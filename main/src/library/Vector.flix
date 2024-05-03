@@ -59,8 +59,7 @@ instance MonadZip[Vector] {
     pub override def unzip(v: Vector[(a, b)]): (Vector[a], Vector[b]) = Vector.unzip(v)
 }
 
-instance Foldable[Vector[a]] {
-    type Elm = a
+instance Foldable[Vector] {
     pub def foldLeft(f: (b, a) -> b \ ef, s: b, v: Vector[a]): b \ ef = Vector.foldLeft(f, s, v)
     pub def foldRight(f: (a, b) -> b \ ef, s: b, v: Vector[a]): b \ ef = Vector.foldRight(f, s, v)
     pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, v: Vector[a]): b \ ef = Vector.foldRightWithCont(f, s, v)

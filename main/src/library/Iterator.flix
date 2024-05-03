@@ -646,7 +646,7 @@ mod Iterator {
     ///
     /// The original iterators `sep` and `iter` should not be reused.
     ///
-    pub def intercalate(sep: t, iter: Iterator[Iterator[a, ef, r], ef, r]): Iterator[a, ef + r, r] \ (r + Foldable.Aef[t]) with Foldable[t] where Foldable.Elm[t] ~ a =
+    pub def intercalate(sep: t[a], iter: Iterator[Iterator[a, ef, r], ef, r]): Iterator[a, ef + r, r] \ (r + Foldable.Aef[t]) with Foldable[t] =
         let Iterator(rc, _) = iter;
         let start = ref true @ rc;
         let sepL = Foldable.toList(sep);

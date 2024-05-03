@@ -70,8 +70,7 @@ instance MonadZip[Identity] {
         Identity.Identity <$> f(x1, y1)
 }
 
-instance Foldable[Identity[a]] {
-    type Elm = a
+instance Foldable[Identity] {
     pub def foldLeft(f: (b, a) -> b \ ef, s: b, x: Identity[a]): b \ ef =
         let Identity.Identity(x1) = x;
         f(s, x1)

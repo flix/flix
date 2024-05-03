@@ -43,7 +43,7 @@ mod Monoid {
     ///
     /// Returns the result of applying `combine` to all the elements in `t`, using `empty` as the initial value.
     ///
-    pub def fold[t: Type, a: Type](t: t): a \ Foldable.Aef[t] with Foldable[t], Monoid[a] where Foldable.Elm[t] ~ a = Foldable.fold(t)
+    pub def fold(t: t[a]): a \ Foldable.Aef[t] with Foldable[t], Monoid[a] = Foldable.fold(t)
 
 }
 

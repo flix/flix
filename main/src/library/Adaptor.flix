@@ -175,7 +175,7 @@ mod Adaptor {
     ///
     /// Alias for `toArrayList`.
     ///
-    pub def toList(ma: m): ##java.util.List \ (IO + Foldable.Aef[m]) with Foldable[m] =
+    pub def toList(ma: m[a]): ##java.util.List \ (IO + Foldable.Aef[m]) with Foldable[m] =
         checked_ecast(checked_cast(toArrayList(ma)))
 
     ///
@@ -183,7 +183,7 @@ mod Adaptor {
     ///
     /// Creates a fresh `ArrayList` and copies all elements in `ma` into it.
     ///
-    pub def toArrayList(ma: m): ##java.util.ArrayList \ (IO + Foldable.Aef[m]) with Foldable[m] where Foldable.Elm[m] ~ a =
+    pub def toArrayList(ma: m[a]): ##java.util.ArrayList \ (IO + Foldable.Aef[m]) with Foldable[m] =
         import java_new java.util.ArrayList(): ##java.util.ArrayList \ IO as newArrayList;
         import java.util.ArrayList.add(##java.lang.Object): Bool \ IO;
         let alist = newArrayList();
@@ -195,7 +195,7 @@ mod Adaptor {
     ///
     /// Creates a fresh `LinkedList` and copies all elements in `ma` into it.
     ///
-    pub def toLinkedList(ma: m): ##java.util.LinkedList \ (IO + Foldable.Aef[m]) with Foldable[m] where Foldable.Elm[m] ~ a =
+    pub def toLinkedList(ma: m[a]): ##java.util.LinkedList \ (IO + Foldable.Aef[m]) with Foldable[m] =
         import java_new java.util.LinkedList(): ##java.util.LinkedList \ IO as newLinkedList;
         import java.util.LinkedList.add(##java.lang.Object): Bool \ IO;
         let llist = newLinkedList();
@@ -205,12 +205,12 @@ mod Adaptor {
     ///
     /// Alias for `toTreeSet`.
     ///
-    pub def toSet(ma: m): ##java.util.Set \ (IO + Foldable.Aef[m]) with Order[a], Foldable[m] where Foldable.Elm[m] ~ a = checked_cast(toTreeSet(ma))
+    pub def toSet(ma: m[a]): ##java.util.Set \ (IO + Foldable.Aef[m]) with Order[a], Foldable[m] = checked_cast(toTreeSet(ma))
 
     ///
     /// Returns the elements of the given foldable `ma` as a new `TreeSet`.
     ///
-    pub def toTreeSet(ma: m): ##java.util.TreeSet \ (IO + Foldable.Aef[m]) with Order[a], Foldable[m] where Foldable.Elm[m] ~ a =
+    pub def toTreeSet(ma: m[a]): ##java.util.TreeSet \ (IO + Foldable.Aef[m]) with Order[a], Foldable[m] =
         import java_new java.util.TreeSet(): ##java.util.TreeSet \ IO as newTreeSet;
         import java.util.TreeSet.add(##java.lang.Object): Bool \ IO;
         let tset = newTreeSet();

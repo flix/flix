@@ -151,8 +151,8 @@ mod Fixpoint.Solver {
     /// given the sequence `(t1), (t1')`.
     ///
     @Internal
-    pub def injectInto1(p: PredSym, ts: f):
-        Datalog[Boxed] \ Foldable.Aef[f] with Order[t1], Foldable[f] where Foldable.Elm[f] ~ t1 =
+    pub def injectInto1(p: PredSym, ts: f[t1]):
+        Datalog[Boxed] \ Foldable.Aef[f] with Order[t1], Foldable[f] =
         injectIntoX(match (v1) ->
             box(v1) ::
             Nil
@@ -165,8 +165,8 @@ mod Fixpoint.Solver {
     /// given the sequence `(t1, t2), (t1', t2')`.
     ///
     @Internal
-    pub def injectInto2(p: PredSym, ts: f):
-        Datalog[Boxed] \ Foldable.Aef[f] with Order[t1], Order[t2], Foldable[f] where Foldable.Elm[f] ~ (t1, t2) =
+    pub def injectInto2(p: PredSym, ts: f[(t1, t2)]):
+        Datalog[Boxed] \ Foldable.Aef[f] with Order[t1], Order[t2], Foldable[f] =
         injectIntoX(match (v1, v2) ->
             box(v1) ::
             box(v2) ::
@@ -180,8 +180,8 @@ mod Fixpoint.Solver {
     /// given the sequence `(t1, t2, t3), (t1', t2', t3')`.
     ///
     @Internal
-    pub def injectInto3(p: PredSym, ts: f):
-        Datalog[Boxed] \ Foldable.Aef[f] with Order[t1], Order[t2], Order[t3], Foldable[f] where Foldable.Elm[f] ~ (t1, t2, t3) =
+    pub def injectInto3(p: PredSym, ts: f[(t1, t2, t3)]):
+        Datalog[Boxed] \ Foldable.Aef[f] with Order[t1], Order[t2], Order[t3], Foldable[f] =
         injectIntoX(match (v1, v2, v3) ->
             box(v1) ::
             box(v2) ::
@@ -197,8 +197,8 @@ mod Fixpoint.Solver {
     /// given the sequence `(t1, t2, t3, t4), (t1', t2', t3', t4')`.
     ///
     @Internal
-    pub def injectInto4(p: PredSym, ts: f):
-        Datalog[Boxed] \ Foldable.Aef[f] with Order[t1], Order[t2], Order[t3], Order[t4], Foldable[f] where Foldable.Elm[f] ~ (t1, t2, t3, t4) =
+    pub def injectInto4(p: PredSym, ts: f[(t1, t2, t3, t4)]):
+        Datalog[Boxed] \ Foldable.Aef[f] with Order[t1], Order[t2], Order[t3], Order[t4], Foldable[f] =
         injectIntoX(match (v1, v2, v3, v4) ->
             box(v1) ::
             box(v2) ::
@@ -215,8 +215,8 @@ mod Fixpoint.Solver {
     /// given the sequence `(t1, t2, t3, t4, t5), (t1', t2', t3', t4', t5')`.
     ///
     @Internal
-    pub def injectInto5(p: PredSym, ts: f):
-        Datalog[Boxed] \ Foldable.Aef[f] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Foldable[f] where Foldable.Elm[f] ~ (t1, t2, t3, t4, t5) =
+    pub def injectInto5(p: PredSym, ts: f[(t1, t2, t3, t4, t5)]):
+        Datalog[Boxed] \ Foldable.Aef[f] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Foldable[f] =
         injectIntoX(match (v1, v2, v3, v4, v5) ->
             box(v1) ::
             box(v2) ::
@@ -234,8 +234,8 @@ mod Fixpoint.Solver {
     /// given the sequence `(t1, t2, t3, t4, t5, t6), (t1', t2', t3', t4', t5', t6')`.
     ///
     @Internal
-    pub def injectInto6(p: PredSym, ts: f):
-        Datalog[Boxed] \ Foldable.Aef[f] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Foldable[f] where Foldable.Elm[f] ~ (t1, t2, t3, t4, t5, t6) =
+    pub def injectInto6(p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6)]):
+        Datalog[Boxed] \ Foldable.Aef[f] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Foldable[f] =
         injectIntoX(match (v1, v2, v3, v4, v5, v6) ->
             box(v1) ::
             box(v2) ::
@@ -254,8 +254,8 @@ mod Fixpoint.Solver {
     /// given the sequence `(t1, t2, t3, t4, t5, t6, t7), (t1', t2', t3', t4', t5', t6', t7')`.
     ///
     @Internal
-    pub def injectInto7(p: PredSym, ts: f):
-        Datalog[Boxed] \ Foldable.Aef[f] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Foldable[f] where Foldable.Elm[f] ~ (t1, t2, t3, t4, t5, t6, t7) =
+    pub def injectInto7(p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7)]):
+        Datalog[Boxed] \ Foldable.Aef[f] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Foldable[f] =
         injectIntoX(match (v1, v2, v3, v4, v5, v6, v7) ->
             box(v1) ::
             box(v2) ::
@@ -276,8 +276,8 @@ mod Fixpoint.Solver {
     /// `(t1, t2, t3, t4, t5, t6, t7, t8), (t1', t2', t3', t4', t5', t6', t7', t8')`.
     ///
     @Internal
-    pub def injectInto8(p: PredSym, ts: f):
-        Datalog[Boxed] \ Foldable.Aef[f] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Foldable[f] where Foldable.Elm[f] ~ (t1, t2, t3, t4, t5, t6, t7, t8) =
+    pub def injectInto8(p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8)]):
+        Datalog[Boxed] \ Foldable.Aef[f] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Foldable[f] =
         injectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8) ->
             box(v1) ::
             box(v2) ::
@@ -299,8 +299,8 @@ mod Fixpoint.Solver {
     /// `(t1, t2, t3, t4, t5, t6, t7, t8, t9), (t1', t2', t3', t4', t5', t6', t7', t8', t9')`.
     ///
     @Internal
-    pub def injectInto9(p: PredSym, ts: f):
-        Datalog[Boxed] \ Foldable.Aef[f] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Foldable[f] where Foldable.Elm[f] ~ (t1, t2, t3, t4, t5, t6, t7, t8, t9) =
+    pub def injectInto9(p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9)]):
+        Datalog[Boxed] \ Foldable.Aef[f] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Foldable[f] =
         injectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9) ->
             box(v1) ::
             box(v2) ::
@@ -325,8 +325,8 @@ mod Fixpoint.Solver {
     ///  (t1', t2', t3', t4', t5', t6', t7', t8', t9', t10')`.
     ///
     @Internal
-    pub def injectInto10(p: PredSym, ts: f):
-        Datalog[Boxed] \ Foldable.Aef[f] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Foldable[f] where Foldable.Elm[f] ~ (t1, t2, t3, t4, t5, t6, t7, t8, t9, t10) =
+    pub def injectInto10(p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10)]):
+        Datalog[Boxed] \ Foldable.Aef[f] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Foldable[f] =
         injectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10) ->
             box(v1) ::
             box(v2) ::
@@ -352,8 +352,8 @@ mod Fixpoint.Solver {
     ///  (t1', t2', t3', t4', t5', t6', t7', t8', t9', t10', t11')`.
     ///
     @Internal
-    pub def injectInto11(p: PredSym, ts: f):
-        Datalog[Boxed] \ Foldable.Aef[f] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Order[t11], Foldable[f] where Foldable.Elm[f] ~ (t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11) =
+    pub def injectInto11(p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11)]):
+        Datalog[Boxed] \ Foldable.Aef[f] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Order[t11], Foldable[f] =
         injectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11) ->
             box(v1) ::
             box(v2) ::
@@ -380,8 +380,8 @@ mod Fixpoint.Solver {
     ///  (t1', t2', t3', t4', t5', t6', t7', t8', t9', t10', t11', t12')`.
     ///
     @Internal
-    pub def injectInto12(p: PredSym, ts: f):
-        Datalog[Boxed] \ Foldable.Aef[f] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Order[t11], Order[t12], Foldable[f] where Foldable.Elm[f] ~ (t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12) =
+    pub def injectInto12(p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12)]):
+        Datalog[Boxed] \ Foldable.Aef[f] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Order[t11], Order[t12], Foldable[f] =
         injectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12) ->
             box(v1) ::
             box(v2) ::
@@ -409,8 +409,8 @@ mod Fixpoint.Solver {
     ///  (t1', t2', t3', t4', t5', t6', t7', t8', t9', t10', t11', t12', t13')`.
     ///
     @Internal
-    pub def injectInto13(p: PredSym, ts: f):
-        Datalog[Boxed] \ Foldable.Aef[f] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Order[t11], Order[t12], Order[t13], Foldable[f] where Foldable.Elm[f] ~ (t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13) =
+    pub def injectInto13(p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13)]):
+        Datalog[Boxed] \ Foldable.Aef[f] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Order[t11], Order[t12], Order[t13], Foldable[f] =
         injectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13) ->
             box(v1) ::
             box(v2) ::
@@ -439,8 +439,8 @@ mod Fixpoint.Solver {
     ///  (t1', t2', t3', t4', t5', t6', t7', t8', t9', t10', t11', t12', t13', t14')`.
     ///
     @Internal
-    pub def injectInto14(p: PredSym, ts: f):
-        Datalog[Boxed] \ Foldable.Aef[f] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Order[t11], Order[t12], Order[t13], Order[t14], Foldable[f]  where Foldable.Elm[f] ~ (t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14)=
+    pub def injectInto14(p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14)]):
+        Datalog[Boxed] \ Foldable.Aef[f] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Order[t11], Order[t12], Order[t13], Order[t14], Foldable[f] =
         injectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14) ->
             box(v1) ::
             box(v2) ::
@@ -470,8 +470,8 @@ mod Fixpoint.Solver {
     ///  (t1', t2', t3', t4', t5', t6', t7', t8', t9', t10', t11', t12', t13', t14', t15')`.
     ///
     @Internal
-    pub def injectInto15(p: PredSym, ts: f):
-        Datalog[Boxed] \ Foldable.Aef[f] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Order[t11], Order[t12], Order[t13], Order[t14], Order[t15], Foldable[f] where Foldable.Elm[f] ~ (t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15) =
+    pub def injectInto15(p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15)]):
+        Datalog[Boxed] \ Foldable.Aef[f] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Order[t11], Order[t12], Order[t13], Order[t14], Order[t15], Foldable[f] =
         injectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15) ->
             box(v1) ::
             box(v2) ::
@@ -491,7 +491,7 @@ mod Fixpoint.Solver {
             Nil
         , p, ts)
 
-    def injectIntoX[f: Type, t: Type, ef: Eff](f: t -> List[Boxed] \ ef, p: PredSym, ts: f): Datalog[Boxed] \ (ef + Foldable.Aef[f]) with Foldable[f] where Foldable.Elm[f] ~ t =
+    def injectIntoX(f: t -> List[Boxed] \ ef, p: PredSym, ts: f[t]): Datalog[Boxed] \ (ef + Foldable.Aef[f]) with Foldable[f] =
         region rc {
             let db = MutMap.empty(rc);
             Foldable.foldLeft(() -> t -> {

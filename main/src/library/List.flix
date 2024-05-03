@@ -82,8 +82,7 @@ instance MonadZip[List] {
     pub override def unzip(xs: List[(a, b)]): (List[a], List[b]) = List.unzip(xs)
 }
 
-instance Foldable[List[a]] {
-    type Elm = a
+instance Foldable[List] {
     pub def foldLeft(f: (b, a) -> b \ ef, s: b, l: List[a]): b \ ef = List.foldLeft(f, s, l)
     pub def foldRight(f: (a, b) -> b \ ef, s: b, l: List[a]): b \ ef = List.foldRight(f, s, l)
     pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, l: List[a]): b \ ef = List.foldRightWithCont(f, s, l)
