@@ -232,7 +232,7 @@ object Monomorpher {
       *
       * Note: This is not synchronized.
       */
-    def nonEmpty: Boolean = {
+    def nonEmpty: Boolean = synchronized {
       !defQueue.isEmpty
     }
 
@@ -241,7 +241,7 @@ object Monomorpher {
       *
       * Note: This is not synchronized.
       */
-    def enqueue(sym: Symbol.DefnSym, defn: LoweredAst.Def, subst: StrictSubstitution): Unit = {
+    def enqueue(sym: Symbol.DefnSym, defn: LoweredAst.Def, subst: StrictSubstitution): Unit = synchronized {
       defQueue.add((sym, defn, subst))
     }
 
@@ -250,7 +250,7 @@ object Monomorpher {
       *
       * Note: This is not synchronized.
       */
-    def dequeueAll: Array[(Symbol.DefnSym, LoweredAst.Def, StrictSubstitution)] = {
+    def dequeueAll: Array[(Symbol.DefnSym, LoweredAst.Def, StrictSubstitution)] = synchronized {
       val r = defQueue.toArray(Array.empty[(Symbol.DefnSym, LoweredAst.Def, StrictSubstitution)])
       defQueue.clear()
       r
@@ -735,24 +735,26 @@ object Monomorpher {
     val subst = infallibleUnify(defn.spec.declaredScheme.base, tpe, defn.sym)
 
     // Check whether the function definition has already been specialized.
-    ctx.getDef2Def(defn.sym, tpe) match {
-      case None =>
-        // Case 1: The function has not been specialized.
-        // Generate a fresh specialized definition symbol.
-        val freshSym = Symbol.freshDefnSym(defn.sym)
+    ctx synchronized {
+      ctx.getDef2Def(defn.sym, tpe) match {
+        case None =>
+          // Case 1: The function has not been specialized.
+          // Generate a fresh specialized definition symbol.
+          val freshSym = Symbol.freshDefnSym(defn.sym)
 
-        // Register the fresh symbol (and actual type) in the symbol2symbol map.
-        ctx.putDef2Def(defn.sym, tpe, freshSym)
+          // Register the fresh symbol (and actual type) in the symbol2symbol map.
+          ctx.putDef2Def(defn.sym, tpe, freshSym)
 
-        // Enqueue the fresh symbol with the definition and substitution.
-        ctx.enqueue(freshSym, defn, subst)
+          // Enqueue the fresh symbol with the definition and substitution.
+          ctx.enqueue(freshSym, defn, subst)
 
-        // Now simply refer to the freshly generated symbol.
-        freshSym
-      case Some(specializedSym) =>
-        // Case 2: The function has already been specialized.
-        // Simply refer to the already existing specialized symbol.
-        specializedSym
+          // Now simply refer to the freshly generated symbol.
+          freshSym
+        case Some(specializedSym) =>
+          // Case 2: The function has already been specialized.
+          // Simply refer to the already existing specialized symbol.
+          specializedSym
+      }
     }
 
   }
