@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.ast.Purity
 import ca.uwaterloo.flix.language.ast.ReducedAst._
 import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoType, Name, SemanticOp, SourceLocation, Symbol}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
+
 import scala.annotation.tailrec
 
 /**
@@ -41,8 +42,9 @@ object Verifier {
     val env = (decl.cparams ++ decl.fparams).foldLeft(Map.empty[Symbol.VarSym, MonoType]) {
       case (macc, fparam) => macc + (fparam.sym -> fparam.tpe)
     }
-    val ret = visitExpr(decl.expr)(root, env, Map.empty)
+    val (ret, pur) = visitExpr(decl.expr)(root, env, Map.empty)
     checkEq(decl.tpe, ret, decl.loc)
+    checkEq(decl.purity, pur, decl.loc)
   }
 
   private def visitExpr(expr: Expr)(implicit root: Root, env: Map[Symbol.VarSym, MonoType], lenv: Map[Symbol.LabelSym, MonoType]): (MonoType, Purity) = expr match {
@@ -232,7 +234,7 @@ object Verifier {
         case AtomicOp.Untag(sym) =>
           val (List(t1), List(p1)) = rs.unzip
           check(expected = MonoType.Enum(sym.enumSym))(actual = t1, loc)
-          (tpe, checkEq(pur, p1, loc))
+          (tpe, pur)
 
         case AtomicOp.ArrayLength =>
           val (List(t1), List(p1)) = rs.unzip
@@ -251,7 +253,7 @@ object Verifier {
           check(expected = MonoType.Int32)(actual = t2, loc)
           (
             checkEq(arrType, tpe, loc),
-            checkEq(pur, Purity.combine(p1, p2), loc)
+            checkEq(pur, Purity.combine3(pur, p1, p2), loc)
           )
 
         case AtomicOp.ArrayLit =>
@@ -259,7 +261,7 @@ object Verifier {
             case MonoType.Array(elmt) =>
               val (ts, ps) = rs.unzip
               ts.foreach(t => checkEq(elmt, t, loc))
-              (tpe, checkEq(pur, Purity.combineAll(ps), loc))
+              (tpe, checkEq(pur, Purity.combineAll(pur :: ps), loc))
             case _ => failMismatchedShape(tpe, "Array", loc)
           }
 
@@ -270,110 +272,117 @@ object Verifier {
               check(expected = MonoType.Int32)(actual = t2, loc)
               (
                 checkEq(elmt, tpe, loc),
-                checkEq(pur, Purity.combine(p1, p2), loc)
+                checkEq(pur, Purity.combine3(pur, p1, p2), loc)
               )
             case _ => failMismatchedShape(t1, "Array", loc)
           }
 
         case AtomicOp.ArrayStore =>
-          val (List(t1, t2, t3), List(p1, p2, p3)) = rs.unzip
+          val (List(t1, t2, t3), ps) = rs.unzip
           t1 match {
             case MonoType.Array(elmt) =>
               check(expected = MonoType.Int32)(actual = t2, loc)
               checkEq(elmt, t3, loc)
               (
                 check(expected = MonoType.Unit)(actual = tpe, loc),
-                checkEq(pur, Pui
+                checkEq(pur, Purity.combineAll(pur :: ps), loc)
               )
             case _ => failMismatchedShape(t1, "Array", loc)
           }
 
         case AtomicOp.Ref =>
-          val List(t1) = ts
+          val (List(t1), List(p1)) = rs.unzip
           val refType = MonoType.Ref(t1)
-          checkEq(refType, tpe, loc)
+          (checkEq(refType, tpe, loc), checkEq(pur, Purity.combine(pur, p1), loc))
 
         case AtomicOp.Deref =>
-          val List(t1) = ts
+          val (List(t1), List(p1)) = rs.unzip
           t1 match {
-            case MonoType.Ref(elm) => checkEq(elm, tpe, loc)
+            case MonoType.Ref(elm) =>
+              (checkEq(elm, tpe, loc), checkEq(pur, Purity.combine(pur, p1), loc))
             case _ => failMismatchedShape(t1, "Ref", loc)
           }
 
         case AtomicOp.Lazy =>
-          val List(t1) = ts
+          val (List(t1), List(p1)) = rs.unzip
           tpe match {
             case MonoType.Lazy(elmt) =>
               val fun = MonoType.Arrow(List(MonoType.Unit), elmt)
               checkEq(t1, fun, loc)
-              tpe
+              check(expected = Purity.Pure)(actual = p1, loc)
+              (tpe, check(expected = Purity.Pure)(actual = pur, loc))
             case _ => failMismatchedShape(tpe, "Lazy", loc)
           }
 
         case AtomicOp.Force =>
-          val List(t1) = ts
+          val (List(t1), List(p1)) = rs.unzip
           t1 match {
-            case MonoType.Lazy(elm) => checkEq(elm, tpe, loc)
+            case MonoType.Lazy(elm) =>
+              check(expected = Purity.Pure)(actual = p1, loc)
+              (checkEq(elm, tpe, loc), check(expected = Purity.Pure)(actual = pur, loc))
             case _ => failMismatchedShape(t1, "Lazy", loc)
           }
 
         case AtomicOp.Tuple =>
+          val (ts, ps) = rs.unzip
           val tup = MonoType.Tuple(ts)
-          checkEq(tup, tpe, loc)
+          (checkEq(tup, tpe, loc), checkEq(pur, Purity.combineAll(ps), loc))
 
         case AtomicOp.Index(idx: Int) =>
-          val List(t1) = ts
+          val (List(t1), List(p1)) = rs.unzip
           t1 match {
-            case MonoType.Tuple(elms) => checkEq(elms(idx), tpe, loc)
+            case MonoType.Tuple(elms) =>
+              (checkEq(elms(idx), tpe, loc), checkEq(pur, p1, loc))
             case _ => failMismatchedShape(t1, "Tuple", loc)
           }
 
         case AtomicOp.Assign =>
-          val List(t1, t2) = ts
+          val (List(t1, t2), List(p1, p2)) = rs.unzip
           t1 match {
             case MonoType.Ref(elm) =>
               checkEq(t2, elm, loc)
-              check(expected = MonoType.Unit)(actual = tpe, loc)
+             (check(expected = MonoType.Unit)(actual = tpe, loc), checkEq(pur, Purity.combine3(pur, p1, p2), loc))
             case _ => failMismatchedShape(t1, "Ref", loc)
           }
 
         // Match- and Hole-errors match with any type
         case AtomicOp.HoleError(_) =>
-          tpe
+          (tpe, pur)
 
         case AtomicOp.MatchError =>
-          tpe
+          (tpe, pur)
 
         case AtomicOp.RecordEmpty =>
-          check(expected = MonoType.RecordEmpty)(actual = tpe, loc)
+          (check(expected = MonoType.RecordEmpty)(actual = tpe, loc), check(expected = Purity.Pure)(actual = pur, loc))
 
         case AtomicOp.RecordExtend(label) =>
-          val List(t1, t2) = ts
+          val (List(t1, t2), List(p1, p2)) = rs.unzip
           removeFromRecordType(tpe, label.name, loc) match {
             case (rec, Some(valtype)) =>
               checkEq(rec, t2, loc)
               checkEq(valtype, t1, loc)
-              tpe
+              (tpe, checkEq(pur, Purity.combine(p1, p2), loc))
             case (_, None) => failMismatchedShape(tpe, s"Record with ${label.name}", loc)
           }
 
         case AtomicOp.RecordRestrict(label) =>
-          val List(t1) = ts
+          val (List(t1), List(p1)) = rs.unzip
           removeFromRecordType(t1, label.name, loc) match {
             case (rec, Some(_)) =>
-              checkEq(tpe, rec, loc)
+              (checkEq(tpe, rec, loc), checkEq(pur, p1, loc))
             case (_, None) => failMismatchedShape(t1, s"Record with ${label.name}", loc)
           }
 
         case AtomicOp.RecordSelect(label) =>
-          val List(t1) = ts
+          val (List(t1), List(p1)) = rs.unzip
           selectFromRecordType(t1, label.name, loc) match {
             case Some(elmt) =>
-              checkEq(tpe, elmt, loc)
+              (checkEq(tpe, elmt, loc), checkEq(pur, p1, loc))
             case None => failMismatchedShape(t1, s"Record with '${label.name}'", loc)
           }
 
-        case AtomicOp.Closure(sym) =>
+        case AtomicOp.Closure(sym) => // TODO: VERIFIER: purity checking for Closure
+          val ts = rs.map(_._1)
           val defn = root.defs(sym)
           val signature = MonoType.Arrow(defn.fparams.map(_.tpe), defn.tpe)
 
@@ -381,107 +390,108 @@ object Verifier {
           val actual = MonoType.Arrow(ts, tpe)
 
           checkEq(decl, actual, loc)
-          tpe
+          (tpe, pur)
 
-        case AtomicOp.Box =>
-          check(expected = MonoType.Object)(actual = tpe, loc)
+        case AtomicOp.Box => // TODO: VERIFIER: purity checking for Box/Unbox
+          (check(expected = MonoType.Object)(actual = tpe, loc), pur)
 
         case AtomicOp.Unbox =>
-          val List(t1) = ts
+          val (List(t1), List(p1)) = rs.unzip
           check(expected = MonoType.Object)(actual = t1, loc)
-          tpe
+          (tpe, checkEq(pur, p1, loc))
 
         // cast may result in any type
         case AtomicOp.Cast =>
-          tpe
+          (tpe, pur)
 
-        case AtomicOp.Region =>
-          check(expected = MonoType.Region)(actual = tpe, loc)
+        case AtomicOp.Region => // TODO: VERIFIER: purity checking for Region/Spawn
+          (check(expected = MonoType.Region)(actual = tpe, loc), pur)
 
         case AtomicOp.Spawn =>
-          val List(t1, t2) = ts
+          val (List(t1, t2), List(p1, p2)) = rs.unzip
           t1 match {
-            case MonoType.Arrow(List(MonoType.Unit), _) => ()
+            case MonoType.Arrow(List(MonoType.Unit), _) =>
+              check(expected = MonoType.Region)(actual = t2, loc)
+              (check(expected = MonoType.Unit)(actual = tpe, loc), pur)
             case _ => failMismatchedShape(t1, "Arrow(List(Unit), _)", loc)
           }
 
-          check(expected = MonoType.Region)(actual = t2, loc)
-          check(expected = MonoType.Unit)(actual = tpe, loc)
-
-        case _ => tpe // TODO: VERIFIER: Add rest
+        case _ => (tpe, pur) // TODO: VERIFIER: Add rest
       }
 
-    case Expr.ApplyClo(exp, exps, ct, tpe, _, loc) =>
-      val lamType1 = visitExpr(exp)
-      val lamType2 = MonoType.Arrow(exps.map(visitExpr), tpe)
+    case Expr.ApplyClo(exp, exps, ct, tpe, pur, loc) => // TODO: VERIFIER: purity checking for function calls/TryWith/Do/NewObject (+ a discussion about Purity in MonoType.Arrow?)
+      val lamType1 = visitExpr(exp)._1
+      val lamType2 = MonoType.Arrow(exps.map(visitExpr).map(_._1), tpe)
       checkEq(lamType1, lamType2, loc)
-      tpe
+      (tpe, pur)
 
-    case Expr.ApplyDef(sym, exps, ct, tpe, _, loc) =>
+    case Expr.ApplyDef(sym, exps, ct, tpe, pur, loc) =>
       val defn = root.defs(sym)
       val declared = MonoType.Arrow(defn.fparams.map(_.tpe), defn.tpe)
-      val actual = MonoType.Arrow(exps.map(visitExpr), tpe)
+      val actual = MonoType.Arrow(exps.map(visitExpr).map(_._1), tpe)
       check(expected = declared)(actual = actual, loc)
-      tpe
+      (tpe, pur)
 
-    case Expr.ApplySelfTail(sym, actuals, tpe, _, loc) =>
+    case Expr.ApplySelfTail(sym, actuals, tpe, pur, loc) =>
       val defn = root.defs(sym)
       val declared = MonoType.Arrow(defn.fparams.map(_.tpe), defn.tpe)
-      val actual = MonoType.Arrow(actuals.map(visitExpr), tpe)
+      val actual = MonoType.Arrow(actuals.map(visitExpr).map(_._1), tpe)
       check(expected = declared)(actual = actual, loc)
-      tpe
+      (tpe, pur)
 
-    case Expr.IfThenElse(exp1, exp2, exp3, tpe, _, loc) =>
-      val condType = visitExpr(exp1)
-      val thenType = visitExpr(exp2)
-      val elseType = visitExpr(exp3)
+    case Expr.IfThenElse(exp1, exp2, exp3, tpe, pur, loc) =>
+      val (condType, condPur) = visitExpr(exp1)
+      val (thenType, thenPur) = visitExpr(exp2)
+      val (elseType, elsePur) = visitExpr(exp3)
+
       check(expected = MonoType.Bool)(actual = condType, exp1.loc)
       checkEq(tpe, thenType, exp2.loc)
       checkEq(tpe, elseType, exp3.loc)
+      (tpe, checkEq(pur, Purity.combine3(condPur, thenPur, elsePur), loc))
 
-    case Expr.Branch(exp, branches, tpe, _, loc) =>
+    case Expr.Branch(exp, branches, tpe, pur, loc) => // TODO: VERIFIER: purity checking for Branch/JumpTo
       val lenv1 = branches.foldLeft(lenv) {
         case (acc, (label, _)) => acc + (label -> tpe)
       }
       branches.foreach {
         case (label, body) =>
-          checkEq(tpe, visitExpr(body)(root, env, lenv1), loc)
+          (checkEq(tpe, visitExpr(body)(root, env, lenv1)._1, loc), pur)
       }
-      tpe
+      (tpe, pur)
 
-    case Expr.JumpTo(sym, tpe1, _, loc) => lenv.get(sym) match {
+    case Expr.JumpTo(sym, tpe1, pur, loc) => lenv.get(sym) match {
       case None => throw InternalCompilerException(s"Unknown label sym: '$sym'.", loc)
-      case Some(tpe2) => checkEq(tpe1, tpe2, loc)
+      case Some(tpe2) => (checkEq(tpe1, tpe2, loc), pur)
     }
 
-    case Expr.Let(sym, exp1, exp2, tpe, _, loc) =>
-      val letBoundType = visitExpr(exp1)
-      val bodyType = visitExpr(exp2)(root, env + (sym -> letBoundType), lenv)
-      checkEq(bodyType, tpe, loc)
+    case Expr.Let(sym, exp1, exp2, tpe, pur, loc) =>
+      val (letBoundType, letBoundPur) = visitExpr(exp1)
+      val (bodyType, bodyPur) = visitExpr(exp2)(root, env + (sym -> letBoundType), lenv)
+      (checkEq(bodyType, tpe, loc), checkEq(pur, Purity.combine(letBoundPur, bodyPur), loc))
 
-    case Expr.LetRec(varSym, _, defSym, exp1, exp2, tpe, _, loc) =>
+    case Expr.LetRec(varSym, _, defSym, exp1, exp2, tpe, pur, loc) =>
       val env1 = env + (varSym -> exp1.tpe)
-      val letBoundType = visitExpr(exp1)(root, env1, lenv)
-      val bodyType = visitExpr(exp2)(root, env1, lenv)
-      checkEq(bodyType, tpe, loc)
+      val (letBoundType, letBoundPur) = visitExpr(exp1)(root, env1, lenv)
+      val (bodyType, bodyPur) = visitExpr(exp2)(root, env1, lenv)
+      (checkEq(bodyType, tpe, loc), checkEq(pur, Purity.combine(letBoundPur, bodyPur), loc))
 
-    case Expr.Stmt(exp1, exp2, tpe, _, loc) =>
-      val firstType = visitExpr(exp1)
-      val secondType = visitExpr(exp2)
-      checkEq(secondType, tpe, loc)
+    case Expr.Stmt(exp1, exp2, tpe, pur, loc) =>
+      val (firstType, firstPur) = visitExpr(exp1)
+      val (secondType, secondPur) = visitExpr(exp2)
+      (checkEq(secondType, tpe, loc), checkEq(pur, Purity.combine(firstPur, secondPur), loc))
 
-    case Expr.Scope(sym, exp, tpe, _, loc) =>
-      checkEq(tpe, visitExpr(exp)(root, env + (sym -> MonoType.Region), lenv), loc)
+    case Expr.Scope(sym, exp, tpe, pur, loc) => // TODO: VERIFIER: purity checking for Scope
+      (checkEq(tpe, visitExpr(exp)(root, env + (sym -> MonoType.Region), lenv)._1, loc), pur)
 
-    case Expr.TryCatch(exp, rules, tpe, _, loc) =>
+    case Expr.TryCatch(exp, rules, tpe, pur, loc) =>
       for (CatchRule(sym, clazz, exp) <- rules) {
-        checkEq(tpe, visitExpr(exp)(root, env + (sym -> MonoType.Native(clazz)), lenv), exp.loc)
+        checkEq(tpe, visitExpr(exp)(root, env + (sym -> MonoType.Native(clazz)), lenv)._1, exp.loc)
       }
-      val t = visitExpr(exp)
-      checkEq(tpe, t, loc)
+      val (t, _) = visitExpr(exp)
+      (checkEq(tpe, t, loc), pur)
 
-    case Expr.TryWith(exp, effUse, rules, ct, tpe, purity, loc) =>
-      val exptype = visitExpr(exp) match {
+    case Expr.TryWith(exp, effUse, rules, ct, tpe, pur, loc) =>
+      val exptype = visitExpr(exp)._1 match {
         case MonoType.Arrow(List(MonoType.Unit), t) => t
         case e => failMismatchedShape(e, "Arrow(List(Unit), _)", exp.loc)
       }
@@ -491,7 +501,7 @@ object Verifier {
       val ops = effect.ops.map(op => op.sym -> op).toMap
 
       for (rule <- rules) {
-        val ruletype = visitExpr(rule.exp)
+        val (ruletype, _) = visitExpr(rule.exp)
         val op = ops.getOrElse(rule.op.sym,
           throw InternalCompilerException(s"Unknown operation sym: '${rule.op.sym}'", rule.op.loc))
 
@@ -502,10 +512,10 @@ object Verifier {
         checkEq(ruletype, signature, rule.exp.loc)
       }
 
-      checkEq(tpe, exptype, loc)
+      (checkEq(tpe, exptype, loc), pur)
 
-    case Expr.Do(opUse, exps, tpe, purity, loc) =>
-      val ts = exps.map(visitExpr)
+    case Expr.Do(opUse, exps, tpe, pur, loc) =>
+      val ts = exps.map(visitExpr).map(_._1)
       val eff = root.effects.getOrElse(opUse.sym.eff,
         throw InternalCompilerException(s"Unknown effect sym: '${opUse.sym.eff}'", opUse.loc))
       val op = eff.ops.find(_.sym == opUse.sym)
@@ -522,15 +532,15 @@ object Verifier {
       )
 
       checkEq(sig, opsig, loc)
-      tpe
+      (tpe, pur)
 
-    case Expr.NewObject(_, clazz, tpe, _, methods, loc) =>
+    case Expr.NewObject(_, clazz, tpe, pur, methods, loc) =>
       for (m <- methods) {
-        val exptype = visitExpr(m.exp)
+        val (exptype, _) = visitExpr(m.exp)
         val signature = MonoType.Arrow(m.fparams.map(_.tpe), m.tpe)
         checkEq(signature, exptype, m.loc)
       }
-      checkEq(tpe, MonoType.Native(clazz), loc)
+      (checkEq(tpe, MonoType.Native(clazz), loc), pur)
 
   }
 
@@ -566,6 +576,16 @@ object Verifier {
     */
   private def checkEq(p1: Purity, p2: Purity, loc: SourceLocation): Purity = {
     if (p1 == p2) p1 else failMismatchedPurity(p1, p2, loc)
+  }
+
+  /**
+    * Asserts that `p` is either `Impure` or `ControlImpure`
+    */
+  private def checkImpure(p: Purity, loc: SourceLocation): Purity = {
+    if (Purity.isPure(p))
+      failUnexpectedPurity(p, "Impure or ControlImpure", loc)
+    else
+      p
   }
 
   /**
@@ -628,6 +648,14 @@ object Verifier {
   private def failUnexpectedPurity(found: Purity, expected: Purity, loc: SourceLocation): Nothing =
     throw InternalCompilerException(
       s"Unexpected type near ${loc.format}: expected = $expected, found = $found", loc
+    )
+
+  /**
+    * Throw `
+    */
+  private def failUnexpectedPurity(found: Purity, expected: String, loc: SourceLocation): Nothing =
+    throw InternalCompilerException(
+      s"Unexpected purity near ${loc.format}: expected = \'$expected\', found = $found", loc
     )
 
   /**
