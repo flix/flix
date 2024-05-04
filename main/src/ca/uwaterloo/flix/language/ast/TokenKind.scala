@@ -191,7 +191,7 @@ sealed trait TokenKind {
       case TokenKind.LiteralString => "<string>"
       case TokenKind.LiteralChar => "<char>"
       case TokenKind.LiteralStringInterpolationL => "'${'"
-      case TokenKind.LiteralStringInterpolationR => "'}'"
+      case TokenKind.LiteralStringInterpolationR => "'}\"'"
       case TokenKind.Err(_) => "<error>"
     }
   }
