@@ -579,53 +579,42 @@ object Verifier {
     */
   @tailrec
   private def checkJavaSubtype(tpe: MonoType, klazz: Class[_], loc: SourceLocation): MonoType = {
-    val monoToPrimitiveName = Map[MonoType, String](
-      MonoType.Int8 -> "byte",
-      MonoType.Int16 -> "short",
-      MonoType.Int32 -> "int",
-      MonoType.Int64 -> "long",
-      MonoType.Float32 -> "float",
-      MonoType.Float64 -> "double",
-      MonoType.Bool -> "boolean",
-      MonoType.Char -> "char",
-      MonoType.Unit -> "void"
-    )
-
-    val monoToClassName = Map[MonoType, String](
-      MonoType.String -> "java.lang.String",
-      MonoType.BigInt -> "java.math.BigInteger",
-      MonoType.BigDecimal -> "java.math.BigDecimal",
-      MonoType.Regex -> "java.util.regex.Pattern",
-      MonoType.Arrow(List(MonoType.Object), MonoType.Unit) -> "java.util.function.Consumer",
-      MonoType.Arrow(List(MonoType.Object), MonoType.Bool) -> "java.util.function.Predicate",
-      MonoType.Arrow(List(MonoType.Int32), MonoType.Unit) -> "java.util.function.IntConsumer",
-      MonoType.Arrow(List(MonoType.Int32), MonoType.Object) -> "java.util.function.IntFunction",
-      MonoType.Arrow(List(MonoType.Int32), MonoType.Bool) -> "java.util.function.IntPredicate",
-      MonoType.Arrow(List(MonoType.Int32), MonoType.Int32) -> "java.util.function.IntUnaryOperator",
-      MonoType.Arrow(List(MonoType.Int32), MonoType.Unit) -> "java.util.function.IntConsumer",
-      MonoType.Arrow(List(MonoType.Int64), MonoType.Unit) -> "java.util.function.LongConsumer",
-      MonoType.Arrow(List(MonoType.Int64), MonoType.Object) -> "java.util.function.LongFunction",
-      MonoType.Arrow(List(MonoType.Int64), MonoType.Bool) -> "java.util.function.LongPredicate",
-      MonoType.Arrow(List(MonoType.Int64), MonoType.Int64) -> "java.util.function.LongUnaryOperator",
-      MonoType.Arrow(List(MonoType.Float64), MonoType.Unit) -> "java.util.function.DoubleConsumer",
-      MonoType.Arrow(List(MonoType.Float64), MonoType.Object) -> "java.util.function.DoubleFunction",
-      MonoType.Arrow(List(MonoType.Float64), MonoType.Bool) -> "java.util.function.DoublePredicate",
-      MonoType.Arrow(List(MonoType.Float64), MonoType.Float64) -> "java.util.function.DoubleUnaryOperator",
-    )
-
     tpe match {
       case MonoType.Array(elmt) if klazz.isArray =>
         checkJavaSubtype(elmt, klazz.getComponentType, loc)
 
-      case MonoType.Native(k) if isSubclass(k, klazz) =>
+      case MonoType.Native(k) if klazz.isAssignableFrom(k) =>
         tpe
 
-      case _ if monoToPrimitiveName.contains(tpe) && klazz.getName == monoToPrimitiveName(tpe) =>
-        tpe
+      case MonoType.Int8    if klazz == classOf[Byte] => tpe
+      case MonoType.Int16   if klazz == classOf[Short] => tpe
+      case MonoType.Int32   if klazz == classOf[Int] => tpe
+      case MonoType.Int64   if klazz == classOf[Long] => tpe
+      case MonoType.Float32 if klazz == classOf[Float] => tpe
+      case MonoType.Float64 if klazz == classOf[Double] => tpe
+      case MonoType.Bool    if klazz == classOf[Boolean] => tpe
+      case MonoType.Char    if klazz == classOf[Char] => tpe
+      case MonoType.Unit    if klazz == classOf[Unit] => tpe
 
-      case _ if monoToClassName.contains(tpe) && isSubclass(Class.forName(monoToClassName(tpe)), klazz) =>
-        tpe
-
+      case MonoType.String if klazz.isAssignableFrom(classOf[java.lang.String]) => tpe
+      case MonoType.BigInt if klazz.isAssignableFrom(classOf[java.math.BigInteger]) => tpe
+      case MonoType.BigDecimal if klazz.isAssignableFrom(classOf[java.math.BigDecimal]) => tpe
+      case MonoType.Regex if klazz.isAssignableFrom(classOf[java.util.regex.Pattern]) => tpe
+      case MonoType.Arrow(List(MonoType.Object), MonoType.Unit) if klazz.isAssignableFrom(classOf[java.util.function.Consumer[Object]]) => tpe
+      case MonoType.Arrow(List(MonoType.Object), MonoType.Bool) if klazz.isAssignableFrom(classOf[java.util.function.Predicate[Object]]) => tpe
+      case MonoType.Arrow(List(MonoType.Int32), MonoType.Unit) if klazz.isAssignableFrom(classOf[java.util.function.IntConsumer]) => tpe
+      case MonoType.Arrow(List(MonoType.Int32), MonoType.Object) if klazz.isAssignableFrom(classOf[java.util.function.IntFunction[Object]]) => tpe
+      case MonoType.Arrow(List(MonoType.Int32), MonoType.Bool) if klazz.isAssignableFrom(classOf[java.util.function.IntPredicate]) => tpe
+      case MonoType.Arrow(List(MonoType.Int32), MonoType.Int32) if klazz.isAssignableFrom(classOf[java.util.function.IntUnaryOperator]) => tpe
+      case MonoType.Arrow(List(MonoType.Int32), MonoType.Unit) if klazz.isAssignableFrom(classOf[java.util.function.IntConsumer]) => tpe
+      case MonoType.Arrow(List(MonoType.Int64), MonoType.Unit) if klazz.isAssignableFrom(classOf[java.util.function.LongConsumer]) => tpe
+      case MonoType.Arrow(List(MonoType.Int64), MonoType.Object) if klazz.isAssignableFrom(classOf[java.util.function.LongFunction[Object]]) => tpe
+      case MonoType.Arrow(List(MonoType.Int64), MonoType.Bool) if klazz.isAssignableFrom(classOf[java.util.function.LongPredicate]) => tpe
+      case MonoType.Arrow(List(MonoType.Int64), MonoType.Int64) if klazz.isAssignableFrom(classOf[java.util.function.LongUnaryOperator]) => tpe
+      case MonoType.Arrow(List(MonoType.Float64), MonoType.Unit) if klazz.isAssignableFrom(classOf[java.util.function.DoubleConsumer]) => tpe
+      case MonoType.Arrow(List(MonoType.Float64), MonoType.Object) if klazz.isAssignableFrom(classOf[java.util.function.DoubleFunction[Object]]) => tpe
+      case MonoType.Arrow(List(MonoType.Float64), MonoType.Bool) if klazz.isAssignableFrom(classOf[java.util.function.DoublePredicate]) => tpe
+      case MonoType.Arrow(List(MonoType.Float64), MonoType.Float64) if klazz.isAssignableFrom(classOf[java.util.function.DoubleUnaryOperator]) => tpe
       case _ => failMismatchedTypes(tpe, klazz, loc)
     }
   }
