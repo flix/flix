@@ -54,7 +54,7 @@
     --dark-eff-color: #ffaefa;
     --dark-type-alias-color: #f9cdad;
     --dark-def-color: #83af9b;
-    --dark-shadow-color: rgba(0, 0, 0, 0.5);
+    --dark-shadow-color: rgba(0, 0, 0, 0.3);
     --dark-highlight-color: hsla(50, 0%, 100%, 0.3);
 
     --toggle-icon: var(--light-toggle-icon);
