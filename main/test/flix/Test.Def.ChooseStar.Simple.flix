@@ -193,11 +193,11 @@ mod Test.Def.ChooseStar.Simple {
 //        let h = if (true) helper12_1 else helper12_2;
 //        let thing = h(Expr.Cst);
 //        ???
-////        choose h(Expr.Cst) {
-////            case Expr.Cst => true
-////            case Expr.Var => true
-////            case Expr.Xor => true
-////        }
+//          choose h(Expr.Cst) {
+//              case Expr.Cst => true
+//              case Expr.Var => true
+//              case Expr.Xor => true
+//          }
 //    }
 //
 //    def helper13_1(e: Expr[s rvand <Expr.Cst, Expr.Var, Expr.Not>]): Expr[<Expr.Cst>] = choose* e {

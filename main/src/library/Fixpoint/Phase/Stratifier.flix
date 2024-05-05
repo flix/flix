@@ -33,12 +33,9 @@ mod Fixpoint.Phase.Stratifier {
     /// I.e. facts are ignored in the stratification.
     ///
     @Internal
-    pub def stratify(d: Datalog[v]): Map[PredSym, Int32] = match d {
-        case Datalog(_, rules) =>
-            Vector.foldRight(match Constraint(HeadAtom(p, _, _), _) -> Map.insert(p, 0), Map#{}, rules) |>
-            stratifyHelper(mkDepGraph(d))
-        case Model(_) => Map#{} // Models contain only facts.
-        case Join(d1, d2) => Map.unionWith(Int32.max, stratify(d1), stratify(d2))
+    pub def stratify(d: Datalog[v]): Map[PredSym, Int32] = {
+        let graph = mkDepGraph(d);
+        stratifyHelper(graph, Map.empty())
     }
 
     def stratifyHelper(g: PrecedenceGraph, stf: Map[PredSym, Int32]): Map[PredSym, Int32] = match g {

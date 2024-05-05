@@ -93,8 +93,9 @@ instance Monoid[Vector[a]] {
     pub def empty(): Vector[a] = Vector.empty()
 }
 
-instance Collectable[Vector] {
-    pub def collect(iter: Iterator[a, ef, r]): Vector[a] \ { r, ef } with Order[a] = Iterator.toVector(iter)
+instance Collectable[Vector[a]] {
+    type Elm = a
+    pub def collect(iter: Iterator[a, ef, r]): Vector[a] \ (ef + r) = Iterator.toVector(iter)
 }
 
 instance Iterable[Vector[a]] {
@@ -103,8 +104,18 @@ instance Iterable[Vector[a]] {
 }
 
 instance ToJava[Vector[a]] {
-    type O = ##java.util.List
+    type Out = ##java.util.List
+    type Aef = IO
     pub def toJava(v: Vector[a]): ##java.util.List \ IO = Adaptor.toList(v)
+}
+
+
+instance FromJava[Vector[a]] {
+    type In = ##java.util.List
+    pub def fromJava(l: ##java.util.List): Vector[a] = region rc {
+        import java.util.List.iterator(): ##java.util.Iterator \ rc;
+        iterator(l) |> Adaptor.fromIterator(rc, (Proxy.Proxy: Proxy[a])) |> Iterator.toVector
+    }
 }
 
 mod Vector {
