@@ -899,8 +899,7 @@ instance Functor[Seq.Seq[s]] {
     pub def map(f: a -> b \ ef, l: Seq.Seq[s][a]): Seq.Seq[s][b] \ ef = Seq.map(f, l)
 }
 
-instance Foldable[Seq.Seq[s][a]] {
-    type Elm = a
+instance Foldable[Seq.Seq[s]] {
     pub def foldLeft(f: (b, a) -> b \ ef, s: b, l: Seq.Seq[s][a]): b \ ef = Seq.foldLeft(f, s, l)
     pub def foldRight(f: (a, b) -> b \ ef, s: b, l: Seq.Seq[s][a]): b \ ef = Seq.foldRight(f, s, l)
     pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, l: Seq.Seq[s][a]): b \ ef = Seq.foldRightWithCont(f, s, l)

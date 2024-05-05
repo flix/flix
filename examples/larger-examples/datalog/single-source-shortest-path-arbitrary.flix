@@ -68,9 +68,7 @@ mod ShortestPathN {
         }
     }
 
-    instance Foldable[Path[a]] {
-        type Elm = a
-
+    instance Foldable[Path] {
         pub def foldLeft(f: b -> (a -> b \ ef), s: b, t: Path[a]): b \ ef = match t {
             case Bot     => s
             case Path(p, _) => Foldable.foldLeft(f, s, p)
