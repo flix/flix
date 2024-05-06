@@ -262,7 +262,7 @@ object Weeder {
     * Performs weeding on the given law declaration `d0`.
     */
   private def visitLaw(d0: ParsedAst.Declaration.Law)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Def], WeederError] = d0 match {
-    case ParsedAst.Declaration.Law(doc0, ann0, mod0, sp1, ident, tparams0, fparams0, tconstrs0, exp0, sp2) =>
+    case ParsedAst.Declaration.Law(doc0, ann0, mod0, sp1, ident, tparams0, fparams0, tconstrs0, econstrs0, exp0, sp2) =>
       val doc = visitDoc(doc0)
       val annVal = visitAnnotations(ann0)
       val modVal = visitModifiers(mod0, legalModifiers = Set.empty)
@@ -271,12 +271,12 @@ object Weeder {
       val tparamsVal = visitKindedTypeParams(tparams0)
       val formalsVal = visitFormalParams(fparams0, Presence.Required)
       val tconstrsVal = Validation.traverse(tconstrs0)(visitTypeConstraint)
+      val econstrsVal = Validation.traverse(econstrs0)(visitEqualityConstraint)
 
-      mapN(annVal, modVal, identVal, tparamsVal, formalsVal, expVal, tconstrsVal) {
-        case (ann, mod, id, tparams, fs, exp, tconstrs) =>
+      mapN(annVal, modVal, identVal, tparamsVal, formalsVal, expVal, tconstrsVal, econstrsVal) {
+        case (ann, mod, id, tparams, fs, exp, tconstrs, econstrs) =>
           val eff = None
           val tpe = WeededAst.Type.Ambiguous(Name.mkQName("Bool"), ident.loc)
-          val econstrs = Nil // TODO ASSOC-TYPES allow econstrs here
           List(WeededAst.Declaration.Def(doc, ann, mod, id, tparams, fs, exp, tpe, eff, tconstrs, econstrs, mkSL(sp1, sp2)))
       }
   }
