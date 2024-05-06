@@ -209,6 +209,34 @@ mod TestIterable {
     }
 
     /////////////////////////////////////////////////////////////////////////////
+    // MutSet instance                                                         //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def iterableMutSet01(): Bool = region rc {
+        let s : MutSet[Int32, rc] = MutSet.empty(rc);
+        Iterable.iterator(rc, s) |> Iterator.toSet == Set.empty()
+    }
+
+    @test
+    def iterableMutSet02(): Bool = region rc {
+        let s = Set#{2, 5, 11, 8} |> Set.toMutSet(rc);
+        Iterable.iterator(rc, s) |> Iterator.toSet == Set#{2, 5, 8, 11}
+    }
+
+    @test
+    def iterableMutSet03(): Bool = region rc {
+        let s = Set#{'A', 'B', 'D', 'C'} |> Set.toMutSet(rc);
+        Iterable.iterator(rc, s) |> Iterator.toSet == Set#{'A', 'B', 'C', 'D'}
+    }
+
+    @test
+    def iterableMutSet04(): Bool = region rc {
+        let s = Set#{(2, 'A'), (5, 'B'), (11, 'D'), (8, 'C')} |> Set.toMutSet(rc);
+        Iterable.iterator(rc, s) |> Iterator.toSet == Set#{(2, 'A'), (5, 'B'), (8, 'C'), (11, 'D')}
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
     // RedBlackTree instance                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -222,6 +250,34 @@ mod TestIterable {
     def iterableRedBlackTree02(): Bool = region rc {
         let Map.Map(t) = Map#{2 => 'A', 5 => 'B', 11 => 'D', 8 => 'C'};
         Iterable.iterator(rc, t) |> Iterator.toList == List#{(2, 'A'), (5, 'B'), (8, 'C'), (11, 'D')}
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Set instance                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def iterableSet01(): Bool = region rc {
+        let s : Set[Int32] = Set.empty();
+        Iterable.iterator(rc, s) |> Iterator.toSet == Set.empty()
+    }
+
+    @test
+    def iterableSet02(): Bool = region rc {
+        let s = Set#{2, 5, 11, 8};
+        Iterable.iterator(rc, s) |> Iterator.toSet == Set#{2, 5, 8, 11}
+    }
+
+    @test
+    def iterableSet03(): Bool = region rc {
+        let s = Set#{'A', 'B', 'D', 'C'};
+        Iterable.iterator(rc, s) |> Iterator.toSet == Set#{'A', 'B', 'C', 'D'}
+    }
+
+    @test
+    def iterableSet04(): Bool = region rc {
+        let s = Set#{(2, 'A'), (5, 'B'), (11, 'D'), (8, 'C')};
+        Iterable.iterator(rc, s) |> Iterator.toSet == Set#{(2, 'A'), (5, 'B'), (8, 'C'), (11, 'D')}
     }
 
 }
