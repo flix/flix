@@ -24,7 +24,7 @@ pub trait Witherable[t : Type -> Type] with Traversable[t], Filterable[t] {
     /// Returns the result of applying the applicative partial mapping function `f` to all the elements of the
     /// data structure `t`.
     ///
-    pub def wither(f: a -> m[Option[b]] \ ef, t: t[a]): m[t[b]] \ ef with Applicative[m] =
+    pub def wither(f: a -> m[Option[b]] \ ef, t: t[a]): m[t[b]] \ (ef + aef) with Applicative[m] where Foldable.Aef[t] ~ aef =
         use Functor.{<$>};
         use Filterable.filterMap;
         (identity |> filterMap) <$> Traversable.traverse(f, t)
@@ -32,7 +32,7 @@ pub trait Witherable[t : Type -> Type] with Traversable[t], Filterable[t] {
     ///
     /// Returns the result of running all the actions in the data structure `t`.
     ///
-    pub def sequenceWither(t: t[m[Option[a]]]): m[t[a]] with Applicative[m] =
+    pub def sequenceWither(t: t[m[Option[a]]]): m[t[a]] \ aef with Applicative[m] where Foldable.Aef[t] ~ aef =
         Witherable.wither(identity, t)
 
 }

@@ -24,12 +24,12 @@ pub trait Traversable[t : Type -> Type] with Functor[t], Foldable[t] {
     /// Returns the result of applying the applicative mapping function `f` to all the elements of the
     /// data structure `t`.
     ///
-    pub def traverse(f: a -> m[b] \ ef, t: t[a]): m[t[b]] \ ef with Applicative[m]
+    pub def traverse(f: a -> m[b] \ ef, t: t[a]): m[t[b]] \ (ef + aef) with Applicative[m] where Foldable.Aef[t] ~ aef
 
     ///
     /// Returns the result of running all the actions in the data structure `t`.
     ///
-    pub def sequence(t: t[m[a]]): m[t[a]] with Applicative[m] =
+    pub def sequence(t: t[m[a]]): m[t[a]] \ aef with Applicative[m] where Foldable.Aef[t] ~ aef =
         Traversable.traverse(identity, t)
 
     ///
@@ -55,7 +55,7 @@ mod Traversable {
     ///
     /// `for` is `traverse` with it's arguments flipped.
     ///
-    pub def for(t: t[a], f: a -> m[b] \ ef): m[t[b]] \ ef with Applicative[m], Traversable[t] =
+    pub def for(t: t[a], f: a -> m[b] \ ef): m[t[b]] \ (ef + Foldable.Aef[t]) with Applicative[m], Foldable[t], Traversable[t] =
         Traversable.traverse(f, t)
 
     ///
@@ -65,7 +65,7 @@ mod Traversable {
     /// `mapAccumLeft` is essentially the combination of `map` and `foldLeft` - like map it returns an updated copy
     /// of the initial structure, like `foldLeft` it passes an updating accumulator through each step of the traversal.
     ///
-    pub def mapAccumLeft(f: (acc, a) -> (acc, b) \ ef, start: acc, t: t[a]): (acc, t[b]) \ ef with Traversable[t] =
+    pub def mapAccumLeft(f: (acc, a) -> (acc, b) \ ef, start: acc, t: t[a]): (acc, t[b]) \ (ef + Foldable.Aef[t]) with Foldable[t], Traversable[t] =
         region rc {
             let acc = ref start @ rc;
             let Identity.Identity(tb) = t |> Traversable.traverse(x -> {
