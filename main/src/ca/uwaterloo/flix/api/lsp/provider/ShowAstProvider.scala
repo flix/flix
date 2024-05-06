@@ -25,6 +25,8 @@ import ca.uwaterloo.flix.util.Similarity
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
 
+import java.nio.file.Path
+
 object ShowAstProvider {
 
   /**
@@ -34,16 +36,20 @@ object ShowAstProvider {
     * - `text` (a string with the ir representation).
     */
   def showAst(phase: String)(implicit index: Index, root: Option[Root], flix: Flix): JObject = {
-    val names = AstPrinter.phaseNames().m1.keys.map(s => (s, s)).toMap
-    val closestName = Similarity.closestMatch(phase, names)
+    val closest = closestPhaseName(phase)
     val oldOpts = flix.options
-    flix.setOptions(oldOpts.copy(xprintphase = Set(closestName)))
+    flix.setOptions(oldOpts.copy(xprintphase = Set(closest)))
     flix.compile()
     flix.setOptions(oldOpts)
-    astObject(closestName, s"Check in build/asts/${closestName}.flixir")
+    pathObject(AstPrinter.phaseOutputPath(closest))
   }
 
-  private def astObject(phase: String, text: String): JObject = {
-    ("title" -> s"$phase.$IrFileExtension") ~ ("text" -> text)
+  private def closestPhaseName(phase: String) = {
+    val phaseNames = AstPrinter.phaseNames().m1.keys
+    Similarity.closestMatch(phase, phaseNames.map(s => (s, s)).toMap)
+  }
+
+  private def pathObject(path: Path): JObject = {
+    ("path" -> path.toAbsolutePath.toString)
   }
 }

@@ -159,9 +159,8 @@ object AstPrinter {
     * flix options if present. The existing file is overwritten if present.
     */
   def writeToDisk(fileName: String, content: String)(implicit flix: Flix): Unit = {
-    val buildAstsPath = flix.options.output.getOrElse(Path.of("./build/")).resolve("asts/")
-    val filePath = buildAstsPath.resolve(s"$fileName.$IrFileExtension")
-    Files.createDirectories(buildAstsPath)
+    val filePath = phaseOutputPath(fileName)
+    Files.createDirectories(filePath.getParent)
 
     // Check if the file already exists.
     if (Files.exists(filePath)) {
@@ -178,4 +177,13 @@ object AstPrinter {
     FileOps.writeString(filePath, content)
   }
 
+  /**
+    * Returns the path to the pretty printed output of `phaseName` used by [[writeToDisk]].
+    *
+    * OBS: this function has no checking so the path might not hold the ast and it might not be readable etc.
+    */
+  def phaseOutputPath(phaseName: String)(implicit flix: Flix): Path = {
+    val buildAstsPath = flix.options.output.getOrElse(Path.of("./build/")).resolve("asts/")
+    buildAstsPath.resolve(s"$phaseName.$IrFileExtension")
+  }
 }
