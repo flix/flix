@@ -31,6 +31,12 @@ pub enum MutDeque[a: Type, r: Region] {
     case MutDeque(Region[r], Ref[Array[a, r], r], Ref[Int32, r], Ref[Int32, r])
 }
 
+instance Iterable[MutDeque[a, r]] {
+    type Elm = a
+    type Aef = r
+    pub def iterator(rc: Region[r1], md: MutDeque[a, r]): Iterator[a, r + r1, r1] \ (r + r1) = MutDeque.iterator(rc, md)
+}
+
 mod MutDeque {
 
     ///

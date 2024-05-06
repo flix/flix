@@ -21,6 +21,13 @@ pub enum MutMap[k: Type, v: Type, r: Region] {
     case MutMap(Region[r], Ref[Map[k, v], r])
 }
 
+instance Iterable[MutMap[k, v, r]] {
+    type Elm = (k, v)
+    type Aef = r
+    pub def iterator(rc: Region[r1], m: MutMap[k, v, r]): Iterator[(k, v), r + r1, r1] \ (r + r1) =
+        MutMap.iterator(rc, m)
+}
+
 mod MutMap {
 
     ///

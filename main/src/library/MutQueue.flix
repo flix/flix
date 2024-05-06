@@ -27,6 +27,12 @@ pub enum MutQueue[a: Type, r: Region] {
     case MutQueue(Region[r], Ref[Array[a, r], r], Ref[Int32, r])
 }
 
+instance Iterable[MutQueue[a, r]] {
+    type Elm = a
+    type Aef = r
+    pub def iterator(rc: Region[r1], q: MutQueue[a, r]): Iterator[a, r + r1, r1] \ (r + r1) = MutQueue.iterator(rc, q)
+}
+
 mod MutQueue {
 
     ///

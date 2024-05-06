@@ -14,6 +14,13 @@
  * limitations under the License.
  */
 
+instance Iterable[Array[a, r]] {
+    type Elm = a
+    type Aef = r
+    pub def iterator(rc: Region[r1], a: Array[a, r]): Iterator[a, r + r1, r1] \ (r + r1) =
+        checked_ecast(Array.iterator(rc, a))
+}
+
 mod Array {
 
     ///
