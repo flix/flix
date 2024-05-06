@@ -505,7 +505,25 @@ object MutationGenerator {
       val appSub = Expr.Apply(sub, varexp :: one, tpe, Type.Pure, loc)
       val appAdd = Expr.Apply(add, varexp :: one, tpe, Type.Pure, loc)
       val ret = (appSub, MutationType.VarMut(sub, varexp.sym)) :: (appAdd, MutationType.VarMut(add, varexp.sym)) :: Nil
-      val constants = mutateVarToConstantByType(tpe).map(c => (c.copy(loc = loc),MutationType.CstMut(c.cst)))
+
+
+      val constants = mutateVarToConstantByType(tpe).map(c => {
+        val method = classOf[Global].getMethods.find(m => m.getName.equals("throwEquivalentMutant")).get
+        val InvokeMethod = Expr.InvokeStaticMethod(method, Nil, Type.Null, Type.IO, loc)
+        val mask = Expr.UncheckedMaskingCast(InvokeMethod, Type.Int64, Type.Pure, loc)
+        val condition = {
+          val eq = Expr.Sig(Symbol.mkSigSym(Symbol.mkTraitSym("Eq"), Name.Ident(loc.sp1, "eq", loc.sp2)), newtpe, loc)
+          Expr.Apply(eq, varexp :: one, tpe, Type.Pure, loc)
+        }
+        val elseBranch = Expr.Cst(Constant.Unit, Type.Unit, loc)
+
+        val ifThenElse = Expr.IfThenElse(condition, mask, elseBranch, Type.Unit, Type.IO, loc)
+
+        val expr = Expr.Stm(ifThenElse, c.copy(loc = loc), c.tpe, c.eff, c.loc)
+
+        (expr, MutationType.CstMut(c.cst))
+      }
+    )
       ret ::: constants
     case _ => Nil
   }
