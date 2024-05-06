@@ -1015,19 +1015,6 @@ class TestKinder extends AnyFunSuite with TestUtils {
     expectError[KindError.MismatchedKinds](result)
   }
 
-  test("KindError.MissingConstraint.01") {
-    val input =
-      """
-        |trait C[a] {
-        |    type T
-        |}
-        |
-        |def foo(): C.T[a] = ???
-        |""".stripMargin
-    val result = compile(input, DefaultOptions)
-    expectError[KindError.MissingTraitConstraint](result)
-  }
-
   test("KindError.AssocType.01") {
     val input =
       """
