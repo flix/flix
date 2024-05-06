@@ -408,7 +408,7 @@ mod Nel {
             case _        => unreachable!()
         };
         let Nel(x, xs) = l;
-        loop(x :: xs, x -> x)
+        loop(x :: xs, id -> id)
 
     ///
     /// Applies `combine` to all elements in `l` until a single value is obtained.
