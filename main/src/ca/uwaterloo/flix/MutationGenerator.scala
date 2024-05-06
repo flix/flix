@@ -113,6 +113,7 @@ object MutationGenerator {
       case (s, fun) =>
         if (defSyms.contains(s)) {
           val mutExps = mutateExpr(fun.exp)
+          println(fun.exp)
           val mutDefs = mutExps.map(mexp => {
             MutatedDef(fun.copy(exp = mexp), mexp.mutationType)
           })
@@ -511,9 +512,10 @@ object MutationGenerator {
         val method = classOf[Global].getMethods.find(m => m.getName.equals("throwEquivalentMutant")).get
         val InvokeMethod = Expr.InvokeStaticMethod(method, Nil, Type.Null, Type.IO, loc)
         val mask = Expr.UncheckedMaskingCast(InvokeMethod, Type.Int64, Type.Pure, loc)
+        val condType = Type.mkPureUncurriedArrow(tpe :: tpe :: Nil, Type.Bool, loc)
         val condition = {
-          val eq = Expr.Sig(Symbol.mkSigSym(Symbol.mkTraitSym("Eq"), Name.Ident(loc.sp1, "eq", loc.sp2)), newtpe, loc)
-          Expr.Apply(eq, varexp :: one, tpe, Type.Pure, loc)
+          val eq = Expr.Sig(Symbol.mkSigSym(Symbol.mkTraitSym("Eq"), Name.Ident(loc.sp1, "eq", loc.sp2)), condType, loc)
+          Expr.Apply(eq, List(varexp, c) , tpe, Type.Pure, loc)
         }
         val elseBranch = Expr.Cst(Constant.Unit, Type.Unit, loc)
 

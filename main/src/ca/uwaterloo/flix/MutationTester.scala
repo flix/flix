@@ -57,6 +57,8 @@ object MutationTester {
         case object MutantSurvived extends TestRes
 
         case object Unknown extends TestRes
+
+        case object Equivalent extends TestRes
     }
     var nonKilledStrList: List[String] = List.empty
 
@@ -221,6 +223,7 @@ object MutationTester {
             val newTime = time + (System.nanoTime() - start).toDouble / nano
             val newSurvivorCount = if (testResults.equals(TestRes.MutantSurvived))  survivorCount + 1 else survivorCount
             val newUnknownCount = if (testResults.equals(TestRes.Unknown))  unknownCount + 1 else unknownCount
+            if (testResults.equals(TestRes.Equivalent)) println("Equivalent mutant") else ()
             if (testResults.equals(TestRes.MutantSurvived)) {
               // println(MutationReporter.reportNonKilledMutation(mDef.exp))
               println(testKit.flix.getFormatter.code(mDef.df.exp.loc, printMutation(mDef.mutType)))
@@ -267,11 +270,13 @@ object MutationTester {
                         case _ => runTest(xs)
                     }
                 } catch {
-                    case e: Throwable =>
-                      if (e.getClass.toString.equals("class dev.flix.runtime.MutationError$")) {
-                        TestRes.Unknown
+                    case e: Throwable => {
+                      e.getClass.toString match {
+                        case "class dev.flix.runtime.MutationError$" => TestRes.Unknown
+                        case "class dev.flix.runtime.EQMutantException$" => println("Equivalent mutant"); TestRes.Equivalent
+                        case e => println(e); TestRes.MutantKilled
                       }
-                      else TestRes.MutantKilled
+                    }
                 }
             case _ => TestRes.MutantSurvived
         }

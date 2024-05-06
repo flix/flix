@@ -31,4 +31,8 @@ public final class Global {
         throw new RuntimeException("Global.setStepCounterField should not be called on the mock class");
     }
 
+    public static final void throwEquivalentMutant() {
+        throw new RuntimeException("Global.throwEquivalentMutant should not be called on the mock class");
+    }
+
 }

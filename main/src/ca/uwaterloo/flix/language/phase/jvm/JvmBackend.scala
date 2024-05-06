@@ -105,6 +105,7 @@ object JvmBackend {
       val holeErrorClass = Map(genClass(BackendObjType.HoleError))
       val matchErrorClass = Map(genClass(BackendObjType.MatchError))
       val MutationErrorClass = Map(genClass(BackendObjType.MutationError))
+      val EQMutantClass = Map(genClass(BackendObjType.EQMutantException))
       val unhandledEffectErrorClass = Map(genClass(BackendObjType.UnhandledEffectError))
 
       val globalClass = Map(genClass(BackendObjType.Global))
@@ -152,6 +153,7 @@ object JvmBackend {
         holeErrorClass,
         matchErrorClass,
         MutationErrorClass,
+        EQMutantClass,
         unhandledEffectErrorClass,
         globalClass,
         regionClass,
