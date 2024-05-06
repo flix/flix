@@ -253,7 +253,7 @@ object Parser2 {
     val error = ParseError("Unclosed parser mark", SyntacticContext.Unknown, currentSourceLocation())
     s.events.append(Event.Open(TreeKind.ErrorTree(error)))
     // Consume any comments just before opening a new mark
-    comments(canStartOnDoc = consumeDocComments)
+    comments(consumeDocComments = consumeDocComments)
     mark
   }
 
@@ -430,7 +430,7 @@ object Parser2 {
       case TokenKind.CommentDoc => ParseError(s"Doc-comments can only decorate declarations.", context, previousSourceLocation())
       case at =>
         val kindsDisplayed = prettyJoin(kinds.toList.map(k => s"${k.display}"))
-        ParseError(s"Expected $kindsDisplayed before ${at.display}", SyntacticContext.Unknown, previousSourceLocation())
+        ParseError(s"Expected $kindsDisplayed before ${at.display}", context, previousSourceLocation())
     }
     closeWithError(mark, error)
   }
@@ -617,17 +617,16 @@ object Parser2 {
     * In cases where doc-comments cannot occur (above expressions for instance), we would like to treat them as regular comments.
     * This is achieved by passing `canStartOnDoc = true`.
     */
-  private def comments(canStartOnDoc: Boolean = false)(implicit s: State): Unit = {
+  private def comments(consumeDocComments: Boolean = false)(implicit s: State): Unit = {
     // Note: In case of a misplaced CommentDoc, we would just like to consume it into the comment list.
     // This is forgiving in the common case of accidentally inserting an extra '/'.
-    val k = nth(0)
-    val atStart = if (canStartOnDoc) k.isComment else k.isCommentNonDoc
-    if (atStart) {
+    def atComment() = if (consumeDocComments) nth(0).isComment else nth(0).isCommentNonDoc
+    if (atComment()) {
       val mark = Mark.Opened(s.events.length)
       val error = ParseError("Unclosed parser mark.", SyntacticContext.Unknown, currentSourceLocation())
       s.events.append(Event.Open(TreeKind.ErrorTree(error)))
       // Note: This loop will also consume doc-comments that are preceded or surrounded by either line or block comments.
-      while (nth(0).isComment && !eof()) {
+      while (atComment() && !eof()) {
         advance()
       }
       close(mark, TreeKind.CommentList)
@@ -638,7 +637,7 @@ object Parser2 {
   /// GRAMMAR                                                                             //
   //////////////////////////////////////////////////////////////////////////////////////////
   private def root()(implicit s: State): Unit = {
-    val mark = open()
+    val mark = open(consumeDocComments = false)
     usesOrImports()
     while (!eof()) {
       Decl.declaration()
@@ -647,7 +646,7 @@ object Parser2 {
   }
 
   private def usesOrImports()(implicit s: State): Mark.Closed = {
-    val mark = open()
+    val mark = open(consumeDocComments = false)
     var continue = true
     while (continue && !eof()) {
       nth(0) match {
@@ -721,7 +720,7 @@ object Parser2 {
       val mark = open(consumeDocComments = false)
       docComment()
       // Handle case where the last thing in a file or module is a doc-comment
-      if (eof() || at(TokenKind.CurlyR)) {
+      if (eof() || eat(TokenKind.CurlyR)) {
         return close(mark, TreeKind.CommentList)
       }
       // Handle modules
@@ -785,8 +784,13 @@ object Parser2 {
             case TokenKind.KeywordDef => signatureDecl(mark)
             case TokenKind.KeywordType => associatedTypeSigDecl(mark)
             case at =>
-              val error = ParseError(s"Expected ${TokenKind.KeywordType.display}, ${TokenKind.KeywordDef.display} or ${TokenKind.KeywordLaw.display} before ${at.display}", SyntacticContext.Decl.Trait, currentSourceLocation())
-              advanceWithError(error, Some(mark))
+              val loc = currentSourceLocation()
+              // Skip ahead until we hit another declaration or any CurlyR.
+              while (!nth(0).isFirstDecl && !eat(TokenKind.CurlyR) && !eof()) {
+                advance()
+              }
+              val error = ParseError(s"Expected ${TokenKind.KeywordType.display}, ${TokenKind.KeywordDef.display} or ${TokenKind.KeywordLaw.display} before ${at.display}", SyntacticContext.Decl.Trait, loc)
+              closeWithError(mark, error)
           }
         }
         expect(TokenKind.CurlyR, SyntacticContext.Decl.Trait)
@@ -798,7 +802,11 @@ object Parser2 {
       assert(at(TokenKind.KeywordInstance))
       expect(TokenKind.KeywordInstance, SyntacticContext.Decl.Instance)
       name(NAME_DEFINITION, allowQualified = true, context = SyntacticContext.Decl.Instance)
-      if (eat(TokenKind.BracketL)) {
+      if (!eat(TokenKind.BracketL)) {
+        // Produce an error for missing type parameter.
+        // TODO: Error hint: Instances must have a type parameter.
+        expect(TokenKind.BracketL, SyntacticContext.Decl.Instance)
+      } else {
         Type.ttype()
         expect(TokenKind.BracketR, SyntacticContext.Decl.Instance)
       }
@@ -816,8 +824,13 @@ object Parser2 {
             case TokenKind.KeywordDef => definitionDecl(mark)
             case TokenKind.KeywordType => associatedTypeDefDecl(mark)
             case at =>
-              val error = ParseError(s"Expected ${TokenKind.KeywordType.display} or ${TokenKind.KeywordDef.display}, found ${at.display}", SyntacticContext.Decl.Instance, currentSourceLocation())
-              advanceWithError(error, Some(mark))
+              val loc = currentSourceLocation()
+              // Skip ahead until we hit another declaration or any CurlyR.
+              while (!nth(0).isFirstDecl && !eat(TokenKind.CurlyR) && !eof()) {
+                advance()
+              }
+              val error = ParseError(s"Expected ${TokenKind.KeywordType.display} or ${TokenKind.KeywordDef.display} before ${at.display}", SyntacticContext.Decl.Instance, loc)
+              closeWithError(mark, error)
           }
         }
         expect(TokenKind.CurlyR, SyntacticContext.Decl.Instance)
@@ -840,7 +853,7 @@ object Parser2 {
         Type.constraints()
       }
       if (at(TokenKind.KeywordWhere)) {
-        equalityConstraints(TokenKind.Equal)
+        equalityConstraints()
       }
       if (eat(TokenKind.Equal)) {
         Expr.statement()
@@ -862,7 +875,7 @@ object Parser2 {
         Type.constraints()
       }
       if (at(TokenKind.KeywordWhere)) {
-        equalityConstraints(TokenKind.Equal)
+        equalityConstraints()
       }
 
       // We want to only parse an expression if we see an equal sign to avoid consuming following definitions as LetRecDefs.
@@ -950,9 +963,7 @@ object Parser2 {
       while (!eof() && atAny(FIRST_ENUM_CASE)) {
         val mark = open(consumeDocComments = false)
         docComment()
-        if (at(TokenKind.KeywordCase)) {
-          expect(TokenKind.KeywordCase, SyntacticContext.Decl.Enum)
-        } else {
+        if (!eat(TokenKind.KeywordCase)) {
           expect(TokenKind.Comma, SyntacticContext.Decl.Enum)
           // Handle comma followed by case keyword
           docComment()
@@ -1038,18 +1049,28 @@ object Parser2 {
 
       if (eat(TokenKind.CurlyL)) {
         while (!at(TokenKind.CurlyR) && !eof()) {
-          operationDecl()
+          val mark = open(consumeDocComments = false)
+          docComment()
+          annotations()
+          modifiers()
+          nth(0) match {
+            case TokenKind.KeywordDef => operationDecl(mark)
+            case at =>
+              val loc = currentSourceLocation()
+              // Skip ahead until we hit another declaration or any CurlyR.
+              while (!nth(0).isFirstDecl && !eat(TokenKind.CurlyR) && !eof()) {
+                advance()
+              }
+              val error = ParseError(s"Expected ${TokenKind.KeywordDef.display} before ${at.display}", SyntacticContext.Decl.OtherDecl, loc)
+              closeWithError(mark, error)
+          }
         }
         expect(TokenKind.CurlyR, SyntacticContext.Decl.OtherDecl)
       }
       close(mark, TreeKind.Decl.Effect)
     }
 
-    private def operationDecl()(implicit s: State): Mark.Closed = {
-      val mark = open(consumeDocComments = false)
-      docComment()
-      annotations()
-      modifiers()
+    private def operationDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
       expect(TokenKind.KeywordDef, SyntacticContext.Decl.OtherDecl)
       name(NAME_DEFINITION, context = SyntacticContext.Decl.OtherDecl)
 
@@ -1126,11 +1147,11 @@ object Parser2 {
       close(mark, TreeKind.Parameter)
     }
 
-    private def equalityConstraints(terminator: TokenKind)(implicit s: State): Mark.Closed = {
+    private def equalityConstraints()(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.KeywordWhere))
       val mark = open()
       expect(TokenKind.KeywordWhere, SyntacticContext.Decl.OtherDecl)
-      while (!at(terminator) && !eof()) {
+      while (nth(0).isFirstType && !eof()) {
         val markConstraint = open()
         Type.ttype()
         expect(TokenKind.Tilde, SyntacticContext.Decl.OtherDecl)
@@ -1143,12 +1164,21 @@ object Parser2 {
   }
 
   private object Expr {
-    def statement()(implicit s: State): Mark.Closed = {
+    /**
+      * Parse a statement, which is an expression optionally followed by a semi-colon and another expression.
+      * If mustHaveRhs is true, the right-hand-side expression is not treated as optional
+      */
+    def statement(rhsIsOptional: Boolean = true)(implicit s: State): Mark.Closed = {
       var lhs = expression()
       if (eat(TokenKind.Semi)) {
         statement()
         lhs = close(openBefore(lhs), TreeKind.Expr.Statement)
         lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+      } else if (!rhsIsOptional) {
+        // If no semi is found and it was required, produce an error.
+        // TODO: We can add a parse error hint as an argument to statement ala:
+        // "Add an expression after the let-binding like so: 'let x = <expr1>; <expr2>'"
+        expect(TokenKind.Semi, SyntacticContext.Expr.OtherExpr)
       }
       lhs
     }
@@ -1591,7 +1621,7 @@ object Parser2 {
         Type.ttype()
       }
       expect(TokenKind.Equal, SyntacticContext.Expr.OtherExpr)
-      statement()
+      statement(rhsIsOptional = false)
       close(mark, TreeKind.Expr.LetMatch)
     }
 
@@ -1607,7 +1637,7 @@ object Parser2 {
         Type.typeAndEffect()
       }
       expect(TokenKind.Equal, SyntacticContext.Expr.OtherExpr)
-      statement()
+      statement(rhsIsOptional = false)
       close(mark, TreeKind.Expr.LetRecDef)
     }
 
@@ -1734,9 +1764,8 @@ object Parser2 {
         expression()
       }
       // TODO: It's common to type '=' instead of '=>' here. Should we make a specific error?
-      if (eat(TokenKind.ArrowThickR)) {
-        statement()
-      }
+      expect(TokenKind.ArrowThickR, SyntacticContext.Expr.OtherExpr)
+      statement()
       close(mark, TreeKind.Expr.MatchRuleFragment)
     }
 
@@ -1880,11 +1909,12 @@ object Parser2 {
           // Now check for record operation or record literal,
           // by looking for a '|' before the closing '}'
           val isRecordOp = {
+            val tokensLeft = s.tokens.length - s.position
             var lookahead = 1
             var nestingLevel = 0
             var isRecordOp = false
             var continue = true
-            while (continue && !eof()) {
+            while (continue && lookahead < tokensLeft) {
               nth(lookahead) match {
                 // Found closing '}' so stop seeking.
                 case TokenKind.CurlyR if nestingLevel == 0 => continue = false
@@ -3149,7 +3179,7 @@ object Parser2 {
       val mark = open()
       eat(TokenKind.KeywordNot)
       eat(TokenKind.KeywordFix)
-      name(NAME_PREDICATE,context = SyntacticContext.Expr.Constraint)
+      name(NAME_PREDICATE, context = SyntacticContext.Expr.Constraint)
       patternList()
       close(mark, TreeKind.Predicate.Atom)
     }
@@ -3295,7 +3325,7 @@ object Parser2 {
   def syntaxTreeToDebugString(tree: SyntaxTree.Tree, nesting: Int = 1): String = {
     s"${tree.kind}${
       tree.children.map {
-        case token@Token(_, _, _, _, _, _,_,_) => s"\n${"  " * nesting}'${token.text}'"
+        case token@Token(_, _, _, _, _, _, _, _) => s"\n${"  " * nesting}'${token.text}'"
         case tree@SyntaxTree.Tree(_, _, _) => s"\n${"  " * nesting}${syntaxTreeToDebugString(tree, nesting + 1)}"
       }.mkString("")
     }"

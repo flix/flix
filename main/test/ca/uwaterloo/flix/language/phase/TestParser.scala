@@ -190,6 +190,24 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
     expectMain(result)
   }
 
+  test("BadEnum.04") {
+    val input =
+      """
+        |// A Suit type deriving an Eq and ToString instance
+        |enum Suit with Eq, ToString {
+        |    case
+        |    //case Clubs
+        |    //case Hearts
+        |    //case Spades
+        |    //case Diamonds
+        |}
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
   test("TypeAlias.01") {
     val input =
       """
@@ -472,6 +490,72 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
     val input =
       """
         |def foo(): #{ Node() | = ???
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("BadInstance.01") {
+    val input =
+      """
+        |instance Order { }
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("BadEff.01") {
+    val input =
+      """
+        |pub eff Print {
+        |    /
+        |    pub def printIt(): Unit
+        |}
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("LetMatchNoStatement.01") {
+    val input =
+      """
+        |def foo(): Unit \ IO =
+        |    let x =
+        |    println("Hello World!")
+        |
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("LetRecDefNoStatement.01") {
+    val input =
+      """
+        |def foo(): Unit \ IO =
+        |    def bar(): Int32 = 123
+        |def main(): Int32 = 456
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("Regression.#7646") {
+    val input =
+      """
+        |instance ToString[Card] {
+        |    pub def toString(x: Card): String = match x {
+        |        case Card.Card(r, s) _ => "${r} of ${s}"
+        |    }
+        |}
         |def main(): Unit = ()
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)

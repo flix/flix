@@ -6,7 +6,7 @@ mod ShortestPath {
     /// Returns the shortest paths from `src` to all of reachable vertices
     /// in the graph `g`.
     ///
-    pub def sssp(src: t, g: m[(t, t)]): Map[t, Vector[t]] with Foldable[m], Order[t] = {
+    pub def sssp(src: t, g: m[(t, t)]): Map[t, Vector[t]] \ Foldable.Aef[m] with Foldable[m], Order[t] = {
         let edges = inject g into Edge;
         let rules = #{
             Reach(x, y; init(y, x)) :- Edge(x, y).
