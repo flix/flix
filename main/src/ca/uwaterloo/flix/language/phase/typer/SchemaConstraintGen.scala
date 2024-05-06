@@ -137,7 +137,9 @@ object SchemaConstraintGen {
         c.unifyType(tpe, Type.mkApply(freshTypeConstructorVar, List(freshElmTypeVar), loc), loc)
         c.unifyType(tvar, Type.mkSchema(Type.mkSchemaRowExtend(pred, Type.mkRelation(List(freshElmTypeVar), loc), freshRestSchemaTypeVar, loc), loc), loc)
         val resTpe = tvar
-        val resEff = eff
+        val aefSym = new Symbol.AssocTypeSym(foldableSym, "Aef", loc)
+        val aefTpe = Type.AssocType(Ast.AssocTypeConstructor(aefSym, loc), freshTypeConstructorVar, Kind.Eff, loc)
+        val resEff = Type.mkUnion(eff, aefTpe, loc)
         (resTpe, resEff)
     }
   }

@@ -6,7 +6,7 @@ mod ShortestDistance {
     /// Returns the shortest distance from `src` to every other reachable vertex in the
     /// weighted directed graph `g`.
     ///
-    pub def sssd(src: t, g: m[(t, Int32, t)]): Map[t, Int32] with Foldable[m], Order[t] = {
+    pub def sssd(src: t, g: m[(t, Int32, t)]): Map[t, Int32] \ Foldable.Aef[m] with Foldable[m], Order[t] = {
         let edges = inject g into Edge;
         let dists = #{
             Dist(src; Down(0)).
