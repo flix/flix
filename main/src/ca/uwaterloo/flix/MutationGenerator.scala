@@ -256,10 +256,14 @@ object MutationGenerator {
       val mut2 = mutateExpr(exp2).map(m => Expr.Mutated(original.copy(exp1 = m), m.mutationType, original.tpe, original.eff, m.loc))
       mut1 ::: mut2
     case Expr.RecordRestrict(_, exp, _, _, _) => Nil
-    case original@Expr.ArrayLit(exps, exp, _, _, _) => Nil
-      //val mut = mutateExpr(exp).map(m => Expr.Mutated(original.copy(exp = m), m.mutationType, original.tpe, original.eff, m.loc))
-      //val mutateExps = exps.map(e => mutateExpr(e))
-      //mutateExps.map(m => Expr.Mutated(original.copy(m), m, original.tpe, original.eff, original.loc)) ::: mut
+    case original@Expr.ArrayLit(exps, exp, _, _, _) =>
+      val mut = mutateExpr(exp).map(m => Expr.Mutated(original.copy(exp = m), m.mutationType, original.tpe, original.eff, m.loc))
+      val mutateExps = exps.zipWithIndex.flatMap {
+        case (ex, index) =>
+          val mutations = mutateExpr(ex)
+          mutations.map(m => Expr.Mutated(original.copy(exps = exps.updated(index, m)), m.mutationType, original.tpe, original.eff, m.loc))
+      }
+      mut ::: mutateExps
     case original@Expr.ArrayNew(exp1, exp2, exp3, _, _, _) =>
       val mut1 = mutateExpr(exp1).map(m => Expr.Mutated(original.copy(exp1 = m), m.mutationType, original.tpe, original.eff, m.loc))
       val mut2 = mutateExpr(exp2).map(m => Expr.Mutated(original.copy(exp2 = m), m.mutationType, original.tpe, original.eff, m.loc))
