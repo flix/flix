@@ -157,7 +157,7 @@ object MutationTester {
             case e => e
           }
         case MutationType.CaseDeletion(i) => s"Deleted case number ${i + 1}"
-        case MutationType.RecordSelectMut(name) => s"selects ${name.name}"
+        case MutationType.RecordSelectMut(name) => s"Selects ${name.name}"
         case MutationType.ListMut() => "Changed to the empty list"
       }
     }
@@ -168,7 +168,6 @@ object MutationTester {
       val InvokeMethod = Expr.InvokeStaticMethod(method, Nil, Type.Int64, Type.IO, loc)
       val mask = Expr.UncheckedMaskingCast(InvokeMethod, Type.Int64, Type.Pure, loc)
       val statement = Expr.Stm(mask, d.exp, d.exp.tpe, d.exp.eff, d.exp.loc)
-      //println(s"name of function ${method.getName}")
       d.copy(exp = statement)
     }
 

@@ -250,8 +250,6 @@ object MutationGenerator {
             Some(Expr.Mutated(original.copy(label = name), MutationType.RecordSelectMut(name), original.tpe, original.eff, original.loc))
           else None
       }
-      //println("mutation for record select")
-      //println(res)
       res
     case original@Expr.RecordExtend(_, exp1, exp2, _, _, _) =>
       val mut1 = mutateExpr(exp1).map(m => Expr.Mutated(original.copy(exp1 = m), m.mutationType, original.tpe, original.eff, m.loc))
