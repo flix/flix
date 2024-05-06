@@ -29,7 +29,7 @@ mod FordFulkerson {
     /// - The label of `src` has the lowest value in the graph
     /// - The label of `dst` has the highest value in the graph
     ///
-    pub def maxFlow(src: t, dst: t, g: m[(t, Int32, t)]): Int32 with Foldable[m], Order[t] =
+    pub def maxFlow(src: t, dst: t, g: m[(t, Int32, t)]): Int32 \ Foldable.Aef[m] with Foldable[m], Order[t] =
         def fordFulkerson(flowNetwork) = match augmentingPath(src, dst, flowNetwork) {
             case None       => getMaxFlow(dst, flowNetwork)
             case Some(path) =>
@@ -43,13 +43,13 @@ mod FordFulkerson {
     ///
     /// Returns a flow network with zero flow.
     ///
-    def zeroFlow(g: m[(t, Int32, t)]): Vector[(t, Int32, Int32, t)] with Foldable[m], Order[t] =
+    def zeroFlow(g: m[(t, Int32, t)]): Vector[(t, Int32, Int32, t)] \ Foldable.Aef[m] with Foldable[m], Order[t] =
         Foldable.toVector(g) |> Vector.map(match (x, y, z) -> (x, y, 0, z))
 
     ///
     /// Returns the sum of the flows on all directly ingoing edges to `dst`.
     ///
-    def getMaxFlow(dst: t, g: m[(t, Int32, Int32, t)]): Int32 with Foldable[m], Order[t] =
+    def getMaxFlow(dst: t, g: m[(t, Int32, Int32, t)]): Int32 \ Foldable.Aef[m] with Foldable[m], Order[t] =
         g
         |> Foldable.toVector
         |> Vector.filterMap(match (_, _, f, d) -> if (d == dst) Some(f) else None)
@@ -61,7 +61,7 @@ mod FordFulkerson {
     /// An edge is in an augmenting path if its flow can be increased, i.e., the flow is strictly less than the capacity,
     /// or if it has non-zero flow.
     ///
-    def augmentingPath(src: t, dst: t, g: m[(t, Int32, Int32, t)]): Option[Path[t]] with Foldable[m], Order[t] =
+    def augmentingPath(src: t, dst: t, g: m[(t, Int32, Int32, t)]): Option[Path[t]] \ Foldable.Aef[m] with Foldable[m], Order[t] =
         let edges = inject g into Edge;
         let rules = #{
             Reach(x, y; init(y, x)) :- Edge(x, u, f, y),                 if (u - f) > 0. // Forward edge
@@ -75,7 +75,7 @@ mod FordFulkerson {
     ///
     /// Returns the most constraining capacity of `g` on the `Path` `p`.
     ///
-    def minCapacity(p: Path[t], g: m[(t, Int32, Int32, t)]): Int32 with Foldable[m], Order[t] =
+    def minCapacity(p: Path[t], g: m[(t, Int32, Int32, t)]): Int32 \ Foldable.Aef[m] with Foldable[m], Order[t] =
         let onPath = (s, d) -> isForwardEdge(s, d, p) or isBackEdge(s, d, p);
         let optMin = g |> Foldable.filter(match (s, _, _, d) -> onPath(s, d))
             |> List.map(match (_, u, f, _) -> u - f)
@@ -88,7 +88,7 @@ mod FordFulkerson {
     ///
     /// Returns a new flow network where the edges in `g` on the `Path` `p` has been adjusted by `incr`.
     ///
-    def increaseFlow(p: Path[t], incr: Int32, g: m[(t, Int32, Int32, t)]): Vector[(t, Int32, Int32, t)] with Foldable[m], Order[t] =
+    def increaseFlow(p: Path[t], incr: Int32, g: m[(t, Int32, Int32, t)]): Vector[(t, Int32, Int32, t)] \ Foldable.Aef[m] with Foldable[m], Order[t] =
         g
         |> Foldable.toVector
         |> Vector.map(match (s, u, f, d) ->
