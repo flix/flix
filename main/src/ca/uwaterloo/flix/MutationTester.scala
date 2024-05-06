@@ -195,15 +195,16 @@ object MutationTester {
         val amountOfMutants = mutatedDefs.map(m => m._2.length).sum
         val f = DateTimeFormatter.ofPattern("yyyy-MM-dd: HH:mm")
         // (survivorCount, startTime, tempTime for progress updates, date for progress updates, amount of mutants currently tested)
-        val localAcc = (0, 0, totalStartTime.toDouble, temp, 0)
-        val (totalSurvivorCount, totalUnknowns, _, _, _) = mutatedDefs.foldLeft(localAcc)((acc, mut) => {
+        val localAcc = (0, 0, 0, totalStartTime.toDouble, temp, 0)
+        val (totalSurvivorCount, totalUnknowns, equivalents, _, _, _) = mutatedDefs.foldLeft(localAcc)((acc, mut) => {
             val kit = TestKit(flix, root, testModule)
             println(s"testing ${mut._2.length} mutations in: ${mut._1}")
             testMutantsAndUpdateProgress(acc, mut, kit, f)
         })
         val totalEndTime = System.nanoTime() - totalStartTime
-        println(s"mutation score: ${(amountOfMutants - totalSurvivorCount - totalUnknowns).toFloat/(amountOfMutants - totalUnknowns).toFloat}")
+        println(s"mutation score: ${(amountOfMutants - totalSurvivorCount - totalUnknowns -equivalents).toFloat/(amountOfMutants - totalUnknowns - equivalents).toFloat}")
         println(s"There where $totalSurvivorCount surviving mutations, out of $amountOfMutants mutations")
+        println(s"There where $equivalents equivalent mutations, out of $amountOfMutants mutations")
         println(s"There where $totalUnknowns mutations that did not finish terminating, out of $amountOfMutants mutations")
         val nano = 1_000_000_000.0
         val ifMutants = amountOfMutants > 0
@@ -213,9 +214,9 @@ object MutationTester {
         println(s"Total time to test all mutants: $time seconds")
     }
 
-    private def testMutantsAndUpdateProgress(acc: (Int, Int, Double, Long, Int), mut: (Symbol.DefnSym, List[MutatedDef]), testKit: TestKit, f: DateTimeFormatter) = {
+    private def testMutantsAndUpdateProgress(acc: (Int, Int, Int, Double, Long, Int), mut: (Symbol.DefnSym, List[MutatedDef]), testKit: TestKit, f: DateTimeFormatter) = {
         mut._2.foldLeft(acc)((acc2, mDef) => {
-            val (survivorCount, unknownCount, time, accTemp, mAmount) = acc2
+            val (survivorCount, unknownCount, eQCount, time, accTemp, mAmount) = acc2
             val mutationAmount = mAmount + 1
             val start = System.nanoTime()
             val testResults = compileAndTestMutant(mDef.df, mut, testKit)
@@ -223,7 +224,7 @@ object MutationTester {
             val newTime = time + (System.nanoTime() - start).toDouble / nano
             val newSurvivorCount = if (testResults.equals(TestRes.MutantSurvived))  survivorCount + 1 else survivorCount
             val newUnknownCount = if (testResults.equals(TestRes.Unknown))  unknownCount + 1 else unknownCount
-            if (testResults.equals(TestRes.Equivalent)) println("Equivalent mutant") else ()
+            val newEQCount = if (testResults.equals(TestRes.Equivalent))  eQCount + 1 else eQCount
             if (testResults.equals(TestRes.MutantSurvived)) {
               // println(MutationReporter.reportNonKilledMutation(mDef.exp))
               println(testKit.flix.getFormatter.code(mDef.df.exp.loc, printMutation(mDef.mutType)))
@@ -234,7 +235,7 @@ object MutationTester {
           val now = LocalDateTime.now()
             val message = s"[${f.format(now)}] Mutants: $mutationAmount, Killed: ${mutationAmount - survivorCount - unknownCount}, Survived: $survivorCount, Unknown: $unknownCount"
             val newTemp = progressUpdate(message, accTemp)
-            (newSurvivorCount, newUnknownCount, newTime, newTemp, mutationAmount)
+            (newSurvivorCount, newUnknownCount, newEQCount, newTime, newTemp, mutationAmount)
             //val sym = mDef.sym.toString
             //println(s"mutation in $sym survived")
         })
@@ -273,8 +274,8 @@ object MutationTester {
                     case e: Throwable => {
                       e.getClass.toString match {
                         case "class dev.flix.runtime.MutationError$" => TestRes.Unknown
-                        case "class dev.flix.runtime.EQMutantException$" => println("Equivalent mutant"); TestRes.Equivalent
-                        case e => println(e); TestRes.MutantKilled
+                        case "class dev.flix.runtime.EQMutantException$" => TestRes.Equivalent
+                        case _ => TestRes.MutantKilled
                       }
                     }
                 }
