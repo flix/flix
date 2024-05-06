@@ -28,8 +28,8 @@ object Instances {
   /**
     * Validates instances and traits in the given AST root.
     */
-  def run(root: TypedAst.Root, oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[TypedAst.Root, InstanceError] = flix.phase("Instances") {
-    val errors = visitInstances(root, oldRoot, changeSet) ::: visitTraits(root)
+  def run(root: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[TypedAst.Root, InstanceError] = flix.phase("Instances") {
+    val errors = visitInstances(root, changeSet) ::: visitTraits(root)
 
     Validation.toSuccessOrSoftFailure(root, errors)
   }
@@ -69,7 +69,7 @@ object Instances {
   /**
     * Validates all instances in the given AST root.
     */
-  private def visitInstances(root: TypedAst.Root, oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): List[InstanceError] = {
+  private def visitInstances(root: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): List[InstanceError] = {
     // Check the instances of each trait in parallel.
     val results = ParOps.parMap(root.instances.values)(checkInstancesOfTrait(_, root, changeSet))
     results.flatten.toList

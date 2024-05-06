@@ -87,6 +87,11 @@ object Command {
   case object Test extends Command
 
   /**
+   * Launches mutation testing for the current project.
+   */
+  case object TestWithMutator extends Command
+
+  /**
     * Show dependencies which have newer versions available.
     */
   case object Outdated extends Command
@@ -172,6 +177,9 @@ object Command {
 
     if (input == ":test" || input == ":t")
       return Command.Test
+
+    if (input == ":test-with-mutator")
+      return Command.TestWithMutator
 
     if (input == ":outdated")
       return Command.Outdated

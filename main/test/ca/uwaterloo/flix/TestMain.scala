@@ -75,6 +75,12 @@ class TestMain extends AnyFunSuite {
     assert(opts.command == Main.Command.Test)
   }
 
+  test("test-with-mutator") {
+    val args = Array("test-with-mutator")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.command == Main.Command.TestWithMutator)
+  }
+
   test("repl") {
     val args = Array("repl")
     val opts = Main.parseCmdOpts(args).get

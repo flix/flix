@@ -162,6 +162,13 @@ class TestBootstrap extends AnyFunSuite {
     b.test(new Flix())
   }
 
+  test("test-with-mutator") {
+    val p = Files.createTempDirectory(ProjectPrefix)
+    Bootstrap.init(p)(System.out)
+    val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
+    b.testWithMutator(new Flix())
+  }
+
   def calcHash(p: Path): String = {
     val buffer = new Array[Byte](8192)
     val sha = MessageDigest.getInstance("SHA-256")
