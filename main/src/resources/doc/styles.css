@@ -32,7 +32,7 @@
     --dark-bg-color-1: #151719;
     --dark-bg-color-2: #101214;
     --dark-bg-color-3: #0e0f11;
-    --dark-border-color: rgba(255, 255, 255, 0.15);
+    --dark-border-color: rgba(255, 255, 255, 0.07);
     --dark-heading-color: #e6e6e6;
     --dark-text-color: #f7f7f7;
     --dark-faded-text-color: #8a8a8a;
@@ -54,7 +54,7 @@
     --dark-eff-color: #ffaefa;
     --dark-type-alias-color: #f9cdad;
     --dark-def-color: #83af9b;
-    --dark-shadow-color: rgba(0, 0, 0, 0.5);
+    --dark-shadow-color: rgba(0, 0, 0, 0.3);
     --dark-highlight-color: hsla(50, 0%, 100%, 0.3);
 
     --toggle-icon: var(--light-toggle-icon);
@@ -483,7 +483,7 @@ main h2 {
 }
 
 .subsection > div {
-    margin-top: 0.5rem;
+    padding: 0.5rem 0;
 }
 .subsection > div:not(:last-child) {
     border-bottom: 1px solid var(--border-color);
