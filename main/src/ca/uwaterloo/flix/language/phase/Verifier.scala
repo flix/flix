@@ -413,8 +413,7 @@ object Verifier {
           checkJavaSubtype(tpe, constructor.getDeclaringClass, loc)
 
         case AtomicOp.InvokeMethod(method) =>
-          val t = ts.head
-          val pts = ts.tail
+          val t :: pts = ts
           checkJavaParameters(pts, method.getParameterTypes.toList, loc)
           checkJavaSubtype(t, method.getDeclaringClass, loc)
           checkJavaSubtype(tpe, method.getReturnType, loc)
