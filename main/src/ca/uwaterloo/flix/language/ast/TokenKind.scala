@@ -240,6 +240,31 @@ sealed trait TokenKind {
   })
 
   /**
+    * Checks if this token is one of the [[TokenKind]]s that can validly appear as the first token in a declaration within an instance.
+    * Note that a CommentDoc, a Modifier and/or an annotation may lead such a declaration.
+    */
+  def isFirstInstance: Boolean = this.isModifier || (this match {
+    case TokenKind.CommentDoc
+         | TokenKind.Annotation
+         | TokenKind.KeywordDef
+         | TokenKind.KeywordType => true
+    case _ => false
+  })
+
+  /**
+    * Checks if this token is one of the [[TokenKind]]s that can validly appear as the first token in a declaration within a trait.
+    * Note that a CommentDoc, a Modifier and/or an annotation may lead such a declaration.
+    */
+  def isFirstTrait: Boolean = this.isModifier || (this match {
+    case TokenKind.CommentDoc
+         | TokenKind.Annotation
+         | TokenKind.KeywordDef
+         | TokenKind.KeywordLaw
+         | TokenKind.KeywordType => true
+    case _ => false
+  })
+
+  /**
     * Checks if kind is one of the [[TokenKind]]s that can validly appear as the first token of any expression.
     */
   def isFirstExpr: Boolean = this match {

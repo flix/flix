@@ -317,15 +317,16 @@ object Weeder2 {
         pickModifiers(tree, allowed = Set.empty),
         pickNameIdent(tree),
         Types.pickConstraints(tree),
+        pickEqualityConstraints(tree),
         Types.pickKindedParameters(tree),
         pickFormalParameters(tree),
         Exprs.pickExpr(tree)
       ) {
-        (doc, ann, mods, ident, tconstrs, tparams, fparams, expr) =>
+        (doc, ann, mods, ident, tconstrs, econstrs, tparams, fparams, expr) =>
           val eff = None
           val tpe = WeededAst.Type.Ambiguous(Name.mkQName("Bool"), ident.loc)
           // TODO: There is a `Declaration.Law` but old Weeder produces a Def
-          Declaration.Def(doc, ann, mods, ident, tparams, fparams, expr, tpe, eff, tconstrs, Nil, tree.loc)
+          Declaration.Def(doc, ann, mods, ident, tparams, fparams, expr, tpe, eff, tconstrs, econstrs, tree.loc)
       }
     }
 
@@ -1206,8 +1207,13 @@ object Weeder2 {
     private def visitMatchExpr(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.Match)
       val rules = pickAll(TreeKind.Expr.MatchRuleFragment, tree)
-      mapN(pickExpr(tree), traverse(rules)(visitMatchRule)) {
-        (expr, rules) => Expr.Match(expr, rules, tree.loc)
+      flatMapN(pickExpr(tree), traverse(rules)(visitMatchRule)) {
+        // Case: no valid match rule found in match expr
+        case (expr, Nil) =>
+          val error = ParseError("Expected at least one match-case", SyntacticContext.Expr.OtherExpr, expr.loc)
+          // Fall back on Expr.Error. Parser has reported an error here.
+          Validation.success(Expr.Error(error))
+        case (expr, rules) => Validation.success(Expr.Match(expr, rules, tree.loc))
       }
     }
 
@@ -1586,15 +1592,15 @@ object Weeder2 {
         traverse(maybeWith)(visitTryWithBody),
       ) {
         // Bad case: try expr
-        case (expr, Nil, Nil) => Validation.toSoftFailure(
-          Expr.TryCatch(expr, List.empty, tree.loc),
-          ParseError(s"Missing `catch` on try-catch expression", SyntacticContext.Expr.OtherExpr, tree.loc)
-        )
+        case (expr, Nil, Nil) =>
+          val error = ParseError(s"Expected ${TokenKind.KeywordCatch.display} or ${TokenKind.KeywordWith.display}", SyntacticContext.Expr.OtherExpr, tree.loc)
+          // Fall back on Expr.Error, Parser has already reported an error.
+          Validation.success( Expr.Error(error))
         // Bad case: try expr catch { rules... } with eff { handlers... }
-        case (expr, _ :: _, _ :: _) => Validation.toSoftFailure(
-          Expr.TryCatch(expr, List.empty, tree.loc),
-          ParseError(s"Cannot use both `catch` and `with` on try-catch expression", SyntacticContext.Expr.OtherExpr, tree.loc)
-        )
+        case (expr, _ :: _, _ :: _) =>
+          val error = ParseError(s"Cannot use both ${TokenKind.KeywordCatch.display} and ${TokenKind.KeywordWith.display} on ${TokenKind.KeywordTry.display}", SyntacticContext.Expr.OtherExpr, tree.loc)
+          // Fall back on Expr.Error, Parser has already reported an error.
+          Validation.success( Expr.Error(error))
         // Case: try expr catch { rules... }
         case (expr, catches, Nil) => Validation.success(Expr.TryCatch(expr, catches.flatten, tree.loc))
         // Case: try expr with eff { handlers... }
