@@ -1,13 +1,13 @@
 mod Test.Eff.Simplification {
-    pub def testPureAndPure(): Unit \ {Pure, Pure} = pure()
+    pub def testPureAndPure(): Unit \ {{}, {}} = pure()
 
-    pub def testPureAndIo(): Unit \ {Pure, IO} = io()
+    pub def testPureAndIo(): Unit \ {{}, IO} = io()
 
     pub def testIoAndIo(): Unit \ {IO, IO} = io()
 
-    pub def testPureOrPure(): Unit \ Pure & Pure = pure()
+    pub def testPureOrPure(): Unit \ {} & {} = pure()
 
-    pub def testPureOrIo(): Unit \ Pure & IO = pure()
+    pub def testPureOrIo(): Unit \ {} & IO = pure()
 
     pub def testIoOrIo(): Unit \ IO & IO = io()
 

@@ -2394,12 +2394,12 @@ object Weeder2 {
     }
 
     def tryPickEffect(tree: Tree)(implicit s: State): Validation[Option[Type], CompilationMessage] = {
-      val maybeEffectSet = tryPick(TreeKind.Type.EffectSet, tree)
-      traverseOpt(maybeEffectSet)(visitEffectType)
+      val maybeEffect = tryPick(TreeKind.Type.Effect, tree)
+      traverseOpt(maybeEffect)(pickType)
     }
 
     def visitType(tree: Tree)(implicit s: State): Validation[WeededAst.Type, CompilationMessage] = {
-      expect(tree, TreeKind.Type.Type)
+      expectAny(tree, List(TreeKind.Type.Type, TreeKind.Type.Effect))
       // Visit first child and match its kind to know what to to
       val inner = unfold(tree)
       inner.kind match {
@@ -2524,7 +2524,6 @@ object Weeder2 {
       expect(tree, TreeKind.Type.Constant)
       text(tree).head match {
         case "false" => Validation.success(Type.False(tree.loc))
-        case "Pure" => Validation.success(Type.Pure(tree.loc))
         case "true" => Validation.success(Type.True(tree.loc))
         // TODO EFF-MIGRATION create dedicated Impure type
         case "Univ" => Validation.success(Type.Complement(Type.Pure(tree.loc), tree.loc))
@@ -2959,7 +2958,7 @@ object Weeder2 {
     */
   private def unfold(tree: Tree): Tree = {
     assert(tree.kind match {
-      case TreeKind.Type.Type | TreeKind.Expr.Expr | TreeKind.JvmOp.JvmOp | TreeKind.Predicate.Body => true
+      case TreeKind.Type.Type | TreeKind.Type.Effect | TreeKind.Expr.Expr | TreeKind.JvmOp.JvmOp | TreeKind.Predicate.Body => true
       case _ => false
     })
 

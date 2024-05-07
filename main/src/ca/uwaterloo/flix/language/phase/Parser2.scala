@@ -147,6 +147,10 @@ object Parser2 {
     root()
     // Build the syntax tree using events in state.
     val tree = buildTree()
+
+    if (src.name == "main/foo.flix") {
+      println(syntaxTreeToDebugString(tree))
+    }
     // Return with errors as soft failures to run subsequent phases for more validations.
     Validation.success(tree).withSoftFailures(s.errors)
   }
@@ -583,7 +587,7 @@ object Parser2 {
   private val NAME_EFFECT: Set[TokenKind] = Set(TokenKind.NameUpperCase)
   private val NAME_MODULE: Set[TokenKind] = Set(TokenKind.NameUpperCase)
   // TODO: Pure is used in enums as tags in Prelude.flix. Should we allow this?
-  private val NAME_TAG: Set[TokenKind] = Set(TokenKind.NameUpperCase, TokenKind.KeywordPure)
+  private val NAME_TAG: Set[TokenKind] = Set(TokenKind.NameUpperCase)
   private val NAME_PREDICATE: Set[TokenKind] = Set(TokenKind.NameUpperCase)
 
   /**
@@ -621,6 +625,7 @@ object Parser2 {
     // Note: In case of a misplaced CommentDoc, we would just like to consume it into the comment list.
     // This is forgiving in the common case of accidentally inserting an extra '/'.
     def atComment() = if (consumeDocComments) nth(0).isComment else nth(0).isCommentNonDoc
+
     if (atComment()) {
       val mark = Mark.Opened(s.events.length)
       val error = ParseError("Unclosed parser mark.", SyntacticContext.Unknown, currentSourceLocation())
@@ -1095,7 +1100,7 @@ object Parser2 {
         if (at(TokenKind.Backslash)) {
           val mark = open()
           eat(TokenKind.Backslash)
-          Type.effectSet()
+          Type.ttype()
           closeWithError(mark, WeederError.IllegalEffectfulOperation(typeLoc))
         }
       }
@@ -1736,9 +1741,9 @@ object Parser2 {
             case TokenKind.Eof => return closeWithError(mark, ParseError("Malformed match expression.", SyntacticContext.Expr.OtherExpr, currentSourceLocation()))
             case t if t.isFirstDecl =>
               // Advance past the erroneous region to the next stable token (the start of the declaration)
-                for (_ <- 0 until lookAhead) {
-                  advance()
-                }
+              for (_ <- 0 until lookAhead) {
+                advance()
+              }
               return closeWithError(mark, ParseError(s"Expected match expression before ${t.display}", SyntacticContext.Expr.OtherExpr, previousSourceLocation()))
             case _ => lookAhead += 1
           }
@@ -1871,7 +1876,7 @@ object Parser2 {
       assert(at(TokenKind.ParenL))
       oneOrMore(
         displayName = "for-fragment",
-        checkForItem = t =>t.isFirstPattern || t == TokenKind.KeywordIf,
+        checkForItem = t => t.isFirstPattern || t == TokenKind.KeywordIf,
         getItem = () =>
           if (at(TokenKind.KeywordIf)) {
             guardFragment()
@@ -2660,7 +2665,9 @@ object Parser2 {
     def typeAndEffect()(implicit s: State): Mark.Closed = {
       val lhs = ttype()
       if (eat(TokenKind.Backslash)) {
-        effectSet()
+        val mark = open()
+        ttype()
+        close(mark, TreeKind.Type.Effect)
       } else lhs
     }
 
@@ -2842,7 +2849,6 @@ object Parser2 {
              | TokenKind.Underscore => name(NAME_VARIABLE, context = SyntacticContext.Type.OtherType)
         case TokenKind.NameLowerCase => variableType()
         case TokenKind.KeywordUniv
-             | TokenKind.KeywordPure
              | TokenKind.KeywordFalse
              | TokenKind.KeywordTrue => constantType()
         case TokenKind.ParenL => tupleOrRecordRowType()
@@ -2873,7 +2879,7 @@ object Parser2 {
       close(mark, TreeKind.Type.Variable)
     }
 
-    private val TYPE_CONSTANT: Set[TokenKind] = Set(TokenKind.KeywordUniv, TokenKind.KeywordPure, TokenKind.KeywordFalse, TokenKind.KeywordTrue)
+    private val TYPE_CONSTANT: Set[TokenKind] = Set(TokenKind.KeywordUniv, TokenKind.KeywordFalse, TokenKind.KeywordTrue)
 
     private def constantType()(implicit s: State): Mark.Closed = {
       val mark = open()
@@ -2925,8 +2931,8 @@ object Parser2 {
     private def recordOrEffectSetType()(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.CurlyL))
       val isRecord = (nth(1), nth(2)) match {
-        case (TokenKind.CurlyR, _)
-             | (TokenKind.Bar, _)
+        case (TokenKind.CurlyR, _) => false
+        case (TokenKind.Bar, _)
              | (_, TokenKind.Bar)
              | (_, TokenKind.Equal) => true
         case _ => false
@@ -2937,17 +2943,26 @@ object Parser2 {
     private def record()(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.CurlyL))
       val mark = open()
-      zeroOrMore(
-        displayName = "record field",
-        getItem = recordField,
-        checkForItem = NAME_FIELD.contains,
-        breakWhen = _.isRecoverType,
-        delimiterL = TokenKind.CurlyL,
-        delimiterR = TokenKind.CurlyR,
-        optionallyWith = Some((TokenKind.Bar, variableType)),
-        context = SyntacticContext.Type.OtherType
-      )
-      close(mark, TreeKind.Type.Record)
+      (nth(1), nth(2)) match {
+        // Empty record type
+        case (TokenKind.Bar, TokenKind.CurlyR) =>
+          advance() // consume '{'.
+          advance() // consume '|'.
+          advance() // consume '}'.
+          close(mark, TreeKind.Type.Record)
+        case _ =>
+          zeroOrMore(
+            displayName = "record field",
+            getItem = recordField,
+            checkForItem = NAME_FIELD.contains,
+            breakWhen = _.isRecoverType,
+            delimiterL = TokenKind.CurlyL,
+            delimiterR = TokenKind.CurlyR,
+            optionallyWith = Some((TokenKind.Bar, variableType)),
+            context = SyntacticContext.Type.OtherType
+          )
+          close(mark, TreeKind.Type.Record)
+      }
     }
 
     private def recordField()(implicit s: State): Mark.Closed = {
@@ -2959,8 +2974,7 @@ object Parser2 {
     }
 
     def effectSet()(implicit s: State): Mark.Closed = {
-      if (at(TokenKind.CurlyL)) {
-        val mark = open()
+      val mark = open()
         zeroOrMore(
           displayName = "effect",
           getItem = () => ttype(),
@@ -2970,12 +2984,7 @@ object Parser2 {
           delimiterR = TokenKind.CurlyR,
           context = SyntacticContext.Type.Eff
         )
-        close(mark, TreeKind.Type.EffectSet)
-      } else {
-        val mark = open()
-        ttype()
-        close(mark, TreeKind.Type.EffectSet)
-      }
+      close(mark, TreeKind.Type.EffectSet)
     }
 
     private def schemaType()(implicit s: State): Mark.Closed = {
