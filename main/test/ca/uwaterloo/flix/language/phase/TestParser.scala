@@ -453,6 +453,17 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
     expectMain(result)
   }
 
+  test("BadMatch.02") {
+    val input =
+      """
+        |def map(t: Int32): Int32 = match t
+        |def main(): Int32 = 123
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
   test("BadType.01") {
     val input =
       """
@@ -514,6 +525,20 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |pub eff Print {
         |    /
         |    pub def printIt(): Unit
+        |}
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("BadConstraintSet.01") {
+    val input =
+      """
+        |def baz(): #{ Path(Int32, Int32) } = #{
+        |    Edge(1, 2).
+        |    Path(x, y) :-
         |}
         |def main(): Unit = ()
         |""".stripMargin

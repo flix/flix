@@ -786,7 +786,7 @@ object Parser2 {
             case at =>
               val loc = currentSourceLocation()
               // Skip ahead until we hit another declaration or any CurlyR.
-              while (!nth(0).isFirstDecl && !eat(TokenKind.CurlyR) && !eof()) {
+              while (!nth(0).isFirstTrait && !eat(TokenKind.CurlyR) && !eof()) {
                 advance()
               }
               val error = ParseError(s"Expected ${TokenKind.KeywordType.display}, ${TokenKind.KeywordDef.display} or ${TokenKind.KeywordLaw.display} before ${at.display}", SyntacticContext.Decl.Trait, loc)
@@ -826,7 +826,7 @@ object Parser2 {
             case at =>
               val loc = currentSourceLocation()
               // Skip ahead until we hit another declaration or any CurlyR.
-              while (!nth(0).isFirstDecl && !eat(TokenKind.CurlyR) && !eof()) {
+              while (!nth(0).isFirstInstance && !eat(TokenKind.CurlyR) && !eof()) {
                 advance()
               }
               val error = ParseError(s"Expected ${TokenKind.KeywordType.display} or ${TokenKind.KeywordDef.display} before ${at.display}", SyntacticContext.Decl.Instance, loc)
@@ -1492,7 +1492,8 @@ object Parser2 {
             var level = 1
             var curlyLevel = 0
             var lookAhead = 0
-            while (level > 0 && !eof()) {
+            val tokensLeft = s.tokens.length - s.position
+            while (level > 0 && lookAhead < tokensLeft && !eof()) {
               lookAhead += 1
               nth(lookAhead) match {
                 case TokenKind.ParenL => level += 1
@@ -1730,6 +1731,12 @@ object Parser2 {
             case TokenKind.ParenL => parenNestingLevel += 1; lookAhead += 1
             case TokenKind.ParenR => parenNestingLevel -= 1; lookAhead += 1
             case TokenKind.Eof => return closeWithError(mark, ParseError("Malformed match expression.", SyntacticContext.Expr.OtherExpr, currentSourceLocation()))
+            case t if t.isFirstDecl =>
+              // Advance past the erroneous region to the next stable token (the start of the declaration)
+                for (_ <- 0 until lookAhead) {
+                  advance()
+                }
+              return closeWithError(mark, ParseError(s"Expected match expression before ${t.display}", SyntacticContext.Expr.OtherExpr, previousSourceLocation()))
             case _ => lookAhead += 1
           }
         }
@@ -3132,14 +3139,19 @@ object Parser2 {
     def body()(implicit s: State): Mark.Closed = {
       val mark = open()
       nth(0) match {
-        case TokenKind.KeywordIf => guard()
-        case TokenKind.KeywordLet => functional()
-        case TokenKind.KeywordNot | TokenKind.KeywordFix | TokenKind.NameUpperCase => atom()
+        case TokenKind.KeywordIf =>
+          guard()
+          close(mark, TreeKind.Predicate.Body)
+        case TokenKind.KeywordLet =>
+          functional()
+          close(mark, TreeKind.Predicate.Body)
+        case TokenKind.KeywordNot | TokenKind.KeywordFix | TokenKind.NameUpperCase =>
+          atom()
+          close(mark, TreeKind.Predicate.Body)
         case at =>
-          val error = ParseError(s"Expected ${TokenKind.KeywordIf.display}, ${TokenKind.KeywordLet.display}, ${TokenKind.KeywordNot.display}, ${TokenKind.KeywordFix} or ${TokenKind.NameUpperCase.display} before ${at.display}", SyntacticContext.Unknown, currentSourceLocation())
-          advanceWithError(error)
+          val error = ParseError(s"Expected ${TokenKind.KeywordIf.display}, ${TokenKind.KeywordLet.display}, ${TokenKind.KeywordNot.display}, ${TokenKind.KeywordFix.display} or ${TokenKind.NameUpperCase.display} before ${at.display}", SyntacticContext.Expr.Constraint, currentSourceLocation())
+          closeWithError(mark, error)
       }
-      close(mark, TreeKind.Predicate.Body)
     }
 
     private def guard()(implicit s: State): Mark.Closed = {
