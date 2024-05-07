@@ -23,126 +23,69 @@ import ca.uwaterloo.flix.language.dbg.printer._
 import ca.uwaterloo.flix.language.phase._
 import ca.uwaterloo.flix.language.phase.jvm.JvmBackend
 import ca.uwaterloo.flix.util.collection.Bimap
-import ca.uwaterloo.flix.util.{FileOps, InternalCompilerException}
+import ca.uwaterloo.flix.util.{FileOps, InternalCompilerException, Validation}
 
 import java.nio.file.{Files, LinkOption, Path}
 
 object AstPrinter {
 
-  /**
-    * Print the given pretty printed ast to file if options requests the given
-    * phase printed.
-    */
-  def printPhase(phase: AnyRef, prettyAst: => String)(implicit flix: Flix): Unit = AstPrinter.phaseNames().getBackward(phase) match {
-    case Some(phaseName) if flix.options.xprintphase.contains("all") || flix.options.xprintphase.contains(phaseName) =>
-      AstPrinter.writeToDisk(phaseName, prettyAst)
-    case _ => ()
+  def printParsedAst(phase: String, root: ParsedAst.Root)(implicit flix: Flix): Unit = {
+    writeToDisk(phase, "Not yet implemented")
   }
 
-  def phaseNames(): Bimap[String, AnyRef] = {
-    Bimap.empty[String, AnyRef] +
-      // frontend
-      ("Parser", Parser) +
-      ("Weeder", Weeder) +
-      ("Desugar", Desugar) +
-      ("Namer", Namer) +
-      ("Resolver", Resolver) +
-      ("Kinder", Kinder) +
-      ("Deriver", Deriver) +
-      ("Typer", Typer) +
-      ("Entrypoint", EntryPoint) +
-      ("PredDeps", PredDeps) +
-      ("Stratifier", Stratifier) +
-      ("PatMatch", PatMatch) +
-      ("Redundancy", Redundancy) +
-      ("Safety", Safety) +
-      // backend
-      ("Lowering", Lowering) +
-      ("TreeShaker1", TreeShaker1) +
-      ("Monomorpher", Monomorpher) +
-      ("MonoTypes", MonoTypes) +
-      ("Simplifier", Simplifier) +
-      ("ClosureConv", ClosureConv) +
-      ("LambdaLift", LambdaLift) +
-      ("Optimizer", Optimizer) +
-      ("TreeShaker2", TreeShaker2) +
-      ("EffectBinder", EffectBinder) +
-      ("TailPos", TailPos) +
-      ("Eraser", Eraser) +
-      ("Reducer", Reducer) +
-      ("VarOffsets", VarOffsets) +
-      ("JvmBackend", JvmBackend)
+  def printWeededAst(phase: String, root: WeededAst.Root)(implicit flix: Flix): Unit = {
+    writeToDisk(phase, "Not yet implemented")
   }
 
-  /**
-    * Formats `root` for display.
-    */
-  def formatParsedAst(root: ParsedAst.Root): String = "Work in progress"
-
-  /**
-    * Formats `root` for display.
-    */
-  def formatWeededAst(root: WeededAst.Root): String = "Work in progress"
-
-  /**
-    * Formats `root` for display.
-    */
-  def formatDesugaredAst(root: DesugaredAst.Root): String = "Work in progress"
-
-  /**
-    * Formats `root` for display.
-    */
-  def formatNamedAst(root: NamedAst.Root): String = "Work in progress"
-
-  /**
-    * Formats `root` for display.
-    */
-  def formatResolvedAst(root: ResolvedAst.Root): String = "Work in progress"
-
-  /**
-    * Formats `root` for display.
-    */
-  def formatKindedAst(root: KindedAst.Root): String = "Work in progress"
-
-  /**
-    * Formats `root` for display.
-    */
-  def formatTypedAst(root: TypedAst.Root): String = {
-    formatDocProgram(TypedAstPrinter.print(root))
+  def printDesugaredAst(phase: String, root: DesugaredAst.Root)(implicit flix: Flix): Unit = {
+    writeToDisk(phase, "Not yet implemented")
   }
 
-
-  /**
-    * Formats `root` for display.
-    */
-  def formatLoweredAst(root: LoweredAst.Root): String = {
-    formatDocProgram(LoweredAstPrinter.print(root))
+  def printNamedAst(phase: String, root: NamedAst.Root)(implicit flix: Flix): Unit = {
+    writeToDisk(phase, "Not yet implemented")
   }
 
-  /**
-    * Formats `root` for display.
-    */
-  def formatMonoAst(root: MonoAst.Root): String = "Work in progress"
-
-  /**
-    * Formats `root` for display.
-    */
-  def formatSimplifiedAst(root: SimplifiedAst.Root): String = {
-    formatDocProgram(SimplifiedAstPrinter.print(root))
+  def printResolvedAst(phase: String, root: ResolvedAst.Root)(implicit flix: Flix): Unit = {
+    writeToDisk(phase, "Not yet implemented")
   }
 
-  /**
-    * Formats `root` for display.
-    */
-  def formatLiftedAst(root: LiftedAst.Root): String = {
-    formatDocProgram(LiftedAstPrinter.print(root))
+  def printKindedAst(phase: String, root: KindedAst.Root)(implicit flix: Flix): Unit = {
+    writeToDisk(phase, "Not yet implemented")
   }
 
-  /**
-    * Formats `root` for display.
-    */
-  def formatReducedAst(root: ReducedAst.Root): String = {
-    formatDocProgram(ReducedAstPrinter.print(root))
+  def printTypedAst(phase: String, root: TypedAst.Root)(implicit flix: Flix): Unit = {
+    printDocProgram(phase, TypedAstPrinter.print(root))
+  }
+
+  def printLoweredAst(phase: String, root: LoweredAst.Root)(implicit flix: Flix): Unit = {
+    printDocProgram(phase, LoweredAstPrinter.print(root))
+  }
+
+  def printMonoAst(phase: String, root: MonoAst.Root)(implicit flix: Flix): Unit = {
+    writeToDisk(phase, "Not yet implemented")
+  }
+
+  def printSimplifiedAst(phase: String, root: SimplifiedAst.Root)(implicit flix: Flix): Unit = {
+    printDocProgram(phase, SimplifiedAstPrinter.print(root))
+  }
+
+  def printLiftedAst(phase: String, root: LiftedAst.Root)(implicit flix: Flix): Unit = {
+    printDocProgram(phase, LiftedAstPrinter.print(root))
+  }
+
+  def printReducedAst(phase: String, root: ReducedAst.Root)(implicit flix: Flix): Unit = {
+    printDocProgram(phase, ReducedAstPrinter.print(root))
+  }
+
+  def inValidation[A, E](f: (String, A) => Unit): (String, Validation[A, E]) => Unit = {
+    (s: String, v: Validation[A, E]) => {
+      Validation.mapN(v)(f(s, _))
+      ()
+    }
+  }
+
+  private def printDocProgram(phase: String, dast: DocAst.Program)(implicit flix: Flix): Unit = {
+    writeToDisk(phase, formatDocProgram(dast))
   }
 
   /**
@@ -155,11 +98,11 @@ object AstPrinter {
   }
 
   /**
-    * Writes `content` to the file `./build/asts/<fileName>.flixir`. The build folder is taken from
+    * Writes `content` to the file `./build/asts/<phaseName>.flixir`. The build folder is taken from
     * flix options if present. The existing file is overwritten if present.
     */
-  def writeToDisk(fileName: String, content: String)(implicit flix: Flix): Unit = {
-    val filePath = phaseOutputPath(fileName)
+  private def writeToDisk(phaseName: String, content: String)(implicit flix: Flix): Unit = {
+    val filePath = phaseOutputPath(phaseName)
     Files.createDirectories(filePath.getParent)
 
     // Check if the file already exists.
@@ -182,8 +125,16 @@ object AstPrinter {
     *
     * OBS: this function has no checking so the path might not hold the ast and it might not be readable etc.
     */
-  def phaseOutputPath(phaseName: String)(implicit flix: Flix): Path = {
-    val buildAstsPath = flix.options.output.getOrElse(Path.of("./build/")).resolve("asts/")
-    buildAstsPath.resolve(s"$phaseName.$IrFileExtension")
+  private def phaseOutputPath(phaseName: String)(implicit flix: Flix): Path = {
+    astFolderPath.resolve(s"$phaseName.$IrFileExtension")
+  }
+
+  /**
+    * Returns the path to the folder that holds the pretty printed ast files used by [[writeToDisk]].
+    *
+    * OBS: this function has no checking so the path might not exist and it might not be readable etc.
+    */
+  def astFolderPath(implicit flix: Flix): Path = {
+    flix.options.output.getOrElse(Path.of("./build/")).resolve("asts/")
   }
 }

@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.{Source, SyntacticContext}
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.dbg.AstPrinter
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.collection.Chain
 import ca.uwaterloo.flix.util.{ParOps, Validation}
@@ -46,7 +47,7 @@ object Parser {
     * Parses the given source inputs into an abstract syntax tree.
     */
   def run(root: ReadAst.Root, entryPoint: Option[Symbol.DefnSym], oldRoot: ParsedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[ParsedAst.Root, CompilationMessage] =
-    flix.phase("Parser") {
+    flix.phase("Parser")(AstPrinter.inValidation[ParsedAst.Root, CompilationMessage](AstPrinter.printParsedAst)) {
 
       // Compute the stale and fresh sources.
       val (stale, fresh) = changeSet.partition(root.sources, oldRoot.units)

@@ -35,18 +35,12 @@ object ShowAstProvider {
     * - `title` (a string like `Namer.flix.ir`)
     * - `text` (a string with the ir representation).
     */
-  def showAst(phase: String)(implicit index: Index, root: Option[Root], flix: Flix): JObject = {
-    val closest = closestPhaseName(phase)
+  def showAst()(implicit index: Index, root: Option[Root], flix: Flix): JObject = {
     val oldOpts = flix.options
-    flix.setOptions(oldOpts.copy(xprintphase = Set(closest)))
+    flix.setOptions(oldOpts.copy(xprintphases = true))
     flix.compile()
     flix.setOptions(oldOpts)
-    pathObject(AstPrinter.phaseOutputPath(closest))
-  }
-
-  private def closestPhaseName(phase: String) = {
-    val phaseNames = AstPrinter.phaseNames().m1.keys
-    Similarity.closestMatch(phase, phaseNames.map(s => (s, s)).toMap)
+    pathObject(AstPrinter.astFolderPath)
   }
 
   private def pathObject(path: Path): JObject = {

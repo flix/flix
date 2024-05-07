@@ -5,6 +5,7 @@ import ca.uwaterloo.flix.language.ast.Ast.ExpPosition
 import ca.uwaterloo.flix.language.ast.ReducedAst.Expr._
 import ca.uwaterloo.flix.language.ast.ReducedAst._
 import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoType, Purity, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.dbg.AstPrinter
 import ca.uwaterloo.flix.util.ParOps
 
 /**
@@ -32,7 +33,7 @@ import ca.uwaterloo.flix.util.ParOps
   */
 object Eraser {
 
-  def run(root: Root)(implicit flix: Flix): Root = flix.phase("Eraser") {
+  def run(root: Root)(implicit flix: Flix): Root = flix.phase("Eraser")(AstPrinter.printReducedAst) {
     val newDefs = ParOps.parMapValues(root.defs)(visitDef)
     val newEffects = ParOps.parMapValues(root.effects)(visitEffect)
     root.copy(defs = newDefs, effects = newEffects)

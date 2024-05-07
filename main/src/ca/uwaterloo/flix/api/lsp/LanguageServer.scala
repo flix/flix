@@ -316,9 +316,9 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
         // ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> InlayHintProvider.processInlayHints(uri, range)(index, root.orNull, flix).map(_.toJSON))
         ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> Nil)
 
-    case Request.ShowAst(id, phase) =>
+    case Request.ShowAst(id) =>
       if (current)
-        ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> ShowAstProvider.showAst(phase)(index, root, flix))
+        ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> ShowAstProvider.showAst()(index, root, flix))
       else
         ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> Nil)
 

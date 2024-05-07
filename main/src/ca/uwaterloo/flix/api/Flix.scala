@@ -19,7 +19,6 @@ package ca.uwaterloo.flix.api
 import ca.uwaterloo.flix.language.ast.Ast.Input
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.dbg.AstPrinter
-import ca.uwaterloo.flix.language.dbg.AstPrinter.printPhase
 import ca.uwaterloo.flix.language.fmt.FormatOptions
 import ca.uwaterloo.flix.language.phase._
 import ca.uwaterloo.flix.language.phase.jvm.JvmBackend
@@ -503,9 +502,7 @@ class Flix {
       afterReader <- Reader.run(getInputs)
       afterLexer <- Lexer.run(afterReader, cachedLexerTokens, changeSet)
       afterParser <- Parser.run(afterReader, entryPoint, cachedParserAst, changeSet)
-      _ = printPhase(Parser, AstPrinter.formatParsedAst(afterParser))
       afterWeeder <- Weeder.run(afterParser, cachedWeederAst, changeSet)
-      _ = printPhase(Weeder, AstPrinter.formatWeededAst(afterWeeder))
 
       // Plan for migrating to new parser + weeder:
       // Stage 1 [ACTIVE]
@@ -522,31 +519,19 @@ class Flix {
       afterWeeder2 <- Weeder2.run(afterReader, entryPoint, afterParser2, cachedWeederAst, changeSet)
 
       afterDesugar = Desugar.run(afterWeeder2, cachedDesugarAst, changeSet)
-      _ = printPhase(Desugar, AstPrinter.formatDesugaredAst(afterDesugar))
       afterNamer <- Namer.run(afterDesugar)
-      _ = printPhase(Namer, AstPrinter.formatNamedAst(afterNamer))
       afterResolver <- Resolver.run(afterNamer, cachedResolverAst, changeSet)
-      _ = printPhase(Resolver, AstPrinter.formatResolvedAst(afterResolver))
       afterKinder <- Kinder.run(afterResolver, cachedKinderAst, changeSet)
-        _ = printPhase(Kinder, AstPrinter.formatKindedAst(afterKinder))
       afterDeriver <- Deriver.run(afterKinder)
-      _ = printPhase(Deriver, AstPrinter.formatKindedAst(afterDeriver))
       afterTyper <- Typer.run(afterDeriver, cachedTyperAst, changeSet)
-      _ = printPhase(Typer, AstPrinter.formatTypedAst(afterTyper))
       _ <- Regions.run(afterTyper)
       afterEntryPoint <- EntryPoint.run(afterTyper)
-      _ = printPhase(EntryPoint, AstPrinter.formatTypedAst(afterEntryPoint))
       _ <- Instances.run(afterEntryPoint, cachedTyperAst, changeSet)
       afterPredDeps <- PredDeps.run(afterEntryPoint)
-      _ = printPhase(PredDeps, AstPrinter.formatTypedAst(afterPredDeps))
       afterStratifier <- Stratifier.run(afterPredDeps)
-      _ = printPhase(Stratifier, AstPrinter.formatTypedAst(afterStratifier))
       afterPatMatch <- PatMatch.run(afterStratifier)
-      _ = printPhase(PatMatch, AstPrinter.formatTypedAst(afterPatMatch))
       afterRedundancy <- Redundancy.run(afterPatMatch)
-      _ = printPhase(Redundancy, AstPrinter.formatTypedAst(afterRedundancy))
       afterSafety <- Safety.run(afterRedundancy)
-      _ = printPhase(Safety, AstPrinter.formatTypedAst(afterSafety))
     } yield {
       // Update caches for incremental compilation.
       if (options.incremental) {
@@ -594,34 +579,20 @@ class Flix {
 
     /** Remember to update [[AstPrinter]] about the list of phases. */
     val loweringAst = Lowering.run(typedAst)
-    printPhase(Lowering, AstPrinter.formatLoweredAst(loweringAst))
     val treeShaker1Ast = TreeShaker1.run(loweringAst)
-    printPhase(TreeShaker1, AstPrinter.formatLoweredAst(treeShaker1Ast))
     val monomorpherAst = Monomorpher.run(treeShaker1Ast)
-    printPhase(Monomorpher, AstPrinter.formatMonoAst(monomorpherAst))
     val monoTypesAst = MonoTypes.run(monomorpherAst)
-    printPhase(MonoTypes, AstPrinter.formatMonoAst(monoTypesAst))
     val simplifierAst = Simplifier.run(monoTypesAst)
-    printPhase(Simplifier, AstPrinter.formatSimplifiedAst(simplifierAst))
     val closureConvAst = ClosureConv.run(simplifierAst)
-    printPhase(ClosureConv, AstPrinter.formatSimplifiedAst(closureConvAst))
     val lambdaLiftAst = LambdaLift.run(closureConvAst)
-    printPhase(LambdaLift, AstPrinter.formatLiftedAst(lambdaLiftAst))
     val optimizerAst = Optimizer.run(lambdaLiftAst)
-    printPhase(Optimizer, AstPrinter.formatLiftedAst(optimizerAst))
     val treeShaker2Ast = TreeShaker2.run(optimizerAst)
-    printPhase(TreeShaker2, AstPrinter.formatLiftedAst(treeShaker2Ast))
     val effectBinderAst = EffectBinder.run(treeShaker2Ast)
-    printPhase(EffectBinder, AstPrinter.formatReducedAst(effectBinderAst))
     val tailPosAst = TailPos.run(effectBinderAst)
-    printPhase(TailPos, AstPrinter.formatReducedAst(tailPosAst))
     Verifier.run(tailPosAst)
     val eraserAst = Eraser.run(tailPosAst)
-    printPhase(Eraser, AstPrinter.formatReducedAst(eraserAst))
     val reducerAst = Reducer.run(eraserAst)
-    printPhase(Reducer, AstPrinter.formatReducedAst(reducerAst))
     val varOffsetsAst = VarOffsets.run(reducerAst)
-    printPhase(VarOffsets, AstPrinter.formatReducedAst(varOffsetsAst))
     val result = JvmBackend.run(varOffsetsAst)
 
     // Shutdown fork-join thread pool.
@@ -652,7 +623,7 @@ class Flix {
   /**
     * Enters the phase with the given name.
     */
-  def phase[A](phase: String)(f: => A): A = {
+  def phase[A](phase: String)(printer: (String, A) => _)(f: => A): A = {
     // Initialize the phase time object.
     currentPhase = PhaseTime(phase, 0, Nil)
 
@@ -671,8 +642,17 @@ class Flix {
     // And add it to the list of executed phases.
     phaseTimers += currentPhase
 
+    if (this.options.xprintphases) printer(phase, r)
+
     // Return the result computed by the phase.
     r
+  }
+
+  /**
+    * Enters the phase with the given name.
+    */
+  def phaseNoPrinter[A](phase: String)(f: => A): A = {
+    this.phase[A](phase)((_, _) => ())(f)
   }
 
   /**
