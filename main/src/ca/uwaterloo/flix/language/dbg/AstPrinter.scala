@@ -28,38 +28,31 @@ import java.nio.file.{Files, LinkOption, Path}
 object AstPrinter {
 
   case class DebugNoOp[T]() extends Debug[T] {
-    override def emit(phase: String, root: T)(implicit flix: Flix): Unit =
-      writeToDisk(phase, "Not yet implemented")
+    override def emit(phase: String, root: T)(implicit flix: Flix): Unit = ()
   }
 
   implicit object DebugParsedAst extends Debug[ParsedAst.Root] {
-    override def emit(phase: String, root: ParsedAst.Root)(implicit flix: Flix): Unit =
-      writeToDisk(phase, "Not yet implemented")
+    override def emit(phase: String, root: ParsedAst.Root)(implicit flix: Flix): Unit = ()
   }
 
   implicit object DebugWeededAst extends Debug[WeededAst.Root] {
-    override def emit(phase: String, root: WeededAst.Root)(implicit flix: Flix): Unit =
-      writeToDisk(phase, "Not yet implemented")
+    override def emit(phase: String, root: WeededAst.Root)(implicit flix: Flix): Unit = ()
   }
 
   implicit object DebugDesugaredAst extends Debug[DesugaredAst.Root] {
-    override def emit(phase: String, root: DesugaredAst.Root)(implicit flix: Flix): Unit =
-      writeToDisk(phase, "Not yet implemented")
+    override def emit(phase: String, root: DesugaredAst.Root)(implicit flix: Flix): Unit = ()
   }
 
   implicit object DebugNamedAst extends Debug[NamedAst.Root] {
-    override def emit(phase: String, root: NamedAst.Root)(implicit flix: Flix): Unit =
-      writeToDisk(phase, "Not yet implemented")
+    override def emit(phase: String, root: NamedAst.Root)(implicit flix: Flix): Unit = ()
   }
 
   implicit object DebugResolvedAst extends Debug[ResolvedAst.Root] {
-    override def emit(phase: String, root: ResolvedAst.Root)(implicit flix: Flix): Unit =
-      writeToDisk(phase, "Not yet implemented")
+    override def emit(phase: String, root: ResolvedAst.Root)(implicit flix: Flix): Unit = ()
   }
 
   implicit object DebugKindedAst extends Debug[KindedAst.Root] {
-    override def emit(phase: String, root: KindedAst.Root)(implicit flix: Flix): Unit =
-      writeToDisk(phase, "Not yet implemented")
+    override def emit(phase: String, root: KindedAst.Root)(implicit flix: Flix): Unit = ()
   }
 
   implicit object DebugTypedAst extends Debug[TypedAst.Root] {
@@ -83,8 +76,7 @@ object AstPrinter {
   }
 
   implicit object DebugMonoAst extends Debug[MonoAst.Root] {
-    override def emit(phase: String, root: MonoAst.Root)(implicit flix: Flix): Unit =
-      writeToDisk(phase, "Not yet implemented")
+    override def emit(phase: String, root: MonoAst.Root)(implicit flix: Flix): Unit = ()
   }
 
   implicit object DebugReducedAst extends Debug[ReducedAst.Root] {
