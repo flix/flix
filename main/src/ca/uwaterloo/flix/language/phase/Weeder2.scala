@@ -1207,8 +1207,13 @@ object Weeder2 {
     private def visitMatchExpr(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.Match)
       val rules = pickAll(TreeKind.Expr.MatchRuleFragment, tree)
-      mapN(pickExpr(tree), traverse(rules)(visitMatchRule)) {
-        (expr, rules) => Expr.Match(expr, rules, tree.loc)
+      flatMapN(pickExpr(tree), traverse(rules)(visitMatchRule)) {
+        // Case: no valid match rule found in match expr
+        case (expr, Nil) =>
+          val error = ParseError("Expected at least one match-case", SyntacticContext.Expr.OtherExpr, expr.loc)
+          // Fall back on Expr.Error. Parser has reported an error here.
+          Validation.success(Expr.Error(error))
+        case (expr, rules) => Validation.success(Expr.Match(expr, rules, tree.loc))
       }
     }
 
