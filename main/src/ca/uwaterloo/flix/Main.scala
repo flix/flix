@@ -100,7 +100,7 @@ object Main {
       xnoboolunif = cmdOpts.xnoboolunif,
       xnoqmc = cmdOpts.xnoqmc,
       xnooptimizer = cmdOpts.xnooptimizer,
-      xprintphase = cmdOpts.xprintphase,
+      xprintphases = cmdOpts.xprintphases,
       xsummary = cmdOpts.xsummary,
       xfuzzer = cmdOpts.xfuzzer,
       xparser = cmdOpts.xparser,
@@ -363,7 +363,7 @@ object Main {
                      xnoboolunif: Boolean = false,
                      xnoqmc: Boolean = false,
                      xnooptimizer: Boolean = false,
-                     xprintphase: Set[String] = Set.empty,
+                     xprintphases: Boolean = false,
                      xsummary: Boolean = false,
                      xfuzzer: Boolean = false,
                      xparser: Boolean = false,
@@ -551,8 +551,8 @@ object Main {
         text("[experimental] disables compiler optimizations.")
 
       // Xprint-phase
-      opt[Seq[String]]("Xprint-phase").action((m, c) => c.copy(xprintphase = m.toSet)).
-        text("[experimental] prints the AST(s) after the given phase(s). 'all' prints all ASTs.")
+      opt[Unit]("Xprint-phases").action((_, c) => c.copy(xprintphases = true)).
+        text("[experimental] prints the ASTs after the each phase.")
 
       // Xbdd-threshold
       opt[Int]("Xbdd-threshold").action((n, c) => c.copy(xbddthreshold = Some(n))).

@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.dbg.AstPrinter
 import ca.uwaterloo.flix.language.errors.RedundancyError
 import ca.uwaterloo.flix.language.errors.RedundancyError._
 import ca.uwaterloo.flix.language.phase.unification.TraitEnvironment
@@ -49,7 +50,7 @@ object Redundancy {
   /**
     * Checks the given AST `root` for redundancies.
     */
-  def run(root: Root)(implicit flix: Flix): Validation[Root, RedundancyError] = flix.phase("Redundancy") {
+  def run(root: Root)(implicit flix: Flix): Validation[Root, RedundancyError] = flix.phaseValidation("Redundancy")(AstPrinter.printTypedAst) {
     implicit val sctx: SharedContext = SharedContext.mk()
 
     val errorsFromDefs = ParOps.parAgg(root.defs, Used.empty)({

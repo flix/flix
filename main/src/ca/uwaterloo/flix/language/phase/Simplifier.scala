@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.BoundBy
 import ca.uwaterloo.flix.language.ast.{Purity, Symbol, _}
+import ca.uwaterloo.flix.language.dbg.AstPrinter
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import scala.annotation.tailrec
@@ -28,7 +29,7 @@ import scala.annotation.tailrec
   */
 object Simplifier {
 
-  def run(root: MonoAst.Root)(implicit flix: Flix): SimplifiedAst.Root = flix.phase("Simplifier") {
+  def run(root: MonoAst.Root)(implicit flix: Flix): SimplifiedAst.Root = flix.phase("Simplifier")(AstPrinter.printSimplifiedAst) {
     implicit val universe: Set[Symbol.EffectSym] = root.effects.keys.toSet
     val defs = ParOps.parMapValues(root.defs)(visitDef)
     val effects = ParOps.parMapValues(root.effects)(visitEffect)

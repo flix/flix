@@ -20,118 +20,72 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.Flix.{IrFileExtension, IrFileIndentation, IrFileWidth}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.dbg.printer._
-import ca.uwaterloo.flix.util.{FileOps, InternalCompilerException}
+import ca.uwaterloo.flix.language.phase._
+import ca.uwaterloo.flix.language.phase.jvm.JvmBackend
+import ca.uwaterloo.flix.util.collection.Bimap
+import ca.uwaterloo.flix.util.{FileOps, InternalCompilerException, Validation}
 
 import java.nio.file.{Files, LinkOption, Path}
 
 object AstPrinter {
 
-  /**
-    * Writes all the formatted asts, requested by the flix options, to disk.
-    */
-  def printAsts()(implicit flix: Flix): Unit = {
-    val optionPhases = flix.options.xprintphase
-    val shouldPrintEverything = optionPhases.contains("all") || optionPhases.contains("All")
-    val phaseMap = if (shouldPrintEverything) allPhases(includeUnfinished = false)
-                   else allPhases().filter(pair => optionPhases.contains(pair._1))
-    printPhaseMap(phaseMap)
+  def printParsedAst(phase: String, root: ParsedAst.Root)(implicit flix: Flix): Unit = {
+    writeToDisk(phase, "Not yet implemented")
   }
 
-  /**
-    * Writes all the formatted asts to disk.
-    */
-  def printAllAsts()(implicit flix: Flix): Unit = {
-    printPhaseMap(allPhases(includeUnfinished = false))
+  def printWeededAst(phase: String, root: WeededAst.Root)(implicit flix: Flix): Unit = {
+    writeToDisk(phase, "Not yet implemented")
   }
 
-  /**
-    * Goes through each map binding and calls [[writeToDisk]].
-    */
-  private def printPhaseMap(phaseMap: Map[String, () => String])(implicit flix: Flix): Unit = {
-    for ((phase, printer) <- phaseMap)
-      writeToDisk(phase, printer())
+  def printDesugaredAst(phase: String, root: DesugaredAst.Root)(implicit flix: Flix): Unit = {
+    writeToDisk(phase, "Not yet implemented")
   }
 
-  /**
-    * Returns a list of map the phases of flix along with a thunked pretty printed AST.
-    *
-    * Returns only the phases that can be pretty printed if `includeUnfinished` is false.
-    */
-  def allPhases(includeUnfinished: Boolean = true)(implicit flix: Flix): Map[String, () => String] = {
-    def wipPhase(phaseName: String): Option[(String, () => String)] = {
-      if (includeUnfinished) Some((phaseName, () => "Work In Progress")) else None
+  def printNamedAst(phase: String, root: NamedAst.Root)(implicit flix: Flix): Unit = {
+    writeToDisk(phase, "Not yet implemented")
+  }
+
+  def printResolvedAst(phase: String, root: ResolvedAst.Root)(implicit flix: Flix): Unit = {
+    writeToDisk(phase, "Not yet implemented")
+  }
+
+  def printKindedAst(phase: String, root: KindedAst.Root)(implicit flix: Flix): Unit = {
+    writeToDisk(phase, "Not yet implemented")
+  }
+
+  def printTypedAst(phase: String, root: TypedAst.Root)(implicit flix: Flix): Unit = {
+    printDocProgram(phase, TypedAstPrinter.print(root))
+  }
+
+  def printLoweredAst(phase: String, root: LoweredAst.Root)(implicit flix: Flix): Unit = {
+    printDocProgram(phase, LoweredAstPrinter.print(root))
+  }
+
+  def printMonoAst(phase: String, root: MonoAst.Root)(implicit flix: Flix): Unit = {
+    writeToDisk(phase, "Not yet implemented")
+  }
+
+  def printSimplifiedAst(phase: String, root: SimplifiedAst.Root)(implicit flix: Flix): Unit = {
+    printDocProgram(phase, SimplifiedAstPrinter.print(root))
+  }
+
+  def printLiftedAst(phase: String, root: LiftedAst.Root)(implicit flix: Flix): Unit = {
+    printDocProgram(phase, LiftedAstPrinter.print(root))
+  }
+
+  def printReducedAst(phase: String, root: ReducedAst.Root)(implicit flix: Flix): Unit = {
+    printDocProgram(phase, ReducedAstPrinter.print(root))
+  }
+
+  def inValidation[A, E, T](f: (String, A) => T): (String, Validation[A, E]) => Unit = {
+    (s: String, v: Validation[A, E]) => {
+      Validation.mapN(v)(f(s, _))
+      ()
     }
-
-    val frontend = List(
-      wipPhase("Parser"),
-      wipPhase("Weeder"),
-      wipPhase("Desugar"),
-      wipPhase("Namer"),
-      wipPhase("Resolver"),
-      wipPhase("Kinder"),
-      wipPhase("Deriver"),
-      Some("Typer", () => formatTypedAst(flix.getTyperAst)),
-      wipPhase("Entrypoint"),
-      wipPhase("PredDeps"),
-      wipPhase("Stratifier"),
-      wipPhase("PatMatch"),
-      wipPhase("Redundancy"),
-      wipPhase("Safety")
-    ).flatten.toMap
-    val backend = List(
-      Some(("Lowering", () => formatLoweredAst(flix.getLoweringAst))),
-      Some(("TreeShaker1", () => formatLoweredAst(flix.getTreeShaker1Ast))),
-      wipPhase("Monomorpher"),
-      wipPhase("MonoTypes"),
-      Some(("Simplifier", () => formatSimplifiedAst(flix.getSimplifierAst))),
-      Some(("ClosureConv", () => formatSimplifiedAst(flix.getClosureConvAst))),
-      Some(("LambdaLift", () => formatLiftedAst(flix.getLambdaLiftAst))),
-      Some(("Optimizer", () => formatLiftedAst(flix.getOptimizerAst))),
-      Some(("TreeShaker2", () => formatLiftedAst(flix.getTreeShaker2Ast))),
-      Some(("EffectBinder", () => formatReducedAst(flix.getEffectBinderAst))),
-      Some(("TailPos", () => formatReducedAst(flix.getTailPosAst))),
-      Some(("Eraser", () => formatReducedAst(flix.getEraserAst))),
-      Some(("Reducer", () => formatReducedAst(flix.getReducerAst))),
-      Some(("VarOffsets", () => formatReducedAst(flix.getVarOffsetsAst))),
-      wipPhase("JvmBackend")
-    ).flatten.toMap
-    frontend ++ backend
   }
 
-  /**
-    * Formats `root` for display.
-    */
-  def formatTypedAst(root: TypedAst.Root): String = {
-    formatDocProgram(TypedAstPrinter.print(root))
-  }
-
-
-  /**
-    * Formats `root` for display.
-    */
-  def formatLoweredAst(root: LoweredAst.Root): String = {
-    formatDocProgram(LoweredAstPrinter.print(root))
-  }
-
-  /**
-    * Formats `root` for display.
-    */
-  def formatSimplifiedAst(root: SimplifiedAst.Root): String = {
-    formatDocProgram(SimplifiedAstPrinter.print(root))
-  }
-
-  /**
-    * Formats `root` for display.
-    */
-  def formatLiftedAst(root: LiftedAst.Root): String = {
-    formatDocProgram(LiftedAstPrinter.print(root))
-  }
-
-  /**
-    * Formats `root` for display.
-    */
-  def formatReducedAst(root: ReducedAst.Root): String = {
-    formatDocProgram(ReducedAstPrinter.print(root))
+  private def printDocProgram(phase: String, dast: DocAst.Program)(implicit flix: Flix): Unit = {
+    writeToDisk(phase, formatDocProgram(dast))
   }
 
   /**
@@ -144,13 +98,12 @@ object AstPrinter {
   }
 
   /**
-    * Writes `content` to the file `./build/asts/<fileName>.flixir`. The build folder is taken from
+    * Writes `content` to the file `./build/asts/<phaseName>.flixir`. The build folder is taken from
     * flix options if present. The existing file is overwritten if present.
     */
-  private def writeToDisk(fileName: String, content: String)(implicit flix: Flix): Unit = {
-    val buildAstsPath = flix.options.output.getOrElse(Path.of("./build/")).resolve("asts/")
-    val filePath = buildAstsPath.resolve(s"$fileName.$IrFileExtension")
-    Files.createDirectories(buildAstsPath)
+  private def writeToDisk(phaseName: String, content: String)(implicit flix: Flix): Unit = {
+    val filePath = phaseOutputPath(phaseName)
+    Files.createDirectories(filePath.getParent)
 
     // Check if the file already exists.
     if (Files.exists(filePath)) {
@@ -167,4 +120,21 @@ object AstPrinter {
     FileOps.writeString(filePath, content)
   }
 
+  /**
+    * Returns the path to the pretty printed output of `phaseName` used by [[writeToDisk]].
+    *
+    * OBS: this function has no checking so the path might not hold the ast and it might not be readable etc.
+    */
+  private def phaseOutputPath(phaseName: String)(implicit flix: Flix): Path = {
+    astFolderPath.resolve(s"$phaseName.$IrFileExtension")
+  }
+
+  /**
+    * Returns the path to the folder that holds the pretty printed ast files used by [[writeToDisk]].
+    *
+    * OBS: this function has no checking so the path might not exist and it might not be readable etc.
+    */
+  def astFolderPath(implicit flix: Flix): Path = {
+    flix.options.output.getOrElse(Path.of("./build/")).resolve("asts/")
+  }
 }
