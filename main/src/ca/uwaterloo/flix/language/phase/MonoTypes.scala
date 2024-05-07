@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.MonoAst.{Expr, Pattern}
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.dbg.AstPrinter
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 /**
@@ -31,7 +32,7 @@ object MonoTypes {
   /**
     * Performs monomorphization of enums on the given AST `root` and removes alias types.
     */
-  def run(root: MonoAst.Root)(implicit flix: Flix): MonoAst.Root = flix.phase("MonoTypes") {
+  def run(root: MonoAst.Root)(implicit flix: Flix): MonoAst.Root = flix.phase("MonoTypes")(AstPrinter.printMonoAst) {
     // Assumptions:
     // - All typeclass information have been transformed into defs - this
     //   phase only looks at types and expressions in defs.

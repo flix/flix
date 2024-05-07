@@ -27,7 +27,7 @@ import scala.annotation.tailrec
   */
 object Verifier {
 
-  def run(root: Root)(implicit flix: Flix): Root = flix.phase("Verifier") {
+  def run(root: Root)(implicit flix: Flix): Root = flix.phaseNoPrinter("Verifier") {
     if (flix.options.xnoverify) {
       root
     } else {

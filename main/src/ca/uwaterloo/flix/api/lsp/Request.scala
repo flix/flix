@@ -146,9 +146,10 @@ object Request {
   case class InlayHint(requestId: String, uri: String, range: Range) extends Request
 
   /**
-    * A request to show the AST following a specific phase.
+    * A request to print the ASTs following each phase.
+    * Returns the folder path that holds the ASTs.
     */
-  case class ShowAst(requestId: String, phase: String) extends Request
+  case class ShowAst(requestId: String) extends Request
 
   /**
     * A request to view available code actions.
@@ -412,8 +413,7 @@ object Request {
   def parseShowAst(json: json4s.JValue): Result[Request, String] = {
     for {
       id <- parseId(json)
-      phase <- parseString("phase", json)
-    } yield Request.ShowAst(id, phase)
+    } yield Request.ShowAst(id)
   }
 
   /**
