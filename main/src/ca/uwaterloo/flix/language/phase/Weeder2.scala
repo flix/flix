@@ -317,15 +317,16 @@ object Weeder2 {
         pickModifiers(tree, allowed = Set.empty),
         pickNameIdent(tree),
         Types.pickConstraints(tree),
+        pickEqualityConstraints(tree),
         Types.pickKindedParameters(tree),
         pickFormalParameters(tree),
         Exprs.pickExpr(tree)
       ) {
-        (doc, ann, mods, ident, tconstrs, tparams, fparams, expr) =>
+        (doc, ann, mods, ident, tconstrs, econstrs, tparams, fparams, expr) =>
           val eff = None
           val tpe = WeededAst.Type.Ambiguous(Name.mkQName("Bool"), ident.loc)
           // TODO: There is a `Declaration.Law` but old Weeder produces a Def
-          Declaration.Def(doc, ann, mods, ident, tparams, fparams, expr, tpe, eff, tconstrs, Nil, tree.loc)
+          Declaration.Def(doc, ann, mods, ident, tparams, fparams, expr, tpe, eff, tconstrs, econstrs, tree.loc)
       }
     }
 
