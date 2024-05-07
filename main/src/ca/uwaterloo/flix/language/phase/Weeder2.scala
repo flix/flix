@@ -2524,7 +2524,6 @@ object Weeder2 {
       expect(tree, TreeKind.Type.Constant)
       text(tree).head match {
         case "false" => Validation.success(Type.False(tree.loc))
-        case "Pure" => Validation.success(Type.Pure(tree.loc))
         case "true" => Validation.success(Type.True(tree.loc))
         // TODO EFF-MIGRATION create dedicated Impure type
         case "Univ" => Validation.success(Type.Complement(Type.Pure(tree.loc), tree.loc))

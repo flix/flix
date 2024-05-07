@@ -4,6 +4,11 @@
 pub type alias Static = IO
 
 ///
+/// Pure denotes the empty effect set.
+///
+pub type alias Pure = / { }
+
+///
 /// An enum that holds type information where a witness is not available.
 ///
 pub enum Proxy[_] {

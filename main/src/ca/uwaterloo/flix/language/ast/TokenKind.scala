@@ -112,7 +112,6 @@ sealed trait TokenKind {
       case TokenKind.KeywordOverride => "'override'"
       case TokenKind.KeywordPar => "'par'"
       case TokenKind.KeywordPub => "'pub'"
-      case TokenKind.KeywordPure => "'Pure'"
       case TokenKind.KeywordProject => "'project'"
       case TokenKind.KeywordQuery => "'query'"
       case TokenKind.KeywordRef => "'ref'"
@@ -358,7 +357,6 @@ sealed trait TokenKind {
          | TokenKind.Underscore
          | TokenKind.NameLowerCase
          | TokenKind.KeywordUniv
-         | TokenKind.KeywordPure
          | TokenKind.KeywordFalse
          | TokenKind.KeywordTrue
          | TokenKind.ParenL
@@ -370,6 +368,7 @@ sealed trait TokenKind {
          | TokenKind.KeywordNot
          | TokenKind.Tilde
          | TokenKind.KeywordRvnot
+         | TokenKind.Slash
          | TokenKind.KeywordStaticUppercase => true
     case _ => false
   }
@@ -671,8 +670,6 @@ object TokenKind {
   case object KeywordPar extends TokenKind
 
   case object KeywordPub extends TokenKind
-
-  case object KeywordPure extends TokenKind
 
   case object KeywordProject extends TokenKind
 

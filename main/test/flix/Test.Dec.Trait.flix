@@ -90,7 +90,9 @@ mod Test.Dec.Trait {
             pub def isPure(f: a -> b \ ef): Bool
         }
 
-        instance Eff[Pure] {
+        // Note: 'Pure' is a type alias from Prelude, but we can't use type aliases in instances.
+        // So use the Pure effect literal instead.
+        instance Eff[/ { }] {
             pub def isPure(_f: a -> b): Bool = true
         }
     }

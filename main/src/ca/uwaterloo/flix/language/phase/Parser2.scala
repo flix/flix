@@ -582,8 +582,7 @@ object Parser2 {
   private val NAME_KIND: Set[TokenKind] = Set(TokenKind.NameUpperCase)
   private val NAME_EFFECT: Set[TokenKind] = Set(TokenKind.NameUpperCase)
   private val NAME_MODULE: Set[TokenKind] = Set(TokenKind.NameUpperCase)
-  // TODO: Pure is used in enums as tags in Prelude.flix. Should we allow this?
-  private val NAME_TAG: Set[TokenKind] = Set(TokenKind.NameUpperCase, TokenKind.KeywordPure)
+  private val NAME_TAG: Set[TokenKind] = Set(TokenKind.NameUpperCase)
   private val NAME_PREDICATE: Set[TokenKind] = Set(TokenKind.NameUpperCase)
 
   /**
@@ -2841,7 +2840,6 @@ object Parser2 {
              | TokenKind.Underscore => name(NAME_VARIABLE, context = SyntacticContext.Type.OtherType)
         case TokenKind.NameLowerCase => variableType()
         case TokenKind.KeywordUniv
-             | TokenKind.KeywordPure
              | TokenKind.KeywordFalse
              | TokenKind.KeywordTrue => constantType()
         case TokenKind.ParenL => tupleOrRecordRowType()
@@ -2850,6 +2848,7 @@ object Parser2 {
         case TokenKind.HashParenL => schemaRowType()
         case TokenKind.NameJava => nativeType()
         case TokenKind.AngleL => caseSetType()
+        case TokenKind.Slash => emptyEffectSet()
         case TokenKind.KeywordNot
              | TokenKind.Tilde
              | TokenKind.KeywordRvnot => unaryType()
@@ -2872,7 +2871,7 @@ object Parser2 {
       close(mark, TreeKind.Type.Variable)
     }
 
-    private val TYPE_CONSTANT: Set[TokenKind] = Set(TokenKind.KeywordUniv, TokenKind.KeywordPure, TokenKind.KeywordFalse, TokenKind.KeywordTrue)
+    private val TYPE_CONSTANT: Set[TokenKind] = Set(TokenKind.KeywordUniv, TokenKind.KeywordFalse, TokenKind.KeywordTrue)
 
     private def constantType()(implicit s: State): Mark.Closed = {
       val mark = open()
@@ -3060,6 +3059,15 @@ object Parser2 {
         context = SyntacticContext.Type.OtherType
       )
       close(mark, TreeKind.Type.CaseSet)
+    }
+
+    private def emptyEffectSet()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.Slash))
+      val mark = open()
+      expect(TokenKind.Slash, SyntacticContext.Type.Eff)
+       expect(TokenKind.CurlyL, SyntacticContext.Type.Eff)
+      expect(TokenKind.CurlyR, SyntacticContext.Type.Eff)
+      close(mark, TreeKind.Type.EffectSet)
     }
 
     private val FIRST_TYPE_UNARY: Set[TokenKind] = Set(TokenKind.Tilde, TokenKind.KeywordNot, TokenKind.KeywordRvnot)
