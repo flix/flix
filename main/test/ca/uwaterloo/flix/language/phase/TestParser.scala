@@ -391,6 +391,18 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
     expectMain(result)
   }
 
+  test("BadForFragments.03") {
+    val input =
+      """
+        |def foo(): Int32 =
+        |    forA ( x <- bar(), y <- baz() yield ???
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
   test("BadIfThenElse.01") {
     val input =
       """
