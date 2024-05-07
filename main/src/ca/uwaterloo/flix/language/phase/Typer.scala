@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.LabelledPrecedenceGraph
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.dbg.AstPrinter
-import ca.uwaterloo.flix.language.errors.TypeError
+import ca.uwaterloo.flix.language.errors.{KindError, TypeError}
 import ca.uwaterloo.flix.language.phase.typer.{ConstraintGen, ConstraintSolver, TypeContext}
 import ca.uwaterloo.flix.language.phase.unification.Substitution
 import ca.uwaterloo.flix.util.Validation.{mapN, traverse}
@@ -176,8 +176,9 @@ object Typer {
     val infTconstrs = context.getTypeConstraints
     val infResult = ConstraintSolver.InfResult(infTconstrs, tpe, eff, infRenv)
     val substVal = ConstraintSolver.visitDef(defn, infResult, renv0, tconstrs0, traitEnv, eqEnv, root)
-    mapN(substVal) {
-      case subst => TypeReconstruction.visitDef(defn, subst)
+    val assocVal = checkAssocTypes(defn.spec, tconstrs0, traitEnv)
+    mapN(substVal, assocVal) {
+      case (subst, _) => TypeReconstruction.visitDef(defn, subst)
     }
   }
 
@@ -372,4 +373,47 @@ object Typer {
   private def visitTypeParam(tparam: KindedAst.TypeParam, root: KindedAst.Root): TypedAst.TypeParam = tparam match {
     case KindedAst.TypeParam(name, sym, loc) => TypedAst.TypeParam(name, sym, loc)
   }
+
+
+  /**
+    * Verifies that all the associated types in the spec are resolvable, according to the declared type constraints.
+    */
+  private def checkAssocTypes(spec0: KindedAst.Spec, extraTconstrs: List[Ast.TypeConstraint], tenv: Map[Symbol.TraitSym, Ast.TraitContext])(implicit flix: Flix): Validation[Unit, TypeError] = {
+    def getAssocTypes(t: Type): List[Type.AssocType] = t match {
+      case Type.Var(_, _) => Nil
+      case Type.Cst(_, _) => Nil
+      case Type.Apply(tpe1, tpe2, _) => getAssocTypes(tpe1) ::: getAssocTypes(tpe2)
+      case Type.Alias(_, args, _, _) => args.flatMap(getAssocTypes) // TODO ASSOC-TYPES what to do about alias
+      case assoc: Type.AssocType => List(assoc)
+    }
+
+    spec0 match {
+      case KindedAst.Spec(_, _, _, tparams, fparams, _, tpe, eff, tconstrs, econstrs, _) =>
+        // get all the associated types in the spec
+        val tpes = fparams.map(_.tpe) ::: tpe :: eff :: econstrs.flatMap {
+          case Ast.EqualityConstraint(cst, tpe1, tpe2, _) =>
+            // Kind is irrelevant for our purposes
+            List(Type.AssocType(cst, tpe1, Kind.Wild, tpe1.loc), tpe2) // TODO ASSOC-TYPES better location for left
+        }
+
+        // check that they are all covered by the type constraints
+        Validation.traverseX(tpes.flatMap(getAssocTypes)) {
+          case Type.AssocType(Ast.AssocTypeConstructor(assocSym, _), arg@Type.Var(tvarSym1, _), _, loc) =>
+            val trtSym = assocSym.clazz
+            val matches = (extraTconstrs ::: tconstrs).flatMap(ConstraintSolver.withSupers(_, tenv)).exists {
+              case Ast.TypeConstraint(Ast.TypeConstraint.Head(tconstrSym, _), Type.Var(tvarSym2, _), _) =>
+                trtSym == tconstrSym && tvarSym1 == tvarSym2
+              case _ => false
+            }
+            if (matches) {
+              Validation.success(())
+            } else {
+              val renv = tparams.map(_.sym).foldLeft(RigidityEnv.empty)(_.markRigid(_))
+              Validation.toSoftFailure((), TypeError.MissingTraitConstraint(trtSym, arg, renv, loc))
+            }
+          case t => throw InternalCompilerException(s"illegal type: $t", t.loc)
+        }
+    }
+  }
+
 }

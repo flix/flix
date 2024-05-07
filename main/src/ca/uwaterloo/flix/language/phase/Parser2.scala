@@ -554,7 +554,7 @@ object Parser2 {
     val locAfter = currentSourceLocation()
     if (itemCount < 1) {
       val loc = SourceLocation.mk(locBefore.sp1, locAfter.sp1)
-      val error = ParseError(s"Expected one or more <$displayName>", SyntacticContext.Unknown, loc)
+      val error = ParseError(s"Expected one or more <$displayName>", context, loc)
       Some(error)
     } else {
       None
@@ -786,7 +786,7 @@ object Parser2 {
             case at =>
               val loc = currentSourceLocation()
               // Skip ahead until we hit another declaration or any CurlyR.
-              while (!nth(0).isFirstDecl && !eat(TokenKind.CurlyR) && !eof()) {
+              while (!nth(0).isFirstTrait && !eat(TokenKind.CurlyR) && !eof()) {
                 advance()
               }
               val error = ParseError(s"Expected ${TokenKind.KeywordType.display}, ${TokenKind.KeywordDef.display} or ${TokenKind.KeywordLaw.display} before ${at.display}", SyntacticContext.Decl.Trait, loc)
@@ -826,7 +826,7 @@ object Parser2 {
             case at =>
               val loc = currentSourceLocation()
               // Skip ahead until we hit another declaration or any CurlyR.
-              while (!nth(0).isFirstDecl && !eat(TokenKind.CurlyR) && !eof()) {
+              while (!nth(0).isFirstInstance && !eat(TokenKind.CurlyR) && !eof()) {
                 advance()
               }
               val error = ParseError(s"Expected ${TokenKind.KeywordType.display} or ${TokenKind.KeywordDef.display} before ${at.display}", SyntacticContext.Decl.Instance, loc)
@@ -905,6 +905,9 @@ object Parser2 {
       }
       if (at(TokenKind.KeywordWith)) {
         Type.constraints()
+      }
+      if (at(TokenKind.KeywordWhere)) {
+        equalityConstraints()
       }
       expect(TokenKind.Dot, SyntacticContext.Decl.OtherDecl)
       Expr.expression()
@@ -1492,7 +1495,8 @@ object Parser2 {
             var level = 1
             var curlyLevel = 0
             var lookAhead = 0
-            while (level > 0 && !eof()) {
+            val tokensLeft = s.tokens.length - s.position
+            while (level > 0 && lookAhead < tokensLeft && !eof()) {
               lookAhead += 1
               nth(lookAhead) match {
                 case TokenKind.ParenL => level += 1
@@ -1730,6 +1734,12 @@ object Parser2 {
             case TokenKind.ParenL => parenNestingLevel += 1; lookAhead += 1
             case TokenKind.ParenR => parenNestingLevel -= 1; lookAhead += 1
             case TokenKind.Eof => return closeWithError(mark, ParseError("Malformed match expression.", SyntacticContext.Expr.OtherExpr, currentSourceLocation()))
+            case t if t.isFirstDecl =>
+              // Advance past the erroneous region to the next stable token (the start of the declaration)
+                for (_ <- 0 until lookAhead) {
+                  advance()
+                }
+              return closeWithError(mark, ParseError(s"Expected match expression before ${t.display}", SyntacticContext.Expr.OtherExpr, previousSourceLocation()))
             case _ => lookAhead += 1
           }
         }
@@ -1859,21 +1869,22 @@ object Parser2 {
 
     private def forFragments()(implicit s: State): Unit = {
       assert(at(TokenKind.ParenL))
-      expect(TokenKind.ParenL, SyntacticContext.Expr.OtherExpr)
-      while (!at(TokenKind.ParenR) && !eof()) {
-        if (at(TokenKind.KeywordIf)) {
-          guardFragment()
-        } else {
-          generatorOrLetFragment()
-        }
-        if (!at(TokenKind.ParenR)) {
-          expect(TokenKind.Semi, SyntacticContext.Expr.OtherExpr)
-        }
-      }
-      expect(TokenKind.ParenR, SyntacticContext.Expr.OtherExpr)
+      oneOrMore(
+        displayName = "for-fragment",
+        checkForItem = t =>t.isFirstPattern || t == TokenKind.KeywordIf,
+        getItem = () =>
+          if (at(TokenKind.KeywordIf)) {
+            guardFragment()
+          } else {
+            generatorOrLetFragment()
+          },
+        breakWhen = t => t == TokenKind.KeywordYield || t.isRecoverExpr,
+        separator = TokenKind.Semi,
+        context = SyntacticContext.Expr.OtherExpr
+      )
     }
 
-    private def guardFragment()(implicit s: State): Unit = {
+    private def guardFragment()(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.KeywordIf))
       val mark = open()
       expect(TokenKind.KeywordIf, SyntacticContext.Expr.OtherExpr)
@@ -1881,7 +1892,7 @@ object Parser2 {
       close(mark, TreeKind.Expr.ForFragmentGuard)
     }
 
-    private def generatorOrLetFragment()(implicit s: State): Unit = {
+    private def generatorOrLetFragment()(implicit s: State): Mark.Closed = {
       val mark = open()
       Pattern.pattern()
       val isGenerator = eat(TokenKind.ArrowThinL)
@@ -3132,14 +3143,19 @@ object Parser2 {
     def body()(implicit s: State): Mark.Closed = {
       val mark = open()
       nth(0) match {
-        case TokenKind.KeywordIf => guard()
-        case TokenKind.KeywordLet => functional()
-        case TokenKind.KeywordNot | TokenKind.KeywordFix | TokenKind.NameUpperCase => atom()
+        case TokenKind.KeywordIf =>
+          guard()
+          close(mark, TreeKind.Predicate.Body)
+        case TokenKind.KeywordLet =>
+          functional()
+          close(mark, TreeKind.Predicate.Body)
+        case TokenKind.KeywordNot | TokenKind.KeywordFix | TokenKind.NameUpperCase =>
+          atom()
+          close(mark, TreeKind.Predicate.Body)
         case at =>
-          val error = ParseError(s"Expected ${TokenKind.KeywordIf.display}, ${TokenKind.KeywordLet.display}, ${TokenKind.KeywordNot.display}, ${TokenKind.KeywordFix} or ${TokenKind.NameUpperCase.display} before ${at.display}", SyntacticContext.Unknown, currentSourceLocation())
-          advanceWithError(error)
+          val error = ParseError(s"Expected ${TokenKind.KeywordIf.display}, ${TokenKind.KeywordLet.display}, ${TokenKind.KeywordNot.display}, ${TokenKind.KeywordFix.display} or ${TokenKind.NameUpperCase.display} before ${at.display}", SyntacticContext.Expr.Constraint, currentSourceLocation())
+          closeWithError(mark, error)
       }
-      close(mark, TreeKind.Predicate.Body)
     }
 
     private def guard()(implicit s: State): Mark.Closed = {

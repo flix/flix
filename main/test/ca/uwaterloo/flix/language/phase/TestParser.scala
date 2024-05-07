@@ -367,6 +367,42 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
     expectMain(result)
   }
 
+  test("BadForFragments.01") {
+    val input =
+      """
+        |def foo(): Int32 =
+        |    forA ( x <- bar(); y <- baz() yield ???
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("BadForFragments.02") {
+    val input =
+      """
+        |def foo(): Int32 =
+        |    forA ( x <- bar(); y <- baz(); yield ???
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("BadForFragments.03") {
+    val input =
+      """
+        |def foo(): Int32 =
+        |    forA ( x <- bar(), y <- baz() yield ???
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
   test("BadIfThenElse.01") {
     val input =
       """
@@ -453,6 +489,17 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
     expectMain(result)
   }
 
+  test("BadMatch.02") {
+    val input =
+      """
+        |def map(t: Int32): Int32 = match t
+        |def main(): Int32 = 123
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
   test("BadType.01") {
     val input =
       """
@@ -522,6 +569,20 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
     expectMain(result)
   }
 
+  test("BadConstraintSet.01") {
+    val input =
+      """
+        |def baz(): #{ Path(Int32, Int32) } = #{
+        |    Edge(1, 2).
+        |    Path(x, y) :-
+        |}
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
   test("LetMatchNoStatement.01") {
     val input =
       """
@@ -542,6 +603,33 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |def foo(): Unit \ IO =
         |    def bar(): Int32 = 123
         |def main(): Int32 = 456
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("MissingWithBody.01") {
+    val input =
+      """
+        |def foo(): Bool =
+        |    let result = try {
+        |        mutual1(10)
+        |    } with AskTell ;
+        |    Assert.eq(Some(84), result)
+        |def main(): Int32 = 123
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("MissingCatchBody.01") {
+    val input =
+      """
+        |def foo(): Bool =
+        |    try { true } catch
+        |def main(): Int32 = 123
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
     expectErrorOnCheck[ParseError](result)
