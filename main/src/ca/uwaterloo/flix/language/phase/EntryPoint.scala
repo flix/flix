@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{Ast, RigidityEnv, Scheme, SourceLocation, Symbol, Type, TypedAst}
-import ca.uwaterloo.flix.language.dbg.AstPrinter
+import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.language.errors.EntryPointError
 import ca.uwaterloo.flix.language.phase.unification.TraitEnvironment
 import ca.uwaterloo.flix.util.Validation.{flatMapN, mapN}
@@ -64,7 +64,7 @@ object EntryPoint {
   /**
     * Introduces a new function `main%` which calls the entry point (if any).
     */
-  def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, EntryPointError] = flix.phaseValidation("EntryPoint")(AstPrinter.printTypedAst) {
+  def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, EntryPointError] = flix.phase("EntryPoint") {
     flatMapN(findOriginalEntryPoint(root)) {
       // Case 1: We have an entry point. Wrap it.
       case Some(entryPoint0) =>
@@ -79,7 +79,7 @@ object EntryPoint {
       // Case 2: No entry point. Don't touch anything.
       case None => Validation.success(root.copy(reachable = getReachable(root)))
     }
-  }
+  }(DebugValidation())
 
   /**
    * Returns all reachable definitions.

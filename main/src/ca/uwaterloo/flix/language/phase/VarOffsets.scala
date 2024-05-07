@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ReducedAst._
 import ca.uwaterloo.flix.language.ast.{MonoType, Symbol}
-import ca.uwaterloo.flix.language.dbg.AstPrinter
+import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugReducedAst
 import ca.uwaterloo.flix.util.ParOps
 
 import scala.annotation.tailrec
@@ -37,7 +37,7 @@ object VarOffsets {
   /**
     * Assigns a stack offset to each variable symbol in the program.
     */
-  def run(root: Root)(implicit flix: Flix): Root = flix.phase("VarOffsets")(AstPrinter.printReducedAst) {
+  def run(root: Root)(implicit flix: Flix): Root = flix.phase("VarOffsets") {
     ParOps.parMapValues(root.defs)(visitDef)
 
     root

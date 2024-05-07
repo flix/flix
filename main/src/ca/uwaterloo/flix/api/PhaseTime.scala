@@ -16,6 +16,6 @@
 package ca.uwaterloo.flix.api
 
 /**
-  * A case class to track the compile time spent in a phase and its sub-phases.
+  * A case class to track the compile time spent in a compiler phase.
   */
-case class PhaseTime(phase: String, time: Long, subphases: List[(String, Long)])
+case class PhaseTime(phase: String, time: Long)

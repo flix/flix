@@ -7,7 +7,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.language.dbg.AstPrinter
+import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.language.errors.SafetyError._
 import ca.uwaterloo.flix.util.{ParOps, Validation}
@@ -29,7 +29,7 @@ object Safety {
   /**
     * Performs safety and well-formedness checks on the given AST `root`.
     */
-  def run(root: Root)(implicit flix: Flix): Validation[Root, SafetyError] = flix.phaseValidation("Safety")(AstPrinter.printTypedAst) {
+  def run(root: Root)(implicit flix: Flix): Validation[Root, SafetyError] = flix.phase("Safety") {
     //
     // Collect all errors.
     //
@@ -44,7 +44,7 @@ object Safety {
     // Check if any errors were found.
     //
     Validation.toSuccessOrSoftFailure(root, errors)
-  }
+  }(DebugValidation())
 
   /**
     * Checks that no type parameters for types that implement `Sendable` of kind `Region`

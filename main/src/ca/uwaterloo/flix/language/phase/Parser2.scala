@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.SyntacticContext
 import ca.uwaterloo.flix.language.ast.SyntaxTree.TreeKind
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.language.errors.{ParseError, WeederError}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
@@ -125,7 +126,7 @@ object Parser2 {
       return Validation.success(SyntaxTree.empty)
     }
 
-    flix.phaseNoPrinter("Parser2") {
+    flix.phase("Parser2") {
       // Compute the stale and fresh sources.
       val (stale, fresh) = changeSet.partition(tokens, oldRoot.units)
 
@@ -138,7 +139,7 @@ object Parser2 {
       mapN(sequence(refreshed)) {
         refreshed => SyntaxTree.Root(refreshed.toMap ++ fresh)
       }
-    }
+    }(DebugValidation()(DebugNoOp()))
   }
 
   private def parse(src: Ast.Source, tokens: Array[Token]): Validation[SyntaxTree.Tree, CompilationMessage] = {

@@ -20,68 +20,83 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.Flix.{IrFileExtension, IrFileIndentation, IrFileWidth}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.dbg.printer._
-import ca.uwaterloo.flix.language.phase._
-import ca.uwaterloo.flix.language.phase.jvm.JvmBackend
-import ca.uwaterloo.flix.util.collection.Bimap
+import ca.uwaterloo.flix.util.tc.Debug
 import ca.uwaterloo.flix.util.{FileOps, InternalCompilerException, Validation}
 
 import java.nio.file.{Files, LinkOption, Path}
 
 object AstPrinter {
 
-  def printParsedAst(phase: String, root: ParsedAst.Root)(implicit flix: Flix): Unit = {
-    writeToDisk(phase, "Not yet implemented")
+  case class DebugNoOp[T]() extends Debug[T] {
+    override def emit(phase: String, root: T)(implicit flix: Flix): Unit =
+      writeToDisk(phase, "Not yet implemented")
   }
 
-  def printWeededAst(phase: String, root: WeededAst.Root)(implicit flix: Flix): Unit = {
-    writeToDisk(phase, "Not yet implemented")
+  implicit object DebugParsedAst extends Debug[ParsedAst.Root] {
+    override def emit(phase: String, root: ParsedAst.Root)(implicit flix: Flix): Unit =
+      writeToDisk(phase, "Not yet implemented")
   }
 
-  def printDesugaredAst(phase: String, root: DesugaredAst.Root)(implicit flix: Flix): Unit = {
-    writeToDisk(phase, "Not yet implemented")
+  implicit object DebugWeededAst extends Debug[WeededAst.Root] {
+    override def emit(phase: String, root: WeededAst.Root)(implicit flix: Flix): Unit =
+      writeToDisk(phase, "Not yet implemented")
   }
 
-  def printNamedAst(phase: String, root: NamedAst.Root)(implicit flix: Flix): Unit = {
-    writeToDisk(phase, "Not yet implemented")
+  implicit object DebugDesugaredAst extends Debug[DesugaredAst.Root] {
+    override def emit(phase: String, root: DesugaredAst.Root)(implicit flix: Flix): Unit =
+      writeToDisk(phase, "Not yet implemented")
   }
 
-  def printResolvedAst(phase: String, root: ResolvedAst.Root)(implicit flix: Flix): Unit = {
-    writeToDisk(phase, "Not yet implemented")
+  implicit object DebugNamedAst extends Debug[NamedAst.Root] {
+    override def emit(phase: String, root: NamedAst.Root)(implicit flix: Flix): Unit =
+      writeToDisk(phase, "Not yet implemented")
   }
 
-  def printKindedAst(phase: String, root: KindedAst.Root)(implicit flix: Flix): Unit = {
-    writeToDisk(phase, "Not yet implemented")
+  implicit object DebugResolvedAst extends Debug[ResolvedAst.Root] {
+    override def emit(phase: String, root: ResolvedAst.Root)(implicit flix: Flix): Unit =
+      writeToDisk(phase, "Not yet implemented")
   }
 
-  def printTypedAst(phase: String, root: TypedAst.Root)(implicit flix: Flix): Unit = {
-    printDocProgram(phase, TypedAstPrinter.print(root))
+  implicit object DebugKindedAst extends Debug[KindedAst.Root] {
+    override def emit(phase: String, root: KindedAst.Root)(implicit flix: Flix): Unit =
+      writeToDisk(phase, "Not yet implemented")
   }
 
-  def printLoweredAst(phase: String, root: LoweredAst.Root)(implicit flix: Flix): Unit = {
-    printDocProgram(phase, LoweredAstPrinter.print(root))
+  implicit object DebugTypedAst extends Debug[TypedAst.Root] {
+    override def emit(phase: String, root: TypedAst.Root)(implicit flix: Flix): Unit =
+      printDocProgram(phase, TypedAstPrinter.print(root))
   }
 
-  def printMonoAst(phase: String, root: MonoAst.Root)(implicit flix: Flix): Unit = {
-    writeToDisk(phase, "Not yet implemented")
+  implicit object DebugSimplifiedAst extends Debug[SimplifiedAst.Root] {
+    override def emit(phase: String, root: SimplifiedAst.Root)(implicit flix: Flix): Unit =
+      printDocProgram(phase, SimplifiedAstPrinter.print(root))
   }
 
-  def printSimplifiedAst(phase: String, root: SimplifiedAst.Root)(implicit flix: Flix): Unit = {
-    printDocProgram(phase, SimplifiedAstPrinter.print(root))
+  implicit object DebugLoweredAst extends Debug[LoweredAst.Root] {
+    override def emit(phase: String, root: LoweredAst.Root)(implicit flix: Flix): Unit =
+      printDocProgram(phase, LoweredAstPrinter.print(root))
   }
 
-  def printLiftedAst(phase: String, root: LiftedAst.Root)(implicit flix: Flix): Unit = {
-    printDocProgram(phase, LiftedAstPrinter.print(root))
+  implicit object DebugLiftedAst extends Debug[LiftedAst.Root] {
+    override def emit(phase: String, root: LiftedAst.Root)(implicit flix: Flix): Unit =
+      printDocProgram(phase, LiftedAstPrinter.print(root))
   }
 
-  def printReducedAst(phase: String, root: ReducedAst.Root)(implicit flix: Flix): Unit = {
-    printDocProgram(phase, ReducedAstPrinter.print(root))
+  implicit object DebugMonoAst extends Debug[MonoAst.Root] {
+    override def emit(phase: String, root: MonoAst.Root)(implicit flix: Flix): Unit =
+      writeToDisk(phase, "Not yet implemented")
   }
 
-  def inValidation[A, E, T](f: (String, A) => T): (String, Validation[A, E]) => Unit = {
-    (s: String, v: Validation[A, E]) => {
-      Validation.mapN(v)(f(s, _))
-      ()
-    }
+  implicit object DebugReducedAst extends Debug[ReducedAst.Root] {
+    override def emit(phase: String, root: ReducedAst.Root)(implicit flix: Flix): Unit =
+      printDocProgram(phase, ReducedAstPrinter.print(root))
+  }
+
+  case class DebugValidation[T, E]()(implicit d: Debug[T]) extends Debug[Validation[T, E]] {
+    override def emit(phase: String, v: Validation[T, E])(implicit flix: Flix): Unit =
+      Validation.mapN(v) {
+        case x => d.emit(phase, x)
+      }
   }
 
   private def printDocProgram(phase: String, dast: DocAst.Program)(implicit flix: Flix): Unit = {
