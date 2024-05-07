@@ -1591,15 +1591,15 @@ object Weeder2 {
         traverse(maybeWith)(visitTryWithBody),
       ) {
         // Bad case: try expr
-        case (expr, Nil, Nil) => Validation.toSoftFailure(
-          Expr.TryCatch(expr, List.empty, tree.loc),
-          ParseError(s"Missing `catch` on try-catch expression", SyntacticContext.Expr.OtherExpr, tree.loc)
-        )
+        case (expr, Nil, Nil) =>
+          val error = ParseError(s"Expected ${TokenKind.KeywordCatch.display} or ${TokenKind.KeywordWith.display}", SyntacticContext.Expr.OtherExpr, tree.loc)
+          // Fall back on Expr.Error, Parser has already reported an error.
+          Validation.success( Expr.Error(error))
         // Bad case: try expr catch { rules... } with eff { handlers... }
-        case (expr, _ :: _, _ :: _) => Validation.toSoftFailure(
-          Expr.TryCatch(expr, List.empty, tree.loc),
-          ParseError(s"Cannot use both `catch` and `with` on try-catch expression", SyntacticContext.Expr.OtherExpr, tree.loc)
-        )
+        case (expr, _ :: _, _ :: _) =>
+          val error = ParseError(s"Cannot use both ${TokenKind.KeywordCatch.display} and ${TokenKind.KeywordWith.display} on ${TokenKind.KeywordTry.display}", SyntacticContext.Expr.OtherExpr, tree.loc)
+          // Fall back on Expr.Error, Parser has already reported an error.
+          Validation.success( Expr.Error(error))
         // Case: try expr catch { rules... }
         case (expr, catches, Nil) => Validation.success(Expr.TryCatch(expr, catches.flatten, tree.loc))
         // Case: try expr with eff { handlers... }
