@@ -69,7 +69,7 @@ object JvmOps {
     case MonoType.RecordEmpty => JvmType.Reference(BackendObjType.Record.jvmName)
     case MonoType.RecordExtend(_, _, _) => JvmType.Reference(BackendObjType.Record.jvmName)
     case MonoType.Enum(_) => JvmType.Object
-    case MonoType.Arrow(_, _) => getFunctionInterfaceType(tpe)
+    case MonoType.Arrow(_, _, _) => getFunctionInterfaceType(tpe)
     case MonoType.Native(clazz) => JvmType.Reference(JvmName.ofClass(clazz))
   }
 
@@ -92,7 +92,7 @@ object JvmOps {
       case Int64 => JvmType.PrimLong
       case Void | AnyType | Unit | BigDecimal | BigInt | String | Regex |
            Region | Array(_) |Lazy(_) | Ref(_) | Tuple(_) | Enum(_) |
-           Arrow(_, _) | RecordEmpty |RecordExtend(_, _, _) | Native(_) =>
+           Arrow(_, _, _) | RecordEmpty |RecordExtend(_, _, _) | Native(_) =>
         JvmType.Object
     }
   }
@@ -116,7 +116,7 @@ object JvmOps {
       case Native(clazz) if clazz == classOf[Object] => JvmType.Object
       case Void | AnyType | Unit | BigDecimal | BigInt | String | Regex |
            Region | Array(_) | Lazy(_) | Ref(_) | Tuple(_) | Enum(_) |
-           Arrow(_, _) | RecordEmpty | RecordExtend(_, _, _) | Native(_) =>
+           Arrow(_, _, _) | RecordEmpty | RecordExtend(_, _, _) | Native(_) =>
         throw InternalCompilerException(s"Unexpected type $tpe", SourceLocation.Unknown)
     }
   }
@@ -132,7 +132,7 @@ object JvmOps {
     * NB: The given type `tpe` must be an arrow type.
     */
   def getFunctionInterfaceType(tpe: MonoType): JvmType.Reference = tpe match {
-    case MonoType.Arrow(targs, tresult) =>
+    case MonoType.Arrow(targs, tresult, _) =>
       val arrowType = BackendObjType.Arrow(targs.map(BackendType.toErasedBackendType), BackendType.asErasedBackendType(tresult))
       JvmType.Reference(arrowType.jvmName)
     case _ =>
@@ -150,7 +150,7 @@ object JvmOps {
     * NB: The given type `tpe` must be an arrow type.
     */
   def getClosureAbstractClassType(tpe: MonoType): JvmType.Reference = tpe match {
-    case MonoType.Arrow(targs, tresult) =>
+    case MonoType.Arrow(targs, tresult, _) =>
       getClosureAbstractClassType(targs.map(getErasedJvmType), asErasedJvmType(tresult))
     case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.", SourceLocation.Unknown)
   }
@@ -324,7 +324,7 @@ object JvmOps {
     */
   def getErasedArrowsOf(types: Iterable[MonoType]): Set[BackendObjType.Arrow] =
     types.foldLeft(Set.empty[BackendObjType.Arrow]) {
-      case (acc, MonoType.Arrow(args, result)) =>
+      case (acc, MonoType.Arrow(args, result, _)) =>
         acc + BackendObjType.Arrow(args.map(BackendType.toErasedBackendType), BackendType.toErasedBackendType(result))
       case (acc, _) => acc
     }

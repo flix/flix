@@ -203,7 +203,7 @@ object Eraser {
       case Ref(tpe) => Ref(erase(tpe))
       case Tuple(elms) => Tuple(elms.map(erase))
       case MonoType.Enum(sym) => MonoType.Enum(sym)
-      case Arrow(args, result) => Arrow(args.map(visitType), box(result))
+      case Arrow(args, result, purity) => Arrow(args.map(visitType), box(result), purity)
       case RecordEmpty => RecordEmpty
       case RecordExtend(label, value, rest) => RecordExtend(label, erase(value), visitType(rest))
       case Native(clazz) => Native(clazz)
@@ -223,7 +223,7 @@ object Eraser {
       case Int64 => Int64
       case Void |AnyType | Unit | BigDecimal | BigInt | String | Regex |
            Region | Array(_) | Lazy(_) | Ref(_) | Tuple(_) | MonoType.Enum(_) |
-           Arrow(_, _) | RecordEmpty | RecordExtend(_, _, _) | Native(_) =>
+           Arrow(_, _, _) | RecordEmpty | RecordExtend(_, _, _) | Native(_) =>
         MonoType.Object
     }
   }

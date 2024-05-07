@@ -117,10 +117,10 @@ object GenAnonymousClasses {
     * Method
     */
   private def compileMethod(currentClass: JvmType.Reference, method: JvmMethod, cloName: String, classVisitor: ClassWriter, obj: AnonClass): Unit = method match {
-    case JvmMethod(ident, fparams, _, tpe, _, loc) =>
+    case JvmMethod(ident, fparams, _, tpe, purity, loc) =>
       val args = fparams.map(_.tpe)
       val boxedResult = MonoType.Object
-      val arrowType = MonoType.Arrow(args, boxedResult)
+      val arrowType = MonoType.Arrow(args, boxedResult, purity)
       val closureAbstractClass = JvmOps.getClosureAbstractClassType(arrowType)
       val functionInterface = JvmOps.getFunctionInterfaceType(arrowType)
 

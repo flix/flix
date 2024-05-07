@@ -203,7 +203,7 @@ object Reducer {
       val paramTypes = op.fparams.map(_.tpe)
       val resType = op.tpe
       val continuationType = MonoType.Object
-      val correctedFunctionType = MonoType.Arrow(paramTypes :+ continuationType, resType)
+      val correctedFunctionType = MonoType.Arrow(paramTypes :+ continuationType, resType, Purity.ControlImpure)
       correctedFunctionType
   }
 
@@ -227,7 +227,7 @@ object Reducer {
           case Lazy(elm) => taskList.enqueue(elm)
           case Ref(elm) => taskList.enqueue(elm)
           case Tuple(elms) => taskList.enqueueAll(elms)
-          case Arrow(targs, tresult) => taskList.enqueueAll(targs).enqueue(tresult)
+          case Arrow(targs, tresult, _) => taskList.enqueueAll(targs).enqueue(tresult)
           case RecordExtend(_, value, rest) => taskList.enqueue(value).enqueue(rest)
         }
         nestedTypesOf(acc + tpe, taskList1)

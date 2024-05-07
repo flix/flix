@@ -103,7 +103,7 @@ object Simplifier {
         case AtomicOp.Spawn =>
           // Wrap the expression in a closure: () -> tpe \ ef
           val List(e1, e2) = es
-          val lambdaTyp = MonoType.Arrow(List(MonoType.Unit), e1.tpe)
+          val lambdaTyp = MonoType.Arrow(List(MonoType.Unit), e1.tpe, Purity.Pure)
           val fp = SimplifiedAst.FormalParam(Symbol.freshVarSym("_spawn", BoundBy.FormalParam, loc), Ast.Modifiers.Empty, MonoType.Unit, loc)
           val lambdaExp = SimplifiedAst.Expr.Lambda(List(fp), e1, lambdaTyp, loc)
           val t = visitType(tpe)
@@ -112,7 +112,7 @@ object Simplifier {
         case AtomicOp.Lazy =>
           // Wrap the expression in a closure: () -> tpe \ Pure
           val e = es.head
-          val lambdaTyp = MonoType.Arrow(List(MonoType.Unit), e.tpe)
+          val lambdaTyp = MonoType.Arrow(List(MonoType.Unit), e.tpe, Purity.Pure)
           val fp = SimplifiedAst.FormalParam(Symbol.freshVarSym("_lazy", BoundBy.FormalParam, loc), Ast.Modifiers.Empty, MonoType.Unit, loc)
           val lambdaExp = SimplifiedAst.Expr.Lambda(List(fp), e, lambdaTyp, loc)
           val t = visitType(tpe)
@@ -221,9 +221,10 @@ object Simplifier {
       throw InternalCompilerException(s"Unexpected expression: $exp0.", loc)
   }
 
-  private def visitType(tpe: Type)(implicit flix: Flix): MonoType = {
+  private def visitType(tpe: Type)(implicit flix: Flix, universe: Set[Symbol.EffectSym]): MonoType = {
     val base = tpe.typeConstructor
-    val args = tpe.typeArguments.map(visitType)
+    val targs = tpe.typeArguments
+    val args = targs.map(visitType)
 
     base match {
       case None => tpe match {
@@ -290,7 +291,7 @@ object Simplifier {
 
           case TypeConstructor.Tuple(_) => MonoType.Tuple(args)
 
-          case TypeConstructor.Arrow(_) => MonoType.Arrow(args.drop(1).init, args.last) // Erase the purity
+          case TypeConstructor.Arrow(_) => MonoType.Arrow(args.drop(1).init, args.last, simplifyEffect(targs.head))
 
           case TypeConstructor.RecordRowExtend(label) => MonoType.RecordExtend(label.name, args.head, args(1))
 
@@ -334,7 +335,7 @@ object Simplifier {
     }
   }
 
-  private def visitFormalParam(p: MonoAst.FormalParam)(implicit flix: Flix): SimplifiedAst.FormalParam = {
+  private def visitFormalParam(p: MonoAst.FormalParam)(implicit flix: Flix, universe: Set[Symbol.EffectSym]): SimplifiedAst.FormalParam = {
     val t = visitType(p.tpe)
     SimplifiedAst.FormalParam(p.sym, p.mod, t, p.loc)
   }
@@ -347,7 +348,7 @@ object Simplifier {
       SimplifiedAst.JvmMethod(ident, fparams, exp, rt, simplifyEffect(eff), loc)
   }
 
-  private def pat2exp(pat0: MonoAst.Pattern)(implicit flix: Flix): SimplifiedAst.Expr = pat0 match {
+  private def pat2exp(pat0: MonoAst.Pattern)(implicit flix: Flix, universe: Set[Symbol.EffectSym]): SimplifiedAst.Expr = pat0 match {
     case MonoAst.Pattern.Cst(cst, tpe, loc) =>
       val t = visitType(tpe)
       SimplifiedAst.Expr.Cst(cst, t, loc)
