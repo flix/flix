@@ -47,7 +47,7 @@ object Parser {
     * Parses the given source inputs into an abstract syntax tree.
     */
   def run(root: ReadAst.Root, entryPoint: Option[Symbol.DefnSym], oldRoot: ParsedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[ParsedAst.Root, CompilationMessage] =
-    flix.phase("Parser")(AstPrinter.inValidation[ParsedAst.Root, CompilationMessage](AstPrinter.printParsedAst)) {
+    flix.phaseValidation("Parser")(AstPrinter.printParsedAst) {
 
       // Compute the stale and fresh sources.
       val (stale, fresh) = changeSet.partition(root.sources, oldRoot.units)

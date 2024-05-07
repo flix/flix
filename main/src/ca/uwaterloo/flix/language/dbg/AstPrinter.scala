@@ -77,7 +77,7 @@ object AstPrinter {
     printDocProgram(phase, ReducedAstPrinter.print(root))
   }
 
-  def inValidation[A, E](f: (String, A) => Unit): (String, Validation[A, E]) => Unit = {
+  def inValidation[A, E, T](f: (String, A) => T): (String, Validation[A, E]) => Unit = {
     (s: String, v: Validation[A, E]) => {
       Validation.mapN(v)(f(s, _))
       ()

@@ -32,7 +32,7 @@ import ca.uwaterloo.flix.util.{ParOps, Validation}
   */
 object Deriver {
 
-  def run(root: KindedAst.Root)(implicit flix: Flix): Validation[KindedAst.Root, DerivationError] = flix.phase("Deriver")(AstPrinter.inValidation[KindedAst.Root, DerivationError](AstPrinter.printKindedAst)) {
+  def run(root: KindedAst.Root)(implicit flix: Flix): Validation[KindedAst.Root, DerivationError] = flix.phaseValidation("Deriver")(AstPrinter.printKindedAst) {
     val derivedInstances = ParOps.parTraverse(root.enums.values)(getDerivedInstances(_, root))
 
     mapN(derivedInstances) {

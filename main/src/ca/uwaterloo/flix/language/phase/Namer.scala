@@ -35,7 +35,7 @@ object Namer {
   /**
     * Introduces unique names for each syntactic entity in the given `program`.
     * */
-  def run(program: DesugaredAst.Root)(implicit flix: Flix): Validation[NamedAst.Root, NameError] = flix.phase("Namer")(AstPrinter.inValidation[NamedAst.Root, NameError](AstPrinter.printNamedAst)) {
+  def run(program: DesugaredAst.Root)(implicit flix: Flix): Validation[NamedAst.Root, NameError] = flix.phaseValidation("Namer")(AstPrinter.printNamedAst) {
     // compute all the source locations
     val locations = program.units.values.foldLeft(Map.empty[Source, SourceLocation]) {
       case (macc, root) => macc + (root.loc.source -> root.loc)

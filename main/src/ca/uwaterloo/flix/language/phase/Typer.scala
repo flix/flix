@@ -31,7 +31,7 @@ object Typer {
   /**
     * Type checks the given AST root.
     */
-  def run(root: KindedAst.Root, oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[TypedAst.Root, TypeError] = flix.phase("Typer")(AstPrinter.inValidation[TypedAst.Root, TypeError](AstPrinter.printTypedAst)) {
+  def run(root: KindedAst.Root, oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[TypedAst.Root, TypeError] = flix.phaseValidation("Typer")(AstPrinter.printTypedAst) {
     val traitEnv = mkTraitEnv(root.traits, root.instances)
     val eqEnv = mkEqualityEnv(root.traits, root.instances)
 

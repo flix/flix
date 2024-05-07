@@ -46,7 +46,7 @@ object Stratifier {
   /**
     * Returns a stratified version of the given AST `root`.
     */
-  def run(root: Root)(implicit flix: Flix): Validation[Root, StratificationError] = flix.phase("Stratifier")(AstPrinter.inValidation[Root, StratificationError](AstPrinter.printTypedAst)) {
+  def run(root: Root)(implicit flix: Flix): Validation[Root, StratificationError] = flix.phaseValidation("Stratifier")(AstPrinter.printTypedAst) {
     implicit val g: LabelledPrecedenceGraph = root.precedenceGraph
     implicit val r: Root = root
 

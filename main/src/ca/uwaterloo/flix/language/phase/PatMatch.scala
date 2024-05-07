@@ -109,7 +109,7 @@ object PatMatch {
     * Returns an error message if a pattern match is not exhaustive
     */
   def run(root: TypedAst.Root)(implicit flix: Flix): Validation[Root, NonExhaustiveMatchError] =
-    flix.phase("PatMatch")(AstPrinter.inValidation[Root, NonExhaustiveMatchError](AstPrinter.printTypedAst)) {
+    flix.phaseValidation("PatMatch")(AstPrinter.printTypedAst) {
       implicit val r: TypedAst.Root = root
 
       val classDefExprs = root.traits.values.flatMap(_.sigs).flatMap(_.exp)

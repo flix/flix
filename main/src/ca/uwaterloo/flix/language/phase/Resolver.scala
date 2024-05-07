@@ -89,7 +89,7 @@ object Resolver {
   /**
     * Performs name resolution on the given program `root`.
     */
-  def run(root: NamedAst.Root, oldRoot: ResolvedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[ResolvedAst.Root, ResolutionError] = flix.phase("Resolver")(AstPrinter.inValidation[ResolvedAst.Root, ResolutionError](AstPrinter.printResolvedAst)) {
+  def run(root: NamedAst.Root, oldRoot: ResolvedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[ResolvedAst.Root, ResolutionError] = flix.phaseValidation("Resolver")(AstPrinter.printResolvedAst) {
 
 
     // Get the default uses.

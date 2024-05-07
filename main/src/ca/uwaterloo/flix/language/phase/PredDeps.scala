@@ -34,7 +34,7 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
   */
 object PredDeps {
 
-  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationMessage] = flix.phase("PredDeps")(AstPrinter.inValidation[Root, CompilationMessage](AstPrinter.printTypedAst)) {
+  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationMessage] = flix.phaseValidation("PredDeps")(AstPrinter.printTypedAst) {
     // Compute an over-approximation of the dependency graph for all constraints in the program.
     val defExps = root.defs.values.map(_.exp)
     val instanceExps = root.instances.values.flatten.flatMap(_.defs).map(_.exp)

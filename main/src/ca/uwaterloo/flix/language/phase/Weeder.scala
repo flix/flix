@@ -63,7 +63,7 @@ object Weeder {
     * Weeds the whole program.
     */
   def run(root: ParsedAst.Root, oldRoot: WeededAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[WeededAst.Root, WeederError] =
-    flix.phase("Weeder")(AstPrinter.inValidation[WeededAst.Root, WeederError](AstPrinter.printWeededAst)) {
+    flix.phaseValidation("Weeder")(AstPrinter.printWeededAst) {
       // Compute the stale and fresh sources.
       val (stale, fresh) = changeSet.partition(root.units, oldRoot.units)
 

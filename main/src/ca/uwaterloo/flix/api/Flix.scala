@@ -623,7 +623,7 @@ class Flix {
   /**
     * Enters the phase with the given name.
     */
-  def phase[A](phase: String)(printer: (String, A) => _)(f: => A): A = {
+  def phase[A, T](phase: String)(printer: (String, A) => T)(f: => A): A = {
     // Initialize the phase time object.
     currentPhase = PhaseTime(phase, 0, Nil)
 
@@ -652,7 +652,14 @@ class Flix {
     * Enters the phase with the given name.
     */
   def phaseNoPrinter[A](phase: String)(f: => A): A = {
-    this.phase[A](phase)((_, _) => ())(f)
+    this.phase[A, Unit](phase)((_, _) => ())(f)
+  }
+
+  /**
+    * Enters the phase with the given name.
+    */
+  def phaseValidation[A, E, T](phase: String)(printer: (String, A) => T)(f: => Validation[A, E]): Validation[A, E] = {
+    this.phase[Validation[A, E], Unit](phase)(AstPrinter.inValidation[A, E, T](printer))(f)
   }
 
   /**
