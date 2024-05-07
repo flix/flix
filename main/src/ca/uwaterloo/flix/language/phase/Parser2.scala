@@ -906,6 +906,9 @@ object Parser2 {
       if (at(TokenKind.KeywordWith)) {
         Type.constraints()
       }
+      if (at(TokenKind.KeywordWhere)) {
+        equalityConstraints()
+      }
       expect(TokenKind.Dot, SyntacticContext.Decl.OtherDecl)
       Expr.expression()
       close(mark, TreeKind.Decl.Law)
