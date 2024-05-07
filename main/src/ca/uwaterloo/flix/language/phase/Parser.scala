@@ -1487,7 +1487,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     def Primary: Rule1[ParsedAst.Type] = rule {
       // NB: Record must come before EffectSet as they overlap
       // NB: CaseComplement must come before Complement as they overlap
-      Arrow | Tuple | Record | RecordRow | Schema | SchemaRow | CaseSet | EffectSet | Not | CaseComplement | Complement |
+      Arrow | Tuple | Record | RecordRow | Schema | SchemaRow | CaseSet | EmptyEffectSet | EffectSet | Not | CaseComplement | Complement |
         Native | True | False | Pure | Univ | Var | Ambiguous
     }
 
@@ -1533,6 +1533,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def SchemaRow: Rule1[ParsedAst.Type] = rule {
       SP ~ atomic("#(") ~ optWS ~ zeroOrMore(RelPredicateWithTypes | LatPredicateWithTypes | PredicateWithAlias).separatedBy(optWS ~ "," ~ optWS) ~ optional(optWS ~ "|" ~ optWS ~ Names.Variable) ~ optWS ~ ")" ~ SP ~> ParsedAst.Type.SchemaRow
+    }
+
+    def EmptyEffectSet: Rule1[ParsedAst.Type] = rule {
+      SP ~ "/" ~ optWS ~ "{" ~ optWS ~ push(Nil) ~ "}" ~ SP ~> ParsedAst.Type.EffectSet
     }
 
     def EffectSet: Rule1[ParsedAst.Type] = rule {
