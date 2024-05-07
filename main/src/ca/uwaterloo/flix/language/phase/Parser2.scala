@@ -554,7 +554,7 @@ object Parser2 {
     val locAfter = currentSourceLocation()
     if (itemCount < 1) {
       val loc = SourceLocation.mk(locBefore.sp1, locAfter.sp1)
-      val error = ParseError(s"Expected one or more <$displayName>", SyntacticContext.Unknown, loc)
+      val error = ParseError(s"Expected one or more <$displayName>", context, loc)
       Some(error)
     } else {
       None
