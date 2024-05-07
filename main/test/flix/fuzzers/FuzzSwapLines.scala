@@ -50,6 +50,12 @@ class FuzzSwapLines extends AnyFunSuite with TestUtils {
     compileWithSwappedLines(filepath.getFileName.toString, lines)
   }
 
+  test("ford-fulkerson") {
+    val filepath = Paths.get("examples/larger-examples/datalog/ford-fulkerson.flix")
+    val lines = Files.lines(filepath)
+    compileWithSwappedLines(filepath.getFileName.toString, lines)
+  }
+
   /**
     * We compile variants of the given program where we swap [[numSwapLines]] lines.
     * For example, in a file with 100 lines and numSwapLines = 10, we try all swaps with 10 of the lines.

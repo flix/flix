@@ -46,6 +46,12 @@ class FuzzDeleteLines extends AnyFunSuite with TestUtils {
     compileAllLinesExceptOne(filepath.getFileName.toString, lines)
   }
 
+  test("ford-fulkerson") {
+    val filepath = Paths.get("examples/larger-examples/datalog/ford-fulkerson.flix")
+    val lines = Files.lines(filepath)
+    compileAllLinesExceptOne(filepath.getFileName.toString, lines)
+  }
+
   /**
     * We compile N variants of the given program where we omit a single line.
     * For example, in a file with 100 lines and N = 10 we make variants without line 1, 10, 20, and so on.

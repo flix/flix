@@ -522,6 +522,20 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
     expectMain(result)
   }
 
+  test("BadConstraintSet.01") {
+    val input =
+      """
+        |def baz(): #{ Path(Int32, Int32) } = #{
+        |    Edge(1, 2).
+        |    Path(x, y) :-
+        |}
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
   test("Regression.#7646") {
     val input =
       """
