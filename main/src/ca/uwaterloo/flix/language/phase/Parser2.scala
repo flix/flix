@@ -253,7 +253,7 @@ object Parser2 {
     val error = ParseError("Unclosed parser mark", SyntacticContext.Unknown, currentSourceLocation())
     s.events.append(Event.Open(TreeKind.ErrorTree(error)))
     // Consume any comments just before opening a new mark
-    comments(canStartOnDoc = consumeDocComments)
+    comments(consumeDocComments = consumeDocComments)
     mark
   }
 
@@ -617,17 +617,16 @@ object Parser2 {
     * In cases where doc-comments cannot occur (above expressions for instance), we would like to treat them as regular comments.
     * This is achieved by passing `canStartOnDoc = true`.
     */
-  private def comments(canStartOnDoc: Boolean = false)(implicit s: State): Unit = {
+  private def comments(consumeDocComments: Boolean = false)(implicit s: State): Unit = {
     // Note: In case of a misplaced CommentDoc, we would just like to consume it into the comment list.
     // This is forgiving in the common case of accidentally inserting an extra '/'.
-    val k = nth(0)
-    val atStart = if (canStartOnDoc) k.isComment else k.isCommentNonDoc
-    if (atStart) {
+    def atComment() = if (consumeDocComments) nth(0).isComment else nth(0).isCommentNonDoc
+    if (atComment()) {
       val mark = Mark.Opened(s.events.length)
       val error = ParseError("Unclosed parser mark.", SyntacticContext.Unknown, currentSourceLocation())
       s.events.append(Event.Open(TreeKind.ErrorTree(error)))
       // Note: This loop will also consume doc-comments that are preceded or surrounded by either line or block comments.
-      while (nth(0).isComment && !eof()) {
+      while (atComment() && !eof()) {
         advance()
       }
       close(mark, TreeKind.CommentList)
@@ -1165,12 +1164,21 @@ object Parser2 {
   }
 
   private object Expr {
-    def statement()(implicit s: State): Mark.Closed = {
+    /**
+      * Parse a statement, which is an expression optionally followed by a semi-colon and another expression.
+      * If mustHaveRhs is true, the right-hand-side expression is not treated as optional
+      */
+    def statement(rhsIsOptional: Boolean = true)(implicit s: State): Mark.Closed = {
       var lhs = expression()
       if (eat(TokenKind.Semi)) {
         statement()
         lhs = close(openBefore(lhs), TreeKind.Expr.Statement)
         lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+      } else if (!rhsIsOptional) {
+        // If no semi is found and it was required, produce an error.
+        // TODO: We can add a parse error hint as an argument to statement ala:
+        // "Add an expression after the let-binding like so: 'let x = <expr1>; <expr2>'"
+        expect(TokenKind.Semi, SyntacticContext.Expr.OtherExpr)
       }
       lhs
     }
@@ -1614,7 +1622,7 @@ object Parser2 {
         Type.ttype()
       }
       expect(TokenKind.Equal, SyntacticContext.Expr.OtherExpr)
-      statement()
+      statement(rhsIsOptional = false)
       close(mark, TreeKind.Expr.LetMatch)
     }
 
@@ -1630,7 +1638,7 @@ object Parser2 {
         Type.typeAndEffect()
       }
       expect(TokenKind.Equal, SyntacticContext.Expr.OtherExpr)
-      statement()
+      statement(rhsIsOptional = false)
       close(mark, TreeKind.Expr.LetRecDef)
     }
 
