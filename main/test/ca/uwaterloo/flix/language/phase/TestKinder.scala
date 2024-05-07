@@ -1023,7 +1023,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |}
         |
         |instance C[String] {
-        |    type T = Pure
+        |    type T = \ { }
         |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)

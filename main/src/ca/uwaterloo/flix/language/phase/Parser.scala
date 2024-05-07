@@ -1536,7 +1536,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def EmptyEffectSet: Rule1[ParsedAst.Type] = rule {
-      SP ~ "/" ~ optWS ~ "{" ~ optWS ~ push(Nil) ~ "}" ~ SP ~> ParsedAst.Type.EffectSet
+      SP ~ "\\" ~ optWS ~ "{" ~ optWS ~ push(Nil) ~ "}" ~ SP ~> ParsedAst.Type.EffectSet
     }
 
     def EffectSet: Rule1[ParsedAst.Type] = rule {

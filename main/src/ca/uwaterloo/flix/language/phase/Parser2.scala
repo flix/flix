@@ -2848,7 +2848,7 @@ object Parser2 {
         case TokenKind.HashParenL => schemaRowType()
         case TokenKind.NameJava => nativeType()
         case TokenKind.AngleL => caseSetType()
-        case TokenKind.Slash => emptyEffectSet()
+        case TokenKind.Backslash => emptyEffectSet()
         case TokenKind.KeywordNot
              | TokenKind.Tilde
              | TokenKind.KeywordRvnot => unaryType()
@@ -3062,9 +3062,9 @@ object Parser2 {
     }
 
     private def emptyEffectSet()(implicit s: State): Mark.Closed = {
-      assert(at(TokenKind.Slash))
+      assert(at(TokenKind.Backslash))
       val mark = open()
-      expect(TokenKind.Slash, SyntacticContext.Type.Eff)
+      expect(TokenKind.Backslash, SyntacticContext.Type.Eff)
        expect(TokenKind.CurlyL, SyntacticContext.Type.Eff)
       expect(TokenKind.CurlyR, SyntacticContext.Type.Eff)
       close(mark, TreeKind.Type.EffectSet)

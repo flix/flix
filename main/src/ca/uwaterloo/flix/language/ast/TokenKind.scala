@@ -368,7 +368,7 @@ sealed trait TokenKind {
          | TokenKind.KeywordNot
          | TokenKind.Tilde
          | TokenKind.KeywordRvnot
-         | TokenKind.Slash
+         | TokenKind.Backslash
          | TokenKind.KeywordStaticUppercase => true
     case _ => false
   }
