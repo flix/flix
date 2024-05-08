@@ -147,10 +147,6 @@ object Parser2 {
     root()
     // Build the syntax tree using events in state.
     val tree = buildTree()
-
-    if (src.name == "main/foo.flix") {
-      println(syntaxTreeToDebugString(tree))
-    }
     // Return with errors as soft failures to run subsequent phases for more validations.
     Validation.success(tree).withSoftFailures(s.errors)
   }
@@ -625,7 +621,6 @@ object Parser2 {
     // Note: In case of a misplaced CommentDoc, we would just like to consume it into the comment list.
     // This is forgiving in the common case of accidentally inserting an extra '/'.
     def atComment() = if (consumeDocComments) nth(0).isComment else nth(0).isCommentNonDoc
-
     if (atComment()) {
       val mark = Mark.Opened(s.events.length)
       val error = ParseError("Unclosed parser mark.", SyntacticContext.Unknown, currentSourceLocation())
