@@ -147,6 +147,10 @@ object Parser2 {
     root()
     // Build the syntax tree using events in state.
     val tree = buildTree()
+
+    if (src.name == "main/foo.flix") {
+      println(syntaxTreeToDebugString(tree))
+    }
     // Return with errors as soft failures to run subsequent phases for more validations.
     Validation.success(tree).withSoftFailures(s.errors)
   }
@@ -484,6 +488,7 @@ object Parser2 {
                           delimiterL: TokenKind = TokenKind.ParenL,
                           delimiterR: TokenKind = TokenKind.ParenR,
                           optionalSeparator: Boolean = false,
+                          allowTrailing: Boolean = false,
                           optionallyWith: Option[(TokenKind, () => Unit)] = None,
                           context: SyntacticContext
                         )(implicit s: State): Int = {
@@ -503,7 +508,7 @@ object Parser2 {
         numItems += 1
         if (!atEnd()) {
           if (optionalSeparator) eat(separator) else expect(separator, context)
-          if (atEnd()) {
+          if (!allowTrailing && atEnd()) {
             closeWithError(open(), ParseError(s"Trailing ${separator.display}", SyntacticContext.Unknown, previousSourceLocation()))
           }
         }
@@ -546,11 +551,12 @@ object Parser2 {
                  delimiterL: TokenKind = TokenKind.ParenL,
                  delimiterR: TokenKind = TokenKind.ParenR,
                  optionalSeparator: Boolean = false,
+                 allowTrailing: Boolean = false,
                  optionallyWith: Option[(TokenKind, () => Unit)] = None,
                  context: SyntacticContext
                )(implicit s: State): Option[ParseError] = {
     val locBefore = previousSourceLocation()
-    val itemCount = zeroOrMore(displayName, getItem, checkForItem, breakWhen, separator, delimiterL, delimiterR, optionalSeparator, optionallyWith, context)
+    val itemCount = zeroOrMore(displayName, getItem, checkForItem, breakWhen, separator, delimiterL, delimiterR, optionalSeparator, allowTrailing, optionallyWith, context)
     val locAfter = currentSourceLocation()
     if (itemCount < 1) {
       val loc = SourceLocation.mk(locBefore.sp1, locAfter.sp1)
@@ -2386,11 +2392,17 @@ object Parser2 {
     private def fixpointConstraintSetExpr()(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.HashCurlyL))
       val mark = open()
-      expect(TokenKind.HashCurlyL, SyntacticContext.Expr.Constraint)
-      while (!at(TokenKind.CurlyR) && !eof()) {
-        fixpointConstraint()
-      }
-      expect(TokenKind.CurlyR, SyntacticContext.Expr.Constraint)
+      zeroOrMore(
+        displayName = "constraint",
+        checkForItem = NAME_PREDICATE.contains,
+        getItem = fixpointConstraint,
+        context = SyntacticContext.Expr.Constraint,
+        delimiterL = TokenKind.HashCurlyL,
+        delimiterR = TokenKind.CurlyR,
+        separator = TokenKind.Dot,
+        breakWhen = _.isRecoverExpr,
+        allowTrailing = true
+      )
       close(mark, TreeKind.Expr.FixpointConstraintSet)
     }
 
@@ -2403,7 +2415,6 @@ object Parser2 {
           Predicate.body()
         }
       }
-      expect(TokenKind.Dot, SyntacticContext.Expr.Constraint)
       close(mark, TreeKind.Expr.FixpointConstraint)
     }
 
