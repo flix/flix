@@ -621,6 +621,7 @@ object Parser2 {
     // Note: In case of a misplaced CommentDoc, we would just like to consume it into the comment list.
     // This is forgiving in the common case of accidentally inserting an extra '/'.
     def atComment() = if (consumeDocComments) nth(0).isComment else nth(0).isCommentNonDoc
+
     if (atComment()) {
       val mark = Mark.Opened(s.events.length)
       val error = ParseError("Unclosed parser mark.", SyntacticContext.Unknown, currentSourceLocation())
@@ -719,10 +720,6 @@ object Parser2 {
     def declaration()(implicit s: State): Mark.Closed = {
       val mark = open(consumeDocComments = false)
       docComment()
-      // Handle case where the last thing in a file or module is a doc-comment
-      if (eof() || eat(TokenKind.CurlyR)) {
-        return close(mark, TreeKind.CommentList)
-      }
       // Handle modules
       if (at(TokenKind.KeywordMod)) {
         return moduleDecl(mark)
@@ -1736,9 +1733,9 @@ object Parser2 {
             case TokenKind.Eof => return closeWithError(mark, ParseError("Malformed match expression.", SyntacticContext.Expr.OtherExpr, currentSourceLocation()))
             case t if t.isFirstDecl =>
               // Advance past the erroneous region to the next stable token (the start of the declaration)
-                for (_ <- 0 until lookAhead) {
-                  advance()
-                }
+              for (_ <- 0 until lookAhead) {
+                advance()
+              }
               return closeWithError(mark, ParseError(s"Expected match expression before ${t.display}", SyntacticContext.Expr.OtherExpr, previousSourceLocation()))
             case _ => lookAhead += 1
           }
@@ -1871,7 +1868,7 @@ object Parser2 {
       assert(at(TokenKind.ParenL))
       oneOrMore(
         displayName = "for-fragment",
-        checkForItem = t =>t.isFirstPattern || t == TokenKind.KeywordIf,
+        checkForItem = t => t.isFirstPattern || t == TokenKind.KeywordIf,
         getItem = () =>
           if (at(TokenKind.KeywordIf)) {
             guardFragment()
