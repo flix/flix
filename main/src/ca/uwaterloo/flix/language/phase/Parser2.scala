@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.SyntacticContext
 import ca.uwaterloo.flix.language.ast.SyntaxTree.TreeKind
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.language.errors.{ParseError, WeederError}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
@@ -125,7 +126,7 @@ object Parser2 {
       return Validation.success(SyntaxTree.empty)
     }
 
-    flix.phaseNoPrinter("Parser2") {
+    flix.phase("Parser2") {
       // Compute the stale and fresh sources.
       val (stale, fresh) = changeSet.partition(tokens, oldRoot.units)
 
@@ -138,7 +139,7 @@ object Parser2 {
       mapN(sequence(refreshed)) {
         refreshed => SyntaxTree.Root(refreshed.toMap ++ fresh)
       }
-    }
+    }(DebugValidation()(DebugNoOp()))
   }
 
   private def parse(src: Ast.Source, tokens: Array[Token]): Validation[SyntaxTree.Tree, CompilationMessage] = {
@@ -455,6 +456,34 @@ object Parser2 {
   }
 
   /**
+    * Enumeration of possible separation modes between a list of items.
+    */
+  sealed trait Separation
+
+  object Separation {
+    /**
+      * Separator is required and will spawn an error if missing.
+      *
+      * @param separator     TokenKind to be used as separator.
+      * @param allowTrailing Whether to allow a trailing separator token.
+      */
+    case class Required(separator: TokenKind, allowTrailing: Boolean = false) extends Separation
+
+    /**
+      * Separator is optional and will *not* spawn an error if missing.
+      *
+      * @param separator     TokenKind to be used as separator.
+      * @param allowTrailing Whether to allow a trailing separator token.
+      */
+    case class Optional(separator: TokenKind, allowTrailing: Boolean = false) extends Separation
+
+    /**
+      * Separator is disallowed.
+      */
+    case object None extends Separation
+  }
+
+  /**
     * A helper function for parsing a number of items surrounded by delimiters and separated by some token.
     * Examples of language features that use [[zeroOrMore]]:
     * Tuples "(1, 2, 3)".
@@ -462,17 +491,16 @@ object Parser2 {
     * ParFieldFragments "par (x <- e1; y <- e2; z <- e3) yield ...".
     * and many many more...
     *
-    * @param displayName       The name of an item to be used in an error message. ie. "Expected <$displayName> before xyz".
-    * @param getItem           Function for parsing a single item.
-    * @param checkForItem      Function used to check if the next token indicates an item. getItem is only called when this returns true.
-    * @param breakWhen         Function for deciding if an unexpected token is in the recover set of the current context. If it is then parsing of items stops.
-    * @param separator         Token that separates each item.
-    * @param optionalSeparator If the separator is optional, a missing separator does not produce an error.
-    * @param delimiterL        The left delimiter.
-    * @param delimiterR        The right delimiter.
-    * @param optionallyWith    Used to parse a single rule before delimiterR but after all items if a specific token is found.
-    *                          For instance in a record operation "{ +x, -y, z = 3 | w }" we can parse the "| w" part with
-    *                          optionallyWith = Some((TokenKind.Bar, () => expression()))
+    * @param displayName    The name of an item to be used in an error message. ie. "Expected <$displayName> before xyz".
+    * @param getItem        Function for parsing a single item.
+    * @param checkForItem   Function used to check if the next token indicates an item. getItem is only called when this returns true.
+    * @param breakWhen      Function for deciding if an unexpected token is in the recover set of the current context. If it is then parsing of items stops.
+    * @param separation     Separation mode. Either required, optional or none.
+    * @param delimiterL     The left delimiter.
+    * @param delimiterR     The right delimiter.
+    * @param optionallyWith Used to parse a single rule before delimiterR but after all items if a specific token is found.
+    *                       For instance in a record operation "{ +x, -y, z = 3 | w }" we can parse the "| w" part with
+    *                       optionallyWith = Some((TokenKind.Bar, () => expression()))
     * @return The number of items successfully parsed.
     */
   private def zeroOrMore(
@@ -480,13 +508,11 @@ object Parser2 {
                           getItem: () => Mark.Closed,
                           checkForItem: TokenKind => Boolean,
                           breakWhen: TokenKind => Boolean,
-                          separator: TokenKind = TokenKind.Comma,
+                          context: SyntacticContext,
+                          separation: Separation = Separation.Required(TokenKind.Comma),
                           delimiterL: TokenKind = TokenKind.ParenL,
                           delimiterR: TokenKind = TokenKind.ParenR,
-                          optionalSeparator: Boolean = false,
-                          allowTrailing: Boolean = false,
-                          optionallyWith: Option[(TokenKind, () => Unit)] = None,
-                          context: SyntacticContext
+                          optionallyWith: Option[(TokenKind, () => Unit)] = None
                         )(implicit s: State): Int = {
     def atEnd(): Boolean = at(delimiterR) || optionallyWith.exists { case (indicator, _) => at(indicator) }
 
@@ -503,9 +529,19 @@ object Parser2 {
         getItem()
         numItems += 1
         if (!atEnd()) {
-          if (optionalSeparator) eat(separator) else expect(separator, context)
-          if (!allowTrailing && atEnd()) {
-            closeWithError(open(), ParseError(s"Trailing ${separator.display}", SyntacticContext.Unknown, previousSourceLocation()))
+          // Check for separator if needed.
+          separation match {
+            case Separation.Required(separator, _) => expect(separator, context)
+            case Separation.Optional(separator, _) => eat(separator)
+            case Separation.None =>
+          }
+          // Check for trailing separator if needed.
+          if (atEnd()) {
+            separation match {
+              case Separation.Required(separator, false) => closeWithError(open(), ParseError(s"Trailing ${separator.display}", context, previousSourceLocation()))
+              case Separation.Optional(separator, false) => closeWithError(open(), ParseError(s"Trailing ${separator.display}", context, previousSourceLocation()))
+              case _ =>
+            }
           }
         }
       } else {
@@ -515,7 +551,7 @@ object Parser2 {
           continue = false
         } else {
           // Otherwise eat one token and continue parsing next item.
-          val error = ParseError(s"Expected <$displayName>", SyntacticContext.Unknown, currentSourceLocation())
+          val error = ParseError(s"Expected <$displayName>", context, currentSourceLocation())
           advanceWithError(error)
         }
       }
@@ -546,16 +582,14 @@ object Parser2 {
                  getItem: () => Mark.Closed,
                  checkForItem: TokenKind => Boolean,
                  breakWhen: TokenKind => Boolean,
-                 separator: TokenKind = TokenKind.Comma,
+                 context: SyntacticContext,
+                 separation: Separation = Separation.Required(TokenKind.Comma),
                  delimiterL: TokenKind = TokenKind.ParenL,
                  delimiterR: TokenKind = TokenKind.ParenR,
-                 optionalSeparator: Boolean = false,
-                 allowTrailing: Boolean = false,
-                 optionallyWith: Option[(TokenKind, () => Unit)] = None,
-                 context: SyntacticContext
+                 optionallyWith: Option[(TokenKind, () => Unit)] = None
                )(implicit s: State): Option[ParseError] = {
     val locBefore = previousSourceLocation()
-    val itemCount = zeroOrMore(displayName, getItem, checkForItem, breakWhen, separator, delimiterL, delimiterR, optionalSeparator, allowTrailing, optionallyWith, context)
+    val itemCount = zeroOrMore(displayName, getItem, checkForItem, breakWhen, context, separation, delimiterL, delimiterR, optionallyWith)
     val locAfter = currentSourceLocation()
     if (itemCount < 1) {
       val loc = SourceLocation.mk(locBefore.sp1, locAfter.sp1)
@@ -757,14 +791,12 @@ object Parser2 {
       assert(at(TokenKind.KeywordMod))
       expect(TokenKind.KeywordMod, SyntacticContext.Decl.OtherDecl)
       name(NAME_MODULE, allowQualified = true, context = SyntacticContext.Decl.OtherDecl)
-      if (at(TokenKind.CurlyL)) {
-        expect(TokenKind.CurlyL, SyntacticContext.Decl.OtherDecl)
-        usesOrImports()
-        while (!at(TokenKind.CurlyR) && !eof()) {
-          declaration()
-        }
-        expect(TokenKind.CurlyR, SyntacticContext.Decl.OtherDecl)
+      expect(TokenKind.CurlyL, SyntacticContext.Decl.OtherDecl)
+      usesOrImports()
+      while (!at(TokenKind.CurlyR) && !eof()) {
+        declaration()
       }
+      expect(TokenKind.CurlyR, SyntacticContext.Decl.OtherDecl)
       close(mark, TreeKind.Decl.Module)
     }
 
@@ -1757,14 +1789,16 @@ object Parser2 {
         close(mark, TreeKind.Expr.LambdaMatch)
       } else {
         expression()
-        if (eat(TokenKind.CurlyL)) {
-          comments()
-          while (at(TokenKind.KeywordCase) && !eof()) {
-            matchRule()
-            eat(TokenKind.Comma)
-          }
-          expect(TokenKind.CurlyR, SyntacticContext.Expr.OtherExpr)
-        }
+        oneOrMore(
+          displayName = "match rule",
+          checkForItem = _ == TokenKind.KeywordCase,
+          getItem = matchRule,
+          breakWhen = _.isRecoverExpr,
+          delimiterL = TokenKind.CurlyL,
+          delimiterR = TokenKind.CurlyR,
+          separation = Separation.Optional(TokenKind.Comma),
+          context = SyntacticContext.Expr.OtherExpr
+        )
         close(mark, TreeKind.Expr.Match)
       }
     }
@@ -1788,13 +1822,16 @@ object Parser2 {
       val mark = open()
       expect(TokenKind.KeywordTypeMatch, SyntacticContext.Expr.OtherExpr)
       expression()
-      if (eat(TokenKind.CurlyL)) {
-        comments()
-        while (at(TokenKind.KeywordCase) && !eof()) {
-          typematchRule()
-        }
-        expect(TokenKind.CurlyR, SyntacticContext.Expr.OtherExpr)
-      }
+      oneOrMore(
+        displayName = "match rule",
+        checkForItem = _ == TokenKind.KeywordCase,
+        getItem = typematchRule,
+        breakWhen = _.isRecoverExpr,
+        delimiterL = TokenKind.CurlyL,
+        delimiterR = TokenKind.CurlyR,
+        separation = Separation.Optional(TokenKind.Comma),
+        context = SyntacticContext.Expr.OtherExpr
+      )
       close(mark, TreeKind.Expr.TypeMatch)
     }
 
@@ -1821,12 +1858,16 @@ object Parser2 {
         expect(TokenKind.KeywordChoose, SyntacticContext.Expr.OtherExpr)
       }
       expression()
-      expect(TokenKind.CurlyL, SyntacticContext.Expr.OtherExpr)
-      comments()
-      while (at(TokenKind.KeywordCase) && !eof()) {
-        matchRule()
-      }
-      expect(TokenKind.CurlyR, SyntacticContext.Expr.OtherExpr)
+      oneOrMore(
+        displayName = "match rule",
+        checkForItem = _ == TokenKind.KeywordCase,
+        getItem = matchRule,
+        breakWhen = _.isRecoverExpr,
+        delimiterL = TokenKind.CurlyL,
+        delimiterR = TokenKind.CurlyR,
+        separation = Separation.Optional(TokenKind.Comma),
+        context = SyntacticContext.Expr.OtherExpr
+      )
       close(mark, if (isStar) TreeKind.Expr.RestrictableChooseStar else TreeKind.Expr.RestrictableChoose)
     }
 
@@ -1834,10 +1875,8 @@ object Parser2 {
       assert(at(TokenKind.KeywordForA))
       val mark = open()
       expect(TokenKind.KeywordForA, SyntacticContext.Expr.OtherExpr)
-      if (at(TokenKind.ParenL)) {
-        // Note: Only generator patterns are allowed here. Weeder verifies this.
-        forFragments()
-      }
+      // Note: Only generator patterns are allowed here. Weeder verifies this.
+      forFragments()
       expect(TokenKind.KeywordYield, SyntacticContext.Expr.OtherExpr)
       expression()
       close(mark, TreeKind.Expr.ForApplicative)
@@ -1848,9 +1887,7 @@ object Parser2 {
       val mark = open()
       var kind: TreeKind = TreeKind.Expr.Foreach
       expect(TokenKind.KeywordForeach, SyntacticContext.Expr.OtherExpr)
-      if (at(TokenKind.ParenL)) {
-        forFragments()
-      }
+      forFragments()
       if (eat(TokenKind.KeywordYield)) {
         kind = TreeKind.Expr.ForeachYield
       }
@@ -1862,17 +1899,13 @@ object Parser2 {
       assert(at(TokenKind.KeywordForM))
       val mark = open()
       expect(TokenKind.KeywordForM, SyntacticContext.Expr.OtherExpr)
-      if (at(TokenKind.ParenL)) {
-        forFragments()
-      }
-      if (eat(TokenKind.KeywordYield)) {
-        expression()
-      }
+      forFragments()
+      expect(TokenKind.KeywordYield, SyntacticContext.Expr.OtherExpr)
+      expression()
       close(mark, TreeKind.Expr.ForMonadic)
     }
 
     private def forFragments()(implicit s: State): Unit = {
-      assert(at(TokenKind.ParenL))
       oneOrMore(
         displayName = "for-fragment",
         checkForItem = t => t.isFirstPattern || t == TokenKind.KeywordIf,
@@ -1883,7 +1916,7 @@ object Parser2 {
             generatorOrLetFragment()
           },
         breakWhen = t => t == TokenKind.KeywordYield || t.isRecoverExpr,
-        separator = TokenKind.Semi,
+        separation = Separation.Required(TokenKind.Semi),
         context = SyntacticContext.Expr.OtherExpr
       )
     }
@@ -2037,14 +2070,11 @@ object Parser2 {
         delimiterR = TokenKind.CurlyR,
         context = SyntacticContext.Expr.OtherExpr
       )
-      if (at(TokenKind.At)) {
-        scopeName()
-      }
+      scopeName()
       close(mark, TreeKind.Expr.LiteralArray)
     }
 
     private def scopeName()(implicit s: State): Mark.Closed = {
-      assert(at(TokenKind.At))
       val mark = open()
       expect(TokenKind.At, SyntacticContext.Expr.OtherExpr)
       expression()
@@ -2118,9 +2148,8 @@ object Parser2 {
     private def mapLiteralValue()(implicit s: State): Mark.Closed = {
       val mark = open()
       expression()
-      if (eat(TokenKind.ArrowThickR)) {
-        expression()
-      }
+      expect(TokenKind.ArrowThickR, SyntacticContext.Expr.OtherExpr)
+      expression()
       close(mark, TreeKind.Expr.LiteralMapKeyValueFragment)
     }
 
@@ -2129,9 +2158,7 @@ object Parser2 {
       val mark = open()
       expect(TokenKind.KeywordRef, SyntacticContext.Expr.OtherExpr)
       expression()
-      if (at(TokenKind.At)) {
-        scopeName()
-      }
+      scopeName()
       close(mark, TreeKind.Expr.Ref)
     }
 
@@ -2209,7 +2236,7 @@ object Parser2 {
         getItem = catchRule,
         checkForItem = _ == TokenKind.KeywordCase,
         breakWhen = _.isRecoverExpr,
-        optionalSeparator = true,
+        separation = Separation.Optional(TokenKind.Comma),
         delimiterL = TokenKind.CurlyL,
         delimiterR = TokenKind.CurlyR,
         context = SyntacticContext.Expr.OtherExpr
@@ -2223,12 +2250,10 @@ object Parser2 {
       val mark = open()
       expect(TokenKind.KeywordCase, SyntacticContext.Expr.OtherExpr)
       name(NAME_VARIABLE, context = SyntacticContext.Expr.OtherExpr)
-      if (eat(TokenKind.Colon)) {
-        name(NAME_JAVA, allowQualified = true, context = SyntacticContext.Expr.OtherExpr)
-      }
-      if (eat(TokenKind.ArrowThickR)) {
-        expression()
-      }
+      expect(TokenKind.Colon, SyntacticContext.Expr.OtherExpr)
+      name(NAME_JAVA, allowQualified = true, context = SyntacticContext.Expr.OtherExpr)
+      expect(TokenKind.ArrowThickR, SyntacticContext.Expr.OtherExpr)
+      expression()
       close(mark, TreeKind.Expr.TryCatchRuleFragment)
     }
 
@@ -2242,7 +2267,7 @@ object Parser2 {
         getItem = withRule,
         checkForItem = kind => kind == TokenKind.KeywordDef || kind.isComment,
         breakWhen = _.isRecoverExpr,
-        optionalSeparator = true,
+        separation = Separation.Optional(TokenKind.Comma),
         delimiterL = TokenKind.CurlyL,
         delimiterR = TokenKind.CurlyR,
         context = SyntacticContext.Expr.OtherExpr
@@ -2258,9 +2283,8 @@ object Parser2 {
       expect(TokenKind.KeywordDef, SyntacticContext.Expr.OtherExpr)
       name(Set(TokenKind.NameLowerCase), context = SyntacticContext.Expr.OtherExpr)
       Decl.parameters(SyntacticContext.Expr.OtherExpr)
-      if (eat(TokenKind.Equal)) {
-        expression()
-      }
+      expect(TokenKind.Equal, SyntacticContext.Expr.OtherExpr)
+      expression()
       close(mark, TreeKind.Expr.TryWithRuleFragment)
     }
 
@@ -2278,11 +2302,16 @@ object Parser2 {
       val mark = open()
       expect(TokenKind.KeywordNew, SyntacticContext.Expr.OtherExpr)
       Type.ttype()
-      expect(TokenKind.CurlyL, SyntacticContext.Expr.OtherExpr)
-      while (at(TokenKind.KeywordDef) && !eof()) {
-        jvmMethod()
-      }
-      expect(TokenKind.CurlyR, SyntacticContext.Expr.OtherExpr)
+      oneOrMore(
+        displayName = "JVM method",
+        checkForItem = t => t.isComment || t == TokenKind.KeywordDef,
+        getItem = jvmMethod,
+        breakWhen = _.isRecoverExpr,
+        delimiterL = TokenKind.CurlyL,
+        delimiterR = TokenKind.CurlyR,
+        separation = Separation.None,
+        context = SyntacticContext.Expr.OtherExpr
+      )
       close(mark, TreeKind.Expr.NewObject)
     }
 
@@ -2292,12 +2321,10 @@ object Parser2 {
       expect(TokenKind.KeywordDef, SyntacticContext.Expr.OtherExpr)
       name(NAME_JAVA, context = SyntacticContext.Expr.OtherExpr)
       Decl.parameters(SyntacticContext.Expr.OtherExpr)
-      if (eat(TokenKind.Colon)) {
-        Type.typeAndEffect()
-      }
-      if (eat(TokenKind.Equal)) {
-        Expr.statement()
-      }
+      expect(TokenKind.Colon, SyntacticContext.Expr.OtherExpr)
+      Type.typeAndEffect()
+      expect(TokenKind.Equal, SyntacticContext.Expr.OtherExpr)
+      Expr.statement()
       close(mark, TreeKind.Expr.JvmMethod)
     }
 
@@ -2314,6 +2341,8 @@ object Parser2 {
       expect(TokenKind.KeywordSelect, SyntacticContext.Expr.OtherExpr)
       expect(TokenKind.CurlyL, SyntacticContext.Expr.OtherExpr)
       comments()
+      // Note: We can't use zeroOrMore here because there's special semantics:
+      // The wildcard rule (case _ => ...) must be the last one.
       var continue = true
       while (continue && at(TokenKind.KeywordCase) && !eof()) {
         val ruleMark = open()
@@ -2351,9 +2380,7 @@ object Parser2 {
       val mark = open()
       expect(TokenKind.KeywordSpawn, SyntacticContext.Expr.OtherExpr)
       expression()
-      if (at(TokenKind.At)) {
-        scopeName()
-      }
+      scopeName()
       close(mark, TreeKind.Expr.Spawn)
     }
 
@@ -2366,7 +2393,7 @@ object Parser2 {
           displayName = "'pattern <- expression'",
           getItem = parYieldFragment,
           checkForItem = _.isFirstPattern,
-          separator = TokenKind.Semi,
+          separation = Separation.Required(TokenKind.Semi),
           breakWhen = kind => kind == TokenKind.KeywordYield || kind.isRecoverExpr,
           context = SyntacticContext.Expr.OtherExpr
         ) match {
@@ -2397,9 +2424,8 @@ object Parser2 {
         context = SyntacticContext.Expr.Constraint,
         delimiterL = TokenKind.HashCurlyL,
         delimiterR = TokenKind.CurlyR,
-        separator = TokenKind.Dot,
+        separation = Separation.Required(TokenKind.Dot, allowTrailing = true),
         breakWhen = _.isRecoverExpr,
-        allowTrailing = true
       )
       close(mark, TreeKind.Expr.FixpointConstraintSet)
     }

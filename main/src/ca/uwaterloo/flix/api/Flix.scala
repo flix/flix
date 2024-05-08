@@ -28,6 +28,7 @@ import ca.uwaterloo.flix.tools.Summary
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.collection.Chain
+import ca.uwaterloo.flix.util.tc.Debug
 
 import java.nio.charset.Charset
 import java.nio.file.{Files, Path}
@@ -623,9 +624,9 @@ class Flix {
   /**
     * Enters the phase with the given name.
     */
-  def phase[A, T](phase: String)(printer: (String, A) => T)(f: => A): A = {
+  def phase[A](phase: String)(f: => A)(implicit d: Debug[A]): A = {
     // Initialize the phase time object.
-    currentPhase = PhaseTime(phase, 0, Nil)
+    currentPhase = PhaseTime(phase, 0)
 
     if (options.progress) {
       progressBar.observe(currentPhase.phase, "", sample = false)
@@ -642,40 +643,11 @@ class Flix {
     // And add it to the list of executed phases.
     phaseTimers += currentPhase
 
-    if (this.options.xprintphases) printer(phase, r)
+    if (this.options.xprintphases){
+      d.emit(phase, r)(this)
+    }
 
     // Return the result computed by the phase.
-    r
-  }
-
-  /**
-    * Enters the phase with the given name.
-    */
-  def phaseNoPrinter[A](phase: String)(f: => A): A = {
-    this.phase[A, Unit](phase)((_, _) => ())(f)
-  }
-
-  /**
-    * Enters the phase with the given name.
-    */
-  def phaseValidation[A, E, T](phase: String)(printer: (String, A) => T)(f: => Validation[A, E]): Validation[A, E] = {
-    this.phase[Validation[A, E], Unit](phase)(AstPrinter.inValidation[A, E, T](printer))(f)
-  }
-
-  /**
-    * Enters the sub-phase with the given name.
-    */
-  def subphase[A](subphase: String)(f: => A): A = {
-    // Measure the execution time.
-    val t = System.nanoTime()
-    val r = f
-    val e = System.nanoTime() - t
-
-    // Update the phase with information about the subphase.
-    val subphases = (subphase, e) :: currentPhase.subphases
-    currentPhase = currentPhase.copy(subphases = subphases)
-
-    // Return the result computed by the subphase.
     r
   }
 

@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.{Constant, Denotation, Fixity, Polarity, SyntacticContext}
 import ca.uwaterloo.flix.language.ast.SyntaxTree.{Child, Tree, TreeKind}
 import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, Name, ReadAst, SemanticOp, SourceLocation, SourcePosition, Symbol, SyntaxTree, Token, TokenKind, WeededAst}
-import ca.uwaterloo.flix.language.dbg.AstPrinter
+import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.language.errors.ParseError
 import ca.uwaterloo.flix.language.errors.WeederError._
 import ca.uwaterloo.flix.util.Validation._
@@ -58,7 +58,7 @@ object Weeder2 {
       return Validation.success(WeededAst.empty)
     }
 
-    flix.phaseValidation("Weeder2")(AstPrinter.printWeededAst) {
+    flix.phase("Weeder2") {
       val (stale, fresh) = changeSet.partition(root.units, oldRoot.units)
       // Parse each source file in parallel and join them into a WeededAst.Root
       val refreshed = ParOps.parMap(stale) {
@@ -67,7 +67,7 @@ object Weeder2 {
 
       val compilationUnits = mapN(sequence(refreshed))(_.toMap ++ fresh)
       mapN(compilationUnits)(WeededAst.Root(_, entryPoint, readRoot.names))
-    }
+    }(DebugValidation())
   }
 
   private def weed(src: Ast.Source, tree: Tree): Validation[CompilationUnit, CompilationMessage] = {
