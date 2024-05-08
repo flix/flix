@@ -740,6 +740,8 @@ object Parser2 {
         case TokenKind.KeywordEnum | TokenKind.KeywordRestrictable => enumerationDecl(mark)
         case TokenKind.KeywordType => typeAliasDecl(mark)
         case TokenKind.KeywordEff => effectDecl(mark)
+        // Last thing was a comment
+        case TokenKind.Eof => close(mark, TreeKind.CommentList)
         case at =>
           val loc = currentSourceLocation()
           // Skip ahead until we hit another declaration.
