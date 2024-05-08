@@ -22,7 +22,7 @@ mod Test.Exp.Null {
     }
 
     @test
-    def testNullRecord01(): {} = unchecked_cast(null as {})
+    def testNullRecord01(): {|} = unchecked_cast(null as {|})
 
     @test
     def testNullRecord02(): {name = String} = unchecked_cast(null as {name = String})

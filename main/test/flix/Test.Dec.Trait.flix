@@ -90,7 +90,7 @@ mod Test.Dec.Trait {
             pub def isPure(f: a -> b \ ef): Bool
         }
 
-        instance Eff[Pure] {
+        instance Eff[{}] {
             pub def isPure(_f: a -> b): Bool = true
         }
     }
