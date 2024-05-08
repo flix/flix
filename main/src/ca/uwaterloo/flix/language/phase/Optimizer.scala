@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.LiftedAst.Root
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.Expression
+import ca.uwaterloo.flix.language.dbg.AstPrinter._
 
 /**
   * Iterative runs of the optimizer pipeline: OccurrenceAnalyzer -> Inliner -> Reducer.

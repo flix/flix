@@ -22,6 +22,7 @@ import ca.uwaterloo.flix.language.ast.NamedAst.{Declaration, RestrictableChooseP
 import ca.uwaterloo.flix.language.ast.ResolvedAst.Pattern.Record
 import ca.uwaterloo.flix.language.ast.UnkindedType._
 import ca.uwaterloo.flix.language.ast.{NamedAst, Symbol, _}
+import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.language.errors.{Recoverable, ResolutionError, Unrecoverable}
 import ca.uwaterloo.flix.language.errors.ResolutionError._
 import ca.uwaterloo.flix.util.Validation._
@@ -132,7 +133,7 @@ object Resolver {
             }
         }
     }
-  }
+  }(DebugValidation())
 
   /**
     * Builds a symbol table from the compilation unit.

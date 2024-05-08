@@ -18,7 +18,8 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.LabelledPrecedenceGraph
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.errors.{KindError, TypeError}
+import ca.uwaterloo.flix.language.dbg.AstPrinter._
+import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.typer.{ConstraintGen, ConstraintSolver, TypeContext}
 import ca.uwaterloo.flix.language.phase.unification.Substitution
 import ca.uwaterloo.flix.util.Validation.{mapN, traverse}
@@ -50,7 +51,7 @@ object Typer {
         TypedAst.Root(modules, traits, instances.m, sigs, defs, enums, restrictableEnums, effs, typeAliases, root.uses, root.entryPoint, Set.empty, root.sources, traitEnv, eqEnv, root.names, precedenceGraph)
     }
 
-  }
+  }(DebugValidation())
 
   /**
     * Collects the symbols in the given root into a map.
@@ -111,8 +112,7 @@ object Typer {
   /**
     * Creates a trait environment from the traits and instances in the root.
     */
-  private def mkTraitEnv(traits0: Map[Symbol.TraitSym, KindedAst.Trait], instances0: Map[Symbol.TraitSym, List[KindedAst.Instance]])(implicit flix: Flix): Map[Symbol.TraitSym, Ast.TraitContext] =
-    flix.subphase("TraitEnv") {
+  private def mkTraitEnv(traits0: Map[Symbol.TraitSym, KindedAst.Trait], instances0: Map[Symbol.TraitSym, List[KindedAst.Instance]])(implicit flix: Flix): Map[Symbol.TraitSym, Ast.TraitContext] = {
       traits0.map {
         case (traitSym, trt) =>
           val instances = instances0.getOrElse(traitSym, Nil)
@@ -128,41 +128,37 @@ object Typer {
   /**
     * Creates an equality environment from the traits and instances in the root.
     */
-  private def mkEqualityEnv(traits0: Map[Symbol.TraitSym, KindedAst.Trait], instances0: Map[Symbol.TraitSym, List[KindedAst.Instance]])(implicit flix: Flix): ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef] =
-    flix.subphase("EqualityEnv") {
-
-      val assocs = for {
-        (traitSym, trt) <- traits0.iterator
-        inst <- instances0.getOrElse(traitSym, Nil)
-        assocSig <- trt.assocs
-        assocDefOpt = inst.assocs.find(_.sym.sym == assocSig.sym)
-        assocDef = assocDefOpt match {
-          case None =>
-            val subst = Substitution.singleton(trt.tparam.sym, inst.tpe)
-            val tpe = subst(assocSig.tpe.get)
-            Ast.AssocTypeDef(inst.tpe, tpe)
-          case Some(KindedAst.AssocTypeDef(doc, mod, sym, arg, tpe, loc)) =>
-            Ast.AssocTypeDef(arg, tpe)
-        }
-      } yield (assocSig.sym, assocDef)
-
-
-      assocs.foldLeft(ListMap.empty[Symbol.AssocTypeSym, Ast.AssocTypeDef]) {
-        case (acc, (sym, defn)) => acc + (sym -> defn)
+  private def mkEqualityEnv(traits0: Map[Symbol.TraitSym, KindedAst.Trait], instances0: Map[Symbol.TraitSym, List[KindedAst.Instance]])(implicit flix: Flix): ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef] = {
+    val assocs = for {
+      (traitSym, trt) <- traits0.iterator
+      inst <- instances0.getOrElse(traitSym, Nil)
+      assocSig <- trt.assocs
+      assocDefOpt = inst.assocs.find(_.sym.sym == assocSig.sym)
+      assocDef = assocDefOpt match {
+        case None =>
+          val subst = Substitution.singleton(trt.tparam.sym, inst.tpe)
+          val tpe = subst(assocSig.tpe.get)
+          Ast.AssocTypeDef(inst.tpe, tpe)
+        case Some(KindedAst.AssocTypeDef(doc, mod, sym, arg, tpe, loc)) =>
+          Ast.AssocTypeDef(arg, tpe)
       }
+    } yield (assocSig.sym, assocDef)
+
+
+    assocs.foldLeft(ListMap.empty[Symbol.AssocTypeSym, Ast.AssocTypeDef]) {
+      case (acc, (sym, defn)) => acc + (sym -> defn)
+    }
     }
 
   /**
     * Reconstructs types in the given defs.
     */
   private def visitDefs(root: KindedAst.Root, oldRoot: TypedAst.Root, changeSet: ChangeSet, traitEnv: Map[Symbol.TraitSym, Ast.TraitContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Validation[Map[Symbol.DefnSym, TypedAst.Def], TypeError] = {
-    flix.subphase("Defs") {
-      val (staleDefs, freshDefs) = changeSet.partition(root.defs, oldRoot.defs)
+    val (staleDefs, freshDefs) = changeSet.partition(root.defs, oldRoot.defs)
       mapN(ParOps.parTraverseValues(staleDefs) {
         case defn => visitDef(defn, tconstrs0 = Nil, RigidityEnv.empty, root, traitEnv, eqEnv)
       })(_ ++ freshDefs)
     }
-  }
 
   /**
     * Reconstructs types in the given def.
@@ -186,8 +182,7 @@ object Typer {
     *
     * Returns [[Err]] if a definition fails to type check.
     */
-  private def visitTraits(root: KindedAst.Root, traitEnv: Map[Symbol.TraitSym, Ast.TraitContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[Map[Symbol.TraitSym, TypedAst.Trait], TypeError] =
-    flix.subphase("Traits") {
+  private def visitTraits(root: KindedAst.Root, traitEnv: Map[Symbol.TraitSym, Ast.TraitContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[Map[Symbol.TraitSym, TypedAst.Trait], TypeError] = {
       val (staleTraits, freshTraits) = changeSet.partition(root.traits, oldRoot.traits)
       mapN(ParOps.parTraverseValues(staleTraits)(visitTrait(_, root, traitEnv, eqEnv)))(_ ++ freshTraits)
     }
@@ -238,9 +233,7 @@ object Typer {
     *
     * Returns [[Err]] if a definition fails to type check.
     */
-  private def visitInstances(root: KindedAst.Root, traitEnv: Map[Symbol.TraitSym, Ast.TraitContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Validation[ListMap[Symbol.TraitSym, TypedAst.Instance], TypeError] =
-    flix.subphase("Instances") {
-
+  private def visitInstances(root: KindedAst.Root, traitEnv: Map[Symbol.TraitSym, Ast.TraitContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Validation[ListMap[Symbol.TraitSym, TypedAst.Instance], TypeError] = {
       val instances0 = for {
         (_, insts) <- root.instances
         inst <- insts
@@ -278,8 +271,7 @@ object Typer {
   /**
     * Reconstructs types in the given enums.
     */
-  private def visitEnums(root: KindedAst.Root)(implicit flix: Flix): Map[Symbol.EnumSym, TypedAst.Enum] =
-    flix.subphase("Enums") {
+  private def visitEnums(root: KindedAst.Root)(implicit flix: Flix): Map[Symbol.EnumSym, TypedAst.Enum] = {
       // Visit every enum in the ast.
       val result = root.enums.toList.map {
         case (_, enum) => visitEnum(enum, root)
@@ -306,8 +298,7 @@ object Typer {
   /**
     * Reconstructs types in the given restrictable enums.
     */
-  private def visitRestrictableEnums(root: KindedAst.Root)(implicit flix: Flix): Map[Symbol.RestrictableEnumSym, TypedAst.RestrictableEnum] =
-    flix.subphase("RestrictableEnums") {
+  private def visitRestrictableEnums(root: KindedAst.Root)(implicit flix: Flix): Map[Symbol.RestrictableEnumSym, TypedAst.RestrictableEnum] = {
       // Visit every restrictable enum in the ast.
       val result = root.restrictableEnums.toList.map {
         case (_, re) => visitRestrictableEnum(re, root)
@@ -336,12 +327,10 @@ object Typer {
     * Reconstructs types in the given effects.
     */
   private def visitEffs(root: KindedAst.Root)(implicit flix: Flix): Map[Symbol.EffectSym, TypedAst.Effect] = {
-    flix.subphase("Effs") {
       root.effects.map {
         case (sym, eff) => sym -> visitEff(eff, root)
       }
     }
-  }
 
   /**
     * Reconstructs types in the given effect.
@@ -355,8 +344,7 @@ object Typer {
   /**
     * Reconstructs types in the given type aliases.
     */
-  private def visitTypeAliases(root: KindedAst.Root)(implicit flix: Flix): Map[Symbol.TypeAliasSym, TypedAst.TypeAlias] =
-    flix.subphase("TypeAliases") {
+  private def visitTypeAliases(root: KindedAst.Root)(implicit flix: Flix): Map[Symbol.TypeAliasSym, TypedAst.TypeAlias] = {
       def visitTypeAlias(alias: KindedAst.TypeAlias): (Symbol.TypeAliasSym, TypedAst.TypeAlias) = alias match {
         case KindedAst.TypeAlias(doc, ann, mod, sym, tparams0, tpe, loc) =>
           val tparams = tparams0.map(visitTypeParam(_, root))

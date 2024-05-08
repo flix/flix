@@ -20,9 +20,9 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Denotation
 import ca.uwaterloo.flix.language.ast.Kind.WildCaseSet
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.language.errors.KindError
-import ca.uwaterloo.flix.language.phase.typer.ConstraintSolver
-import ca.uwaterloo.flix.language.phase.unification.{EqualityEnvironment, TraitEnvironment}
+import ca.uwaterloo.flix.language.phase.unification.EqualityEnvironment
 import ca.uwaterloo.flix.language.phase.unification.KindUnification.unify
 import ca.uwaterloo.flix.util.Validation.{flatMapN, fold, mapN, traverse, traverseOpt}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
@@ -81,7 +81,7 @@ object Kinder {
         }
     }
 
-  }
+  }(DebugValidation())
 
   /**
     * Performs kinding on the given enum.
@@ -391,8 +391,8 @@ object Kinder {
       mapN(expVal) {
         case exp =>
           val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-          val pvar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-          KindedAst.Expr.HoleWithExp(exp, tvar, pvar, loc)
+          val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
+          KindedAst.Expr.HoleWithExp(exp, tvar, evar, loc)
       }
 
     case ResolvedAst.Expr.OpenAs(sym, exp0, loc) =>
@@ -417,8 +417,8 @@ object Kinder {
       mapN(expVal, expsVal) {
         case (exp, exps) =>
           val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-          val pvar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-          KindedAst.Expr.Apply(exp, exps, tvar, pvar, loc)
+          val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
+          KindedAst.Expr.Apply(exp, exps, tvar, evar, loc)
       }
 
     case ResolvedAst.Expr.Lambda(fparam0, exp0, loc) =>
@@ -429,8 +429,8 @@ object Kinder {
       }.recoverOne {
         case err: KindError =>
           val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-          val pvar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-          KindedAst.Expr.Error(err, tvar, pvar)
+          val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
+          KindedAst.Expr.Error(err, tvar, evar)
       }
 
     case ResolvedAst.Expr.Unary(sop, exp0, loc) =>
@@ -485,12 +485,12 @@ object Kinder {
 
     case ResolvedAst.Expr.Scope(sym, regionVar, exp0, loc) =>
       val rv = Type.Var(regionVar.withKind(Kind.Eff), loc)
-      val pvar = Type.freshVar(Kind.Eff, loc.asSynthetic)
+      val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
       flatMapN(kenv0 + (regionVar -> Kind.Eff)) {
         case kenv =>
           val expVal = visitExp(exp0, kenv, taenv, henv0, root)
           mapN(expVal) {
-            exp => KindedAst.Expr.Scope(sym, rv, exp, pvar, loc)
+            exp => KindedAst.Expr.Scope(sym, rv, exp, evar, loc)
           }
       }
 
@@ -509,8 +509,8 @@ object Kinder {
       }.recoverOne {
         case err: KindError =>
           val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-          val pvar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-          KindedAst.Expr.Error(err, tvar, pvar)
+          val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
+          KindedAst.Expr.Error(err, tvar, evar)
       }
 
     case ResolvedAst.Expr.RestrictableChoose(star, exp0, rules0, loc) =>
@@ -565,8 +565,8 @@ object Kinder {
       mapN(esVal, eVal) {
         case (es, e) =>
           val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-          val pvar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-          KindedAst.Expr.ArrayLit(es, e, tvar, pvar, loc)
+          val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
+          KindedAst.Expr.ArrayLit(es, e, tvar, evar, loc)
       }
 
     case ResolvedAst.Expr.ArrayNew(exp1, exp2, exp3, loc) =>
@@ -576,8 +576,8 @@ object Kinder {
       mapN(e1Val, e2Val, e3Val) {
         case (e1, e2, e3) =>
           val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-          val pvar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-          KindedAst.Expr.ArrayNew(e1, e2, e3, tvar, pvar, loc)
+          val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
+          KindedAst.Expr.ArrayNew(e1, e2, e3, tvar, evar, loc)
       }
 
     case ResolvedAst.Expr.ArrayLoad(base0, index0, loc) =>
@@ -585,8 +585,8 @@ object Kinder {
       val indexVal = visitExp(index0, kenv0, taenv, henv0, root)
       mapN(baseVal, indexVal) {
         case (base, index) =>
-          val pvar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-          KindedAst.Expr.ArrayLoad(base, index, Type.freshVar(Kind.Star, loc.asSynthetic), pvar, loc)
+          val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
+          KindedAst.Expr.ArrayLoad(base, index, Type.freshVar(Kind.Star, loc.asSynthetic), evar, loc)
       }
 
     case ResolvedAst.Expr.ArrayStore(base0, index0, elm0, loc) =>
@@ -595,8 +595,8 @@ object Kinder {
       val elmVal = visitExp(elm0, kenv0, taenv, henv0, root)
       mapN(baseVal, indexVal, elmVal) {
         case (base, index, elm) =>
-          val pvar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-          KindedAst.Expr.ArrayStore(base, index, elm, pvar, loc)
+          val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
+          KindedAst.Expr.ArrayStore(base, index, elm, evar, loc)
       }
 
     case ResolvedAst.Expr.ArrayLength(base0, loc) =>
@@ -610,8 +610,8 @@ object Kinder {
       mapN(expsVal) {
         case es =>
           val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-          val pvar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-          KindedAst.Expr.VectorLit(es, tvar, pvar, loc)
+          val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
+          KindedAst.Expr.VectorLit(es, tvar, evar, loc)
       }
 
     case ResolvedAst.Expr.VectorLoad(exp1, exp2, loc) =>
@@ -619,8 +619,8 @@ object Kinder {
       val exp2Val = visitExp(exp2, kenv0, taenv, henv0, root)
       mapN(exp1Val, exp2Val) {
         case (e1, e2) =>
-          val pvar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-          KindedAst.Expr.VectorLoad(e1, e2, Type.freshVar(Kind.Star, loc.asSynthetic), pvar, loc)
+          val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
+          KindedAst.Expr.VectorLoad(e1, e2, Type.freshVar(Kind.Star, loc.asSynthetic), evar, loc)
       }
 
     case ResolvedAst.Expr.VectorLength(exp, loc) =>
@@ -659,8 +659,8 @@ object Kinder {
       }.recoverOne {
         case err: KindError =>
           val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-          val pvar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-          KindedAst.Expr.Error(err, tvar, pvar)
+          val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
+          KindedAst.Expr.Error(err, tvar, evar)
       }
 
     case ResolvedAst.Expr.InstanceOf(exp0, clazz, loc) =>
@@ -673,8 +673,8 @@ object Kinder {
       mapN(visitExp(exp, kenv0, taenv, henv0, root)) {
         case e =>
           val tvar = Type.freshVar(Kind.Star, loc)
-          val pvar = Type.freshVar(Kind.Eff, loc)
-          KindedAst.Expr.CheckedCast(cast, e, tvar, pvar, loc)
+          val evar = Type.freshVar(Kind.Eff, loc)
+          KindedAst.Expr.CheckedCast(cast, e, tvar, evar, loc)
       }
 
     case ResolvedAst.Expr.UncheckedCast(exp0, declaredType0, declaredEff0, loc) =>
@@ -687,8 +687,8 @@ object Kinder {
       }.recoverOne {
         case err: KindError =>
           val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-          val pvar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-          KindedAst.Expr.Error(err, tvar, pvar)
+          val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
+          KindedAst.Expr.Error(err, tvar, evar)
       }
 
     case ResolvedAst.Expr.UncheckedMaskingCast(exp, loc) =>
@@ -726,8 +726,8 @@ object Kinder {
       }.recoverOne {
         case err: KindError =>
           val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-          val pvar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-          KindedAst.Expr.Error(err, tvar, pvar)
+          val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
+          KindedAst.Expr.Error(err, tvar, evar)
       }
 
     case ResolvedAst.Expr.Do(op, args0, loc) =>
@@ -783,8 +783,8 @@ object Kinder {
       }.recoverOne {
         case err: KindError =>
           val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-          val pvar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-          KindedAst.Expr.Error(err, tvar, pvar)
+          val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
+          KindedAst.Expr.Error(err, tvar, evar)
       }
 
     case ResolvedAst.Expr.NewChannel(exp10, exp20, loc) =>
@@ -861,8 +861,8 @@ object Kinder {
       }.recoverOne {
         case err: KindError =>
           val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-          val pvar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-          KindedAst.Expr.Error(err, tvar, pvar)
+          val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
+          KindedAst.Expr.Error(err, tvar, evar)
       }
 
     case ResolvedAst.Expr.FixpointMerge(exp10, exp20, loc) =>
@@ -899,10 +899,10 @@ object Kinder {
 
     case ResolvedAst.Expr.Error(m) =>
       val tvar = Type.freshVar(Kind.Star, m.loc)
-      val pvar = Type.freshVar(Kind.Eff, m.loc)
+      val evar = Type.freshVar(Kind.Eff, m.loc)
       // Note: We must NOT use [[Validation.toSoftFailure]] because
       // that would duplicate the error inside the Validation.
-      Validation.success(KindedAst.Expr.Error(m, tvar, pvar))
+      Validation.success(KindedAst.Expr.Error(m, tvar, evar))
   }
 
   /**

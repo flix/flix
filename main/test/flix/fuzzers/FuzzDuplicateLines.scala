@@ -47,6 +47,12 @@ class FuzzDuplicateLines extends AnyFunSuite with TestUtils {
     compileWithDuplicateLine(filepath.getFileName.toString, lines)
   }
 
+  test("ford-fulkerson") {
+    val filepath = Paths.get("examples/larger-examples/datalog/ford-fulkerson.flix")
+    val lines = Files.lines(filepath)
+    compileWithDuplicateLine(filepath.getFileName.toString, lines)
+  }
+
   /**
     * Compile N variants of the given program with a single line duplicated.
     * The program may not be valid: We just care that it does not crash the compiler.

@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.{Source, SyntacticContext}
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.collection.Chain
 import ca.uwaterloo.flix.util.{ParOps, Validation}
@@ -62,7 +63,7 @@ object Parser {
           }
           ParsedAst.Root(m, entryPoint, root.names)
       }
-    }
+    }(DebugValidation())
 
   /**
     * Replaces `"\n"` `"\r"` `"\t"` with spaces (not actual newlines etc. but dash n etc.).
@@ -263,7 +264,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Law: Rule1[ParsedAst.Declaration.Law] = rule {
-      Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("law") ~ WS ~ Names.Definition ~ optWS ~ ":" ~ optWS ~ keyword("forall") ~ optWS ~ TypeParams ~ optWS ~ FormalParamList ~ WithClause ~ optWS ~ "." ~ optWS ~ Expression ~ SP ~> ParsedAst.Declaration.Law
+      Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("law") ~ WS ~ Names.Definition ~ optWS ~ ":" ~ optWS ~ keyword("forall") ~ optWS ~ TypeParams ~ optWS ~ FormalParamList ~ WithClause ~ optWS ~ OptEqualityConstraintList ~ optWS ~ "." ~ optWS ~ Expression ~ SP ~> ParsedAst.Declaration.Law
     }
 
     def Op: Rule1[ParsedAst.Declaration.Op] = rule {
@@ -1487,8 +1488,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     def Primary: Rule1[ParsedAst.Type] = rule {
       // NB: Record must come before EffectSet as they overlap
       // NB: CaseComplement must come before Complement as they overlap
-      Arrow | Tuple | Record | RecordRow | Schema | SchemaRow | CaseSet | EffectSet | Not | CaseComplement | Complement |
-        Native | True | False | Pure | Univ | Var | Ambiguous
+      Arrow | Tuple | EmptyRecord | Record | RecordRow | Schema | SchemaRow | CaseSet | EffectSet | Not | CaseComplement | Complement |
+        Native | True | False | Univ | Var | Ambiguous
     }
 
     def Arrow: Rule1[ParsedAst.Type] = {
@@ -1513,6 +1514,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       rule {
         Singleton | Tuple
       }
+    }
+
+    def EmptyRecord: Rule1[ParsedAst.Type] = rule {
+      SP ~ "{" ~ optWS ~ push(Nil) ~ optWS ~ "|" ~ optWS ~ push(None) ~ "}" ~ SP ~> ParsedAst.Type.Record
     }
 
     def Record: Rule1[ParsedAst.Type] = rule {
@@ -1561,10 +1566,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def False: Rule1[ParsedAst.Type] = rule {
       SP ~ keyword("false") ~ SP ~> ParsedAst.Type.False
-    }
-
-    def Pure: Rule1[ParsedAst.Type] = rule {
-      SP ~ keyword("Pure") ~ SP ~> ParsedAst.Type.Pure
     }
 
     def Univ: Rule1[ParsedAst.Type] = rule {

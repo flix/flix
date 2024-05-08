@@ -18,8 +18,9 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, RigidityEnv, Scheme, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.language.errors.InstanceError
-import ca.uwaterloo.flix.language.phase.unification.{TraitEnvironment, Substitution, Unification, UnificationError}
+import ca.uwaterloo.flix.language.phase.unification.{Substitution, TraitEnvironment, Unification, UnificationError}
 import ca.uwaterloo.flix.util.collection.ListOps
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result, Validation}
 
@@ -28,11 +29,12 @@ object Instances {
   /**
     * Validates instances and traits in the given AST root.
     */
-  def run(root: TypedAst.Root, oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[TypedAst.Root, InstanceError] = flix.phase("Instances") {
-    val errors = visitInstances(root, oldRoot, changeSet) ::: visitTraits(root)
+  def run(root: TypedAst.Root, oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[TypedAst.Root, InstanceError] =
+    flix.phase("Instances") {
+      val errors = visitInstances(root, oldRoot, changeSet) ::: visitTraits(root)
 
-    Validation.toSuccessOrSoftFailure(root, errors)
-  }
+      Validation.toSuccessOrSoftFailure(root, errors)
+    }(DebugValidation())
 
   /**
     * Validates all instances in the given AST root.
@@ -282,7 +284,7 @@ object Instances {
   private def unsafeGetHead(inst: TypedAst.Instance): TypeConstructor = {
     inst.tpe.typeConstructor match {
       case Some(tc) => tc
-      case None => throw InternalCompilerException("unexpected non-simple type",  inst.trt.loc)
+      case None => throw InternalCompilerException("unexpected non-simple type", inst.trt.loc)
     }
   }
 }
