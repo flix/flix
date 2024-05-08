@@ -759,10 +759,6 @@ object Parser2 {
     def declaration()(implicit s: State): Mark.Closed = {
       val mark = open(consumeDocComments = false)
       docComment()
-      // Handle case where the last thing in a file or module is a doc-comment
-      if (eof() || eat(TokenKind.CurlyR)) {
-        return close(mark, TreeKind.CommentList)
-      }
       // Handle modules
       if (at(TokenKind.KeywordMod)) {
         return moduleDecl(mark)
@@ -778,6 +774,8 @@ object Parser2 {
         case TokenKind.KeywordEnum | TokenKind.KeywordRestrictable => enumerationDecl(mark)
         case TokenKind.KeywordType => typeAliasDecl(mark)
         case TokenKind.KeywordEff => effectDecl(mark)
+        // Last thing was a comment
+        case TokenKind.Eof => close(mark, TreeKind.CommentList)
         case at =>
           val loc = currentSourceLocation()
           // Skip ahead until we hit another declaration.
