@@ -29,7 +29,7 @@ pub trait Iterable[t] {
     ///
     /// The effect is embedded in the type of the Iterator.
     ///
-    type Aef[t]: Eff = Pure
+    type Aef[t]: Eff = {}
 
     ///
     /// Returns an iterator over `t`.

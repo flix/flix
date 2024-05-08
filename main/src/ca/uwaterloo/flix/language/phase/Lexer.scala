@@ -321,7 +321,7 @@ object Lexer {
       case _ if isMatch("#{") => TokenKind.HashCurlyL
       case _ if isMatch("#(") => TokenKind.HashParenL
       case '#' => TokenKind.Hash
-      case _ if isMatch("///") => acceptDocComment()
+      case _ if isMatch("/// ") => acceptDocComment()
       case _ if isMatch("//") => acceptLineComment()
       case _ if isMatch("/*") => acceptBlockComment()
       case '/' => TokenKind.Slash
@@ -403,7 +403,6 @@ object Lexer {
       case _ if isKeyword("override") => TokenKind.KeywordOverride
       case _ if isKeyword("par") => TokenKind.KeywordPar
       case _ if isKeyword("pub") => TokenKind.KeywordPub
-      case _ if isKeyword("Pure") => TokenKind.KeywordPure
       case _ if isKeyword("project") => TokenKind.KeywordProject
       case _ if isKeyword("query") => TokenKind.KeywordQuery
       case _ if isKeyword("ref") => TokenKind.KeywordRef

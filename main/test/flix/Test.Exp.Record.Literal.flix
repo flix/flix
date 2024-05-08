@@ -1,19 +1,19 @@
 mod Test.Exp.Record.Literal {
 
     @test
-    def testEmptyRecord01(): {} =
+    def testEmptyRecord01(): {|} =
         {}
 
     @test
-    def testEmptyRecord02(): { a = {} } =
+    def testEmptyRecord02(): { a = {|} } =
         { a = {} }
 
     @test
-    def testEmptyRecord03(): { a = {}, b = {} } =
+    def testEmptyRecord03(): { a = {|}, b = {|} } =
         { a = {}, b = {} }
 
     @test
-    def testEmptyRecord04(): { a = { b = { c = {} } } } =
+    def testEmptyRecord04(): { a = { b = { c = {|} } } } =
         { a = { b = { c = {} } } }
 
     @test
@@ -81,7 +81,7 @@ mod Test.Exp.Record.Literal {
         { a = 21, b = true, a = 42, b = false }
 
     @test
-    def testNestedLabels01(): { a = { a = { a = {} } } } =
+    def testNestedLabels01(): { a = { a = { a = {|} } } } =
         { a = { a = { a = {} } } }
 
 }

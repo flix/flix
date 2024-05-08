@@ -26,7 +26,7 @@ pub trait Collectable[t: Type] {
     ///
     /// The associated effect of the Collectable which represents the effect of accessing its elements.
     ///
-    type Aef[t]: Eff = Pure
+    type Aef[t]: Eff = {}
 
     ///
     /// Run an Iterator collecting the results.

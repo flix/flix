@@ -142,7 +142,7 @@ pub def unreachable!(): a = bug!("Reached unreachable expression.")
 pub def printUnlessUnit(x: a): Unit \ IO with ToString[a] = {
     typematch x {
         case _: Unit => ()
-        case _: _ => println(x)
+        case _: _    => println(x)
     }
 }
 
@@ -168,8 +168,8 @@ pub enum Purity3[a: Type, b: Type, c: Type, d: Type, ef: Eff] {
 /// it to be pure.
 ///
 pub def purityOf(f: a -> b \ ef): Purity[a, b, ef] = typematch f {
-    case g: a -> b \ Pure => Purity.Pure(g)
-    case _: _             => Purity.Impure(f)
+    case g: a -> b \ {} => Purity.Pure(g)
+    case _: _           => Purity.Impure(f)
 }
 
 ///
@@ -179,8 +179,8 @@ pub def purityOf(f: a -> b \ ef): Purity[a, b, ef] = typematch f {
 /// it to be pure.
 ///
 pub def purityOf2(f: a -> b -> c \ ef): Purity2[a, b, c, ef] = typematch f {
-    case g: a -> b -> c \ Pure => Purity2.Pure(g)
-    case _: _                  => Purity2.Impure(f)
+    case g: a -> b -> c \ {} => Purity2.Pure(g)
+    case _: _                => Purity2.Impure(f)
 }
 
 ///
@@ -190,6 +190,6 @@ pub def purityOf2(f: a -> b -> c \ ef): Purity2[a, b, c, ef] = typematch f {
 /// it to be pure.
 ///
 pub def purityOf3(f: a -> b -> c -> d \ ef): Purity3[a, b, c, d, ef] = typematch f {
-    case g: a -> b -> c -> d \ Pure => Purity3.Pure(g)
-    case _: _                       => Purity3.Impure(f)
+    case g: a -> b -> c -> d \ {} => Purity3.Pure(g)
+    case _: _                     => Purity3.Impure(f)
 }
