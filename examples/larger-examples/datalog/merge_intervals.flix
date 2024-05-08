@@ -6,12 +6,12 @@
 def merge(intervals: List[(Int32, Int32)]): Vector[(Int32, Int32)] =
     let i = inject intervals into Interval;
     let lp = #{
-        /// [a, ..., c, ..., b, ..., d]
+        // [a, ..., c, ..., b, ..., d]
         Interval(a, d) :-
             Interval(a, b), Interval(c, d),
             if a <= c and c <= b and b <= d.
 
-        /// [a, ..., c, ..., d, ..., b]
+        // [a, ..., c, ..., d, ..., b]
         IsContained(c, d) :-
             Interval(a, b), Interval(c, d),
             if (a <= c and d < b) or (a < c and d <= b).
