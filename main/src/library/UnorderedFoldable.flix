@@ -22,7 +22,7 @@ pub trait UnorderedFoldable[t : Type -> Type] {
     /// The associated effect of the UnorderedFoldable which represents the
     /// effect of accessing its elements.
     ///
-    type Aef[m]: Eff = Pure
+    type Aef[m]: Eff = {}
 
     ///
     /// Unordered fold of `t`.

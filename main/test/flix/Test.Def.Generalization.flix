@@ -143,10 +143,10 @@ mod Test.Def.Generalization {
     def testLeq21(): Int32 -> (Int32 -> Int32) = x -> (_ -> x)
 
     @test
-    def testLeq22(): {} -> {x = Int32} = r -> {+x = 21 | r}
+    def testLeq22(): {|} -> {x = Int32} = r -> {+x = 21 | r}
 
     @test
-    def testLeq23(): {x = Int32} -> {} = r -> {-x | r}
+    def testLeq23(): {x = Int32} -> {|} = r -> {-x | r}
 
     @test
     def testLeq24(): {x = Int32} -> {x = Int32} = r -> {x = 21 | r}

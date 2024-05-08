@@ -24,7 +24,7 @@ sealed trait TokenKind {
     */
   def display: String = {
     this match {
-      case TokenKind.Ampersand => "'^'"
+      case TokenKind.Ampersand => "'&'"
       case TokenKind.AngledEqual => "'<=>'"
       case TokenKind.AngledPlus => "'<+>'"
       case TokenKind.AngleL => "'<'"
@@ -112,7 +112,6 @@ sealed trait TokenKind {
       case TokenKind.KeywordOverride => "'override'"
       case TokenKind.KeywordPar => "'par'"
       case TokenKind.KeywordPub => "'pub'"
-      case TokenKind.KeywordPure => "'Pure'"
       case TokenKind.KeywordProject => "'project'"
       case TokenKind.KeywordQuery => "'query'"
       case TokenKind.KeywordRef => "'ref'"
@@ -358,7 +357,6 @@ sealed trait TokenKind {
          | TokenKind.Underscore
          | TokenKind.NameLowerCase
          | TokenKind.KeywordUniv
-         | TokenKind.KeywordPure
          | TokenKind.KeywordFalse
          | TokenKind.KeywordTrue
          | TokenKind.ParenL
@@ -671,8 +669,6 @@ object TokenKind {
   case object KeywordPar extends TokenKind
 
   case object KeywordPub extends TokenKind
-
-  case object KeywordPure extends TokenKind
 
   case object KeywordProject extends TokenKind
 

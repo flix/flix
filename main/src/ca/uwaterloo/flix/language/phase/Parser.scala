@@ -1488,8 +1488,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     def Primary: Rule1[ParsedAst.Type] = rule {
       // NB: Record must come before EffectSet as they overlap
       // NB: CaseComplement must come before Complement as they overlap
-      Arrow | Tuple | Record | RecordRow | Schema | SchemaRow | CaseSet | EffectSet | Not | CaseComplement | Complement |
-        Native | True | False | Pure | Univ | Var | Ambiguous
+      Arrow | Tuple | EmptyRecord | Record | RecordRow | Schema | SchemaRow | CaseSet | EffectSet | Not | CaseComplement | Complement |
+        Native | True | False | Univ | Var | Ambiguous
     }
 
     def Arrow: Rule1[ParsedAst.Type] = {
@@ -1514,6 +1514,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       rule {
         Singleton | Tuple
       }
+    }
+
+    def EmptyRecord: Rule1[ParsedAst.Type] = rule {
+      SP ~ "{" ~ optWS ~ push(Nil) ~ optWS ~ "|" ~ optWS ~ push(None) ~ "}" ~ SP ~> ParsedAst.Type.Record
     }
 
     def Record: Rule1[ParsedAst.Type] = rule {
@@ -1562,10 +1566,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def False: Rule1[ParsedAst.Type] = rule {
       SP ~ keyword("false") ~ SP ~> ParsedAst.Type.False
-    }
-
-    def Pure: Rule1[ParsedAst.Type] = rule {
-      SP ~ keyword("Pure") ~ SP ~> ParsedAst.Type.Pure
     }
 
     def Univ: Rule1[ParsedAst.Type] = rule {

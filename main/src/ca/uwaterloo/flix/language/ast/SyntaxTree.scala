@@ -368,6 +368,8 @@ object SyntaxTree {
 
       case object ConstraintList extends Type
 
+      case object Effect extends Type
+
       case object EffectSet extends Type
 
       case object Function extends Type
