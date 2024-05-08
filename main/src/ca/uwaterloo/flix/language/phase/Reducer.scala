@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.ExpPosition
 import ca.uwaterloo.flix.language.ast.{MonoType, Purity}
 import ca.uwaterloo.flix.language.ast.ReducedAst._
-import ca.uwaterloo.flix.language.dbg.AstPrinter
+import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.util.ParOps
 
 import java.util.concurrent.{ConcurrentHashMap, ConcurrentLinkedQueue}
@@ -37,7 +37,7 @@ import scala.jdk.CollectionConverters._
   */
 object Reducer {
 
-  def run(root: Root)(implicit flix: Flix): Root = flix.phase("Reducer")(AstPrinter.printReducedAst) {
+  def run(root: Root)(implicit flix: Flix): Root = flix.phase("Reducer") {
     implicit val ctx: SharedContext = SharedContext(new ConcurrentLinkedQueue, new ConcurrentHashMap())
 
     val newDefs = ParOps.parMapValues(root.defs)(visitDef)

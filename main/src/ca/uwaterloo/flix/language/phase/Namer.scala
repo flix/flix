@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, Source}
 import ca.uwaterloo.flix.language.ast.DesugaredAst.Pattern.Record
 import ca.uwaterloo.flix.language.ast.DesugaredAst.RestrictableChoosePattern
 import ca.uwaterloo.flix.language.ast.{NamedAst, _}
-import ca.uwaterloo.flix.language.dbg.AstPrinter
+import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.language.errors.NameError
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.collection.{Chain, ListMap}
@@ -35,36 +35,37 @@ object Namer {
   /**
     * Introduces unique names for each syntactic entity in the given `program`.
     * */
-  def run(program: DesugaredAst.Root)(implicit flix: Flix): Validation[NamedAst.Root, NameError] = flix.phaseValidation("Namer")(AstPrinter.printNamedAst) {
-    // compute all the source locations
-    val locations = program.units.values.foldLeft(Map.empty[Source, SourceLocation]) {
-      case (macc, root) => macc + (root.loc.source -> root.loc)
-    }
+  def run(program: DesugaredAst.Root)(implicit flix: Flix): Validation[NamedAst.Root, NameError] =
+    flix.phase("Namer") {
+      // compute all the source locations
+      val locations = program.units.values.foldLeft(Map.empty[Source, SourceLocation]) {
+        case (macc, root) => macc + (root.loc.source -> root.loc)
+      }
 
-    val unitsVal = ParOps.parTraverseValues(program.units)(visitUnit)
+      val unitsVal = ParOps.parTraverseValues(program.units)(visitUnit)
 
-    flatMapN(unitsVal) {
-      case units =>
-        val tableVal = fold(units.values, SymbolTable(Map.empty, Map.empty, Map.empty)) {
-          case (table, unit) => tableUnit(unit, table)
-        }
+      flatMapN(unitsVal) {
+        case units =>
+          val tableVal = fold(units.values, SymbolTable(Map.empty, Map.empty, Map.empty)) {
+            case (table, unit) => tableUnit(unit, table)
+          }
 
-        mapN(tableVal) {
-          case SymbolTable(symbols0, instances0, uses0) =>
-            // TODO NS-REFACTOR remove use of NName
-            val symbols = symbols0.map {
-              case (k, v) => Name.mkUnlocatedNName(k) -> v.m
-            }
-            val instances = instances0.map {
-              case (k, v) => Name.mkUnlocatedNName(k) -> v
-            }
-            val uses = uses0.map {
-              case (k, v) => Name.mkUnlocatedNName(k) -> v
-            }
-            NamedAst.Root(symbols, instances, uses, units, program.entryPoint, locations, program.names)
-        }
-    }
-  }
+          mapN(tableVal) {
+            case SymbolTable(symbols0, instances0, uses0) =>
+              // TODO NS-REFACTOR remove use of NName
+              val symbols = symbols0.map {
+                case (k, v) => Name.mkUnlocatedNName(k) -> v.m
+              }
+              val instances = instances0.map {
+                case (k, v) => Name.mkUnlocatedNName(k) -> v
+              }
+              val uses = uses0.map {
+                case (k, v) => Name.mkUnlocatedNName(k) -> v
+              }
+              NamedAst.Root(symbols, instances, uses, units, program.entryPoint, locations, program.names)
+          }
+      }
+  }(DebugValidation())
 
   /**
     * Performs naming on the given compilation unit `unit` under the given (partial) program `prog0`.
