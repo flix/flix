@@ -16,8 +16,10 @@
 
 package ca.uwaterloo.flix
 import ca.uwaterloo.flix.MutationGenerator.{MutatedDef, mutateRoot}
+import ca.uwaterloo.flix.MutationDataHandler
 import ca.uwaterloo.flix.runtime.TestFn
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.Ast.Annotation.Benchmark
 import ca.uwaterloo.flix.language.ast.Ast.Constant
 import ca.uwaterloo.flix.language.ast.{Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, MutationType, Root, empty}
@@ -69,29 +71,46 @@ object MutationTester {
       * It also keeps track of the time it took to generate all the mutations
       */
     def run(flix: Flix, testModule: String, productionModule: String, percentage: Int): Unit = {
-      println(s"mutating module: $productionModule")
-        val root = flix.check().unsafeGet
-        val start = System.nanoTime()
-        // println(root.sigs.filter(t => t._1.toString.equals("Add.add")))
-        val mutations = MutationGenerator.mutateRoot(root, productionModule)
-        val mutationsAreNotMade = mutations.forall{
-          case (_, md) => md.isEmpty
-        }
-        if (mutationsAreNotMade) { // fast exit if no mutations were made
-            println("No mutations were made. Please verify that you have supplied the correct module names.")
-            return
-        }
-        val selectedMutants = randomSelection(percentage, mutations)
-        val end = System.nanoTime() - start
-        val timeSec = end.toFloat / 1_000_000_000.0
-        println(s"time to generate mutations: $timeSec")
-        val lastRoot = insertDecAndCheckIntoRoot(root)
-        runMutations(flix, testModule, lastRoot, selectedMutants)
-        writeReportsToFile(nonKilledStrList)
+        runBenchmarks(flix)
     }
+  private def toolRun(flix: Flix, testModule: String, productionModule: String, percentage: Int): Unit = {
+    println(s"mutating module: $productionModule")
+    val root = flix.check().unsafeGet
+    val start = System.nanoTime()
+    // println(root.sigs.filter(t => t._1.toString.equals("Add.add")))
+    val mutations = MutationGenerator.mutateRoot(root, productionModule)
+    val mutationsAreNotMade = mutations.forall{
+      case (_, md) => md.isEmpty
+    }
+    if (mutationsAreNotMade) { // fast exit if no mutations were made
+      println("No mutations were made. Please verify that you have supplied the correct module names.")
+      return
+    }
+    val selectedMutants = randomSelection(percentage, mutations)
+    val end = System.nanoTime() - start
+    val timeSec = end.toFloat / 1_000_000_000.0
+    println(s"time to generate mutations: $timeSec")
+    val lastRoot = insertDecAndCheckIntoRoot(root)
+    val _ = runMutations(flix, testModule, lastRoot, selectedMutants)
+    writeReportsToFile(nonKilledStrList)
+  }
 
 
-    def writeReportsToFile(reportsList: List[String]): Unit = {
+  def runBenchmarks(flix: Flix): Unit = {
+    val listToSource: List[String] = ("List" :: "Chain" :: "MutList" :: "Option" :: "Map" :: "ToString" :: "Functor" :: Nil)
+    val data = listToSource.flatMap(module => {
+      val root = flix.check().unsafeGet
+      // println(root.sigs.filter(t => t._1.toString.equals("Add.add")))
+      val mutations = MutationGenerator.mutateRoot(root, module)
+      val testModule = s"Test$module"
+      val lastRoot = insertDecAndCheckIntoRoot(root)
+      runMutations(flix, testModule, lastRoot, mutations)
+    })
+    MutationDataHandler.processData(data)
+  }
+
+
+    private def writeReportsToFile(reportsList: List[String]): Unit = {
       if (reportsList.isEmpty) return
       val stars = "*".repeat(60)
       var strForFile = reportsList.foldLeft("")((acc, str) => s"$acc\n$stars\n\n$str")
@@ -190,7 +209,7 @@ object MutationTester {
 
     private case class TestKit(flix: Flix, root: Root, testModule: String)
 
-    private def runMutations(flix: Flix, testModule: String, root: TypedAst.Root, mutatedDefs: List[(Symbol.DefnSym, List[MutatedDef])]): Unit = {
+    private def runMutations(flix: Flix, testModule: String, root: TypedAst.Root, mutatedDefs: List[(Symbol.DefnSym, List[MutatedDef])]): List[(MutationType, TestRes)] = {
         val totalStartTime = System.nanoTime()
         val temp = totalStartTime
         val amountOfMutants = mutatedDefs.map(m => m._2.length).sum
@@ -204,86 +223,8 @@ object MutationTester {
             testMutantsAndUpdateProgress(acc, mut, kit, f)
         })
       reportResults(totalStartTime, amountOfMutants, totalSurvivorCount, totalUnknowns, equivalents)
-      collectData(mOperatorResults)
+      mOperatorResults
     }
-
-  private def collectData(operatorResults: List[(MutationType, TestRes)]): Unit = {
-   val sortedData = sortData(operatorResults)
-   writeDataToFile(sortedData)
-  }
-  private def writeDataToFile(stringToPoints: Map[String, DataPoints]): Unit = {
-    val stringToWrite = stringToPoints.foldLeft("") {
-      case (acc, (operator, dPoints)) =>
-        s"$acc\n$operator:${dPoints.total}:${dPoints.killed}:${dPoints.surviving}:${dPoints.unknown}:${dPoints.equivalent}"
-    }
-
-    val fileWriter = new FileWriter(new File(s"MutStats.txt"))
-    fileWriter.write(stringToWrite)
-    fileWriter.close()
-  }
-
-  private case class DataPoints(total: Int, killed: Int, surviving: Int, unknown: Int, equivalent: Int)
-  private def sortData(tuples: List[(MutationType, TestRes)]): Map[String, DataPoints] = {
-    def updateDataPoints(dataPoints: DataPoints, testRes: TestRes): DataPoints = testRes match {
-      case TestRes.MutantKilled => dataPoints.copy(total = dataPoints.total + 1, killed = dataPoints.killed + 1)
-      case TestRes.MutantSurvived => dataPoints.copy(total = dataPoints.total + 1, killed = dataPoints.surviving + 1)
-      case TestRes.Unknown => dataPoints.copy(total = dataPoints.total + 1, killed = dataPoints.unknown + 1)
-      case TestRes.Equivalent => dataPoints.copy(total = dataPoints.total + 1, killed = dataPoints.equivalent + 1)
-    }
-    def helper(opRes: (MutationType, TestRes), hMap: HashMap[String, DataPoints])  = opRes._1 match {
-      case MutationType.CstMut(_) =>
-        val dPoints = hMap.apply("CstMut")
-        val newDPoints = updateDataPoints(dPoints, opRes._2)
-        hMap.updated("CstMut", newDPoints)
-      case MutationType.SigMut(_) =>
-        val dPoints = hMap.apply("SigMut")
-        val newDPoints = updateDataPoints(dPoints, opRes._2)
-        hMap.updated("SigMut", newDPoints)
-      case MutationType.IfMut(_) =>
-        val dPoints = hMap.apply("IfMut")
-        val newDPoints = updateDataPoints(dPoints, opRes._2)
-        hMap.updated("IfMut", newDPoints)
-      case MutationType.CompMut(_) =>
-        val dPoints = hMap.apply("CompMut")
-        val newDPoints = updateDataPoints(dPoints, opRes._2)
-        hMap.updated("CompMut", newDPoints)
-      case MutationType.CaseSwitch(_, _) =>
-        val dPoints = hMap.apply("CaseSwitch")
-        val newDPoints = updateDataPoints(dPoints, opRes._2)
-        hMap.updated("CaseSwitch", newDPoints)
-      case MutationType.VarMut(_, _) =>
-        val dPoints = hMap.apply("VarMut")
-        val newDPoints = updateDataPoints(dPoints, opRes._2)
-        hMap.updated("VarMut", newDPoints)
-      case MutationType.CaseDeletion(_) =>
-        val dPoints = hMap.apply("CaseDeletion")
-        val newDPoints = updateDataPoints(dPoints, opRes._2)
-        hMap.updated("CaseDeletion", newDPoints)
-      case MutationType.RecordSelectMut(_) =>
-        val dPoints = hMap.apply("RecordSelectMut")
-        val newDPoints = updateDataPoints(dPoints, opRes._2)
-        hMap.updated("RecordSelectMut", newDPoints)
-      case MutationType.ListMut() =>
-        val dPoints = hMap.apply("ListMut")
-        val newDPoints = updateDataPoints(dPoints, opRes._2)
-        hMap.updated("ListMut", newDPoints)
-    }
-    val emptyMap: HashMap[String, DataPoints] = HashMap.empty
-    val emptyDP = DataPoints(0,0,0,0,0)
-    val m1 =  emptyMap.updated("CstMut", emptyDP)
-    val m2 =  m1.updated("ListMut", emptyDP)
-    val m3 =  m2.updated("RecordSelectMut", emptyDP)
-    val m4 =  m3.updated("CaseDeletion", emptyDP)
-    val m5 =  m4.updated("VarMut", emptyDP)
-    val m6 =  m5.updated("CaseSwitch", emptyDP)
-    val m7 =  m6.updated("CompMut", emptyDP)
-    val m8 =  m7.updated("IfMut", emptyDP)
-    val m9 =  m8.updated("SigMut", emptyDP)
-
-
-    tuples.foldLeft(m9)((acc, t) => helper(t, acc))
-  }
-
 
   private def reportResults(totalStartTime: Long, amountOfMutants: Int, totalSurvivorCount: Int, totalUnknowns: Int, equivalents: Int): Unit = {
 
