@@ -71,7 +71,8 @@ object MutationTester {
       * It also keeps track of the time it took to generate all the mutations
       */
     def run(flix: Flix, testModule: String, productionModule: String, percentage: Int): Unit = {
-        runBenchmarks(flix)
+        //runBenchmarks(flix)
+      toolRun(flix, testModule,productionModule, percentage)
     }
   private def toolRun(flix: Flix, testModule: String, productionModule: String, percentage: Int): Unit = {
     println(s"mutating module: $productionModule")
@@ -98,17 +99,18 @@ object MutationTester {
 
   def runBenchmarks(flix: Flix): Unit = {
     val listToSource: List[String] = ("List" :: "Chain" :: "MutList" :: "Option" :: "Map" :: "ToString" :: "Functor" :: Nil)
-    val data = listToSource.flatMap(module => {
+    val (data, timeToBugData) = listToSource.map(module => {
       val root = flix.check().unsafeGet
       // println(root.sigs.filter(t => t._1.toString.equals("Add.add")))
       val mutations = MutationGenerator.mutateRoot(root, module)
       val testModule = s"Test$module"
       val lastRoot = insertDecAndCheckIntoRoot(root)
-      runMutations(flix, testModule, lastRoot, mutations)
-    })
-    MutationDataHandler.processData(data)
+      val (results, timeToBug) = runMutations(flix, testModule, lastRoot, mutations)
+      (results, s"TTB: $module $timeToBug")
+    }).unzip
+    MutationDataHandler.processData(data.flatten)
+    MutationDataHandler.writeTTBToFile(timeToBugData)
   }
-
 
     private def writeReportsToFile(reportsList: List[String]): Unit = {
       if (reportsList.isEmpty) return
@@ -209,21 +211,22 @@ object MutationTester {
 
     private case class TestKit(flix: Flix, root: Root, testModule: String)
 
-    private def runMutations(flix: Flix, testModule: String, root: TypedAst.Root, mutatedDefs: List[(Symbol.DefnSym, List[MutatedDef])]): List[(MutationType, TestRes)] = {
+    private def runMutations(flix: Flix, testModule: String, root: TypedAst.Root, mutatedDefs: List[(Symbol.DefnSym, List[MutatedDef])]): (List[(MutationType, TestRes)], Long) = {
         val totalStartTime = System.nanoTime()
         val temp = totalStartTime
         val amountOfMutants = mutatedDefs.map(m => m._2.length).sum
         val f = DateTimeFormatter.ofPattern("yyyy-MM-dd: HH:mm")
         // (survivorCount, startTime, tempTime for progress updates, date for progress updates, amount of mutants currently tested)
         val emptyList: List[(MutationType, TestRes)] = Nil
-        val localAcc = (0, 0, 0, totalStartTime.toDouble, temp, 0, emptyList)
-        val (totalSurvivorCount, totalUnknowns, equivalents, _, _, _, mOperatorResults) = mutatedDefs.foldLeft(localAcc)((acc, mut) => {
+        val localAcc = (0, 0, 0, totalStartTime.toDouble, temp, 0, emptyList, 0.toLong)
+        val (totalSurvivorCount, totalUnknowns, equivalents, _, _, _, mOperatorResults, timeToBug) = mutatedDefs.foldLeft(localAcc)((acc, mut) => {
             val kit = TestKit(flix, root, testModule)
             println(s"testing ${mut._2.length} mutations in: ${mut._1}")
             testMutantsAndUpdateProgress(acc, mut, kit, f)
         })
       reportResults(totalStartTime, amountOfMutants, totalSurvivorCount, totalUnknowns, equivalents)
-      mOperatorResults
+      MutationDataHandler.writeTTBToFile(List(s"TTB: $testModule ${timeToBug - totalStartTime}"))
+      (mOperatorResults, timeToBug - totalStartTime)
     }
 
   private def reportResults(totalStartTime: Long, amountOfMutants: Int, totalSurvivorCount: Int, totalUnknowns: Int, equivalents: Int): Unit = {
@@ -241,15 +244,15 @@ object MutationTester {
     println(s"Total time to test all mutants: $time seconds")
   }
 
-    private def testMutantsAndUpdateProgress(acc: (Int, Int, Int, Double, Long, Int, List[(MutationType, TestRes)]), mut: (Symbol.DefnSym, List[MutatedDef]), testKit: TestKit, f: DateTimeFormatter) = {
+    private def testMutantsAndUpdateProgress(acc: (Int, Int, Int, Double, Long, Int, List[(MutationType, TestRes)], Long), mut: (Symbol.DefnSym, List[MutatedDef]), testKit: TestKit, f: DateTimeFormatter) = {
         mut._2.foldLeft(acc)((acc2, mDef) => {
-            val (survivorCount, unknownCount, eQCount, time, accTemp, mAmount, mTypeResults) = acc2
+            val (survivorCount, unknownCount, eQCount, time, accTemp, mAmount, mTypeResults, timeToBug) = acc2
             val mutationAmount = mAmount + 1
             val start = System.nanoTime()
             val testResult = compileAndTestMutant(mDef.df, mut, testKit)
             val nano = 1_000_000_000
             val newTime = time + (System.nanoTime() - start).toDouble / nano
-            val newSurvivorCount = if (testResult.equals(TestRes.MutantSurvived))  survivorCount + 1 else survivorCount
+            val (newSurvivorCount, newTTB) = if (testResult.equals(TestRes.MutantSurvived)) (survivorCount + 1, if (timeToBug == 0) System.nanoTime else timeToBug) else (survivorCount, timeToBug)
             val newUnknownCount = if (testResult.equals(TestRes.Unknown))  unknownCount + 1 else unknownCount
             val newEQCount = if (testResult.equals(TestRes.Equivalent))  eQCount + 1 else eQCount
             if (testResult.equals(TestRes.MutantSurvived)) {
@@ -262,7 +265,7 @@ object MutationTester {
           val now = LocalDateTime.now()
             val message = s"[${f.format(now)}] Mutants: $mutationAmount, Killed: ${mutationAmount - survivorCount - unknownCount}, Survived: $survivorCount, Unknown: $unknownCount"
             val newTemp = progressUpdate(message, accTemp)
-            (newSurvivorCount, newUnknownCount, newEQCount, newTime, newTemp, mutationAmount, (mDef.mutType, testResult) :: mTypeResults)
+            (newSurvivorCount, newUnknownCount, newEQCount, newTime, newTemp, mutationAmount, (mDef.mutType, testResult) :: mTypeResults, newTTB)
             //val sym = mDef.sym.toString
             //println(s"mutation in $sym survived")
         })
