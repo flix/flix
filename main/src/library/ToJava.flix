@@ -19,7 +19,7 @@
 ///
 pub trait ToJava[t: Type] {
     type Out[t]: Type
-    type Aef[t]: Eff = Pure
+    type Aef[t]: Eff = {}
     pub def toJava(t: t): ToJava.Out[t] \ ToJava.Aef[t]
 }
 

@@ -14,7 +14,7 @@ mod Test.Assoc.Eff.Covariance {
     }
 
     instance Functor[List] {
-        type Eff = Pure // Accessing an immutable list is pure.
+        type Eff = {} // Accessing an immutable list is pure.
 
         pub def map(f: a -> b \ ef, x: List[a]): List[b] \ ef = checked_ecast(???)
     }
