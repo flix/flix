@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast
 import ca.uwaterloo.flix.language.ast.ReducedAst._
+import ca.uwaterloo.flix.language.dbg.AstPrinter
 import ca.uwaterloo.flix.util.ParOps
 import ca.uwaterloo.flix.util.collection.MapOps
 
@@ -40,7 +41,7 @@ object TailPos {
   /**
     * Identifies expressions in tail position in the given AST `root`.
     */
-  def run(root: Root)(implicit flix: Flix): Root = flix.phase("TailPos") {
+  def run(root: Root)(implicit flix: Flix): Root = flix.phase("TailPos")(AstPrinter.printReducedAst) {
     val defns = ParOps.parMapValues(root.defs)(visitDef)
     root.copy(defs = defns)
   }

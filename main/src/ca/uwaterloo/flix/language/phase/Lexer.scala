@@ -100,7 +100,7 @@ object Lexer {
    * Run the lexer on multiple `Ast.Source`s in parallel.
    */
   def run(root: ReadAst.Root, oldTokens: Map[Ast.Source, Array[Token]], changeSet: ChangeSet)(implicit flix: Flix): Validation[Map[Ast.Source, Array[Token]], CompilationMessage] = {
-    flix.phase("Lexer") {
+    flix.phaseNoPrinter("Lexer") {
       if (flix.options.xparser) {
         // New lexer and parser disabled. Return immediately.
         return Validation.success(Map.empty[Ast.Source, Array[Token]])

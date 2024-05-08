@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.LabelledPrecedenceGraph
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.dbg.AstPrinter
 import ca.uwaterloo.flix.language.errors.{KindError, TypeError}
 import ca.uwaterloo.flix.language.phase.typer.{ConstraintGen, ConstraintSolver, TypeContext}
 import ca.uwaterloo.flix.language.phase.unification.Substitution
@@ -30,7 +31,7 @@ object Typer {
   /**
     * Type checks the given AST root.
     */
-  def run(root: KindedAst.Root, oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[TypedAst.Root, TypeError] = flix.phase("Typer") {
+  def run(root: KindedAst.Root, oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[TypedAst.Root, TypeError] = flix.phaseValidation("Typer")(AstPrinter.printTypedAst) {
     val traitEnv = mkTraitEnv(root.traits, root.instances)
     val eqEnv = mkEqualityEnv(root.traits, root.instances)
 

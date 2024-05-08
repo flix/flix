@@ -125,7 +125,7 @@ object Parser2 {
       return Validation.success(SyntaxTree.empty)
     }
 
-    flix.phase("Parser2") {
+    flix.phaseNoPrinter("Parser2") {
       // Compute the stale and fresh sources.
       val (stale, fresh) = changeSet.partition(tokens, oldRoot.units)
 
@@ -1869,21 +1869,22 @@ object Parser2 {
 
     private def forFragments()(implicit s: State): Unit = {
       assert(at(TokenKind.ParenL))
-      expect(TokenKind.ParenL, SyntacticContext.Expr.OtherExpr)
-      while (!at(TokenKind.ParenR) && !eof()) {
-        if (at(TokenKind.KeywordIf)) {
-          guardFragment()
-        } else {
-          generatorOrLetFragment()
-        }
-        if (!at(TokenKind.ParenR)) {
-          expect(TokenKind.Semi, SyntacticContext.Expr.OtherExpr)
-        }
-      }
-      expect(TokenKind.ParenR, SyntacticContext.Expr.OtherExpr)
+      oneOrMore(
+        displayName = "for-fragment",
+        checkForItem = t =>t.isFirstPattern || t == TokenKind.KeywordIf,
+        getItem = () =>
+          if (at(TokenKind.KeywordIf)) {
+            guardFragment()
+          } else {
+            generatorOrLetFragment()
+          },
+        breakWhen = t => t == TokenKind.KeywordYield || t.isRecoverExpr,
+        separator = TokenKind.Semi,
+        context = SyntacticContext.Expr.OtherExpr
+      )
     }
 
-    private def guardFragment()(implicit s: State): Unit = {
+    private def guardFragment()(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.KeywordIf))
       val mark = open()
       expect(TokenKind.KeywordIf, SyntacticContext.Expr.OtherExpr)
@@ -1891,7 +1892,7 @@ object Parser2 {
       close(mark, TreeKind.Expr.ForFragmentGuard)
     }
 
-    private def generatorOrLetFragment()(implicit s: State): Unit = {
+    private def generatorOrLetFragment()(implicit s: State): Mark.Closed = {
       val mark = open()
       Pattern.pattern()
       val isGenerator = eat(TokenKind.ArrowThinL)
