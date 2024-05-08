@@ -500,6 +500,20 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
     expectMain(result)
   }
 
+  test("BadFixpointConstraint.01") {
+    val input =
+      """
+        |def getFacts(): #{ ParentOf(String, String), AncestorOf(String, String) } = #{
+        |    ParentOf("Pompey", "Strabo").,
+        |    ParentOf("Sextus", "Pompey").
+        |}
+        |def main(): Int32 = 123
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
   test("BadType.01") {
     val input =
       """
