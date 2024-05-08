@@ -18,8 +18,9 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Constant
 import ca.uwaterloo.flix.language.ast.ReducedAst._
-import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoType, Name, SemanticOp, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoType, Name, Purity, SemanticOp, SourceLocation, Symbol}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
+
 import scala.annotation.tailrec
 
 /**
@@ -70,7 +71,7 @@ object Verifier {
         checkEq(tpe1, tpe2, loc)
     }
 
-    case Expr.ApplyAtomic(op, exps, tpe, _, loc) =>
+    case Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
       val ts = exps.map(visitExpr)
 
       op match {
@@ -280,7 +281,7 @@ object Verifier {
           val List(t1) = ts
           tpe match {
             case MonoType.Lazy(elmt) =>
-              val fun = MonoType.Arrow(List(MonoType.Unit), elmt)
+              val fun = MonoType.Arrow(List(MonoType.Unit), elmt, Purity.Pure)
               checkEq(t1, fun, loc)
               tpe
             case _ => failMismatchedShape(tpe, "Lazy", loc)
@@ -351,10 +352,10 @@ object Verifier {
 
         case AtomicOp.Closure(sym) =>
           val defn = root.defs(sym)
-          val signature = MonoType.Arrow(defn.fparams.map(_.tpe), defn.tpe)
+          val signature = MonoType.Arrow(defn.fparams.map(_.tpe), defn.tpe, defn.purity)
 
-          val decl = MonoType.Arrow(defn.cparams.map(_.tpe), signature)
-          val actual = MonoType.Arrow(ts, tpe)
+          val decl = MonoType.Arrow(defn.cparams.map(_.tpe), signature, Purity.Pure)
+          val actual = MonoType.Arrow(ts, tpe, Purity.Pure)
 
           checkEq(decl, actual, loc)
           tpe
@@ -377,8 +378,8 @@ object Verifier {
         case AtomicOp.Spawn =>
           val List(t1, t2) = ts
           t1 match {
-            case MonoType.Arrow(List(MonoType.Unit), _) => ()
-            case _ => failMismatchedShape(t1, "Arrow(List(Unit), _)", loc)
+            case MonoType.Arrow(List(MonoType.Unit), _, _) => ()
+            case _ => failMismatchedShape(t1, "Arrow(List(Unit), _, _)", loc)
           }
 
           check(expected = MonoType.Region)(actual = t2, loc)
@@ -425,21 +426,22 @@ object Verifier {
 
     case Expr.ApplyClo(exp, exps, ct, tpe, _, loc) =>
       val lamType1 = visitExpr(exp)
-      val lamType2 = MonoType.Arrow(exps.map(visitExpr), tpe)
-      checkEq(lamType1, lamType2, loc)
+      // extract purity from the lambda of lamType1
+      // val lamType2 = MonoType.Arrow(exps.map(visitExpr), tpe, ???)
+      // checkEq(lamType1, lamType2, loc)
       tpe
 
     case Expr.ApplyDef(sym, exps, ct, tpe, _, loc) =>
       val defn = root.defs(sym)
-      val declared = MonoType.Arrow(defn.fparams.map(_.tpe), defn.tpe)
-      val actual = MonoType.Arrow(exps.map(visitExpr), tpe)
+      val declared = MonoType.Arrow(defn.fparams.map(_.tpe), defn.tpe, defn.purity)
+      val actual = MonoType.Arrow(exps.map(visitExpr), tpe, defn.purity)
       check(expected = declared)(actual = actual, loc)
       tpe
 
     case Expr.ApplySelfTail(sym, actuals, tpe, _, loc) =>
       val defn = root.defs(sym)
-      val declared = MonoType.Arrow(defn.fparams.map(_.tpe), defn.tpe)
-      val actual = MonoType.Arrow(actuals.map(visitExpr), tpe)
+      val declared = MonoType.Arrow(defn.fparams.map(_.tpe), defn.tpe, defn.purity)
+      val actual = MonoType.Arrow(actuals.map(visitExpr), tpe, defn.purity)
       check(expected = declared)(actual = actual, loc)
       tpe
 
@@ -494,7 +496,7 @@ object Verifier {
 
     case Expr.TryWith(exp, effUse, rules, ct, tpe, purity, loc) =>
       val exptype = visitExpr(exp) match {
-        case MonoType.Arrow(List(MonoType.Unit), t) => t
+        case MonoType.Arrow(List(MonoType.Unit), t, _) => t
         case e => failMismatchedShape(e, "Arrow(List(Unit), _)", exp.loc)
       }
 
@@ -508,10 +510,10 @@ object Verifier {
           throw InternalCompilerException(s"Unknown operation sym: '${rule.op.sym}'", rule.op.loc))
 
         val params = op.fparams.map(_.tpe)
-        val resumptionType = MonoType.Arrow(List(op.tpe), exptype)
-        val signature = MonoType.Arrow(params :+ resumptionType, exptype)
-
-        checkEq(ruletype, signature, rule.exp.loc)
+//        val resumptionType = MonoType.Arrow(List(op.tpe), exptype, ???)
+//        val signature = MonoType.Arrow(params :+ resumptionType, exptype, ???)
+//
+//        checkEq(ruletype, signature, rule.exp.loc)
       }
 
       checkEq(tpe, exptype, loc)
@@ -528,9 +530,9 @@ object Verifier {
         case t => t
       }
 
-      val sig = MonoType.Arrow(ts, tpe)
+      val sig = MonoType.Arrow(ts, tpe, op.purity)
       val opsig = MonoType.Arrow(
-        op.fparams.map(_.tpe), oprestype
+        op.fparams.map(_.tpe), oprestype, op.purity
       )
 
       checkEq(sig, opsig, loc)
@@ -539,7 +541,7 @@ object Verifier {
     case Expr.NewObject(_, clazz, tpe, _, methods, loc) =>
       for (m <- methods) {
         val exptype = visitExpr(m.exp)
-        val signature = MonoType.Arrow(m.fparams.map(_.tpe), m.tpe)
+        val signature = MonoType.Arrow(m.fparams.map(_.tpe), m.tpe, m.purity)
         checkEq(signature, exptype, m.loc)
       }
       checkEq(tpe, MonoType.Native(clazz), loc)
@@ -599,21 +601,21 @@ object Verifier {
       case MonoType.BigInt if klazz.isAssignableFrom(classOf[java.math.BigInteger]) => tpe
       case MonoType.BigDecimal if klazz.isAssignableFrom(classOf[java.math.BigDecimal]) => tpe
       case MonoType.Regex if klazz.isAssignableFrom(classOf[java.util.regex.Pattern]) => tpe
-      case MonoType.Arrow(List(MonoType.Object), MonoType.Unit) if klazz.isAssignableFrom(classOf[java.util.function.Consumer[Object]]) => tpe
-      case MonoType.Arrow(List(MonoType.Object), MonoType.Bool) if klazz.isAssignableFrom(classOf[java.util.function.Predicate[Object]]) => tpe
-      case MonoType.Arrow(List(MonoType.Int32), MonoType.Unit) if klazz.isAssignableFrom(classOf[java.util.function.IntConsumer]) => tpe
-      case MonoType.Arrow(List(MonoType.Int32), MonoType.Object) if klazz.isAssignableFrom(classOf[java.util.function.IntFunction[Object]]) => tpe
-      case MonoType.Arrow(List(MonoType.Int32), MonoType.Bool) if klazz.isAssignableFrom(classOf[java.util.function.IntPredicate]) => tpe
-      case MonoType.Arrow(List(MonoType.Int32), MonoType.Int32) if klazz.isAssignableFrom(classOf[java.util.function.IntUnaryOperator]) => tpe
-      case MonoType.Arrow(List(MonoType.Int32), MonoType.Unit) if klazz.isAssignableFrom(classOf[java.util.function.IntConsumer]) => tpe
-      case MonoType.Arrow(List(MonoType.Int64), MonoType.Unit) if klazz.isAssignableFrom(classOf[java.util.function.LongConsumer]) => tpe
-      case MonoType.Arrow(List(MonoType.Int64), MonoType.Object) if klazz.isAssignableFrom(classOf[java.util.function.LongFunction[Object]]) => tpe
-      case MonoType.Arrow(List(MonoType.Int64), MonoType.Bool) if klazz.isAssignableFrom(classOf[java.util.function.LongPredicate]) => tpe
-      case MonoType.Arrow(List(MonoType.Int64), MonoType.Int64) if klazz.isAssignableFrom(classOf[java.util.function.LongUnaryOperator]) => tpe
-      case MonoType.Arrow(List(MonoType.Float64), MonoType.Unit) if klazz.isAssignableFrom(classOf[java.util.function.DoubleConsumer]) => tpe
-      case MonoType.Arrow(List(MonoType.Float64), MonoType.Object) if klazz.isAssignableFrom(classOf[java.util.function.DoubleFunction[Object]]) => tpe
-      case MonoType.Arrow(List(MonoType.Float64), MonoType.Bool) if klazz.isAssignableFrom(classOf[java.util.function.DoublePredicate]) => tpe
-      case MonoType.Arrow(List(MonoType.Float64), MonoType.Float64) if klazz.isAssignableFrom(classOf[java.util.function.DoubleUnaryOperator]) => tpe
+      case MonoType.Arrow(List(MonoType.Object), MonoType.Unit, _) if klazz.isAssignableFrom(classOf[java.util.function.Consumer[Object]]) => tpe
+      case MonoType.Arrow(List(MonoType.Object), MonoType.Bool, _) if klazz.isAssignableFrom(classOf[java.util.function.Predicate[Object]]) => tpe
+      case MonoType.Arrow(List(MonoType.Int32), MonoType.Unit, _) if klazz.isAssignableFrom(classOf[java.util.function.IntConsumer]) => tpe
+      case MonoType.Arrow(List(MonoType.Int32), MonoType.Object, _) if klazz.isAssignableFrom(classOf[java.util.function.IntFunction[Object]]) => tpe
+      case MonoType.Arrow(List(MonoType.Int32), MonoType.Bool, _) if klazz.isAssignableFrom(classOf[java.util.function.IntPredicate]) => tpe
+      case MonoType.Arrow(List(MonoType.Int32), MonoType.Int32, _) if klazz.isAssignableFrom(classOf[java.util.function.IntUnaryOperator]) => tpe
+      case MonoType.Arrow(List(MonoType.Int32), MonoType.Unit, _) if klazz.isAssignableFrom(classOf[java.util.function.IntConsumer]) => tpe
+      case MonoType.Arrow(List(MonoType.Int64), MonoType.Unit, _) if klazz.isAssignableFrom(classOf[java.util.function.LongConsumer]) => tpe
+      case MonoType.Arrow(List(MonoType.Int64), MonoType.Object, _) if klazz.isAssignableFrom(classOf[java.util.function.LongFunction[Object]]) => tpe
+      case MonoType.Arrow(List(MonoType.Int64), MonoType.Bool, _) if klazz.isAssignableFrom(classOf[java.util.function.LongPredicate]) => tpe
+      case MonoType.Arrow(List(MonoType.Int64), MonoType.Int64, _) if klazz.isAssignableFrom(classOf[java.util.function.LongUnaryOperator]) => tpe
+      case MonoType.Arrow(List(MonoType.Float64), MonoType.Unit, _) if klazz.isAssignableFrom(classOf[java.util.function.DoubleConsumer]) => tpe
+      case MonoType.Arrow(List(MonoType.Float64), MonoType.Object, _) if klazz.isAssignableFrom(classOf[java.util.function.DoubleFunction[Object]]) => tpe
+      case MonoType.Arrow(List(MonoType.Float64), MonoType.Bool, _) if klazz.isAssignableFrom(classOf[java.util.function.DoublePredicate]) => tpe
+      case MonoType.Arrow(List(MonoType.Float64), MonoType.Float64, _) if klazz.isAssignableFrom(classOf[java.util.function.DoubleUnaryOperator]) => tpe
       case _ => failMismatchedTypes(tpe, klazz, loc)
     }
   }
