@@ -321,7 +321,7 @@ object Lexer {
       case _ if isMatch("#{") => TokenKind.HashCurlyL
       case _ if isMatch("#(") => TokenKind.HashParenL
       case '#' => TokenKind.Hash
-      case _ if isMatch("///") => acceptDocComment()
+      case _ if isMatch("/// ") => acceptDocComment()
       case _ if isMatch("//") => acceptLineComment()
       case _ if isMatch("/*") => acceptBlockComment()
       case '/' => TokenKind.Slash

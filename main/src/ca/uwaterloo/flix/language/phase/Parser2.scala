@@ -519,6 +519,9 @@ object Parser2 {
           advanceWithError(error)
         }
       }
+      // Consume any comments trailing an item.
+      // This is needed because the comment might be just before delimiterR obscuring the atEnd check.
+      comments()
     }
     optionallyWith match {
       case Some((indicator, rule)) => if (eat(indicator)) {
