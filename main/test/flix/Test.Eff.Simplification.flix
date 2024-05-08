@@ -1,11 +1,14 @@
 mod Test.Eff.Simplification {
+    // a pure function
+    // def pure(): Unit \ {} = ()
+
     // TODO: Does this even make sense anymore without Pure?
-    // The test fails right now, and we should probably remove it
+    // Effect sets cannot nest. With Pure (which had special privilege) that was not caught but it is now.
     // pub def testPureAndPure(): Unit \ {{}, {}} = pure()
 
     // TODO: Does this even make sense anymore without Pure?
-    // The test fails right now, and we should probably remove it
-    //pub def testPureAndIo(): Unit \ {{}, IO} = io()
+    // Effect sets cannot nest. With Pure (which had special privilege) that was not caught but it is now.
+    // pub def testPureAndIo(): Unit \ {{}, IO} = io()
 
     pub def testIoAndIo(): Unit \ {IO, IO} = io()
 
@@ -16,9 +19,6 @@ mod Test.Eff.Simplification {
     // pub def testPureOrIo(): Unit \ {} & IO = pure()
     //
     // pub def testIoOrIo(): Unit \ IO & IO = io()
-
-    /// a pure function
-    def pure(): Unit \ {} = ()
 
     /// an io function
     def io(): Unit \ IO = unchecked_cast(() as _ \ IO)
