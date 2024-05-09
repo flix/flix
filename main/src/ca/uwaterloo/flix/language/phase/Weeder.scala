@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.Ast.{Constant, Denotation}
 import ca.uwaterloo.flix.language.ast.ParsedAst.TypeParams
 import ca.uwaterloo.flix.language.ast.WeededAst.Pattern
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.dbg.AstPrinter
+import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.language.errors.WeederError._
 import ca.uwaterloo.flix.language.errors._
 import ca.uwaterloo.flix.util.Validation._
@@ -63,7 +63,7 @@ object Weeder {
     * Weeds the whole program.
     */
   def run(root: ParsedAst.Root, oldRoot: WeededAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[WeededAst.Root, WeederError] =
-    flix.phaseValidation("Weeder")(AstPrinter.printWeededAst) {
+    flix.phase("Weeder") {
       // Compute the stale and fresh sources.
       val (stale, fresh) = changeSet.partition(root.units, oldRoot.units)
 
@@ -72,7 +72,7 @@ object Weeder {
           val m = fresh ++ result
           WeededAst.Root(m, root.entryPoint, root.names)
       }
-    }
+    }(DebugValidation())
 
   /**
     * Weeds the given abstract syntax tree.

@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, ReadAst, SourceLocation, Token, TokenKind}
+import ca.uwaterloo.flix.language.dbg.AstPrinter.{DebugNoOp, DebugValidation}
 import ca.uwaterloo.flix.language.errors.LexerError
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 import ca.uwaterloo.flix.util.Validation._
@@ -99,8 +100,8 @@ object Lexer {
   /**
    * Run the lexer on multiple `Ast.Source`s in parallel.
    */
-  def run(root: ReadAst.Root, oldTokens: Map[Ast.Source, Array[Token]], changeSet: ChangeSet)(implicit flix: Flix): Validation[Map[Ast.Source, Array[Token]], CompilationMessage] = {
-    flix.phaseNoPrinter("Lexer") {
+  def run(root: ReadAst.Root, oldTokens: Map[Ast.Source, Array[Token]], changeSet: ChangeSet)(implicit flix: Flix): Validation[Map[Ast.Source, Array[Token]], CompilationMessage] =
+    flix.phase("Lexer") {
       if (flix.options.xparser) {
         // New lexer and parser disabled. Return immediately.
         return Validation.success(Map.empty[Ast.Source, Array[Token]])
@@ -115,8 +116,7 @@ object Lexer {
       // Construct a map from each source to its tokens.
       val reused = fresh.map(m => Validation.success(m))
       mapN(sequence(results ++ reused))(_.toMap)
-    }
-  }
+    }(DebugValidation()(DebugNoOp()))
 
   /**
    * Lexes a single source (file) into an array of tokens.

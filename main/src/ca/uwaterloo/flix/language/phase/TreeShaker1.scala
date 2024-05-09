@@ -17,9 +17,9 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.ast.LoweredAst._
-import ca.uwaterloo.flix.language.ast.{LoweredAst, Symbol}
-import ca.uwaterloo.flix.language.dbg.AstPrinter
+import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugLoweredAst
 import ca.uwaterloo.flix.util.ParOps
 
 /**
@@ -43,7 +43,7 @@ object TreeShaker1 {
   /**
     * Performs tree shaking on the given AST `root`.
     */
-  def run(root: Root)(implicit flix: Flix): Root = flix.phase("TreeShaker1")(AstPrinter.printLoweredAst) {
+  def run(root: Root)(implicit flix: Flix): Root = flix.phase("TreeShaker1") {
     // Compute the symbols that are always reachable.
     val initReach = initReachable(root)
 

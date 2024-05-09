@@ -144,6 +144,16 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
     expectMain(result)
   }
 
+  test("LeadOnCurlyR.01") {
+    val input =
+      """
+        |} def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
   test("BadTrait.01") {
     val input =
       """
