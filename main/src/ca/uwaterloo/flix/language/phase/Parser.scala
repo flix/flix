@@ -88,10 +88,10 @@ object Parser {
         val mostLikelyContext = possibleContexts.keySet.reduceOption(SyntacticContext.join).getOrElse(SyntacticContext.Unknown)
         val loc = SourceLocation(parser.input, source, isReal = true, e.position.line, e.position.column.toShort, e.position.line, e.position.column.toShort)
         // NOTE: Manually construct a hard failure here since ParseError is Recoverable, but in this parser it is not :-(
-        Validation.HardFailure(Chain(ca.uwaterloo.flix.language.errors.ParseError(stripLiteralWhitespaceChars(parser.formatError(e)), mostLikelyContext, loc)))
+        Validation.HardFailure(Chain(ca.uwaterloo.flix.language.errors.ParseError(_ => stripLiteralWhitespaceChars(parser.formatError(e)), mostLikelyContext, loc)))
       case scala.util.Failure(e) =>
         // NOTE: Manually construct a hard failure here since ParseError is Recoverable, but in this parser it is not :-(
-        Validation.HardFailure(Chain(ca.uwaterloo.flix.language.errors.ParseError(e.getMessage, SyntacticContext.Unknown, SourceLocation.Unknown)))
+        Validation.HardFailure(Chain(ca.uwaterloo.flix.language.errors.ParseError(_ => e.getMessage, SyntacticContext.Unknown, SourceLocation.Unknown)))
     }
   }
 
