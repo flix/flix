@@ -429,6 +429,13 @@ sealed trait TokenKind {
   def isRecoverDecl: Boolean = this.isFirstDecl
 
   /**
+    * Checks if kind is a TokenKind that warrants breaking a module parsing loop.
+    * This is used to skip tokens until the start of a declaration is found,
+    * in case no other error-recovery could be applied.
+    */
+  def isRecoverMod: Boolean = this == TokenKind.CurlyR || this.isFirstDecl
+
+  /**
     * Checks if kind is a TokenKind that warrants breaking an expression parsing loop.
     * For instance, if we find an 'trait' keyword in the middle of an expression,
     * we can assume that there is no more expression to parse.
