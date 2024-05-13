@@ -8,7 +8,7 @@ import scala.collection.immutable.HashMap
 object MutationDataHandler {
 
   def processData(operatorResults: List[(MutationType, TestRes)]): Unit = {
-    val sortedData = sortData(operatorResults)
+    val sortedData = sortData(operatorResults) ++ readDataFromFile()
     writeDataToFile(sortedData)
   }
   private def writeDataToFile(stringToPoints: Map[String, DataPoints]): Unit = {
@@ -21,6 +21,26 @@ object MutationDataHandler {
     fileWriter.write(stringToWrite)
     fileWriter.close()
   }
+
+  private def readDataFromFile(): Map[String, DataPoints] = {
+    val emptyMap: HashMap[String, DataPoints] = HashMap.empty
+    try {
+        val source = scala.io.Source.fromFile("MutStats.txt")
+        val res = source.getLines().foldLeft(emptyMap)((acc, s) => {
+          val arr = s.split(":")
+          val mutationType = arr.apply(0)
+          val dps = DataPoints(arr.apply(1).toInt, arr.apply(2).toInt, arr.apply(3).toInt, arr.apply(4).toInt, arr.apply(5).toInt)
+          acc.updated(mutationType, dps)
+        })
+        source.close()
+        res
+    } catch {
+      case _: Throwable => emptyMap
+    }
+  }
+
+
+
   def writeTTBToFile(times: List[String]): Unit = {
     val stringToWrite = times.foldLeft("")((acc, ttb) => s"$ttb\n$acc")
     val fileWriter = new FileWriter(new File("TTBData.txt"))
