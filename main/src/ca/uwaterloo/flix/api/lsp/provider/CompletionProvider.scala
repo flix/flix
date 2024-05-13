@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.api.lsp.provider.completion.ranker.CompletionRanker
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.SyntacticContext
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, TypedAst}
-import ca.uwaterloo.flix.language.errors.{ParseError, ResolutionError, UnexpectedToken, WeederError}
+import ca.uwaterloo.flix.language.errors.{ParseError, ResolutionError, WeederError}
 import ca.uwaterloo.flix.language.fmt.FormatScheme
 import ca.uwaterloo.flix.language.phase.Parser.Letters
 import org.json4s.JsonAST.JObject
@@ -292,8 +292,8 @@ object CompletionProvider {
       case ResolutionError.UndefinedName(_, _, _, isUse, _) => if (isUse) (1, SyntacticContext.Use) else (2, SyntacticContext.Expr.OtherExpr)
       case ResolutionError.UndefinedType(_, _, _) => (1, SyntacticContext.Type.OtherType)
       case WeederError.MalformedIdentifier(_, _) => (2, SyntacticContext.Import)
-      case UnexpectedToken(_, _, ctx, _, _) => (5, ctx)
-      case ParseError(_, ctx, _, _) => (5, ctx)
+      case WeederError.UnappliedIntrinsic(_, _) => (5, SyntacticContext.Expr.OtherExpr)
+      case err: ParseError => (5, err.context)
       case _ => (999, SyntacticContext.Unknown)
     }).minByOption(_._1) match {
       case None => SyntacticContext.Unknown

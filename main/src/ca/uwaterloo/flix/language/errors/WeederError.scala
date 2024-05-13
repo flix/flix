@@ -1032,6 +1032,26 @@ object WeederError {
   }
 
   /**
+    * An error raised to indicate an unapplied intrinsic .
+    *
+    * @param intrinsic name of the intrinsic.
+    * @param loc the location where the illegal intrinsic occurs.
+    */
+  case class UnappliedIntrinsic(intrinsic: String, loc: SourceLocation) extends WeederError with Recoverable {
+    def summary: String = s"Unapplied intrinsic '$intrinsic'."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Unapplied intrinsic '${red(intrinsic)}'.
+         |
+         |${code(loc, "unapplied intrinsic.")}
+         |Hint: Supply arguments to call the intrinsic `$intrinsic(...)`
+         |""".stripMargin
+    }
+  }
+
+  /**
     * An error raised to indicate an illegal intrinsic.
     *
     * @param loc the location where the illegal intrinsic occurs.
