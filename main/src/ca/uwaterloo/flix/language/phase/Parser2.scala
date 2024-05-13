@@ -622,9 +622,9 @@ object Parser2 {
                  delimiterR: TokenKind = TokenKind.ParenR,
                  optionallyWith: Option[(TokenKind, () => Unit)] = None
                )(implicit s: State): Option[ParseError] = {
-    val locBefore = previousSourceLocation()
+    val locBefore = currentSourceLocation()
     val itemCount = zeroOrMore(displayName, getItem, checkForItem, breakWhen, context, separation, delimiterL, delimiterR, optionallyWith)
-    val locAfter = currentSourceLocation()
+    val locAfter = previousSourceLocation()
     if (itemCount < 1) {
       val loc = SourceLocation.mk(locBefore.sp1, locAfter.sp1)
       val error = ParseError(s"Expected one or more <$displayName}>.", context, loc)
