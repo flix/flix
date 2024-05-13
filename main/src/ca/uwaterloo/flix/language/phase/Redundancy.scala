@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.language.errors.RedundancyError
 import ca.uwaterloo.flix.language.errors.RedundancyError._
 import ca.uwaterloo.flix.language.phase.unification.TraitEnvironment
@@ -78,7 +79,7 @@ object Redundancy {
 
     // Determine whether to return success or soft failure.
     Validation.toSuccessOrSoftFailure(root, errors)
-  }
+  }(DebugValidation())
 
   /**
     * Checks for unused definition symbols.

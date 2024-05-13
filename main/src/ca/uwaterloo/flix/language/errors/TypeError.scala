@@ -733,4 +733,27 @@ object TypeError {
       "Tip: Add an equality constraint to the function."
     })
   }
+
+  /**
+    * Missing trait constraint.
+    *
+    * @param trt   the trait of the constraint.
+    * @param tpe   the type of the constraint.
+    * @param renv  the rigidity environment.
+    * @param loc   the location where the error occurred.
+    */
+  case class MissingTraitConstraint(trt: Symbol.TraitSym, tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError with Recoverable {
+    def summary: String = s"No constraint of the '$trt' trait for the type '${formatType(tpe, Some(renv))}'"
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> No constraint of the '${cyan(trt.toString)}' trait for the type '${red(formatType(tpe, Some(renv)))}'.
+         |
+         |${code(loc, s"missing constraint")}
+         |
+         |""".stripMargin
+    }
+  }
+
 }

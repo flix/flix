@@ -17,6 +17,152 @@
 mod TestFromJava {
 
     /////////////////////////////////////////////////////////////////////////////
+    // Int8                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def int8FromJava01(): Bool =
+        let i = Int8.valueOf(0i8);
+        FromJava.fromJava(i) == 0i8
+
+    @test
+    def int8FromJava02(): Bool =
+        let i = Int8.valueOf(100i8);
+        FromJava.fromJava(i) == 100i8
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Int16                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def int16FromJava01(): Bool =
+        let i = Int16.valueOf(0i16);
+        FromJava.fromJava(i) == 0i16
+
+    @test
+    def int16FromJava02(): Bool =
+        let i = Int16.valueOf(100i16);
+        FromJava.fromJava(i) == 100i16
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Int32                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def int32FromJava01(): Bool =
+        let i = Int32.valueOf(0);
+        FromJava.fromJava(i) == 0
+
+    @test
+    def int32FromJava02(): Bool =
+        let i = Int32.valueOf(100);
+        FromJava.fromJava(i) == 100
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Int64                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def int64FromJava01(): Bool =
+        let i = Int64.valueOf(0i64);
+        FromJava.fromJava(i) == 0i64
+
+    @test
+    def int64FromJava02(): Bool =
+        let i = Int64.valueOf(100i64);
+        FromJava.fromJava(i) == 100i64
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Float32                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def float32FromJava01(): Bool =
+        let d = Float32.valueOf(0.0f32);
+        FromJava.fromJava(d) == 0.0f32
+
+    @test
+    def float32FromJava02(): Bool =
+        let d = Float32.valueOf(100.0f32);
+        FromJava.fromJava(d) == 100.0f32
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Float64                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def float64FromJava01(): Bool =
+        let d = Float64.valueOf(0.0f64);
+        FromJava.fromJava(d) == 0.0f64
+
+    @test
+    def float64FromJava02(): Bool =
+        let d = Float64.valueOf(100.0f64);
+        FromJava.fromJava(d) == 100.0f64
+
+    /////////////////////////////////////////////////////////////////////////////
+    // BigInt                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def bigIntFromJava01(): Bool =
+        import static java.math.BigInteger.valueOf(Int64): ##java.math.BigInteger \ {};
+        let i = valueOf(0i64);
+        FromJava.fromJava(i) == 0ii
+
+    @test
+    def bigIntFromJava02(): Bool =
+        import static java.math.BigInteger.valueOf(Int64): ##java.math.BigInteger \ {};
+        let i = valueOf(100i64);
+        FromJava.fromJava(i) == 100ii
+
+    /////////////////////////////////////////////////////////////////////////////
+    // BigDecimal                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def bigDecimalFromJava01(): Bool =
+        import static java.math.BigDecimal.valueOf(Int64): ##java.math.BigDecimal \ {};
+        let d = valueOf(0i64);
+        FromJava.fromJava(d) == 0.0ff
+
+    @test
+    def bigDecimalFromJava02(): Bool =
+        import static java.math.BigDecimal.valueOf(Int64): ##java.math.BigDecimal \ {};
+        let d = valueOf(100i64);
+        FromJava.fromJava(d) == 100.0ff
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Char                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def charFromJava01(): Bool =
+        let c = Char.valueOf('0');
+        FromJava.fromJava(c) == '0'
+
+    @test
+    def charFromJava02(): Bool =
+        let c = Char.valueOf('a');
+        FromJava.fromJava(c) == 'a'
+
+    /////////////////////////////////////////////////////////////////////////////
+    // String                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def stringFromJava01(): Bool =
+        import static java.lang.String.valueOf(Bool): ##java.lang.String \ {};
+        let s = valueOf(true);
+        FromJava.fromJava(s) == "true"
+
+    @test
+    def stringFromJava02(): Bool =
+        import static java.lang.String.valueOf(Bool): ##java.lang.String \ {};
+        let s = valueOf(false);
+        FromJava.fromJava(s) == "false"
+
+    /////////////////////////////////////////////////////////////////////////////
     // Chain                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 

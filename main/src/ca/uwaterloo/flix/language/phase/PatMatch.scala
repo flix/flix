@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.ast.Symbol.EnumSym
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, ParYieldFragment, Pattern, Root}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
+import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.language.errors.NonExhaustiveMatchError
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
@@ -122,7 +123,7 @@ object PatMatch {
       val errors = classDefErrs ++ defErrs ++ instanceDefErrs ++ sigsErrs
 
       Validation.toSuccessOrSoftFailure(root, errors)
-    }
+    }(DebugValidation())
 
   /**
     * Check that all patterns in an expression are exhaustive

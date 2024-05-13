@@ -19,9 +19,9 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Type}
-import ca.uwaterloo.flix.language.errors.{Recoverable, TypeError, Unrecoverable}
+import ca.uwaterloo.flix.language.dbg.AstPrinter._
+import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.unification.Substitution
-import ca.uwaterloo.flix.util.collection.Chain
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
 import scala.collection.immutable.SortedSet
@@ -39,7 +39,7 @@ object Regions {
 
     // TODO: Instances
     Validation.toSuccessOrSoftFailure((), errors)
-  }
+  }(DebugValidation()(DebugNoOp()))
 
   private def visitDef(def0: Def)(implicit flix: Flix): List[TypeError.RegionVarEscapes] =
     visitExp(def0.exp)(Nil, flix)

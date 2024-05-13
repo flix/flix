@@ -21,6 +21,12 @@ pub enum MutSet[t: Type, r: Region] {
     case MutSet(Region[r], Ref[Set[t], r])
 }
 
+instance Iterable[MutSet[a, r]] {
+    type Elm = a
+    type Aef = r
+    pub def iterator(rc: Region[r1], s: MutSet[a, r]): Iterator[a, r + r1, r1] \ (r + r1) = MutSet.iterator(rc, s)
+}
+
 mod MutSet {
 
     ///

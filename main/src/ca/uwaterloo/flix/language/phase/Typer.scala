@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.LabelledPrecedenceGraph
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.typer.{ConstraintGen, ConstraintSolver, TypeContext}
 import ca.uwaterloo.flix.language.phase.unification.Substitution
@@ -50,7 +51,7 @@ object Typer {
         TypedAst.Root(modules, traits, instances.m, sigs, defs, enums, restrictableEnums, effs, typeAliases, root.uses, root.entryPoint, Set.empty, root.sources, traitEnv, eqEnv, root.names, precedenceGraph)
     }
 
-  }
+  }(DebugValidation())
 
   /**
     * Collects the symbols in the given root into a map.
@@ -111,8 +112,7 @@ object Typer {
   /**
     * Creates a trait environment from the traits and instances in the root.
     */
-  private def mkTraitEnv(traits0: Map[Symbol.TraitSym, KindedAst.Trait], instances0: Map[Symbol.TraitSym, List[KindedAst.Instance]])(implicit flix: Flix): Map[Symbol.TraitSym, Ast.TraitContext] =
-    flix.subphase("TraitEnv") {
+  private def mkTraitEnv(traits0: Map[Symbol.TraitSym, KindedAst.Trait], instances0: Map[Symbol.TraitSym, List[KindedAst.Instance]])(implicit flix: Flix): Map[Symbol.TraitSym, Ast.TraitContext] = {
       traits0.map {
         case (traitSym, trt) =>
           val instances = instances0.getOrElse(traitSym, Nil)
@@ -128,41 +128,37 @@ object Typer {
   /**
     * Creates an equality environment from the traits and instances in the root.
     */
-  private def mkEqualityEnv(traits0: Map[Symbol.TraitSym, KindedAst.Trait], instances0: Map[Symbol.TraitSym, List[KindedAst.Instance]])(implicit flix: Flix): ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef] =
-    flix.subphase("EqualityEnv") {
-
-      val assocs = for {
-        (traitSym, trt) <- traits0.iterator
-        inst <- instances0.getOrElse(traitSym, Nil)
-        assocSig <- trt.assocs
-        assocDefOpt = inst.assocs.find(_.sym.sym == assocSig.sym)
-        assocDef = assocDefOpt match {
-          case None =>
-            val subst = Substitution.singleton(trt.tparam.sym, inst.tpe)
-            val tpe = subst(assocSig.tpe.get)
-            Ast.AssocTypeDef(inst.tpe, tpe)
-          case Some(KindedAst.AssocTypeDef(doc, mod, sym, arg, tpe, loc)) =>
-            Ast.AssocTypeDef(arg, tpe)
-        }
-      } yield (assocSig.sym, assocDef)
-
-
-      assocs.foldLeft(ListMap.empty[Symbol.AssocTypeSym, Ast.AssocTypeDef]) {
-        case (acc, (sym, defn)) => acc + (sym -> defn)
+  private def mkEqualityEnv(traits0: Map[Symbol.TraitSym, KindedAst.Trait], instances0: Map[Symbol.TraitSym, List[KindedAst.Instance]])(implicit flix: Flix): ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef] = {
+    val assocs = for {
+      (traitSym, trt) <- traits0.iterator
+      inst <- instances0.getOrElse(traitSym, Nil)
+      assocSig <- trt.assocs
+      assocDefOpt = inst.assocs.find(_.sym.sym == assocSig.sym)
+      assocDef = assocDefOpt match {
+        case None =>
+          val subst = Substitution.singleton(trt.tparam.sym, inst.tpe)
+          val tpe = subst(assocSig.tpe.get)
+          Ast.AssocTypeDef(inst.tpe, tpe)
+        case Some(KindedAst.AssocTypeDef(doc, mod, sym, arg, tpe, loc)) =>
+          Ast.AssocTypeDef(arg, tpe)
       }
+    } yield (assocSig.sym, assocDef)
+
+
+    assocs.foldLeft(ListMap.empty[Symbol.AssocTypeSym, Ast.AssocTypeDef]) {
+      case (acc, (sym, defn)) => acc + (sym -> defn)
+    }
     }
 
   /**
     * Reconstructs types in the given defs.
     */
   private def visitDefs(root: KindedAst.Root, oldRoot: TypedAst.Root, changeSet: ChangeSet, traitEnv: Map[Symbol.TraitSym, Ast.TraitContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Validation[Map[Symbol.DefnSym, TypedAst.Def], TypeError] = {
-    flix.subphase("Defs") {
-      val (staleDefs, freshDefs) = changeSet.partition(root.defs, oldRoot.defs)
+    val (staleDefs, freshDefs) = changeSet.partition(root.defs, oldRoot.defs)
       mapN(ParOps.parTraverseValues(staleDefs) {
         case defn => visitDef(defn, tconstrs0 = Nil, RigidityEnv.empty, root, traitEnv, eqEnv)
       })(_ ++ freshDefs)
     }
-  }
 
   /**
     * Reconstructs types in the given def.
@@ -175,8 +171,9 @@ object Typer {
     val infTconstrs = context.getTypeConstraints
     val infResult = ConstraintSolver.InfResult(infTconstrs, tpe, eff, infRenv)
     val substVal = ConstraintSolver.visitDef(defn, infResult, renv0, tconstrs0, traitEnv, eqEnv, root)
-    mapN(substVal) {
-      case subst => TypeReconstruction.visitDef(defn, subst)
+    val assocVal = checkAssocTypes(defn.spec, tconstrs0, traitEnv)
+    mapN(substVal, assocVal) {
+      case (subst, _) => TypeReconstruction.visitDef(defn, subst)
     }
   }
 
@@ -185,8 +182,7 @@ object Typer {
     *
     * Returns [[Err]] if a definition fails to type check.
     */
-  private def visitTraits(root: KindedAst.Root, traitEnv: Map[Symbol.TraitSym, Ast.TraitContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[Map[Symbol.TraitSym, TypedAst.Trait], TypeError] =
-    flix.subphase("Traits") {
+  private def visitTraits(root: KindedAst.Root, traitEnv: Map[Symbol.TraitSym, Ast.TraitContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[Map[Symbol.TraitSym, TypedAst.Trait], TypeError] = {
       val (staleTraits, freshTraits) = changeSet.partition(root.traits, oldRoot.traits)
       mapN(ParOps.parTraverseValues(staleTraits)(visitTrait(_, root, traitEnv, eqEnv)))(_ ++ freshTraits)
     }
@@ -237,9 +233,7 @@ object Typer {
     *
     * Returns [[Err]] if a definition fails to type check.
     */
-  private def visitInstances(root: KindedAst.Root, traitEnv: Map[Symbol.TraitSym, Ast.TraitContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Validation[ListMap[Symbol.TraitSym, TypedAst.Instance], TypeError] =
-    flix.subphase("Instances") {
-
+  private def visitInstances(root: KindedAst.Root, traitEnv: Map[Symbol.TraitSym, Ast.TraitContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Validation[ListMap[Symbol.TraitSym, TypedAst.Instance], TypeError] = {
       val instances0 = for {
         (_, insts) <- root.instances
         inst <- insts
@@ -277,8 +271,7 @@ object Typer {
   /**
     * Reconstructs types in the given enums.
     */
-  private def visitEnums(root: KindedAst.Root)(implicit flix: Flix): Map[Symbol.EnumSym, TypedAst.Enum] =
-    flix.subphase("Enums") {
+  private def visitEnums(root: KindedAst.Root)(implicit flix: Flix): Map[Symbol.EnumSym, TypedAst.Enum] = {
       // Visit every enum in the ast.
       val result = root.enums.toList.map {
         case (_, enum) => visitEnum(enum, root)
@@ -305,8 +298,7 @@ object Typer {
   /**
     * Reconstructs types in the given restrictable enums.
     */
-  private def visitRestrictableEnums(root: KindedAst.Root)(implicit flix: Flix): Map[Symbol.RestrictableEnumSym, TypedAst.RestrictableEnum] =
-    flix.subphase("RestrictableEnums") {
+  private def visitRestrictableEnums(root: KindedAst.Root)(implicit flix: Flix): Map[Symbol.RestrictableEnumSym, TypedAst.RestrictableEnum] = {
       // Visit every restrictable enum in the ast.
       val result = root.restrictableEnums.toList.map {
         case (_, re) => visitRestrictableEnum(re, root)
@@ -335,12 +327,10 @@ object Typer {
     * Reconstructs types in the given effects.
     */
   private def visitEffs(root: KindedAst.Root)(implicit flix: Flix): Map[Symbol.EffectSym, TypedAst.Effect] = {
-    flix.subphase("Effs") {
       root.effects.map {
         case (sym, eff) => sym -> visitEff(eff, root)
       }
     }
-  }
 
   /**
     * Reconstructs types in the given effect.
@@ -354,8 +344,7 @@ object Typer {
   /**
     * Reconstructs types in the given type aliases.
     */
-  private def visitTypeAliases(root: KindedAst.Root)(implicit flix: Flix): Map[Symbol.TypeAliasSym, TypedAst.TypeAlias] =
-    flix.subphase("TypeAliases") {
+  private def visitTypeAliases(root: KindedAst.Root)(implicit flix: Flix): Map[Symbol.TypeAliasSym, TypedAst.TypeAlias] = {
       def visitTypeAlias(alias: KindedAst.TypeAlias): (Symbol.TypeAliasSym, TypedAst.TypeAlias) = alias match {
         case KindedAst.TypeAlias(doc, ann, mod, sym, tparams0, tpe, loc) =>
           val tparams = tparams0.map(visitTypeParam(_, root))
@@ -371,4 +360,47 @@ object Typer {
   private def visitTypeParam(tparam: KindedAst.TypeParam, root: KindedAst.Root): TypedAst.TypeParam = tparam match {
     case KindedAst.TypeParam(name, sym, loc) => TypedAst.TypeParam(name, sym, loc)
   }
+
+
+  /**
+    * Verifies that all the associated types in the spec are resolvable, according to the declared type constraints.
+    */
+  private def checkAssocTypes(spec0: KindedAst.Spec, extraTconstrs: List[Ast.TypeConstraint], tenv: Map[Symbol.TraitSym, Ast.TraitContext])(implicit flix: Flix): Validation[Unit, TypeError] = {
+    def getAssocTypes(t: Type): List[Type.AssocType] = t match {
+      case Type.Var(_, _) => Nil
+      case Type.Cst(_, _) => Nil
+      case Type.Apply(tpe1, tpe2, _) => getAssocTypes(tpe1) ::: getAssocTypes(tpe2)
+      case Type.Alias(_, args, _, _) => args.flatMap(getAssocTypes) // TODO ASSOC-TYPES what to do about alias
+      case assoc: Type.AssocType => List(assoc)
+    }
+
+    spec0 match {
+      case KindedAst.Spec(_, _, _, tparams, fparams, _, tpe, eff, tconstrs, econstrs, _) =>
+        // get all the associated types in the spec
+        val tpes = fparams.map(_.tpe) ::: tpe :: eff :: econstrs.flatMap {
+          case Ast.EqualityConstraint(cst, tpe1, tpe2, _) =>
+            // Kind is irrelevant for our purposes
+            List(Type.AssocType(cst, tpe1, Kind.Wild, tpe1.loc), tpe2) // TODO ASSOC-TYPES better location for left
+        }
+
+        // check that they are all covered by the type constraints
+        Validation.traverseX(tpes.flatMap(getAssocTypes)) {
+          case Type.AssocType(Ast.AssocTypeConstructor(assocSym, _), arg@Type.Var(tvarSym1, _), _, loc) =>
+            val trtSym = assocSym.clazz
+            val matches = (extraTconstrs ::: tconstrs).flatMap(ConstraintSolver.withSupers(_, tenv)).exists {
+              case Ast.TypeConstraint(Ast.TypeConstraint.Head(tconstrSym, _), Type.Var(tvarSym2, _), _) =>
+                trtSym == tconstrSym && tvarSym1 == tvarSym2
+              case _ => false
+            }
+            if (matches) {
+              Validation.success(())
+            } else {
+              val renv = tparams.map(_.sym).foldLeft(RigidityEnv.empty)(_.markRigid(_))
+              Validation.toSoftFailure((), TypeError.MissingTraitConstraint(trtSym, arg, renv, loc))
+            }
+          case t => throw InternalCompilerException(s"illegal type: $t", t.loc)
+        }
+    }
+  }
+
 }

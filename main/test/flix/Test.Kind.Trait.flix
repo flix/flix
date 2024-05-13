@@ -127,7 +127,7 @@ mod Test.Kind.Trait {
                 }
 
                 trait CBoolToStar1[a: Eff -> Type] {
-                    pub def boolToStar(x: a[Pure]): Int32 with CBoolToStar[a] = ???
+                    pub def boolToStar(x: a[{}]): Int32 with CBoolToStar[a] = ???
                 }
             }
 
@@ -176,7 +176,7 @@ mod Test.Kind.Trait {
                 }
 
                 trait CBoolToStar1[a: Eff -> Type] {
-                    law boolToStar: forall(x: a[Pure]) with CBoolToStar[a] . ???
+                    law boolToStar: forall(x: a[{}]) with CBoolToStar[a] . ???
                 }
             }
 

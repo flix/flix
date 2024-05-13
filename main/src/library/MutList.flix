@@ -25,6 +25,12 @@ pub enum MutList[a: Type, r: Region] {
     case MutList(Region[r], Ref[Array[a, r], r], Ref[Int32, r])
 }
 
+instance Iterable[MutList[a, r]] {
+    type Elm = a
+    type Aef = r
+    pub def iterator(rc: Region[r1], l: MutList[a, r]): Iterator[a, r + r1, r1] \ (r + r1) = MutList.iterator(rc, l)
+}
+
 mod MutList {
 
     ///
