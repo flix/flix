@@ -135,7 +135,7 @@ object Weeder2 {
         } else res
       // recover from missing alias by using ident
       case ident :: _ =>
-        val error = ParseError(_ => "Missing alias.", SyntacticContext.Use, tree.loc, Some(s"Give an alias after ${TokenKind.ArrowThickR.display}."))
+        val error = ParseError("Missing alias.", SyntacticContext.Use, tree.loc, Some(s"Give an alias after ${TokenKind.ArrowThickR.display}."))
         Validation.toSoftFailure(UseOrImport.Use(Name.mkQName(ident), ident, ident.loc), error)
       case _ => throw InternalCompilerException("Parser passed malformed use with alias", tree.loc)
     }
@@ -179,7 +179,7 @@ object Weeder2 {
         Validation.success(UseOrImport.Import(jname, alias, tree.loc))
       // recover from missing alias by using ident
       case ident :: _ =>
-        val error = ParseError(_ => "Missing alias.", SyntacticContext.Import, tree.loc, Some(s"Give an alias after ${TokenKind.ArrowThickR.display}."))
+        val error = ParseError("Missing alias.", SyntacticContext.Import, tree.loc, Some(s"Give an alias after ${TokenKind.ArrowThickR.display}."))
         Validation.toSoftFailure(
           UseOrImport.Import(Name.JavaName(tree.loc.sp1, Seq(ident.name), tree.loc.sp2), ident, ident.loc),
           error
@@ -695,7 +695,7 @@ object Weeder2 {
         }
       ).getOrElse(Validation.toSoftFailure(
         List(unitFormalParameter(tree.loc)),
-        ParseError(_ => "Expected formal parameters.", SyntacticContext.Decl.OtherDecl, tree.loc))
+        ParseError("Expected formal parameters.", SyntacticContext.Decl.OtherDecl, tree.loc))
       )
     }
 
@@ -727,7 +727,7 @@ object Weeder2 {
         case Some(expr) => Validation.success(expr)
         case None =>
           // Fall back on Expr.Error. Parser has reported an error here.
-          val err = ParseError(fmt => s"Expected ${fmt.cyan("<expression>")}.", SyntacticContext.Expr.OtherExpr, tree.loc)
+          val err = ParseError("Expected <expression>.", SyntacticContext.Expr.OtherExpr, tree.loc)
           Validation.success(Expr.Error(err))
       }
     }
@@ -800,7 +800,7 @@ object Weeder2 {
           // This means that intrinsics are not "first-class" like other functions.
           // Something like "let assign = $VECTOR_ASSIGN$" hits this case.
           val error = ParseError(
-            _ => "Intrinsics must be applied.",
+            "Intrinsics must be applied.",
             SyntacticContext.Expr.OtherExpr,
             tree.loc,
             hint = Some(s"Supply arguments to the intrinsic to call it `${text(tree)}(...)`")
@@ -960,7 +960,7 @@ object Weeder2 {
                | TokenKind.NameMath
                | TokenKind.NameGreek => mapN(pickNameIdent(tree))(ident => Expr.Ambiguous(Name.mkQName(ident), tree.loc))
           case _ =>
-            val err = ParseError(fmt => s"Expected ${fmt.cyan("<literal>")}", SyntacticContext.Expr.OtherExpr, tree.loc)
+            val err = ParseError("Expected <literal>.", SyntacticContext.Expr.OtherExpr, tree.loc)
             Validation.toSoftFailure(Expr.Error(err), err)
         }
         case _ => throw InternalCompilerException(s"Literal had tree child", tree.loc)
@@ -1006,11 +1006,11 @@ object Weeder2 {
             case Expr.Ambiguous(qname, _) =>
               Validation.success(Expr.RecordExtend(Name.mkLabel(qname.ident), e2, Expr.RecordEmpty(tree.loc), tree.loc))
             case _ =>
-              val error = ParseError(_ => s"Named argument does not have a name.", SyntacticContext.Expr.OtherExpr, tree.loc)
+              val error = ParseError(s"Named argument does not have a name.", SyntacticContext.Expr.OtherExpr, tree.loc)
               Validation.toSoftFailure(Expr.Error(error), error)
           }
         case exprs =>
-          val error = ParseError(_ => s"Found ${exprs.length} expressions under named argument", SyntacticContext.Expr.OtherExpr, tree.loc)
+          val error = ParseError(s"Found ${exprs.length} expressions under named argument", SyntacticContext.Expr.OtherExpr, tree.loc)
           Validation.toSoftFailure(Expr.Error(error), error)
       }
     }
@@ -1143,7 +1143,7 @@ object Weeder2 {
             (condition, tthen, eelse) => Expr.IfThenElse(condition, tthen, eelse, tree.loc)
           }
         case _ =>
-          val error = ParseError(_ => "Malformed if-then-else expression", SyntacticContext.Expr.OtherExpr, tree.loc)
+          val error = ParseError("Malformed if-then-else expression", SyntacticContext.Expr.OtherExpr, tree.loc)
           Validation.toSoftFailure(Expr.Error(error), error)
       }
     }
@@ -1175,7 +1175,7 @@ object Weeder2 {
         case Expr.Stm(exp1, exp2, _) => Validation.success((exp1, exp2))
         case e =>
           // Fall back on Expr.Error. Parser has reported an error here.
-          val error = ParseError(_ => "An internal definition must be followed by an expression", SyntacticContext.Expr.OtherExpr, tree.loc)
+          val error = ParseError("An internal definition must be followed by an expression", SyntacticContext.Expr.OtherExpr, tree.loc)
           Validation.success((e, Expr.Error(error)))
       }
 
@@ -1219,7 +1219,7 @@ object Weeder2 {
       flatMapN(pickExpr(tree), traverse(rules)(visitMatchRule)) {
         // Case: no valid match rule found in match expr
         case (expr, Nil) =>
-          val error = ParseError(_ => "Expected at least one match-case", SyntacticContext.Expr.OtherExpr, expr.loc)
+          val error = ParseError("Expected at least one match-case", SyntacticContext.Expr.OtherExpr, expr.loc)
           // Fall back on Expr.Error. Parser has reported an error here.
           Validation.success(Expr.Error(error))
         case (expr, rules) => Validation.success(Expr.Match(expr, rules, tree.loc))
@@ -1236,7 +1236,7 @@ object Weeder2 {
         case (pat, expr1 :: expr2 :: Nil) => Validation.success(MatchRule(pat, Some(expr1), expr2))
         // Fall back on Expr.Error. Parser has reported an error here.
         case (_, _) =>
-          val error = ParseError(_ => "Malformed match rule.", SyntacticContext.Expr.OtherExpr, tree.loc)
+          val error = ParseError("Malformed match rule.", SyntacticContext.Expr.OtherExpr, tree.loc)
           Validation.success(MatchRule(Pattern.Error(tree.loc), None, Expr.Error(error)))
       }
     }
@@ -1410,7 +1410,7 @@ object Weeder2 {
             case Expr.Stm(exp1, exp2, _) => Validation.success((exp1, exp2))
             // Fall back on Expr.Error. Parser has reported an error here.
             case e =>
-              val error = ParseError(_ => "A let-binding must be followed by an expression", SyntacticContext.Expr.OtherExpr, tree.loc)
+              val error = ParseError("A let-binding must be followed by an expression", SyntacticContext.Expr.OtherExpr, tree.loc)
               Validation.success((e, Expr.Error(error)))
           }
           mapN(exprs)(exprs => Expr.LetMatch(pattern, Ast.Modifiers.Empty, tpe, exprs._1, exprs._2, tree.loc))
@@ -1484,7 +1484,7 @@ object Weeder2 {
       flatMapN(traverse(exprs)(visitExpr), traverseOpt(scopeName)(visitScopeName)) {
         case (exprs, Some(scope)) => Validation.success(Expr.ArrayLit(exprs, scope, tree.loc))
         case (exprs, None) =>
-          val err = ParseError(_ => "Missing scope in array literal.", SyntacticContext.Expr.OtherExpr, tree.loc)
+          val err = ParseError("Missing scope in array literal.", SyntacticContext.Expr.OtherExpr, tree.loc)
           Validation.toSoftFailure(Expr.ArrayLit(exprs, Expr.Error(err), tree.loc), err)
       }
     }
@@ -1520,7 +1520,7 @@ object Weeder2 {
         case k :: v :: Nil => Validation.success((k, v))
         // case: k =>
         case k :: Nil =>
-          val err = ParseError(_ => "Missing value in key-value pair", SyntacticContext.Expr.OtherExpr, tree.loc)
+          val err = ParseError("Missing value in key-value pair", SyntacticContext.Expr.OtherExpr, tree.loc)
           Validation.toSoftFailure((k, Expr.Error(err)), err)
         case xs => throw InternalCompilerException(s"Malformed KeyValue pair, found ${xs.length} expressions", tree.loc)
       }
@@ -1538,7 +1538,7 @@ object Weeder2 {
       flatMapN(pickExpr(tree), traverseOpt(scopeName)(visitScopeName)) {
         case (expr1, Some(expr2)) => Validation.success(Expr.Ref(expr1, expr2, tree.loc))
         case (expr1, None) =>
-          val err = ParseError(_ => "Missing scope in ref.", SyntacticContext.Expr.OtherExpr, tree.loc)
+          val err = ParseError("Missing scope in ref.", SyntacticContext.Expr.OtherExpr, tree.loc)
           Validation.toSoftFailure(Expr.Ref(expr1, Expr.Error(err), tree.loc), err)
       }
     }
@@ -1602,12 +1602,12 @@ object Weeder2 {
       ) {
         // Bad case: try expr
         case (expr, Nil, Nil) =>
-          val error = ParseError(_ => s"Expected ${TokenKind.KeywordCatch.display} or ${TokenKind.KeywordWith.display}", SyntacticContext.Expr.OtherExpr, tree.loc)
+          val error = ParseError(s"Expected ${TokenKind.KeywordCatch.display} or ${TokenKind.KeywordWith.display}", SyntacticContext.Expr.OtherExpr, tree.loc)
           // Fall back on Expr.Error, Parser has already reported an error.
           Validation.success( Expr.Error(error))
         // Bad case: try expr catch { rules... } with eff { handlers... }
         case (expr, _ :: _, _ :: _) =>
-          val error = ParseError(_ => s"Cannot use both ${TokenKind.KeywordCatch.display} and ${TokenKind.KeywordWith.display} on ${TokenKind.KeywordTry.display}", SyntacticContext.Expr.OtherExpr, tree.loc)
+          val error = ParseError(s"Cannot use both ${TokenKind.KeywordCatch.display} and ${TokenKind.KeywordWith.display} on ${TokenKind.KeywordTry.display}", SyntacticContext.Expr.OtherExpr, tree.loc)
           // Fall back on Expr.Error, Parser has already reported an error.
           Validation.success( Expr.Error(error))
         // Case: try expr catch { rules... }
@@ -1701,10 +1701,10 @@ object Weeder2 {
         case (ident, channel :: body :: Nil) =>
           Validation.success(SelectChannelRule(ident, channel, body))
         case (ident, channel :: Nil) =>
-          val err = ParseError(_ => "Missing body in select rule.", SyntacticContext.Expr.OtherExpr, tree.loc)
+          val err = ParseError("Missing body in select rule.", SyntacticContext.Expr.OtherExpr, tree.loc)
           Validation.toSoftFailure(SelectChannelRule(ident, channel, Expr.Error(err)), err)
         case _ =>
-          val err = ParseError(_ => "Malformed select rule.", SyntacticContext.Expr.OtherExpr, tree.loc)
+          val err = ParseError("Malformed select rule.", SyntacticContext.Expr.OtherExpr, tree.loc)
           Validation.HardFailure(Chain(err))
       }
     }
@@ -1715,7 +1715,7 @@ object Weeder2 {
       flatMapN(pickExpr(tree), traverseOpt(scopeName)(visitScopeName)) {
         case (expr1, Some(expr2)) => Validation.success(Expr.Spawn(expr1, expr2, tree.loc))
         case (expr1, None) =>
-          val err = ParseError(_ => "Missing scope in spawn.", SyntacticContext.Expr.OtherExpr, tree.loc)
+          val err = ParseError("Missing scope in spawn.", SyntacticContext.Expr.OtherExpr, tree.loc)
           Validation.toSoftFailure(Expr.Spawn(expr1, Expr.Error(err), tree.loc), err)
       }
     }
@@ -1970,7 +1970,7 @@ object Weeder2 {
           case TreeKind.Pattern.FCons => visitFConsPat(tree, seen)
           // Avoid double reporting errors by returning a success here
           case TreeKind.ErrorTree(_) => Validation.success(Pattern.Error(tree.loc))
-          case _ => Validation.toSoftFailure(Pattern.Error(tree.loc), ParseError(fmt => s"Expected ${fmt.cyan("<pattern>")}", SyntacticContext.Pat.OtherPat, tree.loc))
+          case _ => Validation.toSoftFailure(Pattern.Error(tree.loc), ParseError("Expected <pattern>.", SyntacticContext.Pat.OtherPat, tree.loc))
         }
         case _ => throw InternalCompilerException(s"Expected Pattern.Pattern to have tree child", tree.loc)
       }
@@ -2790,7 +2790,7 @@ object Weeder2 {
         case TreeKind.JvmOp.StaticGetField => visitField(inner, WeededAst.JvmOp.GetStaticField)
         case TreeKind.JvmOp.StaticPutField => visitField(inner, WeededAst.JvmOp.PutStaticField)
         // TODO: This double reports the same error. We should be able to handle this resiliently if we had JvmOp.Error.
-        case TreeKind.ErrorTree(_) => Validation.HardFailure(Chain(ParseError(_ => "Expected JvmOp but found Error", SyntacticContext.Expr.OtherExpr, tree.loc)))
+        case TreeKind.ErrorTree(_) => Validation.HardFailure(Chain(ParseError("Expected JvmOp but found Error", SyntacticContext.Expr.OtherExpr, tree.loc)))
         case kind => throw InternalCompilerException(s"child of kind '$kind' under JvmOp.JvmOp", tree.loc)
       }
     }
@@ -2851,7 +2851,7 @@ object Weeder2 {
     private def pickJavaClassMember(tree: Tree)(implicit s: State): Validation[JavaClassMember, CompilationMessage] = {
       val idents = pickQNameIdents(tree)
       flatMapN(idents) {
-        case prefix :: Nil => Validation.HardFailure(Chain(ParseError(fmt => s"Expected java class name before ${fmt.red("'" + prefix + "'")}", SyntacticContext.Expr.OtherExpr, tree.loc)))
+        case prefix :: Nil => Validation.HardFailure(Chain(ParseError(s"Expected java class name before '$prefix'.", SyntacticContext.Expr.OtherExpr, tree.loc)))
         case prefix :: suffix => Validation.success(JavaClassMember(prefix, suffix, tree.loc))
         case Nil => throw InternalCompilerException("JvmOp empty name", tree.loc)
       }
@@ -2871,7 +2871,7 @@ object Weeder2 {
       // Qname starting with '##'
       case Some(qname) if qname.namespace.idents.headOption.exists(_.name.startsWith("##")) => Validation.success(javaQnameToFqn(qname))
       case Some(_) | None =>
-        val err = ParseError(_ => "Expected a java name.", SyntacticContext.Expr.OtherExpr, tree.loc)
+        val err = ParseError("Expected a java name.", SyntacticContext.Expr.OtherExpr, tree.loc)
         Validation.toSoftFailure("Error", err)
     }
   }
@@ -2941,7 +2941,7 @@ object Weeder2 {
       case Some(t: Tree) if t.kind == TreeKind.CommentList =>
         // We hit a misplaced comment.
         val name = text(tree).mkString("")
-        val error = ParseError(_ => if (t.children.length > 1) "Misplaced comments" else "Misplaced comment", SyntacticContext.Unknown, t.loc)
+        val error = ParseError(if (t.children.length > 1) "Misplaced comments" else "Misplaced comment", SyntacticContext.Unknown, t.loc)
         Validation.toSoftFailure(Name.Ident(tree.loc.sp1, name, tree.loc.sp2), error)
       case _ => throw InternalCompilerException(s"Parse failure: expected first child of '${tree.kind}' to be Child.Token", tree.loc)
     }
@@ -3026,7 +3026,7 @@ object Weeder2 {
     tryPick(kind, tree) match {
       case Some(t) => Validation.success(t)
       case None =>
-        val error = ParseError(_ => s"expected to find at least one '$kind'", SyntacticContext.Unknown, tree.loc)
+        val error = ParseError(s"expected to find at least one '$kind'", SyntacticContext.Unknown, tree.loc)
         Validation.HardFailure(Chain(error))
     }
   }

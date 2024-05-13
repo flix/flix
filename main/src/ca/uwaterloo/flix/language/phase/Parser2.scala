@@ -251,7 +251,7 @@ object Parser2 {
     */
   private def open(consumeDocComments: Boolean = true)(implicit s: State): Mark.Opened = {
     val mark = Mark.Opened(s.events.length)
-    val error = ParseError(_ => "Unclosed parser mark", SyntacticContext.Unknown, currentSourceLocation())
+    val error = ParseError("Unclosed parser mark", SyntacticContext.Unknown, currentSourceLocation())
     s.events.append(Event.Open(TreeKind.ErrorTree(error)))
     // Consume any comments just before opening a new mark
     comments(consumeDocComments = consumeDocComments)
@@ -280,7 +280,7 @@ object Parser2 {
     */
   private def openBefore(before: Mark.Closed)(implicit s: State): Mark.Opened = {
     val mark = Mark.Opened(before.index)
-    val error = ParseError(_ => "Unclosed parser mark", SyntacticContext.Unknown, currentSourceLocation())
+    val error = ParseError("Unclosed parser mark", SyntacticContext.Unknown, currentSourceLocation())
     s.events.insert(before.index, Event.Open(TreeKind.ErrorTree(error)))
     mark
   }
@@ -400,29 +400,29 @@ object Parser2 {
     val mark = open()
     val error = nth(0) match {
       case TokenKind.CommentLine => UnexpectedToken(
-        expected = Seq(kind),
-        actual = TokenKind.CommentLine,
+        expected = Seq(kind).map(_.display),
+        actual = TokenKind.CommentLine.display,
         context,
         currentSourceLocation(),
         hint = Some("Place comments on their own line.")
       )
       case TokenKind.CommentBlock => UnexpectedToken(
-        expected = Seq(kind),
-        actual = TokenKind.CommentBlock,
+        expected = Seq(kind).map(_.display),
+        actual = TokenKind.CommentBlock.display,
         context,
         currentSourceLocation(),
         hint = Some("Place comments on their own line.")
       )
       case TokenKind.CommentDoc => UnexpectedToken(
-        expected = Seq(kind),
-        actual = TokenKind.CommentDoc,
+        expected = Seq(kind).map(_.display),
+        actual = TokenKind.CommentDoc.display,
         context,
         currentSourceLocation(),
         hint = Some(s"Doc-comments can only decorate declarations.")
       )
       case at => UnexpectedToken(
-        expected = Seq(kind),
-        actual = at,
+        expected = Seq(kind).map(_.display),
+        actual = at.display,
         context,
         currentSourceLocation(),
       )
@@ -440,29 +440,29 @@ object Parser2 {
     val mark = open()
     val error = nth(0) match {
       case TokenKind.CommentLine => UnexpectedToken(
-        expected = kinds.toSeq,
-        actual = TokenKind.CommentLine,
+        expected = kinds.toSeq.map(_.display),
+        actual = TokenKind.CommentLine.display,
         context,
         currentSourceLocation(),
         hint = Some("Place comments on their own line.")
       )
       case TokenKind.CommentBlock => UnexpectedToken(
-        expected = kinds.toSeq,
-        actual = TokenKind.CommentBlock,
+        expected = kinds.toSeq.map(_.display),
+        actual = TokenKind.CommentBlock.display,
         context,
         currentSourceLocation(),
         hint = Some("Place comments on their own line.")
       )
       case TokenKind.CommentDoc => UnexpectedToken(
-        expected = kinds.toSeq,
-        actual = TokenKind.CommentDoc,
+        expected = kinds.toSeq.map(_.display),
+        actual = TokenKind.CommentDoc.display,
         context,
         currentSourceLocation(),
         hint = Some(s"Doc-comments can only decorate declarations.")
       )
       case at => UnexpectedToken(
-        expected = kinds.toSeq,
-        actual = at,
+        expected = kinds.toSeq.map(_.display),
+        actual = at.display,
         context,
         currentSourceLocation(),
       )
@@ -572,12 +572,8 @@ object Parser2 {
           // Check for trailing separator if needed.
           if (atEnd()) {
             separation match {
-              case Separation.Required(separator, false) => closeWithError(open(), ParseError(
-                fmt => s"Trailing ${fmt.red(separator.display)}", context, previousSourceLocation()
-              ))
-              case Separation.Optional(separator, false) => closeWithError(open(), ParseError(
-                fmt => s"Trailing ${fmt.red(separator.display)}", context, previousSourceLocation()
-              ))
+              case Separation.Required(separator, false) => closeWithError(open(), ParseError(s"Trailing ${separator.display}", context, previousSourceLocation()))
+              case Separation.Optional(separator, false) => closeWithError(open(), ParseError(s"Trailing ${separator.display}", context, previousSourceLocation() ))
               case _ =>
             }
           }
@@ -589,7 +585,7 @@ object Parser2 {
           continue = false
         } else {
           // Otherwise eat one token and continue parsing next item.
-          val error = ParseError(fmt => s"Expected ${fmt.cyan("<" + displayName + ">")}", context, currentSourceLocation())
+          val error = UnexpectedToken(expected = Seq(s"<$displayName>"), actual = nth(0).display, context, currentSourceLocation())
           advanceWithError(error)
         }
       }
@@ -631,7 +627,7 @@ object Parser2 {
     val locAfter = currentSourceLocation()
     if (itemCount < 1) {
       val loc = SourceLocation.mk(locBefore.sp1, locAfter.sp1)
-      val error = ParseError(fmt => s"Expected one or more ${fmt.cyan("<" + displayName + ">")}", context, loc)
+      val error = ParseError(s"Expected one or more <$displayName}>.", context, loc)
       Some(error)
     } else {
       None
@@ -701,7 +697,7 @@ object Parser2 {
 
     if (atComment()) {
       val mark = Mark.Opened(s.events.length)
-      val error = ParseError(_ => "Unclosed parser mark.", SyntacticContext.Unknown, currentSourceLocation())
+      val error = ParseError("Unclosed parser mark.", SyntacticContext.Unknown, currentSourceLocation())
       s.events.append(Event.Open(TreeKind.ErrorTree(error)))
       // Note: This loop will also consume doc-comments that are preceded or surrounded by either line or block comments.
       while (atComment() && !eof()) {
@@ -820,8 +816,7 @@ object Parser2 {
           while (!nth(0).isRecoverDecl && !eof()) {
             advance()
           }
-          // Using a manual ParseError over UnexpectedToken for a shorter error message.
-          val error = ParseError(fmt => s"Expected ${fmt.cyan("<declaration>")} before ${fmt.red(at.display)}", SyntacticContext.Decl.OtherDecl, loc)
+          val error = UnexpectedToken(expected = Seq("<declaration>"), actual = at.display, SyntacticContext.Decl.OtherDecl, loc)
           closeWithError(mark, error)
       }
     }
@@ -864,7 +859,7 @@ object Parser2 {
               while (!nth(0).isFirstTrait && !eat(TokenKind.CurlyR) && !eof()) {
                 advance()
               }
-              val error = UnexpectedToken(expected = Seq(TokenKind.KeywordType, TokenKind.KeywordDef, TokenKind.KeywordLaw), actual = at, SyntacticContext.Decl.Trait, loc)
+              val error = UnexpectedToken(expected = Seq(TokenKind.KeywordType, TokenKind.KeywordDef, TokenKind.KeywordLaw).map(_.display), actual = at.display, SyntacticContext.Decl.Trait, loc)
               closeWithError(mark, error)
           }
         }
@@ -904,7 +899,7 @@ object Parser2 {
               while (!nth(0).isFirstInstance && !eat(TokenKind.CurlyR) && !eof()) {
                 advance()
               }
-              val error = UnexpectedToken(expected = Seq(TokenKind.KeywordType, TokenKind.KeywordDef), actual = at, SyntacticContext.Decl.Instance, loc)
+              val error = UnexpectedToken(expected = Seq(TokenKind.KeywordType, TokenKind.KeywordDef).map(_.display), actual = at.display, SyntacticContext.Decl.Instance, loc)
               closeWithError(mark, error)
           }
         }
@@ -1139,7 +1134,7 @@ object Parser2 {
               while (!nth(0).isFirstDecl && !eat(TokenKind.CurlyR) && !eof()) {
                 advance()
               }
-              val error = UnexpectedToken(expected = Seq(TokenKind.KeywordDef), actual = at, SyntacticContext.Decl.OtherDecl, loc)
+              val error = UnexpectedToken(expected = Seq(TokenKind.KeywordDef.display), actual = at.display, SyntacticContext.Decl.OtherDecl, loc)
               closeWithError(mark, error)
           }
         }
@@ -1491,8 +1486,7 @@ object Parser2 {
         case TokenKind.NameJava => name(NAME_JAVA, allowQualified = true, SyntacticContext.Expr.OtherExpr)
         case t =>
           val mark = open()
-          // Using a ParseError over UnexpectedToken here for a shorter message
-          val error = ParseError(fmt => s"Expected ${fmt.cyan("<expression>")} before ${fmt.red(t.display)}", SyntacticContext.Expr.OtherExpr, previousSourceLocation())
+          val error = UnexpectedToken(expected = Seq("<expression>"), actual = t.display, SyntacticContext.Expr.OtherExpr, previousSourceLocation())
           closeWithError(mark, error)
       }
       close(mark, TreeKind.Expr.Expr)
@@ -1581,11 +1575,11 @@ object Parser2 {
                 case TokenKind.CurlyR if level == 1 =>
                   if (curlyLevel == 0) {
                     // Hitting '}' on top-level is a clear indicator that something is wrong. Most likely the terminating ')' was forgotten.
-                    return advanceWithError(ParseError(_ => "Malformed tuple.", SyntacticContext.Expr.OtherExpr, currentSourceLocation()))
+                    return advanceWithError(ParseError("Malformed tuple.", SyntacticContext.Expr.OtherExpr, currentSourceLocation()))
                   } else {
                     curlyLevel -= 1
                   }
-                case TokenKind.Eof => return advanceWithError(ParseError(_ => "Malformed tuple.", SyntacticContext.Expr.OtherExpr, currentSourceLocation()))
+                case TokenKind.Eof => return advanceWithError(ParseError("Malformed tuple.", SyntacticContext.Expr.OtherExpr, currentSourceLocation()))
                 case _ =>
               }
             }
@@ -1599,7 +1593,7 @@ object Parser2 {
           }
 
         case (t, _) =>
-          val error = UnexpectedToken(expected = Seq(TokenKind.ParenL), actual = t, SyntacticContext.Expr.OtherExpr, currentSourceLocation())
+          val error = UnexpectedToken(expected = Seq(TokenKind.ParenL.display), actual = t.display, SyntacticContext.Expr.OtherExpr, currentSourceLocation())
           advanceWithError(error)
       }
     }
@@ -1735,12 +1729,12 @@ object Parser2 {
           case TokenKind.KeywordJavaSetField => JvmOp.staticPutField()
           case TokenKind.NameJava | TokenKind.NameLowerCase | TokenKind.NameUpperCase => JvmOp.staticMethod()
           case t =>
-            val error = ParseError(fmt => s"Expected static java import before ${fmt.red(t.display)}.", SyntacticContext.Unknown, previousSourceLocation())
+            val error = ParseError(s"Expected static java import before ${t.display}.", SyntacticContext.Unknown, previousSourceLocation())
             advanceWithError(error)
         }
         case TokenKind.NameJava | TokenKind.NameLowerCase | TokenKind.NameUpperCase => JvmOp.method()
         case t =>
-          val error = ParseError(fmt => s"Expected java import before ${fmt.red(t.display)}.", SyntacticContext.Unknown, previousSourceLocation())
+          val error = ParseError(s"Expected java import before ${t.display}.", SyntacticContext.Unknown, previousSourceLocation())
           advanceWithError(error)
       }
       close(markJvmOp, TreeKind.JvmOp.JvmOp)
@@ -1809,13 +1803,13 @@ object Parser2 {
             case TokenKind.ArrowThinR if parenNestingLevel == 0 => isLambda = true; continue = false
             case TokenKind.ParenL => parenNestingLevel += 1; lookAhead += 1
             case TokenKind.ParenR => parenNestingLevel -= 1; lookAhead += 1
-            case TokenKind.Eof => return closeWithError(mark, ParseError(_ => "Malformed match expression.", SyntacticContext.Expr.OtherExpr, currentSourceLocation()))
+            case TokenKind.Eof => return closeWithError(mark, ParseError("Malformed match expression.", SyntacticContext.Expr.OtherExpr, currentSourceLocation()))
             case t if t.isFirstDecl =>
               // Advance past the erroneous region to the next stable token (the start of the declaration)
               for (_ <- 0 until lookAhead) {
                 advance()
               }
-              return closeWithError(mark, ParseError(fmt => s"Expected ${fmt.cyan("<match expression>")} before ${fmt.red(t.display)}", SyntacticContext.Expr.OtherExpr, previousSourceLocation()))
+              return closeWithError(mark, UnexpectedToken(expected = Seq("<match expression>"), actual = t.display, SyntacticContext.Expr.OtherExpr, previousSourceLocation()))
             case _ => lookAhead += 1
           }
         }
@@ -2092,7 +2086,7 @@ object Parser2 {
           expression()
           close(mark, TreeKind.Expr.RecordOpUpdate)
         case at =>
-          val error = UnexpectedToken(expected = Seq(TokenKind.Plus, TokenKind.Minus, TokenKind.NameLowerCase), actual = at, SyntacticContext.Expr.OtherExpr, currentSourceLocation())
+          val error = UnexpectedToken(expected = Seq(TokenKind.Plus, TokenKind.Minus, TokenKind.NameLowerCase).map(_.display), actual = at.display, SyntacticContext.Expr.OtherExpr, currentSourceLocation())
           advanceWithError(error, Some(mark))
       }
     }
@@ -2650,8 +2644,7 @@ object Parser2 {
         case TokenKind.Minus => unaryPat()
         case t =>
           val mark = open()
-          // Using ParseError over UnexpectedToken here for shorter error message
-          val error = ParseError(fmt => s"Expected ${fmt.cyan("<pattern>")} before ${fmt.red(t.display)}", SyntacticContext.Pat.OtherPat, previousSourceLocation())
+          val error = UnexpectedToken(expected = Seq("<pattern>"), actual = t.display, SyntacticContext.Pat.OtherPat, previousSourceLocation())
           closeWithError(mark, error)
       }
       // Handle FCons
@@ -2869,8 +2862,7 @@ object Parser2 {
         if (atAny(NAME_DEFINITION)) {
           constraint()
         } else {
-          // Using ParseError over UnexpectedToken for a shorter error message
-          val error = ParseError(fmt => s"Expected ${fmt.cyan("<type constraint>")} before ${fmt.red(nth(0).display)}", SyntacticContext.WithClause, currentSourceLocation())
+          val error = UnexpectedToken(expected = Seq("<type constraint>"), actual = nth(0).display, SyntacticContext.WithClause, currentSourceLocation())
           closeWithError(open(), error)
           continue = false
         }
@@ -2900,8 +2892,7 @@ object Parser2 {
         if (atAny(NAME_QNAME)) {
           name(NAME_QNAME, allowQualified = true, context = SyntacticContext.WithClause)
         } else {
-          // Using ParseError over UnexpectedToken for a shorter error message
-          val error = ParseError(fmt => s"Expected ${fmt.cyan("<type derivation>")} before ${fmt.red(nth(0).display)}", SyntacticContext.WithClause, currentSourceLocation())
+          val error = UnexpectedToken(expected = Seq("<type derivation>"), actual = nth(0).display, SyntacticContext.WithClause, currentSourceLocation())
           closeWithError(open(), error)
           continue = false
         }
@@ -2938,8 +2929,7 @@ object Parser2 {
         case TokenKind.KeywordStaticUppercase => name(Set(TokenKind.KeywordStaticUppercase), context = SyntacticContext.Type.OtherType)
         case t =>
           val mark = open()
-          // Using ParseError over UnexpectedToken for a shorter error message
-          val error = ParseError(fmt => s"Expected ${fmt.cyan("<type>")} before ${fmt.red(t.display)}.", SyntacticContext.Type.OtherType, previousSourceLocation())
+          val error = UnexpectedToken(expected = Seq("<type>"), actual = t.display, SyntacticContext.Type.OtherType, previousSourceLocation())
           closeWithError(mark, error)
       }
       close(mark, TreeKind.Type.Type)
@@ -3237,8 +3227,8 @@ object Parser2 {
           close(mark, TreeKind.Predicate.Body)
         case at =>
           val error = UnexpectedToken(
-            expected = Seq(TokenKind.KeywordIf, TokenKind.KeywordLet, TokenKind.KeywordNot, TokenKind.KeywordFix, TokenKind.NameUpperCase),
-            actual = at,
+            expected = Seq(TokenKind.KeywordIf, TokenKind.KeywordLet, TokenKind.KeywordNot, TokenKind.KeywordFix, TokenKind.NameUpperCase).map(_.display),
+            actual = at.display,
             SyntacticContext.Expr.Constraint,
             currentSourceLocation()
           )
@@ -3272,8 +3262,8 @@ object Parser2 {
              | TokenKind.Underscore => name(NAME_VARIABLE, context = SyntacticContext.Expr.Constraint)
         case at =>
           val error = UnexpectedToken(
-            expected = Seq(TokenKind.ParenL, TokenKind.NameLowerCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.Underscore),
-            actual = at,
+            expected = Seq(TokenKind.ParenL, TokenKind.NameLowerCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.Underscore).map(_.display),
+            actual = at.display,
             SyntacticContext.Expr.Constraint,
             currentSourceLocation()
           )

@@ -24,13 +24,13 @@ import ca.uwaterloo.flix.util.Formatter
 /**
   * An error raised to indicate an unexpected token was found.
   *
-  * @param expected [[TokenKind]]s that are expected at the location.
-  * @param actual   [[TokenKind]] that was actually found
+  * @param expected Names of the tokens that are expected at the location. See [[TokenKind.display]].
+  * @param actual   Name of the token that was actually found. See [[TokenKind.display]]
   * @param ctx      The syntactic context.
   * @param loc      The source location.
   * @param hint     Optional hint with more details about the error
   */
-case class UnexpectedToken(expected: Seq[TokenKind], actual: TokenKind, ctx: SyntacticContext, loc: SourceLocation, hint: Option[String] = None) extends CompilationMessage with Recoverable {
+case class UnexpectedToken(expected: Seq[String], actual: String, ctx: SyntacticContext, loc: SourceLocation, hint: Option[String] = None) extends CompilationMessage with Recoverable {
   val kind = s"Parse Error ($ctx)"
 
   /**
@@ -43,14 +43,14 @@ case class UnexpectedToken(expected: Seq[TokenKind], actual: TokenKind, ctx: Syn
     case i :: tail => s"$i, ${prettyJoin(tail)}"
   }
 
-  def summary: String = s"Expected ${prettyJoin(expected.map(_.display))} before ${actual.display}"
+  def summary: String = s"Expected ${prettyJoin(expected)} before $actual"
 
   def message(formatter: Formatter): String = {
     import formatter._
     val hintStr = hint.map(s"\nHint: " + _).getOrElse("")
-    val expectedStr = prettyJoin(expected.map(t => cyan(t.display)))
+    val expectedStr = prettyJoin(expected.map(cyan))
     s"""${line(kind, source.name)}
-       |>> Expected $expectedStr before ${red(actual.display)}
+       |>> Expected $expectedStr before ${red(actual)}
        |
        |${code(loc, s"Here")}$hintStr
        |""".stripMargin
@@ -60,20 +60,20 @@ case class UnexpectedToken(expected: Seq[TokenKind], actual: TokenKind, ctx: Syn
 /**
   * An generic parse error. We should prefer [[UnexpectedToken]] when possible.
   *
-  * @param getMessage  Callback returning a formatted error message.
-  * @param ctx         The syntactic context.
-  * @param loc         The source location.
-  * @param hint        Optional hint with more details about the error
+  * @param message Error message to be displayed.
+  * @param ctx     The syntactic context.
+  * @param loc     The source location.
+  * @param hint    Optional hint with more details about the error
   */
-case class ParseError(getMessage: Formatter => String, ctx: SyntacticContext, loc: SourceLocation, hint: Option[String] = None) extends CompilationMessage with Recoverable {
+case class ParseError(message: String, ctx: SyntacticContext, loc: SourceLocation, hint: Option[String] = None) extends CompilationMessage with Recoverable {
   val kind = s"Parse Error ($ctx)"
 
-  def summary: String = getMessage(Formatter.NoFormatter)
+  def summary: String = message
 
   def message(formatter: Formatter): String = {
     val hintStr = hint.map(s"\nHint: " + _).getOrElse("")
     s"""${formatter.line(kind, source.name)}
-       |>> ${getMessage(formatter)}
+       |>> $message
        |
        |${formatter.code(loc, s"Here")}$hintStr
        |""".stripMargin
