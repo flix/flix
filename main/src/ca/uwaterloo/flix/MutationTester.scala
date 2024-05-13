@@ -232,7 +232,7 @@ object MutationTester {
 
   /**
     * Runs the generated mutants against a test module
-     * @param flix the Flix object
+    * @param flix the Flix object
     * @param testModule the name of the test module
     * @param root TypedAst.Root
     * @param mutatedDefs list of mutants
