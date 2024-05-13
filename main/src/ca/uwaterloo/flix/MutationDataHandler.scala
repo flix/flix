@@ -7,14 +7,17 @@ import scala.collection.immutable.HashMap
 
 object MutationDataHandler {
 
-  def processData(operatorResults: List[(MutationType, TestRes)]): Unit = {
-    val sortedData = sortData(operatorResults) ++ readDataFromFile()
+  def processData(operatorResults: List[(MutationType, TestRes)], module: String): Unit = {
+    val empty: Map[String, Map[String,DataPoints]] = HashMap.empty
+    val sortedData = empty.updated(module, sortData(operatorResults, createEmptyDataMap())) ++ readDataFromFile()
     writeDataToFile(sortedData)
   }
-  private def writeDataToFile(stringToPoints: Map[String, DataPoints]): Unit = {
+  private def writeDataToFile(stringToPoints: Map[String, Map[String, DataPoints]]): Unit = {
     val stringToWrite = stringToPoints.foldLeft("") {
-      case (acc, (operator, dPoints)) =>
-        s"$operator:${dPoints.total}:${dPoints.killed}:${dPoints.surviving}:${dPoints.unknown}:${dPoints.equivalent}\n$acc"
+      case (acc, (module, results)) => results.foldLeft("") {
+        case (acc2, (operator, dPoints)) =>
+        s"$operator:${dPoints.total}:${dPoints.killed}:${dPoints.surviving}:${dPoints.unknown}:${dPoints.equivalent}:$module\n$acc2"
+      } ++ acc
     }
 
     val fileWriter = new FileWriter(new File("MutStats.txt"))
@@ -22,20 +25,21 @@ object MutationDataHandler {
     fileWriter.close()
   }
 
-  private def readDataFromFile(): Map[String, DataPoints] = {
+  private def readDataFromFile(): Map[String, Map[String,DataPoints]] = {
     val emptyMap: HashMap[String, DataPoints] = HashMap.empty
+    val empty2: Map[String, Map[String,DataPoints]] = HashMap.empty
     try {
         val source = scala.io.Source.fromFile("MutStats.txt")
-        val res = source.getLines().foldLeft(emptyMap)((acc, s) => {
+        val (res, module) = source.getLines().foldLeft((emptyMap, ""))((acc, s) => {
           val arr = s.split(":")
           val mutationType = arr.apply(0)
           val dps = DataPoints(arr.apply(1).toInt, arr.apply(2).toInt, arr.apply(3).toInt, arr.apply(4).toInt, arr.apply(5).toInt)
-          acc.updated(mutationType, dps)
+          (acc._1.updated(mutationType, dps), arr.apply(6))
         })
         source.close()
-        res
+      empty2.updated(module, res)
     } catch {
-      case _: Throwable => emptyMap
+      case _: Throwable => empty2
     }
   }
 
@@ -49,14 +53,14 @@ object MutationDataHandler {
   }
 
   private case class DataPoints(total: Int, killed: Int, surviving: Int, unknown: Int, equivalent: Int)
-  private def sortData(tuples: List[(MutationType, TestRes)]): Map[String, DataPoints] = {
+  private def sortData(tuples: List[(MutationType, TestRes)],emptyMap: Map[String, DataPoints]): Map[String, DataPoints] = {
     def updateDataPoints(dataPoints: DataPoints, testRes: TestRes): DataPoints = testRes match {
       case TestRes.MutantKilled => dataPoints.copy(total = dataPoints.total + 1, killed = dataPoints.killed + 1)
       case TestRes.MutantSurvived => dataPoints.copy(total = dataPoints.total + 1, surviving = dataPoints.surviving + 1)
       case TestRes.Unknown => dataPoints.copy(total = dataPoints.total + 1, unknown = dataPoints.unknown + 1)
       case TestRes.Equivalent => dataPoints.copy(total = dataPoints.total + 1, equivalent = dataPoints.equivalent + 1)
     }
-    def helper(opRes: (MutationType, TestRes), hMap: HashMap[String, DataPoints])  = opRes._1 match {
+    def helper(opRes: (MutationType, TestRes), hMap: Map[String, DataPoints])  = opRes._1 match {
       case MutationType.CstMut(_) =>
         val dPoints = hMap.apply("CstMut")
         val newDPoints = updateDataPoints(dPoints, opRes._2)
@@ -94,6 +98,12 @@ object MutationDataHandler {
         val newDPoints = updateDataPoints(dPoints, opRes._2)
         hMap.updated("ListMut", newDPoints)
     }
+
+
+    tuples.foldLeft(emptyMap)((acc, t) => helper(t, acc))
+  }
+
+  private def createEmptyDataMap(): HashMap[String, DataPoints] = {
     val emptyMap: HashMap[String, DataPoints] = HashMap.empty
     val emptyDP = DataPoints(0,0,0,0,0)
     val m1 =  emptyMap.updated("CstMut", emptyDP)
@@ -104,11 +114,10 @@ object MutationDataHandler {
     val m6 =  m5.updated("CaseSwitch", emptyDP)
     val m7 =  m6.updated("CompMut", emptyDP)
     val m8 =  m7.updated("IfMut", emptyDP)
-    val m9 =  m8.updated("SigMut", emptyDP)
-
-
-    tuples.foldLeft(m9)((acc, t) => helper(t, acc))
+    m8.updated("SigMut", emptyDP)
   }
-
-
+  def createEmptyDataSetMap(module: String): Unit = {
+    val empty: Map[String, Map[String, DataPoints]] = Map.empty
+    writeDataToFile(empty.updated(module, createEmptyDataMap()))
+  }
 }
