@@ -154,6 +154,47 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
     expectMain(result)
   }
 
+  test("DanglingDocComment.01") {
+    val input =
+      """
+        |def main(): Unit = ()
+        |/// This documents nothing
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("DanglingDocComment.02") {
+    val input =
+      """
+        |mod Foo {
+        |  /// This documents nothing
+        |}
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("MangledModule.02") {
+    val input =
+      """
+        |mod Bar {
+        |    legumes provide healthy access to proteins
+        |    pub def foo(): Int32 = 123
+        |    /// This is not quite finished
+        |    pub def
+        |}
+        |def main(): Int32 = Bar.foo()
+        |
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
   test("BadTrait.01") {
     val input =
       """

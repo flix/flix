@@ -756,12 +756,12 @@ object Parser2 {
   }
 
   private object Decl {
-    def declaration()(implicit s: State): Mark.Closed = {
+    def declaration(nestingLevel: Int = 0)(implicit s: State): Mark.Closed = {
       val mark = open(consumeDocComments = false)
       docComment()
       // Handle modules
       if (at(TokenKind.KeywordMod)) {
-        return moduleDecl(mark)
+        return moduleDecl(mark, nestingLevel)
       }
       // Handle declarations
       annotations()
@@ -774,27 +774,42 @@ object Parser2 {
         case TokenKind.KeywordEnum | TokenKind.KeywordRestrictable => enumerationDecl(mark)
         case TokenKind.KeywordType => typeAliasDecl(mark)
         case TokenKind.KeywordEff => effectDecl(mark)
-        // Last thing was a comment
-        case TokenKind.Eof => close(mark, TreeKind.CommentList)
+        case TokenKind.Eof => close(mark, TreeKind.CommentList) // Last tokens in the file were comments.
         case at =>
           val loc = currentSourceLocation()
-          // Skip ahead until we hit another declaration.
-          while (!nth(0).isRecoverDecl && !eof()) {
-            advance()
-          }
           val error = ParseError(s"Expected <declaration> before ${at.display}", SyntacticContext.Decl.OtherDecl, loc)
+          if (nestingLevel == 0) {
+            // If we are at top-level (nestingLevel == 0) skip ahead until we hit another declaration.
+            // If we are in a module (nestingLevel > 0) we let the module rule handle recovery.
+            while (!nth(0).isRecoverDecl && !eof()) {
+              advance()
+            }
+          }
           closeWithError(mark, error)
       }
     }
 
-    private def moduleDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
+    private def moduleDecl(mark: Mark.Opened, nestingLevel: Int = 0)(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.KeywordMod))
       expect(TokenKind.KeywordMod, SyntacticContext.Decl.OtherDecl)
       name(NAME_MODULE, allowQualified = true, context = SyntacticContext.Decl.OtherDecl)
       expect(TokenKind.CurlyL, SyntacticContext.Decl.OtherDecl)
       usesOrImports()
-      while (!at(TokenKind.CurlyR) && !eof()) {
-        declaration()
+      var continue = true
+      while (continue && !eof()) {
+        nth(0) match {
+          case t if t.isFirstDecl => declaration(nestingLevel + 1)
+          case TokenKind.CurlyR => continue = false
+          case at =>
+            val markErr = open()
+            val loc = currentSourceLocation()
+            val error = ParseError(s"Expected <declaration> before ${at.display}", SyntacticContext.Decl.OtherDecl, loc)
+            // Skip ahead until we find another declaration or a '}' signifying the end of the module.
+            while (!nth(0).isRecoverMod) {
+              advance()
+            }
+            closeWithError(markErr, error)
+        }
       }
       expect(TokenKind.CurlyR, SyntacticContext.Decl.OtherDecl)
       close(mark, TreeKind.Decl.Module)
