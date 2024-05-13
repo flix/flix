@@ -88,13 +88,13 @@ object MutationGenerator {
       case ("Eq.neq", _) =>
         sig.copy(sym = Symbol.mkSigSym(Symbol.mkTraitSym("Eq"), Name.Ident(sym.loc.sp1, "eq", sym.loc.sp2))) :: Nil
       case ("Order.less", _) =>
-        leq :: gre :: greq :: compare :: Nil
+        leq :: gre :: greq  :: Nil
       case ("Order.lessEqual", _) =>
-        le :: gre :: greq :: compare :: Nil
+        le :: gre :: greq :: Nil
       case ("Order.greaterEqual", _) =>
-        leq :: le :: gre :: compare :: Nil
+        leq :: le :: gre  :: Nil
       case ("Order.greater", _) =>
-        leq :: le :: greq :: compare :: Nil
+        leq :: le :: greq :: Nil
       case ("Order.compare", _) =>
         Nil
       case _ => Nil

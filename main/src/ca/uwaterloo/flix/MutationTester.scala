@@ -71,8 +71,8 @@ object MutationTester {
       * It also keeps track of the time it took to generate all the mutations
       */
     def run(flix: Flix, testModule: String, productionModule: String, percentage: Int): Unit = {
-        //runBenchmarks(flix)
-      toolRun(flix, testModule,productionModule, percentage)
+      runBenchmarks(flix)
+      //toolRun(flix, testModule,productionModule, percentage)
     }
   private def toolRun(flix: Flix, testModule: String, productionModule: String, percentage: Int): Unit = {
     println(s"mutating module: $productionModule")
