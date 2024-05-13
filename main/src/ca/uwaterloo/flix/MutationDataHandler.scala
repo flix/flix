@@ -7,9 +7,11 @@ import scala.collection.immutable.HashMap
 
 object MutationDataHandler {
 
-  def processData(operatorResults: List[(MutationType, TestRes)], module: String): Unit = {
+  def processData(operatorResults: List[(List[(MutationType, TestRes)], String)]): Unit = {
     val empty: Map[String, Map[String,DataPoints]] = HashMap.empty
-    val sortedData = empty.updated(module, sortData(operatorResults, createEmptyDataMap())) ++ readDataFromFile()
+    val sortedData = operatorResults.foldLeft(empty){
+      case (acc, (opRes, module)) => acc.updated(module, sortData(opRes, createEmptyDataMap()))
+    }
     writeDataToFile(sortedData)
   }
   private def writeDataToFile(stringToPoints: Map[String, Map[String, DataPoints]]): Unit = {

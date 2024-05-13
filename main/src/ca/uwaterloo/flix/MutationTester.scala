@@ -99,7 +99,6 @@ object MutationTester {
 
   def runBenchmarks(flix: Flix): Unit = {
     val listToSource: List[String] = ("Chain" :: "Option" :: "Map" :: Nil)
-    MutationDataHandler.createEmptyDataSetMap("Chain")
     val (data, timeToBugData) = listToSource.map(module => {
       val root = flix.check().unsafeGet
       // println(root.sigs.filter(t => t._1.toString.equals("Add.add")))
@@ -107,9 +106,9 @@ object MutationTester {
       val testModule = s"Test$module"
       val lastRoot = insertDecAndCheckIntoRoot(root)
       val (results, timeToBug) = runMutations(flix, testModule, lastRoot, mutations)
-      MutationDataHandler.processData(results, module)
-      (results, s"TTB: $module $timeToBug")
+      ((results, module), s"TTB: $module $timeToBug")
     }).unzip
+    MutationDataHandler.processData(data)
     MutationDataHandler.writeTTBToFile(timeToBugData)
   }
 
