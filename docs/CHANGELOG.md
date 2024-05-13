@@ -6,7 +6,7 @@ Version 0.47.0
 - Library: Added associated effects to `Iterable` and `Foldable` (thanks Stephen!)
 - Library: Added `FromJava` and `ToJava` and instances (thanks Stephen!)
 - Library: Added missing `toVector` functions (thanks Stephen!)
-- Compiler: Reduced memory usages (thanks Magnus!)
+- Compiler: Reduced memory usage of types (thanks Magnus!)
 
 Version 0.46.0: 
 - Language: Added support for associated types (thanks Matt!)
