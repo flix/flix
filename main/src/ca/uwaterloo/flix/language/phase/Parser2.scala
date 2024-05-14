@@ -806,15 +806,16 @@ object Parser2 {
       }
       if (at(TokenKind.CurlyL)) {
         expect(TokenKind.CurlyL, SyntacticContext.Decl.Trait)
-        while (!at(TokenKind.CurlyR) && !eof()) {
-          val mark = open(consumeDocComments = false)
-          docComment()
+        var continue = true
+        while (continue && !eof()) {
+          val docMark = docComment()
           annotations()
           modifiers()
           nth(0) match {
-            case TokenKind.KeywordLaw => lawDecl(mark)
-            case TokenKind.KeywordDef => signatureDecl(mark)
-            case TokenKind.KeywordType => associatedTypeSigDecl(mark)
+            case TokenKind.CurlyR => continue = false
+            case TokenKind.KeywordLaw => lawDecl(openBefore(docMark))
+            case TokenKind.KeywordDef => signatureDecl(openBefore(docMark))
+            case TokenKind.KeywordType => associatedTypeSigDecl(openBefore(docMark))
             case at =>
               val loc = currentSourceLocation()
               // Skip ahead until we hit another declaration or any CurlyR.
@@ -846,14 +847,15 @@ object Parser2 {
       }
       if (at(TokenKind.CurlyL)) {
         expect(TokenKind.CurlyL, SyntacticContext.Decl.Instance)
-        while (!at(TokenKind.CurlyR) && !eof()) {
-          val mark = open(consumeDocComments = false)
-          docComment()
+        var continue = true
+        while (continue && !eof()) {
+          val docMark = docComment()
           annotations()
           modifiers()
           nth(0) match {
-            case TokenKind.KeywordDef => definitionDecl(mark)
-            case TokenKind.KeywordType => associatedTypeDefDecl(mark)
+            case TokenKind.CurlyR => continue = false
+            case TokenKind.KeywordDef => definitionDecl(openBefore(docMark))
+            case TokenKind.KeywordType => associatedTypeDefDecl(openBefore(docMark))
             case at =>
               val loc = currentSourceLocation()
               // Skip ahead until we hit another declaration or any CurlyR.
@@ -1082,13 +1084,14 @@ object Parser2 {
       }
 
       if (eat(TokenKind.CurlyL)) {
-        while (!at(TokenKind.CurlyR) && !eof()) {
-          val mark = open(consumeDocComments = false)
-          docComment()
+        var continue = true
+        while (continue && !eof()) {
+          val docMark = docComment()
           annotations()
           modifiers()
           nth(0) match {
-            case TokenKind.KeywordDef => operationDecl(mark)
+            case TokenKind.CurlyR => continue = false
+            case TokenKind.KeywordDef => operationDecl(openBefore(docMark))
             case at =>
               val loc = currentSourceLocation()
               // Skip ahead until we hit another declaration or any CurlyR.
