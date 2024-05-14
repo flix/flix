@@ -35,12 +35,12 @@ pub trait Traversable[t : Type -> Type] with Functor[t], Foldable[t] {
     ///
     /// Traversing with the identity function wrapped into an applicative preserves the container `t`.
     ///
-    law identity: forall(t: t[a], f: a -> m[a]) with Eq[m[t[a]]], Applicative[m] . Traversable.traverse(f, t) == Applicative.point(t)
+    // law identity: forall(t: t[a], f: a -> m[a]) with Eq[m[t[a]]], Applicative[m] . Traversable.traverse(f, t) == Applicative.point(t)
 
     ///
     /// sequence identity.
     ///
-    law identity: forall(t: t[a], f: a -> m[a]) with Eq[m[t[a]]], Applicative[m] . Traversable.sequence(Functor.map(f, t)) == Applicative.point(t)
+    // law identity: forall(t: t[a], f: a -> m[a]) with Eq[m[t[a]]], Applicative[m] . Traversable.sequence(Functor.map(f, t)) == Applicative.point(t)
 
     // Missing laws: naturality and composition.
 
