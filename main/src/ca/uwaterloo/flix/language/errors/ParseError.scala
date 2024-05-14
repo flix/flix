@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.SyntacticContext
-import ca.uwaterloo.flix.language.ast.{SourceLocation, TokenKind}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, SyntaxTree, TokenKind}
 import ca.uwaterloo.flix.util.{Formatter, InternalCompilerException}
 
 /**
@@ -26,144 +26,131 @@ import ca.uwaterloo.flix.util.{Formatter, InternalCompilerException}
   */
 sealed trait ParseError extends CompilationMessage {
   val kind = "Parse Error"
-  val context: SyntacticContext = SyntacticContext.Unknown
+  val sctx: SyntacticContext
 }
 
 object ParseError {
 
   /**
-    * Joins items nicely with comma separation ending with an "or".
-    * For instance prettyJoin(List("def", "enum", "trait")) gives "def, enum or trait".
+    * When reporting an error we want to report what tokens were expected at the particular location.
+    * Sometimes it's best to not list all the options if there is too many, while other times it's fine.
+    * For instance using "<expression>" in an error rather than the ~30 tokens that can lead an expression,
+    * is much more useful to a programmer.
+    * But if there's just 3 options, listing them is better.
+    * [[NamedTokenSet]] models names for the large sets of tokens and provides [[NamedTokenSet.FromKinds]] for the small ones.
+    * Examples:
+    * Expected any expression but found a "}":
+    * UnexpectedToken(expected = NamedTokenSet.Expression, actual = Some(TokenKind.CurlyR), ...)
+    * Expected an "+", "-" or "name" but found a "}":
+    * UnexpectedToken(expected = NamedTokenSet.FromKinds(Set(TokenKind.Plus, TokenKind.Minus, TokenKind.NameLowerCase)), actual = Some(TokenKind.CurlyR), ...)
     */
-  private def prettyJoin[T](items: Seq[T]): String = items match {
-    case i1 :: i2 :: Nil => s"$i1 or $i2"
-    case i1 :: Nil => s"$i1"
-    case i :: tail => s"$i, ${prettyJoin(tail)}"
+  sealed trait NamedTokenSet {
+    def display(fmt: Formatter): String
+  }
+
+  object NamedTokenSet {
+
+    case object Alias extends NamedTokenSet {
+      def display(fmt: Formatter): String = fmt.cyan("<alias>")
+    }
+
+    case object CatchRule extends NamedTokenSet {
+      def display(fmt: Formatter): String = fmt.cyan("<catch-rule>")
+    }
+
+    case object Declaration extends NamedTokenSet {
+      def display(fmt: Formatter): String = fmt.cyan("<declaration>")
+    }
+
+    case object Effect extends NamedTokenSet {
+      def display(fmt: Formatter): String = fmt.cyan("<effect>")
+    }
+
+    case object Expression extends NamedTokenSet {
+      def display(fmt: Formatter): String = fmt.cyan("<expression>")
+    }
+
+    case object FixpointConstraint extends NamedTokenSet {
+      def display(fmt: Formatter): String = fmt.cyan("<fixpoint-constraint>")
+    }
+
+    case object ForFragment extends NamedTokenSet {
+      def display(fmt: Formatter): String = fmt.cyan("<for-generator>")
+    }
+
+    case object JavaImport extends NamedTokenSet {
+      def display(fmt: Formatter): String = fmt.cyan("<java-import>")
+    }
+
+    case object JvmOp extends NamedTokenSet {
+      def display(fmt: Formatter): String = fmt.cyan("<jvm-op>")
+    }
+
+    case object KeyValuePair extends NamedTokenSet {
+      def display(fmt: Formatter): String = fmt.cyan("`key -> value`")
+    }
+
+    case object Literal extends NamedTokenSet {
+      def display(fmt: Formatter): String = fmt.cyan("<literal>")
+    }
+
+    case object MatchRule extends NamedTokenSet {
+      def display(fmt: Formatter): String = fmt.cyan("<match-rule>")
+    }
+
+    case object Name extends NamedTokenSet {
+      def display(fmt: Formatter): String = fmt.cyan("<name>")
+    }
+
+    case object Parameter extends NamedTokenSet {
+      def display(fmt: Formatter): String = fmt.cyan("<parameter>")
+    }
+
+    case object Pattern extends NamedTokenSet {
+      def display(fmt: Formatter): String = fmt.cyan("<pattern>")
+    }
+
+    case object Tuple extends NamedTokenSet {
+      def display(fmt: Formatter): String = fmt.cyan("<tuple>")
+    }
+
+    case object Type extends NamedTokenSet {
+      def display(fmt: Formatter): String = fmt.cyan("<type>")
+    }
+
+    case object WithRule extends NamedTokenSet {
+      def display(fmt: Formatter): String = fmt.cyan("<with-rule>")
+    }
+
+    case class FromKinds(kinds: Set[TokenKind]) extends NamedTokenSet {
+      def display(fmt: Formatter) = s"${prettyJoin(kinds.toList.map(t => fmt.cyan(t.display)))}"
+    }
+
+    case class FromTreeKinds(kinds: Set[SyntaxTree.TreeKind]) extends NamedTokenSet {
+      def display(fmt: Formatter) = s"${prettyJoin(kinds.toList.map(k => fmt.cyan(s"<$k>")))}"
+    }
   }
 
   /**
-    * An error raised to indicate an unexpected token was found.
+    * An error raised to indicate that something was syntactically malformed.
+    * This error is very generic, and should be avoided in favor of other ParserErrors if possible.
     *
-    * @param expected Names of the tokens that are expected at the location. See [[TokenKind.display]].
-    * @param actual   Name of the token that was actually found. See [[TokenKind.display]].
-    * @param ctx      The syntactic context.
-    * @param loc      The source location.
-    * @param hint     Optional hint with more details about the error
+    * @param namedTokenSet Name of the malformed token set.
+    * @param sctx          The syntactic context.
+    * @param hint          Optional hint with more details about the error.
+    * @param loc           The source location.
     */
-  case class UnexpectedToken(expected: Seq[String], actual: Option[String], ctx: SyntacticContext, loc: SourceLocation, hint: Option[String] = None) extends ParseError with Recoverable {
-    override val kind = s"Parse Error ($ctx)"
-    override val context: SyntacticContext = ctx
+  case class Malformed(namedTokenSet: NamedTokenSet, sctx: SyntacticContext, hint: Option[String] = None, loc: SourceLocation) extends ParseError with Recoverable {
+    override val kind = s"Parse Error ($sctx)"
 
-    def summary: String = {
-      val expectedStr = s"Expected ${prettyJoin(expected)}"
-      val actualStr = actual.map(a => s" before $a").getOrElse("")
-      s"$expectedStr$actualStr."
-    }
+    def summary: String = s"Malformed ${namedTokenSet.display(Formatter.NoFormatter)}."
 
-    def message(formatter: Formatter): String = {
-      import formatter._
+    def message(fmt: Formatter): String = {
       val hintStr = hint.map(s"\nHint: " + _).getOrElse("")
-      val expectedStr = s"Expected ${prettyJoin(expected.map(cyan))}"
-      val actualStr = actual.map(a => s" before ${red(a)}").getOrElse("")
-      s"""${line(kind, source.name)}
-         |>> $expectedStr$actualStr.
+      s"""${fmt.line(kind, source.name)}
+         |>> Malformed ${fmt.red(namedTokenSet.display(fmt))}.
          |
-         |${code(loc, s"Here")}$hintStr
-         |""".stripMargin
-    }
-  }
-
-  /**
-    * An error raised to indicate that no items were found in a context where one or more is needed.
-    *
-    * @param expected Names of the items that are expected at least one of. See [[TokenKind.display]].
-    * @param ctx      The syntactic context.
-    * @param loc      The source location.
-    * @param hint     Optional hint with more details about the error
-    */
-  case class NeedAtleastOne(expected: Seq[String], ctx: SyntacticContext, loc: SourceLocation, hint: Option[String] = None) extends ParseError with Recoverable {
-    override val kind = s"Parse Error ($ctx)"
-    override val context: SyntacticContext = ctx
-
-    def summary: String = s"Expected at least one ${prettyJoin(expected)}."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      val hintStr = hint.map(s"\nHint: " + _).getOrElse("")
-      s"""${line(kind, source.name)}
-         |>> Expected at least one ${prettyJoin(expected.map(cyan))}.
-         |
-         |${code(loc, s"Here")}$hintStr
-         |""".stripMargin
-    }
-  }
-
-  /**
-    * An error raised to indicate that a trailing separator is present.
-    *
-    * @param separator Name of the separator that is trailing. See [[TokenKind.display]].
-    * @param ctx       The syntactic context.
-    * @param loc       The source location.
-    */
-  case class TrailingSeparator(separator: String, ctx: SyntacticContext, loc: SourceLocation) extends ParseError with Recoverable {
-    override val kind = s"Parse Error ($ctx)"
-    override val context: SyntacticContext = ctx
-
-    def summary: String = s"Trailing $separator."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Trailing ${red(separator)}.
-         |
-         |${code(loc, s"Here")}
-         |""".stripMargin
-    }
-  }
-
-  /**
-    * An error raised to indicate that a scoped expression is missing a scope.
-    *
-    * @param name Name of the expreesion missing a scope. See [[TokenKind.display]].
-    * @param ctx  The syntactic context.
-    * @param loc  The source location.
-    */
-  case class MissingScope(name: String, ctx: SyntacticContext, loc: SourceLocation) extends ParseError with Recoverable {
-    override val kind = s"Parse Error ($ctx)"
-    override val context: SyntacticContext = ctx
-
-    def summary: String = s"Expected scope on $name."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Expected ${red("scope")} on ${cyan(name)}.
-         |
-         |${code(loc, s"Here")}
-         |Hint: Add a scope using `@ <scope>`
-         |""".stripMargin
-    }
-  }
-
-  /**
-    * An error raised to indicate that one or more doc-comments are misplaced.
-    *
-    * @param ctx  The syntactic context.
-    * @param loc  The source location.
-    */
-  case class MisplacedDocComments(ctx: SyntacticContext, loc: SourceLocation) extends ParseError with Recoverable {
-    override val kind = s"Parse Error ($ctx)"
-    override val context: SyntacticContext = ctx
-
-    def summary: String = s"Misplaced doc-comment(s)."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Misplaced doc-comment(s).
-         |
-         |${code(loc, s"Here")}
-         |Hint: doc-comments must annotate declarations.
+         |${fmt.code(loc, s"Here")}$hintStr
          |""".stripMargin
     }
   }
@@ -171,12 +158,11 @@ object ParseError {
   /**
     * An error raised to indicate that one or more sequential comments are misplaced.
     *
-    * @param ctx  The syntactic context.
+    * @param sctx The syntactic context.
     * @param loc  The source location.
     */
-  case class MisplacedComments(ctx: SyntacticContext, loc: SourceLocation) extends ParseError with Recoverable {
-    override val kind = s"Parse Error ($ctx)"
-    override val context: SyntacticContext = ctx
+  case class MisplacedComments(sctx: SyntacticContext, loc: SourceLocation) extends ParseError with Recoverable {
+    override val kind = s"Parse Error ($sctx)"
 
     def summary: String = s"Misplaced comment(s)."
 
@@ -192,49 +178,141 @@ object ParseError {
   }
 
   /**
-    * An error raised to indicate that something was syntactically malformed.
-    * This error is very generic, and should be avoided in favor of other ParserErrors if possible.
+    * An error raised to indicate that one or more doc-comments are misplaced.
     *
-    * @param name Name of the malformed item. See [[TokenKind.display]].
-    * @param ctx  The syntactic context.
+    * @param sctx The syntactic context.
     * @param loc  The source location.
-    * @param hint Optional hint with more details about the error.
     */
-  case class Malformed(name: String, ctx: SyntacticContext, loc: SourceLocation, hint: Option[String] = None) extends ParseError with Recoverable {
-    override val kind = s"Parse Error ($ctx)"
-    override val context: SyntacticContext = ctx
+  case class MisplacedDocComments(sctx: SyntacticContext, loc: SourceLocation) extends ParseError with Recoverable {
+    override val kind = s"Parse Error ($sctx)"
 
-    def summary: String = s"Malformed $name."
+    def summary: String = s"Misplaced doc-comment(s)."
 
     def message(formatter: Formatter): String = {
       import formatter._
-      val hintStr = hint.map(s"\nHint: " + _).getOrElse("")
       s"""${line(kind, source.name)}
-         |>> Malformed ${red(name)}.
+         |>> Misplaced doc-comment(s).
          |
-         |${code(loc, s"Here")}$hintStr
+         |${code(loc, s"Here")}
+         |Hint: doc-comments must annotate declarations.
          |""".stripMargin
     }
   }
 
   /**
-    * An __internal__ error indicating that a Mark.Opened did not have a corresponding Mark.Closed when parsing ended.
-    * This is used when opening new parser marks and should get overwritten with TreeKind or actual errors as parsing happens.
-    * If a UnclosedParserMark is left when the syntax-tree is being built, that is an internal compiler error.
-    * As such, any attempt to display the error also throws an internal compiler exception.
+    * An error raised to indicate that a scoped expression is missing a scope.
+    *
+    * @param token Name of the expression missing a scope. See [[TokenKind.display]].
+    * @param sctx  The syntactic context.
+    * @param loc   The source location.
     */
-  case class UnclosedParserMark(loc: SourceLocation) extends ParseError with Recoverable {
-    def summary: String = throw InternalCompilerException(s"Unclosed parser mark at $loc.", loc)
-    def message(formatter: Formatter): String = throw InternalCompilerException(s"Unclosed parser mark at $loc.", loc)
+  case class MissingScope(token: TokenKind, sctx: SyntacticContext, loc: SourceLocation) extends ParseError with Recoverable {
+    override val kind = s"Parse Error ($sctx)"
+
+    def summary: String = s"Expected scope on ${token.display}."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Expected ${red("scope")} on ${cyan(token.display)}.
+         |
+         |${code(loc, s"Here")}
+         |Hint: Add a scope using `@ <scope>`
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate that no items were found in a context where one or more is needed.
+    *
+    * @param expected Names of the items that are expected at least one of. See [[TokenKind.display]].
+    * @param sctx     The syntactic context.
+    * @param hint     Optional hint with more details about the error
+    * @param loc      The source location.
+    */
+  case class NeedAtleastOne(expected: NamedTokenSet, sctx: SyntacticContext, hint: Option[String] = None, loc: SourceLocation) extends ParseError with Recoverable {
+    override val kind = s"Parse Error ($sctx)"
+
+    def summary: String = s"Expected at least one ${expected.display(Formatter.NoFormatter)}."
+
+    def message(fmt: Formatter): String = {
+      val hintStr = hint.map(s"\nHint: " + _).getOrElse("")
+      s"""${fmt.line(kind, source.name)}
+         |>> Expected at least one ${expected.display(fmt)}.
+         |
+         |${fmt.code(loc, s"Here")}$hintStr
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate that a trailing separator is present.
+    *
+    * @param separator Name of the separator that is trailing. See [[TokenKind.display]].
+    * @param sctx      The syntactic context.
+    * @param loc       The source location.
+    */
+  case class TrailingSeparator(separator: TokenKind, sctx: SyntacticContext, loc: SourceLocation) extends ParseError with Recoverable {
+    override val kind = s"Parse Error ($sctx)"
+
+    def summary: String = s"Trailing ${separator.display}."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Trailing ${red(separator.display)}.
+         |
+         |${code(loc, s"Here")}
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate an unexpected token was found.
+    *
+    * @param expected Names of the tokens that are expected at the location.
+    * @param actual   Name of the token that was actually found. See [[TokenKind.display]].
+    * @param sctx     The syntactic context.
+    * @param hint     Optional hint with more details about the error
+    * @param loc      The source location.
+    */
+  case class UnexpectedToken(expected: NamedTokenSet, actual: Option[TokenKind], sctx: SyntacticContext, hint: Option[String] = None, loc: SourceLocation) extends ParseError with Recoverable {
+    override val kind = s"Parse Error ($sctx)"
+
+    def summary: String = {
+      val expectedStr = s"Expected ${expected.display(Formatter.NoFormatter)}"
+      val actualStr = actual.map(a => s" before $a").getOrElse("")
+      s"$expectedStr$actualStr."
+    }
+
+    def message(fmt: Formatter): String = {
+      val hintStr = hint.map(s"\nHint: " + _).getOrElse("")
+      val expectedStr = s"Expected ${expected.display(fmt)}"
+      val actualStr = actual.map(a => s" before ${fmt.red(a.display)}").getOrElse("")
+      s"""${fmt.line(kind, source.name)}
+         |>> $expectedStr$actualStr.
+         |
+         |${fmt.code(loc, s"Here")}$hintStr
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * Joins items nicely with comma separation ending with an "or".
+    * For instance prettyJoin(List("def", "enum", "trait")) gives "def, enum or trait".
+    */
+  private def prettyJoin[T](items: Seq[T]): String = items match {
+    case i1 :: i2 :: Nil => s"$i1 or $i2"
+    case i1 :: Nil => s"$i1"
+    case i :: tail => s"$i, ${prettyJoin(tail)}"
   }
 
   /**
     * A __legacy__ error used to support the previous parser.
     * TODO: Remove this with the previous parser.
     */
-  case class Legacy(message: String, ctx: SyntacticContext, loc: SourceLocation) extends ParseError with Recoverable {
-    override val kind = s"Parse Error ($ctx)"
-    override val context: SyntacticContext = ctx
+  case class Legacy(message: String, sctx: SyntacticContext, loc: SourceLocation) extends ParseError with Recoverable {
+    override val kind = s"Parse Error ($sctx)"
 
     def summary: String = message
 

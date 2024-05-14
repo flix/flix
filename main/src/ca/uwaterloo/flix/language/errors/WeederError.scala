@@ -1032,7 +1032,7 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate an unapplied intrinsic .
+    * An error raised to indicate an unapplied intrinsic.
     *
     * @param intrinsic name of the intrinsic.
     * @param loc the location where the illegal intrinsic occurs.
@@ -1046,7 +1046,6 @@ object WeederError {
          |>> Unapplied intrinsic '${red(intrinsic)}'.
          |
          |${code(loc, "unapplied intrinsic.")}
-         |Hint: Supply arguments to call the intrinsic `$intrinsic(...)`
          |""".stripMargin
     }
   }
