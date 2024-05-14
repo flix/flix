@@ -251,7 +251,8 @@ object MutationTester {
         })
       reportResults(totalStartTime, amountOfMutants, totalSurvivorCount, totalUnknowns, equivalents)
       MutationDataHandler.writeTTBToFile(List(s"TTB: $testModule ${timeToBug - totalStartTime}"))
-      (mOperatorResults, timeToBug - totalStartTime)
+      println((timeToBug - totalStartTime) / 1_000_000_000)
+      (mOperatorResults, (timeToBug - totalStartTime) / 1_000_000_000)
     }
 
   /**
@@ -294,7 +295,7 @@ object MutationTester {
             val newTime = time + (System.nanoTime() - start).toDouble / nano
             val (newSurvivorCount, newTTB) = {
               if (testResult.equals(TestRes.MutantSurvived)) {
-              (survivorCount + 1, if (timeToBug == 0) System.nanoTime / nano  else timeToBug)
+              (survivorCount + 1, if (timeToBug == 0) System.nanoTime else timeToBug)
             }
             else (survivorCount, timeToBug)
             }
