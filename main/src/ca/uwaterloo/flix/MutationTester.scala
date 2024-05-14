@@ -71,8 +71,8 @@ object MutationTester {
       * It also keeps track of the time it took to generate all the mutations
       */
     def run(flix: Flix, testModule: String, productionModule: String, percentage: Int): Unit = {
-      runBenchmarks(flix)
-      //toolRun(flix, testModule,productionModule, percentage)
+      //runBenchmarks(flix)
+      toolRun(flix, testModule,productionModule, percentage)
     }
   private def toolRun(flix: Flix, testModule: String, productionModule: String, percentage: Int): Unit = {
     println(s"mutating module: $productionModule")
@@ -292,7 +292,12 @@ object MutationTester {
             val testResult = compileAndTestMutant(mDef.df, mut._1, testKit)
             val nano = 1_000_000_000
             val newTime = time + (System.nanoTime() - start).toDouble / nano
-            val (newSurvivorCount, newTTB) = if (testResult.equals(TestRes.MutantSurvived)) (survivorCount + 1, if (timeToBug == 0) System.nanoTime / nano  else timeToBug) else (survivorCount, timeToBug)
+            val (newSurvivorCount, newTTB) = {
+              if (testResult.equals(TestRes.MutantSurvived)) {
+              (survivorCount + 1, if (timeToBug == 0) System.nanoTime / nano  else timeToBug)
+            }
+            else (survivorCount, timeToBug)
+            }
             val newUnknownCount = if (testResult.equals(TestRes.Unknown))  unknownCount + 1 else unknownCount
             val newEQCount = if (testResult.equals(TestRes.Equivalent))  eQCount + 1 else eQCount
             if (testResult.equals(TestRes.MutantSurvived)) {

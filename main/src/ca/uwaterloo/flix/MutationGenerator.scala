@@ -114,7 +114,8 @@ object MutationGenerator {
         if (defSyms.contains(s)) {
           val mutExps = mutateExpr(fun.exp)
           val mutDefs = mutExps.map(mexp => {
-            MutatedDef(fun.copy(exp = mexp), mexp.mutationType)
+            val a = MutationTester.insertDecAndCheckInDef(fun.copy(exp = mexp))
+            MutatedDef(a, mexp.mutationType)
           })
           Some(d._1 -> mutDefs)
         } else None
