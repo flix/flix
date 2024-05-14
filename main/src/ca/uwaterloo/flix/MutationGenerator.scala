@@ -520,7 +520,7 @@ object MutationGenerator {
 
         val ifThenElse = Expr.IfThenElse(condition, mask, elseBranch, Type.Unit, Type.IO, loc)
 
-        val expr = Expr.Stm(ifThenElse, c.copy(loc = loc), c.tpe, c.eff, c.loc)
+        val expr = Expr.Stm(ifThenElse, c.copy(loc = loc), c.tpe, c.eff, loc)
 
         (expr, MutationType.CstMut(c.cst))
       }
