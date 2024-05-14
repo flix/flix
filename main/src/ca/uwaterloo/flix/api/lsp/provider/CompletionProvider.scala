@@ -292,7 +292,8 @@ object CompletionProvider {
       case ResolutionError.UndefinedName(_, _, _, isUse, _) => if (isUse) (1, SyntacticContext.Use) else (2, SyntacticContext.Expr.OtherExpr)
       case ResolutionError.UndefinedType(_, _, _) => (1, SyntacticContext.Type.OtherType)
       case WeederError.MalformedIdentifier(_, _) => (2, SyntacticContext.Import)
-      case ParseError(_, ctx, _) => (5, ctx)
+      case WeederError.UnappliedIntrinsic(_, _) => (5, SyntacticContext.Expr.OtherExpr)
+      case err: ParseError => (5, err.sctx)
       case _ => (999, SyntacticContext.Unknown)
     }).minByOption(_._1) match {
       case None => SyntacticContext.Unknown
