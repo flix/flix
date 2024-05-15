@@ -120,9 +120,11 @@ object Purity {
     * aliases, or associated types.
     */
   def fromType(eff: Type)(implicit universe: Set[Symbol.EffectSym]): Purity = {
-    evaluateFormula(eff) match {
-      case set if set.isEmpty => Purity.Pure
-      case set if set.sizeIs == 1 && set.contains(Symbol.IO) => Purity.Impure
+    // Note: When proper effect-sets arrive we should use `evaluateFormula` below.
+    // For now, we keep it simple, to avoid bugs.
+    eff.typeConstructor match {
+      case Some(TypeConstructor.Pure) => Purity.Pure
+      case Some(TypeConstructor.Effect(sym)) if sym == Symbol.IO => Purity.Impure
       case _ => Purity.ControlImpure
     }
   }
