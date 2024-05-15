@@ -165,7 +165,7 @@ object Inliner {
       val e1 = visitExp(exp1, subst0)
       val e2 = visitExp(exp2, subst0)
       val e3 = visitExp(exp3, subst0)
-      reduceIfThenElse(e1, e2, e3, tpe, purity, loc)
+      LiftedAst.Expr.IfThenElse(e1, e2, e3, tpe, purity, loc)
 
     case OccurrenceAst.Expression.Branch(exp, branches, tpe, purity, loc) =>
       val e = visitExp(exp, subst0)
@@ -186,7 +186,7 @@ object Inliner {
         } else {
           /// Case 2:
           /// If `sym` is never used (it is `Dead`) so it is safe to make a Stmt.
-          LiftedAst.Expr.Stmt(visitExp(exp1, subst0), visitExp(exp2, subst0), tpe, purity, loc)
+          LiftedAst.Expr.Stm(visitExp(exp1, subst0), visitExp(exp2, subst0), tpe, purity, loc)
         }
       } else {
         /// Case 3:
@@ -231,7 +231,7 @@ object Inliner {
       } else {
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
-        LiftedAst.Expr.Stmt(e1, e2, tpe, purity, loc)
+        LiftedAst.Expr.Stm(e1, e2, tpe, purity, loc)
       }
 
     case OccurrenceAst.Expression.Scope(sym, exp, tpe, purity, loc) =>
@@ -320,7 +320,7 @@ object Inliner {
         // if the parameter is unused and the argument is NOT pure, then put it in a statement.
         val nextLet = bindFormals(exp0, nextSymbols, nextExpressions, env0)
         val purity = Purity.combine(e1.purity, nextLet.purity)
-        LiftedAst.Expr.Stmt(e1, nextLet, exp0.tpe, purity, exp0.loc)
+        LiftedAst.Expr.Stm(e1, nextLet, exp0.tpe, purity, exp0.loc)
       case ((formal, _) :: nextSymbols, e1 :: nextExpressions) =>
         val freshVar = Symbol.freshVarSym(formal.sym)
         val env1 = env0 + (formal.sym -> freshVar)
@@ -370,7 +370,7 @@ object Inliner {
       val e1 = substituteExp(exp1, env0)
       val e2 = substituteExp(exp2, env0)
       val e3 = substituteExp(exp3, env0)
-      reduceIfThenElse(e1, e2, e3, tpe, purity, loc)
+      LiftedAst.Expr.IfThenElse(e1, e2, e3, tpe, purity, loc)
 
     case OccurrenceAst.Expression.Branch(exp, branches, tpe, purity, loc) =>
       val e = substituteExp(exp, env0)
@@ -398,7 +398,7 @@ object Inliner {
     case OccurrenceAst.Expression.Stmt(exp1, exp2, tpe, purity, loc) =>
       val e1 = substituteExp(exp1, env0)
       val e2 = substituteExp(exp2, env0)
-      LiftedAst.Expr.Stmt(e1, e2, tpe, purity, loc)
+      LiftedAst.Expr.Stm(e1, e2, tpe, purity, loc)
 
     case OccurrenceAst.Expression.Scope(sym, exp, tpe, purity, loc) =>
       val e = substituteExp(exp, env0)
@@ -447,34 +447,6 @@ object Inliner {
     */
   private def visitFormalParam(fparam: OccurrenceAst.FormalParam): LiftedAst.FormalParam = fparam match {
     case OccurrenceAst.FormalParam(sym, mod, tpe, loc) => LiftedAst.FormalParam(sym, mod, tpe, loc)
-  }
-
-  /**
-    * If `outerCond` is always true then eliminate else branch
-    * If `outerThen` is always true then eliminate then branch
-    * Transforms expressions of the form
-    * if (c1) (if (c2) e else jump l1) else jump l1)
-    * to
-    * if (c1 and c2) e else jump l1)
-    */
-  private def reduceIfThenElse(outerCond: LiftedAst.Expr, outerThen: LiftedAst.Expr, outerElse: LiftedAst.Expr, tpe: MonoType, purity: Purity, loc: SourceLocation): LiftedAst.Expr = outerCond match {
-    case LiftedAst.Expr.Cst(Ast.Constant.Bool(true), _, _) => outerThen
-    case LiftedAst.Expr.Cst(Ast.Constant.Bool(false), _, _) => outerElse
-    case _ =>
-      outerThen match {
-        case LiftedAst.Expr.IfThenElse(innerCond, innerThen, innerElse, _, _, _) =>
-          (outerElse, innerElse) match {
-            case (LiftedAst.Expr.JumpTo(sym1, _, _, _), LiftedAst.Expr.JumpTo(sym2, _, _, _)) if sym1 == sym2 =>
-              val op = AtomicOp.Binary(SemanticOp.BoolOp.And)
-              val es = List(outerCond, innerCond)
-              val tpe = innerThen.tpe // equal to outerElse.tpe
-              val pur = Purity.combine(outerCond.purity, innerCond.purity)
-              val andExp = LiftedAst.Expr.ApplyAtomic(op, es, MonoType.Bool, pur, loc)
-              LiftedAst.Expr.IfThenElse(andExp, innerThen, outerElse, tpe, purity, loc)
-            case _ => LiftedAst.Expr.IfThenElse(outerCond, outerThen, outerElse, tpe, purity, loc)
-          }
-        case _ => LiftedAst.Expr.IfThenElse(outerCond, outerThen, outerElse, tpe, purity, loc)
-      }
-  }
+ }
 
 }
