@@ -29,9 +29,8 @@ object MutationDataHandler {
 
 
   def writeTTBToFile(times: String): Unit = {
-    val stringToWrite = times.foldLeft("")((acc, ttb) => s"$ttb\n$acc")
     val fileWriter = new FileWriter("TTBData.txt", true)
-    fileWriter.write(stringToWrite)
+    fileWriter.write(times)
     fileWriter.close()
   }
 
