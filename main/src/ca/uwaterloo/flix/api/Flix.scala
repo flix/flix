@@ -78,20 +78,14 @@ class Flix {
     * A cache of ASTs for incremental compilation.
     */
   private var cachedLexerTokens: Map[Ast.Source, Array[Token]] = Map.empty
-  private var cachedParserAst:  ParsedAst.Root = ParsedAst.empty
-  private var cachedParserCst:  SyntaxTree.Root = SyntaxTree.empty
-  private var cachedWeederAst: WeededAst.Root = WeededAst.empty
+  private var cachedParserCst: SyntaxTree.Root = SyntaxTree.empty
   private var cachedWeederAst2: WeededAst.Root = WeededAst.empty
   private var cachedDesugarAst: DesugaredAst.Root = DesugaredAst.empty
   private var cachedKinderAst: KindedAst.Root = KindedAst.empty
   private var cachedResolverAst: ResolvedAst.Root = ResolvedAst.empty
   private var cachedTyperAst: TypedAst.Root = TypedAst.empty
 
-  def getParserAst: ParsedAst.Root = cachedParserAst
-
-  def getParserCst: SyntaxTree.Root  = cachedParserCst
-
-  def getWeederAst: WeededAst.Root = cachedWeederAst
+  def getParserCst: SyntaxTree.Root = cachedParserCst
 
   def getWeederAst2: WeededAst.Root = cachedWeederAst2
 
@@ -501,24 +495,20 @@ class Flix {
     /** Remember to update [[AstPrinter]] about the list of phases. */
     val result = for {
       afterReader <- Reader.run(getInputs)
-      afterLexer <- Lexer.run(afterReader, cachedLexerTokens, changeSet)
-      afterParser <- Parser.run(afterReader, entryPoint, cachedParserAst, changeSet)
-      afterWeeder <- Weeder.run(afterParser, cachedWeederAst, changeSet)
-
       // Plan for migrating to new parser + weeder:
-      // Stage 1 [ACTIVE]
+      // Stage 1
       // Run new pipeline and use results but only after the old pipeline.
       // This way Parser2 and Weeder2 only ever sees code that the old pipeline considers ok.
       // Errors will look like before, but the new WeededAst, which should be equal to the old one, is used.
       //
-      // Stage 2
-      // Run new pipeline by default, but make the old one available through --XParser option.
+      // Stage 2 [ACTIVE]
+      // Run new pipeline by default.
       //
       // Stage 3
       // Full migration, remove old parser and weeder.
+      afterLexer <- Lexer.run(afterReader, cachedLexerTokens, changeSet)
       afterParser2 <- Parser2.run(afterLexer, cachedParserCst, changeSet)
-      afterWeeder2 <- Weeder2.run(afterReader, entryPoint, afterParser2, cachedWeederAst, changeSet)
-
+      afterWeeder2 <- Weeder2.run(afterReader, entryPoint, afterParser2, cachedWeederAst2, changeSet)
       afterDesugar = Desugar.run(afterWeeder2, cachedDesugarAst, changeSet)
       afterNamer <- Namer.run(afterDesugar)
       afterResolver <- Resolver.run(afterNamer, cachedResolverAst, changeSet)
@@ -537,9 +527,7 @@ class Flix {
       // Update caches for incremental compilation.
       if (options.incremental) {
         this.cachedLexerTokens = afterLexer
-        this.cachedParserAst = afterParser
         this.cachedParserCst = afterParser2
-        this.cachedWeederAst = afterWeeder
         this.cachedWeederAst2 = afterWeeder2
         this.cachedDesugarAst = afterDesugar
         this.cachedKinderAst = afterKinder
@@ -643,7 +631,7 @@ class Flix {
     // And add it to the list of executed phases.
     phaseTimers += currentPhase
 
-    if (this.options.xprintphases){
+    if (this.options.xprintphases) {
       d.emit(phase, r)(this)
     }
 
