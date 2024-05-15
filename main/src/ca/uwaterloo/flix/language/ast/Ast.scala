@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.ast
 
 import java.nio.file.Path
 import java.util.Objects
+import scala.annotation.tailrec
 
 /**
   * A collection of AST nodes that are shared across multiple ASTs.
@@ -79,6 +80,29 @@ object Ast {
     override def hashCode(): Int = input.hashCode()
 
     override def toString: String = name
+
+
+    /**
+      * Gets a line of text from the source as a string.
+      */
+    def getLine(line: Int): String = {
+      @tailrec
+      def rec(ix: Int, lineStartIx: Int, lineNr: Int): String =
+        if (ix < data.length)
+          if (data(ix) == '\n')
+            if (lineNr < line) rec(ix + 1, ix + 1, lineNr + 1)
+            else sliceString(lineStartIx, ix)
+          else rec(ix + 1, lineStartIx, lineNr)
+        else if (lineNr == line) sliceString(lineStartIx, ix)
+        else ""
+
+      rec(ix = 0, lineStartIx = 0, lineNr = 1)
+    }
+
+    /**
+      * Gets a string from a slice of [[data]] from start(inclusive) to end(exclusive).
+      */
+    private def sliceString(start: Int, end: Int) = new String(data, start, math.max(end - start, 0))
   }
 
   /**
@@ -250,22 +274,22 @@ object Ast {
     }
 
     /**
-     * An AST node that represents a `@TailRec` annotation.
-     *
-     * A function marked with `@TailRec` is guaranteed to be tail recursive by the compiler.
-     *
-     * @param loc the source location of the annotation.
-     */
+      * An AST node that represents a `@TailRec` annotation.
+      *
+      * A function marked with `@TailRec` is guaranteed to be tail recursive by the compiler.
+      *
+      * @param loc the source location of the annotation.
+      */
     case class TailRecursive(loc: SourceLocation) extends Annotation {
       override def toString: String = "@Tailrec"
     }
 
     /**
-     * An AST node that represents an undefined (i.e. erroneous) annotation.
-     *
-     * @param name the name of the annotation.
-     * @param loc the source location of the annotation.
-     */
+      * An AST node that represents an undefined (i.e. erroneous) annotation.
+      *
+      * @param name the name of the annotation.
+      * @param loc  the source location of the annotation.
+      */
     case class Error(name: String, loc: SourceLocation) extends Annotation {
       override def toString: String = "@" + name
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Magnus Madsen
+ * Copyright 2024 Herluf Baggesen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,1998 +13,3379 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.Ast.{Source, SyntacticContext}
+import ca.uwaterloo.flix.language.ast.Ast.SyntacticContext
+import ca.uwaterloo.flix.language.ast.SyntaxTree.TreeKind
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.dbg.AstPrinter._
+import ca.uwaterloo.flix.language.errors.{WeederError, ParseError}
+import ca.uwaterloo.flix.language.errors.ParseError._
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.collection.Chain
-import ca.uwaterloo.flix.util.{ParOps, Validation}
-import org.parboiled2._
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
-import scala.annotation.tailrec
+import scala.collection.mutable.ArrayBuffer
 
 /**
-  * A phase to transform source files into abstract syntax trees.
+  * A resilient LL parser.
+  * Parses a stream of tokens into a [[SyntaxTree.Tree]].
+  * This parser works in two steps:
+  * 1. First the list of tokens is traversed while emitting Open, Advance and Close events.
+  * Conceptually this is exactly the same as inserting parenthesis in a stream of tokens, only here each parenthesis is annotated with a kind.
+  * For instance:
+  * def main(): Int32 = 123
+  * Becomes:
+  * (Def 'def' (Name 'main' ) '(' ')' ':' (Type 'Int32' ) '=' (Literal '123' ) )
+  * 2. The flat list of events is automatically turned into a SyntaxTree.Tree.
   *
-  * ---
-  *
-  * INVARIANT: No rule should consume trailing whitespace
-  *
-  * REASON: Consuming trailing whitespace might consume the documentation of the
-  * next def/trait/etc.
-  *
-  * EXAMPLE: Do not write `... ~ optWS ~ optional(":" ~ optWS ~ Type)`,
-  * instead write `... ~ optional(optWS ~ ":" ~ optWS ~ Type)`.
+  * This parser is adopted from 'Resilient LL Parsing Tutorial' by Alex Kladov who works on rust-analyzer.
+  * The tutorial is also a great resource for understanding this parser (and a great read to boot!)
+  * https://matklad.github.io/2023/05/21/resilient-ll-parsing-tutorial.html
   */
 object Parser {
 
+  private sealed trait Event
+
   /**
-    * Parses the given source inputs into an abstract syntax tree.
+    * An event emitted by the parser while traversing a list of [[Token]]s
     */
-  def run(root: ReadAst.Root, entryPoint: Option[Symbol.DefnSym], oldRoot: ParsedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[ParsedAst.Root, CompilationMessage] =
+  private object Event {
+    /**
+      * Opens a grouping of tokens with the [[TreeKind]] kind.
+      */
+    case class Open(kind: TreeKind) extends Event
+
+    /**
+      * Closed the most recently opened group.
+      */
+    case object Close extends Event
+
+    /**
+      * Advances one token adding it to the currently open group.
+      */
+    case object Advance extends Event
+  }
+
+  private class State(val tokens: Array[Token], val src: Ast.Source) {
+    /**
+      * The current token being considered by the parser.
+      */
+    var position: Int = 0
+    /**
+      * The parser avoids endless loops via a fuel abstraction.
+      * When a look-up is made with [[nth]] one unit of fuel is lost.
+      * If fuel reaches zero by this, that is a compiler error, since the parser is stuck.
+      * Whenever progress is made with [[advance]] fuel is reset to its original amount.
+      */
+    var fuel: Int = 256
+    /**
+      * The Parsing events emitted during parsing.
+      * Note that this is a flat collection that later gets turned into a [[SyntaxTree.Tree]] by [[buildTree()]].
+      */
+    var events: ArrayBuffer[Event] = ArrayBuffer.empty
+    /**
+      * Errors reside both within the produced `Tree` but are also kept here.
+      * This is done to avoid crawling the tree for errors.
+      * Note that there is data-duplication, but not in the happy case.
+      * An alternative could be to collect errors as part of [[buildTree]] and return them in a list there.
+      */
+    val errors: ArrayBuffer[CompilationMessage] = ArrayBuffer.empty
+  }
+
+  private sealed trait Mark
+
+  /**
+    * Marks point to positions in a list of tokens where an Open or Close event resides.
+    * This is useful because it lets the parser open a group, without knowing exactly what [[TreeKind]] the group should have.
+    * For instance we need to look past doc-comments, annotations and modifiers to see what kind of declaration we a dealing with (def, enum, trait...).
+    * The convention used throughout is to open a group with kind [[TreeKind.ErrorTree]] and then later close it with the correct kind.
+    * This happens via the [[open]] and [[close]] functions.
+    *
+    * Conversely we sometimes need to open a group before the currently open one.
+    * The best example is binary expressions. In '1 + 2' we first see '1' and open a group for a Literal.
+    * Then we see '+' which means we want to open a Expr.Binary group that also includes the '1'.
+    * This is done with [[openBefore]] which takes a [[Mark.Closed]] and inserts an Open event before it.
+    * Whenever possible grammar rules return a [[Mark.Closed]] so another rule may wrap it.
+    */
+  private object Mark {
+    case class Opened(index: Int) extends Mark
+
+    case class Closed(index: Int) extends Mark
+  }
+
+  def run(tokens: Map[Ast.Source, Array[Token]], oldRoot: SyntaxTree.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[SyntaxTree.Root, CompilationMessage] = {
+    if (flix.options.xparser) {
+      // New lexer and parser disabled. Return immediately.
+      return Validation.success(SyntaxTree.empty)
+    }
+
     flix.phase("Parser") {
-
       // Compute the stale and fresh sources.
-      val (stale, fresh) = changeSet.partition(root.sources, oldRoot.units)
+      val (stale, fresh) = changeSet.partition(tokens, oldRoot.units)
 
-      // Parse each stale source in parallel.
-      val result = ParOps.parTraverse(stale.keys)(parseRoot)
+      // Parse each stale source in parallel and join them into a WeededAst.Root
+      val refreshed = ParOps.parMap(stale) {
+        case (src, tokens) => mapN(parse(src, tokens))(trees => src -> trees)
+      }
 
-      // Combine the ASTs into one abstract syntax tree.
-      mapN(result) {
-        case as =>
-          val m = as.foldLeft(fresh) {
-            case (acc, (src, u)) => acc + (src -> u)
-          }
-          ParsedAst.Root(m, entryPoint, root.names)
+      // Join refreshed syntax trees with the already fresh ones.
+      mapN(sequence(refreshed)) {
+        refreshed => SyntaxTree.Root(refreshed.toMap ++ fresh)
       }
     }(DebugValidation())
+  }
+
+  private def parse(src: Ast.Source, tokens: Array[Token]): Validation[SyntaxTree.Tree, CompilationMessage] = {
+    implicit val s: State = new State(tokens, src)
+    // Call the top-most grammar rule to gather all events into state.
+    root()
+    // Build the syntax tree using events in state.
+    val tree = buildTree()
+    // Return with errors as soft failures to run subsequent phases for more validations.
+    Validation.success(tree).withSoftFailures(s.errors)
+  }
+
+  private def buildTree()(implicit s: State): SyntaxTree.Tree = {
+    val tokens = s.tokens.iterator.buffered
+    // We are using lists as stacks here (Scala does have a 'Stack', but it is backed by an ArrayDeque).
+    // Lists are fastest here though since they have constant time prepend (+:) and tail implementations.
+    // We use prepend on Event.Open and stack.tail on Event.Close.
+    var stack: List[SyntaxTree.Tree] = List.empty
+    var locationStack: List[Token] = List.empty
+
+    // Pop the last event, which must be a Close,
+    // to ensure that the stack is not empty when handling event below.
+    val lastEvent = s.events.last
+    s.events = s.events.dropRight(1)
+    assert(lastEvent match {
+      case Event.Close => true
+      case _ => false
+    })
+
+    // Make a synthetic token to begin with, to make the SourceLocations generated below be correct.
+    var lastAdvance = Token(TokenKind.Eof, s.src, 0, 0, 0, 0, 0, 0)
+    for (event <- s.events) {
+      event match {
+        case Event.Open(kind) =>
+          locationStack = tokens.head +: locationStack
+          stack = SyntaxTree.Tree(kind, Array.empty, SourceLocation.Unknown) +: stack
+
+        case Event.Close =>
+          val child = stack.head
+          val openToken = locationStack.head
+          stack.head.loc = if (stack.head.children.length == 0)
+            // If the subtree has no children, give it a zero length position just after the last token
+            SourceLocation.mk(
+              lastAdvance.mkSourcePositionEnd,
+              lastAdvance.mkSourcePositionEnd
+            )
+          else
+            // Otherwise the source location can span from the first to the last token in the sub tree
+            SourceLocation.mk(
+              openToken.mkSourcePosition,
+              lastAdvance.mkSourcePositionEnd
+            )
+          locationStack = locationStack.tail
+          stack = stack.tail
+          stack.head.children = stack.head.children :+ child
+
+        case Event.Advance =>
+          val token = tokens.next()
+          lastAdvance = token
+          stack.head.children = stack.head.children :+ token
+      }
+    }
+
+    // Set source location of the root
+    val openToken = locationStack.last
+    stack.last.loc = SourceLocation.mk(
+      openToken.mkSourcePosition,
+      tokens.head.mkSourcePositionEnd
+    )
+
+    // The stack should now contain a single Source tree,
+    // and there should only be an <eof> token left.
+    assert(stack.length == 1)
+    assert(tokens.next().kind == TokenKind.Eof)
+    stack.head
+  }
 
   /**
-    * Replaces `"\n"` `"\r"` `"\t"` with spaces (not actual newlines etc. but dash n etc.).
-    * If the user forgets `;` and instead the parser reads a newline and `def` then the listed
-    * input is `Invalid input "\r\n\tdef"` which is replaced with `"   def"` by this method.
+    * Get first non-comment previous position of the parser as a [[SourceLocation]].
+    * TODO: It might make sense to seek the first non-comment position here.
     */
-  private def stripLiteralWhitespaceChars(s: String): String =
-    s.replaceAll("\\\\n|\\\\r|\\\\t", " ")
+  private def previousSourceLocation()(implicit s: State): SourceLocation = {
+    // state is zero-indexed while SourceLocation works as one-indexed.
+    val token = s.tokens((s.position - 1).max(0))
+    val beginLine = token.beginLine + 1
+    val beginCol = (token.beginCol + 1).toShort
+    val endLine = token.endLine + 1
+    val endCol = (token.endCol + 1).toShort
+    SourceLocation(s.src, isReal = true, beginLine, beginCol, endLine, endCol)
+  }
 
   /**
-    * Attempts to parse the given `source` as a root.
+    * Get current position of the parser as a [[SourceLocation]]
     */
-  private def parseRoot(source: Source)(implicit flix: Flix): Validation[(Ast.Source, ParsedAst.CompilationUnit), CompilationMessage] = {
-    flix.subtask(source.name)
+  private def currentSourceLocation()(implicit s: State): SourceLocation = {
+    // state is zero-indexed while SourceLocation works as one-indexed.
+    val token = s.tokens(s.position)
+    val beginLine = token.beginLine + 1
+    val beginCol = (token.beginCol + 1).toShort
+    val endLine = token.endLine + 1
+    val endCol = (token.endCol + 1).toShort
+    SourceLocation(s.src, isReal = true, beginLine, beginCol, endLine, endCol)
+  }
 
-    val parser = new Parser(source)
-    parser.Root.run() match {
-      case scala.util.Success(ast) =>
-        Validation.success((source, ast))
-      case scala.util.Failure(e: org.parboiled2.ParseError) =>
-        val possibleContexts = parseTraces(e.traces).filter(_._1 != SyntacticContext.Unknown)
-        val mostLikelyContext = possibleContexts.keySet.reduceOption(SyntacticContext.join).getOrElse(SyntacticContext.Unknown)
-        val loc = SourceLocation(parser.input, source, isReal = true, e.position.line, e.position.column.toShort, e.position.line, e.position.column.toShort)
-        // NOTE: Manually construct a hard failure here since ParseError is Recoverable, but in this parser it is not :-(
-        Validation.HardFailure(Chain(ca.uwaterloo.flix.language.errors.ParseError.Legacy(stripLiteralWhitespaceChars(parser.formatError(e)), mostLikelyContext, loc)))
-      case scala.util.Failure(e) =>
-        // NOTE: Manually construct a hard failure here since ParseError is Recoverable, but in this parser it is not :-(
-        Validation.HardFailure(Chain(ca.uwaterloo.flix.language.errors.ParseError.Legacy(e.getMessage, SyntacticContext.Unknown, SourceLocation.Unknown)))
+  /**
+    * Opens a group with kind [[TreeKind.UnclosedMark]].
+    * Each call to [[open]] must have a pairing call to [[close]]. This is asserted in [[buildTree]].
+    * [[open]] consumes comments into the opened group.
+    */
+  private def open(consumeDocComments: Boolean = true)(implicit s: State): Mark.Opened = {
+    val mark = Mark.Opened(s.events.length)
+    s.events.append(Event.Open(TreeKind.UnclosedMark))
+    // Consume any comments just before opening a new mark
+    comments(consumeDocComments = consumeDocComments)
+    mark
+  }
+
+  /**
+    * Closes a group and marks it with `kind`.
+    * [[close]] consumes comments into the group before closing.
+    */
+  private def close(mark: Mark.Opened, kind: TreeKind)(implicit s: State): Mark.Closed = {
+    s.events(mark.index) = Event.Open(kind)
+    // Consume any comments just before closing a mark
+    comments()
+    s.events.append(Event.Close)
+    Mark.Closed(mark.index)
+  }
+
+  /**
+    * Opens a group before another one.
+    * This is useful when we want to wrap one or more groups in a parent group.
+    * For instance:
+    * (Literal '1') '+' (Literal '2')
+    * Into:
+    * (Expr.Binary (Literal '1') '+' (Literal '2'))
+    */
+  private def openBefore(before: Mark.Closed)(implicit s: State): Mark.Opened = {
+    val mark = Mark.Opened(before.index)
+    s.events.insert(before.index, Event.Open(TreeKind.UnclosedMark))
+    mark
+  }
+
+  /**
+    * Advances the parser one token. [[advance]] refuels the parser.
+    */
+  private def advance()(implicit s: State): Unit = {
+    if (eof()) {
+      return
+    }
+    s.fuel = 256
+    s.events.append(Event.Advance)
+    s.position += 1
+  }
+
+  private def closeWithError(mark: Mark.Opened, error: CompilationMessage)(implicit s: State): Mark.Closed = {
+    nth(0) match {
+      // Avoid double reporting lexer errors.
+      case TokenKind.Err(_) =>
+      case _ => s.errors.append(error)
+    }
+    close(mark, TreeKind.ErrorTree(error))
+  }
+
+  /**
+    * Wrap the next token in an error.
+    */
+  private def advanceWithError(error: CompilationMessage, mark: Option[Mark.Opened] = None)(implicit s: State): Mark.Closed = {
+    val m = mark.getOrElse(open())
+    nth(0) match {
+      // Avoid double reporting lexer errors.
+      case TokenKind.Err(_) =>
+      case _ => s.errors.append(error)
+    }
+    advance()
+    close(m, TreeKind.ErrorTree(error))
+  }
+
+  /**
+    * Check if the parser is at the end-of-file.
+    */
+  private def eof()(implicit s: State): Boolean = {
+    s.position == s.tokens.length - 1
+  }
+
+  /**
+    * Look-ahead `lookahead` tokens.
+    * Consumes one fuel and throws [[InternalCompilerException]] if the parser is out of fuel.
+    * Does not consume fuel if parser has hit end-of-file.
+    * This lets the parser return what ever errors were produced from a deep call-stack without running out of fuel.
+    */
+  private def nth(lookahead: Int)(implicit s: State): TokenKind = {
+    if (s.fuel == 0) {
+      throw InternalCompilerException(s"[${currentSourceLocation()}] Parser is stuck", currentSourceLocation())
+    }
+
+    if (s.position + lookahead >= s.tokens.length - 1) {
+      TokenKind.Eof
+    } else {
+      s.fuel -= 1
+      s.tokens(s.position + lookahead).kind
     }
   }
 
   /**
-    * Computes the nearest syntactic contexts from the given traces.
+    * Checks if the parser is at a token of a specific `kind`.
     */
-  private def parseTraces(traces: Seq[RuleTrace]): Map[SyntacticContext, Int] =
-    traces.map(trace => parseRuleTrace(trace.prefix.reverse)).foldLeft(Map.empty[SyntacticContext, Int]) {
-      case (macc, ctx) => macc.updated(ctx, macc.getOrElse(ctx, 0) + 1)
-    }
+  private def at(kind: TokenKind)(implicit s: State): Boolean = {
+    nth(0) == kind
+  }
 
   /**
-    * Computes the nearest syntactic context from the given list of non-terminals.
+    * Checks if the parser is at a token of kind in `kinds`.
     */
-  @tailrec
-  private def parseRuleTrace(trace: List[RuleTrace.NonTerminal]): SyntacticContext = trace match {
-    case Nil => SyntacticContext.Unknown
-    case RuleTrace.NonTerminal(key, _) :: rest => key match {
-      case RuleTrace.Named(name) =>
-        // Case 1: We have a named rule application. Determine if we know it.
-        syntacticContextOf(name) match {
-          case SyntacticContext.Unknown =>
-            // println(name)
-            // Case 1.1: The named rule is not one of the contexts. Continue recursively.
-            parseRuleTrace(rest)
-          case result =>
-            // Case 2.2: We have found a named rule we know. Return it.
-            result
-        }
-      case _ =>
-        // Case 2: We have non-named rule application. Continue recursively.
-        parseRuleTrace(rest)
+  private def atAny(kinds: Set[TokenKind])(implicit s: State): Boolean = {
+    kinds.contains(nth(0))
+  }
+
+  /**
+    * Checks if the parser is at a token of a specific `kind` and advances past it if it is.
+    */
+  private def eat(kind: TokenKind)(implicit s: State): Boolean = {
+    if (at(kind)) {
+      advance()
+      true
+    } else {
+      false
     }
   }
 
   /**
-    * Returns the syntactic context of the given `name`.
+    * Checks if the parser is at a token of kind in `kinds` and advances past it if it is.
+    */
+  private def eatAny(kinds: Set[TokenKind])(implicit s: State): Boolean = {
+    if (atAny(kinds)) {
+      advance()
+      true
+    } else {
+      false
+    }
+  }
+
+  /**
+    * Advance past current token if it is of kind `kind`. Otherwise wrap it in an error.
+    * Something to note about [[expect]] is that it does __not__ consume any comments.
+    * That means that consecutive calls to expect work in an atomic manner.
+    * expect(TokenKind.KeywordIf)
+    * expect(TokenKind.ParenL)
+    * Means "if (" with no comment in-between "if" and "(".
+    */
+  private def expect(kind: TokenKind, context: SyntacticContext, hint: Option[String] = None)(implicit s: State): Unit = {
+    if (eat(kind)) {
+      return
+    }
+
+    val mark = open()
+    val error = nth(0) match {
+      case TokenKind.CommentLine => MisplacedComments(context, currentSourceLocation())
+      case TokenKind.CommentBlock => MisplacedComments(context, currentSourceLocation())
+      case TokenKind.CommentDoc => MisplacedDocComments(context, currentSourceLocation())
+      case at => UnexpectedToken(expected = NamedTokenSet.FromKinds(Set(kind)), actual = Some(at), context, hint = hint, loc = currentSourceLocation())
+    }
+    closeWithError(mark, error)
+  }
+
+  /**
+    * Advance past current token if it is of kind in `kinds`. Otherwise wrap it in an error.
+    */
+  private def expectAny(kinds: Set[TokenKind], context: SyntacticContext, hint: Option[String] = None)(implicit s: State): Unit = {
+    if (eatAny(kinds)) {
+      return
+    }
+    val mark = open()
+    val error = nth(0) match {
+      case TokenKind.CommentLine => MisplacedComments(context, currentSourceLocation())
+      case TokenKind.CommentBlock => MisplacedComments(context, currentSourceLocation())
+      case TokenKind.CommentDoc => MisplacedDocComments(context, currentSourceLocation())
+      case at => UnexpectedToken(expected = NamedTokenSet.FromKinds(kinds), actual = Some(at), context, hint = hint, loc = currentSourceLocation())
+    }
+    closeWithError(mark, error)
+  }
+
+  /**
+    * Checks if a token of kind `needle` can be found before any token of a kind in `before`.
+    * This is useful for detecting which grammar rule to use, when language constructs share a prefix.
+    * For instance, when sitting on a '{' it's not clear if a block or a record is to come.
+    * But if we can find a '|' before either '{' or '}' we know it is a record.
+    */
+  private def findBefore(needle: TokenKind, before: Array[TokenKind])(implicit s: State): Boolean = {
+    var lookahead = 1
+    while (!eof()) {
+      nth(lookahead) match {
+        case t if t == needle => return true
+        case t if before.contains(t) => return false
+        case TokenKind.Eof => return false
+        case _ => lookahead += 1
+      }
+    }
+    false
+  }
+
+  /**
+    * Enumeration of possible separation modes between a list of items.
+    */
+  sealed trait Separation
+
+  private object Separation {
+    /**
+      * Separator is required and will spawn an error if missing.
+      *
+      * @param separator     TokenKind to be used as separator.
+      * @param allowTrailing Whether to allow a trailing separator token.
+      */
+    case class Required(separator: TokenKind, allowTrailing: Boolean = false) extends Separation
+
+    /**
+      * Separator is optional and will *not* spawn an error if missing.
+      *
+      * @param separator     TokenKind to be used as separator.
+      * @param allowTrailing Whether to allow a trailing separator token.
+      */
+    case class Optional(separator: TokenKind, allowTrailing: Boolean = false) extends Separation
+
+    /**
+      * Separator is disallowed.
+      */
+    case object None extends Separation
+  }
+
+  /**
+    * A helper function for parsing a number of items surrounded by delimiters and separated by some token.
+    * Examples of language features that use [[zeroOrMore]]:
+    * Tuples "(1, 2, 3)".
+    * Records "{ -y, +z = 3 | r }" <- Note the '| r' part. That can be handled by `optionallyWith`
+    * ParFieldFragments "par (x <- e1; y <- e2; z <- e3) yield ...".
+    * and many many more...
     *
-    * Returns [[SyntacticContext.Unknown]] if the context cannot be determined.
+    * @param namedTokenSet  The named token set to be used in an error message. ie. "Expected $namedTokenSet before xyz".
+    * @param getItem        Function for parsing a single item.
+    * @param checkForItem   Function used to check if the next token indicates an item. getItem is only called when this returns true.
+    * @param breakWhen      Function for deciding if an unexpected token is in the recover set of the current context. If it is then parsing of items stops.
+    * @param separation     Separation mode. Either required, optional or none.
+    * @param delimiterL     The left delimiter.
+    * @param delimiterR     The right delimiter.
+    * @param optionallyWith Used to parse a single rule before delimiterR but after all items if a specific token is found.
+    *                       For instance in a record operation "{ +x, -y, z = 3 | w }" we can parse the "| w" part with
+    *                       optionallyWith = Some((TokenKind.Bar, () => expression()))
+    * @return The number of items successfully parsed.
     */
-  private def syntacticContextOf(name: String): SyntacticContext = {
-    name match {
-      case "Expression" => SyntacticContext.Expr.OtherExpr
-      case "Constraint" => SyntacticContext.Expr.Constraint
-      case "Do" => SyntacticContext.Expr.Do
-
-      case "Trait" => SyntacticContext.Decl.Trait
-      case "Enum" => SyntacticContext.Decl.Enum
-      case "Instance" => SyntacticContext.Decl.Instance
-      case "Decls" => SyntacticContext.Decl.OtherDecl
-
-      case "Pattern" => SyntacticContext.Pat.OtherPat
-
-      case "ImportOne" => SyntacticContext.Import
-      case "ImportMany" => SyntacticContext.Import
-      case "Constructor" => SyntacticContext.Import
-      case "Method" => SyntacticContext.Import
-      case "StaticMethod" => SyntacticContext.Import
-      case "GetField" => SyntacticContext.Import
-      case "PutField" => SyntacticContext.Import
-      case "GetStaticField" => SyntacticContext.Import
-      case "PutStaticField" => SyntacticContext.Import
-
-      case "UseOne" => SyntacticContext.Use
-      case "UseMany" => SyntacticContext.Use
-      case "UseName" => SyntacticContext.Use
-
-      case "EffectSetOrEmpty" => SyntacticContext.Type.Eff
-
-      case "Type" => SyntacticContext.Type.OtherType
-
-      case "WithClause" => SyntacticContext.WithClause
-
-      case _ => SyntacticContext.Unknown
-    }
-  }
-
-  object Letters {
-    /**
-      * A lowercase letter.
-      */
-    val LowerLetter: CharPredicate = CharPredicate.LowerAlpha
-
-    /**
-      * An uppercase letter.
-      */
-    val UpperLetter: CharPredicate = CharPredicate.UpperAlpha
-
-    /**
-      * A greek letter.
-      */
-    val GreekLetter: CharPredicate = CharPredicate('\u0370' to '\u03FF')
-
-    /**
-      * A mathematical operator or arrow.
-      */
-    val MathLetter: CharPredicate =
-      CharPredicate('\u2200' to '\u22FF') ++ // Mathematical Operator
-        CharPredicate('\u2190' to '\u21FF') // Mathematical Arrow
-
-    /**
-      * An operator letter.
-      */
-    val OperatorLetter: CharPredicate = CharPredicate("+-*<>=!&|^$")
-
-    /**
-      * a (upper/lower case) letter, numeral, greek letter, or other legal character.
-      */
-    val LegalLetter: CharPredicate = CharPredicate.AlphaNum ++ "_" ++ "!"
-
-  }
-}
-
-/**
-  * A parser for the Flix language.
-  */
-class Parser(val source: Source) extends org.parboiled2.Parser {
-
-  /*
-   * Initialize parser input.
-   */
-  override val input: ParserInput = new org.parboiled2.ParserInput.CharArrayBasedParserInput(source.data)
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Root                                                                    //
-  /////////////////////////////////////////////////////////////////////////////
-  def Root: Rule1[ParsedAst.CompilationUnit] = rule {
-    SP ~ UsesOrImports ~ Decls ~ SP ~ optWS ~ EOI ~> ParsedAst.CompilationUnit
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Declarations                                                            //
-  /////////////////////////////////////////////////////////////////////////////
-  def Declaration: Rule1[ParsedAst.Declaration] = rule {
-    Declarations.Namespace |
-      Declarations.Def |
-      Declarations.Law |
-      Declarations.Enum |
-      Declarations.RestrictableEnum |
-      Declarations.TypeAlias |
-      Declarations.Trait |
-      Declarations.Instance |
-      Declarations.Effect
-  }
-
-  def DeclarationEOI: Rule1[ParsedAst.Declaration] = rule {
-    Declaration ~ EOI
-  }
-
-  def UsesOrImports: Rule1[Seq[ParsedAst.UseOrImport]] = rule {
-    oneOrMore(optWS ~ (Use | Import) ~ ((optWS ~ ";") | WS)) | push(Seq.empty)
-  }
-
-  def Decls: Rule1[Seq[ParsedAst.Declaration]] = rule {
-    zeroOrMore(Declaration)
-  }
-
-  object Declarations {
-
-    def Namespace: Rule1[ParsedAst.Declaration.Namespace] = rule {
-      optWS ~ SP ~ keyword("mod") ~ WS ~ Names.DotSeparated ~ optWS ~ '{' ~ UsesOrImports ~ Decls ~ optWS ~ '}' ~ SP ~> ParsedAst.Declaration.Namespace
-    }
-
-    def Def: Rule1[ParsedAst.Declaration.Def] = rule {
-      Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("def") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ optWS ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ WithClause ~ optWS ~ OptEqualityConstraintList ~ optWS ~ "=" ~ optWS ~ Expressions.Stm ~ SP ~> ParsedAst.Declaration.Def
-    }
-
-    def Sig: Rule1[ParsedAst.Declaration.Sig] = rule {
-      Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("def") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ optWS ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ WithClause ~ optWS ~ OptEqualityConstraintList ~ optional(optWS ~ "=" ~ optWS ~ Expressions.Stm) ~ SP ~> ParsedAst.Declaration.Sig
-    }
-
-    def Law: Rule1[ParsedAst.Declaration.Law] = rule {
-      Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("law") ~ WS ~ Names.Definition ~ optWS ~ ":" ~ optWS ~ keyword("forall") ~ optWS ~ TypeParams ~ optWS ~ FormalParamList ~ WithClause ~ optWS ~ OptEqualityConstraintList ~ optWS ~ "." ~ optWS ~ Expression ~ SP ~> ParsedAst.Declaration.Law
-    }
-
-    def Op: Rule1[ParsedAst.Declaration.Op] = rule {
-      Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("def") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ optWS ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ WithClause ~ SP ~> ParsedAst.Declaration.Op
-    }
-
-    def Enum: Rule1[ParsedAst.Declaration] = {
-      def Case: Rule1[ParsedAst.Case] = rule {
-        SP ~ Names.Tag ~ optional(Types.Tuple) ~ SP ~> ParsedAst.Case
-      }
-
-      def CaseList: Rule1[Seq[ParsedAst.Case]] = rule {
-        NonEmptyCaseList | push(Nil)
-      }
-
-      def NonEmptyCaseList: Rule1[Seq[ParsedAst.Case]] = rule {
-        // Note: We use the case keyword as part of the separator with or without a comma.
-        keyword("case") ~ WS ~ oneOrMore(Case).separatedBy(
-          (optWS ~ "," ~ optWS ~ keyword("case") ~ WS) | (WS ~ keyword("case") ~ WS) | (optWS ~ "," ~ optWS)
-        )
-      }
-
-      def Body = namedRule("CaseBody") {
-        optional(optWS ~ "{" ~ optWS ~ CaseList ~ optWS ~ "}")
-      }
-
-      rule {
-        Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("enum") ~ WS ~ Names.Type ~ TypeParams ~ optional(Types.Tuple) ~ Derivations ~ optWS ~ Body ~ SP ~> ParsedAst.Declaration.Enum
-      }
-    }
-
-    def RestrictableEnum: Rule1[ParsedAst.Declaration] = {
-      def Case: Rule1[ParsedAst.RestrictableCase] = rule {
-        SP ~ Names.Tag ~ optional(Types.Tuple) ~ SP ~> ParsedAst.RestrictableCase
-      }
-
-      def CaseList: Rule1[Seq[ParsedAst.RestrictableCase]] = rule {
-        NonEmptyCaseList | push(Nil)
-      }
-
-      def NonEmptyCaseList: Rule1[Seq[ParsedAst.RestrictableCase]] = rule {
-        // Note: We use the case keyword as part of the separator with or without a comma.
-        keyword("case") ~ WS ~ oneOrMore(Case).separatedBy(
-          (optWS ~ "," ~ optWS ~ keyword("case") ~ WS) | (WS ~ keyword("case") ~ WS) | (optWS ~ "," ~ optWS)
-        )
-      }
-
-      def Body = namedRule("CaseBody") {
-        optional(optWS ~ "{" ~ optWS ~ CaseList ~ optWS ~ "}")
-      }
-
-      def RestrictionParameter: Rule1[ParsedAst.TypeParam] = rule {
-        "[" ~ optWS ~ SP ~ Names.Variable ~ push(None: Option[ParsedAst.Kind]) ~ SP ~ optWS ~ "]" ~> ParsedAst.TypeParam
-      }
-
-      rule {
-        Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("restrictable") ~ WS ~ keyword("enum") ~ WS ~ Names.Type ~ RestrictionParameter ~ TypeParams ~ optional(Types.Tuple) ~ Derivations ~ optWS ~ Body ~ SP ~> ParsedAst.Declaration.RestrictableEnum
-      }
-    }
-
-    def TypeAlias: Rule1[ParsedAst.Declaration.TypeAlias] = rule {
-      Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("type") ~ WS ~ keyword("alias") ~ WS ~ Names.Type ~ optWS ~ TypeParams ~ optWS ~ "=" ~ optWS ~ Type ~ SP ~> ParsedAst.Declaration.TypeAlias
-    }
-
-    def AssocTypeSig: Rule1[ParsedAst.Declaration.AssocTypeSig] = rule {
-      Documentation ~ Modifiers ~ SP ~ keyword("type") ~ WS ~ Names.Type ~ optWS ~ TypeParams ~ optional(optWS ~ ":" ~ optWS ~ Kind) ~ optional(optWS ~ "=" ~ optWS ~ Type) ~ SP ~> ParsedAst.Declaration.AssocTypeSig
-    }
-
-    def AssocTypeDef: Rule1[ParsedAst.Declaration.AssocTypeDef] = rule {
-      Documentation ~ Modifiers ~ SP ~ keyword("type") ~ WS ~ Names.Type ~ optWS ~ optional("[" ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ "]") ~ optWS ~ "=" ~ optWS ~ Type ~ SP ~> ParsedAst.Declaration.AssocTypeDef
-    }
-
-    def Trait: Rule1[ParsedAst.Declaration] = {
-      def Head = rule {
-        Documentation ~ Annotations ~ Modifiers ~ SP ~ (keyword("trait") | keyword("class")) ~ WS ~ Names.Trait ~ optWS ~ "[" ~ optWS ~ TypeParam ~ optWS ~ "]" ~ WithClause
-      }
-
-      def EmptyBody = namedRule("TraitBody") {
-        push(Nil) ~ push(Nil) ~ SP
-      }
-
-      def NonEmptyBody = namedRule("TraitBody") {
-        optWS ~ "{" ~ zeroOrMore(Declarations.AssocTypeSig) ~ zeroOrMore(Declarations.Law | Declarations.Sig) ~ optWS ~ "}" ~ SP
-      }
-
-      rule {
-        Head ~ (NonEmptyBody | EmptyBody) ~> ParsedAst.Declaration.Trait
-      }
-    }
-
-    def TypeConstraint: Rule1[ParsedAst.TypeConstraint] = rule {
-      SP ~ Names.QualifiedTrait ~ optWS ~ "[" ~ optWS ~ Type ~ optWS ~ "]" ~ SP ~> ParsedAst.TypeConstraint
-    }
-
-    def WithClause: Rule1[Seq[ParsedAst.TypeConstraint]] = rule {
-      optional(optWS ~ keyword("with") ~ WS ~ oneOrMore(TypeConstraint).separatedBy(optWS ~ "," ~ optWS)) ~> ((o: Option[Seq[ParsedAst.TypeConstraint]]) => o.getOrElse(Seq.empty))
-    }
-
-    def EqualityConstraint: Rule1[ParsedAst.EqualityConstraint] = rule {
-      SP ~ Type ~ optWS ~ "~" ~ optWS ~ Type ~ SP ~> ParsedAst.EqualityConstraint
-    }
-
-    def OptEqualityConstraintList: Rule1[Seq[ParsedAst.EqualityConstraint]] = rule {
-      optional(keyword("where") ~ WS ~ oneOrMore(EqualityConstraint).separatedBy(optWS ~ "," ~ optWS)) ~> ((o: Option[Seq[ParsedAst.EqualityConstraint]]) => o.getOrElse(Seq.empty))
-    }
-
-    def Instance: Rule1[ParsedAst.Declaration] = {
-      def Head = rule {
-        Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("instance") ~ WS ~ Names.QualifiedTrait ~ optWS ~ "[" ~ optWS ~ Type ~ optWS ~ "]" ~ WithClause
-      }
-
-      def EmptyBody = namedRule("InstanceBody") {
-        push(Nil) ~ push(Nil) ~ SP
-      }
-
-      def NonEmptyBody = namedRule("InstanceBody") {
-        optWS ~ "{" ~ optWS ~ zeroOrMore(Declarations.AssocTypeDef) ~ zeroOrMore(Declarations.Def) ~ optWS ~ "}" ~ SP
-      }
-
-      rule {
-        Head ~ (NonEmptyBody | EmptyBody) ~> ParsedAst.Declaration.Instance
-      }
-    }
-
-    def Effect: Rule1[ParsedAst.Declaration] = {
-      def Head = rule {
-        Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("eff") ~ WS ~ Names.Effect ~ optWS ~ TypeParams
-      }
-
-      def EmptyBody = namedRule("EffectBody") {
-        push(Nil) ~ SP
-      }
-
-      def NonEmptyBody = namedRule("EffectBody") {
-        optWS ~ "{" ~ optWS ~ zeroOrMore(Declarations.Op) ~ optWS ~ "}" ~ SP
-      }
-
-      rule {
-        Head ~ (NonEmptyBody | EmptyBody) ~> ParsedAst.Declaration.Effect
-      }
-    }
-
-    def TypeParam: Rule1[ParsedAst.TypeParam] = rule {
-      SP ~ Names.Variable ~ optional(optWS ~ ":" ~ optWS ~ Kind) ~ SP ~> ParsedAst.TypeParam
-    }
-
-    def TypeParams: Rule1[ParsedAst.TypeParams] = {
-      rule {
-        optional("[" ~ optWS ~ oneOrMore(TypeParam).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]") ~> ((o: Option[Seq[ParsedAst.TypeParam]]) => o match {
-          case None => ParsedAst.TypeParams.Elided
-          case Some(xs) => ParsedAst.TypeParams.Explicit(xs.toList)
-        })
-      }
-    }
-
-    def Derivations: Rule1[ParsedAst.Derivations] = {
-      def WithClause: Rule1[Seq[Name.QName]] = rule {
-        keyword("with") ~ WS ~ oneOrMore(Names.QualifiedTrait).separatedBy(optWS ~ "," ~ optWS)
-      }
-
-      rule {
-        ((optWS ~ SP ~ WithClause ~ SP) | (SP ~ push(Seq.empty[Name.QName]) ~ SP)) ~> ParsedAst.Derivations
-      }
-    }
-
-  }
-
-  def Attribute: Rule1[ParsedAst.Attribute] = rule {
-    SP ~ Names.Attribute ~ optWS ~ ":" ~ optWS ~ Type ~ SP ~> ParsedAst.Attribute
-  }
-
-  def TypeAndEffect: Rule2[ParsedAst.Type, Option[ParsedAst.Type]] = {
-
-    def EmptyEffectSet: Rule1[ParsedAst.Type] = rule {
-      SP ~ "{" ~ optWS ~ push(Nil) ~ "}" ~ SP ~> ParsedAst.Type.EffectSet
-    }
-
-    // First tries to parse the type as an empty effect set, so that {} is interpreted as a set rather than a record
-    def EffectFirstType: Rule1[ParsedAst.Type] = rule {
-      EmptyEffectSet | Type
-    }
-
-    rule {
-      Type ~ optional(optWS ~ "\\" ~ optWS ~ EffectFirstType)
-    }
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Uses                                                                    //
-  /////////////////////////////////////////////////////////////////////////////
-  def Use: Rule1[ParsedAst.Use] = rule {
-    keyword("use") ~ WS ~ (Uses.UseMany | Uses.UseOne)
-  }
-
-  object Uses {
-    def UseOne: Rule1[ParsedAst.Use.UseOne] = rule {
-      SP ~ Names.QName ~ SP ~> ParsedAst.Use.UseOne
-    }
-
-    def UseMany: Rule1[ParsedAst.Use.UseMany] = {
-      def NameAndAlias: Rule1[ParsedAst.Use.NameAndAlias] = rule {
-        SP ~ UseName ~ optional(WS ~ atomic("=>") ~ WS ~ UseName) ~ SP ~> ParsedAst.Use.NameAndAlias
-      }
-
-      rule {
-        SP ~ Names.DotSeparated ~ atomic(".{") ~ optWS ~ zeroOrMore(NameAndAlias).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Use.UseMany
-      }
-    }
-
-    def UseName: Rule1[Name.Ident] = rule {
-      Names.LowerCaseName | Names.UpperCaseName | Names.GreekName | Names.MathName | Names.OperatorName
-    }
-  }
-
-  def Import: Rule1[ParsedAst.Import] = rule {
-    keyword("import") ~ WS ~ (Imports.ImportMany | Imports.ImportOne)
-  }
-
-  object Imports {
-    def ImportOne: Rule1[ParsedAst.Imports.ImportOne] = rule {
-      SP ~ Names.JavaName ~ SP ~> ParsedAst.Imports.ImportOne
-    }
-
-    def ImportMany: Rule1[ParsedAst.Imports.ImportMany] = {
-      def NameAndAlias: Rule1[ParsedAst.Imports.NameAndAlias] = rule {
-        SP ~ Names.JavaIdentifier ~ optional(WS ~ atomic("=>") ~ WS ~ Names.UpperCaseName) ~ SP ~> ParsedAst.Imports.NameAndAlias
-      }
-
-      rule {
-        SP ~ Names.JavaName ~ atomic(".{") ~ optWS ~ zeroOrMore(NameAndAlias).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Imports.ImportMany
-      }
-    }
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Literals                                                                //
-  /////////////////////////////////////////////////////////////////////////////
-  def Literal: Rule1[ParsedAst.Literal] = rule {
-    Literals.Null | Literals.Bool | Literals.Char | Literals.Str | Literals.Float | Literals.Int | Literals.Regex
-  }
-
-  object Literals {
-
-    def Null: Rule1[ParsedAst.Literal] = rule {
-      SP ~ keyword("null") ~ SP ~> ParsedAst.Literal.Null
-    }
-
-    def Bool: Rule1[ParsedAst.Literal] = {
-
-      def True: Rule1[ParsedAst.Literal.True] = rule {
-        SP ~ keyword("true") ~ SP ~> ParsedAst.Literal.True
-      }
-
-      def False: Rule1[ParsedAst.Literal.False] = rule {
-        SP ~ keyword("false") ~ SP ~> ParsedAst.Literal.False
-      }
-
-      rule {
-        True | False
-      }
-    }
-
-    def Char: Rule1[ParsedAst.Literal.Char] = rule {
-      SP ~ "'" ~ zeroOrMore(!"'" ~ Chars.CharCode) ~ "'" ~ SP ~> ParsedAst.Literal.Char
-    }
-
-    // Note that outside of patterns, Strings are parsed as [[Interpolation]]s
-    def Str: Rule1[ParsedAst.Literal.Str] = rule {
-      SP ~ "\"" ~ zeroOrMore(!("\"" | atomic("${") | atomic("%{")) ~ Chars.CharCode) ~ "\"" ~ SP ~> ParsedAst.Literal.Str
-    }
-
-    def Regex: Rule1[ParsedAst.Literal.Regex] = rule {
-      SP ~ "regex\"" ~ zeroOrMore(!("\"") ~ Chars.CharCode) ~ "\"" ~ SP ~> ParsedAst.Literal.Regex
-    }
-
-    def Float: Rule1[ParsedAst.Literal] = rule {
-      Float32 | Float64 | BigDecimal | FloatDefault
-    }
-
-    def FloatDefault: Rule1[ParsedAst.Literal.Float64] = rule {
-      SP ~ Sign ~ SeparableDecDigits ~ "." ~ SeparableDecDigits ~ SP ~> ParsedAst.Literal.Float64
-    }
-
-    def Float32: Rule1[ParsedAst.Literal.Float32] = rule {
-      SP ~ Sign ~ SeparableDecDigits ~ "." ~ SeparableDecDigits ~ atomic("f32") ~ SP ~> ParsedAst.Literal.Float32
-    }
-
-    def Float64: Rule1[ParsedAst.Literal.Float64] = rule {
-      SP ~ Sign ~ SeparableDecDigits ~ "." ~ SeparableDecDigits ~ atomic("f64") ~ SP ~> ParsedAst.Literal.Float64
-    }
-
-    def BigDecimal: Rule1[ParsedAst.Literal.BigDecimal] = rule {
-      SP ~ Sign ~ SeparableDecDigits ~ optional("." ~ SeparableDecDigits) ~ optional(("e" | "E") ~ SeparableDecDigits) ~ atomic("ff") ~ SP ~> ParsedAst.Literal.BigDecimal
-    }
-
-    def Int: Rule1[ParsedAst.Literal] = rule {
-      Int8 | Int16 | Int32 | Int64 | BigInt | IntDefault
-    }
-
-    def IntDefault: Rule1[ParsedAst.Literal.Int32] = rule {
-      SP ~ Sign ~ RadixedInt ~ SP ~> ParsedAst.Literal.Int32
-    }
-
-    def Int8: Rule1[ParsedAst.Literal.Int8] = rule {
-      SP ~ Sign ~ RadixedInt ~ atomic("i8") ~ SP ~> ParsedAst.Literal.Int8
-    }
-
-    def Int16: Rule1[ParsedAst.Literal.Int16] = rule {
-      SP ~ Sign ~ RadixedInt ~ atomic("i16") ~ SP ~> ParsedAst.Literal.Int16
-    }
-
-    def Int32: Rule1[ParsedAst.Literal.Int32] = rule {
-      SP ~ Sign ~ RadixedInt ~ atomic("i32") ~ SP ~> ParsedAst.Literal.Int32
-    }
-
-    def Int64: Rule1[ParsedAst.Literal.Int64] = rule {
-      SP ~ Sign ~ RadixedInt ~ atomic("i64") ~ SP ~> ParsedAst.Literal.Int64
-    }
-
-    def BigInt: Rule1[ParsedAst.Literal.BigInt] = rule {
-      SP ~ Sign ~ RadixedInt ~ atomic("ii") ~ SP ~> ParsedAst.Literal.BigInt
-    }
-
-    def Sign: Rule1[String] = rule {
-      capture("-" | "+" | "")
-    }
-
-    def SeparableDecDigits: Rule1[String] = rule {
-      capture(CharPredicate.Digit ~ zeroOrMore(zeroOrMore("_") ~ CharPredicate.Digit))
-    }
-
-    def SeparableHexDigits: Rule1[String] = rule {
-      capture(CharPredicate.HexDigit ~ zeroOrMore(zeroOrMore("_") ~ CharPredicate.HexDigit))
-    }
-
-    def RadixedInt: Rule2[Int, String] = rule {
-      HexInt | DecInt
-    }
-
-    def HexInt: Rule2[Int, String] = rule {
-      atomic("0x") ~ push(16) ~ SeparableHexDigits
-    }
-
-    def DecInt: Rule2[Int, String] = rule {
-      push(10) ~ SeparableDecDigits
-    }
-
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Characters
-  /////////////////////////////////////////////////////////////////////////////
-  object Chars {
-
-    def Literal: Rule1[ParsedAst.CharCode.Literal] = rule {
-      SP ~ !("\\" | EOI) ~ capture(CharPredicate.All) ~ SP ~> ParsedAst.CharCode.Literal
-    }
-
-    def Escape: Rule1[ParsedAst.CharCode.Escape] = rule {
-      SP ~ "\\" ~ capture(CharPredicate.All) ~ SP ~> ParsedAst.CharCode.Escape
-    }
-
-    def CharCode: Rule1[ParsedAst.CharCode] = rule {
-      Escape | Literal
-    }
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Expressions                                                             //
-  /////////////////////////////////////////////////////////////////////////////
-  def Expression: Rule1[ParsedAst.Expression] = rule {
-    Expressions.Assign
-  }
-
-  def ExpressionEOI: Rule1[ParsedAst.Expression] = rule {
-    Expression ~ EOI
-  }
-
-  object Expressions {
-    def Stm: Rule1[ParsedAst.Expression] = rule {
-      Expression ~ optional(optWS ~ ";" ~ optWS ~ Stm ~ SP ~> ParsedAst.Expression.Stm)
-    }
-
-    def ForFragment: Rule1[ParsedAst.ForFragment] = {
-      def GuardFragment: Rule1[ParsedAst.ForFragment.Guard] = rule {
-        SP ~ keyword("if") ~ WS ~ Expression ~ SP ~> ParsedAst.ForFragment.Guard
-      }
-
-      def GeneratorFragment: Rule1[ParsedAst.ForFragment.Generator] = rule {
-        SP ~ Pattern ~ WS ~ keyword("<-") ~ WS ~ Expression ~ SP ~> ParsedAst.ForFragment.Generator
-      }
-
-      def LetFragment: Rule1[ParsedAst.ForFragment.Let] = rule {
-        SP ~ Pattern ~ optWS ~ atomic("=") ~ optWS ~ Expression ~ SP ~> ParsedAst.ForFragment.Let
-      }
-
-      rule {
-        GeneratorFragment | GuardFragment | LetFragment
-      }
-    }
-
-    def ForFragments: Rule1[Seq[ParsedAst.ForFragment]] = rule {
-      "(" ~ optWS ~ zeroOrMore(ForFragment).separatedBy(optWS ~ ";" ~ optWS) ~ optWS ~ ")"
-    }
-
-    def ApplicativeFor: Rule1[ParsedAst.Expression.ApplicativeFor] = rule {
-      SP ~ keyword("forA") ~ optWS ~ ForFragments ~ optWS ~ keyword("yield") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.ApplicativeFor
-    }
-
-    def ForEach: Rule1[ParsedAst.Expression.ForEach] = rule {
-      SP ~ keyword("foreach") ~ optWS ~ ForFragments ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.ForEach
-    }
-
-    def MonadicFor: Rule1[ParsedAst.Expression.MonadicFor] = rule {
-      SP ~ (keyword("forM") | keyword("for")) ~ optWS ~ ForFragments ~ optWS ~ keyword("yield") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.MonadicFor
-    }
-
-    def ForEachYield: Rule1[ParsedAst.Expression.ForEachYield] = rule {
-      SP ~ keyword("foreach") ~ optWS ~ ForFragments ~ optWS ~ keyword("yield") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.ForEachYield
-    }
-
-    def Assign: Rule1[ParsedAst.Expression] = rule {
-      InstanceOf ~ optional(optWS ~ operatorX(":=") ~ optWS ~ LogicalOr ~ SP ~> ParsedAst.Expression.Assign)
-    }
-
-    def InstanceOf: Rule1[ParsedAst.Expression] = rule {
-      LogicalOr ~ optional(WS ~ operatorX("instanceof") ~ WS ~ atomic("##") ~ Names.JavaName ~ SP ~> ParsedAst.Expression.InstanceOf)
-    }
-
-    def LogicalOr: Rule1[ParsedAst.Expression] = {
-      def Or: Rule1[ParsedAst.Operator] = rule {
-        WS ~ operator("or") ~ WS
-      }
-
-      rule {
-        LogicalAnd ~ zeroOrMore(Or ~ LogicalAnd ~ SP ~> ParsedAst.Expression.Binary)
-      }
-    }
-
-    def LogicalAnd: Rule1[ParsedAst.Expression] = {
-      def And: Rule1[ParsedAst.Operator] = rule {
-        WS ~ operator("and") ~ WS
-      }
-
-      rule {
-        Equality ~ zeroOrMore(And ~ Equality ~ SP ~> ParsedAst.Expression.Binary)
-      }
-    }
-
-    def Equality: Rule1[ParsedAst.Expression] = rule {
-      // NB: use optional here to prevent (x == y == z)
-      Relational ~ optional(optWS ~ (operator("==") | operator("!=") | operator("<=>")) ~ optWS ~ Relational ~ SP ~> ParsedAst.Expression.Binary)
-    }
-
-    def Relational: Rule1[ParsedAst.Expression] = rule {
-      // NB: use optional here to prevent (x <= y <= z)
-      Additive ~ optional(WS ~ (operator("<=") | operator(">=") | operator("<") | operator(">")) ~ WS ~ Additive ~ SP ~> ParsedAst.Expression.Binary)
-    }
-
-    def Additive: Rule1[ParsedAst.Expression] = rule {
-      Multiplicative ~ zeroOrMore(optWS ~ (operator("+") | operator("-")) ~ optWS ~ Multiplicative ~ SP ~> ParsedAst.Expression.Binary)
-    }
-
-    def Multiplicative: Rule1[ParsedAst.Expression] = rule {
-      Compose ~ zeroOrMore(optWS ~ (operator("*") | operator("/")) ~ optWS ~ Compose ~ SP ~> ParsedAst.Expression.Binary)
-    }
-
-    def Compose: Rule1[ParsedAst.Expression] = rule {
-      Infix ~ zeroOrMore(optWS ~ operatorX("<+>") ~ optWS ~ Infix ~ SP ~> ParsedAst.Expression.FixpointCompose)
-    }
-
-    def Infix: Rule1[ParsedAst.Expression] = rule {
-      Special ~ zeroOrMore(optWS ~ "`" ~ QName ~ "`" ~ optWS ~ Special ~ SP ~> ParsedAst.Expression.Infix)
-    }
-
-    def Special: Rule1[ParsedAst.Expression] = {
-      import Parser.Letters
-
-      // NB: We allow any operator, other than a reserved operator, to be matched by this rule.
-      def Reserved2: Rule1[String] = rule {
-        capture("!=" | "::" | ":=" | "<-" | "<=" | "==" | "=>" | ">=" | "or")
-      }
-
-      // NB: We allow any operator, other than a reserved operator, to be matched by this rule.
-      def Reserved3: Rule1[String] = rule {
-        capture(":::" | "<+>" | "<=>" | "???" | "and" | "not")
-      }
-
-      // Match any two character operator which is not reserved.
-      def UserOp2: Rule1[String] = rule {
-        !Reserved2 ~ capture(Letters.OperatorLetter ~ Letters.OperatorLetter)
-      }
-
-      // Match any three character operator which is not reserved.
-      def UserOp3: Rule1[String] = rule {
-        !Reserved3 ~ capture(Letters.OperatorLetter ~ Letters.OperatorLetter ~ Letters.OperatorLetter)
-      }
-
-      // Match any operator which has at least four characters.
-      def UserOpN: Rule1[String] = rule {
-        capture(Letters.OperatorLetter ~ Letters.OperatorLetter ~ Letters.OperatorLetter ~ oneOrMore(Letters.OperatorLetter))
-      }
-
-      // Match any mathematical operator or symbol.
-      def MathOp: Rule1[String] = rule {
-        capture(Letters.MathLetter)
-      }
-
-      // Capture the source positions around the operator.
-      // NB: UserOpN must occur before UserOp2.
-      def Op: Rule1[ParsedAst.Operator] = rule {
-        SP ~ (UserOpN | UserOp3 | UserOp2 | MathOp) ~ SP ~> ParsedAst.Operator
-      }
-
-      rule {
-        Unary ~ zeroOrMore(optWS ~ Op ~ optWS ~ Unary ~ SP ~> ParsedAst.Expression.Binary)
-      }
-    }
-
-    def Unary: Rule1[ParsedAst.Expression] = {
-      def UnaryOp1: Rule1[ParsedAst.Operator] = rule {
-        operator("-")
-      }
-
-      def UnaryOp2: Rule1[ParsedAst.Operator] = rule {
-        operator("not") ~ WS
-      }
-
-      rule {
-        !Literal ~ (SP ~ (UnaryOp1 | UnaryOp2) ~ optWS ~ Unary ~ SP ~> ParsedAst.Expression.Unary) | Ref
-      }
-    }
-
-    // TODO: Why are these not primary?
-    def Ref: Rule1[ParsedAst.Expression] = rule {
-      (SP ~ keyword("ref") ~ WS ~ Ref ~ WS ~ keyword("@") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Ref) | Deref
-    }
-
-    def Deref: Rule1[ParsedAst.Expression] = rule {
-      (SP ~ keyword("deref") ~ WS ~ Deref ~ SP ~> ParsedAst.Expression.Deref) | Without
-    }
-
-    def Without: Rule1[ParsedAst.Expression] = {
-      def Effects: Rule1[Seq[Name.QName]] = rule {
-        Names.QualifiedEffect ~> ((n: Name.QName) => List(n)) | "{" ~ optWS ~ oneOrMore(Names.QualifiedEffect).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}"
-      }
-
-      rule {
-        Ascribe ~ optional(WS ~ keyword("without") ~ WS ~ Effects ~ SP ~> ParsedAst.Expression.Without)
-      }
-    }
-
-    def Ascribe: Rule1[ParsedAst.Expression] = rule {
-      FAppend | atomic("(") ~ optWS ~ FAppend ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ optWS ~ atomic(")") ~ SP ~> ParsedAst.Expression.Ascribe
-    }
-
-    def Primary: Rule1[ParsedAst.Expression] = rule {
-      Static | Scope | LetMatch | LetRecDef | LetUse | LetImport | IfThenElse |
-        RestrictableChoose | TypeMatch | Match | LambdaMatch | Try | Lambda | Tuple |
-        RecordOperation | RecordLiteral | Block |
-        SelectChannel | Spawn | ParYield | Lazy | Force |
-        CheckedTypeCast | CheckedEffectCast | UncheckedCast | UncheckedMaskingCast | Intrinsic | ArrayLit | VectorLit | ListLit |
-        SetLit | FMap | ConstraintSet | FixpointLambda | FixpointProject | FixpointSolveWithProject |
-        FixpointQueryWithSelect | Interpolation | Literal | Do |
-        Discard | Debug | ApplicativeFor | ForEachYield | MonadicFor | ForEach | NewObject |
-        UnaryLambda | Open | OpenAs | HolyName | QName | Hole
-    }
-
-    def CheckedTypeCast: Rule1[ParsedAst.Expression] = rule {
-      SP ~ keyword("checked_cast") ~ optWS ~ "(" ~ optWS ~ Expression ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.CheckedTypeCast
-    }
-
-    def CheckedEffectCast: Rule1[ParsedAst.Expression] = rule {
-      SP ~ keyword("checked_ecast") ~ optWS ~ "(" ~ optWS ~ Expression ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.CheckedEffectCast
-    }
-
-    def UncheckedCast: Rule1[ParsedAst.Expression] = rule {
-      SP ~ keyword("unchecked_cast") ~ optWS ~ "(" ~ optWS ~ Expression ~ WS ~ "as" ~ optWS ~ TypeAndEffect ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.UncheckedCast
-    }
-
-    def UncheckedMaskingCast: Rule1[ParsedAst.Expression.UncheckedMaskingCast] = rule {
-      SP ~ keyword("masked_cast") ~ optWS ~ "(" ~ optWS ~ Expression ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.UncheckedMaskingCast
-    }
-
-    def Literal: Rule1[ParsedAst.Expression.Lit] = rule {
-      SP ~ Parser.this.Literal ~ SP ~> ParsedAst.Expression.Lit
-    }
-
-    def Interpolation: Rule1[ParsedAst.Expression.Interpolation] = {
-      def ExpPart: Rule1[ParsedAst.InterpolationPart] = rule {
-        SP ~ atomic("${") ~ optWS ~ optional(Expression) ~ optWS ~ "}" ~ SP ~> ParsedAst.InterpolationPart.ExpPart
-      }
-
-      def DebugPart: Rule1[ParsedAst.InterpolationPart] = rule {
-        SP ~ atomic("%{") ~ optWS ~ optional(Expression) ~ optWS ~ "}" ~ SP ~> ParsedAst.InterpolationPart.DebugPart
-      }
-
-      def StrPart: Rule1[ParsedAst.InterpolationPart] = rule {
-        SP ~ oneOrMore(!("\"" | atomic("${") | atomic("%{")) ~ Chars.CharCode) ~ SP ~> ParsedAst.InterpolationPart.StrPart
-      }
-
-      def InterpolationPart: Rule1[ParsedAst.InterpolationPart] = rule {
-        ExpPart | DebugPart | StrPart
-      }
-
-      rule {
-        SP ~ "\"" ~ zeroOrMore(InterpolationPart) ~ "\"" ~ SP ~> ParsedAst.Expression.Interpolation
-      }
-    }
-
-    def IfThenElse: Rule1[ParsedAst.Expression.IfThenElse] = rule {
-      SP ~ keyword("if") ~ optWS ~ "(" ~ optWS ~ Expression ~ optWS ~ ")" ~ optWS ~ Expression ~ WS ~ keyword("else") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.IfThenElse
-    }
-
-    def LetMatch: Rule1[ParsedAst.Expression.LetMatch] = rule {
-      SP ~ keyword("let") ~ WS ~ Modifiers ~ Pattern ~ optWS ~ optional(":" ~ optWS ~ Type ~ optWS) ~ "=" ~ optWS ~ Expression ~ optWS ~ ";" ~ optWS ~ Stm ~ SP ~> ParsedAst.Expression.LetMatch
-    }
-
-    def LetRecDef: Rule1[ParsedAst.Expression.LetRecDef] = {
-      def SomeTypeAndEffect: Rule1[Option[(ParsedAst.Type, Option[ParsedAst.Type])]] = rule {
-        ":" ~ optWS ~ TypeAndEffect ~ optWS ~> ((tpe: ParsedAst.Type, eff: Option[ParsedAst.Type]) => Some((tpe, eff)))
-      }
-
-      def NoTypeAndEffect: Rule1[Option[(ParsedAst.Type, Option[ParsedAst.Type])]] = rule {
-        push(None)
-      }
-
-      rule {
-        SP ~ Annotations ~ keyword("def") ~ WS ~ Names.Definition ~ optWS ~ FormalParamList ~ optWS ~ (SomeTypeAndEffect | NoTypeAndEffect) ~ "=" ~ optWS ~ Expression ~ optWS ~ ";" ~ optWS ~ Stm ~ SP ~> ParsedAst.Expression.LetRecDef
-      }
-    }
-
-    def LetUse: Rule1[ParsedAst.Expression.Use] = rule {
-      SP ~ Use ~ optWS ~ ";" ~ optWS ~ Expressions.Stm ~ SP ~> ParsedAst.Expression.Use
-    }
-
-    def Static: Rule1[ParsedAst.Expression.Static] = rule {
-      SP ~ keyword("Static") ~ SP ~> ParsedAst.Expression.Static
-    }
-
-    def Scope: Rule1[ParsedAst.Expression.Scope] = rule {
-      SP ~ keyword("region") ~ WS ~ Names.Variable ~ optWS ~ Expressions.Block ~ SP ~> ParsedAst.Expression.Scope
-    }
-
-    def LetImport: Rule1[ParsedAst.Expression] = {
-
-      def Constructor: Rule1[ParsedAst.JvmOp] = rule {
-        keyword("java_new") ~ WS ~ Names.JavaName ~ optWS ~ Signature ~ optWS ~ Ascription ~ optWS ~ keyword("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmOp.Constructor
-      }
-
-      def Method: Rule1[ParsedAst.JvmOp] = rule {
-        Names.JavaClassMember ~ optWS ~ Signature ~ optWS ~ Ascription ~ optional(optWS ~ keyword("as") ~ WS ~ Names.Variable) ~> ParsedAst.JvmOp.Method
-      }
-
-      def StaticMethod: Rule1[ParsedAst.JvmOp] = rule {
-        keyword("static") ~ WS ~ Names.JavaClassMember ~ optWS ~ Signature ~ optWS ~ Ascription ~ optional(optWS ~ keyword("as") ~ WS ~ Names.Variable) ~> ParsedAst.JvmOp.StaticMethod
-      }
-
-      def GetField: Rule1[ParsedAst.JvmOp] = rule {
-        keyword("java_get_field") ~ WS ~ Names.JavaClassMember ~ optWS ~ Ascription ~ optWS ~ keyword("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmOp.GetField
-      }
-
-      def PutField: Rule1[ParsedAst.JvmOp] = rule {
-        keyword("java_set_field") ~ WS ~ Names.JavaClassMember ~ optWS ~ Ascription ~ optWS ~ keyword("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmOp.PutField
-      }
-
-      def GetStaticField: Rule1[ParsedAst.JvmOp] = rule {
-        keyword("static") ~ WS ~ keyword("java_get_field") ~ WS ~ Names.JavaClassMember ~ optWS ~ Ascription ~ optWS ~ keyword("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmOp.GetStaticField
-      }
-
-      def PutStaticField: Rule1[ParsedAst.JvmOp] = rule {
-        keyword("static") ~ WS ~ keyword("java_set_field") ~ WS ~ Names.JavaClassMember ~ optWS ~ Ascription ~ optWS ~ keyword("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmOp.PutStaticField
-      }
-
-      def Signature: Rule1[Seq[ParsedAst.Type]] = rule {
-        "(" ~ optWS ~ zeroOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")"
-      }
-
-      def Ascription: Rule2[ParsedAst.Type, Option[ParsedAst.Type]] = rule {
-        ":" ~ optWS ~ TypeAndEffect
-      }
-
-      def Import: Rule1[ParsedAst.JvmOp] = rule {
-        keyword("import") ~ WS ~ (Constructor | Method | StaticMethod | GetField | PutField | GetStaticField | PutStaticField)
-      }
-
-      rule {
-        SP ~ Import ~ optWS ~ ";" ~ optWS ~ Stm ~ SP ~> ParsedAst.Expression.LetImport
-      }
-    }
-
-    def NewObject: Rule1[ParsedAst.Expression] = rule {
-      SP ~ keyword("new") ~ WS ~ Type ~ optWS ~ "{" ~ optWS ~ zeroOrMore(JvmMethod).separatedBy(WS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.NewObject
-    }
-
-    def JvmMethod: Rule1[ParsedAst.JvmMethod] = rule {
-      SP ~ keyword("def") ~ WS ~ Names.JavaMethod ~ optWS ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ optWS ~ "=" ~ optWS ~ Expressions.Stm ~ SP ~> ParsedAst.JvmMethod
-    }
-
-    def Match: Rule1[ParsedAst.Expression.Match] = {
-      def Rule: Rule1[ParsedAst.MatchRule] = rule {
-        keyword("case") ~ WS ~ Pattern ~ optWS ~ optional(keyword("if") ~ WS ~ Expression ~ optWS) ~ atomic("=>") ~ optWS ~ Stm ~> ParsedAst.MatchRule
-      }
-
-      rule {
-        SP ~ keyword("match") ~ WS ~ Expression ~ optWS ~ "{" ~ optWS ~ oneOrMore(Rule).separatedBy(CaseSeparator) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.Match
-      }
-    }
-
-    def TypeMatch: Rule1[ParsedAst.Expression.TypeMatch] = {
-      def Rule: Rule1[ParsedAst.TypeMatchRule] = rule {
-        keyword("case") ~ WS ~ Names.Variable ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ atomic("=>") ~ optWS ~ Stm ~> ParsedAst.TypeMatchRule
-      }
-
-      rule {
-        SP ~ keyword("typematch") ~ WS ~ Expression ~ optWS ~ "{" ~ optWS ~ oneOrMore(Rule).separatedBy(CaseSeparator) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.TypeMatch
-      }
-    }
-
-    def RestrictableChoose: Rule1[ParsedAst.Expression.RestrictableChoose] = {
-      def Rule: Rule1[ParsedAst.MatchRule] = rule {
-        keyword("case") ~ WS ~ Pattern ~ optWS ~ optional(keyword("if") ~ WS ~ Expression ~ optWS) ~ atomic("=>") ~ optWS ~ Stm ~> ParsedAst.MatchRule
-      }
-
-      def ChooseKind: Rule1[Boolean] = rule {
-        (keyword("choose*") ~ push(true)) | (keyword("choose") ~ push(false))
-      }
-
-      rule {
-        SP ~ ChooseKind ~ WS ~ Expression ~ optWS ~ "{" ~ optWS ~ oneOrMore(Rule).separatedBy(CaseSeparator) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.RestrictableChoose
-      }
-    }
-
-    def Do: Rule1[ParsedAst.Expression] = rule {
-      SP ~ keyword("do") ~ WS ~ Names.QualifiedOperation ~ ArgumentList ~ SP ~> ParsedAst.Expression.Do
-    }
-
-    def Debug: Rule1[ParsedAst.Expression.Debug] = {
-      def DebugKind: Rule1[ParsedAst.DebugKind] = rule {
-        keyword("debug!!") ~ push(ParsedAst.DebugKind.DebugWithLocAndSrc) |
-          keyword("debug!") ~ push(ParsedAst.DebugKind.DebugWithLoc) |
-          keyword("debug") ~ push(ParsedAst.DebugKind.Debug)
-      }
-
-      rule {
-        SP ~ DebugKind ~ optWS ~ "(" ~ optWS ~ Expression ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.Debug
-      }
-    }
-
-    def Discard: Rule1[ParsedAst.Expression.Discard] = rule {
-      SP ~ keyword("discard") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Discard
-    }
-
-    def Try: Rule1[ParsedAst.Expression] = {
-      def CatchRule: Rule1[ParsedAst.CatchRule] = rule {
-        keyword("case") ~ WS ~ Names.Variable ~ optWS ~ ":" ~ optWS ~ atomic("##") ~ Names.JavaName ~ WS ~ atomic("=>") ~ optWS ~ Expression ~> ParsedAst.CatchRule
-      }
-
-      def CatchBody: Rule1[ParsedAst.TryHandler.Catch] = rule {
-        keyword("catch") ~ optWS ~ "{" ~ optWS ~ oneOrMore(CatchRule).separatedBy(CaseSeparator) ~ optWS ~ "}" ~> ParsedAst.TryHandler.Catch
-      }
-
-      def WithHandlerRule: Rule1[ParsedAst.HandlerRule] = rule {
-        keyword("def") ~ WS ~ Names.Operation ~ FormalParamList ~ optWS ~ atomic("=") ~ optWS ~ Expression ~> ParsedAst.HandlerRule
-      }
-
-      def WithHandlerBody: Rule1[ParsedAst.TryHandler.WithHandler] = rule {
-        keyword("with") ~ optWS ~ Names.QualifiedEffect ~ optWS ~ "{" ~ optWS ~ oneOrMore(WithHandlerRule).separatedBy(CaseSeparator) ~ optWS ~ "}" ~> ParsedAst.TryHandler.WithHandler
-      }
-
-      def CatchHandlerList: Rule1[ParsedAst.HandlerList.CatchHandlerList] = rule {
-        oneOrMore(CatchBody).separatedBy(optWS) ~> ParsedAst.HandlerList.CatchHandlerList
-      }
-
-      def WithHandlerList: Rule1[ParsedAst.HandlerList.WithHandlerList] = rule {
-        oneOrMore(WithHandlerBody).separatedBy(optWS) ~> ParsedAst.HandlerList.WithHandlerList
-      }
-
-      rule {
-        SP ~ keyword("try") ~ WS ~ Expression ~ optWS ~ (CatchHandlerList | WithHandlerList) ~ SP ~> ParsedAst.Expression.Try
-      }
-    }
-
-    def RecordSelect: Rule1[ParsedAst.Expression] = rule {
-      Apply ~ zeroOrMore(optWS ~ "." ~ Names.Field ~ SP ~> ParsedAst.Expression.RecordSelect)
-    }
-
-    def SelectChannel: Rule1[ParsedAst.Expression.SelectChannel] = {
-      def SelectChannelRule: Rule1[ParsedAst.SelectChannelRule] = rule {
-        keyword("case") ~ WS ~ Names.Variable ~ optWS ~ atomic("<-") ~ optWS ~ optional(atomic("Channel.")) ~ atomic("recv") ~ optWS ~ "(" ~ optWS ~ Expression ~ optWS ~ ")" ~ optWS ~ atomic("=>") ~ optWS ~ Stm ~> ParsedAst.SelectChannelRule
-      }
-
-      def SelectChannelDefault: Rule1[ParsedAst.Expression] = rule {
-        keyword("case") ~ WS ~ "_" ~ optWS ~ atomic("=>") ~ optWS ~ Stm
-      }
-
-      rule {
-        SP ~ keyword("select") ~ WS ~ "{" ~ optWS ~ oneOrMore(SelectChannelRule).separatedBy(CaseSeparator) ~ optWS ~ optional(SelectChannelDefault) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.SelectChannel
-      }
-    }
-
-    def Spawn: Rule1[ParsedAst.Expression.Spawn] = rule {
-      SP ~ keyword("spawn") ~ WS ~ Expression ~ WS ~ keyword("@") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Spawn
-    }
-
-    def ParYield: Rule1[ParsedAst.Expression.ParYield] = {
-
-      def Fragment: Rule1[ParsedAst.ParYieldFragment] = rule {
-        SP ~ Pattern ~ optWS ~ atomic("<-") ~ optWS ~ Expression ~ SP ~> ParsedAst.ParYieldFragment
-      }
-
-      rule {
-        SP ~ keyword("par") ~ optWS ~ "(" ~ optWS ~ oneOrMore(Fragment).separatedBy(optWS ~ ";" ~ optWS) ~ optWS ~ ")" ~ optWS ~ keyword("yield") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.ParYield
-      }
-    }
-
-    def Lazy: Rule1[ParsedAst.Expression.Lazy] = rule {
-      SP ~ keyword("lazy") ~ WS ~ RecordSelect ~ SP ~> ParsedAst.Expression.Lazy
-    }
-
-    def Force: Rule1[ParsedAst.Expression.Force] = rule {
-      SP ~ keyword("force") ~ WS ~ RecordSelect ~ SP ~> ParsedAst.Expression.Force
-    }
-
-    def Intrinsic: Rule1[ParsedAst.Expression.Intrinsic] = rule {
-      SP ~ "$" ~ Names.Intrinsic ~ "$" ~ ArgumentList ~ SP ~> ParsedAst.Expression.Intrinsic
-    }
-
-    def Apply: Rule1[ParsedAst.Expression] = rule {
-      Primary ~ zeroOrMore(ArgumentList ~ SP ~> ParsedAst.Expression.Apply)
-    }
-
-    def Tuple: Rule1[ParsedAst.Expression] = rule {
-      SP ~ ArgumentList ~ SP ~> ParsedAst.Expression.Tuple
-    }
-
-    def Block: Rule1[ParsedAst.Expression] = rule {
-      "{" ~ optWS ~ Stm ~ optWS ~ "}"
-    }
-
-    def RecordLiteral: Rule1[ParsedAst.Expression] = {
-      def LabelLit: Rule1[ParsedAst.RecordLabel] = rule {
-        SP ~ Names.Field ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.RecordLabel
-      }
-
-      rule {
-        SP ~ "{" ~ optWS ~ zeroOrMore(LabelLit).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.RecordLit
-      }
-    }
-
-    def RecordOperation: Rule1[ParsedAst.Expression] = {
-      def RecordOp: Rule1[ParsedAst.RecordOp] = rule {
-        Extend | Restrict | Update
-      }
-
-      def Extend: Rule1[ParsedAst.RecordOp.Extend] = rule {
-        SP ~ "+" ~ Names.Field ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.RecordOp.Extend
-      }
-
-      def Restrict: Rule1[ParsedAst.RecordOp.Restrict] = rule {
-        SP ~ "-" ~ Names.Field ~ SP ~> ParsedAst.RecordOp.Restrict
-      }
-
-      def Update: Rule1[ParsedAst.RecordOp.Update] = rule {
-        SP ~ Names.Field ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.RecordOp.Update
-      }
-
-      rule {
-        SP ~ "{" ~ optWS ~ oneOrMore(RecordOp).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "|" ~ optWS ~ Expression ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.RecordOperation
-      }
-    }
-
-    def FAppend: Rule1[ParsedAst.Expression] = rule {
-      FCons ~ optional(optWS ~ SP ~ operatorX(":::") ~ SP ~ optWS ~ Expression ~> ParsedAst.Expression.FAppend)
-    }
-
-    def FCons: Rule1[ParsedAst.Expression] = rule {
-      RecordSelect ~ optional(optWS ~ SP ~ operatorX("::") ~ SP ~ optWS ~ Expression ~> ParsedAst.Expression.FCons)
-    }
-
-    def ArrayLit: Rule1[ParsedAst.Expression.ArrayLit] = rule {
-      SP ~ atomic("Array") ~ atomic("#{") ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ WS ~ keyword("@") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.ArrayLit
-    }
-
-    def VectorLit: Rule1[ParsedAst.Expression.VectorLit] = rule {
-      SP ~ atomic("Vector") ~ atomic("#{") ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.VectorLit
-    }
-
-    def ListLit: Rule1[ParsedAst.Expression.ListLit] = rule {
-      SP ~ atomic("List") ~ SP ~ atomic("#{") ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~> ParsedAst.Expression.ListLit
-    }
-
-    def SetLit: Rule1[ParsedAst.Expression.SetLit] = rule {
-      SP ~ atomic("Set") ~ SP ~ atomic("#{") ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~> ParsedAst.Expression.SetLit
-    }
-
-    def FMap: Rule1[ParsedAst.Expression.MapLit] = {
-      def KeyValue: Rule1[(ParsedAst.Expression, ParsedAst.Expression)] = rule {
-        Expression ~ optWS ~ operatorX("=>") ~ optWS ~ Expression ~> ((e1: ParsedAst.Expression, e2: ParsedAst.Expression) => (e1, e2))
-      }
-
-      rule {
-        SP ~ atomic("Map") ~ SP ~ atomic("#{") ~ optWS ~ zeroOrMore(KeyValue).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~> ParsedAst.Expression.MapLit
-      }
-    }
-
-    def QName: Rule1[ParsedAst.Expression.QName] = rule {
-      SP ~ Names.QName ~ SP ~> ParsedAst.Expression.QName
-    }
-
-    def Open: Rule1[ParsedAst.Expression.Open] = rule {
-      SP ~ keyword("open_variant") ~ optWS ~ Names.QName ~ SP ~> ParsedAst.Expression.Open
-    }
-
-    def OpenAs: Rule1[ParsedAst.Expression.OpenAs] = rule {
-      SP ~ keyword("open_variant_as") ~ optWS ~ Names.QName ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.OpenAs
-    }
-
-    def HolyName: Rule1[ParsedAst.Expression.HolyName] = rule {
-      Names.Variable ~ "?" ~ SP ~> ParsedAst.Expression.HolyName
-    }
-
-    def Hole: Rule1[ParsedAst.Expression.Hole] = {
-      def AnonymousHole: Rule1[ParsedAst.Expression.Hole] = rule {
-        SP ~ operatorX("???") ~ SP ~> ((sp1: SourcePosition, sp2: SourcePosition) => ParsedAst.Expression.Hole(sp1, None, sp2))
-      }
-
-      def NamedHole: Rule1[ParsedAst.Expression.Hole] = rule {
-        SP ~ "?" ~ Names.Hole ~ SP ~> ((sp1: SourcePosition, name: Name.Ident, sp2: SourcePosition) => ParsedAst.Expression.Hole(sp1, Some(name), sp2))
-      }
-
-      rule {
-        AnonymousHole | NamedHole
-      }
-    }
-
-    def UnaryLambda: Rule1[ParsedAst.Expression.Lambda] = rule {
-      SP ~ FormalParam ~ SP ~ optWS ~ atomic("->") ~ optWS ~ Expression ~ SP ~> ((sp1: SourcePosition, param: ParsedAst.FormalParam, sp2: SourcePosition, body: ParsedAst.Expression, sp3: SourcePosition) =>
-        ParsedAst.Expression.Lambda(sp1, ParsedAst.FormalParamList(sp1, Seq(param), sp2), body, sp3))
-    }
-
-    def Lambda: Rule1[ParsedAst.Expression.Lambda] = rule {
-      SP ~ FormalParamList ~ optWS ~ atomic("->") ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.Lambda
-    }
-
-    def LambdaMatch: Rule1[ParsedAst.Expression.LambdaMatch] = rule {
-      SP ~ keyword("match") ~ optWS ~ Pattern ~ optWS ~ atomic("->") ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.LambdaMatch
-    }
-
-    def ConstraintSet: Rule1[ParsedAst.Expression] = rule {
-      SP ~ atomic("#{") ~ optWS ~ zeroOrMore(Constraint) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.FixpointConstraintSet
-    }
-
-    def FixpointLambda: Rule1[ParsedAst.Expression] = rule {
-      SP ~ atomic("#(") ~ optWS ~ oneOrMore(PredicateParam).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ WS ~ keyword("->") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.FixpointLambda
-    }
-
-    def FixpointProject: Rule1[ParsedAst.Expression] = {
-      def ExpressionPart: Rule1[Seq[ParsedAst.Expression]] = rule {
-        oneOrMore(Expression).separatedBy(optWS ~ "," ~ optWS)
-      }
-
-      def ProjectPart: Rule1[Seq[Name.Ident]] = rule {
-        oneOrMore(Names.Predicate).separatedBy(optWS ~ "," ~ optWS)
-      }
-
-      rule {
-        SP ~ keyword("inject") ~ WS ~ ExpressionPart ~ WS ~ keyword("into") ~ WS ~ ProjectPart ~ SP ~> ParsedAst.Expression.FixpointInjectInto
-      }
-    }
-
-    def FixpointSolveWithProject: Rule1[ParsedAst.Expression] = {
-      def ExpressionPart: Rule1[Seq[ParsedAst.Expression]] = rule {
-        oneOrMore(Expression).separatedBy(optWS ~ "," ~ optWS)
-      }
-
-      def ProjectPart: Rule1[Option[Seq[Name.Ident]]] = rule {
-        optional(WS ~ keyword("project") ~ WS ~ oneOrMore(Names.Predicate).separatedBy(optWS ~ "," ~ optWS))
-      }
-
-      rule {
-        SP ~ keyword("solve") ~ WS ~ ExpressionPart ~ ProjectPart ~ SP ~> ParsedAst.Expression.FixpointSolveWithProject
-      }
-    }
-
-    def FixpointQueryWithSelect: Rule1[ParsedAst.Expression] = {
-      def ExpressionPart: Rule1[Seq[ParsedAst.Expression]] = rule {
-        oneOrMore(Expression).separatedBy(optWS ~ "," ~ optWS)
-      }
-
-      def SelectPart: Rule1[Seq[ParsedAst.Expression]] = {
-        def SingleSelect: Rule1[Seq[ParsedAst.Expression]] = rule {
-          Expression ~> ((e: ParsedAst.Expression) => Seq(e))
+  private def zeroOrMore(
+                          namedTokenSet: NamedTokenSet,
+                          getItem: () => Mark.Closed,
+                          checkForItem: TokenKind => Boolean,
+                          breakWhen: TokenKind => Boolean,
+                          context: SyntacticContext,
+                          separation: Separation = Separation.Required(TokenKind.Comma),
+                          delimiterL: TokenKind = TokenKind.ParenL,
+                          delimiterR: TokenKind = TokenKind.ParenR,
+                          optionallyWith: Option[(TokenKind, () => Unit)] = None
+                        )(implicit s: State): Int = {
+    def atEnd(): Boolean = at(delimiterR) || optionallyWith.exists { case (indicator, _) => at(indicator) }
+
+    if (!at(delimiterL)) {
+      return 0
+    }
+    expect(delimiterL, context)
+    var continue = true
+    var numItems = 0
+    while (continue && !atEnd() && !eof()) {
+      comments()
+      val kind = nth(0)
+      if (checkForItem(kind)) {
+        getItem()
+        numItems += 1
+        if (!atEnd()) {
+          // Check for separator if needed.
+          separation match {
+            case Separation.Required(separator, _) => expect(separator, context)
+            case Separation.Optional(separator, _) => eat(separator)
+            case Separation.None =>
+          }
+          // Check for trailing separator if needed.
+          if (atEnd()) {
+            separation match {
+              case Separation.Required(separator, false) => closeWithError(open(), TrailingSeparator(separator, context, previousSourceLocation()))
+              case Separation.Optional(separator, false) => closeWithError(open(), TrailingSeparator(separator, context, previousSourceLocation()))
+              case _ =>
+            }
+          }
         }
-
-        def MultiSelect: Rule1[Seq[ParsedAst.Expression]] = rule {
-          "(" ~ optWS ~ oneOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")"
-        }
-
-        rule {
-          WS ~ keyword("select") ~ WS ~ (MultiSelect | SingleSelect)
-        }
-      }
-
-      def FromPart: Rule1[Seq[ParsedAst.Predicate.Body.Atom]] = rule {
-        WS ~ keyword("from") ~ WS ~ oneOrMore(Predicates.Body.Atom).separatedBy(optWS ~ "," ~ optWS)
-      }
-
-      def WherePart: Rule1[Option[ParsedAst.Expression]] = rule {
-        optional(WS ~ keyword("where") ~ WS ~ Expression)
-      }
-
-      rule {
-        SP ~ keyword("query") ~ WS ~ ExpressionPart ~ SelectPart ~ FromPart ~ WherePart ~ SP ~> ParsedAst.Expression.FixpointQueryWithSelect
-      }
-    }
-
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Patterns                                                                //
-  /////////////////////////////////////////////////////////////////////////////
-  // NB: List must be parsed before everything.
-  // NB: Literal must be parsed before Variable.
-  // NB: Tag must be before Literal and Variable.
-  def Pattern: Rule1[ParsedAst.Pattern] = rule {
-    Patterns.FCons
-  }
-
-  object Patterns {
-
-    def Simple: Rule1[ParsedAst.Pattern] = rule {
-      Lit | Var | Tag | Tuple | Record
-    }
-
-    def Var: Rule1[ParsedAst.Pattern.Var] = rule {
-      SP ~ Names.Variable ~ SP ~> ParsedAst.Pattern.Var
-    }
-
-    def Lit: Rule1[ParsedAst.Pattern.Lit] = rule {
-      SP ~ Parser.this.Literal ~ SP ~> ParsedAst.Pattern.Lit
-    }
-
-    def Tag: Rule1[ParsedAst.Pattern.Tag] = rule {
-      SP ~ Names.QualifiedTag ~ optional(optWS ~ Tuple) ~ SP ~> ParsedAst.Pattern.Tag
-    }
-
-    def Tuple: Rule1[ParsedAst.Pattern.Tuple] = rule {
-      SP ~ "(" ~ optWS ~ zeroOrMore(Pattern).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.Pattern.Tuple
-    }
-
-    def FCons: Rule1[ParsedAst.Pattern] = rule {
-      Simple ~ optional(optWS ~ SP ~ operatorX("::") ~ SP ~ optWS ~ Pattern ~> ParsedAst.Pattern.FCons)
-    }
-
-    def Record: Rule1[ParsedAst.Pattern] = {
-      def RecordLabelPattern: Rule1[ParsedAst.Pattern.RecordLabelPattern] = rule {
-        SP ~ Names.Field ~ optWS ~ optional("=" ~ optWS ~ Pattern) ~ SP ~> ParsedAst.Pattern.RecordLabelPattern
-      }
-
-      rule {
-        SP ~ "{" ~ optWS ~ zeroOrMore(RecordLabelPattern).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ optional("|" ~ optWS ~ Pattern) ~ optWS ~ "}" ~ SP ~> ParsedAst.Pattern.Record
-      }
-    }
-
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Constraints                                                             //
-  /////////////////////////////////////////////////////////////////////////////
-  def Constraint: Rule1[ParsedAst.Constraint] = {
-    def Head: Rule1[ParsedAst.Predicate.Head] = rule {
-      HeadPredicate
-    }
-
-    def Body: Rule1[Seq[ParsedAst.Predicate.Body]] = rule {
-      optional(optWS ~ ":-" ~ optWS ~ oneOrMore(BodyPredicate).separatedBy(optWS ~ "," ~ optWS)) ~> ((o: Option[Seq[ParsedAst.Predicate.Body]]) => o.getOrElse(Seq.empty))
-    }
-
-    rule {
-      optWS ~ SP ~ Head ~ Body ~ optWS ~ "." ~ SP ~> ParsedAst.Constraint
-    }
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Predicates                                                              //
-  /////////////////////////////////////////////////////////////////////////////
-  def HeadPredicate: Rule1[ParsedAst.Predicate.Head] = rule {
-    Predicates.Head.Atom
-  }
-
-  def BodyPredicate: Rule1[ParsedAst.Predicate.Body] = rule {
-    Predicates.Body.Atom | Predicates.Body.Guard | Predicates.Body.Functional
-  }
-
-  object Predicates {
-
-    object Head {
-
-      def Atom: Rule1[ParsedAst.Predicate.Head.Atom] = rule {
-        SP ~ Names.Predicate ~ optWS ~ Predicates.TermList ~ SP ~> ParsedAst.Predicate.Head.Atom
-      }
-
-    }
-
-    object Body {
-
-      def Atom: Rule1[ParsedAst.Predicate.Body.Atom] = {
-        def Polarity: Rule1[Ast.Polarity] = rule {
-          (keyword("not") ~ WS ~ push(Ast.Polarity.Negative)) | push(Ast.Polarity.Positive)
-        }
-
-        def Fixity: Rule1[Ast.Fixity] = rule {
-          (keyword("fix") ~ WS ~ push(Ast.Fixity.Fixed)) | push(Ast.Fixity.Loose)
-        }
-
-        rule {
-          SP ~ Polarity ~ Fixity ~ Names.Predicate ~ optWS ~ Predicates.PatternList ~ SP ~> ParsedAst.Predicate.Body.Atom
-        }
-      }
-
-      def Functional: Rule1[ParsedAst.Predicate.Body.Functional] = {
-        def Single: Rule1[Seq[Name.Ident]] = rule {
-          Names.Variable ~> ((ident: Name.Ident) => Seq(ident))
-        }
-
-        def Multi: Rule1[Seq[Name.Ident]] = rule {
-          "(" ~ oneOrMore(Names.Variable).separatedBy(optWS ~ "," ~ optWS) ~ ")"
-        }
-
-        rule {
-          SP ~ keyword("let") ~ WS ~ (Multi | Single) ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.Predicate.Body.Functional
-        }
-      }
-
-      def Guard: Rule1[ParsedAst.Predicate.Body.Guard] = rule {
-        SP ~ keyword("if") ~ WS ~ Expression ~ SP ~> ParsedAst.Predicate.Body.Guard
-      }
-    }
-
-    def TermList: Rule2[Seq[ParsedAst.Expression], Option[ParsedAst.Expression]] = rule {
-      "(" ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optional(optWS ~ ";" ~ optWS ~ Expression) ~ optWS ~ ")"
-    }
-
-    def PatternList: Rule2[Seq[ParsedAst.Pattern], Option[ParsedAst.Pattern]] = rule {
-      "(" ~ optWS ~ zeroOrMore(Pattern).separatedBy(optWS ~ "," ~ optWS) ~ optional(optWS ~ ";" ~ optWS ~ Pattern) ~ optWS ~ ")"
-    }
-
-  }
-
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Types                                                                   //
-  /////////////////////////////////////////////////////////////////////////////
-  def Type: Rule1[ParsedAst.Type] = rule {
-    Types.UnaryArrow
-  }
-
-  object Types {
-
-    def UnaryArrow: Rule1[ParsedAst.Type] = rule {
-      CaseUnionOrDifference ~ optional(optWS ~ atomic("->") ~ optWS ~ TypeAndEffect ~ SP ~> ParsedAst.Type.UnaryPolymorphicArrow)
-    }
-
-    def CaseUnionOrDifference: Rule1[ParsedAst.Type] = {
-      def CaseUnionTail = rule {
-        WS ~ atomic("rvadd") ~ WS ~ Type ~ SP ~> ParsedAst.Type.CaseUnion
-      }
-
-      def CaseDifferenceTail = rule {
-        WS ~ atomic("rvsub") ~ WS ~ Type ~ SP ~> ParsedAst.Type.CaseDifference
-      }
-
-      rule {
-        CaseIntersection ~ zeroOrMore(CaseUnionTail | CaseDifferenceTail)
-      }
-    }
-
-    def CaseIntersection: Rule1[ParsedAst.Type] = rule {
-      UnionOrDifference ~ zeroOrMore(WS ~ atomic("rvand") ~ WS ~ Type ~ SP ~> ParsedAst.Type.CaseIntersection)
-    }
-
-    def UnionOrDifference: Rule1[ParsedAst.Type] = {
-      def UnionTail = rule {
-        WS ~ atomic("+") ~ WS ~ Type ~ SP ~> ParsedAst.Type.Union
-      }
-
-      def DifferenceTail = rule {
-        WS ~ atomic("-") ~ WS ~ Type ~ SP ~> ParsedAst.Type.Difference
-      }
-
-      rule {
-        Intersection ~ zeroOrMore(UnionTail | DifferenceTail)
-      }
-    }
-
-    def Intersection: Rule1[ParsedAst.Type] = rule {
-      Xor ~ zeroOrMore(WS ~ atomic("&") ~ WS ~ Type ~ SP ~> ParsedAst.Type.Intersection)
-    }
-
-    def Xor: Rule1[ParsedAst.Type] = rule {
-      Or ~ zeroOrMore(WS ~ atomic("xor") ~ WS ~ Type ~ SP ~> ParsedAst.Type.Xor)
-    }
-
-    def Or: Rule1[ParsedAst.Type] = rule {
-      And ~ zeroOrMore(WS ~ atomic("or") ~ WS ~ Type ~ SP ~> ParsedAst.Type.Or)
-    }
-
-    def And: Rule1[ParsedAst.Type] = rule {
-      Ascribe ~ zeroOrMore(WS ~ atomic("and") ~ WS ~ Type ~ SP ~> ParsedAst.Type.And)
-    }
-
-    def Ascribe: Rule1[ParsedAst.Type] = rule {
-      Apply ~ optional(WS ~ keyword(":") ~ WS ~ Kind ~ SP ~> ParsedAst.Type.Ascribe)
-    }
-
-    def Apply: Rule1[ParsedAst.Type] = rule {
-      Primary ~ zeroOrMore(TypeArguments ~ SP ~> ParsedAst.Type.Apply)
-    }
-
-    def Primary: Rule1[ParsedAst.Type] = rule {
-      // NB: Record must come before EffectSet as they overlap
-      // NB: CaseComplement must come before Complement as they overlap
-      Arrow | Tuple | EmptyRecord | Record | RecordRow | Schema | SchemaRow | CaseSet | EffectSet | Not | CaseComplement | Complement |
-        Native | True | False | Univ | Var | Ambiguous
-    }
-
-    def Arrow: Rule1[ParsedAst.Type] = {
-      def TypeList: Rule1[Seq[ParsedAst.Type]] = rule {
-        "(" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")"
-      }
-
-      rule {
-        SP ~ TypeList ~ optWS ~ (atomic("->") ~ optWS ~ TypeAndEffect ~ SP ~> ParsedAst.Type.PolymorphicArrow)
-      }
-    }
-
-    def Tuple: Rule1[ParsedAst.Type] = {
-      def Singleton: Rule1[ParsedAst.Type] = rule {
-        "(" ~ optWS ~ Type ~ optWS ~ ")"
-      }
-
-      def Tuple: Rule1[ParsedAst.Type] = rule {
-        SP ~ "(" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.Type.Tuple
-      }
-
-      rule {
-        Singleton | Tuple
-      }
-    }
-
-    def EmptyRecord: Rule1[ParsedAst.Type] = rule {
-      SP ~ "{" ~ optWS ~ push(Nil) ~ optWS ~ "|" ~ optWS ~ push(None) ~ "}" ~ SP ~> ParsedAst.Type.Record
-    }
-
-    def Record: Rule1[ParsedAst.Type] = rule {
-      SP ~ "{" ~ optWS ~ zeroOrMore(RecordLabelType).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ optional(optWS ~ "|" ~ optWS ~ Names.Variable) ~ optWS ~ "}" ~ SP ~> ParsedAst.Type.Record
-    }
-
-    def RecordRow: Rule1[ParsedAst.Type] = rule {
-      SP ~ "(" ~ optWS ~ zeroOrMore(RecordLabelType).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ optional(optWS ~ "|" ~ optWS ~ Names.Variable) ~ optWS ~ ")" ~ SP ~> ParsedAst.Type.RecordRow
-    }
-
-    private def RecordLabelType: Rule1[ParsedAst.RecordLabelType] = rule {
-      SP ~ Names.Field ~ optWS ~ "=" ~ optWS ~ Type ~ SP ~> ParsedAst.RecordLabelType
-    }
-
-    def Schema: Rule1[ParsedAst.Type] = rule {
-      SP ~ atomic("#{") ~ optWS ~ zeroOrMore(RelPredicateWithTypes | LatPredicateWithTypes | PredicateWithAlias).separatedBy(optWS ~ "," ~ optWS) ~ optional(optWS ~ "|" ~ optWS ~ Names.Variable) ~ optWS ~ "}" ~ SP ~> ParsedAst.Type.Schema
-    }
-
-    def SchemaRow: Rule1[ParsedAst.Type] = rule {
-      SP ~ atomic("#(") ~ optWS ~ zeroOrMore(RelPredicateWithTypes | LatPredicateWithTypes | PredicateWithAlias).separatedBy(optWS ~ "," ~ optWS) ~ optional(optWS ~ "|" ~ optWS ~ Names.Variable) ~ optWS ~ ")" ~ SP ~> ParsedAst.Type.SchemaRow
-    }
-
-    def EffectSet: Rule1[ParsedAst.Type] = rule {
-      SP ~ "{" ~ optWS ~ zeroOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Type.EffectSet
-    }
-
-    private def PredicateWithAlias: Rule1[ParsedAst.PredicateType.PredicateWithAlias] = rule {
-      SP ~ Names.QualifiedPredicate ~ optional(TypeArguments) ~ SP ~> ParsedAst.PredicateType.PredicateWithAlias
-    }
-
-    private def RelPredicateWithTypes: Rule1[ParsedAst.PredicateType.RelPredicateWithTypes] = rule {
-      SP ~ Names.Predicate ~ optWS ~ "(" ~ optWS ~ zeroOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.PredicateType.RelPredicateWithTypes
-    }
-
-    private def LatPredicateWithTypes: Rule1[ParsedAst.PredicateType.LatPredicateWithTypes] = rule {
-      SP ~ Names.Predicate ~ optWS ~ "(" ~ optWS ~ zeroOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ";" ~ optWS ~ Type ~ optWS ~ ")" ~ SP ~> ParsedAst.PredicateType.LatPredicateWithTypes
-    }
-
-    def Native: Rule1[ParsedAst.Type] = rule {
-      SP ~ atomic("##") ~ Names.JavaName ~ SP ~> ParsedAst.Type.Native
-    }
-
-    def True: Rule1[ParsedAst.Type] = rule {
-      SP ~ keyword("true") ~ SP ~> ParsedAst.Type.True
-    }
-
-    def False: Rule1[ParsedAst.Type] = rule {
-      SP ~ keyword("false") ~ SP ~> ParsedAst.Type.False
-    }
-
-    def Univ: Rule1[ParsedAst.Type] = rule {
-      SP ~ keyword("Univ") ~ SP ~> ParsedAst.Type.Univ
-    }
-
-    def Not: Rule1[ParsedAst.Type] = rule {
-      SP ~ keyword("not") ~ WS ~ Apply ~ SP ~> ParsedAst.Type.Not
-    }
-
-    def CaseComplement: Rule1[ParsedAst.Type] = rule {
-      // NB: We must not use Type here because it gives the wrong precedence.
-      SP ~ "rvnot" ~ optWS ~ Apply ~ SP ~> ParsedAst.Type.CaseComplement
-    }
-
-    def Complement: Rule1[ParsedAst.Type] = rule {
-      // NB: We must not use Type here because it gives the wrong precedence.
-      SP ~ "~" ~ optWS ~ Apply ~ SP ~> ParsedAst.Type.Complement
-    }
-
-    def Var: Rule1[ParsedAst.Type] = rule {
-      SP ~ Names.Variable ~ SP ~> ParsedAst.Type.Var
-    }
-
-    def Ambiguous: Rule1[ParsedAst.Type] = rule {
-      SP ~ Names.QualifiedType ~ SP ~> ParsedAst.Type.Ambiguous
-    }
-
-    def CaseSet: Rule1[ParsedAst.Type] = rule {
-      SP ~ "<" ~ optWS ~ zeroOrMore(Names.QName).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ">" ~ SP ~> ParsedAst.Type.CaseSet
-    }
-
-    private def TypeArguments: Rule1[Seq[ParsedAst.Type]] = rule {
-      "[" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]"
-    }
-
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Kinds                                                                   //
-  /////////////////////////////////////////////////////////////////////////////
-  def Kind: Rule1[ParsedAst.Kind] = rule {
-    Kinds.Arrow | Kinds.SimpleKind
-  }
-
-  object Kinds {
-
-    def SimpleKind: Rule1[ParsedAst.Kind] = rule {
-      Kinds.QName | Kinds.Parens
-    }
-
-    def Arrow: Rule1[ParsedAst.Kind] = rule {
-      SimpleKind ~ optional(optWS ~ atomic("->") ~ optWS ~ Kind ~ SP ~> ParsedAst.Kind.Arrow)
-    }
-
-    def QName: Rule1[ParsedAst.Kind.QName] = rule {
-      SP ~ Names.QName ~ SP ~> ParsedAst.Kind.QName
-    }
-
-    def Parens: Rule1[ParsedAst.Kind] = rule {
-      "(" ~ Kind ~ ")"
-    }
-
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Helpers                                                                 //
-  /////////////////////////////////////////////////////////////////////////////
-  def FormalParam: Rule1[ParsedAst.FormalParam] = rule {
-    SP ~ Modifiers ~ Names.Variable ~ optional(optWS ~ ":" ~ optWS ~ Type) ~ SP ~> ParsedAst.FormalParam
-  }
-
-  def FormalParamList: Rule1[ParsedAst.FormalParamList] = rule {
-    SP ~ "(" ~ optWS ~ zeroOrMore(FormalParam).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.FormalParamList
-  }
-
-  def PredicateParam: Rule1[ParsedAst.PredicateParam] = rule {
-    RelPredicateParam | LatPredicateParam | UntypedPredicateParam
-  }
-
-  def UntypedPredicateParam: Rule1[ParsedAst.PredicateParam.UntypedPredicateParam] = rule {
-    SP ~ Names.Predicate ~ SP ~> ParsedAst.PredicateParam.UntypedPredicateParam
-  }
-
-  def RelPredicateParam: Rule1[ParsedAst.PredicateParam.RelPredicateParam] = rule {
-    SP ~ Names.Predicate ~ optWS ~ "(" ~ optWS ~ zeroOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.PredicateParam.RelPredicateParam
-  }
-
-  def LatPredicateParam: Rule1[ParsedAst.PredicateParam.LatPredicateParam] = rule {
-    SP ~ Names.Predicate ~ optWS ~ "(" ~ optWS ~ zeroOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ";" ~ optWS ~ Type ~ optWS ~ ")" ~ SP ~> ParsedAst.PredicateParam.LatPredicateParam
-  }
-
-  def Argument: Rule1[ParsedAst.Argument] = {
-    def NamedArgument: Rule1[ParsedAst.Argument] = rule {
-      Names.Field ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.Argument.Named
-    }
-
-    def UnnamedArgument: Rule1[ParsedAst.Argument] = rule {
-      Expression ~> ParsedAst.Argument.Unnamed
-    }
-
-    rule {
-      NamedArgument | UnnamedArgument
-    }
-  }
-
-  def ArgumentList: Rule1[Seq[ParsedAst.Argument]] = rule {
-    "(" ~ optWS ~ zeroOrMore(Argument).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")"
-  }
-
-  def OptArgumentList: Rule1[Option[Seq[ParsedAst.Argument]]] = rule {
-    optional(ArgumentList)
-  }
-
-  def AttributeList: Rule1[Seq[ParsedAst.Attribute]] = rule {
-    "(" ~ optWS ~ zeroOrMore(Attribute).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")"
-  }
-
-  def Annotations: Rule1[Seq[ParsedAst.Annotation]] = rule {
-    zeroOrMore(Annotation).separatedBy(WS) ~ optWS
-  }
-
-  def Modifiers: Rule1[Seq[ParsedAst.Modifier]] = {
-    def Inline: Rule1[ParsedAst.Modifier] = rule {
-      SP ~ capture(keyword("inline")) ~ SP ~> ParsedAst.Modifier
-    }
-
-    def Lawful: Rule1[ParsedAst.Modifier] = rule {
-      SP ~ capture(keyword("lawful")) ~ SP ~> ParsedAst.Modifier
-    }
-
-    def Override: Rule1[ParsedAst.Modifier] = rule {
-      SP ~ capture(keyword("override")) ~ SP ~> ParsedAst.Modifier
-    }
-
-    def Public: Rule1[ParsedAst.Modifier] = rule {
-      SP ~ capture(keyword("pub")) ~ SP ~> ParsedAst.Modifier
-    }
-
-    def Sealed: Rule1[ParsedAst.Modifier] = rule {
-      SP ~ capture(keyword("sealed")) ~ SP ~> ParsedAst.Modifier
-    }
-
-    def Modifier: Rule1[ParsedAst.Modifier] = rule {
-      Inline | Lawful | Override | Public | Sealed
-    }
-
-    rule {
-      zeroOrMore(Modifier).separatedBy(WS) ~ optWS
-    }
-  }
-
-  def Annotation: Rule1[ParsedAst.Annotation] = rule {
-    SP ~ "@" ~ Names.Annotation ~ SP ~> ParsedAst.Annotation
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Names                                                                   //
-  /////////////////////////////////////////////////////////////////////////////
-  object Names {
-
-    import Parser.Letters
-
-    /**
-      * A lowercase identifier is a lowercase letter optionally followed by any letter, underscore, or prime.
-      */
-    def LowerCaseName: Rule1[Name.Ident] = rule {
-      SP ~ capture(optional("_") ~ Letters.LowerLetter ~ zeroOrMore(Letters.LegalLetter)) ~ SP ~> Name.Ident
-    }
-
-    /**
-      * An uppercase identifier is an uppercase letter optionally followed by any letter, underscore, or prime.
-      */
-    def UpperCaseName: Rule1[Name.Ident] = rule {
-      SP ~ capture(optional("_") ~ Letters.UpperLetter ~ zeroOrMore(Letters.LegalLetter)) ~ SP ~> Name.Ident
-    }
-
-    /**
-      * A qualified name.
-      */
-    def QName: Rule1[Name.QName] = rule {
-      Names.DotSeparated ~> Name.QName.fromNName _
-    }
-
-    /**
-      * A wildcard identifier.
-      */
-    def Wildcard: Rule1[Name.Ident] = rule {
-      SP ~ capture("_") ~ SP ~> Name.Ident
-    }
-
-    /**
-      * A greek identifier.
-      */
-    def GreekName: Rule1[Name.Ident] = rule {
-      SP ~ capture(optional("_") ~ oneOrMore(Letters.GreekLetter)) ~ SP ~> Name.Ident
-    }
-
-    /**
-      * A math identifier.
-      */
-    def MathName: Rule1[Name.Ident] = rule {
-      SP ~ capture(optional("_") ~ oneOrMore(Letters.MathLetter)) ~ SP ~> Name.Ident
-    }
-
-    /**
-      * An operator identifier.
-      */
-    def OperatorName: Rule1[Name.Ident] = rule {
-      SP ~ capture(optional("_") ~ oneOrMore(Letters.OperatorLetter)) ~ SP ~> Name.Ident
-    }
-
-    /**
-      * Dot-separated name.
-      */
-    def DotSeparated: Rule1[Name.NName] = rule {
-      SP ~ oneOrMore(UpperCaseName | LowerCaseName).separatedBy(".") ~ SP ~>
-        ((sp1: SourcePosition, parts: Seq[Name.Ident], sp2: SourcePosition) => Name.NName(sp1, parts.toList, sp2))
-    }
-
-    def Annotation: Rule1[Name.Ident] = rule {
-      LowerCaseName | UpperCaseName
-    }
-
-    def Attribute: Rule1[Name.Ident] = LowerCaseName
-
-    def Trait: Rule1[Name.Ident] = UpperCaseName
-
-    def QualifiedTrait: Rule1[Name.QName] = QName
-
-    def Definition: Rule1[Name.Ident] = rule {
-      LowerCaseName | GreekName | MathName | OperatorName
-    }
-
-    def QualifiedDefinition: Rule1[Name.QName] = QName
-
-    def Effect: Rule1[Name.Ident] = UpperCaseName
-
-    def QualifiedEffect: Rule1[Name.QName] = QName
-
-    def Operation: Rule1[Name.Ident] = LowerCaseName
-
-    def QualifiedOperation: Rule1[Name.QName] = QName
-
-    def Field: Rule1[Name.Ident] = LowerCaseName
-
-    def Hole: Rule1[Name.Ident] = LowerCaseName
-
-    def Intrinsic: Rule1[Name.Ident] = UpperCaseName
-
-    def Predicate: Rule1[Name.Ident] = UpperCaseName
-
-    def QualifiedPredicate: Rule1[Name.QName] = QName
-
-    def Tag: Rule1[Name.Ident] = UpperCaseName
-
-    def QualifiedTag: Rule1[Name.QName] = QName
-
-    def Type: Rule1[Name.Ident] = UpperCaseName
-
-    def QualifiedType: Rule1[Name.QName] = QName
-
-    def Variable: Rule1[Name.Ident] = rule {
-      LowerCaseName | GreekName | MathName | Wildcard
-    }
-
-    def JavaIdentifier: Rule1[String] = rule {
-      capture((CharPredicate.Alpha | anyOf("_$")) ~ zeroOrMore(CharPredicate.AlphaNum | anyOf("_$")))
-    }
-
-    def JavaName: Rule1[Name.JavaName] = rule {
-      SP ~ oneOrMore(JavaIdentifier).separatedBy(".") ~ SP ~> Name.JavaName
-    }
-
-    def JavaClassMember: Rule1[ParsedAst.JavaClassMember] = rule {
-      SP ~ JavaIdentifier ~ "." ~ oneOrMore(JavaIdentifier).separatedBy(".") ~ SP ~> ParsedAst.JavaClassMember
-    }
-
-    def JavaMethod: Rule1[Name.Ident] = rule {
-      SP ~ JavaIdentifier ~ SP ~> Name.Ident
-    }
-
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Operator                                                                //
-  /////////////////////////////////////////////////////////////////////////////
-
-  /**
-    * Reads the symbol and captures its source location.
-    */
-  def operator(symbol: String): Rule1[ParsedAst.Operator] = namedRule(symbol) {
-    SP ~ capture(atomic(symbol)) ~ SP ~> ParsedAst.Operator
-  }
-
-
-  /**
-    * Reads the symbol but does not capture it.
-    * Used for operators that are not converted to binary expressions.
-    *
-    * This function is exactly the same as using [[atomic]].
-    * However, it is useful for identifying symbols that should be reserved.
-    */
-  private def operatorX(symbol: String): Rule0 = namedRule(symbol) {
-    atomic(symbol)
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Keyword                                                                 //
-  /////////////////////////////////////////////////////////////////////////////
-
-  /**
-    * Reads the keyword and looks ahead to ensure there no legal letters immediately following.
-    */
-  def keyword(word: String): Rule0 = namedRule(s"${'"'}$word${'"'}") {
-    atomic(word) ~ !Parser.Letters.LegalLetter
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Case Separator                                                          //
-  /////////////////////////////////////////////////////////////////////////////
-  def CaseSeparator: Rule0 = rule {
-    (optWS ~ "," ~ optWS) | WS
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Whitespace                                                              //
-  /////////////////////////////////////////////////////////////////////////////
-  def WS: Rule0 = rule {
-    quiet(oneOrMore(" " | "\t" | NewLine | Comment))
-  }
-
-  def PossibleDocComment: Rule1[Option[ParsedAst.Doc]] = rule {
-    Comments.DocCommentBlock ~> {
-      Some(_)
-    } | Comment ~ push(None)
-  }
-
-  def optWS: Rule0 = rule {
-    quiet(optional(WS))
-  }
-
-  def PureWS: Rule0 = rule {
-    zeroOrMore(" " | "\t" | NewLine)
-  }
-
-  def ToplevelOptWS: Rule1[Seq[ParsedAst.Doc]] = rule {
-    PureWS ~ zeroOrMore(PossibleDocComment).separatedBy(PureWS) ~ PureWS ~> {
-      (s: Seq[Option[ParsedAst.Doc]]) => s.flatten
-    }
-  }
-
-  def NewLine: Rule0 = rule {
-    quiet("\n" | "\r\n" | "\r")
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Documentation                                                           //
-  /////////////////////////////////////////////////////////////////////////////
-
-  /**
-    * Optionally a parses a documentation comment.
-    */
-  def Documentation: Rule1[ParsedAst.Doc] = rule {
-    SP ~ ToplevelOptWS ~ SP ~> {
-      (sp1: SourcePosition, seq: Seq[ParsedAst.Doc], sp2: SourcePosition) =>
-        seq.lastOption.getOrElse(ParsedAst.Doc(sp1, Seq.empty, sp2))
-    }
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Comments                                                                //
-  /////////////////////////////////////////////////////////////////////////////
-  def Comment: Rule0 = rule {
-    Comments.SingleLineComment | Comments.MultiLineComment
-  }
-
-  object Comments {
-    /**
-      * Parses a single line comment.
-      */
-    def SingleLineComment: Rule0 = rule {
-      "//" ~ zeroOrMore(!NewLine ~ ANY) ~ (NewLine | EOI)
-    }
-
-    /**
-      * Parses a multi line start comment.
-      */
-    def MultiLineComment: Rule0 = {
-      def SlashStar: Rule0 = rule("/*")
-
-      def StarSlash: Rule0 = rule("*/")
-
-      rule {
-        SlashStar ~ zeroOrMore(!StarSlash ~ ANY) ~ StarSlash
-      }
-    }
-
-    def DocCommentLine: Rule1[String] = rule {
-      atomic("///") ~ capture(zeroOrMore(!NewLine ~ ANY)) ~ (NewLine | EOI)
-    }
-
-    def DocCommentBlock: Rule1[ParsedAst.Doc] = rule {
-      SP ~ oneOrMore(DocCommentLine).separatedBy(zeroOrMore(" " | "\t")) ~ SP ~> ParsedAst.Doc
-    }
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Source Positions                                                        //
-  /////////////////////////////////////////////////////////////////////////////
-  def mkLineAndColumnMaps(): (Array[Int], Array[Int]) = {
-    val lines = new Array[Int](input.length + 1)
-    val columns = new Array[Int](input.length + 1)
-
-    var line = 1
-    var column = 1
-    for (i <- 0 until input.length) {
-      lines(i) = line
-      columns(i) = column
-      if (input.charAt(i) == '\n') {
-        line = line + 1
-        column = 1
       } else {
-        column = column + 1
+        // We are not at an item (checkForItem returned false).
+        // Break out of the loop if we hit one of the tokens in the recover set.
+        if (breakWhen(kind)) {
+          continue = false
+        } else {
+          // Otherwise eat one token and continue parsing next item.
+          val error = UnexpectedToken(expected = namedTokenSet, actual = Some(nth(0)), context, loc = currentSourceLocation())
+          advanceWithError(error)
+        }
+      }
+      // Consume any comments trailing an item.
+      // This is needed because the comment might be just before delimiterR obscuring the atEnd check.
+      comments()
+    }
+    optionallyWith match {
+      case Some((indicator, rule)) => if (eat(indicator)) {
+        rule()
+      }
+      case None =>
+    }
+    expect(delimiterR, context)
+    numItems
+  }
+
+  /**
+    * A helper function for parsing one ore more items surrounded by delimiters and separated by some token.
+    * Works by forwarding parameters to [[zeroOrMore]] and then checking that there was at least one item parsed.
+    * Otherwise an error is produced.
+    * See [[zeroOrMore]] for documentation of parameters.
+    *
+    * @return An optional parse error. If one or more item is found, None is returned.
+    */
+  def oneOrMore(
+                 namedTokenSet: NamedTokenSet,
+                 getItem: () => Mark.Closed,
+                 checkForItem: TokenKind => Boolean,
+                 breakWhen: TokenKind => Boolean,
+                 context: SyntacticContext,
+                 separation: Separation = Separation.Required(TokenKind.Comma),
+                 delimiterL: TokenKind = TokenKind.ParenL,
+                 delimiterR: TokenKind = TokenKind.ParenR,
+                 optionallyWith: Option[(TokenKind, () => Unit)] = None
+               )(implicit s: State): Option[ParseError] = {
+    val locBefore = currentSourceLocation()
+    val itemCount = zeroOrMore(namedTokenSet, getItem, checkForItem, breakWhen, context, separation, delimiterL, delimiterR, optionallyWith)
+    val locAfter = previousSourceLocation()
+    if (itemCount < 1) {
+      val loc = SourceLocation.mk(locBefore.sp1, locAfter.sp1)
+      Some(NeedAtleastOne(namedTokenSet, context, loc = loc))
+    } else {
+      None
+    }
+  }
+
+  /**
+    * Groups of [[TokenKind]]s that make of the different kinds of names in Flix.
+    * So for instance NAME_PARAMETER is all the kinds of tokens that may occur as a parameter identifier.
+    * Use these together with the [[name]] helper function.
+    */
+  private val NAME_DEFINITION: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameUpperCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.UserDefinedOperator)
+  private val NAME_PARAMETER: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.Underscore)
+  private val NAME_VARIABLE: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.Underscore)
+  private val NAME_JAVA: Set[TokenKind] = Set(TokenKind.NameJava, TokenKind.NameLowerCase, TokenKind.NameUpperCase)
+  private val NAME_QNAME: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameUpperCase)
+  private val NAME_USE: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameUpperCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.UserDefinedOperator)
+  private val NAME_FIELD: Set[TokenKind] = Set(TokenKind.NameLowerCase)
+  // TODO: Static is used as a type in Prelude.flix. Static is also an expression.
+  // TODO: refactor When Static is used as a region "@ Static" to "@ static" since lowercase is already a keyword.
+  private val NAME_TYPE: Set[TokenKind] = Set(TokenKind.NameUpperCase, TokenKind.KeywordStaticUppercase)
+  private val NAME_KIND: Set[TokenKind] = Set(TokenKind.NameUpperCase)
+  private val NAME_EFFECT: Set[TokenKind] = Set(TokenKind.NameUpperCase)
+  private val NAME_MODULE: Set[TokenKind] = Set(TokenKind.NameUpperCase)
+  private val NAME_TAG: Set[TokenKind] = Set(TokenKind.NameUpperCase)
+  private val NAME_PREDICATE: Set[TokenKind] = Set(TokenKind.NameUpperCase)
+
+  /**
+    * Consumes a token if kind is in `kinds`.
+    * If `allowQualified` is passed also consume subsequent dot-separated tokens with kind in `kinds`.
+    * TODO: Make name consume trailing dots. This is difficult because it clashes with fixpoint constraint sets, which end on dots.
+    */
+  private def name(kinds: Set[TokenKind], allowQualified: Boolean = false, context: SyntacticContext)(implicit s: State): Mark.Closed = {
+    val mark = open(consumeDocComments = false)
+    expectAny(kinds, context)
+    val first = close(mark, TreeKind.Ident)
+    if (!allowQualified) {
+      return first
+    }
+    while (at(TokenKind.Dot) && kinds.contains(nth(1)) && !eof()) {
+      eat(TokenKind.Dot)
+      val mark = open()
+      expectAny(kinds, context)
+      close(mark, TreeKind.Ident)
+    }
+    if (allowQualified) {
+      val mark = openBefore(first)
+      close(mark, TreeKind.QName)
+    } else {
+      first
+    }
+  }
+
+  /**
+    * Consumes subsequent comments.
+    * In cases where doc-comments cannot occur (above expressions for instance), we would like to treat them as regular comments.
+    * This is achieved by passing `canStartOnDoc = true`.
+    */
+  private def comments(consumeDocComments: Boolean = false)(implicit s: State): Unit = {
+    // Note: In case of a misplaced CommentDoc, we would just like to consume it into the comment list.
+    // This is forgiving in the common case of accidentally inserting an extra '/'.
+    def atComment() = if (consumeDocComments) nth(0).isComment else nth(0).isCommentNonDoc
+
+    if (atComment()) {
+      val mark = Mark.Opened(s.events.length)
+      s.events.append(Event.Open(TreeKind.UnclosedMark))
+      // Note: This loop will also consume doc-comments that are preceded or surrounded by either line or block comments.
+      while (atComment() && !eof()) {
+        advance()
+      }
+      close(mark, TreeKind.CommentList)
+    }
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////
+  /// GRAMMAR                                                                             //
+  //////////////////////////////////////////////////////////////////////////////////////////
+  private def root()(implicit s: State): Unit = {
+    val mark = open(consumeDocComments = false)
+    usesOrImports()
+    while (!eof()) {
+      Decl.declaration()
+    }
+    close(mark, TreeKind.Root)
+  }
+
+  private def usesOrImports()(implicit s: State): Mark.Closed = {
+    val mark = open(consumeDocComments = false)
+    var continue = true
+    while (continue && !eof()) {
+      nth(0) match {
+        case TokenKind.KeywordUse =>
+          use()
+          eat(TokenKind.Semi)
+        case TokenKind.KeywordImport =>
+          iimport()
+          eat(TokenKind.Semi)
+        case _ => continue = false
       }
     }
-    lines(input.length) = line
-    columns(input.length) = column
-    (lines, columns)
+    close(mark, TreeKind.UsesOrImports.UseOrImportList)
   }
 
-  val (cursor2line, cursor2column) = mkLineAndColumnMaps()
+  private def use()(implicit s: State): Mark.Closed = {
+    assert(at(TokenKind.KeywordUse))
+    val mark = open()
+    expect(TokenKind.KeywordUse, SyntacticContext.Use)
+    name(NAME_USE, allowQualified = true, context = SyntacticContext.Use)
+    // handle use many case
+    if (at(TokenKind.DotCurlyL)) {
+      val mark = open()
+      zeroOrMore(
+        namedTokenSet = NamedTokenSet.Name,
+        getItem = () => aliasedName(NAME_USE, SyntacticContext.Use),
+        checkForItem = NAME_USE.contains,
+        breakWhen = _.isRecoverUseOrImport,
+        delimiterL = TokenKind.DotCurlyL,
+        delimiterR = TokenKind.CurlyR,
+        context = SyntacticContext.Use
+      )
+      close(mark, TreeKind.UsesOrImports.UseMany)
+    }
+    close(mark, TreeKind.UsesOrImports.Use)
+  }
 
-  def SP: Rule1[SourcePosition] = {
-    val lineNumber = cursor2line(cursor)
-    val columnNumber = cursor2column(cursor)
-    rule {
-      push(SourcePosition(source, lineNumber, columnNumber.toShort, input))
+  private def iimport()(implicit s: State): Mark.Closed = {
+    assert(at(TokenKind.KeywordImport))
+    val mark = open()
+    expect(TokenKind.KeywordImport, SyntacticContext.Import)
+    name(NAME_JAVA, allowQualified = true, context = SyntacticContext.Import)
+    // handle import many case
+    if (at(TokenKind.DotCurlyL)) {
+      val mark = open()
+      zeroOrMore(
+        namedTokenSet = NamedTokenSet.Name,
+        getItem = () => aliasedName(NAME_JAVA, SyntacticContext.Import),
+        checkForItem = NAME_JAVA.contains,
+        breakWhen = _.isRecoverUseOrImport,
+        delimiterL = TokenKind.DotCurlyL,
+        delimiterR = TokenKind.CurlyR,
+        context = SyntacticContext.Import
+      )
+      close(mark, TreeKind.UsesOrImports.ImportMany)
+    }
+    close(mark, TreeKind.UsesOrImports.Import)
+  }
+
+  private def aliasedName(names: Set[TokenKind], context: SyntacticContext)(implicit s: State): Mark.Closed = {
+    var lhs = name(names, context = context)
+    if (eat(TokenKind.ArrowThickR)) {
+      name(names, context = context)
+      lhs = close(openBefore(lhs), TreeKind.UsesOrImports.Alias)
+    }
+    lhs
+  }
+
+  private object Decl {
+    def declaration(nestingLevel: Int = 0)(implicit s: State): Mark.Closed = {
+      val mark = open(consumeDocComments = false)
+      docComment()
+      // Handle modules
+      if (at(TokenKind.KeywordMod)) {
+        return moduleDecl(mark, nestingLevel)
+      }
+      // Handle declarations
+      annotations()
+      modifiers()
+      // If a new declaration is added to this, make sure to add it to FIRST_DECL too.
+      nth(0) match {
+        case TokenKind.KeywordTrait => traitDecl(mark)
+        case TokenKind.KeywordInstance => instanceDecl(mark)
+        case TokenKind.KeywordDef => definitionDecl(mark)
+        case TokenKind.KeywordEnum | TokenKind.KeywordRestrictable => enumerationDecl(mark)
+        case TokenKind.KeywordType => typeAliasDecl(mark)
+        case TokenKind.KeywordEff => effectDecl(mark)
+        case TokenKind.Eof => close(mark, TreeKind.CommentList) // Last tokens in the file were comments.
+        case at =>
+          val loc = currentSourceLocation()
+          val error = UnexpectedToken(expected = NamedTokenSet.Declaration, actual = Some(at), SyntacticContext.Decl.OtherDecl, loc = loc)
+          if (nestingLevel == 0) {
+            // If we are at top-level (nestingLevel == 0) skip ahead until we hit another declaration.
+            // If we are in a module (nestingLevel > 0) we let the module rule handle recovery.
+            while (!nth(0).isRecoverDecl && !eof()) {
+              advance()
+            }
+          }
+          closeWithError(mark, error)
+      }
+    }
+
+    private def moduleDecl(mark: Mark.Opened, nestingLevel: Int = 0)(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordMod))
+      expect(TokenKind.KeywordMod, SyntacticContext.Decl.OtherDecl)
+      name(NAME_MODULE, allowQualified = true, context = SyntacticContext.Decl.OtherDecl)
+      expect(TokenKind.CurlyL, SyntacticContext.Decl.OtherDecl)
+      usesOrImports()
+      var continue = true
+      while (continue && !eof()) {
+        nth(0) match {
+          case t if t.isFirstDecl => declaration(nestingLevel + 1)
+          case TokenKind.CurlyR => continue = false
+          case at =>
+            val markErr = open()
+            val loc = currentSourceLocation()
+            val error = UnexpectedToken(expected = NamedTokenSet.Declaration, actual = Some(at), SyntacticContext.Decl.OtherDecl, loc = loc)
+            // Skip ahead until we find another declaration or a '}' signifying the end of the module.
+            while (!nth(0).isRecoverMod) {
+              advance()
+            }
+            closeWithError(markErr, error)
+        }
+      }
+      expect(TokenKind.CurlyR, SyntacticContext.Decl.OtherDecl)
+      close(mark, TreeKind.Decl.Module)
+    }
+
+    private def traitDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordTrait))
+      expect(TokenKind.KeywordTrait, SyntacticContext.Decl.Trait)
+      name(NAME_DEFINITION, context = SyntacticContext.Decl.Trait)
+      Type.parameters()
+      if (at(TokenKind.KeywordWith)) {
+        Type.constraints()
+      }
+      if (at(TokenKind.CurlyL)) {
+        expect(TokenKind.CurlyL, SyntacticContext.Decl.Trait)
+        var continue = true
+        while (continue && !eof()) {
+          val docMark = docComment()
+          annotations()
+          modifiers()
+          nth(0) match {
+            case TokenKind.CurlyR => continue = false
+            case TokenKind.KeywordLaw => lawDecl(openBefore(docMark))
+            case TokenKind.KeywordDef => signatureDecl(openBefore(docMark))
+            case TokenKind.KeywordType => associatedTypeSigDecl(openBefore(docMark))
+            case at =>
+              val loc = currentSourceLocation()
+              // Skip ahead until we hit another declaration or any CurlyR.
+              while (!nth(0).isFirstTrait && !eat(TokenKind.CurlyR) && !eof()) {
+                advance()
+              }
+              val error = UnexpectedToken(expected = NamedTokenSet.FromKinds(Set(TokenKind.KeywordType, TokenKind.KeywordDef, TokenKind.KeywordLaw)), actual = Some(at), SyntacticContext.Decl.Trait, loc = loc)
+              closeWithError(mark, error)
+          }
+        }
+        expect(TokenKind.CurlyR, SyntacticContext.Decl.Trait)
+      }
+      close(mark, TreeKind.Decl.Trait)
+    }
+
+    private def instanceDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordInstance))
+      expect(TokenKind.KeywordInstance, SyntacticContext.Decl.Instance)
+      name(NAME_DEFINITION, allowQualified = true, context = SyntacticContext.Decl.Instance)
+      if (!eat(TokenKind.BracketL)) {
+        // Produce an error for missing type parameter.
+        expect(TokenKind.BracketL, SyntacticContext.Decl.Instance, hint = Some("Instances must have a type parameter."))
+      } else {
+        Type.ttype()
+        expect(TokenKind.BracketR, SyntacticContext.Decl.Instance)
+      }
+      if (at(TokenKind.KeywordWith)) {
+        Type.constraints()
+      }
+      if (at(TokenKind.CurlyL)) {
+        expect(TokenKind.CurlyL, SyntacticContext.Decl.Instance)
+        var continue = true
+        while (continue && !eof()) {
+          val docMark = docComment()
+          annotations()
+          modifiers()
+          nth(0) match {
+            case TokenKind.CurlyR => continue = false
+            case TokenKind.KeywordDef => definitionDecl(openBefore(docMark))
+            case TokenKind.KeywordType => associatedTypeDefDecl(openBefore(docMark))
+            case at =>
+              val loc = currentSourceLocation()
+              // Skip ahead until we hit another declaration or any CurlyR.
+              while (!nth(0).isFirstInstance && !eat(TokenKind.CurlyR) && !eof()) {
+                advance()
+              }
+              val error = UnexpectedToken(expected = NamedTokenSet.FromKinds(Set(TokenKind.KeywordType, TokenKind.KeywordDef)), actual = Some(at), SyntacticContext.Decl.Instance, loc = loc)
+              closeWithError(mark, error)
+          }
+        }
+        expect(TokenKind.CurlyR, SyntacticContext.Decl.Instance)
+      }
+      close(mark, TreeKind.Decl.Instance)
+    }
+
+    private def signatureDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordDef))
+      expect(TokenKind.KeywordDef, SyntacticContext.Decl.OtherDecl)
+      name(NAME_DEFINITION, context = SyntacticContext.Decl.OtherDecl)
+      if (at(TokenKind.BracketL)) {
+        Type.parameters()
+      }
+      parameters(SyntacticContext.Decl.OtherDecl)
+      expect(TokenKind.Colon, SyntacticContext.Decl.OtherDecl)
+      Type.typeAndEffect()
+
+      if (at(TokenKind.KeywordWith)) {
+        Type.constraints()
+      }
+      if (at(TokenKind.KeywordWhere)) {
+        equalityConstraints()
+      }
+      if (eat(TokenKind.Equal)) {
+        Expr.statement()
+      }
+      close(mark, TreeKind.Decl.Signature)
+    }
+
+    private def definitionDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordDef))
+      expect(TokenKind.KeywordDef, SyntacticContext.Decl.OtherDecl)
+      name(NAME_DEFINITION, context = SyntacticContext.Decl.OtherDecl)
+      if (at(TokenKind.BracketL)) {
+        Type.parameters()
+      }
+      parameters(SyntacticContext.Decl.OtherDecl)
+      expect(TokenKind.Colon, SyntacticContext.Decl.OtherDecl)
+      Type.typeAndEffect()
+      if (at(TokenKind.KeywordWith)) {
+        Type.constraints()
+      }
+      if (at(TokenKind.KeywordWhere)) {
+        equalityConstraints()
+      }
+
+      // We want to only parse an expression if we see an equal sign to avoid consuming following definitions as LetRecDefs.
+      // Here is an example. We want to avoid consuming 'main' as a nested function, even though 'def' signifies an Expr.LetRecDef:
+      // def f(): Unit // <- no equal sign
+      // def main(): Unit = ()
+      if (eat(TokenKind.Equal)) {
+        Expr.statement()
+      } else {
+        expect(TokenKind.Equal, SyntacticContext.Decl.OtherDecl) // Produce an error for missing '='
+      }
+
+      close(mark, TreeKind.Decl.Def)
+    }
+
+    private def lawDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordLaw))
+      expect(TokenKind.KeywordLaw, SyntacticContext.Decl.OtherDecl)
+      name(NAME_DEFINITION, context = SyntacticContext.Decl.OtherDecl)
+      expect(TokenKind.Colon, SyntacticContext.Decl.OtherDecl)
+      expect(TokenKind.KeywordForall, SyntacticContext.Decl.OtherDecl)
+      if (at(TokenKind.BracketL)) {
+        Type.parameters()
+      }
+      if (at(TokenKind.ParenL)) {
+        parameters(SyntacticContext.Decl.OtherDecl)
+      }
+      if (at(TokenKind.KeywordWith)) {
+        Type.constraints()
+      }
+      if (at(TokenKind.KeywordWhere)) {
+        equalityConstraints()
+      }
+      expect(TokenKind.Dot, SyntacticContext.Decl.OtherDecl)
+      Expr.expression()
+      close(mark, TreeKind.Decl.Law)
+    }
+
+    private def enumerationDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
+      assert(atAny(Set(TokenKind.KeywordRestrictable, TokenKind.KeywordEnum)))
+      val isRestrictable = eat(TokenKind.KeywordRestrictable)
+      expect(TokenKind.KeywordEnum, SyntacticContext.Decl.Enum)
+      val nameLoc = currentSourceLocation()
+      name(NAME_TYPE, context = SyntacticContext.Decl.Enum)
+      if (isRestrictable) {
+        expect(TokenKind.BracketL, SyntacticContext.Decl.Enum)
+        val markParam = open()
+        name(NAME_VARIABLE, context = SyntacticContext.Decl.Enum)
+        close(markParam, TreeKind.Parameter)
+        expect(TokenKind.BracketR, SyntacticContext.Decl.Enum)
+      }
+      if (at(TokenKind.BracketL)) {
+        Type.parameters()
+      }
+      // Singleton short-hand
+      val isShorthand = at(TokenKind.ParenL)
+      if (isShorthand) {
+        val markType = open()
+        Type.tuple()
+        close(markType, TreeKind.Type.Type)
+      }
+      // derivations
+      if (at(TokenKind.KeywordWith)) {
+        Type.derivations()
+      }
+
+      // Check for illegal enum using both shorthand and body
+      if (isShorthand && eat(TokenKind.CurlyL)) {
+        val mark = open()
+        enumCases()
+        expect(TokenKind.CurlyR, SyntacticContext.Decl.Enum)
+        closeWithError(mark, WeederError.IllegalEnum(nameLoc))
+      }
+
+      // enum body
+      if (eat(TokenKind.CurlyL)) {
+        enumCases()
+        expect(TokenKind.CurlyR, SyntacticContext.Decl.Enum)
+      }
+      close(mark, if (isRestrictable) TreeKind.Decl.RestrictableEnum else TreeKind.Decl.Enum)
+    }
+
+    private def FIRST_ENUM_CASE: Set[TokenKind] = Set(TokenKind.CommentDoc, TokenKind.KeywordCase, TokenKind.Comma)
+
+    private def enumCases()(implicit s: State): Unit = {
+      // Clear non-doc comments that appear before any cases.
+      comments()
+      while (!eof() && atAny(FIRST_ENUM_CASE)) {
+        val mark = open(consumeDocComments = false)
+        docComment()
+        if (!eat(TokenKind.KeywordCase)) {
+          expect(TokenKind.Comma, SyntacticContext.Decl.Enum)
+          // Handle comma followed by case keyword
+          docComment()
+          eat(TokenKind.KeywordCase)
+        }
+        name(NAME_TAG, context = SyntacticContext.Decl.Enum)
+        if (at(TokenKind.ParenL)) {
+          val mark = open()
+          val markTuple = open()
+          oneOrMore(
+            namedTokenSet = NamedTokenSet.Type,
+            getItem = () => Type.ttype(),
+            checkForItem = _.isFirstType,
+            breakWhen = _.isRecoverDecl,
+            context = SyntacticContext.Decl.Enum
+          ) match {
+            case Some(error) =>
+              close(markTuple, TreeKind.Type.Tuple)
+              closeWithError(mark, error)
+            case None =>
+              close(markTuple, TreeKind.Type.Tuple)
+              close(mark, TreeKind.Type.Type)
+          }
+        }
+        close(mark, TreeKind.Case)
+      }
+    }
+
+    private def typeAliasDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordType))
+      expect(TokenKind.KeywordType, SyntacticContext.Decl.OtherDecl)
+      expect(TokenKind.KeywordAlias, SyntacticContext.Decl.OtherDecl)
+      name(NAME_TYPE, context = SyntacticContext.Decl.OtherDecl)
+      if (at(TokenKind.BracketL)) {
+        Type.parameters()
+      }
+      if (eat(TokenKind.Equal)) {
+        Type.ttype()
+      }
+      close(mark, TreeKind.Decl.TypeAlias)
+    }
+
+    private def associatedTypeSigDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordType))
+      expect(TokenKind.KeywordType, SyntacticContext.Decl.OtherDecl)
+      name(NAME_TYPE, context = SyntacticContext.Decl.OtherDecl)
+      if (at(TokenKind.BracketL)) {
+        Type.parameters()
+      }
+      if (eat(TokenKind.Colon)) {
+        Type.kind()
+      }
+      if (eat(TokenKind.Equal)) {
+        Type.ttype()
+      }
+      close(mark, TreeKind.Decl.AssociatedTypeSig)
+    }
+
+    private def associatedTypeDefDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
+      expect(TokenKind.KeywordType, SyntacticContext.Decl.OtherDecl)
+      name(NAME_TYPE, context = SyntacticContext.Decl.OtherDecl)
+      if (at(TokenKind.BracketL)) {
+        Type.arguments()
+      }
+      if (eat(TokenKind.Equal)) {
+        Type.ttype()
+      }
+      close(mark, TreeKind.Decl.AssociatedTypeDef)
+    }
+
+    private def effectDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordEff))
+      expect(TokenKind.KeywordEff, SyntacticContext.Decl.OtherDecl)
+      name(NAME_EFFECT, context = SyntacticContext.Decl.OtherDecl)
+
+      // Check for illegal type parameters.
+      if (at(TokenKind.BracketL)) {
+        val mark = open()
+        val loc = currentSourceLocation()
+        Type.parameters()
+        closeWithError(mark, WeederError.IllegalEffectTypeParams(loc))
+      }
+
+      if (eat(TokenKind.CurlyL)) {
+        var continue = true
+        while (continue && !eof()) {
+          val docMark = docComment()
+          annotations()
+          modifiers()
+          nth(0) match {
+            case TokenKind.CurlyR => continue = false
+            case TokenKind.KeywordDef => operationDecl(openBefore(docMark))
+            case at =>
+              val loc = currentSourceLocation()
+              // Skip ahead until we hit another declaration or any CurlyR.
+              while (!nth(0).isFirstDecl && !eat(TokenKind.CurlyR) && !eof()) {
+                advance()
+              }
+              val error = UnexpectedToken(expected = NamedTokenSet.FromKinds(Set(TokenKind.KeywordDef)), actual = Some(at), SyntacticContext.Decl.OtherDecl, loc = loc)
+              closeWithError(mark, error)
+          }
+        }
+        expect(TokenKind.CurlyR, SyntacticContext.Decl.OtherDecl)
+      }
+      close(mark, TreeKind.Decl.Effect)
+    }
+
+    private def operationDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
+      expect(TokenKind.KeywordDef, SyntacticContext.Decl.OtherDecl)
+      name(NAME_DEFINITION, context = SyntacticContext.Decl.OtherDecl)
+
+      // Check for illegal type parameters.
+      if (at(TokenKind.BracketL)) {
+        val mark = open()
+        val loc = currentSourceLocation()
+        Type.parameters()
+        closeWithError(mark, WeederError.IllegalEffectTypeParams(loc))
+      }
+
+      if (at(TokenKind.ParenL)) {
+        parameters(SyntacticContext.Decl.OtherDecl)
+      }
+      if (eat(TokenKind.Colon)) {
+        val typeLoc = currentSourceLocation()
+        Type.ttype()
+        // Check for illegal effect
+        if (at(TokenKind.Backslash)) {
+          val mark = open()
+          eat(TokenKind.Backslash)
+          Type.ttype()
+          closeWithError(mark, WeederError.IllegalEffectfulOperation(typeLoc))
+        }
+      }
+      if (at(TokenKind.KeywordWith)) {
+        Type.constraints()
+      }
+      close(mark, TreeKind.Decl.Op)
+    }
+
+    private def modifiers()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      while (nth(0).isModifier && !eof()) {
+        advance()
+      }
+      close(mark, TreeKind.ModifierList)
+    }
+
+    def annotations()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      while (at(TokenKind.Annotation) && !eof()) {
+        advance()
+      }
+      close(mark, TreeKind.AnnotationList)
+    }
+
+    def docComment()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      while (at(TokenKind.CommentDoc) && !eof()) {
+        advance()
+      }
+      close(mark, TreeKind.Doc)
+    }
+
+    def parameters(context: SyntacticContext)(implicit s: State): Mark.Closed = {
+      val mark = open()
+      zeroOrMore(
+        namedTokenSet = NamedTokenSet.Parameter,
+        getItem = () => parameter(context),
+        checkForItem = NAME_PARAMETER.contains,
+        breakWhen = _.isRecoverParameters,
+        context = context
+      )
+      close(mark, TreeKind.ParameterList)
+    }
+
+    private def parameter(context: SyntacticContext)(implicit s: State): Mark.Closed = {
+      val mark = open()
+      name(NAME_PARAMETER, context = context)
+      if (eat(TokenKind.Colon)) {
+        Type.ttype()
+      }
+      close(mark, TreeKind.Parameter)
+    }
+
+    private def equalityConstraints()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordWhere))
+      val mark = open()
+      expect(TokenKind.KeywordWhere, SyntacticContext.Decl.OtherDecl)
+      while (nth(0).isFirstType && !eof()) {
+        val markConstraint = open()
+        Type.ttype()
+        expect(TokenKind.Tilde, SyntacticContext.Decl.OtherDecl)
+        Type.ttype()
+        eat(TokenKind.Comma)
+        close(markConstraint, TreeKind.Decl.EqualityConstraintFragment)
+      }
+      close(mark, TreeKind.Decl.EqualityConstraintList)
     }
   }
 
+  private object Expr {
+    /**
+      * Parse a statement, which is an expression optionally followed by a semi-colon and another expression.
+      * If mustHaveRhs is true, the right-hand-side expression is not treated as optional
+      */
+    def statement(rhsIsOptional: Boolean = true)(implicit s: State): Mark.Closed = {
+      var lhs = expression()
+      if (eat(TokenKind.Semi)) {
+        statement()
+        lhs = close(openBefore(lhs), TreeKind.Expr.Statement)
+        lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+      } else if (!rhsIsOptional) {
+        // If no semi is found and it was required, produce an error.
+        // TODO: We can add a parse error hint as an argument to statement ala:
+        // "Add an expression after the let-binding like so: 'let x = <expr1>; <expr2>'"
+        expect(TokenKind.Semi, SyntacticContext.Expr.OtherExpr)
+      }
+      lhs
+    }
+
+    def expression(left: TokenKind = TokenKind.Eof, leftIsUnary: Boolean = false)(implicit s: State): Mark.Closed = {
+      var lhs = exprDelimited()
+      // Handle calls
+      while (at(TokenKind.ParenL)) {
+        val mark = openBefore(lhs)
+        arguments()
+        lhs = close(mark, TreeKind.Expr.Apply)
+        lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+      }
+      // Handle record select after function call. Example: funcReturningRecord().field
+      if (at(TokenKind.Dot) && nth(1) == TokenKind.NameLowerCase) {
+        val mark = openBefore(lhs)
+        eat(TokenKind.Dot)
+        name(NAME_FIELD, context = SyntacticContext.Expr.OtherExpr)
+        while (eat(TokenKind.Dot)) {
+          name(NAME_FIELD, context = SyntacticContext.Expr.OtherExpr)
+        }
+        lhs = close(mark, TreeKind.Expr.RecordSelect)
+        lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+      }
+      // Handle binary operators
+      var continue = true
+      while (continue) {
+        val right = nth(0)
+        if (rightBindsTighter(left, right, leftIsUnary)) {
+          val mark = openBefore(lhs)
+          val markOp = open()
+          advance()
+          close(markOp, TreeKind.Operator)
+          expression(right)
+          lhs = close(mark, TreeKind.Expr.Binary)
+          lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+        } else {
+          continue = false
+        }
+      }
+      // Handle without expressions
+      if (eat(TokenKind.KeywordWithout)) {
+        if (at(TokenKind.CurlyL)) {
+          val mark = open()
+          oneOrMore(
+            namedTokenSet = NamedTokenSet.Effect,
+            getItem = () => name(NAME_EFFECT, allowQualified = true, SyntacticContext.Type.Eff),
+            checkForItem = NAME_EFFECT.contains,
+            breakWhen = _.isRecoverExpr,
+            delimiterL = TokenKind.CurlyL,
+            delimiterR = TokenKind.CurlyR,
+            context = SyntacticContext.Expr.OtherExpr
+          ) match {
+            case Some(error) => closeWithError(mark, error)
+            case None => close(mark, TreeKind.Type.EffectSet)
+          }
+        } else {
+          val mark = open()
+          name(NAME_EFFECT, allowQualified = true, context = SyntacticContext.Expr.OtherExpr)
+          close(mark, TreeKind.Type.EffectSet)
+        }
+        lhs = close(openBefore(lhs), TreeKind.Expr.Without)
+        lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+      }
+      lhs
+    }
+
+    sealed trait OpKind
+
+    private object OpKind {
+
+      case object Unary extends OpKind
+
+      case object Binary extends OpKind
+    }
+
+    /**
+      * A precedence table for operators, lower is higher precedence.
+      * Note that [[OpKind]] is necessary for the cases where the same token kind can be both unary and binary. IE. Plus or Minus.
+      */
+    private def PRECEDENCE: List[(OpKind, Array[TokenKind])] = List(
+      (OpKind.Binary, Array(TokenKind.ColonEqual, TokenKind.KeywordInstanceOf)), // :=, instanceof
+      (OpKind.Binary, Array(TokenKind.KeywordOr)),
+      (OpKind.Binary, Array(TokenKind.KeywordAnd)),
+      (OpKind.Binary, Array(TokenKind.TripleBar)), // |||
+      (OpKind.Binary, Array(TokenKind.TripleCaret)), // ^^^
+      (OpKind.Binary, Array(TokenKind.TripleAmpersand)), // &&&
+      (OpKind.Binary, Array(TokenKind.EqualEqual, TokenKind.AngledEqual, TokenKind.BangEqual)), // ==, <=>, !=
+      (OpKind.Binary, Array(TokenKind.AngleL, TokenKind.AngleR, TokenKind.AngleLEqual, TokenKind.AngleREqual)), // <, >, <=, >=
+      (OpKind.Binary, Array(TokenKind.ColonColon, TokenKind.TripleColon)), // ::
+      (OpKind.Binary, Array(TokenKind.TripleAngleL, TokenKind.TripleAngleR)), // <<<, >>>
+      (OpKind.Binary, Array(TokenKind.Plus, TokenKind.Minus)), // +, -
+      (OpKind.Binary, Array(TokenKind.Star, TokenKind.StarStar, TokenKind.Slash)), // *, **, /
+      (OpKind.Binary, Array(TokenKind.AngledPlus)), // <+>
+      (OpKind.Unary, Array(TokenKind.KeywordDiscard)), // discard
+      (OpKind.Binary, Array(TokenKind.InfixFunction)), // `my_function`
+      (OpKind.Binary, Array(TokenKind.UserDefinedOperator, TokenKind.NameMath)), // +=+ user defined op like '+=+' or '++'
+      (OpKind.Unary, Array(TokenKind.KeywordLazy, TokenKind.KeywordForce, TokenKind.KeywordDeref)), // lazy, force, deref
+      (OpKind.Unary, Array(TokenKind.Plus, TokenKind.Minus, TokenKind.TripleTilde)), // +, -, ~~~
+      (OpKind.Unary, Array(TokenKind.KeywordNot))
+    )
+
+    // These operators are right associative, meaning for instance that "x :: y :: z" becomes "x :: (y :: z)" rather than "(x :: y) :: z"
+    private val rightAssoc: Array[TokenKind] = Array(TokenKind.ColonColon, TokenKind.TripleColon) // FCons, FAppend
+
+    private def rightBindsTighter(left: TokenKind, right: TokenKind, leftIsUnary: Boolean): Boolean = {
+      def tightness(kind: TokenKind, opKind: OpKind = OpKind.Binary): Int = {
+        PRECEDENCE.indexWhere { case (k, l) => k == opKind && l.contains(kind) }
+      }
+
+      val rt = tightness(right)
+      if (rt == -1) {
+        return false
+      }
+      val lt = tightness(left, if (leftIsUnary) OpKind.Unary else OpKind.Binary)
+      if (lt == -1) {
+        assert(left == TokenKind.Eof)
+        return true
+      }
+
+      if (lt == rt && rightAssoc.contains(left)) true else rt > lt
+    }
+
+    private def arguments()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      zeroOrMore(
+        namedTokenSet = NamedTokenSet.Expression,
+        getItem = argument,
+        // Remove KeywordDef from isFirstExpr for arguments only.
+        // This handles the common case of incomplete arguments followed by another declaration gracefully.
+        // For instance:
+        // def foo(): Int32 = bar(
+        // def main(): Unit = ()
+        // In this example, if we had KeywordDef, main would be read as a LetRecDef expression!
+        checkForItem = kind => kind != TokenKind.KeywordDef && kind.isFirstExpr,
+        breakWhen = _.isRecoverExpr,
+        context = SyntacticContext.Expr.OtherExpr
+      )
+      close(mark, TreeKind.ArgumentList)
+    }
+
+    private def argument()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      expression()
+      if (eat(TokenKind.Equal)) {
+        expression()
+        close(mark, TreeKind.ArgumentNamed)
+      } else {
+        close(mark, TreeKind.Argument)
+      }
+    }
+
+    private def exprDelimited()(implicit s: State): Mark.Closed = {
+      // If a new expression is added here, remember to add it to FIRST_EXPR also.
+      val mark = open()
+      nth(0) match {
+        case TokenKind.KeywordOpenVariant => openVariantExpr()
+        case TokenKind.KeywordOpenVariantAs => openVariantAsExpr()
+        case TokenKind.HoleNamed
+             | TokenKind.HoleAnonymous => holeExpr()
+        case TokenKind.HoleVariable => holeVariableExpr()
+        case TokenKind.KeywordUse => useExpr()
+        case TokenKind.LiteralString
+             | TokenKind.LiteralChar
+             | TokenKind.LiteralFloat32
+             | TokenKind.LiteralFloat64
+             | TokenKind.LiteralBigDecimal
+             | TokenKind.LiteralInt8
+             | TokenKind.LiteralInt16
+             | TokenKind.LiteralInt32
+             | TokenKind.LiteralInt64
+             | TokenKind.LiteralBigInt
+             | TokenKind.KeywordTrue
+             | TokenKind.KeywordFalse
+             | TokenKind.KeywordNull
+             | TokenKind.LiteralRegex => literalExpr()
+        case TokenKind.ParenL => parenOrTupleOrLambdaExpr()
+        case TokenKind.Underscore => if (nth(1) == TokenKind.ArrowThinR) unaryLambdaExpr() else name(NAME_VARIABLE, context = SyntacticContext.Expr.OtherExpr)
+        case TokenKind.NameLowerCase => if (nth(1) == TokenKind.ArrowThinR) unaryLambdaExpr() else name(NAME_FIELD, allowQualified = true, context = SyntacticContext.Expr.OtherExpr)
+        case TokenKind.NameUpperCase
+             | TokenKind.NameMath
+             | TokenKind.NameGreek => if (nth(1) == TokenKind.ArrowThinR) unaryLambdaExpr() else name(NAME_DEFINITION, allowQualified = true, context = SyntacticContext.Expr.OtherExpr)
+        case TokenKind.Minus
+             | TokenKind.KeywordNot
+             | TokenKind.Plus
+             | TokenKind.TripleTilde
+             | TokenKind.KeywordLazy
+             | TokenKind.KeywordForce
+             | TokenKind.KeywordDiscard
+             | TokenKind.KeywordDeref => unaryExpr()
+        case TokenKind.KeywordIf => ifThenElseExpr()
+        case TokenKind.KeywordLet => letMatchExpr()
+        case TokenKind.Annotation | TokenKind.KeywordDef => letRecDefExpr()
+        case TokenKind.KeywordImport => letImportExpr()
+        case TokenKind.KeywordRegion => scopeExpr()
+        case TokenKind.KeywordMatch => matchOrMatchLambdaExpr()
+        case TokenKind.KeywordTypeMatch => typematchExpr()
+        case TokenKind.KeywordChoose
+             | TokenKind.KeywordChooseStar => restrictableChooseExpr()
+        case TokenKind.KeywordForA => forApplicativeExpr()
+        case TokenKind.KeywordForeach => foreachExpr()
+        case TokenKind.KeywordForM => forMonadicExpr()
+        case TokenKind.CurlyL => blockOrRecordExpr()
+        case TokenKind.ArrayHash => arrayLiteralExpr()
+        case TokenKind.VectorHash => vectorLiteralExpr()
+        case TokenKind.ListHash => listLiteralExpr()
+        case TokenKind.SetHash => setLiteralExpr()
+        case TokenKind.MapHash => mapLiteralExpr()
+        case TokenKind.KeywordRef => refExpr()
+        case TokenKind.KeywordCheckedCast => checkedTypeCastExpr()
+        case TokenKind.KeywordCheckedECast => checkedEffectCastExpr()
+        case TokenKind.KeywordUncheckedCast => uncheckedCastExpr()
+        case TokenKind.KeywordMaskedCast => uncheckedMaskingCastExpr()
+        case TokenKind.KeywordTry => tryExpr()
+        case TokenKind.KeywordDo => doExpr()
+        case TokenKind.KeywordNew => newObjectExpr()
+        case TokenKind.KeywordStaticUppercase => staticExpr()
+        case TokenKind.KeywordSelect => selectExpr()
+        case TokenKind.KeywordSpawn => spawnExpr()
+        case TokenKind.KeywordPar => parYieldExpr()
+        case TokenKind.HashCurlyL => fixpointConstraintSetExpr()
+        case TokenKind.HashParenL => fixpointLambdaExpr()
+        case TokenKind.KeywordSolve => fixpointSolveExpr()
+        case TokenKind.KeywordInject => fixpointInjectExpr()
+        case TokenKind.KeywordQuery => fixpointQueryExpr()
+        case TokenKind.BuiltIn => intrinsicExpr()
+        case TokenKind.LiteralStringInterpolationL
+             | TokenKind.LiteralDebugStringL => interpolatedStringExpr()
+        case TokenKind.KeywordDebug
+             | TokenKind.KeywordDebugBang
+             | TokenKind.KeywordDebugBangBang => debugExpr()
+        case TokenKind.NameJava => name(NAME_JAVA, allowQualified = true, SyntacticContext.Expr.OtherExpr)
+        case t =>
+          val mark = open()
+          val error = UnexpectedToken(expected = NamedTokenSet.Expression, actual = Some(t), SyntacticContext.Expr.OtherExpr, loc = currentSourceLocation())
+          closeWithError(mark, error)
+      }
+      close(mark, TreeKind.Expr.Expr)
+    }
+
+    private def openVariantExpr()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordOpenVariant))
+      val mark = open()
+      expect(TokenKind.KeywordOpenVariant, SyntacticContext.Expr.OtherExpr)
+      name(NAME_QNAME, allowQualified = true, context = SyntacticContext.Expr.OtherExpr)
+      close(mark, TreeKind.Expr.OpenVariant)
+    }
+
+    private def openVariantAsExpr()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordOpenVariantAs))
+      val mark = open()
+      expect(TokenKind.KeywordOpenVariantAs, SyntacticContext.Expr.OtherExpr)
+      name(NAME_QNAME, allowQualified = true, context = SyntacticContext.Expr.OtherExpr)
+      expression()
+      close(mark, TreeKind.Expr.OpenVariantAs)
+    }
+
+    private def holeExpr()(implicit s: State): Mark.Closed = {
+      assert(atAny(Set(TokenKind.HoleNamed, TokenKind.HoleAnonymous)))
+      val mark = open()
+      nth(0) match {
+        case TokenKind.HoleAnonymous =>
+          advance()
+          close(mark, TreeKind.Expr.Hole)
+        case TokenKind.HoleNamed =>
+          name(Set(TokenKind.HoleNamed), context = SyntacticContext.Expr.OtherExpr)
+          close(mark, TreeKind.Expr.Hole)
+        case _ => throw InternalCompilerException("Parser assert missed case", currentSourceLocation())
+      }
+    }
+
+    private def holeVariableExpr()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.HoleVariable))
+      val mark = open()
+      name(Set(TokenKind.HoleVariable), context = SyntacticContext.Expr.OtherExpr)
+      close(mark, TreeKind.Expr.HoleVariable)
+    }
+
+    private def useExpr()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      use()
+      expect(TokenKind.Semi, SyntacticContext.Expr.OtherExpr)
+      statement()
+      close(mark, TreeKind.Expr.Use)
+    }
+
+    private def literalExpr()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      advance()
+      close(mark, TreeKind.Expr.Literal)
+    }
+
+    private def parenOrTupleOrLambdaExpr()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.ParenL))
+      (nth(0), nth(1)) match {
+        // Detect unit tuple
+        case (TokenKind.ParenL, TokenKind.ParenR) =>
+          // Detect unit lambda: () -> expr
+          if (nth(2) == TokenKind.ArrowThinR) {
+            lambda()
+          } else {
+            val mark = open()
+            advance()
+            advance()
+            close(mark, TreeKind.Expr.Tuple)
+          }
+
+        case (TokenKind.ParenL, _) =>
+          // Detect lambda function declaration
+          val isLambda = {
+            var level = 1
+            var curlyLevel = 0
+            var lookAhead = 0
+            val tokensLeft = s.tokens.length - s.position
+            while (level > 0 && lookAhead < tokensLeft && !eof()) {
+              lookAhead += 1
+              nth(lookAhead) match {
+                case TokenKind.ParenL => level += 1
+                case TokenKind.ParenR => level -= 1
+                case TokenKind.CurlyL | TokenKind.HashCurlyL => curlyLevel += 1
+                case TokenKind.CurlyR if level == 1 =>
+                  if (curlyLevel == 0) {
+                    // Hitting '}' on top-level is a clear indicator that something is wrong. Most likely the terminating ')' was forgotten.
+                    return advanceWithError(Malformed(NamedTokenSet.Tuple, SyntacticContext.Expr.OtherExpr, loc = currentSourceLocation()))
+                  } else {
+                    curlyLevel -= 1
+                  }
+                case TokenKind.Eof => return advanceWithError(Malformed(NamedTokenSet.Tuple, SyntacticContext.Expr.OtherExpr, loc = currentSourceLocation()))
+                case _ =>
+              }
+            }
+            nth(lookAhead + 1) == TokenKind.ArrowThinR
+          }
+
+          if (isLambda) {
+            lambda()
+          } else {
+            parenOrTupleOrAscribe()
+          }
+
+        case (t, _) =>
+          val error = UnexpectedToken(expected = NamedTokenSet.FromKinds(Set(TokenKind.ParenL)), actual = Some(t), SyntacticContext.Expr.OtherExpr, loc = currentSourceLocation())
+          advanceWithError(error)
+      }
+    }
+
+    private def lambda()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      Decl.parameters(SyntacticContext.Expr.OtherExpr)
+      expect(TokenKind.ArrowThinR, SyntacticContext.Expr.OtherExpr)
+      expression()
+      close(mark, TreeKind.Expr.Lambda)
+    }
+
+    private def parenOrTupleOrAscribe()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      expect(TokenKind.ParenL, SyntacticContext.Expr.OtherExpr)
+      val markExpr = expression()
+      // Distinguish between expression in parenthesis, type ascriptions and tuples
+      nth(0) match {
+        // Type ascription
+        case TokenKind.Colon =>
+          expect(TokenKind.Colon, SyntacticContext.Expr.OtherExpr)
+          Type.typeAndEffect()
+          expect(TokenKind.ParenR, SyntacticContext.Expr.OtherExpr)
+          close(mark, TreeKind.Expr.Ascribe)
+        // Tuple
+        case TokenKind.Equal | TokenKind.Comma =>
+          if (eat(TokenKind.Equal)) {
+            expression()
+            close(openBefore(markExpr), TreeKind.ArgumentNamed)
+          } else {
+            close(openBefore(markExpr), TreeKind.Argument)
+          }
+          while (!at(TokenKind.ParenR) && !eof()) {
+            eat(TokenKind.Comma)
+            argument()
+          }
+          expect(TokenKind.ParenR, SyntacticContext.Expr.OtherExpr)
+          close(mark, TreeKind.Expr.Tuple)
+        // Paren
+        case _ =>
+          expect(TokenKind.ParenR, SyntacticContext.Expr.OtherExpr)
+          close(mark, TreeKind.Expr.Paren)
+      }
+    }
+
+    private def unaryLambdaExpr()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      val markParams = open()
+      val markParam = open()
+      name(NAME_PARAMETER, context = SyntacticContext.Expr.OtherExpr)
+      close(markParam, TreeKind.Parameter)
+      close(markParams, TreeKind.ParameterList)
+      expect(TokenKind.ArrowThinR, SyntacticContext.Expr.OtherExpr)
+      expression()
+      close(mark, TreeKind.Expr.Lambda)
+    }
+
+    private val FIRST_EXPR_UNARY: Set[TokenKind] = Set(
+      TokenKind.Minus,
+      TokenKind.KeywordNot,
+      TokenKind.Plus,
+      TokenKind.TripleTilde,
+      TokenKind.KeywordLazy,
+      TokenKind.KeywordForce,
+      TokenKind.KeywordDiscard,
+      TokenKind.KeywordDeref)
+
+    private def unaryExpr()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      val op = nth(0)
+      val markOp = open()
+      expectAny(FIRST_EXPR_UNARY, context = SyntacticContext.Expr.OtherExpr)
+      close(markOp, TreeKind.Operator)
+      expression(left = op, leftIsUnary = true)
+      close(mark, TreeKind.Expr.Unary)
+    }
+
+    private def ifThenElseExpr()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordIf))
+      val mark = open()
+      expect(TokenKind.KeywordIf, SyntacticContext.Expr.OtherExpr)
+      expect(TokenKind.ParenL, SyntacticContext.Expr.OtherExpr)
+      expression()
+      expect(TokenKind.ParenR, SyntacticContext.Expr.OtherExpr)
+      expression()
+      expect(TokenKind.KeywordElse, SyntacticContext.Expr.OtherExpr)
+      expression()
+      close(mark, TreeKind.Expr.IfThenElse)
+    }
+
+    private def letMatchExpr()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordLet))
+      val mark = open()
+      expect(TokenKind.KeywordLet, SyntacticContext.Expr.OtherExpr)
+      Pattern.pattern()
+      if (eat(TokenKind.Colon)) {
+        Type.ttype()
+      }
+      expect(TokenKind.Equal, SyntacticContext.Expr.OtherExpr)
+      statement(rhsIsOptional = false)
+      close(mark, TreeKind.Expr.LetMatch)
+    }
+
+    private def letRecDefExpr()(implicit s: State): Mark.Closed = {
+      assert(atAny(Set(TokenKind.Annotation, TokenKind.KeywordDef, TokenKind.CommentDoc)))
+      val mark = open(consumeDocComments = false)
+      Decl.docComment()
+      Decl.annotations()
+      expect(TokenKind.KeywordDef, SyntacticContext.Expr.OtherExpr)
+      name(NAME_DEFINITION, context = SyntacticContext.Expr.OtherExpr)
+      Decl.parameters(SyntacticContext.Expr.OtherExpr)
+      if (eat(TokenKind.Colon)) {
+        Type.typeAndEffect()
+      }
+      expect(TokenKind.Equal, SyntacticContext.Expr.OtherExpr)
+      statement(rhsIsOptional = false)
+      close(mark, TreeKind.Expr.LetRecDef)
+    }
+
+    private def letImportExpr()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordImport))
+      val mark = open()
+      expect(TokenKind.KeywordImport, SyntacticContext.Expr.OtherExpr)
+      val markJvmOp = open()
+      nth(0) match {
+        case TokenKind.KeywordJavaNew => JvmOp.constructor()
+        case TokenKind.KeywordJavaGetField => JvmOp.getField()
+        case TokenKind.KeywordJavaSetField => JvmOp.putField()
+        case TokenKind.KeywordStatic => nth(1) match {
+          case TokenKind.KeywordJavaGetField => JvmOp.staticGetField()
+          case TokenKind.KeywordJavaSetField => JvmOp.staticPutField()
+          case TokenKind.NameJava | TokenKind.NameLowerCase | TokenKind.NameUpperCase => JvmOp.staticMethod()
+          case t =>
+            val error = UnexpectedToken(expected = NamedTokenSet.JavaImport, actual = Some(t), SyntacticContext.Unknown, loc = currentSourceLocation())
+            advanceWithError(error)
+        }
+        case TokenKind.NameJava | TokenKind.NameLowerCase | TokenKind.NameUpperCase => JvmOp.method()
+        case t =>
+          val error = UnexpectedToken(expected = NamedTokenSet.JavaImport, actual = Some(t), SyntacticContext.Unknown, loc = currentSourceLocation())
+          advanceWithError(error)
+      }
+      close(markJvmOp, TreeKind.JvmOp.JvmOp)
+      expect(TokenKind.Semi, SyntacticContext.Expr.OtherExpr)
+      statement()
+      close(mark, TreeKind.Expr.LetImport)
+    }
+
+    private def scopeExpr()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordRegion))
+      val mark = open()
+      expect(TokenKind.KeywordRegion, SyntacticContext.Expr.OtherExpr)
+      name(NAME_VARIABLE, context = SyntacticContext.Expr.OtherExpr)
+      if (at(TokenKind.CurlyL)) {
+        block()
+      }
+      close(mark, TreeKind.Expr.Scope)
+    }
+
+    private def block()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.CurlyL))
+      val mark = open()
+      expect(TokenKind.CurlyL, SyntacticContext.Expr.OtherExpr)
+      if (eat(TokenKind.CurlyR)) { // Handle empty block
+        return close(mark, TreeKind.Expr.LiteralRecord)
+      }
+      statement()
+      expect(TokenKind.CurlyR, SyntacticContext.Expr.OtherExpr)
+      close(mark, TreeKind.Expr.Block)
+    }
+
+    private val FIRST_EXPR_DEBUG: Set[TokenKind] = Set(
+      TokenKind.KeywordDebug,
+      TokenKind.KeywordDebugBang,
+      TokenKind.KeywordDebugBangBang
+    )
+
+    private def debugExpr()(implicit s: State): Mark.Closed = {
+      assert(atAny(FIRST_EXPR_DEBUG))
+      val mark = open()
+      expectAny(FIRST_EXPR_DEBUG, SyntacticContext.Expr.OtherExpr)
+      expect(TokenKind.ParenL, SyntacticContext.Expr.OtherExpr)
+      expression()
+      expect(TokenKind.ParenR, SyntacticContext.Expr.OtherExpr)
+      close(mark, TreeKind.Expr.Debug)
+    }
+
+    private def matchOrMatchLambdaExpr()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordMatch))
+      val mark = open()
+      expect(TokenKind.KeywordMatch, SyntacticContext.Expr.OtherExpr)
+      // Detect match lambda
+      val isLambda = {
+        var lookAhead = 0
+        var isLambda = false
+        var continue = true
+        // We need to track the parenthesis nesting level to handle match-expressions
+        // that include lambdas. IE. "match f(x -> g(x)) { case ... }".
+        // In these cases the ArrowThin __does not__ indicate that the expression being parsed is a match lambda.
+        var parenNestingLevel = 0
+        while (continue && !eof()) {
+          nth(lookAhead) match {
+            // match expr { case ... }
+            case TokenKind.KeywordCase => continue = false
+            // match pattern -> expr
+            case TokenKind.ArrowThinR if parenNestingLevel == 0 => isLambda = true; continue = false
+            case TokenKind.ParenL => parenNestingLevel += 1; lookAhead += 1
+            case TokenKind.ParenR => parenNestingLevel -= 1; lookAhead += 1
+            case TokenKind.Eof =>
+              val error = UnexpectedToken(expected = NamedTokenSet.Expression, actual = None, SyntacticContext.Expr.OtherExpr, loc = currentSourceLocation())
+              return closeWithError(mark, error)
+            case t if t.isFirstDecl =>
+              // Advance past the erroneous region to the next stable token (the start of the declaration)
+              for (_ <- 0 until lookAhead) {
+                advance()
+              }
+              val error = UnexpectedToken(expected = NamedTokenSet.Expression, actual = Some(t), SyntacticContext.Expr.OtherExpr, loc = currentSourceLocation())
+              return closeWithError(mark, error)
+            case _ => lookAhead += 1
+          }
+        }
+        isLambda
+      }
+
+      if (isLambda) {
+        Pattern.pattern()
+        expect(TokenKind.ArrowThinR, SyntacticContext.Expr.OtherExpr)
+        expression()
+        close(mark, TreeKind.Expr.LambdaMatch)
+      } else {
+        expression()
+        oneOrMore(
+          namedTokenSet = NamedTokenSet.MatchRule,
+          checkForItem = _ == TokenKind.KeywordCase,
+          getItem = matchRule,
+          breakWhen = _.isRecoverExpr,
+          delimiterL = TokenKind.CurlyL,
+          delimiterR = TokenKind.CurlyR,
+          separation = Separation.Optional(TokenKind.Comma),
+          context = SyntacticContext.Expr.OtherExpr
+        )
+        close(mark, TreeKind.Expr.Match)
+      }
+    }
+
+    private def matchRule()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordCase))
+      val mark = open()
+      expect(TokenKind.KeywordCase, SyntacticContext.Expr.OtherExpr)
+      Pattern.pattern()
+      if (eat(TokenKind.KeywordIf)) {
+        expression()
+      }
+      // TODO: It's common to type '=' instead of '=>' here. Should we make a specific error?
+      expect(TokenKind.ArrowThickR, SyntacticContext.Expr.OtherExpr)
+      statement()
+      close(mark, TreeKind.Expr.MatchRuleFragment)
+    }
+
+    private def typematchExpr()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordTypeMatch))
+      val mark = open()
+      expect(TokenKind.KeywordTypeMatch, SyntacticContext.Expr.OtherExpr)
+      expression()
+      oneOrMore(
+        namedTokenSet = NamedTokenSet.MatchRule,
+        checkForItem = _ == TokenKind.KeywordCase,
+        getItem = typematchRule,
+        breakWhen = _.isRecoverExpr,
+        delimiterL = TokenKind.CurlyL,
+        delimiterR = TokenKind.CurlyR,
+        separation = Separation.Optional(TokenKind.Comma),
+        context = SyntacticContext.Expr.OtherExpr
+      )
+      close(mark, TreeKind.Expr.TypeMatch)
+    }
+
+    private def typematchRule()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordCase))
+      val mark = open()
+      expect(TokenKind.KeywordCase, SyntacticContext.Expr.OtherExpr)
+      name(NAME_VARIABLE, context = SyntacticContext.Expr.OtherExpr)
+      if (eat(TokenKind.Colon)) {
+        Type.ttype()
+      }
+      // TODO: It's common to type '=' instead of '=>' here. Should we make a specific error?
+      if (eat(TokenKind.ArrowThickR)) {
+        statement()
+      }
+      close(mark, TreeKind.Expr.TypeMatchRuleFragment)
+    }
+
+    private def restrictableChooseExpr()(implicit s: State): Mark.Closed = {
+      assert(atAny(Set(TokenKind.KeywordChoose, TokenKind.KeywordChooseStar)))
+      val mark = open()
+      val isStar = eat(TokenKind.KeywordChooseStar)
+      if (!isStar) {
+        expect(TokenKind.KeywordChoose, SyntacticContext.Expr.OtherExpr)
+      }
+      expression()
+      oneOrMore(
+        namedTokenSet = NamedTokenSet.MatchRule,
+        checkForItem = _ == TokenKind.KeywordCase,
+        getItem = matchRule,
+        breakWhen = _.isRecoverExpr,
+        delimiterL = TokenKind.CurlyL,
+        delimiterR = TokenKind.CurlyR,
+        separation = Separation.Optional(TokenKind.Comma),
+        context = SyntacticContext.Expr.OtherExpr
+      )
+      close(mark, if (isStar) TreeKind.Expr.RestrictableChooseStar else TreeKind.Expr.RestrictableChoose)
+    }
+
+    private def forApplicativeExpr()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordForA))
+      val mark = open()
+      expect(TokenKind.KeywordForA, SyntacticContext.Expr.OtherExpr)
+      // Note: Only generator patterns are allowed here. Weeder verifies this.
+      forFragments()
+      expect(TokenKind.KeywordYield, SyntacticContext.Expr.OtherExpr)
+      expression()
+      close(mark, TreeKind.Expr.ForApplicative)
+    }
+
+    private def foreachExpr()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordForeach))
+      val mark = open()
+      var kind: TreeKind = TreeKind.Expr.Foreach
+      expect(TokenKind.KeywordForeach, SyntacticContext.Expr.OtherExpr)
+      forFragments()
+      if (eat(TokenKind.KeywordYield)) {
+        kind = TreeKind.Expr.ForeachYield
+      }
+      expression()
+      close(mark, kind)
+    }
+
+    private def forMonadicExpr()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordForM))
+      val mark = open()
+      expect(TokenKind.KeywordForM, SyntacticContext.Expr.OtherExpr)
+      forFragments()
+      expect(TokenKind.KeywordYield, SyntacticContext.Expr.OtherExpr)
+      expression()
+      close(mark, TreeKind.Expr.ForMonadic)
+    }
+
+    private def forFragments()(implicit s: State): Unit = {
+      oneOrMore(
+        namedTokenSet = NamedTokenSet.ForFragment,
+        checkForItem = t => t.isFirstPattern || t == TokenKind.KeywordIf,
+        getItem = () =>
+          if (at(TokenKind.KeywordIf)) {
+            guardFragment()
+          } else {
+            generatorOrLetFragment()
+          },
+        breakWhen = t => t == TokenKind.KeywordYield || t.isRecoverExpr,
+        separation = Separation.Required(TokenKind.Semi),
+        context = SyntacticContext.Expr.OtherExpr
+      )
+    }
+
+    private def guardFragment()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordIf))
+      val mark = open()
+      expect(TokenKind.KeywordIf, SyntacticContext.Expr.OtherExpr)
+      expression()
+      close(mark, TreeKind.Expr.ForFragmentGuard)
+    }
+
+    private def generatorOrLetFragment()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      Pattern.pattern()
+      val isGenerator = eat(TokenKind.ArrowThinL)
+      if (!isGenerator) {
+        expect(TokenKind.Equal, SyntacticContext.Expr.OtherExpr)
+      }
+      expression()
+      close(mark, if (isGenerator) {
+        TreeKind.Expr.ForFragmentGenerator
+      } else {
+        TreeKind.Expr.ForFragmentLet
+      })
+    }
+
+    private def blockOrRecordExpr()(implicit s: State): Mark.Closed = {
+      // Determines if a '{' is opening a block, a record literal or a record operation.
+      assert(at(TokenKind.CurlyL))
+
+      // We can discern between record ops and literals vs. blocks by looking at the two next tokens.
+      (nth(1), nth(2)) match {
+        case (TokenKind.CurlyR, _)
+             | (TokenKind.NameLowerCase, TokenKind.Equal)
+             | (TokenKind.Plus, TokenKind.NameLowerCase)
+             | (TokenKind.Minus, TokenKind.NameLowerCase) =>
+          // Now check for record operation or record literal,
+          // by looking for a '|' before the closing '}'
+          val isRecordOp = {
+            val tokensLeft = s.tokens.length - s.position
+            var lookahead = 1
+            var nestingLevel = 0
+            var isRecordOp = false
+            var continue = true
+            while (continue && lookahead < tokensLeft) {
+              nth(lookahead) match {
+                // Found closing '}' so stop seeking.
+                case TokenKind.CurlyR if nestingLevel == 0 => continue = false
+                // found '|' before closing '}' -> It is a record operation.
+                case TokenKind.Bar if nestingLevel == 0 =>
+                  isRecordOp = true
+                  continue = false
+                case TokenKind.CurlyL | TokenKind.HashCurlyL =>
+                  nestingLevel += 1
+                  lookahead += 1
+                case TokenKind.CurlyR =>
+                  nestingLevel -= 1
+                  lookahead += 1
+                case _ => lookahead += 1
+              }
+            }
+            isRecordOp
+          }
+
+          if (isRecordOp) {
+            recordOperation()
+          } else {
+            recordLiteral()
+          }
+        case _ => block()
+      }
+    }
+
+    private def recordLiteral()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.CurlyL))
+      val mark = open()
+      zeroOrMore(
+        namedTokenSet = NamedTokenSet.FromKinds(NAME_FIELD),
+        getItem = recordLiteralField,
+        checkForItem = NAME_FIELD.contains,
+        breakWhen = _.isRecoverExpr,
+        delimiterL = TokenKind.CurlyL,
+        delimiterR = TokenKind.CurlyR,
+        context = SyntacticContext.Expr.OtherExpr
+      )
+      close(mark, TreeKind.Expr.LiteralRecord)
+    }
+
+    private def recordLiteralField()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      name(NAME_FIELD, context = SyntacticContext.Expr.OtherExpr)
+      expect(TokenKind.Equal, SyntacticContext.Expr.OtherExpr)
+      expression()
+      close(mark, TreeKind.Expr.LiteralRecordFieldFragment)
+    }
+
+
+    private def recordOperation()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.CurlyL))
+      val mark = open()
+      oneOrMore(
+        namedTokenSet = NamedTokenSet.FromKinds(Set(TokenKind.Plus, TokenKind.Minus, TokenKind.NameLowerCase)),
+        getItem = recordOp,
+        checkForItem = _.isFirstRecordOp,
+        breakWhen = _.isRecoverExpr,
+        delimiterL = TokenKind.CurlyL,
+        delimiterR = TokenKind.CurlyR,
+        optionallyWith = Some((TokenKind.Bar, () => expression())),
+        context = SyntacticContext.Expr.OtherExpr
+      ) match {
+        case Some(error) => closeWithError(mark, error)
+        case None => close(mark, TreeKind.Expr.RecordOperation)
+      }
+    }
+
+    private def recordOp()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      nth(0) match {
+        case TokenKind.Plus =>
+          advance()
+          name(NAME_FIELD, context = SyntacticContext.Expr.OtherExpr)
+          expect(TokenKind.Equal, SyntacticContext.Expr.OtherExpr)
+          expression()
+          close(mark, TreeKind.Expr.RecordOpExtend)
+        case TokenKind.Minus =>
+          advance()
+          name(NAME_FIELD, context = SyntacticContext.Expr.OtherExpr)
+          close(mark, TreeKind.Expr.RecordOpRestrict)
+        case TokenKind.NameLowerCase =>
+          name(NAME_FIELD, context = SyntacticContext.Expr.OtherExpr)
+          expect(TokenKind.Equal, SyntacticContext.Expr.OtherExpr)
+          expression()
+          close(mark, TreeKind.Expr.RecordOpUpdate)
+        case at =>
+          val error = UnexpectedToken(expected = NamedTokenSet.FromKinds(Set(TokenKind.Plus, TokenKind.Minus, TokenKind.NameLowerCase)), actual = Some(at), SyntacticContext.Expr.OtherExpr, loc = currentSourceLocation())
+          advanceWithError(error, Some(mark))
+      }
+    }
+
+    private def arrayLiteralExpr()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.ArrayHash))
+      val mark = open()
+      expect(TokenKind.ArrayHash, context = SyntacticContext.Expr.OtherExpr)
+      zeroOrMore(
+        namedTokenSet = NamedTokenSet.Expression,
+        getItem = () => expression(),
+        checkForItem = _.isFirstExpr,
+        breakWhen = _.isRecoverExpr,
+        delimiterL = TokenKind.CurlyL,
+        delimiterR = TokenKind.CurlyR,
+        context = SyntacticContext.Expr.OtherExpr
+      )
+      scopeName()
+      close(mark, TreeKind.Expr.LiteralArray)
+    }
+
+    private def scopeName()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      expect(TokenKind.At, SyntacticContext.Expr.OtherExpr)
+      expression()
+      close(mark, TreeKind.Expr.ScopeName)
+    }
+
+    private def vectorLiteralExpr()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.VectorHash))
+      val mark = open()
+      expect(TokenKind.VectorHash, SyntacticContext.Expr.OtherExpr)
+      zeroOrMore(
+        namedTokenSet = NamedTokenSet.Expression,
+        getItem = () => expression(),
+        checkForItem = _.isFirstExpr,
+        breakWhen = _.isRecoverExpr,
+        delimiterL = TokenKind.CurlyL,
+        delimiterR = TokenKind.CurlyR,
+        context = SyntacticContext.Expr.OtherExpr
+      )
+      close(mark, TreeKind.Expr.LiteralVector)
+    }
+
+    private def listLiteralExpr()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.ListHash))
+      val mark = open()
+      expect(TokenKind.ListHash, SyntacticContext.Expr.OtherExpr)
+      zeroOrMore(
+        namedTokenSet = NamedTokenSet.Expression,
+        getItem = () => expression(),
+        checkForItem = _.isFirstExpr,
+        breakWhen = _.isRecoverExpr,
+        delimiterL = TokenKind.CurlyL,
+        delimiterR = TokenKind.CurlyR,
+        context = SyntacticContext.Expr.OtherExpr
+      )
+      close(mark, TreeKind.Expr.LiteralList)
+    }
+
+    private def setLiteralExpr()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.SetHash))
+      val mark = open()
+      expect(TokenKind.SetHash, SyntacticContext.Expr.OtherExpr)
+      zeroOrMore(
+        namedTokenSet = NamedTokenSet.Expression,
+        getItem = () => expression(),
+        checkForItem = _.isFirstExpr,
+        breakWhen = _.isRecoverExpr,
+        delimiterL = TokenKind.CurlyL,
+        delimiterR = TokenKind.CurlyR,
+        context = SyntacticContext.Expr.OtherExpr
+      )
+      close(mark, TreeKind.Expr.LiteralSet)
+    }
+
+    private def mapLiteralExpr()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.MapHash))
+      val mark = open()
+      expect(TokenKind.MapHash, SyntacticContext.Expr.OtherExpr)
+      zeroOrMore(
+        namedTokenSet = NamedTokenSet.Expression,
+        getItem = mapLiteralValue,
+        checkForItem = _.isFirstExpr,
+        breakWhen = _.isRecoverExpr,
+        delimiterL = TokenKind.CurlyL,
+        delimiterR = TokenKind.CurlyR,
+        context = SyntacticContext.Expr.OtherExpr
+      )
+      close(mark, TreeKind.Expr.LiteralMap)
+    }
+
+    private def mapLiteralValue()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      expression()
+      expect(TokenKind.ArrowThickR, SyntacticContext.Expr.OtherExpr)
+      expression()
+      close(mark, TreeKind.Expr.LiteralMapKeyValueFragment)
+    }
+
+    private def refExpr()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordRef))
+      val mark = open()
+      expect(TokenKind.KeywordRef, SyntacticContext.Expr.OtherExpr)
+      expression()
+      scopeName()
+      close(mark, TreeKind.Expr.Ref)
+    }
+
+    private def checkedTypeCastExpr()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordCheckedCast))
+      val mark = open()
+      expect(TokenKind.KeywordCheckedCast, SyntacticContext.Expr.OtherExpr)
+      if (eat(TokenKind.ParenL)) {
+        expression()
+        expect(TokenKind.ParenR, SyntacticContext.Expr.OtherExpr)
+      }
+      close(mark, TreeKind.Expr.CheckedTypeCast)
+    }
+
+    private def checkedEffectCastExpr()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordCheckedECast))
+      val mark = open()
+      expect(TokenKind.KeywordCheckedECast, SyntacticContext.Expr.OtherExpr)
+      if (eat(TokenKind.ParenL)) {
+        expression()
+        expect(TokenKind.ParenR, SyntacticContext.Expr.OtherExpr)
+      }
+      close(mark, TreeKind.Expr.CheckedEffectCast)
+    }
+
+    private def uncheckedCastExpr()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordUncheckedCast))
+      val mark = open()
+      expect(TokenKind.KeywordUncheckedCast, SyntacticContext.Expr.OtherExpr)
+      if (eat(TokenKind.ParenL)) {
+        expression()
+        if (eat(TokenKind.KeywordAs)) {
+          Type.typeAndEffect()
+        }
+        expect(TokenKind.ParenR, SyntacticContext.Expr.OtherExpr)
+      }
+      close(mark, TreeKind.Expr.UncheckedCast)
+    }
+
+    private def uncheckedMaskingCastExpr()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordMaskedCast))
+      val mark = open()
+      expect(TokenKind.KeywordMaskedCast, SyntacticContext.Expr.OtherExpr)
+      if (eat(TokenKind.ParenL)) {
+        expression()
+        expect(TokenKind.ParenR, SyntacticContext.Expr.OtherExpr)
+      }
+      close(mark, TreeKind.Expr.UncheckedMaskingCast)
+    }
+
+    private def tryExpr()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordTry))
+      val mark = open()
+      expect(TokenKind.KeywordTry, SyntacticContext.Expr.OtherExpr)
+      expression()
+      if (at(TokenKind.KeywordCatch)) {
+        while (at(TokenKind.KeywordCatch)) {
+          catchBody()
+        }
+      } else if (at(TokenKind.KeywordWith)) {
+        while (at(TokenKind.KeywordWith)) {
+          withBody()
+        }
+      }
+
+      close(mark, TreeKind.Expr.Try)
+    }
+
+    private def catchBody()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordCatch))
+      val mark = open()
+      expect(TokenKind.KeywordCatch, SyntacticContext.Expr.OtherExpr)
+      oneOrMore(
+        namedTokenSet = NamedTokenSet.CatchRule,
+        getItem = catchRule,
+        checkForItem = _ == TokenKind.KeywordCase,
+        breakWhen = _.isRecoverExpr,
+        separation = Separation.Optional(TokenKind.Comma),
+        delimiterL = TokenKind.CurlyL,
+        delimiterR = TokenKind.CurlyR,
+        context = SyntacticContext.Expr.OtherExpr
+      ) match {
+        case Some(error) => closeWithError(mark, error)
+        case None => close(mark, TreeKind.Expr.TryCatchBodyFragment)
+      }
+    }
+
+    private def catchRule()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      expect(TokenKind.KeywordCase, SyntacticContext.Expr.OtherExpr)
+      name(NAME_VARIABLE, context = SyntacticContext.Expr.OtherExpr)
+      expect(TokenKind.Colon, SyntacticContext.Expr.OtherExpr)
+      name(NAME_JAVA, allowQualified = true, context = SyntacticContext.Expr.OtherExpr)
+      expect(TokenKind.ArrowThickR, SyntacticContext.Expr.OtherExpr)
+      expression()
+      close(mark, TreeKind.Expr.TryCatchRuleFragment)
+    }
+
+    private def withBody()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordWith))
+      val mark = open()
+      expect(TokenKind.KeywordWith, SyntacticContext.Expr.OtherExpr)
+      name(NAME_EFFECT, allowQualified = true, context = SyntacticContext.Expr.OtherExpr)
+      oneOrMore(
+        namedTokenSet = NamedTokenSet.WithRule,
+        getItem = withRule,
+        checkForItem = kind => kind == TokenKind.KeywordDef || kind.isComment,
+        breakWhen = _.isRecoverExpr,
+        separation = Separation.Optional(TokenKind.Comma),
+        delimiterL = TokenKind.CurlyL,
+        delimiterR = TokenKind.CurlyR,
+        context = SyntacticContext.Expr.OtherExpr
+      ) match {
+        case Some(error) => closeWithError(mark, error)
+        case None => close(mark, TreeKind.Expr.TryWithBodyFragment)
+      }
+    }
+
+    private def withRule()(implicit s: State): Mark.Closed = {
+      assert(nth(0).isComment || at(TokenKind.KeywordDef))
+      val mark = open()
+      expect(TokenKind.KeywordDef, SyntacticContext.Expr.OtherExpr)
+      name(Set(TokenKind.NameLowerCase), context = SyntacticContext.Expr.OtherExpr)
+      Decl.parameters(SyntacticContext.Expr.OtherExpr)
+      expect(TokenKind.Equal, SyntacticContext.Expr.OtherExpr)
+      expression()
+      close(mark, TreeKind.Expr.TryWithRuleFragment)
+    }
+
+    private def doExpr()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordDo))
+      val mark = open()
+      expect(TokenKind.KeywordDo, SyntacticContext.Expr.Do)
+      name(NAME_QNAME, allowQualified = true, context = SyntacticContext.Expr.Do)
+      arguments()
+      close(mark, TreeKind.Expr.Do)
+    }
+
+    private def newObjectExpr()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordNew))
+      val mark = open()
+      expect(TokenKind.KeywordNew, SyntacticContext.Expr.OtherExpr)
+      Type.ttype()
+      oneOrMore(
+        namedTokenSet = NamedTokenSet.FromKinds(Set(TokenKind.KeywordDef)),
+        checkForItem = t => t.isComment || t == TokenKind.KeywordDef,
+        getItem = jvmMethod,
+        breakWhen = _.isRecoverExpr,
+        delimiterL = TokenKind.CurlyL,
+        delimiterR = TokenKind.CurlyR,
+        separation = Separation.None,
+        context = SyntacticContext.Expr.OtherExpr
+      )
+      close(mark, TreeKind.Expr.NewObject)
+    }
+
+    private def jvmMethod()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordDef))
+      val mark = open()
+      expect(TokenKind.KeywordDef, SyntacticContext.Expr.OtherExpr)
+      name(NAME_JAVA, context = SyntacticContext.Expr.OtherExpr)
+      Decl.parameters(SyntacticContext.Expr.OtherExpr)
+      expect(TokenKind.Colon, SyntacticContext.Expr.OtherExpr)
+      Type.typeAndEffect()
+      expect(TokenKind.Equal, SyntacticContext.Expr.OtherExpr)
+      Expr.statement()
+      close(mark, TreeKind.Expr.JvmMethod)
+    }
+
+    private def staticExpr()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordStaticUppercase))
+      val mark = open()
+      expect(TokenKind.KeywordStaticUppercase, SyntacticContext.Expr.OtherExpr)
+      close(mark, TreeKind.Expr.Static)
+    }
+
+    private def selectExpr()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordSelect))
+      val mark = open()
+      expect(TokenKind.KeywordSelect, SyntacticContext.Expr.OtherExpr)
+      expect(TokenKind.CurlyL, SyntacticContext.Expr.OtherExpr)
+      comments()
+      // Note: We can't use zeroOrMore here because there's special semantics:
+      // The wildcard rule (case _ => ...) must be the last one.
+      var continue = true
+      while (continue && at(TokenKind.KeywordCase) && !eof()) {
+        val ruleMark = open()
+        expect(TokenKind.KeywordCase, SyntacticContext.Expr.OtherExpr)
+        val isDefault = findBefore(TokenKind.ArrowThickR, Array(TokenKind.ArrowThinL))
+        if (isDefault) {
+          // Only the last rule can be a wildcard rule so stop after this one
+          continue = false
+          expect(TokenKind.Underscore, SyntacticContext.Expr.OtherExpr)
+          expect(TokenKind.ArrowThickR, SyntacticContext.Expr.OtherExpr)
+          statement()
+          close(ruleMark, TreeKind.Expr.SelectRuleDefaultFragment)
+        } else {
+          name(NAME_VARIABLE, context = SyntacticContext.Expr.OtherExpr)
+          expect(TokenKind.ArrowThinL, SyntacticContext.Expr.OtherExpr)
+          // Note that only "Channel.recv" and "recv" are allowed for this name.
+          // We don't want to reserve "Channel" and "recv" as keywords,
+          // so parsing it as a qname seems fine for now.
+          name(NAME_QNAME, allowQualified = true, context = SyntacticContext.Expr.OtherExpr)
+          expect(TokenKind.ParenL, SyntacticContext.Expr.OtherExpr)
+          expression()
+          expect(TokenKind.ParenR, SyntacticContext.Expr.OtherExpr)
+          expect(TokenKind.ArrowThickR, SyntacticContext.Expr.OtherExpr)
+          statement()
+          close(ruleMark, TreeKind.Expr.SelectRuleFragment)
+        }
+      }
+      expect(TokenKind.CurlyR, SyntacticContext.Expr.OtherExpr)
+
+      close(mark, TreeKind.Expr.Select)
+    }
+
+    private def spawnExpr()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordSpawn))
+      val mark = open()
+      expect(TokenKind.KeywordSpawn, SyntacticContext.Expr.OtherExpr)
+      expression()
+      scopeName()
+      close(mark, TreeKind.Expr.Spawn)
+    }
+
+    private def parYieldExpr()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordPar))
+      val mark = open()
+      expect(TokenKind.KeywordPar, SyntacticContext.Expr.OtherExpr)
+      if (at(TokenKind.ParenL)) {
+        oneOrMore(
+          namedTokenSet = NamedTokenSet.Pattern,
+          getItem = parYieldFragment,
+          checkForItem = _.isFirstPattern,
+          separation = Separation.Required(TokenKind.Semi),
+          breakWhen = kind => kind == TokenKind.KeywordYield || kind.isRecoverExpr,
+          context = SyntacticContext.Expr.OtherExpr
+        ) match {
+          case Some(error) => closeWithError(open(), error)
+          case None =>
+        }
+      }
+      expect(TokenKind.KeywordYield, SyntacticContext.Expr.OtherExpr)
+      expression()
+      close(mark, TreeKind.Expr.ParYield)
+    }
+
+    private def parYieldFragment()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      Pattern.pattern()
+      expect(TokenKind.ArrowThinL, SyntacticContext.Expr.OtherExpr)
+      expression()
+      close(mark, TreeKind.Expr.ParYieldFragment)
+    }
+
+    private def fixpointConstraintSetExpr()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.HashCurlyL))
+      val mark = open()
+      zeroOrMore(
+        namedTokenSet = NamedTokenSet.FromKinds(NAME_PREDICATE),
+        checkForItem = NAME_PREDICATE.contains,
+        getItem = fixpointConstraint,
+        context = SyntacticContext.Expr.Constraint,
+        delimiterL = TokenKind.HashCurlyL,
+        delimiterR = TokenKind.CurlyR,
+        separation = Separation.Required(TokenKind.Dot, allowTrailing = true),
+        breakWhen = _.isRecoverExpr,
+      )
+      close(mark, TreeKind.Expr.FixpointConstraintSet)
+    }
+
+    private def fixpointConstraint()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      Predicate.head()
+      if (eat(TokenKind.ColonMinus)) {
+        Predicate.body()
+        while (eat(TokenKind.Comma) && !eof()) {
+          Predicate.body()
+        }
+      }
+      close(mark, TreeKind.Expr.FixpointConstraint)
+    }
+
+    private def fixpointLambdaExpr()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.HashParenL))
+      val mark = open()
+      Predicate.params()
+      expect(TokenKind.ArrowThinR, SyntacticContext.Expr.OtherExpr)
+      expression()
+      close(mark, TreeKind.Expr.FixpointLambda)
+    }
+
+    private def fixpointSolveExpr()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordSolve))
+      val mark = open()
+      expect(TokenKind.KeywordSolve, SyntacticContext.Expr.OtherExpr)
+      expression()
+      while (eat(TokenKind.Comma) && !eof()) {
+        expression()
+      }
+
+      if (eat(TokenKind.KeywordProject)) {
+        name(NAME_PREDICATE, context = SyntacticContext.Expr.OtherExpr)
+        while (eat(TokenKind.Comma) && !eof()) {
+          name(NAME_PREDICATE, context = SyntacticContext.Expr.OtherExpr)
+        }
+      }
+      close(mark, TreeKind.Expr.FixpointSolveWithProject)
+    }
+
+    private def fixpointInjectExpr()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordInject))
+      val mark = open()
+      expect(TokenKind.KeywordInject, SyntacticContext.Expr.OtherExpr)
+      expression()
+      while (eat(TokenKind.Comma) && !eof()) {
+        expression()
+      }
+      expect(TokenKind.KeywordInto, SyntacticContext.Expr.OtherExpr)
+      name(NAME_PREDICATE, context = SyntacticContext.Expr.OtherExpr)
+      while (eat(TokenKind.Comma) && !eof()) {
+        name(NAME_PREDICATE, context = SyntacticContext.Expr.OtherExpr)
+      }
+      close(mark, TreeKind.Expr.FixpointInject)
+    }
+
+    private def fixpointQueryExpr()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordQuery))
+      val mark = open()
+      expect(TokenKind.KeywordQuery, SyntacticContext.Expr.OtherExpr)
+      expression()
+      while (eat(TokenKind.Comma) && !eof()) {
+        expression()
+      }
+      if (at(TokenKind.KeywordSelect)) {
+        fixpointQuerySelect()
+      }
+      if (at(TokenKind.KeywordFrom)) {
+        fixpointQueryFrom()
+      }
+      if (at(TokenKind.KeywordWhere)) {
+        fixpointQueryWhere()
+      }
+      close(mark, TreeKind.Expr.FixpointQuery)
+    }
+
+    private def fixpointQuerySelect()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordSelect))
+      val mark = open()
+      expect(TokenKind.KeywordSelect, SyntacticContext.Expr.OtherExpr)
+      (nth(0), nth(1)) match {
+        case (TokenKind.ParenL, TokenKind.ParenR) => expression()
+        case (TokenKind.ParenL, _) => zeroOrMore(
+          namedTokenSet = NamedTokenSet.Expression,
+          getItem = () => expression(),
+          checkForItem = _.isFirstExpr,
+          breakWhen = _.isRecoverExpr,
+          context = SyntacticContext.Expr.OtherExpr
+        )
+        case _ => expression()
+      }
+      close(mark, TreeKind.Expr.FixpointSelect)
+    }
+
+    private def fixpointQueryFrom()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordFrom))
+      val mark = open()
+      expect(TokenKind.KeywordFrom, SyntacticContext.Expr.OtherExpr)
+      Predicate.atom()
+      while (eat(TokenKind.Comma) && !eof()) {
+        Predicate.atom()
+      }
+      close(mark, TreeKind.Expr.FixpointFromFragment)
+    }
+
+    private def fixpointQueryWhere()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordWhere))
+      val mark = open()
+      expect(TokenKind.KeywordWhere, SyntacticContext.Expr.OtherExpr)
+      expression()
+      close(mark, TreeKind.Expr.FixpointWhere)
+    }
+
+    private def intrinsicExpr()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      advance()
+      close(mark, TreeKind.Expr.Intrinsic)
+    }
+
+    private val FIRST_EXPR_INTERPOLATED_STRING: Set[TokenKind] = Set(TokenKind.LiteralStringInterpolationL, TokenKind.LiteralDebugStringL)
+
+    private def interpolatedStringExpr()(implicit s: State): Mark.Closed = {
+      assert(atAny(FIRST_EXPR_INTERPOLATED_STRING))
+      val mark = open()
+
+      def atTerminator(kind: Option[TokenKind]) = kind match {
+        case Some(TokenKind.LiteralStringInterpolationL) => at(TokenKind.LiteralStringInterpolationR)
+        case Some(TokenKind.LiteralDebugStringL) => at(TokenKind.LiteralDebugStringR)
+        case _ => false
+      }
+
+      def getOpener: Option[TokenKind] = nth(0) match {
+        case TokenKind.LiteralStringInterpolationL => advance(); Some(TokenKind.LiteralStringInterpolationL)
+        case TokenKind.LiteralDebugStringL => advance(); Some(TokenKind.LiteralDebugStringR)
+        case _ => None
+      }
+
+      var lastOpener = getOpener
+      while (lastOpener.isDefined && !eof()) {
+        if (atTerminator(lastOpener)) {
+          lastOpener = None // Terminate the loop
+        } else {
+          expression()
+          lastOpener = getOpener // Try to get nested interpolation
+        }
+      }
+      expectAny(Set(TokenKind.LiteralStringInterpolationR, TokenKind.LiteralDebugStringR), SyntacticContext.Expr.OtherExpr)
+      close(mark, TreeKind.Expr.StringInterpolation)
+    }
+  }
+
+  private object Pattern {
+    def pattern()(implicit s: State): Mark.Closed = {
+      // If a new pattern is added here, remember to add it to FIRST_PATTERN too.
+      val mark = open()
+      var lhs = nth(0) match {
+        case TokenKind.NameLowerCase
+             | TokenKind.NameGreek
+             | TokenKind.NameMath
+             | TokenKind.Underscore
+             | TokenKind.KeywordQuery => variablePat()
+        case TokenKind.LiteralString
+             | TokenKind.LiteralChar
+             | TokenKind.LiteralFloat32
+             | TokenKind.LiteralFloat64
+             | TokenKind.LiteralBigDecimal
+             | TokenKind.LiteralInt8
+             | TokenKind.LiteralInt16
+             | TokenKind.LiteralInt32
+             | TokenKind.LiteralInt64
+             | TokenKind.LiteralBigInt
+             | TokenKind.KeywordTrue
+             | TokenKind.KeywordFalse
+             | TokenKind.LiteralRegex
+             | TokenKind.KeywordNull => literalPat()
+        case TokenKind.NameUpperCase => tagPat()
+        case TokenKind.ParenL => tuplePat()
+        case TokenKind.CurlyL => recordPat()
+        case TokenKind.Minus => unaryPat()
+        case t =>
+          val mark = open()
+          val error = UnexpectedToken(expected = NamedTokenSet.Pattern, actual = Some(t), SyntacticContext.Pat.OtherPat, loc = currentSourceLocation())
+          closeWithError(mark, error)
+      }
+      // Handle FCons
+      if (eat(TokenKind.ColonColon)) {
+        lhs = close(openBefore(lhs), TreeKind.Pattern.Pattern)
+        pattern()
+        close(openBefore(lhs), TreeKind.Pattern.FCons)
+      }
+      close(mark, TreeKind.Pattern.Pattern)
+    }
+
+    private def variablePat()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      name(NAME_VARIABLE, context = SyntacticContext.Pat.OtherPat)
+      close(mark, TreeKind.Pattern.Variable)
+    }
+
+    private def literalPat()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      advance()
+      close(mark, TreeKind.Pattern.Literal)
+    }
+
+    private def tagPat()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      name(NAME_TAG, allowQualified = true, context = SyntacticContext.Pat.OtherPat)
+      if (at(TokenKind.ParenL)) {
+        tuplePat()
+      }
+      close(mark, TreeKind.Pattern.Tag)
+    }
+
+    private def tuplePat()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.ParenL))
+      val mark = open()
+      zeroOrMore(
+        namedTokenSet = NamedTokenSet.Pattern,
+        getItem = pattern,
+        checkForItem = _.isFirstPattern,
+        breakWhen = _.isRecoverExpr,
+        context = SyntacticContext.Pat.OtherPat
+      )
+      close(mark, TreeKind.Pattern.Tuple)
+    }
+
+    private def recordPat()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.CurlyL))
+      val mark = open()
+      zeroOrMore(
+        namedTokenSet = NamedTokenSet.FromKinds(NAME_FIELD),
+        getItem = recordField,
+        checkForItem = NAME_FIELD.contains,
+        delimiterL = TokenKind.CurlyL,
+        delimiterR = TokenKind.CurlyR,
+        optionallyWith = Some((TokenKind.Bar, () => pattern())),
+        breakWhen = _.isRecoverExpr,
+        context = SyntacticContext.Pat.OtherPat
+      )
+      close(mark, TreeKind.Pattern.Record)
+    }
+
+    private def recordField()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      name(NAME_FIELD, context = SyntacticContext.Pat.OtherPat)
+      if (eat(TokenKind.Equal)) {
+        pattern()
+      }
+      close(mark, TreeKind.Pattern.RecordFieldFragment)
+    }
+
+    private def unaryPat()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      val opMark = open()
+      advance()
+      close(opMark, TreeKind.Operator)
+      advance()
+      close(mark, TreeKind.Pattern.Unary)
+    }
+  }
+
+  private object Type {
+    def typeAndEffect()(implicit s: State): Mark.Closed = {
+      val lhs = ttype()
+      if (eat(TokenKind.Backslash)) {
+        val mark = open()
+        ttype()
+        close(mark, TreeKind.Type.Effect)
+      } else lhs
+    }
+
+    def ttype(left: TokenKind = TokenKind.Eof)(implicit s: State): Mark.Closed = {
+      var lhs = if (left == TokenKind.ArrowThinR) typeAndEffect() else typeDelimited()
+      // handle Type argument application
+      while (at(TokenKind.BracketL)) {
+        val mark = openBefore(lhs)
+        arguments()
+        lhs = close(mark, TreeKind.Type.Apply)
+        lhs = close(openBefore(lhs), TreeKind.Type.Type)
+      }
+      // Handle binary operators
+      var continue = true
+      while (continue) {
+        val right = nth(0)
+        if (right == TokenKind.Tilde) {
+          // This branch is hit when tilde is used like a binary operator.
+          // That only happens in equality constraints, an in that case,
+          // we want to let that rule continue instead of producing a binary type expression.
+          continue = false
+        } else if (rightBindsTighter(left, right)) {
+          val mark = openBefore(lhs)
+          val markOp = open()
+          advance()
+          close(markOp, TreeKind.Operator)
+          ttype(right)
+          lhs = close(mark, TreeKind.Type.Binary)
+          lhs = close(openBefore(lhs), TreeKind.Type.Type)
+        } else {
+          continue = false
+        }
+      }
+      // Handle kind ascriptions
+      if (eat(TokenKind.Colon)) {
+        Type.kind()
+        lhs = close(openBefore(lhs), TreeKind.Type.Ascribe)
+        lhs = close(openBefore(lhs), TreeKind.Type.Type)
+      }
+
+      lhs
+    }
+
+    // A precedence table for type operators, lower is higher precedence
+    private def TYPE_OP_PRECEDENCE: List[Array[TokenKind]] = List(
+      // BINARY OPS
+      Array(TokenKind.ArrowThinR), // ->
+      Array(TokenKind.KeywordRvadd, TokenKind.KeywordRvsub), // rvadd, rvsub
+      Array(TokenKind.KeywordRvand), // rvand
+      Array(TokenKind.Plus, TokenKind.Minus), // +, -
+      Array(TokenKind.Ampersand), // &
+      Array(TokenKind.KeywordXor), // xor
+      Array(TokenKind.KeywordOr), // or
+      Array(TokenKind.KeywordAnd), // and
+      // UNARY OPS
+      Array(TokenKind.KeywordRvnot, TokenKind.Tilde, TokenKind.KeywordNot) // rvnot, ~, not
+    )
+
+    private def rightBindsTighter(left: TokenKind, right: TokenKind): Boolean = {
+      val rt = TYPE_OP_PRECEDENCE.indexWhere(l => l.contains(right))
+      if (rt == -1) {
+        return false
+      }
+
+      val lt = TYPE_OP_PRECEDENCE.indexWhere(l => l.contains(left))
+      if (lt == -1) {
+        assert(left == TokenKind.Eof)
+        return true
+      }
+      // This >= rather than > makes it so that operators with equal precedence are left-associative.
+      // IE. 't + eff1 + eff2' becomes '(t + eff1) + eff2' rather than 't + (eff1 + eff2)'
+      rt >= lt
+    }
+
+    def arguments()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      zeroOrMore(
+        namedTokenSet = NamedTokenSet.Type,
+        getItem = argument,
+        checkForItem = _.isFirstType,
+        delimiterL = TokenKind.BracketL,
+        delimiterR = TokenKind.BracketR,
+        breakWhen = _.isRecoverType,
+        context = SyntacticContext.Type.OtherType
+      )
+      close(mark, TreeKind.Type.ArgumentList)
+    }
+
+    private def argument()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      ttype()
+      close(mark, TreeKind.Type.Argument)
+    }
+
+    def parameters()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      oneOrMore(
+        namedTokenSet = NamedTokenSet.Parameter,
+        getItem = parameter,
+        checkForItem = kind => NAME_VARIABLE.contains(kind) || NAME_TYPE.contains(kind),
+        delimiterL = TokenKind.BracketL,
+        delimiterR = TokenKind.BracketR,
+        breakWhen = _.isRecoverType,
+        context = SyntacticContext.Type.OtherType
+      ) match {
+        case Some(error) => closeWithError(mark, error)
+        case None => close(mark, TreeKind.TypeParameterList)
+      }
+    }
+
+    private def parameter()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      name(NAME_VARIABLE ++ NAME_TYPE, context = SyntacticContext.Type.OtherType)
+      if (at(TokenKind.Colon)) {
+        expect(TokenKind.Colon, SyntacticContext.Type.OtherType)
+        Type.kind()
+      }
+      close(mark, TreeKind.Parameter)
+    }
+
+    def constraints()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordWith))
+      val mark = open()
+      expect(TokenKind.KeywordWith, SyntacticContext.WithClause)
+      // Note, Can't use zeroOrMore here since there's are no delimiterR.
+      var continue = true
+      while (continue && !eof()) {
+        if (atAny(NAME_DEFINITION)) {
+          constraint()
+        } else {
+          val error = UnexpectedToken(expected = NamedTokenSet.FromKinds(NAME_DEFINITION), actual = Some(nth(0)), SyntacticContext.WithClause, loc = currentSourceLocation())
+          closeWithError(open(), error)
+          continue = false
+        }
+        if (!eat(TokenKind.Comma)) {
+          continue = false
+        }
+      }
+      close(mark, TreeKind.Type.ConstraintList)
+    }
+
+    private def constraint()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      name(NAME_DEFINITION, allowQualified = true, SyntacticContext.WithClause)
+      expect(TokenKind.BracketL, SyntacticContext.WithClause)
+      Type.ttype()
+      expect(TokenKind.BracketR, SyntacticContext.WithClause)
+      close(mark, TreeKind.Type.Constraint)
+    }
+
+    def derivations()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordWith))
+      val mark = open()
+      expect(TokenKind.KeywordWith, SyntacticContext.WithClause)
+      // Note, Can't use zeroOrMore here since there's are no delimiterR.
+      var continue = true
+      while (continue && !eof()) {
+        if (atAny(NAME_QNAME)) {
+          name(NAME_QNAME, allowQualified = true, context = SyntacticContext.WithClause)
+        } else {
+          val error = UnexpectedToken(expected = NamedTokenSet.FromKinds(NAME_QNAME), actual = Some(nth(0)), SyntacticContext.WithClause, loc = currentSourceLocation())
+          closeWithError(open(), error)
+          continue = false
+        }
+        if (!eat(TokenKind.Comma)) {
+          continue = false
+        }
+      }
+      close(mark, TreeKind.DerivationList)
+    }
+
+    private def typeDelimited()(implicit s: State): Mark.Closed = {
+      // If a new type is added here, remember to add it to TYPE_FIRST too.
+      val mark = open()
+      nth(0) match {
+        case TokenKind.NameUpperCase => name(NAME_TYPE, allowQualified = true, context = SyntacticContext.Type.OtherType)
+        case TokenKind.NameMath
+             | TokenKind.NameGreek
+             | TokenKind.Underscore => name(NAME_VARIABLE, context = SyntacticContext.Type.OtherType)
+        case TokenKind.NameLowerCase => variableType()
+        case TokenKind.KeywordUniv
+             | TokenKind.KeywordFalse
+             | TokenKind.KeywordTrue => constantType()
+        case TokenKind.ParenL => tupleOrRecordRowType()
+        case TokenKind.CurlyL => recordOrEffectSetType()
+        case TokenKind.HashCurlyL => schemaType()
+        case TokenKind.HashParenL => schemaRowType()
+        case TokenKind.NameJava => nativeType()
+        case TokenKind.AngleL => caseSetType()
+        case TokenKind.KeywordNot
+             | TokenKind.Tilde
+             | TokenKind.KeywordRvnot => unaryType()
+        // TODO: Static is used as a type name in Prelude.flix. That requires special handling here.
+        // If we remove this rule, remove KeywordStaticUppercase from FIRST_TYPE too.
+        case TokenKind.KeywordStaticUppercase => name(Set(TokenKind.KeywordStaticUppercase), context = SyntacticContext.Type.OtherType)
+        case t =>
+          val mark = open()
+          val error = UnexpectedToken(expected = NamedTokenSet.Type, actual = Some(t), SyntacticContext.Type.OtherType, loc = currentSourceLocation())
+          closeWithError(mark, error)
+      }
+      close(mark, TreeKind.Type.Type)
+    }
+
+    private val TYPE_VAR: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameGreek, TokenKind.NameMath, TokenKind.Underscore)
+
+    private def variableType()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      expectAny(TYPE_VAR, SyntacticContext.Type.OtherType)
+      close(mark, TreeKind.Type.Variable)
+    }
+
+    private val TYPE_CONSTANT: Set[TokenKind] = Set(TokenKind.KeywordUniv, TokenKind.KeywordFalse, TokenKind.KeywordTrue)
+
+    private def constantType()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      expectAny(TYPE_CONSTANT, SyntacticContext.Type.OtherType)
+      close(mark, TreeKind.Type.Constant)
+    }
+
+    private def tupleOrRecordRowType()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.ParenL))
+      // Record rows follow the rule '(' (name '=' type)* ('|' name)? )
+      // So the prefix is always "( name '='" or "'|'"
+      val next = nth(1)
+      val nextnext = nth(2)
+      val isRecordRow = next == TokenKind.Bar || next == TokenKind.NameLowerCase && nextnext == TokenKind.Equal || next == TokenKind.ParenR
+      if (isRecordRow) {
+        recordRow()
+      } else {
+        tuple()
+      }
+    }
+
+    private def recordRow()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.ParenL))
+      val mark = open()
+      zeroOrMore(
+        namedTokenSet = NamedTokenSet.FromKinds(NAME_FIELD),
+        getItem = recordField,
+        checkForItem = NAME_FIELD.contains,
+        breakWhen = _.isRecoverType,
+        optionallyWith = Some((TokenKind.Bar, variableType)),
+        context = SyntacticContext.Type.OtherType
+      )
+      close(mark, TreeKind.Type.RecordRow)
+    }
+
+    def tuple()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.ParenL))
+      val mark = open()
+      zeroOrMore(
+        namedTokenSet = NamedTokenSet.Type,
+        getItem = () => ttype(),
+        checkForItem = _.isFirstType,
+        breakWhen = _.isRecoverType,
+        context = SyntacticContext.Type.OtherType
+      )
+      close(mark, TreeKind.Type.Tuple)
+    }
+
+    private def recordOrEffectSetType()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.CurlyL))
+      val isRecord = (nth(1), nth(2)) match {
+        case (TokenKind.CurlyR, _) => false
+        case (TokenKind.Bar, _)
+             | (_, TokenKind.Bar)
+             | (_, TokenKind.Equal) => true
+        case _ => false
+      }
+      if (isRecord) record() else effectSet()
+    }
+
+    private def record()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.CurlyL))
+      val mark = open()
+      (nth(1), nth(2)) match {
+        // Empty record type
+        case (TokenKind.Bar, TokenKind.CurlyR) =>
+          advance() // consume '{'.
+          advance() // consume '|'.
+          advance() // consume '}'.
+          close(mark, TreeKind.Type.Record)
+        case _ =>
+          zeroOrMore(
+            namedTokenSet = NamedTokenSet.FromKinds(NAME_FIELD),
+            getItem = recordField,
+            checkForItem = NAME_FIELD.contains,
+            breakWhen = _.isRecoverType,
+            delimiterL = TokenKind.CurlyL,
+            delimiterR = TokenKind.CurlyR,
+            optionallyWith = Some((TokenKind.Bar, variableType)),
+            context = SyntacticContext.Type.OtherType
+          )
+          close(mark, TreeKind.Type.Record)
+      }
+    }
+
+    private def recordField()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      name(NAME_FIELD, context = SyntacticContext.Type.OtherType)
+      expect(TokenKind.Equal, SyntacticContext.Type.OtherType)
+      ttype()
+      close(mark, TreeKind.Type.RecordFieldFragment)
+    }
+
+    private def effectSet()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      zeroOrMore(
+        namedTokenSet = NamedTokenSet.Effect,
+        getItem = () => ttype(),
+        checkForItem = _.isFirstType,
+        breakWhen = _.isRecoverType,
+        delimiterL = TokenKind.CurlyL,
+        delimiterR = TokenKind.CurlyR,
+        context = SyntacticContext.Type.Eff
+      )
+      close(mark, TreeKind.Type.EffectSet)
+    }
+
+    private def schemaType()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.HashCurlyL))
+      val mark = open()
+      zeroOrMore(
+        namedTokenSet = NamedTokenSet.FromKinds(NAME_PREDICATE),
+        getItem = schemaTerm,
+        checkForItem = NAME_PREDICATE.contains,
+        delimiterL = TokenKind.HashCurlyL,
+        delimiterR = TokenKind.CurlyR,
+        breakWhen = _.isRecoverType,
+        optionallyWith = Some(TokenKind.Bar, () => name(NAME_VARIABLE, context = SyntacticContext.Type.OtherType)),
+        context = SyntacticContext.Type.OtherType
+      )
+      close(mark, TreeKind.Type.Schema)
+    }
+
+    private def schemaRowType()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.HashParenL))
+      val mark = open()
+      zeroOrMore(
+        namedTokenSet = NamedTokenSet.FromKinds(NAME_PREDICATE),
+        getItem = schemaTerm,
+        checkForItem = NAME_PREDICATE.contains,
+        delimiterL = TokenKind.HashParenL,
+        breakWhen = _.isRecoverType,
+        optionallyWith = Some(TokenKind.Bar, () => name(NAME_VARIABLE, context = SyntacticContext.Type.OtherType)),
+        context = SyntacticContext.Type.OtherType
+      )
+      close(mark, TreeKind.Type.SchemaRow)
+    }
+
+    private def schemaTerm()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      name(NAME_PREDICATE, allowQualified = true, context = SyntacticContext.Type.OtherType)
+      if (at(TokenKind.BracketL)) {
+        arguments()
+        close(mark, TreeKind.Type.PredicateWithAlias)
+      } else {
+        zeroOrMore(
+          namedTokenSet = NamedTokenSet.Type,
+          getItem = () => ttype(),
+          checkForItem = _.isFirstType,
+          breakWhen = _.isRecoverType,
+          context = SyntacticContext.Type.OtherType,
+          optionallyWith = Some(TokenKind.Semi, () => {
+            val mark = open()
+            ttype()
+            close(mark, TreeKind.Predicate.LatticeTerm)
+          })
+        )
+        close(mark, TreeKind.Type.PredicateWithTypes)
+      }
+    }
+
+    private def nativeType()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      var continue = true
+      while (continue && !eof()) {
+        nth(0) match {
+          case TokenKind.NameJava
+               | TokenKind.NameUpperCase
+               | TokenKind.NameLowerCase
+               | TokenKind.Dot
+               | TokenKind.Dollar => advance()
+          case _ => continue = false
+        }
+      }
+      close(mark, TreeKind.Type.Native)
+    }
+
+    private def caseSetType()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.AngleL))
+      val mark = open()
+      zeroOrMore(
+        namedTokenSet = NamedTokenSet.FromKinds(NAME_DEFINITION),
+        getItem = () => name(NAME_DEFINITION, allowQualified = true, context = SyntacticContext.Type.OtherType),
+        checkForItem = NAME_DEFINITION.contains,
+        breakWhen = _.isRecoverType,
+        delimiterL = TokenKind.AngleL,
+        delimiterR = TokenKind.AngleR,
+        context = SyntacticContext.Type.OtherType
+      )
+      close(mark, TreeKind.Type.CaseSet)
+    }
+
+    private val FIRST_TYPE_UNARY: Set[TokenKind] = Set(TokenKind.Tilde, TokenKind.KeywordNot, TokenKind.KeywordRvnot)
+
+    private def unaryType()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      val op = nth(0)
+      val markOp = open()
+      expectAny(FIRST_TYPE_UNARY, SyntacticContext.Type.OtherType)
+      close(markOp, TreeKind.Operator)
+      ttype(left = op)
+      close(mark, TreeKind.Type.Unary)
+    }
+
+    def kind()(implicit s: State): Mark.Closed = {
+      def kindFragment(): Unit = {
+        val inParens = eat(TokenKind.ParenL)
+        name(NAME_KIND, context = SyntacticContext.Type.OtherType)
+        // Check for arrow kind
+        if (eat(TokenKind.ArrowThinR)) {
+          kind()
+        }
+        // consume ')' is necessary
+        if (inParens) {
+          expect(TokenKind.ParenR, SyntacticContext.Type.OtherType)
+        }
+      }
+
+      val mark = open()
+      kindFragment()
+      close(mark, TreeKind.Kind)
+    }
+  }
+
+  private object Predicate {
+    def head()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      name(NAME_PREDICATE, context = SyntacticContext.Expr.Constraint)
+      if (at(TokenKind.ParenL)) {
+        termList()
+      }
+      close(mark, TreeKind.Predicate.Head)
+    }
+
+    private def termList()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.ParenL))
+      val mark = open()
+      zeroOrMore(
+        namedTokenSet = NamedTokenSet.Expression,
+        getItem = () => Expr.expression(),
+        checkForItem = _.isFirstExpr,
+        breakWhen = _.isRecoverExpr,
+        context = SyntacticContext.Expr.Constraint,
+        optionallyWith = Some(TokenKind.Semi, () => {
+          val mark = open()
+          Expr.expression()
+          close(mark, TreeKind.Predicate.LatticeTerm)
+        })
+      )
+      close(mark, TreeKind.Predicate.TermList)
+    }
+
+    private def patternList()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      zeroOrMore(
+        namedTokenSet = NamedTokenSet.Pattern,
+        getItem = Pattern.pattern,
+        checkForItem = _.isFirstPattern,
+        breakWhen = _.isRecoverPattern,
+        context = SyntacticContext.Expr.Constraint,
+        optionallyWith = Some(TokenKind.Semi, () => {
+          val mark = open()
+          Pattern.pattern()
+          close(mark, TreeKind.Predicate.LatticeTerm)
+        })
+      )
+      close(mark, TreeKind.Predicate.PatternList)
+    }
+
+    def body()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      nth(0) match {
+        case TokenKind.KeywordIf =>
+          guard()
+          close(mark, TreeKind.Predicate.Body)
+        case TokenKind.KeywordLet =>
+          functional()
+          close(mark, TreeKind.Predicate.Body)
+        case TokenKind.KeywordNot | TokenKind.KeywordFix | TokenKind.NameUpperCase =>
+          atom()
+          close(mark, TreeKind.Predicate.Body)
+        case at =>
+          val error = UnexpectedToken(
+            expected = NamedTokenSet.FixpointConstraint,
+            actual = Some(at),
+            SyntacticContext.Expr.Constraint,
+            loc = currentSourceLocation()
+          )
+          closeWithError(mark, error)
+      }
+    }
+
+    private def guard()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordIf))
+      val mark = open()
+      expect(TokenKind.KeywordIf, SyntacticContext.Expr.Constraint)
+      Expr.expression()
+      close(mark, TreeKind.Predicate.Guard)
+    }
+
+    private def functional()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordLet))
+      val mark = open()
+      expect(TokenKind.KeywordLet, SyntacticContext.Expr.Constraint)
+      nth(0) match {
+        case TokenKind.ParenL => zeroOrMore(
+          namedTokenSet = NamedTokenSet.FromKinds(NAME_VARIABLE),
+          getItem = () => name(NAME_VARIABLE, context = SyntacticContext.Expr.OtherExpr),
+          checkForItem = NAME_VARIABLE.contains,
+          breakWhen = kind => kind == TokenKind.Equal || kind.isFirstExpr,
+          context = SyntacticContext.Expr.Constraint
+        )
+        case TokenKind.NameLowerCase
+             | TokenKind.NameMath
+             | TokenKind.NameGreek
+             | TokenKind.Underscore => name(NAME_VARIABLE, context = SyntacticContext.Expr.Constraint)
+        case at =>
+          val error = UnexpectedToken(
+            expected = NamedTokenSet.FromKinds(Set(TokenKind.ParenL, TokenKind.NameLowerCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.Underscore)),
+            actual = Some(at),
+            SyntacticContext.Expr.Constraint,
+            loc = currentSourceLocation()
+          )
+          advanceWithError(error)
+      }
+      expect(TokenKind.Equal, SyntacticContext.Expr.Constraint)
+      Expr.expression()
+      close(mark, TreeKind.Predicate.Functional)
+    }
+
+    def atom()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      eat(TokenKind.KeywordNot)
+      eat(TokenKind.KeywordFix)
+      name(NAME_PREDICATE, context = SyntacticContext.Expr.Constraint)
+      patternList()
+      close(mark, TreeKind.Predicate.Atom)
+    }
+
+    def params()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      zeroOrMore(
+        namedTokenSet = NamedTokenSet.Parameter,
+        getItem = Predicate.param,
+        checkForItem = NAME_PREDICATE.contains,
+        delimiterL = TokenKind.HashParenL,
+        breakWhen = kind => kind == TokenKind.ArrowThinR || kind.isFirstExpr,
+        context = SyntacticContext.Expr.Constraint
+      )
+      close(mark, TreeKind.Predicate.ParamList)
+    }
+
+    private def param()(implicit s: State): Mark.Closed = {
+      var kind: TreeKind = TreeKind.Predicate.ParamUntyped
+      val mark = open()
+      name(NAME_PREDICATE, context = SyntacticContext.Expr.Constraint)
+      kind = TreeKind.Predicate.Param
+      zeroOrMore(
+        namedTokenSet = NamedTokenSet.Type,
+        getItem = () => Type.ttype(),
+        checkForItem = _.isFirstType,
+        breakWhen = _.isRecoverType,
+        context = SyntacticContext.Expr.Constraint,
+        optionallyWith = Some(TokenKind.Semi, () => {
+          val mark = open()
+          Type.ttype()
+          close(mark, TreeKind.Predicate.LatticeTerm)
+        })
+      )
+      close(mark, kind)
+    }
+  }
+
+  private object JvmOp {
+    private def signature()(implicit s: State): Unit = {
+      val mark = open()
+      zeroOrMore(
+        namedTokenSet = NamedTokenSet.Type,
+        getItem = () => Type.ttype(),
+        checkForItem = _.isFirstType,
+        breakWhen = _.isRecoverType,
+        context = SyntacticContext.Type.OtherType
+      )
+      close(mark, TreeKind.JvmOp.Sig)
+    }
+
+    private def ascription()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      expect(TokenKind.Colon, SyntacticContext.Expr.OtherExpr)
+      Type.typeAndEffect()
+      close(mark, TreeKind.JvmOp.Ascription)
+    }
+
+    def constructor()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordJavaNew))
+      val mark = open()
+      expect(TokenKind.KeywordJavaNew, SyntacticContext.Expr.OtherExpr)
+      name(NAME_JAVA, allowQualified = true, context = SyntacticContext.Expr.OtherExpr)
+      signature()
+      ascription()
+      expect(TokenKind.KeywordAs, SyntacticContext.Expr.OtherExpr)
+      name(NAME_VARIABLE, context = SyntacticContext.Expr.OtherExpr)
+      close(mark, TreeKind.JvmOp.Constructor)
+    }
+
+    private def methodBody()(implicit s: State): Unit = {
+      name(NAME_JAVA, allowQualified = true, context = SyntacticContext.Expr.OtherExpr)
+      signature()
+      ascription()
+      if (eat(TokenKind.KeywordAs)) {
+        name(NAME_VARIABLE, context = SyntacticContext.Expr.OtherExpr)
+      }
+    }
+
+    def method()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      methodBody()
+      close(mark, TreeKind.JvmOp.Method)
+    }
+
+    def staticMethod()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordStatic))
+      val mark = open()
+      expect(TokenKind.KeywordStatic, SyntacticContext.Expr.OtherExpr)
+      methodBody()
+      close(mark, TreeKind.JvmOp.StaticMethod)
+    }
+
+    private def fieldGetBody()(implicit s: State): Unit = {
+      expect(TokenKind.KeywordJavaGetField, SyntacticContext.Expr.OtherExpr)
+      name(NAME_JAVA, allowQualified = true, context = SyntacticContext.Expr.OtherExpr)
+      ascription()
+      expect(TokenKind.KeywordAs, SyntacticContext.Expr.OtherExpr)
+      name(NAME_VARIABLE, context = SyntacticContext.Expr.OtherExpr)
+    }
+
+    private def putBody()(implicit s: State): Unit = {
+      expect(TokenKind.KeywordJavaSetField, SyntacticContext.Expr.OtherExpr)
+      name(NAME_JAVA, allowQualified = true, context = SyntacticContext.Expr.OtherExpr)
+      ascription()
+      expect(TokenKind.KeywordAs, SyntacticContext.Expr.OtherExpr)
+      name(NAME_VARIABLE, context = SyntacticContext.Expr.OtherExpr)
+    }
+
+    def getField()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      fieldGetBody()
+      close(mark, TreeKind.JvmOp.GetField)
+    }
+
+    def staticGetField()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordStatic))
+      val mark = open()
+      expect(TokenKind.KeywordStatic, SyntacticContext.Expr.OtherExpr)
+      fieldGetBody()
+      close(mark, TreeKind.JvmOp.StaticGetField)
+    }
+
+    def putField()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      putBody()
+      close(mark, TreeKind.JvmOp.PutField)
+    }
+
+    def staticPutField()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordStatic))
+      val mark = open()
+      expect(TokenKind.KeywordStatic, SyntacticContext.Expr.OtherExpr)
+      putBody()
+      close(mark, TreeKind.JvmOp.StaticPutField)
+    }
+  }
+
+  /**
+    * Utility function that computes a textual representation of a [[SyntaxTree.Tree]].
+    * Meant for debugging use.
+    */
+  def syntaxTreeToDebugString(tree: SyntaxTree.Tree, nesting: Int = 1): String = {
+    s"${tree.kind}${
+      tree.children.map {
+        case token@Token(_, _, _, _, _, _, _, _) => s"\n${"  " * nesting}'${token.text}'"
+        case tree@SyntaxTree.Tree(_, _, _) => s"\n${"  " * nesting}${syntaxTreeToDebugString(tree, nesting + 1)}"
+      }.mkString("")
+    }"
+  }
 }

@@ -8,8 +8,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.Suites
 
 class TestParser extends Suites(
-  // TODO: Enable these tests once the new parser is the only one in use.
-  // new TestParserRecovery,
+  new TestParserRecovery,
   new TestParserHappy
 )
 

@@ -24,10 +24,9 @@ import ca.uwaterloo.flix.language.ast.Ast.SyntacticContext
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, TypedAst}
 import ca.uwaterloo.flix.language.errors.{ParseError, ResolutionError, WeederError}
 import ca.uwaterloo.flix.language.fmt.FormatScheme
-import ca.uwaterloo.flix.language.phase.Parser.Letters
+import ca.uwaterloo.flix.language.phase.Lexer
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
-import org.parboiled2.CharPredicate
 
 /**
   * CompletionProvider
@@ -232,8 +231,11 @@ object CompletionProvider {
     * Characters that constitute a word.
     * This is more permissive than the parser, but that's OK.
     */
-  private val isWordChar = Letters.LegalLetter ++ Letters.OperatorLetter ++
-    Letters.MathLetter ++ Letters.GreekLetter ++ CharPredicate("@/.")
+  private def isWordChar(c: Char) = c.isLetter || Lexer.isMathNameChar(c) || Lexer.isGreekNameChar(c) || Lexer.isUserOp(c).isDefined || (c match {
+    case '@' => true
+    case '/' => true
+    case '.' => true
+  })
 
   /**
     * Returns the word at the end of a string, discarding trailing whitespace first

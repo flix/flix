@@ -495,20 +495,9 @@ class Flix {
     /** Remember to update [[AstPrinter]] about the list of phases. */
     val result = for {
       afterReader <- Reader.run(getInputs)
-      // Plan for migrating to new parser + weeder:
-      // Stage 1
-      // Run new pipeline and use results but only after the old pipeline.
-      // This way Parser2 and Weeder2 only ever sees code that the old pipeline considers ok.
-      // Errors will look like before, but the new WeededAst, which should be equal to the old one, is used.
-      //
-      // Stage 2 [ACTIVE]
-      // Run new pipeline by default.
-      //
-      // Stage 3
-      // Full migration, remove old parser and weeder.
       afterLexer <- Lexer.run(afterReader, cachedLexerTokens, changeSet)
-      afterParser2 <- Parser2.run(afterLexer, cachedParserCst, changeSet)
-      afterWeeder2 <- Weeder2.run(afterReader, entryPoint, afterParser2, cachedWeederAst2, changeSet)
+      afterParser2 <- Parser.run(afterLexer, cachedParserCst, changeSet)
+      afterWeeder2 <- Weeder.run(afterReader, entryPoint, afterParser2, cachedWeederAst2, changeSet)
       afterDesugar = Desugar.run(afterWeeder2, cachedDesugarAst, changeSet)
       afterNamer <- Namer.run(afterDesugar)
       afterResolver <- Resolver.run(afterNamer, cachedResolverAst, changeSet)
