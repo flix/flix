@@ -21,7 +21,7 @@ mod TestGetOpt {
     use GetOpt.ArgOrder.{RequireOrder, Permute, ReturnInOrder}
     use GetOpt.{getOpt}
 
-    /// Preliminary code to define options...
+    // Preliminary code to define options...
 
     enum Flag {
         case HiRes
@@ -155,21 +155,21 @@ mod TestGetOpt {
 
     @test
     def testCharArgs09(): Bool  =
-        /// "-m" not defined
+        // "-m" not defined
         let args = "-m" :: Nil;
         getOpt(Permute, options(), args) `assertFailureWith` x ->
             Nec.length(x) == 1
 
     @test
     def testCharArgs10(): Bool  =
-        /// "-m" not defined
+        // "-m" not defined
         let args = "-Xm" :: Nil;
         getOpt(Permute, options(), args) `assertFailureWith` x ->
             Nec.length(x) == 1
 
     @test
     def testCharArgs11(): Bool  =
-        /// "-m" not defined
+        // "-m" not defined
         let args = "-X" :: "-m" :: Nil;
         getOpt(Permute, options(), args) `assertFailureWith` x ->
             Nec.length(x) == 1
@@ -198,14 +198,14 @@ mod TestGetOpt {
 
     @test
     def testStringArgs04(): Bool  =
-        /// Alternative spelling
+        // Alternative spelling
         let args = "--hires" :: "--color" :: Nil;
         getOpt(Permute, options(), args) `assertSuccessWith` x ->
             (x.options == Flag.HiRes :: Flag.Colour(None) :: Nil) and (x.nonOptions == Nil)
 
     @test
     def testStringArgs05(): Bool  =
-    /// Alternative spelling
+        // Alternative spelling
         let args = "--hires" :: "--color=Blue" :: Nil;
         getOpt(Permute, options(), args) `assertSuccessWith` x ->
             (x.options == Flag.HiRes :: Flag.Colour(Some("Blue")) :: Nil) and (x.nonOptions == Nil)
@@ -232,21 +232,21 @@ mod TestGetOpt {
 
     @test
     def testStringArgs09(): Bool  =
-        /// "--multiple" not defined
+        // "--multiple" not defined
         let args = "--multiple" :: Nil;
         getOpt(Permute, options(), args) `assertFailureWith` x ->
             Nec.length(x) == 1
 
     @test
     def testStringArgs10(): Bool  =
-        /// "--multiple" not defined
+        // "--multiple" not defined
         let args = "--hires" :: "--multiple" :: Nil;
         getOpt(Permute, options(), args) `assertFailureWith` x ->
             Nec.length(x) == 1
 
     @test
     def testStringArgs11(): Bool  =
-        /// "--multiple" not defined
+        // "--multiple" not defined
         let args = "--hires" :: "--multiple" :: "test_option1" :: Nil;
         getOpt(Permute, options(), args) `assertFailureWith` x ->
             Nec.length(x) == 1
@@ -275,14 +275,14 @@ mod TestGetOpt {
 
     @test
     def testMixedArgs04(): Bool  =
-        /// Alternative spelling
+        // Alternative spelling
         let args = "-X" :: "--color" :: Nil;
         getOpt(Permute, options(), args) `assertSuccessWith` x ->
             (x.options == Flag.HiRes :: Flag.Colour(None) :: Nil) and (x.nonOptions == Nil)
 
     @test
     def testMixedArgs05(): Bool  =
-    /// Alternative spelling
+        // Alternative spelling
         let args = "-X" :: "--color=Blue" :: Nil;
         getOpt(Permute, options(), args) `assertSuccessWith` x ->
             (x.options == Flag.HiRes :: Flag.Colour(Some("Blue")) :: Nil) and (x.nonOptions == Nil)
@@ -309,21 +309,21 @@ mod TestGetOpt {
 
     @test
     def testMixedArgs09(): Bool  =
-        /// "-m" not defined
+        // "-m" not defined
         let args = "--hires" :: "-m" :: Nil;
         getOpt(Permute, options(), args) `assertFailureWith` x ->
             Nec.length(x) == 1
 
     @test
     def testMixedArgs10(): Bool  =
-        /// "--multiple" not defined
+        // "--multiple" not defined
         let args = "-X" :: "--multiple" :: Nil;
         getOpt(Permute, options(), args) `assertFailureWith` x ->
             Nec.length(x) == 1
 
     @test
     def testMixedArgs11(): Bool  =
-        /// "--multiple" not defined
+        // "--multiple" not defined
         let args = "-X" :: "--multiple" :: "test_option1" :: Nil;
         getOpt(Permute, options(), args) `assertFailureWith` x ->
             Nec.length(x) == 1
@@ -334,28 +334,28 @@ mod TestGetOpt {
 
     @test
     def testPrefixArgs01(): Bool  =
-        /// Fail: Could be "hires" or "height"
+        // Fail: Could be "hires" or "height"
         let args = "--h=1000" :: Nil;
         getOpt(Permute, options(), args) `assertFailureWith` x ->
             Nec.length(x) == 1
 
     @test
     def testPrefixArgs02(): Bool  =
-        /// Success: Could be only be "hires"
+        // Success: Could be only be "hires"
         let args = "--hi" :: Nil;
         getOpt(Permute, options(), args) `assertSuccessWith` x ->
             (x.options == Flag.HiRes :: Nil) and (x.nonOptions == Nil)
 
     @test
     def testPrefixArgs03(): Bool  =
-        /// Success: Could be only be "height"
+        // Success: Could be only be "height"
         let args = "--he=1200" :: Nil;
         getOpt(Permute, options(), args) `assertSuccessWith` x ->
             (x.options == Flag.Height(1200) :: Nil) and (x.nonOptions == Nil)
 
     @test
     def testPrefixArgs04(): Bool  =
-        /// Success: Could be only be "height"
+        // Success: Could be only be "height"
         let args = "--hi" :: "--he=1200" :: "test_option1" :: Nil;
         getOpt(Permute, options(), args) `assertSuccessWith` x ->
             (x.options == Flag.HiRes :: Flag.Height(1200) :: Nil) and (x.nonOptions == "test_option1" :: Nil)
@@ -427,14 +427,14 @@ mod TestGetOpt {
 
     @test
     def preprocess04(): Bool  =
-        /// Note - not quoted...
+        // Note - not quoted...
         let args = String.split({regex = "\\s+"}, "--editor=vs code");
         GetOpt.preprocess({quoteOpen = squote(), quoteClose = squote(), stripQuoteMarks = false}, args)
             == "--editor=vs" :: "code" :: Nil
 
     @test
     def preprocess05(): Bool  =
-        /// Note - not quoted...
+        // Note - not quoted...
         let args = String.split({regex = "\\s+"}, "--editor='vs code'");
         GetOpt.preprocess({quoteOpen = squote(), quoteClose = squote(), stripQuoteMarks = false}, args)
             == "--editor='vs code'" :: Nil
