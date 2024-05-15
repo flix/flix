@@ -343,17 +343,17 @@ object FastBoolUnification {
     * For example, if the equation system is:
     *
     * {{{
-    *     c1794221043 ~ (x55062 ? x55050 ? x55046 ? x55060 ? x55066 ? x55040 ? x55075 ? x55042 ? x55058 ? x55078)
+    *     c1794221043 ~ (x55062 ∧ x55050 ∧ x55046 ∧ x55060 ∧ x55066 ∧ x55040 ∧ x55075 ∧ x55042 ∧ x55058 ∧ x55078)
     *     x55078 ~ x112431
     *     c1794221043 ~ x55040
     *     x55042 ~ x112433
     *     x55044 ~ x112437
-    *     x55046 ~ (x112435 ? x55044)
+    *     x55046 ~ (x112435 ∧ x55044)
     *     x55048 ~ true
-    *     x55050 ~ (x112439 ? x55048)
+    *     x55050 ~ (x112439 ∧ x55048)
     *     x55052 ~ x112443
     *     x55055 ~ true
-    *     x55058 ~ (x55052 ? x112441 ? x55055)
+    *     x55058 ~ (x55052 ∧ x112441 ∧ x55055)
     *     x55060 ~ x112446
     *     x55062 ~ x112448
     *     x55066 ~ true
@@ -363,14 +363,14 @@ object FastBoolUnification {
     * then after constant propagation it is:
     *
     * {{{
-    *     c1794221043 ~ (c1794221043 ? x55062 ? x55050 ? x55046 ? x55060 ? x55075 ? x55042 ? x55058 ? x55078)
+    *     c1794221043 ~ (c1794221043 ∧ x55062 ∧ x55050 ∧ x55046 ∧ x55060 ∧ x55075 ∧ x55042 ∧ x55058 ∧ x55078)
     *     x55078 ~ x112431
     *     x55042 ~ x112433
     *     x55044 ~ x112437
-    *     x55046 ~ (x112435 ? x55044)
+    *     x55046 ~ (x112435 ∧ x55044)
     *     x112439 ~ x55050
     *     x55052 ~ x112443
-    *     x55058 ~ (x55052 ? x112441)
+    *     x55058 ~ (x55052 ∧ x112441)
     *     x55060 ~ x112446
     *     x55062 ~ x112448
     *     x55075 ~ x112453
@@ -443,21 +443,21 @@ object FastBoolUnification {
     * For example, if the equation system is:
     *
     * {{{
-    *     x78914 ~ (c1498 ? c1500 ? c1501)
-    *     x78914 ~ (x78926 ? x78923 ? x78917)
+    *     x78914 ~ (c1498 ∧ c1500 ∧ c1501)
+    *     x78914 ~ (x78926 ∧ x78923 ∧ x78917)
     *     x78917 ~ x127244
     *     x78921 ~ x127251
-    *     x78923 ~ (x127249 ? x127247 ? x127248)
-    *     x78926 ~ (x127254 ? x127252)
+    *     x78923 ~ (x127249 ∧ x127247 ∧ x127248)
+    *     x78926 ~ (x127254 ∧ x127252)
     * }}}
     *
     * then after variable propagation it is:
     *
     * {{{
-    *     x78914 ~ (c1498 ? c1500 ? c1501)
-    *     x78914 ~ (x78926 ? x78923 ? x127244)
-    *     x78923 ~ (x127249 ? x127247 ? x127248)
-    *     x78926 ~ (x127254 ? x127252)
+    *     x78914 ~ (c1498 ∧ c1500 ∧ c1501)
+    *     x78914 ~ (x78926 ∧ x78923 ∧ x127244)
+    *     x78923 ~ (x127249 ∧ x127247 ∧ x127248)
+    *     x78926 ~ (x127254 ∧ x127252)
     * }}}
     *
     * with the substitution:
@@ -513,24 +513,24 @@ object FastBoolUnification {
     * For example, given the equation system:
     *
     * {{{
-    *    x78914 ~ (c1498 ? c1500 ? c1501)
-    *    x78914 ~ (x78926 ? x78923 ? x127244)
-    *    x78923 ~ (x127249 ? x127247 ? x127248)
-    *    x78926 ~ (x127254 ? x127252)
+    *    x78914 ~ (c1498 ∧ c1500 ∧ c1501)
+    *    x78914 ~ (x78926 ∧ x78923 ∧ x127244)
+    *    x78923 ~ (x127249 ∧ x127247 ∧ x127248)
+    *    x78926 ~ (x127254 ∧ x127252)
     * }}}
     *
     * We compute the substitution:
     *
     * {{{
-    *     x78926 -> (x127254 ? x127252)
-    *     x78914 -> (c1498 ? c1500 ? c1501)
-    *     x78923 -> (x127249 ? x127247 ? x127248)
+    *     x78926 -> (x127254 ∧ x127252)
+    *     x78914 -> (c1498 ∧ c1500 ∧ c1501)
+    *     x78923 -> (x127249 ∧ x127247 ∧ x127248)
     * }}}
     *
     * and we have the remaining equations:
     *
     * {{{
-    *     (c1498 ? c1500 ? c1501) ~ (x127248 ? x127244 ? x127254 ? x127252 ? x127249 ? x127247)
+    *     (c1498 ∧ c1500 ∧ c1501) ~ (x127248 ∧ x127244 ∧ x127254 ∧ x127252 ∧ x127249 ∧ x127247)
     * }}}
     */
   private def varAssignment(l: List[Equation]): (List[Equation], BoolSubstitution) = {
@@ -578,7 +578,7 @@ object FastBoolUnification {
     * For example, given the equation system:
     *
     * {{{
-    *   (c9 ? c0) ~ (c9 ? c0)
+    *   (c9 ∧ c0) ~ (c9 ∧ c0)
     *         c10 ~ c11
     * }}}
     *
@@ -591,14 +591,14 @@ object FastBoolUnification {
     * For example, given the equation system:
     *
     * {{{
-    *   (c1 ? c3) ~ (c1 ? c3)
-    *   (c1 ? c3) ~ (c1 ? c3)
+    *   (c1 ∧ c3) ~ (c1 ∧ c3)
+    *   (c1 ∧ c3) ~ (c1 ∧ c3)
     * }}}
     *
     * We return the new equation system:
     *
     * {{{
-    *   (c1 ? c3) ~ (c1 ? c3)
+    *   (c1 ∧ c3) ~ (c1 ∧ c3)
     * }}}
     *
     * We only remove equations, hence the returned substitution is always empty.
@@ -1000,8 +1000,8 @@ object FastBoolUnification {
         case Term.Var(x) => s"¬x$x"
         case _ => s"¬($f)"
       }
-      case Term.And(csts, vars, rest) => s"(${(csts.toList ++ vars.toList ++ rest).mkString(" ? ")})"
-      case Term.Or(ts) => s"(${ts.mkString(" ? ")})"
+      case Term.And(csts, vars, rest) => s"(${(csts.toList ++ vars.toList ++ rest).mkString(" ∧ ")})"
+      case Term.Or(ts) => s"(${ts.mkString(" ∨ ")})"
     }
 
   }
