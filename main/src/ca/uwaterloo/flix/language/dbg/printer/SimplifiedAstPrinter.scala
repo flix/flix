@@ -56,6 +56,7 @@ object SimplifiedAstPrinter {
     case ApplyClo(exp, args, _, _, _) => DocAst.Expression.ApplyClo(print(exp), args.map(print), None)
     case ApplyDef(sym, args, _, _, _) => DocAst.Expression.ApplyDef(sym, args.map(print), None)
     case IfThenElse(exp1, exp2, exp3, _, _, _) => DocAst.Expression.IfThenElse(print(exp1), print(exp2), print(exp3))
+    case Stm(exp1, exp2, _, _, _) => DocAst.Expression.Stm(print(exp1), print(exp2))
     case Branch(exp, branches, _, _, _) => DocAst.Expression.Branch(print(exp), MapOps.mapValues(branches)(print))
     case JumpTo(sym, _, _, _) => DocAst.Expression.JumpTo(sym)
     case Let(sym, exp1, exp2, _, _, _) => DocAst.Expression.Let(printVarSym(sym), Some(MonoTypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
