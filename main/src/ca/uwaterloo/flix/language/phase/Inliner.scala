@@ -166,7 +166,7 @@ object Inliner {
       val e1 = visitExp(exp1, subst0)
       val e2 = visitExp(exp2, subst0)
       val e3 = visitExp(exp3, subst0)
-      reduceIfThenElse(e1, e2, e3, tpe, purity, loc)
+      LiftedAst.Expr.IfThenElse(e1, e2, e3, tpe, purity, loc)
 
     case OccurrenceAst.Expression.Branch(exp, branches, tpe, purity, loc) =>
       val e = visitExp(exp, subst0)
@@ -381,7 +381,7 @@ object Inliner {
       val e1 = substituteExp(exp1, env0)
       val e2 = substituteExp(exp2, env0)
       val e3 = substituteExp(exp3, env0)
-      reduceIfThenElse(e1, e2, e3, tpe, purity, loc)
+      LiftedAst.Expr.IfThenElse(e1, e2, e3, tpe, purity, loc)
 
     case OccurrenceAst.Expression.Branch(exp, branches, tpe, purity, loc) =>
       val e = substituteExp(exp, env0)
@@ -493,34 +493,6 @@ object Inliner {
       case (SemanticOp.BoolOp.Or, _, LiftedAst.Expr.Cst(Ast.Constant.Bool(true), _, _)) if e1.purity == Pure => LiftedAst.Expr.Cst(Ast.Constant.Bool(true), MonoType.Bool, loc)
       case _ => LiftedAst.Expr.ApplyAtomic(AtomicOp.Binary(sop), List(e1, e2), tpe, purity, loc)
     }
-  }
-
-  /**
-    * If `outerCond` is always true then eliminate else branch
-    * If `outerThen` is always true then eliminate then branch
-    * Transforms expressions of the form
-    * if (c1) (if (c2) e else jump l1) else jump l1)
-    * to
-    * if (c1 and c2) e else jump l1)
-    */
-  private def reduceIfThenElse(outerCond: LiftedAst.Expr, outerThen: LiftedAst.Expr, outerElse: LiftedAst.Expr, tpe: MonoType, purity: Purity, loc: SourceLocation): LiftedAst.Expr = outerCond match {
-    case LiftedAst.Expr.Cst(Ast.Constant.Bool(true), _, _) => outerThen
-    case LiftedAst.Expr.Cst(Ast.Constant.Bool(false), _, _) => outerElse
-    case _ =>
-      outerThen match {
-        case LiftedAst.Expr.IfThenElse(innerCond, innerThen, innerElse, _, _, _) =>
-          (outerElse, innerElse) match {
-            case (LiftedAst.Expr.JumpTo(sym1, _, _, _), LiftedAst.Expr.JumpTo(sym2, _, _, _)) if sym1 == sym2 =>
-              val op = AtomicOp.Binary(SemanticOp.BoolOp.And)
-              val es = List(outerCond, innerCond)
-              val tpe = innerThen.tpe // equal to outerElse.tpe
-              val pur = Purity.combine(outerCond.purity, innerCond.purity)
-              val andExp = LiftedAst.Expr.ApplyAtomic(op, es, MonoType.Bool, pur, loc)
-              LiftedAst.Expr.IfThenElse(andExp, innerThen, outerElse, tpe, purity, loc)
-            case _ => LiftedAst.Expr.IfThenElse(outerCond, outerThen, outerElse, tpe, purity, loc)
-          }
-        case _ => LiftedAst.Expr.IfThenElse(outerCond, outerThen, outerElse, tpe, purity, loc)
-      }
   }
 
 }
