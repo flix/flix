@@ -37,7 +37,7 @@ import scala.collection.mutable
 ///   1. We propagate ground terms (true/false/constant) in a fixpoint.
 ///   2. We propagate variables (i.e. resolving constraints of the form x = y).
 ///   3. We perform trivial assignments where the left-hand variables does not occur in the RHS.
-///   4. We eliminate (now) redundant constraints.
+///   4. We eliminate (now) trivial and redundant constraints.
 ///   5. We do full-blown Boolean unification with SVE.
 /// - We represent a conjunction with n >= 2 terms.
 ///   - We group the terms into three: a set of constants, a set of variables, and a list of sub-terms.
@@ -210,8 +210,8 @@ object FastBoolUnification {
 
     private def phase4TrivialAndRedundant(): Unit = {
       debugln("-".repeat(80))
-      debugln("--- Phase 4: Eliminate Redundant Equations")
-      debugln("    (eliminates trivial and redundant equations)")
+      debugln("--- Phase 4: Eliminate Trivial and Redundant Equations")
+      debugln("    (eliminates equations of the form X = X and duplicated equations)")
       debugln("-".repeat(80))
       val s = eliminateTrivialAndRedundant(currentEqns)
       updateState(s)
