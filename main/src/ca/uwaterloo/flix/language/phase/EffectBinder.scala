@@ -161,7 +161,7 @@ object EffectBinder {
       val e = ReducedAst.Expr.LetRec(varSym, index, defSym, e1, e2, tpe, purity, loc)
       bindBinders(binders, e)
 
-    case LiftedAst.Expr.Stmt(exp1, exp2, tpe, purity, loc) =>
+    case LiftedAst.Expr.Stm(exp1, exp2, tpe, purity, loc) =>
       val binders = mutable.ArrayBuffer.empty[Binder]
       val e1 = visitExprInnerWithBinders(binders)(exp1)
       val e2 = visitExpr(exp2)
@@ -261,7 +261,7 @@ object EffectBinder {
       binders.addOne(LetRecBinder(varSym, index, defSym, e1, loc))
       visitExprInnerWithBinders(binders)(exp2)
 
-    case LiftedAst.Expr.Stmt(exp1, exp2, _, _, loc) =>
+    case LiftedAst.Expr.Stm(exp1, exp2, _, _, loc) =>
       val e1 = visitExprInnerWithBinders(binders)(exp1)
       binders.addOne(NonBinder(e1, loc))
       visitExprInnerWithBinders(binders)(exp2)
