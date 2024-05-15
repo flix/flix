@@ -523,7 +523,7 @@ object MutationGenerator {
         val condType = Type.mkPureUncurriedArrow(tpe :: tpe :: Nil, Type.Bool, loc)
         val condition = {
           val eq = Expr.Sig(Symbol.mkSigSym(Symbol.mkTraitSym("Eq"), Name.Ident(loc.sp1, "eq", loc.sp2)), condType, loc)
-          Expr.Apply(eq, List(varexp, c) , tpe, Type.Pure, loc)
+          Expr.Apply(eq, List(varexp, c) , Type.Bool, Type.Pure, loc)
         }
         val elseBranch = Expr.Cst(Constant.Unit, Type.Unit, loc)
 
