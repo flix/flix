@@ -139,19 +139,16 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
         if (ws.isOpen) {
           val jsonCompact = JsonMethods.compact(JsonMethods.render(result))
           val jsonPretty = JsonMethods.pretty(JsonMethods.render(result))
-          ws.send(jsonPretty)
+          ws.send(jsonCompact)
         }
       case Err(msg) => log(msg)(ws)
     }
   } catch {
-    case t: InternalCompilerException =>
-      t.printStackTrace(System.err)
-      System.exit(1)
-    case t: RuntimeException =>
-      t.printStackTrace(System.err)
-      System.exit(2)
-    case t: Throwable =>
-      t.printStackTrace(System.err)
+    case ex: Throwable =>
+      // We try to scream everywhere to ensure the message is shown.
+      CrashHandler.handleCrash(ex)(flix)
+      ex.printStackTrace(System.out)
+      ex.printStackTrace(System.err)
   }
 
   /**
