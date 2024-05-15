@@ -44,7 +44,7 @@ import scala.collection.mutable.ArrayBuffer
   * The tutorial is also a great resource for understanding this parser (and a great read to boot!)
   * https://matklad.github.io/2023/05/21/resilient-ll-parsing-tutorial.html
   */
-object Parser {
+object Parser2 {
 
   private sealed trait Event
 
@@ -643,6 +643,10 @@ object Parser {
       // Note: This loop will also consume doc-comments that are preceded or surrounded by either line or block comments.
       while (atComment() && !eof()) {
         advance()
+      }
+      if (consumeDocComments && !nth(0).isFirstDecl) {
+        val errMark = open()
+        closeWithError(errMark, MisplacedDocComments(SyntacticContext.Decl.OtherDecl, previousSourceLocation()))
       }
       close(mark, TreeKind.CommentList)
     }

@@ -42,7 +42,7 @@ import scala.collection.mutable.ArrayBuffer
   * 3. tryPick* : Works like pick* but only runs the visitor if the child of kind is found. Returns an option containing the result.
   * 3. pickAll* : These will pick all subtrees of a specified kind and run a visitor on it.
   */
-object Weeder {
+object Weeder2 {
 
   import WeededAst._
 
