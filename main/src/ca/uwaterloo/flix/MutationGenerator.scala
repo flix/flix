@@ -499,7 +499,7 @@ object MutationGenerator {
         }
         case _ => Nil
       }
-      if (one == Nil) return mutateVarToConstantByType(tpe).map(c => (c.copy(loc = loc), MutationType.CstMut(c.cst)))
+      if (one == Nil) return equivalentVarCheck(varexp)
       val newtpe = Type.mkPureUncurriedArrow(tpe :: tpe :: Nil, tpe, loc)
       val sub = Expr.Sig(Symbol.mkSigSym(Symbol.mkTraitSym("Sub"), Name.Ident(loc.sp1, "sub", loc.sp2)), newtpe, loc)
       val add = Expr.Sig(Symbol.mkSigSym(Symbol.mkTraitSym("Add"), Name.Ident(loc.sp1, "add", loc.sp2)), newtpe, loc)
@@ -508,7 +508,15 @@ object MutationGenerator {
       val ret = (appSub, MutationType.VarMut(sub, varexp.sym)) :: (appAdd, MutationType.VarMut(add, varexp.sym)) :: Nil
 
 
-      val constants = mutateVarToConstantByType(tpe).map(c => {
+      val constants = equivalentVarCheck(varexp)
+      ret ::: constants
+    case _ => Nil
+  }
+
+  private def equivalentVarCheck(varexp: Expr.Var): List[(Expr, MutationType)]  = {
+      val loc = varexp.loc
+      val tpe = varexp.tpe
+      mutateVarToConstantByType(tpe).map(c => {
         val method = classOf[Global].getMethods.find(m => m.getName.equals("throwEquivalentMutant")).get
         val InvokeMethod = Expr.InvokeStaticMethod(method, Nil, Type.Null, Type.IO, loc)
         val mask = Expr.UncheckedMaskingCast(InvokeMethod, Type.Int64, Type.Pure, loc)
@@ -526,8 +534,7 @@ object MutationGenerator {
         (expr, MutationType.CstMut(c.cst))
       }
     )
-      ret ::: constants
-    case _ => Nil
+
   }
 
   private def mutateVarToNil(varExp: Expr.Var): Option[Expr.Mutated] = {
