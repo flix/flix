@@ -7,11 +7,9 @@ import scala.collection.immutable.HashMap
 
 object MutationDataHandler {
 
-  def processData(operatorResults: List[(List[(MutationType, TestRes)], String)]): Unit = {
+  def processData(operatorResults: List[(MutationType, TestRes)],module:  String): Unit = {
     val empty: Map[String, Map[String,DataPoints]] = HashMap.empty
-    val sortedData = operatorResults.foldLeft(empty){
-      case (acc, (opRes, module)) => acc.updated(module, sortData(opRes, createEmptyDataMap()))
-    }
+    val sortedData = empty.updated(module, sortData(operatorResults, createEmptyDataMap()))
     writeDataToFile(sortedData)
   }
   private def writeDataToFile(stringToPoints: Map[String, Map[String, DataPoints]]): Unit = {
@@ -22,39 +20,23 @@ object MutationDataHandler {
       } ++ acc
     }
 
-    val fileWriter = new FileWriter(new File("MutStats.txt"))
+    val fileWriter = new FileWriter("MutStats.txt", true)
     fileWriter.write(stringToWrite)
     fileWriter.close()
   }
 
-  private def readDataFromFile(): Map[String, Map[String,DataPoints]] = {
-    val emptyMap: HashMap[String, DataPoints] = HashMap.empty
-    val empty2: Map[String, Map[String,DataPoints]] = HashMap.empty
-    try {
-        val source = scala.io.Source.fromFile("MutStats.txt")
-        val (res, module) = source.getLines().foldLeft((emptyMap, ""))((acc, s) => {
-          val arr = s.split(":")
-          val mutationType = arr.apply(0)
-          val dps = DataPoints(arr.apply(1).toInt, arr.apply(2).toInt, arr.apply(3).toInt, arr.apply(4).toInt, arr.apply(5).toInt)
-          (acc._1.updated(mutationType, dps), arr.apply(6))
-        })
-        source.close()
-      empty2.updated(module, res)
-    } catch {
-      case _: Throwable => empty2
-    }
-  }
 
 
 
-  def writeTTBToFile(times: List[String]): Unit = {
+  def writeTTBToFile(times: String): Unit = {
     val stringToWrite = times.foldLeft("")((acc, ttb) => s"$ttb\n$acc")
-    val fileWriter = new FileWriter(new File("TTBData.txt"))
+    val fileWriter = new FileWriter("TTBData.txt", true)
     fileWriter.write(stringToWrite)
     fileWriter.close()
   }
 
   private case class DataPoints(total: Int, killed: Int, surviving: Int, unknown: Int, equivalent: Int)
+
   private def sortData(tuples: List[(MutationType, TestRes)],emptyMap: Map[String, DataPoints]): Map[String, DataPoints] = {
     def updateDataPoints(dataPoints: DataPoints, testRes: TestRes): DataPoints = testRes match {
       case TestRes.MutantKilled => dataPoints.copy(total = dataPoints.total + 1, killed = dataPoints.killed + 1)

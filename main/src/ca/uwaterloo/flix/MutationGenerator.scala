@@ -477,8 +477,8 @@ object MutationGenerator {
     case Expr.Var(_, tpe, loc) =>
       val one = tpe match {
         case Type.Cst(tc, _) => tc match {
-          case TypeConstructor.Char =>
-            Expr.Cst(Constant.Char(1), tpe, loc) :: Nil
+          case TypeConstructor.Char => Nil // Char causes stillborn mutants to be created
+            //Expr.Cst(Constant.Char(1), tpe, loc) :: Nil
           case TypeConstructor.Float32 =>
             Expr.Cst(Constant.Float32(1), tpe, loc) :: Nil
           case TypeConstructor.Float64 =>
@@ -495,7 +495,7 @@ object MutationGenerator {
             Expr.Cst(Constant.Int64(1), tpe, loc) :: Nil
           case TypeConstructor.BigInt =>
             Expr.Cst(Constant.BigInt(java.math.BigInteger.valueOf(1)), tpe, loc) :: Nil
-          case _ => Nil
+          case e => println(s"some unexpected type: $e"); Nil
         }
         case _ => Nil
       }
@@ -558,7 +558,7 @@ object MutationGenerator {
       case TypeConstructor.Char =>
         val mut = Constant.Char(0)
         val mutations = mut :: mutateCst(mut)
-        mutations.map(m => Expr.Cst(m, Type.Bool, loc))
+        mutations.map(m => Expr.Cst(m, Type.Char, loc))
       case TypeConstructor.Float32 =>
         val mut = Constant.Float32(0)
         val mutations = mut :: mutateCst(mut)
@@ -660,7 +660,7 @@ object MutationGenerator {
           lit.add(java.math.BigInteger.ONE),
           lit.subtract(java.math.BigInteger.ONE)).filter(i => lit != i)
         litCand.toList.map(i => Constant.BigInt(i))
-      case Constant.Str(_) => Constant.Str("") :: Constant.Str("Mutated") :: Nil
+      case Constant.Str(lit) => List("", "Mutated").filter(i => !lit.equals(i)).map(i => Constant.Str(i))
       case Constant.Regex(_) => Constant.Regex(java.util.regex.Pattern.compile(".*")) :: Nil
     }
   }

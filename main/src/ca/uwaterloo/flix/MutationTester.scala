@@ -99,17 +99,19 @@ object MutationTester {
 
   def runBenchmarks(flix: Flix): Unit = {
     val listToSource: List[String] = ("Chain" :: "Option" :: "Map" :: Nil)
-    val (data, timeToBugData) = listToSource.map(module => {
+    new File("MutStats.txt")
+    new File("TTBData.txt")
+    val _ = listToSource.map(module => {
       val root = flix.check().unsafeGet
       // println(root.sigs.filter(t => t._1.toString.equals("Add.add")))
       val mutations = MutationGenerator.mutateRoot(root, module)
       val testModule = s"Test$module"
       val lastRoot = insertDecAndCheckIntoRoot(root)
       val (results, timeToBug) = runMutations(flix, testModule, lastRoot, mutations)
-      ((results, module), s"TTB: $module $timeToBug")
-    }).unzip
-    MutationDataHandler.processData(data)
-    MutationDataHandler.writeTTBToFile(timeToBugData)
+      MutationDataHandler.processData(results, module)
+      MutationDataHandler.writeTTBToFile(s"TTB: $module: $timeToBug")
+      (results , s"TTB: $module: $timeToBug")
+    })
   }
 
     private def writeReportsToFile(reportsList: List[String]): Unit = {
@@ -250,7 +252,7 @@ object MutationTester {
             testMutantsAndUpdateProgress(acc, mut, kit, f)
         })
       reportResults(totalStartTime, amountOfMutants, totalSurvivorCount, totalUnknowns, equivalents)
-      MutationDataHandler.writeTTBToFile(List(s"TTB: $testModule ${timeToBug - totalStartTime}"))
+      MutationDataHandler.writeTTBToFile(s"TTB: $testModule ${timeToBug - totalStartTime}")
       println((timeToBug - totalStartTime) / 1_000_000_000)
       (mOperatorResults, (timeToBug - totalStartTime) / 1_000_000_000)
     }
