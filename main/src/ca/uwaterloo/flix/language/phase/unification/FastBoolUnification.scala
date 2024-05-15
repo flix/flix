@@ -37,7 +37,8 @@ import scala.collection.mutable
 ///   1. We propagate ground terms (true/false/constant) in a fixpoint.
 ///   2. We propagate variables (i.e. resolving constraints of the form x = y).
 ///   3. We perform trivial assignments where the left-hand variables does not occur in the RHS.
-///   4. We do full-blown Boolean unification with SVE.
+///   4. We eliminate (now) redundant constraints.
+///   5. We do full-blown Boolean unification with SVE.
 /// - We represent a conjunction with n >= 2 terms.
 ///   - We group the terms into three: a set of constants, a set of variables, and a list of sub-terms.
 ///   - We flatten conjunctions at least one level per call to `mkAnd`.
@@ -151,7 +152,8 @@ object FastBoolUnification {
         phase1ConstantPropagation()
         phase2VarPropagation()
         phase3VarAssignment()
-        phase4SVE()
+        phase4TrivialAndRedundant()
+        phase5SVE()
         verifySolution()
         verifySolutionSize()
 
@@ -206,9 +208,21 @@ object FastBoolUnification {
       debugln()
     }
 
-    private def phase4SVE(): Unit = {
+    private def phase4TrivialAndRedundant(): Unit = {
       debugln("-".repeat(80))
-      debugln("--- Phase 4: Boolean Unification")
+      debugln("--- Phase 4: Eliminate Redundant Equations")
+      debugln("    (eliminates trivial and redundant equations)")
+      debugln("-".repeat(80))
+      val s = eliminateTrivialAndRedundant(currentEqns)
+      updateState(s)
+      printEquations()
+      printSubstitution()
+      debugln()
+    }
+
+    private def phase5SVE(): Unit = {
+      debugln("-".repeat(80))
+      debugln("--- Phase 5: Boolean Unification")
       debugln("    (resolves all remaining equations using SVE.)")
       debugln("-".repeat(80))
       val newSubst = boolUnifyAllPickSmallest(currentEqns)
@@ -329,17 +343,17 @@ object FastBoolUnification {
     * For example, if the equation system is:
     *
     * {{{
-    *     c1794221043 ~ (x55062 ∧ x55050 ∧ x55046 ∧ x55060 ∧ x55066 ∧ x55040 ∧ x55075 ∧ x55042 ∧ x55058 ∧ x55078)
+    *     c1794221043 ~ (x55062 ? x55050 ? x55046 ? x55060 ? x55066 ? x55040 ? x55075 ? x55042 ? x55058 ? x55078)
     *     x55078 ~ x112431
     *     c1794221043 ~ x55040
     *     x55042 ~ x112433
     *     x55044 ~ x112437
-    *     x55046 ~ (x112435 ∧ x55044)
+    *     x55046 ~ (x112435 ? x55044)
     *     x55048 ~ true
-    *     x55050 ~ (x112439 ∧ x55048)
+    *     x55050 ~ (x112439 ? x55048)
     *     x55052 ~ x112443
     *     x55055 ~ true
-    *     x55058 ~ (x55052 ∧ x112441 ∧ x55055)
+    *     x55058 ~ (x55052 ? x112441 ? x55055)
     *     x55060 ~ x112446
     *     x55062 ~ x112448
     *     x55066 ~ true
@@ -349,14 +363,14 @@ object FastBoolUnification {
     * then after constant propagation it is:
     *
     * {{{
-    *     c1794221043 ~ (c1794221043 ∧ x55062 ∧ x55050 ∧ x55046 ∧ x55060 ∧ x55075 ∧ x55042 ∧ x55058 ∧ x55078)
+    *     c1794221043 ~ (c1794221043 ? x55062 ? x55050 ? x55046 ? x55060 ? x55075 ? x55042 ? x55058 ? x55078)
     *     x55078 ~ x112431
     *     x55042 ~ x112433
     *     x55044 ~ x112437
-    *     x55046 ~ (x112435 ∧ x55044)
+    *     x55046 ~ (x112435 ? x55044)
     *     x112439 ~ x55050
     *     x55052 ~ x112443
-    *     x55058 ~ (x55052 ∧ x112441)
+    *     x55058 ~ (x55052 ? x112441)
     *     x55060 ~ x112446
     *     x55062 ~ x112448
     *     x55075 ~ x112453
@@ -429,21 +443,21 @@ object FastBoolUnification {
     * For example, if the equation system is:
     *
     * {{{
-    *     x78914 ~ (c1498 ∧ c1500 ∧ c1501)
-    *     x78914 ~ (x78926 ∧ x78923 ∧ x78917)
+    *     x78914 ~ (c1498 ? c1500 ? c1501)
+    *     x78914 ~ (x78926 ? x78923 ? x78917)
     *     x78917 ~ x127244
     *     x78921 ~ x127251
-    *     x78923 ~ (x127249 ∧ x127247 ∧ x127248)
-    *     x78926 ~ (x127254 ∧ x127252)
+    *     x78923 ~ (x127249 ? x127247 ? x127248)
+    *     x78926 ~ (x127254 ? x127252)
     * }}}
     *
     * then after variable propagation it is:
     *
     * {{{
-    *     x78914 ~ (c1498 ∧ c1500 ∧ c1501)
-    *     x78914 ~ (x78926 ∧ x78923 ∧ x127244)
-    *     x78923 ~ (x127249 ∧ x127247 ∧ x127248)
-    *     x78926 ~ (x127254 ∧ x127252)
+    *     x78914 ~ (c1498 ? c1500 ? c1501)
+    *     x78914 ~ (x78926 ? x78923 ? x127244)
+    *     x78923 ~ (x127249 ? x127247 ? x127248)
+    *     x78926 ~ (x127254 ? x127252)
     * }}}
     *
     * with the substitution:
@@ -499,24 +513,24 @@ object FastBoolUnification {
     * For example, given the equation system:
     *
     * {{{
-    *    x78914 ~ (c1498 ∧ c1500 ∧ c1501)
-    *    x78914 ~ (x78926 ∧ x78923 ∧ x127244)
-    *    x78923 ~ (x127249 ∧ x127247 ∧ x127248)
-    *    x78926 ~ (x127254 ∧ x127252)
+    *    x78914 ~ (c1498 ? c1500 ? c1501)
+    *    x78914 ~ (x78926 ? x78923 ? x127244)
+    *    x78923 ~ (x127249 ? x127247 ? x127248)
+    *    x78926 ~ (x127254 ? x127252)
     * }}}
     *
     * We compute the substitution:
     *
     * {{{
-    *     x78926 -> (x127254 ∧ x127252)
-    *     x78914 -> (c1498 ∧ c1500 ∧ c1501)
-    *     x78923 -> (x127249 ∧ x127247 ∧ x127248)
+    *     x78926 -> (x127254 ? x127252)
+    *     x78914 -> (c1498 ? c1500 ? c1501)
+    *     x78923 -> (x127249 ? x127247 ? x127248)
     * }}}
     *
     * and we have the remaining equations:
     *
     * {{{
-    *     (c1498 ∧ c1500 ∧ c1501) ~ (x127248 ∧ x127244 ∧ x127254 ∧ x127252 ∧ x127249 ∧ x127247)
+    *     (c1498 ? c1500 ? c1501) ~ (x127248 ? x127244 ? x127254 ? x127252 ? x127249 ? x127247)
     * }}}
     */
   private def varAssignment(l: List[Equation]): (List[Equation], BoolSubstitution) = {
@@ -552,6 +566,64 @@ object FastBoolUnification {
 
     // Reverse the unsolved equations to ensure they are returned in the original order.
     (unsolved.reverse, subst)
+  }
+
+  /**
+    * Eliminates trivial and redundant equations.
+    *
+    * An equation is trivial if its LHS and RHS are the same.
+    *
+    * An equation is redundant if it appears multiple times in the list of equations.
+    *
+    * For example, given the equation system:
+    *
+    * {{{
+    *   (c9 ? c0) ~ (c9 ? c0)
+    *         c10 ~ c11
+    * }}}
+    *
+    * We return the new equation system:
+    *
+    * {{{
+    *   c10 ~ c11
+    * }}}
+    *
+    * For example, given the equation system:
+    *
+    * {{{
+    *   (c1 ? c3) ~ (c1 ? c3)
+    *   (c1 ? c3) ~ (c1 ? c3)
+    * }}}
+    *
+    * We return the new equation system:
+    *
+    * {{{
+    *   (c1 ? c3) ~ (c1 ? c3)
+    * }}}
+    *
+    * We only remove equations, hence the returned substitution is always empty.
+    *
+    * Note: We only consider *syntactic equality*.
+    */
+  private def eliminateTrivialAndRedundant(l: List[Equation]): (List[Equation], BoolSubstitution) = {
+    var result = List.empty[Equation]
+    val seen = mutable.Set.empty[Equation]
+
+    // We rely on equations and terms having correct equals and hashCode functions.
+    // Note: We are purely working with *syntactic equality*, not *semantic equality*.
+    for (eqn <- l) {
+      if (!seen.contains(eqn)) {
+        // The equation has not been seen before.
+        if (eqn.t1 != eqn.t2) {
+          // The LHS and RHS are different.
+          seen += eqn
+          result = eqn :: result
+        }
+      }
+    }
+
+    // We reverse the list of equations to preserve the initial order.
+    (result.reverse, BoolSubstitution.empty)
   }
 
   /**
@@ -928,8 +1000,8 @@ object FastBoolUnification {
         case Term.Var(x) => s"¬x$x"
         case _ => s"¬($f)"
       }
-      case Term.And(csts, vars, rest) => s"(${(csts.toList ++ vars.toList ++ rest).mkString(" ∧ ")})"
-      case Term.Or(ts) => s"(${ts.mkString(" ∨ ")})"
+      case Term.And(csts, vars, rest) => s"(${(csts.toList ++ vars.toList ++ rest).mkString(" ? ")})"
+      case Term.Or(ts) => s"(${ts.mkString(" ? ")})"
     }
 
   }
