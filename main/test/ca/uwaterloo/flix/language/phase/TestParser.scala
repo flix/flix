@@ -193,7 +193,8 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
   test("DanglingDocComment.04") {
     val input =
       """
-        |instance Foo[Int32] {
+        |trait Test[t] {}
+        |instance Test[Int32] {
         |  /// This documents nothing
         |}
         |def main(): Unit = ()

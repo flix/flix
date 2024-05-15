@@ -239,6 +239,15 @@ sealed trait TokenKind {
   })
 
   /**
+    * Checks if this token is one of the [[TokenKind]]s that can validly appear after a doc-comment.
+    */
+  def isDocumentable: Boolean = this.isFirstDecl || (this match {
+    case TokenKind.KeywordLaw => true
+    case TokenKind.KeywordCase => true
+    case _ => false
+  })
+
+  /**
     * Checks if this token is one of the [[TokenKind]]s that can validly appear as the first token in a declaration within an instance.
     * Note that a CommentDoc, a Modifier and/or an annotation may lead such a declaration.
     */

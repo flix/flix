@@ -644,7 +644,9 @@ object Parser2 {
       while (atComment() && !eof()) {
         advance()
       }
-      if (consumeDocComments && !nth(0).isFirstDecl) {
+      // Check for a trailing doc-comment that is not followed by a declaration.
+      val isDanglingDoc = consumeDocComments && nth(-1) == TokenKind.CommentDoc && !nth(0).isDocumentable
+      if (isDanglingDoc) {
         val errMark = open()
         closeWithError(errMark, MisplacedDocComments(SyntacticContext.Decl.OtherDecl, previousSourceLocation()))
       }
@@ -815,13 +817,14 @@ object Parser2 {
             case TokenKind.KeywordDef => signatureDecl(openBefore(docMark))
             case TokenKind.KeywordType => associatedTypeSigDecl(openBefore(docMark))
             case at =>
+              val errMark = open()
               val loc = currentSourceLocation()
               // Skip ahead until we hit another declaration or any CurlyR.
               while (!nth(0).isFirstTrait && !eat(TokenKind.CurlyR) && !eof()) {
                 advance()
               }
               val error = UnexpectedToken(expected = NamedTokenSet.FromKinds(Set(TokenKind.KeywordType, TokenKind.KeywordDef, TokenKind.KeywordLaw)), actual = Some(at), SyntacticContext.Decl.Trait, loc = loc)
-              closeWithError(mark, error)
+              closeWithError(errMark, error)
           }
         }
         expect(TokenKind.CurlyR, SyntacticContext.Decl.Trait)
@@ -855,13 +858,14 @@ object Parser2 {
             case TokenKind.KeywordDef => definitionDecl(openBefore(docMark))
             case TokenKind.KeywordType => associatedTypeDefDecl(openBefore(docMark))
             case at =>
+              val errMark = open()
               val loc = currentSourceLocation()
               // Skip ahead until we hit another declaration or any CurlyR.
               while (!nth(0).isFirstInstance && !eat(TokenKind.CurlyR) && !eof()) {
                 advance()
               }
               val error = UnexpectedToken(expected = NamedTokenSet.FromKinds(Set(TokenKind.KeywordType, TokenKind.KeywordDef)), actual = Some(at), SyntacticContext.Decl.Instance, loc = loc)
-              closeWithError(mark, error)
+              closeWithError(errMark, error)
           }
         }
         expect(TokenKind.CurlyR, SyntacticContext.Decl.Instance)
@@ -1091,13 +1095,14 @@ object Parser2 {
             case TokenKind.CurlyR => continue = false
             case TokenKind.KeywordDef => operationDecl(openBefore(docMark))
             case at =>
+              val errMark = open()
               val loc = currentSourceLocation()
               // Skip ahead until we hit another declaration or any CurlyR.
               while (!nth(0).isFirstDecl && !eat(TokenKind.CurlyR) && !eof()) {
                 advance()
               }
               val error = UnexpectedToken(expected = NamedTokenSet.FromKinds(Set(TokenKind.KeywordDef)), actual = Some(at), SyntacticContext.Decl.OtherDecl, loc = loc)
-              closeWithError(mark, error)
+              closeWithError(errMark, error)
           }
         }
         expect(TokenKind.CurlyR, SyntacticContext.Decl.OtherDecl)
@@ -1154,10 +1159,8 @@ object Parser2 {
     }
 
     def docComment()(implicit s: State): Mark.Closed = {
-      val mark = open()
-      while (at(TokenKind.CommentDoc) && !eof()) {
-        advance()
-      }
+      // Let `open` handle consuming the doc-comments, since it is already capable of doing so.
+      val mark = open(consumeDocComments = true)
       close(mark, TreeKind.Doc)
     }
 
@@ -1641,8 +1644,10 @@ object Parser2 {
       expression()
       expect(TokenKind.ParenR, SyntacticContext.Expr.OtherExpr)
       expression()
-      expect(TokenKind.KeywordElse, SyntacticContext.Expr.OtherExpr)
-      expression()
+      if (eat(TokenKind.KeywordElse)) {
+        // Only call expression, if we found an 'else'. Otherwise when it is missing, defs might get read as let-rec-defs.
+        expression()
+      }
       close(mark, TreeKind.Expr.IfThenElse)
     }
 

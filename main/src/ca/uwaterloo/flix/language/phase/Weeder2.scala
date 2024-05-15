@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.Ast.{Constant, Denotation, Fixity, Polarity, SyntacticContext}
+import ca.uwaterloo.flix.language.ast.Ast._
 import ca.uwaterloo.flix.language.ast.SyntaxTree.{Child, Tree, TreeKind}
 import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, Name, ReadAst, SemanticOp, SourceLocation, SourcePosition, Symbol, SyntaxTree, Token, TokenKind, WeededAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter._
@@ -1131,7 +1131,7 @@ object Weeder2 {
             (condition, tthen, eelse) => Expr.IfThenElse(condition, tthen, eelse, tree.loc)
           }
         case _ =>
-          val error = Malformed(NamedTokenSet.FromKinds(Set(TokenKind.KeywordIf)), SyntacticContext.Expr.OtherExpr, loc = tree.loc)
+          val error = UnexpectedToken(NamedTokenSet.FromKinds(Set(TokenKind.KeywordElse)), actual = None, SyntacticContext.Expr.OtherExpr, hint = Some("the else-branch is required in Flix."), tree.loc)
           Validation.toSoftFailure(Expr.Error(error), error)
       }
     }
