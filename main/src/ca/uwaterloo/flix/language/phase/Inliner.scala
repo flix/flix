@@ -187,7 +187,7 @@ object Inliner {
         } else {
           /// Case 2:
           /// If `sym` is never used (it is `Dead`) so it is safe to make a Stmt.
-          LiftedAst.Expr.Stmt(visitExp(exp1, subst0), visitExp(exp2, subst0), tpe, purity, loc)
+          LiftedAst.Expr.Stm(visitExp(exp1, subst0), visitExp(exp2, subst0), tpe, purity, loc)
         }
       } else {
         /// Case 3:
@@ -232,7 +232,7 @@ object Inliner {
       } else {
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
-        LiftedAst.Expr.Stmt(e1, e2, tpe, purity, loc)
+        LiftedAst.Expr.Stm(e1, e2, tpe, purity, loc)
       }
 
     case OccurrenceAst.Expression.Scope(sym, exp, tpe, purity, loc) =>
@@ -321,7 +321,7 @@ object Inliner {
         // if the parameter is unused and the argument is NOT pure, then put it in a statement.
         val nextLet = bindFormals(exp0, nextSymbols, nextExpressions, env0)
         val purity = Purity.combine(e1.purity, nextLet.purity)
-        LiftedAst.Expr.Stmt(e1, nextLet, exp0.tpe, purity, exp0.loc)
+        LiftedAst.Expr.Stm(e1, nextLet, exp0.tpe, purity, exp0.loc)
       case ((formal, _) :: nextSymbols, e1 :: nextExpressions) =>
         val freshVar = Symbol.freshVarSym(formal.sym)
         val env1 = env0 + (formal.sym -> freshVar)
@@ -409,7 +409,7 @@ object Inliner {
     case OccurrenceAst.Expression.Stmt(exp1, exp2, tpe, purity, loc) =>
       val e1 = substituteExp(exp1, env0)
       val e2 = substituteExp(exp2, env0)
-      LiftedAst.Expr.Stmt(e1, e2, tpe, purity, loc)
+      LiftedAst.Expr.Stm(e1, e2, tpe, purity, loc)
 
     case OccurrenceAst.Expression.Scope(sym, exp, tpe, purity, loc) =>
       val e = substituteExp(exp, env0)
