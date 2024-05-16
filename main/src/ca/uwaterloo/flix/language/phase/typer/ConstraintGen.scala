@@ -724,7 +724,7 @@ object ConstraintGen {
         val resultTpe = tpe
 
         // TODO ASSOC-TYPES should be continuationEffect
-        val resultEff = Type.freshVar(Kind.Eff, loc)
+        val resultEff = Type.mkUnion(effs, loc) // TODO temp simplification
         (resultTpe, resultEff)
 
       case Expr.Do(opUse, exps, tvar, loc) =>
