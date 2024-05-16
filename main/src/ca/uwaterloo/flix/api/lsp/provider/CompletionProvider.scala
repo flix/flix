@@ -153,11 +153,8 @@ object CompletionProvider {
       //
       case SyntacticContext.Decl.Trait => KeywordOtherCompleter.getCompletions(context)
       case SyntacticContext.Decl.Enum => KeywordOtherCompleter.getCompletions(context)
-      case SyntacticContext.Decl.Instance => KeywordOtherCompleter.getCompletions(context)
-      case _: SyntacticContext.Decl =>
-        KeywordOtherCompleter.getCompletions(context) ++
-          InstanceCompleter.getCompletions(context) ++
-          SnippetCompleter.getCompletions(context)
+      case SyntacticContext.Decl.Instance => InstanceCompleter.getCompletions(context)
+      case _: SyntacticContext.Decl => KeywordOtherCompleter.getCompletions(context) ++ SnippetCompleter.getCompletions(context)
 
       //
       // Imports.
@@ -229,14 +226,19 @@ object CompletionProvider {
 
   /**
     * Characters that constitute a word.
-    * This is more permissive than the parser, but that's OK.
     */
-  private def isWordChar(c: Char) = c.isLetter || Lexer.isMathNameChar(c) || Lexer.isGreekNameChar(c) || Lexer.isUserOp(c).isDefined || isWordCharSpecial(c)
+  private def isWordChar(c: Char) = isLetter(c) || Lexer.isMathNameChar(c) || Lexer.isGreekNameChar(c) || Lexer.isUserOp(c).isDefined
 
   /**
-    * Additional characters that may appear in a word.
+    * Characters that may appear in a word.
     */
-  private def isWordCharSpecial(c: Char) = c match {
+  private def isLetter(c: Char) = c match {
+      case c if c >= 'a' && c <= 'z' => true
+      case c if c >= 'A' && c <= 'Z' => true
+      case c if c >= '0' && c <= '9' => true
+      // We also include some special symbols. This is more permissive than the lexer, but that's OK.
+      case '_' => true
+      case '!' => true
       case '@' => true
       case '/' => true
       case '.' => true
