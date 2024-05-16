@@ -372,7 +372,9 @@ object Weeder2 {
           val tpe = maybeType
             .map(flattenEnumCaseType)
             .getOrElse(Type.Unit(ident.loc))
-          Case(ident, tpe, tree.loc)
+          // Make a source location that spans the name and type, excluding 'case'.
+          val loc = SourceLocation.mk(ident.loc.sp1, tree.loc.sp2)
+          Case(ident, tpe, loc)
       }
     }
 
