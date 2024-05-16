@@ -465,25 +465,22 @@ object TypeReconstruction {
       val ms = methods map visitJvmMethod
       TypedAst.Expr.NewObject(name, clazz, tpe, eff, ms, loc)
 
-    case KindedAst.Expr.NewChannel(exp1, exp2, tvar, loc) =>
+    case KindedAst.Expr.NewChannel(exp1, exp2, tvar, evar, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      val eff = Type.IO
-      TypedAst.Expr.NewChannel(e1, e2, subst(tvar), eff, loc)
+      TypedAst.Expr.NewChannel(e1, e2, subst(tvar), subst(evar), loc)
 
-    case KindedAst.Expr.GetChannel(exp, tvar, loc) =>
+    case KindedAst.Expr.GetChannel(exp, tvar, evar, loc) =>
       val e = visitExp(exp)
-      val eff = Type.IO
-      TypedAst.Expr.GetChannel(e, subst(tvar), eff, loc)
+      TypedAst.Expr.GetChannel(e, subst(tvar), subst(evar), loc)
 
-    case KindedAst.Expr.PutChannel(exp1, exp2, loc) =>
+    case KindedAst.Expr.PutChannel(exp1, exp2, evar, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val tpe = Type.mkUnit(loc)
-      val eff = Type.IO
-      TypedAst.Expr.PutChannel(e1, e2, tpe, eff, loc)
+      TypedAst.Expr.PutChannel(e1, e2, tpe, subst(evar), loc)
 
-    case KindedAst.Expr.SelectChannel(rules, default, tvar, loc) =>
+    case KindedAst.Expr.SelectChannel(rules, default, tvar, evar, loc) =>
       val rs = rules map {
         case KindedAst.SelectChannelRule(sym, chan, exp) =>
           val c = visitExp(chan)
@@ -491,8 +488,7 @@ object TypeReconstruction {
           TypedAst.SelectChannelRule(sym, c, b)
       }
       val d = default.map(visitExp(_))
-      val eff = Type.IO
-      TypedAst.Expr.SelectChannel(rs, d, subst(tvar), eff, loc)
+      TypedAst.Expr.SelectChannel(rs, d, subst(tvar), subst(evar), loc)
 
     case KindedAst.Expr.Spawn(exp1, exp2, loc) =>
       val e1 = visitExp(exp1)
