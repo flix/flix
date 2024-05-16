@@ -121,7 +121,7 @@ object Parser2 {
       return Validation.success(SyntaxTree.empty)
     }
 
-    flix.phase("Parser") {
+    flix.phase("Parser2") {
       // Compute the stale and fresh sources.
       val (stale, fresh) = changeSet.partition(tokens, oldRoot.units)
 

@@ -79,7 +79,7 @@ class Flix {
     */
   private var cachedLexerTokens: Map[Ast.Source, Array[Token]] = Map.empty
   private var cachedParserCst: SyntaxTree.Root = SyntaxTree.empty
-  private var cachedWeederAst2: WeededAst.Root = WeededAst.empty
+  private var cachedWeederAst: WeededAst.Root = WeededAst.empty
   private var cachedDesugarAst: DesugaredAst.Root = DesugaredAst.empty
   private var cachedKinderAst: KindedAst.Root = KindedAst.empty
   private var cachedResolverAst: ResolvedAst.Root = ResolvedAst.empty
@@ -87,7 +87,7 @@ class Flix {
 
   def getParserCst: SyntaxTree.Root = cachedParserCst
 
-  def getWeederAst2: WeededAst.Root = cachedWeederAst2
+  def getWeederAst: WeededAst.Root = cachedWeederAst
 
   def getDesugarAst: DesugaredAst.Root = cachedDesugarAst
 
@@ -496,9 +496,9 @@ class Flix {
     val result = for {
       afterReader <- Reader.run(getInputs)
       afterLexer <- Lexer.run(afterReader, cachedLexerTokens, changeSet)
-      afterParser2 <- Parser2.run(afterLexer, cachedParserCst, changeSet)
-      afterWeeder2 <- Weeder2.run(afterReader, entryPoint, afterParser2, cachedWeederAst2, changeSet)
-      afterDesugar = Desugar.run(afterWeeder2, cachedDesugarAst, changeSet)
+      afterParser <- Parser2.run(afterLexer, cachedParserCst, changeSet)
+      afterWeeder <- Weeder2.run(afterReader, entryPoint, afterParser, cachedWeederAst, changeSet)
+      afterDesugar = Desugar.run(afterWeeder, cachedDesugarAst, changeSet)
       afterNamer <- Namer.run(afterDesugar)
       afterResolver <- Resolver.run(afterNamer, cachedResolverAst, changeSet)
       afterKinder <- Kinder.run(afterResolver, cachedKinderAst, changeSet)
@@ -516,8 +516,8 @@ class Flix {
       // Update caches for incremental compilation.
       if (options.incremental) {
         this.cachedLexerTokens = afterLexer
-        this.cachedParserCst = afterParser2
-        this.cachedWeederAst2 = afterWeeder2
+        this.cachedParserCst = afterParser
+        this.cachedWeederAst = afterWeeder
         this.cachedDesugarAst = afterDesugar
         this.cachedKinderAst = afterKinder
         this.cachedResolverAst = afterResolver

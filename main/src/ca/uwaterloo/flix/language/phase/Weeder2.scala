@@ -52,7 +52,7 @@ object Weeder2 {
       return Validation.success(WeededAst.empty)
     }
 
-    flix.phase("Weeder") {
+    flix.phase("Weeder2") {
       val (stale, fresh) = changeSet.partition(root.units, oldRoot.units)
       // Parse each source file in parallel and join them into a WeededAst.Root
       val refreshed = ParOps.parMap(stale) {
