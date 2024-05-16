@@ -240,6 +240,7 @@ sealed trait TokenKind {
 
   /**
     * Checks if this token is one of the [[TokenKind]]s that can validly appear after a doc-comment.
+    * Doc-comments may only annotate declarations and enum-cases.
     */
   def isDocumentable: Boolean = this.isFirstDecl || (this match {
     case TokenKind.KeywordLaw => true

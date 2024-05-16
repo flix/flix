@@ -39,7 +39,6 @@ object SourceLocation {
   *
   * Specifically, we:
   *
-  * - Use a nullable reference to `ParserInput`.
   * - Use a `Boolean` to represent whether a source location is real (true) or synthetic (false).
   * - Use `Short`s instead of `Int`s to represent column offsets (i.e. `beginCol` and `endCol`).
   *
