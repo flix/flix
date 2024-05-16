@@ -804,29 +804,32 @@ object ConstraintGen {
         val resEff = Type.IO
         (resTpe, resEff)
 
-      case Expr.NewChannel(exp1, exp2, tvar, loc) =>
+      case Expr.NewChannel(exp1, exp2, tvar, evar, loc) =>
         val regionVar = Type.freshVar(Kind.Eff, loc)
         val regionType = Type.mkRegion(regionVar, loc)
         val (tpe1, eff1) = visitExp(exp1)
         val (tpe2, eff2) = visitExp(exp2)
         c.expectType(expected = regionType, actual = tpe1, exp1.loc)
         c.expectType(expected = Type.Int32, actual = tpe2, exp2.loc)
+        c.unifyType(evar, regionVar, loc)
+        // TODO unify tvar with return type?
         val resTpe = tvar
         val resEff = Type.mkUnion(eff1, eff2, regionVar, loc)
         (resTpe, resEff)
 
-      case Expr.GetChannel(exp, tvar, loc) =>
+      case Expr.GetChannel(exp, tvar, evar, loc) =>
         val regionVar = Type.freshVar(Kind.Eff, loc)
         val elmTpe = Type.freshVar(Kind.Star, loc)
         val receiverTpe = Type.mkReceiver(elmTpe, regionVar, loc)
         val (tpe, eff) = visitExp(exp)
         c.expectType(expected = receiverTpe, actual = tpe, exp.loc)
         c.unifyType(tvar, elmTpe, loc)
+        c.unifyType(evar, Type.mkUnion(eff, regionVar, loc), loc)
         val resTpe = tvar
-        val resEff = Type.mkUnion(eff, regionVar, loc)
+        val resEff = evar
         (resTpe, resEff)
 
-      case Expr.PutChannel(exp1, exp2, loc) =>
+      case Expr.PutChannel(exp1, exp2, evar, loc) =>
         val regionVar = Type.freshVar(Kind.Eff, loc)
         val elmTpe = Type.freshVar(Kind.Star, loc)
         val senderTpe = Type.mkSender(elmTpe, regionVar, loc)
@@ -834,17 +837,19 @@ object ConstraintGen {
         val (tpe2, eff2) = visitExp(exp2)
         c.expectType(expected = senderTpe, actual = tpe1, exp1.loc)
         c.expectType(expected = elmTpe, actual = tpe2, exp2.loc)
+        c.unifyType(evar, Type.mkUnion(eff1, eff2, regionVar, loc), loc)
         val resTpe = Type.mkUnit(loc)
-        val resEff = Type.mkUnion(eff1, eff2, regionVar, loc)
+        val resEff = evar
         (resTpe, resEff)
 
-      case Expr.SelectChannel(rules, default, tvar, loc) =>
+      case Expr.SelectChannel(rules, default, tvar, evar, loc) =>
         val regionVar = Type.freshVar(Kind.Eff, loc)
         val (ruleTypes, ruleEffs) = rules.map(visitSelectRule(_, regionVar)).unzip
         val (defaultType, eff2) = visitDefaultRule(default, loc)
         c.unifyAllTypes(tvar :: defaultType :: ruleTypes, loc)
+        c.unifyType(evar, Type.mkUnion(regionVar :: eff2 :: ruleEffs, loc), loc)
         val resTpe = tvar
-        val resEff = Type.mkUnion(regionVar :: eff2 :: ruleEffs, loc)
+        val resEff = evar
         (resTpe, resEff)
 
       case Expr.Spawn(exp1, exp2, loc) =>
