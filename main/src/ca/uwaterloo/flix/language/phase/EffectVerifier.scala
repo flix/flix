@@ -321,19 +321,19 @@ object EffectVerifier {
       visitExp(exp2)
       // TODO ?
       ()
-    case Expr.FixpointSolve(exp, tpe, eff, loc) => ???
+    case Expr.FixpointSolve(exp, tpe, eff, loc) =>
       visitExp(exp)
       // TODO ?
       ()
-    case Expr.FixpointFilter(pred, exp, tpe, eff, loc) => ???
+    case Expr.FixpointFilter(pred, exp, tpe, eff, loc) =>
       visitExp(exp)
       // TODO ?
       ()
-    case Expr.FixpointInject(exp, pred, tpe, eff, loc) => ???
+    case Expr.FixpointInject(exp, pred, tpe, eff, loc) =>
       visitExp(exp)
       // TODO ?
       ()
-    case Expr.FixpointProject(pred, exp, tpe, eff, loc) => ???
+    case Expr.FixpointProject(pred, exp, tpe, eff, loc) =>
       visitExp(exp)
       // TODO ?
       ()
