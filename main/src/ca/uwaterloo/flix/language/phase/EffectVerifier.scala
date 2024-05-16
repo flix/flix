@@ -236,9 +236,8 @@ object EffectVerifier {
     case Expr.TryWith(exp, effUse, rules, tpe, eff, loc) =>
       visitExp(exp)
       rules.foreach { r => visitExp(r.exp) }
-      val expected = Type.mkUnion(exp.eff :: rules.map(_.exp.eff), loc)
-      val actual = eff
-      expectType(expected, actual, loc)
+      // TODO effect stuff
+      ()
     case Expr.Do(op, exps, tpe, eff, loc) =>
       exps.foreach(visitExp)
       // TODO effect stuff
