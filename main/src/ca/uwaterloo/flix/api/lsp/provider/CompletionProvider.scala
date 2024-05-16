@@ -231,11 +231,17 @@ object CompletionProvider {
     * Characters that constitute a word.
     * This is more permissive than the parser, but that's OK.
     */
-  private def isWordChar(c: Char) = c.isLetter || Lexer.isMathNameChar(c) || Lexer.isGreekNameChar(c) || Lexer.isUserOp(c).isDefined || (c match {
-    case '@' => true
-    case '/' => true
-    case '.' => true
-  })
+  private def isWordChar(c: Char) = c.isLetter || Lexer.isMathNameChar(c) || Lexer.isGreekNameChar(c) || Lexer.isUserOp(c).isDefined || isWordCharSpecial(c)
+
+  /**
+    * Additional characters that may appear in a word.
+    */
+  private def isWordCharSpecial(c: Char) = c match {
+      case '@' => true
+      case '/' => true
+      case '.' => true
+      case _ => false
+    }
 
   /**
     * Returns the word at the end of a string, discarding trailing whitespace first
