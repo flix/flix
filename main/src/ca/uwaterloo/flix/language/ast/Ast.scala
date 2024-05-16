@@ -19,7 +19,6 @@ package ca.uwaterloo.flix.language.ast
 import java.nio.file.Path
 import java.util.Objects
 import scala.annotation.tailrec
-import org.parboiled2.ParserInput
 
 /**
   * A collection of AST nodes that are shared across multiple ASTs.
@@ -85,8 +84,9 @@ object Ast {
 
     /**
       * Gets a line of text from the source as a string.
+      * If line is out of bounds the empty string is returned.
       *
-      * This function has been copied from parboiled2 when moving away from the library.
+      * This function has been adapted from parboiled2 when moving away from the library.
       * We now produce its accompanying license in full:
       *
       * Copyright 2009-2019 Mathias Doenitz
@@ -109,18 +109,13 @@ object Ast {
         if (ix < data.length)
           if (data(ix) == '\n')
             if (lineNr < line) rec(ix + 1, ix + 1, lineNr + 1)
-            else sliceString(lineStartIx, ix)
+            else new String(data, lineStartIx, math.max(ix - lineStartIx, 0))
           else rec(ix + 1, lineStartIx, lineNr)
-        else if (lineNr == line) sliceString(lineStartIx, ix)
+        else if (lineNr == line) new String(data, lineStartIx, math.max(ix - lineStartIx, 0))
         else ""
 
       rec(ix = 0, lineStartIx = 0, lineNr = 1)
     }
-
-    /**
-      * Gets a string from a slice of [[data]] from start(inclusive) to end(exclusive).
-      */
-    private def sliceString(start: Int, end: Int) = new String(data, start, math.max(end - start, 0))
   }
 
   /**
