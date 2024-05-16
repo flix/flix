@@ -374,10 +374,11 @@ object TypeReconstruction {
       }
 
     case KindedAst.Expr.UncheckedMaskingCast(exp, loc) =>
-      // We explicitly mark a `Mask` expression as Impure.
+      // We explicitly mark a `Mask` expression as Pure in TypeReconstruction.
+      // Later it is erased and the effect of the subexpression is unmasked
       val e = visitExp(exp)
       val tpe = e.tpe
-      val eff = Type.IO
+      val eff = Type.Pure
       TypedAst.Expr.UncheckedMaskingCast(e, tpe, eff, loc)
 
     case KindedAst.Expr.Without(exp, effUse, loc) =>
