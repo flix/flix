@@ -1810,8 +1810,17 @@ object Parser2 {
       if (eat(TokenKind.KeywordIf)) {
         expression()
       }
-      // TODO: It's common to type '=' instead of '=>' here. Should we make a specific error?
-      expect(TokenKind.ArrowThickR, SyntacticContext.Expr.OtherExpr)
+      if (eat(TokenKind.Equal)) {
+        val error = UnexpectedToken(
+          NamedTokenSet.FromKinds(Set(TokenKind.ArrowThickR)),
+          actual = Some(TokenKind.Equal),
+          sctx = SyntacticContext.Expr.OtherExpr,
+          hint = Some("match cases use '=>' instead of '='."),
+          loc = previousSourceLocation())
+        closeWithError(open(), error)
+      } else {
+        expect(TokenKind.ArrowThickR, SyntacticContext.Expr.OtherExpr)
+      }
       statement()
       close(mark, TreeKind.Expr.MatchRuleFragment)
     }
