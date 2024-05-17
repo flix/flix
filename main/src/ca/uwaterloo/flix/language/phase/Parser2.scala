@@ -614,6 +614,20 @@ object Parser2 {
     */
   private def name(kinds: Set[TokenKind], allowQualified: Boolean = false, context: SyntacticContext)(implicit s: State): Mark.Closed = {
     val mark = open(consumeDocComments = false)
+
+    // Check if we are at a keyword and emit nice error if so.
+    val current = nth(0)
+    if (nth(0).isKeyword) {
+      advance()
+      return closeWithError(mark, UnexpectedToken(
+        NamedTokenSet.FromKinds(kinds),
+        actual = Some(current),
+        sctx = context,
+        hint = Some(s"${current.display} is a keyword."),
+        loc = previousSourceLocation()
+      ))
+    }
+
     expectAny(kinds, context)
     val first = close(mark, TreeKind.Ident)
     if (!allowQualified) {
@@ -1767,7 +1781,7 @@ object Parser2 {
             case TokenKind.ParenR => parenNestingLevel -= 1; lookAhead += 1
             case TokenKind.Eof =>
               val error = UnexpectedToken(expected = NamedTokenSet.Expression, actual = None, SyntacticContext.Expr.OtherExpr, loc = currentSourceLocation())
-              return closeWithError(mark,error )
+              return closeWithError(mark, error)
             case t if t.isFirstDecl =>
               // Advance past the erroneous region to the next stable token (the start of the declaration)
               for (_ <- 0 until lookAhead) {
