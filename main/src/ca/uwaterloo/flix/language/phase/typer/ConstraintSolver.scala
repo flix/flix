@@ -623,7 +623,7 @@ object ConstraintSolver {
   /**
     * Constructs a specific missing instance error for the given trait symbol `sym` and type `tpe`.
     */
-  private def mkMissingInstance(sym: Symbol.TraitSym, tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix): TypeError = {
+  def mkMissingInstance(sym: Symbol.TraitSym, tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix): TypeError = {
     val eqSym = Symbol.mkTraitSym("Eq")
     val orderSym = Symbol.mkTraitSym("Order")
     val sendableSym = Symbol.mkTraitSym("Sendable")
