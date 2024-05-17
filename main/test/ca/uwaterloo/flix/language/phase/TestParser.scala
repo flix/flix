@@ -760,6 +760,18 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
   * Note that CompilerSuite and LibrarySuite covers the positive testing of the parser well.
   */
 class TestParserHappy extends AnyFunSuite with TestUtils {
+  test("DetectRecord.01") {
+    val input =
+      """
+        |pub def foo(): { x = Int32 } = {
+        |    // This is a comment
+        |    x = 1000
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectSuccess(result)
+  }
+
   test("ParseError.Interpolation.01") {
     val input = s"""pub def foo(): String = "$${""""
     val result = compile(input, Options.TestWithLibNix)
