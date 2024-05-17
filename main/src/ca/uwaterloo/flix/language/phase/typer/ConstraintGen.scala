@@ -720,7 +720,7 @@ object ConstraintGen {
         val correctedBodyEff = c.purifyEff(effUse.sym, eff)
 
         // The continuation effect is the effect of all the rule bodies, plus the effect of the try-body
-        c.unifyType(continuationEffect, Type.mkUnion(correctedBodyEff :: effs, loc), loc)
+        c.unifyType(continuationEffect, Type.mkUnion(effs, loc), loc) // TODO temp simplification: ignoring try-body
         val resultTpe = tpe
 
         // TODO ASSOC-TYPES should be continuationEffect
