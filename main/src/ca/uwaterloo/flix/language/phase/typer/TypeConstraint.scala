@@ -31,7 +31,7 @@ sealed trait TypeConstraint {
     case TypeConstraint.Equality(_: Type.Var, Type.Pure, _) => (0, 0, 0)
     case TypeConstraint.Equality(Type.Pure, _: Type.Var, _) => (0, 0, 0)
     case TypeConstraint.Equality(tvar1: Type.Var, tvar2: Type.Var, _) if tvar1 != tvar2 => (0, 0, 0)
-    case TypeConstraint.Purification(_, _, _, _, _) => (0, 0, 0)
+    case TypeConstraint.Purification(_, _, _, _, __, _, _) => (0, 0, 0)
     case TypeConstraint.Equality(tpe1, tpe2, _) =>
       val tvars = tpe1.typeVars ++ tpe2.typeVars
       val effTvars = tvars.filter(_.kind == Kind.Eff)
@@ -42,7 +42,7 @@ sealed trait TypeConstraint {
   override def toString: String = this match {
     case TypeConstraint.Equality(tpe1, tpe2, _) => s"$tpe1 ~ $tpe2"
     case TypeConstraint.Trait(sym, tpe, _) => s"$sym[$tpe]"
-    case TypeConstraint.Purification(sym, eff1, eff2, _, nested) => s"$eff1 ~ ($eff2)[$sym ↦ Pure] ∧ $nested"
+    case TypeConstraint.Purification(sym, eff1, eff2, _, nested, nestedEffs, nestedTraits) => s"$eff1 ~ ($eff2)[$sym ↦ Pure] ∧ $nested ∧ $nestedEffs ∧ $nestedTraits"
   }
 
   /**
@@ -51,7 +51,7 @@ sealed trait TypeConstraint {
   def numVars: Int = this match {
     case TypeConstraint.Equality(tpe1, tpe2, _) => tpe1.typeVars.size + tpe2.typeVars.size
     case TypeConstraint.Trait(_, tpe, _) => tpe.typeVars.size
-    case TypeConstraint.Purification(_, eff1, eff2, _, _) => eff1.typeVars.size + eff2.typeVars.size
+    case TypeConstraint.Purification(_, eff1, eff2, _, _, _, _) => eff1.typeVars.size + eff2.typeVars.size
   }
 
   def loc: SourceLocation
@@ -90,7 +90,7 @@ object TypeConstraint {
     *   eff1 ~ eff2[sym ↦ Pure] ∧ nested
     * }}}
     */
-  case class Purification(sym: Symbol.KindedTypeVarSym, eff1: Type, eff2: Type, prov: Provenance, nested: List[TypeConstraint]) extends TypeConstraint {
+  case class Purification(sym: Symbol.KindedTypeVarSym, eff1: Type, eff2: Type, prov: Provenance, nested: List[TypeConstraint], nestedEffs: List[TypeConstraint.Equality], nestedTraits: List[TypeConstraint.Trait]) extends TypeConstraint {
     def loc: SourceLocation = prov.loc
   }
 

@@ -145,6 +145,20 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
   }
 
   /**
+    * Applies `this` substitution to the given effect constraint.
+    */
+  def apply(effConstr: TypeConstraint.Equality): TypeConstraint.Equality = effConstr match {
+    case TypeConstraint.Equality(eff1, eff2, prov) => TypeConstraint.Equality(apply(eff1), apply(eff2), apply(prov))
+  }
+
+  /**
+    * Applies `this` substitution to the given trait constraint.
+    */
+  def apply(tconstr: TypeConstraint.Trait): TypeConstraint.Trait = tconstr match {
+    case TypeConstraint.Trait(sym, tpe, loc) => TypeConstraint.Trait(sym, apply(tpe), loc)
+  }
+
+  /**
     * Removes the binding for the given type variable `tvar` (if it exists).
     */
   def unbind(tvar: Symbol.KindedTypeVarSym): Substitution = Substitution(m - tvar)
