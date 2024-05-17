@@ -51,6 +51,7 @@ object Options {
     xfuzzer = false,
     xparser = false,
     xprinttyper = None,
+    xverifyeffects = false,
     XPerfN = None,
     XPerfFrontend = false
   )
@@ -128,6 +129,7 @@ case class Options(lib: LibLevel,
                    xfuzzer: Boolean,
                    xparser: Boolean,
                    xprinttyper: Option[String],
+                   xverifyeffects: Boolean,
                    XPerfFrontend: Boolean,
                    XPerfN: Option[Int],
                   )
