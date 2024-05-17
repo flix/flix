@@ -101,6 +101,12 @@ object MutationTester {
     val listToSource: List[String] = ("Chain" :: "Option" :: "Map" :: Nil)
     new File("MutStats.txt")
     new File("TTBData.txt")
+    val t = new FileWriter("MutStats.txt")
+    val a = new FileWriter("TTBData.txt")
+    a.write("")
+    t.write("")
+    a.close()
+    t.close()
     val _ = listToSource.map(module => {
       val root = flix.check().unsafeGet
       // println(root.sigs.filter(t => t._1.toString.equals("Add.add")))
