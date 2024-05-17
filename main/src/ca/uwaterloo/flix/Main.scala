@@ -105,6 +105,7 @@ object Main {
       xfuzzer = cmdOpts.xfuzzer,
       xparser = cmdOpts.xparser,
       xprinttyper = cmdOpts.xprinttyper,
+      xverifyeffects = cmdOpts.xverifyeffects,
       XPerfFrontend = cmdOpts.XPerfFrontend,
       XPerfN = cmdOpts.XPerfN
     )
@@ -368,6 +369,7 @@ object Main {
                      xfuzzer: Boolean = false,
                      xparser: Boolean = false,
                      xprinttyper: Option[String] = None,
+                     xverifyeffects: Boolean = false,
                      XPerfN: Option[Int] = None,
                      XPerfFrontend: Boolean = false,
                      files: Seq[File] = Seq())
@@ -578,15 +580,21 @@ object Main {
       opt[Unit]("Xsummary").action((_, c) => c.copy(xsummary = true)).
         text("[experimental] prints a summary of the compiled modules.")
 
-      // Xfuzz
+      // Xfuzzer
       opt[Unit]("Xfuzzer").action((_, c) => c.copy(xfuzzer = true)).
-        text("enables compiler fuzzing.")
+        text("[experimental] enables compiler fuzzing.")
 
       // Xparser
       opt[Unit]("Xparser").action((_, c) => c.copy(xparser = true)).
         text("[experimental] disables new experimental lexer and parser.")
 
-      opt[String]("Xprint-typer").action((sym, c) => c.copy(xprinttyper = Some(sym)))
+      // Xprint-typer
+      opt[String]("Xprint-typer").action((sym, c) => c.copy(xprinttyper = Some(sym))).
+        text("[experimental] writes constraints to dot files.")
+
+      // Xverify-effects
+      opt[String]("Xverify-effects").action((_, c) => c.copy(xverifyeffects = true)).
+        text("[experimental] verifies consistency of effects after typechecking")
 
       note("")
 

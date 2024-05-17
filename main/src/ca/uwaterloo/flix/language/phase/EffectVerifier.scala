@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matthew Lutze
+ * Copyright 2024 Matthew Lutze
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,30 +16,44 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.LabelledPrecedenceGraph
 import ca.uwaterloo.flix.language.ast.TypedAst.{Def, Expr, Root}
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.dbg.AstPrinter._
-import ca.uwaterloo.flix.language.errors.TypeError
-import ca.uwaterloo.flix.language.phase.typer.{ConstraintGen, ConstraintSolver, TypeContext}
 import ca.uwaterloo.flix.language.phase.unification.{Substitution, Unification}
-import ca.uwaterloo.flix.util.Validation.{mapN, traverse}
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.collection.ListMap
 
+/**
+  * Performs a re-checking of the effects in the program.
+  *
+  * This phase is run after type inference and reconstruction to ensure that the effects are consistent.
+  *
+  * This phase is only for debugging; inconsistencies indicate a bug in the typer and result in a crash.
+  */
 object EffectVerifier {
 
+  /**
+    * Verifies the effects in the given root.
+    */
   def run(root: Root)(implicit flix: Flix): Unit = {
-    root.defs.foreach {
-      case (sym, defn) => visitDef(defn)(root.eqEnv, flix)
+    if (flix.options.xverifyeffects) {
+      // TODO visit sigs and instances
+      ParOps.parMapValues(root.defs) {
+        case defn => visitDef(defn)(root.eqEnv, flix)
+      }
     }
   }
 
+  /**
+    * Verifies the effects in the given definition.
+    */
   def visitDef(defn: Def)(implicit eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Unit = {
     visitExp(defn.exp)
     expectType(defn.spec.eff, defn.exp.eff, defn.exp.loc)
   }
 
+  /**
+    * Verifies the effects in the given expression
+    */
   def visitExp(e: Expr)(implicit eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Unit = e match {
     case Expr.Cst(cst, tpe, loc) => ()
     case Expr.Var(sym, tpe, loc) => ()
@@ -48,7 +62,7 @@ object EffectVerifier {
     case Expr.Hole(sym, tpe, loc) => ()
     case Expr.HoleWithExp(exp, tpe, eff, loc) =>
       visitExp(exp)
-      // TODO ?
+    // TODO ?
     case Expr.OpenAs(symUse, exp, tpe, loc) =>
       visitExp(exp)
     case Expr.Use(sym, alias, exp, loc) =>
@@ -308,9 +322,9 @@ object EffectVerifier {
       visitExp(exp)
     case Expr.Force(exp, tpe, eff, loc) =>
       visitExp(exp)
-      // TODO ?
+    // TODO ?
     case Expr.FixpointConstraintSet(cs, tpe, loc) =>
-      // TODO inner exps
+    // TODO inner exps
     case Expr.FixpointLambda(pparams, exp, tpe, eff, loc) =>
       visitExp(exp)
       // TODO ?
@@ -339,6 +353,9 @@ object EffectVerifier {
     case Expr.Error(m, tpe, eff) => ()
   }
 
+  /**
+    * Throws an exception if the actual type does not match the expected type.
+    */
   private def expectType(expected: Type, actual: Type, loc: SourceLocation)(implicit eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Unit = {
     // mark everything as rigid
     val renv = RigidityEnv.ofRigidVars(expected.typeVars.map(_.sym) ++ actual.typeVars.map(_.sym))
