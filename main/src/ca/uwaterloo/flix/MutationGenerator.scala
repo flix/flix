@@ -45,10 +45,10 @@ object MutationGenerator {
     *         list that contains a def for all mutations of that def
     */
   case class MutatedDef(df: TypedAst.Def, mutType: MutationType)
-  def mutateRoot(root: TypedAst.Root, productionModule: String): List[(Symbol.DefnSym, List[MutatedDef])] = {
+  def mutateRoot(root: TypedAst.Root, productionModule: String): List[MutatedDef] = {
     val defs = root.defs
     val defSyms = root.modules.filter(pair => pair._1.toString.equals(productionModule)).values.toList.flatten
-    mutateDefs( defs, defSyms).flatten
+    mutateDefs( defs, defSyms).flatten.unzip._2.flatten
   }
 
   def insertDACAndMutInExp(mutated: TypedAst.Expr, original: TypedAst.Expr): TypedAst.Expr = {
