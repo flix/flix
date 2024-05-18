@@ -21,12 +21,13 @@ import ca.uwaterloo.flix.language.ast.Ast.SyntacticContext
 import ca.uwaterloo.flix.language.ast.SyntaxTree.TreeKind
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.dbg.AstPrinter._
-import ca.uwaterloo.flix.language.errors.{WeederError, ParseError}
+import ca.uwaterloo.flix.language.errors.{ParseError, WeederError}
 import ca.uwaterloo.flix.language.errors.ParseError._
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 import org.parboiled2.ParserInput
 
+import scala.annotation.tailrec
 import scala.collection.mutable.ArrayBuffer
 
 /**
@@ -1970,8 +1971,25 @@ object Parser2 {
       // Determines if a '{' is opening a block, a record literal or a record operation.
       assert(at(TokenKind.CurlyL))
 
-      // We can discern between record ops and literals vs. blocks by looking at the two next tokens.
-      (nth(1), nth(2)) match {
+      /**
+        * Gets the distance to the first non-comment token after lookahead.
+        */
+      @tailrec
+      def nextNonComment(lookahead: Int): Int = {
+        s.tokens(s.position + lookahead).kind match {
+          case t if t.isComment && s.position + lookahead < s.tokens.length - 1 =>
+            nextNonComment(lookahead + 1)
+          case _ => lookahead
+        }
+      }
+
+      // We can discern between record ops and literals vs. blocks by looking at the next two non-comment tokens.
+      val nextTwoNonCommentTokens = {
+        val nextIdx = nextNonComment(1)
+        val nextNextIdx = nextNonComment(nextIdx + 1)
+        (nth(nextIdx), nth(nextNextIdx))
+      }
+      nextTwoNonCommentTokens match {
         case (TokenKind.CurlyR, _)
              | (TokenKind.NameLowerCase, TokenKind.Equal)
              | (TokenKind.Plus, TokenKind.NameLowerCase)
@@ -2003,7 +2021,6 @@ object Parser2 {
             }
             isRecordOp
           }
-
           if (isRecordOp) {
             recordOperation()
           } else {
