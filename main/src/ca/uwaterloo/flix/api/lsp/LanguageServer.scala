@@ -97,11 +97,6 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
   private var delta: DeltaContext = DeltaContext(Map.empty)
 
   /**
-    * A Boolean that records if the root AST is current (i.e. up-to-date).
-    */
-  private var current: Boolean = false
-
-  /**
     * The current compilation errors.
     */
   private var currentErrors: List[CompilationMessage] = Nil
@@ -202,7 +197,6 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
     * Add the given source code to the compiler
     */
   private def addSourceCode(uri: String, src: String): Unit = {
-    current = false
     flix.addSourceCode(uri, src)
     sources += (uri -> src)
   }
@@ -211,7 +205,6 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
     * Remove the source code associated with the given uri from the compiler
     */
   private def remSourceCode(uri: String): Unit = {
-    current = false
     flix.remSourceCode(uri)
     sources -= uri
   }
@@ -281,7 +274,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
       ("id" -> id) ~ HighlightProvider.processHighlight(uri, pos)(index, root)
 
     case Request.Hover(id, uri, pos) =>
-      ("id" -> id) ~ HoverProvider.processHover(uri, pos, current)(index, root, flix)
+      ("id" -> id) ~ HoverProvider.processHover(uri, pos)(index, root, flix)
 
     case Request.Goto(id, uri, pos) =>
       ("id" -> id) ~ GotoProvider.processGoto(uri, pos)(index, root)
@@ -302,10 +295,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
       ("id" -> id) ~ FindReferencesProvider.findRefs(uri, pos)(index, root.orNull)
 
     case Request.SemanticTokens(id, uri) =>
-      if (current)
-        ("id" -> id) ~ SemanticTokensProvider.provideSemanticTokens(uri)(index, root.orNull)
-      else
-        ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> ("data" -> Nil))
+      ("id" -> id) ~ SemanticTokensProvider.provideSemanticTokens(uri)(index, root.orNull)
 
     case Request.InlayHint(id, _, _) =>
         // InlayHints disabled due to poor ergonomics.
@@ -313,10 +303,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
         ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> Nil)
 
     case Request.ShowAst(id) =>
-      if (current)
-        ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> ShowAstProvider.showAst()(index, root, flix))
-      else
-        ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> Nil)
+      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> ShowAstProvider.showAst()(index, root, flix))
 
     case Request.CodeAction(id, uri, range, context) =>
       root match {
@@ -349,8 +336,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
         case Result.Err(errors) =>
           // Case 3: Compilation failed. Send back the error messages.
 
-          // Mark the AST as outdated and update the current errors.
-          this.current = false
+          // Update the current errors.
           this.currentErrors = errors.toList
 
           // Publish diagnostics.
@@ -359,8 +345,6 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
       }
     } catch {
       case ex: Throwable =>
-        // Mark the AST as outdated.
-        this.current = false
         val reportPath = CrashHandler.handleCrash(ex)(flix)
         ("id" -> requestId) ~
           ("status" -> ResponseStatus.CompilerError) ~
@@ -376,7 +360,6 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
     this.root = Some(root)
     this.index = Indexer.visitRoot(root)
     this.delta = DeltaContext.mergeDeltas(this.delta, Differ.difference(oldRoot, root))
-    this.current = true
     this.currentErrors = errors.toList
 
     // Compute elapsed time.
