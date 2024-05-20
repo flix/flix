@@ -280,6 +280,10 @@ object Simplifier {
 
           case TypeConstructor.Native(clazz) => MonoType.Native(clazz)
 
+          case TypeConstructor.MethodReturnType(name, arity) => throw InternalCompilerException("MethodReturnType shouldn't exist.", tpe.loc)
+
+          case TypeConstructor.StaticMethodReturnType(clazz, name, arity) => throw InternalCompilerException("StaticMethodReturnType shouldn't exist.", tpe.loc)
+
           case TypeConstructor.Array => MonoType.Array(args.head)
 
           case TypeConstructor.Vector => MonoType.Array(args.head)

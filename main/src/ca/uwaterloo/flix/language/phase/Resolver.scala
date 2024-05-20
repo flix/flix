@@ -3314,6 +3314,10 @@ object Resolver {
 
         case TypeConstructor.Native(clazz) => Result.Ok(clazz)
 
+        case TypeConstructor.MethodReturnType(name, arity) => throw InternalCompilerException("MethodReturnType shouldn't exist.", loc)
+
+        case TypeConstructor.StaticMethodReturnType(clazz, name, arity) => throw InternalCompilerException("StaticMethodReturnType shouldn't exist.", loc)
+
         case TypeConstructor.Record => Result.Ok(Class.forName("java.lang.Object"))
 
         case TypeConstructor.Schema => Result.Ok(Class.forName("java.lang.Object"))
