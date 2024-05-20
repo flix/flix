@@ -268,7 +268,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
       ("id" -> id) ~ CodeLensProvider.processCodeLens(uri)(root)
 
     case Request.Complete(id, uri, pos) =>
-      ("id" -> id) ~ CompletionProvider.autoComplete(uri, pos, sources.get(uri), currentErrors)(flix, index, Some(root), delta) // TODO: Some
+      ("id" -> id) ~ CompletionProvider.autoComplete(uri, pos, sources.get(uri), currentErrors)(flix, index, root, delta)
 
     case Request.Highlight(id, uri, pos) =>
       ("id" -> id) ~ HighlightProvider.processHighlight(uri, pos)(index, root)
@@ -299,11 +299,11 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
 
     case Request.InlayHint(id, _, _) =>
         // InlayHints disabled due to poor ergonomics.
-        // ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> InlayHintProvider.processInlayHints(uri, range)(index, root.orNull, flix).map(_.toJSON))
+        // ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> InlayHintProvider.processInlayHints(uri, range)(index, flix).map(_.toJSON))
         ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> Nil)
 
     case Request.ShowAst(id) =>
-      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> ShowAstProvider.showAst()(index, Some(root), flix)) // TODO: Some
+      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> ShowAstProvider.showAst()(flix))
 
     case Request.CodeAction(id, uri, range, context) =>
       ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> CodeActionProvider.getCodeActions(uri, range, context, currentErrors)(index, root, flix).map(_.toJSON))
