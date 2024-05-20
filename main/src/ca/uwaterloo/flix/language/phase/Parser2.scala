@@ -21,11 +21,12 @@ import ca.uwaterloo.flix.language.ast.Ast.SyntacticContext
 import ca.uwaterloo.flix.language.ast.SyntaxTree.TreeKind
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.dbg.AstPrinter._
-import ca.uwaterloo.flix.language.errors.{WeederError, ParseError}
+import ca.uwaterloo.flix.language.errors.{ParseError, WeederError}
 import ca.uwaterloo.flix.language.errors.ParseError._
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
+import scala.annotation.tailrec
 import scala.collection.mutable.ArrayBuffer
 
 /**
@@ -608,6 +609,20 @@ object Parser2 {
     */
   private def name(kinds: Set[TokenKind], allowQualified: Boolean = false, context: SyntacticContext)(implicit s: State): Mark.Closed = {
     val mark = open(consumeDocComments = false)
+
+    // Check if we are at a keyword and emit nice error if so.
+    val current = nth(0)
+    if (nth(0).isKeyword) {
+      advance()
+      return closeWithError(mark, UnexpectedToken(
+        NamedTokenSet.FromKinds(kinds),
+        actual = Some(current),
+        sctx = context,
+        hint = Some(s"${current.display} is a keyword."),
+        loc = previousSourceLocation()
+      ))
+    }
+
     expectAny(kinds, context)
     val first = close(mark, TreeKind.Ident)
     if (!allowQualified) {
@@ -1813,8 +1828,17 @@ object Parser2 {
       if (eat(TokenKind.KeywordIf)) {
         expression()
       }
-      // TODO: It's common to type '=' instead of '=>' here. Should we make a specific error?
-      expect(TokenKind.ArrowThickR, SyntacticContext.Expr.OtherExpr)
+      if (eat(TokenKind.Equal)) {
+        val error = UnexpectedToken(
+          NamedTokenSet.FromKinds(Set(TokenKind.ArrowThickR)),
+          actual = Some(TokenKind.Equal),
+          sctx = SyntacticContext.Expr.OtherExpr,
+          hint = Some("match cases use '=>' instead of '='."),
+          loc = previousSourceLocation())
+        closeWithError(open(), error)
+      } else {
+        expect(TokenKind.ArrowThickR, SyntacticContext.Expr.OtherExpr)
+      }
       statement()
       close(mark, TreeKind.Expr.MatchRuleFragment)
     }
@@ -1950,8 +1974,25 @@ object Parser2 {
       // Determines if a '{' is opening a block, a record literal or a record operation.
       assert(at(TokenKind.CurlyL))
 
-      // We can discern between record ops and literals vs. blocks by looking at the two next tokens.
-      (nth(1), nth(2)) match {
+      /**
+        * Gets the distance to the first non-comment token after lookahead.
+        */
+      @tailrec
+      def nextNonComment(lookahead: Int): Int = {
+        s.tokens(s.position + lookahead).kind match {
+          case t if t.isComment && s.position + lookahead < s.tokens.length - 1 =>
+            nextNonComment(lookahead + 1)
+          case _ => lookahead
+        }
+      }
+
+      // We can discern between record ops and literals vs. blocks by looking at the next two non-comment tokens.
+      val nextTwoNonCommentTokens = {
+        val nextIdx = nextNonComment(1)
+        val nextNextIdx = nextNonComment(nextIdx + 1)
+        (nth(nextIdx), nth(nextNextIdx))
+      }
+      nextTwoNonCommentTokens match {
         case (TokenKind.CurlyR, _)
              | (TokenKind.NameLowerCase, TokenKind.Equal)
              | (TokenKind.Plus, TokenKind.NameLowerCase)
@@ -1983,7 +2024,6 @@ object Parser2 {
             }
             isRecordOp
           }
-
           if (isRecordOp) {
             recordOperation()
           } else {
