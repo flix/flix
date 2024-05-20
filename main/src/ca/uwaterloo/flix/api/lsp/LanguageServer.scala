@@ -20,12 +20,11 @@ import ca.uwaterloo.flix.api.lsp.provider.completion.DeltaContext
 import ca.uwaterloo.flix.api.lsp.provider.completion.ranker.Differ
 import ca.uwaterloo.flix.api.{CrashHandler, Flix, Version}
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.SourceLocation
+import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.phase.extra.CodeHinter
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.Validation.{HardFailure, SoftFailure, Success}
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.collection.Chain
 import org.java_websocket.WebSocket
@@ -70,7 +69,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
   /**
     * The custom date format to use for logging.
     */
-  val DateFormat: String = "yyyy-MM-dd HH:mm:ss"
+  private val DateFormat: String = "yyyy-MM-dd HH:mm:ss"
 
   /**
     * The Flix instance (the same instance is used for incremental compilation).
@@ -80,12 +79,12 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
   /**
     * A map from source URIs to source code.
     */
-  val sources: mutable.Map[String, String] = mutable.Map.empty
+  private val sources: mutable.Map[String, String] = mutable.Map.empty
 
   /**
     * The current AST root. The root is null until the source code is compiled.
     */
-  private var root: Option[Root] = None
+  private var root: Option[Root] = Some(TypedAst.empty)
 
   /**
     * The current reverse index. The index is empty until the source code is compiled.
@@ -133,12 +132,12 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
     * Invoked when a client sends a message.
     */
   override def onMessage(ws: WebSocket, data: String): Unit = try {
-    parseRequest(data)(ws) match {
+    parseRequest(data) match {
       case Ok(request) =>
         val result = processRequest(request)(ws)
         if (ws.isOpen) {
           val jsonCompact = JsonMethods.compact(JsonMethods.render(result))
-          val jsonPretty = JsonMethods.pretty(JsonMethods.render(result))
+          // val jsonPretty = JsonMethods.pretty(JsonMethods.render(result))
           ws.send(jsonCompact)
         }
       case Err(msg) => log(msg)(ws)
@@ -161,7 +160,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
   /**
     * Parse the request.
     */
-  private def parseRequest(s: String)(implicit ws: WebSocket): Result[Request, String] = try {
+  private def parseRequest(s: String): Result[Request, String] = try {
     // Parse the string `s` into a json value.
     val json = parse(s)
 
@@ -202,7 +201,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
   /**
     * Add the given source code to the compiler
     */
-  private def addSourceCode(uri: String, src: String) = {
+  private def addSourceCode(uri: String, src: String): Unit = {
     current = false
     flix.addSourceCode(uri, src)
     sources += (uri -> src)
@@ -211,7 +210,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
   /**
     * Remove the source code associated with the given uri from the compiler
     */
-  private def remSourceCode(uri: String) = {
+  private def remSourceCode(uri: String): Unit = {
     current = false
     flix.remSourceCode(uri)
     sources -= uri
@@ -260,15 +259,15 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
       flix.addJar(path)
       ("id" -> id) ~ ("status" -> ResponseStatus.Success)
 
-    case Request.RemJar(id, uri) =>
+    case Request.RemJar(id, _) =>
       // No-op (there is no easy way to remove a Jar from the JVM)
       ("id" -> id) ~ ("status" -> ResponseStatus.Success)
 
     case Request.Version(id) => processVersion(id)
 
-    case Request.Shutdown(id) => processShutdown()
+    case Request.Shutdown(_) => processShutdown()
 
-    case Request.Disconnect(id) => processDisconnect()
+    case Request.Disconnect(_) => processDisconnect()
 
     case Request.Check(id) => processCheck(id)
 
@@ -308,7 +307,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
       else
         ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> ("data" -> Nil))
 
-    case Request.InlayHint(id, uri, range) =>
+    case Request.InlayHint(id, _, _) =>
         // InlayHints disabled due to poor ergonomics.
         // ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> InlayHintProvider.processInlayHints(uri, range)(index, root.orNull, flix).map(_.toJSON))
         ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> Nil)
@@ -397,15 +396,15 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
   /**
     * Processes a shutdown request.
     */
-  private def processShutdown()(implicit ws: WebSocket): Nothing = {
+  private def processShutdown(): Nothing = {
     System.exit(0)
     throw null // unreachable
   }
 
   /**
-    * Processes a disconnection request.
-    */
-  private def processDisconnect()(implicit ws: WebSocket) = {
+   * Processes a disconnection request.
+   */
+  private def processDisconnect()(implicit ws: WebSocket): JValue = {
     val code = 1013 // 'Try again later'
     ws.closeConnection(code, "Simulating disconnection...")
     JNothing
@@ -414,7 +413,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
   /**
     * Processes the version request.
     */
-  private def processVersion(requestId: String)(implicit ws: WebSocket): JValue = {
+  private def processVersion(requestId: String): JValue = {
     val major = Version.CurrentVersion.major
     val minor = Version.CurrentVersion.minor
     val revision = Version.CurrentVersion.revision
