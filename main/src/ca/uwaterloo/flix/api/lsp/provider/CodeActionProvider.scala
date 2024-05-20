@@ -26,8 +26,7 @@ import ca.uwaterloo.flix.util.Similarity
 object CodeActionProvider {
 
   def getCodeActions(uri: String, range: Range, context: CodeActionContext, currentErrors: List[CompilationMessage])(implicit index: Index, root: Root, flix: Flix): List[CodeAction] = {
-    getActionsFromErrors(uri, range, currentErrors) ++
-      getActionsFromIndex(uri, range, currentErrors)
+    getActionsFromErrors(uri, range, currentErrors) ++ getActionsFromIndex(uri, range, currentErrors)
   }
 
   /**

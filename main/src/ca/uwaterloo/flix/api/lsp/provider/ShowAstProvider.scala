@@ -35,7 +35,7 @@ object ShowAstProvider {
     * - `title` (a string like `Namer.flix.ir`)
     * - `text` (a string with the ir representation).
     */
-  def showAst()(implicit index: Index, root: Option[Root], flix: Flix): JObject = {
+  def showAst()(implicit flix: Flix): JObject = {
     val oldOpts = flix.options
     flix.setOptions(oldOpts.copy(xprintphases = true))
     flix.compile()
