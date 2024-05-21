@@ -611,7 +611,7 @@ object ParsedAst {
      * Java Apply Expression (function call).
      *
      * @param sp1  the position of the first character in the expression.
-     * @param exp  the lambda expression.
+     * @param exp  the caller object.
      * @param name the name of the function.
      * @param args the arguments.
      * @param sp2  the position of the last character in the expression.

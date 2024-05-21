@@ -822,10 +822,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
-      JavaApply | Scope | LetMatch | LetRecDef | LetUse | LetImport | IfThenElse |
+      Scope | LetMatch | LetRecDef | LetUse | LetImport | IfThenElse |
         RestrictableChoose | TypeMatch | Match | LambdaMatch | Try | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block |
-        SelectChannel | Spawn | ParYield | Lazy | Force |
+        SelectChannel | Spawn | ParYield | Lazy | Force | JavaApply |
         CheckedTypeCast | CheckedEffectCast | UncheckedCast | UncheckedMaskingCast | Intrinsic | ArrayLit | VectorLit | ListLit |
         SetLit | FMap | ConstraintSet | FixpointLambda | FixpointProject | FixpointSolveWithProject |
         FixpointQueryWithSelect | Interpolation | Literal | Do |
