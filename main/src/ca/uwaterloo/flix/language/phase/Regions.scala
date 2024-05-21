@@ -69,6 +69,9 @@ object Regions {
     case Expr.Apply(exp, exps, tpe, _, loc) =>
       visitExp(exp) ++ checkType(tpe, loc)
 
+    case Expr.JavaApply(exp, _, exps, tpe, _, loc) => // TO CHECK
+      visitExp(exp) ++ checkType(tpe, loc)
+
     case Expr.Unary(_, exp, tpe, _, loc) =>
       visitExp(exp) ++ checkType(tpe, loc)
 

@@ -487,6 +487,11 @@ object Monomorpher {
       val es = exps.map(visitExp(_, env0, subst))
       MonoAst.Expr.Apply(e, es, subst(tpe), subst(eff), loc)
 
+    case LoweredAst.Expr.JavaApply(exp, name, exps, tpe, eff, loc) =>
+      val e = visitExp(exp, env0, subst)
+      val es = exps.map(visitExp(_, env0, subst))
+      MonoAst.Expr.JavaApply(e, name, es, subst(tpe), subst(eff), loc)
+
     case LoweredAst.Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp(_, env0, subst))
       MonoAst.Expr.ApplyAtomic(op, es, subst(tpe), subst(eff), loc)

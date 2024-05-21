@@ -137,6 +137,11 @@ object Stratifier {
         case (e, es) => Expr.Apply(e, es, tpe, eff, loc)
       }
 
+    case Expr.JavaApply(exp, _, exps, tpe, eff, loc) => // TO CHECK
+      mapN(visitExp(exp), traverse(exps)(visitExp)) {
+        case (e, es) => Expr.Apply(e, es, tpe, eff, loc)
+      }
+
     case Expr.Unary(sop, exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
         case e => Expr.Unary(sop, e, tpe, eff, loc)

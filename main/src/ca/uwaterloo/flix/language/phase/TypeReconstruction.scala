@@ -120,6 +120,11 @@ object TypeReconstruction {
       val es = exps.map(visitExp(_))
       TypedAst.Expr.Apply(e, es, subst(tvar), subst(evar), loc)
 
+    case KindedAst.Expr.JavaApply(exp, name, exps, tvar, evar, loc) =>
+      val e = visitExp(exp)
+      val es = exps.map(visitExp(_))
+      TypedAst.Expr.JavaApply(e, name, es, subst(tvar), subst(evar), loc)
+
     case KindedAst.Expr.Lambda(fparam, exp, loc) =>
       val p = visitFormalParam(fparam, subst)
       val e = visitExp(exp)

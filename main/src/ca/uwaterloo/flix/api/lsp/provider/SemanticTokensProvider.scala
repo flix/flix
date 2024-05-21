@@ -322,6 +322,11 @@ object SemanticTokensProvider {
         case (acc, exp) => acc ++ visitExp(exp)
       }
 
+    case Expr.JavaApply(exp, name, exps, _, _, _) => // TO CHECK
+      exps.foldLeft(visitExp(exp)) {
+        case (acc, exp) => acc ++ visitExp(exp)
+      }
+
     case Expr.Unary(_, exp, _, _, _) =>
       visitExp(exp)
 

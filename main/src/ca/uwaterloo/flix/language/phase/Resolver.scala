@@ -1077,6 +1077,14 @@ object Resolver {
         case app@NamedAst.Expr.Apply(_, _, _) =>
           visitApply(app, env0)
 
+        case NamedAst.Expr.JavaApply(exp, name, exps, loc) =>
+          val eVal = visitExp(exp, env0)
+          val esVal = traverse(exps)(visitExp(_, env0))
+          mapN(eVal, esVal) {
+            case (e, es) =>
+              ResolvedAst.Expr.JavaApply(e, name, es, loc)
+          }
+
         case NamedAst.Expr.Lambda(fparam, exp, loc) =>
           val pVal = Params.resolve(fparam, env0, taenv, ns0, root)
           flatMapN(pVal) {

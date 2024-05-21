@@ -89,6 +89,22 @@ object ClosureConv {
         Expr.ApplyClo(e, es, tpe, purity, loc)
     }
 
+    case Expr.JavaApply(exp, _, exps, tpe, purity, loc) => exp match { // TO CHECK
+      case Expr.Def(sym, _, _) =>
+        //
+        // Special Case: Direct call to a known function symbol.
+        //
+        val es = exps.map(visitExp)
+        Expr.ApplyDef(sym, es, tpe, purity, loc)
+      case _ =>
+        //
+        // General Case: Call to closure.
+        //
+        val e = visitExp(exp)
+        val es = exps.map(visitExp)
+        Expr.ApplyClo(e, es, tpe, purity, loc)
+    }
+
     case Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
       val es = exps map visitExp
       Expr.ApplyAtomic(op, es, tpe, purity, loc)
@@ -220,6 +236,9 @@ object ClosureConv {
     case Expr.Apply(exp, args, _, _, _) =>
       freeVars(exp) ++ freeVarsExps(args)
 
+    case Expr.JavaApply(exp, _, args, _, _, _) => // TO CHECK
+      freeVars(exp) ++ freeVarsExps(args)
+
     case Expr.ApplyAtomic(_, exps, _, _, _) =>
       freeVarsExps(exps)
 
@@ -334,6 +353,11 @@ object ClosureConv {
         val e = visitExp(exp)
         val as = args map visitExp
         Expr.Apply(e, as, tpe, purity, loc)
+
+      case Expr.JavaApply(exp, name, args, tpe, purity, loc) =>
+        val e = visitExp(exp)
+        val as = args map visitExp
+        Expr.JavaApply(e, name, as, tpe, purity, loc)
 
       case Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
         val e1 = visitExp(exp1)

@@ -64,6 +64,8 @@ object SimplifiedAst {
 
     case class Apply(exp: Expr, args: List[Expr], tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 
+    case class JavaApply(exp: Expr, name: Name.Ident, args: List[Expr], tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
+
     @IntroducedBy(ClosureConv.getClass)
     case class LambdaClosure(cparams: List[FormalParam], fparams: List[FormalParam], freeVars: List[FreeVar], exp: Expr, tpe: MonoType, loc: SourceLocation) extends Expr {
       def purity: Purity = Pure

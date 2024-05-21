@@ -101,6 +101,12 @@ object PredDeps {
         case (acc, exp) => acc + visitExp(exp)
       }
 
+    case Expr.JavaApply(exp, name, exps, _, _, _) => // TO CHECK
+      val init = visitExp(exp)
+      exps.foldLeft(init) {
+        case (acc, exp) => acc + visitExp(exp)
+      }
+
     case Expr.Unary(_, exp, _, _, _) =>
       visitExp(exp)
 

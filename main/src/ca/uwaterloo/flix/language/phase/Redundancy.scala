@@ -324,6 +324,11 @@ object Redundancy {
       val us2 = visitExps(exps, env0, rc)
       us1 ++ us2
 
+    case Expr.JavaApply(exp, _, exps, _, _, _) => // TO CHECK
+      val us1 = visitExp(exp, env0, rc)
+      val us2 = visitExps(exps, env0, rc)
+      us1 ++ us2
+
     case Expr.Unary(_, exp, _, _, _) =>
       visitExp(exp, env0, rc)
 

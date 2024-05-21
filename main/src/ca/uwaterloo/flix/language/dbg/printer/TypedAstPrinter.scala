@@ -37,6 +37,7 @@ object TypedAstPrinter {
     case Expr.Use(sym, alias, exp, loc) => DocAst.Expression.Unknown
     case Expr.Lambda(fparam, exp, _, _) => DocAst.Expression.Lambda(List(printFormalParam(fparam)), print(exp))
     case Expr.Apply(exp, exps, _, _, _) => DocAst.Expression.App(print(exp), exps.map(print))
+    case Expr.JavaApply(exp, _, exps, _, _, _) => DocAst.Expression.App(print(exp), exps.map(print)) // TO CHECK
     case Expr.Unary(sop, exp, _, _, _) => DocAst.Expression.Unary(OpPrinter.print(sop), print(exp))
     case Expr.Binary(sop, exp1, exp2, _, _, _) => DocAst.Expression.Binary(print(exp1), OpPrinter.print(sop), print(exp2))
     case Expr.Let(sym, _, exp1, exp2, _, _, _) => DocAst.Expression.Let(printVar(sym), Some(TypePrinter.print(exp1.tpe)), print(exp1), print(exp2))

@@ -225,6 +225,10 @@ object Indexer {
     case Expr.Apply(exp, exps, _, _, _) =>
       visitExp(exp) ++ visitExps(exps) ++ Index.occurrenceOf(exp0)
 
+    case Expr.JavaApply(exp, name, exps, _, _, _) => // TO CHECK
+      visitExp(exp) ++ visitExps(exps) ++ Index.occurrenceOf(exp0)
+
+
     case Expr.Unary(_, exp, _, _, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0)
 

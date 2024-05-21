@@ -162,6 +162,9 @@ object Safety {
       case Expr.Apply(exp, exps, _, _, _) =>
         visit(exp) ++ exps.flatMap(visit)
 
+      case Expr.JavaApply(exp, _, exps, _, _, _) =>
+        visit(exp) ++ exps.flatMap(visit)
+
       case Expr.Unary(_, exp, _, _, _) =>
         visit(exp)
 

@@ -110,6 +110,15 @@ object CodeHinter {
       val hints1 = checkEffect(eff, loc)
       hints0 ++ hints1 ++ visitExp(exp) ++ visitExps(exps)
 
+    case Expr.JavaApply(exp, _, exps, _, eff, loc) =>
+      val hints0 = (exp, exps) match {
+        case (Expr.Def(sym, _, _), lambda :: _) =>
+          checkEffect(sym, lambda.tpe, loc)
+        case _ => Nil
+      }
+      val hints1 = checkEffect(eff, loc)
+      hints0 ++ hints1 ++ visitExp(exp) ++ visitExps(exps)
+
     case Expr.Unary(_, exp, _, _, _) =>
       visitExp(exp)
 

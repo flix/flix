@@ -375,6 +375,12 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expr.Apply(e, es, t, eff, loc)
 
+    case TypedAst.Expr.JavaApply(exp, name, exps, tpe, eff, loc) =>
+      val e = visitExp(exp)
+      val es = visitExps(exps)
+      val t = visitType(tpe)
+      LoweredAst.Expr.JavaApply(e, name, es, t, eff, loc)
+
     case TypedAst.Expr.Unary(sop, exp, tpe, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
@@ -1850,6 +1856,11 @@ object Lowering {
       val e = substExp(exp, subst)
       val es = exps.map(substExp(_, subst))
       LoweredAst.Expr.Apply(e, es, tpe, eff, loc)
+
+    case LoweredAst.Expr.JavaApply(exp, name, exps, tpe, eff, loc) =>
+      val e = substExp(exp, subst)
+      val es = exps.map(substExp(_, subst))
+      LoweredAst.Expr.JavaApply(e, name, es, tpe, eff, loc)
 
     case LoweredAst.Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
       val es = exps.map(substExp(_, subst))

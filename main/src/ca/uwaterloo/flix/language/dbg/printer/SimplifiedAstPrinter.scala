@@ -51,6 +51,7 @@ object SimplifiedAstPrinter {
     case Def(sym, _, _) => DocAst.Expression.Def(sym)
     case Lambda(fparams, exp, _, _) => DocAst.Expression.Lambda(fparams.map(printFormalParam), print(exp))
     case Apply(exp, args, _, _, _) => DocAst.Expression.App(print(exp), args.map(print))
+    case JavaApply(exp, _, args, _, _, _) => DocAst.Expression.App(print(exp), args.map(print)) // TO CHECKS
     case LambdaClosure(cparams, fparams, _, exp, _, _) => DocAst.Expression.Lambda((cparams ++ fparams).map(printFormalParam), print(exp))
     case ApplyAtomic(op, exps, tpe, _, _) => OpPrinter.print(op, exps.map(print), MonoTypePrinter.print(tpe))
     case ApplyClo(exp, args, _, _, _) => DocAst.Expression.ApplyClo(print(exp), args.map(print), None)

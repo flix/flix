@@ -115,6 +115,9 @@ object TreeShaker1 {
     case Expr.Apply(exp, exps, _, _, _) =>
       visitExp(exp) ++ visitExps(exps)
 
+    case Expr.JavaApply(exp, _, exps, _, _, _) => // TO CHECK
+      visitExp(exp) ++ visitExps(exps)
+
     case Expr.ApplyAtomic(_, exps, _, _, _) =>
       visitExps(exps)
 

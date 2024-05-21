@@ -154,6 +154,9 @@ object ConstraintGen {
             (resTpe, resEff)
         }
 
+      case Expr.JavaApply(exp, name, exps, tvar, evar, loc) =>
+        ???
+
       case Expr.Lambda(fparam, exp, loc) =>
         c.unifyType(fparam.sym.tvar, fparam.tpe, loc)
         val (tpe, eff) = visitExp(exp)
