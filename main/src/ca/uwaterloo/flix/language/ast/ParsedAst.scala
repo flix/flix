@@ -608,6 +608,17 @@ object ParsedAst {
     case class Apply(exp: ParsedAst.Expression, args: Seq[ParsedAst.Argument], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
+     * Java Apply Expression (function call).
+     *
+     * @param sp1  the position of the first character in the expression.
+     * @param exp  the lambda expression.
+     * @param name the name of the function.
+     * @param args the arguments.
+     * @param sp2  the position of the last character in the expression.
+     */
+    case class JavaApply(sp1: SourcePosition, exp: ParsedAst.Expression, name: Name.Ident, args: Seq[ParsedAst.Argument], sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
       * Infix Apply.
       *
       * Replaced with Apply by Weeder.

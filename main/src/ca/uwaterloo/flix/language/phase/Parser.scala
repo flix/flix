@@ -822,7 +822,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
-      Static | Scope | LetMatch | LetRecDef | LetUse | LetImport | IfThenElse |
+      JavaApply | Scope | LetMatch | LetRecDef | LetUse | LetImport | IfThenElse |
         RestrictableChoose | TypeMatch | Match | LambdaMatch | Try | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block |
         SelectChannel | Spawn | ParYield | Lazy | Force |
@@ -1089,6 +1089,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ keyword("force") ~ WS ~ RecordSelect ~ SP ~> ParsedAst.Expression.Force
     }
 
+    def JavaApply: Rule1[ParsedAst.Expression] = rule {
+      SP ~ "." ~ LowerCaseVariable ~ "." ~ Names.JavaMethod ~ ArgumentList ~ SP ~> ParsedAst.Expression.JavaApply
+    }
+
     def Intrinsic: Rule1[ParsedAst.Expression.Intrinsic] = rule {
       SP ~ "$" ~ Names.Intrinsic ~ "$" ~ ArgumentList ~ SP ~> ParsedAst.Expression.Intrinsic
     }
@@ -1173,6 +1177,16 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def QName: Rule1[ParsedAst.Expression.QName] = rule {
       SP ~ Names.QName ~ SP ~> ParsedAst.Expression.QName
+    }
+
+    def LowerCaseVariable: Rule1[ParsedAst.Expression] = {
+      def NonDotSeparatedName: Rule1[Name.QName] = rule {
+        SP ~ Names.LowerCaseName ~ SP ~>
+          ((sp1: SourcePosition, parts: Name.Ident, sp2: SourcePosition) => Name.QName.fromNName(Name.NName(sp1, List(parts), sp2)))
+      }
+      rule {
+        SP ~ NonDotSeparatedName ~ SP ~> ParsedAst.Expression.QName
+      }
     }
 
     def Open: Rule1[ParsedAst.Expression.Open] = rule {
