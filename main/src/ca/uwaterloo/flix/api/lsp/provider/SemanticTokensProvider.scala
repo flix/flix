@@ -674,6 +674,8 @@ object SemanticTokensProvider {
     case TypeConstructor.Enum(_, _) => true
     case TypeConstructor.RestrictableEnum(_, _) => true
     case TypeConstructor.Native(_) => true
+    case TypeConstructor.MethodReturnType(name, arity) => false
+    case TypeConstructor.StaticMethodReturnType(clazz, name, arity) => false
     case TypeConstructor.Array => true
     case TypeConstructor.Vector => true
     case TypeConstructor.Ref => true
