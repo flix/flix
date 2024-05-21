@@ -33,6 +33,16 @@ import java.io.{File, FileWriter}
 import scala.collection.immutable.HashMap
 import scala.util.Random
 import ca.uwaterloo.flix.language.ast.SourceLocation
+import scala.collection.immutable
+import ca.uwaterloo.flix.language.ast.TypedAst.MutationType.CstMut
+import ca.uwaterloo.flix.language.ast.TypedAst.MutationType.RecordSelectMut
+import ca.uwaterloo.flix.language.ast.TypedAst.MutationType.VarMut
+import ca.uwaterloo.flix.language.ast.TypedAst.MutationType.ListMut
+import ca.uwaterloo.flix.language.ast.TypedAst.MutationType.CompMut
+import ca.uwaterloo.flix.language.ast.TypedAst.MutationType.CaseSwitch
+import ca.uwaterloo.flix.language.ast.TypedAst.MutationType.CaseDeletion
+import ca.uwaterloo.flix.language.ast.TypedAst.MutationType.IfMut
+import ca.uwaterloo.flix.language.ast.TypedAst.MutationType.SigMut
 
 ///
 /// A Mutation Tester can be used to evaluate ones test suite.
@@ -91,21 +101,13 @@ object MutationTester {
     val timeSec = end.toFloat / 1_000_000_000.0
     println(s"time to generate mutations: $timeSec")
     val lastRoot = insertDecAndCheckIntoRoot(root)
-    val _ = runMutations(flix, testModule, lastRoot, mutations)
+    val _ = runMutations(flix, testModule, lastRoot, sortMutants(mutations))
     writeReportsToFile(nonKilledStrList)
   }
 
 
   def runBenchmarks(flix: Flix): Unit = {
     val listToSource: List[String] = ("Chain" :: "Option" :: "Map" :: Nil)
-    new File("MutStats.txt")
-    new File("TTBData.txt")
-    val t = new FileWriter("MutStats.txt")
-    val a = new FileWriter("TTBData.txt")
-    a.write("")
-    t.write("")
-    a.close()
-    t.close()
     val _ = listToSource.map(module => {
       val root = flix.check().unsafeGet
       // println(root.sigs.filter(t => t._1.toString.equals("Add.add")))
@@ -140,6 +142,40 @@ object MutationTester {
       }
     }
 
+
+    private def sortMutants(mutants: List[MutatedDef]): List[MutatedDef] = {
+      val csts = mutants.filter(m => m.mutType match {
+        case CstMut(_) => true
+        case _ =>  false
+      })
+      val recordSelectMut = mutants.filter(m => m.mutType match {
+        case RecordSelectMut(_) => true
+        case _ =>  false
+      })
+      val ifMut = mutants.filter(m => m.mutType match {
+        case IfMut(_) => true
+        case _ =>  false
+      })
+      val compMut = mutants.filter(m => m.mutType match {
+        case CompMut(_) => true
+        case _ =>  false})
+      val caseDeletion = mutants.filter(m => m.mutType match {
+        case CaseDeletion(_) => true
+        case _ =>  false})
+      val sigMut = mutants.filter(m => m.mutType match {
+        case SigMut(_) => true
+        case _ =>  false})
+      val caseSwitch = mutants.filter(m => m.mutType match {
+        case CaseSwitch(_, _) => true
+        case _ =>  false})
+      val varMut = mutants.filter(m => m.mutType match {
+        case VarMut(_, _) => true
+        case _ =>  false})
+      val listMut = mutants.filter(m => m.mutType match {
+        case ListMut() => true
+        case _ =>  false})
+      csts ::: varMut ::: ifMut ::: sigMut ::: caseSwitch ::: caseDeletion ::: listMut ::: recordSelectMut ::: compMut
+    }
 
   /**
       * Inserts a masked call to the static function decAndCheck into all defs in the root
@@ -301,7 +337,7 @@ object MutationTester {
         val mutationAmount = mAmount + 1
         val start = System.nanoTime()
 
-        if (survivingLocs.contains(mut.df.exp.loc)) {
+        if (false) {
           acc
         } else {
 
@@ -325,7 +361,7 @@ object MutationTester {
 
           val res_rep = ReportAcc(newSurvivorCount, newUnknownCount, newEQCount)
           val now = LocalDateTime.now()
-          val message = s"[${f.format(now)}] Mutants: $mutationAmount, Killed: ${mutationAmount - rep.totalSurvivorCount - rep.totalUnknowns - rep.equivalent}, Survived: ${rep.totalSurvivorCount}, Unknown: $rep.totalUnknowns"
+          val message = s"[${f.format(now)}] Mutants: $mutationAmount, Killed: ${mutationAmount - rep.totalSurvivorCount - rep.totalUnknowns - rep.equivalent}, Survived: ${rep.totalSurvivorCount}, Unknown: ${rep.totalUnknowns}"
           val newTemp = progressUpdate(message, accTemp)
           (res_rep, newTime, newTemp, mutationAmount, (mut.mutType, testResult) :: mTypeResults, newTTB, newSurvLocs)
         }
@@ -342,6 +378,7 @@ object MutationTester {
     private def compileAndTestMutant(df: TypedAst.Def, mut: Symbol.DefnSym, testKit: TestKit): TestRes = {
         val defs = testKit.root.defs
         val n = defs + (mut -> df)
+        println(df)
         val newRoot = testKit.root.copy(defs = n)
         val cRes = testKit.flix.codeGen(newRoot).unsafeGet
         val testsFromTester = cRes.getTests.filter { case (s, _) => s.namespace.head.equals(testKit.testModule) }.toList
