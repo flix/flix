@@ -280,10 +280,6 @@ object Simplifier {
 
           case TypeConstructor.Native(clazz) => MonoType.Native(clazz)
 
-          case TypeConstructor.MethodReturnType(name, arity) => throw InternalCompilerException("MethodReturnType shouldn't exist.", tpe.loc)
-
-          case TypeConstructor.StaticMethodReturnType(clazz, name, arity) => throw InternalCompilerException("StaticMethodReturnType shouldn't exist.", tpe.loc)
-
           case TypeConstructor.Array => MonoType.Array(args.head)
 
           case TypeConstructor.Vector => MonoType.Array(args.head)
@@ -330,6 +326,12 @@ object Simplifier {
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
 
           case TypeConstructor.Schema =>
+            throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
+
+          case TypeConstructor.MethodReturnType(_, _) =>
+            throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
+
+          case TypeConstructor.StaticMethodReturnType(_, _, _) =>
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
 
           case TypeConstructor.Error(_) =>

@@ -3314,13 +3314,11 @@ object Resolver {
 
         case TypeConstructor.Native(clazz) => Result.Ok(clazz)
 
-        case TypeConstructor.MethodReturnType(name, arity) => throw InternalCompilerException("MethodReturnType shouldn't exist.", loc)
-
-        case TypeConstructor.StaticMethodReturnType(clazz, name, arity) => throw InternalCompilerException("StaticMethodReturnType shouldn't exist.", loc)
-
         case TypeConstructor.Record => Result.Ok(Class.forName("java.lang.Object"))
 
         case TypeConstructor.Schema => Result.Ok(Class.forName("java.lang.Object"))
+
+
 
         case TypeConstructor.True => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.False => Result.Err(ResolutionError.IllegalType(tpe, loc))
@@ -3348,6 +3346,8 @@ object Resolver {
         case TypeConstructor.CaseIntersection(_) => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.CaseUnion(_) => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.Error(_) => Result.Err(ResolutionError.IllegalType(tpe, loc))
+        case TypeConstructor.MethodReturnType(name, arity) => Result.Err(ResolutionError.IllegalType(tpe, loc))
+        case TypeConstructor.StaticMethodReturnType(clazz, name, arity) => Result.Err(ResolutionError.IllegalType(tpe, loc))
 
         case TypeConstructor.AnyType => throw InternalCompilerException(s"unexpected type: $tc", tpe.loc)
         case t: TypeConstructor.Arrow => throw InternalCompilerException(s"unexpected type: $t", tpe.loc)
