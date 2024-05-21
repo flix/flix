@@ -486,6 +486,11 @@ object Desugar {
       val es = visitExps(exps)
       Expr.Apply(e, es, loc)
 
+    case WeededAst.Expr.JavaApply(exp, name, exps, loc) =>
+      val e = visitExp(exp)
+      val es = visitExps(exps)
+      Expr.JavaApply(e, name, es, loc)
+
     case WeededAst.Expr.Infix(exp1, exp2, exp3, loc) =>
       desugarInfix(exp1, exp2, exp3, loc)
 

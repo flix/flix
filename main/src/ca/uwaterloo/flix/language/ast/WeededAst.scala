@@ -95,6 +95,8 @@ object WeededAst {
 
     case class Apply(exp: Expr, exps: List[Expr], loc: SourceLocation) extends Expr
 
+    case class JavaApply(exp: Expr, name: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
+
     case class Infix(exp1: Expr, exp2: Expr, exp3: Expr, loc: SourceLocation) extends Expr
 
     case class Lambda(fparam: FormalParam, exp: Expr, loc: SourceLocation) extends Expr

@@ -825,8 +825,7 @@ object Weeder {
       mapN(visitExp(exp), traverse(args)(e => visitArgument(e))) {
         case (e, as) =>
           val es = getArguments(as, loc)
-          // WeededAst.Expr.JavaApply(e, name, es, loc)
-          ???
+          WeededAst.Expr.JavaApply(e, name, es, loc)
       }
 
     case ParsedAst.Expression.Infix(exp1, name, exp2, sp2) =>

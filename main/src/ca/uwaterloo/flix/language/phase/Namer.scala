@@ -636,6 +636,11 @@ object Namer {
         case (e, es) => NamedAst.Expr.Apply(e, es, loc)
       }
 
+    case DesugaredAst.Expr.JavaApply(exp, name, exps, loc) =>
+      mapN(visitExp(exp, ns0), traverse(exps)(visitExp(_, ns0))) {
+        case (e, es) => NamedAst.Expr.JavaApply(e, name, es, loc)
+      }
+
     case DesugaredAst.Expr.Lambda(fparam0, exp, loc) =>
       mapN(visitFormalParam(fparam0): Validation[NamedAst.FormalParam, NameError], visitExp(exp, ns0)) {
         case (p, e) => NamedAst.Expr.Lambda(p, e, loc)
