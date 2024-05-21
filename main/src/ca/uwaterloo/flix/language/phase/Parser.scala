@@ -822,7 +822,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
-      Scope | LetMatch | LetRecDef | LetUse | LetImport | IfThenElse |
+      Static | Scope | LetMatch | LetRecDef | LetUse | LetImport | IfThenElse |
         RestrictableChoose | TypeMatch | Match | LambdaMatch | Try | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block |
         SelectChannel | Spawn | ParYield | Lazy | Force | JavaApply |
