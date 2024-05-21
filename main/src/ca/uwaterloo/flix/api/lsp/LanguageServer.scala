@@ -84,7 +84,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
   /**
     * The current AST root. The root is null until the source code is compiled.
     */
-  private var root: Option[Root] = Some(TypedAst.empty)
+  private var root: Root = TypedAst.empty
 
   /**
     * The current reverse index. The index is empty until the source code is compiled.
@@ -265,7 +265,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
     case Request.Check(id) => processCheck(id)
 
     case Request.Codelens(id, uri) =>
-      ("id" -> id) ~ CodeLensProvider.processCodeLens(uri)(index, root)
+      ("id" -> id) ~ CodeLensProvider.processCodeLens(uri)(root)
 
     case Request.Complete(id, uri, pos) =>
       ("id" -> id) ~ CompletionProvider.autoComplete(uri, pos, sources.get(uri), currentErrors)(flix, index, root, delta)
@@ -280,38 +280,33 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
       ("id" -> id) ~ GotoProvider.processGoto(uri, pos)(index, root)
 
     case Request.Implementation(id, uri, pos) =>
-      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> ImplementationProvider.processImplementation(uri, pos)(root.orNull).map(_.toJSON))
+      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> ImplementationProvider.processImplementation(uri, pos)(root).map(_.toJSON))
 
     case Request.Rename(id, newName, uri, pos) =>
-      ("id" -> id) ~ RenameProvider.processRename(newName, uri, pos)(index, root.orNull)
+      ("id" -> id) ~ RenameProvider.processRename(newName, uri, pos)(index, root)
 
     case Request.DocumentSymbols(id, uri) =>
-      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> SymbolProvider.processDocumentSymbols(uri)(root.orNull).map(_.toJSON))
+      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> SymbolProvider.processDocumentSymbols(uri)(root).map(_.toJSON))
 
     case Request.WorkspaceSymbols(id, query) =>
-      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> SymbolProvider.processWorkspaceSymbols(query)(root.orNull).map(_.toJSON))
+      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> SymbolProvider.processWorkspaceSymbols(query)(root).map(_.toJSON))
 
     case Request.Uses(id, uri, pos) =>
-      ("id" -> id) ~ FindReferencesProvider.findRefs(uri, pos)(index, root.orNull)
+      ("id" -> id) ~ FindReferencesProvider.findRefs(uri, pos)(index, root)
 
     case Request.SemanticTokens(id, uri) =>
-      ("id" -> id) ~ SemanticTokensProvider.provideSemanticTokens(uri)(index, root.orNull)
+      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ SemanticTokensProvider.provideSemanticTokens(uri)(index, root)
 
     case Request.InlayHint(id, _, _) =>
         // InlayHints disabled due to poor ergonomics.
-        // ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> InlayHintProvider.processInlayHints(uri, range)(index, root.orNull, flix).map(_.toJSON))
+        // ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> InlayHintProvider.processInlayHints(uri, range)(index, flix).map(_.toJSON))
         ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> Nil)
 
     case Request.ShowAst(id) =>
-      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> ShowAstProvider.showAst()(index, root, flix))
+      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> ShowAstProvider.showAst()(flix))
 
     case Request.CodeAction(id, uri, range, context) =>
-      root match {
-        case None =>
-          ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> Nil)
-        case Some(r) =>
-          ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> CodeActionProvider.getCodeActions(uri, range, context, currentErrors)(index, r, flix).map(_.toJSON))
-      }
+      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> CodeActionProvider.getCodeActions(uri, range, context, currentErrors)(index, root, flix).map(_.toJSON))
 
   }
 
@@ -357,7 +352,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
     */
   private def processSuccessfulCheck(requestId: String, root: Root, errors: Chain[CompilationMessage], explain: Boolean, t0: Long): JValue = {
     val oldRoot = this.root
-    this.root = Some(root)
+    this.root = root
     this.index = Indexer.visitRoot(root)
     this.delta = DeltaContext.mergeDeltas(this.delta, Differ.difference(oldRoot, root))
     this.currentErrors = errors.toList
