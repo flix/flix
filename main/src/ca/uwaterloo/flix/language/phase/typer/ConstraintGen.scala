@@ -743,6 +743,9 @@ object ConstraintGen {
 
         (resTpe, resEff)
 
+      case Expr.InvokeMethod2(obj, name, exps, tvar, evar, loc) =>
+        ??? // TODO
+
       case Expr.InvokeConstructor(constructor, exps, _) =>
         val classTpe = Type.getFlixType(constructor.getDeclaringClass)
         val (_, _) = exps.map(visitExp).unzip
