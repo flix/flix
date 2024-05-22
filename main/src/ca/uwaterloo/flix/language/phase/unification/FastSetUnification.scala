@@ -42,7 +42,6 @@ import scala.collection.mutable
 /// - We represent a union with n >= 2 terms.
 ///   - We group the terms into three: a set of constants, a set of variables, and a list of sub-terms.
 ///   - We flatten unions at least one level per call to `mkUnion`.
-/// TODO: add complex intersection
 ///
 /// In the future, we could:
 /// - Explore change of basis.
@@ -341,8 +340,8 @@ object FastSetUnification {
     * - `x ~ empty` becomes `[x -> empty]`.
     * - `x ~ univ` becomes `[x -> univ]`.
     * - `x ~ c` becomes `[x -> c]`.
-    * TODO: add `x ∩ y ∩ .. = univ` becomes `[x -> univ, y -> univ, ...]`
     * - `x ∪ y ∪ ... = empty` becomes `[x -> empty, y -> empty, ...]`.
+    * - `x ∩ y ∩ ... = univ` becomes `[x -> univ, y -> univ, ...]`.
     *
     * For example, if the equation system is:
     *
@@ -423,9 +422,24 @@ object FastSetUnification {
 
           // TODO: add for non-variable union/intersection?
           // Case 4: x ∪ y ∪ z ∪... ~ empty
-          case Equation(Term.Union(csts, vars, rest), Term.Empty, loc) if csts.isEmpty && rest.isEmpty =>
-            for (Term.Var(x) <- vars) {
+          case Equation(Term.Union(posCsts, negCsts, posVars, negVars, rest), Term.Empty, loc) if posCsts.isEmpty && negCsts.isEmpty && rest.isEmpty =>
+            for (Term.Var(x) <- posVars) {
+              subst = subst.extended(x, Term.Empty, loc) // Note: the extended function will check that `x` is not already mapped to another constant.
+              changed = true
+            }
+            for (Term.Var(x) <- negVars) {
               subst = subst.extended(x, Term.Univ, loc) // Note: the extended function will check that `x` is not already mapped to another constant.
+              changed = true
+            }
+
+          // Case 5: x ∩ y ∩ z ∩... ~ univ
+          case Equation(Term.Union(posCsts, negCsts, posVars, negVars, rest), Term.Univ, loc) if posCsts.isEmpty && negCsts.isEmpty && rest.isEmpty =>
+            for (Term.Var(x) <- posVars) {
+              subst = subst.extended(x, Term.Univ, loc) // Note: the extended function will check that `x` is not already mapped to another constant.
+              changed = true
+            }
+            for (Term.Var(x) <- negVars) {
+              subst = subst.extended(x, Term.Empty, loc) // Note: the extended function will check that `x` is not already mapped to another constant.
               changed = true
             }
 
@@ -739,7 +753,7 @@ object FastSetUnification {
     case x :: xs =>
       val t0 = BoolSubstitution.singleton(x, Term.Empty)(t)
       val t1 = BoolSubstitution.singleton(x, Term.Univ)(t)
-      val se = successiveVariableElimination(Term.mkUnion(t0, t1), xs)
+      val se = successiveVariableElimination(Term.mkInter(t0, t1), xs)
 
       val f1 = Term.mkUnion(se(t0), Term.mkMinus(Term.Var(x), se(t1)))
       val st = BoolSubstitution.singleton(x, f1)
@@ -758,10 +772,12 @@ object FastSetUnification {
     case Term.Elem(i) => Term.Elem(i)
     case Term.Var(x) => Term.Var(x)
     case Term.Compl(t) => Term.mkCompl(flexify(t))
-    case Term.Union(csts, vars, rest) =>
+    case Term.Union(posCsts, negCsts, posVars, negVars, rest) =>
       // Translate every constant into a variable:
-      Term.mkUnion(csts.map(c => Term.Var(c.c)).toList ++ vars ++ rest.map(flexify))
-    case Term.Inter(ts) => Term.mkInter(ts.map(flexify))
+      Term.mkUnion(posCsts.map(c => Term.Var(c.c)).toList ++ negCsts.map(c => Term.Compl(Term.Var(c.c))) ++ posVars ++ negVars.map(Term.Compl(_)) ++ rest.map(flexify))
+    case Term.Inter(posCsts, negCsts, posVars, negVars, rest) =>
+      // Translate every constant into a variable:
+      Term.mkInter(posCsts.map(c => Term.Var(c.c)).toList ++ negCsts.map(c => Term.Compl(Term.Var(c.c))) ++ posVars ++ negVars.map(Term.Compl(_)) ++ rest.map(flexify))
   }
 
   /**
@@ -801,13 +817,19 @@ object FastSetUnification {
     case Term.Var(x) => if (univVars.contains(x)) SetEval.univ else SetEval.empty
     case Term.Compl(t) => evaluate(t, univVars).compl()
 
-    case Term.Union(csts, vars, rest) =>
-      assert(csts.isEmpty)
+    case Term.Union(posCsts, negCsts, posVars, negVars, rest) =>
+      assert(posCsts.isEmpty)
+      assert(negCsts.isEmpty)
       // We must pay attention to performance here.
 
       // We first check if there is a variable x that is UNIV.
-      for (x <- vars.map(_.x)) {
+      for (x <- posVars.map(_.x)) {
         if (univVars.contains(x)) {
+          return SetEval.univ
+        }
+      }
+      for (x <- negVars.map(_.x)) {
+        if (!univVars.contains(x)) {
           return SetEval.univ
         }
       }
@@ -821,9 +843,26 @@ object FastSetUnification {
       }
       running
 
-    case Term.Inter(ts) =>
+    case Term.Inter(posCsts, negCsts, posVars, negVars, rest) =>
+      assert(posCsts.isEmpty)
+      assert(negCsts.isEmpty)
+      // We must pay attention to performance here.
+
+      // We first check if there is a variable x that is EMPTY.
+      for (x <- posVars.map(_.x)) {
+        if (!univVars.contains(x)) {
+          return SetEval.empty
+        }
+      }
+      for (x <- negVars.map(_.x)) {
+        if (univVars.contains(x)) {
+          return SetEval.empty
+        }
+      }
+
+      // All vars were empty. We evaluate each sub-term.
       var running = SetEval.univ
-      for (t0 <- ts) {
+      for (t0 <- rest) {
         running = running.intersect(evaluate(t0, univVars))
         // exit early for EMPTY
         if (running.isEmpty) return running
@@ -954,10 +993,8 @@ object FastSetUnification {
       case Term.Elem(_) => SortedSet.empty
       case Term.Var(x) => SortedSet(x)
       case Term.Compl(t) => t.freeVars
-
-      case Term.Union(_, vars, rest) => SortedSet.empty[Int] ++ vars.map(_.x) ++ rest.flatMap(_.freeVars)
-
-      case Term.Inter(ts) => ts.foldLeft(SortedSet.empty[Int])(_ ++ _.freeVars)
+      case Term.Union(_, _, posVars, negVars, rest) => SortedSet.empty[Int] ++ posVars.map(_.x) ++ negVars.map(_.x) ++ rest.flatMap(_.freeVars)
+      case Term.Inter(_, _, posVars, negVars, rest) => SortedSet.empty[Int] ++ posVars.map(_.x) ++ negVars.map(_.x) ++ rest.flatMap(_.freeVars)
     }
 
     /**
@@ -972,11 +1009,12 @@ object FastSetUnification {
       case Term.Elem(_) => 0
       case Term.Var(_) => 0
       case Term.Compl(t) => t.size + 1
-      case Term.Union(csts, vars, rest) =>
+      case Term.Union(posCsts, negCsts, posVars, negVars, rest) =>
         // We need a connective for each constant, variable, and term minus one.
         // We then add the size of all the sub-terms in `rest`.
-        ((csts.size + vars.size + rest.size) - 1) + rest.map(_.size).sum
-      case Term.Inter(ts) => ts.map(_.size).sum + (ts.length - 1)
+        ((posCsts.size + negCsts.size + posVars.size + negVars.size + rest.size) - 1) + rest.map(_.size).sum
+      case Term.Inter(posCsts, negCsts, posVars, negVars, rest) =>
+        ((posCsts.size + negCsts.size + posVars.size + negVars.size + rest.size) - 1) + rest.map(_.size).sum
     }
 
     /**
@@ -992,8 +1030,8 @@ object FastSetUnification {
         case Term.Var(x) => s"^x$x"
         case _ => s"^($f)"
       }
-      case Term.Union(csts, vars, rest) => s"(${(csts.toList ++ vars.toList ++ rest).mkString(" ∪ ")})"
-      case Term.Inter(ts) => s"(${ts.mkString(" ∩ ")})"
+      case Term.Union(posCsts, negCsts, posVars, negVars, rest) => s"(${(posCsts.toList ++ negCsts.map(Term.Compl(_)).toList ++ posVars.toList ++ negVars.map(Term.Compl(_)).toList ++ rest).mkString(" ∪ ")})"
+      case Term.Inter(posCsts, negCsts, posVars, negVars, rest) => s"(${(posCsts.toList ++ negCsts.map(Term.Compl(_)).toList ++ posVars.toList ++ negVars.map(Term.Compl(_)).toList ++ rest).mkString(" ∩ ")})"
     }
 
   }
@@ -1008,7 +1046,7 @@ object FastSetUnification {
     /**
       * The EMPTY term (`Ø`).
       */
-    val Empty: Term = Union(Set.empty, Set.empty, Nil)
+    val Empty: Term = Union(Set.empty, Set.empty, Set.empty, Set.empty, Nil)
 
     /**
       * Represents an uninterpreted set constant ("rigid variable").
@@ -1040,10 +1078,8 @@ object FastSetUnification {
       * We use a clever representation where we have a union of constants, variables, and then sub-terms.
       *
       * For example, the union: `x7 ∪ (^x2) ∪ c1 ∪ x4` is represented as: `Set(c1), Set(x4, x7), List(^x2)`.
-      *
-      * This representation is key to efficiency because the equations we solve are heavy on unions.
       */
-    case class Union(csts: Set[Term.Cst], vars: Set[Term.Var], rest: List[Term]) extends Term {
+    case class Union(posCsts: Set[Term.Cst], negCsts: Set[Term.Cst], posVars: Set[Term.Var], negVars: Set[Term.Var], rest: List[Term]) extends Term {
       // We ensure that `rest` cannot contain constants and variables.
       // Once the code is better tested, we can remove these assertions.
       assert(!rest.exists(_.isInstanceOf[Term.Cst]))
@@ -1051,22 +1087,34 @@ object FastSetUnification {
     }
 
     /**
-      * A intersection of the terms `ts` (`∩`).
+      * Represents an intersection of terms (`∩`).
       *
-      * Note: We do not use currently use any clever representation of intersections (because there has been no need).
+      * We use a clever representation where we have a union of constants, variables, and then sub-terms.
+      *
+      * For example, the intersection: `x7 ∩ (^x2) ∩ c1 ∩ x4` is represented as: `Set(c1), Set(x4, x7), List(^x2)`.
       */
-    case class Inter(ts: List[Term]) extends Term {
-      assert(ts.length >= 2)
+    case class Inter(posCsts: Set[Term.Cst], negCsts: Set[Term.Cst], posVars: Set[Term.Var], negVars: Set[Term.Var], rest: List[Term]) extends Term {
+      // We ensure that `rest` cannot contain constants and variables.
+      // Once the code is better tested, we can remove these assertions.
+      assert(!rest.exists(_.isInstanceOf[Term.Cst]))
+      assert(!rest.exists(_.isInstanceOf[Term.Var]))
     }
 
     /**
       * Smart constructor for complement (`^`).
+      *
+      * Rewrites complements deeply
       */
     final def mkCompl(t: Term): Term = t match {
       case Univ => Empty
-      case Empty => Univ
-      case Compl(t0) => t0
-      case _ => Compl(t)
+      case Cst(c) => Compl(Cst(c))
+      case Elem(i) => Compl(Elem(i))
+      case Var(x) => Compl(Var(x))
+      case Compl(t) => t
+      case Union(posCsts, negCsts, posVars, negVars, rest) =>
+        mkInter(Inter(negCsts, posCsts, negVars, posVars, Nil), mkInter(rest.map(mkCompl)))
+      case Inter(posCsts, negCsts, posVars, negVars, rest) =>
+        mkUnion(Union(negCsts, posCsts, negVars, posVars, Nil), mkUnion(rest.map(mkCompl)))
     }
 
     /**
@@ -1106,26 +1154,34 @@ object FastSetUnification {
       */
     final def mkUnion(ts: List[Term]): Term = {
       // Mutable data structures to hold constants, variables, and other sub-terms.
-      val cstTerms = mutable.Set.empty[Term.Cst]
-      val varTerms = mutable.Set.empty[Term.Var]
+      val posCstTerms = mutable.Set.empty[Term.Cst]
+      val negCstTerms = mutable.Set.empty[Term.Cst]
+      val posVarTerms = mutable.Set.empty[Term.Var]
+      val negVarTerms = mutable.Set.empty[Term.Var]
       val restTerms = mutable.ListBuffer.empty[Term]
       for (t <- ts) {
         t match {
           case Empty => // NOP - We do not have to include Empty in a union.
           case Univ => return Univ // If the union contains UNIV then whole union is UNIV.
-          case x@Term.Cst(_) => cstTerms += x
-          case x@Term.Var(_) => varTerms += x
-          case Union(csts0, vars0, rest0) =>
+          case x@Term.Cst(_) => posCstTerms += x
+          case Term.Compl(x@Term.Cst(_)) => negCstTerms += x
+          case x@Term.Var(_) => posVarTerms += x
+          case Term.Compl(x@Term.Var(_)) => negVarTerms += x
+          case Union(posCsts0, negCsts0, posVars0, negVars0, rest0) =>
             // We have found a nested union. We can immediately add _its_ constants and variables.
-            cstTerms ++= csts0
-            varTerms ++= vars0
+            posCstTerms ++= posCsts0
+            negCstTerms ++= negCsts0
+            posVarTerms ++= posVars0
+            negVarTerms ++= negVars0
             for (t0 <- rest0) {
               // We then iterate through the nested sub-terms of the nested union.
               t0 match {
                 case Empty => // NOP - We do not have to include Empty in a union.
                 case Univ => return Univ // If the sub-union contains UNIV then the whole union is UNIV.
-                case x@Term.Cst(_) => cstTerms += x
-                case x@Term.Var(_) => varTerms += x
+                case x@Term.Cst(_) => posCstTerms += x
+                case Term.Compl(x@Term.Cst(_)) => negCstTerms += x
+                case x@Term.Var(_) => posVarTerms += x
+                case Term.Compl(x@Term.Var(_)) => negVarTerms += x
                 case _ => restTerms += t0
               }
             }
@@ -1133,14 +1189,23 @@ object FastSetUnification {
         }
       }
 
+      val posCstTermsSet = posCstTerms.toSet
+      val negCstTermsSet = negCstTerms.toSet
+      if (posCstTermsSet.intersect(negCstTermsSet).nonEmpty) return Univ
+      val posVarTermsSet = posVarTerms.toSet
+      val negVarTermsSet = negVarTerms.toSet
+      if (posVarTermsSet.intersect(negVarTermsSet).nonEmpty) return Univ
+
       // We now have a set of constants, a set of variables, and a list of sub-terms.
       // We optimize for the case where each of these is empty EXCEPT for one element.
-      (cstTerms.toList, varTerms.toList, restTerms.toList) match {
-        case (Nil, Nil, Nil) => Term.Empty // Everything is empty, so we return the neutral element, i.e. EMPTY.
-        case (List(c), Nil, Nil) => c // A single constant.
-        case (Nil, List(x), Nil) => x // A single variable.
-        case (Nil, Nil, List(t)) => t // A single non-constant and non-variable sub-term.
-        case _ => Union(cstTerms.toSet, varTerms.toSet, restTerms.toList)
+      (posCstTerms.toList, negCstTerms.toList, posVarTerms.toList, negVarTerms.toList, restTerms.toList) match {
+        case (Nil, Nil, Nil, Nil, Nil) => Term.Empty // Everything is empty, so we return the neutral element, i.e. EMPTY.
+        case (List(c), Nil, Nil, Nil, Nil) => c
+        case (Nil, List(x), Nil, Nil, Nil) => Term.Compl(x)
+        case (Nil, Nil, List(x), Nil, Nil) => x
+        case (Nil, Nil, Nil, List(x), Nil) => Term.Compl(x)
+        case (Nil, Nil, Nil, Nil, List(t)) => t
+        case _ => Union(posCstTermsSet, negCstTermsSet, posVarTermsSet, negVarTermsSet, restTerms.toList)
       }
     }
 
@@ -1148,32 +1213,59 @@ object FastSetUnification {
       * Smart constructor for intersection (∩).
       */
     final def mkInter(ts: List[Term]): Term = {
-      // We refer to [[mkUnion]] since the structure is similar.
-
-      val varTerms = mutable.Set.empty[Term]
-      val nonVarTerms = mutable.ListBuffer.empty[Term]
+      // Mutable data structures to hold constants, variables, and other sub-terms.
+      val posCstTerms = mutable.Set.empty[Term.Cst]
+      val negCstTerms = mutable.Set.empty[Term.Cst]
+      val posVarTerms = mutable.Set.empty[Term.Var]
+      val negVarTerms = mutable.Set.empty[Term.Var]
+      val restTerms = mutable.ListBuffer.empty[Term]
       for (t <- ts) {
         t match {
-          case Empty => return Empty
-          case Univ => // nop
-          case x@Term.Var(_) => varTerms += x
-          case Inter(ts0) =>
-            for (t0 <- ts0) {
+          case Univ => // NOP - We do not have to include UNIV in a union.
+          case Empty => return Empty // If the union contains EMPTY then whole union is EMPTY.
+          case x@Term.Cst(_) => posCstTerms += x
+          case Term.Compl(x@Term.Cst(_)) => negCstTerms += x
+          case x@Term.Var(_) => posVarTerms += x
+          case Term.Compl(x@Term.Var(_)) => negVarTerms += x
+          case Inter(posCsts0, negCsts0, posVars0, negVars0, rest0) =>
+            // We have found a nested union. We can immediately add _its_ constants and variables.
+            posCstTerms ++= posCsts0
+            negCstTerms ++= negCsts0
+            posVarTerms ++= posVars0
+            negVarTerms ++= negVars0
+            for (t0 <- rest0) {
+              // We then iterate through the nested sub-terms of the nested union.
               t0 match {
-                case Empty => return Empty
-                case Univ => // nop
-                case x@Term.Var(_) => varTerms += x
-                case _ => nonVarTerms += t0
+                case Univ => // NOP - We do not have to include UNIV in a union.
+                case Empty => return Empty // If the sub-union contains EMPTY then the whole union is EMPTY.
+                case x@Term.Cst(_) => posCstTerms += x
+                case Term.Compl(x@Term.Cst(_)) => negCstTerms += x
+                case x@Term.Var(_) => posVarTerms += x
+                case Term.Compl(x@Term.Var(_)) => negVarTerms += x
+                case _ => restTerms += t0
               }
             }
-          case _ => nonVarTerms += t
+          case _ => restTerms += t // We found some other sub-term.
         }
       }
 
-      varTerms.toList ++ nonVarTerms.toList match {
-        case Nil => Univ
-        case x :: Nil => x
-        case xs => Inter(xs)
+      val posCstTermsSet = posCstTerms.toSet
+      val negCstTermsSet = negCstTerms.toSet
+      if (posCstTermsSet.intersect(negCstTermsSet).nonEmpty) return Empty
+      val posVarTermsSet = posVarTerms.toSet
+      val negVarTermsSet = negVarTerms.toSet
+      if (posVarTermsSet.intersect(negVarTermsSet).nonEmpty) return Empty
+
+      // We now have a set of constants, a set of variables, and a list of sub-terms.
+      // We optimize for the case where each of these is empty EXCEPT for one element.
+      (posCstTerms.toList, negCstTerms.toList, posVarTerms.toList, negVarTerms.toList, restTerms.toList) match {
+        case (Nil, Nil, Nil, Nil, Nil) => Term.Univ // Everything is empty, so we return the neutral element, i.e. EMPTY.
+        case (List(c), Nil, Nil, Nil, Nil) => c
+        case (Nil, List(x), Nil, Nil, Nil) => Term.Compl(x)
+        case (Nil, Nil, List(x), Nil, Nil) => x
+        case (Nil, Nil, Nil, List(x), Nil) => Term.Compl(x)
+        case (Nil, Nil, Nil, Nil, List(t)) => t
+        case _ => Inter(posCstTermsSet, negCstTermsSet, posVarTermsSet, negVarTermsSet, restTerms.toList)
       }
     }
 
@@ -1230,15 +1322,18 @@ object FastSetUnification {
 
       case Term.Compl(t0) => Term.mkCompl(apply(t0))
 
-      case Term.Union(csts, vars, rest) =>
+      case Term.Union(posCsts, negCsts, posVars, negVars, rest) =>
         // A union is a sequence of: constants, variables, and terms. We know that the constants are unchanged by
         // the substitution. We know that some variables may become constants, variables, or terms. Since we do not want
         // to duplicate functionality from [[Term.mkUnion]], we simply apply the substitution to the variables and terms,
         // and put everything in one list. We then let [[Term.mkUnion]] reclassify all the sub-terms.
-        val ts = csts.toList ++ vars.toList.map(apply) ++ rest.map(apply)
+        val ts = posCsts.toList ++ negCsts.map(Term.Compl(_)).toList ++ posVars.toList.map(apply) ++ negVars.map(Term.Compl(_)).toList.map(apply) ++ rest.map(apply)
         Term.mkUnion(ts)
 
-      case Term.Inter(ts) => Term.mkInter(ts.map(apply))
+      case Term.Inter(posCsts, negCsts, posVars, negVars, rest) =>
+        // see union
+        val ts = posCsts.toList ++ negCsts.map(Term.Compl(_)).toList ++ posVars.toList.map(apply) ++ negVars.map(Term.Compl(_)).toList.map(apply) ++ rest.map(apply)
+        Term.mkInter(ts)
     }
 
     /**
