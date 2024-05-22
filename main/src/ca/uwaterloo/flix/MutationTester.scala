@@ -101,7 +101,8 @@ object MutationTester {
     val timeSec = end.toFloat / 1_000_000_000.0
     println(s"time to generate mutations: $timeSec")
     val lastRoot = insertDecAndCheckIntoRoot(root)
-    val _ = runMutations(flix, testModule, lastRoot, sortMutants(mutations))
+    val (_, ttb) = runMutations(flix, testModule, lastRoot, Random.shuffle(mutations))
+    MutationDataHandler.writeTTBToFile(s"TTB: $productionModule ${ttb}")
     writeReportsToFile(nonKilledStrList)
   }
 
@@ -297,7 +298,6 @@ object MutationTester {
             testMutantsAndUpdateProgress(acc, mut, kit, f)
         })
       reportResults(totalStartTime, amountOfMutants, rep.totalSurvivorCount, rep.totalUnknowns, rep.equivalent)
-      MutationDataHandler.writeTTBToFile(s"TTB: $testModule ${timeToBug - totalStartTime}")
       println((timeToBug - totalStartTime) / 1_000_000_000)
       (mOperatorResults, (timeToBug - totalStartTime) / 1_000_000_000)
     }
@@ -341,6 +341,7 @@ object MutationTester {
           acc
         } else {
 
+          println(mut.mutType)
           val testResult = compileAndTestMutant(mut.df, mut.df.sym, testKit)
 
           val nano = 1_000_000_000
@@ -378,7 +379,6 @@ object MutationTester {
     private def compileAndTestMutant(df: TypedAst.Def, mut: Symbol.DefnSym, testKit: TestKit): TestRes = {
         val defs = testKit.root.defs
         val n = defs + (mut -> df)
-        println(df)
         val newRoot = testKit.root.copy(defs = n)
         val cRes = testKit.flix.codeGen(newRoot).unsafeGet
         val testsFromTester = cRes.getTests.filter { case (s, _) => s.namespace.head.equals(testKit.testModule) }.toList

@@ -30,7 +30,7 @@ object MutationDataHandler {
 
   def writeTTBToFile(times: String): Unit = {
     val fileWriter = new FileWriter("TTBData.txt", true)
-    fileWriter.write(times)
+    fileWriter.write(s"$times\n")
     fileWriter.close()
   }
 
