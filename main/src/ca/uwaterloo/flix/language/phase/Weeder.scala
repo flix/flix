@@ -820,15 +820,6 @@ object Weeder {
           WeededAst.Expr.Apply(e, es, loc)
       }
 
-    case ParsedAst.Expression.InvokeMethod2(sp1, exp, name, args, sp2) =>
-      val loc = mkSL(sp1, sp2)
-      mapN(visitExp(exp), traverse(args)(e => visitArgument(e))) {
-        case (e, as) =>
-          val es = getArguments(as, loc)
-          // WeededAst.Expr.InvokeMethod2(e, name, es, loc)
-          ???
-      }
-
     case ParsedAst.Expression.Infix(exp1, name, exp2, sp2) =>
       val loc = mkSL(leftMostSourcePosition(exp1), sp2)
       val e1 = visitExp(exp1)
@@ -1348,6 +1339,15 @@ object Weeder {
       val argsVal = mapN(traverse(args0)(visitArgument(_)))(getArguments(_, loc))
       mapN(argsVal) {
         args => WeededAst.Expr.Do(op, args, loc)
+      }
+
+    case ParsedAst.Expression.InvokeMethod2(sp1, exp, name, args, sp2) =>
+      val loc = mkSL(sp1, sp2)
+      mapN(visitExp(exp), traverse(args)(e => visitArgument(e))) {
+        case (e, as) =>
+          val es = getArguments(as, loc)
+          // WeededAst.Expr.InvokeMethod2(e, name, es, loc)
+          ???
       }
 
     case ParsedAst.Expression.Try(sp1, exp, ParsedAst.HandlerList.CatchHandlerList(handlers0), sp2) =>
@@ -2994,7 +2994,6 @@ object Weeder {
     case ParsedAst.Expression.Lit(sp1, _, _) => sp1
     case ParsedAst.Expression.Intrinsic(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Apply(e1, _, _) => leftMostSourcePosition(e1)
-    case ParsedAst.Expression.InvokeMethod2(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.Infix(e1, _, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Lambda(sp1, _, _, _) => sp1
     case ParsedAst.Expression.LambdaMatch(sp1, _, _, _) => sp1
@@ -3039,6 +3038,7 @@ object Weeder {
     case ParsedAst.Expression.CheckedEffectCast(sp1, _, _) => sp1
     case ParsedAst.Expression.Without(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Do(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.InvokeMethod2(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.Try(sp1, _, _, _) => sp1
     case ParsedAst.Expression.SelectChannel(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Spawn(sp1, _, _, _) => sp1

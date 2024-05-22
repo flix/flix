@@ -825,10 +825,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       Static | Scope | LetMatch | LetRecDef | LetUse | LetImport | IfThenElse |
         RestrictableChoose | TypeMatch | Match | LambdaMatch | Try | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block |
-        SelectChannel | Spawn | ParYield | Lazy | Force | InvokeMethod2 |
+        SelectChannel | Spawn | ParYield | Lazy | Force |
         CheckedTypeCast | CheckedEffectCast | UncheckedCast | UncheckedMaskingCast | Intrinsic | ArrayLit | VectorLit | ListLit |
         SetLit | FMap | ConstraintSet | FixpointLambda | FixpointProject | FixpointSolveWithProject |
-        FixpointQueryWithSelect | Interpolation | Literal | Do |
+        FixpointQueryWithSelect | Interpolation | Literal | Do | InvokeMethod2 |
         Discard | Debug | ApplicativeFor | ForEachYield | MonadicFor | ForEach | NewObject |
         UnaryLambda | Open | OpenAs | HolyName | QName | Hole
     }
@@ -1002,6 +1002,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ keyword("do") ~ WS ~ Names.QualifiedOperation ~ ArgumentList ~ SP ~> ParsedAst.Expression.Do
     }
 
+    def InvokeMethod2: Rule1[ParsedAst.Expression] = rule {
+      SP ~ "." ~ LowerCaseVariable ~ "." ~ Names.JavaMethod ~ ArgumentList ~ SP ~> ParsedAst.Expression.InvokeMethod2
+    }
+
     def Debug: Rule1[ParsedAst.Expression.Debug] = {
       def DebugKind: Rule1[ParsedAst.DebugKind] = rule {
         keyword("debug!!") ~ push(ParsedAst.DebugKind.DebugWithLocAndSrc) |
@@ -1087,10 +1091,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Force: Rule1[ParsedAst.Expression.Force] = rule {
       SP ~ keyword("force") ~ WS ~ RecordSelect ~ SP ~> ParsedAst.Expression.Force
-    }
-
-    def InvokeMethod2: Rule1[ParsedAst.Expression] = rule {
-      SP ~ "." ~ LowerCaseVariable ~ "." ~ Names.JavaMethod ~ ArgumentList ~ SP ~> ParsedAst.Expression.InvokeMethod2
     }
 
     def Intrinsic: Rule1[ParsedAst.Expression.Intrinsic] = rule {
