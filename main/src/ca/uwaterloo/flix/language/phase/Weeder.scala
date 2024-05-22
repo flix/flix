@@ -1341,10 +1341,10 @@ object Weeder {
         args => WeededAst.Expr.Do(op, args, loc)
       }
 
-    case ParsedAst.Expression.InvokeMethod2(sp1, exp, name, args, sp2) =>
+    case ParsedAst.Expression.InvokeMethod2(sp1, obj, name, args, sp2) =>
       val loc = mkSL(sp1, sp2)
-      mapN(visitExp(exp), traverse(args)(e => visitArgument(e))) {
-        case (e, as) =>
+      mapN(traverse(args)(e => visitArgument(e))) {
+        case (as) =>
           val es = getArguments(as, loc)
           // WeededAst.Expr.InvokeMethod2(e, name, es, loc)
           ???

@@ -1043,12 +1043,12 @@ object ParsedAst {
      * Invoke Java Method Expression (function call).
      *
      * @param sp1  the position of the first character in the expression.
-     * @param exp  the caller object.
+     * @param obj  the caller object.
      * @param name the name of the function.
      * @param args the arguments.
      * @param sp2  the position of the last character in the expression.
      */
-    case class InvokeMethod2(sp1: SourcePosition, exp: ParsedAst.Expression, name: Name.Ident, args: Seq[ParsedAst.Argument], sp2: SourcePosition) extends ParsedAst.Expression
+    case class InvokeMethod2(sp1: SourcePosition, obj: Name.Ident, name: Name.Ident, args: Seq[ParsedAst.Argument], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Try Expression.

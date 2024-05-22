@@ -1003,7 +1003,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def InvokeMethod2: Rule1[ParsedAst.Expression] = rule {
-      SP ~ "." ~ LowerCaseVariable ~ "." ~ Names.JavaMethod ~ ArgumentList ~ SP ~> ParsedAst.Expression.InvokeMethod2
+      SP ~ "." ~ Names.LowerCaseName ~ "." ~ Names.JavaMethod ~ ArgumentList ~ SP ~> ParsedAst.Expression.InvokeMethod2
     }
 
     def Debug: Rule1[ParsedAst.Expression.Debug] = {
@@ -1177,16 +1177,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def QName: Rule1[ParsedAst.Expression.QName] = rule {
       SP ~ Names.QName ~ SP ~> ParsedAst.Expression.QName
-    }
-
-    def LowerCaseVariable: Rule1[ParsedAst.Expression] = {
-      def NonDotSeparatedName: Rule1[Name.QName] = rule {
-        SP ~ Names.LowerCaseName ~ SP ~>
-          ((sp1: SourcePosition, parts: Name.Ident, sp2: SourcePosition) => Name.QName.fromNName(Name.NName(sp1, List(parts), sp2)))
-      }
-      rule {
-        SP ~ NonDotSeparatedName ~ SP ~> ParsedAst.Expression.QName
-      }
     }
 
     def Open: Rule1[ParsedAst.Expression.Open] = rule {
