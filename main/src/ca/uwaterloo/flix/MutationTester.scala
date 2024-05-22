@@ -175,7 +175,7 @@ object MutationTester {
       val listMut = mutants.filter(m => m.mutType match {
         case ListMut() => true
         case _ =>  false})
-      csts ::: varMut ::: ifMut ::: sigMut ::: caseSwitch ::: caseDeletion ::: listMut ::: recordSelectMut ::: compMut
+      caseSwitch ::: listMut ::: ifMut ::: varMut ::: csts ::: sigMut ::: caseDeletion ::: compMut ::: recordSelectMut
     }
 
   /**
