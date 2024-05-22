@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.LiftedAst.Root
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.Expression
-import ca.uwaterloo.flix.language.dbg.AstPrinter
+import ca.uwaterloo.flix.language.dbg.AstPrinter._
 
 /**
   * Iterative runs of the optimizer pipeline: OccurrenceAnalyzer -> Inliner -> Reducer.
@@ -29,7 +29,7 @@ object Optimizer {
   /**
     * Returns an optimized version of the given AST `root`.
     */
-  def run(root: Root)(implicit flix: Flix): Root = flix.phase("Optimizer")(AstPrinter.printLiftedAst) {
+  def run(root: Root)(implicit flix: Flix): Root = flix.phase("Optimizer") {
     if (flix.options.xnooptimizer) {
       root
     } else {

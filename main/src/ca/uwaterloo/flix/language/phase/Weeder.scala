@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.Ast.{Constant, Denotation}
 import ca.uwaterloo.flix.language.ast.ParsedAst.TypeParams
 import ca.uwaterloo.flix.language.ast.WeededAst.Pattern
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.dbg.AstPrinter
+import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.language.errors.WeederError._
 import ca.uwaterloo.flix.language.errors._
 import ca.uwaterloo.flix.util.Validation._
@@ -63,7 +63,7 @@ object Weeder {
     * Weeds the whole program.
     */
   def run(root: ParsedAst.Root, oldRoot: WeededAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[WeededAst.Root, WeederError] =
-    flix.phaseValidation("Weeder")(AstPrinter.printWeededAst) {
+    flix.phase("Weeder") {
       // Compute the stale and fresh sources.
       val (stale, fresh) = changeSet.partition(root.units, oldRoot.units)
 
@@ -72,7 +72,7 @@ object Weeder {
           val m = fresh ++ result
           WeededAst.Root(m, root.entryPoint, root.names)
       }
-    }
+    }(DebugValidation())
 
   /**
     * Weeds the given abstract syntax tree.
@@ -1339,6 +1339,15 @@ object Weeder {
       val argsVal = mapN(traverse(args0)(visitArgument(_)))(getArguments(_, loc))
       mapN(argsVal) {
         args => WeededAst.Expr.Do(op, args, loc)
+      }
+
+    case ParsedAst.Expression.InvokeMethod2(sp1, obj, name, args, sp2) =>
+      val loc = mkSL(sp1, sp2)
+      mapN(traverse(args)(e => visitArgument(e))) {
+        case (as) =>
+          val es = getArguments(as, loc)
+          // WeededAst.Expr.InvokeMethod2(e, name, es, loc)
+          ???
       }
 
     case ParsedAst.Expression.Try(sp1, exp, ParsedAst.HandlerList.CatchHandlerList(handlers0), sp2) =>
@@ -3029,6 +3038,7 @@ object Weeder {
     case ParsedAst.Expression.CheckedEffectCast(sp1, _, _) => sp1
     case ParsedAst.Expression.Without(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Do(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.InvokeMethod2(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.Try(sp1, _, _, _) => sp1
     case ParsedAst.Expression.SelectChannel(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Spawn(sp1, _, _, _) => sp1

@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.BoundBy
 import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, LiftedAst, MonoType, Purity, SimplifiedAst, Symbol}
-import ca.uwaterloo.flix.language.dbg.AstPrinter
+import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -30,7 +30,7 @@ object LambdaLift {
   /**
     * Performs lambda lifting on the given AST `root`.
     */
-  def run(root: SimplifiedAst.Root)(implicit flix: Flix): LiftedAst.Root = flix.phase("LambdaLift")(AstPrinter.printLiftedAst) {
+  def run(root: SimplifiedAst.Root)(implicit flix: Flix): LiftedAst.Root = flix.phase("LambdaLift") {
     implicit val ctx: SharedContext = SharedContext(new ConcurrentLinkedQueue())
 
     val defs = ParOps.parMapValues(root.defs)(visitDef)
@@ -127,6 +127,11 @@ object LambdaLift {
       val e2 = visitExp(exp2)
       val e3 = visitExp(exp3)
       LiftedAst.Expr.IfThenElse(e1, e2, e3, tpe, purity, loc)
+
+    case SimplifiedAst.Expr.Stm(exp1, exp2, tpe, purity, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      LiftedAst.Expr.Stm(e1, e2, tpe, purity, loc)
 
     case SimplifiedAst.Expr.Branch(exp, branches, tpe, purity, loc) =>
       val e = visitExp(exp)

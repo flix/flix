@@ -182,13 +182,13 @@ object KindedAst {
 
     case class NewObject(name: String, clazz: java.lang.Class[_], methods: List[JvmMethod], loc: SourceLocation) extends Expr
 
-    case class NewChannel(exp1: Expr, exp2: Expr, tvar: Type.Var, loc: SourceLocation) extends Expr
+    case class NewChannel(exp1: Expr, exp2: Expr, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class GetChannel(exp: Expr, tvar: Type.Var, loc: SourceLocation) extends Expr
+    case class GetChannel(exp: Expr, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class PutChannel(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
+    case class PutChannel(exp1: Expr, exp2: Expr, evar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class SelectChannel(rules: List[SelectChannelRule], default: Option[Expr], tvar: Type.Var, loc: SourceLocation) extends Expr
+    case class SelectChannel(rules: List[SelectChannelRule], default: Option[Expr], tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
     case class Spawn(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
@@ -208,7 +208,7 @@ object KindedAst {
 
     case class FixpointFilter(pred: Name.Pred, exp: Expr, tvar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class FixpointInject(exp: Expr, pred: Name.Pred, tvar: Type.Var, loc: SourceLocation) extends Expr
+    case class FixpointInject(exp: Expr, pred: Name.Pred, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
     case class FixpointProject(pred: Name.Pred, exp1: Expr, exp2: Expr, tvar: Type.Var, loc: SourceLocation) extends Expr
 

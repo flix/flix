@@ -24,7 +24,7 @@ sealed trait TokenKind {
     */
   def display: String = {
     this match {
-      case TokenKind.Ampersand => "'^'"
+      case TokenKind.Ampersand => "'&'"
       case TokenKind.AngledEqual => "'<=>'"
       case TokenKind.AngledPlus => "'<+>'"
       case TokenKind.AngleL => "'<'"
@@ -112,7 +112,6 @@ sealed trait TokenKind {
       case TokenKind.KeywordOverride => "'override'"
       case TokenKind.KeywordPar => "'par'"
       case TokenKind.KeywordPub => "'pub'"
-      case TokenKind.KeywordPure => "'Pure'"
       case TokenKind.KeywordProject => "'project'"
       case TokenKind.KeywordQuery => "'query'"
       case TokenKind.KeywordRef => "'ref'"
@@ -208,6 +207,93 @@ sealed trait TokenKind {
     * Checks if this token is a doc, line or block comment.
     */
   def isComment: Boolean = this == TokenKind.CommentDoc || this.isCommentNonDoc
+
+  /**
+    * Checks if this token is a keyword.
+    */
+  def isKeyword: Boolean = this match {
+    case TokenKind.KeywordAlias => true
+    case TokenKind.KeywordAnd => true
+    case TokenKind.KeywordAs => true
+    case TokenKind.KeywordCase => true
+    case TokenKind.KeywordCatch => true
+    case TokenKind.KeywordCheckedCast => true
+    case TokenKind.KeywordCheckedECast => true
+    case TokenKind.KeywordChoose => true
+    case TokenKind.KeywordChooseStar => true
+    case TokenKind.KeywordDebug => true
+    case TokenKind.KeywordDebugBang => true
+    case TokenKind.KeywordDebugBangBang => true
+    case TokenKind.KeywordDef => true
+    case TokenKind.KeywordDeref => true
+    case TokenKind.KeywordDiscard => true
+    case TokenKind.KeywordDo => true
+    case TokenKind.KeywordEff => true
+    case TokenKind.KeywordElse => true
+    case TokenKind.KeywordEnum => true
+    case TokenKind.KeywordFalse => true
+    case TokenKind.KeywordFix => true
+    case TokenKind.KeywordForA => true
+    case TokenKind.KeywordForall => true
+    case TokenKind.KeywordForce => true
+    case TokenKind.KeywordForeach => true
+    case TokenKind.KeywordForM => true
+    case TokenKind.KeywordFrom => true
+    case TokenKind.KeywordIf => true
+    case TokenKind.KeywordImport => true
+    case TokenKind.KeywordInject => true
+    case TokenKind.KeywordInline => true
+    case TokenKind.KeywordInstance => true
+    case TokenKind.KeywordInstanceOf => true
+    case TokenKind.KeywordInto => true
+    case TokenKind.KeywordJavaGetField => true
+    case TokenKind.KeywordJavaNew => true
+    case TokenKind.KeywordJavaSetField => true
+    case TokenKind.KeywordLaw => true
+    case TokenKind.KeywordLawful => true
+    case TokenKind.KeywordLazy => true
+    case TokenKind.KeywordLet => true
+    case TokenKind.KeywordMaskedCast => true
+    case TokenKind.KeywordMatch => true
+    case TokenKind.KeywordMod => true
+    case TokenKind.KeywordNew => true
+    case TokenKind.KeywordNot => true
+    case TokenKind.KeywordNull => true
+    case TokenKind.KeywordOpenVariant => true
+    case TokenKind.KeywordOpenVariantAs => true
+    case TokenKind.KeywordOr => true
+    case TokenKind.KeywordOverride => true
+    case TokenKind.KeywordPar => true
+    case TokenKind.KeywordPub => true
+    case TokenKind.KeywordProject => true
+    case TokenKind.KeywordQuery => true
+    case TokenKind.KeywordRef => true
+    case TokenKind.KeywordRegion => true
+    case TokenKind.KeywordRestrictable => true
+    case TokenKind.KeywordRvadd => true
+    case TokenKind.KeywordRvand => true
+    case TokenKind.KeywordRvnot => true
+    case TokenKind.KeywordRvsub => true
+    case TokenKind.KeywordSealed => true
+    case TokenKind.KeywordSelect => true
+    case TokenKind.KeywordSolve => true
+    case TokenKind.KeywordSpawn => true
+    case TokenKind.KeywordStatic => true
+    case TokenKind.KeywordTrait => true
+    case TokenKind.KeywordTrue => true
+    case TokenKind.KeywordTry => true
+    case TokenKind.KeywordType => true
+    case TokenKind.KeywordTypeMatch => true
+    case TokenKind.KeywordUncheckedCast => true
+    case TokenKind.KeywordUniv => true
+    case TokenKind.KeywordUse => true
+    case TokenKind.KeywordWhere => true
+    case TokenKind.KeywordWith => true
+    case TokenKind.KeywordWithout => true
+    case TokenKind.KeywordYield => true
+    case TokenKind.KeywordXor => true
+    case _ => false
+  }
 
   /**
     * Checks if this token is a modifier.
@@ -358,7 +444,6 @@ sealed trait TokenKind {
          | TokenKind.Underscore
          | TokenKind.NameLowerCase
          | TokenKind.KeywordUniv
-         | TokenKind.KeywordPure
          | TokenKind.KeywordFalse
          | TokenKind.KeywordTrue
          | TokenKind.ParenL
@@ -429,6 +514,13 @@ sealed trait TokenKind {
     * in case no other error-recovery could be applied.
     */
   def isRecoverDecl: Boolean = this.isFirstDecl
+
+  /**
+    * Checks if kind is a TokenKind that warrants breaking a module parsing loop.
+    * This is used to skip tokens until the start of a declaration is found,
+    * in case no other error-recovery could be applied.
+    */
+  def isRecoverMod: Boolean = this == TokenKind.CurlyR || this.isFirstDecl
 
   /**
     * Checks if kind is a TokenKind that warrants breaking an expression parsing loop.
@@ -671,8 +763,6 @@ object TokenKind {
   case object KeywordPar extends TokenKind
 
   case object KeywordPub extends TokenKind
-
-  case object KeywordPure extends TokenKind
 
   case object KeywordProject extends TokenKind
 

@@ -374,10 +374,11 @@ object TypeReconstruction {
       }
 
     case KindedAst.Expr.UncheckedMaskingCast(exp, loc) =>
-      // We explicitly mark a `Mask` expression as Impure.
+      // We explicitly mark a `Mask` expression as Pure in TypeReconstruction.
+      // Later it is erased and the effect of the subexpression is unmasked
       val e = visitExp(exp)
       val tpe = e.tpe
-      val eff = Type.IO
+      val eff = Type.Pure
       TypedAst.Expr.UncheckedMaskingCast(e, tpe, eff, loc)
 
     case KindedAst.Expr.Without(exp, effUse, loc) =>
@@ -465,25 +466,22 @@ object TypeReconstruction {
       val ms = methods map visitJvmMethod
       TypedAst.Expr.NewObject(name, clazz, tpe, eff, ms, loc)
 
-    case KindedAst.Expr.NewChannel(exp1, exp2, tvar, loc) =>
+    case KindedAst.Expr.NewChannel(exp1, exp2, tvar, evar, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      val eff = Type.IO
-      TypedAst.Expr.NewChannel(e1, e2, subst(tvar), eff, loc)
+      TypedAst.Expr.NewChannel(e1, e2, subst(tvar), subst(evar), loc)
 
-    case KindedAst.Expr.GetChannel(exp, tvar, loc) =>
+    case KindedAst.Expr.GetChannel(exp, tvar, evar, loc) =>
       val e = visitExp(exp)
-      val eff = Type.IO
-      TypedAst.Expr.GetChannel(e, subst(tvar), eff, loc)
+      TypedAst.Expr.GetChannel(e, subst(tvar), subst(evar), loc)
 
-    case KindedAst.Expr.PutChannel(exp1, exp2, loc) =>
+    case KindedAst.Expr.PutChannel(exp1, exp2, evar, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val tpe = Type.mkUnit(loc)
-      val eff = Type.IO
-      TypedAst.Expr.PutChannel(e1, e2, tpe, eff, loc)
+      TypedAst.Expr.PutChannel(e1, e2, tpe, subst(evar), loc)
 
-    case KindedAst.Expr.SelectChannel(rules, default, tvar, loc) =>
+    case KindedAst.Expr.SelectChannel(rules, default, tvar, evar, loc) =>
       val rs = rules map {
         case KindedAst.SelectChannelRule(sym, chan, exp) =>
           val c = visitExp(chan)
@@ -491,8 +489,7 @@ object TypeReconstruction {
           TypedAst.SelectChannelRule(sym, c, b)
       }
       val d = default.map(visitExp(_))
-      val eff = Type.IO
-      TypedAst.Expr.SelectChannel(rs, d, subst(tvar), eff, loc)
+      TypedAst.Expr.SelectChannel(rs, d, subst(tvar), subst(evar), loc)
 
     case KindedAst.Expr.Spawn(exp1, exp2, loc) =>
       val e1 = visitExp(exp1)
@@ -555,10 +552,9 @@ object TypeReconstruction {
       val eff = e.eff
       TypedAst.Expr.FixpointFilter(pred, e, subst(tvar), eff, loc)
 
-    case KindedAst.Expr.FixpointInject(exp, pred, tvar, loc) =>
+    case KindedAst.Expr.FixpointInject(exp, pred, tvar, evar, loc) =>
       val e = visitExp(exp)
-      val eff = e.eff
-      TypedAst.Expr.FixpointInject(e, pred, subst(tvar), eff, loc)
+      TypedAst.Expr.FixpointInject(e, pred, subst(tvar), subst(evar), loc)
 
     case KindedAst.Expr.FixpointProject(pred, exp1, exp2, tvar, loc) =>
       val e1 = visitExp(exp1)

@@ -446,7 +446,7 @@ object CompilerPerf {
       }
 
     val phases = flix.phaseTimers.map {
-      case PhaseTime(phase, time, _) => phase -> time
+      case PhaseTime(phase, time) => phase -> time
     }
     val totalTime = flix.getTotalTime
 

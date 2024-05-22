@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.{Source, SyntacticContext}
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.dbg.AstPrinter
+import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.collection.Chain
 import ca.uwaterloo.flix.util.{ParOps, Validation}
@@ -47,7 +47,7 @@ object Parser {
     * Parses the given source inputs into an abstract syntax tree.
     */
   def run(root: ReadAst.Root, entryPoint: Option[Symbol.DefnSym], oldRoot: ParsedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[ParsedAst.Root, CompilationMessage] =
-    flix.phaseValidation("Parser")(AstPrinter.printParsedAst) {
+    flix.phase("Parser") {
 
       // Compute the stale and fresh sources.
       val (stale, fresh) = changeSet.partition(root.sources, oldRoot.units)
@@ -63,7 +63,7 @@ object Parser {
           }
           ParsedAst.Root(m, entryPoint, root.names)
       }
-    }
+    }(DebugValidation())
 
   /**
     * Replaces `"\n"` `"\r"` `"\t"` with spaces (not actual newlines etc. but dash n etc.).
@@ -88,10 +88,10 @@ object Parser {
         val mostLikelyContext = possibleContexts.keySet.reduceOption(SyntacticContext.join).getOrElse(SyntacticContext.Unknown)
         val loc = SourceLocation(parser.input, source, isReal = true, e.position.line, e.position.column.toShort, e.position.line, e.position.column.toShort)
         // NOTE: Manually construct a hard failure here since ParseError is Recoverable, but in this parser it is not :-(
-        Validation.HardFailure(Chain(ca.uwaterloo.flix.language.errors.ParseError(stripLiteralWhitespaceChars(parser.formatError(e)), mostLikelyContext, loc)))
+        Validation.HardFailure(Chain(ca.uwaterloo.flix.language.errors.ParseError.Legacy(stripLiteralWhitespaceChars(parser.formatError(e)), mostLikelyContext, loc)))
       case scala.util.Failure(e) =>
         // NOTE: Manually construct a hard failure here since ParseError is Recoverable, but in this parser it is not :-(
-        Validation.HardFailure(Chain(ca.uwaterloo.flix.language.errors.ParseError(e.getMessage, SyntacticContext.Unknown, SourceLocation.Unknown)))
+        Validation.HardFailure(Chain(ca.uwaterloo.flix.language.errors.ParseError.Legacy(e.getMessage, SyntacticContext.Unknown, SourceLocation.Unknown)))
     }
   }
 
@@ -828,7 +828,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         SelectChannel | Spawn | ParYield | Lazy | Force |
         CheckedTypeCast | CheckedEffectCast | UncheckedCast | UncheckedMaskingCast | Intrinsic | ArrayLit | VectorLit | ListLit |
         SetLit | FMap | ConstraintSet | FixpointLambda | FixpointProject | FixpointSolveWithProject |
-        FixpointQueryWithSelect | Interpolation | Literal | Do |
+        FixpointQueryWithSelect | Interpolation | Literal | Do | InvokeMethod2 |
         Discard | Debug | ApplicativeFor | ForEachYield | MonadicFor | ForEach | NewObject |
         UnaryLambda | Open | OpenAs | HolyName | QName | Hole
     }
@@ -1000,6 +1000,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Do: Rule1[ParsedAst.Expression] = rule {
       SP ~ keyword("do") ~ WS ~ Names.QualifiedOperation ~ ArgumentList ~ SP ~> ParsedAst.Expression.Do
+    }
+
+    def InvokeMethod2: Rule1[ParsedAst.Expression] = rule {
+      SP ~ "." ~ Names.LowerCaseName ~ "." ~ Names.JavaMethod ~ ArgumentList ~ SP ~> ParsedAst.Expression.InvokeMethod2
     }
 
     def Debug: Rule1[ParsedAst.Expression.Debug] = {
@@ -1488,8 +1492,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     def Primary: Rule1[ParsedAst.Type] = rule {
       // NB: Record must come before EffectSet as they overlap
       // NB: CaseComplement must come before Complement as they overlap
-      Arrow | Tuple | Record | RecordRow | Schema | SchemaRow | CaseSet | EffectSet | Not | CaseComplement | Complement |
-        Native | True | False | Pure | Univ | Var | Ambiguous
+      Arrow | Tuple | EmptyRecord | Record | RecordRow | Schema | SchemaRow | CaseSet | EffectSet | Not | CaseComplement | Complement |
+        Native | True | False | Univ | Var | Ambiguous
     }
 
     def Arrow: Rule1[ParsedAst.Type] = {
@@ -1514,6 +1518,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       rule {
         Singleton | Tuple
       }
+    }
+
+    def EmptyRecord: Rule1[ParsedAst.Type] = rule {
+      SP ~ "{" ~ optWS ~ push(Nil) ~ optWS ~ "|" ~ optWS ~ push(None) ~ "}" ~ SP ~> ParsedAst.Type.Record
     }
 
     def Record: Rule1[ParsedAst.Type] = rule {
@@ -1562,10 +1570,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def False: Rule1[ParsedAst.Type] = rule {
       SP ~ keyword("false") ~ SP ~> ParsedAst.Type.False
-    }
-
-    def Pure: Rule1[ParsedAst.Type] = rule {
-      SP ~ keyword("Pure") ~ SP ~> ParsedAst.Type.Pure
     }
 
     def Univ: Rule1[ParsedAst.Type] = rule {

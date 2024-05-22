@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.LiftedAst._
 import ca.uwaterloo.flix.language.ast.{AtomicOp, Symbol}
-import ca.uwaterloo.flix.language.dbg.AstPrinter
+import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.util.ParOps
 
 /**
@@ -37,7 +37,7 @@ object TreeShaker2 {
   /**
     * Performs tree shaking on the given AST `root`.
     */
-  def run(root: Root)(implicit flix: Flix): Root = flix.phase("TreeShaker2")(AstPrinter.printLiftedAst) {
+  def run(root: Root)(implicit flix: Flix): Root = flix.phase("TreeShaker2") {
     // Compute the symbols that are always reachable.
     val initReach = root.reachable
 
@@ -95,7 +95,7 @@ object TreeShaker2 {
     case Expr.LetRec(_, _, _, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expr.Stmt(exp1, exp2, _, _, _) =>
+    case Expr.Stm(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
     case Expr.Scope(_, exp, _, _, _) =>

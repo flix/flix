@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.Ast._
 import ca.uwaterloo.flix.language.ast.Type.eraseAliases
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, Kind, LoweredAst, Name, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
-import ca.uwaterloo.flix.language.dbg.AstPrinter
+import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugLoweredAst
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 /**
@@ -144,7 +144,7 @@ object Lowering {
   /**
     * Translates internal Datalog constraints into Flix Datalog constraints.
     */
-  def run(root: TypedAst.Root)(implicit flix: Flix): LoweredAst.Root = flix.phase("Lowering")(AstPrinter.printLoweredAst) {
+  def run(root: TypedAst.Root)(implicit flix: Flix): LoweredAst.Root = flix.phase("Lowering") {
     implicit val r: TypedAst.Root = root
 
     val defs = ParOps.parMapValues(root.defs)(visitDef)

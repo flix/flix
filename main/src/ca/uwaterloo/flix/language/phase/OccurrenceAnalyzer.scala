@@ -59,7 +59,7 @@ object OccurrenceAnalyzer {
   /**
     * Performs occurrence analysis on the given AST `root`.
     */
-  def run(root: LiftedAst.Root)(implicit flix: Flix): Validation[OccurrenceAst.Root, CompilationMessage] = flix.subphase("OccurrenceAnalyzer") {
+  def run(root: LiftedAst.Root)(implicit flix: Flix): Validation[OccurrenceAst.Root, CompilationMessage] = {
 
     val defs = visitDefs(root.defs)
     val effects = root.effects.map { case (k, v) => k -> visitEffect(v) }
@@ -207,7 +207,7 @@ object OccurrenceAnalyzer {
       val o3 = combineAllSeq(o1, o2)
       (OccurrenceAst.Expression.LetRec(varSym, index, defSym, e1, e2, tpe, purity, loc), o3.increaseSizeByOne())
 
-    case Expr.Stmt(exp1, exp2, tpe, purity, loc) =>
+    case Expr.Stm(exp1, exp2, tpe, purity, loc) =>
       val (e1, o1) = visitExp(sym0, exp1)
       val (e2, o2) = visitExp(sym0, exp2)
       val o3 = combineAllSeq(o1, o2)

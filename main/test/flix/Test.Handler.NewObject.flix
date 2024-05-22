@@ -20,7 +20,7 @@ mod Test.Handler.NewObject {
     }
 
     def newGenRunnable(r: Ref[Int32, rc]): Runnable \ IO = new Runnable {
-        def run(_this: Runnable): Unit \ { IO , rc } =
+        def run(_this: Runnable): Unit \ { rc } =
             try {
               Ref.put(do Gen.gen(), r)
             } with Gen {
@@ -29,7 +29,7 @@ mod Test.Handler.NewObject {
     }
 
     def newGenAskRunnable(r: Ref[Int32, rc]): Runnable \ IO = new Runnable {
-        def run(_this: Runnable): Unit \ { IO , rc } =
+        def run(_this: Runnable): Unit \ { rc } =
             try {
                 do Ask.ask(
                     try {
