@@ -341,7 +341,6 @@ object MutationTester {
           acc
         } else {
 
-          println(mut.mutType)
           val testResult = compileAndTestMutant(mut.df, mut.df.sym, testKit)
 
           val nano = 1_000_000_000
