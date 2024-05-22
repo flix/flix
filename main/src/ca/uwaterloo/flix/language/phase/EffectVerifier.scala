@@ -350,6 +350,8 @@ object EffectVerifier {
       visitExp(exp)
       // TODO ?
       ()
+    case Expr.InvokeMethod2(_, _, _, _, _, _) =>
+      ()
     case Expr.Error(m, tpe, eff) => ()
   }
 

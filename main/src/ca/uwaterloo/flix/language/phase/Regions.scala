@@ -279,6 +279,9 @@ object Regions {
     case Expr.FixpointProject(_, exp, tpe, _, loc) =>
       visitExp(exp) ++ checkType(tpe, loc)
 
+    case Expr.InvokeMethod2(_, _, _, _, _, _) =>
+      Nil
+
     case Expr.Error(_, _, _) =>
       Nil
 

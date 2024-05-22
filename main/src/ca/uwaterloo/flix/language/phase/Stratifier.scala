@@ -495,6 +495,9 @@ object Stratifier {
         case e => Expr.FixpointProject(pred, e, tpe, eff, loc)
       }
 
+    case Expr.InvokeMethod2(exp, name, exps, tpe, eff, loc) =>
+      Validation.success((Expr.InvokeMethod2(exp, name, exps, tpe, eff, loc)))
+
     case Expr.Error(m, tpe, eff) =>
       // Note: We must NOT use [[Validation.toSoftFailure]] because
       // that would duplicate the error inside the Validation.
