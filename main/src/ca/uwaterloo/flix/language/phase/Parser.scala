@@ -825,7 +825,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       Static | Scope | LetMatch | LetRecDef | LetUse | LetImport | IfThenElse |
         RestrictableChoose | TypeMatch | Match | LambdaMatch | Try | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block |
-        SelectChannel | Spawn | ParYield | Lazy | Force | JavaApply |
+        SelectChannel | Spawn | ParYield | Lazy | Force | InvokeMethod2 |
         CheckedTypeCast | CheckedEffectCast | UncheckedCast | UncheckedMaskingCast | Intrinsic | ArrayLit | VectorLit | ListLit |
         SetLit | FMap | ConstraintSet | FixpointLambda | FixpointProject | FixpointSolveWithProject |
         FixpointQueryWithSelect | Interpolation | Literal | Do |
@@ -1089,8 +1089,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ keyword("force") ~ WS ~ RecordSelect ~ SP ~> ParsedAst.Expression.Force
     }
 
-    def JavaApply: Rule1[ParsedAst.Expression] = rule {
-      SP ~ "." ~ LowerCaseVariable ~ "." ~ Names.JavaMethod ~ ArgumentList ~ SP ~> ParsedAst.Expression.JavaApply
+    def InvokeMethod2: Rule1[ParsedAst.Expression] = rule {
+      SP ~ "." ~ LowerCaseVariable ~ "." ~ Names.JavaMethod ~ ArgumentList ~ SP ~> ParsedAst.Expression.InvokeMethod2
     }
 
     def Intrinsic: Rule1[ParsedAst.Expression.Intrinsic] = rule {

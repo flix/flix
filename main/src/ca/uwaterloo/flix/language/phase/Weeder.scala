@@ -820,12 +820,12 @@ object Weeder {
           WeededAst.Expr.Apply(e, es, loc)
       }
 
-    case ParsedAst.Expression.JavaApply(sp1, exp, name, args, sp2) =>
+    case ParsedAst.Expression.InvokeMethod2(sp1, exp, name, args, sp2) =>
       val loc = mkSL(sp1, sp2)
       mapN(visitExp(exp), traverse(args)(e => visitArgument(e))) {
         case (e, as) =>
           val es = getArguments(as, loc)
-          // WeededAst.Expr.JavaApply(e, name, es, loc)
+          // WeededAst.Expr.InvokeMethod2(e, name, es, loc)
           ???
       }
 
@@ -2994,7 +2994,7 @@ object Weeder {
     case ParsedAst.Expression.Lit(sp1, _, _) => sp1
     case ParsedAst.Expression.Intrinsic(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Apply(e1, _, _) => leftMostSourcePosition(e1)
-    case ParsedAst.Expression.JavaApply(sp1, _, _, _, _) => sp1
+    case ParsedAst.Expression.InvokeMethod2(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.Infix(e1, _, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Lambda(sp1, _, _, _) => sp1
     case ParsedAst.Expression.LambdaMatch(sp1, _, _, _) => sp1
