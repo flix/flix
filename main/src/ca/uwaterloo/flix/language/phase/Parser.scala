@@ -828,7 +828,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         SelectChannel | Spawn | ParYield | Lazy | Force |
         CheckedTypeCast | CheckedEffectCast | UncheckedCast | UncheckedMaskingCast | Intrinsic | ArrayLit | VectorLit | ListLit |
         SetLit | FMap | ConstraintSet | FixpointLambda | FixpointProject | FixpointSolveWithProject |
-        FixpointQueryWithSelect | Interpolation | Literal | Do |
+        FixpointQueryWithSelect | Interpolation | Literal | Do | InvokeMethod2 |
         Discard | Debug | ApplicativeFor | ForEachYield | MonadicFor | ForEach | NewObject |
         UnaryLambda | Open | OpenAs | HolyName | QName | Hole
     }
@@ -1000,6 +1000,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Do: Rule1[ParsedAst.Expression] = rule {
       SP ~ keyword("do") ~ WS ~ Names.QualifiedOperation ~ ArgumentList ~ SP ~> ParsedAst.Expression.Do
+    }
+
+    def InvokeMethod2: Rule1[ParsedAst.Expression] = rule {
+      SP ~ "." ~ Names.LowerCaseName ~ "." ~ Names.JavaMethod ~ ArgumentList ~ SP ~> ParsedAst.Expression.InvokeMethod2
     }
 
     def Debug: Rule1[ParsedAst.Expression.Debug] = {
