@@ -286,6 +286,7 @@ object CompletionProvider {
       case ResolutionError.UndefinedJvmClass(_, _, _) => (1, SyntacticContext.Import)
       case ResolutionError.UndefinedName(_, _, _, isUse, _) => if (isUse) (1, SyntacticContext.Use) else (2, SyntacticContext.Expr.OtherExpr)
       case ResolutionError.UndefinedType(_, _, _) => (1, SyntacticContext.Type.OtherType)
+      case ResolutionError.UndefinedOp(_, _) => (1, SyntacticContext.Expr.Do)
       case WeederError.MalformedIdentifier(_, _) => (2, SyntacticContext.Import)
       case WeederError.UnappliedIntrinsic(_, _) => (5, SyntacticContext.Expr.OtherExpr)
       case err: ParseError => (5, err.sctx)
