@@ -784,6 +784,7 @@ object Weeder2 {
         case TreeKind.Expr.Without => visitWithoutExpr(tree)
         case TreeKind.Expr.Try => visitTryExpr(tree)
         case TreeKind.Expr.Do => visitDoExpr(tree)
+        case TreeKind.Expr.InvokeMethod2 => visitInvokeMethod2Expr(tree)
         case TreeKind.Expr.NewObject => visitNewObjectExpr(tree)
         case TreeKind.Expr.Static => visitStaticExpr(tree)
         case TreeKind.Expr.Select => visitSelectExpr(tree)
@@ -1655,6 +1656,18 @@ object Weeder2 {
       expect(tree, TreeKind.Expr.Do)
       mapN(pickQName(tree), pickArguments(tree)) {
         (op, args) => Expr.Do(op, args, tree.loc)
+      }
+    }
+
+    private def visitInvokeMethod2Expr(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      expect(tree, TreeKind.Expr.InvokeMethod2)
+      flatMapN(pick(TreeKind.Expr.Expr, tree), pickNameIdent(tree), pickArguments(tree)) {
+        case (expr, name, args) => // do args contain exps list ?
+          val maybeIntrinsic = tryPick(TreeKind.Expr.Intrinsic, expr)
+          maybeIntrinsic match {
+            case Some(intrinsic) => visitIntrinsic(intrinsic, args)
+            case None => mapN(visitExpr(expr))(Expr.InvokeMethod2(_, name, args, tree.loc))
+          }
       }
     }
 
