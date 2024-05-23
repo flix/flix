@@ -25,8 +25,11 @@ object MutationDataHandler {
     fileWriter.close()
   }
 
-
-
+  def writeBBSToFile(bbs: String): Unit = {
+    val fileWriter = new FileWriter("BBSData.txt", true)
+    fileWriter.write(s"$bbs\n")
+    fileWriter.close()
+  }
 
   def writeTTBToFile(times: String): Unit = {
     val fileWriter = new FileWriter("TTBData.txt", true)

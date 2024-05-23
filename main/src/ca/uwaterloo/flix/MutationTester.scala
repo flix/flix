@@ -101,8 +101,9 @@ object MutationTester {
     val timeSec = end.toFloat / 1_000_000_000.0
     println(s"time to generate mutations: $timeSec")
     val lastRoot = insertDecAndCheckIntoRoot(root)
-    val (_, ttb) = runMutations(flix, testModule, lastRoot, Random.shuffle(mutations))
+    val (_, ttb, bbs, bugs) = runMutations(flix, testModule, lastRoot, sortMutants(mutations))
     MutationDataHandler.writeTTBToFile(s"TTB: $productionModule: ${ttb}")
+    MutationDataHandler.writeBBSToFile(s"BBS: $productionModule: ${bbs}: $bugs")
     writeReportsToFile(nonKilledStrList)
   }
 
@@ -115,7 +116,7 @@ object MutationTester {
       val mutations = MutationGenerator.mutateRoot(root, module)
       val testModule = s"Test$module"
       val lastRoot = insertDecAndCheckIntoRoot(root)
-      val (results, timeToBug) = runMutations(flix, testModule, lastRoot, mutations)
+      val (results, timeToBug, _, _) = runMutations(flix, testModule, lastRoot, mutations)
       MutationDataHandler.processData(results, module)
       MutationDataHandler.writeTTBToFile(s"TTB: $module: $timeToBug")
       (results , s"TTB: $module: $timeToBug")
@@ -283,23 +284,38 @@ object MutationTester {
     * @param mutatedDefs list of mutants
     * @return the results of running the generated mutants along with time to bug
     */
-    private def runMutations(flix: Flix, testModule: String, root: TypedAst.Root, mutatedDefs: List[MutatedDef]): (List[(MutationType, TestRes)], Double) = {
+    private def runMutations(flix: Flix, testModule: String, root: TypedAst.Root, mutatedDefs: List[MutatedDef]): (List[(MutationType, TestRes)], Double, Double, Int) = {
         val totalStartTime = System.nanoTime()
         val temp = totalStartTime
         val amountOfMutants = mutatedDefs.length
         val f = DateTimeFormatter.ofPattern("yyyy-MM-dd: HH:mm")
-        val emptyList: List[(MutationType, TestRes)] = Nil
+        val emptyList: List[(MutatedDef, TestRes)] = Nil
         val emptyLocs: List[SourceLocation] = Nil
         val newRep = ReportAcc(0,0,0)
-        val localAcc: (ReportAcc, Double, Long, Int, List[(MutationType, TestRes)], Long, List[SourceLocation]) = (newRep, totalStartTime.toDouble, temp, 0, emptyList, 0.toLong, emptyLocs)
+        val localAcc: (ReportAcc, Double, Long, Int, List[(MutatedDef, TestRes)], Long, List[SourceLocation]) = (newRep, totalStartTime.toDouble, temp, 0, emptyList, 0.toLong, emptyLocs)
         val (rep, _, _, _, mOperatorResults, timeToBug, _) = mutatedDefs.foldLeft(localAcc)((acc, mut) => {
             val kit = TestKit(flix, root, testModule)
             //println(s"testing ${mut._2.length} mutations in: ${mut._1}")
             testMutantsAndUpdateProgress(acc, mut, kit, f)
         })
-      reportResults(totalStartTime, amountOfMutants, rep.totalSurvivorCount, rep.totalUnknowns, rep.equivalent)
+      val totalTime = reportResults(totalStartTime, amountOfMutants, rep.totalSurvivorCount, rep.totalUnknowns, rep.equivalent)
       println((timeToBug - totalStartTime).toDouble / 1_000_000_000.toDouble)
-      (mOperatorResults, (timeToBug - totalStartTime).toDouble / 1_000_000_000.toDouble)
+
+      val bugs = calcBugs(mOperatorResults)
+
+      val mOpRes = mOperatorResults.map{
+        case (mDef, tR) => (mDef.mutType, tR)
+      }
+
+      (mOpRes, (timeToBug - totalStartTime).toDouble / 1_000_000_000.toDouble, bugs.toDouble / totalTime, bugs)
+    }
+
+
+    private def calcBugs(mutRes: List[(MutatedDef, TestRes)]): Int = {
+      val survivors = mutRes.filter{case (_, tR) => tR == TestRes.MutantSurvived}
+      val emptyList: List[SourceLocation] = Nil
+      val bugs = survivors.foldLeft(emptyList)((acc, m) => if (acc.contains(m._1.df.exp.loc)) acc else  m._1.df.exp.loc :: acc)
+      bugs.length
     }
 
   /**
@@ -309,8 +325,9 @@ object MutationTester {
     * @param totalSurvivorCount
     * @param totalUnknowns
     * @param equivalents
+    * @return totalEndTime
     */
-  private def reportResults(totalStartTime: Long, amountOfMutants: Int, totalSurvivorCount: Int, totalUnknowns: Int, equivalents: Int): Unit = {
+  private def reportResults(totalStartTime: Long, amountOfMutants: Int, totalSurvivorCount: Int, totalUnknowns: Int, equivalents: Int): Double = {
     val totalEndTime = System.nanoTime() - totalStartTime
     println(s"mutation score: ${(amountOfMutants - totalSurvivorCount - totalUnknowns -equivalents).toFloat/(amountOfMutants - totalUnknowns - equivalents).toFloat}")
     println(s"There where $totalSurvivorCount surviving mutations, out of $amountOfMutants mutations")
@@ -322,6 +339,8 @@ object MutationTester {
     println(s"Average time to test a mutant:  $average seconds")
     val time = if (ifMutants) totalEndTime.toFloat / nano else 0
     println(s"Total time to test all mutants: $time seconds")
+
+    totalEndTime.toDouble / nano
   }
 
   /**
@@ -332,12 +351,12 @@ object MutationTester {
     * @param f DateTimeFormatter
     * @return acc
     */
-    private def testMutantsAndUpdateProgress(acc: (ReportAcc, Double, Long, Int, List[(MutationType, TestRes)], Long, List[SourceLocation]), mut: MutatedDef, testKit: TestKit, f: DateTimeFormatter) = {
+    private def testMutantsAndUpdateProgress(acc: (ReportAcc, Double, Long, Int, List[(MutatedDef, TestRes)], Long, List[SourceLocation]), mut: MutatedDef, testKit: TestKit, f: DateTimeFormatter) = {
         val (rep, time, accTemp, mAmount, mTypeResults, timeToBug, survivingLocs) = acc
         val mutationAmount = mAmount + 1
         val start = System.nanoTime()
 
-        if (false) {
+        if (survivingLocs.contains(mut.df.exp.loc)) {
           acc
         } else {
 
@@ -363,7 +382,7 @@ object MutationTester {
           val now = LocalDateTime.now()
           val message = s"[${f.format(now)}] Mutants: $mutationAmount, Killed: ${mutationAmount - rep.totalSurvivorCount - rep.totalUnknowns - rep.equivalent}, Survived: ${rep.totalSurvivorCount}, Unknown: ${rep.totalUnknowns}"
           val newTemp = progressUpdate(message, accTemp)
-          (res_rep, newTime, newTemp, mutationAmount, (mut.mutType, testResult) :: mTypeResults, newTTB, newSurvLocs)
+          (res_rep, newTime, newTemp, mutationAmount, (mut, testResult) :: mTypeResults, newTTB, newSurvLocs)
         }
     }
 
