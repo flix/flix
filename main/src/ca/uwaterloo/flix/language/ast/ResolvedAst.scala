@@ -181,6 +181,8 @@ object ResolvedAst {
 
     case class Do(op: Ast.OpSymUse, exps: List[Expr], loc: SourceLocation) extends Expr
 
+    case class InvokeMethod2(exp: Expr, name: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
+
     case class InvokeConstructor(constructor: Constructor[_], exps: List[Expr], loc: SourceLocation) extends Expr
 
     case class InvokeMethod(method: Method, clazz: java.lang.Class[_], exp: Expr, exps: List[Expr], loc: SourceLocation) extends Expr
