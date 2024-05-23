@@ -203,6 +203,7 @@ object PatMatch {
         (exp :: ruleExps).flatMap(visitExp)
 
       case Expr.Do(_, exps, _, _, _) => exps.flatMap(visitExp)
+      case Expr.InvokeMethod2(exp, _, exps, _, _, _) => (exp :: exps).flatMap(visitExp)
       case Expr.InvokeConstructor(_, args, _, _, _) => args.flatMap(visitExp)
       case Expr.InvokeMethod(_, exp, args, _, _, _) => (exp :: args).flatMap(visitExp)
       case Expr.InvokeStaticMethod(_, args, _, _, _) => args.flatMap(visitExp)
@@ -237,7 +238,6 @@ object PatMatch {
       case Expr.FixpointFilter(_, exp, _, _, _) => visitExp(exp)
       case Expr.FixpointInject(exp, _, _, _, _) => visitExp(exp)
       case Expr.FixpointProject(_, exp, _, _, _) => visitExp(exp)
-      case Expr.InvokeMethod2(_, _, _, _, _, _) => Nil
       case Expr.Error(_, _, _) => Nil
     }
   }

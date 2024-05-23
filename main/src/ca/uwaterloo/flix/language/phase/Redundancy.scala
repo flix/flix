@@ -652,6 +652,11 @@ object Redundancy {
       sctx.effSyms.put(opUse.sym.eff, ())
       visitExps(exps, env0, rc)
 
+    case Expr.InvokeMethod2(exp, _, exps, _, _, _) =>
+      val us1 = visitExp(exp, env0, rc)
+      val us2 = visitExps(exps, env0, rc)
+      us1 ++ us2
+
     case Expr.InvokeConstructor(_, args, _, _, _) =>
       visitExps(args, env0, rc)
 
@@ -765,9 +770,6 @@ object Redundancy {
 
     case Expr.FixpointProject(_, exp, _, _, _) =>
       visitExp(exp, env0, rc)
-
-    case Expr.InvokeMethod2(_, _, _, _, _, _) =>
-      Used.empty
 
     case Expr.Error(_, _, _) =>
       lctx.errorLocs += e0.loc

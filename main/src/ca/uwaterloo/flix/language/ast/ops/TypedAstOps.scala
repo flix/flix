@@ -85,7 +85,7 @@ object TypedAstOps {
     case Expr.TryCatch(exp, rules, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp))
     case Expr.TryWith(exp, _, rules, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp))
     case Expr.Do(_, exps, _, _, _) => exps.flatMap(sigSymsOf).toSet
-    case Expr.InvokeMethod2(_, _, exps, _, _, _) => exps.flatMap(sigSymsOf).toSet
+    case Expr.InvokeMethod2(exp, _, exps, _, _, _) =>  sigSymsOf(exp) ++ exps.flatMap(sigSymsOf)
     case Expr.InvokeConstructor(_, args, _, _, _) => args.flatMap(sigSymsOf).toSet
     case Expr.InvokeMethod(_, exp, args, _, _, _) => sigSymsOf(exp) ++ args.flatMap(sigSymsOf)
     case Expr.InvokeStaticMethod(_, args, _, _, _) => args.flatMap(sigSymsOf).toSet

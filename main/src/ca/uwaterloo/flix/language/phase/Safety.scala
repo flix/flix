@@ -302,6 +302,9 @@ object Safety {
       case Expr.Do(_, exps, _, _, _) =>
         exps.flatMap(visit)
 
+      case Expr.InvokeMethod2(exp, _, exps, _, _, _) =>
+        visit(exp) ++ exps.flatMap(visit)
+
       case Expr.InvokeConstructor(_, args, _, _, _) =>
         args.flatMap(visit)
 
@@ -377,9 +380,6 @@ object Safety {
 
       case Expr.FixpointProject(_, exp, _, _, _) =>
         visit(exp)
-
-      case Expr.InvokeMethod2(_, _, _, _, _, _) =>
-        Nil
 
       case Expr.Error(_, _, _) =>
         Nil

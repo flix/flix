@@ -203,6 +203,9 @@ object Regions {
     case Expr.Do(_, exps, tpe, _, loc) =>
       exps.flatMap(visitExp) ++ checkType(tpe, loc)
 
+    case Expr.InvokeMethod2(exp, _, _, tpe, _, loc) =>
+      visitExp(exp) ++ checkType(tpe, loc)
+
     case Expr.InvokeConstructor(_, exps, tpe, _, loc) =>
       exps.flatMap(visitExp) ++ checkType(tpe, loc)
 
@@ -278,9 +281,6 @@ object Regions {
 
     case Expr.FixpointProject(_, exp, tpe, _, loc) =>
       visitExp(exp) ++ checkType(tpe, loc)
-
-    case Expr.InvokeMethod2(_, _, _, _, _, _) =>
-      Nil
 
     case Expr.Error(_, _, _) =>
       Nil

@@ -326,11 +326,11 @@ object PredDeps {
     case Expr.FixpointProject(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expr.InvokeMethod2(_, _, _, _, _, loc) =>
-      throw InternalCompilerException(s"Unexpected method invocation.", loc)
-
     case Expr.Error(_, _, _) =>
       LabelledPrecedenceGraph.empty
+
+    case Expr.InvokeMethod2(_, _, _, _, _, loc) =>
+      throw InternalCompilerException(s"Unexpected method invocation.", loc)
 
   }
 
