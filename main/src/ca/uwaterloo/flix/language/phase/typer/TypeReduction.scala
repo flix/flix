@@ -98,13 +98,33 @@ object TypeReduction {
     case Type.Alias(cst, args, t, _) => simplify(t, renv0, loc)
   }
 
-  def simplifyJava(tpe: Type,loc: SourceLocation)(implicit flix: Flix): Result[(Type, Boolean), TypeError] =
+  def simplifyJava(tpe: Type, loc: SourceLocation)(implicit flix: Flix): Result[(Type, Boolean), TypeError] =
     tpe.typeConstructor match {
       case Some(TypeConstructor.MethodReturnType(m, n)) =>
-        ???
+        val targs = tpe.typeArguments
+        resolveMethodReturnType(targs.head, m, targs.tail, loc) match {
+          case ResolutionResult.Resolve(t) => Result.Ok((t, true))
+          case ResolutionResult.NotFound() => ???
+          case ResolutionResult.NoProgress(t) => Result.Ok((t, false))
+        }
       case _ => Result.Ok((tpe, false))
     }
 
-  def resolveMethodReturnType(thisObj: Type, method: String, ts: List[Type], loc: SourceLocation)(implicit flix: Flix): Result[(Type, Boolean), TypeError] = ???
+  def resolveMethodReturnType(thisObj: Type, method: String, ts: List[Type], loc: SourceLocation)(implicit flix: Flix): ResolutionResult =
+    thisObj match {
+      case Type.Cst(TypeConstructor.Str, loc2) =>
+        val clazz = classOf[String]
+        clazz.getMethods
+
+      case _ => ResolutionResult.NoProgress(thisObj)
+    }
+
+
+  sealed trait ResolutionResult
+  object ResolutionResult {
+    case class Resolve(tpe: Type) extends ResolutionResult
+    case class NotFound() extends ResolutionResult
+    case class NoProgress(tpe: Type) extends ResolutionResult
+  }
 
 }
