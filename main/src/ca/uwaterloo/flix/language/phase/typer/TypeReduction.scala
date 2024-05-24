@@ -105,7 +105,7 @@ object TypeReduction {
         resolveMethodReturnType(targs.head, m, targs.tail, loc) match {
           case ResolutionResult.Resolve(t) => Result.Ok((t, true))
           case ResolutionResult.NotFound() => ???
-          case ResolutionResult.NoProgress(t) => Result.Ok((t, false))
+          case ResolutionResult.NoProgress() => Result.Ok((tpe, false))
         }
       case _ => Result.Ok((tpe, false))
     }
@@ -124,7 +124,7 @@ object TypeReduction {
   object ResolutionResult {
     case class Resolve(tpe: Type) extends ResolutionResult
     case class NotFound() extends ResolutionResult
-    case class NoProgress(tpe: Type) extends ResolutionResult
+    case class NoProgress() extends ResolutionResult
   }
 
 }
