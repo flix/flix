@@ -753,9 +753,9 @@ object FastSetUnification {
     case x :: xs =>
       val t0 = BoolSubstitution.singleton(x, Term.Empty)(t)
       val t1 = BoolSubstitution.singleton(x, Term.Univ)(t)
-      val se = successiveVariableElimination(Term.mkInter(t0, t1), xs)
+      val se = successiveVariableElimination(booleanAbsorption(Term.mkInter(t0, t1)), xs)
 
-      val f1 = Term.mkUnion(se(t0), Term.mkMinus(Term.Var(x), se(t1)))
+      val f1 = booleanAbsorption(Term.mkUnion(se(t0), Term.mkMinus(Term.Var(x), se(t1))))
       val st = BoolSubstitution.singleton(x, f1)
       st ++ se
   }
@@ -870,6 +870,7 @@ object FastSetUnification {
       running
 
   }
+
   sealed trait SetEval {
     import SetEval.{Set,  Compl}
     def union(s: SetEval): SetEval = (this, s) match {
@@ -920,6 +921,169 @@ object FastSetUnification {
     val empty: SetEval = Set(SortedSet.empty)
     val univ: SetEval = Compl(SortedSet.empty)
     def single(i: Int): SetEval = Set(SortedSet(i))
+  }
+
+
+  /**
+    * Perform intersection-propagation on the given `term`.
+    *
+    * We use intersection-propagation to simplify terms during the Successive Variable Elimination (SVE) algorithm.
+    *
+    * For example, the term:
+    *
+    * {{{
+    *   x1 inter x2 inter not (x7 inter x9 inter x1)
+    * }}}
+    *
+    * is simplified to the term:
+    *
+    * {{{
+    *   x1 inter x2 inter not (x7 inter x9 inter UNIV)
+    * }}}
+    *
+    * The idea is that
+    * x inter f(x) = x inter f(Univ)
+    * ^x inter f(x) = ^x inter f(Empty)
+    */
+  private def booleanAbsorption(t: Term): Term = {
+    def visit(t: Term, univCsts: SortedSet[Int], emptyCsts: SortedSet[Int], univVars: SortedSet[Int], emptyVars: SortedSet[Int]): Term = t match {
+      case Term.Univ => Term.Univ
+      case Term.Empty => Term.Empty
+      case Term.Cst(c) => if (univCsts.contains(c)) Term.Univ else if (emptyCsts.contains(c)) Term.Empty else Term.Cst(c)
+      case Term.Elem(i) => Term.Elem(i)
+      case Term.Var(x) => if (univVars.contains(x)) Term.Univ else if (emptyVars.contains(x)) Term.Empty else Term.Var(x)
+      case Term.Compl(t0) => Term.mkCompl(visit(t0, univCsts, emptyCsts, univVars, emptyVars))
+      case Term.Inter(posCsts0, negCsts0, posVars0, negVars0, rest0) =>
+        // Compute the constants and variables that _must_ hold for the whole conjunction to hold.
+        val posTermCsts = posCsts0.map(_.c)
+        val negTermCsts = negCsts0.map(_.c)
+        val posTermVars = posVars0.map(_.x)
+        val negTermVars = negVars0.map(_.x)
+
+        // Extend trueCsts and trueVars.
+        val currentPosCsts = univCsts ++ posTermCsts
+        val currentNegCsts = emptyCsts ++ negTermCsts
+        val currentPosVars = univVars ++ posTermVars
+        val currentNegVars = emptyVars ++ negTermVars
+
+        // Recurse on the sub-terms with the updated maps.
+        val rest = rest0.collect {
+          case t: Term.Compl => visit(t, currentPosCsts, currentNegCsts, currentPosVars, currentNegVars)
+          case t: Term.Inter => visit(t, currentPosCsts, currentNegCsts, currentPosVars, currentNegVars)
+          case t: Term.Union => visit(t, currentPosCsts, currentNegCsts, currentPosVars, currentNegVars)
+          case t: Term.Elem => visit(t, currentPosCsts, currentNegCsts, currentPosVars, currentNegVars)
+          case _: Term.Cst =>
+            // Cannot happen because the invariant of [[Term.mkAnd]] ensures there are no constants in `rest`.
+            throw InternalCompilerException("Unexpected constant", SourceLocation.Unknown)
+          case _: Term.Var =>
+            // Cannot happen because the invariant of [[Term.mkAnd]] ensures there are no variables in `rest`.
+            throw InternalCompilerException("Unexpected variable", SourceLocation.Unknown)
+        }
+
+        // Compute new constant and variable sets by removing constants and variables that hold.
+        val posCsts = posTermCsts -- univCsts
+        val negCsts = negTermCsts -- emptyCsts
+        val posVars = posTermVars -- univVars
+        val negVars = negTermVars -- emptyVars
+
+        // Recompose the conjunction. We use the smart constructor because some sets may have become empty.
+        Term.mkInter(Term.Inter(posCsts.map(Term.Cst), negCsts.map(Term.Cst), posVars.map(Term.Var), negVars.map(Term.Var), Nil) :: rest)
+
+      case Term.Union(posCsts0, negCsts0, posVars0, negVars0, rest0) =>
+        // Compute the constants and variables that _must_ hold for the whole conjunction to hold.
+        val posTermCsts = posCsts0.map(_.c)
+        val negTermCsts = negCsts0.map(_.c)
+        val posTermVars = posVars0.map(_.x)
+        val negTermVars = negVars0.map(_.x)
+
+        // Extend trueCsts and trueVars.
+        val currentPosCsts = univCsts ++ negTermCsts
+        val currentNegCsts = emptyCsts ++ posTermCsts
+        val currentPosVars = univVars ++ negTermVars
+        val currentNegVars = emptyVars ++ posTermVars
+
+        // Recurse on the sub-terms with the updated maps.
+        val rest = rest0.collect {
+          case t: Term.Compl => visit(t, currentPosCsts, currentNegCsts, currentPosVars, currentNegVars)
+          case t: Term.Inter => visit(t, currentPosCsts, currentNegCsts, currentPosVars, currentNegVars)
+          case t: Term.Union => visit(t, currentPosCsts, currentNegCsts, currentPosVars, currentNegVars)
+          case t: Term.Elem => visit(t, currentPosCsts, currentNegCsts, currentPosVars, currentNegVars)
+          case _: Term.Cst =>
+            // Cannot happen because the invariant of [[Term.mkAnd]] ensures there are no constants in `rest`.
+            throw InternalCompilerException("Unexpected constant", SourceLocation.Unknown)
+          case _: Term.Var =>
+            // Cannot happen because the invariant of [[Term.mkAnd]] ensures there are no variables in `rest`.
+            throw InternalCompilerException("Unexpected variable", SourceLocation.Unknown)
+        }
+
+        // Compute new constant and variable sets by removing constants and variables that hold.
+        val posCsts = posTermCsts -- emptyCsts
+        val negCsts = negTermCsts -- univCsts
+        val posVars = posTermVars -- emptyVars
+        val negVars = negTermVars -- univVars
+
+        // Recompose the conjunction. We use the smart constructor because some sets may have become empty.
+        Term.mkUnion(Term.Union(posCsts.map(Term.Cst), negCsts.map(Term.Cst), posVars.map(Term.Var), negVars.map(Term.Var), Nil) :: rest)
+    }
+
+    visit(t, SortedSet.empty, SortedSet.empty, SortedSet.empty, SortedSet.empty)
+  }
+
+  def boundAbsorption(t: Term): Term = {
+    def visit(t: Term, atMostPosCsts: Set[Term.Cst], atMostNegCsts: Set[Term.Cst], atLeastPosCsts: Set[Term.Cst], atLeastNegCsts: Set[Term.Cst], atMostPosVars: Set[Term.Var], atMostNegVars: Set[Term.Var], atLeastPosVars: Set[Term.Var], atLeastNegVars: Set[Term.Var]): Term = t match {
+      case Term.Univ => t
+      case Term.Cst(_) => t
+      case Term.Elem(_) => t
+      case Term.Var(_) => t
+      case Term.Compl(_) => t // TODO
+      case Term.Union(posCsts0, negCsts0, posVars0, negVars0, rest0) =>
+        // CASE: cst union (... union !cst union ... ) == cst union U
+        if (atLeastPosCsts.intersect(negCsts0).nonEmpty) return Term.Univ
+        // Case: !cst union (... union cst union ...) == cst union U
+        if (atLeastNegCsts.intersect(posCsts0).nonEmpty) return Term.Univ
+        // CASE: cst inter (... union cst union ... ) == cst inter cst
+        val squashedPosCsts = atMostPosCsts.intersect(posCsts0)
+        if (squashedPosCsts.nonEmpty) return squashedPosCsts.head
+        // CASE: !cst inter (... union !cst union ... ) == !cst inter !cst
+        val squashedNegCsts = atMostNegCsts.intersect(negCsts0)
+        if (squashedNegCsts.nonEmpty) return squashedNegCsts.head
+        // CASE: cst union (... union cst union ...) == cst union (... ...)
+        // CASE: !cst inter (... union cst union ...) == !cst inter (... ...)
+        val posCsts = posCsts0.diff(atLeastPosCsts).diff(atMostNegCsts)
+        // CASE: !cst union (... union !cst union ...) == !cst union (... ...)
+        // CASE: cst inter (... union !cst union ...) == cst inter (... ...)
+        val negCsts = negCsts0.diff(atLeastNegCsts).diff(atMostPosCsts)
+        // add to new lowerbounds
+        val atLeastPosCsts1 = atLeastPosCsts.union(posCsts)
+        val atLeastNegCsts1 = atLeastNegCsts.union(negCsts)
+
+        // CASE: var union (... union !var union ... ) == var union U
+        if (atLeastPosVars.intersect(negVars0).nonEmpty) return Term.Univ
+        // Case: !var union (... union var union ...) == var union U
+        if (atLeastNegVars.intersect(posVars0).nonEmpty) return Term.Univ
+        // CASE: var inter (... union var union ... ) == var inter var
+        val squashedPosVars = atMostPosVars.intersect(posVars0)
+        if (squashedPosVars.nonEmpty) return squashedPosVars.head
+        // CASE: !var inter (... union !var union ... ) == !var inter !var
+        val squashedNegVars = atMostNegVars.intersect(negVars0)
+        if (squashedNegVars.nonEmpty) return squashedNegVars.head
+        // CASE: var union (... union var union ...) == var union (... ...)
+        // CASE: !var inter (... union var union ...) == !var inter (... ...)
+        val posVars = posVars0.diff(atLeastPosVars).diff(atMostNegVars)
+        // CASE: !var union (... union !var union ...) == !var union (... ...)
+        // CASE: var inter (... union !var union ...) == var inter (... ...)
+        val negVars = negVars0.diff(atLeastNegVars).diff(atMostPosVars)
+        // add to new lowerbounds
+        val atLeastPosVars1 = atLeastPosVars.union(posVars)
+        val atLeastNegVars1 = atLeastNegVars.union(negVars)
+
+        val rest = rest0.map(visit(_, atMostPosCsts, atMostNegCsts, atLeastPosCsts1, atLeastNegCsts1, atMostPosVars, atMostNegVars, atLeastPosVars1, atLeastNegVars1))
+        Term.mkUnion(Term.Union(posCsts, negCsts, posVars, negVars, Nil) :: rest)
+
+      case Term.Inter(posCsts0, negCsts0, posVars0, negVars0, rest0) => t
+    }
+
+    visit(t, Set.empty, Set.empty, Set.empty, Set.empty, Set.empty, Set.empty, Set.empty, Set.empty)
   }
 
   /**
@@ -1112,9 +1276,9 @@ object FastSetUnification {
       case Var(x) => Compl(Var(x))
       case Compl(t) => t
       case Union(posCsts, negCsts, posVars, negVars, rest) =>
-        mkInter(Inter(negCsts, posCsts, negVars, posVars, Nil), mkInter(rest.map(mkCompl)))
+        mkInter(Inter(negCsts, posCsts, negVars, posVars, Nil) :: rest.map(mkCompl))
       case Inter(posCsts, negCsts, posVars, negVars, rest) =>
-        mkUnion(Union(negCsts, posCsts, negVars, posVars, Nil), mkUnion(rest.map(mkCompl)))
+        mkUnion(Union(negCsts, posCsts, negVars, posVars, Nil) :: rest.map(mkCompl))
     }
 
     /**
