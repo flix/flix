@@ -116,7 +116,7 @@ object TypeReduction {
         val clazz = classOf[String]
         clazz.getMethods
 
-      case _ => ResolutionResult.NoProgress(thisObj)
+      case _ => ResolutionResult.NoProgress()
     }
 
 
