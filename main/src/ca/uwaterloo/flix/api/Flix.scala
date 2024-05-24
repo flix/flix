@@ -516,10 +516,10 @@ class Flix {
       //
       // Stage 3
       // Full migration, remove old parser and weeder.
-      afterParser2 <- Parser2.run(afterLexer, cachedParserCst, changeSet)
-      afterWeeder2 <- Weeder2.run(afterReader, entryPoint, afterParser2, cachedWeederAst, changeSet)
+      // afterParser2 <- Parser2.run(afterLexer, cachedParserCst, changeSet)
+      // afterWeeder2 <- Weeder2.run(afterReader, entryPoint, afterParser2, cachedWeederAst, changeSet)
 
-      afterDesugar = Desugar.run(afterWeeder2, cachedDesugarAst, changeSet)
+      afterDesugar = Desugar.run(afterWeeder, cachedDesugarAst, changeSet)
       afterNamer <- Namer.run(afterDesugar)
       afterResolver <- Resolver.run(afterNamer, cachedResolverAst, changeSet)
       afterKinder <- Kinder.run(afterResolver, cachedKinderAst, changeSet)
@@ -539,9 +539,9 @@ class Flix {
       if (options.incremental) {
         this.cachedLexerTokens = afterLexer
         this.cachedParserAst = afterParser
-        this.cachedParserCst = afterParser2
+        // this.cachedParserCst = afterParser2
         this.cachedWeederAst = afterWeeder
-        this.cachedWeederAst2 = afterWeeder2
+        // this.cachedWeederAst2 = afterWeeder2
         this.cachedDesugarAst = afterDesugar
         this.cachedKinderAst = afterKinder
         this.cachedResolverAst = afterResolver

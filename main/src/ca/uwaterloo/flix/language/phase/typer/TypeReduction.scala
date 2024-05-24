@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{Ast, RigidityEnv, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Ast, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.Result
@@ -57,8 +57,9 @@ object TypeReduction {
       for {
         (t1, p1) <- simplify(tpe1, renv0, loc)
         (t2, p2) <- simplify(tpe2, renv0, loc)
+        (t3, p3) <- simplifyJava(Type.Apply(t1, t2, loc), loc)
       } yield {
-        (Type.Apply(t1, t2, loc), p1 || p2)
+        (t3, p1 || p2 || p3)
       }
 
     // arg_R and syn_R
@@ -96,5 +97,14 @@ object TypeReduction {
 
     case Type.Alias(cst, args, t, _) => simplify(t, renv0, loc)
   }
+
+  def simplifyJava(tpe: Type,loc: SourceLocation)(implicit flix: Flix): Result[(Type, Boolean), TypeError] =
+    tpe.typeConstructor match {
+      case Some(TypeConstructor.MethodReturnType(m, n)) =>
+        ???
+      case _ => Result.Ok((tpe, false))
+    }
+
+  def resolveMethodReturnType(thisObj: Type, method: String, ts: List[Type], loc: SourceLocation)(implicit flix: Flix): Result[(Type, Boolean), TypeError] = ???
 
 }
