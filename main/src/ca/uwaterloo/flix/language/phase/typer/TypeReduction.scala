@@ -114,8 +114,12 @@ object TypeReduction {
     thisObj match {
       case Type.Cst(TypeConstructor.Str, loc2) =>
         val clazz = classOf[String]
-        clazz.getMethods
+        // Filter out candidate methods by method name
+        // NB: this considers also static methods
+        val candidateMethods = clazz.getMethods.filter(m => m.getName == method)
+          .filter(m => m.getParameterCount == 0) // Type.Cst case, no parameter???
 
+        ResolutionResult.Resolve(Type.getFlixType(candidateMethods.head.getReturnType)) // For now, arbitrarily return the first candidate method
       case _ => ResolutionResult.NoProgress()
     }
 
