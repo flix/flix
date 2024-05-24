@@ -67,7 +67,7 @@ object Regions {
       visitExp(exp) ++ checkType(tpe, loc)
 
     case Expr.Apply(exp, exps, tpe, _, loc) =>
-      visitExp(exp) ++ checkType(tpe, loc)
+      exps.flatMap(visitExp) ++ visitExp(exp) ++ checkType(tpe, loc)
 
     case Expr.Unary(_, exp, tpe, _, loc) =>
       visitExp(exp) ++ checkType(tpe, loc)
@@ -202,6 +202,9 @@ object Regions {
 
     case Expr.Do(_, exps, tpe, _, loc) =>
       exps.flatMap(visitExp) ++ checkType(tpe, loc)
+
+    case Expr.InvokeMethod2(exp, _, exps, tpe, _, loc) =>
+      exps.flatMap(visitExp) ++ visitExp(exp) ++ checkType(tpe, loc)
 
     case Expr.InvokeConstructor(_, exps, tpe, _, loc) =>
       exps.flatMap(visitExp) ++ checkType(tpe, loc)
