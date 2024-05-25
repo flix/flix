@@ -865,7 +865,7 @@ object Weeder2 {
 
       Validation.fold(tree.children, init: WeededAst.Expr) {
         // A string part: Concat it onto the result
-        case (acc, token@Token(_, _, _, _, _, _ ,_ ,_)) =>
+        case (acc, token@Token(_, _, _, _, _, _, _, _)) =>
           isDebug = token.kind == TokenKind.LiteralDebugStringL
           val loc = token.mkSourceLocation(s.src, Some(s.parserInput))
           val lit0 = token.text.stripPrefix("\"").stripSuffix("\"").stripPrefix("}")
@@ -918,7 +918,8 @@ object Weeder2 {
       expect(tree, TreeKind.Expr.HoleVariable)
       mapN(pickNameIdent(tree)) {
         ident =>
-          val id = Name.Ident(ident.sp1, ident.name.stripSuffix("?"), ident.sp2)
+          // Strip '?' suffix and update source location
+          val id = Name.Ident(ident.sp1, ident.name.stripSuffix("?"), ident.sp2.copy(col = (ident.sp2.col - 1).toShort))
           val expr = Expr.Ambiguous(Name.mkQName(id), id.loc)
           Expr.HoleWithExp(expr, tree.loc)
       }
@@ -935,7 +936,7 @@ object Weeder2 {
       // Note: This visitor is used by both expression literals and pattern literals.
       expectAny(tree, List(TreeKind.Expr.Literal, TreeKind.Pattern.Literal))
       tree.children(0) match {
-        case token@Token(_, _, _, _, _, _ ,_ ,_) => token.kind match {
+        case token@Token(_, _, _, _, _, _, _, _) => token.kind match {
           case TokenKind.KeywordNull => Validation.success(Expr.Cst(Ast.Constant.Null, token.mkSourceLocation(s.src, Some(s.parserInput))))
           case TokenKind.KeywordTrue => Validation.success(Expr.Cst(Ast.Constant.Bool(true), token.mkSourceLocation(s.src, Some(s.parserInput))))
           case TokenKind.KeywordFalse => Validation.success(Expr.Cst(Ast.Constant.Bool(false), token.mkSourceLocation(s.src, Some(s.parserInput))))
@@ -1034,7 +1035,7 @@ object Weeder2 {
       flatMapN(pick(TreeKind.Operator, tree), pick(TreeKind.Expr.Expr, tree))(
         (opTree, exprTree) => {
           opTree.children.headOption match {
-            case Some(opToken@Token(_, _, _, _, _, _ ,_ ,_)) =>
+            case Some(opToken@Token(_, _, _, _, _, _, _, _)) =>
               val sp1 = tree.loc.sp1
               val sp2 = tree.loc.sp2
               val literalToken = tryPickNumberLiteralToken(exprTree)
@@ -1069,7 +1070,7 @@ object Weeder2 {
       val NumberLiteralKinds = List(TokenKind.LiteralInt8, TokenKind.LiteralInt16, TokenKind.LiteralInt32, TokenKind.LiteralInt64, TokenKind.LiteralBigInt, TokenKind.LiteralFloat32, TokenKind.LiteralFloat64, TokenKind.LiteralBigDecimal)
       val maybeTree = tryPick(TreeKind.Expr.Literal, tree)
       maybeTree.flatMap(_.children(0) match {
-        case t@Token(_, _, _, _, _, _ ,_ ,_) if NumberLiteralKinds.contains(t.kind) => Some(t)
+        case t@Token(_, _, _, _, _, _, _, _) if NumberLiteralKinds.contains(t.kind) => Some(t)
         case _ => None
       })
     }
@@ -1081,7 +1082,7 @@ object Weeder2 {
       flatMapN(op, traverse(exprs)(visitExpr)) {
         case (op, e1 :: e2 :: Nil) =>
           val isInfix = op.children.head match {
-            case Token(kind, _, _, _, _, _ ,_ ,_) => kind == TokenKind.InfixFunction
+            case Token(kind, _, _, _, _, _, _, _) => kind == TokenKind.InfixFunction
             case _ => false
           }
 
@@ -1170,7 +1171,7 @@ object Weeder2 {
         case Expr.Stm(exp1, exp2, _) => Validation.success((exp1, exp2))
         case e =>
           // Fall back on Expr.Error. Parser has reported an error here.
-          val error = Malformed(NamedTokenSet.FromKinds(Set(TokenKind.KeywordDef)) , SyntacticContext.Expr.OtherExpr, hint = Some("Internal definitions must be followed by an expression"), loc = e.loc)
+          val error = Malformed(NamedTokenSet.FromKinds(Set(TokenKind.KeywordDef)), SyntacticContext.Expr.OtherExpr, hint = Some("Internal definitions must be followed by an expression"), loc = e.loc)
           Validation.success((e, Expr.Error(error)))
       }
 
@@ -1608,7 +1609,7 @@ object Weeder2 {
         case (expr, _ :: _, _ :: _) =>
           val error = Malformed(NamedTokenSet.FromKinds(Set(TokenKind.KeywordTry)), SyntacticContext.Expr.OtherExpr, hint = Some(s"Use either ${TokenKind.KeywordWith.display} or ${TokenKind.KeywordCatch.display} on ${TokenKind.KeywordTry.display}."), tree.loc)
           // Fall back on Expr.Error, Parser has already reported an error.
-          Validation.success( Expr.Error(error))
+          Validation.success(Expr.Error(error))
         // Case: try expr catch { rules... }
         case (expr, catches, Nil) => Validation.success(Expr.TryCatch(expr, catches.flatten, tree.loc))
         // Case: try expr with eff { handlers... }
@@ -1808,9 +1809,9 @@ object Weeder2 {
 
     private def pickDebugKind(tree: Tree): Validation[DebugKind, CompilationMessage] = {
       tree.children.headOption match {
-        case Some(Token(kind, _, _, _, _, _ ,_ ,_)) if kind == TokenKind.KeywordDebug => Validation.success(DebugKind.Debug)
-        case Some(Token(kind, _, _, _, _, _ ,_ ,_)) if kind == TokenKind.KeywordDebugBang => Validation.success(DebugKind.DebugWithLoc)
-        case Some(Token(kind, _, _, _, _, _ ,_ ,_)) if kind == TokenKind.KeywordDebugBangBang => Validation.success(DebugKind.DebugWithLocAndSrc)
+        case Some(Token(kind, _, _, _, _, _, _, _)) if kind == TokenKind.KeywordDebug => Validation.success(DebugKind.Debug)
+        case Some(Token(kind, _, _, _, _, _, _, _)) if kind == TokenKind.KeywordDebugBang => Validation.success(DebugKind.DebugWithLoc)
+        case Some(Token(kind, _, _, _, _, _, _, _)) if kind == TokenKind.KeywordDebugBangBang => Validation.success(DebugKind.DebugWithLocAndSrc)
         case _ => throw InternalCompilerException(s"Malformed debug expression, could not find debug kind", tree.loc)
       }
     }
@@ -2075,11 +2076,11 @@ object Weeder2 {
       expect(tree, TreeKind.Pattern.Unary)
       val NumberLiteralKinds = List(TokenKind.LiteralInt8, TokenKind.LiteralInt16, TokenKind.LiteralInt32, TokenKind.LiteralInt64, TokenKind.LiteralBigInt, TokenKind.LiteralFloat32, TokenKind.LiteralFloat64, TokenKind.LiteralBigDecimal)
       val literalToken = tree.children(1) match {
-        case t@Token(_, _, _, _, _, _ ,_ ,_) if NumberLiteralKinds.contains(t.kind) => Some(t)
+        case t@Token(_, _, _, _, _, _, _, _) if NumberLiteralKinds.contains(t.kind) => Some(t)
         case _ => None
       }
       flatMapN(pick(TreeKind.Operator, tree))(_.children(0) match {
-        case opToken@Token(_, _, _, _, _, _ ,_ ,_) =>
+        case opToken@Token(_, _, _, _, _, _, _, _) =>
           literalToken match {
             // fold unary minus into a constant, and visit it like any other constant
             case Some(lit) if opToken.text == "-" =>
@@ -2924,7 +2925,7 @@ object Weeder2 {
     */
   private def tokenToIdent(tree: Tree)(implicit s: State): Validation[Name.Ident, CompilationMessage] = {
     tree.children.headOption match {
-      case Some(token@Token(_, _, _, _, _, _ ,_ ,_)) =>
+      case Some(token@Token(_, _, _, _, _, _, _, _)) =>
         Validation.success(Name.Ident(
           token.mkSourcePosition(s.src, Some(s.parserInput)),
           token.text,
@@ -2986,7 +2987,7 @@ object Weeder2 {
     */
   private def hasToken(kind: TokenKind, tree: Tree): Boolean = {
     tree.children.exists {
-      case Token(k, _, _, _, _, _ ,_ ,_) => k == kind
+      case Token(k, _, _, _, _, _, _, _) => k == kind
       case _ => false
     }
   }
@@ -3004,7 +3005,7 @@ object Weeder2 {
     * Collects all immediate child tokens from a tree.
     */
   private def pickAllTokens(tree: Tree): Array[Token] = {
-    tree.children.collect { case token@Token(_, _, _, _, _, _ ,_ ,_) => token }
+    tree.children.collect { case token@Token(_, _, _, _, _, _, _, _) => token }
   }
 
   /**
@@ -3012,7 +3013,7 @@ object Weeder2 {
     */
   private def text(tree: Tree): List[String] = {
     tree.children.foldLeft[List[String]](List.empty)((acc, c) => c match {
-      case token@Token(_, _, _, _, _, _ ,_ ,_) => acc :+ token.text
+      case token@Token(_, _, _, _, _, _, _, _) => acc :+ token.text
       case _ => acc
     })
   }
