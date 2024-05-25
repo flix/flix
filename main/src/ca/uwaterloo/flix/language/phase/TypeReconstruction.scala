@@ -417,6 +417,11 @@ object TypeReconstruction {
       val eff = Type.mkUnion(eff1 :: es.map(_.eff), loc)
       TypedAst.Expr.Do(op, es, tpe, eff, loc)
 
+    case KindedAst.Expr.InvokeMethod2(exp, name, exps, tvar, evar, loc) =>
+      val e = visitExp(exp)
+      val es = exps.map(visitExp(_))
+      TypedAst.Expr.InvokeMethod2(e, name, es, subst(tvar), subst(evar), loc)
+
     case KindedAst.Expr.InvokeConstructor(constructor, args, loc) =>
       val as = args.map(visitExp(_))
       val tpe = getFlixType(constructor.getDeclaringClass)

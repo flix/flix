@@ -896,6 +896,11 @@ object Namer {
         exps => NamedAst.Expr.Do(op, exps, loc)
       }
 
+    case DesugaredAst.Expr.InvokeMethod2(exp, name, exps, loc) =>
+      mapN(visitExp(exp, ns0), traverse(exps)(visitExp(_, ns0))) {
+        case (e, es) => NamedAst.Expr.InvokeMethod2(e, name, es, loc)
+      }
+
     case DesugaredAst.Expr.InvokeConstructor(className, exps, sig, loc) =>
       val argsVal = traverse(exps)(visitExp(_, ns0))
       val sigVal = traverse(sig)(visitType): Validation[List[NamedAst.Type], NameError]

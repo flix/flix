@@ -1346,8 +1346,9 @@ object Weeder {
       mapN(traverse(args)(e => visitArgument(e))) {
         case (as) =>
           val es = getArguments(as, loc)
-          // WeededAst.Expr.InvokeMethod2(e, name, es, loc)
-          ???
+          val qname = Name.QName.fromNName(Name.NName(obj.sp1, List(obj), obj.sp2))
+          val objExpr = WeededAst.Expr.Ambiguous(qname, qname.loc)
+          WeededAst.Expr.InvokeMethod2(objExpr, name, es, loc)
       }
 
     case ParsedAst.Expression.Try(sp1, exp, ParsedAst.HandlerList.CatchHandlerList(handlers0), sp2) =>
