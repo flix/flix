@@ -1431,6 +1431,14 @@ object Resolver {
               }
           }
 
+        case NamedAst.Expr.InvokeMethod2(exp, name, exps, loc) =>
+          val eVal = visitExp(exp, env0)
+          val esVal = traverse(exps)(visitExp(_, env0))
+          mapN(eVal, esVal) {
+            case (e, es) =>
+              ResolvedAst.Expr.InvokeMethod2(e, name, es, loc)
+          }
+
         case NamedAst.Expr.InvokeConstructor(className, args, sig, loc) =>
           lookupJvmClass(className, loc) match {
             case Result.Ok(clazz) =>
@@ -3318,6 +3326,8 @@ object Resolver {
 
         case TypeConstructor.Schema => Result.Ok(Class.forName("java.lang.Object"))
 
+
+
         case TypeConstructor.True => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.False => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.Not => Result.Err(ResolutionError.IllegalType(tpe, loc))
@@ -3344,6 +3354,8 @@ object Resolver {
         case TypeConstructor.CaseIntersection(_) => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.CaseUnion(_) => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.Error(_) => Result.Err(ResolutionError.IllegalType(tpe, loc))
+        case TypeConstructor.MethodReturnType(name, arity) => Result.Err(ResolutionError.IllegalType(tpe, loc))
+        case TypeConstructor.StaticMethodReturnType(clazz, name, arity) => Result.Err(ResolutionError.IllegalType(tpe, loc))
 
         case TypeConstructor.AnyType => throw InternalCompilerException(s"unexpected type: $tc", tpe.loc)
         case t: TypeConstructor.Arrow => throw InternalCompilerException(s"unexpected type: $t", tpe.loc)

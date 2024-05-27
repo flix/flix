@@ -255,6 +255,9 @@ object DocAst {
     def Do(sym: Symbol.OpSym, ds: List[Expression]): Expression =
       Keyword("do", App(AsIs(sym.toString), ds))
 
+    def JavaInvokeMethod2(d: Expression, name: Name.Ident, ds: List[Expression]): Expression =
+      App(DoubleDot(d, AsIs(name.name)), ds)
+
     def JavaInvokeMethod(m: Method, d: Expression, ds: List[Expression]): Expression =
       App(DoubleDot(d, AsIs(m.getName)), ds)
 

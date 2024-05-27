@@ -1040,6 +1040,17 @@ object ParsedAst {
     case class Do(sp1: SourcePosition, op: Name.QName, args: Seq[ParsedAst.Argument], sp2: SourcePosition) extends Expression
 
     /**
+     * Invoke Java Method Expression (function call).
+     *
+     * @param sp1  the position of the first character in the expression.
+     * @param obj  the caller object.
+     * @param name the name of the function.
+     * @param args the arguments.
+     * @param sp2  the position of the last character in the expression.
+     */
+    case class InvokeMethod2(sp1: SourcePosition, obj: Name.Ident, name: Name.Ident, args: Seq[ParsedAst.Argument], sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
       * Try Expression.
       *
       * @param sp1      the position of the first character in the expression.

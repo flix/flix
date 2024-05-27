@@ -3180,15 +3180,23 @@ object Parser2 {
     def head()(implicit s: State): Mark.Closed = {
       val mark = open()
       name(NAME_PREDICATE, context = SyntacticContext.Expr.Constraint)
-      if (at(TokenKind.ParenL)) {
-        termList()
-      }
+      termList()
       close(mark, TreeKind.Predicate.Head)
     }
 
     private def termList()(implicit s: State): Mark.Closed = {
-      assert(at(TokenKind.ParenL))
       val mark = open()
+      // Check for missing term list
+      if (!at(TokenKind.ParenL)) {
+        closeWithError(open(), UnexpectedToken(
+          expected = NamedTokenSet.FromKinds(Set(TokenKind.ParenL)),
+          actual = Some(nth(0)),
+          sctx = SyntacticContext.Expr.Constraint,
+          hint = Some("provide a list of terms."),
+          loc = previousSourceLocation())
+        )
+      }
+
       zeroOrMore(
         namedTokenSet = NamedTokenSet.Expression,
         getItem = () => Expr.expression(),
