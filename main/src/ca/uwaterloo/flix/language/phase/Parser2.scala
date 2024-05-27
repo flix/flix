@@ -2656,7 +2656,7 @@ object Parser2 {
         case t =>
           val mark = open()
           val error = UnexpectedToken(expected = NamedTokenSet.Pattern, actual = Some(t), SyntacticContext.Pat.OtherPat, loc = currentSourceLocation())
-          close(mark, TreeKind.ErrorTree(error))
+          closeWithError(mark, error)
       }
       // Handle FCons
       if (eat(TokenKind.ColonColon)) {
@@ -2941,7 +2941,7 @@ object Parser2 {
         case t =>
           val mark = open()
           val error = UnexpectedToken(expected = NamedTokenSet.Type, actual = Some(t), SyntacticContext.Type.OtherType, loc = currentSourceLocation())
-          close(mark, TreeKind.ErrorTree(error))
+          closeWithError(mark, error)
       }
       close(mark, TreeKind.Type.Type)
     }
