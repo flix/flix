@@ -144,9 +144,6 @@ object Parser2 {
     root()
     // Build the syntax tree using events in state.
     val tree = buildTree()
-    if (src.name == "main/foo.flix") {
-      println(syntaxTreeToDebugString(tree))
-    }
     // Return with errors as soft failures to run subsequent phases for more validations.
     Validation.success(tree).withSoftFailures(s.errors)
   }
