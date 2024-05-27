@@ -297,8 +297,8 @@ object Parser2 {
     s.position += 1
   }
 
-  private def closeWithError(mark: Mark.Opened, error: CompilationMessage)(implicit s: State): Mark.Closed = {
-    nth(0) match {
+  private def closeWithError(mark: Mark.Opened, error: CompilationMessage, token: Option[TokenKind] = None)(implicit s: State): Mark.Closed = {
+    token.getOrElse(nth(0)) match {
       // Avoid double reporting lexer errors.
       case TokenKind.Err(_) =>
       case _ => s.errors.append(error)
@@ -787,7 +787,7 @@ object Parser2 {
               advance()
             }
           }
-          closeWithError(mark, error)
+          closeWithError(mark, error, Some(at))
       }
     }
 
@@ -844,7 +844,7 @@ object Parser2 {
                 advance()
               }
               val error = UnexpectedToken(expected = NamedTokenSet.FromKinds(Set(TokenKind.KeywordType, TokenKind.KeywordDef, TokenKind.KeywordLaw)), actual = Some(at), SyntacticContext.Decl.Trait, loc = loc)
-              closeWithError(mark, error)
+              closeWithError(mark, error, Some(at))
           }
         }
         expect(TokenKind.CurlyR, SyntacticContext.Decl.Trait)
@@ -884,7 +884,7 @@ object Parser2 {
                 advance()
               }
               val error = UnexpectedToken(expected = NamedTokenSet.FromKinds(Set(TokenKind.KeywordType, TokenKind.KeywordDef)), actual = Some(at), SyntacticContext.Decl.Instance, loc = loc)
-              closeWithError(mark, error)
+              closeWithError(mark, error, Some(at))
           }
         }
         expect(TokenKind.CurlyR, SyntacticContext.Decl.Instance)
@@ -1120,7 +1120,7 @@ object Parser2 {
                 advance()
               }
               val error = UnexpectedToken(expected = NamedTokenSet.FromKinds(Set(TokenKind.KeywordDef)), actual = Some(at), SyntacticContext.Decl.OtherDecl, loc = loc)
-              closeWithError(mark, error)
+              closeWithError(mark, error, Some(at))
           }
         }
         expect(TokenKind.CurlyR, SyntacticContext.Decl.OtherDecl)
