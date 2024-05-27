@@ -729,7 +729,7 @@ object FastSetUnification {
       val t1 = BoolSubstitution.singleton(x, Term.Univ)(t)
       val se = successiveVariableElimination(propagateAnd(Term.mkAnd(t0, t1)), xs)
 
-      val f1 = propagateAnd(Term.mkOr(se(t0), Term.mkAnd(Term.Var(x), Term.mkNot(se(t1)))))
+      val f1 = propagateAnd(Term.mkOr(se(t0), Term.mkAnd(Term.Var(x), Term.mkCompl(se(t1)))))
       val st = BoolSubstitution.singleton(x, f1)
       st ++ se
   }
@@ -744,7 +744,7 @@ object FastSetUnification {
     case Term.Empty => Term.Empty
     case Term.Cst(c) => Term.Var(c) // We use the constant name as the variable name.
     case Term.Var(x) => Term.Var(x)
-    case Term.Not(t) => Term.mkNot(flexify(t))
+    case Term.Compl(t) => Term.mkCompl(flexify(t))
     case Term.And(csts, vars, rest) =>
       // Translate every constant into a variable:
       Term.mkAnd(csts.map(c => Term.Var(c.c)).toList ++ vars ++ rest.map(flexify))
@@ -792,7 +792,7 @@ object FastSetUnification {
     case Term.Empty => false
     case Term.Cst(_) => false
     case Term.Var(x) => trueVars.contains(x)
-    case Term.Not(t) => !evaluate(t, trueVars)
+    case Term.Compl(t) => !evaluate(t, trueVars)
 
     case Term.And(csts, vars, rest) =>
       if (csts.nonEmpty) {
@@ -839,13 +839,13 @@ object FastSetUnification {
     * For example, the term:
     *
     * {{{
-    *   x1 /\ x2 /\ not (x7 /\ x9 /\ x1)
+    *   x1 /\ x2 /\ compl (x7 /\ x9 /\ x1)
     * }}}
     *
     * is simplified to the term:
     *
     * {{{
-    *   x1 /\ x2 /\ not (x7 /\ x9 /\ UNIV)
+    *   x1 /\ x2 /\ compl (x7 /\ x9 /\ UNIV)
     * }}}
     *
     * The idea is that since x1 (and x2) must hold for the entire conjunction to be UNIV they can be removed from the sub-term.
@@ -857,7 +857,7 @@ object FastSetUnification {
       case Term.Empty => Term.Empty
       case Term.Cst(c) => if (trueCsts.contains(c)) Term.Univ else Term.Cst(c) // `c` holds so we can replace it by UNIV.
       case Term.Var(x) => if (trueVars.contains(x)) Term.Univ else Term.Var(x) // `x` holds so we can replace it by UNIV.
-      case Term.Not(t0) => Term.mkNot(visit(t0, trueCsts, trueVars))
+      case Term.Compl(t0) => Term.mkCompl(visit(t0, trueCsts, trueVars))
       case Term.And(csts0, vars0, rest0) =>
         // Compute the constants and variables that _must_ hold for the whole conjunction to hold.
         val termCsts = csts0.map(_.c)
@@ -869,7 +869,7 @@ object FastSetUnification {
 
         // Recurse on the sub-terms with the updated maps.
         val rest = rest0.collect {
-          case t: Term.Not => visit(t, currentCsts, currentVars)
+          case t: Term.Compl => visit(t, currentCsts, currentVars)
           case t: Term.And => visit(t, currentCsts, currentVars)
           case t: Term.Or => visit(t, currentCsts, currentVars)
           case _: Term.Cst =>
@@ -963,7 +963,7 @@ object FastSetUnification {
       case Term.Empty => SortedSet.empty
       case Term.Cst(_) => SortedSet.empty
       case Term.Var(x) => SortedSet(x)
-      case Term.Not(t) => t.freeVars
+      case Term.Compl(t) => t.freeVars
 
       case Term.And(_, vars, rest) => SortedSet.empty[Int] ++ vars.map(_.x) ++ rest.flatMap(_.freeVars)
 
@@ -973,14 +973,14 @@ object FastSetUnification {
     /**
       * Returns the number of connectives in `this` term.
       *
-      * For example, `size(x) = 0`, `size(x /\ y) = 1`, and `size(x /\ not y) = 2`.
+      * For example, `size(x) = 0`, `size(x /\ y) = 1`, and `size(x /\ compl y) = 2`.
       */
     final def size: Int = this match {
       case Term.Univ => 0
       case Term.Empty => 0
       case Term.Cst(_) => 0
       case Term.Var(_) => 0
-      case Term.Not(t) => t.size + 1
+      case Term.Compl(t) => t.size + 1
       case Term.And(csts, vars, rest) =>
         // We need a connective for each constant, variable, and term minus one.
         // We then add the size of all the sub-terms in `rest`.
@@ -996,9 +996,9 @@ object FastSetUnification {
       case Term.Empty => formatter.red("empty")
       case Term.Cst(c) => formatter.blue(s"c$c")
       case Term.Var(x) => s"x$x"
-      case Term.Not(f) => f match {
-        case Term.Var(x) => s"¬x$x"
-        case _ => s"¬($f)"
+      case Term.Compl(f) => f match {
+        case Term.Var(x) => s"!x$x"
+        case _ => s"!($f)"
       }
       case Term.And(csts, vars, rest) => s"(${(csts.toList ++ vars.toList ++ rest).mkString(" ∧ ")})"
       case Term.Or(ts) => s"(${ts.mkString(" ∨ ")})"
@@ -1033,16 +1033,16 @@ object FastSetUnification {
     case class Var(x: Int) extends Term
 
     /**
-      * Represents the negation of the term `t`.
+      * Represents the complement of the term `t`.
       */
-    case class Not(t: Term) extends Term
+    case class Compl(t: Term) extends Term
 
     /**
       * Represents a conjunction of terms.
       *
       * We use a clever representation where we have a conjunction of constants, variables, and then sub-terms.
       *
-      * For example, the conjunction: `x7 /\ (not x2) /\ c1 /\ x4` is represented as: `Set(c1), Set(x4, x7), List((not x2))`.
+      * For example, the conjunction: `x7 /\ (compl x2) /\ c1 /\ x4` is represented as: `Set(c1), Set(x4, x7), List((compl x2))`.
       *
       * This representation is key to efficiency because the equations we solve are heavy on conjunctions.
       */
@@ -1063,13 +1063,13 @@ object FastSetUnification {
     }
 
     /**
-      * Smart constructor for negation.
+      * Smart constructor for complement.
       */
-    final def mkNot(t: Term): Term = t match {
+    final def mkCompl(t: Term): Term = t match {
       case Univ => Empty
       case Empty => Univ
-      case Not(t0) => t0
-      case _ => Not(t)
+      case Compl(t0) => t0
+      case _ => Compl(t)
     }
 
     /**
@@ -1176,7 +1176,7 @@ object FastSetUnification {
     /**
       * Returns the Xor of `x` and `y`. Implemented by desugaring.
       */
-    final def mkXor(x: Term, y: Term): Term = mkOr(mkAnd(x, mkNot(y)), mkAnd(mkNot(x), y))
+    final def mkXor(x: Term, y: Term): Term = mkOr(mkAnd(x, mkCompl(y)), mkAnd(mkCompl(x), y))
 
   }
 
@@ -1223,7 +1223,7 @@ object FastSetUnification {
         case Some(t0) => t0 // Case 2: The substitution has no binding for `x`. Return the original term.
       }
 
-      case Term.Not(t0) => Term.mkNot(apply(t0))
+      case Term.Compl(t0) => Term.mkCompl(apply(t0))
 
       case Term.And(csts, vars, rest) =>
         // A conjunction is a sequence of: constants, variables, and terms. We know that the constants are unchanged by

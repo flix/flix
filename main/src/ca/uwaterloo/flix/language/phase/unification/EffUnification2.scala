@@ -106,7 +106,7 @@ object EffUnification2 {
       }
     }
 
-    case Type.Apply(Type.Cst(TypeConstructor.Complement, _), tpe1, _) => Term.mkNot(toTerm(tpe1))
+    case Type.Apply(Type.Cst(TypeConstructor.Complement, _), tpe1, _) => Term.mkCompl(toTerm(tpe1))
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), tpe1, _), tpe2, _) => Term.mkAnd(toTerm(tpe1), toTerm(tpe2))
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), tpe1, _), tpe2, _) => Term.mkOr(toTerm(tpe1), toTerm(tpe2))
 
@@ -138,7 +138,7 @@ object EffUnification2 {
     case Term.Empty => Type.Univ
     case Term.Cst(c) => m.getBackward(c).get // Safe: We never introduce new variables.
     case Term.Var(x) => m.getBackward(x).get // Safe: We never introduce new variables.
-    case Term.Not(t) => Type.mkComplement(fromTerm(t, loc), loc)
+    case Term.Compl(t) => Type.mkComplement(fromTerm(t, loc), loc)
     case Term.And(csts, vars, rest) =>
       val ts = csts.toList.map(fromTerm(_, loc)) ++ vars.toList.map(fromTerm(_, loc)) ++ rest.map(fromTerm(_, loc))
       Type.mkUnion(ts, loc)
