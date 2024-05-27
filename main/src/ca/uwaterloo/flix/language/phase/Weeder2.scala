@@ -1092,7 +1092,7 @@ object Weeder2 {
           }
 
           def mkApply(name: String): Expr.Apply = Expr.Apply(
-            Expr.Ambiguous(Name.mkQName(name, tree.loc.sp1, tree.loc.sp2), tree.loc), List(e1, e2),
+            Expr.Ambiguous(Name.mkQName(name, op.loc.sp1, op.loc.sp2), op.loc), List(e1, e2),
             tree.loc
           )
 
