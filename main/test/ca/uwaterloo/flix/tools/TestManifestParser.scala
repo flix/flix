@@ -288,9 +288,9 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(expected = List(Dependency.MavenDependency("org.postgresql", "postgresql", "1.2.3"),
+    assertResult(expected = Set(Dependency.MavenDependency("org.postgresql", "postgresql", "1.2.3"),
                                   Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", "4.b.0")))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest.dependencies
+      case Ok(manifest) => manifest.dependencies.toSet
       case Err(e) => e.message(f)
     })
   }
@@ -483,7 +483,7 @@ class TestManifestParser extends AnyFunSuite {
     expectError[ManifestError.RequiredPropertyHasWrongType](result)
   }
 
-  test("Err.version.format.01") {
+  test("ManifestError.FlixVersionHasWrongLength.01") {
     val toml = {
       """
         |[package]
@@ -496,13 +496,11 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.FlixVersionHasWrongLength(null, "010").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
+    val result = ManifestParser.parse(toml, null)
+    expectError[ManifestError.FlixVersionHasWrongLength](result)
   }
 
-  test("Err.version.format.02") {
+  test("ManifestError.FlixVersionHasWrongLength.02") {
     val toml = {
       """
         |[package]
@@ -515,10 +513,8 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.FlixVersionHasWrongLength(null, "0.1.0.1").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
+    val result = ManifestParser.parse(toml, null)
+    expectError[ManifestError.FlixVersionHasWrongLength](result)
   }
 
   test("Err.version.numbers.01") {
@@ -597,7 +593,7 @@ class TestManifestParser extends AnyFunSuite {
     expectError[ManifestError.IllegalPackageKeyFound](result)
   }
 
-  test("Err.repository.wrongFormat.01") {
+  test("ManifestError.RepositoryFormatError.01") {
     val toml = {
       """
         |[package]
@@ -611,13 +607,11 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.RepositoryFormatError(null, "hello-world").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
+    val result = ManifestParser.parse(toml, null)
+    expectError[ManifestError.RepositoryFormatError](result)
   }
 
-  test("Err.repository.wrongFormat.02") {
+  test("ManifestError.RepositoryFormatError.02") {
     val toml = {
       """
         |[package]
@@ -631,13 +625,11 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.RepositoryFormatError(null, "johnDoe/hello-world").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
+    val result = ManifestParser.parse(toml, null)
+    expectError[ManifestError.RepositoryFormatError](result)
   }
 
-  test("Err.repository.wrongFormat.03") {
+  test("ManifestError.RepositoryFormatError.03") {
     val toml = {
       """
         |[package]
@@ -651,13 +643,11 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.RepositoryFormatError(null, "github:github/johnDoe/hello-world").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
+    val result = ManifestParser.parse(toml, null)
+    expectError[ManifestError.RepositoryFormatError](result)
   }
 
-  test("Err.repository.wrongFormat.04") {
+  test("ManifestError.RepositoryFormatError.04") {
     val toml = {
       """
         |[package]
@@ -671,13 +661,11 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.RepositoryFormatError(null, "github:johnDoe/").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
+    val result = ManifestParser.parse(toml, null)
+    expectError[ManifestError.RepositoryFormatError](result)
   }
 
-  test("Err.repository.wrongFormat.05") {
+  test("ManifestError.RepositoryFormatError.05") {
     val toml = {
       """
         |[package]
@@ -691,10 +679,8 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.RepositoryFormatError(null, "github:/hello-world").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
+    val result = ManifestParser.parse(toml, null)
+    expectError[ManifestError.RepositoryFormatError](result)
   }
 
   test("Err.repository.wrongFormat.06") {
@@ -711,10 +697,8 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.RepositoryFormatError(null, "github:/").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
+    val result = ManifestParser.parse(toml, null)
+    expectError[ManifestError.RepositoryFormatError](result)
   }
 
   // Modules
@@ -805,7 +789,7 @@ class TestManifestParser extends AnyFunSuite {
     expectError[ManifestError.RequiredPropertyHasWrongType](result)
   }
 
-  test("Err.flix.format.01") {
+  test("ManifestError.FlixVersionHasWrongLength.03") {
     val toml = {
       """
         |[package]
@@ -818,13 +802,11 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.FlixVersionHasWrongLength(null, "0330").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
+    val result = ManifestParser.parse(toml, null)
+    expectError[ManifestError.FlixVersionHasWrongLength](result)
   }
 
-  test("Err.flix.format.02") {
+  test("ManifestError.FlixVersionHasWrongLength.04") {
     val toml = {
       """
         |[package]
@@ -837,10 +819,8 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.FlixVersionHasWrongLength(null, "0,33,0").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
+    val result = ManifestParser.parse(toml, null)
+    expectError[ManifestError.FlixVersionHasWrongLength](result)
   }
 
   test("Err.flix.numbers.01") {
@@ -936,7 +916,7 @@ class TestManifestParser extends AnyFunSuite {
   }
 
   //Authors
-  test("Err.authors.missing") {
+  test("ManifestError.MissingRequiredProperty.05") {
     val toml = {
       """
         |[package]
@@ -948,10 +928,8 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.MissingRequiredProperty(null, "package.authors", None).message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
+    val result = ManifestParser.parse(toml, null)
+    expectError[ManifestError.MissingRequiredProperty](result)
   }
 
   test("ManifestError.IllegalPackageKeyFound.08") {
@@ -1119,7 +1097,7 @@ class TestManifestParser extends AnyFunSuite {
     })
   }
 
-  test("Err.dependencies.format.01") {
+  test("ManifestError.FlixVersionHasWrongLength.05") {
     val toml = {
       """
         |[package]
@@ -1136,13 +1114,11 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.FlixVersionHasWrongLength(null, "123").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
+    val result = ManifestParser.parse(toml, null)
+    expectError[ManifestError.FlixVersionHasWrongLength](result)
   }
 
-  test("Err.dependencies.format.02") {
+  test("ManifestError.FlixVersionHasWrongLength.06") {
     val toml = {
       """
         |[package]
@@ -1159,10 +1135,8 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.FlixVersionHasWrongLength(null, "1.23").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
+    val result = ManifestParser.parse(toml, null)
+    expectError[ManifestError.FlixVersionHasWrongLength](result)
   }
 
   test("Err.dependencies.format.03") {
