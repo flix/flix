@@ -781,6 +781,11 @@ object Lexer {
       if (p.isEmpty) {
         return TokenKind.Err(LexerError.UnterminatedString(sourceLocationAtStart()))
       }
+      // Check for multi-line string
+      if (p.contains('\n')) {
+        return TokenKind.Err(LexerError.UnterminatedString(sourceLocationAtStart()))
+      }
+      // All is good, eat one char and continue.
       advance()
     }
     TokenKind.Err(LexerError.UnterminatedString(sourceLocationAtStart()))
