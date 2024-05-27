@@ -150,6 +150,9 @@ object Parser2 {
     root()
     // Build the syntax tree using events in state.
     val tree = buildTree()
+    if (src.name == "main/foo.flix") {
+      syntaxTreeToDebugString(tree)
+    }
     // Return with errors as soft failures to run subsequent phases for more validations.
     Validation.success(tree).withSoftFailures(s.errors)
   }
@@ -706,7 +709,7 @@ object Parser2 {
     // handle use many case
     if (at(TokenKind.DotCurlyL)) {
       val mark = open()
-      zeroOrMore(
+      oneOrMore(
         namedTokenSet = NamedTokenSet.Name,
         getItem = () => aliasedName(NAME_USE, SyntacticContext.Use),
         checkForItem = NAME_USE.contains,
@@ -714,7 +717,10 @@ object Parser2 {
         delimiterL = TokenKind.DotCurlyL,
         delimiterR = TokenKind.CurlyR,
         context = SyntacticContext.Use
-      )
+      ) match {
+        case Some(err) => closeWithError(open(), err)
+        case None =>
+      }
       close(mark, TreeKind.UsesOrImports.UseMany)
     }
     close(mark, TreeKind.UsesOrImports.Use)
@@ -728,7 +734,7 @@ object Parser2 {
     // handle import many case
     if (at(TokenKind.DotCurlyL)) {
       val mark = open()
-      zeroOrMore(
+      oneOrMore(
         namedTokenSet = NamedTokenSet.Name,
         getItem = () => aliasedName(NAME_JAVA, SyntacticContext.Import),
         checkForItem = NAME_JAVA.contains,
@@ -736,7 +742,10 @@ object Parser2 {
         delimiterL = TokenKind.DotCurlyL,
         delimiterR = TokenKind.CurlyR,
         context = SyntacticContext.Import
-      )
+      ) match {
+        case Some(err) => closeWithError(open(), err)
+        case None =>
+      }
       close(mark, TreeKind.UsesOrImports.ImportMany)
     }
     close(mark, TreeKind.UsesOrImports.Import)
