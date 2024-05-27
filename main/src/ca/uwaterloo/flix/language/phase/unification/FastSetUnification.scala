@@ -30,11 +30,11 @@ import scala.collection.mutable
 ///
 /// - We work on all the equations as one whole system.
 /// - We assume the equation system has been put into normal form. This avoids the need to mirror a lot of cases.
-///   - We move univ and false to the rhs.
+///   - We move univ and empty to the rhs.
 ///   - We move a single variable to the lhs.
 ///   - See the definition of `Equation.mk` for details.
 /// - We progress in the following order:
-///   1. We propagate ground terms (univ/false/constant) in a fixpoint.
+///   1. We propagate ground terms (univ/empty/constant) in a fixpoint.
 ///   2. We propagate variables (i.e. resolving constraints of the form x = y).
 ///   3. We perform trivial assignments where the left-hand variables does not occur in the RHS.
 ///   4. We eliminate (now) trivial and redundant constraints.
@@ -293,36 +293,36 @@ object FastSetUnification {
     *
     * A trivial equation is one of:
     * -     univ ~ univ
-    * -    false ~ false
+    * -    empty ~ empty
     * -        c ~ c        (same constant)
     * -        x ~ x        (same variable)
     *
     *
     * An unsolvable (conflicted) equation is one of:
     *
-    * -      univ ~ false   (and mirrored)
+    * -      univ ~ empty   (and mirrored)
     * -       c_i ~ c_j     (different constants)
     * -        c ~ univ     (and mirrored)
-    * -        c ~ false    (and mirrored)
+    * -        c ~ empty    (and mirrored)
     */
   private def checkAndSimplify(l: List[Equation]): List[Equation] = l match {
     case Nil => Nil
     case Equation(t1, t2, loc) :: es => (t1, t2) match {
       // Trivial equations: skip them.
       case (Term.Univ, Term.Univ) => checkAndSimplify(es)
-      case (Term.False, Term.False) => checkAndSimplify(es)
+      case (Term.Empty, Term.Empty) => checkAndSimplify(es)
       case (Term.Cst(c1), Term.Cst(c2)) if c1 == c2 => checkAndSimplify(es)
       case (Term.Var(x1), Term.Var(x2)) if x1 == x2 => checkAndSimplify(es)
 
       // Unsolvable (conflicted) equations: raise an exception.
-      case (Term.Univ, Term.False) => throw ConflictException(t1, t2, loc)
-      case (Term.False, Term.Univ) => throw ConflictException(t1, t2, loc)
+      case (Term.Univ, Term.Empty) => throw ConflictException(t1, t2, loc)
+      case (Term.Empty, Term.Univ) => throw ConflictException(t1, t2, loc)
       case (Term.Cst(c1), Term.Cst(c2)) if c1 != c2 => throw ConflictException(t1, t2, loc)
       // Note: A constraint with two different variables is of course solvable!
       case (Term.Cst(_), Term.Univ) => throw ConflictException(t1, t2, loc)
-      case (Term.Cst(_), Term.False) => throw ConflictException(t1, t2, loc)
+      case (Term.Cst(_), Term.Empty) => throw ConflictException(t1, t2, loc)
       case (Term.Univ, Term.Cst(_)) => throw ConflictException(t1, t2, loc)
-      case (Term.False, Term.Cst(_)) => throw ConflictException(t1, t2, loc)
+      case (Term.Empty, Term.Cst(_)) => throw ConflictException(t1, t2, loc)
 
       // Non-trivial and non-conflicted equation: keep it.
       case _ => Equation(t1, t2, loc) :: checkAndSimplify(es)
@@ -387,7 +387,7 @@ object FastSetUnification {
     *
     * Note that several equations were simplified.
     *
-    * Note: We do not propagate false. This extension can be added, if needed.
+    * Note: We do not propagate empty. This extension can be added, if needed.
     *
     * Note: We use `subst.extended` to check for conflicts. For example, if we already know that `s = [x -> c17]` and we
     * learn that `x -> univ` then we will try to extend s with the new binding which will raise a [[ConflictException]].
@@ -695,7 +695,7 @@ object FastSetUnification {
     * Throws a [[ConflictException]] if the equation cannot be solved.
     */
   private def boolUnifyOne(e: Equation): BoolSubstitution = try {
-    // The boolean expression we want to show is false.
+    // The boolean expression we want to show is empty.
     val query = Term.mkXor(e.t1, e.t2)
 
     // Determine the order in which to eliminate the variables.
@@ -710,7 +710,7 @@ object FastSetUnification {
   /**
     * The Successive Variable Elimination algorithm.
     *
-    * Computes the most-general unifier of the given term `t ~ false` where `fvs` is the list of free variables in `t`.
+    * Computes the most-general unifier of the given term `t ~ empty` where `fvs` is the list of free variables in `t`.
     *
     * Eliminates variables one-by-one from the given list `fvs`.
     *
@@ -725,7 +725,7 @@ object FastSetUnification {
         throw BoolUnificationException()
 
     case x :: xs =>
-      val t0 = BoolSubstitution.singleton(x, Term.False)(t)
+      val t0 = BoolSubstitution.singleton(x, Term.Empty)(t)
       val t1 = BoolSubstitution.singleton(x, Term.Univ)(t)
       val se = successiveVariableElimination(propagateAnd(Term.mkAnd(t0, t1)), xs)
 
@@ -741,7 +741,7 @@ object FastSetUnification {
     */
   private def flexify(t: Term): Term = t match {
     case Term.Univ => Term.Univ
-    case Term.False => Term.False
+    case Term.Empty => Term.Empty
     case Term.Cst(c) => Term.Var(c) // We use the constant name as the variable name.
     case Term.Var(x) => Term.Var(x)
     case Term.Not(t) => Term.mkNot(flexify(t))
@@ -755,7 +755,7 @@ object FastSetUnification {
     * Returns `univ` if the given term `t` is satisfiable, i.e. if there is an assignment to its free variables that
     * makes the whole term evaluate to univ.
     *
-    * Note that a constant can never be satisfied because we do not know if it is univ or false.
+    * Note that a constant can never be satisfied because we do not know if it is univ or empty.
     *
     * A smarter implementation would use a full-blown SAT solver, but since this function is rarely called and typically
     * called with a small term, we use a very naive implementation.
@@ -763,7 +763,7 @@ object FastSetUnification {
   private def satisfiable(t: Term): Boolean = t match {
     case Term.Univ => true // A univ term is already satisfied.
     case Term.Var(_) => true // A variable is trivially satisfiable.
-    case Term.False => false // A false term can never be satisfied.
+    case Term.Empty => false // A empty term can never be satisfied.
     case _ => evaluateAll(t, t.freeVars.toList, SortedSet.empty) // Evaluate t on all its valuations.
   }
 
@@ -773,23 +773,23 @@ object FastSetUnification {
     *
     * Evaluates the given term `t` under all valuations of the free variables `fvs` where `trueVars` are assumed to be univ.
     *
-    * For each variable `x`, the function recursively explores both when `x` is univ and when `x` is false.
+    * For each variable `x`, the function recursively explores both when `x` is univ and when `x` is empty.
     */
   private def evaluateAll(t: Term, fvs: List[Int], trueVars: SortedSet[Int]): Boolean = fvs match {
     case Nil =>
       // All variables are bound. Compute the truth value.
       evaluate(t, trueVars)
     case x :: xs =>
-      // Recurse on two cases: x = univ and x = false.
+      // Recurse on two cases: x = univ and x = empty.
       evaluateAll(t, xs, trueVars + x) || evaluateAll(t, xs, trueVars)
   }
 
   /**
-    * Returns `univ` if the given term `t` evaluates to univ when all variables in `trueVars` are univ and all other variables are false.
+    * Returns `univ` if the given term `t` evaluates to univ when all variables in `trueVars` are univ and all other variables are empty.
     */
   private def evaluate(t: Term, trueVars: SortedSet[Int]): Boolean = t match {
     case Term.Univ => true
-    case Term.False => false
+    case Term.Empty => false
     case Term.Cst(_) => false
     case Term.Var(x) => trueVars.contains(x)
     case Term.Not(t) => !evaluate(t, trueVars)
@@ -802,14 +802,14 @@ object FastSetUnification {
         // Case 2: We know that csts is empty.
         // We must pay attention to performance here.
 
-        // We first check if there is a variable x that is false (i.e. an x not in trueVars).
+        // We first check if there is a variable x that is empty (i.e. an x not in trueVars).
         for (x <- vars.map(_.x)) {
           if (!trueVars.contains(x)) {
             return false
           }
         }
 
-        // All vars were univ. We evaluate each sub-term until we find one that is false.
+        // All vars were univ. We evaluate each sub-term until we find one that is empty.
         for (t0 <- rest) {
           if (!evaluate(t0, trueVars)) {
             return false
@@ -826,7 +826,7 @@ object FastSetUnification {
           return true
         }
       }
-      // All sub-terms were false, return false.
+      // All sub-terms were empty, return empty.
       false
 
   }
@@ -854,7 +854,7 @@ object FastSetUnification {
     // Simplifies the given term `t` assuming that `trueCsts` and `trueVars` are all UNIV.
     def visit(t: Term, trueCsts: SortedSet[Int], trueVars: SortedSet[Int]): Term = t match {
       case Term.Univ => Term.Univ
-      case Term.False => Term.False
+      case Term.Empty => Term.Empty
       case Term.Cst(c) => if (trueCsts.contains(c)) Term.Univ else Term.Cst(c) // `c` holds so we can replace it by UNIV.
       case Term.Var(x) => if (trueVars.contains(x)) Term.Univ else Term.Var(x) // `x` holds so we can replace it by UNIV.
       case Term.Not(t0) => Term.mkNot(visit(t0, trueCsts, trueVars))
@@ -901,7 +901,7 @@ object FastSetUnification {
       * Returns a unification equation  `t1 ~ t2` between the terms `t1` and `t2`.
       *
       * The smart constructor performs normalization:
-      * - We move univ and false to the rhs.
+      * - We move univ and empty to the rhs.
       * - We move a single variable to the lhs.
       * - We reorder constant/variables so that the smaller constant/variable is on the lhs.
       *
@@ -915,7 +915,7 @@ object FastSetUnification {
       case (Term.Cst(c1), Term.Cst(c2)) => if (c1 <= c2) Equation(t1, t2, loc) else Equation(t2, t1, loc)
       case (Term.Var(x1), Term.Var(x2)) => if (x1 <= x2) Equation(t1, t2, loc) else Equation(t2, t1, loc)
       case (Term.Univ, _) => Equation(t2, Term.Univ, loc)
-      case (Term.False, _) => Equation(t2, Term.False, loc)
+      case (Term.Empty, _) => Equation(t2, Term.Empty, loc)
       case (_, Term.Var(_)) => Equation(t2, t1, loc)
       case _ => Equation(t1, t2, loc)
     }
@@ -960,7 +960,7 @@ object FastSetUnification {
       */
     final def freeVars: SortedSet[Int] = this match {
       case Term.Univ => SortedSet.empty
-      case Term.False => SortedSet.empty
+      case Term.Empty => SortedSet.empty
       case Term.Cst(_) => SortedSet.empty
       case Term.Var(x) => SortedSet(x)
       case Term.Not(t) => t.freeVars
@@ -977,7 +977,7 @@ object FastSetUnification {
       */
     final def size: Int = this match {
       case Term.Univ => 0
-      case Term.False => 0
+      case Term.Empty => 0
       case Term.Cst(_) => 0
       case Term.Var(_) => 0
       case Term.Not(t) => t.size + 1
@@ -993,7 +993,7 @@ object FastSetUnification {
       */
     override def toString: String = this match {
       case Term.Univ => formatter.red("univ")
-      case Term.False => formatter.red("false")
+      case Term.Empty => formatter.red("empty")
       case Term.Cst(c) => formatter.blue(s"c$c")
       case Term.Var(x) => s"x$x"
       case Term.Not(f) => f match {
@@ -1014,9 +1014,9 @@ object FastSetUnification {
     case object Univ extends Term
 
     /**
-      * The FALSE symbol.
+      * The EMPTY symbol.
       */
-    case object False extends Term
+    case object Empty extends Term
 
     /**
       * Represents an uninterpreted constant ("rigid variable").
@@ -1066,8 +1066,8 @@ object FastSetUnification {
       * Smart constructor for negation.
       */
     final def mkNot(t: Term): Term = t match {
-      case Univ => False
-      case False => Univ
+      case Univ => Empty
+      case Empty => Univ
       case Not(t0) => t0
       case _ => Not(t)
     }
@@ -1076,8 +1076,8 @@ object FastSetUnification {
       * Smart constructor for conjunction.
       */
     final def mkAnd(t1: Term, t2: Term): Term = (t1, t2) match {
-      case (False, _) => False
-      case (_, False) => False
+      case (Empty, _) => Empty
+      case (_, Empty) => Empty
       case (Univ, _) => t2
       case (_, Univ) => t1
       case _ => mkAnd(List(t1, t2))
@@ -1089,8 +1089,8 @@ object FastSetUnification {
     final def mkOr(t1: Term, t2: Term): Term = (t1, t2) match {
       case (Univ, _) => Univ
       case (_, Univ) => Univ
-      case (False, _) => t2
-      case (_, False) => t1
+      case (Empty, _) => t2
+      case (_, Empty) => t1
       case _ => mkOr(List(t1, t2))
     }
 
@@ -1108,7 +1108,7 @@ object FastSetUnification {
       for (t <- ts) {
         t match {
           case Univ => // NOP - We do not have to include Univ in a conjunction.
-          case False => return False // If the conjunction contains FALSE then whole conjunct is FALSE.
+          case Empty => return Empty // If the conjunction contains EMPTY then whole conjunct is EMPTY.
           case x@Term.Cst(_) => cstTerms += x
           case x@Term.Var(_) => varTerms += x
           case And(csts0, vars0, rest0) =>
@@ -1119,7 +1119,7 @@ object FastSetUnification {
               // We then iterate through the nested sub-terms of the nested conjunction.
               t0 match {
                 case Univ => // NOP - We do not have to include Univ in a conjunction.
-                case False => return False // If the sub-conjunction contains FALSE then the whole conjunct is FALSE.
+                case Empty => return Empty // If the sub-conjunction contains EMPTY then the whole conjunct is EMPTY.
                 case x@Term.Cst(_) => cstTerms += x
                 case x@Term.Var(_) => varTerms += x
                 case _ => restTerms += t0
@@ -1151,13 +1151,13 @@ object FastSetUnification {
       for (t <- ts) {
         t match {
           case Univ => return Univ
-          case False => // nop
+          case Empty => // nop
           case x@Term.Var(_) => varTerms += x
           case Or(ts0) =>
             for (t0 <- ts0) {
               t0 match {
                 case Univ => return Univ
-                case False => // nop
+                case Empty => // nop
                 case x@Term.Var(_) => varTerms += x
                 case _ => nonVarTerms += t0
               }
@@ -1167,7 +1167,7 @@ object FastSetUnification {
       }
 
       varTerms.toList ++ nonVarTerms.toList match {
-        case Nil => False
+        case Nil => Empty
         case x :: Nil => x
         case xs => Or(xs)
       }
@@ -1215,7 +1215,7 @@ object FastSetUnification {
       */
     def apply(t: Term): Term = t match {
       case Term.Univ => Term.Univ
-      case Term.False => Term.False
+      case Term.Empty => Term.Empty
       case Term.Cst(c) => Term.Cst(c)
 
       case Term.Var(x) => m.get(x) match {
@@ -1379,8 +1379,8 @@ object FastSetUnification {
   def verify(s: BoolSubstitution, l: List[Equation]): Unit = {
     // Apply the substitution to every equation and check that it is solved.
     for (e <- l) {
-      // We want to check that `s(t1) == s(t2)`. In other words that both sides are either univ or both sides are false.
-      // If we can find a situation where one side is univ and the other side is false then the equation does not hold.
+      // We want to check that `s(t1) == s(t2)`. In other words that both sides are either univ or both sides are empty.
+      // If we can find a situation where one side is univ and the other side is empty then the equation does not hold.
       // We can look for such a situation by checking whether `s(t1) xor s(t2)` is satisfiable. If it is then we have
       // found an equation that is not solved.
       val t1 = s(e.t1)
