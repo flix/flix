@@ -21,7 +21,7 @@ import org.scalatest.Suites
 class UnificationSuite extends Suites(
   new TestBdd,
   new TestBoolFormulaTable,
-  new TestFastBoolUnification,
+  new TestFastSetUnification,
   new TestQMCtoBoolFormula,
   new TestIncremental
 )

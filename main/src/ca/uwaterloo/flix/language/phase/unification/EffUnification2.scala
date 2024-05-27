@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{Rigidity, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.language.phase.unification.FastBoolUnification.{ConflictException, Equation, Term, TooComplexException}
+import ca.uwaterloo.flix.language.phase.unification.FastSetUnification.{ConflictException, Equation, Term, TooComplexException}
 import ca.uwaterloo.flix.language.phase.unification.UnificationError.TooComplex
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 import ca.uwaterloo.flix.util.collection.Bimap
@@ -43,7 +43,7 @@ object EffUnification2 {
     }
 
     // Compute the most-general unifier of all the equations.
-    FastBoolUnification.solveAll(equations) match {
+    FastSetUnification.solveAll(equations) match {
       case Result.Ok(subst) => Result.Ok(fromBoolSubst(subst))
 
       case Result.Err((ex: ConflictException, _, _)) =>
@@ -95,8 +95,8 @@ object EffUnification2 {
     * The rigidity environment `renv` is used to map rigid type variables to constants and flexible type variables to term variables.
     */
   private def toTerm(t: Type)(implicit renv: RigidityEnv, m: Bimap[Type.Var, Int]): Term = Type.eraseTopAliases(t) match {
-    case Type.Pure => Term.True
-    case Type.Univ => Term.False
+    case Type.Pure => Term.Univ
+    case Type.Univ => Term.Empty
 
     case t: Type.Var => m.getForward(t) match {
       case None => throw InternalCompilerException(s"Unexpected unbound type variable: '$t'.", t.loc)
@@ -116,7 +116,7 @@ object EffUnification2 {
   /**
     * Returns a regular type substitution obtained from the given Boolean substitution `s`.
     */
-  private def fromBoolSubst(s: FastBoolUnification.BoolSubstitution)(implicit m: Bimap[Type.Var, Int]): Substitution = {
+  private def fromBoolSubst(s: FastSetUnification.BoolSubstitution)(implicit m: Bimap[Type.Var, Int]): Substitution = {
     Substitution(s.m.foldLeft(Map.empty[Symbol.KindedTypeVarSym, Type]) {
       case (macc, (k, v)) =>
         val tvar = m.getBackward(k).get.sym
@@ -134,8 +134,8 @@ object EffUnification2 {
     * distinguishes their rigidity or flexibility.
     */
   private def fromTerm(t: Term, loc: SourceLocation)(implicit m: Bimap[Type.Var, Int]): Type = t match {
-    case Term.True => Type.Pure
-    case Term.False => Type.Univ
+    case Term.Univ => Type.Pure
+    case Term.Empty => Type.Univ
     case Term.Cst(c) => m.getBackward(c).get // Safe: We never introduce new variables.
     case Term.Var(x) => m.getBackward(x).get // Safe: We never introduce new variables.
     case Term.Not(t) => Type.mkComplement(fromTerm(t, loc), loc)
