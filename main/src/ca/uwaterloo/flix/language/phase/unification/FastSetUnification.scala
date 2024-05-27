@@ -729,7 +729,7 @@ object FastSetUnification {
       val t1 = BoolSubstitution.singleton(x, Term.Univ)(t)
       val se = successiveVariableElimination(propagateInter(Term.mkInter(t0, t1)), xs)
 
-      val f1 = propagateInter(Term.mkUnion(se(t0), Term.mkInter(Term.Var(x), Term.mkCompl(se(t1)))))
+      val f1 = propagateInter(Term.mkUnion(se(t0), Term.mkMinus(Term.Var(x), se(t1))))
       val st = BoolSubstitution.singleton(x, f1)
       st ++ se
   }
@@ -1176,7 +1176,12 @@ object FastSetUnification {
     /**
       * Returns the Xor of `x` and `y`. Implemented by desugaring.
       */
-    final def mkXor(x: Term, y: Term): Term = mkUnion(mkInter(x, mkCompl(y)), mkInter(mkCompl(x), y))
+    final def mkXor(x: Term, y: Term): Term = mkUnion(mkMinus(x, y), mkMinus(y, x))
+
+    /**
+      * Returns the Minus of `x` and `y` (`-`). Implemented by desugaring.
+      */
+    final def mkMinus(x: Term, y: Term): Term = mkInter(x, mkCompl(y))
 
   }
 
