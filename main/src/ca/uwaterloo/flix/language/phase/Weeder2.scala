@@ -1124,8 +1124,8 @@ object Weeder2 {
             case "instanceof" => mapN(tryPickJavaName(exprs(1)))(Expr.InstanceOf(e1, _, tree.loc))
             // UNRECOGNIZED
             case id =>
-              val ident = Name.Ident(tree.loc.sp1, id, tree.loc.sp2)
-              Validation.success(Expr.Apply(Expr.Ambiguous(Name.mkQName(ident), ident.loc), List(e1, e2), tree.loc))
+              val ident = Name.Ident(op.loc.sp1, id, op.loc.sp2)
+              Validation.success(Expr.Apply(Expr.Ambiguous(Name.mkQName(ident), op.loc), List(e1, e2), tree.loc))
           }
         case (_, operands) => throw InternalCompilerException(s"Expr.Binary tree with ${operands.length} operands", tree.loc)
       }
