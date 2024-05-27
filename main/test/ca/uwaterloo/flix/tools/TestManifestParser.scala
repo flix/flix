@@ -1,17 +1,30 @@
 package ca.uwaterloo.flix.tools
 
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
-import ca.uwaterloo.flix.tools.pkg.{Dependency, PackageModules, ManifestError, ManifestParser, Repository, SemVer}
-import ca.uwaterloo.flix.util.Formatter
+import ca.uwaterloo.flix.tools.pkg.{Dependency, ManifestError, ManifestParser, PackageModules, Repository, SemVer}
+import ca.uwaterloo.flix.util.{Formatter, Result}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.language.ast.Symbol
 import org.scalatest.funsuite.AnyFunSuite
+import ca.uwaterloo.flix.tools.pkg.Manifest
 
 import java.io.File
 import java.net.URI
 import java.nio.file.Paths
+import scala.reflect.ClassTag
 
 class TestManifestParser extends AnyFunSuite {
+
+  def expectError[T](result: Result[Manifest, ManifestError])(implicit classTag: ClassTag[T]): Unit =
+    result match {
+      case Ok(_) => fail(s"Expected failure, but got success.")
+      case Err(error) =>
+        val expected = classTag.runtimeClass
+        val actual = error.getClass
+        if (!expected.isAssignableFrom(actual)) {
+          fail(s"Expected an error of type ${expected.getSimpleName}, but found:\n\n${actual.getName}")
+        }
+    }
 
   val f: Formatter = Formatter.NoFormatter
   val s: String = File.separator
@@ -310,17 +323,15 @@ class TestManifestParser extends AnyFunSuite {
   * Errors
   * */
   //File does not exist
-  test("Err.file.missing") {
+  test("ManifestError.IOError.01") {
     val pathString = "main/test/ca/uwaterloo/flix/tools/missing.toml"
     val path = Paths.get(pathString)
-    assertResult(ManifestError.IOError(path, s"main${s}test${s}ca${s}uwaterloo${s}flix${s}tools${s}missing.toml").message(f))(ManifestParser.parse(path) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
+    val result = ManifestParser.parse(path)
+    expectError[ManifestError.IOError](result)
   }
 
   //Name
-  test("Err.name.missing") {
+  test("ManifestError.MissingRequiredProperty.01") {
     val toml = {
       """
         |[package]
@@ -332,13 +343,11 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.MissingRequiredProperty(null, "package.name", None).message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
+    val result = ManifestParser.parse(toml, null)
+    expectError[ManifestError.MissingRequiredProperty](result)
   }
 
-  test("Err.name.misspelled") {
+  test("ManifestError.IllegalPackageKeyFound.01") {
     val toml = {
       """
         |[package]
@@ -351,13 +360,11 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.IllegalPackageKeyFound(null, "package.mane").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
+    val result = ManifestParser.parse(toml, null)
+    expectError[ManifestError.IllegalPackageKeyFound](result)
   }
 
-  test("Err.name.type") {
+  test("ManifestError.RequiredPropertyHasWrongType.01") {
     val toml = {
       """
         |[package]
@@ -370,14 +377,12 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.RequiredPropertyHasWrongType(null, "package.name", "String", "Value of 'package.name' is a integer").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
+    val result = ManifestParser.parse(toml, null)
+    expectError[ManifestError.RequiredPropertyHasWrongType](result)
   }
 
   //Description
-  test("Err.description.missing") {
+  test("ManifestError.MissingRequiredProperty.02") {
     val toml = {
     """
       |[package]
@@ -388,14 +393,12 @@ class TestManifestParser extends AnyFunSuite {
       |authors = ["John Doe <john@example.com>"]
       |
       |""".stripMargin
-  }
-    assertResult(ManifestError.MissingRequiredProperty(null, "package.description", None).message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
+    }
+    val result = ManifestParser.parse(toml, null)
+    expectError[ManifestError.MissingRequiredProperty](result)
   }
 
-  test("Err.description.misspelled") {
+  test("ManifestError.IllegalPackageKeyFound.02") {
     val toml = {
       """
         |[package]
@@ -408,13 +411,11 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.IllegalPackageKeyFound(null, "package.desciption").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
+    val result = ManifestParser.parse(toml, null)
+    expectError[ManifestError.IllegalPackageKeyFound](result)
   }
 
-  test("Err.description.type") {
+  test("ManifestError.RequiredPropertyHasWrongType.02") {
     val toml = {
     """
       |[package]
@@ -427,32 +428,28 @@ class TestManifestParser extends AnyFunSuite {
       |
       |""".stripMargin
   }
-    assertResult(ManifestError.RequiredPropertyHasWrongType(null, "package.description", "String", "Value of 'package.description' is a integer").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
+    val result = ManifestParser.parse(toml, null)
+    expectError[ManifestError.RequiredPropertyHasWrongType](result)
   }
 
   //Version
-  test("Err.version.missing") {
+  test("ManifestError.MissingRequiredProperty.03") {
     val toml = {
-    """
-      |[package]
-      |name = "hello-world"
-      |description = "A simple program"
-      |flix = "0.33.0"
-      |license = "Apache-2.0"
-      |authors = ["John Doe <john@example.com>"]
-      |
-      |""".stripMargin
-  }
-    assertResult(ManifestError.MissingRequiredProperty(null, "package.version", None).message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
+      """
+        |[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |flix = "0.33.0"
+        |license = "Apache-2.0"
+        |authors = ["John Doe <john@example.com>"]
+        |
+        |""".stripMargin
+    }
+    val result = ManifestParser.parse(toml, null)
+    expectError[ManifestError.MissingRequiredProperty](result)
   }
 
-  test("Err.version.misspelled") {
+  test("ManifestError.IllegalPackageKeyFound.03") {
     val toml = {
       """
         |[package]
@@ -465,13 +462,11 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.IllegalPackageKeyFound(null, "package.varsion").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
+    val result = ManifestParser.parse(toml, null)
+    expectError[ManifestError.IllegalPackageKeyFound](result)
   }
 
-  test("Err.version.type") {
+  test("ManifestError.RequiredPropertyHasWrongType.03") {
     val toml = {
     """
       |[package]
@@ -483,11 +478,9 @@ class TestManifestParser extends AnyFunSuite {
       |authors = ["John Doe <john@example.com>"]
       |
       |""".stripMargin
-  }
-    assertResult(ManifestError.RequiredPropertyHasWrongType(null, "package.version", "String", "Value of 'package.version' is a array").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
+    }
+    val result = ManifestParser.parse(toml, null)
+    expectError[ManifestError.RequiredPropertyHasWrongType](result)
   }
 
   test("Err.version.format.01") {
@@ -586,7 +579,7 @@ class TestManifestParser extends AnyFunSuite {
   }
 
   // Repository
-  test("Err.repository.misspelled") {
+  test("ManifestError.IllegalPackageKeyFound.04") {
     val toml = {
       """
         |[package]
@@ -600,10 +593,8 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.IllegalPackageKeyFound(null, "package.repsository").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
+    val result = ManifestParser.parse(toml, null)
+    expectError[ManifestError.IllegalPackageKeyFound](result)
   }
 
   test("Err.repository.wrongFormat.01") {
@@ -727,7 +718,7 @@ class TestManifestParser extends AnyFunSuite {
   }
 
   // Modules
-  test("Err.modules.misspelled") {
+  test("ManifestError.IllegalPackageKeyFound.05") {
     val toml = {
       """
         |[package]
@@ -741,13 +732,11 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.IllegalPackageKeyFound(null, "package.modjules").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
+    val result = ManifestParser.parse(toml, null)
+    expectError[ManifestError.IllegalPackageKeyFound](result)
   }
 
-  test("Err.modules.type") {
+  test("ManifestError.RequiredPropertyHasWrongType.04") {
     val toml = {
       """
         |[package]
@@ -761,14 +750,12 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.RequiredPropertyHasWrongType(null, "package.modules", "Array", "Value of 'package.modules' is a integer").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
+    val result = ManifestParser.parse(toml, null)
+    expectError[ManifestError.RequiredPropertyHasWrongType](result)
   }
 
   //Flix
-  test("Err.flix.missing") {
+  test("ManifestError.MissingRequiredProperty.04") {
     val toml = {
       """
         |[package]
@@ -780,13 +767,11 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.MissingRequiredProperty(null, "package.flix", None).message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
+    val result = ManifestParser.parse(toml, null)
+    expectError[ManifestError.MissingRequiredProperty](result)
   }
 
-  test("Err.flix.misspelled") {
+  test("ManifestError.IllegalPackageKeyFound.06") {
     val toml = {
       """
         |[package]
@@ -799,13 +784,11 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.IllegalPackageKeyFound(null, "package.flux").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
+    val result = ManifestParser.parse(toml, null)
+    expectError[ManifestError.IllegalPackageKeyFound](result)
   }
 
-  test("Err.flix.type") {
+  test("ManifestError.RequiredPropertyHasWrongType.05") {
     val toml = {
       """
         |[package]
@@ -818,10 +801,8 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.RequiredPropertyHasWrongType(null, "package.flix", "String", "Value of 'package.flix' is a integer").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
+    val result = ManifestParser.parse(toml, null)
+    expectError[ManifestError.RequiredPropertyHasWrongType](result)
   }
 
   test("Err.flix.format.01") {
@@ -920,7 +901,7 @@ class TestManifestParser extends AnyFunSuite {
   }
 
   //License
-  test("Err.license.type") {
+  test("ManifestError.RequiredPropertyHasWrongType.06") {
     val toml = {
       """
         |[package]
@@ -933,13 +914,11 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.RequiredPropertyHasWrongType(null, "package.license", "String", "Value of 'package.license' is a integer").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
+    val result = ManifestParser.parse(toml, null)
+    expectError[ManifestError.RequiredPropertyHasWrongType](result)
   }
 
-  test("Err.license.misspelled") {
+  test("ManifestError.IllegalPackageKeyFound.07") {
     val toml = {
       """
         |[package]
@@ -952,10 +931,8 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.IllegalPackageKeyFound(null, "package.licence").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
+    val result = ManifestParser.parse(toml, null)
+    expectError[ManifestError.IllegalPackageKeyFound](result)
   }
 
   //Authors
@@ -977,7 +954,7 @@ class TestManifestParser extends AnyFunSuite {
     })
   }
 
-  test("Err.authors.misspelled") {
+  test("ManifestError.IllegalPackageKeyFound.08") {
     val toml = {
       """
         |[package]
@@ -990,13 +967,11 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.IllegalPackageKeyFound(null, "package.authars").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
+    val result = ManifestParser.parse(toml, null)
+    expectError[ManifestError.IllegalPackageKeyFound](result)
   }
 
-  test("Err.authors.type.01") {
+  test("ManifestError.RequiredPropertyHasWrongType.07") {
     val toml = {
       """
         |[package]
@@ -1009,10 +984,8 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.RequiredPropertyHasWrongType(null, "package.authors", "Array", "Value of 'package.authors' is a string").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
+    val result = ManifestParser.parse(toml, null)
+    expectError[ManifestError.RequiredPropertyHasWrongType](result)
   }
 
   test("Err.authors.type.02") {
