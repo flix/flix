@@ -729,7 +729,7 @@ object FastSetUnification {
       val t1 = BoolSubstitution.singleton(x, Term.Univ)(t)
       val se = successiveVariableElimination(propagateInter(Term.mkInter(t0, t1)), xs)
 
-      val f1 = propagateInter(Term.mkOr(se(t0), Term.mkInter(Term.Var(x), Term.mkCompl(se(t1)))))
+      val f1 = propagateInter(Term.mkUnion(se(t0), Term.mkInter(Term.Var(x), Term.mkCompl(se(t1)))))
       val st = BoolSubstitution.singleton(x, f1)
       st ++ se
   }
@@ -748,7 +748,7 @@ object FastSetUnification {
     case Term.Inter(csts, vars, rest) =>
       // Translate every constant into a variable:
       Term.mkInter(csts.map(c => Term.Var(c.c)).toList ++ vars ++ rest.map(flexify))
-    case Term.Or(ts) => Term.mkOr(ts.map(flexify))
+    case Term.Union(ts) => Term.mkUnion(ts.map(flexify))
   }
 
   /**
@@ -820,7 +820,7 @@ object FastSetUnification {
         true
       }
 
-    case Term.Or(ts) =>
+    case Term.Union(ts) =>
       for (t0 <- ts) {
         if (evaluate(t0, trueVars)) {
           return true
@@ -871,7 +871,7 @@ object FastSetUnification {
         val rest = rest0.collect {
           case t: Term.Compl => visit(t, currentCsts, currentVars)
           case t: Term.Inter => visit(t, currentCsts, currentVars)
-          case t: Term.Or => visit(t, currentCsts, currentVars)
+          case t: Term.Union => visit(t, currentCsts, currentVars)
           case _: Term.Cst =>
             // Cannot happen because the invariant of [[Term.mkInter]] ensures there are no constants in `rest`.
             throw InternalCompilerException("Unexpected constant", SourceLocation.Unknown)
@@ -887,7 +887,7 @@ object FastSetUnification {
         // Recompose the intersection. We use the smart constructor because some sets may have become empty.
         Term.mkInter(csts.toList.map(Term.Cst) ++ vars.toList.map(Term.Var) ++ rest)
 
-      case Term.Or(ts) => Term.mkOr(ts.map(visit(_, trueCsts, trueVars)))
+      case Term.Union(ts) => Term.mkUnion(ts.map(visit(_, trueCsts, trueVars)))
     }
 
     visit(t, SortedSet.empty, SortedSet.empty)
@@ -967,7 +967,7 @@ object FastSetUnification {
 
       case Term.Inter(_, vars, rest) => SortedSet.empty[Int] ++ vars.map(_.x) ++ rest.flatMap(_.freeVars)
 
-      case Term.Or(ts) => ts.foldLeft(SortedSet.empty[Int])(_ ++ _.freeVars)
+      case Term.Union(ts) => ts.foldLeft(SortedSet.empty[Int])(_ ++ _.freeVars)
     }
 
     /**
@@ -985,7 +985,7 @@ object FastSetUnification {
         // We need a connective for each constant, variable, and term minus one.
         // We then add the size of all the sub-terms in `rest`.
         ((csts.size + vars.size + rest.size) - 1) + rest.map(_.size).sum
-      case Term.Or(ts) => ts.map(_.size).sum + (ts.length - 1)
+      case Term.Union(ts) => ts.map(_.size).sum + (ts.length - 1)
     }
 
     /**
@@ -1001,7 +1001,7 @@ object FastSetUnification {
         case _ => s"!($f)"
       }
       case Term.Inter(csts, vars, rest) => s"(${(csts.toList ++ vars.toList ++ rest).mkString(" ∩ ")})"
-      case Term.Or(ts) => s"(${ts.mkString(" ∨ ")})"
+      case Term.Union(ts) => s"(${ts.mkString(" ∪ ")})"
     }
 
   }
@@ -1054,11 +1054,11 @@ object FastSetUnification {
     }
 
     /**
-      * A disjunction of the terms `ts`.
+      * A union of the terms `ts`.
       *
-      * Note: We do not use currently use any clever representation of disjunctions (because there has been no need).
+      * Note: We do not use currently use any clever representation of unions (because there has been no need).
       */
-    case class Or(ts: List[Term]) extends Term {
+    case class Union(ts: List[Term]) extends Term {
       assert(ts.length >= 2)
     }
 
@@ -1084,14 +1084,14 @@ object FastSetUnification {
     }
 
     /**
-      * Smart constructor for disjunction.
+      * Smart constructor for union.
       */
-    final def mkOr(t1: Term, t2: Term): Term = (t1, t2) match {
+    final def mkUnion(t1: Term, t2: Term): Term = (t1, t2) match {
       case (Univ, _) => Univ
       case (_, Univ) => Univ
       case (Empty, _) => t2
       case (_, Empty) => t1
-      case _ => mkOr(List(t1, t2))
+      case _ => mkUnion(List(t1, t2))
     }
 
     /**
@@ -1141,9 +1141,9 @@ object FastSetUnification {
     }
 
     /**
-      * Smart constructor for disjunction.
+      * Smart constructor for union.
       */
-    final def mkOr(ts: List[Term]): Term = {
+    final def mkUnion(ts: List[Term]): Term = {
       // We refer to [[mkInter]] since the structure is similar.
 
       val varTerms = mutable.Set.empty[Term]
@@ -1153,7 +1153,7 @@ object FastSetUnification {
           case Univ => return Univ
           case Empty => // nop
           case x@Term.Var(_) => varTerms += x
-          case Or(ts0) =>
+          case Union(ts0) =>
             for (t0 <- ts0) {
               t0 match {
                 case Univ => return Univ
@@ -1169,14 +1169,14 @@ object FastSetUnification {
       varTerms.toList ++ nonVarTerms.toList match {
         case Nil => Empty
         case x :: Nil => x
-        case xs => Or(xs)
+        case xs => Union(xs)
       }
     }
 
     /**
       * Returns the Xor of `x` and `y`. Implemented by desugaring.
       */
-    final def mkXor(x: Term, y: Term): Term = mkOr(mkInter(x, mkCompl(y)), mkInter(mkCompl(x), y))
+    final def mkXor(x: Term, y: Term): Term = mkUnion(mkInter(x, mkCompl(y)), mkInter(mkCompl(x), y))
 
   }
 
@@ -1233,7 +1233,7 @@ object FastSetUnification {
         val ts = csts.toList ++ vars.toList.map(apply) ++ rest.map(apply)
         Term.mkInter(ts)
 
-      case Term.Or(ts) => Term.mkOr(ts.map(apply))
+      case Term.Union(ts) => Term.mkUnion(ts.map(apply))
     }
 
     /**
