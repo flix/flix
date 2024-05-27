@@ -39,9 +39,9 @@ import scala.collection.mutable
 ///   3. We perform trivial assignments where the left-hand variables does not occur in the RHS.
 ///   4. We eliminate (now) trivial and redundant constraints.
 ///   5. We do full-blown Boolean unification with SVE.
-/// - We represent a conjunction with n >= 2 terms.
+/// - We represent a intersection with n >= 2 terms.
 ///   - We group the terms into three: a set of constants, a set of variables, and a list of sub-terms.
-///   - We flatten conjunctions at least one level per call to `mkAnd`.
+///   - We flatten intersections at least one level per call to `mkInter`.
 ///
 /// In the future, we could:
 /// - Explore change of basis.
@@ -338,7 +338,7 @@ object FastSetUnification {
     *
     * - `x ~ univ` becomes `[x -> univ]`.
     * - `x ~ c` becomes `[x -> c]`.
-    * - `x /\ y /\ ... = univ` becomes `[x -> univ, y -> univ, ...]`.
+    * - `x ∩ y ∩ ... = univ` becomes `[x -> univ, y -> univ, ...]`.
     *
     * For example, if the equation system is:
     *
@@ -414,8 +414,8 @@ object FastSetUnification {
             subst = subst.extended(x, Term.Cst(c), loc) // Note: the extended function will check that `x` is not already mapped to another constant.
             changed = true
 
-          // Case 3: x /\ y /\ z /\... ~ univ
-          case Equation(Term.And(csts, vars, rest), Term.Univ, loc) if csts.isEmpty && rest.isEmpty =>
+          // Case 3: x ∩ y ∩ z ∩... ~ univ
+          case Equation(Term.Inter(csts, vars, rest), Term.Univ, loc) if csts.isEmpty && rest.isEmpty =>
             for (Term.Var(x) <- vars) {
               subst = subst.extended(x, Term.Univ, loc) // Note: the extended function will check that `x` is not already mapped to another constant.
               changed = true
@@ -727,9 +727,9 @@ object FastSetUnification {
     case x :: xs =>
       val t0 = BoolSubstitution.singleton(x, Term.Empty)(t)
       val t1 = BoolSubstitution.singleton(x, Term.Univ)(t)
-      val se = successiveVariableElimination(propagateAnd(Term.mkAnd(t0, t1)), xs)
+      val se = successiveVariableElimination(propagateInter(Term.mkInter(t0, t1)), xs)
 
-      val f1 = propagateAnd(Term.mkOr(se(t0), Term.mkAnd(Term.Var(x), Term.mkCompl(se(t1)))))
+      val f1 = propagateInter(Term.mkOr(se(t0), Term.mkInter(Term.Var(x), Term.mkCompl(se(t1)))))
       val st = BoolSubstitution.singleton(x, f1)
       st ++ se
   }
@@ -745,9 +745,9 @@ object FastSetUnification {
     case Term.Cst(c) => Term.Var(c) // We use the constant name as the variable name.
     case Term.Var(x) => Term.Var(x)
     case Term.Compl(t) => Term.mkCompl(flexify(t))
-    case Term.And(csts, vars, rest) =>
+    case Term.Inter(csts, vars, rest) =>
       // Translate every constant into a variable:
-      Term.mkAnd(csts.map(c => Term.Var(c.c)).toList ++ vars ++ rest.map(flexify))
+      Term.mkInter(csts.map(c => Term.Var(c.c)).toList ++ vars ++ rest.map(flexify))
     case Term.Or(ts) => Term.mkOr(ts.map(flexify))
   }
 
@@ -794,7 +794,7 @@ object FastSetUnification {
     case Term.Var(x) => trueVars.contains(x)
     case Term.Compl(t) => !evaluate(t, trueVars)
 
-    case Term.And(csts, vars, rest) =>
+    case Term.Inter(csts, vars, rest) =>
       if (csts.nonEmpty) {
         // Case 1: If there is a constant then the term may be unsatisfiable.
         false
@@ -832,25 +832,25 @@ object FastSetUnification {
   }
 
   /**
-    * Perform AND-propagation on the given `term`.
+    * Perform INTER-propagation on the given `term`.
     *
-    * We use AND-propagation to simplify terms during the Successive Variable Elimination (SVE) algorithm.
+    * We use INTER-propagation to simplify terms during the Successive Variable Elimination (SVE) algorithm.
     *
     * For example, the term:
     *
     * {{{
-    *   x1 /\ x2 /\ compl (x7 /\ x9 /\ x1)
+    *   x1 ∩ x2 ∩ compl (x7 ∩ x9 ∩ x1)
     * }}}
     *
     * is simplified to the term:
     *
     * {{{
-    *   x1 /\ x2 /\ compl (x7 /\ x9 /\ UNIV)
+    *   x1 ∩ x2 ∩ compl (x7 ∩ x9 ∩ UNIV)
     * }}}
     *
-    * The idea is that since x1 (and x2) must hold for the entire conjunction to be UNIV they can be removed from the sub-term.
+    * The idea is that since x1 (and x2) must hold for the entire intersection to be UNIV they can be removed from the sub-term.
     */
-  private def propagateAnd(t: Term): Term = {
+  private def propagateInter(t: Term): Term = {
     // Simplifies the given term `t` assuming that `trueCsts` and `trueVars` are all UNIV.
     def visit(t: Term, trueCsts: SortedSet[Int], trueVars: SortedSet[Int]): Term = t match {
       case Term.Univ => Term.Univ
@@ -858,8 +858,8 @@ object FastSetUnification {
       case Term.Cst(c) => if (trueCsts.contains(c)) Term.Univ else Term.Cst(c) // `c` holds so we can replace it by UNIV.
       case Term.Var(x) => if (trueVars.contains(x)) Term.Univ else Term.Var(x) // `x` holds so we can replace it by UNIV.
       case Term.Compl(t0) => Term.mkCompl(visit(t0, trueCsts, trueVars))
-      case Term.And(csts0, vars0, rest0) =>
-        // Compute the constants and variables that _must_ hold for the whole conjunction to hold.
+      case Term.Inter(csts0, vars0, rest0) =>
+        // Compute the constants and variables that _must_ hold for the whole intersection to hold.
         val termCsts = csts0.map(_.c)
         val termVars = vars0.map(_.x)
 
@@ -870,13 +870,13 @@ object FastSetUnification {
         // Recurse on the sub-terms with the updated maps.
         val rest = rest0.collect {
           case t: Term.Compl => visit(t, currentCsts, currentVars)
-          case t: Term.And => visit(t, currentCsts, currentVars)
+          case t: Term.Inter => visit(t, currentCsts, currentVars)
           case t: Term.Or => visit(t, currentCsts, currentVars)
           case _: Term.Cst =>
-            // Cannot happen because the invariant of [[Term.mkAnd]] ensures there are no constants in `rest`.
+            // Cannot happen because the invariant of [[Term.mkInter]] ensures there are no constants in `rest`.
             throw InternalCompilerException("Unexpected constant", SourceLocation.Unknown)
           case _: Term.Var =>
-            // Cannot happen because the invariant of [[Term.mkAnd]] ensures there are no variables in `rest`.
+            // Cannot happen because the invariant of [[Term.mkInter]] ensures there are no variables in `rest`.
             throw InternalCompilerException("Unexpected variable", SourceLocation.Unknown)
         }
 
@@ -884,8 +884,8 @@ object FastSetUnification {
         val csts = termCsts -- trueCsts
         val vars = termVars -- trueVars
 
-        // Recompose the conjunction. We use the smart constructor because some sets may have become empty.
-        Term.mkAnd(csts.toList.map(Term.Cst) ++ vars.toList.map(Term.Var) ++ rest)
+        // Recompose the intersection. We use the smart constructor because some sets may have become empty.
+        Term.mkInter(csts.toList.map(Term.Cst) ++ vars.toList.map(Term.Var) ++ rest)
 
       case Term.Or(ts) => Term.mkOr(ts.map(visit(_, trueCsts, trueVars)))
     }
@@ -909,7 +909,7 @@ object FastSetUnification {
       * -     univ ~ x7 ==> x7 ~ univ
       * -       c3 ~ c2 ==> c2 ~ c3
       * -       x7 ~ x5 ==> x5 ~ x7
-      * - x3 /\ x7 ~ x4 ==> x4 ~ x3 /\ x7
+      * - x3 ∩ x7 ~ x4 ==> x4 ~ x3 ∩ x7
       */
     def mk(t1: Term, t2: Term, loc: SourceLocation): Equation = (t1, t2) match {
       case (Term.Cst(c1), Term.Cst(c2)) => if (c1 <= c2) Equation(t1, t2, loc) else Equation(t2, t1, loc)
@@ -946,9 +946,9 @@ object FastSetUnification {
   sealed trait Term {
 
     /**
-      * Syntactic sugar for [[Term.mkAnd]].
+      * Syntactic sugar for [[Term.mkInter]].
       */
-    final def &(that: Term): Term = Term.mkAnd(this, that)
+    final def &(that: Term): Term = Term.mkInter(this, that)
 
     /**
       * Syntactic sugar for [[Equation.mk]]
@@ -965,7 +965,7 @@ object FastSetUnification {
       case Term.Var(x) => SortedSet(x)
       case Term.Compl(t) => t.freeVars
 
-      case Term.And(_, vars, rest) => SortedSet.empty[Int] ++ vars.map(_.x) ++ rest.flatMap(_.freeVars)
+      case Term.Inter(_, vars, rest) => SortedSet.empty[Int] ++ vars.map(_.x) ++ rest.flatMap(_.freeVars)
 
       case Term.Or(ts) => ts.foldLeft(SortedSet.empty[Int])(_ ++ _.freeVars)
     }
@@ -973,7 +973,7 @@ object FastSetUnification {
     /**
       * Returns the number of connectives in `this` term.
       *
-      * For example, `size(x) = 0`, `size(x /\ y) = 1`, and `size(x /\ compl y) = 2`.
+      * For example, `size(x) = 0`, `size(x ∩ y) = 1`, and `size(x ∩ compl y) = 2`.
       */
     final def size: Int = this match {
       case Term.Univ => 0
@@ -981,7 +981,7 @@ object FastSetUnification {
       case Term.Cst(_) => 0
       case Term.Var(_) => 0
       case Term.Compl(t) => t.size + 1
-      case Term.And(csts, vars, rest) =>
+      case Term.Inter(csts, vars, rest) =>
         // We need a connective for each constant, variable, and term minus one.
         // We then add the size of all the sub-terms in `rest`.
         ((csts.size + vars.size + rest.size) - 1) + rest.map(_.size).sum
@@ -1000,7 +1000,7 @@ object FastSetUnification {
         case Term.Var(x) => s"!x$x"
         case _ => s"!($f)"
       }
-      case Term.And(csts, vars, rest) => s"(${(csts.toList ++ vars.toList ++ rest).mkString(" ∧ ")})"
+      case Term.Inter(csts, vars, rest) => s"(${(csts.toList ++ vars.toList ++ rest).mkString(" ∩ ")})"
       case Term.Or(ts) => s"(${ts.mkString(" ∨ ")})"
     }
 
@@ -1038,15 +1038,15 @@ object FastSetUnification {
     case class Compl(t: Term) extends Term
 
     /**
-      * Represents a conjunction of terms.
+      * Represents a intersection of terms.
       *
-      * We use a clever representation where we have a conjunction of constants, variables, and then sub-terms.
+      * We use a clever representation where we have a intersection of constants, variables, and then sub-terms.
       *
-      * For example, the conjunction: `x7 /\ (compl x2) /\ c1 /\ x4` is represented as: `Set(c1), Set(x4, x7), List((compl x2))`.
+      * For example, the intersection: `x7 ∩ (compl x2) ∩ c1 ∩ x4` is represented as: `Set(c1), Set(x4, x7), List((compl x2))`.
       *
-      * This representation is key to efficiency because the equations we solve are heavy on conjunctions.
+      * This representation is key to efficiency because the equations we solve are heavy on intersections.
       */
-    case class And(csts: Set[Term.Cst], vars: Set[Term.Var], rest: List[Term]) extends Term {
+    case class Inter(csts: Set[Term.Cst], vars: Set[Term.Var], rest: List[Term]) extends Term {
       // We ensure that `rest` cannot contain constants and variables.
       // Once the code is better tested, we can remove these assertions.
       assert(!rest.exists(_.isInstanceOf[Term.Cst]))
@@ -1073,14 +1073,14 @@ object FastSetUnification {
     }
 
     /**
-      * Smart constructor for conjunction.
+      * Smart constructor for intersection.
       */
-    final def mkAnd(t1: Term, t2: Term): Term = (t1, t2) match {
+    final def mkInter(t1: Term, t2: Term): Term = (t1, t2) match {
       case (Empty, _) => Empty
       case (_, Empty) => Empty
       case (Univ, _) => t2
       case (_, Univ) => t1
-      case _ => mkAnd(List(t1, t2))
+      case _ => mkInter(List(t1, t2))
     }
 
     /**
@@ -1095,31 +1095,31 @@ object FastSetUnification {
     }
 
     /**
-      * Smart constructor for conjunction.
+      * Smart constructor for intersection.
       *
       * A lot of heavy lifting occurs here. In particular, we must partition `ts` into (a) constants, (b) variables,
-      * and (c) other sub-terms. Moreover, we look into those sub-terms and flatten any conjunctions we find within.
+      * and (c) other sub-terms. Moreover, we look into those sub-terms and flatten any intersections we find within.
       */
-    final def mkAnd(ts: List[Term]): Term = {
+    final def mkInter(ts: List[Term]): Term = {
       // Mutable data structures to hold constants, variables, and other sub-terms.
       val cstTerms = mutable.Set.empty[Term.Cst]
       val varTerms = mutable.Set.empty[Term.Var]
       val restTerms = mutable.ListBuffer.empty[Term]
       for (t <- ts) {
         t match {
-          case Univ => // NOP - We do not have to include Univ in a conjunction.
-          case Empty => return Empty // If the conjunction contains EMPTY then whole conjunct is EMPTY.
+          case Univ => // NOP - We do not have to include Univ in a intersection.
+          case Empty => return Empty // If the intersection contains EMPTY then whole intersection is EMPTY.
           case x@Term.Cst(_) => cstTerms += x
           case x@Term.Var(_) => varTerms += x
-          case And(csts0, vars0, rest0) =>
-            // We have found a nested conjunction. We can immediately add _its_ constants and variables.
+          case Inter(csts0, vars0, rest0) =>
+            // We have found a nested intersection. We can immediately add _its_ constants and variables.
             cstTerms ++= csts0
             varTerms ++= vars0
             for (t0 <- rest0) {
-              // We then iterate through the nested sub-terms of the nested conjunction.
+              // We then iterate through the nested sub-terms of the nested intersection.
               t0 match {
-                case Univ => // NOP - We do not have to include Univ in a conjunction.
-                case Empty => return Empty // If the sub-conjunction contains EMPTY then the whole conjunct is EMPTY.
+                case Univ => // NOP - We do not have to include Univ in a intersection.
+                case Empty => return Empty // If the sub-intersection contains EMPTY then the whole intersection is EMPTY.
                 case x@Term.Cst(_) => cstTerms += x
                 case x@Term.Var(_) => varTerms += x
                 case _ => restTerms += t0
@@ -1136,7 +1136,7 @@ object FastSetUnification {
         case (List(c), Nil, Nil) => c // A single constant.
         case (Nil, List(x), Nil) => x // A single variable.
         case (Nil, Nil, List(t)) => t // A single non-constant and non-variable sub-term.
-        case _ => And(cstTerms.toSet, varTerms.toSet, restTerms.toList)
+        case _ => Inter(cstTerms.toSet, varTerms.toSet, restTerms.toList)
       }
     }
 
@@ -1144,7 +1144,7 @@ object FastSetUnification {
       * Smart constructor for disjunction.
       */
     final def mkOr(ts: List[Term]): Term = {
-      // We refer to [[mkAnd]] since the structure is similar.
+      // We refer to [[mkInter]] since the structure is similar.
 
       val varTerms = mutable.Set.empty[Term]
       val nonVarTerms = mutable.ListBuffer.empty[Term]
@@ -1176,7 +1176,7 @@ object FastSetUnification {
     /**
       * Returns the Xor of `x` and `y`. Implemented by desugaring.
       */
-    final def mkXor(x: Term, y: Term): Term = mkOr(mkAnd(x, mkCompl(y)), mkAnd(mkCompl(x), y))
+    final def mkXor(x: Term, y: Term): Term = mkOr(mkInter(x, mkCompl(y)), mkInter(mkCompl(x), y))
 
   }
 
@@ -1225,13 +1225,13 @@ object FastSetUnification {
 
       case Term.Compl(t0) => Term.mkCompl(apply(t0))
 
-      case Term.And(csts, vars, rest) =>
-        // A conjunction is a sequence of: constants, variables, and terms. We know that the constants are unchanged by
+      case Term.Inter(csts, vars, rest) =>
+        // A intersection is a sequence of: constants, variables, and terms. We know that the constants are unchanged by
         // the substitution. We know that some variables may become constants, variables, or terms. Since we do not want
-        // to duplicate functionality from [[Term.mkAnd]], we simply apply the substitution to the variables and terms,
-        // and put everything in one list. We then let [[Term.mkAnd]] reclassify all the sub-terms.
+        // to duplicate functionality from [[Term.mkInter]], we simply apply the substitution to the variables and terms,
+        // and put everything in one list. We then let [[Term.mkInter]] reclassify all the sub-terms.
         val ts = csts.toList ++ vars.toList.map(apply) ++ rest.map(apply)
-        Term.mkAnd(ts)
+        Term.mkInter(ts)
 
       case Term.Or(ts) => Term.mkOr(ts.map(apply))
     }

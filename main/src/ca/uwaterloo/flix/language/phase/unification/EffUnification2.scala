@@ -107,7 +107,7 @@ object EffUnification2 {
     }
 
     case Type.Apply(Type.Cst(TypeConstructor.Complement, _), tpe1, _) => Term.mkCompl(toTerm(tpe1))
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), tpe1, _), tpe2, _) => Term.mkAnd(toTerm(tpe1), toTerm(tpe2))
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), tpe1, _), tpe2, _) => Term.mkInter(toTerm(tpe1), toTerm(tpe2))
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), tpe1, _), tpe2, _) => Term.mkOr(toTerm(tpe1), toTerm(tpe2))
 
     case _ => throw InternalCompilerException(s"Unexpected type: '$t'.", t.loc)
@@ -139,7 +139,7 @@ object EffUnification2 {
     case Term.Cst(c) => m.getBackward(c).get // Safe: We never introduce new variables.
     case Term.Var(x) => m.getBackward(x).get // Safe: We never introduce new variables.
     case Term.Compl(t) => Type.mkComplement(fromTerm(t, loc), loc)
-    case Term.And(csts, vars, rest) =>
+    case Term.Inter(csts, vars, rest) =>
       val ts = csts.toList.map(fromTerm(_, loc)) ++ vars.toList.map(fromTerm(_, loc)) ++ rest.map(fromTerm(_, loc))
       Type.mkUnion(ts, loc)
     case Term.Or(ts) => Type.mkIntersection(ts.map(fromTerm(_, loc)), loc)
