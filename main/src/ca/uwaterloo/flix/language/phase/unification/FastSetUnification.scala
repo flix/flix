@@ -839,13 +839,13 @@ object FastSetUnification {
     * For example, the term:
     *
     * {{{
-    *   x1 ∩ x2 ∩ compl (x7 ∩ x9 ∩ x1)
+    *   x1 ∩ x2 ∩ !(x7 ∩ x9 ∩ x1)
     * }}}
     *
     * is simplified to the term:
     *
     * {{{
-    *   x1 ∩ x2 ∩ compl (x7 ∩ x9 ∩ UNIV)
+    *   x1 ∩ x2 ∩ !(x7 ∩ x9 ∩ UNIV)
     * }}}
     *
     * The idea is that since x1 (and x2) must hold for the entire intersection to be UNIV they can be removed from the sub-term.
@@ -973,7 +973,7 @@ object FastSetUnification {
     /**
       * Returns the number of connectives in `this` term.
       *
-      * For example, `size(x) = 0`, `size(x ∩ y) = 1`, and `size(x ∩ compl y) = 2`.
+      * For example, `size(x) = 0`, `size(x ∩ y) = 1`, and `size(x ∩ !y) = 2`.
       */
     final def size: Int = this match {
       case Term.Univ => 0
@@ -1033,16 +1033,16 @@ object FastSetUnification {
     case class Var(x: Int) extends Term
 
     /**
-      * Represents the complement of the term `t`.
+      * Represents the complement of the term `t` (`!`).
       */
     case class Compl(t: Term) extends Term
 
     /**
-      * Represents a intersection of terms.
+      * Represents a intersection of terms (`∩`).
       *
       * We use a clever representation where we have a intersection of constants, variables, and then sub-terms.
       *
-      * For example, the intersection: `x7 ∩ (compl x2) ∩ c1 ∩ x4` is represented as: `Set(c1), Set(x4, x7), List((compl x2))`.
+      * For example, the intersection: `x7 ∩ !x2 ∩ c1 ∩ x4` is represented as: `Set(c1), Set(x4, x7), List(!x2)`.
       *
       * This representation is key to efficiency because the equations we solve are heavy on intersections.
       */
@@ -1054,7 +1054,7 @@ object FastSetUnification {
     }
 
     /**
-      * A union of the terms `ts`.
+      * A union of the terms `ts` (`∪`).
       *
       * Note: We do not use currently use any clever representation of unions (because there has been no need).
       */
@@ -1063,7 +1063,7 @@ object FastSetUnification {
     }
 
     /**
-      * Smart constructor for complement.
+      * Smart constructor for complement (`!`).
       */
     final def mkCompl(t: Term): Term = t match {
       case Univ => Empty
@@ -1073,7 +1073,7 @@ object FastSetUnification {
     }
 
     /**
-      * Smart constructor for intersection.
+      * Smart constructor for intersection (`∩`).
       */
     final def mkInter(t1: Term, t2: Term): Term = (t1, t2) match {
       case (Empty, _) => Empty
@@ -1084,7 +1084,7 @@ object FastSetUnification {
     }
 
     /**
-      * Smart constructor for union.
+      * Smart constructor for union (`∪`).
       */
     final def mkUnion(t1: Term, t2: Term): Term = (t1, t2) match {
       case (Univ, _) => Univ
@@ -1095,7 +1095,7 @@ object FastSetUnification {
     }
 
     /**
-      * Smart constructor for intersection.
+      * Smart constructor for intersection (`∩`).
       *
       * A lot of heavy lifting occurs here. In particular, we must partition `ts` into (a) constants, (b) variables,
       * and (c) other sub-terms. Moreover, we look into those sub-terms and flatten any intersections we find within.
@@ -1141,7 +1141,7 @@ object FastSetUnification {
     }
 
     /**
-      * Smart constructor for union.
+      * Smart constructor for union (`∪`).
       */
     final def mkUnion(ts: List[Term]): Term = {
       // We refer to [[mkInter]] since the structure is similar.
