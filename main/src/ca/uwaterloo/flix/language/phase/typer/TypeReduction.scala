@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase.typer
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{Ast, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.TypeError
+import ca.uwaterloo.flix.language.fmt.FormatType
 import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.collection.{ListMap, ListOps}
@@ -118,8 +119,8 @@ object TypeReduction {
         // NB: this considers also static methods
         val candidateMethods = clazz.getMethods.filter(m => m.getName == method)
           .filter(m => m.getParameterCount == 0) // Type.Cst case, no parameter???
-
-        ResolutionResult.Resolve(Type.getFlixType(candidateMethods.head.getReturnType)) // For now, arbitrarily return the first candidate method
+        val tpe = Type.getFlixType(candidateMethods.head.getReturnType)
+        ResolutionResult.Resolve(tpe) // For now, arbitrarily return the first candidate method
       case _ => ResolutionResult.NoProgress()
     }
 
