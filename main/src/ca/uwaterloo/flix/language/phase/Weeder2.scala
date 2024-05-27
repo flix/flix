@@ -1574,11 +1574,14 @@ object Weeder2 {
       val effectSet = pick(TreeKind.Type.EffectSet, tree)
       val effects = flatMapN(effectSet)(effectSetTree => traverse(pickAll(TreeKind.QName, effectSetTree))(visitQName))
       mapN(pickExpr(tree), effects) {
-        (expr, effects) =>
-          val base = Expr.Without(expr, effects.head, tree.loc)
-          effects.tail.foldLeft(base) {
+        case (expr, effect :: effects) =>
+          val base = Expr.Without(expr, effect, tree.loc)
+          effects.foldLeft(base) {
             case (acc, eff) => Expr.Without(acc, eff, tree.loc.asSynthetic)
           }
+        case (_, Nil) =>
+          // Fall back on Expr.Error, Parser has already reported this
+          Expr.Error(Malformed(NamedTokenSet.Effect, SyntacticContext.Expr.OtherExpr, None, tree.loc))
       }
     }
 

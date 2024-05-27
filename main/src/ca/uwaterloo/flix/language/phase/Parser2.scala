@@ -144,6 +144,9 @@ object Parser2 {
     root()
     // Build the syntax tree using events in state.
     val tree = buildTree()
+    if (src.name == "main/foo.flix") {
+      println(syntaxTreeToDebugString(tree))
+    }
     // Return with errors as soft failures to run subsequent phases for more validations.
     Validation.success(tree).withSoftFailures(s.errors)
   }
@@ -612,8 +615,11 @@ object Parser2 {
 
     // Check if we are at a keyword and emit nice error if so.
     val current = nth(0)
-    if (nth(0).isKeyword) {
-      advance()
+    if (current.isKeyword) {
+      // If the keyword is leads a declaration it's best to leave it be.
+      if (!current.isFirstDecl) {
+        advance()
+      }
       return closeWithError(mark, UnexpectedToken(
         NamedTokenSet.FromKinds(kinds),
         actual = Some(current),
@@ -1274,8 +1280,8 @@ object Parser2 {
       }
       // Handle without expressions
       if (eat(TokenKind.KeywordWithout)) {
+        val mark = open()
         if (at(TokenKind.CurlyL)) {
-          val mark = open()
           oneOrMore(
             namedTokenSet = NamedTokenSet.Effect,
             getItem = () => name(NAME_EFFECT, allowQualified = true, SyntacticContext.Type.Eff),
@@ -1285,14 +1291,20 @@ object Parser2 {
             delimiterR = TokenKind.CurlyR,
             context = SyntacticContext.Expr.OtherExpr
           ) match {
-            case Some(error) => closeWithError(mark, error)
-            case None => close(mark, TreeKind.Type.EffectSet)
+            case Some(error) => closeWithError(open(), error)
+            case _ =>
           }
-        } else {
-          val mark = open()
+        } else if (NAME_EFFECT.contains(nth(0))) {
           name(NAME_EFFECT, allowQualified = true, context = SyntacticContext.Expr.OtherExpr)
-          close(mark, TreeKind.Type.EffectSet)
+        } else {
+          closeWithError(open(), UnexpectedToken(
+            expected = NamedTokenSet.Effect,
+            actual = Some(nth(0)),
+            sctx = SyntacticContext.Expr.OtherExpr,
+            hint = Some(s"supply at least one effect to ${TokenKind.KeywordWithout.display}."),
+            loc = previousSourceLocation()))
         }
+        close(mark, TreeKind.Type.EffectSet)
         lhs = close(openBefore(lhs), TreeKind.Expr.Without)
         lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
       }
