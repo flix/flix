@@ -312,7 +312,17 @@ object Lexer {
       case ',' => TokenKind.Comma
       case '\\' => TokenKind.Backslash
       case _ if isMatch(".{") => TokenKind.DotCurlyL
-      case '.' => TokenKind.Dot
+      case '.' =>
+        // Check for whitespace around dot.
+        // We disallow whitespace on both sides; This captures cases like "Shape   .   Rectangle".
+        // But note that there can be whitespace after the dot in laws and fixpoint constraints:
+        //   law reflexivity: forall(x: a). x == x
+        //                                ^ Like this
+        if (previousPrevious().exists(_.isWhitespace) && peek().isWhitespace) {
+          TokenKind.Err(LexerError.FreeDot(sourceLocationAtStart()))
+        } else {
+          TokenKind.Dot
+        }
       case '$' if peek().isUpper => acceptBuiltIn()
       case '\"' => acceptString()
       case '\'' => acceptChar()
