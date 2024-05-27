@@ -1991,9 +1991,10 @@ object Parser2 {
         */
       @tailrec
       def nextNonComment(lookahead: Int): Int = {
-        s.tokens(s.position + lookahead).kind match {
-          case t if t.isComment && s.position + lookahead < s.tokens.length - 2 =>
-            nextNonComment(lookahead + 1)
+        if (s.position + lookahead > s.tokens.length - 1) {
+          lookahead
+        } else s.tokens(s.position + lookahead).kind match {
+          case t if t.isComment => nextNonComment(lookahead + 1)
           case _ => lookahead
         }
       }
