@@ -297,8 +297,8 @@ object Parser2 {
     s.position += 1
   }
 
-  private def closeWithError(mark: Mark.Opened, error: CompilationMessage)(implicit s: State): Mark.Closed = {
-    nth(0) match {
+  private def closeWithError(mark: Mark.Opened, error: CompilationMessage, token: Option[TokenKind] = None)(implicit s: State): Mark.Closed = {
+    token.getOrElse(nth(0)) match {
       // Avoid double reporting lexer errors.
       case TokenKind.Err(_) =>
       case _ => s.errors.append(error)
@@ -787,11 +787,7 @@ object Parser2 {
               advance()
             }
           }
-          at match {
-            // Avoid double reporting lexer errors.
-            case TokenKind.Err(_) => close(mark, TreeKind.ErrorTree(error))
-            case t => closeWithError(mark, error)
-          }
+          closeWithError(mark, error, Some(at))
       }
     }
 
@@ -848,11 +844,7 @@ object Parser2 {
                 advance()
               }
               val error = UnexpectedToken(expected = NamedTokenSet.FromKinds(Set(TokenKind.KeywordType, TokenKind.KeywordDef, TokenKind.KeywordLaw)), actual = Some(at), SyntacticContext.Decl.Trait, loc = loc)
-              at match {
-                // Avoid double reporting lexer errors.
-                case TokenKind.Err(_) => close(mark, TreeKind.ErrorTree(error))
-                case t => closeWithError(mark, error)
-              }
+              closeWithError(mark, error, Some(at))
           }
         }
         expect(TokenKind.CurlyR, SyntacticContext.Decl.Trait)
@@ -892,11 +884,7 @@ object Parser2 {
                 advance()
               }
               val error = UnexpectedToken(expected = NamedTokenSet.FromKinds(Set(TokenKind.KeywordType, TokenKind.KeywordDef)), actual = Some(at), SyntacticContext.Decl.Instance, loc = loc)
-              at match {
-                // Avoid double reporting lexer errors.
-                case TokenKind.Err(_) => close(mark, TreeKind.ErrorTree(error))
-                case t => closeWithError(mark, error)
-              }
+              closeWithError(mark, error, Some(at))
           }
         }
         expect(TokenKind.CurlyR, SyntacticContext.Decl.Instance)
@@ -1132,11 +1120,7 @@ object Parser2 {
                 advance()
               }
               val error = UnexpectedToken(expected = NamedTokenSet.FromKinds(Set(TokenKind.KeywordDef)), actual = Some(at), SyntacticContext.Decl.OtherDecl, loc = loc)
-              at match {
-                // Avoid double reporting lexer errors.
-                case TokenKind.Err(_) => close(mark, TreeKind.ErrorTree(error))
-                case t => closeWithError(mark, error)
-              }
+              closeWithError(mark, error, Some(at))
           }
         }
         expect(TokenKind.CurlyR, SyntacticContext.Decl.OtherDecl)
@@ -1488,11 +1472,7 @@ object Parser2 {
         case t =>
           val mark = open()
           val error = UnexpectedToken(expected = NamedTokenSet.Expression, actual = Some(t), SyntacticContext.Expr.OtherExpr, loc = currentSourceLocation())
-          t match {
-            // Avoid double reporting lexer errors.
-            case TokenKind.Err(_) => close(mark, TreeKind.ErrorTree(error))
-            case t => closeWithError(mark, error)
-          }
+          closeWithError(mark, error)
       }
       close(mark, TreeKind.Expr.Expr)
     }
@@ -2676,11 +2656,7 @@ object Parser2 {
         case t =>
           val mark = open()
           val error = UnexpectedToken(expected = NamedTokenSet.Pattern, actual = Some(t), SyntacticContext.Pat.OtherPat, loc = currentSourceLocation())
-          t match {
-            // Avoid double reporting lexer errors.
-            case TokenKind.Err(_) => close(mark, TreeKind.ErrorTree(error))
-            case _ => closeWithError(mark, error)
-          }
+          close(mark, TreeKind.ErrorTree(error))
       }
       // Handle FCons
       if (eat(TokenKind.ColonColon)) {
@@ -2965,11 +2941,7 @@ object Parser2 {
         case t =>
           val mark = open()
           val error = UnexpectedToken(expected = NamedTokenSet.Type, actual = Some(t), SyntacticContext.Type.OtherType, loc = currentSourceLocation())
-          t match {
-            // Avoid double reporting lexer errors.
-            case TokenKind.Err(_) => close(mark, TreeKind.ErrorTree(error))
-            case _ => closeWithError(mark, error)
-          }
+          close(mark, TreeKind.ErrorTree(error))
       }
       close(mark, TreeKind.Type.Type)
     }
