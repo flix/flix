@@ -94,9 +94,13 @@ object EffUnification2 {
     *
     * The rigidity environment `renv` is used to map rigid type variables to constants and flexible type variables to term variables.
     */
-  private def toTerm(t: Type)(implicit renv: RigidityEnv, m: Bimap[Type.Var, Int]): Term = Type.eraseTopAliases(t) match {
-    case Type.Pure => Term.Univ
-    case Type.Univ => Term.Empty
+  private def toTerm(t: Type)(implicit renv: RigidityEnv, m: Bimap[Type.Var, Int]): Term = {
+    toTermDirect(Type.eraseTopAliases(t)).flip
+  }
+
+  private def toTermDirect(t: Type)(implicit renv: RigidityEnv, m: Bimap[Type.Var, Int]): Term = Type.eraseTopAliases(t) match {
+    case Type.Pure => Term.Empty
+    case Type.Univ => Term.Univ
 
     case t: Type.Var => m.getForward(t) match {
       case None => throw InternalCompilerException(s"Unexpected unbound type variable: '$t'.", t.loc)
@@ -106,9 +110,9 @@ object EffUnification2 {
       }
     }
 
-    case Type.Apply(Type.Cst(TypeConstructor.Complement, _), tpe1, _) => Term.mkCompl(toTerm(tpe1))
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), tpe1, _), tpe2, _) => Term.mkInter(toTerm(tpe1), toTerm(tpe2))
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), tpe1, _), tpe2, _) => Term.mkUnion(toTerm(tpe1), toTerm(tpe2))
+    case Type.Apply(Type.Cst(TypeConstructor.Complement, _), tpe1, _) => Term.mkCompl(toTermDirect(tpe1))
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), tpe1, _), tpe2, _) => Term.mkUnion(toTermDirect(tpe1), toTermDirect(tpe2))
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), tpe1, _), tpe2, _) => Term.mkInter(toTermDirect(tpe1), toTermDirect(tpe2))
 
     case _ => throw InternalCompilerException(s"Unexpected type: '$t'.", t.loc)
   }
@@ -133,16 +137,20 @@ object EffUnification2 {
     * Both constants and variables are mapped back to type variables. The rigidity environment, in the type world,
     * distinguishes their rigidity or flexibility.
     */
-  private def fromTerm(t: Term, loc: SourceLocation)(implicit m: Bimap[Type.Var, Int]): Type = t match {
-    case Term.Univ => Type.Pure
-    case Term.Empty => Type.Univ
+  private def fromTerm(t: Term, loc: SourceLocation)(implicit m: Bimap[Type.Var, Int]): Type = {
+    fromTermDirect(t.flip, loc)
+  }
+
+  private def fromTermDirect(t: Term, loc: SourceLocation)(implicit m: Bimap[Type.Var, Int]): Type = t match {
+    case Term.Univ => Type.Univ
+    case Term.Empty => Type.Pure
     case Term.Cst(c) => m.getBackward(c).get // Safe: We never introduce new variables.
     case Term.Var(x) => m.getBackward(x).get // Safe: We never introduce new variables.
-    case Term.Compl(t) => Type.mkComplement(fromTerm(t, loc), loc)
+    case Term.Compl(t) => Type.mkComplement(fromTermDirect(t, loc), loc)
     case Term.Inter(csts, vars, rest) =>
-      val ts = csts.toList.map(fromTerm(_, loc)) ++ vars.toList.map(fromTerm(_, loc)) ++ rest.map(fromTerm(_, loc))
-      Type.mkUnion(ts, loc)
-    case Term.Union(ts) => Type.mkIntersection(ts.map(fromTerm(_, loc)), loc)
+      val ts = csts.toList.map(fromTermDirect(_, loc)) ++ vars.toList.map(fromTermDirect(_, loc)) ++ rest.map(fromTermDirect(_, loc))
+      Type.mkIntersection(ts, loc)
+    case Term.Union(ts) => Type.mkUnion(ts.map(fromTermDirect(_, loc)), loc)
   }
 
 }

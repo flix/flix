@@ -956,6 +956,11 @@ object FastSetUnification {
     final def ~(that: Term)(implicit loc: SourceLocation): Equation = Equation.mk(this, that, loc)
 
     /**
+      * Syntactic sugar for [[Term.flip]]
+      */
+    final def flip: Term = Term.flip(this)
+
+    /**
       * Returns all variables that occur in `this` term.
       */
     final def freeVars: SortedSet[Int] = this match {
@@ -1182,6 +1187,20 @@ object FastSetUnification {
       * Returns the Minus of `x` and `y` (`-`). Implemented by desugaring.
       */
     final def mkMinus(x: Term, y: Term): Term = mkInter(x, mkCompl(y))
+
+    /**
+      * Flips the formula in regards to operations but does not flip constants and variables since
+      * they are supposed to be re-interpreted externally.
+      */
+    final def flip(t: Term): Term = t match {
+      case Univ => Empty
+      case Empty => Univ
+      case Cst(c) => Cst(c)
+      case Var(x) => Var(x)
+      case Compl(t) => Compl(flip(t))
+      case Inter(csts, vars, rest) => mkUnion((csts.toList ++ vars ++ rest).map(flip))
+      case Union(ts) => mkInter(ts.map(flip))
+    }
 
   }
 
