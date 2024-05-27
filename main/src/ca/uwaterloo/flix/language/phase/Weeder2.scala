@@ -129,7 +129,8 @@ object Weeder2 {
       // recover from missing alias by using ident
       case ident :: _ =>
         val error = Malformed(NamedTokenSet.Alias, SyntacticContext.Use, hint = Some(s"Give an alias after ${TokenKind.ArrowThickR.display}."), loc = tree.loc)
-        Validation.toSoftFailure(UseOrImport.Use(Name.mkQName(ident), ident, ident.loc), error)
+        val qname = Name.QName(tree.loc.sp1, namespace, ident, tree.loc.sp2)
+        Validation.toSoftFailure(UseOrImport.Use(qname, ident, ident.loc), error)
       case _ => throw InternalCompilerException("Parser passed malformed use with alias", tree.loc)
     }
   }
