@@ -321,8 +321,7 @@ object Lexer {
       case _ if isMatch("#{") => TokenKind.HashCurlyL
       case _ if isMatch("#(") => TokenKind.HashParenL
       case '#' => TokenKind.Hash
-      case _ if isMatch("/// ") => acceptDocComment()
-      case _ if isMatch("//") => acceptLineComment()
+      case _ if isMatch("//") => acceptLineOrDocComment()
       case _ if isMatch("/*") => acceptBlockComment()
       case '/' => TokenKind.Slash
       case '@' if peek().isLetter => acceptAnnotation()
@@ -1021,31 +1020,26 @@ object Lexer {
   }
 
   /**
-   * Moves current position past a line-comment
+   * Moves current position past a line- or doc-comment
    */
-  private def acceptLineComment()(implicit s: State): TokenKind = {
-    while (!eof()) {
-      if (peek() == '\n') {
-        return TokenKind.CommentLine
-      } else {
-        advance()
-      }
-    }
-    TokenKind.CommentLine
-  }
+  private def acceptLineOrDocComment()(implicit s: State): TokenKind = {
+//    advance() // Eat one slash.
 
-  /**
-   * Moves current position past a doc-comment
-   */
-  private def acceptDocComment()(implicit s: State): TokenKind = {
+    // Check for doc-comment. A doc-comments leads with exactly 3 slashes.
+    // For instance '//// this is not a doc-comment'.
+    val kind = (peek(), peekPeek()) match {
+      case ('/', Some(c)) if c != '/' => TokenKind.CommentDoc
+      case _ => TokenKind.CommentLine
+    }
+    // Advance until a newline is found.
     while (!eof()) {
       if (peek() == '\n') {
-        return TokenKind.CommentDoc
+        return kind
       } else {
         advance()
       }
     }
-    TokenKind.CommentDoc
+    kind
   }
 
   /**
