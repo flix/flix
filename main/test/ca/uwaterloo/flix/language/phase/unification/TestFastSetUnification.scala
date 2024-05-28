@@ -791,4 +791,31 @@ class TestFastSetUnification extends AnyFunSuite with TestUtils {
     verify(s, l)
   }
 
+  test("Base.Elem.0") {
+    val l = List(
+      Var(123) ~ (Elem(0) & Elem(1))
+    )
+    val s = solveAll(l).get
+    println(s)
+    verify(s, l)
+  }
+
+  test("Base.Elem.1") {
+    val l = List(
+      Var(123) ~ ((Elem(0) | Elem(1) | Elem(2)) & Term.Compl(Elem(2)))
+    )
+    val s = solveAll(l).get
+    println(s)
+    verify(s, l)
+  }
+
+  test("Base.Elem.2") {
+    val l = List(
+      Var(123) ~ ((Cst(0) | Cst(1) | Cst(2)) & Term.Compl(Cst(2)))
+    )
+    val s = solveAll(l).get
+    println(s)
+    verify(s, l)
+  }
+
 }

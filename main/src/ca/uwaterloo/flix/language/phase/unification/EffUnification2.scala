@@ -101,6 +101,9 @@ object EffUnification2 {
   private def toTermDirect(t: Type)(implicit renv: RigidityEnv, m: Bimap[Type.Var, Int]): Term = Type.eraseTopAliases(t) match {
     case Type.Pure => Term.Empty
     case Type.Univ => Term.Univ
+    case Type.Cst(TypeConstructor.Effect(sym), loc) =>
+      val i = ???
+      Term.Elem(i)
 
     case t: Type.Var => m.getForward(t) match {
       case None => throw InternalCompilerException(s"Unexpected unbound type variable: '$t'.", t.loc)
@@ -145,9 +148,11 @@ object EffUnification2 {
     case Term.Univ => Type.Univ
     case Term.Empty => Type.Pure
     case Term.Cst(c) => m.getBackward(c).get // Safe: We never introduce new variables.
+    case Term.Elem(i) => ???
     case Term.Var(x) => m.getBackward(x).get // Safe: We never introduce new variables.
     case Term.Compl(t) => Type.mkComplement(fromTermDirect(t, loc), loc)
-    case Term.Inter(csts, vars, rest) =>
+    case Term.Inter(_, csts, vars, rest) =>
+      val todo = ???
       val ts = csts.toList.map(fromTermDirect(_, loc)) ++ vars.toList.map(fromTermDirect(_, loc)) ++ rest.map(fromTermDirect(_, loc))
       Type.mkIntersection(ts, loc)
     case Term.Union(ts) => Type.mkUnion(ts.map(fromTermDirect(_, loc)), loc)
