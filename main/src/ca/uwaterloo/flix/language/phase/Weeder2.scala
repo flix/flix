@@ -93,8 +93,10 @@ object Weeder2 {
       }
       val nname = Name.NName(qname.sp1, qname.namespace.idents :+ qname.ident, qname.sp2)
       mapN(traverseOpt(maybeUseMany)(tree => visitUseMany(tree, nname))) {
+        // case: empty use many. Fallback on empty list. Parser has reported an error here.
+        case Some(Nil) => List.empty
         // case: use one, use the qname
-        case None | Some(Nil) => List(UseOrImport.Use(qname, qname.ident, qname.loc))
+        case None => List(UseOrImport.Use(qname, qname.ident, qname.loc))
         // case: use many
         case Some(uses) => uses
       }
@@ -140,8 +142,10 @@ object Weeder2 {
     val maybeImportMany = tryPick(TreeKind.UsesOrImports.ImportMany, tree)
     flatMapN(JvmOp.pickJavaName(tree))(jname => {
       mapN(traverseOpt(maybeImportMany)(tree => visitImportMany(tree, jname.fqn))) {
+        // case: empty import many. Fallback on empty list. Parser has reported an error here.
+        case Some(Nil) => List.empty
         // case: import one, use the java name
-        case None | Some(Nil) =>
+        case None =>
           val ident = Name.Ident(jname.sp1, jname.fqn.lastOption.getOrElse(""), jname.sp2)
           List(UseOrImport.Import(jname, ident, tree.loc))
         // case: import many
@@ -1120,8 +1124,8 @@ object Weeder2 {
             case "instanceof" => mapN(tryPickJavaName(exprs(1)))(Expr.InstanceOf(e1, _, tree.loc))
             // UNRECOGNIZED
             case id =>
-              val ident = Name.Ident(tree.loc.sp1, id, tree.loc.sp2)
-              Validation.success(Expr.Apply(Expr.Ambiguous(Name.mkQName(ident), ident.loc), List(e1, e2), tree.loc))
+              val ident = Name.Ident(op.loc.sp1, id, op.loc.sp2)
+              Validation.success(Expr.Apply(Expr.Ambiguous(Name.mkQName(ident), op.loc), List(e1, e2), tree.loc))
           }
         case (_, operands) => throw InternalCompilerException(s"Expr.Binary tree with ${operands.length} operands", tree.loc)
       }

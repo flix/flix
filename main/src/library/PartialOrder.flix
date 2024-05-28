@@ -30,12 +30,12 @@ pub lawful trait PartialOrder[a] {
     ///
     /// Reflexivity: An element `x` is lower or equal to itself.
     ///
-    law reflexivity: forall(x: a). PartialOrder.lessEqual(x, x)
+    law reflexivity: forall(x: a) PartialOrder.lessEqual(x, x)
 
     ///
     /// Transitivity: If `x` is lower or equal to `y` and `y` is lower equal to `z` then `x` must be lower or equal to `z`.
     ///
-    law transitivity: forall(x: a, y: a, z: a). (PartialOrder.lessEqual(x, y) and PartialOrder.lessEqual(y, z)) ==> PartialOrder.lessEqual(x, z)
+    law transitivity: forall(x: a, y: a, z: a) (PartialOrder.lessEqual(x, y) and PartialOrder.lessEqual(y, z)) ==> PartialOrder.lessEqual(x, z)
 }
 
 instance PartialOrder[Int8] {
