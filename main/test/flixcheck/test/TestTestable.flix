@@ -1,4 +1,3 @@
-use Gen.{chooseInt, Arbitrary, Gen, sizedListOf, orderedListOf, sized, vector, oneOf}
 use Monad.{>>=}
 
 def sizeConfig(): Unit \ IO =
@@ -15,7 +14,7 @@ def shouldFail(): Unit \ IO =
     //verboseCheck(prop)
     check(verbose(), prop)
 
-def testReverse(): Unit \ IO =
+def testReverse2(): Unit \ IO =
     // Property that checks if the reverse of a list is the same as the original list
     def propRevRev(xs: List[Char]) = List.reverse(List.reverse(xs)) == xs;
     // Property that checks if the reverse of a single element list is the same as the original list
@@ -138,3 +137,8 @@ def testInsertOrdered2(): Unit \ IO =
     let genOrderedList = sized(size -> orderedListOf(size, Arbitrary.arbitrary()));
     def propInsertOrdered(e: Int32, xs: List[Int32]) = implies(isOrdered(xs), isOrdered(insertOrdered(e, xs)));
     flixCheck(forAll2(Arbitrary.arbitrary(), genOrderedList, propInsertOrdered))
+
+def testModuloBiggerThan(): Unit \ IO =
+    // Tests that x modulo y equals x, when y is larger than x, and both are positive/larger than 1
+    def propModulo(x: Int32, y: Int32) = implies(y > x and y > 1 and x > 1, Int32.modulo(x, y) == x);
+    verboseCheck(TFunc2.TFunc2(propModulo))

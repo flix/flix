@@ -1,4 +1,3 @@
-use Gen.{Gen, Arbitrary, return}
 use Functor.{map}
 
 /// A result of testing a property
@@ -66,6 +65,12 @@ pub enum TFunc[a, b](a -> b)
 /// Functions (with 2 params) must be wrapped in TFunc2 to be testable
 pub enum TFunc2[a, b, c](a -> b -> c)
 
+/// Functions (with 3 params) must be wrapped in TFunc3 to be testable
+pub enum TFunc3[a, b, c, d](a -> b -> c -> d)
+
+/// Functions (with 4 params) must be wrapped in TFunc4 to be testable
+pub enum TFunc4[a, b, c, d, e](a -> b -> c -> d -> e)
+
 /// Instance of `Testable` for functions of type `a -> b`
 instance Testable[TFunc[a, b]] with Arbitrary[a], ToString[a], Testable[b] {
     pub def property(f: TFunc[a, b]): Property =
@@ -79,6 +84,21 @@ instance Testable[TFunc2[a, b, c]] with Arbitrary[a], Arbitrary[b], ToString[a],
         let TFunc2.TFunc2(func) = f;
         forAll2(Arbitrary.arbitrary(), Arbitrary.arbitrary(), func)
 }
+
+/// Instance of `Testable` for functions of type `(a, b, c) -> d`
+instance Testable[TFunc3[a, b, c, d]] with Arbitrary[a], Arbitrary[b], Arbitrary[c], ToString[a], ToString[b], ToString[c], Testable[d] {
+    pub def property(f: TFunc3[a, b, c, d]): Property =
+        let TFunc3.TFunc3(func) = f;
+        forAll3(Arbitrary.arbitrary(), Arbitrary.arbitrary(), Arbitrary.arbitrary(), func)
+}
+
+/// Instance of `Testable` for functions of type `(a, b, c, d) -> e`
+instance Testable[TFunc4[a, b, c, d, e]] with Arbitrary[a], Arbitrary[b], Arbitrary[c], Arbitrary[d], ToString[a], ToString[b], ToString[c], ToString[d], Testable[e] {
+    pub def property(f: TFunc4[a, b, c, d, e]): Property =
+        let TFunc4.TFunc4(func) = f;
+        forAll4(Arbitrary.arbitrary(), Arbitrary.arbitrary(), Arbitrary.arbitrary(), Arbitrary.arbitrary(), func)
+}
+
 
 pub def forAll(aGen: Gen[a], f: a -> b): Property with ToString[a], Testable[b] =
     Property.Property(
@@ -110,6 +130,19 @@ pub def forAll3(aGen: Gen[a], bGen: Gen[b], cGen: Gen[c], f: (a, b, c) -> d): Pr
             res <- evaluate(f(a, b, c))
         ) yield (
             addArgument(a, res) |> addArgument(b) |> addArgument(c)
+        )
+    )
+
+pub def forAll4(aGen: Gen[a], bGen: Gen[b], cGen: Gen[c], dGen: Gen[d], f: (a, b, c, d) -> e): Property with ToString[a], ToString[b], ToString[c], ToString[d], Testable[e] =
+    Property.Property(
+        forM (
+            a <- aGen;
+            b <- bGen;
+            c <- cGen;
+            d <- dGen;
+            res <- evaluate(f(a, b, c, d))
+        ) yield (
+            addArgument(a, res) |> addArgument(b) |> addArgument(c) |> addArgument(d)
         )
     )
 

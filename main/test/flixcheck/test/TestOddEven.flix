@@ -1,4 +1,3 @@
-use Gen.{Arbitrary}
 def testOddEven(): Unit \ IO =
     oddOrEven(12345) |> println;
     oddOrEven(1234) |> println;

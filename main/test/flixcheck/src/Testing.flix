@@ -20,25 +20,19 @@ type alias Config = {
     every = Int32 -> List[String] -> String,
     initSeed = Option[Int64]
 }
-/// Generates the test arguments for the test
-pub def generate(size: Int32, rand: SplittableRandom, gen: Gen[a]): a \ IO =
-    match gen {
-        case Gen.Gen(g) => 
-            let (r1, _) = split(rand);
-            g(size, r1)  
-    }
 
 /// A default setting for the config
+///
+/// The maximum number of tests to run is 100 by default 
+/// The maximum number of failed tests before the test is considered failed, 1000 by default
+/// The size of the test is n/2 + 3 by default
+/// The every function returns a string with the number of tests and the arguments of the test
+/// The initial seed is None by default, and hence produces a new random seed
 pub def default(): Config = {
-    // The maximum number of tests to run is 100 by default 
     maxTest = 100,
-    // The maximum number of failed tests before the test is considered failed, 1000 by default
     maxFail = 1000,
-    // The size of the test is n/2 + 3 by default
     size = n -> n/2 + 3,
-    // The every function returns a string with the number of tests and the arguments of the test
     every = _ -> _ -> "",
-    // The initial seed is None by default, and hence produces a new random seed
     initSeed = None
 }
 
@@ -50,6 +44,14 @@ pub def createConfig(maxTest: Int32, maxFail: Int32, size: Int32 -> Int32, every
     every = every,
     initSeed = initSeed
 }
+
+/// Generates the test arguments for the test
+pub def generate(size: Int32, rand: SplittableRandom, gen: Gen[a]): a \ IO =
+    match gen {
+        case Gen.Gen(g) => 
+            let (r1, _) = split(rand);
+            g(size, r1)  
+    }
 
 /// A verbose version of the default config, prints more detailed information about the tests
 pub def verbose(): Config = 
@@ -86,26 +88,26 @@ pub def checkWithSeed(config: Config, x: a, seed: Int64): Unit \ IO with Testabl
 /// 
 pub def tests(config: Config, gen: Gen[TResult], rng: SplittableRandom, nTest: Int32, nFail: Int32, stamps: List[List[String]]): Unit \ IO = 
     if (nTest == config.maxTest) {
-        done("OK, passed", nTest, stamps)
+        done("OK, passed", nTest, nFail, stamps)
     } else if (nFail == config.maxFail) {
-        done("Arguments exhausted after", nTest, stamps)
+        done("Arguments exhausted after passing", nTest, nFail, stamps)
     } else {
         let (r1, r2) = split(rng);
         let result = generate(config.size(nTest), r2, gen);
-        System.StdOut.print(config.every(nTest, result.arguments));
         match result.ok {
             case None =>
                 tests(config, gen, r1, nTest, (nFail + 1), stamps)
             case Some(true) =>
+                System.StdOut.print(config.every(nTest, result.arguments));
                 tests(config, gen, r1, (nTest + 1), nFail, (result.stamp :: stamps))
             case Some(false) =>
+                System.StdOut.print(config.every(nTest, result.arguments));
                 if (result.arguments == Nil) {
-                    println("Falsifiable after " + "${nTest + 1}" + " test(s):\n" + "No arguments.");
-                    printSeed(config.initSeed)
+                    println("Falsifiable after " + "${nTest + 1}" + " test(s):\n" + "No arguments.")
                 } else {
-                    println("Falsifiable after " + "${nTest + 1}" + " test(s) with argument(s):\n" + String.intercalate("\n", result.arguments));
-                    printSeed(config.initSeed)
-                }
+                    println("Falsifiable after " + "${nTest + 1}" + " test(s) with argument(s):\n" + String.intercalate("\n", result.arguments))
+                };
+                printSeed(config.initSeed)
         }
     }
 
@@ -117,7 +119,7 @@ pub def printSeed(seed: Option[Int64]): Unit \ IO =
     }
 
 /// Prints the result of the test
-pub def done(msg: String, nTest: Int32, stamps: List[List[String]]): Unit \ IO = 
+pub def done(msg: String, nTest: Int32, nFail: Int32, stamps: List[List[String]]): Unit \ IO = 
     // Helper functions
     // percentage calculates the distribution of the numbers used in the tests 
     def percentage(n: Int32, m: Int32): String =
@@ -139,7 +141,7 @@ pub def done(msg: String, nTest: Int32, stamps: List[List[String]]): Unit \ IO =
         List.map(entry) |>
         display
     );
-    println(msg + " " + "${nTest}" + " tests" + table)
+    println(msg + " " + "${nTest}" + " tests. " + "${nFail} tests discarded" + table)
 
 /// Defines how the test results are displayed
 pub def display(l: List[String]): String =
