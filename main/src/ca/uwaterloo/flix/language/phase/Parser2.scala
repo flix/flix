@@ -611,7 +611,6 @@ object Parser2 {
   /**
     * Consumes a token if kind is in `kinds`.
     * If `allowQualified` is passed also consume subsequent dot-separated tokens with kind in `kinds`.
-    * TODO: Make name consume trailing dots. This is difficult because it clashes with fixpoint constraint sets, which end on dots.
     */
   private def name(kinds: Set[TokenKind], allowQualified: Boolean = false, context: SyntacticContext)(implicit s: State): Mark.Closed = {
     val mark = open(consumeDocComments = false)
@@ -634,18 +633,51 @@ object Parser2 {
     if (!allowQualified) {
       return first
     }
-    while (at(TokenKind.Dot) && kinds.contains(nth(1)) && !eof()) {
-      eat(TokenKind.Dot)
-      val mark = open()
-      expectAny(kinds, context)
-      close(mark, TreeKind.Ident)
+
+    var continue = true
+    while (continue && !eof()) {
+      nth(0) match {
+        case TokenKind.Dot =>
+          if (!kinds.contains(nth(1))) {
+            // Trailing dot, stop parsing the qualified name.
+            val error = UnexpectedToken(
+              expected = NamedTokenSet.FromKinds(kinds),
+              actual = Some(TokenKind.Dot),
+              sctx = context,
+              hint = None,
+              loc = currentSourceLocation()
+            )
+            advanceWithError(error)
+            continue = false
+          } else {
+            advance() // Eat the dot
+            val mark = open()
+            expectAny(kinds, context)
+            close(mark, TreeKind.Ident)
+          }
+        case TokenKind.DotWhiteSpace if kinds.contains(nth(1)) =>
+          // Nice error for:
+          // SomeName.
+          //    myFunc()
+          val markErr = open()
+          advance() // Eat the dot
+          val error = UnexpectedToken(
+            expected = NamedTokenSet.FromKinds(Set(TokenKind.Dot)),
+            actual = None,
+            sctx = context,
+            hint = Some("Remove whitespace after '.'"),
+            loc = previousSourceLocation()
+          )
+          closeWithError(markErr, error)
+          // Now continue parsing qualified name.
+          val mark = open()
+          expectAny(kinds, context)
+          close(mark, TreeKind.Ident)
+        case _ => continue = false
+      }
     }
-    if (allowQualified) {
-      val mark = openBefore(first)
-      close(mark, TreeKind.QName)
-    } else {
-      first
-    }
+
+    close(openBefore(first), TreeKind.QName)
   }
 
   /**
@@ -963,7 +995,6 @@ object Parser2 {
       if (at(TokenKind.KeywordWhere)) {
         equalityConstraints()
       }
-      expect(TokenKind.Dot, SyntacticContext.Decl.OtherDecl)
       Expr.expression()
       close(mark, TreeKind.Decl.Law)
     }
@@ -1209,12 +1240,13 @@ object Parser2 {
       assert(at(TokenKind.KeywordWhere))
       val mark = open()
       expect(TokenKind.KeywordWhere, SyntacticContext.Decl.OtherDecl)
-      while (nth(0).isFirstType && !eof()) {
+      var continue = nth(0).isFirstType
+      while (continue && !eof()) {
         val markConstraint = open()
         Type.ttype()
         expect(TokenKind.Tilde, SyntacticContext.Decl.OtherDecl)
         Type.ttype()
-        eat(TokenKind.Comma)
+        continue = eat(TokenKind.Comma)
         close(markConstraint, TreeKind.Decl.EqualityConstraintFragment)
       }
       close(mark, TreeKind.Decl.EqualityConstraintList)
@@ -2469,7 +2501,7 @@ object Parser2 {
         context = SyntacticContext.Expr.Constraint,
         delimiterL = TokenKind.HashCurlyL,
         delimiterR = TokenKind.CurlyR,
-        separation = Separation.Required(TokenKind.Dot, allowTrailing = true),
+        separation = Separation.Required(TokenKind.DotWhiteSpace, allowTrailing = true),
         breakWhen = _.isRecoverExpr,
       )
       close(mark, TreeKind.Expr.FixpointConstraintSet)
