@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.unification
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.util.{Formatter, InternalCompilerException, Result}
 
-import scala.collection.immutable.SortedSet
+import scala.collection.immutable.{SortedMap, SortedSet}
 import scala.collection.mutable
 
 ///
@@ -315,16 +315,28 @@ object FastSetUnification {
       case (Term.Empty, Term.Empty) => checkAndSimplify(es)
       case (Term.Cst(c1), Term.Cst(c2)) if c1 == c2 => checkAndSimplify(es)
       case (Term.Var(x1), Term.Var(x2)) if x1 == x2 => checkAndSimplify(es)
+      case (Term.Elem(i1), Term.Elem(i2)) if i1 == i2 => checkAndSimplify(es)
 
       // Unsolvable (conflicted) equations: raise an exception.
       case (Term.Univ, Term.Empty) => throw ConflictException(t1, t2, loc)
+      case (Term.Univ, Term.Elem(_)) => throw ConflictException(t1, t2, loc)
       case (Term.Empty, Term.Univ) => throw ConflictException(t1, t2, loc)
+      case (Term.Empty, Term.Elem(_)) =>  throw ConflictException(t1, t2, loc)
       case (Term.Cst(c1), Term.Cst(c2)) if c1 != c2 => throw ConflictException(t1, t2, loc)
       // Note: A constraint with two different variables is of course solvable!
       case (Term.Cst(_), Term.Univ) => throw ConflictException(t1, t2, loc)
+      case (Term.Cst(_), Term.Elem(_)) => throw ConflictException(t1, t2, loc)
       case (Term.Cst(_), Term.Empty) => throw ConflictException(t1, t2, loc)
+      case (Term.Elem(_), Term.Univ) => throw ConflictException(t1, t2, loc)
+      case (Term.Elem(_), Term.Empty) => throw ConflictException(t1, t2, loc)
+      case (Term.Elem(_), Term.Cst(_)) => throw ConflictException(t1, t2, loc)
+      case (Term.Elem(i1), Term.Elem(i2)) if i1 != i2 => throw ConflictException(t1, t2, loc)
       case (Term.Univ, Term.Cst(_)) => throw ConflictException(t1, t2, loc)
       case (Term.Empty, Term.Cst(_)) => throw ConflictException(t1, t2, loc)
+
+      case (Term.Inter(Some(_), _, _, _), Term.Univ) => throw ConflictException(t1, t2, loc)
+      case (Term.Inter(Some(Term.Elem(i1)), _, _, _), Term.Elem(i2)) if i1 != i2 => throw ConflictException(t1, t2, loc)
+      case (Term.Inter(Some(Term.Elem(_)), _, _, _), Term.Cst(_)) => throw ConflictException(t1, t2, loc)
 
       // Non-trivial and non-conflicted equation: keep it.
       case _ => Equation(t1, t2, loc) :: checkAndSimplify(es)
@@ -416,10 +428,22 @@ object FastSetUnification {
             subst = subst.extended(x, Term.Cst(c), loc) // Note: the extended function will check that `x` is not already mapped to another constant.
             changed = true
 
-          // Case 3: x ∩ y ∩ z ∩... ~ univ
+          // Case 3: x ~ e
+          case Equation(Term.Var(x), Term.Elem(i), loc) =>
+            subst = subst.extended(x, Term.Elem(i), loc) // Note: the extended function will check that `x` is not already mapped to another constant.
+            changed = true
+
+          // Case 4: x ∩ y ∩ z ∩... ~ univ
           case Equation(Term.Inter(None, csts, vars, rest), Term.Univ, loc) if csts.isEmpty && rest.isEmpty =>
             for (Term.Var(x) <- vars) {
               subst = subst.extended(x, Term.Univ, loc) // Note: the extended function will check that `x` is not already mapped to another constant.
+              changed = true
+            }
+
+          // Case 5: x ∪ y ∪ z ∪... ~ empty
+          case Equation(Term.Union(elems, csts, vars, rest), Term.Empty, loc) if elems.isEmpty && csts.isEmpty && rest.isEmpty =>
+            for (Term.Var(x) <- vars) {
+              subst = subst.extended(x, Term.Empty, loc) // Note: the extended function will check that `x` is not already mapped to another constant.
               changed = true
             }
 
@@ -721,7 +745,7 @@ object FastSetUnification {
   private def successiveVariableElimination(t: Term, fvs: List[Int]): BoolSubstitution = fvs match {
     case Nil =>
       // Determine if f is unsatisfiable when all constants are made into (flexible) variables.
-      if (!satisfiable(flexify(t)))
+      if (emptyEquivalent(flexify(t)))
         BoolSubstitution.empty
       else
         throw BoolUnificationException()
@@ -729,9 +753,9 @@ object FastSetUnification {
     case x :: xs =>
       val t0 = BoolSubstitution.singleton(x, Term.Empty)(t)
       val t1 = BoolSubstitution.singleton(x, Term.Univ)(t)
-      val se = successiveVariableElimination(propagateInter(Term.mkInter(t0, t1)), xs)
+      val se = successiveVariableElimination(propagation(Term.mkInter(t0, t1)), xs)
 
-      val f1 = propagateInter(Term.mkUnion(se(t0), Term.mkMinus(Term.Var(x), se(t1))))
+      val f1 = propagation(Term.mkUnion(se(t0), Term.mkMinus(Term.Var(x), se(t1))))
       val st = BoolSubstitution.singleton(x, f1)
       st ++ se
   }
@@ -750,135 +774,172 @@ object FastSetUnification {
     case Term.Compl(t) => Term.mkCompl(flexify(t))
     case Term.Inter(elem, csts, vars, rest) =>
       // Translate every constant into a variable:
-      Term.mkInter(elem.toList ++ csts.map(c => Term.Var(c.c)).toList ++ vars ++ rest.map(flexify))
-    case Term.Union(ts) => Term.mkUnion(ts.map(flexify))
+      Term.mkInter(elem.toList ++ csts.map(c => Term.Var(c.c)) ++ vars ++ rest.map(flexify))
+    case Term.Union(elems, csts, vars, rest) =>
+      // Translate every constant into a variable:
+      Term.mkUnion(elems.toList ++ csts.map(c => Term.Var(c.c)) ++ vars ++ rest.map(flexify))
   }
 
   /**
-    * Returns `univ` if the given term `t` is satisfiable, i.e. if there is an assignment to its free variables that
-    * makes the whole term evaluate to univ.
+    * Returns `true` if the given term `t` is equivalent to empty, i.e. if all assignments to its free variables
+    * makes the whole term evaluate to empty.
     *
-    * Note that a constant can never be satisfied because we do not know if it is univ or empty.
+    * Note that a constant can never be empty equivalent because we do not know if it is univ or empty.
     *
     * A smarter implementation would use a full-blown SAT solver, but since this function is rarely called and typically
     * called with a small term, we use a very naive implementation.
     */
-  private def satisfiable(t: Term): Boolean = t match {
-    case Term.Univ => true // A univ term is already satisfied.
-    case Term.Var(_) => true // A variable is trivially satisfiable.
-    case Term.Empty => false // A empty term can never be satisfied.
+  private def emptyEquivalent(t: Term): Boolean = t match {
+    case Term.Univ => false
+    case Term.Cst(_) => false
+    case Term.Var(_) => false
+    case Term.Elem(_) => false
+    case Term.Empty => true
     case _ => evaluateAll(t, t.freeVars.toList, SortedSet.empty) // Evaluate t on all its valuations.
   }
 
   /**
-    * Returns `univ` if `t` can evaluate to `univ` under the assumption that `fvs` are the free variables in `t`
-    * (which can be assigned freely) and that `trueVars` are variables assigned the UNIV value.
+    * Returns `true` if `t` is equivalent to empty under the assumption that `fvs` is the vars of
+    * `t` and that vars in `trueVars` are set to `univ`.
     *
-    * Evaluates the given term `t` under all valuations of the free variables `fvs` where `trueVars` are assumed to be univ.
+    * It is assumed that there is no constants
     *
     * For each variable `x`, the function recursively explores both when `x` is univ and when `x` is empty.
     */
   private def evaluateAll(t: Term, fvs: List[Int], trueVars: SortedSet[Int]): Boolean = fvs match {
     case Nil =>
       // All variables are bound. Compute the truth value.
-      evaluate(t, trueVars)
+      evaluate(t, trueVars).isEmpty
     case x :: xs =>
       // Recurse on two cases: x = univ and x = empty.
-      evaluateAll(t, xs, trueVars + x) || evaluateAll(t, xs, trueVars)
+      evaluateAll(t, xs, trueVars + x) && evaluateAll(t, xs, trueVars)
   }
 
   /**
-    * Returns `univ` if the given term `t` evaluates to univ when all variables in `trueVars` are univ and all other variables are empty.
+    * Returns the evaluation of the formula.
     */
-  private def evaluate(t: Term, trueVars: SortedSet[Int]): Boolean = t match {
-    case Term.Univ => true
-    case Term.Empty => false
-    case Term.Cst(_) => false
-    case Term.Elem(_) => false
-    case Term.Var(x) => trueVars.contains(x)
-    case Term.Compl(t) => !evaluate(t, trueVars)
+  private def evaluate(t: Term, trueVars: SortedSet[Int]): SetEval = t match {
+    case Term.Univ => SetEval.univ
+    case Term.Empty => SetEval.empty
+    case Term.Cst(_) => ??? // unreachable
+    case Term.Elem(i) => SetEval.single(i)
+    case Term.Var(x) => if (trueVars.contains(x)) SetEval.univ else SetEval.empty
+    case Term.Compl(t) => evaluate(t, trueVars).compl()
 
     case Term.Inter(elem, csts, vars, rest) =>
-      if (elem.isDefined) {
-        false
-      } else if (csts.nonEmpty) {
-        // Case 1: If there is a constant then the term may be unsatisfiable.
-        false
-      } else {
-        // Case 2: We know that csts is empty.
-        // We must pay attention to performance here.
-
-        // We first check if there is a variable x that is empty (i.e. an x not in trueVars).
-        for (x <- vars.map(_.x)) {
-          if (!trueVars.contains(x)) {
-            return false
-          }
-        }
-
-        // All vars were univ. We evaluate each sub-term until we find one that is empty.
-        for (t0 <- rest) {
-          if (!evaluate(t0, trueVars)) {
-            return false
-          }
-        }
-
-        // All variables and sub-terms were univ, return univ.
-        true
+      var running = SetEval.univ
+      for (t <- elem.toList ++ csts ++ vars ++ rest) {
+        running = running.intersect(evaluate(t, trueVars))
+        // if (running.isEmpty) return running
       }
+      running
 
-    case Term.Union(ts) =>
-      for (t0 <- ts) {
-        if (evaluate(t0, trueVars)) {
-          return true
-        }
+    case Term.Union(elems, csts, vars, rest) =>
+      var running = SetEval.empty
+      for (t <- elems.toList ++ csts ++ vars ++ rest) {
+        running = running.union(evaluate(t, trueVars))
+        //if (running.isUniv) return running
       }
-      // All sub-terms were empty, return empty.
-      false
+      running
+  }
 
+  sealed trait SetEval {
+
+    import SetEval.{Set, Compl}
+
+    def union(s: SetEval): SetEval = (this, s) match {
+      case (Set(s1), Set(s2)) =>
+        Set(s1.union(s2))
+      case (Set(s1), Compl(s2)) =>
+        // s1 u ^s2
+        // ^(^s1 inter s2)
+        // ^(s2 - s1)
+        Compl(s2.diff(s1))
+      case (Compl(_), Set(_)) =>
+        s.union(this)
+      case (Compl(s1), Compl(s2)) =>
+        // ^s1 u ^s2
+        Compl(s1.intersect(s2))
+    }
+
+    def intersect(s: SetEval): SetEval = (this, s) match {
+      case (Set(s1), Set(s2)) =>
+        Set(s1.intersect(s2))
+      case (Set(s1), Compl(s2)) =>
+        // s1 inter ^s2
+        Set(s1.diff(s2))
+      case (Compl(s1), Set(s2)) =>
+        s.intersect(this)
+      case (Compl(s1), Compl(s2)) =>
+        // ^s1 inter ^s2
+        Compl(s1.union(s2))
+    }
+
+    def compl(): SetEval = this match {
+      case Set(s) =>
+        Compl(s)
+      case Compl(s) =>
+        Set(s)
+    }
+
+    def isUniv: Boolean = this match {
+      case Compl(s) if s.isEmpty => true
+      case Set(_) => false
+      case Compl(_) => false
+    }
+
+    def isEmpty: Boolean = this match {
+      case Set(s) if s.isEmpty => true
+      case Set(_) => false
+      case Compl(_) => false
+    }
+  }
+
+  object SetEval {
+    private case class Set(s: SortedSet[Int]) extends SetEval
+
+    private case class Compl(s: SortedSet[Int]) extends SetEval
+
+    val empty: SetEval = Set(SortedSet.empty)
+    val univ: SetEval = Compl(SortedSet.empty)
+
+    def single(i: Int): SetEval = Set(SortedSet(i))
   }
 
   /**
-    * Perform INTER-propagation on the given `term`.
+    * Use the two rewrites `x ∩ f === x ∩ f[x -> Univ]` and `x ∪ f === x ∪ f[x -> Empty]`.
     *
-    * We use INTER-propagation to simplify terms during the Successive Variable Elimination (SVE) algorithm.
-    *
-    * For example, the term:
-    *
-    * {{{
-    *   x1 ∩ x2 ∩ !(x7 ∩ x9 ∩ x1)
-    * }}}
-    *
-    * is simplified to the term:
-    *
-    * {{{
-    *   x1 ∩ x2 ∩ !(x7 ∩ x9 ∩ UNIV)
-    * }}}
-    *
-    * The idea is that since x1 (and x2) must hold for the entire intersection to be UNIV they can be removed from the sub-term.
+    * We use this for elements, constants, and variables.
     */
-  private def propagateInter(t: Term): Term = {
+  private def propagation(t: Term): Term = {
     // Simplifies the given term `t` assuming that `trueCsts` and `trueVars` are all UNIV.
-    def visit(t: Term, trueCsts: SortedSet[Int], trueVars: SortedSet[Int]): Term = t match {
+    def visit(t: Term, setElems: SortedMap[Int, Term], setCsts: SortedMap[Int, Term], setVars: SortedMap[Int, Term]): Term = t match {
       case Term.Univ => Term.Univ
       case Term.Empty => Term.Empty
-      case Term.Cst(c) => if (trueCsts.contains(c)) Term.Univ else Term.Cst(c) // `c` holds so we can replace it by UNIV.
-      case Term.Var(x) => if (trueVars.contains(x)) Term.Univ else Term.Var(x) // `x` holds so we can replace it by UNIV.
-      case Term.Elem(i) => Term.Elem(i)
-      case Term.Compl(t0) => Term.mkCompl(visit(t0, trueCsts, trueVars))
+      case Term.Cst(c) => setCsts.getOrElse(c, Term.Cst(c))
+      case Term.Var(x) => setVars.getOrElse(x, Term.Var(x))
+      case Term.Elem(i) => setElems.getOrElse(i, Term.Elem(i))
+      case Term.Compl(t0) => Term.mkCompl(visit(t0, setElems, setCsts, setVars))
       case Term.Inter(elem0, csts0, vars0, rest0) =>
         // Compute the constants and variables that _must_ hold for the whole intersection to hold.
+        val termElem = elem0.map(_.i)
         val termCsts = csts0.map(_.c)
         val termVars = vars0.map(_.x)
 
-        // Extend trueCsts and trueVars.
-        val currentCsts = trueCsts ++ termCsts
-        val currentVars = trueVars ++ termVars
+        // check for trivial cases
+        if (termElem.exists(e => setElems.get(e).contains(Term.Empty))) return Term.Empty
+        if (termCsts.exists(c => setCsts.get(c).contains(Term.Empty))) return Term.Empty
+        if (termVars.exists(c => setVars.get(c).contains(Term.Empty))) return Term.Empty
+
+        val currentElems = setElems ++ termElem.map((_, Term.Univ))
+        val currentCsts = setCsts ++ termCsts.map((_, Term.Univ))
+        val currentVars = setVars ++ termVars.map((_, Term.Univ))
 
         // Recurse on the sub-terms with the updated maps.
         val rest = rest0.collect {
-          case t: Term.Compl => visit(t, currentCsts, currentVars)
-          case t: Term.Inter => visit(t, currentCsts, currentVars)
-          case t: Term.Union => visit(t, currentCsts, currentVars)
+          case t: Term.Compl => visit(t, currentElems, currentCsts, currentVars)
+          case t: Term.Inter => visit(t, currentElems, currentCsts, currentVars)
+          case t: Term.Union => visit(t, currentElems, currentCsts, currentVars)
           case _: Term.Cst =>
             // Cannot happen because the invariant of [[Term.mkInter]] ensures there are no constants in `rest`.
             throw InternalCompilerException("Unexpected constant", SourceLocation.Unknown)
@@ -888,16 +949,50 @@ object FastSetUnification {
         }
 
         // Compute new constant and variable sets by removing constants and variables that hold.
-        val csts = termCsts -- trueCsts
-        val vars = termVars -- trueVars
+        val elem = termElem.filterNot(e => setElems.get(e).contains(Term.Univ))
+        val csts = termCsts.filterNot(c => setCsts.get(c).contains(Term.Univ))
+        val vars = termVars.filterNot(c => setVars.get(c).contains(Term.Univ))
 
         // Recompose the intersection. We use the smart constructor because some sets may have become empty.
-        Term.mkInter(elem0.toList ++ csts.toList.map(Term.Cst) ++ vars.toList.map(Term.Var) ++ rest)
+        Term.mkInter(elem.toList.map(Term.Elem) ++ csts.toList.map(Term.Cst) ++ vars.toList.map(Term.Var) ++ rest)
 
-      case Term.Union(ts) => Term.mkUnion(ts.map(visit(_, trueCsts, trueVars)))
+      case Term.Union(elems0, csts0, vars0, rest0) =>
+        // Compute the constants and variables that _must_ hold for the whole intersection to hold.
+        val termElems = elems0.map(_.i)
+        val termCsts = csts0.map(_.c)
+        val termVars = vars0.map(_.x)
+
+        // check for trivial cases
+        if (termElems.exists(e => setElems.get(e).contains(Term.Univ))) return Term.Univ
+        if (termCsts.exists(c => setCsts.get(c).contains(Term.Univ))) return Term.Univ
+        if (termVars.exists(c => setVars.get(c).contains(Term.Univ))) return Term.Univ
+
+        val currentElems = setElems ++ termElems.map((_, Term.Empty))
+        val currentCsts = setCsts ++ termCsts.map((_, Term.Empty))
+        val currentVars = setVars ++ termVars.map((_, Term.Empty))
+
+        // Recurse on the sub-terms with the updated maps.
+        val rest = rest0.collect {
+          case t: Term.Compl => visit(t, currentElems, currentCsts, currentVars)
+          case t: Term.Inter => visit(t, currentElems, currentCsts, currentVars)
+          case t: Term.Union => visit(t, currentElems, currentCsts, currentVars)
+          case _: Term.Cst =>
+            // Cannot happen because the invariant of [[Term.mkInter]] ensures there are no constants in `rest`.
+            throw InternalCompilerException("Unexpected constant", SourceLocation.Unknown)
+          case _: Term.Var =>
+            // Cannot happen because the invariant of [[Term.mkInter]] ensures there are no variables in `rest`.
+            throw InternalCompilerException("Unexpected variable", SourceLocation.Unknown)
+        }
+
+        // Compute new constant and variable sets by removing constants and variables that hold.
+        val elem = termElems.filterNot(e => setElems.get(e).contains(Term.Empty))
+        val csts = termCsts.filterNot(c => setCsts.get(c).contains(Term.Empty))
+        val vars = termVars.filterNot(c => setVars.get(c).contains(Term.Empty))
+
+        // Recompose the intersection. We use the smart constructor because some sets may have become empty.
+        Term.mkUnion(elem.toList.map(Term.Elem) ++ csts.toList.map(Term.Cst) ++ vars.toList.map(Term.Var) ++ rest)
     }
-
-    visit(t, SortedSet.empty, SortedSet.empty)
+    visit(t, SortedMap.empty, SortedMap.empty, SortedMap.empty)
   }
 
   /**
@@ -921,8 +1016,10 @@ object FastSetUnification {
     def mk(t1: Term, t2: Term, loc: SourceLocation): Equation = (t1, t2) match {
       case (Term.Cst(c1), Term.Cst(c2)) => if (c1 <= c2) Equation(t1, t2, loc) else Equation(t2, t1, loc)
       case (Term.Var(x1), Term.Var(x2)) => if (x1 <= x2) Equation(t1, t2, loc) else Equation(t2, t1, loc)
+      case (Term.Elem(i1), Term.Elem(i2)) => if (i1 <= i2) Equation(t1, t2, loc) else Equation(t2, t1, loc)
       case (Term.Univ, _) => Equation(t2, Term.Univ, loc)
       case (Term.Empty, _) => Equation(t2, Term.Empty, loc)
+      case (Term.Elem(i), _) => Equation(t2, Term.Elem(i), loc)
       case (_, Term.Var(_)) => Equation(t2, t1, loc)
       case _ => Equation(t1, t2, loc)
     }
@@ -985,7 +1082,7 @@ object FastSetUnification {
 
       case Term.Inter(_, _, vars, rest) => SortedSet.empty[Int] ++ vars.map(_.x) ++ rest.flatMap(_.freeVars)
 
-      case Term.Union(ts) => ts.foldLeft(SortedSet.empty[Int])(_ ++ _.freeVars)
+      case Term.Union(_, _, vars, rest) => SortedSet.empty[Int] ++ vars.map(_.x) ++ rest.flatMap(_.freeVars)
     }
 
     /**
@@ -1004,7 +1101,8 @@ object FastSetUnification {
         // We need a connective for each constant, variable, and term minus one.
         // We then add the size of all the sub-terms in `rest`.
         ((elem0.size + csts.size + vars.size + rest.size) - 1) + rest.map(_.size).sum
-      case Term.Union(ts) => ts.map(_.size).sum + (ts.length - 1)
+      case Term.Union(elems0, csts, vars, rest) =>
+        ((elems0.size + csts.size + vars.size + rest.size) - 1) + rest.map(_.size).sum
     }
 
     /**
@@ -1020,8 +1118,8 @@ object FastSetUnification {
         case Term.Var(x) => s"!x$x"
         case _ => s"!($f)"
       }
-      case Term.Inter(elem, csts, vars, rest) => s"(${(elem.toList ++ csts.toList ++ vars.toList ++ rest).mkString(" ∩ ")})"
-      case Term.Union(ts) => s"(${ts.mkString(" ∪ ")})"
+      case Term.Inter(elem, csts, vars, rest) => s"(${(elem.toList ++ csts ++ vars ++ rest).mkString(" ∩ ")})"
+      case Term.Union(elems, csts, vars, rest) => s"(${(elems.toList ++ csts ++ vars ++ rest).mkString(" ∪ ")})"
     }
 
   }
@@ -1073,6 +1171,7 @@ object FastSetUnification {
       // Once the code is better tested, we can remove these assertions.
       assert(!rest.exists(_.isInstanceOf[Term.Cst]))
       assert(!rest.exists(_.isInstanceOf[Term.Var]))
+      assert(!rest.exists(_.isInstanceOf[Term.Elem]))
     }
 
     /**
@@ -1080,8 +1179,12 @@ object FastSetUnification {
       *
       * Note: We do not use currently use any clever representation of unions (because there has been no need).
       */
-    case class Union(ts: List[Term]) extends Term {
-      assert(ts.length >= 2)
+    case class Union(elems: Set[Term.Elem], csts: Set[Term.Cst], vars: Set[Term.Var], rest: List[Term]) extends Term {
+      // We ensure that `rest` cannot contain constants and variables.
+      // Once the code is better tested, we can remove these assertions.
+      assert(!rest.exists(_.isInstanceOf[Term.Cst]))
+      assert(!rest.exists(_.isInstanceOf[Term.Var]))
+      assert(!rest.exists(_.isInstanceOf[Term.Elem]))
     }
 
     /**
@@ -1090,8 +1193,14 @@ object FastSetUnification {
     final def mkCompl(t: Term): Term = t match {
       case Univ => Empty
       case Empty => Univ
+      case Cst(c) => Compl(Cst(c))
+      case Var(x) => Compl(Var(x))
+      case Elem(i) => Compl(Elem(i))
       case Compl(t0) => t0
-      case _ => Compl(t)
+      case Inter(elem, csts, vars, rest) =>
+        mkUnion((elem.toList ++ csts ++ vars ++ rest).map(mkCompl))
+      case Union(elem, csts, vars, rest) =>
+        mkInter((elem.toList ++ csts ++ vars ++ rest).map(mkCompl))
     }
 
     /**
@@ -1177,32 +1286,47 @@ object FastSetUnification {
       * Smart constructor for union (`∪`).
       */
     final def mkUnion(ts: List[Term]): Term = {
-      // We refer to [[mkInter]] since the structure is similar.
-
-      val varTerms = mutable.Set.empty[Term]
-      val nonVarTerms = mutable.ListBuffer.empty[Term]
+      // Mutable data structures to hold constants, variables, and other sub-terms.
+      val elemTerms = mutable.Set.empty[Term.Elem]
+      val cstTerms = mutable.Set.empty[Term.Cst]
+      val varTerms = mutable.Set.empty[Term.Var]
+      val restTerms = mutable.ListBuffer.empty[Term]
       for (t <- ts) {
         t match {
-          case Univ => return Univ
-          case Empty => // nop
+          case Empty => // NOP - We do not have to include Empty in a union.
+          case Univ => return Univ // If the union contains UNIV then whole union is UNIV.
+          case x@Term.Cst(_) => cstTerms += x
+          case x@Term.Elem(_) => elemTerms += x
           case x@Term.Var(_) => varTerms += x
-          case Union(ts0) =>
-            for (t0 <- ts0) {
+          case Union(elems0, csts0, vars0, rest0) =>
+            // We have found a nested union. We can immediately add _its_ constants and variables.
+            elemTerms ++= elems0.toList
+            cstTerms ++= csts0
+            varTerms ++= vars0
+            for (t0 <- rest0) {
+              // We then iterate through the nested sub-terms of the nested union.
               t0 match {
-                case Univ => return Univ
-                case Empty => // nop
+                case Empty => // NOP - We do not have to include Empty in a union.
+                case Univ => return Univ // If the sub-union contains UNIV then the whole union is UNIV.
+                case x@Term.Cst(_) => cstTerms += x
+                case x@Term.Elem(_) => elemTerms += x
                 case x@Term.Var(_) => varTerms += x
-                case _ => nonVarTerms += t0
+                case _ => restTerms += t0
               }
             }
-          case _ => nonVarTerms += t
+          case _ => restTerms += t // We found some other sub-term.
         }
       }
 
-      varTerms.toList ++ nonVarTerms.toList match {
-        case Nil => Empty
-        case x :: Nil => x
-        case xs => Union(xs)
+      // We now have a set of constants, a set of variables, and a list of sub-terms.
+      // We optimize for the case where each of these is empty EXCEPT for one element.
+      (elemTerms.toList, cstTerms.toList, varTerms.toList, restTerms.toList) match {
+        case (Nil, Nil, Nil, Nil) => Term.Empty // Everything is empty, so we return the neutral element, i.e. EMPTY.
+        case (List(elem), Nil, Nil, Nil) => elem // A single constant.
+        case (Nil, List(c), Nil, Nil) => c // A single constant.
+        case (Nil, Nil, List(x), Nil) => x // A single variable.
+        case (Nil, Nil, Nil, List(t)) => t // A single non-constant and non-variable sub-term.
+        case _ => Union(elemTerms.toSet, cstTerms.toSet, varTerms.toSet, restTerms.toList)
       }
     }
 
@@ -1227,8 +1351,8 @@ object FastSetUnification {
       case Elem(i) => Elem(i)
       case Var(x) => Var(x)
       case Compl(t) => Compl(flip(t))
-      case Inter(elem, csts, vars, rest) => mkUnion((elem.toList ++ csts.toList ++ vars ++ rest).map(flip))
-      case Union(ts) => mkInter(ts.map(flip))
+      case Inter(elem, csts, vars, rest) => mkUnion((elem.toList ++ csts ++ vars ++ rest).map(flip))
+      case Union(elems, csts, vars, rest) => mkInter((elems.toList ++ csts ++ vars ++ rest).map(flip))
     }
 
   }
@@ -1284,10 +1408,12 @@ object FastSetUnification {
         // the substitution. We know that some variables may become constants, variables, or terms. Since we do not want
         // to duplicate functionality from [[Term.mkInter]], we simply apply the substitution to the variables and terms,
         // and put everything in one list. We then let [[Term.mkInter]] reclassify all the sub-terms.
-        val ts = elem.toList ++ csts.toList ++ vars.toList.map(apply) ++ rest.map(apply)
+        val ts = elem.toList ++ csts ++ vars.map(apply) ++ rest.map(apply)
         Term.mkInter(ts)
 
-      case Term.Union(ts) => Term.mkUnion(ts.map(apply))
+      case Term.Union(elems, csts, vars, rest) =>
+        val ts = elems.toList ++ csts ++ vars.map(apply) ++ rest.map(apply)
+        Term.mkUnion(ts)
     }
 
     /**
@@ -1440,7 +1566,7 @@ object FastSetUnification {
       val t1 = s(e.t1)
       val t2 = s(e.t2)
       val query = Term.mkXor(t1, t2)
-      if (satisfiable(query)) {
+      if (!emptyEquivalent(flexify(query))) {
         println(s"  Original  : ${e.t1} ~ ${e.t2}")
         println(s"  with Subst: $t1 ~ $t2")
         throw InternalCompilerException(s"Incorrectly solved equation", SourceLocation.Unknown)
