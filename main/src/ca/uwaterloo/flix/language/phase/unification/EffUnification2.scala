@@ -109,7 +109,7 @@ object EffUnification2 {
     * The rigidity environment `renv` is used to map rigid type variables to constants and flexible type variables to term variables.
     */
   private def toTerm(t: Type)(implicit renv: RigidityEnv, m: Bimap[Atom, Int]): Term = {
-    toTermDirect(Type.eraseTopAliases(t)).flip
+    toTermDirect(Type.eraseTopAliases(t))
   }
 
   private def toTermDirect(t: Type)(implicit renv: RigidityEnv, m: Bimap[Atom, Int]): Term = t match {
@@ -193,7 +193,7 @@ object EffUnification2 {
     * distinguishes their rigidity or flexibility.
     */
   private def fromTerm(t: Term, loc: SourceLocation)(implicit m: Bimap[Atom, Int]): Type = {
-    fromTermDirect(t.flip, loc)
+    fromTermDirect(t, loc)
   }
 
   private def fromTermDirect(t: Term, loc: SourceLocation)(implicit m: Bimap[Atom, Int]): Type = t match {
