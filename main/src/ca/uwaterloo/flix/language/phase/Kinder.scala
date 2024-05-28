@@ -1306,7 +1306,7 @@ object Kinder {
       }
 
 
-    case UnkindedType.Error(loc) => Validation.success(Type.Cst(TypeConstructor.Error(expectedKind), loc))
+    case UnkindedType.Error(loc) => Validation.success(Type.freshError(expectedKind, loc))
 
     case _: UnkindedType.UnappliedAlias => throw InternalCompilerException("unexpected unapplied alias", tpe0.loc)
     case _: UnkindedType.UnappliedAssocType => throw InternalCompilerException("unexpected unapplied associated type", tpe0.loc)
