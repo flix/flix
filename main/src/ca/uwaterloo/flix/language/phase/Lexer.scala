@@ -314,12 +314,14 @@ object Lexer {
       case _ if isMatch(".{") => TokenKind.DotCurlyL
       case '.' =>
         // Check for whitespace around dot.
-        // We disallow whitespace on both sides; This captures cases like "Shape   .   Rectangle".
-        // But note that there can be whitespace after the dot in laws and fixpoint constraints:
-        //   law reflexivity: forall(x: a). x == x
-        //                                ^ Like this
-        if (previousPrevious().exists(_.isWhitespace) && peek().isWhitespace) {
+        if (previousPrevious().exists(_.isWhitespace)) {
+          // If the dot is prefixed with whitespace we treat that as an error.
           TokenKind.Err(LexerError.FreeDot(sourceLocationAtStart()))
+        } else if (peek().isWhitespace) {
+          // A dot with trailing whitespace is it's own TokenKind.
+          // That way we can use that as a terminator for fixpoint constraints,
+          // without clashing with qualified names. IE. This is not allowed "Shape.    Rectangle"
+          TokenKind.DotWhiteSpace
         } else {
           TokenKind.Dot
         }
