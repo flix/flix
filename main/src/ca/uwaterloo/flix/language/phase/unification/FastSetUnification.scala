@@ -416,8 +416,6 @@ object FastSetUnification {
             subst = subst.extended(x, Term.Cst(c), loc) // Note: the extended function will check that `x` is not already mapped to another constant.
             changed = true
 
-          case Equation(Term.Inter(Some(elem), _, _, _), Term.Univ, _) => ???
-
           // Case 3: x ∩ y ∩ z ∩... ~ univ
           case Equation(Term.Inter(None, csts, vars, rest), Term.Univ, loc) if csts.isEmpty && rest.isEmpty =>
             for (Term.Var(x) <- vars) {
