@@ -1446,6 +1446,7 @@ object Parser2 {
         case TokenKind.KeywordMaskedCast => uncheckedMaskingCastExpr()
         case TokenKind.KeywordTry => tryExpr()
         case TokenKind.KeywordDo => doExpr()
+        case TokenKind.KeywordDot => doInvokeMethod2Expr()
         case TokenKind.KeywordNew => newObjectExpr()
         case TokenKind.KeywordStaticUppercase => staticExpr()
         case TokenKind.KeywordSelect => selectExpr()
@@ -2334,6 +2335,16 @@ object Parser2 {
       name(NAME_QNAME, allowQualified = true, context = SyntacticContext.Expr.Do)
       arguments()
       close(mark, TreeKind.Expr.Do)
+    }
+
+    private def doInvokeMethod2Expr()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.Dot))
+      val mark = open()
+      expect(TokenKind.Dot, SyntacticContext.Expr.Dot)
+      name(NAME_QNAME, context = SyntacticContext.Expr.InvokeMethod2)
+      expect(TokenKind.Dot, SyntacticContext.Expr.Dot)
+      expression()
+      close(mark, TreeKind.Expr.InvokeMethod2)
     }
 
     private def newObjectExpr()(implicit s: State): Mark.Closed = {
