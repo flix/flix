@@ -99,19 +99,39 @@ object TypeReduction {
     case Type.Alias(cst, args, t, _) => simplify(t, renv0, loc)
   }
 
-  def simplifyJava(tpe: Type, loc: SourceLocation)(implicit flix: Flix): Result[(Type, Boolean), TypeError] =
+  /**
+   * Simplifies the type of the java method.
+   *
+   * @param tpe the type of the java method
+   * @param loc the location where the java method has been called
+   * @return
+   */
+  private def simplifyJava(tpe: Type, loc: SourceLocation)(implicit flix: Flix): Result[(Type, Boolean), TypeError] =
     tpe.typeConstructor match {
       case Some(TypeConstructor.MethodReturnType(m, n)) =>
         val targs = tpe.typeArguments
         resolveMethodReturnType(targs.head, m, targs.tail, loc) match {
-          case ResolutionResult.Resolve(t) => Result.Ok((t, true))
-          case ResolutionResult.NotFound() => ???
-          case ResolutionResult.NoProgress() => Result.Ok((tpe, false))
+          case ResolutionResult.Resolved(t) => Result.Ok((t, true))
+          case ResolutionResult.MethodNotFound() => Result.Err(TypeError.MethodNotFound(m, tpe, RigidityEnv.empty, loc))
+          case ResolutionResult.NoProgress => Result.Ok((tpe, false))
         }
       case _ => Result.Ok((tpe, false))
     }
 
-  def resolveMethodReturnType(thisObj: Type, method: String, ts: List[Type], loc: SourceLocation)(implicit flix: Flix): ResolutionResult =
+  /**
+   * This is the resolution process of the java method method, member of the class of the java object thisObj.
+   * Returns the return type of the java method according to the type of thisObj and the arguments of the method,
+   * if there exists such a java method.
+   * Otherwise, either the java method could not be found with the given method signature, or, the return type
+   * could not be simplified more at this state of the process.
+   *
+   * @param thisObj the java object
+   * @param method  the java method, supposedly member of the class of the java object
+   * @param ts      the list containing the type of thisObj and the arguments of the method
+   * @param loc     the location where the java method has been called
+   * @return        A ResolutionResult object that indicates the status of the resolution progress
+   */
+  private def resolveMethodReturnType(thisObj: Type, method: String, ts: List[Type], loc: SourceLocation)(implicit flix: Flix): ResolutionResult =
     thisObj match {
       case Type.Cst(TypeConstructor.Str, loc2) =>
         val clazz = classOf[String]
@@ -120,16 +140,25 @@ object TypeReduction {
         val candidateMethods = clazz.getMethods.filter(m => m.getName == method)
           .filter(m => m.getParameterCount == 0) // Type.Cst case, no parameter???
         val tpe = Type.getFlixType(candidateMethods.head.getReturnType)
-        ResolutionResult.Resolve(tpe) // For now, arbitrarily return the first candidate method
-      case _ => ResolutionResult.NoProgress()
+        ResolutionResult.Resolved(tpe) // For now, arbitrarily return the first candidate method
+      case _ => ResolutionResult.NoProgress
     }
 
 
+  /**
+   * Represents the result of a resolution process of a java method.
+   *
+   * There are three possible outcomes:
+   *
+   * 1. Resolved(tpe): Indicates that there was some progress in the resolution and returns a simplified type of the java method.
+   * 2. MethodNotFound(): The resolution failed to find a corresponding java method.
+   * 3. NoProgress: The resolution did not make any progress in the type simplification.
+   */
   sealed trait ResolutionResult
   object ResolutionResult {
-    case class Resolve(tpe: Type) extends ResolutionResult
-    case class NotFound() extends ResolutionResult
-    case class NoProgress() extends ResolutionResult
+    case class Resolved(tpe: Type) extends ResolutionResult
+    case class MethodNotFound() extends ResolutionResult
+    case object NoProgress extends ResolutionResult
   }
 
 }
