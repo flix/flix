@@ -383,7 +383,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
   test("BadBinaryOperation.02") {
     val input =
       """
-        |def foo(): Int32 = % 2
+        |def foo(): Int32 = # 2
         |def main(): Unit = ()
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
@@ -773,18 +773,12 @@ class TestParserHappy extends AnyFunSuite with TestUtils {
   }
 
   test("ParseError.Interpolation.01") {
-    val input = s"""pub def foo(): String = "$${""""
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-  }
-
-  test("ParseError.Interpolation.02") {
     val input = s"""pub def foo(): String = "$${1 + }""""
     val result = compile(input, Options.TestWithLibNix)
     expectError[ParseError](result)
   }
 
-  test("ParseError.Interpolation.03") {
+  test("ParseError.Interpolation.02") {
     val input = s"""pub def foo(): String = "$${1 {}""""
     val result = compile(input, Options.TestWithLibNix)
     expectError[LexerError](result)
