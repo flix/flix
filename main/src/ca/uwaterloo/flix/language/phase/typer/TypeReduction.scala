@@ -139,8 +139,13 @@ object TypeReduction {
         // NB: this considers also static methods
         val candidateMethods = clazz.getMethods.filter(m => m.getName == method)
           .filter(m => m.getParameterCount == 0) // Type.Cst case, no parameter???
-        val tpe = Type.getFlixType(candidateMethods.head.getReturnType)
-        ResolutionResult.Resolved(tpe) // For now, arbitrarily return the first candidate method
+
+        candidateMethods.length match {
+          case 1 =>
+            val tpe = Type.getFlixType(candidateMethods.head.getReturnType)
+            ResolutionResult.Resolved(tpe)
+          case _ => ResolutionResult.MethodNotFound() // For now, method not found either if there is an ambiguity or no method found
+        }
       case _ => ResolutionResult.NoProgress
     }
 
