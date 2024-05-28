@@ -73,7 +73,7 @@ object CompletionProvider {
   /**
     * Process a completion request.
     */
-  def autoComplete(uri: String, pos: Position, source: Option[String], currentErrors: List[CompilationMessage])(implicit flix: Flix, index: Index, root: Option[TypedAst.Root], deltaContext: DeltaContext): JObject = {
+  def autoComplete(uri: String, pos: Position, source: Option[String], currentErrors: List[CompilationMessage])(implicit flix: Flix, index: Index, root: TypedAst.Root, deltaContext: DeltaContext): JObject = {
     val holeCompletions = getHoleExpCompletions(pos, uri, index, root)
     // If we are currently on a hole the only useful completion is a hole completion.
     if (holeCompletions.nonEmpty) {
@@ -88,16 +88,12 @@ object CompletionProvider {
     val completions = source.flatMap(getContext(_, uri, pos, currentErrors)) match {
       case None => Nil
       case Some(context) =>
-        root match {
-          case Some(nonOptionRoot) =>
-            // Get all completions
-            val completions = getCompletions()(context, flix, index, nonOptionRoot, deltaContext)
+        // Get all completions
+        val completions = getCompletions()(context, flix, index, root, deltaContext)
 
-            // Find the best completion
-            val best = CompletionRanker.findBest(completions)(context, index, deltaContext)
-            boostBestCompletion(best)(context, flix) ++ completions.map(comp => comp.toCompletionItem(context))
-          case None => Nil
-        }
+        // Find the best completion
+        val best = CompletionRanker.findBest(completions)(context, index, deltaContext)
+        boostBestCompletion(best)(context, flix) ++ completions.map(comp => comp.toCompletionItem(context))
     }
 
     ("status" -> ResponseStatus.Success) ~ ("result" -> CompletionList(isIncomplete = true, completions).toJSON)
@@ -106,13 +102,12 @@ object CompletionProvider {
   /**
     * Gets completions for when the cursor position is on a hole expression with an expression
     */
-  private def getHoleExpCompletions(pos: Position, uri: String, index: Index, root: Option[TypedAst.Root])(implicit flix: Flix): Iterable[CompletionItem] = {
-    if (root.isEmpty) return Nil
+  private def getHoleExpCompletions(pos: Position, uri: String, index: Index, root: TypedAst.Root)(implicit flix: Flix): Iterable[CompletionItem] = {
     val entity = index.query(uri, pos)
     entity match {
       case Some(Entity.Exp(TypedAst.Expr.HoleWithExp(TypedAst.Expr.Var(sym, sourceType, _), targetType, _, loc))) =>
-        HoleCompletion.candidates(sourceType, targetType, root.get)
-          .map(root.get.defs(_))
+        HoleCompletion.candidates(sourceType, targetType, root)
+          .map(root.defs(_))
           .filter(_.spec.mod.isPublic)
           .zipWithIndex
           .map { case (decl, idx) => holeDefCompletion(f"$idx%09d", loc, sym, decl) }
@@ -290,7 +285,10 @@ object CompletionProvider {
       case WeederError.UnqualifiedUse(_) => (1, SyntacticContext.Use)
       case ResolutionError.UndefinedJvmClass(_, _, _) => (1, SyntacticContext.Import)
       case ResolutionError.UndefinedName(_, _, _, isUse, _) => if (isUse) (1, SyntacticContext.Use) else (2, SyntacticContext.Expr.OtherExpr)
+      case ResolutionError.UndefinedNameUnrecoverable(_, _, _, isUse, _) => if (isUse) (1, SyntacticContext.Use) else (2, SyntacticContext.Expr.OtherExpr)
       case ResolutionError.UndefinedType(_, _, _) => (1, SyntacticContext.Type.OtherType)
+      case ResolutionError.UndefinedTag(_, _, _) => (1, SyntacticContext.Pat.OtherPat)
+      case ResolutionError.UndefinedOp(_, _) => (1, SyntacticContext.Expr.Do)
       case WeederError.MalformedIdentifier(_, _) => (2, SyntacticContext.Import)
       case WeederError.UnappliedIntrinsic(_, _) => (5, SyntacticContext.Expr.OtherExpr)
       case err: ParseError => (5, err.sctx)

@@ -33,9 +33,6 @@ object SemanticTokensProvider {
     * Processes a request for (full) semantic tokens.
     */
   def provideSemanticTokens(uri: String)(implicit index: Index, root: Root): JObject = {
-    if (root == null)
-      throw new IllegalArgumentException("The argument 'root' must be non-null.")
-
     //
     // This class uses iterators over lists to ensure fast append (!)
     //
@@ -113,7 +110,7 @@ object SemanticTokensProvider {
     //
     // Construct the JSON result.
     //
-    ("status" -> ResponseStatus.Success) ~ ("result" -> ("data" -> encodedTokens))
+    ("result" -> ("data" -> encodedTokens))
   }
 
   /**
@@ -479,6 +476,11 @@ object SemanticTokensProvider {
       val t = SemanticToken(SemanticTokenType.Function, Nil, op.loc)
       Iterator(t) ++ visitExps(exps)
 
+    case Expr.InvokeMethod2(exp, _, exps, _, _, _) =>
+      exps.foldLeft(visitExp(exp)) {
+        case (acc, exp) => acc ++ visitExp(exp)
+      }
+
     case Expr.InvokeConstructor(_, exps, _, _, _) =>
       exps.foldLeft(Iterator.empty[SemanticToken]) {
         case (acc, exp) => acc ++ visitExp(exp)
@@ -677,6 +679,8 @@ object SemanticTokensProvider {
     case TypeConstructor.Enum(_, _) => true
     case TypeConstructor.RestrictableEnum(_, _) => true
     case TypeConstructor.Native(_) => true
+    case TypeConstructor.MethodReturnType(name, arity) => false
+    case TypeConstructor.StaticMethodReturnType(clazz, name, arity) => false
     case TypeConstructor.Array => true
     case TypeConstructor.Vector => true
     case TypeConstructor.Ref => true

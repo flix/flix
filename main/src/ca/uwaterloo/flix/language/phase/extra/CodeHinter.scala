@@ -235,6 +235,15 @@ object CodeHinter {
     case Expr.Do(_, exps, _, _, _) =>
       exps.flatMap(visitExp)
 
+    case Expr.InvokeMethod2(exp, _, exps, _, eff, loc) =>
+      val hints0 = (exp, exps) match {
+        case (Expr.Def(sym, _, _), lambda :: _) =>
+          checkEffect(sym, lambda.tpe, loc)
+        case _ => Nil
+      }
+      val hints1 = checkEffect(eff, loc)
+      hints0 ++ hints1 ++ visitExp(exp) ++ visitExps(exps)
+
     case Expr.InvokeConstructor(_, args, _, _, _) =>
       visitExps(args)
 

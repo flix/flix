@@ -297,8 +297,8 @@ object Parser2 {
     s.position += 1
   }
 
-  private def closeWithError(mark: Mark.Opened, error: CompilationMessage)(implicit s: State): Mark.Closed = {
-    nth(0) match {
+  private def closeWithError(mark: Mark.Opened, error: CompilationMessage, token: Option[TokenKind] = None)(implicit s: State): Mark.Closed = {
+    token.getOrElse(nth(0)) match {
       // Avoid double reporting lexer errors.
       case TokenKind.Err(_) =>
       case _ => s.errors.append(error)
@@ -706,7 +706,7 @@ object Parser2 {
     // handle use many case
     if (at(TokenKind.DotCurlyL)) {
       val mark = open()
-      zeroOrMore(
+      oneOrMore(
         namedTokenSet = NamedTokenSet.Name,
         getItem = () => aliasedName(NAME_USE, SyntacticContext.Use),
         checkForItem = NAME_USE.contains,
@@ -714,7 +714,10 @@ object Parser2 {
         delimiterL = TokenKind.DotCurlyL,
         delimiterR = TokenKind.CurlyR,
         context = SyntacticContext.Use
-      )
+      ) match {
+        case Some(err) => closeWithError(open(), err)
+        case None =>
+      }
       close(mark, TreeKind.UsesOrImports.UseMany)
     }
     close(mark, TreeKind.UsesOrImports.Use)
@@ -728,7 +731,7 @@ object Parser2 {
     // handle import many case
     if (at(TokenKind.DotCurlyL)) {
       val mark = open()
-      zeroOrMore(
+      oneOrMore(
         namedTokenSet = NamedTokenSet.Name,
         getItem = () => aliasedName(NAME_JAVA, SyntacticContext.Import),
         checkForItem = NAME_JAVA.contains,
@@ -736,7 +739,10 @@ object Parser2 {
         delimiterL = TokenKind.DotCurlyL,
         delimiterR = TokenKind.CurlyR,
         context = SyntacticContext.Import
-      )
+      ) match {
+        case Some(err) => closeWithError(open(), err)
+        case None =>
+      }
       close(mark, TreeKind.UsesOrImports.ImportMany)
     }
     close(mark, TreeKind.UsesOrImports.Import)
@@ -781,7 +787,7 @@ object Parser2 {
               advance()
             }
           }
-          closeWithError(mark, error)
+          closeWithError(mark, error, Some(at))
       }
     }
 
@@ -838,7 +844,7 @@ object Parser2 {
                 advance()
               }
               val error = UnexpectedToken(expected = NamedTokenSet.FromKinds(Set(TokenKind.KeywordType, TokenKind.KeywordDef, TokenKind.KeywordLaw)), actual = Some(at), SyntacticContext.Decl.Trait, loc = loc)
-              closeWithError(mark, error)
+              closeWithError(mark, error, Some(at))
           }
         }
         expect(TokenKind.CurlyR, SyntacticContext.Decl.Trait)
@@ -878,7 +884,7 @@ object Parser2 {
                 advance()
               }
               val error = UnexpectedToken(expected = NamedTokenSet.FromKinds(Set(TokenKind.KeywordType, TokenKind.KeywordDef)), actual = Some(at), SyntacticContext.Decl.Instance, loc = loc)
-              closeWithError(mark, error)
+              closeWithError(mark, error, Some(at))
           }
         }
         expect(TokenKind.CurlyR, SyntacticContext.Decl.Instance)
@@ -1114,7 +1120,7 @@ object Parser2 {
                 advance()
               }
               val error = UnexpectedToken(expected = NamedTokenSet.FromKinds(Set(TokenKind.KeywordDef)), actual = Some(at), SyntacticContext.Decl.OtherDecl, loc = loc)
-              closeWithError(mark, error)
+              closeWithError(mark, error, Some(at))
           }
         }
         expect(TokenKind.CurlyR, SyntacticContext.Decl.OtherDecl)
@@ -3177,15 +3183,23 @@ object Parser2 {
     def head()(implicit s: State): Mark.Closed = {
       val mark = open()
       name(NAME_PREDICATE, context = SyntacticContext.Expr.Constraint)
-      if (at(TokenKind.ParenL)) {
-        termList()
-      }
+      termList()
       close(mark, TreeKind.Predicate.Head)
     }
 
     private def termList()(implicit s: State): Mark.Closed = {
-      assert(at(TokenKind.ParenL))
       val mark = open()
+      // Check for missing term list
+      if (!at(TokenKind.ParenL)) {
+        closeWithError(open(), UnexpectedToken(
+          expected = NamedTokenSet.FromKinds(Set(TokenKind.ParenL)),
+          actual = Some(nth(0)),
+          sctx = SyntacticContext.Expr.Constraint,
+          hint = Some("provide a list of terms."),
+          loc = previousSourceLocation())
+        )
+      }
+
       zeroOrMore(
         namedTokenSet = NamedTokenSet.Expression,
         getItem = () => Expr.expression(),

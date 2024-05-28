@@ -23,16 +23,10 @@ object Differ {
   /**
     * Computes the semantic difference between the `oldAst` and `newAst`
     */
-  def difference(old: Option[TypedAst.Root], newAst: TypedAst.Root): DeltaContext = old match {
-    case None =>
-      // Case 1: No old AST. No difference.
-      DeltaContext(Map.empty)
-    case Some(oldAst) =>
-      // Case 2: We have an oldAst and a newAst. Compute their difference.
-
-      val newDefs = findModifiedDefs(oldAst, newAst)
-
-      DeltaContext(newDefs)
+  def difference(oldAst: TypedAst.Root, newAst: TypedAst.Root): DeltaContext = {
+    // Case 2: We have an oldAst and a newAst. Compute their difference.
+    val newDefs = findModifiedDefs(oldAst, newAst)
+    DeltaContext(newDefs)
   }
 
   /**

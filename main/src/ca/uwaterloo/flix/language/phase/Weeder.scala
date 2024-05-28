@@ -1341,6 +1341,16 @@ object Weeder {
         args => WeededAst.Expr.Do(op, args, loc)
       }
 
+    case ParsedAst.Expression.InvokeMethod2(sp1, obj, name, args, sp2) =>
+      val loc = mkSL(sp1, sp2)
+      mapN(traverse(args)(e => visitArgument(e))) {
+        case (as) =>
+          val es = getArguments(as, loc)
+          val qname = Name.QName.fromNName(Name.NName(obj.sp1, List(obj), obj.sp2))
+          val objExpr = WeededAst.Expr.Ambiguous(qname, qname.loc)
+          WeededAst.Expr.InvokeMethod2(objExpr, name, es, loc)
+      }
+
     case ParsedAst.Expression.Try(sp1, exp, ParsedAst.HandlerList.CatchHandlerList(handlers0), sp2) =>
       val expVal = visitExp(exp)
       val rulesVal = traverse(handlers0) {
@@ -3029,6 +3039,7 @@ object Weeder {
     case ParsedAst.Expression.CheckedEffectCast(sp1, _, _) => sp1
     case ParsedAst.Expression.Without(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Do(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.InvokeMethod2(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.Try(sp1, _, _, _) => sp1
     case ParsedAst.Expression.SelectChannel(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Spawn(sp1, _, _, _) => sp1
