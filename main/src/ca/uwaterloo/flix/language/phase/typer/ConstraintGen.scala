@@ -746,10 +746,8 @@ object ConstraintGen {
       case Expr.InvokeMethod2(exp, name, exps, tvar, evar, loc) =>
         val (tpe, eff) = visitExp(exp)
         val (tpes, effs) = exps.map(visitExp).unzip
-        val t = Type.mkApply(Type.Cst(TypeConstructor.MethodReturnType(name.name, exps.length), loc), tpe :: tpes, loc)
-        val r = Type.mkUnion(Type.IO :: eff :: effs, loc)
-        c.unifyType(tvar, t, loc)
-        c.unifyType(evar, r, loc)
+        c.unifyType(tvar, Type.mkApply(Type.Cst(TypeConstructor.MethodReturnType(name.name, exps.length), loc), tpe :: tpes, loc), loc)
+        c.unifyType(evar, Type.mkUnion(Type.IO :: eff :: effs, loc), loc)
         val resTpe = tvar
         val resEff = evar
         (resTpe, resEff)
