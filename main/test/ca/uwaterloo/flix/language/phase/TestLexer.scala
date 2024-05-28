@@ -272,6 +272,15 @@ class TestLexer extends AnyFunSuite with TestUtils {
     expectError[LexerError.UnterminatedString](result)
   }
 
+  test("LexerError.MultilineString.01") {
+    val input = s"""
+         |def f(): String = "This is a
+         |multi-line string"
+         |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[LexerError.UnterminatedString](result)
+  }
+
   test("LexerError.UnterminatedStringInterpolation.01") {
     val input = """ "Hi ${name!" """
     val result = compile(input, Options.TestWithLibNix)
