@@ -517,7 +517,7 @@ class TestManifestParser extends AnyFunSuite {
     expectError[ManifestError.FlixVersionHasWrongLength](result)
   }
 
-  test("Err.version.numbers.01") {
+  test("ManifestError.VersionNumberWrong.01") {
     val toml = {
       """
         |[package]
@@ -530,13 +530,11 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.VersionNumberWrong(null, "a.1.0", "For input string: \"a\"").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
+    val result = ManifestParser.parse(toml, null)
+    expectError[ManifestError.VersionNumberWrong](result)
   }
 
-  test("Err.version.numbers.02") {
+  test("ManifestError.VersionNumberWrong.02") {
     val toml = {
       """
         |[package]
@@ -549,13 +547,11 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.VersionNumberWrong(null, "0.b.0", "For input string: \"b\"").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
+    val result = ManifestParser.parse(toml, null)
+    expectError[ManifestError.VersionNumberWrong](result)
   }
 
-  test("Err.version.numbers.03") {
+  test("ManifestError.VersionNumberWrong.03") {
     val toml = {
       """
         |[package]
@@ -568,10 +564,8 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.VersionNumberWrong(null, "0.1.c", "For input string: \"c\"").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
+    val result = ManifestParser.parse(toml, null)
+    expectError[ManifestError.VersionNumberWrong](result)
   }
 
   // Repository
@@ -683,7 +677,7 @@ class TestManifestParser extends AnyFunSuite {
     expectError[ManifestError.RepositoryFormatError](result)
   }
 
-  test("Err.repository.wrongFormat.06") {
+  test("ManifestError.RepositoryFormatError.06") {
     val toml = {
       """
         |[package]
@@ -823,7 +817,7 @@ class TestManifestParser extends AnyFunSuite {
     expectError[ManifestError.FlixVersionHasWrongLength](result)
   }
 
-  test("Err.flix.numbers.01") {
+  test("ManifestError.VersionNumberWrong.04") {
     val toml = {
       """
         |[package]
@@ -836,13 +830,11 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.VersionNumberWrong(null, "?.33.0", "For input string: \"?\"").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
+    val result = ManifestParser.parse(toml, null)
+    expectError[ManifestError.VersionNumberWrong](result)
   }
 
-  test("Err.flix.numbers.02") {
+  test("ManifestError.VersionNumberWrong.05") {
     val toml = {
       """
         |[package]
@@ -855,13 +847,11 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.VersionNumberWrong(null, "0.?.0", "For input string: \"?\"").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
+    val result = ManifestParser.parse(toml, null)
+    expectError[ManifestError.VersionNumberWrong](result)
   }
 
-  test("Err.flix.numbers.03") {
+  test("ManifestError.VersionNumberWrong.06") {
     val toml = {
       """
         |[package]
@@ -874,10 +864,8 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.VersionNumberWrong(null, "0.33.?", "For input string: \"?\"").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
+    val result = ManifestParser.parse(toml, null)
+    expectError[ManifestError.VersionNumberWrong](result)
   }
 
   //License
@@ -966,7 +954,7 @@ class TestManifestParser extends AnyFunSuite {
     expectError[ManifestError.RequiredPropertyHasWrongType](result)
   }
 
-  test("Err.authors.type.02") {
+  test("ManifestError.AuthorNameError.01") {
     val toml = {
       """
         |[package]
@@ -979,13 +967,11 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.AuthorNameError(null, "key at index 0 is a integer").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
+    val result = ManifestParser.parse(toml, null)
+    expectError[ManifestError.AuthorNameError](result)
   }
 
-  test("Err.authors.type.03") {
+  test("ManifestError.AuthorNameError.02") {
     val toml = {
       """
         |[package]
@@ -998,14 +984,12 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.AuthorNameError(null, "key at index 1 is a integer").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
+    val result = ManifestParser.parse(toml, null)
+    expectError[ManifestError.AuthorNameError](result)
   }
 
   //Dependencies
-  test("Err.dependencies.type") {
+  test("ManifestError.DependencyFormatError.01") {
     val toml = {
       """
         |[package]
@@ -1022,13 +1006,11 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.DependencyFormatError(null, "class java.lang.Long cannot be cast to class java.lang.String (java.lang.Long and java.lang.String are in module java.base of loader 'bootstrap')").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
+    val result = ManifestParser.parse(toml, null)
+    expectError[ManifestError.DependencyFormatError](result)
   }
 
-  test("Err.dependencies.misspelled") {
+  test("ManifestError.IllegalTableFound.01") {
     val toml = {
       """
         |[package]
@@ -1045,13 +1027,10 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.IllegalTableFound(null, "depandencies").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
+    val result = ManifestParser.parse(toml, null)
+    expectError[ManifestError.IllegalTableFound](result)
   }
-
-  test("Err.dependencies.name.01") {
+  test("ManifestError.IllegalName.01") {
     val toml = {
       """
         |[package]
@@ -1068,13 +1047,11 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.IllegalName(null, "ml&tze").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
+    val result = ManifestParser.parse(toml, null)
+    expectError[ManifestError.IllegalName](result)
   }
 
-  test("Err.dependencies.name.02") {
+  test("ManifestError.IllegalName.02") {
     val toml = {
       """
         |[package]
@@ -1091,10 +1068,8 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.IllegalName(null, "tic#tac-toe").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
+    val result = ManifestParser.parse(toml, null)
+    expectError[ManifestError.IllegalName](result)
   }
 
   test("ManifestError.FlixVersionHasWrongLength.05") {
@@ -1139,7 +1114,7 @@ class TestManifestParser extends AnyFunSuite {
     expectError[ManifestError.FlixVersionHasWrongLength](result)
   }
 
-  test("Err.dependencies.format.03") {
+  test("ManifestError.FlixDependencyFormatError.01") {
     val toml = {
       """
         |[package]
@@ -1156,13 +1131,11 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.FlixDependencyFormatError(null, "github:jls:tic-tac-toe").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
+    val result = ManifestParser.parse(toml, null)
+    expectError[ManifestError.FlixDependencyFormatError](result)
   }
 
-  test("Err.dependencies.format.04") {
+  test("ManifestError.FlixDependencyFormatError.02") {
     val toml = {
       """
         |[package]
@@ -1179,13 +1152,11 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.FlixDependencyFormatError(null, "github/jls/tic-tac-toe").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
+    val result = ManifestParser.parse(toml, null)
+    expectError[ManifestError.FlixDependencyFormatError](result)
   }
 
-  test("Err.dependencies.numbers.01") {
+  test("ManifestError.VersionNumberWrong.07") {
     val toml = {
       """
         |[package]
@@ -1202,13 +1173,11 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.VersionNumberWrong(null, "a.2.1", "For input string: \"a\"").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
+    val result = ManifestParser.parse(toml, null)
+    expectError[ManifestError.VersionNumberWrong](result)
   }
 
-  test("Err.dependencies.numbers.02") {
+  test("ManifestError.VersionNumberWrong.08") {
     val toml = {
       """
         |[package]
@@ -1225,13 +1194,11 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.VersionNumberWrong(null, "3.b.1", "For input string: \"b\"").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
+    val result = ManifestParser.parse(toml, null)
+    expectError[ManifestError.VersionNumberWrong](result)
   }
 
-  test("Err.dependencies.numbers.03") {
+  test("ManifestError.VersionNumberWrong.09") {
     val toml = {
       """
         |[package]
@@ -1248,14 +1215,12 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.VersionNumberWrong(null, "3.2.c", "For input string: \"c\"").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
+    val result = ManifestParser.parse(toml, null)
+    expectError[ManifestError.VersionNumberWrong](result)
   }
 
   //Mvn-dependencies
-  test("Err.mvn-dependencies.type") {
+  test("ManifestError.DependencyFormatError.02") {
     val toml = {
       """
         |[package]
@@ -1272,13 +1237,11 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.DependencyFormatError(null, "class java.lang.Long cannot be cast to class java.lang.String (java.lang.Long and java.lang.String are in module java.base of loader 'bootstrap')").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
+    val result = ManifestParser.parse(toml, null)
+    expectError[ManifestError.DependencyFormatError](result)
   }
 
-  test("Err.mvn-dependencies.misspelled") {
+  test("ManifestError.IllegalTableFound.02") {
     val toml = {
       """
         |[package]
@@ -1295,13 +1258,11 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.IllegalTableFound(null, "mwn-dependencies").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
+    val result = ManifestParser.parse(toml, null)
+    expectError[ManifestError.IllegalTableFound](result)
   }
 
-  test("Err.mvn-dependencies.name.01") {
+  test("ManifestError.IllegalName.03") {
     val toml = {
       """
         |[package]
@@ -1318,13 +1279,11 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.IllegalName(null, "org.po)tgresql").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
+    val result = ManifestParser.parse(toml, null)
+    expectError[ManifestError.IllegalName](result)
   }
 
-  test("Err.mvn-dependencies.name.02") {
+  test("ManifestError.IllegalName.04") {
     val toml = {
       """
         |[package]
@@ -1341,14 +1300,12 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.IllegalName(null, "post¤resql").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
+    val result = ManifestParser.parse(toml, null)
+    expectError[ManifestError.IllegalName](result)
   }
 
 
-  test("Err.mvn-dependencies.format.01") {
+  test("ManifestError.MavenDependencyFormatError.01") {
     val toml = {
       """
         |[package]
@@ -1365,13 +1322,11 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.MavenDependencyFormatError(null, "org.eclipse.jetty.jetty-server").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
+    val result = ManifestParser.parse(toml, null)
+    expectError[ManifestError.MavenDependencyFormatError](result)
   }
 
-  test("Err.mvn-dependencies.format.02") {
+  test("ManifestError.MavenDependencyFormatError.02") {
     val toml = {
       """
         |[package]
@@ -1388,14 +1343,12 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.MavenDependencyFormatError(null, "org:eclipse:jetty:jetty-server").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
+    val result = ManifestParser.parse(toml, null)
+    expectError[ManifestError.MavenDependencyFormatError](result)
   }
 
   //Jar-dependencies
-  test("Err.jar-dependencies.type") {
+  test("ManifestError.JarUrlTypeError.01") {
     val toml = {
       """
         |[package]
@@ -1411,13 +1364,11 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.JarUrlTypeError(null, "class org.tomlj.MutableTomlArray cannot be cast to class java.lang.String (org.tomlj.MutableTomlArray is in unnamed module of loader 'app'; java.lang.String is in module java.base of loader 'bootstrap')").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => println(e.message(f)); e.message(f)
-    })
+    val result = ManifestParser.parse(toml, null)
+    expectError[ManifestError.JarUrlTypeError](result)
   }
 
-  test("Err.jar-dependencies.misspelled") {
+  test("ManifestError.IllegalTableFound.03") {
     val toml = {
       """
         |[package]
@@ -1433,13 +1384,11 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.IllegalTableFound(null, "jar-dependences").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
+    val result = ManifestParser.parse(toml, null)
+    expectError[ManifestError.IllegalTableFound](result)
   }
 
-  test("Err.jar-dependencies.filename.01") {
+  test("ManifestError.JarUrlFileNameError.01") {
     val toml = {
       """
         |[package]
@@ -1455,13 +1404,11 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.JarUrlFileNameError(null, "myJar").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
+    val result = ManifestParser.parse(toml, null)
+    expectError[ManifestError.JarUrlFileNameError](result)
   }
 
-  test("Err.jar-dependencies.filename.02") {
+  test("ManifestError.JarUrlExtensionError.01") {
     val toml = {
       """
         |[package]
@@ -1477,13 +1424,11 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.JarUrlExtensionError(null, "myJar.jsr", "jsr").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
+    val result = ManifestParser.parse(toml, null)
+    expectError[ManifestError.JarUrlExtensionError](result)
   }
 
-  test("Err.jar-dependencies.url.01") {
+  test("ManifestError.JarUrlFormatError.01") {
     val toml = {
       """
         |[package]
@@ -1499,13 +1444,11 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.JarUrlFormatError(null, "https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
+    val result = ManifestParser.parse(toml, null)
+    expectError[ManifestError.JarUrlFormatError](result)
   }
 
-  test("Err.jar-dependencies.url.02") {
+  test("ManifestError.WrongUrlFormat.01") {
     val toml = {
       """
         |[package]
@@ -1521,10 +1464,8 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.WrongUrlFormat(null, "url:repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar", "URI is not absolute").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
+    val result = ManifestParser.parse(toml, null)
+    expectError[ManifestError.WrongUrlFormat](result)
   }
 
 }
