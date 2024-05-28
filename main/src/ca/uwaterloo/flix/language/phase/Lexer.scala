@@ -1023,8 +1023,6 @@ object Lexer {
    * Moves current position past a line- or doc-comment
    */
   private def acceptLineOrDocComment()(implicit s: State): TokenKind = {
-//    advance() // Eat one slash.
-
     // Check for doc-comment. A doc-comments leads with exactly 3 slashes.
     // For instance '//// this is not a doc-comment'.
     val kind = (peek(), peekPeek()) match {
