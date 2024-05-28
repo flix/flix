@@ -178,6 +178,45 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
     expectMain(result)
   }
 
+  test("DanglingDocComment.03") {
+    val input =
+      """
+        |trait Foo[t] {
+        |  /// This documents nothing
+        |}
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("DanglingDocComment.04") {
+    val input =
+      """
+        |instance Foo[Int32] {
+        |  /// This documents nothing
+        |}
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("DanglingDocComment.05") {
+    val input =
+      """
+        |eff MyEff {
+        |  /// This documents nothing
+        |}
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
   test("MangledModule.02") {
     val input =
       """
@@ -721,6 +760,18 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
   * Note that CompilerSuite and LibrarySuite covers the positive testing of the parser well.
   */
 class TestParserHappy extends AnyFunSuite with TestUtils {
+  test("DetectRecord.01") {
+    val input =
+      """
+        |pub def foo(): { x = Int32 } = {
+        |    // This is a comment
+        |    x = 1000
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectSuccess(result)
+  }
+
   test("ParseError.Interpolation.01") {
     val input = s"""pub def foo(): String = "$${""""
     val result = compile(input, Options.TestWithLibNix)

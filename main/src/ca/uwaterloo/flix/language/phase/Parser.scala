@@ -88,10 +88,10 @@ object Parser {
         val mostLikelyContext = possibleContexts.keySet.reduceOption(SyntacticContext.join).getOrElse(SyntacticContext.Unknown)
         val loc = SourceLocation(parser.input, source, isReal = true, e.position.line, e.position.column.toShort, e.position.line, e.position.column.toShort)
         // NOTE: Manually construct a hard failure here since ParseError is Recoverable, but in this parser it is not :-(
-        Validation.HardFailure(Chain(ca.uwaterloo.flix.language.errors.ParseError(stripLiteralWhitespaceChars(parser.formatError(e)), mostLikelyContext, loc)))
+        Validation.HardFailure(Chain(ca.uwaterloo.flix.language.errors.ParseError.Legacy(stripLiteralWhitespaceChars(parser.formatError(e)), mostLikelyContext, loc)))
       case scala.util.Failure(e) =>
         // NOTE: Manually construct a hard failure here since ParseError is Recoverable, but in this parser it is not :-(
-        Validation.HardFailure(Chain(ca.uwaterloo.flix.language.errors.ParseError(e.getMessage, SyntacticContext.Unknown, SourceLocation.Unknown)))
+        Validation.HardFailure(Chain(ca.uwaterloo.flix.language.errors.ParseError.Legacy(e.getMessage, SyntacticContext.Unknown, SourceLocation.Unknown)))
     }
   }
 
@@ -828,7 +828,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         SelectChannel | Spawn | ParYield | Lazy | Force |
         CheckedTypeCast | CheckedEffectCast | UncheckedCast | UncheckedMaskingCast | Intrinsic | ArrayLit | VectorLit | ListLit |
         SetLit | FMap | ConstraintSet | FixpointLambda | FixpointProject | FixpointSolveWithProject |
-        FixpointQueryWithSelect | Interpolation | Literal | Do |
+        FixpointQueryWithSelect | Interpolation | Literal | Do | InvokeMethod2 |
         Discard | Debug | ApplicativeFor | ForEachYield | MonadicFor | ForEach | NewObject |
         UnaryLambda | Open | OpenAs | HolyName | QName | Hole
     }
@@ -1000,6 +1000,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Do: Rule1[ParsedAst.Expression] = rule {
       SP ~ keyword("do") ~ WS ~ Names.QualifiedOperation ~ ArgumentList ~ SP ~> ParsedAst.Expression.Do
+    }
+
+    def InvokeMethod2: Rule1[ParsedAst.Expression] = rule {
+      SP ~ "." ~ Names.LowerCaseName ~ "." ~ Names.JavaMethod ~ ArgumentList ~ SP ~> ParsedAst.Expression.InvokeMethod2
     }
 
     def Debug: Rule1[ParsedAst.Expression.Debug] = {

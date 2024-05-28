@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.fmt.{FormatOptions, FormatScheme}
 import ca.uwaterloo.flix.language.phase.typer.ConstraintSolver.ResolutionResult
-import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver, TypeConstraint}
+import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver, TypeConstraint, TypeReduction}
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnvironment, Substitution, UnificationError}
 import ca.uwaterloo.flix.util.collection.{Chain, ListMap}
@@ -158,7 +158,7 @@ object Scheme {
     val cconstrs2 = cconstrs2_0.map {
       case Ast.TypeConstraint(head, arg, loc) =>
         // should never fail
-        val (t, _) = ConstraintSolver.simplifyType(subst(arg), RigidityEnv.empty, loc)(eenv0, flix).get
+        val (t, _) = TypeReduction.simplify(subst(arg), RigidityEnv.empty, loc)(eenv0, flix).get
         Ast.TypeConstraint(head, t, loc)
     }
 

@@ -652,6 +652,11 @@ object Redundancy {
       sctx.effSyms.put(opUse.sym.eff, ())
       visitExps(exps, env0, rc)
 
+    case Expr.InvokeMethod2(exp, _, exps, _, _, _) =>
+      val us1 = visitExp(exp, env0, rc)
+      val us2 = visitExps(exps, env0, rc)
+      us1 ++ us2
+
     case Expr.InvokeConstructor(_, args, _, _, _) =>
       visitExps(args, env0, rc)
 
@@ -942,7 +947,7 @@ object Redundancy {
     * Returns true if the expression is pure.
     */
   private def isUselessExpression(exp: Expr): Boolean =
-    isPure(exp)
+    isPure(exp) && !exp.isInstanceOf[Expr.UncheckedMaskingCast]
 
   /**
     * Returns `true` if the expression must be used.
