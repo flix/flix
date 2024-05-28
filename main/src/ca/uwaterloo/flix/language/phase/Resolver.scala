@@ -1431,6 +1431,14 @@ object Resolver {
               }
           }
 
+        case NamedAst.Expr.InvokeMethod2(exp, name, exps, loc) =>
+          val eVal = visitExp(exp, env0)
+          val esVal = traverse(exps)(visitExp(_, env0))
+          mapN(eVal, esVal) {
+            case (e, es) =>
+              ResolvedAst.Expr.InvokeMethod2(e, name, es, loc)
+          }
+
         case NamedAst.Expr.InvokeConstructor(className, args, sig, loc) =>
           lookupJvmClass(className, loc) match {
             case Result.Ok(clazz) =>
