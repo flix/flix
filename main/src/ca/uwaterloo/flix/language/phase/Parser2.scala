@@ -1446,7 +1446,7 @@ object Parser2 {
         case TokenKind.KeywordMaskedCast => uncheckedMaskingCastExpr()
         case TokenKind.KeywordTry => tryExpr()
         case TokenKind.KeywordDo => doExpr()
-        case TokenKind.KeywordDot => doInvokeMethod2Expr()
+        case TokenKind.Dot => invokeMethod2Expr()
         case TokenKind.KeywordNew => newObjectExpr()
         case TokenKind.KeywordStaticUppercase => staticExpr()
         case TokenKind.KeywordSelect => selectExpr()
@@ -2337,13 +2337,14 @@ object Parser2 {
       close(mark, TreeKind.Expr.Do)
     }
 
-    private def doInvokeMethod2Expr()(implicit s: State): Mark.Closed = {
+    private def invokeMethod2Expr()(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.Dot))
       val mark = open()
-      expect(TokenKind.Dot, SyntacticContext.Expr.Dot)
-      name(NAME_QNAME, context = SyntacticContext.Expr.InvokeMethod2)
-      expect(TokenKind.Dot, SyntacticContext.Expr.Dot)
+      expect(TokenKind.Dot, SyntacticContext.Expr.OtherExpr)
+      name(NAME_QNAME, context = SyntacticContext.Expr.OtherExpr)
+      expect(TokenKind.Dot, SyntacticContext.Expr.OtherExpr)
       expression()
+      arguments()
       close(mark, TreeKind.Expr.InvokeMethod2)
     }
 

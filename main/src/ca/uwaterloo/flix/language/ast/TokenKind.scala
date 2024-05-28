@@ -75,7 +75,6 @@ sealed trait TokenKind {
       case TokenKind.KeywordDeref => "'deref'"
       case TokenKind.KeywordDiscard => "'discard'"
       case TokenKind.KeywordDo => "'do'"
-      case TokenKind.KeywordDot => "'.'"
       case TokenKind.KeywordEff => "'eff'"
       case TokenKind.KeywordElse => "'else'"
       case TokenKind.KeywordEnum => "'enum'"
@@ -229,7 +228,6 @@ sealed trait TokenKind {
     case TokenKind.KeywordDeref => true
     case TokenKind.KeywordDiscard => true
     case TokenKind.KeywordDo => true
-    case TokenKind.KeywordDot => true
     case TokenKind.KeywordEff => true
     case TokenKind.KeywordElse => true
     case TokenKind.KeywordEnum => true
@@ -416,7 +414,6 @@ sealed trait TokenKind {
          | TokenKind.KeywordMaskedCast
          | TokenKind.KeywordTry
          | TokenKind.KeywordDo
-         | TokenKind.KeywordDot
          | TokenKind.KeywordNew
          | TokenKind.KeywordStaticUppercase
          | TokenKind.KeywordSelect
@@ -692,8 +689,6 @@ object TokenKind {
   case object KeywordDiscard extends TokenKind
 
   case object KeywordDo extends TokenKind
-
-  case object KeywordDot extends TokenKind
 
   case object KeywordEff extends TokenKind
 

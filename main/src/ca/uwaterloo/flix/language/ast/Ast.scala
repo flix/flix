@@ -847,10 +847,6 @@ object Ast {
 
       case object Do extends Expr
 
-      case object Dot extends Expr
-
-      case object InvokeMethod2 extends Expr
-
       case object OtherExpr extends Expr
     }
 
