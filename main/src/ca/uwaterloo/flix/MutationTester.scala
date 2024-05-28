@@ -101,7 +101,8 @@ object MutationTester {
     val timeSec = end.toFloat / 1_000_000_000.0
     println(s"time to generate mutations: $timeSec")
     val lastRoot = insertDecAndCheckIntoRoot(root)
-    val (_, ttb, bbs, bugs) = runMutations(flix, testModule, lastRoot, sortMutants(mutations))
+    val (results, ttb, bbs, bugs) = runMutations(flix, testModule, lastRoot, sortMutants(mutations))
+    MutationDataHandler.processData(results, productionModule)
     MutationDataHandler.writeTTBToFile(s"TTB: $productionModule: ${ttb}")
     MutationDataHandler.writeBBSToFile(s"BBS: $productionModule: ${bbs}: $bugs")
     writeReportsToFile(nonKilledStrList)
@@ -290,7 +291,7 @@ object MutationTester {
         val amountOfMutants = mutatedDefs.length
         val f = DateTimeFormatter.ofPattern("yyyy-MM-dd: HH:mm")
         val emptyList: List[(MutatedDef, TestRes)] = Nil
-        val emptySkip: SkipM = SkipM.Default(Nil)
+        val emptySkip: SkipM = SkipM.LocRecOp(Nil)
         val newRep = ReportAcc(0,0,0)
         val localAcc: (ReportAcc, Double, Long, Int, List[(MutatedDef, TestRes)], Long, SkipM) = (newRep, totalStartTime.toDouble, temp, 0, emptyList, 0.toLong, emptySkip)
         val (rep, _, _, _, mOperatorResults, timeToBug, survived) = mutatedDefs.foldLeft(localAcc)((acc, mut) => {
@@ -370,8 +371,7 @@ object MutationTester {
       skip match {
         case SkipM.Default(survivors) => SkipM.Default(mut :: survivors)
         case SkipM.LocOp(locs) => SkipM.LocOp(mut.df.exp.loc :: locs)
-        case SkipM.LocRecOp(locRecs) =>
-          SkipM.LocRecOp((mut.df.exp.loc, mut.mutType):: locRecs)
+        case SkipM.LocRecOp(locRecs) => SkipM.LocRecOp((mut.df.exp.loc, mut.mutType):: locRecs)
       }
     }
     private def equalMutOp(m1: MutationType, m2: MutationType): Boolean = {
@@ -395,7 +395,7 @@ object MutationTester {
           survivors.foldLeft(emptyList)((acc, m) => if (acc.contains(m.df.exp.loc)) acc else  m.df.exp.loc :: acc).length
         case LocOp(locs) => locs.length
         case LocRecOp(locsRecs) => locsRecs.length
-      }
+    }
     }
   }
 
@@ -424,10 +424,11 @@ object MutationTester {
           val (newSurvivorCount, newTTB, newSkip): (Int, Long, SkipM) = {
             if (testResult.equals(TestRes.MutantSurvived)) {
 
-            (rep.totalSurvivorCount + 1, if (timeToBug == 0) System.nanoTime else timeToBug, mut :: survived)
+              (rep.totalSurvivorCount + 1, if (timeToBug == 0) System.nanoTime else timeToBug, mut :: survived)
+            }
+            else (rep.totalSurvivorCount, timeToBug, survived)
           }
-          else (rep.totalSurvivorCount, timeToBug, survived)
-          }
+
           val newUnknownCount = if (testResult.equals(TestRes.Unknown))  rep.totalUnknowns + 1 else rep.totalUnknowns
           val newEQCount = if (testResult.equals(TestRes.Equivalent))  rep.equivalent + 1 else rep.equivalent
           if (testResult.equals(TestRes.MutantSurvived)) {
@@ -457,6 +458,7 @@ object MutationTester {
     private def compileAndTestMutant(df: TypedAst.Def, mut: Symbol.DefnSym, testKit: TestKit): TestRes = {
         val defs = testKit.root.defs
         val n = defs + (mut -> df)
+        println(df)
         val newRoot = testKit.root.copy(defs = n)
         val cRes = testKit.flix.codeGen(newRoot).unsafeGet
         val testsFromTester = cRes.getTests.filter { case (s, _) => s.namespace.head.equals(testKit.testModule) }.toList

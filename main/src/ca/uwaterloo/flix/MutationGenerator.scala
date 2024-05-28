@@ -51,7 +51,7 @@ object MutationGenerator {
     mutateDefs( defs, defSyms).flatten.unzip._2.flatten
   }
 
-  def insertDACAndMutInExp(mutated: TypedAst.Expr, original: TypedAst.Expr): TypedAst.Expr = {
+  def insertDACAndMutInExp(mutated: TypedAst.Expr): TypedAst.Expr = {
     val loc = mutated.loc
     val method = classOf[Global].getMethods.find(m => m.getName.equals("decAndCheck")).get
     val InvokeMethod = Expr.InvokeStaticMethod(method, Nil, Type.Int64, Type.IO, loc)
@@ -203,8 +203,8 @@ object MutationGenerator {
     case Expr.Region(_, _) => Nil
     case original@Expr.Scope(_, _, exp, tpe, eff, loc) => mutateExpr(exp).map(m => Expr.Mutated(original.copy(exp = m), m.mutationType, tpe, eff, m.loc))
     case original@Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
-      val ifTrue = Expr.Mutated(original.copy(exp1 = Expr.Cst(Constant.Bool(true), True, exp1.loc)), MutationType.IfMut(true), original.tpe, original.eff, exp1.loc)
-      val ifFalse = Expr.Mutated(original.copy(exp1 = Expr.Cst(Constant.Bool(false), False, exp1.loc)), MutationType.IfMut(false), original.tpe, original.eff, exp1.loc)
+      val ifFalse = Expr.Mutated(original.copy(exp1 = Expr.Cst(Constant.Bool(true), True, exp1.loc), exp2 = insertDACAndMutInExp(exp2)), MutationType.IfMut(true), original.tpe, original.eff, exp1.loc)
+      val ifTrue = Expr.Mutated(original.copy(exp1 = Expr.Cst(Constant.Bool(false), False, exp1.loc), exp3 = insertDACAndMutInExp(exp3)), MutationType.IfMut(false), original.tpe, original.eff, exp1.loc)
       val mut2 = mutateExpr(exp2).map(m => Expr.Mutated(original.copy(exp2 = m), m.mutationType, m.tpe, m.eff, m.loc))
       val mut3 = mutateExpr(exp3).map(m => Expr.Mutated(original.copy(exp3 = m), m.mutationType, m.tpe, m.eff, m.loc))
       ifTrue :: ifFalse :: mut2 ::: mut3
@@ -672,4 +672,19 @@ object MutationGenerator {
     }
   }
 
+
+  private def insertDAC(df: TypedAst.Def): TypedAst.Def = {
+    df.exp match {
+      case  o@Expr.LetRec(_, _, _, exp1, exp2, tpe, eff, loc) =>
+          val newExp = exp1 match {
+              case lambda@Expr.Lambda(_, exp, _, _) =>
+                Some(lambda.copy(exp = insertDACAndMutInExp(exp)))
+              case _ => None
+            }
+          df.copy(exp = o.copy(exp1 = newExp.get))
+    }
+  }
+
 }
+
+
