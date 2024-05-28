@@ -264,7 +264,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Law: Rule1[ParsedAst.Declaration.Law] = rule {
-      Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("law") ~ WS ~ Names.Definition ~ optWS ~ ":" ~ optWS ~ keyword("forall") ~ optWS ~ TypeParams ~ optWS ~ FormalParamList ~ WithClause ~ optWS ~ OptEqualityConstraintList ~ optWS ~ "." ~ optWS ~ Expression ~ SP ~> ParsedAst.Declaration.Law
+      Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("law") ~ WS ~ Names.Definition ~ optWS ~ ":" ~ optWS ~ keyword("forall") ~ optWS ~ TypeParams ~ optWS ~ FormalParamList ~ WithClause ~ optWS ~ OptEqualityConstraintList ~ optWS ~ Expression ~ SP ~> ParsedAst.Declaration.Law
     }
 
     def Op: Rule1[ParsedAst.Declaration.Op] = rule {

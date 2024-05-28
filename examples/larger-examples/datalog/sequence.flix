@@ -2,7 +2,7 @@
 
 def main(): Unit \ IO =
 
-    let numLetters = #{NumLetters(20).};
+    let numLetters = #{ NumLetters(20). };
 
     let lp = #{
 
