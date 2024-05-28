@@ -263,6 +263,7 @@ object FastSetUnification {
     private def verifySolutionSize(): Unit = {
       val size = currentSubst.size
       if (size > SizeThreshold) {
+        println(currentSubst)
         throw TooComplexException(s"Too large a substitution (threshold: $SizeThreshold, found: $size)")
       }
     }
@@ -931,21 +932,29 @@ object FastSetUnification {
         if (termCsts.exists(c => setCsts.get(c).contains(Term.Empty))) return Term.Empty
         if (termVars.exists(c => setVars.get(c).contains(Term.Empty))) return Term.Empty
 
-        val currentElems = setElems ++ termElem.map((_, Term.Univ))
-        val currentCsts = setCsts ++ termCsts.map((_, Term.Univ))
-        val currentVars = setVars ++ termVars.map((_, Term.Univ))
+        var currentElems = setElems ++ termElem.map((_, Term.Univ))
+        var currentCsts = setCsts ++ termCsts.map((_, Term.Univ))
+        var currentVars = setVars ++ termVars.map((_, Term.Univ))
 
         // Recurse on the sub-terms with the updated maps.
-        val rest = rest0.collect {
-          case t: Term.Compl => visit(t, currentElems, currentCsts, currentVars)
-          case t: Term.Inter => visit(t, currentElems, currentCsts, currentVars)
-          case t: Term.Union => visit(t, currentElems, currentCsts, currentVars)
-          case _: Term.Cst =>
-            // Cannot happen because the invariant of [[Term.mkInter]] ensures there are no constants in `rest`.
-            throw InternalCompilerException("Unexpected constant", SourceLocation.Unknown)
-          case _: Term.Var =>
-            // Cannot happen because the invariant of [[Term.mkInter]] ensures there are no variables in `rest`.
-            throw InternalCompilerException("Unexpected variable", SourceLocation.Unknown)
+        val rest = rest0.map { t =>
+            val res = visit(t, currentElems, currentCsts, currentVars)
+            res match {
+              case Term.Univ => res
+              case Term.Empty => res
+              case Term.Cst(c) =>
+                currentCsts += (c -> Term.Univ)
+                res
+              case Term.Var(x) =>
+                currentVars += (x -> Term.Univ)
+                res
+              case Term.Elem(i) =>
+                currentElems += (i -> Term.Univ)
+                res
+              case Term.Compl(_) => res
+              case Term.Inter(_, _, _, _) => res
+              case Term.Union(_, _, _, _) => res
+            }
         }
 
         // Compute new constant and variable sets by removing constants and variables that hold.
@@ -967,21 +976,29 @@ object FastSetUnification {
         if (termCsts.exists(c => setCsts.get(c).contains(Term.Univ))) return Term.Univ
         if (termVars.exists(c => setVars.get(c).contains(Term.Univ))) return Term.Univ
 
-        val currentElems = setElems ++ termElems.map((_, Term.Empty))
-        val currentCsts = setCsts ++ termCsts.map((_, Term.Empty))
-        val currentVars = setVars ++ termVars.map((_, Term.Empty))
+        var currentElems = setElems ++ termElems.map((_, Term.Empty))
+        var currentCsts = setCsts ++ termCsts.map((_, Term.Empty))
+        var currentVars = setVars ++ termVars.map((_, Term.Empty))
 
         // Recurse on the sub-terms with the updated maps.
-        val rest = rest0.collect {
-          case t: Term.Compl => visit(t, currentElems, currentCsts, currentVars)
-          case t: Term.Inter => visit(t, currentElems, currentCsts, currentVars)
-          case t: Term.Union => visit(t, currentElems, currentCsts, currentVars)
-          case _: Term.Cst =>
-            // Cannot happen because the invariant of [[Term.mkInter]] ensures there are no constants in `rest`.
-            throw InternalCompilerException("Unexpected constant", SourceLocation.Unknown)
-          case _: Term.Var =>
-            // Cannot happen because the invariant of [[Term.mkInter]] ensures there are no variables in `rest`.
-            throw InternalCompilerException("Unexpected variable", SourceLocation.Unknown)
+        val rest = rest0.map { t =>
+          val res = visit(t, currentElems, currentCsts, currentVars)
+          res match {
+            case Term.Univ => res
+            case Term.Empty => res
+            case Term.Cst(c) =>
+              currentCsts += (c -> Term.Empty)
+              res
+            case Term.Var(x) =>
+              currentVars += (x -> Term.Empty)
+              res
+            case Term.Elem(i) =>
+              currentElems += (i -> Term.Empty)
+              res
+            case Term.Compl(_) => res
+            case Term.Inter(_, _, _, _) => res
+            case Term.Union(_, _, _, _) => res
+          }
         }
 
         // Compute new constant and variable sets by removing constants and variables that hold.
