@@ -35,9 +35,9 @@ mod IFDS {
         def eshCallStart1(n, d, p) = augmentForZero(d, ifds.eshCallStart(n, d, p));
         def eshEndReturn1(p, d, n) = augmentForZero(d, ifds.eshEndReturn(p, d, n));
 
-        ///
-        /// The core IFDS Framework.
-        ///
+        //
+        // The core IFDS Framework.
+        //
         let p = #{
             // nodes in a given procedure
             InProc(p, start) :- StartNode(p, start).

@@ -1,9 +1,6 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.Ast.Source
-import org.parboiled2.ParserInput
-
-import javax.annotation.Nullable
 
 /**
   * Companion object for the [[SourceLocation]] class.
@@ -21,7 +18,7 @@ object SourceLocation {
     * Returns the source location constructed from the source positions `b` and `e.`
     */
   def mk(b: SourcePosition, e: SourcePosition, isReal: Boolean = true): SourceLocation =
-    SourceLocation(b.input, b.source, isReal, b.line, b.col, e.line, e.col)
+    SourceLocation(b.source, isReal, b.line, b.col, e.line, e.col)
 
   implicit object Order extends Ordering[SourceLocation] {
 
@@ -42,11 +39,9 @@ object SourceLocation {
   *
   * Specifically, we:
   *
-  * - Use a nullable reference to `ParserInput`.
   * - Use a `Boolean` to represent whether a source location is real (true) or synthetic (false).
   * - Use `Short`s instead of `Int`s to represent column offsets (i.e. `beginCol` and `endCol`).
   *
-  * @param input        the nullable parser input.
   * @param source       the source input.
   * @param isReal       true if real location, false if synthetic location.
   * @param beginLine    the line number where the entity begins.
@@ -54,7 +49,7 @@ object SourceLocation {
   * @param endLine      the line number where the entity ends.
   * @param endCol       the column number where the entity ends.
   */
-case class SourceLocation(@Nullable private val input: ParserInput, source: Source, isReal: Boolean, beginLine: Int, beginCol: Short, endLine: Int, endCol: Short) {
+case class SourceLocation(source: Source, isReal: Boolean, beginLine: Int, beginCol: Short, endLine: Int, endCol: Short) {
 
   /**
     * Returns `true` if this source location spans a single line.
@@ -84,12 +79,12 @@ case class SourceLocation(@Nullable private val input: ParserInput, source: Sour
   /**
     * Returns the left-most [[SourcePosition]] of `this` [[SourceLocation]].
     */
-  def sp1: SourcePosition = SourcePosition(source, beginLine, beginCol, input)
+  def sp1: SourcePosition = SourcePosition(source, beginLine, beginCol)
 
   /**
     * Returns the left-most [[SourcePosition]] of `this` [[SourceLocation]].
     */
-  def sp2: SourcePosition = SourcePosition(source, endLine, endCol, input)
+  def sp2: SourcePosition = SourcePosition(source, endLine, endCol)
 
   /**
     * Returns the smallest (i.e. the first that appears in the source code) of `this` and `that`.
@@ -101,14 +96,9 @@ case class SourceLocation(@Nullable private val input: ParserInput, source: Sour
     *
     * The line does not have to refer to `this` source location.
     */
-  def lineAt(line: Int): String =
-    if (input == null) {
-      ""
-    } else {
-      input.getLine(line)
+  def lineAt(line: Int): String = source.getLine(line)
         .replaceAll("\n", "")
         .replaceAll("\r", "")
-    }
 
   /**
     * Returns a string representation of `this` source location with the line number.
