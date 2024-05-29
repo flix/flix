@@ -18,7 +18,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.language.ast.ReducedAst._
-import ca.uwaterloo.flix.language.ast.{MonoType, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{MonoType, ReducedAst, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.mangle
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -246,8 +246,7 @@ object JvmOps {
   }
 
   private def getNamespaceName(ns: List[String]): JvmName = {
-    val name = JvmName.mkClassName("Ns")
-    JvmName(ns, name)
+    JvmName(ns, "Export")
   }
 
   /**
@@ -258,7 +257,10 @@ object JvmOps {
     * find      =>  m_find
     * length    =>  m_length
     */
-  def getDefMethodNameInNamespaceClass(sym: Symbol.DefnSym): String = "m_" + mangle(sym.name)
+  def getDefMethodNameInNamespaceClass(defn: ReducedAst.Def): String = {
+    if (defn.ann.isExport) defn.sym.name
+    else "m_" + mangle(defn.sym.name)
+  }
 
   def getTagName(sym: Symbol.CaseSym): String = mangle(sym.name)
 

@@ -95,7 +95,13 @@ object Safety {
       Nil
     } else {
       val defn = root.defs(sym)
-      if (hasUnitParameter(defn) && isPureOrIO(defn)) {
+      if (defn.spec.ann.isExport) {
+        val pub = if (isPub(defn)) Nil else List(SafetyError.IllegalExportSignature(defn.sym.loc, "Exported functions must be `pub`."))
+        val name = if (validJavaName(defn)) Nil else List(SafetyError.IllegalExportSignature(defn.sym.loc, "Exported functions must have simple of letters and numbers."))
+        val types = checkExportableTypes(defn)
+        val effect = if (isPureOrIO(defn)) Nil else List(SafetyError.IllegalExportSignature(defn.sym.loc, "Exported functions must have no effect or `IO`."))
+        pub ++ name ++ types ++ effect
+      } else if (hasUnitParameter(defn) && isPureOrIO(defn)) {
         Nil
       } else {
         SafetyError.IllegalEntryPointSignature(defn.sym.loc) :: Nil
@@ -115,6 +121,86 @@ object Safety {
         // Case 2: Multiple parameters.
         false
     }
+  }
+
+  private def isPub(defn: Def): Boolean = {
+    defn.spec.mod.isPublic
+  }
+
+  private def checkExportableTypes(defn: Def): List[SafetyError] = {
+    if (defn.spec.tparams.nonEmpty) {
+      List(SafetyError.IllegalExportSignature(defn.sym.loc, "Exported functions cannot be polymorphic."))
+    } else {
+      val types = defn.spec.fparams.map(_.tpe) :+ defn.spec.retTpe
+      types.flatMap{
+        t => if (isExportType(t)) Nil else List(SafetyError.IllegalExportSignature(t.loc, s"Exported function can only use simple(?) types, not `$t`"))
+      }
+    }
+  }
+
+  private def isExportType(tpe: Type): Boolean = tpe.typeConstructor match {
+    case None => false
+    case Some(value) => value match {
+      case TypeConstructor.Void => false
+      case TypeConstructor.AnyType => false
+      case TypeConstructor.Unit => false
+      case TypeConstructor.Null => false
+      case TypeConstructor.Bool => true
+      case TypeConstructor.Char => true
+      case TypeConstructor.Float32 => true
+      case TypeConstructor.Float64 => true
+      case TypeConstructor.BigDecimal => false
+      case TypeConstructor.Int8 => true
+      case TypeConstructor.Int16 => true
+      case TypeConstructor.Int32 => true
+      case TypeConstructor.Int64 => true
+      case TypeConstructor.BigInt => true
+      case TypeConstructor.Str => false
+      case TypeConstructor.Regex => false
+      case TypeConstructor.Arrow(_) => false
+      case TypeConstructor.RecordRowEmpty => false
+      case TypeConstructor.RecordRowExtend(_) => false
+      case TypeConstructor.Record => false
+      case TypeConstructor.SchemaRowEmpty => false
+      case TypeConstructor.SchemaRowExtend(_) => false
+      case TypeConstructor.Schema => false
+      case TypeConstructor.Sender => false
+      case TypeConstructor.Receiver => false
+      case TypeConstructor.Lazy => false
+      case TypeConstructor.Enum(_, _) => false
+      case TypeConstructor.RestrictableEnum(_, _) => false
+      case TypeConstructor.Native(clazz) if clazz == classOf[Object] => true
+      case TypeConstructor.Native(_) => false
+      case TypeConstructor.MethodReturnType(_, _) => false
+      case TypeConstructor.StaticMethodReturnType(_, _, _) => false
+      case TypeConstructor.Array => false
+      case TypeConstructor.Vector => false
+      case TypeConstructor.Ref => false
+      case TypeConstructor.Tuple(_) => false
+      case TypeConstructor.Relation => false
+      case TypeConstructor.Lattice => false
+      case TypeConstructor.True => false
+      case TypeConstructor.False => false
+      case TypeConstructor.Not => false
+      case TypeConstructor.And => false
+      case TypeConstructor.Or => false
+      case TypeConstructor.Pure => false
+      case TypeConstructor.Univ => false
+      case TypeConstructor.Complement => false
+      case TypeConstructor.Union => false
+      case TypeConstructor.Intersection => false
+      case TypeConstructor.Effect(_) => false
+      case TypeConstructor.CaseComplement(_) => false
+      case TypeConstructor.CaseUnion(_) => false
+      case TypeConstructor.CaseIntersection(_) => false
+      case TypeConstructor.CaseSet(_, _) => false
+      case TypeConstructor.RegionToStar => false
+      case TypeConstructor.Error(_) => true
+    }
+  }
+
+  private def validJavaName(defn: Def): Boolean = {
+    defn.sym.name.matches("[a-z][a-zA-Z0-9]*")
   }
 
   /**

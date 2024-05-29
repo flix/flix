@@ -165,6 +165,29 @@ object SafetyError {
   }
 
   /**
+    * An error raised to indicate that an exported function has an illegal signature.
+    *
+    * @param loc the location of the defn.
+    * @param msg the specialized message
+    */
+  case class IllegalExportSignature(loc: SourceLocation, msg: String) extends SafetyError with Recoverable {
+    def summary: String = s"Illegal exported function signature"
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Illegal exported function signature.
+         |>> $msg
+         |
+         |${code(loc, "illegal signature.")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
    * An error raised to indicate that the Java class in a catch clause is not a Throwable.
    *
    * @param loc the location of the catch parameter.

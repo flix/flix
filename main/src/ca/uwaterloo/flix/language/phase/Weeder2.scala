@@ -584,6 +584,7 @@ object Weeder2 {
         case "@benchmark" | "@Benchmark" => Validation.success(Benchmark(loc))
         case "@Deprecated" => Validation.success(Deprecated(loc))
         case "@Experimental" => Validation.success(Experimental(loc))
+        case "@Export" => Validation.success(Export(loc))
         case "@Internal" => Validation.success(Internal(loc))
         case "@Parallel" => Validation.success(Parallel(loc))
         case "@ParallelWhenPure" => Validation.success(ParallelWhenPure(loc))

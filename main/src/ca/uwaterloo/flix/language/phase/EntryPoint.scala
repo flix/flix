@@ -87,7 +87,7 @@ object EntryPoint {
   private def getReachable(root: TypedAst.Root): Set[Symbol.DefnSym] = {
     val s = mutable.Set.empty[Symbol.DefnSym]
     for ((sym, defn) <- root.defs) {
-      if (defn.spec.ann.isBenchmark || defn.spec.ann.isTest) {
+      if (defn.spec.ann.isBenchmark || defn.spec.ann.isTest || defn.spec.ann.isExport) {
         s += sym
       }
     }
@@ -210,7 +210,7 @@ object EntryPoint {
 
     val spec = TypedAst.Spec(
       doc = Ast.Doc(Nil, SourceLocation.Unknown),
-      ann = Ast.Annotations.Empty,
+      ann = Ast.Annotations.Export(SourceLocation.Unknown),
       mod = Ast.Modifiers.Empty,
       tparams = Nil,
       fparams = List(TypedAst.FormalParam(argSym, Ast.Modifiers.Empty, Type.Unit, Ast.TypeSource.Ascribed, SourceLocation.Unknown)),
