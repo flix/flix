@@ -14,8 +14,8 @@ object SourcePosition {
   *
   * A [[SourcePosition]] must always be one-indexed.
   *
-  * @param line  the line number.
-  * @param col   the column number.
+  * @param line the line number. Must be one-indexed.
+  * @param col  the column number. Must be one-indexed.
   */
 case class SourcePosition(source: Source, line: Int, col: Short) {
 
