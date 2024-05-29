@@ -101,7 +101,7 @@ object MutationTester {
     val timeSec = end.toFloat / 1_000_000_000.0
     println(s"time to generate mutations: $timeSec")
     val lastRoot = insertDecAndCheckIntoRoot(root)
-    val (results, ttb, bbs, bugs) = runMutations(flix, testModule, lastRoot, sortMutants(mutations))
+    val (results, ttb, bbs, bugs) = runMutations(flix, testModule, lastRoot, mutations)
     MutationDataHandler.processData(results, productionModule)
     MutationDataHandler.writeTTBToFile(s"TTB: $productionModule: ${ttb}")
     MutationDataHandler.writeBBSToFile(s"BBS: $productionModule: ${bbs}: $bugs")
@@ -296,8 +296,11 @@ object MutationTester {
         val localAcc: (ReportAcc, Double, Long, Int, List[(MutatedDef, TestRes)], Long, SkipM) = (newRep, totalStartTime.toDouble, temp, 0, emptyList, 0.toLong, emptySkip)
         val (rep, _, _, _, mOperatorResults, timeToBug, survived) = mutatedDefs.foldLeft(localAcc)((acc, mut) => {
             val kit = TestKit(flix, root, testModule)
-            //println(s"testing ${mut._2.length} mutations in: ${mut._1}")
-            testMutantsAndUpdateProgress(acc, mut, kit, f)
+            val (_, _, _, _, _, _, survived) = acc
+            if (survived.length > 0)
+              acc
+            else
+              testMutantsAndUpdateProgress(acc, mut, kit, f)
         })
       val totalTime = reportResults(totalStartTime, amountOfMutants, rep.totalSurvivorCount, rep.totalUnknowns, rep.equivalent)
       println((timeToBug - totalStartTime).toDouble / 1_000_000_000.toDouble)
@@ -344,6 +347,7 @@ object MutationTester {
     def shouldSkip(mut: MutatedDef): Boolean = SkipM.contains(this, mut)
     def ::(mut: MutatedDef): SkipM = SkipM.skipPrepend(this, mut)
     def bugs: Int = SkipM.bugs(this)
+    def length: Int = SkipM.length(this)
   }
 
 
@@ -354,6 +358,13 @@ object MutationTester {
     case class LocOp(locs: List[SourceLocation]) extends SkipM
     case class LocRecOp(locsRecs: List[(SourceLocation, MutationType)]) extends SkipM
 
+    private  def length(skip: SkipM): Int = {
+      skip match {
+        case Default(survivors) => survivors.length
+        case LocOp(locs) => locs.length
+        case LocRecOp(locsRecs) => locsRecs.length
+      }
+    }
 
     private def contains(skip: SkipM, mut: MutatedDef): Boolean = {
       skip match {
@@ -458,7 +469,6 @@ object MutationTester {
     private def compileAndTestMutant(df: TypedAst.Def, mut: Symbol.DefnSym, testKit: TestKit): TestRes = {
         val defs = testKit.root.defs
         val n = defs + (mut -> df)
-        println(df)
         val newRoot = testKit.root.copy(defs = n)
         val cRes = testKit.flix.codeGen(newRoot).unsafeGet
         val testsFromTester = cRes.getTests.filter { case (s, _) => s.namespace.head.equals(testKit.testModule) }.toList

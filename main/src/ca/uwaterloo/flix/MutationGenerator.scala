@@ -673,17 +673,10 @@ object MutationGenerator {
   }
 
 
-  private def insertDAC(df: TypedAst.Def): TypedAst.Def = {
-    df.exp match {
-      case  o@Expr.LetRec(_, _, _, exp1, exp2, tpe, eff, loc) =>
-          val newExp = exp1 match {
-              case lambda@Expr.Lambda(_, exp, _, _) =>
-                Some(lambda.copy(exp = insertDACAndMutInExp(exp)))
-              case _ => None
-            }
-          df.copy(exp = o.copy(exp1 = newExp.get))
-    }
-  }
+
+
+
+
 
 }
 
