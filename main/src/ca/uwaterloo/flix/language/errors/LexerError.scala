@@ -111,6 +111,27 @@ object LexerError {
   }
 
   /**
+    * An error raised when a period has whitespace before it.
+    * This is problematic because we want to disallow tokens like: "Rectangle   .Shape".
+    *
+    * @param loc The location of the '.'.
+    */
+  case class FreeDot(loc: SourceLocation) extends LexerError with Recoverable {
+    override def summary: String = s"'.' has leading whitespace."
+
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> '.' has leading whitespace.
+         |
+         |${code(loc, "here")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
+  }
+  /**
    * An error raised when a number ends on an underscore.
    *
    * @param loc The location of the number literal.

@@ -836,7 +836,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
       """
         |trait A[a] {
         |    pub def f(x: Bool, y: a): Bool
-        |    law l: forall (x: Int32, y: Bool) . A.f(x, y)
+        |    law l: forall (x: Int32, y: Bool) A.f(x, y)
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)

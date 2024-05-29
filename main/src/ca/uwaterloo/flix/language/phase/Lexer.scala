@@ -312,7 +312,19 @@ object Lexer {
       case ',' => TokenKind.Comma
       case '\\' => TokenKind.Backslash
       case _ if isMatch(".{") => TokenKind.DotCurlyL
-      case '.' => TokenKind.Dot
+      case '.' =>
+        // Check for whitespace around dot.
+        if (previousPrevious().exists(_.isWhitespace)) {
+          // If the dot is prefixed with whitespace we treat that as an error.
+          TokenKind.Err(LexerError.FreeDot(sourceLocationAtStart()))
+        } else if (peek().isWhitespace) {
+          // A dot with trailing whitespace is it's own TokenKind.
+          // That way we can use that as a terminator for fixpoint constraints,
+          // without clashing with qualified names. IE. This is not allowed "Shape.    Rectangle"
+          TokenKind.DotWhiteSpace
+        } else {
+          TokenKind.Dot
+        }
       case '$' if peek().isUpper => acceptBuiltIn()
       case '\"' => acceptString()
       case '\'' => acceptChar()
@@ -321,8 +333,7 @@ object Lexer {
       case _ if isMatch("#{") => TokenKind.HashCurlyL
       case _ if isMatch("#(") => TokenKind.HashParenL
       case '#' => TokenKind.Hash
-      case _ if isMatch("/// ") => acceptDocComment()
-      case _ if isMatch("//") => acceptLineComment()
+      case _ if isMatch("//") => acceptLineOrDocComment()
       case _ if isMatch("/*") => acceptBlockComment()
       case '/' => TokenKind.Slash
       case '@' if peek().isLetter => acceptAnnotation()
@@ -1021,31 +1032,24 @@ object Lexer {
   }
 
   /**
-   * Moves current position past a line-comment
+   * Moves current position past a line- or doc-comment
    */
-  private def acceptLineComment()(implicit s: State): TokenKind = {
+  private def acceptLineOrDocComment()(implicit s: State): TokenKind = {
+    // Check for doc-comment. A doc-comments leads with exactly 3 slashes.
+    // For instance '//// this is not a doc-comment'.
+    val kind = (peek(), peekPeek()) match {
+      case ('/', Some(c)) if c != '/' => TokenKind.CommentDoc
+      case _ => TokenKind.CommentLine
+    }
+    // Advance until a newline is found.
     while (!eof()) {
       if (peek() == '\n') {
-        return TokenKind.CommentLine
+        return kind
       } else {
         advance()
       }
     }
-    TokenKind.CommentLine
-  }
-
-  /**
-   * Moves current position past a doc-comment
-   */
-  private def acceptDocComment()(implicit s: State): TokenKind = {
-    while (!eof()) {
-      if (peek() == '\n') {
-        return TokenKind.CommentDoc
-      } else {
-        advance()
-      }
-    }
-    TokenKind.CommentDoc
+    kind
   }
 
   /**
