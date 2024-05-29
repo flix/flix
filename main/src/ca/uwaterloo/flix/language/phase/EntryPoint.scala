@@ -210,7 +210,7 @@ object EntryPoint {
 
     val spec = TypedAst.Spec(
       doc = Ast.Doc(Nil, SourceLocation.Unknown),
-      ann = Ast.Annotations.Export(SourceLocation.Unknown),
+      ann = Ast.Annotations.Empty,
       mod = Ast.Modifiers.Empty,
       tparams = Nil,
       fparams = List(TypedAst.FormalParam(argSym, Ast.Modifiers.Empty, Type.Unit, Ast.TypeSource.Ascribed, SourceLocation.Unknown)),

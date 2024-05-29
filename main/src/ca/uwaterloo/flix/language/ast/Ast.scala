@@ -326,11 +326,6 @@ object Ast {
       * The empty sequence of annotations.
       */
     val Empty: Annotations = Annotations(Nil)
-
-    /**
-      * The export singleton sequence of annotations.
-      */
-    def Export(loc: SourceLocation): Annotations = Annotations(List(Annotation.Export(loc)))
   }
 
   /**
