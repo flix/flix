@@ -25,20 +25,14 @@ package ca.uwaterloo.flix.language.ast
   *
   * We do so because [[Token]]s are very common objects.
   *
-  * Specifically, we:
-  *
-  * - Use `Short`s instead of `Int`s to represent column offsets (i.e. `beginCol` and `endCol`).
-  *
-  * @param kind      The kind of token this instance represents.
-  * @param src       A pointer to the source that this lexeme stems from.
-  * @param start     The absolute character offset into `src` of the beginning of the lexeme.
-  * @param end       The absolute character offset into `src` of the end of the lexeme.
-  * @param beginLine The line that the lexeme __starts__ on.
-  * @param beginCol  The column that the lexeme __starts__ on.
-  * @param endLine   The line that the lexeme __ends__ on.
-  * @param endCol    The column that the lexeme __ends__ on.
+  * @param kind  The kind of token this instance represents.
+  * @param src   A pointer to the source that this lexeme stems from.
+  * @param start The absolute character offset into `src` of the beginning of the lexeme. Indexed from zero.
+  * @param end   The absolute character offset into `src` of the end of the lexeme. Indexed from zero.
+  * @param sp1   The source position that the lexeme __starts__ on. Indexed starting from one.
+  * @param sp2   The source position that the lexeme __ends__ on. Indexed starting from one.
   */
-case class Token(kind: TokenKind, src: Ast.Source, start: Int, end: Int, beginLine: Int, beginCol: Short, endLine: Int, endCol: Short) extends SyntaxTree.Child {
+case class Token(kind: TokenKind, src: Ast.Source, start: Int, end: Int, sp1: SourcePosition, sp2: SourcePosition) extends SyntaxTree.Child {
   /**
     * Computes the lexeme that the token refers to by slicing it from `src`.
     *
@@ -47,28 +41,15 @@ case class Token(kind: TokenKind, src: Ast.Source, start: Int, end: Int, beginLi
   def text: String = src.data.slice(start, end).mkString("")
 
   /**
-    * Returns a string representation of this token. Should only be used for debugging.
-    */
-  override def toString: String = s"Token($kind, $text, $beginLine, $beginCol, $endLine, $endCol)"
-
-  /**
-    * Makes a [[SourcePosition]] pointing at the start of this token.
-    * NB: Tokens are zero-indexed while SourcePositions are one-indexed
-    */
-  def mkSourcePosition: SourcePosition = SourcePosition(src, beginLine + 1, (beginCol + 1).toShort)
-
-  /**
-    * Makes a [[SourcePosition]] pointing at the _end_ of this token.
-    * NB: Tokens are zero-indexed while SourcePositions are one-indexed
-    */
-  def mkSourcePositionEnd: SourcePosition = SourcePosition(src, endLine + 1, (endCol + 1).toShort)
-
-  /**
     * Makes a [[SourceLocation]] spanning this token.
     * NB: Tokens are zero-indexed while SourceLocations are one-indexed
     */
   def mkSourceLocation(isReal: Boolean = true): SourceLocation = {
-    SourceLocation(src, isReal, beginLine + 1, (beginCol + 1).toShort, endLine + 1, (endCol + 1).toShort)
+    SourceLocation(src, isReal, sp1.line, sp1.col, sp2.line, sp2.col)
   }
-}
 
+  /**
+    * Returns a string representation of this token. Must only be used for debugging.
+    */
+  override def toString: String = s"Token($kind, $text, ${sp1.line}, ${sp1.col}, ${sp2.line}, ${sp2.col})"
+}
