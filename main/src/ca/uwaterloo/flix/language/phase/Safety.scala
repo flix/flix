@@ -78,14 +78,17 @@ object Safety {
     * Performs safety and well-formedness checks on the given definition `def0`.
     */
   private def visitDef(def0: Def)(implicit flix: Flix): List[SafetyError] = {
+    val exportErrs = if (isExported(def0)) visitExportDef(def0) else Nil
     val renv = def0.spec.tparams.map(_.sym).foldLeft(RigidityEnv.empty) {
       case (acc, e) => acc.markRigid(e)
     }
-    visitExp(def0.exp, renv)
+    val expErrs = visitExp(def0.exp, renv)
+    exportErrs ++ expErrs
   }
 
   /**
-    * Checks that every every reachable function entry point has a valid signature.
+    * Checks that every every reachable function entry point has a valid
+    * signature and that exported functions are valid.
     *
     * A signature is valid if there is a single argument of type `Unit` and if it is pure or has the IO effect.
     */
@@ -95,18 +98,38 @@ object Safety {
       Nil
     } else {
       val defn = root.defs(sym)
-      if (defn.spec.ann.isExport) {
-        val pub = if (isPub(defn)) Nil else List(SafetyError.IllegalExportSignature(defn.sym.loc, "Exported functions must be `pub`."))
-        val name = if (validJavaName(defn)) Nil else List(SafetyError.IllegalExportSignature(defn.sym.loc, "Exported functions must have simple of letters and numbers."))
-        val types = checkExportableTypes(defn)
-        val effect = if (isPureOrIO(defn)) Nil else List(SafetyError.IllegalExportSignature(defn.sym.loc, "Exported functions must have no effect or `IO`."))
-        pub ++ name ++ types ++ effect
-      } else if (hasUnitParameter(defn) && isPureOrIO(defn)) {
+      // Note that exported defs have different rules
+      if (!isExported(defn) && hasUnitParameter(defn) && isPureOrIO(defn)) {
         Nil
       } else {
         SafetyError.IllegalEntryPointSignature(defn.sym.loc) :: Nil
       }
     }
+  }
+
+  /**
+    * Returns `true` if the given `defn` is annotated to be exported.
+    */
+  private def isExported(defn: Def): Boolean = {
+    defn.spec.ann.isExport
+  }
+
+  /**
+    * Checks that the function is able to be exported.
+    *
+    * The function should be public, use a Java-valid name, be non-polymoprhic,
+    * use exportable types, and use non-algebraic effects
+    */
+  private def visitExportDef(defn: Def): List[SafetyError] = {
+    val pub = if (isPub(defn)) Nil else List(SafetyError.IllegalExportSignature(defn.sym.loc, "Exported functions must be `pub`."))
+    val name = if (validJavaName(defn)) Nil else List(SafetyError.IllegalExportSignature(defn.sym.loc, "Exported functions must have simple of letters and numbers."))
+    val types = if (isPolymorphic(defn)) {
+      List(SafetyError.IllegalExportSignature(defn.sym.loc, "Exported functions cannot be polymorphic."))
+    } else {
+      checkExportableTypes(defn)
+    }
+    val effect = if (isPureOrIO(defn)) Nil else List(SafetyError.IllegalExportSignature(defn.sym.loc, "Exported functions must have no effect or `IO`."))
+    pub ++ name ++ types ++ effect
   }
 
   /**
@@ -123,23 +146,34 @@ object Safety {
     }
   }
 
+  /**
+    * Returns `true` if the given `defn` has the public modifier.
+    */
   private def isPub(defn: Def): Boolean = {
     defn.spec.mod.isPublic
   }
 
+  /**
+    * Returns `true` if the given `defn` has a polymorphic type.
+    */
+  private def isPolymorphic(defn: Def): Boolean = {
+    defn.spec.tparams.nonEmpty
+  }
+
+  /**
+    * Returns `Nil` if the given `defn` has exportable types according to
+    * [[isExportType]], otherwise a list of the found errors is returned.
+    */
   private def checkExportableTypes(defn: Def): List[SafetyError] = {
-    if (defn.spec.tparams.nonEmpty) {
-      List(SafetyError.IllegalExportSignature(defn.sym.loc, "Exported functions cannot be polymorphic."))
-    } else {
-      val types = defn.spec.fparams.map(_.tpe) :+ defn.spec.retTpe
-      types.flatMap{
-        t => if (isExportType(t)) Nil else List(SafetyError.IllegalExportSignature(t.loc, s"Exported function can only use simple(?) types, not `$t`"))
-      }
+    val types = defn.spec.fparams.map(_.tpe) :+ defn.spec.retTpe
+    types.flatMap{ t =>
+      if (isExportType(t)) Nil
+      else List(SafetyError.IllegalExportSignature(t.loc, s"Exported function can only use simple types, not `$t`"))
     }
   }
 
   /**
-    * Returns true if the given type is supported in exported signatures.
+    * Returns `true` if the given `tpe` is supported in exported signatures.
     *
     * Currently this is only types that are immune to erasure, i.e. the
     * primitive java types and Object.
@@ -169,7 +203,7 @@ object Safety {
   }
 
   /**
-    * Returns true if the def has a name that is directly valid in Java.
+    * Returns `true` if given `defn` has a name that is directly valid in Java.
     */
   private def validJavaName(defn: Def): Boolean = {
     defn.sym.name.matches("[a-z][a-zA-Z0-9]*")
