@@ -331,7 +331,6 @@ object PredDeps {
 
     case Expr.InvokeMethod2(_, _, _, _, _, loc) =>
       LabelledPrecedenceGraph.empty
-      //throw InternalCompilerException(s"Unexpected method invocation.", loc)
 
   }
 
