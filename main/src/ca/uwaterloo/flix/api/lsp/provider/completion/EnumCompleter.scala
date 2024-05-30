@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.language.ast.{Symbol, TypedAst}
 
 object EnumCompleter extends Completer {
 
-  def getCompletions(ctx: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[EnumCompletion] = {
+  def getCompletions(ctx: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[EnumCompletion] = {
     val enumsInModule = getEnumSymsInModule(ctx)
     getEnumCompletions(enumsInModule, ctx)
   }

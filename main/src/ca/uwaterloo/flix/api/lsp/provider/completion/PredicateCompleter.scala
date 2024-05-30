@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.fmt.FormatType
 
 object PredicateCompleter extends Completer {
 
-  def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[PredicateCompletion] = {
+  def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[PredicateCompletion] = {
     //
     // Find all predicates together with their type and source location.
     //
