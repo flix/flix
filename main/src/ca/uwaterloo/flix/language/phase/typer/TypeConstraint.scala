@@ -69,8 +69,15 @@ object TypeConstraint {
     def loc: SourceLocation = prov.loc
   }
 
-  case class EqJvmConstructor(tvar: Type.Var, clazz: Class[_], tpes: List[Type]) // Where tvar must have kind JvmConstructorOrMethod
-  case class EqJvmMethod(tvar: Type.Var, tpe: Type, method: Name.Ident, tpes: List[Type]) // Where tvar must have kind JvmConstructorOrMethod
+  /**
+   * A constraint indicating the equivalence between a Java constructor's type and a class with its arguments.
+   */
+  case class EqJvmConstructor(mvar: Type.Var, clazz: Class[_], tpes: List[Type]) // Where mvar must have kind JvmConstructorOrMethod -> Type
+
+  /**
+   * A constraint indicating the equivalence between a Java method's type and a method signature, i.e., a type, method name and list of arguments.
+   */
+  case class EqJvmMethod(mvar: Type.Var, tpe: Type, method: Name.Ident, tpes: List[Type]) // Where mvar must have kind JvmConstructorOrMethod -> Type
 
   /**
     * A constraint indicating that the given type is a member of the given trait.
