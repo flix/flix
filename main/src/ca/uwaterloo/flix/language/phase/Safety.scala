@@ -138,64 +138,33 @@ object Safety {
     }
   }
 
+  /**
+    * Returns true if the given type is supported in exported signatures.
+    *
+    * Currently this is only types that are immune to erasure, i.e. the
+    * primitive java types and Object.
+    *
+    * Note that signatures should be exportable as-is, this means that even
+    * though the signature contains `MyAlias[Bool]` where
+    * `type alias MyAlias[t] = t`, it uses flix-specific type information which
+    * is not allowed.
+    */
   private def isExportType(tpe: Type): Boolean = tpe.typeConstructor match {
     case None => false
     case Some(value) => value match {
-      case TypeConstructor.Void => false
-      case TypeConstructor.AnyType => false
-      case TypeConstructor.Unit => false
-      case TypeConstructor.Null => false
       case TypeConstructor.Bool => true
       case TypeConstructor.Char => true
       case TypeConstructor.Float32 => true
       case TypeConstructor.Float64 => true
-      case TypeConstructor.BigDecimal => false
       case TypeConstructor.Int8 => true
       case TypeConstructor.Int16 => true
       case TypeConstructor.Int32 => true
       case TypeConstructor.Int64 => true
       case TypeConstructor.BigInt => true
-      case TypeConstructor.Str => false
-      case TypeConstructor.Regex => false
-      case TypeConstructor.Arrow(_) => false
-      case TypeConstructor.RecordRowEmpty => false
-      case TypeConstructor.RecordRowExtend(_) => false
-      case TypeConstructor.Record => false
-      case TypeConstructor.SchemaRowEmpty => false
-      case TypeConstructor.SchemaRowExtend(_) => false
-      case TypeConstructor.Schema => false
-      case TypeConstructor.Sender => false
-      case TypeConstructor.Receiver => false
-      case TypeConstructor.Lazy => false
-      case TypeConstructor.Enum(_, _) => false
-      case TypeConstructor.RestrictableEnum(_, _) => false
       case TypeConstructor.Native(clazz) if clazz == classOf[Object] => true
-      case TypeConstructor.Native(_) => false
-      case TypeConstructor.MethodReturnType(_, _) => false
-      case TypeConstructor.StaticMethodReturnType(_, _, _) => false
-      case TypeConstructor.Array => false
-      case TypeConstructor.Vector => false
-      case TypeConstructor.Ref => false
-      case TypeConstructor.Tuple(_) => false
-      case TypeConstructor.Relation => false
-      case TypeConstructor.Lattice => false
-      case TypeConstructor.True => false
-      case TypeConstructor.False => false
-      case TypeConstructor.Not => false
-      case TypeConstructor.And => false
-      case TypeConstructor.Or => false
-      case TypeConstructor.Pure => false
-      case TypeConstructor.Univ => false
-      case TypeConstructor.Complement => false
-      case TypeConstructor.Union => false
-      case TypeConstructor.Intersection => false
-      case TypeConstructor.Effect(_) => false
-      case TypeConstructor.CaseComplement(_) => false
-      case TypeConstructor.CaseUnion(_) => false
-      case TypeConstructor.CaseIntersection(_) => false
-      case TypeConstructor.CaseSet(_, _) => false
-      case TypeConstructor.RegionToStar => false
+      // Error is accepted to avoid cascading errors
       case TypeConstructor.Error(_) => true
+      case _ => false
     }
   }
 
