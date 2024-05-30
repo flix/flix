@@ -273,7 +273,9 @@ object ConstraintSolver {
         case ResolutionResult(subst, constrs, p) => ResolutionResult(subst @@ subst0, constrs, progress = p)
       }
     case TypeConstraint.EqJvmMethod(mvar, tpe, method, tpes, prov) =>
-      resolveEquality(mvar, tpe, subst0(prov), renv, constr0.loc)
+      resolveEquality(mvar, tpe, subst0(prov), renv, constr0.loc).map {
+        case ResolutionResult(subst, constrs, p) => ResolutionResult(subst @@ subst0, constrs, progress = p)
+      }
     case TypeConstraint.EqJvmConstructor(mvar, clazz, tpes, prov) =>
       throw InternalCompilerException(s"Unexpected java constructor invocation.", prov.loc)
     case TypeConstraint.Trait(sym, tpe, loc) =>
