@@ -1671,7 +1671,7 @@ object Weeder2 {
       mapN(objName, fragments) {
         case (objName, fragments) =>
           val nameExpr = Expr.Ambiguous(Name.mkQName(objName), objName.loc)
-          // TODO: InvokeMethod2 source location is likely off
+          // TODO INTEROP InvokeMethod2 source location is likely off
           fragments.foldLeft[Expr](nameExpr) {
             case (acc, (methodName, arguments)) => Expr.InvokeMethod2(acc, methodName, arguments, tree.loc)
           }

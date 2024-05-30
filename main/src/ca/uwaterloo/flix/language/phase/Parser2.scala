@@ -2393,7 +2393,7 @@ object Parser2 {
       assert(at(TokenKind.NameLowerCase) || at(TokenKind.NameUpperCase))
       val mark = open()
       name(Set(TokenKind.NameUpperCase, TokenKind.NameLowerCase), context = SyntacticContext.Expr.OtherExpr)
-      // TODO: emit an error if we are not at an hash here
+      // TODO INTEROP emit an error if we are not at an hash here
       while (eat(TokenKind.Hash)) {
         val fragmentMark = open()
         name(Set(TokenKind.NameUpperCase, TokenKind.NameLowerCase), context = SyntacticContext.Expr.OtherExpr)
