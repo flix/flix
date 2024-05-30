@@ -755,9 +755,9 @@ object FastSetUnification {
     case x :: xs =>
       val t0 = BoolSubstitution.singleton(x, Term.Empty)(t)
       val t1 = BoolSubstitution.singleton(x, Term.Univ)(t)
-      val se = successiveVariableElimination(fixpointPropagation(Term.mkInter(t0, t1), 3), xs)
+      val se = successiveVariableElimination(repeatedPropagation(Term.mkInter(t0, t1), 3), xs)
 
-      val f1 = fixpointPropagation(Term.mkUnion(se(t0), Term.mkMinus(Term.Var(x), se(t1))), 3)
+      val f1 = repeatedPropagation(Term.mkUnion(se(t0), Term.mkMinus(Term.Var(x), se(t1))), 3)
       val st = BoolSubstitution.singleton(x, f1)
       st ++ se
   }
@@ -909,8 +909,8 @@ object FastSetUnification {
   }
 
   @tailrec
-  private def fixpointPropagation(t: Term, k: Int): Term = {
-    if (k <= 0) t else fixpointPropagation(propagation(t), k - 1)
+  private def repeatedPropagation(t: Term, k: Int): Term = {
+    if (k <= 0) t else repeatedPropagation(propagation(t), k - 1)
   }
 
   /**
