@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.ModCompletion
 
 object ModuleCompleter extends Completer {
 
-  def getCompletions(ctx: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[ModCompletion] = {
+  def getCompletions(ctx: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[ModCompletion] = {
 
     val nestedModules = CompletionUtils.getNestedModules(ctx.word)
     nestedModules.map(mod => Completion.ModCompletion(mod))
