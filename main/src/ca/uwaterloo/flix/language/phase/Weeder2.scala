@@ -784,6 +784,7 @@ object Weeder2 {
         case TreeKind.Expr.Without => visitWithoutExpr(tree)
         case TreeKind.Expr.Try => visitTryExpr(tree)
         case TreeKind.Expr.Do => visitDoExpr(tree)
+        case TreeKind.Expr.InvokeMethod2 => visitInvokeMethod2Expr(tree)
         case TreeKind.Expr.NewObject => visitNewObjectExpr(tree)
         case TreeKind.Expr.Static => visitStaticExpr(tree)
         case TreeKind.Expr.Select => visitSelectExpr(tree)
@@ -1659,6 +1660,30 @@ object Weeder2 {
       expect(tree, TreeKind.Expr.Do)
       mapN(pickQName(tree), pickArguments(tree)) {
         (op, args) => Expr.Do(op, args, tree.loc)
+      }
+    }
+
+    private def visitInvokeMethod2Expr(tree: Tree): Validation[Expr, CompilationMessage] = {
+      expect(tree, TreeKind.Expr.InvokeMethod2)
+      val fragmentsTrees = pickAll(TreeKind.Expr.InvokeMethod2Fragment, tree)
+      val fragments = traverse(fragmentsTrees)(visitInvokeMethod2Fragment)
+      val objName = pickNameIdent(tree)
+      mapN(objName, fragments) {
+        case (objName, fragments) =>
+          val nameExpr = Expr.Ambiguous(Name.mkQName(objName), objName.loc)
+          // TODO: InvokeMethod2 source location is likely off
+          fragments.foldLeft[Expr](nameExpr) {
+            case (acc, (methodName, arguments)) => Expr.InvokeMethod2(acc, methodName, arguments, tree.loc)
+          }
+      }
+    }
+
+    private def visitInvokeMethod2Fragment(tree: Tree): Validation[(Name.Ident, List[Expr]), CompilationMessage] = {
+      expect(tree, TreeKind.Expr.InvokeMethod2Fragment)
+      val methodName = pickNameIdent(tree)
+      val arguments = pickArguments(tree)
+      mapN(methodName, arguments) {
+        (methodName, arguments) => (methodName, arguments)
       }
     }
 

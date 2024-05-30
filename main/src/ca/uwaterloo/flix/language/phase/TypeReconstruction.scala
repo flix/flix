@@ -419,7 +419,7 @@ object TypeReconstruction {
 
     case KindedAst.Expr.InvokeMethod2(exp, name, exps, tvar, evar, loc) =>
       val e = visitExp(exp)
-      val es = exps.map(visitExp(_))
+      val es = exps.map(visitExp)
       TypedAst.Expr.InvokeMethod2(e, name, es, subst(tvar), subst(evar), loc)
 
     case KindedAst.Expr.InvokeConstructor(constructor, args, loc) =>
