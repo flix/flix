@@ -329,7 +329,7 @@ object PredDeps {
     case Expr.Error(_, _, _) =>
       LabelledPrecedenceGraph.empty
 
-    case Expr.InvokeMethod2(_, _, _, _, _, loc) =>
+    case Expr.InvokeMethod2(_, _, _, _, _, _, _) =>
       LabelledPrecedenceGraph.empty
 
   }

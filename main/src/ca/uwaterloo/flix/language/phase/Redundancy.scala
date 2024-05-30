@@ -652,7 +652,7 @@ object Redundancy {
       sctx.effSyms.put(opUse.sym.eff, ())
       visitExps(exps, env0, rc)
 
-    case Expr.InvokeMethod2(exp, _, exps, _, _, _) =>
+    case Expr.InvokeMethod2(exp, _, exps, _, _, _, _) =>
       val us1 = visitExp(exp, env0, rc)
       val us2 = visitExps(exps, env0, rc)
       us1 ++ us2

@@ -233,7 +233,7 @@ object CodeHinter {
     case Expr.Do(_, exps, _, _, _) =>
       exps.flatMap(visitExp)
 
-    case Expr.InvokeMethod2(exp, _, exps, _, _, loc) =>
+    case Expr.InvokeMethod2(exp, _, exps, _, _, _, loc) =>
       val hints0 = (exp, exps) match {
         case (Expr.Def(sym, _, _), lambda :: _) =>
           checkEffect(sym, lambda.tpe, loc)

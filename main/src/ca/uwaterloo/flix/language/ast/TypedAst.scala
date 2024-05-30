@@ -214,7 +214,7 @@ object TypedAst {
 
     case class Do(op: Ast.OpSymUse, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class InvokeMethod2(exp: Expr, name: Name.Ident, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class InvokeMethod2(exp: Expr, name: Name.Ident, exps: List[Expr], methodTpe: Type, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class InvokeConstructor(constructor: Constructor[_], exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 

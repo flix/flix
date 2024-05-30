@@ -166,7 +166,7 @@ object KindedAst {
 
     case class Do(op: Ast.OpSymUse, exps: List[Expr], tvar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class InvokeMethod2(exp: Expr, name: Name.Ident, exps: List[Expr], tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
+    case class InvokeMethod2(exp: Expr, name: Name.Ident, exps: List[Expr], mvar: Type.Var, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
     case class InvokeConstructor(constructor: Constructor[_], exps: List[Expr], loc: SourceLocation) extends Expr
 

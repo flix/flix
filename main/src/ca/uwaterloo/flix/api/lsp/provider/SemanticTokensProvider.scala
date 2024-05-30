@@ -476,7 +476,7 @@ object SemanticTokensProvider {
       val t = SemanticToken(SemanticTokenType.Function, Nil, op.loc)
       Iterator(t) ++ visitExps(exps)
 
-    case Expr.InvokeMethod2(exp, _, exps, _, _, _) =>
+    case Expr.InvokeMethod2(exp, _, exps, _, _, _, _) =>
       exps.foldLeft(visitExp(exp)) {
         case (acc, exp) => acc ++ visitExp(exp)
       }

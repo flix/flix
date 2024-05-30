@@ -1,6 +1,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.Ast.{EliminatedBy, IntroducedBy}
+import ca.uwaterloo.flix.language.ast.Kind.JvmConstructorOrMethod
 import ca.uwaterloo.flix.language.phase.{Kinder, Lowering, Monomorpher}
 
 import scala.collection.immutable.SortedSet
@@ -243,6 +244,20 @@ object TypeConstructor {
   }
 
   /**
+   * A type constructor that represents the type of a Java constructor.
+   * */
+  case class JvmConstructor(methodName: String, arity: Int) {
+    def kind: Kind = Kind.Star
+  }
+
+  /**
+   * A type constructor that represents the type of a Java method.
+   */
+  case class JvmMethod(methodName: String, arity: Int) {
+    def kind: Kind = Kind.Star
+  }
+
+  /**
    * A type constructor that represents the _return type_ of a Java method.
    *
    * A method return type can be resolved when the receiver object and argument types are known.
@@ -255,8 +270,8 @@ object TypeConstructor {
    *
    * The type constructor requires at least one type argument: the type of the receiver object.
    */
-  case class MethodReturnType(name: String, arity: Int) extends TypeConstructor {
-    def kind: Kind = Kind.mkArrow(arity + 1)
+  case class MethodReturnType(methodName: String, arity: Int) extends TypeConstructor {
+    def kind: Kind = Kind.mkArrow(List(Kind.JvmConstructorOrMethod, Kind.Star))
   }
 
   /**

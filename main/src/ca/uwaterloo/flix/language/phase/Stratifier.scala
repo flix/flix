@@ -350,9 +350,9 @@ object Stratifier {
         case es => Expr.Do(sym, es, tpe, eff, loc)
       }
 
-    case Expr.InvokeMethod2(exp, name, exps, tpe, eff, loc) =>
+    case Expr.InvokeMethod2(exp, name, exps, mtpe, tpe, eff, loc) =>
       mapN(visitExp(exp), traverse(exps)(visitExp)) {
-        case (e, es) => Expr.InvokeMethod2(e, name, es, tpe, eff, loc)
+        case (e, es) => Expr.InvokeMethod2(e, name, es, mtpe, tpe, eff, loc)
       }
 
     case Expr.InvokeConstructor(constructor, args, tpe, eff, loc) =>

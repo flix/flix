@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.phase.typer
 
-import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Kind, Name, SourceLocation, Symbol, Type}
 
 
 /**
@@ -68,6 +68,9 @@ object TypeConstraint {
   case class Equality(tpe1: Type, tpe2: Type, prov: Provenance) extends TypeConstraint {
     def loc: SourceLocation = prov.loc
   }
+
+  case class EqJvmConstructor(tvar: Type.Var, clazz: Class[_], tpes: List[Type]) // Where tvar must have kind JvmConstructorOrMethod
+  case class EqJvmMethod(tvar: Type.Var, tpe: Type, method: Name.Ident, tpes: List[Type]) // Where tvar must have kind JvmConstructorOrMethod
 
   /**
     * A constraint indicating that the given type is a member of the given trait.

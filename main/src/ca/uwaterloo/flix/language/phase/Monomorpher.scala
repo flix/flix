@@ -114,6 +114,7 @@ object Monomorpher {
       case Kind.RecordRow => Type.RecordRowEmpty
       case Kind.SchemaRow => Type.SchemaRowEmpty
       case Kind.Predicate => Type.mkAnyType(tpe0.loc)
+      case Kind.JvmConstructorOrMethod => Type.mkAnyType(tpe0.loc) // to check
       case Kind.CaseSet(sym) => Type.Cst(TypeConstructor.CaseSet(SortedSet.empty, sym), tpe0.loc)
       case Kind.Arrow(_, _) => Type.mkAnyType(tpe0.loc)
     }
