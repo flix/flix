@@ -168,6 +168,9 @@ object Safety {
     }
   }
 
+  /**
+    * Returns true if the def has a name that is directly valid in Java.
+    */
   private def validJavaName(defn: Def): Boolean = {
     defn.sym.name.matches("[a-z][a-zA-Z0-9]*")
   }
