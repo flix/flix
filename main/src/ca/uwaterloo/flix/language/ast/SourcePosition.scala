@@ -12,15 +12,12 @@ object SourcePosition {
 /**
   * A class that represent a physical source position inside a source input.
   *
-  * @param line  the line number.
-  * @param col   the column number.
+  * A [[SourcePosition]] must always be one-indexed.
+  *
+  * @param line the line number. Must be one-indexed.
+  * @param col  the column number. Must be one-indexed.
   */
 case class SourcePosition(source: Source, line: Int, col: Short) {
-
-  /**
-    * Returns the hashCode of `this` source position.
-    */
-  override def hashCode(): Int = source.hashCode() + line + col
 
   /**
     * Returns `true` if `this` and `o` represent the same source position.
@@ -32,4 +29,10 @@ case class SourcePosition(source: Source, line: Int, col: Short) {
         this.col == that.col
     case _ => false
   }
+
+  /**
+    * Returns the hashCode of `this` source position.
+    */
+  override def hashCode(): Int = source.hashCode() + line + col
+
 }
