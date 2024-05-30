@@ -110,7 +110,7 @@ object TypeReduction {
     tpe.typeConstructor match {
       case Some(TypeConstructor.MethodReturnType(m, n)) =>
         val targs = tpe.typeArguments
-        // TODO: add base case
+        // TODO INTEROP add base case
         resolveMethodReturnType(targs.head, m, targs.tail, loc) match {
           case ResolutionResult.Resolved(t) => Result.Ok((t, true))
           case ResolutionResult.MethodNotFound() => Result.Err(TypeError.MethodNotFound(m, tpe, renv0, loc))
