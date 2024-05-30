@@ -52,6 +52,7 @@ sealed trait TokenKind {
       case TokenKind.CurlyR => "'}'"
       case TokenKind.Dollar => "'$'"
       case TokenKind.Dot => "'.'"
+      case TokenKind.DotWhiteSpace => "'. '"
       case TokenKind.DotCurlyL => "'.{'"
       case TokenKind.Equal => "'='"
       case TokenKind.EqualEqual => "'=='"
@@ -322,6 +323,16 @@ sealed trait TokenKind {
          | TokenKind.KeywordType
          | TokenKind.KeywordEff
          | TokenKind.KeywordRestrictable => true
+    case _ => false
+  })
+
+  /**
+    * Checks if this token is one of the [[TokenKind]]s that can validly appear after a doc-comment.
+    * Doc-comments may only annotate declarations and enum-cases.
+    */
+  def isDocumentable: Boolean = this.isFirstDecl || (this match {
+    case TokenKind.KeywordLaw => true
+    case TokenKind.KeywordCase => true
     case _ => false
   })
 
@@ -637,6 +648,8 @@ object TokenKind {
   case object Dollar extends TokenKind
 
   case object Dot extends TokenKind
+
+  case object DotWhiteSpace extends TokenKind
 
   case object DotCurlyL extends TokenKind
 

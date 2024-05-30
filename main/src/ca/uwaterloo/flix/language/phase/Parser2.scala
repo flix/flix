@@ -25,7 +25,6 @@ import ca.uwaterloo.flix.language.errors.{ParseError, WeederError}
 import ca.uwaterloo.flix.language.errors.ParseError._
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
-import org.parboiled2.ParserInput
 
 import scala.annotation.tailrec
 import scala.collection.mutable.ArrayBuffer
@@ -94,11 +93,6 @@ object Parser2 {
       * An alternative could be to collect errors as part of [[buildTree]] and return them in a list there.
       */
     val errors: ArrayBuffer[CompilationMessage] = ArrayBuffer.empty
-    /*
-     * This is necessary to display source code in error messages.
-     * But since it comes from parboiled we probably want to get rid of it some day.
-     */
-    val parserInput: ParserInput = ParserInput.apply(src.data)
   }
 
   private sealed trait Mark
@@ -141,7 +135,7 @@ object Parser2 {
       mapN(sequence(refreshed)) {
         refreshed => SyntaxTree.Root(refreshed.toMap ++ fresh)
       }
-    }(DebugValidation()(DebugNoOp()))
+    }(DebugValidation())
   }
 
   private def parse(src: Ast.Source, tokens: Array[Token]): Validation[SyntaxTree.Tree, CompilationMessage] = {
@@ -172,7 +166,7 @@ object Parser2 {
     })
 
     // Make a synthetic token to begin with, to make the SourceLocations generated below be correct.
-    var lastAdvance = Token(TokenKind.Eof, s.src.data, 0, 0, 0, 0, 0, 0)
+    var lastAdvance = Token(TokenKind.Eof, s.src, 0, 0, 0, 0, 0, 0)
     for (event <- s.events) {
       event match {
         case Event.Open(kind) =>
@@ -185,14 +179,14 @@ object Parser2 {
           stack.head.loc = if (stack.head.children.length == 0)
             // If the subtree has no children, give it a zero length position just after the last token
             SourceLocation.mk(
-              lastAdvance.mkSourcePositionEnd(s.src, Some(s.parserInput)),
-              lastAdvance.mkSourcePositionEnd(s.src, Some(s.parserInput))
+              lastAdvance.mkSourcePositionEnd,
+              lastAdvance.mkSourcePositionEnd
             )
           else
             // Otherwise the source location can span from the first to the last token in the sub tree
             SourceLocation.mk(
-              openToken.mkSourcePosition(s.src, Some(s.parserInput)),
-              lastAdvance.mkSourcePositionEnd(s.src, Some(s.parserInput))
+              openToken.mkSourcePosition,
+              lastAdvance.mkSourcePositionEnd
             )
           locationStack = locationStack.tail
           stack = stack.tail
@@ -208,8 +202,8 @@ object Parser2 {
     // Set source location of the root
     val openToken = locationStack.last
     stack.last.loc = SourceLocation.mk(
-      openToken.mkSourcePosition(s.src, Some(s.parserInput)),
-      tokens.head.mkSourcePositionEnd(s.src, Some(s.parserInput))
+      openToken.mkSourcePosition,
+      tokens.head.mkSourcePositionEnd
     )
 
     // The stack should now contain a single Source tree,
@@ -230,7 +224,7 @@ object Parser2 {
     val beginCol = (token.beginCol + 1).toShort
     val endLine = token.endLine + 1
     val endCol = (token.endCol + 1).toShort
-    SourceLocation(s.parserInput, s.src, isReal = true, beginLine, beginCol, endLine, endCol)
+    SourceLocation(s.src, isReal = true, beginLine, beginCol, endLine, endCol)
   }
 
   /**
@@ -243,7 +237,7 @@ object Parser2 {
     val beginCol = (token.beginCol + 1).toShort
     val endLine = token.endLine + 1
     val endCol = (token.endCol + 1).toShort
-    SourceLocation(s.parserInput, s.src, isReal = true, beginLine, beginCol, endLine, endCol)
+    SourceLocation(s.src, isReal = true, beginLine, beginCol, endLine, endCol)
   }
 
   /**
@@ -611,15 +605,17 @@ object Parser2 {
   /**
     * Consumes a token if kind is in `kinds`.
     * If `allowQualified` is passed also consume subsequent dot-separated tokens with kind in `kinds`.
-    * TODO: Make name consume trailing dots. This is difficult because it clashes with fixpoint constraint sets, which end on dots.
     */
   private def name(kinds: Set[TokenKind], allowQualified: Boolean = false, context: SyntacticContext)(implicit s: State): Mark.Closed = {
     val mark = open(consumeDocComments = false)
 
     // Check if we are at a keyword and emit nice error if so.
     val current = nth(0)
-    if (nth(0).isKeyword) {
-      advance()
+    if (current.isKeyword) {
+      // If the keyword is leads a declaration it's best to leave it be.
+      if (!current.isFirstDecl) {
+        advance()
+      }
       return closeWithError(mark, UnexpectedToken(
         NamedTokenSet.FromKinds(kinds),
         actual = Some(current),
@@ -634,18 +630,51 @@ object Parser2 {
     if (!allowQualified) {
       return first
     }
-    while (at(TokenKind.Dot) && kinds.contains(nth(1)) && !eof()) {
-      eat(TokenKind.Dot)
-      val mark = open()
-      expectAny(kinds, context)
-      close(mark, TreeKind.Ident)
+
+    var continue = true
+    while (continue && !eof()) {
+      nth(0) match {
+        case TokenKind.Dot =>
+          if (!kinds.contains(nth(1))) {
+            // Trailing dot, stop parsing the qualified name.
+            val error = UnexpectedToken(
+              expected = NamedTokenSet.FromKinds(kinds),
+              actual = Some(TokenKind.Dot),
+              sctx = context,
+              hint = None,
+              loc = currentSourceLocation()
+            )
+            advanceWithError(error)
+            continue = false
+          } else {
+            advance() // Eat the dot
+            val mark = open()
+            expectAny(kinds, context)
+            close(mark, TreeKind.Ident)
+          }
+        case TokenKind.DotWhiteSpace if kinds.contains(nth(1)) =>
+          // Nice error for:
+          // SomeName.
+          //    myFunc()
+          val markErr = open()
+          advance() // Eat the dot
+          val error = UnexpectedToken(
+            expected = NamedTokenSet.FromKinds(Set(TokenKind.Dot)),
+            actual = None,
+            sctx = context,
+            hint = Some("Remove whitespace after '.'"),
+            loc = previousSourceLocation()
+          )
+          closeWithError(markErr, error)
+          // Now continue parsing qualified name.
+          val mark = open()
+          expectAny(kinds, context)
+          close(mark, TreeKind.Ident)
+        case _ => continue = false
+      }
     }
-    if (allowQualified) {
-      val mark = openBefore(first)
-      close(mark, TreeKind.QName)
-    } else {
-      first
-    }
+
+    close(openBefore(first), TreeKind.QName)
   }
 
   /**
@@ -664,6 +693,12 @@ object Parser2 {
       // Note: This loop will also consume doc-comments that are preceded or surrounded by either line or block comments.
       while (atComment() && !eof()) {
         advance()
+      }
+      // Check for a trailing doc-comment that is not followed by a declaration.
+      val isDanglingDoc = consumeDocComments && nth(-1) == TokenKind.CommentDoc && !nth(0).isDocumentable
+      if (isDanglingDoc) {
+        val errMark = open()
+        closeWithError(errMark, MisplacedDocComments(SyntacticContext.Decl.OtherDecl, previousSourceLocation()))
       }
       close(mark, TreeKind.CommentList)
     }
@@ -838,13 +873,14 @@ object Parser2 {
             case TokenKind.KeywordDef => signatureDecl(openBefore(docMark))
             case TokenKind.KeywordType => associatedTypeSigDecl(openBefore(docMark))
             case at =>
+              val errMark = open()
               val loc = currentSourceLocation()
               // Skip ahead until we hit another declaration or any CurlyR.
               while (!nth(0).isFirstTrait && !eat(TokenKind.CurlyR) && !eof()) {
                 advance()
               }
               val error = UnexpectedToken(expected = NamedTokenSet.FromKinds(Set(TokenKind.KeywordType, TokenKind.KeywordDef, TokenKind.KeywordLaw)), actual = Some(at), SyntacticContext.Decl.Trait, loc = loc)
-              closeWithError(mark, error, Some(at))
+              closeWithError(errMark, error, Some(at))
           }
         }
         expect(TokenKind.CurlyR, SyntacticContext.Decl.Trait)
@@ -878,13 +914,14 @@ object Parser2 {
             case TokenKind.KeywordDef => definitionDecl(openBefore(docMark))
             case TokenKind.KeywordType => associatedTypeDefDecl(openBefore(docMark))
             case at =>
+              val errMark = open()
               val loc = currentSourceLocation()
               // Skip ahead until we hit another declaration or any CurlyR.
               while (!nth(0).isFirstInstance && !eat(TokenKind.CurlyR) && !eof()) {
                 advance()
               }
               val error = UnexpectedToken(expected = NamedTokenSet.FromKinds(Set(TokenKind.KeywordType, TokenKind.KeywordDef)), actual = Some(at), SyntacticContext.Decl.Instance, loc = loc)
-              closeWithError(mark, error, Some(at))
+              closeWithError(errMark, error, Some(at))
           }
         }
         expect(TokenKind.CurlyR, SyntacticContext.Decl.Instance)
@@ -963,7 +1000,6 @@ object Parser2 {
       if (at(TokenKind.KeywordWhere)) {
         equalityConstraints()
       }
-      expect(TokenKind.Dot, SyntacticContext.Decl.OtherDecl)
       Expr.expression()
       close(mark, TreeKind.Decl.Law)
     }
@@ -1114,13 +1150,14 @@ object Parser2 {
             case TokenKind.CurlyR => continue = false
             case TokenKind.KeywordDef => operationDecl(openBefore(docMark))
             case at =>
+              val errMark = open()
               val loc = currentSourceLocation()
               // Skip ahead until we hit another declaration or any CurlyR.
               while (!nth(0).isFirstDecl && !eat(TokenKind.CurlyR) && !eof()) {
                 advance()
               }
               val error = UnexpectedToken(expected = NamedTokenSet.FromKinds(Set(TokenKind.KeywordDef)), actual = Some(at), SyntacticContext.Decl.OtherDecl, loc = loc)
-              closeWithError(mark, error, Some(at))
+              closeWithError(errMark, error, Some(at))
           }
         }
         expect(TokenKind.CurlyR, SyntacticContext.Decl.OtherDecl)
@@ -1177,10 +1214,8 @@ object Parser2 {
     }
 
     def docComment()(implicit s: State): Mark.Closed = {
-      val mark = open()
-      while (at(TokenKind.CommentDoc) && !eof()) {
-        advance()
-      }
+      // Let `open` handle consuming the doc-comments, since it is already capable of doing so.
+      val mark = open(consumeDocComments = true)
       close(mark, TreeKind.Doc)
     }
 
@@ -1209,12 +1244,13 @@ object Parser2 {
       assert(at(TokenKind.KeywordWhere))
       val mark = open()
       expect(TokenKind.KeywordWhere, SyntacticContext.Decl.OtherDecl)
-      while (nth(0).isFirstType && !eof()) {
+      var continue = nth(0).isFirstType
+      while (continue && !eof()) {
         val markConstraint = open()
         Type.ttype()
         expect(TokenKind.Tilde, SyntacticContext.Decl.OtherDecl)
         Type.ttype()
-        eat(TokenKind.Comma)
+        continue = eat(TokenKind.Comma)
         close(markConstraint, TreeKind.Decl.EqualityConstraintFragment)
       }
       close(mark, TreeKind.Decl.EqualityConstraintList)
@@ -1279,8 +1315,8 @@ object Parser2 {
       }
       // Handle without expressions
       if (eat(TokenKind.KeywordWithout)) {
+        val mark = open()
         if (at(TokenKind.CurlyL)) {
-          val mark = open()
           oneOrMore(
             namedTokenSet = NamedTokenSet.Effect,
             getItem = () => name(NAME_EFFECT, allowQualified = true, SyntacticContext.Type.Eff),
@@ -1290,14 +1326,20 @@ object Parser2 {
             delimiterR = TokenKind.CurlyR,
             context = SyntacticContext.Expr.OtherExpr
           ) match {
-            case Some(error) => closeWithError(mark, error)
-            case None => close(mark, TreeKind.Type.EffectSet)
+            case Some(error) => closeWithError(open(), error)
+            case _ =>
           }
-        } else {
-          val mark = open()
+        } else if (NAME_EFFECT.contains(nth(0))) {
           name(NAME_EFFECT, allowQualified = true, context = SyntacticContext.Expr.OtherExpr)
-          close(mark, TreeKind.Type.EffectSet)
+        } else {
+          closeWithError(open(), UnexpectedToken(
+            expected = NamedTokenSet.Effect,
+            actual = Some(nth(0)),
+            sctx = SyntacticContext.Expr.OtherExpr,
+            hint = Some(s"supply at least one effect to ${TokenKind.KeywordWithout.display}."),
+            loc = previousSourceLocation()))
         }
+        close(mark, TreeKind.Type.EffectSet)
         lhs = close(openBefore(lhs), TreeKind.Expr.Without)
         lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
       }
@@ -1664,8 +1706,10 @@ object Parser2 {
       expression()
       expect(TokenKind.ParenR, SyntacticContext.Expr.OtherExpr)
       expression()
-      expect(TokenKind.KeywordElse, SyntacticContext.Expr.OtherExpr)
-      expression()
+      if (eat(TokenKind.KeywordElse)) {
+        // Only call expression, if we found an 'else'. Otherwise when it is missing, defs might get read as let-rec-defs.
+        expression()
+      }
       close(mark, TreeKind.Expr.IfThenElse)
     }
 
@@ -1982,9 +2026,10 @@ object Parser2 {
         */
       @tailrec
       def nextNonComment(lookahead: Int): Int = {
-        s.tokens(s.position + lookahead).kind match {
-          case t if t.isComment && s.position + lookahead < s.tokens.length - 1 =>
-            nextNonComment(lookahead + 1)
+        if (s.position + lookahead > s.tokens.length - 1) {
+          lookahead
+        } else s.tokens(s.position + lookahead).kind match {
+          case t if t.isComment => nextNonComment(lookahead + 1)
           case _ => lookahead
         }
       }
@@ -2469,7 +2514,7 @@ object Parser2 {
         context = SyntacticContext.Expr.Constraint,
         delimiterL = TokenKind.HashCurlyL,
         delimiterR = TokenKind.CurlyR,
-        separation = Separation.Required(TokenKind.Dot, allowTrailing = true),
+        separation = Separation.Required(TokenKind.DotWhiteSpace, allowTrailing = true),
         breakWhen = _.isRecoverExpr,
       )
       close(mark, TreeKind.Expr.FixpointConstraintSet)

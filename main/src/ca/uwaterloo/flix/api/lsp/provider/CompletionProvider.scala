@@ -24,10 +24,9 @@ import ca.uwaterloo.flix.language.ast.Ast.SyntacticContext
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, TypedAst}
 import ca.uwaterloo.flix.language.errors.{ParseError, ResolutionError, WeederError}
 import ca.uwaterloo.flix.language.fmt.FormatScheme
-import ca.uwaterloo.flix.language.phase.Parser.Letters
+import ca.uwaterloo.flix.language.phase.Lexer
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
-import org.parboiled2.CharPredicate
 
 /**
   * CompletionProvider
@@ -149,11 +148,8 @@ object CompletionProvider {
       //
       case SyntacticContext.Decl.Trait => KeywordOtherCompleter.getCompletions(context)
       case SyntacticContext.Decl.Enum => KeywordOtherCompleter.getCompletions(context)
-      case SyntacticContext.Decl.Instance => KeywordOtherCompleter.getCompletions(context)
-      case _: SyntacticContext.Decl =>
-        KeywordOtherCompleter.getCompletions(context) ++
-          InstanceCompleter.getCompletions(context) ++
-          SnippetCompleter.getCompletions(context)
+      case SyntacticContext.Decl.Instance => InstanceCompleter.getCompletions(context)
+      case _: SyntacticContext.Decl => KeywordOtherCompleter.getCompletions(context) ++ SnippetCompleter.getCompletions(context)
 
       //
       // Imports.
@@ -225,10 +221,24 @@ object CompletionProvider {
 
   /**
     * Characters that constitute a word.
-    * This is more permissive than the parser, but that's OK.
     */
-  private val isWordChar = Letters.LegalLetter ++ Letters.OperatorLetter ++
-    Letters.MathLetter ++ Letters.GreekLetter ++ CharPredicate("@/.")
+  private def isWordChar(c: Char) = isLetter(c) || Lexer.isMathNameChar(c) || Lexer.isGreekNameChar(c) || Lexer.isUserOp(c).isDefined
+
+  /**
+    * Characters that may appear in a word.
+    */
+  private def isLetter(c: Char) = c match {
+      case c if c >= 'a' && c <= 'z' => true
+      case c if c >= 'A' && c <= 'Z' => true
+      case c if c >= '0' && c <= '9' => true
+      // We also include some special symbols. This is more permissive than the lexer, but that's OK.
+      case '_' => true
+      case '!' => true
+      case '@' => true
+      case '/' => true
+      case '.' => true
+      case _ => false
+    }
 
   /**
     * Returns the word at the end of a string, discarding trailing whitespace first

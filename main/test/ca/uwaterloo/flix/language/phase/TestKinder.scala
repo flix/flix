@@ -845,7 +845,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
     val input =
       """
         |trait C[a: Type -> Type] {
-        |  law l: forall (x: a) . ???
+        |  law l: forall (x: a) ???
         |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)
