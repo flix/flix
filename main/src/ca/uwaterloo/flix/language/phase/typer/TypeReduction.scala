@@ -58,7 +58,7 @@ object TypeReduction {
       for {
         (t1, p1) <- simplify(tpe1, renv0, loc)
         (t2, p2) <- simplify(tpe2, renv0, loc)
-        (t3, p3) <- simplifyJava(Type.Apply(t1, t2, loc), loc)
+        (t3, p3) <- simplifyJava(Type.Apply(t1, t2, loc), renv0, loc)
       } yield {
         (t3, p1 || p2 || p3)
       }
@@ -106,13 +106,14 @@ object TypeReduction {
    * @param loc the location where the java method has been called
    * @return
    */
-  private def simplifyJava(tpe: Type, loc: SourceLocation)(implicit flix: Flix): Result[(Type, Boolean), TypeError] =
+  private def simplifyJava(tpe: Type, renv0: RigidityEnv, loc: SourceLocation)(implicit flix: Flix): Result[(Type, Boolean), TypeError] =
     tpe.typeConstructor match {
       case Some(TypeConstructor.MethodReturnType(m, n)) =>
         val targs = tpe.typeArguments
+        // TODO: add base case
         resolveMethodReturnType(targs.head, m, targs.tail, loc) match {
           case ResolutionResult.Resolved(t) => Result.Ok((t, true))
-          case ResolutionResult.MethodNotFound() => Result.Err(TypeError.MethodNotFound(m, tpe, RigidityEnv.empty, loc))
+          case ResolutionResult.MethodNotFound() => Result.Err(TypeError.MethodNotFound(m, tpe, renv0, loc))
           case ResolutionResult.NoProgress => Result.Ok((tpe, false))
         }
       case _ => Result.Ok((tpe, false))
@@ -148,7 +149,6 @@ object TypeReduction {
         }
       case _ => ResolutionResult.NoProgress
     }
-
 
   /**
    * Represents the result of a resolution process of a java method.
