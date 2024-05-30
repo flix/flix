@@ -1764,7 +1764,7 @@ object Lowering {
     * Returns a desugared [[TypedAst.Expr.ParYield]] expression as a nested match-expression.
     */
   private def mkParYield(frags: List[LoweredAst.ParYieldFragment], exp: LoweredAst.Expr, tpe: Type, eff: Type, loc: SourceLocation)(implicit flix: Flix): LoweredAst.Expr = {
-    // Partition fragments into complex and simple (vars or csts) exps.
+    // Partition fragments into complex and simple (vars or posCsts) exps.
     val (complex, varOrCsts) = frags.partition(f => isSpawnable(f.exp))
 
     // Only generate channels for n-1 fragments. We use the current thread for the last fragment.

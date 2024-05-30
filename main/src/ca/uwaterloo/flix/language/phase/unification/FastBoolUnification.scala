@@ -799,7 +799,7 @@ object FastBoolUnification {
         // Case 1: If there is a constant then the term may be unsatisfiable.
         false
       } else {
-        // Case 2: We know that csts is empty.
+        // Case 2: We know that posCsts is empty.
         // We must pay attention to performance here.
 
         // We first check if there is a variable x that is false (i.e. an x not in trueVars).
