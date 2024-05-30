@@ -24,7 +24,7 @@ object ImportMethodCompleter extends Completer {
   /**
     * Returns a List of Completion for importMethod (both static and instance methods).
     */
-  override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[ImportMethodCompletion] = {
+  override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[ImportMethodCompletion] = {
     val instance = raw"\s*import\s+(.*)".r
     val static = raw"\s*import\s+static\s+(.*)".r
     context.prefix match {

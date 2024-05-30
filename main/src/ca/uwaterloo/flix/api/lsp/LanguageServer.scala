@@ -16,8 +16,6 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.api.lsp.provider._
-import ca.uwaterloo.flix.api.lsp.provider.completion.DeltaContext
-import ca.uwaterloo.flix.api.lsp.provider.completion.ranker.Differ
 import ca.uwaterloo.flix.api.{CrashHandler, Flix, Version}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst
@@ -90,11 +88,6 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
     * The current reverse index. The index is empty until the source code is compiled.
     */
   private var index: Index = Index.empty
-
-  /**
-    * The current delta context. Initially has no changes.
-    */
-  private var delta: DeltaContext = DeltaContext(Map.empty)
 
   /**
     * The current compilation errors.
@@ -268,7 +261,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
       ("id" -> id) ~ CodeLensProvider.processCodeLens(uri)(root)
 
     case Request.Complete(id, uri, pos) =>
-      ("id" -> id) ~ CompletionProvider.autoComplete(uri, pos, sources.get(uri), currentErrors)(flix, index, root, delta)
+      ("id" -> id) ~ CompletionProvider.autoComplete(uri, pos, sources.get(uri), currentErrors)(flix, index, root)
 
     case Request.Highlight(id, uri, pos) =>
       ("id" -> id) ~ HighlightProvider.processHighlight(uri, pos)(index, root)
@@ -354,7 +347,6 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
     val oldRoot = this.root
     this.root = root
     this.index = Indexer.visitRoot(root)
-    this.delta = DeltaContext.mergeDeltas(this.delta, Differ.difference(oldRoot, root))
     this.currentErrors = errors.toList
 
     // Compute elapsed time.

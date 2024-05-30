@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, ReadAst, SourceLocation, Token, TokenKind}
+import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, ReadAst, SourceLocation, SourcePosition, Token, TokenKind}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.{DebugNoOp, DebugValidation}
 import ca.uwaterloo.flix.language.errors.LexerError
 import ca.uwaterloo.flix.util.{ParOps, Validation}
@@ -131,7 +131,7 @@ object Lexer {
     addToken(TokenKind.Eof)
 
     val errors = s.tokens.collect {
-      case Token(TokenKind.Err(err), _, _, _, _, _, _, _) => err
+      case Token(TokenKind.Err(err), _, _, _, _, _) => err
     }
 
     Validation.toSuccessOrSoftFailure(s.tokens.toArray, errors)
@@ -279,7 +279,9 @@ object Lexer {
    * Afterwards `s.start` is reset to the next position after the previous token.
    */
   private def addToken(kind: TokenKind)(implicit s: State): Unit = {
-    s.tokens += Token(kind, s.src, s.start.offset, s.current.offset, s.start.line, s.start.column.toShort, s.end.line, s.end.column.toShort)
+    val b = SourcePosition(s.src, s.start.line + 1, (s.start.column + 1).toShort)
+    val e = SourcePosition(s.src, s.end.line + 1, (s.end.column + 1).toShort)
+    s.tokens += Token(kind, s.src, s.start.offset, s.current.offset, b, e)
     s.start = new Position(s.current.line, s.current.column, s.current.offset)
   }
 
