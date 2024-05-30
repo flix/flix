@@ -240,6 +240,12 @@ object PredDeps {
         case (acc, exp) => acc + visitExp(exp)
       }
 
+    case Expr.InvokeMethod2(exp, _, exps, _, _, loc) =>
+      val init = visitExp(exp)
+      exps.foldLeft(init) {
+        case (acc, exp) => acc + visitExp(exp)
+      }
+
     case Expr.InvokeConstructor(_, args, _, _, _) =>
       args.foldLeft(LabelledPrecedenceGraph.empty) {
         case (acc, e) => acc + visitExp(e)
@@ -328,9 +334,6 @@ object PredDeps {
 
     case Expr.Error(_, _, _) =>
       LabelledPrecedenceGraph.empty
-
-    case Expr.InvokeMethod2(_, _, _, _, _, loc) =>
-      throw InternalCompilerException(s"Unexpected method invocation.", loc)
 
   }
 
