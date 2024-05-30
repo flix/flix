@@ -1575,13 +1575,19 @@ object FastSetUnification {
 
       case Term.Inter(posElem, posCsts, posVars, negElems, negCsts, negVars, rest) =>
         val maintain = Term.Inter(posElem, posCsts, Set.empty, negElems, negCsts, Set.empty, Nil)
-        val ts = posVars.toList.map(apply) ++ negVars.toList.map(x => Term.mkCompl(apply(x))) ++ rest.map(apply)
-        Term.mkInter(maintain :: ts)
+        val ts = mutable.ListBuffer.empty[Term]
+        for (x <- posVars) ts += apply(x)
+        for (x <- negVars) ts += Term.mkCompl(apply(x))
+        for (t <- rest) ts += apply(t)
+        Term.mkInter(maintain :: ts.toList)
 
       case Term.Union(posElems, posCsts, posVars, negElems, negCsts, negVars, rest) =>
         val maintain = Term.Union(posElems, posCsts, Set.empty, negElems, negCsts, Set.empty, Nil)
-        val ts = posVars.toList.map(apply) ++ negVars.toList.map(x => Term.mkCompl(apply(x))) ++ rest.map(apply)
-        Term.mkUnion(maintain :: ts)
+        val ts = mutable.ListBuffer.empty[Term]
+        for (x <- posVars) ts += apply(x)
+        for (x <- negVars) ts += Term.mkCompl(apply(x))
+        for (t <- rest) ts += apply(t)
+        Term.mkUnion(maintain :: ts.toList)
     }
 
     /**
