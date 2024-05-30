@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase.unification
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.util.{Formatter, InternalCompilerException, Result}
 
+import scala.annotation.tailrec
 import scala.collection.immutable.{SortedMap, SortedSet}
 import scala.collection.mutable
 
@@ -322,7 +323,7 @@ object FastSetUnification {
       case (Term.Univ, Term.Empty) => throw ConflictException(t1, t2, loc)
       case (Term.Univ, Term.Elem(_)) => throw ConflictException(t1, t2, loc)
       case (Term.Empty, Term.Univ) => throw ConflictException(t1, t2, loc)
-      case (Term.Empty, Term.Elem(_)) =>  throw ConflictException(t1, t2, loc)
+      case (Term.Empty, Term.Elem(_)) => throw ConflictException(t1, t2, loc)
       case (Term.Cst(c1), Term.Cst(c2)) if c1 != c2 => throw ConflictException(t1, t2, loc)
       // Note: A constraint with two different variables is of course solvable!
       case (Term.Cst(_), Term.Univ) => throw ConflictException(t1, t2, loc)
@@ -754,9 +755,9 @@ object FastSetUnification {
     case x :: xs =>
       val t0 = BoolSubstitution.singleton(x, Term.Empty)(t)
       val t1 = BoolSubstitution.singleton(x, Term.Univ)(t)
-      val se = successiveVariableElimination(propagation(Term.mkInter(t0, t1)), xs)
+      val se = successiveVariableElimination(fixpointPropagation(Term.mkInter(t0, t1), 3), xs)
 
-      val f1 = propagation(Term.mkUnion(se(t0), Term.mkMinus(Term.Var(x), se(t1))))
+      val f1 = fixpointPropagation(Term.mkUnion(se(t0), Term.mkMinus(Term.Var(x), se(t1))), 3)
       val st = BoolSubstitution.singleton(x, f1)
       st ++ se
   }
@@ -846,7 +847,7 @@ object FastSetUnification {
 
   sealed trait SetEval {
 
-    import SetEval.{Set, Compl}
+    import SetEval.{Compl, Set}
 
     def union(s: SetEval): SetEval = (this, s) match {
       case (Set(s1), Set(s2)) =>
@@ -907,6 +908,11 @@ object FastSetUnification {
     def single(i: Int): SetEval = Set(SortedSet(i))
   }
 
+  @tailrec
+  private def fixpointPropagation(t: Term, k: Int): Term = {
+    if (k <= 0) t else fixpointPropagation(propagation(t), k - 1)
+  }
+
   /**
     * Use the two rewrites `x ∩ f === x ∩ f[x -> Univ]` and `x ∪ f === x ∪ f[x -> Empty]`.
     *
@@ -938,23 +944,23 @@ object FastSetUnification {
 
         // Recurse on the sub-terms with the updated maps.
         val rest = rest0.map { t =>
-            val res = visit(t, currentElems, currentCsts, currentVars)
-            res match {
-              case Term.Univ => res
-              case Term.Empty => res
-              case Term.Cst(c) =>
-                currentCsts += (c -> Term.Univ)
-                res
-              case Term.Var(x) =>
-                currentVars += (x -> Term.Univ)
-                res
-              case Term.Elem(i) =>
-                currentElems += (i -> Term.Univ)
-                res
-              case Term.Compl(_) => res
-              case Term.Inter(_, _, _, _) => res
-              case Term.Union(_, _, _, _) => res
-            }
+          val res = visit(t, currentElems, currentCsts, currentVars)
+          res match {
+            case Term.Univ => res
+            case Term.Empty => res
+            case Term.Cst(c) =>
+              currentCsts += (c -> Term.Univ)
+              res
+            case Term.Var(x) =>
+              currentVars += (x -> Term.Univ)
+              res
+            case Term.Elem(i) =>
+              currentElems += (i -> Term.Univ)
+              res
+            case Term.Compl(_) => res
+            case Term.Inter(_, _, _, _) => res
+            case Term.Union(_, _, _, _) => res
+          }
         }
 
         // Compute new constant and variable sets by removing constants and variables that hold.
@@ -1009,6 +1015,7 @@ object FastSetUnification {
         // Recompose the intersection. We use the smart constructor because some sets may have become empty.
         Term.mkUnion(elem.toList.map(Term.Elem) ++ csts.toList.map(Term.Cst) ++ vars.toList.map(Term.Var) ++ rest)
     }
+
     visit(t, SortedMap.empty, SortedMap.empty, SortedMap.empty)
   }
 
