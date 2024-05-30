@@ -101,9 +101,8 @@ object MutationTester {
     val timeSec = end.toFloat / 1_000_000_000.0
     println(s"time to generate mutations: $timeSec")
     val lastRoot = insertDecAndCheckIntoRoot(root)
-    val (results, ttb, bbs, bugs, time) = runMutations(flix, testModule, lastRoot, mutations)
-    MutationDataHandler.processData(results, productionModule)
-    MutationDataHandler.writeTotalTime(productionModule, time)
+    val (results, ttb, bbs, bugs, time) = runMutations(flix, testModule, lastRoot, sortMutants(mutations))
+    MutationDataHandler.processData(results, time, productionModule)
     MutationDataHandler.writeTTBToFile(s"TTB: $productionModule: ${ttb}")
     MutationDataHandler.writeBBSToFile(s"BBS: $productionModule: ${bbs}: $bugs")
     writeReportsToFile(nonKilledStrList)
@@ -119,8 +118,6 @@ object MutationTester {
       val testModule = s"Test$module"
       val lastRoot = insertDecAndCheckIntoRoot(root)
       val (results, timeToBug, _, _, _) = runMutations(flix, testModule, lastRoot, mutations)
-      MutationDataHandler.processData(results, module)
-      MutationDataHandler.writeTTBToFile(s"TTB: $module: $timeToBug")
       (results , s"TTB: $module: $timeToBug")
     })
   }

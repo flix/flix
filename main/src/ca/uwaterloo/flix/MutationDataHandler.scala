@@ -7,16 +7,16 @@ import scala.collection.immutable.HashMap
 
 object MutationDataHandler {
 
-  def processData(operatorResults: List[(MutationType, TestRes)],module:  String): Unit = {
+  def processData(operatorResults: List[(MutationType, TestRes)], time: Double ,module:  String): Unit = {
     val empty: Map[String, Map[String,DataPoints]] = HashMap.empty
     val sortedData = empty.updated(module, sortData(operatorResults, createEmptyDataMap()))
-    writeDataToFile(sortedData)
+    writeDataToFile(sortedData, time)
   }
-  private def writeDataToFile(stringToPoints: Map[String, Map[String, DataPoints]]): Unit = {
+  private def writeDataToFile(stringToPoints: Map[String, Map[String, DataPoints]], time: Double): Unit = {
     val stringToWrite = stringToPoints.foldLeft("") {
       case (acc, (module, results)) => results.foldLeft("") {
         case (acc2, (operator, dPoints)) =>
-        s"$operator:${dPoints.total}:${dPoints.killed}:${dPoints.surviving}:${dPoints.unknown}:${dPoints.equivalent}:$module\n$acc2"
+        s"$operator:${dPoints.total}:${dPoints.killed}:${dPoints.surviving}:${dPoints.unknown}:${dPoints.equivalent}:$module:$time\n$acc2"
       } ++ acc
     }
 
@@ -26,11 +26,6 @@ object MutationDataHandler {
   }
 
 
-  def writeTotalTime(module: String, time: Double): Unit = {
-    val fileWriter = new FileWriter("TotalTimes.txt", true)
-    fileWriter.write(s"$module:$time\n")
-    fileWriter.close()
-  }
 
   def writeBBSToFile(bbs: String): Unit = {
     val fileWriter = new FileWriter("BBSData.txt", true)
@@ -110,7 +105,7 @@ object MutationDataHandler {
     m8.updated("SigMut", emptyDP)
   }
   def createEmptyDataSetMap(module: String): Unit = {
-    val empty: Map[String, Map[String, DataPoints]] = Map.empty
-    writeDataToFile(empty.updated(module, createEmptyDataMap()))
+    //val empty: Map[String, Map[String, DataPoints]] = Map.empty
+  //  writeDataToFile(empty.updated(module, createEmptyDataMap()))
   }
 }
