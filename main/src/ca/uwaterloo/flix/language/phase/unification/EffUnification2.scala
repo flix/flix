@@ -203,11 +203,23 @@ object EffUnification2 {
     case Term.Elem(i) => fromAtom(m.getBackward(i).get, loc)
     case Term.Var(x) => fromAtom(m.getBackward(x).get, loc) // Safe: We never introduce new variables.
     case Term.Compl(t) => Type.mkComplement(fromTermDirect(t, loc), loc)
-    case Term.Inter(posElem, posCsts, posVars, rest) =>
-      val ts = posElem.toList.map(fromTermDirect(_, loc)) ++ posCsts.toList.map(fromTermDirect(_, loc)) ++ posVars.toList.map(fromTermDirect(_, loc)) ++ rest.map(fromTermDirect(_, loc))
+    case Term.Inter(posElem, posCsts, posVars, negElems, negCsts, negVars, rest) =>
+      val ts = posElem.toList.map(fromTermDirect(_, loc)) ++
+        negElems.toList.map(Term.Compl).map(fromTermDirect(_, loc)) ++
+        posCsts.toList.map(fromTermDirect(_, loc)) ++
+        negCsts.toList.map(Term.Compl).map(fromTermDirect(_, loc)) ++
+        posVars.toList.map(fromTermDirect(_, loc)) ++
+        negVars.toList.map(Term.Compl).map(fromTermDirect(_, loc)) ++
+        rest.map(fromTermDirect(_, loc))
       Type.mkIntersection(ts, loc)
-    case Term.Union(posElems, posCsts, posVars, rest) =>
-      val ts = posElems.toList.map(fromTermDirect(_, loc)) ++ posCsts.toList.map(fromTermDirect(_, loc)) ++ posVars.toList.map(fromTermDirect(_, loc)) ++ rest.map(fromTermDirect(_, loc))
+    case Term.Union(posElems, posCsts, posVars, negElems, negCsts, negVars, rest) =>
+      val ts = posElems.toList.map(fromTermDirect(_, loc)) ++
+        negElems.toList.map(Term.Compl).map(fromTermDirect(_, loc)) ++
+        posCsts.toList.map(fromTermDirect(_, loc)) ++
+        negCsts.toList.map(Term.Compl).map(fromTermDirect(_, loc)) ++
+        posVars.toList.map(fromTermDirect(_, loc)) ++
+        negVars.toList.map(Term.Compl).map(fromTermDirect(_, loc)) ++
+        rest.map(fromTermDirect(_, loc))
       Type.mkUnion(ts, loc)
   }
 

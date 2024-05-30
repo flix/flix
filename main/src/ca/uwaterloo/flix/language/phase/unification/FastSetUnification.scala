@@ -90,7 +90,7 @@ object FastSetUnification {
   /**
     * Enable debugging (prints information during Boolean unification).
     */
-  private val Debugging: Boolean = false
+  private val Debugging: Boolean = true
 
   /**
     * Enable verification (i.e. check that the computed most-general unifier is a solution to the original equation system.)
@@ -336,9 +336,13 @@ object FastSetUnification {
       case (Term.Univ, Term.Cst(_)) => throw ConflictException(t1, t2, loc)
       case (Term.Empty, Term.Cst(_)) => throw ConflictException(t1, t2, loc)
 
-      case (Term.Inter(Some(_), _, _, _), Term.Univ) => throw ConflictException(t1, t2, loc)
-      case (Term.Inter(Some(Term.Elem(i1)), _, _, _), Term.Elem(i2)) if i1 != i2 => throw ConflictException(t1, t2, loc)
-      case (Term.Inter(Some(Term.Elem(_)), _, _, _), Term.Cst(_)) => throw ConflictException(t1, t2, loc)
+      case (Term.Inter(posElem, _, _, negElems, _, _, _), Term.Univ) if posElem.isDefined || negElems.nonEmpty => throw ConflictException(t1, t2, loc)
+      case (Term.Inter(Some(Term.Elem(i1)), _, _, _, _, _, _), Term.Elem(i2)) if i1 != i2 => throw ConflictException(t1, t2, loc)
+      case (Term.Inter(_, _, _, negElems, _, _, _), Term.Elem(i)) if negElems.exists(_.i == i) => throw ConflictException(t1, t2, loc)
+      case (Term.Inter(posElem, _, _, negElems, _, _, _), Term.Cst(_)) if posElem.isDefined || negElems.nonEmpty => throw ConflictException(t1, t2, loc)
+
+      case (Term.Union(posElems, _, _, negElems, _, _, _), Term.Empty) if posElems.nonEmpty || negElems.nonEmpty => throw ConflictException(t1, t2, loc)
+      case (Term.Union(posElems, _, _, negElems, _, _, _), Term.Cst(_)) if posElems.nonEmpty || negElems.nonEmpty => throw ConflictException(t1, t2, loc)
 
       // Non-trivial and non-conflicted equation: keep it.
       case _ => Equation(t1, t2, loc) :: checkAndSimplify(es)
@@ -418,35 +422,48 @@ object FastSetUnification {
       changed = false
 
       var rest: List[Equation] = Nil
+      // OBS: subst.extended checks for conflicting mappings
       for (e <- pending) {
         e match {
           // Case 1: x ~ univ
           case Equation(Term.Var(x), Term.Univ, loc) =>
-            subst = subst.extended(x, Term.Univ, loc) // Note: the extended function will check that `x` is not already mapped to another constant.
+            subst = subst.extended(x, Term.Univ, loc)
             changed = true
 
           // Case 2: x ~ c
           case Equation(Term.Var(x), Term.Cst(c), loc) =>
-            subst = subst.extended(x, Term.Cst(c), loc) // Note: the extended function will check that `x` is not already mapped to another constant.
+            subst = subst.extended(x, Term.Cst(c), loc)
             changed = true
 
           // Case 3: x ~ e
           case Equation(Term.Var(x), Term.Elem(i), loc) =>
-            subst = subst.extended(x, Term.Elem(i), loc) // Note: the extended function will check that `x` is not already mapped to another constant.
+            subst = subst.extended(x, Term.Elem(i), loc)
             changed = true
 
-          // Case 4: x ∩ y ∩ z ∩... ~ univ
-          case Equation(Term.Inter(None, posCsts, posVars, rest), Term.Univ, loc) if posCsts.isEmpty && rest.isEmpty =>
-            for (Term.Var(x) <- posVars) {
-              subst = subst.extended(x, Term.Univ, loc) // Note: the extended function will check that `x` is not already mapped to another constant.
-              changed = true
+          // Case 4: x ∩ y ∩ !z ∩... ~ univ
+          case Equation(Term.Inter(None, posCsts, posVars, negElems, negCsts, negVars, rest), Term.Univ, loc) if
+            posCsts.isEmpty && negElems.isEmpty && negCsts.isEmpty && rest.isEmpty => {
+              for (Term.Var(x) <- posVars) {
+                subst = subst.extended(x, Term.Univ, loc)
+                changed = true
+              }
+              for (Term.Var(x) <- negVars) {
+                subst = subst.extended(x, Term.Empty, loc)
+                changed = true
+              }
             }
 
-          // Case 5: x ∪ y ∪ z ∪... ~ empty
-          case Equation(Term.Union(posElems, posCsts, posVars, rest), Term.Empty, loc) if posElems.isEmpty && posCsts.isEmpty && rest.isEmpty =>
-            for (Term.Var(x) <- posVars) {
-              subst = subst.extended(x, Term.Empty, loc) // Note: the extended function will check that `x` is not already mapped to another constant.
-              changed = true
+          // Case 5: x ∪ y ∪ !z ∪... ~ empty
+          case Equation(Term.Union(posElems, posCsts, posVars, negElems, negCsts, negVars, rest), Term.Empty, loc) if
+            posElems.isEmpty && posCsts.isEmpty && negElems.isEmpty && negCsts.isEmpty && rest.isEmpty => {
+              for (Term.Var(x) <- posVars) {
+                subst = subst.extended(x, Term.Empty, loc)
+                changed = true
+              }
+              for (Term.Var(x) <- negVars) {
+                subst = subst.extended(x, Term.Univ, loc)
+                changed = true
+              }
             }
 
           case _ =>
@@ -755,9 +772,9 @@ object FastSetUnification {
     case x :: xs =>
       val t0 = BoolSubstitution.singleton(x, Term.Empty)(t)
       val t1 = BoolSubstitution.singleton(x, Term.Univ)(t)
-      val se = successiveVariableElimination(repeatedPropagation(Term.mkInter(t0, t1), 3), xs)
+      val se = successiveVariableElimination(repeatedPropagation(Term.mkInter(t0, t1), 1), xs)
 
-      val f1 = repeatedPropagation(Term.mkUnion(se(t0), Term.mkMinus(Term.Var(x), se(t1))), 3)
+      val f1 = repeatedPropagation(Term.mkUnion(se(t0), Term.mkMinus(Term.Var(x), se(t1))), 1)
       val st = BoolSubstitution.singleton(x, f1)
       st ++ se
   }
@@ -774,12 +791,20 @@ object FastSetUnification {
     case Term.Elem(i) => Term.Elem(i)
     case Term.Var(x) => Term.Var(x)
     case Term.Compl(t) => Term.mkCompl(flexify(t))
-    case Term.Inter(posElem, posCsts, posVars, rest) =>
-      // Translate every constant into a variable:
-      Term.mkInter(posElem.toList ++ posCsts.map(c => Term.Var(c.c)) ++ posVars ++ rest.map(flexify))
-    case Term.Union(posElems, posCsts, posVars, rest) =>
-      // Translate every constant into a variable:
-      Term.mkUnion(posElems.toList ++ posCsts.map(c => Term.Var(c.c)) ++ posVars ++ rest.map(flexify))
+    case Term.Inter(posElem, posCsts, posVars, negElems, negCsts, negVars, rest) =>
+      val maintain = Term.Inter(posElem, Set.empty, posVars, negElems, Set.empty, negVars, Nil)
+      val posCstsFlexed = posCsts.toList.map(c => Term.Var(c.c))
+      val negCstsFlexed = negCsts.toList.map(c => Term.Compl(Term.Var(c.c)))
+      val restFlexed = rest.map(flexify)
+      val transformed = posCstsFlexed ++ negCstsFlexed ++ restFlexed
+      Term.mkInter(maintain :: transformed)
+    case Term.Union(posElems, posCsts, posVars, negElems, negCsts, negVars, rest) =>
+      val maintain = Term.Union(posElems, Set.empty, posVars, negElems, Set.empty, negVars, Nil)
+      val posCstsFlexed = posCsts.toList.map(c => Term.Var(c.c))
+      val negCstsFlexed = negCsts.toList.map(c => Term.Compl(Term.Var(c.c)))
+      val restFlexed = rest.map(flexify)
+      val transformed = posCstsFlexed ++ negCstsFlexed ++ restFlexed
+      Term.mkUnion(maintain :: transformed)
   }
 
   /**
@@ -828,19 +853,35 @@ object FastSetUnification {
     case Term.Var(x) => if (trueVars.contains(x)) SetEval.univ else SetEval.empty
     case Term.Compl(t) => evaluate(t, trueVars).compl()
 
-    case Term.Inter(posElem, posCsts, posVars, rest) =>
+    case Term.Inter(posElem, posCsts, posVars, negElems, negCsts, negVars, rest) =>
       var running = SetEval.univ
-      for (t <- posElem.toList ++ posCsts ++ posVars ++ rest) {
+      for (t <- posElem.toList ++ posCsts ++ posVars) {
         running = running.intersect(evaluate(t, trueVars))
-        // if (running.isEmpty) return running
+         if (running.isEmpty) return running
+      }
+      for (t <- negElems.toList ++ negCsts ++ negVars) {
+        running = running.intersect(evaluate(t, trueVars).compl())
+        if (running.isEmpty) return running
+      }
+      for (t <- rest) {
+        running = running.intersect(evaluate(t, trueVars))
+        if (running.isEmpty) return running
       }
       running
 
-    case Term.Union(posElems, posCsts, posVars, rest) =>
+    case Term.Union(posElems, posCsts, posVars, negElems, negCsts, negVars, rest) =>
       var running = SetEval.empty
-      for (t <- posElems.toList ++ posCsts ++ posVars ++ rest) {
+      for (t <- posElems.toList ++ posCsts ++ posVars) {
         running = running.union(evaluate(t, trueVars))
-        //if (running.isUniv) return running
+        if (running.isUniv) return running
+      }
+      for (t <- negElems.toList ++ negCsts ++ negVars) {
+        running = running.union(evaluate(t, trueVars).compl())
+        if (running.isUniv) return running
+      }
+      for (t <- rest) {
+        running = running.union(evaluate(t, trueVars))
+        if (running.isUniv) return running
       }
       running
   }
@@ -926,20 +967,18 @@ object FastSetUnification {
       case Term.Var(x) => setVars.getOrElse(x, Term.Var(x))
       case Term.Elem(i) => setElems.getOrElse(i, Term.Elem(i))
       case Term.Compl(t0) => Term.mkCompl(visit(t0, setElems, setCsts, setVars))
-      case Term.Inter(posElem0, posCsts0, posVars0, rest0) =>
-        // Compute the constants and variables that _must_ hold for the whole intersection to hold.
-        val termPosElem = posElem0.map(_.i)
-        val termPosCsts = posCsts0.map(_.c)
-        val termPosVars = posVars0.map(_.x)
-
+      case Term.Inter(posElem0, posCsts0, posVars0, negElems0, negCsts0, negVars0, rest0) =>
         // check for trivial cases
-        if (termPosElem.exists(e => setElems.get(e).contains(Term.Empty))) return Term.Empty
-        if (termPosCsts.exists(c => setCsts.get(c).contains(Term.Empty))) return Term.Empty
-        if (termPosVars.exists(c => setVars.get(c).contains(Term.Empty))) return Term.Empty
+        if (posElem0.exists(e => setElems.get(e.i).contains(Term.Empty))) return Term.Empty
+        if (posCsts0.exists(c => setCsts.get(c.c).contains(Term.Empty))) return Term.Empty
+        if (posVars0.exists(x => setVars.get(x.x).contains(Term.Empty))) return Term.Empty
+        if (negElems0.exists(e => setElems.get(e.i).contains(Term.Univ))) return Term.Empty
+        if (negCsts0.exists(c => setCsts.get(c.c).contains(Term.Univ))) return Term.Empty
+        if (negVars0.exists(x => setVars.get(x.x).contains(Term.Univ))) return Term.Empty
 
-        var currentElems = setElems ++ termPosElem.map((_, Term.Univ))
-        var currentCsts = setCsts ++ termPosCsts.map((_, Term.Univ))
-        var currentVars = setVars ++ termPosVars.map((_, Term.Univ))
+        var currentElems = setElems ++ posElem0.toList.map(e => (e.i, Term.Univ)) ++ negElems0.map(e => (e.i, Term.Empty))
+        var currentCsts = setCsts ++ posCsts0.map(c => (c.c, Term.Univ)) ++ negCsts0.map(c => (c.c, Term.Empty))
+        var currentVars = setVars ++ posVars0.map(x => (x.x, Term.Univ)) ++ negVars0.map(x => (x.x, Term.Empty))
 
         // Recurse on the sub-terms with the updated maps.
         val rest = rest0.map { t =>
@@ -950,40 +989,50 @@ object FastSetUnification {
             case Term.Cst(c) =>
               currentCsts += (c -> Term.Univ)
               res
+            case Term.Compl(Term.Cst(c)) =>
+              currentCsts += (c -> Term.Empty)
+              res
             case Term.Var(x) =>
               currentVars += (x -> Term.Univ)
+              res
+            case Term.Compl(Term.Var(x)) =>
+              currentVars += (x -> Term.Empty)
               res
             case Term.Elem(i) =>
               currentElems += (i -> Term.Univ)
               res
+            case Term.Compl(Term.Elem(i)) =>
+              currentElems += (i -> Term.Empty)
+              res
             case Term.Compl(_) => res
-            case Term.Inter(_, _, _, _) => res
-            case Term.Union(_, _, _, _) => res
+            case Term.Inter(_, _, _, _, _, _, _) => res
+            case Term.Union(_, _, _, _, _, _, _) => res
           }
         }
 
         // Compute new constant and variable sets by removing constants and variables that hold.
-        val posElem = termPosElem.filterNot(e => setElems.get(e).contains(Term.Univ))
-        val posCsts = termPosCsts.filterNot(c => setCsts.get(c).contains(Term.Univ))
-        val posVars = termPosVars.filterNot(c => setVars.get(c).contains(Term.Univ))
+        val posElem = posElem0.filterNot(e => setElems.get(e.i).contains(Term.Univ))
+        val posCsts = posCsts0.filterNot(c => setCsts.get(c.c).contains(Term.Univ))
+        val posVars = posVars0.filterNot(x => setVars.get(x.x).contains(Term.Univ))
+        val negElems = negElems0.filterNot(e => setElems.get(e.i).contains(Term.Empty))
+        val negCsts = negCsts0.filterNot(c => setCsts.get(c.c).contains(Term.Empty))
+        val negVars = negVars0.filterNot(x => setVars.get(x.x).contains(Term.Empty))
 
-        // Recompose the intersection. We use the smart constructor because some sets may have become empty.
-        Term.mkInter(posElem.toList.map(Term.Elem) ++ posCsts.toList.map(Term.Cst) ++ posVars.toList.map(Term.Var) ++ rest)
+        val maintain = Term.Inter(posElem, posCsts, posVars, negElems, negCsts, negVars, Nil)
+        Term.mkInter(maintain :: rest)
 
-      case Term.Union(posElems0, posCsts0, posVars0, rest0) =>
-        // Compute the constants and variables that _must_ hold for the whole intersection to hold.
-        val termPosElems = posElems0.map(_.i)
-        val termPosCsts = posCsts0.map(_.c)
-        val termPosVars = posVars0.map(_.x)
-
+      case Term.Union(posElems0, posCsts0, posVars0, negElems0, negCsts0, negVars0, rest0) =>
         // check for trivial cases
-        if (termPosElems.exists(e => setElems.get(e).contains(Term.Univ))) return Term.Univ
-        if (termPosCsts.exists(c => setCsts.get(c).contains(Term.Univ))) return Term.Univ
-        if (termPosVars.exists(c => setVars.get(c).contains(Term.Univ))) return Term.Univ
+        if (posElems0.exists(e => setElems.get(e.i).contains(Term.Univ))) return Term.Univ
+        if (posCsts0.exists(c => setCsts.get(c.c).contains(Term.Univ))) return Term.Univ
+        if (posVars0.exists(x => setVars.get(x.x).contains(Term.Univ))) return Term.Univ
+        if (negElems0.exists(e => setElems.get(e.i).contains(Term.Empty))) return Term.Univ
+        if (negCsts0.exists(c => setCsts.get(c.c).contains(Term.Empty))) return Term.Univ
+        if (negVars0.exists(x => setVars.get(x.x).contains(Term.Empty))) return Term.Univ
 
-        var currentElems = setElems ++ termPosElems.map((_, Term.Empty))
-        var currentCsts = setCsts ++ termPosCsts.map((_, Term.Empty))
-        var currentVars = setVars ++ termPosVars.map((_, Term.Empty))
+        var currentElems = setElems ++ posElems0.toList.map(e => (e.i, Term.Empty)) ++ negElems0.map(e => (e.i, Term.Univ))
+        var currentCsts = setCsts ++ posCsts0.map(c => (c.c, Term.Empty)) ++ negCsts0.map(c => (c.c, Term.Univ))
+        var currentVars = setVars ++ posVars0.map(x => (x.x, Term.Empty)) ++ negVars0.map(x => (x.x, Term.Univ))
 
         // Recurse on the sub-terms with the updated maps.
         val rest = rest0.map { t =>
@@ -994,25 +1043,37 @@ object FastSetUnification {
             case Term.Cst(c) =>
               currentCsts += (c -> Term.Empty)
               res
+            case Term.Compl(Term.Cst(c)) =>
+              currentCsts += (c -> Term.Univ)
+              res
             case Term.Var(x) =>
               currentVars += (x -> Term.Empty)
+              res
+            case Term.Compl(Term.Var(x)) =>
+              currentVars += (x -> Term.Univ)
               res
             case Term.Elem(i) =>
               currentElems += (i -> Term.Empty)
               res
+            case Term.Compl(Term.Elem(i)) =>
+              currentElems += (i -> Term.Univ)
+              res
             case Term.Compl(_) => res
-            case Term.Inter(_, _, _, _) => res
-            case Term.Union(_, _, _, _) => res
+            case Term.Inter(_, _, _, _, _, _, _) => res
+            case Term.Union(_, _, _, _, _, _, _) => res
           }
         }
 
         // Compute new constant and variable sets by removing constants and variables that hold.
-        val posElem = termPosElems.filterNot(e => setElems.get(e).contains(Term.Empty))
-        val posCsts = termPosCsts.filterNot(c => setCsts.get(c).contains(Term.Empty))
-        val posVars = termPosVars.filterNot(c => setVars.get(c).contains(Term.Empty))
+        val posElem = posElems0.filterNot(e => setElems.get(e.i).contains(Term.Empty))
+        val posCsts = posCsts0.filterNot(c => setCsts.get(c.c).contains(Term.Empty))
+        val posVars = posVars0.filterNot(x => setVars.get(x.x).contains(Term.Empty))
+        val negElems = negElems0.filterNot(e => setElems.get(e.i).contains(Term.Univ))
+        val negCsts = negCsts0.filterNot(c => setCsts.get(c.c).contains(Term.Univ))
+        val negVars = negVars0.filterNot(x => setVars.get(x.x).contains(Term.Univ))
 
-        // Recompose the intersection. We use the smart constructor because some sets may have become empty.
-        Term.mkUnion(posElem.toList.map(Term.Elem) ++ posCsts.toList.map(Term.Cst) ++ posVars.toList.map(Term.Var) ++ rest)
+        val maintain = Term.Union(posElem, posCsts, posVars, negElems, negCsts, negVars, Nil)
+        Term.mkUnion(maintain :: rest)
     }
 
     visit(t, SortedMap.empty, SortedMap.empty, SortedMap.empty)
@@ -1088,11 +1149,6 @@ object FastSetUnification {
     final def ~(that: Term)(implicit loc: SourceLocation): Equation = Equation.mk(this, that, loc)
 
     /**
-      * Syntactic sugar for [[Term.flip]]
-      */
-    final def flip: Term = Term.flip(this)
-
-    /**
       * Returns all variables that occur in `this` term.
       */
     final def freeVars: SortedSet[Int] = this match {
@@ -1102,10 +1158,10 @@ object FastSetUnification {
       case Term.Elem(_) => SortedSet.empty
       case Term.Var(x) => SortedSet(x)
       case Term.Compl(t) => t.freeVars
-
-      case Term.Inter(_, _, posVars, rest) => SortedSet.empty[Int] ++ posVars.map(_.x) ++ rest.flatMap(_.freeVars)
-
-      case Term.Union(_, _, posVars, rest) => SortedSet.empty[Int] ++ posVars.map(_.x) ++ rest.flatMap(_.freeVars)
+      case Term.Inter(_, _, posVars, _, _, negVars, rest) =>
+        SortedSet.empty[Int] ++ posVars.map(_.x) ++ negVars.map(_.x) ++ rest.flatMap(_.freeVars)
+      case Term.Union(_, _, posVars, _, _, negVars, rest) =>
+        SortedSet.empty[Int] ++ posVars.map(_.x) ++ negVars.map(_.x) ++ rest.flatMap(_.freeVars)
     }
 
     /**
@@ -1120,12 +1176,12 @@ object FastSetUnification {
       case Term.Elem(_) => 0
       case Term.Var(_) => 0
       case Term.Compl(t) => t.size + 1
-      case Term.Inter(posElem0, posCsts, posVars, rest) =>
+      case Term.Inter(posElem, posCsts, posVars, negElems, negCsts, negVars, rest) =>
         // We need a connective for each constant, variable, and term minus one.
         // We then add the size of all the sub-terms in `rest`.
-        ((posElem0.size + posCsts.size + posVars.size + rest.size) - 1) + rest.map(_.size).sum
-      case Term.Union(posElems0, posCsts, posVars, rest) =>
-        ((posElems0.size + posCsts.size + posVars.size + rest.size) - 1) + rest.map(_.size).sum
+        ((posElem.size + posCsts.size + posVars.size + negElems.size + negCsts.size + negVars.size + rest.size) - 1) + rest.map(_.size).sum
+      case Term.Union(posElems, posCsts, posVars, negElems, negCsts, negVars, rest) =>
+        ((posElems.size + posCsts.size + posVars.size + negElems.size + negCsts.size + negVars.size + rest.size) - 1) + rest.map(_.size).sum
     }
 
     /**
@@ -1141,8 +1197,12 @@ object FastSetUnification {
         case Term.Var(x) => s"!x$x"
         case _ => s"!($f)"
       }
-      case Term.Inter(posElem, posCsts, posVars, rest) => s"(${(posElem.toList ++ posCsts ++ posVars ++ rest).mkString(" ∩ ")})"
-      case Term.Union(posElems, posCsts, posVars, rest) => s"(${(posElems.toList ++ posCsts ++ posVars ++ rest).mkString(" ∪ ")})"
+      case Term.Inter(posElem, posCsts, posVars, negElems, negCsts, negVars, rest) =>
+        val terms = posElem.toList ++ negElems.map(Term.Compl(_)) ++ posCsts ++ negCsts.map(Term.Compl(_)) ++ posVars ++ negVars.map(Term.Compl(_)) ++ rest
+        s"(${terms.mkString(" ∩ ")})"
+      case Term.Union(posElems, posCsts, posVars, negElems, negCsts, negVars, rest) =>
+        val terms = posElems.toList ++ negElems.map(Term.Compl(_)) ++ posCsts ++ negCsts.map(Term.Compl(_)) ++ posVars ++ negVars.map(Term.Compl(_)) ++ rest
+        s"(${terms.mkString(" ∪ ")})"
     }
 
   }
@@ -1189,7 +1249,7 @@ object FastSetUnification {
       *
       * This representation is key to efficiency because the equations we solve are heavy on intersections.
       */
-    case class Inter(posElem: Option[Term.Elem], posCsts: Set[Term.Cst], posVars: Set[Term.Var], rest: List[Term]) extends Term {
+    case class Inter(posElem: Option[Term.Elem], posCsts: Set[Term.Cst], posVars: Set[Term.Var], negElems: Set[Term.Elem], negCsts: Set[Term.Cst], negVars: Set[Term.Var], rest: List[Term]) extends Term {
       // We ensure that `rest` cannot contain constants and variables.
       // Once the code is better tested, we can remove these assertions.
       assert(!rest.exists(_.isInstanceOf[Term.Cst]))
@@ -1202,7 +1262,7 @@ object FastSetUnification {
       *
       * Note: We do not use currently use any clever representation of unions (because there has been no need).
       */
-    case class Union(posElems: Set[Term.Elem], posCsts: Set[Term.Cst], posVars: Set[Term.Var], rest: List[Term]) extends Term {
+    case class Union(posElems: Set[Term.Elem], posCsts: Set[Term.Cst], posVars: Set[Term.Var], negElems: Set[Term.Elem], negCsts: Set[Term.Cst], negVars: Set[Term.Var], rest: List[Term]) extends Term {
       // We ensure that `rest` cannot contain constants and variables.
       // Once the code is better tested, we can remove these assertions.
       assert(!rest.exists(_.isInstanceOf[Term.Cst]))
@@ -1220,10 +1280,13 @@ object FastSetUnification {
       case Var(x) => Compl(Var(x))
       case Elem(i) => Compl(Elem(i))
       case Compl(t0) => t0
-      case Inter(posElem, posCsts, posVars, rest) =>
-        mkUnion((posElem.toList ++ posCsts ++ posVars ++ rest).map(mkCompl))
-      case Union(posElems, posCsts, posVars, rest) =>
-        mkInter((posElems.toList ++ posCsts ++ posVars ++ rest).map(mkCompl))
+      case Inter(posElem, posCsts, posVars, negElems, negCsts, negVars, rest) =>
+        val maintain = Union(negElems, negCsts, negVars, posElem.toSet, posCsts, posVars, Nil)
+        mkUnion(maintain :: rest.map(mkCompl))
+      case Union(posElems, posCsts, posVars, negElems, negCsts, negVars, rest) =>
+        if (negElems.sizeIs > 1) return Term.Empty
+        val maintain = Inter(negElems.headOption, negCsts, negVars, posElems, posCsts, posVars, Nil)
+        mkInter(maintain :: rest.map(mkCompl))
     }
 
     /**
@@ -1259,32 +1322,66 @@ object FastSetUnification {
       val posElemTerms = mutable.Set.empty[Term.Elem]
       val posCstTerms = mutable.Set.empty[Term.Cst]
       val posVarTerms = mutable.Set.empty[Term.Var]
+      val negElemTerms = mutable.Set.empty[Term.Elem]
+      val negCstTerms = mutable.Set.empty[Term.Cst]
+      val negVarTerms = mutable.Set.empty[Term.Var]
       val restTerms = mutable.ListBuffer.empty[Term]
       for (t <- ts) {
         t match {
           case Univ => // NOP - We do not have to include Univ in a intersection.
           case Empty => return Empty // If the intersection contains EMPTY then whole intersection is EMPTY.
-          case x@Term.Cst(_) => posCstTerms += x
+          case x@Term.Cst(_) =>
+            if (negCstTerms.contains(x)) return Empty
+            posCstTerms += x
+          case Term.Compl(x@Term.Cst(_)) =>
+            if (posCstTerms.contains(x)) return Empty
+            negCstTerms += x
           case x@Term.Elem(_) =>
+            if (negElemTerms.contains(x)) return Empty
             posElemTerms += x
             if (posElemTerms.size > 1) return Empty
-          case x@Term.Var(_) => posVarTerms += x
-          case Inter(posElem0, posCsts0, posVars0, rest0) =>
+          case Term.Compl(x@Term.Elem(_)) =>
+            if (posElemTerms.contains(x)) return Empty
+            negElemTerms += x
+          case x@Term.Var(_) =>
+            if (negVarTerms.contains(x)) return Empty
+            posVarTerms += x
+          case Term.Compl(x@Term.Var(_)) =>
+            if (posVarTerms.contains(x)) return Empty
+            negVarTerms += x
+          case Inter(posElem0, posCsts0, posVars0, negElems0, negCsts0, negVars0, rest0) =>
             posElemTerms ++= posElem0.toList
             if (posElemTerms.size > 1) return Empty
             // We have found a nested intersection. We can immediately add _its_ constants and variables.
             posCstTerms ++= posCsts0
             posVarTerms ++= posVars0
+            negElemTerms ++= negElems0
+            negCstTerms ++= negCsts0
+            negVarTerms ++= negVars0
             for (t0 <- rest0) {
               // We then iterate through the nested sub-terms of the nested intersection.
               t0 match {
                 case Univ => // NOP - We do not have to include Univ in a intersection.
-                case Empty => return Empty // If the sub-intersection contains EMPTY then the whole intersection is EMPTY.
-                case x@Term.Cst(_) => posCstTerms += x
+                case Empty => return Empty // If the intersection contains EMPTY then whole intersection is EMPTY.
+                case x@Term.Cst(_) =>
+                  if (negCstTerms.contains(x)) return Empty
+                  posCstTerms += x
+                case Term.Compl(x@Term.Cst(_)) =>
+                  if (posCstTerms.contains(x)) return Empty
+                  negCstTerms += x
                 case x@Term.Elem(_) =>
+                  if (negElemTerms.contains(x)) return Empty
                   posElemTerms += x
                   if (posElemTerms.size > 1) return Empty
-                case x@Term.Var(_) => posVarTerms += x
+                case Term.Compl(x@Term.Elem(_)) =>
+                  if (posElemTerms.contains(x)) return Empty
+                  negElemTerms += x
+                case x@Term.Var(_) =>
+                  if (negVarTerms.contains(x)) return Empty
+                  posVarTerms += x
+                case Term.Compl(x@Term.Var(_)) =>
+                  if (posVarTerms.contains(x)) return Empty
+                  negVarTerms += x
                 case _ => restTerms += t0
               }
             }
@@ -1295,13 +1392,16 @@ object FastSetUnification {
 
       // We now have a set of constants, a set of variables, and a list of sub-terms.
       // We optimize for the case where each of these is empty EXCEPT for one element.
-      (posElemTerms.toList, posCstTerms.toList, posVarTerms.toList, restTerms.toList) match {
-        case (Nil, Nil, Nil, Nil) => Term.Univ // Everything is empty, so we return the neutral element, i.e. UNIV.
-        case (List(posElem), Nil, Nil, Nil) => posElem // A single constant.
-        case (Nil, List(c), Nil, Nil) => c // A single constant.
-        case (Nil, Nil, List(x), Nil) => x // A single variable.
-        case (Nil, Nil, Nil, List(t)) => t // A single non-constant and non-variable sub-term.
-        case _ => Inter(posElemTerms.headOption, posCstTerms.toSet, posVarTerms.toSet, restTerms.toList)
+      (posElemTerms.toList, posCstTerms.toList, posVarTerms.toList, negElemTerms.toList, negCstTerms.toList, negVarTerms.toList, restTerms.toList) match {
+        case (Nil, Nil, Nil, Nil, Nil, Nil, Nil) => Term.Univ // Everything is empty, so we return the neutral element, i.e. UNIV.
+        case (List(posElem), Nil, Nil, Nil, Nil, Nil, Nil) => posElem
+        case (Nil, List(c), Nil, Nil, Nil, Nil, Nil) => c
+        case (Nil, Nil, List(x), Nil, Nil, Nil, Nil) => x
+        case (Nil, Nil, Nil, List(x), Nil, Nil, Nil) => Term.Compl(x)
+        case (Nil, Nil, Nil, Nil, List(x), Nil, Nil) => Term.Compl(x)
+        case (Nil, Nil, Nil, Nil, Nil, List(x), Nil) => Term.Compl(x)
+        case (Nil, Nil, Nil, Nil, Nil, Nil, List(t)) => t
+        case _ => Inter(posElemTerms.headOption, posCstTerms.toSet, posVarTerms.toSet, negElemTerms.toSet, negCstTerms.toSet, negVarTerms.toSet, restTerms.toList)
       }
     }
 
@@ -1313,27 +1413,63 @@ object FastSetUnification {
       val posElemTerms = mutable.Set.empty[Term.Elem]
       val posCstTerms = mutable.Set.empty[Term.Cst]
       val posVarTerms = mutable.Set.empty[Term.Var]
+      val negElemTerms = mutable.Set.empty[Term.Elem]
+      val negCstTerms = mutable.Set.empty[Term.Cst]
+      val negVarTerms = mutable.Set.empty[Term.Var]
       val restTerms = mutable.ListBuffer.empty[Term]
       for (t <- ts) {
         t match {
           case Empty => // NOP - We do not have to include Empty in a union.
           case Univ => return Univ // If the union contains UNIV then whole union is UNIV.
-          case x@Term.Cst(_) => posCstTerms += x
-          case x@Term.Elem(_) => posElemTerms += x
-          case x@Term.Var(_) => posVarTerms += x
-          case Union(posElems0, posCsts0, posVars0, rest0) =>
-            // We have found a nested union. We can immediately add _its_ constants and variables.
+          case x@Term.Cst(_) =>
+            if (negCstTerms.contains(x)) return Univ
+            posCstTerms += x
+          case Term.Compl(x@Term.Cst(_)) =>
+            if (posCstTerms.contains(x)) return Univ
+            negCstTerms += x
+          case x@Term.Elem(_) =>
+            if (negElemTerms.contains(x)) return Univ
+            posElemTerms += x
+          case Term.Compl(x@Term.Elem(_)) =>
+            if (posElemTerms.contains(x)) return Univ
+            negElemTerms += x
+          case x@Term.Var(_) =>
+            if (negVarTerms.contains(x)) return Univ
+            posVarTerms += x
+          case Term.Compl(x@Term.Var(_)) =>
+            if (posVarTerms.contains(x)) return Univ
+            negVarTerms += x
+          case Union(posElems0, posCsts0, posVars0, negElems0, negCsts0, negVars0, rest0) =>
             posElemTerms ++= posElems0.toList
+            // We have found a nested intersection. We can immediately add _its_ constants and variables.
             posCstTerms ++= posCsts0
             posVarTerms ++= posVars0
+            negElemTerms ++= negElems0
+            negCstTerms ++= negCsts0
+            negVarTerms ++= negVars0
             for (t0 <- rest0) {
-              // We then iterate through the nested sub-terms of the nested union.
+              // We then iterate through the nested sub-terms of the nested intersection.
               t0 match {
                 case Empty => // NOP - We do not have to include Empty in a union.
-                case Univ => return Univ // If the sub-union contains UNIV then the whole union is UNIV.
-                case x@Term.Cst(_) => posCstTerms += x
-                case x@Term.Elem(_) => posElemTerms += x
-                case x@Term.Var(_) => posVarTerms += x
+                case Univ => return Univ // If the union contains UNIV then whole union is UNIV.
+                case x@Term.Cst(_) =>
+                  if (negCstTerms.contains(x)) return Univ
+                  posCstTerms += x
+                case Term.Compl(x@Term.Cst(_)) =>
+                  if (posCstTerms.contains(x)) return Univ
+                  negCstTerms += x
+                case x@Term.Elem(_) =>
+                  if (negElemTerms.contains(x)) return Univ
+                  posElemTerms += x
+                case Term.Compl(x@Term.Elem(_)) =>
+                  if (posElemTerms.contains(x)) return Univ
+                  negElemTerms += x
+                case x@Term.Var(_) =>
+                  if (negVarTerms.contains(x)) return Univ
+                  posVarTerms += x
+                case Term.Compl(x@Term.Var(_)) =>
+                  if (posVarTerms.contains(x)) return Univ
+                  negVarTerms += x
                 case _ => restTerms += t0
               }
             }
@@ -1343,13 +1479,16 @@ object FastSetUnification {
 
       // We now have a set of constants, a set of variables, and a list of sub-terms.
       // We optimize for the case where each of these is empty EXCEPT for one element.
-      (posElemTerms.toList, posCstTerms.toList, posVarTerms.toList, restTerms.toList) match {
-        case (Nil, Nil, Nil, Nil) => Term.Empty // Everything is empty, so we return the neutral element, i.e. EMPTY.
-        case (List(posElem), Nil, Nil, Nil) => posElem // A single constant.
-        case (Nil, List(c), Nil, Nil) => c // A single constant.
-        case (Nil, Nil, List(x), Nil) => x // A single variable.
-        case (Nil, Nil, Nil, List(t)) => t // A single non-constant and non-variable sub-term.
-        case _ => Union(posElemTerms.toSet, posCstTerms.toSet, posVarTerms.toSet, restTerms.toList)
+      (posElemTerms.toList, posCstTerms.toList, posVarTerms.toList, negElemTerms.toList, negCstTerms.toList, negVarTerms.toList, restTerms.toList) match {
+        case (Nil, Nil, Nil, Nil, Nil, Nil, Nil) => Term.Empty // Everything is empty, so we return the neutral element, i.e. EMPTY.
+        case (List(posElem), Nil, Nil, Nil, Nil, Nil, Nil) => posElem
+        case (Nil, List(c), Nil, Nil, Nil, Nil, Nil) => c
+        case (Nil, Nil, List(x), Nil, Nil, Nil, Nil) => x
+        case (Nil, Nil, Nil, List(x), Nil, Nil, Nil) => Term.Compl(x)
+        case (Nil, Nil, Nil, Nil, List(x), Nil, Nil) => Term.Compl(x)
+        case (Nil, Nil, Nil, Nil, Nil, List(x), Nil) => Term.Compl(x)
+        case (Nil, Nil, Nil, Nil, Nil, Nil, List(t)) => t
+        case _ => Union(posElemTerms.toSet, posCstTerms.toSet, posVarTerms.toSet, negElemTerms.toSet, negCstTerms.toSet, negVarTerms.toSet, restTerms.toList)
       }
     }
 
@@ -1362,22 +1501,6 @@ object FastSetUnification {
       * Returns the Minus of `x` and `y` (`-`). Implemented by desugaring.
       */
     final def mkMinus(x: Term, y: Term): Term = mkInter(x, mkCompl(y))
-
-    /**
-      * Flips the formula in regards to operations but does not flip constants and variables since
-      * they are supposed to be re-interpreted externally.
-      */
-    final def flip(t: Term): Term = t match {
-      case Univ => Empty
-      case Empty => Univ
-      case Cst(c) => Cst(c)
-      case Elem(i) => Elem(i)
-      case Var(x) => Var(x)
-      case Compl(t) => Compl(flip(t))
-      case Inter(posElem, posCsts, posVars, rest) => mkUnion((posElem.toList ++ posCsts ++ posVars ++ rest).map(flip))
-      case Union(posElems, posCsts, posVars, rest) => mkInter((posElems.toList ++ posCsts ++ posVars ++ rest).map(flip))
-    }
-
   }
 
   /**
@@ -1426,17 +1549,15 @@ object FastSetUnification {
 
       case Term.Compl(t0) => Term.mkCompl(apply(t0))
 
-      case Term.Inter(posElem, posCsts, posVars, rest) =>
-        // A intersection is a sequence of: constants, variables, and terms. We know that the constants are unchanged by
-        // the substitution. We know that some variables may become constants, variables, or terms. Since we do not want
-        // to duplicate functionality from [[Term.mkInter]], we simply apply the substitution to the variables and terms,
-        // and put everything in one list. We then let [[Term.mkInter]] reclassify all the sub-terms.
-        val ts = posElem.toList ++ posCsts ++ posVars.map(apply) ++ rest.map(apply)
-        Term.mkInter(ts)
+      case Term.Inter(posElem, posCsts, posVars, negElems, negCsts, negVars, rest) =>
+        val maintain = Term.Inter(posElem, posCsts, Set.empty, negElems, negCsts, Set.empty, Nil)
+        val ts = posVars.toList.map(apply) ++ negVars.toList.map(x => Term.mkCompl(apply(x))) ++ rest.map(apply)
+        Term.mkInter(maintain :: ts)
 
-      case Term.Union(posElems, posCsts, posVars, rest) =>
-        val ts = posElems.toList ++ posCsts ++ posVars.map(apply) ++ rest.map(apply)
-        Term.mkUnion(ts)
+      case Term.Union(posElems, posCsts, posVars, negElems, negCsts, negVars, rest) =>
+        val maintain = Term.Union(posElems, posCsts, Set.empty, negElems, negCsts, Set.empty, Nil)
+        val ts = posVars.toList.map(apply) ++ negVars.toList.map(x => Term.mkCompl(apply(x))) ++ rest.map(apply)
+        Term.mkUnion(maintain :: ts)
     }
 
     /**
