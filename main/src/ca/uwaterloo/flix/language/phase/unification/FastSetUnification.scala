@@ -591,7 +591,7 @@ object FastSetUnification {
       pending = pending.tail
 
       e match {
-        case Equation(Term.Var(x), rhs, _) if !rhs.freeVars.contains(x) =>
+        case Equation(v@Term.Var(x), rhs, _) if !rhs.freeVarsContains(v) =>
           // Case 1: We have found an equation: `x ~ t` where `x` is not free in `t`.
           // Construct a singleton substitution `[x -> y]`.
           val singleton = BoolSubstitution.singleton(x, rhs)
@@ -764,8 +764,7 @@ object FastSetUnification {
   private def successiveVariableElimination(t: Term, fvs: List[Int]): BoolSubstitution = fvs match {
     case Nil =>
       // Determine if f is unsatisfiable when all constants are made into (flexible) variables.
-      // TODO instead of actually flexifying, emptyEquivalent should just treat them that way
-      if (emptyEquivalent(flexify(t)))
+      if (emptyEquivalent(t))
         BoolSubstitution.empty
       else
         throw BoolUnificationException()
@@ -778,36 +777,6 @@ object FastSetUnification {
       val f1 = repeatedPropagation(Term.mkUnion(se(t0), Term.mkMinus(Term.Var(x), se(t1))), 1)
       val st = BoolSubstitution.singleton(x, f1)
       st ++ se
-  }
-
-  /**
-    * Returns `t` where every constant has been made into a variable.
-    *
-    * Note: We use the constant name as the variable. This assume that constants and variables are disjoint.
-    */
-  private def flexify(t: Term): Term = t match {
-    case Term.Univ => t
-    case Term.Empty => t
-    case Term.Cst(c) => Term.Var(c) // We use the constant name as the variable name.
-    case Term.Elem(_) => t
-    case Term.Var(_) => t
-    case Term.Compl(t0) =>
-      val flex = flexify(t0)
-      if (flex eq t0) t else Term.mkCompl(flex)
-    case Term.Inter(posElem, posCsts, posVars, negElems, negCsts, negVars, rest) =>
-      val maintain = Term.Inter(posElem, Set.empty, posVars, negElems, Set.empty, negVars, Nil)
-      val posCstsFlexed = posCsts.toList.map(c => Term.Var(c.c))
-      val negCstsFlexed = negCsts.toList.map(c => Term.Compl(Term.Var(c.c)))
-      val restFlexed = rest.map(flexify)
-      val transformed = posCstsFlexed ++ negCstsFlexed ++ restFlexed
-      Term.mkInter(maintain :: transformed)
-    case Term.Union(posElems, posCsts, posVars, negElems, negCsts, negVars, rest) =>
-      val maintain = Term.Union(posElems, Set.empty, posVars, negElems, Set.empty, negVars, Nil)
-      val posCstsFlexed = posCsts.toList.map(c => Term.Var(c.c))
-      val negCstsFlexed = negCsts.toList.map(c => Term.Compl(Term.Var(c.c)))
-      val restFlexed = rest.map(flexify)
-      val transformed = posCstsFlexed ++ negCstsFlexed ++ restFlexed
-      Term.mkUnion(maintain :: transformed)
   }
 
   /**
@@ -825,7 +794,7 @@ object FastSetUnification {
     case Term.Var(_) => false
     case Term.Elem(_) => false
     case Term.Empty => true
-    case _ => evaluateAll(t, t.freeVars.toList, SortedSet.empty) // Evaluate t on all its valuations.
+    case _ => evaluateAll(t, t.freeUnknowns.toList, SortedSet.empty) // Evaluate t on all its valuations.
   }
 
   /**
@@ -851,7 +820,7 @@ object FastSetUnification {
   private def evaluate(t: Term, trueVars: SortedSet[Int]): SetEval = t match {
     case Term.Univ => SetEval.univ
     case Term.Empty => SetEval.empty
-    case Term.Cst(_) => ??? // unreachable
+    case Term.Cst(c) => if (trueVars.contains(c)) SetEval.univ else SetEval.empty
     case Term.Elem(i) => SetEval.single(i)
     case Term.Var(x) => if (trueVars.contains(x)) SetEval.univ else SetEval.empty
     case Term.Compl(t) => evaluate(t, trueVars).compl()
@@ -1167,6 +1136,38 @@ object FastSetUnification {
         SortedSet.empty[Int] ++ posVars.map(_.x) ++ negVars.map(_.x) ++ rest.flatMap(_.freeVars)
       case Term.Union(_, _, posVars, _, _, negVars, rest) =>
         SortedSet.empty[Int] ++ posVars.map(_.x) ++ negVars.map(_.x) ++ rest.flatMap(_.freeVars)
+    }
+
+    /**
+      * Returns all variables that occur in `this` term.
+      */
+    final def freeVarsContains(v: Term.Var): Boolean = this match {
+      case Term.Univ => false
+      case Term.Empty => false
+      case Term.Cst(_) => false
+      case Term.Elem(_) => false
+      case Term.Var(_) => this == v
+      case Term.Compl(t) => t.freeVarsContains(v)
+      case Term.Inter(_, _, posVars, _, _, negVars, rest) =>
+        posVars.contains(v) || negVars.contains(v) || rest.exists(t => t.freeVarsContains(v))
+      case Term.Union(_, _, posVars, _, _, negVars, rest) =>
+        posVars.contains(v) || negVars.contains(v) || rest.exists(t => t.freeVarsContains(v))
+    }
+
+    /**
+      * Returns all variables and constants that occur in `this` term.
+      */
+    final def freeUnknowns: SortedSet[Int] = this match {
+      case Term.Univ => SortedSet.empty
+      case Term.Empty => SortedSet.empty
+      case Term.Cst(c) => SortedSet(c)
+      case Term.Elem(_) => SortedSet.empty
+      case Term.Var(x) => SortedSet(x)
+      case Term.Compl(t) => t.freeUnknowns
+      case Term.Inter(_, posCsts, posVars, _, negCsts, negVars, rest) =>
+        SortedSet.empty[Int] ++ posCsts.map(_.c) ++ posVars.map(_.x) ++ negCsts.map(_.c) ++ negVars.map(_.x) ++ rest.flatMap(_.freeUnknowns)
+      case Term.Union(_, posCsts, posVars, _, negCsts, negVars, rest) =>
+        SortedSet.empty[Int] ++ posCsts.map(_.c) ++ posVars.map(_.x) ++ negCsts.map(_.c) ++ negVars.map(_.x) ++ rest.flatMap(_.freeUnknowns)
     }
 
     /**
@@ -1743,7 +1744,7 @@ object FastSetUnification {
       val t1 = s(e.t1)
       val t2 = s(e.t2)
       val query = Term.mkXor(t1, t2)
-      if (!emptyEquivalent(flexify(query))) {
+      if (!emptyEquivalent(query)) {
         println(s"  Original  : ${e.t1} ~ ${e.t2}")
         println(s"  with Subst: $t1 ~ $t2")
         throw InternalCompilerException(s"Incorrectly solved equation", SourceLocation.Unknown)
