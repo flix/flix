@@ -63,7 +63,7 @@ object FastSetUnification {
     *
     * If a solution is too complex an [[TooComplexException]] exception is thrown.
     */
-  private val SizeThreshold: Int = 1_000
+  private val SizeThreshold: Int = 600
 
   /**
     * The threshold for how many complex equation we will try to solve.
