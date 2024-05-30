@@ -1457,8 +1457,7 @@ object Parser2 {
              | TokenKind.LiteralRegex => literalExpr()
         case TokenKind.ParenL => parenOrTupleOrLambdaExpr()
         case TokenKind.Underscore => if (nth(1) == TokenKind.ArrowThinR) unaryLambdaExpr() else name(NAME_VARIABLE, context = SyntacticContext.Expr.OtherExpr)
-        case TokenKind.NameLowerCase | TokenKind.NameUpperCase if nth(1) == TokenKind.Hash =>
-          invokeMethod2Expr()
+        case TokenKind.NameLowerCase if nth(1) == TokenKind.Hash => invokeMethod2Expr()
         case TokenKind.NameLowerCase => if (nth(1) == TokenKind.ArrowThinR) unaryLambdaExpr() else name(NAME_FIELD, allowQualified = true, context = SyntacticContext.Expr.OtherExpr)
         case TokenKind.NameUpperCase
              | TokenKind.NameMath
@@ -2390,9 +2389,9 @@ object Parser2 {
     }
 
     private def invokeMethod2Expr()(implicit s: State): Mark.Closed = {
-      assert(at(TokenKind.NameLowerCase) || at(TokenKind.NameUpperCase))
+      assert(at(TokenKind.NameLowerCase))
       val mark = open()
-      name(Set(TokenKind.NameUpperCase, TokenKind.NameLowerCase), context = SyntacticContext.Expr.OtherExpr)
+      name(Set(TokenKind.NameLowerCase), context = SyntacticContext.Expr.OtherExpr)
       // TODO INTEROP emit an error if we are not at an hash here
       while (eat(TokenKind.Hash)) {
         val fragmentMark = open()

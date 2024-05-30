@@ -1678,6 +1678,17 @@ object Weeder2 {
       }
     }
 
+    /**
+     * Helper method to visit a sub-expression of invokeMethod2.
+     * We may consider a sub-expression the following: someCall(x, y, ...)
+     * which contains the method name "someCall" and its arguments x, y, ...
+     *
+     * Its purpose is to ease manipulation of consecutive java calls, e.g.:
+     *
+     *                    obj#method1()#method2()
+     *
+     * contains two invokeMethod2 fragments.
+     */
     private def visitInvokeMethod2Fragment(tree: Tree): Validation[(Name.Ident, List[Expr]), CompilationMessage] = {
       expect(tree, TreeKind.Expr.InvokeMethod2Fragment)
       val methodName = pickNameIdent(tree)
