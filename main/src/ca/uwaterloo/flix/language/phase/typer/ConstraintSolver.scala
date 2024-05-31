@@ -366,12 +366,7 @@ object ConstraintSolver {
         res <- CaseSetUnification.unify(t1, t2, renv, sym1.universe, sym1).mapErr(toTypeError(_, prov))
       } yield ResolutionResult.newSubst(res)
 
-    case (k1, k2) if KindUnification.unifiesWith(k1, k2) =>
-      for {
-        (t1, _) <- TypeReduction.simplify(tpe1, renv, loc)
-        (t2, _) <- TypeReduction.simplify(tpe2, renv, loc)
-        res <- resolveEqualityStar(tpe1, tpe2, prov, renv, loc)
-      } yield res
+    case (k1, k2) if KindUnification.unifiesWith(k1, k2) => resolveEqualityStar(tpe1, tpe2, prov, renv, loc)
 
     case _ => Err(toTypeError(UnificationError.MismatchedTypes(tpe1, tpe2), prov))
   }
