@@ -31,8 +31,8 @@ sealed trait TypeConstraint {
     case TypeConstraint.Equality(_: Type.Var, Type.Pure, _) => (0, 0, 0)
     case TypeConstraint.Equality(Type.Pure, _: Type.Var, _) => (0, 0, 0)
     case TypeConstraint.Equality(tvar1: Type.Var, tvar2: Type.Var, _) if tvar1 != tvar2 => (0, 0, 0)
-    case TypeConstraint.EqJvmConstructor(_, _, _, _) => (0, 0, 0) // to check
-    case TypeConstraint.EqJvmMethod(_, _, _, _, _) => (0, 0, 0) // to check
+    case TypeConstraint.EqJvmConstructor(_, _, _, _) => (1, 0, 0)
+    case TypeConstraint.EqJvmMethod(_, _, _, _, _) => (1, 0, 0)
     case TypeConstraint.Purification(_, _, _, _, _) => (0, 0, 0)
     case TypeConstraint.Equality(tpe1, tpe2, _) =>
       val tvars = tpe1.typeVars ++ tpe2.typeVars
