@@ -75,4 +75,26 @@ object DerivationError {
          |""".stripMargin
     }
   }
+
+  /**
+    * An error to indicate the derivation of Coerce for a non-singleton enum.
+    *
+    * @param sym the enum symbol
+    * @param loc the source location where the error occurred.
+    */
+  case class IllegalNonSingletonCoerce(sym: Symbol.EnumSym, loc: SourceLocation) extends DerivationError with Recoverable {
+    def summary: String = s"Cannot derive 'Coerce' for the non-singleton enum '${sym.name}'."
+
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Cannot derive '${magenta("Coerce")}' for the non-singleton enum '${red(sym.name)}'.
+         |
+         |${code(loc, "illegal derivation")}
+         |
+         |'Coerce' can only be derived for enums with exactly one case.
+         |""".stripMargin
+    }
+  }
 }
