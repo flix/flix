@@ -246,7 +246,7 @@ object TypeConstructor {
   /**
    * A type constructor that represents the type of a Java constructor.
    * */
-  case class JvmConstructor(methodName: String, arity: Int) {
+  case class JvmConstructor(arity: Int) {
     def kind: Kind = Kind.Star
   }
 

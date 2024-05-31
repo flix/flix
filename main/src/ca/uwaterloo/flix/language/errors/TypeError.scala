@@ -60,6 +60,26 @@ object TypeError {
   }
 
   /**
+   * Java method not found type error.
+   *
+   * @param tpe  the type of the method.
+   * @param renv the rigidity environment.
+   * @param loc  the location where the error occured.
+   */
+  case class MethodNotFound(methodName: String, tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    def summary: String = s"Java method with type '$tpe' not found."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Java method '$methodName' with signature '${red(formatType(tpe, Some(renv)))}' not found.
+         |
+         |${code(loc, s"java method '${methodName} method not found")}
+         |""".stripMargin
+    }
+  }
+
+  /**
     * Mismatched Arity.
     *
     * @param tpe1 the first type.
@@ -392,26 +412,6 @@ object TypeError {
          |
          |""".stripMargin
     })
-  }
-
-  /**
-   * Java method not found type error.
-   *
-   * @param tpe  the type of the method.
-   * @param renv the rigidity environment.
-   * @param loc  the location where the error occured.
-   */
-  case class MethodNotFound(methodName: String, tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"Java method with type '$tpe' not found."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Java method '$methodName' with signature '${red(formatType(tpe, Some(renv)))}' not found.
-         |
-         |${code(loc, s"java method '${methodName} method not found")}
-         |""".stripMargin
-    }
   }
 
   /**
