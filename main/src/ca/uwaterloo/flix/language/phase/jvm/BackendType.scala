@@ -187,6 +187,8 @@ object BackendType {
       case MonoType.RecordEmpty => BackendObjType.RecordEmpty.toTpe
       case MonoType.RecordExtend(_, value, _) => BackendObjType.RecordExtend(toBackendType(value)).toTpe
       case MonoType.Native(clazz) => BackendObjType.Native(JvmName.ofClass(clazz)).toTpe
+      case MonoType.JvmConstructor(method) => BackendObjType.JavaObject.toTpe
+      case MonoType.JvmMethod(method) => BackendObjType.JavaObject.toTpe
     }
   }
 
@@ -220,7 +222,8 @@ object BackendType {
     case MonoType.Void | MonoType.AnyType | MonoType.Unit | MonoType.BigDecimal | MonoType.BigInt |
          MonoType.String | MonoType.Regex | MonoType.Array(_) | MonoType.Lazy(_) | MonoType.Ref(_) |
          MonoType.Tuple(_) | MonoType.Enum(_) | MonoType.Arrow(_, _) | MonoType.RecordEmpty |
-         MonoType.RecordExtend(_, _, _) | MonoType.Native(_) | MonoType.Region =>
+         MonoType.RecordExtend(_, _, _) | MonoType.Native(_) | MonoType.JvmConstructor(_) |
+         MonoType.JvmMethod(_) | MonoType.Region =>
       BackendObjType.JavaObject.toTpe
   }
 
@@ -237,7 +240,8 @@ object BackendType {
     case MonoType.Void | MonoType.AnyType | MonoType.Unit | MonoType.BigDecimal | MonoType.BigInt |
          MonoType.String | MonoType.Regex | MonoType.Array(_) | MonoType.Lazy(_) | MonoType.Ref(_) |
          MonoType.Tuple(_) | MonoType.Enum(_) | MonoType.Arrow(_, _) | MonoType.RecordEmpty |
-         MonoType.RecordExtend(_, _, _) | MonoType.Native(_) | MonoType.Region =>
+         MonoType.RecordExtend(_, _, _) | MonoType.Native(_) | MonoType.JvmConstructor(_) |
+         MonoType.JvmMethod(_) | MonoType.Region =>
       throw InternalCompilerException(s"Unexpected type $tpe", SourceLocation.Unknown)
   }
 
@@ -262,6 +266,8 @@ object BackendType {
     case MonoType.String => BackendObjType.String.toTpe
     case MonoType.Regex => BackendObjType.Regex.toTpe
     case MonoType.Native(clazz) => JvmName.ofClass(clazz).toTpe
+    case MonoType.JvmConstructor(method) => JvmName.ofClass(method.getClass).toTpe
+    case MonoType.JvmMethod(method) => JvmName.ofClass(method.getClass).toTpe
     case MonoType.Void | MonoType.AnyType | MonoType.Unit | MonoType.Lazy(_) | MonoType.Ref(_) |
          MonoType.Tuple(_) | MonoType.Arrow(_, _) | MonoType.RecordEmpty |
          MonoType.RecordExtend(_, _, _) | MonoType.Region | MonoType.Enum(_) =>

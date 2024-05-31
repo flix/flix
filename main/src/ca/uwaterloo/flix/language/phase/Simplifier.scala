@@ -280,6 +280,10 @@ object Simplifier {
 
           case TypeConstructor.Native(clazz) => MonoType.Native(clazz)
 
+          case TypeConstructor.JvmConstructor(method) => MonoType.JvmConstructor(method)
+
+          case TypeConstructor.JvmMethod(method) => MonoType.JvmMethod(method)
+
           case TypeConstructor.Array => MonoType.Array(args.head)
 
           case TypeConstructor.Vector => MonoType.Array(args.head)

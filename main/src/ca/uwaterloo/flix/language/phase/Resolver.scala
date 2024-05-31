@@ -3322,6 +3322,10 @@ object Resolver {
 
         case TypeConstructor.Native(clazz) => Result.Ok(clazz)
 
+        case TypeConstructor.JvmConstructor(method) => Result.Ok(method.getClass) // to check
+
+        case TypeConstructor.JvmMethod(method) => Result.Ok(method.getClass) // to check
+
         case TypeConstructor.Record => Result.Ok(Class.forName("java.lang.Object"))
 
         case TypeConstructor.Schema => Result.Ok(Class.forName("java.lang.Object"))

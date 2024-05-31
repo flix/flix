@@ -19,7 +19,6 @@ import ca.uwaterloo.flix.language.ast.Ast.CheckedCastType
 import ca.uwaterloo.flix.language.ast.Type.getFlixType
 import ca.uwaterloo.flix.language.ast.{Ast, KindedAst, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.phase.unification.Substitution
-import ca.uwaterloo.flix.util.InternalCompilerException
 
 object TypeReconstruction {
 
@@ -421,9 +420,10 @@ object TypeReconstruction {
     case KindedAst.Expr.InvokeMethod2(exp, name, exps, mvar, tvar, evar, loc) =>
       val e = visitExp(exp)
       val es = exps.map(visitExp)
-      // val t = Type.Cst(TypeConstructor.JvmMethod(name.name, es.length), loc) = subst(mvar)
       // Translation from invokeMethod2 to invokeMethod
-      throw InternalCompilerException(s"Unexpected invokeMethod2 call.", loc) // TODO INTEROP WIP
+      // TODO INTEROP check this
+      val Type.Cst(TypeConstructor.JvmMethod(method), loc) = subst(mvar)
+      TypedAst.Expr.InvokeMethod(method, e, es, subst(tvar), subst(evar), loc)
 
     case KindedAst.Expr.InvokeConstructor(constructor, args, loc) =>
       val as = args.map(visitExp(_))

@@ -50,6 +50,8 @@ object MonoTypePrinter {
     case MonoType.RecordEmpty => Type.RecordEmpty
     case MonoType.RecordExtend(label, value, rest) => Type.RecordExtend(label, print(value), print(rest))
     case MonoType.Native(clazz) => Type.Native(clazz)
+    case MonoType.JvmConstructor(method) => Type.JvmConstructor(method)
+    case MonoType.JvmMethod(method) => Type.JvmMethod(method)
   }
 
 }

@@ -4,6 +4,7 @@ import ca.uwaterloo.flix.language.ast.Ast.{EliminatedBy, IntroducedBy}
 import ca.uwaterloo.flix.language.ast.Kind.JvmConstructorOrMethod
 import ca.uwaterloo.flix.language.phase.{Kinder, Lowering, Monomorpher}
 
+import java.lang.reflect.Method
 import scala.collection.immutable.SortedSet
 
 /**
@@ -246,14 +247,14 @@ object TypeConstructor {
   /**
    * A type constructor that represents the type of a Java constructor.
    * */
-  case class JvmConstructor(arity: Int) {
+  case class JvmConstructor(constructor: Method) extends TypeConstructor {
     def kind: Kind = Kind.Star
   }
 
   /**
    * A type constructor that represents the type of a Java method.
    */
-  case class JvmMethod(methodName: String, arity: Int) {
+  case class JvmMethod(method: Method) extends TypeConstructor {
     def kind: Kind = Kind.Star
   }
 
