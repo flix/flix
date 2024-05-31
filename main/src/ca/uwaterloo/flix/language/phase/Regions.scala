@@ -203,9 +203,6 @@ object Regions {
     case Expr.Do(_, exps, tpe, _, loc) =>
       exps.flatMap(visitExp) ++ checkType(tpe, loc)
 
-    case Expr.InvokeMethod2(exp, _, exps, mtpe, tpe, _, loc) =>
-      exps.flatMap(visitExp) ++ visitExp(exp) ++ checkType(mtpe, loc) ++ checkType(tpe, loc) // do we check mtpe?
-
     case Expr.InvokeConstructor(_, exps, tpe, _, loc) =>
       exps.flatMap(visitExp) ++ checkType(tpe, loc)
 

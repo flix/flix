@@ -113,7 +113,7 @@ object TypeReduction {
         // TODO INTEROP add base case
         resolveMethodReturnType(targs.head, m, targs.tail, loc) match {
           case ResolutionResult.Resolved(t) => println(s">>> found return type $t"); Result.Ok((t, true))
-          case ResolutionResult.MethodNotFound() => Result.Err(TypeError.MethodNotFound(m, tpe, renv0, loc))
+          case ResolutionResult.MethodNotFound() => Result.Err(TypeError.MethodNotFound(m, targs.head, tpe, List(), renv0, loc)) // TODO INTEROP tpe shall be replaced by list of types of arguments + fill in candidate methods
           case ResolutionResult.NoProgress => Result.Ok((tpe, false))
         }
       case _ => Result.Ok((tpe, false))

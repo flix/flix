@@ -256,11 +256,6 @@ object EffectVerifier {
       exps.foreach(visitExp)
       // TODO effect stuff
       ()
-    case Expr.InvokeMethod2(exp, name, exps, mtpe, tpe, eff, loc) =>
-      visitExp(exp)
-      exps.foreach(visitExp)
-      // TODO Java stuff
-      ()
     case Expr.InvokeConstructor(constructor, exps, tpe, eff, loc) =>
       exps.foreach(visitExp)
       // TODO Java stuff
