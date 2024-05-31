@@ -77,15 +77,17 @@ object TypeConstraint {
 
   /**
    * A constraint indicating the equivalence between a Java constructor's type and a class with its arguments.
+   * Where mvar must have kind JvmConstructorOrMethod -> Type.
    */
-  case class EqJvmConstructor(mvar: Type.Var, clazz: Class[_], tpes: List[Type], prov: Provenance) extends TypeConstraint { // Where mvar must have kind JvmConstructorOrMethod -> Type
+  case class EqJvmConstructor(mvar: Type.Var, clazz: Class[_], tpes: List[Type], prov: Provenance) extends TypeConstraint {
     def loc: SourceLocation = prov.loc
   }
 
   /**
    * A constraint indicating the equivalence between a Java method's type and a method signature, i.e., a type, method name and list of arguments.
+   * Where mvar must have kind JvmConstructorOrMethod -> Type.
    */
-  case class EqJvmMethod(mvar: Type.Var, tpe: Type, method: Name.Ident, tpes: List[Type], prov: Provenance) extends TypeConstraint {// Where mvar must have kind JvmConstructorOrMethod -> Type
+  case class EqJvmMethod(mvar: Type.Var, tpe: Type, method: Name.Ident, tpes: List[Type], prov: Provenance) extends TypeConstraint {
     def loc: SourceLocation = prov.loc
   }
 
