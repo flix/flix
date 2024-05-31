@@ -63,7 +63,7 @@ object FastSetUnification {
     *
     * If a solution is too complex an [[TooComplexException]] exception is thrown.
     */
-  private val SizeThreshold: Int = 600
+  private val SizeThreshold: Int = 800
 
   /**
     * The threshold for how many complex equation we will try to solve.
@@ -116,6 +116,11 @@ object FastSetUnification {
     solver.solve()
   }
 
+  def solveAllInfo(l: List[Equation]): (Result[BoolSubstitution, (FastBoolUnificationException, List[Equation], BoolSubstitution)], Int) = {
+    val solver = new Solver(l)
+    (solver.solve(), solver.phase)
+  }
+
   /**
     * A stateful phased solver for Boolean unification equations. The solver maintains two fields that change over time:
     *
@@ -125,6 +130,10 @@ object FastSetUnification {
     * @param l The input list of Boolean unification equations to solve.
     */
   private class Solver(l: List[Equation]) {
+
+    var phase: Int = 0
+
+    private def setPhase(p: Int): Unit = phase = phase max p
 
     /**
       * The current (pending) equations to solve.
@@ -180,6 +189,7 @@ object FastSetUnification {
       debugln("--- Phase 1: Constant Propagation")
       debugln("    (resolves all equations of the form: x = c where x is a var and c is const)")
       debugln("-".repeat(80))
+      if (currentEqns.nonEmpty) setPhase(1)
       val s = propagateConstants(currentEqns)
       updateState(s)
       printEquations()
@@ -192,6 +202,7 @@ object FastSetUnification {
       debugln("--- Phase 2: Variable Propagation")
       debugln("    (resolves all equations of the form: x = y where x and y are vars)")
       debugln("-".repeat(80))
+      if (currentEqns.nonEmpty) setPhase(2)
       val s = propagateVars(currentEqns)
       updateState(s)
       printEquations()
@@ -204,6 +215,7 @@ object FastSetUnification {
       debugln("--- Phase 3: Variable Assignment")
       debugln("    (resolves all equations of the form: x = t where x is free in t)")
       debugln("-".repeat(80))
+      if (currentEqns.nonEmpty) setPhase(3)
       val s = varAssignment(currentEqns)
       updateState(s)
       printEquations()
@@ -216,6 +228,7 @@ object FastSetUnification {
       debugln("--- Phase 4: Eliminate Trivial and Redundant Equations")
       debugln("    (eliminates equations of the form X = X and duplicated equations)")
       debugln("-".repeat(80))
+      if (currentEqns.nonEmpty) setPhase(4)
       val s = eliminateTrivialAndRedundant(currentEqns)
       updateState(s)
       printEquations()
@@ -228,6 +241,7 @@ object FastSetUnification {
       debugln("--- Phase 5: Boolean Unification")
       debugln("    (resolves all remaining equations using SVE.)")
       debugln("-".repeat(80))
+      if (currentEqns.nonEmpty) setPhase(5)
       val newSubst = boolUnifyAllPickSmallest(currentEqns)
       updateState(Nil, newSubst) // Note: We pass Nil because SVE will have solved all equations.
       printSubstitution()
@@ -264,7 +278,7 @@ object FastSetUnification {
     private def verifySolutionSize(): Unit = {
       val size = currentSubst.size
       if (size > SizeThreshold) {
-        println(currentSubst)
+        println(currentSubst.toRawString)
         throw TooComplexException(s"Too large a substitution (threshold: $SizeThreshold, found: $size)")
       }
     }
@@ -594,7 +608,7 @@ object FastSetUnification {
         case Equation(v@Term.Var(x), rhs, _) if !rhs.freeVarsContains(v) =>
           // Case 1: We have found an equation: `x ~ t` where `x` is not free in `t`.
           // Construct a singleton substitution `[x -> y]`.
-          val singleton = BoolSubstitution.singleton(x, rhs)
+          val singleton = BoolSubstitution.singleton(x, repeatedPropagation(rhs, 1))
 
           // Apply the singleton substitution to the unsolved equations.
           pending = singleton(pending)
@@ -763,7 +777,6 @@ object FastSetUnification {
     */
   private def successiveVariableElimination(t: Term, fvs: List[Int]): BoolSubstitution = fvs match {
     case Nil =>
-      // Determine if f is unsatisfiable when all constants are made into (flexible) variables.
       if (emptyEquivalent(t))
         BoolSubstitution.empty
       else
@@ -923,7 +936,11 @@ object FastSetUnification {
 
   @tailrec
   private def repeatedPropagation(t: Term, k: Int): Term = {
-    if (k <= 0) t else repeatedPropagation(propagation(t), k - 1)
+    if (k <= 0) t else {
+      val prop = propagation(t)
+      if (prop eq t) t
+      else repeatedPropagation(prop, k - 1)
+    }
   }
 
   /**
@@ -931,7 +948,7 @@ object FastSetUnification {
     *
     * We use this for elements, constants, and variables.
     */
-  private def propagation(t: Term): Term = {
+  def propagation(t: Term): Term = {
     def visit(t: Term, setElems: SortedMap[Int, Term], setCsts: SortedMap[Int, Term], setVars: SortedMap[Int, Term]): Term = t match {
       case Term.Univ => t
       case Term.Empty => t
@@ -1112,15 +1129,21 @@ object FastSetUnification {
       */
     final def &(that: Term): Term = Term.mkInter(this, that)
 
+    def inter(that: Term): Term = Term.mkInter(this, that)
+
     /**
       * Syntactic sugar for [[Term.mkUnion]].
       */
     final def |(that: Term): Term = Term.mkUnion(this, that)
 
+    def union(that: Term): Term = Term.mkUnion(this, that)
+
     /**
       * Syntactic sugar for [[Equation.mk]]
       */
     final def ~(that: Term)(implicit loc: SourceLocation): Equation = Equation.mk(this, that, loc)
+
+    def compl(): Term = Term.mkCompl(this)
 
     /**
       * Returns all variables that occur in `this` term.
@@ -1189,6 +1212,25 @@ object FastSetUnification {
       case Term.Union(posElems, posCsts, posVars, negElems, negCsts, negVars, rest) =>
         ((posElems.size + posCsts.size + posVars.size + negElems.size + negCsts.size + negVars.size + rest.size) - 1) + rest.map(_.size).sum
     }
+
+    def toRawString: String = this match {
+      case Term.Univ => "Univ"
+      case Term.Empty => "Empty"
+      case Term.Cst(c) => s"Cst($c)"
+      case Term.Var(x) => s"Var($x)"
+      case Term.Elem(i) => s"Elem($i)"
+      case Term.Compl(t) => s"Compl(${t.toRawString})"
+      case Term.Inter(posElem, posCsts, posVars, negElems, negCsts, negVars, rest) =>
+        val pe = posElem match {
+          case Some(value) => s"Some(${value.toRawString})"
+          case None => s"None"
+        }
+        s"Inter($pe, ${helpSet(posCsts)}, ${helpSet(posVars)}, ${helpSet(negElems)}, ${helpSet(negCsts)}, ${helpSet(negVars)}, ${helpList(rest)})"
+      case Term.Union(posElems, posCsts, posVars, negElems, negCsts, negVars, rest) =>
+        s"Union(${helpSet(posElems)}, ${helpSet(posCsts)}, ${helpSet(posVars)}, ${helpSet(negElems)}, ${helpSet(negCsts)}, ${helpSet(negVars)}, ${helpList(rest)})"
+    }
+    private def helpList(l: Iterable[Term]): String = l.map(_.toRawString).mkString("List(", ", ", ")")
+    private def helpSet(l: Iterable[Term]): String = l.map(_.toRawString).mkString("Set(", ", ", ")")
 
     /**
       * Returns a human-readable representation of `this` term.
@@ -1369,11 +1411,26 @@ object FastSetUnification {
             posElemTerms ++= posElem0.toList
             if (posElemTerms.size > 1) return Empty
             // We have found a nested intersection. We can immediately add _its_ constants and variables.
-            posCstTerms ++= posCsts0
-            posVarTerms ++= posVars0
-            negElemTerms ++= negElems0
-            negCstTerms ++= negCsts0
-            negVarTerms ++= negVars0
+            for (x <- posCsts0) {
+              if (negCstTerms.contains(x)) return Empty
+              posCstTerms += x
+            }
+            for (x <- posVars0) {
+              if (negVarTerms.contains(x)) return Empty
+              posVarTerms += x
+            }
+            for (x <- negElems0) {
+              if (posElemTerms.contains(x)) return Empty
+              negElemTerms += x
+            }
+            for (x <- negCsts0) {
+              if (posCstTerms.contains(x)) return Empty
+              negCstTerms += x
+            }
+            for (x <- negVars0) {
+              if (posVarTerms.contains(x)) return Empty
+              negVarTerms += x
+            }
             for (t0 <- rest0) {
               // We then iterate through the nested sub-terms of the nested intersection.
               t0 match {
@@ -1463,12 +1520,30 @@ object FastSetUnification {
             negVarTerms += x
           case Union(posElems0, posCsts0, posVars0, negElems0, negCsts0, negVars0, rest0) =>
             // We have found a nested intersection. We can immediately add _its_ constants and variables.
-            posElemTerms ++= posElems0
-            posCstTerms ++= posCsts0
-            posVarTerms ++= posVars0
-            negElemTerms ++= negElems0
-            negCstTerms ++= negCsts0
-            negVarTerms ++= negVars0
+            for (x <- posElems0) {
+              if (negElemTerms.contains(x)) return Univ
+              posElemTerms += x
+            }
+            for (x <- posCsts0) {
+              if (negCstTerms.contains(x)) return Univ
+              posCstTerms += x
+            }
+            for (x <- posVars0) {
+              if (negVarTerms.contains(x)) return Univ
+              posVarTerms += x
+            }
+            for (x <- negElems0) {
+              if (posElemTerms.contains(x)) return Univ
+              negElemTerms += x
+            }
+            for (x <- negCsts0) {
+              if (posCstTerms.contains(x)) return Univ
+              negCstTerms += x
+            }
+            for (x <- negVars0) {
+              if (posVarTerms.contains(x)) return Univ
+              negVarTerms += x
+            }
             for (t0 <- rest0) {
               // We then iterate through the nested sub-terms of the nested intersection.
               t0 match {
@@ -1678,7 +1753,7 @@ object FastSetUnification {
 
       // Add all bindings in `that`. (Applying the current substitution).
       for ((x, t) <- that.m) {
-        result.update(x, this.apply(t))
+        result.update(x, repeatedPropagation(this.apply(t), 1))
       }
 
       // Add all bindings in `this` that are not in `that`.
@@ -1704,6 +1779,21 @@ object FastSetUnification {
         sb.append(s"x$x")
         sb.append(" -> ")
         sb.append(t)
+        sb.append("\n")
+      }
+      sb.toString()
+    }
+
+    def toRawString: String = {
+      val indent = 4
+
+      val sb = new StringBuilder()
+      // We sort the bindings by (size, name).
+      for ((x, t) <- m.toList.sortBy(kv => (kv._2.size, kv._1))) {
+        sb.append(" ".repeat(indent))
+        sb.append(s"x$x")
+        sb.append(" -> ")
+        sb.append(t.toRawString)
         sb.append("\n")
       }
       sb.toString()
