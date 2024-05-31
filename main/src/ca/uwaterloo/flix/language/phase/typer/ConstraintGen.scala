@@ -744,6 +744,7 @@ object ConstraintGen {
         (resTpe, resEff)
 
       case Expr.InvokeMethod2(exp, name, exps, mvar, tvar, evar, loc) =>
+        // TODO INTEROP make distinction between java method or constructor calls
         val (tpe, eff) = visitExp(exp)
         val (tpes, effs) = exps.map(visitExp).unzip
         val t = Type.Cst(TypeConstructor.MethodReturnType(name.name, exps.length), loc)
