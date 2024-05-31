@@ -93,7 +93,7 @@ task testAll(dependsOn: ['testClasses'], type: JavaExec) {
     // Of course we still benefit from parallelism inside Flix itself.
     args = ['-s', 'ca.uwaterloo.flix.TestAll', '-o']
     // We also enforce that all tests can complete with 4GB of memory:
-    jvmArgs = ['-Xmx4g']
+    jvmArgs = ['-Xmx3g']
     classpath = sourceSets.test.runtimeClasspath
     standardInput = System.in
 }
