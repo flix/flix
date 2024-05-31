@@ -82,6 +82,8 @@ jar {
         include '**/*.zip'
     }
 
+    exclude('test')
+
     duplicatesStrategy = 'exclude'
 }
 
