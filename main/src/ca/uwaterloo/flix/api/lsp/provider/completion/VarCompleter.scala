@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.Flix
@@ -26,7 +26,7 @@ object VarCompleter extends Completer {
   /**
     * Returns a List of Completion for var.
     */
-  override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[VarCompletion] = {
+  override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[VarCompletion] = {
     ///
     /// Find all local variables in the current uri with a given range.
     ///

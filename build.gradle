@@ -12,14 +12,13 @@ repositories {
 }
 
 dependencies {
-    implementation 'org.scala-lang:scala-library:2.13.12!!'
-    implementation 'org.scala-lang:scala-reflect:2.13.12!!'
+    implementation 'org.scala-lang:scala-library:2.13.14!!'
+    implementation 'org.scala-lang:scala-reflect:2.13.14!!'
 
     implementation('org.java-websocket:Java-WebSocket:1.5.3')
     implementation('org.jline:jline:3.25.0')
     implementation('org.json4s:json4s-native_2.13:3.6.12')
     implementation('org.ow2.asm:asm:9.6')
-    implementation('org.scalactic:scalactic_2.13:3.2.15')
     implementation('com.github.rjeschke:txtmark:0.13')
     implementation('com.github.scopt:scopt_2.13:4.1.0')
     implementation('com.google.guava:guava:31.1-jre')
@@ -94,7 +93,7 @@ task testAll(dependsOn: ['testClasses'], type: JavaExec) {
     // Of course we still benefit from parallelism inside Flix itself.
     args = ['-s', 'ca.uwaterloo.flix.TestAll', '-o']
     // We also enforce that all tests can complete with 4GB of memory:
-    jvmArgs = ['-Xmx4g']
+    jvmArgs = ['-Xmx3g']
     classpath = sourceSets.test.runtimeClasspath
     standardInput = System.in
 }

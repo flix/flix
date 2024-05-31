@@ -166,7 +166,9 @@ object Parser2 {
     })
 
     // Make a synthetic token to begin with, to make the SourceLocations generated below be correct.
-    var lastAdvance = Token(TokenKind.Eof, s.src, 0, 0, 0, 0, 0, 0)
+    val b = SourcePosition(s.src, 0, 0)
+    val e = SourcePosition(s.src, 0, 0)
+    var lastAdvance = Token(TokenKind.Eof, s.src, 0, 0, b, e)
     for (event <- s.events) {
       event match {
         case Event.Open(kind) =>
@@ -179,14 +181,14 @@ object Parser2 {
           stack.head.loc = if (stack.head.children.length == 0)
             // If the subtree has no children, give it a zero length position just after the last token
             SourceLocation.mk(
-              lastAdvance.mkSourcePositionEnd,
-              lastAdvance.mkSourcePositionEnd
+              lastAdvance.sp2,
+              lastAdvance.sp2
             )
           else
             // Otherwise the source location can span from the first to the last token in the sub tree
             SourceLocation.mk(
-              openToken.mkSourcePosition,
-              lastAdvance.mkSourcePositionEnd
+              openToken.sp1,
+              lastAdvance.sp2
             )
           locationStack = locationStack.tail
           stack = stack.tail
@@ -202,8 +204,8 @@ object Parser2 {
     // Set source location of the root
     val openToken = locationStack.last
     stack.last.loc = SourceLocation.mk(
-      openToken.mkSourcePosition,
-      tokens.head.mkSourcePositionEnd
+      openToken.sp1,
+      tokens.head.sp2
     )
 
     // The stack should now contain a single Source tree,
@@ -220,10 +222,10 @@ object Parser2 {
   private def previousSourceLocation()(implicit s: State): SourceLocation = {
     // state is zero-indexed while SourceLocation works as one-indexed.
     val token = s.tokens((s.position - 1).max(0))
-    val beginLine = token.beginLine + 1
-    val beginCol = (token.beginCol + 1).toShort
-    val endLine = token.endLine + 1
-    val endCol = (token.endCol + 1).toShort
+    val beginLine = token.sp1.line
+    val beginCol = token.sp1.col
+    val endLine = token.sp2.line
+    val endCol = token.sp2.col
     SourceLocation(s.src, isReal = true, beginLine, beginCol, endLine, endCol)
   }
 
@@ -233,10 +235,10 @@ object Parser2 {
   private def currentSourceLocation()(implicit s: State): SourceLocation = {
     // state is zero-indexed while SourceLocation works as one-indexed.
     val token = s.tokens(s.position)
-    val beginLine = token.beginLine + 1
-    val beginCol = (token.beginCol + 1).toShort
-    val endLine = token.endLine + 1
-    val endCol = (token.endCol + 1).toShort
+    val beginLine = token.sp1.line
+    val beginCol = token.sp1.col
+    val endLine = token.sp2.line
+    val endCol = token.sp2.col
     SourceLocation(s.src, isReal = true, beginLine, beginCol, endLine, endCol)
   }
 
@@ -1457,6 +1459,7 @@ object Parser2 {
              | TokenKind.LiteralRegex => literalExpr()
         case TokenKind.ParenL => parenOrTupleOrLambdaExpr()
         case TokenKind.Underscore => if (nth(1) == TokenKind.ArrowThinR) unaryLambdaExpr() else name(NAME_VARIABLE, context = SyntacticContext.Expr.OtherExpr)
+        case TokenKind.NameLowerCase if nth(1) == TokenKind.Hash => invokeMethod2Expr()
         case TokenKind.NameLowerCase => if (nth(1) == TokenKind.ArrowThinR) unaryLambdaExpr() else name(NAME_FIELD, allowQualified = true, context = SyntacticContext.Expr.OtherExpr)
         case TokenKind.NameUpperCase
              | TokenKind.NameMath
@@ -2385,6 +2388,20 @@ object Parser2 {
       name(NAME_QNAME, allowQualified = true, context = SyntacticContext.Expr.Do)
       arguments()
       close(mark, TreeKind.Expr.Do)
+    }
+
+    private def invokeMethod2Expr()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.NameLowerCase))
+      val mark = open()
+      name(Set(TokenKind.NameLowerCase), context = SyntacticContext.Expr.OtherExpr)
+      // TODO INTEROP emit an error if we are not at an hash here
+      while (eat(TokenKind.Hash)) {
+        val fragmentMark = open()
+        name(Set(TokenKind.NameUpperCase, TokenKind.NameLowerCase), context = SyntacticContext.Expr.OtherExpr)
+        arguments()
+        close(fragmentMark, TreeKind.Expr.InvokeMethod2Fragment)
+      }
+      close(mark, TreeKind.Expr.InvokeMethod2)
     }
 
     private def newObjectExpr()(implicit s: State): Mark.Closed = {
@@ -3488,7 +3505,7 @@ object Parser2 {
   def syntaxTreeToDebugString(tree: SyntaxTree.Tree, nesting: Int = 1): String = {
     s"${tree.kind}${
       tree.children.map {
-        case token@Token(_, _, _, _, _, _, _, _) => s"\n${"  " * nesting}'${token.text}'"
+        case token@Token(_, _, _, _, _, _) => s"\n${"  " * nesting}'${token.text}'"
         case tree@SyntaxTree.Tree(_, _, _) => s"\n${"  " * nesting}${syntaxTreeToDebugString(tree, nesting + 1)}"
       }.mkString("")
     }"
