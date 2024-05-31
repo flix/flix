@@ -256,10 +256,12 @@ object Lexer {
    * @param length the length that the source location should span
    */
   private def sourceLocationAtStart(length: Int = 1)(implicit s: State): SourceLocation = {
-    // state is zero-indexed while SourceLocation works as one-indexed.
+    // A state is zero-indexed while a SourcePosition is one-indexed.
     val line = s.start.line + 1
     val column = s.start.column + 1
-    SourceLocation(s.src, isReal = true, line, column.toShort, line, (column + length).toShort)
+    val sp1 = SourcePosition(s.src, line, column.toShort)
+    val sp2 = SourcePosition(s.src, line, (column + length).toShort)
+    SourceLocation(isReal = true, sp1, sp2)
   }
 
   /**
@@ -268,10 +270,12 @@ object Lexer {
    * @param length the length that the source location should span
    */
   private def sourceLocationAtCurrent(length: Int = 1)(implicit s: State): SourceLocation = {
-    // state is zero-indexed while SourceLocation works as one-indexed.
+    // A state is zero-indexed while a SourcePosition is one-indexed.
     val line = s.current.line + 1
     val column = s.current.column + 1
-    SourceLocation(s.src, isReal = true, line, column.toShort, line, (column + length).toShort)
+    val sp1 = SourcePosition(s.src, line, column.toShort)
+    val sp2 = SourcePosition(s.src, line, (column + length).toShort)
+    SourceLocation(isReal = true, sp1, sp2)
   }
 
   /**

@@ -53,12 +53,12 @@ object Name {
   /**
     * Converts the given identifier `ident` to a label.
     */
-  def mkLabel(ident: Ident): Label = Label(ident.name, SourceLocation.mk(ident.sp1, ident.sp2))
+  def mkLabel(ident: Ident): Label = Label(ident.name, SourceLocation(isReal = true, ident.sp1, ident.sp2))
 
   /**
     * Converts the given identifier `ident` to a predicate name.
     */
-  def mkPred(ident: Ident): Pred = Pred(ident.name, SourceLocation.mk(ident.sp1, ident.sp2))
+  def mkPred(ident: Ident): Pred = Pred(ident.name, SourceLocation(isReal = true, ident.sp1, ident.sp2))
 
   /**
     * Extends the given namespace `ns` with the given identifier `ident`.
@@ -104,7 +104,7 @@ object Name {
     /**
       * The source location of the identifier.
       */
-    def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    def loc: SourceLocation = SourceLocation(isReal = true, sp1, sp2)
 
     /**
       * Two identifiers are equal if they have the same name.
@@ -136,7 +136,7 @@ object Name {
     * Behaves just like Ident, but reports its `loc` as synthetic.
     */
   class SyntheticIdent(sp1: SourcePosition, name: String, sp2: SourcePosition) extends Ident(sp1, name, sp2) {
-    override def loc: SourceLocation = SourceLocation.mk(sp1, sp2, isReal = false)
+    override def loc: SourceLocation = SourceLocation(isReal = false, sp1, sp2)
   }
 
   /**
@@ -160,7 +160,7 @@ object Name {
     /**
       * The source location of the namespace.
       */
-    def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    def loc: SourceLocation = SourceLocation(isReal = true, sp1, sp2)
 
     /**
       * Returns the hash code of `this` namespace.
@@ -229,7 +229,7 @@ object Name {
     /**
       * The source location of the name.
       */
-    def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    def loc: SourceLocation = SourceLocation(isReal = true, sp1, sp2)
 
     /**
       * Human readable representation.
