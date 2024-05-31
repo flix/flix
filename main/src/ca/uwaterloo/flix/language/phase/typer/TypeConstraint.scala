@@ -54,8 +54,8 @@ sealed trait TypeConstraint {
     */
   def numVars: Int = this match {
     case TypeConstraint.Equality(tpe1, tpe2, _) => tpe1.typeVars.size + tpe2.typeVars.size
-    case TypeConstraint.EqJvmConstructor(mvar, clazz, tpes, _) => mvar.baseType.size // TODO INTEROP add all typeVars size of tpes
-    case TypeConstraint.EqJvmMethod(mvar, clazz, tpes, _, _) => mvar.baseType.size // TODO INTEROP add all typeVars size of tpes
+    case TypeConstraint.EqJvmConstructor(mvar, clazz, tpes, _) => tpes.foldLeft(1) { (acc, tpe) => acc + tpe.typeVars.size }
+    case TypeConstraint.EqJvmMethod(mvar, tpe, _, tpes, _) => tpes.foldLeft(1 + tpe.typeVars.size) { (acc, tpe) => acc + tpe.typeVars.size }
     case TypeConstraint.Trait(_, tpe, _) => tpe.typeVars.size
     case TypeConstraint.Purification(_, eff1, eff2, _, _) => eff1.typeVars.size + eff2.typeVars.size
   }
