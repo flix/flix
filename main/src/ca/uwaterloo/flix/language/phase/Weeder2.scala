@@ -47,11 +47,6 @@ object Weeder2 {
   import WeededAst._
 
   def run(readRoot: ReadAst.Root, entryPoint: Option[Symbol.DefnSym], root: SyntaxTree.Root, oldRoot: WeededAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[WeededAst.Root, CompilationMessage] = {
-    if (flix.options.xparser) {
-      // New lexer and parser disabled. Return immediately.
-      return Validation.success(WeededAst.empty)
-    }
-
     flix.phase("Weeder2") {
       val (stale, fresh) = changeSet.partition(root.units, oldRoot.units)
       // Parse each source file in parallel and join them into a WeededAst.Root

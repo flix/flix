@@ -103,7 +103,6 @@ object Main {
       xprintphases = cmdOpts.xprintphases,
       xsummary = cmdOpts.xsummary,
       xfuzzer = cmdOpts.xfuzzer,
-      xparser = cmdOpts.xparser,
       xprinttyper = cmdOpts.xprinttyper,
       xverifyeffects = cmdOpts.xverifyeffects,
       XPerfFrontend = cmdOpts.XPerfFrontend,
@@ -367,7 +366,6 @@ object Main {
                      xprintphases: Boolean = false,
                      xsummary: Boolean = false,
                      xfuzzer: Boolean = false,
-                     xparser: Boolean = false,
                      xprinttyper: Option[String] = None,
                      xverifyeffects: Boolean = false,
                      XPerfN: Option[Int] = None,
@@ -583,10 +581,6 @@ object Main {
       // Xfuzzer
       opt[Unit]("Xfuzzer").action((_, c) => c.copy(xfuzzer = true)).
         text("[experimental] enables compiler fuzzing.")
-
-      // Xparser
-      opt[Unit]("Xparser").action((_, c) => c.copy(xparser = true)).
-        text("[experimental] disables new experimental lexer and parser.")
 
       // Xprint-typer
       opt[String]("Xprint-typer").action((sym, c) => c.copy(xprinttyper = Some(sym))).
