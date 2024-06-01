@@ -165,7 +165,7 @@ object Weeder2 {
 
   private def visitImportIdent(tree: Tree, namespace: Seq[String]): Validation[UseOrImport.Import, CompilationMessage] = {
     mapN(tokenToIdent(tree)) {
-      ident => UseOrImport.Import(Name.JavaName(namespace ++ Seq(ident.name), tree.loc), ident, tree.loc)
+      ident => UseOrImport.Import(Name.JavaName(namespace ++ Seq(ident.name), tree.loc), ident, ident.loc)
     }
   }
 
