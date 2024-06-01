@@ -1135,7 +1135,7 @@ object Desugar {
     // ignore redundant effect casts to IO
     val correctedEff = eff match {
       case None => None
-      case Some(DesugaredAst.Type.Ambiguous(Name.QName(_, Name.NName(_, Nil, _), Name.Ident(_, "IO", _), _), _)) => None
+      case Some(DesugaredAst.Type.Ambiguous(Name.QName(_, Name.NName(Nil, _), Name.Ident(_, "IO", _), _), _)) => None
       case Some(v) => Some(v)
     }
     DesugaredAst.Expr.UncheckedCast(exp, Some(tpe), correctedEff, loc0)
