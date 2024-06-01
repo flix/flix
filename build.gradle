@@ -30,7 +30,7 @@ dependencies {
     implementation('org.tomlj:tomlj:1.1.1')
     implementation('org.antlr:antlr4-runtime:4.13.1')
 
-    implementation('org.slf4j:slf4j-nop:2.0.7')
+    implementation('org.slf4j:slf4j-nop:2.0.13')
 
     testImplementation('org.scalatest:scalatest_2.13:3.2.15')
 }
