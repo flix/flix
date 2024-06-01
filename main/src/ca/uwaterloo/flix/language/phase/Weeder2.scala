@@ -114,7 +114,7 @@ object Weeder2 {
 
   private def visitUseIdent(tree: Tree, namespace: Name.NName): Validation[UseOrImport.Use, CompilationMessage] = {
     mapN(tokenToIdent(tree)) {
-      ident => UseOrImport.Use(Name.QName(tree.loc.sp1, namespace, ident, tree.loc.sp2), ident, ident.loc)
+      ident => UseOrImport.Use(Name.QName(namespace, ident, tree.loc), ident, ident.loc)
     }
   }
 
@@ -122,7 +122,7 @@ object Weeder2 {
     val idents = traverse(pickAll(TreeKind.Ident, tree))(tokenToIdent)
     flatMapN(idents) {
       case ident :: alias :: _ =>
-        val qname = Name.QName(tree.loc.sp1, namespace, ident, tree.loc.sp2)
+        val qname = Name.QName(namespace, ident, tree.loc)
         val res = Validation.success(UseOrImport.Use(qname, alias, tree.loc))
         // Check for illegal alias
         if ((ident.name.nonEmpty && alias.name.nonEmpty) && ident.name.charAt(0).isUpper != alias.name.charAt(0).isUpper) {
@@ -131,7 +131,7 @@ object Weeder2 {
       // recover from missing alias by using ident
       case ident :: _ =>
         val error = Malformed(NamedTokenSet.Alias, SyntacticContext.Use, hint = Some(s"Give an alias after ${TokenKind.ArrowThickR.display}."), loc = tree.loc)
-        val qname = Name.QName(tree.loc.sp1, namespace, ident, tree.loc.sp2)
+        val qname = Name.QName(namespace, ident, tree.loc)
         Validation.toSoftFailure(UseOrImport.Use(qname, ident, ident.loc), error)
       case _ => throw InternalCompilerException("Parser passed malformed use with alias", tree.loc)
     }
@@ -736,7 +736,7 @@ object Weeder2 {
       assert(exprTree.kind == TreeKind.Expr.Expr)
       val tree = unfold(exprTree)
       tree.kind match {
-        case TreeKind.Ident => mapN(tokenToIdent(tree)) { ident => Expr.Ambiguous(Name.mkQName(ident), tree.loc) }
+        case TreeKind.Ident => mapN(tokenToIdent(tree)) { ident => Expr.Ambiguous(Name.QName(Name.RootNS, ident, ident.loc), tree.loc) }
         case TreeKind.QName => visitQnameExpr(tree)
         case TreeKind.Expr.Paren => visitParenExpr(tree)
         case TreeKind.Expr.Block => visitBlockExpr(tree)
@@ -819,7 +819,7 @@ object Weeder2 {
           val nnameIdents = idents.dropRight(1)
           val loc = SourceLocation(isReal = true, first.sp1, ident.sp2)
           val nname = Name.NName(nnameIdents, loc)
-          val qname = Name.QName(first.sp1, nname, ident, ident.sp2)
+          val qname = Name.QName(nname, ident, loc)
           val prefix = idents.takeWhile(_.isUpper)
           val suffix = idents.dropWhile(_.isUpper)
 
@@ -835,7 +835,7 @@ object Weeder2 {
             // Case 2: actually a record access
             case ident :: labels =>
               // NB: We only use the source location of the identifier itself.
-              val base = Expr.Ambiguous(Name.mkQName(prefix.map(_.toString), ident.name, ident.sp1, ident.sp2), ident.loc)
+              val base = Expr.Ambiguous(Name.mkQName(prefix.map(_.toString), ident.name, ident.loc), ident.loc)
               Validation.success(labels.foldLeft(base: Expr) {
                 case (acc, label) => Expr.RecordSelect(acc, Name.mkLabel(label), label.loc)
               })
@@ -922,7 +922,7 @@ object Weeder2 {
         ident =>
           // Strip '?' suffix and update source location
           val id = Name.Ident(ident.sp1, ident.name.stripSuffix("?"), ident.sp2.copy(col = (ident.sp2.col - 1).toShort))
-          val expr = Expr.Ambiguous(Name.mkQName(id), id.loc)
+          val expr = Expr.Ambiguous(Name.QName(Name.RootNS, id, id.loc), id.loc)
           Expr.HoleWithExp(expr, tree.loc)
       }
     }
@@ -956,7 +956,7 @@ object Weeder2 {
           case TokenKind.NameLowerCase
                | TokenKind.NameUpperCase
                | TokenKind.NameMath
-               | TokenKind.NameGreek => mapN(pickNameIdent(tree))(ident => Expr.Ambiguous(Name.mkQName(ident), tree.loc))
+               | TokenKind.NameGreek => mapN(pickNameIdent(tree))(ident => Expr.Ambiguous(Name.QName(Name.RootNS, ident, ident.loc), tree.loc))
           case _ =>
             val err = UnexpectedToken(expected = NamedTokenSet.Literal, actual = None, SyntacticContext.Expr.OtherExpr, loc = tree.loc)
             Validation.toSoftFailure(Expr.Error(err), err)
@@ -1038,8 +1038,6 @@ object Weeder2 {
         (opTree, exprTree) => {
           opTree.children.headOption match {
             case Some(opToken@Token(_, _, _, _, _, _)) =>
-              val sp1 = tree.loc.sp1
-              val sp2 = tree.loc.sp2
               val literalToken = tryPickNumberLiteralToken(exprTree)
               literalToken match {
                 // fold unary minus into a constant
@@ -1055,9 +1053,9 @@ object Weeder2 {
                     case "force" => Expr.Force(expr, tree.loc)
                     case "lazy" => Expr.Lazy(expr, tree.loc)
                     case "not" => Expr.Unary(SemanticOp.BoolOp.Not, expr, tree.loc)
-                    case "-" => Expr.Apply(Expr.Ambiguous(Name.mkQName("Neg.neg", sp1, sp2), opTree.loc), List(expr), tree.loc)
+                    case "-" => Expr.Apply(Expr.Ambiguous(Name.mkQName("Neg.neg", tree.loc), opTree.loc), List(expr), tree.loc)
                     case "+" => expr
-                    case op => Expr.Apply(Expr.Ambiguous(Name.mkQName(op, sp1, sp2), opTree.loc), List(expr), tree.loc)
+                    case op => Expr.Apply(Expr.Ambiguous(Name.mkQName(op, tree.loc), opTree.loc), List(expr), tree.loc)
                   }
                 })
               }
@@ -1092,13 +1090,13 @@ object Weeder2 {
             val infixName = text(op).head.stripPrefix("`").stripSuffix("`")
             val infixNameParts = infixName.split('.').toList
             val lastName = infixNameParts.lastOption.getOrElse("")
-            val qname = Name.mkQName(infixNameParts.init, lastName, op.loc.sp1, op.loc.sp2)
+            val qname = Name.mkQName(infixNameParts.init, lastName, op.loc)
             val opExpr = Expr.Ambiguous(qname, op.loc)
             return Validation.success(Expr.Infix(e1, opExpr, e2, tree.loc))
           }
 
           def mkApply(name: String): Expr.Apply = Expr.Apply(
-            Expr.Ambiguous(Name.mkQName(name, op.loc.sp1, op.loc.sp2), op.loc), List(e1, e2),
+            Expr.Ambiguous(Name.mkQName(name, op.loc), op.loc), List(e1, e2),
             tree.loc
           )
 
@@ -1127,7 +1125,7 @@ object Weeder2 {
             // UNRECOGNIZED
             case id =>
               val ident = Name.Ident(op.loc.sp1, id, op.loc.sp2)
-              Validation.success(Expr.Apply(Expr.Ambiguous(Name.mkQName(ident), op.loc), List(e1, e2), tree.loc))
+              Validation.success(Expr.Apply(Expr.Ambiguous(Name.QName(Name.RootNS, ident, ident.loc), op.loc), List(e1, e2), tree.loc))
           }
         case (_, operands) => throw InternalCompilerException(s"Expr.Binary tree with ${operands.length} operands", tree.loc)
       }
@@ -1671,7 +1669,7 @@ object Weeder2 {
       val objName = pickNameIdent(tree)
       mapN(objName, fragments) {
         case (objName, fragments) =>
-          val nameExpr = Expr.Ambiguous(Name.mkQName(objName), objName.loc)
+          val nameExpr = Expr.Ambiguous(Name.QName(Name.RootNS, objName, objName.loc), objName.loc)
           // TODO INTEROP InvokeMethod2 source location is likely off
           fragments.foldLeft[Expr](nameExpr) {
             case (acc, (methodName, arguments)) => Expr.InvokeMethod2(acc, methodName, arguments, tree.loc)
@@ -2140,7 +2138,7 @@ object Weeder2 {
       val patterns = pickAll(TreeKind.Pattern.Pattern, tree)
       mapN(traverse(patterns)(visitPattern(_, seen))) {
         case pat1 :: pat2 :: Nil =>
-          val qname = Name.mkQName("List.Cons", tree.loc.sp1, tree.loc.sp2)
+          val qname = Name.mkQName("List.Cons", tree.loc)
           val pat = Pattern.Tuple(List(pat1, pat2), tree.loc)
           Pattern.Tag(qname, pat, tree.loc)
         case pats => throw InternalCompilerException(s"Pattern.FCons expected 2 but found '${pats.length}' sub-patterns", tree.loc)
@@ -2479,7 +2477,7 @@ object Weeder2 {
     private def visitIdentType(tree: Tree): Validation[Type, CompilationMessage] = {
       mapN(tokenToIdent(tree)) {
         case ident if ident.isWild => Type.Var(ident, tree.loc)
-        case ident => Type.Ambiguous(Name.mkQName(ident), tree.loc)
+        case ident => Type.Ambiguous(Name.QName(Name.RootNS, ident, ident.loc), tree.loc)
       }
     }
 
@@ -2797,7 +2795,7 @@ object Weeder2 {
       expect(tree, TreeKind.Kind)
       mapN(pickNameIdent(tree)) {
         ident => {
-          val kind = Kind.Ambiguous(Name.mkQName(ident), ident.loc)
+          val kind = Kind.Ambiguous(Name.QName(Name.RootNS, ident, ident.loc), ident.loc)
           tryPick(TreeKind.Kind, tree)
           tryPickKind(tree)
             .map(Kind.Arrow(kind, _, tree.loc))
@@ -2930,7 +2928,7 @@ object Weeder2 {
         val nnameIdents = idents.dropRight(1)
         val loc = SourceLocation(isReal = true, first.sp1, ident.sp2)
         val nname = Name.NName(nnameIdents, loc)
-        Name.QName(first.sp1, nname, ident, ident.sp2)
+        Name.QName(nname, ident, loc)
     }
   }
 
