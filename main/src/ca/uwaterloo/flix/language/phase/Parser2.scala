@@ -117,11 +117,6 @@ object Parser2 {
   }
 
   def run(tokens: Map[Ast.Source, Array[Token]], oldRoot: SyntaxTree.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[SyntaxTree.Root, CompilationMessage] = {
-    if (flix.options.xparser) {
-      // New lexer and parser disabled. Return immediately.
-      return Validation.success(SyntaxTree.empty)
-    }
-
     flix.phase("Parser2") {
       // Compute the stale and fresh sources.
       val (stale, fresh) = changeSet.partition(tokens, oldRoot.units)
