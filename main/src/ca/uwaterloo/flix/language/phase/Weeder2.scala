@@ -91,7 +91,7 @@ object Weeder2 {
       if (qname.namespace.idents.isEmpty && maybeUseMany.isEmpty) {
         return Validation.toSoftFailure(Nil, UnqualifiedUse(qname.loc))
       }
-      val nname = Name.NName(qname.sp1, qname.namespace.idents :+ qname.ident, qname.sp2)
+      val nname = Name.NName(qname.namespace.idents :+ qname.ident, qname.loc)
       mapN(traverseOpt(maybeUseMany)(tree => visitUseMany(tree, nname))) {
         // case: empty use many. Fallback on empty list. Parser has reported an error here.
         case Some(Nil) => List.empty
@@ -146,7 +146,7 @@ object Weeder2 {
         case Some(Nil) => List.empty
         // case: import one, use the java name
         case None =>
-          val ident = Name.Ident(jname.sp1, jname.fqn.lastOption.getOrElse(""), jname.sp2)
+          val ident = Name.Ident(jname.loc.sp1, jname.fqn.lastOption.getOrElse(""), jname.loc.sp2)
           List(UseOrImport.Import(jname, ident, tree.loc))
         // case: import many
         case Some(imports) => imports
@@ -165,7 +165,7 @@ object Weeder2 {
 
   private def visitImportIdent(tree: Tree, namespace: Seq[String]): Validation[UseOrImport.Import, CompilationMessage] = {
     mapN(tokenToIdent(tree)) {
-      ident => UseOrImport.Import(Name.JavaName(tree.loc.sp1, namespace ++ Seq(ident.name), tree.loc.sp2), ident, ident.loc)
+      ident => UseOrImport.Import(Name.JavaName(namespace ++ Seq(ident.name), tree.loc), ident, ident.loc)
     }
   }
 
@@ -173,13 +173,13 @@ object Weeder2 {
     val idents = traverse(pickAll(TreeKind.Ident, tree))(tokenToIdent)
     flatMapN(idents) {
       case ident :: alias :: _ =>
-        val jname = Name.JavaName(tree.loc.sp1, namespace ++ Seq(ident.name), tree.loc.sp2)
+        val jname = Name.JavaName(namespace ++ Seq(ident.name), tree.loc)
         Validation.success(UseOrImport.Import(jname, alias, tree.loc))
       // recover from missing alias by using ident
       case ident :: _ =>
         val error = Malformed(NamedTokenSet.Alias, SyntacticContext.Import, hint = Some(s"Give an alias after ${TokenKind.ArrowThickR.display}."), loc = tree.loc)
         Validation.toSoftFailure(
-          UseOrImport.Import(Name.JavaName(tree.loc.sp1, Seq(ident.name), tree.loc.sp2), ident, ident.loc),
+          UseOrImport.Import(Name.JavaName(Seq(ident.name), tree.loc), ident, ident.loc),
           error
         )
       case _ => throw InternalCompilerException("Parser passed malformed use with alias", tree.loc)
@@ -817,7 +817,8 @@ object Weeder2 {
           val first = idents.head
           val ident = idents.last
           val nnameIdents = idents.dropRight(1)
-          val nname = Name.NName(first.sp1, nnameIdents, ident.sp2)
+          val loc = SourceLocation(isReal = true, first.sp1, ident.sp2)
+          val nname = Name.NName(nnameIdents, loc)
           val qname = Name.QName(first.sp1, nname, ident, ident.sp2)
           val prefix = idents.takeWhile(_.isUpper)
           val suffix = idents.dropWhile(_.isUpper)
@@ -2898,7 +2899,7 @@ object Weeder2 {
     def pickJavaName(tree: Tree): Validation[Name.JavaName, CompilationMessage] = {
       val idents = pickQNameIdents(tree)
       mapN(idents) {
-        idents => Name.JavaName(tree.loc.sp1, idents, tree.loc.sp2)
+        idents => Name.JavaName(idents, tree.loc)
       }
     }
   }
@@ -2927,7 +2928,8 @@ object Weeder2 {
         val first = idents.head
         val ident = idents.last
         val nnameIdents = idents.dropRight(1)
-        val nname = Name.NName(first.sp1, nnameIdents, ident.sp2)
+        val loc = SourceLocation(isReal = true, first.sp1, ident.sp2)
+        val nname = Name.NName(nnameIdents, loc)
         Name.QName(first.sp1, nname, ident, ident.sp2)
     }
   }
