@@ -426,9 +426,9 @@ object TypeReconstruction {
       val returnTpe = subst(tvar)
       val methodTpe = subst(mvar)
       val argsTpe = subst(evar)
-      subst(mvar) match {
+      methodTpe match {
         case Type.Cst(TypeConstructor.JvmMethod(method), loc) =>
-          TypedAst.Expr.InvokeMethod(method, e, es, subst(tvar), subst(evar), loc)
+          TypedAst.Expr.InvokeMethod(method, e, es, returnTpe, argsTpe, loc)
         case _ =>
           throw InternalCompilerException(s"Java method not defined.", loc) // TODO INTEROP better message
       }
