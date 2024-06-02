@@ -18,16 +18,14 @@ package ca.uwaterloo.flix.api.lsp.provider
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp._
 import ca.uwaterloo.flix.api.lsp.provider.completion._
-import ca.uwaterloo.flix.api.lsp.provider.completion.ranker.CompletionRanker
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.SyntacticContext
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, TypedAst}
 import ca.uwaterloo.flix.language.errors.{ParseError, ResolutionError, WeederError}
 import ca.uwaterloo.flix.language.fmt.FormatScheme
-import ca.uwaterloo.flix.language.phase.Parser.Letters
+import ca.uwaterloo.flix.language.phase.Lexer
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
-import org.parboiled2.CharPredicate
 
 /**
   * CompletionProvider
@@ -73,7 +71,7 @@ object CompletionProvider {
   /**
     * Process a completion request.
     */
-  def autoComplete(uri: String, pos: Position, source: Option[String], currentErrors: List[CompilationMessage])(implicit flix: Flix, index: Index, root: TypedAst.Root, deltaContext: DeltaContext): JObject = {
+  def autoComplete(uri: String, pos: Position, source: Option[String], currentErrors: List[CompilationMessage])(implicit flix: Flix, index: Index, root: TypedAst.Root): JObject = {
     val holeCompletions = getHoleExpCompletions(pos, uri, index, root)
     // If we are currently on a hole the only useful completion is a hole completion.
     if (holeCompletions.nonEmpty) {
@@ -89,11 +87,8 @@ object CompletionProvider {
       case None => Nil
       case Some(context) =>
         // Get all completions
-        val completions = getCompletions()(context, flix, index, root, deltaContext)
-
-        // Find the best completion
-        val best = CompletionRanker.findBest(completions)(context, index, deltaContext)
-        boostBestCompletion(best)(context, flix) ++ completions.map(comp => comp.toCompletionItem(context))
+        val completions = getCompletions()(context, flix, index, root)
+        completions.map(comp => comp.toCompletionItem(context))
     }
 
     ("status" -> ResponseStatus.Success) ~ ("result" -> CompletionList(isIncomplete = true, completions).toJSON)
@@ -135,7 +130,7 @@ object CompletionProvider {
       kind = CompletionItemKind.Function)
   }
 
-  private def getCompletions()(implicit context: CompletionContext, flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[Completion] = {
+  private def getCompletions()(implicit context: CompletionContext, flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] = {
     context.sctx match {
       //
       // Expressions.
@@ -149,11 +144,8 @@ object CompletionProvider {
       //
       case SyntacticContext.Decl.Trait => KeywordOtherCompleter.getCompletions(context)
       case SyntacticContext.Decl.Enum => KeywordOtherCompleter.getCompletions(context)
-      case SyntacticContext.Decl.Instance => KeywordOtherCompleter.getCompletions(context)
-      case _: SyntacticContext.Decl =>
-        KeywordOtherCompleter.getCompletions(context) ++
-          InstanceCompleter.getCompletions(context) ++
-          SnippetCompleter.getCompletions(context)
+      case SyntacticContext.Decl.Instance => InstanceCompleter.getCompletions(context)
+      case _: SyntacticContext.Decl => KeywordOtherCompleter.getCompletions(context) ++ SnippetCompleter.getCompletions(context)
 
       //
       // Imports.
@@ -193,42 +185,25 @@ object CompletionProvider {
   }
 
   /**
-    * Boosts a best completion to the top of the pop-up-pane.
-    *
-    * @param comp the completion to boost.
-    * @return nil, if no we have no completion to boost,
-    *         otherwise a List consisting only of the boosted completion as CompletionItem.
+    * Characters that constitute a word.
     */
-  private def boostBestCompletion(comp: Option[Completion])(implicit context: CompletionContext, flix: Flix): List[CompletionItem] = {
-    comp match {
-      case None =>
-        // No best completion to boost
-        Nil
-      case Some(best) =>
-        // We have a better completion, boost that to top priority
-        val compForBoost = best.toCompletionItem(context)
-        // Change documentation to include "Best pick"
-        val bestPickDocu = compForBoost.documentation match {
-          case Some(oldDocu) =>
-            // Adds "Best pick" at the top of the information pane. Provided with two newlines, to make it more
-            // visible to the user, that it's the best pick.
-            "Best pick \n\n" + oldDocu
-          case None => "Best pick"
-        }
-        // Boosting by changing priority in sortText
-        // This is done by removing the old int at the first position in the string, and changing it to 1
-        val boostedComp = compForBoost.copy(sortText = "0" + compForBoost.sortText.splitAt(1)._2,
-          documentation = Some(bestPickDocu))
-        List(boostedComp)
-    }
-  }
+  private def isWordChar(c: Char) = isLetter(c) || Lexer.isMathNameChar(c) || Lexer.isGreekNameChar(c) || Lexer.isUserOp(c).isDefined
 
   /**
-    * Characters that constitute a word.
-    * This is more permissive than the parser, but that's OK.
+    * Characters that may appear in a word.
     */
-  private val isWordChar = Letters.LegalLetter ++ Letters.OperatorLetter ++
-    Letters.MathLetter ++ Letters.GreekLetter ++ CharPredicate("@/.")
+  private def isLetter(c: Char) = c match {
+      case c if c >= 'a' && c <= 'z' => true
+      case c if c >= 'A' && c <= 'Z' => true
+      case c if c >= '0' && c <= '9' => true
+      // We also include some special symbols. This is more permissive than the lexer, but that's OK.
+      case '_' => true
+      case '!' => true
+      case '@' => true
+      case '/' => true
+      case '.' => true
+      case _ => false
+    }
 
   /**
     * Returns the word at the end of a string, discarding trailing whitespace first

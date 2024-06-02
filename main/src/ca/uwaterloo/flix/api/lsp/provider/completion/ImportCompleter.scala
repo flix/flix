@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst
 
 object ImportCompleter {
 
-  def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[Completion] = {
+  def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] = {
     val importKeywords = List(
       Completion.KeywordCompletion("import"),
       Completion.KeywordCompletion("java_new"),

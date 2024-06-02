@@ -25,7 +25,7 @@ object LabelCompleter extends Completer {
   /**
     * Returns a list of [[LabelCompletion]]s.
     */
-  override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[LabelCompletion] = {
+  override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[LabelCompletion] = {
     // Do not get label completions if we are importing or using.
     if (context.prefix.contains("import") || context.prefix.contains("use")) {
       return Nil

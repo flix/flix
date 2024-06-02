@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.ast
 
 import java.nio.file.Path
 import java.util.Objects
+import scala.annotation.tailrec
 
 /**
   * A collection of AST nodes that are shared across multiple ASTs.
@@ -79,6 +80,42 @@ object Ast {
     override def hashCode(): Int = input.hashCode()
 
     override def toString: String = name
+
+
+    /**
+      * Gets a line of text from the source as a string.
+      * If line is out of bounds the empty string is returned.
+      *
+      * This function has been adapted from parboiled2 when moving away from the library.
+      * We now produce its accompanying license in full:
+      *
+      * Copyright 2009-2019 Mathias Doenitz
+      *
+      * Licensed under the Apache License, Version 2.0 (the "License");
+      * you may not use this file except in compliance with the License.
+      * You may obtain a copy of the License at
+      *
+      * http://www.apache.org/licenses/LICENSE-2.0
+      *
+      * Unless required by applicable law or agreed to in writing, software
+      * distributed under the License is distributed on an "AS IS" BASIS,
+      * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+      * See the License for the specific language governing permissions and
+      * limitations under the License.
+      */
+    def getLine(line: Int): String = {
+      @tailrec
+      def rec(ix: Int, lineStartIx: Int, lineNr: Int): String =
+        if (ix < data.length)
+          if (data(ix) == '\n')
+            if (lineNr < line) rec(ix + 1, ix + 1, lineNr + 1)
+            else new String(data, lineStartIx, math.max(ix - lineStartIx, 0))
+          else rec(ix + 1, lineStartIx, lineNr)
+        else if (lineNr == line) new String(data, lineStartIx, math.max(ix - lineStartIx, 0))
+        else ""
+
+      rec(ix = 0, lineStartIx = 0, lineNr = 1)
+    }
   }
 
   /**
@@ -250,22 +287,22 @@ object Ast {
     }
 
     /**
-     * An AST node that represents a `@TailRec` annotation.
-     *
-     * A function marked with `@TailRec` is guaranteed to be tail recursive by the compiler.
-     *
-     * @param loc the source location of the annotation.
-     */
+      * An AST node that represents a `@TailRec` annotation.
+      *
+      * A function marked with `@TailRec` is guaranteed to be tail recursive by the compiler.
+      *
+      * @param loc the source location of the annotation.
+      */
     case class TailRecursive(loc: SourceLocation) extends Annotation {
       override def toString: String = "@Tailrec"
     }
 
     /**
-     * An AST node that represents an undefined (i.e. erroneous) annotation.
-     *
-     * @param name the name of the annotation.
-     * @param loc the source location of the annotation.
-     */
+      * An AST node that represents an undefined (i.e. erroneous) annotation.
+      *
+      * @param name the name of the annotation.
+      * @param loc  the source location of the annotation.
+      */
     case class Error(name: String, loc: SourceLocation) extends Annotation {
       override def toString: String = "@" + name
     }

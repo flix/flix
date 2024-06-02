@@ -66,9 +66,9 @@ mod IDE {
         def eshCallStart1(n, d, p) = augmentForZero(d, ide.eshCallStart(n, d, p));
         def eshEndReturn1(p, d, n) = augmentForZero(d, ide.eshEndReturn(p, d, n));
 
-        ///
-        /// The core IDE Framework.
-        ///
+        //
+        // The core IDE Framework.
+        //
         let p = #{
             // nodes in a given procedure
             InProc(p, start) :- StartNode(p, start).

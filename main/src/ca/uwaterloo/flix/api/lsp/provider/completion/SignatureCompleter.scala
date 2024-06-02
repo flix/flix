@@ -24,7 +24,7 @@ object SignatureCompleter extends Completer {
   /**
     * Returns a List of Completion for completer.
     */
-  override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[SigCompletion] = {
+  override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[SigCompletion] = {
     val word = context.word
     val uri = context.uri
 

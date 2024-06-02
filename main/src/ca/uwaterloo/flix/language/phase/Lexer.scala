@@ -17,12 +17,11 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, ReadAst, SourceLocation, Token, TokenKind}
+import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, ReadAst, SourceLocation, SourcePosition, Token, TokenKind}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.{DebugNoOp, DebugValidation}
 import ca.uwaterloo.flix.language.errors.LexerError
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 import ca.uwaterloo.flix.util.Validation._
-import org.parboiled2.ParserInput
 
 import scala.collection.mutable
 import scala.util.Random
@@ -49,7 +48,7 @@ object Lexer {
   /**
    * The characters allowed in a user defined operator mapped to their `TokenKind`s
    */
-  private def isUserOp(c: Char): Option[TokenKind] = {
+  def isUserOp(c: Char): Option[TokenKind] = {
     c match {
       case '+' => Some(TokenKind.Plus)
       case '-' => Some(TokenKind.Minus)
@@ -86,10 +85,6 @@ object Lexer {
     var end: Position = new Position(0, 0, 0)
     val tokens: mutable.ListBuffer[Token] = mutable.ListBuffer.empty
     var interpolationNestingLevel: Int = 0
-    // Compute a `ParserInput` when initializing a state for lexing a source.
-    // This is necessary to display source code in error messages.
-    // See `sourceLocationAtStart` for usage and `SourceLocation` for more information.
-    val parserInput: ParserInput = ParserInput.apply(src.data)
   }
 
   /**
@@ -102,11 +97,6 @@ object Lexer {
    */
   def run(root: ReadAst.Root, oldTokens: Map[Ast.Source, Array[Token]], changeSet: ChangeSet)(implicit flix: Flix): Validation[Map[Ast.Source, Array[Token]], CompilationMessage] =
     flix.phase("Lexer") {
-      if (flix.options.xparser) {
-        // New lexer and parser disabled. Return immediately.
-        return Validation.success(Map.empty[Ast.Source, Array[Token]])
-      }
-
       // Compute the stale and fresh sources.
       val (stale, fresh) = changeSet.partition(root.sources, oldTokens)
 
@@ -121,7 +111,7 @@ object Lexer {
   /**
    * Lexes a single source (file) into an array of tokens.
    */
-  private def lex(src: Ast.Source): Validation[Array[Token], CompilationMessage] = {
+  def lex(src: Ast.Source): Validation[Array[Token], CompilationMessage] = {
     implicit val s: State = new State(src)
     while (!eof()) {
       whitespace()
@@ -136,7 +126,7 @@ object Lexer {
     addToken(TokenKind.Eof)
 
     val errors = s.tokens.collect {
-      case Token(TokenKind.Err(err), _, _, _, _, _, _, _) => err
+      case Token(TokenKind.Err(err), _, _, _, _, _) => err
     }
 
     Validation.toSuccessOrSoftFailure(s.tokens.toArray, errors)
@@ -261,10 +251,12 @@ object Lexer {
    * @param length the length that the source location should span
    */
   private def sourceLocationAtStart(length: Int = 1)(implicit s: State): SourceLocation = {
-    // state is zero-indexed while SourceLocation works as one-indexed.
+    // A state is zero-indexed while a SourcePosition is one-indexed.
     val line = s.start.line + 1
     val column = s.start.column + 1
-    SourceLocation(s.parserInput, s.src, isReal = true, line, column.toShort, line, (column + length).toShort)
+    val sp1 = SourcePosition(s.src, line, column.toShort)
+    val sp2 = SourcePosition(s.src, line, (column + length).toShort)
+    SourceLocation(isReal = true, sp1, sp2)
   }
 
   /**
@@ -273,10 +265,12 @@ object Lexer {
    * @param length the length that the source location should span
    */
   private def sourceLocationAtCurrent(length: Int = 1)(implicit s: State): SourceLocation = {
-    // state is zero-indexed while SourceLocation works as one-indexed.
+    // A state is zero-indexed while a SourcePosition is one-indexed.
     val line = s.current.line + 1
     val column = s.current.column + 1
-    SourceLocation(s.parserInput, s.src, isReal = true, line, column.toShort, line, (column + length).toShort)
+    val sp1 = SourcePosition(s.src, line, column.toShort)
+    val sp2 = SourcePosition(s.src, line, (column + length).toShort)
+    SourceLocation(isReal = true, sp1, sp2)
   }
 
   /**
@@ -284,7 +278,9 @@ object Lexer {
    * Afterwards `s.start` is reset to the next position after the previous token.
    */
   private def addToken(kind: TokenKind)(implicit s: State): Unit = {
-    s.tokens += Token(kind, s.src.data, s.start.offset, s.current.offset, s.start.line, s.start.column.toShort, s.end.line, s.end.column.toShort)
+    val b = SourcePosition(s.src, s.start.line + 1, (s.start.column + 1).toShort)
+    val e = SourcePosition(s.src, s.end.line + 1, (s.end.column + 1).toShort)
+    s.tokens += Token(kind, s.src, s.start.offset, s.current.offset, b, e)
     s.start = new Position(s.current.line, s.current.column, s.current.offset)
   }
 
@@ -681,7 +677,7 @@ object Lexer {
   /**
    * Checks whether `c` lies in unicode range U+0370 to U+03FF
    */
-  private def isGreekNameChar(c: Char): Boolean = {
+  def isGreekNameChar(c: Char): Boolean = {
     val i = c.toInt
     0x0370 <= i && i <= 0x03FF
   }
@@ -704,7 +700,7 @@ object Lexer {
   /**
    * Checks whether `c` lies in unicode range U+2190 to U+22FF
    */
-  private def isMathNameChar(c: Char): Boolean = {
+  def isMathNameChar(c: Char): Boolean = {
     val i = c.toInt
     0x2190 <= i && i <= 0x22FF
   }
