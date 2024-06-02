@@ -521,7 +521,7 @@ object RedundancyError {
          |""".stripMargin
     })
 
-    def loc: SourceLocation = SourceLocation.mk(ident.sp1, ident.sp2)
+    def loc: SourceLocation = SourceLocation(isReal = true, ident.sp1, ident.sp2)
   }
 
   /**

@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.dbg
 
 import ca.uwaterloo.flix.language.ast.Ast.VarText
 import ca.uwaterloo.flix.language.dbg.Doc._
-import ca.uwaterloo.flix.language.dbg.DocAst.Expression._
+import ca.uwaterloo.flix.language.dbg.DocAst.Expr._
 import ca.uwaterloo.flix.language.dbg.DocAst._
 
 import scala.annotation.tailrec
@@ -61,10 +61,10 @@ object DocAstFormatter {
     (enums ++ defs).sortBy(_._1).map(_._2)
   }
 
-  def format(d: Expression)(implicit i: Indent): Doc =
+  def format(d: Expr)(implicit i: Indent): Doc =
     aux(d, paren = false, inBlock = true)
 
-  private def aux(d: Expression, paren: Boolean = true, inBlock: Boolean = false)(implicit i: Indent): Doc = {
+  private def aux(d: Expr, paren: Boolean = true, inBlock: Boolean = false)(implicit i: Indent): Doc = {
     val doc = d match {
       case Unit =>
         text("()")
@@ -266,9 +266,9 @@ object DocAstFormatter {
   private def formatAscription(tpe: Option[Type])(implicit i: Indent): Doc =
     tpe.map(t => text(":") +: formatType(t)).getOrElse(empty)
 
-  private def collectLetBinders(d: Expression): (List[LetBinder], Expression) = {
+  private def collectLetBinders(d: Expr): (List[LetBinder], Expr) = {
     @tailrec
-    def chase(d0: Expression, acc: List[LetBinder]): (List[LetBinder], Expression) = {
+    def chase(d0: Expr, acc: List[LetBinder]): (List[LetBinder], Expr) = {
       d0 match {
         case s@Stm(_, d2) =>
           chase(d2, s :: acc)
@@ -283,9 +283,9 @@ object DocAstFormatter {
     chase(d, List())
   }
 
-  private def collectRecordOps(d: Expression)(implicit i: Indent): (List[RecordOp], Option[Expression]) = {
+  private def collectRecordOps(d: Expr)(implicit i: Indent): (List[RecordOp], Option[Expr]) = {
     @tailrec
-    def chase(d0: Expression, acc: List[RecordOp]): (List[RecordOp], Option[Expression]) = {
+    def chase(d0: Expr, acc: List[RecordOp]): (List[RecordOp], Option[Expr]) = {
       d0 match {
         case re@RecordExtend(_, _, rest) =>
           chase(rest, re :: acc)
