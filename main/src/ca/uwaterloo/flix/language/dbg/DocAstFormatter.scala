@@ -366,8 +366,8 @@ object DocAstFormatter {
         }
       case Type.Native(clazz) =>
         formatJavaClass(clazz)
-      case Type.JvmConstructor(method) =>
-        formatJavaClass(method.getClass)
+      case Type.JvmConstructor(constructor) =>
+        formatJavaClass(constructor.getClass)
       case Type.JvmMethod(method) =>
         formatJavaClass(method.getClass)
       case Type.Meta(s) =>

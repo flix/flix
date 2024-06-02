@@ -337,7 +337,7 @@ object FormatType {
           case Kind.RecordRow => "r" + id
           case Kind.SchemaRow => "s" + id
           case Kind.Predicate => "'" + id.toString
-          case Kind.JvmConstructorOrMethod => id.toString // to check
+          case Kind.JvmConstructorOrMethod => "j" + id.toString
           case Kind.CaseSet(_) => "c" + id.toString
           case Kind.Arrow(_, _) => "'" + id.toString
         }

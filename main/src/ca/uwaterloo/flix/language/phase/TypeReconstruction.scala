@@ -421,16 +421,14 @@ object TypeReconstruction {
     case KindedAst.Expr.InvokeMethod2(exp, name, exps, mvar, tvar, evar, loc) =>
       val e = visitExp(exp)
       val es = exps.map(visitExp)
-      // Translation from invokeMethod2 to invokeMethod
-      // TODO INTEROP check this
       val returnTpe = subst(tvar)
       val methodTpe = subst(mvar)
-      val argsTpe = subst(evar)
+      val eff = subst(evar)
       methodTpe match {
         case Type.Cst(TypeConstructor.JvmMethod(method), loc) =>
-          TypedAst.Expr.InvokeMethod(method, e, es, returnTpe, argsTpe, loc)
+          TypedAst.Expr.InvokeMethod(method, e, es, returnTpe, eff, loc)
         case _ =>
-          throw InternalCompilerException(s"Java method not defined.", loc) // TODO INTEROP better message
+          throw InternalCompilerException(s"unexpected type: ${methodTpe}.", loc)
       }
 
     case KindedAst.Expr.InvokeConstructor(constructor, args, loc) =>

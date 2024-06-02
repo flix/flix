@@ -114,7 +114,7 @@ object Monomorpher {
       case Kind.RecordRow => Type.RecordRowEmpty
       case Kind.SchemaRow => Type.SchemaRowEmpty
       case Kind.Predicate => Type.mkAnyType(tpe0.loc)
-      case Kind.JvmConstructorOrMethod => Type.mkAnyType(tpe0.loc) // to check
+      case Kind.JvmConstructorOrMethod => Type.mkAnyType(tpe0.loc) // TODO INTEROP I don't really know what to put at this stage.
       case Kind.CaseSet(sym) => Type.Cst(TypeConstructor.CaseSet(SortedSet.empty, sym), tpe0.loc)
       case Kind.Arrow(_, _) => Type.mkAnyType(tpe0.loc)
     }

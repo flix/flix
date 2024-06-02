@@ -15,9 +15,6 @@
  */
 package ca.uwaterloo.flix.language.ast
 
-import java.lang.reflect.Method;
-import java.lang.reflect.Constructor;
-
 /**
   * Representation of monomorphed types.
   *
