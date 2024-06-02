@@ -329,7 +329,7 @@ object DocAst {
 
     case class JvmConstructor(method: Method) extends Atom
 
-    case class JvmMethod(method: Method) extends Atom
+    case class JvmMethod(constructor: Constructor[_]) extends Atom
 
     /** inserted string printed as-is (assumed not to require parenthesis) */
     case class Meta(s: String) extends Atom

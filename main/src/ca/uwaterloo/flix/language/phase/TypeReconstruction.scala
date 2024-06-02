@@ -19,6 +19,7 @@ import ca.uwaterloo.flix.language.ast.Ast.CheckedCastType
 import ca.uwaterloo.flix.language.ast.Type.getFlixType
 import ca.uwaterloo.flix.language.ast.{Ast, KindedAst, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.phase.unification.Substitution
+import ca.uwaterloo.flix.util.InternalCompilerException
 
 object TypeReconstruction {
 
@@ -422,8 +423,15 @@ object TypeReconstruction {
       val es = exps.map(visitExp)
       // Translation from invokeMethod2 to invokeMethod
       // TODO INTEROP check this
-      val Type.Cst(TypeConstructor.JvmMethod(method), loc) = subst(mvar)
-      TypedAst.Expr.InvokeMethod(method, e, es, subst(tvar), subst(evar), loc)
+      val returnTpe = subst(tvar)
+      val methodTpe = subst(mvar)
+      val argsTpe = subst(evar)
+      subst(mvar) match {
+        case Type.Cst(TypeConstructor.JvmMethod(method), loc) =>
+          TypedAst.Expr.InvokeMethod(method, e, es, subst(tvar), subst(evar), loc)
+        case _ =>
+          throw InternalCompilerException(s"Java method not defined.", loc) // TODO INTEROP better message
+      }
 
     case KindedAst.Expr.InvokeConstructor(constructor, args, loc) =>
       val as = args.map(visitExp(_))

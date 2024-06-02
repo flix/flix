@@ -273,9 +273,12 @@ object ConstraintSolver {
         case ResolutionResult(subst, constrs, p) => ResolutionResult(subst @@ subst0, constrs, progress = p)
       }
     case TypeConstraint.EqJvmMethod(mvar, tpe, method, tpes, prov) =>
-      resolveEquality(mvar, tpe, subst0(prov), renv, constr0.loc).map {
-        case ResolutionResult(subst, constrs, p) =>
-          ResolutionResult(subst @@ subst0, constrs, progress = p)
+      TypeReduction.simplify(tpe, renv, mvar.loc) match {
+        case Result.Ok((t, p)) =>
+          val subst = Substitution.singleton(mvar.sym, t)
+          Result.Ok(ResolutionResult.newSubst(subst @@ subst0))
+
+        case Err(e) => throw InternalCompilerException(s"to do $e", mvar.loc)
       }
     case TypeConstraint.EqJvmConstructor(mvar, clazz, tpes, prov) =>
       throw InternalCompilerException(s"Unexpected java constructor invocation.", prov.loc)

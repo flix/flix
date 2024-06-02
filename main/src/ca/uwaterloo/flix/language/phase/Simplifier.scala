@@ -280,10 +280,6 @@ object Simplifier {
 
           case TypeConstructor.Native(clazz) => MonoType.Native(clazz)
 
-          case TypeConstructor.JvmConstructor(method) => MonoType.JvmConstructor(method)
-
-          case TypeConstructor.JvmMethod(method) => MonoType.JvmMethod(method)
-
           case TypeConstructor.Array => MonoType.Array(args.head)
 
           case TypeConstructor.Vector => MonoType.Array(args.head)
@@ -336,6 +332,12 @@ object Simplifier {
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
 
           case TypeConstructor.StaticMethodReturnType(_, _, _) =>
+            throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
+
+          case TypeConstructor.JvmConstructor(_) =>
+            throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
+
+          case TypeConstructor.JvmMethod(_) =>
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
 
           case TypeConstructor.Error(_) =>

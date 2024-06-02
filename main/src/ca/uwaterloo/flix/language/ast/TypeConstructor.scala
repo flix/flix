@@ -1,10 +1,10 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.Ast.{EliminatedBy, IntroducedBy}
-import ca.uwaterloo.flix.language.ast.Kind.JvmConstructorOrMethod
 import ca.uwaterloo.flix.language.phase.{Kinder, Lowering, Monomorpher}
 
 import java.lang.reflect.Method
+import java.lang.reflect.Constructor;
 import scala.collection.immutable.SortedSet
 
 /**
@@ -247,7 +247,7 @@ object TypeConstructor {
   /**
    * A type constructor that represents the type of a Java constructor.
    * */
-  case class JvmConstructor(constructor: Method) extends TypeConstructor {
+  case class JvmConstructor(constructor: Constructor[_]) extends TypeConstructor {
     def kind: Kind = Kind.Star
   }
 

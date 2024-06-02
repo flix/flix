@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import java.lang.reflect.Method;
+import java.lang.reflect.Constructor;
 
 /**
   * Representation of monomorphed types.
@@ -86,11 +87,6 @@ object MonoType {
   case class RecordExtend(label: String, value: MonoType, rest: MonoType) extends MonoType
 
   case class Native(clazz: Class[_]) extends MonoType
-
-  // TODO INTEROP use Native or Object instead??
-  case class JvmConstructor(method: Method) extends MonoType
-
-  case class JvmMethod(method: Method) extends MonoType
 
   val Object: MonoType = Native(classOf[java.lang.Object])
 

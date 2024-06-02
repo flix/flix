@@ -71,8 +71,6 @@ object JvmOps {
     case MonoType.Enum(_) => JvmType.Object
     case MonoType.Arrow(_, _) => getFunctionInterfaceType(tpe)
     case MonoType.Native(clazz) => JvmType.Reference(JvmName.ofClass(clazz))
-    case MonoType.JvmConstructor(method) => JvmType.Reference(JvmName.ofClass(method.getClass))
-    case MonoType.JvmMethod(method) => JvmType.Reference(JvmName.ofClass(method.getClass))
   }
 
 
@@ -94,8 +92,7 @@ object JvmOps {
       case Int64 => JvmType.PrimLong
       case Void | AnyType | Unit | BigDecimal | BigInt | String | Regex |
            Region | Array(_) |Lazy(_) | Ref(_) | Tuple(_) | Enum(_) |
-           Arrow(_, _) | RecordEmpty | RecordExtend(_, _, _) | Native(_) |
-           MonoType.JvmConstructor(_) | MonoType.JvmMethod(_) =>
+           Arrow(_, _) | RecordEmpty | RecordExtend(_, _, _) | Native(_) =>
         JvmType.Object
     }
   }
@@ -119,8 +116,7 @@ object JvmOps {
       case Native(clazz) if clazz == classOf[Object] => JvmType.Object
       case Void | AnyType | Unit | BigDecimal | BigInt | String | Regex |
            Region | Array(_) | Lazy(_) | Ref(_) | Tuple(_) | Enum(_) |
-           Arrow(_, _) | RecordEmpty | RecordExtend(_, _, _) | Native(_) |
-           MonoType.JvmConstructor(_) | MonoType.JvmMethod(_) =>
+           Arrow(_, _) | RecordEmpty | RecordExtend(_, _, _) | Native(_) =>
         throw InternalCompilerException(s"Unexpected type $tpe", SourceLocation.Unknown)
     }
   }
