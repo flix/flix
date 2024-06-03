@@ -424,6 +424,8 @@ object SimpleType {
         case TypeConstructor.Enum(sym, _) => mkApply(Name(sym.name), t.typeArguments.map(visit))
         case TypeConstructor.RestrictableEnum(sym, _) => mkApply(Name(sym.name), t.typeArguments.map(visit))
         case TypeConstructor.Native(clazz) => Name(clazz.getName)
+        case TypeConstructor.JvmConstructor(constructor) => Name(constructor.getName)
+        case TypeConstructor.JvmMethod(method) => Name(method.getName)
         case TypeConstructor.MethodReturnType(name, arity) => mkApply(Name("." + name), t.typeArguments.map(visit))
         case TypeConstructor.StaticMethodReturnType(clazz, name, arity) => mkApply(Name(name), t.typeArguments.map(visit))
         case TypeConstructor.Ref => mkApply(Ref, t.typeArguments.map(visit))

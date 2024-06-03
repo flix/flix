@@ -47,11 +47,6 @@ object Weeder2 {
   import WeededAst._
 
   def run(readRoot: ReadAst.Root, entryPoint: Option[Symbol.DefnSym], root: SyntaxTree.Root, oldRoot: WeededAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[WeededAst.Root, CompilationMessage] = {
-    if (flix.options.xparser) {
-      // New lexer and parser disabled. Return immediately.
-      return Validation.success(WeededAst.empty)
-    }
-
     flix.phase("Weeder2") {
       val (stale, fresh) = changeSet.partition(root.units, oldRoot.units)
       // Parse each source file in parallel and join them into a WeededAst.Root
@@ -349,6 +344,10 @@ object Weeder2 {
             case (Some(_), _ :: _) => Validation.toHardFailure(IllegalEnum(ident.loc))
             // Empty enum
             case (None, Nil) => Validation.success(List.empty)
+            // Empty singleton enum
+            case (Some(Type.Error(_)), Nil) =>
+              // Fall back on no cases, parser has already reported an error
+              Validation.success(List.empty)
             // Singleton enum
             case (Some(t), Nil) =>
               Validation.success(List(WeededAst.Case(ident, flattenEnumCaseType(t), ident.loc)))
