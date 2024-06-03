@@ -78,7 +78,7 @@ object Safety {
     * Performs safety and well-formedness checks on the given definition `def0`.
     */
   private def visitDef(def0: Def)(implicit flix: Flix): List[SafetyError] = {
-    val exportErrs = if (isExported(def0)) visitExportDef(def0) else Nil
+    val exportErrs = if (def0.spec.ann.isExport) visitExportDef(def0) else Nil
     val renv = def0.spec.tparams.map(_.sym).foldLeft(RigidityEnv.empty) {
       case (acc, e) => acc.markRigid(e)
     }
@@ -99,19 +99,12 @@ object Safety {
     } else {
       val defn = root.defs(sym)
       // Note that exported defs have different rules
-      if (!isExported(defn) && hasUnitParameter(defn) && isPureOrIO(defn)) {
+      if (!defn.spec.ann.isExport && hasUnitParameter(defn) && isPureOrIO(defn)) {
         Nil
       } else {
         SafetyError.IllegalEntryPointSignature(defn.sym.loc) :: Nil
       }
     }
-  }
-
-  /**
-    * Returns `true` if the given `defn` is annotated to be exported.
-    */
-  private def isExported(defn: Def): Boolean = {
-    defn.spec.ann.isExport
   }
 
   /**
