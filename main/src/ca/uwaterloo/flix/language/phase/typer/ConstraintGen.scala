@@ -748,12 +748,9 @@ object ConstraintGen {
         val (tpe, eff) = visitExp(exp)
         val (tpes, effs) = exps.map(visitExp).unzip
         val t = Type.Cst(TypeConstructor.MethodReturnType(name.name, exps.length), loc)
-        val v = Type.IO :: eff :: effs
-        val m = Type.mkApply(t, tpe :: tpes, loc)
-        c.unifyJvmMethodType(mvar, m, name, tpes, loc) // unify method
-        c.unifyType(tvar, t, loc) // unify method return type
-        c.unifyType(mvar, m, loc)
-        c.unifyType(evar, Type.mkUnion(v, loc), loc) // unify effects
+        c.unifyJvmMethodType(mvar, tpe, name, tpes, loc) // unify method
+        c.unifyType(tvar, Type.mkApply(t, List(mvar), loc), loc) // unify method return type
+        c.unifyType(evar, Type.mkUnion(Type.IO :: eff :: effs, loc), loc) // unify effects
         val resTpe = tvar
         val resEff = evar
         (resTpe, resEff)

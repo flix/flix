@@ -58,9 +58,8 @@ object TypeReduction {
       for {
         (t1, p1) <- simplify(tpe1, renv0, loc)
         (t2, p2) <- simplify(tpe2, renv0, loc)
-        (t3, p3) <- simplifyJava(Type.Apply(t1, t2, loc), renv0, loc)
       } yield {
-        (t3, p1 || p2 || p3)
+        (Type.Apply(t1, t2, loc), p1 || p2)
       }
 
     // arg_R and syn_R
@@ -111,10 +110,10 @@ object TypeReduction {
       case Some(TypeConstructor.MethodReturnType(m, n)) =>
         val targs = tpe.typeArguments
         // TODO INTEROP add base case
-        resolveMethodReturnType(targs.head, m, targs.tail, loc) match {
-          case ResolutionResult.Resolved(t) => println(s">>> found return type $t"); Result.Ok((t, true))
-          case ResolutionResult.MethodNotFound() => Result.Err(TypeError.MethodNotFound(m, targs.head, tpe, List(), renv0, loc)) // TODO INTEROP tpe shall be replaced by list of types of arguments + fill in candidate methods
-          case ResolutionResult.NoProgress => Result.Ok((tpe, false))
+        lookupMethod(targs.head, m, targs.tail, loc) match {
+          case ResolutionResult2.Resolved(t) => println(s">>> found return type $t"); Result.Ok((t, true))
+          case ResolutionResult2.MethodNotFound() => Result.Err(TypeError.MethodNotFound(m, targs.head, tpe, List(), renv0, loc)) // TODO INTEROP tpe shall be replaced by list of types of arguments + fill in candidate methods
+          case ResolutionResult2.NoProgress => Result.Ok((tpe, false))
         }
       case _ => Result.Ok((tpe, false))
     }
@@ -132,7 +131,7 @@ object TypeReduction {
    * @param loc     the location where the java method has been called
    * @return        A ResolutionResult object that indicates the status of the resolution progress
    */
-  private def resolveMethodReturnType(thisObj: Type, method: String, ts: List[Type], loc: SourceLocation)(implicit flix: Flix): ResolutionResult =
+  def lookupMethod(thisObj: Type, method: String, ts: List[Type], loc: SourceLocation)(implicit flix: Flix): ResolutionResult2 =
     thisObj match {
       case Type.Cst(TypeConstructor.Str, loc2) =>
         val clazz = classOf[String]
@@ -143,11 +142,11 @@ object TypeReduction {
 
         candidateMethods.length match {
           case 1 =>
-            val tpe = Type.getFlixType(candidateMethods.head.getReturnType)
-            ResolutionResult.Resolved(tpe)
-          case _ => ResolutionResult.MethodNotFound() // For now, method not found either if there is an ambiguity or no method found
+            val tpe = Type.Cst(TypeConstructor.JvmMethod(candidateMethods.head), loc)
+            ResolutionResult2.Resolved(tpe)
+          case _ => ResolutionResult2.MethodNotFound() // For now, method not found either if there is an ambiguity or no method found
         }
-      case _ => ResolutionResult.NoProgress
+      case _ => ResolutionResult2.NoProgress
     }
 
   /**
@@ -159,10 +158,10 @@ object TypeReduction {
    * 2. MethodNotFound(): The resolution failed to find a corresponding java method.
    * 3. NoProgress: The resolution did not make any progress in the type simplification.
    */
-  sealed trait ResolutionResult
-  object ResolutionResult {
-    case class Resolved(tpe: Type) extends ResolutionResult
-    case class MethodNotFound() extends ResolutionResult
-    case object NoProgress extends ResolutionResult
+  sealed trait ResolutionResult2
+  object ResolutionResult2 {
+    case class Resolved(tpe: Type) extends ResolutionResult2
+    case class MethodNotFound() extends ResolutionResult2
+    case object NoProgress extends ResolutionResult2
   }
 }
