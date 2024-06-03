@@ -187,7 +187,6 @@ object Safety {
       case TypeConstructor.Int16 => true
       case TypeConstructor.Int32 => true
       case TypeConstructor.Int64 => true
-      case TypeConstructor.BigInt => true
       case TypeConstructor.Native(clazz) if clazz == classOf[Object] => true
       // Error is accepted to avoid cascading errors
       case TypeConstructor.Error(_) => true
