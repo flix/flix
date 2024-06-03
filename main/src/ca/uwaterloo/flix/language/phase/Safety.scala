@@ -114,8 +114,8 @@ object Safety {
     * use exportable types, and use non-algebraic effects
     */
   private def visitExportDef(defn: Def): List[SafetyError] = {
-    val pub = if (isPub(defn)) Nil else List(SafetyError.IllegalExportSignature(defn.sym.loc, "Exported functions must be `pub`."))
-    val name = if (validJavaName(defn.sym)) Nil else List(SafetyError.IllegalExportSignature(defn.sym.loc, "Exported functions must have simple of letters and numbers."))
+    val pub = if (isPub(defn)) Nil else List(SafetyError.NonPublicExportSignature(defn.sym.loc))
+    val name = if (validJavaName(defn.sym)) Nil else List(SafetyError.InvalidNameExportSignature(defn.sym.loc))
     val types = if (isPolymorphic(defn)) {
       List(SafetyError.IllegalExportSignature(defn.sym.loc, "Exported functions cannot be polymorphic."))
     } else {

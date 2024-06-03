@@ -165,6 +165,48 @@ object SafetyError {
   }
 
   /**
+    * An error raised to indicate that an exported function is not public.
+    *
+    * @param loc the location of the defn.
+    */
+  case class NonPublicExportSignature(loc: SourceLocation) extends SafetyError with Recoverable {
+    def summary: String = s"Exported function must be public"
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Exported function must be public.
+         |
+         |${code(loc, "non-public exported function.")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * An error raised to indicate that an exported function has an invalid name.
+    *
+    * @param loc the location of the defn.
+    */
+  case class InvalidNameExportSignature(loc: SourceLocation) extends SafetyError with Recoverable {
+    def summary: String = s"Exported function must have a Java valid name"
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Exported function must have a Java valid name.
+         |
+         |${code(loc, "invalid Java name.")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
     * An error raised to indicate that an exported function has an illegal signature.
     *
     * @param loc the location of the defn.
