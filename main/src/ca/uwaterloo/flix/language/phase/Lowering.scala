@@ -763,8 +763,15 @@ object Lowering {
       // Compute the symbol of the function.
       val sym = Defs.ProjectInto(arity)
 
+      // The effect of the function is Foldable.Aef[F]
+      def defEff = Type.AssocType(
+        Ast.AssocTypeConstructor(new Symbol.AssocTypeSym(Symbol.mkTraitSym("Foldable"), "Aef", loc), loc),
+        Type.eraseAliases(exp.tpe).baseType,
+        Kind.Eff,
+        loc
+      )
       // The type of the function.
-      val defTpe = Type.mkPureUncurriedArrow(List(Types.PredSym, exp.tpe), Types.Datalog, loc)
+      val defTpe = Type.mkUncurriedArrowWithEffect(List(Types.PredSym, exp.tpe), defEff, Types.Datalog, loc)
 
       // Put everything together.
       val defExp = LoweredAst.Expr.Def(sym, defTpe, loc)
@@ -1757,7 +1764,7 @@ object Lowering {
     * Returns a desugared [[TypedAst.Expr.ParYield]] expression as a nested match-expression.
     */
   private def mkParYield(frags: List[LoweredAst.ParYieldFragment], exp: LoweredAst.Expr, tpe: Type, eff: Type, loc: SourceLocation)(implicit flix: Flix): LoweredAst.Expr = {
-    // Partition fragments into complex and simple (vars or csts) exps.
+    // Partition fragments into complex and simple (vars or posCsts) exps.
     val (complex, varOrCsts) = frags.partition(f => isSpawnable(f.exp))
 
     // Only generate channels for n-1 fragments. We use the current thread for the last fragment.

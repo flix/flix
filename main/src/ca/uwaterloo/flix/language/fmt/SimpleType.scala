@@ -548,7 +548,7 @@ object SimpleType {
         case TypeConstructor.Effect(sym) => mkApply(SimpleType.Name(sym.name), t.typeArguments.map(visit))
         case TypeConstructor.RegionToStar => mkApply(Region, t.typeArguments.map(visit))
 
-        case TypeConstructor.Error(_) => SimpleType.Error
+        case TypeConstructor.Error(_, _) => SimpleType.Error
       }
     }
 
