@@ -248,14 +248,14 @@ object TypeConstructor {
    * A type constructor that represents the type of a Java constructor.
    * */
   case class JvmConstructor(constructor: Constructor[_]) extends TypeConstructor {
-    def kind: Kind = Kind.Star
+    def kind: Kind = Kind.JvmConstructorOrMethod
   }
 
   /**
    * A type constructor that represents the type of a Java method.
    */
   case class JvmMethod(method: Method) extends TypeConstructor {
-    def kind: Kind = Kind.Star
+    def kind: Kind = Kind.JvmConstructorOrMethod
   }
 
   /**

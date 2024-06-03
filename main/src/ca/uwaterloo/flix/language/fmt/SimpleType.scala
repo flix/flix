@@ -264,6 +264,11 @@ object SimpleType {
   case class Tuple(elms: List[SimpleType]) extends SimpleType
 
   /**
+   * A method return type.
+   */
+  case class MethodReturnType(arity: Int) extends SimpleType
+
+  /**
     * An error type.
     */
   case object Error extends SimpleType
@@ -426,7 +431,7 @@ object SimpleType {
         case TypeConstructor.Native(clazz) => Name(clazz.getName)
         case TypeConstructor.JvmConstructor(constructor) => Name(constructor.getName)
         case TypeConstructor.JvmMethod(method) => Name(method.getName)
-        case TypeConstructor.MethodReturnType(arity) => ??? // OLD: mkApply(Name("." + name), t.typeArguments.map(visit)) TODO INTEROP: ?
+        case TypeConstructor.MethodReturnType(arity) => SimpleType.MethodReturnType(arity) // TODO INTEROP: do we keep the method name only for this?
         case TypeConstructor.StaticMethodReturnType(clazz, name, arity) => mkApply(Name(name), t.typeArguments.map(visit))
         case TypeConstructor.Ref => mkApply(Ref, t.typeArguments.map(visit))
         case TypeConstructor.Tuple(l) =>
