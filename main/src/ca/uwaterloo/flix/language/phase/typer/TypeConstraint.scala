@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.phase.typer
 
-import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Kind, Name, SourceLocation, Symbol, Type}
 
 
 /**
@@ -31,6 +31,8 @@ sealed trait TypeConstraint {
     case TypeConstraint.Equality(_: Type.Var, Type.Pure, _) => (0, 0, 0)
     case TypeConstraint.Equality(Type.Pure, _: Type.Var, _) => (0, 0, 0)
     case TypeConstraint.Equality(tvar1: Type.Var, tvar2: Type.Var, _) if tvar1 != tvar2 => (0, 0, 0)
+    case TypeConstraint.EqJvmConstructor(_, _, _, _) => (1, 0, 0)
+    case TypeConstraint.EqJvmMethod(_, _, _, _, _) => (1, 0, 0)
     case TypeConstraint.Purification(_, _, _, _, _) => (0, 0, 0)
     case TypeConstraint.Equality(tpe1, tpe2, _) =>
       val tvars = tpe1.typeVars ++ tpe2.typeVars
@@ -41,6 +43,8 @@ sealed trait TypeConstraint {
 
   override def toString: String = this match {
     case TypeConstraint.Equality(tpe1, tpe2, _) => s"$tpe1 ~ $tpe2"
+    case TypeConstraint.EqJvmConstructor(mvar, clazz, tpes, _) => s"${mvar.baseType} ~ ${Type.getFlixType(clazz)}[$tpes" // temporary
+    case TypeConstraint.EqJvmMethod(mvar, tpe, _, _, _) => s"${mvar.baseType} ~ $tpe"
     case TypeConstraint.Trait(sym, tpe, _) => s"$sym[$tpe]"
     case TypeConstraint.Purification(sym, eff1, eff2, _, nested) => s"$eff1 ~ ($eff2)[$sym ↦ Pure] ∧ $nested"
   }
@@ -50,6 +54,8 @@ sealed trait TypeConstraint {
     */
   def numVars: Int = this match {
     case TypeConstraint.Equality(tpe1, tpe2, _) => tpe1.typeVars.size + tpe2.typeVars.size
+    case TypeConstraint.EqJvmConstructor(mvar, clazz, tpes, _) => tpes.foldLeft(1) { (acc, tpe) => acc + tpe.typeVars.size }
+    case TypeConstraint.EqJvmMethod(mvar, tpe, _, tpes, _) => tpes.foldLeft(1 + tpe.typeVars.size) { (acc, tpe) => acc + tpe.typeVars.size }
     case TypeConstraint.Trait(_, tpe, _) => tpe.typeVars.size
     case TypeConstraint.Purification(_, eff1, eff2, _, _) => eff1.typeVars.size + eff2.typeVars.size
   }
@@ -66,6 +72,22 @@ object TypeConstraint {
     * }}}
     */
   case class Equality(tpe1: Type, tpe2: Type, prov: Provenance) extends TypeConstraint {
+    def loc: SourceLocation = prov.loc
+  }
+
+  /**
+   * A constraint indicating the equivalence between a Java constructor's type and a class with its arguments.
+   * Where mvar must have kind JvmConstructorOrMethod -> Type.
+   */
+  case class EqJvmConstructor(mvar: Type.Var, clazz: Class[_], tpes: List[Type], prov: Provenance) extends TypeConstraint {
+    def loc: SourceLocation = prov.loc
+  }
+
+  /**
+   * A constraint indicating the equivalence between a Java method's type and a method signature, i.e., a type, method name and list of arguments.
+   * Where mvar must have kind JvmConstructorOrMethod -> Type.
+   */
+  case class EqJvmMethod(mvar: Type.Var, mTpe: Type, method: Name.Ident, tpes: List[Type], prov: Provenance) extends TypeConstraint {
     def loc: SourceLocation = prov.loc
   }
 

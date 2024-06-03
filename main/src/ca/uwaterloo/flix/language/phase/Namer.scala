@@ -99,7 +99,7 @@ object Namer {
     */
   private def visitNamespace(decl: DesugaredAst.Declaration.Namespace, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.Namespace, NameError] = decl match {
     case DesugaredAst.Declaration.Namespace(ident, usesAndImports0, decls0, loc) =>
-      val ns = Name.NName(ident.sp1, ns0.idents :+ ident, ident.sp2)
+      val ns = Name.NName(ns0.idents :+ ident, ident.loc)
       val usesAndImports = usesAndImports0.map(visitUseOrImport)
       val declsVal = traverse(decls0)(visitDecl(_, ns))
       val sym = new Symbol.ModuleSym(ns.parts)

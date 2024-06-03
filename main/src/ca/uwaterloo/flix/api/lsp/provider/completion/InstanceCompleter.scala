@@ -25,7 +25,7 @@ object InstanceCompleter extends Completer {
   /**
     * Returns a List of Completion based on traits.
     */
-  override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[InstanceCompletion] = {
+  override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[InstanceCompletion] = {
     if (context.previousWord != "instance") {
       return Nil
     }

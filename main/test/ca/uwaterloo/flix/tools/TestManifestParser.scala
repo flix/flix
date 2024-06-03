@@ -73,7 +73,7 @@ class TestManifestParser extends AnyFunSuite {
   }
 
   test("Ok.version") {
-    assertResult(expected = SemVer(0, 1, Some(0), None, None))(actual = {
+    assertResult(expected = SemVer(0, 1, 0))(actual = {
       ManifestParser.parse(tomlCorrect, null) match {
         case Ok(manifest) => manifest.version
         case Err(e) => e.message(f)
@@ -140,7 +140,7 @@ class TestManifestParser extends AnyFunSuite {
   }
 
   test("Ok.flix") {
-    assertResult(expected = SemVer(0, 33, Some(0), None, None))(actual = {
+    assertResult(expected = SemVer(0, 33, 0))(actual = {
       ManifestParser.parse(tomlCorrect, null) match {
         case Ok(manifest) => manifest.flix
         case Err(e) => e.message(f)
@@ -187,8 +187,8 @@ class TestManifestParser extends AnyFunSuite {
   }
 
   test("Ok.dependencies") {
-    assertResult(expected = List(Dependency.FlixDependency(Repository.GitHub, "jls", "tic-tac-toe", SemVer(1, 2, Some(3), None, None)),
-                                 Dependency.FlixDependency(Repository.GitHub, "mlutze", "flixball", SemVer(3, 2, Some(1), None, None)),
+    assertResult(expected = List(Dependency.FlixDependency(Repository.GitHub, "jls", "tic-tac-toe", SemVer(1, 2, 3)),
+                                 Dependency.FlixDependency(Repository.GitHub, "mlutze", "flixball", SemVer(3, 2, 1)),
                                  Dependency.MavenDependency("org.postgresql", "postgresql", "1.2.3.4"),
                                  Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", "4.7.0-M1"),
                                  Dependency.JarDependency(new URI("https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar").toURL, "myJar.jar")))(actual = {

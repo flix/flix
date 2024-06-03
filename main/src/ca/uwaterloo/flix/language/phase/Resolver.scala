@@ -47,8 +47,10 @@ object Resolver {
   private val ToStringSym = new Symbol.TraitSym(Nil, "ToString", SourceLocation.Unknown)
   private val HashSym = new Symbol.TraitSym(Nil, "Hash", SourceLocation.Unknown)
   private val SendableSym = new Symbol.TraitSym(Nil, "Sendable", SourceLocation.Unknown)
+  private val CoerceSym = new Symbol.TraitSym(Nil, "Coerce", SourceLocation.Unknown)
 
-  val DerivableSyms: List[Symbol.TraitSym] = List(EqSym, OrderSym, ToStringSym, HashSym, SendableSym)
+  // TODO move to Deriver
+  val DerivableSyms: List[Symbol.TraitSym] = List(EqSym, OrderSym, ToStringSym, HashSym, SendableSym, CoerceSym)
 
   /**
     * Java classes for primitives and Object
@@ -3361,6 +3363,8 @@ object Resolver {
         case t: TypeConstructor.Arrow => throw InternalCompilerException(s"unexpected type: $t", tpe.loc)
         case t: TypeConstructor.Enum => throw InternalCompilerException(s"unexpected type: $t", tpe.loc)
         case t: TypeConstructor.RestrictableEnum => throw InternalCompilerException(s"unexpected type: $t", tpe.loc)
+        case TypeConstructor.JvmConstructor(_) => throw InternalCompilerException(s"unexpected type: $tc", tpe.loc)
+        case TypeConstructor.JvmMethod(_) => throw InternalCompilerException(s"unexpected type: $tc", tpe.loc)
 
       }
 

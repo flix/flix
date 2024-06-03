@@ -743,11 +743,17 @@ object ConstraintGen {
 
         (resTpe, resEff)
 
-      case Expr.InvokeMethod2(exp, name, exps, tvar, evar, loc) =>
+      case Expr.InvokeMethod2(exp, name, exps, mvar, tvar, evar, loc) =>
+        // TODO INTEROP make distinction between java method or constructor calls
         val (tpe, eff) = visitExp(exp)
         val (tpes, effs) = exps.map(visitExp).unzip
-        c.unifyType(tvar, Type.mkApply(Type.Cst(TypeConstructor.MethodReturnType(name.name, exps.length), loc), tpe :: tpes, loc), loc)
-        c.unifyType(evar, Type.mkUnion(Type.IO :: eff :: effs, loc), loc)
+        val t = Type.Cst(TypeConstructor.MethodReturnType(name.name, exps.length), loc)
+        val v = Type.IO :: eff :: effs
+        val m = Type.mkApply(t, tpe :: tpes, loc)
+        c.unifyJvmMethodType(mvar, m, name, tpes, loc) // unify method
+        c.unifyType(tvar, t, loc) // unify method return type
+        c.unifyType(mvar, m, loc)
+        c.unifyType(evar, Type.mkUnion(v, loc), loc) // unify effects
         val resTpe = tvar
         val resEff = evar
         (resTpe, resEff)

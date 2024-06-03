@@ -219,7 +219,7 @@ object ManifestParser {
     try {
       s.split('.') match {
         case Array(major, minor, patch) =>
-          Ok(SemVer(major.toInt, minor.toInt, Some(patch.toInt), None, None))
+          Ok(SemVer(major.toInt, minor.toInt, patch.toInt))
         case _ => Err(ManifestError.FlixVersionHasWrongLength(p, s))
       }
     } catch {

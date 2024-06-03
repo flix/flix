@@ -26,7 +26,7 @@ object EnumTagCompleter extends Completer {
   /**
     * Returns a List of Completion for enum tags.
     */
-  override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[EnumTagCompletion] = {
+  override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[EnumTagCompletion] = {
     // We don't know if the user has provided a tag, so we have to try both cases
     val fqn = context.word.split('.').toList
 
