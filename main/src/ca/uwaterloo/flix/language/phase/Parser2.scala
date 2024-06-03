@@ -673,9 +673,17 @@ object Parser2 {
     * This is achieved by passing `canStartOnDoc = true`.
     */
   private def comments(consumeDocComments: Boolean = false)(implicit s: State): Unit = {
-    // Note: In case of a misplaced CommentDoc, we would just like to consume it into the comment list.
-    // This is forgiving in the common case of accidentally inserting an extra '/'.
-    def atComment() = if (consumeDocComments) nth(0).isComment else nth(0).isCommentNonDoc
+    // Note: This function does not use nth on purpose.
+    // Calls to comments are so frequent, from open and close for instance,
+    // that nth would needlessly consume all the parses fuel.
+    def atComment(): Boolean = {
+      val current = if (s.position >= s.tokens.length - 1) {
+        TokenKind.Eof
+      } else {
+        s.tokens(s.position).kind
+      }
+      if (consumeDocComments) current.isComment else current.isCommentNonDoc
+    }
 
     if (atComment()) {
       val mark = Mark.Opened(s.events.length)
