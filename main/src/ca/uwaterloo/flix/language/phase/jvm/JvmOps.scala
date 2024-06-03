@@ -230,10 +230,10 @@ object JvmOps {
     *
     * For example:
     *
-    * <root>      =>  Ns
-    * Foo         =>  Foo.Ns
-    * Foo.Bar     =>  Foo.Bar.Ns
-    * Foo.Bar.Baz =>  Foo.Bar.Baz.Ns
+    * <root>      =>  Root$
+    * Foo         =>  Foo
+    * Foo.Bar     =>  Foo.Bar
+    * Foo.Bar.Baz =>  Foo.Bar.Baz
     */
   def getNamespaceClassType(ns: NamespaceInfo): JvmName = {
     getNamespaceName(ns.ns)
