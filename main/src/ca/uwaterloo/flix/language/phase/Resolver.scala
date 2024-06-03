@@ -3356,7 +3356,7 @@ object Resolver {
         case TypeConstructor.CaseIntersection(_) => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.CaseUnion(_) => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.Error(_) => Result.Err(ResolutionError.IllegalType(tpe, loc))
-        case TypeConstructor.MethodReturnType(name, arity) => Result.Err(ResolutionError.IllegalType(tpe, loc))
+        case TypeConstructor.MethodReturnType(arity) => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.StaticMethodReturnType(clazz, name, arity) => Result.Err(ResolutionError.IllegalType(tpe, loc))
 
         case TypeConstructor.AnyType => throw InternalCompilerException(s"unexpected type: $tc", tpe.loc)
