@@ -673,9 +673,17 @@ object Parser2 {
     * This is achieved by passing `canStartOnDoc = true`.
     */
   private def comments(consumeDocComments: Boolean = false)(implicit s: State): Unit = {
-    // Note: In case of a misplaced CommentDoc, we would just like to consume it into the comment list.
-    // This is forgiving in the common case of accidentally inserting an extra '/'.
-    def atComment() = if (consumeDocComments) nth(0).isComment else nth(0).isCommentNonDoc
+    // Note: This function does not use nth on purpose, to avoid consuming fuel.
+    // both open and close use comments, and so comments is called so ofter
+    // that nth would needlessly consume all the parsers fuel.
+    def atComment(): Boolean = {
+      val current = if (s.position >= s.tokens.length - 1) {
+        TokenKind.Eof
+      } else {
+        s.tokens(s.position).kind
+      }
+      if (consumeDocComments) current.isComment else current.isCommentNonDoc
+    }
 
     if (atComment()) {
       val mark = Mark.Opened(s.events.length)
@@ -1014,7 +1022,17 @@ object Parser2 {
       val isShorthand = at(TokenKind.ParenL)
       if (isShorthand) {
         val markType = open()
-        Type.tuple()
+        val mark = open()
+        oneOrMore(
+          namedTokenSet = NamedTokenSet.Type,
+          getItem = () => Type.ttype(),
+          checkForItem = _.isFirstType,
+          breakWhen = _.isRecoverType,
+          context = SyntacticContext.Type.OtherType
+        ) match {
+          case Some(error) => closeWithError(mark, error)
+          case None => close(mark, TreeKind.Type.Tuple)
+        }
         close(markType, TreeKind.Type.Type)
       }
       // derivations
