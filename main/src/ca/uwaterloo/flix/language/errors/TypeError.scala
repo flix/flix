@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.errors
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.BroadEqualityConstraint
+import ca.uwaterloo.flix.language.ast.TypeConstructor.JvmMethod
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.fmt.FormatEqualityConstraint.formatEqualityConstraint
 import ca.uwaterloo.flix.language.fmt.FormatType.formatType
@@ -57,6 +58,29 @@ object TypeError {
     override def explain(formatter: Formatter): Option[String] = Some({
       "Tip: Add an equality constraint to the function."
     })
+  }
+
+  /**
+   * Java method not found type error.
+   *
+   * @param oTpe    the type of the receiver object.
+   * @param mTpe    the type of the method, i.e., of its arguments.
+   * @param methods a list of possible candidate methods on the type of the receiver object.
+   * @param renv    the rigidity environment.
+   * @param loc     the location where the error occured.
+   */
+  case class MethodNotFound(methodName: String, oTpe: Type, mTpe: Type, methods: List[JvmMethod], renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    // TODO INTEROP better comment, e.g., list possible methods
+    def summary: String = s"Java method with type '$mTpe' in type '$oTpe' not found."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Java method '$methodName' with signature '${red(formatType(mTpe, Some(renv)))}' from '${red(formatType(oTpe, Some(renv)))}' not found.
+         |
+         |${code(loc, s"java method '${methodName} method not found")}
+         |""".stripMargin
+    }
   }
 
   /**

@@ -92,7 +92,7 @@ object JvmOps {
       case Int64 => JvmType.PrimLong
       case Void | AnyType | Unit | BigDecimal | BigInt | String | Regex |
            Region | Array(_) |Lazy(_) | Ref(_) | Tuple(_) | Enum(_) |
-           Arrow(_, _) | RecordEmpty |RecordExtend(_, _, _) | Native(_) =>
+           Arrow(_, _) | RecordEmpty | RecordExtend(_, _, _) | Native(_) =>
         JvmType.Object
     }
   }

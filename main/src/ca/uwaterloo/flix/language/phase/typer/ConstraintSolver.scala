@@ -272,6 +272,16 @@ object ConstraintSolver {
       resolveEquality(t1, t2, prov, renv, constr0.loc).map {
         case ResolutionResult(subst, constrs, p) => ResolutionResult(subst @@ subst0, constrs, progress = p)
       }
+    case TypeConstraint.EqJvmMethod(mvar, tpe, method, tpes, prov) =>
+      TypeReduction.simplify(tpe, renv, mvar.loc) match {
+        case Result.Ok((t, p)) =>
+          val subst = Substitution.singleton(mvar.sym, t)
+          Result.Ok(ResolutionResult.newSubst(subst @@ subst0))
+
+        case Err(e) => throw InternalCompilerException(s"to do $e", mvar.loc)
+      }
+    case TypeConstraint.EqJvmConstructor(mvar, clazz, tpes, prov) =>
+      throw InternalCompilerException(s"Unexpected java constructor invocation.", prov.loc)
     case TypeConstraint.Trait(sym, tpe, loc) =>
       resolveTraitConstraint(sym, subst0(tpe), renv, loc).map {
         case (constrs, progress) => ResolutionResult(subst0, constrs, progress)
@@ -505,6 +515,8 @@ object ConstraintSolver {
   private def getFirstError(deferred: List[TypeConstraint], renv: RigidityEnv)(implicit flix: Flix): Option[TypeError] = deferred match {
     case Nil => None
     case TypeConstraint.Equality(tpe1, tpe2, prov) :: _ => Some(toTypeError(UnificationError.MismatchedTypes(tpe1, tpe2), prov))
+    case TypeConstraint.EqJvmConstructor(mvar, clazz, tpes, prov) :: _ => Some(toTypeError(UnificationError.MismatchedTypes(mvar.baseType, Type.getFlixType(clazz)), prov))
+    case TypeConstraint.EqJvmMethod(mvar, tpe, method, tpes, prov) :: _ => Some(toTypeError(UnificationError.MismatchedTypes(mvar.baseType, tpe), prov))
     case TypeConstraint.Trait(sym, tpe, loc) :: _ => Some(mkMissingInstance(sym, tpe, renv, loc))
     case TypeConstraint.Purification(_, _, _, _, nested) :: _ => getFirstError(nested, renv)
   }
