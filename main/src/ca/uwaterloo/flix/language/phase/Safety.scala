@@ -99,7 +99,9 @@ object Safety {
     } else {
       val defn = root.defs(sym)
       // Note that exported defs have different rules
-      if (!defn.spec.ann.isExport && hasUnitParameter(defn) && isPureOrIO(defn)) {
+      if (defn.spec.ann.isExport) {
+        Nil
+      } else if (hasUnitParameter(defn) && isPureOrIO(defn)) {
         Nil
       } else {
         SafetyError.IllegalEntryPointSignature(defn.sym.loc) :: Nil
@@ -114,15 +116,16 @@ object Safety {
     * use exportable types, and use non-algebraic effects
     */
   private def visitExportDef(defn: Def): List[SafetyError] = {
-    val pub = if (isPub(defn)) Nil else List(SafetyError.NonPublicExportSignature(defn.sym.loc))
-    val name = if (validJavaName(defn.sym)) Nil else List(SafetyError.InvalidNameExportSignature(defn.sym.loc))
+    val nonRoot = if (isInRootNamespace(defn)) List(SafetyError.IllegalExportNamespace(defn.sym.loc)) else Nil
+    val pub = if (isPub(defn)) Nil else List(SafetyError.NonPublicExport(defn.sym.loc))
+    val name = if (validJavaName(defn.sym)) Nil else List(SafetyError.IllegalExportName(defn.sym.loc))
     val types = if (isPolymorphic(defn)) {
-      List(SafetyError.IllegalExportSignature(defn.sym.loc, "Exported functions cannot be polymorphic."))
+      List(SafetyError.IllegalExportPolymorphism(defn.spec.loc))
     } else {
       checkExportableTypes(defn)
     }
-    val effect = if (isPureOrIO(defn)) Nil else List(SafetyError.IllegalExportSignature(defn.sym.loc, "Exported functions must have no effect or `IO`."))
-    pub ++ name ++ types ++ effect
+    val effect = if (isPureOrIO(defn)) Nil else List(SafetyError.IllegalExportEffect(defn.spec.loc))
+    nonRoot ++ pub ++ name ++ types ++ effect
   }
 
   /**
@@ -137,6 +140,13 @@ object Safety {
         // Case 2: Multiple parameters.
         false
     }
+  }
+
+  /**
+    * Returns `true` if the given `defn` is in the root namespace.
+    */
+  private def isInRootNamespace(defn: Def): Boolean = {
+    defn.sym.namespace.isEmpty
   }
 
   /**
@@ -161,7 +171,7 @@ object Safety {
     val types = defn.spec.fparams.map(_.tpe) :+ defn.spec.retTpe
     types.flatMap{ t =>
       if (isExportableType(t)) Nil
-      else List(SafetyError.IllegalExportSignature(t.loc, s"Exported function can only use simple types, not `$t`"))
+      else List(SafetyError.IllegalExportType(t, t.loc))
     }
   }
 

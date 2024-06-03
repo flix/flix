@@ -246,7 +246,9 @@ object JvmOps {
   }
 
   private def getNamespaceName(ns: List[String]): JvmName = {
-    JvmName(ns, "Export")
+    val last = ns.lastOption.getOrElse("Root")
+    val nsFixed = ns.init
+    JvmName(nsFixed, last)
   }
 
   /**
