@@ -23,34 +23,32 @@ import scala.collection.immutable.{SortedMap, SortedSet}
 import scala.collection.mutable
 
 ///
-/// Fast Type Inference with Systems of Boolean Unification Equations
+/// Fast Type Inference with Systems of Set Unification Equations
 ///
 /// Work smarter, not harder -- Proverb
 ///
-/// A Fast Boolean Unification Solver based on the following ideas:
+/// A fast set unification solver based on the following ideas:
 ///
-/// - We work on all the equations as one whole system.
-/// - We assume the equation system has been put into normal form. This avoids the need to mirror a lot of cases.
-///   - We move univ and empty to the rhs.
+/// - Work on all the equations as one whole system.
+/// - Assume the equation system has been put into normal form. This avoids the need to mirror a lot of cases.
+///   - We move univ, empty, and single elements to the rhs.
 ///   - We move a single variable to the lhs.
 ///   - See the definition of `Equation.mk` for details.
-/// - We progress in the following order:
-///   1. We propagate ground terms (univ/empty/constant) in a fixpoint.
-///   2. We propagate variables (i.e. resolving constraints of the form x = y).
-///   3. We perform trivial assignments where the left-hand variables does not occur in the RHS.
-///   4. We eliminate (now) trivial and redundant constraints.
-///   5. We do full-blown Boolean unification with SVE.
-/// - We represent a intersection with n >= 2 terms.
-///   - We group the terms into three: a set of constants, a set of variables, and a list of sub-terms.
-///   - We flatten intersections at least one level per call to `mkInter`.
-///
-/// Written under open-world assumption, i.e. the universe is infinite.
-///
-/// In the future, we could:
-/// - Explore change of basis.
-/// - Explore use slack variables (i.e. variables marked don't care, and use SAT).
-/// - Explore in detail how constraints are generated.
-/// - Explore whether to run Phase 1-3 after _ONE_ SVE computation.
+/// - Progress in the following order:
+///   1. Propagate ground terms (univ/empty/element/constant) in a fixpoint. // TODO also fx x ∪ y ∪ z ~ empty
+///   2. Propagate variables (i.e. resolving constraints of the form x = y).
+///   3. Perform trivial assignments where the left-hand variables does not occur in the RHS.
+///   4. Eliminate (now) trivial and redundant constraints.
+///   5. Do full-blown set unification with SVE.
+/// - Represent n-ary unions and intersections.
+///   - Group the terms into seven:
+///     - A set of positive/negative elements
+///     - A set of positive/negative constants
+///     - A set of positive/negative variables
+///     - A list of sub-terms.
+///   - Flatten unions and intersections at least one level per call to `mkUnion`/`mkInter`.
+/// - Push down complement immediately, this means that only "atoms" have complement.
+/// - Assume open-world assumption, i.e. the universe of elements is infinite.
 ///
 object FastSetUnification {
 
@@ -58,8 +56,6 @@ object FastSetUnification {
     * The threshold for when a solution is considered too complex.
     *
     * The threshold is specified as an upper bound on the permitted connectives in a substitution.
-    *
-    * The threshold must be at least 600 for the test suite to pass.
     *
     * If a solution is too complex an [[TooComplexException]] exception is thrown.
     */
@@ -111,28 +107,39 @@ object FastSetUnification {
     *
     * Returns `Err(c, l, s)` where `c` is a conflict, `l` is a list of unsolved equations, and `s` is a partial substitution.
     */
-  def solveAll(l: List[Equation]): Result[BoolSubstitution, (FastBoolUnificationException, List[Equation], BoolSubstitution)] = {
+  def solveAll(l: List[Equation]): Result[SetSubstitution, (FastBoolUnificationException, List[Equation], SetSubstitution)] = {
     val solver = new Solver(l)
     solver.solve()
   }
 
-  def solveAllInfo(l: List[Equation]): (Result[BoolSubstitution, (FastBoolUnificationException, List[Equation], BoolSubstitution)], Int) = {
+  /**
+    * Equivalent to [[solveAll]] but also return the index of the last phase working on non-empty equations.
+    */
+  def solveAllInfo(l: List[Equation]): (Result[SetSubstitution, (FastBoolUnificationException, List[Equation], SetSubstitution)], Int) = {
     val solver = new Solver(l)
-    (solver.solve(), solver.phase)
+    solver.solveInfo()
   }
 
   /**
-    * A stateful phased solver for Boolean unification equations. The solver maintains two fields that change over time:
+    * A stateful phased solver for set unification equations. The solver maintains two fields that change over time:
     *
     * - The current (pending) unification equations to solve.
     * - The current (partial) substitution which represents the solution.
     *
-    * @param l The input list of Boolean unification equations to solve.
+    * @param l The input list of set unification equations to solve.
     */
   private class Solver(l: List[Equation]) {
 
-    var phase: Int = 0
+    /**
+      * The max phase reached that operated on non-empty equations.
+      *
+      * This is used for debugging.
+      */
+    private var phase: Int = 0
 
+    /**
+      * Updates [[phase]] if less than `p`.
+      */
     private def setPhase(p: Int): Unit = phase = phase max p
 
     /**
@@ -142,14 +149,14 @@ object FastSetUnification {
       *
       * Note that the pending equations is not a strict subset of the original equations because they may be simplified during computation.
       *
-      * If Boolean unification is successful, the list of pending equations will become empty at the end of the computation.
+      * If set unification is successful, the list of pending equations will become empty at the end of the computation.
       */
     private var currentEqns: List[Equation] = l
 
     /**
       * The current substitution. Initially empty, but grows during computation.
       */
-    private var currentSubst: BoolSubstitution = BoolSubstitution.empty
+    private var currentSubst: SetSubstitution = SetSubstitution.empty
 
     /**
       * Attempts to solve the equation system that this solver was instantiated with.
@@ -158,7 +165,7 @@ object FastSetUnification {
       *
       * Returns `Result.Err((ex, l, s))` where `c` is a conflict, `l` is a list of unsolved equations, and `s` is a partial substitution.
       */
-    def solve(): Result[BoolSubstitution, (FastBoolUnificationException, List[Equation], BoolSubstitution)] = {
+    def solve(): Result[SetSubstitution, (FastBoolUnificationException, List[Equation], SetSubstitution)] = {
       try {
         phase0Init()
         phase1ConstantPropagation()
@@ -176,24 +183,32 @@ object FastSetUnification {
       }
     }
 
+    /**
+      * Equivalent to [[solve]] but also return the index of the last phase working on non-empty equations.
+      */
+    def solveInfo(): (Result[SetSubstitution, (FastBoolUnificationException, List[Equation], SetSubstitution)], Int) = {
+      (solve(), this.phase)
+    }
+
     private def phase0Init(): Unit = {
       debugln("-".repeat(80))
       debugln("--- Phase 0: Input")
       debugln("-".repeat(80))
-      printEquations()
+      debugEquations()
       debugln()
     }
 
     private def phase1ConstantPropagation(): Unit = {
       debugln("-".repeat(80))
       debugln("--- Phase 1: Constant Propagation")
-      debugln("    (resolves all equations of the form: x = c where x is a var and c is const)")
+      // TODO this is lying
+      debugln("    (resolves all equations of the form: x = c where x is a var and c is univ/empty/constant/element)")
       debugln("-".repeat(80))
       if (currentEqns.nonEmpty) setPhase(1)
       val s = propagateConstants(currentEqns)
       updateState(s)
-      printEquations()
-      printSubstitution()
+      debugEquations()
+      debugSubstitution()
       debugln()
     }
 
@@ -205,8 +220,8 @@ object FastSetUnification {
       if (currentEqns.nonEmpty) setPhase(2)
       val s = propagateVars(currentEqns)
       updateState(s)
-      printEquations()
-      printSubstitution()
+      debugEquations()
+      debugSubstitution()
       debugln()
     }
 
@@ -218,8 +233,8 @@ object FastSetUnification {
       if (currentEqns.nonEmpty) setPhase(3)
       val s = varAssignment(currentEqns)
       updateState(s)
-      printEquations()
-      printSubstitution()
+      debugEquations()
+      debugSubstitution()
       debugln()
     }
 
@@ -231,20 +246,20 @@ object FastSetUnification {
       if (currentEqns.nonEmpty) setPhase(4)
       val s = eliminateTrivialAndRedundant(currentEqns)
       updateState(s)
-      printEquations()
-      printSubstitution()
+      debugEquations()
+      debugSubstitution()
       debugln()
     }
 
     private def phase5SVE(): Unit = {
       debugln("-".repeat(80))
-      debugln("--- Phase 5: Boolean Unification")
+      debugln("--- Phase 5: Set Unification")
       debugln("    (resolves all remaining equations using SVE.)")
       debugln("-".repeat(80))
       if (currentEqns.nonEmpty) setPhase(5)
-      val newSubst = boolUnifyAllPickSmallest(currentEqns)
-      updateState(Nil, newSubst) // Note: We pass Nil because SVE will have solved all equations.
-      printSubstitution()
+      val newSubst = setUnifyAllPickSmallest(currentEqns)
+      updateState(Nil, newSubst) // Note: Pass Nil because SVE will have solved all equations.
+      debugSubstitution()
       debugln()
     }
 
@@ -253,27 +268,28 @@ object FastSetUnification {
       *
       * Simplifies the pending equations. Throws [[ConflictException]] if an unsolvable equation is detected.
       */
-    private def updateState(l: (List[Equation], BoolSubstitution)): Unit = {
+    private def updateState(l: (List[Equation], SetSubstitution)): Unit = {
       val (nextEqns, nextSubst) = l
       currentEqns = checkAndSimplify(nextEqns)
       currentSubst = nextSubst @@ currentSubst
     }
 
     /**
-      * Verifies that the current substitution is a valid solution to the original equations `l`.
+      * Verifies that the current substitution is a valid solution to the original equations `l`
+      * if [[Verify]] is set.
       *
       * Note: Does not make sense to call before the equation system has been fully solved.
       *
       * Throws a [[ConflictException]] if an equation is not solved by the current substitution.
       */
     private def verifySolution(): Unit = {
-      if (Verify) { // We only verify if the flag is set.
+      if (Verify) {
         verify(currentSubst, l)
       }
     }
 
     /**
-      * Checks that current substitution has not grown too large according to the defined threshold.
+      * Checks that current substitution has not grown too large according to [[SizeThreshold]].
       */
     private def verifySolutionSize(): Unit = {
       val size = currentSubst.size
@@ -282,12 +298,12 @@ object FastSetUnification {
       }
     }
 
-    private def printEquations(): Unit = {
+    private def debugEquations(): Unit = {
       debugln(s"Equations (${currentEqns.size}):")
       debugln(format(currentEqns))
     }
 
-    private def printSubstitution(): Unit = {
+    private def debugSubstitution(): Unit = {
       debugln(s"Substitution (${currentSubst.numberOfBindings}):")
       debugln(currentSubst.toString)
     }
@@ -311,16 +327,16 @@ object FastSetUnification {
     * A trivial equation is one of:
     * -     univ ~ univ
     * -    empty ~ empty
+    * -        e ~ e        (same element)
     * -        c ~ c        (same constant)
     * -        x ~ x        (same variable)
     *
     *
-    * An unsolvable (conflicted) equation is one of:
+    * An unsolvable (conflicted) equation is a trivial inequality involving
+    * a combination of univ, empty, constants, and elements.
     *
-    * -      univ ~ empty   (and mirrored)
-    * -       c_i ~ c_j     (different constants)
-    * -        c ~ univ     (and mirrored)
-    * -        c ~ empty    (and mirrored)
+    * In the future, we could:
+    * - Consider unions and intersections, e.g. `e ∩ ... ~ univ` is trivially false
     */
   private def checkAndSimplify(l: List[Equation]): List[Equation] = l match {
     case Nil => Nil
@@ -333,34 +349,28 @@ object FastSetUnification {
       case (Term.Elem(i1), Term.Elem(i2)) if i1 == i2 => checkAndSimplify(es)
 
       // Unsolvable (conflicted) equations: raise an exception.
+      // Note: A constraint with two different variables is of course solvable!
       case (Term.Univ, Term.Empty) => throw ConflictException(t1, t2, loc)
       case (Term.Univ, Term.Elem(_)) => throw ConflictException(t1, t2, loc)
+      case (Term.Univ, Term.Cst(_)) => throw ConflictException(t1, t2, loc)
       case (Term.Empty, Term.Univ) => throw ConflictException(t1, t2, loc)
       case (Term.Empty, Term.Elem(_)) => throw ConflictException(t1, t2, loc)
-      case (Term.Cst(c1), Term.Cst(c2)) if c1 != c2 => throw ConflictException(t1, t2, loc)
-      // Note: A constraint with two different variables is of course solvable!
-      case (Term.Cst(_), Term.Univ) => throw ConflictException(t1, t2, loc)
-      case (Term.Cst(_), Term.Elem(_)) => throw ConflictException(t1, t2, loc)
-      case (Term.Cst(_), Term.Empty) => throw ConflictException(t1, t2, loc)
+      case (Term.Empty, Term.Cst(_)) => throw ConflictException(t1, t2, loc)
       case (Term.Elem(_), Term.Univ) => throw ConflictException(t1, t2, loc)
       case (Term.Elem(_), Term.Empty) => throw ConflictException(t1, t2, loc)
-      case (Term.Elem(_), Term.Cst(_)) => throw ConflictException(t1, t2, loc)
       case (Term.Elem(i1), Term.Elem(i2)) if i1 != i2 => throw ConflictException(t1, t2, loc)
-      case (Term.Univ, Term.Cst(_)) => throw ConflictException(t1, t2, loc)
-      case (Term.Empty, Term.Cst(_)) => throw ConflictException(t1, t2, loc)
-
-      case (Term.Inter(posElem, _, _, negElems, _, _, _), Term.Univ) if posElem.isDefined || negElems.nonEmpty => throw ConflictException(t1, t2, loc)
-      case (Term.Inter(Some(Term.Elem(i1)), _, _, _, _, _, _), Term.Elem(i2)) if i1 != i2 => throw ConflictException(t1, t2, loc)
-      case (Term.Inter(_, _, _, negElems, _, _, _), Term.Elem(i)) if negElems.exists(_.i == i) => throw ConflictException(t1, t2, loc)
-      case (Term.Inter(posElem, _, _, negElems, _, _, _), Term.Cst(_)) if posElem.isDefined || negElems.nonEmpty => throw ConflictException(t1, t2, loc)
-
-      case (Term.Union(posElems, _, _, negElems, _, _, _), Term.Empty) if posElems.nonEmpty || negElems.nonEmpty => throw ConflictException(t1, t2, loc)
-      case (Term.Union(posElems, _, _, negElems, _, _, _), Term.Cst(_)) if posElems.nonEmpty || negElems.nonEmpty => throw ConflictException(t1, t2, loc)
+      case (Term.Elem(_), Term.Cst(_)) => throw ConflictException(t1, t2, loc)
+      case (Term.Cst(_), Term.Univ) => throw ConflictException(t1, t2, loc)
+      case (Term.Cst(_), Term.Empty) => throw ConflictException(t1, t2, loc)
+      case (Term.Cst(_), Term.Elem(_)) => throw ConflictException(t1, t2, loc)
+      case (Term.Cst(c1), Term.Cst(c2)) if c1 != c2 => throw ConflictException(t1, t2, loc)
 
       // Non-trivial and non-conflicted equation: keep it.
       case _ => Equation(t1, t2, loc) :: checkAndSimplify(es)
     }
   }
+
+  // TODO: READTHROUGH PROGRESS
 
   /**
     * Propagates constants and truth values through the equation system.
@@ -425,10 +435,11 @@ object FastSetUnification {
     * Note: We use `subst.extended` to check for conflicts. For example, if we already know that `s = [x -> c17]` and we
     * learn that `x -> univ` then we will try to extend s with the new binding which will raise a [[ConflictException]].
     */
-  private def propagateConstants(l: List[Equation]): (List[Equation], BoolSubstitution) = {
+  private def propagateConstants(l: List[Equation]): (List[Equation], SetSubstitution) = {
     var pending = l
-    var subst = BoolSubstitution.empty
+    var subst = SetSubstitution.empty
 
+    // TODO add x ~ Print ∪ Crash
     // We iterate until no changes are detected.
     var changed = true
     while (changed) {
@@ -527,9 +538,9 @@ object FastSetUnification {
     *
     * Returns a list of unsolved equations and a partial substitution.
     */
-  private def propagateVars(l: List[Equation]): (List[Equation], BoolSubstitution) = {
+  private def propagateVars(l: List[Equation]): (List[Equation], SetSubstitution) = {
     var pending = l
-    var subst = BoolSubstitution.empty
+    var subst = SetSubstitution.empty
 
     var unsolved: List[Equation] = Nil
 
@@ -543,7 +554,7 @@ object FastSetUnification {
         case Equation(Term.Var(x), y@Term.Var(_), _) =>
           // Case 1: We have found an equation: `x ~ y`.
           // Construct a singleton substitution `[x -> y]`.
-          val singleton = BoolSubstitution.singleton(x, y)
+          val singleton = SetSubstitution.singleton(x, y)
 
           // Apply the singleton substitution to the pending equations.
           pending = singleton(pending)
@@ -591,9 +602,9 @@ object FastSetUnification {
     *     (c1498 ∩ c1500 ∩ c1501) ~ (x127248 ∩ x127244 ∩ x127254 ∩ x127252 ∩ x127249 ∩ x127247)
     * }}}
     */
-  private def varAssignment(l: List[Equation]): (List[Equation], BoolSubstitution) = {
+  private def varAssignment(l: List[Equation]): (List[Equation], SetSubstitution) = {
     var pending = l
-    var subst = BoolSubstitution.empty
+    var subst = SetSubstitution.empty
 
     var unsolved: List[Equation] = Nil
 
@@ -607,7 +618,7 @@ object FastSetUnification {
         case Equation(v@Term.Var(x), rhs, _) if !rhs.freeVarsContains(v) =>
           // Case 1: We have found an equation: `x ~ t` where `x` is not free in `t`.
           // Construct a singleton substitution `[x -> y]`.
-          val singleton = BoolSubstitution.singleton(x, propagation(rhs))
+          val singleton = SetSubstitution.singleton(x, propagation(rhs))
 
           // Apply the singleton substitution to the unsolved equations.
           pending = singleton(pending)
@@ -663,7 +674,7 @@ object FastSetUnification {
     *
     * Note: We only consider *syntactic equality*.
     */
-  private def eliminateTrivialAndRedundant(l: List[Equation]): (List[Equation], BoolSubstitution) = {
+  private def eliminateTrivialAndRedundant(l: List[Equation]): (List[Equation], SetSubstitution) = {
     var result = List.empty[Equation]
     val seen = mutable.Set.empty[Equation]
 
@@ -681,7 +692,7 @@ object FastSetUnification {
     }
 
     // We reverse the list of equations to preserve the initial order.
-    (result.reverse, BoolSubstitution.empty)
+    (result.reverse, SetSubstitution.empty)
   }
 
   /**
@@ -689,7 +700,7 @@ object FastSetUnification {
     *
     * If multiple equations are involved then we try to solve them in different order to find a small substitution.
     */
-  private def boolUnifyAllPickSmallest(l: List[Equation]): BoolSubstitution = {
+  private def setUnifyAllPickSmallest(l: List[Equation]): SetSubstitution = {
     // Case 1: We have at most one equation to solve: just solve immediately.
     if (l.length <= 1) {
       return boolUnifyAll(l)
@@ -725,8 +736,8 @@ object FastSetUnification {
     *
     * Note: We assume that any existing substitution will be composed with the substitution returned by this function.
     */
-  private def boolUnifyAll(l: List[Equation]): BoolSubstitution = {
-    var subst = BoolSubstitution.empty
+  private def boolUnifyAll(l: List[Equation]): SetSubstitution = {
+    var subst = SetSubstitution.empty
     var pending = l
     while (pending.nonEmpty) {
       val e = pending.head
@@ -752,7 +763,7 @@ object FastSetUnification {
     *
     * Throws a [[ConflictException]] if the equation cannot be solved.
     */
-  private def boolUnifyOne(e: Equation): BoolSubstitution = try {
+  private def boolUnifyOne(e: Equation): SetSubstitution = try {
     // The boolean expression we want to show is empty.
     val query = Term.mkXor(e.t1, e.t2)
 
@@ -774,20 +785,20 @@ object FastSetUnification {
     *
     * Throws a [[BoolUnificationException]] if there is no solution.
     */
-  private def successiveVariableElimination(t: Term, fvs: List[Int]): BoolSubstitution = fvs match {
+  private def successiveVariableElimination(t: Term, fvs: List[Int]): SetSubstitution = fvs match {
     case Nil =>
       if (emptyEquivalent(t))
-        BoolSubstitution.empty
+        SetSubstitution.empty
       else
         throw BoolUnificationException()
 
     case x :: xs =>
-      val t0 = BoolSubstitution.singleton(x, Term.Empty)(t)
-      val t1 = BoolSubstitution.singleton(x, Term.Univ)(t)
+      val t0 = SetSubstitution.singleton(x, Term.Empty)(t)
+      val t1 = SetSubstitution.singleton(x, Term.Univ)(t)
       val se = successiveVariableElimination(propagation(Term.mkInter(t0, t1)), xs)
 
       val f1 = propagation(Term.mkUnion(se(t0), Term.mkMinus(Term.Var(x), se(t1))))
-      val st = BoolSubstitution.singleton(x, f1)
+      val st = SetSubstitution.singleton(x, f1)
       st ++ se
   }
 
@@ -1592,18 +1603,18 @@ object FastSetUnification {
   }
 
   /**
-    * Companion object of [[BoolSubstitution]].
+    * Companion object of [[SetSubstitution]].
     */
-  object BoolSubstitution {
+  object SetSubstitution {
     /**
       * The empty substitution.
       */
-    val empty: BoolSubstitution = BoolSubstitution(Map.empty)
+    val empty: SetSubstitution = SetSubstitution(Map.empty)
 
     /**
       * Returns a singleton substitution where the variable `x` is bound to the term `t`.
       */
-    def singleton(x: Int, t: Term): BoolSubstitution = BoolSubstitution(Map(x -> t))
+    def singleton(x: Int, t: Term): SetSubstitution = SetSubstitution(Map(x -> t))
   }
 
   /**
@@ -1617,7 +1628,7 @@ object FastSetUnification {
     *
     * Note: constants and variables are a separate syntactic category. A substitution will never replace any constants.
     */
-  case class BoolSubstitution(m: Map[Int, Term]) {
+  case class SetSubstitution(m: Map[Int, Term]) {
 
     /**
       * Applies `this` substitution to the given term `t`.
@@ -1694,8 +1705,8 @@ object FastSetUnification {
       *
       * Throws a [[ConflictException]] if `x` is already bound to a term different from `t`.
       */
-    def extended(x: Int, t: Term, loc: SourceLocation): BoolSubstitution = m.get(x) match {
-      case None => BoolSubstitution(m + (x -> t))
+    def extended(x: Int, t: Term, loc: SourceLocation): SetSubstitution = m.get(x) match {
+      case None => SetSubstitution(m + (x -> t))
       case Some(t1) =>
         // Note: If t == t1 we can just return the same substitution.
         if (t == t1)
@@ -1711,13 +1722,13 @@ object FastSetUnification {
       *
       * The domains of the two substitutions must not overlap.
       */
-    def ++(that: BoolSubstitution): BoolSubstitution = {
+    def ++(that: SetSubstitution): SetSubstitution = {
       val intersection = this.m.keySet.intersect(that.m.keySet)
       if (intersection.nonEmpty) {
         throw InternalCompilerException(s"Substitutions are not disjoint on: '${intersection.mkString(",")}'.", SourceLocation.Unknown)
       }
 
-      BoolSubstitution(this.m ++ that.m)
+      SetSubstitution(this.m ++ that.m)
     }
 
     /**
@@ -1727,7 +1738,7 @@ object FastSetUnification {
       *
       * We want to compute `a -> c` which we get by computing `x -> this(that(x))`.
       */
-    def @@(that: BoolSubstitution): BoolSubstitution = {
+    def @@(that: SetSubstitution): SetSubstitution = {
       // Case 1: Return `that` if `this` is empty.
       if (this.m.isEmpty) {
         return that
@@ -1753,7 +1764,7 @@ object FastSetUnification {
         }
       }
 
-      BoolSubstitution(result.toMap)
+      SetSubstitution(result.toMap)
     }
 
     /**
@@ -1814,7 +1825,7 @@ object FastSetUnification {
     *
     * Note: Unfortunately this function is very slow since the SAT solver is very slow.
     */
-  def verify(s: BoolSubstitution, l: List[Equation]): Unit = {
+  def verify(s: SetSubstitution, l: List[Equation]): Unit = {
     // Apply the substitution to every equation and check that it is solved.
     for (e <- l) {
       // We want to check that `s(t1) == s(t2)`. In other words that both sides are either univ or both sides are empty.
