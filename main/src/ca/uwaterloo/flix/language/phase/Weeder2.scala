@@ -344,6 +344,10 @@ object Weeder2 {
             case (Some(_), _ :: _) => Validation.toHardFailure(IllegalEnum(ident.loc))
             // Empty enum
             case (None, Nil) => Validation.success(List.empty)
+            // Empty singleton enum
+            case (Some(Type.Error(_)), Nil) =>
+              // Fall back on no cases, parser has already reported an error
+              Validation.success(List.empty)
             // Singleton enum
             case (Some(t), Nil) =>
               Validation.success(List(WeededAst.Case(ident, flattenEnumCaseType(t), ident.loc)))
