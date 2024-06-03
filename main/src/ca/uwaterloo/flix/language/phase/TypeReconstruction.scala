@@ -17,8 +17,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.ast.Ast.CheckedCastType
 import ca.uwaterloo.flix.language.ast.Type.getFlixType
-import ca.uwaterloo.flix.language.ast.{Ast, KindedAst, RigidityEnv, Type, TypeConstructor, TypedAst}
-import ca.uwaterloo.flix.language.errors.TypeError
+import ca.uwaterloo.flix.language.ast.{Ast, KindedAst, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.phase.unification.Substitution
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -429,7 +428,7 @@ object TypeReconstruction {
         case Type.Cst(TypeConstructor.JvmMethod(method), loc) =>
           TypedAst.Expr.InvokeMethod(method, e, es, returnTpe, eff, loc)
         case _ =>
-          throw InternalCompilerException(s"unexpected type: ${methodTpe}.", loc) // TODO: We have to return Expr.Error here instead
+          throw InternalCompilerException(s"unexpected type: $methodTpe.", loc) // TODO: We have to return Expr.Error here instead
       }
 
     case KindedAst.Expr.InvokeConstructor(constructor, args, loc) =>
