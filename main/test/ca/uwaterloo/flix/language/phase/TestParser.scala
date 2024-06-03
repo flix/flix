@@ -938,6 +938,15 @@ class TestParserHappy extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalEnum](result)
   }
 
+  test("IllegalEnum.03") {
+    val input =
+      """
+        |enum Foo()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
   test("Regression.#7820") {
     val input =
       """
