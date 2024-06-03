@@ -690,7 +690,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
   test("LetMatchNoStatement.01") {
     val input =
       """
-        |def foo(): Unit  =
+        |def foo(): Unit \ IO  =
         |    let x =
         |    println("Hello World!")
         |
@@ -704,7 +704,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
   test("LetRecDefNoStatement.01") {
     val input =
       """
-        |def foo(): Unit  =
+        |def foo(): Unit \ IO =
         |    def bar(): Int32 = 123
         |def main(): Int32 = 456
         |""".stripMargin
@@ -877,7 +877,7 @@ class TestParserHappy extends AnyFunSuite with TestUtils {
     val input =
       """
         |eff E {
-        |    def op(): Unit
+        |    def op(): Unit \ IO
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
