@@ -9,6 +9,8 @@ mod Test.Derives.Coerce {
 
     enum PolyEnum[a](a) with Coerce
 
+    enum RegionEnum[r: Eff, a: Type](Region[r], a) with Coerce
+
     @Test
     def testUnitEnum(): Bool = Coerce.coerce(UnitEnum.UnitEnum()) == ()
 
@@ -20,4 +22,10 @@ mod Test.Derives.Coerce {
 
     @Test
     def testPolyEnum(): Bool = Coerce.coerce(PolyEnum.PolyEnum(false)) == false
+
+    @Test
+    def testRegionEnum(): Bool = region rc {
+        let (_, x) = Coerce.coerce(RegionEnum.RegionEnum(rc, 123));
+        x == 123
+    }
 }

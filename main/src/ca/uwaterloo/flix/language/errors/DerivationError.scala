@@ -85,7 +85,6 @@ object DerivationError {
   case class IllegalNonSingletonCoerce(sym: Symbol.EnumSym, loc: SourceLocation) extends DerivationError with Recoverable {
     def summary: String = s"Cannot derive 'Coerce' for the non-singleton enum '${sym.name}'."
 
-
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
