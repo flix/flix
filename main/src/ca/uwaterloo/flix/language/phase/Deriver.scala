@@ -52,13 +52,15 @@ object Deriver {
     */
   private def getDerivedInstances(enum0: KindedAst.Enum, root: KindedAst.Root)(implicit flix: Flix): Validation[List[KindedAst.Instance], DerivationError] = enum0 match {
     case KindedAst.Enum(_, _, _, enumSym, _, derives, cases, _, _) =>
-      // lazy so that in we don't try a lookup if there are no derivations (important for Nix Lib)
+      // lazy so that we don't try a lookup if there are no derivations (important for Nix Lib)
       lazy val eqSym = PredefinedTraits.lookupTraitSym("Eq", root)
       lazy val orderSym = PredefinedTraits.lookupTraitSym("Order", root)
       lazy val toStringSym = PredefinedTraits.lookupTraitSym("ToString", root)
       lazy val hashSym = PredefinedTraits.lookupTraitSym("Hash", root)
       lazy val sendableSym = PredefinedTraits.lookupTraitSym("Sendable", root)
       lazy val coerceSym = PredefinedTraits.lookupTraitSym("Coerce", root)
+      lazy val derivableSyms = List(eqSym, orderSym, toStringSym, hashSym, sendableSym, coerceSym)
+
       val instanceVals = Validation.traverse(derives.traits) {
         case Ast.Derivation(traitSym, loc) if cases.isEmpty => Validation.toSoftFailure(None, DerivationError.IllegalDerivationForEmptyEnum(enumSym, traitSym, loc))
         case Ast.Derivation(sym, loc) if sym == eqSym => mapN(mkEqInstance(enum0, loc, root))(Some(_))
@@ -67,7 +69,7 @@ object Deriver {
         case Ast.Derivation(sym, loc) if sym == hashSym => mapN(mkHashInstance(enum0, loc, root))(Some(_))
         case Ast.Derivation(sym, loc) if sym == sendableSym => mapN(mkSendableInstance(enum0, loc, root))(Some(_))
         case Ast.Derivation(sym, loc) if sym == coerceSym => mkCoerceInstance(enum0, loc, root)
-        case Ast.Derivation(sym, loc) => Validation.toSoftFailure(None, DerivationError.IllegalDerivation(sym, Resolver.DerivableSyms, loc))
+        case Ast.Derivation(sym, loc) => Validation.toSoftFailure(None, DerivationError.IllegalDerivation(sym, derivableSyms, loc))
       }
       mapN(instanceVals)(_.flatten)
   }
