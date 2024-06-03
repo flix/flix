@@ -111,9 +111,9 @@ object TypeReduction {
         val targs = tpe.typeArguments
         // TODO INTEROP add base case
         lookupMethod(targs.head, m, targs.tail, loc) match {
-          case ResolutionResult2.Resolved(t) => println(s">>> found return type $t"); Result.Ok((t, true))
-          case ResolutionResult2.MethodNotFound() => Result.Err(TypeError.MethodNotFound(m, targs.head, tpe, List(), renv0, loc)) // TODO INTEROP tpe shall be replaced by list of types of arguments + fill in candidate methods
-          case ResolutionResult2.NoProgress => Result.Ok((tpe, false))
+          case JavaResolutionResult.Resolved(t) => println(s">>> found return type $t"); Result.Ok((t, true))
+          case JavaResolutionResult.MethodNotFound() => Result.Err(TypeError.MethodNotFound(m, targs.head, tpe, List(), renv0, loc)) // TODO INTEROP tpe shall be replaced by list of types of arguments + fill in candidate methods
+          case JavaResolutionResult.NoProgress => Result.Ok((tpe, false))
         }
       case _ => Result.Ok((tpe, false))
     }
@@ -143,10 +143,10 @@ object TypeReduction {
         candidateMethods.length match {
           case 1 =>
             val tpe = Type.Cst(TypeConstructor.JvmMethod(candidateMethods.head), loc)
-            ResolutionResult2.Resolved(tpe)
-          case _ => ResolutionResult2.MethodNotFound() // For now, method not found either if there is an ambiguity or no method found
+            JavaResolutionResult.Resolved(tpe)
+          case _ => JavaResolutionResult.MethodNotFound() // For now, method not found either if there is an ambiguity or no method found
         }
-      case _ => ResolutionResult2.NoProgress
+      case _ => JavaResolutionResult.NoProgress
     }
 
   /**
@@ -158,8 +158,8 @@ object TypeReduction {
    * 2. MethodNotFound(): The resolution failed to find a corresponding java method.
    * 3. NoProgress: The resolution did not make any progress in the type simplification.
    */
-  sealed trait ResolutionResult2
-  object ResolutionResult2 {
+  sealed trait JavaResolutionResult
+  object JavaResolutionResult {
     case class Resolved(tpe: Type) extends ResolutionResult2
     case class MethodNotFound() extends ResolutionResult2
     case object NoProgress extends ResolutionResult2

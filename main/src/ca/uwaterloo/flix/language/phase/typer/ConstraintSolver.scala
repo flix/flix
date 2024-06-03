@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
-import ca.uwaterloo.flix.language.phase.typer.TypeReduction.ResolutionResult2
+import ca.uwaterloo.flix.language.phase.typer.TypeReduction.JavaResolutionResult
 import ca.uwaterloo.flix.language.phase.unification.Unification.getUnderOrOverAppliedError
 import ca.uwaterloo.flix.language.phase.unification._
 import ca.uwaterloo.flix.util.Result.Err
@@ -274,27 +274,24 @@ object ConstraintSolver {
         case ResolutionResult(subst, constrs, p) => ResolutionResult(subst @@ subst0, constrs, progress = p)
       }
     case TypeConstraint.EqJvmMethod(mvar, tpe0, method, tpes0, prov) =>
-
       // Recall: Subst is applied lazily. Apply it now.
       val tpe = subst0(tpe0)
       val tpes = tpes0.map(t => subst0(t))
-
-      def isKnown(t0: Type): Boolean = t0 match { // TODO: Actually, it cannot variables recursively...
-        case Type.Var(_, _) => false
-        case _ => true
-      }
+      // Ensure that simplification for method parameters is done
       val allKnown = isKnown(tpe) && tpes.forall(isKnown)
 
       if (allKnown) {
+        // Lookup method is then guaranteed to either find it or not
         TypeReduction.lookupMethod(tpe, method.name, tpes, mvar.loc) match {
-          case ResolutionResult2.Resolved(tpe) =>
+          case JavaResolutionResult.Resolved(tpe) =>
             val subst = Substitution.singleton(mvar.sym, tpe)
             Result.Ok(ResolutionResult(subst @@ subst0, Nil, progress = true))
-          case ResolutionResult2.MethodNotFound() => ??? // TODO: Return Result.Err
-          case ResolutionResult2.NoProgress => ???            // TODO: Cannot happen anymore?
+          case JavaResolutionResult.MethodNotFound() => Result.Err(TypeError.MethodNotFound(method.name, tpe, tpes, List(), renv, mvar.loc)) // TODO INTEROP: fill in candidate methods
+          case JavaResolutionResult.NoProgress =>
+            throw InternalCompilerException(s"unexpected no progress state with type ${tpe}", mvar.loc) // TODO: Cannot happen anymore?
         }
-
       } else {
+        // Otherwise other constraints may still need to be solved.
         Result.Ok(ResolutionResult(subst0, List(constr0), progress = false))
       }
     case TypeConstraint.EqJvmConstructor(mvar, clazz, tpes, prov) =>
@@ -524,7 +521,13 @@ object ConstraintSolver {
     }
   }
 
-
+  /**
+   * Helper method which returns true if the given type type t0 does not have any variables.
+   */
+  private def isKnown(t0: Type): Boolean = t0 match { // TODO INTEROP: Actually, it cannot have variables recursively...
+    case Type.Var(_, _) => false
+    case _ => true
+  }
 
   /**
     * Gets an error from the list of unresolved constraints.
