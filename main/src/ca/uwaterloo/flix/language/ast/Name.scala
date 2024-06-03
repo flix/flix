@@ -26,30 +26,24 @@ object Name {
   /**
     * Returns the given string `fqn` as a qualified name.
     */
-  def mkQName(fqn: String, sp1: SourcePosition = SourcePosition.Unknown, sp2: SourcePosition = SourcePosition.Unknown): QName = {
+  def mkQName(fqn: String, loc: SourceLocation = SourceLocation.Unknown): QName = {
     if (!fqn.contains('.'))
-      return QName(sp1, Name.RootNS, Ident(sp1, fqn, sp2), sp2)
+      return QName(Name.RootNS, Ident(loc.sp1, fqn, loc.sp2), loc)
 
     val index = fqn.indexOf('.')
     val parts = fqn.substring(0, index).split('/').toList
     val name = fqn.substring(index + 1, fqn.length)
-    mkQName(parts, name, sp1, sp2)
+    mkQName(parts, name, loc)
   }
 
   /**
     * Creates a qualified name from the given namespace `ns` and name `name`.
     */
-  def mkQName(ns: List[String], name: String, sp1: SourcePosition, sp2: SourcePosition): QName = {
-    val loc = SourceLocation(isReal = true, sp1, sp2)
-    val nname = NName(ns.map(t => Name.Ident(sp1, t, sp2)), loc)
-    val ident = Ident(sp1, name, sp2)
-    QName(sp1, nname, ident, sp2)
+  def mkQName(ns: List[String], name: String, loc: SourceLocation): QName = {
+    val nname = NName(ns.map(t => Name.Ident(loc.sp1, t, loc.sp2)), loc)
+    val ident = Ident(loc.sp1, name, loc.sp2)
+    QName(nname, ident, loc)
   }
-
-  /**
-    * Returns the given identifier `ident` as qualified name in the root namespace.
-    */
-  def mkQName(ident: Ident): QName = QName(ident.sp1, RootNS, ident, ident.sp2)
 
   /**
     * Converts the given identifier `ident` to a label.
@@ -172,42 +166,17 @@ object Name {
   }
 
   /**
-    * Companion object for the [[QName]] class.
-    */
-  object QName {
-    /**
-      * Returns the qualified name for the given optional namespace `nsOpt` and identifier `ident`.
-      */
-    def mk(sp1: SourcePosition, nsOpt: Option[NName], ident: Ident, sp2: SourcePosition): QName = nsOpt match {
-      case None => Name.QName(sp1, RootNS, ident, sp2)
-      case Some(ns) => Name.QName(sp1, ns, ident, sp2)
-    }
-  }
-
-  /**
     * Qualified Name.
     *
-    * @param sp1       the position of the first character in the qualified name.
     * @param namespace the namespace
     * @param ident     the identifier.
-    * @param sp2       the position of the last character in the qualified name.
+    * @param loc       the source location of the qualified name.
     */
-  case class QName(sp1: SourcePosition, namespace: NName, ident: Ident, sp2: SourcePosition) {
-
-    /**
-      * Returns `true` if this name is qualified by a namespace.
-      */
-    def isQualified: Boolean = !namespace.isRoot
-
+  case class QName(namespace: NName, ident: Ident, loc: SourceLocation) {
     /**
       * Returns `true` if this name is unqualified (i.e. has no namespace).
       */
-    def isUnqualified: Boolean = !isQualified
-
-    /**
-      * The source location of the name.
-      */
-    def loc: SourceLocation = SourceLocation(isReal = true, sp1, sp2)
+    def isUnqualified: Boolean = namespace.isRoot
 
     /**
       * Human readable representation.
