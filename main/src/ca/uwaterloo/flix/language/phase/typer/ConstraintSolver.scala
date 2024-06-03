@@ -388,7 +388,7 @@ object ConstraintSolver {
       for {
         (t1, _) <- TypeReduction.simplify(tpe1, renv, loc)
         (t2, _) <- TypeReduction.simplify(tpe2, renv, loc)
-        res <- resolveEqualityStar(tpe1, tpe2, prov, renv, loc)
+        res <- resolveEqualityStar(t1, t2, prov, renv, loc)
       } yield res
 
     case _ => Err(toTypeError(UnificationError.MismatchedTypes(tpe1, tpe2), prov))

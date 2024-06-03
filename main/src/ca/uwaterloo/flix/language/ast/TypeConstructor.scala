@@ -272,7 +272,7 @@ object TypeConstructor {
    * The type constructor requires at least one type argument: the type of the receiver object.
    */
   case class MethodReturnType(arity: Int) extends TypeConstructor {
-    def kind: Kind = Kind.mkArrow(List(Kind.JvmConstructorOrMethod, Kind.Star))
+    def kind: Kind = Kind.JvmConstructorOrMethod ->: Kind.Star
   }
 
   /**

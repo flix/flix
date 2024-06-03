@@ -206,7 +206,6 @@ object FormatType {
       case SimpleType.Var(_, _, _, _) => true
       case SimpleType.Tuple(_) => true
       case SimpleType.Union(_) => true
-      case SimpleType.MethodReturnType(_) => true // to check
       case SimpleType.Error => true
     }
 
@@ -358,9 +357,6 @@ object FormatType {
 
       case SimpleType.Tuple(elms) =>
         elms.map(visit(_, Mode.Type)).mkString("(", ", ", ")")
-
-      case SimpleType.MethodReturnType(arity) =>
-        "mrt" + arity // TODO INTEROP: this lacks sense
 
       case SimpleType.Error => "Error"
 
