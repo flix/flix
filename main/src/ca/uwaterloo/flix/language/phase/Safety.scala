@@ -178,7 +178,7 @@ object Safety {
     */
   private def isExportableType(tpe: Type): Boolean = tpe.typeConstructor match {
     case None => false
-    case Some(value) => value match {
+    case Some(cst) => cst match {
       case TypeConstructor.Bool => true
       case TypeConstructor.Char => true
       case TypeConstructor.Float32 => true
