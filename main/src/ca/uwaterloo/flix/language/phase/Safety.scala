@@ -155,12 +155,12 @@ object Safety {
 
   /**
     * Returns `Nil` if the given `defn` has exportable types according to
-    * [[isExportType]], otherwise a list of the found errors is returned.
+    * [[isExportableType]], otherwise a list of the found errors is returned.
     */
   private def checkExportableTypes(defn: Def): List[SafetyError] = {
     val types = defn.spec.fparams.map(_.tpe) :+ defn.spec.retTpe
     types.flatMap{ t =>
-      if (isExportType(t)) Nil
+      if (isExportableType(t)) Nil
       else List(SafetyError.IllegalExportSignature(t.loc, s"Exported function can only use simple types, not `$t`"))
     }
   }
@@ -176,7 +176,7 @@ object Safety {
     * `type alias MyAlias[t] = t`, it uses flix-specific type information which
     * is not allowed.
     */
-  private def isExportType(tpe: Type): Boolean = tpe.typeConstructor match {
+  private def isExportableType(tpe: Type): Boolean = tpe.typeConstructor match {
     case None => false
     case Some(value) => value match {
       case TypeConstructor.Bool => true
