@@ -44,7 +44,7 @@ sealed trait TypeConstraint {
   override def toString: String = this match {
     case TypeConstraint.Equality(tpe1, tpe2, _) => s"$tpe1 ~ $tpe2"
     case TypeConstraint.EqJvmConstructor(mvar, clazz, tpes, _) => s"${mvar.baseType} ~ ${Type.getFlixType(clazz)}[$tpes" // temporary
-    case TypeConstraint.EqJvmMethod(mvar, tpe, _, _, _) => s"${mvar.baseType} ~ $tpe"
+    case TypeConstraint.EqJvmMethod(mvar, tpe, methodName, tpes, _) => s"${mvar.baseType} ~ $tpe.${methodName.name}(${tpes.mkString(",")})"
     case TypeConstraint.Trait(sym, tpe, _) => s"$sym[$tpe]"
     case TypeConstraint.Purification(sym, eff1, eff2, _, nested) => s"$eff1 ~ ($eff2)[$sym ↦ Pure] ∧ $nested"
   }
@@ -87,7 +87,7 @@ object TypeConstraint {
    * A constraint indicating the equivalence between a Java method's type and a method signature, i.e., a type, method name and list of arguments.
    * Where mvar must have kind JvmConstructorOrMethod -> Type.
    */
-  case class EqJvmMethod(mvar: Type.Var, mTpe: Type, method: Name.Ident, tpes: List[Type], prov: Provenance) extends TypeConstraint {
+  case class EqJvmMethod(mvar: Type.Var, tpe0: Type, method: Name.Ident, tpes: List[Type], prov: Provenance) extends TypeConstraint {
     def loc: SourceLocation = prov.loc
   }
 
