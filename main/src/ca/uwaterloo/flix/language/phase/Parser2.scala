@@ -673,9 +673,9 @@ object Parser2 {
     * This is achieved by passing `canStartOnDoc = true`.
     */
   private def comments(consumeDocComments: Boolean = false)(implicit s: State): Unit = {
-    // Note: This function does not use nth on purpose.
-    // Calls to comments are so frequent, from open and close for instance,
-    // that nth would needlessly consume all the parses fuel.
+    // Note: This function does not use nth on purpose, to avoid consuming fuel.
+    // both open and close use comments, and so comments is called so ofter
+    // that nth would needlessly consume all the parsers fuel.
     def atComment(): Boolean = {
       val current = if (s.position >= s.tokens.length - 1) {
         TokenKind.Eof
