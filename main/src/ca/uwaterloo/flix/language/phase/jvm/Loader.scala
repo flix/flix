@@ -41,7 +41,7 @@ object Loader {
       val nsClass = loadedClasses.getOrElse(nsName, throw InternalCompilerException(s"Unknown namespace: '$nsName'.", sym.loc))
 
       // Retrieve the method name of the symbol.
-      val methodName = JvmOps.getDefMethodNameInNamespaceClass(sym)
+      val methodName = JvmOps.getDefMethodNameInNamespaceClass(defn)
 
       // Retrieve the method object.
       val method = allMethods.get(nsClass) match {
