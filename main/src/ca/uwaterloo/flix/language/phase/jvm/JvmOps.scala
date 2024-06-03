@@ -17,6 +17,7 @@
 
 package ca.uwaterloo.flix.language.phase.jvm
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ReducedAst._
 import ca.uwaterloo.flix.language.ast.{MonoType, ReducedAst, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.mangle
@@ -246,8 +247,8 @@ object JvmOps {
   }
 
   private def getNamespaceName(ns: List[String]): JvmName = {
-    val last = ns.lastOption.getOrElse("Root")
-    val nsFixed = ns.init
+    val last = ns.lastOption.getOrElse(s"Root${Flix.Delimiter}")
+    val nsFixed = ns.dropRight(1)
     JvmName(nsFixed, last)
   }
 
