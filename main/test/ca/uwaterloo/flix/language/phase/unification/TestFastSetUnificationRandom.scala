@@ -12,21 +12,20 @@ object TestFastSetUnificationRandom {
   implicit val loc: SourceLocation = SourceLocation.Unknown
 
   def randomTerm(r: Random, depth: Int, csts: Int, vars: Int, elems: Int): Term = {
-    r.nextInt(8) match {
-      case 0 => randomTerm(r, depth, csts, vars, elems)
-      case 1 => randomTerm(r, depth, csts, vars, elems)
-      case 2 if csts <= 0 => randomTerm(r, depth, csts, vars, elems)
-      case 2 => Cst(r.nextInt(csts))
-      case 3 if vars <= 0 => randomTerm(r, depth, csts, vars, elems)
-      case 3 => Var(csts + r.nextInt(vars))
-      case 4 if elems <= 0 => randomTerm(r, depth, csts, vars, elems)
-      case 4 => Term.Elem(csts + vars + r.nextInt(elems))
+    if (csts <= 0 && vars <= 0 && elems <= 0 && depth <= 0) Term.Empty
+    else r.nextInt(6) match {
+      case 0 if csts <= 0 => randomTerm(r, depth, csts, vars, elems)
+      case 0 => Cst(r.nextInt(csts))
+      case 1 if vars <= 0 => randomTerm(r, depth, csts, vars, elems)
+      case 1 => Var(csts + r.nextInt(vars))
+      case 2 if elems <= 0 => randomTerm(r, depth, csts, vars, elems)
+      case 2 => Term.Elem(csts + vars + r.nextInt(elems))
+      case 3 if depth <= 0 => randomTerm(r, depth, csts, vars, elems)
+      case 3 => Term.mkCompl(randomTerm(r, depth - 1, csts, vars, elems))
+      case 4 if depth <= 0 => randomTerm(r, depth, csts, vars, elems)
+      case 4 => Term.mkInter(List.fill(r.nextInt(4) + 1)(Term.Empty).map(_ => randomTerm(r, depth - 1, csts, vars, elems)))
       case 5 if depth <= 0 => randomTerm(r, depth, csts, vars, elems)
-      case 5 => Term.mkCompl(randomTerm(r, depth - 1, csts, vars, elems))
-      case 6 if depth <= 0 => randomTerm(r, depth, csts, vars, elems)
-      case 6 => Term.mkInter(List.fill(r.nextInt(4) + 1)(Term.Empty).map(_ => randomTerm(r, depth - 1, csts, vars, elems)))
-      case 7 if depth <= 0 => randomTerm(r, depth, csts, vars, elems)
-      case 7 => Term.mkUnion(List.fill(r.nextInt(4) + 1)(Term.Empty).map(_ => randomTerm(r, depth - 1, csts, vars, elems)))
+      case 5 => Term.mkUnion(List.fill(r.nextInt(4) + 1)(Term.Empty).map(_ => randomTerm(r, depth - 1, csts, vars, elems)))
     }
   }
 
