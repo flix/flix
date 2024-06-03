@@ -40,19 +40,6 @@ import scala.collection.mutable
 object Resolver {
 
   /**
-    * Symbols of traits that are derivable.
-    */
-  private val EqSym = new Symbol.TraitSym(Nil, "Eq", SourceLocation.Unknown)
-  private val OrderSym = new Symbol.TraitSym(Nil, "Order", SourceLocation.Unknown)
-  private val ToStringSym = new Symbol.TraitSym(Nil, "ToString", SourceLocation.Unknown)
-  private val HashSym = new Symbol.TraitSym(Nil, "Hash", SourceLocation.Unknown)
-  private val SendableSym = new Symbol.TraitSym(Nil, "Sendable", SourceLocation.Unknown)
-  private val CoerceSym = new Symbol.TraitSym(Nil, "Coerce", SourceLocation.Unknown)
-
-  // TODO move to Deriver
-  val DerivableSyms: List[Symbol.TraitSym] = List(EqSym, OrderSym, ToStringSym, HashSym, SendableSym, CoerceSym)
-
-  /**
     * Java classes for primitives and Object
     */
   private val Int = classOf[Int]
