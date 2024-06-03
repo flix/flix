@@ -117,11 +117,6 @@ object Parser2 {
   }
 
   def run(tokens: Map[Ast.Source, Array[Token]], oldRoot: SyntaxTree.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[SyntaxTree.Root, CompilationMessage] = {
-    if (flix.options.xparser) {
-      // New lexer and parser disabled. Return immediately.
-      return Validation.success(SyntaxTree.empty)
-    }
-
     flix.phase("Parser2") {
       // Compute the stale and fresh sources.
       val (stale, fresh) = changeSet.partition(tokens, oldRoot.units)
@@ -180,13 +175,15 @@ object Parser2 {
           val openToken = locationStack.head
           stack.head.loc = if (stack.head.children.length == 0)
             // If the subtree has no children, give it a zero length position just after the last token
-            SourceLocation.mk(
+            SourceLocation(
+              isReal = true,
               lastAdvance.sp2,
               lastAdvance.sp2
             )
           else
             // Otherwise the source location can span from the first to the last token in the sub tree
-            SourceLocation.mk(
+            SourceLocation(
+              isReal = true,
               openToken.sp1,
               lastAdvance.sp2
             )
@@ -203,7 +200,8 @@ object Parser2 {
 
     // Set source location of the root
     val openToken = locationStack.last
-    stack.last.loc = SourceLocation.mk(
+    stack.last.loc = SourceLocation(
+      isReal = true,
       openToken.sp1,
       tokens.head.sp2
     )
@@ -220,26 +218,16 @@ object Parser2 {
     * TODO: It might make sense to seek the first non-comment position here.
     */
   private def previousSourceLocation()(implicit s: State): SourceLocation = {
-    // state is zero-indexed while SourceLocation works as one-indexed.
     val token = s.tokens((s.position - 1).max(0))
-    val beginLine = token.sp1.line
-    val beginCol = token.sp1.col
-    val endLine = token.sp2.line
-    val endCol = token.sp2.col
-    SourceLocation(s.src, isReal = true, beginLine, beginCol, endLine, endCol)
+    SourceLocation(isReal = true, token.sp1, token.sp2)
   }
 
   /**
     * Get current position of the parser as a [[SourceLocation]]
     */
   private def currentSourceLocation()(implicit s: State): SourceLocation = {
-    // state is zero-indexed while SourceLocation works as one-indexed.
     val token = s.tokens(s.position)
-    val beginLine = token.sp1.line
-    val beginCol = token.sp1.col
-    val endLine = token.sp2.line
-    val endCol = token.sp2.col
-    SourceLocation(s.src, isReal = true, beginLine, beginCol, endLine, endCol)
+    SourceLocation(isReal = true, token.sp1, token.sp2)
   }
 
   /**
@@ -576,7 +564,7 @@ object Parser2 {
     val itemCount = zeroOrMore(namedTokenSet, getItem, checkForItem, breakWhen, context, separation, delimiterL, delimiterR, optionallyWith)
     val locAfter = previousSourceLocation()
     if (itemCount < 1) {
-      val loc = SourceLocation.mk(locBefore.sp1, locAfter.sp1)
+      val loc = SourceLocation(isReal = true, locBefore.sp1, locAfter.sp1)
       Some(NeedAtleastOne(namedTokenSet, context, loc = loc))
     } else {
       None
@@ -685,9 +673,17 @@ object Parser2 {
     * This is achieved by passing `canStartOnDoc = true`.
     */
   private def comments(consumeDocComments: Boolean = false)(implicit s: State): Unit = {
-    // Note: In case of a misplaced CommentDoc, we would just like to consume it into the comment list.
-    // This is forgiving in the common case of accidentally inserting an extra '/'.
-    def atComment() = if (consumeDocComments) nth(0).isComment else nth(0).isCommentNonDoc
+    // Note: This function does not use nth on purpose, to avoid consuming fuel.
+    // both open and close use comments, and so comments is called so ofter
+    // that nth would needlessly consume all the parsers fuel.
+    def atComment(): Boolean = {
+      val current = if (s.position >= s.tokens.length - 1) {
+        TokenKind.Eof
+      } else {
+        s.tokens(s.position).kind
+      }
+      if (consumeDocComments) current.isComment else current.isCommentNonDoc
+    }
 
     if (atComment()) {
       val mark = Mark.Opened(s.events.length)

@@ -44,9 +44,7 @@ case class Token(kind: TokenKind, src: Ast.Source, start: Int, end: Int, sp1: So
     * Makes a [[SourceLocation]] spanning this token.
     * NB: Tokens are zero-indexed while SourceLocations are one-indexed
     */
-  def mkSourceLocation(isReal: Boolean = true): SourceLocation = {
-    SourceLocation(src, isReal, sp1.line, sp1.col, sp2.line, sp2.col)
-  }
+  def mkSourceLocation(isReal: Boolean = true): SourceLocation = SourceLocation(isReal, sp1, sp2)
 
   /**
     * Returns a string representation of this token. Must only be used for debugging.
