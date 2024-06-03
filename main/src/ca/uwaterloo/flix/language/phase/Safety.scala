@@ -115,7 +115,7 @@ object Safety {
     */
   private def visitExportDef(defn: Def): List[SafetyError] = {
     val pub = if (isPub(defn)) Nil else List(SafetyError.IllegalExportSignature(defn.sym.loc, "Exported functions must be `pub`."))
-    val name = if (validJavaName(defn)) Nil else List(SafetyError.IllegalExportSignature(defn.sym.loc, "Exported functions must have simple of letters and numbers."))
+    val name = if (validJavaName(defn.sym)) Nil else List(SafetyError.IllegalExportSignature(defn.sym.loc, "Exported functions must have simple of letters and numbers."))
     val types = if (isPolymorphic(defn)) {
       List(SafetyError.IllegalExportSignature(defn.sym.loc, "Exported functions cannot be polymorphic."))
     } else {
@@ -197,8 +197,8 @@ object Safety {
   /**
     * Returns `true` if given `defn` has a name that is directly valid in Java.
     */
-  private def validJavaName(defn: Def): Boolean = {
-    defn.sym.name.matches("[a-z][a-zA-Z0-9]*")
+  private def validJavaName(sym: Symbol.DefnSym): Boolean = {
+    sym.name.matches("[a-z][a-zA-Z0-9]*")
   }
 
   /**
