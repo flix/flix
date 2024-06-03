@@ -91,7 +91,7 @@ object JvmOps {
       case Int32 => JvmType.PrimInt
       case Int64 => JvmType.PrimLong
       case Void | AnyType | Unit | BigDecimal | BigInt | String | Regex |
-           Region | Array(_) |Lazy(_) | Ref(_) | Tuple(_) | Enum(_) |
+           Region | Array(_) | Lazy(_) | Ref(_) | Tuple(_) | Enum(_) |
            Arrow(_, _) | RecordEmpty | RecordExtend(_, _, _) | Native(_) =>
         JvmType.Object
     }
@@ -258,6 +258,10 @@ object JvmOps {
     * length    =>  m_length
     */
   def getDefMethodNameInNamespaceClass(defn: ReducedAst.Def): String = {
+    /**
+      * Exported names are checked in [[ca.uwaterloo.flix.language.phase.Safety]]
+      * so no mangling is needed.
+      */
     if (defn.ann.isExport) defn.sym.name
     else "m_" + mangle(defn.sym.name)
   }
