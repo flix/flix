@@ -981,6 +981,13 @@ object Weeder2 {
       flatMapN(pick(TreeKind.ArgumentList, tree))(visitArguments)
     }
 
+    /**
+     * This method is the same as pickArguments but for invokeMethod2. It calls visitMethodArguments instead.
+     */
+    private def pickMethodArguments(tree: Tree): Validation[List[Expr], CompilationMessage] = {
+      flatMapN(pick(TreeKind.ArgumentList, tree))(visitMethodArguments)
+    }
+
     private def visitArguments(tree: Tree): Validation[List[Expr], CompilationMessage] = {
       mapN(
         traverse(pickAll(TreeKind.Argument, tree))(pickExpr),
@@ -993,6 +1000,14 @@ object Weeder2 {
             case args => args.sortBy(_.loc)
           }
       }
+    }
+
+    /**
+     * This method is the same as visitArguments but for invokeMethod2. It does not consider named arguments
+     * as they are not allowed and it doesn't add unit arguments for empty arguments.
+     */
+    private def visitMethodArguments(tree: Tree): Validation[List[Expr], CompilationMessage] = {
+      traverse(pickAll(TreeKind.Argument, tree))(pickExpr)
     }
 
     private def visitArgumentNamed(tree: Tree): Validation[Expr, CompilationMessage] = {
@@ -1691,7 +1706,7 @@ object Weeder2 {
     private def visitInvokeMethod2Fragment(tree: Tree): Validation[(Name.Ident, List[Expr]), CompilationMessage] = {
       expect(tree, TreeKind.Expr.InvokeMethod2Fragment)
       val methodName = pickNameIdent(tree)
-      val arguments = pickArguments(tree)
+      val arguments = pickMethodArguments(tree)
       mapN(methodName, arguments) {
         (methodName, arguments) => (methodName, arguments)
       }
