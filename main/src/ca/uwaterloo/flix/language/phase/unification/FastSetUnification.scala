@@ -846,20 +846,20 @@ object FastSetUnification {
     case Term.Cst(c) => if (trueVars.contains(c)) SetEval.univ else SetEval.empty
     case Term.Elem(i) => SetEval.single(i)
     case Term.Var(x) => if (trueVars.contains(x)) SetEval.univ else SetEval.empty
-    case Term.Compl(t) => evaluate(t, trueVars).compl()
+    case Term.Compl(t) => SetEval.compl(evaluate(t, trueVars))
 
     case Term.Inter(posElem, posCsts, posVars, negElems, negCsts, negVars, rest) =>
       var running = SetEval.univ
       for (t <- posElem.iterator ++ posCsts.iterator ++ posVars.iterator) {
-        running = running.intersect(evaluate(t, trueVars))
+        running = SetEval.intersect(running, evaluate(t, trueVars))
         if (running.isEmpty) return running
       }
       for (t <- negElems.iterator ++ negCsts.iterator ++ negVars.iterator) {
-        running = running.intersect(evaluate(t, trueVars).compl())
+        running = SetEval.intersect(running, SetEval.compl(evaluate(t, trueVars)))
         if (running.isEmpty) return running
       }
       for (t <- rest) {
-        running = running.intersect(evaluate(t, trueVars))
+        running = SetEval.intersect(running, evaluate(t, trueVars))
         if (running.isEmpty) return running
       }
       running
@@ -867,58 +867,22 @@ object FastSetUnification {
     case Term.Union(posElems, posCsts, posVars, negElems, negCsts, negVars, rest) =>
       var running = SetEval.empty
       for (t <- posElems.iterator ++ posCsts.iterator ++ posVars.iterator) {
-        running = running.union(evaluate(t, trueVars))
+        running = SetEval.union(running, evaluate(t, trueVars))
         if (running.isUniv) return running
       }
       for (t <- negElems.iterator ++ negCsts.iterator ++ negVars.iterator) {
-        running = running.union(evaluate(t, trueVars).compl())
+        running = SetEval.union(running, SetEval.compl(evaluate(t, trueVars)))
         if (running.isUniv) return running
       }
       for (t <- rest) {
-        running = running.union(evaluate(t, trueVars))
+        running = SetEval.union(running, evaluate(t, trueVars))
         if (running.isUniv) return running
       }
       running
   }
 
   sealed trait SetEval {
-
-    import SetEval.{Compl, Set}
-
-    def union(s: SetEval): SetEval = (this, s) match {
-      case (Set(s1), Set(s2)) =>
-        Set(s1.union(s2))
-      case (Set(s1), Compl(s2)) =>
-        // s1 u ^s2
-        // ^(^s1 inter s2)
-        // ^(s2 - s1)
-        Compl(s2.diff(s1))
-      case (Compl(_), Set(_)) =>
-        s.union(this)
-      case (Compl(s1), Compl(s2)) =>
-        // ^s1 u ^s2
-        Compl(s1.intersect(s2))
-    }
-
-    def intersect(s: SetEval): SetEval = (this, s) match {
-      case (Set(s1), Set(s2)) =>
-        Set(s1.intersect(s2))
-      case (Set(s1), Compl(s2)) =>
-        // s1 inter ^s2
-        Set(s1.diff(s2))
-      case (Compl(_), Set(_)) =>
-        s.intersect(this)
-      case (Compl(s1), Compl(s2)) =>
-        // ^s1 inter ^s2
-        Compl(s1.union(s2))
-    }
-
-    def compl(): SetEval = this match {
-      case Set(s) =>
-        Compl(s)
-      case Compl(s) =>
-        Set(s)
-    }
+    import SetEval.{Set, Compl}
 
     def isUniv: Boolean = this match {
       case Compl(s) if s.isEmpty => true
@@ -939,9 +903,60 @@ object FastSetUnification {
     private case class Compl(s: SortedSet[Int]) extends SetEval
 
     val empty: SetEval = Set(SortedSet.empty)
+
     val univ: SetEval = Compl(SortedSet.empty)
 
     def single(i: Int): SetEval = Set(SortedSet(i))
+
+    def union(s1: SetEval, s2: SetEval): SetEval = (s1, s2) match {
+      case (Set(x), Set(y)) =>
+        // x ∪ y
+        Set(x.union(y))
+      case (Set(x), Compl(y)) =>
+        // x ∪ !y =
+        // !(!x ∩ y) =
+        // !(y ∩ !x) =
+        // !(y - x)
+        Compl(y.diff(x))
+      case (Compl(x), Set(y)) =>
+        // !x ∪ y =
+        // !(x ∩ !y) =
+        // !(x - y)
+        Compl(x.diff(y))
+      case (Compl(x), Compl(y)) =>
+        // !x ∪ !y =
+        // !(x ∩ y)
+        Compl(x.intersect(y))
+    }
+
+    def intersect(s1: SetEval, s2: SetEval): SetEval = (s1, s2) match {
+      case (Set(x), Set(y)) =>
+        // x ∩ y
+        Set(x.intersect(y))
+      case (Set(x), Compl(y)) =>
+        // x ∩ !y =
+        // x - y
+        Set(x.diff(y))
+      case (Compl(x), Set(y)) =>
+        // !x ∩ y =
+        // y ∩ !x =
+        // y - x
+        Set(y.diff(x))
+      case (Compl(x), Compl(y)) =>
+        // !x ∩ !y =
+        // !(x ∪ y)
+        Compl(x.union(y))
+    }
+
+    def compl(s: SetEval): SetEval = s match {
+      case Set(s) =>
+        // !s
+        Compl(s)
+      case Compl(s) =>
+        // !!s =
+        // s
+        Set(s)
+    }
   }
 
   /**
