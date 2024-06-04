@@ -40,19 +40,6 @@ import scala.collection.mutable
 object Resolver {
 
   /**
-    * Symbols of traits that are derivable.
-    */
-  private val EqSym = new Symbol.TraitSym(Nil, "Eq", SourceLocation.Unknown)
-  private val OrderSym = new Symbol.TraitSym(Nil, "Order", SourceLocation.Unknown)
-  private val ToStringSym = new Symbol.TraitSym(Nil, "ToString", SourceLocation.Unknown)
-  private val HashSym = new Symbol.TraitSym(Nil, "Hash", SourceLocation.Unknown)
-  private val SendableSym = new Symbol.TraitSym(Nil, "Sendable", SourceLocation.Unknown)
-  private val CoerceSym = new Symbol.TraitSym(Nil, "Coerce", SourceLocation.Unknown)
-
-  // TODO move to Deriver
-  val DerivableSyms: List[Symbol.TraitSym] = List(EqSym, OrderSym, ToStringSym, HashSym, SendableSym, CoerceSym)
-
-  /**
     * Java classes for primitives and Object
     */
   private val Int = classOf[Int]
@@ -715,7 +702,7 @@ object Resolver {
       val symVal = trt.assocs.collectFirst {
         case NamedAst.Declaration.AssocTypeSig(_, _, sym, _, _, _, _) if sym.name == ident.name => sym
       } match {
-        case None => Validation.toHardFailure(ResolutionError.UndefinedAssocType(Name.mkQName(ident), ident.loc))
+        case None => Validation.toHardFailure(ResolutionError.UndefinedAssocType(Name.QName(Name.RootNS, ident, ident.loc), ident.loc))
         case Some(sym) => Validation.success(sym)
       }
       mapN(symVal, argVal, tpeVal) {
@@ -2171,7 +2158,7 @@ object Resolver {
     opOpt match {
       case None =>
         val nname = eff.sym.namespace :+ eff.sym.name
-        val qname = Name.mkQName(nname, ident.name, SourcePosition.Unknown, SourcePosition.Unknown)
+        val qname = Name.mkQName(nname, ident.name, SourceLocation.Unknown)
         Validation.toHardFailure(ResolutionError.UndefinedOp(qname, ident.loc))
       case Some(op) =>
         Validation.success(op)
@@ -2788,7 +2775,7 @@ object Resolver {
       case None => None
       case Some(prefix) =>
         val ns = prefix ::: qname0.namespace.parts.tail
-        val qname = Name.mkQName(ns, qname0.ident.name, SourcePosition.Unknown, SourcePosition.Unknown)
+        val qname = Name.mkQName(ns, qname0.ident.name, SourceLocation.Unknown)
         root.symbols.getOrElse(qname.namespace, Map.empty).get(qname.ident.name)
     }
   }

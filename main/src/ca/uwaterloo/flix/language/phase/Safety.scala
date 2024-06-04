@@ -78,14 +78,17 @@ object Safety {
     * Performs safety and well-formedness checks on the given definition `def0`.
     */
   private def visitDef(def0: Def)(implicit flix: Flix): List[SafetyError] = {
+    val exportErrs = if (def0.spec.ann.isExport) visitExportDef(def0) else Nil
     val renv = def0.spec.tparams.map(_.sym).foldLeft(RigidityEnv.empty) {
       case (acc, e) => acc.markRigid(e)
     }
-    visitExp(def0.exp, renv)
+    val expErrs = visitExp(def0.exp, renv)
+    exportErrs ++ expErrs
   }
 
   /**
-    * Checks that every every reachable function entry point has a valid signature.
+    * Checks that every every reachable function entry point has a valid
+    * signature and that exported functions are valid.
     *
     * A signature is valid if there is a single argument of type `Unit` and if it is pure or has the IO effect.
     */
@@ -95,12 +98,34 @@ object Safety {
       Nil
     } else {
       val defn = root.defs(sym)
-      if (hasUnitParameter(defn) && isPureOrIO(defn)) {
+      // Note that exported defs have different rules
+      if (defn.spec.ann.isExport) {
+        Nil
+      } else if (hasUnitParameter(defn) && isPureOrIO(defn)) {
         Nil
       } else {
         SafetyError.IllegalEntryPointSignature(defn.sym.loc) :: Nil
       }
     }
+  }
+
+  /**
+    * Checks that the function is able to be exported.
+    *
+    * The function should be public, use a Java-valid name, be non-polymoprhic,
+    * use exportable types, and use non-algebraic effects
+    */
+  private def visitExportDef(defn: Def): List[SafetyError] = {
+    val nonRoot = if (isInRootNamespace(defn)) List(SafetyError.IllegalExportNamespace(defn.sym.loc)) else Nil
+    val pub = if (isPub(defn)) Nil else List(SafetyError.NonPublicExport(defn.sym.loc))
+    val name = if (validJavaName(defn.sym)) Nil else List(SafetyError.IllegalExportName(defn.sym.loc))
+    val types = if (isPolymorphic(defn)) {
+      List(SafetyError.IllegalExportPolymorphism(defn.spec.loc))
+    } else {
+      checkExportableTypes(defn)
+    }
+    val effect = if (isPureOrIO(defn)) Nil else List(SafetyError.IllegalExportEffect(defn.spec.loc))
+    nonRoot ++ pub ++ name ++ types ++ effect
   }
 
   /**
@@ -115,6 +140,75 @@ object Safety {
         // Case 2: Multiple parameters.
         false
     }
+  }
+
+  /**
+    * Returns `true` if the given `defn` is in the root namespace.
+    */
+  private def isInRootNamespace(defn: Def): Boolean = {
+    defn.sym.namespace.isEmpty
+  }
+
+  /**
+    * Returns `true` if the given `defn` has the public modifier.
+    */
+  private def isPub(defn: Def): Boolean = {
+    defn.spec.mod.isPublic
+  }
+
+  /**
+    * Returns `true` if the given `defn` has a polymorphic type.
+    */
+  private def isPolymorphic(defn: Def): Boolean = {
+    defn.spec.tparams.nonEmpty
+  }
+
+  /**
+    * Returns `Nil` if the given `defn` has exportable types according to
+    * [[isExportableType]], otherwise a list of the found errors is returned.
+    */
+  private def checkExportableTypes(defn: Def): List[SafetyError] = {
+    val types = defn.spec.fparams.map(_.tpe) :+ defn.spec.retTpe
+    types.flatMap{ t =>
+      if (isExportableType(t)) Nil
+      else List(SafetyError.IllegalExportType(t, t.loc))
+    }
+  }
+
+  /**
+    * Returns `true` if the given `tpe` is supported in exported signatures.
+    *
+    * Currently this is only types that are immune to erasure, i.e. the
+    * primitive java types and Object.
+    *
+    * Note that signatures should be exportable as-is, this means that even
+    * though the signature contains `MyAlias[Bool]` where
+    * `type alias MyAlias[t] = t`, it uses flix-specific type information which
+    * is not allowed.
+    */
+  private def isExportableType(tpe: Type): Boolean = tpe.typeConstructor match {
+    case None => false
+    case Some(cst) => cst match {
+      case TypeConstructor.Bool => true
+      case TypeConstructor.Char => true
+      case TypeConstructor.Float32 => true
+      case TypeConstructor.Float64 => true
+      case TypeConstructor.Int8 => true
+      case TypeConstructor.Int16 => true
+      case TypeConstructor.Int32 => true
+      case TypeConstructor.Int64 => true
+      case TypeConstructor.Native(clazz) if clazz == classOf[Object] => true
+      // Error is accepted to avoid cascading errors
+      case TypeConstructor.Error(_) => true
+      case _ => false
+    }
+  }
+
+  /**
+    * Returns `true` if given `defn` has a name that is directly valid in Java.
+    */
+  private def validJavaName(sym: Symbol.DefnSym): Boolean = {
+    sym.name.matches("[a-z][a-zA-Z0-9]*")
   }
 
   /**
