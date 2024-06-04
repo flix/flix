@@ -18,7 +18,6 @@ package ca.uwaterloo.flix.language.phase.unification
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.util.{Formatter, InternalCompilerException, Result}
 
-import scala.annotation.tailrec
 import scala.collection.immutable.{SortedMap, SortedSet}
 import scala.collection.mutable
 
@@ -897,7 +896,7 @@ object FastSetUnification {
     }
   }
 
-  object SetEval {
+  private object SetEval {
     private case class Set(s: SortedSet[Int]) extends SetEval
 
     private case class Compl(s: SortedSet[Int]) extends SetEval
@@ -964,7 +963,7 @@ object FastSetUnification {
     *
     * We use this for elements, constants, and variables.
     */
-  def propagation(t: Term): Term = {
+  private def propagation(t: Term): Term = {
     def visit(t: Term, setElems: SortedMap[Int, Term], setCsts: SortedMap[Int, Term], setVars: SortedMap[Int, Term]): Term = t match {
       case Term.Univ => t
       case Term.Empty => t
@@ -1143,23 +1142,22 @@ object FastSetUnification {
     /**
       * Syntactic sugar for [[Term.mkInter]].
       */
-    final def &(that: Term): Term = Term.mkInter(this, that)
-
     def inter(that: Term): Term = Term.mkInter(this, that)
 
     /**
       * Syntactic sugar for [[Term.mkUnion]].
       */
-    final def |(that: Term): Term = Term.mkUnion(this, that)
-
     def union(that: Term): Term = Term.mkUnion(this, that)
+
+    /**
+      * Syntactic sugar for [[Term.mkCompl]]
+      */
+    def compl(): Term = Term.mkCompl(this)
 
     /**
       * Syntactic sugar for [[Equation.mk]]
       */
     final def ~(that: Term)(implicit loc: SourceLocation): Equation = Equation.mk(this, that, loc)
-
-    def compl(): Term = Term.mkCompl(this)
 
     /**
       * Returns all variables that occur in `this` term.
@@ -1228,25 +1226,6 @@ object FastSetUnification {
       case Term.Union(posElems, posCsts, posVars, negElems, negCsts, negVars, rest) =>
         ((posElems.size + posCsts.size + posVars.size + negElems.size + negCsts.size + negVars.size + rest.size) - 1) + rest.map(_.size).sum
     }
-
-    def toRawString: String = this match {
-      case Term.Univ => "Univ"
-      case Term.Empty => "Empty"
-      case Term.Cst(c) => s"Cst($c)"
-      case Term.Var(x) => s"Var($x)"
-      case Term.Elem(i) => s"Elem($i)"
-      case Term.Compl(t) => s"Compl(${t.toRawString})"
-      case Term.Inter(posElem, posCsts, posVars, negElems, negCsts, negVars, rest) =>
-        val pe = posElem match {
-          case Some(value) => s"Some(${value.toRawString})"
-          case None => s"None"
-        }
-        s"Inter($pe, ${helpSet(posCsts)}, ${helpSet(posVars)}, ${helpSet(negElems)}, ${helpSet(negCsts)}, ${helpSet(negVars)}, ${helpList(rest)})"
-      case Term.Union(posElems, posCsts, posVars, negElems, negCsts, negVars, rest) =>
-        s"Union(${helpSet(posElems)}, ${helpSet(posCsts)}, ${helpSet(posVars)}, ${helpSet(negElems)}, ${helpSet(negCsts)}, ${helpSet(negVars)}, ${helpList(rest)})"
-    }
-    private def helpList(l: Iterable[Term]): String = l.map(_.toRawString).mkString("List(", ", ", ")")
-    private def helpSet(l: Iterable[Term]): String = l.map(_.toRawString).mkString("Set(", ", ", ")")
 
     /**
       * Returns a human-readable representation of `this` term.
@@ -1620,7 +1599,7 @@ object FastSetUnification {
   /**
     * Companion object of [[SetSubstitution]].
     */
-  object SetSubstitution {
+  private object SetSubstitution {
     /**
       * The empty substitution.
       */
@@ -1795,21 +1774,6 @@ object FastSetUnification {
         sb.append(s"x$x")
         sb.append(" -> ")
         sb.append(t)
-        sb.append("\n")
-      }
-      sb.toString()
-    }
-
-    def toRawString: String = {
-      val indent = 4
-
-      val sb = new StringBuilder()
-      // We sort the bindings by (size, name).
-      for ((x, t) <- m.toList.sortBy(kv => (kv._2.size, kv._1))) {
-        sb.append(" ".repeat(indent))
-        sb.append(s"x$x")
-        sb.append(" -> ")
-        sb.append(t.toRawString)
         sb.append("\n")
       }
       sb.toString()

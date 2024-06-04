@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.language.ast.SourceLocation
+import ca.uwaterloo.flix.language.phase.unification.BooleanFuzzer.RawString.toRawString
 import ca.uwaterloo.flix.language.phase.unification.FastSetUnification.Term
 import ca.uwaterloo.flix.util.Result
 
@@ -125,9 +126,9 @@ object BooleanFuzzer {
     if (timeoutPhaseFrequence.nonEmpty) println(s"Timeout phases:")
     timeoutPhaseFrequence.toList.sorted.foreach(p => println(s"\t\tphase ${p._1}: ${p._2} timeouts"))
     if (errs.nonEmpty) println(s"Smallest error:")
-    errs.sortBy(_.size).headOption.foreach(err => println(s"> ${err.toString}\n> ${err.toRawString}"))
+    errs.sortBy(_.size).headOption.foreach(err => println(s"> ${err.toString}\n> ${toRawString(err)}"))
     if (timeouts.nonEmpty) println(s"Smallest timeout:")
-    timeouts.sortBy(_.size).headOption.foreach(timeout => println(s"> ${timeout.toString}\n> ${timeout.toRawString}"))
+    timeouts.sortBy(_.size).headOption.foreach(timeout => println(s"> ${timeout.toString}\n> ${toRawString(timeout)}"))
     errs.isEmpty
   }
 
@@ -160,6 +161,27 @@ object BooleanFuzzer {
       case Result.Err((_, _, _)) =>
         (Res.Fail, phase)
     }
+  }
+
+  object RawString {
+    def toRawString(t: Term): String = t match {
+      case Term.Univ => "Univ"
+      case Term.Empty => "Empty"
+      case Term.Cst(c) => s"Cst($c)"
+      case Term.Var(x) => s"Var($x)"
+      case Term.Elem(i) => s"Elem($i)"
+      case Term.Compl(t) => s"Compl(${toRawString(t)})"
+      case Term.Inter(posElem, posCsts, posVars, negElems, negCsts, negVars, rest) =>
+        val pe = posElem match {
+          case Some(value) => s"Some(${toRawString(value)})"
+          case None => s"None"
+        }
+        s"Inter($pe, ${helpSet(posCsts)}, ${helpSet(posVars)}, ${helpSet(negElems)}, ${helpSet(negCsts)}, ${helpSet(negVars)}, ${helpList(rest)})"
+      case Term.Union(posElems, posCsts, posVars, negElems, negCsts, negVars, rest) =>
+        s"Union(${helpSet(posElems)}, ${helpSet(posCsts)}, ${helpSet(posVars)}, ${helpSet(negElems)}, ${helpSet(negCsts)}, ${helpSet(negVars)}, ${helpList(rest)})"
+    }
+    private def helpList(l: Iterable[Term]): String = l.map(toRawString).mkString("List(", ", ", ")")
+    private def helpSet(l: Iterable[Term]): String = l.map(toRawString).mkString("Set(", ", ", ")")
   }
 
 }
