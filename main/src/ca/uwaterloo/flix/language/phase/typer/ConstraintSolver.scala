@@ -281,12 +281,11 @@ object ConstraintSolver {
       val allKnown = isKnown(tpe) && tpes.forall(isKnown)
 
       if (allKnown) {
-        // Lookup method is then guaranteed to either find it or not
         TypeReduction.lookupMethod(tpe, method.name, tpes, mvar.loc) match {
           case JavaResolutionResult.Resolved(tpe) =>
             val subst = Substitution.singleton(mvar.sym, tpe)
             Result.Ok(ResolutionResult(subst @@ subst0, Nil, progress = true))
-          case JavaResolutionResult.MethodNotFound() => Result.Err(TypeError.MethodNotFound(method.name, tpe, tpes, List(), renv, mvar.loc)) // TODO INTEROP: fill in candidate methods
+          case JavaResolutionResult.MethodNotFound => Result.Err(TypeError.MethodNotFound(method.name, tpe, tpes, List(), renv, mvar.loc)) // TODO INTEROP: fill in candidate methods
         }
       } else {
         // Otherwise other constraints may still need to be solved.

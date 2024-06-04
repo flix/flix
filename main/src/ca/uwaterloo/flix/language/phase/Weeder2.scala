@@ -1007,13 +1007,7 @@ object Weeder2 {
      * as they are not allowed and it doesn't add unit arguments for empty arguments.
      */
     private def visitMethodArguments(tree: Tree): Validation[List[Expr], CompilationMessage] = {
-      mapN(
-        traverse(pickAll(TreeKind.Argument, tree))(pickExpr)
-      ) {
-            // Unit arguments are not added
-            case Nil => List()
-            case args => args.sortBy(_.loc)
-        }
+      traverse(pickAll(TreeKind.Argument, tree))(pickExpr)
     }
 
     private def visitArgumentNamed(tree: Tree): Validation[Expr, CompilationMessage] = {

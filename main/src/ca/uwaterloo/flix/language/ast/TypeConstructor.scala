@@ -1,10 +1,11 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.Ast.{EliminatedBy, IntroducedBy}
-import ca.uwaterloo.flix.language.phase.{Kinder, Lowering, Monomorpher}
+import ca.uwaterloo.flix.language.phase.typer.TypeReduction
+import ca.uwaterloo.flix.language.phase.{Kinder, Lowering, Monomorpher, TypeReconstruction}
 
 import java.lang.reflect.Method
-import java.lang.reflect.Constructor;
+import java.lang.reflect.Constructor
 import scala.collection.immutable.SortedSet
 
 /**
@@ -285,8 +286,9 @@ object TypeConstructor {
    * - The type: `Apply(Apply(InvokeMethod("startsWith", 1), String), String)` is equivalent to `Bool`.
    * - The type: `Apply(Apply(Apply(InvokeMethod("substring", 2), String), Int32), Int32)` is equivalent to `String`.
    *
-   * The type constructor requires at least one type argument: the type of the receiver object.
+   * The type constructor requires a java method or constructor type constructor.
    */
+  @EliminatedBy(TypeReconstruction.getClass)
   case object MethodReturnType extends TypeConstructor {
     def kind: Kind = Kind.JvmConstructorOrMethod ->: Kind.Star
   }

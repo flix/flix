@@ -76,7 +76,7 @@ object TypeError {
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Java method '$methodName' from type '${red(formatType(tpe0, Some(renv)))}' with arguments types '${tpes.foldLeft("") { (acc, t) => acc + red(formatType(t, Some(renv))) }}' not found.
+         |>> Java method '$methodName' from type '${red(formatType(tpe0, Some(renv)))}' with arguments types '${tpes.map( t => red(formatType(t, Some(renv))).mkString(", "))}}' not found.
          |
          |${code(loc, s"java method '${methodName} method not found")}
          |""".stripMargin

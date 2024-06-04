@@ -136,21 +136,16 @@ object TypeReduction {
         val clazz = classOf[String]
         // Filter out candidate methods by method name
         // NB: this considers also static methods
-        val nbParams = ts.length - ts.foldLeft(0) { (acc, t) =>
-          t match {
-            case Type.Cst(TypeConstructor.Unit, _) => 1 + acc
-            case _ => acc
-          }}
         val candidateMethods = clazz.getMethods.filter(m => m.getName == method)
-          .filter(m => m.getParameterCount == nbParams)
+          .filter(m => m.getParameterCount == ts.length)
 
         candidateMethods.length match {
           case 1 =>
             val tpe = Type.Cst(TypeConstructor.JvmMethod(candidateMethods.head), loc)
             JavaResolutionResult.Resolved(tpe)
-          case _ => JavaResolutionResult.MethodNotFound() // For now, method not found either if there is an ambiguity or no method found
+          case _ => JavaResolutionResult.MethodNotFound // For now, method not found either if there is an ambiguity or no method found
         }
-      case _ => JavaResolutionResult.MethodNotFound() // to check: before it was NoProgress
+      case _ => JavaResolutionResult.MethodNotFound // to check: before it was NoProgress
     }
 
   /**
@@ -164,6 +159,6 @@ object TypeReduction {
   sealed trait JavaResolutionResult
   object JavaResolutionResult {
     case class Resolved(tpe: Type) extends JavaResolutionResult
-    case class MethodNotFound() extends JavaResolutionResult
+    case object MethodNotFound extends JavaResolutionResult
   }
 }
