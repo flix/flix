@@ -15,6 +15,7 @@ mod Test.Exp.Jvm.InvokeMethod2 {
         let obj = "hello world";
         obj#length() == 11
 
+    @test
     def testInvokeMethod2_04(): Bool \ IO =
         let obj = "hEllO wORlD";
         obj#toLowerCase()#toUpperCase() == "HELLO WORLD"
