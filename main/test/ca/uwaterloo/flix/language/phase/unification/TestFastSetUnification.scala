@@ -803,7 +803,7 @@ class TestFastSetUnification extends AnyFunSuite with TestUtils {
 
   test("Custom.Elems.Disjoint02") {
     val l = List(
-      (Elem(0) union Elem(1)) ~ ((Elem(0) union Elem(1) union Elem(2)) inter Term.Compl(Elem(2)))
+      (Elem(0) union Elem(1)) ~ ((Elem(0) union Elem(1) union Elem(2)) inter Term.mkCompl(Elem(2)))
     )
     val s = solveAll(l).get
     verify(s, l)
@@ -811,7 +811,7 @@ class TestFastSetUnification extends AnyFunSuite with TestUtils {
 
   test("Custom.Minus01") {
     val l = List(
-      (Cst(0) inter Term.Compl(Cst(1))) ~ ((Cst(0) union Cst(1)) inter Term.Compl(Cst(1)))
+      (Cst(0) inter Term.mkCompl(Cst(1))) ~ ((Cst(0) union Cst(1)) inter Term.mkCompl(Cst(1)))
     )
     val s = solveAll(l).get
     verify(s, l)
@@ -819,7 +819,7 @@ class TestFastSetUnification extends AnyFunSuite with TestUtils {
 
   test("Custom.Fuzzer") {
     val random = new Random(seed = 56238265)
-    assert(BooleanFuzzer.fuzz(random, 50_000, 1, -1))
+    assert(BooleanFuzzer.fuzz(random, 500_000, 1, -1))
   }
 
 }
