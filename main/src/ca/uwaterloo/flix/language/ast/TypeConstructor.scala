@@ -259,23 +259,6 @@ object TypeConstructor {
   }
 
   /**
-   * A type constructor that represents the _return type_ of a Java method.
-   *
-   * A method return type can be resolved when the receiver object and argument types are known.
-   *
-   * A few examples:
-   *
-   * - The type: `Apply(InvokeMethod("length", 0), String)` is equivalent to `Int32`.
-   * - The type: `Apply(Apply(InvokeMethod("startsWith", 1), String), String)` is equivalent to `Bool`.
-   * - The type: `Apply(Apply(Apply(InvokeMethod("substring", 2), String), Int32), Int32)` is equivalent to `String`.
-   *
-   * The type constructor requires at least one type argument: the type of the receiver object.
-   */
-  case class MethodReturnType() extends TypeConstructor {
-    def kind: Kind = Kind.JvmConstructorOrMethod ->: Kind.Star
-  }
-
-  /**
    * A type constructor that represents the _return type_ of a Java static method.
    *
    * A static method return type can be resolved when the argument types are known.
@@ -289,6 +272,23 @@ object TypeConstructor {
    */
   case class StaticMethodReturnType(clazz: Class[_], name: String, arity: Int) extends TypeConstructor {
     def kind: Kind = Kind.mkArrow(arity)
+  }
+
+  /**
+   * A type constructor that represents the _return type_ of a Java method.
+   *
+   * A method return type can be resolved when the receiver object and argument types are known.
+   *
+   * A few examples:
+   *
+   * - The type: `Apply(InvokeMethod("length", 0), String)` is equivalent to `Int32`.
+   * - The type: `Apply(Apply(InvokeMethod("startsWith", 1), String), String)` is equivalent to `Bool`.
+   * - The type: `Apply(Apply(Apply(InvokeMethod("substring", 2), String), Int32), Int32)` is equivalent to `String`.
+   *
+   * The type constructor requires at least one type argument: the type of the receiver object.
+   */
+  case object MethodReturnType extends TypeConstructor {
+    def kind: Kind = Kind.JvmConstructorOrMethod ->: Kind.Star
   }
 
   /**
