@@ -747,7 +747,7 @@ object ConstraintGen {
         // TODO INTEROP make distinction between java method or constructor calls
         val (tpe, eff) = visitExp(exp)
         val (tpes, effs) = exps.map(visitExp).unzip
-        val t = Type.Cst(TypeConstructor.MethodReturnType(), loc)
+        val t = Type.Cst(TypeConstructor.MethodReturnType, loc)
         c.unifyJvmMethodType(mvar, tpe, name, tpes, loc) // unify method
         c.unifyType(tvar, Type.mkApply(t, List(mvar), loc), loc) // unify method return type
         c.unifyType(evar, Type.mkUnion(Type.IO :: eff :: effs, loc), loc) // unify effects

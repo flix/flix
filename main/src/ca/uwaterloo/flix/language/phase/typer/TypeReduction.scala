@@ -107,7 +107,7 @@ object TypeReduction {
    */
   private def simplifyJava(tpe: Type, renv0: RigidityEnv, loc: SourceLocation)(implicit flix: Flix): Result[(Type, Boolean), TypeError] = {
     tpe.typeConstructor match {
-      case Some(TypeConstructor.MethodReturnType()) =>
+      case Some(TypeConstructor.MethodReturnType) =>
         val methodType = tpe.typeArguments.head
         methodType match {
           case Type.Cst(TypeConstructor.JvmMethod(method), _) => Result.Ok(Type.getFlixType(method.getReturnType), true)
@@ -132,7 +132,7 @@ object TypeReduction {
    */
   def lookupMethod(thisObj: Type, method: String, ts: List[Type], loc: SourceLocation)(implicit flix: Flix): JavaResolutionResult =
     thisObj match {
-      case Type.Cst(TypeConstructor.Str, loc2) =>
+      case Type.Cst(TypeConstructor.Str, _) =>
         val clazz = classOf[String]
         // Filter out candidate methods by method name
         // NB: this considers also static methods
@@ -150,22 +150,20 @@ object TypeReduction {
             JavaResolutionResult.Resolved(tpe)
           case _ => JavaResolutionResult.MethodNotFound() // For now, method not found either if there is an ambiguity or no method found
         }
-      case _ => JavaResolutionResult.NoProgress
+      case _ => JavaResolutionResult.MethodNotFound() // to check: before it was NoProgress
     }
 
   /**
    * Represents the result of a resolution process of a java method.
    *
-   * There are three possible outcomes:
+   * There are two possible outcomes:
    *
    * 1. Resolved(tpe): Indicates that there was some progress in the resolution and returns a simplified type of the java method.
    * 2. MethodNotFound(): The resolution failed to find a corresponding java method.
-   * 3. NoProgress: The resolution did not make any progress in the type simplification.
    */
   sealed trait JavaResolutionResult
   object JavaResolutionResult {
     case class Resolved(tpe: Type) extends JavaResolutionResult
     case class MethodNotFound() extends JavaResolutionResult
-    case object NoProgress extends JavaResolutionResult
   }
 }

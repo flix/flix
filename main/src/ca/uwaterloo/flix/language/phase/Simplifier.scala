@@ -328,7 +328,7 @@ object Simplifier {
           case TypeConstructor.Schema =>
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
 
-          case TypeConstructor.MethodReturnType() =>
+          case TypeConstructor.MethodReturnType =>
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
 
           case TypeConstructor.StaticMethodReturnType(_, _, _) =>

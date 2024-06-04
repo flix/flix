@@ -287,8 +287,6 @@ object ConstraintSolver {
             val subst = Substitution.singleton(mvar.sym, tpe)
             Result.Ok(ResolutionResult(subst @@ subst0, Nil, progress = true))
           case JavaResolutionResult.MethodNotFound() => Result.Err(TypeError.MethodNotFound(method.name, tpe, tpes, List(), renv, mvar.loc)) // TODO INTEROP: fill in candidate methods
-          case JavaResolutionResult.NoProgress =>
-            throw InternalCompilerException(s"unexpected no progress state with type ${tpe}", mvar.loc) // TODO: Cannot happen anymore?
         }
       } else {
         // Otherwise other constraints may still need to be solved.

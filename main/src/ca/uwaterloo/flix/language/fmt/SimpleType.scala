@@ -433,7 +433,7 @@ object SimpleType {
         case TypeConstructor.Native(clazz) => Name(clazz.getName)
         case TypeConstructor.JvmConstructor(constructor) => Name(constructor.getName)
         case TypeConstructor.JvmMethod(method) => Name(method.getName)
-        case TypeConstructor.MethodReturnType() =>
+        case TypeConstructor.MethodReturnType =>
           t.typeArguments.size match {
             case 0 => SimpleType.MethodReturnType(SimpleType.Hole)
             case 1 => SimpleType.MethodReturnType(fromWellKindedType(t.typeArguments.head))

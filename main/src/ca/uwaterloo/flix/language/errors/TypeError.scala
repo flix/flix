@@ -84,6 +84,16 @@ object TypeError {
   }
 
   /**
+   * Unresolved method type error.
+   * This is a dummy error used in java method type reconstruction for invokeMethod2.
+   */
+  case class UnresolvedMethod(name: String, loc: SourceLocation) extends TypeError with Recoverable {
+    def summary: String = s"Unresolved method '$name'"
+    def message(formatter: Formatter): String = s"Unresolved method '$name'"
+  }
+
+
+  /**
     * Mismatched Arity.
     *
     * @param tpe1 the first type.
