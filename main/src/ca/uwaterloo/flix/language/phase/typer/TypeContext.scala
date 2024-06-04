@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.phase.typer
 
-import ca.uwaterloo.flix.language.ast.{Ast, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Ast, Name, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -112,6 +112,22 @@ class TypeContext {
     */
   def unifyType(tpe1: Type, tpe2: Type, loc: SourceLocation): Unit = {
     val constr = TypeConstraint.Equality(tpe1, tpe2, Provenance.Match(tpe1, tpe2, loc))
+    currentScopeConstraints.add(constr)
+  }
+
+  /**
+   * Generates constraints unifying a given java method type and a type.
+   */
+  def unifyJvmMethodType(mvar: Type.Var, tpe: Type, methodName: Name.Ident, tpes: List[Type], loc: SourceLocation): Unit = {
+    val constr = TypeConstraint.EqJvmMethod(mvar, tpe, methodName, tpes, Provenance.Match(mvar, tpe, loc))
+    currentScopeConstraints.add(constr)
+  }
+
+  /**
+   * Generates constraints unifying a given java constructor type and a class.
+   */
+  def unifyJvmConstructorType(mvar: Type.Var, tpe: Type, clazz: Class[_], tpes: List[Type], loc: SourceLocation): Unit = {
+    val constr = TypeConstraint.EqJvmConstructor(mvar, clazz, tpes, Provenance.Match(mvar, tpe, loc))
     currentScopeConstraints.add(constr)
   }
 

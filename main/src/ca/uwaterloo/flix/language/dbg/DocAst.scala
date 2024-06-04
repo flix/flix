@@ -327,6 +327,10 @@ object DocAst {
 
     case class Native(clazz: Class[_]) extends Atom
 
+    case class JvmConstructor(constructor: Constructor[_]) extends Atom
+
+    case class JvmMethod(method: Method) extends Atom
+
     /** inserted string printed as-is (assumed not to require parenthesis) */
     case class Meta(s: String) extends Atom
 

@@ -33,6 +33,15 @@ import ca.uwaterloo.flix.util.{ParOps, Validation}
   */
 object Deriver {
 
+  val EqSym = new Symbol.TraitSym(Nil, "Eq", SourceLocation.Unknown)
+  val OrderSym = new Symbol.TraitSym(Nil, "Order", SourceLocation.Unknown)
+  val ToStringSym = new Symbol.TraitSym(Nil, "ToString", SourceLocation.Unknown)
+  val HashSym = new Symbol.TraitSym(Nil, "Hash", SourceLocation.Unknown)
+  val SendableSym = new Symbol.TraitSym(Nil, "Sendable", SourceLocation.Unknown)
+  val CoerceSym = new Symbol.TraitSym(Nil, "Coerce", SourceLocation.Unknown)
+
+  val DerivableSyms = List(EqSym, OrderSym, ToStringSym, HashSym, SendableSym, CoerceSym)
+
   def run(root: KindedAst.Root)(implicit flix: Flix): Validation[KindedAst.Root, DerivationError] = flix.phase("Deriver") {
     val derivedInstances = ParOps.parTraverse(root.enums.values)(getDerivedInstances(_, root))
 
@@ -52,20 +61,16 @@ object Deriver {
     */
   private def getDerivedInstances(enum0: KindedAst.Enum, root: KindedAst.Root)(implicit flix: Flix): Validation[List[KindedAst.Instance], DerivationError] = enum0 match {
     case KindedAst.Enum(_, _, _, enumSym, _, derives, cases, _, _) =>
-      // lazy so that in we don't try a lookup if there are no derivations (important for Nix Lib)
-      lazy val eqSym = PredefinedTraits.lookupTraitSym("Eq", root)
-      lazy val orderSym = PredefinedTraits.lookupTraitSym("Order", root)
-      lazy val toStringSym = PredefinedTraits.lookupTraitSym("ToString", root)
-      lazy val hashSym = PredefinedTraits.lookupTraitSym("Hash", root)
-      lazy val sendableSym = PredefinedTraits.lookupTraitSym("Sendable", root)
+
       val instanceVals = Validation.traverse(derives.traits) {
         case Ast.Derivation(traitSym, loc) if cases.isEmpty => Validation.toSoftFailure(None, DerivationError.IllegalDerivationForEmptyEnum(enumSym, traitSym, loc))
-        case Ast.Derivation(sym, loc) if sym == eqSym => mapN(mkEqInstance(enum0, loc, root))(Some(_))
-        case Ast.Derivation(sym, loc) if sym == orderSym => mapN(mkOrderInstance(enum0, loc, root))(Some(_))
-        case Ast.Derivation(sym, loc) if sym == toStringSym => mapN(mkToStringInstance(enum0, loc, root))(Some(_))
-        case Ast.Derivation(sym, loc) if sym == hashSym => mapN(mkHashInstance(enum0, loc, root))(Some(_))
-        case Ast.Derivation(sym, loc) if sym == sendableSym => mapN(mkSendableInstance(enum0, loc, root))(Some(_))
-        case Ast.Derivation(sym, loc) => Validation.toSoftFailure(None, DerivationError.IllegalDerivation(sym, Resolver.DerivableSyms, loc))
+        case Ast.Derivation(sym, loc) if sym == EqSym => mapN(mkEqInstance(enum0, loc, root))(Some(_))
+        case Ast.Derivation(sym, loc) if sym == OrderSym => mapN(mkOrderInstance(enum0, loc, root))(Some(_))
+        case Ast.Derivation(sym, loc) if sym == ToStringSym => mapN(mkToStringInstance(enum0, loc, root))(Some(_))
+        case Ast.Derivation(sym, loc) if sym == HashSym => mapN(mkHashInstance(enum0, loc, root))(Some(_))
+        case Ast.Derivation(sym, loc) if sym == SendableSym => mapN(mkSendableInstance(enum0, loc, root))(Some(_))
+        case Ast.Derivation(sym, loc) if sym == CoerceSym => mkCoerceInstance(enum0, loc, root)
+        case Ast.Derivation(sym, loc) => Validation.toSoftFailure(None, DerivationError.IllegalDerivation(sym, DerivableSyms, loc))
       }
       mapN(instanceVals)(_.flatten)
   }
@@ -741,6 +746,129 @@ object Deriver {
         ns = Name.RootNS,
         loc = loc
       ))
+  }
+
+  /**
+    * Creates a Coerce instance for the given enum.
+    *
+    * The enum must be a singleton.
+    *
+    * {{{
+    * enum Box[a](a, String)
+    * }}}
+    *
+    * yields
+    *
+    * {{{
+    * instance Coerce[Box[a]] {
+    *   type Out = (a, String)
+    *   pub def coerce(x: Box[a]): (a, String) = {
+    *     match x {
+    *       case Box.Box(y) => y
+    *     }
+    *   }
+    * }}}
+    */
+  private def mkCoerceInstance(enum0: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): Validation[Option[KindedAst.Instance], DerivationError] = enum0 match {
+    case KindedAst.Enum(_, _, _, sym, _, _, cases, tpe, _) =>
+      if (cases.size == 1) {
+        val coerceTraitSym = PredefinedTraits.lookupTraitSym("Coerce", root)
+        val coerceDefSym = Symbol.mkDefnSym("Coerce.coerce", Some(flix.genSym.freshId()))
+
+        val (_, caze) = cases.head
+
+        val outSym = new Symbol.AssocTypeSym(coerceTraitSym, "Out", loc)
+        val outTpe = caze.tpe
+        val out = KindedAst.AssocTypeDef(
+          Ast.Doc(Nil, loc),
+          Ast.Modifiers.Empty,
+          Ast.AssocTypeSymUse(outSym, loc),
+          tpe,
+          outTpe,
+          loc
+        )
+
+        val param = Symbol.freshVarSym("x", BoundBy.FormalParam, loc)
+        val exp = mkCoerceImpl(enum0, param, loc, root)
+        val spec = mkCoerceSpec(enum0, param, loc, root)
+
+        val defn = KindedAst.Def(coerceDefSym, spec, exp)
+
+        Validation.success(Some(KindedAst.Instance(
+          doc = Ast.Doc(Nil, loc),
+          ann = Ast.Annotations.Empty,
+          mod = Ast.Modifiers.Empty,
+          clazz = Ast.TraitSymUse(coerceTraitSym, loc),
+          tpe = tpe,
+          tconstrs = Nil,
+          defs = List(defn),
+          assocs = List(out),
+          ns = Name.RootNS,
+          loc = loc
+        )))
+      } else {
+        Validation.toSoftFailure(None, DerivationError.IllegalNonSingletonCoerce(sym, loc))
+      }
+  }
+
+  /**
+    * Creates the coerce implementation for the given enum.
+    */
+  private def mkCoerceImpl(enum0: KindedAst.Enum, param: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Expr = enum0 match {
+    case KindedAst.Enum(_, _, _, _, _, _, cases, _, _) =>
+      val (_, caze) = cases.head
+      val matchRule = mkCoerceMatchRule(caze, loc, root)
+
+      KindedAst.Expr.Match(
+        KindedAst.Expr.Var(param, loc),
+        List(matchRule),
+        loc
+      )
+  }
+
+  /**
+    * Creates the coerce specification for the given enum.
+    */
+  private def mkCoerceSpec(enum0: KindedAst.Enum, param: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Spec = enum0 match {
+    case KindedAst.Enum(_, _, _, _, tparams, _, cases, tpe, _) =>
+      val coerceTraitSym = PredefinedTraits.lookupTraitSym("Coerce", root)
+      val (_, caze) = cases.head
+      val retTpe = caze.tpe
+      KindedAst.Spec(
+        doc = Ast.Doc(Nil, loc),
+        ann = Ast.Annotations.Empty,
+        mod = Ast.Modifiers.Empty,
+        tparams = tparams,
+        fparams = List(KindedAst.FormalParam(param, Ast.Modifiers.Empty, tpe, Ast.TypeSource.Ascribed, loc)),
+        sc = Scheme(
+          tparams.map(_.sym),
+          List(Ast.TypeConstraint(Ast.TypeConstraint.Head(coerceTraitSym, loc), tpe, loc)),
+          Nil,
+          Type.mkPureArrow(tpe, retTpe, loc)
+        ),
+        tpe = retTpe,
+        eff = Type.Cst(TypeConstructor.Pure, loc),
+        tconstrs = List(Ast.TypeConstraint(Ast.TypeConstraint.Head(coerceTraitSym, loc), tpe, loc)),
+        econstrs = Nil,
+        loc = loc
+      )
+  }
+
+  /**
+    * Creates a Coerce match rule for the given enum case.
+    */
+  private def mkCoerceMatchRule(caze: KindedAst.Case, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.MatchRule = caze match {
+    case KindedAst.Case(sym, tpe, _, _) =>
+      // get a pattern corresponding to this case, e.g.
+      // `case C(x0)`
+      // Unlike other derivations, we do not unpack tuples
+      val varSym = Symbol.freshVarSym("x0", BoundBy.Pattern, loc)
+      val pat = KindedAst.Pattern.Tag(Ast.CaseSymUse(sym, loc), mkVarPattern(varSym, loc), Type.freshVar(Kind.Star, loc), loc)
+
+      // the body is just whatever we extracted
+      val exp = KindedAst.Expr.Var(varSym, loc)
+
+      KindedAst.MatchRule(pat, None, exp)
   }
 
   /**

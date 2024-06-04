@@ -16,8 +16,9 @@
 package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{Ast, RigidityEnv, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Ast, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.TypeError
+import ca.uwaterloo.flix.language.fmt.FormatType
 import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.collection.{ListMap, ListOps}
@@ -97,4 +98,70 @@ object TypeReduction {
     case Type.Alias(cst, args, t, _) => simplify(t, renv0, loc)
   }
 
+  /**
+   * Simplifies the type of the java method.
+   *
+   * @param tpe the type of the java method
+   * @param loc the location where the java method has been called
+   * @return
+   */
+  private def simplifyJava(tpe: Type, renv0: RigidityEnv, loc: SourceLocation)(implicit flix: Flix): Result[(Type, Boolean), TypeError] =
+    tpe.typeConstructor match {
+      case Some(TypeConstructor.MethodReturnType(m, n)) =>
+        val targs = tpe.typeArguments
+        // TODO INTEROP add base case
+        lookupMethod(targs.head, m, targs.tail, loc) match {
+          case ResolutionResult2.Resolved(t) => println(s">>> found return type $t"); Result.Ok((t, true))
+          case ResolutionResult2.MethodNotFound() => Result.Err(TypeError.MethodNotFound(m, targs.head, tpe, List(), renv0, loc)) // TODO INTEROP tpe shall be replaced by list of types of arguments + fill in candidate methods
+          case ResolutionResult2.NoProgress => Result.Ok((tpe, false))
+        }
+      case _ => Result.Ok((tpe, false))
+    }
+
+  /**
+   * This is the resolution process of the java method method, member of the class of the java object thisObj.
+   * Returns the return type of the java method according to the type of thisObj and the arguments of the method,
+   * if there exists such a java method.
+   * Otherwise, either the java method could not be found with the given method signature, or, the return type
+   * could not be simplified more at this state of the process.
+   *
+   * @param thisObj the java object
+   * @param method  the java method, supposedly member of the class of the java object
+   * @param ts      the list containing the type of thisObj and the arguments of the method
+   * @param loc     the location where the java method has been called
+   * @return        A ResolutionResult object that indicates the status of the resolution progress
+   */
+  def lookupMethod(thisObj: Type, method: String, ts: List[Type], loc: SourceLocation)(implicit flix: Flix): ResolutionResult2 =
+    thisObj match {
+      case Type.Cst(TypeConstructor.Str, loc2) =>
+        val clazz = classOf[String]
+        // Filter out candidate methods by method name
+        // NB: this considers also static methods
+        val candidateMethods = clazz.getMethods.filter(m => m.getName == method)
+          .filter(m => m.getParameterCount == 0) // Type.Cst case, no parameter???
+
+        candidateMethods.length match {
+          case 1 =>
+            val tpe = Type.Cst(TypeConstructor.JvmMethod(candidateMethods.head), loc)
+            ResolutionResult2.Resolved(tpe)
+          case _ => ResolutionResult2.MethodNotFound() // For now, method not found either if there is an ambiguity or no method found
+        }
+      case _ => ResolutionResult2.NoProgress
+    }
+
+  /**
+   * Represents the result of a resolution process of a java method.
+   *
+   * There are three possible outcomes:
+   *
+   * 1. Resolved(tpe): Indicates that there was some progress in the resolution and returns a simplified type of the java method.
+   * 2. MethodNotFound(): The resolution failed to find a corresponding java method.
+   * 3. NoProgress: The resolution did not make any progress in the type simplification.
+   */
+  sealed trait ResolutionResult2
+  object ResolutionResult2 {
+    case class Resolved(tpe: Type) extends ResolutionResult2
+    case class MethodNotFound() extends ResolutionResult2
+    case object NoProgress extends ResolutionResult2
+  }
 }

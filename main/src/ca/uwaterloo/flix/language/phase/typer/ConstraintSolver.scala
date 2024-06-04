@@ -19,6 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
+import ca.uwaterloo.flix.language.phase.typer.TypeReduction.ResolutionResult2
 import ca.uwaterloo.flix.language.phase.unification.Unification.getUnderOrOverAppliedError
 import ca.uwaterloo.flix.language.phase.unification._
 import ca.uwaterloo.flix.util.Result.Err
@@ -272,6 +273,32 @@ object ConstraintSolver {
       resolveEquality(t1, t2, prov, renv, constr0.loc).map {
         case ResolutionResult(subst, constrs, p) => ResolutionResult(subst @@ subst0, constrs, progress = p)
       }
+    case TypeConstraint.EqJvmMethod(mvar, tpe0, method, tpes0, prov) =>
+
+      // Recall: Subst is applied lazily. Apply it now.
+      val tpe = subst0(tpe0)
+      val tpes = tpes0.map(t => subst0(t))
+
+      def isKnown(t0: Type): Boolean = t0 match { // TODO: Actually, it cannot variables recursively...
+        case Type.Var(_, _) => false
+        case _ => true
+      }
+      val allKnown = isKnown(tpe) && tpes.forall(isKnown)
+
+      if (allKnown) {
+        TypeReduction.lookupMethod(tpe, method.name, tpes, mvar.loc) match {
+          case ResolutionResult2.Resolved(tpe) =>
+            val subst = Substitution.singleton(mvar.sym, tpe)
+            Result.Ok(ResolutionResult(subst @@ subst0, Nil, progress = true))
+          case ResolutionResult2.MethodNotFound() => ??? // TODO: Return Result.Err
+          case ResolutionResult2.NoProgress => ???            // TODO: Cannot happen anymore?
+        }
+
+      } else {
+        Result.Ok(ResolutionResult(subst0, List(constr0), progress = false))
+      }
+    case TypeConstraint.EqJvmConstructor(mvar, clazz, tpes, prov) =>
+      throw InternalCompilerException(s"Unexpected java constructor invocation.", prov.loc)
     case TypeConstraint.Trait(sym, tpe, loc) =>
       resolveTraitConstraint(sym, subst0(tpe), renv, loc).map {
         case (constrs, progress) => ResolutionResult(subst0, constrs, progress)
@@ -505,6 +532,8 @@ object ConstraintSolver {
   private def getFirstError(deferred: List[TypeConstraint], renv: RigidityEnv)(implicit flix: Flix): Option[TypeError] = deferred match {
     case Nil => None
     case TypeConstraint.Equality(tpe1, tpe2, prov) :: _ => Some(toTypeError(UnificationError.MismatchedTypes(tpe1, tpe2), prov))
+    case TypeConstraint.EqJvmConstructor(mvar, clazz, tpes, prov) :: _ => Some(toTypeError(UnificationError.MismatchedTypes(mvar.baseType, Type.getFlixType(clazz)), prov))
+    case TypeConstraint.EqJvmMethod(mvar, tpe, method, tpes, prov) :: _ => Some(toTypeError(UnificationError.MismatchedTypes(mvar.baseType, tpe), prov))
     case TypeConstraint.Trait(sym, tpe, loc) :: _ => Some(mkMissingInstance(sym, tpe, renv, loc))
     case TypeConstraint.Purification(_, _, _, _, nested) :: _ => getFirstError(nested, renv)
   }
