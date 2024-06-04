@@ -32,7 +32,6 @@ import java.util.regex.{PatternSyntaxException, Pattern => JPattern}
 import scala.annotation.tailrec
 import scala.collection.immutable.{::, List, Nil}
 import scala.collection.mutable.ArrayBuffer
-import scala.jdk.CollectionConverters._
 
 /**
   * Weeder2 walks a [[Tree]], validates it and thereby transforms it into a [[WeededAst]].
