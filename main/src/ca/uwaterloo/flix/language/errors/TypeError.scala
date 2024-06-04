@@ -63,25 +63,35 @@ object TypeError {
   /**
    * Java method not found type error.
    *
-   * @param oTpe    the type of the receiver object.
-   * @param mTpe    the type of the method, i.e., of its arguments.
+   * @param tpe0    the type of the receiver object.
+   * @param tpes    the types of the arguments.
    * @param methods a list of possible candidate methods on the type of the receiver object.
    * @param renv    the rigidity environment.
    * @param loc     the location where the error occured.
    */
-  case class MethodNotFound(methodName: String, oTpe: Type, mTpe: Type, methods: List[JvmMethod], renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class MethodNotFound(methodName: String, tpe0: Type, tpes: List[Type], methods: List[JvmMethod], renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     // TODO INTEROP better comment, e.g., list possible methods
-    def summary: String = s"Java method with type '$mTpe' in type '$oTpe' not found."
+    def summary: String = s"Java method '$methodName' in type '$tpe0' with arguments types '${tpes.toString}' not found."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Java method '$methodName' with signature '${red(formatType(mTpe, Some(renv)))}' from '${red(formatType(oTpe, Some(renv)))}' not found.
+         |>> Java method '$methodName' from type '${red(formatType(tpe0, Some(renv)))}' with arguments types '${tpes.map( t => red(formatType(t, Some(renv))).mkString(", "))}}' not found.
          |
          |${code(loc, s"java method '${methodName} method not found")}
          |""".stripMargin
     }
   }
+
+  /**
+   * Unresolved method type error.
+   * This is a dummy error used in java method type reconstruction for invokeMethod2.
+   */
+  case class UnresolvedMethod(loc: SourceLocation) extends TypeError with Recoverable {
+    def summary: String = s"Unresolved method"
+    def message(formatter: Formatter): String = s"Unresolved method"
+  }
+
 
   /**
     * Mismatched Arity.
