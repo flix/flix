@@ -676,7 +676,7 @@ object SemanticTokensProvider {
     case TypeConstructor.Native(_) => true
     case TypeConstructor.JvmConstructor(_) => false
     case TypeConstructor.JvmMethod(_) => false
-    case TypeConstructor.MethodReturnType(arity) => false
+    case TypeConstructor.MethodReturnType() => false
     case TypeConstructor.StaticMethodReturnType(clazz, name, arity) => false
     case TypeConstructor.Array => true
     case TypeConstructor.Vector => true

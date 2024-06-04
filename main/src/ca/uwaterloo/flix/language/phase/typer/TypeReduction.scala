@@ -107,7 +107,7 @@ object TypeReduction {
    */
   private def simplifyJava(tpe: Type, renv0: RigidityEnv, loc: SourceLocation)(implicit flix: Flix): Result[(Type, Boolean), TypeError] = {
     tpe.typeConstructor match {
-      case Some(TypeConstructor.MethodReturnType(_)) =>
+      case Some(TypeConstructor.MethodReturnType()) =>
         val methodType = tpe.typeArguments.head
         methodType match {
           case Type.Cst(TypeConstructor.JvmMethod(method), _) => Result.Ok(Type.getFlixType(method.getReturnType), true)
