@@ -46,6 +46,14 @@ instance Testable[Bool] {
         result({ok = Some(b), stamp = Nil, arguments = Nil})
 }
 
+instance Testable[Option[a]] with Testable[a] {
+    pub def property(o: Option[a]): Property =
+        match o {
+            case Some(x) => Testable.property(x),
+            case None => result(nothing())
+        }
+}
+
 pub enum TestableResult(TResult)
 
 instance Testable[TestableResult] {
@@ -99,7 +107,7 @@ instance Testable[TFunc4[a, b, c, d, e]] with Arbitrary[a], Arbitrary[b], Arbitr
         forAll4(Arbitrary.arbitrary(), Arbitrary.arbitrary(), Arbitrary.arbitrary(), Arbitrary.arbitrary(), func)
 }
 
-
+/// Creates a property from one generator and a testable function
 pub def forAll(aGen: Gen[a], f: a -> b): Property with ToString[a], Testable[b] =
     Property.Property(
         forM (
@@ -109,7 +117,7 @@ pub def forAll(aGen: Gen[a], f: a -> b): Property with ToString[a], Testable[b] 
             addArgument(a, res)
         )
     )
-
+/// Creates a property from two generators and a testable function
 pub def forAll2(aGen: Gen[a], bGen: Gen[b], f: (a, b) -> c): Property with ToString[a], ToString[b], Testable[c] =
     Property.Property(
         forM (
@@ -120,7 +128,7 @@ pub def forAll2(aGen: Gen[a], bGen: Gen[b], f: (a, b) -> c): Property with ToStr
             addArgument(a, res) |> addArgument(b)
         )
     )
-
+/// Creates a property from three generators and a testable function
 pub def forAll3(aGen: Gen[a], bGen: Gen[b], cGen: Gen[c], f: (a, b, c) -> d): Property with ToString[a], ToString[b], ToString[c], Testable[d] =
     Property.Property(
         forM (
@@ -132,7 +140,7 @@ pub def forAll3(aGen: Gen[a], bGen: Gen[b], cGen: Gen[c], f: (a, b, c) -> d): Pr
             addArgument(a, res) |> addArgument(b) |> addArgument(c)
         )
     )
-
+/// Creates a property from four generators and a testable function
 pub def forAll4(aGen: Gen[a], bGen: Gen[b], cGen: Gen[c], dGen: Gen[d], f: (a, b, c, d) -> e): Property with ToString[a], ToString[b], ToString[c], ToString[d], Testable[e] =
     Property.Property(
         forM (
@@ -146,6 +154,7 @@ pub def forAll4(aGen: Gen[a], bGen: Gen[b], cGen: Gen[c], dGen: Gen[d], f: (a, b
         )
     )
 
+/// Adds an argument to a result
 pub def addArgument(arg: a, res: TResult): TResult with ToString[a] =
     let aString = ToString.toString(arg);
     {arguments = List.append(res.arguments, aString :: Nil) | res}
@@ -156,6 +165,7 @@ pub def implies(b: Bool, x: t): Property with Testable[t] =
         case false => Testable.property()
     }
 
+/// Alias for `implies`
 pub def ==>(b: Bool, x: t): Property with Testable[t] =
     implies(b, x)
 

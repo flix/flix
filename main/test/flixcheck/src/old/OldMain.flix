@@ -10,7 +10,7 @@ def splitRand(r: Int32): (Int32, Int32) =
         let r2 = Int32.remainder(246049789 * r, 268435399);
         (r1, r2)
 
-def main(): Unit \ IO =
+def mainOld(): Unit \ IO =
     // let gen: Gen[Float32] = Arbitrary.arbitrary();
     // let ll = testNTimes(200, 10, 123456789, gen, true);
     // let sumOfPos = List.foldLeft((acc, x) -> if (x > 0.0f32) acc + 1 else acc, 0, ll);

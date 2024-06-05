@@ -1,6 +1,6 @@
 
 use Monad.{>>=}
-use SplittableRandom.{split, nextBool, nextInt32, nextFloat64}
+use SplittableRandom.{split, nextBool, nextInt32, nextInt64, nextFloat32, nextFloat64}
 
 pub type alias Rand = SplittableRandom
 
@@ -41,6 +41,7 @@ instance Monad[Gen] {
 pub def return(x: a): Gen[a] = 
     Gen.Gen(_ -> _ -> unchecked_cast(x as _ \ IO))
 
+/// Applies the generator to the given size and random number generator.
 pub def applyGen(gen: Gen[a], size: Int32, rand: Rand): a \ IO =
     match gen {
         case Gen.Gen(g) => g(size, rand)
@@ -99,6 +100,10 @@ pub def frequency(xs: Nel[(Int32, Gen[a])]): Gen[a] =
     let total = Nel.foldLeft((acc, x) -> acc + fst(x), 0, xs);
     chooseInt(1, total) >>= (n -> pick(n, xs))
 
+pub def lazyFrequency(xs: Nel[(Int32, Lazy[Gen[a]])]): Gen[a] =
+    let total = Nel.foldLeft((acc, x) -> acc + fst(x), 0, xs);
+    chooseInt(1, total) >>= (n -> pick(n, xs))
+
 /// Returns a randomly generated value of type `a` based on the given frequency distribution.
 ///
 /// `n` is the number used to select a generator based on its frequency.
@@ -106,34 +111,72 @@ pub def frequency(xs: Nel[(Int32, Gen[a])]): Gen[a] =
 /// `nel` is the non-empty list of tuples containing frequencies and generators.
 ///
 /// Returns a randomly generated value of type `a`.
-pub def pick(n: Int32, nel: Nel[(Int32, Gen[a])]): Gen[a] =
+def pick(n: Int32, nel: Nel[(Int32, b)]): Gen[a] =
     match nel {
         case Nel.Nel((k, gen), _) if (n <= k) => 
-            gen,
+            typematch gen {
+                case g: Lazy[Gen[a]] => force g,
+                case g: Gen[a] => g,
+                case _:_ => unreachable!() 
+            }
         case Nel.Nel((k, _), y :: ys) =>
             pick(n-k, Nel.Nel(y, ys))
         case Nel.Nel((_, _), Nil) =>
             // This should never happen as the sum of all frequencies are equal to n.
             unreachable!()
-    }
+}
 
-/// Returns a Generator that uniformly generates values in the interval [lower, upper]
+/// Returns a Generator that uniformly generates values in the interval [lower, upper] for Int8
+pub def chooseInt8(lower: Int32, upper: Int32): Gen[Int8] =
+    Gen.Gen(_ -> rand ->
+        Int32.clampToInt8(
+            {min = Int8.minValue()}, 
+            {max = Int8.maxValue()},         
+            nextInt32(rand, lower, upper)
+        )
+    )
+/// Returns a Generator that uniformly generates values in the interval [lower, upper] for Int16
+pub def chooseInt16(lower: Int32, upper: Int32): Gen[Int16] =
+    Gen.Gen(_ -> rand ->
+        Int32.clampToInt16(
+            {min = Int16.minValue()}, 
+            {max = Int16.maxValue()}, 
+            nextInt32(rand, lower, upper)
+        )
+    )
+
+/// Returns a Generator that uniformly generates values in the interval [lower, upper] for Int32
 pub def chooseInt(lower: Int32, upper: Int32): Gen[Int32] =
     Gen.Gen(_ -> rand ->
         nextInt32(rand, lower, upper + 1)
     )
 
+/// Returns a Generator that uniformly generates values in the interval [lower, upper] for Int64
+pub def chooseInt64(lower: Int64, upper: Int64): Gen[Int64] =
+    Gen.Gen(_ -> rand ->
+        nextInt64(rand, lower, upper + 1i64)
+    )
+            
 /// Returns a generator that uniformly generates a boolean value.
 pub def chooseBool(): Gen[Bool] =
     Gen.Gen(_ -> rand ->
         nextBool(rand)
     )
 
-/// Returns a generator that uniformly generates a float value in the interval [lower, upper]
-pub def chooseFloat(lower: Float64, upper: Float64): Gen[Float64] =
+/// Returns a generator that uniformly generates a float32 value in the interval [lower, upper[ where the upper bound is exclusive.
+pub def chooseFloat32(lower: Float32, upper: Float32): Gen[Float32] =
+    Gen.Gen(_ -> rand ->
+        nextFloat32(rand, lower, upper)
+    )
+
+/// Returns a generator that uniformly generates a float64 value in the interval [lower, upper[ where the upper bound is exclusive.
+pub def chooseFloat64(lower: Float64, upper: Float64): Gen[Float64] =
     Gen.Gen(_ -> rand ->
         nextFloat64(rand, lower, upper)
     )
+
+pub def chooseBigInt(lower: Int64, upper: Int64): Gen[BigInt] =
+    Functor.map(Int64.toBigInt, chooseInt64(lower, upper))
 
 /// Returns a generator that uniformly generates a lower case character.
 pub def chooseLowerChar(): Gen[Char] =
@@ -150,6 +193,15 @@ pub def chooseUpperChar(): Gen[Char] =
     'I' :: 'J' :: 'K' :: 'L' :: 'M' :: 'N' :: 'O' ::
     'P' :: 'Q' :: 'R' :: 'S' :: 'T' :: 'U' :: 'V' ::
     'W' :: 'X' :: 'Y' :: 'Z' :: Nil))
+
+/// Returns a generator that uniformly generates a character that is not a letter or a digit.
+pub def chooseOtherChar(): Gen[Char] =
+    elements(Nel.Nel('!', 
+    '"' :: '#' :: '$' :: '%' :: '&' :: '\'' :: '(' :: 
+    ')' :: '*' :: '+' :: ',' :: '-' :: '.' :: '/' :: 
+    ':' :: ';' :: '<' :: '=' :: '>' :: '?' :: '@' :: 
+    '[' :: '\\' :: ']' :: '^' :: '_' :: '`' :: '{' :: 
+    '|' :: '}' :: '~' :: Nil))
 
 /// Returns a generator that uniformly generates a string of length `size` with characters generated by `gen`.
 pub def chooseString(size: Int32, gen: Gen[Char]): Gen[String] =
@@ -172,11 +224,37 @@ instance Arbitrary[Unit] {
         Applicative.point()
 }
 
+/// Arbitrary instance for the Int8 type.
+instance Arbitrary[Int8] {
+    pub def arbitrary(): Gen[Int8] =
+        sized(size -> chooseInt8(-size, size))
+}
+
+/// Arbitrary instance for the Int16 type.
+instance Arbitrary[Int16] {
+    pub def arbitrary(): Gen[Int16] =
+        sized(size -> chooseInt16(-size, size))
+}
+
 /// Arbitrary instance for the Int32 type.
 instance Arbitrary[Int32] {
     pub def arbitrary(): Gen[Int32] =
         sized(size -> chooseInt(-size, size))
 }
+
+/// Arbitrary instance for the Int64 type.
+instance Arbitrary[Int64] {
+    pub def arbitrary(): Gen[Int64] =
+        // This is a temporary solution until we can handle the size parameter in something else than Int32
+        chooseInt64(Int64.minValue(), Int64.maxValue() - 1i64)
+}
+/// Arbitrary instance for the BigInt type.
+instance Arbitrary[BigInt] {
+    pub def arbitrary(): Gen[BigInt] =
+        // This is a temporary solution until we have a better way to generate BigInts.
+        chooseBigInt(Int64.minValue(), Int64.maxValue() - 1i64)
+}
+
 
 /// Arbitrary instance for the Bool type.
 instance Arbitrary[Bool] {
@@ -187,20 +265,26 @@ instance Arbitrary[Bool] {
 /// Arbitrary instance for the Char type.
 instance Arbitrary[Char] {
     pub def arbitrary(): Gen[Char] = 
-        chooseUpperChar()
+        oneOf(Nel.Nel(chooseLowerChar(), chooseUpperChar() :: Nil))
+}
+
+/// Arbitrary instance for the Float32 type.
+instance Arbitrary[Float32] {
+    pub def arbitrary(): Gen[Float32] = 
+        sized(size -> chooseFloat32(Int32.toFloat32(-size), Int32.toFloat32(size)))
 }
 
 /// Arbitrary instance for the Float64 type.
 instance Arbitrary[Float64] {
     pub def arbitrary(): Gen[Float64] = 
-        sized(size -> chooseFloat(Int32.toFloat64(-size), Int32.toFloat64(size)))
+        sized(size -> chooseFloat64(Int32.toFloat64(-size), Int32.toFloat64(size)))
 }
 
 /// Arbitrary instance for the String type.
 instance Arbitrary[String] {
     pub def arbitrary(): Gen[String] =
         sized(size ->
-            chooseInt(0, size) >>= (x -> chooseString(x, chooseLowerChar()))
+            chooseInt(0, size) >>= (x -> chooseString(x, oneOf(Nel.Nel(chooseLowerChar(), chooseUpperChar() :: Nil))))
         )
 }
 
@@ -285,4 +369,18 @@ instance Arbitrary[Result[e, t]] with Arbitrary[e], Arbitrary[t] {
                 case false => Err(eGen)
             };
         Applicative.map3(func, chooseBool(), Arbitrary.arbitrary(), Arbitrary.arbitrary())
+}
+
+instance Arbitrary[Set[a]] with Arbitrary[a], Order[a] {
+    pub def arbitrary(): Gen[Set[a]] =
+        sized(size -> 
+            Functor.map(List.toSet, vector(size))
+        )
+}
+
+instance Arbitrary[Map[k, v]] with Arbitrary[k], Order[k], Arbitrary[v] {
+    pub def arbitrary(): Gen[Map[k, v]] =
+        sized(size -> 
+            Functor.map(List.toMap, vector(size))
+        )
 }

@@ -1,5 +1,5 @@
 use Gen.{Gen}
-use SplittableRandom.{split}
+use SplittableRandom.{split, nextInt32}
 
 ///
 /// The configuration of a test
@@ -23,10 +23,14 @@ type alias Config = {
 
 /// A default setting for the config
 ///
-/// The maximum number of tests to run is 100 by default 
+/// The maximum number of tests to run is 100 by default
+///
 /// The maximum number of failed tests before the test is considered failed, 1000 by default
-/// The size of the test is n/2 + 3 by default
+///
+/// The size of the test is n -> n/2 + 3 by default
+///
 /// The every function returns a string with the number of tests and the arguments of the test
+///
 /// The initial seed is None by default, and hence produces a new random seed
 pub def default(): Config = {
     maxTest = 100,
@@ -46,11 +50,12 @@ pub def createConfig(maxTest: Int32, maxFail: Int32, size: Int32 -> Int32, every
 }
 
 /// Generates the test arguments for the test
-pub def generate(size: Int32, rand: SplittableRandom, gen: Gen[a]): a \ IO =
+pub def generate(sizeBound: Int32, rand: SplittableRandom, gen: Gen[a]): a \ IO =
     match gen {
         case Gen.Gen(g) => 
-            let (r1, _) = split(rand);
-            g(size, r1)  
+            let (r1, r2) = split(rand);
+            let size = nextInt32(r1, 0, sizeBound+1);
+            g(size, r2)  
     }
 
 /// A verbose version of the default config, prints more detailed information about the tests
@@ -79,7 +84,7 @@ pub def check(config: Config, x: a): Unit \ IO with Testable[a] =
             tests({initSeed = Some(s) | config}, evaluate(x), SplittableRandom.freshWithSeed(s), 0, 0, Nil)
     }
 
-///The actual testing function when a specific seed is desired
+/// The actual testing function when a specific seed is desired
 pub def checkWithSeed(config: Config, x: a, seed: Int64): Unit \ IO with Testable[a] = 
     let configWithSeed = {initSeed = Some(seed) | config};
     let seededRng = SplittableRandom.freshWithSeed(seed);

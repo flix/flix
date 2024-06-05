@@ -37,11 +37,11 @@ def propWithCollect(): Unit \ IO =
 /// Testing the properties of the List.Transpose function ///
 
 // The transpose of the transpose of a matrix is the matrix itself
-def propSelfInverse(a: List[List[Int32]]): Bool =
+def propSelfInverse2(a: List[List[Int32]]): Bool =
     List.transpose(List.transpose(a)) == a
 
 // When transposed the dimentions should be swapped (2x3 -> 3x2)
-def propDimensions(a: List[List[Int32]]): Bool =
+def propDimensions2(a: List[List[Int32]]): Bool =
     // Helper function for getting the dimensions of a matrix
     def getDimensions(xs: List[List[Int32]]): (Int32, Int32) = (
         let rows = List.length(xs);
@@ -57,7 +57,7 @@ def propDimensions(a: List[List[Int32]]): Bool =
     
 
 // (A + B)^T = A^T + B^T
-def propAddition(a: List[List[Int32]], b: List[List[Int32]]): Bool =
+def propAddition2(a: List[List[Int32]], b: List[List[Int32]]): Bool =
     // Helper function for adding two matrices
     def addMatrix(xs: List[List[Int32]], ys: List[List[Int32]]): List[List[Int32]] = (
         let addFunc = listPair -> List.map(intPair -> fst(intPair) + snd(intPair), List.zip(fst(listPair), snd(listPair)));
@@ -66,17 +66,17 @@ def propAddition(a: List[List[Int32]], b: List[List[Int32]]): Bool =
     List.transpose(addMatrix(a, b)) == addMatrix(List.transpose(a), List.transpose(b))
     
 
-def testTranspose(): Unit \ IO =
+def testTranspose2(): Unit \ IO =
     let matrixGen: Gen[List[List[Int32]]] = 
         sized(size -> 
             chooseInt(1, size) >>= l -> sizedListOf(l, vector(l))
         );
     // Check that the matrix self inverse property holds
-    flixCheck(forAll(matrixGen, propSelfInverse));
+    flixCheck(forAll(matrixGen, propSelfInverse2));
     // Check that the matrix dimensions property holds
-    flixCheck(forAll(matrixGen, propDimensions));
+    flixCheck(forAll(matrixGen, propDimensions2));
     // Check that the matrix addition property holds
-    flixCheck(forAll2(matrixGen, matrixGen, propAddition))
+    flixCheck(forAll2(matrixGen, matrixGen, propAddition2))
 
 
 def testClassify(): Unit \ IO =
@@ -142,3 +142,56 @@ def testModuloBiggerThan(): Unit \ IO =
     // Tests that x modulo y equals x, when y is larger than x, and both are positive/larger than 1
     def propModulo(x: Int32, y: Int32) = implies(y > x and y > 1 and x > 1, Int32.modulo(x, y) == x);
     verboseCheck(TFunc2.TFunc2(propModulo))
+
+def testDistribution(): Unit \ IO =
+    // tests the size parameter
+    def propDist(n: Int32): Property = (
+        (n == n) |>
+        classify(n < 0, "negative") |>
+        classify(n == 0, "zero") |>
+        classify(n > 0, "positive")
+    );
+    flixCheck(forAll(chooseInt(-10, 10), propDist))
+
+def testSizes(): Unit \ IO =
+    println("Testing n*2");
+    check({size = n -> n*2 | default()}, TFunc.TFunc(x -> x < 100));
+    println("Testing _ -> 100");
+    check({size = _ -> 100 | default()}, TFunc.TFunc(x -> x < 100));
+    println("Testing n/2+3");
+    check({size = n -> n/2+3 | default()}, TFunc.TFunc(x -> x < 100));
+    println("Testing n/3+1");
+    check({size = n -> n/3+1 | default()}, TFunc.TFunc(x -> x < 100));
+    println("Testing n*2 + 1");
+    check({size = n -> n*2 + 1 | default()}, TFunc.TFunc(x -> x < 100));
+    println("Testing n, 1000 tests, should stop after a while");
+    check({size = n -> n, maxTest = 1000 | verbose()}, TFunc.TFunc(x -> x < 100));
+    println("Testing n -> 15");
+    check({size = _ -> 15 | default()}, TFunc.TFunc(x -> x < 100))
+
+def testResizeUI(): Unit \ IO =
+    println("Testing standard call");
+    flixCheck(TFunc.TFunc(x -> x < 80));
+    // tests the resize function
+    let gen = resize(25, chooseInt(0, 100));
+    let prop = forAll(gen, x -> x < 80);
+    flixCheck(prop)
+
+def testSizedUI(): Unit \ IO =
+    println("Testing standard call");
+    flixCheck(TFunc.TFunc(x -> x < 95));
+    // tests the sized function
+    println("Testing sized");
+    let gen = sized(n -> chooseInt(0, n));
+    let prop = forAll(gen, x -> x < 95);
+    flixCheck(prop)
+
+
+def testResize2(): Unit \ IO =
+    // tests the resize function
+    let gen = resize(6000, chooseInt(9, 10));
+    let prop = forAll(gen, x -> x < 80);
+    flixCheck(prop);
+    let gen2 = resize(5, chooseInt(1, 4));
+    let prop2 = forAll(gen2, x -> x < 80);
+    verboseCheck(prop2)

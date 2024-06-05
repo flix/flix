@@ -123,11 +123,11 @@ mod FlixCheck2 {
     /// Returns a generator that generates a list of length `length` with values of type `a`.
     pub def sizedListOf(length: Int32, gen: Gen[a]): Gen[List[a]] =
         match length {
-            case 0 => 
+            case x if (x <= 0) => 
                 return(Nil)
             case _ => 
-                let func = x -> fmap(y -> x :: y, sizedListOf(length - 1, gen));
-                bind(func, gen)
+                let func = (x, xs) -> x :: xs;
+                liftM2(func, gen, sizedListOf(length - 1, gen))
         }
 
         
@@ -166,17 +166,17 @@ mod FlixCheck2 {
         }
     
     /// Lifts a function with 2 parameters to a monadic context
-    pub def liftM2(f: a -> b -> c, aGen: Gen[a], bGen: Gen[b]): Gen[c] =
-        let func = x -> fmap(y -> f(x, y), bGen);
+    pub def liftM2(f: (a, b) -> c, aGen: Gen[a], bGen: Gen[b]): Gen[c] =
+        let func = x -> fmap(f(x), bGen);
         bind(func, aGen)
 
     /// Lifts a function with 3 parameters to a monadic context
-    pub def liftM3(f: a -> b -> c -> d, aGen: Gen[a], bGen: Gen[b], cGen: Gen[c]): Gen[d] =
+    pub def liftM3(f: (a, b, c) -> d, aGen: Gen[a], bGen: Gen[b], cGen: Gen[c]): Gen[d] =
         let func = x -> liftM2(f(x), bGen, cGen);
         bind(func, aGen)
     
     /// Lifts a function with 4 parameters to a monadic context
-    pub def liftM4(f: a -> b -> c -> d -> e, aGen: Gen[a], bGen: Gen[b], cGen: Gen[c], dGen: Gen[d]): Gen[e] =
+    pub def liftM4(f: (a, b, c, d) -> e, aGen: Gen[a], bGen: Gen[b], cGen: Gen[c], dGen: Gen[d]): Gen[e] =
         let func = x -> liftM3(f(x), bGen, cGen, dGen);
         bind(func, aGen)
 
@@ -215,6 +215,9 @@ mod FlixCheck2 {
         'I' :: 'J' :: 'K' :: 'L' :: 'M' :: 'N' :: 'O' ::
         'P' :: 'Q' :: 'R' :: 'S' :: 'T' :: 'U' :: 'V' ::
         'W' :: 'X' :: 'Y' :: 'Z' :: Nil))
+
+    pub def randomPair(aGen: Gen[a], bGen: Gen[b]): Gen[(a, b)] =
+        liftM2((x, y) -> (x, y), aGen, bGen)
 
 
     // Arbitrary trait
@@ -273,7 +276,7 @@ mod FlixCheck2 {
 
     instance Arbitrary[(a, b)] with Arbitrary[a], Arbitrary[b] {
         pub def arbitrary(): Gen[(a, b)] =
-            liftM2((x, y) -> (x, y), Arbitrary.arbitrary(), Arbitrary.arbitrary())
+            randomPair(Arbitrary.arbitrary(), Arbitrary.arbitrary())
 
         pub def coArbitrary(x: (a, b)): Gen[c] -> Gen[c] = ???
     }

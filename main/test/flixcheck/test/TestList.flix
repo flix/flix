@@ -1,3 +1,4 @@
+use Monad.{>>=}
 // Definitions for List.*
 pub def runAllTests(): Unit \ IO =
     testAp();
@@ -25,7 +26,8 @@ pub def runAllTests(): Unit \ IO =
     testFoldRight();
     testFoldRight2();
 
-    testReverse()
+    testReverse();
+    testTranspose()
 
 // ap
 pub def testAp(): Unit \ IO =
@@ -203,8 +205,9 @@ pub def testEmpty(): Unit \ IO =
     }
 
 // enumerator
-// TODO ##########################
-//  Returns an iterator over l zipped with the indices of the elements.
+// TODO when effects are implemented
+//
+// Returns an iterator over l zipped with the indices of the elements.
 //
 // Implementation:
 // pub def enumerator(rc: Region[r], l: List[a]): Iterator[(Int32, a), r, r] \ r =
@@ -580,6 +583,7 @@ pub def testFoldRight2(): Unit \ IO =
     }
 
 // foldRightWithCont
+
     // ///
     // /// Applies `f` to a start value `z` and all elements in `l` going from right to left.
     // ///
@@ -591,7 +595,7 @@ pub def testFoldRight2(): Unit \ IO =
     //     case x :: xs => f(x, _ -> foldRightWithCont(f, z, xs))
 //     // }
 // pub def testFoldRightWithCont(): Unit \ IO =
-// TODO, I have no clue to how to test this yet
+// TODO
 
 pub def devTest(): Unit \ IO  =
 
@@ -690,7 +694,69 @@ def testReverse(): Unit \ IO =
 // toSet
 // toString
 // toVector
+
 // transpose
+/// Testing the properties of the List.Transpose function ///
+
+def testTranspose(): Unit \ IO =
+    let matrixGen: Gen[List[List[Int32]]] = 
+        sized(size -> 
+            chooseInt(1, size) >>= l -> sizedListOf(l, vector(l))
+        );
+    // Check that the matrix self inverse property holds
+    flixCheck(forAll(matrixGen, propSelfInverse));
+    // Check that the matrix dimensions property holds
+    flixCheck(forAll(matrixGen, propDimensions));
+    // Check that the matrix addition property holds
+    flixCheck(forAll2(matrixGen, matrixGen, propAddition));
+    // Check that the matrix scalar multiplication property holds
+    flixCheck(forAll2(matrixGen, chooseInt(0, 100), propScalarMultiplication));
+    // Check that the matrix multiplication property holds
+    flixCheck(forAll2(matrixGen, matrixGen, propMatrixMultiplication))
+
+// The transpose of the transpose of a matrix is the matrix itself
+def propSelfInverse(a: List[List[Int32]]): Bool =
+    List.transpose(List.transpose(a)) == a
+
+// When transposed the dimensions should be swapped (2x3 -> 3x2)
+def propDimensions(a: List[List[Int32]]): Bool =
+    // Helper function for getting the dimensions of a matrix
+    def getDimensions(xs: List[List[Int32]]): (Int32, Int32) = (
+        let rows = List.length(xs);
+        let cols = match List.head(xs) {
+            case Some(row) => List.length(row),
+            case None => 0
+        };
+        (rows, cols)
+    );
+    let (aRows, aCols) = getDimensions(a);
+    let (a_TRows, a_TCols) = getDimensions(List.transpose(a));  
+    aRows == a_TCols and aCols == a_TRows
+    
+// (A + B)^T = A^T + B^T
+def propAddition(a: List[List[Int32]], b: List[List[Int32]]): Bool =
+    // Helper function for adding two matrices
+    def addMatrix(xs: List[List[Int32]], ys: List[List[Int32]]): List[List[Int32]] = (
+        let addFunc = listPair -> List.map(intPair -> fst(intPair) + snd(intPair), List.zip(fst(listPair), snd(listPair)));
+        List.map(addFunc, List.zip(xs, ys))
+    );
+    List.transpose(addMatrix(a, b)) == addMatrix(List.transpose(a), List.transpose(b))
+    
+// (kA)^T= kA^T
+def propScalarMultiplication(a: List[List[Int32]], k: Int32): Bool =
+    List.transpose(List.map(row -> List.map(x -> k * x, row), a)) == List.map(row -> List.map(x -> k * x, row), List.transpose(a))
+
+// (AB)^T=(B^T)(A^T)
+def propMatrixMultiplication(a: List[List[Int32]], b: List[List[Int32]]): Bool =
+    // Helper function for multiplying two matrices
+    def multiplyMatrix(xs: List[List[Int32]], ys: List[List[Int32]]): List[List[Int32]] = (
+        let multiplyFunc = row -> List.map(col -> List.foldLeft2((acc, x, y) -> acc + x * y, 0, row, col), List.transpose(ys));
+        List.map(multiplyFunc, xs)
+    );
+    List.transpose(multiplyMatrix(a, b)) == multiplyMatrix(List.transpose(b), List.transpose(a))
+
+
+
 // traverse
 // unfold
 // unfoldWithIter

@@ -329,4 +329,17 @@ mod FlixCheck1 {
             resultGenerator(Arbitrary.arbitrary(), Arbitrary.arbitrary())
     }
 
+pub def randomListFaulty(aGen: Gen[a]): Gen[List[a]] =
+    Gen.Gen(size -> rand ->
+        let (r1, r2) = splitRand(rand);
+        match applyGen(chooseBool(), size, r1) {
+            case true => applyGen(aGen, size, r1) :: applyGen(randomListFaulty(aGen), size, r2),
+            case false => Nil
+        }
+    )
+
+pub def testy(): Unit \ IO =
+    let l = randomListFaulty(chooseBool());
+    println(applyGen(l, 1000, 123658))
+
 }

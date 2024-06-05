@@ -43,5 +43,11 @@ mod SplittableRandom {
         import java.util.SplittableRandom.nextDouble(Float64, Float64): Float64 \ IO;
         let SplittableRandom(object) = sr;
         nextDouble(object, origin, bound)
+    
+    /// Returns a pseudorandom Float32 value between the specified origin (inclusive) and the specified bound (exclusive).
+    pub def nextFloat32(sr: SplittableRandom, origin: Float32, bound: Float32): Float32 \ IO =
+        import java.util.SplittableRandom.nextFloat(Float32, Float32): Float32 \ IO;
+        let SplittableRandom(object) = sr;
+        nextFloat(object, origin, bound)
 
 }
