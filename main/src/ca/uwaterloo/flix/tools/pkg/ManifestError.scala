@@ -79,6 +79,16 @@ object ManifestError {
          |""".stripMargin
   }
 
+  case class FlixVersionFormatError(path: Path, lib: String,  version: String) extends ManifestError {
+    override def message(f: Formatter): String = {
+      // Should have package name as well for ease of use.
+      s"""
+         |Unrecognized version format for package ${f.bold(lib)}: ${f.bold(f.red(version))}.
+         |The project file was found at ${f.cyan(if (path == null) "Unknown file path" else path.toString)}
+         |""".stripMargin
+    }
+  }
+
   case class RepositoryFormatError(path: Path, repository: String) extends ManifestError {
     override def message(f: Formatter): String =
       s"""
