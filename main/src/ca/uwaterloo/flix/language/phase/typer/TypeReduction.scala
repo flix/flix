@@ -88,7 +88,7 @@ object TypeReduction {
                 // If it's an associated type, it's ok. It may be reduced later to a concrete type.
                 case _: Type.AssocType => Result.Ok((Type.AssocType(cst, t, kind, loc), p))
                 // Otherwise it's a problem.
-                case baseTpe => Result.Err(ConstraintSolver.mkMissingInstance(cst.sym.clazz, baseTpe, renv, loc))
+                case baseTpe => Result.Err(ConstraintSolver.mkMissingInstance(cst.sym.trt, baseTpe, renv, loc))
               }
             // We could reduce! Simplify further if possible.
             case Some(t) => simplify(t, renv0, loc).map { case (res, _) => (res, true) }

@@ -362,7 +362,7 @@ object Kinder {
     */
   private def visitAssocTypeDef(d0: ResolvedAst.Declaration.AssocTypeDef, trtKind: Kind, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.AssocTypeDef, KindError] = d0 match {
     case ResolvedAst.Declaration.AssocTypeDef(doc, mod, symUse, arg0, tpe0, loc) =>
-      val trt = root.traits(symUse.sym.clazz)
+      val trt = root.traits(symUse.sym.trt)
       val assocSig = trt.assocs.find(assoc => assoc.sym == symUse.sym).get
       val tpeKind = assocSig.kind
       val argVal = visitType(arg0, trtKind, kenv, taenv, root)
@@ -1176,7 +1176,7 @@ object Kinder {
       }
 
     case UnkindedType.AssocType(cst, arg0, loc) =>
-      val trt = root.traits(cst.sym.clazz)
+      val trt = root.traits(cst.sym.trt)
       // TODO ASSOC-TYPES maybe have dedicated field in root for assoc types
       trt.assocs.find(_.sym == cst.sym).get match {
         case ResolvedAst.Declaration.AssocTypeSig(_, _, _, _, k0, _, _) =>
@@ -1467,7 +1467,7 @@ object Kinder {
     */
   private def inferEqualityConstraint(econstr: ResolvedAst.EqualityConstraint, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindEnv, KindError] = econstr match {
     case ResolvedAst.EqualityConstraint(Ast.AssocTypeConstructor(sym, _), tpe1, tpe2, _) =>
-      val trt = root.traits(sym.clazz)
+      val trt = root.traits(sym.trt)
       val kind1 = getTraitKind(trt)
       val kind2 = trt.assocs.find(_.sym == sym).get.kind
       val kenv1Val = inferType(tpe1, kind1, kenv, taenv, root)
@@ -1526,7 +1526,7 @@ object Kinder {
       }
 
     case UnkindedType.AssocType(cst, arg, _) =>
-      val trt = root.traits(cst.sym.clazz)
+      val trt = root.traits(cst.sym.trt)
       val kind = getTraitKind(trt)
       inferType(arg, kind, kenv0, taenv, root)
 
