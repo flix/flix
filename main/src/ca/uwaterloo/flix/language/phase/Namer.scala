@@ -400,9 +400,9 @@ object Namer {
   /**
     * Performs naming on the given associated type signature `s0`.
     */
-  private def visitAssocTypeSig(s0: DesugaredAst.Declaration.AssocTypeSig, clazz: Symbol.TraitSym, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.AssocTypeSig, NameError] = s0 match {
+  private def visitAssocTypeSig(s0: DesugaredAst.Declaration.AssocTypeSig, trt: Symbol.TraitSym, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.AssocTypeSig, NameError] = s0 match {
     case DesugaredAst.Declaration.AssocTypeSig(doc, mod, ident, tparams0, kind0, tpe0, loc) =>
-      val sym = Symbol.mkAssocTypeSym(clazz, ident)
+      val sym = Symbol.mkAssocTypeSym(trt, ident)
       val tparam = getTypeParam(tparams0)
       val kind = visitKind(kind0)
       val tpeVal = traverseOpt(tpe0)(visitType)
@@ -468,9 +468,9 @@ object Namer {
     * Performs naming on the given type constraint `tconstr`.
     */
   private def visitTypeConstraint(tconstr: DesugaredAst.TypeConstraint, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.TypeConstraint, NameError] = tconstr match {
-    case DesugaredAst.TypeConstraint(clazz, tparam0, loc) =>
+    case DesugaredAst.TypeConstraint(trt, tparam0, loc) =>
       mapN(visitType(tparam0)) {
-        tparam => NamedAst.TypeConstraint(clazz, tparam, loc)
+        tparam => NamedAst.TypeConstraint(trt, tparam, loc)
       }
   }
 

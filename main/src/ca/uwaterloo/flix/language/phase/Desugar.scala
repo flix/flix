@@ -94,12 +94,12 @@ object Desugar {
     * Desugars the given [[WeededAst.Declaration.Instance]] `instance0`.
     */
   private def visitInstance(instance0: WeededAst.Declaration.Instance)(implicit flix: Flix): DesugaredAst.Declaration.Instance = instance0 match {
-    case WeededAst.Declaration.Instance(doc, ann, mod, clazz, tpe0, tconstrs0, assocs0, defs0, loc) =>
+    case WeededAst.Declaration.Instance(doc, ann, mod, trt, tpe0, tconstrs0, assocs0, defs0, loc) =>
       val tpe = visitType(tpe0)
       val tconstrs = tconstrs0.map(visitTypeConstraint)
       val assocs = assocs0.map(visitAssocTypeDef)
       val defs = defs0.map(visitDef)
-      DesugaredAst.Declaration.Instance(doc, ann, mod, clazz, tpe, tconstrs, assocs, defs, loc)
+      DesugaredAst.Declaration.Instance(doc, ann, mod, trt, tpe, tconstrs, assocs, defs, loc)
   }
 
   /**
@@ -188,9 +188,9 @@ object Desugar {
     * Desugars the given [[WeededAst.TypeConstraint]] `tconstr0`.
     */
   private def visitTypeConstraint(tconstr0: WeededAst.TypeConstraint): DesugaredAst.TypeConstraint = tconstr0 match {
-    case WeededAst.TypeConstraint(clazz, tpe0, loc) =>
+    case WeededAst.TypeConstraint(trt, tpe0, loc) =>
       val tpe = visitType(tpe0)
-      DesugaredAst.TypeConstraint(clazz, tpe, loc)
+      DesugaredAst.TypeConstraint(trt, tpe, loc)
   }
 
   /**
