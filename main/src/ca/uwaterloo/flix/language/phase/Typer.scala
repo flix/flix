@@ -169,6 +169,7 @@ object Typer {
     val (tpe, eff) = ConstraintGen.visitExp(defn.exp)
     val infRenv = context.getRigidityEnv
     val infTconstrs = context.getTypeConstraints
+    PaperStats.addEffCount(defn.sym, infTconstrs)
     val infResult = ConstraintSolver.InfResult(infTconstrs, tpe, eff, infRenv)
     val substVal = ConstraintSolver.visitDef(defn, infResult, renv0, tconstrs0, traitEnv, eqEnv, root)
     val assocVal = checkAssocTypes(defn.spec, tconstrs0, traitEnv)
