@@ -28,7 +28,7 @@ class TestAssocTypeUnification extends AnyFunSuite with TestUtils {
   private implicit val flix: Flix = new Flix()
   private val loc: SourceLocation = SourceLocation.Unknown
   private val CollSym: Symbol.TraitSym = Symbol.mkTraitSym("Coll")
-  private val ElemSym: Symbol.AssocTypeSym = Symbol.mkAssocTypeSym(CollSym, Name.Ident(SourcePosition.Unknown, "Elem", SourcePosition.Unknown))
+  private val ElemSym: Symbol.AssocTypeSym = Symbol.mkAssocTypeSym(CollSym, Name.Ident("Elem", SourceLocation.Unknown))
   private val ElemCst: Ast.AssocTypeConstructor = Ast.AssocTypeConstructor(ElemSym, loc)
 
   test("TestUnifyTypes.01") {
