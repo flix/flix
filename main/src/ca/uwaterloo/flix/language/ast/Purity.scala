@@ -121,23 +121,23 @@ object Purity {
     */
   def fromType(eff: Type)(implicit universe: Set[Symbol.EffectSym]): Purity = {
     evaluateFormula(eff) match {
-      case set if isPure(set) => Purity.Pure
-      case set if isImpure(set) => Purity.Impure
+      case set if representedByPure(set) => Purity.Pure
+      case set if representedByImpure(set) => Purity.Impure
       case _ => Purity.ControlImpure
     }
   }
 
   /**
-    * Returns `true` if `set` is represented by [[Purity.Pure]].
+    * Returns `true` if `set` is precisely represented by [[Purity.Pure]].
     */
-  private def isPure(set: Set[Symbol.EffectSym]): Boolean = {
+  private def representedByPure(set: Set[Symbol.EffectSym]): Boolean = {
     set.isEmpty
   }
 
   /**
-    * Returns `true` if `set` is represented by [[Purity.Impure]].
+    * Returns `true` if `set` is precisely represented by [[Purity.Impure]].
     */
-  private def isImpure(set: Set[Symbol.EffectSym]): Boolean = {
+  private def representedByImpure(set: Set[Symbol.EffectSym]): Boolean = {
     set.sizeIs == 1 &&
       set.exists(sym => sym.namespace == Nil && sym.name == "IO")
   }
