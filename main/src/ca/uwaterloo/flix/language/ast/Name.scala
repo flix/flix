@@ -28,7 +28,7 @@ object Name {
     */
   def mkQName(fqn: String, loc: SourceLocation = SourceLocation.Unknown): QName = {
     if (!fqn.contains('.'))
-      return QName(Name.RootNS, Ident(loc.sp1, fqn, loc.sp2), loc)
+      return QName(Name.RootNS, Ident(fqn, loc), loc)
 
     val index = fqn.indexOf('.')
     val parts = fqn.substring(0, index).split('/').toList
@@ -40,26 +40,26 @@ object Name {
     * Creates a qualified name from the given namespace `ns` and name `name`.
     */
   def mkQName(ns: List[String], name: String, loc: SourceLocation): QName = {
-    val nname = NName(ns.map(t => Name.Ident(loc.sp1, t, loc.sp2)), loc)
-    val ident = Ident(loc.sp1, name, loc.sp2)
+    val nname = NName(ns.map(t => Name.Ident(t, loc)), loc)
+    val ident = Ident(name, loc)
     QName(nname, ident, loc)
   }
 
   /**
     * Converts the given identifier `ident` to a label.
     */
-  def mkLabel(ident: Ident): Label = Label(ident.name, SourceLocation(isReal = true, ident.sp1, ident.sp2))
+  def mkLabel(ident: Ident): Label = Label(ident.name, ident.loc)
 
   /**
     * Converts the given identifier `ident` to a predicate name.
     */
-  def mkPred(ident: Ident): Pred = Pred(ident.name, SourceLocation(isReal = true, ident.sp1, ident.sp2))
+  def mkPred(ident: Ident): Pred = Pred(ident.name, ident.loc)
 
   /**
     * Builds an unlocated name from the given namespace parts.
     */
   def mkUnlocatedNName(parts: List[String]): NName = {
-    val idents = parts.map(Ident(SourcePosition.Unknown, _, SourcePosition.Unknown))
+    val idents = parts.map(Ident(_, SourceLocation.Unknown))
     NName(idents, SourceLocation.Unknown)
   }
 
@@ -71,11 +71,10 @@ object Name {
   /**
     * Identifier.
     *
-    * @param sp1  the position of the first character in the identifier.
     * @param name the identifier string.
-    * @param sp2  the position of the last character in the identifier.
+    * @param loc  the source location of the identifier.
     */
-  case class Ident(sp1: SourcePosition, name: String, sp2: SourcePosition) {
+  case class Ident(name: String, loc: SourceLocation) {
     /**
       * Returns `true`if `this` identifier is a wildcard.
       */
@@ -90,11 +89,6 @@ object Name {
       * Returns `true` if `this` identifier is lowercase.
       */
     def isLower: Boolean = name.charAt(0).isLower
-
-    /**
-      * The source location of the identifier.
-      */
-    def loc: SourceLocation = SourceLocation(isReal = true, sp1, sp2)
 
     /**
       * Two identifiers are equal if they have the same name.
@@ -113,20 +107,6 @@ object Name {
       * Human readable representation.
       */
     override def toString: String = name
-
-    /**
-      * Convert this Ident to synthetic
-      */
-    def asSynthetic = new SyntheticIdent(sp1, name, sp2)
-  }
-
-  /**
-    * Synthetic Identifier
-    *
-    * Behaves just like Ident, but reports its `loc` as synthetic.
-    */
-  class SyntheticIdent(sp1: SourcePosition, name: String, sp2: SourcePosition) extends Ident(sp1, name, sp2) {
-    override def loc: SourceLocation = SourceLocation(isReal = false, sp1, sp2)
   }
 
   /**

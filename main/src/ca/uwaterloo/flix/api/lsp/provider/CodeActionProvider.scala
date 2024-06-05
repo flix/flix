@@ -62,7 +62,7 @@ object CodeActionProvider {
       mkUnusedDefCodeAction(sym, uri) :: Nil
     case RedundancyError.UnusedFormalParam(sym) if onSameLine(range, sym.loc) =>
       mkUnusedParamCodeAction(sym, uri) :: Nil
-    case RedundancyError.UnusedTypeParam(sym) if onSameLine(range, sym.loc) =>
+    case RedundancyError.UnusedTypeParam(sym, _) if onSameLine(range, sym.loc) =>
       mkUnusedTypeParamCodeAction(sym, uri) :: Nil
     case RedundancyError.UnusedEffectSym(sym) if onSameLine(range, sym.loc) =>
       mkUnusedEffectCodeAction(sym, uri) :: Nil
