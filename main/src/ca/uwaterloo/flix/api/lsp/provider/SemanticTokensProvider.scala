@@ -476,11 +476,6 @@ object SemanticTokensProvider {
       val t = SemanticToken(SemanticTokenType.Function, Nil, op.loc)
       Iterator(t) ++ visitExps(exps)
 
-    case Expr.InvokeMethod2(exp, _, exps, _, _, _) =>
-      exps.foldLeft(visitExp(exp)) {
-        case (acc, exp) => acc ++ visitExp(exp)
-      }
-
     case Expr.InvokeConstructor(_, exps, _, _, _) =>
       exps.foldLeft(Iterator.empty[SemanticToken]) {
         case (acc, exp) => acc ++ visitExp(exp)
@@ -679,7 +674,9 @@ object SemanticTokensProvider {
     case TypeConstructor.Enum(_, _) => true
     case TypeConstructor.RestrictableEnum(_, _) => true
     case TypeConstructor.Native(_) => true
-    case TypeConstructor.MethodReturnType(name, arity) => false
+    case TypeConstructor.JvmConstructor(_) => false
+    case TypeConstructor.JvmMethod(_) => false
+    case TypeConstructor.MethodReturnType => false
     case TypeConstructor.StaticMethodReturnType(clazz, name, arity) => false
     case TypeConstructor.Array => true
     case TypeConstructor.Vector => true

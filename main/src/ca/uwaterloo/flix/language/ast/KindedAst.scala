@@ -40,7 +40,7 @@ object KindedAst {
 
   case class Trait(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.TraitSym, tparam: TypeParam, superTraits: List[Ast.TypeConstraint], assocs: List[AssocTypeSig], sigs: Map[Symbol.SigSym, Sig], laws: List[Def], loc: SourceLocation)
 
-  case class Instance(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, clazz: Ast.TraitSymUse, tpe: Type, tconstrs: List[Ast.TypeConstraint], assocs: List[AssocTypeDef], defs: List[Def], ns: Name.NName, loc: SourceLocation)
+  case class Instance(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, trt: Ast.TraitSymUse, tpe: Type, tconstrs: List[Ast.TypeConstraint], assocs: List[AssocTypeDef], defs: List[Def], ns: Name.NName, loc: SourceLocation)
 
   case class Sig(sym: Symbol.SigSym, spec: Spec, exp: Option[Expr])
 
@@ -166,7 +166,7 @@ object KindedAst {
 
     case class Do(op: Ast.OpSymUse, exps: List[Expr], tvar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class InvokeMethod2(exp: Expr, name: Name.Ident, exps: List[Expr], tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
+    case class InvokeMethod2(exp: Expr, name: Name.Ident, exps: List[Expr], mvar: Type.Var, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
     case class InvokeConstructor(constructor: Constructor[_], exps: List[Expr], loc: SourceLocation) extends Expr
 

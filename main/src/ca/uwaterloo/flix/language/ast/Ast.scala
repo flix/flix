@@ -211,6 +211,15 @@ object Ast {
     }
 
     /**
+      * An annotation that marks a function to exported.
+      *
+      * @param loc the source location of the annotation.
+      */
+    case class Export(loc: SourceLocation) extends Annotation {
+      override def toString: String = "@Export"
+    }
+
+    /**
       * An annotation that marks a construct as internal.
       *
       * @param loc the source location of the annotation.
@@ -338,6 +347,11 @@ object Ast {
       * Returns `true` if `this` sequence contains the `@Experimental` annotation.
       */
     def isExperimental: Boolean = annotations exists (_.isInstanceOf[Annotation.Experimental])
+
+    /**
+      * Returns `true` if `this` sequence contains the `@Export` annotation.
+      */
+    def isExport: Boolean = annotations exists (_.isInstanceOf[Annotation.Export])
 
     /**
       * Returns `true` if `this` sequence contains the `@Internal` annotation.

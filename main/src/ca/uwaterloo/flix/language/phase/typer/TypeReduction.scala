@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{Ast, RigidityEnv, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Ast, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.Result
@@ -57,8 +57,9 @@ object TypeReduction {
       for {
         (t1, p1) <- simplify(tpe1, renv0, loc)
         (t2, p2) <- simplify(tpe2, renv0, loc)
+        (t3, p3) <- simplifyJava(Type.Apply(t1, t2, loc), renv0, loc)
       } yield {
-        (Type.Apply(t1, t2, loc), p1 || p2)
+        (t3, p1 || p2 || p3)
       }
 
     // arg_R and syn_R
@@ -87,7 +88,7 @@ object TypeReduction {
                 // If it's an associated type, it's ok. It may be reduced later to a concrete type.
                 case _: Type.AssocType => Result.Ok((Type.AssocType(cst, t, kind, loc), p))
                 // Otherwise it's a problem.
-                case baseTpe => Result.Err(ConstraintSolver.mkMissingInstance(cst.sym.clazz, baseTpe, renv, loc))
+                case baseTpe => Result.Err(ConstraintSolver.mkMissingInstance(cst.sym.trt, baseTpe, renv, loc))
               }
             // We could reduce! Simplify further if possible.
             case Some(t) => simplify(t, renv0, loc).map { case (res, _) => (res, true) }
@@ -97,4 +98,67 @@ object TypeReduction {
     case Type.Alias(cst, args, t, _) => simplify(t, renv0, loc)
   }
 
+  /**
+   * Simplifies the type of the java method.
+   *
+   * @param tpe the type of the java method
+   * @param loc the location where the java method has been called
+   * @return
+   */
+  private def simplifyJava(tpe: Type, renv0: RigidityEnv, loc: SourceLocation)(implicit flix: Flix): Result[(Type, Boolean), TypeError] = {
+    tpe.typeConstructor match {
+      case Some(TypeConstructor.MethodReturnType) =>
+        val methodType = tpe.typeArguments.head
+        methodType match {
+          case Type.Cst(TypeConstructor.JvmMethod(method), _) => Result.Ok(Type.getFlixType(method.getReturnType), true)
+          case _ => Result.Ok((tpe, false))
+        }
+      case _ => Result.Ok((tpe, false))
+    }
+  }
+
+  /**
+   * This is the resolution process of the java method method, member of the class of the java object thisObj.
+   * Returns the return type of the java method according to the type of thisObj and the arguments of the method,
+   * if there exists such a java method.
+   * Otherwise, either the java method could not be found with the given method signature, or, the return type
+   * could not be simplified more at this state of the process.
+   *
+   * @param thisObj the java object
+   * @param method  the java method, supposedly member of the class of the java object
+   * @param ts      the list containing the type of thisObj and the arguments of the method
+   * @param loc     the location where the java method has been called
+   * @return        A ResolutionResult object that indicates the status of the resolution progress
+   */
+  def lookupMethod(thisObj: Type, method: String, ts: List[Type], loc: SourceLocation)(implicit flix: Flix): JavaResolutionResult =
+    thisObj match {
+      case Type.Cst(TypeConstructor.Str, _) =>
+        val clazz = classOf[String]
+        // Filter out candidate methods by method name
+        // NB: this considers also static methods
+        val candidateMethods = clazz.getMethods.filter(m => m.getName == method)
+          .filter(m => m.getParameterCount == ts.length)
+
+        candidateMethods.length match {
+          case 1 =>
+            val tpe = Type.Cst(TypeConstructor.JvmMethod(candidateMethods.head), loc)
+            JavaResolutionResult.Resolved(tpe)
+          case _ => JavaResolutionResult.MethodNotFound // For now, method not found either if there is an ambiguity or no method found
+        }
+      case _ => JavaResolutionResult.MethodNotFound // to check: before it was NoProgress
+    }
+
+  /**
+   * Represents the result of a resolution process of a java method.
+   *
+   * There are two possible outcomes:
+   *
+   * 1. Resolved(tpe): Indicates that there was some progress in the resolution and returns a simplified type of the java method.
+   * 2. MethodNotFound(): The resolution failed to find a corresponding java method.
+   */
+  sealed trait JavaResolutionResult
+  object JavaResolutionResult {
+    case class Resolved(tpe: Type) extends JavaResolutionResult
+    case object MethodNotFound extends JavaResolutionResult
+  }
 }

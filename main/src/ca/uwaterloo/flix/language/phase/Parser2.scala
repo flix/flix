@@ -1022,7 +1022,17 @@ object Parser2 {
       val isShorthand = at(TokenKind.ParenL)
       if (isShorthand) {
         val markType = open()
-        Type.tuple()
+        val mark = open()
+        oneOrMore(
+          namedTokenSet = NamedTokenSet.Type,
+          getItem = () => Type.ttype(),
+          checkForItem = _.isFirstType,
+          breakWhen = _.isRecoverType,
+          context = SyntacticContext.Type.OtherType
+        ) match {
+          case Some(error) => closeWithError(mark, error)
+          case None => close(mark, TreeKind.Type.Tuple)
+        }
         close(markType, TreeKind.Type.Type)
       }
       // derivations

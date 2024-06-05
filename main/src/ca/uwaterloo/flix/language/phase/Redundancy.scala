@@ -652,11 +652,6 @@ object Redundancy {
       sctx.effSyms.put(opUse.sym.eff, ())
       visitExps(exps, env0, rc)
 
-    case Expr.InvokeMethod2(exp, _, exps, _, _, _) =>
-      val us1 = visitExp(exp, env0, rc)
-      val us2 = visitExps(exps, env0, rc)
-      us1 ++ us2
-
     case Expr.InvokeConstructor(_, args, _, _, _) =>
       visitExps(args, env0, rc)
 
@@ -1031,6 +1026,7 @@ object Redundancy {
   private def deadDef(decl: Def)(implicit sctx: SharedContext, root: Root): Boolean =
     !decl.spec.ann.isTest &&
       !decl.spec.mod.isPublic &&
+      !decl.spec.ann.isExport &&
       !isMain(decl.sym) &&
       !decl.sym.name.startsWith("_") &&
       !sctx.defSyms.containsKey(decl.sym)
