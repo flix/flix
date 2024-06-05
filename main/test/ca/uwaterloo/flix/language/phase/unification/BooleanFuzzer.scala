@@ -50,7 +50,7 @@ object BooleanFuzzer {
     Term.Empty,
     Term.Cst,
     Term.Var,
-    Term.Elem,
+    Term.mkElemSet(_: Int),
     Term.mkUnion(_: List[Term]),
     Term.mkInter(_: List[Term]),
     Term.mkCompl
@@ -87,7 +87,7 @@ object BooleanFuzzer {
   }
 
   def main(args: Array[String]): Unit = {
-    fuzz(new Random(), 200_000, 5, -1)
+    fuzz(new Random(), 2000_000, 5, -1)
   }
 
   def fuzz(random: Random, testLimit: Int, errLimit: Int, timeoutLimit: Int): Boolean = {
@@ -99,9 +99,13 @@ object BooleanFuzzer {
     var continue = true
     var tests = 0
     while (continue && tests < testLimit) {
-      if (tests % 10_000 == 0) println(s"${tests/1000}k")
+      if (tests % 10_000 == 0) {
+        val errAmount = errs.length
+        val timeoutAmount = timeouts.length
+        println(s"${tests/1000}k (${(tests-errAmount-timeoutAmount)/1000}k, ${errAmount} errs, ${timeoutAmount} t.o.)")
+      }
       tests += 1
-      val t = randomTerm(former, random, 7, 4, 4, 4)
+      val t = randomTerm(former, random, 8, 6, 6, 6)
       val (res, phase) = eqSelf(t)
       res match {
         case Res.Pass => ()
@@ -169,7 +173,7 @@ object BooleanFuzzer {
       case Term.Empty => "Empty"
       case Term.Cst(c) => s"Cst($c)"
       case Term.Var(x) => s"Var($x)"
-      case Term.Elem(i) => s"Elem($i)"
+      case Term.ElemSet(i) => s"ElemSet(SortedSet(${i.mkString(", ")}))"
       case Term.Compl(t) => s"Compl(${toRawString(t)})"
       case Term.Inter(posElem, posCsts, posVars, negElems, negCsts, negVars, rest) =>
         val pe = posElem match {

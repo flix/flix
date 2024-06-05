@@ -795,7 +795,7 @@ class TestFastSetUnification extends AnyFunSuite with TestUtils {
 
   test("Custom.Elems.Disjoint01") {
     val l = List(
-      Empty ~ (Elem(0) inter Elem(1))
+      Empty ~ (mkElemSet(0) inter mkElemSet(1))
     )
     val s = solveAll(l).get
     verify(s, l)
@@ -803,7 +803,7 @@ class TestFastSetUnification extends AnyFunSuite with TestUtils {
 
   test("Custom.Elems.Disjoint02") {
     val l = List(
-      (Elem(0) union Elem(1)) ~ ((Elem(0) union Elem(1) union Elem(2)) inter Term.mkCompl(Elem(2)))
+      (mkElemSet(0) union mkElemSet(1)) ~ ((mkElemSet(0) union mkElemSet(1) union mkElemSet(2)) inter Term.mkCompl(mkElemSet(2)))
     )
     val s = solveAll(l).get
     verify(s, l)
