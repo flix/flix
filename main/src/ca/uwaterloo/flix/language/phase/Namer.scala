@@ -896,9 +896,21 @@ object Namer {
         exps => NamedAst.Expr.Do(op, exps, loc)
       }
 
+    case DesugaredAst.Expr.InvokeConstructor2(clazzName, exps, loc) =>
+      val expsVal = traverse(exps)(visitExp(_, ns0))
+      mapN(expsVal) {
+        exps => NamedAst.Expr.InvokeConstructor2(clazzName, exps, loc)
+      }
+
     case DesugaredAst.Expr.InvokeMethod2(exp, name, exps, loc) =>
       mapN(visitExp(exp, ns0), traverse(exps)(visitExp(_, ns0))) {
         case (e, es) => NamedAst.Expr.InvokeMethod2(e, name, es, loc)
+      }
+
+    case DesugaredAst.Expr.InvokeStaticMethod2(clazzName, methodName, exps, loc) =>
+      val expsVal = traverse(exps)(visitExp(_, ns0))
+      mapN(expsVal) {
+        exps => NamedAst.Expr.InvokeStaticMethod2(clazzName, methodName, exps, loc)
       }
 
     case DesugaredAst.Expr.InvokeConstructor(className, exps, sig, loc) =>
