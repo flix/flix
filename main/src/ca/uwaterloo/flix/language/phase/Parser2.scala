@@ -840,7 +840,7 @@ object Parser2 {
             val loc = currentSourceLocation()
             val error = UnexpectedToken(expected = NamedTokenSet.Declaration, actual = Some(at), SyntacticContext.Decl.OtherDecl, loc = loc)
             // Skip ahead until we find another declaration or a '}' signifying the end of the module.
-            while (!nth(0).isRecoverMod) {
+            while (!nth(0).isRecoverMod && !eof()) {
               advance()
             }
             closeWithError(markErr, error)

@@ -88,7 +88,7 @@ object TypeReduction {
                 // If it's an associated type, it's ok. It may be reduced later to a concrete type.
                 case _: Type.AssocType => Result.Ok((Type.AssocType(cst, t, kind, loc), p))
                 // Otherwise it's a problem.
-                case baseTpe => Result.Err(ConstraintSolver.mkMissingInstance(cst.sym.clazz, baseTpe, renv, loc))
+                case baseTpe => Result.Err(ConstraintSolver.mkMissingInstance(cst.sym.trt, baseTpe, renv, loc))
               }
             // We could reduce! Simplify further if possible.
             case Some(t) => simplify(t, renv0, loc).map { case (res, _) => (res, true) }
@@ -134,19 +134,30 @@ object TypeReduction {
     thisObj match {
       case Type.Cst(TypeConstructor.Str, _) =>
         val clazz = classOf[String]
-        // Filter out candidate methods by method name
-        // NB: this considers also static methods
-        val candidateMethods = clazz.getMethods.filter(m => m.getName == method)
-          .filter(m => m.getParameterCount == ts.length)
-
-        candidateMethods.length match {
-          case 1 =>
-            val tpe = Type.Cst(TypeConstructor.JvmMethod(candidateMethods.head), loc)
-            JavaResolutionResult.Resolved(tpe)
-          case _ => JavaResolutionResult.MethodNotFound // For now, method not found either if there is an ambiguity or no method found
-        }
+        retrieveMethod(clazz, method, ts, loc)
       case _ => JavaResolutionResult.MethodNotFound // to check: before it was NoProgress
     }
+
+  /**
+   * Helper method to retrieve a method given its name and parameter types.
+   * Returns a JavaResolutionResult either containing the Java method or a MethodNotFound object.
+   */
+  private def retrieveMethod(clazz: Class[_], method: String, ts: List[Type], loc: SourceLocation)(implicit flix: Flix): JavaResolutionResult = {
+    // NB: this considers also static methods
+    val candidateMethods = clazz.getMethods
+      .filter(m => m.getName == method)
+      .filter(m => m.getParameterCount == ts.length)
+      .filter(m =>
+        (m.getParameterTypes zip ts).foldLeft(true){ case (acc, (clazz, tpe)) => acc && (Type.getFlixType(clazz) == tpe) } // Parameter types correspondance
+      )
+
+    candidateMethods.length match {
+      case 1 =>
+        val tpe = Type.Cst(TypeConstructor.JvmMethod(candidateMethods.head), loc)
+        JavaResolutionResult.Resolved(tpe)
+      case _ => JavaResolutionResult.MethodNotFound // For now, method not found either if there is an ambiguity or no method found
+    }
+  }
 
   /**
    * Represents the result of a resolution process of a java method.

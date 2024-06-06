@@ -49,8 +49,8 @@ object Deriver {
       instances =>
         val newInstances = instances.flatten.foldLeft(root.instances) {
           case (acc, inst) =>
-            val accInsts = acc.getOrElse(inst.clazz.sym, Nil)
-            acc + (inst.clazz.sym -> (inst :: accInsts))
+            val accInsts = acc.getOrElse(inst.trt.sym, Nil)
+            acc + (inst.trt.sym -> (inst :: accInsts))
         }
         root.copy(instances = newInstances)
     }
@@ -117,7 +117,7 @@ object Deriver {
         doc = Ast.Doc(Nil, loc),
         ann = Ast.Annotations.Empty,
         mod = Ast.Modifiers.Empty,
-        clazz = Ast.TraitSymUse(eqTraitSym, loc),
+        trt = Ast.TraitSymUse(eqTraitSym, loc),
         tpe = tpe,
         tconstrs = tconstrs,
         assocs = Nil,
@@ -267,7 +267,7 @@ object Deriver {
         doc = Ast.Doc(Nil, loc),
         ann = Ast.Annotations.Empty,
         mod = Ast.Modifiers.Empty,
-        clazz = Ast.TraitSymUse(orderTraitSym, loc),
+        trt = Ast.TraitSymUse(orderTraitSym, loc),
         tpe = tpe,
         tconstrs = tconstrs,
         assocs = Nil,
@@ -481,7 +481,7 @@ object Deriver {
         doc = Ast.Doc(Nil, loc),
         ann = Ast.Annotations.Empty,
         mod = Ast.Modifiers.Empty,
-        clazz = Ast.TraitSymUse(toStringTraitSym, loc),
+        trt = Ast.TraitSymUse(toStringTraitSym, loc),
         tpe = tpe,
         tconstrs = tconstrs,
         assocs = Nil,
@@ -616,7 +616,7 @@ object Deriver {
         doc = Ast.Doc(Nil, loc),
         ann = Ast.Annotations.Empty,
         mod = Ast.Modifiers.Empty,
-        clazz = Ast.TraitSymUse(hashTraitSym, loc),
+        trt = Ast.TraitSymUse(hashTraitSym, loc),
         tpe = tpe,
         tconstrs = tconstrs,
         defs = List(defn),
@@ -738,7 +738,7 @@ object Deriver {
         doc = Ast.Doc(Nil, loc),
         ann = Ast.Annotations.Empty,
         mod = Ast.Modifiers.Empty,
-        clazz = Ast.TraitSymUse(sendableTraitSym, loc),
+        trt = Ast.TraitSymUse(sendableTraitSym, loc),
         tpe = tpe,
         tconstrs = tconstrs,
         defs = Nil,
@@ -798,7 +798,7 @@ object Deriver {
           doc = Ast.Doc(Nil, loc),
           ann = Ast.Annotations.Empty,
           mod = Ast.Modifiers.Empty,
-          clazz = Ast.TraitSymUse(coerceTraitSym, loc),
+          trt = Ast.TraitSymUse(coerceTraitSym, loc),
           tpe = tpe,
           tconstrs = Nil,
           defs = List(defn),
