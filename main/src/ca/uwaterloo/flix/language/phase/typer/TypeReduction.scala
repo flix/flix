@@ -135,6 +135,9 @@ object TypeReduction {
       case Type.Cst(TypeConstructor.Str, _) =>
         val clazz = classOf[String]
         retrieveMethod(clazz, method, ts, loc)
+      case Type.Cst(TypeConstructor.BigDecimal, _) =>
+        val clazz = classOf[java.math.BigDecimal]
+        retrieveMethod(clazz, method, ts, loc)
       case _ => JavaResolutionResult.MethodNotFound // to check: before it was NoProgress
     }
 
