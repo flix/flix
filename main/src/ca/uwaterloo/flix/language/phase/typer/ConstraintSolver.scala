@@ -285,6 +285,7 @@ object ConstraintSolver {
           case JavaResolutionResult.Resolved(tpe) =>
             val subst = Substitution.singleton(mvar.sym, tpe)
             Result.Ok(ResolutionResult(subst @@ subst0, Nil, progress = true))
+          case JavaResolutionResult.AmbiguousMethod(methods) => Result.Err(TypeError.AmbiguousMethod(method.name, tpe, tpes, methods, renv, mvar.loc))
           case JavaResolutionResult.MethodNotFound => Result.Err(TypeError.MethodNotFound(method.name, tpe, tpes, List(), renv, mvar.loc)) // TODO INTEROP: fill in candidate methods
         }
       } else {

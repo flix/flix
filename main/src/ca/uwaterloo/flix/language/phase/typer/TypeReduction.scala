@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.collection.{ListMap, ListOps}
+import java.lang.reflect.Method;
 
 object TypeReduction {
 
@@ -135,7 +136,7 @@ object TypeReduction {
       case Type.Cst(TypeConstructor.Str, _) =>
         val clazz = classOf[String]
         retrieveMethod(clazz, method, ts, loc)
-      case _ => JavaResolutionResult.MethodNotFound // to check: before it was NoProgress
+      case _ => JavaResolutionResult.MethodNotFound
     }
 
   /**
@@ -152,24 +153,27 @@ object TypeReduction {
       )
 
     candidateMethods.length match {
+      case 0 => JavaResolutionResult.MethodNotFound
       case 1 =>
         val tpe = Type.Cst(TypeConstructor.JvmMethod(candidateMethods.head), loc)
         JavaResolutionResult.Resolved(tpe)
-      case _ => JavaResolutionResult.MethodNotFound // For now, method not found either if there is an ambiguity or no method found
+      case 2 => JavaResolutionResult.AmbiguousMethod(candidateMethods.toList) // For now, method not found either if there is an ambiguity or no method found
     }
   }
 
   /**
    * Represents the result of a resolution process of a java method.
    *
-   * There are two possible outcomes:
+   * There are three possible outcomes:
    *
    * 1. Resolved(tpe): Indicates that there was some progress in the resolution and returns a simplified type of the java method.
-   * 2. MethodNotFound(): The resolution failed to find a corresponding java method.
+   * 2. AmbiguousMethod: The resolution lacked some elements to find a java method among a set of methods.
+   * 3. MethodNotFound(): The resolution failed to find a corresponding java method.
    */
   sealed trait JavaResolutionResult
   object JavaResolutionResult {
     case class Resolved(tpe: Type) extends JavaResolutionResult
+    case class AmbiguousMethod(methods: List[Method]) extends JavaResolutionResult
     case object MethodNotFound extends JavaResolutionResult
   }
 }
