@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.language.errors.RedundancyError
 import ca.uwaterloo.flix.language.errors.RedundancyError._
 import ca.uwaterloo.flix.language.phase.unification.TraitEnvironment
@@ -78,7 +79,7 @@ object Redundancy {
 
     // Determine whether to return success or soft failure.
     Validation.toSuccessOrSoftFailure(root, errors)
-  }
+  }(DebugValidation())
 
   /**
     * Checks for unused definition symbols.
@@ -139,7 +140,7 @@ object Redundancy {
           !usedTypeVars.contains(tparam.sym) &&
             !tparam.name.name.startsWith("_")
       }
-      result ++= unusedTypeParams.map(tparam => UnusedTypeParam(tparam.name))
+      result ++= unusedTypeParams.map(tparam => UnusedTypeParam(tparam.name, tparam.loc))
     }
     result.toList
   }
@@ -241,7 +242,7 @@ object Redundancy {
       val tpes = fparams.map(_.tpe) ::: tpe :: eff :: tconstrs.map(_.arg) ::: econstrs.map(_.tpe1) ::: econstrs.map(_.tpe2)
       val used = tpes.flatMap { t => t.typeVars.map(_.sym) }.toSet
       tparams.collect {
-        case tparam if deadTypeVar(tparam.sym, used) => UnusedTypeParam(tparam.name)
+        case tparam if deadTypeVar(tparam.sym, used) => UnusedTypeParam(tparam.name, tparam.loc)
       }
   }
 
@@ -941,7 +942,7 @@ object Redundancy {
     * Returns true if the expression is pure.
     */
   private def isUselessExpression(exp: Expr): Boolean =
-    isPure(exp)
+    isPure(exp) && !exp.isInstanceOf[Expr.UncheckedMaskingCast]
 
   /**
     * Returns `true` if the expression must be used.
@@ -1025,6 +1026,7 @@ object Redundancy {
   private def deadDef(decl: Def)(implicit sctx: SharedContext, root: Root): Boolean =
     !decl.spec.ann.isTest &&
       !decl.spec.mod.isPublic &&
+      !decl.spec.ann.isExport &&
       !isMain(decl.sym) &&
       !decl.sym.name.startsWith("_") &&
       !sctx.defSyms.containsKey(decl.sym)

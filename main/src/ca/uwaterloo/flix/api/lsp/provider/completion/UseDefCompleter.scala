@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.ast.Symbol.DefnSym
 
 object UseDefCompleter extends Completer {
-  override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[UseDefCompletion] = {
+  override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[UseDefCompletion] = {
     stripWord(context) match {
       case Some(word) =>
         val defs = getLocalDefSyms(word)

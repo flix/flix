@@ -34,7 +34,7 @@ mod Test.Dec.AssocEff {
     }
 
     instance Div[Int32] {
-        type Aef = Pure
+        type Aef = {}
         pub def div(x: Int32, y: Int32): Int32 = $INT32_DIV$(x, y)
     }
 
@@ -60,7 +60,7 @@ mod Test.Dec.AssocEff {
 
     instance Iterable[List[a]] {
         type Elm = a
-        type Aef = Pure
+        type Aef = {}
         pub def iterator(rc: Region[r], l: List[a]): Iterator[a, r, r] \ r = {
             List.iterator(rc, l)
         }
@@ -76,7 +76,7 @@ mod Test.Dec.AssocEff {
 
     instance Iterable[Map[k, v]] {
         type Elm = (k, v)
-        type Aef = Pure
+        type Aef = {}
         pub def iterator(rc: Region[r], l: Map[k, v]): Iterator[(k, v), r, r] \ r = {
             Map.iterator(rc, l)
         }
@@ -111,7 +111,7 @@ mod Test.Dec.AssocEff {
 
     instance DeepIterable[Int32] {
         type Elm = Int32
-        type Aef = Pure
+        type Aef = {}
         pub def iterator(rc: Region[r], x: Int32): Iterator[Int32, r, r] \ r = Iterator.singleton(rc, x)
     }
 

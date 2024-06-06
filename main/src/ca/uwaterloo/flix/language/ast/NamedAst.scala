@@ -179,6 +179,8 @@ object NamedAst {
 
     case class Do(op: Name.QName, exps: List[Expr], loc: SourceLocation) extends Expr
 
+    case class InvokeMethod2(exp: Expr, name: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
+
     case class InvokeConstructor(className: String, exps: List[Expr], sig: List[Type], loc: SourceLocation) extends Expr
 
     case class InvokeMethod(className: String, methodName: String, exp: Expr, exps: List[Expr], sig: List[Type], retTpe: Type, loc: SourceLocation) extends Expr
@@ -437,7 +439,7 @@ object NamedAst {
 
   }
 
-  case class TypeConstraint(clazz: Name.QName, tpe: Type, loc: SourceLocation)
+  case class TypeConstraint(trt: Name.QName, tpe: Type, loc: SourceLocation)
 
   case class EqualityConstraint(qname: Name.QName, tpe1: Type, tpe2: Type, loc: SourceLocation)
 

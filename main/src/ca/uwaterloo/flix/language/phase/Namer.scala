@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, Source}
 import ca.uwaterloo.flix.language.ast.DesugaredAst.Pattern.Record
 import ca.uwaterloo.flix.language.ast.DesugaredAst.RestrictableChoosePattern
 import ca.uwaterloo.flix.language.ast.{NamedAst, _}
+import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.language.errors.NameError
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.collection.{Chain, ListMap}
@@ -34,36 +35,37 @@ object Namer {
   /**
     * Introduces unique names for each syntactic entity in the given `program`.
     * */
-  def run(program: DesugaredAst.Root)(implicit flix: Flix): Validation[NamedAst.Root, NameError] = flix.phase("Namer") {
-    // compute all the source locations
-    val locations = program.units.values.foldLeft(Map.empty[Source, SourceLocation]) {
-      case (macc, root) => macc + (root.loc.source -> root.loc)
-    }
+  def run(program: DesugaredAst.Root)(implicit flix: Flix): Validation[NamedAst.Root, NameError] =
+    flix.phase("Namer") {
+      // compute all the source locations
+      val locations = program.units.values.foldLeft(Map.empty[Source, SourceLocation]) {
+        case (macc, root) => macc + (root.loc.source -> root.loc)
+      }
 
-    val unitsVal = ParOps.parTraverseValues(program.units)(visitUnit)
+      val unitsVal = ParOps.parTraverseValues(program.units)(visitUnit)
 
-    flatMapN(unitsVal) {
-      case units =>
-        val tableVal = fold(units.values, SymbolTable(Map.empty, Map.empty, Map.empty)) {
-          case (table, unit) => tableUnit(unit, table)
-        }
+      flatMapN(unitsVal) {
+        case units =>
+          val tableVal = fold(units.values, SymbolTable(Map.empty, Map.empty, Map.empty)) {
+            case (table, unit) => tableUnit(unit, table)
+          }
 
-        mapN(tableVal) {
-          case SymbolTable(symbols0, instances0, uses0) =>
-            // TODO NS-REFACTOR remove use of NName
-            val symbols = symbols0.map {
-              case (k, v) => Name.mkUnlocatedNName(k) -> v.m
-            }
-            val instances = instances0.map {
-              case (k, v) => Name.mkUnlocatedNName(k) -> v
-            }
-            val uses = uses0.map {
-              case (k, v) => Name.mkUnlocatedNName(k) -> v
-            }
-            NamedAst.Root(symbols, instances, uses, units, program.entryPoint, locations, program.names)
-        }
-    }
-  }
+          mapN(tableVal) {
+            case SymbolTable(symbols0, instances0, uses0) =>
+              // TODO NS-REFACTOR remove use of NName
+              val symbols = symbols0.map {
+                case (k, v) => Name.mkUnlocatedNName(k) -> v.m
+              }
+              val instances = instances0.map {
+                case (k, v) => Name.mkUnlocatedNName(k) -> v
+              }
+              val uses = uses0.map {
+                case (k, v) => Name.mkUnlocatedNName(k) -> v
+              }
+              NamedAst.Root(symbols, instances, uses, units, program.entryPoint, locations, program.names)
+          }
+      }
+  }(DebugValidation())
 
   /**
     * Performs naming on the given compilation unit `unit` under the given (partial) program `prog0`.
@@ -97,7 +99,7 @@ object Namer {
     */
   private def visitNamespace(decl: DesugaredAst.Declaration.Namespace, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.Namespace, NameError] = decl match {
     case DesugaredAst.Declaration.Namespace(ident, usesAndImports0, decls0, loc) =>
-      val ns = Name.NName(ident.sp1, ns0.idents :+ ident, ident.sp2)
+      val ns = Name.NName(ns0.idents :+ ident, ident.loc)
       val usesAndImports = usesAndImports0.map(visitUseOrImport)
       val declsVal = traverse(decls0)(visitDecl(_, ns))
       val sym = new Symbol.ModuleSym(ns.parts)
@@ -398,9 +400,9 @@ object Namer {
   /**
     * Performs naming on the given associated type signature `s0`.
     */
-  private def visitAssocTypeSig(s0: DesugaredAst.Declaration.AssocTypeSig, clazz: Symbol.TraitSym, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.AssocTypeSig, NameError] = s0 match {
+  private def visitAssocTypeSig(s0: DesugaredAst.Declaration.AssocTypeSig, trt: Symbol.TraitSym, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.AssocTypeSig, NameError] = s0 match {
     case DesugaredAst.Declaration.AssocTypeSig(doc, mod, ident, tparams0, kind0, tpe0, loc) =>
-      val sym = Symbol.mkAssocTypeSym(clazz, ident)
+      val sym = Symbol.mkAssocTypeSym(trt, ident)
       val tparam = getTypeParam(tparams0)
       val kind = visitKind(kind0)
       val tpeVal = traverseOpt(tpe0)(visitType)
@@ -466,9 +468,9 @@ object Namer {
     * Performs naming on the given type constraint `tconstr`.
     */
   private def visitTypeConstraint(tconstr: DesugaredAst.TypeConstraint, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.TypeConstraint, NameError] = tconstr match {
-    case DesugaredAst.TypeConstraint(clazz, tparam0, loc) =>
+    case DesugaredAst.TypeConstraint(trt, tparam0, loc) =>
       mapN(visitType(tparam0)) {
-        tparam => NamedAst.TypeConstraint(clazz, tparam, loc)
+        tparam => NamedAst.TypeConstraint(trt, tparam, loc)
       }
   }
 
@@ -892,6 +894,11 @@ object Namer {
       val expsVal = traverse(exps0)(visitExp(_, ns0))
       mapN(expsVal) {
         exps => NamedAst.Expr.Do(op, exps, loc)
+      }
+
+    case DesugaredAst.Expr.InvokeMethod2(exp, name, exps, loc) =>
+      mapN(visitExp(exp, ns0), traverse(exps)(visitExp(_, ns0))) {
+        case (e, es) => NamedAst.Expr.InvokeMethod2(e, name, es, loc)
       }
 
     case DesugaredAst.Expr.InvokeConstructor(className, exps, sig, loc) =>

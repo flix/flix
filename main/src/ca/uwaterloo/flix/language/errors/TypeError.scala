@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.errors
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.BroadEqualityConstraint
+import ca.uwaterloo.flix.language.ast.TypeConstructor.JvmMethod
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.fmt.FormatEqualityConstraint.formatEqualityConstraint
 import ca.uwaterloo.flix.language.fmt.FormatType.formatType
@@ -58,6 +59,39 @@ object TypeError {
       "Tip: Add an equality constraint to the function."
     })
   }
+
+  /**
+   * Java method not found type error.
+   *
+   * @param tpe0    the type of the receiver object.
+   * @param tpes    the types of the arguments.
+   * @param methods a list of possible candidate methods on the type of the receiver object.
+   * @param renv    the rigidity environment.
+   * @param loc     the location where the error occured.
+   */
+  case class MethodNotFound(methodName: String, tpe0: Type, tpes: List[Type], methods: List[JvmMethod], renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    // TODO INTEROP better comment, e.g., list possible methods
+    def summary: String = s"Java method '$methodName' in type '$tpe0' with arguments types '${tpes.toString}' not found."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Java method '$methodName' from type '${red(formatType(tpe0, Some(renv)))}' with arguments types '${tpes.map( t => red(formatType(t, Some(renv))).mkString(", "))}}' not found.
+         |
+         |${code(loc, s"java method '${methodName} method not found")}
+         |""".stripMargin
+    }
+  }
+
+  /**
+   * Unresolved method type error.
+   * This is a dummy error used in java method type reconstruction for invokeMethod2.
+   */
+  case class UnresolvedMethod(loc: SourceLocation) extends TypeError with Recoverable {
+    def summary: String = s"Unresolved method"
+    def message(formatter: Formatter): String = s"Unresolved method"
+  }
+
 
   /**
     * Mismatched Arity.
@@ -212,20 +246,20 @@ object TypeError {
   }
 
   /**
-    * Missing type class instance.
+    * Missing trait instance.
     *
-    * @param clazz the class of the instance.
-    * @param tpe   the type of the instance.
-    * @param renv  the rigidity environment.
-    * @param loc   the location where the error occurred.
+    * @param trt  the trait of the instance.
+    * @param tpe  the type of the instance.
+    * @param renv the rigidity environment.
+    * @param loc  the location where the error occurred.
     */
-  case class MissingInstance(clazz: Symbol.TraitSym, tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"No instance of the '$clazz' class for the type '${formatType(tpe, Some(renv))}'."
+  case class MissingInstance(trt: Symbol.TraitSym, tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    def summary: String = s"No instance of the '$trt' class for the type '${formatType(tpe, Some(renv))}'."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> No instance of the '${cyan(clazz.toString)}' class for the type '${red(formatType(tpe, Some(renv)))}'.
+         |>> No instance of the '${cyan(trt.toString)}' class for the type '${red(formatType(tpe, Some(renv)))}'.
          |
          |${code(loc, s"missing instance")}
          |
@@ -234,20 +268,20 @@ object TypeError {
   }
 
   /**
-    * Missing type class instance for a function type.
+    * Missing trait instance for a function type.
     *
-    * @param clazz the class of the instance.
-    * @param tpe   the type of the instance.
-    * @param renv  the rigidity environment.
-    * @param loc   the location where the error occurred.
+    * @param trt  the class of the instance.
+    * @param tpe  the type of the instance.
+    * @param renv the rigidity environment.
+    * @param loc  the location where the error occurred.
     */
-  case class MissingInstanceArrow(clazz: Symbol.TraitSym, tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"No instance of the '$clazz' class for the function type '${formatType(tpe, Some(renv))}'."
+  case class MissingInstanceArrow(trt: Symbol.TraitSym, tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    def summary: String = s"No instance of the '$trt' class for the function type '${formatType(tpe, Some(renv))}'."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> No instance of the '${cyan(clazz.toString)}' class for the ${magenta("function")} type '${red(formatType(tpe, Some(renv)))}'.
+         |>> No instance of the '${cyan(trt.toString)}' class for the ${magenta("function")} type '${red(formatType(tpe, Some(renv)))}'.
          |
          |>> Did you forget to apply the function to all of its arguments?
          |
@@ -733,4 +767,27 @@ object TypeError {
       "Tip: Add an equality constraint to the function."
     })
   }
+
+  /**
+    * Missing trait constraint.
+    *
+    * @param trt  the trait of the constraint.
+    * @param tpe  the type of the constraint.
+    * @param renv the rigidity environment.
+    * @param loc  the location where the error occurred.
+    */
+  case class MissingTraitConstraint(trt: Symbol.TraitSym, tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError with Recoverable {
+    def summary: String = s"No constraint of the '$trt' trait for the type '${formatType(tpe, Some(renv))}'"
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> No constraint of the '${cyan(trt.toString)}' trait for the type '${red(formatType(tpe, Some(renv)))}'.
+         |
+         |${code(loc, s"missing constraint")}
+         |
+         |""".stripMargin
+    }
+  }
+
 }

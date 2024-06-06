@@ -838,7 +838,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
       """
         |trait A[a] {
         |    pub def f(x: Bool, y: a): Bool
-        |    law l: forall (x: Int32, y: Bool) . A.f(x, y)
+        |    law l: forall (x: Int32, y: Bool) A.f(x, y)
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -1450,4 +1450,17 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError](result)
   }
 
+
+  test("TypeError.MissingConstraint.01") {
+    val input =
+      """
+        |trait C[a] {
+        |    type T
+        |}
+        |
+        |def foo(): C.T[a] = ???
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.MissingTraitConstraint](result)
+  }
 }

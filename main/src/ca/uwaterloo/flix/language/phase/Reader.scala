@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.api.{Bootstrap, Flix}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.{Input, Source}
 import ca.uwaterloo.flix.language.ast.{Ast, ReadAst}
+import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.util.{StreamOps, Validation}
 import ca.uwaterloo.flix.util.collection.MultiMap
 
@@ -64,7 +65,7 @@ object Reader {
       val sources = result.toMap
       val names = findClasses()
       Validation.success(ReadAst.Root(sources, names))
-    }
+    }(DebugValidation()(DebugNoOp()))
 
   /**
     * Returns a list of sources extracted from the given flix package at path `p`.

@@ -20,6 +20,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ReducedAst._
 import ca.uwaterloo.flix.language.ast.{MonoType, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugNoOp
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -36,7 +37,7 @@ object JvmBackend {
     implicit val r: Root = root
 
     // Generate all classes.
-    val allClasses = flix.subphase("CodeGen") {
+    val allClasses = {
 
       //
       // First, collect information and types needed to generate classes.
@@ -175,11 +176,9 @@ object JvmBackend {
     // Write each class (and interface) to disk.
     // NB: In interactive and test mode we skip writing the files to disk.
     if (flix.options.output.nonEmpty) {
-      flix.subphase("WriteClasses") {
-        for ((_, jvmClass) <- allClasses) {
-          flix.subtask(jvmClass.name.toBinaryName, sample = true)
-          JvmOps.writeClass(flix.options.output.get.resolve("class/"), jvmClass)
-        }
+      for ((_, jvmClass) <- allClasses) {
+        flix.subtask(jvmClass.name.toBinaryName, sample = true)
+        JvmOps.writeClass(flix.options.output.get.resolve("class/"), jvmClass)
       }
     }
 
@@ -199,7 +198,7 @@ object JvmBackend {
       // Return the compilation result.
       new CompilationResult(root, main, getCompiledDefs(root), flix.getTotalTime, outputBytes)
     }
-  }
+  }(DebugNoOp())
 
   private def genClass(g: Generatable)(implicit flix: Flix): (JvmName, JvmClass) = {
     (g.jvmName, JvmClass(g.jvmName, g.genByteCode()))

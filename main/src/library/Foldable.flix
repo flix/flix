@@ -21,7 +21,7 @@ pub trait Foldable[t : Type -> Type] {
     ///
     /// The associated effect of the Foldable which represents the effect of accessing its elements.
     ///
-    type Aef[t]: Eff = Pure
+    type Aef[t]: Eff = {}
 
     ///
     /// Left-associative fold of a structure.

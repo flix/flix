@@ -8,8 +8,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.Suites
 
 class TestParser extends Suites(
-  // TODO: Enable these tests once the new parser is the only one in use.
-  // new TestParserRecovery,
+  new TestParserRecovery,
   new TestParserHappy
 )
 
@@ -138,6 +137,97 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
       """
         |def foo(x: Int32) = ???
         |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("LeadOnCurlyR.01") {
+    val input =
+      """
+        |} def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("DanglingDocComment.01") {
+    val input =
+      """
+        |def main(): Unit = ()
+        |/// This documents nothing
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("DanglingDocComment.02") {
+    val input =
+      """
+        |mod Foo {
+        |  /// This documents nothing
+        |}
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("DanglingDocComment.03") {
+    val input =
+      """
+        |trait Foo[t] {
+        |  /// This documents nothing
+        |}
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("DanglingDocComment.04") {
+    val input =
+      """
+        |trait Test[t] {}
+        |instance Test[Int32] {
+        |  /// This documents nothing
+        |}
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("DanglingDocComment.05") {
+    val input =
+      """
+        |eff MyEff {
+        |  /// This documents nothing
+        |}
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("MangledModule.02") {
+    val input =
+      """
+        |mod Bar {
+        |    legumes provide healthy access to proteins
+        |    pub def foo(): Int32 = 123
+        |    /// This is not quite finished
+        |    pub def
+        |}
+        |def main(): Int32 = Bar.foo()
+        |
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
     expectErrorOnCheck[ParseError](result)
@@ -293,7 +383,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
   test("BadBinaryOperation.02") {
     val input =
       """
-        |def foo(): Int32 = % 2
+        |def foo(): Int32 = # 2
         |def main(): Unit = ()
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
@@ -360,6 +450,42 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
     val input =
       """
         |def foo(): Int32 = { lazy; 1 }
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("BadForFragments.01") {
+    val input =
+      """
+        |def foo(): Int32 =
+        |    forA ( x <- bar(); y <- baz() yield ???
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("BadForFragments.02") {
+    val input =
+      """
+        |def foo(): Int32 =
+        |    forA ( x <- bar(); y <- baz(); yield ???
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("BadForFragments.03") {
+    val input =
+      """
+        |def foo(): Int32 =
+        |    forA ( x <- bar(), y <- baz() yield ???
         |def main(): Unit = ()
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
@@ -453,6 +579,31 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
     expectMain(result)
   }
 
+  test("BadMatch.02") {
+    val input =
+      """
+        |def map(t: Int32): Int32 = match t
+        |def main(): Int32 = 123
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("BadFixpointConstraint.01") {
+    val input =
+      """
+        |def getFacts(): #{ ParentOf(String, String), AncestorOf(String, String) } = #{
+        |    ParentOf("Pompey", "Strabo").,
+        |    ParentOf("Sextus", "Pompey").
+        |}
+        |def main(): Int32 = 123
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
   test("BadType.01") {
     val input =
       """
@@ -522,10 +673,24 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
     expectMain(result)
   }
 
+  test("BadConstraintSet.01") {
+    val input =
+      """
+        |def baz(): #{ Path(Int32, Int32) } = #{
+        |    Edge(1, 2).
+        |    Path(x, y) :-
+        |}
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
   test("LetMatchNoStatement.01") {
     val input =
       """
-        |def foo(): Unit \ IO =
+        |def foo(): Unit \ IO  =
         |    let x =
         |    println("Hello World!")
         |
@@ -542,6 +707,33 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |def foo(): Unit \ IO =
         |    def bar(): Int32 = 123
         |def main(): Int32 = 456
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("MissingWithBody.01") {
+    val input =
+      """
+        |def foo(): Bool =
+        |    let result = try {
+        |        mutual1(10)
+        |    } with AskTell ;
+        |    Assert.eq(Some(84), result)
+        |def main(): Int32 = 123
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("MissingCatchBody.01") {
+    val input =
+      """
+        |def foo(): Bool =
+        |    try { true } catch
+        |def main(): Int32 = 123
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
     expectErrorOnCheck[ParseError](result)
@@ -568,19 +760,25 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
   * Note that CompilerSuite and LibrarySuite covers the positive testing of the parser well.
   */
 class TestParserHappy extends AnyFunSuite with TestUtils {
-  test("ParseError.Interpolation.01") {
-    val input = s"""pub def foo(): String = "$${""""
+  test("DetectRecord.01") {
+    val input =
+      """
+        |pub def foo(): { x = Int32 } = {
+        |    // This is a comment
+        |    x = 1000
+        |}
+        |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
+    expectSuccess(result)
   }
 
-  test("ParseError.Interpolation.02") {
+  test("ParseError.Interpolation.01") {
     val input = s"""pub def foo(): String = "$${1 + }""""
     val result = compile(input, Options.TestWithLibNix)
     expectError[ParseError](result)
   }
 
-  test("ParseError.Interpolation.03") {
+  test("ParseError.Interpolation.02") {
     val input = s"""pub def foo(): String = "$${1 {}""""
     val result = compile(input, Options.TestWithLibNix)
     expectError[LexerError](result)
@@ -740,8 +938,103 @@ class TestParserHappy extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalEnum](result)
   }
 
-  // TODO: unignore with Parser2
-  ignore("IllegalModuleName.01") {
+  test("IllegalEnum.03") {
+    val input =
+      """
+        |enum Foo()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
+  test("Regression.#7820") {
+    val input =
+      """
+        | def main(): Unit \ IO = tests()
+        |
+        |def tests(): Unit \ IO =
+        |    let start_time1 = Time.Epoch.milliseconds();
+        |    let _pipeline1 = cat(List#{"./test/clientList.txt"}) |> cut(List#{1});
+        |    let end_time1 = Time.Epoch.milliseconds();
+        |    let elapsed_time1 = (end_time1 - start_time1);
+        |    println("Pipeline 1: ${elapsed_time1}");
+        |
+        |    let start_time2 = Time.Epoch.milliseconds();
+        |    let _pipeline2 = cat(List#{"./test/clientList.txt"}) |> transDelete(",") |> transToLowerCase |> tee("pipeline2.txt", "./results");
+        |    let end_time2 = Time.Epoch.milliseconds();
+        |    let elapsed_time2 = (end_time2 - start_time2);
+        |    println("Pipeline 2: ${elapsed_time2}");
+        |
+        |    let start_time3 = Time.Epoch.milliseconds();
+        |    let _pipeline3 = ls("./test") |> sort |> uniq |> tee("pipeline3.txt", "./results") |> grep("client") |> wc;
+        |    let end_time3 = Time.Epoch.milliseconds();
+        |    let elapsed_time3 = (end_time3 - start_time3);
+        |    println("Pipeline 3: ${elapsed_time3}");
+        |
+        |    let start_time4 = Time.Epoch.milliseconds();
+        |    let _pipeline4 = findName("./test", "client") |> catMiddle |> grep("Zeta") |> cut(List#{4}) |> uniq |> sort |> tee("pipeline4.txt", "./results") |> wc;
+        |    let end_time4 = Time.Epoch.milliseconds();
+        |    let elapsed_time4 = (end_time4 - start_time4);
+        |    println("Pipeline 4: ${elapsed_time4}");
+        |
+        |    let start_time5 = Time.Epoch.milliseconds();
+        |    let _pipeline5 = cat(List#{"./test/clientList.txt", "./test/clientList.txt", "./test/clientList.txt", "./test/clientList.txt", "./test/clientList.txt", "./test/clientList.txt", "./test/clientList.txt", "./test/clientList.txt"}) |> uniq |> sort;
+        |    let end_time5 = Time.Epoch.milliseconds();
+        |    let elapsed_time5 = (end_time5 - start_time5);
+        |    println("Pipeline 5: ${elapsed_time5}");
+        |
+        |    let start_time7 = Time.Epoch.milliseconds();
+        |    let _pipeline7 = cat(List#{"./test/clientList.txt", "./test/clientList.txt", "./test/clientList.txt", "./test/clientList.txt", "./test/clientList.txt"}) |> grep("Zeta") |> uniq |> sort;
+        |    let end_time7 = Time.Epoch.milliseconds();
+        |    let elapsed_time7 = (end_time7 - start_time7);
+        |    println("Pipeline 7: ${elapsed_time7}");
+        |
+        |    let start_time8 = Time.Epoch.milliseconds();
+        |    let _pipeline8 = cat(List#{"./test/clientList.txt"}) |> sort |> sortReverse |> sort |> sort;
+        |    let end_time8 = Time.Epoch.milliseconds();
+        |    let elapsed_time8 = (end_time8 - start_time8);
+        |    println("Pipeline 8: ${elapsed_time8}")
+        |
+        |def cat(_files: List[String]): (List[String], List[String]) = (List#{}, List#{})
+        |def matchedLines(_r: Result[IOError, String]): (String, String) = ("", "")
+        |def catMiddle(_l: (List[String], List[String])): (List[String], List[String])  = (List#{}, List#{})
+        |def catNew(_files: List[String], _l: (List[String], List[String])): (List[String], List[String])  = (List#{}, List#{})
+        |def cut(_n: List[Int32], _l: (List[String], List[String])): (List[String], List[String]) = (List#{}, List#{})
+        |def echo(_l: (List[String], List[String])): (List[String], List[String])  = (List#{}, List#{})
+        |def findName(_directory: String, _name: String): (List[String], List[String])  = (List#{}, List#{})
+        |def grep(_pattern: String, _l: (List[String], List[String])): (List[String], List[String]) = (List#{}, List#{})
+        |def head(_n: Int32, _l: (List[String], List[String])): (List[String], List[String]) = (List#{}, List#{})
+        |def ls(_path: String): (List[String], List[String])  = (List#{}, List#{})
+        |def shift(_l: (List[String], List[String])): (List[String], List[String]) = (List#{}, List#{})
+        |def sort(_l: (List[String], List[String])): (List[String], List[String]) = (List#{}, List#{})
+        |def sortReverse(_l: (List[String], List[String])): (List[String], List[String]) = (List#{}, List#{})
+        |def tail(_n: Int32, _l: (List[String], List[String])): (List[String], List[String]) = (List#{}, List#{})
+        |def tee(_file_name: String, _directory: String, _l: (List[String], List[String])): (List[String], List[String])  = (List#{}, List#{})
+        |def exists(_filePath: String): Bool  = false
+        |def transDelete(_chars: String, _l: (List[String], List[String])): (List[String], List[String]) =(List#{}, List#{})
+        |def transToLowerCase(_l: (List[String], List[String])): (List[String], List[String]) =(List#{}, List#{})
+        |def transToUpperCase(_l: (List[String], List[String])): (List[String], List[String]) =(List#{}, List#{})
+        |def uniq(_l: (List[String], List[String])): (List[String], List[String]) = (List#{}, List#{})
+        |def wc(_l: (List[String], List[String])): (Int32, List[String]) = (0, List#{})
+        |def index(_index: Int32, _l: List[String]): String = ""
+        |def indices(_n: List[Int32], _l: List[String]): String = ""
+        |""".stripMargin
+    val result = compile(input, Options.DefaultTest)
+    expectSuccess(result)
+  }
+
+  test("IllegalModule.01") {
+    val input =
+      """
+        |mod DelayMap {
+        |    @Experimental
+        |    pub de
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
+  test("IllegalModuleName.01") {
     val input =
       """
         |mod mymod {
@@ -751,8 +1044,7 @@ class TestParserHappy extends AnyFunSuite with TestUtils {
     expectError[ParseError](result)
   }
 
-  // TODO: unignore with Parser2
-  ignore("IllegalModuleName.02") {
+  test("IllegalModuleName.02") {
     val input =
       """
         |mod Mymod.othermod {
@@ -762,8 +1054,7 @@ class TestParserHappy extends AnyFunSuite with TestUtils {
     expectError[ParseError](result)
   }
 
-  // TODO: unignore with Parser2
-  ignore("IllegalModuleName.03") {
+  test("IllegalModuleName.03") {
     val input =
       """
         |mod Mymod {

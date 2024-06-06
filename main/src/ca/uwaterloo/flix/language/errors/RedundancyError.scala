@@ -498,7 +498,7 @@ object RedundancyError {
     *
     * @param ident the unused type variable.
     */
-  case class UnusedTypeParam(ident: Name.Ident) extends RedundancyError with Recoverable {
+  case class UnusedTypeParam(ident: Name.Ident, loc: SourceLocation) extends RedundancyError with Recoverable {
     def summary: String = "Unused type parameter."
 
     def message(formatter: Formatter): String = {
@@ -520,8 +520,6 @@ object RedundancyError {
          |
          |""".stripMargin
     })
-
-    def loc: SourceLocation = SourceLocation.mk(ident.sp1, ident.sp2)
   }
 
   /**

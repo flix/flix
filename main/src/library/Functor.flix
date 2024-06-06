@@ -26,13 +26,13 @@ pub lawful trait Functor[m : Type -> Type] {
     ///
     /// Mapping the identity function over a functor preserves the functor.
     ///
-    law identity: forall(x: m[a]) with Eq[m[a]] . Functor.map(identity, x) == x
+    law identity: forall(x: m[a]) with Eq[m[a]] Functor.map(identity, x) == x
 
     ///
     /// Composing two functions and mapping the resulting function over a functor is the same as
     /// mapping the functions one after the other over the functor.
     ///
-    law composition: forall(f: b -> c, g: a -> b, v: m[a]) with Eq[m[c]] . Functor.map(g >> f, v) == Functor.map(f, Functor.map(g, v))
+    law composition: forall(f: b -> c, g: a -> b, v: m[a]) with Eq[m[c]] Functor.map(g >> f, v) == Functor.map(f, Functor.map(g, v))
 }
 
 mod Functor {

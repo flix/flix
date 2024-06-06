@@ -28,6 +28,7 @@ import ca.uwaterloo.flix.tools.Summary
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.collection.Chain
+import ca.uwaterloo.flix.util.tc.Debug
 
 import java.nio.charset.Charset
 import java.nio.file.{Files, Path}
@@ -77,22 +78,16 @@ class Flix {
     * A cache of ASTs for incremental compilation.
     */
   private var cachedLexerTokens: Map[Ast.Source, Array[Token]] = Map.empty
-  private var cachedParserAst:  ParsedAst.Root = ParsedAst.empty
-  private var cachedParserCst:  SyntaxTree.Root = SyntaxTree.empty
+  private var cachedParserCst: SyntaxTree.Root = SyntaxTree.empty
   private var cachedWeederAst: WeededAst.Root = WeededAst.empty
-  private var cachedWeederAst2: WeededAst.Root = WeededAst.empty
   private var cachedDesugarAst: DesugaredAst.Root = DesugaredAst.empty
   private var cachedKinderAst: KindedAst.Root = KindedAst.empty
   private var cachedResolverAst: ResolvedAst.Root = ResolvedAst.empty
   private var cachedTyperAst: TypedAst.Root = TypedAst.empty
 
-  def getParserAst: ParsedAst.Root = cachedParserAst
-
-  def getParserCst: SyntaxTree.Root  = cachedParserCst
+  def getParserCst: SyntaxTree.Root = cachedParserCst
 
   def getWeederAst: WeededAst.Root = cachedWeederAst
-
-  def getWeederAst2: WeededAst.Root = cachedWeederAst2
 
   def getDesugarAst: DesugaredAst.Root = cachedDesugarAst
 
@@ -101,52 +96,6 @@ class Flix {
   def getResolverAst: ResolvedAst.Root = cachedResolverAst
 
   def getTyperAst: TypedAst.Root = cachedTyperAst
-
-  /**
-    * A cache of ASTs for debugging.
-    */
-  private var cachedLoweringAst: LoweredAst.Root = LoweredAst.empty
-  private var cachedTreeShaker1Ast: LoweredAst.Root = LoweredAst.empty
-  private var cachedMonomorpherAst: MonoAst.Root = MonoAst.empty
-  private var cachedMonoTypesAst: MonoAst.Root = MonoAst.empty
-  private var cachedSimplifierAst: SimplifiedAst.Root = SimplifiedAst.empty
-  private var cachedClosureConvAst: SimplifiedAst.Root = SimplifiedAst.empty
-  private var cachedLambdaLiftAst: LiftedAst.Root = LiftedAst.empty
-  private var cachedOptimizerAst: LiftedAst.Root = LiftedAst.empty
-  private var cachedTreeShaker2Ast: LiftedAst.Root = LiftedAst.empty
-  private var cachedEffectBinderAst: ReducedAst.Root = ReducedAst.empty
-  private var cachedTailPosAst: ReducedAst.Root = ReducedAst.empty
-  private var cachedEraserAst: ReducedAst.Root = ReducedAst.empty
-  private var cachedReducerAst: ReducedAst.Root = ReducedAst.empty
-  private var cachedVarOffsetsAst: ReducedAst.Root = ReducedAst.empty
-
-  def getLoweringAst: LoweredAst.Root = cachedLoweringAst
-
-  def getTreeShaker1Ast: LoweredAst.Root = cachedTreeShaker1Ast
-
-  def getMonomorpherAst: MonoAst.Root = cachedMonomorpherAst
-
-  def getMonoTypesAst: MonoAst.Root = cachedMonoTypesAst
-
-  def getSimplifierAst: SimplifiedAst.Root = cachedSimplifierAst
-
-  def getClosureConvAst: SimplifiedAst.Root = cachedClosureConvAst
-
-  def getLambdaLiftAst: LiftedAst.Root = cachedLambdaLiftAst
-
-  def getOptimizerAst: LiftedAst.Root = cachedOptimizerAst
-
-  def getTreeShaker2Ast: LiftedAst.Root = cachedTreeShaker2Ast
-
-  def getEffectBinderAst: ReducedAst.Root = cachedEffectBinderAst
-
-  def getTailPosAst: ReducedAst.Root = cachedTailPosAst
-
-  def getEraserAst: ReducedAst.Root = cachedEraserAst
-
-  def getReducerAst: ReducedAst.Root = cachedReducerAst
-
-  def getVarOffsetsAst: ReducedAst.Root = cachedVarOffsetsAst
 
   /**
     * A sequence of internal inputs to be parsed into Flix ASTs.
@@ -547,29 +496,15 @@ class Flix {
     val result = for {
       afterReader <- Reader.run(getInputs)
       afterLexer <- Lexer.run(afterReader, cachedLexerTokens, changeSet)
-      afterParser <- Parser.run(afterReader, entryPoint, cachedParserAst, changeSet)
-      afterWeeder <- Weeder.run(afterParser, cachedWeederAst, changeSet)
-
-      // Plan for migrating to new parser + weeder:
-      // Stage 1 [ACTIVE]
-      // Run new pipeline and use results but only after the old pipeline.
-      // This way Parser2 and Weeder2 only ever sees code that the old pipeline considers ok.
-      // Errors will look like before, but the new WeededAst, which should be equal to the old one, is used.
-      //
-      // Stage 2
-      // Run new pipeline by default, but make the old one available through --XParser option.
-      //
-      // Stage 3
-      // Full migration, remove old parser and weeder.
-      afterParser2 <- Parser2.run(afterLexer, cachedParserCst, changeSet)
-      afterWeeder2 <- Weeder2.run(afterReader, entryPoint, afterParser2, cachedWeederAst, changeSet)
-
-      afterDesugar = Desugar.run(afterWeeder2, cachedDesugarAst, changeSet)
+      afterParser <- Parser2.run(afterLexer, cachedParserCst, changeSet)
+      afterWeeder <- Weeder2.run(afterReader, entryPoint, afterParser, cachedWeederAst, changeSet)
+      afterDesugar = Desugar.run(afterWeeder, cachedDesugarAst, changeSet)
       afterNamer <- Namer.run(afterDesugar)
       afterResolver <- Resolver.run(afterNamer, cachedResolverAst, changeSet)
       afterKinder <- Kinder.run(afterResolver, cachedKinderAst, changeSet)
       afterDeriver <- Deriver.run(afterKinder)
       afterTyper <- Typer.run(afterDeriver, cachedTyperAst, changeSet)
+      _ = EffectVerifier.run(afterTyper)
       _ <- Regions.run(afterTyper)
       afterEntryPoint <- EntryPoint.run(afterTyper)
       _ <- Instances.run(afterEntryPoint, cachedTyperAst, changeSet)
@@ -582,10 +517,8 @@ class Flix {
       // Update caches for incremental compilation.
       if (options.incremental) {
         this.cachedLexerTokens = afterLexer
-        this.cachedParserAst = afterParser
-        this.cachedParserCst = afterParser2
+        this.cachedParserCst = afterParser
         this.cachedWeederAst = afterWeeder
-        this.cachedWeederAst2 = afterWeeder2
         this.cachedDesugarAst = afterDesugar
         this.cachedKinderAst = afterKinder
         this.cachedResolverAst = afterResolver
@@ -593,10 +526,6 @@ class Flix {
       }
       afterSafety
     }
-
-    // Write formatted asts to disk based on options.
-    // (Possible duplicate files in codeGen will just be empty and overwritten there)
-    AstPrinter.printAsts()
 
     // Shutdown fork-join thread pool.
     shutdownForkJoinPool()
@@ -628,25 +557,22 @@ class Flix {
     initForkJoinPool()
 
     /** Remember to update [[AstPrinter]] about the list of phases. */
-    cachedLoweringAst = Lowering.run(typedAst)
-    cachedTreeShaker1Ast = TreeShaker1.run(cachedLoweringAst)
-    cachedMonomorpherAst = Monomorpher.run(cachedTreeShaker1Ast)
-    cachedMonoTypesAst = MonoTypes.run(cachedMonomorpherAst)
-    cachedSimplifierAst = Simplifier.run(cachedMonoTypesAst)
-    cachedClosureConvAst = ClosureConv.run(cachedSimplifierAst)
-    cachedLambdaLiftAst = LambdaLift.run(cachedClosureConvAst)
-    cachedOptimizerAst = Optimizer.run(cachedLambdaLiftAst)
-    cachedTreeShaker2Ast = TreeShaker2.run(cachedOptimizerAst)
-    cachedEffectBinderAst = EffectBinder.run(cachedTreeShaker2Ast)
-    cachedTailPosAst = TailPos.run(cachedEffectBinderAst)
-    Verifier.run(cachedTailPosAst)
-    cachedEraserAst = Eraser.run(cachedTailPosAst)
-    cachedReducerAst = Reducer.run(cachedEraserAst)
-    cachedVarOffsetsAst = VarOffsets.run(cachedReducerAst)
-    val result = JvmBackend.run(cachedVarOffsetsAst)
-
-    // Write formatted asts to disk based on options.
-    AstPrinter.printAsts()
+    val loweringAst = Lowering.run(typedAst)
+    val treeShaker1Ast = TreeShaker1.run(loweringAst)
+    val monomorpherAst = Monomorpher.run(treeShaker1Ast)
+    val monoTypesAst = MonoTypes.run(monomorpherAst)
+    val simplifierAst = Simplifier.run(monoTypesAst)
+    val closureConvAst = ClosureConv.run(simplifierAst)
+    val lambdaLiftAst = LambdaLift.run(closureConvAst)
+    val optimizerAst = Optimizer.run(lambdaLiftAst)
+    val treeShaker2Ast = TreeShaker2.run(optimizerAst)
+    val effectBinderAst = EffectBinder.run(treeShaker2Ast)
+    val tailPosAst = TailPos.run(effectBinderAst)
+    Verifier.run(tailPosAst)
+    val eraserAst = Eraser.run(tailPosAst)
+    val reducerAst = Reducer.run(eraserAst)
+    val varOffsetsAst = VarOffsets.run(reducerAst)
+    val result = JvmBackend.run(varOffsetsAst)
 
     // Shutdown fork-join thread pool.
     shutdownForkJoinPool()
@@ -676,9 +602,9 @@ class Flix {
   /**
     * Enters the phase with the given name.
     */
-  def phase[A](phase: String)(f: => A): A = {
+  def phase[A](phase: String)(f: => A)(implicit d: Debug[A]): A = {
     // Initialize the phase time object.
-    currentPhase = PhaseTime(phase, 0, Nil)
+    currentPhase = PhaseTime(phase, 0)
 
     if (options.progress) {
       progressBar.observe(currentPhase.phase, "", sample = false)
@@ -695,24 +621,11 @@ class Flix {
     // And add it to the list of executed phases.
     phaseTimers += currentPhase
 
+    if (this.options.xprintphases) {
+      d.emit(phase, r)(this)
+    }
+
     // Return the result computed by the phase.
-    r
-  }
-
-  /**
-    * Enters the sub-phase with the given name.
-    */
-  def subphase[A](subphase: String)(f: => A): A = {
-    // Measure the execution time.
-    val t = System.nanoTime()
-    val r = f
-    val e = System.nanoTime() - t
-
-    // Update the phase with information about the subphase.
-    val subphases = (subphase, e) :: currentPhase.subphases
-    currentPhase = currentPhase.copy(subphases = subphases)
-
-    // Return the result computed by the subphase.
     r
   }
 
