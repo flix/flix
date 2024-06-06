@@ -702,10 +702,18 @@ object Desugar {
       val es = visitExps(exps)
       Expr.Do(op, es, loc)
 
+    case WeededAst.Expr.InvokeConstructor2(clazzName, exps, loc) =>
+      val es = visitExps(exps)
+      Expr.InvokeConstructor2(clazzName, es, loc)
+
     case WeededAst.Expr.InvokeMethod2(exp, name, exps, loc) =>
       val e = visitExp(exp)
       val es = visitExps(exps)
       Expr.InvokeMethod2(e, name, es, loc)
+
+    case WeededAst.Expr.InvokeStaticMethod2(clazzName, methodName, exps, loc) =>
+      val es = visitExps(exps)
+      Expr.InvokeStaticMethod2(clazzName, methodName, es, loc)
 
     case WeededAst.Expr.InvokeConstructor(className, exps, sig, loc) =>
       val es = visitExps(exps)

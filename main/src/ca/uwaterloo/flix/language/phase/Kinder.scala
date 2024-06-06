@@ -737,6 +737,12 @@ object Kinder {
         case args => KindedAst.Expr.Do(op, args, tvar, loc)
       }
 
+    case ResolvedAst.Expr.InvokeConstructor2(clazz, exps0, loc) =>
+      val expsVal = traverse(exps0)(visitExp(_, kenv0, taenv, henv0, root))
+      mapN(expsVal) {
+        exps => KindedAst.Expr.InvokeConstructor2(clazz, exps, loc)
+      }
+
     case ResolvedAst.Expr.InvokeMethod2(exp0, name, exps0, loc) =>
       val expVal = visitExp(exp0, kenv0, taenv, henv0, root)
       val expsVal = traverse(exps0)(visitExp(_, kenv0, taenv, henv0, root))
@@ -746,6 +752,12 @@ object Kinder {
           val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
           val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
           KindedAst.Expr.InvokeMethod2(exp, name, exps, mvar, tvar, evar, loc)
+      }
+
+    case ResolvedAst.Expr.InvokeStaticMethod2(clazz, methodName, exps0, loc) =>
+      val expsVal = traverse(exps0)(visitExp(_, kenv0, taenv, henv0, root))
+      mapN(expsVal) {
+        exps => KindedAst.Expr.InvokeStaticMethod2(clazz, methodName, exps, loc)
       }
 
     case ResolvedAst.Expr.InvokeConstructor(constructor, args0, loc) =>
