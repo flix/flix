@@ -24,4 +24,29 @@ mod Test.Exp.Jvm.InvokeMethod2.ZeroArg {
     def testInvokeMethod2_05(): Bool \ IO =
         let obj = "hello world";
         obj#intern() == obj
+
+    @test
+    def testInvokeMethod2_6(): Bool \ IO =
+        let val = 12093ii;
+        val#intValueExact() == 12093
+
+    @test
+    def testInvokeMethod2_7(): Bool \ IO =
+        let val = -20938ii;
+        val#floatValue() == -20938f32
+
+    @test
+    def testInvokeMethod2_8(): Bool \ IO =
+        let val = 34882ii;
+        val#getLowestSetBit() == 1
+
+    @test
+    def testInvokeMethod2_9(): Bool \ IO =
+        let val = 2384721ii;
+        val#bitCount() == 9
+
+    @test
+    def testInvokeMethod2_10(): Bool \ IO =
+        let val = -32ii;
+        val#abs() == 32ii
 }
