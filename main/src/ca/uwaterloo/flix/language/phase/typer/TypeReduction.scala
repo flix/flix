@@ -136,8 +136,12 @@ object TypeReduction {
         val clazz = classOf[String]
         // Filter out candidate methods by method name
         // NB: this considers also static methods
-        val candidateMethods = clazz.getMethods.filter(m => m.getName == method)
+        val candidateMethods = clazz.getMethods
+          .filter(m => m.getName == method)
           .filter(m => m.getParameterCount == ts.length)
+          .filter(m =>
+            (m.getParameterTypes zip ts).foldLeft(true){ case (acc, (clazz, tpe)) => acc && (Type.getFlixType(clazz) == tpe) } // Parameter types correspondance
+          )
 
         candidateMethods.length match {
           case 1 =>
