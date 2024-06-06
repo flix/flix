@@ -1,4 +1,4 @@
-mod Test.Exp.Jvm.InvokeMethod2 {
+mod Test.Exp.Jvm.InvokeMethod2.ZeroArg {
 
     @test
     def testInvokeMethod2_01(): Bool \ IO =
