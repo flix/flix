@@ -12,53 +12,6 @@ import scala.collection.immutable.SortedSet
 
 object PaperStats {
 
-  private val effVarCount: TrieMap[Symbol.DefnSym, Int] = TrieMap.empty
-
-  def addEffCount(sym: Symbol.DefnSym, tc: List[TypeConstraint]): Unit = {
-    if (effVarCount.contains(sym)) ??? // shouldn't happen
-    else effVarCount.update(sym, effVars(tc).size)
-  }
-
-  private def combine(l: List[SortedSet[Type.Var]]): SortedSet[Type.Var] = {
-    if (l.isEmpty) SortedSet.empty
-    else l.reduce((s1, s2) => s1.union(s2))
-  }
-
-  private def effVars(tcs: List[TypeConstraint]): SortedSet[Type.Var] = {
-    combine(tcs.map(effVars))
-  }
-
-  private def effVars(tc: TypeConstraint): SortedSet[Type.Var] = tc match {
-    case TypeConstraint.Equality(tpe1, tpe2, _) =>
-      effVars(tpe1).union(effVars(tpe2))
-    case TypeConstraint.EqJvmConstructor(mvar, _, tpes, _) =>
-      effVars(mvar).union(combine(tpes.map(effVars)))
-    case TypeConstraint.EqJvmMethod(mvar, tpe0, _, tpes, _) =>
-      effVars(mvar).union(effVars(tpe0)).union(combine(tpes.map(effVars)))
-    case TypeConstraint.Trait(_, tpe, _) =>
-      effVars(tpe)
-    case TypeConstraint.Purification(_, eff1, eff2, _, nested) =>
-      effVars(eff1).union(effVars(eff2)).union(effVars(nested))
-  }
-
-  /**
-    * OBS: not counting associated types as variables.
-    */
-  private def effVars(tpe: Type): SortedSet[Type.Var] = tpe match {
-    case v@Type.Var(_, _) if tpe.kind == Kind.Eff =>
-      SortedSet(v)
-    case Type.Var(_, _) =>
-      SortedSet.empty
-    case Type.Cst(_, _) =>
-      SortedSet.empty
-    case Type.Apply(tpe1, tpe2, _) =>
-      effVars(tpe1).union(effVars(tpe2))
-    case Type.Alias(_, args, tpe, _) =>
-      combine(args.map(effVars)).union(effVars(tpe))
-    case Type.AssocType(_, arg, _, _) =>
-      effVars(arg)
-  }
-
   def run(root: Root): Unit = {
     val defs = allDefs(root, defs = true, instances = true)
     val stats = getStats(defs)
@@ -76,7 +29,7 @@ object PaperStats {
   }
 
   private def getStats(defs: Iterable[Def]): List[Stats] = {
-    defs.map(visitDef).toList.sortWith((s1, s2) => s1.sym.toString < s2.sym.toString)
+    ??? //defs.map(visitDef).toList.sortWith((s1, s2) => s1.sym.toString < s2.sym.toString)
   }
 
   private def allDefs(root: Root, defs: Boolean, instances: Boolean): Iterable[Def] = {
@@ -277,102 +230,5 @@ object PaperStats {
     override def toString: String = {
       s"$sym, $lines, $effect, $lambdas, $effVars"
     }
-  }
-
-  private def visitDef(defn: Def): Stats = {
-    Stats(
-      sym = defn.sym,
-      lines = lineCount(defn),
-      effect = effectType(defn),
-      lambdas = lambdaCount(defn),
-      effVars = effVarCount.getOrElse(defn.sym, -1)
-    )
-  }
-
-  /**
-    * Returns the number of syntactic lambdas in the function body.
-    *
-    * OBS: newObject are not counted as a lambda.
-    */
-  private def lambdaCount(defn: Def): Int = {
-    def visit(e: Expr): Int = e match {
-      case Expr.Cst(cst, tpe, loc) => 0
-      case Expr.Var(sym, tpe, loc) => 0
-      case Expr.Def(sym, tpe, loc) => 0
-      case Expr.Sig(sym, tpe, loc) => 0
-      case Expr.Hole(sym, tpe, loc) => -0
-      case Expr.HoleWithExp(exp, tpe, eff, loc) => visit(exp)
-      case Expr.OpenAs(symUse, exp, tpe, loc) => visit(exp)
-      case Expr.Use(sym, alias, exp, loc) => visit(exp)
-      case Expr.Lambda(fparam, exp, tpe, loc) => 1 + visit(exp)
-      case Expr.Apply(exp, exps, tpe, eff, loc) => (exp :: exps).map(visit).sum
-      case Expr.Unary(sop, exp, tpe, eff, loc) => visit(exp)
-      case Expr.Binary(sop, exp1, exp2, tpe, eff, loc) => visit(exp1) + visit(exp2)
-      case Expr.Let(sym, mod, exp1, exp2, tpe, eff, loc) => visit(exp1) + visit(exp2)
-      case Expr.LetRec(sym, ann, mod, exp1, exp2, tpe, eff, loc) => visit(exp1) + visit(exp2)
-      case Expr.Region(tpe, loc) => 0
-      case Expr.Scope(sym, regionVar, exp, tpe, eff, loc) => visit(exp)
-      case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) => visit(exp1) + visit(exp2) + visit(exp3)
-      case Expr.Stm(exp1, exp2, tpe, eff, loc) => visit(exp1) + visit(exp2)
-      case Expr.Discard(exp, eff, loc) => visit(exp)
-      case Expr.Match(exp, rules, tpe, eff, loc) => (exp :: rules.flatMap(r => r.exp :: r.guard.toList)).map(visit).sum
-      case Expr.TypeMatch(exp, rules, tpe, eff, loc) => (exp :: rules.map(_.exp)).map(visit).sum
-      case Expr.RestrictableChoose(star, exp, rules, tpe, eff, loc) => (exp :: rules.map(_.exp)).map(visit).sum
-      case Expr.Tag(sym, exp, tpe, eff, loc) => visit(exp)
-      case Expr.RestrictableTag(sym, exp, tpe, eff, loc) => visit(exp)
-      case Expr.Tuple(elms, tpe, eff, loc) => elms.map(visit).sum
-      case Expr.RecordEmpty(tpe, loc) => 0
-      case Expr.RecordSelect(exp, label, tpe, eff, loc) => visit(exp)
-      case Expr.RecordExtend(label, exp1, exp2, tpe, eff, loc) => visit(exp1) + visit(exp2)
-      case Expr.RecordRestrict(label, exp, tpe, eff, loc) => visit(exp)
-      case Expr.ArrayLit(exps, exp, tpe, eff, loc) => (exp :: exps).map(visit).sum
-      case Expr.ArrayNew(exp1, exp2, exp3, tpe, eff, loc) => visit(exp1) + visit(exp2) + visit(exp3)
-      case Expr.ArrayLoad(exp1, exp2, tpe, eff, loc) => visit(exp1) + visit(exp2)
-      case Expr.ArrayLength(exp, eff, loc) => visit(exp)
-      case Expr.ArrayStore(exp1, exp2, exp3, eff, loc) => visit(exp1) + visit(exp2) + visit(exp3)
-      case Expr.VectorLit(exps, tpe, eff, loc) => exps.map(visit).sum
-      case Expr.VectorLoad(exp1, exp2, tpe, eff, loc) => visit(exp1) + visit(exp2)
-      case Expr.VectorLength(exp, loc) => visit(exp)
-      case Expr.Ref(exp1, exp2, tpe, eff, loc) => visit(exp1) + visit(exp2)
-      case Expr.Deref(exp, tpe, eff, loc) => visit(exp)
-      case Expr.Assign(exp1, exp2, tpe, eff, loc) => visit(exp1) + visit(exp2)
-      case Expr.Ascribe(exp, tpe, eff, loc) => visit(exp)
-      case Expr.InstanceOf(exp, clazz, loc) => visit(exp)
-      case Expr.CheckedCast(cast, exp, tpe, eff, loc) => visit(exp)
-      case Expr.UncheckedCast(exp, declaredType, declaredEff, tpe, eff, loc) => visit(exp)
-      case Expr.UncheckedMaskingCast(exp, tpe, eff, loc) => visit(exp)
-      case Expr.Without(exp, effUse, tpe, eff, loc) => visit(exp)
-      case Expr.TryCatch(exp, rules, tpe, eff, loc) => (exp :: rules.map(_.exp)).map(visit).sum
-      case Expr.TryWith(exp, effUse, rules, tpe, eff, loc) => (exp :: rules.map(_.exp)).map(visit).sum
-      case Expr.Do(op, exps, tpe, eff, loc) => exps.map(visit).sum
-      case Expr.InvokeConstructor(constructor, exps, tpe, eff, loc) => exps.map(visit).sum
-      case Expr.InvokeMethod(method, exp, exps, tpe, eff, loc) => (exp :: exps).map(visit).sum
-      case Expr.InvokeStaticMethod(method, exps, tpe, eff, loc) => exps.map(visit).sum
-      case Expr.GetField(field, exp, tpe, eff, loc) => visit(exp)
-      case Expr.PutField(field, exp1, exp2, tpe, eff, loc) => visit(exp1) + visit(exp2)
-      case Expr.GetStaticField(field, tpe, eff, loc) => 0
-      case Expr.PutStaticField(field, exp, tpe, eff, loc) => visit(exp)
-      case Expr.NewObject(name, clazz, tpe, eff, methods, loc) => methods.map(_.exp).map(visit).sum
-      case Expr.NewChannel(exp1, exp2, tpe, eff, loc) => visit(exp1) + visit(exp2)
-      case Expr.GetChannel(exp, tpe, eff, loc) => visit(exp)
-      case Expr.PutChannel(exp1, exp2, tpe, eff, loc) => visit(exp1) + visit(exp2)
-      case Expr.SelectChannel(rules, default, tpe, eff, loc) => (default.toList ++ rules.flatMap(r => List(r.exp, r.chan))).map(visit).sum
-      case Expr.Spawn(exp1, exp2, tpe, eff, loc) => visit(exp1) + visit(exp2)
-      case Expr.ParYield(frags, exp, tpe, eff, loc) => (exp :: frags.map(_.exp)).map(visit).sum
-      case Expr.Lazy(exp, tpe, loc) => visit(exp)
-      case Expr.Force(exp, tpe, eff, loc) => visit(exp)
-      case Expr.FixpointConstraintSet(cs, tpe, loc) => cs.flatMap(_.head match {
-        case Head.Atom(pred, den, terms, tpe, loc) => terms
-      }).map(visit).sum
-      case Expr.FixpointLambda(pparams, exp, tpe, eff, loc) => visit(exp)
-      case Expr.FixpointMerge(exp1, exp2, tpe, eff, loc) => visit(exp1) + visit(exp2)
-      case Expr.FixpointSolve(exp, tpe, eff, loc) => visit(exp)
-      case Expr.FixpointFilter(pred, exp, tpe, eff, loc) => visit(exp)
-      case Expr.FixpointInject(exp, pred, tpe, eff, loc) => visit(exp)
-      case Expr.FixpointProject(pred, exp, tpe, eff, loc) => visit(exp)
-      case Expr.Error(m, tpe, eff) => 0
-    }
-
-    visit(defn.exp)
   }
 }

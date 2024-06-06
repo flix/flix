@@ -147,8 +147,6 @@ object Lowering {
   def run(root: TypedAst.Root)(implicit flix: Flix): LoweredAst.Root = flix.phase("Lowering") {
     implicit val r: TypedAst.Root = root
 
-    PaperStats.run(root)
-
     val defs = ParOps.parMapValues(root.defs)(visitDef)
     val sigs = ParOps.parMapValues(root.sigs)(visitSig)
     val instances = ParOps.parMapValues(root.instances)(insts => insts.map(visitInstance))

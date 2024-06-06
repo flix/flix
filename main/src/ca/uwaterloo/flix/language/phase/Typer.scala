@@ -22,6 +22,7 @@ import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.typer.{ConstraintGen, ConstraintSolver, TypeContext}
 import ca.uwaterloo.flix.language.phase.unification.Substitution
+import ca.uwaterloo.flix.tools.Summary
 import ca.uwaterloo.flix.util.Validation.{mapN, traverse}
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.collection.ListMap
@@ -169,7 +170,7 @@ object Typer {
     val (tpe, eff) = ConstraintGen.visitExp(defn.exp)
     val infRenv = context.getRigidityEnv
     val infTconstrs = context.getTypeConstraints
-    PaperStats.addEffCount(defn.sym, infTconstrs)
+    if (flix.options.xsummary) Summary.addEffCount(defn.sym, infTconstrs)
     val infResult = ConstraintSolver.InfResult(infTconstrs, tpe, eff, infRenv)
     val substVal = ConstraintSolver.visitDef(defn, infResult, renv0, tconstrs0, traitEnv, eqEnv, root)
     val assocVal = checkAssocTypes(defn.spec, tconstrs0, traitEnv)
@@ -221,6 +222,7 @@ object Typer {
         val (tpe, eff) = ConstraintGen.visitExp(exp)
         val renv = context.getRigidityEnv
         val constrs = context.getTypeConstraints
+        if (flix.options.xsummary) Summary.addEffCount(sig.sym, constrs)
         val infResult = ConstraintSolver.InfResult(constrs, tpe, eff, renv)
         val substVal = ConstraintSolver.visitSig(sig, infResult, renv0, tconstrs0, traitEnv, eqEnv, root)
         mapN(substVal) {
