@@ -71,14 +71,14 @@ object TypeError {
    */
   case class MethodNotFound(methodName: String, tpe0: Type, tpes: List[Type], methods: List[JvmMethod], renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     // TODO INTEROP better comment, e.g., list possible methods
-    def summary: String = s"Java method '$methodName' in type '$tpe0' with arguments types '${tpes.toString}' not found."
+    def summary: String = s"Java method '$methodName' in type '$tpe0' with arguments types (${tpes.mkString(", ")}) not found."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Java method '$methodName' from type '${red(formatType(tpe0, Some(renv)))}' with arguments types '${tpes.map( t => red(formatType(t, Some(renv))).mkString(", "))}}' not found.
+         |>> Java method '$methodName' from type '${red(formatType(tpe0, Some(renv)))}' with arguments types (${tpes.mkString(", ")}) not found.
          |
-         |${code(loc, s"java method '${methodName} method not found")}
+         |${code(loc, s"java method '${methodName} not found")}
          |""".stripMargin
     }
   }
