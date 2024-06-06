@@ -126,7 +126,7 @@ object EffUnification2 {
 
     case tpe@Type.Cst(TypeConstructor.Effect(_), _) => m.getForward(toAtom(tpe)) match {
       case None => throw InternalCompilerException(s"Unexpected unbound effect: '$t'.", t.loc)
-      case Some(x) => Term.Elem(x)
+      case Some(x) => Term.mkElemSet(x)
     }
 
     case tpe: Type.AssocType => m.getForward(toAtom(tpe)) match {
@@ -167,7 +167,7 @@ object EffUnification2 {
   /**
     * Returns a regular type substitution obtained from the given Boolean substitution `s`.
     */
-  private def fromBoolSubst(s: FastSetUnification.BoolSubstitution)(implicit m: Bimap[Atom, Int]): Substitution = {
+  private def fromBoolSubst(s: FastSetUnification.SetSubstitution)(implicit m: Bimap[Atom, Int]): Substitution = {
     Substitution(s.m.foldLeft(Map.empty[Symbol.KindedTypeVarSym, Type]) {
       case (macc, (k, v)) =>
         m.getBackward(k).get match {
@@ -200,7 +200,7 @@ object EffUnification2 {
     case Term.Univ => Type.Univ
     case Term.Empty => Type.Pure
     case Term.Cst(c) => fromAtom(m.getBackward(c).get, loc) // Safe: We never introduce new variables.
-    case Term.Elem(i) => fromAtom(m.getBackward(i).get, loc)
+    case Term.ElemSet(s) => Type.mkUnion(s.toList.map(i => fromAtom(m.getBackward(i).get, loc)), loc)
     case Term.Var(x) => fromAtom(m.getBackward(x).get, loc) // Safe: We never introduce new variables.
     case Term.Compl(t) => Type.mkComplement(fromTermDirect(t, loc), loc)
     case Term.Inter(posElem, posCsts, posVars, negElems, negCsts, negVars, rest) =>

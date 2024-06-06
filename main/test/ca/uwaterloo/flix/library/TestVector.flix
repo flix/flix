@@ -786,7 +786,7 @@ mod TestVector {
     @test
     def scanRight02(): Bool =
         let v = Vector.scanRight((b, i) -> if (b) i + 1 else i + 2, 1, Vector#{false});
-        v == Vector#{3, 1}
+        debug(v) == Vector#{3, 1}
 
     @test
     def scanRight03(): Bool =
