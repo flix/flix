@@ -32,7 +32,7 @@ mod Test.Exp.Jvm.InvokeMethod2.Chaining {
         val#multiply(11ii)#negate() == -1043152ii
 
     @test
-    def testInvokeMethod2_01(): Bool \ IO =
+    def testInvokeMethod2_07(): Bool \ IO =
         let val = 324521ii;
         val#shiftLeft(2)#max(1284ii)#modPow(1ii, 10ii) == 4ii
 }
