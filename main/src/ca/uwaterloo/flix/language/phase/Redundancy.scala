@@ -140,7 +140,7 @@ object Redundancy {
           !usedTypeVars.contains(tparam.sym) &&
             !tparam.name.name.startsWith("_")
       }
-      result ++= unusedTypeParams.map(tparam => UnusedTypeParam(tparam.name))
+      result ++= unusedTypeParams.map(tparam => UnusedTypeParam(tparam.name, tparam.loc))
     }
     result.toList
   }
@@ -242,7 +242,7 @@ object Redundancy {
       val tpes = fparams.map(_.tpe) ::: tpe :: eff :: tconstrs.map(_.arg) ::: econstrs.map(_.tpe1) ::: econstrs.map(_.tpe2)
       val used = tpes.flatMap { t => t.typeVars.map(_.sym) }.toSet
       tparams.collect {
-        case tparam if deadTypeVar(tparam.sym, used) => UnusedTypeParam(tparam.name)
+        case tparam if deadTypeVar(tparam.sym, used) => UnusedTypeParam(tparam.name, tparam.loc)
       }
   }
 
