@@ -1023,8 +1023,18 @@ class TestParserHappy extends AnyFunSuite with TestUtils {
     expectSuccess(result)
   }
 
-  // TODO: unignore with Parser2
-  ignore("IllegalModuleName.01") {
+  test("IllegalModule.01") {
+    val input =
+      """
+        |mod DelayMap {
+        |    @Experimental
+        |    pub de
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
+  test("IllegalModuleName.01") {
     val input =
       """
         |mod mymod {
@@ -1034,8 +1044,7 @@ class TestParserHappy extends AnyFunSuite with TestUtils {
     expectError[ParseError](result)
   }
 
-  // TODO: unignore with Parser2
-  ignore("IllegalModuleName.02") {
+  test("IllegalModuleName.02") {
     val input =
       """
         |mod Mymod.othermod {
@@ -1045,8 +1054,7 @@ class TestParserHappy extends AnyFunSuite with TestUtils {
     expectError[ParseError](result)
   }
 
-  // TODO: unignore with Parser2
-  ignore("IllegalModuleName.03") {
+  test("IllegalModuleName.03") {
     val input =
       """
         |mod Mymod {
