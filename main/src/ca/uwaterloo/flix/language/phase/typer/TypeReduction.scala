@@ -163,7 +163,7 @@ object TypeReduction {
       case 1 =>
         val tpe = Type.Cst(TypeConstructor.JvmMethod(candidateMethods.head), loc)
         JavaResolutionResult.Resolved(tpe)
-      case _ => JavaResolutionResult.AmbiguousMethod(candidateMethods.toList) // For now, method not found either if there is an ambiguity or no method found
+      case _ => JavaResolutionResult.AmbiguousMethod(candidateMethods.toList)
     }
   }
 
