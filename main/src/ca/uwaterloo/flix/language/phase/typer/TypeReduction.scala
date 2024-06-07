@@ -141,6 +141,9 @@ object TypeReduction {
       case Type.Cst(TypeConstructor.BigInt, _) =>
         val clazz = classOf[BigInteger]
         retrieveMethod(clazz, method, ts, loc)
+      case Type.Cst(TypeConstructor.BigDecimal, _) =>
+        val clazz = classOf[java.math.BigDecimal]
+        retrieveMethod(clazz, method, ts, loc)
       case Type.Cst(TypeConstructor.Native(clazz), _) =>
         retrieveMethod(clazz, method, ts, loc)
       case _ => JavaResolutionResult.MethodNotFound
@@ -177,6 +180,8 @@ object TypeReduction {
               case (acc, (clazz, tpe)) => acc && (Type.getFlixType(clazz) == tpe)
             })
         exactSignature.length match {
+          
+          
           case 1 => JavaResolutionResult.Resolved(Type.Cst(TypeConstructor.JvmMethod(exactSignature.head), loc))
           case _ => JavaResolutionResult.AmbiguousMethod(candidateMethods.toList)
         }
