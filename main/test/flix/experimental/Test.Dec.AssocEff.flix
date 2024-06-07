@@ -132,7 +132,7 @@ mod Test.Dec.AssocEff {
         type Aef = DeepIterable.Aef[a]
         pub def iterator(rc: Region[r], x: List[a]): Iterator[DeepIterable.Elm[a], r + DeepIterable.Aef[a], r] \ r + DeepIterable.Aef[a] = {
             // this is needed because the nested Aef isn't actually executed when we flatMap
-            let _ = (checked_ecast(123): _ \ DeepIterable.Aef[a]);
+            let _ = (checked_ecast(123): _ \ DeepIterable.Aef[a]); // cannot
             List.iterator(rc, x) |> Iterator.flatMap(DeepIterable.iterator(rc))
 
         }

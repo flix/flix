@@ -46,7 +46,7 @@ mod Iterator {
             case Some(a) => Ans(a)
             case None    => Done
         };
-        let iterF = () -> checked_ecast(f1());
+        let iterF = () -> (f1());
         Iterator(rc, iterF)
 
     ///

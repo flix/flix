@@ -321,7 +321,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |}
         |
         |instance C[Bool] {
-        |    pub def f(x: Bool, y: Int32): Int32 \ IO = checked_ecast(123)
+        |    pub def f(x: Bool, y: Int32): Int32 \ IO = (123)
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -336,7 +336,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |}
         |
         |instance C[Bool] {
-        |    pub def f(x: Bool, y: Int32): Int32 \ IO = checked_ecast(123)
+        |    pub def f(x: Bool, y: Int32): Int32 \ IO = (123)
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
