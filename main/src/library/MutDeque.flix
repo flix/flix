@@ -34,7 +34,7 @@ pub enum MutDeque[a: Type, r: Region] {
 instance Iterable[MutDeque[a, r]] {
     type Elm = a
     type Aef = r
-    pub def iterator(rc: Region[r1], md: MutDeque[a, r]): Iterator[a, r + r1, r1] \ (r + r1) = MutDeque.iterator(rc, md)
+    pub def iterator(rc: Region[r1], md: MutDeque[a, r]): Iterator[a, r + r1, r1] \ r1 = MutDeque.iterator(rc, md)
 }
 
 mod MutDeque {
@@ -423,10 +423,11 @@ mod MutDeque {
     ///
     /// Modifying `d` while using an iterator has undefined behavior and is dangerous.
     ///
-    pub def iterator(rc: Region[r1], d: MutDeque[a, r2]): Iterator[a, r1 + r2, r1] \ { r1, r2 } =
+    pub def iterator(rc: Region[r1], d: MutDeque[a, r2]): Iterator[a, r1 + r2, r1] \ r1 =
         let MutDeque(_, a, f, b) = d;
-        let i = ref (deref f) @ rc;
+        let i = ref -1 @ rc;
         let next = () -> {
+            if (deref i == -1) Ref.put(deref f, i) else ();
             if (deref i < deref b) {
                 let x = Array.get(deref i, deref a);
                 Ref.put(deref i + Int32.bitwiseAnd(1, capacity(d) - 1), i);

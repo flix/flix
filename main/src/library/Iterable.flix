@@ -34,12 +34,12 @@ pub trait Iterable[t] {
     ///
     /// Returns an iterator over `t`.
     ///
-    pub def iterator(rc: Region[r], t: t): Iterator[Iterable.Elm[t], r + aef, r] \ (r + aef) where Iterable.Aef[t] ~ aef
+    pub def iterator(rc: Region[r], t: t): Iterator[Iterable.Elm[t], r + aef, r] \ r where Iterable.Aef[t] ~ aef
 
     ///
     /// Returns an iterator over `t` zipped with the indices of the elements.
     ///
-    pub def enumerator(rc: Region[r], t: t): Iterator[(Int32, Iterable.Elm[t]), r + aef, r] \ (r + aef) where Iterable.Aef[t] ~ aef =
+    pub def enumerator(rc: Region[r], t: t): Iterator[(Int32, Iterable.Elm[t]), r + aef, r] \ r where Iterable.Aef[t] ~ aef =
         Iterable.iterator(rc, t) |> Iterator.zipWithIndex
 
 }

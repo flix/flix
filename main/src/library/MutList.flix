@@ -28,7 +28,7 @@ pub enum MutList[a: Type, r: Region] {
 instance Iterable[MutList[a, r]] {
     type Elm = a
     type Aef = r
-    pub def iterator(rc: Region[r1], l: MutList[a, r]): Iterator[a, r + r1, r1] \ (r + r1) = MutList.iterator(rc, l)
+    pub def iterator(rc: Region[r1], l: MutList[a, r]): Iterator[a, r + r1, r1] \ r1 = MutList.iterator(rc, l)
 }
 
 mod MutList {
@@ -826,13 +826,12 @@ mod MutList {
     ///
     /// Modifying `l` while using an iterator has undefined behavior and is dangerous.
     ///
-    pub def iterator(rc: Region[r1], l: MutList[a, r2]): Iterator[a, r1 + r2, r1] \ { r1, r2 } =
+    pub def iterator(rc: Region[r1], l: MutList[a, r2]): Iterator[a, r1 + r2, r1] \ r1 =
         let MutList(_, a, len) = l;
-        let len1 = deref len;
         let ix = ref 0 @ rc;
         let next = () -> {
             let i = deref ix;
-            if (i < len1) {
+            if (i < deref len) {
                 let x = Array.get(i, deref a);
                 Ref.put(i + 1, ix);
                 Some(x)

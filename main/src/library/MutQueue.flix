@@ -30,7 +30,7 @@ pub enum MutQueue[a: Type, r: Region] {
 instance Iterable[MutQueue[a, r]] {
     type Elm = a
     type Aef = r
-    pub def iterator(rc: Region[r1], q: MutQueue[a, r]): Iterator[a, r + r1, r1] \ (r + r1) = MutQueue.iterator(rc, q)
+    pub def iterator(rc: Region[r1], q: MutQueue[a, r]): Iterator[a, r + r1, r1] \ r1 = MutQueue.iterator(rc, q)
 }
 
 mod MutQueue {
@@ -124,10 +124,20 @@ mod MutQueue {
     ///
     /// Modifying `mq` during iteration is undefined and not recommended.
     ///
-    pub def iterator(rc: Region[r1], mq: MutQueue[a, r2]): Iterator[a, r1 + r2, r1] \ {r1, r2} =
+    pub def iterator(rc: Region[r1], mq: MutQueue[a, r2]): Iterator[a, r1 + r2, r1] \ r1 =
         let MutQueue(_, arr, s) = mq;
-        let it1 = Iterator.range(rc, 0, deref s);
-        Iterator.map(x -> Array.get(x, deref arr), it1)
+        let ix = ref 0 @ rc;
+        let next = () -> {
+            let i = deref ix;
+            if (i < deref s) {
+                let x = Array.get(i, deref arr);
+                Ref.put(i + 1, ix);
+                Some(x)
+            } else {
+                None
+            }
+        };
+        Iterator.iterate(rc, next)
 
     ///
     /// Returns a List representation of `mq`.
