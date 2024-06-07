@@ -55,7 +55,7 @@ mod Test.Dec.AssocEff {
     trait Iterable[t: Type] {
         type Elm: Type
         type Aef: Eff
-        pub def iterator(rc: Region[r], t: t): Iterator[Iterable.Elm[t], r + Iterable.Aef[t], r] \ r + Iterable.Aef[t]
+        pub def iterator(rc: Region[r], t: t): Iterator[Iterable.Elm[t], r + Iterable.Aef[t], r] \ r
     }
 
     instance Iterable[List[a]] {
@@ -69,7 +69,7 @@ mod Test.Dec.AssocEff {
     instance Iterable[MutList[a, r1]] {
         type Elm = a
         type Aef = r1
-        pub def iterator(rc: Region[r], l: MutList[a, r1]): Iterator[a, r + r1, r] \ r + r1 = {
+        pub def iterator(rc: Region[r], l: MutList[a, r1]): Iterator[a, r + r1, r] \ r = {
             MutList.iterator(rc, l)
         }
     }
@@ -85,7 +85,7 @@ mod Test.Dec.AssocEff {
     instance Iterable[MutMap[k, v, r1]] {
         type Elm = (k, v)
         type Aef = r1
-        pub def iterator(rc: Region[r], l: MutMap[k, v, r1]): Iterator[(k, v), r + r1, r] \ r + r1 = {
+        pub def iterator(rc: Region[r], l: MutMap[k, v, r1]): Iterator[(k, v), r + r1, r] \ r = {
             MutMap.iterator(rc, l)
         }
     }
