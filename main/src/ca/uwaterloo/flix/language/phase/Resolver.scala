@@ -1420,12 +1420,24 @@ object Resolver {
               }
           }
 
+        case NamedAst.Expr.InvokeConstructor2(clazzName, exps, loc) =>
+          val esVal = traverse(exps)(visitExp(_, env0))
+          mapN(esVal) {
+            es => ResolvedAst.Expr.InvokeConstructor2(Class.forName(clazzName.name), es, loc)
+          }
+
         case NamedAst.Expr.InvokeMethod2(exp, name, exps, loc) =>
           val eVal = visitExp(exp, env0)
           val esVal = traverse(exps)(visitExp(_, env0))
           mapN(eVal, esVal) {
             case (e, es) =>
               ResolvedAst.Expr.InvokeMethod2(e, name, es, loc)
+          }
+
+        case NamedAst.Expr.InvokeStaticMethod2(clazzName, methodName, exps, loc) =>
+          val esVal = traverse(exps)(visitExp(_, env0))
+          mapN(esVal) {
+            es => ResolvedAst.Expr.InvokeStaticMethod2(Class.forName(clazzName.name), methodName, es, loc)
           }
 
         case NamedAst.Expr.InvokeConstructor(className, args, sig, loc) =>

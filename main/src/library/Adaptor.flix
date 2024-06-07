@@ -27,7 +27,7 @@ mod Adaptor {
         let f1 = (o1, o2) -> {
             let a = unchecked_cast(o1 as a);
             let b = unchecked_cast(o2 as a);
-            Order.compare(a, b) |> Comparison.toInt
+            Order.compare(a, b) |> Comparison.toInt32
         };
         new ##java.util.Comparator {
             def compare(_this: ##java.util.Comparator, t: ##java.lang.Object, u: ##java.lang.Object): Int32 =
