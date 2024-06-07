@@ -23,6 +23,8 @@ import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.collection.{ListMap, ListOps}
 import java.lang.reflect.Method;
 
+import java.math.BigInteger
+
 object TypeReduction {
 
   /**
@@ -131,13 +133,17 @@ object TypeReduction {
    * @param loc     the location where the java method has been called
    * @return        A ResolutionResult object that indicates the status of the resolution progress
    */
-  def lookupMethod(thisObj: Type, method: String, ts: List[Type], loc: SourceLocation)(implicit flix: Flix): JavaResolutionResult =
-    thisObj match {
+  def lookupMethod(thisObj: Type, method: String, ts: List[Type], loc: SourceLocation)(implicit flix: Flix): JavaResolutionResult = {
+    thisObj match { // there might be a possible factorization
       case Type.Cst(TypeConstructor.Str, _) =>
         val clazz = classOf[String]
         retrieveMethod(clazz, method, ts, loc)
+      case Type.Cst(TypeConstructor.BigInt, _) =>
+        val clazz = classOf[BigInteger]
+        retrieveMethod(clazz, method, ts, loc)
       case _ => JavaResolutionResult.MethodNotFound
     }
+  }
 
   /**
    * Helper method to retrieve a method given its name and parameter types.
