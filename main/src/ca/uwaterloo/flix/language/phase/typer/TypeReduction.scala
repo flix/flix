@@ -19,10 +19,10 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{Ast, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.unification.Unification
-import ca.uwaterloo.flix.util.Result
+import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 import ca.uwaterloo.flix.util.collection.{ListMap, ListOps}
-import java.lang.reflect.Method;
 
+import java.lang.reflect.Method
 import java.math.BigInteger
 
 object TypeReduction {
@@ -141,6 +141,8 @@ object TypeReduction {
       case Type.Cst(TypeConstructor.BigInt, _) =>
         val clazz = classOf[BigInteger]
         retrieveMethod(clazz, method, ts, loc)
+      case Type.Cst(TypeConstructor.Native(clazz), _) =>
+        retrieveMethod(clazz, method, ts, loc)
       case _ => JavaResolutionResult.MethodNotFound
     }
   }
@@ -154,16 +156,46 @@ object TypeReduction {
     val candidateMethods = clazz.getMethods
       .filter(m => m.getName == method)
       .filter(m => m.getParameterCount == ts.length)
-      .filter(m =>
-        (m.getParameterTypes zip ts).foldLeft(true){ case (acc, (clazz, tpe)) => acc && (Type.getFlixType(clazz) == tpe) } // Parameter types correspondance
-      )
+      .filter(m => // Parameter types correspondance with subtyping
+        (m.getParameterTypes zip ts).foldLeft(true) {
+          case (acc, (clazz, tpe)) => acc && isSubtype(Type.getFlixType(clazz), tpe)
+          })
+      // NB: once methods with same signatures have been filtered out, we should remove super-methods duplicates if superclass is abstract or ignore if it is a primitive type, e.g., void
+      .filter(m => m.getReturnType.isPrimitive || !java.lang.reflect.Modifier.isAbstract(m.getReturnType.getModifiers)) // temporary to avoid superclass abstract duplicate
 
     candidateMethods.length match {
       case 0 => JavaResolutionResult.MethodNotFound
       case 1 =>
         val tpe = Type.Cst(TypeConstructor.JvmMethod(candidateMethods.head), loc)
         JavaResolutionResult.Resolved(tpe)
-      case _ => JavaResolutionResult.AmbiguousMethod(candidateMethods.toList)
+      case _ =>
+        // Among candidate methods if there already exists the method with the exact signature, we should ignore the rest. E.g.: append(String), append(Object) in SB for the call append("a") should already know to use append(String)
+        // TODO: there is surely a better way to repeat the operation, pre-factorization should be possible
+        val exactSignature = candidateMethods
+          .filter(m => // Parameter types correspondance with subtyping
+            (m.getParameterTypes zip ts).foldLeft(true) {
+              case (acc, (clazz, tpe)) => acc && (Type.getFlixType(clazz) == tpe)
+            })
+        exactSignature.length match {
+          case 1 => JavaResolutionResult.Resolved(Type.Cst(TypeConstructor.JvmMethod(exactSignature.head), loc))
+          case _ => JavaResolutionResult.AmbiguousMethod(candidateMethods.toList)
+        }
+    }
+  }
+
+  /**
+   * Helper method to define a sub-typing relation between two given Flix types.
+   * Returns true if tpe2 is a sub-type of type tpe1, false otherwise.
+   */
+  private def isSubtype(tpe1: Type, tpe2: Type)(implicit flix: Flix): Boolean = {
+    (tpe1, tpe2) match {
+      case (_, Type.Null) => true // Null is a sub-type of every other type
+      case (t1, t2) if t1 == t2 => true
+      case (Type.Cst(TypeConstructor.Native(clazz1), _), Type.Cst(TypeConstructor.Native(clazz2), _)) => clazz1.isAssignableFrom(clazz2)
+      case (Type.Cst(TypeConstructor.Native(clazz), _), Type.Cst(TypeConstructor.Str, _)) => clazz.isAssignableFrom(classOf[String])
+      case (Type.Cst(TypeConstructor.Native(clazz), _), Type.Cst(TypeConstructor.BigInt, _)) => clazz.isAssignableFrom(classOf[BigInteger])
+      case (Type.Cst(TypeConstructor.Native(clazz), _), Type.Cst(TypeConstructor.BigDecimal, _)) => clazz.isAssignableFrom(classOf[java.math.BigDecimal])
+      case _ => false
     }
   }
 
