@@ -692,7 +692,7 @@ object Namer {
       val sym = Symbol.freshVarSym(ident, BoundBy.Let)
 
       // Introduce a rigid region variable for the region.
-      val regionVar = Symbol.freshUnkindedTypeVarSym(Ast.VarText.SourceText(sym.text), isRegion = true, loc)
+      val regionVar = Symbol.freshUnkindedTypeVarSym(Ast.VarText.SourceText(sym.text), isRegion = true, isSlack = false, loc)
 
       // We must increase the level because we go under a new region scope.
       mapN(visitExp(exp, ns0)) {
@@ -1597,7 +1597,7 @@ object Namer {
     * Creates a flexible unkinded type variable symbol from the given ident.
     */
   private def mkTypeVarSym(ident: Name.Ident)(implicit flix: Flix): Symbol.UnkindedTypeVarSym = {
-    Symbol.freshUnkindedTypeVarSym(Ast.VarText.SourceText(ident.name), isRegion = false, ident.loc)
+    Symbol.freshUnkindedTypeVarSym(Ast.VarText.SourceText(ident.name), isRegion = false, isSlack = false, ident.loc)
   }
 
   /**

@@ -301,8 +301,8 @@ object UnkindedType {
   /**
     * Returns a fresh type variable of the given kind `k` and rigidity `r`.
     */
-  def freshVar(loc: SourceLocation, isRegion: Boolean = false, text: Ast.VarText = Ast.VarText.Absent)(implicit flix: Flix): UnkindedType.Var = {
-    val sym = Symbol.freshUnkindedTypeVarSym(text, isRegion, loc)
+  def freshVar(loc: SourceLocation, isRegion: Boolean = false, isSlack: Boolean = false, text: Ast.VarText = Ast.VarText.Absent)(implicit flix: Flix): UnkindedType.Var = {
+    val sym = Symbol.freshUnkindedTypeVarSym(text, isRegion, isSlack, loc)
     UnkindedType.Var(sym, loc)
   }
 
