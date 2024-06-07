@@ -140,6 +140,9 @@ object TypeReduction {
       case Type.Cst(TypeConstructor.BigInt, _) =>
         val clazz = classOf[BigInteger]
         retrieveMethod(clazz, method, ts, loc)
+      case Type.Cst(TypeConstructor.BigDecimal, _) =>
+        val clazz = classOf[java.math.BigDecimal]
+        retrieveMethod(clazz, method, ts, loc)
       case _ => JavaResolutionResult.MethodNotFound
     }
   }

@@ -49,4 +49,29 @@ mod Test.Exp.Jvm.InvokeMethod2.ZeroArg {
     def testInvokeMethod2_10(): Bool \ IO =
         let val = -32ii;
         val#abs() == 32ii
+
+    @test
+    def testInvokeMethod2_11(): Bool \ IO =
+        let val = -123.45ff;
+        val#abs() == 123.45ff
+
+    @test
+    def testInvokeMethod2_12(): Bool \ IO =
+        let val = 12443.1489ff;
+        val#precision() == 9
+
+    @test
+    def testInvokeMethod2_13(): Bool \ IO =
+        let val = -50.000001ff;
+        val#plus() == -50.000001ff
+
+    @test
+    def testInvokeMethod2_14(): Bool \ IO =
+        let val = 23984.1119ff;
+        val#doubleValue() == 23984.1119f64
+
+    @test
+    def testInvokeMethod2_15(): Bool \ IO =
+        let val = 57842.0109ff;
+        val#floatValue() == 57842.0109f32
 }
