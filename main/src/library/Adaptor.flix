@@ -176,7 +176,7 @@ mod Adaptor {
     /// Alias for `toArrayList`.
     ///
     pub def toList(ma: m[a]): ##java.util.List \ (IO + Foldable.Aef[m]) with Foldable[m] =
-        (checked_cast(toArrayList(ma)))
+        checked_cast(toArrayList(ma))
 
     ///
     /// Returns the elements of the given foldable `ma` as a new Java `ArrayList`.
