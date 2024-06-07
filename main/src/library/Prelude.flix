@@ -24,11 +24,6 @@ pub eff IO
 pub def identity(x: a): a = x
 
 ///
-/// The identity function, automatically casting to the required effect.
-///
-pub def eidentity(x: a): a \ ef = checked_ecast(x) // cannot, 23 uses which could be `x -> x`
-
-///
 /// The constant function.
 ///
 pub def constant(x: a): b -> a \ ef = _ -> (x)
@@ -107,11 +102,6 @@ pub def println(x: a): Unit \ IO with ToString[a] =
     import static java_get_field java.lang.System.out: ##java.io.PrintStream \ IO as getOut;
     import java.io.PrintStream.println(String): Unit \ IO;
     x |> ToString.toString |> println(getOut())
-
-///
-/// Touches the given region capability `rc`.
-///
-pub def touch(_: Region[r]): Unit \ r = checked_ecast(()) // cannot, but unused
 
 ///
 /// Crashes the current process with the given message `m`.
