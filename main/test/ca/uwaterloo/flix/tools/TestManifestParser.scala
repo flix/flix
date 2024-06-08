@@ -187,8 +187,8 @@ class TestManifestParser extends AnyFunSuite {
   }
 
   test("Ok.dependencies") {
-    assertResult(expected = List(Dependency.FlixDependency(Repository.GitHub, "jls", "tic-tac-toe", SemVer(1, 2, 3)),
-                                 Dependency.FlixDependency(Repository.GitHub, "mlutze", "flixball", SemVer(3, 2, 1)),
+    assertResult(expected = List(Dependency.FlixDependency(Repository.GitHub, "jls", "tic-tac-toe", SemVer(1, 2, 3), None),
+                                 Dependency.FlixDependency(Repository.GitHub, "mlutze", "flixball", SemVer(3, 2, 1), None),
                                  Dependency.MavenDependency("org.postgresql", "postgresql", "1.2.3.4"),
                                  Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", "4.7.0-M1"),
                                  Dependency.JarDependency(new URI("https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar").toURL, "myJar.jar")))(actual = {

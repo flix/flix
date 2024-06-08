@@ -449,7 +449,7 @@ object ManifestParser {
             case Some(v) => v
             case None => return Err(ManifestError.FlixVersionFormatError(p, depKey, depVer))
           }
-          Ok(Dependency.FlixDependency(repo, username, projectName, ver))
+          Ok(Dependency.FlixDependency(repo, username, projectName, ver, None))
         } else {
           val typ = deps.get(depKey).getClass
           Err(ManifestError.DependencyFormatError(p, s"Flix dependency error: expected String but received $typ"))
