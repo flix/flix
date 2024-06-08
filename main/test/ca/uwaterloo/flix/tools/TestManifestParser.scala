@@ -1072,7 +1072,7 @@ class TestManifestParser extends AnyFunSuite {
     expectError[ManifestError.IllegalName](result)
   }
 
-  test("ManifestError.FlixVersionHasWrongLength.05") {
+  test("ManifestError.FlixVersionFormatError.01") {
     val toml = {
       """
         |[package]
@@ -1090,10 +1090,10 @@ class TestManifestParser extends AnyFunSuite {
         |""".stripMargin
     }
     val result = ManifestParser.parse(toml, null)
-    expectError[ManifestError.FlixVersionHasWrongLength](result)
+    expectError[ManifestError.FlixVersionFormatError](result)
   }
 
-  test("ManifestError.FlixVersionHasWrongLength.06") {
+  test("ManifestError.FlixVersionFormatError.02") {
     val toml = {
       """
         |[package]
@@ -1111,7 +1111,7 @@ class TestManifestParser extends AnyFunSuite {
         |""".stripMargin
     }
     val result = ManifestParser.parse(toml, null)
-    expectError[ManifestError.FlixVersionHasWrongLength](result)
+    expectError[ManifestError.FlixVersionFormatError](result)
   }
 
   test("ManifestError.FlixDependencyFormatError.01") {
@@ -1156,7 +1156,7 @@ class TestManifestParser extends AnyFunSuite {
     expectError[ManifestError.FlixDependencyFormatError](result)
   }
 
-  test("ManifestError.VersionNumberWrong.07") {
+  test("ManifestError.FlixVersionFormatError.03") {
     val toml = {
       """
         |[package]
@@ -1174,10 +1174,10 @@ class TestManifestParser extends AnyFunSuite {
         |""".stripMargin
     }
     val result = ManifestParser.parse(toml, null)
-    expectError[ManifestError.VersionNumberWrong](result)
+    expectError[ManifestError.FlixVersionFormatError](result)
   }
 
-  test("ManifestError.VersionNumberWrong.08") {
+  test("ManifestError.FlixVersionFormatError.04") {
     val toml = {
       """
         |[package]
@@ -1195,10 +1195,10 @@ class TestManifestParser extends AnyFunSuite {
         |""".stripMargin
     }
     val result = ManifestParser.parse(toml, null)
-    expectError[ManifestError.VersionNumberWrong](result)
+    expectError[ManifestError.FlixVersionFormatError](result)
   }
 
-  test("ManifestError.VersionNumberWrong.09") {
+  test("ManifestError.FlixVersionFormatError.05") {
     val toml = {
       """
         |[package]
@@ -1216,7 +1216,7 @@ class TestManifestParser extends AnyFunSuite {
         |""".stripMargin
     }
     val result = ManifestParser.parse(toml, null)
-    expectError[ManifestError.VersionNumberWrong](result)
+    expectError[ManifestError.FlixVersionFormatError](result)
   }
 
   //Mvn-dependencies

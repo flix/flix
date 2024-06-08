@@ -261,7 +261,9 @@ object ManifestParser {
           if (jarDep) {
             createJarDep(depKey, depValue, p)
           } else if (flixDep) {
-            createFlixDep(depKey, depValue, p)
+            // Key needs this format to do typed look-ups.
+            val dottedDepKey = s"\"$depKey\""
+            createFlixDep(deps, dottedDepKey, p)
           } else {
             createMavenDep(depKey, depValue, p)
           }
@@ -429,14 +431,30 @@ object ManifestParser {
     * `prodDep` decides whether it is a production or development dependency.
     * `p` is for reporting errors.
     */
-  private def createFlixDep(depName: String, depVer: AnyRef, p: Path): Result[FlixDependency, ManifestError] = {
-    for (
-      repository <- getRepository(depName, p);
-      username <- getUsername(depName, p);
-      projectName <- getProjectName(depName, p);
-      version <- getFlixVersion(depVer, p)
-    ) yield {
-      Dependency.FlixDependency(repository, username, projectName, version)
+  private def createFlixDep(deps: TomlTable, depKey: String, p: Path): Result[FlixDependency, ManifestError] = {
+    val validPkg = s"^\"(.+):(.+)/(.+)\"$$".r
+    depKey match {
+      case validPkg(repoStr, username, projectName) =>
+        val repo = Repository.ofString(repoStr) match {
+          case Some(r) => r
+          case None => return Err(ManifestError.UnsupportedRepository(p, repoStr))
+        }
+        if (!username.matches(s"^$validName$$"))
+          return Err(ManifestError.IllegalName(p, depKey))
+        if (!projectName.matches(s"^$validName$$"))
+          return Err(ManifestError.IllegalName(p, depKey))
+        if (deps.isString(depKey)) {
+          val depVer = deps.getString(depKey)
+          val ver = SemVer.ofString(depVer) match {
+            case Some(v) => v
+            case None => return Err(ManifestError.FlixVersionFormatError(p, depKey, depVer))
+          }
+          Ok(Dependency.FlixDependency(repo, username, projectName, ver))
+        } else {
+          val typ = deps.get(depKey).getClass
+          Err(ManifestError.DependencyFormatError(p, s"Flix dependency error: expected String but received $typ"))
+        }
+      case _ => Err(ManifestError.FlixDependencyFormatError(p, depKey))
     }
   }
 
@@ -488,6 +506,10 @@ object ManifestParser {
         Ok(PackageModules.Selected(moduleSet))
     }
   }
+
+  private val validName = "[a-zA-Z0-9.:/_-]+".r
+
+  private val validRepo = "github".r
 
   /**
     * Checks that a package name does not include any illegal characters.

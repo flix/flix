@@ -18,5 +18,10 @@ package ca.uwaterloo.flix.tools.pkg
 sealed trait Repository
 
 object Repository {
+  def ofString(s: String): Option[Repository] = s match {
+    case "github" => Some(Repository.GitHub)
+    case _ => None
+  }
+
   case object GitHub extends Repository
 }
