@@ -154,17 +154,9 @@ object TypeReduction {
    * Helper method to retrieve a method given its name and parameter types.
    * Returns a JavaResolutionResult either containing the Java method or a MethodNotFound object.
    */
-  private def retrieveMethod(clazz: Class[_], method: String, ts: List[Type], loc: SourceLocation)(implicit flix: Flix): JavaResolutionResult = {
+  private def retrieveMethod(clazz: Class[_], methodName: String, ts: List[Type], loc: SourceLocation)(implicit flix: Flix): JavaResolutionResult = {
     // NB: this considers also static methods
-    val candidateMethods = clazz.getMethods
-      .filter(m => m.getName == method)
-      .filter(m => m.getParameterCount == ts.length)
-      .filter(m => // Parameter types correspondance with subtyping
-        (m.getParameterTypes zip ts).foldLeft(true) {
-          case (acc, (clazz, tpe)) => acc && isSubtype(Type.getFlixType(clazz), tpe)
-          })
-      // NB: once methods with same signatures have been filtered out, we should remove super-methods duplicates if superclass is abstract or ignore if it is a primitive type, e.g., void
-      .filter(m => m.getReturnType.isPrimitive || !java.lang.reflect.Modifier.isAbstract(m.getReturnType.getModifiers)) // temporary to avoid superclass abstract duplicate
+    val candidateMethods = clazz.getMethods.filter(m => isCandidate(m, methodName, ts))
 
     candidateMethods.length match {
       case 0 => JavaResolutionResult.MethodNotFound
@@ -172,28 +164,44 @@ object TypeReduction {
         val tpe = Type.Cst(TypeConstructor.JvmMethod(candidateMethods.head), loc)
         JavaResolutionResult.Resolved(tpe)
       case _ =>
-        // Among candidate methods if there already exists the method with the exact signature, we should ignore the rest. E.g.: append(String), append(Object) in SB for the call append("a") should already know to use append(String)
-        // TODO: there is surely a better way to repeat the operation, pre-factorization should be possible
-        val exactSignature = candidateMethods
+        // Among candidate methods if there already exists the method with the exact signature,
+        // we should ignore the rest. E.g.: append(String), append(Object) in SB for the call append("a") should already know to use append(String)
+        val exactMethod = candidateMethods
           .filter(m => // Parameter types correspondance with subtyping
-            (m.getParameterTypes zip ts).foldLeft(true) {
-              case (acc, (clazz, tpe)) => acc && (Type.getFlixType(clazz) == tpe)
+            (m.getParameterTypes zip ts).forall {
+              case (clazz, tpe) => Type.getFlixType(clazz) == tpe
             })
-        exactSignature.length match {
-          
-          
-          case 1 => JavaResolutionResult.Resolved(Type.Cst(TypeConstructor.JvmMethod(exactSignature.head), loc))
-          case _ => JavaResolutionResult.AmbiguousMethod(candidateMethods.toList)
+        exactMethod.length match {
+          case 1 => JavaResolutionResult.Resolved(Type.Cst(TypeConstructor.JvmMethod(exactMethod.head), loc))
+          case _ => JavaResolutionResult.AmbiguousMethod(candidateMethods.toList) // 0 corresponds to no exact method, 2 or higher should be impossible in Java
         }
     }
   }
 
   /**
+   * Helper method that returns if the given method is a candidate method given a signature.
+   *
+   * @param cand       a candidate method
+   * @param methodName the potential candidate method's name
+   * @param ts         the list of parameter types of the potential candidate method
+   */
+  private def isCandidate(cand: Method, methodName: String, ts: List[Type])(implicit flix: Flix): Boolean =
+    (cand.getName == methodName) &&
+    (cand.getParameterCount == ts.length) &&
+    // Parameter types correspondance with subtyping
+    (cand.getParameterTypes zip ts).forall {
+      case (clazz, tpe) => isSubtype(tpe, Type.getFlixType(clazz))
+    } &&
+    // NB: once methods with same signatures have been filtered out, we should remove super-methods duplicates
+    // if the superclass is abstract or ignore if it is a primitive type, e.g., void
+    (cand.getReturnType.isPrimitive || !java.lang.reflect.Modifier.isAbstract(cand.getReturnType.getModifiers)) // temporary to avoid superclass abstract duplicate
+
+  /**
    * Helper method to define a sub-typing relation between two given Flix types.
-   * Returns true if tpe2 is a sub-type of type tpe1, false otherwise.
+   * Returns true if tpe1 is a sub-type of type tpe2, false otherwise.
    */
   private def isSubtype(tpe1: Type, tpe2: Type)(implicit flix: Flix): Boolean = {
-    (tpe1, tpe2) match {
+    (tpe2, tpe1) match {
       case (_, Type.Null) => true // Null is a sub-type of every other type
       case (t1, t2) if t1 == t2 => true
       case (Type.Cst(TypeConstructor.Native(clazz1), _), Type.Cst(TypeConstructor.Native(clazz2), _)) => clazz1.isAssignableFrom(clazz2)

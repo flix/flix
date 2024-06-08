@@ -99,12 +99,15 @@ object TypeError {
 
     def message(formatter: Formatter): String = {
       import formatter._
+      def methodToStr(m: Method) = {
+         s"${m.getName}(${m.getParameterTypes.map(t => t.getName).mkString(", ")})"
+      }
       s"""${line(kind, source.name)}
          |>> Java method '$methodName' from type '${red(formatType(tpe0, Some(renv)))}' with arguments types (${tpes.mkString(", ")}) is ambiguous.
          | Possible candidate methods:
-         |  ${methods.map(m => s"${m.getName}(${m.getParameterTypes.map(t => t.getName).mkString(", ")})").mkString(", ")}
+         |  ${methods.map(m => methodToStr(m)).mkString(", ")}
          |
-         |${code(loc, s"java method '${methodName} ambiguous")}
+         |${code(loc, s"Ambiguous Java method '${methodName}'")}
          |""".stripMargin
     }
   }
