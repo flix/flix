@@ -39,7 +39,7 @@ mod Test.Dec.AssocType {
         type Eff[a]: Eff
         type Elem[a]: Type
 
-        pub def iterator(rc: Region[r], x: a): Iterator[Iterable2.Elem[a], Iterable2.Eff[a] + r, r] \ Iterable2.Eff[a] + r
+        pub def iterator(rc: Region[r], x: a): Iterator[Iterable2.Elem[a], Iterable2.Eff[a] + r, r] \ r
     }
 
     instance Iterable2[String] {
@@ -53,7 +53,7 @@ mod Test.Dec.AssocType {
         type Eff[MutList[a, r]] = r
         type Elem[MutList[a, r]] = a
 
-        pub def iterator(rc: Region[r2], x: MutList[a, r]): Iterator[a, r + r2, r2] \ r + r2 = MutList.iterator(rc, x)
+        pub def iterator(rc: Region[r2], x: MutList[a, r]): Iterator[a, r + r2, r2] \ r2 = MutList.iterator(rc, x)
     }
 
     trait C[a] {

@@ -24,7 +24,7 @@ pub enum MutSet[t: Type, r: Region] {
 instance Iterable[MutSet[a, r]] {
     type Elm = a
     type Aef = r
-    pub def iterator(rc: Region[r1], s: MutSet[a, r]): Iterator[a, r + r1, r1] \ (r + r1) = MutSet.iterator(rc, s)
+    pub def iterator(rc: Region[r1], s: MutSet[a, r]): Iterator[a, r + r1, r1] \ r1 = MutSet.iterator(rc, s)
 }
 
 mod MutSet {
@@ -401,14 +401,25 @@ mod MutSet {
     ///
     /// Returns an iterator over `s`.
     ///
-    pub def iterator(rc: Region[r1], s: MutSet[a, r2]): Iterator[a, r1 + r2, r1] \ { r1, r2 } =
+    pub def iterator(rc: Region[r1], s: MutSet[a, r2]): Iterator[a, r1 + r2, r1] \ r1 =
         let MutSet(_, ms) = s;
-        Set.iterator(rc, deref ms) |> Iterator.map(x -> { discard deref ms; x })
+        let itRef = ref None @ rc;
+        let next = () -> {
+            let it = match deref itRef {
+                case None =>
+                    let underlying = Set.iterator(rc, deref ms);
+                    itRef |> Ref.put(Some(underlying));
+                    underlying
+                case Some(v) => v
+            };
+            Iterator.next(it)
+        };
+        Iterator.iterate(rc, next)
 
     ///
     /// Returns an enumerator over `s`.
     ///
-    pub def enumerator(rc: Region[r1], s: MutSet[a, r2]): Iterator[(Int32, a), r1 + r2, r1] \ { r1, r2 } =
+    pub def enumerator(rc: Region[r1], s: MutSet[a, r2]): Iterator[(Int32, a), r1 + r2, r1] \ r1 =
         iterator(rc, s) |> Iterator.zipWithIndex
 
     ///

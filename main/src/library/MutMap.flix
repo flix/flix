@@ -24,7 +24,7 @@ pub enum MutMap[k: Type, v: Type, r: Region] {
 instance Iterable[MutMap[k, v, r]] {
     type Elm = (k, v)
     type Aef = r
-    pub def iterator(rc: Region[r1], m: MutMap[k, v, r]): Iterator[(k, v), r + r1, r1] \ (r + r1) =
+    pub def iterator(rc: Region[r1], m: MutMap[k, v, r]): Iterator[(k, v), r + r1, r1] \ r1 =
         MutMap.iterator(rc, m)
 }
 
@@ -593,23 +593,59 @@ mod MutMap {
     ///
     /// Returns an iterator over all key-value pairs in `m`.
     ///
-    pub def iterator(rc: Region[r1], m: MutMap[k, v, r2]): Iterator[(k, v), r1 + r2, r1] \ { r1, r2 } =
+    pub def iterator(rc: Region[r1], m: MutMap[k, v, r2]): Iterator[(k, v), r1 + r2, r1] \ r1 = {
         let MutMap(_, mm) = m;
-        Map.iterator(rc, deref mm) |> Iterator.map(x -> { discard deref mm; x })
+        let itRef = ref None @ rc;
+        let next = () -> {
+            let it = match deref itRef {
+                case None =>
+                    let underlying = Map.iterator(rc, deref mm);
+                    itRef |> Ref.put(Some(underlying));
+                    underlying
+                case Some(v) => v
+            };
+            Iterator.next(it)
+        };
+        Iterator.iterate(rc, next)
+    }
 
     ///
     /// Returns an iterator over keys in `m`.
     ///
-    pub def iteratorKeys(rc: Region[r1], m: MutMap[k, v, r2]): Iterator[k, r1 + r2, r1] \ { r1, r2 } =
+    pub def iteratorKeys(rc: Region[r1], m: MutMap[k, v, r2]): Iterator[k, r1 + r2, r1] \ r1 = {
         let MutMap(_, mm) = m;
-        Map.iteratorKeys(rc, deref mm) |> Iterator.map(x -> { discard deref mm; x })
+        let itRef = ref None @ rc;
+        let next = () -> {
+            let it = match deref itRef {
+                case None =>
+                    let underlying = Map.iteratorKeys(rc, deref mm);
+                    itRef |> Ref.put(Some(underlying));
+                    underlying
+                case Some(v) => v
+            };
+            Iterator.next(it)
+        };
+        Iterator.iterate(rc, next)
+    }
 
     ///
     /// Returns an iterator over values in `m`.
     ///
-    pub def iteratorValues(rc: Region[r1], m: MutMap[k, v, r2]): Iterator[v, r1 + r2, r1] \ { r1, r2 } =
+    pub def iteratorValues(rc: Region[r1], m: MutMap[k, v, r2]): Iterator[v, r1 + r2, r1] \ r1 = {
         let MutMap(_, mm) = m;
-        Map.iteratorValues(rc, deref mm) |> Iterator.map(x -> { discard deref mm; x })
+        let itRef = ref None @ rc;
+        let next = () -> {
+            let it = match deref itRef {
+                case None =>
+                    let underlying = Map.iteratorValues(rc, deref mm);
+                    itRef |> Ref.put(Some(underlying));
+                    underlying
+                case Some(v) => v
+            };
+            Iterator.next(it)
+        };
+        Iterator.iterate(rc, next)
+    }
 
     ///
     /// Extracts a range of key-value pairs from the mutable map `m`.
