@@ -26,7 +26,7 @@ import java.io.{IOException, StringReader}
 import java.net.{URI, URL}
 import java.nio.file.Path
 import scala.collection.mutable
-import scala.jdk.CollectionConverters.SetHasAsScala
+import scala.jdk.CollectionConverters.{SetHasAsScala,ListHasAsScala}
 
 object ManifestParser {
 
@@ -444,12 +444,24 @@ object ManifestParser {
         if (!projectName.matches(s"^$validName$$"))
           return Err(ManifestError.IllegalName(p, depKey))
         if (deps.isString(depKey)) {
-          val depVer = deps.getString(depKey)
-          val ver = SemVer.ofString(depVer) match {
-            case Some(v) => v
-            case None => return Err(ManifestError.FlixVersionFormatError(p, depKey, depVer))
+          for (ver <- getFlixVersion(deps, depKey, p))
+            yield Dependency.FlixDependency(repo, username, projectName, ver, List())
+        } else if (deps.isTable(depKey)) {
+          val depTbl = deps.getTable(depKey)
+          val verKey = "version"
+          val permKey = "permissions"
+          if (!depTbl.isString(verKey)) {
+            val typ = depTbl.get(verKey).getClass
+            return Err(ManifestError.DependencyFormatError(p, s"Flix dependency error: expected String but received $typ"))
           }
-          Ok(Dependency.FlixDependency(repo, username, projectName, ver, None))
+          if (!depTbl.isArray(permKey)) {
+            val typ = depTbl.get(permKey).getClass
+            return Err(ManifestError.DependencyFormatError(p, s"Flix dependency error: expected String but received $typ"))
+          }
+          for (
+            ver <- getFlixVersion(depTbl, verKey, p);
+            perm <- getPermissions(depTbl, permKey, p)
+          ) yield FlixDependency(repo, username, projectName, ver, perm)
         } else {
           val typ = deps.get(depKey).getClass
           Err(ManifestError.DependencyFormatError(p, s"Flix dependency error: expected String but received $typ"))
@@ -457,6 +469,36 @@ object ManifestParser {
       case _ => Err(ManifestError.FlixDependencyFormatError(p, depKey))
     }
   }
+
+  private def getFlixVersion(deps: TomlTable, depKey: String, p: Path): Result[SemVer, ManifestError] = {
+    val depVer = deps.getString(depKey)
+    SemVer.ofString(depVer) match {
+      case Some(v) => Ok(v)
+      case None => Err(ManifestError.FlixVersionFormatError(p, depKey, depVer))
+    }
+  }
+
+  private def getPermissions(depTbl: TomlTable, key: String, p: Path): Result[List[Permission], ManifestError] = {
+    if (!depTbl.isArray(key)) {
+      val perms = depTbl.get(key)
+      return Err(ManifestError.FlixDependencyPermissionTypeError(p, key, perms))
+    }
+    val permArray = depTbl.getArray(key)
+    if (!permArray.toList.asScala.toList.forall(_.isInstanceOf[String])) {
+      val perms = depTbl.get(key)
+      return Err(ManifestError.FlixDependencyPermissionTypeError(p, key, perms))
+    }
+    var perms: List[Permission] = List()
+    for (i <- Range(0, permArray.size())) {
+      val s = permArray.getString(i)
+      Permission.ofString(s) match {
+        case Some(p) => { perms = p::perms }
+        case None => return Err(ManifestError.FlixUnknownPermissionError(p, key, s))
+      }
+    }
+    Ok(perms)
+  }
+
 
   /**
     * Creates a JarDependency.
@@ -508,8 +550,6 @@ object ManifestParser {
   }
 
   private val validName = "[a-zA-Z0-9.:/_-]+".r
-
-  private val validRepo = "github".r
 
   /**
     * Checks that a package name does not include any illegal characters.

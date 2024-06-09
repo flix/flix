@@ -7,6 +7,7 @@ import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.language.ast.Symbol
 import org.scalatest.funsuite.AnyFunSuite
 import ca.uwaterloo.flix.tools.pkg.Manifest
+import ca.uwaterloo.flix.tools.pkg.Permission
 
 import java.io.File
 import java.net.URI
@@ -187,8 +188,8 @@ class TestManifestParser extends AnyFunSuite {
   }
 
   test("Ok.dependencies") {
-    assertResult(expected = List(Dependency.FlixDependency(Repository.GitHub, "jls", "tic-tac-toe", SemVer(1, 2, 3), None),
-                                 Dependency.FlixDependency(Repository.GitHub, "mlutze", "flixball", SemVer(3, 2, 1), None),
+    assertResult(expected = List(Dependency.FlixDependency(Repository.GitHub, "jls", "tic-tac-toe", SemVer(1, 2, 3), List()),
+                                 Dependency.FlixDependency(Repository.GitHub, "mlutze", "flixball", SemVer(3, 2, 1), List()),
                                  Dependency.MavenDependency("org.postgresql", "postgresql", "1.2.3.4"),
                                  Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", "4.7.0-M1"),
                                  Dependency.JarDependency(new URI("https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar").toURL, "myJar.jar")))(actual = {
@@ -265,7 +266,7 @@ class TestManifestParser extends AnyFunSuite {
         |""".stripMargin
     }
     assertResult(expected = List(Dependency.MavenDependency("org.postgresql", "postgresql", "1.2.3"),
-                                  Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", "a.7.0")))(ManifestParser.parse(toml, null) match {
+                                 Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", "a.7.0")))(ManifestParser.parse(toml, null) match {
       case Ok(manifest) => manifest.dependencies
       case Err(e) => e.message(f)
     })
@@ -317,6 +318,33 @@ class TestManifestParser extends AnyFunSuite {
       case Ok(manifest) => manifest.dependencies
       case Err(e) => e.message(f)
     })
+  }
+
+  test("Ok.flix-dependency-permission.01") {
+    val toml = {
+      """
+        |[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |authors = ["John Doe <john@example.com>"]
+        |
+        |[dependencies]
+        |"github:jls/tic-tac-toe" = { version = "1.2.3", permissions = ["java-interop", "unsafe-cast", "effect"] }
+        |""".stripMargin
+    }
+    assertResult(expected = Set(Permission.JavaInterop, Permission.UnsafeCast, Permission.Effect))(actual =
+      ManifestParser.parse(toml, null) match {
+        case Ok(m) =>
+          m.dependencies
+            .head
+            .asInstanceOf[Dependency.FlixDependency]
+            .permissions
+            .toSet
+        case Err(e) => e.message(f)
+      }
+    )
   }
 
   /*

@@ -79,12 +79,30 @@ object ManifestError {
          |""".stripMargin
   }
 
-  case class FlixVersionFormatError(path: Path, lib: String,  version: String) extends ManifestError {
+  case class FlixVersionFormatError(path: Path, lib: String, version: String) extends ManifestError {
     override def message(f: Formatter): String = {
       // Should have package name as well for ease of use.
       s"""
          |Unrecognized version format for package ${f.bold(lib)}: ${f.bold(f.red(version))}.
          |The project file was found at ${f.cyan(if (path == null) "Unknown file path" else path.toString)}
+         |""".stripMargin
+    }
+  }
+
+  case class FlixDependencyPermissionTypeError(path: Path, lib: String, perm: AnyRef) extends ManifestError {
+    override def message(f: Formatter): String = {
+      val typ = perm.getClass
+      s"""
+         |Unexpected permissions format in Flix dependency ${f.bold(lib)}.
+         |Expected an Array of Strings but got: ${f.bold(f.red(typ.toString))}.
+         |""".stripMargin
+    }
+  }
+
+  case class FlixUnknownPermissionError(path: Path, lib: String, perm: String) extends ManifestError {
+    override def message(f: Formatter): String = {
+      s"""
+         |Unknown permission in dependency ${f.bold(lib)}: ${f.red(f.bold(perm))}.
          |""".stripMargin
     }
   }
