@@ -7,13 +7,13 @@ mod Test.Exp.Jvm.InvokeMethod2 {
 
    @test
    def testInvokeMethod2_02(): Bool \ IO =
-       let obj = "HELLO WORLD";
-       obj¤indexOf("W", 5) == 6
+       let obj = "Hello";
+       obj¤concat(" world") == "Hello world"
 
    @test
    def testInvokeMethod2_03(): Bool \ IO =
-       let obj = "HELLO WORLD";
-       obj¤indexOf("W", 7) == -1
+       let obj = "Hello world";
+       obj¤compareTo("Goodbye world") == 1
 
    @test
    def testInvokeMethod2_04(): Bool \ IO =
