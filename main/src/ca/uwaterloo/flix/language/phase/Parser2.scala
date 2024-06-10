@@ -2416,9 +2416,9 @@ object Parser2 {
       expect(TokenKind.KeywordNew, SyntacticContext.Expr.OtherExpr)
       Type.ttype()
 
-      // NewObject or InvokeConstructor Expression?
+      // NewObject or InvokeConstructor?
       if (at(TokenKind.CurlyL)) {
-        // Case 1: Expr.NewObject
+        // Case 1: new Type { ... }
         oneOrMore(
           namedTokenSet = NamedTokenSet.FromKinds(Set(TokenKind.KeywordDef)),
           checkForItem = t => t.isComment || t == TokenKind.KeywordDef,
@@ -2431,7 +2431,7 @@ object Parser2 {
         )
         close(mark, TreeKind.Expr.NewObject)
       } else {
-        // Case 2: Expr.InvokeConstructor2
+        // Case 2: new Type(exps...)
         arguments()
         close(mark, TreeKind.Expr.InvokeConstructor2)
       }
