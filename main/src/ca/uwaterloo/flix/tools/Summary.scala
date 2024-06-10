@@ -17,22 +17,26 @@ package ca.uwaterloo.flix.tools
 
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.Constant
+import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, Predicate, Root, Spec}
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, SourceLocation, Symbol, Type}
-import ca.uwaterloo.flix.language.ast.TypedAst.{Def, Expr, Predicate, Root, Spec}
+import ca.uwaterloo.flix.language.phase.typer.TypeConstraint
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.language.phase.typer.TypeConstraint
 
 import scala.collection.concurrent.TrieMap
 import scala.collection.immutable.SortedSet
 
 object Summary {
 
-  private val effVarCount: TrieMap[Symbol, Int] = TrieMap.empty
+  private val effVarCount: TrieMap[Symbol, (Int, Int)] = TrieMap.empty
 
   def addEffCount(sym: Symbol, tc: List[TypeConstraint]): Unit = {
     if (effVarCount.contains(sym)) ??? // shouldn't happen
-    else effVarCount.update(sym, effVars(tc).size)
+    else {
+      val effVarSet = effVars(tc)
+      val (slackVars, nonSlackVars) = effVarSet.partition(_.sym.isSlack)
+      effVarCount.update(sym, (nonSlackVars.size, slackVars.size))
+    }
   }
 
   private def combine(l: List[SortedSet[Type.Var]]): SortedSet[Type.Var] = {
@@ -93,9 +97,7 @@ object Summary {
   /**
     * The width of every other column.
     */
-  private val ColWidth = 12
-
-  private val fillerExpr = Expr.Cst(Constant.Unit, Type.Unit, SourceLocation.Unknown)
+  private val ColWidth = 13
 
   /**
     * Returns `true` if the given module `mod` should be printed.
@@ -116,11 +118,13 @@ object Summary {
       print(Separator)
       print(padL("IO", ColWidth))
       print(Separator)
-      print(padL("Polymorphic", ColWidth))
+      print(padL("Eff. Poly", ColWidth))
       print(Separator)
       print(padL("Lambdas", ColWidth))
       print(Separator)
       print(padL("Eff. Vars.", ColWidth))
+      print(Separator)
+      print(padL("Slack Vars.", ColWidth))
       println(EndOfLine)
 
       var totalLines = 0
@@ -130,6 +134,7 @@ object Summary {
       var totalEffPolymorphicFunctions = 0
       var totalLambdas = 0
       var totalEffVars = 0
+      var totalSlackEffVars = 0
 
       for ((source, loc) <- root.sources.toList.sortBy(_._1.name)) {
         val module = source.name
@@ -137,39 +142,45 @@ object Summary {
           getTraitFunctions(source, root) ++
           getInstanceFunctions(source, root)
 
-        val numberOfLines = loc.endLine
-        val numberOfFunctions = defs.size
-        val numberOfPureFunctions = defs.count(defn => isPure(defn._2))
-        val numberOfIOFunctions = defs.count(defn => isIO(defn._2))
-        val numberOfEffectPolymorphicFunctions = defs.count(defn => isEffectPolymorphic(defn._2))
-        val numberOfLambdas = defs.map(defn => lambdaCount(defn._3)).sum
-        val numberOfEffVars = defs.map(defn => effVarCount.getOrElse(defn._1, -1)).sum
+        if (defs.nonEmpty) {
 
-        totalLines = totalLines + numberOfLines
-        totalFunctions = totalFunctions + numberOfFunctions
-        totalPureFunctions = totalPureFunctions + numberOfPureFunctions
-        totalUnivFunctions = totalUnivFunctions + numberOfIOFunctions
-        totalEffPolymorphicFunctions = totalEffPolymorphicFunctions + numberOfEffectPolymorphicFunctions
-        totalLambdas = totalLambdas + numberOfLambdas
-        totalEffVars = totalEffVars + numberOfEffVars
+          val numberOfLines = loc.endLine
+          val numberOfFunctions = defs.size
+          val numberOfPureFunctions = defs.count(defn => isPure(defn._2))
+          val numberOfIOFunctions = defs.count(defn => isIO(defn._2))
+          val numberOfEffectPolymorphicFunctions = defs.count(defn => isEffectPolymorphic(defn._2))
+          val numberOfLambdas = defs.map(defn => lambdaCount(defn._3)).sum
+          val (numberOfEffVars, numberOfSlackEffVars) = defs.map(defn => effVarCount.getOrElse(defn._1, (-1, -1))).reduce((x, y) => (x._1 + y._1, x._2 + y._2))
 
-        if (include(module, numberOfLines)) {
-          print(padR(module, ModWidth))
-          print(Separator)
-          print(padL(format(numberOfLines), ColWidth))
-          print(Separator)
-          print(padL(format(numberOfFunctions), ColWidth))
-          print(Separator)
-          print(padL(format(numberOfPureFunctions), ColWidth))
-          print(Separator)
-          print(padL(format(numberOfIOFunctions), ColWidth))
-          print(Separator)
-          print(padL(format(numberOfEffectPolymorphicFunctions), ColWidth))
-          print(Separator)
-          print(padL(format(numberOfLambdas), ColWidth))
-          print(Separator)
-          print(padL(format(numberOfEffVars), ColWidth))
-          println(EndOfLine)
+          totalLines = totalLines + numberOfLines
+          totalFunctions = totalFunctions + numberOfFunctions
+          totalPureFunctions = totalPureFunctions + numberOfPureFunctions
+          totalUnivFunctions = totalUnivFunctions + numberOfIOFunctions
+          totalEffPolymorphicFunctions = totalEffPolymorphicFunctions + numberOfEffectPolymorphicFunctions
+          totalLambdas = totalLambdas + numberOfLambdas
+          totalEffVars = totalEffVars + numberOfEffVars
+          totalSlackEffVars = totalSlackEffVars + numberOfSlackEffVars
+
+          if (include(module, numberOfLines)) {
+            print(padR(module, ModWidth))
+            print(Separator)
+            print(padL(format(numberOfLines), ColWidth))
+            print(Separator)
+            print(padL(format(numberOfFunctions), ColWidth))
+            print(Separator)
+            print(padL(format(numberOfPureFunctions), ColWidth))
+            print(Separator)
+            print(padL(format(numberOfIOFunctions), ColWidth))
+            print(Separator)
+            print(padL(format(numberOfEffectPolymorphicFunctions), ColWidth))
+            print(Separator)
+            print(padL(format(numberOfLambdas), ColWidth))
+            print(Separator)
+            print(padL(format(numberOfEffVars), ColWidth))
+            print(Separator)
+            print(padL(s"${format(numberOfSlackEffVars, sign = true)} ${format(numberOfEffVars, numberOfSlackEffVars)}", ColWidth))
+            println(EndOfLine)
+          }
         }
       }
 
@@ -189,7 +200,10 @@ object Summary {
       print(padL(format(totalLambdas), ColWidth))
       print(Separator)
       print(padL(format(totalEffVars), ColWidth))
+      print(Separator)
+      print(padL(s"${format(totalSlackEffVars, sign = true)} ${format(totalEffVars, totalSlackEffVars)}", ColWidth))
       println(EndOfLine)
+
   }
 
   /**
@@ -210,7 +224,7 @@ object Summary {
       case (sym, trt) if sym.loc.source == source =>
         trt.sigs.collect {
           case sig if sig.exp.nonEmpty =>
-            (sig.sym, sig.spec, sig.exp.getOrElse(fillerExpr))
+            (sig.sym, sig.spec, sig.exp.getOrElse(???))
         }
     }.flatten
 
@@ -225,7 +239,18 @@ object Summary {
   /**
     * Formats the given number `n`.
     */
-  private def format(n: Int): String = f"$n%,d".replace(".", ",")
+  private def format(n: Int, sign: Boolean = false): String = {
+    if (sign) f"$n%+,d".replace(".", ",")
+    else f"$n%,d".replace(".", ",")
+  }
+
+  private def format(before: Int, inc: Int): String = {
+    val after = before + inc
+    // k * before = after
+    // k = after / before
+    val percentage = if (before == 0) "inf" else f"${(100 * after / (1.0 * before))-100}%+3.0f"
+    s"($percentage \\%)"
+  }
 
   /**
     * Returns `true` if the given `spec` is pure.
