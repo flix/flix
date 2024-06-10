@@ -25,7 +25,6 @@ import org.tomlj.{Toml, TomlArray, TomlInvalidTypeException, TomlParseResult, To
 import java.io.{IOException, StringReader}
 import java.net.{URI, URL}
 import java.nio.file.Path
-import scala.collection.mutable
 import scala.jdk.CollectionConverters.{SetHasAsScala,ListHasAsScala}
 
 object ManifestParser {
