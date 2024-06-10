@@ -2727,7 +2727,7 @@ object Resolver {
     if (ident.isWild) {
       wildness match {
         case Wildness.AllowWild =>
-          Result.Ok(Symbol.freshUnkindedTypeVarSym(VarText.SourceText(ident.name), isRegion = false, ident.loc))
+          Result.Ok(Symbol.freshUnkindedTypeVarSym(VarText.SourceText(ident.name), isRegion = false, isSlack = false, ident.loc))
         case Wildness.ForbidWild =>
           Result.Err(ResolutionError.IllegalWildType(ident, ident.loc))
       }
