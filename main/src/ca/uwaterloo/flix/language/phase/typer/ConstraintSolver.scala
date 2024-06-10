@@ -382,6 +382,10 @@ object ConstraintSolver {
         res <- CaseSetUnification.unify(t1, t2, renv, sym1.universe, sym1).mapErr(toTypeError(_, prov))
       } yield ResolutionResult.newSubst(res)
 
+    case (Kind.Error, _) => Result.Ok(ResolutionResult.newSubst(Substitution.empty))
+
+    case (_, Kind.Error) => Result.Ok(ResolutionResult.newSubst(Substitution.empty))
+
     case (k1, k2) if KindUnification.unifiesWith(k1, k2) =>
       for {
         (t1, _) <- TypeReduction.simplify(tpe1, renv, loc)
