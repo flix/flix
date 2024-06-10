@@ -19,9 +19,10 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{Ast, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.unification.Unification
-import ca.uwaterloo.flix.util.Result
+import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 import ca.uwaterloo.flix.util.collection.{ListMap, ListOps}
 
+import java.lang.reflect.Method
 import java.math.BigInteger
 
 object TypeReduction {
@@ -143,6 +144,8 @@ object TypeReduction {
       case Type.Cst(TypeConstructor.BigDecimal, _) =>
         val clazz = classOf[java.math.BigDecimal]
         retrieveMethod(clazz, method, ts, loc)
+      case Type.Cst(TypeConstructor.Native(clazz), _) =>
+        retrieveMethod(clazz, method, ts, loc)
       case _ => JavaResolutionResult.MethodNotFound
     }
   }
@@ -151,34 +154,77 @@ object TypeReduction {
    * Helper method to retrieve a method given its name and parameter types.
    * Returns a JavaResolutionResult either containing the Java method or a MethodNotFound object.
    */
-  private def retrieveMethod(clazz: Class[_], method: String, ts: List[Type], loc: SourceLocation)(implicit flix: Flix): JavaResolutionResult = {
+  private def retrieveMethod(clazz: Class[_], methodName: String, ts: List[Type], loc: SourceLocation)(implicit flix: Flix): JavaResolutionResult = {
     // NB: this considers also static methods
-    val candidateMethods = clazz.getMethods
-      .filter(m => m.getName == method)
-      .filter(m => m.getParameterCount == ts.length)
-      .filter(m =>
-        (m.getParameterTypes zip ts).foldLeft(true){ case (acc, (clazz, tpe)) => acc && (Type.getFlixType(clazz) == tpe) } // Parameter types correspondance
-      )
+    val candidateMethods = clazz.getMethods.filter(m => isCandidate(m, methodName, ts))
 
     candidateMethods.length match {
+      case 0 => JavaResolutionResult.MethodNotFound
       case 1 =>
         val tpe = Type.Cst(TypeConstructor.JvmMethod(candidateMethods.head), loc)
         JavaResolutionResult.Resolved(tpe)
-      case _ => JavaResolutionResult.MethodNotFound // For now, method not found either if there is an ambiguity or no method found
+      case _ =>
+        // Among candidate methods if there already exists the method with the exact signature,
+        // we should ignore the rest. E.g.: append(String), append(Object) in SB for the call append("a") should already know to use append(String)
+        val exactMethod = candidateMethods
+          .filter(m => // Parameter types correspondance with subtyping
+            (m.getParameterTypes zip ts).forall {
+              case (clazz, tpe) => Type.getFlixType(clazz) == tpe
+            })
+        exactMethod.length match {
+          case 1 => JavaResolutionResult.Resolved(Type.Cst(TypeConstructor.JvmMethod(exactMethod.head), loc))
+          case _ => JavaResolutionResult.AmbiguousMethod(candidateMethods.toList) // 0 corresponds to no exact method, 2 or higher should be impossible in Java
+        }
+    }
+  }
+
+  /**
+   * Helper method that returns if the given method is a candidate method given a signature.
+   *
+   * @param cand       a candidate method
+   * @param methodName the potential candidate method's name
+   * @param ts         the list of parameter types of the potential candidate method
+   */
+  private def isCandidate(cand: Method, methodName: String, ts: List[Type])(implicit flix: Flix): Boolean =
+    (cand.getName == methodName) &&
+    (cand.getParameterCount == ts.length) &&
+    // Parameter types correspondance with subtyping
+    (cand.getParameterTypes zip ts).forall {
+      case (clazz, tpe) => isSubtype(tpe, Type.getFlixType(clazz))
+    } &&
+    // NB: once methods with same signatures have been filtered out, we should remove super-methods duplicates
+    // if the superclass is abstract or ignore if it is a primitive type, e.g., void
+    (cand.getReturnType.isPrimitive || !java.lang.reflect.Modifier.isAbstract(cand.getReturnType.getModifiers)) // temporary to avoid superclass abstract duplicate
+
+  /**
+   * Helper method to define a sub-typing relation between two given Flix types.
+   * Returns true if tpe1 is a sub-type of type tpe2, false otherwise.
+   */
+  private def isSubtype(tpe1: Type, tpe2: Type)(implicit flix: Flix): Boolean = {
+    (tpe2, tpe1) match {
+      case (_, Type.Null) => true // Null is a sub-type of every other type
+      case (t1, t2) if t1 == t2 => true
+      case (Type.Cst(TypeConstructor.Native(clazz1), _), Type.Cst(TypeConstructor.Native(clazz2), _)) => clazz1.isAssignableFrom(clazz2)
+      case (Type.Cst(TypeConstructor.Native(clazz), _), Type.Cst(TypeConstructor.Str, _)) => clazz.isAssignableFrom(classOf[String])
+      case (Type.Cst(TypeConstructor.Native(clazz), _), Type.Cst(TypeConstructor.BigInt, _)) => clazz.isAssignableFrom(classOf[BigInteger])
+      case (Type.Cst(TypeConstructor.Native(clazz), _), Type.Cst(TypeConstructor.BigDecimal, _)) => clazz.isAssignableFrom(classOf[java.math.BigDecimal])
+      case _ => false
     }
   }
 
   /**
    * Represents the result of a resolution process of a java method.
    *
-   * There are two possible outcomes:
+   * There are three possible outcomes:
    *
    * 1. Resolved(tpe): Indicates that there was some progress in the resolution and returns a simplified type of the java method.
-   * 2. MethodNotFound(): The resolution failed to find a corresponding java method.
+   * 2. AmbiguousMethod: The resolution lacked some elements to find a java method among a set of methods.
+   * 3. MethodNotFound(): The resolution failed to find a corresponding java method.
    */
   sealed trait JavaResolutionResult
   object JavaResolutionResult {
     case class Resolved(tpe: Type) extends JavaResolutionResult
+    case class AmbiguousMethod(methods: List[Method]) extends JavaResolutionResult
     case object MethodNotFound extends JavaResolutionResult
   }
 }

@@ -24,6 +24,7 @@ import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.fmt.FormatEqualityConstraint.formatEqualityConstraint
 import ca.uwaterloo.flix.language.fmt.FormatType.formatType
 import ca.uwaterloo.flix.util.{Formatter, Grammar}
+import java.lang.reflect.Method;
 
 /**
   * A common super-type for type errors.
@@ -79,6 +80,34 @@ object TypeError {
          |>> Java method '$methodName' from type '${red(formatType(tpe0, Some(renv)))}' with arguments types (${tpes.mkString(", ")}) not found.
          |
          |${code(loc, s"java method '${methodName} not found")}
+         |""".stripMargin
+    }
+  }
+
+  /**
+   * Java ambiguous method type error.
+   *
+   * @param tpe0    the type of the receiver object.
+   * @param tpes    the types of the arguments.
+   * @param methods a list of possible candidate methods on the type of the receiver object.
+   * @param renv    the rigidity environment.
+   * @param loc     the location where the error occured.
+   */
+  case class AmbiguousMethod(methodName: String, tpe0: Type, tpes: List[Type], methods: List[Method], renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    // TODO INTEROP better comment with candidate methods formatting
+    def summary: String = s"Ambiguous Java method '$methodName' in type '$tpe0' with arguments types (${tpes.mkString(", ")})."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      def methodToStr(m: Method) = {
+         s"${m.getName}(${m.getParameterTypes.map(t => t.getName).mkString(", ")})"
+      }
+      s"""${line(kind, source.name)}
+         |>> Java method '$methodName' from type '${red(formatType(tpe0, Some(renv)))}' with arguments types (${tpes.mkString(", ")}) is ambiguous.
+         | Possible candidate methods:
+         |  ${methods.map(m => methodToStr(m)).mkString(", ")}
+         |
+         |${code(loc, s"Ambiguous Java method '${methodName}'")}
          |""".stripMargin
     }
   }
