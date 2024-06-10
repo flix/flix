@@ -431,13 +431,15 @@ object ManifestParser {
   }
 
   /**
-    * Creates a FlixDependency.
-    * Repository, username and project name are given by `depName`.
-    * The version is given by `depVer`.
-    * `prodDep` decides whether it is a production or development dependency.
-    * `p` is for reporting errors.
-    */
+   * Create a [[FlixDependency]].
+   * @param deps [[TomlTable]] of declared Flix dependencies.
+   * @param depKey Repository address of the package.
+   * @param p [[Path]] of the project Toml file.
+   * @return [[Result]] of the [[FlixDependency]] if succesful, otherwise a [[ManifestError]]
+   */
   private def createFlixDep(deps: TomlTable, depKey: String, p: Path): Result[FlixDependency, ManifestError] = {
+    // Regex for extracting repository, username, and project name.
+    // (.+) is a capturing group, where . matches any character.
     val validPkg = s"^\"(.+):(.+)/(.+)\"$$".r
     depKey match {
       case validPkg(repoStr, username, projectName) =>
@@ -445,10 +447,13 @@ object ManifestParser {
           case Some(r) => r
           case None => return Err(ManifestError.UnsupportedRepository(p, repoStr))
         }
+
         if (!username.matches(s"^$ValidName$$"))
           return Err(ManifestError.IllegalName(p, depKey))
+
         if (!projectName.matches(s"^$ValidName$$"))
           return Err(ManifestError.IllegalName(p, depKey))
+
         if (deps.isString(depKey)) {
           for (ver <- getFlixVersion(deps, depKey, p))
             yield Dependency.FlixDependency(repo, username, projectName, ver, List())
@@ -464,6 +469,7 @@ object ManifestParser {
             val typ = depTbl.get(permKey).getClass
             return Err(ManifestError.DependencyFormatError(p, s"Flix dependency error: expected String but received $typ"))
           }
+          getFlixVersion(depTbl, verKey, p)
           for (
             ver <- getFlixVersion(depTbl, verKey, p);
             perm <- getPermissions(depTbl, permKey, p)
