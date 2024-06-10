@@ -46,7 +46,7 @@ mod Iterator {
             case Some(a) => Ans(a)
             case None    => Done
         };
-        let iterF = () -> checked_ecast(f1());
+        let iterF = () -> (f1());
         Iterator(rc, iterF)
 
     ///
@@ -426,7 +426,7 @@ mod Iterator {
             case Done   => k(s)
 
         };
-        loop(eidentity)
+        loop(x -> x)
 
     ///
     /// Applies `f` to a start value `z` and all elements in `iter` going from right to left.

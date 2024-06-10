@@ -507,7 +507,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
     val input =
       """
         |eff E
-        |def impureBool(): Bool \ E = checked_ecast(???)
+        |def impureBool(): Bool \ E = (???)
         |
         |def foo(): Int32 \ E = {
         |    match 0 {
@@ -525,7 +525,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
       """
         |eff IO
         |
-        |def impureX(): String \ IO = checked_ecast("x")
+        |def impureX(): String \ IO = ("x")
         |
         |def f(): ##java.lang.Object \ IO = {
         |    let x = new ##java.lang.Object {
@@ -825,10 +825,12 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |
         |def mustE(f: Unit -> Unit \ {ef, E}): Unit = ???
         |
+        |// This is now correct!
         |def foo(): Unit = mustE(x -> x)
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError](result)
+    // expectError[TypeError](result)
+    expectSuccess(result)
   }
 
   test("Test.UnexpectedArgument.04") {
