@@ -13,7 +13,7 @@ mod Test.Exp.Jvm.InvokeMethod2 {
    @test
    def testInvokeMethod2_03(): Bool \ IO =
        let obj = "Hello world";
-       obj#contains("o w")
+       obj#compareTo("Goodbye world") == 1
 
    @test
    def testInvokeMethod2_04(): Bool \ IO =
