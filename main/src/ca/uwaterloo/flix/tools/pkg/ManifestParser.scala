@@ -496,21 +496,14 @@ object ManifestParser {
       return Err(ManifestError.FlixDependencyPermissionTypeError(p, key, perms))
     }
     val permArray = depTbl.getArray(key)
-    if (!permArray.toList.asScala.toList.forall(_.isInstanceOf[String])) {
-      val perms = depTbl.get(key)
-      return Err(ManifestError.FlixDependencyPermissionTypeError(p, key, perms))
-    }
-    var perms: List[Permission] = List()
-    for (i <- Range(0, permArray.size())) {
-      val s = permArray.getString(i)
-      Permission.ofString(s) match {
-        case Some(p) => perms = p::perms
+    permArray.toList.asScala.toList.map({
+      case s: String => Permission.ofString(s) match {
+        case Some(p) => p
         case None => return Err(ManifestError.FlixUnknownPermissionError(p, key, s))
       }
-    }
-    Ok(perms)
+      case _ => return Err(ManifestError.FlixDependencyPermissionTypeError(p, key, permArray))
+    }).toOk
   }
-
 
   /**
     * Creates a JarDependency.
@@ -532,17 +525,10 @@ object ManifestParser {
     * an error if anything in the array is not a String.
     */
   private def convertTomlArrayToStringList(array: TomlArray, p: Path): Result[List[String], ManifestError] = {
-    val stringSet = mutable.Set.empty[String]
-    for (i <- 0 until array.size()) {
-      try {
-        val s = array.getString(i)
-        stringSet.add(s)
-      } catch {
-        case e: TomlInvalidTypeException =>
-          return Err(ManifestError.AuthorNameError(p, e.getMessage))
-      }
-    }
-    Ok(stringSet.toList)
+    array.toList.asScala.toList.map({
+      case s: String => s
+      case _ => return Err(ManifestError.AuthorNameError(p))
+    }).toOk
   }
 
   /**

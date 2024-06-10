@@ -170,10 +170,9 @@ object ManifestError {
          |""".stripMargin
   }
 
-  case class AuthorNameError(path: Path, message: String) extends ManifestError {
+  case class AuthorNameError(path: Path) extends ManifestError {
     override def message(f: Formatter): String =
       s"""There was an author name which was not of type String:
-         |$message
          |The toml file was found at ${f.cyan(if(path == null) "null" else path.toString)}.
          |""".stripMargin
   }
