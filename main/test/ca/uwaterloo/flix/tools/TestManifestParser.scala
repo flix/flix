@@ -1035,7 +1035,7 @@ class TestManifestParser extends AnyFunSuite {
         |""".stripMargin
     }
     val result = ManifestParser.parse(toml, null)
-    expectError[ManifestError.DependencyFormatError](result)
+    expectError[ManifestError.VersionTypeError](result)
   }
 
   test("ManifestError.IllegalTableFound.01") {

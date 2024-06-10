@@ -83,10 +83,11 @@ object ManifestError {
     }
   }
 
-  case class FlixDependencyPermissionTypeError(path: Path, lib: String, perm: AnyRef) extends ManifestError {
+  case class FlixDependencyPermissionTypeError(path: Option[Path], lib: String, perm: AnyRef) extends ManifestError {
     override def message(f: Formatter): String = {
+      val pStr = path.map(_.toString).getOrElse("\"unknown\"")
       val typ = perm.getClass
-      s"""Unexpected permissions format in Flix dependency ${f.bold(lib)}.
+      s"""Unexpected permissions format of Flix dependency ${f.bold(lib)} in file ${f.cyan(pStr)}.
          |Expected an Array of Strings but got: ${f.bold(f.red(typ.toString))}.
          |""".stripMargin
     }
@@ -144,6 +145,15 @@ object ManifestError {
          |Instead found: ${f.red(depName)}.
          |The toml file was found at ${f.cyan(if (path == null) "null" else path.toString)}.
          |""".stripMargin
+  }
+
+  case class VersionTypeError(path: Option[Path], lib: String, ver: AnyRef) extends ManifestError {
+    override def message(f: Formatter): String = {
+      val pStr = path.map(_.toString).getOrElse("unknown file")
+      s"""Unexpected version type for dependency ${f.bold(lib)} in file ${f.cyan(pStr)}.
+         |Expected ${f.bold("String")} but found ${f.bold(f.red(ver.getClass.toString))}.
+         |""".stripMargin
+    }
   }
 
   case class DependencyFormatError(path: Path, message: String) extends ManifestError {
