@@ -29,6 +29,12 @@ import scala.collection.mutable
 import scala.jdk.CollectionConverters.{SetHasAsScala,ListHasAsScala}
 
 object ManifestParser {
+  /**
+   * [[Regex]] defining a valid string for user name and project name.
+   * Concretely, a valid name is a [[String]] consisting only of alphanumeric characters
+   * or the symbols `.`,`:`,`/`,`_` and `-`.
+   */
+  private val ValidName = "[a-zA-Z0-9.:/_-]+".r
 
   /**
     * Creates a Manifest from the .toml file
@@ -439,9 +445,9 @@ object ManifestParser {
           case Some(r) => r
           case None => return Err(ManifestError.UnsupportedRepository(p, repoStr))
         }
-        if (!username.matches(s"^$validName$$"))
+        if (!username.matches(s"^$ValidName$$"))
           return Err(ManifestError.IllegalName(p, depKey))
-        if (!projectName.matches(s"^$validName$$"))
+        if (!projectName.matches(s"^$ValidName$$"))
           return Err(ManifestError.IllegalName(p, depKey))
         if (deps.isString(depKey)) {
           for (ver <- getFlixVersion(deps, depKey, p))
@@ -548,8 +554,6 @@ object ManifestParser {
         Ok(PackageModules.Selected(moduleSet))
     }
   }
-
-  private val validName = "[a-zA-Z0-9.:/_-]+".r
 
   /**
     * Checks that a package name does not include any illegal characters.
