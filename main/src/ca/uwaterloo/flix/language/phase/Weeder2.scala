@@ -784,6 +784,7 @@ object Weeder2 {
         case TreeKind.Expr.Without => visitWithoutExpr(tree)
         case TreeKind.Expr.Try => visitTryExpr(tree)
         case TreeKind.Expr.Do => visitDoExpr(tree)
+        case TreeKind.Expr.InvokeConstructor2 => visitInvokeConstructor2Expr(tree)
         case TreeKind.Expr.InvokeMethod2 => visitInvokeMethod2Expr(tree)
         case TreeKind.Expr.NewObject => visitNewObjectExpr(tree)
         case TreeKind.Expr.Static => visitStaticExpr(tree)
@@ -1676,6 +1677,19 @@ object Weeder2 {
       expect(tree, TreeKind.Expr.Do)
       mapN(pickQName(tree), pickArguments(tree)) {
         (op, args) => Expr.Do(op, args, tree.loc)
+      }
+    }
+
+    private def visitInvokeConstructor2Expr(tree: Tree): Validation[Expr, CompilationMessage] = {
+      expect(tree, TreeKind.Expr.InvokeConstructor2)
+      flatMapN(Types.pickType(tree), pickArguments(tree)) {
+        (tpe, exps) => tpe match {
+          case WeededAst.Type.Ambiguous(qname, _) if qname.isUnqualified =>
+            Validation.success(Expr.InvokeConstructor2(qname.ident, exps, tree.loc))
+          case _ =>
+            val m = IllegalQualifiedNameInInvokeConstructor(tree.loc)
+            Validation.toSoftFailure(Expr.Error(m), m)
+        }
       }
     }
 
