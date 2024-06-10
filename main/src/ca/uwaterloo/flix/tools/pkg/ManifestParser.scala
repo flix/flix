@@ -404,7 +404,7 @@ object ManifestParser {
     * A Maven version number is an uninterpreted tag. Maven (the repository) does not
     * enforce a format for version numbers so we must be liberal about what we accept.
     */
-  def getMavenVersion(depVer: AnyRef, p: Path): Result[String, ManifestError] = {
+  private def getMavenVersion(depVer: AnyRef, p: Path): Result[String, ManifestError] = {
     try {
       val version = depVer.asInstanceOf[String]
       Ok(version)
@@ -443,9 +443,9 @@ object ManifestParser {
     val validPkg = s"^\"(.+):(.+)/(.+)\"$$".r
     depKey match {
       case validPkg(repoStr, username, projectName) =>
-        val repo = Repository.ofString(repoStr) match {
-          case Some(r) => r
-          case None => return Err(ManifestError.UnsupportedRepository(p, repoStr))
+        val repo = Repository.mkRepository(repoStr) match {
+          case Ok(r) => r
+          case Err(_) => return Err(ManifestError.UnsupportedRepository(p, repoStr))
         }
 
         if (!username.matches(s"^$ValidName$$"))
@@ -486,7 +486,7 @@ object ManifestParser {
     val depVer = deps.getString(depKey)
     SemVer.ofString(depVer) match {
       case Some(v) => Ok(v)
-      case None => Err(ManifestError.FlixVersionFormatError(p, depKey, depVer))
+      case None => Err(ManifestError.FlixVersionFormatError(Some(p), depKey, depVer))
     }
   }
 
@@ -504,7 +504,7 @@ object ManifestParser {
     for (i <- Range(0, permArray.size())) {
       val s = permArray.getString(i)
       Permission.ofString(s) match {
-        case Some(p) => { perms = p::perms }
+        case Some(p) => perms = p::perms
         case None => return Err(ManifestError.FlixUnknownPermissionError(p, key, s))
       }
     }

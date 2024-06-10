@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Magnus Madsen
+ * Copyright 2024 Andreas Stenbæk Larsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,23 +15,8 @@
  */
 package ca.uwaterloo.flix.tools.pkg
 
-import ca.uwaterloo.flix.util.Result
-import ca.uwaterloo.flix.util.Result.{Err, Ok}
+sealed trait RepositoryError
 
-sealed trait Repository
-
-object Repository {
-
-  /**
-   * Convert a [[String]] into a [[Repository]].
-   */
-  def mkRepository(s: String): Result[Repository, RepositoryError] = s match {
-    case "github" => Ok(Repository.GitHub)
-    case _ => Err(RepositoryError.UnsupportedRepositoryError(s))
-  }
-
-  /**
-   * A GitHub repository.
-   */
-  case object GitHub extends Repository
+object RepositoryError {
+  case class UnsupportedRepositoryError(s: String) extends RepositoryError
 }
