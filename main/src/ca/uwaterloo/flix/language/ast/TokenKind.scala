@@ -50,6 +50,7 @@ sealed trait TokenKind {
       case TokenKind.Comma => "','"
       case TokenKind.CurlyL => "'{'"
       case TokenKind.CurlyR => "'}'"
+      case TokenKind.Currency => "'¤'"
       case TokenKind.Dollar => "'$'"
       case TokenKind.Dot => "'.'"
       case TokenKind.DotWhiteSpace => "'. '"
@@ -644,6 +645,8 @@ object TokenKind {
   case object CurlyL extends TokenKind
 
   case object CurlyR extends TokenKind
+
+  case object Currency extends TokenKind
 
   case object Dollar extends TokenKind
 
