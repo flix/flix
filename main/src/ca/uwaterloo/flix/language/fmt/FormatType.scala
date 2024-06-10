@@ -341,6 +341,7 @@ object FormatType {
           case Kind.JvmConstructorOrMethod => "j" + id.toString
           case Kind.CaseSet(_) => "c" + id.toString
           case Kind.Arrow(_, _) => "'" + id.toString
+          case Kind.Error => "err" + id.toString
         }
         val suffix = if (isRegion) {
           "!"
