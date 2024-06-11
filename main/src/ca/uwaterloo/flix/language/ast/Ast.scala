@@ -28,7 +28,12 @@ object Ast {
   /**
     * A common super-type for inputs.
     */
-  sealed trait Input
+  sealed trait Input {
+    /**
+      * A source is stable if it cannot change after being loaded (e.g. the standard library, etc).
+      */
+    def stable: Boolean
+  }
 
   object Input {
 
@@ -42,12 +47,13 @@ object Ast {
         case that: StdLib => this.name == that.name
         case _ => false
       }
+
+      // Standard library is stable.
+      override def stable: Boolean = true
     }
-    
+
     /**
       * A source that is backed by an internal resource.
-      *
-      * A source is stable if it cannot change after being loaded (e.g. the standard library, etc).
       */
     case class Text(name: String, text: String, stable: Boolean) extends Input {
       override def hashCode(): Int = name.hashCode
@@ -61,12 +67,16 @@ object Ast {
     /**
       * A source that is backed by a regular file.
       */
-    case class TxtFile(path: Path) extends Input
+    case class TxtFile(path: Path) extends Input {
+      override def stable: Boolean = false
+    }
 
     /**
       * A source that is backed by flix package file.
       */
-    case class PkgFile(path: Path) extends Input
+    case class PkgFile(path: Path) extends Input {
+      override def stable: Boolean = false
+    }
 
   }
 
