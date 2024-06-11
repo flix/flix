@@ -35,7 +35,7 @@ object Ast {
     /**
       * A source from the standard library.
       */
-    case class StdLib(name: String, test: String) extends Input {
+    case class StdLib(name: String, text: String) extends Input {
       override def hashCode(): Int = name.hashCode
 
       override def equals(obj: Any): Boolean = obj match {
@@ -43,7 +43,7 @@ object Ast {
         case _ => false
       }
     }
-
+    
     /**
       * A source that is backed by an internal resource.
       *
