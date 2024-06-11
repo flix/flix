@@ -366,9 +366,11 @@ object ManifestParser {
           if (!depTbl.isString(verKey)) {
             return Err(ManifestError.VersionTypeError(Option.apply(p), depKey, depTbl.get(verKey)))
           }
+
           if (!depTbl.isArray(permKey)) {
             return Err(ManifestError.FlixDependencyPermissionTypeError(Option.apply(p), depKey, depTbl.get(permKey)))
           }
+
           for (
             ver <- getFlixVersion(depTbl, verKey, p);
             perm <- getPermissions(depTbl, permKey, p)
