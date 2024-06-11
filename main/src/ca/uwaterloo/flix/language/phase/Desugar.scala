@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.DesugaredAst.Expr
 import ca.uwaterloo.flix.language.ast.WeededAst.Predicate
+import ca.uwaterloo.flix.language.ast.shared.Fixity
 import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, DesugaredAst, Name, SourceLocation, Type, WeededAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugDesugaredAst
 import ca.uwaterloo.flix.util.ParOps
@@ -1722,7 +1723,7 @@ object Desugar {
     // Automatically fix all lattices atoms.
     val body = guard ::: from.map {
       case DesugaredAst.Predicate.Body.Atom(pred, Ast.Denotation.Latticenal, polarity, _, terms, loc) =>
-        DesugaredAst.Predicate.Body.Atom(pred, Ast.Denotation.Latticenal, polarity, Ast.Fixity.Fixed, terms, loc)
+        DesugaredAst.Predicate.Body.Atom(pred, Ast.Denotation.Latticenal, polarity, Fixity.Fixed, terms, loc)
       case pred => pred
     }
 
