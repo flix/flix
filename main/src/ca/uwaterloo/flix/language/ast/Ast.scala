@@ -33,6 +33,18 @@ object Ast {
   object Input {
 
     /**
+      * A source from the standard library.
+      */
+    case class StdLib(name: String, test: String) extends Input {
+      override def hashCode(): Int = name.hashCode
+
+      override def equals(obj: Any): Boolean = obj match {
+        case that: StdLib => this.name == that.name
+        case _ => false
+      }
+    }
+
+    /**
       * A source that is backed by an internal resource.
       *
       * A source is stable if it cannot change after being loaded (e.g. the standard library, etc).
