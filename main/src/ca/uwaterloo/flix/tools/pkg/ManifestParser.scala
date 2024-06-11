@@ -363,7 +363,7 @@ object ManifestParser {
             Dependency.FlixDependency(repo, username, projectName, _, Nil).toOk
           )
 
-        // If the dependency maps to a table, get the version and permissions.
+          // If the dependency maps to a table, get the version and permissions.
         } else if (deps.isTable(depKey)) {
           val depTbl = deps.getTable(depKey)
           val verKey = "version"
@@ -381,7 +381,7 @@ object ManifestParser {
   }
 
   /**
-   *
+   * Attempt to retrieve a [[SemVer]] at `depKey` from the table `deps`.
    */
   private def getFlixVersion(deps: TomlTable, depKey: String, p: Path): Result[SemVer, ManifestError] = {
     // Ensure the version is a String.
@@ -475,7 +475,6 @@ object ManifestParser {
     } else {
       Err(ManifestError.JarUrlFileNameError(p, depName))
     }
-
   }
 
   /**
