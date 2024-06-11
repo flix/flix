@@ -349,27 +349,25 @@ object ManifestParser {
           case Err(_) => return Err(ManifestError.UnsupportedRepository(p, repoStr))
         }
 
+        // Ensure the username is valid.
         if (!username.matches(s"^$ValidName$$"))
           return Err(ManifestError.IllegalName(p, depKey))
 
+        // Ensure the project name is valid.
         if (!projectName.matches(s"^$ValidName$$"))
           return Err(ManifestError.IllegalName(p, depKey))
 
+        // If the dependency maps to a string, parse the version.
         if (deps.isString(depKey)) {
           getFlixVersion(deps, depKey, p).flatMap(
             Dependency.FlixDependency(repo, username, projectName, _, Nil).toOk
           )
+
+        // If the dependency maps to a table, get the version and permissions.
         } else if (deps.isTable(depKey)) {
           val depTbl = deps.getTable(depKey)
           val verKey = "version"
           val permKey = "permissions"
-          if (!depTbl.isString(verKey)) {
-            return Err(ManifestError.VersionTypeError(Option.apply(p), depKey, depTbl.get(verKey)))
-          }
-
-          if (!depTbl.isArray(permKey)) {
-            return Err(ManifestError.FlixDependencyPermissionTypeError(Option.apply(p), depKey, depTbl.get(permKey)))
-          }
 
           for (
             ver <- getFlixVersion(depTbl, verKey, p);
@@ -383,26 +381,31 @@ object ManifestParser {
   }
 
   private def getFlixVersion(deps: TomlTable, depKey: String, p: Path): Result[SemVer, ManifestError] = {
-    val depVer = deps.getString(depKey)
-    SemVer.ofString(depVer) match {
-      case Some(v) => Ok(v)
-      case None => Err(ManifestError.FlixVersionFormatError(Some(p), depKey, depVer))
+    if (!deps.isString(depKey)) {
+      Err(ManifestError.VersionTypeError(Option.apply(p), depKey, deps.get(depKey)))
+    } else {
+      val depVer = deps.getString(depKey)
+      SemVer.ofString(depVer) match {
+        case Some(v) => Ok(v)
+        case None => Err(ManifestError.FlixVersionFormatError(Option.apply(p), depKey, depVer))
+      }
     }
   }
 
   private def getPermissions(depTbl: TomlTable, key: String, p: Path): Result[List[Permission], ManifestError] = {
     if (!depTbl.isArray(key)) {
       val perms = depTbl.get(key)
-      return Err(ManifestError.FlixDependencyPermissionTypeError(Option.apply(p), key, perms))
+      Err(ManifestError.FlixDependencyPermissionTypeError(Option.apply(p), key, perms))
+    } else {
+      val permArray = depTbl.getArray(key)
+      permArray.toList.asScala.toList.map({
+        case s: String => Permission.mkPermission(s) match {
+          case Some(p) => p
+          case None => return Err(ManifestError.FlixUnknownPermissionError(p, key, s))
+        }
+        case _ => return Err(ManifestError.FlixDependencyPermissionTypeError(Option.apply(p), key, permArray))
+      }).toOk
     }
-    val permArray = depTbl.getArray(key)
-    permArray.toList.asScala.toList.map({
-      case s: String => Permission.mkPermission(s) match {
-        case Some(p) => p
-        case None => return Err(ManifestError.FlixUnknownPermissionError(p, key, s))
-      }
-      case _ => return Err(ManifestError.FlixDependencyPermissionTypeError(Option.apply(p), key, permArray))
-    }).toOk
   }
 
   /**
