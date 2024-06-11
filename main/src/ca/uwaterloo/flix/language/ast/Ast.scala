@@ -16,6 +16,8 @@
 
 package ca.uwaterloo.flix.language.ast
 
+import ca.uwaterloo.flix.language.ast.shared.Fixity
+
 import java.nio.file.Path
 import java.util.Objects
 import scala.annotation.tailrec
@@ -550,25 +552,6 @@ object Ast {
       * The atom is negative.
       */
     case object Negative extends Polarity
-
-  }
-
-  /**
-    * A common super-type for the fixity of an atom.
-    */
-  sealed trait Fixity
-
-  object Fixity {
-
-    /**
-      * The atom is loose (it does not have to be fully materialized before it can be used).
-      */
-    case object Loose extends Fixity
-
-    /**
-      * The atom is fixed (it must be fully materialized before it can be used).
-      */
-    case object Fixed extends Fixity
 
   }
 

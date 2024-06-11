@@ -19,6 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast._
 import ca.uwaterloo.flix.language.ast.SyntaxTree.{Child, Tree, TreeKind}
+import ca.uwaterloo.flix.language.ast.shared.Fixity
 import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, Name, ReadAst, SemanticOp, SourceLocation, SourcePosition, Symbol, SyntaxTree, Token, TokenKind, WeededAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.language.errors.ParseError._
@@ -2397,7 +2398,7 @@ object Weeder2 {
             case (pats, None) =>
               // Check for `[[IllegalFixedAtom]]`.
               val errors = (polarity, fixity) match {
-                case (Ast.Polarity.Negative, Ast.Fixity.Fixed) => Some(IllegalFixedAtom(tree.loc))
+                case (Ast.Polarity.Negative, Fixity.Fixed) => Some(IllegalFixedAtom(tree.loc))
                 case _ => None
               }
               Validation.success(Predicate.Body.Atom(Name.mkPred(ident), Denotation.Relational, polarity, fixity, pats, tree.loc)
