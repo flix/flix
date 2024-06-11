@@ -1442,8 +1442,14 @@ object Resolver {
 
         case NamedAst.Expr.InvokeStaticMethod2(clazzName, methodName, exps, loc) =>
           val esVal = traverse(exps)(visitExp(_, env0))
-          mapN(esVal) {
-            es => ResolvedAst.Expr.InvokeStaticMethod2(Class.forName(clazzName.name), methodName, es, loc)
+          flatMapN(esVal) {
+            es => env0.get(clazzName.name) match {
+              case Some(List(Resolution.JavaClass(clazz))) =>
+                Validation.success(ResolvedAst.Expr.InvokeStaticMethod2(clazz, methodName, es, loc))
+              case _ =>
+                val m = ResolutionError.UndefinedJvmClass(clazzName.name, "", loc)
+                Validation.toSoftFailure(ResolvedAst.Expr.Error(m), m)
+            }
           }
 
         case NamedAst.Expr.InvokeConstructor(className, args, sig, loc) =>

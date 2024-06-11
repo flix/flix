@@ -787,6 +787,7 @@ object Weeder2 {
         case TreeKind.Expr.Do => visitDoExpr(tree)
         case TreeKind.Expr.InvokeConstructor2 => visitInvokeConstructor2Expr(tree)
         case TreeKind.Expr.InvokeMethod2 => visitInvokeMethod2Expr(tree)
+        case TreeKind.Expr.InvokeStaticMethod2 => visitInvokeStaticMethod2Expr(tree)
         case TreeKind.Expr.NewObject => visitNewObjectExpr(tree)
         case TreeKind.Expr.Static => visitStaticExpr(tree)
         case TreeKind.Expr.Select => visitSelectExpr(tree)
@@ -1706,6 +1707,15 @@ object Weeder2 {
           fragments.foldLeft[Expr](nameExpr) {
             case (acc, (methodName, arguments)) => Expr.InvokeMethod2(acc, methodName, arguments, tree.loc)
           }
+      }
+    }
+
+    private def visitInvokeStaticMethod2Expr(tree: Tree): Validation[Expr, CompilationMessage] = {
+      expect(tree, TreeKind.Expr.InvokeStaticMethod2)
+      val List(clazzTree, methodTree) = pickAll(TreeKind.Ident, tree) // TODO: Resilience
+      mapN(tokenToIdent(clazzTree), tokenToIdent(methodTree), pickArguments(tree)) {
+        (clazzName, methodName, exps) =>
+          Expr.InvokeStaticMethod2(clazzName, methodName, exps, tree.loc)
       }
     }
 
