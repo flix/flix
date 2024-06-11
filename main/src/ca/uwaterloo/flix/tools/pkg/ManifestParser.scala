@@ -380,7 +380,11 @@ object ManifestParser {
     }
   }
 
+  /**
+   *
+   */
   private def getFlixVersion(deps: TomlTable, depKey: String, p: Path): Result[SemVer, ManifestError] = {
+    // Ensure the version is a String.
     if (!deps.isString(depKey)) {
       Err(ManifestError.VersionTypeError(Option.apply(p), depKey, deps.get(depKey)))
     } else {
@@ -392,17 +396,23 @@ object ManifestParser {
     }
   }
 
+  /**
+   * Retrieve a list of permissions from a [[TomlTable]] `depTbl` at `key`.
+   */
   private def getPermissions(depTbl: TomlTable, key: String, p: Path): Result[List[Permission], ManifestError] = {
+    // Ensure the permissions are an Array.
     if (!depTbl.isArray(key)) {
       val perms = depTbl.get(key)
       Err(ManifestError.FlixDependencyPermissionTypeError(Option.apply(p), key, perms))
     } else {
       val permArray = depTbl.getArray(key)
       permArray.toList.asScala.toList.map({
+        // Ensure the contents of the array are strings.
         case s: String => Permission.mkPermission(s) match {
           case Some(p) => p
           case None => return Err(ManifestError.FlixUnknownPermissionError(p, key, s))
         }
+        // If an entry is not a string, return an error.
         case _ => return Err(ManifestError.FlixDependencyPermissionTypeError(Option.apply(p), key, permArray))
       }).toOk
     }
