@@ -31,7 +31,7 @@ object Symbol {
   /**
     * The symbol for the IO effect.
     */
-  val IO: EffectSym = mkEffectSym(Name.RootNS, Ident(SourcePosition.Unknown, "IO", SourcePosition.Unknown))
+  val IO: EffectSym = mkEffectSym(Name.RootNS, Ident("IO", SourceLocation.Unknown))
 
   /**
     * Returns a fresh def symbol based on the given symbol.
@@ -673,29 +673,29 @@ object Symbol {
   /**
     * Associated Type Symbol.
     */
-  final class AssocTypeSym(val clazz: Symbol.TraitSym, val name: String, val loc: SourceLocation) extends Symbol {
+  final class AssocTypeSym(val trt: Symbol.TraitSym, val name: String, val loc: SourceLocation) extends Symbol {
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
       */
     override def equals(obj: scala.Any): Boolean = obj match {
-      case that: AssocTypeSym => this.clazz == that.clazz && this.name == that.name
+      case that: AssocTypeSym => this.trt == that.trt && this.name == that.name
       case _ => false
     }
 
     /**
       * Returns the hash code of this symbol.
       */
-    override val hashCode: Int = Objects.hash(clazz, name)
+    override val hashCode: Int = Objects.hash(trt, name)
 
     /**
       * Human readable representation.
       */
-    override def toString: String = clazz.toString + "." + name
+    override def toString: String = trt.toString + "." + name
 
     /**
       * The symbol's namespace.
       */
-    def namespace: List[String] = clazz.namespace :+ clazz.name
+    def namespace: List[String] = trt.namespace :+ trt.name
   }
 
   /**

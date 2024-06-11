@@ -19,6 +19,7 @@ import ca.uwaterloo.flix.language.ast.Ast.CheckedCastType
 import ca.uwaterloo.flix.language.ast.Type.getFlixType
 import ca.uwaterloo.flix.language.ast.{Ast, KindedAst, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.phase.unification.Substitution
+import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 object TypeReconstruction {
@@ -418,6 +419,10 @@ object TypeReconstruction {
       val eff = Type.mkUnion(eff1 :: es.map(_.eff), loc)
       TypedAst.Expr.Do(op, es, tpe, eff, loc)
 
+    case KindedAst.Expr.InvokeConstructor2(clazz, exps, loc) =>
+      val es = exps.map(visitExp)
+      throw InternalCompilerException(s"Unexpected InvokeConstructor2 call.", loc)
+
     case KindedAst.Expr.InvokeMethod2(exp, _, exps, mvar, tvar, evar, loc) =>
       val e = visitExp(exp)
       val es = exps.map(visitExp)
@@ -428,8 +433,12 @@ object TypeReconstruction {
         case Type.Cst(TypeConstructor.JvmMethod(method), loc) =>
           TypedAst.Expr.InvokeMethod(method, e, es, returnTpe, eff, loc)
         case _ =>
-          throw InternalCompilerException(s"unexpected type: ${methodTpe}.", loc)
+          TypedAst.Expr.Error(TypeError.UnresolvedMethod(loc), methodTpe, eff)
       }
+
+    case KindedAst.Expr.InvokeStaticMethod2(clazz, methodName, exps, loc) =>
+      val es = exps.map(visitExp)
+      throw InternalCompilerException(s"Unexpected InvokeStaticMethod2 call.", loc)
 
     case KindedAst.Expr.InvokeConstructor(constructor, args, loc) =>
       val as = args.map(visitExp(_))

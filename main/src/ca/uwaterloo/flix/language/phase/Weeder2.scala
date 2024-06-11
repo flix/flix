@@ -141,7 +141,7 @@ object Weeder2 {
         case Some(Nil) => List.empty
         // case: import one, use the java name
         case None =>
-          val ident = Name.Ident(jname.loc.sp1, jname.fqn.lastOption.getOrElse(""), jname.loc.sp2)
+          val ident = Name.Ident(jname.fqn.lastOption.getOrElse(""), jname.loc)
           List(UseOrImport.Import(jname, ident, tree.loc))
         // case: import many
         case Some(imports) => imports
@@ -667,7 +667,7 @@ object Weeder2 {
     }
 
     def unitFormalParameter(loc: SourceLocation): FormalParam = FormalParam(
-      Name.Ident(SourcePosition.Unknown, "_unit", SourcePosition.Unknown),
+      Name.Ident("_unit", SourceLocation.Unknown),
       Ast.Modifiers(List.empty),
       Some(Type.Unit(loc)),
       loc
@@ -784,6 +784,7 @@ object Weeder2 {
         case TreeKind.Expr.Without => visitWithoutExpr(tree)
         case TreeKind.Expr.Try => visitTryExpr(tree)
         case TreeKind.Expr.Do => visitDoExpr(tree)
+        case TreeKind.Expr.InvokeConstructor2 => visitInvokeConstructor2Expr(tree)
         case TreeKind.Expr.InvokeMethod2 => visitInvokeMethod2Expr(tree)
         case TreeKind.Expr.NewObject => visitNewObjectExpr(tree)
         case TreeKind.Expr.Static => visitStaticExpr(tree)
@@ -817,7 +818,7 @@ object Weeder2 {
           val first = idents.head
           val ident = idents.last
           val nnameIdents = idents.dropRight(1)
-          val loc = SourceLocation(isReal = true, first.sp1, ident.sp2)
+          val loc = SourceLocation(isReal = true, first.loc.sp1, ident.loc.sp2)
           val nname = Name.NName(nnameIdents, loc)
           val qname = Name.QName(nname, ident, loc)
           val prefix = idents.takeWhile(_.isUpper)
@@ -911,7 +912,7 @@ object Weeder2 {
       expect(tree, TreeKind.Expr.Hole)
       mapN(tryPickNameIdent(tree)) {
         ident =>
-          val strippedIdent = ident.map(id => Name.Ident(id.sp1, id.name.stripPrefix("?"), id.sp2))
+          val strippedIdent = ident.map(id => Name.Ident(id.name.stripPrefix("?"), id.loc))
           Expr.Hole(strippedIdent, tree.loc)
       }
     }
@@ -921,7 +922,9 @@ object Weeder2 {
       mapN(pickNameIdent(tree)) {
         ident =>
           // Strip '?' suffix and update source location
-          val id = Name.Ident(ident.sp1, ident.name.stripSuffix("?"), ident.sp2.copy(col = (ident.sp2.col - 1).toShort))
+          val sp1 = ident.loc.sp1
+          val sp2 = ident.loc.sp2.copy(col = (ident.loc.sp2.col - 1).toShort)
+          val id = Name.Ident(ident.name.stripSuffix("?"), SourceLocation(isReal = true, sp1, sp2))
           val expr = Expr.Ambiguous(Name.QName(Name.RootNS, id, id.loc), id.loc)
           Expr.HoleWithExp(expr, tree.loc)
       }
@@ -981,6 +984,13 @@ object Weeder2 {
       flatMapN(pick(TreeKind.ArgumentList, tree))(visitArguments)
     }
 
+    /**
+     * This method is the same as pickArguments but for invokeMethod2. It calls visitMethodArguments instead.
+     */
+    private def pickMethodArguments(tree: Tree): Validation[List[Expr], CompilationMessage] = {
+      flatMapN(pick(TreeKind.ArgumentList, tree))(visitMethodArguments)
+    }
+
     private def visitArguments(tree: Tree): Validation[List[Expr], CompilationMessage] = {
       mapN(
         traverse(pickAll(TreeKind.Argument, tree))(pickExpr),
@@ -993,6 +1003,14 @@ object Weeder2 {
             case args => args.sortBy(_.loc)
           }
       }
+    }
+
+    /**
+     * This method is the same as visitArguments but for invokeMethod2. It does not consider named arguments
+     * as they are not allowed and it doesn't add unit arguments for empty arguments.
+     */
+    private def visitMethodArguments(tree: Tree): Validation[List[Expr], CompilationMessage] = {
+      traverse(pickAll(TreeKind.Argument, tree))(pickExpr)
     }
 
     private def visitArgumentNamed(tree: Tree): Validation[Expr, CompilationMessage] = {
@@ -1124,7 +1142,7 @@ object Weeder2 {
             case "instanceof" => mapN(tryPickJavaName(exprs(1)))(Expr.InstanceOf(e1, _, tree.loc))
             // UNRECOGNIZED
             case id =>
-              val ident = Name.Ident(op.loc.sp1, id, op.loc.sp2)
+              val ident = Name.Ident(id, op.loc)
               Validation.success(Expr.Apply(Expr.Ambiguous(Name.QName(Name.RootNS, ident, ident.loc), op.loc), List(e1, e2), tree.loc))
           }
         case (_, operands) => throw InternalCompilerException(s"Expr.Binary tree with ${operands.length} operands", tree.loc)
@@ -1662,6 +1680,19 @@ object Weeder2 {
       }
     }
 
+    private def visitInvokeConstructor2Expr(tree: Tree): Validation[Expr, CompilationMessage] = {
+      expect(tree, TreeKind.Expr.InvokeConstructor2)
+      flatMapN(Types.pickType(tree), pickArguments(tree)) {
+        (tpe, exps) => tpe match {
+          case WeededAst.Type.Ambiguous(qname, _) if qname.isUnqualified =>
+            Validation.success(Expr.InvokeConstructor2(qname.ident, exps, tree.loc))
+          case _ =>
+            val m = IllegalQualifiedNameInInvokeConstructor(tree.loc)
+            Validation.toSoftFailure(Expr.Error(m), m)
+        }
+      }
+    }
+
     private def visitInvokeMethod2Expr(tree: Tree): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.InvokeMethod2)
       val fragmentsTrees = pickAll(TreeKind.Expr.InvokeMethod2Fragment, tree)
@@ -1691,7 +1722,7 @@ object Weeder2 {
     private def visitInvokeMethod2Fragment(tree: Tree): Validation[(Name.Ident, List[Expr]), CompilationMessage] = {
       expect(tree, TreeKind.Expr.InvokeMethod2Fragment)
       val methodName = pickNameIdent(tree)
-      val arguments = pickArguments(tree)
+      val arguments = pickMethodArguments(tree)
       mapN(methodName, arguments) {
         (methodName, arguments) => (methodName, arguments)
       }
@@ -2926,7 +2957,7 @@ object Weeder2 {
         val first = idents.head
         val ident = idents.last
         val nnameIdents = idents.dropRight(1)
-        val loc = SourceLocation(isReal = true, first.sp1, ident.sp2)
+        val loc = SourceLocation(isReal = true, first.loc.sp1, ident.loc.sp2)
         val nname = Name.NName(nnameIdents, loc)
         Name.QName(nname, ident, loc)
     }
@@ -2964,23 +2995,19 @@ object Weeder2 {
     */
   private def tokenToIdent(tree: Tree): Validation[Name.Ident, CompilationMessage] = {
     tree.children.headOption match {
-      case Some(token@Token(_, _, _, _, _, _)) =>
-        Validation.success(Name.Ident(
-          token.sp1,
-          token.text,
-          token.sp2
-        ))
+      case Some(token@Token(_, _, _, _, sp1, sp2)) =>
+        Validation.success(Name.Ident(token.text, SourceLocation(isReal = true, sp1, sp2)))
       // If child is an ErrorTree, that means the parse already reported and error.
       // We can avoid double reporting by returning a success here.
       // Doing it this way is most resilient, but phases down the line might have trouble with this sort of thing.
       case Some(t: Tree) if t.kind.isInstanceOf[TreeKind.ErrorTree] =>
         val name = text(tree).mkString("")
-        Validation.success(Name.Ident(tree.loc.sp1, name, tree.loc.sp2))
+        Validation.success(Name.Ident(name, tree.loc))
       case Some(t: Tree) if t.kind == TreeKind.CommentList =>
         // We hit a misplaced comment.
         val name = text(tree).mkString("")
         val error = MisplacedComments(SyntacticContext.Unknown, t.loc)
-        Validation.toSoftFailure(Name.Ident(tree.loc.sp1, name, tree.loc.sp2), error)
+        Validation.toSoftFailure(Name.Ident(name, tree.loc), error)
       case _ => throw InternalCompilerException(s"Parse failure: expected first child of '${tree.kind}' to be Child.Token", tree.loc)
     }
   }

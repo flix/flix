@@ -840,7 +840,7 @@ object Parser2 {
             val loc = currentSourceLocation()
             val error = UnexpectedToken(expected = NamedTokenSet.Declaration, actual = Some(at), SyntacticContext.Decl.OtherDecl, loc = loc)
             // Skip ahead until we find another declaration or a '}' signifying the end of the module.
-            while (!nth(0).isRecoverMod) {
+            while (!nth(0).isRecoverMod && !eof()) {
               advance()
             }
             closeWithError(markErr, error)
@@ -1465,7 +1465,7 @@ object Parser2 {
              | TokenKind.LiteralRegex => literalExpr()
         case TokenKind.ParenL => parenOrTupleOrLambdaExpr()
         case TokenKind.Underscore => if (nth(1) == TokenKind.ArrowThinR) unaryLambdaExpr() else name(NAME_VARIABLE, context = SyntacticContext.Expr.OtherExpr)
-        case TokenKind.NameLowerCase if nth(1) == TokenKind.Hash => invokeMethod2Expr()
+        case TokenKind.NameLowerCase if nth(1) == TokenKind.Currency => invokeMethod2Expr()
         case TokenKind.NameLowerCase => if (nth(1) == TokenKind.ArrowThinR) unaryLambdaExpr() else name(NAME_FIELD, allowQualified = true, context = SyntacticContext.Expr.OtherExpr)
         case TokenKind.NameUpperCase
              | TokenKind.NameMath
@@ -1503,7 +1503,7 @@ object Parser2 {
         case TokenKind.KeywordMaskedCast => uncheckedMaskingCastExpr()
         case TokenKind.KeywordTry => tryExpr()
         case TokenKind.KeywordDo => doExpr()
-        case TokenKind.KeywordNew => newObjectExpr()
+        case TokenKind.KeywordNew => ambiguousNewExpr()
         case TokenKind.KeywordStaticUppercase => staticExpr()
         case TokenKind.KeywordSelect => selectExpr()
         case TokenKind.KeywordSpawn => spawnExpr()
@@ -2400,8 +2400,8 @@ object Parser2 {
       assert(at(TokenKind.NameLowerCase))
       val mark = open()
       name(Set(TokenKind.NameLowerCase), context = SyntacticContext.Expr.OtherExpr)
-      // TODO INTEROP emit an error if we are not at an hash here
-      while (eat(TokenKind.Hash)) {
+      // TODO INTEROP emit an error if we are not at a Java operator here
+      while (eat(TokenKind.Currency)) {
         val fragmentMark = open()
         name(Set(TokenKind.NameUpperCase, TokenKind.NameLowerCase), context = SyntacticContext.Expr.OtherExpr)
         arguments()
@@ -2410,22 +2410,31 @@ object Parser2 {
       close(mark, TreeKind.Expr.InvokeMethod2)
     }
 
-    private def newObjectExpr()(implicit s: State): Mark.Closed = {
+    private def ambiguousNewExpr()(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.KeywordNew))
       val mark = open()
       expect(TokenKind.KeywordNew, SyntacticContext.Expr.OtherExpr)
       Type.ttype()
-      oneOrMore(
-        namedTokenSet = NamedTokenSet.FromKinds(Set(TokenKind.KeywordDef)),
-        checkForItem = t => t.isComment || t == TokenKind.KeywordDef,
-        getItem = jvmMethod,
-        breakWhen = _.isRecoverExpr,
-        delimiterL = TokenKind.CurlyL,
-        delimiterR = TokenKind.CurlyR,
-        separation = Separation.None,
-        context = SyntacticContext.Expr.OtherExpr
-      )
-      close(mark, TreeKind.Expr.NewObject)
+
+      // NewObject or InvokeConstructor?
+      if (at(TokenKind.CurlyL)) {
+        // Case 1: new Type { ... }
+        oneOrMore(
+          namedTokenSet = NamedTokenSet.FromKinds(Set(TokenKind.KeywordDef)),
+          checkForItem = t => t.isComment || t == TokenKind.KeywordDef,
+          getItem = jvmMethod,
+          breakWhen = _.isRecoverExpr,
+          delimiterL = TokenKind.CurlyL,
+          delimiterR = TokenKind.CurlyR,
+          separation = Separation.None,
+          context = SyntacticContext.Expr.OtherExpr
+        )
+        close(mark, TreeKind.Expr.NewObject)
+      } else {
+        // Case 2: new Type(exps...)
+        arguments()
+        close(mark, TreeKind.Expr.InvokeConstructor2)
+      }
     }
 
     private def jvmMethod()(implicit s: State): Mark.Closed = {

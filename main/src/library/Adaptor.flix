@@ -27,7 +27,7 @@ mod Adaptor {
         let f1 = (o1, o2) -> {
             let a = unchecked_cast(o1 as a);
             let b = unchecked_cast(o2 as a);
-            Order.compare(a, b) |> Comparison.toInt
+            Order.compare(a, b) |> Comparison.toInt32
         };
         new ##java.util.Comparator {
             def compare(_this: ##java.util.Comparator, t: ##java.lang.Object, u: ##java.lang.Object): Int32 =
@@ -134,7 +134,7 @@ mod Adaptor {
                 case false => None
             }
         };
-        let iterF = () -> checked_ecast(step());
+        let iterF = () -> (step());
         Iterator.iterate(rc, iterF)
 
     ///
@@ -176,7 +176,7 @@ mod Adaptor {
     /// Alias for `toArrayList`.
     ///
     pub def toList(ma: m[a]): ##java.util.List \ (IO + Foldable.Aef[m]) with Foldable[m] =
-        checked_ecast(checked_cast(toArrayList(ma)))
+        checked_cast(toArrayList(ma))
 
     ///
     /// Returns the elements of the given foldable `ma` as a new Java `ArrayList`.

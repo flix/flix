@@ -205,6 +205,7 @@ object FormatType {
       case SimpleType.Apply(_, _) => true
       case SimpleType.Var(_, _, _, _) => true
       case SimpleType.Tuple(_) => true
+      case SimpleType.MethodReturnType(_) => true
       case SimpleType.Union(_) => true
       case SimpleType.Error => true
     }
@@ -340,6 +341,7 @@ object FormatType {
           case Kind.JvmConstructorOrMethod => "j" + id.toString
           case Kind.CaseSet(_) => "c" + id.toString
           case Kind.Arrow(_, _) => "'" + id.toString
+          case Kind.Error => "err" + id.toString
         }
         val suffix = if (isRegion) {
           "!"
@@ -357,6 +359,10 @@ object FormatType {
 
       case SimpleType.Tuple(elms) =>
         elms.map(visit(_, Mode.Type)).mkString("(", ", ", ")")
+
+      case SimpleType.MethodReturnType(tpe) =>
+        val arg = visit(tpe, Mode.Type)
+        "MethodReturnType(" + arg + ")"
 
       case SimpleType.Error => "Error"
 
