@@ -397,7 +397,7 @@ object ManifestParser {
     }
     val permArray = depTbl.getArray(key)
     permArray.toList.asScala.toList.map({
-      case s: String => Permission.ofString(s) match {
+      case s: String => Permission.mkPermission(s) match {
         case Some(p) => p
         case None => return Err(ManifestError.FlixUnknownPermissionError(p, key, s))
       }

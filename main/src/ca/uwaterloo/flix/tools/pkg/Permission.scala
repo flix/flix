@@ -43,7 +43,7 @@ object Permission {
     override def toString: String = "unchecked-cast"
   }
 
-  def ofString(s: String): Option[Permission] = s match {
+  def mkPermission(s: String): Option[Permission] = s match {
     case "java-interop" => Some(JavaInterop)
     case "unchecked-cast" => Some(UncheckedCast)
     case "effect" => Some(Effect)

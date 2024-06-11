@@ -331,10 +331,10 @@ class TestManifestParser extends AnyFunSuite {
         |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3", permissions = ["java-interop", "unsafe-cast", "effect"] }
+        |"github:jls/tic-tac-toe" = { version = "1.2.3", permissions = ["java-interop", "unchecked-cast", "effect"] }
         |""".stripMargin
     }
-    assertResult(expected = Set(Permission.JavaInterop, Permission.UnsafeCast, Permission.Effect))(actual =
+    assertResult(expected = Set(Permission.JavaInterop, Permission.UncheckedCast, Permission.Effect))(actual =
       ManifestParser.parse(toml, null) match {
         case Ok(m) =>
           m.dependencies
