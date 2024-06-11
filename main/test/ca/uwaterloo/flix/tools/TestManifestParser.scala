@@ -347,6 +347,30 @@ class TestManifestParser extends AnyFunSuite {
     )
   }
 
+  test("Ok.flix-dependency-permission.02") {
+    val toml =  """[package]
+                  |name = "hello-world"
+                  |description = "A simple program"
+                  |version = "0.1.0"
+                  |flix = "0.33.0"
+                  |authors = ["John Doe <john@example.com>"]
+                  |
+                  |[dependencies]
+                  |"github:jls/tic-tac-toe" = { version = "1.2.3", permissions = [] }
+                  |""".stripMargin
+    assertResult(expected = Set.empty)(actual =
+      ManifestParser.parse(toml, null) match {
+        case Ok(m) =>
+          m.dependencies
+            .head
+            .asInstanceOf[Dependency.FlixDependency]
+            .permissions
+            .toSet
+        case Err(e) => e.message(f)
+      }
+    )
+  }
+
   /*
   * Errors
   * */
@@ -1496,4 +1520,67 @@ class TestManifestParser extends AnyFunSuite {
     expectError[ManifestError.WrongUrlFormat](result)
   }
 
+  test("ManifestError.FlixUnknownPermissionError.01") {
+    val toml = """[package]
+                 |name = "hello-world"
+                 |description = "A simple program"
+                 |version = "0.1.0"
+                 |flix = "0.33.0"
+                 |license = "Apache-2.0"
+                 |authors = ["John Doe <john@example.com>"]
+                 |
+                 |[dependencies]
+                 |"github:jls/tic-tac-toe" = { version = "1.2.3", permissions = ["netflix"] }
+                 |""".stripMargin
+    val result = ManifestParser.parse(toml, null)
+    expectError[ManifestError.FlixUnknownPermissionError](result)
+  }
+
+  test("ManifestError.FlixUnknownPermissionError.02") {
+    val toml = """[package]
+                 |name = "hello-world"
+                 |description = "A simple program"
+                 |version = "0.1.0"
+                 |flix = "0.33.0"
+                 |license = "Apache-2.0"
+                 |authors = ["John Doe <john@example.com>"]
+                 |
+                 |[dependencies]
+                 |"github:jls/tic-tac-toe" = { version = "1.2.3", permissions = ["effect", "netflix"] }
+                 |""".stripMargin
+    val result = ManifestParser.parse(toml, null)
+    expectError[ManifestError.FlixUnknownPermissionError](result)
+  }
+
+  test("ManifestError.FlixDependencyPermissionTypeError.01") {
+    val toml = """[package]
+                 |name = "hello-world"
+                 |description = "A simple program"
+                 |version = "0.1.0"
+                 |flix = "0.33.0"
+                 |license = "Apache-2.0"
+                 |authors = ["John Doe <john@example.com>"]
+                 |
+                 |[dependencies]
+                 |"github:jls/tic-tac-toe" = { version = "1.2.3", permissions = "effect" }
+                 |""".stripMargin
+    val result = ManifestParser.parse(toml, null)
+    expectError[ManifestError.FlixDependencyPermissionTypeError](result)
+  }
+
+  test("ManifestError.UnsupportedRepository.01") {
+    val toml = """[package]
+                 |name = "hello-world"
+                 |description = "A simple program"
+                 |version = "0.1.0"
+                 |flix = "0.33.0"
+                 |license = "Apache-2.0"
+                 |authors = ["John Doe <john@example.com>"]
+                 |
+                 |[dependencies]
+                 |"hubgit:jls/tic-tac-toe" = "1.2.3"
+                 |""".stripMargin
+    val result = ManifestParser.parse(toml, null)
+    expectError[ManifestError.UnsupportedRepository](result)
+  }
 }
