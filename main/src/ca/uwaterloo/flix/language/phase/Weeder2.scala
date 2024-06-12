@@ -782,6 +782,7 @@ object Weeder2 {
         case TreeKind.Expr.CheckedEffectCast => visitCheckedEffectCastExpr(tree)
         case TreeKind.Expr.UncheckedCast => visitUncheckedCastExpr(tree)
         case TreeKind.Expr.UncheckedMaskingCast => visitUncheckedMaskingCastExpr(tree)
+        case TreeKind.Expr.Unsafe => visitUnsafeExpr(tree)
         case TreeKind.Expr.Without => visitWithoutExpr(tree)
         case TreeKind.Expr.Try => visitTryExpr(tree)
         case TreeKind.Expr.Do => visitDoExpr(tree)
@@ -1591,6 +1592,13 @@ object Weeder2 {
       expect(tree, TreeKind.Expr.UncheckedMaskingCast)
       mapN(pickExpr(tree)) {
         expr => Expr.UncheckedMaskingCast(expr, tree.loc)
+      }
+    }
+
+    private def visitUnsafeExpr(tree: Tree): Validation[Expr, CompilationMessage] = {
+      expect(tree, TreeKind.Expr.Unsafe)
+      mapN(pickExpr(tree)) {
+        expr => Expr.Unsafe(expr, tree.loc)
       }
     }
 
