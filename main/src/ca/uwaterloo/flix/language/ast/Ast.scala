@@ -30,14 +30,67 @@ object Ast {
   /**
     * A common super-type for inputs.
     */
-  sealed trait Input
+  sealed trait Input {
+    /**
+      * A source is stable if it cannot change after being loaded (e.g. the standard library, etc).
+      */
+    def stable: Boolean
+  }
 
   object Input {
 
     /**
+      * A Flix input in a package.
+      */
+    case class FlixFileInPackage(name: String, text: String, pkgFile: PkgFile) extends Input {
+      override def stable: Boolean = false
+    }
+
+    /**
+      * An input from the language server.
+      */
+    case class Lsp(text: String) extends Input {
+      override def stable: Boolean = false
+    }
+
+    /**
+      * A source that is backed by Flix package file.
+      */
+    case class PkgFile(path: Path) extends Input {
+      override def stable: Boolean = false
+    }
+
+    /**
+      * An input from the repl.
+      */
+    case class Shell(text: String) extends Input {
+      override def stable: Boolean = false
+    }
+
+    /**
+      * An input from the socket server.
+      */
+    case class SocketServer(text: String) extends Input {
+      override def stable: Boolean = false
+    }
+
+    /**
+      * A source from the standard library.
+      */
+    case class StdLib(name: String, text: String) extends Input {
+      override def hashCode(): Int = name.hashCode
+
+      override def equals(obj: Any): Boolean = obj match {
+        case that: StdLib => this.name == that.name
+        case _ => false
+      }
+
+      // Standard library is stable.
+      override def stable: Boolean = true
+    }
+
+    /**
       * A source that is backed by an internal resource.
-      *
-      * A source is stable if it cannot change after being loaded (e.g. the standard library, etc).
       */
     case class Text(name: String, text: String, stable: Boolean) extends Input {
       override def hashCode(): Int = name.hashCode
@@ -51,12 +104,9 @@ object Ast {
     /**
       * A source that is backed by a regular file.
       */
-    case class TxtFile(path: Path) extends Input
-
-    /**
-      * A source that is backed by flix package file.
-      */
-    case class PkgFile(path: Path) extends Input
+    case class TxtFile(path: Path) extends Input {
+      override def stable: Boolean = false
+    }
 
   }
 
