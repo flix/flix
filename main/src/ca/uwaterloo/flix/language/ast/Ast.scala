@@ -38,9 +38,23 @@ object Ast {
   object Input {
 
     /**
+      * A Flix input in a package.
+      */
+    case class FlixFileInPackage(name: String, text: String, pkgFile: PkgFile) extends Input {
+      override def stable: Boolean = false
+    }
+
+    /**
       * An input from the language server.
       */
     case class Lsp(text: String) extends Input {
+      override def stable: Boolean = false
+    }
+
+    /**
+      * A source that is backed by Flix package file.
+      */
+    case class PkgFile(path: Path) extends Input {
       override def stable: Boolean = false
     }
 
@@ -82,13 +96,6 @@ object Ast {
       * A source that is backed by a regular file.
       */
     case class TxtFile(path: Path) extends Input {
-      override def stable: Boolean = false
-    }
-
-    /**
-      * A source that is backed by flix package file.
-      */
-    case class PkgFile(path: Path) extends Input {
       override def stable: Boolean = false
     }
 
