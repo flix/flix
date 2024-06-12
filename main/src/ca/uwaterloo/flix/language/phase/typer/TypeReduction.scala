@@ -194,7 +194,9 @@ object TypeReduction {
     } &&
     // NB: once methods with same signatures have been filtered out, we should remove super-methods duplicates
     // if the superclass is abstract or ignore if it is a primitive type, e.g., void
-    (cand.getReturnType.isPrimitive || !java.lang.reflect.Modifier.isAbstract(cand.getReturnType.getModifiers)) // temporary to avoid superclass abstract duplicate
+    (cand.getReturnType.isPrimitive ||
+      java.lang.reflect.Modifier.isInterface(cand.getReturnType.getModifiers) || // Interfaces are by default abstract, thus considered similar to primitives
+      !java.lang.reflect.Modifier.isAbstract(cand.getReturnType.getModifiers)) // temporary to avoid superclass abstract duplicate
 
   /**
    * Helper method to define a sub-typing relation between two given Flix types.
