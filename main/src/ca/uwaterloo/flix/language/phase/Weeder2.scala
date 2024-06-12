@@ -1598,11 +1598,7 @@ object Weeder2 {
     private def visitUnsafeExpr(tree: Tree): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.Unsafe)
       mapN(pickExpr(tree)) {
-        expr =>
-          // We desugar an unsafe expression to an unchecked cast to pure.
-          val declaredType = None
-          val declaredEff = Some(Type.Pure(tree.loc))
-          Expr.UncheckedCast(expr, declaredType, declaredEff, tree.loc)
+        expr => Expr.Unsafe(expr, tree.loc)
       }
     }
 
