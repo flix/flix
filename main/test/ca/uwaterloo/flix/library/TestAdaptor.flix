@@ -270,21 +270,21 @@ mod TestAdaptor {
     @test
     def fromCollectionToIterator01(): Bool \ {} = region rc {
         import static java.util.List.of(): ##java.util.List \ {};
-        let col = unchecked_cast(of() as ##java.util.Collection);
+        let col = checked_cast(of());
         Iterator.toList(Adaptor.fromCollectionToIterator(rc, (Proxy.Proxy: Proxy[String]), col)) == (Nil : List[String])
     }
 
     @test
     def fromCollectionToIterator02(): Bool \ {} = region rc {
         import static java.util.List.of(##java.lang.Object): ##java.util.List \ {};
-        let col = unchecked_cast(of(checked_cast("hello")) as ##java.util.Collection);
+        let col = checked_cast(of(checked_cast("hello")));
         Iterator.toList(Adaptor.fromCollectionToIterator(rc, (Proxy.Proxy: Proxy[String]), col)) == "hello" :: Nil
     }
 
     @test
     def fromCollectionToIterator03(): Bool \ {} = region rc {
         import static java.util.List.of(##java.lang.Object, ##java.lang.Object): ##java.util.List \ {};
-        let col = unchecked_cast(of(checked_cast("hello"), checked_cast("world")) as ##java.util.Collection);
+        let col = checked_cast(of(checked_cast("hello"), checked_cast("world")));
         Iterator.toList(Adaptor.fromCollectionToIterator(rc, (Proxy.Proxy: Proxy[String]), col)) == "hello" :: "world" :: Nil
     }
 
@@ -352,7 +352,7 @@ mod TestAdaptor {
         import static java.util.List.of(): ##java.util.List \ {};
         import java.util.ArrayList.equals(##java.lang.Object): Bool \ {};
         let l = Adaptor.toArrayList(Nil);
-        equals(newArrayList(unchecked_cast(of() as ##java.util.Collection)), checked_cast(l))
+        equals(newArrayList(checked_cast(of())), checked_cast(l))
 
     @test
     def toArrayList02(): Bool \ IO =
@@ -360,7 +360,7 @@ mod TestAdaptor {
         import static java.util.List.of(##java.lang.Object): ##java.util.List \ {};
         import java.util.ArrayList.equals(##java.lang.Object): Bool \ {};
         let l = Adaptor.toArrayList(List#{"hello"});
-        equals(newArrayList(unchecked_cast(of(checked_cast("hello")) as ##java.util.Collection)), checked_cast(l))
+        equals(newArrayList(checked_cast(of(checked_cast("hello")))), checked_cast(l))
 
     @test
     def toArrayList03(): Bool \ IO =
@@ -368,7 +368,7 @@ mod TestAdaptor {
         import static java.util.List.of(##java.lang.Object, ##java.lang.Object): ##java.util.List \ {};
         import java.util.ArrayList.equals(##java.lang.Object): Bool \ {};
         let l = Adaptor.toArrayList(List#{"hello", "world"});
-        equals(newArrayList(unchecked_cast(of(checked_cast("hello"), checked_cast("world")) as ##java.util.Collection)), checked_cast(l))
+        equals(newArrayList(checked_cast(of(checked_cast("hello"), checked_cast("world")))), checked_cast(l))
 
     /////////////////////////////////////////////////////////////////////////////
     // toLinkedList                                                            //
@@ -380,7 +380,7 @@ mod TestAdaptor {
         import static java.util.List.of(): ##java.util.List \ {};
         import java.util.LinkedList.equals(##java.lang.Object): Bool \ {};
         let l = Adaptor.toLinkedList(Nil);
-        equals(newLinkedList(unchecked_cast(of() as ##java.util.Collection)), checked_cast(l))
+        equals(newLinkedList(checked_cast(of())), checked_cast(l))
 
     @test
     def toLinkedList02(): Bool \ IO =
@@ -388,7 +388,7 @@ mod TestAdaptor {
         import static java.util.List.of(##java.lang.Object): ##java.util.List \ {};
         import java.util.LinkedList.equals(##java.lang.Object): Bool \ {};
         let l = Adaptor.toLinkedList(List#{"hello"});
-        equals(newLinkedList(unchecked_cast(of(checked_cast("hello")) as ##java.util.Collection)), checked_cast(l))
+        equals(newLinkedList(checked_cast(of(checked_cast("hello")))), checked_cast(l))
 
     @test
     def toLinkedList03(): Bool \ IO =
@@ -396,7 +396,7 @@ mod TestAdaptor {
         import static java.util.List.of(##java.lang.Object, ##java.lang.Object): ##java.util.List \ {};
         import java.util.LinkedList.equals(##java.lang.Object): Bool \ {};
         let l = Adaptor.toLinkedList(List#{"hello", "world"});
-        equals(newLinkedList(unchecked_cast(of(checked_cast("hello"), checked_cast("world")) as ##java.util.Collection)), checked_cast(l))
+        equals(newLinkedList(checked_cast(of(checked_cast("hello"), checked_cast("world")))), checked_cast(l))
 
     /////////////////////////////////////////////////////////////////////////////
     // toSet                                                                   //
@@ -433,7 +433,7 @@ mod TestAdaptor {
         import static java.util.List.of(): ##java.util.List \ {};
         import java.util.TreeSet.equals(##java.lang.Object): Bool \ {};
         let s = Adaptor.toTreeSet((Set#{} : Set[String]));
-        equals(newTreeSet(unchecked_cast(of() as ##java.util.Collection)), checked_cast(s))
+        equals(newTreeSet(checked_cast(of())), checked_cast(s))
 
     @test
     def toTreeSet02(): Bool \ IO =
@@ -441,7 +441,7 @@ mod TestAdaptor {
         import static java.util.List.of(##java.lang.Object): ##java.util.List \ {};
         import java.util.TreeSet.equals(##java.lang.Object): Bool \ {};
         let s = Adaptor.toTreeSet(Set#{"hello"});
-        equals(newTreeSet(unchecked_cast(of(checked_cast("hello")) as ##java.util.Collection)), checked_cast(s))
+        equals(newTreeSet(checked_cast(of(checked_cast("hello")))), checked_cast(s))
 
     @test
     def toTreeSet03(): Bool \ IO =
@@ -449,7 +449,7 @@ mod TestAdaptor {
         import static java.util.List.of(##java.lang.Object, ##java.lang.Object): ##java.util.List \ {};
         import java.util.TreeSet.equals(##java.lang.Object): Bool \ {};
         let s = Adaptor.toTreeSet(Set#{"hello", "world"});
-        equals(newTreeSet(unchecked_cast(of(checked_cast("hello"), checked_cast("world")) as ##java.util.Collection)), checked_cast(s))
+        equals(newTreeSet(checked_cast(of(checked_cast("hello"), checked_cast("world")))), checked_cast(s))
 
     /////////////////////////////////////////////////////////////////////////////
     // toMap                                                                   //

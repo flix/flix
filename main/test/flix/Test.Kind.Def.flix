@@ -47,11 +47,11 @@ mod Test.Kind.Def {
         mod Effect {
             pub enum EBool[_a: Eff]
 
-            pub def bool(): Int32 \ ef = unchecked_cast(??? as _ \ ef)
+            pub def bool(): Int32 \ ef = ???()
 
-            pub def func(x: Int32 -> Int32 \ ef): Int32 \ ef = unchecked_cast(??? as _ \ ef)
+            pub def func(x: Int32 -> Int32 \ ef): Int32 \ ef = ???()
 
-            pub def enum_(x: EBool[ef]): Int32 \ ef = unchecked_cast(??? as _ \ ef)
+            pub def enum_(x: EBool[ef]): Int32 \ ef = ???()
         }
 
         mod Exp {
@@ -87,7 +87,7 @@ mod Test.Kind.Def {
             pub def starToStar[a: Type -> Type](x: a[Int32]): Int32 with CStarToStar[a] = ???
 
             // cannot be inferred
-            pub def boolToStar[a: Eff -> Type, ef: Eff](x: a[ef]): Int32 \ ef with CBoolToStar[a] = unchecked_cast(??? as _ \ ef)
+            pub def boolToStar[a: Eff -> Type, ef: Eff](x: a[ef]): Int32 \ ef with CBoolToStar[a] = ???()
         }
 
         mod Enum {
@@ -110,11 +110,11 @@ mod Test.Kind.Def {
         mod Effect {
             pub enum EBool[_a: Eff]
 
-            pub def bool[ef: Eff](): Int32 \ ef = unchecked_cast(??? as _ \ ef)
+            pub def bool[ef: Eff](): Int32 \ ef = ???()
 
-            pub def func[ef: Eff](x: Int32 -> Int32 \ ef): Int32 \ ef = unchecked_cast(??? as _ \ ef)
+            pub def func[ef: Eff](x: Int32 -> Int32 \ ef): Int32 \ ef = ???()
 
-            pub def enum_[ef: Eff](x: EBool[ef]): Int32 \ ef = unchecked_cast(??? as _ \ ef)
+            pub def enum_[ef: Eff](x: EBool[ef]): Int32 \ ef = ???()
         }
 
         mod Exp {
