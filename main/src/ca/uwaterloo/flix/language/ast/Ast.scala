@@ -59,9 +59,16 @@ object Ast {
     }
 
     /**
-      * A source from the repl.
+      * An input from the repl.
       */
     case class Shell(text: String) extends Input {
+      override def stable: Boolean = false
+    }
+
+    /**
+      * An input from the socket server.
+      */
+    case class SocketServer(text: String) extends Input {
       override def stable: Boolean = false
     }
 
