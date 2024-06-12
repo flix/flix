@@ -38,6 +38,13 @@ object Ast {
   object Input {
 
     /**
+      * An input from the language server.
+      */
+    case class Lsp(text: String) extends Input {
+      override def stable: Boolean = false
+    }
+
+    /**
       * A source from the repl.
       */
     case class Shell(text: String) extends Input {
