@@ -142,7 +142,7 @@ mod Adaptor {
     ///
     pub def fromStreamToIterator(rc: Region[r], proxy: Proxy[a], strm: ##java.util.stream.Stream): Iterator[a, r, r] =
         import java.util.stream.BaseStream.iterator(): ##java.util.Iterator \ {};
-        let iter = iterator(unchecked_cast(strm as ##java.util.stream.BaseStream));
+        let iter = iterator(checked_cast(strm));
         Adaptor.fromIterator(rc, proxy, iter)
 
     ///
