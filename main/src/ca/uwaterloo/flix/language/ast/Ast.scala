@@ -38,6 +38,13 @@ object Ast {
   object Input {
 
     /**
+      * A source from the repl.
+      */
+    case class Shell(text: String) extends Input {
+      override def stable: Boolean = false
+    }
+
+    /**
       * A source from the standard library.
       */
     case class StdLib(name: String, text: String) extends Input {
