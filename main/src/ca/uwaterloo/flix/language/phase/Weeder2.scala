@@ -1599,7 +1599,7 @@ object Weeder2 {
       expect(tree, TreeKind.Expr.Unsafe)
       mapN(pickExpr(tree)) {
         expr =>
-          // We desugar an unsafe block to an unchecked cast to pure.
+          // We desugar an unsafe expression to an unchecked cast to pure.
           val declaredType = None
           val declaredEff = Some(Type.Pure(tree.loc))
           Expr.UncheckedCast(expr, declaredType, declaredEff, tree.loc)
