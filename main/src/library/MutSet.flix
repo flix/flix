@@ -403,7 +403,7 @@ mod MutSet {
     ///
     pub def iterator(rc: Region[r1], s: MutSet[a, r2]): Iterator[a, r1 + r2, r1] \ { r1, r2 } =
         let MutSet(_, ms) = s;
-        Set.iterator(rc, deref ms) |> Iterator.map(eidentity)
+        Set.iterator(rc, deref ms) |> Iterator.upcast
 
     ///
     /// Returns an enumerator over `s`.

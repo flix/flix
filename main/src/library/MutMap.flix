@@ -595,21 +595,21 @@ mod MutMap {
     ///
     pub def iterator(rc: Region[r1], m: MutMap[k, v, r2]): Iterator[(k, v), r1 + r2, r1] \ { r1, r2 } =
         let MutMap(_, mm) = m;
-        Map.iterator(rc, deref mm) |> Iterator.map(eidentity)
+        Map.iterator(rc, deref mm) |> Iterator.upcast
 
     ///
     /// Returns an iterator over keys in `m`.
     ///
     pub def iteratorKeys(rc: Region[r1], m: MutMap[k, v, r2]): Iterator[k, r1 + r2, r1] \ { r1, r2 } =
         let MutMap(_, mm) = m;
-        Map.iteratorKeys(rc, deref mm) |> Iterator.map(eidentity)
+        Map.iteratorKeys(rc, deref mm) |> Iterator.upcast
 
     ///
     /// Returns an iterator over values in `m`.
     ///
     pub def iteratorValues(rc: Region[r1], m: MutMap[k, v, r2]): Iterator[v, r1 + r2, r1] \ { r1, r2 } =
         let MutMap(_, mm) = m;
-        Map.iteratorValues(rc, deref mm) |> Iterator.map(eidentity)
+        Map.iteratorValues(rc, deref mm) |> Iterator.upcast
 
     ///
     /// Extracts a range of key-value pairs from the mutable map `m`.

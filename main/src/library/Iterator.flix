@@ -756,4 +756,13 @@ mod Iterator {
     pub def flatten(iter: Iterator[Iterator[a, ef1, r], ef2, r]): Iterator[a, r + ef1 + ef2, r] \ r =
         flatMap(identity, iter)
 
+
+    ///
+    /// Returns the given iterator, typed with a larger effect.
+    ///
+    pub def upcast(iter: Iterator[a, ef1, r]): Iterator[a, ef1 + ef2, r] = {
+        let Iterator(rc, next) = iter;
+        Iterator(rc, () -> checked_ecast(next()))
+    }
+
 }
