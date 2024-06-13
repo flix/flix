@@ -682,6 +682,13 @@ object Desugar {
       val e = visitExp(exp)
       Expr.UncheckedMaskingCast(e, loc)
 
+    case WeededAst.Expr.Unsafe(exp, loc) =>
+      // We desugar an unsafe expression to an unchecked cast to pure.
+      val e = visitExp(exp)
+      val declaredType = None
+      val declaredEff = Some(DesugaredAst.Type.Pure(loc.asSynthetic))
+      Expr.UncheckedCast(e, declaredType, declaredEff, loc)
+
     case WeededAst.Expr.Without(exp, eff, loc) =>
       val e = visitExp(exp)
       Expr.Without(e, eff, loc)

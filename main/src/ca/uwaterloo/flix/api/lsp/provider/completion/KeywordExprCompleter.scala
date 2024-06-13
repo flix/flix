@@ -56,6 +56,7 @@ object KeywordExprCompleter extends Completer {
       "true",
       "try",
       "typematch",
+      "unsafe",
       "use",
       "without",
       "yield"
