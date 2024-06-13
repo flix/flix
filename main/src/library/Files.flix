@@ -41,8 +41,7 @@ mod Files {
                 fileAttributes |> lastAccessTime |> toMillis
         } catch {
             case ex: ##java.io.IOException =>
-                import java.lang.Throwable.getMessage(): String \ IO;
-                Err(Generic(getMessage(checked_cast(ex))))
+                Err(Generic(ex¤getMessage()))
         }
 
     ///
@@ -59,8 +58,7 @@ mod Files {
                 fileAttributes |> creationTime |> toMillis
         } catch {
             case ex: ##java.io.IOException =>
-                import java.lang.Throwable.getMessage(): String \ IO;
-                Err(Generic(getMessage(checked_cast(ex))))
+                Err(Generic(ex¤getMessage()))
         }
 
     ///
@@ -77,8 +75,7 @@ mod Files {
                 fileAttributes |> lastModifiedTime |> toMillis
         } catch {
             case ex: ##java.io.IOException =>
-                import java.lang.Throwable.getMessage(): String \ IO;
-                Err(Generic(getMessage(checked_cast(ex))))
+                Err(Generic(ex¤getMessage()))
         }
 
     ///
@@ -94,8 +91,7 @@ mod Files {
                 size(fileAttributes)
         } catch {
             case ex: ##java.io.IOException =>
-                import java.lang.Throwable.getMessage(): String \ IO;
-                Err(Generic(getMessage(checked_cast(ex))))
+                Err(Generic(ex¤getMessage()))
         }
 
     ///
@@ -104,9 +100,9 @@ mod Files {
     def getAttributes(f: String): Result[IOError, ##java.nio.file.attribute.BasicFileAttributes] \ IO = region rc {
         IOError.tryCatch(_ -> {
             import java_new java.io.File(String): ##java.io.File \ IO as newFile;
-            import java.io.File.toPath(): ##java.nio.file.Path \ IO;
             import static java.nio.file.Files.readAttributes(##java.nio.file.Path, ##java.lang.Class, Array[##java.nio.file.LinkOption, rc]): ##java.nio.file.attribute.BasicFileAttributes \ IO;
             import static java.lang.Class.forName(String): ##java.lang.Class \ IO;
+            import java.io.File.toPath(): ##java.nio.file.Path \ IO;
 
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
@@ -167,8 +163,8 @@ mod Files {
     pub def exists(f: String): Result[IOError, Bool] \ IO =
         IOError.tryCatch(_ -> {
             import java_new java.io.File(String): ##java.io.File \ IO as newFile;
-            import java.io.File.exists(): Bool \ IO;
-            exists(newFile(f))
+            let file = newFile(f);
+            file¤exists()
         })
 
     ///
@@ -177,8 +173,8 @@ mod Files {
     pub def isDirectory(f: String): Result[IOError, Bool] \ IO =
         IOError.tryCatch(_ -> {
             import java_new java.io.File(String): ##java.io.File \ IO as newFile;
-            import java.io.File.isDirectory(): Bool \ IO;
-            isDirectory(newFile(f))
+            let file = newFile(f);
+            file¤isDirectory()
         })
 
     ///
@@ -187,8 +183,8 @@ mod Files {
     pub def isRegularFile(f: String): Result[IOError, Bool] \ IO = region rc {
         IOError.tryCatch(_ -> {
             import java_new java.io.File(String): ##java.io.File \ IO as newFile;
-            import java.io.File.toPath(): ##java.nio.file.Path \ IO;
             import static java.nio.file.Files.isRegularFile(##java.nio.file.Path, Array[##java.nio.file.LinkOption, rc]): Bool \ IO;
+            import java.io.File.toPath(): ##java.nio.file.Path \ IO;
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
             isRegularFile(javaPath, Array#{} @ rc)
@@ -201,8 +197,8 @@ mod Files {
     pub def isReadable(f: String): Result[IOError, Bool] \ IO =
         IOError.tryCatch(_ -> {
             import java_new java.io.File(String): ##java.io.File \ IO as newFile;
-            import java.io.File.canRead(): Bool \ IO;
-            canRead(newFile(f))
+            let file = newFile(f);
+            file¤canRead()
         })
 
     ///
@@ -211,8 +207,8 @@ mod Files {
     pub def isSymbolicLink(f: String): Result[IOError, Bool] \ IO =
         IOError.tryCatch(_ -> {
             import java_new java.io.File(String): ##java.io.File \ IO as newFile;
-            import java.io.File.toPath(): ##java.nio.file.Path \ IO;
             import static java.nio.file.Files.isSymbolicLink(##java.nio.file.Path): Bool \ IO;
+            import java.io.File.toPath(): ##java.nio.file.Path \ IO;
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
             isSymbolicLink(javaPath)
@@ -224,8 +220,8 @@ mod Files {
     pub def isWritable(f: String): Result[IOError, Bool] \ IO =
         IOError.tryCatch(_ -> {
             import java_new java.io.File(String): ##java.io.File \ IO as newFile;
-            import java.io.File.canWrite(): Bool \ IO;
-            canWrite(newFile(f))
+            let file = newFile(f);
+            file¤canWrite()
         })
 
     ///
@@ -234,8 +230,8 @@ mod Files {
     pub def isExecutable(f: String): Result[IOError, Bool] \ IO =
         IOError.tryCatch(_ -> {
             import java_new java.io.File(String): ##java.io.File \ IO as newFile;
-            import java.io.File.canExecute(): Bool \ IO;
-            canExecute(newFile(f))
+            let file = newFile(f);
+            file¤canExecute()
         })
 
     ///
@@ -244,8 +240,8 @@ mod Files {
     pub def read(f: String): Result[IOError, String] \ IO =
         IOError.tryCatch(_ -> {
             import java_new java.io.File(String): ##java.io.File \ IO as newFile;
-            import java.io.File.toPath(): ##java.nio.file.Path \ IO;
             import static java.nio.file.Files.readString(##java.nio.file.Path): String \ IO;
+            import java.io.File.toPath(): ##java.nio.file.Path \ IO;
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
             let result = readString(javaPath);
@@ -282,8 +278,7 @@ mod Files {
                 }
             } catch {
                 case ex: ##java.io.IOException =>
-                    import java.lang.Throwable.getMessage(): String \ IO;
-                    Err(Generic(getMessage(checked_cast(ex))))
+                    Err(Generic(ex¤getMessage()))
             }
         } else if (opts.count == 0) {
             Ok("")
@@ -299,8 +294,7 @@ mod Files {
     def skip(i: Int64, bytesToSkip: Int64, stream: ##java.io.FileInputStream, f: String): Result[IOError, Unit] \ IO =
         try {
             if (0i64 <= i) {
-                import java.io.FileInputStream.skip(Int64): Int64 \ IO as javaSkip;
-                let skipped = javaSkip(stream, bytesToSkip);
+                let skipped = stream¤skip(bytesToSkip);
                 if (skipped < bytesToSkip)
                     skip(i - 1i64, bytesToSkip - skipped, stream, f)
                 else
@@ -310,8 +304,7 @@ mod Files {
             }
         } catch {
             case ex: ##java.io.IOException =>
-                import java.lang.Throwable.getMessage(): String \ IO;
-                Err(Generic(getMessage(checked_cast(ex))))
+                Err(Generic(ex¤getMessage()))
         }
 
     ///
@@ -320,8 +313,8 @@ mod Files {
     pub def readLines(f: String): Result[IOError, List[String]] \ IO =
         IOError.tryCatch(_ -> {
             import java_new java.io.File(String): ##java.io.File \ IO as newFile;
-            import java.io.File.toPath(): ##java.nio.file.Path \ IO;
             import static java.nio.file.Files.newBufferedReader(##java.nio.file.Path): ##java.io.BufferedReader \ IO;
+            import java.io.File.toPath(): ##java.nio.file.Path \ IO;
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
             let reader = newBufferedReader(javaPath);
@@ -332,9 +325,8 @@ mod Files {
     /// Reads all lines from the given buffered reader `r` until it is empty.
     ///
     def readAll(r: ##java.io.BufferedReader): List[String] \ IO =
-        import java.io.BufferedReader.readLine(): String \ IO;
         def loop(k) = {
-            let l = readLine(r);
+            let l = r¤readLine();
             if (Object.isNull(l))
                 k(Nil)
             else
@@ -350,9 +342,9 @@ mod Files {
     pub def readLinesWith(opts: {charSet = String}, f: String): Result[IOError, List[String]] \ IO =
         IOError.tryCatch(_ -> {
             import java_new java.io.File(String): ##java.io.File \ IO as newFile;
-            import java.io.File.toPath(): ##java.nio.file.Path \ IO;
             import static java.nio.file.Files.newBufferedReader(##java.nio.file.Path, ##java.nio.charset.Charset): ##java.io.BufferedReader \ IO;
             import static java.nio.charset.Charset.forName(String): ##java.nio.charset.Charset \ IO;
+            import java.io.File.toPath(): ##java.nio.file.Path \ IO;
 
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
@@ -366,8 +358,8 @@ mod Files {
     pub def readLinesIter(rc: Region[r], f: String): Iterator[Result[IOError, String], IO + r, r] \ { r, IO } =
         try {
             import java_new java.io.File(String): ##java.io.File \ IO as newFile;
-            import java.io.File.toPath(): ##java.nio.file.Path \ IO;
             import static java.nio.file.Files.newBufferedReader(##java.nio.file.Path): ##java.io.BufferedReader \ IO;
+            import java.io.File.toPath(): ##java.nio.file.Path \ IO;
             import java.io.BufferedReader.readLine(): String \ IO;
 
             let javaFile = newFile(f);
@@ -383,8 +375,7 @@ mod Files {
                     } catch {
                         case ex: ##java.io.IOException => {
                             Ref.put(checked_cast(null), line);
-                            import java.lang.Throwable.getMessage(): String \ {};
-                            Some(Err(Generic(getMessage(checked_cast(ex)))))
+                            Some(Err(Generic(ex¤getMessage())))
                         }
                     }
                 } else {
@@ -394,8 +385,7 @@ mod Files {
             Iterator.iterate(rc, next)
         } catch {
             case ex: ##java.io.IOException =>
-                import java.lang.Throwable.getMessage(): String \ {};
-                Iterator.iterate(rc, constant(Some(Err(Generic(getMessage(checked_cast(ex)))))))
+                Iterator.iterate(rc, constant(Some(Err(Generic(ex¤getMessage())))))
         }
 
     ///
@@ -406,9 +396,9 @@ mod Files {
     pub def readLinesIterWith(rc: Region[r], opts: {charSet = String}, f: String): Iterator[Result[IOError, String], IO + r, r] \ { r, IO } =
         try {
             import java_new java.io.File(String): ##java.io.File \ IO as newFile;
-            import java.io.File.toPath(): ##java.nio.file.Path \ IO;
             import static java.nio.file.Files.newBufferedReader(##java.nio.file.Path, ##java.nio.charset.Charset): ##java.io.BufferedReader \ IO;
             import static java.nio.charset.Charset.forName(String): ##java.nio.charset.Charset \ IO;
+            import java.io.File.toPath(): ##java.nio.file.Path \ IO;
             import java.io.BufferedReader.readLine(): String \ IO;
 
             let javaFile = newFile(f);
@@ -424,8 +414,7 @@ mod Files {
                     } catch {
                         case ex: ##java.io.IOException => {
                             Ref.put(checked_cast(null), line);
-                            import java.lang.Throwable.getMessage(): String \ {};
-                            Some(Err(Generic(getMessage(checked_cast(ex)))))
+                            Some(Err(Generic(ex¤getMessage())))
                         }
                     }
                 } else {
@@ -435,8 +424,7 @@ mod Files {
             Iterator.iterate(rc, next)
         } catch {
             case ex: ##java.io.IOException =>
-                import java.lang.Throwable.getMessage(): String \ {};
-                Iterator.iterate(rc, constant(Some(Err(Generic(getMessage(checked_cast(ex)))))))
+                Iterator.iterate(rc, constant(Some(Err(Generic(ex¤getMessage())))))
         }
 
     ///
@@ -445,8 +433,8 @@ mod Files {
     pub def readBytes(_rc: Region[r], f: String): Result[IOError, Array[Int8, r]] \ { r, IO } =
         IOError.tryCatch(_ -> {
             import java_new java.io.File(String): ##java.io.File \ IO as newFile;
-            import java.io.File.toPath(): ##java.nio.file.Path \ IO;
             import static java.nio.file.Files.readAllBytes(##java.nio.file.Path): Array[Int8, r] \ IO + r;
+            import java.io.File.toPath(): ##java.nio.file.Path \ IO;
 
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
@@ -481,8 +469,7 @@ mod Files {
                 }
             } catch {
                 case ex: ##java.io.IOException =>
-                    import java.lang.Throwable.getMessage(): String \ IO;
-                    Err(Generic(getMessage(checked_cast(ex))))
+                    Err(Generic(ex¤getMessage()))
             }
         } else if (opts.count == 0) {
             Ok(Array#{} @ rc)
@@ -532,8 +519,7 @@ mod Files {
                         } catch {
                             case ex: ##java.io.IOException => {
                                 Ref.put(-1, numberRead);
-                                import java.lang.Throwable.getMessage(): String \ {};
-                                Some(Err(Generic(getMessage(checked_cast(ex)))))
+                                Some(Err(Generic(ex¤getMessage())))
                             }
                         }
                     } else {
@@ -543,8 +529,7 @@ mod Files {
                 Iterator.iterate(rc, next)
             } catch {
                 case ex: ##java.io.IOException =>
-                    import java.lang.Throwable.getMessage(): String \ {};
-                    Iterator.iterate(rc, constant(Some(Err(Generic(getMessage(checked_cast(ex)))))))
+                    Iterator.iterate(rc, constant(Some(Err(Generic(ex¤getMessage())))))
             }
         } else {
             Iterator.iterate(rc, constant(Some(Err(Generic("The argument `chunkSize` has to be a non negative number when calling `File.readChunks`.")))))
@@ -561,19 +546,16 @@ mod Files {
         try {
             import java_new java.io.File(String): ##java.io.File \ IO as newFile;
             import java_new java.io.PrintWriter(##java.io.File): ##java.io.PrintWriter \ IO as newPrintWriter;
-            import java.io.PrintWriter.print(String): Unit \ IO;
-            import java.io.PrintWriter.close(): Unit \ IO;
-            import java.io.PrintWriter.checkError(): Bool \ IO;
 
             let alreadyExists = Files.exists(f);
 
             let javaFile = newFile(f);
             let w = newPrintWriter(javaFile);
 
-            print(w, "${data}");
-            close(w);
+            w¤print("${data}");
+            w¤close();
 
-            if (checkError(w)) {
+            if (w¤checkError()) {
                 Err(Generic("An error occurred when writing to the file: '${f}'."))
             }
             else {
@@ -581,8 +563,7 @@ mod Files {
             }
         } catch {
             case ex: ##java.io.IOException =>
-                import java.lang.Throwable.getMessage(): String \ IO;
-                Err(Generic(getMessage(checked_cast(ex))))
+                Err(Generic(ex¤getMessage()))
         }
 
     ///
@@ -596,19 +577,16 @@ mod Files {
         try {
             import java_new java.io.File(String): ##java.io.File \ IO as newFile;
             import java_new java.io.PrintWriter(##java.io.File): ##java.io.PrintWriter \ IO as newPrintWriter;
-            import java.io.PrintWriter.println(String): Unit \ IO;
-            import java.io.PrintWriter.close(): Unit \ IO;
-            import java.io.PrintWriter.checkError(): Bool \ IO;
 
             let alreadyExists = Files.exists(f);
 
             let javaFile = newFile(f);
             let w = newPrintWriter(javaFile);
 
-            Foldable.forEach(line -> println(w, line), data);
-            close(w);
+            Foldable.forEach(line -> w¤println(line), data);
+            w¤close();
 
-            if (checkError(w)) {
+            if (w¤checkError()) {
                 Err(Generic("An error occurred when writing lines to the file: '${f}'."))
             }
             else {
@@ -616,8 +594,7 @@ mod Files {
             }
         } catch {
             case ex: ##java.io.IOException =>
-                import java.lang.Throwable.getMessage(): String \ IO;
-                Err(Generic(getMessage(checked_cast(ex))))
+                Err(Generic(ex¤getMessage()))
         }
 
     ///
@@ -630,9 +607,6 @@ mod Files {
             import java_new java.io.File(String): ##java.io.File \ IO as newFile;
             import java_new java.io.FileWriter(##java.io.File, Bool): ##java.io.FileWriter \ IO as newFileWriter;
             import java_new java.io.PrintWriter(##java.io.Writer): ##java.io.PrintWriter \ IO as newPrintWriter;
-            import java.io.PrintWriter.println(String): Unit \ IO;
-            import java.io.PrintWriter.close(): Unit \ IO;
-            import java.io.PrintWriter.checkError(): Bool \ IO;
 
             let alreadyExists = Files.exists(f);
 
@@ -641,10 +615,10 @@ mod Files {
             let fileWriter = newFileWriter(javaFile, true);
             let printWriter = newPrintWriter(checked_cast(fileWriter));
 
-            println(printWriter, "${data}");
-            close(printWriter);
+            printWriter¤println("${data}");
+            printWriter¤close();
 
-            if (checkError(printWriter)) {
+            if (printWriter¤checkError()) {
                 Err(Generic("An error occurred when appending to the file: '${f}'."))
             }
             else {
@@ -652,8 +626,7 @@ mod Files {
             }
         } catch {
             case ex: ##java.io.IOException =>
-                import java.lang.Throwable.getMessage(): String \ IO;
-                Err(Generic(getMessage(checked_cast(ex))))
+                Err(Generic(ex¤getMessage()))
         }
 
     ///
@@ -666,9 +639,6 @@ mod Files {
             import java_new java.io.File(String): ##java.io.File \ IO as newFile;
             import java_new java.io.FileWriter(##java.io.File, Bool): ##java.io.FileWriter \ IO as newFileWriter;
             import java_new java.io.PrintWriter(##java.io.Writer): ##java.io.PrintWriter \ IO as newPrintWriter;
-            import java.io.PrintWriter.println(String): Unit \ IO;
-            import java.io.PrintWriter.close(): Unit \ IO;
-            import java.io.PrintWriter.checkError(): Bool \ IO;
 
             let alreadyExists = Files.exists(f);
 
@@ -677,10 +647,10 @@ mod Files {
             let fileWriter = newFileWriter(javaFile, true);
             let printWriter = newPrintWriter(checked_cast(fileWriter));
 
-            Foldable.forEach(line -> println(printWriter, line), data);
-            close(printWriter);
+            Foldable.forEach(line -> printWriter¤println(line), data);
+            printWriter¤close();
 
-            if (checkError(printWriter)) {
+            if (printWriter¤checkError()) {
                 Err(Generic("An error occurred when appending lines to the file: '${f}'."))
             }
             else {
@@ -688,8 +658,7 @@ mod Files {
             }
         } catch {
             case ex: ##java.io.IOException =>
-                import java.lang.Throwable.getMessage(): String \ IO;
-                Err(Generic(getMessage(checked_cast(ex))))
+                Err(Generic(ex¤getMessage()))
         }
 
     ///
@@ -705,8 +674,6 @@ mod Files {
             import java_new java.io.FileOutputStream(##java.io.File): ##java.io.FileOutputStream \ IO as newFileStream;
             import java_new java.io.PrintWriter(##java.io.OutputStream): ##java.io.PrintWriter \ IO as newPrintWriter;
             import java.io.FileOutputStream.write(Array[Int8, rc]): Unit \ IO;
-            import java.io.PrintWriter.close(): Unit \ IO;
-            import java.io.PrintWriter.checkError(): Bool \ IO;
 
             let alreadyExists = Files.exists(f);
 
@@ -716,9 +683,9 @@ mod Files {
 
             let dataAsArray = Foldable.toArray(rc, data);
             write(fileStream, dataAsArray);
-            close(printWriter);
+            printWriter¤close();
 
-            if (checkError(printWriter)) {
+            if (printWriter¤checkError()) {
                 Err(Generic("An error occurred when writing to the file: '${f}'."))
             }
             else {
@@ -726,8 +693,7 @@ mod Files {
             }
         } catch {
             case ex: ##java.io.IOException =>
-                import java.lang.Throwable.getMessage(): String \ IO;
-                Err(Generic(getMessage(checked_cast(ex))))
+                Err(Generic(ex¤getMessage()))
         }
     }
 
@@ -742,8 +708,6 @@ mod Files {
             import java_new java.io.FileOutputStream(##java.io.File, Bool): ##java.io.FileOutputStream \ IO as newFileStream;
             import java_new java.io.PrintWriter(##java.io.OutputStream): ##java.io.PrintWriter \ IO as newPrintWriter;
             import java.io.FileOutputStream.write(Array[Int8, rc]): Unit \ IO;
-            import java.io.PrintWriter.close(): Unit \ IO;
-            import java.io.PrintWriter.checkError(): Bool \ IO;
 
             let alreadyExists = Files.exists(f);
 
@@ -755,9 +719,9 @@ mod Files {
             let dataAsArray = Foldable.toArray(rc, data);
             write(fileStream, dataAsArray);
 
-            close(printWriter);
+            printWriter¤close();
 
-            if (checkError(printWriter)) {
+            if (printWriter¤checkError()) {
                 Err(Generic("An error occurred when appending to the file: '${f}'."))
             }
             else {
@@ -765,8 +729,7 @@ mod Files {
             }
         } catch {
             case ex: ##java.io.IOException =>
-                import java.lang.Throwable.getMessage(): String \ IO;
-                Err(Generic(getMessage(checked_cast(ex))))
+                Err(Generic(ex¤getMessage()))
         }
     }
 
@@ -777,17 +740,15 @@ mod Files {
         try {
             import java_new java.io.File(String): ##java.io.File \ IO as newFile;
             import java_new java.io.PrintWriter(##java.io.File): ##java.io.PrintWriter \ IO as newPrintWriter;
-            import java.io.PrintWriter.close(): Unit \ IO;
-            import java.io.PrintWriter.checkError(): Bool \ IO;
 
             let alreadyExists = Files.exists(f);
 
             let javaFile = newFile(f);
             let printWriter = newPrintWriter(javaFile);
 
-            close(printWriter);
+            printWriter¤close();
 
-            if (checkError(printWriter)) {
+            if (printWriter¤checkError()) {
                 Err(Generic("An error occurred when truncating to the file: '${f}'."))
             }
             else {
@@ -795,8 +756,7 @@ mod Files {
             }
         } catch {
             case ex: ##java.io.IOException =>
-                import java.lang.Throwable.getMessage(): String \ IO;
-                Err(Generic(getMessage(checked_cast(ex))))
+                Err(Generic(ex¤getMessage()))
         }
 
     ///
@@ -809,10 +769,9 @@ mod Files {
     pub def mkdir(d: String): Result[IOError, Bool] \ IO =
         IOError.tryCatch(_ -> {
             import java_new java.io.File(String): ##java.io.File \ IO as newFile;
-            import java.io.File.mkdir(): Bool \ IO;
 
             let javaFile = newFile(d);
-            mkdir(javaFile)
+            javaFile¤mkdir()
         })
 
     ///
@@ -825,10 +784,9 @@ mod Files {
     pub def mkdirs(d: String): Result[IOError, Bool] \ IO =
         IOError.tryCatch(_ -> {
             import java_new java.io.File(String): ##java.io.File \ IO as newFile;
-            import java.io.File.mkdirs(): Bool \ IO;
 
             let javaFile = newFile(d);
-            mkdirs(javaFile)
+            javaFile¤mkdir()
         })
 
     ///
@@ -854,8 +812,7 @@ mod Files {
             }
         } catch {
             case ex: ##java.io.IOException =>
-                import java.lang.Throwable.getMessage(): String \ IO;
-                Err(Generic(getMessage(checked_cast(ex))))
+                Err(Generic(ex¤getMessage()))
         }
     }
 
@@ -868,10 +825,10 @@ mod Files {
     pub def listWithIter(rc: Region[r], f: String): Result[IOError, Iterator[String, r, r]] \ IO =
         IOError.tryCatch(_ -> {
             import java_new java.io.File(String): ##java.io.File \ IO as newFile;
-            import java.io.File.toPath(): ##java.nio.file.Path \ IO;
             import static java.nio.file.Files.newDirectoryStream(##java.nio.file.Path): ##java.nio.file.DirectoryStream \ IO;
             import java.nio.file.DirectoryStream.iterator(): ##java.util.Iterator \ IO;
             import java.nio.file.Path.toString(): String \ {} as pathToString;
+            import java.io.File.toPath(): ##java.nio.file.Path \ IO;
 
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
@@ -891,10 +848,10 @@ mod Files {
     pub def walk(rc: Region[r], f: String): Result[IOError, Iterator[String, r, r]] \ IO + r =
         IOError.tryCatch(_ -> {
             import java_new java.io.File(String): ##java.io.File \ IO as newFile;
-            import java.io.File.toPath(): ##java.nio.file.Path \ IO;
             import static java.nio.file.Files.walk(##java.nio.file.Path, Array[##java.nio.file.FileVisitOption, r]): ##java.util.stream.Stream \ IO;
             import java.util.stream.BaseStream.iterator(): ##java.util.Iterator \ IO;
             import java.nio.file.Path.toString(): String \ {} as pathToString;
+            import java.io.File.toPath(): ##java.nio.file.Path \ IO;
 
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
@@ -932,8 +889,8 @@ mod Files {
     pub def move(src: {src = String} , dst: String): Result[IOError, Unit] \ IO = region rc {
         IOError.tryCatch(_ -> {
             import java_new java.io.File(String): ##java.io.File \ IO as newFile;
-            import java.io.File.toPath(): ##java.nio.file.Path \ IO;
             import static java.nio.file.Files.move(##java.nio.file.Path, ##java.nio.file.Path, Array[##java.nio.file.CopyOption, rc]): ##java.nio.file.Path \ IO;
+            import java.io.File.toPath(): ##java.nio.file.Path \ IO;
 
             let srcFile = newFile(src.src);
             let srcPath = toPath(srcFile);
@@ -974,8 +931,7 @@ mod Files {
             }
         } catch {
             case ex: ##java.io.IOException =>
-                import java.lang.Throwable.getMessage(): String \ IO;
-                Err(Generic(getMessage(checked_cast(ex))))
+                Err(Generic(ex¤getMessage()))
         }
 
     ///
@@ -987,9 +943,9 @@ mod Files {
     pub def moveOver(src: {src = String}, dst: String): Result[IOError, Unit] \ IO = region rc {
         IOError.tryCatch(_ -> {
             import java_new java.io.File(String): ##java.io.File \ IO as newFile;
-            import java.io.File.toPath(): ##java.nio.file.Path \ IO;
             import static java.nio.file.Files.move(##java.nio.file.Path, ##java.nio.file.Path, Array[##java.nio.file.CopyOption, rc]): ##java.nio.file.Path \ IO;
             import static java_get_field java.nio.file.StandardCopyOption.REPLACE_EXISTING: ##java.nio.file.StandardCopyOption \ IO as getOverwrite;
+            import java.io.File.toPath(): ##java.nio.file.Path \ IO;
 
             let dstFile = newFile(dst);
             let dstPath = toPath(dstFile);
@@ -1012,8 +968,8 @@ mod Files {
     pub def copy(src: {src = String} , dst: String): Result[IOError, Unit] \ IO = region rc {
         IOError.tryCatch(_ -> {
             import java_new java.io.File(String): ##java.io.File \ IO as newFile;
-            import java.io.File.toPath(): ##java.nio.file.Path \ IO;
             import static java.nio.file.Files.copy(##java.nio.file.Path, ##java.nio.file.Path, Array[##java.nio.file.CopyOption, rc]): ##java.nio.file.Path \ IO;
+            import java.io.File.toPath(): ##java.nio.file.Path \ IO;
 
             let srcFile = newFile(src.src);
             let srcPath = toPath(srcFile);
@@ -1038,9 +994,9 @@ mod Files {
             match isDirectory(dst) {
                 case Ok(true)  => {
                     import java_new java.io.File(String): ##java.io.File \ IO as newFile;
-                    import java.io.File.toPath(): ##java.nio.file.Path \ IO;
                     import java.nio.file.Path.getFileName(): ##java.nio.file.Path \ IO;
                     import java.nio.file.Path.toString(): String \ IO as pathToString;
+                    import java.io.File.toPath(): ##java.nio.file.Path \ IO;
 
                     let javaFile = newFile(src.src);
                     let javaPath = toPath(javaFile);
@@ -1054,8 +1010,7 @@ mod Files {
             }
         } catch {
             case ex: ##java.io.IOException =>
-                import java.lang.Throwable.getMessage(): String \ IO;
-                Err(Generic(getMessage(checked_cast(ex))))
+                Err(Generic(ex¤getMessage()))
         }
 
     ///
@@ -1067,9 +1022,9 @@ mod Files {
     pub def copyOver(src: {src = String}, dst: String): Result[IOError, Unit] \ IO = region rc {
         IOError.tryCatch(_ -> {
             import java_new java.io.File(String): ##java.io.File \ IO as newFile;
-            import java.io.File.toPath(): ##java.nio.file.Path \ IO;
             import static java.nio.file.Files.copy(##java.nio.file.Path, ##java.nio.file.Path, Array[##java.nio.file.CopyOption, rc]): ##java.nio.file.Path \ IO;
             import static java_get_field java.nio.file.StandardCopyOption.REPLACE_EXISTING: ##java.nio.file.StandardCopyOption \ IO as getOverwrite;
+            import java.io.File.toPath(): ##java.nio.file.Path \ IO;
 
             let dstFile = newFile(dst);
             let dstPath = toPath(dstFile);
@@ -1088,8 +1043,8 @@ mod Files {
     pub def delete(f: String): Result[IOError, Unit] \ IO =
         IOError.tryCatch(_ -> {
             import java_new java.io.File(String): ##java.io.File \ IO as newFile;
-            import java.io.File.toPath(): ##java.nio.file.Path \ IO;
             import static java.nio.file.Files.delete(##java.nio.file.Path): Unit \ IO;
+            import java.io.File.toPath(): ##java.nio.file.Path \ IO;
 
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
@@ -1106,8 +1061,8 @@ mod Files {
     pub def deleteIfExists(f: String): Result[IOError, Bool] \ IO =
         IOError.tryCatch(_ -> {
             import java_new java.io.File(String): ##java.io.File \ IO as newFile;
-            import java.io.File.toPath(): ##java.nio.file.Path \ IO;
             import static java.nio.file.Files.deleteIfExists(##java.nio.file.Path): Bool \ IO;
+            import java.io.File.toPath(): ##java.nio.file.Path \ IO;
 
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
