@@ -35,9 +35,7 @@ mod String {
     ///
     /// Returns the code point at position `i` in the string `s`.
     ///
-    pub def codePointAt(i: Int32, s: String): Int32 =
-        import java.lang.String.codePointAt(Int32): Int32 \ {};
-        codePointAt(s, i)
+    pub def codePointAt(i: Int32, s: String): Int32 = unsafe s¤codePointAt(i)
 
     ///
     /// Optionally returns the code point at position `i` in the string `s`.
@@ -51,16 +49,12 @@ mod String {
     ///
     /// Returns the string `s1` followed by the string `s2`.
     ///
-    pub def concat(s1: String, s2: String): String =
-        import java.lang.String.concat(String): String \ {};
-        (s1 `concat` s2)
+    pub def concat(s1: String, s2: String): String = unsafe s1¤concat(s2)
 
     ///
     /// Returns `true` if the string `s` is the empty string.
     ///
-    pub def isEmpty(s: String): Bool =
-        import java.lang.String.isEmpty(): Bool \ {};
-        isEmpty(s)
+    pub def isEmpty(s: String): Bool = unsafe s¤isEmpty()
 
     ///
     /// Returns `true` if the string `s` is non-empty.
@@ -70,23 +64,17 @@ mod String {
     ///
     /// Returns the length of the string `s`.
     ///
-    pub def length(s: String): Int32 =
-        import java.lang.String.length(): Int32 \ {};
-        length(s)
+    pub def length(s: String): Int32 = unsafe s¤length()
 
     ///
     /// Returns `true` if the string `s` starts with the string `prefix`.
     ///
-    pub def startsWith(prefix: {prefix = String}, s: String): Bool =
-        import java.lang.String.startsWith(String): Bool \ {};
-        (s `startsWith` prefix.prefix)
+    pub def startsWith(prefix: {prefix = String}, s: String): Bool = unsafe s¤startsWith(prefix.prefix)
 
     ///
     /// Returns `true` if the string `s` ends with the string `suffix`.
     ///
-    pub def endsWith(suffix: {suffix = String}, s: String): Bool =
-        import java.lang.String.endsWith(String): Bool \ {};
-        (s `endsWith` suffix.suffix)
+    pub def endsWith(suffix: {suffix = String}, s: String): Bool = unsafe s¤endsWith(suffix.suffix)
 
     ///
     /// Splits the string `s` around matches of the regular expression `regex`.
@@ -100,16 +88,12 @@ mod String {
     ///
     /// Returns the lower case version of the string `s`.
     ///
-    pub def toLowerCase(s: String): String =
-        import java.lang.String.toLowerCase(): String \ {};
-        toLowerCase(s)
+    pub def toLowerCase(s: String): String = unsafe s¤toLowerCase()
 
     ///
     /// Returns the upper case version of the string `s`.
     ///
-    pub def toUpperCase(s: String): String =
-        import java.lang.String.toUpperCase(): String \ {};
-        toUpperCase(s)
+    pub def toUpperCase(s: String): String = unsafe s¤toUpperCase()
 
     ///
     /// Returns the given string `s` as a list of characters.
@@ -121,9 +105,7 @@ mod String {
     ///
     /// Returns a new empty string if there is no characters in `s`.
     ///
-    pub def trim(s: String): String =
-        import java.lang.String.trim(): String \ {};
-        trim(s)
+    pub def trim(s: String): String = unsafe s¤trim()
 
     ///
     /// Get the system line separator.
@@ -307,13 +289,7 @@ mod String {
     ///
     /// Note - use `isSubmatch` to search for a substring.
     ///
-    pub def isMatch(regex: {regex = String}, s: String): Bool =
-        import java.lang.String.matches(String): Bool \ {};
-        try {
-            matches(s, regex.regex)
-        } catch {
-            case _: ##java.util.regex.PatternSyntaxException => false
-        }
+    pub def isMatch(regex: {regex = String}, s: String): Bool = try { unsafe s¤matches(regex.regex) } catch { case _: ##java.util.regex.PatternSyntaxException => false }
 
     ///
     /// Returns `true` if the string `s` is matched by the regular expression `regex` at any point.
@@ -327,12 +303,11 @@ mod String {
     def isSubmatchHelper(pattern: String, s: String): Bool = region rc {
         import static java.util.regex.Pattern.compile(String): ##java.util.regex.Pattern \ rc;
         import java.util.regex.Pattern.matcher(##java.lang.CharSequence): ##java.util.regex.Matcher \ rc;
-        import java.util.regex.Matcher.find(Int32): Bool \ rc;
         let _ = rc; // This avoids a redundancy error.
         try {
             let p1 = compile(pattern);
             let m1 = matcher(p1, checked_cast(s));
-            find(m1, 0)
+            unsafe m1¤find(0)
         } catch {
             case _: ##java.util.regex.PatternSyntaxException => false
         }
@@ -343,12 +318,7 @@ mod String {
     ///
     /// If `b` or `e` are out-of-bounds, return the empty string.
     ///
-    pub def slice(start: {start = Int32}, end: {end = Int32}, s: String): String = try {
-        import java.lang.String.substring(Int32, Int32): String \ {};
-        substring(s, start.start, end.end)
-    } catch {
-        case _: ##java.lang.IndexOutOfBoundsException => ""
-    }
+    pub def slice(start: {start = Int32}, end: {end = Int32}, s: String): String = try { unsafe s¤substring(start.start, end.end) } catch { case _: ##java.lang.IndexOutOfBoundsException => "" }
 
     ///
     /// Get the substring of `s` to the left of index `end` (exclusive).
@@ -823,30 +793,22 @@ mod String {
     ///
     /// Returns `s` with every match of the substring `src` replaced by the string `dst`.
     ///
-    pub def replace(src: {src = String}, dst: {dst = String}, s: String): String =
-        import java.lang.String.replace(##java.lang.CharSequence, ##java.lang.CharSequence): String \ {};
-        replace(s, checked_cast(src.src), checked_cast(dst.dst))
+    pub def replace(src: {src = String}, dst: {dst = String}, s: String): String = unsafe s¤replace(src.src, dst.dst) // TO CHECK: removed explicit casts
 
     ///
     /// Returns `s` with every match of the character `src` replaced by the character `dst`.
     ///
-    pub def replaceChar(src: {src = Char}, dst: {dst = Char}, s: String): String =
-        import java.lang.String.replace(Char, Char): String \ {};
-        replace(s, src.src, dst.dst)
+    pub def replaceChar(src: {src = Char}, dst: {dst = Char}, s: String): String = unsafe s¤replace(src.src, dst.dst)
 
     ///
     /// Returns `s` with every match of the regular expression `regex` replaced by the string `to`.
     ///
-    pub def replaceMatches(regex: {regex = String}, to: {to = String}, s: String): String =
-        import java.lang.String.replaceAll(String, String): String \ {};
-        replaceAll(s, regex.regex, to.to)
+    pub def replaceMatches(regex: {regex = String}, to: {to = String}, s: String): String = unsafe s¤replaceAll(regex.regex, to.to)
 
     ///
     /// Returns `s` with the first match of the regular expression `regex` replaced by the string `to`.
     ///
-    pub def replaceFirstMatch(regex: {regex = String}, to: {to = String}, s: String): String =
-        import java.lang.String.replaceFirst(String, String): String \ {};
-        replaceFirst(s, regex.regex, to.to)
+    pub def replaceFirstMatch(regex: {regex = String}, to: {to = String}, s: String): String = unsafe s¤replaceFirst(regex.regex, to.to)
 
     ///
     /// Returns `s` with the element at index `i` replaced by `a`.
@@ -999,14 +961,7 @@ mod String {
     ///
     /// If `substr` is the empty string return None.
     ///
-    pub def indexOfLeft(substr: {substr = String}, s: String): Option[Int32] =
-        import java.lang.String.indexOf(String): Int32 \ {};
-        if (isEmpty(substr.substr))
-            None
-        else {
-            let i = indexOf(s, substr.substr);
-            if (i < 0) None else Some(i)
-        }
+    pub def indexOfLeft(substr: {substr = String}, s: String): Option[Int32] = if (isEmpty(substr.substr)) None else { let i = unsafe s¤indexOf(substr.substr); if (i < 0) None else Some(i) }
 
     ///
     /// Return the index of the first occurrence of `substr` in `s` from the right.
@@ -1015,14 +970,7 @@ mod String {
     ///
     /// If `substr` is the empty string return None.
     ///
-    pub def indexOfRight(substr: {substr = String}, s: String): Option[Int32] =
-        import java.lang.String.lastIndexOf(String): Int32 \ {};
-        if (isEmpty(substr.substr))
-            None
-        else {
-            let i = lastIndexOf(s, substr.substr);
-            if (i < 0) None else Some(i)
-        }
+    pub def indexOfRight(substr: {substr = String}, s: String): Option[Int32] = if (isEmpty(substr.substr)) None else { let i = unsafe s¤lastIndexOf(substr.substr); if (i < 0) None else Some(i) }
 
     ///
     /// Returns `true` if and only if `substr` is an infix of `s`.
@@ -1204,28 +1152,14 @@ mod String {
     ///
     /// Returns `None` if `substr` is the empty string.
     ///
-    pub def indexOfLeftWithOffset(substr: {substr = String}, offset: {offset = Int32}, s: String): Option[Int32] =
-        import java.lang.String.indexOf(String, Int32): Int32 \ {};
-        if (isEmpty(substr.substr))
-            None
-        else {
-            let ix = indexOf(s, substr.substr, offset.offset);
-            if (ix < 0) None else Some(ix)
-        }
+    pub def indexOfLeftWithOffset(substr: {substr = String}, offset: {offset = Int32}, s: String): Option[Int32] = if (isEmpty(substr.substr)) None else { let ix = unsafe s¤indexOf(substr.substr, offset.offset); if (ix < 0) None else Some(ix) }
 
     ///
     /// This is `indexOfRight` with a start offset.
     ///
     /// Returns `None` if `substr` is the empty string.
     ///
-    pub def indexOfRightWithOffset(substr: {substr = String}, offset: {offset = Int32}, s: String): Option[Int32] =
-        import java.lang.String.lastIndexOf(String, Int32): Int32 \ {};
-        if (isEmpty(substr.substr))
-            None
-        else {
-            let ix = lastIndexOf(s, substr.substr, offset.offset);
-            if (ix < 0) None else Some(ix)
-        }
+    pub def indexOfRightWithOffset(substr: {substr = String}, offset: {offset = Int32}, s: String): Option[Int32] = if (isEmpty(substr.substr)) None else { let ix = unsafe s¤lastIndexOf(substr.substr, offset.offset); if (ix < 0) None else Some(ix) }
 
     ///
     /// Split the string `s` into chunks of length `k`, the last chunk may be smaller than `k`.
