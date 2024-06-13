@@ -422,12 +422,13 @@ object TypeReconstruction {
     case KindedAst.Expr.InvokeConstructor2(clazz, exps, cvar, evar, loc) =>
       val es = exps.map(visitExp)
       val constructorTpe = subst(cvar)
+      val tpe = Type.getFlixType(clazz)
       val eff = subst(evar)
       constructorTpe match {
         case Type.Cst(TypeConstructor.JvmConstructor(constructor), loc) =>
-          TypedAst.Expr.InvokeConstructor(constructor, es, constructorTpe, eff, loc)
+          TypedAst.Expr.InvokeConstructor(constructor, es, tpe, eff, loc)
         case _ =>
-          TypedAst.Expr.Error(TypeError.UnresolvedMethod(loc), constructorTpe, eff)
+          TypedAst.Expr.Error(TypeError.UnresolvedMethod(loc), tpe, eff)
       }
 
     case KindedAst.Expr.InvokeMethod2(exp, _, exps, mvar, tvar, evar, loc) =>
