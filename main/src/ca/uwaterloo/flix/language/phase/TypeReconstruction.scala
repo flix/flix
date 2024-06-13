@@ -292,9 +292,9 @@ object TypeReconstruction {
       val eff = subst(evar)
       TypedAst.Expr.ArrayStore(e1, e2, e3, eff, loc)
 
-    case KindedAst.Expr.ArrayLength(exp, loc) =>
+    case KindedAst.Expr.ArrayLength(exp, evar, loc) =>
       val e = visitExp(exp)
-      val eff = e.eff
+      val eff = subst(evar)
       TypedAst.Expr.ArrayLength(e, eff, loc)
 
     case KindedAst.Expr.VectorLit(exps, tvar, evar, loc) =>
