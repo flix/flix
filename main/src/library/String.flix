@@ -289,7 +289,12 @@ mod String {
     ///
     /// Note - use `isSubmatch` to search for a substring.
     ///
-    pub def isMatch(regex: {regex = String}, s: String): Bool = try { unsafe s¤matches(regex.regex) } catch { case _: ##java.util.regex.PatternSyntaxException => false }
+    pub def isMatch(regex: {regex = String}, s: String): Bool =
+        try {
+            unsafe s¤matches(regex.regex)
+        } catch {
+            case _: ##java.util.regex.PatternSyntaxException => false
+        }
 
     ///
     /// Returns `true` if the string `s` is matched by the regular expression `regex` at any point.
@@ -318,7 +323,12 @@ mod String {
     ///
     /// If `b` or `e` are out-of-bounds, return the empty string.
     ///
-    pub def slice(start: {start = Int32}, end: {end = Int32}, s: String): String = try { unsafe s¤substring(start.start, end.end) } catch { case _: ##java.lang.IndexOutOfBoundsException => "" }
+    pub def slice(start: {start = Int32}, end: {end = Int32}, s: String): String =
+        try {
+            unsafe s¤substring(start.start, end.end)
+        } catch {
+            case _: ##java.lang.IndexOutOfBoundsException => ""
+        }
 
     ///
     /// Get the substring of `s` to the left of index `end` (exclusive).
@@ -961,8 +971,13 @@ mod String {
     ///
     /// If `substr` is the empty string return None.
     ///
-    pub def indexOfLeft(substr: {substr = String}, s: String): Option[Int32] = if (isEmpty(substr.substr)) None else { let i = unsafe s¤indexOf(substr.substr); if (i < 0) None else Some(i) }
-
+    pub def indexOfLeft(substr: {substr = String}, s: String): Option[Int32] =
+        if (isEmpty(substr.substr))
+            None
+        else {
+            let i = unsafe s¤indexOf(substr.substr);
+            if (i < 0) None else Some(i)
+        }
     ///
     /// Return the index of the first occurrence of `substr` in `s` from the right.
     ///
@@ -970,7 +985,13 @@ mod String {
     ///
     /// If `substr` is the empty string return None.
     ///
-    pub def indexOfRight(substr: {substr = String}, s: String): Option[Int32] = if (isEmpty(substr.substr)) None else { let i = unsafe s¤lastIndexOf(substr.substr); if (i < 0) None else Some(i) }
+    pub def indexOfRight(substr: {substr = String}, s: String): Option[Int32] =
+        if (isEmpty(substr.substr))
+            None
+        else {
+            let i = unsafe s¤lastIndexOf(substr.substr);
+            if (i < 0) None else Some(i)
+        }
 
     ///
     /// Returns `true` if and only if `substr` is an infix of `s`.
@@ -1152,7 +1173,13 @@ mod String {
     ///
     /// Returns `None` if `substr` is the empty string.
     ///
-    pub def indexOfLeftWithOffset(substr: {substr = String}, offset: {offset = Int32}, s: String): Option[Int32] = if (isEmpty(substr.substr)) None else { let ix = unsafe s¤indexOf(substr.substr, offset.offset); if (ix < 0) None else Some(ix) }
+    pub def indexOfLeftWithOffset(substr: {substr = String}, offset: {offset = Int32}, s: String): Option[Int32] =
+        if (isEmpty(substr.substr))
+            None
+        else {
+            let ix = unsafe s¤indexOf(substr.substr, offset.offset);
+            if (ix < 0) None else Some(ix)
+        }
 
     ///
     /// This is `indexOfRight` with a start offset.
