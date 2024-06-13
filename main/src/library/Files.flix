@@ -102,9 +102,10 @@ mod Files {
             import java_new java.io.File(String): ##java.io.File \ IO as newFile;
             import static java.nio.file.Files.readAttributes(##java.nio.file.Path, ##java.lang.Class, Array[##java.nio.file.LinkOption, rc]): ##java.nio.file.attribute.BasicFileAttributes \ IO;
             import static java.lang.Class.forName(String): ##java.lang.Class \ IO;
+            import java.io.File.toPath(): ##java.nio.file.Path \ IO;
 
             let javaFile = newFile(f);
-            let javaPath = javaFile¤toPath();
+            let javaPath = toPath(javaFile);
             let classOfAttributes = forName("java.nio.file.attribute.BasicFileAttributes");
 
             readAttributes(javaPath, classOfAttributes, Array#{} @ rc)
@@ -183,8 +184,9 @@ mod Files {
         IOError.tryCatch(_ -> {
             import java_new java.io.File(String): ##java.io.File \ IO as newFile;
             import static java.nio.file.Files.isRegularFile(##java.nio.file.Path, Array[##java.nio.file.LinkOption, rc]): Bool \ IO;
+            import java.io.File.toPath(): ##java.nio.file.Path \ IO;
             let javaFile = newFile(f);
-            let javaPath = javaFile¤toPath();
+            let javaPath = toPath(javaFile);
             isRegularFile(javaPath, Array#{} @ rc)
         })
     }
@@ -206,8 +208,9 @@ mod Files {
         IOError.tryCatch(_ -> {
             import java_new java.io.File(String): ##java.io.File \ IO as newFile;
             import static java.nio.file.Files.isSymbolicLink(##java.nio.file.Path): Bool \ IO;
+            import java.io.File.toPath(): ##java.nio.file.Path \ IO;
             let javaFile = newFile(f);
-            let javaPath = javaFile¤toPath();
+            let javaPath = toPath(javaFile);
             isSymbolicLink(javaPath)
         })
 
@@ -238,8 +241,9 @@ mod Files {
         IOError.tryCatch(_ -> {
             import java_new java.io.File(String): ##java.io.File \ IO as newFile;
             import static java.nio.file.Files.readString(##java.nio.file.Path): String \ IO;
+            import java.io.File.toPath(): ##java.nio.file.Path \ IO;
             let javaFile = newFile(f);
-            let javaPath = javaFile¤toPath();
+            let javaPath = toPath(javaFile);
             let result = readString(javaPath);
             result
         })
@@ -256,6 +260,7 @@ mod Files {
             try {
                 import java_new java.io.File(String): ##java.io.File \ IO as newFile;
                 import java_new java.io.FileInputStream(##java.io.File): ##java.io.FileInputStream \ IO as newInputStream;
+                import java.io.FileInputStream.read(Array[Int8, rc], Int32, Int32): Int32 \ IO;
                 import static java.nio.charset.Charset.forName(String): ##java.nio.charset.Charset \ IO;
                 import java_new java.lang.String(Array[Int8, rc], ##java.nio.charset.Charset): String \ IO as newString;
 
@@ -264,7 +269,7 @@ mod Files {
                 match skip((opts.offset / 10_000i64), opts.offset, stream, f) {
                     case Ok(_)    => {
                         let bytes = Array.empty(rc, opts.count);
-                        discard stream¤read(bytes, 0, opts.count);
+                        discard read(stream, bytes, 0, opts.count);
                         let charSet = forName(opts.charSet);
                         let returnString = newString(bytes, charSet);
                         Ok(returnString)
@@ -309,8 +314,9 @@ mod Files {
         IOError.tryCatch(_ -> {
             import java_new java.io.File(String): ##java.io.File \ IO as newFile;
             import static java.nio.file.Files.newBufferedReader(##java.nio.file.Path): ##java.io.BufferedReader \ IO;
+            import java.io.File.toPath(): ##java.nio.file.Path \ IO;
             let javaFile = newFile(f);
-            let javaPath = javaFile¤toPath();
+            let javaPath = toPath(javaFile);
             let reader = newBufferedReader(javaPath);
             readAll(reader)
         })
@@ -338,9 +344,10 @@ mod Files {
             import java_new java.io.File(String): ##java.io.File \ IO as newFile;
             import static java.nio.file.Files.newBufferedReader(##java.nio.file.Path, ##java.nio.charset.Charset): ##java.io.BufferedReader \ IO;
             import static java.nio.charset.Charset.forName(String): ##java.nio.charset.Charset \ IO;
+            import java.io.File.toPath(): ##java.nio.file.Path \ IO;
 
             let javaFile = newFile(f);
-            let javaPath = javaFile¤toPath();
+            let javaPath = toPath(javaFile);
             let reader = newBufferedReader(javaPath, forName(opts.charSet));
             readAll(reader)
         })
@@ -352,16 +359,18 @@ mod Files {
         try {
             import java_new java.io.File(String): ##java.io.File \ IO as newFile;
             import static java.nio.file.Files.newBufferedReader(##java.nio.file.Path): ##java.io.BufferedReader \ IO;
+            import java.io.File.toPath(): ##java.nio.file.Path \ IO;
+            import java.io.BufferedReader.readLine(): String \ IO;
 
             let javaFile = newFile(f);
-            let javaPath = javaFile¤toPath();
+            let javaPath = toPath(javaFile);
             let reader = newBufferedReader(javaPath);
-            let line = ref reader¤readLine() @ rc;
+            let line = ref readLine(reader) @ rc;
             let next = () -> ({
                 if (not Object.isNull(deref line)) {
                     try {
                         let l = deref line;
-                        Ref.put(reader¤readLine(), line);
+                        Ref.put(readLine(reader), line);
                         Some(Ok(l))
                     } catch {
                         case ex: ##java.io.IOException => {
@@ -389,16 +398,18 @@ mod Files {
             import java_new java.io.File(String): ##java.io.File \ IO as newFile;
             import static java.nio.file.Files.newBufferedReader(##java.nio.file.Path, ##java.nio.charset.Charset): ##java.io.BufferedReader \ IO;
             import static java.nio.charset.Charset.forName(String): ##java.nio.charset.Charset \ IO;
+            import java.io.File.toPath(): ##java.nio.file.Path \ IO;
+            import java.io.BufferedReader.readLine(): String \ IO;
 
             let javaFile = newFile(f);
-            let javaPath = javaFile¤toPath();
+            let javaPath = toPath(javaFile);
             let reader = newBufferedReader(javaPath, forName(opts.charSet));
-            let line = ref reader¤readLine() @ rc;
+            let line = ref readLine(reader) @ rc;
             let next = () -> ({
                 if (not Object.isNull(deref line)) {
                     try {
                         let l = deref line;
-                        Ref.put(reader¤readLine(), line);
+                        Ref.put(readLine(reader), line);
                         Some(Ok(l))
                     } catch {
                         case ex: ##java.io.IOException => {
@@ -423,9 +434,10 @@ mod Files {
         IOError.tryCatch(_ -> {
             import java_new java.io.File(String): ##java.io.File \ IO as newFile;
             import static java.nio.file.Files.readAllBytes(##java.nio.file.Path): Array[Int8, r] \ IO + r;
+            import java.io.File.toPath(): ##java.nio.file.Path \ IO;
 
             let javaFile = newFile(f);
-            let javaPath = javaFile¤toPath();
+            let javaPath = toPath(javaFile);
             let bytes = readAllBytes(javaPath);
 
             bytes
@@ -442,13 +454,14 @@ mod Files {
             try {
                 import java_new java.io.File(String): ##java.io.File \ IO as newFile;
                 import java_new java.io.FileInputStream(##java.io.File): ##java.io.FileInputStream \ IO as newInputStream;
+                import java.io.FileInputStream.read(Array[Int8, r], Int32, Int32): Int32 \ IO;
 
                 let javaFile = newFile(f);
                 let stream = newInputStream(javaFile);
                 match skip((opts.offset / 10_000i64), opts.offset, stream, f) {
                     case Ok(_)    => {
                         let bytes = Array.empty(rc, opts.count);
-                        let numberRead = stream¤read(bytes, 0, opts.count);
+                        let numberRead = read(stream, bytes, 0, opts.count);
                         let res = readBytesWithHelper(rc, bytes, numberRead, opts.count);
                         Ok(res)
                     }
@@ -489,18 +502,19 @@ mod Files {
             try {
                 import java_new java.io.File(String): ##java.io.File \ IO as newFile;
                 import java_new java.io.FileInputStream(##java.io.File): ##java.io.FileInputStream \ IO as newInputStream;
+                import java.io.FileInputStream.read(Array[Int8, r]): Int32 \ IO + r;
 
                 let javaFile = newFile(f);
                 let stream = newInputStream(javaFile);
                 let bytes = ref Array.empty(rc, chunkSize) @ rc;
-                let numberRead = ref stream¤read(deref bytes) @ rc;
+                let numberRead = ref read(stream, deref bytes) @ rc;
                 let next = () -> ({
                     if (deref numberRead >= 0) {
                         try {
                             let chunk = deref bytes;
                             Ref.put(Array.empty(rc, chunkSize), bytes);
                             let accRead = deref numberRead;
-                            Ref.put(stream¤read(deref bytes), numberRead);
+                            Ref.put(read(stream, deref bytes), numberRead);
                             Some(Ok(readBytesWithHelper(rc, chunk, accRead, chunkSize)))
                         } catch {
                             case ex: ##java.io.IOException => {
@@ -659,6 +673,7 @@ mod Files {
             import java_new java.io.File(String): ##java.io.File \ IO as newFile;
             import java_new java.io.FileOutputStream(##java.io.File): ##java.io.FileOutputStream \ IO as newFileStream;
             import java_new java.io.PrintWriter(##java.io.OutputStream): ##java.io.PrintWriter \ IO as newPrintWriter;
+            import java.io.FileOutputStream.write(Array[Int8, rc]): Unit \ IO;
 
             let alreadyExists = Files.exists(f);
 
@@ -667,7 +682,7 @@ mod Files {
             let printWriter = newPrintWriter(checked_cast(fileStream));
 
             let dataAsArray = Foldable.toArray(rc, data);
-            fileStream¤write(dataAsArray);
+            write(fileStream, dataAsArray);
             printWriter¤close();
 
             if (printWriter¤checkError()) {
@@ -692,6 +707,7 @@ mod Files {
             import java_new java.io.File(String): ##java.io.File \ IO as newFile;
             import java_new java.io.FileOutputStream(##java.io.File, Bool): ##java.io.FileOutputStream \ IO as newFileStream;
             import java_new java.io.PrintWriter(##java.io.OutputStream): ##java.io.PrintWriter \ IO as newPrintWriter;
+            import java.io.FileOutputStream.write(Array[Int8, rc]): Unit \ IO;
 
             let alreadyExists = Files.exists(f);
 
@@ -701,7 +717,7 @@ mod Files {
             let printWriter = newPrintWriter(checked_cast(fileStream));
 
             let dataAsArray = Foldable.toArray(rc, data);
-            fileStream¤write(dataAsArray);
+            write(fileStream, dataAsArray);
 
             printWriter¤close();
 
@@ -770,7 +786,7 @@ mod Files {
             import java_new java.io.File(String): ##java.io.File \ IO as newFile;
 
             let javaFile = newFile(d);
-            javaFile¤mkDirs()
+            javaFile¤mkdir()
         })
 
     ///
@@ -810,12 +826,14 @@ mod Files {
         IOError.tryCatch(_ -> {
             import java_new java.io.File(String): ##java.io.File \ IO as newFile;
             import static java.nio.file.Files.newDirectoryStream(##java.nio.file.Path): ##java.nio.file.DirectoryStream \ IO;
+            import java.nio.file.DirectoryStream.iterator(): ##java.util.Iterator \ IO;
             import java.nio.file.Path.toString(): String \ {} as pathToString;
+            import java.io.File.toPath(): ##java.nio.file.Path \ IO;
 
             let javaFile = newFile(f);
-            let javaPath = javaFile¤toPath();
+            let javaPath = toPath(javaFile);
             let javaStream = newDirectoryStream(javaPath);
-            let javaIter = javaStream¤iterator();
+            let javaIter = iterator(javaStream);
 
             let iter = fromJavaIter(rc, javaIter);
             Iterator.map(pathToString, iter)
@@ -831,12 +849,14 @@ mod Files {
         IOError.tryCatch(_ -> {
             import java_new java.io.File(String): ##java.io.File \ IO as newFile;
             import static java.nio.file.Files.walk(##java.nio.file.Path, Array[##java.nio.file.FileVisitOption, r]): ##java.util.stream.Stream \ IO;
+            import java.util.stream.BaseStream.iterator(): ##java.util.Iterator \ IO;
             import java.nio.file.Path.toString(): String \ {} as pathToString;
+            import java.io.File.toPath(): ##java.nio.file.Path \ IO;
 
             let javaFile = newFile(f);
-            let javaPath = javaFile¤toPath();
+            let javaPath = toPath(javaFile);
             let javaStream = walk(javaPath, Array#{} @ rc);
-            let javaIter = javaStream¤iterator();
+            let javaIter = iterator(checked_cast(javaStream));
 
             let iter = fromJavaIter(rc, javaIter);
             Iterator.map(pathToString, iter)
@@ -846,9 +866,11 @@ mod Files {
     /// Converts a Java iterator to a Flix Iterator.
     ///
     def fromJavaIter(rc: Region[r], iter: ##java.util.Iterator): Iterator[a, r, r] =
+        import java.util.Iterator.hasNext(): Bool \ r;
+        import java.util.Iterator.next(): a \ r as getNext;
         let next = () -> {
-            if(iter¤hasNext()) {
-                iter¤next() |> Some
+            if(hasNext(iter)) {
+                getNext(iter) |> Some
             } else {
                 None
             }
@@ -868,11 +890,12 @@ mod Files {
         IOError.tryCatch(_ -> {
             import java_new java.io.File(String): ##java.io.File \ IO as newFile;
             import static java.nio.file.Files.move(##java.nio.file.Path, ##java.nio.file.Path, Array[##java.nio.file.CopyOption, rc]): ##java.nio.file.Path \ IO;
+            import java.io.File.toPath(): ##java.nio.file.Path \ IO;
 
             let srcFile = newFile(src.src);
-            let srcPath = srcFile¤toPath();
+            let srcPath = toPath(srcFile);
             let dstFile = newFile(dst);
-            let dstPath = dstFile¤toPath();
+            let dstPath = toPath(dstFile);
             discard move(srcPath, dstPath, Array#{} @ rc)
         })
     }
@@ -892,10 +915,13 @@ mod Files {
             match isDirectory(dst) {
                 case Ok(true)  => {
                     import java_new java.io.File(String): ##java.io.File \ IO as newFile;
+                    import java.io.File.toPath(): ##java.nio.file.Path \ IO;
+                    import java.nio.file.Path.getFileName(): ##java.nio.file.Path \ IO;
+                    import java.nio.file.Path.toString(): String \ IO as pathToString;
 
                     let javaFile = newFile(src.src);
-                    let javaPath = javaFile¤toPath();
-                    let name = javaPath¤getFileName()¤toString();
+                    let javaPath = toPath(javaFile);
+                    let name = pathToString(getFileName(javaPath));
                     let newDst = dst / name;
 
                     move(src = src.src, newDst)
@@ -919,12 +945,13 @@ mod Files {
             import java_new java.io.File(String): ##java.io.File \ IO as newFile;
             import static java.nio.file.Files.move(##java.nio.file.Path, ##java.nio.file.Path, Array[##java.nio.file.CopyOption, rc]): ##java.nio.file.Path \ IO;
             import static java_get_field java.nio.file.StandardCopyOption.REPLACE_EXISTING: ##java.nio.file.StandardCopyOption \ IO as getOverwrite;
+            import java.io.File.toPath(): ##java.nio.file.Path \ IO;
 
             let dstFile = newFile(dst);
-            let dstPath = dstFile¤toPath();
+            let dstPath = toPath(dstFile);
 
             let srcFile = newFile(src.src);
-            let srcPath = srcFile¤toPath();
+            let srcPath = toPath(srcFile);
             discard move(srcPath, dstPath, Array#{checked_cast(getOverwrite())} @ rc)
         })
     }
@@ -942,11 +969,12 @@ mod Files {
         IOError.tryCatch(_ -> {
             import java_new java.io.File(String): ##java.io.File \ IO as newFile;
             import static java.nio.file.Files.copy(##java.nio.file.Path, ##java.nio.file.Path, Array[##java.nio.file.CopyOption, rc]): ##java.nio.file.Path \ IO;
+            import java.io.File.toPath(): ##java.nio.file.Path \ IO;
 
             let srcFile = newFile(src.src);
-            let srcPath = srcFile¤toPath();
+            let srcPath = toPath(srcFile);
             let dstFile = newFile(dst);
-            let dstPath = dstFile¤toPath();
+            let dstPath = toPath(dstFile);
             discard copy(srcPath, dstPath, Array#{} @ rc)
        })
     }
@@ -966,10 +994,13 @@ mod Files {
             match isDirectory(dst) {
                 case Ok(true)  => {
                     import java_new java.io.File(String): ##java.io.File \ IO as newFile;
+                    import java.nio.file.Path.getFileName(): ##java.nio.file.Path \ IO;
+                    import java.nio.file.Path.toString(): String \ IO as pathToString;
+                    import java.io.File.toPath(): ##java.nio.file.Path \ IO;
 
                     let javaFile = newFile(src.src);
-                    let javaPath = javaFile¤toPath();
-                    let name = javaPath¤getFileName()¤toString();
+                    let javaPath = toPath(javaFile);
+                    let name = pathToString(getFileName(javaPath));
                     let newDst = dst / name;
 
                     copy(src = src.src, newDst)
@@ -993,12 +1024,13 @@ mod Files {
             import java_new java.io.File(String): ##java.io.File \ IO as newFile;
             import static java.nio.file.Files.copy(##java.nio.file.Path, ##java.nio.file.Path, Array[##java.nio.file.CopyOption, rc]): ##java.nio.file.Path \ IO;
             import static java_get_field java.nio.file.StandardCopyOption.REPLACE_EXISTING: ##java.nio.file.StandardCopyOption \ IO as getOverwrite;
+            import java.io.File.toPath(): ##java.nio.file.Path \ IO;
 
             let dstFile = newFile(dst);
-            let dstPath = dstFile¤toPath();
+            let dstPath = toPath(dstFile);
 
             let srcFile = newFile(src.src);
-            let srcPath = srcFile¤toPath();
+            let srcPath = toPath(srcFile);
             discard copy(srcPath, dstPath, Array#{checked_cast(getOverwrite())} @ rc)
         })
     }
@@ -1012,9 +1044,10 @@ mod Files {
         IOError.tryCatch(_ -> {
             import java_new java.io.File(String): ##java.io.File \ IO as newFile;
             import static java.nio.file.Files.delete(##java.nio.file.Path): Unit \ IO;
+            import java.io.File.toPath(): ##java.nio.file.Path \ IO;
 
             let javaFile = newFile(f);
-            let javaPath = javaFile¤toPath();
+            let javaPath = toPath(javaFile);
 
             delete(javaPath)
         })
@@ -1029,9 +1062,10 @@ mod Files {
         IOError.tryCatch(_ -> {
             import java_new java.io.File(String): ##java.io.File \ IO as newFile;
             import static java.nio.file.Files.deleteIfExists(##java.nio.file.Path): Bool \ IO;
+            import java.io.File.toPath(): ##java.nio.file.Path \ IO;
 
             let javaFile = newFile(f);
-            let javaPath = javaFile¤toPath();
+            let javaPath = toPath(javaFile);
 
             deleteIfExists(javaPath)
         })
