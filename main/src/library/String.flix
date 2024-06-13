@@ -21,9 +21,7 @@ mod String {
     ///
     /// Returns the character at position `i` in the string `s`.
     ///
-    pub def charAt(i: Int32, s: String): Char =
-        import java.lang.String.charAt(Int32): Char \ {};
-        charAt(s, i)
+    pub def charAt(i: Int32, s: String): Char = unsafe s¤charAt(i)
 
     ///
     /// Optionally return the character at position `i` in the string `s`.

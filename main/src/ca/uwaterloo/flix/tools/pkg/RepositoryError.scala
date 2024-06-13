@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Magnus Madsen
+ * Copyright 2024 Andreas Stenbæk Larsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,16 +15,8 @@
  */
 package ca.uwaterloo.flix.tools.pkg
 
-import java.net.URL
+sealed trait RepositoryError
 
-sealed trait Dependency
-
-object Dependency {
-
-  case class FlixDependency(repo: Repository, username: String, projectName: String, version: SemVer, permissions: List[Permission]) extends Dependency
-
-  case class MavenDependency(groupId: String, artifactId: String, versionTag: String) extends Dependency
-
-  case class JarDependency(url: URL, fileName: String) extends Dependency
-
+object RepositoryError {
+  case class UnsupportedRepositoryError(s: String) extends RepositoryError
 }

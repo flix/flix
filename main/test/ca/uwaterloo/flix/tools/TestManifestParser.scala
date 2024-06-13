@@ -7,6 +7,7 @@ import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.language.ast.Symbol
 import org.scalatest.funsuite.AnyFunSuite
 import ca.uwaterloo.flix.tools.pkg.Manifest
+import ca.uwaterloo.flix.tools.pkg.Permission
 
 import java.io.File
 import java.net.URI
@@ -187,8 +188,8 @@ class TestManifestParser extends AnyFunSuite {
   }
 
   test("Ok.dependencies") {
-    assertResult(expected = List(Dependency.FlixDependency(Repository.GitHub, "jls", "tic-tac-toe", SemVer(1, 2, 3)),
-                                 Dependency.FlixDependency(Repository.GitHub, "mlutze", "flixball", SemVer(3, 2, 1)),
+    assertResult(expected = List(Dependency.FlixDependency(Repository.GitHub, "jls", "tic-tac-toe", SemVer(1, 2, 3), Nil),
+                                 Dependency.FlixDependency(Repository.GitHub, "mlutze", "flixball", SemVer(3, 2, 1), Nil),
                                  Dependency.MavenDependency("org.postgresql", "postgresql", "1.2.3.4"),
                                  Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", "4.7.0-M1"),
                                  Dependency.JarDependency(new URI("https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar").toURL, "myJar.jar")))(actual = {
@@ -265,7 +266,7 @@ class TestManifestParser extends AnyFunSuite {
         |""".stripMargin
     }
     assertResult(expected = List(Dependency.MavenDependency("org.postgresql", "postgresql", "1.2.3"),
-                                  Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", "a.7.0")))(ManifestParser.parse(toml, null) match {
+                                 Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", "a.7.0")))(ManifestParser.parse(toml, null) match {
       case Ok(manifest) => manifest.dependencies
       case Err(e) => e.message(f)
     })
@@ -317,6 +318,57 @@ class TestManifestParser extends AnyFunSuite {
       case Ok(manifest) => manifest.dependencies
       case Err(e) => e.message(f)
     })
+  }
+
+  test("Ok.flix-dependency-permission.01") {
+    val toml = {
+      """
+        |[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |authors = ["John Doe <john@example.com>"]
+        |
+        |[dependencies]
+        |"github:jls/tic-tac-toe" = { version = "1.2.3", permissions = ["java-interop", "unchecked-cast", "effect"] }
+        |""".stripMargin
+    }
+    assertResult(expected = Set(Permission.JavaInterop, Permission.UncheckedCast, Permission.Effect))(actual =
+      ManifestParser.parse(toml, null) match {
+        case Ok(m) =>
+          m.dependencies
+            .head
+            .asInstanceOf[Dependency.FlixDependency]
+            .permissions
+            .toSet
+        case Err(e) => e.message(f)
+      }
+    )
+  }
+
+  test("Ok.flix-dependency-permission.02") {
+    val toml =  """[package]
+                  |name = "hello-world"
+                  |description = "A simple program"
+                  |version = "0.1.0"
+                  |flix = "0.33.0"
+                  |authors = ["John Doe <john@example.com>"]
+                  |
+                  |[dependencies]
+                  |"github:jls/tic-tac-toe" = { version = "1.2.3", permissions = [] }
+                  |""".stripMargin
+    assertResult(expected = Set.empty)(actual =
+      ManifestParser.parse(toml, null) match {
+        case Ok(m) =>
+          m.dependencies
+            .head
+            .asInstanceOf[Dependency.FlixDependency]
+            .permissions
+            .toSet
+        case Err(e) => e.message(f)
+      }
+    )
   }
 
   /*
@@ -1007,7 +1059,7 @@ class TestManifestParser extends AnyFunSuite {
         |""".stripMargin
     }
     val result = ManifestParser.parse(toml, null)
-    expectError[ManifestError.DependencyFormatError](result)
+    expectError[ManifestError.VersionTypeError](result)
   }
 
   test("ManifestError.IllegalTableFound.01") {
@@ -1072,7 +1124,7 @@ class TestManifestParser extends AnyFunSuite {
     expectError[ManifestError.IllegalName](result)
   }
 
-  test("ManifestError.FlixVersionHasWrongLength.05") {
+  test("ManifestError.FlixVersionFormatError.01") {
     val toml = {
       """
         |[package]
@@ -1090,10 +1142,10 @@ class TestManifestParser extends AnyFunSuite {
         |""".stripMargin
     }
     val result = ManifestParser.parse(toml, null)
-    expectError[ManifestError.FlixVersionHasWrongLength](result)
+    expectError[ManifestError.FlixVersionFormatError](result)
   }
 
-  test("ManifestError.FlixVersionHasWrongLength.06") {
+  test("ManifestError.FlixVersionFormatError.02") {
     val toml = {
       """
         |[package]
@@ -1111,7 +1163,7 @@ class TestManifestParser extends AnyFunSuite {
         |""".stripMargin
     }
     val result = ManifestParser.parse(toml, null)
-    expectError[ManifestError.FlixVersionHasWrongLength](result)
+    expectError[ManifestError.FlixVersionFormatError](result)
   }
 
   test("ManifestError.FlixDependencyFormatError.01") {
@@ -1156,7 +1208,7 @@ class TestManifestParser extends AnyFunSuite {
     expectError[ManifestError.FlixDependencyFormatError](result)
   }
 
-  test("ManifestError.VersionNumberWrong.07") {
+  test("ManifestError.FlixVersionFormatError.03") {
     val toml = {
       """
         |[package]
@@ -1174,10 +1226,10 @@ class TestManifestParser extends AnyFunSuite {
         |""".stripMargin
     }
     val result = ManifestParser.parse(toml, null)
-    expectError[ManifestError.VersionNumberWrong](result)
+    expectError[ManifestError.FlixVersionFormatError](result)
   }
 
-  test("ManifestError.VersionNumberWrong.08") {
+  test("ManifestError.FlixVersionFormatError.04") {
     val toml = {
       """
         |[package]
@@ -1195,10 +1247,10 @@ class TestManifestParser extends AnyFunSuite {
         |""".stripMargin
     }
     val result = ManifestParser.parse(toml, null)
-    expectError[ManifestError.VersionNumberWrong](result)
+    expectError[ManifestError.FlixVersionFormatError](result)
   }
 
-  test("ManifestError.VersionNumberWrong.09") {
+  test("ManifestError.FlixVersionFormatError.05") {
     val toml = {
       """
         |[package]
@@ -1216,7 +1268,7 @@ class TestManifestParser extends AnyFunSuite {
         |""".stripMargin
     }
     val result = ManifestParser.parse(toml, null)
-    expectError[ManifestError.VersionNumberWrong](result)
+    expectError[ManifestError.FlixVersionFormatError](result)
   }
 
   //Mvn-dependencies
@@ -1468,4 +1520,67 @@ class TestManifestParser extends AnyFunSuite {
     expectError[ManifestError.WrongUrlFormat](result)
   }
 
+  test("ManifestError.FlixUnknownPermissionError.01") {
+    val toml = """[package]
+                 |name = "hello-world"
+                 |description = "A simple program"
+                 |version = "0.1.0"
+                 |flix = "0.33.0"
+                 |license = "Apache-2.0"
+                 |authors = ["John Doe <john@example.com>"]
+                 |
+                 |[dependencies]
+                 |"github:jls/tic-tac-toe" = { version = "1.2.3", permissions = ["netflix"] }
+                 |""".stripMargin
+    val result = ManifestParser.parse(toml, null)
+    expectError[ManifestError.FlixUnknownPermissionError](result)
+  }
+
+  test("ManifestError.FlixUnknownPermissionError.02") {
+    val toml = """[package]
+                 |name = "hello-world"
+                 |description = "A simple program"
+                 |version = "0.1.0"
+                 |flix = "0.33.0"
+                 |license = "Apache-2.0"
+                 |authors = ["John Doe <john@example.com>"]
+                 |
+                 |[dependencies]
+                 |"github:jls/tic-tac-toe" = { version = "1.2.3", permissions = ["effect", "netflix"] }
+                 |""".stripMargin
+    val result = ManifestParser.parse(toml, null)
+    expectError[ManifestError.FlixUnknownPermissionError](result)
+  }
+
+  test("ManifestError.FlixDependencyPermissionTypeError.01") {
+    val toml = """[package]
+                 |name = "hello-world"
+                 |description = "A simple program"
+                 |version = "0.1.0"
+                 |flix = "0.33.0"
+                 |license = "Apache-2.0"
+                 |authors = ["John Doe <john@example.com>"]
+                 |
+                 |[dependencies]
+                 |"github:jls/tic-tac-toe" = { version = "1.2.3", permissions = "effect" }
+                 |""".stripMargin
+    val result = ManifestParser.parse(toml, null)
+    expectError[ManifestError.FlixDependencyPermissionTypeError](result)
+  }
+
+  test("ManifestError.UnsupportedRepository.01") {
+    val toml = """[package]
+                 |name = "hello-world"
+                 |description = "A simple program"
+                 |version = "0.1.0"
+                 |flix = "0.33.0"
+                 |license = "Apache-2.0"
+                 |authors = ["John Doe <john@example.com>"]
+                 |
+                 |[dependencies]
+                 |"hubgit:jls/tic-tac-toe" = "1.2.3"
+                 |""".stripMargin
+    val result = ManifestParser.parse(toml, null)
+    expectError[ManifestError.UnsupportedRepository](result)
+  }
 }
