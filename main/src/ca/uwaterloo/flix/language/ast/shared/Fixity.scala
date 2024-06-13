@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Magnus Madsen
+ * Copyright 2024 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,18 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.tools.pkg
+package ca.uwaterloo.flix.language.ast.shared
 
-import java.net.URL
+/**
+  * A common super-type for the fixity of an atom.
+  */
+sealed trait Fixity
 
-sealed trait Dependency
+object Fixity {
 
-object Dependency {
+  /**
+    * The atom is loose (it does not have to be fully materialized before it can be used).
+    */
+  case object Loose extends Fixity
 
-  case class FlixDependency(repo: Repository, username: String, projectName: String, version: SemVer, permissions: List[Permission]) extends Dependency
-
-  case class MavenDependency(groupId: String, artifactId: String, versionTag: String) extends Dependency
-
-  case class JarDependency(url: URL, fileName: String) extends Dependency
+  /**
+    * The atom is fixed (it must be fully materialized before it can be used).
+    */
+  case object Fixed extends Fixity
 
 }

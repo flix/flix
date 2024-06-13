@@ -329,6 +329,7 @@ object Lexer {
       case _ if isMatch("#{") => TokenKind.HashCurlyL
       case _ if isMatch("#(") => TokenKind.HashParenL
       case '#' => TokenKind.Hash
+      case '¤' => TokenKind.Currency
       case _ if isMatch("//") => acceptLineOrDocComment()
       case _ if isMatch("/*") => acceptBlockComment()
       case '/' => TokenKind.Slash
@@ -432,6 +433,7 @@ object Lexer {
       case _ if isKeyword("typematch") => TokenKind.KeywordTypeMatch
       case _ if isKeyword("unchecked_cast") => TokenKind.KeywordUncheckedCast
       case _ if isKeyword("Univ") => TokenKind.KeywordUniv
+      case _ if isKeyword("unsafe") => TokenKind.KeywordUnsafe
       case _ if isKeyword("use") => TokenKind.KeywordUse
       case _ if isKeyword("where") => TokenKind.KeywordWhere
       case _ if isKeyword("with") => TokenKind.KeywordWith

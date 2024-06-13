@@ -451,6 +451,12 @@ object ConstraintSolver {
         ResolutionResult.constraints(List(TypeConstraint.Equality(t1, t2, prov)), p1 || p2)
       }
 
+    // MRT
+    case (_, Type.Apply(Type.Cst(TypeConstructor.MethodReturnType, _), _, _)) =>
+      Result.Ok(ResolutionResult.constraints(List(TypeConstraint.Equality(tpe1, tpe2, prov)), progress = false))
+    case (Type.Apply(Type.Cst(TypeConstructor.MethodReturnType, _), _, _), _) =>
+      Result.Ok(ResolutionResult.constraints(List(TypeConstraint.Equality(tpe1, tpe2, prov)), progress = false))
+
     case _ =>
       Result.Err(toTypeError(UnificationError.MismatchedTypes(tpe1, tpe2), prov))
   }
@@ -533,6 +539,7 @@ object ConstraintSolver {
    */
   private def isKnown(t0: Type): Boolean = t0 match { // TODO INTEROP: Actually, it cannot have variables recursively...
     case Type.Var(_, _) => false
+    case Type.Apply(Type.Cst(TypeConstructor.MethodReturnType, _), _, _) => false
     case _ => true
   }
 

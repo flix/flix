@@ -79,7 +79,7 @@ object TypeError {
       s"""${line(kind, source.name)}
          |>> Java method '$methodName' from type '${red(formatType(tpe0, Some(renv)))}' with arguments types (${tpes.mkString(", ")}) not found.
          |
-         |${code(loc, s"java method '${methodName} not found")}
+         |${code(loc, s"java method '${methodName}' not found")}
          |""".stripMargin
     }
   }

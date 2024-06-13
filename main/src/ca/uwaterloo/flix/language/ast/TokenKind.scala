@@ -50,6 +50,7 @@ sealed trait TokenKind {
       case TokenKind.Comma => "','"
       case TokenKind.CurlyL => "'{'"
       case TokenKind.CurlyR => "'}'"
+      case TokenKind.Currency => "'¤'"
       case TokenKind.Dollar => "'$'"
       case TokenKind.Dot => "'.'"
       case TokenKind.DotWhiteSpace => "'. '"
@@ -135,6 +136,7 @@ sealed trait TokenKind {
       case TokenKind.KeywordTypeMatch => "'typematch'"
       case TokenKind.KeywordUncheckedCast => "'unchecked_cast'"
       case TokenKind.KeywordUniv => "'univ'"
+      case TokenKind.KeywordUnsafe => "'unsafe'"
       case TokenKind.KeywordUse => "'use'"
       case TokenKind.KeywordWhere => "'where'"
       case TokenKind.KeywordWith => "'with'"
@@ -287,6 +289,7 @@ sealed trait TokenKind {
     case TokenKind.KeywordTypeMatch => true
     case TokenKind.KeywordUncheckedCast => true
     case TokenKind.KeywordUniv => true
+    case TokenKind.KeywordUnsafe => true
     case TokenKind.KeywordUse => true
     case TokenKind.KeywordWhere => true
     case TokenKind.KeywordWith => true
@@ -422,6 +425,7 @@ sealed trait TokenKind {
          | TokenKind.KeywordCheckedCast
          | TokenKind.KeywordCheckedECast
          | TokenKind.KeywordUncheckedCast
+         | TokenKind.KeywordUnsafe
          | TokenKind.KeywordMaskedCast
          | TokenKind.KeywordTry
          | TokenKind.KeywordDo
@@ -645,6 +649,8 @@ object TokenKind {
 
   case object CurlyR extends TokenKind
 
+  case object Currency extends TokenKind
+
   case object Dollar extends TokenKind
 
   case object Dot extends TokenKind
@@ -820,6 +826,8 @@ object TokenKind {
   case object KeywordUncheckedCast extends TokenKind
 
   case object KeywordUniv extends TokenKind
+
+  case object KeywordUnsafe extends TokenKind
 
   case object KeywordUse extends TokenKind
 
