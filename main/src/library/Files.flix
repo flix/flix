@@ -436,7 +436,7 @@ mod Files {
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage(): String \ {};
-                Iterator.iterate(rc, constant(Some(Err(Generic(getMessage(checked_cast(ex)))))))
+                Iterator.iterate(rc, _ -> Some(Err(Generic(getMessage(checked_cast(ex))))))
         }
 
     ///
@@ -547,7 +547,7 @@ mod Files {
                     Iterator.iterate(rc, _ -> Some(Err(Generic(getMessage(checked_cast(ex))))))
             }
         } else {
-            Iterator.iterate(rc, constant(Some(Err(Generic("The argument `chunkSize` has to be a non negative number when calling `File.readChunks`.")))))
+            Iterator.iterate(rc, _ -> Some(Err(Generic("The argument `chunkSize` has to be a non negative number when calling `File.readChunks`."))))
         }
 
     ///
