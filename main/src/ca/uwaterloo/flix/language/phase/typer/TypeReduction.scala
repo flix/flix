@@ -206,7 +206,7 @@ object TypeReduction {
             })
         exactConstructor.length match {
           case 1 => JavaConstructorResolutionResult.Resolved(Type.Cst(TypeConstructor.JvmConstructor(exactConstructor.head), loc))
-          case _ => JavaConstructorResolutionResult.AmbiguousConstructor(exactConstructor.toList) // 0 corresponds to no exact constructor, 2 or higher should be impossible in Java
+          case _ => JavaConstructorResolutionResult.AmbiguousConstructor(candidateConstructors.toList) // 0 corresponds to no exact constructor, 2 or higher should be impossible in Java
         }
     }
   }
