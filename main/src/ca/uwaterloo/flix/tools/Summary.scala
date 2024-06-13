@@ -130,6 +130,7 @@ object Summary {
       var totalEffPolymorphicFunctions = 0
       var totalLambdas = 0
       var totalEffVars = 0
+      var totalCasts = empty
 
       for ((source, loc) <- root.sources.toList.sortBy(_._1.name)) {
         val module = source.name
@@ -144,6 +145,7 @@ object Summary {
         val numberOfEffectPolymorphicFunctions = defs.count(defn => isEffectPolymorphic(defn._2))
         val numberOfLambdas = defs.map(defn => lambdaCount(defn._3)).sum
         val numberOfEffVars = defs.map(defn => effVarCount.getOrElse(defn._1, -1)).sum
+        val numberOfCasts = castCount(defs.map(_._3).toList)
 
         totalLines = totalLines + numberOfLines
         totalFunctions = totalFunctions + numberOfFunctions
@@ -152,6 +154,7 @@ object Summary {
         totalEffPolymorphicFunctions = totalEffPolymorphicFunctions + numberOfEffectPolymorphicFunctions
         totalLambdas = totalLambdas + numberOfLambdas
         totalEffVars = totalEffVars + numberOfEffVars
+        totalCasts = combine(totalCasts, numberOfCasts)
 
         if (include(module, numberOfLines)) {
           print(padR(module, ModWidth))
@@ -190,6 +193,39 @@ object Summary {
       print(Separator)
       print(padL(format(totalEffVars), ColWidth))
       println(EndOfLine)
+
+      println()
+      printCastCountSummary(totalLines, totalCasts)
+  }
+
+  private def printCastCountSummary(totalLines: Int, totalCasts: Casts): Unit = {
+    print(padL("Lines", ColWidth))
+    print(Separator)
+    print(padL("Casts", ColWidth))
+    print(Separator)
+    print(padL("Type Upcast", ColWidth))
+    print(Separator)
+    print(padL("Type Downcast", ColWidth))
+    print(Separator)
+    print(padL("Eff. Upcast", ColWidth))
+    print(Separator)
+    print(padL("Eff. Downcast", ColWidth))
+    println(EndOfLine)
+
+
+    val sumOfCasts = total(totalCasts)
+    print(padL(format(totalLines), ColWidth))
+    print(Separator)
+    print(padL(format(sumOfCasts), ColWidth))
+    print(Separator)
+    print(padL(s"${format(totalCasts.typeUpcast)} ${formatOfSum(totalCasts.typeUpcast, sumOfCasts)}", ColWidth))
+    print(Separator)
+    print(padL(s"${format(totalCasts.typeDowncast)} ${formatOfSum(totalCasts.typeDowncast, sumOfCasts)}", ColWidth))
+    print(Separator)
+    print(padL(s"${format(totalCasts.effectUpcast)} ${formatOfSum(totalCasts.effectUpcast, sumOfCasts)}", ColWidth))
+    print(Separator)
+    print(padL(s"${format(totalCasts.effectDowncast)} ${formatOfSum(totalCasts.effectDowncast, sumOfCasts)}", ColWidth))
+    println(EndOfLine)
   }
 
   /**
@@ -226,6 +262,11 @@ object Summary {
     * Formats the given number `n`.
     */
   private def format(n: Int): String = f"$n%,d".replace(".", ",")
+
+  private def formatOfSum(before: Int, sum: Int): String = {
+    val percentage = if (sum == 0) "inf" else f"${100 * before / (1.0 * sum)}%2.0f"
+    s"($percentage \\%)"
+  }
 
   /**
     * Returns `true` if the given `spec` is pure.
@@ -343,6 +384,130 @@ object Summary {
     case Expr.FixpointInject(exp, pred, tpe, eff, loc) => lambdaCount(exp)
     case Expr.FixpointProject(pred, exp, tpe, eff, loc) => lambdaCount(exp)
     case Expr.Error(m, tpe, eff) => 0
+  }
+
+  private sealed case class Casts(typeUpcast: Int, typeDowncast: Int, effectUpcast: Int, effectDowncast: Int)
+
+  private val empty: Casts = Casts(0, 0, 0, 0)
+  private val typeUpcast: Casts = Casts(1, 0, 0, 0)
+  private val typeDowncast: Casts = Casts(0, 1, 0, 0)
+  private val effectUpcast: Casts = Casts(0, 0, 1, 0)
+  private val effectDowncast: Casts = Casts(0, 0, 0, 1)
+
+  private def total(c: Casts): Int = c.typeUpcast + c.typeDowncast + c.effectUpcast + c.effectDowncast
+
+  private def combine(c1: Casts, c2: Casts): Casts = {
+    val Casts(tu1, td1, eu1, ed1) = c1
+    val Casts(tu2, td2, eu2, ed2) = c2
+    Casts(tu1 + tu2, td1 + td2, eu1 + eu2, ed1 + ed2)
+  }
+
+
+  private def castCount(l: List[Expr]): Casts = {
+    l.map(castCount).foldLeft(empty)(combine)
+  }
+
+  private def castCount(e1: Expr, e2: Expr): Casts = {
+    combine(castCount(e1), castCount(e2))
+  }
+
+  private def castCount(e1: Expr, e2: Expr, e3: Expr): Casts = {
+    combine(combine(castCount(e1), castCount(e2)), castCount(e3))
+  }
+
+  private def castCount(e: Expr): Casts = e match {
+    case Expr.CheckedCast(Ast.CheckedCastType.TypeCast, exp, tpe, eff, loc) => combine(typeUpcast, castCount(exp))
+    case Expr.CheckedCast(Ast.CheckedCastType.EffectCast, exp, tpe, eff, loc) => combine(effectUpcast, castCount(exp))
+    case Expr.UncheckedCast(exp, declaredType, declaredEff, tpe, eff, loc) if jvmThing(exp) => empty
+    case Expr.UncheckedCast(exp, None, Some(_), tpe, eff, loc) => combine(effectDowncast, castCount(exp))
+    case Expr.UncheckedCast(exp, Some(_), None, tpe, eff, loc) => combine(typeDowncast, castCount(exp))
+    case Expr.UncheckedCast(exp, None, None, tpe, eff, loc) => ???
+    case Expr.UncheckedCast(exp, Some(_), Some(_), tpe, eff, loc) => ???
+
+    case Expr.Cst(cst, tpe, loc) => empty
+    case Expr.Var(sym, tpe, loc) => empty
+    case Expr.Def(sym, tpe, loc) => empty
+    case Expr.Sig(sym, tpe, loc) => empty
+    case Expr.Hole(sym, tpe, loc) => empty
+    case Expr.HoleWithExp(exp, tpe, eff, loc) => castCount(exp)
+    case Expr.OpenAs(symUse, exp, tpe, loc) => castCount(exp)
+    case Expr.Use(sym, alias, exp, loc) => castCount(exp)
+    case Expr.Lambda(fparam, exp, tpe, loc) => castCount(exp)
+    case Expr.Apply(exp, exps, tpe, eff, loc) => castCount(exp :: exps)
+    case Expr.Unary(sop, exp, tpe, eff, loc) => castCount(exp)
+    case Expr.Binary(sop, exp1, exp2, tpe, eff, loc) => castCount(exp1, exp2)
+    case Expr.Let(sym, mod, exp1, exp2, tpe, eff, loc) => castCount(exp1, exp2)
+    case Expr.LetRec(sym, ann, mod, exp1, exp2, tpe, eff, loc) => castCount(exp1, exp2)
+    case Expr.Region(tpe, loc) => empty
+    case Expr.Scope(sym, regionVar, exp, tpe, eff, loc) => castCount(exp)
+    case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) => castCount(List(exp1, exp2, exp3))
+    case Expr.Stm(exp1, exp2, tpe, eff, loc) => castCount(exp1, exp2)
+    case Expr.Discard(exp, eff, loc) => castCount(exp)
+    case Expr.Match(exp, rules, tpe, eff, loc) => castCount(exp :: rules.flatMap(r => r.exp :: r.guard.toList))
+    case Expr.TypeMatch(exp, rules, tpe, eff, loc) => castCount(exp :: rules.map(_.exp))
+    case Expr.RestrictableChoose(star, exp, rules, tpe, eff, loc) => castCount(exp :: rules.map(_.exp))
+    case Expr.Tag(sym, exp, tpe, eff, loc) => castCount(exp)
+    case Expr.RestrictableTag(sym, exp, tpe, eff, loc) => castCount(exp)
+    case Expr.Tuple(elms, tpe, eff, loc) => castCount(elms)
+    case Expr.RecordEmpty(tpe, loc) => empty
+    case Expr.RecordSelect(exp, label, tpe, eff, loc) => castCount(exp)
+    case Expr.RecordExtend(label, exp1, exp2, tpe, eff, loc) => castCount(exp1, exp2)
+    case Expr.RecordRestrict(label, exp, tpe, eff, loc) => castCount(exp)
+    case Expr.ArrayLit(exps, exp, tpe, eff, loc) => castCount(exp :: exps)
+    case Expr.ArrayNew(exp1, exp2, exp3, tpe, eff, loc) => castCount(exp1, exp2, exp3)
+    case Expr.ArrayLoad(exp1, exp2, tpe, eff, loc) => castCount(exp1, exp2)
+    case Expr.ArrayLength(exp, eff, loc) => castCount(exp)
+    case Expr.ArrayStore(exp1, exp2, exp3, eff, loc) => castCount(exp1, exp2, exp3)
+    case Expr.VectorLit(exps, tpe, eff, loc) => castCount(exps)
+    case Expr.VectorLoad(exp1, exp2, tpe, eff, loc) => castCount(exp1, exp2)
+    case Expr.VectorLength(exp, loc) => castCount(exp)
+    case Expr.Ref(exp1, exp2, tpe, eff, loc) => castCount(exp1, exp2)
+    case Expr.Deref(exp, tpe, eff, loc) => castCount(exp)
+    case Expr.Assign(exp1, exp2, tpe, eff, loc) => castCount(exp1, exp2)
+    case Expr.Ascribe(exp, tpe, eff, loc) => castCount(exp)
+    case Expr.InstanceOf(exp, clazz, loc) => castCount(exp)
+    case Expr.UncheckedMaskingCast(exp, tpe, eff, loc) => castCount(exp)
+    case Expr.Without(exp, effUse, tpe, eff, loc) => castCount(exp)
+    case Expr.TryCatch(exp, rules, tpe, eff, loc) => castCount(exp :: rules.map(_.exp))
+    case Expr.TryWith(exp, effUse, rules, tpe, eff, loc) => castCount(exp :: rules.map(_.exp))
+    case Expr.Do(op, exps, tpe, eff, loc) => castCount(exps)
+    case Expr.InvokeConstructor(constructor, exps, tpe, eff, loc) => castCount(exps)
+    case Expr.InvokeMethod(method, exp, exps, tpe, eff, loc) => castCount(exp :: exps)
+    case Expr.InvokeStaticMethod(method, exps, tpe, eff, loc) => castCount(exps)
+    case Expr.GetField(field, exp, tpe, eff, loc) => castCount(exp)
+    case Expr.PutField(field, exp1, exp2, tpe, eff, loc) => castCount(exp1, exp2)
+    case Expr.GetStaticField(field, tpe, eff, loc) => empty
+    case Expr.PutStaticField(field, exp, tpe, eff, loc) => castCount(exp)
+    case Expr.NewObject(name, clazz, tpe, eff, methods, loc) => castCount(methods.map(_.exp))
+    case Expr.NewChannel(exp1, exp2, tpe, eff, loc) => castCount(exp1, exp2)
+    case Expr.GetChannel(exp, tpe, eff, loc) => castCount(exp)
+    case Expr.PutChannel(exp1, exp2, tpe, eff, loc) => castCount(exp1, exp2)
+    case Expr.SelectChannel(rules, default, tpe, eff, loc) => castCount(default.toList ++ rules.flatMap(r => List(r.exp, r.chan)))
+    case Expr.Spawn(exp1, exp2, tpe, eff, loc) => castCount(exp1, exp2)
+    case Expr.ParYield(frags, exp, tpe, eff, loc) => castCount(exp :: frags.map(_.exp))
+    case Expr.Lazy(exp, tpe, loc) => castCount(exp)
+    case Expr.Force(exp, tpe, eff, loc) => castCount(exp)
+    case Expr.FixpointConstraintSet(cs, tpe, loc) => castCount(cs.flatMap(_.head match {
+      case Predicate.Head.Atom(pred, den, terms, tpe, loc) => terms
+    }))
+    case Expr.FixpointLambda(pparams, exp, tpe, eff, loc) => castCount(exp)
+    case Expr.FixpointMerge(exp1, exp2, tpe, eff, loc) => castCount(exp1, exp2)
+    case Expr.FixpointSolve(exp, tpe, eff, loc) => castCount(exp)
+    case Expr.FixpointFilter(pred, exp, tpe, eff, loc) => castCount(exp)
+    case Expr.FixpointInject(exp, pred, tpe, eff, loc) => castCount(exp)
+    case Expr.FixpointProject(pred, exp, tpe, eff, loc) => castCount(exp)
+    case Expr.Error(m, tpe, eff) => empty
+  }
+
+  private def jvmThing(e: Expr): Boolean = e match {
+    case Expr.InvokeConstructor(constructor, exps, tpe, eff, loc) => true
+    case Expr.InvokeMethod(method, exp, exps, tpe, eff, loc) => true
+    case Expr.InvokeStaticMethod(method, exps, tpe, eff, loc) => true
+    case Expr.GetField(field, exp, tpe, eff, loc) => true
+    case Expr.PutField(field, exp1, exp2, tpe, eff, loc) => true
+    case Expr.GetStaticField(field, tpe, eff, loc) => true
+    case Expr.PutStaticField(field, exp, tpe, eff, loc) => true
+    case _ => false
   }
 
 }
