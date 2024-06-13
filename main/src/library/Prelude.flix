@@ -24,11 +24,6 @@ pub eff IO
 pub def identity(x: a): a = x
 
 ///
-/// The constant function.
-///
-pub def constant(x: a): b -> a \ ef = _ -> (x)
-
-///
 /// Returns the function `f` with input arguments swapped.
 /// That is, given the function `f: (a, b) -> c`, returns a function `(b, a) -> c`
 ///

@@ -836,7 +836,7 @@ mod DelayList {
             case LCons(x, xs) => loop(force xs, () -> if (f(x)) Some(x) else k())
             case LList(xs)    => loop(force xs, k)
         };
-        loop(l, constant(None))
+        loop(l, _ -> None)
 
     ///
     /// Returns the first non-None result of applying the partial function `f` to each element of `l`.
