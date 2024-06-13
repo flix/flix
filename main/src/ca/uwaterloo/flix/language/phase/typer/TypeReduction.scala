@@ -276,7 +276,7 @@ object TypeReduction {
      * There are three possible outcomes:
      *
      * 1. Resolved(tpe): Indicates that there was some progress in the resolution and returns a simplified type of the java constructor.
-     * 2. AmbiguousMethod: The resolution lacked some elements to find a java constructor among a set of constructors.
+     * 2. AmbiguousConstructor: The resolution lacked some elements to find a java constructor among a set of constructors.
      * 3. ConstructorNotFound(): The resolution failed to find a corresponding java constructor.
      */
     sealed trait JavaConstructorResolutionResult

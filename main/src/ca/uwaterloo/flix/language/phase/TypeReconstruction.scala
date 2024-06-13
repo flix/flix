@@ -428,7 +428,7 @@ object TypeReconstruction {
         case Type.Cst(TypeConstructor.JvmConstructor(constructor), loc) =>
           TypedAst.Expr.InvokeConstructor(constructor, es, tpe, eff, loc)
         case _ =>
-          TypedAst.Expr.Error(TypeError.UnresolvedMethod(loc), tpe, eff)
+          TypedAst.Expr.Error(TypeError.UnresolvedConstructor(loc), tpe, eff)
       }
 
     case KindedAst.Expr.InvokeMethod2(exp, _, exps, mvar, tvar, evar, loc) =>

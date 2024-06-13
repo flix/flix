@@ -164,6 +164,15 @@ object TypeError {
   }
 
   /**
+   * Unresolved constructor type error.
+   * This is a dummy error used in java constructor type reconstruction for invokeConstructor2.
+   */
+  case class UnresolvedConstructor(loc: SourceLocation) extends TypeError with Recoverable {
+    def summary: String = s"Unresolved constructor"
+    def message(formatter: Formatter): String = s"Unresolved constructor"
+  }
+
+  /**
    * Unresolved method type error.
    * This is a dummy error used in java method type reconstruction for invokeMethod2.
    */
