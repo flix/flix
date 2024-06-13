@@ -449,10 +449,11 @@ object Summary {
   private def castCount(e: Expr): Casts = e match {
     case Expr.CheckedCast(Ast.CheckedCastType.TypeCast, exp, tpe, eff, loc) => combine(typeUpcast, castCount(exp))
     case Expr.CheckedCast(Ast.CheckedCastType.EffectCast, exp, tpe, eff, loc) => combine(effectUpcast, castCount(exp))
+    case Expr.UncheckedCast(exp, declaredType, declaredEff, tpe, eff, loc) if jvmThing(exp) => empty
     case Expr.UncheckedCast(exp, None, Some(_), tpe, eff, loc) => combine(effectDowncast, castCount(exp))
     case Expr.UncheckedCast(exp, Some(_), None, tpe, eff, loc) => combine(typeDowncast, castCount(exp))
     case Expr.UncheckedCast(exp, None, None, tpe, eff, loc) => ???
-    case Expr.UncheckedCast(exp, Some(_), Some(_), tpe, eff, loc) => combine(combine(typeDowncast, effectDowncast), castCount(exp))
+    case Expr.UncheckedCast(exp, Some(_), Some(_), tpe, eff, loc) => ???
 
     case Expr.Cst(cst, tpe, loc) => empty
     case Expr.Var(sym, tpe, loc) => empty
@@ -527,6 +528,17 @@ object Summary {
     case Expr.FixpointInject(exp, pred, tpe, eff, loc) => castCount(exp)
     case Expr.FixpointProject(pred, exp, tpe, eff, loc) => castCount(exp)
     case Expr.Error(m, tpe, eff) => empty
+  }
+
+  private def jvmThing(e: Expr): Boolean = e match {
+    case Expr.InvokeConstructor(constructor, exps, tpe, eff, loc) => true
+    case Expr.InvokeMethod(method, exp, exps, tpe, eff, loc) => true
+    case Expr.InvokeStaticMethod(method, exps, tpe, eff, loc) => true
+    case Expr.GetField(field, exp, tpe, eff, loc) => true
+    case Expr.PutField(field, exp1, exp2, tpe, eff, loc) => true
+    case Expr.GetStaticField(field, tpe, eff, loc) => true
+    case Expr.PutStaticField(field, exp, tpe, eff, loc) => true
+    case _ => false
   }
 
 }
