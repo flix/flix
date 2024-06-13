@@ -81,7 +81,7 @@ instance Foldable[Identity] {
 
     pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, x: Identity[a]): b \ ef =
         let Identity.Identity(x1) = x;
-        f(x1, constant(s))
+        f(x1, _ -> checked_ecast(s))
 }
 
 instance UnorderedFoldable[Identity] {
