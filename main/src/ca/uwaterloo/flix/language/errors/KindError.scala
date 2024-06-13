@@ -82,7 +82,7 @@ object KindError {
    *
    * @param loc The location where the error occurred.
    */
-  case class UninferrableKind(loc: SourceLocation) extends KindError with Unrecoverable {
+  case class UninferrableKind(loc: SourceLocation) extends KindError with Recoverable {
     override def summary: String = "Unable to infer kind."
 
     def message(formatter: Formatter): String = {
