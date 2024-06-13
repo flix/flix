@@ -21,10 +21,12 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.BroadEqualityConstraint
 import ca.uwaterloo.flix.language.ast.TypeConstructor.JvmMethod
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.dbg.DocAst.Type.JvmConstructor
 import ca.uwaterloo.flix.language.fmt.FormatEqualityConstraint.formatEqualityConstraint
 import ca.uwaterloo.flix.language.fmt.FormatType.formatType
 import ca.uwaterloo.flix.util.{Formatter, Grammar}
-import java.lang.reflect.Method;
+
+import java.lang.reflect.{Method, Constructor};
 
 /**
   * A common super-type for type errors.
@@ -85,6 +87,28 @@ object TypeError {
   }
 
   /**
+   * Java constructor not found type error.
+   *
+   * @param tpes    the types of the arguments.
+   * @param methods a list of possible candidate constructors on the type of the receiver object.
+   * @param renv    the rigidity environment.
+   * @param loc     the location where the error occured.
+   */
+  case class ConstructorNotFound(clazz: Class[_], tpes: List[Type], constructors: List[JvmConstructor], renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    // TODO INTEROP better comment, e.g., list possible constructors
+    def summary: String = s"Java '${clazz.getName}' constructor with arguments types (${tpes.mkString(", ")}) not found."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Java '${clazz.getName}' constructor with arguments types (${tpes.mkString(", ")}) not found.
+         |
+         |${code(loc, s"java '${clazz.getName}' constructor not found")}
+         |""".stripMargin
+    }
+  }
+
+  /**
    * Java ambiguous method type error.
    *
    * @param tpe0    the type of the receiver object.
@@ -108,6 +132,33 @@ object TypeError {
          |  ${methods.map(m => methodToStr(m)).mkString(", ")}
          |
          |${code(loc, s"Ambiguous Java method '${methodName}'")}
+         |""".stripMargin
+    }
+  }
+
+  /**
+   * Java ambiguous constructor type error.
+   *
+   * @param tpes    the types of the arguments.
+   * @param constructors a list of possible candidate constructors on the type of the receiver object.
+   * @param renv    the rigidity environment.
+   * @param loc     the location where the error occured.
+   */
+  case class AmbiguousConstructor(clazz: Class[_], tpes: List[Type], constructors: List[Constructor[_]], renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    // TODO INTEROP better comment with candidate constructors formatting
+    def summary: String = s"Ambiguous Java '${clazz.getName}' constructor with arguments types (${tpes.mkString(", ")})."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      def constructorToStr(c: Constructor[_]) = {
+        s"${c.getName}(${c.getParameterTypes.map(t => t.getName).mkString(", ")})"
+      }
+      s"""${line(kind, source.name)}
+         |>> Java '${clazz.getName}' constructor with arguments types (${tpes.mkString(", ")}) is ambiguous.
+         | Possible candidate constructors:
+         |  ${constructors.map(m => constructorToStr(m)).mkString(", ")}
+         |
+         |${code(loc, s"Ambiguous Java '${clazz.getName}' constructor")}
          |""".stripMargin
     }
   }
