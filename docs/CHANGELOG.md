@@ -1,7 +1,7 @@
 # Changelog
 
 Version 0.48.0:
-- Compiler: Add support for resilient lexing and parsing (thanks Herluf!)
+- Compiler: Added support for resilient lexing and parsing (thanks Herluf!)
 
 Version 0.47.0:
 - Language: Added support for associated effects (thanks Matt!)
