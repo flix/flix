@@ -156,12 +156,24 @@ mod Adaptor {
     ///
     /// Returns the `o` as a new Java `Optional`.
     ///
+    /// OBS: Will crash on primitive types, i.e. integers, booleans, floats, and chars.
+    ///
     pub def toOptional(o: Option[a]): ##java.util.Optional \ IO =
         import static java.util.Optional.empty(): ##java.util.Optional \ IO;
         import static java.util.Optional.of(##java.lang.Object): ##java.util.Optional \ IO;
-        match o {
-            case None    => empty()
-            case Some(a) => of(unchecked_cast(a as ##java.lang.Object))
+        typematch o {
+            case _: Option[Bool] => bug!("Adaptor.toOptional on Option[Bool].")
+            case _: Option[Char] => bug!("Adaptor.toOptional on Option[Char].")
+            case _: Option[Int8] => bug!("Adaptor.toOptional on Option[Int8].")
+            case _: Option[Int16] => bug!("Adaptor.toOptional on Option[Int16].")
+            case _: Option[Int32] => bug!("Adaptor.toOptional on Option[Int32].")
+            case _: Option[Int64] => bug!("Adaptor.toOptional on Option[Int64].")
+            case _: Option[Float32] => bug!("Adaptor.toOptional on Option[Float32].")
+            case _: Option[Float64] => bug!("Adaptor.toOptional on Option[Float64].")
+            case _: _ => match o {
+                case None    => empty()
+                case Some(a) => of(unchecked_cast(a as ##java.lang.Object))
+            }
         }
 
     ///
