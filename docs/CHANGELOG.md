@@ -1,6 +1,6 @@
 # Changelog
 
-Version 0.48.0
+Version 0.48.0:
 - Compiler: Add support for resilient lexing and parsing (thanks Herluf!)
 
 Version 0.47.0:
