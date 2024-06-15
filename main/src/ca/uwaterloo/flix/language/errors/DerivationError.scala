@@ -42,9 +42,9 @@ object DerivationError {
     def message(formatter: Formatter): String = {
       import formatter._
       s"""|>> Illegal derivation '${red(sym.name)}'.
-         |
-         |${code(loc, "Illegal derivation.")}
-         |""".stripMargin
+          |
+          |${code(loc, "Illegal derivation.")}
+          |""".stripMargin
     }
 
     override def explain(formatter: Formatter): Option[String] = Some({
@@ -66,11 +66,11 @@ object DerivationError {
     def message(formatter: Formatter): String = {
       import formatter._
       s"""|>> Cannot derive '${magenta(classSym.name)}' for the empty enum '${red(sym.name)}'.
-         |
-         |${code(loc, "illegal derivation")}
-         |
-         |Flix cannot derive any instances for an empty enumeration.
-         |""".stripMargin
+          |
+          |${code(loc, "illegal derivation")}
+          |
+          |Flix cannot derive any instances for an empty enumeration.
+          |""".stripMargin
     }
   }
 
@@ -86,11 +86,11 @@ object DerivationError {
     def message(formatter: Formatter): String = {
       import formatter._
       s"""|>> Cannot derive '${magenta("Coerce")}' for the non-singleton enum '${red(sym.name)}'.
-         |
-         |${code(loc, "illegal derivation")}
-         |
-         |'Coerce' can only be derived for enums with exactly one case.
-         |""".stripMargin
+          |
+          |${code(loc, "illegal derivation")}
+          |
+          |'Coerce' can only be derived for enums with exactly one case.
+          |""".stripMargin
     }
   }
 }
