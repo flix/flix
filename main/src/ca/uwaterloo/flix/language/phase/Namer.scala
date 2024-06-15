@@ -1585,19 +1585,19 @@ object Namer {
     */
   private def getSymLocation(f: NamedAst.Declaration): SourceLocation = f match {
     case NamedAst.Declaration.Trait(_, _, _, sym, _, _, _, _, _, _) => sym.loc
-    case NamedAst.Declaration.Sig(sym, spec, exp) => sym.loc
-    case NamedAst.Declaration.Def(sym, spec, exp) => sym.loc
-    case NamedAst.Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc) => sym.loc
-    case NamedAst.Declaration.RestrictableEnum(doc, ann, mod, sym, ident, tparams, derives, cases, loc) => sym.loc
-    case NamedAst.Declaration.TypeAlias(doc, _, mod, sym, tparams, tpe, loc) => sym.loc
-    case NamedAst.Declaration.Effect(doc, ann, mod, sym, ops, loc) => sym.loc
-    case NamedAst.Declaration.Op(sym, spec) => sym.loc
-    case NamedAst.Declaration.Case(sym, tpe, _) => sym.loc
-    case NamedAst.Declaration.RestrictableCase(sym, tpe, _) => sym.loc
-    case NamedAst.Declaration.AssocTypeSig(doc, mod, sym, tparams, kind, tpe, loc) => sym.loc
-    case NamedAst.Declaration.AssocTypeDef(doc, mod, ident, args, tpe, loc) => throw InternalCompilerException("Unexpected associated type definition", loc)
-    case NamedAst.Declaration.Instance(doc, ann, mod, clazz, tparams, tpe, tconstrs, assocs, defs, ns, loc) => throw InternalCompilerException("Unexpected instance", loc)
-    case NamedAst.Declaration.Namespace(sym, usesAndImports, decls, loc) => throw InternalCompilerException("Unexpected namespace", loc)
+    case NamedAst.Declaration.Sig(sym, _, _) => sym.loc
+    case NamedAst.Declaration.Def(sym, _, _) => sym.loc
+    case NamedAst.Declaration.Enum(_, _, _, sym, _, _, _, _) => sym.loc
+    case NamedAst.Declaration.RestrictableEnum(_, _, _, sym, _, _, _, _, _) => sym.loc
+    case NamedAst.Declaration.TypeAlias(_, _, _, sym, _, _, _) => sym.loc
+    case NamedAst.Declaration.Effect(_, _, _, sym, _, _) => sym.loc
+    case NamedAst.Declaration.Op(sym, _) => sym.loc
+    case NamedAst.Declaration.Case(sym, _, _) => sym.loc
+    case NamedAst.Declaration.RestrictableCase(sym, _, _) => sym.loc
+    case NamedAst.Declaration.AssocTypeSig(_, _, sym, _, _, _, _) => sym.loc
+    case NamedAst.Declaration.AssocTypeDef(_, _, _, _, _, loc) => throw InternalCompilerException("Unexpected associated type definition", loc)
+    case NamedAst.Declaration.Instance(_, _, _, _, _, _, _, _, _, _, loc) => throw InternalCompilerException("Unexpected instance", loc)
+    case NamedAst.Declaration.Namespace(_, _, _, loc) => throw InternalCompilerException("Unexpected namespace", loc)
   }
 
   /**
