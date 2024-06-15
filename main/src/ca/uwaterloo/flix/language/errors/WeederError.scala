@@ -865,8 +865,7 @@ object WeederError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""
-         |>> The formal parameter '${red(name)}' must have a declared type.
+      s""">> The formal parameter '${red(name)}' must have a declared type.
          |
          |${code(loc, "has no declared type.")}
          |""".stripMargin
