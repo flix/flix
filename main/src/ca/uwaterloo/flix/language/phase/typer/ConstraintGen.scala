@@ -743,8 +743,14 @@ object ConstraintGen {
 
         (resTpe, resEff)
 
-      case Expr.InvokeConstructor2(clazz, exps, loc) =>
-        throw InternalCompilerException(s"Unexpected InvokeConstructor2 call.", loc)
+      case Expr.InvokeConstructor2(clazz, exps, cvar, evar, loc) =>
+        val classTpe = Type.getFlixType(clazz.getDeclaringClass)
+        val (tpes, effs) = exps.map(visitExp).unzip
+        c.unifyJvmConstructorType(cvar, classTpe, clazz, tpes, loc) // unify constructor
+        c.unifyType(evar, Type.mkUnion(Type.IO :: effs, loc), loc) // unify effects
+        val resTpe = classTpe
+        val resEff = evar
+        (resTpe, resEff)
 
       case Expr.InvokeMethod2(exp, name, exps, mvar, tvar, evar, loc) =>
         val (tpe, eff) = visitExp(exp)
