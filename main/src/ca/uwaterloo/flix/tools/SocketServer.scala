@@ -44,14 +44,29 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
   val DateFormat: String = "yyyy-MM-dd HH:mm:ss"
 
   /**
-    * The Flix instance (the same instance is used for incremental compilation).
+    * The Flix instance (the same instance is reused for incremental compilation).
     */
   private val flix: Flix = new Flix().setFormatter(NoFormatter)
+
+  /**
+    * The number of warm-up iterations.
+    */
+  private val WarmupIterations: Int = 5
 
   /**
     * Invoked when the server is started.
     */
   override def onStart(): Unit = {
+    val options = Options.Default.copy(progress = false)
+    flix.setOptions(options)
+
+    val t = System.nanoTime()
+    Console.println(s"Warming up the Flix compiler. Please wait...")
+    for (_ <- 0 until WarmupIterations) {
+      flix.compile()
+    }
+    val e = (System.nanoTime() - t) / 1_000_000
+    Console.println(s"Warmup completed in $e ms.")
     Console.println(s"WebSocket server listening on: ws://localhost:$port")
   }
 
@@ -78,9 +93,9 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
 
     // Parse and process request.
     for {
-      (src, opts) <- parseRequest(data)(ws)
+      src <- parseRequest(data)(ws)
     } yield {
-      processRequest(src, opts)(ws)
+      processRequest(src)(ws)
     }
   }
 
@@ -100,7 +115,7 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
   /**
     * Parse the request.
     */
-  private def parseRequest(s: String)(implicit ws: WebSocket): Option[(String, Options)] = try {
+  private def parseRequest(s: String)(implicit ws: WebSocket): Option[String] = try {
     // Parse the string into a json object.
     val json = parse(s)
 
@@ -110,19 +125,7 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
       case _ => ""
     }
 
-    // --Xcore
-    val xcore = json \\ "xcore" match {
-      case JBool(b) => b
-      case _ => false
-    }
-
-    // Construct the options object.
-    val opts = Options.Default.copy(
-      lib = if (xcore) LibLevel.Min else LibLevel.All
-    )
-
-    // Return the source and options.
-    Some((src, opts))
+    Some(src)
   } catch {
     case ex: ParseException =>
       val msg = s"Malformed request. Unable to parse JSON: '${ex.getMessage}'."
@@ -134,14 +137,14 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
   /**
     * Process the request.
     */
-  private def processRequest(src: String, opts: Options)(implicit ws: WebSocket): Unit = {
+  private def processRequest(src: String)(implicit ws: WebSocket): Unit = {
     // Log the string.
     for (line <- src.split("\n")) {
       log("  >  " + line)(ws)
     }
 
     // Evaluate the string.
-    val result = eval(src, opts)(ws)
+    val result = eval(src)(ws)
 
     // Log whether evaluation was successful.
     log("")(ws)
@@ -166,11 +169,10 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
   /**
     * Evaluates the given string `input` as a Flix program.
     */
-  private def eval(input: String, opts: Options)(implicit ws: WebSocket): Result[(String, Long, Long), String] = {
+  private def eval(input: String)(implicit ws: WebSocket): Result[(String, Long, Long), String] = {
     try {
       // Compile the program.
       flix.addSourceCode("<input>", input)
-      flix.setOptions(opts)
 
       flix.compile().toHardResult match {
         case Result.Ok(compilationResult) =>
