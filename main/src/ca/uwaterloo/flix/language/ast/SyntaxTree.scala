@@ -73,6 +73,13 @@ object SyntaxTree {
      */
     case class ErrorTree(error: CompilationMessage) extends TreeKind
 
+    /**
+      * A special [[TreeKind]] used as a placeholder when a new mark is opened and the actual kind is not yet known.
+      * [[UnclosedMark]] always gets overwritten with another [[TreeKind]] as parsing happens.
+      * Failure to do so is a compiler error and gets caught when building the syntax tree.
+      */
+    case object UnclosedMark extends TreeKind
+
     case object AnnotationList extends TreeKind
 
     case object Argument extends TreeKind
@@ -179,6 +186,14 @@ object SyntaxTree {
       case object CheckedTypeCast extends Expr
 
       case object Do extends Expr
+
+      case object InvokeConstructor2 extends Expr
+
+      case object InvokeMethod2 extends Expr
+
+      case object InvokeMethod2Fragment extends Expr
+
+      case object InvokeStaticMethod2 extends Expr
 
       case object Debug extends Expr
 
@@ -326,6 +341,8 @@ object SyntaxTree {
 
       case object UncheckedMaskingCast extends Expr
 
+      case object Unsafe extends Expr
+
       case object Use extends Expr
 
       case object Without extends Expr
@@ -367,6 +384,8 @@ object SyntaxTree {
       case object Constraint extends Type
 
       case object ConstraintList extends Type
+
+      case object Effect extends Type
 
       case object EffectSet extends Type
 

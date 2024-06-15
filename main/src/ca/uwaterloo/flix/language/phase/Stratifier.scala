@@ -20,12 +20,14 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast._
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.ast.shared.Fixity
+import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.language.errors.StratificationError
 import ca.uwaterloo.flix.language.phase.PredDeps.termTypesAndDenotation
 import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.collection.{Chain, ListMap}
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result, Validation}
+import ca.uwaterloo.flix.util.collection.ListMap
+import ca.uwaterloo.flix.util.{ParOps, Result, Validation}
 
 import scala.annotation.tailrec
 
@@ -57,7 +59,7 @@ object Stratifier {
     mapN(newDefs, newInstances, newTraits) {
       case (ds, is, ts) => root.copy(defs = ds, instances = is, traits = ts)
     }
-  }
+  }(DebugValidation())
 
   /**
     * Performs Stratification of the given trait `t0`.

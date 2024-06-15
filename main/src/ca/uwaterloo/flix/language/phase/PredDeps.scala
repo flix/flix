@@ -23,6 +23,7 @@ import ca.uwaterloo.flix.language.ast.Type.eraseAliases
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor}
+import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
 /**
@@ -45,7 +46,7 @@ object PredDeps {
     }, _ + _)
 
     Validation.success(root.copy(precedenceGraph = g))
-  }
+  }(DebugValidation())
 
   /**
     * Returns the term types of the given relational or latticenal type.
@@ -327,7 +328,6 @@ object PredDeps {
 
     case Expr.Error(_, _, _) =>
       LabelledPrecedenceGraph.empty
-
   }
 
   /**

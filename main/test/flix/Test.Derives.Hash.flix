@@ -97,10 +97,10 @@ mod Test.Derives.Hash {
     def testHashEq18(): Bool = hash(PolyMultiEnum.BothCase(123, true)) == hash(PolyMultiEnum.BothCase(123, true))
 
     @test
-    def testHashEq19(): Bool = hash((PolyBoolEnum.EmptyCase: PolyBoolEnum[Pure])) == hash((PolyBoolEnum.EmptyCase: PolyBoolEnum[Pure]))
+    def testHashEq19(): Bool = hash((PolyBoolEnum.EmptyCase: PolyBoolEnum[{}])) == hash((PolyBoolEnum.EmptyCase: PolyBoolEnum[{}]))
 
     @test
-    def testHashEq20(): Bool = hash((PolyBoolEnum.RecursiveCase(PolyBoolEnum.EmptyCase): PolyBoolEnum[Pure])) == hash((PolyBoolEnum.RecursiveCase(PolyBoolEnum.EmptyCase): PolyBoolEnum[Pure]))
+    def testHashEq20(): Bool = hash((PolyBoolEnum.RecursiveCase(PolyBoolEnum.EmptyCase): PolyBoolEnum[{}])) == hash((PolyBoolEnum.RecursiveCase(PolyBoolEnum.EmptyCase): PolyBoolEnum[{}]))
 
     @test
     def testHashEq21(): Bool = hash(MutRecursiveEnum1.EmptyCase) == hash(MutRecursiveEnum1.EmptyCase)
@@ -136,7 +136,7 @@ mod Test.Derives.Hash {
     def testHashNeq07(): Bool = hash((PolyMultiEnum.LeftCase(123): PolyMultiEnum[Int32, Int32])) != hash((PolyMultiEnum.RightCase(123): PolyMultiEnum[Int32, Int32]))
 
     @test
-    def testHashNeq08(): Bool = hash((PolyBoolEnum.EmptyCase: PolyBoolEnum[Pure])) != hash((PolyBoolEnum.RecursiveCase(PolyBoolEnum.EmptyCase): PolyBoolEnum[Pure]))
+    def testHashNeq08(): Bool = hash((PolyBoolEnum.EmptyCase: PolyBoolEnum[{}])) != hash((PolyBoolEnum.RecursiveCase(PolyBoolEnum.EmptyCase): PolyBoolEnum[{}]))
 
     @test
     def testHashNeq09(): Bool = hash(MutRecursiveEnum1.EmptyCase) != hash(MutRecursiveEnum1.RecursiveCase(MutRecursiveEnum2.EmptyCase))

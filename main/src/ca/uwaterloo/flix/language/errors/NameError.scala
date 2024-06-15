@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.util.Formatter
 /**
   * A common super-type for naming errors.
   */
-sealed trait NameError extends CompilationMessage {
+sealed trait NameError extends CompilationMessage with Recoverable {
   val kind = "Name Error"
 }
 

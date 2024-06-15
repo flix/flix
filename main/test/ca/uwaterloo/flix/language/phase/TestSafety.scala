@@ -773,4 +773,77 @@ class TestSafety extends AnyFunSuite with TestUtils {
     expectError[SafetyError.IllegalEntryPointSignature](result)
   }
 
+  test("IllegalExportFunction.01") {
+    val input =
+      """
+        |mod Mod { @Export def id(x: Int32): Int32 = x }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.NonPublicExport](result)
+  }
+
+  test("IllegalExportFunction.02") {
+    val input =
+      """
+        |@Export pub def id(x: Int32): Int32 = x
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalExportNamespace](result)
+  }
+
+  test("IllegalExportFunction.03") {
+    val input =
+      """
+        |mod Mod { @Export pub def <><(x: Int32, _y: Int32): Int32 = x }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalExportName](result)
+  }
+
+  test("IllegalExportFunction.04") {
+    val input =
+      """
+        |eff Print
+        |def println(x: t): t \ Print = ???()
+        |mod Mod { @Export pub def id(x: Int32): Int32 \ Print = println(x) }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalExportEffect](result)
+  }
+
+  test("IllegalExportFunction.05") {
+    val input =
+      """
+        |enum Option[t] {
+        |  case Some(t)
+        |  case None
+        |}
+        |mod Mod { @Export pub def id(x: Int32): Option[Int32] = Some(x) }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalExportType](result)
+  }
+
+  test("IllegalExportFunction.06") {
+    val input =
+      """
+        |enum Option[t] {
+        |  case Some(t)
+        |  case None
+        |}
+        |mod Mod { @Export pub def id(x: Int32, _y: Option[Int32]): Int32 = x }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalExportType](result)
+  }
+
+  test("IllegalExportFunction.07") {
+    val input =
+      """
+        |mod Mod { @Export pub def id[t](x: t): t = x }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalExportPolymorphism](result)
+  }
+
 }

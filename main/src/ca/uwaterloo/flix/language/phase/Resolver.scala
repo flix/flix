@@ -22,6 +22,7 @@ import ca.uwaterloo.flix.language.ast.NamedAst.{Declaration, RestrictableChooseP
 import ca.uwaterloo.flix.language.ast.ResolvedAst.Pattern.Record
 import ca.uwaterloo.flix.language.ast.UnkindedType._
 import ca.uwaterloo.flix.language.ast.{NamedAst, Symbol, _}
+import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.language.errors.{Recoverable, ResolutionError, Unrecoverable}
 import ca.uwaterloo.flix.language.errors.ResolutionError._
 import ca.uwaterloo.flix.util.Validation._
@@ -37,17 +38,6 @@ import scala.collection.mutable
   * The Resolver phase performs name resolution on the program.
   */
 object Resolver {
-
-  /**
-    * Symbols of traits that are derivable.
-    */
-  private val EqSym = new Symbol.TraitSym(Nil, "Eq", SourceLocation.Unknown)
-  private val OrderSym = new Symbol.TraitSym(Nil, "Order", SourceLocation.Unknown)
-  private val ToStringSym = new Symbol.TraitSym(Nil, "ToString", SourceLocation.Unknown)
-  private val HashSym = new Symbol.TraitSym(Nil, "Hash", SourceLocation.Unknown)
-  private val SendableSym = new Symbol.TraitSym(Nil, "Sendable", SourceLocation.Unknown)
-
-  val DerivableSyms: List[Symbol.TraitSym] = List(EqSym, OrderSym, ToStringSym, HashSym, SendableSym)
 
   /**
     * Java classes for primitives and Object
@@ -132,7 +122,7 @@ object Resolver {
             }
         }
     }
-  }
+  }(DebugValidation())
 
   /**
     * Builds a symbol table from the compilation unit.
@@ -712,7 +702,7 @@ object Resolver {
       val symVal = trt.assocs.collectFirst {
         case NamedAst.Declaration.AssocTypeSig(_, _, sym, _, _, _, _) if sym.name == ident.name => sym
       } match {
-        case None => Validation.toHardFailure(ResolutionError.UndefinedAssocType(Name.mkQName(ident), ident.loc))
+        case None => Validation.toHardFailure(ResolutionError.UndefinedAssocType(Name.QName(Name.RootNS, ident, ident.loc), ident.loc))
         case Some(sym) => Validation.success(sym)
       }
       mapN(symVal, argVal, tpeVal) {
@@ -1428,6 +1418,38 @@ object Resolver {
                   val opUse = Ast.OpSymUse(o.sym, op.loc)
                   ResolvedAst.Expr.Do(opUse, es, loc)
               }
+          }
+
+        case NamedAst.Expr.InvokeConstructor2(clazzName, exps, loc) =>
+          val esVal = traverse(exps)(visitExp(_, env0))
+          flatMapN(esVal) {
+            es => env0.get(clazzName.name) match {
+              case Some(List(Resolution.JavaClass(clazz))) =>
+                Validation.success(ResolvedAst.Expr.InvokeConstructor2(clazz, es, loc))
+              case _ =>
+                val m = ResolutionError.UndefinedJvmClass(clazzName.name, "", loc)
+                Validation.toSoftFailure(ResolvedAst.Expr.Error(m), m)
+            }
+          }
+
+        case NamedAst.Expr.InvokeMethod2(exp, name, exps, loc) =>
+          val eVal = visitExp(exp, env0)
+          val esVal = traverse(exps)(visitExp(_, env0))
+          mapN(eVal, esVal) {
+            case (e, es) =>
+              ResolvedAst.Expr.InvokeMethod2(e, name, es, loc)
+          }
+
+        case NamedAst.Expr.InvokeStaticMethod2(clazzName, methodName, exps, loc) =>
+          val esVal = traverse(exps)(visitExp(_, env0))
+          flatMapN(esVal) {
+            es => env0.get(clazzName.name) match {
+              case Some(List(Resolution.JavaClass(clazz))) =>
+                Validation.success(ResolvedAst.Expr.InvokeStaticMethod2(clazz, methodName, es, loc))
+              case _ =>
+                val m = ResolutionError.UndefinedJvmClass(clazzName.name, "", loc)
+                Validation.toSoftFailure(ResolvedAst.Expr.Error(m), m)
+            }
           }
 
         case NamedAst.Expr.InvokeConstructor(className, args, sig, loc) =>
@@ -2160,7 +2182,7 @@ object Resolver {
     opOpt match {
       case None =>
         val nname = eff.sym.namespace :+ eff.sym.name
-        val qname = Name.mkQName(nname, ident.name, SourcePosition.Unknown, SourcePosition.Unknown)
+        val qname = Name.mkQName(nname, ident.name, SourceLocation.Unknown)
         Validation.toHardFailure(ResolutionError.UndefinedOp(qname, ident.loc))
       case Some(op) =>
         Validation.success(op)
@@ -2777,7 +2799,7 @@ object Resolver {
       case None => None
       case Some(prefix) =>
         val ns = prefix ::: qname0.namespace.parts.tail
-        val qname = Name.mkQName(ns, qname0.ident.name, SourcePosition.Unknown, SourcePosition.Unknown)
+        val qname = Name.mkQName(ns, qname0.ident.name, SourceLocation.Unknown)
         root.symbols.getOrElse(qname.namespace, Map.empty).get(qname.ident.name)
     }
   }
@@ -3317,6 +3339,8 @@ object Resolver {
 
         case TypeConstructor.Schema => Result.Ok(Class.forName("java.lang.Object"))
 
+
+
         case TypeConstructor.True => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.False => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.Not => Result.Err(ResolutionError.IllegalType(tpe, loc))
@@ -3343,11 +3367,15 @@ object Resolver {
         case TypeConstructor.CaseIntersection(_) => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.CaseUnion(_) => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.Error(_) => Result.Err(ResolutionError.IllegalType(tpe, loc))
+        case TypeConstructor.MethodReturnType => Result.Err(ResolutionError.IllegalType(tpe, loc))
+        case TypeConstructor.StaticMethodReturnType(clazz, name, arity) => Result.Err(ResolutionError.IllegalType(tpe, loc))
 
         case TypeConstructor.AnyType => throw InternalCompilerException(s"unexpected type: $tc", tpe.loc)
         case t: TypeConstructor.Arrow => throw InternalCompilerException(s"unexpected type: $t", tpe.loc)
         case t: TypeConstructor.Enum => throw InternalCompilerException(s"unexpected type: $t", tpe.loc)
         case t: TypeConstructor.RestrictableEnum => throw InternalCompilerException(s"unexpected type: $t", tpe.loc)
+        case TypeConstructor.JvmConstructor(_) => throw InternalCompilerException(s"unexpected type: $tc", tpe.loc)
+        case TypeConstructor.JvmMethod(_) => throw InternalCompilerException(s"unexpected type: $tc", tpe.loc)
 
       }
 

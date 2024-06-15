@@ -682,6 +682,27 @@ object WeederError {
   }
 
   /**
+    * An error raised to indicate an illegal qualified name in an invoke constructor expression.
+    *
+    * @param loc the location of the illegal qualified name.
+    */
+  case class IllegalQualifiedNameInInvokeConstructor(loc: SourceLocation) extends WeederError with Recoverable {
+    override def summary: String = "Unexpected qualified name in new expression"
+
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Unexpected qualified name in new expression.
+         |
+         |${code(loc, "illegal qualified name")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
     * An error raised to indicate a non-single character literal.
     *
     * @param chars the characters in the character literal.
@@ -1027,6 +1048,25 @@ object WeederError {
          |>> Illegal intrinsic.
          |
          |${code(loc, "illegal intrinsic.")}
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate an unapplied intrinsic.
+    *
+    * @param intrinsic name of the intrinsic.
+    * @param loc the location where the illegal intrinsic occurs.
+    */
+  case class UnappliedIntrinsic(intrinsic: String, loc: SourceLocation) extends WeederError with Recoverable {
+    def summary: String = s"Unapplied intrinsic '$intrinsic'."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Unapplied intrinsic '${red(intrinsic)}'.
+         |
+         |${code(loc, "unapplied intrinsic.")}
          |""".stripMargin
     }
   }

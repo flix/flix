@@ -18,7 +18,7 @@ mod Test.Kind.TypeAlias {
 
         type alias TStarToStar[a: Type -> Type] = a[Int32]
 
-        type alias TBoolToStar[a: Eff -> Type] = a[Pure]
+        type alias TBoolToStar[a: Eff -> Type] = a[{}]
 
         type alias TRecordRowToStar[a: RecordRow -> Type, r: RecordRow] = a[r]
 

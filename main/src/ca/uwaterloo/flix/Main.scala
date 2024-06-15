@@ -100,11 +100,11 @@ object Main {
       xnoboolunif = cmdOpts.xnoboolunif,
       xnoqmc = cmdOpts.xnoqmc,
       xnooptimizer = cmdOpts.xnooptimizer,
-      xprintphase = cmdOpts.xprintphase,
+      xprintphases = cmdOpts.xprintphases,
       xsummary = cmdOpts.xsummary,
       xfuzzer = cmdOpts.xfuzzer,
-      xparser = cmdOpts.xparser,
       xprinttyper = cmdOpts.xprinttyper,
+      xverifyeffects = cmdOpts.xverifyeffects,
       XPerfFrontend = cmdOpts.XPerfFrontend,
       XPerfN = cmdOpts.XPerfN
     )
@@ -363,11 +363,11 @@ object Main {
                      xnoboolunif: Boolean = false,
                      xnoqmc: Boolean = false,
                      xnooptimizer: Boolean = false,
-                     xprintphase: Set[String] = Set.empty,
+                     xprintphases: Boolean = false,
                      xsummary: Boolean = false,
                      xfuzzer: Boolean = false,
-                     xparser: Boolean = false,
                      xprinttyper: Option[String] = None,
+                     xverifyeffects: Boolean = false,
                      XPerfN: Option[Int] = None,
                      XPerfFrontend: Boolean = false,
                      files: Seq[File] = Seq())
@@ -551,8 +551,8 @@ object Main {
         text("[experimental] disables compiler optimizations.")
 
       // Xprint-phase
-      opt[Seq[String]]("Xprint-phase").action((m, c) => c.copy(xprintphase = m.toSet)).
-        text("[experimental] prints the AST(s) after the given phase(s). 'all' prints all ASTs.")
+      opt[Unit]("Xprint-phases").action((_, c) => c.copy(xprintphases = true)).
+        text("[experimental] prints the ASTs after the each phase.")
 
       // Xbdd-threshold
       opt[Int]("Xbdd-threshold").action((n, c) => c.copy(xbddthreshold = Some(n))).
@@ -578,15 +578,17 @@ object Main {
       opt[Unit]("Xsummary").action((_, c) => c.copy(xsummary = true)).
         text("[experimental] prints a summary of the compiled modules.")
 
-      // Xfuzz
+      // Xfuzzer
       opt[Unit]("Xfuzzer").action((_, c) => c.copy(xfuzzer = true)).
-        text("enables compiler fuzzing.")
+        text("[experimental] enables compiler fuzzing.")
 
-      // Xparser
-      opt[Unit]("Xparser").action((_, c) => c.copy(xparser = true)).
-        text("[experimental] disables new experimental lexer and parser.")
+      // Xprint-typer
+      opt[String]("Xprint-typer").action((sym, c) => c.copy(xprinttyper = Some(sym))).
+        text("[experimental] writes constraints to dot files.")
 
-      opt[String]("Xprint-typer").action((sym, c) => c.copy(xprinttyper = Some(sym)))
+      // Xverify-effects
+      opt[String]("Xverify-effects").action((_, c) => c.copy(xverifyeffects = true)).
+        text("[experimental] verifies consistency of effects after typechecking")
 
       note("")
 

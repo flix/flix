@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst
 
 object KeywordExprCompleter extends Completer {
 
-  def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[KeywordCompletion] =
+  def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[KeywordCompletion] =
     List(
       "and",
       "as",
@@ -56,6 +56,7 @@ object KeywordExprCompleter extends Completer {
       "true",
       "try",
       "typematch",
+      "unsafe",
       "use",
       "without",
       "yield"

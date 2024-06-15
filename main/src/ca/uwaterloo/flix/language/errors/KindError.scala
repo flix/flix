@@ -55,28 +55,6 @@ object KindError {
   }
 
   /**
-   * Missing trait constraint.
-   *
-   * @param trt   the trait of the constraint.
-   * @param tpe   the type of the constraint.
-   * @param renv  the rigidity environment.
-   * @param loc   the location where the error occurred.
-   */
-  case class MissingTraitConstraint(trt: Symbol.TraitSym, tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends KindError with Unrecoverable {
-    def summary: String = s"No constraint of the '$trt' trait for the type '${formatType(tpe, Some(renv))}'"
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> No constraint of the '${cyan(trt.toString)}' trait for the type '${red(formatType(tpe, Some(renv)))}'.
-         |
-         |${code(loc, s"missing constraint")}
-         |
-         |""".stripMargin
-    }
-  }
-
-  /**
    * An error describing a kind that doesn't match the expected kind.
    *
    * @param expectedKind the expected kind.
@@ -104,7 +82,7 @@ object KindError {
    *
    * @param loc The location where the error occurred.
    */
-  case class UninferrableKind(loc: SourceLocation) extends KindError with Unrecoverable {
+  case class UninferrableKind(loc: SourceLocation) extends KindError with Recoverable {
     override def summary: String = "Unable to infer kind."
 
     def message(formatter: Formatter): String = {

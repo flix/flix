@@ -30,7 +30,7 @@ pub trait SemiGroup[a] {
         if (n <= 1) x
         else SemiGroup.combine(x, SemiGroup.combineN(x, n - 1))
 
-    law associative: forall(x: a, y: a, z: a) with Eq[a] . SemiGroup.combine(SemiGroup.combine(x, y), z) == SemiGroup.combine(x, SemiGroup.combine(y, z))
+    law associative: forall(x: a, y: a, z: a) with Eq[a] SemiGroup.combine(SemiGroup.combine(x, y), z) == SemiGroup.combine(x, SemiGroup.combine(y, z))
 
 }
 

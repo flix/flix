@@ -29,7 +29,7 @@ def deMorgan01(x: B[a], y: B[b]): Bool =
 def deMorgan02(x: B[a], y: B[b]): Bool =
     mkNot(mkOr(x, y)) == mkAnd(mkNot(x), mkNot(y))
 
-/// Note that if we try to write a law that is invalid,
-/// the type checker will fail:
-/// def invalidLaw(x: B[a], y: B[b]): Bool =
-///    x == mkNot(y)
+// Note that if we try to write a law that is invalid,
+// the type checker will fail:
+// def invalidLaw(x: B[a], y: B[b]): Bool =
+//    x == mkNot(y)

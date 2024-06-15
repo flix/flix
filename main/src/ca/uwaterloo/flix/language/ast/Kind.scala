@@ -90,6 +90,11 @@ object Kind {
   case object Predicate extends Kind
 
   /**
+   * Represents the kind of a Java constructor or method.
+   */
+  case object JvmConstructorOrMethod extends Kind
+
+  /**
     * Represents the kind of sets of restrictable enum cases.
     */
   case class CaseSet(sym: Symbol.RestrictableEnumSym) extends Kind
@@ -98,6 +103,11 @@ object Kind {
     * Represents the kind of type expressions `k1 -> k2`.
     */
   case class Arrow(k1: Kind, k2: Kind) extends Kind
+
+  /**
+    * Represents an error kind.
+    */
+  case object Error extends Kind
 
   /**
     * Returns the kind: * -> (* ... -> *)

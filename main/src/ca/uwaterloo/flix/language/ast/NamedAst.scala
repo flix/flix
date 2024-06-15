@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Source}
+import ca.uwaterloo.flix.language.ast.shared.Fixity
 import ca.uwaterloo.flix.util.collection.MultiMap
 
 object NamedAst {
@@ -179,6 +180,12 @@ object NamedAst {
 
     case class Do(op: Name.QName, exps: List[Expr], loc: SourceLocation) extends Expr
 
+    case class InvokeConstructor2(clazzName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
+
+    case class InvokeMethod2(exp: Expr, methodName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
+
+    case class InvokeStaticMethod2(clazzName: Name.Ident, methodName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
+
     case class InvokeConstructor(className: String, exps: List[Expr], sig: List[Type], loc: SourceLocation) extends Expr
 
     case class InvokeMethod(className: String, methodName: String, exp: Expr, exps: List[Expr], sig: List[Type], retTpe: Type, loc: SourceLocation) extends Expr
@@ -289,7 +296,7 @@ object NamedAst {
 
     object Body {
 
-      case class Atom(pred: Name.Pred, den: Denotation, polarity: Ast.Polarity, fixity: Ast.Fixity, terms: List[Pattern], loc: SourceLocation) extends Predicate.Body
+      case class Atom(pred: Name.Pred, den: Denotation, polarity: Ast.Polarity, fixity: Fixity, terms: List[Pattern], loc: SourceLocation) extends Predicate.Body
 
       case class Functional(idents: List[Name.Ident], exp: Expr, loc: SourceLocation) extends Predicate.Body
 
@@ -437,7 +444,7 @@ object NamedAst {
 
   }
 
-  case class TypeConstraint(clazz: Name.QName, tpe: Type, loc: SourceLocation)
+  case class TypeConstraint(trt: Name.QName, tpe: Type, loc: SourceLocation)
 
   case class EqualityConstraint(qname: Name.QName, tpe1: Type, tpe2: Type, loc: SourceLocation)
 

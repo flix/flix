@@ -115,7 +115,7 @@ object SchemaConstraintGen {
 
   def visitFixpointInject(e: KindedAst.Expr.FixpointInject)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
     e match {
-      case KindedAst.Expr.FixpointInject(exp, pred, tvar, loc) =>
+      case KindedAst.Expr.FixpointInject(exp, pred, tvar, evar, loc) =>
         //
         //  exp : F[freshElmType] where F is Foldable
         //  -------------------------------------------
@@ -133,11 +133,15 @@ object SchemaConstraintGen {
 
         c.addClassConstraints(List(order, foldable), loc)
 
+        val aefSym = new Symbol.AssocTypeSym(foldableSym, "Aef", loc)
+        val aefTpe = Type.AssocType(Ast.AssocTypeConstructor(aefSym, loc), freshTypeConstructorVar, Kind.Eff, loc)
+
         val (tpe, eff) = visitExp(exp)
         c.unifyType(tpe, Type.mkApply(freshTypeConstructorVar, List(freshElmTypeVar), loc), loc)
         c.unifyType(tvar, Type.mkSchema(Type.mkSchemaRowExtend(pred, Type.mkRelation(List(freshElmTypeVar), loc), freshRestSchemaTypeVar, loc), loc), loc)
+        c.unifyType(evar, Type.mkUnion(eff, aefTpe, loc), loc)
         val resTpe = tvar
-        val resEff = eff
+        val resEff = evar
         (resTpe, resEff)
     }
   }

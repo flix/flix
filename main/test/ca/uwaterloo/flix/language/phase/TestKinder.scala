@@ -273,7 +273,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
   }
 
   test("IllegalUninhabitedType.08") {
-    val input = "def f(): Int32 = unchecked_cast(1 as Pure)"
+    val input = "def f(): Int32 = unchecked_cast(1 as {})"
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)
   }
@@ -291,7 +291,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
   }
 
   test("IllegalUninhabitedType.10") {
-    val input = "def f(): Int32 = (1: Pure)"
+    val input = "def f(): Int32 = (1: {})"
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)
   }
@@ -418,7 +418,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
   test("KindError.Def.Expression.Ascribe.01") {
     val input =
       """
-        |def f(): Int32 = (1: Pure)
+        |def f(): Int32 = (1: {})
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
@@ -494,7 +494,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
   test("KindError.Def.Expression.Cast.01") {
     val input =
       """
-        |def f(): Int32 = unchecked_cast(1 as Pure)
+        |def f(): Int32 = unchecked_cast(1 as {})
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
@@ -551,7 +551,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
   test("KindError.Def.Type.03") {
     val input =
       """
-        |def f(x: Pure -> Int32 \ Int32): Int32 = ???
+        |def f(x: {} -> Int32 \ Int32): Int32 = ???
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
@@ -598,7 +598,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
   test("KindError.Def.Parameter.01") {
     val input =
       """
-        |def f(x: Pure): Int32 = ???
+        |def f(x: {}): Int32 = ???
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
@@ -618,7 +618,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
   test("KindError.Def.Return.01") {
     val input =
       """
-        |def f(): Pure = ???
+        |def f(): {} = ???
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
@@ -697,7 +697,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
     val input =
       """
         |enum E {
-        |  case C(Pure)
+        |  case C({})
         |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)
@@ -820,7 +820,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
   test("KindError.TypeAlias.Type.01") {
     val input =
       """
-        |type alias T = Pure -> Int32
+        |type alias T = {} -> Int32
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
@@ -845,7 +845,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
     val input =
       """
         |trait C[a: Type -> Type] {
-        |  law l: forall (x: a) . ???
+        |  law l: forall (x: a) ???
         |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)
@@ -1015,19 +1015,6 @@ class TestKinder extends AnyFunSuite with TestUtils {
     expectError[KindError.MismatchedKinds](result)
   }
 
-  test("KindError.MissingConstraint.01") {
-    val input =
-      """
-        |trait C[a] {
-        |    type T
-        |}
-        |
-        |def foo(): C.T[a] = ???
-        |""".stripMargin
-    val result = compile(input, DefaultOptions)
-    expectError[KindError.MissingTraitConstraint](result)
-  }
-
   test("KindError.AssocType.01") {
     val input =
       """
@@ -1036,7 +1023,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |}
         |
         |instance C[String] {
-        |    type T = Pure
+        |    type T = {}
         |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)
@@ -1051,7 +1038,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |}
         |
         |instance C[String] {
-        |    type T[Pure] = String
+        |    type T[{}] = String
         |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)
@@ -1072,7 +1059,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |    }
         |
         |    instance Add[Set[t]] with Order[t] {
-        |        type Rhs = {Pure}
+        |        type Rhs = {}
         |        pub def add(lhs: Set[t], rhs: t): Set[t] = ???
         |
         |    }
@@ -1092,7 +1079,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |        pub def add(lhs: t, rhs: t): t \ Add.Aef[t]
         |    }
         |    instance Add[String] {
-        |        type Aef = {}
+        |        type Aef = {|}
         |        pub def add(x: String, y: String): String = x + y
         |    }
         |}

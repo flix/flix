@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 Magnus Madsen
+ * Copyright 2024 Andreas Stenbæk Larsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,29 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package ca.uwaterloo.flix.tools.pkg
 
-package ca.uwaterloo.flix.util.tc
+sealed trait RepositoryError
 
-/**
-  * Type class for values that can be shown.
-  */
-trait Show[A] {
-  /**
-    * Returns a string representation of `a`.
-    */
-  def show(a: A): String
-}
-
-/**
-  * Companion object of [[Show]].
-  */
-object Show {
-
-  /**
-    * Adds a `show` method to every instance of [[Show]].
-    */
-  implicit class ShowableSyntax[A: Show](a: A) {
-    def show: String = implicitly[Show[A]].show(a)
-  }
-
+object RepositoryError {
+  case class UnsupportedRepositoryError(s: String) extends RepositoryError
 }

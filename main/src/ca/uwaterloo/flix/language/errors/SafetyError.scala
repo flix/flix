@@ -165,6 +165,133 @@ object SafetyError {
   }
 
   /**
+    * An error raised to indicate that an exported function has an illegal namespace.
+    *
+    * @param loc the location of the defn.
+    */
+  case class IllegalExportNamespace(loc: SourceLocation) extends SafetyError with Recoverable {
+    def summary: String = s"Exported functions must be in a module (e.g. not in the root namespace)"
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Exported functions must be in a module (e.g. not in the root namespace).
+         |
+         |${code(loc, "exported function.")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * An error raised to indicate that an exported function is not public.
+    *
+    * @param loc the location of the defn.
+    */
+  case class NonPublicExport(loc: SourceLocation) extends SafetyError with Recoverable {
+    def summary: String = s"Exported functions must be public"
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Exported functions must be public.
+         |
+         |${code(loc, "exported function.")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * An error raised to indicate that an exported function has an invalid name.
+    *
+    * @param loc the location of the defn.
+    */
+  case class IllegalExportName(loc: SourceLocation) extends SafetyError with Recoverable {
+    def summary: String = s"Exported functions must have a Java valid name"
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Exported functions must have a Java valid name.
+         |
+         |${code(loc, "invalid Java name.")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * An error raised to indicate that an exported function has an invalid effect.
+    *
+    * @param loc the location of the defn.
+    */
+  case class IllegalExportEffect(loc: SourceLocation) extends SafetyError with Recoverable {
+    def summary: String = s"Exported functions must be pure or have the IO effect"
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Exported functions must be pure or have the IO effect.
+         |
+         |${code(loc, "exported function.")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * An error raised to indicate that an exported function is type-polymorphic.
+    *
+    * @param loc the location of the defn.
+    */
+  case class IllegalExportPolymorphism(loc: SourceLocation) extends SafetyError with Recoverable {
+    def summary: String = s"Exported functions must not have type variables (i.e. not polymorphic)"
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Exported functions must not have type variables (i.e. not polymorphic).
+         |
+         |${code(loc, "exported function.")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * An error raised to indicate that an exported function uses an illegal type.
+    *
+    * @param t the type that is not allowed.
+    * @param loc the location of the type.
+    */
+  case class IllegalExportType(t: Type, loc: SourceLocation) extends SafetyError with Recoverable {
+    def summary: String = s"Exported functions must use primitive Java types or Object, not '$t'"
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Exported functions must use primitive Java types or Object, not '$t'.
+         |
+         |${code(loc, "unsupported type.")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
    * An error raised to indicate that the Java class in a catch clause is not a Throwable.
    *
    * @param loc the location of the catch parameter.
