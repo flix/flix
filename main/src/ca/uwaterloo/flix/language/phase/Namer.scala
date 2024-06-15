@@ -119,7 +119,7 @@ object Namer {
     * Adds symbols from the compilation unit to the table.
     */
   private def tableUnit(unit: NamedAst.CompilationUnit, table0: SymbolTable): Validation[SymbolTable, NameError] = unit match {
-    case NamedAst.CompilationUnit(usesAndImports, decls, loc) =>
+    case NamedAst.CompilationUnit(_, decls, _) =>
       fold(decls, table0) {
         case (acc, decl) => tableDecl(decl, acc)
       }
@@ -134,7 +134,7 @@ object Namer {
       }
       mapN(table2Val)(addUsesToTable(_, sym.ns, usesAndImports))
 
-    case NamedAst.Declaration.Trait(doc, ann, mod, sym, tparam, superTraits, assocs, sigs, laws, loc) =>
+    case NamedAst.Declaration.Trait(_, _, _, sym, _, _, assocs, sigs, _, _) =>
       val table1Val = tryAddToTable(table0, sym.namespace, sym.name, decl)
       flatMapN(table1Val) {
         case table1 => fold(assocs ++ sigs, table1) {
@@ -142,16 +142,16 @@ object Namer {
         }
       }
 
-    case inst@NamedAst.Declaration.Instance(doc, ann, mod, clazz, tparams, tpe, tconstrs, assocs, defs, ns, loc) =>
+    case inst@NamedAst.Declaration.Instance(_, _, _, clazz, _, _, _, _, _, ns, _) =>
       Validation.success(addInstanceToTable(table0, ns, clazz.ident.name, inst))
 
-    case NamedAst.Declaration.Sig(sym, spec, exp) =>
+    case NamedAst.Declaration.Sig(sym, _, _) =>
       tryAddToTable(table0, sym.namespace, sym.name, decl)
 
-    case NamedAst.Declaration.Def(sym, spec, exp) =>
+    case NamedAst.Declaration.Def(sym, _, _) =>
       tryAddToTable(table0, sym.namespace, sym.name, decl)
 
-    case NamedAst.Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc) =>
+    case NamedAst.Declaration.Enum(_, _, _, sym, _, _, cases, _) =>
       val table1Val = tryAddToTable(table0, sym.namespace, sym.name, decl)
       flatMapN(table1Val) {
         case table1 => fold(cases, table1) {
@@ -159,7 +159,7 @@ object Namer {
         }
       }
 
-    case NamedAst.Declaration.RestrictableEnum(doc, ann, mod, sym, index, tparams, derives, cases, loc) =>
+    case NamedAst.Declaration.RestrictableEnum(_, _, _, sym, _, _, _, cases, _) =>
       val table1Val = tryAddToTable(table0, sym.namespace, sym.name, decl)
       flatMapN(table1Val) {
         case table1 => fold(cases, table1) {
@@ -167,13 +167,13 @@ object Namer {
         }
       }
 
-    case NamedAst.Declaration.TypeAlias(doc, _, mod, sym, tparams, tpe, loc) =>
+    case NamedAst.Declaration.TypeAlias(_, _, _, sym, _, _, _) =>
       tryAddToTable(table0, sym.namespace, sym.name, decl)
 
-    case NamedAst.Declaration.AssocTypeSig(doc, mod, sym, tparams, kind, tpe, loc) =>
+    case NamedAst.Declaration.AssocTypeSig(_, _, sym, _, _, _, _) =>
       tryAddToTable(table0, sym.namespace, sym.name, decl)
 
-    case NamedAst.Declaration.Effect(doc, ann, mod, sym, ops, loc) =>
+    case NamedAst.Declaration.Effect(_, _, _, sym, ops, _) =>
       val table1Val = tryAddToTable(table0, sym.namespace, sym.name, decl)
       flatMapN(table1Val) {
         case table1 => fold(ops, table1) {
@@ -181,7 +181,7 @@ object Namer {
         }
       }
 
-    case NamedAst.Declaration.Op(sym, spec) =>
+    case NamedAst.Declaration.Op(sym, _) =>
       tryAddToTable(table0, sym.namespace, sym.name, decl)
 
     case caze@NamedAst.Declaration.Case(sym, _, _) =>
@@ -190,7 +190,7 @@ object Namer {
     case caze@NamedAst.Declaration.RestrictableCase(sym, _, _) =>
       tryAddToTable(table0, sym.namespace, sym.name, caze)
 
-    case NamedAst.Declaration.AssocTypeDef(doc, mod, ident, args, tpe, loc) =>
+    case NamedAst.Declaration.AssocTypeDef(_, _, _, _, _, loc) =>
       throw InternalCompilerException("unexpected tabling of associated type definition", loc)
 
   }
@@ -300,7 +300,7 @@ object Namer {
       // Introduce a symbol for every unique ident in the body, removing wildcards
       val idents = bs.flatMap {
         case DesugaredAst.Predicate.Body.Atom(_, _, _, _, terms, _) => terms.flatMap(freeVars)
-        case DesugaredAst.Predicate.Body.Functional(idents, _, _) => idents
+        case DesugaredAst.Predicate.Body.Functional(idents1, _, _) => idents1
         case DesugaredAst.Predicate.Body.Guard(_, _) => Nil
       }.distinct.filterNot(_.isWild)
 
@@ -407,7 +407,7 @@ object Namer {
   /**
     * Performs naming on the given associated type signature `s0`.
     */
-  private def visitAssocTypeSig(s0: DesugaredAst.Declaration.AssocTypeSig, trt: Symbol.TraitSym, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.AssocTypeSig, NameError] = s0 match {
+  private def visitAssocTypeSig(s0: DesugaredAst.Declaration.AssocTypeSig, trt: Symbol.TraitSym)(implicit flix: Flix): Validation[NamedAst.Declaration.AssocTypeSig, NameError] = s0 match {
     case DesugaredAst.Declaration.AssocTypeSig(doc, mod, ident, tparams0, kind0, tpe0, loc) =>
       val sym = Symbol.mkAssocTypeSym(trt, ident)
       val tparam = getTypeParam(tparams0)
@@ -441,7 +441,7 @@ object Namer {
       val tparam = getTypeParam(tparams0)
 
       val superTraitsVal = traverse(superTraits0)(visitTypeConstraint(_, ns0))
-      val assocsVal = traverse(assocs0)(visitAssocTypeSig(_, sym, ns0)) // TODO switch param order to match visitSig
+      val assocsVal = traverse(assocs0)(visitAssocTypeSig(_, sym)) // TODO switch param order to match visitSig
       val sigsVal = traverse(signatures)(visitSig(_, ns0, sym))
       val lawsVal = traverse(laws0)(visitDef(_, ns0, DefKind.Member))
 
