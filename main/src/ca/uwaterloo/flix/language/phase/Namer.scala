@@ -422,7 +422,7 @@ object Namer {
   /**
     * Performs naming on the given associated type definition `d0`.
     */
-  private def visitAssocTypeDef(d0: DesugaredAst.Declaration.AssocTypeDef, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.AssocTypeDef, NameError] = d0 match {
+  private def visitAssocTypeDef(d0: DesugaredAst.Declaration.AssocTypeDef)(implicit flix: Flix): Validation[NamedAst.Declaration.AssocTypeDef, NameError] = d0 match {
     case DesugaredAst.Declaration.AssocTypeDef(doc, mod, ident, arg0, tpe0, loc) =>
       val argVal = visitType(arg0)
       val tpeVal = visitType(tpe0)
@@ -460,7 +460,7 @@ object Namer {
 
       val tpeVal = visitType(tpe0)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint(_, ns0))
-      val assocsVal = traverse(assocs0)(visitAssocTypeDef(_, ns0))
+      val assocsVal = traverse(assocs0)(visitAssocTypeDef)
       flatMapN(tpeVal, tconstrsVal, assocsVal) {
         case (tpe, tconstrs, assocs) =>
           val defsVal = traverse(defs0)(visitDef(_, ns0, DefKind.Member))
