@@ -440,7 +440,7 @@ object Namer {
       val mod = visitModifiers(mod0, ns0)
       val tparam = getTypeParam(tparams0)
 
-      val superTraitsVal = traverse(superTraits0)(visitTypeConstraint(_, ns0))
+      val superTraitsVal = traverse(superTraits0)(visitTypeConstraint)
       val assocsVal = traverse(assocs0)(visitAssocTypeSig(_, sym)) // TODO switch param order to match visitSig
       val sigsVal = traverse(signatures)(visitSig(_, ns0, sym))
       val lawsVal = traverse(laws0)(visitDef(_, ns0, DefKind.Member))
@@ -459,7 +459,7 @@ object Namer {
       val tparams = getImplicitTypeParamsFromTypes(List(tpe0))
 
       val tpeVal = visitType(tpe0)
-      val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint(_, ns0))
+      val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint)
       val assocsVal = traverse(assocs0)(visitAssocTypeDef)
       flatMapN(tpeVal, tconstrsVal, assocsVal) {
         case (tpe, tconstrs, assocs) =>
@@ -474,7 +474,7 @@ object Namer {
   /**
     * Performs naming on the given type constraint `tconstr`.
     */
-  private def visitTypeConstraint(tconstr: DesugaredAst.TypeConstraint, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.TypeConstraint, NameError] = tconstr match {
+  private def visitTypeConstraint(tconstr: DesugaredAst.TypeConstraint)(implicit flix: Flix): Validation[NamedAst.TypeConstraint, NameError] = tconstr match {
     case DesugaredAst.TypeConstraint(trt, tparam0, loc) =>
       mapN(visitType(tparam0)) {
         tparam => NamedAst.TypeConstraint(trt, tparam, loc)
@@ -505,7 +505,7 @@ object Namer {
       val fparamsVal = getFormalParams(fparams0)
       val tpeVal = visitType(tpe0)
       val effVal = traverseOpt(eff0)(visitType)
-      val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint(_, ns0))
+      val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint)
       val econstrsVal = traverse(econstrs0)(visitEqualityConstraint(_, ns0))
 
       flatMapN(fparamsVal, tpeVal, effVal, tconstrsVal, econstrsVal) {
@@ -538,7 +538,7 @@ object Namer {
       val fparamsVal = getFormalParams(fparams0)
       val tpeVal = visitType(tpe0)
       val effVal = traverseOpt(eff0)(visitType)
-      val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint(_, ns0))
+      val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint)
       val econstrsVal = traverse(econstrs0)(visitEqualityConstraint(_, ns0))
 
       flatMapN(fparamsVal, tpeVal, effVal, tconstrsVal, econstrsVal) {
@@ -587,7 +587,7 @@ object Namer {
       val mod = visitModifiers(mod0, ns0)
       val fparamsVal = getFormalParams(fparams0)
       val tpeVal = visitType(tpe0)
-      val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint(_, ns0))
+      val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint)
 
       mapN(fparamsVal, tpeVal, tconstrsVal) {
         case (fparams, tpe, tconstrs) =>
