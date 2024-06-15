@@ -45,12 +45,12 @@ object InstanceError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> Complex instance type '${red(FormatType.formatType(tpe))}' in '${magenta(sym.name)}'.
-          |
-          |${code(loc, s"complex instance type")}
-          |
-          |An instance type must be a type constructor applied to zero or more distinct type variables.
-          |""".stripMargin
+      s""">> Complex instance type '${red(FormatType.formatType(tpe))}' in '${magenta(sym.name)}'.
+         |
+         |${code(loc, s"complex instance type")}
+         |
+         |An instance type must be a type constructor applied to zero or more distinct type variables.
+         |""".stripMargin
     }
   }
 
@@ -66,10 +66,10 @@ object InstanceError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> Duplicate type variable '${red(FormatType.formatType(tvar))}' in '${magenta(sym.name)}'.
-          |
-          |${code(loc, s"The type variable '${FormatType.formatType(tvar)}' occurs more than once.")}
-          |""".stripMargin
+      s""">> Duplicate type variable '${red(FormatType.formatType(tvar))}' in '${magenta(sym.name)}'.
+         |
+         |${code(loc, s"The type variable '${FormatType.formatType(tvar)}' occurs more than once.")}
+         |""".stripMargin
     }
 
     override def explain(formatter: Formatter): Option[String] = Some({
@@ -91,10 +91,10 @@ object InstanceError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> The signature '${red(defnSym.name)}' is not present in the '${magenta(traitSym.name)}' trait.
-          |
-          |${code(loc, s"extraneous def")}
-          |""".stripMargin
+      s""">> The signature '${red(defnSym.name)}' is not present in the '${magenta(traitSym.name)}' trait.
+         |
+         |${code(loc, s"extraneous def")}
+         |""".stripMargin
     }
 
     override def explain(formatter: Formatter): Option[String] = Some({
@@ -115,12 +115,12 @@ object InstanceError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> Illegal use of associated type '${red(assoc.name)}' in instance declaration for '${magenta(trtSym.name)}'.
-          |
-          |${code(loc, s"illegal use of associated type")}
-          |
-          |A trait instance cannot use an associated type. Use the full type.
-          |""".stripMargin
+      s""">> Illegal use of associated type '${red(assoc.name)}' in instance declaration for '${magenta(trtSym.name)}'.
+         |
+         |${code(loc, s"illegal use of associated type")}
+         |
+         |A trait instance cannot use an associated type. Use the full type.
+         |""".stripMargin
     }
   }
 
@@ -135,13 +135,13 @@ object InstanceError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> Illegal override of '${red(sym.name)}'.
-          |
-          |${code(loc, s"illegal override")}
-          |
-          |Only signatures with default implementations can be overridden.
-          |
-          |""".stripMargin
+      s""">> Illegal override of '${red(sym.name)}'.
+         |
+         |${code(loc, s"illegal override")}
+         |
+         |Only signatures with default implementations can be overridden.
+         |
+         |""".stripMargin
     }
   }
 
@@ -157,12 +157,12 @@ object InstanceError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> Illegal use of type alias '${red(alias.name)}' in instance declaration for '${magenta(trtSym.name)}'.
-          |
-          |${code(loc, s"illegal use of type alias")}
-          |
-          |A trait instance cannot use a type alias. Use the full type.
-          |""".stripMargin
+      s""">> Illegal use of type alias '${red(alias.name)}' in instance declaration for '${magenta(trtSym.name)}'.
+         |
+         |${code(loc, s"illegal use of type alias")}
+         |
+         |A trait instance cannot use a type alias. Use the full type.
+         |""".stripMargin
     }
   }
 
@@ -179,13 +179,13 @@ object InstanceError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""|Mismatched signature '${red(sigSym.name)}' required by '${magenta(sigSym.trt.name)}'.
-          |
-          |${code(loc, "mismatched signature.")}
-          |
-          |Expected scheme: ${FormatScheme.formatScheme(expected)}
-          |Actual scheme:   ${FormatScheme.formatScheme(actual)}
-          |""".stripMargin
+      s""">> Mismatched signature '${red(sigSym.name)}' required by '${magenta(sigSym.trt.name)}'.
+         |
+         |${code(loc, "mismatched signature.")}
+         |
+         |Expected scheme: ${FormatScheme.formatScheme(expected)}
+         |Actual scheme:   ${FormatScheme.formatScheme(actual)}
+         |""".stripMargin
     }
 
     override def explain(formatter: Formatter): Option[String] = Some({
@@ -205,10 +205,10 @@ object InstanceError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> Missing implementation of '${red(sig.name)}' required by '${magenta(sig.trt.name)}'.
-          |
-          |${code(loc, s"missing implementation")}
-          |""".stripMargin
+      s""">> Missing implementation of '${red(sig.name)}' required by '${magenta(sig.trt.name)}'.
+         |
+         |${code(loc, s"missing implementation")}
+         |""".stripMargin
     }
 
     override def explain(formatter: Formatter): Option[String] = Some({
@@ -230,14 +230,14 @@ object InstanceError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> Missing super trait instance '${red(superTrait.name)}' for type '${red(FormatType.formatType(tpe))}'.
-          |
-          |${code(loc, s"missing super trait instance")}
-          |
-          |The trait '${red(subTrait.name)}' extends the trait '${red(superTrait.name)}'.
-          |
-          |If you provide an instance for '${red(subTrait.name)}' you must also provide an instance for '${red(superTrait.name)}'.
-          |""".stripMargin
+      s""">> Missing super trait instance '${red(superTrait.name)}' for type '${red(FormatType.formatType(tpe))}'.
+         |
+         |${code(loc, s"missing super trait instance")}
+         |
+         |The trait '${red(subTrait.name)}' extends the trait '${red(superTrait.name)}'.
+         |
+         |If you provide an instance for '${red(subTrait.name)}' you must also provide an instance for '${red(superTrait.name)}'.
+         |""".stripMargin
     }
 
     override def explain(formatter: Formatter): Option[String] = Some({
@@ -258,11 +258,11 @@ object InstanceError {
 
     override def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> Missing type constraint: ${FormatTypeConstraint.formatTypeConstraint(tconstr)}
-          |
-          |The constraint ${FormatTypeConstraint.formatTypeConstraint(tconstr)} is required because it is a constraint on super trait ${superTrait.name}.
-          |
-          |${code(loc, s"missing type constraint")}
+      s""">> Missing type constraint: ${FormatTypeConstraint.formatTypeConstraint(tconstr)}
+         |
+         |The constraint ${FormatTypeConstraint.formatTypeConstraint(tconstr)} is required because it is a constraint on super trait ${superTrait.name}.
+         |
+         |${code(loc, s"missing type constraint")}
       """.stripMargin
     }
 
@@ -284,12 +284,12 @@ object InstanceError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> Orphan instance for type '${red(FormatType.formatType(tpe))}' in '${magenta(sym.name)}'.
-          |
-          |${code(loc, s"orphan instance")}
-          |
-          |An instance must be declared in the trait's namespace or in the type's namespace.
-          |""".stripMargin
+      s""">> Orphan instance for type '${red(FormatType.formatType(tpe))}' in '${magenta(sym.name)}'.
+         |
+         |${code(loc, s"orphan instance")}
+         |
+         |An instance must be declared in the trait's namespace or in the type's namespace.
+         |""".stripMargin
     }
   }
 
@@ -305,12 +305,12 @@ object InstanceError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> Overlapping instances for '${magenta(sym.name)}'.
-          |
-          |${code(loc1, "the first instance was declared here.")}
-          |
-          |${code(loc2, "the second instance was declared here.")}
-          |""".stripMargin
+      s""">> Overlapping instances for '${magenta(sym.name)}'.
+         |
+         |${code(loc1, "the first instance was declared here.")}
+         |
+         |${code(loc2, "the second instance was declared here.")}
+         |""".stripMargin
     }
 
     override def explain(formatter: Formatter): Option[String] = Some({
@@ -332,14 +332,14 @@ object InstanceError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> Unlawful signature '${red(sym.name)}'.
-          |
-          |>> Each signature of a lawful trait must appear in at least one law.
-          |
-          |${code(loc, s"unlawful signature")}
-          |
-          |Create a law for '$sym' or remove the 'lawful' modifier from the trait.
-          |""".stripMargin
+      s""">> Unlawful signature '${red(sym.name)}'.
+         |
+         |>> Each signature of a lawful trait must appear in at least one law.
+         |
+         |${code(loc, s"unlawful signature")}
+         |
+         |Create a law for '$sym' or remove the 'lawful' modifier from the trait.
+         |""".stripMargin
     }
   }
 
@@ -354,12 +354,12 @@ object InstanceError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> Unmarked override of '${red(sym.name)}'. This definition overrides a default implementation.
-          |
-          |${code(loc, s"unmarked override")}
-          |
-          |Either add the `override` modifier or remove the definition.
-          |""".stripMargin
+      s""">> Unmarked override of '${red(sym.name)}'. This definition overrides a default implementation.
+         |
+         |${code(loc, s"unmarked override")}
+         |
+         |Either add the `override` modifier or remove the definition.
+         |""".stripMargin
     }
   }
 }

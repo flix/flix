@@ -147,8 +147,7 @@ object ParseError {
 
     def message(fmt: Formatter): String = {
       val hintStr = hint.map(s"\nHint: " + _).getOrElse("")
-      s"""${fmt.line(kind, source.name)}
-         |>> Malformed ${fmt.red(namedTokenSet.display(fmt))}.
+      s""">> Malformed ${fmt.red(namedTokenSet.display(fmt))}.
          |
          |${fmt.code(loc, s"Here")}$hintStr
          |""".stripMargin
@@ -168,11 +167,11 @@ object ParseError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> Misplaced comment(s).
-          |
-          |${code(loc, s"Here")}
-          |Hint: Place comments on their own line.
-          |""".stripMargin
+      s""">> Misplaced comment(s).
+         |
+         |${code(loc, s"Here")}
+         |Hint: Place comments on their own line.
+         |""".stripMargin
     }
   }
 
@@ -189,11 +188,11 @@ object ParseError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> Misplaced doc-comment(s).
-          |
-          |${code(loc, s"Here")}
-          |Hint: doc-comments must annotate declarations.
-          |""".stripMargin
+      s""">> Misplaced doc-comment(s).
+         |
+         |${code(loc, s"Here")}
+         |Hint: doc-comments must annotate declarations.
+         |""".stripMargin
     }
   }
 
@@ -211,11 +210,11 @@ object ParseError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> Expected ${red("scope")} on ${cyan(token.display)}.
-          |
-          |${code(loc, s"Here")}
-          |Hint: Add a scope using `@ <scope>`
-          |""".stripMargin
+      s""">> Expected ${red("scope")} on ${cyan(token.display)}.
+         |
+         |${code(loc, s"Here")}
+         |Hint: Add a scope using `@ <scope>`
+         |""".stripMargin
     }
   }
 
@@ -234,8 +233,7 @@ object ParseError {
 
     def message(fmt: Formatter): String = {
       val hintStr = hint.map(s"\nHint: " + _).getOrElse("")
-      s"""${fmt.line(kind, source.name)}
-         |>> Expected at least one ${expected.display(fmt)}.
+      s""">> Expected at least one ${expected.display(fmt)}.
          |
          |${fmt.code(loc, s"Here")}$hintStr
          |""".stripMargin
@@ -256,10 +254,10 @@ object ParseError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> Trailing ${red(separator.display)}.
-          |
-          |${code(loc, s"Here")}
-          |""".stripMargin
+      s""">> Trailing ${red(separator.display)}.
+         |
+         |${code(loc, s"Here")}
+         |""".stripMargin
     }
   }
 
@@ -285,8 +283,7 @@ object ParseError {
       val hintStr = hint.map(s"\nHint: " + _).getOrElse("")
       val expectedStr = s"Expected ${expected.display(fmt)}"
       val actualStr = actual.map(a => s" before ${fmt.red(a.display)}").getOrElse("")
-      s"""${fmt.line(kind, source.name)}
-         |>> $expectedStr$actualStr.
+      s""">> $expectedStr$actualStr.
          |
          |${fmt.code(loc, s"Here")}$hintStr
          |""".stripMargin
@@ -314,10 +311,10 @@ object ParseError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> $message
-          |
-          |${code(loc, s"Here")}
-          |""".stripMargin
+      s""">> $message
+         |
+         |${code(loc, s"Here")}
+         |""".stripMargin
     }
   }
 }

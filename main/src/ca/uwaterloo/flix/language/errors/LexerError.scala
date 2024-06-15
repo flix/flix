@@ -35,11 +35,11 @@ object LexerError {
 
     override def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> Block-comment nested too deep.
-          |
-          |${code(loc, "This is nested too deep.")}
-          |
-          |""".stripMargin
+      s""">> Block-comment nested too deep.
+         |
+         |${code(loc, "This is nested too deep.")}
+         |
+         |""".stripMargin
     }
 
     override def explain(formatter: Formatter): Option[String] = None
@@ -56,11 +56,11 @@ object LexerError {
 
     override def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> Number has two decimal dots.
-          |
-          |${code(loc, "Second decimal dot is here.")}
-          |
-          |""".stripMargin
+      s""">> Number has two decimal dots.
+         |
+         |${code(loc, "Second decimal dot is here.")}
+         |
+         |""".stripMargin
     }
 
     override def explain(formatter: Formatter): Option[String] = None
@@ -76,11 +76,11 @@ object LexerError {
 
     override def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> Number has two scientific notation indicators.
-          |
-          |${code(loc, "Second 'e' is here.")}
-          |
-          |""".stripMargin
+      s""">> Number has two scientific notation indicators.
+         |
+         |${code(loc, "Second 'e' is here.")}
+         |
+         |""".stripMargin
     }
 
     override def explain(formatter: Formatter): Option[String] = None
@@ -96,11 +96,11 @@ object LexerError {
 
     override def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> Number has sequence of '_'.
-          |
-          |${code(loc, "Ending here")}
-          |
-          |""".stripMargin
+      s""">> Number has sequence of '_'.
+         |
+         |${code(loc, "Ending here")}
+         |
+         |""".stripMargin
     }
 
     override def explain(formatter: Formatter): Option[String] = None
@@ -117,11 +117,11 @@ object LexerError {
 
     override def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> '.' has leading whitespace.
-          |
-          |${code(loc, "here")}
-          |
-          |""".stripMargin
+      s""">> '.' has leading whitespace.
+         |
+         |${code(loc, "here")}
+         |
+         |""".stripMargin
     }
 
     override def explain(formatter: Formatter): Option[String] = None
@@ -137,11 +137,11 @@ object LexerError {
 
     override def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> Number ends on a '_'.
-          |
-          |${code(loc, "Here")}
-          |
-          |""".stripMargin
+      s""">> Number ends on a '_'.
+         |
+         |${code(loc, "Here")}
+         |
+         |""".stripMargin
     }
 
     override def explain(formatter: Formatter): Option[String] = None
@@ -157,11 +157,11 @@ object LexerError {
 
     override def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> Hex literal starts on a '_'.
-          |
-          |${code(loc, "Here")}
-          |
-          |""".stripMargin
+      s""">> Hex literal starts on a '_'.
+         |
+         |${code(loc, "Here")}
+         |
+         |""".stripMargin
     }
 
     override def explain(formatter: Formatter): Option[String] = None
@@ -177,11 +177,11 @@ object LexerError {
 
     override def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> String interpolation nested too deep.
-          |
-          |${code(loc, "This is nested too deep.")}
-          |
-          |""".stripMargin
+      s""">> String interpolation nested too deep.
+         |
+         |${code(loc, "This is nested too deep.")}
+         |
+         |""".stripMargin
     }
 
     override def explain(formatter: Formatter): Option[String] = None
@@ -198,11 +198,11 @@ object LexerError {
 
     override def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> Unexpected character '${red(s)}'.
-          |
-          |${code(loc, "Unexpected character.")}
-          |
-          |""".stripMargin
+      s""">> Unexpected character '${red(s)}'.
+         |
+         |${code(loc, "Unexpected character.")}
+         |
+         |""".stripMargin
     }
 
     override def explain(formatter: Formatter): Option[String] = None
@@ -218,11 +218,11 @@ object LexerError {
 
     override def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> Missing '*/' in block-comment.
-          |
-          |${code(loc, "Block-comment starts here.")}
-          |
-          |""".stripMargin
+      s""">> Missing '*/' in block-comment.
+         |
+         |${code(loc, "Block-comment starts here.")}
+         |
+         |""".stripMargin
     }
 
     override def explain(formatter: Formatter): Option[String] = None
@@ -238,11 +238,11 @@ object LexerError {
 
     override def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> Missing '$$' in built-in.
-          |
-          |${code(loc, "Built-in starts here.")}
-          |
-          |""".stripMargin
+      s""">> Missing '$$' in built-in.
+         |
+         |${code(loc, "Built-in starts here.")}
+         |
+         |""".stripMargin
     }
 
     override def explain(formatter: Formatter): Option[String] = None
@@ -258,11 +258,11 @@ object LexerError {
 
     override def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> Missing `'` in char.
-          |
-          |${code(loc, "Char starts here")}
-          |
-          |""".stripMargin
+      s""">> Missing `'` in char.
+         |
+         |${code(loc, "Char starts here")}
+         |
+         |""".stripMargin
     }
 
     override def explain(formatter: Formatter): Option[String] = None
@@ -278,11 +278,11 @@ object LexerError {
 
     override def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> Missing '`' in infix function.
-          |
-          |${code(loc, "Infix function starts here.")}
-          |
-          |""".stripMargin
+      s""">> Missing '`' in infix function.
+         |
+         |${code(loc, "Infix function starts here.")}
+         |
+         |""".stripMargin
     }
 
     override def explain(formatter: Formatter): Option[String] = None
@@ -298,11 +298,11 @@ object LexerError {
 
     override def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> Missing `"` in regex.
-          |
-          |${code(loc, "Regex starts here")}
-          |
-          |""".stripMargin
+      s""">> Missing `"` in regex.
+         |
+         |${code(loc, "Regex starts here")}
+         |
+         |""".stripMargin
     }
 
     override def explain(formatter: Formatter): Option[String] = None
@@ -318,11 +318,11 @@ object LexerError {
 
     override def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> missing '"' in string.
-          |
-          |${code(loc, "String starts here.")}
-          |
-          |""".stripMargin
+      s""">> Missing '"' in string.
+         |
+         |${code(loc, "String starts here.")}
+         |
+         |""".stripMargin
     }
 
     override def explain(formatter: Formatter): Option[String] = None
@@ -338,11 +338,11 @@ object LexerError {
 
     override def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> Missing '}' in string interpolation.
-          |
-          |${code(loc, "Interpolation starts here.")}
-          |
-          |""".stripMargin
+      s""">> Missing '}' in string interpolation.
+         |
+         |${code(loc, "Interpolation starts here.")}
+         |
+         |""".stripMargin
     }
 
     override def explain(formatter: Formatter): Option[String] = None

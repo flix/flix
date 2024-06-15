@@ -32,21 +32,21 @@ case class StratificationError(cycle: List[(Name.Pred, SourceLocation)], tpe: Ty
 
   def message(formatter: Formatter): String = {
     import formatter._
-    s"""|>> The expression is not stratified. A predicate depends strongly on itself.
-        |
-        |${code(loc, "the expression is not stratified.")}
-        |
-        |The type of the expression is:
-        |
-        |  ${cyan(FormatType.formatType(tpe))}
-        |
-        |The following predicate symbols are on the cycle:
-        |
-        |  ${cycle.map(_._1).mkString(" <- ")}
-        |
-        |The following constraints are part of the cycle:
-        |${fmtConstraints(formatter)}
-        |""".stripMargin
+    s""">> The expression is not stratified. A predicate depends strongly on itself.
+       |
+       |${code(loc, "the expression is not stratified.")}
+       |
+       |The type of the expression is:
+       |
+       |  ${cyan(FormatType.formatType(tpe))}
+       |
+       |The following predicate symbols are on the cycle:
+       |
+       |  ${cycle.map(_._1).mkString(" <- ")}
+       |
+       |The following constraints are part of the cycle:
+       |${fmtConstraints(formatter)}
+       |""".stripMargin
   }
 
   /**

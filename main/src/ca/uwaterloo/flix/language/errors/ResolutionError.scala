@@ -49,8 +49,7 @@ object ResolutionError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""|
-         |${code(loc, "cyclic inheritance.")}
+      s"""${code(loc, "cyclic inheritance.")}
          |
          |The following traits are in the cycle:
          |
@@ -83,8 +82,7 @@ object ResolutionError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""|
-         |${code(loc, "Cyclic type aliases.")}
+      s"""${code(loc, "Cyclic type aliases.")}
          |
          |The following type aliases are in the cycle:
          |$appendCycles
@@ -112,7 +110,7 @@ object ResolutionError {
 
     override def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> Duplicate associated type definition: ${red(sym.name)}.
+      s""">> Duplicate associated type definition: ${red(sym.name)}.
          |
          |${code(loc2, "duplicate associated type definition.")}
          |""".stripMargin
@@ -135,7 +133,7 @@ object ResolutionError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> Duplicate derivation '${red(sym.name)}'.
+      s""">> Duplicate derivation '${red(sym.name)}'.
          |
          |${code(loc1, "the first occurrence was here.")}
          |
@@ -163,7 +161,7 @@ object ResolutionError {
 
     override def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> Illegal associated type application.
+      s""">> Illegal associated type application.
          |
          |${code(loc, "illegal associated type application.")}
          |""".stripMargin
@@ -185,7 +183,7 @@ object ResolutionError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> Unexpected non-Java type: '${red(tpe.toString)}'.
+      s""">> Unexpected non-Java type: '${red(tpe.toString)}'.
          |
          |${code(loc, "unexpected type.")}
          |
@@ -205,7 +203,7 @@ object ResolutionError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> Unexpected signature '${red(sym.name)}' which does not mention the type variable of the class.
+      s""">> Unexpected signature '${red(sym.name)}' which does not mention the type variable of the class.
          |
          |${code(loc, "unexpected signature.")}
          |""".stripMargin
@@ -228,7 +226,7 @@ object ResolutionError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> Illegal type: '${red(tpe.toString)}'.
+      s""">> Illegal type: '${red(tpe.toString)}'.
          |
          |${code(loc, "illegal type.")}
          |""".stripMargin
@@ -246,7 +244,7 @@ object ResolutionError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> Illegal wildcard type: '$ident'.
+      s""">> Illegal wildcard type: '$ident'.
          |
          |${code(loc, "illegal wildcard type.")}
          |""".stripMargin
@@ -269,7 +267,7 @@ object ResolutionError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> Trait '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
+      s""">> Trait '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
          |
          |${code(loc, "inaccessible trait.")}
          |
@@ -295,7 +293,7 @@ object ResolutionError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> Definition '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
+      s""">> Definition '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
          |
          |${code(loc, "inaccessible definition.")}
          |
@@ -321,7 +319,7 @@ object ResolutionError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> Effect '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
+      s""">> Effect '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
          |
          |${code(loc, "inaccessible effect.")}
          |
@@ -347,7 +345,7 @@ object ResolutionError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> Enum '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
+      s""">> Enum '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
          |
          |${code(loc, "inaccessible enum.")}
          |
@@ -373,7 +371,7 @@ object ResolutionError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> Operation '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
+      s""">> Operation '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
          |
          |${code(loc, "inaccessible operation.")}
          |""".stripMargin
@@ -398,7 +396,7 @@ object ResolutionError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> Enum '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
+      s""">> Enum '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
          |
          |${code(loc, "inaccessible enum.")}
          |
@@ -424,7 +422,7 @@ object ResolutionError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> Definition '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
+      s""">> Definition '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
          |
          |${code(loc, "inaccessible definition.")}
          |""".stripMargin
@@ -449,7 +447,7 @@ object ResolutionError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> Type alias '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
+      s""">> Type alias '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
          |
          |${code(loc, "inaccessible type alias.")}
          |
@@ -477,7 +475,7 @@ object ResolutionError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""|
+      s"""
          | >> Mismatched return type for method '${red(methodName)}' in class '${cyan(className)}'.
          |
          |${code(loc, "mismatched return type.")}
@@ -499,7 +497,7 @@ object ResolutionError {
 
     override def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> Missing associated type definition: $name.
+      s""">> Missing associated type definition: $name.
          |
          |${code(loc, s"missing associated type definition: $name.")}
          |""".stripMargin
@@ -520,7 +518,7 @@ object ResolutionError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> Class '${red(sym.toString)}' is sealed from the module '${cyan(ns.toString)}'.
+      s""">> Class '${red(sym.toString)}' is sealed from the module '${cyan(ns.toString)}'.
          |
          |${code(loc, "sealed class.")}
          |
@@ -545,7 +543,7 @@ object ResolutionError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> Undefined associated type'${red(qn.toString)}'.
+      s""">> Undefined associated type'${red(qn.toString)}'.
          |
          |${code(loc, "associated type not found.")}
          |
@@ -570,7 +568,7 @@ object ResolutionError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> Undefined class '${red(qn.toString)}'.
+      s""">> Undefined class '${red(qn.toString)}'.
          |
          |${code(loc, "class not found")}
          |
@@ -596,7 +594,7 @@ object ResolutionError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> Undefined effect '${red(qn.toString)}'.
+      s""">> Undefined effect '${red(qn.toString)}'.
          |
          |${code(loc, "effect not found")}
          |
@@ -622,7 +620,7 @@ object ResolutionError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> Undefined Java class '${red(name)}'.
+      s""">> Undefined Java class '${red(name)}'.
          |
          |${code(loc, "undefined class.")}
          |
@@ -654,7 +652,7 @@ object ResolutionError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> Undefined constructor in class '${cyan(clazz.getName)}' with the given signature.
+      s""">> Undefined constructor in class '${cyan(clazz.getName)}' with the given signature.
          |
          |${code(loc, "undefined constructor.")}
          |
@@ -695,7 +693,7 @@ object ResolutionError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> Undefined ${magenta(keyword)} field '${red(fieldName)}' in class '${cyan(className)}'.
+      s""">> Undefined ${magenta(keyword)} field '${red(fieldName)}' in class '${cyan(className)}'.
          |
          |${code(loc, "undefined field.")}
          |Available fields:
@@ -733,7 +731,7 @@ object ResolutionError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> Undefined ${magenta(keyword)} method '${red(methodName)}' in class '${cyan(className)}'.
+      s""">> Undefined ${magenta(keyword)} method '${red(methodName)}' in class '${cyan(className)}'.
          |
          |${code(loc, "undefined method.")}
          |No method matches the signature:
@@ -766,7 +764,7 @@ object ResolutionError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> Undefined kind '${red(qn.toString)}'.
+      s""">> Undefined kind '${red(qn.toString)}'.
          |
          |${code(loc, "undefined kind.")}
          |""".stripMargin
@@ -779,20 +777,20 @@ object ResolutionError {
   }
 
   /**
-   * Undefined Name Error.
-   *
-   * @param qn    the unresolved name.
-   * @param ns    the current namespace.
-   * @param env   the variables in the scope.
-   * @param isUse true if the undefined name occurs in a use.
-   * @param loc   the location where the error occurred.
-   */
+    * Undefined Name Error.
+    *
+    * @param qn    the unresolved name.
+    * @param ns    the current namespace.
+    * @param env   the variables in the scope.
+    * @param isUse true if the undefined name occurs in a use.
+    * @param loc   the location where the error occurred.
+    */
   case class UndefinedName(qn: Name.QName, ns: Name.NName, env: Map[String, Symbol.VarSym], isUse: Boolean, loc: SourceLocation) extends ResolutionError with Recoverable {
     def summary: String = s"Undefined name: '${qn.toString}'."
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> Undefined name '${red(qn.toString)}'.
+      s""">> Undefined name '${red(qn.toString)}'.
          |
          |${code(loc, "name not found")}
          |
@@ -820,7 +818,7 @@ object ResolutionError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> Undefined name '${red(qn.toString)}'.
+      s""">> Undefined name '${red(qn.toString)}'.
          |
          |${code(loc, "name not found")}
          |
@@ -845,7 +843,7 @@ object ResolutionError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> Undefined operation '${red(qname.toString)}'.
+      s""">> Undefined operation '${red(qname.toString)}'.
          |
          |${code(loc, "operation not found")}
          |
@@ -870,7 +868,7 @@ object ResolutionError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> Undefined restrictable tag '${red(tag)}'.
+      s""">> Undefined restrictable tag '${red(tag)}'.
          |
          |${code(loc, "tag not found.")}
          |
@@ -896,7 +894,7 @@ object ResolutionError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> Undefined restrictable type '${red(qn.toString)}'.
+      s""">> Undefined restrictable type '${red(qn.toString)}'.
          |
          |${code(loc, "type not found.")}
          |
@@ -922,7 +920,7 @@ object ResolutionError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> Undefined tag '${red(tag)}'.
+      s""">> Undefined tag '${red(tag)}'.
          |
          |${code(loc, "tag not found.")}
          |
@@ -948,7 +946,7 @@ object ResolutionError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> Undefined type '${red(qn.toString)}'.
+      s""">> Undefined type '${red(qn.toString)}'.
          |
          |${code(loc, "type not found.")}
          |
@@ -973,7 +971,7 @@ object ResolutionError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> Undefined type variable '${red(name)}'.
+      s""">> Undefined type variable '${red(name)}'.
          |
          |${code(loc, "undefined type variable.")}
          |""".stripMargin
@@ -996,7 +994,7 @@ object ResolutionError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> Under-applied associated type '${red(sym.name)}'.
+      s""">> Under-applied associated type '${red(sym.name)}'.
          |
          |${code(loc, "Under-applied associated type.")}
          |""".stripMargin
@@ -1020,7 +1018,7 @@ object ResolutionError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> Under-applied type alias '${red(sym.name)}'.
+      s""">> Under-applied type alias '${red(sym.name)}'.
          |
          |${code(loc, "Under-applied type alias.")}
          |""".stripMargin
@@ -1049,7 +1047,7 @@ object ResolutionError {
       */
     override def message(formatter: Formatter): String = {
       import formatter._
-      s"""|
+      s"""
          |The operation $op expects $expected parameter(s),
          |but $actual are provided here.
          |

@@ -41,12 +41,12 @@ object NameError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> Duplicate definition of '${red(name)}'.
-          |
-          |${code(loc1, "the first definition was here.")}
-          |
-          |${code(loc2, "the second definition was here.")}
-          |""".stripMargin
+      s""">> Duplicate definition of '${red(name)}'.
+         |
+         |${code(loc1, "the first definition was here.")}
+         |
+         |${code(loc2, "the second definition was here.")}
+         |""".stripMargin
     }
 
     override def explain(formatter: Formatter): Option[String] = Some({
@@ -75,12 +75,12 @@ object NameError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> Duplicate definition of '${red(name)}'.
-          |
-          |${code(loc1, "the first definition was here.")}
-          |
-          |${code(loc2, "the second definition was here.")}
-          |""".stripMargin
+      s""">> Duplicate definition of '${red(name)}'.
+         |
+         |${code(loc1, "the first definition was here.")}
+         |
+         |${code(loc2, "the second definition was here.")}
+         |""".stripMargin
     }
 
     def loc: SourceLocation = loc1
@@ -98,11 +98,10 @@ object NameError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""|
-         |>> Suspicious type variable '${red(name)}'. Did you mean: '${cyan(name.capitalize)}'?
-          |
-          |${code(loc, "suspicious type variable.")}
-          |""".stripMargin
+      s""">> Suspicious type variable '${red(name)}'. Did you mean: '${cyan(name.capitalize)}'?
+         |
+         |${code(loc, "suspicious type variable.")}
+         |""".stripMargin
     }
 
     override def explain(formatter: Formatter): Option[String] = Some({

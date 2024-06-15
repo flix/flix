@@ -41,13 +41,13 @@ object KindError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> This type variable was used as both kind '${red(formatKind(k1))}' and kind '${red(formatKind(k2))}'.
-          |
-          |${code(loc, "mismatched kind.")}
-          |
-          |Kind One: ${cyan(formatKind(k1))}
-          |Kind Two: ${magenta(formatKind(k2))}
-          |""".stripMargin
+      s""">> This type variable was used as both kind '${red(formatKind(k1))}' and kind '${red(formatKind(k2))}'.
+         |
+         |${code(loc, "mismatched kind.")}
+         |
+         |Kind One: ${cyan(formatKind(k1))}
+         |Kind Two: ${magenta(formatKind(k2))}
+         |""".stripMargin
     }
   }
 
@@ -63,13 +63,13 @@ object KindError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> Expected kind '${red(formatKind(expectedKind))}' here, but kind '${red(formatKind(actualKind))}' is used.
-          |
-          |${code(loc, "unexpected kind.")}
-          |
-          |Expected kind: ${cyan(formatKind(expectedKind))}
-          |Actual kind:   ${magenta(formatKind(actualKind))}
-          |""".stripMargin
+      s""">> Expected kind '${red(formatKind(expectedKind))}' here, but kind '${red(formatKind(actualKind))}' is used.
+         |
+         |${code(loc, "unexpected kind.")}
+         |
+         |Expected kind: ${cyan(formatKind(expectedKind))}
+         |Actual kind:   ${magenta(formatKind(actualKind))}
+         |""".stripMargin
     }
   }
 
@@ -83,11 +83,11 @@ object KindError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""|>> Unable to infer kind.
-          |
-          |${code(loc, "uninferred kind.")}
-          |
-          |""".stripMargin
+      s""">> Unable to infer kind.
+         |
+         |${code(loc, "uninferred kind.")}
+         |
+         |""".stripMargin
     }
 
     override def explain(formatter: Formatter): Option[String] = Some({
