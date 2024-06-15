@@ -1046,7 +1046,8 @@ object ResolutionError {
       */
     override def message(formatter: Formatter): String = {
       import formatter._
-      s"""
+      s""">> Mismatched arity.
+         |
          |The operation $op expects $expected parameter(s),
          |but $actual are provided here.
          |
