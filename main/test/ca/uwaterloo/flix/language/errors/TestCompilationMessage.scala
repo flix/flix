@@ -20,7 +20,7 @@ class TestCompilationMessage extends AnyFunSuite with TestUtils {
          |
          |""".stripMargin
 
-    val actual = CompilationMessage.messageWithLoc(NoFormatter)
+    val actual = TestCompilationMessage.messageWithLoc(NoFormatter)
 
     assert(expected == actual)
   }
