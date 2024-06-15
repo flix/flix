@@ -47,7 +47,7 @@ trait CompilationMessage {
   def summary: String
 
   /**
-    * Returns the formatted error message.
+    * Returns the error message.
     */
   def message(formatter: Formatter): String
 
