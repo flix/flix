@@ -1169,147 +1169,143 @@ object Namer {
   }
 
   /**
-    * Names the given type `tpe`.
+    * Names the given type `tpe0`.
     */
-  private def visitType(t0: DesugaredAst.Type)(implicit flix: Flix): Validation[NamedAst.Type, NameError] = {
-    def visit(tpe0: DesugaredAst.Type): Validation[NamedAst.Type, NameError] = tpe0 match {
-      case DesugaredAst.Type.Unit(loc) =>
-        Validation.success(NamedAst.Type.Unit(loc))
+  private def visitType(tpe0: DesugaredAst.Type)(implicit flix: Flix): Validation[NamedAst.Type, NameError] = tpe0 match {
+    case DesugaredAst.Type.Unit(loc) =>
+      Validation.success(NamedAst.Type.Unit(loc))
 
-      case DesugaredAst.Type.Var(ident, loc) =>
-        //
-        // Check for [[NameError.SuspiciousTypeVarName]].
-        //
-        if (isSuspiciousTypeVarName(ident.name)) {
-          // TODO NS-REFACTOR maybe check this at declaration site instead of use site
-          Validation.toSoftFailure(NamedAst.Type.Var(ident, loc), NameError.SuspiciousTypeVarName(ident.name, loc))
-        } else {
-          Validation.success(NamedAst.Type.Var(ident, loc))
-        }
+    case DesugaredAst.Type.Var(ident, loc) =>
+      //
+      // Check for [[NameError.SuspiciousTypeVarName]].
+      //
+      if (isSuspiciousTypeVarName(ident.name)) {
+        // TODO NS-REFACTOR maybe check this at declaration site instead of use site
+        Validation.toSoftFailure(NamedAst.Type.Var(ident, loc), NameError.SuspiciousTypeVarName(ident.name, loc))
+      } else {
+        Validation.success(NamedAst.Type.Var(ident, loc))
+      }
 
-      case DesugaredAst.Type.Ambiguous(qname, loc) =>
-        Validation.success(NamedAst.Type.Ambiguous(qname, loc))
+    case DesugaredAst.Type.Ambiguous(qname, loc) =>
+      Validation.success(NamedAst.Type.Ambiguous(qname, loc))
 
-      case DesugaredAst.Type.Tuple(elms, loc) =>
-        mapN(traverse(elms)(visit)) {
-          case ts => NamedAst.Type.Tuple(ts, loc)
-        }
+    case DesugaredAst.Type.Tuple(elms, loc) =>
+      mapN(traverse(elms)(visitType)) {
+        case ts => NamedAst.Type.Tuple(ts, loc)
+      }
 
-      case DesugaredAst.Type.RecordRowEmpty(loc) =>
-        Validation.success(NamedAst.Type.RecordRowEmpty(loc))
+    case DesugaredAst.Type.RecordRowEmpty(loc) =>
+      Validation.success(NamedAst.Type.RecordRowEmpty(loc))
 
-      case DesugaredAst.Type.RecordRowExtend(label, value, rest, loc) =>
-        mapN(visit(value), visit(rest)) {
-          case (t, r) => NamedAst.Type.RecordRowExtend(label, t, r, loc)
-        }
+    case DesugaredAst.Type.RecordRowExtend(label, value, rest, loc) =>
+      mapN(visitType(value), visitType(rest)) {
+        case (t, r) => NamedAst.Type.RecordRowExtend(label, t, r, loc)
+      }
 
-      case DesugaredAst.Type.Record(row, loc) =>
-        mapN(visit(row)) {
-          r => NamedAst.Type.Record(r, loc)
-        }
+    case DesugaredAst.Type.Record(row, loc) =>
+      mapN(visitType(row)) {
+        r => NamedAst.Type.Record(r, loc)
+      }
 
-      case DesugaredAst.Type.SchemaRowEmpty(loc) =>
-        Validation.success(NamedAst.Type.SchemaRowEmpty(loc))
+    case DesugaredAst.Type.SchemaRowEmpty(loc) =>
+      Validation.success(NamedAst.Type.SchemaRowEmpty(loc))
 
-      case DesugaredAst.Type.SchemaRowExtendByAlias(qname, targs, rest, loc) =>
-        mapN(traverse(targs)(visit), visit(rest)) {
-          case (ts, r) => NamedAst.Type.SchemaRowExtendWithAlias(qname, ts, r, loc)
-        }
+    case DesugaredAst.Type.SchemaRowExtendByAlias(qname, targs, rest, loc) =>
+      mapN(traverse(targs)(visitType), visitType(rest)) {
+        case (ts, r) => NamedAst.Type.SchemaRowExtendWithAlias(qname, ts, r, loc)
+      }
 
-      case DesugaredAst.Type.SchemaRowExtendByTypes(ident, den, tpes, rest, loc) =>
-        mapN(traverse(tpes)(visit), visit(rest)) {
-          case (ts, r) => NamedAst.Type.SchemaRowExtendWithTypes(ident, den, ts, r, loc)
-        }
+    case DesugaredAst.Type.SchemaRowExtendByTypes(ident, den, tpes, rest, loc) =>
+      mapN(traverse(tpes)(visitType), visitType(rest)) {
+        case (ts, r) => NamedAst.Type.SchemaRowExtendWithTypes(ident, den, ts, r, loc)
+      }
 
-      case DesugaredAst.Type.Schema(row, loc) =>
-        mapN(visit(row)) {
-          r => NamedAst.Type.Schema(r, loc)
-        }
+    case DesugaredAst.Type.Schema(row, loc) =>
+      mapN(visitType(row)) {
+        r => NamedAst.Type.Schema(r, loc)
+      }
 
-      case DesugaredAst.Type.Native(fqn, loc) =>
-        Validation.success(NamedAst.Type.Native(fqn, loc))
+    case DesugaredAst.Type.Native(fqn, loc) =>
+      Validation.success(NamedAst.Type.Native(fqn, loc))
 
-      case DesugaredAst.Type.Arrow(tparams0, eff0, tresult0, loc) =>
-        val tparamsVal = traverse(tparams0)(visit)
-        val effVal = traverseOpt(eff0)(visitType)
-        val tresultVal = visit(tresult0)
-        mapN(tparamsVal, effVal, tresultVal) {
-          case (tparams, eff, tresult) => NamedAst.Type.Arrow(tparams, eff, tresult, loc)
-        }
+    case DesugaredAst.Type.Arrow(tparams0, eff0, tresult0, loc) =>
+      val tparamsVal = traverse(tparams0)(visitType)
+      val effVal = traverseOpt(eff0)(visitType)
+      val tresultVal = visitType(tresult0)
+      mapN(tparamsVal, effVal, tresultVal) {
+        case (tparams, eff, tresult) => NamedAst.Type.Arrow(tparams, eff, tresult, loc)
+      }
 
-      case DesugaredAst.Type.Apply(tpe1, tpe2, loc) =>
-        mapN(visit(tpe1), visit(tpe2)) {
-          case (t1, t2) => NamedAst.Type.Apply(t1, t2, loc)
-        }
+    case DesugaredAst.Type.Apply(tpe1, tpe2, loc) =>
+      mapN(visitType(tpe1), visitType(tpe2)) {
+        case (t1, t2) => NamedAst.Type.Apply(t1, t2, loc)
+      }
 
-      case DesugaredAst.Type.True(loc) =>
-        Validation.success(NamedAst.Type.True(loc))
+    case DesugaredAst.Type.True(loc) =>
+      Validation.success(NamedAst.Type.True(loc))
 
-      case DesugaredAst.Type.False(loc) =>
-        Validation.success(NamedAst.Type.False(loc))
+    case DesugaredAst.Type.False(loc) =>
+      Validation.success(NamedAst.Type.False(loc))
 
-      case DesugaredAst.Type.Not(tpe, loc) =>
-        mapN(visit(tpe)) {
-          case t => NamedAst.Type.Not(t, loc)
-        }
+    case DesugaredAst.Type.Not(tpe, loc) =>
+      mapN(visitType(tpe)) {
+        case t => NamedAst.Type.Not(t, loc)
+      }
 
-      case DesugaredAst.Type.And(tpe1, tpe2, loc) =>
-        mapN(visit(tpe1), visit(tpe2)) {
-          case (t1, t2) => NamedAst.Type.And(t1, t2, loc)
-        }
+    case DesugaredAst.Type.And(tpe1, tpe2, loc) =>
+      mapN(visitType(tpe1), visitType(tpe2)) {
+        case (t1, t2) => NamedAst.Type.And(t1, t2, loc)
+      }
 
-      case DesugaredAst.Type.Or(tpe1, tpe2, loc) =>
-        mapN(visit(tpe1), visit(tpe2)) {
-          case (t1, t2) => NamedAst.Type.Or(t1, t2, loc)
-        }
+    case DesugaredAst.Type.Or(tpe1, tpe2, loc) =>
+      mapN(visitType(tpe1), visitType(tpe2)) {
+        case (t1, t2) => NamedAst.Type.Or(t1, t2, loc)
+      }
 
-      case DesugaredAst.Type.Complement(tpe, loc) =>
-        mapN(visit(tpe)) {
-          case t => NamedAst.Type.Complement(t, loc)
-        }
+    case DesugaredAst.Type.Complement(tpe, loc) =>
+      mapN(visitType(tpe)) {
+        case t => NamedAst.Type.Complement(t, loc)
+      }
 
-      case DesugaredAst.Type.Union(tpe1, tpe2, loc) =>
-        mapN(visit(tpe1), visit(tpe2)) {
-          case (t1, t2) => NamedAst.Type.Union(t1, t2, loc)
-        }
+    case DesugaredAst.Type.Union(tpe1, tpe2, loc) =>
+      mapN(visitType(tpe1), visitType(tpe2)) {
+        case (t1, t2) => NamedAst.Type.Union(t1, t2, loc)
+      }
 
-      case DesugaredAst.Type.Intersection(tpe1, tpe2, loc) =>
-        mapN(visit(tpe1), visit(tpe2)) {
-          case (t1, t2) => NamedAst.Type.Intersection(t1, t2, loc)
-        }
+    case DesugaredAst.Type.Intersection(tpe1, tpe2, loc) =>
+      mapN(visitType(tpe1), visitType(tpe2)) {
+        case (t1, t2) => NamedAst.Type.Intersection(t1, t2, loc)
+      }
 
-      case DesugaredAst.Type.Pure(loc) =>
-        Validation.success(NamedAst.Type.Pure(loc))
+    case DesugaredAst.Type.Pure(loc) =>
+      Validation.success(NamedAst.Type.Pure(loc))
 
-      case DesugaredAst.Type.CaseSet(cases, loc) =>
-        Validation.success(NamedAst.Type.CaseSet(cases, loc))
+    case DesugaredAst.Type.CaseSet(cases, loc) =>
+      Validation.success(NamedAst.Type.CaseSet(cases, loc))
 
-      case DesugaredAst.Type.CaseComplement(tpe, loc) =>
-        mapN(visitType(tpe)) {
-          case t => NamedAst.Type.CaseComplement(t, loc)
-        }
+    case DesugaredAst.Type.CaseComplement(tpe, loc) =>
+      mapN(visitType(tpe)) {
+        case t => NamedAst.Type.CaseComplement(t, loc)
+      }
 
-      case DesugaredAst.Type.CaseUnion(tpe1, tpe2, loc) =>
-        mapN(visit(tpe1), visit(tpe2)) {
-          case (t1, t2) => NamedAst.Type.CaseUnion(t1, t2, loc)
-        }
+    case DesugaredAst.Type.CaseUnion(tpe1, tpe2, loc) =>
+      mapN(visitType(tpe1), visitType(tpe2)) {
+        case (t1, t2) => NamedAst.Type.CaseUnion(t1, t2, loc)
+      }
 
-      case DesugaredAst.Type.CaseIntersection(tpe1, tpe2, loc) =>
-        mapN(visit(tpe1), visit(tpe2)) {
-          case (t1, t2) => NamedAst.Type.CaseIntersection(t1, t2, loc)
-        }
+    case DesugaredAst.Type.CaseIntersection(tpe1, tpe2, loc) =>
+      mapN(visitType(tpe1), visitType(tpe2)) {
+        case (t1, t2) => NamedAst.Type.CaseIntersection(t1, t2, loc)
+      }
 
-      case DesugaredAst.Type.Ascribe(tpe, kind0, loc) =>
-        val kind = visitKind(kind0)
-        mapN(visit(tpe)) {
-          t => NamedAst.Type.Ascribe(t, kind, loc)
-        }
+    case DesugaredAst.Type.Ascribe(tpe, kind0, loc) =>
+      val kind = visitKind(kind0)
+      mapN(visitType(tpe)) {
+        t => NamedAst.Type.Ascribe(t, kind, loc)
+      }
 
-      case DesugaredAst.Type.Error(loc) =>
-        Validation.success(NamedAst.Type.Error(loc))
-    }
-
-    visit(t0)
+    case DesugaredAst.Type.Error(loc) =>
+      Validation.success(NamedAst.Type.Error(loc))
   }
 
   /**
