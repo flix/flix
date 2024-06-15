@@ -169,10 +169,10 @@ object ParseError {
     def message(formatter: Formatter): String = {
       import formatter._
       s"""|>> Misplaced comment(s).
-         |
-         |${code(loc, s"Here")}
-         |Hint: Place comments on their own line.
-         |""".stripMargin
+          |
+          |${code(loc, s"Here")}
+          |Hint: Place comments on their own line.
+          |""".stripMargin
     }
   }
 
@@ -190,10 +190,10 @@ object ParseError {
     def message(formatter: Formatter): String = {
       import formatter._
       s"""|>> Misplaced doc-comment(s).
-         |
-         |${code(loc, s"Here")}
-         |Hint: doc-comments must annotate declarations.
-         |""".stripMargin
+          |
+          |${code(loc, s"Here")}
+          |Hint: doc-comments must annotate declarations.
+          |""".stripMargin
     }
   }
 
@@ -212,10 +212,10 @@ object ParseError {
     def message(formatter: Formatter): String = {
       import formatter._
       s"""|>> Expected ${red("scope")} on ${cyan(token.display)}.
-         |
-         |${code(loc, s"Here")}
-         |Hint: Add a scope using `@ <scope>`
-         |""".stripMargin
+          |
+          |${code(loc, s"Here")}
+          |Hint: Add a scope using `@ <scope>`
+          |""".stripMargin
     }
   }
 
@@ -257,9 +257,9 @@ object ParseError {
     def message(formatter: Formatter): String = {
       import formatter._
       s"""|>> Trailing ${red(separator.display)}.
-         |
-         |${code(loc, s"Here")}
-         |""".stripMargin
+          |
+          |${code(loc, s"Here")}
+          |""".stripMargin
     }
   }
 
@@ -315,9 +315,9 @@ object ParseError {
     def message(formatter: Formatter): String = {
       import formatter._
       s"""|>> $message
-         |
-         |${code(loc, s"Here")}
-         |""".stripMargin
+          |
+          |${code(loc, s"Here")}
+          |""".stripMargin
     }
   }
 }
