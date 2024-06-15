@@ -1,6 +1,9 @@
 # Changelog
 
-Version 0.47.0
+Version 0.48.0:
+- Compiler: Added support for resilient lexing and parsing (thanks Herluf!)
+
+Version 0.47.0:
 - Language: Added support for associated effects (thanks Matt!)
 - Library: Added `Iterable` instances for maps (thanks Stephen!)
 - Library: Added associated effects to `Iterable` and `Foldable` (thanks Stephen!)
