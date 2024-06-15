@@ -797,10 +797,10 @@ object WeederError {
     def summary: String = s"Malformed unicode escape sequence."
 
     def message(formatter: Formatter): String = {
-      import formatter.{line, code => fmtcode}
+      import formatter._
       s""">> Malformed unicode escape sequence.
          |
-         |${fmtcode(loc, "malformed unicode escape sequence")}
+         |${code(loc, "malformed unicode escape sequence")}
          |
          |""".stripMargin
     }
