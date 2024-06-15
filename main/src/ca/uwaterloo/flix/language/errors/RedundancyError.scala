@@ -45,9 +45,9 @@ object RedundancyError {
       import formatter._
       s"""|
          |>> A pure expression should not be discarded.
-         |
-         |${code(loc, "pure expression.")}
-         |""".stripMargin
+          |
+          |${code(loc, "pure expression.")}
+          |""".stripMargin
     }
   }
 
@@ -63,9 +63,9 @@ object RedundancyError {
     def message(formatter: Formatter): String = {
       import formatter._
       s"""|>> Hidden variable symbol '${red(sym.text)}'. The symbol is marked as unused.
-         |
-         |${code(loc, "hidden symbol.")}
-         |""".stripMargin
+          |
+          |${code(loc, "hidden symbol.")}
+          |""".stripMargin
 
     }
 
@@ -91,10 +91,10 @@ object RedundancyError {
     def message(formatter: Formatter): String = {
       import formatter._
       s"""|>> Redundant effect cast. The expression already has the required effect.
-         |
-         |${code(loc, "redundant cast.")}
-         |
-         |""".stripMargin
+          |
+          |${code(loc, "redundant cast.")}
+          |
+          |""".stripMargin
     }
   }
 
@@ -109,10 +109,10 @@ object RedundancyError {
     def message(formatter: Formatter): String = {
       import formatter._
       s"""|>> Redundant type cast. The expression already has the required type.
-         |
-         |${code(loc, "redundant cast.")}
-         |
-         |""".stripMargin
+          |
+          |${code(loc, "redundant cast.")}
+          |
+          |""".stripMargin
     }
   }
 
@@ -127,9 +127,9 @@ object RedundancyError {
     def message(formatter: Formatter): String = {
       import formatter._
       s"""|>> Redundant discard of unit value.
-         |
-         |${code(loc, "discarded unit value.")}
-         |""".stripMargin
+          |
+          |${code(loc, "discarded unit value.")}
+          |""".stripMargin
     }
   }
 
@@ -146,9 +146,9 @@ object RedundancyError {
     def message(formatter: Formatter): String = {
       import formatter._
       s"""|>> Type constraint '${red(FormatTypeConstraint.formatTypeConstraint(redundantTconstr))}' is entailed by type constraint '${green(FormatTypeConstraint.formatTypeConstraint(redundantTconstr))}'.
-         |
-         |${code(loc, "redundant type constraint.")}
-         |""".stripMargin
+          |
+          |${code(loc, "redundant type constraint.")}
+          |""".stripMargin
     }
 
     override def explain(formatter: Formatter): Option[String] = Some({
@@ -172,10 +172,10 @@ object RedundancyError {
     def message(formatter: Formatter): String = {
       import formatter._
       s"""|>> Redundant effect cast. The expression is already pure.
-         |
-         |${code(loc, "redundant cast.")}
-         |
-         |""".stripMargin
+          |
+          |${code(loc, "redundant cast.")}
+          |
+          |""".stripMargin
     }
   }
 
@@ -191,14 +191,14 @@ object RedundancyError {
     def message(formatter: Formatter): String = {
       import formatter._
       s"""|>> Shadowed name '${red(name)}'.
-         |
-         |${code(shadowed, "shadowed name.")}
-         |
-         |The shadowing name was declared here:
-         |
-         |${code(shadowing, "shadowing name.")}
-         |
-         |""".stripMargin
+          |
+          |${code(shadowed, "shadowed name.")}
+          |
+          |The shadowing name was declared here:
+          |
+          |${code(shadowing, "shadowing name.")}
+          |
+          |""".stripMargin
     }
 
     def loc: SourceLocation = shadowed
@@ -216,14 +216,14 @@ object RedundancyError {
     def message(formatter: Formatter): String = {
       import formatter._
       s"""|>> Shadowing name '${red(name)}'.
-         |
-         |${code(shadowing, "shadowing name.")}
-         |
-         |The shadowed name was declared here:
-         |
-         |${code(shadowed, "shadowed name.")}
-         |
-         |""".stripMargin
+          |
+          |${code(shadowing, "shadowing name.")}
+          |
+          |The shadowed name was declared here:
+          |
+          |${code(shadowed, "shadowed name.")}
+          |
+          |""".stripMargin
     }
 
     def loc: SourceLocation = shadowing
@@ -242,11 +242,11 @@ object RedundancyError {
     def message(formatter: Formatter): String = {
       import formatter._
       s"""|>> Under applied function. ${applicationAdvice(tpe)}
-         |
-         |${code(loc, "the function is not fully-applied and hence has no effect.")}
-         |
-         |The function has type '${FormatType.formatType(tpe)}'
-         |""".stripMargin
+          |
+          |${code(loc, "the function is not fully-applied and hence has no effect.")}
+          |
+          |The function has type '${FormatType.formatType(tpe)}'
+          |""".stripMargin
     }
 
     override def explain(formatter: Formatter): Option[String] = Some({
@@ -305,9 +305,9 @@ object RedundancyError {
     def message(formatter: Formatter): String = {
       import formatter._
       s"""|>> Unused definition '${red(sym.name)}'. The definition is never referenced.
-         |
-         |${code(sym.loc, "unused definition.")}
-         |""".stripMargin
+          |
+          |${code(sym.loc, "unused definition.")}
+          |""".stripMargin
     }
 
     override def explain(formatter: Formatter): Option[String] = Some({
@@ -335,9 +335,9 @@ object RedundancyError {
     def message(formatter: Formatter): String = {
       import formatter._
       s"""|>> Unused effect '${red(sym.name)}'. The effect is never referenced.
-         |
-         |${code(sym.loc, "unused effect.")}
-         |""".stripMargin
+          |
+          |${code(sym.loc, "unused effect.")}
+          |""".stripMargin
     }
 
     override def explain(formatter: Formatter): Option[String] = Some({
@@ -365,9 +365,9 @@ object RedundancyError {
     def message(formatter: Formatter): String = {
       import formatter._
       s"""|>> Unused enum '${red(sym.name)}'. Neither the enum nor its cases are ever used.
-         |
-         |${code(sym.loc, "unused enum.")}
-         |""".stripMargin
+          |
+          |${code(sym.loc, "unused enum.")}
+          |""".stripMargin
     }
 
     override def explain(formatter: Formatter): Option[String] = Some({
@@ -397,9 +397,9 @@ object RedundancyError {
     def message(formatter: Formatter): String = {
       import formatter._
       s"""|>> Unused case '${red(tag.name)}' in enum '${cyan(sym.name)}'.
-         |
-         |${code(tag.loc, "unused tag.")}
-         |""".stripMargin
+          |
+          |${code(tag.loc, "unused tag.")}
+          |""".stripMargin
 
     }
 
@@ -428,9 +428,9 @@ object RedundancyError {
     def message(formatter: Formatter): String = {
       import formatter._
       s"""|>> Unused formal parameter '${red(sym.text)}'. The parameter is not used within its scope.
-         |
-         |${code(sym.loc, "unused formal parameter.")}
-         |""".stripMargin
+          |
+          |${code(sym.loc, "unused formal parameter.")}
+          |""".stripMargin
     }
 
     override def explain(formatter: Formatter): Option[String] = Some({
@@ -459,11 +459,11 @@ object RedundancyError {
     def message(formatter: Formatter): String = {
       import formatter._
       s"""|>> Unused value but its type is marked as @MustUse.
-         |
-         |${code(loc, "unused value.")}
-         |
-         |The expression has type '${FormatType.formatType(tpe)}'
-         |""".stripMargin
+          |
+          |${code(loc, "unused value.")}
+          |
+          |The expression has type '${FormatType.formatType(tpe)}'
+          |""".stripMargin
     }
 
     override def explain(formatter: Formatter): Option[String] = Some({
@@ -488,9 +488,9 @@ object RedundancyError {
     def message(formatter: Formatter): String = {
       import formatter._
       s"""|>> Unused type parameter '${red(ident.name)}'. The parameter is not referenced anywhere.
-         |
-         |${code(ident.loc, "unused type parameter.")}
-         |""".stripMargin
+          |
+          |${code(ident.loc, "unused type parameter.")}
+          |""".stripMargin
     }
 
     override def explain(formatter: Formatter): Option[String] = Some({
@@ -516,9 +516,9 @@ object RedundancyError {
     def message(formatter: Formatter): String = {
       import formatter._
       s"""|>> Unused local variable '${red(sym.text)}'. The variable is not referenced within its scope.
-         |
-         |${code(sym.loc, "unused local variable.")}
-         |""".stripMargin
+          |
+          |${code(sym.loc, "unused local variable.")}
+          |""".stripMargin
     }
 
     override def explain(formatter: Formatter): Option[String] = Some({
@@ -547,11 +547,11 @@ object RedundancyError {
     def message(formatter: Formatter): String = {
       import formatter._
       s"""|>> Useless expression: It has no side-effect(s) and its result is discarded.
-         |
-         |${code(loc, "useless expression.")}
-         |
-         |The expression has type '${FormatType.formatType(tpe)}'
-         |""".stripMargin
+          |
+          |${code(loc, "useless expression.")}
+          |
+          |The expression has type '${FormatType.formatType(tpe)}'
+          |""".stripMargin
     }
 
     override def explain(formatter: Formatter): Option[String] = Some({
