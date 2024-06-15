@@ -71,9 +71,9 @@ object EntryPointError {
     override def message(formatter: Formatter): String = {
       import formatter._
       s"""|>> Arguments to the entry point function are not permitted.
-         |
-         |${code(loc, "unexpected entry point argument(s).")}
-         |""".stripMargin
+          |
+          |${code(loc, "unexpected entry point argument(s).")}
+          |""".stripMargin
     }
 
     override def explain(formatter: Formatter): Option[String] = None
@@ -92,11 +92,11 @@ object EntryPointError {
     override def message(formatter: Formatter): String = {
       import formatter._
       s"""|>> Unhandled effect: '${red(FormatType.formatType(eff))}'.
-         |
-         |${code(loc, "unhandled effect")}
-         |
-         |The entry point cannot have any effect other than IO.
-         |""".stripMargin
+          |
+          |${code(loc, "unhandled effect")}
+          |
+          |The entry point cannot have any effect other than IO.
+          |""".stripMargin
     }
 
     override def explain(formatter: Formatter): Option[String] = None
@@ -115,9 +115,9 @@ object EntryPointError {
     override def message(formatter: Formatter): String = {
       import formatter._
       s"""|>> The result type: '${red(FormatType.formatType(tpe))}' is not a valid entry point result type.
-         |
-         |${code(loc, "unexpected entry point result type.")}
-         |""".stripMargin
+          |
+          |${code(loc, "unexpected entry point result type.")}
+          |""".stripMargin
     }
 
     override def explain(formatter: Formatter): Option[String] = Some({
