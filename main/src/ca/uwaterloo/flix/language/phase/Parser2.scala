@@ -2446,7 +2446,7 @@ object Parser2 {
           delimiterL = TokenKind.CurlyL,
           delimiterR = TokenKind.CurlyR,
           separation = Separation.None,
-          context = SyntacticContext.Expr.OtherExpr
+          context = SyntacticContext.Expr.NewObject
         )
         close(mark, TreeKind.Expr.NewObject)
       } else {
