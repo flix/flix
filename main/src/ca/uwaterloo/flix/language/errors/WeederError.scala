@@ -386,8 +386,7 @@ object WeederError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""
-         |>> Illegal fixed atom. A negative atom is implicitly fixed.
+      s""">> Illegal fixed atom. A negative atom is implicitly fixed.
          |
          |${code(loc, "Illegal fixed atom.")}
          |""".stripMargin
