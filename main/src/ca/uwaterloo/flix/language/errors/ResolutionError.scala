@@ -475,8 +475,7 @@ object ResolutionError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""
-         | >> Mismatched return type for method '${red(methodName)}' in class '${cyan(className)}'.
+      s""">> Mismatched return type for method '${red(methodName)}' in class '${cyan(className)}'.
          |
          |${code(loc, "mismatched return type.")}
          |
