@@ -1169,9 +1169,9 @@ object Namer {
   }
 
   /**
-    * Names the given type `tpe`.
+    * Names the given type `tpe0`.
     */
-  private def visitType(t0: DesugaredAst.Type)(implicit flix: Flix): Validation[NamedAst.Type, NameError] = t0 match {
+  private def visitType(tpe0: DesugaredAst.Type)(implicit flix: Flix): Validation[NamedAst.Type, NameError] = tpe0 match {
     case DesugaredAst.Type.Unit(loc) =>
       Validation.success(NamedAst.Type.Unit(loc))
 
