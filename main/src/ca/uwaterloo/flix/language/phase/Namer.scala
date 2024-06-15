@@ -27,9 +27,8 @@ import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.collection.{Chain, ListMap}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
-import scala.jdk.CollectionConverters._
-
 import java.util.concurrent.ConcurrentLinkedQueue
+import scala.jdk.CollectionConverters._
 
 /**
   * The Namer phase introduces unique symbols for each syntactic entity in the program.
