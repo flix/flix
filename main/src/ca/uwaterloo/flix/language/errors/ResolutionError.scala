@@ -1039,7 +1039,10 @@ object ResolutionError {
     * @param loc      the location where the error occurred.
     */
   case class MismatchedOpArity(op: Symbol.OpSym, expected: Int, actual: Int, loc: SourceLocation) extends ResolutionError with Recoverable {
-    override def summary: String = s"Expected $expected parameter(s) but found $actual."
+    val params = if (expected == 1) "parameter" else "parameters"
+    val be = if (actual == 1) "is" else "are"
+
+    override def summary: String = s"Expected $expected $params but found $actual."
 
     /**
       * Returns the formatted error message.
@@ -1048,10 +1051,10 @@ object ResolutionError {
       import formatter._
       s""">> Mismatched arity.
          |
-         |The operation $op expects $expected parameter(s),
-         |but $actual are provided here.
+         |The operation $op expects $expected $params,
+         |but $actual $be provided here.
          |
-         |${code(loc, s"expected $expected parameter(s) but found $actual")}
+         |${code(loc, s"expected $expected $params but found $actual")}
          |""".stripMargin
     }
 
