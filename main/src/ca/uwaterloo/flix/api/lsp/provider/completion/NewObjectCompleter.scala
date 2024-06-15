@@ -3,7 +3,7 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.{ClassCompletion, NewObjectCompletion}
-import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.fmt.FormatType
 
 object NewObjectCompleter extends Completer {
@@ -11,7 +11,7 @@ object NewObjectCompleter extends Completer {
   /**
     * Returns a List of Completion for completer.
     */
-  override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[Completion] = {
+  override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] = {
     val regex = raw"\s*n?e?w?\s+(?:##)?(?:.*\s+)*(.*)".r
     context.prefix match {
       case regex(clazz) =>
