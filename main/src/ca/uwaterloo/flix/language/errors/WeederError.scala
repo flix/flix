@@ -590,7 +590,7 @@ object WeederError {
   case class IllegalRestrictableChooseGuard(star: Boolean, loc: SourceLocation) extends WeederError with Unrecoverable {
     private val operationName: String = if (star) "choose*" else "choose"
 
-    def summary: String = s"cases of $operationName do not allow guards."
+    def summary: String = s"Cases of $operationName do not allow guards."
 
     def message(formatter: Formatter): String = {
       import formatter._
