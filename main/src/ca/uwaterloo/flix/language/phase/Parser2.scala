@@ -2432,7 +2432,7 @@ object Parser2 {
     private def ambiguousNewExpr()(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.KeywordNew))
       val mark = open()
-      expect(TokenKind.KeywordNew, SyntacticContext.Expr.OtherExpr)
+      expect(TokenKind.KeywordNew, SyntacticContext.Expr.NewObject)
       Type.ttype()
 
       // NewObject or InvokeConstructor?
@@ -2446,7 +2446,7 @@ object Parser2 {
           delimiterL = TokenKind.CurlyL,
           delimiterR = TokenKind.CurlyR,
           separation = Separation.None,
-          context = SyntacticContext.Expr.NewObject
+          context = SyntacticContext.Expr.OtherExpr
         )
         close(mark, TreeKind.Expr.NewObject)
       } else {
