@@ -31,7 +31,7 @@ object Summary {
   private val effVarCount: TrieMap[Symbol, (Int, Int)] = TrieMap.empty
 
   def addEffCount(sym: Symbol, tc: List[TypeConstraint]): Unit = {
-    if (effVarCount.contains(sym)) ??? // shouldn't happen
+    if (effVarCount.contains(sym)) {println(sym); ???} // shouldn't happen
     else {
       val effVarSet = effVars(tc)
       val (slackVars, nonSlackVars) = effVarSet.partition(_.sym.isSlack)
@@ -152,7 +152,7 @@ object Summary {
           val numberOfIOFunctions = defs.count(defn => isIO(defn._2))
           val numberOfEffectPolymorphicFunctions = defs.count(defn => isEffectPolymorphic(defn._2))
           val numberOfLambdas = defs.map(defn => lambdaCount(defn._3)).sum
-          val (numberOfEffVars, numberOfSlackEffVars) = defs.map(defn => effVarCount.getOrElse(defn._1, (-1, -1))).reduce((x, y) => (x._1 + y._1, x._2 + y._2))
+          val (numberOfEffVars, numberOfSlackEffVars) = defs.map(defn => effVarCount.getOrElse(defn._1, {println(defn._1); ???})).reduce((x, y) => (x._1 + y._1, x._2 + y._2))
           val numberOfCasts = castCount(defs.map(_._3).toList)
 
           totalLines = totalLines + numberOfLines
