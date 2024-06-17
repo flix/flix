@@ -15,6 +15,8 @@
  */
 mod Environment {
 
+    import java.lang.Exception
+
     ///
     /// Returns the arguments passed to the program via the command line.
     ///
@@ -36,7 +38,7 @@ mod Environment {
             let iter = getenv() |> entrySet |> iterator;
             getEnvHelper(iter, Map.empty())
         } catch {
-            case _:##java.lang.Exception => Map.empty()
+            case _: Exception => Map.empty()
         }
     }
 
