@@ -121,7 +121,7 @@ object Parser2 {
       // Compute the stale and fresh sources.
       val (stale, fresh) = changeSet.partition(tokens, oldRoot.units)
 
-      // We benefit from parsing the *largest* source files *first*.
+      // Sort the stale inputs by size to increase throughput (i.e. to start work early on the biggest tasks).
       val staleByDecreasingSize = stale.toList.sortBy(p => p._2.length)
 
       // Parse each stale source in parallel and join them into a WeededAst.Root
