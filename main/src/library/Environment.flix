@@ -15,8 +15,8 @@
  */
 mod Environment {
 
-    import java.util.{Iterator => JIterator, Map => JMap, Set => JSet}
     import java.lang.{Object, Runtime}
+    import java.util.{Iterator => JIterator, Map => JMap, Set => JSet}
 
     ///
     /// Returns the arguments passed to the program via the command line.
