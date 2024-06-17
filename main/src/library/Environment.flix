@@ -17,6 +17,7 @@ mod Environment {
 
     // TODO: Sort alphabetically
     import java.util.{Map => JMap, Set => JSet, Iterator => JIterator}
+    import java.lang.Runtime
 
     ///
     /// Returns the arguments passed to the program via the command line.
@@ -52,7 +53,7 @@ mod Environment {
             let result = getenv(name);
             Object.toOption(result)
         } catch {
-            case _:##java.lang.Exception => None
+            case _: ##java.lang.Exception => None
         }
 
     ///
@@ -64,7 +65,7 @@ mod Environment {
             let result = getProperty(name);
             Object.toOption(result)
         } catch {
-            case _:##java.lang.Exception => None
+            case _: ##java.lang.Exception => None
         }
 
     ///
@@ -129,7 +130,7 @@ mod Environment {
     /// The returned value is never less than one.
     ///
     pub def getVirtualProcessors(): Int32 =
-        import static java.lang.Runtime.getRuntime(): ##java.lang.Runtime \ {};
+        import static java.lang.Runtime.getRuntime(): Runtime \ {};
         import java.lang.Runtime.availableProcessors(): Int32 \ {};
         (getRuntime() |> availableProcessors)
 
