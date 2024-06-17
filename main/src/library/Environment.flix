@@ -15,6 +15,9 @@
  */
 mod Environment {
 
+    import java.util.{Map => JMap, Set => JSet, Iterator => JIterator}
+    import java.lang.Exception
+
     ///
     /// Returns the arguments passed to the program via the command line.
     ///
@@ -28,15 +31,15 @@ mod Environment {
     /// Returns an map of the current system environment.
     ///
     pub def getEnv(): Map[String, String] = region rc {
-        import static java.lang.System.getenv(): ##java.util.Map \ rc;
-        import java.util.Map.entrySet(): ##java.util.Set \ { rc };
-        import java.util.Set.iterator(): ##java.util.Iterator \ { rc };
+        import static java.lang.System.getenv(): JMap \ rc;
+        import java.util.Map.entrySet(): JSet \ { rc };
+        import java.util.Set.iterator(): JIterator \ { rc };
         let _ = rc; // Avoids redundancy error.
         try {
             let iter = getenv() |> entrySet |> iterator;
             getEnvHelper(iter, Map.empty())
         } catch {
-            case _:##java.lang.Exception => Map.empty()
+            case _: Exception => Map.empty()
         }
     }
 
