@@ -24,6 +24,8 @@ instance UpperBound[Char] {
 
 mod Char {
 
+    import java.lang.Character
+
     ///
     ///  Returns `true` if the given char `c` is an ascii character.
     ///
@@ -240,23 +242,23 @@ mod Char {
         }
 
     ///
-    /// Get the primitive Char value from its object representation (i.e. ##java.lang.Character).
+    /// Get the primitive Char value from its object representation, i.e., java.lang.Character.
     ///
     /// This function is expected to be used when marshaling Chars from Java. Generally in Flix
-    /// code you should not need to use `##java.lang.Character`.
+    /// code you should not need to use `java.lang.Character`.
     ///
-    pub def charValue(c: ##java.lang.Character): Char =
+    pub def charValue(c: Character): Char =
         import java.lang.Character.charValue(): Char \ {};
         charValue(c)
 
     ///
-    /// Convert an Char value to its its object representation (i.e. ##java.lang.Character).
+    /// Convert an Char value to its its object representation (i.e. java.lang.Character).
     ///
     /// This function is expected to be used when marshaling Chars to Java. Generally in Flix
-    /// code you should not need to use `##java.lang.Character`.
+    /// code you should not need to use `java.lang.Character`.
     ///
-    pub def valueOf(c: Char): ##java.lang.Character =
-        import static java.lang.Character.valueOf(Char): ##java.lang.Character \ {};
+    pub def valueOf(c: Char): Character =
+        import static java.lang.Character.valueOf(Char): Character \ {};
         valueOf(c)
 
 }
