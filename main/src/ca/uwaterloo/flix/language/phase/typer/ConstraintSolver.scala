@@ -101,7 +101,7 @@ object ConstraintSolver {
 
       // We add extra constraints for the declared type and effect
       val declaredTpeConstr = TypeConstraint.Equality(tpe, infTpe, Provenance.ExpectType(expected = tpe, actual = infTpe, loc))
-      val nInfEff = if (!open) infEff else Type.mkUnion(infEff, Type.freshVar(Kind.Eff, infEff.loc, isSlack = true), infEff.loc)
+      val nInfEff = if (!open && eff == Type.Pure) infEff else Type.mkUnion(infEff, Type.freshVar(Kind.Eff, infEff.loc, isSlack = true), infEff.loc)
       val declaredEffConstr = TypeConstraint.Equality(eff, nInfEff, Provenance.ExpectEffect(expected = eff, actual = nInfEff, loc))
       val constrs = declaredTpeConstr :: declaredEffConstr :: infConstrs
 
