@@ -1173,7 +1173,7 @@ object Namer {
     */
   private def visitType(tpe0: DesugaredAst.Type)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.Type, NameError] = tpe0 match {
     case DesugaredAst.Type.Unit(loc) =>
-      NamedAst.Type.Unit(loc)
+      Validation.success(NamedAst.Type.Unit(loc))
 
     case DesugaredAst.Type.Var(ident, loc) =>
       //
