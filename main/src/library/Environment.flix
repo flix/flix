@@ -15,7 +15,8 @@
  */
 mod Environment {
 
-    import java.lang.Exception
+    import java.lang.{Exception, Object, Runtime}
+    import java.util.{Iterator => JIterator, Map => JMap, Set => JSet}
 
     ///
     /// Returns the arguments passed to the program via the command line.
@@ -30,9 +31,9 @@ mod Environment {
     /// Returns an map of the current system environment.
     ///
     pub def getEnv(): Map[String, String] = region rc {
-        import static java.lang.System.getenv(): ##java.util.Map \ rc;
-        import java.util.Map.entrySet(): ##java.util.Set \ { rc };
-        import java.util.Set.iterator(): ##java.util.Iterator \ { rc };
+        import static java.lang.System.getenv(): JMap \ rc;
+        import java.util.Map.entrySet(): JSet \ { rc };
+        import java.util.Set.iterator(): JIterator \ { rc };
         let _ = rc; // Avoids redundancy error.
         try {
             let iter = getenv() |> entrySet |> iterator;
@@ -128,15 +129,15 @@ mod Environment {
     /// The returned value is never less than one.
     ///
     pub def getVirtualProcessors(): Int32 =
-        import static java.lang.Runtime.getRuntime(): ##java.lang.Runtime \ {};
+        import static java.lang.Runtime.getRuntime(): Runtime \ {};
         import java.lang.Runtime.availableProcessors(): Int32 \ {};
         (getRuntime() |> availableProcessors)
 
     def getEnvHelper(iter: ##java.util.Iterator, m: Map[String, String]): Map[String, String] =
         import java.util.Iterator.hasNext(): Bool \ {};
-        import java.util.Iterator.next(): ##java.lang.Object \ {};
-        import java.util.Map$Entry.getKey(): ##java.lang.Object \ {};
-        import java.util.Map$Entry.getValue(): ##java.lang.Object \ {};
+        import java.util.Iterator.next(): Object \ {};
+        import java.util.Map$Entry.getKey(): Object \ {};
+        import java.util.Map$Entry.getValue(): Object \ {};
         if (hasNext(iter))
             let e = unchecked_cast(next(iter) as ##java.util.Map$Entry);
             let k = unchecked_cast(getKey(e) as String);
