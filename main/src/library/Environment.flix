@@ -51,7 +51,7 @@ mod Environment {
             let result = getenv(name);
             Object.toOption(result)
         } catch {
-            case _:##java.lang.Exception => None
+            case _: Exception => None
         }
 
     ///
@@ -63,7 +63,7 @@ mod Environment {
             let result = getProperty(name);
             Object.toOption(result)
         } catch {
-            case _:##java.lang.Exception => None
+            case _: Exception => None
         }
 
     ///
