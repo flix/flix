@@ -1322,7 +1322,7 @@ object Resolver {
           }
 
         case NamedAst.Expr.InstanceOf(exp, className, loc) =>
-          lookupJvmClass(className, loc) match {
+          lookupJvmClass(className, loc, ns0, root) match {
             case Result.Ok(clazz) => mapN(visitExp(exp, env0)) {
               e => ResolvedAst.Expr.InstanceOf(e, clazz, loc)
             }
@@ -1353,7 +1353,7 @@ object Resolver {
           val rulesVal = traverse(rules) {
             case NamedAst.CatchRule(sym, className, body) =>
               val env = env0 ++ mkVarEnv(sym)
-              val clazzVal = lookupJvmClass(className, sym.loc).toValidation
+              val clazzVal = lookupJvmClass(className, sym.loc, ns0, root).toValidation
               val bVal = visitExp(body, env)
               mapN(clazzVal, bVal) {
                 case (clazz, b) => ResolvedAst.CatchRule(sym, clazz, b)
@@ -1423,13 +1423,14 @@ object Resolver {
         case NamedAst.Expr.InvokeConstructor2(clazzName, exps, loc) =>
           val esVal = traverse(exps)(visitExp(_, env0))
           flatMapN(esVal) {
-            es => env0.get(clazzName.name) match {
-              case Some(List(Resolution.JavaClass(clazz))) =>
-                Validation.success(ResolvedAst.Expr.InvokeConstructor2(clazz, es, loc))
-              case _ =>
-                val m = ResolutionError.UndefinedJvmClass(clazzName.name, "", loc)
-                Validation.toSoftFailure(ResolvedAst.Expr.Error(m), m)
-            }
+            es =>
+              env0.get(clazzName.name) match {
+                case Some(List(Resolution.JavaClass(clazz))) =>
+                  Validation.success(ResolvedAst.Expr.InvokeConstructor2(clazz, es, loc))
+                case _ =>
+                  val m = ResolutionError.UndefinedJvmClass(clazzName.name, "", loc)
+                  Validation.toSoftFailure(ResolvedAst.Expr.Error(m), m)
+              }
           }
 
         case NamedAst.Expr.InvokeMethod2(exp, name, exps, loc) =>
@@ -1443,17 +1444,18 @@ object Resolver {
         case NamedAst.Expr.InvokeStaticMethod2(clazzName, methodName, exps, loc) =>
           val esVal = traverse(exps)(visitExp(_, env0))
           flatMapN(esVal) {
-            es => env0.get(clazzName.name) match {
-              case Some(List(Resolution.JavaClass(clazz))) =>
-                Validation.success(ResolvedAst.Expr.InvokeStaticMethod2(clazz, methodName, es, loc))
-              case _ =>
-                val m = ResolutionError.UndefinedJvmClass(clazzName.name, "", loc)
-                Validation.toSoftFailure(ResolvedAst.Expr.Error(m), m)
-            }
+            es =>
+              env0.get(clazzName.name) match {
+                case Some(List(Resolution.JavaClass(clazz))) =>
+                  Validation.success(ResolvedAst.Expr.InvokeStaticMethod2(clazz, methodName, es, loc))
+                case _ =>
+                  val m = ResolutionError.UndefinedJvmClass(clazzName.name, "", loc)
+                  Validation.toSoftFailure(ResolvedAst.Expr.Error(m), m)
+              }
           }
 
         case NamedAst.Expr.InvokeConstructor(className, args, sig, loc) =>
-          lookupJvmClass(className, loc) match {
+          lookupJvmClass(className, loc, ns0, root) match {
             case Result.Ok(clazz) =>
               val argsVal = traverse(args)(visitExp(_, env0))
               val sigVal = traverse(sig)(resolveType(_, Wildness.ForbidWild, env0, taenv, ns0, root))
@@ -1475,7 +1477,7 @@ object Resolver {
           val argsVal = traverse(args)(visitExp(_, env0))
           val sigVal = traverse(sig)(resolveType(_, Wildness.ForbidWild, env0, taenv, ns0, root))
           val retVal = resolveType(retTpe, Wildness.ForbidWild, env0, taenv, ns0, root)
-          val clazzVal = lookupJvmClass(className, loc).toValidation
+          val clazzVal = lookupJvmClass(className, loc, ns0, root).toValidation
           flatMapN(sigVal, expVal, argsVal, retVal, clazzVal) {
             case (signature, e, as, ret, clazz) =>
               flatMapN(lookupSignature(signature, loc)) {
@@ -1491,7 +1493,7 @@ object Resolver {
           val argsVal = traverse(args)(visitExp(_, env0))
           val sigVal = traverse(sig)(resolveType(_, Wildness.ForbidWild, env0, taenv, ns0, root))
           val retVal = resolveType(retTpe, Wildness.ForbidWild, env0, taenv, ns0, root)
-          val clazzVal = lookupJvmClass(className, loc).toValidation
+          val clazzVal = lookupJvmClass(className, loc, ns0, root).toValidation
           flatMapN(sigVal, argsVal, retVal, clazzVal) {
             case (signature, as, ret, clazz) =>
               flatMapN(lookupSignature(signature, loc)) {
@@ -1504,7 +1506,7 @@ object Resolver {
           }
 
         case NamedAst.Expr.GetField(className, fieldName, exp, loc) =>
-          lookupJvmField(className, fieldName, static = false, loc) match {
+          lookupJvmField(className, fieldName, static = false, loc, ns0, root) match {
             case Result.Ok((clazz, field)) =>
               mapN(visitExp(exp, env0)) {
                 case e => ResolvedAst.Expr.GetField(field, clazz, e, loc)
@@ -1513,7 +1515,7 @@ object Resolver {
           }
 
         case NamedAst.Expr.PutField(className, fieldName, exp1, exp2, loc) =>
-          lookupJvmField(className, fieldName, static = false, loc) match {
+          lookupJvmField(className, fieldName, static = false, loc, ns0, root) match {
             case Result.Ok((clazz, field)) =>
               mapN(visitExp(exp1, env0), visitExp(exp2, env0)) {
                 case (e1, e2) => ResolvedAst.Expr.PutField(field, clazz, e1, e2, loc)
@@ -1522,14 +1524,14 @@ object Resolver {
           }
 
         case NamedAst.Expr.GetStaticField(className, fieldName, loc) =>
-          lookupJvmField(className, fieldName, static = true, loc) match {
+          lookupJvmField(className, fieldName, static = true, loc, ns0, root) match {
             case Result.Ok((_, field)) =>
               Validation.success(ResolvedAst.Expr.GetStaticField(field, loc))
             case Result.Err(e) => Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
           }
 
         case NamedAst.Expr.PutStaticField(className, fieldName, exp, loc) =>
-          lookupJvmField(className, fieldName, static = true, loc) match {
+          lookupJvmField(className, fieldName, static = true, loc, ns0, root) match {
             case Result.Ok((_, field)) =>
               mapN(visitExp(exp, env0)) {
                 case e => ResolvedAst.Expr.PutStaticField(field, e, loc)
@@ -2376,7 +2378,7 @@ object Resolver {
         }
 
       case NamedAst.Type.Native(fqn, loc) =>
-        mapN(lookupJvmClass(fqn, loc).toValidation) {
+        mapN(lookupJvmClass(fqn, loc, ns0, root).toValidation) {
           case clazz => flixifyType(clazz, loc)
         }
 
@@ -3165,13 +3167,31 @@ object Resolver {
   /**
     * Returns the class reflection object for the given `className`.
     */
-  private def lookupJvmClass(className: String, loc: SourceLocation)(implicit flix: Flix): Result[Class[_], ResolutionError with Recoverable] = try {
+  private def lookupJvmClass(className: String, loc: SourceLocation, ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Result[Class[_], ResolutionError with Recoverable] = try {
     // Don't initialize the class; we don't want to execute static initializers.
     val initialize = false
     Result.Ok(Class.forName(className, initialize, flix.jarLoader))
   } catch {
-    case ex: ClassNotFoundException => Result.Err(ResolutionError.UndefinedJvmClass(className, ex.getMessage, loc))
-    case ex: NoClassDefFoundError => Result.Err(ResolutionError.UndefinedJvmClass(className, ex.getMessage, loc))
+    case ex: ClassNotFoundException => lookUpJvmClassInImport(className, loc, ns0, root)
+    case ex: NoClassDefFoundError => lookUpJvmClassInImport(className, loc, ns0, root)
+  }
+
+  private def lookUpJvmClassInImport(className: String, loc: SourceLocation, ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Result[Class[_], ResolutionError with Recoverable] = {
+    val imports = root.uses.getOrElse(ns0, Nil)
+    val importedClazzName = imports.find {
+      case NamedAst.UseOrImport.Import(_, alias, _) => alias.name == className
+      case NamedAst.UseOrImport.Use(_, _, _) => false
+    }.map {
+      case NamedAst.UseOrImport.Import(jname, _, _) => jname.toString
+      case NamedAst.UseOrImport.Use(_, _, _) => "" // Unreachable
+    }.getOrElse("")
+    val initialize = false
+    try {
+      Result.Ok(Class.forName(importedClazzName, initialize, flix.jarLoader))
+    } catch {
+      case ex: ClassNotFoundException => Result.Err(ResolutionError.UndefinedJvmClass(className, ex.getMessage, loc))
+      case ex: NoClassDefFoundError => Result.Err(ResolutionError.UndefinedJvmClass(className, ex.getMessage, loc))
+    }
   }
 
   /**
@@ -3235,8 +3255,8 @@ object Resolver {
   /**
     * Returns the class and field reflection objects for the given `className` and `fieldName`.
     */
-  private def lookupJvmField(className: String, fieldName: String, static: Boolean, loc: SourceLocation)(implicit flix: Flix): Result[(Class[_], Field), ResolutionError with Recoverable] = {
-    lookupJvmClass(className, loc).flatMap {
+  private def lookupJvmField(className: String, fieldName: String, static: Boolean, loc: SourceLocation, ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Result[(Class[_], Field), ResolutionError with Recoverable] = {
+    lookupJvmClass(className, loc, ns0, root).flatMap {
       case clazz =>
         try {
           // Lookup the field.
@@ -3338,7 +3358,6 @@ object Resolver {
         case TypeConstructor.Record => Result.Ok(Class.forName("java.lang.Object"))
 
         case TypeConstructor.Schema => Result.Ok(Class.forName("java.lang.Object"))
-
 
 
         case TypeConstructor.True => Result.Err(ResolutionError.IllegalType(tpe, loc))
@@ -3520,10 +3539,10 @@ object Resolver {
   /**
     * Resolves the given Use.
     */
-  private def visitUseOrImport(useOrImport: NamedAst.UseOrImport, ns: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[Ast.UseOrImport, ResolutionError] = useOrImport match {
-    case NamedAst.UseOrImport.Use(qname, alias, loc) => tryLookupName(qname, ListMap.empty, ns, root) match {
+  private def visitUseOrImport(useOrImport: NamedAst.UseOrImport, ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[Ast.UseOrImport, ResolutionError] = useOrImport match {
+    case NamedAst.UseOrImport.Use(qname, alias, loc) => tryLookupName(qname, ListMap.empty, ns0, root) match {
       // Case 1: No matches. Error.
-      case Nil => Validation.toHardFailure(ResolutionError.UndefinedNameUnrecoverable(qname, ns, Map.empty, isUse = true, loc))
+      case Nil => Validation.toHardFailure(ResolutionError.UndefinedNameUnrecoverable(qname, ns0, Map.empty, isUse = true, loc))
       // Case 2: A match. Map it to a use.
       // TODO NS-REFACTOR: should map to multiple uses or ignore namespaces or something
       case Resolution.Declaration(d) :: _ =>
@@ -3533,7 +3552,7 @@ object Resolver {
     }
 
     case NamedAst.UseOrImport.Import(name, alias, loc) =>
-      val clazzVal = lookupJvmClass(name.toString, loc).toValidation
+      val clazzVal = lookupJvmClass(name.toString, loc, ns0, root).toValidation
       mapN(clazzVal) {
         case clazz => Ast.UseOrImport.Import(clazz, alias, loc)
       }
