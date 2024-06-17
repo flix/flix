@@ -38,7 +38,7 @@ object Namer {
   /**
     * Introduces unique names for each syntactic entity in the given `program`.
     * */
-  def run(program: DesugaredAst.Root)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.Root, NameError] =
+  def run(program: DesugaredAst.Root)(implicit flix: Flix): Validation[NamedAst.Root, NameError] =
     flix.phase("Namer") {
 
       // Construct a new shared context.
