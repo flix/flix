@@ -100,8 +100,11 @@ object Lexer {
       // Compute the stale and fresh sources.
       val (stale, fresh) = changeSet.partition(root.sources, oldTokens)
 
+      // Sort the stale inputs by size to increase throughput (i.e. to start work early on the biggest tasks).
+      val staleByDecreasingSize = stale.keys.toList.sortBy(s => -s.data.length)
+
       // Lex each stale source file in parallel.
-      val results = ParOps.parMap(stale.keys)(src => mapN(mapN(lex(src))(fuzz))(tokens => src -> tokens))
+      val results = ParOps.parMap(staleByDecreasingSize)(src => mapN(mapN(lex(src))(fuzz))(tokens => src -> tokens))
 
       // Construct a map from each source to its tokens.
       val reused = fresh.map(m => Validation.success(m))
