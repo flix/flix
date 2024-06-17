@@ -17,7 +17,7 @@ mod Environment {
 
     // TODO: Sort alphabetically
     import java.util.{Map => JMap, Set => JSet, Iterator => JIterator}
-    import java.lang.Runtime
+    import java.lang.{Runtime, Object}
 
     ///
     /// Returns the arguments passed to the program via the command line.
@@ -136,9 +136,9 @@ mod Environment {
 
     def getEnvHelper(iter: ##java.util.Iterator, m: Map[String, String]): Map[String, String] =
         import java.util.Iterator.hasNext(): Bool \ {};
-        import java.util.Iterator.next(): ##java.lang.Object \ {};
-        import java.util.Map$Entry.getKey(): ##java.lang.Object \ {};
-        import java.util.Map$Entry.getValue(): ##java.lang.Object \ {};
+        import java.util.Iterator.next(): Object \ {};
+        import java.util.Map$Entry.getKey(): Object \ {};
+        import java.util.Map$Entry.getValue(): Object \ {};
         if (hasNext(iter))
             let e = unchecked_cast(next(iter) as ##java.util.Map$Entry);
             let k = unchecked_cast(getKey(e) as String);
