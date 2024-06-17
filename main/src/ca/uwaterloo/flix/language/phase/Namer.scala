@@ -294,7 +294,7 @@ object Namer {
   /**
     * Performs naming on the given constraint `c0`.
     */
-  private def visitConstraint(c0: DesugaredAst.Constraint, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Constraint, NameError] = c0 match {
+  private def visitConstraint(c0: DesugaredAst.Constraint, ns0: Name.NName)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.Constraint, NameError] = c0 match {
     case DesugaredAst.Constraint(h, bs, loc) =>
 
       // Introduce a symbol for every unique ident in the body, removing wildcards
@@ -321,7 +321,7 @@ object Namer {
   /**
     * Performs naming on the given enum `enum0`.
     */
-  private def visitEnum(enum0: DesugaredAst.Declaration.Enum, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.Enum, NameError] = enum0 match {
+  private def visitEnum(enum0: DesugaredAst.Declaration.Enum, ns0: Name.NName)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.Declaration.Enum, NameError] = enum0 match {
     case DesugaredAst.Declaration.Enum(doc, ann, mod0, ident, tparams0, derives0, cases0, loc) =>
       val sym = Symbol.mkEnumSym(ns0, ident)
 
@@ -341,7 +341,7 @@ object Namer {
   /**
     * Performs naming on the given enum `enum0`.
     */
-  private def visitRestrictableEnum(enum0: DesugaredAst.Declaration.RestrictableEnum, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.RestrictableEnum, NameError] = enum0 match {
+  private def visitRestrictableEnum(enum0: DesugaredAst.Declaration.RestrictableEnum, ns0: Name.NName)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.Declaration.RestrictableEnum, NameError] = enum0 match {
     case DesugaredAst.Declaration.RestrictableEnum(doc, ann, mod0, ident, index0, tparams0, derives0, cases0, loc) =>
       val caseIdents = cases0.map(_.ident)
       val sym = Symbol.mkRestrictableEnumSym(ns0, ident, caseIdents)
@@ -369,7 +369,7 @@ object Namer {
   /**
     * Performs naming on the given enum case.
     */
-  private def visitCase(case0: DesugaredAst.Case, enumSym: Symbol.EnumSym)(implicit flix: Flix): Validation[NamedAst.Declaration.Case, NameError] = case0 match {
+  private def visitCase(case0: DesugaredAst.Case, enumSym: Symbol.EnumSym)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.Declaration.Case, NameError] = case0 match {
     case DesugaredAst.Case(ident, tpe0, loc) =>
       mapN(visitType(tpe0)) {
         case tpe =>
@@ -381,7 +381,7 @@ object Namer {
   /**
     * Performs naming on the given enum case.
     */
-  private def visitRestrictableCase(case0: DesugaredAst.RestrictableCase, enumSym: Symbol.RestrictableEnumSym)(implicit flix: Flix): Validation[NamedAst.Declaration.RestrictableCase, NameError] = case0 match {
+  private def visitRestrictableCase(case0: DesugaredAst.RestrictableCase, enumSym: Symbol.RestrictableEnumSym)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.Declaration.RestrictableCase, NameError] = case0 match {
     case DesugaredAst.RestrictableCase(ident, tpe0, loc) =>
       mapN(visitType(tpe0)) {
         case tpe =>
@@ -393,7 +393,7 @@ object Namer {
   /**
     * Performs naming on the given type alias `alias0`.
     */
-  private def visitTypeAlias(alias0: DesugaredAst.Declaration.TypeAlias, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.TypeAlias, NameError] = alias0 match {
+  private def visitTypeAlias(alias0: DesugaredAst.Declaration.TypeAlias, ns0: Name.NName)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.Declaration.TypeAlias, NameError] = alias0 match {
     case DesugaredAst.Declaration.TypeAlias(doc, ann, mod0, ident, tparams0, tpe0, loc) =>
       val mod = visitModifiers(mod0, ns0)
       val tparams = getTypeParams(tparams0)
@@ -407,7 +407,7 @@ object Namer {
   /**
     * Performs naming on the given associated type signature `s0`.
     */
-  private def visitAssocTypeSig(s0: DesugaredAst.Declaration.AssocTypeSig, trt: Symbol.TraitSym)(implicit flix: Flix): Validation[NamedAst.Declaration.AssocTypeSig, NameError] = s0 match {
+  private def visitAssocTypeSig(s0: DesugaredAst.Declaration.AssocTypeSig, trt: Symbol.TraitSym)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.Declaration.AssocTypeSig, NameError] = s0 match {
     case DesugaredAst.Declaration.AssocTypeSig(doc, mod, ident, tparams0, kind0, tpe0, loc) =>
       val sym = Symbol.mkAssocTypeSym(trt, ident)
       val tparam = getTypeParam(tparams0)
@@ -422,7 +422,7 @@ object Namer {
   /**
     * Performs naming on the given associated type definition `d0`.
     */
-  private def visitAssocTypeDef(d0: DesugaredAst.Declaration.AssocTypeDef)(implicit flix: Flix): Validation[NamedAst.Declaration.AssocTypeDef, NameError] = d0 match {
+  private def visitAssocTypeDef(d0: DesugaredAst.Declaration.AssocTypeDef)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.Declaration.AssocTypeDef, NameError] = d0 match {
     case DesugaredAst.Declaration.AssocTypeDef(doc, mod, ident, arg0, tpe0, loc) =>
       val argVal = visitType(arg0)
       val tpeVal = visitType(tpe0)
@@ -434,7 +434,7 @@ object Namer {
   /**
     * Performs naming on the given trait `trt`.
     */
-  private def visitTrait(trt: DesugaredAst.Declaration.Trait, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.Trait, NameError] = trt match {
+  private def visitTrait(trt: DesugaredAst.Declaration.Trait, ns0: Name.NName)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.Declaration.Trait, NameError] = trt match {
     case DesugaredAst.Declaration.Trait(doc, ann, mod0, ident, tparams0, superTraits0, assocs0, signatures, laws0, loc) =>
       val sym = Symbol.mkTraitSym(ns0, ident)
       val mod = visitModifiers(mod0, ns0)
@@ -454,7 +454,7 @@ object Namer {
   /**
     * Performs naming on the given instance `instance`.
     */
-  private def visitInstance(instance: DesugaredAst.Declaration.Instance, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.Instance, NameError] = instance match {
+  private def visitInstance(instance: DesugaredAst.Declaration.Instance, ns0: Name.NName)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.Declaration.Instance, NameError] = instance match {
     case DesugaredAst.Declaration.Instance(doc, ann, mod, clazz, tpe0, tconstrs0, assocs0, defs0, loc) =>
       val tparams = getImplicitTypeParamsFromTypes(List(tpe0))
 
@@ -474,7 +474,7 @@ object Namer {
   /**
     * Performs naming on the given type constraint `tconstr`.
     */
-  private def visitTypeConstraint(tconstr: DesugaredAst.TypeConstraint)(implicit flix: Flix): Validation[NamedAst.TypeConstraint, NameError] = tconstr match {
+  private def visitTypeConstraint(tconstr: DesugaredAst.TypeConstraint)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.TypeConstraint, NameError] = tconstr match {
     case DesugaredAst.TypeConstraint(trt, tparam0, loc) =>
       mapN(visitType(tparam0)) {
         tparam => NamedAst.TypeConstraint(trt, tparam, loc)
@@ -484,7 +484,7 @@ object Namer {
   /**
     * Performs naming on the given equality constraint `econstr`.
     */
-  private def visitEqualityConstraint(econstr: DesugaredAst.EqualityConstraint)(implicit flix: Flix): Validation[NamedAst.EqualityConstraint, NameError] = econstr match {
+  private def visitEqualityConstraint(econstr: DesugaredAst.EqualityConstraint)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.EqualityConstraint, NameError] = econstr match {
     case DesugaredAst.EqualityConstraint(qname, tpe1, tpe2, loc) =>
       val t1Val = visitType(tpe1)
       val t2Val = visitType(tpe2)
@@ -496,7 +496,7 @@ object Namer {
   /**
     * Performs naming on the given signature declaration `sig`.
     */
-  private def visitSig(sig: DesugaredAst.Declaration.Sig, ns0: Name.NName, traitSym: Symbol.TraitSym)(implicit flix: Flix): Validation[NamedAst.Declaration.Sig, NameError] = sig match {
+  private def visitSig(sig: DesugaredAst.Declaration.Sig, ns0: Name.NName, traitSym: Symbol.TraitSym)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.Declaration.Sig, NameError] = sig match {
     case DesugaredAst.Declaration.Sig(doc, ann, mod0, ident, tparams0, fparams0, exp0, tpe0, eff0, tconstrs0, econstrs0, loc) =>
       val tparams = getTypeParamsFromFormalParams(tparams0, fparams0, tpe0, eff0, econstrs0)
 
@@ -527,7 +527,7 @@ object Namer {
   /**
     * Performs naming on the given definition declaration `decl0`.
     */
-  private def visitDef(decl0: DesugaredAst.Declaration.Def, ns0: Name.NName, defKind: DefKind)(implicit flix: Flix): Validation[NamedAst.Declaration.Def, NameError] = decl0 match {
+  private def visitDef(decl0: DesugaredAst.Declaration.Def, ns0: Name.NName, defKind: DefKind)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.Declaration.Def, NameError] = decl0 match {
     case DesugaredAst.Declaration.Def(doc, ann, mod0, ident, tparams0, fparams0, exp, tpe0, eff0, tconstrs0, econstrs0, loc) =>
       flix.subtask(ident.name, sample = true)
 
@@ -566,7 +566,7 @@ object Namer {
   /**
     * Performs naming on the given effect `eff0`.
     */
-  private def visitEffect(eff0: DesugaredAst.Declaration.Effect, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.Effect, NameError] = eff0 match {
+  private def visitEffect(eff0: DesugaredAst.Declaration.Effect, ns0: Name.NName)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.Declaration.Effect, NameError] = eff0 match {
     case DesugaredAst.Declaration.Effect(doc, ann, mod0, ident, ops0, loc) =>
       val sym = Symbol.mkEffectSym(ns0, ident)
 
@@ -581,7 +581,7 @@ object Namer {
   /**
     * Performs naming on the given effect operation `op0`.
     */
-  private def visitOp(op0: DesugaredAst.Declaration.Op, ns0: Name.NName, effSym: Symbol.EffectSym)(implicit flix: Flix): Validation[NamedAst.Declaration.Op, NameError] = op0 match {
+  private def visitOp(op0: DesugaredAst.Declaration.Op, ns0: Name.NName, effSym: Symbol.EffectSym)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.Declaration.Op, NameError] = op0 match {
     case DesugaredAst.Declaration.Op(doc, ann, mod0, ident, fparams0, tpe0, tconstrs0, loc) =>
       // First visit all the top-level information
       val mod = visitModifiers(mod0, ns0)
@@ -605,7 +605,7 @@ object Namer {
     * Performs naming on the given expression `exp0`.
     */
   // TODO NS-REFACTOR can remove ns0 too?
-  private def visitExp(exp0: DesugaredAst.Expr, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Expr, NameError] = exp0 match {
+  private def visitExp(exp0: DesugaredAst.Expr, ns0: Name.NName)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.Expr, NameError] = exp0 match {
 
     case DesugaredAst.Expr.Ambiguous(name, loc) =>
       Validation.success(NamedAst.Expr.Ambiguous(name, loc))
@@ -1083,7 +1083,7 @@ object Namer {
   /**
     * Names the given pattern `pat0`.
     */
-  private def visitPattern(pat0: DesugaredAst.Pattern)(implicit flix: Flix): NamedAst.Pattern = pat0 match {
+  private def visitPattern(pat0: DesugaredAst.Pattern)(implicit flix: Flix, sctx: SharedContext): NamedAst.Pattern = pat0 match {
     case DesugaredAst.Pattern.Wild(loc) => NamedAst.Pattern.Wild(loc)
     case DesugaredAst.Pattern.Var(ident, loc) =>
       // make a fresh variable symbol for the local variable.
@@ -1121,7 +1121,7 @@ object Namer {
   /**
     * Names the given pattern `pat0`
     */
-  private def visitRestrictablePattern(pat0: DesugaredAst.RestrictableChoosePattern)(implicit flix: Flix): NamedAst.RestrictableChoosePattern = {
+  private def visitRestrictablePattern(pat0: DesugaredAst.RestrictableChoosePattern)(implicit flix: Flix, sctx: SharedContext): NamedAst.RestrictableChoosePattern = {
     def visitVarPlace(vp: DesugaredAst.RestrictableChoosePattern.VarOrWild): NamedAst.RestrictableChoosePattern.VarOrWild = vp match {
       case RestrictableChoosePattern.Wild(loc) => NamedAst.RestrictableChoosePattern.Wild(loc)
       case RestrictableChoosePattern.Var(ident, loc) =>
@@ -1139,7 +1139,7 @@ object Namer {
   /**
     * Names the given head predicate `head`.
     */
-  private def visitHeadPredicate(head: DesugaredAst.Predicate.Head, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Predicate.Head, NameError] = head match {
+  private def visitHeadPredicate(head: DesugaredAst.Predicate.Head, ns0: Name.NName)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.Predicate.Head, NameError] = head match {
     case DesugaredAst.Predicate.Head.Atom(pred, den, exps, loc) =>
       val expsVal = traverse(exps)(t => visitExp(t, ns0))
       mapN(expsVal) {
@@ -1150,7 +1150,7 @@ object Namer {
   /**
     * Names the given body predicate `body`.
     */
-  private def visitBodyPredicate(body: DesugaredAst.Predicate.Body, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Predicate.Body, NameError] = body match {
+  private def visitBodyPredicate(body: DesugaredAst.Predicate.Body, ns0: Name.NName)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.Predicate.Body, NameError] = body match {
     case DesugaredAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, loc) =>
       val ts = terms.map(visitPattern)
       Validation.success(NamedAst.Predicate.Body.Atom(pred, den, polarity, fixity, ts, loc))
@@ -1171,7 +1171,7 @@ object Namer {
   /**
     * Names the given type `tpe0`.
     */
-  private def visitType(tpe0: DesugaredAst.Type)(implicit flix: Flix): Validation[NamedAst.Type, NameError] = tpe0 match {
+  private def visitType(tpe0: DesugaredAst.Type)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.Type, NameError] = tpe0 match {
     case DesugaredAst.Type.Unit(loc) =>
       Validation.success(NamedAst.Type.Unit(loc))
 
@@ -1181,7 +1181,8 @@ object Namer {
       //
       if (isSuspiciousTypeVarName(ident.name)) {
         // TODO NS-REFACTOR maybe check this at declaration site instead of use site
-        Validation.toSoftFailure(NamedAst.Type.Var(ident, loc), NameError.SuspiciousTypeVarName(ident.name, loc))
+        sctx.errors.add(NameError.SuspiciousTypeVarName(ident.name, loc))
+        Validation.success(NamedAst.Type.Var(ident, loc))
       } else {
         Validation.success(NamedAst.Type.Var(ident, loc))
       }
@@ -1432,7 +1433,7 @@ object Namer {
   /**
     * Translates the given weeded formal parameter to a named formal parameter.
     */
-  private def visitFormalParam(fparam: DesugaredAst.FormalParam)(implicit flix: Flix): Validation[NamedAst.FormalParam, NameError] = fparam match {
+  private def visitFormalParam(fparam: DesugaredAst.FormalParam)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.FormalParam, NameError] = fparam match {
     case DesugaredAst.FormalParam(ident, mod, optType, loc) =>
       // Generate a fresh variable symbol for the identifier.
       val freshSym = Symbol.freshVarSym(ident, BoundBy.FormalParam)
@@ -1449,7 +1450,7 @@ object Namer {
   /**
     * Translates the given weeded predicate parameter to a named predicate parameter.
     */
-  private def visitPredicateParam(pparam: DesugaredAst.PredicateParam)(implicit flix: Flix): Validation[NamedAst.PredicateParam, NameError] = pparam match {
+  private def visitPredicateParam(pparam: DesugaredAst.PredicateParam)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.PredicateParam, NameError] = pparam match {
     case DesugaredAst.PredicateParam.PredicateParamUntyped(pred, loc) =>
       Validation.success(NamedAst.PredicateParam.PredicateParamUntyped(pred, loc))
 
@@ -1462,7 +1463,7 @@ object Namer {
   /**
     * Translates the given weeded JvmMethod to a named JvmMethod.
     */
-  private def visitJvmMethod(method: DesugaredAst.JvmMethod, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.JvmMethod, NameError] = method match {
+  private def visitJvmMethod(method: DesugaredAst.JvmMethod, ns0: Name.NName)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.JvmMethod, NameError] = method match {
     case DesugaredAst.JvmMethod(ident, fparams0, exp0, tpe0, eff0, loc) =>
       flatMapN(traverse(fparams0)(visitFormalParam): Validation[List[NamedAst.FormalParam], NameError]) {
         case fparams =>
@@ -1478,7 +1479,7 @@ object Namer {
   /**
     * Performs naming on the given formal parameters `fparam0`.
     */
-  private def getFormalParams(fparams0: List[DesugaredAst.FormalParam])(implicit flix: Flix): Validation[List[NamedAst.FormalParam], NameError] = {
+  private def getFormalParams(fparams0: List[DesugaredAst.FormalParam])(implicit flix: Flix, sctx: SharedContext): Validation[List[NamedAst.FormalParam], NameError] = {
     traverse(fparams0)(visitFormalParam)
   }
 
@@ -1486,7 +1487,7 @@ object Namer {
   /**
     * Performs naming on the given type parameter.
     */
-  private def getTypeParam(tparam0: DesugaredAst.TypeParam)(implicit flix: Flix): NamedAst.TypeParam = tparam0 match {
+  private def getTypeParam(tparam0: DesugaredAst.TypeParam)(implicit flix: Flix, sctx: SharedContext): NamedAst.TypeParam = tparam0 match {
     case DesugaredAst.TypeParam.Kinded(ident, kind) =>
       NamedAst.TypeParam.Kinded(ident, mkTypeVarSym(ident), visitKind(kind), ident.loc)
     case DesugaredAst.TypeParam.Unkinded(ident) =>
@@ -1496,7 +1497,7 @@ object Namer {
   /**
     * Performs naming on the given type parameters `tparam0` from the given cases `cases`.
     */
-  private def getTypeParams(tparams0: DesugaredAst.TypeParams)(implicit flix: Flix): NamedAst.TypeParams = {
+  private def getTypeParams(tparams0: DesugaredAst.TypeParams)(implicit flix: Flix, sctx: SharedContext): NamedAst.TypeParams = {
     tparams0 match {
       case DesugaredAst.TypeParams.Elided => NamedAst.TypeParams.Kinded(Nil)
       case DesugaredAst.TypeParams.Unkinded(tparams) => getExplicitTypeParams(tparams)
@@ -1508,7 +1509,7 @@ object Namer {
   /**
     * Performs naming on the given type parameters `tparams0` from the given formal params `fparams` and overall type `tpe`.
     */
-  private def getTypeParamsFromFormalParams(tparams0: DesugaredAst.TypeParams, fparams: List[DesugaredAst.FormalParam], tpe: DesugaredAst.Type, eff: Option[DesugaredAst.Type], econstrs: List[DesugaredAst.EqualityConstraint])(implicit flix: Flix): NamedAst.TypeParams = {
+  private def getTypeParamsFromFormalParams(tparams0: DesugaredAst.TypeParams, fparams: List[DesugaredAst.FormalParam], tpe: DesugaredAst.Type, eff: Option[DesugaredAst.Type], econstrs: List[DesugaredAst.EqualityConstraint])(implicit flix: Flix, sctx: SharedContext): NamedAst.TypeParams = {
     tparams0 match {
       case DesugaredAst.TypeParams.Elided => getImplicitTypeParamsFromFormalParams(fparams, tpe, eff, econstrs)
       case DesugaredAst.TypeParams.Unkinded(tparams) => getExplicitTypeParams(tparams)
@@ -1520,7 +1521,7 @@ object Namer {
   /**
     * Names the explicit kinded type params.
     */
-  private def getExplicitKindedTypeParams(tparams0: List[DesugaredAst.TypeParam.Kinded])(implicit flix: Flix): NamedAst.TypeParams.Kinded = {
+  private def getExplicitKindedTypeParams(tparams0: List[DesugaredAst.TypeParam.Kinded])(implicit flix: Flix, sctx: SharedContext): NamedAst.TypeParams.Kinded = {
     val tparams = tparams0.map {
       case DesugaredAst.TypeParam.Kinded(ident, kind) =>
         NamedAst.TypeParam.Kinded(ident, mkTypeVarSym(ident), visitKind(kind), ident.loc)
@@ -1531,7 +1532,7 @@ object Namer {
   /**
     * Returns the explicit unkinded type parameters from the given type parameter names and implicit type parameters.
     */
-  private def getExplicitTypeParams(tparams0: List[DesugaredAst.TypeParam.Unkinded])(implicit flix: Flix): NamedAst.TypeParams.Unkinded = {
+  private def getExplicitTypeParams(tparams0: List[DesugaredAst.TypeParam.Unkinded])(implicit flix: Flix, sctx: SharedContext): NamedAst.TypeParams.Unkinded = {
     val tparams = tparams0.map {
       case DesugaredAst.TypeParam.Unkinded(ident) =>
         NamedAst.TypeParam.Unkinded(ident, mkTypeVarSym(ident), ident.loc)
@@ -1542,7 +1543,7 @@ object Namer {
   /**
     * Returns the implicit type parameters constructed from the given types.
     */
-  private def getImplicitTypeParamsFromTypes(types: List[DesugaredAst.Type])(implicit flix: Flix): NamedAst.TypeParams.Implicit = {
+  private def getImplicitTypeParamsFromTypes(types: List[DesugaredAst.Type])(implicit flix: Flix, sctx: SharedContext): NamedAst.TypeParams.Implicit = {
     val tvars = types.flatMap(freeTypeVars).distinct
     val tparams = tvars.map {
       ident => NamedAst.TypeParam.Implicit(ident, mkTypeVarSym(ident), ident.loc)
@@ -1553,7 +1554,7 @@ object Namer {
   /**
     * Returns the implicit type parameters constructed from the given formal parameters and type.
     */
-  private def getImplicitTypeParamsFromFormalParams(fparams: List[DesugaredAst.FormalParam], tpe: DesugaredAst.Type, eff: Option[DesugaredAst.Type], econstrs: List[DesugaredAst.EqualityConstraint])(implicit flix: Flix): NamedAst.TypeParams = {
+  private def getImplicitTypeParamsFromFormalParams(fparams: List[DesugaredAst.FormalParam], tpe: DesugaredAst.Type, eff: Option[DesugaredAst.Type], econstrs: List[DesugaredAst.EqualityConstraint])(implicit flix: Flix, sctx: SharedContext): NamedAst.TypeParams = {
     // Compute the type variables that occur in the formal parameters.
     val fparamTvars = fparams.flatMap {
       case DesugaredAst.FormalParam(_, _, Some(tpe1), _) => freeTypeVars(tpe1)
@@ -1599,7 +1600,7 @@ object Namer {
   /**
     * Creates a flexible unkinded type variable symbol from the given ident.
     */
-  private def mkTypeVarSym(ident: Name.Ident)(implicit flix: Flix): Symbol.UnkindedTypeVarSym = {
+  private def mkTypeVarSym(ident: Name.Ident)(implicit flix: Flix, sctx: SharedContext): Symbol.UnkindedTypeVarSym = {
     Symbol.freshUnkindedTypeVarSym(Ast.VarText.SourceText(ident.name), isRegion = false, ident.loc)
   }
 
