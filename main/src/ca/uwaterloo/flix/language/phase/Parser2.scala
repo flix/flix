@@ -122,7 +122,7 @@ object Parser2 {
       val (stale, fresh) = changeSet.partition(tokens, oldRoot.units)
 
       // Sort the stale inputs by size to increase throughput (i.e. to start work early on the biggest tasks).
-      val staleByDecreasingSize = stale.toList.sortBy(p => p._2.length)
+      val staleByDecreasingSize = stale.toList.sortBy(p => -p._2.length)
 
       // Parse each stale source in parallel and join them into a WeededAst.Root
       val refreshed = ParOps.parMap(staleByDecreasingSize) {
