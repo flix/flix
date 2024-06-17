@@ -17,7 +17,6 @@ mod Environment {
 
     // TODO: Sort alphabetically
     import java.util.{Map => JMap, Set => JSet, Iterator => JIterator}
-    import java.lang.Exception
 
     ///
     /// Returns the arguments passed to the program via the command line.
@@ -40,7 +39,7 @@ mod Environment {
             let iter = getenv() |> entrySet |> iterator;
             getEnvHelper(iter, Map.empty())
         } catch {
-            case _: Exception => Map.empty()
+            case _: ##java.lang.Exception => Map.empty()
         }
     }
 
