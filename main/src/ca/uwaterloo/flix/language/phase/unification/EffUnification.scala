@@ -212,7 +212,7 @@ object EffUnification {
         } yield Type.Apply(t1, t2, loc)
       case Type.Alias(_, _, tpe, _) => visit(tpe)
       case Type.AssocType(Ast.AssocTypeConstructor(assoc, _), Type.Var(tvar, _), kind, _) if renv.isRigid(tvar) =>
-        val sym = cache.getOrElseUpdate((assoc, tvar), Symbol.freshKindedTypeVarSym(Ast.VarText.Absent, kind, isRegion = false, SourceLocation.Unknown))
+        val sym = cache.getOrElseUpdate((assoc, tvar), Symbol.freshKindedTypeVarSym(Ast.VarText.Absent, kind, isRegion = false, isSlack = false, SourceLocation.Unknown))
         Some(Type.Var(sym, SourceLocation.Unknown))
       case Type.AssocType(_, _, _, _) => None
     }

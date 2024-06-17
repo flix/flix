@@ -156,7 +156,8 @@ object ConstraintGen {
 
       case Expr.Lambda(fparam, exp, loc) =>
         c.unifyType(fparam.sym.tvar, fparam.tpe, loc)
-        val (tpe, eff) = visitExp(exp)
+        val (tpe, eff0) = visitExp(exp)
+        val eff = Type.mkUnion(eff0, Type.freshVar(Kind.Eff, loc, isSlack = true), loc)
         val resTpe = Type.mkArrowWithEffect(fparam.tpe, eff, tpe, loc)
         val resEff = Type.Pure
         (resTpe, resEff)
@@ -1190,7 +1191,7 @@ object ConstraintGen {
         // The operation type is `Void`. Flix does not have subtyping, but here we want something close to it.
         // Hence we treat `Void` as a fresh type variable.
         // An alternative would be to allow empty pattern matches, but that is cumbersome.
-        Type.freshVar(Kind.Star, op.spec.tpe.loc, isRegion = false, Ast.VarText.Absent)
+        Type.freshVar(Kind.Star, op.spec.tpe.loc, isRegion = false, isSlack = false, Ast.VarText.Absent)
       case _ => op.spec.tpe
     }
   }

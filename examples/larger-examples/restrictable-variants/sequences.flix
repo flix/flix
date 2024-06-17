@@ -414,7 +414,7 @@ mod Seq {
     ///
     pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, z: b, l: Seq[s][a]): b \ ef = choose l {
         case Seq.Nil            => z
-        case Seq.One(x)         => f(x, _ -> checked_ecast(z))
+        case Seq.One(x)         => f(x, _ -> (z))
         case Seq.Cons(x, xs)    => f(x, _ -> foldRightWithCont(f, z, xs))
     }
 

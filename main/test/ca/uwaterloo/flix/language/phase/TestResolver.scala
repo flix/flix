@@ -1511,7 +1511,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |}
         |
         |def foo(): Unit = {
-        |    try checked_ecast(()) with E {
+        |    try (()) with E {
         |        def op(x, y, cont) = ()
         |    }
         |}

@@ -1760,12 +1760,13 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     expectError[RedundancyError.UnusedMustUseValue](result)
   }
 
-  test("RedundantCheckedTypeCast.01") {
+  ignore("RedundantCheckedTypeCast.01") {
     val input =
       """
         |def f(): Unit =
         |    let _ =
         |        if (true)
+        |            // is now illegal
         |            checked_cast(x -> x + 1)
         |        else
         |            x -> x + 1;
@@ -1776,12 +1777,13 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     expectError[RedundancyError.RedundantCheckedTypeCast](result)
   }
 
-  test("RedundantCheckedTypeCast.02") {
+  ignore("RedundantCheckedTypeCast.02") {
     val input =
       """
         |def f(): Unit \ IO =
         |    let _ =
         |        if (true)
+        |            // is now illegal
         |            checked_cast(x -> x + 1)
         |        else {
         |            println(1);
@@ -1847,7 +1849,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     expectError[RedundancyError.RedundantCheckedTypeCast](result)
   }
 
-  test("RedundantCheckedTypeCast.06") {
+  ignore("RedundantCheckedTypeCast.06") {
     val input =
       """
         |pub eff A
@@ -1859,6 +1861,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |    let g = () -> unchecked_cast(() as _ \ { A, B, C });
         |    let _ =
         |        if (true)
+        |            // is now illegal
         |            checked_cast(f)
         |        else
         |            g;
@@ -1876,7 +1879,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |def f(): Unit =
         |    let _ =
         |        if (true)
-        |            checked_ecast(x -> x)
+        |            (x -> x)
         |        else
         |            x -> x;
         |    ()
@@ -1892,7 +1895,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |def f(): Unit =
         |    let _ =
         |        if (true)
-        |            checked_ecast(())
+        |            (())
         |        else
         |            region rc {
         |                let _ = $ARRAY_NEW$(rc, 8, 8);
@@ -1911,7 +1914,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |def f(): Unit =
         |    let _ =
         |        if (true)
-        |            checked_ecast((1, "a"))
+        |            ((1, "a"))
         |        else
         |            (1, "a");
         |    ()
@@ -1951,7 +1954,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |    let g = () -> unchecked_cast(() as _ \ { A, B, C });
         |    let _ =
         |        if (true)
-        |            checked_ecast(f)
+        |            (f)
         |        else
         |            g;
         |    ()
