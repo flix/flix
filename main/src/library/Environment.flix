@@ -15,9 +15,8 @@
  */
 mod Environment {
 
-    // TODO: Sort alphabetically
-    import java.util.{Map => JMap, Set => JSet, Iterator => JIterator}
-    import java.lang.{Runtime, Object}
+    import java.util.{Iterator => JIterator, Map => JMap, Set => JSet}
+    import java.lang.{Object, Runtime}
 
     ///
     /// Returns the arguments passed to the program via the command line.
