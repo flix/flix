@@ -392,7 +392,7 @@ object CompilerPerf {
       flushCaches()
 
       val flix = new Flix()
-      flix.setOptions(o.copy(threads = MinThreads, incremental = false, loadClassFiles = false))
+      flix.setOptions(o.copy(threads = MinThreads, incremental = false, progress = false, loadClassFiles = false))
 
       addInputs(flix)
       runSingle(flix)
@@ -408,7 +408,7 @@ object CompilerPerf {
       flushCaches()
 
       val flix = new Flix()
-      flix.setOptions(o.copy(threads = MaxThreads, incremental = false, loadClassFiles = false))
+      flix.setOptions(o.copy(threads = MaxThreads, incremental = false, progress = false, loadClassFiles = false))
 
       addInputs(flix)
       runSingle(flix)
