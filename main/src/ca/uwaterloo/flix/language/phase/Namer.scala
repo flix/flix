@@ -1242,64 +1242,60 @@ object Namer {
       NamedAst.Type.False(loc)
 
     case DesugaredAst.Type.Not(tpe, loc) =>
-      mapN(visitType(tpe)) {
-        case t => NamedAst.Type.Not(t, loc)
-      }
+      val t = visitType(tpe)
+      NamedAst.Type.Not(t, loc)
 
     case DesugaredAst.Type.And(tpe1, tpe2, loc) =>
-      mapN(visitType(tpe1), visitType(tpe2)) {
-        case (t1, t2) => NamedAst.Type.And(t1, t2, loc)
-      }
+      val t1 = visitType(tpe1)
+      val t2 = visitType(tpe2)
+      NamedAst.Type.And(t1, t2, loc)
 
     case DesugaredAst.Type.Or(tpe1, tpe2, loc) =>
-      mapN(visitType(tpe1), visitType(tpe2)) {
-        case (t1, t2) => NamedAst.Type.Or(t1, t2, loc)
-      }
+      val t1 = visitType(tpe1)
+      val t2 = visitType(tpe2)
+      NamedAst.Type.Or(t1, t2, loc)
 
     case DesugaredAst.Type.Complement(tpe, loc) =>
-      mapN(visitType(tpe)) {
-        case t => NamedAst.Type.Complement(t, loc)
-      }
+      val t = visitType(tpe)
+      NamedAst.Type.Complement(t, loc)
 
     case DesugaredAst.Type.Union(tpe1, tpe2, loc) =>
-      mapN(visitType(tpe1), visitType(tpe2)) {
-        case (t1, t2) => NamedAst.Type.Union(t1, t2, loc)
-      }
+      val t1 = visitType(tpe1)
+      val t2 = visitType(tpe2)
+      NamedAst.Type.Union(t1, t2, loc)
 
     case DesugaredAst.Type.Intersection(tpe1, tpe2, loc) =>
-      mapN(visitType(tpe1), visitType(tpe2)) {
-        case (t1, t2) => NamedAst.Type.Intersection(t1, t2, loc)
-      }
+      val t1 = visitType(tpe1)
+      val t2 = visitType(tpe2)
+      NamedAst.Type.Intersection(t1, t2, loc)
 
     case DesugaredAst.Type.Pure(loc) =>
-      Validation.success(NamedAst.Type.Pure(loc))
+      NamedAst.Type.Pure(loc)
 
     case DesugaredAst.Type.CaseSet(cases, loc) =>
-      Validation.success(NamedAst.Type.CaseSet(cases, loc))
+      NamedAst.Type.CaseSet(cases, loc)
 
     case DesugaredAst.Type.CaseComplement(tpe, loc) =>
-      mapN(visitType(tpe)) {
-        case t => NamedAst.Type.CaseComplement(t, loc)
-      }
+      val t = visitType(tpe)
+      NamedAst.Type.CaseComplement(t, loc)
 
     case DesugaredAst.Type.CaseUnion(tpe1, tpe2, loc) =>
-      mapN(visitType(tpe1), visitType(tpe2)) {
-        case (t1, t2) => NamedAst.Type.CaseUnion(t1, t2, loc)
-      }
+      val t1 = visitType(tpe1)
+      val t2 = visitType(tpe2)
+      NamedAst.Type.CaseUnion(t1, t2, loc)
 
     case DesugaredAst.Type.CaseIntersection(tpe1, tpe2, loc) =>
-      mapN(visitType(tpe1), visitType(tpe2)) {
-        case (t1, t2) => NamedAst.Type.CaseIntersection(t1, t2, loc)
-      }
+      val t1 = visitType(tpe1)
+      val t2 = visitType(tpe2)
+      NamedAst.Type.CaseIntersection(t1, t2, loc)
 
-    case DesugaredAst.Type.Ascribe(tpe, kind0, loc) =>
-      val kind = visitKind(kind0)
-      mapN(visitType(tpe)) {
-        t => NamedAst.Type.Ascribe(t, kind, loc)
-      }
+    case DesugaredAst.Type.Ascribe(tpe, kind, loc) =>
+      val t = visitType(tpe)
+      val k = visitKind(kind)
+      NamedAst.Type.Ascribe(t, k, loc)
 
     case DesugaredAst.Type.Error(loc) =>
-      Validation.success(NamedAst.Type.Error(loc))
+      NamedAst.Type.Error(loc)
   }
 
   /**
