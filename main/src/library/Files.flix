@@ -20,7 +20,8 @@ mod Files {
     import java.lang.Class
     import java.nio.charset.Charset
     import java.nio.file.attribute.{FileTime, BasicFileAttributes}
-    import java.nio.file.{LinkOption, Path}
+    import java.nio.file.{DirectoryStream, LinkOption, Path}
+    import java.util.{Iterator => JIterator}
 
     ///
     /// File types.
@@ -874,8 +875,8 @@ mod Files {
         IOError.tryCatch(_ -> {
             import java_new java.io.File(String): File \ IO as newFile;
             import java.io.File.toPath(): Path \ IO;
-            import static java.nio.file.Files.newDirectoryStream(Path): ##java.nio.file.DirectoryStream \ IO;
-            import java.nio.file.DirectoryStream.iterator(): ##java.util.Iterator \ IO;
+            import static java.nio.file.Files.newDirectoryStream(Path): DirectoryStream \ IO;
+            import java.nio.file.DirectoryStream.iterator(): JIterator \ IO;
             import java.nio.file.Path.toString(): String \ {} as pathToString;
 
             let javaFile = newFile(f);
@@ -898,7 +899,7 @@ mod Files {
             import java_new java.io.File(String): File \ IO as newFile;
             import java.io.File.toPath(): Path \ IO;
             import static java.nio.file.Files.walk(Path, Array[##java.nio.file.FileVisitOption, r]): ##java.util.stream.Stream \ IO;
-            import java.util.stream.BaseStream.iterator(): ##java.util.Iterator \ IO;
+            import java.util.stream.BaseStream.iterator(): JIterator \ IO;
             import java.nio.file.Path.toString(): String \ {} as pathToString;
 
             let javaFile = newFile(f);
@@ -913,7 +914,7 @@ mod Files {
     ///
     /// Converts a Java iterator to a Flix Iterator.
     ///
-    def fromJavaIter(rc: Region[r], iter: ##java.util.Iterator): Iterator[a, r, r] =
+    def fromJavaIter(rc: Region[r], iter: JIterator): Iterator[a, r, r] =
         import java.util.Iterator.hasNext(): Bool \ r;
         import java.util.Iterator.next(): a \ r as getNext;
         let next = () -> {
