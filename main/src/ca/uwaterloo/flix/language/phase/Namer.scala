@@ -1409,15 +1409,15 @@ object Namer {
     * Translates the given weeded formal parameter to a named formal parameter.
     */
   private def visitFormalParam(fparam: DesugaredAst.FormalParam)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.FormalParam, NameError] = fparam match {
-    case DesugaredAst.FormalParam(ident, mod, optType, loc) =>
+    case DesugaredAst.FormalParam(ident, mod, tpe, loc) =>
       // Generate a fresh variable symbol for the identifier.
       val freshSym = Symbol.freshVarSym(ident, BoundBy.FormalParam)
 
       // Compute the type of the formal parameter or use the type variable of the symbol.
-      val tpe = optType.map(visitType)
+      val t = tpe.map(visitType)
 
       // Construct the formal parameter.
-      Validation.success(NamedAst.FormalParam(freshSym, mod, tpe, loc))
+      Validation.success(NamedAst.FormalParam(freshSym, mod, t, loc))
   }
 
   /**
