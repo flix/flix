@@ -1174,8 +1174,8 @@ object Namer {
     case DesugaredAst.Type.Ambiguous(qname, loc) =>
       NamedAst.Type.Ambiguous(qname, loc)
 
-    case DesugaredAst.Type.Tuple(elms, loc) =>
-      val ts = elms.map(visitType)
+    case DesugaredAst.Type.Tuple(tpes, loc) =>
+      val ts = tpes.map(visitType)
       NamedAst.Type.Tuple(ts, loc)
 
     case DesugaredAst.Type.RecordRowEmpty(loc) =>
@@ -1186,25 +1186,25 @@ object Namer {
       val t2 = visitType(tpe2)
       NamedAst.Type.RecordRowExtend(label, t1, t2, loc)
 
-    case DesugaredAst.Type.Record(row, loc) =>
-      val t = visitType(row)
+    case DesugaredAst.Type.Record(tpe, loc) =>
+      val t = visitType(tpe)
       NamedAst.Type.Record(t, loc)
 
     case DesugaredAst.Type.SchemaRowEmpty(loc) =>
       NamedAst.Type.SchemaRowEmpty(loc)
 
-    case DesugaredAst.Type.SchemaRowExtendByAlias(qname, targs, rest, loc) =>
+    case DesugaredAst.Type.SchemaRowExtendByAlias(qname, targs, tpe, loc) =>
       val ts = targs.map(visitType)
-      val t = visitType(rest)
+      val t = visitType(tpe)
       NamedAst.Type.SchemaRowExtendWithAlias(qname, ts, t, loc)
 
-    case DesugaredAst.Type.SchemaRowExtendByTypes(ident, den, tpes, rest, loc) =>
+    case DesugaredAst.Type.SchemaRowExtendByTypes(ident, den, tpes, tpe, loc) =>
       val ts = tpes.map(visitType)
-      val t = visitType(rest)
+      val t = visitType(tpe)
       NamedAst.Type.SchemaRowExtendWithTypes(ident, den, ts, t, loc)
 
-    case DesugaredAst.Type.Schema(row, loc) =>
-      val t = visitType(row)
+    case DesugaredAst.Type.Schema(tpe, loc) =>
+      val t = visitType(tpe)
       NamedAst.Type.Schema(t, loc)
 
     case DesugaredAst.Type.Native(fqn, loc) =>
