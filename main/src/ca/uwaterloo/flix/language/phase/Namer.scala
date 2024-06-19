@@ -815,10 +815,10 @@ object Namer {
           NamedAst.Expr.Assign(e1, e2, loc)
       }
 
-    case DesugaredAst.Expr.Ascribe(exp, expectedType, expectedEff, loc) =>
+    case DesugaredAst.Expr.Ascribe(exp, tpe, eff, loc) =>
       val expVal = visitExp(exp, ns0)
-      val t = expectedType.map(visitType)
-      val ef = expectedEff.map(visitType)
+      val t = tpe.map(visitType)
+      val ef = eff.map(visitType)
       mapN(expVal) {
         case e => NamedAst.Expr.Ascribe(e, t, ef, loc)
       }
