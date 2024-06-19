@@ -370,53 +370,44 @@ object Namer {
     * Performs naming on the given enum case.
     */
   private def visitCase(case0: DesugaredAst.Case, enumSym: Symbol.EnumSym)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.Declaration.Case, NameError] = case0 match {
-    case DesugaredAst.Case(ident, tpe0, loc) =>
-      mapN(visitType(tpe0)) {
-        case tpe =>
-          val caseSym = Symbol.mkCaseSym(enumSym, ident)
-          NamedAst.Declaration.Case(caseSym, tpe, loc)
-      }
+    case DesugaredAst.Case(ident, tpe, loc) =>
+      val t = visitType(tpe)
+      val caseSym = Symbol.mkCaseSym(enumSym, ident)
+      Validation.success(NamedAst.Declaration.Case(caseSym, t, loc))
   }
 
   /**
     * Performs naming on the given enum case.
     */
   private def visitRestrictableCase(case0: DesugaredAst.RestrictableCase, enumSym: Symbol.RestrictableEnumSym)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.Declaration.RestrictableCase, NameError] = case0 match {
-    case DesugaredAst.RestrictableCase(ident, tpe0, loc) =>
-      mapN(visitType(tpe0)) {
-        case tpe =>
-          val caseSym = Symbol.mkRestrictableCaseSym(enumSym, ident)
-          NamedAst.Declaration.RestrictableCase(caseSym, tpe, loc)
-      }
+    case DesugaredAst.RestrictableCase(ident, tpe, loc) =>
+      val t = visitType(tpe)
+      val caseSym = Symbol.mkRestrictableCaseSym(enumSym, ident)
+      NamedAst.Declaration.RestrictableCase(caseSym, t, loc)
   }
 
   /**
     * Performs naming on the given type alias `alias0`.
     */
   private def visitTypeAlias(alias0: DesugaredAst.Declaration.TypeAlias, ns0: Name.NName)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.Declaration.TypeAlias, NameError] = alias0 match {
-    case DesugaredAst.Declaration.TypeAlias(doc, ann, mod0, ident, tparams0, tpe0, loc) =>
+    case DesugaredAst.Declaration.TypeAlias(doc, ann, mod0, ident, tparams0, tpe, loc) =>
       val mod = visitModifiers(mod0, ns0)
       val tparams = getTypeParams(tparams0)
-      mapN(visitType(tpe0)) {
-        tpe =>
-          val sym = Symbol.mkTypeAliasSym(ns0, ident)
-          NamedAst.Declaration.TypeAlias(doc, ann, mod, sym, tparams, tpe, loc)
-      }
+      val t = visitType(tpe)
+      val sym = Symbol.mkTypeAliasSym(ns0, ident)
+      Validation.success(NamedAst.Declaration.TypeAlias(doc, ann, mod, sym, tparams, t, loc))
   }
 
   /**
     * Performs naming on the given associated type signature `s0`.
     */
   private def visitAssocTypeSig(s0: DesugaredAst.Declaration.AssocTypeSig, trt: Symbol.TraitSym)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.Declaration.AssocTypeSig, NameError] = s0 match {
-    case DesugaredAst.Declaration.AssocTypeSig(doc, mod, ident, tparams0, kind0, tpe0, loc) =>
+    case DesugaredAst.Declaration.AssocTypeSig(doc, mod, ident, tparams0, kind0, tpe, loc) =>
       val sym = Symbol.mkAssocTypeSym(trt, ident)
       val tparam = getTypeParam(tparams0)
       val kind = visitKind(kind0)
-      val tpeVal = traverseOpt(tpe0)(visitType)
-      mapN(tpeVal) {
-        case tpe =>
-          NamedAst.Declaration.AssocTypeSig(doc, mod, sym, tparam, kind, tpe, loc)
-      }
+      val t = tpe.map(visitType)
+      Validation.success(NamedAst.Declaration.AssocTypeSig(doc, mod, sym, tparam, kind, t, loc))
   }
 
   /**
@@ -424,11 +415,9 @@ object Namer {
     */
   private def visitAssocTypeDef(d0: DesugaredAst.Declaration.AssocTypeDef)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.Declaration.AssocTypeDef, NameError] = d0 match {
     case DesugaredAst.Declaration.AssocTypeDef(doc, mod, ident, arg0, tpe0, loc) =>
-      val argVal = visitType(arg0)
-      val tpeVal = visitType(tpe0)
-      mapN(argVal, tpeVal) {
-        case (arg, tpe) => NamedAst.Declaration.AssocTypeDef(doc, mod, ident, arg, tpe, loc)
-      }
+      val t1 = visitType(arg0)
+      val t2 = visitType(tpe0)
+      Validation.success(NamedAst.Declaration.AssocTypeDef(doc, mod, ident, t1, t2, loc))
   }
 
   /**
@@ -455,17 +444,16 @@ object Namer {
     * Performs naming on the given instance `instance`.
     */
   private def visitInstance(instance: DesugaredAst.Declaration.Instance, ns0: Name.NName)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.Declaration.Instance, NameError] = instance match {
-    case DesugaredAst.Declaration.Instance(doc, ann, mod, clazz, tpe0, tconstrs0, assocs0, defs0, loc) =>
-      val tparams = getImplicitTypeParamsFromTypes(List(tpe0))
-
-      val tpeVal = visitType(tpe0)
+    case DesugaredAst.Declaration.Instance(doc, ann, mod, clazz, tpe, tconstrs0, assocs0, defs0, loc) =>
+      val tparams = getImplicitTypeParamsFromTypes(List(tpe))
+      val t = visitType(tpe)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint)
       val assocsVal = traverse(assocs0)(visitAssocTypeDef)
-      flatMapN(tpeVal, tconstrsVal, assocsVal) {
-        case (tpe, tconstrs, assocs) =>
+      flatMapN(tconstrsVal, assocsVal) {
+        case (tconstrs, assocs) =>
           val defsVal = traverse(defs0)(visitDef(_, ns0, DefKind.Member))
           mapN(defsVal) {
-            defs => NamedAst.Declaration.Instance(doc, ann, mod, clazz, tparams, tpe, tconstrs, assocs, defs, ns0.parts, loc)
+            defs => NamedAst.Declaration.Instance(doc, ann, mod, clazz, tparams, t, tconstrs, assocs, defs, ns0.parts, loc)
           }
       }
   }
@@ -475,10 +463,9 @@ object Namer {
     * Performs naming on the given type constraint `tconstr`.
     */
   private def visitTypeConstraint(tconstr: DesugaredAst.TypeConstraint)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.TypeConstraint, NameError] = tconstr match {
-    case DesugaredAst.TypeConstraint(trt, tparam0, loc) =>
-      mapN(visitType(tparam0)) {
-        tparam => NamedAst.TypeConstraint(trt, tparam, loc)
-      }
+    case DesugaredAst.TypeConstraint(trt, tparam, loc) =>
+      val t = visitType(tparam)
+      Validation.success(NamedAst.TypeConstraint(trt, t, loc))
   }
 
   /**
@@ -486,11 +473,9 @@ object Namer {
     */
   private def visitEqualityConstraint(econstr: DesugaredAst.EqualityConstraint)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.EqualityConstraint, NameError] = econstr match {
     case DesugaredAst.EqualityConstraint(qname, tpe1, tpe2, loc) =>
-      val t1Val = visitType(tpe1)
-      val t2Val = visitType(tpe2)
-      mapN(t1Val, t2Val) {
-        case (t1, t2) => NamedAst.EqualityConstraint(qname, t1, t2, loc)
-      }
+      val t1 = visitType(tpe1)
+      val t2 = visitType(tpe2)
+      Validation.success(NamedAst.EqualityConstraint(qname, t1, t2, loc))
   }
 
   /**
@@ -1428,12 +1413,10 @@ object Namer {
       val freshSym = Symbol.freshVarSym(ident, BoundBy.FormalParam)
 
       // Compute the type of the formal parameter or use the type variable of the symbol.
-      val tpeVal = traverseOpt(optType)(visitType)
+      val tpe = optType.map(visitType)
 
       // Construct the formal parameter.
-      mapN(tpeVal) {
-        case tpe => NamedAst.FormalParam(freshSym, mod, tpe, loc)
-      }
+      Validation.success(NamedAst.FormalParam(freshSym, mod, tpe, loc))
   }
 
   /**
@@ -1444,9 +1427,8 @@ object Namer {
       Validation.success(NamedAst.PredicateParam.PredicateParamUntyped(pred, loc))
 
     case DesugaredAst.PredicateParam.PredicateParamWithType(pred, den, tpes, loc) =>
-      mapN(traverse(tpes)(visitType)) {
-        case ts => NamedAst.PredicateParam.PredicateParamWithType(pred, den, ts, loc)
-      }
+      val ts = tpes.map(visitType)
+      Validation.success(NamedAst.PredicateParam.PredicateParamWithType(pred, den, ts, loc))
   }
 
   /**
@@ -1457,10 +1439,10 @@ object Namer {
       flatMapN(traverse(fparams0)(visitFormalParam): Validation[List[NamedAst.FormalParam], NameError]) {
         case fparams =>
           val exp = visitExp(exp0, ns0)
-          val tpe = visitType(tpe0)
-          val eff = traverseOpt(eff0)(visitType)
-          mapN(exp, tpe, eff) {
-            case (e, t, p) => NamedAst.JvmMethod(ident, fparams, e, t, p, loc)
+          val t = visitType(tpe0)
+          val ef = eff0.map(visitType)
+          mapN(exp) {
+            case e => NamedAst.JvmMethod(ident, fparams, e, t, ef, loc)
           }
       }: Validation[NamedAst.JvmMethod, NameError]
   }
