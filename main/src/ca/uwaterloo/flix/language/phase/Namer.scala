@@ -1171,9 +1171,9 @@ object Namer {
   /**
     * Names the given type `tpe0`.
     */
-  private def visitType(tpe0: DesugaredAst.Type)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.Type, NameError] = tpe0 match {
+  private def visitType(tpe0: DesugaredAst.Type)(implicit flix: Flix, sctx: SharedContext): NamedAst.Type = tpe0 match {
     case DesugaredAst.Type.Unit(loc) =>
-      Validation.success(NamedAst.Type.Unit(loc))
+      NamedAst.Type.Unit(loc)
 
     case DesugaredAst.Type.Var(ident, loc) =>
       //
@@ -1182,49 +1182,44 @@ object Namer {
       if (isSuspiciousTypeVarName(ident.name)) {
         // TODO NS-REFACTOR maybe check this at declaration site instead of use site
         sctx.errors.add(NameError.SuspiciousTypeVarName(ident.name, loc))
-        Validation.success(NamedAst.Type.Var(ident, loc))
-      } else {
-        Validation.success(NamedAst.Type.Var(ident, loc))
       }
+      NamedAst.Type.Var(ident, loc)
 
     case DesugaredAst.Type.Ambiguous(qname, loc) =>
-      Validation.success(NamedAst.Type.Ambiguous(qname, loc))
+      NamedAst.Type.Ambiguous(qname, loc)
 
     case DesugaredAst.Type.Tuple(elms, loc) =>
-      mapN(traverse(elms)(visitType)) {
-        case ts => NamedAst.Type.Tuple(ts, loc)
-      }
+      val ts = elms.map(visitType)
+      NamedAst.Type.Tuple(ts, loc)
 
     case DesugaredAst.Type.RecordRowEmpty(loc) =>
-      Validation.success(NamedAst.Type.RecordRowEmpty(loc))
+      NamedAst.Type.RecordRowEmpty(loc)
 
     case DesugaredAst.Type.RecordRowExtend(label, value, rest, loc) =>
-      mapN(visitType(value), visitType(rest)) {
-        case (t, r) => NamedAst.Type.RecordRowExtend(label, t, r, loc)
-      }
+      val t1 = visitType(value)
+      val t2 = visitType(rest)
+      NamedAst.Type.RecordRowExtend(label, t1, t2, loc)
 
     case DesugaredAst.Type.Record(row, loc) =>
-      mapN(visitType(row)) {
-        r => NamedAst.Type.Record(r, loc)
-      }
+      val t = visitType(row)
+      NamedAst.Type.Record(t, loc)
 
     case DesugaredAst.Type.SchemaRowEmpty(loc) =>
-      Validation.success(NamedAst.Type.SchemaRowEmpty(loc))
+      NamedAst.Type.SchemaRowEmpty(loc)
 
     case DesugaredAst.Type.SchemaRowExtendByAlias(qname, targs, rest, loc) =>
-      mapN(traverse(targs)(visitType), visitType(rest)) {
-        case (ts, r) => NamedAst.Type.SchemaRowExtendWithAlias(qname, ts, r, loc)
-      }
+      val ts = targs.map(visitType)
+      val t = visitType(rest)
+      NamedAst.Type.SchemaRowExtendWithAlias(qname, ts, t, loc)
 
     case DesugaredAst.Type.SchemaRowExtendByTypes(ident, den, tpes, rest, loc) =>
-      mapN(traverse(tpes)(visitType), visitType(rest)) {
-        case (ts, r) => NamedAst.Type.SchemaRowExtendWithTypes(ident, den, ts, r, loc)
-      }
+      val ts = tpes.map(visitType)
+      val t = visitType(rest)
+      NamedAst.Type.SchemaRowExtendWithTypes(ident, den, ts, t, loc)
 
     case DesugaredAst.Type.Schema(row, loc) =>
-      mapN(visitType(row)) {
-        r => NamedAst.Type.Schema(r, loc)
-      }
+      val t = visitType(row)
+      NamedAst.Type.Schema(t, loc)
 
     case DesugaredAst.Type.Native(fqn, loc) =>
       Validation.success(NamedAst.Type.Native(fqn, loc))
