@@ -1222,26 +1222,24 @@ object Namer {
       NamedAst.Type.Schema(t, loc)
 
     case DesugaredAst.Type.Native(fqn, loc) =>
-      Validation.success(NamedAst.Type.Native(fqn, loc))
+      NamedAst.Type.Native(fqn, loc)
 
-    case DesugaredAst.Type.Arrow(tparams0, eff0, tresult0, loc) =>
-      val tparamsVal = traverse(tparams0)(visitType)
-      val effVal = traverseOpt(eff0)(visitType)
-      val tresultVal = visitType(tresult0)
-      mapN(tparamsVal, effVal, tresultVal) {
-        case (tparams, eff, tresult) => NamedAst.Type.Arrow(tparams, eff, tresult, loc)
-      }
+    case DesugaredAst.Type.Arrow(tparams, eff, tresult, loc) =>
+      val ts = tparams.map(visitType)
+      val ef = eff.map(visitType)
+      val t = visitType(tresult)
+      NamedAst.Type.Arrow(ts, ef, t, loc)
 
     case DesugaredAst.Type.Apply(tpe1, tpe2, loc) =>
-      mapN(visitType(tpe1), visitType(tpe2)) {
-        case (t1, t2) => NamedAst.Type.Apply(t1, t2, loc)
-      }
+      val t1 = visitType(tpe1)
+      val t2 = visitType(tpe2)
+      NamedAst.Type.Apply(t1, t2, loc)
 
     case DesugaredAst.Type.True(loc) =>
-      Validation.success(NamedAst.Type.True(loc))
+      NamedAst.Type.True(loc)
 
     case DesugaredAst.Type.False(loc) =>
-      Validation.success(NamedAst.Type.False(loc))
+      NamedAst.Type.False(loc)
 
     case DesugaredAst.Type.Not(tpe, loc) =>
       mapN(visitType(tpe)) {
