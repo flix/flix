@@ -1181,9 +1181,9 @@ object Namer {
     case DesugaredAst.Type.RecordRowEmpty(loc) =>
       NamedAst.Type.RecordRowEmpty(loc)
 
-    case DesugaredAst.Type.RecordRowExtend(label, value, rest, loc) =>
-      val t1 = visitType(value)
-      val t2 = visitType(rest)
+    case DesugaredAst.Type.RecordRowExtend(label, tpe1, tpe2, loc) =>
+      val t1 = visitType(tpe1)
+      val t2 = visitType(tpe2)
       NamedAst.Type.RecordRowExtend(label, t1, t2, loc)
 
     case DesugaredAst.Type.Record(row, loc) =>
