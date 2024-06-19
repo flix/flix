@@ -16,7 +16,7 @@
 mod Files {
 
     use IOError.{Generic}
-    import java.io.{File, FileInputStream, FileOutputStream, FileWriter}
+    import java.io.{File, FileInputStream, FileOutputStream, FileWriter, PrintWriter}
     import java.lang.Class
     import java.nio.charset.Charset
     import java.nio.file.attribute.{FileTime, BasicFileAttributes}
@@ -565,7 +565,7 @@ mod Files {
     pub def write(f: String, data: t): Result[IOError, Bool] \ IO with ToString[t] =
         try {
             import java_new java.io.File(String): File \ IO as newFile;
-            import java_new java.io.PrintWriter(File): ##java.io.PrintWriter \ IO as newPrintWriter;
+            import java_new java.io.PrintWriter(File): PrintWriter \ IO as newPrintWriter;
             import java.io.PrintWriter.print(String): Unit \ IO;
             import java.io.PrintWriter.close(): Unit \ IO;
             import java.io.PrintWriter.checkError(): Bool \ IO;
@@ -600,7 +600,7 @@ mod Files {
     pub def writeLines(f: String, data: f[String]): Result[IOError, Bool] \ (IO + Foldable.Aef[f]) with Foldable[f] =
         try {
             import java_new java.io.File(String): File \ IO as newFile;
-            import java_new java.io.PrintWriter(File): ##java.io.PrintWriter \ IO as newPrintWriter;
+            import java_new java.io.PrintWriter(File): PrintWriter \ IO as newPrintWriter;
             import java.io.PrintWriter.println(String): Unit \ IO;
             import java.io.PrintWriter.close(): Unit \ IO;
             import java.io.PrintWriter.checkError(): Bool \ IO;
@@ -634,7 +634,7 @@ mod Files {
         try {
             import java_new java.io.File(String): File \ IO as newFile;
             import java_new java.io.FileWriter(File, Bool): FileWriter \ IO as newFileWriter;
-            import java_new java.io.PrintWriter(##java.io.Writer): ##java.io.PrintWriter \ IO as newPrintWriter;
+            import java_new java.io.PrintWriter(##java.io.Writer): PrintWriter \ IO as newPrintWriter;
             import java.io.PrintWriter.println(String): Unit \ IO;
             import java.io.PrintWriter.close(): Unit \ IO;
             import java.io.PrintWriter.checkError(): Bool \ IO;
@@ -670,7 +670,7 @@ mod Files {
         try {
             import java_new java.io.File(String): File \ IO as newFile;
             import java_new java.io.FileWriter(File, Bool): FileWriter \ IO as newFileWriter;
-            import java_new java.io.PrintWriter(##java.io.Writer): ##java.io.PrintWriter \ IO as newPrintWriter;
+            import java_new java.io.PrintWriter(##java.io.Writer): PrintWriter \ IO as newPrintWriter;
             import java.io.PrintWriter.println(String): Unit \ IO;
             import java.io.PrintWriter.close(): Unit \ IO;
             import java.io.PrintWriter.checkError(): Bool \ IO;
@@ -708,7 +708,7 @@ mod Files {
         try {
             import java_new java.io.File(String): File \ IO as newFile;
             import java_new java.io.FileOutputStream(File): FileOutputStream \ IO as newFileStream;
-            import java_new java.io.PrintWriter(##java.io.OutputStream): ##java.io.PrintWriter \ IO as newPrintWriter;
+            import java_new java.io.PrintWriter(##java.io.OutputStream): PrintWriter \ IO as newPrintWriter;
             import java.io.FileOutputStream.write(Array[Int8, rc]): Unit \ IO;
             import java.io.PrintWriter.close(): Unit \ IO;
             import java.io.PrintWriter.checkError(): Bool \ IO;
@@ -745,7 +745,7 @@ mod Files {
         try {
             import java_new java.io.File(String): File \ IO as newFile;
             import java_new java.io.FileOutputStream(File, Bool): FileOutputStream \ IO as newFileStream;
-            import java_new java.io.PrintWriter(##java.io.OutputStream): ##java.io.PrintWriter \ IO as newPrintWriter;
+            import java_new java.io.PrintWriter(##java.io.OutputStream): PrintWriter \ IO as newPrintWriter;
             import java.io.FileOutputStream.write(Array[Int8, rc]): Unit \ IO;
             import java.io.PrintWriter.close(): Unit \ IO;
             import java.io.PrintWriter.checkError(): Bool \ IO;
@@ -781,7 +781,7 @@ mod Files {
     pub def truncate(f: String): Result[IOError, Bool] \ IO =
         try {
             import java_new java.io.File(String): File \ IO as newFile;
-            import java_new java.io.PrintWriter(File): ##java.io.PrintWriter \ IO as newPrintWriter;
+            import java_new java.io.PrintWriter(File): PrintWriter \ IO as newPrintWriter;
             import java.io.PrintWriter.close(): Unit \ IO;
             import java.io.PrintWriter.checkError(): Bool \ IO;
 
