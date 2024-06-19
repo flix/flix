@@ -122,17 +122,16 @@ object TypeReduction {
   }
 
   /**
-   * This is the resolution process of the java method method, member of the class of the java object thisObj.
-   * Returns the return type of the java method according to the type of thisObj and the arguments of the method,
-   * if there exists such a java method.
-   * Otherwise, either the java method could not be found with the given method signature, or, the return type
-   * could not be simplified more at this state of the process.
+   * This is the resolution process of the Java method method, member of the class of the Java object thisObj.
+   * Returns the return type of the Java method according to the type of thisObj and the arguments of the method,
+   * if there exists such a Java method.
+   * Otherwise, either the Java method could not be found with the given method signature, or, there was an ambiguity.
    *
-   * @param thisObj the java object
-   * @param method  the java method, supposedly member of the class of the java object
+   * @param thisObj the Java object
+   * @param method  the Java method, supposedly member of the class of the Java object
    * @param ts      the list containing the type of thisObj and the arguments of the method
-   * @param loc     the location where the java method has been called
-   * @return        A ResolutionResult object that indicates the status of the resolution progress
+   * @param loc     the location where the Java method has been called
+   * @return        A JavaMethodResolutionResult object that indicates the status of the resolution progress
    */
   def lookupMethod(thisObj: Type, method: String, ts: List[Type], loc: SourceLocation)(implicit flix: Flix): JavaMethodResolutionResult = {
     thisObj match { // there might be a possible factorization
@@ -151,6 +150,16 @@ object TypeReduction {
     }
   }
 
+  /**
+   * This is the resolution process of the Java constructor designated by a class and the parameter types.
+   * Returns the return type of the Java constructor according, if there exists such a Java constructor.
+   * Otherwise, either the Java constructor could not be found with the given signature or there was an ambiguity.
+   *
+   * @param clazz   the constructor's Java class
+   * @param ts      the list containing the parameter types of the constructor
+   * @param loc     the location where the java constructor has been invoked
+   * @return        A JavaConstructorResolutionResult object that indicates the status of the resolution progress
+   */
   def lookupConstructor(clazz: Class[_], ts: List[Type], loc: SourceLocation)(implicit flix: Flix): JavaConstructorResolutionResult = {
     retrieveConstructor(clazz, ts, loc)
   }
