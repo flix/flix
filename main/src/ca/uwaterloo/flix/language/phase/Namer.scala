@@ -833,10 +833,10 @@ object Namer {
         case e => NamedAst.Expr.CheckedCast(c, e, loc)
       }
 
-    case DesugaredAst.Expr.UncheckedCast(exp, declaredType, declaredEff, loc) =>
+    case DesugaredAst.Expr.UncheckedCast(exp, tpe, eff, loc) =>
       val expVal = visitExp(exp, ns0)
-      val t = declaredType.map(visitType)
-      val ef = declaredEff.map(visitType)
+      val t = tpe.map(visitType)
+      val ef = eff.map(visitType)
 
       mapN(expVal) {
         case e => NamedAst.Expr.UncheckedCast(e, t, ef, loc)
@@ -912,19 +912,19 @@ object Namer {
         case as => NamedAst.Expr.InvokeConstructor(className, as, ts, loc)
       }
 
-    case DesugaredAst.Expr.InvokeMethod(className, methodName, exp, exps, sig, retTpe, loc) =>
+    case DesugaredAst.Expr.InvokeMethod(className, methodName, exp, exps, sig, tpe, loc) =>
       val expVal = visitExp(exp, ns0)
       val argsVal = traverse(exps)(visitExp(_, ns0))
       val ts = sig.map(visitType)
-      val t = visitType(retTpe)
+      val t = visitType(tpe)
       mapN(expVal, argsVal) {
         case (e, as) => NamedAst.Expr.InvokeMethod(className, methodName, e, as, ts, t, loc)
       }
 
-    case DesugaredAst.Expr.InvokeStaticMethod(className, methodName, exps, sig, retTpe, loc) =>
+    case DesugaredAst.Expr.InvokeStaticMethod(className, methodName, exps, sig, tpe, loc) =>
       val argsVal = traverse(exps)(visitExp(_, ns0))
       val ts = sig.map(visitType)
-      val t = visitType(retTpe)
+      val t = visitType(tpe)
       mapN(argsVal) {
         case as => NamedAst.Expr.InvokeStaticMethod(className, methodName, as, ts, t, loc)
       }
