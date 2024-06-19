@@ -464,6 +464,7 @@ object Lexer {
         } else TokenKind.Underscore
       case c if c.isLetter => acceptName(c.isUpper)
       case '0' if peek() == 'x' => acceptHexNumber()
+      case '%' => acceptEscapedJavaName()
       case c if isDigit(c) => acceptNumber()
       // User defined operators.
       case _ if isUserOp(c).isDefined =>
@@ -648,7 +649,6 @@ object Lexer {
     kind
   }
 
-
   /**
    * Moves current position past a java name. IE. "##java"
    */
@@ -662,6 +662,26 @@ object Lexer {
       advance()
     }
     TokenKind.NameJava
+  }
+
+  /**
+   * Moves current position past an escaped java name.
+   *
+   * An escaped name is of the form %s% where s is a string of letters (lowercase, uppercase, and digits).
+   */
+  private def acceptEscapedJavaName()(implicit s: State): TokenKind = {
+    val kind = TokenKind.NameJava
+    while (!eof()) {
+      val p = peek()
+      if (p == '%') {
+        advance()
+        return kind
+      } else if (!p.isLetter && !p.isDigit && p != '_' && p != '!' && p != '$') {
+        return kind
+      }
+      advance()
+    }
+    kind
   }
 
   /**
