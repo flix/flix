@@ -18,6 +18,7 @@ mod Files {
     use IOError.{Generic}
     import java.io.{File, FileInputStream, FileOutputStream, FileWriter}
     import java.lang.Class
+    import java.nio.charset.Charset
     import java.nio.file.attribute.{FileTime, BasicFileAttributes}
     import java.nio.file.{LinkOption, Path}
 
@@ -269,8 +270,8 @@ mod Files {
                 import java_new java.io.File(String): File \ IO as newFile;
                 import java_new java.io.FileInputStream(File): FileInputStream \ IO as newInputStream;
                 import java.io.FileInputStream.read(Array[Int8, rc], Int32, Int32): Int32 \ IO;
-                import static java.nio.charset.Charset.forName(String): ##java.nio.charset.Charset \ IO;
-                import java_new java.lang.String(Array[Int8, rc], ##java.nio.charset.Charset): String \ IO as newString;
+                import static java.nio.charset.Charset.forName(String): Charset \ IO;
+                import java_new java.lang.String(Array[Int8, rc], Charset): String \ IO as newString;
 
                 let javaFile = newFile(f);
                 let stream = newInputStream(javaFile);
@@ -355,8 +356,8 @@ mod Files {
         IOError.tryCatch(_ -> {
             import java_new java.io.File(String): File \ IO as newFile;
             import java.io.File.toPath(): Path \ IO;
-            import static java.nio.file.Files.newBufferedReader(Path, ##java.nio.charset.Charset): ##java.io.BufferedReader \ IO;
-            import static java.nio.charset.Charset.forName(String): ##java.nio.charset.Charset \ IO;
+            import static java.nio.file.Files.newBufferedReader(Path, Charset): ##java.io.BufferedReader \ IO;
+            import static java.nio.charset.Charset.forName(String): Charset \ IO;
 
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
@@ -411,8 +412,8 @@ mod Files {
         try {
             import java_new java.io.File(String): File \ IO as newFile;
             import java.io.File.toPath(): Path \ IO;
-            import static java.nio.file.Files.newBufferedReader(Path, ##java.nio.charset.Charset): ##java.io.BufferedReader \ IO;
-            import static java.nio.charset.Charset.forName(String): ##java.nio.charset.Charset \ IO;
+            import static java.nio.file.Files.newBufferedReader(Path, Charset): ##java.io.BufferedReader \ IO;
+            import static java.nio.charset.Charset.forName(String): Charset \ IO;
             import java.io.BufferedReader.readLine(): String \ IO;
 
             let javaFile = newFile(f);
