@@ -38,7 +38,7 @@ object Diagnostic {
       case Some(expl) if explain => explanationHeading + expl
       case _ => ""
     }
-    val fullMessage = compilationMessage.message(formatter) + explanation
+    val fullMessage = compilationMessage.messageWithLoc(formatter) + explanation
     Diagnostic(range, severity, Some(code), None, summary, fullMessage, Nil)
   }
 

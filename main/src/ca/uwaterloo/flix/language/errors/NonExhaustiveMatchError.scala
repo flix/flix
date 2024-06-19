@@ -30,8 +30,7 @@ case class NonExhaustiveMatchError(pat: String, loc: SourceLocation) extends Com
 
   def message(formatter: Formatter): String = {
     import formatter._
-    s"""${line(kind, source.name)}
-       |>> Non-Exhaustive Pattern. Missing case: ${red(pat)} in match expression.
+    s""">> Non-Exhaustive Pattern. Missing case: ${red(pat)} in match expression.
        |
        |${code(loc, "incomplete pattern.")}
        |""".stripMargin
