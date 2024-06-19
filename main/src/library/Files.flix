@@ -16,7 +16,7 @@
 mod Files {
 
     use IOError.{Generic}
-    import java.io.{File, FileInputStream, FileOutputStream, FileWriter, PrintWriter}
+    import java.io.{BufferedReader, File, FileInputStream, FileOutputStream, FileWriter, PrintWriter}
     import java.lang.Class
     import java.nio.charset.Charset
     import java.nio.file.attribute.{FileTime, BasicFileAttributes}
@@ -327,7 +327,7 @@ mod Files {
         IOError.tryCatch(_ -> {
             import java_new java.io.File(String): File \ IO as newFile;
             import java.io.File.toPath(): Path \ IO;
-            import static java.nio.file.Files.newBufferedReader(Path): ##java.io.BufferedReader \ IO;
+            import static java.nio.file.Files.newBufferedReader(Path): BufferedReader \ IO;
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
             let reader = newBufferedReader(javaPath);
@@ -337,7 +337,7 @@ mod Files {
     ///
     /// Reads all lines from the given buffered reader `r` until it is empty.
     ///
-    def readAll(r: ##java.io.BufferedReader): List[String] \ IO =
+    def readAll(r: BufferedReader): List[String] \ IO =
         import java.io.BufferedReader.readLine(): String \ IO;
         def loop(k) = {
             let l = readLine(r);
@@ -357,7 +357,7 @@ mod Files {
         IOError.tryCatch(_ -> {
             import java_new java.io.File(String): File \ IO as newFile;
             import java.io.File.toPath(): Path \ IO;
-            import static java.nio.file.Files.newBufferedReader(Path, Charset): ##java.io.BufferedReader \ IO;
+            import static java.nio.file.Files.newBufferedReader(Path, Charset): BufferedReader \ IO;
             import static java.nio.charset.Charset.forName(String): Charset \ IO;
 
             let javaFile = newFile(f);
@@ -373,7 +373,7 @@ mod Files {
         try {
             import java_new java.io.File(String): File \ IO as newFile;
             import java.io.File.toPath(): Path \ IO;
-            import static java.nio.file.Files.newBufferedReader(Path): ##java.io.BufferedReader \ IO;
+            import static java.nio.file.Files.newBufferedReader(Path): BufferedReader \ IO;
             import java.io.BufferedReader.readLine(): String \ IO;
 
             let javaFile = newFile(f);
@@ -413,7 +413,7 @@ mod Files {
         try {
             import java_new java.io.File(String): File \ IO as newFile;
             import java.io.File.toPath(): Path \ IO;
-            import static java.nio.file.Files.newBufferedReader(Path, Charset): ##java.io.BufferedReader \ IO;
+            import static java.nio.file.Files.newBufferedReader(Path, Charset): BufferedReader \ IO;
             import static java.nio.charset.Charset.forName(String): Charset \ IO;
             import java.io.BufferedReader.readLine(): String \ IO;
 
