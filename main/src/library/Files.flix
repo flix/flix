@@ -16,6 +16,7 @@
 mod Files {
 
     use IOError.{Generic}
+    import java.nio.file.attribute.FileTime
 
     ///
     /// File types.
@@ -32,7 +33,7 @@ mod Files {
     ///
     pub def accessTime(f: String): Result[IOError, Int64] \ IO =
         try {
-            import java.nio.file.attribute.BasicFileAttributes.lastAccessTime(): ##java.nio.file.attribute.FileTime \ IO;
+            import java.nio.file.attribute.BasicFileAttributes.lastAccessTime(): FileTime \ IO;
             import java.nio.file.attribute.FileTime.toMillis(): Int64 \ IO;
 
             forM (
@@ -50,7 +51,7 @@ mod Files {
     ///
     pub def creationTime(f: String): Result[IOError, Int64] \ IO =
         try {
-            import java.nio.file.attribute.BasicFileAttributes.creationTime(): ##java.nio.file.attribute.FileTime \ IO;
+            import java.nio.file.attribute.BasicFileAttributes.creationTime(): FileTime \ IO;
             import java.nio.file.attribute.FileTime.toMillis(): Int64 \ IO;
 
             forM (
@@ -68,7 +69,7 @@ mod Files {
     ///
     pub def modificationTime(f: String): Result[IOError, Int64] \ IO =
         try {
-            import java.nio.file.attribute.BasicFileAttributes.lastModifiedTime(): ##java.nio.file.attribute.FileTime \ IO;
+            import java.nio.file.attribute.BasicFileAttributes.lastModifiedTime(): FileTime \ IO;
             import java.nio.file.attribute.FileTime.toMillis(): Int64 \ IO;
 
             forM (
