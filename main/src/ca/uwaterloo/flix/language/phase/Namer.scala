@@ -1210,10 +1210,10 @@ object Namer {
     case DesugaredAst.Type.Native(fqn, loc) =>
       NamedAst.Type.Native(fqn, loc)
 
-    case DesugaredAst.Type.Arrow(tparams, eff, tresult, loc) =>
+    case DesugaredAst.Type.Arrow(tparams, eff, tpe, loc) =>
       val ts = tparams.map(visitType)
       val ef = eff.map(visitType)
-      val t = visitType(tresult)
+      val t = visitType(tpe)
       NamedAst.Type.Arrow(ts, ef, t, loc)
 
     case DesugaredAst.Type.Apply(tpe1, tpe2, loc) =>
