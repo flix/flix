@@ -383,7 +383,7 @@ object Namer {
     case DesugaredAst.RestrictableCase(ident, tpe, loc) =>
       val t = visitType(tpe)
       val caseSym = Symbol.mkRestrictableCaseSym(enumSym, ident)
-      NamedAst.Declaration.RestrictableCase(caseSym, t, loc)
+      Validation.success(NamedAst.Declaration.RestrictableCase(caseSym, t, loc))
   }
 
   /**
@@ -488,13 +488,13 @@ object Namer {
       // First visit all the top-level information
       val mod = visitModifiers(mod0, ns0)
       val fparamsVal = getFormalParams(fparams0)
-      val tpeVal = visitType(tpe0)
-      val effVal = traverseOpt(eff0)(visitType)
+      val t = visitType(tpe0)
+      val ef = eff0.map(visitType)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint)
       val econstrsVal = traverse(econstrs0)(visitEqualityConstraint)
 
-      flatMapN(fparamsVal, tpeVal, effVal, tconstrsVal, econstrsVal) {
-        case (fparams, tpe, eff, tconstrs, econstrs) =>
+      flatMapN(fparamsVal, tconstrsVal, econstrsVal) {
+        case (fparams, tconstrs, econstrs) =>
 
           // Then visit the parts depending on the parameters
           val expVal = traverseOpt(exp0)(visitExp(_, ns0))
@@ -503,7 +503,7 @@ object Namer {
             case exp =>
 
               val sym = Symbol.mkSigSym(traitSym, ident)
-              val spec = NamedAst.Spec(doc, ann, mod, tparams, fparams, tpe, eff, tconstrs, econstrs, loc)
+              val spec = NamedAst.Spec(doc, ann, mod, tparams, fparams, t, ef, tconstrs, econstrs, loc)
               NamedAst.Declaration.Sig(sym, spec, exp)
           }
       }
@@ -521,13 +521,13 @@ object Namer {
       // First visit all the top-level information
       val mod = visitModifiers(mod0, ns0)
       val fparamsVal = getFormalParams(fparams0)
-      val tpeVal = visitType(tpe0)
-      val effVal = traverseOpt(eff0)(visitType)
+      val t = visitType(tpe0)
+      val ef = eff0.map(visitType)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint)
       val econstrsVal = traverse(econstrs0)(visitEqualityConstraint)
 
-      flatMapN(fparamsVal, tpeVal, effVal, tconstrsVal, econstrsVal) {
-        case (fparams, tpe, eff, tconstrs, econstrs) =>
+      flatMapN(fparamsVal, tconstrsVal, econstrsVal) {
+        case (fparams, tconstrs, econstrs) =>
 
           // Then visit the parts depending on the parameters
           val expVal = visitExp(exp, ns0)
@@ -542,7 +542,7 @@ object Namer {
                 case DefKind.NonMember => None
               }
               val sym = Symbol.mkDefnSym(ns0, ident, id)
-              val spec = NamedAst.Spec(doc, ann, mod, tparams, fparams, tpe, eff, tconstrs, econstrs, loc)
+              val spec = NamedAst.Spec(doc, ann, mod, tparams, fparams, t, ef, tconstrs, econstrs, loc)
               NamedAst.Declaration.Def(sym, spec, e)
           }
       }
@@ -567,21 +567,21 @@ object Namer {
     * Performs naming on the given effect operation `op0`.
     */
   private def visitOp(op0: DesugaredAst.Declaration.Op, ns0: Name.NName, effSym: Symbol.EffectSym)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.Declaration.Op, NameError] = op0 match {
-    case DesugaredAst.Declaration.Op(doc, ann, mod0, ident, fparams0, tpe0, tconstrs0, loc) =>
+    case DesugaredAst.Declaration.Op(doc, ann, mod0, ident, fparams0, tpe, tconstrs0, loc) =>
       // First visit all the top-level information
       val mod = visitModifiers(mod0, ns0)
       val fparamsVal = getFormalParams(fparams0)
-      val tpeVal = visitType(tpe0)
+      val t = visitType(tpe)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint)
 
-      mapN(fparamsVal, tpeVal, tconstrsVal) {
-        case (fparams, tpe, tconstrs) =>
+      mapN(fparamsVal, tconstrsVal) {
+        case (fparams, tconstrs) =>
           val tparams = NamedAst.TypeParams.Kinded(Nil) // operations are monomorphic
           val eff = None // operations are pure
           val econstrs = Nil // TODO ASSOC-TYPES allow econstrs here
 
           val sym = Symbol.mkOpSym(effSym, ident)
-          val spec = NamedAst.Spec(doc, ann, mod, tparams, fparams, tpe, eff, tconstrs, econstrs, loc)
+          val spec = NamedAst.Spec(doc, ann, mod, tparams, fparams, t, eff, tconstrs, econstrs, loc)
           NamedAst.Declaration.Op(sym, spec)
       }
   }
@@ -711,8 +711,9 @@ object Namer {
       val rulesVal = traverse(rules) {
         case DesugaredAst.TypeMatchRule(ident, tpe, body) =>
           val sym = Symbol.freshVarSym(ident, BoundBy.Pattern)
-          mapN(visitType(tpe): Validation[NamedAst.Type, NameError], visitExp(body, ns0)) {
-            case (t, b) => NamedAst.TypeMatchRule(sym, t, b)
+          val t = visitType(tpe)
+          mapN(visitExp(body, ns0)) {
+            case b => NamedAst.TypeMatchRule(sym, t, b)
           }
       }
       mapN(expVal, rulesVal) {
@@ -816,11 +817,10 @@ object Namer {
 
     case DesugaredAst.Expr.Ascribe(exp, expectedType, expectedEff, loc) =>
       val expVal = visitExp(exp, ns0)
-      val expectedTypVal = traverseOpt(expectedType)(visitType)
-      val expectedEffVal = traverseOpt(expectedEff)(visitType)
-
-      mapN(expVal, expectedTypVal, expectedEffVal) {
-        case (e, t, f) => NamedAst.Expr.Ascribe(e, t, f, loc)
+      val t = expectedType.map(visitType)
+      val ef = expectedEff.map(visitType)
+      mapN(expVal) {
+        case e => NamedAst.Expr.Ascribe(e, t, ef, loc)
       }
 
     case DesugaredAst.Expr.InstanceOf(exp, className, loc) =>
@@ -835,11 +835,11 @@ object Namer {
 
     case DesugaredAst.Expr.UncheckedCast(exp, declaredType, declaredEff, loc) =>
       val expVal = visitExp(exp, ns0)
-      val declaredTypVal = traverseOpt(declaredType)(visitType)
-      val declaredEffVal = traverseOpt(declaredEff)(visitType)
+      val t = declaredType.map(visitType)
+      val ef = declaredEff.map(visitType)
 
-      mapN(expVal, declaredTypVal, declaredEffVal) {
-        case (e, t, f) => NamedAst.Expr.UncheckedCast(e, t, f, loc)
+      mapN(expVal) {
+        case e => NamedAst.Expr.UncheckedCast(e, t, ef, loc)
       }
 
     case DesugaredAst.Expr.UncheckedMaskingCast(exp, loc) =>
@@ -907,26 +907,26 @@ object Namer {
 
     case DesugaredAst.Expr.InvokeConstructor(className, exps, sig, loc) =>
       val argsVal = traverse(exps)(visitExp(_, ns0))
-      val sigVal = traverse(sig)(visitType): Validation[List[NamedAst.Type], NameError]
-      mapN(argsVal, sigVal) {
-        case (as, sig1) => NamedAst.Expr.InvokeConstructor(className, as, sig1, loc)
+      val ts = sig.map(visitType)
+      mapN(argsVal) {
+        case as => NamedAst.Expr.InvokeConstructor(className, as, ts, loc)
       }
 
     case DesugaredAst.Expr.InvokeMethod(className, methodName, exp, exps, sig, retTpe, loc) =>
       val expVal = visitExp(exp, ns0)
       val argsVal = traverse(exps)(visitExp(_, ns0))
-      val sigVal = traverse(sig)(visitType): Validation[List[NamedAst.Type], NameError]
-      val retVal = visitType(retTpe): Validation[NamedAst.Type, NameError]
-      mapN(expVal, argsVal, sigVal, retVal) {
-        case (e, as, sig1, ret) => NamedAst.Expr.InvokeMethod(className, methodName, e, as, sig1, ret, loc)
+      val ts = sig.map(visitType)
+      val t = visitType(retTpe)
+      mapN(expVal, argsVal) {
+        case (e, as) => NamedAst.Expr.InvokeMethod(className, methodName, e, as, ts, t, loc)
       }
 
     case DesugaredAst.Expr.InvokeStaticMethod(className, methodName, exps, sig, retTpe, loc) =>
       val argsVal = traverse(exps)(visitExp(_, ns0))
-      val sigVal = traverse(sig)(visitType): Validation[List[NamedAst.Type], NameError]
-      val retVal = visitType(retTpe): Validation[NamedAst.Type, NameError]
-      mapN(argsVal, sigVal, retVal) {
-        case (as, sig1, ret) => NamedAst.Expr.InvokeStaticMethod(className, methodName, as, sig1, ret, loc)
+      val ts = sig.map(visitType)
+      val t = visitType(retTpe)
+      mapN(argsVal) {
+        case as => NamedAst.Expr.InvokeStaticMethod(className, methodName, as, ts, t, loc)
       }
 
     case DesugaredAst.Expr.GetField(className, fieldName, exp, loc) =>
@@ -948,10 +948,11 @@ object Namer {
       }
 
     case DesugaredAst.Expr.NewObject(tpe, methods, loc) =>
-      mapN(visitType(tpe): Validation[NamedAst.Type, NameError], traverse(methods)(visitJvmMethod(_, ns0))) {
-        case (tpe1, ms) =>
+      val t = visitType(tpe)
+      mapN(traverse(methods)(visitJvmMethod(_, ns0))) {
+        case ms =>
           val name = s"Anon$$${flix.genSym.freshId()}"
-          NamedAst.Expr.NewObject(name, tpe1, ms, loc)
+          NamedAst.Expr.NewObject(name, t, ms, loc)
       }
 
     case DesugaredAst.Expr.NewChannel(exp1, exp2, loc) =>
