@@ -988,9 +988,9 @@ object Weeder2 {
     }
 
     /**
-     * This method is the same as pickArguments but for invokeMethod2. It calls visitMethodArguments instead.
+     * This method is the same as pickArguments but considers Unit as no-argument. It calls visitMethodArguments instead.
      */
-    private def pickMethodArguments(tree: Tree): Validation[List[Expr], CompilationMessage] = {
+    private def pickRawArguments(tree: Tree): Validation[List[Expr], CompilationMessage] = {
       flatMapN(pick(TreeKind.ArgumentList, tree))(visitMethodArguments)
     }
 
@@ -1692,7 +1692,7 @@ object Weeder2 {
 
     private def visitInvokeConstructor2Expr(tree: Tree): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.InvokeConstructor2)
-      flatMapN(Types.pickType(tree), pickArguments(tree)) {
+      flatMapN(Types.pickType(tree), pickRawArguments(tree)) {
         (tpe, exps) => tpe match {
           case WeededAst.Type.Ambiguous(qname, _) if qname.isUnqualified =>
             Validation.success(Expr.InvokeConstructor2(qname.ident, exps, tree.loc))
@@ -1741,7 +1741,7 @@ object Weeder2 {
     private def visitInvokeMethod2Fragment(tree: Tree): Validation[(Name.Ident, List[Expr]), CompilationMessage] = {
       expect(tree, TreeKind.Expr.InvokeMethod2Fragment)
       val methodName = pickNameIdent(tree)
-      val arguments = pickMethodArguments(tree)
+      val arguments = pickRawArguments(tree)
       mapN(methodName, arguments) {
         (methodName, arguments) => (methodName, arguments)
       }

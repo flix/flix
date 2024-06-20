@@ -185,7 +185,7 @@ object TypeReduction {
         // Among candidate constructors if there already exists the one with the exact signature,
         // we should ignore the rest.
         val exactConstructor = candidateConstructors
-          .filter(c => // Parameter types correspondance with subtyping
+          .filter(c => // Parameter types correspondence with subtyping
             (c.getParameterTypes zip ts).forall {
               case (clazz, tpe) => Type.getFlixType(clazz) == tpe
             })
@@ -249,7 +249,9 @@ object TypeReduction {
     } &&
     // NB: once methods with same signatures have been filtered out, we should remove super-methods duplicates
     // if the superclass is abstract or ignore if it is a primitive type, e.g., void
-    (cand.getReturnType.isPrimitive || !java.lang.reflect.Modifier.isAbstract(cand.getReturnType.getModifiers)) // temporary to avoid superclass abstract duplicate
+    (cand.getReturnType.isPrimitive ||
+      java.lang.reflect.Modifier.isInterface(cand.getReturnType.getModifiers) || // interfaces are considered primitives
+      !java.lang.reflect.Modifier.isAbstract(cand.getReturnType.getModifiers)) // temporary to avoid superclass abstract duplicate
 
   /**
    * Helper method to define a sub-typing relation between two given Flix types.
