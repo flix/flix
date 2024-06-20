@@ -62,7 +62,7 @@ object MutationTester {
       * When the test suite is ran, a mutant can either be killed or survive.
       *
       * A special case is added when the test doesn't terminate.
-      */
+    */
     sealed trait TestRes
 
     object TestRes {
@@ -81,11 +81,7 @@ object MutationTester {
       *
       * It also keeps track of the time it took to generate all the mutations
       */
-    def run(flix: Flix, testModule: String, productionModule: String, percentage: Int): Unit = {
-      //runBenchmarks(flix)
-      toolRun(flix, testModule,productionModule, percentage)
-    }
-  private def toolRun(flix: Flix, testModule: String, productionModule: String, percentage: Int): Unit = {
+  def run(flix: Flix, testModule: String, productionModule: String, percentage: Int): Unit = {
     println(s"mutating module: $productionModule")
     val root = flix.check().unsafeGet
     val start = System.nanoTime()
@@ -106,20 +102,6 @@ object MutationTester {
     MutationDataHandler.writeTTBToFile(s"TTB: $productionModule: ${ttb}")
     MutationDataHandler.writeBBSToFile(s"BBS: $productionModule: ${bbs}: $bugs")
     writeReportsToFile(nonKilledStrList)
-  }
-
-
-  def runBenchmarks(flix: Flix): Unit = {
-    val listToSource: List[String] = ("Chain" :: "Option" :: "Map" :: Nil)
-    val _ = listToSource.map(module => {
-      val root = flix.check().unsafeGet
-      // println(root.sigs.filter(t => t._1.toString.equals("Add.add")))
-      val mutations = MutationGenerator.mutateRoot(root, module)
-      val testModule = s"Test$module"
-      val lastRoot = insertDecAndCheckIntoRoot(root)
-      val (results, timeToBug, _, _, _) = runMutations(flix, testModule, lastRoot, mutations)
-      (results , s"TTB: $module: $timeToBug")
-    })
   }
 
     private def writeReportsToFile(reportsList: List[String]): Unit = {
@@ -289,7 +271,9 @@ object MutationTester {
         val amountOfMutants = mutatedDefs.length
         val f = DateTimeFormatter.ofPattern("yyyy-MM-dd: HH:mm")
         val emptyList: List[(MutatedDef, TestRes)] = Nil
+
         val emptySkip: SkipM = SkipM.Default(Nil)
+
         val newRep = ReportAcc(0,0,0)
         val localAcc: (ReportAcc, Double, Long, Int, List[(MutatedDef, TestRes)], Long, SkipM) = (newRep, totalStartTime.toDouble, temp, 0, emptyList, 0.toLong, emptySkip)
         val (rep, _, _, mutantsRun, mOperatorResults, timeToBug, survived) = mutatedDefs.foldLeft(localAcc)((acc, mut) => {
@@ -347,10 +331,12 @@ object MutationTester {
   }
 
 
+  // Object for omptimizations
   object SkipM {
 
+    // The default
     case class Default(survivors: List[MutatedDef]) extends SkipM
-
+    // The different omptimizations
     case class LocOp(locs: List[SourceLocation]) extends SkipM
     case class LocRecOp(locsRecs: List[(SourceLocation, MutationType)]) extends SkipM
 
@@ -402,7 +388,7 @@ object MutationTester {
           survivors.foldLeft(emptyList)((acc, m) => if (acc.contains(m.df.exp.loc)) acc else  m.df.exp.loc :: acc).length
         case LocOp(locs) => locs.length
         case LocRecOp(locsRecs) => locsRecs.length
-    }
+      }
     }
   }
 

@@ -401,13 +401,6 @@ object MutationGenerator {
     }
   }
 
-  private def switchMutations(mrs: List[TypedAst.MatchRule]): List[List[TypedAst.MatchRule]] = {
-    mrs match {
-      case x::xs =>
-        Nil
-      case _ => Nil
-    }
-  }
 
   private def legalSwitches(matches: List[TypedAst.MatchRule]): List[(List[TypedAst.MatchRule], (Int, Int))] = {
     def comparePatterns(candPat: TypedAst.Pattern, otherPat: TypedAst.Pattern): Boolean = {
