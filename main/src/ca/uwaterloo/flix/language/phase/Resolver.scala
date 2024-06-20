@@ -3368,7 +3368,6 @@ object Resolver {
         case TypeConstructor.CaseUnion(_) => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.Error(_) => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.MethodReturnType => Result.Err(ResolutionError.IllegalType(tpe, loc))
-        case TypeConstructor.StaticMethodReturnType(clazz, name, arity) => Result.Err(ResolutionError.IllegalType(tpe, loc))
 
         case TypeConstructor.AnyType => throw InternalCompilerException(s"unexpected type: $tc", tpe.loc)
         case t: TypeConstructor.Arrow => throw InternalCompilerException(s"unexpected type: $t", tpe.loc)
