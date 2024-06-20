@@ -656,7 +656,7 @@ mod Regex {
     ///
     def matcherStart(m: Matcher[r]): Result[String, Int32] \ r =
         Result.tryCatch(_ -> {
-            import java.util.regex.Matcher#start(): Int32 \ r;
+            import java.util.regex.Matcher.start(): Int32 \ r;
             let Matcher(m1) = m;
             start(m1)
         })
@@ -666,7 +666,7 @@ mod Regex {
     ///
     def matcherEnd(m: Matcher[r]): Result[String, Int32] \ r =
         Result.tryCatch(_ -> {
-            import java.util.regex.Matcher#end(): Int32 \ r;
+            import java.util.regex.Matcher.end(): Int32 \ r;
             let Matcher(m1) = m;
             end(m1)
         })
