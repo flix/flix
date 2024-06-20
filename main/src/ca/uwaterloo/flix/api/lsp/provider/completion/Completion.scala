@@ -48,7 +48,7 @@ sealed trait Completion {
         textEdit = TextEdit(context.range, s"$name "),
         kind = CompletionItemKind.Keyword)
     case Completion.LabelCompletion(label, prefix) =>
-      val name = s"$prefix.${label.name}"
+      val name = s"$prefix#${label.name}"
       CompletionItem(label = name,
         sortText = Priority.high(name),
         textEdit = TextEdit(context.range, name),
