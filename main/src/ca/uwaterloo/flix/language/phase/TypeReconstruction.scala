@@ -444,14 +444,14 @@ object TypeReconstruction {
           TypedAst.Expr.Error(TypeError.UnresolvedMethod(loc), methodTpe, eff)
       }
 
-    case KindedAst.Expr.InvokeStaticMethod2(clazz, _, exps, mvar, tvar, evar, loc) =>
+    case KindedAst.Expr.InvokeStaticMethod2(_, _, exps, mvar, tvar, evar, loc) =>
       val es = exps.map(visitExp)
-      val tpe = Type.getFlixType(clazz)
       val methodTpe = subst(mvar)
+      val returnTpe = subst(tvar)
       val eff = subst(evar)
       methodTpe match {
         case Type.Cst(TypeConstructor.JvmMethod(method), loc) =>
-          TypedAst.Expr.InvokeStaticMethod(method, es, tpe, eff, loc)
+          TypedAst.Expr.InvokeStaticMethod(method, es, returnTpe, eff, loc)
         case _ =>
           TypedAst.Expr.Error(TypeError.UnresolvedMethod(loc), methodTpe, eff) // TODO INTEROP: UnresolvedStaticMethod ?
       }
