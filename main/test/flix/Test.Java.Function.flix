@@ -93,7 +93,7 @@ mod Test.Java.Function {
         import java.util.stream.IntStream.filter(IntPredicate): IntStream \ IO;
         import java.util.stream.IntStream.sum(): Int32 \ IO;
         let stream0 = range(0, 9);
-        let stream1 = filter(stream0, i -> checked_ecast(i `Int32.remainder` 2 == 0));
+        let stream1 = filter(stream0, i -> (i `Int32.remainder` 2 == 0));
         sum(stream1) == 20
     }
 
@@ -103,7 +103,7 @@ mod Test.Java.Function {
         import java.util.stream.IntStream.map(IntUnaryOperator): IntStream \ IO;
         import java.util.stream.IntStream.sum(): Int32 \ IO;
         let stream0 = of(5);
-        let stream1 = map(stream0, i -> checked_ecast(i+7));
+        let stream1 = map(stream0, i -> (i+7));
         sum(stream1) == 12
     }
 
@@ -138,7 +138,7 @@ mod Test.Java.Function {
         import java.util.stream.LongStream.filter(LongPredicate): LongStream \ IO;
         import java.util.stream.LongStream.sum(): Int64 \ IO;
         let stream0 = range(0i64, 9i64);
-        let stream1 = filter(stream0, i -> checked_ecast(i `Int64.remainder` 2i64 == 0i64));
+        let stream1 = filter(stream0, i -> (i `Int64.remainder` 2i64 == 0i64));
         sum(stream1) == 20i64
     }
 
@@ -148,7 +148,7 @@ mod Test.Java.Function {
         import java.util.stream.LongStream.map(LongUnaryOperator): LongStream \ IO;
         import java.util.stream.LongStream.sum(): Int64 \ IO;
         let stream0 = of(5i64);
-        let stream1 = map(stream0, i -> checked_ecast(i+7i64));
+        let stream1 = map(stream0, i -> (i+7i64));
         sum(stream1) == 12i64
     }
 
@@ -187,7 +187,7 @@ mod Test.Java.Function {
         import java.util.stream.DoubleStream.filter(DoublePredicate): DoubleStream \ IO;
         import java.util.stream.DoubleStream.sum(): Float64 \ IO;
         let stream0 = of(Array#{0.0f64, 1.0f64, 2.0f64, 3.0f64, 4.0f64, 5.0f64, 6.0f64, 7.0f64, 8.0f64} @ rc);
-        let stream1 = filter(stream0, d -> checked_ecast(match Float64.tryToInt32(d) {
+        let stream1 = filter(stream0, d -> (match Float64.tryToInt32(d) {
             case Some(i) => i `Int32.remainder` 2 == 0
             case None    => false
             }));
@@ -201,7 +201,7 @@ mod Test.Java.Function {
         import java.util.stream.DoubleStream.map(DoubleUnaryOperator): DoubleStream \ IO;
         import java.util.stream.DoubleStream.sum(): Float64 \ IO;
         let stream0 = of(5.0f64);
-        let stream1 = map(stream0, d -> checked_ecast(d + 7.0f64));
+        let stream1 = map(stream0, d -> (d + 7.0f64));
         let tot = sum(stream1);
         Float64.tryToInt32(tot) == Some(12)
     }

@@ -26,7 +26,7 @@ class TestEntryPoint extends AnyFunSuite with TestUtils {
   test("Test.IllegalEntryPointArg.Main.01") {
     val input =
       """
-        |def main(blah: Array[String, _]): Unit \ IO = checked_ecast(())
+        |def main(blah: Array[String, _]): Unit \ IO = (())
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[EntryPointError.IllegalEntryPointArgs](result)
@@ -35,7 +35,7 @@ class TestEntryPoint extends AnyFunSuite with TestUtils {
   test("Test.IllegalEntryPointArg.Main.02") {
     val input =
       """
-        |def main(blah: Array[a, _]): Unit \ IO = checked_ecast(())
+        |def main(blah: Array[a, _]): Unit \ IO = (())
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[EntryPointError.IllegalEntryPointArgs](result)
@@ -46,7 +46,7 @@ class TestEntryPoint extends AnyFunSuite with TestUtils {
       """
         |trait C[a]
         |
-        |def main(blah: Array[a, _]): Unit \ IO with C[a] = checked_ecast(())
+        |def main(blah: Array[a, _]): Unit \ IO with C[a] = (())
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[EntryPointError.IllegalEntryPointArgs](result)
@@ -115,7 +115,7 @@ class TestEntryPoint extends AnyFunSuite with TestUtils {
   test("Test.IllegalEntryPointResult.Main.01") {
     val input =
       """
-        |def main(): a \ IO = checked_ecast(???)
+        |def main(): a \ IO = (???)
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[EntryPointError.IllegalEntryPointResult](result)
@@ -171,7 +171,7 @@ class TestEntryPoint extends AnyFunSuite with TestUtils {
   test("Test.ValidEntryPoint.Main.02") {
     val input =
       """
-        |def main(): Int64 \ IO = checked_ecast(42i64)
+        |def main(): Int64 \ IO = checked_ecast(42i64) // cannot
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectSuccess(result)
