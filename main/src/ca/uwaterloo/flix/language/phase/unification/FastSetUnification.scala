@@ -446,7 +446,7 @@ object FastSetUnification {
     while (changed) {
       changed = false
 
-      var remaining: List[Equation] = Nil
+      var unsolved: List[Equation] = Nil
       // OBS: subst.extended checks for conflicting mappings
       for (e <- pending) {
         e match {
@@ -478,7 +478,7 @@ object FastSetUnification {
               changed = true
             }
             if (rest.nonEmpty) {
-              remaining = rest.map(Equation.mk(_, Term.Univ, loc)) ++ remaining
+              unsolved = rest.map(Equation.mk(_, Term.Univ, loc)) ++ unsolved
               changed = true
             }
           }
@@ -496,17 +496,17 @@ object FastSetUnification {
               changed = true
             }
             if (rest.nonEmpty) {
-              remaining = rest.map(Equation.mk(_, Term.Empty, loc)) ++ remaining
+              unsolved = rest.map(Equation.mk(_, Term.Empty, loc)) ++ unsolved
               changed = true
             }
           }
 
           case _ =>
-            remaining = e :: remaining
+            unsolved = e :: unsolved
         }
       }
-      // INVARIANT: We apply the current substitution to all remaining equations.
-      pending = subst(remaining)
+      // INVARIANT: We apply the current substitution to all unsolved equations.
+      pending = subst(unsolved)
     }
 
     // Reverse the unsolved equations to ensure they are returned in the original order.
