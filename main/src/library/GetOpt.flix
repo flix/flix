@@ -107,8 +107,8 @@ mod GetOpt {
     /// Format each option descriptor.
     ///
     def formatOpt(opts: OptionDescr[a]): List[(String, String, String)] =
-        let shorts  = List.map(formatShort(opts.argDescriptor),  opts#optionIds)   |> sepBy(',');
-        let longs   = List.map(formatLong(opts.argDescriptor),   opts#optionNames) |> sepBy(',');
+        let shorts  = List.map(formatShort(opts#argDescriptor),  opts#optionIds)   |> sepBy(',');
+        let longs   = List.map(formatLong(opts#argDescriptor),   opts#optionNames) |> sepBy(',');
         match String.lines(opts#explanation) {
             case Nil => (shorts, longs, "") :: Nil
             case d :: ds => (shorts, longs, d) :: List.map(x -> ("", "", x), ds)
