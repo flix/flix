@@ -209,7 +209,7 @@ object TypeReduction {
         // Among candidate constructors if there already exists the one with the exact signature,
         // we should ignore the rest.
         val exactConstructor = candidateConstructors
-          .filter(c => // Parameter types correspondance with subtyping
+          .filter(c => // Parameter types correspondence with subtyping
             (c.getParameterTypes zip ts).forall {
               case (clazz, tpe) => Type.getFlixType(clazz) == tpe
             })
