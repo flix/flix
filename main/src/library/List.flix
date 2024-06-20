@@ -472,7 +472,7 @@ mod List {
     /// Returns `l` with every occurrence of `src` replaced by `dst`.
     ///
     pub def replace(src: {src = a}, dst: {dst = a}, l: List[a]): List[a] with Eq[a] =
-        map(e -> if (e == src.src) dst.dst else e, l)
+        map(e -> if (e == src#src) dst#dst else e, l)
 
     ///
     /// Returns `l2` with the `n` elements starting at index `i` replaced with the elements of `l1`.
