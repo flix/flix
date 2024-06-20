@@ -17,9 +17,11 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.phase.unification.BooleanFuzzer.RawString.toRawString
-import ca.uwaterloo.flix.language.phase.unification.FastSetUnification.Term
-import ca.uwaterloo.flix.util.Result
+import ca.uwaterloo.flix.language.phase.unification.FastSetUnification.{Equation, Term}
+import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
+import scala.annotation.tailrec
+import scala.collection.immutable.SortedSet
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.util.Random
@@ -106,7 +108,7 @@ object BooleanFuzzer {
       }
       tests += 1
       val t = randomTerm(former, random, 8, 6, 6, 6)
-      val (res, phase) = eqSelf(t)
+      val (res, phase) = eqSelf(t, Some(random))
       res match {
         case Res.Pass => ()
         case Res.Fail =>
@@ -153,18 +155,130 @@ object BooleanFuzzer {
     case object Timeout extends Res
   }
 
-  private def eqSelf(t: Term): (Res, Int) = {
+  private def eqSelf(t: Term, explode: Option[Random]): (Res, Int) = {
     val eq = Term.mkXor(t, t) ~ Term.Empty
-    val (res, phase) = FastSetUnification.solveAllInfo(List(eq))
+    val eqs = explode match {
+      case Some(r) => explodeKnownEquation(r, eq)
+      case None => List(eq)
+    }
+    val (res, phase) = FastSetUnification.solveAllInfo(eqs)
     res match {
-      case Result.Ok(subst) =>
-        FastSetUnification.verify(subst, List(eq))
+      case Result.Ok(subst) => try {
+        FastSetUnification.verify(subst, eqs)
         (Res.Pass, phase)
+      } catch {
+        case ex: InternalCompilerException => (Res.Fail, phase)
+      }
       case Result.Err((ex, _, _)) if ex.isInstanceOf[FastSetUnification.TooComplexException] =>
         (Res.Timeout, phase)
       case Result.Err((_, _, _)) =>
         (Res.Fail, phase)
     }
+  }
+
+  /**
+    * Takes an equation and creates equations that names some subterms as variables via extra equations.
+    */
+  private def explodeKnownEquation(r: Random, eq: Equation): List[Equation] = {
+    var next = maxId(eq.t1) max maxId(eq.t2)
+    def getId(): Int = {
+      next += 1
+      next
+    }
+    val (left, leftEqs) = explode(r, eq.t1, eq.loc, getId())
+    val (right, rightEqs) = explode(r, eq.t2, eq.loc, getId())
+    Equation.mk(left, right, eq.loc) :: leftEqs ++ rightEqs
+  }
+
+  private def explode(r: Random, t: Term, loc: SourceLocation, gen: => Int): (Term, List[Equation]) = t match {
+    case Term.Univ | Term.Empty | Term.Cst(_) | Term.ElemSet(_) | Term.Var(_) =>
+      if (r.nextInt(5) == 0) {
+        val fresh = Term.Var(gen)
+        (fresh, List(Equation.mk(fresh, t, loc)))
+      } else (t, Nil)
+    case Term.Compl(t0) =>
+      val (t, eqs) = explode(r, t0, loc, gen)
+      if (r.nextInt(3) == 0) {
+        val fresh = Term.Var(gen)
+        (fresh, Equation.mk(fresh, Term.Compl(t), loc) :: eqs)
+      } else (t, eqs)
+    case Term.Inter(posElem, posCsts, posVars, negElem, negCsts, negVars, rest) =>
+      splitTerms(Term.mkInter, r, loc, gen, posElem, posCsts, posVars, negElem, negCsts, negVars, rest)
+    case Term.Union(posElem, posCsts, posVars, negElem, negCsts, negVars, rest) =>
+      splitTerms(Term.mkUnion, r, loc, gen, posElem, posCsts, posVars, negElem, negCsts, negVars, rest)
+  }
+
+  private def splitTerms(build: List[Term] => Term, r: Random, loc: SourceLocation, gen: => Int, posElem: Option[Term.ElemSet], posCsts: Set[Term.Cst], posVars: Set[Term.Var], negElem: Option[Term.ElemSet], negCsts: Set[Term.Cst], negVars: Set[Term.Var], rest0: List[Term]): (Term, List[Equation]) = {
+    var eqs: List[Equation] = Nil
+    var rest: List[Term] = Nil
+    for (r0 <- rest0) {
+      val (rr, eq) = explode(r, r0, loc, gen)
+      rest = rr :: rest
+      eqs = eq ++ eqs
+    }
+    val terms0: List[Term] = posElem.toList ++ posCsts.toList ++ posVars.toList ++ negElem.toList.map(Term.mkCompl) ++ negCsts.toList.map(Term.mkCompl) ++ negVars.toList.map(Term.mkCompl) ++ rest
+    val terms = r.shuffle(terms0)
+    // chose between at least 1 and at most terms - 2 or 4
+    val maxRoll = 4 min ((terms.size - 2) max 0)
+    val chunkAmount = if (maxRoll <= 0) 1 else r.nextInt(maxRoll) + 1
+    // reserve chunkAmount elements to have them non-empty
+    var (reserved, remaining) = terms.splitAt(chunkAmount)
+    var chunks: List[List[Term]] = Nil
+    for (i <- Range(0, chunkAmount)) {
+      val (hd, reserved1) = (reserved.head, reserved.drop(1))
+      reserved = reserved1
+      if (remaining.isEmpty) {
+        chunks = List(hd) :: chunks
+      } else {
+        val index = if (i == chunkAmount - 1) remaining.size else r.nextInt(remaining.size+1)
+        val (mine, remaining1) = remaining.splitAt(index)
+        remaining = remaining1
+        chunks = (hd :: mine) :: chunks
+      }
+    }
+    assert(reserved.isEmpty)
+    assert(remaining.isEmpty, remaining.size)
+    var finalTerms: List[Term] = Nil
+    for (chunk <- chunks) {
+      if (r.nextInt(4) != 0) {
+        val fresh = Term.Var(gen)
+        eqs = Equation.mk(fresh, build(chunk), loc) :: eqs
+        finalTerms = fresh :: finalTerms
+      } else {
+        finalTerms = chunk ++ finalTerms
+      }
+    }
+    (build(finalTerms), eqs)
+  }
+
+  @tailrec
+  private def maxId(t: Term): Int = t match {
+    case Term.Univ => -1
+    case Term.Empty => -1
+    case Term.Cst(c) => c
+    case Term.Var(x) => x
+    case Term.ElemSet(s) => maxId(s)
+    case Term.Compl(t) => maxId(t)
+    case Term.Inter(posElem, posCsts, posVars, negElem, negCsts, negVars, rest) =>
+      maxId(posElem) max maxId(posCsts) max maxId(posVars) max maxId(negElem) max maxId(negCsts) max maxId(negVars) max maxId(rest)
+    case Term.Union(posElem, posCsts, posVars, negElem, negCsts, negVars, rest) =>
+      maxId(posElem) max maxId(posCsts) max maxId(posVars) max maxId(negElem) max maxId(negCsts) max maxId(negVars) max maxId(rest)
+  }
+
+  private def maxId(l: List[Term]): Int = {
+    if (l.isEmpty) -1 else l.map(maxId).max
+  }
+
+  private def maxId(s: Set[_ <: Term]): Int = {
+    if (s.isEmpty) -1 else s.map(maxId).max
+  }
+
+  private def maxId(s: SortedSet[Int]): Int = {
+    if (s.isEmpty) -1 else s.max
+  }
+
+  private def maxId(o: Option[Term.ElemSet]): Int = {
+    o.map(es => maxId(es.s)).getOrElse(-1)
   }
 
   object RawString {

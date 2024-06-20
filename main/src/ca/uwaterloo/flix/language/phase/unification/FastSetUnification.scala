@@ -85,7 +85,8 @@ object FastSetUnification {
   /**
     * Enable debugging (prints information during set unification).
     */
-  private val Debugging: Boolean = false
+  private var Debugging: Boolean = false
+  private val Rerun: Boolean = false
 
   /**
     * Enable verification (i.e. check that the computed most-general unifier is a solution to the original equation system.)
@@ -177,6 +178,15 @@ object FastSetUnification {
 
         Result.Ok(currentSubst)
       } catch {
+        case _ if !Debugging && Rerun =>
+          // rerun with debugging
+          val old = Debugging
+          Debugging = true
+          currentEqns = l
+          currentSubst = SetSubstitution.empty
+          val res = solve()
+          Debugging = old
+          res
         case ex: ConflictException => Result.Err((ex, currentEqns, currentSubst))
         case ex: TooComplexException => Result.Err((ex, currentEqns, currentSubst))
       }
@@ -197,13 +207,13 @@ object FastSetUnification {
       debugln()
     }
 
-    private def phase1ConstantPropagation(): Unit = {
+    private def phase1ConstantPropagation(): Unit = if (currentEqns.nonEmpty) {
       debugln("-".repeat(80))
       debugln("--- Phase 1: Constant Propagation")
       // TODO this is lying
       debugln("    (resolves all equations of the form: x = c where x is a var and c is univ/empty/constant/element)")
       debugln("-".repeat(80))
-      if (currentEqns.nonEmpty) setPhase(1)
+      setPhase(1)
       val s = propagateConstants(currentEqns)
       updateState(s)
       debugEquations()
@@ -211,12 +221,12 @@ object FastSetUnification {
       debugln()
     }
 
-    private def phase2VarPropagation(): Unit = {
+    private def phase2VarPropagation(): Unit = if (currentEqns.nonEmpty) {
       debugln("-".repeat(80))
       debugln("--- Phase 2: Variable Propagation")
       debugln("    (resolves all equations of the form: x = y where x and y are vars)")
       debugln("-".repeat(80))
-      if (currentEqns.nonEmpty) setPhase(2)
+      setPhase(2)
       val s = propagateVars(currentEqns)
       updateState(s)
       debugEquations()
@@ -224,12 +234,12 @@ object FastSetUnification {
       debugln()
     }
 
-    private def phase3VarAssignment(): Unit = {
+    private def phase3VarAssignment(): Unit = if (currentEqns.nonEmpty) {
       debugln("-".repeat(80))
       debugln("--- Phase 3: Variable Assignment")
       debugln("    (resolves all equations of the form: x = t where x is free in t)")
       debugln("-".repeat(80))
-      if (currentEqns.nonEmpty) setPhase(3)
+      setPhase(3)
       val s = varAssignment(currentEqns)
       updateState(s)
       debugEquations()
@@ -237,12 +247,12 @@ object FastSetUnification {
       debugln()
     }
 
-    private def phase4TrivialAndRedundant(): Unit = {
+    private def phase4TrivialAndRedundant(): Unit = if (currentEqns.nonEmpty) {
       debugln("-".repeat(80))
       debugln("--- Phase 4: Eliminate Trivial and Redundant Equations")
       debugln("    (eliminates equations of the form X = X and duplicated equations)")
       debugln("-".repeat(80))
-      if (currentEqns.nonEmpty) setPhase(4)
+      setPhase(4)
       val s = eliminateTrivialAndRedundant(currentEqns)
       updateState(s)
       debugEquations()
@@ -250,12 +260,12 @@ object FastSetUnification {
       debugln()
     }
 
-    private def phase5SVE(): Unit = {
+    private def phase5SVE(): Unit = if (currentEqns.nonEmpty) {
       debugln("-".repeat(80))
       debugln("--- Phase 5: Set Unification")
       debugln("    (resolves all remaining equations using SVE.)")
       debugln("-".repeat(80))
-      if (currentEqns.nonEmpty) setPhase(5)
+      setPhase(5)
       val newSubst = setUnifyAllPickSmallest(currentEqns)
       updateState(Nil, newSubst) // Note: Pass Nil because SVE will have solved all equations.
       debugSubstitution()
@@ -455,17 +465,22 @@ object FastSetUnification {
             subst = subst.extended(x, Term.Univ, loc)
             changed = true
 
-          // Case 2: x ~ c
+          // Case 2: x ~ empty
+          case Equation(Term.Var(x), Term.Empty, loc) =>
+            subst = subst.extended(x, Term.Empty, loc)
+            changed = true
+
+          // Case 3: x ~ c
           case Equation(Term.Var(x), c@Term.Cst(_), loc) =>
             subst = subst.extended(x, c, loc)
             changed = true
 
-          // Case 3: x ~ e
+          // Case 4: x ~ e
           case Equation(Term.Var(x), e@Term.ElemSet(_), loc) =>
             subst = subst.extended(x, e, loc)
             changed = true
 
-          // Case 4: x ∩ y ∩ !z ∩ ... ∩ rest ~ univ
+          // Case 5: x ∩ y ∩ !z ∩ ... ∩ rest ~ univ
           case Equation(Term.Inter(None, posCsts, posVars, negElem, negCsts, negVars, rest), Term.Univ, loc) if
             posCsts.isEmpty && negElem.isEmpty && negCsts.isEmpty =>
           {
@@ -483,7 +498,7 @@ object FastSetUnification {
             }
           }
 
-          // Case 5: x ∪ y ∪ !z ∪ ... ∪ rest ~ empty
+          // Case 6: x ∪ y ∪ !z ∪ ... ∪ rest ~ empty
           case Equation(Term.Union(posElem, posCsts, posVars, negElem, negCsts, negVars, rest), Term.Empty, loc) if
             posElem.isEmpty && posCsts.isEmpty && negElem.isEmpty && negCsts.isEmpty =>
           {
