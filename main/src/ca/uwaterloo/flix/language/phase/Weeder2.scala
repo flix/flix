@@ -23,7 +23,6 @@ import ca.uwaterloo.flix.language.ast.shared.Fixity
 import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, Name, ReadAst, SemanticOp, SourceLocation, SourcePosition, Symbol, SyntaxTree, Token, TokenKind, WeededAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.language.errors.ParseError._
-import ca.uwaterloo.flix.language.errors.WeederError
 import ca.uwaterloo.flix.language.errors.WeederError._
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.collection.Chain
@@ -839,11 +838,11 @@ object Weeder2 {
               Validation.success(Expr.Ambiguous(qname, ident.loc))
             // Case 2: actually a record access
             case ident :: labels =>
-              println(ident.loc)
               // NB: We only use the source location of the identifier itself.
-              val m = WeederError.EmptyRecordExtensionPattern(ident.loc)
-              val e = Expr.Error(m)
-              Validation.toSoftFailure(e, m)
+              val base = Expr.Ambiguous(Name.mkQName(prefix.map(_.toString), ident.name, ident.loc), ident.loc)
+              Validation.success(labels.foldLeft(base: Expr) {
+                case (acc, label) => Expr.RecordSelect(acc, Name.mkLabel(label), label.loc)
+              })
           }
       }
     }
