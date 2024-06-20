@@ -1021,7 +1021,7 @@ mod Files {
             import java.io.File.toPath(): Path \ IO;
             import static java.nio.file.Files.copy(Path, Path, Array[##java.nio.file.CopyOption, rc]): Path \ IO;
 
-            let srcFile = newFile(src.src);
+            let srcFile = newFile(src#src);
             let srcPath = toPath(srcFile);
             let dstFile = newFile(dst);
             let dstPath = toPath(dstFile);
