@@ -85,7 +85,7 @@ object FastSetUnification {
   /**
     * Enable debugging (prints information during set unification).
     */
-  private var Debugging: Boolean = true
+  private var Debugging: Boolean = false
   private val Rerun: Boolean = false
 
   /**
@@ -93,7 +93,7 @@ object FastSetUnification {
     *
     * Note: Verification is _very expensive_ and may not terminate in reasonable time.
     */
-  private val Verify: Boolean = true
+  private val Verify: Boolean = false
 
   /**
     * Internal formatter. Used for debugging.
@@ -1732,7 +1732,7 @@ object FastSetUnification {
                   posElemTerm0 = posElemTerm0.union(s)
                 case Term.Compl(Term.ElemSet(s)) =>
                   negElemTerm0 = negElemTerm0.map(_.intersect(s)).orElse(Some(s))
-                  if (negElemTerm0.isEmpty) return Univ
+                  if (negElemTerm0.exists(_.isEmpty)) return Univ
                 case x@Term.Var(_) =>
                   if (negVarTerms.contains(x)) return Univ
                   posVarTerms += x

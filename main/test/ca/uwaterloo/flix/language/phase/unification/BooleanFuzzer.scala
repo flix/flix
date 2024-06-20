@@ -90,9 +90,10 @@ object BooleanFuzzer {
   }
 
   def main(args: Array[String]): Unit = {
-    FastSetUnification.solveAllInfo(testCase())
-//    fuzz(new Random(), 200_000, 1, -1)
+    fuzz(new Random(), 200_000, 5, -1)
   }
+
+  // TODO add testing of t ~ propagation(t)
 
   def fuzz(random: Random, testLimit: Int, errLimit: Int, timeoutLimit: Int): Boolean = {
     val former = termFormer()
