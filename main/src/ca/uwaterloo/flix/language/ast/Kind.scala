@@ -105,6 +105,11 @@ object Kind {
   case class Arrow(k1: Kind, k2: Kind) extends Kind
 
   /**
+    * Represents an error kind.
+    */
+  case object Error extends Kind
+
+  /**
     * Returns the kind: * -> (* ... -> *)
     */
   def mkArrow(length: Int): Kind = {

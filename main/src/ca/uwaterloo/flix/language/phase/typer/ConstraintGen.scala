@@ -743,8 +743,10 @@ object ConstraintGen {
 
         (resTpe, resEff)
 
+      case Expr.InvokeConstructor2(clazz, exps, loc) =>
+        throw InternalCompilerException(s"Unexpected InvokeConstructor2 call.", loc)
+
       case Expr.InvokeMethod2(exp, name, exps, mvar, tvar, evar, loc) =>
-        // TODO INTEROP make distinction between java method or constructor calls
         val (tpe, eff) = visitExp(exp)
         val (tpes, effs) = exps.map(visitExp).unzip
         val t = Type.Cst(TypeConstructor.MethodReturnType, loc)
@@ -754,6 +756,9 @@ object ConstraintGen {
         val resTpe = tvar
         val resEff = evar
         (resTpe, resEff)
+
+      case Expr.InvokeStaticMethod2(clazz, methodName, exps, loc) =>
+        throw InternalCompilerException(s"Unexpected InvokeConstructor2 call.", loc)
 
       case Expr.InvokeConstructor(constructor, exps, _) =>
         val classTpe = Type.getFlixType(constructor.getDeclaringClass)

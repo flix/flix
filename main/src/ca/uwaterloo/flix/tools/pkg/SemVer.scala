@@ -25,6 +25,15 @@ object SemVer {
       .orElseBy(_.minor)
       .orElseBy(_.patch)
 
+  def ofString(input: String): Option[SemVer] = {
+    val numPattern = raw"0|[1-9]\d*".r
+    val pattern = raw"^($numPattern)\.($numPattern)\.($numPattern)$$".r
+    input match {
+      case pattern(major, minor, patch) =>
+        Some(SemVer(major.toInt, minor.toInt, patch.toInt))
+      case _ => None
+    }
+  }
 }
 
 /**

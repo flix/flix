@@ -285,6 +285,7 @@ object ConstraintSolver {
           case JavaResolutionResult.Resolved(tpe) =>
             val subst = Substitution.singleton(mvar.sym, tpe)
             Result.Ok(ResolutionResult(subst @@ subst0, Nil, progress = true))
+          case JavaResolutionResult.AmbiguousMethod(methods) => Result.Err(TypeError.AmbiguousMethod(method.name, tpe, tpes, methods, renv, mvar.loc))
           case JavaResolutionResult.MethodNotFound => Result.Err(TypeError.MethodNotFound(method.name, tpe, tpes, List(), renv, mvar.loc)) // TODO INTEROP: fill in candidate methods
         }
       } else {
@@ -381,6 +382,10 @@ object ConstraintSolver {
         res <- CaseSetUnification.unify(t1, t2, renv, sym1.universe, sym1).mapErr(toTypeError(_, prov))
       } yield ResolutionResult.newSubst(res)
 
+    case (Kind.Error, _) => Result.Ok(ResolutionResult.newSubst(Substitution.empty))
+
+    case (_, Kind.Error) => Result.Ok(ResolutionResult.newSubst(Substitution.empty))
+
     case (k1, k2) if KindUnification.unifiesWith(k1, k2) =>
       for {
         (t1, _) <- TypeReduction.simplify(tpe1, renv, loc)
@@ -445,6 +450,12 @@ object ConstraintSolver {
       } yield {
         ResolutionResult.constraints(List(TypeConstraint.Equality(t1, t2, prov)), p1 || p2)
       }
+
+    // MRT
+    case (_, Type.Apply(Type.Cst(TypeConstructor.MethodReturnType, _), _, _)) =>
+      Result.Ok(ResolutionResult.constraints(List(TypeConstraint.Equality(tpe1, tpe2, prov)), progress = false))
+    case (Type.Apply(Type.Cst(TypeConstructor.MethodReturnType, _), _, _), _) =>
+      Result.Ok(ResolutionResult.constraints(List(TypeConstraint.Equality(tpe1, tpe2, prov)), progress = false))
 
     case _ =>
       Result.Err(toTypeError(UnificationError.MismatchedTypes(tpe1, tpe2), prov))
@@ -528,6 +539,7 @@ object ConstraintSolver {
    */
   private def isKnown(t0: Type): Boolean = t0 match { // TODO INTEROP: Actually, it cannot have variables recursively...
     case Type.Var(_, _) => false
+    case Type.Apply(Type.Cst(TypeConstructor.MethodReturnType, _), _, _) => false
     case _ => true
   }
 

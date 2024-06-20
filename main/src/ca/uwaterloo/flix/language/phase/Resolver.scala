@@ -1420,12 +1420,36 @@ object Resolver {
               }
           }
 
+        case NamedAst.Expr.InvokeConstructor2(clazzName, exps, loc) =>
+          val esVal = traverse(exps)(visitExp(_, env0))
+          flatMapN(esVal) {
+            es => env0.get(clazzName.name) match {
+              case Some(List(Resolution.JavaClass(clazz))) =>
+                Validation.success(ResolvedAst.Expr.InvokeConstructor2(clazz, es, loc))
+              case _ =>
+                val m = ResolutionError.UndefinedJvmClass(clazzName.name, "", loc)
+                Validation.toSoftFailure(ResolvedAst.Expr.Error(m), m)
+            }
+          }
+
         case NamedAst.Expr.InvokeMethod2(exp, name, exps, loc) =>
           val eVal = visitExp(exp, env0)
           val esVal = traverse(exps)(visitExp(_, env0))
           mapN(eVal, esVal) {
             case (e, es) =>
               ResolvedAst.Expr.InvokeMethod2(e, name, es, loc)
+          }
+
+        case NamedAst.Expr.InvokeStaticMethod2(clazzName, methodName, exps, loc) =>
+          val esVal = traverse(exps)(visitExp(_, env0))
+          flatMapN(esVal) {
+            es => env0.get(clazzName.name) match {
+              case Some(List(Resolution.JavaClass(clazz))) =>
+                Validation.success(ResolvedAst.Expr.InvokeStaticMethod2(clazz, methodName, es, loc))
+              case _ =>
+                val m = ResolutionError.UndefinedJvmClass(clazzName.name, "", loc)
+                Validation.toSoftFailure(ResolvedAst.Expr.Error(m), m)
+            }
           }
 
         case NamedAst.Expr.InvokeConstructor(className, args, sig, loc) =>
