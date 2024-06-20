@@ -289,15 +289,16 @@ object MutationTester {
         val amountOfMutants = mutatedDefs.length
         val f = DateTimeFormatter.ofPattern("yyyy-MM-dd: HH:mm")
         val emptyList: List[(MutatedDef, TestRes)] = Nil
-        val emptySkip: SkipM = SkipM.LocRecOp(Nil)
+        val emptySkip: SkipM = SkipM.Default(Nil)
         val newRep = ReportAcc(0,0,0)
         val localAcc: (ReportAcc, Double, Long, Int, List[(MutatedDef, TestRes)], Long, SkipM) = (newRep, totalStartTime.toDouble, temp, 0, emptyList, 0.toLong, emptySkip)
-        val (rep, _, _, _, mOperatorResults, timeToBug, survived) = mutatedDefs.foldLeft(localAcc)((acc, mut) => {
+        val (rep, _, _, mutantsRun, mOperatorResults, timeToBug, survived) = mutatedDefs.foldLeft(localAcc)((acc, mut) => {
             val kit = TestKit(flix, root, testModule)
 
               testMutantsAndUpdateProgress(acc, mut, kit, f)
         })
-      val totalTime = reportResults(totalStartTime, amountOfMutants, rep.totalSurvivorCount, rep.totalUnknowns, rep.equivalent)
+
+      val totalTime = reportResults(totalStartTime, mutantsRun, rep.totalSurvivorCount, rep.totalUnknowns, rep.equivalent)
       println((timeToBug - totalStartTime).toDouble / 1_000_000_000.toDouble)
 
       val bugs = survived.bugs
@@ -416,12 +417,12 @@ object MutationTester {
     */
     private def testMutantsAndUpdateProgress(acc: (ReportAcc, Double, Long, Int, List[(MutatedDef, TestRes)], Long, SkipM), mut: MutatedDef, testKit: TestKit, f: DateTimeFormatter) = {
         val (rep, time, accTemp, mAmount, mTypeResults, timeToBug, survived) = acc
-        val mutationAmount = mAmount + 1
         val start = System.nanoTime()
 
         if (survived.shouldSkip(mut)) {
           acc
         } else {
+          val mutationAmount = mAmount + 1
 
           val testResult = compileAndTestMutant(mut.df, mut.df.sym, testKit)
 
