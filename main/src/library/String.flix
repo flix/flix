@@ -990,7 +990,7 @@ mod String {
     ///
     /// Alias for `indexOfLeft`.
     ///
-    pub def indexOf(substr: {substr = String}, s: String): Option[Int32] = indexOfLeft({substr = substr.substr}, s)
+    pub def indexOf(substr: {substr = String}, s: String): Option[Int32] = indexOfLeft({substr = substr#substr}, s)
 
     ///
     /// Return the index of the first occurrence of `substr` in `s` from the left.
