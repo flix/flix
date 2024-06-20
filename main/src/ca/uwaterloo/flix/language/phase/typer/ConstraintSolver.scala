@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.language.phase.unification.Unification.getUnderOrOverAp
 import ca.uwaterloo.flix.language.phase.unification._
 import ca.uwaterloo.flix.util.Result.Err
 import ca.uwaterloo.flix.util.collection.{ListMap, ListOps}
-import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
+import ca.uwaterloo.flix.util.{InternalCompilerException, Result, SubEffectLevel, Validation}
 
 import scala.annotation.tailrec
 
