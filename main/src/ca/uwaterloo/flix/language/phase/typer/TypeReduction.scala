@@ -236,7 +236,9 @@ object TypeReduction {
     } &&
     // NB: once methods with same signatures have been filtered out, we should remove super-methods duplicates
     // if the superclass is abstract or ignore if it is a primitive type, e.g., void
-    (cand.getReturnType.isPrimitive || !java.lang.reflect.Modifier.isAbstract(cand.getReturnType.getModifiers)) // temporary to avoid superclass abstract duplicate
+    (cand.getReturnType.isPrimitive ||
+      java.lang.reflect.Modifier.isInterface(cand.getReturnType.getModifiers) || // interfaces are considered primitives
+      !java.lang.reflect.Modifier.isAbstract(cand.getReturnType.getModifiers)) // temporary to avoid superclass abstract duplicate
 
   /**
    * Helper method that returns if the given constructor is a candidate constructor given a signature.
