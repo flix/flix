@@ -85,7 +85,7 @@ object FastSetUnification {
   /**
     * Enable debugging (prints information during set unification).
     */
-  private var Debugging: Boolean = false
+  private var Debugging: Boolean = true
   private val Rerun: Boolean = false
 
   /**
@@ -93,7 +93,7 @@ object FastSetUnification {
     *
     * Note: Verification is _very expensive_ and may not terminate in reasonable time.
     */
-  private val Verify: Boolean = false
+  private val Verify: Boolean = true
 
   /**
     * Internal formatter. Used for debugging.

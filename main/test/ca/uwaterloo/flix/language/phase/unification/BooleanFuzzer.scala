@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.phase.unification.BooleanFuzzer.RawString.toRawString
+import ca.uwaterloo.flix.language.phase.unification.FastSetUnification.Term.{Compl, Cst, ElemSet, Empty, Inter, Union, Var}
 import ca.uwaterloo.flix.language.phase.unification.FastSetUnification.{Equation, Term}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
@@ -89,14 +90,15 @@ object BooleanFuzzer {
   }
 
   def main(args: Array[String]): Unit = {
-    fuzz(new Random(), 2000_000, 5, -1)
+    FastSetUnification.solveAllInfo(testCase())
+//    fuzz(new Random(), 200_000, 1, -1)
   }
 
   def fuzz(random: Random, testLimit: Int, errLimit: Int, timeoutLimit: Int): Boolean = {
     val former = termFormer()
-    val errs: ListBuffer[Term] = ListBuffer.empty
+    val errs: ListBuffer[(List[Equation], Boolean)] = ListBuffer.empty
     val errPhaseFrequence = mutable.Map.empty[Int, Int]
-    val timeouts: ListBuffer[Term] = ListBuffer.empty
+    val timeouts: ListBuffer[List[Equation]] = ListBuffer.empty
     val timeoutPhaseFrequence = mutable.Map.empty[Int, Int]
     var continue = true
     var tests = 0
@@ -107,16 +109,16 @@ object BooleanFuzzer {
         println(s"${tests/1000}k (${(tests-errAmount-timeoutAmount)/1000}k, ${errAmount} errs, ${timeoutAmount} t.o.)")
       }
       tests += 1
-      val t = randomTerm(former, random, 8, 6, 6, 6)
-      val (res, phase) = eqSelf(t, Some(random))
+      val t = randomTerm(former, random, 4, 3, 3, 3)
+      val (input, res, phase) = eqSelf(t, Some(random))
       res match {
         case Res.Pass => ()
-        case Res.Fail =>
-          errs += Term.mkXor(t, t)
+        case Res.Fail(verf) =>
+          errs += ((input, verf))
           inc(errPhaseFrequence, phase)
           if (errLimit > 0 && errs.sizeIs >= errLimit) continue = false
         case Res.Timeout =>
-          timeouts += Term.mkXor(t, t)
+          timeouts += input
           inc(timeoutPhaseFrequence, phase)
           if (timeoutLimit > 0 && timeouts.sizeIs >= timeoutLimit) continue = false
       }
@@ -124,17 +126,18 @@ object BooleanFuzzer {
     println()
     println(s"   Tests: $tests")
     val errSize = errs.size
-    println(s"    Errs: $errSize (${errSize/(1.0*tests) * 100} %)")
+    val verfSize = errs.count{case (_, b) => b}
+    println(s"    Errs: $errSize (${errSize/(1.0*tests) * 100} %) (${verfSize} verification errors)")
     val timeoutSize = timeouts.size
     println(s"Timeouts: $timeoutSize (${timeoutSize/(1.0*tests) * 100} %)")
     if (errPhaseFrequence.nonEmpty) println(s"Err phases:")
     errPhaseFrequence.toList.sorted.foreach(p => println(s"\t\tphase ${p._1}: ${p._2} errors"))
     if (timeoutPhaseFrequence.nonEmpty) println(s"Timeout phases:")
     timeoutPhaseFrequence.toList.sorted.foreach(p => println(s"\t\tphase ${p._1}: ${p._2} timeouts"))
-    if (errs.nonEmpty) println(s"Smallest error:")
-    errs.sortBy(_.size).headOption.foreach(err => println(s"> ${err.toString}\n> ${toRawString(err)}"))
-    if (timeouts.nonEmpty) println(s"Smallest timeout:")
-    timeouts.sortBy(_.size).headOption.foreach(timeout => println(s"> ${timeout.toString}\n> ${toRawString(timeout)}"))
+    if (errs.nonEmpty) println(s"\nSmallest error:")
+    errs.sortBy{case (a, _) => a.map(_.size).sum}.headOption.foreach{case (err, verf) => println(s">${if (verf) "v" else ""} ${err.mkString("\n")}\n>${if (verf) "v" else ""} ${toRawString(err)}")}
+    if (timeouts.nonEmpty) println(s"\nSmallest timeout:")
+    timeouts.sortBy(_.map(_.size).sum).headOption.foreach(timeout => println(s"> ${timeout.mkString("\n")}\n> ${toRawString(timeout)}"))
     errs.isEmpty
   }
 
@@ -145,17 +148,17 @@ object BooleanFuzzer {
   private sealed trait Res {
     def passed: Boolean = this match {
       case Res.Pass => true
-      case Res.Fail => false
+      case Res.Fail(_) => false
       case Res.Timeout => false
     }
   }
   private object Res {
     case object Pass extends Res
-    case object Fail extends Res
+    case class Fail(verf: Boolean) extends Res
     case object Timeout extends Res
   }
 
-  private def eqSelf(t: Term, explode: Option[Random]): (Res, Int) = {
+  private def eqSelf(t: Term, explode: Option[Random]): (List[Equation], Res, Int) = {
     val eq = Term.mkXor(t, t) ~ Term.Empty
     val eqs = explode match {
       case Some(r) => explodeKnownEquation(r, eq)
@@ -165,14 +168,14 @@ object BooleanFuzzer {
     res match {
       case Result.Ok(subst) => try {
         FastSetUnification.verify(subst, eqs)
-        (Res.Pass, phase)
+        (eqs, Res.Pass, phase)
       } catch {
-        case ex: InternalCompilerException => (Res.Fail, phase)
+        case ex: InternalCompilerException => (eqs, Res.Fail(true), phase)
       }
       case Result.Err((ex, _, _)) if ex.isInstanceOf[FastSetUnification.TooComplexException] =>
-        (Res.Timeout, phase)
+        (eqs, Res.Timeout, phase)
       case Result.Err((_, _, _)) =>
-        (Res.Fail, phase)
+        (eqs, Res.Fail(false), phase)
     }
   }
 
@@ -300,6 +303,30 @@ object BooleanFuzzer {
     }
     private def helpList(l: Iterable[Term]): String = l.map(toRawString).mkString("List(", ", ", ")")
     private def helpSet(l: Iterable[Term]): String = l.map(toRawString).mkString("Set(", ", ", ")")
+    def toRawString(l: List[Equation]): String = {
+      s"List(${l.map(eq => s"${toRawString(eq.t1)} ~ ${toRawString(eq.t2)}").mkString(",\n")})"
+    }
+  }
+
+  private def testCase(): List[Equation] = {
+    List(Union(None, Set(), Set(), None, Set(), Set(), List(Inter(None, Set(), Set(Var(17), Var(15), Var(16)), None, Set(), Set(), List()), Inter(None, Set(), Set(Var(25), Var(24)), None, Set(), Set(), List()))) ~ Empty,
+      Var(25) ~ Cst(0),
+      Var(24) ~ Inter(Some(ElemSet(SortedSet(6))), Set(), Set(Var(18), Var(23)), None, Set(), Set(), List(Union(None, Set(), Set(Var(20), Var(19)), None, Set(), Set(), List()))),
+      Var(23) ~ Union(None, Set(), Set(Var(21)), Option(ElemSet(SortedSet(6))), Set(Cst(0)), Set(), List(Inter(None, Set(), Set(Var(22)), Option(ElemSet(SortedSet(6))), Set(), Set(Var(3), Var(5), Var(4)), List()))),
+      Var(22) ~ Compl(Cst(2)),
+      Var(21) ~ Inter(None, Set(), Set(), Option(ElemSet(SortedSet(8))), Set(Cst(1)), Set(), List()),
+      Var(3) ~ Var(20),
+      Var(19) ~ Union(Option(ElemSet(SortedSet(6))), Set(Cst(2)), Set(Var(5), Var(4)), None, Set(), Set(), List()),
+      Var(18) ~ Union(Option(ElemSet(SortedSet(8))), Set(Cst(1)), Set(), None, Set(), Set(), List()),
+      Var(17) ~ ElemSet(SortedSet(6)),
+      Var(16) ~ Inter(None, Set(), Set(Var(9), Var(14), Var(10)), None, Set(), Set(), List()),
+      Var(15) ~ Cst(0),
+      Var(14) ~ Union(None, Set(), Set(Var(11)), Option(ElemSet(SortedSet(6))), Set(Cst(0)), Set(), List(Inter(None, Set(), Set(Var(12), Var(13)), None, Set(Cst(2)), Set(Var(3), Var(5)), List()))),
+      Var(13) ~ Compl(ElemSet(SortedSet(6))),
+      Var(12) ~ Compl(Var(4)),
+      Var(11) ~ Inter(None, Set(), Set(), Option(ElemSet(SortedSet(8))), Set(Cst(1)), Set(), List()),
+      Var(10) ~ Union(Option(ElemSet(SortedSet(6))), Set(Cst(2)), Set(Var(3), Var(5), Var(4)), None, Set(), Set(), List()),
+      Var(9) ~ Union(Option(ElemSet(SortedSet(8))), Set(Cst(1)), Set(), None, Set(), Set(), List()))
   }
 
 }
