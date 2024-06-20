@@ -253,8 +253,8 @@ object TypeReduction {
    */
   private def isSubtype(tpe1: Type, tpe2: Type)(implicit flix: Flix): Boolean = {
     (tpe2, tpe1) match {
-      case (Type.Cst(TypeConstructor.Native(_), _), Type.Null) => true // Null is a sub-type of any Java object
       case (t1, t2) if t1 == t2 => true
+      case (Type.Cst(TypeConstructor.Native(_), _), Type.Null) => true // Null is a sub-type of any Java object
       case (Type.Cst(TypeConstructor.Native(clazz1), _), Type.Cst(TypeConstructor.Native(clazz2), _)) => clazz1.isAssignableFrom(clazz2)
       case (Type.Cst(TypeConstructor.Native(clazz), _), Type.Cst(TypeConstructor.Str, _)) => clazz.isAssignableFrom(classOf[String])
       case (Type.Cst(TypeConstructor.Native(clazz), _), Type.Cst(TypeConstructor.BigInt, _)) => clazz.isAssignableFrom(classOf[BigInteger])
