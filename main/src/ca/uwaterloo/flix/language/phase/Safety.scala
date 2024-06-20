@@ -12,8 +12,10 @@ import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.language.errors.SafetyError._
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 
+import java.lang.reflect.Method
 import java.math.BigInteger
 import scala.annotation.tailrec
+import scala.jdk.CollectionConverters._
 
 /**
   * Performs safety and well-formedness checks on:
@@ -283,7 +285,7 @@ object Safety {
         }
 
       case e@Expr.UncheckedCast(exp, _, _, _, _, loc) =>
-        val errors = isMethodAllowed(loc) ++ verifyUncheckedCast(e)
+        val errors = isMethodAllowed(loc, null) ++ verifyUncheckedCast(e)
         visit(exp) ++ errors
 
       case Expr.UncheckedMaskingCast(exp, _, _, _) =>
@@ -303,14 +305,23 @@ object Safety {
       case Expr.Do(_, exps, _, _, _) =>
         exps.flatMap(visit)
 
-      case Expr.InvokeConstructor(_, args, _, _, loc) =>
-        args.flatMap(visit) ++ isMethodAllowed(loc)
+      case Expr.InvokeConstructor(_, args, _, eff, loc) =>
+        if (eff == Type.IO) args.flatMap(visit)
+        else
+          println(eff)
+          args.flatMap(visit) ++ isMethodAllowed(loc, null)
 
-      case Expr.InvokeMethod(_, exp, args, _, _, loc) =>
-        visit(exp) ++ args.flatMap(visit) ++ isMethodAllowed(loc)
+      case Expr.InvokeMethod(_, exp, args, _, eff, loc) =>
+        if (eff == Type.IO)
+          visit(exp) ++ args.flatMap(visit)
+        else
+          println(eff)
+          visit(exp) ++ args.flatMap(visit) ++ isMethodAllowed(loc, null)
 
-      case Expr.InvokeStaticMethod(_, args, _, _, loc) =>
-        args.flatMap(visit) ++ isMethodAllowed(loc)
+        visit(exp) ++ args.flatMap(visit) ++ isMethodAllowed(loc, null)
+
+      case Expr.InvokeStaticMethod(m, args, tpe, _, loc) =>
+        args.flatMap(visit) ++ isMethodAllowed(loc, m)
 
       case Expr.GetField(_, exp, _, _, _) =>
         visit(exp)
@@ -709,17 +720,24 @@ object Safety {
    *  Checks whether an unchecked cast is allowed to use or not
    *  If not it will return an 'IncorrectSafetySignature'
    */
-  private def isMethodAllowed(loc: SourceLocation)(implicit flix: Flix): List[SafetyError] = loc.source.input match {
+  private def isMethodAllowed(loc: SourceLocation, method: Method)(implicit flix: Flix): List[SafetyError] = {
+    if (method != null && method.getDeclaringClass == classOf[String]) {
+      println("Hello")
+      Nil
+    } else if (method != null)
+    loc.source.input match {
     case _: Input.Shell => Nil
     case _: Input.StdLib => Nil
     case _: Input.Pkg => Nil
     case _: Input.Lsp => Nil
     case _: Input.SocketServlet => Nil
     case _: Input.Empty => Nil
-    case Input.FlixProjectFile(_, m) => if (m.safe) IncorrectSafetySignature(loc) :: Nil else Nil
+    case Input.FlixProjectFile(_, m) => if (method != null) println(method.getDeclaringClass.toString); if (m.safe) IncorrectSafetySignature(loc) :: Nil else Nil
     case Input.FlixFolderFile(_, true) => IncorrectSafetySignature(loc) :: Nil
     case Input.FlixFolderFile(_, false) => Nil
     case Input.PkgFile(_,_, m) => if (m.safe) IncorrectSafetySignature(loc) :: Nil else Nil
+  }
+    else Nil
   }
 
   /**

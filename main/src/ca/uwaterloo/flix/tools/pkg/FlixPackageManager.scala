@@ -189,7 +189,9 @@ object FlixPackageManager {
 
     ) yield {
 
-      //check safety
+      //safetyChecks
+      //checkPackageSafety
+
       checkDepSafetyChange(flixDeps, transManifests) match {
         case Err(e) => return Err(e)
         case _ =>
@@ -220,6 +222,11 @@ object FlixPackageManager {
       case Err(e) => Err(PackageError.ManifestParseError(e))
     }
   }
+
+  //private def checkPackageSafety(manifest: Manifest, depManifests: List[Manifest]): Result[Unit, PackageError] = {
+  //  depManifests.foreach {m => if (manifest.safe > m.safe) return Err(PackageError.ManifestSafetyError(manifest.name, m.name)); }
+  //  Ok(())
+  //}
 
   private def checkDepSafetyChange(depList: List[FlixDependency], depManifests: List[Manifest]): Result[Unit, PackageError] = {
     for (m <- depManifests) {
