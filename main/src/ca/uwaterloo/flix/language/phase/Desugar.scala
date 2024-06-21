@@ -63,6 +63,8 @@ object Desugar {
     * Compiles `decl0` to a [[DesugaredAst.Declaration]].
     */
   private def visitDecl(decl0: WeededAst.Declaration)(implicit flix: Flix): DesugaredAst.Declaration = decl0 match {
+    case _: WeededAst.Declaration.Struct =>
+      throw new RuntimeException("No struct support yet")
     case WeededAst.Declaration.Namespace(ident, usesAndImports0, decls0, loc) =>
       val usesAndImports = usesAndImports0.map(visitUseOrImport)
       val decls = decls0.map(visitDecl)

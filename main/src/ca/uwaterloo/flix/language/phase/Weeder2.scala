@@ -190,6 +190,7 @@ object Weeder2 {
       val instances = pickAll(TreeKind.Decl.Instance, tree)
       val definitions = pickAll(TreeKind.Decl.Def, tree)
       val enums = pickAll(TreeKind.Decl.Enum, tree)
+      val structs = pickAll(TreeKind.Decl.Struct, tree)
       val restrictableEnums = pickAll(TreeKind.Decl.RestrictableEnum, tree)
       val typeAliases = pickAll(TreeKind.Decl.TypeAlias, tree)
       val effects = pickAll(TreeKind.Decl.Effect, tree)
@@ -199,12 +200,13 @@ object Weeder2 {
         traverse(instances)(visitInstanceDecl),
         traverse(definitions)(visitDefinitionDecl(_)),
         traverse(enums)(visitEnumDecl),
+        traverse(structs)(visitStructDecl),
         traverse(restrictableEnums)(visitRestrictableEnumDecl),
         traverse(typeAliases)(visitTypeAliasDecl),
         traverse(effects)(visitEffectDecl)
       ) {
-        case (modules, traits, instances, definitions, enums, rEnums, typeAliases, effects) =>
-          (modules ++ traits ++ instances ++ definitions ++ enums ++ rEnums ++ typeAliases ++ effects).sortBy(_.loc)
+        case (modules, traits, instances, definitions, enums, structs, rEnums, typeAliases, effects) =>
+          (modules ++ traits ++ instances ++ definitions ++ enums ++ structs ++ rEnums ++ typeAliases ++ effects).sortBy(_.loc)
       }
     }
 
@@ -322,6 +324,39 @@ object Weeder2 {
           val tpe = WeededAst.Type.Ambiguous(Name.mkQName("Bool"), ident.loc)
           // TODO: There is a `Declaration.Law` but old Weeder produces a Def
           Declaration.Def(doc, ann, mods, ident, tparams, fparams, expr, tpe, eff, tconstrs, econstrs, tree.loc)
+      }
+    }
+
+    private def visitStructDecl(tree: Tree): Validation[Declaration.Struct, CompilationMessage] = {
+      expect(tree, TreeKind.Decl.Struct)
+      val fields = pickAll(TreeKind.StructField, tree)
+      flatMapN(
+        pickDocumentation(tree),
+        pickAnnotations(tree),
+        pickModifiers(tree, allowed = Set(TokenKind.KeywordPub)),
+        pickNameIdent(tree),
+        Types.pickParameters(tree),
+        traverse(fields)(visitStructField)
+      ) {
+        (doc, ann, mods, ident, tparams, fields) =>
+        // TODO: Validation, e.g., never duplicate names
+        Validation.success(Declaration.Struct(
+          doc, ann, mods, ident, tparams, fields.sortBy(_.loc), tree.loc
+        ))
+      }
+    }
+
+    private def visitStructField(tree: Tree): Validation[StructField, CompilationMessage] = {
+      expect(tree, TreeKind.StructField)
+      mapN(
+        pickNameIdent(tree),
+        Types.pickType(tree)
+        // TODO: Doc comments on enum cases. It is not available on [[Case]] yet.
+      ) {
+        (ident, ttype) =>
+          // Make a source location that spans the name and type
+          val loc = SourceLocation(isReal = true, ident.loc.sp1, tree.loc.sp2)
+          StructField(ident, ttype, loc)
       }
     }
 
