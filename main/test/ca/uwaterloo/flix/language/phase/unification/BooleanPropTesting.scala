@@ -16,14 +16,13 @@
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.language.ast.SourceLocation
-import ca.uwaterloo.flix.language.phase.unification.BooleanPropTesting.RawString.{toRawString, toRawStringEqs}
-import ca.uwaterloo.flix.language.phase.unification.FastSetUnification.Term.{Compl, Cst, ElemSet, Empty, Inter, Union, Var, mkElemSet}
+import ca.uwaterloo.flix.language.phase.unification.BooleanPropTesting.RawString.toRawStringEqs
+import ca.uwaterloo.flix.language.phase.unification.FastSetUnification.Term._
 import ca.uwaterloo.flix.language.phase.unification.FastSetUnification.{Equation, Term}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
 import scala.annotation.tailrec
 import scala.collection.immutable.SortedSet
-import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.util.Random
 
@@ -90,7 +89,7 @@ object BooleanPropTesting {
   }
 
   def main(args: Array[String]): Unit = {
-    testSolvableConstraints(new Random(), explodedRandomXor, 1_000_000, 1, -1)
+    testSolvableConstraints(new Random(), explodedRandomXor, 1000, 1, -1)
   }
 
   // TODO add testing of t ~ propagation(t)
@@ -154,15 +153,17 @@ object BooleanPropTesting {
 
   def explodedRandomXor(random: Random): List[Equation] = {
     val former = termFormer()
-    val t = randomTerm(former, random, 4, 3, 3, 3)
-    explodeKnownEquation(random, xorSelf(t))
+    val t = randomTerm(former, random, 3, 3, 3, 3)
+    groupAssignments(explodeKnownEquation(random, eqPropagatedSelf(t)), 2)
   }
 
   private sealed trait Res
 
   private object Res {
     case object Pass extends Res
+
     case class Fail(verf: Boolean) extends Res
+
     case object Timeout extends Res
   }
 
@@ -182,8 +183,32 @@ object BooleanPropTesting {
     }
   }
 
-  private def xorSelf(t: Term): Equation = {
-    Term.mkXor(t, t) ~ Term.Empty
+  private def eqPropagatedSelf(t: Term): Equation = {
+    t ~ FastSetUnification.propagation(t)
+  }
+
+  /** Returns an empty equivalent term */
+  private def xorSelf(t: Term): Term = {
+    Term.mkXor(t, t)
+  }
+
+  /** finds pairs of x1 ~ f and x2 ~ g and collects them into one equation with unions of sides */
+  private def groupAssignments(l: List[Equation], maxAmount: Int): List[Equation] = {
+    var res: List[Equation] = Nil
+    var prev: Option[(Term.Var, Term)] = None
+    var collections = 0
+
+    for (eq <- l) {(eq, prev) match {
+      case (Equation(x@Term.Var(_), t1, loc), Some((y, t2))) if maxAmount > 0 && collections < maxAmount =>
+        collections += 1
+        prev = None
+        res = Equation.mk(Term.mkUnion(x, y), Term.mkUnion(t1, t2), loc) :: res
+      case (Equation(x@Term.Var(_), t, _), None) =>
+        prev = Some(x, t)
+      case (other, _) => res = other :: res
+    }}
+    prev.foreach{case (x, t) => res = (x ~ t) :: res}
+    res
   }
 
   /**
@@ -191,10 +216,12 @@ object BooleanPropTesting {
     */
   private def explodeKnownEquation(r: Random, eq: Equation): List[Equation] = {
     var next = maxId(eq.t1) max maxId(eq.t2)
+
     def getId(): Int = {
       next += 1
       next
     }
+
     val (left, leftEqs) = explode(r, eq.t1, eq.loc, getId())
     val (right, rightEqs) = explode(r, eq.t2, eq.loc, getId())
     Equation.mk(left, right, eq.loc) :: leftEqs ++ rightEqs
@@ -202,15 +229,15 @@ object BooleanPropTesting {
 
   private def explode(r: Random, t: Term, loc: SourceLocation, gen: => Int): (Term, List[Equation]) = t match {
     case Term.Univ | Term.Empty | Term.Cst(_) | Term.ElemSet(_) | Term.Var(_) =>
-      if (r.nextInt(5) == 0) {
+      if (r.nextInt(7) == 0) {
         val fresh = Term.Var(gen)
         (fresh, List(Equation.mk(fresh, t, loc)))
       } else (t, Nil)
     case Term.Compl(t0) =>
-      val (t, eqs) = explode(r, t0, loc, gen)
-      if (r.nextInt(3) == 0) {
+      val (t1, eqs) = explode(r, t0, loc, gen)
+      if (r.nextInt(5) == 0) {
         val fresh = Term.Var(gen)
-        (fresh, Equation.mk(fresh, Term.Compl(t), loc) :: eqs)
+        (fresh, Equation.mk(fresh, Term.mkCompl(t1), loc) :: eqs)
       } else (t, eqs)
     case Term.Inter(posElem, posCsts, posVars, negElem, negCsts, negVars, rest) =>
       splitTerms(Term.mkInter, r, loc, gen, posElem, posCsts, posVars, negElem, negCsts, negVars, rest)
@@ -240,7 +267,7 @@ object BooleanPropTesting {
       if (remaining.isEmpty) {
         chunks = List(hd) :: chunks
       } else {
-        val index = if (i == chunkAmount - 1) remaining.size else r.nextInt(remaining.size+1)
+        val index = if (i == chunkAmount - 1) remaining.size else r.nextInt(remaining.size + 1)
         val (mine, remaining1) = remaining.splitAt(index)
         remaining = remaining1
         chunks = (hd :: mine) :: chunks
@@ -305,12 +332,16 @@ object BooleanPropTesting {
       case Term.Union(posElem, posCsts, posVars, negElem, negCsts, negVars, rest) =>
         s"Union(${toRawString(posElem)}, ${toRawString(posCsts)}, ${toRawString(posVars)}, ${toRawString(negElem)}, ${toRawString(negCsts)}, ${toRawString(negVars)}, ${toRawString(rest)})"
     }
+
     private def toRawString(l: List[Term]): String = l.map(toRawString).mkString("List(", ", ", ")")
+
     private def toRawString(l: Set[_ <: Term]): String = l.map(toRawString).mkString("Set(", ", ", ")")
+
     private def toRawString(l: Option[Term]): String = l match {
       case Some(value) => s"Some(${toRawString(value)})"
       case None => "None"
     }
+
     def toRawStringEqs(l: List[Equation]): String = {
       s"List(${l.map(eq => s"${toRawString(eq.t1)} ~ ${toRawString(eq.t2)}").mkString(",\n")})"
     }
