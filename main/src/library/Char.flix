@@ -140,7 +140,7 @@ mod Char {
     ///
     pub def isSurrogatePair(high: {high = Char}, low: {low = Char}): Bool =
         import static java.lang.Character.isSurrogatePair(Char, Char): Bool \ {};
-        isSurrogatePair(high.high, low.low)
+        isSurrogatePair(high#high, low#low)
 
     ///
     /// Converts a letter to its lowercase version.
@@ -183,7 +183,7 @@ mod Char {
     ///
     pub def toSupplementaryCodePoint(high: {high = Char}, low: {low = Char}): Int32 =
         import static java.lang.Character.toCodePoint(Char, Char): Int32 \ {};
-        toCodePoint(high.high, low.low)
+        toCodePoint(high#high, low#low)
 
     ///
     /// Returns the character `c` as a string.
@@ -222,7 +222,7 @@ mod Char {
     ///
     pub def digit(radix: {radix = Int32}, c: Char): Option[Int32] =
         import static java.lang.Character.digit(Char, Int32): Int32 \ {};
-        match digit(c, radix.radix) {
+        match digit(c, radix#radix) {
             case i if i < 0 => None
             case i          => Some(i)
         }
@@ -236,7 +236,7 @@ mod Char {
     ///
     pub def forDigit(radix: {radix = Int32}, n: Int32): Option[Char] =
         import static java.lang.Character.forDigit(Int32, Int32): Char \ {};
-        match forDigit(n, radix.radix) {
+        match forDigit(n, radix#radix) {
             case c if c == '\u0000' => None
             case c                  => Some(c)
         }
