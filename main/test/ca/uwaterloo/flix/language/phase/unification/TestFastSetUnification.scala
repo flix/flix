@@ -819,7 +819,7 @@ class TestFastSetUnification extends AnyFunSuite with TestUtils {
 
   test("Custom.Fuzzer") {
     val random = new Random(seed = 56238265)
-    assert(BooleanFuzzer.fuzz(random, 50_000, 1, -1))
+    assert(BooleanFuzzer.fuzz(random, BooleanFuzzer.explodedRandomXor, 50_000, 1, -1))
   }
 
 }

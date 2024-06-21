@@ -90,15 +90,14 @@ object BooleanFuzzer {
   }
 
   def main(args: Array[String]): Unit = {
-    fuzz(new Random(), 200_000, 5, -1)
+    fuzz(new Random(), explodedRandomXor, 200_000, 5, -1)
   }
 
   // TODO add testing of t ~ propagation(t)
 
-  def fuzz(random: Random, testLimit: Int, errLimit: Int, timeoutLimit: Int): Boolean = {
-    val former = termFormer()
+  def fuzz(random: Random, genSolvable: Random => List[Equation], testLimit: Int, errLimit: Int, timeoutLimit: Int): Boolean = {
     val errs: ListBuffer[(List[Equation], Boolean)] = ListBuffer.empty
-    val errPhaseFrequence = mutable.Map.empty[Int, Int]
+    val errPhaseFrequency = mutable.Map.empty[Int, Int]
     val timeouts: ListBuffer[List[Equation]] = ListBuffer.empty
     val timeoutPhaseFrequence = mutable.Map.empty[Int, Int]
     var continue = true
@@ -110,13 +109,13 @@ object BooleanFuzzer {
         println(s"${tests/1000}k (${(tests-errAmount-timeoutAmount)/1000}k, ${errAmount} errs, ${timeoutAmount} t.o.)")
       }
       tests += 1
-      val t = randomTerm(former, random, 4, 3, 3, 3)
-      val (input, res, phase) = eqSelf(t, Some(random))
+      val input = genSolvable(random)
+      val (res, phase) = runEquations(input)
       res match {
         case Res.Pass => ()
         case Res.Fail(verf) =>
           errs += ((input, verf))
-          inc(errPhaseFrequence, phase)
+          inc(errPhaseFrequency, phase)
           if (errLimit > 0 && errs.sizeIs >= errLimit) continue = false
         case Res.Timeout =>
           timeouts += input
@@ -131,8 +130,8 @@ object BooleanFuzzer {
     println(s"    Errs: $errSize (${errSize/(1.0*tests) * 100} %) (${verfSize} verification errors)")
     val timeoutSize = timeouts.size
     println(s"Timeouts: $timeoutSize (${timeoutSize/(1.0*tests) * 100} %)")
-    if (errPhaseFrequence.nonEmpty) println(s"Err phases:")
-    errPhaseFrequence.toList.sorted.foreach(p => println(s"\t\tphase ${p._1}: ${p._2} errors"))
+    if (errPhaseFrequency.nonEmpty) println(s"Err phases:")
+    errPhaseFrequency.toList.sorted.foreach(p => println(s"\t\tphase ${p._1}: ${p._2} errors"))
     if (timeoutPhaseFrequence.nonEmpty) println(s"Timeout phases:")
     timeoutPhaseFrequence.toList.sorted.foreach(p => println(s"\t\tphase ${p._1}: ${p._2} timeouts"))
     if (errs.nonEmpty) println(s"\nSmallest error:")
@@ -140,6 +139,12 @@ object BooleanFuzzer {
     if (timeouts.nonEmpty) println(s"\nSmallest timeout:")
     timeouts.sortBy(_.map(_.size).sum).headOption.foreach(timeout => println(s"> ${timeout.mkString("\n")}\n> ${toRawString(timeout)}"))
     errs.isEmpty
+  }
+
+  def explodedRandomXor(random: Random): List[Equation] = {
+    val former = termFormer()
+    val t = randomTerm(former, random, 4, 3, 3, 3)
+    explodeKnownEquation(random, xorSelf(t))
   }
 
   private def inc[K](m: mutable.Map[K, Int], k: K): Unit = {
@@ -159,25 +164,24 @@ object BooleanFuzzer {
     case object Timeout extends Res
   }
 
-  private def eqSelf(t: Term, explode: Option[Random]): (List[Equation], Res, Int) = {
-    val eq = Term.mkXor(t, t) ~ Term.Empty
-    val eqs = explode match {
-      case Some(r) => explodeKnownEquation(r, eq)
-      case None => List(eq)
-    }
+  private def runEquations(eqs: List[Equation]): (Res, Int) = {
     val (res, phase) = FastSetUnification.solveAllInfo(eqs)
     res match {
       case Result.Ok(subst) => try {
         FastSetUnification.verify(subst, eqs)
-        (eqs, Res.Pass, phase)
+        (Res.Pass, phase)
       } catch {
-        case ex: InternalCompilerException => (eqs, Res.Fail(true), phase)
+        case _: InternalCompilerException => (Res.Fail(true), phase)
       }
       case Result.Err((ex, _, _)) if ex.isInstanceOf[FastSetUnification.TooComplexException] =>
-        (eqs, Res.Timeout, phase)
+        (Res.Timeout, phase)
       case Result.Err((_, _, _)) =>
-        (eqs, Res.Fail(false), phase)
+        (Res.Fail(false), phase)
     }
+  }
+
+  private def xorSelf(t: Term): Equation = {
+    Term.mkXor(t, t) ~ Term.Empty
   }
 
   /**
