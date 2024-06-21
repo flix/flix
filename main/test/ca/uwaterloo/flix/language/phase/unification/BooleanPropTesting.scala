@@ -298,14 +298,10 @@ object BooleanPropTesting {
       case Term.ElemSet(s) if s.sizeIs == 1 => s"mkElemSet(${s.head})"
       case Term.ElemSet(s) => s"ElemSet(SortedSet(${s.mkString(", ")}))"
       case Term.Compl(t) => s"Compl(${toRawString(t)})"
-      case Term.Inter(posElem, posCsts, posVars, negElems, negCsts, negVars, rest) =>
-        val pe = posElem match {
-          case Some(value) => s"Some(${toRawString(value)})"
-          case None => s"None"
-        }
-        s"Inter($pe, ${toRawString(posCsts)}, ${toRawString(posVars)}, ${toRawString(negElems)}, ${toRawString(negCsts)}, ${toRawString(negVars)}, ${toRawString(rest)})"
-      case Term.Union(posElems, posCsts, posVars, negElems, negCsts, negVars, rest) =>
-        s"Union(${toRawString(posElems)}, ${toRawString(posCsts)}, ${toRawString(posVars)}, ${toRawString(negElems)}, ${toRawString(negCsts)}, ${toRawString(negVars)}, ${toRawString(rest)})"
+      case Term.Inter(posElem, posCsts, posVars, negElem, negCsts, negVars, rest) =>
+        s"Inter(${toRawString(posElem)}, ${toRawString(posCsts)}, ${toRawString(posVars)}, ${toRawString(negElem)}, ${toRawString(negCsts)}, ${toRawString(negVars)}, ${toRawString(rest)})"
+      case Term.Union(posElem, posCsts, posVars, negElem, negCsts, negVars, rest) =>
+        s"Union(${toRawString(posElem)}, ${toRawString(posCsts)}, ${toRawString(posVars)}, ${toRawString(negElem)}, ${toRawString(negCsts)}, ${toRawString(negVars)}, ${toRawString(rest)})"
     }
     private def toRawString(l: List[Term]): String = l.map(toRawString).mkString("List(", ", ", ")")
     private def toRawString(l: Set[_ <: Term]): String = l.map(toRawString).mkString("Set(", ", ", ")")
