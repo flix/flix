@@ -1029,6 +1029,16 @@ object FastSetUnification {
     }
   }
 
+  private def setElem(elem: Option[Term.ElemSet], target: Term): SortedMap[Int, Term] = elem match {
+    case Some(e) => setElem(e, target)
+    case _ => SortedMap.empty[Int, Term]
+  }
+
+  private def setElem(elem: Term.ElemSet, target: Term): SortedMap[Int, Term] = {
+    if (elem.s.sizeIs == 1) SortedMap(elem.s.head -> target)
+    else SortedMap.empty[Int, Term]
+  }
+
   /**
     * Use the four rewrites
     *
@@ -1099,9 +1109,7 @@ object FastSetUnification {
         val negVars = if (setVars.isEmpty) negVars0 else negVars0.filterNot(x => setVars.get(x.x).contains(Term.Empty))
 
         // Add the new propagated elements/constants/variables
-        var currentElems = setElems ++
-          posElem0.map(_.s.iterator.map(_ -> Term.Univ)).getOrElse(Iterator.empty) ++
-          negElem0.map(_.s.iterator.map(_ -> Term.Empty)).getOrElse(Iterator.empty)
+        var currentElems = setElems ++ setElem(posElem0, Term.Univ) ++ setElem(negElem0, Term.Empty)
         var currentCsts = setCsts ++
           posCsts0.iterator.map(_.c -> Term.Univ) ++
           negCsts0.iterator.map(_.c -> Term.Empty)
@@ -1129,11 +1137,11 @@ object FastSetUnification {
             case Term.Compl(Term.Var(x)) =>
               currentVars += (x -> Term.Empty)
               res
-            case Term.ElemSet(s) =>
-              for (i <- s) currentElems += (i -> Term.Univ)
+            case e@Term.ElemSet(_) =>
+              currentElems ++= setElem(e, Term.Univ)
               res
-            case Term.Compl(Term.ElemSet(s)) =>
-              for (i <- s) currentElems += (i -> Term.Empty)
+            case Term.Compl(e@Term.ElemSet(_)) =>
+              currentElems ++= setElem(e, Term.Empty)
               res
             case Term.Compl(_) => res
             case Term.Inter(_, _, _, _, _, _, _) => res
@@ -1176,9 +1184,7 @@ object FastSetUnification {
         val negCsts = if (setCsts.isEmpty) negCsts0 else negCsts0.filterNot(c => setCsts.get(c.c).contains(Term.Univ))
         val negVars = if (setVars.isEmpty) negVars0 else negVars0.filterNot(x => setVars.get(x.x).contains(Term.Univ))
 
-        var currentElems = setElems ++
-          posElem0.map(_.s.iterator.map(_ -> Term.Empty)).getOrElse(Iterator.empty) ++
-          negElem0.map(_.s.iterator.map(_ -> Term.Univ)).getOrElse(Iterator.empty)
+        var currentElems = setElems ++ setElem(posElem0, Term.Empty) ++ setElem(negElem0, Term.Univ)
         var currentCsts = setCsts ++
           posCsts0.iterator.map(_.c -> Term.Empty) ++
           negCsts0.iterator.map(_.c -> Term.Univ)
@@ -1204,11 +1210,11 @@ object FastSetUnification {
             case Term.Compl(Term.Var(x)) =>
               currentVars += (x -> Term.Univ)
               res
-            case Term.ElemSet(s) =>
-              for (i <- s) currentElems += (i -> Term.Empty)
+            case e@Term.ElemSet(_) =>
+              currentElems ++= setElem(e, Term.Empty)
               res
-            case Term.Compl(Term.ElemSet(s)) =>
-              for (i <- s) currentElems += (i -> Term.Univ)
+            case Term.Compl(e@Term.ElemSet(_)) =>
+              currentElems ++= setElem(e, Term.Univ)
               res
             case Term.Compl(_) => res
             case Term.Inter(_, _, _, _, _, _, _) => res
@@ -1762,7 +1768,7 @@ object FastSetUnification {
           // !(!es1 inter es2)
           // !(es2 - es1)
           val negElems = s.diff(posElemTerm0)
-          val neg = if (negElems.isEmpty) None else Some(Term.ElemSet(negElems))
+          val neg = if (negElems.isEmpty) return Term.Univ else Some(Term.ElemSet(negElems))
           (None, neg)
         case None =>
           val pos = if (posElemTerm0.isEmpty) None else Some(Term.ElemSet(posElemTerm0))
