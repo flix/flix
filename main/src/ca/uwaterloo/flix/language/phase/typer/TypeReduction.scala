@@ -262,8 +262,9 @@ object TypeReduction {
       case (Type.Cst(TypeConstructor.Native(clazz), _), Type.Cst(TypeConstructor.BigDecimal, _)) => clazz.isAssignableFrom(classOf[java.math.BigDecimal])
       // Null is a sub-type of every Java object and non-primitive Flix type
       case (Type.Cst(TypeConstructor.Native(_), _), Type.Null) => true
-      case (Type.Cst(TypeConstructor.Null, _), _) => true
+      case (Type.Cst(TypeConstructor.Null, _), Type.Null) => true
       case (tpe, Type.Null) if !isPrimitive(tpe) => true
+      case _ => false
     }
   }
 
@@ -272,7 +273,6 @@ object TypeReduction {
    */
   private def isPrimitive(tpe: Type)(implicit flix: Flix): Boolean = {
     tpe match {
-      case Type.Cst(TypeConstructor.Null, _) => true
       case Type.Cst(TypeConstructor.Bool, _) => true
       case Type.Cst(TypeConstructor.Char, _) => true
       case Type.Cst(TypeConstructor.Float32, _) => true
