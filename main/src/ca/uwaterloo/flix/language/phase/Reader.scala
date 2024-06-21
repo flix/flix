@@ -117,50 +117,5 @@ object Reader {
           case (acc1, _) => acc1
         }
     }
-
-    /*
-    sys.env.get("JAVA_HOME") match {
-      case None => MultiMap.empty
-      case Some(home) =>
-        val path = java.nio.file.Paths.get(home, "lib", "classlist")
-        if (Files.exists(path) && Files.isRegularFile(path) && Files.isReadable(path)) {
-          try {
-            val fileContents = Files.readString(path)
-            fileContents.linesIterator
-              // Filter out comments
-              .filter(line => !line.startsWith("#"))
-              // Filter out inner classes
-              .filter(clazz => !clazz.contains("$"))
-              // Filter out lambda-invoke/lambda-proxy lines
-              .filter(clazz => !clazz.contains("@"))
-              .filter(clazz => !clazz.contains("sun"))
-              .filter(clazz => !clazz.contains("internal"))
-              // Create a multimap from all class path prefixes to the next packages/classes
-              // I.e java.lang.string
-              // [] => {java}
-              // [java] => {lang}
-              // [java, lang] => {String}
-              .foldLeft[MultiMap[List[String], String]](MultiMap.empty) {
-                case (acc, clazz) =>
-                  println(clazz + ".class")
-                  val clazzPath = clazz.split('/').toList
-
-                  clazzPath.inits.foldLeft(acc) {
-                    // Case 1: Nonempty path: split prefix and package
-                    case (acc1, prefix :+ pkg) => acc1 + (prefix -> pkg)
-                    // Case 2: Empty path: skip it
-                    case (acc1, _) => acc1
-                  }
-              }
-          } catch {
-            // If any IO error occurs, i.e the file not existing in the users JDK, we return an empty map.
-            case _: IOException => MultiMap.empty
-          }
-        } else {
-          MultiMap.empty
-        }
-    }
-    */
-
   }
 }
