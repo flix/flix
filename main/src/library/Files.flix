@@ -266,7 +266,7 @@ mod Files {
     /// `charSet` - the specific charset to be used to decode the bytes.
     ///
     pub def readWith(opts: {offset = Int64, count = Int32, charSet = String}, f : String): Result[IOError, String] \ IO = region rc {
-        if (0 < opts.count) {
+        if (0 < opts#count) {
             try {
                 import java_new java.io.File(String): File \ IO as newFile;
                 import java_new java.io.FileInputStream(File): FileInputStream \ IO as newInputStream;
@@ -276,11 +276,11 @@ mod Files {
 
                 let javaFile = newFile(f);
                 let stream = newInputStream(javaFile);
-                match skip((opts.offset / 10_000i64), opts.offset, stream, f) {
+                match skip((opts#offset / 10_000i64), opts#offset, stream, f) {
                     case Ok(_)    => {
-                        let bytes = Array.empty(rc, opts.count);
-                        discard read(stream, bytes, 0, opts.count);
-                        let charSet = forName(opts.charSet);
+                        let bytes = Array.empty(rc, opts#count);
+                        discard read(stream, bytes, 0, opts#count);
+                        let charSet = forName(opts#charSet);
                         let returnString = newString(bytes, charSet);
                         Ok(returnString)
                     }
@@ -291,7 +291,7 @@ mod Files {
                     import java.lang.Throwable.getMessage(): String \ IO;
                     Err(Generic(getMessage(checked_cast(ex))))
             }
-        } else if (opts.count == 0) {
+        } else if (opts#count == 0) {
             Ok("")
         } else {
             Err(Generic("The argument `count` has to be a non negative number when calling `File.readWith`."))
@@ -362,7 +362,7 @@ mod Files {
 
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
-            let reader = newBufferedReader(javaPath, forName(opts.charSet));
+            let reader = newBufferedReader(javaPath, forName(opts#charSet));
             readAll(reader)
         })
 
@@ -419,7 +419,7 @@ mod Files {
 
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
-            let reader = newBufferedReader(javaPath, forName(opts.charSet));
+            let reader = newBufferedReader(javaPath, forName(opts#charSet));
             let line = ref readLine(reader) @ rc;
             let next = () -> ({
                 if (not Object.isNull(deref line)) {
@@ -468,7 +468,7 @@ mod Files {
     /// `count` - the number of bytes read.
     ///
     pub def readBytesWith(rc: Region[r], opts: {offset = Int64, count = Int32}, f: String): Result[IOError, Array[Int8, r]] \ { r, IO } =
-        if (0 < opts.count) {
+        if (0 < opts#count) {
             try {
                 import java_new java.io.File(String): File \ IO as newFile;
                 import java_new java.io.FileInputStream(File): FileInputStream \ IO as newInputStream;
@@ -476,11 +476,11 @@ mod Files {
 
                 let javaFile = newFile(f);
                 let stream = newInputStream(javaFile);
-                match skip((opts.offset / 10_000i64), opts.offset, stream, f) {
+                match skip((opts#offset / 10_000i64), opts#offset, stream, f) {
                     case Ok(_)    => {
-                        let bytes = Array.empty(rc, opts.count);
-                        let numberRead = read(stream, bytes, 0, opts.count);
-                        let res = readBytesWithHelper(rc, bytes, numberRead, opts.count);
+                        let bytes = Array.empty(rc, opts#count);
+                        let numberRead = read(stream, bytes, 0, opts#count);
+                        let res = readBytesWithHelper(rc, bytes, numberRead, opts#count);
                         Ok(res)
                     }
                     case Err(msg) => Err(msg)
@@ -490,7 +490,7 @@ mod Files {
                     import java.lang.Throwable.getMessage(): String \ IO;
                     Err(Generic(getMessage(checked_cast(ex))))
             }
-        } else if (opts.count == 0) {
+        } else if (opts#count == 0) {
             Ok(Array#{} @ rc)
         } else {
             Err(Generic("The argument `count` has to be a non negative number when calling `File.readBytesWith`."))
@@ -941,7 +941,7 @@ mod Files {
             import java.io.File.toPath(): Path \ IO;
             import static java.nio.file.Files.move(Path, Path, Array[##java.nio.file.CopyOption, rc]): Path \ IO;
 
-            let srcFile = newFile(src.src);
+            let srcFile = newFile(src#src);
             let srcPath = toPath(srcFile);
             let dstFile = newFile(dst);
             let dstPath = toPath(dstFile);
@@ -968,12 +968,12 @@ mod Files {
                     import java.nio.file.Path.getFileName(): Path \ IO;
                     import java.nio.file.Path.toString(): String \ IO as pathToString;
 
-                    let javaFile = newFile(src.src);
+                    let javaFile = newFile(src#src);
                     let javaPath = toPath(javaFile);
                     let name = pathToString(getFileName(javaPath));
                     let newDst = dst / name;
 
-                    move(src = src.src, newDst)
+                    move(src = src#src, newDst)
                 }
                 case Ok(false) => Err(Generic("dst is not a directory."))
                 case Err(msg)  => Err(msg)
@@ -1000,7 +1000,7 @@ mod Files {
             let dstFile = newFile(dst);
             let dstPath = toPath(dstFile);
 
-            let srcFile = newFile(src.src);
+            let srcFile = newFile(src#src);
             let srcPath = toPath(srcFile);
             discard move(srcPath, dstPath, Array#{checked_cast(getOverwrite())} @ rc)
         })
@@ -1021,7 +1021,7 @@ mod Files {
             import java.io.File.toPath(): Path \ IO;
             import static java.nio.file.Files.copy(Path, Path, Array[##java.nio.file.CopyOption, rc]): Path \ IO;
 
-            let srcFile = newFile(src.src);
+            let srcFile = newFile(src#src);
             let srcPath = toPath(srcFile);
             let dstFile = newFile(dst);
             let dstPath = toPath(dstFile);
@@ -1048,12 +1048,12 @@ mod Files {
                     import java.nio.file.Path.getFileName(): Path \ IO;
                     import java.nio.file.Path.toString(): String \ IO as pathToString;
 
-                    let javaFile = newFile(src.src);
+                    let javaFile = newFile(src#src);
                     let javaPath = toPath(javaFile);
                     let name = pathToString(getFileName(javaPath));
                     let newDst = dst / name;
 
-                    copy(src = src.src, newDst)
+                    copy(src = src#src, newDst)
                 }
                 case Ok(false) => Err(Generic("dst is not a directory."))
                 case Err(msg)  => Err(msg)
@@ -1080,7 +1080,7 @@ mod Files {
             let dstFile = newFile(dst);
             let dstPath = toPath(dstFile);
 
-            let srcFile = newFile(src.src);
+            let srcFile = newFile(src#src);
             let srcPath = toPath(srcFile);
             discard copy(srcPath, dstPath, Array#{checked_cast(getOverwrite())} @ rc)
         })
