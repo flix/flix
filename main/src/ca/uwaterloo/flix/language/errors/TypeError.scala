@@ -63,28 +63,6 @@ object TypeError {
   }
 
   /**
-    * Java method not found type error.
-    *
-    * @param tpe0    the type of the receiver object.
-    * @param tpes    the types of the arguments.
-    * @param methods a list of possible candidate methods on the type of the receiver object.
-    * @param renv    the rigidity environment.
-    * @param loc     the location where the error occured.
-    */
-  case class MethodNotFound(methodName: String, tpe0: Type, tpes: List[Type], methods: List[JvmMethod], renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    // TODO INTEROP better comment, e.g., list possible methods
-    def summary: String = s"Java method '$methodName' in type '$tpe0' with arguments types (${tpes.mkString(", ")}) not found."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s""">> Java method '$methodName' from type '${red(formatType(tpe0, Some(renv)))}' with arguments types (${tpes.mkString(", ")}) not found.
-         |
-         |${code(loc, s"java method '${methodName}' not found")}
-         |""".stripMargin
-    }
-  }
-
-  /**
    * Java constructor not found type error.
    *
    * @param tpes    the types of the arguments.
@@ -101,7 +79,78 @@ object TypeError {
       s"""${line(kind, source.name)}
          |>> Java '${clazz.getName}' constructor with arguments types (${tpes.mkString(", ")}) not found.
          |
-         |${code(loc, s"java '${clazz.getName}' constructor not found")}
+         |${code(loc, s"Java '${clazz.getName}' constructor not found")}
+         |""".stripMargin
+    }
+  }
+
+  /**
+   * Java method not found type error.
+   *
+   * @param tpe0    the type of the receiver object.
+   * @param tpes    the types of the arguments.
+   * @param methods a list of possible candidate methods on the type of the receiver object.
+   * @param renv    the rigidity environment.
+   * @param loc     the location where the error occured.
+   */
+  case class MethodNotFound(methodName: String, tpe0: Type, tpes: List[Type], methods: List[JvmMethod], renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    // TODO INTEROP better comment, e.g., list possible methods
+    def summary: String = s"Java method '$methodName' in type '$tpe0' with arguments types (${tpes.mkString(", ")}) not found."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s""">> Java method '$methodName' from type '${red(formatType(tpe0, Some(renv)))}' with arguments types (${tpes.mkString(", ")}) not found.
+         |
+         |${code(loc, s"Java method '${methodName}' not found")}
+         |""".stripMargin
+    }
+  }
+
+  /**
+   * Static Java method not found type error.
+   *
+   * @param clazz   the Java class expected to contain the static method
+   * @param tpes    the types of the arguments.
+   * @param methods a list of possible candidate methods in the class.
+   * @param renv    the rigidity environment.
+   * @param loc     the location where the error occured.
+   */
+  case class StaticMethodNotFound(clazz: Class[_], methodName: String, tpes: List[Type], methods: List[JvmMethod], renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    // TODO INTEROP better comment, e.g., list possible methods
+    def summary: String = s"Static Java method '$methodName' from class ${clazz.getName} with arguments types (${tpes.mkString(", ")}) not found."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s""">> Static Java method '$methodName' from class '${clazz.getName}' with arguments types (${tpes.mkString(", ")}) not found.
+         |
+         |${code(loc, s"Static Java method '${methodName}' not found")}
+         |""".stripMargin
+    }
+  }
+
+  /**
+   * Java ambiguous constructor type error.
+   *
+   * @param tpes    the types of the arguments.
+   * @param constructors a list of possible candidate constructors on the type of the receiver object.
+   * @param renv    the rigidity environment.
+   * @param loc     the location where the error occured.
+   */
+  case class AmbiguousConstructor(clazz: Class[_], tpes: List[Type], constructors: List[Constructor[_]], renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    // TODO INTEROP better comment with candidate constructors formatting
+    def summary: String = s"Ambiguous Java '${clazz.getName}' constructor with arguments types (${tpes.mkString(", ")})."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      def constructorToStr(c: Constructor[_]) = {
+        s"${c.getName}(${c.getParameterTypes.map(t => t.getName).mkString(", ")})"
+      }
+      s"""${line(kind, source.name)}
+         |>> Java '${clazz.getName}' constructor with arguments types (${tpes.mkString(", ")}) is ambiguous.
+         | Possible candidate constructors:
+         |  ${constructors.map(m => constructorToStr(m)).mkString(", ")}
+         |
+         |${code(loc, s"Ambiguous Java '${clazz.getName}' constructor")}
          |""".stripMargin
     }
   }
@@ -134,28 +183,28 @@ object TypeError {
   }
 
   /**
-   * Java ambiguous constructor type error.
+   * Java ambiguous static method type error.
    *
+   * @param clazz   the Java class expected to contain the static method
    * @param tpes    the types of the arguments.
-   * @param constructors a list of possible candidate constructors on the type of the receiver object.
+   * @param methods a list of possible candidate methods in the class
    * @param renv    the rigidity environment.
    * @param loc     the location where the error occured.
    */
-  case class AmbiguousConstructor(clazz: Class[_], tpes: List[Type], constructors: List[Constructor[_]], renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    // TODO INTEROP better comment with candidate constructors formatting
-    def summary: String = s"Ambiguous Java '${clazz.getName}' constructor with arguments types (${tpes.mkString(", ")})."
+  case class AmbiguousStaticMethod(clazz: Class[_], methodName: String, tpes: List[Type], methods: List[Method], renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    // TODO INTEROP better comment with candidate methods formatting
+    def summary: String = s"Ambiguous static Java method '$methodName' from class '${clazz.getName}' with arguments types (${tpes.mkString(", ")})."
 
     def message(formatter: Formatter): String = {
       import formatter._
-      def constructorToStr(c: Constructor[_]) = {
-        s"${c.getName}(${c.getParameterTypes.map(t => t.getName).mkString(", ")})"
+      def methodToStr(m: Method) = {
+        s"${m.getName}(${m.getParameterTypes.map(t => t.getName).mkString(", ")})"
       }
-      s"""${line(kind, source.name)}
-         |>> Java '${clazz.getName}' constructor with arguments types (${tpes.mkString(", ")}) is ambiguous.
-         | Possible candidate constructors:
-         |  ${constructors.map(m => constructorToStr(m)).mkString(", ")}
+      s""">> Static Java method '$methodName' from class '${clazz.getName}' with arguments types (${tpes.mkString(", ")}) is ambiguous.
+         | Possible candidate static methods:
+         |  ${methods.map(m => methodToStr(m)).mkString(", ")}
          |
-         |${code(loc, s"Ambiguous Java '${clazz.getName}' constructor")}
+         |${code(loc, s"Ambiguous static Java method '${methodName}'")}
          |""".stripMargin
     }
   }

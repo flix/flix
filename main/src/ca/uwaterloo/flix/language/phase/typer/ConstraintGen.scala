@@ -754,19 +754,27 @@ object ConstraintGen {
         val resEff = evar
         (resTpe, resEff)
 
-      case Expr.InvokeMethod2(exp, name, exps, mvar, tvar, evar, loc) =>
+      case Expr.InvokeMethod2(exp, methodName, exps, mvar, tvar, evar, loc) =>
         val (tpe, eff) = visitExp(exp)
         val (tpes, effs) = exps.map(visitExp).unzip
         val t = Type.Cst(TypeConstructor.MethodReturnType, loc)
-        c.unifyJvmMethodType(mvar, tpe, name, tpes, loc) // unify method
+        c.unifyJvmMethodType(mvar, tpe, methodName, tpes, loc) // unify method
         c.unifyType(tvar, Type.mkApply(t, List(mvar), loc), loc) // unify method return type
         c.unifyType(evar, Type.mkUnion(Type.IO :: eff :: effs, loc), loc) // unify effects
         val resTpe = tvar
         val resEff = evar
         (resTpe, resEff)
 
-      case Expr.InvokeStaticMethod2(clazz, methodName, exps, loc) =>
-        throw InternalCompilerException(s"Unexpected InvokeConstructor2 call.", loc)
+      case Expr.InvokeStaticMethod2(clazz, methodName, exps, mvar, tvar, evar, loc) =>
+        val tpe = Type.getFlixType(clazz)
+        val (tpes, effs) = exps.map(visitExp).unzip
+        val t = Type.Cst(TypeConstructor.MethodReturnType, loc)
+        c.unifyStaticJvmMethodType(mvar, clazz, tpe, methodName, tpes, loc)
+        c.unifyType(tvar, Type.mkApply(t, List(mvar), loc), loc)
+        c.unifyType(evar, Type.mkUnion(Type.IO :: effs, loc), loc)
+        val resTpe = tvar
+        val resEff = evar
+        (resTpe, resEff)
 
       case Expr.InvokeConstructor(constructor, exps, _) =>
         val classTpe = Type.getFlixType(constructor.getDeclaringClass)
