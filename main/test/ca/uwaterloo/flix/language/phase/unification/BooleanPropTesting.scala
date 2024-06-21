@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.language.ast.SourceLocation
-import ca.uwaterloo.flix.language.phase.unification.BooleanPropTesting.RawString.toRawString
+import ca.uwaterloo.flix.language.phase.unification.BooleanPropTesting.RawString.{toRawString, toRawStringEqs}
 import ca.uwaterloo.flix.language.phase.unification.FastSetUnification.Term.{Compl, Cst, ElemSet, Empty, Inter, Union, Var}
 import ca.uwaterloo.flix.language.phase.unification.FastSetUnification.{Equation, Term}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
@@ -90,7 +90,7 @@ object BooleanPropTesting {
   }
 
   def main(args: Array[String]): Unit = {
-    testSolvableConstraints(new Random(), explodedRandomXor, 200_000, 5, -1)
+    testSolvableConstraints(new Random(), explodedRandomXor, 200_000, 50, -1)
   }
 
   // TODO add testing of t ~ propagation(t)
@@ -135,9 +135,9 @@ object BooleanPropTesting {
     if (timeoutPhaseFrequence.nonEmpty) println(s"Timeout phases:")
     timeoutPhaseFrequence.toList.sorted.foreach(p => println(s"\t\tphase ${p._1}: ${p._2} timeouts"))
     if (errs.nonEmpty) println(s"\nSmallest error:")
-    errs.sortBy{case (a, _) => a.map(_.size).sum}.headOption.foreach{case (err, verf) => println(s">${if (verf) "v" else ""} ${err.mkString("\n")}\n>${if (verf) "v" else ""} ${toRawString(err)}")}
+    errs.sortBy{case (a, _) => a.map(_.size).sum}.headOption.foreach{case (err, verf) => println(s">${if (verf) "v" else ""} ${err.mkString("\n")}\n>${if (verf) "v" else ""} ${toRawStringEqs(err)}")}
     if (timeouts.nonEmpty) println(s"\nSmallest timeout:")
-    timeouts.sortBy(_.map(_.size).sum).headOption.foreach(timeout => println(s"> ${timeout.mkString("\n")}\n> ${toRawString(timeout)}"))
+    timeouts.sortBy(_.map(_.size).sum).headOption.foreach(timeout => println(s"> ${timeout.mkString("\n")}\n> ${toRawStringEqs(timeout)}"))
     errs.isEmpty
   }
 
@@ -295,20 +295,25 @@ object BooleanPropTesting {
       case Term.Empty => "Empty"
       case Term.Cst(c) => s"Cst($c)"
       case Term.Var(x) => s"Var($x)"
-      case Term.ElemSet(i) => s"ElemSet(SortedSet(${i.mkString(", ")}))"
+      case Term.ElemSet(s) if s.sizeIs == 1 => s"mkElemSet(${s.head})"
+      case Term.ElemSet(s) => s"ElemSet(SortedSet(${s.mkString(", ")}))"
       case Term.Compl(t) => s"Compl(${toRawString(t)})"
       case Term.Inter(posElem, posCsts, posVars, negElems, negCsts, negVars, rest) =>
         val pe = posElem match {
           case Some(value) => s"Some(${toRawString(value)})"
           case None => s"None"
         }
-        s"Inter($pe, ${helpSet(posCsts)}, ${helpSet(posVars)}, ${helpSet(negElems)}, ${helpSet(negCsts)}, ${helpSet(negVars)}, ${helpList(rest)})"
+        s"Inter($pe, ${toRawString(posCsts)}, ${toRawString(posVars)}, ${toRawString(negElems)}, ${toRawString(negCsts)}, ${toRawString(negVars)}, ${toRawString(rest)})"
       case Term.Union(posElems, posCsts, posVars, negElems, negCsts, negVars, rest) =>
-        s"Union(${helpSet(posElems)}, ${helpSet(posCsts)}, ${helpSet(posVars)}, ${helpSet(negElems)}, ${helpSet(negCsts)}, ${helpSet(negVars)}, ${helpList(rest)})"
+        s"Union(${toRawString(posElems)}, ${toRawString(posCsts)}, ${toRawString(posVars)}, ${toRawString(negElems)}, ${toRawString(negCsts)}, ${toRawString(negVars)}, ${toRawString(rest)})"
     }
-    private def helpList(l: Iterable[Term]): String = l.map(toRawString).mkString("List(", ", ", ")")
-    private def helpSet(l: Iterable[Term]): String = l.map(toRawString).mkString("Set(", ", ", ")")
-    def toRawString(l: List[Equation]): String = {
+    private def toRawString(l: List[Term]): String = l.map(toRawString).mkString("List(", ", ", ")")
+    private def toRawString(l: Set[_ <: Term]): String = l.map(toRawString).mkString("Set(", ", ", ")")
+    private def toRawString(l: Option[Term]): String = l match {
+      case Some(value) => s"Some(${toRawString(value)})"
+      case None => "None"
+    }
+    def toRawStringEqs(l: List[Equation]): String = {
       s"List(${l.map(eq => s"${toRawString(eq.t1)} ~ ${toRawString(eq.t2)}").mkString(",\n")})"
     }
   }
