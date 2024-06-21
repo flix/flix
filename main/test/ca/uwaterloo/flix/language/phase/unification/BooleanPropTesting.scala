@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.language.ast.SourceLocation
-import ca.uwaterloo.flix.language.phase.unification.BooleanFuzzer.RawString.toRawString
+import ca.uwaterloo.flix.language.phase.unification.BooleanPropTesting.RawString.toRawString
 import ca.uwaterloo.flix.language.phase.unification.FastSetUnification.Term.{Compl, Cst, ElemSet, Empty, Inter, Union, Var}
 import ca.uwaterloo.flix.language.phase.unification.FastSetUnification.{Equation, Term}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
@@ -27,7 +27,7 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.util.Random
 
-object BooleanFuzzer {
+object BooleanPropTesting {
 
   private implicit val loc: SourceLocation = SourceLocation.Unknown
 
@@ -90,12 +90,12 @@ object BooleanFuzzer {
   }
 
   def main(args: Array[String]): Unit = {
-    fuzz(new Random(), explodedRandomXor, 200_000, 5, -1)
+    testSolvableConstraints(new Random(), explodedRandomXor, 200_000, 5, -1)
   }
 
   // TODO add testing of t ~ propagation(t)
 
-  def fuzz(random: Random, genSolvable: Random => List[Equation], testLimit: Int, errLimit: Int, timeoutLimit: Int): Boolean = {
+  def testSolvableConstraints(random: Random, genSolvable: Random => List[Equation], testLimit: Int, errLimit: Int, timeoutLimit: Int): Boolean = {
     val errs: ListBuffer[(List[Equation], Boolean)] = ListBuffer.empty
     val errPhaseFrequency = mutable.Map.empty[Int, Int]
     val timeouts: ListBuffer[List[Equation]] = ListBuffer.empty
