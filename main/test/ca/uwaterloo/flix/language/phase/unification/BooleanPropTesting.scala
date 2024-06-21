@@ -90,7 +90,7 @@ object BooleanPropTesting {
   }
 
   def main(args: Array[String]): Unit = {
-    testSolvableConstraints(new Random(), propagationTesting, -1, 1, -1)
+    testSolvableConstraints(new Random(), explodedRandomXor, 1_000_000, 1, -1)
   }
 
   // TODO add testing of t ~ propagation(t)
