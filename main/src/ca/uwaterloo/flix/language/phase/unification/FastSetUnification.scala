@@ -1039,7 +1039,7 @@ object FastSetUnification {
     *
     * where `x` can be an element, a constant, or a variable.
     */
-  private def propagation(t: Term): Term = {
+  def propagation(t: Term): Term = {
     // instantiates elements, returning either Univ, Empty, or Term.ElemSet
     def instElemSet(s0: SortedSet[Int], setElems: SortedMap[Int, Term]): Term = {
       if (setElems.nonEmpty && s0.exists(i => setElems.get(i).contains(Term.Univ))) {
@@ -1689,7 +1689,7 @@ object FastSetUnification {
             posElemTerm0 = posElemTerm0.union(s)
           case Term.Compl(Term.ElemSet(s)) =>
             negElemTerm0 = negElemTerm0.map(_.intersect(s)).orElse(Some(s))
-            if (negElemTerm0.isEmpty) return Univ
+            if (negElemTerm0.exists(_.isEmpty)) return Univ
           case x@Term.Var(_) =>
             if (negVarTerms.contains(x)) return Univ
             posVarTerms += x
