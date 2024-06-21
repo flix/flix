@@ -472,7 +472,7 @@ mod List {
     /// Returns `l` with every occurrence of `src` replaced by `dst`.
     ///
     pub def replace(src: {src = a}, dst: {dst = a}, l: List[a]): List[a] with Eq[a] =
-        map(e -> if (e == src.src) dst.dst else e, l)
+        map(e -> if (e == src#src) dst#dst else e, l)
 
     ///
     /// Returns `l2` with the `n` elements starting at index `i` replaced with the elements of `l1`.
@@ -772,14 +772,14 @@ mod List {
         def loop(ll, i, k) = match ll {
             case Nil     => k(Nil)
             case x :: xs =>
-                if (i < start.start)
+                if (i < start#start)
                     loop(xs, i + 1, k)
-                else if (i >= end.end)
+                else if (i >= end#end)
                     k(Nil)
                 else
                     loop(xs, i + 1, ks -> k(x :: ks))
         };
-        if (start.start < end.end) loop(l, 0, identity) else Nil
+        if (start#start < end#end) loop(l, 0, identity) else Nil
 
     ///
     /// Returns a pair of lists `(l1, l2)`.
@@ -1170,7 +1170,7 @@ mod List {
             let a = Array.empty(rc, length(l));
             forEach(match (i, b) -> Array.put(b, i, a), zipWithIndex(l));
             a
-        }
+    }
 
     ///
     /// Returns the list `l` as a vector.
