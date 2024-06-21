@@ -292,7 +292,7 @@ mod Iterator {
     /// Does *not* consume any elements from the iterator.
     ///
     pub def replace(src: {src = a}, dst: {dst = a}, iter: Iterator[a, ef, r]): Iterator[a, ef, r] with Eq[a] =
-        map(a -> if (a == src.src) dst.dst else a, iter)
+        map(a -> if (a == src#src) dst#dst else a, iter)
 
     ///
     /// Returns `iterB` appended to (the end of) `iterA`.
