@@ -120,10 +120,10 @@ mod Int64 {
     /// A zero is shifted into the leftmost position regardless of sign extension.
     ///
     pub def logicalRightShift(dist: {dist = Int32}, x: Int64): Int64 =
-        if (x < 0i64 and Int32.remainder(dist.dist, size()) != 0)
-            rightShift(bitwiseAnd(rightShift(x, 1), maxValue()), (dist.dist - 1))
+        if (x < 0i64 and Int32.remainder(dist#dist, size()) != 0)
+            rightShift(bitwiseAnd(rightShift(x, 1), maxValue()), (dist#dist - 1))
         else
-            rightShift(x, dist.dist)
+            rightShift(x, dist#dist)
 
     ///
     /// Returns the number of one-bits in the two's complement binary
@@ -140,14 +140,14 @@ mod Int64 {
     /// binary representation of `x` right by `distance` bits.
     ///
     pub def rotateRight(dist: {dist = Int32}, x: Int64): Int64 =
-        bitwiseOr(logicalRightShift(dist = dist.dist, x), leftShift(x, -dist.dist))
+        bitwiseOr(logicalRightShift(dist = dist#dist, x), leftShift(x, -dist#dist))
 
     ///
     /// Returns the the value obtained by rotating the two's complement
     /// binary representation of `x` left by `distance` bits.
     ///
     pub def rotateLeft(dist: {dist = Int32}, x: Int64): Int64 =
-        bitwiseOr(logicalRightShift(dist = -dist.dist, x), leftShift(x, dist.dist))
+        bitwiseOr(logicalRightShift(dist = -dist#dist, x), leftShift(x, dist#dist))
 
     ///
     /// Returns the value obtained by reversing the bits in the
@@ -247,28 +247,28 @@ mod Int64 {
     /// The bits of x have positions: 0 (rightmost bit) - 63 (leftmost bit).
     ///
     pub def getBit(pos: {pos = Int32}, x: Int64): Int32 =
-        if (rightShift(x, pos.pos) `remainder` 2i64 == 0i64) 0 else 1
+        if (rightShift(x, pos#pos) `remainder` 2i64 == 0i64) 0 else 1
 
     ///
     /// Returns `x` with the bit at position `position` set (to 1).
     /// Considers the 6 rightmost bits of `position` (`position` mod 64).
     /// The bits of x have positions: 0 (rightmost bit) - 63 (leftmost bit)
     ///
-    pub def setBit(pos: {pos = Int32}, x: Int64): Int64 = bitwiseOr(x, leftShift(1i64, pos.pos))
+    pub def setBit(pos: {pos = Int32}, x: Int64): Int64 = bitwiseOr(x, leftShift(1i64, pos#pos))
 
     ///
     /// Returns `x` with the bit at position `position` cleared (to 0).
     /// Considers the 6 rightmost bits of `position` (`position` mod 64).
     /// The bits of x have positions: 0 (rightmost bit) - 63 (leftmost bit)
     ///
-    pub def clearBit(pos: {pos = Int32}, x: Int64): Int64 = bitwiseAnd(x, bitwiseNot(leftShift(1i64, pos.pos)))
+    pub def clearBit(pos: {pos = Int32}, x: Int64): Int64 = bitwiseAnd(x, bitwiseNot(leftShift(1i64, pos#pos)))
 
     ///
     /// Returns `x` with the bit at position `position` flipped.
     /// Considers the 6 rightmost bits of `position` (`position` mod 64).
     /// The bits of x have positions: 0 (rightmost bit) - 63 (leftmost bit)
     ///
-    pub def flipBit(pos: {pos = Int32}, x: Int64): Int64 = bitwiseXor(x, leftShift(1i64, pos.pos))
+    pub def flipBit(pos: {pos = Int32}, x: Int64): Int64 = bitwiseXor(x, leftShift(1i64, pos#pos))
 
     ///
     /// Returns the integer binary logarithm of `x`.
@@ -447,11 +447,11 @@ mod Int64 {
     /// Helper function for the `clamp` conversion functions.
     ///
     def clamp(min: {min = Int64}, max: {max = Int64}, x: Int64): Int64 =
-        if (x < min.min)
-             min.min
+        if (x < min#min)
+             min#min
         else
-            if (x > max.max)
-                max.max
+            if (x > max#max)
+                max#max
             else
                 x
 
@@ -463,8 +463,8 @@ mod Int64 {
     pub def clampToInt8(min: {min = Int8}, max: {max = Int8}, x: Int64): Int8 =
         import static java.lang.Long.valueOf(Int64): ##java.lang.Long \ {};
         import java.lang.Long.byteValue(): Int8 \ {};
-        let mini64 = Int8.toInt64(min.min);
-        let maxi64 = Int8.toInt64(max.max);
+        let mini64 = Int8.toInt64(min#min);
+        let maxi64 = Int8.toInt64(max#max);
         (valueOf(clamp(min = mini64, max = maxi64, x)) |> byteValue)
 
     ///
@@ -475,8 +475,8 @@ mod Int64 {
     pub def clampToInt16(min: {min = Int16}, max: {max = Int16}, x: Int64): Int16 =
         import static java.lang.Long.valueOf(Int64): ##java.lang.Long \ {};
         import java.lang.Long.shortValue(): Int16 \ {};
-        let mini64 = Int16.toInt64(min.min);
-        let maxi64 = Int16.toInt64(max.max);
+        let mini64 = Int16.toInt64(min#min);
+        let maxi64 = Int16.toInt64(max#max);
         (valueOf(clamp(min = mini64, max = maxi64, x)) |> shortValue)
 
 
@@ -488,8 +488,8 @@ mod Int64 {
     pub def clampToInt32(min: {min = Int32}, max: {max = Int32}, x: Int64): Int32 =
         import static java.lang.Long.valueOf(Int64): ##java.lang.Long \ {};
         import java.lang.Long.intValue(): Int32 \ {};
-        let mini64 = Int32.toInt64(min.min);
-        let maxi64 = Int32.toInt64(max.max);
+        let mini64 = Int32.toInt64(min#min);
+        let maxi64 = Int32.toInt64(max#max);
         (valueOf(clamp(min = mini64, max = maxi64, x)) |> intValue)
 
     ///

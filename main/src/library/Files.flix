@@ -16,6 +16,12 @@
 mod Files {
 
     use IOError.{Generic}
+    import java.io.{BufferedReader, File, FileInputStream, FileOutputStream, FileWriter, PrintWriter}
+    import java.lang.Class
+    import java.nio.charset.Charset
+    import java.nio.file.attribute.{FileTime, BasicFileAttributes}
+    import java.nio.file.{DirectoryStream, LinkOption, Path}
+    import java.util.{Iterator => JIterator}
 
     ///
     /// File types.
@@ -32,7 +38,7 @@ mod Files {
     ///
     pub def accessTime(f: String): Result[IOError, Int64] \ IO =
         try {
-            import java.nio.file.attribute.BasicFileAttributes.lastAccessTime(): ##java.nio.file.attribute.FileTime \ IO;
+            import java.nio.file.attribute.BasicFileAttributes.lastAccessTime(): FileTime \ IO;
             import java.nio.file.attribute.FileTime.toMillis(): Int64 \ IO;
 
             forM (
@@ -50,7 +56,7 @@ mod Files {
     ///
     pub def creationTime(f: String): Result[IOError, Int64] \ IO =
         try {
-            import java.nio.file.attribute.BasicFileAttributes.creationTime(): ##java.nio.file.attribute.FileTime \ IO;
+            import java.nio.file.attribute.BasicFileAttributes.creationTime(): FileTime \ IO;
             import java.nio.file.attribute.FileTime.toMillis(): Int64 \ IO;
 
             forM (
@@ -68,7 +74,7 @@ mod Files {
     ///
     pub def modificationTime(f: String): Result[IOError, Int64] \ IO =
         try {
-            import java.nio.file.attribute.BasicFileAttributes.lastModifiedTime(): ##java.nio.file.attribute.FileTime \ IO;
+            import java.nio.file.attribute.BasicFileAttributes.lastModifiedTime(): FileTime \ IO;
             import java.nio.file.attribute.FileTime.toMillis(): Int64 \ IO;
 
             forM (
@@ -101,12 +107,12 @@ mod Files {
     ///
     /// Returns the BasicFileAttributes of the file `f`.
     ///
-    def getAttributes(f: String): Result[IOError, ##java.nio.file.attribute.BasicFileAttributes] \ IO = region rc {
+    def getAttributes(f: String): Result[IOError, BasicFileAttributes] \ IO = region rc {
         IOError.tryCatch(_ -> {
-            import java_new java.io.File(String): ##java.io.File \ IO as newFile;
-            import java.io.File.toPath(): ##java.nio.file.Path \ IO;
-            import static java.nio.file.Files.readAttributes(##java.nio.file.Path, ##java.lang.Class, Array[##java.nio.file.LinkOption, rc]): ##java.nio.file.attribute.BasicFileAttributes \ IO;
-            import static java.lang.Class.forName(String): ##java.lang.Class \ IO;
+            import java_new java.io.File(String): File \ IO as newFile;
+            import java.io.File.toPath(): Path \ IO;
+            import static java.nio.file.Files.readAttributes(Path, Class, Array[LinkOption, rc]): BasicFileAttributes \ IO;
+            import static java.lang.Class.forName(String): Class \ IO;
 
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
@@ -166,7 +172,7 @@ mod Files {
     ///
     pub def exists(f: String): Result[IOError, Bool] \ IO =
         IOError.tryCatch(_ -> {
-            import java_new java.io.File(String): ##java.io.File \ IO as newFile;
+            import java_new java.io.File(String): File \ IO as newFile;
             import java.io.File.exists(): Bool \ IO;
             exists(newFile(f))
         })
@@ -176,7 +182,7 @@ mod Files {
     ///
     pub def isDirectory(f: String): Result[IOError, Bool] \ IO =
         IOError.tryCatch(_ -> {
-            import java_new java.io.File(String): ##java.io.File \ IO as newFile;
+            import java_new java.io.File(String): File \ IO as newFile;
             import java.io.File.isDirectory(): Bool \ IO;
             isDirectory(newFile(f))
         })
@@ -186,9 +192,9 @@ mod Files {
     ///
     pub def isRegularFile(f: String): Result[IOError, Bool] \ IO = region rc {
         IOError.tryCatch(_ -> {
-            import java_new java.io.File(String): ##java.io.File \ IO as newFile;
-            import java.io.File.toPath(): ##java.nio.file.Path \ IO;
-            import static java.nio.file.Files.isRegularFile(##java.nio.file.Path, Array[##java.nio.file.LinkOption, rc]): Bool \ IO;
+            import java_new java.io.File(String): File \ IO as newFile;
+            import java.io.File.toPath(): Path \ IO;
+            import static java.nio.file.Files.isRegularFile(Path, Array[LinkOption, rc]): Bool \ IO;
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
             isRegularFile(javaPath, Array#{} @ rc)
@@ -200,7 +206,7 @@ mod Files {
     ///
     pub def isReadable(f: String): Result[IOError, Bool] \ IO =
         IOError.tryCatch(_ -> {
-            import java_new java.io.File(String): ##java.io.File \ IO as newFile;
+            import java_new java.io.File(String): File \ IO as newFile;
             import java.io.File.canRead(): Bool \ IO;
             canRead(newFile(f))
         })
@@ -210,9 +216,9 @@ mod Files {
     ///
     pub def isSymbolicLink(f: String): Result[IOError, Bool] \ IO =
         IOError.tryCatch(_ -> {
-            import java_new java.io.File(String): ##java.io.File \ IO as newFile;
-            import java.io.File.toPath(): ##java.nio.file.Path \ IO;
-            import static java.nio.file.Files.isSymbolicLink(##java.nio.file.Path): Bool \ IO;
+            import java_new java.io.File(String): File \ IO as newFile;
+            import java.io.File.toPath(): Path \ IO;
+            import static java.nio.file.Files.isSymbolicLink(Path): Bool \ IO;
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
             isSymbolicLink(javaPath)
@@ -223,7 +229,7 @@ mod Files {
     ///
     pub def isWritable(f: String): Result[IOError, Bool] \ IO =
         IOError.tryCatch(_ -> {
-            import java_new java.io.File(String): ##java.io.File \ IO as newFile;
+            import java_new java.io.File(String): File \ IO as newFile;
             import java.io.File.canWrite(): Bool \ IO;
             canWrite(newFile(f))
         })
@@ -233,7 +239,7 @@ mod Files {
     ///
     pub def isExecutable(f: String): Result[IOError, Bool] \ IO =
         IOError.tryCatch(_ -> {
-            import java_new java.io.File(String): ##java.io.File \ IO as newFile;
+            import java_new java.io.File(String): File \ IO as newFile;
             import java.io.File.canExecute(): Bool \ IO;
             canExecute(newFile(f))
         })
@@ -243,9 +249,9 @@ mod Files {
     ///
     pub def read(f: String): Result[IOError, String] \ IO =
         IOError.tryCatch(_ -> {
-            import java_new java.io.File(String): ##java.io.File \ IO as newFile;
-            import java.io.File.toPath(): ##java.nio.file.Path \ IO;
-            import static java.nio.file.Files.readString(##java.nio.file.Path): String \ IO;
+            import java_new java.io.File(String): File \ IO as newFile;
+            import java.io.File.toPath(): Path \ IO;
+            import static java.nio.file.Files.readString(Path): String \ IO;
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
             let result = readString(javaPath);
@@ -260,21 +266,21 @@ mod Files {
     /// `charSet` - the specific charset to be used to decode the bytes.
     ///
     pub def readWith(opts: {offset = Int64, count = Int32, charSet = String}, f : String): Result[IOError, String] \ IO = region rc {
-        if (0 < opts.count) {
+        if (0 < opts#count) {
             try {
-                import java_new java.io.File(String): ##java.io.File \ IO as newFile;
-                import java_new java.io.FileInputStream(##java.io.File): ##java.io.FileInputStream \ IO as newInputStream;
+                import java_new java.io.File(String): File \ IO as newFile;
+                import java_new java.io.FileInputStream(File): FileInputStream \ IO as newInputStream;
                 import java.io.FileInputStream.read(Array[Int8, rc], Int32, Int32): Int32 \ IO;
-                import static java.nio.charset.Charset.forName(String): ##java.nio.charset.Charset \ IO;
-                import java_new java.lang.String(Array[Int8, rc], ##java.nio.charset.Charset): String \ IO as newString;
+                import static java.nio.charset.Charset.forName(String): Charset \ IO;
+                import java_new java.lang.String(Array[Int8, rc], Charset): String \ IO as newString;
 
                 let javaFile = newFile(f);
                 let stream = newInputStream(javaFile);
-                match skip((opts.offset / 10_000i64), opts.offset, stream, f) {
+                match skip((opts#offset / 10_000i64), opts#offset, stream, f) {
                     case Ok(_)    => {
-                        let bytes = Array.empty(rc, opts.count);
-                        discard read(stream, bytes, 0, opts.count);
-                        let charSet = forName(opts.charSet);
+                        let bytes = Array.empty(rc, opts#count);
+                        discard read(stream, bytes, 0, opts#count);
+                        let charSet = forName(opts#charSet);
                         let returnString = newString(bytes, charSet);
                         Ok(returnString)
                     }
@@ -285,7 +291,7 @@ mod Files {
                     import java.lang.Throwable.getMessage(): String \ IO;
                     Err(Generic(getMessage(checked_cast(ex))))
             }
-        } else if (opts.count == 0) {
+        } else if (opts#count == 0) {
             Ok("")
         } else {
             Err(Generic("The argument `count` has to be a non negative number when calling `File.readWith`."))
@@ -296,7 +302,7 @@ mod Files {
     /// Helper function for `readWith` and `readBytesWith`.
     /// Tries to skip the requested number of bytes `bytes to skip` in `f` over `i + 1` iterations.
     ///
-    def skip(i: Int64, bytesToSkip: Int64, stream: ##java.io.FileInputStream, f: String): Result[IOError, Unit] \ IO =
+    def skip(i: Int64, bytesToSkip: Int64, stream: FileInputStream, f: String): Result[IOError, Unit] \ IO =
         try {
             if (0i64 <= i) {
                 import java.io.FileInputStream.skip(Int64): Int64 \ IO as javaSkip;
@@ -319,9 +325,9 @@ mod Files {
     ///
     pub def readLines(f: String): Result[IOError, List[String]] \ IO =
         IOError.tryCatch(_ -> {
-            import java_new java.io.File(String): ##java.io.File \ IO as newFile;
-            import java.io.File.toPath(): ##java.nio.file.Path \ IO;
-            import static java.nio.file.Files.newBufferedReader(##java.nio.file.Path): ##java.io.BufferedReader \ IO;
+            import java_new java.io.File(String): File \ IO as newFile;
+            import java.io.File.toPath(): Path \ IO;
+            import static java.nio.file.Files.newBufferedReader(Path): BufferedReader \ IO;
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
             let reader = newBufferedReader(javaPath);
@@ -331,7 +337,7 @@ mod Files {
     ///
     /// Reads all lines from the given buffered reader `r` until it is empty.
     ///
-    def readAll(r: ##java.io.BufferedReader): List[String] \ IO =
+    def readAll(r: BufferedReader): List[String] \ IO =
         import java.io.BufferedReader.readLine(): String \ IO;
         def loop(k) = {
             let l = readLine(r);
@@ -349,14 +355,14 @@ mod Files {
     ///
     pub def readLinesWith(opts: {charSet = String}, f: String): Result[IOError, List[String]] \ IO =
         IOError.tryCatch(_ -> {
-            import java_new java.io.File(String): ##java.io.File \ IO as newFile;
-            import java.io.File.toPath(): ##java.nio.file.Path \ IO;
-            import static java.nio.file.Files.newBufferedReader(##java.nio.file.Path, ##java.nio.charset.Charset): ##java.io.BufferedReader \ IO;
-            import static java.nio.charset.Charset.forName(String): ##java.nio.charset.Charset \ IO;
+            import java_new java.io.File(String): File \ IO as newFile;
+            import java.io.File.toPath(): Path \ IO;
+            import static java.nio.file.Files.newBufferedReader(Path, Charset): BufferedReader \ IO;
+            import static java.nio.charset.Charset.forName(String): Charset \ IO;
 
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
-            let reader = newBufferedReader(javaPath, forName(opts.charSet));
+            let reader = newBufferedReader(javaPath, forName(opts#charSet));
             readAll(reader)
         })
 
@@ -365,9 +371,9 @@ mod Files {
     ///
     pub def readLinesIter(rc: Region[r], f: String): Iterator[Result[IOError, String], IO + r, r] \ { r, IO } =
         try {
-            import java_new java.io.File(String): ##java.io.File \ IO as newFile;
-            import java.io.File.toPath(): ##java.nio.file.Path \ IO;
-            import static java.nio.file.Files.newBufferedReader(##java.nio.file.Path): ##java.io.BufferedReader \ IO;
+            import java_new java.io.File(String): File \ IO as newFile;
+            import java.io.File.toPath(): Path \ IO;
+            import static java.nio.file.Files.newBufferedReader(Path): BufferedReader \ IO;
             import java.io.BufferedReader.readLine(): String \ IO;
 
             let javaFile = newFile(f);
@@ -405,15 +411,15 @@ mod Files {
     ///
     pub def readLinesIterWith(rc: Region[r], opts: {charSet = String}, f: String): Iterator[Result[IOError, String], IO + r, r] \ { r, IO } =
         try {
-            import java_new java.io.File(String): ##java.io.File \ IO as newFile;
-            import java.io.File.toPath(): ##java.nio.file.Path \ IO;
-            import static java.nio.file.Files.newBufferedReader(##java.nio.file.Path, ##java.nio.charset.Charset): ##java.io.BufferedReader \ IO;
-            import static java.nio.charset.Charset.forName(String): ##java.nio.charset.Charset \ IO;
+            import java_new java.io.File(String): File \ IO as newFile;
+            import java.io.File.toPath(): Path \ IO;
+            import static java.nio.file.Files.newBufferedReader(Path, Charset): BufferedReader \ IO;
+            import static java.nio.charset.Charset.forName(String): Charset \ IO;
             import java.io.BufferedReader.readLine(): String \ IO;
 
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
-            let reader = newBufferedReader(javaPath, forName(opts.charSet));
+            let reader = newBufferedReader(javaPath, forName(opts#charSet));
             let line = ref readLine(reader) @ rc;
             let next = () -> ({
                 if (not Object.isNull(deref line)) {
@@ -444,9 +450,9 @@ mod Files {
     ///
     pub def readBytes(_rc: Region[r], f: String): Result[IOError, Array[Int8, r]] \ { r, IO } =
         IOError.tryCatch(_ -> {
-            import java_new java.io.File(String): ##java.io.File \ IO as newFile;
-            import java.io.File.toPath(): ##java.nio.file.Path \ IO;
-            import static java.nio.file.Files.readAllBytes(##java.nio.file.Path): Array[Int8, r] \ IO + r;
+            import java_new java.io.File(String): File \ IO as newFile;
+            import java.io.File.toPath(): Path \ IO;
+            import static java.nio.file.Files.readAllBytes(Path): Array[Int8, r] \ IO + r;
 
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
@@ -462,19 +468,19 @@ mod Files {
     /// `count` - the number of bytes read.
     ///
     pub def readBytesWith(rc: Region[r], opts: {offset = Int64, count = Int32}, f: String): Result[IOError, Array[Int8, r]] \ { r, IO } =
-        if (0 < opts.count) {
+        if (0 < opts#count) {
             try {
-                import java_new java.io.File(String): ##java.io.File \ IO as newFile;
-                import java_new java.io.FileInputStream(##java.io.File): ##java.io.FileInputStream \ IO as newInputStream;
+                import java_new java.io.File(String): File \ IO as newFile;
+                import java_new java.io.FileInputStream(File): FileInputStream \ IO as newInputStream;
                 import java.io.FileInputStream.read(Array[Int8, r], Int32, Int32): Int32 \ IO;
 
                 let javaFile = newFile(f);
                 let stream = newInputStream(javaFile);
-                match skip((opts.offset / 10_000i64), opts.offset, stream, f) {
+                match skip((opts#offset / 10_000i64), opts#offset, stream, f) {
                     case Ok(_)    => {
-                        let bytes = Array.empty(rc, opts.count);
-                        let numberRead = read(stream, bytes, 0, opts.count);
-                        let res = readBytesWithHelper(rc, bytes, numberRead, opts.count);
+                        let bytes = Array.empty(rc, opts#count);
+                        let numberRead = read(stream, bytes, 0, opts#count);
+                        let res = readBytesWithHelper(rc, bytes, numberRead, opts#count);
                         Ok(res)
                     }
                     case Err(msg) => Err(msg)
@@ -484,7 +490,7 @@ mod Files {
                     import java.lang.Throwable.getMessage(): String \ IO;
                     Err(Generic(getMessage(checked_cast(ex))))
             }
-        } else if (opts.count == 0) {
+        } else if (opts#count == 0) {
             Ok(Array#{} @ rc)
         } else {
             Err(Generic("The argument `count` has to be a non negative number when calling `File.readBytesWith`."))
@@ -513,8 +519,8 @@ mod Files {
     pub def readChunks(rc: Region[r], chunkSize: Int32, f: String): Iterator[Result[IOError, Array[Int8, r]], IO + r, r] \ IO + r =
         if (0 < chunkSize) {
             try {
-                import java_new java.io.File(String): ##java.io.File \ IO as newFile;
-                import java_new java.io.FileInputStream(##java.io.File): ##java.io.FileInputStream \ IO as newInputStream;
+                import java_new java.io.File(String): File \ IO as newFile;
+                import java_new java.io.FileInputStream(File): FileInputStream \ IO as newInputStream;
                 import java.io.FileInputStream.read(Array[Int8, r]): Int32 \ IO + r;
 
                 let javaFile = newFile(f);
@@ -559,8 +565,8 @@ mod Files {
     ///
     pub def write(f: String, data: t): Result[IOError, Bool] \ IO with ToString[t] =
         try {
-            import java_new java.io.File(String): ##java.io.File \ IO as newFile;
-            import java_new java.io.PrintWriter(##java.io.File): ##java.io.PrintWriter \ IO as newPrintWriter;
+            import java_new java.io.File(String): File \ IO as newFile;
+            import java_new java.io.PrintWriter(File): PrintWriter \ IO as newPrintWriter;
             import java.io.PrintWriter.print(String): Unit \ IO;
             import java.io.PrintWriter.close(): Unit \ IO;
             import java.io.PrintWriter.checkError(): Bool \ IO;
@@ -594,8 +600,8 @@ mod Files {
     ///
     pub def writeLines(f: String, data: f[String]): Result[IOError, Bool] \ (IO + Foldable.Aef[f]) with Foldable[f] =
         try {
-            import java_new java.io.File(String): ##java.io.File \ IO as newFile;
-            import java_new java.io.PrintWriter(##java.io.File): ##java.io.PrintWriter \ IO as newPrintWriter;
+            import java_new java.io.File(String): File \ IO as newFile;
+            import java_new java.io.PrintWriter(File): PrintWriter \ IO as newPrintWriter;
             import java.io.PrintWriter.println(String): Unit \ IO;
             import java.io.PrintWriter.close(): Unit \ IO;
             import java.io.PrintWriter.checkError(): Bool \ IO;
@@ -627,9 +633,9 @@ mod Files {
     ///
     pub def append(f: String, data: t): Result[IOError, Bool] \ IO with ToString[t] =
         try {
-            import java_new java.io.File(String): ##java.io.File \ IO as newFile;
-            import java_new java.io.FileWriter(##java.io.File, Bool): ##java.io.FileWriter \ IO as newFileWriter;
-            import java_new java.io.PrintWriter(##java.io.Writer): ##java.io.PrintWriter \ IO as newPrintWriter;
+            import java_new java.io.File(String): File \ IO as newFile;
+            import java_new java.io.FileWriter(File, Bool): FileWriter \ IO as newFileWriter;
+            import java_new java.io.PrintWriter(##java.io.Writer): PrintWriter \ IO as newPrintWriter;
             import java.io.PrintWriter.println(String): Unit \ IO;
             import java.io.PrintWriter.close(): Unit \ IO;
             import java.io.PrintWriter.checkError(): Bool \ IO;
@@ -663,9 +669,9 @@ mod Files {
     ///
     pub def appendLines(f: String, data: m[String]): Result[IOError, Bool] \ (IO + Foldable.Aef[m]) with Foldable[m] =
         try {
-            import java_new java.io.File(String): ##java.io.File \ IO as newFile;
-            import java_new java.io.FileWriter(##java.io.File, Bool): ##java.io.FileWriter \ IO as newFileWriter;
-            import java_new java.io.PrintWriter(##java.io.Writer): ##java.io.PrintWriter \ IO as newPrintWriter;
+            import java_new java.io.File(String): File \ IO as newFile;
+            import java_new java.io.FileWriter(File, Bool): FileWriter \ IO as newFileWriter;
+            import java_new java.io.PrintWriter(##java.io.Writer): PrintWriter \ IO as newPrintWriter;
             import java.io.PrintWriter.println(String): Unit \ IO;
             import java.io.PrintWriter.close(): Unit \ IO;
             import java.io.PrintWriter.checkError(): Bool \ IO;
@@ -701,9 +707,9 @@ mod Files {
     ///
     pub def writeBytes(f: String, data: m[Int8]): Result[IOError, Bool] \ (IO + Foldable.Aef[m]) with Foldable[m] = region rc {
         try {
-            import java_new java.io.File(String): ##java.io.File \ IO as newFile;
-            import java_new java.io.FileOutputStream(##java.io.File): ##java.io.FileOutputStream \ IO as newFileStream;
-            import java_new java.io.PrintWriter(##java.io.OutputStream): ##java.io.PrintWriter \ IO as newPrintWriter;
+            import java_new java.io.File(String): File \ IO as newFile;
+            import java_new java.io.FileOutputStream(File): FileOutputStream \ IO as newFileStream;
+            import java_new java.io.PrintWriter(##java.io.OutputStream): PrintWriter \ IO as newPrintWriter;
             import java.io.FileOutputStream.write(Array[Int8, rc]): Unit \ IO;
             import java.io.PrintWriter.close(): Unit \ IO;
             import java.io.PrintWriter.checkError(): Bool \ IO;
@@ -738,9 +744,9 @@ mod Files {
     ///
     pub def appendBytes(f: String, data: m[Int8]): Result[IOError, Bool] \ (IO + Foldable.Aef[m]) with Foldable[m] = region rc {
         try {
-            import java_new java.io.File(String): ##java.io.File \ IO as newFile;
-            import java_new java.io.FileOutputStream(##java.io.File, Bool): ##java.io.FileOutputStream \ IO as newFileStream;
-            import java_new java.io.PrintWriter(##java.io.OutputStream): ##java.io.PrintWriter \ IO as newPrintWriter;
+            import java_new java.io.File(String): File \ IO as newFile;
+            import java_new java.io.FileOutputStream(File, Bool): FileOutputStream \ IO as newFileStream;
+            import java_new java.io.PrintWriter(##java.io.OutputStream): PrintWriter \ IO as newPrintWriter;
             import java.io.FileOutputStream.write(Array[Int8, rc]): Unit \ IO;
             import java.io.PrintWriter.close(): Unit \ IO;
             import java.io.PrintWriter.checkError(): Bool \ IO;
@@ -775,8 +781,8 @@ mod Files {
     ///
     pub def truncate(f: String): Result[IOError, Bool] \ IO =
         try {
-            import java_new java.io.File(String): ##java.io.File \ IO as newFile;
-            import java_new java.io.PrintWriter(##java.io.File): ##java.io.PrintWriter \ IO as newPrintWriter;
+            import java_new java.io.File(String): File \ IO as newFile;
+            import java_new java.io.PrintWriter(File): PrintWriter \ IO as newPrintWriter;
             import java.io.PrintWriter.close(): Unit \ IO;
             import java.io.PrintWriter.checkError(): Bool \ IO;
 
@@ -808,7 +814,7 @@ mod Files {
     ///
     pub def mkdir(d: String): Result[IOError, Bool] \ IO =
         IOError.tryCatch(_ -> {
-            import java_new java.io.File(String): ##java.io.File \ IO as newFile;
+            import java_new java.io.File(String): File \ IO as newFile;
             import java.io.File.mkdir(): Bool \ IO;
 
             let javaFile = newFile(d);
@@ -824,7 +830,7 @@ mod Files {
     ///
     pub def mkdirs(d: String): Result[IOError, Bool] \ IO =
         IOError.tryCatch(_ -> {
-            import java_new java.io.File(String): ##java.io.File \ IO as newFile;
+            import java_new java.io.File(String): File \ IO as newFile;
             import java.io.File.mkdirs(): Bool \ IO;
 
             let javaFile = newFile(d);
@@ -839,9 +845,9 @@ mod Files {
     ///
     pub def list(f: String): Result[IOError, List[String]] \ IO = region rc {
         try {
-            import java_new java.io.File(String): ##java.io.File \ IO as newFile;
-            import java.io.File.listFiles(): Array[##java.io.File, rc] \ IO;
-            import java.io.File.toPath(): ##java.nio.file.Path \ IO;
+            import java_new java.io.File(String): File \ IO as newFile;
+            import java.io.File.listFiles(): Array[File, rc] \ IO;
+            import java.io.File.toPath(): Path \ IO;
             import java.nio.file.Path.toString(): String \ IO as pathToString;
 
             let javaList = f |> newFile |> listFiles;
@@ -867,10 +873,10 @@ mod Files {
     ///
     pub def listWithIter(rc: Region[r], f: String): Result[IOError, Iterator[String, r, r]] \ IO =
         IOError.tryCatch(_ -> {
-            import java_new java.io.File(String): ##java.io.File \ IO as newFile;
-            import java.io.File.toPath(): ##java.nio.file.Path \ IO;
-            import static java.nio.file.Files.newDirectoryStream(##java.nio.file.Path): ##java.nio.file.DirectoryStream \ IO;
-            import java.nio.file.DirectoryStream.iterator(): ##java.util.Iterator \ IO;
+            import java_new java.io.File(String): File \ IO as newFile;
+            import java.io.File.toPath(): Path \ IO;
+            import static java.nio.file.Files.newDirectoryStream(Path): DirectoryStream \ IO;
+            import java.nio.file.DirectoryStream.iterator(): JIterator \ IO;
             import java.nio.file.Path.toString(): String \ {} as pathToString;
 
             let javaFile = newFile(f);
@@ -890,10 +896,10 @@ mod Files {
     ///
     pub def walk(rc: Region[r], f: String): Result[IOError, Iterator[String, r, r]] \ IO + r =
         IOError.tryCatch(_ -> {
-            import java_new java.io.File(String): ##java.io.File \ IO as newFile;
-            import java.io.File.toPath(): ##java.nio.file.Path \ IO;
-            import static java.nio.file.Files.walk(##java.nio.file.Path, Array[##java.nio.file.FileVisitOption, r]): ##java.util.stream.Stream \ IO;
-            import java.util.stream.BaseStream.iterator(): ##java.util.Iterator \ IO;
+            import java_new java.io.File(String): File \ IO as newFile;
+            import java.io.File.toPath(): Path \ IO;
+            import static java.nio.file.Files.walk(Path, Array[##java.nio.file.FileVisitOption, r]): ##java.util.stream.Stream \ IO;
+            import java.util.stream.BaseStream.iterator(): JIterator \ IO;
             import java.nio.file.Path.toString(): String \ {} as pathToString;
 
             let javaFile = newFile(f);
@@ -908,7 +914,7 @@ mod Files {
     ///
     /// Converts a Java iterator to a Flix Iterator.
     ///
-    def fromJavaIter(rc: Region[r], iter: ##java.util.Iterator): Iterator[a, r, r] =
+    def fromJavaIter(rc: Region[r], iter: JIterator): Iterator[a, r, r] =
         import java.util.Iterator.hasNext(): Bool \ r;
         import java.util.Iterator.next(): a \ r as getNext;
         let next = () -> {
@@ -931,11 +937,11 @@ mod Files {
     ///
     pub def move(src: {src = String} , dst: String): Result[IOError, Unit] \ IO = region rc {
         IOError.tryCatch(_ -> {
-            import java_new java.io.File(String): ##java.io.File \ IO as newFile;
-            import java.io.File.toPath(): ##java.nio.file.Path \ IO;
-            import static java.nio.file.Files.move(##java.nio.file.Path, ##java.nio.file.Path, Array[##java.nio.file.CopyOption, rc]): ##java.nio.file.Path \ IO;
+            import java_new java.io.File(String): File \ IO as newFile;
+            import java.io.File.toPath(): Path \ IO;
+            import static java.nio.file.Files.move(Path, Path, Array[##java.nio.file.CopyOption, rc]): Path \ IO;
 
-            let srcFile = newFile(src.src);
+            let srcFile = newFile(src#src);
             let srcPath = toPath(srcFile);
             let dstFile = newFile(dst);
             let dstPath = toPath(dstFile);
@@ -957,17 +963,17 @@ mod Files {
         try {
             match isDirectory(dst) {
                 case Ok(true)  => {
-                    import java_new java.io.File(String): ##java.io.File \ IO as newFile;
-                    import java.io.File.toPath(): ##java.nio.file.Path \ IO;
-                    import java.nio.file.Path.getFileName(): ##java.nio.file.Path \ IO;
+                    import java_new java.io.File(String): File \ IO as newFile;
+                    import java.io.File.toPath(): Path \ IO;
+                    import java.nio.file.Path.getFileName(): Path \ IO;
                     import java.nio.file.Path.toString(): String \ IO as pathToString;
 
-                    let javaFile = newFile(src.src);
+                    let javaFile = newFile(src#src);
                     let javaPath = toPath(javaFile);
                     let name = pathToString(getFileName(javaPath));
                     let newDst = dst / name;
 
-                    move(src = src.src, newDst)
+                    move(src = src#src, newDst)
                 }
                 case Ok(false) => Err(Generic("dst is not a directory."))
                 case Err(msg)  => Err(msg)
@@ -986,15 +992,15 @@ mod Files {
     ///
     pub def moveOver(src: {src = String}, dst: String): Result[IOError, Unit] \ IO = region rc {
         IOError.tryCatch(_ -> {
-            import java_new java.io.File(String): ##java.io.File \ IO as newFile;
-            import java.io.File.toPath(): ##java.nio.file.Path \ IO;
-            import static java.nio.file.Files.move(##java.nio.file.Path, ##java.nio.file.Path, Array[##java.nio.file.CopyOption, rc]): ##java.nio.file.Path \ IO;
+            import java_new java.io.File(String): File \ IO as newFile;
+            import java.io.File.toPath(): Path \ IO;
+            import static java.nio.file.Files.move(Path, Path, Array[##java.nio.file.CopyOption, rc]): Path \ IO;
             import static java_get_field java.nio.file.StandardCopyOption.REPLACE_EXISTING: ##java.nio.file.StandardCopyOption \ IO as getOverwrite;
 
             let dstFile = newFile(dst);
             let dstPath = toPath(dstFile);
 
-            let srcFile = newFile(src.src);
+            let srcFile = newFile(src#src);
             let srcPath = toPath(srcFile);
             discard move(srcPath, dstPath, Array#{checked_cast(getOverwrite())} @ rc)
         })
@@ -1011,11 +1017,11 @@ mod Files {
     ///
     pub def copy(src: {src = String} , dst: String): Result[IOError, Unit] \ IO = region rc {
         IOError.tryCatch(_ -> {
-            import java_new java.io.File(String): ##java.io.File \ IO as newFile;
-            import java.io.File.toPath(): ##java.nio.file.Path \ IO;
-            import static java.nio.file.Files.copy(##java.nio.file.Path, ##java.nio.file.Path, Array[##java.nio.file.CopyOption, rc]): ##java.nio.file.Path \ IO;
+            import java_new java.io.File(String): File \ IO as newFile;
+            import java.io.File.toPath(): Path \ IO;
+            import static java.nio.file.Files.copy(Path, Path, Array[##java.nio.file.CopyOption, rc]): Path \ IO;
 
-            let srcFile = newFile(src.src);
+            let srcFile = newFile(src#src);
             let srcPath = toPath(srcFile);
             let dstFile = newFile(dst);
             let dstPath = toPath(dstFile);
@@ -1037,17 +1043,17 @@ mod Files {
         try {
             match isDirectory(dst) {
                 case Ok(true)  => {
-                    import java_new java.io.File(String): ##java.io.File \ IO as newFile;
-                    import java.io.File.toPath(): ##java.nio.file.Path \ IO;
-                    import java.nio.file.Path.getFileName(): ##java.nio.file.Path \ IO;
+                    import java_new java.io.File(String): File \ IO as newFile;
+                    import java.io.File.toPath(): Path \ IO;
+                    import java.nio.file.Path.getFileName(): Path \ IO;
                     import java.nio.file.Path.toString(): String \ IO as pathToString;
 
-                    let javaFile = newFile(src.src);
+                    let javaFile = newFile(src#src);
                     let javaPath = toPath(javaFile);
                     let name = pathToString(getFileName(javaPath));
                     let newDst = dst / name;
 
-                    copy(src = src.src, newDst)
+                    copy(src = src#src, newDst)
                 }
                 case Ok(false) => Err(Generic("dst is not a directory."))
                 case Err(msg)  => Err(msg)
@@ -1066,15 +1072,15 @@ mod Files {
     ///
     pub def copyOver(src: {src = String}, dst: String): Result[IOError, Unit] \ IO = region rc {
         IOError.tryCatch(_ -> {
-            import java_new java.io.File(String): ##java.io.File \ IO as newFile;
-            import java.io.File.toPath(): ##java.nio.file.Path \ IO;
-            import static java.nio.file.Files.copy(##java.nio.file.Path, ##java.nio.file.Path, Array[##java.nio.file.CopyOption, rc]): ##java.nio.file.Path \ IO;
+            import java_new java.io.File(String): File \ IO as newFile;
+            import java.io.File.toPath(): Path \ IO;
+            import static java.nio.file.Files.copy(Path, Path, Array[##java.nio.file.CopyOption, rc]): Path \ IO;
             import static java_get_field java.nio.file.StandardCopyOption.REPLACE_EXISTING: ##java.nio.file.StandardCopyOption \ IO as getOverwrite;
 
             let dstFile = newFile(dst);
             let dstPath = toPath(dstFile);
 
-            let srcFile = newFile(src.src);
+            let srcFile = newFile(src#src);
             let srcPath = toPath(srcFile);
             discard copy(srcPath, dstPath, Array#{checked_cast(getOverwrite())} @ rc)
         })
@@ -1087,9 +1093,9 @@ mod Files {
     ///
     pub def delete(f: String): Result[IOError, Unit] \ IO =
         IOError.tryCatch(_ -> {
-            import java_new java.io.File(String): ##java.io.File \ IO as newFile;
-            import java.io.File.toPath(): ##java.nio.file.Path \ IO;
-            import static java.nio.file.Files.delete(##java.nio.file.Path): Unit \ IO;
+            import java_new java.io.File(String): File \ IO as newFile;
+            import java.io.File.toPath(): Path \ IO;
+            import static java.nio.file.Files.delete(Path): Unit \ IO;
 
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
@@ -1105,9 +1111,9 @@ mod Files {
     ///
     pub def deleteIfExists(f: String): Result[IOError, Bool] \ IO =
         IOError.tryCatch(_ -> {
-            import java_new java.io.File(String): ##java.io.File \ IO as newFile;
-            import java.io.File.toPath(): ##java.nio.file.Path \ IO;
-            import static java.nio.file.Files.deleteIfExists(##java.nio.file.Path): Bool \ IO;
+            import java_new java.io.File(String): File \ IO as newFile;
+            import java.io.File.toPath(): Path \ IO;
+            import static java.nio.file.Files.deleteIfExists(Path): Bool \ IO;
 
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);

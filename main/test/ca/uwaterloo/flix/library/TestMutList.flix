@@ -2308,12 +2308,12 @@ mod TestMutList {
         pub def eq(a: R, b: R): Bool =
             let R.R(x) = a;
             let R.R(y) = b;
-            x.i == y.i and x.s == y.s
+            x#i == y#i and x#s == y#s
     }
 
     @test
     def sortBy10(): Bool = region rc {
-        MutList.sortBy(rc, r -> let R.R(x) = r; x.i, Array.toMutList(rc, Array#{R.R({i = 2, s = "A"}), R.R({i = 1, s = "B"}), R.R({i = 3, s = "C"})} @ rc))
+        MutList.sortBy(rc, r -> let R.R(x) = r; x#i, Array.toMutList(rc, Array#{R.R({i = 2, s = "A"}), R.R({i = 1, s = "B"}), R.R({i = 3, s = "C"})} @ rc))
         `sameElements` Array.toMutList(rc, Array#{R.R({i = 1, s = "B"}), R.R({i = 2, s = "A"}), R.R({i = 3, s = "C"})} @ rc)
     }
 

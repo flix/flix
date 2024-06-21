@@ -114,9 +114,9 @@ mod Benchmark {
         import static java.lang.System.nanoTime(): Int64 \ IO;
         let Benchmark(r) = b;
         let t = nanoTime();
-        loop(r.f, n);
+        loop(r#f, n);
         let e = nanoTime() - t;
-        BenchmarkResult.Success({name = r.name, rounds = n, total = e})
+        BenchmarkResult.Success({name = r#name, rounds = n, total = e})
 
     ///
     /// Returns the number of nanoseconds it is estimated that a warm JVM
@@ -128,7 +128,7 @@ mod Benchmark {
         let Benchmark(r) = b;
         import static java.lang.System.nanoTime(): Int64 \ IO;
         let t = nanoTime();
-        (r.f)();
+        (r#f)();
         (nanoTime() - t) / scaleFactor()
 
     ///
@@ -174,10 +174,10 @@ mod Benchmark {
     ///
     def printRow(s: BenchmarkResult): Unit \ IO = {
         let BenchmarkResult.Success(r) = s;
-        let avgNs = r.total / Int32.toInt64(r.rounds);
+        let avgNs = r#total / Int32.toInt64(r#rounds);
         let avgMs = toMicroSeconds(avgNs);
-        let namePart = String.padRight(40, ' ', r.name);
-        let iterPart = String.padLeft(20, ' ', "${r.rounds}");
+        let namePart = String.padRight(40, ' ', r#name);
+        let iterPart = String.padLeft(20, ' ', "${r#rounds}");
         let avgTimePart = String.padLeft(20, ' ', "${avgMs} us/op");
         "${namePart}${iterPart}${avgTimePart}" |> println
     }

@@ -121,8 +121,11 @@ object Parser2 {
       // Compute the stale and fresh sources.
       val (stale, fresh) = changeSet.partition(tokens, oldRoot.units)
 
+      // Sort the stale inputs by size to increase throughput (i.e. to start work early on the biggest tasks).
+      val staleByDecreasingSize = stale.toList.sortBy(p => -p._2.length)
+
       // Parse each stale source in parallel and join them into a WeededAst.Root
-      val refreshed = ParOps.parMap(stale) {
+      val refreshed = ParOps.parMap(staleByDecreasingSize) {
         case (src, tokens) => mapN(parse(src, tokens))(trees => src -> trees)
       }
 
@@ -1295,11 +1298,11 @@ object Parser2 {
         lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
       }
       // Handle record select after function call. Example: funcReturningRecord().field
-      if (at(TokenKind.Dot) && nth(1) == TokenKind.NameLowerCase) {
+      if (at(TokenKind.Hash) && nth(1) == TokenKind.NameLowerCase) {
         val mark = openBefore(lhs)
-        eat(TokenKind.Dot)
+        eat(TokenKind.Hash)
         name(NAME_FIELD, context = SyntacticContext.Expr.OtherExpr)
-        while (eat(TokenKind.Dot)) {
+        while (eat(TokenKind.Hash)) {
           name(NAME_FIELD, context = SyntacticContext.Expr.OtherExpr)
         }
         lhs = close(mark, TreeKind.Expr.RecordSelect)
