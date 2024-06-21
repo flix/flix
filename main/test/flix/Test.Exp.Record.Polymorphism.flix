@@ -59,29 +59,29 @@ mod Test.Exp.Record.Polymorphism {
     @test
     def testRecordPolySelect01(): Bool =
         let p1 = { fstName = "Luke", lstName = "Skywalker" };
-        withAgeAndSex(21, "m", p1).fstName == "Luke"
+        withAgeAndSex(21, "m", p1)#fstName == "Luke"
 
     @test
     def testRecordPolySelect02(): Bool =
         let p1 = { fstName = "Luke", lstName = "Skywalker" };
-        withAgeAndSex(21, "m", p1).lstName == "Skywalker"
+        withAgeAndSex(21, "m", p1)#lstName == "Skywalker"
 
     @test
     def testRecordPolySelect03(): Bool =
         let p1 = { fstName = "Luke", lstName = "Skywalker" };
-        withAgeAndSex(21, "m", p1).age == 21
+        withAgeAndSex(21, "m", p1)#age == 21
 
     @test
     def testRecordPolySelect04(): Bool =
         let p1 = { fstName = "Luke", lstName = "Skywalker" };
-        withAgeAndSex(21, "m", p1).sex == "m"
+        withAgeAndSex(21, "m", p1)#sex == "m"
 
     @test
     def testRecordPolySelectDuplicate01(): Bool =
         let p1 = { fstName = "Luke", lstName = "Skywalker" };
         let p2 = p1 |> withAgeAndSex(21, "m");
         let p3 = p2 |> withAgeAndSex(22, "f");
-        p3.age == 22 and p3.sex == "f"
+        p3#age == 22 and p3#sex == "f"
 
     @test
     def testRecordPolySelectDuplicate02(): Bool =
@@ -89,7 +89,7 @@ mod Test.Exp.Record.Polymorphism {
         let p2 = p1 |> withAgeAndSex(21, "m");
         let p3 = p2 |> withAgeAndSex(22, "f");
         let p4 = p3 |> withAgeAndSex(23, "m");
-        p4.age == 23 and p4.sex == "m"
+        p4#age == 23 and p4#sex == "m"
 
     def |>(x: a, f: a -> b \ ef): b \ ef = f(x)
 

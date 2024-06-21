@@ -79,7 +79,7 @@ object TypeConstraint {
    * A constraint indicating the equivalence between a Java constructor's type and a class with its arguments.
    * Where mvar must have kind JvmConstructorOrMethod -> Type.
    */
-  case class EqJvmConstructor(mvar: Type.Var, clazz: Class[_], tpes: List[Type], prov: Provenance) extends TypeConstraint {
+  case class EqJvmConstructor(cvar: Type.Var, clazz: Class[_], tpes: List[Type], prov: Provenance) extends TypeConstraint {
     def loc: SourceLocation = prov.loc
   }
 

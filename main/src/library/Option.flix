@@ -186,7 +186,7 @@ mod Option {
     /// Returns `o` if it is `Some(v)`. Otherwise returns `default`.
     ///
     pub def withDefault(default: {default = Option[a]}, o: Option[a]): Option[a] = match o {
-        case None    => default.default
+        case None    => default#default
         case Some(_) => o
     }
 
@@ -195,7 +195,7 @@ mod Option {
     ///
     pub def replace(src: {src = a}, dst: {dst = a}, o: Option[a]): Option[a] with Eq[a] = match o {
         case None    => o
-        case Some(v) => Some(if (v == src.src) dst.dst else v)
+        case Some(v) => Some(if (v == src#src) dst#dst else v)
     }
 
     ///

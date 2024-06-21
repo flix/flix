@@ -47,7 +47,16 @@ trait CompilationMessage {
   def summary: String
 
   /**
-    * Returns the formatted error message.
+    * Returns the error message formatted with source location.
+    */
+  def messageWithLoc(formatter: Formatter): String = {
+    formatter.line(kind, source.name) + System.lineSeparator() + message(formatter)
+  }
+
+  /**
+    * Returns the error message.
+    *
+    * You probably want to use [[messageWithLoc]] instead.
     */
   def message(formatter: Formatter): String
 

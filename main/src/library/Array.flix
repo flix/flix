@@ -110,7 +110,7 @@ mod Array {
     /// Returns a fresh array with the elements from the array `a` from index `start` (inclusive) until index `end` (exclusive).
     ///
     pub def slice(rc1: Region[r1], start: {start = Int32}, end: {end = Int32}, a: Array[a, r]): Array[a, r1] \ { r, r1 } =
-        copyOfRange(rc1, start.start, end.end, a)
+        copyOfRange(rc1, start#start, end#end, a)
 
     ///
     /// Returns the array `a` as a list.
@@ -564,13 +564,13 @@ mod Array {
     /// Returns a copy of `a` with every occurrence of `src` replaced by `dst`.
     ///
     pub def replace(rc1: Region[r1], src: {src = a}, dst: {dst = a}, a: Array[a, r]): Array[a, r1] \ { r, r1 } with Eq[a] =
-        map(rc1, e -> if (e == src.src) dst.dst else e, a)
+        map(rc1, e -> if (e == src#src) dst#dst else e, a)
 
     ///
     /// Replace every occurrence of `src` by `dst` in the array `a`, mutating it in place.
     ///
     pub def replace!(src: {src = a}, dst: {dst = a}, a: Array[a, r]): Unit \ r with Eq[a] =
-        transform!(e -> if (e == src.src) dst.dst else e, a)
+        transform!(e -> if (e == src#src) dst#dst else e, a)
 
     ///
     /// Returns `b` with the `n` elements starting at index `i` replaced with the elements of `a`.
