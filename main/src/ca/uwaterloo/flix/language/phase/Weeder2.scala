@@ -351,7 +351,6 @@ object Weeder2 {
       mapN(
         pickNameIdent(tree),
         Types.pickType(tree)
-        // TODO: Doc comments on enum cases. It is not available on [[Case]] yet.
       ) {
         (ident, ttype) =>
           // Make a source location that spans the name and type
