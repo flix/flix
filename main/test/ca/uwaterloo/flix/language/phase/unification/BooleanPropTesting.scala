@@ -101,10 +101,10 @@ object BooleanPropTesting {
       println(s"${tests / 1000}k (${passed / 1000}k passed, $errAmount errs, $timeoutAmount t.o.)")
     }
 
-    val errs: ListBuffer[(List[Equation], Boolean)] = ListBuffer.empty
-    val errPhaseFrequency = mutable.Map.empty[Int, Int]
-    val timeouts: ListBuffer[List[Equation]] = ListBuffer.empty
-    val timeoutPhaseFrequence = mutable.Map.empty[Int, Int]
+    // input, verfierError, phase
+    val passes: ListBuffer[Int] = ListBuffer.empty
+    val errs: ListBuffer[(List[Equation], Boolean, Int)] = ListBuffer.empty
+    val timeouts: ListBuffer[(List[Equation], Int)] = ListBuffer.empty
     var continue = true
     var tests = 0
 
@@ -115,43 +115,41 @@ object BooleanPropTesting {
       val (res, phase) = runEquations(input)
       res match {
         case Res.Pass =>
-          ()
+          passes += phase
         case Res.Fail(verf) =>
-          errs += ((input, verf))
-          inc(errPhaseFrequency, phase)
+          errs += ((input, verf, phase))
           if (errLimit > 0 && errs.sizeIs >= errLimit) continue = false
         case Res.Timeout =>
-          timeouts += input
-          inc(timeoutPhaseFrequence, phase)
+          timeouts += ((input, phase))
           if (timeoutLimit > 0 && timeouts.sizeIs >= timeoutLimit) continue = false
       }
     }
+    printTestOutput(errs, timeouts, tests)
+    errs.isEmpty
+  }
+
+  private def printTestOutput(errs: ListBuffer[(List[Equation], Boolean, Int)], timeouts: ListBuffer[(List[Equation], Int)], tests: Int): Unit = {
     println()
     println(s"   Tests: $tests")
     val errSize = errs.size
-    val verfSize = errs.count{case (_, b) => b}
-    println(s"    Errs: $errSize (${errSize/(1.0*tests) * 100} %) (${verfSize} verification errors)")
+    val verfSize = errs.count { case (_, b, _) => b }
+    println(s"    Errs: $errSize (${errSize / (1.0 * tests) * 100} %) ($verfSize verification errors)")
     val timeoutSize = timeouts.size
-    println(s"Timeouts: $timeoutSize (${timeoutSize/(1.0*tests) * 100} %)")
-    if (errPhaseFrequency.nonEmpty) println(s"Err phases:")
-    errPhaseFrequency.toList.sorted.foreach(p => println(s"\t\tphase ${p._1}: ${p._2} errors"))
-    if (timeoutPhaseFrequence.nonEmpty) println(s"Timeout phases:")
-    timeoutPhaseFrequence.toList.sorted.foreach(p => println(s"\t\tphase ${p._1}: ${p._2} timeouts"))
+    println(s"Timeouts: $timeoutSize (${timeoutSize / (1.0 * tests) * 100} %)")
     if (errs.nonEmpty) println(s"\nSmallest error:")
-    errs.sortBy{case (a, _) => a.map(_.size).sum}.headOption.foreach{case (err, verf) => println(s">${if (verf) "v" else ""} ${err.mkString("\n")}\n>${if (verf) "v" else ""} ${toRawStringEqs(err)}")}
+    errs.sortBy { case (a, _, p) => (p, a.map(_.size).sum) }.headOption.foreach {
+      case (err, verf, phase) => println(s">${if (verf) "v" else ""}$phase: ${err.mkString("\n")}\n>${if (verf) "v" else ""}$phase: ${toRawStringEqs(err)}")
+    }
     if (timeouts.nonEmpty) println(s"\nSmallest timeout:")
-    timeouts.sortBy(_.map(_.size).sum).headOption.foreach(timeout => println(s"> ${timeout.mkString("\n")}\n> ${toRawStringEqs(timeout)}"))
-    errs.isEmpty
+    timeouts.sortBy(p => (p._2, p._1.map(_.size).sum)).headOption.foreach {
+      case (timeout, phase) => println(s">$phase: ${timeout.mkString("\n")}\n>$phase: ${toRawStringEqs(timeout)}")
+    }
   }
 
   def explodedRandomXor(random: Random): List[Equation] = {
     val former = termFormer()
     val t = randomTerm(former, random, 4, 3, 3, 3)
     explodeKnownEquation(random, xorSelf(t))
-  }
-
-  private def inc[K](m: mutable.Map[K, Int], k: K): Unit = {
-    m.updateWith(k)(opt => Some(opt.getOrElse(0) + 1))
   }
 
   private sealed trait Res {
