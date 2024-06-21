@@ -129,7 +129,6 @@ sealed trait TokenKind {
       case TokenKind.KeywordSpawn => "'spawn'"
       case TokenKind.KeywordStatic => "'static'"
       case TokenKind.KeywordStaticUppercase => "'Static'"
-      case TokenKind.KeywordStruct => "'struct'"
       case TokenKind.KeywordTrait => "'trait'"
       case TokenKind.KeywordTrue => "'true'"
       case TokenKind.KeywordTry => "'try'"
@@ -283,7 +282,6 @@ sealed trait TokenKind {
     case TokenKind.KeywordSolve => true
     case TokenKind.KeywordSpawn => true
     case TokenKind.KeywordStatic => true
-    case TokenKind.KeywordStruct => true
     case TokenKind.KeywordTrait => true
     case TokenKind.KeywordTrue => true
     case TokenKind.KeywordTry => true
@@ -323,7 +321,6 @@ sealed trait TokenKind {
          | TokenKind.KeywordMod
          | TokenKind.KeywordDef
          | TokenKind.KeywordEnum
-         | TokenKind.KeywordStruct
          | TokenKind.KeywordTrait
          | TokenKind.KeywordInstance
          | TokenKind.KeywordType
@@ -815,8 +812,6 @@ object TokenKind {
   case object KeywordStatic extends TokenKind
 
   case object KeywordStaticUppercase extends TokenKind
-
-  case object KeywordStruct extends TokenKind
 
   case object KeywordTrait extends TokenKind
 

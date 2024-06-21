@@ -112,8 +112,6 @@ object SyntaxTree {
 
     case object Root extends TreeKind
 
-    case object StructField extends TreeKind
-
     case object TypeParameter extends TreeKind
 
     case object TypeParameterList extends TreeKind
@@ -151,8 +149,6 @@ object SyntaxTree {
       case object RestrictableEnum extends Decl
 
       case object Signature extends Decl
-
-      case object Struct extends Decl
 
       case object TypeAlias extends Decl
     }

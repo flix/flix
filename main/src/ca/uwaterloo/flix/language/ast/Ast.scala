@@ -872,8 +872,6 @@ object Ast {
       case object Instance extends Decl
 
       case object OtherDecl extends Decl
-
-      case object Struct extends Decl
     }
 
     sealed trait Expr extends SyntacticContext
