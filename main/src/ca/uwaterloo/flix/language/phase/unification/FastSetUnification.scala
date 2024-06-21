@@ -475,8 +475,18 @@ object FastSetUnification {
             subst = subst.extended(x, c, loc)
             changed = true
 
+          // Case 3.5: x ~ !c
+          case Equation(Term.Var(x), c@Term.Compl(Term.Cst(_)), loc) =>
+            subst = subst.extended(x, c, loc)
+            changed = true
+
           // Case 4: x ~ e
           case Equation(Term.Var(x), e@Term.ElemSet(_), loc) =>
+            subst = subst.extended(x, e, loc)
+            changed = true
+
+          // Case 4.5: x ~ !e
+          case Equation(Term.Var(x), e@Term.Compl(Term.ElemSet(_)), loc) =>
             subst = subst.extended(x, e, loc)
             changed = true
 
@@ -1450,7 +1460,7 @@ object FastSetUnification {
       def trivialNonEmpty: Boolean = posElem.isDefined || posCsts.nonEmpty || negElem.isDefined || negCsts.nonEmpty
     }
 
-    final def mkElemSet(i: Int): Term = {
+    final def mkElemSet(i: Int): ElemSet = {
       Term.ElemSet(SortedSet(i))
     }
 
