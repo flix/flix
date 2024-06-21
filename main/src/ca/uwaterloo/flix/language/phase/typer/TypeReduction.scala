@@ -264,7 +264,6 @@ object TypeReduction {
       case (Type.Cst(TypeConstructor.Native(_), _), Type.Null) => true
       // Flix non-primitives
       case (Type.Cst(TypeConstructor.Str, _), Type.Null) => true
-      case (Type.Cst(TypeConstructor.And, _), Type.Null) => true
       case (Type.Cst(TypeConstructor.Arrow(_), _), Type.Null) => true
       case (Type.Cst(TypeConstructor.Array, _), Type.Null) => true
       case (Type.Cst(TypeConstructor.AnyType, _), Type.Null) => true
