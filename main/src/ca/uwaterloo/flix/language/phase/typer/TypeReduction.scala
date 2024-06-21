@@ -260,46 +260,36 @@ object TypeReduction {
       case (Type.Cst(TypeConstructor.Native(clazz), _), Type.Cst(TypeConstructor.Str, _)) => clazz.isAssignableFrom(classOf[String])
       case (Type.Cst(TypeConstructor.Native(clazz), _), Type.Cst(TypeConstructor.BigInt, _)) => clazz.isAssignableFrom(classOf[BigInteger])
       case (Type.Cst(TypeConstructor.Native(clazz), _), Type.Cst(TypeConstructor.BigDecimal, _)) => clazz.isAssignableFrom(classOf[java.math.BigDecimal])
-      // Null is a sub-type of every Java object
+      // Null is a sub-type of every Java object and non-primitive Flix type
       case (Type.Cst(TypeConstructor.Native(_), _), Type.Null) => true
-      // Flix non-primitives
-      case (Type.Cst(TypeConstructor.Str, _), Type.Null) => true
-      case (Type.Cst(TypeConstructor.Arrow(_), _), Type.Null) => true
-      case (Type.Cst(TypeConstructor.Array, _), Type.Null) => true
-      case (Type.Cst(TypeConstructor.AnyType, _), Type.Null) => true
-      case (Type.Cst(TypeConstructor.BigDecimal, _), Type.Null) => true
-      case (Type.Cst(TypeConstructor.BigInt, _), Type.Null) => true
-      case (Type.Cst(TypeConstructor.Complement, _), Type.Null) => true
-      case (Type.Cst(TypeConstructor.CaseComplement(_), _), Type.Null) => true
-      case (Type.Cst(TypeConstructor.CaseSet(_, _), _), Type.Null) => true
-      case (Type.Cst(TypeConstructor.CaseUnion(_), _), Type.Null) => true
-      case (Type.Cst(TypeConstructor.CaseIntersection(_), _), Type.Null) => true
-      case (Type.Cst(TypeConstructor.Intersection, _), Type.Null) => true
-      case (Type.Cst(TypeConstructor.Effect(_), _), Type.Null) => true
-      case (Type.Cst(TypeConstructor.Enum(_, _), _), Type.Null) => true
-      case (Type.Cst(TypeConstructor.RestrictableEnum(_, _), _), Type.Null) => true
-      case (Type.Cst(TypeConstructor.MethodReturnType, _), Type.Null) => true
-      case (Type.Cst(TypeConstructor.JvmConstructor(_), _), Type.Null) => true
-      case (Type.Cst(TypeConstructor.JvmMethod(_), _), Type.Null) => true
-      case (Type.Cst(TypeConstructor.Lattice, _), Type.Null) => true
-      case (Type.Cst(TypeConstructor.Lazy, _), Type.Null) => true
-      case (Type.Cst(TypeConstructor.Error(_), _), Type.Null) => true
-      case (Type.Cst(TypeConstructor.Null, _), Type.Null) => true
-      case (Type.Cst(TypeConstructor.Pure, _), Type.Null) => true // to check
-      case (Type.Cst(TypeConstructor.Receiver, _), Type.Null) => true
-      case (Type.Cst(TypeConstructor.Record, _), Type.Null) => true
-      case (Type.Cst(TypeConstructor.RecordRowEmpty, _), Type.Null) => true
-      case (Type.Cst(TypeConstructor.RecordRowExtend(_), _), Type.Null) => true
-      case (Type.Cst(TypeConstructor.Regex, _), Type.Null) => true
-      case (Type.Cst(TypeConstructor.RegionToStar, _), Type.Null) => true
-      case (Type.Cst(TypeConstructor.Ref, _), Type.Null) => true
-      case (Type.Cst(TypeConstructor.Relation, _), Type.Null) => true
-      case (Type.Cst(TypeConstructor.Schema, _), Type.Null) => true
-      case (Type.Cst(TypeConstructor.SchemaRowEmpty, _), Type.Null) => true
-      case (Type.Cst(TypeConstructor.SchemaRowExtend(_), _), Type.Null) => true
-      case (Type.Cst(TypeConstructor.Sender, _), Type.Null) => true
-      case (Type.Cst(TypeConstructor.Tuple(_), _), Type.Null) => true
-      case (Type.Cst(TypeConstructor.Vector, _), Type.Null) => true
+      case (tpe, Type.Null) if !isPrimitive(tpe) => true
+    }
+  }
+
+  /**
+   * Returns true iff the given type tpe is a Flix primitive.
+   */
+  private def isPrimitive(tpe: Type)(implicit flix: Flix): Boolean = {
+    tpe match {
+      case baseType: Type.BaseType => true // to check
+      case Type.Cst(TypeConstructor.Unit, _) => true
+      case Type.Cst(TypeConstructor.Null, _) => true
+      case Type.Cst(TypeConstructor.Bool, _) => true
+      case Type.Cst(TypeConstructor.Char, _) => true
+      case Type.Cst(TypeConstructor.Float32, _) => true
+      case Type.Cst(TypeConstructor.Float64, _) => true
+      case Type.Cst(TypeConstructor.BigDecimal, _) => true
+      case Type.Cst(TypeConstructor.Int8, _) => true
+      case Type.Cst(TypeConstructor.Int16, _) => true
+      case Type.Cst(TypeConstructor.Int32, _) => true
+      case Type.Cst(TypeConstructor.Int64, _) => true
+      case Type.Cst(TypeConstructor.BigInt, _) => true
+      case Type.Cst(TypeConstructor.Str, _) => true // to check
+      case Type.Cst(TypeConstructor.True, _) => true
+      case Type.Cst(TypeConstructor.False, _) => true
+      case Type.Cst(TypeConstructor.Not, _) => true
+      case Type.Cst(TypeConstructor.And, _) => true
+      case Type.Cst(TypeConstructor.Or, _) => true
       case _ => false
     }
   }
