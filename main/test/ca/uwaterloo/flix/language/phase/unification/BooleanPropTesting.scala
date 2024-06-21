@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.phase.unification.BooleanPropTesting.RawString.{toRawString, toRawStringEqs}
-import ca.uwaterloo.flix.language.phase.unification.FastSetUnification.Term.{Compl, Cst, ElemSet, Empty, Inter, Union, Var}
+import ca.uwaterloo.flix.language.phase.unification.FastSetUnification.Term.{Compl, Cst, ElemSet, Empty, Inter, Union, Var, mkElemSet}
 import ca.uwaterloo.flix.language.phase.unification.FastSetUnification.{Equation, Term}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
@@ -90,7 +90,7 @@ object BooleanPropTesting {
   }
 
   def main(args: Array[String]): Unit = {
-    testSolvableConstraints(new Random(), explodedRandomXor, 200_000, 50, -1)
+    testSolvableConstraints(new Random(), propagationTesting, -1, 1, -1)
   }
 
   // TODO add testing of t ~ propagation(t)
@@ -101,14 +101,14 @@ object BooleanPropTesting {
       println(s"${tests / 1000}k (${passed / 1000}k passed, $errAmount errs, $timeoutAmount t.o.)")
     }
 
-    // input, verfierError, phase
     val passes: ListBuffer[Int] = ListBuffer.empty
+    // input, verfierError, phase
     val errs: ListBuffer[(List[Equation], Boolean, Int)] = ListBuffer.empty
     val timeouts: ListBuffer[(List[Equation], Int)] = ListBuffer.empty
     var continue = true
     var tests = 0
 
-    while (continue && tests < testLimit) {
+    while (continue && (testLimit <= 0 || tests < testLimit)) {
       if (tests % 10_000 == 0) printProgress(tests, errs.length, timeouts.length)
       tests += 1
       val input = genSolvable(random)
@@ -146,19 +146,20 @@ object BooleanPropTesting {
     }
   }
 
+  def propagationTesting(random: Random): List[Equation] = {
+    val former = termFormer()
+    val t = randomTerm(former, random, 4, 3, 3, 3)
+    List(t ~ FastSetUnification.propagation(t))
+  }
+
   def explodedRandomXor(random: Random): List[Equation] = {
     val former = termFormer()
     val t = randomTerm(former, random, 4, 3, 3, 3)
     explodeKnownEquation(random, xorSelf(t))
   }
 
-  private sealed trait Res {
-    def passed: Boolean = this match {
-      case Res.Pass => true
-      case Res.Fail(_) => false
-      case Res.Timeout => false
-    }
-  }
+  private sealed trait Res
+
   private object Res {
     case object Pass extends Res
     case class Fail(verf: Boolean) extends Res
@@ -334,6 +335,27 @@ object BooleanPropTesting {
       Var(11) ~ Inter(None, Set(), Set(), Option(ElemSet(SortedSet(8))), Set(Cst(1)), Set(), List()),
       Var(10) ~ Union(Option(ElemSet(SortedSet(6))), Set(Cst(2)), Set(Var(3), Var(5), Var(4)), None, Set(), Set(), List()),
       Var(9) ~ Union(Option(ElemSet(SortedSet(8))), Set(Cst(1)), Set(), None, Set(), Set(), List()))
+  }
+
+  private def testCases2(): List[Equation] = {
+    List(Var(24) ~ Var(25),
+      Var(24) ~ Union(None, Set(), Set(), None, Set(), Set(), List(Inter(None, Set(), Set(Var(15), Var(16)), None, Set(), Set(), List()), Inter(None, Set(), Set(Var(23), Var(22)), None, Set(), Set(), List()))),
+      Var(23) ~ Inter(None, Set(), Set(), Some(mkElemSet(8)), Set(Cst(0)), Set(Var(5)), List(Union(Some(mkElemSet(8)), Set(Cst(0)), Set(Var(5), Var(19)), None, Set(), Set(), List()))),
+      Var(22) ~ Union(None, Set(), Set(Var(21)), Some(mkElemSet(8)), Set(), Set(Var(3)), List()),
+      Var(21) ~ Inter(None, Set(), Set(Var(20)), Some(mkElemSet(6)), Set(), Set(), List(Union(None, Set(), Set(), Some(mkElemSet(8)), Set(Cst(0)), Set(), List()))),
+      Var(20) ~ Union(None, Set(), Set(), Some(mkElemSet(8)), Set(), Set(Var(5), Var(4)), List()),
+      Var(19) ~ Inter(Some(mkElemSet(8)), Set(), Set(Var(18), Var(3)), None, Set(), Set(), List()),
+      Var(18) ~ Union(Some(mkElemSet(6)), Set(), Set(Var(17)), None, Set(), Set(), List(Inter(Some(mkElemSet(8)), Set(), Set(Var(5), Var(4)), None, Set(), Set(), List()))),
+      Var(17) ~ Inter(Some(mkElemSet(8)), Set(Cst(0)), Set(), None, Set(), Set(), List()),
+      Var(16) ~ Compl(mkElemSet(8)),
+      Var(15) ~ Inter(None, Set(), Set(Var(12), Var(14)), None, Set(Cst(0)), Set(Var(5)), List()),
+      Var(14) ~ Union(None, Set(), Set(Var(13)), Some(mkElemSet(8)), Set(), Set(Var(3)), List()),
+      Var(13) ~ Inter(None, Set(), Set(), Some(mkElemSet(6)), Set(), Set(), List(Union(None, Set(), Set(), Some(mkElemSet(8)), Set(), Set(Var(5), Var(4)), List()), Union(None, Set(), Set(), Some(mkElemSet(8)), Set(Cst(0)), Set(), List()))),
+      Var(12) ~ Union(Some(mkElemSet(8)), Set(Cst(0)), Set(Var(5)), None, Set(), Set(), List(Inter(Some(mkElemSet(8)), Set(), Set(Var(11), Var(3)), None, Set(), Set(), List()))),
+      Var(11) ~ Union(Some(mkElemSet(6)), Set(), Set(Var(9), Var(10)), None, Set(), Set(), List()),
+      Var(10) ~ Inter(Some(mkElemSet(8)), Set(Cst(0)), Set(), None, Set(), Set(), List()),
+      Var(9) ~ Inter(Some(mkElemSet(8)), Set(), Set(Var(5), Var(4)), None, Set(), Set(), List()),
+      Var(25) ~ Empty)
   }
 
 }
