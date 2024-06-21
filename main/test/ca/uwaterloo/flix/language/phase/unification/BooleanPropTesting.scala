@@ -96,23 +96,26 @@ object BooleanPropTesting {
   // TODO add testing of t ~ propagation(t)
 
   def testSolvableConstraints(random: Random, genSolvable: Random => List[Equation], testLimit: Int, errLimit: Int, timeoutLimit: Int): Boolean = {
+    def printProgress(tests: Int, errAmount: Int, timeoutAmount: Int): Unit = {
+      val passed = tests - errAmount - timeoutAmount
+      println(s"${tests / 1000}k (${passed / 1000}k passed, $errAmount errs, $timeoutAmount t.o.)")
+    }
+
     val errs: ListBuffer[(List[Equation], Boolean)] = ListBuffer.empty
     val errPhaseFrequency = mutable.Map.empty[Int, Int]
     val timeouts: ListBuffer[List[Equation]] = ListBuffer.empty
     val timeoutPhaseFrequence = mutable.Map.empty[Int, Int]
     var continue = true
     var tests = 0
+
     while (continue && tests < testLimit) {
-      if (tests % 10_000 == 0) {
-        val errAmount = errs.length
-        val timeoutAmount = timeouts.length
-        println(s"${tests/1000}k (${(tests-errAmount-timeoutAmount)/1000}k, ${errAmount} errs, ${timeoutAmount} t.o.)")
-      }
+      if (tests % 10_000 == 0) printProgress(tests, errs.length, timeouts.length)
       tests += 1
       val input = genSolvable(random)
       val (res, phase) = runEquations(input)
       res match {
-        case Res.Pass => ()
+        case Res.Pass =>
+          ()
         case Res.Fail(verf) =>
           errs += ((input, verf))
           inc(errPhaseFrequency, phase)
