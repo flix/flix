@@ -839,10 +839,13 @@ object Weeder2 {
             // Case 2: actually a record access
             case ident :: labels =>
               // NB: We only use the source location of the identifier itself.
-              val base = Expr.Ambiguous(Name.mkQName(prefix.map(_.toString), ident.name, ident.loc), ident.loc)
-              Validation.success(labels.foldLeft(base: Expr) {
-                case (acc, label) => Expr.RecordSelect(acc, Name.mkLabel(label), label.loc)
-              })
+              // val base = Expr.Ambiguous(Name.mkQName(prefix.map(_.toString), ident.name, ident.loc), ident.loc)
+              // Validation.success(labels.foldLeft(base: Expr) {
+              //   case (acc, label) => Expr.RecordSelect(acc, Name.mkLabel(label), label.loc)
+              // })
+              val m = IllegalRecordExtensionPattern(ident.loc) // Dummy error
+              val e = Expr.Error(m)
+              Validation.toSoftFailure(e, m)
           }
       }
     }
