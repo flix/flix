@@ -146,14 +146,14 @@ mod File {
         })
 
     ///
-    /// Read up to `length.length` bytes from the file `f`, the bytes are written to the array `buf` at the offset `destOffset`.
+    /// Read up to `length#length` bytes from the file `f`, the bytes are written to the array `buf` at the offset `destOffset`.
     /// This function blocks until at least one byte of data is available.
     ///
     pub def readWith!(destOffset: {destOffset = Int32}, length: {length = Int32}, buf: Array[Int8, r], f: File): Result[IOError, Int32] \ {IO, r} =
         IOError.tryCatch(_ -> {
             import java.io.RandomAccessFile.read(Array[Int8, r], Int32, Int32): Int32 \ {IO, r};
             let File(f1) = f;
-            read(f1, buf, destOffset.destOffset, length.length)
+            read(f1, buf, destOffset#destOffset, length#length)
         })
 
     ///
@@ -168,14 +168,14 @@ mod File {
         })
 
     ///
-    /// Reads `length.length` bytes from the file `f`, the bytes are written to the array `buf` at the offset `destOffset`.
+    /// Reads `length#length` bytes from the file `f`, the bytes are written to the array `buf` at the offset `destOffset`.
     /// This function blocks until the requested length of data is available.
     ///
     pub def readFullyWith!(destOffset: {destOffset = Int32}, length: {length = Int32}, buf: Array[Int8, r], f: File): Result[IOError, Unit] \ {IO, r} =
         IOError.tryCatch(_ -> {
             import java.io.RandomAccessFile.readFully(Array[Int8, r], Int32, Int32): Unit \ {IO, r};
             let File(f1) = f;
-            readFully(f1, buf, destOffset.destOffset, length.length)
+            readFully(f1, buf, destOffset#destOffset, length#length)
         })
 
     ///
@@ -355,14 +355,14 @@ mod File {
         })
 
     ///
-    /// Write to `length.length` bytes to the file `f`, the bytes are read from the
-    /// array `buf` starting at `sourceOffset.sourceOffset`.
+    /// Write to `length#length` bytes to the file `f`, the bytes are read from the
+    /// array `buf` starting at `sourceOffset#sourceOffset`.
     ///
     pub def writeWith!(sourceOffset: {sourceOffset = Int32}, length: {length = Int32}, buf: Array[Int8, r], f: File): Result[IOError, Unit] \ {IO, r} =
         IOError.tryCatch(_ -> {
             import java.io.RandomAccessFile.write(Array[Int8, r], Int32, Int32): Unit \ {IO, r};
             let File(f1) = f;
-            write(f1, buf, sourceOffset.sourceOffset, length.length)
+            write(f1, buf, sourceOffset#sourceOffset, length#length)
         })
 
     ///

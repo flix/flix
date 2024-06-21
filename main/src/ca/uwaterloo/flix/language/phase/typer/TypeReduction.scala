@@ -23,6 +23,7 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 import ca.uwaterloo.flix.util.collection.{ListMap, ListOps}
 
 import java.lang.reflect.Method
+import java.lang.reflect.Constructor
 import java.math.BigInteger
 
 object TypeReduction {
@@ -121,19 +122,18 @@ object TypeReduction {
   }
 
   /**
-   * This is the resolution process of the java method method, member of the class of the java object thisObj.
-   * Returns the return type of the java method according to the type of thisObj and the arguments of the method,
-   * if there exists such a java method.
-   * Otherwise, either the java method could not be found with the given method signature, or, the return type
-   * could not be simplified more at this state of the process.
+   * This is the resolution process of the Java method method, member of the class of the Java object thisObj.
+   * Returns the return type of the Java method according to the type of thisObj and the arguments of the method,
+   * if there exists such a Java method.
+   * Otherwise, either the Java method could not be found with the given method signature, or, there was an ambiguity.
    *
-   * @param thisObj the java object
-   * @param method  the java method, supposedly member of the class of the java object
+   * @param thisObj the Java object
+   * @param method  the Java method, supposedly member of the class of the Java object
    * @param ts      the list containing the type of thisObj and the arguments of the method
-   * @param loc     the location where the java method has been called
-   * @return        A ResolutionResult object that indicates the status of the resolution progress
+   * @param loc     the location where the Java method has been called
+   * @return        A JavaMethodResolutionResult object that indicates the status of the resolution progress
    */
-  def lookupMethod(thisObj: Type, method: String, ts: List[Type], loc: SourceLocation)(implicit flix: Flix): JavaResolutionResult = {
+  def lookupMethod(thisObj: Type, method: String, ts: List[Type], loc: SourceLocation)(implicit flix: Flix): JavaMethodResolutionResult = {
     thisObj match { // there might be a possible factorization
       case Type.Cst(TypeConstructor.Str, _) =>
         val clazz = classOf[String]
@@ -146,23 +146,37 @@ object TypeReduction {
         retrieveMethod(clazz, method, ts, loc)
       case Type.Cst(TypeConstructor.Native(clazz), _) =>
         retrieveMethod(clazz, method, ts, loc)
-      case _ => JavaResolutionResult.MethodNotFound
+      case _ => JavaMethodResolutionResult.MethodNotFound
     }
   }
 
   /**
-   * Helper method to retrieve a method given its name and parameter types.
-   * Returns a JavaResolutionResult either containing the Java method or a MethodNotFound object.
+   * This is the resolution process of the Java constructor designated by a class and the parameter types.
+   * Returns the return type of the Java constructor according, if there exists such a Java constructor.
+   * Otherwise, either the Java constructor could not be found with the given signature or there was an ambiguity.
+   *
+   * @param clazz   the constructor's Java class
+   * @param ts      the list containing the parameter types of the constructor
+   * @param loc     the location where the java constructor has been invoked
+   * @return        A JavaConstructorResolutionResult object that indicates the status of the resolution progress
    */
-  private def retrieveMethod(clazz: Class[_], methodName: String, ts: List[Type], loc: SourceLocation)(implicit flix: Flix): JavaResolutionResult = {
+  def lookupConstructor(clazz: Class[_], ts: List[Type], loc: SourceLocation)(implicit flix: Flix): JavaConstructorResolutionResult = {
+    retrieveConstructor(clazz, ts, loc)
+  }
+
+  /**
+   * Helper method to retrieve a method given its name and parameter types.
+   * Returns a JavaMethodResolutionResult either containing the Java method or a MethodNotFound object.
+   */
+  private def retrieveMethod(clazz: Class[_], methodName: String, ts: List[Type], loc: SourceLocation)(implicit flix: Flix): JavaMethodResolutionResult = {
     // NB: this considers also static methods
-    val candidateMethods = clazz.getMethods.filter(m => isCandidate(m, methodName, ts))
+    val candidateMethods = clazz.getMethods.filter(m => isCandidateMethod(m, methodName, ts))
 
     candidateMethods.length match {
-      case 0 => JavaResolutionResult.MethodNotFound
+      case 0 => JavaMethodResolutionResult.MethodNotFound
       case 1 =>
         val tpe = Type.Cst(TypeConstructor.JvmMethod(candidateMethods.head), loc)
-        JavaResolutionResult.Resolved(tpe)
+        JavaMethodResolutionResult.Resolved(tpe)
       case _ =>
         // Among candidate methods if there already exists the method with the exact signature,
         // we should ignore the rest. E.g.: append(String), append(Object) in SB for the call append("a") should already know to use append(String)
@@ -172,20 +186,48 @@ object TypeReduction {
               case (clazz, tpe) => Type.getFlixType(clazz) == tpe
             })
         exactMethod.length match {
-          case 1 => JavaResolutionResult.Resolved(Type.Cst(TypeConstructor.JvmMethod(exactMethod.head), loc))
-          case _ => JavaResolutionResult.AmbiguousMethod(candidateMethods.toList) // 0 corresponds to no exact method, 2 or higher should be impossible in Java
+          case 1 => JavaMethodResolutionResult.Resolved(Type.Cst(TypeConstructor.JvmMethod(exactMethod.head), loc))
+          case _ => JavaMethodResolutionResult.AmbiguousMethod(candidateMethods.toList) // 0 corresponds to no exact method, 2 or higher should be impossible in Java
         }
     }
   }
 
-  /**
+    /**
+     * Helper method to retrieve a constructor given its parameter types and the class.
+     * Returns a JavaConstructorResolutionResult containing either the constructor, a list of candidate constructors or
+     * a ConstructorNotFound object. The working process is similar to retrieveMethod and differs in the selection of candidate constructors.
+     */
+  private def retrieveConstructor(clazz: Class[_], ts: List[Type], loc: SourceLocation)(implicit flix: Flix): JavaConstructorResolutionResult = {
+    val candidateConstructors = clazz.getConstructors.filter(c => isCandidateConstructor(c, ts))
+
+    candidateConstructors.length match {
+      case 0 => JavaConstructorResolutionResult.ConstructorNotFound
+      case 1 =>
+        val tpe = Type.Cst(TypeConstructor.JvmConstructor(candidateConstructors.head), loc)
+        JavaConstructorResolutionResult.Resolved(tpe)
+      case _ =>
+        // Among candidate constructors if there already exists the one with the exact signature,
+        // we should ignore the rest.
+        val exactConstructor = candidateConstructors
+          .filter(c => // Parameter types correspondence with subtyping
+            (c.getParameterTypes zip ts).forall {
+              case (clazz, tpe) => Type.getFlixType(clazz) == tpe
+            })
+        exactConstructor.length match {
+          case 1 => JavaConstructorResolutionResult.Resolved(Type.Cst(TypeConstructor.JvmConstructor(exactConstructor.head), loc))
+          case _ => JavaConstructorResolutionResult.AmbiguousConstructor(candidateConstructors.toList) // 0 corresponds to no exact constructor, 2 or higher should be impossible in Java
+        }
+    }
+  }
+
+    /**
    * Helper method that returns if the given method is a candidate method given a signature.
    *
    * @param cand       a candidate method
    * @param methodName the potential candidate method's name
    * @param ts         the list of parameter types of the potential candidate method
    */
-  private def isCandidate(cand: Method, methodName: String, ts: List[Type])(implicit flix: Flix): Boolean =
+  private def isCandidateMethod(cand: Method, methodName: String, ts: List[Type])(implicit flix: Flix): Boolean =
     (cand.getName == methodName) &&
     (cand.getParameterCount == ts.length) &&
     // Parameter types correspondance with subtyping
@@ -194,7 +236,18 @@ object TypeReduction {
     } &&
     // NB: once methods with same signatures have been filtered out, we should remove super-methods duplicates
     // if the superclass is abstract or ignore if it is a primitive type, e.g., void
-    (cand.getReturnType.isPrimitive || !java.lang.reflect.Modifier.isAbstract(cand.getReturnType.getModifiers)) // temporary to avoid superclass abstract duplicate
+    (cand.getReturnType.isPrimitive ||
+      java.lang.reflect.Modifier.isInterface(cand.getReturnType.getModifiers) || // interfaces are considered primitives
+      !java.lang.reflect.Modifier.isAbstract(cand.getReturnType.getModifiers)) // temporary to avoid superclass abstract duplicate
+
+  /**
+   * Helper method that returns if the given constructor is a candidate constructor given a signature.
+   */
+  private def isCandidateConstructor(cand: Constructor[_], ts: List[Type])(implicit flix: Flix): Boolean =
+    (cand.getParameterCount == ts.length) &&
+    (cand.getParameterTypes zip ts).forall {
+      case (clazz, tpe) => isSubtype(tpe, Type.getFlixType(clazz))
+    }
 
   /**
    * Helper method to define a sub-typing relation between two given Flix types.
@@ -221,10 +274,26 @@ object TypeReduction {
    * 2. AmbiguousMethod: The resolution lacked some elements to find a java method among a set of methods.
    * 3. MethodNotFound(): The resolution failed to find a corresponding java method.
    */
-  sealed trait JavaResolutionResult
-  object JavaResolutionResult {
-    case class Resolved(tpe: Type) extends JavaResolutionResult
-    case class AmbiguousMethod(methods: List[Method]) extends JavaResolutionResult
-    case object MethodNotFound extends JavaResolutionResult
+  sealed trait JavaMethodResolutionResult
+  object JavaMethodResolutionResult {
+    case class Resolved(tpe: Type) extends JavaMethodResolutionResult
+    case class AmbiguousMethod(methods: List[Method]) extends JavaMethodResolutionResult
+    case object MethodNotFound extends JavaMethodResolutionResult
   }
+
+    /**
+     * Represents the result of a resolution process of a java constructor.
+     *
+     * There are three possible outcomes:
+     *
+     * 1. Resolved(tpe): Indicates that there was some progress in the resolution and returns a simplified type of the java constructor.
+     * 2. AmbiguousConstructor: The resolution lacked some elements to find a java constructor among a set of constructors.
+     * 3. ConstructorNotFound(): The resolution failed to find a corresponding java constructor.
+     */
+    sealed trait JavaConstructorResolutionResult
+    object JavaConstructorResolutionResult {
+      case class Resolved(tpe: Type) extends JavaConstructorResolutionResult
+      case class AmbiguousConstructor(constructors: List[Constructor[_]]) extends JavaConstructorResolutionResult
+      case object ConstructorNotFound extends JavaConstructorResolutionResult
+    }
 }

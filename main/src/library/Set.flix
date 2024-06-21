@@ -492,7 +492,7 @@ mod Set {
     /// Note: The returned set may be smaller than `s`.
     ///
     pub def replace(src: {src = a}, dst: {dst = a}, s: Set[a]): Set[a] with Order[a] =
-        if (memberOf(src.src, s)) insert(dst.dst, remove(src.src, s)) else s
+        if (memberOf(src#src, s)) insert(dst#dst, remove(src#src, s)) else s
 
     ///
     /// Returns a pair of sets `(s1, s2)`.
