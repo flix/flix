@@ -557,6 +557,31 @@ object WeederError {
   }
 
   /**
+    * An error raised to indicate that a record label was selected using a dot.
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class IllegalRecordSelectSyntax(loc: SourceLocation) extends WeederError with Recoverable {
+
+    override def summary: String = "The '#' is used for record label selection."
+
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s""">> Unexpected record label selection syntax.
+         |
+         |${code(loc, "The '#' is used for record label selection.")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} The dot syntax is reserved for Java interoperability, whereas the '#' symbol is used for record selection."
+    })
+  }
+
+
+  /**
     * An error raised to indicate an illegal regex pattern.
     *
     * @param loc the location where the illegal regex pattern occurs.
