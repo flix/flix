@@ -823,9 +823,9 @@ object Namer {
         case e => NamedAst.Expr.Ascribe(e, t, ef, loc)
       }
 
-    case DesugaredAst.Expr.InstanceOf(exp, qname, loc) =>
+    case DesugaredAst.Expr.InstanceOf(exp, className, loc) =>
       mapN(visitExp(exp, ns0)) {
-        case e => NamedAst.Expr.InstanceOf(e, qname, loc)
+        case e => NamedAst.Expr.InstanceOf(e, className, loc)
       }
 
     case DesugaredAst.Expr.CheckedCast(c, exp, loc) =>
