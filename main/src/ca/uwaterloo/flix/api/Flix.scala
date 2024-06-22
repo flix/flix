@@ -394,7 +394,7 @@ class Flix {
       throw new IllegalArgumentException(s"'$p' must be a readable file.")
 
     jarLoader.addURL(p.toUri.toURL)
-    extendClassNames(p)
+    extendKnownJavaClassAndInterfaces(p)
     this
   }
 
@@ -677,7 +677,7 @@ class Flix {
   /**
     * Extends the set of known Java classes and interfaces with those in the given JAR-file `p`.
     */
-  private def extendClassNames(p: Path): Unit = {
+  private def extendKnownJavaClassAndInterfaces(p: Path): Unit = {
     knownClassesAndInterfaces = knownClassesAndInterfaces ++ getPackageContent(getClassesAndInterfacesOfJar(p))
   }
 
