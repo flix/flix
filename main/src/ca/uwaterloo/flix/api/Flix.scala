@@ -77,7 +77,7 @@ class Flix {
   private var changeSet: ChangeSet = ChangeSet.Everything
 
   /**
-    * The set of known Java classes (and interfaces).
+    * The set of known Java classes and interfaces.
     */
   private var knownClassesAndInterfaces: MultiMap[List[String], String] = getJavaPlatformClassesAndInterfaces()
 
