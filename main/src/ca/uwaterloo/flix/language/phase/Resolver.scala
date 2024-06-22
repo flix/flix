@@ -1322,7 +1322,7 @@ object Resolver {
           }
 
         case NamedAst.Expr.InstanceOf(exp, className, loc) =>
-          lookupJvmClass(className, loc) match {
+          lookupJvmClass2(className, env0, loc) match {
             case Result.Ok(clazz) => mapN(visitExp(exp, env0)) {
               e => ResolvedAst.Expr.InstanceOf(e, clazz, loc)
             }
@@ -1353,7 +1353,7 @@ object Resolver {
           val rulesVal = traverse(rules) {
             case NamedAst.CatchRule(sym, className, body) =>
               val env = env0 ++ mkVarEnv(sym)
-              val clazzVal = lookupJvmClass(className, sym.loc).toValidation
+              val clazzVal = lookupJvmClass2(className, env0, sym.loc).toValidation
               val bVal = visitExp(body, env)
               mapN(clazzVal, bVal) {
                 case (clazz, b) => ResolvedAst.CatchRule(sym, clazz, b)
@@ -1423,13 +1423,14 @@ object Resolver {
         case NamedAst.Expr.InvokeConstructor2(clazzName, exps, loc) =>
           val esVal = traverse(exps)(visitExp(_, env0))
           flatMapN(esVal) {
-            es => env0.get(clazzName.name) match {
-              case Some(List(Resolution.JavaClass(clazz))) =>
-                Validation.success(ResolvedAst.Expr.InvokeConstructor2(clazz, es, loc))
-              case _ =>
-                val m = ResolutionError.UndefinedJvmClass(clazzName.name, "", loc)
-                Validation.toSoftFailure(ResolvedAst.Expr.Error(m), m)
-            }
+            es =>
+              env0.get(clazzName.name) match {
+                case Some(List(Resolution.JavaClass(clazz))) =>
+                  Validation.success(ResolvedAst.Expr.InvokeConstructor2(clazz, es, loc))
+                case _ =>
+                  val m = ResolutionError.UndefinedJvmClass(clazzName.name, "", loc)
+                  Validation.toSoftFailure(ResolvedAst.Expr.Error(m), m)
+              }
           }
 
         case NamedAst.Expr.InvokeMethod2(exp, name, exps, loc) =>
@@ -1443,17 +1444,18 @@ object Resolver {
         case NamedAst.Expr.InvokeStaticMethod2(clazzName, methodName, exps, loc) =>
           val esVal = traverse(exps)(visitExp(_, env0))
           flatMapN(esVal) {
-            es => env0.get(clazzName.name) match {
-              case Some(List(Resolution.JavaClass(clazz))) =>
-                Validation.success(ResolvedAst.Expr.InvokeStaticMethod2(clazz, methodName, es, loc))
-              case _ =>
-                val m = ResolutionError.UndefinedJvmClass(clazzName.name, "", loc)
-                Validation.toSoftFailure(ResolvedAst.Expr.Error(m), m)
-            }
+            es =>
+              env0.get(clazzName.name) match {
+                case Some(List(Resolution.JavaClass(clazz))) =>
+                  Validation.success(ResolvedAst.Expr.InvokeStaticMethod2(clazz, methodName, es, loc))
+                case _ =>
+                  val m = ResolutionError.UndefinedJvmClass(clazzName.name, "", loc)
+                  Validation.toSoftFailure(ResolvedAst.Expr.Error(m), m)
+              }
           }
 
         case NamedAst.Expr.InvokeConstructor(className, args, sig, loc) =>
-          lookupJvmClass(className, loc) match {
+          lookupJvmClass2(className, env0, loc) match {
             case Result.Ok(clazz) =>
               val argsVal = traverse(args)(visitExp(_, env0))
               val sigVal = traverse(sig)(resolveType(_, Wildness.ForbidWild, env0, taenv, ns0, root))
@@ -1475,7 +1477,7 @@ object Resolver {
           val argsVal = traverse(args)(visitExp(_, env0))
           val sigVal = traverse(sig)(resolveType(_, Wildness.ForbidWild, env0, taenv, ns0, root))
           val retVal = resolveType(retTpe, Wildness.ForbidWild, env0, taenv, ns0, root)
-          val clazzVal = lookupJvmClass(className, loc).toValidation
+          val clazzVal = lookupJvmClass2(className, env0, loc).toValidation
           flatMapN(sigVal, expVal, argsVal, retVal, clazzVal) {
             case (signature, e, as, ret, clazz) =>
               flatMapN(lookupSignature(signature, loc)) {
@@ -1491,7 +1493,7 @@ object Resolver {
           val argsVal = traverse(args)(visitExp(_, env0))
           val sigVal = traverse(sig)(resolveType(_, Wildness.ForbidWild, env0, taenv, ns0, root))
           val retVal = resolveType(retTpe, Wildness.ForbidWild, env0, taenv, ns0, root)
-          val clazzVal = lookupJvmClass(className, loc).toValidation
+          val clazzVal = lookupJvmClass2(className, env0, loc).toValidation
           flatMapN(sigVal, argsVal, retVal, clazzVal) {
             case (signature, as, ret, clazz) =>
               flatMapN(lookupSignature(signature, loc)) {
@@ -3175,6 +3177,19 @@ object Resolver {
   }
 
   /**
+    * Returns the class reflection object for the given `className`.
+    */
+  private def lookupJvmClass2(className: String, env0: ListMap[String, Resolution], loc: SourceLocation)(implicit flix: Flix): Result[Class[_], ResolutionError with Recoverable] = {
+    lookupJvmClass(className, loc) match {
+      case Result.Ok(clazz) => Result.Ok(clazz)
+      case Result.Err(e) => env0.get(className) match {
+        case Some(List(Resolution.JavaClass(clazz))) => Result.Ok(clazz)
+        case _ => Result.Err(e)
+      }
+    }
+  }
+
+  /**
     * Returns the constructor reflection object for the given `clazz` and `signature`.
     */
   private def lookupJvmConstructor(clazz: Class[_], signature: List[Class[_]], loc: SourceLocation)(implicit flix: Flix): Result[Constructor[_], ResolutionError with Recoverable] = {
@@ -3338,7 +3353,6 @@ object Resolver {
         case TypeConstructor.Record => Result.Ok(Class.forName("java.lang.Object"))
 
         case TypeConstructor.Schema => Result.Ok(Class.forName("java.lang.Object"))
-
 
 
         case TypeConstructor.True => Result.Err(ResolutionError.IllegalType(tpe, loc))
