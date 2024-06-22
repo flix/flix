@@ -3176,7 +3176,7 @@ object Resolver {
     case ex: NoClassDefFoundError => lookUpJvmClassInImport(className, loc, ns0, root)
   }
 
-  private def lookUpJvmClassInImport(className: String, loc: SourceLocation, ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Result[Class[_], ResolutionError with Recoverable] = {
+  private def lookUpJvmClassInImport(className: String, loc: SourceLocation, ns0: Name.NName)(implicit flix: Flix, root: NamedAst.Root): Result[Class[_], ResolutionError with Recoverable] = {
     val imports = root.uses.getOrElse(ns0, Nil)
     val importedClazzName = imports.find {
       case NamedAst.UseOrImport.Import(_, alias, _) => alias.name == className
