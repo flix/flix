@@ -419,9 +419,17 @@ object TypeReconstruction {
       val eff = Type.mkUnion(eff1 :: es.map(_.eff), loc)
       TypedAst.Expr.Do(op, es, tpe, eff, loc)
 
-    case KindedAst.Expr.InvokeConstructor2(clazz, exps, loc) =>
+    case KindedAst.Expr.InvokeConstructor2(clazz, exps, cvar, evar, loc) =>
       val es = exps.map(visitExp)
-      throw InternalCompilerException(s"Unexpected InvokeConstructor2 call.", loc)
+      val constructorTpe = subst(cvar)
+      val tpe = Type.getFlixType(clazz)
+      val eff = subst(evar)
+      constructorTpe match {
+        case Type.Cst(TypeConstructor.JvmConstructor(constructor), loc) =>
+          TypedAst.Expr.InvokeConstructor(constructor, es, tpe, eff, loc)
+        case _ =>
+          TypedAst.Expr.Error(TypeError.UnresolvedConstructor(loc), tpe, eff)
+      }
 
     case KindedAst.Expr.InvokeMethod2(exp, _, exps, mvar, tvar, evar, loc) =>
       val e = visitExp(exp)
@@ -436,9 +444,17 @@ object TypeReconstruction {
           TypedAst.Expr.Error(TypeError.UnresolvedMethod(loc), methodTpe, eff)
       }
 
-    case KindedAst.Expr.InvokeStaticMethod2(clazz, methodName, exps, loc) =>
+    case KindedAst.Expr.InvokeStaticMethod2(_, _, exps, mvar, tvar, evar, loc) =>
       val es = exps.map(visitExp)
-      throw InternalCompilerException(s"Unexpected InvokeStaticMethod2 call.", loc)
+      val methodTpe = subst(mvar)
+      val returnTpe = subst(tvar)
+      val eff = subst(evar)
+      methodTpe match {
+        case Type.Cst(TypeConstructor.JvmMethod(method), loc) =>
+          TypedAst.Expr.InvokeStaticMethod(method, es, returnTpe, eff, loc)
+        case _ =>
+          TypedAst.Expr.Error(TypeError.UnresolvedMethod(loc), methodTpe, eff) // TODO INTEROP: UnresolvedStaticMethod ?
+      }
 
     case KindedAst.Expr.InvokeConstructor(constructor, args, loc) =>
       val as = args.map(visitExp(_))

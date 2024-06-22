@@ -260,22 +260,6 @@ object TypeConstructor {
   }
 
   /**
-   * A type constructor that represents the _return type_ of a Java static method.
-   *
-   * A static method return type can be resolved when the argument types are known.
-   *
-   * A few examples:
-   *
-   * - The type: `Apply(InvokeStaticMethod(String.class, "valueOf", 1), Bool)` is equivalent to `String`.
-   * - The type: `Apply(InvokeStaticMethod(String.class, "valueOf", 1), Char)` is equivalent to `String`.
-   *
-   * The type constructor does not require any arguments.
-   */
-  case class StaticMethodReturnType(clazz: Class[_], name: String, arity: Int) extends TypeConstructor {
-    def kind: Kind = Kind.mkArrow(arity)
-  }
-
-  /**
    * A type constructor that represents the _return type_ of a Java method.
    *
    * A method return type can be resolved when the receiver object and argument types are known.
