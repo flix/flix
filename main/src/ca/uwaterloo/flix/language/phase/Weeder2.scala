@@ -1142,7 +1142,13 @@ object Weeder2 {
             case "::" => Validation.success(Expr.FCons(e1, e2, tree.loc))
             case ":::" => Validation.success(Expr.FAppend(e1, e2, tree.loc))
             case "<+>" => Validation.success(Expr.FixpointMerge(e1, e2, tree.loc))
-            case "instanceof" => mapN(tryPickJavaName(exprs(1)))(Expr.InstanceOf(e1, _, tree.loc))
+            case "instanceof" =>
+              flatMapN(pickQName(exprs(1))) {
+                case qname if qname.isUnqualified => Validation.success(Expr.InstanceOf(e1, qname.ident, tree.loc))
+                case _ =>
+                  val m = IllegalQualifiedName(exprs(1).loc)
+                  Validation.toSoftFailure(Expr.Error(m), m)
+              }
             // UNRECOGNIZED
             case id =>
               val ident = Name.Ident(id, op.loc)
@@ -1697,7 +1703,7 @@ object Weeder2 {
           case WeededAst.Type.Ambiguous(qname, _) if qname.isUnqualified =>
             Validation.success(Expr.InvokeConstructor2(qname.ident, exps, tree.loc))
           case _ =>
-            val m = IllegalQualifiedNameInInvokeConstructor(tree.loc)
+            val m = IllegalQualifiedName(tree.loc)
             Validation.toSoftFailure(Expr.Error(m), m)
         }
       }

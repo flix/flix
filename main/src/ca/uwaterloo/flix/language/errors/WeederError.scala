@@ -654,16 +654,16 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate an illegal qualified name in an invoke constructor expression.
+    * An error raised to indicate an illegal qualified name.
     *
     * @param loc the location of the illegal qualified name.
     */
-  case class IllegalQualifiedNameInInvokeConstructor(loc: SourceLocation) extends WeederError with Recoverable {
-    override def summary: String = "Unexpected qualified name in new expression"
+  case class IllegalQualifiedName(loc: SourceLocation) extends WeederError with Recoverable {
+    override def summary: String = "Unexpected qualified name"
 
     override def message(formatter: Formatter): String = {
       import formatter._
-      s""">> Unexpected qualified name in new expression.
+      s""">> Unexpected qualified name.
          |
          |${code(loc, "illegal qualified name")}
          |
