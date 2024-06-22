@@ -77,9 +77,9 @@ class Flix {
   private var changeSet: ChangeSet = ChangeSet.Everything
 
   /**
-    * The set of available Java classes (and interfaces).
+    * The set of known Java classes (and interfaces).
     */
-  private var classes: MultiMap[List[String], String] = getJavaPlatformClasses()
+  private var knownClassesAndInterfaces: MultiMap[List[String], String] = getJavaPlatformClassesAndInterfaces()
 
   /**
     * A cache of ASTs for incremental compilation.
@@ -490,7 +490,7 @@ class Flix {
 
     /** Remember to update [[AstPrinter]] about the list of phases. */
     val result = for {
-      afterReader <- Reader.run(getInputs, classes)
+      afterReader <- Reader.run(getInputs, knownClassesAndInterfaces)
       afterLexer <- Lexer.run(afterReader, cachedLexerTokens, changeSet)
       afterParser <- Parser2.run(afterLexer, cachedParserCst, changeSet)
       afterWeeder <- Weeder2.run(afterReader, entryPoint, afterParser, cachedWeederAst, changeSet)
@@ -675,24 +675,23 @@ class Flix {
   }
 
   /**
-    * Extends the set of known Java classes (and interfaces) with those in the given JAR-file `p`.
+    * Extends the set of known Java classes and interfaces with those in the given JAR-file `p`.
     */
   private def extendClassNames(p: Path): Unit = {
-    classes = classes ++ classes2MultiMap(getJarClasses(p))
+    knownClassesAndInterfaces = knownClassesAndInterfaces ++ getPackageContent(getClassesAndInterfacesOfJar(p))
   }
 
   /**
-    * Returns all Java classes (and interfaces) in the current Java Platform.
+    * Returns all Java classes and interfaces in the current Java Platform.
     */
-  private def getJavaPlatformClasses(): MultiMap[List[String], String] = {
-    val javaPlatformClasses = ClassList.TheList
-    classes2MultiMap(javaPlatformClasses)
+  private def getJavaPlatformClassesAndInterfaces(): MultiMap[List[String], String] = {
+    getPackageContent(ClassList.TheList)
   }
 
   /**
-    * Returns the names of all classes (and interfaces) in the given JAR-file `p`.
+    * Returns the names of all classes and interfaces in the given JAR-file `p`.
     */
-  private def getJarClasses(p: Path): List[String] = {
+  private def getClassesAndInterfacesOfJar(p: Path): List[String] = {
     Using(new ZipFile(p.toFile)) { zip =>
       val result = mutable.ListBuffer.empty[String]
       val iterator = zip.entries()
@@ -708,9 +707,9 @@ class Flix {
   }
 
   /**
-    * Returns the list of Java classes (and interfaces) as a multimap from packages to their content.
+    * Returns a multimap from Java packages to sub-packages, classes, and interfaces.
     */
-  private def classes2MultiMap(l: List[String]): MultiMap[List[String], String] = {
+  private def getPackageContent(l: List[String]): MultiMap[List[String], String] = {
     l.foldLeft[MultiMap[List[String], String]](MultiMap.empty) {
       case (acc, clazz) =>
         // Given a string `java/util/zip/ZipUtils.class` we convert it to the list `java :: util :: zip :: ZipUtils`.
