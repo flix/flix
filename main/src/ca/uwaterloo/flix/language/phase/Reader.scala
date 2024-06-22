@@ -37,7 +37,7 @@ object Reader {
   /**
     * Reads the given source inputs into memory.
     */
-  def run(inputs: List[Input], classes: MultiMap[List[String], String])(implicit flix: Flix): Validation[ReadAst.Root, CompilationMessage] =
+  def run(inputs: List[Input], names: MultiMap[List[String], String])(implicit flix: Flix): Validation[ReadAst.Root, CompilationMessage] =
     flix.phase("Reader") {
 
       val result = mutable.Map.empty[Source, Unit]
@@ -62,7 +62,7 @@ object Reader {
       }
 
       val sources = result.toMap
-      Validation.success(ReadAst.Root(sources, classes))
+      Validation.success(ReadAst.Root(sources, names))
     }(DebugValidation()(DebugNoOp()))
 
   /**
