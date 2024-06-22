@@ -663,7 +663,7 @@ object WeederError {
 
     override def message(formatter: Formatter): String = {
       import formatter._
-      s""">> Unexpected qualified nam.
+      s""">> Unexpected qualified name.
          |
          |${code(loc, "illegal qualified name")}
          |
