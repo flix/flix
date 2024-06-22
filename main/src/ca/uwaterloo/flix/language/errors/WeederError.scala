@@ -569,7 +569,7 @@ object WeederError {
       import formatter._
       s""">> Unexpected record label selection syntax.
          |
-         |${code(loc, "The '#' is used for record label selection.")}
+         |${code(loc, "The '#' symbol is used for record label selection.")}
          |
          |""".stripMargin
     }
