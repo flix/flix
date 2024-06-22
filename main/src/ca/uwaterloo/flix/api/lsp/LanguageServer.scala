@@ -106,6 +106,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
     */
   override def onOpen(ws: WebSocket, ch: ClientHandshake): Unit = {
     /* nop */
+    ws.send("{\"capabilities\":{\"completionProvider\":{\"triggerCharacters\":['#', '.', ':']}}}")
     Console.println(s"Client at '${ws.getRemoteSocketAddress}' connected.")
   }
 
