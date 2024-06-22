@@ -444,9 +444,17 @@ object TypeReconstruction {
           TypedAst.Expr.Error(TypeError.UnresolvedMethod(loc), methodTpe, eff)
       }
 
-    case KindedAst.Expr.InvokeStaticMethod2(clazz, methodName, exps, loc) =>
+    case KindedAst.Expr.InvokeStaticMethod2(_, _, exps, mvar, tvar, evar, loc) =>
       val es = exps.map(visitExp)
-      throw InternalCompilerException(s"Unexpected InvokeStaticMethod2 call.", loc)
+      val methodTpe = subst(mvar)
+      val returnTpe = subst(tvar)
+      val eff = subst(evar)
+      methodTpe match {
+        case Type.Cst(TypeConstructor.JvmMethod(method), loc) =>
+          TypedAst.Expr.InvokeStaticMethod(method, es, returnTpe, eff, loc)
+        case _ =>
+          TypedAst.Expr.Error(TypeError.UnresolvedMethod(loc), methodTpe, eff) // TODO INTEROP: UnresolvedStaticMethod ?
+      }
 
     case KindedAst.Expr.InvokeConstructor(constructor, args, loc) =>
       val as = args.map(visitExp(_))

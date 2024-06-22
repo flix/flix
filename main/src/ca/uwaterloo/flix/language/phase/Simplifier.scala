@@ -331,9 +331,6 @@ object Simplifier {
           case TypeConstructor.MethodReturnType =>
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
 
-          case TypeConstructor.StaticMethodReturnType(_, _, _) =>
-            throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
-
           case TypeConstructor.JvmConstructor(_) =>
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
 
