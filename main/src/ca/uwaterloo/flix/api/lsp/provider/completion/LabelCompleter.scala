@@ -36,7 +36,7 @@ object LabelCompleter extends Completer {
 
     val regex = raw"(.*)#.*".r
 
-    println(s"context.word is: ${context.word}")
+    println(s"context.word is: ${if (context.word.isBlank) "<the empty string>" else context.word}")
     println(s"regex matches: ${regex.matches(context.word)}")
 
     context.word match {
