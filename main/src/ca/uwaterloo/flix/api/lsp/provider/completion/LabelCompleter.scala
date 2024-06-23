@@ -41,8 +41,7 @@ object LabelCompleter extends Completer {
             case (label, _) =>
               Completion.LabelCompletion(label, prefix)
           }
-      case _ =>
-        Nil
+      case _ => Nil
     }
   }
 
