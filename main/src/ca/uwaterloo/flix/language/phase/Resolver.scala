@@ -1456,7 +1456,7 @@ object Resolver {
           }
 
         case NamedAst.Expr.InvokeConstructor(className, args, sig, loc) =>
-          lookupJvmClass(className, env0, loc) match {
+          lookupJvmClass(className, loc) match {
             case Result.Ok(clazz) =>
               val argsVal = traverse(args)(visitExp(_, env0))
               val sigVal = traverse(sig)(resolveType(_, Wildness.ForbidWild, env0, taenv, ns0, root))
@@ -1478,7 +1478,7 @@ object Resolver {
           val argsVal = traverse(args)(visitExp(_, env0))
           val sigVal = traverse(sig)(resolveType(_, Wildness.ForbidWild, env0, taenv, ns0, root))
           val retVal = resolveType(retTpe, Wildness.ForbidWild, env0, taenv, ns0, root)
-          val clazzVal = lookupJvmClass(className, env0, loc).toValidation
+          val clazzVal = lookupJvmClass(className, loc).toValidation
           flatMapN(sigVal, expVal, argsVal, retVal, clazzVal) {
             case (signature, e, as, ret, clazz) =>
               flatMapN(lookupSignature(signature, loc)) {
@@ -1494,7 +1494,7 @@ object Resolver {
           val argsVal = traverse(args)(visitExp(_, env0))
           val sigVal = traverse(sig)(resolveType(_, Wildness.ForbidWild, env0, taenv, ns0, root))
           val retVal = resolveType(retTpe, Wildness.ForbidWild, env0, taenv, ns0, root)
-          val clazzVal = lookupJvmClass(className, env0, loc).toValidation
+          val clazzVal = lookupJvmClass(className, loc).toValidation
           flatMapN(sigVal, argsVal, retVal, clazzVal) {
             case (signature, as, ret, clazz) =>
               flatMapN(lookupSignature(signature, loc)) {
