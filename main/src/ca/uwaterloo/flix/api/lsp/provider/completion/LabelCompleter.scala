@@ -37,7 +37,8 @@ object LabelCompleter extends Completer {
     val regex = raw"(.*)#.*".r
 
     println(s"context.word is: ${if (context.word.isBlank) "<the empty string>" else context.word}")
-    println(s"regex matches: ${regex.matches(context.word)}")
+    println(s"regex matches word: ${regex.matches(context.word)}")
+    println(s"regex matches prefix: ${regex.matches(context.prefix)}")
 
     context.word match {
       case regex(prefix) if isFirstCharLowerCase(prefix) =>
@@ -48,6 +49,9 @@ object LabelCompleter extends Completer {
             case (label, _) =>
               Completion.LabelCompletion(label, prefix)
           }
+      case regex(prefix) =>
+        println(s"case regex(prefix) => $prefix")
+        Nil
       case _ =>
         println("Entered Nil suggestion path")
         Nil
