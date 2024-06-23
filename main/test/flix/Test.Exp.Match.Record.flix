@@ -219,7 +219,7 @@ mod Test.Exp.Match.Record {
     }
     @test
     def testExtensionLabels01(): Bool = match { a = true, b = true } {
-        case { a | r } => a and r.b
+        case { a | r } => a and r#b
     }
 
     @test
