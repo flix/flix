@@ -254,12 +254,12 @@ mod Test.Exp.Match.Record {
 
     @test
     def testDuplicateLabelsWithExtensionLabels01(): Bool = match { a = false, a = true, a = 42 } {
-        case { a = x, a = y | r } => ((not x) and y) and r.a == 42
+        case { a = x, a = y | r } => ((not x) and y) and r#a == 42
     }
 
     @test
     def testDuplicateLabelsWithExtensionLabels02(): Bool = match { a = false, a = true, a = 42, a = 3 } {
-        case { a = x, a = y | r } => ((not x) and y) and r.a == 42
+        case { a = x, a = y | r } => ((not x) and y) and r#a == 42
     }
 
 }
