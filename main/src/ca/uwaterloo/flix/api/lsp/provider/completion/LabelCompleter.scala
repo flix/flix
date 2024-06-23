@@ -27,21 +27,27 @@ object LabelCompleter extends Completer {
     */
   override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[LabelCompletion] = {
     // Do not get label completions if we are importing or using.
+    println("Entered LabelCompleter")
     if (context.prefix.contains("import") || context.prefix.contains("use")) {
       return Nil
     }
+
+    println("Not in import or use context")
 
     val regex = raw"(.*)#.*".r
 
     context.word match {
       case regex(prefix) if isFirstCharLowerCase(prefix) =>
+        println("Entered good suggestion path")
         index.labelDefs.m.concat(index.labelUses.m)
           .filter { case (_, locs) => locs.exists(loc => loc.source.name == context.uri) }
           .map {
             case (label, _) =>
               Completion.LabelCompletion(label, prefix)
           }
-      case _ => Nil
+      case _ =>
+        println("Entered Nil suggestion path")
+        Nil
     }
   }
 
