@@ -16,50 +16,57 @@
 
 mod Test.Exp.Instanceof {
 
-    import java.lang.{CharSequence, Enum, Long, Object, String => JString, StringBuilder => JStringBuilder}
-    import java.math.{BigInteger, Number}
-    import java.nio.file.{OpenOption, StandardOpenOption}
+    import java.lang.{CharSequence => JCharSequence}
+    import java.lang.{Enum => JEnum}
+    import java.lang.{Long => JLong}
+    import java.lang.{Number => JNumber}
+    import java.lang.{Object => JObject}
+    import java.lang.{String => JString}
+    import java.lang.StringBuilder
+    import java.math.BigInteger
+    import java.nio.file.StandardOpenOption
+    import java.nio.file.OpenOption
 
     @test
     def testInstanceof01(): Bool = "Hello World" instanceof JString
 
     @test
-    def testInstanceof02(): Bool = "Hello World" instanceof CharSequence
+    def testInstanceof02(): Bool = "Hello World" instanceof JCharSequence
 
     @test
-    def testInstanceof03(): Bool = "Hello World" instanceof Object
+    def testInstanceof03(): Bool = "Hello World" instanceof JObject
 
     @test
     def testInstanceof04(): Bool = 100ii instanceof BigInteger
 
     @test
-    def testInstanceof05(): Bool = 100ii instanceof Number
+    def testInstanceof05(): Bool = 100ii instanceof JNumber
 
     @test
-    def testInstanceof06(): Bool = 100ii instanceof Object
+    def testInstanceof06(): Bool = 100ii instanceof JObject
 
     @test
     def testInstanceof07(): Bool =
-        import static java_get_field java.nio.file.StandardOpenOption.DELETE_ON_CLOSE: StandardOpenOption \ {} as get_DELETE_ON_CLOSE;
+        import static java_get_field java.nio.file.StandardOpenOption.DELETE_ON_CLOSE: ##java.nio.file.StandardOpenOption \ {} as get_DELETE_ON_CLOSE;
         get_DELETE_ON_CLOSE() instanceof StandardOpenOption
 
     @test
     def testInstanceof08(): Bool =
-        import static java_get_field java.nio.file.StandardOpenOption.DELETE_ON_CLOSE: StandardOpenOption \ {} as get_DELETE_ON_CLOSE;
+        import static java_get_field java.nio.file.StandardOpenOption.DELETE_ON_CLOSE: ##java.nio.file.StandardOpenOption \ {} as get_DELETE_ON_CLOSE;
         get_DELETE_ON_CLOSE() instanceof OpenOption
 
     @test
     def testInstanceof09(): Bool =
-        import static java_get_field java.nio.file.StandardOpenOption.DELETE_ON_CLOSE: StandardOpenOption \ {} as get_DELETE_ON_CLOSE;
-        get_DELETE_ON_CLOSE() instanceof Enum
+        import static java_get_field java.nio.file.StandardOpenOption.DELETE_ON_CLOSE: ##java.nio.file.StandardOpenOption \ {} as get_DELETE_ON_CLOSE;
+        get_DELETE_ON_CLOSE() instanceof JEnum
 
     @test
     def testInstanceof10(): Bool =
-        import static java_get_field java.nio.file.StandardOpenOption.DELETE_ON_CLOSE: StandardOpenOption \ {} as get_DELETE_ON_CLOSE;
-        get_DELETE_ON_CLOSE() instanceof Object
+        import static java_get_field java.nio.file.StandardOpenOption.DELETE_ON_CLOSE: ##java.nio.file.StandardOpenOption \ {} as get_DELETE_ON_CLOSE;
+        get_DELETE_ON_CLOSE() instanceof JObject
 
     @test
-    def testInstanceof11(): Bool = (100ii instanceof Long) == false
+    def testInstanceof11(): Bool = (100ii instanceof JLong) == false
 
     @test
     def testInstanceof12(): Bool = ("Hello World" instanceof StringBuilder) == false
@@ -67,7 +74,7 @@ mod Test.Exp.Instanceof {
     @test
     def testInstanceof13(): Bool \ IO = {
         let arr = Array#{"hi"} @ Static;
-        Array.get(0, arr) instanceof String
+        Array.get(0, arr) instanceof JString
     }
 
 }
