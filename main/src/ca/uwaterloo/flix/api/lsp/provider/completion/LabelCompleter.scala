@@ -42,7 +42,7 @@ object LabelCompleter extends Completer {
     println(s"regex matches context.word  : ${regex.matches(context.word)}")
     println(s"regex matches context.prefix: ${regex.matches(context.prefix)}")
 
-    val matchWord = if (context.word.isBlank) context.prefix else context.word
+    val matchWord = context.word
 
     println(s"match word is: $matchWord")
 
