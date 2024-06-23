@@ -29,6 +29,7 @@ object LabelCompleter extends Completer {
     // Do not get label completions if we are importing or using.
     println("Entered LabelCompleter")
     if (context.prefix.contains("import") || context.prefix.contains("use")) {
+      println("BAD: In import or use context")
       return Nil
     }
 
