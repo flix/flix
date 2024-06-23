@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.{Input, Source}
 import ca.uwaterloo.flix.language.ast.{Ast, ReadAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter._
-import ca.uwaterloo.flix.util.{ClassList, StreamOps, Validation}
+import ca.uwaterloo.flix.util.{StreamOps, Validation}
 import ca.uwaterloo.flix.util.collection.MultiMap
 
 import java.nio.file.{Files, Path}
@@ -37,7 +37,7 @@ object Reader {
   /**
     * Reads the given source inputs into memory.
     */
-  def run(inputs: List[Input])(implicit flix: Flix): Validation[ReadAst.Root, CompilationMessage] =
+  def run(inputs: List[Input], names: MultiMap[List[String], String])(implicit flix: Flix): Validation[ReadAst.Root, CompilationMessage] =
     flix.phase("Reader") {
 
       val result = mutable.Map.empty[Source, Unit]
@@ -62,7 +62,6 @@ object Reader {
       }
 
       val sources = result.toMap
-      val names = findClasses()
       Validation.success(ReadAst.Root(sources, names))
     }(DebugValidation()(DebugNoOp()))
 
@@ -94,28 +93,4 @@ object Reader {
     }.get // TODO Return a Result instead, see https://github.com/flix/flix/issues/3132
   }
 
-  /**
-    * Returns the java classes in the JDK classlist file.
-    */
-  private def findClasses(): MultiMap[List[String], String] = {
-    val javaPlatformClasses = ClassList.TheList
-
-    javaPlatformClasses.foldLeft[MultiMap[List[String], String]](MultiMap.empty) {
-      case (acc, clazz) =>
-        // Given a string `java/util/zip/ZipUtils.class` we convert it to the list `java :: util :: zip :: ZipUtils`.
-        val clazzPath = clazz.stripSuffix(".class").split('/').toList
-
-        // Create a multimap from all package prefixes to their sub packages and classes.
-        // For example, if we have `java.lang.String`, we want to compute:
-        // Nil                  => {java}
-        // List("java")         => {lang}
-        // List("java", "lang") => {String}
-        clazzPath.inits.foldLeft(acc) {
-          // Case 1: Nonempty path: split prefix and package
-          case (acc1, prefix :+ pkg) => acc1 + (prefix -> pkg)
-          // Case 2: Empty path: skip it
-          case (acc1, _) => acc1
-        }
-    }
-  }
 }

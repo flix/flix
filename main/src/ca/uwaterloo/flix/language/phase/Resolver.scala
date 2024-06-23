@@ -1322,11 +1322,14 @@ object Resolver {
           }
 
         case NamedAst.Expr.InstanceOf(exp, className, loc) =>
-          lookupJvmClass(className, loc) match {
-            case Result.Ok(clazz) => mapN(visitExp(exp, env0)) {
-              e => ResolvedAst.Expr.InstanceOf(e, clazz, loc)
+          flatMapN(visitExp(exp, env0)) {
+            case e => env0.get(className.name) match {
+              case Some(List(Resolution.JavaClass(clazz))) =>
+                Validation.success(ResolvedAst.Expr.InstanceOf(e, clazz, loc))
+              case _ =>
+                val m = ResolutionError.UndefinedJvmClass(className.name, "", loc)
+                Validation.toSoftFailure(ResolvedAst.Expr.Error(m), m)
             }
-            case Result.Err(e) => Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
           }
 
         case NamedAst.Expr.CheckedCast(c, exp, loc) =>
@@ -1420,14 +1423,14 @@ object Resolver {
               }
           }
 
-        case NamedAst.Expr.InvokeConstructor2(clazzName, exps, loc) =>
+        case NamedAst.Expr.InvokeConstructor2(className, exps, loc) =>
           val esVal = traverse(exps)(visitExp(_, env0))
           flatMapN(esVal) {
-            es => env0.get(clazzName.name) match {
+            es => env0.get(className.name) match {
               case Some(List(Resolution.JavaClass(clazz))) =>
                 Validation.success(ResolvedAst.Expr.InvokeConstructor2(clazz, es, loc))
               case _ =>
-                val m = ResolutionError.UndefinedJvmClass(clazzName.name, "", loc)
+                val m = ResolutionError.UndefinedJvmClass(className.name, "", loc)
                 Validation.toSoftFailure(ResolvedAst.Expr.Error(m), m)
             }
           }
@@ -1440,14 +1443,14 @@ object Resolver {
               ResolvedAst.Expr.InvokeMethod2(e, name, es, loc)
           }
 
-        case NamedAst.Expr.InvokeStaticMethod2(clazzName, methodName, exps, loc) =>
+        case NamedAst.Expr.InvokeStaticMethod2(className, methodName, exps, loc) =>
           val esVal = traverse(exps)(visitExp(_, env0))
           flatMapN(esVal) {
-            es => env0.get(clazzName.name) match {
+            es => env0.get(className.name) match {
               case Some(List(Resolution.JavaClass(clazz))) =>
                 Validation.success(ResolvedAst.Expr.InvokeStaticMethod2(clazz, methodName, es, loc))
               case _ =>
-                val m = ResolutionError.UndefinedJvmClass(clazzName.name, "", loc)
+                val m = ResolutionError.UndefinedJvmClass(className.name, "", loc)
                 Validation.toSoftFailure(ResolvedAst.Expr.Error(m), m)
             }
           }
