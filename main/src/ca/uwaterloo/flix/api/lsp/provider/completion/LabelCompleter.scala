@@ -44,6 +44,8 @@ object LabelCompleter extends Completer {
 
     val matchWord = if (context.word.isBlank) context.prefix else context.word
 
+    println(s"match word is: $matchWord")
+
     matchWord match {
       case regex(prefix) if isFirstCharLowerCase(prefix) =>
         println("Entered good suggestion path")
