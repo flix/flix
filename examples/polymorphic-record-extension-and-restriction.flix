@@ -19,4 +19,4 @@ def main2(): Unit \ IO =
     let r1 = {fstName = "Julius", lstName = "Caesar"};
     let r2 = withAge(r1, 55);
     let r3 = withoutAge(r2);
-    "Mr. ${r3fstName} ${r3lstName}" |> println
+    "Mr. ${r3#fstName} ${r3#lstName}" |> println
