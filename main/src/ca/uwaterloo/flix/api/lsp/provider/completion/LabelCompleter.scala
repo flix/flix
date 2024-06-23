@@ -37,9 +37,10 @@ object LabelCompleter extends Completer {
 
     val regex = raw"(.*)#.*".r
 
-    println(s"context.word is: ${if (context.word.isBlank) "<the empty string>" else context.word}")
-    println(s"regex matches word: ${regex.matches(context.word)}")
-    println(s"regex matches prefix: ${regex.matches(context.prefix)}")
+    println(s"context.word is             : ${if (context.word.isBlank) "<the empty string>" else context.word}")
+    println(s"context.prefix is           : ${if (context.prefix.isBlank) "<the empty string>" else context.prefix}")
+    println(s"regex matches context.word  : ${regex.matches(context.word)}")
+    println(s"regex matches context.prefix: ${regex.matches(context.prefix)}")
 
     context.word match {
       case regex(prefix) if isFirstCharLowerCase(prefix) =>
