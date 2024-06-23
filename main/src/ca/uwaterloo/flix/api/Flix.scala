@@ -27,15 +27,17 @@ import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.Summary
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util._
-import ca.uwaterloo.flix.util.collection.Chain
+import ca.uwaterloo.flix.util.collection.{Chain, MultiMap}
 import ca.uwaterloo.flix.util.tc.Debug
 
 import java.nio.charset.Charset
 import java.nio.file.{Files, Path}
 import java.util.concurrent.ForkJoinPool
+import java.util.zip.ZipFile
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.language.implicitConversions
+import scala.util.Using
 
 object Flix {
   /**
@@ -75,6 +77,11 @@ class Flix {
   private var changeSet: ChangeSet = ChangeSet.Everything
 
   /**
+    * The set of known Java classes and interfaces.
+    */
+  private var knownClassesAndInterfaces: MultiMap[List[String], String] = getJavaPlatformClassesAndInterfaces()
+
+  /**
     * A cache of ASTs for incremental compilation.
     */
   private var cachedLexerTokens: Map[Ast.Source, Array[Token]] = Map.empty
@@ -84,18 +91,6 @@ class Flix {
   private var cachedKinderAst: KindedAst.Root = KindedAst.empty
   private var cachedResolverAst: ResolvedAst.Root = ResolvedAst.empty
   private var cachedTyperAst: TypedAst.Root = TypedAst.empty
-
-  def getParserCst: SyntaxTree.Root = cachedParserCst
-
-  def getWeederAst: WeededAst.Root = cachedWeederAst
-
-  def getDesugarAst: DesugaredAst.Root = cachedDesugarAst
-
-  def getKinderAst: KindedAst.Root = cachedKinderAst
-
-  def getResolverAst: ResolvedAst.Root = cachedResolverAst
-
-  def getTyperAst: TypedAst.Root = cachedTyperAst
 
   /**
     * A sequence of internal inputs to be parsed into Flix ASTs.
@@ -399,6 +394,7 @@ class Flix {
       throw new IllegalArgumentException(s"'$p' must be a readable file.")
 
     jarLoader.addURL(p.toUri.toURL)
+    extendKnownJavaClassesAndInterfaces(p)
     this
   }
 
@@ -494,7 +490,7 @@ class Flix {
 
     /** Remember to update [[AstPrinter]] about the list of phases. */
     val result = for {
-      afterReader <- Reader.run(getInputs)
+      afterReader <- Reader.run(getInputs, knownClassesAndInterfaces)
       afterLexer <- Lexer.run(afterReader, cachedLexerTokens, changeSet)
       afterParser <- Parser2.run(afterLexer, cachedParserCst, changeSet)
       afterWeeder <- Weeder2.run(afterReader, entryPoint, afterParser, cachedWeederAst, changeSet)
@@ -676,6 +672,61 @@ class Flix {
     */
   private def shutdownForkJoinPool(): Unit = {
     threadPool.shutdown()
+  }
+
+  /**
+    * Extends the set of known Java classes and interfaces with those in the given JAR-file `p`.
+    */
+  private def extendKnownJavaClassesAndInterfaces(p: Path): Unit = {
+    knownClassesAndInterfaces = knownClassesAndInterfaces ++ getPackageContent(getClassesAndInterfacesOfJar(p))
+  }
+
+  /**
+    * Returns all Java classes and interfaces in the current Java Platform.
+    */
+  private def getJavaPlatformClassesAndInterfaces(): MultiMap[List[String], String] = {
+    getPackageContent(ClassList.TheList)
+  }
+
+  /**
+    * Returns the names of all classes and interfaces in the given JAR-file `p`.
+    */
+  private def getClassesAndInterfacesOfJar(p: Path): List[String] = {
+    Using(new ZipFile(p.toFile)) { zip =>
+      val result = mutable.ListBuffer.empty[String]
+      val iterator = zip.entries()
+      while (iterator.hasMoreElements) {
+        val entry = iterator.nextElement()
+        val name = entry.getName
+        if (name.endsWith(".class")) {
+          result += name
+        }
+      }
+      result.toList
+    }.get
+  }
+
+  /**
+    * Returns a multimap from Java packages to sub-packages, classes, and interfaces.
+    */
+  private def getPackageContent(l: List[String]): MultiMap[List[String], String] = {
+    l.foldLeft[MultiMap[List[String], String]](MultiMap.empty) {
+      case (acc, clazz) =>
+        // Given a string `java/util/zip/ZipUtils.class` we convert it to the list `java :: util :: zip :: ZipUtils`.
+        val clazzPath = clazz.stripSuffix(".class").split('/').toList
+
+        // Create a multimap from all package prefixes to their sub packages and classes.
+        // For example, if we have `java.lang.String`, we want to compute:
+        // Nil                  => {java}
+        // List("java")         => {lang}
+        // List("java", "lang") => {String}
+        clazzPath.inits.foldLeft(acc) {
+          // Case 1: Nonempty path: split prefix and package
+          case (acc1, prefix :+ pkg) => acc1 + (prefix -> pkg)
+          // Case 2: Empty path: skip it
+          case (acc1, _) => acc1
+        }
+    }
   }
 
 }

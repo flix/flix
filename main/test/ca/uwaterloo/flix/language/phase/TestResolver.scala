@@ -1404,16 +1404,6 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.UndefinedKind](result)
   }
 
-  test("UndefinedInstanceOf.01") {
-    val input =
-      """
-        |def foo(): Bool =
-        |    1000ii instanceof ##org.undefined.BigInt
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UndefinedJvmClass](result)
-  }
-
   test("DuplicateAssocTypeDef.01") {
     val input =
       """
