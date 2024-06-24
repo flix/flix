@@ -89,7 +89,7 @@ object BooleanPropTesting {
   }
 
   def main(args: Array[String]): Unit = {
-    testSolvableConstraints(new Random(), explodedRandomXor, 1000, 1, -1)
+    testSolvableConstraints(new Random(), explodedRandomXor, 10_000, 1, -1)
   }
 
   // TODO add testing of t ~ propagation(t)
@@ -97,7 +97,7 @@ object BooleanPropTesting {
   def testSolvableConstraints(random: Random, genSolvable: Random => List[Equation], testLimit: Int, errLimit: Int, timeoutLimit: Int): Boolean = {
     def printProgress(tests: Int, errAmount: Int, timeoutAmount: Int): Unit = {
       val passed = tests - errAmount - timeoutAmount
-      println(s"${tests / 1000}k (${passed / 1000}k passed, $errAmount errs, $timeoutAmount t.o.)")
+      println(s"${tests / 1000}k (${passed} passed, $errAmount errs, $timeoutAmount t.o.)")
     }
 
     val passes: ListBuffer[Int] = ListBuffer.empty
@@ -106,9 +106,14 @@ object BooleanPropTesting {
     val timeouts: ListBuffer[(List[Equation], Int)] = ListBuffer.empty
     var continue = true
     var tests = 0
+    var start = System.currentTimeMillis()
 
     while (continue && (testLimit <= 0 || tests < testLimit)) {
-      if (tests % 10_000 == 0) printProgress(tests, errs.length, timeouts.length)
+      val now = System.currentTimeMillis()
+      if (now - start >= 2000) {
+        start = now
+        printProgress(tests, errs.length, timeouts.length)
+      }
       tests += 1
       val input = genSolvable(random)
       val (res, phase) = runEquations(input)
@@ -153,8 +158,8 @@ object BooleanPropTesting {
 
   def explodedRandomXor(random: Random): List[Equation] = {
     val former = termFormer()
-    val t = randomTerm(former, random, 3, 3, 3, 3)
-    groupAssignments(explodeKnownEquation(random, eqPropagatedSelf(t)), 2)
+    val t = randomTerm(former, random, 4, 3, 3, 3)
+    groupAssignments(explodeKnownEquation(random, eqPropagatedSelf(t)), 1)
   }
 
   private sealed trait Res
