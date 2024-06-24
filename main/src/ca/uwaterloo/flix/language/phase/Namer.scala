@@ -158,11 +158,9 @@ object Namer {
       }
 
     case NamedAst.Declaration.RestrictableEnum(_, _, _, sym, _, _, _, cases, _) =>
-      val table1Val = tryAddToTable(table0, sym.namespace, sym.name, decl)
-      flatMapN(table1Val) {
-        case table1 => fold(cases, table1) {
-          case (table, d) => tableDecl(d, table)
-        }
+      val table1 = tryAddToTable(table0, sym.namespace, sym.name, decl)
+      cases.foldLeft(table1) {
+        case (table, d) => tableDecl(d, table)
       }
 
     case NamedAst.Declaration.TypeAlias(_, _, _, sym, _, _, _) =>
@@ -172,11 +170,9 @@ object Namer {
       tryAddToTable(table0, sym.namespace, sym.name, decl)
 
     case NamedAst.Declaration.Effect(_, _, _, sym, ops, _) =>
-      val table1Val = tryAddToTable(table0, sym.namespace, sym.name, decl)
-      flatMapN(table1Val) {
-        case table1 => fold(ops, table1) {
-          case (table, d) => tableDecl(d, table)
-        }
+      val table1 = tryAddToTable(table0, sym.namespace, sym.name, decl)
+      ops.foldLeft(table1) {
+        case (table, d) => tableDecl(d, table)
       }
 
     case NamedAst.Declaration.Op(sym, _) =>
@@ -199,7 +195,9 @@ object Namer {
   private def tryAddToTable(table: SymbolTable, ns: List[String], name: String, decl: NamedAst.Declaration)(implicit sctx: SharedContext): SymbolTable = {
     lookupName(name, ns, table) match {
       case LookupResult.NotDefined => addDeclToTable(table, ns, name, decl)
-      case LookupResult.AlreadyDefined(loc) => mkDuplicateNamePair(name, getSymLocation(decl), loc)
+      case LookupResult.AlreadyDefined(loc) =>
+        mkDuplicateNamePair(name, getSymLocation(decl), loc)
+        SymbolTable.empty
     }
   }
 
@@ -1582,6 +1580,12 @@ object Namer {
     * A structure holding the symbols and instances in the program.
     */
   case class SymbolTable(symbols: Map[List[String], ListMap[String, NamedAst.Declaration]], instances: Map[List[String], Map[String, List[NamedAst.Declaration.Instance]]], uses: Map[List[String], List[NamedAst.UseOrImport]])
+
+  object SymbolTable {
+
+    def empty: SymbolTable = SymbolTable(Map.empty, Map.empty, Map.empty)
+
+  }
 
   /**
     * An enumeration of the kinds of defs.
