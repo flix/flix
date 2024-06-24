@@ -16,12 +16,13 @@
 mod Files {
 
     use IOError.{Generic}
-    import java.io.{BufferedReader, File, FileInputStream, FileOutputStream, FileWriter, PrintWriter}
+    import java.io.{BufferedReader, File, FileInputStream, FileOutputStream, FileWriter, IOException, OutputStream, PrintWriter, Writer}
     import java.lang.Class
     import java.nio.charset.Charset
     import java.nio.file.attribute.{FileTime, BasicFileAttributes}
-    import java.nio.file.{DirectoryStream, LinkOption, Path}
+    import java.nio.file.{CopyOption, DirectoryStream, FileVisitOption, LinkOption, Path, StandardCopyOption}
     import java.util.{Iterator => JIterator}
+    import java.util.stream.Stream
 
     ///
     /// File types.
@@ -46,7 +47,7 @@ mod Files {
             ) yield
                 fileAttributes |> lastAccessTime |> toMillis
         } catch {
-            case ex: ##java.io.IOException =>
+            case ex: IOException =>
                 import java.lang.Throwable.getMessage(): String \ IO;
                 Err(Generic(getMessage(checked_cast(ex))))
         }
@@ -64,7 +65,7 @@ mod Files {
             ) yield
                 fileAttributes |> creationTime |> toMillis
         } catch {
-            case ex: ##java.io.IOException =>
+            case ex: IOException =>
                 import java.lang.Throwable.getMessage(): String \ IO;
                 Err(Generic(getMessage(checked_cast(ex))))
         }
@@ -82,7 +83,7 @@ mod Files {
             ) yield
                 fileAttributes |> lastModifiedTime |> toMillis
         } catch {
-            case ex: ##java.io.IOException =>
+            case ex: IOException =>
                 import java.lang.Throwable.getMessage(): String \ IO;
                 Err(Generic(getMessage(checked_cast(ex))))
         }
@@ -99,7 +100,7 @@ mod Files {
             ) yield
                 size(fileAttributes)
         } catch {
-            case ex: ##java.io.IOException =>
+            case ex: IOException =>
                 import java.lang.Throwable.getMessage(): String \ IO;
                 Err(Generic(getMessage(checked_cast(ex))))
         }
@@ -287,7 +288,7 @@ mod Files {
                     case Err(msg) => Err(msg)
                 }
             } catch {
-                case ex: ##java.io.IOException =>
+                case ex: IOException =>
                     import java.lang.Throwable.getMessage(): String \ IO;
                     Err(Generic(getMessage(checked_cast(ex))))
             }
@@ -315,7 +316,7 @@ mod Files {
                 Err(Generic("An error occurred when reading the file: '${f}'."))
             }
         } catch {
-            case ex: ##java.io.IOException =>
+            case ex: IOException =>
                 import java.lang.Throwable.getMessage(): String \ IO;
                 Err(Generic(getMessage(checked_cast(ex))))
         }
@@ -387,7 +388,7 @@ mod Files {
                         Ref.put(readLine(reader), line);
                         Some(Ok(l))
                     } catch {
-                        case ex: ##java.io.IOException => {
+                        case ex: IOException => {
                             Ref.put(checked_cast(null), line);
                             import java.lang.Throwable.getMessage(): String \ {};
                             Some(Err(Generic(getMessage(checked_cast(ex)))))
@@ -399,7 +400,7 @@ mod Files {
             });
             Iterator.iterate(rc, next)
         } catch {
-            case ex: ##java.io.IOException =>
+            case ex: IOException =>
                 import java.lang.Throwable.getMessage(): String \ {};
                 Iterator.iterate(rc, constant(Some(Err(Generic(getMessage(checked_cast(ex)))))))
         }
@@ -428,7 +429,7 @@ mod Files {
                         Ref.put(readLine(reader), line);
                         Some(Ok(l))
                     } catch {
-                        case ex: ##java.io.IOException => {
+                        case ex: IOException => {
                             Ref.put(checked_cast(null), line);
                             import java.lang.Throwable.getMessage(): String \ {};
                             Some(Err(Generic(getMessage(checked_cast(ex)))))
@@ -440,7 +441,7 @@ mod Files {
             });
             Iterator.iterate(rc, next)
         } catch {
-            case ex: ##java.io.IOException =>
+            case ex: IOException =>
                 import java.lang.Throwable.getMessage(): String \ {};
                 Iterator.iterate(rc, constant(Some(Err(Generic(getMessage(checked_cast(ex)))))))
         }
@@ -486,7 +487,7 @@ mod Files {
                     case Err(msg) => Err(msg)
                 }
             } catch {
-                case ex: ##java.io.IOException =>
+                case ex: IOException =>
                     import java.lang.Throwable.getMessage(): String \ IO;
                     Err(Generic(getMessage(checked_cast(ex))))
             }
@@ -536,7 +537,7 @@ mod Files {
                             Ref.put(read(stream, deref bytes), numberRead);
                             Some(Ok(readBytesWithHelper(rc, chunk, accRead, chunkSize)))
                         } catch {
-                            case ex: ##java.io.IOException => {
+                            case ex: IOException => {
                                 Ref.put(-1, numberRead);
                                 import java.lang.Throwable.getMessage(): String \ {};
                                 Some(Err(Generic(getMessage(checked_cast(ex)))))
@@ -548,7 +549,7 @@ mod Files {
                 });
                 Iterator.iterate(rc, next)
             } catch {
-                case ex: ##java.io.IOException =>
+                case ex: IOException =>
                     import java.lang.Throwable.getMessage(): String \ {};
                     Iterator.iterate(rc, constant(Some(Err(Generic(getMessage(checked_cast(ex)))))))
             }
@@ -586,7 +587,7 @@ mod Files {
                 Result.flatMap(exists -> Ok(not exists), alreadyExists)
             }
         } catch {
-            case ex: ##java.io.IOException =>
+            case ex: IOException =>
                 import java.lang.Throwable.getMessage(): String \ IO;
                 Err(Generic(getMessage(checked_cast(ex))))
         }
@@ -621,7 +622,7 @@ mod Files {
                 Result.flatMap(exists -> Ok(not exists), alreadyExists)
             }
         } catch {
-            case ex: ##java.io.IOException =>
+            case ex: IOException =>
                 import java.lang.Throwable.getMessage(): String \ IO;
                 Err(Generic(getMessage(checked_cast(ex))))
         }
@@ -635,7 +636,7 @@ mod Files {
         try {
             import java_new java.io.File(String): File \ IO as newFile;
             import java_new java.io.FileWriter(File, Bool): FileWriter \ IO as newFileWriter;
-            import java_new java.io.PrintWriter(##java.io.Writer): PrintWriter \ IO as newPrintWriter;
+            import java_new java.io.PrintWriter(Writer): PrintWriter \ IO as newPrintWriter;
             import java.io.PrintWriter.println(String): Unit \ IO;
             import java.io.PrintWriter.close(): Unit \ IO;
             import java.io.PrintWriter.checkError(): Bool \ IO;
@@ -657,7 +658,7 @@ mod Files {
                 Result.flatMap(exists -> Ok(not exists), alreadyExists)
             }
         } catch {
-            case ex: ##java.io.IOException =>
+            case ex: IOException =>
                 import java.lang.Throwable.getMessage(): String \ IO;
                 Err(Generic(getMessage(checked_cast(ex))))
         }
@@ -671,7 +672,7 @@ mod Files {
         try {
             import java_new java.io.File(String): File \ IO as newFile;
             import java_new java.io.FileWriter(File, Bool): FileWriter \ IO as newFileWriter;
-            import java_new java.io.PrintWriter(##java.io.Writer): PrintWriter \ IO as newPrintWriter;
+            import java_new java.io.PrintWriter(Writer): PrintWriter \ IO as newPrintWriter;
             import java.io.PrintWriter.println(String): Unit \ IO;
             import java.io.PrintWriter.close(): Unit \ IO;
             import java.io.PrintWriter.checkError(): Bool \ IO;
@@ -693,7 +694,7 @@ mod Files {
                 Result.flatMap(exists -> Ok(not exists), alreadyExists)
             }
         } catch {
-            case ex: ##java.io.IOException =>
+            case ex: IOException =>
                 import java.lang.Throwable.getMessage(): String \ IO;
                 Err(Generic(getMessage(checked_cast(ex))))
         }
@@ -709,7 +710,7 @@ mod Files {
         try {
             import java_new java.io.File(String): File \ IO as newFile;
             import java_new java.io.FileOutputStream(File): FileOutputStream \ IO as newFileStream;
-            import java_new java.io.PrintWriter(##java.io.OutputStream): PrintWriter \ IO as newPrintWriter;
+            import java_new java.io.PrintWriter(OutputStream): PrintWriter \ IO as newPrintWriter;
             import java.io.FileOutputStream.write(Array[Int8, rc]): Unit \ IO;
             import java.io.PrintWriter.close(): Unit \ IO;
             import java.io.PrintWriter.checkError(): Bool \ IO;
@@ -731,7 +732,7 @@ mod Files {
                 Result.flatMap(exists -> Ok(not exists), alreadyExists)
             }
         } catch {
-            case ex: ##java.io.IOException =>
+            case ex: IOException =>
                 import java.lang.Throwable.getMessage(): String \ IO;
                 Err(Generic(getMessage(checked_cast(ex))))
         }
@@ -746,7 +747,7 @@ mod Files {
         try {
             import java_new java.io.File(String): File \ IO as newFile;
             import java_new java.io.FileOutputStream(File, Bool): FileOutputStream \ IO as newFileStream;
-            import java_new java.io.PrintWriter(##java.io.OutputStream): PrintWriter \ IO as newPrintWriter;
+            import java_new java.io.PrintWriter(OutputStream): PrintWriter \ IO as newPrintWriter;
             import java.io.FileOutputStream.write(Array[Int8, rc]): Unit \ IO;
             import java.io.PrintWriter.close(): Unit \ IO;
             import java.io.PrintWriter.checkError(): Bool \ IO;
@@ -770,7 +771,7 @@ mod Files {
                 Result.flatMap(exists -> Ok(not exists), alreadyExists)
             }
         } catch {
-            case ex: ##java.io.IOException =>
+            case ex: IOException =>
                 import java.lang.Throwable.getMessage(): String \ IO;
                 Err(Generic(getMessage(checked_cast(ex))))
         }
@@ -800,7 +801,7 @@ mod Files {
                 Result.flatMap(exists -> Ok(not exists), alreadyExists)
             }
         } catch {
-            case ex: ##java.io.IOException =>
+            case ex: IOException =>
                 import java.lang.Throwable.getMessage(): String \ IO;
                 Err(Generic(getMessage(checked_cast(ex))))
         }
@@ -859,7 +860,7 @@ mod Files {
                 Err(Generic("An error occurred when trying to list the file: '${f}'."))
             }
         } catch {
-            case ex: ##java.io.IOException =>
+            case ex: IOException =>
                 import java.lang.Throwable.getMessage(): String \ IO;
                 Err(Generic(getMessage(checked_cast(ex))))
         }
@@ -898,7 +899,7 @@ mod Files {
         IOError.tryCatch(_ -> {
             import java_new java.io.File(String): File \ IO as newFile;
             import java.io.File.toPath(): Path \ IO;
-            import static java.nio.file.Files.walk(Path, Array[##java.nio.file.FileVisitOption, r]): ##java.util.stream.Stream \ IO;
+            import static java.nio.file.Files.walk(Path, Array[FileVisitOption, r]): Stream \ IO;
             import java.util.stream.BaseStream.iterator(): JIterator \ IO;
             import java.nio.file.Path.toString(): String \ {} as pathToString;
 
@@ -939,7 +940,7 @@ mod Files {
         IOError.tryCatch(_ -> {
             import java_new java.io.File(String): File \ IO as newFile;
             import java.io.File.toPath(): Path \ IO;
-            import static java.nio.file.Files.move(Path, Path, Array[##java.nio.file.CopyOption, rc]): Path \ IO;
+            import static java.nio.file.Files.move(Path, Path, Array[CopyOption, rc]): Path \ IO;
 
             let srcFile = newFile(src#src);
             let srcPath = toPath(srcFile);
@@ -979,7 +980,7 @@ mod Files {
                 case Err(msg)  => Err(msg)
             }
         } catch {
-            case ex: ##java.io.IOException =>
+            case ex: IOException =>
                 import java.lang.Throwable.getMessage(): String \ IO;
                 Err(Generic(getMessage(checked_cast(ex))))
         }
@@ -994,8 +995,8 @@ mod Files {
         IOError.tryCatch(_ -> {
             import java_new java.io.File(String): File \ IO as newFile;
             import java.io.File.toPath(): Path \ IO;
-            import static java.nio.file.Files.move(Path, Path, Array[##java.nio.file.CopyOption, rc]): Path \ IO;
-            import static java_get_field java.nio.file.StandardCopyOption.REPLACE_EXISTING: ##java.nio.file.StandardCopyOption \ IO as getOverwrite;
+            import static java.nio.file.Files.move(Path, Path, Array[CopyOption, rc]): Path \ IO;
+            import static java_get_field java.nio.file.StandardCopyOption.REPLACE_EXISTING: StandardCopyOption \ IO as getOverwrite;
 
             let dstFile = newFile(dst);
             let dstPath = toPath(dstFile);
@@ -1019,7 +1020,7 @@ mod Files {
         IOError.tryCatch(_ -> {
             import java_new java.io.File(String): File \ IO as newFile;
             import java.io.File.toPath(): Path \ IO;
-            import static java.nio.file.Files.copy(Path, Path, Array[##java.nio.file.CopyOption, rc]): Path \ IO;
+            import static java.nio.file.Files.copy(Path, Path, Array[CopyOption, rc]): Path \ IO;
 
             let srcFile = newFile(src#src);
             let srcPath = toPath(srcFile);
@@ -1059,7 +1060,7 @@ mod Files {
                 case Err(msg)  => Err(msg)
             }
         } catch {
-            case ex: ##java.io.IOException =>
+            case ex: IOException =>
                 import java.lang.Throwable.getMessage(): String \ IO;
                 Err(Generic(getMessage(checked_cast(ex))))
         }
@@ -1074,8 +1075,8 @@ mod Files {
         IOError.tryCatch(_ -> {
             import java_new java.io.File(String): File \ IO as newFile;
             import java.io.File.toPath(): Path \ IO;
-            import static java.nio.file.Files.copy(Path, Path, Array[##java.nio.file.CopyOption, rc]): Path \ IO;
-            import static java_get_field java.nio.file.StandardCopyOption.REPLACE_EXISTING: ##java.nio.file.StandardCopyOption \ IO as getOverwrite;
+            import static java.nio.file.Files.copy(Path, Path, Array[CopyOption, rc]): Path \ IO;
+            import static java_get_field java.nio.file.StandardCopyOption.REPLACE_EXISTING: StandardCopyOption \ IO as getOverwrite;
 
             let dstFile = newFile(dst);
             let dstPath = toPath(dstFile);
