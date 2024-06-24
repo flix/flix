@@ -118,14 +118,15 @@ object Namer {
   /**
     * Adds symbols from the compilation unit to the table.
     */
-  private def tableUnit(unit: NamedAst.CompilationUnit, table0: SymbolTable): Validation[SymbolTable, NameError] = unit match {
+  private def tableUnit(unit: NamedAst.CompilationUnit, table0: SymbolTable)(implicit sctx: SharedContext): Validation[SymbolTable, NameError] = unit match {
     case NamedAst.CompilationUnit(_, decls, _) =>
-      fold(decls, table0) {
+      val table = decls.foldLeft(table0) {
         case (acc, decl) => tableDecl(decl, acc)
       }
+      Validation.success(table)
   }
 
-  private def tableDecl(decl: NamedAst.Declaration, table0: SymbolTable): Validation[SymbolTable, NameError] = decl match {
+  private def tableDecl(decl: NamedAst.Declaration, table0: SymbolTable)(implicit sctx: SharedContext): SymbolTable = decl match {
     case NamedAst.Declaration.Namespace(sym, usesAndImports, decls, _) =>
       // Add the namespace to the table (no validation needed)
       val table1 = addDeclToTable(table0, sym.ns.init, sym.ns.last, decl)
