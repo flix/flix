@@ -120,27 +120,21 @@ object Namer {
     */
   private def tableUnit(unit: NamedAst.CompilationUnit, table0: SymbolTable)(implicit sctx: SharedContext): Validation[SymbolTable, NameError] = unit match {
     case NamedAst.CompilationUnit(_, decls, _) =>
-      val table = decls.foldLeft(table0) {
-        case (acc, decl) => tableDecl(decl, acc)
-      }
+      val table = decls.foldLeft(table0)(tableDecl)
       Validation.success(table)
   }
 
-  private def tableDecl(decl: NamedAst.Declaration, table0: SymbolTable)(implicit sctx: SharedContext): SymbolTable = decl match {
+  private def tableDecl(table0: SymbolTable, decl: NamedAst.Declaration)(implicit sctx: SharedContext): SymbolTable = decl match {
     case NamedAst.Declaration.Namespace(sym, usesAndImports, decls, _) =>
       // Add the namespace to the table (no validation needed)
       val table1 = addDeclToTable(table0, sym.ns.init, sym.ns.last, decl)
-      val table2 = decls.foldLeft(table1) {
-        case (table, d) => tableDecl(d, table)
-      }
+      val table2 = decls.foldLeft(table1)(tableDecl)
       addUsesToTable(table2, sym.ns, usesAndImports)
 
     case NamedAst.Declaration.Trait(_, _, _, sym, _, _, assocs, sigs, _, _) =>
       val table1 = tryAddToTable(table0, sym.namespace, sym.name, decl)
       val assocsAndSigs = assocs ++ sigs
-      assocsAndSigs.foldLeft(table1) {
-        (table, d) => tableDecl(d, table)
-      }
+      assocsAndSigs.foldLeft(table1)(tableDecl)
 
     case inst@NamedAst.Declaration.Instance(_, _, _, clazz, _, _, _, _, _, ns, _) =>
       addInstanceToTable(table0, ns, clazz.ident.name, inst)
@@ -153,15 +147,11 @@ object Namer {
 
     case NamedAst.Declaration.Enum(_, _, _, sym, _, _, cases, _) =>
       val table1 = tryAddToTable(table0, sym.namespace, sym.name, decl)
-      cases.foldLeft(table1) {
-        case (table, d) => tableDecl(d, table)
-      }
+      cases.foldLeft(table1)(tableDecl)
 
     case NamedAst.Declaration.RestrictableEnum(_, _, _, sym, _, _, _, cases, _) =>
       val table1 = tryAddToTable(table0, sym.namespace, sym.name, decl)
-      cases.foldLeft(table1) {
-        case (table, d) => tableDecl(d, table)
-      }
+      cases.foldLeft(table1)(tableDecl)
 
     case NamedAst.Declaration.TypeAlias(_, _, _, sym, _, _, _) =>
       tryAddToTable(table0, sym.namespace, sym.name, decl)
@@ -171,9 +161,7 @@ object Namer {
 
     case NamedAst.Declaration.Effect(_, _, _, sym, ops, _) =>
       val table1 = tryAddToTable(table0, sym.namespace, sym.name, decl)
-      ops.foldLeft(table1) {
-        case (table, d) => tableDecl(d, table)
-      }
+      ops.foldLeft(table1)(tableDecl)
 
     case NamedAst.Declaration.Op(sym, _) =>
       tryAddToTable(table0, sym.namespace, sym.name, decl)
