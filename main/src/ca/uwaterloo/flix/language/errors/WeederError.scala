@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation}
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, SourcePosition}
 import ca.uwaterloo.flix.util.Formatter
 
 /**
@@ -563,13 +563,23 @@ object WeederError {
     */
   case class IllegalRecordSelectSyntax(loc: SourceLocation) extends WeederError with Recoverable {
 
+    private val dotLoc = {
+      val sp1 = loc.sp1
+      val sp2 = loc.sp2
+      val dotColBegin = (sp1.col + (sp2.col - sp1.col)).toShort
+      val dotColEnd = (sp2.col + 1).toShort
+      val dotSp1 = SourcePosition(sp1.source, sp1.line, dotColBegin)
+      val dotSp2 = SourcePosition(sp2.source, sp2.line, dotColEnd)
+      SourceLocation(isReal = true, dotSp1, dotSp2)
+    }
+
     override def summary: String = "The '#' is used for record label selection."
 
     override def message(formatter: Formatter): String = {
       import formatter._
       s""">> Unexpected record label selection syntax.
          |
-         |${code(loc, "The '#' symbol is used for record label selection.")}
+         |${code(dotLoc, "The '#' symbol is used for record label selection.")}
          |
          |""".stripMargin
     }
