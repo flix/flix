@@ -202,6 +202,7 @@ object CompletionProvider {
       case '@' => true
       case '/' => true
       case '.' => true
+      case '#' => true
       case _ => false
     }
 
