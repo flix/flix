@@ -285,13 +285,6 @@ object TypeReduction {
       case Type.Cst(TypeConstructor.Int16, _) => true
       case Type.Cst(TypeConstructor.Int32, _) => true
       case Type.Cst(TypeConstructor.Int64, _) => true
-      case Type.Cst(TypeConstructor.BigInt, _) => true
-      case Type.Cst(TypeConstructor.Str, _) => true
-      case Type.Cst(TypeConstructor.True, _) => true
-      case Type.Cst(TypeConstructor.False, _) => true
-      case Type.Cst(TypeConstructor.Not, _) => true
-      case Type.Cst(TypeConstructor.And, _) => true
-      case Type.Cst(TypeConstructor.Or, _) => true
       case _ => false
     }
   }
