@@ -59,8 +59,8 @@ def typeCheck2(e: Expr[r]): Expr[(tpe = Type | r)] = match e {
     case Expr.False  => Expr.False
     case Expr.Cst(i) => Expr.Cst({ +tpe = Type.TInt | { value = i#value | i}})
     case Expr.Add(i) =>
-        let e1 = typeCheck2(i#exp1);
-        let e2 = typeCheck2(i#exp2);
+        let e1 = typeCheck2(i.exp1);
+        let e2 = typeCheck2(i.exp2);
             Expr.Add({ +tpe = Type.TInt | {exp1 = e1, exp2 = e2 | i} })
     case Expr.Ite(i) =>
       let e1 = typeCheck2(i#exp1);
