@@ -144,7 +144,7 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate an enum using both singleton and multiton syntaxes.
+    * An error raised to indicate a struct contains duplicate fields
     *
     * @param loc the location of the struct declaration
     * @param fieldName the name of the field
