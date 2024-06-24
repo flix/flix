@@ -158,14 +158,6 @@ object Symbol {
   }
 
   /**
-   * Returns the struct symbol for the given fully qualified name.
-   */
-  def mkStructSym(fqn: String): StructSym = split(fqn) match {
-    case None => new StructSym(Nil, fqn, SourceLocation.Unknown)
-    case Some((ns, name)) => new StructSym(ns, name, SourceLocation.Unknown)
-  }
-
-  /**
     * Returns the case symbol for the given name `ident` in the given `enum`.
     */
   def mkCaseSym(sym: Symbol.EnumSym, ident: Ident): CaseSym = {
