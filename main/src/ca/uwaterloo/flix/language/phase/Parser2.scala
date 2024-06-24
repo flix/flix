@@ -645,6 +645,24 @@ object Parser2 {
             expectAny(kinds, context)
             close(mark, TreeKind.Ident)
           }
+        case TokenKind.Hash =>
+          if (!kinds.contains(nth(1))) {
+            // Trailing dot, stop parsing the qualified name.
+            val error = UnexpectedToken(
+              expected = NamedTokenSet.FromKinds(kinds),
+              actual = Some(TokenKind.Hash),
+              sctx = context,
+              hint = None,
+              loc = currentSourceLocation()
+            )
+            advanceWithError(error)
+            continue = false
+          } else {
+            advance() // Eat the hash
+            val mark = open()
+            expectAny(kinds, context)
+            close(mark, TreeKind.Ident)
+          }
         case TokenKind.DotWhiteSpace if kinds.contains(nth(1)) =>
           // Nice error for:
           // SomeName.
