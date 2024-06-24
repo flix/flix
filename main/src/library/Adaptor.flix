@@ -15,6 +15,7 @@
  */
 
 mod Adaptor {
+    import java.util.{ArrayList, LinkedList, TreeSet, TreeMap};
 
     ///
     /// Returns a comparator for elements of type `a`.
@@ -184,9 +185,8 @@ mod Adaptor {
     /// Creates a fresh `ArrayList` and copies all elements in `ma` into it.
     ///
     pub def toArrayList(ma: m[a]): ##java.util.ArrayList \ (IO + Foldable.Aef[m]) with Foldable[m] =
-        import java_new java.util.ArrayList(): ##java.util.ArrayList \ IO as newArrayList;
         import java.util.ArrayList.add(##java.lang.Object): Bool \ IO;
-        let alist = newArrayList();
+        let alist = new ArrayList();
         Foldable.forEach(x -> discard add(alist, unchecked_cast(x as ##java.lang.Object)), ma);
         alist
 
@@ -196,9 +196,8 @@ mod Adaptor {
     /// Creates a fresh `LinkedList` and copies all elements in `ma` into it.
     ///
     pub def toLinkedList(ma: m[a]): ##java.util.LinkedList \ (IO + Foldable.Aef[m]) with Foldable[m] =
-        import java_new java.util.LinkedList(): ##java.util.LinkedList \ IO as newLinkedList;
         import java.util.LinkedList.add(##java.lang.Object): Bool \ IO;
-        let llist = newLinkedList();
+        let llist = new LinkedList();
         Foldable.forEach(x -> discard add(llist, unchecked_cast(x as ##java.lang.Object)), ma);
         llist
 
@@ -211,9 +210,8 @@ mod Adaptor {
     /// Returns the elements of the given foldable `ma` as a new `TreeSet`.
     ///
     pub def toTreeSet(ma: m[a]): ##java.util.TreeSet \ (IO + Foldable.Aef[m]) with Order[a], Foldable[m] =
-        import java_new java.util.TreeSet(): ##java.util.TreeSet \ IO as newTreeSet;
         import java.util.TreeSet.add(##java.lang.Object): Bool \ IO;
-        let tset = newTreeSet();
+        let tset = new TreeSet();
         Foldable.forEach(x -> discard add(tset, unchecked_cast(x as ##java.lang.Object)), ma);
         tset
 
@@ -228,9 +226,8 @@ mod Adaptor {
     /// The `TreeMap` uses a `Comparator` constructed from the `Order` on `k`.
     ///
     pub def toTreeMap(m: Map[k, v]): ##java.util.TreeMap \ IO with Order[k] =
-        import java_new java.util.TreeMap(): ##java.util.TreeMap \ IO as newTreeMap;
         import java.util.TreeMap.put(##java.lang.Object, ##java.lang.Object): ##java.lang.Object \ IO;
-        let tmap = newTreeMap();
+        let tmap = new TreeMap();
         Map.forEach((k, v) -> discard put(tmap, unchecked_cast(k as ##java.lang.Object), unchecked_cast(v as ##java.lang.Object)), m);
         tmap
 
