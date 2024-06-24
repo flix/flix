@@ -439,7 +439,6 @@ object SimpleType {
             case 1 => SimpleType.MethodReturnType(fromWellKindedType(t.typeArguments.head))
             case _ => throw InternalCompilerException(s"Unexpected wrong kinded type $t", t.loc)
           }
-        case TypeConstructor.StaticMethodReturnType(clazz, name, arity) => mkApply(Name(name), t.typeArguments.map(visit))
         case TypeConstructor.Ref => mkApply(Ref, t.typeArguments.map(visit))
         case TypeConstructor.Tuple(l) =>
           val tpes = t.typeArguments.map(visit).padTo(l, Hole)

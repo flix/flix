@@ -122,35 +122,6 @@ object TypeReduction {
   }
 
   /**
-   * This is the resolution process of the Java method method, member of the class of the Java object thisObj.
-   * Returns the return type of the Java method according to the type of thisObj and the arguments of the method,
-   * if there exists such a Java method.
-   * Otherwise, either the Java method could not be found with the given method signature, or, there was an ambiguity.
-   *
-   * @param thisObj the Java object
-   * @param method  the Java method, supposedly member of the class of the Java object
-   * @param ts      the list containing the type of thisObj and the arguments of the method
-   * @param loc     the location where the Java method has been called
-   * @return        A JavaMethodResolutionResult object that indicates the status of the resolution progress
-   */
-  def lookupMethod(thisObj: Type, method: String, ts: List[Type], loc: SourceLocation)(implicit flix: Flix): JavaMethodResolutionResult = {
-    thisObj match { // there might be a possible factorization
-      case Type.Cst(TypeConstructor.Str, _) =>
-        val clazz = classOf[String]
-        retrieveMethod(clazz, method, ts, loc)
-      case Type.Cst(TypeConstructor.BigInt, _) =>
-        val clazz = classOf[BigInteger]
-        retrieveMethod(clazz, method, ts, loc)
-      case Type.Cst(TypeConstructor.BigDecimal, _) =>
-        val clazz = classOf[java.math.BigDecimal]
-        retrieveMethod(clazz, method, ts, loc)
-      case Type.Cst(TypeConstructor.Native(clazz), _) =>
-        retrieveMethod(clazz, method, ts, loc)
-      case _ => JavaMethodResolutionResult.MethodNotFound
-    }
-  }
-
-  /**
    * This is the resolution process of the Java constructor designated by a class and the parameter types.
    * Returns the return type of the Java constructor according, if there exists such a Java constructor.
    * Otherwise, either the Java constructor could not be found with the given signature or there was an ambiguity.
@@ -165,38 +136,43 @@ object TypeReduction {
   }
 
   /**
-   * Helper method to retrieve a method given its name and parameter types.
-   * Returns a JavaMethodResolutionResult either containing the Java method or a MethodNotFound object.
+   * This is the resolution process of the Java method method, member of the class of the Java object thisObj.
+   * Returns the return type of the Java method according to the type of thisObj and the arguments of the method,
+   * if there exists such a Java method.
+   * Otherwise, either the Java method could not be found with the given method signature, or, there was an ambiguity.
+   *
+   * @param thisObj the Java object
+   * @param methodName  the Java method, supposedly member of the class of the Java object
+   * @param ts      the list containing the type of thisObj and the arguments of the method
+   * @param loc     the location where the Java method has been called
+   * @return        A JavaMethodResolutionResult object that indicates the status of the resolution progress
    */
-  private def retrieveMethod(clazz: Class[_], methodName: String, ts: List[Type], loc: SourceLocation)(implicit flix: Flix): JavaMethodResolutionResult = {
-    // NB: this considers also static methods
-    val candidateMethods = clazz.getMethods.filter(m => isCandidateMethod(m, methodName, ts))
-
-    candidateMethods.length match {
-      case 0 => JavaMethodResolutionResult.MethodNotFound
-      case 1 =>
-        val tpe = Type.Cst(TypeConstructor.JvmMethod(candidateMethods.head), loc)
-        JavaMethodResolutionResult.Resolved(tpe)
-      case _ =>
-        // Among candidate methods if there already exists the method with the exact signature,
-        // we should ignore the rest. E.g.: append(String), append(Object) in SB for the call append("a") should already know to use append(String)
-        val exactMethod = candidateMethods
-          .filter(m => // Parameter types correspondance with subtyping
-            (m.getParameterTypes zip ts).forall {
-              case (clazz, tpe) => Type.getFlixType(clazz) == tpe
-            })
-        exactMethod.length match {
-          case 1 => JavaMethodResolutionResult.Resolved(Type.Cst(TypeConstructor.JvmMethod(exactMethod.head), loc))
-          case _ => JavaMethodResolutionResult.AmbiguousMethod(candidateMethods.toList) // 0 corresponds to no exact method, 2 or higher should be impossible in Java
-        }
+  def lookupMethod(thisObj: Type, methodName: String, ts: List[Type], loc: SourceLocation)(implicit flix: Flix): JavaMethodResolutionResult = {
+    thisObj match { // there might be a possible factorization
+      case Type.Cst(TypeConstructor.Str, _) =>
+        val clazz = classOf[String]
+        retrieveMethod(clazz, methodName, ts, loc = loc)
+      case Type.Cst(TypeConstructor.BigInt, _) =>
+        val clazz = classOf[BigInteger]
+        retrieveMethod(clazz, methodName, ts, loc = loc)
+      case Type.Cst(TypeConstructor.BigDecimal, _) =>
+        val clazz = classOf[java.math.BigDecimal]
+        retrieveMethod(clazz, methodName, ts, loc = loc)
+      case Type.Cst(TypeConstructor.Native(clazz), _) =>
+        retrieveMethod(clazz, methodName, ts, loc = loc)
+      case _ => JavaMethodResolutionResult.MethodNotFound
     }
   }
 
-    /**
-     * Helper method to retrieve a constructor given its parameter types and the class.
-     * Returns a JavaConstructorResolutionResult containing either the constructor, a list of candidate constructors or
-     * a ConstructorNotFound object. The working process is similar to retrieveMethod and differs in the selection of candidate constructors.
-     */
+  def lookupStaticMethod(clazz: Class[_], methodName: String, ts: List[Type], loc: SourceLocation)(implicit flix: Flix): JavaMethodResolutionResult = {
+    retrieveMethod(clazz, methodName, ts, isStatic = true, loc = loc)
+  }
+
+  /**
+   * Helper method to retrieve a constructor given its parameter types and the class.
+   * Returns a JavaConstructorResolutionResult containing either the constructor, a list of candidate constructors or
+   * a ConstructorNotFound object. The working process is similar to retrieveMethod and differs in the selection of candidate constructors.
+   */
   private def retrieveConstructor(clazz: Class[_], ts: List[Type], loc: SourceLocation)(implicit flix: Flix): JavaConstructorResolutionResult = {
     val candidateConstructors = clazz.getConstructors.filter(c => isCandidateConstructor(c, ts))
 
@@ -220,7 +196,44 @@ object TypeReduction {
     }
   }
 
-    /**
+  /**
+   * Helper method to retrieve a method given its name and parameter types.
+   * Returns a JavaMethodResolutionResult either containing the Java method or a MethodNotFound object.
+   */
+  private def retrieveMethod(clazz: Class[_], methodName: String, ts: List[Type], isStatic: Boolean = false, loc: SourceLocation)(implicit flix: Flix): JavaMethodResolutionResult = {
+    // NB: this considers also static methods
+    val candidateMethods = clazz.getMethods.filter(m => isCandidateMethod(m, methodName, ts) && (if (isStatic) java.lang.reflect.Modifier.isStatic(m.getModifiers) else true))
+
+    candidateMethods.length match {
+      case 0 => JavaMethodResolutionResult.MethodNotFound
+      case 1 =>
+        val tpe = Type.Cst(TypeConstructor.JvmMethod(candidateMethods.head), loc)
+        JavaMethodResolutionResult.Resolved(tpe)
+      case _ =>
+        // Among candidate methods if there already exists the method with the exact signature,
+        // we should ignore the rest. E.g.: append(String), append(Object) in SB for the call append("a") should already know to use append(String)
+        val exactMethod = candidateMethods
+          .filter(m => // Parameter types correspondance with subtyping
+            (m.getParameterTypes zip ts).forall {
+              case (clazz, tpe) => Type.getFlixType(clazz) == tpe
+            })
+        exactMethod.length match {
+          case 1 => JavaMethodResolutionResult.Resolved(Type.Cst(TypeConstructor.JvmMethod(exactMethod.head), loc))
+          case _ => JavaMethodResolutionResult.AmbiguousMethod(candidateMethods.toList) // 0 corresponds to no exact method, 2 or higher should be impossible in Java
+        }
+    }
+  }
+
+  /**
+   * Helper method that returns if the given constructor is a candidate constructor given a signature.
+   */
+  private def isCandidateConstructor(cand: Constructor[_], ts: List[Type])(implicit flix: Flix): Boolean =
+    (cand.getParameterCount == ts.length) &&
+      (cand.getParameterTypes zip ts).forall {
+        case (clazz, tpe) => isSubtype(tpe, Type.getFlixType(clazz))
+      }
+
+  /**
    * Helper method that returns if the given method is a candidate method given a signature.
    *
    * @param cand       a candidate method
@@ -239,15 +252,6 @@ object TypeReduction {
     (cand.getReturnType.isPrimitive ||
       java.lang.reflect.Modifier.isInterface(cand.getReturnType.getModifiers) || // interfaces are considered primitives
       !java.lang.reflect.Modifier.isAbstract(cand.getReturnType.getModifiers)) // temporary to avoid superclass abstract duplicate
-
-  /**
-   * Helper method that returns if the given constructor is a candidate constructor given a signature.
-   */
-  private def isCandidateConstructor(cand: Constructor[_], ts: List[Type])(implicit flix: Flix): Boolean =
-    (cand.getParameterCount == ts.length) &&
-    (cand.getParameterTypes zip ts).forall {
-      case (clazz, tpe) => isSubtype(tpe, Type.getFlixType(clazz))
-    }
 
   /**
    * Helper method to define a sub-typing relation between two given Flix types.
