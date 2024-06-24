@@ -144,6 +144,37 @@ object WeederError {
   }
 
   /**
+    * An error raised to indicate an enum using both singleton and multiton syntaxes.
+    *
+    * @param loc the location of the struct declaration
+    * @param fieldName the name of the field
+    * @param structName the name of the struct
+    * @param field1 the location of the first field
+    * @param field2 the location of the second field
+    */
+  case class DuplicateStructField(loc: SourceLocation, fieldName: String, structName: String, field1: SourceLocation, field2: SourceLocation) extends WeederError with Recoverable {
+    def summary: String = s"Multiple declarations of field '$fieldName' in struct '$structName'"
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s""">> Multiple declarations of field '$fieldName' in struct '$structName'
+         |
+         |${code(loc, "struct declaration has duplicate fields")}
+         |
+         |${code(field1, "the first occurrence was here")}
+         |
+         |${code(field2, "the second occurrence was here")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Remove one of the two fields."
+    })
+  }
+
+  /**
     * An error raised to indicate that a loop does not contain any fragments.
     *
     * @param loc the location of the for-loop with no fragments.
@@ -329,33 +360,6 @@ object WeederError {
          |    }
          |
          |""".stripMargin
-    })
-  }
-
-  /**
-    * An error raised to indicate an enum using both singleton and multiton syntaxes.
-    *
-    * @param loc the location where the error occurred.
-    */
-  case class DuplicateStructField(loc: SourceLocation, fieldName: String, structName: String, field1: SourceLocation, field2: SourceLocation) extends WeederError with Unrecoverable {
-    def summary: String = s"Multiple declarations of field '$fieldName' in struct '$structName'"
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s""">> Multiple declarations of field '$fieldName' in struct '$structName'
-         |
-         |${code(loc, "struct declaration has duplicate fields")}
-         |
-         |${code(field1, "the first occurrence was here")}
-         |
-         |${code(field2, "the second occurrence was here")}
-         |
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
-      s"${underline("Tip:")} Remove one of the two fields."
     })
   }
 
