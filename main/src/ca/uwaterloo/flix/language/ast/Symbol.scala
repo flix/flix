@@ -136,6 +136,13 @@ object Symbol {
   }
 
   /**
+   * Returns the struct symbol for the given name `ident` in the given namespace `ns`.
+   */
+  def mkStructSym(ns: NName, ident: Ident): StructSym = {
+    new StructSym(ns.parts, ident.name, ident.loc)
+  }
+
+  /**
     * Returns the restrictable enum symbol for the given name `ident` in the given namespace `ns`.
     */
   def mkRestrictableEnumSym(ns: NName, ident: Ident, cases: List[Ident]): RestrictableEnumSym = {
@@ -148,6 +155,14 @@ object Symbol {
   def mkEnumSym(fqn: String): EnumSym = split(fqn) match {
     case None => new EnumSym(Nil, fqn, SourceLocation.Unknown)
     case Some((ns, name)) => new EnumSym(ns, name, SourceLocation.Unknown)
+  }
+
+  /**
+   * Returns the struct symbol for the given fully qualified name.
+   */
+  def mkStructSym(fqn: String): StructSym = split(fqn) match {
+    case None => new StructSym(Nil, fqn, SourceLocation.Unknown)
+    case Some((ns, name)) => new StructSym(ns, name, SourceLocation.Unknown)
   }
 
   /**
@@ -452,6 +467,9 @@ object Symbol {
     override def toString: String = if (namespace.isEmpty) name else namespace.mkString(".") + "." + name
   }
 
+  /**
+   * Struct Symbol.
+   */
   final class StructSym(val namespace: List[String], val text: String, val loc: SourceLocation) extends Symbol {
     /**
       * Returns the name of `this` symbol.
