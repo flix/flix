@@ -191,6 +191,7 @@ object Weeder2 {
       val definitions = pickAll(TreeKind.Decl.Def, tree)
       val enums = pickAll(TreeKind.Decl.Enum, tree)
       val restrictableEnums = pickAll(TreeKind.Decl.RestrictableEnum, tree)
+      val structs = pickAll(TreeKind.Decl.Struct, tree)
       val typeAliases = pickAll(TreeKind.Decl.TypeAlias, tree)
       val effects = pickAll(TreeKind.Decl.Effect, tree)
       mapN(
@@ -199,12 +200,13 @@ object Weeder2 {
         traverse(instances)(visitInstanceDecl),
         traverse(definitions)(visitDefinitionDecl(_)),
         traverse(enums)(visitEnumDecl),
+        traverse(structs)(visitStructDecl),
         traverse(restrictableEnums)(visitRestrictableEnumDecl),
         traverse(typeAliases)(visitTypeAliasDecl),
         traverse(effects)(visitEffectDecl)
       ) {
-        case (modules, traits, instances, definitions, enums, rEnums, typeAliases, effects) =>
-          (modules ++ traits ++ instances ++ definitions ++ enums ++ rEnums ++ typeAliases ++ effects).sortBy(_.loc)
+        case (modules, traits, instances, definitions, enums, rEnums, structs, typeAliases, effects) =>
+          (modules ++ traits ++ instances ++ definitions ++ enums ++ rEnums ++ structs ++ typeAliases ++ effects).sortBy(_.loc)
       }
     }
 
@@ -446,6 +448,37 @@ object Weeder2 {
       }
     }
 
+    private def visitStructDecl(tree: Tree): Validation[Declaration.Struct, CompilationMessage] = {
+      expect(tree, TreeKind.Decl.Struct)
+      val fields = pickAll(TreeKind.StructField, tree)
+      flatMapN(
+        pickDocumentation(tree),
+        pickAnnotations(tree),
+        pickModifiers(tree, allowed = Set(TokenKind.KeywordPub)),
+        pickNameIdent(tree),
+        Types.pickParameters(tree),
+        traverse(fields)(visitStructField)
+      ) {
+        (doc, ann, mods, ident, tparams, fields) =>
+        // TODO: Validation, e.g., never duplicate names
+        Validation.success(Declaration.Struct(
+          doc, ann, mods, ident, tparams, fields.sortBy(_.loc), tree.loc
+        ))
+      }
+    }
+
+    private def visitStructField(tree: Tree): Validation[StructField, CompilationMessage] = {
+      expect(tree, TreeKind.StructField)
+      mapN(
+        pickNameIdent(tree),
+        Types.pickType(tree)
+      ) {
+        (ident, ttype) =>
+          // Make a source location that spans the name and type
+          val loc = SourceLocation(isReal = true, ident.loc.sp1, tree.loc.sp2)
+          StructField(ident, ttype, loc)
+      }
+    }
     private def visitTypeAliasDecl(tree: Tree): Validation[Declaration.TypeAlias, CompilationMessage] = {
       expect(tree, TreeKind.Decl.TypeAlias)
       mapN(
@@ -944,7 +977,7 @@ object Weeder2 {
       // Note: This visitor is used by both expression literals and pattern literals.
       expectAny(tree, List(TreeKind.Expr.Literal, TreeKind.Pattern.Literal))
       tree.children(0) match {
-        case token@Token(_, _, _, _, _, _ ) => token.kind match {
+        case token@Token(_, _, _, _, _, _) => token.kind match {
           case TokenKind.KeywordNull => Validation.success(Expr.Cst(Ast.Constant.Null, token.mkSourceLocation()))
           case TokenKind.KeywordTrue => Validation.success(Expr.Cst(Ast.Constant.Bool(true), token.mkSourceLocation()))
           case TokenKind.KeywordFalse => Validation.success(Expr.Cst(Ast.Constant.Bool(false), token.mkSourceLocation()))
@@ -988,8 +1021,8 @@ object Weeder2 {
     }
 
     /**
-     * This method is the same as pickArguments but considers Unit as no-argument. It calls visitMethodArguments instead.
-     */
+      * This method is the same as pickArguments but considers Unit as no-argument. It calls visitMethodArguments instead.
+      */
     private def pickRawArguments(tree: Tree): Validation[List[Expr], CompilationMessage] = {
       flatMapN(pick(TreeKind.ArgumentList, tree))(visitMethodArguments)
     }
@@ -1009,9 +1042,9 @@ object Weeder2 {
     }
 
     /**
-     * This method is the same as visitArguments but for invokeMethod2. It does not consider named arguments
-     * as they are not allowed and it doesn't add unit arguments for empty arguments.
-     */
+      * This method is the same as visitArguments but for invokeMethod2. It does not consider named arguments
+      * as they are not allowed and it doesn't add unit arguments for empty arguments.
+      */
     private def visitMethodArguments(tree: Tree): Validation[List[Expr], CompilationMessage] = {
       traverse(pickAll(TreeKind.Argument, tree))(pickExpr)
     }
@@ -1142,7 +1175,13 @@ object Weeder2 {
             case "::" => Validation.success(Expr.FCons(e1, e2, tree.loc))
             case ":::" => Validation.success(Expr.FAppend(e1, e2, tree.loc))
             case "<+>" => Validation.success(Expr.FixpointMerge(e1, e2, tree.loc))
-            case "instanceof" => mapN(tryPickJavaName(exprs(1)))(Expr.InstanceOf(e1, _, tree.loc))
+            case "instanceof" =>
+              flatMapN(pickQName(exprs(1))) {
+                case qname if qname.isUnqualified => Validation.success(Expr.InstanceOf(e1, qname.ident, tree.loc))
+                case _ =>
+                  val m = IllegalQualifiedName(exprs(1).loc)
+                  Validation.toSoftFailure(Expr.Error(m), m)
+              }
             // UNRECOGNIZED
             case id =>
               val ident = Name.Ident(id, op.loc)
@@ -1693,13 +1732,14 @@ object Weeder2 {
     private def visitInvokeConstructor2Expr(tree: Tree): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.InvokeConstructor2)
       flatMapN(Types.pickType(tree), pickRawArguments(tree)) {
-        (tpe, exps) => tpe match {
-          case WeededAst.Type.Ambiguous(qname, _) if qname.isUnqualified =>
-            Validation.success(Expr.InvokeConstructor2(qname.ident, exps, tree.loc))
-          case _ =>
-            val m = IllegalQualifiedNameInInvokeConstructor(tree.loc)
-            Validation.toSoftFailure(Expr.Error(m), m)
-        }
+        (tpe, exps) =>
+          tpe match {
+            case WeededAst.Type.Ambiguous(qname, _) if qname.isUnqualified =>
+              Validation.success(Expr.InvokeConstructor2(qname.ident, exps, tree.loc))
+            case _ =>
+              val m = IllegalQualifiedName(tree.loc)
+              Validation.toSoftFailure(Expr.Error(m), m)
+          }
       }
     }
 
@@ -1728,16 +1768,16 @@ object Weeder2 {
     }
 
     /**
-     * Helper method to visit a sub-expression of invokeMethod2.
-     * We may consider a sub-expression the following: someCall(x, y, ...)
-     * which contains the method name "someCall" and its arguments x, y, ...
-     *
-     * Its purpose is to ease manipulation of consecutive java calls, e.g.:
-     *
-     *                    obj#method1()#method2()
-     *
-     * contains two invokeMethod2 fragments.
-     */
+      * Helper method to visit a sub-expression of invokeMethod2.
+      * We may consider a sub-expression the following: someCall(x, y, ...)
+      * which contains the method name "someCall" and its arguments x, y, ...
+      *
+      * Its purpose is to ease manipulation of consecutive java calls, e.g.:
+      *
+      * obj#method1()#method2()
+      *
+      * contains two invokeMethod2 fragments.
+      */
     private def visitInvokeMethod2Fragment(tree: Tree): Validation[(Name.Ident, List[Expr]), CompilationMessage] = {
       expect(tree, TreeKind.Expr.InvokeMethod2Fragment)
       val methodName = pickNameIdent(tree)

@@ -810,6 +810,7 @@ object Parser2 {
         case TokenKind.KeywordInstance => instanceDecl(mark)
         case TokenKind.KeywordDef => definitionDecl(mark)
         case TokenKind.KeywordEnum | TokenKind.KeywordRestrictable => enumerationDecl(mark)
+        case TokenKind.KeywordStruct => structDecl(mark)
         case TokenKind.KeywordType => typeAliasDecl(mark)
         case TokenKind.KeywordEff => effectDecl(mark)
         case TokenKind.Eof => close(mark, TreeKind.CommentList) // Last tokens in the file were comments.
@@ -1094,6 +1095,35 @@ object Parser2 {
         }
         close(mark, TreeKind.Case)
       }
+    }
+
+    private def structDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordStruct))
+      expect(TokenKind.KeywordStruct, SyntacticContext.Decl.Struct)
+      val nameLoc = currentSourceLocation()
+      name(NAME_TYPE, context = SyntacticContext.Decl.Struct)
+      if (at(TokenKind.BracketL)) {
+        Type.parameters()
+      }
+      zeroOrMore(
+        namedTokenSet = NamedTokenSet.FromKinds(NAME_FIELD),
+        getItem = structField,
+        checkForItem = NAME_FIELD.contains,
+        breakWhen = _.isRecoverExpr,
+        delimiterL = TokenKind.CurlyL,
+        delimiterR = TokenKind.CurlyR,
+        context = SyntacticContext.Decl.Struct
+      )
+      close(mark, TreeKind.Decl.Struct)
+    }
+
+    private def structField()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      docComment()
+      name(NAME_FIELD, context = SyntacticContext.Decl.Struct)
+      expect(TokenKind.Colon, SyntacticContext.Decl.Struct)
+      Type.ttype()
+      close(mark, TreeKind.StructField)
     }
 
     private def typeAliasDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {

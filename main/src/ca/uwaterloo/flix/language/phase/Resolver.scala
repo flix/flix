@@ -1322,11 +1322,14 @@ object Resolver {
           }
 
         case NamedAst.Expr.InstanceOf(exp, className, loc) =>
-          lookupJvmClass(className, loc) match {
-            case Result.Ok(clazz) => mapN(visitExp(exp, env0)) {
-              e => ResolvedAst.Expr.InstanceOf(e, clazz, loc)
+          flatMapN(visitExp(exp, env0)) {
+            case e => env0.get(className.name) match {
+              case Some(List(Resolution.JavaClass(clazz))) =>
+                Validation.success(ResolvedAst.Expr.InstanceOf(e, clazz, loc))
+              case _ =>
+                val m = ResolutionError.UndefinedJvmClass(className.name, "", loc)
+                Validation.toSoftFailure(ResolvedAst.Expr.Error(m), m)
             }
-            case Result.Err(e) => Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
           }
 
         case NamedAst.Expr.CheckedCast(c, exp, loc) =>
@@ -1353,7 +1356,7 @@ object Resolver {
           val rulesVal = traverse(rules) {
             case NamedAst.CatchRule(sym, className, body) =>
               val env = env0 ++ mkVarEnv(sym)
-              val clazzVal = lookupJvmClass(className, sym.loc).toValidation
+              val clazzVal = lookupJvmClass2(className, env0, sym.loc).toValidation
               val bVal = visitExp(body, env)
               mapN(clazzVal, bVal) {
                 case (clazz, b) => ResolvedAst.CatchRule(sym, clazz, b)
@@ -1420,14 +1423,14 @@ object Resolver {
               }
           }
 
-        case NamedAst.Expr.InvokeConstructor2(clazzName, exps, loc) =>
+        case NamedAst.Expr.InvokeConstructor2(className, exps, loc) =>
           val esVal = traverse(exps)(visitExp(_, env0))
           flatMapN(esVal) {
-            es => env0.get(clazzName.name) match {
+            es => env0.get(className.name) match {
               case Some(List(Resolution.JavaClass(clazz))) =>
                 Validation.success(ResolvedAst.Expr.InvokeConstructor2(clazz, es, loc))
               case _ =>
-                val m = ResolutionError.UndefinedJvmClass(clazzName.name, "", loc)
+                val m = ResolutionError.UndefinedJvmClass(className.name, "", loc)
                 Validation.toSoftFailure(ResolvedAst.Expr.Error(m), m)
             }
           }
@@ -1440,14 +1443,14 @@ object Resolver {
               ResolvedAst.Expr.InvokeMethod2(e, name, es, loc)
           }
 
-        case NamedAst.Expr.InvokeStaticMethod2(clazzName, methodName, exps, loc) =>
+        case NamedAst.Expr.InvokeStaticMethod2(className, methodName, exps, loc) =>
           val esVal = traverse(exps)(visitExp(_, env0))
           flatMapN(esVal) {
-            es => env0.get(clazzName.name) match {
+            es => env0.get(className.name) match {
               case Some(List(Resolution.JavaClass(clazz))) =>
                 Validation.success(ResolvedAst.Expr.InvokeStaticMethod2(clazz, methodName, es, loc))
               case _ =>
-                val m = ResolutionError.UndefinedJvmClass(clazzName.name, "", loc)
+                val m = ResolutionError.UndefinedJvmClass(className.name, "", loc)
                 Validation.toSoftFailure(ResolvedAst.Expr.Error(m), m)
             }
           }
@@ -3175,6 +3178,19 @@ object Resolver {
   }
 
   /**
+    * Returns the class reflection object for the given `className`.
+    */
+  private def lookupJvmClass2(className: String, env0: ListMap[String, Resolution], loc: SourceLocation)(implicit flix: Flix): Result[Class[_], ResolutionError with Recoverable] = {
+    lookupJvmClass(className, loc) match {
+      case Result.Ok(clazz) => Result.Ok(clazz)
+      case Result.Err(e) => env0.get(className) match {
+        case Some(List(Resolution.JavaClass(clazz))) => Result.Ok(clazz)
+        case _ => Result.Err(e)
+      }
+    }
+  }
+
+  /**
     * Returns the constructor reflection object for the given `clazz` and `signature`.
     */
   private def lookupJvmConstructor(clazz: Class[_], signature: List[Class[_]], loc: SourceLocation)(implicit flix: Flix): Result[Constructor[_], ResolutionError with Recoverable] = {
@@ -3340,7 +3356,6 @@ object Resolver {
         case TypeConstructor.Schema => Result.Ok(Class.forName("java.lang.Object"))
 
 
-
         case TypeConstructor.True => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.False => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.Not => Result.Err(ResolutionError.IllegalType(tpe, loc))
@@ -3368,7 +3383,6 @@ object Resolver {
         case TypeConstructor.CaseUnion(_) => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.Error(_) => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.MethodReturnType => Result.Err(ResolutionError.IllegalType(tpe, loc))
-        case TypeConstructor.StaticMethodReturnType(clazz, name, arity) => Result.Err(ResolutionError.IllegalType(tpe, loc))
 
         case TypeConstructor.AnyType => throw InternalCompilerException(s"unexpected type: $tc", tpe.loc)
         case t: TypeConstructor.Arrow => throw InternalCompilerException(s"unexpected type: $t", tpe.loc)

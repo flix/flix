@@ -164,7 +164,7 @@ object NamedAst {
 
     case class Ascribe(exp: Expr, expectedType: Option[Type], expectedEff: Option[Type], loc: SourceLocation) extends Expr
 
-    case class InstanceOf(exp: Expr, className: String, loc: SourceLocation) extends Expr
+    case class InstanceOf(exp: Expr, className: Name.Ident, loc: SourceLocation) extends Expr
 
     case class CheckedCast(cast: Ast.CheckedCastType, exp: Expr, loc: SourceLocation) extends Expr
 

@@ -74,6 +74,8 @@ object Desugar {
     case d: WeededAst.Declaration.Law => visitLaw(d)
     case d: WeededAst.Declaration.Enum => visitEnum(d)
     case d: WeededAst.Declaration.RestrictableEnum => visitRestrictableEnum(d)
+    case _: WeededAst.Declaration.Struct =>
+      throw new RuntimeException("No struct support yet")
     case d: WeededAst.Declaration.TypeAlias => visitTypeAlias(d)
     case d: WeededAst.Declaration.Effect => visitEffect(d)
   }
@@ -710,18 +712,18 @@ object Desugar {
       val es = visitExps(exps)
       Expr.Do(op, es, loc)
 
-    case WeededAst.Expr.InvokeConstructor2(clazzName, exps, loc) =>
+    case WeededAst.Expr.InvokeConstructor2(className, exps, loc) =>
       val es = visitExps(exps)
-      Expr.InvokeConstructor2(clazzName, es, loc)
+      Expr.InvokeConstructor2(className, es, loc)
 
     case WeededAst.Expr.InvokeMethod2(exp, name, exps, loc) =>
       val e = visitExp(exp)
       val es = visitExps(exps)
       Expr.InvokeMethod2(e, name, es, loc)
 
-    case WeededAst.Expr.InvokeStaticMethod2(clazzName, methodName, exps, loc) =>
+    case WeededAst.Expr.InvokeStaticMethod2(className, methodName, exps, loc) =>
       val es = visitExps(exps)
-      Expr.InvokeStaticMethod2(clazzName, methodName, es, loc)
+      Expr.InvokeStaticMethod2(className, methodName, es, loc)
 
     case WeededAst.Expr.InvokeConstructor(className, exps, sig, loc) =>
       val es = visitExps(exps)
