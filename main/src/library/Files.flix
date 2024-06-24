@@ -900,7 +900,7 @@ mod Files {
 
             let srcFile = new File(src#src);
             let srcPath = toPath(srcFile);
-            let dstFile = newFile(dst);
+            let dstFile = new File(dst);
             let dstPath = toPath(dstFile);
             discard move(srcPath, dstPath, Array#{} @ rc)
         })
@@ -955,7 +955,7 @@ mod Files {
             let dstFile = new File(dst);
             let dstPath = toPath(dstFile);
 
-            let srcFile = newFile(src#src);
+            let srcFile = new File(src#src);
             let srcPath = toPath(srcFile);
             discard move(srcPath, dstPath, Array#{checked_cast(getOverwrite())} @ rc)
         })
@@ -977,7 +977,7 @@ mod Files {
 
             let srcFile = new File(src#src);
             let srcPath = toPath(srcFile);
-            let dstFile = newFile(dst);
+            let dstFile = new File(dst);
             let dstPath = toPath(dstFile);
             discard copy(srcPath, dstPath, Array#{} @ rc)
        })
@@ -1032,7 +1032,7 @@ mod Files {
             let dstFile = new File(dst);
             let dstPath = toPath(dstFile);
 
-            let srcFile = newFile(src#src);
+            let srcFile = new File(src#src);
             let srcPath = toPath(srcFile);
             discard copy(srcPath, dstPath, Array#{checked_cast(getOverwrite())} @ rc)
         })
