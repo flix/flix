@@ -210,7 +210,7 @@ object JavaScriptBackend {
     case Float32Op.Add => "+"
     case Float32Op.Sub => "-"
     case Float32Op.Mul => "*"
-    case Float32Op.Div => throw InternalCompilerException("Division is not supported by JS", loc)
+    case Float32Op.Div => "/"
     case Float32Op.Exp => throw InternalCompilerException("Exponentiation is not supported by JS", loc)
     case Float32Op.Eq => "==="
     case Float32Op.Neq => "!=="
@@ -221,7 +221,7 @@ object JavaScriptBackend {
     case Float64Op.Add => "+"
     case Float64Op.Sub => "-"
     case Float64Op.Mul => "*"
-    case Float64Op.Div => throw InternalCompilerException("Division is not supported by JS", loc)
+    case Float64Op.Div => "/"
     case Float64Op.Exp => throw InternalCompilerException("Exponentiation is not supported by JS", loc)
     case Float64Op.Eq => "==="
     case Float64Op.Neq => "!=="
@@ -232,7 +232,7 @@ object JavaScriptBackend {
     case Int8Op.Add => "+"
     case Int8Op.Sub => "-"
     case Int8Op.Mul => "*"
-    case Int8Op.Div => throw InternalCompilerException("Division is not supported by JS", loc)
+    case Int8Op.Div => throw InternalCompilerException("Integer division is not supported by JS", loc)
     case Int8Op.Rem => throw InternalCompilerException("Remainder is not supported by JS", loc)
     case Int8Op.Exp => throw InternalCompilerException("Exponentiation is not supported by JS", loc)
     case Int8Op.And => throw InternalCompilerException("Bitwise operations not supported in JS", loc)
@@ -249,7 +249,7 @@ object JavaScriptBackend {
     case Int16Op.Add => "+"
     case Int16Op.Sub => "-"
     case Int16Op.Mul => "*"
-    case Int16Op.Div => throw InternalCompilerException("Division is not supported by JS", loc)
+    case Int16Op.Div => throw InternalCompilerException("Integer division is not supported by JS", loc)
     case Int16Op.Rem => throw InternalCompilerException("Remainder is not supported by JS", loc)
     case Int16Op.Exp => throw InternalCompilerException("Exponentiation is not supported by JS", loc)
     case Int16Op.And => throw InternalCompilerException("Bitwise operations not supported in JS", loc)
@@ -266,7 +266,7 @@ object JavaScriptBackend {
     case Int32Op.Add => "+"
     case Int32Op.Sub => "-"
     case Int32Op.Mul => "*"
-    case Int32Op.Div => throw InternalCompilerException("Division is not supported by JS", loc)
+    case Int32Op.Div => throw InternalCompilerException("Integer division is not supported by JS", loc)
     case Int32Op.Rem => throw InternalCompilerException("Remainder is not supported by JS", loc)
     case Int32Op.Exp => throw InternalCompilerException("Exponentiation is not supported by JS", loc)
     case Int32Op.And => throw InternalCompilerException("Bitwise operations not supported in JS", loc)
@@ -283,7 +283,7 @@ object JavaScriptBackend {
     case Int64Op.Add => "+"
     case Int64Op.Sub => "-"
     case Int64Op.Mul => "*"
-    case Int64Op.Div => throw InternalCompilerException("Division is not supported by JS", loc)
+    case Int64Op.Div => throw InternalCompilerException("Integer division is not supported by JS", loc)
     case Int64Op.Rem => throw InternalCompilerException("Remainder is not supported by JS", loc)
     case Int64Op.Exp => throw InternalCompilerException("Exponentiation is not supported by JS", loc)
     case Int64Op.And => throw InternalCompilerException("Bitwise operations not supported in JS", loc)
