@@ -137,6 +137,55 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.DuplicateTag](result)
   }
 
+  test("DuplicateStructField.01") {
+    val input =
+      """struct Person {
+         name: String,
+         name: String
+      }
+    """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.DuplicateStructField](result)
+  }
+
+  test("DuplicateStructField.02") {
+    val input =
+      """struct Person {
+         name: String,
+         age: Int32,
+         name: String
+      }
+    """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.DuplicateStructField](result)
+  }
+
+  test("DuplicateStructField.03") {
+    val input =
+      """struct Person {
+         name: String,
+         age: Int32,
+         name: String,
+         age: Int32
+      }
+    """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.DuplicateStructField](result)
+  }
+
+  test("DuplicateStructField.04") {
+    val input =
+      """struct Person {
+         name: String,
+         age: Int32,
+         age: Int32,
+         height: Int32
+      }
+    """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.DuplicateStructField](result)
+  }
+
   test("EmptyForFragment.01") {
     val input =
       """
