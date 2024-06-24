@@ -1327,7 +1327,7 @@ object Parser2 {
         lhs = close(mark, TreeKind.Expr.Apply)
         lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
       }
-      // Handle record select after function call. Example: funcReturningRecord()#field
+      // Handle record select after function call. Example: funcReturningRecord().field
       if (at(TokenKind.Hash) && nth(1) == TokenKind.NameLowerCase) {
         val mark = openBefore(lhs)
         eat(TokenKind.Hash)
