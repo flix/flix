@@ -460,10 +460,10 @@ object Weeder2 {
         traverse(fields)(visitStructField)
       ) {
         (doc, ann, mods, ident, tparams, fields) =>
-        // TODO: Validation, e.g., never duplicate names
-        Validation.success(Declaration.Struct(
-          doc, ann, mods, ident, tparams, fields.sortBy(_.loc), tree.loc
-        ))
+          // TODO: Validation, e.g., never duplicate names
+          Validation.success(Declaration.Struct(
+            doc, ann, mods, ident, tparams, fields.sortBy(_.loc), tree.loc
+          ))
       }
     }
 
@@ -479,6 +479,7 @@ object Weeder2 {
           StructField(ident, ttype, loc)
       }
     }
+
     private def visitTypeAliasDecl(tree: Tree): Validation[Declaration.TypeAlias, CompilationMessage] = {
       expect(tree, TreeKind.Decl.TypeAlias)
       mapN(
@@ -980,7 +981,7 @@ object Weeder2 {
       // Note: This visitor is used by both expression literals and pattern literals.
       expectAny(tree, List(TreeKind.Expr.Literal, TreeKind.Pattern.Literal))
       tree.children(0) match {
-        case token@Token(_, _, _, _, _, _ ) => token.kind match {
+        case token@Token(_, _, _, _, _, _) => token.kind match {
           case TokenKind.KeywordNull => Validation.success(Expr.Cst(Ast.Constant.Null, token.mkSourceLocation()))
           case TokenKind.KeywordTrue => Validation.success(Expr.Cst(Ast.Constant.Bool(true), token.mkSourceLocation()))
           case TokenKind.KeywordFalse => Validation.success(Expr.Cst(Ast.Constant.Bool(false), token.mkSourceLocation()))
@@ -1024,8 +1025,8 @@ object Weeder2 {
     }
 
     /**
-     * This method is the same as pickArguments but considers Unit as no-argument. It calls visitMethodArguments instead.
-     */
+      * This method is the same as pickArguments but considers Unit as no-argument. It calls visitMethodArguments instead.
+      */
     private def pickRawArguments(tree: Tree): Validation[List[Expr], CompilationMessage] = {
       flatMapN(pick(TreeKind.ArgumentList, tree))(visitMethodArguments)
     }
@@ -1045,9 +1046,9 @@ object Weeder2 {
     }
 
     /**
-     * This method is the same as visitArguments but for invokeMethod2. It does not consider named arguments
-     * as they are not allowed and it doesn't add unit arguments for empty arguments.
-     */
+      * This method is the same as visitArguments but for invokeMethod2. It does not consider named arguments
+      * as they are not allowed and it doesn't add unit arguments for empty arguments.
+      */
     private def visitMethodArguments(tree: Tree): Validation[List[Expr], CompilationMessage] = {
       traverse(pickAll(TreeKind.Argument, tree))(pickExpr)
     }
@@ -1735,13 +1736,14 @@ object Weeder2 {
     private def visitInvokeConstructor2Expr(tree: Tree): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.InvokeConstructor2)
       flatMapN(Types.pickType(tree), pickRawArguments(tree)) {
-        (tpe, exps) => tpe match {
-          case WeededAst.Type.Ambiguous(qname, _) if qname.isUnqualified =>
-            Validation.success(Expr.InvokeConstructor2(qname.ident, exps, tree.loc))
-          case _ =>
-            val m = IllegalQualifiedName(tree.loc)
-            Validation.toSoftFailure(Expr.Error(m), m)
-        }
+        (tpe, exps) =>
+          tpe match {
+            case WeededAst.Type.Ambiguous(qname, _) if qname.isUnqualified =>
+              Validation.success(Expr.InvokeConstructor2(qname.ident, exps, tree.loc))
+            case _ =>
+              val m = IllegalQualifiedName(tree.loc)
+              Validation.toSoftFailure(Expr.Error(m), m)
+          }
       }
     }
 
@@ -1770,16 +1772,16 @@ object Weeder2 {
     }
 
     /**
-     * Helper method to visit a sub-expression of invokeMethod2.
-     * We may consider a sub-expression the following: someCall(x, y, ...)
-     * which contains the method name "someCall" and its arguments x, y, ...
-     *
-     * Its purpose is to ease manipulation of consecutive java calls, e.g.:
-     *
-     *                    obj#method1()#method2()
-     *
-     * contains two invokeMethod2 fragments.
-     */
+      * Helper method to visit a sub-expression of invokeMethod2.
+      * We may consider a sub-expression the following: someCall(x, y, ...)
+      * which contains the method name "someCall" and its arguments x, y, ...
+      *
+      * Its purpose is to ease manipulation of consecutive java calls, e.g.:
+      *
+      * obj#method1()#method2()
+      *
+      * contains two invokeMethod2 fragments.
+      */
     private def visitInvokeMethod2Fragment(tree: Tree): Validation[(Name.Ident, List[Expr]), CompilationMessage] = {
       expect(tree, TreeKind.Expr.InvokeMethod2Fragment)
       val methodName = pickNameIdent(tree)
