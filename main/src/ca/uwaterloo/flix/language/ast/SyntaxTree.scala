@@ -112,6 +112,8 @@ object SyntaxTree {
 
     case object Root extends TreeKind
 
+    case object StructField extends TreeKind
+
     case object TypeParameter extends TreeKind
 
     case object TypeParameterList extends TreeKind
@@ -150,6 +152,8 @@ object SyntaxTree {
 
       case object Signature extends Decl
 
+      case object Struct extends Decl
+
       case object TypeAlias extends Decl
     }
 
@@ -187,9 +191,13 @@ object SyntaxTree {
 
       case object Do extends Expr
 
+      case object InvokeConstructor2 extends Expr
+
       case object InvokeMethod2 extends Expr
 
       case object InvokeMethod2Fragment extends Expr
+
+      case object InvokeStaticMethod2 extends Expr
 
       case object Debug extends Expr
 
@@ -336,6 +344,8 @@ object SyntaxTree {
       case object UncheckedCast extends Expr
 
       case object UncheckedMaskingCast extends Expr
+
+      case object Unsafe extends Expr
 
       case object Use extends Expr
 

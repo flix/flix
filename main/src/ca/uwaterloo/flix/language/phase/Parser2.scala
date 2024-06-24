@@ -121,8 +121,11 @@ object Parser2 {
       // Compute the stale and fresh sources.
       val (stale, fresh) = changeSet.partition(tokens, oldRoot.units)
 
+      // Sort the stale inputs by size to increase throughput (i.e. to start work early on the biggest tasks).
+      val staleByDecreasingSize = stale.toList.sortBy(p => -p._2.length)
+
       // Parse each stale source in parallel and join them into a WeededAst.Root
-      val refreshed = ParOps.parMap(stale) {
+      val refreshed = ParOps.parMap(staleByDecreasingSize) {
         case (src, tokens) => mapN(parse(src, tokens))(trees => src -> trees)
       }
 
@@ -807,6 +810,7 @@ object Parser2 {
         case TokenKind.KeywordInstance => instanceDecl(mark)
         case TokenKind.KeywordDef => definitionDecl(mark)
         case TokenKind.KeywordEnum | TokenKind.KeywordRestrictable => enumerationDecl(mark)
+        case TokenKind.KeywordStruct => structDecl(mark)
         case TokenKind.KeywordType => typeAliasDecl(mark)
         case TokenKind.KeywordEff => effectDecl(mark)
         case TokenKind.Eof => close(mark, TreeKind.CommentList) // Last tokens in the file were comments.
@@ -1093,6 +1097,35 @@ object Parser2 {
       }
     }
 
+    private def structDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordStruct))
+      expect(TokenKind.KeywordStruct, SyntacticContext.Decl.Struct)
+      val nameLoc = currentSourceLocation()
+      name(NAME_TYPE, context = SyntacticContext.Decl.Struct)
+      if (at(TokenKind.BracketL)) {
+        Type.parameters()
+      }
+      zeroOrMore(
+        namedTokenSet = NamedTokenSet.FromKinds(NAME_FIELD),
+        getItem = structField,
+        checkForItem = NAME_FIELD.contains,
+        breakWhen = _.isRecoverExpr,
+        delimiterL = TokenKind.CurlyL,
+        delimiterR = TokenKind.CurlyR,
+        context = SyntacticContext.Decl.Struct
+      )
+      close(mark, TreeKind.Decl.Struct)
+    }
+
+    private def structField()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      docComment()
+      name(NAME_FIELD, context = SyntacticContext.Decl.Struct)
+      expect(TokenKind.Colon, SyntacticContext.Decl.Struct)
+      Type.ttype()
+      close(mark, TreeKind.StructField)
+    }
+
     private def typeAliasDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.KeywordType))
       expect(TokenKind.KeywordType, SyntacticContext.Decl.OtherDecl)
@@ -1295,11 +1328,11 @@ object Parser2 {
         lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
       }
       // Handle record select after function call. Example: funcReturningRecord().field
-      if (at(TokenKind.Dot) && nth(1) == TokenKind.NameLowerCase) {
+      if (at(TokenKind.Hash) && nth(1) == TokenKind.NameLowerCase) {
         val mark = openBefore(lhs)
-        eat(TokenKind.Dot)
+        eat(TokenKind.Hash)
         name(NAME_FIELD, context = SyntacticContext.Expr.OtherExpr)
-        while (eat(TokenKind.Dot)) {
+        while (eat(TokenKind.Hash)) {
           name(NAME_FIELD, context = SyntacticContext.Expr.OtherExpr)
         }
         lhs = close(mark, TreeKind.Expr.RecordSelect)
@@ -1465,7 +1498,8 @@ object Parser2 {
              | TokenKind.LiteralRegex => literalExpr()
         case TokenKind.ParenL => parenOrTupleOrLambdaExpr()
         case TokenKind.Underscore => if (nth(1) == TokenKind.ArrowThinR) unaryLambdaExpr() else name(NAME_VARIABLE, context = SyntacticContext.Expr.OtherExpr)
-        case TokenKind.NameLowerCase if nth(1) == TokenKind.Hash => invokeMethod2Expr()
+        case TokenKind.NameLowerCase if nth(1) == TokenKind.Currency => invokeMethod2Expr()
+        case TokenKind.NameUpperCase if nth(1) == TokenKind.Currency => invokeStaticMethod2Expr()
         case TokenKind.NameLowerCase => if (nth(1) == TokenKind.ArrowThinR) unaryLambdaExpr() else name(NAME_FIELD, allowQualified = true, context = SyntacticContext.Expr.OtherExpr)
         case TokenKind.NameUpperCase
              | TokenKind.NameMath
@@ -1500,10 +1534,11 @@ object Parser2 {
         case TokenKind.KeywordCheckedCast => checkedTypeCastExpr()
         case TokenKind.KeywordCheckedECast => checkedEffectCastExpr()
         case TokenKind.KeywordUncheckedCast => uncheckedCastExpr()
+        case TokenKind.KeywordUnsafe => unsafeExpr()
         case TokenKind.KeywordMaskedCast => uncheckedMaskingCastExpr()
         case TokenKind.KeywordTry => tryExpr()
         case TokenKind.KeywordDo => doExpr()
-        case TokenKind.KeywordNew => newObjectExpr()
+        case TokenKind.KeywordNew => ambiguousNewExpr()
         case TokenKind.KeywordStaticUppercase => staticExpr()
         case TokenKind.KeywordSelect => selectExpr()
         case TokenKind.KeywordSpawn => spawnExpr()
@@ -2297,6 +2332,14 @@ object Parser2 {
       close(mark, TreeKind.Expr.UncheckedCast)
     }
 
+    private def unsafeExpr()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordUnsafe))
+      val mark = open()
+      expect(TokenKind.KeywordUnsafe, SyntacticContext.Expr.OtherExpr)
+      expression()
+      close(mark, TreeKind.Expr.Unsafe)
+    }
+
     private def uncheckedMaskingCastExpr()(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.KeywordMaskedCast))
       val mark = open()
@@ -2400,8 +2443,7 @@ object Parser2 {
       assert(at(TokenKind.NameLowerCase))
       val mark = open()
       name(Set(TokenKind.NameLowerCase), context = SyntacticContext.Expr.OtherExpr)
-      // TODO INTEROP emit an error if we are not at an hash here
-      while (eat(TokenKind.Hash)) {
+      while (eat(TokenKind.Currency)) {
         val fragmentMark = open()
         name(Set(TokenKind.NameUpperCase, TokenKind.NameLowerCase), context = SyntacticContext.Expr.OtherExpr)
         arguments()
@@ -2410,22 +2452,41 @@ object Parser2 {
       close(mark, TreeKind.Expr.InvokeMethod2)
     }
 
-    private def newObjectExpr()(implicit s: State): Mark.Closed = {
+    private def invokeStaticMethod2Expr()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.NameUpperCase))
+      val mark = open()
+      name(Set(TokenKind.NameUpperCase), context = SyntacticContext.Expr.OtherExpr)
+      eat(TokenKind.Currency)
+      name(Set(TokenKind.NameLowerCase), context = SyntacticContext.Expr.OtherExpr)
+      arguments()
+      close(mark, TreeKind.Expr.InvokeStaticMethod2)
+    }
+
+    private def ambiguousNewExpr()(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.KeywordNew))
       val mark = open()
       expect(TokenKind.KeywordNew, SyntacticContext.Expr.OtherExpr)
       Type.ttype()
-      oneOrMore(
-        namedTokenSet = NamedTokenSet.FromKinds(Set(TokenKind.KeywordDef)),
-        checkForItem = t => t.isComment || t == TokenKind.KeywordDef,
-        getItem = jvmMethod,
-        breakWhen = _.isRecoverExpr,
-        delimiterL = TokenKind.CurlyL,
-        delimiterR = TokenKind.CurlyR,
-        separation = Separation.None,
-        context = SyntacticContext.Expr.OtherExpr
-      )
-      close(mark, TreeKind.Expr.NewObject)
+
+      // NewObject or InvokeConstructor?
+      if (at(TokenKind.CurlyL)) {
+        // Case 1: new Type { ... }
+        oneOrMore(
+          namedTokenSet = NamedTokenSet.FromKinds(Set(TokenKind.KeywordDef)),
+          checkForItem = t => t.isComment || t == TokenKind.KeywordDef,
+          getItem = jvmMethod,
+          breakWhen = _.isRecoverExpr,
+          delimiterL = TokenKind.CurlyL,
+          delimiterR = TokenKind.CurlyR,
+          separation = Separation.None,
+          context = SyntacticContext.Expr.OtherExpr
+        )
+        close(mark, TreeKind.Expr.NewObject)
+      } else {
+        // Case 2: new Type(exps...)
+        arguments()
+        close(mark, TreeKind.Expr.InvokeConstructor2)
+      }
     }
 
     private def jvmMethod()(implicit s: State): Mark.Closed = {

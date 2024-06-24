@@ -199,19 +199,19 @@ mod TestDebug {
 
      @test
      def testNullStringify02(): Bool = {
-         let s = stringify(unchecked_cast(null as String));
+         let s = stringify((checked_cast(null): String));
          s == "null"
      }
 
      @test
      def testNullStringify03(): Bool = {
-         let s = stringify(unchecked_cast(null as BigInt));
+         let s = stringify((checked_cast(null): BigInt));
          s == "null"
      }
 
     @test
     def testNullStringify04(): Bool = {
-        let s = stringify(Poly.This(unchecked_cast(null as String)));
+        let s = stringify(Poly.This((checked_cast(null): String)));
         s == "This(null)"
     }
 
@@ -223,13 +223,13 @@ mod TestDebug {
 
     @test
     def testNullStringify06(): Bool = region rc {
-        let s = stringify(Array#{unchecked_cast(null as String), "42"} @ rc);
+        let s = stringify(Array#{(checked_cast(null): String), "42"} @ rc);
         s == "[null, 42]"
     }
 
     @test
     def testNullStringify07(): Bool = {
-        let s = stringify({label = unchecked_cast(null as String)});
+        let s = stringify({label = (checked_cast(null): String)});
         s == "{label = null}"
     }
 }

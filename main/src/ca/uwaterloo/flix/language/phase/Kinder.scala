@@ -737,7 +737,16 @@ object Kinder {
         case args => KindedAst.Expr.Do(op, args, tvar, loc)
       }
 
-    case ResolvedAst.Expr.InvokeMethod2(exp0, name, exps0, loc) =>
+    case ResolvedAst.Expr.InvokeConstructor2(clazz, exps0, loc) =>
+      val expsVal = traverse(exps0)(visitExp(_, kenv0, taenv, henv0, root))
+      mapN(expsVal) {
+        exps =>
+          val cvar = Type.freshVar(Kind.JvmConstructorOrMethod, loc.asSynthetic)
+          val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
+          KindedAst.Expr.InvokeConstructor2(clazz, exps, cvar, evar, loc)
+      }
+
+    case ResolvedAst.Expr.InvokeMethod2(exp0, methodName, exps0, loc) =>
       val expVal = visitExp(exp0, kenv0, taenv, henv0, root)
       val expsVal = traverse(exps0)(visitExp(_, kenv0, taenv, henv0, root))
       mapN(expVal, expsVal) {
@@ -745,7 +754,17 @@ object Kinder {
           val mvar = Type.freshVar(Kind.JvmConstructorOrMethod, loc.asSynthetic)
           val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
           val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-          KindedAst.Expr.InvokeMethod2(exp, name, exps, mvar, tvar, evar, loc)
+          KindedAst.Expr.InvokeMethod2(exp, methodName, exps, mvar, tvar, evar, loc)
+      }
+
+    case ResolvedAst.Expr.InvokeStaticMethod2(clazz, methodName, exps0, loc) =>
+      val expsVal = traverse(exps0)(visitExp(_, kenv0, taenv, henv0, root))
+      mapN(expsVal) {
+        exps =>
+          val mvar = Type.freshVar(Kind.JvmConstructorOrMethod, loc.asSynthetic)
+          val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+          val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
+          KindedAst.Expr.InvokeStaticMethod2(clazz, methodName, exps, mvar, tvar, evar, loc)
       }
 
     case ResolvedAst.Expr.InvokeConstructor(constructor, args0, loc) =>
@@ -1238,7 +1257,7 @@ object Kinder {
             // Case 1:  We have an explicit case kind.
             case Some(Kind.CaseSet(sym)) => Validation.success(Type.Cst(TypeConstructor.CaseSet(cases.to(SortedSet), sym), loc))
             // Case 2: We have a generic case kind. Error.
-            case Some(Kind.WildCaseSet) => Validation.toHardFailure(KindError.UninferrableKind(loc))
+            case Some(Kind.WildCaseSet) => Validation.toSoftFailure(Type.Cst(TypeConstructor.Error(Kind.Error), loc), KindError.UninferrableKind(loc))
             // Case 3: Unexpected kind. Error.
             case None => Validation.toHardFailure(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = actualKind, loc))
 

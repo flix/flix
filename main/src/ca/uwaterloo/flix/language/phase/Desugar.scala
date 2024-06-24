@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.DesugaredAst.Expr
 import ca.uwaterloo.flix.language.ast.WeededAst.Predicate
+import ca.uwaterloo.flix.language.ast.shared.Fixity
 import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, DesugaredAst, Name, SourceLocation, Type, WeededAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugDesugaredAst
 import ca.uwaterloo.flix.util.ParOps
@@ -681,6 +682,13 @@ object Desugar {
       val e = visitExp(exp)
       Expr.UncheckedMaskingCast(e, loc)
 
+    case WeededAst.Expr.Unsafe(exp, loc) =>
+      // We desugar an unsafe expression to an unchecked cast to pure.
+      val e = visitExp(exp)
+      val declaredType = None
+      val declaredEff = Some(DesugaredAst.Type.Pure(loc.asSynthetic))
+      Expr.UncheckedCast(e, declaredType, declaredEff, loc)
+
     case WeededAst.Expr.Without(exp, eff, loc) =>
       val e = visitExp(exp)
       Expr.Without(e, eff, loc)
@@ -702,10 +710,18 @@ object Desugar {
       val es = visitExps(exps)
       Expr.Do(op, es, loc)
 
+    case WeededAst.Expr.InvokeConstructor2(className, exps, loc) =>
+      val es = visitExps(exps)
+      Expr.InvokeConstructor2(className, es, loc)
+
     case WeededAst.Expr.InvokeMethod2(exp, name, exps, loc) =>
       val e = visitExp(exp)
       val es = visitExps(exps)
       Expr.InvokeMethod2(e, name, es, loc)
+
+    case WeededAst.Expr.InvokeStaticMethod2(className, methodName, exps, loc) =>
+      val es = visitExps(exps)
+      Expr.InvokeStaticMethod2(className, methodName, es, loc)
 
     case WeededAst.Expr.InvokeConstructor(className, exps, sig, loc) =>
       val es = visitExps(exps)
@@ -1714,7 +1730,7 @@ object Desugar {
     // Automatically fix all lattices atoms.
     val body = guard ::: from.map {
       case DesugaredAst.Predicate.Body.Atom(pred, Ast.Denotation.Latticenal, polarity, _, terms, loc) =>
-        DesugaredAst.Predicate.Body.Atom(pred, Ast.Denotation.Latticenal, polarity, Ast.Fixity.Fixed, terms, loc)
+        DesugaredAst.Predicate.Body.Atom(pred, Ast.Denotation.Latticenal, polarity, Fixity.Fixed, terms, loc)
       case pred => pred
     }
 

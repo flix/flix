@@ -19,6 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast._
 import ca.uwaterloo.flix.language.ast.SyntaxTree.{Child, Tree, TreeKind}
+import ca.uwaterloo.flix.language.ast.shared.Fixity
 import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, Name, ReadAst, SemanticOp, SourceLocation, SourcePosition, Symbol, SyntaxTree, Token, TokenKind, WeededAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.language.errors.ParseError._
@@ -781,10 +782,13 @@ object Weeder2 {
         case TreeKind.Expr.CheckedEffectCast => visitCheckedEffectCastExpr(tree)
         case TreeKind.Expr.UncheckedCast => visitUncheckedCastExpr(tree)
         case TreeKind.Expr.UncheckedMaskingCast => visitUncheckedMaskingCastExpr(tree)
+        case TreeKind.Expr.Unsafe => visitUnsafeExpr(tree)
         case TreeKind.Expr.Without => visitWithoutExpr(tree)
         case TreeKind.Expr.Try => visitTryExpr(tree)
         case TreeKind.Expr.Do => visitDoExpr(tree)
+        case TreeKind.Expr.InvokeConstructor2 => visitInvokeConstructor2Expr(tree)
         case TreeKind.Expr.InvokeMethod2 => visitInvokeMethod2Expr(tree)
+        case TreeKind.Expr.InvokeStaticMethod2 => visitInvokeStaticMethod2Expr(tree)
         case TreeKind.Expr.NewObject => visitNewObjectExpr(tree)
         case TreeKind.Expr.Static => visitStaticExpr(tree)
         case TreeKind.Expr.Select => visitSelectExpr(tree)
@@ -984,9 +988,9 @@ object Weeder2 {
     }
 
     /**
-     * This method is the same as pickArguments but for invokeMethod2. It calls visitMethodArguments instead.
+     * This method is the same as pickArguments but considers Unit as no-argument. It calls visitMethodArguments instead.
      */
-    private def pickMethodArguments(tree: Tree): Validation[List[Expr], CompilationMessage] = {
+    private def pickRawArguments(tree: Tree): Validation[List[Expr], CompilationMessage] = {
       flatMapN(pick(TreeKind.ArgumentList, tree))(visitMethodArguments)
     }
 
@@ -1138,7 +1142,13 @@ object Weeder2 {
             case "::" => Validation.success(Expr.FCons(e1, e2, tree.loc))
             case ":::" => Validation.success(Expr.FAppend(e1, e2, tree.loc))
             case "<+>" => Validation.success(Expr.FixpointMerge(e1, e2, tree.loc))
-            case "instanceof" => mapN(tryPickJavaName(exprs(1)))(Expr.InstanceOf(e1, _, tree.loc))
+            case "instanceof" =>
+              flatMapN(pickQName(exprs(1))) {
+                case qname if qname.isUnqualified => Validation.success(Expr.InstanceOf(e1, qname.ident, tree.loc))
+                case _ =>
+                  val m = IllegalQualifiedName(exprs(1).loc)
+                  Validation.toSoftFailure(Expr.Error(m), m)
+              }
             // UNRECOGNIZED
             case id =>
               val ident = Name.Ident(id, op.loc)
@@ -1591,6 +1601,13 @@ object Weeder2 {
       }
     }
 
+    private def visitUnsafeExpr(tree: Tree): Validation[Expr, CompilationMessage] = {
+      expect(tree, TreeKind.Expr.Unsafe)
+      mapN(pickExpr(tree)) {
+        expr => Expr.Unsafe(expr, tree.loc)
+      }
+    }
+
     private def visitWithoutExpr(tree: Tree): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.Without)
       val effectSet = pick(TreeKind.Type.EffectSet, tree)
@@ -1679,6 +1696,19 @@ object Weeder2 {
       }
     }
 
+    private def visitInvokeConstructor2Expr(tree: Tree): Validation[Expr, CompilationMessage] = {
+      expect(tree, TreeKind.Expr.InvokeConstructor2)
+      flatMapN(Types.pickType(tree), pickRawArguments(tree)) {
+        (tpe, exps) => tpe match {
+          case WeededAst.Type.Ambiguous(qname, _) if qname.isUnqualified =>
+            Validation.success(Expr.InvokeConstructor2(qname.ident, exps, tree.loc))
+          case _ =>
+            val m = IllegalQualifiedName(tree.loc)
+            Validation.toSoftFailure(Expr.Error(m), m)
+        }
+      }
+    }
+
     private def visitInvokeMethod2Expr(tree: Tree): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.InvokeMethod2)
       val fragmentsTrees = pickAll(TreeKind.Expr.InvokeMethod2Fragment, tree)
@@ -1691,6 +1721,15 @@ object Weeder2 {
           fragments.foldLeft[Expr](nameExpr) {
             case (acc, (methodName, arguments)) => Expr.InvokeMethod2(acc, methodName, arguments, tree.loc)
           }
+      }
+    }
+
+    private def visitInvokeStaticMethod2Expr(tree: Tree): Validation[Expr, CompilationMessage] = {
+      expect(tree, TreeKind.Expr.InvokeStaticMethod2)
+      val List(clazzTree, methodTree) = pickAll(TreeKind.Ident, tree) // TODO: Resilience
+      mapN(tokenToIdent(clazzTree), tokenToIdent(methodTree), pickArguments(tree)) {
+        (clazzName, methodName, exps) =>
+          Expr.InvokeStaticMethod2(clazzName, methodName, exps, tree.loc)
       }
     }
 
@@ -1708,7 +1747,7 @@ object Weeder2 {
     private def visitInvokeMethod2Fragment(tree: Tree): Validation[(Name.Ident, List[Expr]), CompilationMessage] = {
       expect(tree, TreeKind.Expr.InvokeMethod2Fragment)
       val methodName = pickNameIdent(tree)
-      val arguments = pickMethodArguments(tree)
+      val arguments = pickRawArguments(tree)
       mapN(methodName, arguments) {
         (methodName, arguments) => (methodName, arguments)
       }
@@ -2383,7 +2422,7 @@ object Weeder2 {
             case (pats, None) =>
               // Check for `[[IllegalFixedAtom]]`.
               val errors = (polarity, fixity) match {
-                case (Ast.Polarity.Negative, Ast.Fixity.Fixed) => Some(IllegalFixedAtom(tree.loc))
+                case (Ast.Polarity.Negative, Fixity.Fixed) => Some(IllegalFixedAtom(tree.loc))
                 case _ => None
               }
               Validation.success(Predicate.Body.Atom(Name.mkPred(ident), Denotation.Relational, polarity, fixity, pats, tree.loc)

@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.Denotation
+import ca.uwaterloo.flix.language.ast.shared.Fixity
 import ca.uwaterloo.flix.util.collection.MultiMap
 
 object DesugaredAst {
@@ -153,7 +154,7 @@ object DesugaredAst {
 
     case class Ascribe(exp: Expr, expectedType: Option[Type], expectedEff: Option[Type], loc: SourceLocation) extends Expr
 
-    case class InstanceOf(exp: Expr, className: String, loc: SourceLocation) extends Expr
+    case class InstanceOf(exp: Expr, className: Name.Ident, loc: SourceLocation) extends Expr
 
     case class CheckedCast(cast: Ast.CheckedCastType, exp: Expr, loc: SourceLocation) extends Expr
 
@@ -169,7 +170,11 @@ object DesugaredAst {
 
     case class Do(op: Name.QName, exps: List[Expr], loc: SourceLocation) extends Expr
 
-    case class InvokeMethod2(exp: Expr, name: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
+    case class InvokeConstructor2(clazzName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
+
+    case class InvokeMethod2(exp: Expr, methodName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
+
+    case class InvokeStaticMethod2(clazzName: Name.Ident, methodName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
 
     case class InvokeConstructor(className: String, exps: List[Expr], sig: List[Type], loc: SourceLocation) extends Expr
 
@@ -284,7 +289,7 @@ object DesugaredAst {
 
     object Body {
 
-      case class Atom(pred: Name.Pred, den: Denotation, polarity: Ast.Polarity, fixity: Ast.Fixity, terms: List[Pattern], loc: SourceLocation) extends Predicate.Body
+      case class Atom(pred: Name.Pred, den: Denotation, polarity: Ast.Polarity, fixity: Fixity, terms: List[Pattern], loc: SourceLocation) extends Predicate.Body
 
       case class Functional(idents: List[Name.Ident], exp: Expr, loc: SourceLocation) extends Predicate.Body
 

@@ -16,6 +16,8 @@
 
 package ca.uwaterloo.flix.language.ast
 
+import ca.uwaterloo.flix.language.ast.shared.Fixity
+
 import java.nio.file.Path
 import java.util.Objects
 import scala.annotation.tailrec
@@ -554,25 +556,6 @@ object Ast {
   }
 
   /**
-    * A common super-type for the fixity of an atom.
-    */
-  sealed trait Fixity
-
-  object Fixity {
-
-    /**
-      * The atom is loose (it does not have to be fully materialized before it can be used).
-      */
-    case object Loose extends Fixity
-
-    /**
-      * The atom is fixed (it must be fully materialized before it can be used).
-      */
-    case object Fixed extends Fixity
-
-  }
-
-  /**
     * Represents a positive or negative labelled dependency edge.
     *
     * The labels represent predicate nodes that must co-occur for the dependency to be relevant.
@@ -889,6 +872,8 @@ object Ast {
       case object Instance extends Decl
 
       case object OtherDecl extends Decl
+
+      case object Struct extends Decl
     }
 
     sealed trait Expr extends SyntacticContext

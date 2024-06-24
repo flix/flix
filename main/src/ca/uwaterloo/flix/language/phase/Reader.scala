@@ -24,7 +24,6 @@ import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.util.{StreamOps, Validation}
 import ca.uwaterloo.flix.util.collection.MultiMap
 
-import java.io.IOException
 import java.nio.file.{Files, Path}
 import java.util.zip.ZipFile
 import scala.collection.mutable
@@ -38,13 +37,13 @@ object Reader {
   /**
     * Reads the given source inputs into memory.
     */
-  def run(inputs: List[Input])(implicit flix: Flix): Validation[ReadAst.Root, CompilationMessage] =
+  def run(inputs: List[Input], names: MultiMap[List[String], String])(implicit flix: Flix): Validation[ReadAst.Root, CompilationMessage] =
     flix.phase("Reader") {
 
       val result = mutable.Map.empty[Source, Unit]
       for (input <- inputs) {
         input match {
-          case Input.Text(name, text, stable) =>
+          case Input.Text(_, text, stable) =>
             val src = Source(input, text.toCharArray, stable)
             result += (src -> ())
 
@@ -63,7 +62,6 @@ object Reader {
       }
 
       val sources = result.toMap
-      val names = findClasses()
       Validation.success(ReadAst.Root(sources, names))
     }(DebugValidation()(DebugNoOp()))
 
@@ -95,45 +93,4 @@ object Reader {
     }.get // TODO Return a Result instead, see https://github.com/flix/flix/issues/3132
   }
 
-  /**
-    * Returns the java classes in the JDK classlist file.
-    */
-  private def findClasses(): MultiMap[List[String], String] = sys.env.get("JAVA_HOME") match {
-    case None => MultiMap.empty
-    case Some(home) =>
-      val path = java.nio.file.Paths.get(home, "lib", "classlist")
-      if (Files.exists(path) && Files.isRegularFile(path) && Files.isReadable(path)) {
-        try {
-          val fileContents = Files.readString(path)
-          fileContents.linesIterator
-            // Filter out comments
-            .filter(line => !line.startsWith("#"))
-            // Filter out inner classes
-            .filter(clazz => !clazz.contains("$"))
-            // Filter out lambda-invoke/lambda-proxy lines
-            .filter(clazz => !clazz.contains("@"))
-            // Create a multimap from all class path prefixes to the next packages/classes
-            // I.e java.lang.string
-            // [] => {java}
-            // [java] => {lang}
-            // [java, lang] => {String}
-            .foldLeft[MultiMap[List[String], String]](MultiMap.empty) {
-              case (acc, clazz) =>
-                val clazzPath = clazz.split('/').toList
-
-                clazzPath.inits.foldLeft(acc) {
-                  // Case 1: Nonempty path: split prefix and package
-                  case (acc1, prefix :+ pkg) => acc1 + (prefix -> pkg)
-                  // Case 2: Empty path: skip it
-                  case (acc1, _) => acc1
-                }
-            }
-        } catch {
-          // If any IO error occurs, i.e the file not existing in the users JDK, we return an empty map.
-          case _: IOException => MultiMap.empty
-        }
-      } else {
-        MultiMap.empty
-      }
-  }
 }

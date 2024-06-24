@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast._
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.ast.shared.Fixity
 import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.language.errors.StratificationError
 import ca.uwaterloo.flix.language.phase.PredDeps.termTypesAndDenotation

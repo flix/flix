@@ -100,8 +100,11 @@ object Lexer {
       // Compute the stale and fresh sources.
       val (stale, fresh) = changeSet.partition(root.sources, oldTokens)
 
+      // Sort the stale inputs by size to increase throughput (i.e. to start work early on the biggest tasks).
+      val staleByDecreasingSize = stale.keys.toList.sortBy(s => -s.data.length)
+
       // Lex each stale source file in parallel.
-      val results = ParOps.parMap(stale.keys)(src => mapN(mapN(lex(src))(fuzz))(tokens => src -> tokens))
+      val results = ParOps.parMap(staleByDecreasingSize)(src => mapN(mapN(lex(src))(fuzz))(tokens => src -> tokens))
 
       // Construct a map from each source to its tokens.
       val reused = fresh.map(m => Validation.success(m))
@@ -329,6 +332,7 @@ object Lexer {
       case _ if isMatch("#{") => TokenKind.HashCurlyL
       case _ if isMatch("#(") => TokenKind.HashParenL
       case '#' => TokenKind.Hash
+      case '¤' => TokenKind.Currency
       case _ if isMatch("//") => acceptLineOrDocComment()
       case _ if isMatch("/*") => acceptBlockComment()
       case '/' => TokenKind.Slash
@@ -425,6 +429,7 @@ object Lexer {
       case _ if isKeyword("spawn") => TokenKind.KeywordSpawn
       case _ if isKeyword("static") => TokenKind.KeywordStatic
       case _ if isKeyword("Static") => TokenKind.KeywordStaticUppercase
+      case _ if isKeyword("struct") => TokenKind.KeywordStruct
       case _ if isKeyword("trait") => TokenKind.KeywordTrait
       case _ if isKeywordLiteral("true") => TokenKind.KeywordTrue
       case _ if isKeyword("try") => TokenKind.KeywordTry
@@ -432,6 +437,7 @@ object Lexer {
       case _ if isKeyword("typematch") => TokenKind.KeywordTypeMatch
       case _ if isKeyword("unchecked_cast") => TokenKind.KeywordUncheckedCast
       case _ if isKeyword("Univ") => TokenKind.KeywordUniv
+      case _ if isKeyword("unsafe") => TokenKind.KeywordUnsafe
       case _ if isKeyword("use") => TokenKind.KeywordUse
       case _ if isKeyword("where") => TokenKind.KeywordWhere
       case _ if isKeyword("with") => TokenKind.KeywordWith

@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.util.Formatter
 /**
   * A common super-type for naming errors.
   */
-sealed trait NameError extends CompilationMessage {
+sealed trait NameError extends CompilationMessage with Recoverable {
   val kind = "Name Error"
 }
 
@@ -41,8 +41,7 @@ object NameError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
-         |>> Duplicate definition of '${red(name)}'.
+      s""">> Duplicate definition of '${red(name)}'.
          |
          |${code(loc1, "the first definition was here.")}
          |
@@ -76,8 +75,7 @@ object NameError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
-         |>> Duplicate definition of '${red(name)}'.
+      s""">> Duplicate definition of '${red(name)}'.
          |
          |${code(loc1, "the first definition was here.")}
          |
@@ -100,9 +98,7 @@ object NameError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
-         |
-         |>> Suspicious type variable '${red(name)}'. Did you mean: '${cyan(name.capitalize)}'?
+      s""">> Suspicious type variable '${red(name)}'. Did you mean: '${cyan(name.capitalize)}'?
          |
          |${code(loc, "suspicious type variable.")}
          |""".stripMargin

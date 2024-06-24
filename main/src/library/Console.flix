@@ -195,10 +195,10 @@ mod Console {
         match colorSupport() {
             case ColorSupport.None      => s
             case ColorSupport.Ansi      =>
-                let color = downsample(c, opts.isFg);
+                let color = downsample(c, opts#isFg);
                 formatAnsi(color, s)
             case ColorSupport.TrueColor =>
-                formatTrueColor(c, s, opts.isFg)
+                formatTrueColor(c, s, opts#isFg)
         }
 
     ///

@@ -21,9 +21,7 @@ mod String {
     ///
     /// Returns the character at position `i` in the string `s`.
     ///
-    pub def charAt(i: Int32, s: String): Char =
-        import java.lang.String.charAt(Int32): Char \ {};
-        charAt(s, i)
+    pub def charAt(i: Int32, s: String): Char = unsafe s¤charAt(i)
 
     ///
     /// Optionally return the character at position `i` in the string `s`.
@@ -81,14 +79,14 @@ mod String {
     ///
     pub def startsWith(prefix: {prefix = String}, s: String): Bool =
         import java.lang.String.startsWith(String): Bool \ {};
-        (s `startsWith` prefix.prefix)
+        (s `startsWith` prefix#prefix)
 
     ///
     /// Returns `true` if the string `s` ends with the string `suffix`.
     ///
     pub def endsWith(suffix: {suffix = String}, s: String): Bool =
         import java.lang.String.endsWith(String): Bool \ {};
-        (s `endsWith` suffix.suffix)
+        (s `endsWith` suffix#suffix)
 
     ///
     /// Splits the string `s` around matches of the regular expression `regex`.
@@ -96,7 +94,7 @@ mod String {
     pub def split(regex: {regex = String}, s: String): List[String] = region rc {
         import java.lang.String.split(String): Array[String, rc] \ rc;
         let _ = rc; // This avoids a redundancy error.
-        Array.toList(split(s, regex.regex))
+        Array.toList(split(s, regex#regex))
     }
 
     ///
@@ -312,7 +310,7 @@ mod String {
     pub def isMatch(regex: {regex = String}, s: String): Bool =
         import java.lang.String.matches(String): Bool \ {};
         try {
-            matches(s, regex.regex)
+            matches(s, regex#regex)
         } catch {
             case _: ##java.util.regex.PatternSyntaxException => false
         }
@@ -321,7 +319,7 @@ mod String {
     /// Returns `true` if the string `s` is matched by the regular expression `regex` at any point.
     ///
     pub def isSubmatch(regex: {regex = String}, s: String): Bool =
-        isSubmatchHelper(regex.regex, s)
+        isSubmatchHelper(regex#regex, s)
 
     ///
     /// Helper function for `isSubmatch`.
@@ -347,7 +345,7 @@ mod String {
     ///
     pub def slice(start: {start = Int32}, end: {end = Int32}, s: String): String = try {
         import java.lang.String.substring(Int32, Int32): String \ {};
-        substring(s, start.start, end.end)
+        substring(s, start#start, end#end)
     } catch {
         case _: ##java.lang.IndexOutOfBoundsException => ""
     }
@@ -358,8 +356,8 @@ mod String {
     /// `sliceLeft == slice(0 , e, s)`
     ///
     pub def sliceLeft(end: {end = Int32}, s: String): String = match length(s) {
-        case len if end.end > len => ""
-        case _   if end.end < 0   => ""
+        case len if end#end > len => ""
+        case _   if end#end < 0   => ""
         case _                    => slice(start = 0, end, s)
     }
 
@@ -369,8 +367,8 @@ mod String {
     /// `sliceRight == slice(start , length(s), s)`
     ///
     pub def sliceRight(start: {start = Int32}, s: String): String = match length(s) {
-        case len if start.start >= len => ""
-        case _   if start.start < 0    => ""
+        case len if start#start >= len => ""
+        case _   if start#start < 0    => ""
         case len                       => slice(start, end = len, s)
     }
 
@@ -433,9 +431,9 @@ mod String {
     /// Returns `Nil` if `substr` is the empty string.
     ///
     pub def indices(substr: {substr = String}, s: String): List[Int32] =
-        let sublen = length(substr.substr);
+        let sublen = length(substr#substr);
         let step = ix ->
-            match indexOfLeftWithOffset({substr = substr.substr}, {offset = ix}, s) {
+            match indexOfLeftWithOffset({substr = substr#substr}, {offset = ix}, s) {
                 case None => None
                 case Some(ix2) => Some(ix2, ix2 + sublen)
             };
@@ -827,28 +825,28 @@ mod String {
     ///
     pub def replace(src: {src = String}, dst: {dst = String}, s: String): String =
         import java.lang.String.replace(##java.lang.CharSequence, ##java.lang.CharSequence): String \ {};
-        replace(s, checked_cast(src.src), checked_cast(dst.dst))
+        replace(s, checked_cast(src#src), checked_cast(dst#dst))
 
     ///
     /// Returns `s` with every match of the character `src` replaced by the character `dst`.
     ///
     pub def replaceChar(src: {src = Char}, dst: {dst = Char}, s: String): String =
         import java.lang.String.replace(Char, Char): String \ {};
-        replace(s, src.src, dst.dst)
+        replace(s, src#src, dst#dst)
 
     ///
     /// Returns `s` with every match of the regular expression `regex` replaced by the string `to`.
     ///
     pub def replaceMatches(regex: {regex = String}, to: {to = String}, s: String): String =
         import java.lang.String.replaceAll(String, String): String \ {};
-        replaceAll(s, regex.regex, to.to)
+        replaceAll(s, regex#regex, to#to)
 
     ///
     /// Returns `s` with the first match of the regular expression `regex` replaced by the string `to`.
     ///
     pub def replaceFirstMatch(regex: {regex = String}, to: {to = String}, s: String): String =
         import java.lang.String.replaceFirst(String, String): String \ {};
-        replaceFirst(s, regex.regex, to.to)
+        replaceFirst(s, regex#regex, to#to)
 
     ///
     /// Returns `s` with the element at index `i` replaced by `a`.
@@ -992,7 +990,7 @@ mod String {
     ///
     /// Alias for `indexOfLeft`.
     ///
-    pub def indexOf(substr: {substr = String}, s: String): Option[Int32] = indexOfLeft({substr = substr.substr}, s)
+    pub def indexOf(substr: {substr = String}, s: String): Option[Int32] = indexOfLeft({substr = substr#substr}, s)
 
     ///
     /// Return the index of the first occurrence of `substr` in `s` from the left.
@@ -1003,10 +1001,10 @@ mod String {
     ///
     pub def indexOfLeft(substr: {substr = String}, s: String): Option[Int32] =
         import java.lang.String.indexOf(String): Int32 \ {};
-        if (isEmpty(substr.substr))
+        if (isEmpty(substr#substr))
             None
         else {
-            let i = indexOf(s, substr.substr);
+            let i = indexOf(s, substr#substr);
             if (i < 0) None else Some(i)
         }
 
@@ -1019,10 +1017,10 @@ mod String {
     ///
     pub def indexOfRight(substr: {substr = String}, s: String): Option[Int32] =
         import java.lang.String.lastIndexOf(String): Int32 \ {};
-        if (isEmpty(substr.substr))
+        if (isEmpty(substr#substr))
             None
         else {
-            let i = lastIndexOf(s, substr.substr);
+            let i = lastIndexOf(s, substr#substr);
             if (i < 0) None else Some(i)
         }
 
@@ -1030,10 +1028,10 @@ mod String {
     /// Returns `true` if and only if `substr` is an infix of `s`.
     ///
     pub def contains(substr: {substr = String}, s: String): Bool =
-        if (isEmpty(substr.substr))
+        if (isEmpty(substr#substr))
             true
         else {
-            let a = indexOfLeft({substr = substr.substr}, s);
+            let a = indexOfLeft({substr = substr#substr}, s);
             not Option.isEmpty(a)
         }
 
@@ -1181,14 +1179,14 @@ mod String {
     ///
     pub def splitOn(substr: {substr = String}, s: String): List[String] =
         let maxlen = length(s);
-        let sublen = length(substr.substr);
+        let sublen = length(substr#substr);
         let step = ix ->
             // Note - to stop we have to be greater than maxlen.
             // We want to return a final empty string if `s` terminates with `substr`.
             if (ix > maxlen)
                 None
             else {
-                match indexOfLeftWithOffset({substr = substr.substr}, {offset = ix}, s) {
+                match indexOfLeftWithOffset({substr = substr#substr}, {offset = ix}, s) {
                     case None => {
                         let s1 = sliceRight(start = ix, s);
                         Some(s1, maxlen + 1)
@@ -1208,10 +1206,10 @@ mod String {
     ///
     pub def indexOfLeftWithOffset(substr: {substr = String}, offset: {offset = Int32}, s: String): Option[Int32] =
         import java.lang.String.indexOf(String, Int32): Int32 \ {};
-        if (isEmpty(substr.substr))
+        if (isEmpty(substr#substr))
             None
         else {
-            let ix = indexOf(s, substr.substr, offset.offset);
+            let ix = indexOf(s, substr#substr, offset#offset);
             if (ix < 0) None else Some(ix)
         }
 
@@ -1222,10 +1220,10 @@ mod String {
     ///
     pub def indexOfRightWithOffset(substr: {substr = String}, offset: {offset = Int32}, s: String): Option[Int32] =
         import java.lang.String.lastIndexOf(String, Int32): Int32 \ {};
-        if (isEmpty(substr.substr))
+        if (isEmpty(substr#substr))
             None
         else {
-            let ix = lastIndexOf(s, substr.substr, offset.offset);
+            let ix = lastIndexOf(s, substr#substr, offset#offset);
             if (ix < 0) None else Some(ix)
         }
 
@@ -1259,7 +1257,7 @@ mod String {
     /// prefix of string `s` up to `substr` and the rest of string `s` including `substr`.
     ///
     pub def breakOnLeft(substr: {substr = String}, s: String): (String, String) =
-        match indexOfLeft({substr = substr.substr}, s) {
+        match indexOfLeft({substr = substr#substr}, s) {
             case None    => (s, "")
             case Some(i) => (sliceLeft(end = i, s), sliceRight(start = i, s))
         }
@@ -1269,8 +1267,8 @@ mod String {
     /// initial string including `substr` and suffix from `substr`.
     ///
     pub def breakOnRight(substr: {substr = String}, s: String): (String, String) =
-        let sublen = length(substr.substr);
-        match indexOfRight({substr = substr.substr}, s) {
+        let sublen = length(substr#substr);
+        match indexOfRight({substr = substr#substr}, s) {
             case None    => (s, "")
             case Some(i) => (sliceLeft(end  = i + sublen, s), sliceRight(start = i + sublen, s))
         }
@@ -1279,8 +1277,8 @@ mod String {
     /// Count the occurrences of `substr` in string `s`.
     ///
     pub def countSubstring(substr: {substr = String}, s: String): Int32 =
-        let sublen = length(substr.substr);
-        def loop(offset, count) = match indexOfLeftWithOffset(substr = substr.substr, offset = offset, s) {
+        let sublen = length(substr#substr);
+        def loop(offset, count) = match indexOfLeftWithOffset(substr = substr#substr, offset = offset, s) {
             case None    => count
             case Some(i) => loop(i + sublen, count + 1)
         };
@@ -1311,9 +1309,9 @@ mod String {
     /// control characters followed by `margin`, if such a prefix exists.
     ///
     def stripMarginWithSingleLine(margin: {margin = String}, s: String): String =
-        let marginLen = length(margin.margin);
+        let marginLen = length(margin#margin);
         let trimmed = dropWhile(c -> c <= ' ', s);
-        if (startsWith(prefix = margin.margin, trimmed))
+        if (startsWith(prefix = margin#margin, trimmed))
             sliceRight(start = marginLen, trimmed)
         else
             s
@@ -1337,19 +1335,19 @@ mod String {
     /// Returns `Some(suffix)` of string `s` if its prefix matches `substr`.
     ///
     pub def stripPrefix(substr: {substr = String}, s: String): Option[String] =
-        if (not startsWith(prefix = substr.substr, s))
+        if (not startsWith(prefix = substr#substr, s))
             None
         else
-            Some(dropLeft(length(substr.substr), s))
+            Some(dropLeft(length(substr#substr), s))
 
     ///
     /// Returns `Some(prefix)` of string `s` if its suffix matches `substr`.
     ///
     pub def stripSuffix(substr: {substr = String}, s: String): Option[String] =
-        if (not endsWith(suffix = substr.substr, s))
+        if (not endsWith(suffix = substr#substr, s))
             None
         else
-            Some(dropRight(length(substr.substr), s))
+            Some(dropRight(length(substr#substr), s))
 
     ///
     /// Wrap the string `s` into lines that are each at most as long as `w`, breaking on whitespace.

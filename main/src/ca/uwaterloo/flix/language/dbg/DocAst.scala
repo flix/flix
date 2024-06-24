@@ -94,6 +94,11 @@ object DocAst {
     /** e.g. `r..toString()`. It is used for java "dots" */
     case class DoubleDot(d1: Expr, d2: Expr) extends Atom
 
+    /**
+      * e.g. `r#x` for [[RecordSelect]].
+      */
+    case class Hash(d1: Expr, d2: Expr) extends Atom
+
     case class TryCatch(d: Expr, rules: List[(Symbol.VarSym, Class[_], Expr)]) extends Atom
 
     case class TryWith(d1: Expr, eff: Symbol.EffectSym, rules: List[(Symbol.OpSym, List[Ascription], Expr)]) extends Atom
@@ -255,8 +260,8 @@ object DocAst {
     def Do(sym: Symbol.OpSym, ds: List[Expr]): Expr =
       Keyword("do", App(AsIs(sym.toString), ds))
 
-    def JavaInvokeMethod2(d: Expr, name: Name.Ident, ds: List[Expr]): Expr =
-      App(DoubleDot(d, AsIs(name.name)), ds)
+    def JavaInvokeMethod2(d: Expr, methodName: Name.Ident, ds: List[Expr]): Expr =
+      App(DoubleDot(d, AsIs(methodName.name)), ds)
 
     def JavaInvokeMethod(m: Method, d: Expr, ds: List[Expr]): Expr =
       App(DoubleDot(d, AsIs(m.getName)), ds)
@@ -286,7 +291,7 @@ object DocAst {
       Keyword("goto", AsIs(sym.toString))
 
     def RecordSelect(label: Name.Label, d: Expr): Expr =
-      Dot(d, AsIs(label.name))
+      Hash(d, AsIs(label.name))
 
     def Regex(p: java.util.regex.Pattern): Expr =
       App(AsIs("Regex"), List(AsIs(s""""${p.toString}"""")))
