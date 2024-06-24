@@ -461,10 +461,11 @@ object Weeder2 {
       ) {
         (doc, ann, mods, ident, tparams, fields) =>
         // Ensure that each name is unique
-        val errors = getDuplicates(fields, (f: StructField) => f.ident.name)
-        if (errors.nonEmpty) {
-          Validation.toHardFailure(DuplicateStructField(ident.loc, errors.head._1.ident.name, ident.name, errors.head._1.ident.loc,
-            errors.head._2.ident.loc))
+        val groupedByName = fields.groupBy(_.ident.name)
+        val filteredElements = groupedByName.values.filter(_.size > 1).flatten.toList
+        if (filteredElements.nonEmpty) {
+          Validation.toHardFailure(DuplicateStructField(ident.loc, filteredElements.head.ident.name, ident.name,
+            filteredElements(0).ident.loc, filteredElements(1).ident.loc))
         } else
         Validation.success(Declaration.Struct(
           doc, ann, mods, ident, tparams, fields.sortBy(_.loc), tree.loc

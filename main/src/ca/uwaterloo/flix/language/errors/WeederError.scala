@@ -19,7 +19,6 @@ package ca.uwaterloo.flix.language.errors
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation}
 import ca.uwaterloo.flix.util.Formatter
-import ca.uwaterloo.flix.api.lsp.CodeActionKind.Source
 
 /**
   * A common super-type for weeding errors.
@@ -338,19 +337,18 @@ object WeederError {
     *
     * @param loc the location where the error occurred.
     */
-  case class DuplicateStructField(loc: SourceLocation, fieldName: String, structName: String,
-                                  field1: SourceLocation, field2: SourceLocation) extends WeederError with Unrecoverable {
-    def summary: String = s"Multiple declarations of field ${fieldName} in struct ${structName}"
+  case class DuplicateStructField(loc: SourceLocation, fieldName: String, structName: String, field1: SourceLocation, field2: SourceLocation) extends WeederError with Unrecoverable {
+    def summary: String = s"Multiple declarations of field '$fieldName' in struct '$structName'"
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s""">> Multiple declarations of field ${fieldName} in struct ${structName}
+      s""">> Multiple declarations of field '$fieldName' in struct '$structName'
          |
          |${code(loc, "struct declaration has duplicate fields")}
          |
          |${code(field1, "the first occurrence was here")}
          |
-         |${code(field1, "the second occurrence was here")}
+         |${code(field2, "the second occurrence was here")}
          |
          |""".stripMargin
     }
