@@ -130,21 +130,20 @@ object Namer {
     case NamedAst.Declaration.Namespace(sym, usesAndImports, decls, _) =>
       // Add the namespace to the table (no validation needed)
       val table1 = addDeclToTable(table0, sym.ns.init, sym.ns.last, decl)
-      val table2Val = fold(decls, table1) {
+      val table2 = decls.foldLeft(table1) {
         case (table, d) => tableDecl(d, table)
       }
-      mapN(table2Val)(addUsesToTable(_, sym.ns, usesAndImports))
+      addUsesToTable(table2, sym.ns, usesAndImports)
 
     case NamedAst.Declaration.Trait(_, _, _, sym, _, _, assocs, sigs, _, _) =>
-      val table1Val = tryAddToTable(table0, sym.namespace, sym.name, decl)
-      flatMapN(table1Val) {
-        case table1 => fold(assocs ++ sigs, table1) {
-          case (table, d) => tableDecl(d, table)
-        }
+      val table1 = tryAddToTable(table0, sym.namespace, sym.name, decl)
+      val assocsAndSigs = assocs ++ sigs
+      assocsAndSigs.foldLeft(table1) {
+        (table, d) => tableDecl(d, table)
       }
 
     case inst@NamedAst.Declaration.Instance(_, _, _, clazz, _, _, _, _, _, ns, _) =>
-      Validation.success(addInstanceToTable(table0, ns, clazz.ident.name, inst))
+      addInstanceToTable(table0, ns, clazz.ident.name, inst)
 
     case NamedAst.Declaration.Sig(sym, _, _) =>
       tryAddToTable(table0, sym.namespace, sym.name, decl)
@@ -153,11 +152,9 @@ object Namer {
       tryAddToTable(table0, sym.namespace, sym.name, decl)
 
     case NamedAst.Declaration.Enum(_, _, _, sym, _, _, cases, _) =>
-      val table1Val = tryAddToTable(table0, sym.namespace, sym.name, decl)
-      flatMapN(table1Val) {
-        case table1 => fold(cases, table1) {
-          case (table, d) => tableDecl(d, table)
-        }
+      val table1 = tryAddToTable(table0, sym.namespace, sym.name, decl)
+      cases.foldLeft(table1) {
+        case (table, d) => tableDecl(d, table)
       }
 
     case NamedAst.Declaration.RestrictableEnum(_, _, _, sym, _, _, _, cases, _) =>
@@ -199,9 +196,9 @@ object Namer {
   /**
     * Tries to add the given declaration to the table.
     */
-  private def tryAddToTable(table: SymbolTable, ns: List[String], name: String, decl: NamedAst.Declaration): Validation[SymbolTable, NameError] = {
+  private def tryAddToTable(table: SymbolTable, ns: List[String], name: String, decl: NamedAst.Declaration)(implicit sctx: SharedContext): SymbolTable = {
     lookupName(name, ns, table) match {
-      case LookupResult.NotDefined => Validation.success(addDeclToTable(table, ns, name, decl))
+      case LookupResult.NotDefined => addDeclToTable(table, ns, name, decl)
       case LookupResult.AlreadyDefined(loc) => mkDuplicateNamePair(name, getSymLocation(decl), loc)
     }
   }
@@ -245,20 +242,16 @@ object Namer {
   /**
     * Creates a pair of errors reporting a duplicate type declaration at each location.
     */
-  private def mkDuplicateNamePair[T](name: String, loc1: SourceLocation, loc2: SourceLocation): Validation.HardFailure[T, NameError] = {
+  private def mkDuplicateNamePair[T](name: String, loc1: SourceLocation, loc2: SourceLocation)(implicit sctx: SharedContext): Unit = {
     // NB: We report an error at both source locations.
     if (name.charAt(0).isUpper) {
       // Case 1: uppercase name
-      HardFailure(Chain(
-        NameError.DuplicateUpperName(name, loc1, loc2),
-        NameError.DuplicateUpperName(name, loc2, loc1)
-      ))
+      sctx.errors.add(NameError.DuplicateUpperName(name, loc1, loc2))
+      sctx.errors.add(NameError.DuplicateUpperName(name, loc2, loc1))
     } else {
       // Case 2: lowercase name
-      HardFailure(Chain(
-        NameError.DuplicateLowerName(name, loc1, loc2),
-        NameError.DuplicateLowerName(name, loc2, loc1)
-      ))
+      sctx.errors.add(NameError.DuplicateLowerName(name, loc1, loc2))
+      sctx.errors.add(NameError.DuplicateLowerName(name, loc2, loc1))
     }
   }
 
