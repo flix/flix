@@ -31,7 +31,7 @@ object LabelCompleter extends Completer {
       return Nil
     }
 
-    val regex = raw"(.*)[.].*".r
+    val regex = raw"(.*)#.*".r
 
     context.word match {
       case regex(prefix) if isFirstCharLowerCase(prefix) =>
