@@ -31,6 +31,7 @@ mod File {
 
     use IOError.{Generic}
     use File.Mode.{ReadOnly, ReadWrite, ReadWriteS, ReadWriteD}
+    import java.io.RandomAccessFile
 
     ///
     /// Represents a mode for opening files used by the function `open`.
@@ -73,7 +74,7 @@ mod File {
     ///
     pub def open(path: String, mode: Mode): Result[IOError, File] \ IO =
         IOError.tryCatch(_ -> {
-            import java_new java.io.RandomAccessFile(String, String): ##java.io.RandomAccessFile \ IO as newRandomAccessFile;
+            import java_new java.io.RandomAccessFile(String, String): RandomAccessFile \ IO as newRandomAccessFile;
             let mode1 = modeString(mode);
             File(newRandomAccessFile(path, mode1))
         })
