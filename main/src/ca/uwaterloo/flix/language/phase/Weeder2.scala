@@ -1750,8 +1750,7 @@ object Weeder2 {
       val objName = pickNameIdent(tree)
       mapN(objName, fragments) {
         case (objName, fragments) =>
-          //Expr.Ambiguous(Name.mkQName(prefix.map(_.toString), ident.name, ident.loc), ident.loc)
-          val nameExpr = Expr.Ambiguous(Name.mkQName(List(), objName.name, objName.loc), objName.loc)
+          val nameExpr = Expr.Ambiguous(Name.QName(Name.RootNS, objName, objName.loc), objName.loc)
           // TODO INTEROP InvokeMethod2 source location is likely off
           fragments.foldLeft[Expr](nameExpr) {
             case (acc, (methodName, arguments)) => Expr.InvokeMethod2(acc, methodName, arguments, tree.loc)
