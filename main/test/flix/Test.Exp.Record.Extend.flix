@@ -75,6 +75,6 @@ mod Test.Exp.Record.Extend {
         let r0 = { +x = 123 | {} };
         let r1 = { +x = "abc" | r0 };
         let r2 = { +x = "def" | r0 };
-            r1.x != r2.x
+            r1#x != r2#x
 
 }
