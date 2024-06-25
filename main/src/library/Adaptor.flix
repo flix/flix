@@ -17,7 +17,7 @@
 mod Adaptor {
 
     import java.lang.Object
-    import java.util.{ArrayList, Comparator, LinkedList, Optional, TreeSet, TreeMap};
+    import java.util.{ArrayList, Comparator, LinkedList, List => JList, Optional, TreeSet, TreeMap};
 
     ///
     /// Returns a comparator for elements of type `a`.
@@ -63,7 +63,7 @@ mod Adaptor {
     ///
     /// Returns all elements in the given Java List as a Flix List.
     ///
-    pub def fromList(l: ##java.util.List): List[a] = region rc {
+    pub def fromList(l: JList): List[a] = region rc {
         import java.util.List.iterator(): ##java.util.Iterator \ rc;
         iterator(l) |> fromIterator(rc, (Proxy.Proxy: Proxy[a])) |> Iterator.toList
     }
@@ -71,7 +71,7 @@ mod Adaptor {
     ///
     /// Returns a Flix Iterator of the elements in the given Java List.
     ///
-    pub def fromListToIterator(rc: Region[r], prx: Proxy[a], l: ##java.util.List): Iterator[a, r, r] \ r =
+    pub def fromListToIterator(rc: Region[r], prx: Proxy[a], l: JList): Iterator[a, r, r] \ r =
         import java.util.List.iterator(): ##java.util.Iterator \ r;
         iterator(l) |> fromIterator(rc, prx)
 
@@ -178,7 +178,7 @@ mod Adaptor {
     ///
     /// Alias for `toArrayList`.
     ///
-    pub def toList(ma: m[a]): ##java.util.List \ (IO + Foldable.Aef[m]) with Foldable[m] =
+    pub def toList(ma: m[a]): JList \ (IO + Foldable.Aef[m]) with Foldable[m] =
         checked_cast(toArrayList(ma))
 
     ///
