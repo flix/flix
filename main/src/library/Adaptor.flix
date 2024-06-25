@@ -215,7 +215,7 @@ mod Adaptor {
     ///
     /// Returns the elements of the given foldable `ma` as a new `TreeSet`.
     ///
-    pub def toTreeSet(ma: m[a]): ##java.util.TreeSet \ (IO + Foldable.Aef[m]) with Order[a], Foldable[m] =
+    pub def toTreeSet(ma: m[a]): TreeSet \ (IO + Foldable.Aef[m]) with Order[a], Foldable[m] =
         import java.util.TreeSet.add(Object): Bool \ IO;
         let tset = new TreeSet();
         Foldable.forEach(x -> discard add(tset, unchecked_cast(x as Object)), ma);
@@ -224,14 +224,14 @@ mod Adaptor {
     ///
     /// Alias for `toTreeMap`.
     ///
-    pub def toMap(m: Map[k, v]): ##java.util.Map \ IO with Order[k] = checked_cast(toTreeMap(m))
+    pub def toMap(m: Map[k, v]): JMap \ IO with Order[k] = checked_cast(toTreeMap(m))
 
     ///
     /// Returns all key-value pairs of the given map `m` as a new `TreeMap`.
     ///
     /// The `TreeMap` uses a `Comparator` constructed from the `Order` on `k`.
     ///
-    pub def toTreeMap(m: Map[k, v]): ##java.util.TreeMap \ IO with Order[k] =
+    pub def toTreeMap(m: Map[k, v]): TreeMap \ IO with Order[k] =
         import java.util.TreeMap.put(Object, Object): Object \ IO;
         let tmap = new TreeMap();
         Map.forEach((k, v) -> discard put(tmap, unchecked_cast(k as Object), unchecked_cast(v as Object)), m);
