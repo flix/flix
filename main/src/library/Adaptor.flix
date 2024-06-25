@@ -20,6 +20,8 @@ mod Adaptor {
     import java.util.{ArrayList, Comparator, Iterator => JIterator,
         LinkedList, List => JList, Map => JMap, Optional, Set => JSet,
         TreeSet, TreeMap};
+    import java.util.stream.Stream
+    import java.util.Collection
 
     ///
     /// Returns a comparator for elements of type `a`.
@@ -145,7 +147,7 @@ mod Adaptor {
     ///
     /// Returns a Flix Iterator of the elements in the given Java Stream.
     ///
-    pub def fromStreamToIterator(rc: Region[r], proxy: Proxy[a], strm: ##java.util.stream.Stream): Iterator[a, r, r] =
+    pub def fromStreamToIterator(rc: Region[r], proxy: Proxy[a], strm: Stream): Iterator[a, r, r] =
         import java.util.stream.BaseStream.iterator(): ##java.util.Iterator \ {};
         let iter = iterator(checked_cast(strm));
         Adaptor.fromIterator(rc, proxy, iter)
@@ -153,7 +155,7 @@ mod Adaptor {
     ///
     /// Returns a Flix Iterator of the elements in the given Java Collection.
     ///
-    pub def fromCollectionToIterator(rc: Region[r], proxy: Proxy[a], col: ##java.util.Collection): Iterator[a, r, r] =
+    pub def fromCollectionToIterator(rc: Region[r], proxy: Proxy[a], col: Collection): Iterator[a, r, r] =
         import java.util.Collection.iterator(): ##java.util.Iterator \ {};
         let iter = iterator(col);
         Adaptor.fromIterator(rc, proxy, iter)
