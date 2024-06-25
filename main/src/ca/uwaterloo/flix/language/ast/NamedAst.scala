@@ -21,6 +21,8 @@ import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Source}
 import ca.uwaterloo.flix.language.ast.shared.Fixity
 import ca.uwaterloo.flix.util.collection.MultiMap
 
+import java.lang.reflect.Field
+
 object NamedAst {
 
   case class Root(symbols: Map[Name.NName, Map[String, List[Declaration]]],
@@ -48,6 +50,8 @@ object NamedAst {
     case class Def(sym: Symbol.DefnSym, spec: Spec, exp: Expr) extends Declaration
 
     case class Enum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: TypeParams, derives: Derivations, cases: List[Declaration.Case], loc: SourceLocation) extends Declaration
+
+    case class Struct(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.StructSym, tparams: List[TypeParam], fields: Map[Name.StructField, Field], tpe: Type, loc: SourceLocation) extends Declaration
 
     case class RestrictableEnum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.RestrictableEnumSym, index: TypeParam, tparams: TypeParams, derives: Derivations, cases: List[Declaration.RestrictableCase], loc: SourceLocation) extends Declaration
 

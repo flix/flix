@@ -398,13 +398,15 @@ object Monomorpher {
         MonoAst.Effect(doc, ann, mod, sym, ops, loc)
     }
 
+    val structs = Map.empty[Symbol.StructSym, MonoAst.Struct]
     // Reassemble the AST.
     MonoAst.Root(
       ctx.toMap,
       effects,
       root.entryPoint,
       root.reachable,
-      root.sources
+      root.sources,
+      structs
     )
   }
 

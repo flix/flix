@@ -20,15 +20,18 @@ import ca.uwaterloo.flix.language.ast.Ast.{Denotation, EliminatedBy, Source}
 import ca.uwaterloo.flix.language.ast.shared.Fixity
 import ca.uwaterloo.flix.language.phase.Monomorpher
 
+import java.lang.reflect.Field
+
 object MonoAst {
 
-  val empty: Root = Root(Map.empty, Map.empty, None, Set.empty, Map.empty)
+  val empty: Root = Root(Map.empty, Map.empty, None, Set.empty, Map.empty, Map.empty)
 
   case class Root(defs: Map[Symbol.DefnSym, Def],
                   effects: Map[Symbol.EffectSym, Effect],
                   entryPoint: Option[Symbol.DefnSym],
                   reachable: Set[Symbol.DefnSym],
-                  sources: Map[Source, SourceLocation])
+                  sources: Map[Source, SourceLocation],
+                  structs: Map[Symbol.StructSym, Struct])
 
   case class Def(sym: Symbol.DefnSym, spec: Spec, exp: Expr)
 
@@ -37,6 +40,8 @@ object MonoAst {
   case class Effect(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EffectSym, ops: List[Op], loc: SourceLocation)
 
   case class Op(sym: Symbol.OpSym, spec: Spec)
+
+  case class Struct(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.StructSym, fields: Map[Name.StructField, Field], tpe: Type, loc: SourceLocation)
 
   sealed trait Expr extends Product {
     def tpe: Type

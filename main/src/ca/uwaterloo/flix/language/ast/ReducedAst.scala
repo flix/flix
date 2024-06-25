@@ -21,12 +21,15 @@ import ca.uwaterloo.flix.language.ast.Purity.Pure
 
 import java.lang.reflect.Method
 
+import java.lang.reflect.Field
+
 object ReducedAst {
 
-  val empty: Root = Root(Map.empty, Map.empty, Set.empty, List.empty, None, Set.empty, Map.empty)
+  val empty: Root = Root(Map.empty, Map.empty, Map.empty, Set.empty, List.empty, None, Set.empty, Map.empty)
 
   case class Root(defs: Map[Symbol.DefnSym, Def],
                   effects: Map[Symbol.EffectSym, Effect],
+                  structs: Map[Symbol.StructSym, Struct],
                   types: Set[MonoType],
                   anonClasses: List[AnonClass],
                   entryPoint: Option[Symbol.DefnSym],
@@ -51,6 +54,8 @@ object ReducedAst {
   case class Effect(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EffectSym, ops: List[Op], loc: SourceLocation)
 
   case class Op(sym: Symbol.OpSym, ann: Ast.Annotations, mod: Ast.Modifiers, fparams: List[FormalParam], tpe: MonoType, purity: Purity, loc: SourceLocation)
+
+  case class Struct(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.StructSym, fields: Map[Name.StructField, Field], tpe: Type, loc: SourceLocation)
 
   sealed trait Expr {
     def tpe: MonoType
