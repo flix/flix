@@ -362,7 +362,7 @@ mod Float32 {
         floatValue(d)
 
     ///
-    /// Convert an Float32 value to its object representation (i.e. ##java.lang.Float).
+    /// Convert an Float32 value to its object representation (i.e. java.lang.Float).
     ///
     /// This function is expected to be used when marshaling Float32s to Java. Generally in Flix
     /// code you should not need to use `java.lang.Float`.
