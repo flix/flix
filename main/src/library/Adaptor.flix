@@ -31,8 +31,8 @@ mod Adaptor {
             let b = unchecked_cast(o2 as a);
             Order.compare(a, b) |> Comparison.toInt32
         };
-        new ##java.util.Comparator {
-            def compare(_this: ##java.util.Comparator, t: Object, u: Object): Int32 =
+        new Comparator {
+            def compare(_this: Comparator, t: Object, u: Object): Int32 =
                 f1(t, u)
         }
 
