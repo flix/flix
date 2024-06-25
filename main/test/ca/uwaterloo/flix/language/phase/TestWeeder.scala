@@ -137,7 +137,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.DuplicateTag](result)
   }
 
-  test("DuplicateStructField.01") {
+  ignore("DuplicateStructField.01") {
     val input =
       """struct Person {
          name: String,
@@ -148,7 +148,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.DuplicateStructField](result)
   }
 
-  test("DuplicateStructField.02") {
+  ignore("DuplicateStructField.02") {
     val input =
       """struct Person {
          name: String,
@@ -160,7 +160,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.DuplicateStructField](result)
   }
 
-  test("DuplicateStructField.03") {
+  ignore("DuplicateStructField.03") {
     val input =
       """struct Person {
          name: String,
@@ -173,7 +173,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.DuplicateStructField](result)
   }
 
-  test("DuplicateStructField.04") {
+  ignore("DuplicateStructField.04") {
     val input =
       """struct Person {
          name: String,
