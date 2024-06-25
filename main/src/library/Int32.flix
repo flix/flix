@@ -23,6 +23,7 @@ instance UpperBound[Int32] {
 }
 
 mod Int32 {
+    import java.math.BigDecimal;
 
     ///
     /// Returns the number of bits used to represent an `Int32`.
@@ -436,8 +437,7 @@ mod Int32 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toBigDecimal(x: Int32): BigDecimal =
-        import java_new java.math.BigDecimal(Int32): BigDecimal \ {} as fromInt32;
-        fromInt32(x)
+        unsafe new BigDecimal(x)
 
     ///
     /// Helper function for the `clamp` conversion functions.

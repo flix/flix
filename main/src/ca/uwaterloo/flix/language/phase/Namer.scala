@@ -95,6 +95,7 @@ object Namer {
     case decl: DesugaredAst.Declaration.Instance => visitInstance(decl, ns0)
     case decl: DesugaredAst.Declaration.Def => visitDef(decl, ns0, DefKind.NonMember)
     case decl: DesugaredAst.Declaration.Enum => visitEnum(decl, ns0)
+    case _: DesugaredAst.Declaration.Struct => throw new RuntimeException("Not implemented yet")
     case decl: DesugaredAst.Declaration.RestrictableEnum => visitRestrictableEnum(decl, ns0)
     case decl: DesugaredAst.Declaration.TypeAlias => visitTypeAlias(decl, ns0)
     case decl: DesugaredAst.Declaration.Effect => visitEffect(decl, ns0)
@@ -148,6 +149,9 @@ object Namer {
     case NamedAst.Declaration.Enum(_, _, _, sym, _, _, cases, _) =>
       val table1 = tryAddToTable(table0, sym.namespace, sym.name, decl)
       cases.foldLeft(table1)(tableDecl)
+
+    case NamedAst.Declaration.Struct(_, _, _, sym, _, _, _, _) =>
+      tryAddToTable(table0, sym.namespace, sym.name, decl)
 
     case NamedAst.Declaration.RestrictableEnum(_, _, _, sym, _, _, _, cases, _) =>
       val table1 = tryAddToTable(table0, sym.namespace, sym.name, decl)
@@ -1537,6 +1541,7 @@ object Namer {
     case NamedAst.Declaration.Sig(sym, _, _) => sym.loc
     case NamedAst.Declaration.Def(sym, _, _) => sym.loc
     case NamedAst.Declaration.Enum(_, _, _, sym, _, _, _, _) => sym.loc
+    case NamedAst.Declaration.Struct(_, _, _, sym, _, _, _, _) => sym.loc
     case NamedAst.Declaration.RestrictableEnum(_, _, _, sym, _, _, _, _, _) => sym.loc
     case NamedAst.Declaration.TypeAlias(_, _, _, sym, _, _, _) => sym.loc
     case NamedAst.Declaration.Effect(_, _, _, sym, _, _) => sym.loc

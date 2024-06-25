@@ -25,12 +25,13 @@ import java.lang.reflect.{Constructor, Field, Method}
 
 object ResolvedAst {
 
-  val empty: Root = Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, List.empty, None, Map.empty, MultiMap.empty)
+  val empty: Root = Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, List.empty, None, Map.empty, MultiMap.empty)
 
   case class Root(traits: Map[Symbol.TraitSym, Declaration.Trait],
                   instances: Map[Symbol.TraitSym, List[Declaration.Instance]],
                   defs: Map[Symbol.DefnSym, Declaration.Def],
                   enums: Map[Symbol.EnumSym, Declaration.Enum],
+                  structs: Map[Symbol.StructSym, Declaration.Struct],
                   restrictableEnums: Map[Symbol.RestrictableEnumSym, Declaration.RestrictableEnum],
                   effects: Map[Symbol.EffectSym, Declaration.Effect],
                   typeAliases: Map[Symbol.TypeAliasSym, Declaration.TypeAlias],
@@ -57,6 +58,10 @@ object ResolvedAst {
     case class Def(sym: Symbol.DefnSym, spec: Spec, exp: Expr) extends Declaration
 
     case class Enum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: TypeParams, derives: Ast.Derivations, cases: List[Declaration.Case], loc: SourceLocation) extends Declaration
+
+    case class Struct(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.StructSym, tparams: List[TypeParam], fields: Map[Name.StructField, StructField], tpe: Type, loc: SourceLocation) extends Declaration
+
+    case class StructField(sym: Symbol.StructFieldSym, tpe: Type, sc: Scheme, loc: SourceLocation)
 
     case class RestrictableEnum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.RestrictableEnumSym, index: TypeParam, tparams: TypeParams, derives: Ast.Derivations, cases: List[Declaration.RestrictableCase], loc: SourceLocation) extends Declaration
 
