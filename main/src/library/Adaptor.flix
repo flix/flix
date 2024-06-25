@@ -15,7 +15,8 @@
  */
 
 mod Adaptor {
-    import java.util.{ArrayList, LinkedList, TreeSet, TreeMap};
+    import java.lang.Object
+    import java.util.{ArrayList, Comparator, LinkedList, TreeSet, TreeMap};
 
     ///
     /// Returns a comparator for elements of type `a`.
@@ -24,14 +25,14 @@ mod Adaptor {
     ///
     /// Note: Currently requires a Proxy (until Java types support generics).
     ///
-    pub def comparator(_: Proxy[a]): ##java.util.Comparator \ IO with Order[a] =
+    pub def comparator(_: Proxy[a]): Comparator \ IO with Order[a] =
         let f1 = (o1, o2) -> {
             let a = unchecked_cast(o1 as a);
             let b = unchecked_cast(o2 as a);
             Order.compare(a, b) |> Comparison.toInt32
         };
         new ##java.util.Comparator {
-            def compare(_this: ##java.util.Comparator, t: ##java.lang.Object, u: ##java.lang.Object): Int32 =
+            def compare(_this: ##java.util.Comparator, t: Object, u: Object): Int32 =
                 f1(t, u)
         }
 
@@ -40,7 +41,7 @@ mod Adaptor {
     ///
     pub def fromOptional(_: Proxy[a], o: ##java.util.Optional): Option[a] =
         import java.util.Optional.isPresent(): Bool \ {};
-        import java.util.Optional.get(): ##java.lang.Object \ {};
+        import java.util.Optional.get(): Object \ {};
         if (isPresent(o)) {
             let o1 = get(o);
             Some(unchecked_cast(o1 as a))
@@ -51,8 +52,8 @@ mod Adaptor {
     /// Returns the given Java `Map.Entry` as a Flix tuple.
     ///
     pub def fromMapEntry(_: Proxy[k], _: Proxy[v], e: ##java.util.Map$Entry): (k, v) =
-        import java.util.Map$Entry.getKey(): ##java.lang.Object \ {};
-        import java.util.Map$Entry.getValue(): ##java.lang.Object \ {};
+        import java.util.Map$Entry.getKey(): Object \ {};
+        import java.util.Map$Entry.getValue(): Object \ {};
         let k1 = getKey(e);
         let v1 = getValue(e);
         (unchecked_cast(k1 as k), unchecked_cast(v1 as v))
@@ -110,7 +111,7 @@ mod Adaptor {
         import java.util.Map.entrySet(): ##java.util.Set \ r;
         import java.util.Set.iterator(): ##java.util.Iterator \ r;
         import java.util.Iterator.hasNext(): Bool \ r;
-        import java.util.Iterator.next(): ##java.lang.Object \ r;
+        import java.util.Iterator.next(): Object \ r;
         let entries = entrySet(m);
         let iter = iterator(entries);
         let getNext = () -> match hasNext(iter) {
@@ -128,7 +129,7 @@ mod Adaptor {
     ///
     pub def fromIterator(rc: Region[r], _: Proxy[a], iter: ##java.util.Iterator): Iterator[a, r, r] =
         import java.util.Iterator.hasNext(): Bool \ r;
-        import java.util.Iterator.next(): ##java.lang.Object \ r;
+        import java.util.Iterator.next(): Object \ r;
         let step = () -> {
             match hasNext(iter) {
                 case true  => next(iter) |> (o -> unchecked_cast(o as a)) |> Some
@@ -159,19 +160,19 @@ mod Adaptor {
     ///
     pub def toOptional(o: Option[a]): ##java.util.Optional \ IO =
         import static java.util.Optional.empty(): ##java.util.Optional \ IO;
-        import static java.util.Optional.of(##java.lang.Object): ##java.util.Optional \ IO;
+        import static java.util.Optional.of(Object): ##java.util.Optional \ IO;
         match o {
             case None    => empty()
-            case Some(a) => of(unchecked_cast(a as ##java.lang.Object))
+            case Some(a) => of(unchecked_cast(a as Object))
         }
 
     ///
     /// Returns the key-value pair `p` as a new Java `Map.Entry`.
     ///
     pub def toMapEntry(p: (k, v)): ##java.util.Map$Entry \ IO =
-        import static java.util.Map.entry(##java.lang.Object, ##java.lang.Object): ##java.util.Map$Entry \ IO;
+        import static java.util.Map.entry(Object, Object): ##java.util.Map$Entry \ IO;
         let (k, v) = p;
-        entry(unchecked_cast(k as ##java.lang.Object), unchecked_cast(v as ##java.lang.Object))
+        entry(unchecked_cast(k as Object), unchecked_cast(v as Object))
 
     ///
     /// Alias for `toArrayList`.
@@ -185,9 +186,9 @@ mod Adaptor {
     /// Creates a fresh `ArrayList` and copies all elements in `ma` into it.
     ///
     pub def toArrayList(ma: m[a]): ##java.util.ArrayList \ (IO + Foldable.Aef[m]) with Foldable[m] =
-        import java.util.ArrayList.add(##java.lang.Object): Bool \ IO;
+        import java.util.ArrayList.add(Object): Bool \ IO;
         let alist = new ArrayList();
-        Foldable.forEach(x -> discard add(alist, unchecked_cast(x as ##java.lang.Object)), ma);
+        Foldable.forEach(x -> discard add(alist, unchecked_cast(x as Object)), ma);
         alist
 
     ///
@@ -196,9 +197,9 @@ mod Adaptor {
     /// Creates a fresh `LinkedList` and copies all elements in `ma` into it.
     ///
     pub def toLinkedList(ma: m[a]): ##java.util.LinkedList \ (IO + Foldable.Aef[m]) with Foldable[m] =
-        import java.util.LinkedList.add(##java.lang.Object): Bool \ IO;
+        import java.util.LinkedList.add(Object): Bool \ IO;
         let llist = new LinkedList();
-        Foldable.forEach(x -> discard add(llist, unchecked_cast(x as ##java.lang.Object)), ma);
+        Foldable.forEach(x -> discard add(llist, unchecked_cast(x as Object)), ma);
         llist
 
     ///
@@ -210,9 +211,9 @@ mod Adaptor {
     /// Returns the elements of the given foldable `ma` as a new `TreeSet`.
     ///
     pub def toTreeSet(ma: m[a]): ##java.util.TreeSet \ (IO + Foldable.Aef[m]) with Order[a], Foldable[m] =
-        import java.util.TreeSet.add(##java.lang.Object): Bool \ IO;
+        import java.util.TreeSet.add(Object): Bool \ IO;
         let tset = new TreeSet();
-        Foldable.forEach(x -> discard add(tset, unchecked_cast(x as ##java.lang.Object)), ma);
+        Foldable.forEach(x -> discard add(tset, unchecked_cast(x as Object)), ma);
         tset
 
     ///
@@ -226,9 +227,9 @@ mod Adaptor {
     /// The `TreeMap` uses a `Comparator` constructed from the `Order` on `k`.
     ///
     pub def toTreeMap(m: Map[k, v]): ##java.util.TreeMap \ IO with Order[k] =
-        import java.util.TreeMap.put(##java.lang.Object, ##java.lang.Object): ##java.lang.Object \ IO;
+        import java.util.TreeMap.put(Object, Object): Object \ IO;
         let tmap = new TreeMap();
-        Map.forEach((k, v) -> discard put(tmap, unchecked_cast(k as ##java.lang.Object), unchecked_cast(v as ##java.lang.Object)), m);
+        Map.forEach((k, v) -> discard put(tmap, unchecked_cast(k as Object), unchecked_cast(v as Object)), m);
         tmap
 
 
