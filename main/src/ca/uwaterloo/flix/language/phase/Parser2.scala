@@ -626,14 +626,13 @@ object Parser2 {
 
     var continue = true
     while (continue && !eof()) {
-      val n0 = nth(0)
-      n0 match {
-        case TokenKind.Dot | TokenKind.Hash =>
+      nth(0) match {
+        case TokenKind.Dot =>
           if (!kinds.contains(nth(1))) {
             // Trailing dot, stop parsing the qualified name.
             val error = UnexpectedToken(
               expected = NamedTokenSet.FromKinds(kinds),
-              actual = Some(n0),
+              actual = Some(TokenKind.Dot),
               sctx = context,
               hint = None,
               loc = currentSourceLocation()
@@ -1328,7 +1327,7 @@ object Parser2 {
         lhs = close(mark, TreeKind.Expr.Apply)
         lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
       }
-      // Handle record select after function call. Example: funcReturningRecord()#field
+      // Handle record select after function call. Example: funcReturningRecord().field
       if (at(TokenKind.Hash) && nth(1) == TokenKind.NameLowerCase) {
         val mark = openBefore(lhs)
         eat(TokenKind.Hash)
