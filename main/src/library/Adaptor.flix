@@ -17,7 +17,9 @@
 mod Adaptor {
 
     import java.lang.Object
-    import java.util.{ArrayList, Comparator, LinkedList, List => JList, Optional, TreeSet, TreeMap};
+    import java.util.{ArrayList, Comparator, Iterator => JIterator,
+        LinkedList, List => JList, Map => JMap, Optional, Set => JSet,
+        TreeSet, TreeMap};
 
     ///
     /// Returns a comparator for elements of type `a`.
@@ -80,7 +82,7 @@ mod Adaptor {
     ///
     /// WARNING: The Flix Set will use the ordering defined on `a`.
     ///
-    pub def fromSet(l: ##java.util.Set): Set[a] with Order[a] = region rc {
+    pub def fromSet(l: JSet): Set[a] with Order[a] = region rc {
         import java.util.Set.iterator(): ##java.util.Iterator \ rc;
         iterator(l) |> fromIterator(rc, (Proxy.Proxy: Proxy[a])) |> Iterator.toSet
     }
@@ -88,7 +90,7 @@ mod Adaptor {
     ///
     /// Returns a Flix Iterator of the elements in the given Java Set.
     ///
-    pub def fromSetToIterator(rc: Region[r], prx: Proxy[a], s: ##java.util.Set): Iterator[a, r, r] \ r =
+    pub def fromSetToIterator(rc: Region[r], prx: Proxy[a], s: JSet): Iterator[a, r, r] \ r =
         import java.util.Set.iterator(): ##java.util.Iterator \ r;
         iterator(s) |> fromIterator(rc, prx)
 
@@ -97,7 +99,7 @@ mod Adaptor {
     ///
     /// WARNING: The Flix Map will use the ordering defined on `k`.
     ///
-    pub def fromMap(m: ##java.util.Map): Map[k, v] with Order[k] = region rc {
+    pub def fromMap(m: JMap): Map[k, v] with Order[k] = region rc {
         def step(acc, entry) = {
             let (k, v) = entry;
             Map.insert(k, v, acc)
@@ -108,8 +110,8 @@ mod Adaptor {
     ///
     /// Returns a Flix Iterator of the key-value pairs in the given Java Map.
     ///
-    pub def fromMapToIterator(rc: Region[r], m: ##java.util.Map): Iterator[(k, v), r, r] \ r =
-        import java.util.Map.entrySet(): ##java.util.Set \ r;
+    pub def fromMapToIterator(rc: Region[r], m: JMap): Iterator[(k, v), r, r] \ r =
+        import java.util.Map.entrySet(): JSet \ r;
         import java.util.Set.iterator(): ##java.util.Iterator \ r;
         import java.util.Iterator.hasNext(): Bool \ r;
         import java.util.Iterator.next(): Object \ r;
@@ -128,7 +130,7 @@ mod Adaptor {
     ///
     /// Returns a fresh Flix `Iterator` from the Java iterator `iter`.
     ///
-    pub def fromIterator(rc: Region[r], _: Proxy[a], iter: ##java.util.Iterator): Iterator[a, r, r] =
+    pub def fromIterator(rc: Region[r], _: Proxy[a], iter: JIterator): Iterator[a, r, r] =
         import java.util.Iterator.hasNext(): Bool \ r;
         import java.util.Iterator.next(): Object \ r;
         let step = () -> {
@@ -186,7 +188,7 @@ mod Adaptor {
     ///
     /// Creates a fresh `ArrayList` and copies all elements in `ma` into it.
     ///
-    pub def toArrayList(ma: m[a]): ##java.util.ArrayList \ (IO + Foldable.Aef[m]) with Foldable[m] =
+    pub def toArrayList(ma: m[a]): ArrayList \ (IO + Foldable.Aef[m]) with Foldable[m] =
         import java.util.ArrayList.add(Object): Bool \ IO;
         let alist = new ArrayList();
         Foldable.forEach(x -> discard add(alist, unchecked_cast(x as Object)), ma);
@@ -197,7 +199,7 @@ mod Adaptor {
     ///
     /// Creates a fresh `LinkedList` and copies all elements in `ma` into it.
     ///
-    pub def toLinkedList(ma: m[a]): ##java.util.LinkedList \ (IO + Foldable.Aef[m]) with Foldable[m] =
+    pub def toLinkedList(ma: m[a]): LinkedList \ (IO + Foldable.Aef[m]) with Foldable[m] =
         import java.util.LinkedList.add(Object): Bool \ IO;
         let llist = new LinkedList();
         Foldable.forEach(x -> discard add(llist, unchecked_cast(x as Object)), ma);
@@ -206,7 +208,7 @@ mod Adaptor {
     ///
     /// Alias for `toTreeSet`.
     ///
-    pub def toSet(ma: m[a]): ##java.util.Set \ (IO + Foldable.Aef[m]) with Order[a], Foldable[m] = checked_cast(toTreeSet(ma))
+    pub def toSet(ma: m[a]): JSet \ (IO + Foldable.Aef[m]) with Order[a], Foldable[m] = checked_cast(toTreeSet(ma))
 
     ///
     /// Returns the elements of the given foldable `ma` as a new `TreeSet`.
