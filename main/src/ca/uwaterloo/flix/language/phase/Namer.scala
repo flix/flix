@@ -118,32 +118,26 @@ object Namer {
   /**
     * Adds symbols from the compilation unit to the table.
     */
-  private def tableUnit(unit: NamedAst.CompilationUnit, table0: SymbolTable): Validation[SymbolTable, NameError] = unit match {
+  private def tableUnit(unit: NamedAst.CompilationUnit, table0: SymbolTable)(implicit sctx: SharedContext): Validation[SymbolTable, NameError] = unit match {
     case NamedAst.CompilationUnit(_, decls, _) =>
-      fold(decls, table0) {
-        case (acc, decl) => tableDecl(decl, acc)
-      }
+      val table = decls.foldLeft(table0)(tableDecl)
+      Validation.success(table)
   }
 
-  private def tableDecl(decl: NamedAst.Declaration, table0: SymbolTable): Validation[SymbolTable, NameError] = decl match {
+  private def tableDecl(table0: SymbolTable, decl: NamedAst.Declaration)(implicit sctx: SharedContext): SymbolTable = decl match {
     case NamedAst.Declaration.Namespace(sym, usesAndImports, decls, _) =>
       // Add the namespace to the table (no validation needed)
       val table1 = addDeclToTable(table0, sym.ns.init, sym.ns.last, decl)
-      val table2Val = fold(decls, table1) {
-        case (table, d) => tableDecl(d, table)
-      }
-      mapN(table2Val)(addUsesToTable(_, sym.ns, usesAndImports))
+      val table2 = decls.foldLeft(table1)(tableDecl)
+      addUsesToTable(table2, sym.ns, usesAndImports)
 
     case NamedAst.Declaration.Trait(_, _, _, sym, _, _, assocs, sigs, _, _) =>
-      val table1Val = tryAddToTable(table0, sym.namespace, sym.name, decl)
-      flatMapN(table1Val) {
-        case table1 => fold(assocs ++ sigs, table1) {
-          case (table, d) => tableDecl(d, table)
-        }
-      }
+      val table1 = tryAddToTable(table0, sym.namespace, sym.name, decl)
+      val assocsAndSigs = assocs ++ sigs
+      assocsAndSigs.foldLeft(table1)(tableDecl)
 
     case inst@NamedAst.Declaration.Instance(_, _, _, clazz, _, _, _, _, _, ns, _) =>
-      Validation.success(addInstanceToTable(table0, ns, clazz.ident.name, inst))
+      addInstanceToTable(table0, ns, clazz.ident.name, inst)
 
     case NamedAst.Declaration.Sig(sym, _, _) =>
       tryAddToTable(table0, sym.namespace, sym.name, decl)
@@ -152,20 +146,12 @@ object Namer {
       tryAddToTable(table0, sym.namespace, sym.name, decl)
 
     case NamedAst.Declaration.Enum(_, _, _, sym, _, _, cases, _) =>
-      val table1Val = tryAddToTable(table0, sym.namespace, sym.name, decl)
-      flatMapN(table1Val) {
-        case table1 => fold(cases, table1) {
-          case (table, d) => tableDecl(d, table)
-        }
-      }
+      val table1 = tryAddToTable(table0, sym.namespace, sym.name, decl)
+      cases.foldLeft(table1)(tableDecl)
 
     case NamedAst.Declaration.RestrictableEnum(_, _, _, sym, _, _, _, cases, _) =>
-      val table1Val = tryAddToTable(table0, sym.namespace, sym.name, decl)
-      flatMapN(table1Val) {
-        case table1 => fold(cases, table1) {
-          case (table, d) => tableDecl(d, table)
-        }
-      }
+      val table1 = tryAddToTable(table0, sym.namespace, sym.name, decl)
+      cases.foldLeft(table1)(tableDecl)
 
     case NamedAst.Declaration.TypeAlias(_, _, _, sym, _, _, _) =>
       tryAddToTable(table0, sym.namespace, sym.name, decl)
@@ -174,12 +160,8 @@ object Namer {
       tryAddToTable(table0, sym.namespace, sym.name, decl)
 
     case NamedAst.Declaration.Effect(_, _, _, sym, ops, _) =>
-      val table1Val = tryAddToTable(table0, sym.namespace, sym.name, decl)
-      flatMapN(table1Val) {
-        case table1 => fold(ops, table1) {
-          case (table, d) => tableDecl(d, table)
-        }
-      }
+      val table1 = tryAddToTable(table0, sym.namespace, sym.name, decl)
+      ops.foldLeft(table1)(tableDecl)
 
     case NamedAst.Declaration.Op(sym, _) =>
       tryAddToTable(table0, sym.namespace, sym.name, decl)
@@ -198,10 +180,12 @@ object Namer {
   /**
     * Tries to add the given declaration to the table.
     */
-  private def tryAddToTable(table: SymbolTable, ns: List[String], name: String, decl: NamedAst.Declaration): Validation[SymbolTable, NameError] = {
+  private def tryAddToTable(table: SymbolTable, ns: List[String], name: String, decl: NamedAst.Declaration)(implicit sctx: SharedContext): SymbolTable = {
     lookupName(name, ns, table) match {
-      case LookupResult.NotDefined => Validation.success(addDeclToTable(table, ns, name, decl))
-      case LookupResult.AlreadyDefined(loc) => mkDuplicateNamePair(name, getSymLocation(decl), loc)
+      case LookupResult.NotDefined => addDeclToTable(table, ns, name, decl)
+      case LookupResult.AlreadyDefined(loc) =>
+        mkDuplicateNamePair(name, getSymLocation(decl), loc)
+        SymbolTable.empty
     }
   }
 
@@ -244,20 +228,16 @@ object Namer {
   /**
     * Creates a pair of errors reporting a duplicate type declaration at each location.
     */
-  private def mkDuplicateNamePair[T](name: String, loc1: SourceLocation, loc2: SourceLocation): Validation.HardFailure[T, NameError] = {
+  private def mkDuplicateNamePair[T](name: String, loc1: SourceLocation, loc2: SourceLocation)(implicit sctx: SharedContext): Unit = {
     // NB: We report an error at both source locations.
     if (name.charAt(0).isUpper) {
       // Case 1: uppercase name
-      HardFailure(Chain(
-        NameError.DuplicateUpperName(name, loc1, loc2),
-        NameError.DuplicateUpperName(name, loc2, loc1)
-      ))
+      sctx.errors.add(NameError.DuplicateUpperName(name, loc1, loc2))
+      sctx.errors.add(NameError.DuplicateUpperName(name, loc2, loc1))
     } else {
       // Case 2: lowercase name
-      HardFailure(Chain(
-        NameError.DuplicateLowerName(name, loc1, loc2),
-        NameError.DuplicateLowerName(name, loc2, loc1)
-      ))
+      sctx.errors.add(NameError.DuplicateLowerName(name, loc1, loc2))
+      sctx.errors.add(NameError.DuplicateLowerName(name, loc2, loc1))
     }
   }
 
@@ -1588,6 +1568,12 @@ object Namer {
     * A structure holding the symbols and instances in the program.
     */
   case class SymbolTable(symbols: Map[List[String], ListMap[String, NamedAst.Declaration]], instances: Map[List[String], Map[String, List[NamedAst.Declaration.Instance]]], uses: Map[List[String], List[NamedAst.UseOrImport]])
+
+  object SymbolTable {
+
+    def empty: SymbolTable = SymbolTable(Map.empty, Map.empty, Map.empty)
+
+  }
 
   /**
     * An enumeration of the kinds of defs.
