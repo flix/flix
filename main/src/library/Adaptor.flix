@@ -20,6 +20,7 @@ mod Adaptor {
     import java.util.{ArrayList, Comparator, Iterator => JIterator,
         LinkedList, List => JList, Map => JMap, Optional, Set => JSet,
         TreeSet, TreeMap};
+    import java.util.{Map$Entry => Entry}
     import java.util.stream.Stream
     import java.util.Collection
 
@@ -56,7 +57,7 @@ mod Adaptor {
     ///
     /// Returns the given Java `Map.Entry` as a Flix tuple.
     ///
-    pub def fromMapEntry(_: Proxy[k], _: Proxy[v], e: ##java.util.Map$Entry): (k, v) =
+    pub def fromMapEntry(_: Proxy[k], _: Proxy[v], e: Entry): (k, v) =
         import java.util.Map$Entry.getKey(): Object \ {};
         import java.util.Map$Entry.getValue(): Object \ {};
         let k1 = getKey(e);
@@ -121,7 +122,7 @@ mod Adaptor {
         let iter = iterator(entries);
         let getNext = () -> match hasNext(iter) {
             case true  => {
-                let entry = {let obj = next(iter); unchecked_cast(obj as ##java.util.Map$Entry)};
+                let entry = {let obj = next(iter); unchecked_cast(obj as Entry)};
                 let (k, v) = fromMapEntry((Proxy.Proxy: Proxy[k]), (Proxy.Proxy: Proxy[v]), entry);
                 Some((k, v))
             }
@@ -174,8 +175,8 @@ mod Adaptor {
     ///
     /// Returns the key-value pair `p` as a new Java `Map.Entry`.
     ///
-    pub def toMapEntry(p: (k, v)): ##java.util.Map$Entry \ IO =
-        import static java.util.Map.entry(Object, Object): ##java.util.Map$Entry \ IO;
+    pub def toMapEntry(p: (k, v)): Entry \ IO =
+        import static java.util.Map.entry(Object, Object): Entry \ IO;
         let (k, v) = p;
         entry(unchecked_cast(k as Object), unchecked_cast(v as Object))
 
