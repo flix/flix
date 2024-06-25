@@ -406,7 +406,7 @@ object Monomorpher {
       effects,
       root.entryPoint,
       root.reachable,
-      root.sources,
+      root.sources
     )
   }
 
