@@ -53,6 +53,7 @@ object KeywordExprCompleter extends Completer {
       "select",
       "solve",
       "spawn",
+      "struct",
       "true",
       "try",
       "typematch",
