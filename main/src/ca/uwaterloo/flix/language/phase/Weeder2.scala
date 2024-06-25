@@ -465,15 +465,18 @@ object Weeder2 {
         // For each field, only keep the first occurrence of the name
         val groupedByName = fields.groupBy(_.ident.name)
         val filteredFields = groupedByName.values.map(_.head).toList
-        val result = Validation.success(Declaration.Struct(
-          doc, ann, mods, ident, tparams, filteredFields.sortBy(_.loc), tree.loc
-        ))
-        if (errors.nonEmpty) {
-          result.withSoftFailures(errors.map {
-            case (field1, field2) => DuplicateStructField(ident.loc, field1.ident.name, ident.name, field1.ident.loc, field2.ident.loc)
+        if (errors.isEmpty) {
+          Validation.success(Declaration.Struct(
+            doc, ann, mods, ident, tparams, filteredFields.sortBy(_.loc), tree.loc
+          ))
+        }
+        else {
+          Validation.success(Declaration.Struct(
+            doc, ann, mods, ident, tparams, filteredFields.sortBy(_.loc), tree.loc
+          )).withSoftFailures(errors.map {
+            case (field1, field2) => DuplicateStructField(ident.name, field1.ident.name, field1.ident.loc, field2.ident.loc, ident.loc)
           })
-        } else
-          result
+        }
       }
     }
 
