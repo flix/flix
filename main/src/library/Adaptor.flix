@@ -15,8 +15,9 @@
  */
 
 mod Adaptor {
+
     import java.lang.Object
-    import java.util.{ArrayList, Comparator, LinkedList, TreeSet, TreeMap};
+    import java.util.{ArrayList, Comparator, LinkedList, Optional, TreeSet, TreeMap};
 
     ///
     /// Returns a comparator for elements of type `a`.
@@ -39,7 +40,7 @@ mod Adaptor {
     ///
     /// Returns the given Java Optional as a Flix Option.
     ///
-    pub def fromOptional(_: Proxy[a], o: ##java.util.Optional): Option[a] =
+    pub def fromOptional(_: Proxy[a], o: Optional): Option[a] =
         import java.util.Optional.isPresent(): Bool \ {};
         import java.util.Optional.get(): Object \ {};
         if (isPresent(o)) {
@@ -158,9 +159,9 @@ mod Adaptor {
     ///
     /// Returns the `o` as a new Java `Optional`.
     ///
-    pub def toOptional(o: Option[a]): ##java.util.Optional \ IO =
-        import static java.util.Optional.empty(): ##java.util.Optional \ IO;
-        import static java.util.Optional.of(Object): ##java.util.Optional \ IO;
+    pub def toOptional(o: Option[a]): Optional \ IO =
+        import static java.util.Optional.empty(): Optional \ IO;
+        import static java.util.Optional.of(Object): Optional \ IO;
         match o {
             case None    => empty()
             case Some(a) => of(unchecked_cast(a as Object))
