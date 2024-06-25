@@ -113,6 +113,37 @@ object WeederError {
   }
 
   /**
+   * An error raised to indicate a struct contains duplicate fields
+   *
+   * @param structName the name of the struct
+   * @param fieldName the name of the field
+   * @param field1Loc the location of the first field
+   * @param field2Loc the location of the second field
+   * @param loc the location of the struct declaration
+   */
+  case class DuplicateStructField(structName: String, fieldName: String, field1Loc: SourceLocation, field2Loc: SourceLocation, loc: SourceLocation) extends WeederError with Recoverable {
+    def summary: String = s"struct has duplicate fields"
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s""">> Struct has duplicate fields
+         |
+         |${code(loc, "struct declaration has duplicate fields")}
+         |
+         |${code(field1Loc, "the first occurrence was here")}
+         |
+         |${code(field2Loc, "the second occurrence was here")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Remove one of the two fields."
+    })
+  }
+
+  /**
     * An error raised to indicate that the tag `name` was declared multiple times.
     *
     * @param enumName the name of the enum.
