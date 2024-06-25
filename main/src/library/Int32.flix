@@ -437,7 +437,7 @@ mod Int32 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toBigDecimal(x: Int32): BigDecimal =
-        new BigDecimal(x)
+        unsafe new BigDecimal(x)
 
     ///
     /// Helper function for the `clamp` conversion functions.
