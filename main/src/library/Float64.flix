@@ -24,6 +24,8 @@ instance UpperBound[Float64] {
 
 mod Float64 {
 
+    import java.math.BigDecimal;
+
     ///
     /// Returns the number of bits used to represent a `Float64`.
     ///
@@ -228,9 +230,8 @@ mod Float64 {
     /// If `x` is NaN or infinity return `None`.
     ///
     pub def tryToBigDecimal(x: Float64): Option[BigDecimal] =
-        import java_new java.math.BigDecimal(Float64): BigDecimal \ {} as fromFloat64;
         try {
-            Some(fromFloat64(x))
+            Some(unsafe new BigDecimal(x))
         } catch {
             case _: ##java.lang.NumberFormatException => None
         }
