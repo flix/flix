@@ -110,6 +110,7 @@ object Resolver {
                   table.instances.m, // TODO NS-REFACTOR use ListMap elsewhere for this too
                   table.defs,
                   table.enums,
+                  table.structs,
                   table.restrictableEnums,
                   table.effects,
                   table.typeAliases,
@@ -140,6 +141,7 @@ object Resolver {
     case inst: ResolvedAst.Declaration.Instance => SymbolTable.empty.addInstance(inst)
     case defn: ResolvedAst.Declaration.Def => SymbolTable.empty.addDef(defn)
     case enum: ResolvedAst.Declaration.Enum => SymbolTable.empty.addEnum(enum)
+    case struct: ResolvedAst.Declaration.Struct => SymbolTable.empty.addStruct(struct)
     case enum: ResolvedAst.Declaration.RestrictableEnum => SymbolTable.empty.addRestrictableEnum(enum)
     case alias: ResolvedAst.Declaration.TypeAlias => SymbolTable.empty.addTypeAlias(alias)
     case effect: ResolvedAst.Declaration.Effect => SymbolTable.empty.addEffect(effect)
@@ -357,6 +359,8 @@ object Resolver {
       resolveDef(defn, None, env0, taenv, ns0, root)
     case enum@NamedAst.Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc) =>
       resolveEnum(enum, env0, taenv, ns0, root)
+    case struct@NamedAst.Declaration.Struct(_, _, _, _, _, _, _, _) =>
+      throw new RuntimeException("Not implemented")
     case enum@NamedAst.Declaration.RestrictableEnum(doc, ann, mod, sym, index, tparams, derives, cases, loc) =>
       resolveRestrictableEnum(enum, env0, taenv, ns0, root)
     case NamedAst.Declaration.TypeAlias(doc, ann, mod, sym, tparams, tpe, loc) =>
@@ -3497,6 +3501,7 @@ object Resolver {
     case NamedAst.Declaration.Sig(sym, spec, exp) => sym
     case NamedAst.Declaration.Def(sym, spec, exp) => sym
     case NamedAst.Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc) => sym
+    case NamedAst.Declaration.Struct(doc, ann, mod, sym, tparams, fields, tpe, loc) => sym
     case NamedAst.Declaration.RestrictableEnum(doc, ann, mod, sym, ident, tparams, derives, cases, loc) => sym
     case NamedAst.Declaration.TypeAlias(doc, ann, mod, sym, tparams, tpe, loc) => sym
     case NamedAst.Declaration.AssocTypeSig(doc, mod, sym, tparams, kind, tpe, loc) => sym
@@ -3517,6 +3522,7 @@ object Resolver {
     case sym: Symbol.StructSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.RestrictableEnumSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.CaseSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
+    case sym: Symbol.StructFieldSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.RestrictableCaseSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.TraitSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.SigSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
@@ -3767,6 +3773,7 @@ object Resolver {
                                  instances: ListMap[Symbol.TraitSym, ResolvedAst.Declaration.Instance],
                                  defs: Map[Symbol.DefnSym, ResolvedAst.Declaration.Def],
                                  enums: Map[Symbol.EnumSym, ResolvedAst.Declaration.Enum],
+                                 structs: Map[Symbol.StructSym, ResolvedAst.Declaration.Struct],
                                  restrictableEnums: Map[Symbol.RestrictableEnumSym, ResolvedAst.Declaration.RestrictableEnum],
                                  effects: Map[Symbol.EffectSym, ResolvedAst.Declaration.Effect],
                                  typeAliases: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias]) {
@@ -3775,6 +3782,8 @@ object Resolver {
     def addDef(defn: ResolvedAst.Declaration.Def): SymbolTable = copy(defs = defs + (defn.sym -> defn))
 
     def addEnum(`enum`: ResolvedAst.Declaration.Enum): SymbolTable = copy(enums = enums + (`enum`.sym -> `enum`))
+
+    def addStruct(struct: ResolvedAst.Declaration.Struct): SymbolTable = copy(structs = structs + (struct.sym -> struct))
 
     def addRestrictableEnum(`enum`: ResolvedAst.Declaration.RestrictableEnum): SymbolTable = copy(restrictableEnums = restrictableEnums + (`enum`.sym -> `enum`))
 
@@ -3790,6 +3799,7 @@ object Resolver {
         instances = this.instances ++ that.instances,
         defs = this.defs ++ that.defs,
         enums = this.enums ++ that.enums,
+        structs = this.structs ++ that.structs,
         restrictableEnums = this.restrictableEnums ++ that.restrictableEnums,
         effects = this.effects ++ that.effects,
         typeAliases = this.typeAliases ++ that.typeAliases
@@ -3798,7 +3808,7 @@ object Resolver {
   }
 
   private object SymbolTable {
-    val empty: SymbolTable = SymbolTable(Map.empty, ListMap.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty)
+    val empty: SymbolTable = SymbolTable(Map.empty, ListMap.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty)
 
     /**
       * Traverses `xs`, gathering the symbols from each element by applying the function `f`.
