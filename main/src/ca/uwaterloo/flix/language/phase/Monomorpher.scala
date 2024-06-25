@@ -402,11 +402,11 @@ object Monomorpher {
     // Reassemble the AST.
     MonoAst.Root(
       ctx.toMap,
+      structs,
       effects,
       root.entryPoint,
       root.reachable,
       root.sources,
-      structs
     )
   }
 

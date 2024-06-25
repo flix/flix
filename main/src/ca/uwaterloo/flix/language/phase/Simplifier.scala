@@ -35,7 +35,7 @@ object Simplifier {
     val effects = ParOps.parMapValues(root.effects)(visitEffect)
     val structs = Map.empty[Symbol.StructSym, SimplifiedAst.Struct]
 
-    SimplifiedAst.Root(defs, effects, root.entryPoint, root.reachable, root.sources, structs)
+    SimplifiedAst.Root(defs, structs, effects, root.entryPoint, root.reachable, root.sources)
   }
 
   private def visitDef(decl: MonoAst.Def)(implicit flix: Flix, universe: Set[Symbol.EffectSym]): SimplifiedAst.Def = decl match {

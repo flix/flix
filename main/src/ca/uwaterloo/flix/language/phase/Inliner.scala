@@ -65,7 +65,7 @@ object Inliner {
     val effects = ParOps.parMapValues(root.effects)(visitEffect)
     val structs = Map.empty[Symbol.StructSym, LiftedAst.Struct]
 
-    Validation.success(LiftedAst.Root(defs, effects, root.entryPoint, root.reachable, root.sources, structs))
+    Validation.success(LiftedAst.Root(defs, structs, effects, root.entryPoint, root.reachable, root.sources))
   }
 
   /**
