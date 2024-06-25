@@ -460,10 +460,10 @@ object Weeder2 {
         traverse(fields)(visitStructField)
       ) {
         (doc, ann, mods, ident, tparams, fields) =>
-        // TODO: Validation, e.g., never duplicate names
-        Validation.success(Declaration.Struct(
-          doc, ann, mods, ident, tparams, fields.sortBy(_.loc), tree.loc
-        ))
+          // TODO: Validation, e.g., never duplicate names
+          Validation.success(Declaration.Struct(
+            doc, ann, mods, ident, tparams, fields.sortBy(_.loc), tree.loc
+          ))
       }
     }
 
@@ -479,6 +479,7 @@ object Weeder2 {
           StructField(ident, ttype, loc)
       }
     }
+
     private def visitTypeAliasDecl(tree: Tree): Validation[Declaration.TypeAlias, CompilationMessage] = {
       expect(tree, TreeKind.Decl.TypeAlias)
       mapN(
@@ -872,10 +873,13 @@ object Weeder2 {
             // Case 2: actually a record access
             case ident :: labels =>
               // NB: We only use the source location of the identifier itself.
-              val base = Expr.Ambiguous(Name.mkQName(prefix.map(_.toString), ident.name, ident.loc), ident.loc)
-              Validation.success(labels.foldLeft(base: Expr) {
-                case (acc, label) => Expr.RecordSelect(acc, Name.mkLabel(label), label.loc)
-              })
+              // val base = Expr.Ambiguous(Name.mkQName(prefix.map(_.toString), ident.name, ident.loc), ident.loc)
+              // Validation.success(labels.foldLeft(base: Expr) {
+              //   case (acc, label) => Expr.RecordSelect(acc, Name.mkLabel(label), label.loc)
+              // })
+              val m = IllegalRecordSelectSyntax(ident.loc)
+              val e = Expr.Error(m)
+              Validation.toSoftFailure(e, m)
           }
       }
     }
