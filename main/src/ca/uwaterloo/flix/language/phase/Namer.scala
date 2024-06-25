@@ -53,24 +53,18 @@ object Namer {
 
       flatMapN(unitsVal) {
         case units =>
-          val tableVal = fold(units.values, SymbolTable(Map.empty, Map.empty, Map.empty)) {
-            case (table, unit) => tableUnit(unit, table)
+          val SymbolTable(symbols0, instances0, uses0) = units.values.foldLeft(SymbolTable.empty)(tableUnit)
+          // TODO NS-REFACTOR remove use of NName
+          val symbols = symbols0.map {
+            case (k, v) => Name.mkUnlocatedNName(k) -> v.m
           }
-
-          flatMapN(tableVal) {
-            case SymbolTable(symbols0, instances0, uses0) =>
-              // TODO NS-REFACTOR remove use of NName
-              val symbols = symbols0.map {
-                case (k, v) => Name.mkUnlocatedNName(k) -> v.m
-              }
-              val instances = instances0.map {
-                case (k, v) => Name.mkUnlocatedNName(k) -> v
-              }
-              val uses = uses0.map {
-                case (k, v) => Name.mkUnlocatedNName(k) -> v
-              }
-              Validation.toSuccessOrSoftFailure(NamedAst.Root(symbols, instances, uses, units, program.entryPoint, locations, program.names), sctx.errors.asScala)
+          val instances = instances0.map {
+            case (k, v) => Name.mkUnlocatedNName(k) -> v
           }
+          val uses = uses0.map {
+            case (k, v) => Name.mkUnlocatedNName(k) -> v
+          }
+          Validation.toSuccessOrSoftFailure(NamedAst.Root(symbols, instances, uses, units, program.entryPoint, locations, program.names), sctx.errors.asScala)
       }
     }(DebugValidation())
 
@@ -119,10 +113,8 @@ object Namer {
   /**
     * Adds symbols from the compilation unit to the table.
     */
-  private def tableUnit(unit: NamedAst.CompilationUnit, table0: SymbolTable)(implicit sctx: SharedContext): Validation[SymbolTable, NameError] = unit match {
-    case NamedAst.CompilationUnit(_, decls, _) =>
-      val table = decls.foldLeft(table0)(tableDecl)
-      Validation.success(table)
+  private def tableUnit(table0: SymbolTable, unit: NamedAst.CompilationUnit)(implicit sctx: SharedContext): SymbolTable = unit match {
+    case NamedAst.CompilationUnit(_, decls, _) => decls.foldLeft(table0)(tableDecl)
   }
 
   private def tableDecl(table0: SymbolTable, decl: NamedAst.Declaration)(implicit sctx: SharedContext): SymbolTable = decl match {
