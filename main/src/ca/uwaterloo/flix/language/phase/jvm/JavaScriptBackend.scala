@@ -56,10 +56,22 @@ object JavaScriptBackend {
 
   private def isJavaScriptFile(path: Path): Boolean = true
 
+  private def compileDefOrClo(defn: Def)(implicit indent: Indent): String = {
+    if (defn.cparams.isEmpty) compileDef(defn) else compileClo(defn)
+  }
+
   private def compileDef(defn: Def)(implicit indent: Indent): String = {
     val name = compileDefnSym(defn.sym)
     val args = defn.fparams.map(compileFparam)
     val body = compileExp(defn.expr, inf, tail = true)
+    val fun = function(name, args, body)
+    pretty(80, fun)
+  }
+
+  private def compileClo(defn: Def)(implicit indent: Indent): String = {
+    val name = compileDefnSym(defn.sym)
+    val args = defn.cparams.map(compileFparam)
+    val body = returnit(compileLambda(None, defn.fparams.map(compileFparam), defn.expr), tail = true)
     val fun = function(name, args, body)
     pretty(80, fun)
   }
@@ -124,7 +136,7 @@ object JavaScriptBackend {
   @tailrec
   private def compileBinders(exp: Expr, acc: List[Doc], tail: Boolean)(implicit indent: Indent): List[Doc] = exp match {
     case Expr.Let(sym, exp1, exp2, _, _, _) =>
-      val doc = text("const") +: compileVarSym(sym) +: text("=") +\: compileExp(exp1, inf, tail = false)
+      val doc = text("const") +: compileVarSym(sym) +: text("=") +: compileExp(exp1, inf, tail = false)
       compileBinders(exp2, group(doc) :: acc, tail)
     case Expr.LetRec(_, _, _, _, exp2, _, _, loc) =>
       val doc = if (crash) throw InternalCompilerException("Local defs are not supported in JS", loc) else text("?letrec?")
@@ -155,7 +167,8 @@ object JavaScriptBackend {
   }
 
   private def compileAtomic(op: AtomicOp, exps: List[Expr], level: Int, tail: Boolean, loc: SourceLocation)(implicit indent: Indent): Doc = op match {
-    case AtomicOp.Closure(sym) => if (crash) throw InternalCompilerException("Closures are not supported by JS", loc) else text("?closure?")
+    case AtomicOp.Closure(sym) =>
+      returnit(compileDefnSym(sym) :: tuple(exps.map(compileExp(_, inf, tail = false))), tail)
     case AtomicOp.Unary(sop) => exps match {
       case List(one) =>
         val d = compileUnary(sop, compileExp(one, unOp, tail = false), loc)
@@ -212,6 +225,10 @@ object JavaScriptBackend {
     case AtomicOp.Force => if (crash) throw InternalCompilerException("Lazy values are not supported in JS", loc) else text("?force?")
     case AtomicOp.HoleError(sym) => text("throw") +: text("new") +: text("Error") :: parens(string(s"HoleError ${sym.name}"))
     case AtomicOp.MatchError => text("throw") +: text("new") +: text("Error") :: parens(string(s"MatchError"))
+  }
+
+  private def compileLambda(name: Option[String], args: List[Doc], body: Expr)(implicit indent: Indent): Doc = {
+    group(text("function") +: text(name.map(_ + " ").getOrElse("")) :: tuple(args) +: curlyOpen(compileExp(body, inf, tail = true)))
   }
 
   private def parensCond(doc: Doc, found: Int, maxParen: Int)(implicit indent: Indent): Doc = {
