@@ -72,9 +72,15 @@ object JavaScriptBackend {
     text(s"v${x.getStackOffset(localOffset = 0)}")
   }
 
+  private def compileCaseSym(x: Symbol.CaseSym): Doc = {
+    text(s"v${mkSafe(x.name)}")
+  }
+
   private def compileDefnSym(x: Symbol.DefnSym): Doc = {
     namespacedName(x.namespace, x.name)
   }
+
+  private val crash = true
 
   private val inf = 99
   private val binOp = 30
@@ -88,28 +94,27 @@ object JavaScriptBackend {
     case Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
       compileAtomic(op, exps, level: Int, loc)
     case Expr.ApplyClo(exp, exps, ct, tpe, purity, loc) =>
-      val d = compileExp(exp, app) :: tuple(exps.map(compileExp(_, inf)))
+      compileExp(exp, app) :: tuple(exps.map(compileExp(_, inf)))
       // no paren: inf, app, unOp, binOp
       //    paren:
-      parensCond(d, level, maxParen = nothing)
     case Expr.ApplyDef(sym, exps, ct, tpe, purity, loc) =>
       compileDefnSym(sym) :: tuple(exps.map(compileExp(_, inf)))
     case Expr.ApplySelfTail(sym, actuals, tpe, purity, loc) =>
       compileDefnSym(sym) :: tuple(actuals.map(compileExp(_, inf)))
     case Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       text("if") +: parens(compileExp(exp1, inf)) +: curly(compileExp(exp2, inf)) +: text("else") +: curly(compileExp(exp3, inf))
-    case Expr.Branch(exp, branches, tpe, purity, loc) => throw InternalCompilerException("Pattern matching is not supported in JS", loc)
-    case Expr.JumpTo(sym, tpe, purity, loc) => throw InternalCompilerException("Pattern matching is not supported in JS", loc)
+    case Expr.Branch(exp, branches, tpe, purity, loc) => if (crash) throw InternalCompilerException("Pattern matching is not supported in JS", loc) else text("?branch?")
+    case Expr.JumpTo(sym, tpe, purity, loc) => if (crash) throw InternalCompilerException("Pattern matching is not supported in JS", loc) else text("?jumpto?")
     case Expr.Let(_, _, _, _, _, _) | Expr.LetRec(_, _, _, _, _, _, _, _) | Expr.Stmt(_, _, _, _, _) =>
       val d = semiSep(compileBinders(exp, Nil))
       // no paren: inf
       //    paren: app, unOp, binOp
       curlyCond(d, level, binOp)
-    case Expr.Scope(sym, exp, tpe, purity, loc) => throw InternalCompilerException("Regions are not supported in JS", loc)
-    case Expr.TryCatch(exp, rules, tpe, purity, loc) => throw InternalCompilerException("Try-Catch is not supported in JS", loc)
-    case Expr.TryWith(exp, effUse, rules, ct, tpe, purity, loc) => throw InternalCompilerException("Algebraic effects are not supported in JS", loc)
-    case Expr.Do(op, exps, tpe, purity, loc) => throw InternalCompilerException("Algebraic effects are not supported in JS", loc)
-    case Expr.NewObject(name, clazz, tpe, purity, methods, loc) => throw InternalCompilerException("Java interop is not supported in JS", loc)
+    case Expr.Scope(sym, exp, tpe, purity, loc) => if (crash) throw InternalCompilerException("Regions are not supported in JS", loc) else text("?scope?")
+    case Expr.TryCatch(exp, rules, tpe, purity, loc) => if (crash) throw InternalCompilerException("Try-Catch is not supported in JS", loc) else text("?trycatch?")
+    case Expr.TryWith(exp, effUse, rules, ct, tpe, purity, loc) => if (crash) throw InternalCompilerException("Algebraic effects are not supported in JS", loc) else text("?trywith?")
+    case Expr.Do(op, exps, tpe, purity, loc) => if (crash) throw InternalCompilerException("Algebraic effects are not supported in JS", loc) else text("?do?")
+    case Expr.NewObject(name, clazz, tpe, purity, methods, loc) => if (crash) throw InternalCompilerException("Java interop is not supported in JS", loc) else text("?newobject?")
   }
 
   @tailrec
@@ -117,8 +122,9 @@ object JavaScriptBackend {
     case Expr.Let(sym, exp1, exp2, _, _, _) =>
       val doc = text("const") +: compileVarSym(sym) +: text("=") +\: compileExp(exp1, inf)
       compileBinders(exp2, group(doc) :: acc)
-    case Expr.LetRec(_, _, _, _, _, _, _, loc) =>
-      throw InternalCompilerException("Local defs are not supported in JS", loc)
+    case Expr.LetRec(_, _, _, _, exp2, _, _, loc) =>
+      val doc = if (crash) throw InternalCompilerException("Local defs are not supported in JS", loc) else text("?letrec?")
+      compileBinders(exp2, doc :: acc)
     case Expr.Stmt(exp1, exp2, _, _, _) =>
       val doc = compileExp(exp1, inf)
       compileBinders(exp2, doc :: acc)
@@ -134,18 +140,18 @@ object JavaScriptBackend {
     case Constant.Char(lit) => string(lit.toString)
     case Constant.Float32(lit) => text(lit.toString)
     case Constant.Float64(lit) => text(lit.toString)
-    case Constant.BigDecimal(_) => throw InternalCompilerException("BigDecimal is not supported in JS", loc)
+    case Constant.BigDecimal(_) => if (crash) throw InternalCompilerException("BigDecimal is not supported in JS", loc) else text("?bigdecimal?")
     case Constant.Int8(lit) => text(lit.toString)
     case Constant.Int16(lit) => text(lit.toString)
     case Constant.Int32(lit) => text(lit.toString)
     case Constant.Int64(lit) => text(lit.toString)
-    case Constant.BigInt(_) => throw InternalCompilerException("BigInt is not supported in JS", loc)
+    case Constant.BigInt(_) => if (crash) throw InternalCompilerException("BigInt is not supported in JS", loc) else text("?bigint?")
     case Constant.Str(lit) => string(lit)
-    case Constant.Regex(_) => throw InternalCompilerException("Regex is not supported in JS", loc)
+    case Constant.Regex(_) => if (crash) throw InternalCompilerException("Regex is not supported in JS", loc) else text("?regex?")
   }
 
   private def compileAtomic(op: AtomicOp, exps: List[Expr], level: Int, loc: SourceLocation)(implicit indent: Indent): Doc = op match {
-    case AtomicOp.Closure(sym) => throw InternalCompilerException("Closures are not supported by JS", loc)
+    case AtomicOp.Closure(sym) => if (crash) throw InternalCompilerException("Closures are not supported by JS", loc) else text("?closure?")
     case AtomicOp.Unary(sop) => exps match {
       case List(one) =>
         val d = compileUnary(sop, compileExp(one, unOp), loc)
@@ -162,38 +168,44 @@ object JavaScriptBackend {
         parensCond(d, level, maxParen = binOp)
       case _ => throw InternalCompilerException("Malformed program", loc)
     }
-    case AtomicOp.Region => throw InternalCompilerException("Regions are not supported by JS", loc)
-    case AtomicOp.Is(sym) => throw InternalCompilerException("Enums are not supported by JS", loc)
-    case AtomicOp.Tag(sym) => throw InternalCompilerException("Enums are not supported by JS", loc)
-    case AtomicOp.Untag(sym) => throw InternalCompilerException("Enums are not supported by JS", loc)
-    case AtomicOp.Index(idx) => throw InternalCompilerException("Tuples are not supported by JS", loc)
-    case AtomicOp.Tuple => throw InternalCompilerException("Tuples are not supported by JS", loc)
-    case AtomicOp.RecordEmpty => throw InternalCompilerException("Records are not supported by JS", loc)
-    case AtomicOp.RecordSelect(label) => throw InternalCompilerException("Records are not supported by JS", loc)
-    case AtomicOp.RecordExtend(label) => throw InternalCompilerException("Records are not supported by JS", loc)
-    case AtomicOp.RecordRestrict(label) => throw InternalCompilerException("Records are not supported by JS", loc)
-    case AtomicOp.ArrayLit => throw InternalCompilerException("Arrays are not supported by JS", loc)
-    case AtomicOp.ArrayNew => throw InternalCompilerException("Arrays are not supported by JS", loc)
-    case AtomicOp.ArrayLoad => throw InternalCompilerException("Arrays are not supported by JS", loc)
-    case AtomicOp.ArrayStore => throw InternalCompilerException("Arrays are not supported by JS", loc)
-    case AtomicOp.ArrayLength => throw InternalCompilerException("Arrays are not supported by JS", loc)
-    case AtomicOp.Ref => throw InternalCompilerException("References are not supported by JS", loc)
-    case AtomicOp.Deref => throw InternalCompilerException("References are not supported by JS", loc)
-    case AtomicOp.Assign => throw InternalCompilerException("References are not supported by JS", loc)
-    case AtomicOp.InstanceOf(_) => throw InternalCompilerException("Java interop is not supported in JS", loc)
+    case AtomicOp.Region => if (crash) throw InternalCompilerException("Regions are not supported by JS", loc) else text("?region?")
+    case AtomicOp.Is(sym) =>
+      val d = compileExp(takeOne(exps, loc), binOp) :: square(text("0")) +: text("===") +: compileCaseSym(sym)
+      parensCond(d, level, maxParen = binOp)
+    case AtomicOp.Tag(sym) =>
+      squareTuple(List(compileCaseSym(sym), compileExp(takeOne(exps, loc), inf)))
+    case AtomicOp.Untag(_) =>
+      compileExp(takeOne(exps, loc), app) :: square(text("1"))
+    case AtomicOp.Index(idx) =>
+      compileExp(takeOne(exps, loc), app) :: square(text(idx.toString))
+    case AtomicOp.Tuple =>
+      squareTuple(exps.map(compileExp(_, inf)))
+    case AtomicOp.RecordEmpty => if (crash) throw InternalCompilerException("Records are not supported by JS", loc) else text("?recordEmpty?")
+    case AtomicOp.RecordSelect(label) => if (crash) throw InternalCompilerException("Records are not supported by JS", loc) else text("?recordselect?")
+    case AtomicOp.RecordExtend(label) => if (crash) throw InternalCompilerException("Records are not supported by JS", loc) else text("?recordExtend?")
+    case AtomicOp.RecordRestrict(label) => if (crash) throw InternalCompilerException("Records are not supported by JS", loc) else text("?recordRestrict?")
+    case AtomicOp.ArrayLit => if (crash) throw InternalCompilerException("Arrays are not supported by JS", loc) else text("?arrayLit?")
+    case AtomicOp.ArrayNew => if (crash) throw InternalCompilerException("Arrays are not supported by JS", loc) else text("?arrayNew?")
+    case AtomicOp.ArrayLoad => if (crash) throw InternalCompilerException("Arrays are not supported by JS", loc) else text("?arrayload?")
+    case AtomicOp.ArrayStore => if (crash) throw InternalCompilerException("Arrays are not supported by JS", loc) else text("?arrayStore?")
+    case AtomicOp.ArrayLength => if (crash) throw InternalCompilerException("Arrays are not supported by JS", loc) else text("?arrayLength?")
+    case AtomicOp.Ref => if (crash) throw InternalCompilerException("References are not supported by JS", loc) else text("?re?")
+    case AtomicOp.Deref => if (crash) throw InternalCompilerException("References are not supported by JS", loc) else text("?deref?")
+    case AtomicOp.Assign => if (crash) throw InternalCompilerException("References are not supported by JS", loc) else text("?assign?")
+    case AtomicOp.InstanceOf(_) => if (crash) throw InternalCompilerException("Java interop is not supported in JS", loc) else text("?instanceof?")
     case AtomicOp.Cast => compileExp(takeOne(exps, loc), level)
     case AtomicOp.Unbox => compileExp(takeOne(exps, loc), level)
     case AtomicOp.Box => compileExp(takeOne(exps, loc), level)
-    case AtomicOp.InvokeConstructor(_) => throw InternalCompilerException("Java interop is not supported in JS", loc)
-    case AtomicOp.InvokeMethod(_) => throw InternalCompilerException("Java interop is not supported in JS", loc)
-    case AtomicOp.InvokeStaticMethod(_) => throw InternalCompilerException("Java interop is not supported in JS", loc)
-    case AtomicOp.GetField(_) => throw InternalCompilerException("Java interop is not supported in JS", loc)
-    case AtomicOp.PutField(_) => throw InternalCompilerException("Java interop is not supported in JS", loc)
-    case AtomicOp.GetStaticField(_) => throw InternalCompilerException("Java interop is not supported in JS", loc)
-    case AtomicOp.PutStaticField(_) => throw InternalCompilerException("Java interop is not supported in JS", loc)
-    case AtomicOp.Spawn => throw InternalCompilerException("Spawn is not supported in JS", loc)
-    case AtomicOp.Lazy => throw InternalCompilerException("Lazy values are not supported in JS", loc)
-    case AtomicOp.Force => throw InternalCompilerException("Lazy values are not supported in JS", loc)
+    case AtomicOp.InvokeConstructor(_) => if (crash) throw InternalCompilerException("Java interop is not supported in JS", loc) else text("?invokeCOnstructor?")
+    case AtomicOp.InvokeMethod(_) => if (crash) throw InternalCompilerException("Java interop is not supported in JS", loc) else text("?invokeMethod?")
+    case AtomicOp.InvokeStaticMethod(_) => if (crash) throw InternalCompilerException("Java interop is not supported in JS", loc) else text("?invokeStaticMethod?")
+    case AtomicOp.GetField(_) => if (crash) throw InternalCompilerException("Java interop is not supported in JS", loc) else text("?getField?")
+    case AtomicOp.PutField(_) => if (crash) throw InternalCompilerException("Java interop is not supported in JS", loc) else text("?PutField?")
+    case AtomicOp.GetStaticField(_) => if (crash) throw InternalCompilerException("Java interop is not supported in JS", loc) else text("?getStaticField?")
+    case AtomicOp.PutStaticField(_) => if (crash) throw InternalCompilerException("Java interop is not supported in JS", loc) else text("?putStaticField?")
+    case AtomicOp.Spawn => if (crash) throw InternalCompilerException("Spawn is not supported in JS", loc) else text("?spawn?")
+    case AtomicOp.Lazy => if (crash) throw InternalCompilerException("Lazy values are not supported in JS", loc) else text("?lazy?")
+    case AtomicOp.Force => if (crash) throw InternalCompilerException("Lazy values are not supported in JS", loc) else text("?force?")
     case AtomicOp.HoleError(sym) => text("throw") +: text("new") +: text("Error") :: parens(string(s"HoleError ${sym.name}"))
     case AtomicOp.MatchError => text("throw") +: text("new") +: text("Error") :: parens(string(s"MatchError"))
   }
@@ -211,13 +223,13 @@ object JavaScriptBackend {
     case Float32Op.Neg => text("-") :: exp
     case Float64Op.Neg => text("-") :: exp
     case Int8Op.Neg => text("-") :: exp
-    case Int8Op.Not => throw InternalCompilerException("Bitwise operations not supported in JS", loc)
+    case Int8Op.Not => if (crash) throw InternalCompilerException("Bitwise operations not supported in JS", loc) else text("?int8not?")
     case Int16Op.Neg => text("-") :: exp
-    case Int16Op.Not => throw InternalCompilerException("Bitwise operations not supported in JS", loc)
+    case Int16Op.Not => if (crash) throw InternalCompilerException("Bitwise operations not supported in JS", loc) else text("?int16not?")
     case Int32Op.Neg => text("-") :: exp
-    case Int32Op.Not => throw InternalCompilerException("Bitwise operations not supported in JS", loc)
+    case Int32Op.Not => if (crash) throw InternalCompilerException("Bitwise operations not supported in JS", loc) else text("?int32not?")
     case Int64Op.Neg => text("-") :: exp
-    case Int64Op.Not => throw InternalCompilerException("Bitwise operations not supported in JS", loc)
+    case Int64Op.Not => if (crash) throw InternalCompilerException("Bitwise operations not supported in JS", loc) else text("?int64not?")
   }
 
   private def compileBinary(op: SemanticOp.BinaryOp, exp1: Doc, exp2: Doc, loc: SourceLocation): Doc = {
@@ -239,7 +251,7 @@ object JavaScriptBackend {
     case Float32Op.Sub => "-"
     case Float32Op.Mul => "*"
     case Float32Op.Div => "/"
-    case Float32Op.Exp => throw InternalCompilerException("Exponentiation is not supported by JS", loc)
+    case Float32Op.Exp => if (crash) throw InternalCompilerException("Exponentiation is not supported by JS", loc) else "?float32exp?"
     case Float32Op.Eq => "==="
     case Float32Op.Neq => "!=="
     case Float32Op.Lt => "<"
@@ -250,7 +262,7 @@ object JavaScriptBackend {
     case Float64Op.Sub => "-"
     case Float64Op.Mul => "*"
     case Float64Op.Div => "/"
-    case Float64Op.Exp => throw InternalCompilerException("Exponentiation is not supported by JS", loc)
+    case Float64Op.Exp => if (crash) throw InternalCompilerException("Exponentiation is not supported by JS", loc) else "?float64exp?"
     case Float64Op.Eq => "==="
     case Float64Op.Neq => "!=="
     case Float64Op.Lt => "<"
@@ -260,14 +272,14 @@ object JavaScriptBackend {
     case Int8Op.Add => "+"
     case Int8Op.Sub => "-"
     case Int8Op.Mul => "*"
-    case Int8Op.Div => throw InternalCompilerException("Integer division is not supported by JS", loc)
-    case Int8Op.Rem => throw InternalCompilerException("Remainder is not supported by JS", loc)
-    case Int8Op.Exp => throw InternalCompilerException("Exponentiation is not supported by JS", loc)
-    case Int8Op.And => throw InternalCompilerException("Bitwise operations not supported in JS", loc)
-    case Int8Op.Or => throw InternalCompilerException("Bitwise operations not supported in JS", loc)
-    case Int8Op.Xor => throw InternalCompilerException("Bitwise operations not supported in JS", loc)
-    case Int8Op.Shl => throw InternalCompilerException("Bitwise operations not supported in JS", loc)
-    case Int8Op.Shr => throw InternalCompilerException("Bitwise operations not supported in JS", loc)
+    case Int8Op.Div => if (crash) throw InternalCompilerException("Integer division is not supported by JS", loc) else "?int8op?"
+    case Int8Op.Rem => if (crash) throw InternalCompilerException("Remainder is not supported by JS", loc) else "?int8op?"
+    case Int8Op.Exp => if (crash) throw InternalCompilerException("Exponentiation is not supported by JS", loc) else "?int8op?"
+    case Int8Op.And => if (crash) throw InternalCompilerException("Bitwise operations not supported in JS", loc) else "?int8op?"
+    case Int8Op.Or => if (crash) throw InternalCompilerException("Bitwise operations not supported in JS", loc) else "?int8op?"
+    case Int8Op.Xor => if (crash) throw InternalCompilerException("Bitwise operations not supported in JS", loc) else "?int8op?"
+    case Int8Op.Shl => if (crash) throw InternalCompilerException("Bitwise operations not supported in JS", loc) else "?int8op?"
+    case Int8Op.Shr => if (crash) throw InternalCompilerException("Bitwise operations not supported in JS", loc) else "?int8op?"
     case Int8Op.Eq => "==="
     case Int8Op.Neq => "!=="
     case Int8Op.Lt => "<"
@@ -277,14 +289,14 @@ object JavaScriptBackend {
     case Int16Op.Add => "+"
     case Int16Op.Sub => "-"
     case Int16Op.Mul => "*"
-    case Int16Op.Div => throw InternalCompilerException("Integer division is not supported by JS", loc)
-    case Int16Op.Rem => throw InternalCompilerException("Remainder is not supported by JS", loc)
-    case Int16Op.Exp => throw InternalCompilerException("Exponentiation is not supported by JS", loc)
-    case Int16Op.And => throw InternalCompilerException("Bitwise operations not supported in JS", loc)
-    case Int16Op.Or => throw InternalCompilerException("Bitwise operations not supported in JS", loc)
-    case Int16Op.Xor => throw InternalCompilerException("Bitwise operations not supported in JS", loc)
-    case Int16Op.Shl => throw InternalCompilerException("Bitwise operations not supported in JS", loc)
-    case Int16Op.Shr => throw InternalCompilerException("Bitwise operations not supported in JS", loc)
+    case Int16Op.Div => if (crash) throw InternalCompilerException("Integer division is not supported by JS", loc) else "?int16op?"
+    case Int16Op.Rem => if (crash) throw InternalCompilerException("Remainder is not supported by JS", loc) else "?int16op?"
+    case Int16Op.Exp => if (crash) throw InternalCompilerException("Exponentiation is not supported by JS", loc) else "?int16op?"
+    case Int16Op.And => if (crash) throw InternalCompilerException("Bitwise operations not supported in JS", loc) else "?int16op?"
+    case Int16Op.Or => if (crash) throw InternalCompilerException("Bitwise operations not supported in JS", loc) else "?int16op?"
+    case Int16Op.Xor => if (crash) throw InternalCompilerException("Bitwise operations not supported in JS", loc) else "?int16op?"
+    case Int16Op.Shl => if (crash) throw InternalCompilerException("Bitwise operations not supported in JS", loc) else "?int16op?"
+    case Int16Op.Shr => if (crash) throw InternalCompilerException("Bitwise operations not supported in JS", loc) else "?int16op?"
     case Int16Op.Eq => "==="
     case Int16Op.Neq => "!=="
     case Int16Op.Lt => "<"
@@ -294,14 +306,14 @@ object JavaScriptBackend {
     case Int32Op.Add => "+"
     case Int32Op.Sub => "-"
     case Int32Op.Mul => "*"
-    case Int32Op.Div => throw InternalCompilerException("Integer division is not supported by JS", loc)
-    case Int32Op.Rem => throw InternalCompilerException("Remainder is not supported by JS", loc)
-    case Int32Op.Exp => throw InternalCompilerException("Exponentiation is not supported by JS", loc)
-    case Int32Op.And => throw InternalCompilerException("Bitwise operations not supported in JS", loc)
-    case Int32Op.Or => throw InternalCompilerException("Bitwise operations not supported in JS", loc)
-    case Int32Op.Xor => throw InternalCompilerException("Bitwise operations not supported in JS", loc)
-    case Int32Op.Shl => throw InternalCompilerException("Bitwise operations not supported in JS", loc)
-    case Int32Op.Shr => throw InternalCompilerException("Bitwise operations not supported in JS", loc)
+    case Int32Op.Div => if (crash) throw InternalCompilerException("Integer division is not supported by JS", loc) else "?int32op?"
+    case Int32Op.Rem => if (crash) throw InternalCompilerException("Remainder is not supported by JS", loc) else "?int32op?"
+    case Int32Op.Exp => if (crash) throw InternalCompilerException("Exponentiation is not supported by JS", loc) else "?int32op?"
+    case Int32Op.And => if (crash) throw InternalCompilerException("Bitwise operations not supported in JS", loc) else "?int32op?"
+    case Int32Op.Or => if (crash) throw InternalCompilerException("Bitwise operations not supported in JS", loc) else "?int32op?"
+    case Int32Op.Xor => if (crash) throw InternalCompilerException("Bitwise operations not supported in JS", loc) else "?int32op?"
+    case Int32Op.Shl => if (crash) throw InternalCompilerException("Bitwise operations not supported in JS", loc) else "?int32op?"
+    case Int32Op.Shr => if (crash) throw InternalCompilerException("Bitwise operations not supported in JS", loc) else "?int32op?"
     case Int32Op.Eq => "==="
     case Int32Op.Neq => "!=="
     case Int32Op.Lt => "<"
@@ -311,14 +323,14 @@ object JavaScriptBackend {
     case Int64Op.Add => "+"
     case Int64Op.Sub => "-"
     case Int64Op.Mul => "*"
-    case Int64Op.Div => throw InternalCompilerException("Integer division is not supported by JS", loc)
-    case Int64Op.Rem => throw InternalCompilerException("Remainder is not supported by JS", loc)
-    case Int64Op.Exp => throw InternalCompilerException("Exponentiation is not supported by JS", loc)
-    case Int64Op.And => throw InternalCompilerException("Bitwise operations not supported in JS", loc)
-    case Int64Op.Or => throw InternalCompilerException("Bitwise operations not supported in JS", loc)
-    case Int64Op.Xor => throw InternalCompilerException("Bitwise operations not supported in JS", loc)
-    case Int64Op.Shl => throw InternalCompilerException("Bitwise operations not supported in JS", loc)
-    case Int64Op.Shr => throw InternalCompilerException("Bitwise operations not supported in JS", loc)
+    case Int64Op.Div => if (crash) throw InternalCompilerException("Integer division is not supported by JS", loc) else "?int64op?"
+    case Int64Op.Rem => if (crash) throw InternalCompilerException("Remainder is not supported by JS", loc) else "?int64op?"
+    case Int64Op.Exp => if (crash) throw InternalCompilerException("Exponentiation is not supported by JS", loc) else "?int64op?"
+    case Int64Op.And => if (crash) throw InternalCompilerException("Bitwise operations not supported in JS", loc) else "?int64op?"
+    case Int64Op.Or => if (crash) throw InternalCompilerException("Bitwise operations not supported in JS", loc) else "?int64op?"
+    case Int64Op.Xor => if (crash) throw InternalCompilerException("Bitwise operations not supported in JS", loc) else "?int64op?"
+    case Int64Op.Shl => if (crash) throw InternalCompilerException("Bitwise operations not supported in JS", loc) else "?int64op?"
+    case Int64Op.Shr => if (crash) throw InternalCompilerException("Bitwise operations not supported in JS", loc) else "?int64op?"
     case Int64Op.Eq => "==="
     case Int64Op.Neq => "!=="
     case Int64Op.Lt => "<"
