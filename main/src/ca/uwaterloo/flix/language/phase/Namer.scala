@@ -53,24 +53,18 @@ object Namer {
 
       flatMapN(unitsVal) {
         case units =>
-          val tableVal = fold(units.values, SymbolTable(Map.empty, Map.empty, Map.empty)) {
-            case (table, unit) => tableUnit(unit, table)
+          val SymbolTable(symbols0, instances0, uses0) = units.values.foldLeft(SymbolTable.empty)(tableUnit)
+          // TODO NS-REFACTOR remove use of NName
+          val symbols = symbols0.map {
+            case (k, v) => Name.mkUnlocatedNName(k) -> v.m
           }
-
-          flatMapN(tableVal) {
-            case SymbolTable(symbols0, instances0, uses0) =>
-              // TODO NS-REFACTOR remove use of NName
-              val symbols = symbols0.map {
-                case (k, v) => Name.mkUnlocatedNName(k) -> v.m
-              }
-              val instances = instances0.map {
-                case (k, v) => Name.mkUnlocatedNName(k) -> v
-              }
-              val uses = uses0.map {
-                case (k, v) => Name.mkUnlocatedNName(k) -> v
-              }
-              Validation.toSuccessOrSoftFailure(NamedAst.Root(symbols, instances, uses, units, program.entryPoint, locations, program.names), sctx.errors.asScala)
+          val instances = instances0.map {
+            case (k, v) => Name.mkUnlocatedNName(k) -> v
           }
+          val uses = uses0.map {
+            case (k, v) => Name.mkUnlocatedNName(k) -> v
+          }
+          Validation.toSuccessOrSoftFailure(NamedAst.Root(symbols, instances, uses, units, program.entryPoint, locations, program.names), sctx.errors.asScala)
       }
     }(DebugValidation())
 
@@ -95,6 +89,7 @@ object Namer {
     case decl: DesugaredAst.Declaration.Instance => visitInstance(decl, ns0)
     case decl: DesugaredAst.Declaration.Def => visitDef(decl, ns0, DefKind.NonMember)
     case decl: DesugaredAst.Declaration.Enum => visitEnum(decl, ns0)
+    case decl: DesugaredAst.Declaration.Struct => visitStruct(decl, ns0)
     case decl: DesugaredAst.Declaration.RestrictableEnum => visitRestrictableEnum(decl, ns0)
     case decl: DesugaredAst.Declaration.TypeAlias => visitTypeAlias(decl, ns0)
     case decl: DesugaredAst.Declaration.Effect => visitEffect(decl, ns0)
@@ -118,10 +113,8 @@ object Namer {
   /**
     * Adds symbols from the compilation unit to the table.
     */
-  private def tableUnit(unit: NamedAst.CompilationUnit, table0: SymbolTable)(implicit sctx: SharedContext): Validation[SymbolTable, NameError] = unit match {
-    case NamedAst.CompilationUnit(_, decls, _) =>
-      val table = decls.foldLeft(table0)(tableDecl)
-      Validation.success(table)
+  private def tableUnit(table0: SymbolTable, unit: NamedAst.CompilationUnit)(implicit sctx: SharedContext): SymbolTable = unit match {
+    case NamedAst.CompilationUnit(_, decls, _) => decls.foldLeft(table0)(tableDecl)
   }
 
   private def tableDecl(table0: SymbolTable, decl: NamedAst.Declaration)(implicit sctx: SharedContext): SymbolTable = decl match {
@@ -149,8 +142,9 @@ object Namer {
       val table1 = tryAddToTable(table0, sym.namespace, sym.name, decl)
       cases.foldLeft(table1)(tableDecl)
 
-    case NamedAst.Declaration.Struct(_, _, _, sym, _, _, _, _) =>
-      tryAddToTable(table0, sym.namespace, sym.name, decl)
+    case NamedAst.Declaration.Struct(_, _, _, sym, _, fields, _) =>
+      val table1 = tryAddToTable(table0, sym.namespace, sym.name, decl)
+      fields.foldLeft(table1)(tableDecl)
 
     case NamedAst.Declaration.RestrictableEnum(_, _, _, sym, _, _, _, cases, _) =>
       val table1 = tryAddToTable(table0, sym.namespace, sym.name, decl)
@@ -171,6 +165,9 @@ object Namer {
 
     case caze@NamedAst.Declaration.Case(sym, _, _) =>
       tryAddToTable(table0, sym.namespace, sym.name, caze)
+
+    case field@NamedAst.Declaration.StructField(sym, _, _) =>
+      tryAddToTable(table0, sym.namespace, sym.name, field)
 
     case caze@NamedAst.Declaration.RestrictableCase(sym, _, _) =>
       tryAddToTable(table0, sym.namespace, sym.name, caze)
@@ -322,6 +319,25 @@ object Namer {
   }
 
   /**
+   * Performs the naming on the given struct `struct0`.
+   */
+  private def visitStruct(struct0: DesugaredAst.Declaration.Struct, ns0: Name.NName)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.Declaration.Struct, NameError] = struct0 match {
+    case DesugaredAst.Declaration.Struct(doc, ann, mod0, ident, tparams0, fields0, loc) =>
+      val sym = Symbol.mkStructSym(ns0, ident)
+
+      // Compute the type parameters.
+      val tparams = getTypeParams(tparams0)
+
+      val mod = visitModifiers(mod0, ns0)
+      val fieldsVal = traverse(fields0)(visitField(_, sym))
+
+      mapN(fieldsVal) {
+        case fields =>
+          NamedAst.Declaration.Struct(doc, ann, mod, sym, tparams, fields, loc)
+      }
+  }
+
+  /**
     * Performs naming on the given enum `enum0`.
     */
   private def visitRestrictableEnum(enum0: DesugaredAst.Declaration.RestrictableEnum, ns0: Name.NName)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.Declaration.RestrictableEnum, NameError] = enum0 match {
@@ -357,6 +373,16 @@ object Namer {
       val t = visitType(tpe)
       val caseSym = Symbol.mkCaseSym(enumSym, ident)
       Validation.success(NamedAst.Declaration.Case(caseSym, t, loc))
+  }
+
+  /**
+    * Performs naming on the given field.
+    */
+  private def visitField(field0: DesugaredAst.StructField, structSym: Symbol.StructSym)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.Declaration.StructField, NameError] = field0 match {
+    case DesugaredAst.StructField(ident, tpe, loc) =>
+      val t = visitType(tpe)
+      val fieldSym = Symbol.mkStructFieldSym(structSym, ident)
+      Validation.success(NamedAst.Declaration.StructField(fieldSym, t, loc))
   }
 
   /**
@@ -1540,12 +1566,13 @@ object Namer {
     case NamedAst.Declaration.Sig(sym, _, _) => sym.loc
     case NamedAst.Declaration.Def(sym, _, _) => sym.loc
     case NamedAst.Declaration.Enum(_, _, _, sym, _, _, _, _) => sym.loc
-    case NamedAst.Declaration.Struct(_, _, _, sym, _, _, _, _) => sym.loc
+    case NamedAst.Declaration.Struct(_, _, _, sym, _, _, _) => sym.loc
     case NamedAst.Declaration.RestrictableEnum(_, _, _, sym, _, _, _, _, _) => sym.loc
     case NamedAst.Declaration.TypeAlias(_, _, _, sym, _, _, _) => sym.loc
     case NamedAst.Declaration.Effect(_, _, _, sym, _, _) => sym.loc
     case NamedAst.Declaration.Op(sym, _) => sym.loc
     case NamedAst.Declaration.Case(sym, _, _) => sym.loc
+    case NamedAst.Declaration.StructField(sym, _, _) => sym.loc
     case NamedAst.Declaration.RestrictableCase(sym, _, _) => sym.loc
     case NamedAst.Declaration.AssocTypeSig(_, _, sym, _, _, _, _) => sym.loc
     case NamedAst.Declaration.AssocTypeDef(_, _, _, _, _, loc) => throw InternalCompilerException("Unexpected associated type definition", loc)

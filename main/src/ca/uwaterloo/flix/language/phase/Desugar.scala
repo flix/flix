@@ -74,8 +74,7 @@ object Desugar {
     case d: WeededAst.Declaration.Law => visitLaw(d)
     case d: WeededAst.Declaration.Enum => visitEnum(d)
     case d: WeededAst.Declaration.RestrictableEnum => visitRestrictableEnum(d)
-    case _: WeededAst.Declaration.Struct =>
-      throw new RuntimeException("No struct support yet")
+    case d: WeededAst.Declaration.Struct => visitStruct(d)
     case d: WeededAst.Declaration.TypeAlias => visitTypeAlias(d)
     case d: WeededAst.Declaration.Effect => visitEffect(d)
   }
@@ -144,6 +143,16 @@ object Desugar {
       val derives = visitDerivations(derives0)
       val cases = cases0.map(visitCase)
       DesugaredAst.Declaration.Enum(doc, ann, mod, ident, tparams, derives, cases, loc)
+  }
+
+  /**
+   * Desugars the given [[WeededAst.Declaration.Struct]] `struct0`.
+   */
+  private def visitStruct(struct0: WeededAst.Declaration.Struct): DesugaredAst.Declaration.Struct = struct0 match {
+    case WeededAst.Declaration.Struct(doc, ann, mod, ident, tparams0, fields0, loc) =>
+      val tparams = visitTypeParams(tparams0)
+      val fields = fields0.map(visitField)
+      DesugaredAst.Declaration.Struct(doc, ann, mod, ident, tparams, fields, loc)
   }
 
   /**
@@ -420,6 +429,15 @@ object Desugar {
     case WeededAst.Case(ident, tpe0, loc) =>
       val tpe = visitType(tpe0)
       DesugaredAst.Case(ident, tpe, loc)
+  }
+
+  /**
+   * Desugars the given [[WeededAst.StructField]] `field0`.
+   */
+  private def visitField(field0: WeededAst.StructField): DesugaredAst.StructField = field0 match {
+    case WeededAst.StructField(ident, tpe0, loc) =>
+      val tpe = visitType(tpe0)
+      DesugaredAst.StructField(ident, tpe, loc)
   }
 
   /**

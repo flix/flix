@@ -359,7 +359,7 @@ object Resolver {
       resolveDef(defn, None, env0, taenv, ns0, root)
     case enum@NamedAst.Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc) =>
       resolveEnum(enum, env0, taenv, ns0, root)
-    case struct@NamedAst.Declaration.Struct(_, _, _, _, _, _, _, _) =>
+    case struct@NamedAst.Declaration.Struct(_, _, _, _, _, _, _) =>
       throw new RuntimeException("Not implemented")
     case enum@NamedAst.Declaration.RestrictableEnum(doc, ann, mod, sym, index, tparams, derives, cases, loc) =>
       resolveRestrictableEnum(enum, env0, taenv, ns0, root)
@@ -370,6 +370,7 @@ object Resolver {
     case op@NamedAst.Declaration.Op(sym, spec) => throw InternalCompilerException("unexpected op", sym.loc)
     case NamedAst.Declaration.Sig(sym, spec, exp) => throw InternalCompilerException("unexpected sig", sym.loc)
     case NamedAst.Declaration.Case(sym, tpe, _) => throw InternalCompilerException("unexpected case", sym.loc)
+    case NamedAst.Declaration.StructField(sym, tpe, _) => throw InternalCompilerException("unexpected struct field", sym.loc)
     case NamedAst.Declaration.RestrictableCase(sym, tpe, _) => throw InternalCompilerException("unexpected case", sym.loc)
     case NamedAst.Declaration.AssocTypeDef(doc, mod, ident, args, tpe, loc) => throw InternalCompilerException("unexpected associated type definition", ident.loc)
     case NamedAst.Declaration.AssocTypeSig(doc, mod, sym, tparams, kind, tpe, loc) => throw InternalCompilerException("unexpected associated type signature", sym.loc)
@@ -1047,6 +1048,25 @@ object Resolver {
           Validation.success(ResolvedAst.Expr.Cst(cst, loc))
 
         case app@NamedAst.Expr.Apply(NamedAst.Expr.Ambiguous(qname, innerLoc), exps, outerLoc) =>
+          // Special Case: We must check if we have a static method call, i.e. ClassName.methodName().
+          if (qname.namespace.idents.length == 1) {
+            // We may have an imported class name.
+            val className = qname.namespace.idents.head
+            env0.get(className.name) match {
+              case Some(List(Resolution.JavaClass(clazz))) =>
+                // We have a static method call.
+                val methodName = qname.ident
+                val expsVal = traverse(exps)(visitExp(_, env0))
+                mapN(expsVal) {
+                  case es =>
+                    // Returns out of visitExp
+                    return Validation.success(ResolvedAst.Expr.InvokeStaticMethod2(clazz, methodName, es, outerLoc))
+                }
+              case _ =>
+                // Fallthrough to below.
+            }
+          }
+
           flatMapN(lookupQName(qname, env0, ns0, root)) {
             case ResolvedQName.Def(defn) => visitApplyDef(app, defn, exps, env0, innerLoc, outerLoc)
             case ResolvedQName.Sig(sig) => visitApplySig(app, sig, exps, env0, innerLoc, outerLoc)
@@ -3501,13 +3521,14 @@ object Resolver {
     case NamedAst.Declaration.Sig(sym, spec, exp) => sym
     case NamedAst.Declaration.Def(sym, spec, exp) => sym
     case NamedAst.Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc) => sym
-    case NamedAst.Declaration.Struct(doc, ann, mod, sym, tparams, fields, tpe, loc) => sym
+    case NamedAst.Declaration.Struct(doc, ann, mod, sym, tparams, fields, loc) => sym
     case NamedAst.Declaration.RestrictableEnum(doc, ann, mod, sym, ident, tparams, derives, cases, loc) => sym
     case NamedAst.Declaration.TypeAlias(doc, ann, mod, sym, tparams, tpe, loc) => sym
     case NamedAst.Declaration.AssocTypeSig(doc, mod, sym, tparams, kind, tpe, loc) => sym
     case NamedAst.Declaration.Effect(doc, ann, mod, sym, ops, loc) => sym
     case NamedAst.Declaration.Op(sym, spec) => sym
     case NamedAst.Declaration.Case(sym, tpe, _) => sym
+    case NamedAst.Declaration.StructField(sym, tpe, loc) => sym
     case NamedAst.Declaration.RestrictableCase(sym, tpe, _) => sym
     case NamedAst.Declaration.AssocTypeDef(doc, mod, ident, args, tpe, loc) => throw InternalCompilerException("unexpected associated type definition", loc)
     case NamedAst.Declaration.Instance(doc, ann, mod, clazz, tparams, tpe, tconstrs, _, defs, ns, loc) => throw InternalCompilerException("unexpected instance", loc)
