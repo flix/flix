@@ -1048,6 +1048,25 @@ object Resolver {
           Validation.success(ResolvedAst.Expr.Cst(cst, loc))
 
         case app@NamedAst.Expr.Apply(NamedAst.Expr.Ambiguous(qname, innerLoc), exps, outerLoc) =>
+          // Special Case: We must check if we have a static method call, i.e. ClassName.methodName().
+          if (qname.namespace.idents.length == 1) {
+            // We may have an imported class name.
+            val className = qname.namespace.idents.head
+            env0.get(className.name) match {
+              case Some(List(Resolution.JavaClass(clazz))) =>
+                // We have a static method call.
+                val methodName = qname.ident
+                val expsVal = traverse(exps)(visitExp(_, env0))
+                mapN(expsVal) {
+                  case es =>
+                    // Returns out of visitExp
+                    return Validation.success(ResolvedAst.Expr.InvokeStaticMethod2(clazz, methodName, es, outerLoc))
+                }
+              case _ =>
+                // Fallthrough to below.
+            }
+          }
+
           flatMapN(lookupQName(qname, env0, ns0, root)) {
             case ResolvedQName.Def(defn) => visitApplyDef(app, defn, exps, env0, innerLoc, outerLoc)
             case ResolvedQName.Sig(sig) => visitApplySig(app, sig, exps, env0, innerLoc, outerLoc)

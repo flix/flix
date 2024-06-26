@@ -207,6 +207,12 @@ class TestMain extends AnyFunSuite {
     assert(opts.explain)
   }
 
+  test("--Xdeprecated") {
+    val args = Array("--Xdeprecated")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.xdeprecated)
+  }
+
   test("--Xsummary") {
     val args = Array("--Xsummary")
     val opts = Main.parseCmdOpts(args).get
