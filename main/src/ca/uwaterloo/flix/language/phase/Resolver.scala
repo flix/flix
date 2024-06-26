@@ -574,7 +574,7 @@ object Resolver {
       flatMapN(tparamsVal) {
         case tparams =>
           val env = env0 ++ mkTypeParamEnv(tparams.tparams)
-          val fieldsVal = traverse(fields0)(resolveField(_, env, taenv, ns0, root))
+          val fieldsVal = traverse(fields0)(resolveStructField(_, env, taenv, ns0, root))
           mapN(fieldsVal) {
             case (fields) =>
               ResolvedAst.Declaration.Struct(doc, ann, mod, sym, tparams, fields, loc)
@@ -612,7 +612,10 @@ object Resolver {
       }
   }
 
-  private def resolveField(field0: NamedAst.Declaration.StructField, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration.StructField, ResolutionError] = field0 match {
+  /**
+    * Performs name resolution on the given struct field `field0` in the given namespace `ns0`.
+    */
+  private def resolveStructField(field0: NamedAst.Declaration.StructField, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration.StructField, ResolutionError] = field0 match {
     case NamedAst.Declaration.StructField(sym, tpe0, loc) =>
       val tpeVal = resolveType(tpe0, Wildness.ForbidWild, env, taenv, ns0, root)
       mapN(tpeVal) {

@@ -93,13 +93,13 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val input =
       s"""
          |mod A{
-         |  struct S {
-         |    a: Int32
-         |  }
+         |    struct S {
+         |        a: Int32
+         |    }
          |}
          |
          |mod B {
-         |  def g(): A.S = ???
+         |    def g(): A.S = ???
          |}
          |"""
     val result = compile(input, Options.TestWithLibNix)
@@ -110,12 +110,11 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val input =
       s"""
          |mod A {
-         |  def f(): A.B.C.Color = ???
+         |    def f(): A.B.C.Color = ???
          |
-         |  mod B.C {
-         |    struct Color {
+         |    mod B.C {
+         |        struct Color { }
          |    }
-         |  }
          |}
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -126,14 +125,14 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val input =
       s"""
          |mod A {
-         |  enum Color {
-         |    case Blu,
-         |    case Red
-         |  }
+         |    enum Color {
+         |        case Blu,
+         |        case Red
+         |    }
          |}
          |
          |mod B {
-         |  def g(): A.Color = ???
+         |    def g(): A.Color = ???
          |}
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
