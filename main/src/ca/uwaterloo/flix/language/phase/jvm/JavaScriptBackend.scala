@@ -43,7 +43,7 @@ object JavaScriptBackend {
 
       // Check that the file is empty or a class file.
       if (!(isEmpty(path) || isJavaScriptFile(path))) {
-        throw InternalCompilerException(s"Refusing to overwrite non-empty, non-class file: '$path'.", SourceLocation.Unknown)
+        throw InternalCompilerException(s"Refusing to overwrite non-empty, non-js file: '$path'.", SourceLocation.Unknown)
       }
     }
 
@@ -54,12 +54,12 @@ object JavaScriptBackend {
 
   private def isEmpty(path: Path): Boolean = Files.size(path) == 0L
 
-  private def isJavaScriptFile(path: Path): Boolean = false
+  private def isJavaScriptFile(path: Path): Boolean = true
 
   private def compileDef(defn: Def)(implicit indent: Indent): String = {
     val name = compileDefnSym(defn.sym)
     val args = defn.fparams.map(compileFparam)
-    val body = compileExp(defn.expr)
+    val body = compileExp(defn.expr, inf)
     val fun = function(name, args, body)
     pretty(80, fun)
   }
@@ -76,23 +76,35 @@ object JavaScriptBackend {
     namespacedName(x.namespace, x.name)
   }
 
-  private def compileExp(exp: Expr)(implicit indent: Indent): Doc = exp match {
+  private val inf = 99
+  private val binOp = 30
+  private val unOp = 7
+  private val app = 5
+  private val nothing = 0
+
+  private def compileExp(exp: Expr, level: Int)(implicit indent: Indent): Doc = exp match {
     case Expr.Cst(cst, _, loc) => compileCst(cst, loc)
     case Expr.Var(sym, _, _) => compileVarSym(sym)
-    case Expr.ApplyAtomic(op, exps, tpe, purity, loc) => compileAtomic(op, exps.map(compileExp), loc)
+    case Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
+      compileAtomic(op, exps, level: Int, loc)
     case Expr.ApplyClo(exp, exps, ct, tpe, purity, loc) =>
-      compileExp(exp) :: tuple(exps.map(compileExp))
+      val d = compileExp(exp, app) :: tuple(exps.map(compileExp(_, inf)))
+      // no paren: inf, app, unOp, binOp
+      //    paren:
+      parensCond(d, level, maxParen = nothing)
     case Expr.ApplyDef(sym, exps, ct, tpe, purity, loc) =>
-      compileDefnSym(sym) :: tuple(exps.map(compileExp))
+      compileDefnSym(sym) :: tuple(exps.map(compileExp(_, inf)))
     case Expr.ApplySelfTail(sym, actuals, tpe, purity, loc) =>
-      compileDefnSym(sym) :: tuple(actuals.map(compileExp))
+      compileDefnSym(sym) :: tuple(actuals.map(compileExp(_, inf)))
     case Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
-      text("if") +: parens(compileExp(exp1)) +: curly(compileExp(exp2)) +: text("else") +: curly(compileExp(exp3))
+      text("if") +: parens(compileExp(exp1, inf)) +: curly(compileExp(exp2, inf)) +: text("else") +: curly(compileExp(exp3, inf))
     case Expr.Branch(exp, branches, tpe, purity, loc) => throw InternalCompilerException("Pattern matching is not supported in JS", loc)
     case Expr.JumpTo(sym, tpe, purity, loc) => throw InternalCompilerException("Pattern matching is not supported in JS", loc)
-    case Expr.Let(_, _, _, _, _, _) => semiSep(compileBinders(exp, Nil))
-    case Expr.LetRec(_, _, _, _, _, _, _, _) => semiSep(compileBinders(exp, Nil))
-    case Expr.Stmt(_, _, _, _, _) => semiSep(compileBinders(exp, Nil))
+    case Expr.Let(_, _, _, _, _, _) | Expr.LetRec(_, _, _, _, _, _, _, _) | Expr.Stmt(_, _, _, _, _) =>
+      val d = semiSep(compileBinders(exp, Nil))
+      // no paren: inf
+      //    paren: app, unOp, binOp
+      curlyCond(d, level, binOp)
     case Expr.Scope(sym, exp, tpe, purity, loc) => throw InternalCompilerException("Regions are not supported in JS", loc)
     case Expr.TryCatch(exp, rules, tpe, purity, loc) => throw InternalCompilerException("Try-Catch is not supported in JS", loc)
     case Expr.TryWith(exp, effUse, rules, ct, tpe, purity, loc) => throw InternalCompilerException("Algebraic effects are not supported in JS", loc)
@@ -103,14 +115,14 @@ object JavaScriptBackend {
   @tailrec
   private def compileBinders(exp: Expr, acc: List[Doc])(implicit indent: Indent): List[Doc] = exp match {
     case Expr.Let(sym, exp1, exp2, _, _, _) =>
-      val doc = text("const") +: compileVarSym(sym) +: text("=") +\: compileExp(exp1)
-      compileBinders(exp2, doc :: acc)
+      val doc = text("const") +: compileVarSym(sym) +: text("=") +\: compileExp(exp1, inf)
+      compileBinders(exp2, group(doc) :: acc)
     case Expr.LetRec(_, _, _, _, _, _, _, loc) =>
       throw InternalCompilerException("Local defs are not supported in JS", loc)
     case Expr.Stmt(exp1, exp2, _, _, _) =>
-      val doc = compileExp(exp1)
+      val doc = compileExp(exp1, inf)
       compileBinders(exp2, doc :: acc)
-    case _ => (compileExp(exp) :: acc).reverse
+    case _ => (compileExp(exp, inf) :: acc).reverse
   }
 
   private def compileCst(cst: Constant, loc: SourceLocation): Doc = cst match {
@@ -132,14 +144,22 @@ object JavaScriptBackend {
     case Constant.Regex(_) => throw InternalCompilerException("Regex is not supported in JS", loc)
   }
 
-  private def compileAtomic(op: AtomicOp, exps: List[Doc], loc: SourceLocation)(implicit indent: Indent): Doc = op match {
+  private def compileAtomic(op: AtomicOp, exps: List[Expr], level: Int, loc: SourceLocation)(implicit indent: Indent): Doc = op match {
     case AtomicOp.Closure(sym) => throw InternalCompilerException("Closures are not supported by JS", loc)
     case AtomicOp.Unary(sop) => exps match {
-      case List(one) => compileUnary(sop, one, loc)
+      case List(one) =>
+        val d = compileUnary(sop, compileExp(one, unOp), loc)
+        // no paren: inf, binOp
+        //    paren: app, unOp
+        parensCond(d, level, maxParen = unOp)
       case _ => throw InternalCompilerException("Malformed program", loc)
     }
     case AtomicOp.Binary(sop) => exps match {
-      case List(one, two) => compileBinary(sop, one, two, loc)
+      case List(one, two) =>
+        val d = compileBinary(sop, compileExp(one, binOp), compileExp(two, binOp), loc)
+        // no paren: inf
+        //    paren: unOp, app, binOp
+        parensCond(d, level, maxParen = binOp)
       case _ => throw InternalCompilerException("Malformed program", loc)
     }
     case AtomicOp.Region => throw InternalCompilerException("Regions are not supported by JS", loc)
@@ -161,9 +181,9 @@ object JavaScriptBackend {
     case AtomicOp.Deref => throw InternalCompilerException("References are not supported by JS", loc)
     case AtomicOp.Assign => throw InternalCompilerException("References are not supported by JS", loc)
     case AtomicOp.InstanceOf(_) => throw InternalCompilerException("Java interop is not supported in JS", loc)
-    case AtomicOp.Cast => takeOne(exps, loc)
-    case AtomicOp.Unbox => takeOne(exps, loc)
-    case AtomicOp.Box => takeOne(exps, loc)
+    case AtomicOp.Cast => compileExp(takeOne(exps, loc), level)
+    case AtomicOp.Unbox => compileExp(takeOne(exps, loc), level)
+    case AtomicOp.Box => compileExp(takeOne(exps, loc), level)
     case AtomicOp.InvokeConstructor(_) => throw InternalCompilerException("Java interop is not supported in JS", loc)
     case AtomicOp.InvokeMethod(_) => throw InternalCompilerException("Java interop is not supported in JS", loc)
     case AtomicOp.InvokeStaticMethod(_) => throw InternalCompilerException("Java interop is not supported in JS", loc)
@@ -176,6 +196,14 @@ object JavaScriptBackend {
     case AtomicOp.Force => throw InternalCompilerException("Lazy values are not supported in JS", loc)
     case AtomicOp.HoleError(sym) => text("throw") +: text("new") +: text("Error") :: parens(string(s"HoleError ${sym.name}"))
     case AtomicOp.MatchError => text("throw") +: text("new") +: text("Error") :: parens(string(s"MatchError"))
+  }
+
+  private def parensCond(doc: Doc, found: Int, maxParen: Int)(implicit indent: Indent): Doc = {
+    if (found <= maxParen) parens(doc) else doc
+  }
+
+  private def curlyCond(doc: Doc, found: Int, maxParen: Int)(implicit indent: Indent): Doc = {
+    if (found <= maxParen) curly(doc) else doc
   }
 
   private def compileUnary(op: SemanticOp.UnaryOp, exp: Doc, loc: SourceLocation): Doc = op match {

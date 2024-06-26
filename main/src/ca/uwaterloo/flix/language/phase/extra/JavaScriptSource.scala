@@ -6,7 +6,7 @@ import ca.uwaterloo.flix.language.dbg.Doc._
 object JavaScriptSource {
 
   def function(name: Doc, args: List[Doc], body: Doc)(implicit indent: Indent): Doc = {
-    text("function") +: name :: tuple(args) +: curly(body)
+    group(text("function") +: name :: tuple(args) +: curlyOpen(body))
   }
 
   def namespacedName(ns: List[String], name: String): Doc = text(ns match {
