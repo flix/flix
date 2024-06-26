@@ -360,6 +360,31 @@ object ResolutionError {
   }
 
   /**
+    * Inaccessible Struct Error
+    * 
+    * @param sym the struct symbol
+    * @param ns the namespace where the symbol is not accessible
+    * @param loc the location where the error occurred
+    */
+  case class InaccessibleStruct(sym: Symbol.StructSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError with Recoverable {
+    def summary: String = "Inaccessible."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s""">> Struct '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
+         |
+         |${code(loc, "inaccessible struct.")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Mark the definition as public."
+    })
+  }
+
+  /**
     * Inaccessible Op Error.
     *
     * @param sym the sig symbol.

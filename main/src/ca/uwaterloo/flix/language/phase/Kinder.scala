@@ -1229,6 +1229,9 @@ object Kinder {
         case Some(k) => Validation.success(Type.Cst(TypeConstructor.Enum(sym, k), loc))
         case None => Validation.toHardFailure(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc))
       }
+    
+    case UnkindedType.Struct(sym, loc) =>
+      throw new RuntimeException("Joe: Structs are not supported yet.")
 
     case UnkindedType.RestrictableEnum(sym, loc) =>
       val kind = getRestrictableEnumKind(root.restrictableEnums(sym))
@@ -1570,6 +1573,8 @@ object Kinder {
         }
       }
 
+    case UnkindedType.Struct(sym, _) =>
+      throw new RuntimeException("Joe: Structs are not supported in the kind checker yet.")
     case UnkindedType.RestrictableEnum(sym, _) =>
       val tyconKind = getRestrictableEnumKind(root.restrictableEnums(sym))
       val args = Kind.kindArgs(tyconKind)

@@ -89,6 +89,23 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.InaccessibleEnum](result)
   }
 
+  ignore("InaccessibleStruct.01") {
+    val input =
+      s"""
+         |mod A{
+         |  struct S {
+         |    a: Int32
+         |  }
+         |}
+         |
+         |mod B {
+         |  def g(): A.S = ???
+         |}
+         |"""
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.InaccessibleStruct](result)
+  }
+
   test("InaccessibleType.01") {
     val input =
       s"""
