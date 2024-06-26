@@ -3528,7 +3528,7 @@ object Resolver {
 
       // Case 3: Enum / Struct. Return an object type.
       case _: UnkindedType.Enum => Result.Ok(Class.forName("java.lang.Object"))
-      // TODO: Should this be a specific class instead
+      // TODO STRUCTS Should this be a specific class instead?
       case _: UnkindedType.Struct => Result.Ok(Class.forName("java.lang.Object"))
       case _: UnkindedType.RestrictableEnum => Result.Ok(Class.forName("java.lang.Object"))
 
