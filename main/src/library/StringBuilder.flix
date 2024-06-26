@@ -144,4 +144,3 @@ mod StringBuilder {
         toString(msb)
 
 }
-
