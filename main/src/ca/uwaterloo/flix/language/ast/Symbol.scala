@@ -164,6 +164,10 @@ object Symbol {
     new CaseSym(sym, ident.name, ident.loc)
   }
 
+  def mkStructFieldSym(sym: Symbol.StructSym, ident: Ident): StructFieldSym = {
+    new StructFieldSym(sym, ident.name, ident.loc)
+  }
+
   /**
     * Returns the restrictable case symbol for the given name `ident` in the given `enum`.
     */
