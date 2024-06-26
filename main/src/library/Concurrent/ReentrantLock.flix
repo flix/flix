@@ -29,6 +29,7 @@ mod Concurrent {
         use Concurrent.Condition
         use Concurrent.Condition.Condition
 
+        import java.util.concurrent.locks.{ReentrantLock => JReentrantLock};
 
         ///
         /// Creates an instance of ReentrantLock with the given fairness policy.
@@ -36,8 +37,7 @@ mod Concurrent {
         ///
         @Internal
         pub def newLock(fair: Bool): ReentrantLock \ IO =
-            import java_new java.util.concurrent.locks.ReentrantLock(Bool): ##java.util.concurrent.locks.ReentrantLock \ IO as reentrantLock;
-            ReentrantLock(reentrantLock(fair))
+            ReentrantLock(new JReentrantLock(fair))
 
         ///
         /// Returns true if this lock has fairness set true.
