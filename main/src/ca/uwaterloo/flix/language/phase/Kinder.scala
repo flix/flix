@@ -1575,6 +1575,7 @@ object Kinder {
 
     case UnkindedType.Struct(sym, _) =>
       throw new RuntimeException("Joe: Structs are not supported in the kind checker yet.")
+
     case UnkindedType.RestrictableEnum(sym, _) =>
       val tyconKind = getRestrictableEnumKind(root.restrictableEnums(sym))
       val args = Kind.kindArgs(tyconKind)
