@@ -1320,26 +1320,26 @@ object Parser2 {
 
     def expression(left: TokenKind = TokenKind.Eof, leftIsUnary: Boolean = false)(implicit s: State): Mark.Closed = {
       var lhs = exprDelimited()
-      // Handle calls
-      while (at(TokenKind.ParenL)) {
-        val mark = openBefore(lhs)
-        arguments()
-        lhs = close(mark, TreeKind.Expr.Apply)
-        lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
-      }
-      // Handle record select after function call. Example: funcReturningRecord().field
-      if (at(TokenKind.Hash) && nth(1) == TokenKind.NameLowerCase) {
-        val mark = openBefore(lhs)
-        eat(TokenKind.Hash)
-        name(NAME_FIELD, context = SyntacticContext.Expr.OtherExpr)
-        while (eat(TokenKind.Hash)) {
-          name(NAME_FIELD, context = SyntacticContext.Expr.OtherExpr)
+      // Handle chained calls and record lookups
+      var continue = true
+      while (continue) {
+        nth(0) match {
+          case TokenKind.ParenL => // function call
+            val mark = openBefore(lhs)
+            arguments()
+            lhs = close(mark, TreeKind.Expr.Apply)
+            lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+          case TokenKind.Hash if nth(1) == TokenKind.NameLowerCase => // record lookup
+            val mark = openBefore(lhs)
+            eat(TokenKind.Hash)
+            name(NAME_FIELD, context = SyntacticContext.Expr.OtherExpr)
+            lhs = close(mark, TreeKind.Expr.RecordSelect)
+            lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+          case _ => continue = false
         }
-        lhs = close(mark, TreeKind.Expr.RecordSelect)
-        lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
       }
       // Handle binary operators
-      var continue = true
+      continue = true
       while (continue) {
         val right = nth(0)
         if (rightBindsTighter(left, right, leftIsUnary)) {
