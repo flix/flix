@@ -118,7 +118,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |}
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.InaccessibleEnum](result)
+    expectError[ResolutionError.InaccessibleStruct](result)
   }
 
   test("InaccessibleType.01") {
@@ -136,7 +136,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |}
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.InaccessibleEnum](result)
+    expectError[ResolutionError.InaccessibleStruct](result)
   }
 
   test("InaccessibleType.02") {
