@@ -149,7 +149,7 @@ object Namer {
     case NamedAst.Declaration.Enum(_, _, _, sym, _, _, cases, _) =>
       val table1 = tryAddToTable(table0, sym.namespace, sym.name, decl)
       cases.foldLeft(table1)(tableDecl)
-    
+
     case NamedAst.Declaration.Struct(_, _, _, sym, _, fields, _) =>
       val table1 = tryAddToTable(table0, sym.namespace, sym.name, decl)
       fields.foldLeft(table1)(tableDecl)
@@ -173,7 +173,7 @@ object Namer {
 
     case caze@NamedAst.Declaration.Case(sym, _, _) =>
       tryAddToTable(table0, sym.namespace, sym.name, caze)
-    
+
     case field@NamedAst.Declaration.StructField(sym, _, _) =>
       tryAddToTable(table0, sym.namespace, sym.name, field)
 
@@ -382,7 +382,7 @@ object Namer {
       val caseSym = Symbol.mkCaseSym(enumSym, ident)
       Validation.success(NamedAst.Declaration.Case(caseSym, t, loc))
   }
-  
+
   /**
     * Performs naming on the given field.
     */
