@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.WeededAst.Predicate
 import ca.uwaterloo.flix.language.ast.shared.Fixity
 import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, DesugaredAst, Name, SourceLocation, Type, WeededAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugDesugaredAst
-import ca.uwaterloo.flix.util.ParOps
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 object Desugar {
 
@@ -743,10 +743,8 @@ object Desugar {
       val es = visitExps(exps)
       Expr.InvokeStaticMethod2(className, methodName, es, loc)
 
-    case WeededAst.Expr.InvokeConstructor(className, exps, sig, loc) =>
-      val es = visitExps(exps)
-      val ts = sig.map(visitType)
-      Expr.InvokeConstructor(className, es, ts, loc)
+    case WeededAst.Expr.InvokeConstructor(_, _, _, loc) =>
+      throw InternalCompilerException(s"Unsupported InvokeConstructor call.", loc)
 
     case WeededAst.Expr.InvokeMethod(className, methodName, exp, exps, sig, retTpe, loc) =>
       val e = visitExp(exp)
