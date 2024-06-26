@@ -19,7 +19,7 @@ object JavaScriptBackend {
   def run(root: Root)(implicit flix: Flix): Unit = flix.phase("JavaScriptBackend") {
     if (flix.options.output.nonEmpty) {
       implicit val indent: Indent = indentationLevel(2)
-      val program = root.defs.values.map(compileDef).mkString("\n")
+      val program = root.defs.values.map(compileDef).mkString("\n\n")
       val outputPath = flix.options.output.get.resolve("js/flix.js").toAbsolutePath
       writeProgram(outputPath, program)
     }
@@ -59,7 +59,7 @@ object JavaScriptBackend {
   private def compileDef(defn: Def)(implicit indent: Indent): String = {
     val name = compileDefnSym(defn.sym)
     val args = defn.fparams.map(compileFparam)
-    val body = compileExp(defn.expr, inf)
+    val body = compileExp(defn.expr, inf, tail = true)
     val fun = function(name, args, body)
     pretty(80, fun)
   }
@@ -80,7 +80,7 @@ object JavaScriptBackend {
     namespacedName(x.namespace, x.name)
   }
 
-  private val crash = true
+  private val crash = false
 
   private val inf = 99
   private val binOp = 30
@@ -88,25 +88,29 @@ object JavaScriptBackend {
   private val app = 5
   private val nothing = 0
 
-  private def compileExp(exp: Expr, level: Int)(implicit indent: Indent): Doc = exp match {
-    case Expr.Cst(cst, _, loc) => compileCst(cst, loc)
-    case Expr.Var(sym, _, _) => compileVarSym(sym)
+  private def returnit(doc: Doc, tail: Boolean): Doc = {
+    if (tail) text("return") +: doc else doc
+  }
+
+  private def compileExp(exp: Expr, level: Int, tail: Boolean)(implicit indent: Indent): Doc = exp match {
+    case Expr.Cst(cst, _, loc) => returnit(compileCst(cst, loc), tail)
+    case Expr.Var(sym, _, _) => returnit(compileVarSym(sym), tail)
     case Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
-      compileAtomic(op, exps, level: Int, loc)
+      compileAtomic(op, exps, level: Int, tail, loc)
     case Expr.ApplyClo(exp, exps, ct, tpe, purity, loc) =>
-      compileExp(exp, app) :: tuple(exps.map(compileExp(_, inf)))
+      returnit(compileExp(exp, app, tail = false) :: tuple(exps.map(compileExp(_, inf, tail = false))), tail)
       // no paren: inf, app, unOp, binOp
       //    paren:
     case Expr.ApplyDef(sym, exps, ct, tpe, purity, loc) =>
-      compileDefnSym(sym) :: tuple(exps.map(compileExp(_, inf)))
+      returnit(compileDefnSym(sym) :: tuple(exps.map(compileExp(_, inf, tail = false))), tail)
     case Expr.ApplySelfTail(sym, actuals, tpe, purity, loc) =>
-      compileDefnSym(sym) :: tuple(actuals.map(compileExp(_, inf)))
+      returnit(compileDefnSym(sym) :: tuple(actuals.map(compileExp(_, inf, tail = false))), tail)
     case Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
-      text("if") +: parens(compileExp(exp1, inf)) +: curly(compileExp(exp2, inf)) +: text("else") +: curly(compileExp(exp3, inf))
+      text("if") +: parens(compileExp(exp1, inf, tail = false)) +: curly(compileExp(exp2, inf, tail)) +: text("else") +: curly(compileExp(exp3, inf, tail))
     case Expr.Branch(exp, branches, tpe, purity, loc) => if (crash) throw InternalCompilerException("Pattern matching is not supported in JS", loc) else text("?branch?")
     case Expr.JumpTo(sym, tpe, purity, loc) => if (crash) throw InternalCompilerException("Pattern matching is not supported in JS", loc) else text("?jumpto?")
     case Expr.Let(_, _, _, _, _, _) | Expr.LetRec(_, _, _, _, _, _, _, _) | Expr.Stmt(_, _, _, _, _) =>
-      val d = semiSep(compileBinders(exp, Nil))
+      val d = semiSep(compileBinders(exp, Nil, tail))
       // no paren: inf
       //    paren: app, unOp, binOp
       curlyCond(d, level, binOp)
@@ -118,17 +122,17 @@ object JavaScriptBackend {
   }
 
   @tailrec
-  private def compileBinders(exp: Expr, acc: List[Doc])(implicit indent: Indent): List[Doc] = exp match {
+  private def compileBinders(exp: Expr, acc: List[Doc], tail: Boolean)(implicit indent: Indent): List[Doc] = exp match {
     case Expr.Let(sym, exp1, exp2, _, _, _) =>
-      val doc = text("const") +: compileVarSym(sym) +: text("=") +\: compileExp(exp1, inf)
-      compileBinders(exp2, group(doc) :: acc)
+      val doc = text("const") +: compileVarSym(sym) +: text("=") +\: compileExp(exp1, inf, tail = false)
+      compileBinders(exp2, group(doc) :: acc, tail)
     case Expr.LetRec(_, _, _, _, exp2, _, _, loc) =>
       val doc = if (crash) throw InternalCompilerException("Local defs are not supported in JS", loc) else text("?letrec?")
-      compileBinders(exp2, doc :: acc)
+      compileBinders(exp2, doc :: acc, tail)
     case Expr.Stmt(exp1, exp2, _, _, _) =>
-      val doc = compileExp(exp1, inf)
-      compileBinders(exp2, doc :: acc)
-    case _ => (compileExp(exp, inf) :: acc).reverse
+      val doc = compileExp(exp1, inf, tail = false)
+      compileBinders(exp2, doc :: acc, tail)
+    case _ => (compileExp(exp, inf, tail) :: acc).reverse
   }
 
   private def compileCst(cst: Constant, loc: SourceLocation): Doc = cst match {
@@ -150,36 +154,36 @@ object JavaScriptBackend {
     case Constant.Regex(_) => if (crash) throw InternalCompilerException("Regex is not supported in JS", loc) else text("?regex?")
   }
 
-  private def compileAtomic(op: AtomicOp, exps: List[Expr], level: Int, loc: SourceLocation)(implicit indent: Indent): Doc = op match {
+  private def compileAtomic(op: AtomicOp, exps: List[Expr], level: Int, tail: Boolean, loc: SourceLocation)(implicit indent: Indent): Doc = op match {
     case AtomicOp.Closure(sym) => if (crash) throw InternalCompilerException("Closures are not supported by JS", loc) else text("?closure?")
     case AtomicOp.Unary(sop) => exps match {
       case List(one) =>
-        val d = compileUnary(sop, compileExp(one, unOp), loc)
+        val d = compileUnary(sop, compileExp(one, unOp, tail = false), loc)
         // no paren: inf, binOp
         //    paren: app, unOp
-        parensCond(d, level, maxParen = unOp)
+        returnit(parensCond(d, level, maxParen = unOp), tail)
       case _ => throw InternalCompilerException("Malformed program", loc)
     }
     case AtomicOp.Binary(sop) => exps match {
       case List(one, two) =>
-        val d = compileBinary(sop, compileExp(one, binOp), compileExp(two, binOp), loc)
+        val d = compileBinary(sop, compileExp(one, binOp, tail = false), compileExp(two, binOp, tail = false), loc)
         // no paren: inf
         //    paren: unOp, app, binOp
-        parensCond(d, level, maxParen = binOp)
+        returnit(parensCond(d, level, maxParen = binOp), tail)
       case _ => throw InternalCompilerException("Malformed program", loc)
     }
     case AtomicOp.Region => if (crash) throw InternalCompilerException("Regions are not supported by JS", loc) else text("?region?")
     case AtomicOp.Is(sym) =>
-      val d = compileExp(takeOne(exps, loc), binOp) :: square(text("0")) +: text("===") +: compileCaseSym(sym)
-      parensCond(d, level, maxParen = binOp)
+      val d = compileExp(takeOne(exps, loc), binOp, tail = false) :: square(text("0")) +: text("===") +: compileCaseSym(sym)
+      returnit(parensCond(d, level, maxParen = binOp), tail = false)
     case AtomicOp.Tag(sym) =>
-      squareTuple(List(compileCaseSym(sym), compileExp(takeOne(exps, loc), inf)))
+      returnit(squareTuple(List(compileCaseSym(sym), compileExp(takeOne(exps, loc), inf, tail = false))), tail)
     case AtomicOp.Untag(_) =>
-      compileExp(takeOne(exps, loc), app) :: square(text("1"))
+      returnit(compileExp(takeOne(exps, loc), app, tail = false) :: square(text("1")), tail)
     case AtomicOp.Index(idx) =>
-      compileExp(takeOne(exps, loc), app) :: square(text(idx.toString))
+      returnit(compileExp(takeOne(exps, loc), app, tail = false) :: square(text(idx.toString)), tail)
     case AtomicOp.Tuple =>
-      squareTuple(exps.map(compileExp(_, inf)))
+      returnit(squareTuple(exps.map(compileExp(_, inf, tail = false))), tail)
     case AtomicOp.RecordEmpty => if (crash) throw InternalCompilerException("Records are not supported by JS", loc) else text("?recordEmpty?")
     case AtomicOp.RecordSelect(label) => if (crash) throw InternalCompilerException("Records are not supported by JS", loc) else text("?recordselect?")
     case AtomicOp.RecordExtend(label) => if (crash) throw InternalCompilerException("Records are not supported by JS", loc) else text("?recordExtend?")
@@ -193,9 +197,9 @@ object JavaScriptBackend {
     case AtomicOp.Deref => if (crash) throw InternalCompilerException("References are not supported by JS", loc) else text("?deref?")
     case AtomicOp.Assign => if (crash) throw InternalCompilerException("References are not supported by JS", loc) else text("?assign?")
     case AtomicOp.InstanceOf(_) => if (crash) throw InternalCompilerException("Java interop is not supported in JS", loc) else text("?instanceof?")
-    case AtomicOp.Cast => compileExp(takeOne(exps, loc), level)
-    case AtomicOp.Unbox => compileExp(takeOne(exps, loc), level)
-    case AtomicOp.Box => compileExp(takeOne(exps, loc), level)
+    case AtomicOp.Cast => compileExp(takeOne(exps, loc), level, tail)
+    case AtomicOp.Unbox => compileExp(takeOne(exps, loc), level, tail)
+    case AtomicOp.Box => compileExp(takeOne(exps, loc), level, tail)
     case AtomicOp.InvokeConstructor(_) => if (crash) throw InternalCompilerException("Java interop is not supported in JS", loc) else text("?invokeCOnstructor?")
     case AtomicOp.InvokeMethod(_) => if (crash) throw InternalCompilerException("Java interop is not supported in JS", loc) else text("?invokeMethod?")
     case AtomicOp.InvokeStaticMethod(_) => if (crash) throw InternalCompilerException("Java interop is not supported in JS", loc) else text("?invokeStaticMethod?")
