@@ -157,6 +157,22 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.InaccessibleEnum](result)
   }
 
+  test("InaccessibleType.03") {
+    val input =
+      s"""
+         |mod A {
+         |  def f(): A.B.C.Color = ???
+         |
+         |  mod B.C {
+         |    struct Color {
+         |    }
+         |  }
+         |}
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.InaccessibleStruct](result)
+  }
+
   test("InaccessibleTypeAlias.01") {
     val input =
       s"""
@@ -362,6 +378,23 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |
          |type alias Foo = Option[Bar]
          |type alias Bar = Option[Foo]
+         |
+         |def f(): Foo = 123
+         |
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.CyclicTypeAliases](result)
+  }
+
+  test("CyclicTypeAliases.06") {
+    val input =
+      s"""
+         |struct S[t] {
+         |    field: t
+         |}
+         |
+         |type alias Foo = S[Bar]
+         |type alias Bar = S[Foo]
          |
          |def f(): Foo = 123
          |

@@ -3058,9 +3058,9 @@ object Resolver {
 
   /**
     * Successfully returns the given `struct0` if it is accessible from the given namespace `ns0`.
-    * 
+    *
     * Otherwise fails with a resolution error.
-    * 
+    *
     * A struct is accessible from a namespace `ns0` if:
     *
     * (a) the definition is marked public, or
@@ -3130,7 +3130,7 @@ object Resolver {
     mapN(getEnumIfAccessible(enum0, ns0, loc)) {
       case enum => mkEnum(enum.sym, loc)
     }
-  
+
   /**
     * Successfully returns the type of the given `struct0` if it is accessible from the given namespace `ns0`.
     *
