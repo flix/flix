@@ -20,6 +20,7 @@ mod TestFile {
     use Applicative.{*>}
     use Monad.{>>=}
     use IOError.Generic
+    import java.io.IOException
     import java.nio.file.Path
 
     ///
@@ -41,7 +42,7 @@ mod TestFile {
                 Ok(path)
             }, tempdir)
         } catch {
-            case ex: ##java.io.IOException =>
+            case ex: IOException =>
                 import java.lang.Throwable.getMessage(): String \ {};
                 Err(Generic(getMessage(checked_cast(ex))))
         }

@@ -133,7 +133,7 @@ mod Environment {
         import java.lang.Runtime.availableProcessors(): Int32 \ {};
         (getRuntime() |> availableProcessors)
 
-    def getEnvHelper(iter: ##java.util.Iterator, m: Map[String, String]): Map[String, String] =
+    def getEnvHelper(iter: JIterator, m: Map[String, String]): Map[String, String] =
         import java.util.Iterator.hasNext(): Bool \ {};
         import java.util.Iterator.next(): Object \ {};
         import java.util.Map$Entry.getKey(): Object \ {};
