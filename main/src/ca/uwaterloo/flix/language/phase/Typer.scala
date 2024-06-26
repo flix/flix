@@ -39,6 +39,7 @@ object Typer {
     val instancesVal = visitInstances(root, traitEnv, eqEnv)
     val defsVal = visitDefs(root, oldRoot, changeSet, traitEnv, eqEnv)
     val enums = visitEnums(root)
+    val structs = Map.empty[Symbol.StructSym, TypedAst.Struct]
     val restrictableEnums = visitRestrictableEnums(root)
     val effs = visitEffs(root)
     val typeAliases = visitTypeAliases(root)
@@ -48,7 +49,7 @@ object Typer {
       case (traits, instances, defs) =>
         val sigs = traits.values.flatMap(_.sigs).map(sig => sig.sym -> sig).toMap
         val modules = collectModules(root)
-        TypedAst.Root(modules, traits, instances.m, sigs, defs, enums, restrictableEnums, effs, typeAliases, root.uses, root.entryPoint, Set.empty, root.sources, traitEnv, eqEnv, root.names, precedenceGraph)
+        TypedAst.Root(modules, traits, instances.m, sigs, defs, enums, structs, restrictableEnums, effs, typeAliases, root.uses, root.entryPoint, Set.empty, root.sources, traitEnv, eqEnv, root.names, precedenceGraph)
     }
 
   }(DebugValidation())
@@ -57,7 +58,7 @@ object Typer {
     * Collects the symbols in the given root into a map.
     */
   private def collectModules(root: KindedAst.Root): Map[Symbol.ModuleSym, List[Symbol]] = root match {
-    case KindedAst.Root(traits, _, defs, enums, restrictableEnums, effects, typeAliases, _, _, _, loc) =>
+    case KindedAst.Root(traits, _, defs, enums, structs, restrictableEnums, effects, typeAliases, _, _, _, loc) =>
       val sigs = traits.values.flatMap { trt => trt.sigs.values.map(_.sym) }
       val ops = effects.values.flatMap { eff => eff.ops.map(_.sym) }
 
@@ -83,6 +84,7 @@ object Typer {
       val groups = syms.groupBy {
         case sym: Symbol.DefnSym => new Symbol.ModuleSym(sym.namespace)
         case sym: Symbol.EnumSym => new Symbol.ModuleSym(sym.namespace)
+        case sym: Symbol.StructSym => new Symbol.ModuleSym(sym.namespace)
         case sym: Symbol.RestrictableEnumSym => new Symbol.ModuleSym(sym.namespace)
         case sym: Symbol.TraitSym => new Symbol.ModuleSym(sym.namespace)
         case sym: Symbol.TypeAliasSym => new Symbol.ModuleSym(sym.namespace)
@@ -95,6 +97,7 @@ object Typer {
         case sym: Symbol.ModuleSym => new Symbol.ModuleSym(sym.ns.init)
 
         case sym: Symbol.CaseSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
+        case sym: Symbol.StructFieldSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
         case sym: Symbol.RestrictableCaseSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
         case sym: Symbol.VarSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
         case sym: Symbol.KindedTypeVarSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)

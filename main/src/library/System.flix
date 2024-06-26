@@ -59,6 +59,8 @@ mod System {
     ///
     mod StdOut {
 
+        import java.io.PrintStream
+
         ///
         /// Prints the given string `s` to the standard output stream.
         ///
@@ -90,7 +92,7 @@ mod System {
         ///
         /// Returns the standard output stream.
         ///
-        def getOutputStream(): ##java.io.PrintStream \ IO =
+        def getOutputStream(): PrintStream \ IO =
             import static java_get_field java.lang.System.out: ##java.io.PrintStream \ IO as getOut;
             getOut()
 

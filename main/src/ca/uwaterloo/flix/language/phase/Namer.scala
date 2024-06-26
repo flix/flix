@@ -53,24 +53,18 @@ object Namer {
 
       flatMapN(unitsVal) {
         case units =>
-          val tableVal = fold(units.values, SymbolTable(Map.empty, Map.empty, Map.empty)) {
-            case (table, unit) => tableUnit(unit, table)
+          val SymbolTable(symbols0, instances0, uses0) = units.values.foldLeft(SymbolTable.empty)(tableUnit)
+          // TODO NS-REFACTOR remove use of NName
+          val symbols = symbols0.map {
+            case (k, v) => Name.mkUnlocatedNName(k) -> v.m
           }
-
-          flatMapN(tableVal) {
-            case SymbolTable(symbols0, instances0, uses0) =>
-              // TODO NS-REFACTOR remove use of NName
-              val symbols = symbols0.map {
-                case (k, v) => Name.mkUnlocatedNName(k) -> v.m
-              }
-              val instances = instances0.map {
-                case (k, v) => Name.mkUnlocatedNName(k) -> v
-              }
-              val uses = uses0.map {
-                case (k, v) => Name.mkUnlocatedNName(k) -> v
-              }
-              Validation.toSuccessOrSoftFailure(NamedAst.Root(symbols, instances, uses, units, program.entryPoint, locations, program.names), sctx.errors.asScala)
+          val instances = instances0.map {
+            case (k, v) => Name.mkUnlocatedNName(k) -> v
           }
+          val uses = uses0.map {
+            case (k, v) => Name.mkUnlocatedNName(k) -> v
+          }
+          Validation.toSuccessOrSoftFailure(NamedAst.Root(symbols, instances, uses, units, program.entryPoint, locations, program.names), sctx.errors.asScala)
       }
     }(DebugValidation())
 
@@ -95,6 +89,7 @@ object Namer {
     case decl: DesugaredAst.Declaration.Instance => visitInstance(decl, ns0)
     case decl: DesugaredAst.Declaration.Def => visitDef(decl, ns0, DefKind.NonMember)
     case decl: DesugaredAst.Declaration.Enum => visitEnum(decl, ns0)
+    case decl: DesugaredAst.Declaration.Struct => visitStruct(decl, ns0)
     case decl: DesugaredAst.Declaration.RestrictableEnum => visitRestrictableEnum(decl, ns0)
     case decl: DesugaredAst.Declaration.TypeAlias => visitTypeAlias(decl, ns0)
     case decl: DesugaredAst.Declaration.Effect => visitEffect(decl, ns0)
@@ -118,32 +113,24 @@ object Namer {
   /**
     * Adds symbols from the compilation unit to the table.
     */
-  private def tableUnit(unit: NamedAst.CompilationUnit, table0: SymbolTable): Validation[SymbolTable, NameError] = unit match {
-    case NamedAst.CompilationUnit(_, decls, _) =>
-      fold(decls, table0) {
-        case (acc, decl) => tableDecl(decl, acc)
-      }
+  private def tableUnit(table0: SymbolTable, unit: NamedAst.CompilationUnit)(implicit sctx: SharedContext): SymbolTable = unit match {
+    case NamedAst.CompilationUnit(_, decls, _) => decls.foldLeft(table0)(tableDecl)
   }
 
-  private def tableDecl(decl: NamedAst.Declaration, table0: SymbolTable): Validation[SymbolTable, NameError] = decl match {
+  private def tableDecl(table0: SymbolTable, decl: NamedAst.Declaration)(implicit sctx: SharedContext): SymbolTable = decl match {
     case NamedAst.Declaration.Namespace(sym, usesAndImports, decls, _) =>
       // Add the namespace to the table (no validation needed)
       val table1 = addDeclToTable(table0, sym.ns.init, sym.ns.last, decl)
-      val table2Val = fold(decls, table1) {
-        case (table, d) => tableDecl(d, table)
-      }
-      mapN(table2Val)(addUsesToTable(_, sym.ns, usesAndImports))
+      val table2 = decls.foldLeft(table1)(tableDecl)
+      addUsesToTable(table2, sym.ns, usesAndImports)
 
     case NamedAst.Declaration.Trait(_, _, _, sym, _, _, assocs, sigs, _, _) =>
-      val table1Val = tryAddToTable(table0, sym.namespace, sym.name, decl)
-      flatMapN(table1Val) {
-        case table1 => fold(assocs ++ sigs, table1) {
-          case (table, d) => tableDecl(d, table)
-        }
-      }
+      val table1 = tryAddToTable(table0, sym.namespace, sym.name, decl)
+      val assocsAndSigs = assocs ++ sigs
+      assocsAndSigs.foldLeft(table1)(tableDecl)
 
     case inst@NamedAst.Declaration.Instance(_, _, _, clazz, _, _, _, _, _, ns, _) =>
-      Validation.success(addInstanceToTable(table0, ns, clazz.ident.name, inst))
+      addInstanceToTable(table0, ns, clazz.ident.name, inst)
 
     case NamedAst.Declaration.Sig(sym, _, _) =>
       tryAddToTable(table0, sym.namespace, sym.name, decl)
@@ -152,20 +139,16 @@ object Namer {
       tryAddToTable(table0, sym.namespace, sym.name, decl)
 
     case NamedAst.Declaration.Enum(_, _, _, sym, _, _, cases, _) =>
-      val table1Val = tryAddToTable(table0, sym.namespace, sym.name, decl)
-      flatMapN(table1Val) {
-        case table1 => fold(cases, table1) {
-          case (table, d) => tableDecl(d, table)
-        }
-      }
+      val table1 = tryAddToTable(table0, sym.namespace, sym.name, decl)
+      cases.foldLeft(table1)(tableDecl)
+
+    case NamedAst.Declaration.Struct(_, _, _, sym, _, fields, _) =>
+      val table1 = tryAddToTable(table0, sym.namespace, sym.name, decl)
+      fields.foldLeft(table1)(tableDecl)
 
     case NamedAst.Declaration.RestrictableEnum(_, _, _, sym, _, _, _, cases, _) =>
-      val table1Val = tryAddToTable(table0, sym.namespace, sym.name, decl)
-      flatMapN(table1Val) {
-        case table1 => fold(cases, table1) {
-          case (table, d) => tableDecl(d, table)
-        }
-      }
+      val table1 = tryAddToTable(table0, sym.namespace, sym.name, decl)
+      cases.foldLeft(table1)(tableDecl)
 
     case NamedAst.Declaration.TypeAlias(_, _, _, sym, _, _, _) =>
       tryAddToTable(table0, sym.namespace, sym.name, decl)
@@ -174,18 +157,17 @@ object Namer {
       tryAddToTable(table0, sym.namespace, sym.name, decl)
 
     case NamedAst.Declaration.Effect(_, _, _, sym, ops, _) =>
-      val table1Val = tryAddToTable(table0, sym.namespace, sym.name, decl)
-      flatMapN(table1Val) {
-        case table1 => fold(ops, table1) {
-          case (table, d) => tableDecl(d, table)
-        }
-      }
+      val table1 = tryAddToTable(table0, sym.namespace, sym.name, decl)
+      ops.foldLeft(table1)(tableDecl)
 
     case NamedAst.Declaration.Op(sym, _) =>
       tryAddToTable(table0, sym.namespace, sym.name, decl)
 
     case caze@NamedAst.Declaration.Case(sym, _, _) =>
       tryAddToTable(table0, sym.namespace, sym.name, caze)
+
+    case field@NamedAst.Declaration.StructField(sym, _, _) =>
+      tryAddToTable(table0, sym.namespace, sym.name, field)
 
     case caze@NamedAst.Declaration.RestrictableCase(sym, _, _) =>
       tryAddToTable(table0, sym.namespace, sym.name, caze)
@@ -198,10 +180,12 @@ object Namer {
   /**
     * Tries to add the given declaration to the table.
     */
-  private def tryAddToTable(table: SymbolTable, ns: List[String], name: String, decl: NamedAst.Declaration): Validation[SymbolTable, NameError] = {
+  private def tryAddToTable(table: SymbolTable, ns: List[String], name: String, decl: NamedAst.Declaration)(implicit sctx: SharedContext): SymbolTable = {
     lookupName(name, ns, table) match {
-      case LookupResult.NotDefined => Validation.success(addDeclToTable(table, ns, name, decl))
-      case LookupResult.AlreadyDefined(loc) => mkDuplicateNamePair(name, getSymLocation(decl), loc)
+      case LookupResult.NotDefined => addDeclToTable(table, ns, name, decl)
+      case LookupResult.AlreadyDefined(loc) =>
+        mkDuplicateNamePair(name, getSymLocation(decl), loc)
+        SymbolTable.empty
     }
   }
 
@@ -244,20 +228,16 @@ object Namer {
   /**
     * Creates a pair of errors reporting a duplicate type declaration at each location.
     */
-  private def mkDuplicateNamePair[T](name: String, loc1: SourceLocation, loc2: SourceLocation): Validation.HardFailure[T, NameError] = {
+  private def mkDuplicateNamePair[T](name: String, loc1: SourceLocation, loc2: SourceLocation)(implicit sctx: SharedContext): Unit = {
     // NB: We report an error at both source locations.
     if (name.charAt(0).isUpper) {
       // Case 1: uppercase name
-      HardFailure(Chain(
-        NameError.DuplicateUpperName(name, loc1, loc2),
-        NameError.DuplicateUpperName(name, loc2, loc1)
-      ))
+      sctx.errors.add(NameError.DuplicateUpperName(name, loc1, loc2))
+      sctx.errors.add(NameError.DuplicateUpperName(name, loc2, loc1))
     } else {
       // Case 2: lowercase name
-      HardFailure(Chain(
-        NameError.DuplicateLowerName(name, loc1, loc2),
-        NameError.DuplicateLowerName(name, loc2, loc1)
-      ))
+      sctx.errors.add(NameError.DuplicateLowerName(name, loc1, loc2))
+      sctx.errors.add(NameError.DuplicateLowerName(name, loc2, loc1))
     }
   }
 
@@ -339,6 +319,25 @@ object Namer {
   }
 
   /**
+   * Performs the naming on the given struct `struct0`.
+   */
+  private def visitStruct(struct0: DesugaredAst.Declaration.Struct, ns0: Name.NName)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.Declaration.Struct, NameError] = struct0 match {
+    case DesugaredAst.Declaration.Struct(doc, ann, mod0, ident, tparams0, fields0, loc) =>
+      val sym = Symbol.mkStructSym(ns0, ident)
+
+      // Compute the type parameters.
+      val tparams = getTypeParams(tparams0)
+
+      val mod = visitModifiers(mod0, ns0)
+      val fieldsVal = traverse(fields0)(visitField(_, sym))
+
+      mapN(fieldsVal) {
+        case fields =>
+          NamedAst.Declaration.Struct(doc, ann, mod, sym, tparams, fields, loc)
+      }
+  }
+
+  /**
     * Performs naming on the given enum `enum0`.
     */
   private def visitRestrictableEnum(enum0: DesugaredAst.Declaration.RestrictableEnum, ns0: Name.NName)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.Declaration.RestrictableEnum, NameError] = enum0 match {
@@ -374,6 +373,16 @@ object Namer {
       val t = visitType(tpe)
       val caseSym = Symbol.mkCaseSym(enumSym, ident)
       Validation.success(NamedAst.Declaration.Case(caseSym, t, loc))
+  }
+
+  /**
+    * Performs naming on the given field.
+    */
+  private def visitField(field0: DesugaredAst.StructField, structSym: Symbol.StructSym)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.Declaration.StructField, NameError] = field0 match {
+    case DesugaredAst.StructField(ident, tpe, loc) =>
+      val t = visitType(tpe)
+      val fieldSym = Symbol.mkStructFieldSym(structSym, ident)
+      Validation.success(NamedAst.Declaration.StructField(fieldSym, t, loc))
   }
 
   /**
@@ -1557,11 +1566,13 @@ object Namer {
     case NamedAst.Declaration.Sig(sym, _, _) => sym.loc
     case NamedAst.Declaration.Def(sym, _, _) => sym.loc
     case NamedAst.Declaration.Enum(_, _, _, sym, _, _, _, _) => sym.loc
+    case NamedAst.Declaration.Struct(_, _, _, sym, _, _, _) => sym.loc
     case NamedAst.Declaration.RestrictableEnum(_, _, _, sym, _, _, _, _, _) => sym.loc
     case NamedAst.Declaration.TypeAlias(_, _, _, sym, _, _, _) => sym.loc
     case NamedAst.Declaration.Effect(_, _, _, sym, _, _) => sym.loc
     case NamedAst.Declaration.Op(sym, _) => sym.loc
     case NamedAst.Declaration.Case(sym, _, _) => sym.loc
+    case NamedAst.Declaration.StructField(sym, _, _) => sym.loc
     case NamedAst.Declaration.RestrictableCase(sym, _, _) => sym.loc
     case NamedAst.Declaration.AssocTypeSig(_, _, sym, _, _, _, _) => sym.loc
     case NamedAst.Declaration.AssocTypeDef(_, _, _, _, _, loc) => throw InternalCompilerException("Unexpected associated type definition", loc)
@@ -1588,6 +1599,12 @@ object Namer {
     * A structure holding the symbols and instances in the program.
     */
   case class SymbolTable(symbols: Map[List[String], ListMap[String, NamedAst.Declaration]], instances: Map[List[String], Map[String, List[NamedAst.Declaration.Instance]]], uses: Map[List[String], List[NamedAst.UseOrImport]])
+
+  object SymbolTable {
+
+    def empty: SymbolTable = SymbolTable(Map.empty, Map.empty, Map.empty)
+
+  }
 
   /**
     * An enumeration of the kinds of defs.
