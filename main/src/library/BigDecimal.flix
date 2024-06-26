@@ -21,6 +21,7 @@
 /// numerical equality (are the values the same after the scales have been
 /// normalized) is provided by the function `numericEquals`.
 mod BigDecimal {
+    import java.math.BigDecimal;
 
     ///
     /// Returns the smaller of `x` and `y`.
@@ -71,8 +72,7 @@ mod BigDecimal {
     ///
     pub def fromString(s: String): Option[BigDecimal] = try {
         import java.lang.String.strip(): String \ {};
-        import java_new java.math.BigDecimal(String): BigDecimal \ {} as parseBigDecimal;
-        Some(s |> strip |> parseBigDecimal)
+        Some(unsafe new BigDecimal(s |> strip))
     } catch {
         case _: ##java.lang.NumberFormatException => None
     }
