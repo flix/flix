@@ -275,6 +275,8 @@ object Simplifier {
 
           case TypeConstructor.Enum(sym, _) => MonoType.Enum(sym)
 
+          case TypeConstructor.Struct(sym, _) => throw new RuntimeException("Joe: Not implemented yet")
+
           case TypeConstructor.RestrictableEnum(sym, _) =>
             val enumSym = new Symbol.EnumSym(sym.namespace, sym.name, sym.loc)
             MonoType.Enum(enumSym)

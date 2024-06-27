@@ -89,18 +89,50 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.InaccessibleEnum](result)
   }
 
+  ignore("InaccessibleStruct.01") {
+    val input =
+      s"""
+         |mod A{
+         |    struct S {
+         |        a: Int32
+         |    }
+         |}
+         |
+         |mod B {
+         |    def g(): A.S = ???
+         |}
+         |"""
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.InaccessibleStruct](result)
+  }
+
+  ignore("InaccessibleStruct.02") {
+    val input =
+      s"""
+         |mod A {
+         |    def f(): A.B.C.Color = ???
+         |
+         |    mod B.C {
+         |        struct Color { }
+         |    }
+         |}
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.InaccessibleStruct](result)
+  }
+
   test("InaccessibleType.01") {
     val input =
       s"""
          |mod A {
-         |  enum Color {
-         |    case Blu,
-         |    case Red
-         |  }
+         |    enum Color {
+         |        case Blu,
+         |        case Red
+         |    }
          |}
          |
          |mod B {
-         |  def g(): A.Color = ???
+         |    def g(): A.Color = ???
          |}
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -123,6 +155,22 @@ class TestResolver extends AnyFunSuite with TestUtils {
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.InaccessibleEnum](result)
+  }
+
+  ignore("InaccessibleType.03") {
+    val input =
+      s"""
+         |mod A {
+         |  def f(): A.B.C.Color = ???
+         |
+         |  mod B.C {
+         |    struct Color {
+         |    }
+         |  }
+         |}
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.InaccessibleStruct](result)
   }
 
   test("InaccessibleTypeAlias.01") {
@@ -330,6 +378,23 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |
          |type alias Foo = Option[Bar]
          |type alias Bar = Option[Foo]
+         |
+         |def f(): Foo = 123
+         |
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.CyclicTypeAliases](result)
+  }
+
+  ignore("CyclicTypeAliases.06") {
+    val input =
+      s"""
+         |struct S[t] {
+         |    field: t
+         |}
+         |
+         |type alias Foo = S[Bar]
+         |type alias Bar = S[Foo]
          |
          |def f(): Foo = 123
          |
