@@ -2484,7 +2484,7 @@ object Parser2 {
         close(mark, TreeKind.Expr.NewObject)
       } else if (at(TokenKind.CurlyL)) {
         // case 2: new Struct {field1 = expr1, field2 = expr2, ...} @ region
-        oneOrMore(
+        zeroOrMore(
           namedTokenSet = NamedTokenSet.FromKinds(NAME_FIELD),
           checkForItem = NAME_FIELD.contains,
           getItem = structFieldInit,
