@@ -62,9 +62,9 @@ mod IDE {
         def prependId(v) = Vector#{(ide#zero, ide#id)} ++ v;
         def augmentForZero(d, v) = if (d == ide#zero) prependId(v) else v;
 
-        def eshIntra1(n, d) = augmentForZero(d, (ide#eshIntra)(n, d));
-        def eshCallStart1(n, d, p) = augmentForZero(d, (ide#eshCallStart)(n, d, p));
-        def eshEndReturn1(p, d, n) = augmentForZero(d, (ide#eshEndReturn)(p, d, n));
+        def eshIntra1(n, d) = augmentForZero(d, ide#eshIntra(n, d));
+        def eshCallStart1(n, d, p) = augmentForZero(d, ide#eshCallStart(n, d, p));
+        def eshEndReturn1(p, d, n) = augmentForZero(d, ide#eshEndReturn(p, d, n));
 
         //
         // The core IDE Framework.
