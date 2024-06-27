@@ -1,4 +1,5 @@
 mod Test.Exp.Jvm.InvokeMethod2.Overload.Null {
+    import java.lang.{String, StringBuilder};
 
    @test
    def testInvokeMethod2_01(): Bool \ IO =
