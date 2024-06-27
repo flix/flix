@@ -1102,9 +1102,7 @@ object Parser2 {
       expect(TokenKind.KeywordStruct, SyntacticContext.Decl.Struct)
       val nameLoc = currentSourceLocation()
       name(NAME_TYPE, context = SyntacticContext.Decl.Struct)
-      if (at(TokenKind.BracketL)) {
-        Type.parameters()
-      }
+      Type.parameters()
       zeroOrMore(
         namedTokenSet = NamedTokenSet.FromKinds(NAME_FIELD),
         getItem = structField,
