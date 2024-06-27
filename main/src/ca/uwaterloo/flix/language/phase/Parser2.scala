@@ -2468,8 +2468,8 @@ object Parser2 {
       expect(TokenKind.KeywordNew, SyntacticContext.Expr.OtherExpr)
       Type.ttype()
 
-      // NewObject or InvokeConstructor?
-      if (at(TokenKind.CurlyL)) {
+      // NewStruct, NewObject, or InvokeConstructor?
+      if (at(TokenKind.CurlyL) && nth(1) == TokenKind.KeywordDef) {
         // Case 1: new Type { ... }
         oneOrMore(
           namedTokenSet = NamedTokenSet.FromKinds(Set(TokenKind.KeywordDef)),
@@ -2482,11 +2482,34 @@ object Parser2 {
           context = SyntacticContext.Expr.OtherExpr
         )
         close(mark, TreeKind.Expr.NewObject)
+      } else if (at(TokenKind.CurlyL)) {
+        // case 2: new Struct {field1 = expr1, field2 = expr2, ...} @ region
+        oneOrMore(
+          namedTokenSet = NamedTokenSet.FromKinds(NAME_FIELD),
+          checkForItem = NAME_FIELD.contains,
+          getItem = structFieldInit,
+          breakWhen = _.isRecoverExpr,
+          context = SyntacticContext.Expr.OtherExpr,
+          separation = Separation.Required(TokenKind.Comma),
+          delimiterL = TokenKind.CurlyL,
+          delimiterR = TokenKind.CurlyR
+        )
+        expect(TokenKind.At, SyntacticContext.Expr.OtherExpr)
+        name(NAME_VARIABLE, context = SyntacticContext.Expr.OtherExpr) // region name
+        close(mark, TreeKind.Expr.NewStruct)
       } else {
-        // Case 2: new Type(exps...)
+        // Case 3: new Type(exps...)
         arguments()
         close(mark, TreeKind.Expr.InvokeConstructor2)
       }
+    }
+
+    private def structFieldInit()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      name(NAME_FIELD, context = SyntacticContext.Expr.OtherExpr)
+      expect(TokenKind.Equal, SyntacticContext.Expr.OtherExpr)
+      expression()
+      close(mark, TreeKind.Expr.LiteralStructFieldFragment)
     }
 
     private def jvmMethod()(implicit s: State): Mark.Closed = {
