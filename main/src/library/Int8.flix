@@ -23,6 +23,7 @@ instance UpperBound[Int8] {
 }
 
 mod Int8 {
+    import java.math.BigDecimal;
 
     ///
     /// Returns the number of bits used to represent an `Int8`.
@@ -406,8 +407,7 @@ mod Int8 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toBigDecimal(x: Int8): BigDecimal =
-        import java_new java.math.BigDecimal(Int32): BigDecimal \ {} as fromInt32;
-        Int8.toInt32(x) |> fromInt32
+        unsafe new BigDecimal(Int8.toInt32(x))
 
     ///
     /// Get the primitive Int8 value from its object representation (i.e. ##java.lang.Byte).

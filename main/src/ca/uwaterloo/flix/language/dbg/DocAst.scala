@@ -379,6 +379,8 @@ object DocAst {
 
     def Enum(sym: Symbol.EnumSym, args: List[Type]): Type = App(sym.toString, args)
 
+    def Struct(sym: Symbol.StructSym, args: List[Type]): Type = App(sym.toString, args)
+
     def Var(id: Int): Type = AsIs(s"var$id")
   }
 

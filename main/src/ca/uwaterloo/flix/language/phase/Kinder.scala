@@ -77,7 +77,7 @@ object Kinder {
 
         mapN(enumsVal, restrictableEnumsVal, traitsVal, defsVal, instancesVal, effectsVal) {
           case (enums, restrictableEnums, traits, defs, instances, effects) =>
-            KindedAst.Root(traits, instances, defs, enums, restrictableEnums, effects, taenv, root.uses, root.entryPoint, root.sources, root.names)
+            KindedAst.Root(traits, instances, defs, enums, Map.empty, restrictableEnums, effects, taenv, root.uses, root.entryPoint, root.sources, root.names)
         }
     }
 
@@ -748,7 +748,7 @@ object Kinder {
           KindedAst.Expr.InvokeConstructor2(clazz, exps, cvar, evar, loc)
       }
 
-    case ResolvedAst.Expr.InvokeMethod2(exp0, name, exps0, loc) =>
+    case ResolvedAst.Expr.InvokeMethod2(exp0, methodName, exps0, loc) =>
       val expVal = visitExp(exp0, kenv0, taenv, henv0, root)
       val expsVal = traverse(exps0)(visitExp(_, kenv0, taenv, henv0, root))
       mapN(expVal, expsVal) {
@@ -756,13 +756,17 @@ object Kinder {
           val mvar = Type.freshVar(Kind.JvmConstructorOrMethod, loc.asSynthetic)
           val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
           val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-          KindedAst.Expr.InvokeMethod2(exp, name, exps, mvar, tvar, evar, loc)
+          KindedAst.Expr.InvokeMethod2(exp, methodName, exps, mvar, tvar, evar, loc)
       }
 
     case ResolvedAst.Expr.InvokeStaticMethod2(clazz, methodName, exps0, loc) =>
       val expsVal = traverse(exps0)(visitExp(_, kenv0, taenv, henv0, root))
       mapN(expsVal) {
-        exps => KindedAst.Expr.InvokeStaticMethod2(clazz, methodName, exps, loc)
+        exps =>
+          val mvar = Type.freshVar(Kind.JvmConstructorOrMethod, loc.asSynthetic)
+          val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+          val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
+          KindedAst.Expr.InvokeStaticMethod2(clazz, methodName, exps, mvar, tvar, evar, loc)
       }
 
     case ResolvedAst.Expr.InvokeConstructor(constructor, args0, loc) =>
@@ -1227,6 +1231,9 @@ object Kinder {
         case Some(k) => Validation.success(Type.Cst(TypeConstructor.Enum(sym, k), loc))
         case None => Validation.toHardFailure(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc))
       }
+    
+    case UnkindedType.Struct(sym, loc) =>
+      throw new RuntimeException("Joe: Structs are not supported yet.")
 
     case UnkindedType.RestrictableEnum(sym, loc) =>
       val kind = getRestrictableEnumKind(root.restrictableEnums(sym))
@@ -1567,6 +1574,9 @@ object Kinder {
           kenv => acc ++ kenv
         }
       }
+
+    case UnkindedType.Struct(sym, _) =>
+      throw new RuntimeException("Joe: Structs are not supported in the kind checker yet.")
 
     case UnkindedType.RestrictableEnum(sym, _) =>
       val tyconKind = getRestrictableEnumKind(root.restrictableEnums(sym))

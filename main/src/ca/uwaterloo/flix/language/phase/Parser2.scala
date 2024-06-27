@@ -810,6 +810,7 @@ object Parser2 {
         case TokenKind.KeywordInstance => instanceDecl(mark)
         case TokenKind.KeywordDef => definitionDecl(mark)
         case TokenKind.KeywordEnum | TokenKind.KeywordRestrictable => enumerationDecl(mark)
+        case TokenKind.KeywordStruct => structDecl(mark)
         case TokenKind.KeywordType => typeAliasDecl(mark)
         case TokenKind.KeywordEff => effectDecl(mark)
         case TokenKind.Eof => close(mark, TreeKind.CommentList) // Last tokens in the file were comments.
@@ -1096,6 +1097,35 @@ object Parser2 {
       }
     }
 
+    private def structDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordStruct))
+      expect(TokenKind.KeywordStruct, SyntacticContext.Decl.Struct)
+      val nameLoc = currentSourceLocation()
+      name(NAME_TYPE, context = SyntacticContext.Decl.Struct)
+      if (at(TokenKind.BracketL)) {
+        Type.parameters()
+      }
+      zeroOrMore(
+        namedTokenSet = NamedTokenSet.FromKinds(NAME_FIELD),
+        getItem = structField,
+        checkForItem = NAME_FIELD.contains,
+        breakWhen = _.isRecoverExpr,
+        delimiterL = TokenKind.CurlyL,
+        delimiterR = TokenKind.CurlyR,
+        context = SyntacticContext.Decl.Struct
+      )
+      close(mark, TreeKind.Decl.Struct)
+    }
+
+    private def structField()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      docComment()
+      name(NAME_FIELD, context = SyntacticContext.Decl.Struct)
+      expect(TokenKind.Colon, SyntacticContext.Decl.Struct)
+      Type.ttype()
+      close(mark, TreeKind.StructField)
+    }
+
     private def typeAliasDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.KeywordType))
       expect(TokenKind.KeywordType, SyntacticContext.Decl.OtherDecl)
@@ -1290,26 +1320,26 @@ object Parser2 {
 
     def expression(left: TokenKind = TokenKind.Eof, leftIsUnary: Boolean = false)(implicit s: State): Mark.Closed = {
       var lhs = exprDelimited()
-      // Handle calls
-      while (at(TokenKind.ParenL)) {
-        val mark = openBefore(lhs)
-        arguments()
-        lhs = close(mark, TreeKind.Expr.Apply)
-        lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
-      }
-      // Handle record select after function call. Example: funcReturningRecord().field
-      if (at(TokenKind.Hash) && nth(1) == TokenKind.NameLowerCase) {
-        val mark = openBefore(lhs)
-        eat(TokenKind.Hash)
-        name(NAME_FIELD, context = SyntacticContext.Expr.OtherExpr)
-        while (eat(TokenKind.Hash)) {
-          name(NAME_FIELD, context = SyntacticContext.Expr.OtherExpr)
+      // Handle chained calls and record lookups
+      var continue = true
+      while (continue) {
+        nth(0) match {
+          case TokenKind.ParenL => // function call
+            val mark = openBefore(lhs)
+            arguments()
+            lhs = close(mark, TreeKind.Expr.Apply)
+            lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+          case TokenKind.Hash if nth(1) == TokenKind.NameLowerCase => // record lookup
+            val mark = openBefore(lhs)
+            eat(TokenKind.Hash)
+            name(NAME_FIELD, context = SyntacticContext.Expr.OtherExpr)
+            lhs = close(mark, TreeKind.Expr.RecordSelect)
+            lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+          case _ => continue = false
         }
-        lhs = close(mark, TreeKind.Expr.RecordSelect)
-        lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
       }
       // Handle binary operators
-      var continue = true
+      continue = true
       while (continue) {
         val right = nth(0)
         if (rightBindsTighter(left, right, leftIsUnary)) {

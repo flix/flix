@@ -29,6 +29,26 @@ sealed trait WeederError extends CompilationMessage {
 
 object WeederError {
 
+
+  /**
+   * An error raised to indicate a deprecated feature
+   * *
+   * @param loc the location of the deprecated feature.
+   */
+  case class Deprecated(loc: SourceLocation) extends WeederError with Recoverable {
+    def summary: String = s"Deprecated feature."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s""">> Deprecated feature. Use --Xdeprecated to enable.
+         |
+         |${code(loc, "deprecated")}
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
+  }
+
   /**
     * An error raised to indicate that the annotation `name` was used multiple times.
     *
@@ -110,6 +130,37 @@ object WeederError {
     }
 
     def loc: SourceLocation = loc1
+  }
+
+  /**
+   * An error raised to indicate a struct contains duplicate fields
+   *
+   * @param structName the name of the struct
+   * @param fieldName the name of the field
+   * @param field1Loc the location of the first field
+   * @param field2Loc the location of the second field
+   * @param loc the location of the struct declaration
+   */
+  case class DuplicateStructField(structName: String, fieldName: String, field1Loc: SourceLocation, field2Loc: SourceLocation, loc: SourceLocation) extends WeederError with Recoverable {
+    def summary: String = s"struct has duplicate fields"
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s""">> Struct has duplicate fields
+         |
+         |${code(loc, "struct declaration has duplicate fields")}
+         |
+         |${code(field1Loc, "the first occurrence was here")}
+         |
+         |${code(field2Loc, "the second occurrence was here")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Remove one of the two fields."
+    })
   }
 
   /**
@@ -654,16 +705,16 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate an illegal qualified name in an invoke constructor expression.
+    * An error raised to indicate an illegal qualified name.
     *
     * @param loc the location of the illegal qualified name.
     */
-  case class IllegalQualifiedNameInInvokeConstructor(loc: SourceLocation) extends WeederError with Recoverable {
-    override def summary: String = "Unexpected qualified name in new expression"
+  case class IllegalQualifiedName(loc: SourceLocation) extends WeederError with Recoverable {
+    override def summary: String = "Unexpected qualified name"
 
     override def message(formatter: Formatter): String = {
       import formatter._
-      s""">> Unexpected qualified name in new expression.
+      s""">> Unexpected qualified name.
          |
          |${code(loc, "illegal qualified name")}
          |
