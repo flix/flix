@@ -1826,7 +1826,7 @@ object Weeder2 {
       expect(tree, TreeKind.Expr.NewStruct)
       val fields = pickAll(TreeKind.Expr.LiteralStructFieldFragment, tree)
       mapN(Types.pickType(tree), traverse(fields)(visitNewStructField), pickNameIdent(tree)) {
-        (tpe, fields, region) => Expr.StructNew(tpe, fields, tree.loc)
+        (tpe, fields, region) => Expr.StructNew(tpe, fields, region, tree.loc)
       }
     }
 
