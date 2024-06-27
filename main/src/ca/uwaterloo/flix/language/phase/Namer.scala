@@ -915,7 +915,7 @@ object Namer {
       }
 
     case DesugaredAst.Expr.InvokeConstructor(className, exps, sig, loc) =>
-      if (flix.options.xdeprecated) {
+      if (!flix.options.xdeprecated) {
         val m = NameError.Deprecated(loc)
         Validation.toSoftFailure(NamedAst.Expr.Error(m), m)
       } else {
