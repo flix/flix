@@ -19,7 +19,13 @@ object JavaScriptBackend {
   def run(root: Root)(implicit flix: Flix): Unit = flix.phase("JavaScriptBackend") {
     if (flix.options.output.nonEmpty) {
       implicit val indent: Indent = indentationLevel(2)
-      val program = root.defs.values.map(compileDef).mkString("\n\n")
+      var next = 0
+      implicit val gen: () => Int = () => {
+        next += 1
+        next
+      }
+      implicit val jumps: Map[Symbol.LabelSym, String] = Map.empty
+      val program = root.defs.values.map(compileDefOrClo).mkString("\n\n")
       val outputPath = flix.options.output.get.resolve("js/flix.js").toAbsolutePath
       writeProgram(outputPath, program)
     }
@@ -56,11 +62,11 @@ object JavaScriptBackend {
 
   private def isJavaScriptFile(path: Path): Boolean = true
 
-  private def compileDefOrClo(defn: Def)(implicit indent: Indent): String = {
+  private def compileDefOrClo(defn: Def)(implicit indent: Indent, gen: () => Int, jumps: Map[Symbol.LabelSym, String]): String = {
     if (defn.cparams.isEmpty) compileDef(defn) else compileClo(defn)
   }
 
-  private def compileDef(defn: Def)(implicit indent: Indent): String = {
+  private def compileDef(defn: Def)(implicit indent: Indent, gen: () => Int, jumps: Map[Symbol.LabelSym, String]): String = {
     val name = compileDefnSym(defn.sym)
     val args = defn.fparams.map(compileFparam)
     val body = compileExp(defn.expr, inf, tail = true)
@@ -68,10 +74,10 @@ object JavaScriptBackend {
     pretty(80, fun)
   }
 
-  private def compileClo(defn: Def)(implicit indent: Indent): String = {
+  private def compileClo(defn: Def)(implicit indent: Indent, gen: () => Int, jumps: Map[Symbol.LabelSym, String]): String = {
     val name = compileDefnSym(defn.sym)
     val args = defn.cparams.map(compileFparam)
-    val body = returnit(compileLambda(None, defn.fparams.map(compileFparam), defn.expr), tail = true)
+    val body = returnit(compileLambda(None, defn.fparams.map(compileFparam), compileExp(defn.expr, inf, tail = true)), tail = true)
     val fun = function(name, args, body)
     pretty(80, fun)
   }
@@ -104,7 +110,7 @@ object JavaScriptBackend {
     if (tail) text("return") +: doc else doc
   }
 
-  private def compileExp(exp: Expr, level: Int, tail: Boolean)(implicit indent: Indent): Doc = exp match {
+  private def compileExp(exp: Expr, level: Int, tail: Boolean)(implicit indent: Indent, gen: () => Int, jumps: Map[Symbol.LabelSym, String]): Doc = exp match {
     case Expr.Cst(cst, _, loc) => returnit(compileCst(cst, loc), tail)
     case Expr.Var(sym, _, _) => returnit(compileVarSym(sym), tail)
     case Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
@@ -119,8 +125,17 @@ object JavaScriptBackend {
       returnit(compileDefnSym(sym) :: tuple(actuals.map(compileExp(_, inf, tail = false))), tail)
     case Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       text("if") +: parens(compileExp(exp1, inf, tail = false)) +: curly(compileExp(exp2, inf, tail)) +: text("else") +: curly(compileExp(exp3, inf, tail))
-    case Expr.Branch(exp, branches, tpe, purity, loc) => if (crash) throw InternalCompilerException("Pattern matching is not supported in JS", loc) else text("?branch?")
-    case Expr.JumpTo(sym, tpe, purity, loc) => if (crash) throw InternalCompilerException("Pattern matching is not supported in JS", loc) else text("?jumpto?")
+    case Expr.Branch(exp, branches, tpe, purity, loc) =>
+      val bname = "b$" + gen()
+      val jumps1: Map[Symbol.LabelSym, String] = jumps ++ branches.map(p => (p._1, bname))
+      val bargname = text("$" + gen())
+      val bfunbody = semiSep(branches.map{
+        case (sym, branchExp) => group(text("if") +: parens(bargname +: text("==") +: text(sym.id.toString)) +: curlyOpen(compileExp(branchExp, inf, tail = true)(indent, gen, jumps1)))
+      }.toList)
+      val bfun = compileLambda(Some(bname), List(bargname), bfunbody)
+      curly(semiSep(List(bfun, compileExp(exp, inf, tail)(indent, gen, jumps1))))
+    case Expr.JumpTo(sym, tpe, purity, loc) =>
+      returnit(text(jumps(sym)) :: parens(text(sym.id.toString)), tail)
     case Expr.Let(_, _, _, _, _, _) | Expr.LetRec(_, _, _, _, _, _, _, _) | Expr.Stmt(_, _, _, _, _) =>
       val d = semiSep(compileBinders(exp, Nil, tail))
       // no paren: inf
@@ -134,7 +149,7 @@ object JavaScriptBackend {
   }
 
   @tailrec
-  private def compileBinders(exp: Expr, acc: List[Doc], tail: Boolean)(implicit indent: Indent): List[Doc] = exp match {
+  private def compileBinders(exp: Expr, acc: List[Doc], tail: Boolean)(implicit indent: Indent, gen: () => Int, jumps: Map[Symbol.LabelSym, String]): List[Doc] = exp match {
     case Expr.Let(sym, exp1, exp2, _, _, _) =>
       val doc = text("const") +: compileVarSym(sym) +: text("=") +: compileExp(exp1, inf, tail = false)
       compileBinders(exp2, group(doc) :: acc, tail)
@@ -166,7 +181,7 @@ object JavaScriptBackend {
     case Constant.Regex(_) => if (crash) throw InternalCompilerException("Regex is not supported in JS", loc) else text("?regex?")
   }
 
-  private def compileAtomic(op: AtomicOp, exps: List[Expr], level: Int, tail: Boolean, loc: SourceLocation)(implicit indent: Indent): Doc = op match {
+  private def compileAtomic(op: AtomicOp, exps: List[Expr], level: Int, tail: Boolean, loc: SourceLocation)(implicit indent: Indent, gen: () => Int, jumps: Map[Symbol.LabelSym, String]): Doc = op match {
     case AtomicOp.Closure(sym) =>
       returnit(compileDefnSym(sym) :: tuple(exps.map(compileExp(_, inf, tail = false))), tail)
     case AtomicOp.Unary(sop) => exps match {
@@ -227,8 +242,8 @@ object JavaScriptBackend {
     case AtomicOp.MatchError => text("throw") +: text("new") +: text("Error") :: parens(string(s"MatchError"))
   }
 
-  private def compileLambda(name: Option[String], args: List[Doc], body: Expr)(implicit indent: Indent): Doc = {
-    group(text("function") +: text(name.map(_ + " ").getOrElse("")) :: tuple(args) +: curlyOpen(compileExp(body, inf, tail = true)))
+  private def compileLambda(name: Option[String], args: List[Doc], body: Doc)(implicit indent: Indent, gen: () => Int): Doc = {
+    group(text("function") +: text(name.map(_ + " ").getOrElse("")) :: tuple(args) +: curlyOpen(body))
   }
 
   private def parensCond(doc: Doc, found: Int, maxParen: Int)(implicit indent: Indent): Doc = {
