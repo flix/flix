@@ -224,7 +224,7 @@ object Eraser {
       case Int64 => Int64
       case Void | AnyType | Unit | BigDecimal | BigInt | String | Regex |
            Region | Array(_) | Lazy(_) | Ref(_) | Tuple(_) | MonoType.Enum(_) |
-           Arrow(_, _) | RecordEmpty | RecordExtend(_, _, _) | Native(_) | Null => // to check
+           Arrow(_, _) | RecordEmpty | RecordExtend(_, _, _) | Native(_) | Null =>
         MonoType.Object
     }
   }
