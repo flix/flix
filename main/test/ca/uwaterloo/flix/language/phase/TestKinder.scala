@@ -218,6 +218,37 @@ class TestKinder extends AnyFunSuite with TestUtils {
     expectError[KindError](result)
   }
 
+  test("MismatchedTypeParamKind.Struct.07") {
+    val input =
+      """
+        |struct D[r] {
+        |    d1: r
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[KindError](result)
+  }
+
+  test("MismatchedTypeParamKind.Struct.08") {
+    val input =
+      """
+        |struct D[r] { }
+        |def f(d: D[Int32]): Int32 = 123
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[KindError](result)
+  }
+
+  test("MismatchedTypeParamKind.Struct.09") {
+    val input =
+      """
+        |struct D[a, r] { }
+        |def f(d: D[Int32, Int32]): Int32 = 123
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[KindError](result)
+  }
+
   test("MismatchedTypeParamKind.TypeAlias.01") {
     val input = raw"type alias T[o] = Int32 -> o \ o"
     val result = compile(input, DefaultOptions)

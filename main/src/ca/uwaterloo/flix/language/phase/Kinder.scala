@@ -115,9 +115,9 @@ object Kinder {
   private def visitStruct(struct0: ResolvedAst.Declaration.Struct, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Struct, KindError] = struct0 match {
     case ResolvedAst.Declaration.Struct(doc, ann, mod, sym, tparams0, fields0, loc) =>
       val tparams1 = tparams0 match {
-        case ResolvedAst.TypeParams.Kinded(tparams) => ResolvedAst.TypeParams.Kinded(tparams)
-        case ResolvedAst.TypeParams.Unkinded(tparams0) =>
-          val tparams = tparams0.init.map(tparam => ResolvedAst.TypeParam.Kinded(tparam.name, tparam.sym, Kind.Star, tparam.loc)) :+ ResolvedAst.TypeParam.Kinded(tparams0.last.name, tparams0.last.sym, Kind.Eff, tparams0.last.loc)
+        case ResolvedAst.TypeParams.Kinded(t) => ResolvedAst.TypeParams.Kinded(t)
+        case ResolvedAst.TypeParams.Unkinded(t) =>
+          val tparams = t.init.map(tparam => ResolvedAst.TypeParam.Kinded(tparam.name, tparam.sym, Kind.Star, tparam.loc)) :+ ResolvedAst.TypeParam.Kinded(t.last.name, t.last.sym, Kind.Eff, t.last.loc)
           ResolvedAst.TypeParams.Kinded(tparams)
       }
       val kenv0 = getKindEnvFromTypeParamsDefaultStar(tparams1)
