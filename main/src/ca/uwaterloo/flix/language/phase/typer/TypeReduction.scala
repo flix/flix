@@ -268,9 +268,9 @@ object TypeReduction {
       case (Type.Cst(TypeConstructor.Native(clazz), _), Type.Cst(TypeConstructor.BigInt, _)) => clazz.isAssignableFrom(classOf[BigInteger])
       case (Type.Cst(TypeConstructor.Native(clazz), _), Type.Cst(TypeConstructor.BigDecimal, _)) => clazz.isAssignableFrom(classOf[java.math.BigDecimal])
       case (Type.Cst(TypeConstructor.Array, _), Type.Cst(TypeConstructor.Array, _)) =>
-        val (elmType2, elmType1) = (tpe2.typeVars.head, tpe1.typeVars.head)
-        val (rc2, rc1) = (tpe2.typeVars.tail.head, tpe1.typeVars.tail.head)
-        isSubtype(elmType1, elmType1)
+        val List(elmType1, rc1) = tpe1.typeArguments
+        val List(elmType2, rc2) = tpe2.typeArguments
+        isSubtype(elmType1, elmType2)
       case _ => false
     }
   }
