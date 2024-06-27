@@ -795,6 +795,8 @@ object Weeder2 {
         case TreeKind.Expr.Use => visitExprUseExpr(tree)
         case TreeKind.Expr.Literal => visitLiteralExpr(tree)
         case TreeKind.Expr.Apply => visitApplyExpr(tree)
+        case TreeKind.Expr.Index => visitIndexExpr(tree)
+        case TreeKind.Expr.IndexWrite => visitIndexWriteExpr(tree)
         case TreeKind.Expr.Lambda => visitLambdaExpr(tree)
         case TreeKind.Expr.LambdaMatch => visitLambdaMatchExpr(tree)
         case TreeKind.Expr.Unary => visitUnaryExpr(tree)
@@ -1026,6 +1028,28 @@ object Weeder2 {
             case Some(intrinsic) => visitIntrinsic(intrinsic, args)
             case None => mapN(visitExpr(expr))(Expr.Apply(_, args, tree.loc))
           }
+      }
+    }
+
+    private def visitIndexExpr(tree: Tree): Validation[Expr, CompilationMessage] = {
+      expect(tree, TreeKind.Expr.Index)
+      pickAll(TreeKind.Expr.Expr, tree) match {
+        case e1 :: e2 :: Nil => mapN(visitExpr(e1), visitExpr(e2)){
+          case (exp1, exp2) =>
+            Expr.Apply(Expr.Ambiguous(Name.mkQName("Indexable.get", exp1.loc), exp1.loc), List(exp1, exp2), tree.loc)
+        }
+        case _ => ???
+      }
+    }
+
+    private def visitIndexWriteExpr(tree: Tree): Validation[Expr, CompilationMessage] = {
+      expect(tree, TreeKind.Expr.IndexWrite)
+      pickAll(TreeKind.Expr.Expr, tree) match {
+        case e1 :: e2 :: e3 :: Nil => mapN(visitExpr(e1), visitExpr(e2), visitExpr(e3)){
+          case (exp1, exp2, exp3) =>
+            Expr.Apply(Expr.Ambiguous(Name.mkQName("Writable.put", exp1.loc), exp1.loc), List(exp1, exp2, exp3), tree.loc)
+        }
+        case _ => ???
       }
     }
 

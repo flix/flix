@@ -1335,6 +1335,23 @@ object Parser2 {
             name(NAME_FIELD, context = SyntacticContext.Expr.OtherExpr)
             lhs = close(mark, TreeKind.Expr.RecordSelect)
             lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+          case TokenKind.BracketL =>
+            val mark = openBefore(lhs)
+            expect(TokenKind.BracketL, SyntacticContext.Expr.OtherExpr)
+            expression()
+            expect(TokenKind.BracketR, SyntacticContext.Expr.OtherExpr)
+            if (at(TokenKind.Equal)) {
+              // ..[index] = expr
+              expect(TokenKind.Equal, SyntacticContext.Expr.OtherExpr)
+              expression()
+              lhs = close(mark, TreeKind.Expr.IndexWrite)
+              lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+              continue = false
+            } else {
+              // ...[index]
+              lhs = close(mark, TreeKind.Expr.Index)
+              lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+            }
           case _ => continue = false
         }
       }
