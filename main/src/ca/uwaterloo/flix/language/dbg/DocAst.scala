@@ -371,6 +371,8 @@ object DocAst {
 
     val Region: Type = AsIs("Region")
 
+    val Null: Type = AsIs("Null")
+
     def Array(t: Type): Type = App("Array", List(t))
 
     def Lazy(t: Type): Type = App("Lazy", List(t))

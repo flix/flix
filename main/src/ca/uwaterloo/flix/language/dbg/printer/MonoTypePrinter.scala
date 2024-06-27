@@ -41,6 +41,7 @@ object MonoTypePrinter {
     case MonoType.String => Type.Str
     case MonoType.Regex => Type.Regex
     case MonoType.Region => Type.Region
+    case MonoType.Null => Type.Null
     case MonoType.Array(tpe) => Type.Array(print(tpe))
     case MonoType.Lazy(tpe) => Type.Lazy(print(tpe))
     case MonoType.Ref(tpe) => Type.Ref(print(tpe))
