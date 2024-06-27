@@ -2469,20 +2469,7 @@ object Parser2 {
       Type.ttype()
 
       // NewStruct, NewObject, or InvokeConstructor?
-      if (at(TokenKind.CurlyL) && nth(1) == TokenKind.KeywordDef) {
-        // Case 1: new Type { ... }
-        oneOrMore(
-          namedTokenSet = NamedTokenSet.FromKinds(Set(TokenKind.KeywordDef)),
-          checkForItem = t => t.isComment || t == TokenKind.KeywordDef,
-          getItem = jvmMethod,
-          breakWhen = _.isRecoverExpr,
-          delimiterL = TokenKind.CurlyL,
-          delimiterR = TokenKind.CurlyR,
-          separation = Separation.None,
-          context = SyntacticContext.Expr.OtherExpr
-        )
-        close(mark, TreeKind.Expr.NewObject)
-      } else if (at(TokenKind.CurlyL)) {
+      if (at(TokenKind.CurlyL) && nth(1) == TokenKind.NameLowerCase) {
         // case 2: new Struct {field1 = expr1, field2 = expr2, ...} @ region
         zeroOrMore(
           namedTokenSet = NamedTokenSet.FromKinds(NAME_FIELD),
@@ -2497,6 +2484,19 @@ object Parser2 {
         expect(TokenKind.At, SyntacticContext.Expr.OtherExpr)
         expression()
         close(mark, TreeKind.Expr.NewStruct)
+      } else if (at(TokenKind.CurlyL)) {
+        // Case 1: new Type { ... }
+        oneOrMore(
+          namedTokenSet = NamedTokenSet.FromKinds(Set(TokenKind.KeywordDef)),
+          checkForItem = t => t.isComment || t == TokenKind.KeywordDef,
+          getItem = jvmMethod,
+          breakWhen = _.isRecoverExpr,
+          delimiterL = TokenKind.CurlyL,
+          delimiterR = TokenKind.CurlyR,
+          separation = Separation.None,
+          context = SyntacticContext.Expr.OtherExpr
+        )
+        close(mark, TreeKind.Expr.NewObject)
       } else {
         // Case 3: new Type(exps...)
         arguments()
