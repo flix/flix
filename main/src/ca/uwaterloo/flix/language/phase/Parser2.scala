@@ -2495,7 +2495,7 @@ object Parser2 {
           delimiterR = TokenKind.CurlyR
         )
         expect(TokenKind.At, SyntacticContext.Expr.OtherExpr)
-        name(NAME_VARIABLE, context = SyntacticContext.Expr.OtherExpr) // region name
+        expression()
         close(mark, TreeKind.Expr.NewStruct)
       } else {
         // Case 3: new Type(exps...)

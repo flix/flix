@@ -1825,7 +1825,7 @@ object Weeder2 {
     private def visitNewStructExpr(tree: Tree): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.NewStruct)
       val fields = pickAll(TreeKind.Expr.LiteralStructFieldFragment, tree)
-      mapN(Types.pickType(tree), traverse(fields)(visitNewStructField), pickNameIdent(tree)) {
+      mapN(Types.pickType(tree), traverse(fields)(visitNewStructField), pickExpr(tree)) {
         (tpe, fields, region) => Expr.StructNew(tpe, fields, region, tree.loc)
       }
     }
