@@ -233,6 +233,12 @@ object TypeConstructor {
   case class Enum(sym: Symbol.EnumSym, kind: Kind) extends TypeConstructor
 
   /**
+   * A type constructor that represents the type of structs.
+   */
+  @IntroducedBy(Kinder.getClass)
+  case class Struct(sym: Symbol.StructSym, kind: Kind) extends TypeConstructor
+
+  /**
     * A type constructor that represents the type of enums.
     */
   @IntroducedBy(Kinder.getClass)
