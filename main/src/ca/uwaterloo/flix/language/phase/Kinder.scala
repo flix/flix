@@ -114,6 +114,7 @@ object Kinder {
    */
   private def visitStruct(struct0: ResolvedAst.Declaration.Struct, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Struct, KindError] = struct0 match {
     case ResolvedAst.Declaration.Struct(doc, ann, mod, sym, tparams0, fields0, loc) =>
+      // if not annotated tparams are assumed to be Star except the last one which is Eff
       val tparams1 = tparams0 match {
         case ResolvedAst.TypeParams.Kinded(t) => ResolvedAst.TypeParams.Kinded(t)
         case ResolvedAst.TypeParams.Unkinded(t) =>
@@ -1279,14 +1280,14 @@ object Kinder {
         case Some(k) => Validation.success(Type.Cst(TypeConstructor.Enum(sym, k), loc))
         case None => Validation.toHardFailure(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc))
       }
-    
+
     case UnkindedType.Struct(sym, loc) =>
       val kind = getStructKind(root.structs(sym))
       unify(kind, expectedKind) match {
         case Some(k) => Validation.success(Type.Cst(TypeConstructor.Struct(sym, k), loc))
         case None => Validation.toHardFailure(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc))
       }
-    
+
     case UnkindedType.RestrictableEnum(sym, loc) =>
       val kind = getRestrictableEnumKind(root.restrictableEnums(sym))
       unify(kind, expectedKind) match {
@@ -1772,7 +1773,14 @@ object Kinder {
    * Gets the kind of the struct.
    */
   private def getStructKind(struct0: ResolvedAst.Declaration.Struct)(implicit flix: Flix): Kind = struct0 match {
-    case ResolvedAst.Declaration.Struct(_, _, _, _, tparams, _, _) =>
+    case ResolvedAst.Declaration.Struct(_, _, _, _, tparams0, _, _) =>
+      // tparams default to zero except for the region param
+      val tparams = tparams0 match {
+        case ResolvedAst.TypeParams.Kinded(t) => ResolvedAst.TypeParams.Kinded(t)
+        case ResolvedAst.TypeParams.Unkinded(t) =>
+          val tparams = t.init.map(tparam => ResolvedAst.TypeParam.Kinded(tparam.name, tparam.sym, Kind.Star, tparam.loc)) :+ ResolvedAst.TypeParam.Kinded(t.last.name, t.last.sym, Kind.Eff, t.last.loc)
+          ResolvedAst.TypeParams.Kinded(tparams)
+      }
       val kenv = getKindEnvFromTypeParamsDefaultStar(tparams)
       tparams.tparams.foldRight(Kind.Star: Kind) {
         case (tparam, acc) => kenv.map(tparam.sym) ->: acc
