@@ -33,6 +33,7 @@ sealed trait UnkindedType {
     case UnkindedType.Var(sym, _) => f(sym)
     case t: UnkindedType.Cst => t
     case t: UnkindedType.Enum => t
+    case t: UnkindedType.Struct => t
     case t: UnkindedType.RestrictableEnum => t
     case t: UnkindedType.UnappliedAlias => t
     case t: UnkindedType.UnappliedAssocType => t
@@ -80,6 +81,7 @@ sealed trait UnkindedType {
     case UnkindedType.Var(sym, _) => SortedSet(sym)
     case UnkindedType.Cst(_, _) => SortedSet.empty
     case UnkindedType.Enum(_, _) => SortedSet.empty
+    case UnkindedType.Struct(_, _) => SortedSet.empty
     case UnkindedType.RestrictableEnum(_, _) => SortedSet.empty
     case UnkindedType.UnappliedAlias(_, _) => SortedSet.empty
     case UnkindedType.UnappliedAssocType(_, _) => SortedSet.empty
@@ -132,6 +134,18 @@ object UnkindedType {
   case class Enum(sym: Symbol.EnumSym, loc: SourceLocation) extends UnkindedType {
     override def equals(that: Any): Boolean = that match {
       case Enum(sym2, _) => sym == sym2
+      case _ => false
+    }
+
+    override def hashCode(): Int = Objects.hash(sym)
+  }
+
+  /**
+   * An unkinded struct.
+   */
+  case class Struct(sym: Symbol.StructSym, loc: SourceLocation) extends UnkindedType {
+    override def equals(that: Any): Boolean = that match {
+      case Struct(sym2, _) => sym == sym2
       case _ => false
     }
 
@@ -435,6 +449,11 @@ object UnkindedType {
   def mkEnum(sym: Symbol.EnumSym, loc: SourceLocation): UnkindedType = UnkindedType.Enum(sym, loc)
 
   /**
+    * Construct the struct type constructor for the given symbol `sym` with the given kind `k`.
+    */
+  def mkStruct(sym: Symbol.StructSym, loc: SourceLocation): UnkindedType = UnkindedType.Struct(sym, loc)
+
+  /**
     * Construct the restrictable enum type constructor for the given symbol `sym` with the given kind `k`.
     */
   def mkRestrictableEnum(sym: Symbol.RestrictableEnumSym, loc: SourceLocation): UnkindedType = UnkindedType.RestrictableEnum(sym, loc)
@@ -509,6 +528,7 @@ object UnkindedType {
     case tpe: Var => tpe
     case tpe: Cst => tpe
     case tpe: Enum => tpe
+    case tpe: Struct => tpe
     case tpe: RestrictableEnum => tpe
     case tpe: UnkindedType.CaseSet => tpe
     case Apply(tpe1, tpe2, loc) => Apply(eraseAliases(tpe1), eraseAliases(tpe2), loc)
