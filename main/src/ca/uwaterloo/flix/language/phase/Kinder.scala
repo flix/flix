@@ -114,21 +114,31 @@ object Kinder {
    */
   private def visitStruct(struct0: ResolvedAst.Declaration.Struct, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Struct, KindError] = struct0 match {
     case ResolvedAst.Declaration.Struct(doc, ann, mod, sym, tparams0, fields0, loc) =>
-      val kenv = getKindEnvFromTypeParamsDefaultStar(tparams0)
+      val tparams1 = tparams0 match {
+        case ResolvedAst.TypeParams.Kinded(tparams) => ResolvedAst.TypeParams.Kinded(tparams)
+        case ResolvedAst.TypeParams.Unkinded(tparams0) =>
+          val tparams = tparams0.init.map(tparam => ResolvedAst.TypeParam.Kinded(tparam.name, tparam.sym, Kind.Star, tparam.loc)) :+ ResolvedAst.TypeParam.Kinded(tparams0.last.name, tparams0.last.sym, Kind.Eff, tparams0.last.loc)
+          ResolvedAst.TypeParams.Kinded(tparams)
+      }
+      val kenv0 = getKindEnvFromTypeParamsDefaultStar(tparams1)
+      val kenvVal = kenv0 + (tparams1.tparams.last.sym -> Kind.Eff)
 
-      val tparamsVal = traverse(tparams0.tparams)(visitTypeParam(_, kenv))
+      flatMapN(kenvVal) {
+        case kenv =>
+          val tparamsVal = traverse(tparams1.tparams)(visitTypeParam(_, kenv))
 
-      flatMapN(tparamsVal) {
-        case tparams =>
-          val targs = tparams.map(tparam => Type.Var(tparam.sym, tparam.loc.asSynthetic))
-          val tpe = Type.mkApply(Type.Cst(TypeConstructor.Struct(sym, getStructKind(struct0)), sym.loc.asSynthetic), targs, sym.loc.asSynthetic)
-          val fieldsVal = traverse(fields0) {
-            case field0 => mapN(visitStructField(field0, tparams, tpe, kenv, taenv, root)) {
-              field => field.sym -> field
-            }
-          }
-          mapN(fieldsVal) {
-            case fields => KindedAst.Struct(doc, ann, mod, sym, tparams, fields.toMap, tpe, loc)
+          flatMapN(tparamsVal) {
+            case tparams =>
+              val targs = tparams.map(tparam => Type.Var(tparam.sym, tparam.loc.asSynthetic))
+              val tpe = Type.mkApply(Type.Cst(TypeConstructor.Struct(sym, getStructKind(struct0)), sym.loc.asSynthetic), targs, sym.loc.asSynthetic)
+              val fieldsVal = traverse(fields0) {
+                case field0 => mapN(visitStructField(field0, tparams, tpe, kenv, taenv, root)) {
+                  field => field.sym -> field
+                }
+              }
+              mapN(fieldsVal) {
+                case fields => KindedAst.Struct(doc, ann, mod, sym, tparams, fields.toMap, tpe, loc)
+              }
           }
       }
     }

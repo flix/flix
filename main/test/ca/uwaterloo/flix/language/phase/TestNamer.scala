@@ -602,7 +602,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
   ignore("DuplicateUpperName.28") {
     val input =
       """
-        |struct S {}
+        |struct S[r] {}
         |enum S {}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
