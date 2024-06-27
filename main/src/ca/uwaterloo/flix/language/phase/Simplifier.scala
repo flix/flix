@@ -239,7 +239,7 @@ object Simplifier {
 
           case TypeConstructor.Unit => MonoType.Unit
 
-          case TypeConstructor.Null => MonoType.Unit
+          case TypeConstructor.Null => MonoType.Null
 
           case TypeConstructor.Bool => MonoType.Bool
 
