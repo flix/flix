@@ -949,6 +949,17 @@ class TestKinder extends AnyFunSuite with TestUtils {
   test("KindError.Struct.Case.01") {
     val input =
       """
+        |struct S {
+        |    c: { }
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[KindError.UnexpectedKind](result)
+  }
+
+  test("KindError.Struct.Case.02") {
+    val input =
+      """
         |struct F[a]
         |
         |struct E {
@@ -959,7 +970,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
     expectError[KindError.UnexpectedKind](result)
   }
 
-  test("KindError.Struct.Case.02") {
+  test("KindError.Struct.Case.04") {
     val input =
       """
         |struct S[a: Type -> Type] {
@@ -970,7 +981,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
     expectError[KindError.UnexpectedKind](result)
   }
 
-  test("KindError.Struct.Case.03") {
+  test("KindError.Struct.Case.05") {
     val input =
       """
         |struct S[a] {
