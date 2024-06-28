@@ -1834,7 +1834,7 @@ object Weeder2 {
               val m = IllegalQualifiedName(tree.loc)
               Validation.toSoftFailure(Expr.Error(m), m)
           }
-      }
+       }
     }
 
     private def visitNewStructField(tree: Tree): Validation[(Name.Ident, Expr), CompilationMessage] = {
