@@ -836,6 +836,7 @@ object Weeder2 {
         case TreeKind.Expr.InvokeMethod2 => visitInvokeMethod2Expr(tree)
         case TreeKind.Expr.InvokeStaticMethod2 => visitInvokeStaticMethod2Expr(tree)
         case TreeKind.Expr.NewObject => visitNewObjectExpr(tree)
+        case TreeKind.Expr.StructGet => visitStructGetExpr(tree)
         case TreeKind.Expr.Static => visitStaticExpr(tree)
         case TreeKind.Expr.Select => visitSelectExpr(tree)
         case TreeKind.Expr.Spawn => visitSpawnExpr(tree)
@@ -1805,6 +1806,17 @@ object Weeder2 {
       val methods = pickAll(TreeKind.Expr.JvmMethod, tree)
       mapN(Types.pickType(tree), traverse(methods)(visitJvmMethod)) {
         (tpe, methods) => Expr.NewObject(tpe, methods, tree.loc)
+      }
+    }
+
+    private def visitStructGetExpr(tree: Tree): Validation[Expr, CompilationMessage] = {
+      expect(tree, TreeKind.Expr.StructGet)
+      val idents = pickAll(TreeKind.Ident, tree)
+      mapN(pickExpr(tree), traverse(idents)(tokenToIdent)) {
+        (expr, idents) =>
+          idents.foldLeft(expr) {
+            case (acc, ident) => Expr.StructGet(acc, Name.mkLabel(ident), ident.loc)
+          }
       }
     }
 
