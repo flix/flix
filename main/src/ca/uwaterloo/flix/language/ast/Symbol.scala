@@ -48,6 +48,8 @@ object Symbol {
     case None => new DefnSym(Some(id), sym.namespace, sym.text, sym.loc)
     case Some(oldId) =>
       // We already had an index, so now we add the two.
+      // TODO: We need to work smarter.
+      // Probably it would make sense to have a list of ids?
       new DefnSym(Some(oldId + 100_000 * id), sym.namespace, sym.text, sym.loc)
   }
 

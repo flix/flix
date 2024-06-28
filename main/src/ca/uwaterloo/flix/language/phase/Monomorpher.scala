@@ -745,7 +745,7 @@ object Monomorpher {
         case None =>
           // Case 1: The function has not been specialized.
           // Generate a fresh specialized definition symbol.
-          val hash = tpe.hashCode()
+          val hash = tpe.hashCode() // TODO: Can be negative
           val freshSym = Symbol.freshDefnSym(defn.sym, hash)
 
           // Register the fresh symbol (and actual type) in the symbol2symbol map.
