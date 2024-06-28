@@ -91,7 +91,7 @@ object JavaScriptBackend {
   }
 
   private def compileCaseSym(x: Symbol.CaseSym): Doc = {
-    text(s"v${mkSafe(x.name)}")
+    string(s"${mkSafe(x.name)}")
   }
 
   private def compileDefnSym(x: Symbol.DefnSym): Doc = {
