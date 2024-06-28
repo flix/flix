@@ -559,6 +559,9 @@ object SemanticTokensProvider {
     case Expr.FixpointProject(_, exp, _, _, _) =>
       visitExp(exp)
 
+    case Expr.DirectBackend(_, _, _, _) =>
+      Iterator.empty
+
     case Expr.Error(_, _, _) =>
       Iterator.empty
 

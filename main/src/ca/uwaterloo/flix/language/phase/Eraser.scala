@@ -124,6 +124,7 @@ object Eraser {
         case AtomicOp.Lazy => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Force =>
           castExp(ApplyAtomic(op, es, erase(tpe), purity, loc), t, purity, loc)
+        case AtomicOp.DirectBackend(_) => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.HoleError(_) => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.MatchError => ApplyAtomic(op, es, t, purity, loc)
       }

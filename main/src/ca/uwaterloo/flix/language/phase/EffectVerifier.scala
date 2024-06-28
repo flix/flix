@@ -350,6 +350,7 @@ object EffectVerifier {
       visitExp(exp)
       // TODO ?
       ()
+    case Expr.DirectBackend(_, _, _, _) => ()
     case Expr.Error(m, tpe, eff) => ()
   }
 

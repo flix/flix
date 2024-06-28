@@ -450,6 +450,9 @@ object Indexer {
     case Expr.FixpointProject(_, exp, _, _, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0)
 
+    case Expr.DirectBackend(_, _, _, _) =>
+      Index.occurrenceOf(exp0)
+
     case Expr.Error(_, _, _) =>
       Index.occurrenceOf(exp0)
   }

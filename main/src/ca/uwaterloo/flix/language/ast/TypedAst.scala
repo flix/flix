@@ -268,6 +268,8 @@ object TypedAst {
 
     case class FixpointProject(pred: Name.Pred, exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
+    case class DirectBackend(content: String, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+
     case class Error(m: CompilationMessage, tpe: Type, eff: Type) extends Expr {
       override def loc: SourceLocation = m.loc
     }

@@ -796,6 +796,9 @@ object Lowering {
       val argExps = mkPredSym(pred) :: visitExp(exp) :: Nil
       LoweredAst.Expr.Apply(defExp, argExps, tpe, eff, loc)
 
+    case TypedAst.Expr.DirectBackend(content, tpe, eff, loc) =>
+      LoweredAst.Expr.ApplyAtomic(AtomicOp.DirectBackend(content), Nil, tpe, eff, loc)
+
     case TypedAst.Expr.Error(m, _, _) =>
       throw InternalCompilerException(s"Unexpected error expression near", m.loc)
 
