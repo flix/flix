@@ -2469,7 +2469,7 @@ object Parser2 {
       Type.ttype()
 
       // NewStruct, NewObject, or InvokeConstructor?
-      if (at(TokenKind.CurlyL) && (nth(1) == TokenKind.NameLowerCase || nth(1) == TokenKind.CurlyR)) {
+      if (at(TokenKind.CurlyL) && (nth(1) == TokenKind.NameLowerCase || (nth(1) == TokenKind.CurlyR && nth(2) == TokenKind.At))) {
         // case 2: new Struct {field1 = expr1, field2 = expr2, ...} @ region
         //     or: new Struct {} @ region
         zeroOrMore(
