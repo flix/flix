@@ -283,8 +283,6 @@ object SyntaxTree {
 
       case object StructGet extends Expr
 
-      case object NewStruct extends Expr
-
       case object OpenVariant extends Expr
 
       case object OpenVariantAs extends Expr
