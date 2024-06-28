@@ -65,24 +65,14 @@ function initCopyLinks() {
 }
 
 function initMobileInteractions() {
-    const menuToggle = document.querySelector("#menu-toggle");
+    const menuToggleCheckbox = document.querySelector("#menu-toggle > input");
     const menuLinks = document.querySelectorAll("nav a");
-    const main = document.querySelector("main");
 
-    function onToggle() {
-        main.style.pointerEvents = menuToggle.checked ? "none" : "all";
-    }
-
-    menuToggle.addEventListener("change", onToggle);
-
+    // Hide sidebar when navigating somewhere within the page
     for (const link of menuLinks) {
         const isAnchor = link.getAttribute("href").startsWith("#");
         if (isAnchor) link.addEventListener("click", () => {
-            menuToggle.checked = false;
-
-            // This is needed because the change event is not fired when 
-            // the toggle is unchecked programmatically.
-            onToggle();
+            menuToggleCheckbox.checked = false;
         });
     }
 }
