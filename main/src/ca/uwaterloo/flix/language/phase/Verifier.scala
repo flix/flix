@@ -314,6 +314,9 @@ object Verifier {
             case _ => failMismatchedShape(t1, "Ref", loc)
           }
 
+        case AtomicOp.DirectBackend(_) =>
+          tpe
+
         // Match- and Hole-errors match with any type
         case AtomicOp.HoleError(_) =>
           tpe

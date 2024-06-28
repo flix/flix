@@ -1693,6 +1693,9 @@ object Resolver {
             case (e1, e2) => ResolvedAst.Expr.FixpointProject(pred, e1, e2, loc)
           }
 
+        case NamedAst.Expr.DirectBackend(content, loc) =>
+          Validation.success(ResolvedAst.Expr.DirectBackend(content, loc))
+
         case NamedAst.Expr.Error(m) =>
           // Note: We must NOT use [[Validation.toSoftFailure]] because
           // that would duplicate the error inside the Validation.

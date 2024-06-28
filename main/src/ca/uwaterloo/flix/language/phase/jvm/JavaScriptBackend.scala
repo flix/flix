@@ -238,6 +238,7 @@ object JavaScriptBackend {
     case AtomicOp.Spawn => if (crash) throw InternalCompilerException("Spawn is not supported in JS", loc) else text("?spawn?")
     case AtomicOp.Lazy => if (crash) throw InternalCompilerException("Lazy values are not supported in JS", loc) else text("?lazy?")
     case AtomicOp.Force => if (crash) throw InternalCompilerException("Lazy values are not supported in JS", loc) else text("?force?")
+    case AtomicOp.DirectBackend(content) => text(content)
     case AtomicOp.HoleError(sym) => text("throw") +: text("new") +: text("Error") :: parens(string(s"HoleError ${sym.name}"))
     case AtomicOp.MatchError => text("throw") +: text("new") +: text("Error") :: parens(string(s"MatchError"))
   }

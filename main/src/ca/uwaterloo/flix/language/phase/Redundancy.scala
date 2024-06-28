@@ -766,6 +766,9 @@ object Redundancy {
     case Expr.FixpointProject(_, exp, _, _, _) =>
       visitExp(exp, env0, rc)
 
+    case Expr.DirectBackend(_, _, _, loc) =>
+      Used.empty
+
     case Expr.Error(_, _, _) =>
       lctx.errorLocs += e0.loc
       Used.empty

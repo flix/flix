@@ -222,6 +222,8 @@ object KindedAst {
 
     case class FixpointProject(pred: Name.Pred, exp1: Expr, exp2: Expr, tvar: Type.Var, loc: SourceLocation) extends Expr
 
+    case class DirectBackend(content: String, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
+
     case class Error(m: CompilationMessage, tvar: Type.Var, evar: Type.Var) extends Expr {
       override def loc: SourceLocation = m.loc
     }

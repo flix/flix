@@ -927,6 +927,11 @@ object Kinder {
         case (exp1, exp2) => KindedAst.Expr.FixpointProject(pred, exp1, exp2, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }
 
+    case ResolvedAst.Expr.DirectBackend(content, loc) =>
+      val tvar = Type.freshVar(Kind.Star, loc)
+      val evar = Type.freshVar(Kind.Eff, loc)
+      Validation.success(KindedAst.Expr.DirectBackend(content, tvar, evar, loc))
+
     case ResolvedAst.Expr.Error(m) =>
       val tvar = Type.freshVar(Kind.Star, m.loc)
       val evar = Type.freshVar(Kind.Eff, m.loc)

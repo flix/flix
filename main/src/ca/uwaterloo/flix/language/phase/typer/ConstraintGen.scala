@@ -930,6 +930,12 @@ object ConstraintGen {
       case e: Expr.FixpointInject => SchemaConstraintGen.visitFixpointInject(e)
       case e: Expr.FixpointProject => SchemaConstraintGen.visitFixpointProject(e)
 
+      case Expr.DirectBackend(_, tvar, evar, _) =>
+        // The error expression has whatever type and effect it needs to have.
+        val resTpe = tvar
+        val resEff = evar
+        (resTpe, resEff)
+
       case Expr.Error(_, tvar, evar) =>
         // The error expression has whatever type and effect it needs to have.
         val resTpe = tvar

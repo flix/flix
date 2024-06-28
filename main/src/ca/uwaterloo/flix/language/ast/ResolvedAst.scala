@@ -239,6 +239,8 @@ object ResolvedAst {
 
     case class FixpointProject(pred: Name.Pred, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
+    case class DirectBackend(content: String, loc: SourceLocation) extends Expr
+
     case class Error(m: CompilationMessage) extends Expr {
       override def loc: SourceLocation = m.loc
     }

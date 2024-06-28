@@ -863,6 +863,9 @@ object Desugar {
       val e2 = visitExp(exp2)
       Expr.FixpointProject(pred, e1, e2, loc)
 
+    case WeededAst.Expr.DirectBackend(content, loc) =>
+      Expr.DirectBackend(content, loc)
+
     case WeededAst.Expr.Debug(exp, kind, loc) =>
       desugarDebug(exp, kind, loc)
 

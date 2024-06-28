@@ -608,6 +608,11 @@ object TypeReconstruction {
       val solveExp = TypedAst.Expr.FixpointSolve(mergeExp, e1.tpe, eff, loc)
       TypedAst.Expr.FixpointProject(pred, solveExp, tpe, eff, loc)
 
+    case KindedAst.Expr.DirectBackend(content, tvar, evar, loc) =>
+      val tpe = subst(tvar)
+      val eff = subst(evar)
+      TypedAst.Expr.DirectBackend(content, tpe, eff, loc)
+
     case KindedAst.Expr.Error(m, tvar, evar) =>
       val tpe = subst(tvar)
       val eff = subst(evar)

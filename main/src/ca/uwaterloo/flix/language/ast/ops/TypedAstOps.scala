@@ -108,6 +108,7 @@ object TypedAstOps {
     case Expr.FixpointFilter(_, exp, _, _, _) => sigSymsOf(exp)
     case Expr.FixpointInject(exp, _, _, _, _) => sigSymsOf(exp)
     case Expr.FixpointProject(_, exp, _, _, _) => sigSymsOf(exp)
+    case Expr.DirectBackend(_, _, _, _) => Set.empty
     case Expr.Error(_, _, _) => Set.empty
   }
 
@@ -372,6 +373,9 @@ object TypedAstOps {
 
     case Expr.FixpointProject(_, exp, _, _, _) =>
       freeVars(exp)
+
+    case Expr.DirectBackend(_, _, _, _) =>
+      Map.empty
 
     case Expr.Error(_, _, _) =>
       Map.empty
