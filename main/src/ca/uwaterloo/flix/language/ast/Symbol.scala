@@ -42,6 +42,16 @@ object Symbol {
   }
 
   /**
+   * Returns a fresh def symbol with the given index (which must be unique w.r.t. the def symbol).
+   */
+  def freshDefnSym(sym: DefnSym, id: Int): DefnSym = sym.id match {
+    case None => new DefnSym(Some(id), sym.namespace, sym.text, sym.loc)
+    case Some(oldId) =>
+      // We already had an index, so now we add the two.
+      new DefnSym(Some(oldId + 100_000 * id), sym.namespace, sym.text, sym.loc)
+  }
+
+  /**
     * Returns a fresh hole symbol associated with the given source location `loc`.
     */
   def freshHoleSym(loc: SourceLocation)(implicit flix: Flix): HoleSym = {
