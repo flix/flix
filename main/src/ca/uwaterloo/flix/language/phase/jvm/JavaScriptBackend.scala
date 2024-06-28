@@ -4,7 +4,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Constant
 import ca.uwaterloo.flix.language.ast.ReducedAst._
 import ca.uwaterloo.flix.language.ast.SemanticOp.{BoolOp, CharOp, Float32Op, Float64Op, Int16Op, Int32Op, Int64Op, Int8Op, StringOp}
-import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, SemanticOp, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, Name, SemanticOp, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugNoOp
 import ca.uwaterloo.flix.language.dbg.Doc
 import ca.uwaterloo.flix.language.dbg.Doc._
@@ -25,7 +25,7 @@ object JavaScriptBackend {
         next
       }
       implicit val jumps: Map[Symbol.LabelSym, String] = Map.empty
-      val program = root.defs.values.map(compileDefOrClo).mkString("\n\n")
+      val program = (runtime() :: root.defs.values.map(compileDefOrClo).toList).mkString("\n\n")
       val outputPath = flix.options.output.get.resolve("js/flix.js").toAbsolutePath
       writeProgram(outputPath, program)
     }
@@ -212,10 +212,18 @@ object JavaScriptBackend {
       returnit(compileExp(takeOne(exps, loc), app, tail = false) :: square(text(idx.toString)), tail)
     case AtomicOp.Tuple =>
       returnit(squareTuple(exps.map(compileExp(_, inf, tail = false))), tail)
-    case AtomicOp.RecordEmpty => if (crash) throw InternalCompilerException("Records are not supported by JS", loc) else text("?recordEmpty?")
-    case AtomicOp.RecordSelect(label) => if (crash) throw InternalCompilerException("Records are not supported by JS", loc) else text("?recordselect?")
-    case AtomicOp.RecordExtend(label) => if (crash) throw InternalCompilerException("Records are not supported by JS", loc) else text("?recordExtend?")
-    case AtomicOp.RecordRestrict(label) => if (crash) throw InternalCompilerException("Records are not supported by JS", loc) else text("?recordRestrict?")
+    case AtomicOp.RecordEmpty =>
+      returnit(text(runtimeRecordEmpty), tail)
+    case AtomicOp.RecordSelect(label) =>
+      val d = compileExp(takeOne(exps, loc), app, tail = false) :: text(".flixlookup") :: parens(compileLabel(label))
+      returnit(parensCond(d, level, maxParen = app), tail)
+    case AtomicOp.RecordExtend(label) =>
+      val (e1, e2) = takeTwo(exps, loc)
+      val d = text(runtimeRecordExtend) :: tuple(List(compileLabel(label), compileExp(e1, inf, tail = false), compileExp(e2, inf, tail = false)))
+      returnit(d, tail)
+    case AtomicOp.RecordRestrict(label) =>
+      val d = compileExp(takeOne(exps, loc), app, tail = false) :: text(".flixrestrict") :: parens(compileLabel(label))
+      returnit(parensCond(d, level, maxParen = app), tail)
     case AtomicOp.ArrayLit => if (crash) throw InternalCompilerException("Arrays are not supported by JS", loc) else text("?arrayLit?")
     case AtomicOp.ArrayNew => if (crash) throw InternalCompilerException("Arrays are not supported by JS", loc) else text("?arrayNew?")
     case AtomicOp.ArrayLoad => if (crash) throw InternalCompilerException("Arrays are not supported by JS", loc) else text("?arrayload?")
@@ -271,6 +279,10 @@ object JavaScriptBackend {
 
   private def compileBinary(op: SemanticOp.BinaryOp, exp1: Doc, exp2: Doc, loc: SourceLocation): Doc = {
     exp1 +: text(binaryString(op, loc)) +: exp2
+  }
+
+  private def compileLabel(label: Name.Label): Doc = {
+    string(label.toString)
   }
 
   private def binaryString(op: SemanticOp.BinaryOp, loc: SourceLocation): String = op match {
@@ -382,5 +394,31 @@ object JavaScriptBackend {
       case List(one) => one
       case _ => throw InternalCompilerException("Malformed program", loc)
     }
+  }
+
+  private def takeTwo[T](l: List[T], loc: SourceLocation): (T, T) = {
+    l match {
+      case List(one, two) => (one, two)
+      case _ => throw InternalCompilerException("Malformed program", loc)
+    }
+  }
+
+  private val runtimeRecordEmpty: String = "flix$runtime$recordEmpty"
+  private val runtimeRecordExtend: String = "flix$runtime$recordExtend"
+
+  private def runtime(): String = {
+    s"""
+      |function $runtimeRecordExtend (l, v, r) {
+      |   return {
+      |     flixlookup: function (lother) {if (l == lother) {return v} else {return r.flixlookup(lother)}},
+      |     flixrestrict: function (lother) {if (l == lother) {return r} else {return $runtimeRecordExtend(l, v, r.flixrestrict(lother))}}
+      |   }
+      |}
+      |
+      |const $runtimeRecordEmpty = {
+      |  flixlookup: function (l) {throw new Error("Cannot find label " + l)},
+      |  flixrestrict: function (l) {throw new Error("Cannot restrict label " + l)}
+      |}
+      |""".stripMargin
   }
 }
