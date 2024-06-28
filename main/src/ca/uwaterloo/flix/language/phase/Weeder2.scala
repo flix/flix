@@ -1825,8 +1825,15 @@ object Weeder2 {
     private def visitNewStructExpr(tree: Tree): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.NewStruct)
       val fields = pickAll(TreeKind.Expr.LiteralStructFieldFragment, tree)
-      mapN(Types.pickType(tree), traverse(fields)(visitNewStructField), pickExpr(tree)) {
-        (tpe, fields, region) => Expr.StructNew(tpe, fields, region, tree.loc)
+      flatMapN(Types.pickType(tree), traverse(fields)(visitNewStructField), pickExpr(tree)) {
+        (tpe, fields, region) =>
+          tpe match {
+            case WeededAst.Type.Ambiguous(qname, _) if qname.isUnqualified =>
+              Validation.success(Expr.StructNew(qname, fields, region, tree.loc))
+            case _ =>
+              val m = IllegalQualifiedName(tree.loc)
+              Validation.toSoftFailure(Expr.Error(m), m)
+          }
       }
     }
 
