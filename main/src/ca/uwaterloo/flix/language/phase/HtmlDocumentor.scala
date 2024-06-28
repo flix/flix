@@ -17,7 +17,6 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.{Flix, Version}
-import ca.uwaterloo.flix.language.ast.Symbol.ModuleSym
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.fmt.{FormatType, SimpleType}
 import ca.uwaterloo.flix.tools.pkg.PackageModules
@@ -861,7 +860,7 @@ object HtmlDocumentor {
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docSideBar(parent: Option[ModuleSym])(docContents: () => Unit)(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docSideBar(parent: Option[Symbol.ModuleSym])(docContents: () => Unit)(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append("<nav>")
     sb.append("<div id='menu-toggle'>")
     sb.append("<input type='checkbox' aria-label='Show/hide sidebar menu'>")
