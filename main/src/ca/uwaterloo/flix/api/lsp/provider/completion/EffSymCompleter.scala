@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst
 
 object EffSymCompleter extends Completer {
 
-  def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[EffectCompletion] = {
+  def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[EffectCompletion] = {
     root.effects.map {
       case (sym, eff) => Completion.EffectCompletion(sym, eff.doc.text)
     }

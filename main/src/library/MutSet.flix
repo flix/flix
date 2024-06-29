@@ -116,7 +116,7 @@ mod MutSet {
     ///
     pub def replace!(src: {src = a}, dst: {dst = a}, s: MutSet[a, r]): Unit \ r with Order[a] =
         let MutSet(_, ms) = s;
-        Ref.put(Set.replace(src = src.src, dst = dst.dst, deref ms), ms)
+        Ref.put(Set.replace(src = src#src, dst = dst#dst, deref ms), ms)
 
     ///
     /// Applies the function `f` to every element in the mutable set `s`.
@@ -403,7 +403,7 @@ mod MutSet {
     ///
     pub def iterator(rc: Region[r1], s: MutSet[a, r2]): Iterator[a, r1 + r2, r1] \ { r1, r2 } =
         let MutSet(_, ms) = s;
-        Set.iterator(rc, deref ms) |> Iterator.map(x -> { discard deref ms; x })
+        Set.iterator(rc, deref ms) |> Iterator.map(eidentity)
 
     ///
     /// Returns an enumerator over `s`.

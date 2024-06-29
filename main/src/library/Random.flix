@@ -5,20 +5,19 @@
 pub enum Random(##java.util.Random)
 
 mod Random {
+    import java.util.{Random => JRandom};
 
     ///
     /// Returns a fresh random number generator.
     ///
     pub def fresh(): Random \ IO =
-        import java_new java.util.Random(): ##java.util.Random \ IO as newRandom;
-        Random(newRandom())
+        Random(new JRandom())
 
     ///
     /// Returns a fresh random number generator initialized with the given seed `s`.
     ///
     pub def freshWithSeed(s: Int64): Random \ IO =
-        import java_new java.util.Random(Int64): ##java.util.Random \ IO as newRandom;
-        Random(newRandom(s))
+        Random(new JRandom(s))
 
     ///
     /// Returns a pseudorandom element from the given array `a` using the random number generator `r`.

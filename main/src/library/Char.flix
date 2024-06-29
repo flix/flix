@@ -24,6 +24,8 @@ instance UpperBound[Char] {
 
 mod Char {
 
+    import java.lang.Character
+
     ///
     ///  Returns `true` if the given char `c` is an ascii character.
     ///
@@ -138,7 +140,7 @@ mod Char {
     ///
     pub def isSurrogatePair(high: {high = Char}, low: {low = Char}): Bool =
         import static java.lang.Character.isSurrogatePair(Char, Char): Bool \ {};
-        isSurrogatePair(high.high, low.low)
+        isSurrogatePair(high#high, low#low)
 
     ///
     /// Converts a letter to its lowercase version.
@@ -181,7 +183,7 @@ mod Char {
     ///
     pub def toSupplementaryCodePoint(high: {high = Char}, low: {low = Char}): Int32 =
         import static java.lang.Character.toCodePoint(Char, Char): Int32 \ {};
-        toCodePoint(high.high, low.low)
+        toCodePoint(high#high, low#low)
 
     ///
     /// Returns the character `c` as a string.
@@ -220,7 +222,7 @@ mod Char {
     ///
     pub def digit(radix: {radix = Int32}, c: Char): Option[Int32] =
         import static java.lang.Character.digit(Char, Int32): Int32 \ {};
-        match digit(c, radix.radix) {
+        match digit(c, radix#radix) {
             case i if i < 0 => None
             case i          => Some(i)
         }
@@ -234,29 +236,29 @@ mod Char {
     ///
     pub def forDigit(radix: {radix = Int32}, n: Int32): Option[Char] =
         import static java.lang.Character.forDigit(Int32, Int32): Char \ {};
-        match forDigit(n, radix.radix) {
+        match forDigit(n, radix#radix) {
             case c if c == '\u0000' => None
             case c                  => Some(c)
         }
 
     ///
-    /// Get the primitive Char value from its object representation (i.e. ##java.lang.Character).
+    /// Get the primitive Char value from its object representation, i.e., java.lang.Character.
     ///
     /// This function is expected to be used when marshaling Chars from Java. Generally in Flix
-    /// code you should not need to use `##java.lang.Character`.
+    /// code you should not need to use `java.lang.Character`.
     ///
-    pub def charValue(c: ##java.lang.Character): Char =
+    pub def charValue(c: Character): Char =
         import java.lang.Character.charValue(): Char \ {};
         charValue(c)
 
     ///
-    /// Convert an Char value to its its object representation (i.e. ##java.lang.Character).
+    /// Convert an Char value to its its object representation (i.e. java.lang.Character).
     ///
     /// This function is expected to be used when marshaling Chars to Java. Generally in Flix
-    /// code you should not need to use `##java.lang.Character`.
+    /// code you should not need to use `java.lang.Character`.
     ///
-    pub def valueOf(c: Char): ##java.lang.Character =
-        import static java.lang.Character.valueOf(Char): ##java.lang.Character \ {};
+    pub def valueOf(c: Char): Character =
+        import static java.lang.Character.valueOf(Char): Character \ {};
         valueOf(c)
 
 }

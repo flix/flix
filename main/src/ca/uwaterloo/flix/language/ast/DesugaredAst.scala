@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.Denotation
+import ca.uwaterloo.flix.language.ast.shared.Fixity
 import ca.uwaterloo.flix.util.collection.MultiMap
 
 object DesugaredAst {
@@ -37,7 +38,7 @@ object DesugaredAst {
     // TODO change laws to Law
     case class Trait(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparam: TypeParam, superTraits: List[TypeConstraint], assocs: List[Declaration.AssocTypeSig], sigs: List[Declaration.Sig], laws: List[Declaration.Def], loc: SourceLocation) extends Declaration
 
-    case class Instance(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, clazz: Name.QName, tpe: Type, tconstrs: List[TypeConstraint], assocs: List[Declaration.AssocTypeDef], defs: List[Declaration.Def], loc: SourceLocation) extends Declaration
+    case class Instance(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, trt: Name.QName, tpe: Type, tconstrs: List[TypeConstraint], assocs: List[Declaration.AssocTypeDef], defs: List[Declaration.Def], loc: SourceLocation) extends Declaration
 
     case class Sig(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparams: KindedTypeParams, fparams: List[FormalParam], exp: Option[Expr], tpe: Type, eff: Option[Type], tconstrs: List[TypeConstraint], econstrs: List[EqualityConstraint], loc: SourceLocation)
 
@@ -46,6 +47,8 @@ object DesugaredAst {
     case class Law(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparams: KindedTypeParams, fparams: List[FormalParam], exp: Expr, tpe: Type, eff: Type, tconstrs: List[TypeConstraint], loc: SourceLocation) extends Declaration
 
     case class Enum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparams: TypeParams, derives: Derivations, cases: List[Case], loc: SourceLocation) extends Declaration
+
+    case class Struct(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparams: TypeParams, fields: List[StructField], loc: SourceLocation) extends Declaration
 
     case class RestrictableEnum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, index: TypeParam, tparams: TypeParams, derives: Derivations, cases: List[RestrictableCase], loc: SourceLocation) extends Declaration
 
@@ -153,7 +156,7 @@ object DesugaredAst {
 
     case class Ascribe(exp: Expr, expectedType: Option[Type], expectedEff: Option[Type], loc: SourceLocation) extends Expr
 
-    case class InstanceOf(exp: Expr, className: String, loc: SourceLocation) extends Expr
+    case class InstanceOf(exp: Expr, className: Name.Ident, loc: SourceLocation) extends Expr
 
     case class CheckedCast(cast: Ast.CheckedCastType, exp: Expr, loc: SourceLocation) extends Expr
 
@@ -168,6 +171,12 @@ object DesugaredAst {
     case class TryWith(exp: Expr, eff: Name.QName, rules: List[HandlerRule], loc: SourceLocation) extends Expr
 
     case class Do(op: Name.QName, exps: List[Expr], loc: SourceLocation) extends Expr
+
+    case class InvokeConstructor2(clazzName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
+
+    case class InvokeMethod2(exp: Expr, methodName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
+
+    case class InvokeStaticMethod2(clazzName: Name.Ident, methodName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
 
     case class InvokeConstructor(className: String, exps: List[Expr], sig: List[Type], loc: SourceLocation) extends Expr
 
@@ -282,7 +291,7 @@ object DesugaredAst {
 
     object Body {
 
-      case class Atom(pred: Name.Pred, den: Denotation, polarity: Ast.Polarity, fixity: Ast.Fixity, terms: List[Pattern], loc: SourceLocation) extends Predicate.Body
+      case class Atom(pred: Name.Pred, den: Denotation, polarity: Ast.Polarity, fixity: Fixity, terms: List[Pattern], loc: SourceLocation) extends Predicate.Body
 
       case class Functional(idents: List[Name.Ident], exp: Expr, loc: SourceLocation) extends Predicate.Body
 
@@ -382,6 +391,8 @@ object DesugaredAst {
 
   case class Case(ident: Name.Ident, tpe: Type, loc: SourceLocation)
 
+  case class StructField(sym: Name.Ident, tpe: Type, loc: SourceLocation)
+
   case class RestrictableCase(ident: Name.Ident, tpe: Type, loc: SourceLocation)
 
   case class FormalParam(ident: Name.Ident, mod: Ast.Modifiers, tpe: Option[Type], loc: SourceLocation)
@@ -404,7 +415,7 @@ object DesugaredAst {
 
   case class RestrictableChooseRule(pat: RestrictableChoosePattern, exp: Expr)
 
-  case class TypeConstraint(clazz: Name.QName, tpe: Type, loc: SourceLocation)
+  case class TypeConstraint(trt: Name.QName, tpe: Type, loc: SourceLocation)
 
   case class EqualityConstraint(qname: Name.QName, tpe1: Type, tpe2: Type, loc: SourceLocation)
 

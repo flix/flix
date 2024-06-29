@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.DesugaredAst.Expr
 import ca.uwaterloo.flix.language.ast.WeededAst.Predicate
+import ca.uwaterloo.flix.language.ast.shared.Fixity
 import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, DesugaredAst, Name, SourceLocation, Type, WeededAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugDesugaredAst
 import ca.uwaterloo.flix.util.ParOps
@@ -73,6 +74,7 @@ object Desugar {
     case d: WeededAst.Declaration.Law => visitLaw(d)
     case d: WeededAst.Declaration.Enum => visitEnum(d)
     case d: WeededAst.Declaration.RestrictableEnum => visitRestrictableEnum(d)
+    case d: WeededAst.Declaration.Struct => visitStruct(d)
     case d: WeededAst.Declaration.TypeAlias => visitTypeAlias(d)
     case d: WeededAst.Declaration.Effect => visitEffect(d)
   }
@@ -94,12 +96,12 @@ object Desugar {
     * Desugars the given [[WeededAst.Declaration.Instance]] `instance0`.
     */
   private def visitInstance(instance0: WeededAst.Declaration.Instance)(implicit flix: Flix): DesugaredAst.Declaration.Instance = instance0 match {
-    case WeededAst.Declaration.Instance(doc, ann, mod, clazz, tpe0, tconstrs0, assocs0, defs0, loc) =>
+    case WeededAst.Declaration.Instance(doc, ann, mod, trt, tpe0, tconstrs0, assocs0, defs0, loc) =>
       val tpe = visitType(tpe0)
       val tconstrs = tconstrs0.map(visitTypeConstraint)
       val assocs = assocs0.map(visitAssocTypeDef)
       val defs = defs0.map(visitDef)
-      DesugaredAst.Declaration.Instance(doc, ann, mod, clazz, tpe, tconstrs, assocs, defs, loc)
+      DesugaredAst.Declaration.Instance(doc, ann, mod, trt, tpe, tconstrs, assocs, defs, loc)
   }
 
   /**
@@ -141,6 +143,16 @@ object Desugar {
       val derives = visitDerivations(derives0)
       val cases = cases0.map(visitCase)
       DesugaredAst.Declaration.Enum(doc, ann, mod, ident, tparams, derives, cases, loc)
+  }
+
+  /**
+   * Desugars the given [[WeededAst.Declaration.Struct]] `struct0`.
+   */
+  private def visitStruct(struct0: WeededAst.Declaration.Struct): DesugaredAst.Declaration.Struct = struct0 match {
+    case WeededAst.Declaration.Struct(doc, ann, mod, ident, tparams0, fields0, loc) =>
+      val tparams = visitTypeParams(tparams0)
+      val fields = fields0.map(visitField)
+      DesugaredAst.Declaration.Struct(doc, ann, mod, ident, tparams, fields, loc)
   }
 
   /**
@@ -188,9 +200,9 @@ object Desugar {
     * Desugars the given [[WeededAst.TypeConstraint]] `tconstr0`.
     */
   private def visitTypeConstraint(tconstr0: WeededAst.TypeConstraint): DesugaredAst.TypeConstraint = tconstr0 match {
-    case WeededAst.TypeConstraint(clazz, tpe0, loc) =>
+    case WeededAst.TypeConstraint(trt, tpe0, loc) =>
       val tpe = visitType(tpe0)
-      DesugaredAst.TypeConstraint(clazz, tpe, loc)
+      DesugaredAst.TypeConstraint(trt, tpe, loc)
   }
 
   /**
@@ -417,6 +429,15 @@ object Desugar {
     case WeededAst.Case(ident, tpe0, loc) =>
       val tpe = visitType(tpe0)
       DesugaredAst.Case(ident, tpe, loc)
+  }
+
+  /**
+   * Desugars the given [[WeededAst.StructField]] `field0`.
+   */
+  private def visitField(field0: WeededAst.StructField): DesugaredAst.StructField = field0 match {
+    case WeededAst.StructField(ident, tpe0, loc) =>
+      val tpe = visitType(tpe0)
+      DesugaredAst.StructField(ident, tpe, loc)
   }
 
   /**
@@ -681,6 +702,13 @@ object Desugar {
       val e = visitExp(exp)
       Expr.UncheckedMaskingCast(e, loc)
 
+    case WeededAst.Expr.Unsafe(exp, loc) =>
+      // We desugar an unsafe expression to an unchecked cast to pure.
+      val e = visitExp(exp)
+      val declaredType = None
+      val declaredEff = Some(DesugaredAst.Type.Pure(loc.asSynthetic))
+      Expr.UncheckedCast(e, declaredType, declaredEff, loc)
+
     case WeededAst.Expr.Without(exp, eff, loc) =>
       val e = visitExp(exp)
       Expr.Without(e, eff, loc)
@@ -701,6 +729,19 @@ object Desugar {
     case WeededAst.Expr.Do(op, exps, loc) =>
       val es = visitExps(exps)
       Expr.Do(op, es, loc)
+
+    case WeededAst.Expr.InvokeConstructor2(className, exps, loc) =>
+      val es = visitExps(exps)
+      Expr.InvokeConstructor2(className, es, loc)
+
+    case WeededAst.Expr.InvokeMethod2(exp, name, exps, loc) =>
+      val e = visitExp(exp)
+      val es = visitExps(exps)
+      Expr.InvokeMethod2(e, name, es, loc)
+
+    case WeededAst.Expr.InvokeStaticMethod2(className, methodName, exps, loc) =>
+      val es = visitExps(exps)
+      Expr.InvokeStaticMethod2(className, methodName, es, loc)
 
     case WeededAst.Expr.InvokeConstructor(className, exps, sig, loc) =>
       val es = visitExps(exps)
@@ -1093,7 +1134,7 @@ object Desugar {
 
     ts match {
       case Nil => // Case 1: No arguments.
-        val fparam = DesugaredAst.FormalParam(Name.Ident(loc0.sp1, "_", loc0.sp2), Ast.Modifiers.Empty, Some(DesugaredAst.Type.Unit(loc0)), loc0)
+        val fparam = DesugaredAst.FormalParam(Name.Ident("_", loc0), Ast.Modifiers.Empty, Some(DesugaredAst.Type.Unit(loc0)), loc0)
         val call = DesugaredAst.Expr.InvokeConstructor(className, Nil, Nil, loc0)
         val lambdaBody = jvmCast(call, tpe, eff, loc0)
         val e1 = DesugaredAst.Expr.Lambda(fparam, lambdaBody, loc0)
@@ -1103,15 +1144,15 @@ object Desugar {
         // Introduce a formal parameter (of appropriate type) for each declared argument.
         val fs = ts.zipWithIndex.map {
           case (tpe, index) =>
-            val id = Name.Ident(loc0.sp1, "a" + index, loc0.sp2)
+            val id = Name.Ident("a" + index, loc0)
             DesugaredAst.FormalParam(id, Ast.Modifiers.Empty, Some(tpe), loc0)
         }
 
         // Compute the argument to the method call.
         val as = ts.zipWithIndex.map {
           case (_, index) =>
-            val ident = Name.Ident(loc0.sp1, "a" + index, loc0.sp2)
-            DesugaredAst.Expr.Ambiguous(Name.mkQName(ident), loc0)
+            val ident = Name.Ident("a" + index, loc0)
+            DesugaredAst.Expr.Ambiguous(Name.QName(Name.RootNS, ident, ident.loc), loc0)
         }
 
         // Assemble the lambda expression.
@@ -1130,7 +1171,7 @@ object Desugar {
     // ignore redundant effect casts to IO
     val correctedEff = eff match {
       case None => None
-      case Some(DesugaredAst.Type.Ambiguous(Name.QName(_, Name.NName(_, Nil, _), Name.Ident(_, "IO", _), _), _)) => None
+      case Some(DesugaredAst.Type.Ambiguous(Name.QName(Name.NName(Nil, _), Name.Ident("IO", _), _), _)) => None
       case Some(v) => Some(v)
     }
     DesugaredAst.Expr.UncheckedCast(exp, Some(tpe), correctedEff, loc0)
@@ -1150,27 +1191,27 @@ object Desugar {
     val eff = eff0.map(visitType)
 
     // Compute the name of the let-bound variable.
-    val ident = ident0.getOrElse(Name.Ident(fqn0.loc.sp1, methodName, fqn0.loc.sp2))
+    val ident = ident0.getOrElse(Name.Ident(methodName, fqn0.loc))
 
     val receiverType = DesugaredAst.Type.Native(className, loc0)
 
     // Introduce a formal parameter for the object argument.
-    val objId = Name.Ident(loc0.sp1, "obj" + Flix.Delimiter, loc0.sp2)
+    val objId = Name.Ident("obj" + Flix.Delimiter, loc0)
     val objParam = DesugaredAst.FormalParam(objId, Ast.Modifiers.Empty, Some(receiverType), loc0)
-    val objExp = DesugaredAst.Expr.Ambiguous(Name.mkQName(objId), loc0)
+    val objExp = DesugaredAst.Expr.Ambiguous(Name.QName(Name.RootNS, objId, objId.loc), loc0)
 
     // Introduce a formal parameter (of appropriate type) for each declared argument.
     val fs = objParam :: ts.zipWithIndex.map {
       case (tpe, index) =>
-        val ident = Name.Ident(loc0.sp1, "a" + index + Flix.Delimiter, loc0.sp2)
+        val ident = Name.Ident("a" + index + Flix.Delimiter, loc0)
         DesugaredAst.FormalParam(ident, Ast.Modifiers.Empty, Some(tpe), loc0)
     }
 
     // Compute the argument to the method call.
     val as = objExp :: ts.zipWithIndex.map {
       case (_, index) =>
-        val ident = Name.Ident(loc0.sp1, "a" + index + Flix.Delimiter, loc0.sp2)
-        DesugaredAst.Expr.Ambiguous(Name.mkQName(ident), loc0)
+        val ident = Name.Ident("a" + index + Flix.Delimiter, loc0)
+        DesugaredAst.Expr.Ambiguous(Name.QName(Name.RootNS, ident, ident.loc), loc0)
     }
 
     // Assemble the lambda expression.
@@ -1194,11 +1235,11 @@ object Desugar {
     val eff = eff0.map(visitType)
 
     // Compute the name of the let-bound variable.
-    val ident = ident0.getOrElse(Name.Ident(fqn0.loc.sp1, methodName, fqn0.loc.sp2))
+    val ident = ident0.getOrElse(Name.Ident(methodName, fqn0.loc))
 
     ts match {
       case Nil => // Case 1: No arguments.
-        val fparam = DesugaredAst.FormalParam(Name.Ident(loc0.sp1, "_", loc0.sp2), Ast.Modifiers.Empty, Some(DesugaredAst.Type.Unit(loc0)), loc0)
+        val fparam = DesugaredAst.FormalParam(Name.Ident("_", loc0), Ast.Modifiers.Empty, Some(DesugaredAst.Type.Unit(loc0)), loc0)
         val call = DesugaredAst.Expr.InvokeStaticMethod(className, methodName, Nil, Nil, tpe, loc0)
         val lambdaBody = jvmCast(call, tpe, eff, loc0)
         val e1 = DesugaredAst.Expr.Lambda(fparam, lambdaBody, loc0)
@@ -1208,15 +1249,15 @@ object Desugar {
         // Introduce a formal parameter (of appropriate type) for each declared argument.
         val fs = ts.zipWithIndex.map {
           case (tpe, index) =>
-            val id = Name.Ident(loc0.sp1, "a" + index + Flix.Delimiter, loc0.sp2)
+            val id = Name.Ident("a" + index + Flix.Delimiter, loc0)
             DesugaredAst.FormalParam(id, Ast.Modifiers.Empty, Some(tpe), loc0)
         }
 
         // Compute the argument to the method call.
         val as = ts.zipWithIndex.map {
           case (_, index) =>
-            val ident = Name.Ident(loc0.sp1, "a" + index + Flix.Delimiter, loc0.sp2)
-            DesugaredAst.Expr.Ambiguous(Name.mkQName(ident), loc0)
+            val ident = Name.Ident("a" + index + Flix.Delimiter, loc0)
+            DesugaredAst.Expr.Ambiguous(Name.QName(Name.RootNS, ident, ident.loc), loc0)
         }
 
         // Assemble the lambda expression.
@@ -1239,8 +1280,8 @@ object Desugar {
     val tpe = visitType(tpe0)
     val eff = eff0.map(visitType)
 
-    val objectId = Name.Ident(loc0.sp1, "o" + Flix.Delimiter, loc0.sp2)
-    val objectExp = DesugaredAst.Expr.Ambiguous(Name.mkQName(objectId), loc0)
+    val objectId = Name.Ident("o" + Flix.Delimiter, loc0)
+    val objectExp = DesugaredAst.Expr.Ambiguous(Name.QName(Name.RootNS, objectId, objectId.loc), loc0)
     val objectParam = DesugaredAst.FormalParam(objectId, Ast.Modifiers.Empty, None, loc0)
     val call = DesugaredAst.Expr.GetField(className, fieldName, objectExp, loc0)
     val lambdaBody = jvmCast(call, tpe, eff, loc0)
@@ -1260,10 +1301,10 @@ object Desugar {
     val tpe = visitType(tpe0)
     val eff = eff0.map(visitType)
 
-    val objectId = Name.Ident(loc0.sp1, "o" + Flix.Delimiter, loc0.sp2)
-    val valueId = Name.Ident(loc0.sp1, "v" + Flix.Delimiter, loc0.sp2)
-    val objectExp = DesugaredAst.Expr.Ambiguous(Name.mkQName(objectId), loc0)
-    val valueExp = DesugaredAst.Expr.Ambiguous(Name.mkQName(valueId), loc0)
+    val objectId = Name.Ident("o" + Flix.Delimiter, loc0)
+    val valueId = Name.Ident("v" + Flix.Delimiter, loc0)
+    val objectExp = DesugaredAst.Expr.Ambiguous(Name.QName(Name.RootNS, objectId, objectId.loc), loc0)
+    val valueExp = DesugaredAst.Expr.Ambiguous(Name.QName(Name.RootNS, valueId, valueId.loc), loc0)
     val objectParam = DesugaredAst.FormalParam(objectId, Ast.Modifiers.Empty, None, loc0)
     val valueParam = DesugaredAst.FormalParam(valueId, Ast.Modifiers.Empty, None, loc0)
     val call = DesugaredAst.Expr.PutField(className, fieldName, objectExp, valueExp, loc0)
@@ -1284,7 +1325,7 @@ object Desugar {
     val tpe = visitType(tpe0)
     val eff = eff0.map(visitType)
 
-    val unitId = Name.Ident(loc0.sp1, "_", loc0.sp2)
+    val unitId = Name.Ident("_", loc0)
     val unitParam = DesugaredAst.FormalParam(unitId, Ast.Modifiers.Empty, Some(DesugaredAst.Type.Unit(loc0)), loc0)
     val call = DesugaredAst.Expr.GetStaticField(className, fieldName, loc0)
     val lambdaBody = jvmCast(call, tpe, eff, loc0)
@@ -1304,8 +1345,8 @@ object Desugar {
     val tpe = visitType(tpe0)
     val eff = eff0.map(visitType)
 
-    val valueId = Name.Ident(loc0.sp1, "v" + Flix.Delimiter, loc0.sp2)
-    val valueExp = DesugaredAst.Expr.Ambiguous(Name.mkQName(valueId), loc0)
+    val valueId = Name.Ident("v" + Flix.Delimiter, loc0)
+    val valueExp = DesugaredAst.Expr.Ambiguous(Name.QName(Name.RootNS, valueId, valueId.loc), loc0)
     val valueParam = DesugaredAst.FormalParam(valueId, Ast.Modifiers.Empty, None, loc0)
     val call = DesugaredAst.Expr.PutStaticField(className, fieldName, valueExp, loc0)
     val lambdaBody = jvmCast(call, tpe, eff, loc0)
@@ -1369,8 +1410,8 @@ object Desugar {
   private def desugarForEach(frags0: List[WeededAst.ForFragment], exp0: WeededAst.Expr, loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
     val fqnForEach = "Iterator.forEach"
     val fqnIterator = "Iterable.iterator"
-    val regIdent = Name.Ident(loc0.sp1, "reg" + Flix.Delimiter + flix.genSym.freshId(), loc0.sp2).asSynthetic
-    val regVar = DesugaredAst.Expr.Ambiguous(Name.mkQName(regIdent), loc0.asSynthetic)
+    val regIdent = Name.Ident("reg" + Flix.Delimiter + flix.genSym.freshId(), loc0.asSynthetic)
+    val regVar = DesugaredAst.Expr.Ambiguous(Name.QName(Name.RootNS, regIdent, regIdent.loc), loc0.asSynthetic)
 
     val foreachExp = frags0.foldRight(visitExp(exp0)) {
       case (WeededAst.ForFragment.Generator(pat1, exp1, loc1), acc) =>
@@ -1467,8 +1508,8 @@ object Desugar {
 
     // Make region variable
     val regionSym = "forEachYieldIteratorRegion" + Flix.Delimiter + flix.genSym.freshId()
-    val regionIdent = Name.Ident(loc0.sp1, regionSym, loc0.sp2).asSynthetic
-    val regionVar = DesugaredAst.Expr.Ambiguous(Name.mkQName(regionIdent), loc0)
+    val regionIdent = Name.Ident(regionSym, loc0.asSynthetic)
+    val regionVar = DesugaredAst.Expr.Ambiguous(Name.QName(Name.RootNS, regionIdent, regionIdent.loc), loc0)
 
     // Desugar yield-exp
     //    ... yield x
@@ -1642,7 +1683,7 @@ object Desugar {
 
     // Introduce a tmp% variable that holds the minimal model of the merge of the exps.
     val freshVar = flix.genSym.freshId()
-    val localVar = Name.Ident(SourceLocation.Unknown.sp1, s"tmp" + Flix.Delimiter + freshVar, SourceLocation.Unknown.sp2)
+    val localVar = Name.Ident(s"tmp" + Flix.Delimiter + freshVar, SourceLocation.Unknown)
 
     // Merge all the exps into one Datalog program value.
     val mergeExp = es.reduceRight[DesugaredAst.Expr] {
@@ -1654,7 +1695,7 @@ object Desugar {
     val bodyExp = idents0 match {
       case None =>
         // Case 1: No projections: Simply return the minimal model.
-        DesugaredAst.Expr.Ambiguous(Name.mkQName(localVar), loc0)
+        DesugaredAst.Expr.Ambiguous(Name.QName(Name.RootNS, localVar, localVar.loc), loc0)
 
       case Some(idents) =>
         // Case 2: A non-empty sequence of predicate symbols to project.
@@ -1662,7 +1703,7 @@ object Desugar {
         // Construct a list of each projection.
         val projectExps = idents.map {
           case ident =>
-            val varExp = DesugaredAst.Expr.Ambiguous(Name.mkQName(localVar), loc0)
+            val varExp = DesugaredAst.Expr.Ambiguous(Name.QName(Name.RootNS, localVar, localVar.loc), loc0)
             DesugaredAst.Expr.FixpointFilter(Name.Pred(ident.name, loc0), varExp, loc0)
         }
 
@@ -1709,7 +1750,7 @@ object Desugar {
     // Automatically fix all lattices atoms.
     val body = guard ::: from.map {
       case DesugaredAst.Predicate.Body.Atom(pred, Ast.Denotation.Latticenal, polarity, _, terms, loc) =>
-        DesugaredAst.Predicate.Body.Atom(pred, Ast.Denotation.Latticenal, polarity, Ast.Fixity.Fixed, terms, loc)
+        DesugaredAst.Predicate.Body.Atom(pred, Ast.Denotation.Latticenal, polarity, Fixity.Fixed, terms, loc)
       case pred => pred
     }
 
@@ -1763,10 +1804,10 @@ object Desugar {
     */
   private def mkLambdaMatch(pat0: DesugaredAst.Pattern, exp0: DesugaredAst.Expr, loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr.Lambda = {
     // The name of the lambda parameter.
-    val ident = Name.Ident(loc0.sp1, "pat" + Flix.Delimiter + flix.genSym.freshId(), loc0.sp2).asSynthetic
+    val ident = Name.Ident("pat" + Flix.Delimiter + flix.genSym.freshId(), loc0.asSynthetic)
 
     // Construct the body of the lambda expression.
-    val varOrRef = DesugaredAst.Expr.Ambiguous(Name.mkQName(ident), loc0)
+    val varOrRef = DesugaredAst.Expr.Ambiguous(Name.QName(Name.RootNS, ident, ident.loc), loc0)
     val rule = DesugaredAst.MatchRule(pat0, None, exp0)
 
     val fparam = DesugaredAst.FormalParam(ident, Ast.Modifiers.Empty, None, loc0)

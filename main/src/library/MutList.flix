@@ -663,7 +663,7 @@ mod MutList {
     /// Replaces all occurrences of the `src` with `dst` in the given mutable list `v`.
     ///
     pub def replace!(src: {src = a}, dst: {dst = a}, v: MutList[a, r]): Unit \ r with Eq[a] =
-        transform!(e -> if (e == src.src) dst.dst else e, v)
+        transform!(e -> if (e == src#src) dst#dst else e, v)
 
     ///
     /// Reverses the order of the elements in the given mutable list `v`.

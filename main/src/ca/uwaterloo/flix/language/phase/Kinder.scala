@@ -32,7 +32,7 @@ import scala.collection.immutable.SortedSet
 /**
   * Attributes kinds to the types in the AST.
   *
-  * For enums, traits, instances, and type aliases:
+  * For enums, structs, traits, instances, and type aliases:
   * Either:
   *   - type parameters are not annotated and are then assumed all to be Star, or
   *   - type parameters are all annotated with their kinds.
@@ -65,6 +65,8 @@ object Kinder {
 
         val enumsVal = ParOps.parTraverseValues(root.enums)(visitEnum(_, taenv, root))
 
+        val structsVal = ParOps.parTraverseValues(root.structs)(visitStruct(_, taenv, root))
+
         val restrictableEnumsVal = ParOps.parTraverseValues(root.restrictableEnums)(visitRestrictableEnum(_, taenv, root))
 
         val traitsVal = visitTraits(root, taenv, oldRoot, changeSet)
@@ -75,9 +77,9 @@ object Kinder {
 
         val effectsVal = ParOps.parTraverseValues(root.effects)(visitEffect(_, taenv, root))
 
-        mapN(enumsVal, restrictableEnumsVal, traitsVal, defsVal, instancesVal, effectsVal) {
-          case (enums, restrictableEnums, traits, defs, instances, effects) =>
-            KindedAst.Root(traits, instances, defs, enums, restrictableEnums, effects, taenv, root.uses, root.entryPoint, root.sources, root.names)
+        mapN(enumsVal, structsVal, restrictableEnumsVal, traitsVal, defsVal, instancesVal, effectsVal) {
+          case (enums, structs, restrictableEnums, traits, defs, instances, effects) =>
+            KindedAst.Root(traits, instances, defs, enums, structs, restrictableEnums, effects, taenv, root.uses, root.entryPoint, root.sources, root.names)
         }
     }
 
@@ -106,6 +108,41 @@ object Kinder {
           }
       }
   }
+
+  /**
+   * Performs kinding on the given struct.
+   */
+  private def visitStruct(struct0: ResolvedAst.Declaration.Struct, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Struct, KindError] = struct0 match {
+    case ResolvedAst.Declaration.Struct(doc, ann, mod, sym, tparams0, fields0, loc) =>
+      // if not annotated tparams are assumed to be Star except the last one which is Eff
+      val tparams1 = tparams0 match {
+        case ResolvedAst.TypeParams.Kinded(t) => ResolvedAst.TypeParams.Kinded(t)
+        case ResolvedAst.TypeParams.Unkinded(t) =>
+          val tparams = t.init.map(tparam => ResolvedAst.TypeParam.Kinded(tparam.name, tparam.sym, Kind.Star, tparam.loc)) :+ ResolvedAst.TypeParam.Kinded(t.last.name, t.last.sym, Kind.Eff, t.last.loc)
+          ResolvedAst.TypeParams.Kinded(tparams)
+      }
+      val kenv0 = getKindEnvFromTypeParamsDefaultStar(tparams1)
+      val kenvVal = kenv0 + (tparams1.tparams.last.sym -> Kind.Eff)
+
+      flatMapN(kenvVal) {
+        case kenv =>
+          val tparamsVal = traverse(tparams1.tparams)(visitTypeParam(_, kenv))
+
+          flatMapN(tparamsVal) {
+            case tparams =>
+              val targs = tparams.map(tparam => Type.Var(tparam.sym, tparam.loc.asSynthetic))
+              val tpe = Type.mkApply(Type.Cst(TypeConstructor.Struct(sym, getStructKind(struct0)), sym.loc.asSynthetic), targs, sym.loc.asSynthetic)
+              val fieldsVal = traverse(fields0) {
+                case field0 => mapN(visitStructField(field0, tparams, tpe, kenv, taenv, root)) {
+                  field => field.sym -> field
+                }
+              }
+              mapN(fieldsVal) {
+                case fields => KindedAst.Struct(doc, ann, mod, sym, tparams, fields.toMap, tpe, loc)
+              }
+          }
+      }
+    }
 
   /**
     * Performs kinding on the given restrictable enum.
@@ -178,6 +215,18 @@ object Kinder {
           KindedAst.Case(sym, tpe, sc, loc)
       }
   }
+
+  /**
+   * Performs kinding on the given struct field under the given kind environment.
+   */
+  private def visitStructField(field0: ResolvedAst.Declaration.StructField, tparams: List[KindedAst.TypeParam], resTpe: Type, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.StructField, KindError] = field0 match {
+    case ResolvedAst.Declaration.StructField(sym, tpe0, loc) =>
+      val tpeVal = visitType(tpe0, Kind.Star, kenv, taenv, root)
+      mapN(tpeVal) {
+        case tpe =>
+          KindedAst.StructField(sym, tpe, loc)
+      }
+    }
 
   /**
     * Performs kinding on the given enum case under the given kind environment.
@@ -362,7 +411,7 @@ object Kinder {
     */
   private def visitAssocTypeDef(d0: ResolvedAst.Declaration.AssocTypeDef, trtKind: Kind, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.AssocTypeDef, KindError] = d0 match {
     case ResolvedAst.Declaration.AssocTypeDef(doc, mod, symUse, arg0, tpe0, loc) =>
-      val trt = root.traits(symUse.sym.clazz)
+      val trt = root.traits(symUse.sym.trt)
       val assocSig = trt.assocs.find(assoc => assoc.sym == symUse.sym).get
       val tpeKind = assocSig.kind
       val argVal = visitType(arg0, trtKind, kenv, taenv, root)
@@ -602,7 +651,9 @@ object Kinder {
     case ResolvedAst.Expr.ArrayLength(base0, loc) =>
       val baseVal = visitExp(base0, kenv0, taenv, henv0, root)
       mapN(baseVal) {
-        base => KindedAst.Expr.ArrayLength(base, loc)
+        base =>
+          val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
+          KindedAst.Expr.ArrayLength(base, evar, loc)
       }
 
     case ResolvedAst.Expr.VectorLit(exps, loc) =>
@@ -735,6 +786,36 @@ object Kinder {
       val tvar = Type.freshVar(Kind.Star, loc)
       mapN(argsVal) {
         case args => KindedAst.Expr.Do(op, args, tvar, loc)
+      }
+
+    case ResolvedAst.Expr.InvokeConstructor2(clazz, exps0, loc) =>
+      val expsVal = traverse(exps0)(visitExp(_, kenv0, taenv, henv0, root))
+      mapN(expsVal) {
+        exps =>
+          val cvar = Type.freshVar(Kind.JvmConstructorOrMethod, loc.asSynthetic)
+          val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
+          KindedAst.Expr.InvokeConstructor2(clazz, exps, cvar, evar, loc)
+      }
+
+    case ResolvedAst.Expr.InvokeMethod2(exp0, methodName, exps0, loc) =>
+      val expVal = visitExp(exp0, kenv0, taenv, henv0, root)
+      val expsVal = traverse(exps0)(visitExp(_, kenv0, taenv, henv0, root))
+      mapN(expVal, expsVal) {
+        case (exp, exps) =>
+          val mvar = Type.freshVar(Kind.JvmConstructorOrMethod, loc.asSynthetic)
+          val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+          val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
+          KindedAst.Expr.InvokeMethod2(exp, methodName, exps, mvar, tvar, evar, loc)
+      }
+
+    case ResolvedAst.Expr.InvokeStaticMethod2(clazz, methodName, exps0, loc) =>
+      val expsVal = traverse(exps0)(visitExp(_, kenv0, taenv, henv0, root))
+      mapN(expsVal) {
+        exps =>
+          val mvar = Type.freshVar(Kind.JvmConstructorOrMethod, loc.asSynthetic)
+          val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+          val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
+          KindedAst.Expr.InvokeStaticMethod2(clazz, methodName, exps, mvar, tvar, evar, loc)
       }
 
     case ResolvedAst.Expr.InvokeConstructor(constructor, args0, loc) =>
@@ -1165,7 +1246,7 @@ object Kinder {
       }
 
     case UnkindedType.AssocType(cst, arg0, loc) =>
-      val trt = root.traits(cst.sym.clazz)
+      val trt = root.traits(cst.sym.trt)
       // TODO ASSOC-TYPES maybe have dedicated field in root for assoc types
       trt.assocs.find(_.sym == cst.sym).get match {
         case ResolvedAst.Declaration.AssocTypeSig(_, _, _, _, k0, _, _) =>
@@ -1200,6 +1281,13 @@ object Kinder {
         case None => Validation.toHardFailure(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc))
       }
 
+    case UnkindedType.Struct(sym, loc) =>
+      val kind = getStructKind(root.structs(sym))
+      unify(kind, expectedKind) match {
+        case Some(k) => Validation.success(Type.Cst(TypeConstructor.Struct(sym, k), loc))
+        case None => Validation.toHardFailure(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc))
+      }
+
     case UnkindedType.RestrictableEnum(sym, loc) =>
       val kind = getRestrictableEnumKind(root.restrictableEnums(sym))
       unify(kind, expectedKind) match {
@@ -1227,7 +1315,7 @@ object Kinder {
             // Case 1:  We have an explicit case kind.
             case Some(Kind.CaseSet(sym)) => Validation.success(Type.Cst(TypeConstructor.CaseSet(cases.to(SortedSet), sym), loc))
             // Case 2: We have a generic case kind. Error.
-            case Some(Kind.WildCaseSet) => Validation.toHardFailure(KindError.UninferrableKind(loc))
+            case Some(Kind.WildCaseSet) => Validation.toSoftFailure(Type.Cst(TypeConstructor.Error(Kind.Error), loc), KindError.UninferrableKind(loc))
             // Case 3: Unexpected kind. Error.
             case None => Validation.toHardFailure(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = actualKind, loc))
 
@@ -1456,7 +1544,7 @@ object Kinder {
     */
   private def inferEqualityConstraint(econstr: ResolvedAst.EqualityConstraint, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindEnv, KindError] = econstr match {
     case ResolvedAst.EqualityConstraint(Ast.AssocTypeConstructor(sym, _), tpe1, tpe2, _) =>
-      val trt = root.traits(sym.clazz)
+      val trt = root.traits(sym.trt)
       val kind1 = getTraitKind(trt)
       val kind2 = trt.assocs.find(_.sym == sym).get.kind
       val kenv1Val = inferType(tpe1, kind1, kenv, taenv, root)
@@ -1515,7 +1603,7 @@ object Kinder {
       }
 
     case UnkindedType.AssocType(cst, arg, _) =>
-      val trt = root.traits(cst.sym.clazz)
+      val trt = root.traits(cst.sym.trt)
       val kind = getTraitKind(trt)
       inferType(arg, kind, kenv0, taenv, root)
 
@@ -1532,6 +1620,16 @@ object Kinder {
 
     case UnkindedType.Enum(sym, _) =>
       val tyconKind = getEnumKind(root.enums(sym))
+      val args = Kind.kindArgs(tyconKind)
+
+      fold(tpe.typeArguments.zip(args), KindEnv.empty) {
+        case (acc, (targ, kind)) => flatMapN(inferType(targ, kind, kenv0, taenv, root)) {
+          kenv => acc ++ kenv
+        }
+      }
+
+    case UnkindedType.Struct(sym, _) =>
+      val tyconKind = getStructKind(root.structs(sym))
       val args = Kind.kindArgs(tyconKind)
 
       fold(tpe.typeArguments.zip(args), KindEnv.empty) {
@@ -1665,6 +1763,24 @@ object Kinder {
     */
   private def getEnumKind(enum0: ResolvedAst.Declaration.Enum)(implicit flix: Flix): Kind = enum0 match {
     case ResolvedAst.Declaration.Enum(_, _, _, _, tparams, _, _, _) =>
+      val kenv = getKindEnvFromTypeParamsDefaultStar(tparams)
+      tparams.tparams.foldRight(Kind.Star: Kind) {
+        case (tparam, acc) => kenv.map(tparam.sym) ->: acc
+      }
+  }
+
+  /**
+   * Gets the kind of the struct.
+   */
+  private def getStructKind(struct0: ResolvedAst.Declaration.Struct)(implicit flix: Flix): Kind = struct0 match {
+    case ResolvedAst.Declaration.Struct(_, _, _, _, tparams0, _, _) =>
+      // tparams default to zero except for the region param
+      val tparams = tparams0 match {
+        case ResolvedAst.TypeParams.Kinded(t) => ResolvedAst.TypeParams.Kinded(t)
+        case ResolvedAst.TypeParams.Unkinded(t) =>
+          val tparams = t.init.map(tparam => ResolvedAst.TypeParam.Kinded(tparam.name, tparam.sym, Kind.Star, tparam.loc)) :+ ResolvedAst.TypeParam.Kinded(t.last.name, t.last.sym, Kind.Eff, t.last.loc)
+          ResolvedAst.TypeParams.Kinded(tparams)
+      }
       val kenv = getKindEnvFromTypeParamsDefaultStar(tparams)
       tparams.tparams.foldRight(Kind.Star: Kind) {
         case (tparam, acc) => kenv.map(tparam.sym) ->: acc

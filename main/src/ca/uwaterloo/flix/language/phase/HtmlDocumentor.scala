@@ -1166,7 +1166,7 @@ object HtmlDocumentor {
 
     sb.append("<span> <span class='keyword'>where</span> ")
     docList(econsts.sortBy(_.loc)) { e =>
-      docTraitName(e.cst.sym.clazz)
+      docTraitName(e.cst.sym.trt)
       sb.append(".")
       sb.append(esc(e.cst.sym.name))
       sb.append("[")
@@ -1470,7 +1470,7 @@ object HtmlDocumentor {
     */
   private def createLink(loc: SourceLocation): String = {
     // TODO make it also work for local user code
-    s"$LibraryGitHub${escUrl(loc.source.name)}#L${loc.beginLine}-L${loc.beginLine}"
+    s"$LibraryGitHub${escUrl(loc.source.name)}#L${loc.beginLine}-L${loc.endLine}"
   }
 
   /**

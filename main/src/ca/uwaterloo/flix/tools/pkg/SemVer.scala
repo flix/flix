@@ -25,23 +25,22 @@ object SemVer {
       .orElseBy(_.minor)
       .orElseBy(_.patch)
 
+  def ofString(input: String): Option[SemVer] = {
+    val numPattern = raw"0|[1-9]\d*".r
+    val pattern = raw"^($numPattern)\.($numPattern)\.($numPattern)$$".r
+    input match {
+      case pattern(major, minor, patch) =>
+        Some(SemVer(major.toInt, minor.toInt, patch.toInt))
+      case _ => None
+    }
+  }
 }
 
 /**
   * A semantic version number.
   */
-case class SemVer(major: Int, minor: Int, patch: Option[Int], buildDot: Option[Int], buildDash: Option[String]) {
-  override def toString: String = patch match {
-    case None => s"$major.$minor"
-    case Some(patch) => buildDot match {
-      case None => buildDash match {
-        case Some(build) => s"$major.$minor.$patch-$build"
-        case None => s"$major.$minor.$patch"
-      }
-      case Some(build) => s"$major.$minor.$patch.$build"
-    }
-
-  }
+case class SemVer(major: Int, minor: Int, patch: Int) {
+  override def toString: String = s"$major.$minor.$patch"
 
   /**
     * Of the given `versions`, get the newest version which is a major update, if one exists.
@@ -92,6 +91,6 @@ case class SemVer(major: Int, minor: Int, patch: Option[Int], buildDot: Option[I
     versions.filter(v =>
       v.major == major
         && v.minor == minor
-        && (v.patch zip patch).exists { case (vp, cvp) => vp > cvp }
+        && v.patch > patch
     ).maxOption
 }

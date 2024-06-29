@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Source}
+import ca.uwaterloo.flix.language.ast.shared.Fixity
 import ca.uwaterloo.flix.util.collection.MultiMap
 
 object NamedAst {
@@ -48,6 +49,8 @@ object NamedAst {
 
     case class Enum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: TypeParams, derives: Derivations, cases: List[Declaration.Case], loc: SourceLocation) extends Declaration
 
+    case class Struct(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.StructSym, tparams: TypeParams, fields: List[Declaration.StructField], loc: SourceLocation) extends Declaration
+
     case class RestrictableEnum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.RestrictableEnumSym, index: TypeParam, tparams: TypeParams, derives: Derivations, cases: List[Declaration.RestrictableCase], loc: SourceLocation) extends Declaration
 
     case class TypeAlias(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.TypeAliasSym, tparams: TypeParams, tpe: Type, loc: SourceLocation) extends Declaration
@@ -61,6 +64,8 @@ object NamedAst {
     case class Op(sym: Symbol.OpSym, spec: Spec) extends Declaration
 
     case class Case(sym: Symbol.CaseSym, tpe: Type, loc: SourceLocation) extends Declaration
+
+    case class StructField(sym: Symbol.StructFieldSym, tpe: Type, loc: SourceLocation) extends Declaration
 
     case class RestrictableCase(sym: Symbol.RestrictableCaseSym, tpe: Type, loc: SourceLocation) extends Declaration
   }
@@ -163,7 +168,7 @@ object NamedAst {
 
     case class Ascribe(exp: Expr, expectedType: Option[Type], expectedEff: Option[Type], loc: SourceLocation) extends Expr
 
-    case class InstanceOf(exp: Expr, className: String, loc: SourceLocation) extends Expr
+    case class InstanceOf(exp: Expr, className: Name.Ident, loc: SourceLocation) extends Expr
 
     case class CheckedCast(cast: Ast.CheckedCastType, exp: Expr, loc: SourceLocation) extends Expr
 
@@ -178,6 +183,12 @@ object NamedAst {
     case class TryWith(exp: Expr, eff: Name.QName, rules: List[HandlerRule], loc: SourceLocation) extends Expr
 
     case class Do(op: Name.QName, exps: List[Expr], loc: SourceLocation) extends Expr
+
+    case class InvokeConstructor2(clazzName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
+
+    case class InvokeMethod2(exp: Expr, methodName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
+
+    case class InvokeStaticMethod2(clazzName: Name.Ident, methodName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
 
     case class InvokeConstructor(className: String, exps: List[Expr], sig: List[Type], loc: SourceLocation) extends Expr
 
@@ -289,7 +300,7 @@ object NamedAst {
 
     object Body {
 
-      case class Atom(pred: Name.Pred, den: Denotation, polarity: Ast.Polarity, fixity: Ast.Fixity, terms: List[Pattern], loc: SourceLocation) extends Predicate.Body
+      case class Atom(pred: Name.Pred, den: Denotation, polarity: Ast.Polarity, fixity: Fixity, terms: List[Pattern], loc: SourceLocation) extends Predicate.Body
 
       case class Functional(idents: List[Name.Ident], exp: Expr, loc: SourceLocation) extends Predicate.Body
 
@@ -437,7 +448,7 @@ object NamedAst {
 
   }
 
-  case class TypeConstraint(clazz: Name.QName, tpe: Type, loc: SourceLocation)
+  case class TypeConstraint(trt: Name.QName, tpe: Type, loc: SourceLocation)
 
   case class EqualityConstraint(qname: Name.QName, tpe1: Type, tpe2: Type, loc: SourceLocation)
 

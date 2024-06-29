@@ -314,7 +314,7 @@ mod Nel {
     /// Returns `l` with every occurrence of `src` replaced by `dst`.
     ///
     pub def replace(src: {src = a}, dst: {dst = a}, l: Nel[a]): Nel[a] with Eq[a] =
-        map(e -> if (e == src.src) dst.dst else e, l)
+        map(e -> if (e == src#src) dst#dst else e, l)
 
     ///
     /// Returns all permutations of `l` in lexicographical order by element indices in `l`.

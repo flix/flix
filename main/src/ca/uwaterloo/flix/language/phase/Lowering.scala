@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.language.ast.Ast.Denotation.{Latticenal, Relational}
 import ca.uwaterloo.flix.language.ast.Ast._
 import ca.uwaterloo.flix.language.ast.Type.eraseAliases
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
+import ca.uwaterloo.flix.language.ast.shared.Fixity
 import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, Kind, LoweredAst, Name, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugLoweredAst
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
@@ -151,6 +152,7 @@ object Lowering {
     val sigs = ParOps.parMapValues(root.sigs)(visitSig)
     val instances = ParOps.parMapValues(root.instances)(insts => insts.map(visitInstance))
     val enums = ParOps.parMapValues(root.enums)(visitEnum)
+    val structs = Map.empty[Symbol.StructSym, LoweredAst.Struct]
     val restrictableEnums = ParOps.parMapValues(root.restrictableEnums)(visitRestrictableEnum)
     val effects = ParOps.parMapValues(root.effects)(visitEffect)
     val aliases = ParOps.parMapValues(root.typeAliases)(visitTypeAlias)
@@ -163,7 +165,7 @@ object Lowering {
       case (_, v) => v.sym -> v
     }
 
-    LoweredAst.Root(traits, instances, sigs, defs, newEnums, effects, aliases, root.entryPoint, root.reachable, root.sources, root.traitEnv, root.eqEnv)
+    LoweredAst.Root(traits, instances, sigs, defs, newEnums, structs, effects, aliases, root.entryPoint, root.reachable, root.sources, root.traitEnv, root.eqEnv)
   }
 
   /**
@@ -1219,7 +1221,7 @@ object Lowering {
   /**
     * Constructs a `Fixpoint/Ast/Datalog.Fixity` from the given fixity `f`.
     */
-  private def mkFixity(f: Ast.Fixity, loc: SourceLocation): LoweredAst.Expr = f match {
+  private def mkFixity(f: Fixity, loc: SourceLocation): LoweredAst.Expr = f match {
     case Fixity.Loose =>
       val innerExp = LoweredAst.Expr.Cst(Ast.Constant.Unit, Type.Unit, loc)
       mkTag(Enums.Fixity, "Loose", innerExp, Types.Fixity, loc)

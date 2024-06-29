@@ -40,17 +40,6 @@ import scala.collection.mutable
 object Resolver {
 
   /**
-    * Symbols of traits that are derivable.
-    */
-  private val EqSym = new Symbol.TraitSym(Nil, "Eq", SourceLocation.Unknown)
-  private val OrderSym = new Symbol.TraitSym(Nil, "Order", SourceLocation.Unknown)
-  private val ToStringSym = new Symbol.TraitSym(Nil, "ToString", SourceLocation.Unknown)
-  private val HashSym = new Symbol.TraitSym(Nil, "Hash", SourceLocation.Unknown)
-  private val SendableSym = new Symbol.TraitSym(Nil, "Sendable", SourceLocation.Unknown)
-
-  val DerivableSyms: List[Symbol.TraitSym] = List(EqSym, OrderSym, ToStringSym, HashSym, SendableSym)
-
-  /**
     * Java classes for primitives and Object
     */
   private val Int = classOf[Int]
@@ -121,6 +110,7 @@ object Resolver {
                   table.instances.m, // TODO NS-REFACTOR use ListMap elsewhere for this too
                   table.defs,
                   table.enums,
+                  table.structs,
                   table.restrictableEnums,
                   table.effects,
                   table.typeAliases,
@@ -151,6 +141,7 @@ object Resolver {
     case inst: ResolvedAst.Declaration.Instance => SymbolTable.empty.addInstance(inst)
     case defn: ResolvedAst.Declaration.Def => SymbolTable.empty.addDef(defn)
     case enum: ResolvedAst.Declaration.Enum => SymbolTable.empty.addEnum(enum)
+    case struct: ResolvedAst.Declaration.Struct => SymbolTable.empty.addStruct(struct)
     case enum: ResolvedAst.Declaration.RestrictableEnum => SymbolTable.empty.addRestrictableEnum(enum)
     case alias: ResolvedAst.Declaration.TypeAlias => SymbolTable.empty.addTypeAlias(alias)
     case effect: ResolvedAst.Declaration.Effect => SymbolTable.empty.addEffect(effect)
@@ -276,6 +267,7 @@ object Resolver {
     case UnkindedType.CaseUnion(tpe1, tpe2, loc) => getAliasUses(tpe1) ::: getAliasUses(tpe2)
     case UnkindedType.CaseIntersection(tpe1, tpe2, loc) => getAliasUses(tpe1) ::: getAliasUses(tpe2)
     case _: UnkindedType.Enum => Nil
+    case _: UnkindedType.Struct => Nil
     case _: UnkindedType.RestrictableEnum => Nil
     case _: UnkindedType.Error => Nil
     case alias: UnkindedType.Alias => throw InternalCompilerException("unexpected applied alias", alias.loc)
@@ -368,6 +360,8 @@ object Resolver {
       resolveDef(defn, None, env0, taenv, ns0, root)
     case enum@NamedAst.Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc) =>
       resolveEnum(enum, env0, taenv, ns0, root)
+    case struct@NamedAst.Declaration.Struct(_, _, _, _, _, _, _) =>
+      resolveStruct(struct, env0, taenv, ns0, root)
     case enum@NamedAst.Declaration.RestrictableEnum(doc, ann, mod, sym, index, tparams, derives, cases, loc) =>
       resolveRestrictableEnum(enum, env0, taenv, ns0, root)
     case NamedAst.Declaration.TypeAlias(doc, ann, mod, sym, tparams, tpe, loc) =>
@@ -377,6 +371,7 @@ object Resolver {
     case op@NamedAst.Declaration.Op(sym, spec) => throw InternalCompilerException("unexpected op", sym.loc)
     case NamedAst.Declaration.Sig(sym, spec, exp) => throw InternalCompilerException("unexpected sig", sym.loc)
     case NamedAst.Declaration.Case(sym, tpe, _) => throw InternalCompilerException("unexpected case", sym.loc)
+    case NamedAst.Declaration.StructField(sym, tpe, _) => throw InternalCompilerException("unexpected struct field", sym.loc)
     case NamedAst.Declaration.RestrictableCase(sym, tpe, _) => throw InternalCompilerException("unexpected case", sym.loc)
     case NamedAst.Declaration.AssocTypeDef(doc, mod, ident, args, tpe, loc) => throw InternalCompilerException("unexpected associated type definition", ident.loc)
     case NamedAst.Declaration.AssocTypeSig(doc, mod, sym, tparams, kind, tpe, loc) => throw InternalCompilerException("unexpected associated type signature", sym.loc)
@@ -571,6 +566,23 @@ object Resolver {
   }
 
   /**
+   * Performs name resolution on the given struct `s0` in the given namespace `ns0`.
+   */
+  def resolveStruct(s0: NamedAst.Declaration.Struct, env0: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration.Struct, ResolutionError] = s0 match {
+    case NamedAst.Declaration.Struct(doc, ann, mod, sym, tparams0, fields0, loc) =>
+      val tparamsVal = resolveTypeParams(tparams0, env0, ns0, root)
+      flatMapN(tparamsVal) {
+        case tparams =>
+          val env = env0 ++ mkTypeParamEnv(tparams.tparams)
+          val fieldsVal = traverse(fields0)(resolveStructField(_, env, taenv, ns0, root))
+          mapN(fieldsVal) {
+            case (fields) =>
+              ResolvedAst.Declaration.Struct(doc, ann, mod, sym, tparams, fields, loc)
+          }
+      }
+  }
+
+  /**
     * Performs name resolution on the given restrictable enum `e0` in the given namespace `ns0`.
     */
   def resolveRestrictableEnum(e0: NamedAst.Declaration.RestrictableEnum, env0: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration.RestrictableEnum, ResolutionError] = e0 match {
@@ -597,6 +609,17 @@ object Resolver {
       val tpeVal = resolveType(tpe0, Wildness.ForbidWild, env, taenv, ns0, root)
       mapN(tpeVal) {
         tpe => ResolvedAst.Declaration.Case(sym, tpe, loc)
+      }
+  }
+
+  /**
+    * Performs name resolution on the given struct field `field0` in the given namespace `ns0`.
+    */
+  private def resolveStructField(field0: NamedAst.Declaration.StructField, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration.StructField, ResolutionError] = field0 match {
+    case NamedAst.Declaration.StructField(sym, tpe0, loc) =>
+      val tpeVal = resolveType(tpe0, Wildness.ForbidWild, env, taenv, ns0, root)
+      mapN(tpeVal) {
+        tpe => ResolvedAst.Declaration.StructField(sym, tpe, loc)
       }
   }
 
@@ -713,7 +736,7 @@ object Resolver {
       val symVal = trt.assocs.collectFirst {
         case NamedAst.Declaration.AssocTypeSig(_, _, sym, _, _, _, _) if sym.name == ident.name => sym
       } match {
-        case None => Validation.toHardFailure(ResolutionError.UndefinedAssocType(Name.mkQName(ident), ident.loc))
+        case None => Validation.toHardFailure(ResolutionError.UndefinedAssocType(Name.QName(Name.RootNS, ident, ident.loc), ident.loc))
         case Some(sym) => Validation.success(sym)
       }
       mapN(symVal, argVal, tpeVal) {
@@ -1054,6 +1077,25 @@ object Resolver {
           Validation.success(ResolvedAst.Expr.Cst(cst, loc))
 
         case app@NamedAst.Expr.Apply(NamedAst.Expr.Ambiguous(qname, innerLoc), exps, outerLoc) =>
+          // Special Case: We must check if we have a static method call, i.e. ClassName.methodName().
+          if (qname.namespace.idents.length == 1) {
+            // We may have an imported class name.
+            val className = qname.namespace.idents.head
+            env0.get(className.name) match {
+              case Some(List(Resolution.JavaClass(clazz))) =>
+                // We have a static method call.
+                val methodName = qname.ident
+                val expsVal = traverse(exps)(visitExp(_, env0))
+                mapN(expsVal) {
+                  case es =>
+                    // Returns out of visitExp
+                    return Validation.success(ResolvedAst.Expr.InvokeStaticMethod2(clazz, methodName, es, outerLoc))
+                }
+              case _ =>
+                // Fallthrough to below.
+            }
+          }
+
           flatMapN(lookupQName(qname, env0, ns0, root)) {
             case ResolvedQName.Def(defn) => visitApplyDef(app, defn, exps, env0, innerLoc, outerLoc)
             case ResolvedQName.Sig(sig) => visitApplySig(app, sig, exps, env0, innerLoc, outerLoc)
@@ -1333,11 +1375,14 @@ object Resolver {
           }
 
         case NamedAst.Expr.InstanceOf(exp, className, loc) =>
-          lookupJvmClass(className, loc) match {
-            case Result.Ok(clazz) => mapN(visitExp(exp, env0)) {
-              e => ResolvedAst.Expr.InstanceOf(e, clazz, loc)
+          flatMapN(visitExp(exp, env0)) {
+            case e => env0.get(className.name) match {
+              case Some(List(Resolution.JavaClass(clazz))) =>
+                Validation.success(ResolvedAst.Expr.InstanceOf(e, clazz, loc))
+              case _ =>
+                val m = ResolutionError.UndefinedJvmClass(className.name, "", loc)
+                Validation.toSoftFailure(ResolvedAst.Expr.Error(m), m)
             }
-            case Result.Err(e) => Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
           }
 
         case NamedAst.Expr.CheckedCast(c, exp, loc) =>
@@ -1364,7 +1409,7 @@ object Resolver {
           val rulesVal = traverse(rules) {
             case NamedAst.CatchRule(sym, className, body) =>
               val env = env0 ++ mkVarEnv(sym)
-              val clazzVal = lookupJvmClass(className, sym.loc).toValidation
+              val clazzVal = lookupJvmClass2(className, env0, sym.loc).toValidation
               val bVal = visitExp(body, env)
               mapN(clazzVal, bVal) {
                 case (clazz, b) => ResolvedAst.CatchRule(sym, clazz, b)
@@ -1429,6 +1474,38 @@ object Resolver {
                   val opUse = Ast.OpSymUse(o.sym, op.loc)
                   ResolvedAst.Expr.Do(opUse, es, loc)
               }
+          }
+
+        case NamedAst.Expr.InvokeConstructor2(className, exps, loc) =>
+          val esVal = traverse(exps)(visitExp(_, env0))
+          flatMapN(esVal) {
+            es => env0.get(className.name) match {
+              case Some(List(Resolution.JavaClass(clazz))) =>
+                Validation.success(ResolvedAst.Expr.InvokeConstructor2(clazz, es, loc))
+              case _ =>
+                val m = ResolutionError.UndefinedJvmClass(className.name, "", loc)
+                Validation.toSoftFailure(ResolvedAst.Expr.Error(m), m)
+            }
+          }
+
+        case NamedAst.Expr.InvokeMethod2(exp, name, exps, loc) =>
+          val eVal = visitExp(exp, env0)
+          val esVal = traverse(exps)(visitExp(_, env0))
+          mapN(eVal, esVal) {
+            case (e, es) =>
+              ResolvedAst.Expr.InvokeMethod2(e, name, es, loc)
+          }
+
+        case NamedAst.Expr.InvokeStaticMethod2(className, methodName, exps, loc) =>
+          val esVal = traverse(exps)(visitExp(_, env0))
+          flatMapN(esVal) {
+            es => env0.get(className.name) match {
+              case Some(List(Resolution.JavaClass(clazz))) =>
+                Validation.success(ResolvedAst.Expr.InvokeStaticMethod2(clazz, methodName, es, loc))
+              case _ =>
+                val m = ResolutionError.UndefinedJvmClass(className.name, "", loc)
+                Validation.toSoftFailure(ResolvedAst.Expr.Error(m), m)
+            }
           }
 
         case NamedAst.Expr.InvokeConstructor(className, args, sig, loc) =>
@@ -2161,7 +2238,7 @@ object Resolver {
     opOpt match {
       case None =>
         val nname = eff.sym.namespace :+ eff.sym.name
-        val qname = Name.mkQName(nname, ident.name, SourcePosition.Unknown, SourcePosition.Unknown)
+        val qname = Name.mkQName(nname, ident.name, SourceLocation.Unknown)
         Validation.toHardFailure(ResolutionError.UndefinedOp(qname, ident.loc))
       case Some(op) =>
         Validation.success(op)
@@ -2277,6 +2354,7 @@ object Resolver {
         case typeName =>
           lookupType(qname, env, ns0, root) match {
             case TypeLookupResult.Enum(enum) => getEnumTypeIfAccessible(enum, ns0, loc)
+            case TypeLookupResult.Struct(struct) => getStructTypeIfAccessible(struct, ns0, loc)
             case TypeLookupResult.RestrictableEnum(enum) => getRestrictableEnumTypeIfAccessible(enum, ns0, loc)
             case TypeLookupResult.TypeAlias(typeAlias) => getTypeAliasTypeIfAccessible(typeAlias, ns0, root, loc)
             case TypeLookupResult.Effect(eff) => getEffectTypeIfAccessible(eff, ns0, root, loc)
@@ -2291,6 +2369,7 @@ object Resolver {
         // Disambiguate type.
         lookupType(qname, env, ns0, root) match {
           case TypeLookupResult.Enum(enum) => getEnumTypeIfAccessible(enum, ns0, loc)
+          case TypeLookupResult.Struct(struct) => getStructTypeIfAccessible(struct, ns0, loc)
           case TypeLookupResult.RestrictableEnum(enum) => getRestrictableEnumTypeIfAccessible(enum, ns0, loc)
           case TypeLookupResult.TypeAlias(typeAlias) => getTypeAliasTypeIfAccessible(typeAlias, ns0, root, loc)
           case TypeLookupResult.Effect(eff) => getEffectTypeIfAccessible(eff, ns0, root, loc)
@@ -2523,6 +2602,11 @@ object Resolver {
           resolvedArgs => UnkindedType.mkApply(baseType, resolvedArgs, tpe0.loc)
         }
 
+      case _: UnkindedType.Struct =>
+        mapN(traverse(targs)(finishResolveType(_, taenv))) {
+          resolvedArgs => UnkindedType.mkApply(baseType, resolvedArgs, tpe0.loc)
+        }
+
       case _: UnkindedType.RestrictableEnum =>
         mapN(traverse(targs)(finishResolveType(_, taenv))) {
           resolvedArgs => UnkindedType.mkApply(baseType, resolvedArgs, tpe0.loc)
@@ -2602,6 +2686,7 @@ object Resolver {
       */
     def orElse(other: => TypeLookupResult): TypeLookupResult = this match {
       case res: TypeLookupResult.Enum => res
+      case res: TypeLookupResult.Struct => res
       case res: TypeLookupResult.RestrictableEnum => res
       case res: TypeLookupResult.TypeAlias => res
       case res: TypeLookupResult.Effect => res
@@ -2616,6 +2701,11 @@ object Resolver {
       * The result is an enum.
       */
     case class Enum(enum0: NamedAst.Declaration.Enum) extends TypeLookupResult
+
+    /**
+      * The result is an struct.
+      */
+    case class Struct(struct0: NamedAst.Declaration.Struct) extends TypeLookupResult
 
     /**
       * The result is a restrictable enum.
@@ -2660,17 +2750,20 @@ object Resolver {
       case Resolution.Declaration(enum: NamedAst.Declaration.Enum) =>
         // Case 2: found an enum
         TypeLookupResult.Enum(enum)
+      case Resolution.Declaration(struct: NamedAst.Declaration.Struct) =>
+        // Case 3: found a struct
+        TypeLookupResult.Struct(struct)
       case Resolution.Declaration(enum: NamedAst.Declaration.RestrictableEnum) =>
-        // Case 3: found a restrictable enum
+        // Case 4: found a restrictable enum
         TypeLookupResult.RestrictableEnum(enum)
       case Resolution.Declaration(effect: NamedAst.Declaration.Effect) =>
-        // Case 4: found an effect
+        // Case 5: found an effect
         TypeLookupResult.Effect(effect)
       case Resolution.Declaration(assoc: NamedAst.Declaration.AssocTypeSig) =>
-        // Case 5: found an associated type
+        // Case 6: found an associated type
         TypeLookupResult.AssocType(assoc)
       case Resolution.JavaClass(clazz) =>
-        // Case 5: found a Java class
+        // Case 7: found a Java class
         TypeLookupResult.JavaClass(clazz)
     }.getOrElse(TypeLookupResult.NotFound)
   }
@@ -2778,7 +2871,7 @@ object Resolver {
       case None => None
       case Some(prefix) =>
         val ns = prefix ::: qname0.namespace.parts.tail
-        val qname = Name.mkQName(ns, qname0.ident.name, SourcePosition.Unknown, SourcePosition.Unknown)
+        val qname = Name.mkQName(ns, qname0.ident.name, SourceLocation.Unknown)
         root.symbols.getOrElse(qname.namespace, Map.empty).get(qname.ident.name)
     }
   }
@@ -2792,6 +2885,7 @@ object Resolver {
       case Resolution.Declaration(ns: NamedAst.Declaration.Namespace) => ns.sym.ns
       case Resolution.Declaration(trt: NamedAst.Declaration.Trait) => trt.sym.namespace :+ trt.sym.name
       case Resolution.Declaration(enum: NamedAst.Declaration.Enum) => enum.sym.namespace :+ enum.sym.name
+      case Resolution.Declaration(struct: NamedAst.Declaration.Struct) => struct.sym.namespace :+ struct.sym.name
       case Resolution.Declaration(enum: NamedAst.Declaration.RestrictableEnum) => enum.sym.namespace :+ enum.sym.name
       case Resolution.Declaration(eff: NamedAst.Declaration.Effect) => eff.sym.namespace :+ eff.sym.name
     }.orElse {
@@ -2800,6 +2894,7 @@ object Resolver {
         case Declaration.Namespace(sym, usesAndImports, decls, loc) => sym.ns
         case Declaration.Trait(doc, ann, mod, sym, tparam, superClasses, _, sigs, laws, loc) => sym.namespace :+ sym.name
         case Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc) => sym.namespace :+ sym.name
+        case Declaration.Struct(doc, ann, mod, sym, tparams, fields, loc) => sym.namespace :+ sym.name
         case Declaration.RestrictableEnum(doc, ann, mod, sym, ident, tparams, derives, cases, loc) => sym.namespace :+ sym.name
         case Declaration.Effect(doc, ann, mod, sym, ops, loc) => sym.namespace :+ sym.name
       }
@@ -2809,6 +2904,7 @@ object Resolver {
         case Declaration.Namespace(sym, usesAndImports, decls, loc) => sym.ns
         case Declaration.Trait(doc, ann, mod, sym, tparam, superTraits, _, sigs, laws, loc) => sym.namespace :+ sym.name
         case Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc) => sym.namespace :+ sym.name
+        case Declaration.Struct(doc, ann, mod, sym, tparams, fields, loc) => sym.namespace :+ sym.name
         case Declaration.RestrictableEnum(doc, ann, mod, sym, ident, tparams, derives, cases, loc) => sym.namespace :+ sym.name
         case Declaration.Effect(doc, ann, mod, sym, ops, loc) => sym.namespace :+ sym.name
       }
@@ -2980,6 +3076,38 @@ object Resolver {
   }
 
   /**
+    * Successfully returns the given `struct0` if it is accessible from the given namespace `ns0`.
+    *
+    * Otherwise fails with a resolution error.
+    *
+    * A struct is accessible from a namespace `ns0` if:
+    *
+    * (a) the definition is marked public, or
+    * (b) the definition is defined in the namespace `ns0` itself or in a parent of `ns0`.
+    */
+  private def getStructIfAccessible(struct0: NamedAst.Declaration.Struct, ns0: Name.NName, loc: SourceLocation): Validation[NamedAst.Declaration.Struct, ResolutionError] = {
+    //
+    // Check if the definition is marked public.
+    //
+    if (struct0.mod.isPublic)
+      return Validation.success(struct0)
+
+    //
+    // Check if the struct is defined in `ns0` or in a parent of `ns0`.
+    //
+    val prefixNs = struct0.sym.namespace
+    val targetNs = ns0.idents.map(_.name)
+    if (targetNs.startsWith(prefixNs))
+      return Validation.success(struct0)
+
+    //
+    // The struct is not accessible.
+    //
+    Validation.toSoftFailure(struct0, ResolutionError.InaccessibleStruct(struct0.sym, ns0, loc))
+  }
+
+
+  /**
     * Successfully returns the given `enum0` if it is accessible from the given namespace `ns0`.
     *
     * Otherwise fails with a resolution error.
@@ -3020,6 +3148,16 @@ object Resolver {
   private def getEnumTypeIfAccessible(enum0: NamedAst.Declaration.Enum, ns0: Name.NName, loc: SourceLocation): Validation[UnkindedType, ResolutionError] =
     mapN(getEnumIfAccessible(enum0, ns0, loc)) {
       case enum => mkEnum(enum.sym, loc)
+    }
+
+  /**
+    * Successfully returns the type of the given `struct0` if it is accessible from the given namespace `ns0`.
+    *
+    * Otherwise fails with a resolution error.
+    */
+  private def getStructTypeIfAccessible(struct0: NamedAst.Declaration.Struct, ns0: Name.NName, loc: SourceLocation): Validation[UnkindedType, ResolutionError] =
+    mapN(getStructIfAccessible(struct0, ns0, loc)) {
+      case struct => mkStruct(struct.sym, loc)
     }
 
   /**
@@ -3151,6 +3289,19 @@ object Resolver {
   } catch {
     case ex: ClassNotFoundException => Result.Err(ResolutionError.UndefinedJvmClass(className, ex.getMessage, loc))
     case ex: NoClassDefFoundError => Result.Err(ResolutionError.UndefinedJvmClass(className, ex.getMessage, loc))
+  }
+
+  /**
+    * Returns the class reflection object for the given `className`.
+    */
+  private def lookupJvmClass2(className: String, env0: ListMap[String, Resolution], loc: SourceLocation)(implicit flix: Flix): Result[Class[_], ResolutionError with Recoverable] = {
+    lookupJvmClass(className, loc) match {
+      case Result.Ok(clazz) => Result.Ok(clazz)
+      case Result.Err(e) => env0.get(className) match {
+        case Some(List(Resolution.JavaClass(clazz))) => Result.Ok(clazz)
+        case _ => Result.Err(e)
+      }
+    }
   }
 
   /**
@@ -3318,6 +3469,7 @@ object Resolver {
 
         case TypeConstructor.Schema => Result.Ok(Class.forName("java.lang.Object"))
 
+
         case TypeConstructor.True => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.False => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.Not => Result.Err(ResolutionError.IllegalType(tpe, loc))
@@ -3344,11 +3496,15 @@ object Resolver {
         case TypeConstructor.CaseIntersection(_) => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.CaseUnion(_) => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.Error(_) => Result.Err(ResolutionError.IllegalType(tpe, loc))
+        case TypeConstructor.MethodReturnType => Result.Err(ResolutionError.IllegalType(tpe, loc))
 
         case TypeConstructor.AnyType => throw InternalCompilerException(s"unexpected type: $tc", tpe.loc)
         case t: TypeConstructor.Arrow => throw InternalCompilerException(s"unexpected type: $t", tpe.loc)
         case t: TypeConstructor.Enum => throw InternalCompilerException(s"unexpected type: $t", tpe.loc)
+        case t: TypeConstructor.Struct => throw InternalCompilerException(s"unexpected type: $t", tpe.loc)
         case t: TypeConstructor.RestrictableEnum => throw InternalCompilerException(s"unexpected type: $t", tpe.loc)
+        case TypeConstructor.JvmConstructor(_) => throw InternalCompilerException(s"unexpected type: $tc", tpe.loc)
+        case TypeConstructor.JvmMethod(_) => throw InternalCompilerException(s"unexpected type: $tc", tpe.loc)
 
       }
 
@@ -3390,8 +3546,10 @@ object Resolver {
           case _ => Result.Err(ResolutionError.IllegalType(tpe, loc))
         }
 
-      // Case 3: Enum. Return an object type.
+      // Case 3: Enum / Struct. Return an object type.
       case _: UnkindedType.Enum => Result.Ok(Class.forName("java.lang.Object"))
+      // TODO STRUCTS Should this be a specific class instead?
+      case _: UnkindedType.Struct => Result.Ok(Class.forName("java.lang.Object"))
       case _: UnkindedType.RestrictableEnum => Result.Ok(Class.forName("java.lang.Object"))
 
       // Case 4: Ascription. Ignore it and recurse.
@@ -3456,12 +3614,14 @@ object Resolver {
     case NamedAst.Declaration.Sig(sym, spec, exp) => sym
     case NamedAst.Declaration.Def(sym, spec, exp) => sym
     case NamedAst.Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc) => sym
+    case NamedAst.Declaration.Struct(doc, ann, mod, sym, tparams, fields, loc) => sym
     case NamedAst.Declaration.RestrictableEnum(doc, ann, mod, sym, ident, tparams, derives, cases, loc) => sym
     case NamedAst.Declaration.TypeAlias(doc, ann, mod, sym, tparams, tpe, loc) => sym
     case NamedAst.Declaration.AssocTypeSig(doc, mod, sym, tparams, kind, tpe, loc) => sym
     case NamedAst.Declaration.Effect(doc, ann, mod, sym, ops, loc) => sym
     case NamedAst.Declaration.Op(sym, spec) => sym
     case NamedAst.Declaration.Case(sym, tpe, _) => sym
+    case NamedAst.Declaration.StructField(sym, _, _) => sym
     case NamedAst.Declaration.RestrictableCase(sym, tpe, _) => sym
     case NamedAst.Declaration.AssocTypeDef(doc, mod, ident, args, tpe, loc) => throw InternalCompilerException("unexpected associated type definition", loc)
     case NamedAst.Declaration.Instance(doc, ann, mod, clazz, tparams, tpe, tconstrs, _, defs, ns, loc) => throw InternalCompilerException("unexpected instance", loc)
@@ -3473,8 +3633,10 @@ object Resolver {
   private def infallableLookupSym(sym: Symbol, root: NamedAst.Root)(implicit flix: Flix): List[NamedAst.Declaration] = sym match {
     case sym: Symbol.DefnSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.EnumSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
+    case sym: Symbol.StructSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.RestrictableEnumSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.CaseSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
+    case sym: Symbol.StructFieldSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.RestrictableCaseSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.TraitSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.SigSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
@@ -3725,6 +3887,7 @@ object Resolver {
                                  instances: ListMap[Symbol.TraitSym, ResolvedAst.Declaration.Instance],
                                  defs: Map[Symbol.DefnSym, ResolvedAst.Declaration.Def],
                                  enums: Map[Symbol.EnumSym, ResolvedAst.Declaration.Enum],
+                                 structs: Map[Symbol.StructSym, ResolvedAst.Declaration.Struct],
                                  restrictableEnums: Map[Symbol.RestrictableEnumSym, ResolvedAst.Declaration.RestrictableEnum],
                                  effects: Map[Symbol.EffectSym, ResolvedAst.Declaration.Effect],
                                  typeAliases: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias]) {
@@ -3733,6 +3896,8 @@ object Resolver {
     def addDef(defn: ResolvedAst.Declaration.Def): SymbolTable = copy(defs = defs + (defn.sym -> defn))
 
     def addEnum(`enum`: ResolvedAst.Declaration.Enum): SymbolTable = copy(enums = enums + (`enum`.sym -> `enum`))
+
+    def addStruct(struct: ResolvedAst.Declaration.Struct): SymbolTable = copy(structs = structs + (struct.sym -> struct))
 
     def addRestrictableEnum(`enum`: ResolvedAst.Declaration.RestrictableEnum): SymbolTable = copy(restrictableEnums = restrictableEnums + (`enum`.sym -> `enum`))
 
@@ -3748,6 +3913,7 @@ object Resolver {
         instances = this.instances ++ that.instances,
         defs = this.defs ++ that.defs,
         enums = this.enums ++ that.enums,
+        structs = this.structs ++ that.structs,
         restrictableEnums = this.restrictableEnums ++ that.restrictableEnums,
         effects = this.effects ++ that.effects,
         typeAliases = this.typeAliases ++ that.typeAliases
@@ -3756,7 +3922,7 @@ object Resolver {
   }
 
   private object SymbolTable {
-    val empty: SymbolTable = SymbolTable(Map.empty, ListMap.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty)
+    val empty: SymbolTable = SymbolTable(Map.empty, ListMap.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty)
 
     /**
       * Traverses `xs`, gathering the symbols from each element by applying the function `f`.

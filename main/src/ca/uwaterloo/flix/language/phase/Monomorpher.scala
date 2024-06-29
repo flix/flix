@@ -116,6 +116,8 @@ object Monomorpher {
       case Kind.Predicate => Type.mkAnyType(tpe0.loc)
       case Kind.CaseSet(sym) => Type.Cst(TypeConstructor.CaseSet(SortedSet.empty, sym), tpe0.loc)
       case Kind.Arrow(_, _) => Type.mkAnyType(tpe0.loc)
+      case Kind.JvmConstructorOrMethod => throw InternalCompilerException(s"Unexpected type: '$tpe0'.", tpe0.loc)
+      case Kind.Error => throw InternalCompilerException(s"Unexpected type '$tpe0'.", tpe0.loc)
     }
 
     /**
@@ -396,9 +398,11 @@ object Monomorpher {
         MonoAst.Effect(doc, ann, mod, sym, ops, loc)
     }
 
+    val structs = Map.empty[Symbol.StructSym, MonoAst.Struct]
     // Reassemble the AST.
     MonoAst.Root(
       ctx.toMap,
+      structs,
       effects,
       root.entryPoint,
       root.reachable,

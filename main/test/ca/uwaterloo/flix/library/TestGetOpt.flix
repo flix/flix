@@ -21,7 +21,7 @@ mod TestGetOpt {
     use GetOpt.ArgOrder.{RequireOrder, Permute, ReturnInOrder}
     use GetOpt.{getOpt}
 
-    /// Preliminary code to define options...
+    // Preliminary code to define options...
 
     enum Flag {
         case HiRes
@@ -81,7 +81,7 @@ mod TestGetOpt {
     def testNoArgs01(): Bool  =
         let args = Nil;
         getOpt(Permute, options(), args) `assertSuccessWith` x ->
-            x.options == Nil and x.nonOptions == Nil
+            x#options == Nil and x#nonOptions == Nil
 
     /////////////////////////////////////////////////////////////////////////////
     // Non-options                                                             //
@@ -91,13 +91,13 @@ mod TestGetOpt {
     def testNonOptions01(): Bool  =
         let args = "non_option1" :: Nil;
         getOpt(Permute, options(), args) `assertSuccessWith` x ->
-            x.options == Nil and x.nonOptions == "non_option1" :: Nil
+            x#options == Nil and x#nonOptions == "non_option1" :: Nil
 
     @test
     def testNonOptions02(): Bool  =
         let args = "non_option1" :: "non_option2" :: Nil;
         getOpt(Permute, options(), args) `assertSuccessWith` x ->
-            x.options == Nil and x.nonOptions == "non_option1" :: "non_option2" :: Nil
+            x#options == Nil and x#nonOptions == "non_option1" :: "non_option2" :: Nil
 
     /////////////////////////////////////////////////////////////////////////////
     // Single char options                                                     //
@@ -107,69 +107,69 @@ mod TestGetOpt {
     def testCharArgs01(): Bool  =
         let args = "-X" :: Nil;
         getOpt(Permute, options(), args) `assertSuccessWith` x ->
-            (x.options == Flag.HiRes :: Nil) and (x.nonOptions == Nil)
+            (x#options == Flag.HiRes :: Nil) and (x#nonOptions == Nil)
 
     @test
     def testCharArgs02(): Bool  =
         let args = "-Xc" :: Nil;
         getOpt(Permute, options(), args) `assertSuccessWith` x ->
-            (x.options == Flag.HiRes :: Flag.Colour(None) :: Nil) and (x.nonOptions == Nil)
+            (x#options == Flag.HiRes :: Flag.Colour(None) :: Nil) and (x#nonOptions == Nil)
 
     @test
     def testCharArgs03(): Bool  =
         let args = "-XcBlue" :: Nil;
         getOpt(Permute, options(), args) `assertSuccessWith` x ->
-            (x.options == Flag.HiRes :: Flag.Colour(Some("Blue")) :: Nil) and (x.nonOptions == Nil)
+            (x#options == Flag.HiRes :: Flag.Colour(Some("Blue")) :: Nil) and (x#nonOptions == Nil)
 
     @test
     def testCharArgs04(): Bool  =
         let args = "-X" :: "-c" :: Nil;
         getOpt(Permute, options(), args) `assertSuccessWith` x ->
-            (x.options == Flag.HiRes :: Flag.Colour(None) :: Nil) and (x.nonOptions == Nil)
+            (x#options == Flag.HiRes :: Flag.Colour(None) :: Nil) and (x#nonOptions == Nil)
 
     @test
     def testCharArgs05(): Bool  =
         let args = "-X" :: "-cBlue" :: Nil;
         getOpt(Permute, options(), args) `assertSuccessWith` x ->
-            (x.options == Flag.HiRes :: Flag.Colour(Some("Blue")) :: Nil) and (x.nonOptions == Nil)
+            (x#options == Flag.HiRes :: Flag.Colour(Some("Blue")) :: Nil) and (x#nonOptions == Nil)
 
     @test
     def testCharArgs06(): Bool  =
         let args = "-X" :: "-cBlue" :: "non_option1" :: Nil;
         getOpt(Permute, options(), args) `assertSuccessWith` x ->
-            (x.options == Flag.HiRes :: Flag.Colour(Some("Blue")) :: Nil) and (x.nonOptions == "non_option1" :: Nil)
+            (x#options == Flag.HiRes :: Flag.Colour(Some("Blue")) :: Nil) and (x#nonOptions == "non_option1" :: Nil)
 
     @test
     def testCharArgs07(): Bool  =
         let args = "-X" :: "-cBlue" :: "-w1024" :: "-h768" :: Nil;
         getOpt(Permute, options(), args) `assertSuccessWith` x ->
-            (x.options == Flag.HiRes :: Flag.Colour(Some("Blue")) :: Flag.Width(1024) :: Flag.Height(768) :: Nil)
-                and (x.nonOptions == Nil)
+            (x#options == Flag.HiRes :: Flag.Colour(Some("Blue")) :: Flag.Width(1024) :: Flag.Height(768) :: Nil)
+                and (x#nonOptions == Nil)
 
     @test
     def testCharArgs08(): Bool  =
         let args = "-X" :: "-cBlue" :: "-w1024" :: "-h768" :: "non_option1" :: Nil;
         getOpt(Permute, options(), args) `assertSuccessWith` x ->
-            (x.options == Flag.HiRes :: Flag.Colour(Some("Blue")) :: Flag.Width(1024) :: Flag.Height(768) :: Nil)
-                and (x.nonOptions == "non_option1" :: Nil)
+            (x#options == Flag.HiRes :: Flag.Colour(Some("Blue")) :: Flag.Width(1024) :: Flag.Height(768) :: Nil)
+                and (x#nonOptions == "non_option1" :: Nil)
 
     @test
     def testCharArgs09(): Bool  =
-        /// "-m" not defined
+        // "-m" not defined
         let args = "-m" :: Nil;
         getOpt(Permute, options(), args) `assertFailureWith` x ->
             Nec.length(x) == 1
 
     @test
     def testCharArgs10(): Bool  =
-        /// "-m" not defined
+        // "-m" not defined
         let args = "-Xm" :: Nil;
         getOpt(Permute, options(), args) `assertFailureWith` x ->
             Nec.length(x) == 1
 
     @test
     def testCharArgs11(): Bool  =
-        /// "-m" not defined
+        // "-m" not defined
         let args = "-X" :: "-m" :: Nil;
         getOpt(Permute, options(), args) `assertFailureWith` x ->
             Nec.length(x) == 1
@@ -182,71 +182,71 @@ mod TestGetOpt {
     def testStringArgs01(): Bool  =
         let args = "--hires" :: Nil;
         getOpt(Permute, options(), args) `assertSuccessWith` x ->
-            (x.options == Flag.HiRes :: Nil) and (x.nonOptions == Nil)
+            (x#options == Flag.HiRes :: Nil) and (x#nonOptions == Nil)
 
     @test
     def testStringArgs02(): Bool  =
         let args = "--hires" :: "--colour" :: Nil;
         getOpt(Permute, options(), args) `assertSuccessWith` x ->
-            (x.options == Flag.HiRes :: Flag.Colour(None) :: Nil) and (x.nonOptions == Nil)
+            (x#options == Flag.HiRes :: Flag.Colour(None) :: Nil) and (x#nonOptions == Nil)
 
     @test
     def testStringArgs03(): Bool  =
         let args = "--hires" :: "--colour=Blue" :: Nil;
         getOpt(Permute, options(), args) `assertSuccessWith` x ->
-            (x.options == Flag.HiRes :: Flag.Colour(Some("Blue")) :: Nil) and (x.nonOptions == Nil)
+            (x#options == Flag.HiRes :: Flag.Colour(Some("Blue")) :: Nil) and (x#nonOptions == Nil)
 
     @test
     def testStringArgs04(): Bool  =
-        /// Alternative spelling
+        // Alternative spelling
         let args = "--hires" :: "--color" :: Nil;
         getOpt(Permute, options(), args) `assertSuccessWith` x ->
-            (x.options == Flag.HiRes :: Flag.Colour(None) :: Nil) and (x.nonOptions == Nil)
+            (x#options == Flag.HiRes :: Flag.Colour(None) :: Nil) and (x#nonOptions == Nil)
 
     @test
     def testStringArgs05(): Bool  =
-    /// Alternative spelling
+        // Alternative spelling
         let args = "--hires" :: "--color=Blue" :: Nil;
         getOpt(Permute, options(), args) `assertSuccessWith` x ->
-            (x.options == Flag.HiRes :: Flag.Colour(Some("Blue")) :: Nil) and (x.nonOptions == Nil)
+            (x#options == Flag.HiRes :: Flag.Colour(Some("Blue")) :: Nil) and (x#nonOptions == Nil)
 
     @test
     def testStringArgs06(): Bool  =
         let args = "--hires" :: "--colour=Blue" :: "non_option1" :: Nil;
         getOpt(Permute, options(), args) `assertSuccessWith` x ->
-            (x.options == Flag.HiRes :: Flag.Colour(Some("Blue")) :: Nil) and (x.nonOptions == "non_option1" :: Nil)
+            (x#options == Flag.HiRes :: Flag.Colour(Some("Blue")) :: Nil) and (x#nonOptions == "non_option1" :: Nil)
 
     @test
     def testStringArgs07(): Bool  =
         let args = "--hires" :: "--colour=Blue" :: "--width=1024" :: "--height=768" :: Nil;
         getOpt(Permute, options(), args) `assertSuccessWith` x ->
-            (x.options == Flag.HiRes :: Flag.Colour(Some("Blue")) :: Flag.Width(1024) :: Flag.Height(768) :: Nil)
-                and (x.nonOptions == Nil)
+            (x#options == Flag.HiRes :: Flag.Colour(Some("Blue")) :: Flag.Width(1024) :: Flag.Height(768) :: Nil)
+                and (x#nonOptions == Nil)
 
     @test
     def testStringArgs08(): Bool  =
         let args = "--hires" :: "--colour=Blue" :: "--width=1024" :: "--height=768" :: "non_option1" :: Nil;
         getOpt(Permute, options(), args) `assertSuccessWith` x ->
-            (x.options == Flag.HiRes :: Flag.Colour(Some("Blue")) :: Flag.Width(1024) :: Flag.Height(768) :: Nil)
-                and (x.nonOptions == "non_option1" :: Nil)
+            (x#options == Flag.HiRes :: Flag.Colour(Some("Blue")) :: Flag.Width(1024) :: Flag.Height(768) :: Nil)
+                and (x#nonOptions == "non_option1" :: Nil)
 
     @test
     def testStringArgs09(): Bool  =
-        /// "--multiple" not defined
+        // "--multiple" not defined
         let args = "--multiple" :: Nil;
         getOpt(Permute, options(), args) `assertFailureWith` x ->
             Nec.length(x) == 1
 
     @test
     def testStringArgs10(): Bool  =
-        /// "--multiple" not defined
+        // "--multiple" not defined
         let args = "--hires" :: "--multiple" :: Nil;
         getOpt(Permute, options(), args) `assertFailureWith` x ->
             Nec.length(x) == 1
 
     @test
     def testStringArgs11(): Bool  =
-        /// "--multiple" not defined
+        // "--multiple" not defined
         let args = "--hires" :: "--multiple" :: "test_option1" :: Nil;
         getOpt(Permute, options(), args) `assertFailureWith` x ->
             Nec.length(x) == 1
@@ -259,71 +259,71 @@ mod TestGetOpt {
     def testMixedArgs01(): Bool  =
         let args = "--hires" :: "-c" :: Nil;
         getOpt(Permute, options(), args) `assertSuccessWith` x ->
-            (x.options == Flag.HiRes :: Flag.Colour(None) :: Nil) and (x.nonOptions == Nil)
+            (x#options == Flag.HiRes :: Flag.Colour(None) :: Nil) and (x#nonOptions == Nil)
 
     @test
     def testMixedArgs02(): Bool  =
         let args = "-X" :: "--colour" :: Nil;
         getOpt(Permute, options(), args) `assertSuccessWith` x ->
-            (x.options == Flag.HiRes :: Flag.Colour(None) :: Nil) and (x.nonOptions == Nil)
+            (x#options == Flag.HiRes :: Flag.Colour(None) :: Nil) and (x#nonOptions == Nil)
 
     @test
     def testMixedArgs03(): Bool  =
         let args = "--hires" :: "-cBlue" :: Nil;
         getOpt(Permute, options(), args) `assertSuccessWith` x ->
-            (x.options == Flag.HiRes :: Flag.Colour(Some("Blue")) :: Nil) and (x.nonOptions == Nil)
+            (x#options == Flag.HiRes :: Flag.Colour(Some("Blue")) :: Nil) and (x#nonOptions == Nil)
 
     @test
     def testMixedArgs04(): Bool  =
-        /// Alternative spelling
+        // Alternative spelling
         let args = "-X" :: "--color" :: Nil;
         getOpt(Permute, options(), args) `assertSuccessWith` x ->
-            (x.options == Flag.HiRes :: Flag.Colour(None) :: Nil) and (x.nonOptions == Nil)
+            (x#options == Flag.HiRes :: Flag.Colour(None) :: Nil) and (x#nonOptions == Nil)
 
     @test
     def testMixedArgs05(): Bool  =
-    /// Alternative spelling
+        // Alternative spelling
         let args = "-X" :: "--color=Blue" :: Nil;
         getOpt(Permute, options(), args) `assertSuccessWith` x ->
-            (x.options == Flag.HiRes :: Flag.Colour(Some("Blue")) :: Nil) and (x.nonOptions == Nil)
+            (x#options == Flag.HiRes :: Flag.Colour(Some("Blue")) :: Nil) and (x#nonOptions == Nil)
 
     @test
     def testMixedArgs06(): Bool  =
         let args = "-X" :: "--colour=Blue" :: "non_option1" :: Nil;
         getOpt(Permute, options(), args) `assertSuccessWith` x ->
-            (x.options == Flag.HiRes :: Flag.Colour(Some("Blue")) :: Nil) and (x.nonOptions == "non_option1" :: Nil)
+            (x#options == Flag.HiRes :: Flag.Colour(Some("Blue")) :: Nil) and (x#nonOptions == "non_option1" :: Nil)
 
     @test
     def testMixedArgs07(): Bool  =
         let args = "-X" :: "--colour=Blue" :: "-w1024" :: "-h768" :: Nil;
         getOpt(Permute, options(), args) `assertSuccessWith` x ->
-            (x.options == Flag.HiRes :: Flag.Colour(Some("Blue")) :: Flag.Width(1024) :: Flag.Height(768) :: Nil)
-                and (x.nonOptions == Nil)
+            (x#options == Flag.HiRes :: Flag.Colour(Some("Blue")) :: Flag.Width(1024) :: Flag.Height(768) :: Nil)
+                and (x#nonOptions == Nil)
 
     @test
     def testMixedArgs08(): Bool  =
         let args = "-X" :: "-cBlue" :: "--width=1024" :: "--height=768" :: "non_option1" :: Nil;
         getOpt(Permute, options(), args) `assertSuccessWith` x ->
-            (x.options == Flag.HiRes :: Flag.Colour(Some("Blue")) :: Flag.Width(1024) :: Flag.Height(768) :: Nil)
-                and (x.nonOptions == "non_option1" :: Nil)
+            (x#options == Flag.HiRes :: Flag.Colour(Some("Blue")) :: Flag.Width(1024) :: Flag.Height(768) :: Nil)
+                and (x#nonOptions == "non_option1" :: Nil)
 
     @test
     def testMixedArgs09(): Bool  =
-        /// "-m" not defined
+        // "-m" not defined
         let args = "--hires" :: "-m" :: Nil;
         getOpt(Permute, options(), args) `assertFailureWith` x ->
             Nec.length(x) == 1
 
     @test
     def testMixedArgs10(): Bool  =
-        /// "--multiple" not defined
+        // "--multiple" not defined
         let args = "-X" :: "--multiple" :: Nil;
         getOpt(Permute, options(), args) `assertFailureWith` x ->
             Nec.length(x) == 1
 
     @test
     def testMixedArgs11(): Bool  =
-        /// "--multiple" not defined
+        // "--multiple" not defined
         let args = "-X" :: "--multiple" :: "test_option1" :: Nil;
         getOpt(Permute, options(), args) `assertFailureWith` x ->
             Nec.length(x) == 1
@@ -334,31 +334,31 @@ mod TestGetOpt {
 
     @test
     def testPrefixArgs01(): Bool  =
-        /// Fail: Could be "hires" or "height"
+        // Fail: Could be "hires" or "height"
         let args = "--h=1000" :: Nil;
         getOpt(Permute, options(), args) `assertFailureWith` x ->
             Nec.length(x) == 1
 
     @test
     def testPrefixArgs02(): Bool  =
-        /// Success: Could be only be "hires"
+        // Success: Could be only be "hires"
         let args = "--hi" :: Nil;
         getOpt(Permute, options(), args) `assertSuccessWith` x ->
-            (x.options == Flag.HiRes :: Nil) and (x.nonOptions == Nil)
+            (x#options == Flag.HiRes :: Nil) and (x#nonOptions == Nil)
 
     @test
     def testPrefixArgs03(): Bool  =
-        /// Success: Could be only be "height"
+        // Success: Could be only be "height"
         let args = "--he=1200" :: Nil;
         getOpt(Permute, options(), args) `assertSuccessWith` x ->
-            (x.options == Flag.Height(1200) :: Nil) and (x.nonOptions == Nil)
+            (x#options == Flag.Height(1200) :: Nil) and (x#nonOptions == Nil)
 
     @test
     def testPrefixArgs04(): Bool  =
-        /// Success: Could be only be "height"
+        // Success: Could be only be "height"
         let args = "--hi" :: "--he=1200" :: "test_option1" :: Nil;
         getOpt(Permute, options(), args) `assertSuccessWith` x ->
-            (x.options == Flag.HiRes :: Flag.Height(1200) :: Nil) and (x.nonOptions == "test_option1" :: Nil)
+            (x#options == Flag.HiRes :: Flag.Height(1200) :: Nil) and (x#nonOptions == "test_option1" :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
     // Decoding option args                                                    //
@@ -368,7 +368,7 @@ mod TestGetOpt {
     def testDecodeArgs01(): Bool  =
         let args = "--width=1400" :: Nil;
         getOpt(Permute, options(), args) `assertSuccessWith` x ->
-            (x.options == Flag.Width(1400) :: Nil) and (x.nonOptions == Nil)
+            (x#options == Flag.Width(1400) :: Nil) and (x#nonOptions == Nil)
 
     @test
     def testDecodeArgs02(): Bool  =
@@ -380,7 +380,7 @@ mod TestGetOpt {
     def testDecodeArgs03(): Bool  =
         let args = "--width=1400" :: "--height=1000" :: Nil;
         getOpt(Permute, options(), args) `assertSuccessWith` x ->
-            (x.options == Flag.Width(1400) :: Flag.Height(1000) :: Nil) and (x.nonOptions == Nil)
+            (x#options == Flag.Width(1400) :: Flag.Height(1000) :: Nil) and (x#nonOptions == Nil)
 
     @test
     def testDecodeArgs04(): Bool  =
@@ -427,14 +427,14 @@ mod TestGetOpt {
 
     @test
     def preprocess04(): Bool  =
-        /// Note - not quoted...
+        // Note - not quoted...
         let args = String.split({regex = "\\s+"}, "--editor=vs code");
         GetOpt.preprocess({quoteOpen = squote(), quoteClose = squote(), stripQuoteMarks = false}, args)
             == "--editor=vs" :: "code" :: Nil
 
     @test
     def preprocess05(): Bool  =
-        /// Note - not quoted...
+        // Note - not quoted...
         let args = String.split({regex = "\\s+"}, "--editor='vs code'");
         GetOpt.preprocess({quoteOpen = squote(), quoteClose = squote(), stripQuoteMarks = false}, args)
             == "--editor='vs code'" :: Nil

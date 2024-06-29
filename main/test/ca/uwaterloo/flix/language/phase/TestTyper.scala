@@ -836,7 +836,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
       """
         |trait A[a] {
         |    pub def f(x: Bool, y: a): Bool
-        |    law l: forall (x: Int32, y: Bool) . A.f(x, y)
+        |    law l: forall (x: Int32, y: Bool) A.f(x, y)
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -1460,5 +1460,34 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.MissingTraitConstraint](result)
+  }
+
+  test("TypeError.AmbiguousMethod.01") {
+    val input =
+      """
+        |def main(): Unit \ IO =
+        |    import java_new java.lang.StringBuilder(String): ##java.lang.StringBuilder \ IO as newSB;
+        |    let a = testInvokeMethod2_01(newSB(""));
+        |    println(a¤toString())
+        |
+        |def testInvokeMethod2_01(sb: ##java.lang.StringBuilder): ##java.lang.StringBuilder \ IO =
+        |    sb¤append(null)
+        |""".stripMargin
+    val result = compile(input, Options.Default)
+    expectError[TypeError.AmbiguousMethod](result)
+  }
+
+  test("TypeError.AmbiguousMethod.02") {
+    val input =
+      """
+        |def main(): Unit \ IO =
+        |    import java_new java.io.PrintStream(String): ##java.io.PrintStream \ IO as newPS;
+        |    testInvokeMethod2_01(newPS(""))
+        |
+        |def testInvokeMethod2_01(ps: ##java.io.PrintStream): Unit \ IO =
+        |    ps¤println(null)
+        |""".stripMargin
+    val result = compile(input, Options.Default)
+    expectError[TypeError.AmbiguousMethod](result)
   }
 }

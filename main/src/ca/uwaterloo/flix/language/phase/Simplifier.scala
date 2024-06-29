@@ -33,8 +33,9 @@ object Simplifier {
     implicit val universe: Set[Symbol.EffectSym] = root.effects.keys.toSet
     val defs = ParOps.parMapValues(root.defs)(visitDef)
     val effects = ParOps.parMapValues(root.effects)(visitEffect)
+    val structs = Map.empty[Symbol.StructSym, SimplifiedAst.Struct]
 
-    SimplifiedAst.Root(defs, effects, root.entryPoint, root.reachable, root.sources)
+    SimplifiedAst.Root(defs, structs, effects, root.entryPoint, root.reachable, root.sources)
   }
 
   private def visitDef(decl: MonoAst.Def)(implicit flix: Flix, universe: Set[Symbol.EffectSym]): SimplifiedAst.Def = decl match {
@@ -274,6 +275,8 @@ object Simplifier {
 
           case TypeConstructor.Enum(sym, _) => MonoType.Enum(sym)
 
+          case TypeConstructor.Struct(sym, _) => throw new RuntimeException("Joe: Not implemented yet")
+
           case TypeConstructor.RestrictableEnum(sym, _) =>
             val enumSym = new Symbol.EnumSym(sym.namespace, sym.name, sym.loc)
             MonoType.Enum(enumSym)
@@ -326,6 +329,15 @@ object Simplifier {
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
 
           case TypeConstructor.Schema =>
+            throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
+
+          case TypeConstructor.MethodReturnType =>
+            throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
+
+          case TypeConstructor.JvmConstructor(_) =>
+            throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
+
+          case TypeConstructor.JvmMethod(_) =>
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
 
           case TypeConstructor.Error(_) =>

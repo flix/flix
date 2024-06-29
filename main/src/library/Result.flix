@@ -78,14 +78,14 @@ mod Result {
     ///
     pub def withDefault(default: {default = Result[e2, t]}, r: Result[e1, t]): Result[e2, t] = match r {
         case Ok(v)  => Ok(v)
-        case Err(_) => default.default
+        case Err(_) => default#default
     }
 
     ///
     /// Returns `Ok(dst)` if `r` is `Ok(src)`. Otherwise returns `r`.
     ///
     pub def replace(src: {src = t}, dst: {dst = t}, r: Result[e, t]): Result[e, t] with Eq[t] = match r {
-        case Ok(v)  => Ok(if (v == src.src) dst.dst else v)
+        case Ok(v)  => Ok(if (v == src#src) dst#dst else v)
         case Err(_) => r
     }
 

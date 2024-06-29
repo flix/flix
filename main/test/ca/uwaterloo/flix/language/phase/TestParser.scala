@@ -8,8 +8,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.Suites
 
 class TestParser extends Suites(
-  // TODO: Enable these tests once the new parser is the only one in use.
-  // new TestParserRecovery,
+  new TestParserRecovery,
   new TestParserHappy
 )
 
@@ -194,7 +193,8 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
   test("DanglingDocComment.04") {
     val input =
       """
-        |instance Foo[Int32] {
+        |trait Test[t] {}
+        |instance Test[Int32] {
         |  /// This documents nothing
         |}
         |def main(): Unit = ()
@@ -383,7 +383,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
   test("BadBinaryOperation.02") {
     val input =
       """
-        |def foo(): Int32 = % 2
+        |def foo(): Int32 = # 2
         |def main(): Unit = ()
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
@@ -690,7 +690,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
   test("LetMatchNoStatement.01") {
     val input =
       """
-        |def foo(): Unit \ IO =
+        |def foo(): Unit \ IO  =
         |    let x =
         |    println("Hello World!")
         |
@@ -773,18 +773,12 @@ class TestParserHappy extends AnyFunSuite with TestUtils {
   }
 
   test("ParseError.Interpolation.01") {
-    val input = s"""pub def foo(): String = "$${""""
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-  }
-
-  test("ParseError.Interpolation.02") {
     val input = s"""pub def foo(): String = "$${1 + }""""
     val result = compile(input, Options.TestWithLibNix)
     expectError[ParseError](result)
   }
 
-  test("ParseError.Interpolation.03") {
+  test("ParseError.Interpolation.02") {
     val input = s"""pub def foo(): String = "$${1 {}""""
     val result = compile(input, Options.TestWithLibNix)
     expectError[LexerError](result)
@@ -833,16 +827,6 @@ class TestParserHappy extends AnyFunSuite with TestUtils {
       """
         |def foo(): Bool =
         |    1000ii instanceof java.math.BigInteger
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-  }
-
-  test("ParseError.InstanceOf.02") {
-    val input =
-      """
-        |def foo(): Bool =
-        |    1000ii instanceof BigInt
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ParseError](result)
@@ -944,8 +928,103 @@ class TestParserHappy extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalEnum](result)
   }
 
-  // TODO: unignore with Parser2
-  ignore("IllegalModuleName.01") {
+  test("IllegalEnum.03") {
+    val input =
+      """
+        |enum Foo()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
+  test("Regression.#7820") {
+    val input =
+      """
+        | def main(): Unit \ IO = tests()
+        |
+        |def tests(): Unit \ IO =
+        |    let start_time1 = Time.Epoch.milliseconds();
+        |    let _pipeline1 = cat(List#{"./test/clientList.txt"}) |> cut(List#{1});
+        |    let end_time1 = Time.Epoch.milliseconds();
+        |    let elapsed_time1 = (end_time1 - start_time1);
+        |    println("Pipeline 1: ${elapsed_time1}");
+        |
+        |    let start_time2 = Time.Epoch.milliseconds();
+        |    let _pipeline2 = cat(List#{"./test/clientList.txt"}) |> transDelete(",") |> transToLowerCase |> tee("pipeline2.txt", "./results");
+        |    let end_time2 = Time.Epoch.milliseconds();
+        |    let elapsed_time2 = (end_time2 - start_time2);
+        |    println("Pipeline 2: ${elapsed_time2}");
+        |
+        |    let start_time3 = Time.Epoch.milliseconds();
+        |    let _pipeline3 = ls("./test") |> sort |> uniq |> tee("pipeline3.txt", "./results") |> grep("client") |> wc;
+        |    let end_time3 = Time.Epoch.milliseconds();
+        |    let elapsed_time3 = (end_time3 - start_time3);
+        |    println("Pipeline 3: ${elapsed_time3}");
+        |
+        |    let start_time4 = Time.Epoch.milliseconds();
+        |    let _pipeline4 = findName("./test", "client") |> catMiddle |> grep("Zeta") |> cut(List#{4}) |> uniq |> sort |> tee("pipeline4.txt", "./results") |> wc;
+        |    let end_time4 = Time.Epoch.milliseconds();
+        |    let elapsed_time4 = (end_time4 - start_time4);
+        |    println("Pipeline 4: ${elapsed_time4}");
+        |
+        |    let start_time5 = Time.Epoch.milliseconds();
+        |    let _pipeline5 = cat(List#{"./test/clientList.txt", "./test/clientList.txt", "./test/clientList.txt", "./test/clientList.txt", "./test/clientList.txt", "./test/clientList.txt", "./test/clientList.txt", "./test/clientList.txt"}) |> uniq |> sort;
+        |    let end_time5 = Time.Epoch.milliseconds();
+        |    let elapsed_time5 = (end_time5 - start_time5);
+        |    println("Pipeline 5: ${elapsed_time5}");
+        |
+        |    let start_time7 = Time.Epoch.milliseconds();
+        |    let _pipeline7 = cat(List#{"./test/clientList.txt", "./test/clientList.txt", "./test/clientList.txt", "./test/clientList.txt", "./test/clientList.txt"}) |> grep("Zeta") |> uniq |> sort;
+        |    let end_time7 = Time.Epoch.milliseconds();
+        |    let elapsed_time7 = (end_time7 - start_time7);
+        |    println("Pipeline 7: ${elapsed_time7}");
+        |
+        |    let start_time8 = Time.Epoch.milliseconds();
+        |    let _pipeline8 = cat(List#{"./test/clientList.txt"}) |> sort |> sortReverse |> sort |> sort;
+        |    let end_time8 = Time.Epoch.milliseconds();
+        |    let elapsed_time8 = (end_time8 - start_time8);
+        |    println("Pipeline 8: ${elapsed_time8}")
+        |
+        |def cat(_files: List[String]): (List[String], List[String]) = (List#{}, List#{})
+        |def matchedLines(_r: Result[IOError, String]): (String, String) = ("", "")
+        |def catMiddle(_l: (List[String], List[String])): (List[String], List[String])  = (List#{}, List#{})
+        |def catNew(_files: List[String], _l: (List[String], List[String])): (List[String], List[String])  = (List#{}, List#{})
+        |def cut(_n: List[Int32], _l: (List[String], List[String])): (List[String], List[String]) = (List#{}, List#{})
+        |def echo(_l: (List[String], List[String])): (List[String], List[String])  = (List#{}, List#{})
+        |def findName(_directory: String, _name: String): (List[String], List[String])  = (List#{}, List#{})
+        |def grep(_pattern: String, _l: (List[String], List[String])): (List[String], List[String]) = (List#{}, List#{})
+        |def head(_n: Int32, _l: (List[String], List[String])): (List[String], List[String]) = (List#{}, List#{})
+        |def ls(_path: String): (List[String], List[String])  = (List#{}, List#{})
+        |def shift(_l: (List[String], List[String])): (List[String], List[String]) = (List#{}, List#{})
+        |def sort(_l: (List[String], List[String])): (List[String], List[String]) = (List#{}, List#{})
+        |def sortReverse(_l: (List[String], List[String])): (List[String], List[String]) = (List#{}, List#{})
+        |def tail(_n: Int32, _l: (List[String], List[String])): (List[String], List[String]) = (List#{}, List#{})
+        |def tee(_file_name: String, _directory: String, _l: (List[String], List[String])): (List[String], List[String])  = (List#{}, List#{})
+        |def exists(_filePath: String): Bool  = false
+        |def transDelete(_chars: String, _l: (List[String], List[String])): (List[String], List[String]) =(List#{}, List#{})
+        |def transToLowerCase(_l: (List[String], List[String])): (List[String], List[String]) =(List#{}, List#{})
+        |def transToUpperCase(_l: (List[String], List[String])): (List[String], List[String]) =(List#{}, List#{})
+        |def uniq(_l: (List[String], List[String])): (List[String], List[String]) = (List#{}, List#{})
+        |def wc(_l: (List[String], List[String])): (Int32, List[String]) = (0, List#{})
+        |def index(_index: Int32, _l: List[String]): String = ""
+        |def indices(_n: List[Int32], _l: List[String]): String = ""
+        |""".stripMargin
+    val result = compile(input, Options.DefaultTest)
+    expectSuccess(result)
+  }
+
+  test("IllegalModule.01") {
+    val input =
+      """
+        |mod DelayMap {
+        |    @Experimental
+        |    pub de
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
+  test("IllegalModuleName.01") {
     val input =
       """
         |mod mymod {
@@ -955,8 +1034,7 @@ class TestParserHappy extends AnyFunSuite with TestUtils {
     expectError[ParseError](result)
   }
 
-  // TODO: unignore with Parser2
-  ignore("IllegalModuleName.02") {
+  test("IllegalModuleName.02") {
     val input =
       """
         |mod Mymod.othermod {
@@ -966,8 +1044,7 @@ class TestParserHappy extends AnyFunSuite with TestUtils {
     expectError[ParseError](result)
   }
 
-  // TODO: unignore with Parser2
-  ignore("IllegalModuleName.03") {
+  test("IllegalModuleName.03") {
     val input =
       """
         |mod Mymod {

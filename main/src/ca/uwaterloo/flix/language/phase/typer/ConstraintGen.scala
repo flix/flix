@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.typer
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.KindedAst.Expr
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, Name, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.{InternalCompilerException, SubEffectLevel}
 
 /**
   * This phase generates a list of type constraints, which include
@@ -156,7 +156,9 @@ object ConstraintGen {
 
       case Expr.Lambda(fparam, exp, loc) =>
         c.unifyType(fparam.sym.tvar, fparam.tpe, loc)
-        val (tpe, eff) = visitExp(exp)
+        val (tpe, eff0) = visitExp(exp)
+        // Use sub-effecting for lambdas if the appropriate option is set
+        val eff = if (flix.options.xsubeffecting < SubEffectLevel.Lambdas) eff0 else Type.mkUnion(eff0, Type.freshVar(Kind.Eff, loc), loc)
         val resTpe = Type.mkArrowWithEffect(fparam.tpe, eff, tpe, loc)
         val resEff = Type.Pure
         (resTpe, resEff)
@@ -561,13 +563,14 @@ object ConstraintGen {
         val resEff = evar
         (resTpe, resEff)
 
-      case Expr.ArrayLength(exp, loc) =>
+      case Expr.ArrayLength(exp, evar, loc) =>
         val elmVar = Type.freshVar(Kind.Star, loc)
         val regionVar = Type.freshVar(Kind.Eff, loc)
         val (tpe, eff) = visitExp(exp)
         c.expectType(Type.mkArray(elmVar, regionVar, loc), tpe, exp.loc)
+        c.unifyType(evar, Type.mkUnion(regionVar, eff, loc), loc)
         val resTpe = Type.Int32
-        val resEff = eff
+        val resEff = evar
         (resTpe, resEff)
 
       case Expr.VectorLit(exps, tvar, evar, loc) =>
@@ -741,6 +744,37 @@ object ConstraintGen {
         val resTpe = tvar
         val resEff = Type.mkUnion(effTpe :: op.spec.eff :: effs, loc)
 
+        (resTpe, resEff)
+
+      case Expr.InvokeConstructor2(clazz, exps, cvar, evar, loc) =>
+        val tpe = Type.getFlixType(clazz)
+        val (tpes, effs) = exps.map(visitExp).unzip
+        c.unifyJvmConstructorType(cvar, tpe, clazz, tpes, loc) // unify constructor
+        c.unifyType(evar, Type.mkUnion(Type.IO :: effs, loc), loc) // unify effects
+        val resTpe = tpe
+        val resEff = evar
+        (resTpe, resEff)
+
+      case Expr.InvokeMethod2(exp, methodName, exps, mvar, tvar, evar, loc) =>
+        val (tpe, eff) = visitExp(exp)
+        val (tpes, effs) = exps.map(visitExp).unzip
+        val t = Type.Cst(TypeConstructor.MethodReturnType, loc)
+        c.unifyJvmMethodType(mvar, tpe, methodName, tpes, loc) // unify method
+        c.unifyType(tvar, Type.mkApply(t, List(mvar), loc), loc) // unify method return type
+        c.unifyType(evar, Type.mkUnion(Type.IO :: eff :: effs, loc), loc) // unify effects
+        val resTpe = tvar
+        val resEff = evar
+        (resTpe, resEff)
+
+      case Expr.InvokeStaticMethod2(clazz, methodName, exps, mvar, tvar, evar, loc) =>
+        val tpe = Type.getFlixType(clazz)
+        val (tpes, effs) = exps.map(visitExp).unzip
+        val t = Type.Cst(TypeConstructor.MethodReturnType, loc)
+        c.unifyStaticJvmMethodType(mvar, clazz, tpe, methodName, tpes, loc)
+        c.unifyType(tvar, Type.mkApply(t, List(mvar), loc), loc)
+        c.unifyType(evar, Type.mkUnion(Type.IO :: effs, loc), loc)
+        val resTpe = tvar
+        val resEff = evar
         (resTpe, resEff)
 
       case Expr.InvokeConstructor(constructor, exps, _) =>

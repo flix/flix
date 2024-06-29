@@ -20,15 +20,17 @@ mod TestFile {
     use Applicative.{*>}
     use Monad.{>>=}
     use IOError.Generic
+    import java.io.IOException
+    import java.nio.file.Path
 
     ///
     /// Helper - make a filepath within the temp directory.
     /// Use `java.nio.file.Path` functions for platform independence.
     ///
     def makeTempPath(fileName: String): Result[IOError, String] = region rc {
-        import static java.nio.file.Path.of(String, Array[String, rc]): ##java.nio.file.Path \ rc as ofPath;
+        import static java.nio.file.Path.of(String, Array[String, rc]): Path \ rc as ofPath;
         import java.nio.file.Path.toString(): String \ {};
-        import java.nio.file.Path.normalize(): ##java.nio.file.Path \ {};
+        import java.nio.file.Path.normalize(): Path \ {};
         let tempdir = match Environment.getTemporaryDirectory() {
             case Some(dir)  => Ok(dir)
             case None       => Err(Generic("Could not find TemporaryDirectory"))
@@ -40,7 +42,7 @@ mod TestFile {
                 Ok(path)
             }, tempdir)
         } catch {
-            case ex: ##java.io.IOException =>
+            case ex: IOException =>
                 import java.lang.Throwable.getMessage(): String \ {};
                 Err(Generic(getMessage(checked_cast(ex))))
         }

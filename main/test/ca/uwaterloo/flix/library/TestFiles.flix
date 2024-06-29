@@ -64,7 +64,7 @@ mod TestFile {
     @test
     def testStat02(): Bool \ IO =
         match stat("README.md") {
-            case Ok(v) => v.fileType == Files.FileType.File
+            case Ok(v) => v#fileType == Files.FileType.File
             case _ => false
         }
 

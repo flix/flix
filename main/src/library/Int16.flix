@@ -23,6 +23,7 @@ instance UpperBound[Int16] {
 }
 
 mod Int16 {
+    import java.math.BigDecimal;
 
     ///
     /// Returns the number of bits used to represent an `Int16`.
@@ -120,10 +121,10 @@ mod Int16 {
     /// A zero is shifted into the leftmost position regardless of sign extension.
     ///
     pub def logicalRightShift(dist: {dist = Int32}, x: Int16): Int16 =
-        if (x < 0i16 and Int32.remainder(dist.dist, 32) != 0)
-            rightShift(bitwiseAnd(rightShift(x, 1), maxValue()), dist.dist - 1)
+        if (x < 0i16 and Int32.remainder(dist#dist, 32) != 0)
+            rightShift(bitwiseAnd(rightShift(x, 1), maxValue()), dist#dist - 1)
         else
-            rightShift(x, dist.dist)
+            rightShift(x, dist#dist)
 
     ///
     /// Returns the number of one-bits in the two's complement binary
@@ -140,7 +141,7 @@ mod Int16 {
     /// binary representation of `x` right by `distance` bits.
     ///
     pub def rotateRight(dist: {dist = Int32}, x: Int16): Int16 =
-        let rem1 = dist.dist `Int32.remainder` size();
+        let rem1 = dist#dist `Int32.remainder` size();
         let rot = if (rem1 >= 0) rem1 else rem1 + size();
         bitwiseOr(logicalRightShift(dist = rot, x), leftShift(x, size() - rot))
 
@@ -149,7 +150,7 @@ mod Int16 {
     /// binary representation of `x` left by `distance` bits.
     ///
     pub def rotateLeft(dist: {dist = Int32}, x: Int16): Int16 =
-        let rem1 = dist.dist `Int32.remainder` size();
+        let rem1 = dist#dist `Int32.remainder` size();
         let rot = if (rem1 >= 0) rem1 else rem1 + size();
         bitwiseOr(logicalRightShift(dist = size() - rot, x), leftShift(x, rot))
 
@@ -251,28 +252,28 @@ mod Int16 {
     /// The bits of x have positions: 0 (rightmost bit) - 15 (leftmost bit)
     ///
     pub def getBit(pos: {pos = Int32}, x: Int16): Int32 =
-        if (rightShift(x, pos.pos) `remainder` 2i16 == 0i16) 0 else 1
+        if (rightShift(x, pos#pos) `remainder` 2i16 == 0i16) 0 else 1
 
     ///
     /// Returns `x` with the bit at position `pos` set (to 1).
     /// Considers the 5 rightmost bits of `pos` (`pos` mod 32).
     /// The bits of x have positions: 0 (rightmost bit) - 15 (leftmost bit)
     ///
-    pub def setBit(pos: {pos = Int32}, x: Int16): Int16 = bitwiseOr(x, leftShift(1i16, pos.pos))
+    pub def setBit(pos: {pos = Int32}, x: Int16): Int16 = bitwiseOr(x, leftShift(1i16, pos#pos))
 
     ///
     /// Returns `x` with the bit at position `pos` cleared (to 0).
     /// Considers the 5 rightmost bits of `pos` (`pos` mod 32).
     /// The bits of x have positions: 0 (rightmost bit) - 15 (leftmost bit)
     ///
-    pub def clearBit(pos: {pos = Int32}, x: Int16): Int16 = bitwiseAnd(x, bitwiseNot(leftShift(1i16, pos.pos)))
+    pub def clearBit(pos: {pos = Int32}, x: Int16): Int16 = bitwiseAnd(x, bitwiseNot(leftShift(1i16, pos#pos)))
 
     ///
     /// Returns `x` with the bit at position `pos` flipped.
     /// Considers the 5 rightmost bits of `pos` (`pos` mod 32).
     /// The bits of x have positions: 0 (rightmost bit) - 15 (leftmost bit)
     ///
-    pub def flipBit(pos: {pos = Int32}, x: Int16): Int16 = bitwiseXor(x, leftShift(1i16, pos.pos))
+    pub def flipBit(pos: {pos = Int32}, x: Int16): Int16 = bitwiseXor(x, leftShift(1i16, pos#pos))
 
     ///
     /// Returns the integer binary logarithm of `x`.
@@ -411,18 +412,17 @@ mod Int16 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toBigDecimal(x: Int16): BigDecimal =
-        import java_new java.math.BigDecimal(Int32): BigDecimal \ {} as fromInt32;
-        Int16.toInt32(x) |> fromInt32
+        unsafe new BigDecimal(Int16.toInt32(x))
 
     ///
     /// Helper function for the `clamp` conversion function.
     ///
     def clamp(min: {min = Int16}, max: {max = Int16}, x: Int16): Int16 =
-        if (x < min.min)
-             min.min
+        if (x < min#min)
+             min#min
         else
-            if (x > max.max)
-                max.max
+            if (x > max#max)
+                max#max
             else
                 x
 
@@ -434,8 +434,8 @@ mod Int16 {
     pub def clampToInt8(min: {min = Int8}, max: {max = Int8}, x: Int16): Int8 =
         import static java.lang.Short.valueOf(Int16): ##java.lang.Short \ {};
         import java.lang.Short.byteValue(): Int8 \ {};
-        let mini16 = Int8.toInt16(min.min);
-        let maxi16 = Int8.toInt16(max.max);
+        let mini16 = Int8.toInt16(min#min);
+        let maxi16 = Int8.toInt16(max#max);
         (valueOf(clamp(min = mini16, max = maxi16, x)) |> byteValue)
 
     ///

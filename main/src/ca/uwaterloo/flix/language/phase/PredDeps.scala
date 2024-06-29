@@ -328,7 +328,6 @@ object PredDeps {
 
     case Expr.Error(_, _, _) =>
       LabelledPrecedenceGraph.empty
-
   }
 
   /**
