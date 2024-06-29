@@ -1,0 +1,49 @@
+name: IDE Tests
+
+on: [pull_request]
+
+# Cancel previous runs if the PR is updated
+concurrency:
+  cancel-in-progress: true
+  group: build-${{ github.ref }}
+
+jobs:
+  vscode:
+    runs-on: ubuntu-latest
+    env:
+      GRADLE_OPTS: "-Xms128m -Xmx4g"
+
+    steps:
+      - name: Check out compiler
+        uses: actions/checkout@v4
+        with:
+          path: ./compiler
+      - name: Check out flix/vscode-flix
+        uses: actions/checkout@v4
+        with:
+          repository: "flix/vscode-flix"
+          path: ./vscode-flix
+
+      - name: Install JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+
+      - name: Build compiler
+        working-directory: ./compiler
+        run: chmod +x ./gradlew && ./gradlew jar
+
+      - name: Copy artifact
+        run: cp ./compiler/build/libs/compiler.jar ./vscode-flix/test/activeWorkspace/flix.jar
+
+      - name: Install dependencies of VS Code extension
+        working-directory: ./vscode-flix
+        run: npm ci
+      - name: Run VS Code extension tests
+        working-directory: ./vscode-flix
+        run: xvfb-run -a npm test
