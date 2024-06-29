@@ -636,6 +636,8 @@ object Desugar {
       val e3 = visitExp(exp3)
       Expr.ArrayStore(e1, e2, e3, loc)
 
+    case WeededAst.Expr.StructGet(_, _, _) => throw new RuntimeException("Joe: Not implemented yet")
+
     case WeededAst.Expr.VectorLit(exps, loc) =>
       val e = visitExps(exps)
       Expr.VectorLit(e, loc)
