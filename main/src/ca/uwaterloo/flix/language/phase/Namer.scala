@@ -915,10 +915,15 @@ object Namer {
       }
 
     case DesugaredAst.Expr.InvokeConstructor(className, exps, sig, loc) =>
-      val argsVal = traverse(exps)(visitExp(_, ns0))
-      val ts = sig.map(visitType)
-      mapN(argsVal) {
-        case as => NamedAst.Expr.InvokeConstructor(className, as, ts, loc)
+      if (!flix.options.xdeprecated) {
+        val m = NameError.Deprecated(loc)
+        Validation.toSoftFailure(NamedAst.Expr.Error(m), m)
+      } else {
+        val argsVal = traverse(exps)(visitExp(_, ns0))
+        val ts = sig.map(visitType)
+        mapN(argsVal) {
+          case as => NamedAst.Expr.InvokeConstructor(className, as, ts, loc)
+        }
       }
 
     case DesugaredAst.Expr.InvokeMethod(className, methodName, exp, exps, sig, tpe, loc) =>
