@@ -91,6 +91,9 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
     * Invoked when a client sends a message.
     */
   override def onMessage(ws: WebSocket, data: String): Unit = {
+    // Log the length and size of the received data.
+    log(s"Received ${data.length} characters of source code.")
+
     // Parse and process request.
     for {
       src <- parseRequest(data)(ws)
@@ -252,6 +255,6 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
   /**
     * Returns the current Flix version.
     */
-  private def getVersionWithPort = "flix-" + Version.CurrentVersion.toString + " on port " + port
+  private def getVersionWithPort: String = "flix-" + Version.CurrentVersion.toString + " on port " + port
 
 }
