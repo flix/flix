@@ -836,6 +836,7 @@ object Weeder2 {
         case TreeKind.Expr.InvokeMethod2 => visitInvokeMethod2Expr(tree)
         case TreeKind.Expr.InvokeStaticMethod2 => visitInvokeStaticMethod2Expr(tree)
         case TreeKind.Expr.NewObject => visitNewObjectExpr(tree)
+        case TreeKind.Expr.NewStruct => visitNewStructExpr(tree)
         case TreeKind.Expr.StructGet => visitStructGetExpr(tree)
         case TreeKind.Expr.Static => visitStaticExpr(tree)
         case TreeKind.Expr.Select => visitSelectExpr(tree)
@@ -1830,6 +1831,28 @@ object Weeder2 {
         Types.tryPickEffect(tree),
       ) {
         (ident, expr, fparams, tpe, eff) => JvmMethod(ident, fparams, expr, tpe, eff, tree.loc)
+      }
+    }
+
+    private def visitNewStructExpr(tree: Tree): Validation[Expr, CompilationMessage] = {
+      expect(tree, TreeKind.Expr.NewStruct)
+      val fields = pickAll(TreeKind.Expr.LiteralStructFieldFragment, tree)
+      flatMapN(Types.pickType(tree), traverse(fields)(visitNewStructField), pickExpr(tree)) {
+        (tpe, fields, region) =>
+          tpe match {
+            case WeededAst.Type.Ambiguous(qname, _) if qname.isUnqualified =>
+              Validation.success(Expr.StructNew(qname, fields, region, tree.loc))
+            case _ =>
+              val m = IllegalQualifiedName(tree.loc)
+              Validation.toSoftFailure(Expr.Error(m), m)
+          }
+       }
+    }
+
+    private def visitNewStructField(tree: Tree): Validation[(Name.Ident, Expr), CompilationMessage] = {
+      expect(tree, TreeKind.Expr.LiteralStructFieldFragment)
+      mapN(pickNameIdent(tree), pickExpr(tree)) {
+        (ident, expr) => (ident, expr)
       }
     }
 
