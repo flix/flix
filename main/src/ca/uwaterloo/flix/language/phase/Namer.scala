@@ -790,6 +790,12 @@ object Namer {
       mapN(visitExp(exp, ns0)) {
         case e => NamedAst.Expr.ArrayLength(e, loc)
       }
+    
+    case DesugaredAst.Expr.StructNew(_, _, _, _) => throw new RuntimeException("Joe: Not implemented yet")
+
+    case DesugaredAst.Expr.StructGet(_, _, _) => throw new RuntimeException("Joe: Not implemented yet")
+
+    case DesugaredAst.Expr.StructPut(_, _, _, _) => throw new RuntimeException("Joe: Not implemented yet")
 
     case DesugaredAst.Expr.VectorLit(exps, loc) =>
       mapN(traverse(exps)(visitExp(_, ns0))) {
