@@ -1324,6 +1324,10 @@ object Resolver {
           mapN(bVal) {
             b => ResolvedAst.Expr.ArrayLength(b, loc)
           }
+        
+        case NamedAst.Expr.StructNew(_, _, _, _) => throw new RuntimeException("Joe todo")
+        case NamedAst.Expr.StructGet(_, _, _) => throw new RuntimeException("Joe todo")
+        case NamedAst.Expr.StructPut(_, _, _, _) => throw new RuntimeException("Joe todo")
 
         case NamedAst.Expr.VectorLit(exps, loc) =>
           val expsVal = traverse(exps)(visitExp(_, env0))
