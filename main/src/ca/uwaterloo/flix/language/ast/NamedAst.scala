@@ -154,7 +154,7 @@ object NamedAst {
 
     case class ArrayLength(base: Expr, loc: SourceLocation) extends Expr
 
-    case class StructNew(name: Name.QName, exps: List[(Name.Ident, Expr)], region: Expr, loc: SourceLocation) extends Expr
+    case class StructNew(name: Symbol.StructSym, exps: List[(Symbol.StructFieldSym, Expr)], region: Expr, loc: SourceLocation) extends Expr
 
     case class StructGet(exp: Expr, name: Name.Label, loc: SourceLocation) extends Expr
 
