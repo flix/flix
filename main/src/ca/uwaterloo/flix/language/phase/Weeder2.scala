@@ -838,6 +838,7 @@ object Weeder2 {
         case TreeKind.Expr.NewObject => visitNewObjectExpr(tree)
         case TreeKind.Expr.NewStruct => visitNewStructExpr(tree)
         case TreeKind.Expr.StructGet => visitStructGetExpr(tree)
+        case TreeKind.Expr.StructPut => visitStructPutExpr(tree)
         case TreeKind.Expr.Static => visitStaticExpr(tree)
         case TreeKind.Expr.Select => visitSelectExpr(tree)
         case TreeKind.Expr.Spawn => visitSpawnExpr(tree)
@@ -1812,12 +1813,18 @@ object Weeder2 {
 
     private def visitStructGetExpr(tree: Tree): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.StructGet)
-      val idents = pickAll(TreeKind.Ident, tree)
-      mapN(pickExpr(tree), traverse(idents)(tokenToIdent)) {
-        (expr, idents) =>
-          idents.foldLeft(expr) {
-            case (acc, ident) => Expr.StructGet(acc, Name.mkLabel(ident), ident.loc)
-          }
+      mapN(pickExpr(tree), pickNameIdent(tree)) {
+        (expr, ident) => Expr.StructGet(expr, Name.mkLabel(ident), tree.loc)
+      }
+    }
+    
+    private def visitStructPutExpr(tree: Tree): Validation[Expr, CompilationMessage] = {
+      expect(tree, TreeKind.Expr.StructPut)
+      val struct = pickExpr(tree)
+      val ident = pickNameIdent(tree)
+      val rhs = pickExpr(tree)
+      mapN(struct, ident, rhs) {
+        (struct, ident, rhs) => Expr.StructPut(struct, Name.mkLabel(ident), rhs, tree.loc)
       }
     }
 

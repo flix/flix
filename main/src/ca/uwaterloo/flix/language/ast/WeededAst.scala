@@ -226,6 +226,8 @@ object WeededAst {
 
     case class StructGet(exp: Expr, label: Name.Label, loc: SourceLocation) extends Expr
 
+    case class StructPut(struct: Expr, label: Name.Label, rhs: Expr, loc: SourceLocation) extends Expr
+
     case class Static(loc: SourceLocation) extends Expr
 
     case class NewChannel(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr

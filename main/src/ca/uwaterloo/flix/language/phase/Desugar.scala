@@ -635,10 +635,14 @@ object Desugar {
       val e2 = visitExp(exp2)
       val e3 = visitExp(exp3)
       Expr.ArrayStore(e1, e2, e3, loc)
-    
-    case WeededAst.Expr.StructNew(_, _, _, _) => throw new RuntimeException("Joe: Not implemented yet.")
 
-    case WeededAst.Expr.StructGet(_, _, _) => throw new RuntimeException("Joe: Not implemented yet")
+    case WeededAst.Expr.StructNew(_, _, _, _) => throw new RuntimeException("Joe: StructNew not implemented yet.")
+
+    case WeededAst.Expr.StructGet(e, name, _) =>
+      throw new RuntimeException("Joe: StructGet not implemented yet. field name = " + name)
+
+    case WeededAst.Expr.StructPut(_, name, _, _) =>
+      throw new RuntimeException("Joe: StructPut not implemented yet. field name = " + name)
 
     case WeededAst.Expr.VectorLit(exps, loc) =>
       val e = visitExps(exps)
