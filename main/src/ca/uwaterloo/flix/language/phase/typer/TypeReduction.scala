@@ -259,12 +259,32 @@ object TypeReduction {
    */
   private def isSubtype(tpe1: Type, tpe2: Type)(implicit flix: Flix): Boolean = {
     (tpe2, tpe1) match {
-      case (_, Type.Null) => true // Null is a sub-type of every other type
       case (t1, t2) if t1 == t2 => true
       case (Type.Cst(TypeConstructor.Native(clazz1), _), Type.Cst(TypeConstructor.Native(clazz2), _)) => clazz1.isAssignableFrom(clazz2)
       case (Type.Cst(TypeConstructor.Native(clazz), _), Type.Cst(TypeConstructor.Str, _)) => clazz.isAssignableFrom(classOf[String])
       case (Type.Cst(TypeConstructor.Native(clazz), _), Type.Cst(TypeConstructor.BigInt, _)) => clazz.isAssignableFrom(classOf[BigInteger])
       case (Type.Cst(TypeConstructor.Native(clazz), _), Type.Cst(TypeConstructor.BigDecimal, _)) => clazz.isAssignableFrom(classOf[java.math.BigDecimal])
+      // Null is a sub-type of every Java object and non-primitive Flix type
+      case (Type.Cst(TypeConstructor.Native(_), _), Type.Null) => true
+      case (Type.Cst(TypeConstructor.Null, _), Type.Null) => true
+      case (tpe, Type.Null) if !isPrimitive(tpe) => true
+      case _ => false
+    }
+  }
+
+  /**
+   * Returns true iff the given type tpe is a Flix primitive.
+   */
+  private def isPrimitive(tpe: Type)(implicit flix: Flix): Boolean = {
+    tpe match {
+      case Type.Cst(TypeConstructor.Bool, _) => true
+      case Type.Cst(TypeConstructor.Char, _) => true
+      case Type.Cst(TypeConstructor.Float32, _) => true
+      case Type.Cst(TypeConstructor.Float64, _) => true
+      case Type.Cst(TypeConstructor.Int8, _) => true
+      case Type.Cst(TypeConstructor.Int16, _) => true
+      case Type.Cst(TypeConstructor.Int32, _) => true
+      case Type.Cst(TypeConstructor.Int64, _) => true
       case _ => false
     }
   }
