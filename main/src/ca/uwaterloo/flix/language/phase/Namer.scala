@@ -790,12 +790,28 @@ object Namer {
       mapN(visitExp(exp, ns0)) {
         case e => NamedAst.Expr.ArrayLength(e, loc)
       }
-    
-    case DesugaredAst.Expr.StructNew(_, _, _, _) => throw new RuntimeException("Joe: Not implemented yet")
 
-    case DesugaredAst.Expr.StructGet(_, _, _) => throw new RuntimeException("Joe: Not implemented yet")
+    case DesugaredAst.Expr.StructNew(name, exps0, region0, loc) =>
+      val structsym = Symbol.mkStructSym(name.namespace, name.ident)
+      val expsVal = traverse(exps0) {
+        case (n, e) => mapN(visitExp(e, ns0)) {
+          case e => (Symbol.mkStructFieldSym(structsym, n), e)
+        }
+      }
+      val regionVal = visitExp(region0, ns0)
+      mapN(expsVal, regionVal) {
+        case (exps, region) => NamedAst.Expr.StructNew(structsym, exps, region, loc)
+      }
 
-    case DesugaredAst.Expr.StructPut(_, _, _, _) => throw new RuntimeException("Joe: Not implemented yet")
+    case DesugaredAst.Expr.StructGet(e, name, loc) =>
+      mapN(visitExp(e, ns0)) {
+        case e => NamedAst.Expr.StructGet(e, name, loc)
+      }
+
+    case DesugaredAst.Expr.StructPut(e1, name, e2, loc) =>
+      mapN(visitExp(e1, ns0), visitExp(e2, ns0)) {
+        case (e1, e2) => NamedAst.Expr.StructPut(e1, name, e2, loc)
+      }
 
     case DesugaredAst.Expr.VectorLit(exps, loc) =>
       mapN(traverse(exps)(visitExp(_, ns0))) {
