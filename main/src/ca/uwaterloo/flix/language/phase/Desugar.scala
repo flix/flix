@@ -638,6 +638,8 @@ object Desugar {
     
     case WeededAst.Expr.StructNew(_, _, _, _) => throw new RuntimeException("Joe: Not implemented yet.")
 
+    case WeededAst.Expr.StructGet(_, _, _) => throw new RuntimeException("Joe: Not implemented yet")
+
     case WeededAst.Expr.VectorLit(exps, loc) =>
       val e = visitExps(exps)
       Expr.VectorLit(e, loc)
