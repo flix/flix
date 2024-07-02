@@ -31,13 +31,13 @@ object LambdaLift {
     * Performs lambda lifting on the given AST `root`.
     */
   def run(root: SimplifiedAst.Root)(implicit flix: Flix): LiftedAst.Root = flix.phase("LambdaLift") {
-    implicit val ctx: SharedContext = SharedContext(new ConcurrentLinkedQueue())
+    implicit val sctx: SharedContext = SharedContext(new ConcurrentLinkedQueue())
 
     val defs = ParOps.parMapValues(root.defs)(visitDef)
     val effects = ParOps.parMapValues(root.effects)(visitEffect)
 
     // Add lifted defs from the shared context to the existing defs.
-    val newDefs = ctx.liftedDefs.asScala.foldLeft(defs) {
+    val newDefs = sctx.liftedDefs.asScala.foldLeft(defs) {
       case (macc, (sym, defn)) => macc + (sym -> defn)
     }
 
@@ -46,10 +46,11 @@ object LambdaLift {
     LiftedAst.Root(newDefs, structs, effects, root.entryPoint, root.reachable, root.sources)
   }
 
-  private def visitDef(def0: SimplifiedAst.Def)(implicit ctx: SharedContext, flix: Flix): LiftedAst.Def = def0 match {
+  private def visitDef(def0: SimplifiedAst.Def)(implicit sctx: SharedContext, flix: Flix): LiftedAst.Def = def0 match {
     case SimplifiedAst.Def(ann, mod, sym, fparams, exp, tpe, purity, loc) =>
+      implicit val lctx: LocalContext = new LocalContext
       val fs = fparams.map(visitFormalParam)
-      val e = visitExp(exp)(sym, ctx, flix)
+      val e = visitExp(exp)(sym, lctx, sctx, flix)
       LiftedAst.Def(ann, mod, sym, Nil, fs, e, tpe, purity, loc)
   }
 
@@ -65,7 +66,7 @@ object LambdaLift {
       LiftedAst.Op(sym, ann, mod, fparams, tpe, purity, loc)
   }
 
-  private def visitExp(e: SimplifiedAst.Expr)(implicit sym0: Symbol.DefnSym, ctx: SharedContext, flix: Flix): LiftedAst.Expr = e match {
+  private def visitExp(e: SimplifiedAst.Expr)(implicit sym0: Symbol.DefnSym, lctx: LocalContext, sctx: SharedContext, flix: Flix): LiftedAst.Expr = e match {
     case SimplifiedAst.Expr.Cst(cst, tpe, loc) => LiftedAst.Expr.Cst(cst, tpe, loc)
 
     case SimplifiedAst.Expr.Var(sym, tpe, loc) => LiftedAst.Expr.Var(sym, tpe, loc)
@@ -80,7 +81,7 @@ object LambdaLift {
       val liftedExp = visitExp(exp)
 
       // Generate a fresh symbol for the new lifted definition.
-      val freshSymbol = Symbol.freshDefnSym(sym0)
+      val freshSymbol = Symbol.freshDefnSym(sym0, lctx.getAndInc())
 
       // Construct annotations and modifiers for the fresh definition.
       val ann = Ast.Annotations.Empty
@@ -99,7 +100,7 @@ object LambdaLift {
       val defn = LiftedAst.Def(ann, mod, freshSymbol, cs, fs, liftedExp, defTpe, liftedExp.purity, loc)
 
       // Add the new definition to the map of lifted definitions.
-      ctx.liftedDefs.add(freshSymbol -> defn)
+      sctx.liftedDefs.add(freshSymbol -> defn)
 
       // Construct the closure args.
       val closureArgs = if (freeVars.isEmpty)
@@ -206,7 +207,7 @@ object LambdaLift {
     case SimplifiedAst.Expr.Apply(_, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression.", loc)
   }
 
-  private def visitJvmMethod(method: SimplifiedAst.JvmMethod)(implicit sym0: Symbol.DefnSym, ctx: SharedContext, flix: Flix): LiftedAst.JvmMethod = method match {
+  private def visitJvmMethod(method: SimplifiedAst.JvmMethod)(implicit sym0: Symbol.DefnSym, lctx: LocalContext, sctx: SharedContext, flix: Flix): LiftedAst.JvmMethod = method match {
     case SimplifiedAst.JvmMethod(ident, fparams0, exp, retTpe, purity, loc) =>
       val fparams = fparams0 map visitFormalParam
       LiftedAst.JvmMethod(ident, fparams, visitExp(exp), retTpe, purity, loc)
@@ -215,6 +216,21 @@ object LambdaLift {
 
   private def visitFormalParam(fparam: SimplifiedAst.FormalParam): LiftedAst.FormalParam = fparam match {
     case SimplifiedAst.FormalParam(sym, mod, tpe, loc) => LiftedAst.FormalParam(sym, mod, tpe, loc)
+  }
+
+  /**
+   * A context that is local to a thread.
+   *
+   * We use the local context to deterministically number the lifted lambda expressions.
+   */
+  private class LocalContext {
+    private var counter: Int = 1
+
+    def getAndInc(): Int = {
+      val result = counter
+      counter = counter + 1;
+      result
+    }
   }
 
   /**
