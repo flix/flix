@@ -20,6 +20,7 @@ import java.lang.Float
 import java.lang.Integer
 import java.lang.Long
 import java.lang.Short
+import java.math.BigDecimal
 import java.math.BigInteger
 
 ///
@@ -67,8 +68,8 @@ instance FromJava[BigInt] {
 }
 
 instance FromJava[BigDecimal] {
-    type In = ##java.math.BigDecimal
-    pub def fromJava(d: ##java.math.BigDecimal): BigDecimal = d
+    type In = BigDecimal
+    pub def fromJava(d: BigDecimal): BigDecimal = d
 }
 
 instance FromJava[Char] {
