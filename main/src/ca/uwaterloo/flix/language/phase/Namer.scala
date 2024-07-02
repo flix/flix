@@ -88,7 +88,7 @@ object Namer {
     case decl: DesugaredAst.Declaration.Trait => visitTrait(decl, ns0)
     case decl: DesugaredAst.Declaration.Instance => visitInstance(decl, ns0)
     case decl: DesugaredAst.Declaration.Def => visitDef(decl, ns0, DefKind.NonMember)
-    case decl: DesugaredAst.Declaration.Enum => visitEnum(decl, ns0)
+    case decl: DesugaredAst.Declaration.Enum => Validation.success(visitEnum(decl, ns0))
     case decl: DesugaredAst.Declaration.Struct => visitStruct(decl, ns0)
     case decl: DesugaredAst.Declaration.RestrictableEnum => visitRestrictableEnum(decl, ns0)
     case decl: DesugaredAst.Declaration.TypeAlias => visitTypeAlias(decl, ns0)
@@ -301,7 +301,7 @@ object Namer {
   /**
     * Performs naming on the given enum `enum0`.
     */
-  private def visitEnum(enum0: DesugaredAst.Declaration.Enum, ns0: Name.NName)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.Declaration.Enum, NameError] = enum0 match {
+  private def visitEnum(enum0: DesugaredAst.Declaration.Enum, ns0: Name.NName)(implicit flix: Flix, sctx: SharedContext): NamedAst.Declaration.Enum = enum0 match {
     case DesugaredAst.Declaration.Enum(doc, ann, mod0, ident, tparams0, derives0, cases0, loc) =>
       val sym = Symbol.mkEnumSym(ns0, ident)
 
@@ -312,7 +312,7 @@ object Namer {
       val derives = visitDerivations(derives0)
       val cases = cases0.map(visitCase(_, sym))
 
-      Validation.success(NamedAst.Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc))
+      NamedAst.Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc)
   }
 
   /**
