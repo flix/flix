@@ -24,6 +24,17 @@ object Bimap {
     * Returns the empty Bimap.
     */
   def empty[A, B]: Bimap[A, B] = Bimap(Map.empty, Map.empty)
+
+  /**
+    * Constructs a Bimap from the given iterable of key-value pairs.
+    *
+    * Keys and values must be unique.
+    */
+  def from[A, B](it: Iterable[(A, B)]): Bimap[A, B] = {
+    val forward = it.toMap
+    val backward = it.map { case (k, v) => (v, k) }.toMap
+    Bimap(forward, backward)
+  }
 }
 
 /**

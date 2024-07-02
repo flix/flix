@@ -765,8 +765,15 @@ object Lowering {
       // Compute the symbol of the function.
       val sym = Defs.ProjectInto(arity)
 
+      // The effect of the function is Foldable.Aef[F]
+      def defEff = Type.AssocType(
+        Ast.AssocTypeConstructor(new Symbol.AssocTypeSym(Symbol.mkTraitSym("Foldable"), "Aef", loc), loc),
+        Type.eraseAliases(exp.tpe).baseType,
+        Kind.Eff,
+        loc
+      )
       // The type of the function.
-      val defTpe = Type.mkPureUncurriedArrow(List(Types.PredSym, exp.tpe), Types.Datalog, loc)
+      val defTpe = Type.mkUncurriedArrowWithEffect(List(Types.PredSym, exp.tpe), defEff, Types.Datalog, loc)
 
       // Put everything together.
       val defExp = LoweredAst.Expr.Def(sym, defTpe, loc)
