@@ -20,6 +20,7 @@ import java.lang.Float
 import java.lang.Integer
 import java.lang.Long
 import java.lang.Short
+import java.math.BigInteger
 
 ///
 /// A trait for marshaling values from Java objects.
@@ -61,8 +62,8 @@ instance FromJava[Float64] {
 }
 
 instance FromJava[BigInt] {
-    type In = ##java.math.BigInteger
-    pub def fromJava(i: ##java.math.BigInteger): BigInt = i
+    type In = BigInteger
+    pub def fromJava(i: BigInteger): BigInt = i
 }
 
 instance FromJava[BigDecimal] {
