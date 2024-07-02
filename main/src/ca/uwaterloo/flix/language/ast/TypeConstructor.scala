@@ -455,6 +455,6 @@ object TypeConstructor {
   /**
     * A type constructor which represents an erroneous type of the given `kind`.
     */
-  case class Error(kind: Kind) extends TypeConstructor
+  case class Error(id: Int, kind: Kind) extends TypeConstructor
 
 }

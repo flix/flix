@@ -118,10 +118,10 @@ object EffUnification {
         case (Type.Cst(TypeConstructor.Univ, _), Type.Cst(TypeConstructor.Univ, _)) =>
           return Ok((Substitution.empty, Nil)) //  100 hits
 
-        case (Type.Cst(TypeConstructor.Error(_), _), _) =>
+        case (Type.Cst(TypeConstructor.Error(_, _), _), _) =>
           return Ok((Substitution.empty, Nil))
 
-        case (_, Type.Cst(TypeConstructor.Error(_), _)) =>
+        case (_, Type.Cst(TypeConstructor.Error(_, _), _)) =>
           return Ok((Substitution.empty, Nil))
 
         case (t1@Type.Var(x, _), t2) if renv0.isFlexible(x) && !t2.typeVars.contains(t1) =>

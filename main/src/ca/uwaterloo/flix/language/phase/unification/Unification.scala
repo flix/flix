@@ -132,9 +132,9 @@ object Unification {
 
     case (_, _: Type.AssocType) => Result.Ok(Substitution.empty, List(Ast.BroadEqualityConstraint(tpe1, tpe2)))
 
-    case (Type.Cst(TypeConstructor.Error(k1), _), t2) if k1 == t2.kind => Result.Ok(Substitution.empty, Nil)
+    case (Type.Cst(TypeConstructor.Error(_, k1), _), t2) if k1 == t2.kind => Result.Ok(Substitution.empty, Nil)
 
-    case (t1, Type.Cst(TypeConstructor.Error(k2), _)) if t1.kind == k2 => Result.Ok(Substitution.empty, Nil)
+    case (t1, Type.Cst(TypeConstructor.Error(_, k2), _)) if t1.kind == k2 => Result.Ok(Substitution.empty, Nil)
 
     case _ => Result.Err(UnificationError.MismatchedTypes(tpe1, tpe2))
   }

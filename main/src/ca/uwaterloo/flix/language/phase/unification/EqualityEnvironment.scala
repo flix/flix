@@ -63,7 +63,7 @@ object EqualityEnvironment {
     */
   def broaden(econstr: Ast.EqualityConstraint): Ast.BroadEqualityConstraint = econstr match {
     case Ast.EqualityConstraint(cst, tpe1, tpe2, loc) =>
-      Ast.BroadEqualityConstraint(Type.AssocType(cst, tpe1, Kind.Wild, loc), tpe2)
+      Ast.BroadEqualityConstraint(Type.AssocType(cst, tpe1, tpe2.kind, loc), tpe2)
   }
 
   /**
