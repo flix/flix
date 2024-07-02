@@ -142,9 +142,9 @@ object KindedAst {
 
     case class StructNew(sym: Symbol.StructSym, fields: List[(Symbol.StructFieldSym, Expr)], region: Expr, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class StructGet(exp: Expr, field: Name.Label, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
+    case class StructGet(sym: Symbol.StructSym, exp: Expr, field: Name.Label, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class StructPut(exp1: Expr, field: Name.Label, exp2: Expr, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
+    case class StructPut(Sym: Symbol.StructSym, exp1: Expr, field: Name.Label, exp2: Expr, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
     case class VectorLit(exps: List[Expr], tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 

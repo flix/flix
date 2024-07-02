@@ -576,10 +576,10 @@ object ConstraintGen {
       case Expr.StructNew(sym, fields, region, tvar, evar, loc) =>
         throw new RuntimeException("joe tbd")
 
-      case Expr.StructGet(exp, name, tvar, evar, loc) =>
+      case Expr.StructGet(sym, exp, name, tvar, evar, loc) =>
         throw new RuntimeException("joe tbd")
 
-      case Expr.StructPut(exp1, name, exp2, tvar, evar, loc) =>
+      case Expr.StructPut(sym, exp1, name, exp2, tvar, evar, loc) =>
         throw new RuntimeException("joe tbd")
 
       case Expr.VectorLit(exps, tvar, evar, loc) =>

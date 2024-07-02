@@ -300,10 +300,10 @@ object TypeReconstruction {
     case KindedAst.Expr.StructNew(sym, fields, region, tvar, evar, loc) =>
       throw new RuntimeException("Joe TBD")
 
-    case KindedAst.Expr.StructGet(expr, label, tvar, evar, loc) =>
+    case KindedAst.Expr.StructGet(sym, expr, label, tvar, evar, loc) =>
       throw new RuntimeException("Joe TBD")
 
-    case KindedAst.Expr.StructPut(expr, field, exp2, tvar, evar, loc) =>
+    case KindedAst.Expr.StructPut(sym, expr, field, exp2, tvar, evar, loc) =>
       throw new RuntimeException("Joe TBD")
 
     case KindedAst.Expr.VectorLit(exps, tvar, evar, loc) =>
