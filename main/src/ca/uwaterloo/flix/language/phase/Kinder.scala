@@ -655,6 +655,12 @@ object Kinder {
           val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
           KindedAst.Expr.ArrayLength(base, evar, loc)
       }
+    
+    case ResolvedAst.Expr.StructNew(name, fields, region, loc) => throw new RuntimeException("joe todo")
+
+    case ResolvedAst.Expr.StructGet(e, field, loc) => throw new RuntimeException("joe todo")
+
+    case ResolvedAst.Expr.StructPut(e1, name, e2, loc) => throw new RuntimeException("joe todo")
 
     case ResolvedAst.Expr.VectorLit(exps, loc) =>
       val expsVal = traverse(exps)(visitExp(_, kenv0, taenv, henv0, root))
