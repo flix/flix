@@ -425,7 +425,7 @@ object Kinder {
       val fparamVal = visitFormalParam(fparam0, kenv0, taenv, root)
       val expVal = visitExp(exp0, kenv0, taenv, henv0, root)
       mapN(fparamVal, expVal) {
-        case (fparam, exp) => KindedAst.Expr.Lambda(fparam, exp, loc)
+        case (fparam, exp) => KindedAst.Expr.Lambda(fparam, exp, Type.freshVar(Kind.Eff, loc.asSynthetic), loc)
       }.recoverOne {
         case err: KindError =>
           val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)

@@ -154,11 +154,12 @@ object ConstraintGen {
             (resTpe, resEff)
         }
 
-      case Expr.Lambda(fparam, exp, loc) =>
+      case Expr.Lambda(fparam, exp, evar, loc) =>
         c.unifyType(fparam.sym.tvar, fparam.tpe, loc)
         val (tpe, eff0) = visitExp(exp)
         // Use sub-effecting for lambdas if the appropriate option is set
         val eff = if (flix.options.xsubeffecting < SubEffectLevel.Lambdas) eff0 else Type.mkUnion(eff0, Type.freshVar(Kind.Eff, loc), loc)
+        c.unifyType(eff, evar, loc)
         val resTpe = Type.mkArrowWithEffect(fparam.tpe, eff, tpe, loc)
         val resEff = Type.Pure
         (resTpe, resEff)

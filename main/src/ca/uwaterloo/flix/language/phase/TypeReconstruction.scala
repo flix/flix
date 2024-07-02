@@ -120,10 +120,10 @@ object TypeReconstruction {
       val es = exps.map(visitExp(_))
       TypedAst.Expr.Apply(e, es, subst(tvar), subst(evar), loc)
 
-    case KindedAst.Expr.Lambda(fparam, exp, loc) =>
+    case KindedAst.Expr.Lambda(fparam, exp, evar, loc) =>
       val p = visitFormalParam(fparam, subst)
       val e = visitExp(exp)
-      val t = Type.mkArrowWithEffect(p.tpe, e.eff, e.tpe, loc)
+      val t = Type.mkArrowWithEffect(p.tpe, subst(evar), e.tpe, loc)
       TypedAst.Expr.Lambda(p, e, t, loc)
 
     case KindedAst.Expr.Unary(sop, exp, tvar, loc) =>
