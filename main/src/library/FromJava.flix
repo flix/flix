@@ -16,6 +16,7 @@
 
 import java.lang.Byte
 import java.lang.Integer
+import java.lang.Long
 import java.lang.Short
 
 ///
@@ -43,8 +44,8 @@ instance FromJava[Int32] {
 }
 
 instance FromJava[Int64] {
-    type In = ##java.lang.Long
-    pub def fromJava(i: ##java.lang.Long): Int64 = Int64.longValue(i)
+    type In = Long
+    pub def fromJava(i: Long): Int64 = Int64.longValue(i)
 }
 
 instance FromJava[Float32] {
