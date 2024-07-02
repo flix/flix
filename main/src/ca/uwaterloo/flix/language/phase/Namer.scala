@@ -89,7 +89,7 @@ object Namer {
     case decl: DesugaredAst.Declaration.Instance => visitInstance(decl, ns0)
     case decl: DesugaredAst.Declaration.Def => visitDef(decl, ns0, DefKind.NonMember)
     case decl: DesugaredAst.Declaration.Enum => Validation.success(visitEnum(decl, ns0))
-    case decl: DesugaredAst.Declaration.Struct => visitStruct(decl, ns0)
+    case decl: DesugaredAst.Declaration.Struct => Validation.success(visitStruct(decl, ns0))
     case decl: DesugaredAst.Declaration.RestrictableEnum => visitRestrictableEnum(decl, ns0)
     case decl: DesugaredAst.Declaration.TypeAlias => visitTypeAlias(decl, ns0)
     case decl: DesugaredAst.Declaration.Effect => visitEffect(decl, ns0)
@@ -318,7 +318,7 @@ object Namer {
   /**
     * Performs the naming on the given struct `struct0`.
     */
-  private def visitStruct(struct0: DesugaredAst.Declaration.Struct, ns0: Name.NName)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.Declaration.Struct, NameError] = struct0 match {
+  private def visitStruct(struct0: DesugaredAst.Declaration.Struct, ns0: Name.NName)(implicit flix: Flix, sctx: SharedContext): NamedAst.Declaration.Struct = struct0 match {
     case DesugaredAst.Declaration.Struct(doc, ann, mod0, ident, tparams0, fields0, loc) =>
       val sym = Symbol.mkStructSym(ns0, ident)
 
@@ -328,7 +328,7 @@ object Namer {
       val mod = visitModifiers(mod0, ns0)
       val fields = fields0.map(visitField(_, sym))
 
-      Validation.success(NamedAst.Declaration.Struct(doc, ann, mod, sym, tparams, fields, loc))
+      NamedAst.Declaration.Struct(doc, ann, mod, sym, tparams, fields, loc)
   }
 
   /**
