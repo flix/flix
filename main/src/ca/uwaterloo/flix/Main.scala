@@ -369,7 +369,7 @@ object Main {
                      xfuzzer: Boolean = false,
                      xparser: Boolean = false,
                      xprinttyper: Option[String] = None,
-                     xsubeffecting: SubEffectLevel = SubEffectLevel.Nothing,
+                     xsubeffecting: SubEffectLevel = SubEffectLevel.LambdasAndInstances,
                      XPerfN: Option[Int] = None,
                      XPerfFrontend: Boolean = false,
                      files: Seq[File] = Seq())
