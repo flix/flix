@@ -672,12 +672,12 @@ object SemanticTokensProvider {
     case TypeConstructor.Receiver => true
     case TypeConstructor.Lazy => true
     case TypeConstructor.Enum(_, _) => true
+    case TypeConstructor.Struct(_, _) => true
     case TypeConstructor.RestrictableEnum(_, _) => true
     case TypeConstructor.Native(_) => true
     case TypeConstructor.JvmConstructor(_) => false
     case TypeConstructor.JvmMethod(_) => false
     case TypeConstructor.MethodReturnType => false
-    case TypeConstructor.StaticMethodReturnType(clazz, name, arity) => false
     case TypeConstructor.Array => true
     case TypeConstructor.Vector => true
     case TypeConstructor.Ref => true

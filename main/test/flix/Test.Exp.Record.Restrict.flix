@@ -34,14 +34,14 @@ mod Test.Exp.Record.Restrict {
     def testRecordRestrict05(): Bool =
         let r0 = { a = 123, a = 456 };
         let r1 = { -a | r0 };
-        r1.a == 456
+        r1#a == 456
 
     @test
     def testRecordRestrict06(): Bool =
         let r0 = { a = 123, a = 456, a = 789 };
         let r1 = { -a | r0 };
         let r2 = { -a | r1 };
-        r2.a == 789
+        r2#a == 789
 
     @test
     pub def testRecordRestrict07(): Bool = {
@@ -49,7 +49,7 @@ mod Test.Exp.Record.Restrict {
         // the arbitrary value juggling is to avoid inlining
         let r1 = {x = 1, y = 1, z = 1};
         let r2 = {-z | r1};
-        let tple = (r1.z + r2.y) |> (i -> (r1.z, i));
+        let tple = (r1#z + r2#y) |> (i -> (r1#z, i));
         fst(tple) == 1
     }
 

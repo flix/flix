@@ -333,6 +333,7 @@ object Lexer {
       case _ if isMatch("#(") => TokenKind.HashParenL
       case '#' => TokenKind.Hash
       case '¤' => TokenKind.Currency
+      case '€' => TokenKind.Euro
       case _ if isMatch("//") => acceptLineOrDocComment()
       case _ if isMatch("/*") => acceptBlockComment()
       case '/' => TokenKind.Slash
@@ -429,6 +430,7 @@ object Lexer {
       case _ if isKeyword("spawn") => TokenKind.KeywordSpawn
       case _ if isKeyword("static") => TokenKind.KeywordStatic
       case _ if isKeyword("Static") => TokenKind.KeywordStaticUppercase
+      case _ if isKeyword("struct") => TokenKind.KeywordStruct
       case _ if isKeyword("trait") => TokenKind.KeywordTrait
       case _ if isKeywordLiteral("true") => TokenKind.KeywordTrue
       case _ if isKeyword("try") => TokenKind.KeywordTry

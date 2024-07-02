@@ -832,16 +832,6 @@ class TestParserHappy extends AnyFunSuite with TestUtils {
     expectError[ParseError](result)
   }
 
-  test("ParseError.InstanceOf.02") {
-    val input =
-      """
-        |def foo(): Bool =
-        |    1000ii instanceof BigInt
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-  }
-
   test("IllegalEffectTypeParams.01") {
     val input =
       """

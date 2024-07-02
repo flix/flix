@@ -112,6 +112,8 @@ object SyntaxTree {
 
     case object Root extends TreeKind
 
+    case object StructField extends TreeKind
+
     case object TypeParameter extends TreeKind
 
     case object TypeParameterList extends TreeKind
@@ -149,6 +151,8 @@ object SyntaxTree {
       case object RestrictableEnum extends Decl
 
       case object Signature extends Decl
+
+      case object Struct extends Decl
 
       case object TypeAlias extends Decl
     }
@@ -265,6 +269,8 @@ object SyntaxTree {
 
       case object LiteralRecordFieldFragment extends Expr
 
+      case object LiteralStructFieldFragment extends Expr
+
       case object LiteralSet extends Expr
 
       case object LiteralVector extends Expr
@@ -274,6 +280,12 @@ object SyntaxTree {
       case object MatchRuleFragment extends Expr
 
       case object NewObject extends Expr
+
+      case object NewStruct extends Expr
+
+      case object StructGet extends Expr
+
+      case object StructPut extends Expr
 
       case object OpenVariant extends Expr
 

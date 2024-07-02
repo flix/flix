@@ -23,8 +23,8 @@ def typeOf(e: Expr[(tpe = Type | r)]): Type = match e {
     case Expr.True   => Type.TBool
     case Expr.False  => Type.TBool
     case Expr.Cst(_) => Type.TInt
-    case Expr.Add(i) => i.tpe
-    case Expr.Ite(i) => i.tpe
+    case Expr.Add(i) => i#tpe
+    case Expr.Ite(i) => i#tpe
 }
 
 /// We can write a function that takes an untyped expression
@@ -33,15 +33,15 @@ def typeOf(e: Expr[(tpe = Type | r)]): Type = match e {
 def typeCheck(e: Expr[()]): Expr[(tpe = Type)] = match e {
     case Expr.True   => Expr.True
     case Expr.False  => Expr.False
-    case Expr.Cst(i) => Expr.Cst({value = i.value, tpe = Type.TInt})
+    case Expr.Cst(i) => Expr.Cst({value = i#value, tpe = Type.TInt})
     case Expr.Add(i) =>
-        let e1 = typeCheck(i.exp1);
-        let e2 = typeCheck(i.exp2);
+        let e1 = typeCheck(i#exp1);
+        let e2 = typeCheck(i#exp2);
             Expr.Add({exp1 = e1, exp2 = e2, tpe = Type.TInt})
     case Expr.Ite(i) =>
-      let e1 = typeCheck(i.exp1);
-      let e2 = typeCheck(i.exp2);
-      let e3 = typeCheck(i.exp2);
+      let e1 = typeCheck(i#exp1);
+      let e2 = typeCheck(i#exp2);
+      let e3 = typeCheck(i#exp2);
         Expr.Ite({exp1 = e1, exp2 = e2, exp3 = e3, tpe = typeOf(e2)})
 }
 
@@ -57,14 +57,14 @@ def run(): Type =
 def typeCheck2(e: Expr[r]): Expr[(tpe = Type | r)] = match e {
     case Expr.True   => Expr.True
     case Expr.False  => Expr.False
-    case Expr.Cst(i) => Expr.Cst({ +tpe = Type.TInt | { value = i.value | i}})
+    case Expr.Cst(i) => Expr.Cst({ +tpe = Type.TInt | { value = i#value | i}})
     case Expr.Add(i) =>
-        let e1 = typeCheck2(i.exp1);
-        let e2 = typeCheck2(i.exp2);
+        let e1 = typeCheck2(i#exp1);
+        let e2 = typeCheck2(i#exp2);
             Expr.Add({ +tpe = Type.TInt | {exp1 = e1, exp2 = e2 | i} })
     case Expr.Ite(i) =>
-      let e1 = typeCheck2(i.exp1);
-      let e2 = typeCheck2(i.exp2);
-      let e3 = typeCheck2(i.exp3);
+      let e1 = typeCheck2(i#exp1);
+      let e2 = typeCheck2(i#exp2);
+      let e3 = typeCheck2(i#exp3);
         Expr.Ite({ +tpe = Type.TInt | {exp1 = e1, exp2 = e2, exp3 = e3 | i} })
 }

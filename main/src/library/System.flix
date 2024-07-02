@@ -19,6 +19,7 @@ mod System {
     /// Operations on the Standard Input Stream.
     ///
     mod StdIn {
+        import java.io.{InputStreamReader, BufferedReader};
 
         ///
         /// Returns an iterator over lines from the standard input stream.
@@ -32,12 +33,10 @@ mod System {
         ///
         pub def readLines(rc: Region[r]): Iterator[String, IO + r, r] \ { r, IO } =
             import static java_get_field java.lang.System.in: ##java.io.InputStream \ IO as getSystemIn;
-            import java_new java.io.InputStreamReader(##java.io.InputStream): ##java.io.InputStreamReader \ IO as newInputStream;
-            import java_new java.io.BufferedReader(##java.io.Reader): ##java.io.BufferedReader \ IO as newBufferedReader;
             // note: BufferedReader.readLine can block
             import java.io.BufferedReader.readLine(): String \ IO as brReadLine;
 
-            let br = newBufferedReader(checked_cast(newInputStream(getSystemIn()))); // up-cast to superclass
+            let br = new BufferedReader(new InputStreamReader(getSystemIn())); // up-cast to superclass
             let nextLine = ref None @ rc;
             let next = () -> {
                 let l = match deref nextLine {
@@ -58,6 +57,8 @@ mod System {
     /// Operations on the Standard Output Stream.
     ///
     mod StdOut {
+
+        import java.io.PrintStream
 
         ///
         /// Prints the given string `s` to the standard output stream.
@@ -90,7 +91,7 @@ mod System {
         ///
         /// Returns the standard output stream.
         ///
-        def getOutputStream(): ##java.io.PrintStream \ IO =
+        def getOutputStream(): PrintStream \ IO =
             import static java_get_field java.lang.System.out: ##java.io.PrintStream \ IO as getOut;
             getOut()
 

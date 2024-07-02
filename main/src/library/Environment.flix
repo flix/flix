@@ -15,7 +15,8 @@
  */
 mod Environment {
 
-    import java.lang.{Object, Runtime}
+    import java.lang.{Exception, Runtime}
+    import java.lang.{Object => JObject}
     import java.util.{Iterator => JIterator, Map => JMap, Set => JSet}
 
     ///
@@ -39,7 +40,7 @@ mod Environment {
             let iter = getenv() |> entrySet |> iterator;
             getEnvHelper(iter, Map.empty())
         } catch {
-            case _: ##java.lang.Exception => Map.empty()
+            case _: Exception => Map.empty()
         }
     }
 
@@ -52,7 +53,7 @@ mod Environment {
             let result = getenv(name);
             Object.toOption(result)
         } catch {
-            case _: ##java.lang.Exception => None
+            case _: Exception => None
         }
 
     ///
@@ -64,7 +65,7 @@ mod Environment {
             let result = getProperty(name);
             Object.toOption(result)
         } catch {
-            case _: ##java.lang.Exception => None
+            case _: Exception => None
         }
 
     ///
@@ -133,11 +134,11 @@ mod Environment {
         import java.lang.Runtime.availableProcessors(): Int32 \ {};
         (getRuntime() |> availableProcessors)
 
-    def getEnvHelper(iter: ##java.util.Iterator, m: Map[String, String]): Map[String, String] =
+    def getEnvHelper(iter: JIterator, m: Map[String, String]): Map[String, String] =
         import java.util.Iterator.hasNext(): Bool \ {};
-        import java.util.Iterator.next(): Object \ {};
-        import java.util.Map$Entry.getKey(): Object \ {};
-        import java.util.Map$Entry.getValue(): Object \ {};
+        import java.util.Iterator.next(): JObject \ {};
+        import java.util.Map$Entry.getKey(): JObject \ {};
+        import java.util.Map$Entry.getValue(): JObject \ {};
         if (hasNext(iter))
             let e = unchecked_cast(next(iter) as ##java.util.Map$Entry);
             let k = unchecked_cast(getKey(e) as String);

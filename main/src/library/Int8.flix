@@ -23,6 +23,7 @@ instance UpperBound[Int8] {
 }
 
 mod Int8 {
+    import java.math.BigDecimal;
 
     ///
     /// Returns the number of bits used to represent an `Int8`.
@@ -121,10 +122,10 @@ mod Int8 {
     /// A zero is shifted into the leftmost position regardless of sign extension.
     ///
     pub def logicalRightShift(dist: {dist = Int32}, x: Int8): Int8 =
-        if (x < 0i8 and Int32.remainder(dist.dist, 32) != 0)
-            rightShift(bitwiseAnd(rightShift(x, 1), maxValue()), dist.dist - 1)
+        if (x < 0i8 and Int32.remainder(dist#dist, 32) != 0)
+            rightShift(bitwiseAnd(rightShift(x, 1), maxValue()), dist#dist - 1)
         else
-            rightShift(x, dist.dist)
+            rightShift(x, dist#dist)
 
     ///
     /// Returns the number of one-bits in the two's complement binary
@@ -141,7 +142,7 @@ mod Int8 {
     /// binary representation of `x` right by `distance` bits.
     ///
     pub def rotateRight(dist: {dist = Int32}, x: Int8): Int8 =
-        let rem1 = dist.dist `Int32.remainder` size();
+        let rem1 = dist#dist `Int32.remainder` size();
         let rot = if (rem1 >= 0) rem1 else rem1 + size();
         bitwiseOr(logicalRightShift(dist = rot, x), leftShift(x, size() - rot))
 
@@ -150,7 +151,7 @@ mod Int8 {
     /// binary representation of `x` left by `distance` bits.
     ///
     pub def rotateLeft(dist: {dist = Int32}, x: Int8): Int8 =
-        let rem1 = dist.dist `Int32.remainder` size();
+        let rem1 = dist#dist `Int32.remainder` size();
         let rot = if (rem1 >= 0) rem1 else rem1 + size();
         bitwiseOr(logicalRightShift(dist = size() - rot, x), leftShift(x, rot))
 
@@ -252,28 +253,28 @@ mod Int8 {
     /// The bits of x have positions: 0 (rightmost bit) - 7 (leftmost bit)
     ///
     pub def getBit(pos: {pos = Int32}, x: Int8): Int32 =
-        if (rightShift(x, pos.pos) `remainder` 2i8 == 0i8) 0 else 1
+        if (rightShift(x, pos#pos) `remainder` 2i8 == 0i8) 0 else 1
 
     ///
     /// Returns `x` with the bit at position `pos` set (to 1).
     /// Considers the 5 rightmost bits of `pos` (`pos` mod 32).
     /// The bits of x have positions: 0 (rightmost bit) - 7 (leftmost bit)
     ///
-    pub def setBit(pos: {pos = Int32}, x: Int8): Int8 = bitwiseOr(x, leftShift(1i8, pos.pos))
+    pub def setBit(pos: {pos = Int32}, x: Int8): Int8 = bitwiseOr(x, leftShift(1i8, pos#pos))
 
     ///
     /// Returns `x` with the bit at position `pos` cleared (to 0).
     /// Considers the 5 rightmost bits of `pos` (`pos` mod 32).
     /// The bits of x have positions: 0 (rightmost bit) - 7 (leftmost bit)
     ///
-    pub def clearBit(pos: {pos = Int32}, x: Int8): Int8 = bitwiseAnd(x, bitwiseNot(leftShift(1i8, pos.pos)))
+    pub def clearBit(pos: {pos = Int32}, x: Int8): Int8 = bitwiseAnd(x, bitwiseNot(leftShift(1i8, pos#pos)))
 
     ///
     /// Returns `x` with the bit at position `pos` flipped.
     /// Considers the 5 rightmost bits of `pos` (`pos` mod 32).
     /// The bits of x have positions: 0 (rightmost bit) - 7 (leftmost bit)
     ///
-    pub def flipBit(pos: {pos = Int32}, x: Int8): Int8 = bitwiseXor(x, leftShift(1i8, pos.pos))
+    pub def flipBit(pos: {pos = Int32}, x: Int8): Int8 = bitwiseXor(x, leftShift(1i8, pos#pos))
 
     ///
     /// Returns the integer binary logarithm of `x`.
@@ -406,8 +407,7 @@ mod Int8 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toBigDecimal(x: Int8): BigDecimal =
-        import java_new java.math.BigDecimal(Int32): BigDecimal \ {} as fromInt32;
-        Int8.toInt32(x) |> fromInt32
+        unsafe new BigDecimal(Int8.toInt32(x))
 
     ///
     /// Get the primitive Int8 value from its object representation (i.e. ##java.lang.Byte).
