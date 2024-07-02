@@ -15,6 +15,7 @@
  */
 
 import java.lang.Byte
+import java.lang.Character
 import java.lang.Double
 import java.lang.Float
 import java.lang.Integer
@@ -73,8 +74,8 @@ instance FromJava[BigDecimal] {
 }
 
 instance FromJava[Char] {
-    type In = ##java.lang.Character
-    pub def fromJava(c: ##java.lang.Character): Char = Char.charValue(c)
+    type In = Character
+    pub def fromJava(c: Character): Char = Char.charValue(c)
 }
 
 instance FromJava[String] {
