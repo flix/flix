@@ -1338,7 +1338,7 @@ object Parser2 {
             eat(TokenKind.Euro)
             name(NAME_FIELD, context = SyntacticContext.Expr.OtherExpr)
             if (at(TokenKind.Equal)) { // struct put
-              eat (TokenKind.Equal)
+              eat(TokenKind.Equal)
               expression(TokenKind.Equal)
               close(mark, TreeKind.Expr.StructPut)
               lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
