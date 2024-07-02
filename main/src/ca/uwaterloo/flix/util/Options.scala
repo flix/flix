@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.util
 
 import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.util.SubEffectLevel.toInt
 
 import java.nio.file.Path
 
@@ -51,6 +52,7 @@ object Options {
     xfuzzer = false,
     xparser = false,
     xprinttyper = None,
+    xsubeffecting = SubEffectLevel.LambdasAndInstances,
     XPerfN = None,
     XPerfFrontend = false
   )
@@ -128,6 +130,7 @@ case class Options(lib: LibLevel,
                    xfuzzer: Boolean,
                    xparser: Boolean,
                    xprinttyper: Option[String],
+                   xsubeffecting: SubEffectLevel,
                    XPerfFrontend: Boolean,
                    XPerfN: Option[Int],
                   )
@@ -164,5 +167,46 @@ object LibLevel {
     * Include the full standard library.
     */
   case object All extends LibLevel
+
+}
+
+/**
+  * Compare [[LibLevel]]s based on how much sub-effecting they allow.
+  */
+sealed trait SubEffectLevel extends Ordered[SubEffectLevel] {
+  override def compare(that: SubEffectLevel): Int = toInt(this).compare(toInt(that))
+}
+
+object SubEffectLevel {
+
+  /**
+    * Do not use sub-effecting anywhere.
+    */
+  case object Nothing extends SubEffectLevel
+
+  /**
+    * Allow sub-effecting on lambdas.
+    */
+  case object Lambdas extends SubEffectLevel
+
+  /**
+    * Allow sub-effecting on lambdas and instance def bodies
+    */
+  case object LambdasAndInstances extends SubEffectLevel
+
+  /**
+    * Allow sub-effecting on lambdas and def bodies
+    */
+  case object LambdasAndDefs extends SubEffectLevel
+
+  /**
+    * Returns an integer where a larger number means more sub-effecting.
+    */
+  def toInt(level: SubEffectLevel): Int = level match {
+    case Nothing => 0
+    case Lambdas => 1
+    case LambdasAndInstances => 2
+    case LambdasAndDefs => 3
+  }
 
 }

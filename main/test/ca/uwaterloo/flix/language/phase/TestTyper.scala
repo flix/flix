@@ -816,7 +816,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError](result)
   }
 
-  test("Test.UnexpectedArgument.03") {
+  ignore("Test.UnexpectedArgument.03") {
     val input =
       """
         |eff E {

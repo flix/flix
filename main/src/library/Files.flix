@@ -374,7 +374,7 @@ mod Files {
             let javaPath = toPath(javaFile);
             let reader = newBufferedReader(javaPath);
             let line = ref readLine(reader) @ rc;
-            let next = () -> checked_ecast({
+            let next = () -> ({
                 if (not Object.isNull(deref line)) {
                     try {
                         let l = deref line;
@@ -395,7 +395,7 @@ mod Files {
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage(): String \ {};
-                Iterator.iterate(rc, constant(Some(Err(Generic(getMessage(checked_cast(ex)))))))
+                Iterator.iterate(rc, _ ->(Some(Err(Generic(getMessage(checked_cast(ex)))))))
         }
 
     ///
@@ -415,7 +415,7 @@ mod Files {
             let javaPath = toPath(javaFile);
             let reader = newBufferedReader(javaPath, forName(opts.charSet));
             let line = ref readLine(reader) @ rc;
-            let next = () -> checked_ecast({
+            let next = () -> ({
                 if (not Object.isNull(deref line)) {
                     try {
                         let l = deref line;
@@ -436,7 +436,7 @@ mod Files {
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage(): String \ {};
-                Iterator.iterate(rc, constant(Some(Err(Generic(getMessage(checked_cast(ex)))))))
+                Iterator.iterate(rc, _ ->(Some(Err(Generic(getMessage(checked_cast(ex)))))))
         }
 
     ///
@@ -521,7 +521,7 @@ mod Files {
                 let stream = newInputStream(javaFile);
                 let bytes = ref Array.empty(rc, chunkSize) @ rc;
                 let numberRead = ref read(stream, deref bytes) @ rc;
-                let next = () -> checked_ecast({
+                let next = () -> ({
                     if (deref numberRead >= 0) {
                         try {
                             let chunk = deref bytes;
@@ -544,10 +544,10 @@ mod Files {
             } catch {
                 case ex: ##java.io.IOException =>
                     import java.lang.Throwable.getMessage(): String \ {};
-                    Iterator.iterate(rc, constant(Some(Err(Generic(getMessage(checked_cast(ex)))))))
+                    Iterator.iterate(rc, _ ->(Some(Err(Generic(getMessage(checked_cast(ex)))))))
             }
         } else {
-            Iterator.iterate(rc, constant(Some(Err(Generic("The argument `chunkSize` has to be a non negative number when calling `File.readChunks`.")))))
+            Iterator.iterate(rc, _ ->(Some(Err(Generic("The argument `chunkSize` has to be a non negative number when calling `File.readChunks`.")))))
         }
 
     ///

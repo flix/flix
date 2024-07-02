@@ -191,7 +191,7 @@ mod Result {
     /// A `foldRightWithCont` allows early termination by not calling the continuation.
     ///
     pub def foldRightWithCont(f: (t, Unit -> a \ ef) -> a \ ef, z: a, r: Result[e, t]): a \ ef = match r {
-        case Ok(v)  => f(v, constant(z))
+        case Ok(v)  => f(v, _ ->(z))
         case Err(_) => z
     }
 
@@ -271,7 +271,7 @@ mod Result {
                 case Err(e) => Err(e)
             })
         };
-        loop(l, s1 -> checked_ecast(Ok(s1)))
+        loop(l, s1 -> (Ok(s1)))
 
     ///
     /// Returns a one-element list of the value `v` if `r` is `Ok(v)`. Otherwise returns the empty list.

@@ -324,7 +324,7 @@ mod Option {
     ///
     pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, o: Option[a], z: b): b \ ef = match o {
         case None    => z
-        case Some(v) => f(v, constant(z))
+        case Some(v) => f(v, _ ->(z))
     }
 
     ///
@@ -407,7 +407,7 @@ mod Option {
                 case None     => None
             })
         };
-        loop(l, s1 -> checked_ecast(Some(s1)))
+        loop(l, s1 -> (Some(s1)))
 
     ///
     /// Returns a one-element list of the value `v` if `o` is `Some(v)`. Otherwise returns the empty list.

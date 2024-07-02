@@ -105,6 +105,7 @@ object Main {
       xfuzzer = cmdOpts.xfuzzer,
       xparser = cmdOpts.xparser,
       xprinttyper = cmdOpts.xprinttyper,
+      xsubeffecting = cmdOpts.xsubeffecting,
       XPerfFrontend = cmdOpts.XPerfFrontend,
       XPerfN = cmdOpts.XPerfN
     )
@@ -368,6 +369,7 @@ object Main {
                      xfuzzer: Boolean = false,
                      xparser: Boolean = false,
                      xprinttyper: Option[String] = None,
+                     xsubeffecting: SubEffectLevel = SubEffectLevel.Nothing,
                      XPerfN: Option[Int] = None,
                      XPerfFrontend: Boolean = false,
                      files: Seq[File] = Seq())
@@ -421,10 +423,18 @@ object Main {
     * @param args the arguments array.
     */
   def parseCmdOpts(args: Array[String]): Option[CmdOpts] = {
-    implicit val readInclusion: scopt.Read[LibLevel] = scopt.Read.reads {
+    implicit val readLibLevel: scopt.Read[LibLevel] = scopt.Read.reads {
       case "nix" => LibLevel.Nix
       case "min" => LibLevel.Min
       case "all" => LibLevel.All
+      case arg => throw new IllegalArgumentException(s"'$arg' is not a valid library level. Valid options are 'all', 'min', and 'nix'.")
+    }
+
+    implicit val readSubEffectLevel: scopt.Read[SubEffectLevel] = scopt.Read.reads {
+      case "nothing" => SubEffectLevel.Nothing
+      case "lambdas" => SubEffectLevel.Lambdas
+      case "lambdas-and-instances" => SubEffectLevel.LambdasAndInstances
+      case "lambdas-and-defs" => SubEffectLevel.LambdasAndDefs
       case arg => throw new IllegalArgumentException(s"'$arg' is not a valid library level. Valid options are 'all', 'min', and 'nix'.")
     }
 
@@ -587,6 +597,10 @@ object Main {
         text("[experimental] disables new experimental lexer and parser.")
 
       opt[String]("Xprint-typer").action((sym, c) => c.copy(xprinttyper = Some(sym)))
+
+      // Xsubeffecting
+      opt[SubEffectLevel]("Xsubeffecting").action((level, c) => c.copy(xsubeffecting = level)).
+        text("[experimental] enables sub-effecting in select places")
 
       note("")
 

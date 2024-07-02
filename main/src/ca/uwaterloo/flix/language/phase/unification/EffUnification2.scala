@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.unification
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.AssocTypeConstructor
 import ca.uwaterloo.flix.language.ast.{Kind, Rigidity, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.language.phase.unification.FastBoolUnification.{ConflictException, Equation, Term, TooComplexException}
+import ca.uwaterloo.flix.language.phase.unification.FastSetUnification.{ConflictException, Equation, Term, TooComplexException}
 import ca.uwaterloo.flix.util.collection.Bimap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
@@ -41,7 +41,7 @@ object EffUnification2 {
     }
 
     // Compute the most-general unifier of all the equations.
-    FastBoolUnification.solveAll(equations) match {
+    FastSetUnification.solveAll(equations) match {
       case Result.Ok(subst) => Result.Ok(fromBoolSubst(subst))
 
       case Result.Err((ex: ConflictException, _, _)) =>
@@ -109,8 +109,8 @@ object EffUnification2 {
     * The rigidity environment `renv` is used to map rigid type variables to constants and flexible type variables to term variables.
     */
   private def toTerm(t: Type)(implicit renv: RigidityEnv, m: Bimap[Atom, Int]): Term = Type.eraseTopAliases(t) match {
-    case Type.Pure => Term.True
-    case Type.Univ => Term.False
+    case Type.Pure => Term.Empty
+    case Type.Univ => Term.Univ
 
     case tpe@Type.Var(sym, _) => m.getForward(toAtom(tpe)) match {
       case None => throw InternalCompilerException(s"Unexpected unbound type variable: '$t'.", t.loc)
@@ -122,7 +122,7 @@ object EffUnification2 {
 
     case tpe@Type.Cst(TypeConstructor.Effect(_), _) => m.getForward(toAtom(tpe)) match {
       case None => throw InternalCompilerException(s"Unexpected unbound effect: '$t'.", t.loc)
-      case Some(x) => Term.Cst(x)
+      case Some(x) => Term.mkElemSet(x)
     }
 
     case tpe: Type.AssocType => m.getForward(toAtom(tpe)) match {
@@ -135,9 +135,9 @@ object EffUnification2 {
       case Some(x) => Term.Var(x)
     }
 
-    case Type.Apply(Type.Cst(TypeConstructor.Complement, _), tpe1, _) => Term.mkNot(toTerm(tpe1))
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), tpe1, _), tpe2, _) => Term.mkAnd(toTerm(tpe1), toTerm(tpe2))
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), tpe1, _), tpe2, _) => Term.mkOr(toTerm(tpe1), toTerm(tpe2))
+    case Type.Apply(Type.Cst(TypeConstructor.Complement, _), tpe1, _) => Term.mkCompl(toTerm(tpe1))
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), tpe1, _), tpe2, _) => Term.mkUnion(toTerm(tpe1), toTerm(tpe2))
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), tpe1, _), tpe2, _) => Term.mkInter(toTerm(tpe1), toTerm(tpe2))
 
     case _ => throw InternalCompilerException(s"Unexpected type: '$t'.", t.loc)
   }
@@ -158,7 +158,7 @@ object EffUnification2 {
   /**
     * Returns a regular type substitution obtained from the given Boolean substitution `s`.
     */
-  private def fromBoolSubst(s: FastBoolUnification.BoolSubstitution)(implicit m: Bimap[Atom, Int]): Substitution = {
+  private def fromBoolSubst(s: FastSetUnification.SetSubstitution)(implicit m: Bimap[Atom, Int]): Substitution = {
     Substitution(s.m.foldLeft(Map.empty[Symbol.KindedTypeVarSym, Type]) {
       case (macc, (k, v)) =>
         m.getBackward(k).get match {
@@ -184,15 +184,30 @@ object EffUnification2 {
     * distinguishes their rigidity or flexibility.
     */
   private def fromTerm(t: Term, loc: SourceLocation)(implicit m: Bimap[Atom, Int]): Type = t match {
-    case Term.True => Type.Pure
-    case Term.False => Type.Univ
+    case Term.Univ => Type.Univ
+    case Term.Empty => Type.Pure
     case Term.Cst(c) => fromAtom(m.getBackward(c).get, loc) // Safe: We never introduce new variables.
     case Term.Var(x) => fromAtom(m.getBackward(x).get, loc) // Safe: We never introduce new variables.
-    case Term.Not(t) => Type.mkComplement(fromTerm(t, loc), loc)
-    case Term.And(csts, vars, rest) =>
-      val ts = csts.toList.map(fromTerm(_, loc)) ++ vars.toList.map(fromTerm(_, loc)) ++ rest.map(fromTerm(_, loc))
+    case Term.ElemSet(s) => Type.mkUnion(s.toList.map(i => fromAtom(m.getBackward(i).get, loc)), loc)
+    case Term.Compl(t) => Type.mkComplement(fromTerm(t, loc), loc)
+    case Term.Inter(posElem, posCsts, posVars, negElem, negCsts, negVars, rest) =>
+      val ts = posElem.toList.map(fromTerm(_, loc)) ++
+        negElem.toList.map(Term.mkCompl).map(fromTerm(_, loc)) ++
+        posCsts.toList.map(fromTerm(_, loc)) ++
+        negCsts.toList.map(Term.mkCompl).map(fromTerm(_, loc)) ++
+        posVars.toList.map(fromTerm(_, loc)) ++
+        negVars.toList.map(Term.mkCompl).map(fromTerm(_, loc)) ++
+        rest.map(fromTerm(_, loc))
+      Type.mkIntersection(ts, loc)
+    case Term.Union(posElem, posCsts, posVars, negElem, negCsts, negVars, rest) =>
+      val ts = posElem.toList.map(fromTerm(_, loc)) ++
+        negElem.toList.map(Term.mkCompl).map(fromTerm(_, loc)) ++
+        posCsts.toList.map(fromTerm(_, loc)) ++
+        negCsts.toList.map(Term.mkCompl).map(fromTerm(_, loc)) ++
+        posVars.toList.map(fromTerm(_, loc)) ++
+        negVars.toList.map(Term.mkCompl).map(fromTerm(_, loc)) ++
+        rest.map(fromTerm(_, loc))
       Type.mkUnion(ts, loc)
-    case Term.Or(ts) => Type.mkIntersection(ts.map(fromTerm(_, loc)), loc)
   }
 
   /**
