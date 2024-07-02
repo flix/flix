@@ -1324,10 +1324,33 @@ object Resolver {
           mapN(bVal) {
             b => ResolvedAst.Expr.ArrayLength(b, loc)
           }
-        
-        case NamedAst.Expr.StructNew(_, _, _, _) => throw new RuntimeException("Joe todo")
-        case NamedAst.Expr.StructGet(_, _, _) => throw new RuntimeException("Joe todo")
-        case NamedAst.Expr.StructPut(_, _, _, _) => throw new RuntimeException("Joe todo")
+
+        case NamedAst.Expr.StructNew(name, fields, region, loc) =>
+          val fieldsVal = traverse(fields) {
+            case (f, e) =>
+              val eVal = visitExp(e, env0)
+              mapN(eVal) {
+                case e => (f, e)
+              }
+          }
+          val regionVal = visitExp(region, env0)
+          mapN(fieldsVal, regionVal) {
+            case (fields, region) =>
+              ResolvedAst.Expr.StructNew(name, fields, region, loc)
+          }
+
+        case NamedAst.Expr.StructGet(sym, e, field, loc) =>
+          val eVal = visitExp(e, env0)
+          mapN(eVal) {
+            case e => ResolvedAst.Expr.StructGet(sym, e, field, loc)
+          }
+
+        case NamedAst.Expr.StructPut(sym, e1, name, e2, loc) =>
+          val e1Val = visitExp(e1, env0)
+          val e2Val = visitExp(e2, env0)
+          mapN(e1Val, e2Val) {
+            case (e1, e2) => ResolvedAst.Expr.StructPut(sym, e1, name, e2, loc)
+          }
 
         case NamedAst.Expr.VectorLit(exps, loc) =>
           val expsVal = traverse(exps)(visitExp(_, env0))
