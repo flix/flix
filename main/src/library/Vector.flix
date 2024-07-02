@@ -15,6 +15,7 @@
  */
 
 import java.util.{List => JList}
+import java.util.{Iterator => JIterator}
 
 ///
 /// A Vector data type which is fundamentally like Array but is immutable.
@@ -115,7 +116,7 @@ instance ToJava[Vector[a]] {
 instance FromJava[Vector[a]] {
     type In = JList
     pub def fromJava(l: JList): Vector[a] = region rc {
-        import java.util.List.iterator(): ##java.util.Iterator \ rc;
+        import java.util.List.iterator(): JIterator \ rc;
         iterator(l) |> Adaptor.fromIterator(rc, (Proxy.Proxy: Proxy[a])) |> Iterator.toVector
     }
 }
