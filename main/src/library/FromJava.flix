@@ -15,6 +15,7 @@
  */
 
 import java.lang.Byte
+import java.lang.Short
 
 ///
 /// A trait for marshaling values from Java objects.
@@ -31,8 +32,8 @@ instance FromJava[Int8] {
 }
 
 instance FromJava[Int16] {
-    type In = ##java.lang.Short
-    pub def fromJava(i: ##java.lang.Short): Int16 = Int16.shortValue(i)
+    type In = Short
+    pub def fromJava(i: Short): Int16 = Int16.shortValue(i)
 }
 
 instance FromJava[Int32] {
