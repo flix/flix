@@ -21,6 +21,7 @@ import java.lang.Float
 import java.lang.Integer
 import java.lang.Long
 import java.lang.Short
+import java.lang.{String => JString}
 import java.math.BigDecimal
 import java.math.BigInteger
 
@@ -79,6 +80,6 @@ instance FromJava[Char] {
 }
 
 instance FromJava[String] {
-    type In = ##java.lang.String
-    pub def fromJava(s: ##java.lang.String): String = s
+    type In = JString
+    pub def fromJava(s: JString): String = s
 }
