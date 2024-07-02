@@ -804,13 +804,15 @@ object Namer {
       }
 
     case DesugaredAst.Expr.StructGet(e, name, loc) =>
+      val structsym = Symbol.mkStructSym(ns0, ns0.idents.last)
       mapN(visitExp(e, ns0)) {
-        case e => NamedAst.Expr.StructGet(e, name, loc)
+        case e => NamedAst.Expr.StructGet(structsym, e, name, loc)
       }
 
     case DesugaredAst.Expr.StructPut(e1, name, e2, loc) =>
+      val structsym = Symbol.mkStructSym(ns0, ns0.idents.last)
       mapN(visitExp(e1, ns0), visitExp(e2, ns0)) {
-        case (e1, e2) => NamedAst.Expr.StructPut(e1, name, e2, loc)
+        case (e1, e2) => NamedAst.Expr.StructPut(structsym, e1, name, e2, loc)
       }
 
     case DesugaredAst.Expr.VectorLit(exps, loc) =>
