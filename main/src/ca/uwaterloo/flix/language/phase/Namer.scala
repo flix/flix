@@ -310,17 +310,14 @@ object Namer {
 
       val mod = visitModifiers(mod0, ns0)
       val derives = visitDerivations(derives0)
-      val casesVal = traverse(cases0)(visitCase(_, sym))
+      val cases = cases0.map(visitCase(_, sym))
 
-      mapN(casesVal) {
-        case cases =>
-          NamedAst.Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc)
-      }
+      Validation.success(NamedAst.Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc))
   }
 
   /**
-   * Performs the naming on the given struct `struct0`.
-   */
+    * Performs the naming on the given struct `struct0`.
+    */
   private def visitStruct(struct0: DesugaredAst.Declaration.Struct, ns0: Name.NName)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.Declaration.Struct, NameError] = struct0 match {
     case DesugaredAst.Declaration.Struct(doc, ann, mod0, ident, tparams0, fields0, loc) =>
       val sym = Symbol.mkStructSym(ns0, ident)
@@ -368,11 +365,11 @@ object Namer {
   /**
     * Performs naming on the given enum case.
     */
-  private def visitCase(case0: DesugaredAst.Case, enumSym: Symbol.EnumSym)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.Declaration.Case, NameError] = case0 match {
+  private def visitCase(case0: DesugaredAst.Case, enumSym: Symbol.EnumSym)(implicit flix: Flix, sctx: SharedContext): NamedAst.Declaration.Case = case0 match {
     case DesugaredAst.Case(ident, tpe, loc) =>
       val t = visitType(tpe)
       val caseSym = Symbol.mkCaseSym(enumSym, ident)
-      Validation.success(NamedAst.Declaration.Case(caseSym, t, loc))
+      NamedAst.Declaration.Case(caseSym, t, loc)
   }
 
   /**
