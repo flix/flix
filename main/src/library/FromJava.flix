@@ -14,6 +14,8 @@
  *  limitations under the License.
  */
 
+import java.lang.Byte
+
 ///
 /// A trait for marshaling values from Java objects.
 ///
@@ -24,8 +26,8 @@ pub trait FromJava[t: Type] {
 }
 
 instance FromJava[Int8] {
-    type In = ##java.lang.Byte
-    pub def fromJava(i: ##java.lang.Byte): Int8 = Int8.byteValue(i)
+    type In = Byte
+    pub def fromJava(i: Byte): Int8 = Int8.byteValue(i)
 }
 
 instance FromJava[Int16] {
