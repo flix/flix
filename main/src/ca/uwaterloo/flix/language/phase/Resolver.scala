@@ -1325,10 +1325,6 @@ object Resolver {
             b => ResolvedAst.Expr.ArrayLength(b, loc)
           }
         
-        case NamedAst.Expr.StructNew(_, _, _, _) => throw new RuntimeException("Joe todo")
-        case NamedAst.Expr.StructGet(_, _, _) => throw new RuntimeException("Joe todo")
-        case NamedAst.Expr.StructPut(_, _, _, _) => throw new RuntimeException("Joe todo")
-
         case NamedAst.Expr.StructNew(name, fields, region, loc) =>
           val fieldsVal = traverse(fields) {
             case (f, e) =>
