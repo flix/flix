@@ -49,6 +49,8 @@ object NamedAst {
 
     case class Enum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: TypeParams, derives: Derivations, cases: List[Declaration.Case], loc: SourceLocation) extends Declaration
 
+    case class Struct(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.StructSym, tparams: TypeParams, fields: List[Declaration.StructField], loc: SourceLocation) extends Declaration
+
     case class RestrictableEnum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.RestrictableEnumSym, index: TypeParam, tparams: TypeParams, derives: Derivations, cases: List[Declaration.RestrictableCase], loc: SourceLocation) extends Declaration
 
     case class TypeAlias(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.TypeAliasSym, tparams: TypeParams, tpe: Type, loc: SourceLocation) extends Declaration
@@ -62,6 +64,8 @@ object NamedAst {
     case class Op(sym: Symbol.OpSym, spec: Spec) extends Declaration
 
     case class Case(sym: Symbol.CaseSym, tpe: Type, loc: SourceLocation) extends Declaration
+
+    case class StructField(sym: Symbol.StructFieldSym, tpe: Type, loc: SourceLocation) extends Declaration
 
     case class RestrictableCase(sym: Symbol.RestrictableCaseSym, tpe: Type, loc: SourceLocation) extends Declaration
   }
@@ -149,6 +153,12 @@ object NamedAst {
     case class ArrayStore(base: Expr, index: Expr, elm: Expr, loc: SourceLocation) extends Expr
 
     case class ArrayLength(base: Expr, loc: SourceLocation) extends Expr
+
+    case class StructNew(name: Symbol.StructSym, exps: List[(Symbol.StructFieldSym, Expr)], region: Expr, loc: SourceLocation) extends Expr
+
+    case class StructGet(structsym: Symbol.StructSym, exp: Expr, name: Name.Label, loc: SourceLocation) extends Expr
+
+    case class StructPut(structsym: Symbol.StructSym, exp1: Expr, name: Name.Label, exp2: Expr, loc: SourceLocation) extends Expr
 
     case class VectorLit(exps: List[Expr], loc: SourceLocation) extends Expr
 

@@ -27,8 +27,11 @@ dependencies {
     implementation files('lib/pjbdd-v1.0.10-9-67-gf113b5a.jar')
 
     implementation('io.get-coursier:coursier_2.13:2.1.4')
+
+    // Note: The tomlj library determines the antlr library.
+    // We cannot upgrade the antlr library independently.
     implementation('org.tomlj:tomlj:1.1.1')
-    implementation('org.antlr:antlr4-runtime:4.13.1')
+    implementation('org.antlr:antlr4-runtime:4.11.1')
 
     implementation('org.slf4j:slf4j-nop:2.0.13')
 
@@ -80,6 +83,7 @@ jar {
     from('main') {
         include '**/*.flix'
         include '**/*.zip'
+        include '**/ClassList.txt'
     }
 
     duplicatesStrategy = 'exclude'

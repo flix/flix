@@ -74,8 +74,7 @@ object Desugar {
     case d: WeededAst.Declaration.Law => visitLaw(d)
     case d: WeededAst.Declaration.Enum => visitEnum(d)
     case d: WeededAst.Declaration.RestrictableEnum => visitRestrictableEnum(d)
-    case _: WeededAst.Declaration.Struct =>
-      throw new RuntimeException("No struct support yet")
+    case d: WeededAst.Declaration.Struct => visitStruct(d)
     case d: WeededAst.Declaration.TypeAlias => visitTypeAlias(d)
     case d: WeededAst.Declaration.Effect => visitEffect(d)
   }
@@ -144,6 +143,16 @@ object Desugar {
       val derives = visitDerivations(derives0)
       val cases = cases0.map(visitCase)
       DesugaredAst.Declaration.Enum(doc, ann, mod, ident, tparams, derives, cases, loc)
+  }
+
+  /**
+   * Desugars the given [[WeededAst.Declaration.Struct]] `struct0`.
+   */
+  private def visitStruct(struct0: WeededAst.Declaration.Struct): DesugaredAst.Declaration.Struct = struct0 match {
+    case WeededAst.Declaration.Struct(doc, ann, mod, ident, tparams0, fields0, loc) =>
+      val tparams = visitTypeParams(tparams0)
+      val fields = fields0.map(visitField)
+      DesugaredAst.Declaration.Struct(doc, ann, mod, ident, tparams, fields, loc)
   }
 
   /**
@@ -423,6 +432,15 @@ object Desugar {
   }
 
   /**
+   * Desugars the given [[WeededAst.StructField]] `field0`.
+   */
+  private def visitField(field0: WeededAst.StructField): DesugaredAst.StructField = field0 match {
+    case WeededAst.StructField(ident, tpe0, loc) =>
+      val tpe = visitType(tpe0)
+      DesugaredAst.StructField(ident, tpe, loc)
+  }
+
+  /**
     * Desugars the given [[WeededAst.RestrictableCase]] `case0`.
     */
   private def visitRestrictableCase(case0: WeededAst.RestrictableCase): DesugaredAst.RestrictableCase = case0 match {
@@ -617,6 +635,17 @@ object Desugar {
       val e2 = visitExp(exp2)
       val e3 = visitExp(exp3)
       Expr.ArrayStore(e1, e2, e3, loc)
+
+    case WeededAst.Expr.StructNew(name, fields0, region0, loc) => 
+      val fields = fields0.map(field => (field._1, visitExp(field._2)))
+      val region = visitExp(region0)
+      Expr.StructNew(name, fields, region, loc)
+
+    case WeededAst.Expr.StructGet(e, name, loc) =>
+      Expr.StructGet(visitExp(e), name, loc)
+
+    case WeededAst.Expr.StructPut(e1, name, e2, loc) =>
+      Expr.StructPut(visitExp(e1), name, visitExp(e2), loc)
 
     case WeededAst.Expr.VectorLit(exps, loc) =>
       val e = visitExps(exps)

@@ -1102,9 +1102,7 @@ object Parser2 {
       expect(TokenKind.KeywordStruct, SyntacticContext.Decl.Struct)
       val nameLoc = currentSourceLocation()
       name(NAME_TYPE, context = SyntacticContext.Decl.Struct)
-      if (at(TokenKind.BracketL)) {
-        Type.parameters()
-      }
+      Type.parameters()
       zeroOrMore(
         namedTokenSet = NamedTokenSet.FromKinds(NAME_FIELD),
         getItem = structField,
@@ -1320,26 +1318,39 @@ object Parser2 {
 
     def expression(left: TokenKind = TokenKind.Eof, leftIsUnary: Boolean = false)(implicit s: State): Mark.Closed = {
       var lhs = exprDelimited()
-      // Handle calls
-      while (at(TokenKind.ParenL)) {
-        val mark = openBefore(lhs)
-        arguments()
-        lhs = close(mark, TreeKind.Expr.Apply)
-        lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
-      }
-      // Handle record select after function call. Example: funcReturningRecord()#field
-      if (at(TokenKind.Hash) && nth(1) == TokenKind.NameLowerCase) {
-        val mark = openBefore(lhs)
-        eat(TokenKind.Hash)
-        name(NAME_FIELD, context = SyntacticContext.Expr.OtherExpr)
-        while (eat(TokenKind.Hash)) {
-          name(NAME_FIELD, context = SyntacticContext.Expr.OtherExpr)
+      // Handle chained calls and record lookups
+      var continue = true
+      while (continue) {
+        nth(0) match {
+          case TokenKind.ParenL => // function call
+            val mark = openBefore(lhs)
+            arguments()
+            lhs = close(mark, TreeKind.Expr.Apply)
+            lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+          case TokenKind.Hash if nth(1) == TokenKind.NameLowerCase => // record lookup
+            val mark = openBefore(lhs)
+            eat(TokenKind.Hash)
+            name(NAME_FIELD, context = SyntacticContext.Expr.OtherExpr)
+            lhs = close(mark, TreeKind.Expr.RecordSelect)
+            lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+          case TokenKind.Euro if nth(1) == TokenKind.NameLowerCase => // struct get / put
+            val mark = openBefore(lhs)
+            eat(TokenKind.Euro)
+            name(NAME_FIELD, context = SyntacticContext.Expr.OtherExpr)
+            if (at(TokenKind.Equal)) { // struct put
+              eat (TokenKind.Equal)
+              expression(TokenKind.Equal)
+              close(mark, TreeKind.Expr.StructPut)
+              lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+            } else { // struct get
+              lhs = close(mark, TreeKind.Expr.StructGet)
+              lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+            }
+          case _ => continue = false
         }
-        lhs = close(mark, TreeKind.Expr.RecordSelect)
-        lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
       }
       // Handle binary operators
-      var continue = true
+      continue = true
       while (continue) {
         val right = nth(0)
         if (rightBindsTighter(left, right, leftIsUnary)) {
@@ -2468,8 +2479,24 @@ object Parser2 {
       expect(TokenKind.KeywordNew, SyntacticContext.Expr.OtherExpr)
       Type.ttype()
 
-      // NewObject or InvokeConstructor?
-      if (at(TokenKind.CurlyL)) {
+      // NewStruct, NewObject, or InvokeConstructor?
+      if (at(TokenKind.CurlyL) && (nth(1) == TokenKind.NameLowerCase || (nth(1) == TokenKind.CurlyR && nth(2) == TokenKind.At))) {
+        // case 2: new Struct {field1 = expr1, field2 = expr2, ...} @ region
+        //     or: new Struct {} @ region
+        zeroOrMore(
+          namedTokenSet = NamedTokenSet.FromKinds(NAME_FIELD),
+          checkForItem = NAME_FIELD.contains,
+          getItem = structFieldInit,
+          breakWhen = _.isRecoverExpr,
+          context = SyntacticContext.Expr.OtherExpr,
+          separation = Separation.Required(TokenKind.Comma),
+          delimiterL = TokenKind.CurlyL,
+          delimiterR = TokenKind.CurlyR
+        )
+        expect(TokenKind.At, SyntacticContext.Expr.OtherExpr)
+        expression()
+        close(mark, TreeKind.Expr.NewStruct)
+      } else if (at(TokenKind.CurlyL)) {
         // Case 1: new Type { ... }
         oneOrMore(
           namedTokenSet = NamedTokenSet.FromKinds(Set(TokenKind.KeywordDef)),
@@ -2483,10 +2510,18 @@ object Parser2 {
         )
         close(mark, TreeKind.Expr.NewObject)
       } else {
-        // Case 2: new Type(exps...)
+        // Case 3: new Type(exps...)
         arguments()
         close(mark, TreeKind.Expr.InvokeConstructor2)
       }
+    }
+
+    private def structFieldInit()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      name(NAME_FIELD, context = SyntacticContext.Expr.OtherExpr)
+      expect(TokenKind.Equal, SyntacticContext.Expr.OtherExpr)
+      expression()
+      close(mark, TreeKind.Expr.LiteralStructFieldFragment)
     }
 
     private def jvmMethod()(implicit s: State): Mark.Closed = {
