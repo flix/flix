@@ -15,6 +15,7 @@
  */
 
 import java.lang.Byte
+import java.lang.Integer
 import java.lang.Short
 
 ///
@@ -37,8 +38,8 @@ instance FromJava[Int16] {
 }
 
 instance FromJava[Int32] {
-    type In = ##java.lang.Integer
-    pub def fromJava(i: ##java.lang.Integer): Int32 = Int32.intValue(i)
+    type In = Integer
+    pub def fromJava(i: Integer): Int32 = Int32.intValue(i)
 }
 
 instance FromJava[Int64] {
