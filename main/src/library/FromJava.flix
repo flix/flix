@@ -15,6 +15,7 @@
  */
 
 import java.lang.Byte
+import java.lang.Double
 import java.lang.Float
 import java.lang.Integer
 import java.lang.Long
@@ -55,8 +56,8 @@ instance FromJava[Float32] {
 }
 
 instance FromJava[Float64] {
-    type In = ##java.lang.Double
-    pub def fromJava(d: ##java.lang.Double): Float64 = Float64.doubleValue(d)
+    type In = Double
+    pub def fromJava(d: Double): Float64 = Float64.doubleValue(d)
 }
 
 instance FromJava[BigInt] {
