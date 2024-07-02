@@ -59,13 +59,13 @@ object ResolvedAst {
 
     case class Enum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: TypeParams, derives: Ast.Derivations, cases: List[Declaration.Case], loc: SourceLocation) extends Declaration
 
-    case class Struct(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.StructSym, tparams: List[TypeParam], fields: Map[Name.StructField, StructField], tpe: Type, loc: SourceLocation) extends Declaration
-
-    case class StructField(sym: Symbol.StructFieldSym, tpe: Type, sc: Scheme, loc: SourceLocation)
+    case class Struct(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.StructSym, tparams: TypeParams, fields: List[Declaration.StructField], loc: SourceLocation) extends Declaration
 
     case class RestrictableEnum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.RestrictableEnumSym, index: TypeParam, tparams: TypeParams, derives: Ast.Derivations, cases: List[Declaration.RestrictableCase], loc: SourceLocation) extends Declaration
 
     case class Case(sym: Symbol.CaseSym, tpe: UnkindedType, loc: SourceLocation) extends Declaration
+
+    case class StructField(sym: Symbol.StructFieldSym, tpe: UnkindedType, loc: SourceLocation)
 
     case class RestrictableCase(sym: Symbol.RestrictableCaseSym, tpe: UnkindedType, loc: SourceLocation) extends Declaration
 
@@ -156,6 +156,12 @@ object ResolvedAst {
     case class ArrayStore(base: Expr, index: Expr, elm: Expr, loc: SourceLocation) extends Expr
 
     case class ArrayLength(base: Expr, loc: SourceLocation) extends Expr
+
+    case class StructNew(name: Symbol.StructSym, exps: List[(Symbol.StructFieldSym, Expr)], region: Expr, loc: SourceLocation) extends Expr
+
+    case class StructGet(sym: Symbol.StructSym, e: Expr, f: Name.Label, loc: SourceLocation) extends Expr
+
+    case class StructPut(sym: Symbol.StructSym, exp1: Expr, name: Name.Label, exp2: Expr, loc: SourceLocation) extends Expr
 
     case class VectorLit(exps: List[Expr], loc: SourceLocation) extends Expr
 

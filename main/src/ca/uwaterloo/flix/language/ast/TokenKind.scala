@@ -57,6 +57,7 @@ sealed trait TokenKind {
       case TokenKind.DotCurlyL => "'.{'"
       case TokenKind.Equal => "'='"
       case TokenKind.EqualEqual => "'=='"
+      case TokenKind.Euro => "'€'"
       case TokenKind.Hash => "'#'"
       case TokenKind.HashCurlyL => "'#{'"
       case TokenKind.HashParenL => "'#('"
@@ -665,6 +666,8 @@ object TokenKind {
   case object Equal extends TokenKind
 
   case object EqualEqual extends TokenKind
+
+  case object Euro extends TokenKind
 
   case object Hash extends TokenKind
 

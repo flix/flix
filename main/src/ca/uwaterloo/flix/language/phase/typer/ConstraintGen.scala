@@ -563,14 +563,24 @@ object ConstraintGen {
         val resEff = evar
         (resTpe, resEff)
 
-      case Expr.ArrayLength(exp, loc) =>
+      case Expr.ArrayLength(exp, evar, loc) =>
         val elmVar = Type.freshVar(Kind.Star, loc)
         val regionVar = Type.freshVar(Kind.Eff, loc)
         val (tpe, eff) = visitExp(exp)
         c.expectType(Type.mkArray(elmVar, regionVar, loc), tpe, exp.loc)
+        c.unifyType(evar, Type.mkUnion(regionVar, eff, loc), loc)
         val resTpe = Type.Int32
-        val resEff = eff
+        val resEff = evar
         (resTpe, resEff)
+
+      case Expr.StructNew(sym, fields, region, tvar, evar, loc) =>
+        throw new RuntimeException("joe tbd")
+
+      case Expr.StructGet(sym, exp, name, tvar, evar, loc) =>
+        throw new RuntimeException("joe tbd")
+
+      case Expr.StructPut(sym, exp1, name, exp2, tvar, evar, loc) =>
+        throw new RuntimeException("joe tbd")
 
       case Expr.VectorLit(exps, tvar, evar, loc) =>
         val (tpes, effs) = exps.map(visitExp).unzip
