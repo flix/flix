@@ -460,23 +460,23 @@ object Weeder2 {
         traverse(fields)(visitStructField)
       ) {
         (doc, ann, mods, ident, tparams, fields) =>
-        // Ensure that each name is unique
-        val errors = getDuplicates(fields, (f: StructField) => f.ident.name)
-        // For each field, only keep the first occurrence of the name
-        val groupedByName = fields.groupBy(_.ident.name)
-        val filteredFields = groupedByName.values.map(_.head).toList
-        if (errors.isEmpty) {
-          Validation.success(Declaration.Struct(
-            doc, ann, mods, ident, tparams, filteredFields.sortBy(_.loc), tree.loc
-          ))
-        }
-        else {
-          Validation.success(Declaration.Struct(
-            doc, ann, mods, ident, tparams, filteredFields.sortBy(_.loc), tree.loc
-          )).withSoftFailures(errors.map {
-            case (field1, field2) => DuplicateStructField(ident.name, field1.ident.name, field1.ident.loc, field2.ident.loc, ident.loc)
-          })
-        }
+          // Ensure that each name is unique
+          val errors = getDuplicates(fields, (f: StructField) => f.ident.name)
+          // For each field, only keep the first occurrence of the name
+          val groupedByName = fields.groupBy(_.ident.name)
+          val filteredFields = groupedByName.values.map(_.head).toList
+          if (errors.isEmpty) {
+            Validation.success(Declaration.Struct(
+              doc, ann, mods, ident, tparams, filteredFields.sortBy(_.loc), tree.loc
+            ))
+          }
+          else {
+            Validation.success(Declaration.Struct(
+              doc, ann, mods, ident, tparams, filteredFields.sortBy(_.loc), tree.loc
+            )).withSoftFailures(errors.map {
+              case (field1, field2) => DuplicateStructField(ident.name, field1.ident.name, field1.ident.loc, field2.ident.loc, ident.loc)
+            })
+          }
       }
     }
 
@@ -1857,7 +1857,7 @@ object Weeder2 {
               val m = IllegalQualifiedName(tree.loc)
               Validation.toSoftFailure(Expr.Error(m), m)
           }
-       }
+      }
     }
 
     private def visitNewStructField(tree: Tree): Validation[(Name.Ident, Expr), CompilationMessage] = {
