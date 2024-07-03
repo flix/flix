@@ -77,6 +77,8 @@ object MonoType {
 
   case class Enum(sym: Symbol.EnumSym) extends MonoType
 
+  case class Struct(sym: Symbol.StructSym) extends MonoType
+
   case class Arrow(args: List[MonoType], result: MonoType) extends MonoType
 
   case object RecordEmpty extends MonoType
