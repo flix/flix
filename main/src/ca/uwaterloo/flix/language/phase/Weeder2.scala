@@ -231,8 +231,10 @@ object Weeder2 {
       val traitName = "Dot_" ++ fieldName
       val ident = Name.Ident(traitName, loc)
       val tparam = WeededAst.TypeParam.Kinded(Name.Ident("st_typ", loc), Kind.Ambiguous(Name.mkQName("Type", loc), loc))
-      val fieldAssocType = WeededAst.Declaration.AssocTypeSig(doc, mod, Name.Ident("FieldType", loc), TypeParam.Unkinded(Name.Ident("st_typ", loc)), Kind.Ambiguous(Name.mkQName("Type"), loc), None, loc)
-      val fieldAssocEff = WeededAst.Declaration.AssocTypeSig(doc, mod, Name.Ident("Eff", loc), TypeParam.Unkinded(Name.Ident("st_typ", loc)), Kind.Ambiguous(Name.mkQName("Eff"), loc), None, loc)
+      val typeKind = Kind.Ambiguous(Name.mkQName("Type", loc), loc)
+      val effKind = Kind.Ambiguous(Name.mkQName("Eff", loc), loc)
+      val fieldAssocType = WeededAst.Declaration.AssocTypeSig(doc, mod, Name.Ident("FieldType", loc), TypeParam.Kinded(Name.Ident("st_typ", loc), typeKind), typeKind, None, loc)
+      val fieldAssocEff = WeededAst.Declaration.AssocTypeSig(doc, mod, Name.Ident("Eff", loc), TypeParam.Kinded(Name.Ident("st_typ", loc), typeKind), effKind, None, loc)
       val tvar = WeededAst.Type.Var(Name.Ident("st_typ", loc), loc)
       val fieldType = Type.Apply(Type.Ambiguous(Name.mkQName(traitName ++ ".FieldType", loc), loc), tvar, loc)
       val effType = Type.Apply(Type.Ambiguous(Name.mkQName(traitName ++ ".Aef", loc), loc), tvar, loc)
