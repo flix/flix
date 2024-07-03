@@ -205,9 +205,52 @@ object Weeder2 {
         traverse(typeAliases)(visitTypeAliasDecl),
         traverse(effects)(visitEffectDecl)
       ) {
-        case (modules, traits, instances, definitions, enums, rEnums, structs, typeAliases, effects) =>
-          (modules ++ traits ++ instances ++ definitions ++ enums ++ rEnums ++ structs ++ typeAliases ++ effects).sortBy(_.loc)
+        case (modules, traits, instances, definitions, enums, structs, rEnums, typeAliases, effects) =>
+          (modules ++ allTraits(traits, structs) ++ instances ++ definitions ++ enums ++ structs ++ rEnums ++ typeAliases ++ effects).sortBy(_.loc)
       }
+    }
+
+    private def allTraits(traits: List[WeededAst.Declaration.Trait], structs: List[WeededAst.Declaration.Struct]): List[WeededAst.Declaration.Trait] = {
+      val fieldsSet = structs.foldLeft(Set.empty[String]) {
+        (acc, struct) => acc ++ struct.fields.map(_.ident.name)
+      }
+      val fieldsList = fieldsSet.toList
+
+      traits ++ fieldsList.map(traitOfField)
+    }
+
+    private def traitOfField(fieldName: String): WeededAst.Declaration.Trait = {
+      // STRUCT TODO: What should the location be? The location of the first field(but then what if there are multiple fields of the same name)?
+      val loc = SourceLocation.Unknown
+      val doc = Ast.Doc(Nil, loc)
+      val ann = Ast.Annotations(Nil)
+      val mod = Ast.Modifiers(List(Ast.Modifier.Public))
+
+
+      // STRUCT TODO: Give this a name that cannot be accidentally overshadowed by the user?
+      val ident = Name.Ident("Dot" ++ fieldName, loc)
+      val tparam = WeededAst.TypeParam.Kinded(Name.Ident("st_typ", loc), Kind.Ambiguous(Name.mkQName("Type", loc), loc))
+      val fieldAssocType = WeededAst.Declaration.AssocTypeSig(doc, mod, Name.Ident("FieldType", loc), TypeParam.Unkinded(Name.Ident("st_typ", loc)), Kind.Ambiguous(Name.mkQName("Type"), loc), None, loc)
+      val fieldAssocEff = WeededAst.Declaration.AssocTypeSig(doc, mod, Name.Ident("Eff", loc), TypeParam.Unkinded(Name.Ident("st_typ", loc)), Kind.Ambiguous(Name.mkQName("Eff"), loc), None, loc)
+      val tvar = WeededAst.Type.Var(Name.Ident("st_typ", loc), loc)
+      val fieldType = Type.Apply(Type.Ambiguous(Name.mkQName("DotField.FieldType", loc), loc), tvar, loc)
+      val effType = Type.Apply(Type.Ambiguous(Name.mkQName("DotField.Aef", loc), loc), tvar, loc)
+      val getFormalParams = List(FormalParam(Name.Ident("st_val", loc), mod, Some(tvar), loc))
+      val putFormalParams = getFormalParams :+ FormalParam(Name.Ident("field_val", loc), mod, Some(fieldType), loc)
+      val getSig = WeededAst.Declaration.Sig(doc, ann, mod, Name.Ident("get", loc), TypeParams.Elided, getFormalParams, None, fieldType, Some(effType), List(), List(), loc)
+      val putSig = WeededAst.Declaration.Sig(doc, ann, mod, Name.Ident("put", loc), TypeParams.Elided, putFormalParams, None, Type.Ambiguous(Name.mkQName("Unit"), loc), Some(effType), List(), List(), loc)
+      WeededAst.Declaration.Trait(
+        doc = doc,
+        ann = ann,
+        mod = mod,
+        ident = ident,
+        tparam = tparam,
+        superTraits = List(),
+        assocs = List(fieldAssocType, fieldAssocEff),
+        sigs = List(getSig, putSig),
+        laws = List(),
+        loc = loc
+      )
     }
 
     private def visitModuleDecl(tree: Tree): Validation[Declaration.Namespace, CompilationMessage] = {
@@ -1817,7 +1860,7 @@ object Weeder2 {
         (expr, ident) => Expr.StructGet(expr, Name.mkLabel(ident), tree.loc)
       }
     }
-    
+
     private def visitStructPutExpr(tree: Tree): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.StructPut)
       val struct = pickExpr(tree)
