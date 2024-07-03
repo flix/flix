@@ -47,8 +47,8 @@ object EffUnification2 {
       case Result.Ok(subst) => Result.Ok(fromBoolSubst(subst))
 
       case Result.Err((ex: ConflictException, _, _)) =>
-        val tpe1 = fromTerm(ex.x, ex.loc)
-        val tpe2 = fromTerm(ex.y, ex.loc)
+        val tpe1 = fromTerm(flipTerm(ex.x), ex.loc)
+        val tpe2 = fromTerm(flipTerm(ex.y), ex.loc)
         Result.Err(UnificationError.MismatchedEffects(tpe1, tpe2))
 
       case Result.Err((ex: TooComplexException, _, _)) =>
@@ -84,7 +84,7 @@ object EffUnification2 {
     */
   private def toEquation(p: (Type, Type, SourceLocation))(implicit renv: RigidityEnv, m: Bimap[Type.Var, Int]): Equation = {
     val (tpe1, tpe2, loc) = p
-    Equation.mk(toTerm(tpe1), toTerm(tpe2), loc)
+    Equation.mk(flipTerm(toTerm(tpe1)), flipTerm(toTerm(tpe2)), loc)
   }
 
   /**
@@ -95,8 +95,8 @@ object EffUnification2 {
     * The rigidity environment `renv` is used to map rigid type variables to constants and flexible type variables to term variables.
     */
   private def toTerm(t: Type)(implicit renv: RigidityEnv, m: Bimap[Type.Var, Int]): Term = Type.eraseTopAliases(t) match {
-    case Type.Pure => Term.True
-    case Type.Univ => Term.False
+    case Type.Pure => Term.False
+    case Type.Univ => Term.True
 
     case t: Type.Var => m.getForward(t) match {
       case None => throw InternalCompilerException(s"Unexpected unbound type variable: '$t'.", t.loc)
@@ -107,10 +107,23 @@ object EffUnification2 {
     }
 
     case Type.Apply(Type.Cst(TypeConstructor.Complement, _), tpe1, _) => Term.mkNot(toTerm(tpe1))
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), tpe1, _), tpe2, _) => Term.mkAnd(toTerm(tpe1), toTerm(tpe2))
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), tpe1, _), tpe2, _) => Term.mkOr(toTerm(tpe1), toTerm(tpe2))
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), tpe1, _), tpe2, _) => Term.mkOr(toTerm(tpe1), toTerm(tpe2))
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), tpe1, _), tpe2, _) => Term.mkAnd(toTerm(tpe1), toTerm(tpe2))
 
     case _ => throw InternalCompilerException(s"Unexpected type: '$t'.", t.loc)
+  }
+
+  /**
+    * Returns the term under flipped lattice interpretation. This is NOT a negation of the given term.
+    */
+  private def flipTerm(t: Term): Term = t match {
+    case Term.True => Term.False
+    case Term.False => Term.True
+    case Term.Cst(_) => t
+    case Term.Var(_) => t
+    case Term.Not(t) => Term.mkNot(t)
+    case Term.And(csts, vars, rest) => Term.mkOr(csts.toList ++ vars ++ rest.map(flipTerm))
+    case Term.Or(ts) => Term.mkAnd(ts.map(flipTerm))
   }
 
   /**
@@ -120,7 +133,7 @@ object EffUnification2 {
     Substitution(s.m.foldLeft(Map.empty[Symbol.KindedTypeVarSym, Type]) {
       case (macc, (k, v)) =>
         val tvar = m.getBackward(k).get.sym
-        macc + (tvar -> fromTerm(v, tvar.loc))
+        macc + (tvar -> fromTerm(flipTerm(v), tvar.loc))
     })
   }
 
@@ -134,15 +147,15 @@ object EffUnification2 {
     * distinguishes their rigidity or flexibility.
     */
   private def fromTerm(t: Term, loc: SourceLocation)(implicit m: Bimap[Type.Var, Int]): Type = t match {
-    case Term.True => Type.Pure
-    case Term.False => Type.Univ
+    case Term.True => Type.Univ
+    case Term.False => Type.False
     case Term.Cst(c) => m.getBackward(c).get // Safe: We never introduce new variables.
     case Term.Var(x) => m.getBackward(x).get // Safe: We never introduce new variables.
     case Term.Not(t) => Type.mkComplement(fromTerm(t, loc), loc)
     case Term.And(csts, vars, rest) =>
       val ts = csts.toList.map(fromTerm(_, loc)) ++ vars.toList.map(fromTerm(_, loc)) ++ rest.map(fromTerm(_, loc))
-      Type.mkUnion(ts, loc)
-    case Term.Or(ts) => Type.mkIntersection(ts.map(fromTerm(_, loc)), loc)
+      Type.mkIntersection(ts, loc)
+    case Term.Or(ts) => Type.mkUnion(ts.map(fromTerm(_, loc)), loc)
   }
 
 }
