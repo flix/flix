@@ -228,13 +228,14 @@ object Weeder2 {
 
 
       // STRUCT TODO: Give this a name that cannot be accidentally overshadowed by the user?
-      val ident = Name.Ident("Dot" ++ fieldName, loc)
+      val traitName = "Dot_" ++ fieldName
+      val ident = Name.Ident(traitName, loc)
       val tparam = WeededAst.TypeParam.Kinded(Name.Ident("st_typ", loc), Kind.Ambiguous(Name.mkQName("Type", loc), loc))
       val fieldAssocType = WeededAst.Declaration.AssocTypeSig(doc, mod, Name.Ident("FieldType", loc), TypeParam.Unkinded(Name.Ident("st_typ", loc)), Kind.Ambiguous(Name.mkQName("Type"), loc), None, loc)
       val fieldAssocEff = WeededAst.Declaration.AssocTypeSig(doc, mod, Name.Ident("Eff", loc), TypeParam.Unkinded(Name.Ident("st_typ", loc)), Kind.Ambiguous(Name.mkQName("Eff"), loc), None, loc)
       val tvar = WeededAst.Type.Var(Name.Ident("st_typ", loc), loc)
-      val fieldType = Type.Apply(Type.Ambiguous(Name.mkQName("DotField.FieldType", loc), loc), tvar, loc)
-      val effType = Type.Apply(Type.Ambiguous(Name.mkQName("DotField.Aef", loc), loc), tvar, loc)
+      val fieldType = Type.Apply(Type.Ambiguous(Name.mkQName(traitName ++ ".FieldType", loc), loc), tvar, loc)
+      val effType = Type.Apply(Type.Ambiguous(Name.mkQName(traitName ++ ".Aef", loc), loc), tvar, loc)
       val getFormalParams = List(FormalParam(Name.Ident("st_val", loc), mod, Some(tvar), loc))
       val putFormalParams = getFormalParams :+ FormalParam(Name.Ident("field_val", loc), mod, Some(fieldType), loc)
       val getSig = WeededAst.Declaration.Sig(doc, ann, mod, Name.Ident("get", loc), TypeParams.Elided, getFormalParams, None, fieldType, Some(effType), List(), List(), loc)
