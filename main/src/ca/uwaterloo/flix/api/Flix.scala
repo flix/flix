@@ -531,7 +531,7 @@ class Flix {
 
     // Print summary?
     if (options.xsummary) {
-      Summary.printSummary(result)
+      result.map(Summary.printMarkdownFileSummary(_, nsDepth = Some(1), minLines = Some(125)))
     }
 
     // Return the result (which could contain soft failures).

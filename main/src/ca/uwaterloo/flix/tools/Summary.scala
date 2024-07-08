@@ -15,168 +15,228 @@
  */
 package ca.uwaterloo.flix.tools
 
-import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.{Ast, Type}
-import ca.uwaterloo.flix.language.ast.TypedAst.{Root, Spec}
-import ca.uwaterloo.flix.util.Validation
-import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.language.ast.TypedAst.Root
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, SourceLocation, SourcePosition, Type, TypedAst}
+import ca.uwaterloo.flix.util.InternalCompilerException
+
+import scala.collection.mutable.ListBuffer
 
 object Summary {
 
-  /**
-    * The column separator.
-    */
-  private val Separator = " & "
+  def printMarkdownFileSummary(root: Root, nsDepth: Option[Int] = None, minLines: Option[Int] = None): Unit = {
+    val table = fileSummaryTable(root, nsDepth, minLines)
 
-  /**
-    * The end of line separator.
-    */
-  private val EndOfLine = " \\\\"
+    def rowString(row: List[String]) = row.mkString("| ", " | ", " |")
 
-  /**
-    * The width of the module column.
-    */
-  private val ModWidth = 30
+    table match {
+      case headers :: rows =>
+        val line = headers.map(s => "-" * s.length)
+        println(rowString(headers))
+        println(rowString(line))
+        rows.foreach(row => println(rowString(row)))
+      case Nil => println("Empty")
+    }
+  }
 
-  /**
-    * The width of every other column.
-    */
-  private val ColWidth = 12
+  def printLatexFileSummary(root: Root, nsDepth: Option[Int] = None, minLines: Option[Int] = None): Unit = {
+    val table = fileSummaryTable(root, nsDepth, minLines)
+    table.foreach(row => println(row.mkString("", " & ", " \\\\")))
+  }
 
-  /**
-    * Returns `true` if the given module `mod` should be printed.
-    */
-  private def include(mod: String, lines: Int): Boolean =
-    lines >= 125
+  private def fileSummaryTable(root: Root, nsDepth: Option[Int], minLines: Option[Int]): List[List[String]] = {
+    val allSums = groupedFileSummaries(fileSummaries(root), nsDepth)
+    val totals = fileTotals(allSums)
+    val printedSums = minLines match {
+      case Some(min) => allSums.filter(_.data.lines >= min)
+      case None => allSums
+    }
+    val dots = printedSums.lengthIs < allSums.length
+    val builder = new RowBuilder()
+    builder.addRow(FileSummary.header)
+    printedSums.sortBy(_.src.name).map(_.toRow).foreach(builder.addRow)
+    if (dots) builder.addRepeatedRow("...")
+    builder.addRow("Totals" :: totals.toRow)
+    builder.getRows
+  }
 
-  def printSummary(v: Validation[Root, CompilationMessage]): Unit = mapN(v) {
-    case root =>
+  private def defSummary(defn: TypedAst.Def, isInstance: Boolean): DefSummary = {
+    val fun = if (isInstance) Function.InstanceFun(defn.sym) else Function.Def(defn.sym)
+    val eff = resEffect(defn.spec.eff)
+    DefSummary(fun, eff)
+  }
 
-      print(padR("Module", ModWidth))
-      print(Separator)
-      print(padL("Lines", ColWidth))
-      print(Separator)
-      print(padL("Functions", ColWidth))
-      print(Separator)
-      print(padL("Pure", ColWidth))
-      print(Separator)
-      print(padL("Univ", ColWidth))
-      print(Separator)
-      print(padL("Polymorphic", ColWidth))
-      println(EndOfLine)
+  private def defSummary(sig: TypedAst.Sig): DefSummary = {
+    val fun = Function.TraitFunWithExp(sig.sym)
+    val eff = resEffect(sig.spec.eff)
+    DefSummary(fun, eff)
+  }
 
-      var totalLines = 0
-      var totalFunctions = 0
-      var totalPureFunctions = 0
-      var totalUnivFunctions = 0
-      var totalEffPolymorphicFunctions = 0
+  private def defSummaries(root: Root): List[DefSummary] = {
+    val defs = root.defs.values.map(defSummary(_, isInstance = false))
+    val instances = root.instances.values.flatten.flatMap(i => i.defs.map(defSummary(_, isInstance = true)))
+    val traits = root.traits.values.flatMap(t => t.sigs.filter(_.exp.isDefined).map(defSummary))
+    (defs ++ instances ++ traits).toList
+  }
 
-      for ((source, loc) <- root.sources.toList.sortBy(_._1.name)) {
-        val module = source.name
-        val defs = getFunctions(source, root) ++
-          getTraitFunctions(source, root) ++
-          getInstanceFunctions(source, root)
+  private def fileData(sum: DefSummary)(implicit root: Root): FileData = {
+    val src = sum.fun.loc.source
+    val srcLoc = root.sources.getOrElse(src, SourceLocation(isReal = false, SourcePosition(unknownSource, 0, 0), SourcePosition(unknownSource, 0, 0)))
+    val pureDefs = if (sum.eff == ResEffect.Pure) 1 else 0
+    val justIODefs = if (sum.eff == ResEffect.JustIO) 1 else 0
+    val polyDefs = if (sum.eff == ResEffect.Poly) 1 else 0
+    FileData(Some(src), srcLoc.endLine, defs = 1, pureDefs, justIODefs, polyDefs)
+  }
 
-        val numberOfLines = loc.endLine
-        val numberOfFunctions = defs.size
-        val numberOfPureFunctions = defs.count(isPure)
-        val numberOfUnivFunctions = defs.count(isUniv)
-        val numberOfEffectPolymorphicFunctions = defs.count(isEffectPolymorphic)
+  private def fileData(sums: List[DefSummary])(implicit root: Root): FileData = {
+    FileData.combine(sums.map(fileData))
+  }
 
-        totalLines = totalLines + numberOfLines
-        totalFunctions = totalFunctions + numberOfFunctions
-        totalPureFunctions = totalPureFunctions + numberOfPureFunctions
-        totalUnivFunctions = totalUnivFunctions + numberOfUnivFunctions
-        totalEffPolymorphicFunctions = totalEffPolymorphicFunctions + numberOfEffectPolymorphicFunctions
-
-        if (include(module, numberOfLines)) {
-          print(padR(module, ModWidth))
-          print(Separator)
-          print(padL(format(numberOfLines), ColWidth))
-          print(Separator)
-          print(padL(format(numberOfFunctions), ColWidth))
-          print(Separator)
-          print(padL(format(numberOfPureFunctions), ColWidth))
-          print(Separator)
-          print(padL(format(numberOfUnivFunctions), ColWidth))
-          print(Separator)
-          print(padL(format(numberOfEffectPolymorphicFunctions), ColWidth))
-          println(EndOfLine)
-        }
-      }
-
-      println("---")
-      print(padR("Totals (incl. filtered)", ModWidth))
-      print(Separator)
-      print(padL(format(totalLines), ColWidth))
-      print(Separator)
-      print(padL(format(totalFunctions), ColWidth))
-      print(Separator)
-      print(padL(format(totalPureFunctions), ColWidth))
-      print(Separator)
-      print(padL(format(totalUnivFunctions), ColWidth))
-      print(Separator)
-      print(padL(format(totalEffPolymorphicFunctions), ColWidth))
-      println(EndOfLine)
+  private def fileSummaries(root: Root): List[FileSummary] = {
+    val defSums = defSummaries(root)
+    defSums.groupBy(_.src).map { case (src, sums) => FileSummary(src, fileData(sums)(root)) }.toList
   }
 
   /**
-    * Returns the [[Spec]] of all top-level functions in the given `source`.
-    */
-  private def getFunctions(source: Ast.Source, root: Root): Iterable[Spec] =
-    root.defs.collect {
-      case (sym, defn) if sym.loc.source == source => defn.spec
-    }
-
-  /**
-    * Returns the [[Spec]] of all trait functions in the given `source`.
+    * nsDepth=1 means that `Something/One.flix` and `Something/Two.flix` are counted
+    * together under `Something/...`. nsDepth=2 would keep them separate but
+    * collect files a level deeper.
     *
-    * Note: This means signatures that have an implementation (i.e. body expression).
+    * nsDepth < 1 means all files are kept separate
     */
-  private def getTraitFunctions(source: Ast.Source, root: Root): Iterable[Spec] =
-    root.traits.collect {
-      case (sym, trt) if sym.loc.source == source =>
-        trt.sigs.collect {
-          case sig if sig.exp.nonEmpty => sig.spec
-        }
-    }.flatten
-
-  /**
-    * Returns the [[Spec]] of all instance functions in the given `source`.
-    */
-  private def getInstanceFunctions(source: Ast.Source, root: Root): Iterable[Spec] =
-    root.instances.values.flatMap {
-      case instances => instances.filter(_.loc.source == source).flatMap(_.defs).map(_.spec)
+  private def groupedFileSummaries(sums: List[FileSummary], nsDepth: Option[Int]): List[FileSummary] = {
+    def comb(x: FileSummary, y: FileSummary): FileSummary = {
+      FileSummary(x.src, x.data.naiveSum(y.data))
     }
 
+    def zero(name: String): FileSummary = FileSummary(Ast.Source(Ast.Input.Text(name, "", stable = true), Array.emptyCharArray, stable = true), FileData.zero)
+
+    sums.groupBy(sum => prefixFileName(sum.src.name, nsDepth)).map {
+      case (name, sums) => sums.foldLeft(zero(name))(comb).copy(src = zero(name).src)
+    }.toList
+  }
+
+  private def prefixFileName(name: String, nsDepth: Option[Int]): String = {
+    nsDepth match {
+      case None => name
+      case Some(depth) =>
+        // Note: the separator disagrees with File.separator
+        val fileSep = '/'
+        name.split(fileSep).toList match {
+          case parts if depth > 0 && parts.length > depth =>
+            (parts.take(depth) :+ "...").mkString(fileSep.toString)
+          case _ => name
+        }
+    }
+  }
+
+  private def fileTotals(l: List[FileSummary]): FileData = {
+    FileData.naiveSum(l.map(_.data))
+  }
+
   /**
-    * Formats the given number `n`.
+    * Assumes that IO and Pure are represented simply, i.e. no `{} + {}`,
+    * `IO + {}`, or `x - x`.
     */
+  private def resEffect(eff: Type): ResEffect = eff match {
+    case Type.Pure => ResEffect.Pure
+    case Type.IO => ResEffect.JustIO
+    case _ if eff.kind == Kind.Eff => ResEffect.Poly
+    case _ => throw InternalCompilerException(s"Not an effect: '$eff'", eff.loc)
+  }
+
+  private val unknownSource = {
+    Ast.Source(Ast.Input.Text("generated", "", stable = true), Array.emptyCharArray, stable = true)
+  }
+
+  /** debugSrc is just for consistency checking exceptions */
+  private sealed case class FileData(debugSrc: Option[Ast.Source], lines: Int, defs: Int, pureDefs: Int, justIODefs: Int, polyDefs: Int) {
+    if (defs != pureDefs + justIODefs + polyDefs) {
+      val src = debugSrc.getOrElse(unknownSource)
+      throw InternalCompilerException(
+        s"${(defs, pureDefs, justIODefs, polyDefs)} does not sum for $src",
+        SourceLocation(isReal = true, SourcePosition(src, 0, 0), SourcePosition(src, 0, 0))
+      )
+    }
+
+    def combine(other: FileData): FileData = {
+      if (lines != other.lines) {
+        val src = debugSrc.getOrElse(unknownSource)
+        throw InternalCompilerException(s"lines '$lines' and '${other.lines}' in $debugSrc",
+          SourceLocation(isReal = true, SourcePosition(src, 0, 0), SourcePosition(src, 0, 0))
+        )
+      }
+      FileData(debugSrc.orElse(other.debugSrc), lines, defs + other.defs, pureDefs + other.pureDefs, justIODefs + other.justIODefs, polyDefs + other.polyDefs)
+    }
+
+    def naiveSum(other: FileData): FileData = {
+      FileData(debugSrc.orElse(other.debugSrc), lines + other.lines, defs + other.defs, pureDefs + other.pureDefs, justIODefs + other.justIODefs, polyDefs + other.polyDefs)
+    }
+
+    def toRow: List[String] = List(lines, defs, pureDefs, justIODefs, polyDefs).map(format)
+  }
+
+  private object FileData {
+    val zero: FileData = FileData(None, 0, 0, 0, 0, 0)
+
+    def combine(l: List[FileData]): FileData = if (l.nonEmpty) l.reduce(_.combine(_)) else zero
+
+    def naiveSum(l: List[FileData]): FileData = if (l.nonEmpty) l.reduce(_.naiveSum(_)) else zero
+
+    def header: List[String] = List("lines", "defs", "Pure", "IO", "Eff. Poly.")
+  }
+
+  private sealed case class FileSummary(src: Ast.Source, data: FileData) {
+    def toRow: List[String] = List(src.name) ++ data.toRow
+  }
+
+  private object FileSummary {
+    def header: List[String] = List("Module") ++ FileData.header
+  }
+
+  private sealed case class DefSummary(fun: Function, eff: ResEffect) {
+    def src: Ast.Source = loc.source
+
+    def loc: SourceLocation = fun.loc
+  }
+
+  private sealed trait ResEffect
+
+  private object ResEffect {
+    case object Pure extends ResEffect
+
+    case object JustIO extends ResEffect
+
+    case object Poly extends ResEffect
+  }
+
+  private sealed trait Function {
+    def loc: SourceLocation
+  }
+
+  private object Function {
+
+    import ca.uwaterloo.flix.language.ast.Symbol
+
+    case class Def(sym: Symbol.DefnSym) extends Function {
+      val loc: SourceLocation = sym.loc
+    }
+
+    case class TraitFunWithExp(sym: Symbol.SigSym) extends Function {
+      val loc: SourceLocation = sym.loc
+    }
+
+    case class InstanceFun(sym: Symbol.DefnSym) extends Function {
+      val loc: SourceLocation = sym.loc
+    }
+  }
+
+  /** Formats the given number `n`. */
   private def format(n: Int): String = f"$n%,d".replace(".", ",")
 
-  /**
-    * Returns `true` if the given `spec` is pure.
-    */
-  private def isPure(spec: Spec): Boolean = spec.eff == Type.Pure
-
-  /**
-    * Returns `true` if the given `spec` has the top effect.
-    */
-  private def isUniv(spec: Spec): Boolean = spec.eff == Type.Univ
-
-  /**
-    * Returns `true` if the given `spec` is effect polymorphic (neither pure or impure).
-    */
-  private def isEffectPolymorphic(spec: Spec): Boolean = !isPure(spec) && !isUniv(spec)
-
-  /**
-    * Right-pads the given string `s` to length `l`.
-    */
+  /** Right-pads the given string `s` to length `l`. */
   private def padR(s: String, l: Int): String = s.padTo(l, ' ')
 
-  /**
-    * Left-pads the given string `s` to length `l`.
-    */
+  /** Left-pads the given string `s` to length `l`. */
   private def padL(s: String, l: Int): String = {
     if (s.length >= l) {
       return s
@@ -187,6 +247,33 @@ object Summary {
     }
     sb.append(s)
     sb.toString
+  }
+
+  /** Keeps track of max lengths in columns */
+  private class RowBuilder() {
+    private val rows: ListBuffer[List[String]] = ListBuffer.empty
+    /** has the length of the longest list in rows */
+    private val maxLens: ListBuffer[Int] = ListBuffer.empty
+
+    def addRow(row: List[String]): Unit = {
+      for ((s, i) <- row.iterator.zipWithIndex) {
+        if (i >= maxLens.size) maxLens.append(0)
+        maxLens(i) = maxLens(i) max s.length
+      }
+      rows.append(row)
+    }
+
+    def addRepeatedRow(content: String): Unit = {
+      addRow(maxLens.toList.map(_ => content))
+    }
+
+    def getRows: List[List[String]] = {
+      rows.map(row => {
+        row.iterator.zipWithIndex.map {
+          case (s, i) => padL(s, maxLens(i))
+        }.toList
+      }).toList
+    }
   }
 
 }
