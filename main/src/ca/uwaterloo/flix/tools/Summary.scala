@@ -23,6 +23,14 @@ import scala.collection.mutable.ListBuffer
 
 object Summary {
 
+  /**
+    * Returns a markdown of the file data of the root
+    * @param root the root to create data for
+    * @param nsDepth after this folder depth, files will be summarized under the
+    *                folder
+    * @param minLines all files with less lines than this will not be in the
+    *                 table but it will still be reflected in the total row
+    */
   def printMarkdownFileSummary(root: Root, nsDepth: Option[Int] = None, minLines: Option[Int] = None): Unit = {
     val table = fileSummaryTable(root, nsDepth, minLines)
 
@@ -38,11 +46,27 @@ object Summary {
     }
   }
 
+  /**
+    * Prints a latex table of the file data of the root
+    * @param root the root to create data for
+    * @param nsDepth after this folder depth, files will be summarized under the
+    *                folder
+    * @param minLines all files with less lines than this will not be in the
+    *                 table but it will still be reflected in the total row
+    */
   def printLatexFileSummary(root: Root, nsDepth: Option[Int] = None, minLines: Option[Int] = None): Unit = {
     val table = fileSummaryTable(root, nsDepth, minLines)
     table.foreach(row => println(row.mkString("", " & ", " \\\\")))
   }
 
+  /**
+    * Returns a table of the file data of the root
+    * @param root the root to create data for
+    * @param nsDepth after this folder depth, files will be summarized under the
+    *                folder
+    * @param minLines all files with less lines than this will not be in the
+    *                 table but it will still be reflected in the total row
+    */
   private def fileSummaryTable(root: Root, nsDepth: Option[Int], minLines: Option[Int]): List[List[String]] = {
     val allSums = groupedFileSummaries(fileSummaries(root), nsDepth)
     val totals = fileTotals(allSums)
@@ -59,25 +83,33 @@ object Summary {
     builder.getRows
   }
 
+  /** Returns a function summary for a def or an instance, depending on the flag */
   private def defSummary(defn: TypedAst.Def, isInstance: Boolean): DefSummary = {
-    val fun = if (isInstance) Function.InstanceFun(defn.sym) else Function.Def(defn.sym)
+    val fun = if (isInstance) FunctionSym.InstanceFun(defn.sym) else FunctionSym.Def(defn.sym)
     val eff = resEffect(defn.spec.eff)
     DefSummary(fun, eff)
   }
 
-  private def defSummary(sig: TypedAst.Sig): DefSummary = {
-    val fun = Function.TraitFunWithExp(sig.sym)
-    val eff = resEffect(sig.spec.eff)
-    DefSummary(fun, eff)
+  /** Returns a function summary for a signature, if it has implementation */
+  private def defSummary(sig: TypedAst.Sig): Option[DefSummary] = sig.exp match {
+    case None => None
+    case Some(_) =>
+      val fun = FunctionSym.TraitFunWithExp(sig.sym)
+      val eff = resEffect(sig.spec.eff)
+      Some(DefSummary(fun, eff))
   }
 
+  /** Returns a function summary for every function */
   private def defSummaries(root: Root): List[DefSummary] = {
     val defs = root.defs.values.map(defSummary(_, isInstance = false))
-    val instances = root.instances.values.flatten.flatMap(i => i.defs.map(defSummary(_, isInstance = true)))
-    val traits = root.traits.values.flatMap(t => t.sigs.filter(_.exp.isDefined).map(defSummary))
+    val instances = root.instances.values.flatten.flatMap(_.defs.map(defSummary(_, isInstance = true)))
+    val traits = root.traits.values.flatMap(_.sigs.flatMap(defSummary))
     (defs ++ instances ++ traits).toList
   }
 
+  /** Converts a function summary into file data.
+    * Root is used to find file length.
+    */
   private def fileData(sum: DefSummary)(implicit root: Root): FileData = {
     val src = sum.fun.loc.source
     val srcLoc = root.sources.getOrElse(src, SourceLocation(isReal = false, SourcePosition(unknownSource, 0, 0), SourcePosition(unknownSource, 0, 0)))
@@ -87,34 +119,51 @@ object Summary {
     FileData(Some(src), srcLoc.endLine, defs = 1, pureDefs, justIODefs, polyDefs)
   }
 
+  /** Combines function summaries into file data. */
   private def fileData(sums: List[DefSummary])(implicit root: Root): FileData = {
     FileData.combine(sums.map(fileData))
   }
 
+  /** Returns a file summary of each individual file. */
   private def fileSummaries(root: Root): List[FileSummary] = {
     val defSums = defSummaries(root)
     defSums.groupBy(_.src).map { case (src, sums) => FileSummary(src, fileData(sums)(root)) }.toList
   }
 
   /**
-    * nsDepth=1 means that `Something/One.flix` and `Something/Two.flix` are counted
-    * together under `Something/...`. nsDepth=2 would keep them separate but
-    * collect files a level deeper.
+    * Returns the given summaries grouped by their folder structure up to the
+    * given depth if any. If depth 1 is given, then top level folders are
+    * summarized by a single summary.
     *
-    * nsDepth < 1 means all files are kept separate
+    * Sources are converted to faux sources to reflect the groupings.
+    *
+    * nsDepth=1 means that `Something/One.flix` and `Something/Two.flix` are
+    * counted together under `Something/...`. nsDepth=2 would keep them separate
+    * but collect files a level deeper.
+    *
+    * nsDepth < 1 means all files are kept separate.
     */
   private def groupedFileSummaries(sums: List[FileSummary], nsDepth: Option[Int]): List[FileSummary] = {
     def comb(x: FileSummary, y: FileSummary): FileSummary = {
       FileSummary(x.src, x.data.naiveSum(y.data))
     }
 
-    def zero(name: String): FileSummary = FileSummary(Ast.Source(Ast.Input.Text(name, "", stable = true), Array.emptyCharArray, stable = true), FileData.zero)
+    def zero(name: String): FileSummary =
+      FileSummary(Ast.Source(Ast.Input.Text(name, "", stable = true), Array.emptyCharArray, stable = true), FileData.zero)
 
     sums.groupBy(sum => prefixFileName(sum.src.name, nsDepth)).map {
       case (name, sums) => sums.foldLeft(zero(name))(comb).copy(src = zero(name).src)
     }.toList
   }
 
+  /**
+    * - prefixFileName("a/b", None) = "a/b"
+    * - prefixFileName("a/b", Some(1)) = "a/..."
+    * - prefixFileName("a/b", Some(2)) = "a/b"
+    * - prefixFileName("a/b/c", Some(2)) = "a/b/..."
+    * - prefixFileName("a/b", Some(0) = "a/b"
+    * - prefixFileName("a/b", Some(-1) = "a/b"
+    */
   private def prefixFileName(name: String, nsDepth: Option[Int]): String = {
     nsDepth match {
       case None => name
@@ -158,6 +207,11 @@ object Summary {
       )
     }
 
+    /**
+      * Combines two partial FileData from the same file. Line count is asserted
+      * to be equal for both data and is left unchanged. The remaining fields
+      * are summed.
+      */
     def combine(other: FileData): FileData = {
       if (lines != other.lines) {
         val src = debugSrc.getOrElse(unknownSource)
@@ -168,6 +222,10 @@ object Summary {
       FileData(debugSrc.orElse(other.debugSrc), lines, defs + other.defs, pureDefs + other.pureDefs, justIODefs + other.justIODefs, polyDefs + other.polyDefs)
     }
 
+    /**
+      * Returns new data where each field is summed. This is used for data of
+      * different files to compute a total of a folder fx.
+      */
     def naiveSum(other: FileData): FileData = {
       FileData(debugSrc.orElse(other.debugSrc), lines + other.lines, defs + other.defs, pureDefs + other.pureDefs, justIODefs + other.justIODefs, polyDefs + other.polyDefs)
     }
@@ -178,8 +236,17 @@ object Summary {
   private object FileData {
     val zero: FileData = FileData(None, 0, 0, 0, 0, 0)
 
+    /**
+      * Combines a list of partial FileData from the same file. Line count is
+      * asserted to be equal for all data and is left unchanged. The remaining
+      * fields are summed.
+      */
     def combine(l: List[FileData]): FileData = if (l.nonEmpty) l.reduce(_.combine(_)) else zero
 
+    /**
+      * Returns new data where each field is summed. This is used for data of
+      * different files to compute a total of a folder fx.
+      */
     def naiveSum(l: List[FileData]): FileData = if (l.nonEmpty) l.reduce(_.naiveSum(_)) else zero
 
     def header: List[String] = List("lines", "defs", "Pure", "IO", "Eff. Poly.")
@@ -193,12 +260,18 @@ object Summary {
     def header: List[String] = List("Module") ++ FileData.header
   }
 
-  private sealed case class DefSummary(fun: Function, eff: ResEffect) {
+  private sealed case class DefSummary(fun: FunctionSym, eff: ResEffect) {
     def src: Ast.Source = loc.source
 
     def loc: SourceLocation = fun.loc
   }
 
+  /**
+    * Represents the direct effect of a function
+    * - `def f(x: Int32): Int32` is `Pure`
+    * - `def f(x: Int32): Unit \ IO` is `JustIO`
+    * - `def f(x: Array[Int32, r]): IO + r` is `Poly`
+    */
   private sealed trait ResEffect
 
   private object ResEffect {
@@ -209,23 +282,29 @@ object Summary {
     case object Poly extends ResEffect
   }
 
-  private sealed trait Function {
+  /**
+    * This type is used to differentiate between
+    * - normal defs
+    * - instance defs, and
+    * - trait defs with implementation
+    */
+  private sealed trait FunctionSym {
     def loc: SourceLocation
   }
 
-  private object Function {
+  private object FunctionSym {
 
     import ca.uwaterloo.flix.language.ast.Symbol
 
-    case class Def(sym: Symbol.DefnSym) extends Function {
+    case class Def(sym: Symbol.DefnSym) extends FunctionSym {
       val loc: SourceLocation = sym.loc
     }
 
-    case class TraitFunWithExp(sym: Symbol.SigSym) extends Function {
+    case class TraitFunWithExp(sym: Symbol.SigSym) extends FunctionSym {
       val loc: SourceLocation = sym.loc
     }
 
-    case class InstanceFun(sym: Symbol.DefnSym) extends Function {
+    case class InstanceFun(sym: Symbol.DefnSym) extends FunctionSym {
       val loc: SourceLocation = sym.loc
     }
   }
@@ -251,10 +330,17 @@ object Summary {
 
   /** Keeps track of max lengths in columns */
   private class RowBuilder() {
+
+    /** The rows collected so far */
     private val rows: ListBuffer[List[String]] = ListBuffer.empty
-    /** has the length of the longest list in rows */
+
+    /**
+      * Has the length of the longest list in rows. Each integer contains the
+      * max length of any string in that column.
+      */
     private val maxLens: ListBuffer[Int] = ListBuffer.empty
 
+    /** Adds a row to the builder. The rows can have different lengths */
     def addRow(row: List[String]): Unit = {
       for ((s, i) <- row.iterator.zipWithIndex) {
         if (i >= maxLens.size) maxLens.append(0)
@@ -263,10 +349,21 @@ object Summary {
       rows.append(row)
     }
 
+    /**
+      * Adds a row with the given content in each column. The number of columns
+      * is the max length of the previous columns.
+      *
+      * OBS: if this is the first row, it will have zero columns.
+      */
     def addRepeatedRow(content: String): Unit = {
       addRow(maxLens.toList.map(_ => content))
     }
 
+    /**
+      * Returns the built rows where all strings are left padded to have
+      * consistent column lengths, i.e, all strings in a column is padded to the
+      * length of the longest string in the column.
+      */
     def getRows: List[List[String]] = {
       rows.map(row => {
         row.iterator.zipWithIndex.map {
