@@ -24,50 +24,24 @@ import scala.collection.mutable.ListBuffer
 object Summary {
 
   /**
-    * Returns a markdown of the file data of the root
-    * @param root the root to create data for
-    * @param nsDepth after this folder depth, files will be summarized under the
-    *                folder
-    * @param minLines all files with less lines than this will not be in the
-    *                 table but it will still be reflected in the total row
-    */
-  def printMarkdownFileSummary(root: Root, nsDepth: Option[Int] = None, minLines: Option[Int] = None): Unit = {
-    val table = fileSummaryTable(root, nsDepth, minLines)
-
-    def rowString(row: List[String]) = row.mkString("| ", " | ", " |")
-
-    table match {
-      case headers :: rows =>
-        val line = headers.map(s => "-" * s.length)
-        println(rowString(headers))
-        println(rowString(line))
-        rows.foreach(row => println(rowString(row)))
-      case Nil => println("Empty")
-    }
-  }
-
-  /**
-    * Prints a latex table of the file data of the root
-    * @param root the root to create data for
-    * @param nsDepth after this folder depth, files will be summarized under the
-    *                folder
-    * @param minLines all files with less lines than this will not be in the
-    *                 table but it will still be reflected in the total row
-    */
-  def printLatexFileSummary(root: Root, nsDepth: Option[Int] = None, minLines: Option[Int] = None): Unit = {
-    val table = fileSummaryTable(root, nsDepth, minLines)
-    table.foreach(row => println(row.mkString("", " & ", " \\\\")))
-  }
-
-  /**
     * Returns a table of the file data of the root
+    *
+    * Example with markdown rendering (just a single data row):
+    * {{{
+    * |               Module |  lines |  defs |  Pure |  IO | Eff. Poly. |
+    * | -------------------- | ------ | ----- | ----- | --- | ---------- |
+    * |         Adaptor.flix |    242 |    21 |     8 |   5 |          8 |
+    * |                  ... |    ... |   ... |   ... | ... |        ... |
+    * |               Totals | 37,877 | 3,519 | 1,998 | 149 |      1,372 |
+    * }}}
+    *
     * @param root the root to create data for
     * @param nsDepth after this folder depth, files will be summarized under the
     *                folder
     * @param minLines all files with less lines than this will not be in the
     *                 table but it will still be reflected in the total row
     */
-  private def fileSummaryTable(root: Root, nsDepth: Option[Int], minLines: Option[Int]): List[List[String]] = {
+  def fileSummaryTable(root: Root, nsDepth: Option[Int], minLines: Option[Int]): Table = {
     val allSums = groupedFileSummaries(fileSummaries(root), nsDepth)
     val totals = fileTotals(allSums)
     val printedSums = minLines match {
@@ -75,12 +49,12 @@ object Summary {
       case None => allSums
     }
     val dots = printedSums.lengthIs < allSums.length
-    val builder = new RowBuilder()
-    builder.addRow(FileSummary.header)
-    printedSums.sortBy(_.src.name).map(_.toRow).foreach(builder.addRow)
-    if (dots) builder.addRepeatedRow("...")
-    builder.addRow("Totals" :: totals.toRow)
-    builder.getRows
+    val table = new Table()
+    table.addRow(FileSummary.header)
+    printedSums.sortBy(_.src.name).map(_.toRow).foreach(table.addRow)
+    if (dots) table.addRepeatedRow("...")
+    table.addRow("Totals" :: totals.toRow)
+    table
   }
 
   /** Returns a function summary for a def or an instance, depending on the flag */
@@ -329,7 +303,7 @@ object Summary {
   }
 
   /** Keeps track of max lengths in columns */
-  private class RowBuilder() {
+  class Table() {
 
     /** The rows collected so far */
     private val rows: ListBuffer[List[String]] = ListBuffer.empty
@@ -341,12 +315,14 @@ object Summary {
     private val maxLens: ListBuffer[Int] = ListBuffer.empty
 
     /** Adds a row to the builder. The rows can have different lengths */
-    def addRow(row: List[String]): Unit = {
+    def addRow(row: List[String]): Unit = insertRow(rows.length, row)
+
+    private def insertRow(idx: Int, row: List[String]): Unit = {
       for ((s, i) <- row.iterator.zipWithIndex) {
         if (i >= maxLens.size) maxLens.append(0)
         maxLens(i) = maxLens(i) max s.length
       }
-      rows.append(row)
+      rows.insert(idx, row)
     }
 
     /**
@@ -370,6 +346,28 @@ object Summary {
           case (s, i) => padL(s, maxLens(i))
         }.toList
       }).toList
+    }
+
+    /** Returns the table as a list of lines with latex formatting. */
+    def getLatexLines: List[String] = {
+      // avoid common illegal character % in latex syntax
+      def sanitize(s: String): String = s.replace("%", "\\%")
+
+      def latexLine(l: List[String]): String = l.mkString("", " & ", " \\\\")
+
+      getRows.map(_.map(sanitize)).map(latexLine)
+    }
+
+    /** Returns the table as a list of lines with markdown formatting */
+    def getMarkdownLines: List[String] = {
+      // add | --- | --- | --- | header separation
+      if (rows.length >= 2) {
+        insertRow(1, maxLens.toList.map(len => "-" * (len max 3)))
+      }
+
+      def markdownLine(l: List[String]): String = l.mkString("| ", " | ", " |")
+
+      getRows.map(markdownLine)
     }
   }
 
