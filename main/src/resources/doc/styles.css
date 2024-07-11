@@ -408,6 +408,7 @@ main {
 }
 @media screen and (max-width: 800px) {
     main {
+        flex: 1;
         padding: 1rem 5%;
 
         transition: filter 0.2s;
