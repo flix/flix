@@ -287,6 +287,8 @@ object SyntaxTree {
 
       case object StructPut extends Expr
 
+      case object StructPutRHS extends Expr
+
       case object OpenVariant extends Expr
 
       case object OpenVariantAs extends Expr

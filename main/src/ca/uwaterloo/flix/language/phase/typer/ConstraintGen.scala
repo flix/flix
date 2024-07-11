@@ -614,6 +614,8 @@ object ConstraintGen {
         val (tpe1, eff1) = visitExp(exp1)
         // JOE TODO: Figure out the effect type
         // c.expectType(Type.mkStruct(sym, List(), exp1.loc), tpe1, exp1.loc)
+        println(exp2)
+        while(true) {}
         val (tpe2, eff2) = visitExp(exp2)
         c.expectType(fieldTpe, tpe2, exp2.loc)
         c.unifyType(Type.mkUnion(eff1, eff2, loc), evar, loc)
