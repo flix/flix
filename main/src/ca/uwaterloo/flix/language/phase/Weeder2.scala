@@ -1817,12 +1817,15 @@ object Weeder2 {
         (expr, ident) => Expr.StructGet(expr, Name.mkLabel(ident), tree.loc)
       }
     }
-    
+
     private def visitStructPutExpr(tree: Tree): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.StructPut)
-      val struct = pickExpr(tree)
+      val exprs = pickAll(SyntaxTree.TreeKind.Expr.Expr, tree)
+      assert(exprs.length == 2)
+
+      val struct = pickExpr(exprs(0))
       val ident = pickNameIdent(tree)
-      val rhs = pickExpr(tree)
+      val rhs = pickExpr(exprs(1))
       mapN(struct, ident, rhs) {
         (struct, ident, rhs) => Expr.StructPut(struct, Name.mkLabel(ident), rhs, tree.loc)
       }

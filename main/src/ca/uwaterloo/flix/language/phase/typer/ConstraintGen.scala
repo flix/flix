@@ -593,13 +593,13 @@ object ConstraintGen {
         }
 
         c.unifyType(evar, Type.mkUnion(Type.mkUnion(effs, loc), regionEff, regionVar, loc), loc)
-        val tparams = root.structs(sym).tparams
 
-        c.unifyType(tvar, Type.mkStruct(sym, tparams.init.map(_ => Type.freshVar(Kind.Star, loc)) :+ regionVar, loc), loc)
+        c.unifyType(tvar, Type.mkStruct(sym, Kind.Star, loc), loc)
         (tvar, evar)
 
       case Expr.StructGet(sym, exp, name, tvar, evar, loc) =>
         // JOE TODO: There should be some sort of error here or we should have a `expectHasField` thingy
+        // JOE TODO: Figure out the effect type
         val fieldTpe = root.structs(sym).fields(Symbol.mkStructFieldSym(sym, Name.Ident(name.name, name.loc))).tpe
         c.unifyType(fieldTpe, tvar, loc)
         val (tpe, eff) = visitExp(exp)
@@ -612,6 +612,7 @@ object ConstraintGen {
         // JOE TODO: There should be some sort of error here or we should have a `expectHasField` thingy
         val fieldTpe = root.structs(sym).fields(Symbol.mkStructFieldSym(sym, Name.Ident(name.name, name.loc))).tpe
         val (tpe1, eff1) = visitExp(exp1)
+        // JOE TODO: Figure out the effect type
         // c.expectType(Type.mkStruct(sym, List(), exp1.loc), tpe1, exp1.loc)
         val (tpe2, eff2) = visitExp(exp2)
         c.expectType(fieldTpe, tpe2, exp2.loc)

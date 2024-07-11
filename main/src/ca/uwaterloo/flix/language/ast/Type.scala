@@ -727,7 +727,7 @@ object Type {
   /**
     * Construct the enum type `Sym[ts]`
     */
-  def mkStruct(sym: Symbol.StructSym, ts: List[Type], loc: SourceLocation): Type = mkApply(Type.Cst(TypeConstructor.Struct(sym, Kind.mkArrow(ts.length)), loc), ts, loc)
+  def mkStruct(sym: Symbol.StructSym, k: Kind, loc: SourceLocation): Type = Type.Cst(TypeConstructor.Struct(sym, k), loc)
 
   /**
     * Constructs the tuple type (A, B, ...) where the types are drawn from the list `ts`.
