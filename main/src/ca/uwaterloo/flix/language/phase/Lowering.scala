@@ -511,6 +511,15 @@ object Lowering {
       val e3 = visitExp(exp3)
       LoweredAst.Expr.ApplyAtomic(AtomicOp.ArrayStore, List(e1, e2, e3), Type.Unit, eff, loc)
 
+    case TypedAst.Expr.StructNew(_, _, _, _, _, _) =>
+      throw new RuntimeException("JOE TODO")
+
+    case TypedAst.Expr.StructGet(_, _, _, _, _, _) =>
+      throw new RuntimeException("JOE TODO")
+
+    case TypedAst.Expr.StructPut(_, _, _, _, _, _, _) =>
+      throw new RuntimeException("JOE TODO")
+
     case TypedAst.Expr.VectorLit(exps, tpe, eff, loc) =>
       val es = visitExps(exps)
       val t = visitType(tpe)

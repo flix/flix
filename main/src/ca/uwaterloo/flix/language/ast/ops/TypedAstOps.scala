@@ -70,6 +70,9 @@ object TypedAstOps {
     case Expr.ArrayLoad(base, index, _, _, _) => sigSymsOf(base) ++ sigSymsOf(index)
     case Expr.ArrayLength(base, _, _) => sigSymsOf(base)
     case Expr.ArrayStore(base, index, elm, _, _) => sigSymsOf(base) ++ sigSymsOf(index) ++ sigSymsOf(elm)
+    case Expr.StructNew(_, fields, region, _, _, _) => sigSymsOf(region) ++ fields.flatMap(field => sigSymsOf(field._2))
+    case Expr.StructGet(_, e, _, _, _, _) => sigSymsOf(e)
+    case Expr.StructPut(_, e1, _, e2, _, _, _) => sigSymsOf(e1) ++ sigSymsOf(e2)
     case Expr.VectorLit(exps, _, _, _) => exps.flatMap(sigSymsOf).toSet
     case Expr.VectorLoad(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expr.VectorLength(exp, _) => sigSymsOf(exp)
@@ -236,6 +239,15 @@ object TypedAstOps {
 
     case Expr.ArrayStore(base, index, elm, _, _) =>
       freeVars(base) ++ freeVars(index) ++ freeVars(elm)
+
+    case Expr.StructNew(_, fields, region, _, _, _) =>
+      freeVars(region) ++ fields.flatMap(f => freeVars(f._2))
+
+    case Expr.StructGet(_, e, _, _, _, _) =>
+      freeVars(e)
+
+    case Expr.StructPut(_, e1, _, e2, _, _, _) =>
+      freeVars(e1) ++ freeVars(e2)
 
     case Expr.VectorLit(elms, _, _, _) =>
       elms.foldLeft(Map.empty[Symbol.VarSym, Type]) {

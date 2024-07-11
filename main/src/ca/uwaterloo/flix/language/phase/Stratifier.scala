@@ -270,6 +270,26 @@ object Stratifier {
         case (b, i, e) => Expr.ArrayStore(b, i, e, eff, loc)
       }
 
+    case Expr.StructNew(sym, fields0, region0, tpe, eff, loc) =>
+      val fieldsVal = traverse(fields0) {
+        case (name, e0) => mapN(visitExp(e0)) {
+          case e => (name, e)
+        }
+      }
+      mapN(visitExp(region0), fieldsVal) {
+        case (region, fields) => Expr.StructNew(sym, fields, region, tpe, eff, loc)
+      }
+
+    case Expr.StructGet(sym, e0, field, tpe, eff, loc) =>
+      mapN(visitExp(e0)) {
+        case e => Expr.StructGet(sym, e, field, tpe, eff, loc)
+      }
+
+    case Expr.StructPut(sym, e1, field, e2, tpe, eff, loc) =>
+      mapN(visitExp(e1), visitExp(e2)) {
+        case (exp1, exp2) => Expr.StructPut(sym, exp1, field, exp2, tpe, eff, loc)
+      }
+
     case Expr.VectorLit(exps, tpe, eff, loc) =>
       mapN(traverse(exps)(visitExp)) {
         case es => Expr.VectorLit(es, tpe, eff, loc)

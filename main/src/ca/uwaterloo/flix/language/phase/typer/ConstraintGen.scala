@@ -574,13 +574,51 @@ object ConstraintGen {
         (resTpe, resEff)
 
       case Expr.StructNew(sym, fields, region, tvar, evar, loc) =>
-        throw new RuntimeException("joe tbd")
+        // Region type
+        // JOE TODO: What to do about tvars? Magnus said that no need for schemes?
+        val regionVar = Type.freshVar(Kind.Eff, loc)
+        val regionType = Type.mkRegion(regionVar, loc)
+        val (regionTpe, regionEff) = visitExp(region)
+        c.expectType(expected = regionType, actual = regionTpe, region.loc)
+
+        // Field types
+        val fieldTypes = fields.map(field => visitExp(field._2))
+        val effs = fields.zip(fieldTypes).map {
+          case ((fieldSym, expr), (fieldTpe, fieldEff)) =>
+            // JOE TODO: There should be some sort of error here or we should have a `expectHasField` thingy
+            // ALSO FIGURE OUT A WAY TO ENSURE ALL FIELDS EXIST(both ways)
+            val field = root.structs(sym).fields(fieldSym)
+            c.expectType(expected = field.tpe, actual = fieldTpe, expr.loc)
+            fieldEff
+        }
+
+        c.unifyType(evar, Type.mkUnion(Type.mkUnion(effs, loc), regionEff, regionVar, loc), loc)
+        val tparams = root.structs(sym).tparams
+
+        c.unifyType(tvar, Type.mkStruct(sym, tparams.init.map(_ => Type.freshVar(Kind.Star, loc)) :+ regionVar, loc), loc)
+        (tvar, evar)
 
       case Expr.StructGet(sym, exp, name, tvar, evar, loc) =>
-        throw new RuntimeException("joe tbd")
+        // JOE TODO: There should be some sort of error here or we should have a `expectHasField` thingy
+        val fieldTpe = root.structs(sym).fields(Symbol.mkStructFieldSym(sym, Name.Ident(name.name, name.loc))).tpe
+        c.unifyType(fieldTpe, tvar, loc)
+        val (tpe, eff) = visitExp(exp)
+        println("TODO: FIX THIS")
+        // c.expectType(Type.mkStruct(sym, List(), exp.loc), tpe, exp.loc)
+        c.unifyType(eff, evar, exp.loc)
+        (tvar, evar)
 
       case Expr.StructPut(sym, exp1, name, exp2, tvar, evar, loc) =>
-        throw new RuntimeException("joe tbd")
+        // JOE TODO: There should be some sort of error here or we should have a `expectHasField` thingy
+        val fieldTpe = root.structs(sym).fields(Symbol.mkStructFieldSym(sym, Name.Ident(name.name, name.loc))).tpe
+        val (tpe1, eff1) = visitExp(exp1)
+        // c.expectType(Type.mkStruct(sym, List(), exp1.loc), tpe1, exp1.loc)
+        val (tpe2, eff2) = visitExp(exp2)
+        c.expectType(fieldTpe, tpe2, exp2.loc)
+        c.unifyType(Type.mkUnion(eff1, eff2, loc), evar, loc)
+        c.unifyType(Type.mkUnit(loc), tvar, loc)
+        (tvar, evar)
+
 
       case Expr.VectorLit(exps, tvar, evar, loc) =>
         val (tpes, effs) = exps.map(visitExp).unzip

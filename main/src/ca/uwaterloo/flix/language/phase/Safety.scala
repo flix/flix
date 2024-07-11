@@ -335,6 +335,15 @@ object Safety {
       case Expr.ArrayLength(base, _, _) =>
         visit(base)
 
+      case Expr.StructNew(_, fields, region, _, _, _) =>
+        fields.map(_._2).flatMap(visit) ++ visit(region)
+
+      case Expr.StructGet(_, e, _, _, _, _) =>
+        visit(e)
+
+      case Expr.StructPut(_, e1, _, e2, _, _, _) =>
+        visit(e1) ++ visit(e2)
+
       case Expr.ArrayStore(base, index, elm, _, _) =>
         visit(base) ++ visit(index) ++ visit(elm)
 

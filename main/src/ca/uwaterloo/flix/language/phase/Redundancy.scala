@@ -558,6 +558,15 @@ object Redundancy {
       val us3 = visitExp(elm, env0, rc)
       us1 ++ us2 ++ us3
 
+    case Expr.StructNew(_, fields, region, _, _, _) =>
+      visitExps(fields.map(_._2), env0, rc) ++ visitExp(region, env0, rc)
+
+    case Expr.StructGet(_, e, _, _, _, _) =>
+      visitExp(e, env0, rc)
+
+    case Expr.StructPut(_, e1, _, e2, _, _, _) =>
+      visitExp(e1, env0, rc) ++ visitExp(e2, env0, rc)
+
     case Expr.VectorLit(exps, _, _, _) =>
       visitExps(exps, env0, rc)
 

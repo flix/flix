@@ -311,6 +311,15 @@ object Indexer {
     case Expr.ArrayStore(exp1, exp2, exp3, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) ++ Index.occurrenceOf(exp0)
 
+    case Expr.StructNew(_, exps, region, _, _, _) =>
+      throw new RuntimeException("Joe TODO")
+
+    case Expr.StructGet(_, exp, _, _, _, _) =>
+      throw new RuntimeException("Joe TODO")
+
+    case Expr.StructPut(_, exp1, _, exp2, _, _, _) =>
+      throw new RuntimeException("Joe TODO")
+
     case Expr.VectorLit(exps, _, _, _) =>
       visitExps(exps) ++ Index.occurrenceOf(exp0)
 

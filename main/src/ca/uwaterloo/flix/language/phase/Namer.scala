@@ -792,7 +792,7 @@ object Namer {
       }
 
     case DesugaredAst.Expr.StructNew(name, exps0, region0, loc) =>
-      val structsym = Symbol.mkStructSym(name.namespace, name.ident)
+      val structsym = Symbol.mkStructSym(ns0, name.ident)
       val expsVal = traverse(exps0) {
         case (n, e) => mapN(visitExp(e, ns0)) {
           case e => (Symbol.mkStructFieldSym(structsym, n), e)

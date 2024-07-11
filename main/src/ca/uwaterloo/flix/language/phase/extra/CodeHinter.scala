@@ -184,6 +184,15 @@ object CodeHinter {
     case Expr.ArrayLength(exp, _, _) =>
       visitExp(exp)
 
+    case Expr.StructNew(sym, fields, region, _, _, _) =>
+      throw new RuntimeException("Joe todo")
+
+    case Expr.StructGet(_, exp, _, _, _, _) =>
+      throw new RuntimeException("Joe todo")
+
+    case Expr.StructPut(_, exp1, _, exp2, _, _, _) =>
+      throw new RuntimeException("Joe todo")
+
     case Expr.VectorLit(exps, _, _, _) =>
       visitExps(exps)
 
