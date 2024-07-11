@@ -1,4 +1,4 @@
-:root {
+:root, :root.light {
     --light-bg-color-1: #ffffff;
     --light-bg-color-2: #fcfcfd;
     --light-bg-color-3: #f8f9fa;
@@ -116,38 +116,7 @@
         color-scheme: dark;
     }
 }
-
-body.light {
-    --bg-color-1: var(--light-bg-color-1);
-    --bg-color-2: var(--light-bg-color-2);
-    --bg-color-3: var(--light-bg-color-3);
-    --border-color: var(--light-border-color);
-    --heading-color: var(--light-heading-color);
-    --text-color: var(--light-text-color);
-    --faded-text-color: var(--light-faded-text-color);
-    --annotation-color: var(--light-annotation-color);
-    --keyword-color: var(--light-keyword-color);
-    --name-color: var(--light-name-color);
-    --type-color: var(--light-type-color);
-    --kind-color: var(--light-kind-color);
-    --effect-color: var(--light-effect-color);
-    --doc-code-color: var(--light-doc-code-color);
-    --show-hide-color: var(--light-show-hide-color);
-    --show-hide-hover-color: var(--light-show-hide-hover-color);
-    --module-color: var(--light-module-color);
-    --signature-color: var(--light-signature-color);
-    --trait-def-color: var(--light-trait-def-color);
-    --traits-color: var(--light-traits-color);
-    --enum-color: var(--light-enum-color);
-    --op-color: var(--light-op-color);
-    --eff-color: var(--light-eff-color);
-    --type-alias-color: var(--light-type-alias-color);
-    --def-color: var(--light-def-color);
-    --shadow-color: var(--light-shadow-color);
-    --highlight-color: var(--light-highlight-color);
-    color-scheme: light;
-}
-body.dark {
+:root.dark {
     --bg-color-1: var(--dark-bg-color-1);
     --bg-color-2: var(--dark-bg-color-2);
     --bg-color-3: var(--dark-bg-color-3);
@@ -185,57 +154,6 @@ html, body {
     padding: 0;
 }
 
-body {
-    font-family: "Noto Sans", sans-serif;
-
-    background-color: var(--bg-color-1);
-    color: var(--text-color);
-
-    display: flex;
-    background-color: var(--bg-color-2);
-}
-
-.no-script #theme-toggle {
-    display: none;
-}
-#theme-toggle {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: absolute;
-    top: 0;
-    right: 0;
-    margin: 1rem 2rem;
-    border: none;
-    cursor: pointer;
-    color: var(--faded-text-color);
-    background-color: var(--bg-color-2);
-    border-radius: 50%;
-    width: 2rem;
-    height: 2rem;
-}
-#theme-toggle:hover {
-    color: var(--text-color)
-}
-@media screen and (max-width: 50rem) {
-    #theme-toggle {
-        margin: 0.4rem;
-    }
-}
-
-#theme-toggle .text {
-    /* Replace text with icons when CSS is included */
-    display: none;
-}
-
-/* Can rely on .light and .dark because it's only visible when JS is present */
-.light #theme-toggle .light-icon {
-    display: none;
-}
-.dark #theme-toggle .dark-icon {
-    display: none;
-}
-
 h1, h2 {
     color: var(--heading-color);
     margin-top: 0;
@@ -264,104 +182,179 @@ h3 {
     color: var(--heading-color);
 }
 
-nav {
-    position: relative;
+a {
+    color: var(--text-color);
+    text-decoration: none;
 }
-@media screen and (max-width: 50rem) {
-    nav {
-        position: absolute;
-        top: 0;
-        left: 0;
-        height: 100%;
+a:hover {
+    text-decoration: underline;
+}
+
+button, input {
+    cursor: pointer;
+    background-color: transparent;
+    border: none;
+    font-family: inherit;
+    font-size: inherit;
+}
+
+body {
+    display: grid;
+    grid-template-areas:
+        "header header"
+        "nav main";
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto 1fr;
+
+
+    font-family: "Noto Sans", sans-serif;
+    color: var(--text-color);
+}
+@media screen and (max-width: 800px) {
+    body {
+        display: flex;
+        flex-direction: column-reverse; /* Put the header at the bottom */
     }
 }
 
-nav .back {
+header {
+    grid-area: header;
+
     display: flex;
-    gap: 0.1rem;
-    margin-bottom: 1rem;
+    justify-content: space-between;
+    gap: 0.5rem;
+
+    background-color: var(--bg-color-1);
+    box-shadow: 0 0 10px 0 var(--shadow-color);
+    border-bottom: 1px solid var(--border-color);
+    padding: 0.5rem 1rem;
+    z-index: 2; /* Cast shadows to the top layer */
+}
+@media screen and (max-width: 800px) {
+    header {
+        border-bottom: none;
+        border-top: 1px solid var(--border-color);
+    }
 }
 
-nav > .sidebar {
+.flix {
+    display: flex;
+    gap: 0.3rem;
+    align-items: baseline;
+}
+.flix > h2 {
+    font-weight: 700;
+    display: inline-block;
+    margin-bottom: 0;
+    font-size: 1.5rem;
+}
+.flix > .version {
+    color: var(--faded-text-color);
+    font-size: 0.7rem;
+}
+
+#search {
+    display: flex;
+    gap: 0.3rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 2rem;
+    width: 15rem;
+    border: 1px solid var(--border-color);
+    background-color: var(--bg-color-3);
+    color: var(--faded-text-color);
+    font-size: 0.9rem;
+    cursor: text;
+    margin: 0 0.5rem;
+}
+#search > svg {
+    width: 1em;
+    height: 1em;
+}
+
+header > .toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--faded-text-color);
+}
+header > .toggle:hover {
+    color: var(--text-color)
+}
+
+.no-script #theme-toggle .light.icon,
+:root.light #theme-toggle .light.icon {
+    display: none;
+}
+@media (prefers-color-scheme: dark) {
+    .no-script #theme-toggle .dark.icon {
+        display: none;
+    }
+}
+:root.dark #theme-toggle .dark.icon {
+    display: none;
+}
+
+#menu-toggle {
+    display: none;
+    position: relative;
+}
+#menu-toggle > input {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+}
+#menu-toggle:has(input:checked) > .open.icon {
+    display: none;
+}
+#menu-toggle:has(input:not(:checked)) > .close.icon {
+    display: none;
+}
+@media screen and (max-width: 800px) {
+    #menu-toggle {
+        display: flex;
+    }
+}
+
+nav {
+    grid-area: nav;
+
+    position: relative;
     background-color: var(--bg-color-1);
     box-shadow: 0 0 10px 0 var(--shadow-color);
     border-right: 1px solid var(--border-color);
     box-sizing: border-box;
     padding: 0.5rem 1rem;
-    height: 100%;
     width: 20rem;
     overflow-y: auto;
+    z-index: 1;
 }
+@media screen and (max-width: 800px) {
+    nav {
+        position: absolute;
+        top: 20%;
+        width: 100%;
+        bottom: 0;
+        border: none;
+        background-color: var(--bg-color-1);
+        border-radius: 0.5rem;
+        box-shadow: 0 0 10px 0 var(--shadow-color);
+        border-top: 1px solid var(--border-color);
+        padding-bottom: 3rem;
 
-#menu-toggle {
-    display: none;
-    position: absolute;
-    top: 0;
-    right: 0;
-    margin: 0.4rem;
-    width: 2rem;
-    height: 2rem;
-    color: var(--faded-text-color);
-    align-items: center;
-    justify-content: center;
+        transform: translateY(100%);
+        transition: transform 0.2s;
+    }
+    :root:has(#menu-toggle input:checked) nav {
+        transform: translateY(0);
+    }
 }
-#menu-toggle:has(input:not(:checked)) {
-    background-color: var(--bg-color-1);
-    border: 1px solid var(--border-color);
-    box-shadow: 0 0 10px 0 var(--shadow-color);
-    border-radius: 0.3rem;
-}
-#menu-toggle > input {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    opacity: 0;
-}
-#menu-toggle > .icon {
+nav > .back {
     display: flex;
+    gap: 0.1rem;
+    margin-bottom: 1rem;
 }
-#menu-toggle:has(input:not(:checked)) > .close.icon {
-    display: none;
-}
-#menu-toggle:has(input:checked) > .menu.icon {
-    display: none;
-}
-@media screen and (max-width: 50rem) {
-    #menu-toggle {
-        display: flex;
-    }
-    #menu-toggle:has(input:not(:checked)) {
-        transform: translateX(2.8rem);
-    }
-
-    nav:has(#menu-toggle > input:not(:checked)) > .sidebar {
-        display: none;
-    }
-
-    body:has(#menu-toggle > input:checked) main {
-        /* Disable interactions behind the sidebar when it is shown */
-        pointer-events: none;
-    }
-}
-
-label[for="menu-toggle"] {
-    display: none;
-}
-
-nav h2 {
-    font-weight: 700;
-    display: inline-block;
-    margin-bottom: 0.5rem;
-}
-
-.version {
-    color: var(--faded-text-color);
-    margin-left: 0.5rem;
-    font-size: 0.85rem;
-}
-
 nav ul {
     margin-top: 0.2rem;
     padding-left: 0.5rem;
@@ -369,15 +362,6 @@ nav ul {
     font-size: 13px;
     list-style: none;
 }
-
-nav a {
-    color: var(--text-color);
-    text-decoration: none;
-}
-nav a:hover {
-    text-decoration: underline;
-}
-
 nav li {
     margin-bottom: 0.1rem;
 }
@@ -415,15 +399,22 @@ nav .Module-Definitions li::before {
 }
 
 main {
-    padding: 1rem 10%;
-    flex: 1;
+    grid-area: main;
 
+    padding: 1rem 10%;
     overflow-y: auto;
     scroll-behavior: smooth;
+    background-color: var(--bg-color-2);
 }
-@media screen and (max-width: 50rem) {
+@media screen and (max-width: 800px) {
     main {
-        padding: 2.5rem 5%;
+        padding: 1rem 5%;
+
+        transition: filter 0.2s;
+    }
+    :root:has(#menu-toggle input:checked) main {
+        filter: blur(10px) contrast(0.9);
+        pointer-events: none;
     }
 }
 

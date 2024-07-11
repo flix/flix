@@ -1,16 +1,18 @@
 function initTheme() {
     const storeKey = "flix-html-docs:use-dark-theme";
 
+    const root = document.querySelector(":root");
+
     const body = document.querySelector("body");
     body.classList.remove("no-script");
 
     function setTheme(useDarkTheme) {
         if (useDarkTheme) {
-            body.classList.remove("light");
-            body.classList.add("dark");
+            root.classList.remove("light");
+            root.classList.add("dark");
         } else {
-            body.classList.remove("dark");
-            body.classList.add("light");
+            root.classList.remove("dark");
+            root.classList.add("light");
         }
     }
 
@@ -26,7 +28,6 @@ function initTheme() {
     setTheme(dark);
 
     const toggle = document.querySelector("#theme-toggle");
-    toggle.removeAttribute("disabled");
     toggle.addEventListener("click", () => {
         dark = !dark;
         setTheme(dark);
