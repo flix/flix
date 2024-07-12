@@ -1488,6 +1488,9 @@ object GenExpression {
         mv.visitFieldInsn(PUTFIELD, className, s"clo$i", JvmOps.getClosureAbstractClassType(e.tpe).toDescriptor)
       }
 
+    case Expr.StructNew(_, _, _, _, _, _) => throw new RuntimeException("JOE TBD")
+    case Expr.StructGet(_, _, _, _, _, _) => throw new RuntimeException("JOE TBD")
+    case Expr.StructPut(_, _, _, _, _, _, _) => throw new RuntimeException("JOE TBD")
   }
 
   private def printPc(mv: MethodVisitor, pcPoint: Int): Unit = if (!GenFunAndClosureClasses.onCallDebugging) () else {

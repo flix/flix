@@ -3615,3 +3615,19 @@ object Parser2 {
     }"
   }
 }
+/*
+TODO: This has a weird error message:
+
+mod S {
+    struct S[v, r] {
+        a: Int32
+    }
+    def andy(): Unit = {
+        region rc {
+            let s = new S {a = 3} @ rc;
+            let s2 = new S {a = "hello" @ rc;
+            ()
+        }
+    }
+}
+*/

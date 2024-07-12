@@ -575,45 +575,43 @@ object ConstraintGen {
 
       case Expr.StructNew(sym, fields, region, tvar, evar, loc) =>
         // Region type
-        // JOE TODO: What to do about tvars? Magnus said that no need for schemes?
         val regionVar = Type.freshVar(Kind.Eff, loc)
         val regionType = Type.mkRegion(regionVar, loc)
         val (regionTpe, regionEff) = visitExp(region)
         c.expectType(expected = regionType, actual = regionTpe, region.loc)
-
         // Field types
         val fieldTypes = fields.map(field => visitExp(field._2))
+        val (structType, ts) = instantiateStruct(sym, root.structs)
         val effs = fields.zip(fieldTypes).map {
           case ((fieldSym, expr), (fieldTpe, fieldEff)) =>
             // JOE TODO: There should be some sort of error here or we should have a `expectHasField` thingy
             // ALSO FIGURE OUT A WAY TO ENSURE ALL FIELDS EXIST(both ways)
-            val field = root.structs(sym).fields(fieldSym)
+            val field = structType.fields(fieldSym)
             c.expectType(expected = field.tpe, actual = fieldTpe, expr.loc)
             fieldEff
         }
-
         c.unifyType(evar, Type.mkUnion(Type.mkUnion(effs, loc), regionEff, regionVar, loc), loc)
-
-        c.unifyType(tvar, Type.mkStruct(sym, Kind.Star, loc), loc)
+        c.unifyType(tvar, Type.mkStruct(sym, ts, loc), loc)
         (tvar, evar)
 
       case Expr.StructGet(sym, exp, name, tvar, evar, loc) =>
         // JOE TODO: There should be some sort of error here or we should have a `expectHasField` thingy
         // JOE TODO: Figure out the effect type
-        val fieldTpe = root.structs(sym).fields(Symbol.mkStructFieldSym(sym, Name.Ident(name.name, name.loc))).tpe
+        val (struct, ts) = instantiateStruct(sym, root.structs)
+        val fieldTpe = struct.fields(Symbol.mkStructFieldSym(sym, Name.Ident(name.name, name.loc))).tpe
         c.unifyType(fieldTpe, tvar, loc)
         val (tpe, eff) = visitExp(exp)
-        println("TODO: FIX THIS")
-        // c.expectType(Type.mkStruct(sym, List(), exp.loc), tpe, exp.loc)
+        c.expectType(Type.mkStruct(sym, ts, exp.loc), tpe, exp.loc)
         c.unifyType(eff, evar, exp.loc)
         (tvar, evar)
 
       case Expr.StructPut(sym, exp1, name, exp2, tvar, evar, loc) =>
         // JOE TODO: There should be some sort of error here or we should have a `expectHasField` thingy
-        val fieldTpe = root.structs(sym).fields(Symbol.mkStructFieldSym(sym, Name.Ident(name.name, name.loc))).tpe
+        val (struct, ts) = instantiateStruct(sym, root.structs)
+        val fieldTpe = struct.fields(Symbol.mkStructFieldSym(sym, Name.Ident(name.name, name.loc))).tpe
         val (tpe1, eff1) = visitExp(exp1)
         // JOE TODO: Figure out the effect type
-        // c.expectType(Type.mkStruct(sym, List(), exp1.loc), tpe1, exp1.loc)
+        c.expectType(Type.mkStruct(sym, ts, exp1.loc), tpe1, exp1.loc)
         val (tpe2, eff2) = visitExp(exp2)
         c.expectType(fieldTpe, tpe2, exp2.loc)
         c.unifyType(Type.mkUnion(eff1, eff2, loc), evar, loc)
@@ -1260,9 +1258,9 @@ object ConstraintGen {
     }
   }
 
-  private def instantiateStruct(sym: Symbol.StructSym, structs: Map[Symbol.StructSym, KindedAst.Struct])(implicit flix: Flix) : KindedAst.Struct = {
+  private def instantiateStruct(sym: Symbol.StructSym, structs: Map[Symbol.StructSym, KindedAst.Struct])(implicit flix: Flix) : (KindedAst.Struct, List[Type.Var]) = {
     val struct = structs(sym)
-    val originalTparams = struct.tparams
+    val originalTparams = struct.tparams.map(_.sym.id)
     val newTparams = struct.tparams.map(t => Type.freshVar(t.sym.kind, t.loc, isRegion=t.sym.isRegion))
     val subst = originalTparams.zip(newTparams).toMap
     val newFields = struct.fields.map {mapentry =>
@@ -1271,6 +1269,30 @@ object ConstraintGen {
          fieldsym -> KindedAst.StructField(field.sym, tpe, field.loc)
     }
     // JOE STRUCT TODO: Should it be struct.tpe? Or should we have a new tyvar? Does it even matter?
-    KindedAst.Struct(struct.doc, struct.ann, struct.mod, struct.sym, List(), newFields, struct.tpe, struct.loc)
+    (KindedAst.Struct(struct.doc, struct.ann, struct.mod, struct.sym, List(), newFields, struct.tpe, struct.loc), newTparams)
+  }
+
+  private def applyTyVarSubst(tpe: Type, subst: Map[Int, Type.Var]): Type = {
+    tpe match {
+      case Type.Var(sym, loc) =>
+        subst.get(sym.id) match {
+          case None =>
+            Type.Var(sym, loc)
+          case Some(t) =>
+            t
+        }
+
+      case Type.Cst(_, _) =>
+        tpe
+
+      case Type.Alias(sym, args, tpe, loc) =>
+        Type.Alias(sym, args.map(applyTyVarSubst(_, subst)), applyTyVarSubst(tpe, subst), loc)
+
+      case Type.AssocType(sym, args, kind, loc) =>
+        Type.AssocType(sym, args.map(applyTyVarSubst(_, subst)), kind, loc)
+
+      case Type.Apply(tpe1, tpe2, loc) =>
+        Type.Apply(applyTyVarSubst(tpe1, subst), applyTyVarSubst(tpe2, subst), loc)
+    }
   }
 }
