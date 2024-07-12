@@ -1815,7 +1815,6 @@ object Weeder2 {
       expect(tree, TreeKind.Expr.StructGet)
       mapN(pickExpr(tree), pickNameIdent(tree)) {
         (expr, ident) =>
-          println(expr)
           Expr.StructGet(expr, Name.mkLabel(ident), tree.loc)
       }
     }
