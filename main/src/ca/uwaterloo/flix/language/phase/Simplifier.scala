@@ -33,7 +33,7 @@ object Simplifier {
     implicit val universe: Set[Symbol.EffectSym] = root.effects.keys.toSet
     val defs = ParOps.parMapValues(root.defs)(visitDef)
     val effects = ParOps.parMapValues(root.effects)(visitEffect)
-    val structs = Map.empty[Symbol.StructSym, SimplifiedAst.Struct]
+    val structs = ParOps.parMapValues(root.structs)(visitStruct)
 
     SimplifiedAst.Root(defs, structs, effects, root.entryPoint, root.reachable, root.sources)
   }
@@ -52,6 +52,19 @@ object Simplifier {
     case MonoAst.Effect(_, ann, mod, sym, ops0, loc) =>
       val ops = ops0.map(visitEffOp)
       SimplifiedAst.Effect(ann, mod, sym, ops, loc)
+  }
+
+  private def visitStruct(s: MonoAst.Struct): SimplifiedAst.Struct = s match {
+    case MonoAst.Struct(doc, ann, mod, sym, fields0, tpe, loc) =>
+      val fieldIndices = fields0.toList.map(_._1).sortBy(field => field.name).zipWithIndex.toMap
+      val fields = fields0.map(visitStructField(fieldIndices))
+      SimplifiedAst.Struct(doc, ann, mod, sym, fields, tpe, loc)
+  }
+
+  private def visitStructField(fieldIndices: Map[Symbol.StructFieldSym, Int])(field: (Symbol.StructFieldSym, MonoAst.StructField)) = field match {
+    case (_, MonoAst.StructField(sym, tpe, loc)) => {
+      (sym, SimplifiedAst.StructField(sym, fieldIndices(sym), tpe, loc))
+    }
   }
 
   private def visitExp(exp0: MonoAst.Expr)(implicit flix: Flix, universe: Set[Symbol.EffectSym]): SimplifiedAst.Expr = exp0 match {
@@ -177,6 +190,20 @@ object Simplifier {
       val purity = e.purity
       SimplifiedAst.Expr.ApplyAtomic(AtomicOp.ArrayLength, List(e), MonoType.Int32, purity, loc)
 
+    case MonoAst.Expr.StructNew(sym, fields0, region0, tpe, eff, loc) =>
+      val fields = fields0.map(visitExp)
+      val region = visitExp(region0)
+      SimplifiedAst.Expr.StructNew(sym, fields, region, visitType(tpe), simplifyEffect(eff), loc)
+
+    case MonoAst.Expr.StructGet(sym, e0, field, tpe, eff, loc) =>
+      val struct = visitExp(e0)
+      SimplifiedAst.Expr.StructGet(sym, struct, field, visitType(tpe), simplifyEffect(eff), loc)
+
+    case MonoAst.Expr.StructPut(sym, e0, field, e1, tpe, eff, loc) =>
+      val struct = visitExp(e0)
+      val rhs = visitExp(e1)
+      SimplifiedAst.Expr.StructPut(sym, struct, field, rhs, visitType(tpe), simplifyEffect(eff), loc)
+
     case MonoAst.Expr.Ascribe(exp, _, _, _) => visitExp(exp)
 
     case MonoAst.Expr.Cast(exp, _, _, tpe, eff, loc) =>
@@ -267,6 +294,8 @@ object Simplifier {
 
           case TypeConstructor.RecordRowEmpty => MonoType.RecordEmpty
 
+          case TypeConstructor.Struct(sym, _) => MonoType.Struct(sym)
+
           case TypeConstructor.Sender => throw InternalCompilerException("Unexpected Sender", tpe.loc)
 
           case TypeConstructor.Receiver => throw InternalCompilerException("Unexpected Receiver", tpe.loc)
@@ -275,7 +304,6 @@ object Simplifier {
 
           case TypeConstructor.Enum(sym, _) => MonoType.Enum(sym)
 
-          case TypeConstructor.Struct(sym, _) => throw new RuntimeException("Joe: Not implemented yet")
 
           case TypeConstructor.RestrictableEnum(sym, _) =>
             val enumSym = new Symbol.EnumSym(sym.namespace, sym.name, sym.loc)

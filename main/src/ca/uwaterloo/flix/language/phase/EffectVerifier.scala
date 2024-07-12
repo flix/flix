@@ -199,11 +199,15 @@ object EffectVerifier {
       visitExp(exp3)
       // TODO region stuff
       ()
-    case Expr.StructNew(_, _, _, _, _, _) =>
-      throw new RuntimeException("JOE TODO")
+    case Expr.StructNew(sym, fields, region, tpe, eff, loc) =>
+      // TODO region stuff
+      fields.map(_._2).map(visitExp)
+      visitExp(region)
     case Expr.StructGet(_, e, _, _, _, _) =>
+      // TODO region stuff
       visitExp(e)
     case Expr.StructPut(_, e1, _, e2, _, _, _) =>
+      // TODO region stuff
       visitExp(e1)
       visitExp(e2)
     case Expr.VectorLit(exps, tpe, eff, loc) =>

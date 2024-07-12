@@ -159,6 +159,12 @@ object Eraser {
       Do(op, exps.map(visitExp), visitType(tpe), purity, loc)
     case NewObject(name, clazz, tpe, purity, methods, loc) =>
       NewObject(name, clazz, visitType(tpe), purity, methods.map(visitJvmMethod), loc)
+    case StructNew(sym, exps, exp, tpe, purity, loc) =>
+      StructNew(sym, exps.map(visitExp), visitExp(exp), visitType(tpe), purity, loc)
+    case StructGet(sym, exp1, field, tpe, purity, loc) =>
+      StructGet(sym, visitExp(exp1), field, visitType(tpe), purity, loc)
+    case StructPut(sym, exp1, field, exp2, tpe, purity, loc) =>
+      StructPut(sym, visitExp(exp1), field, visitExp(exp2), visitType(tpe), purity, loc)
   }
 
   private def castExp(exp: Expr, t: MonoType, purity: Purity, loc: SourceLocation): Expr = {
@@ -206,6 +212,7 @@ object Eraser {
       case Arrow(args, result) => Arrow(args.map(visitType), box(result))
       case RecordEmpty => RecordEmpty
       case RecordExtend(label, value, rest) => RecordExtend(label, erase(value), visitType(rest))
+      case MonoType.Struct(sym) => MonoType.Struct(sym)
       case Native(clazz) => Native(clazz)
     }
   }
@@ -223,7 +230,7 @@ object Eraser {
       case Int64 => Int64
       case Void |AnyType | Unit | BigDecimal | BigInt | String | Regex |
            Region | Array(_) | Lazy(_) | Ref(_) | Tuple(_) | MonoType.Enum(_) |
-           Arrow(_, _) | RecordEmpty | RecordExtend(_, _, _) | Native(_) =>
+           Arrow(_, _) | RecordEmpty | RecordExtend(_, _, _) | Native(_) | MonoType.Struct(_) =>
         MonoType.Object
     }
   }

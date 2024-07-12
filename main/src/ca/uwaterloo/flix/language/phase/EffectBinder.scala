@@ -52,7 +52,7 @@ object EffectBinder {
   def run(root: LiftedAst.Root)(implicit flix: Flix): ReducedAst.Root = flix.phase("EffectBinder") {
     val newDefs = ParOps.parMapValues(root.defs)(visitDef)
     val newEffects = ParOps.parMapValues(root.effects)(visitEffect)
-    val structs = Map.empty[Symbol.StructSym, ReducedAst.Struct]
+    val structs = ParOps.parMapValues(root.structs)(visitStruct)
     ReducedAst.Root(newDefs, structs, newEffects, Set.empty, Nil, root.entryPoint, root.reachable, root.sources)
   }
 
@@ -81,6 +81,18 @@ object EffectBinder {
     case LiftedAst.Effect(ann, mod, sym, ops0, loc) =>
       val ops = ops0.map(visitOp)
       ReducedAst.Effect(ann, mod, sym, ops, loc)
+  }
+
+  private def visitStruct(s: LiftedAst.Struct): ReducedAst.Struct = s match {
+    case LiftedAst.Struct(doc, ann, mod, sym, fields0, tpe, loc) =>
+      val fields = fields0.map(visitStructField)
+      ReducedAst.Struct(doc, ann, mod, sym, fields, tpe, loc)
+  }
+
+  private def visitStructField(field: (Symbol.StructFieldSym, LiftedAst.StructField)) = field match {
+    case (_, LiftedAst.StructField(sym, idx, tpe, loc)) => {
+      (sym, ReducedAst.StructField(sym, idx, tpe, loc))
+    }
   }
 
   private def visitOp(op: LiftedAst.Op): ReducedAst.Op = op match {
@@ -199,6 +211,21 @@ object EffectBinder {
       val binders = mutable.ArrayBuffer.empty[Binder]
       val e = visitExprInnerWithBinders(binders)(exp)
       bindBinders(binders, e)
+
+    case LiftedAst.Expr.StructNew(_, _, _, _, _, _) =>
+      val binders = mutable.ArrayBuffer.empty[Binder]
+      val e = visitExprInnerWithBinders(binders)(exp)
+      bindBinders(binders, e)
+
+    case LiftedAst.Expr.StructGet(_, _, _, _, _, _) =>
+      val binders = mutable.ArrayBuffer.empty[Binder]
+      val e = visitExprInnerWithBinders(binders)(exp)
+      bindBinders(binders, e)
+
+    case LiftedAst.Expr.StructPut(_, _, _, _, _, _, _) =>
+      val binders = mutable.ArrayBuffer.empty[Binder]
+      val e = visitExprInnerWithBinders(binders)(exp)
+      bindBinders(binders, e)
   }
 
   /**
@@ -298,6 +325,20 @@ object EffectBinder {
     case LiftedAst.Expr.NewObject(name, clazz, tpe, purity, methods, loc) =>
       val ms = methods.map(visitJvmMethod)
       ReducedAst.Expr.NewObject(name, clazz, tpe, purity, ms, loc)
+
+    case LiftedAst.Expr.StructNew(sym, fields0, region0, tpe, purity, loc) =>
+      val fields = fields0.map(visitExprWithBinders(binders))
+      val region = visitExprWithBinders(binders)(region0)
+      ReducedAst.Expr.StructNew(sym, fields, region, tpe, purity, loc)
+
+    case LiftedAst.Expr.StructGet(sym, e, field, tpe, purity, loc) =>
+      val exp = visitExprWithBinders(binders)(e)
+      ReducedAst.Expr.StructGet(sym, exp, field, tpe, purity, loc)
+
+    case LiftedAst.Expr.StructPut(sym, e1, field, e2, tpe, purity, loc) =>
+      val exp1 = visitExprWithBinders(binders)(e1)
+      val exp2 = visitExprWithBinders(binders)(e2)
+      ReducedAst.Expr.StructPut(sym, exp1, field, exp2, tpe, purity, loc)
   }
 
   /**
@@ -340,6 +381,9 @@ object EffectBinder {
       case ReducedAst.Expr.TryWith(_, _, _, _, _, _, _) => letBindExpr(binders)(e)
       case ReducedAst.Expr.Do(_, _, _, _, _) => letBindExpr(binders)(e)
       case ReducedAst.Expr.NewObject(_, _, _, _, _, _) => letBindExpr(binders)(e)
+      case ReducedAst.Expr.StructNew(_, _, _, _, _, _) => letBindExpr(binders)(e)
+      case ReducedAst.Expr.StructGet(_, _, _, _, _, _) => letBindExpr(binders)(e)
+      case ReducedAst.Expr.StructPut(_, _, _, _, _, _, _) => letBindExpr(binders)(e)
     }
 
     bind(visitExprInnerWithBinders(binders)(exp))

@@ -88,6 +88,9 @@ object LoweredAstPrinter {
     case Expr.VectorLit(exps, tpe, eff, loc) => DocAst.Expr.VectorLit(exps.map(print))
     case Expr.VectorLoad(exp1, exp2, tpe, eff, loc) => DocAst.Expr.VectorLoad(print(exp1), print(exp2))
     case Expr.VectorLength(exp, loc) => DocAst.Expr.ArrayLength(print(exp))
+    case Expr.StructNew(sym, fields, region, tpe, eff, loc) => throw new RuntimeException("JOE TODO")
+    case Expr.StructGet(sym, exp, field, tpe, eff, loc) => throw new RuntimeException("JOE TODO")
+    case Expr.StructPut(sym, exp0, field, exp1, tpe, eff, loc) => throw new RuntimeException("JOE TODO")
     case Expr.Ascribe(exp, tpe, eff, loc) => DocAst.Expr.Ascription(print(exp), TypePrinter.print(tpe))
     case Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc) => declaredType match {
       case None => print(exp) // TODO needs eff

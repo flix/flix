@@ -172,6 +172,20 @@ object Reducer {
 
         Expr.NewObject(name, clazz, tpe, purity, specs, loc)
 
+    case Expr.StructNew(sym, fields0, region0, tpe, eff, loc) =>
+      val fields = fields0.map(visitExpr)
+      val region = visitExpr(region0)
+      Expr.StructNew(sym, fields, region, tpe, eff, loc)
+
+    case Expr.StructGet(sym, e0, field, tpe, eff, loc) =>
+      val struct = visitExpr(e0)
+      Expr.StructGet(sym, struct, field, tpe, eff, loc)
+
+    case Expr.StructPut(sym, e0, field, e1, tpe, eff, loc) =>
+      val struct = visitExpr(e0)
+      val rhs = visitExpr(e1)
+      Expr.StructPut(sym, struct, field, rhs, tpe, eff, loc)
+
     }
   }
 
@@ -223,7 +237,7 @@ object Reducer {
         val taskList1 = tpe match {
           case Void | AnyType | Unit | Bool | Char | Float32 | Float64 | BigDecimal | Int8 | Int16 |
                Int32 | Int64 | BigInt | String | Regex | Region | Enum(_) | RecordEmpty |
-               Native(_) => taskList
+               Struct(_) | Native(_) => taskList
           case Array(elm) => taskList.enqueue(elm)
           case Lazy(elm) => taskList.enqueue(elm)
           case Ref(elm) => taskList.enqueue(elm)

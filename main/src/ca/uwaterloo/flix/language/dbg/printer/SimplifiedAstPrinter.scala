@@ -75,6 +75,9 @@ object SimplifiedAstPrinter {
       case SimplifiedAst.JvmMethod(ident, fparams, exp, retTpe, _, _) =>
         DocAst.JvmMethod(ident, fparams.map(printFormalParam), print(exp), MonoTypePrinter.print(retTpe))
     })
+    case StructNew(_, exps, region, _, _, _) => throw new RuntimeException("Joe TODO")
+    case StructGet(_, exp, _, _, _, _) => throw new RuntimeException("Joe TODO")
+    case StructPut(_, exp1, _, exp2, _, _, _) => throw new RuntimeException("Joe TODO")
   }
 
   /**

@@ -63,7 +63,7 @@ object OccurrenceAnalyzer {
 
     val defs = visitDefs(root.defs)
     val effects = root.effects.map { case (k, v) => k -> visitEffect(v) }
-    val structs = Map.empty[Symbol.StructSym, OccurrenceAst.Struct]
+    val structs = root.structs.map {case (k, v) => k -> visitStruct(v)}
 
     val result = OccurrenceAst.Root(defs, structs, effects, root.entryPoint, root.reachable, root.sources)
 
@@ -128,6 +128,18 @@ object OccurrenceAnalyzer {
     }
     val defContext = DefContext(isDirectCall, oi.defs.getOrElse(defn.sym, Dead), oi.size, isSelfRecursive)
     (OccurrenceAst.Def(defn.ann, defn.mod, defn.sym, cparams, fparams, e, defContext, defn.tpe, defn.purity, defn.loc), oi)
+  }
+
+  private def visitStruct(s: LiftedAst.Struct): OccurrenceAst.Struct = s match {
+    case LiftedAst.Struct(doc, ann, mod, sym, fields0, tpe, loc) =>
+      val fields = fields0.map(visitStructField)
+      OccurrenceAst.Struct(doc, ann, mod, sym, fields, tpe, loc)
+  }
+
+  private def visitStructField(field: (Symbol.StructFieldSym, LiftedAst.StructField)) = field match {
+    case (_, LiftedAst.StructField(sym, idx, tpe, loc)) => {
+      (sym, OccurrenceAst.StructField(sym, idx, tpe, loc))
+    }
   }
 
   /**
@@ -256,6 +268,20 @@ object OccurrenceAnalyzer {
       val o2 = o1.foldLeft(OccurInfo.Empty)((acc, o3) => combineAllSeq(acc, o3))
       (OccurrenceAst.Expr.NewObject(name, clazz, tpe, purity, ms, loc), o2.increaseSizeByOne())
 
+    case Expr.StructNew(sym, es0, e0, tpe, purity, loc) =>
+      val (es, o1) = visitExps(sym0, es0)
+      val (e, o2) = visitExp(sym0, e0)
+      val o3 = combineAllSeq(o1, o2)
+      (OccurrenceAst.Expr.StructNew(sym, es, e, tpe, purity, loc), o3.increaseSizeByOne())
+
+    case Expr.StructGet(sym, e0, field, tpe, purity, loc) =>
+      val (e, o) = visitExp(sym0, e0)
+      (OccurrenceAst.Expr.StructGet(sym, e, field, tpe, purity, loc), o.increaseSizeByOne())
+
+    case Expr.StructPut(sym, e1, field, e2, tpe, purity, loc) =>
+      val (exp1, o1) = visitExp(sym0, e1)
+      val (exp2, o2) = visitExp(sym0, e2)
+      (OccurrenceAst.Expr.StructPut(sym, exp1, field, exp2, tpe, purity, loc), o2)
   }
 
   /**

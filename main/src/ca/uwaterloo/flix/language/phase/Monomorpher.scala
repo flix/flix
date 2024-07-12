@@ -398,7 +398,11 @@ object Monomorpher {
         MonoAst.Effect(doc, ann, mod, sym, ops, loc)
     }
 
-    val structs = Map.empty[Symbol.StructSym, MonoAst.Struct]
+    val structs = ParOps.parMapValues(root.structs) {
+      case LoweredAst.Struct(doc, ann, mod, sym, tparams, fields, tpe, loc) =>
+        val newFields = fields.map(visitStructField)
+        MonoAst.Struct(doc, ann, mod, sym, newFields, tpe, loc)
+    }
     // Reassemble the AST.
     MonoAst.Root(
       ctx.toMap,
@@ -408,6 +412,13 @@ object Monomorpher {
       root.reachable,
       root.sources
     )
+  }
+
+  def visitStructField(field: (Symbol.StructFieldSym, LoweredAst.StructField)): (Symbol.StructFieldSym, MonoAst.StructField) = {
+    field match {
+      case (sym, LoweredAst.StructField(name, tpe, loc)) =>
+        (sym, MonoAst.StructField(name, tpe, loc))
+      }
   }
 
   /**
@@ -582,6 +593,20 @@ object Monomorpher {
     case LoweredAst.Expr.VectorLength(exp, loc) =>
       val e = visitExp(exp, env0, subst)
       MonoAst.Expr.VectorLength(e, loc)
+
+    case LoweredAst.Expr.StructNew(sym, fields0, region0, tpe, eff, loc) =>
+      val fields = fields0.map(visitExp(_, env0, subst))
+      val region = visitExp(region0, env0, subst)
+      MonoAst.Expr.StructNew(sym, fields, region, subst(tpe), subst(eff), loc)
+
+    case LoweredAst.Expr.StructGet(sym, e0, field, tpe, eff, loc) =>
+      val struct = visitExp(e0, env0, subst)
+      MonoAst.Expr.StructGet(sym, struct, field, tpe, eff, loc)
+
+    case LoweredAst.Expr.StructPut(sym, e0, field, e1, tpe, eff, loc) =>
+      val struct = visitExp(e0, env0, subst)
+      val rhs = visitExp(e1, env0, subst)
+      MonoAst.Expr.StructPut(sym, struct, field, rhs, tpe, eff, loc)
 
     case LoweredAst.Expr.Ascribe(exp, tpe, eff, loc) =>
       val e = visitExp(exp, env0, subst)

@@ -23,8 +23,9 @@ import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 /**
-  * This phase does two things:
+  * This phase does three things:
   * - Erase enums, such that `Option[t]` becomes `Option`
+  * - Erase structs, such that `Person[t]` becomes `Person`
   * - Removes all type aliases in types
   */
 object MonoTypes {
@@ -193,6 +194,23 @@ object MonoTypes {
       val e = visitExp(exp)
       Expr.VectorLength(e, loc)
 
+    case Expr.StructNew(sym, fields0, region0, tpe0, eff0, loc) =>
+      val fields = fields0.map(visitExp)
+      val region = visitExp(region0)
+      val tpe = visitType(tpe0)
+      val eff = visitType(eff0)
+      Expr.StructNew(sym, fields, region, tpe, eff, loc)
+    case Expr.StructGet(sym, e0, field, tpe0, eff0, loc) =>
+      val e = visitExp(e0)
+      val tpe = visitType(tpe0)
+      val eff = visitType(eff0)
+      Expr.StructGet(sym, e, field, tpe, eff, loc)
+    case Expr.StructPut(sym, e0, field, e1, tpe0, eff0, loc) =>
+      val e = visitExp(e0)
+      val rhs = visitExp(e1)
+      val tpe = visitType(tpe0)
+      val eff = visitType(eff0)
+      Expr.StructPut(sym, e, field, rhs, tpe, eff, loc)
     case Expr.Ascribe(exp, tpe, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
@@ -307,6 +325,8 @@ object MonoTypes {
         // Throw away type arguments and fix the kind.
         // `Enum[a, b, c]` becomes `Enum`
         Type.Cst(TypeConstructor.Enum(sym, Kind.Star), tpe.loc)
+      case TypeConstructor.Struct(sym, _) =>
+        Type.Cst(TypeConstructor.Struct(sym, Kind.Star), tpe.loc)
       case _ => tpe match {
         case Type.Cst(_, _) =>
           tpe

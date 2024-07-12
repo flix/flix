@@ -1830,10 +1830,6 @@ object Weeder2 {
       }
       mapN(struct, ident, rhs) {
         (struct, ident, rhs) =>
-          println(struct)
-          println(ident)
-          println(rhs)
-          while(true) {}
           Expr.StructPut(struct, Name.mkLabel(ident), rhs, tree.loc)
       }
     }

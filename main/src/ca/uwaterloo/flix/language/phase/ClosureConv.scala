@@ -159,6 +159,20 @@ object ClosureConv {
       }
       Expr.NewObject(name, clazz, tpe, purity, methods, loc)
 
+    case Expr.StructNew(sym, exps, exp, tpe, eff, loc) =>
+      val es = exps.map(visitExp)
+      val e = visitExp(exp)
+      Expr.StructNew(sym, es, e, tpe, eff, loc)
+
+    case Expr.StructGet(sym, exp1, field, tpe, eff, loc) =>
+      val e = visitExp(exp1)
+      Expr.StructGet(sym, e, field, tpe, eff, loc)
+
+    case Expr.StructPut(sym, exp1, field, exp2, tpe, eff, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      Expr.StructPut(sym, e1, field, e2, tpe, eff, loc)
+
     case Expr.LambdaClosure(_, _, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.", loc)
 
     case Expr.ApplyClo(_, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.", loc)
@@ -267,6 +281,15 @@ object ClosureConv {
     case Expr.ApplyClo(_, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.", loc)
 
     case Expr.ApplyDef(_, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.", loc)
+
+    case Expr.StructNew(sym, exps, exp, tpe, eff, loc) =>
+      freeVars(exp) ++ freeVarsExps(exps)
+
+    case Expr.StructGet(sym, exp1, _, _, _, _) =>
+      freeVars(exp1)
+
+    case Expr.StructPut(sym, exp1, _, exp2, _, _, _) =>
+      freeVars(exp1) ++ freeVars(exp2)
   }
 
   /**
@@ -401,6 +424,19 @@ object ClosureConv {
         val methods = methods0.map(visitJvmMethod)
         Expr.NewObject(name, clazz, tpe, purity, methods, loc)
 
+      case Expr.StructNew (sym, exps, exp, tpe, eff, loc) =>
+        val es = exps.map(visitExp)
+        val e = visitExp(exp)
+        Expr.StructNew(sym, es, e, tpe, eff, loc)
+
+      case Expr.StructGet(sym, exp1, field, tpe, eff, loc) =>
+        val e = visitExp(exp1)
+        Expr.StructGet(sym, e, field, tpe, eff, loc)
+
+      case Expr.StructPut(sym, exp1, field, exp2, tpe, eff, loc) =>
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
+        Expr.StructPut(sym, e1, field, e2, tpe, eff, loc)
     }
 
     def visitFormalParam(fparam: FormalParam): FormalParam = fparam match {

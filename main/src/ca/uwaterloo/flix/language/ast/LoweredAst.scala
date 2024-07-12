@@ -51,7 +51,7 @@ object LoweredAst {
 
   case class Enum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[TypeParam], derives: Ast.Derivations, cases: Map[Symbol.CaseSym, Case], tpe: Type, loc: SourceLocation)
 
-  case class Struct(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.StructSym, tparams: List[TypeParam], fields: Map[Name.StructField, StructField], tpe: Type, loc: SourceLocation)
+  case class Struct(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.StructSym, tparams: List[TypeParam], fields: Map[Symbol.StructFieldSym, StructField], tpe: Type, loc: SourceLocation)
 
   case class TypeAlias(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.TypeAliasSym, tparams: List[TypeParam], tpe: Type, loc: SourceLocation)
 
@@ -127,6 +127,12 @@ object LoweredAst {
 
       def tpe: Type = Type.Int32
     }
+
+    case class StructNew(sym: Symbol.StructSym, fields: List[Expr], region: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+
+    case class StructGet(sym: Symbol.StructSym, exp: Expr, field: Name.Label, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+
+    case class StructPut(sym: Symbol.StructSym, exp0: Expr, field: Name.Label, exp1: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class Ascribe(exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 

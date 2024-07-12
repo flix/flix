@@ -41,7 +41,7 @@ object LambdaLift {
       case (macc, (sym, defn)) => macc + (sym -> defn)
     }
 
-    val structs = Map.empty[Symbol.StructSym, LiftedAst.Struct]
+    val structs = ParOps.parMapValues(root.structs)(visitStruct)
 
     LiftedAst.Root(newDefs, structs, effects, root.entryPoint, root.reachable, root.sources)
   }
@@ -57,6 +57,18 @@ object LambdaLift {
     case SimplifiedAst.Effect(ann, mod, sym, ops0, loc) =>
       val ops = ops0.map(visitOp)
       LiftedAst.Effect(ann, mod, sym, ops, loc)
+  }
+
+  private def visitStruct(s: SimplifiedAst.Struct): LiftedAst.Struct = s match {
+    case SimplifiedAst.Struct(doc, ann, mod, sym, fields0, tpe, loc) =>
+      val fields = fields0.map(visitStructField)
+      LiftedAst.Struct(doc, ann, mod, sym, fields, tpe, loc)
+  }
+
+  private def visitStructField(field: (Symbol.StructFieldSym, SimplifiedAst.StructField)) = field match {
+    case (_, SimplifiedAst.StructField(sym, idx, tpe, loc)) => {
+      (sym, LiftedAst.StructField(sym, idx, tpe, loc))
+    }
   }
 
   private def visitOp(op: SimplifiedAst.Op): LiftedAst.Op = op match {
@@ -204,6 +216,20 @@ object LambdaLift {
     case SimplifiedAst.Expr.Lambda(_, _, _, loc) => throw InternalCompilerException(s"Unexpected expression.", loc)
 
     case SimplifiedAst.Expr.Apply(_, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression.", loc)
+
+    case SimplifiedAst.Expr.StructNew(sym, fields0, region0, tpe, purity, loc) =>
+      val fields = fields0.map(visitExp)
+      val region = visitExp(region0)
+      LiftedAst.Expr.StructNew(sym, fields, region, tpe, purity, loc)
+
+    case SimplifiedAst.Expr.StructGet(sym, e0, field, tpe, purity, loc) =>
+      val struct = visitExp(e0)
+      LiftedAst.Expr.StructGet(sym, struct, field, tpe, purity, loc)
+
+    case SimplifiedAst.Expr.StructPut(sym, e0, field, e1, tpe, purity, loc) =>
+      val struct = visitExp(e0)
+      val rhs = visitExp(e1)
+      LiftedAst.Expr.StructPut(sym, struct, field, rhs, tpe, purity, loc)
   }
 
   private def visitJvmMethod(method: SimplifiedAst.JvmMethod)(implicit sym0: Symbol.DefnSym, ctx: SharedContext, flix: Flix): LiftedAst.JvmMethod = method match {

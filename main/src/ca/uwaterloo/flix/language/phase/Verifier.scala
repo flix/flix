@@ -545,6 +545,18 @@ object Verifier {
       }
       checkEq(tpe, MonoType.Native(clazz), loc)
 
+    case Expr.StructNew(sym, fields, region, tpe, _, loc) =>
+      // JOE STRUCTS TODO
+      tpe
+
+    case Expr.StructGet(sym, struct, field, tpe, _, loc) =>
+      // JOE STRUCTS TODO
+      tpe
+
+    case Expr.StructPut(sym, struct, field, value, tpe, _, loc) =>
+      // JOE STRUCTS TODO
+      tpe
+
   }
 
   /**
