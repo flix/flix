@@ -1,3 +1,4 @@
+/* BEGIN VARIABLES */
 :root, :root.light {
     --light-bg-color-1: #ffffff;
     --light-bg-color-2: #fcfcfd;
@@ -146,7 +147,11 @@
     --highlight-color: var(--dark-highlight-color);
     color-scheme: dark;
 }
+/* END VARIABLES */
 
+
+
+/* BEGIN RESET */
 html, body {
     height: 100vh;
     overflow-y: hidden;
@@ -197,6 +202,16 @@ button, input {
     font-family: inherit;
     font-size: inherit;
 }
+
+@media (prefers-reduced-motion) {
+    * {
+        transition: none !important;
+        animation: none !important;
+    }
+}
+/* END RESET */
+
+
 
 body {
     display: grid;
