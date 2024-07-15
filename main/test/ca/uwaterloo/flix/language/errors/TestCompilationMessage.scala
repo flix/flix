@@ -22,7 +22,7 @@ class TestCompilationMessage extends AnyFunSuite with TestUtils {
 
     val actual = TestCompilationMessage.messageWithLoc(NoFormatter)
 
-    assert(expected == actual)
+    assert(actual.replace("\r\n", "\n") == expected.replace("\r\n", "\n"))
   }
 
 
