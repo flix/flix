@@ -275,6 +275,7 @@ object BoolFormulaTable {
     val allLines = readTableFromZip(Path)
 
     // Split the string into lines.
+    // is this okay?
     val lines = allLines.split("\n")
 
     // A cache used to canonicalize formulas.

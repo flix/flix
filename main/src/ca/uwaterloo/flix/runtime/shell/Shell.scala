@@ -59,6 +59,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
   private def unescapeLine(s: String): String = {
 
     // (?s) enables dotall mode (so . matches newlines)
+    // is this okay?
     val twoBackslashes = raw"(?s)\\\\\n(.*)\n\\\\".r
 
     s match {
@@ -68,6 +69,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
       // If not, then replace all escaped line endings with \n
       case _ =>
         val escapedLineEnd = raw"\\\n".r
+        // is this okay?
         escapedLineEnd.replaceAllIn(s, "\n")
     }
   }

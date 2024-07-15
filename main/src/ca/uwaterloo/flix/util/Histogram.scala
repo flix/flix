@@ -37,11 +37,11 @@ class Histogram[T] {
 
   override def toString: String = {
     val sb = new mutable.StringBuilder
-    sb.append("Entry, Count").append("\n")
+    sb.append("Entry, Count").append(System.lineSeparator())
     for ((k, count) <- m.toList.sortBy(_._2)) {
-      sb.append(s"$k, $count").append("\n")
+      sb.append(s"$k, $count").append(System.lineSeparator())
     }
-    sb.append("\n")
+    sb.append(System.lineSeparator())
     val entries = m.size
     val counts = m.values.sum
     sb.append(s"Unique Entries: $entries, Total Counts: $counts.")

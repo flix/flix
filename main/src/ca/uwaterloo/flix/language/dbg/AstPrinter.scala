@@ -101,7 +101,8 @@ object AstPrinter {
   private def formatDocProgram(p: DocAst.Program): String = {
     implicit val i: Doc.Indent = Doc.indentationLevel(IrFileIndentation)
     val docs = DocAstFormatter.format(p)
-    docs.map(Doc.pretty(IrFileWidth, _)).mkString("\n\n")
+    val doubleNewline = s"${System.lineSeparator()}${System.lineSeparator()}"
+    docs.map(Doc.pretty(IrFileWidth, _)).mkString(doubleNewline)
   }
 
   /**

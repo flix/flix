@@ -146,7 +146,7 @@ object ParseError {
     def summary: String = s"Malformed ${namedTokenSet.display(Formatter.NoFormatter)}."
 
     def message(fmt: Formatter): String = {
-      val hintStr = hint.map(s"\nHint: " + _).getOrElse("")
+      val hintStr = hint.map(s"${System.lineSeparator()}Hint: " + _).getOrElse("")
       s""">> Malformed ${fmt.red(namedTokenSet.display(fmt))}.
          |
          |${fmt.code(loc, s"Here")}$hintStr
@@ -232,7 +232,7 @@ object ParseError {
     def summary: String = s"Expected at least one ${expected.display(Formatter.NoFormatter)}."
 
     def message(fmt: Formatter): String = {
-      val hintStr = hint.map(s"\nHint: " + _).getOrElse("")
+      val hintStr = hint.map(s"${System.lineSeparator()}Hint: " + _).getOrElse("")
       s""">> Expected at least one ${expected.display(fmt)}.
          |
          |${fmt.code(loc, s"Here")}$hintStr
@@ -280,7 +280,7 @@ object ParseError {
     }
 
     def message(fmt: Formatter): String = {
-      val hintStr = hint.map(s"\nHint: " + _).getOrElse("")
+      val hintStr = hint.map(s"${System.lineSeparator()}Hint: " + _).getOrElse("")
       val expectedStr = s"Expected ${expected.display(fmt)}"
       val actualStr = actual.map(a => s" before ${fmt.red(a.display)}").getOrElse("")
       s""">> $expectedStr$actualStr.

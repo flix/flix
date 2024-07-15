@@ -108,12 +108,13 @@ object Ast {
     def getLine(line: Int): String = {
       @tailrec
       def rec(ix: Int, lineStartIx: Int, lineNr: Int): String =
-        if (ix < data.length)
+        if (ix < data.length) {
+          // is this bad?
           if (data(ix) == '\n')
             if (lineNr < line) rec(ix + 1, ix + 1, lineNr + 1)
             else new String(data, lineStartIx, math.max(ix - lineStartIx, 0))
           else rec(ix + 1, lineStartIx, lineNr)
-        else if (lineNr == line) new String(data, lineStartIx, math.max(ix - lineStartIx, 0))
+        } else if (lineNr == line) new String(data, lineStartIx, math.max(ix - lineStartIx, 0))
         else ""
 
       rec(ix = 0, lineStartIx = 0, lineNr = 1)
@@ -423,7 +424,7 @@ object Ast {
     def text: String = lines.
       dropWhile(_.trim.isEmpty).
       map(_.trim).
-      mkString("\n")
+      mkString(System.lineSeparator())
 
     /**
       * Returns a string representation that hides the internals.

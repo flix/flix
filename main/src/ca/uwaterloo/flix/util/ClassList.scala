@@ -32,5 +32,5 @@ object ClassList {
     * }}}
     */
   val TheList: List[String] = LocalResource.get("/src/ca/uwaterloo/flix/util/ClassList.txt").split('\n').map(_.trim).toList
-
+  // Is this bad
 }

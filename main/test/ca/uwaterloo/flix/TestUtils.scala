@@ -42,7 +42,7 @@ trait TestUtils {
     new Flix().setOptions(o).addSourceCode("<test>", s).compile()
 
   private def errorString(errors: Seq[CompilationMessage]): String = {
-    errors.map(_.messageWithLoc(Formatter.NoFormatter)).mkString("\n\n")
+    errors.map(_.messageWithLoc(Formatter.NoFormatter)).mkString(s"${System.lineSeparator()}${System.lineSeparator()}")
   }
 
   /**
@@ -87,7 +87,7 @@ trait TestUtils {
   def expectSuccess(result: Validation[CompilationResult, CompilationMessage]): Unit = result.toHardResult match {
     case Result.Ok(_) => ()
     case Result.Err(errors) =>
-      fail(s"Expected success, but found errors:\n\n${errorString(errors.toSeq)}.")
+      fail(s"Expected success, but found errors:${System.lineSeparator()}${System.lineSeparator()}${errorString(errors.toSeq)}.")
   }
 
   /**
@@ -106,7 +106,7 @@ trait TestUtils {
           if (actual.loc == SourceLocation.Unknown) {
             fail("Error contains unknown source location.")
           }
-        case None => fail(s"Expected an error of type ${expected.getSimpleName}, but found:\n\n${actuals.map(p => p._2.getName)}.")
+        case None => fail(s"Expected an error of type ${expected.getSimpleName}, but found:${System.lineSeparator()}${System.lineSeparator()}${actuals.map(p => p._2.getName)}.")
       }
   }
 }

@@ -188,7 +188,7 @@ object CodeActionProvider {
           edit = Some(WorkspaceEdit(
             Map(uri -> List(TextEdit(
               Range(Position(0, 0), Position(0, 0)), // TODO: We should figure out where to best place the use.
-              s"use $sym;\n"
+              s"use $sym;${System.lineSeparator()}"
             )))
           )),
           command = None
