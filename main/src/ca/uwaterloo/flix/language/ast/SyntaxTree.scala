@@ -269,6 +269,8 @@ object SyntaxTree {
 
       case object LiteralRecordFieldFragment extends Expr
 
+      case object LiteralStructFieldFragment extends Expr
+
       case object LiteralSet extends Expr
 
       case object LiteralVector extends Expr
@@ -278,6 +280,12 @@ object SyntaxTree {
       case object MatchRuleFragment extends Expr
 
       case object NewObject extends Expr
+
+      case object NewStruct extends Expr
+
+      case object StructGet extends Expr
+
+      case object StructPut extends Expr
 
       case object OpenVariant extends Expr
 

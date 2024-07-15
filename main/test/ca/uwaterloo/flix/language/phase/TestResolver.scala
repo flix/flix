@@ -93,7 +93,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val input =
       s"""
          |mod A{
-         |    struct S {
+         |    struct S[r] {
          |        a: Int32
          |    }
          |}
@@ -113,7 +113,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |    def f(): A.B.C.Color = ???
          |
          |    mod B.C {
-         |        struct Color { }
+         |        struct Color[r] { }
          |    }
          |}
        """.stripMargin
@@ -164,7 +164,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |  def f(): A.B.C.Color = ???
          |
          |  mod B.C {
-         |    struct Color {
+         |    struct Color[r] {
          |    }
          |  }
          |}
@@ -389,7 +389,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
   ignore("CyclicTypeAliases.06") {
     val input =
       s"""
-         |struct S[t] {
+         |struct S[t, r] {
          |    field: t
          |}
          |

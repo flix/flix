@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.language.ast.{NamedAst, _}
 import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.language.errors.NameError
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.collection.{Chain, ListMap}
+import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -88,8 +88,8 @@ object Namer {
     case decl: DesugaredAst.Declaration.Trait => visitTrait(decl, ns0)
     case decl: DesugaredAst.Declaration.Instance => visitInstance(decl, ns0)
     case decl: DesugaredAst.Declaration.Def => visitDef(decl, ns0, DefKind.NonMember)
-    case decl: DesugaredAst.Declaration.Enum => visitEnum(decl, ns0)
-    case decl: DesugaredAst.Declaration.Struct => visitStruct(decl, ns0)
+    case decl: DesugaredAst.Declaration.Enum => Validation.success(visitEnum(decl, ns0))
+    case decl: DesugaredAst.Declaration.Struct => Validation.success(visitStruct(decl, ns0))
     case decl: DesugaredAst.Declaration.RestrictableEnum => visitRestrictableEnum(decl, ns0)
     case decl: DesugaredAst.Declaration.TypeAlias => visitTypeAlias(decl, ns0)
     case decl: DesugaredAst.Declaration.Effect => visitEffect(decl, ns0)
@@ -228,7 +228,7 @@ object Namer {
   /**
     * Creates a pair of errors reporting a duplicate type declaration at each location.
     */
-  private def mkDuplicateNamePair[T](name: String, loc1: SourceLocation, loc2: SourceLocation)(implicit sctx: SharedContext): Unit = {
+  private def mkDuplicateNamePair(name: String, loc1: SourceLocation, loc2: SourceLocation)(implicit sctx: SharedContext): Unit = {
     // NB: We report an error at both source locations.
     if (name.charAt(0).isUpper) {
       // Case 1: uppercase name
@@ -301,7 +301,7 @@ object Namer {
   /**
     * Performs naming on the given enum `enum0`.
     */
-  private def visitEnum(enum0: DesugaredAst.Declaration.Enum, ns0: Name.NName)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.Declaration.Enum, NameError] = enum0 match {
+  private def visitEnum(enum0: DesugaredAst.Declaration.Enum, ns0: Name.NName)(implicit flix: Flix, sctx: SharedContext): NamedAst.Declaration.Enum = enum0 match {
     case DesugaredAst.Declaration.Enum(doc, ann, mod0, ident, tparams0, derives0, cases0, loc) =>
       val sym = Symbol.mkEnumSym(ns0, ident)
 
@@ -310,18 +310,15 @@ object Namer {
 
       val mod = visitModifiers(mod0, ns0)
       val derives = visitDerivations(derives0)
-      val casesVal = traverse(cases0)(visitCase(_, sym))
+      val cases = cases0.map(visitCase(_, sym))
 
-      mapN(casesVal) {
-        case cases =>
-          NamedAst.Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc)
-      }
+      NamedAst.Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc)
   }
 
   /**
-   * Performs the naming on the given struct `struct0`.
-   */
-  private def visitStruct(struct0: DesugaredAst.Declaration.Struct, ns0: Name.NName)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.Declaration.Struct, NameError] = struct0 match {
+    * Performs the naming on the given struct `struct0`.
+    */
+  private def visitStruct(struct0: DesugaredAst.Declaration.Struct, ns0: Name.NName)(implicit flix: Flix, sctx: SharedContext): NamedAst.Declaration.Struct = struct0 match {
     case DesugaredAst.Declaration.Struct(doc, ann, mod0, ident, tparams0, fields0, loc) =>
       val sym = Symbol.mkStructSym(ns0, ident)
 
@@ -329,12 +326,9 @@ object Namer {
       val tparams = getTypeParams(tparams0)
 
       val mod = visitModifiers(mod0, ns0)
-      val fieldsVal = traverse(fields0)(visitField(_, sym))
+      val fields = fields0.map(visitField(_, sym))
 
-      mapN(fieldsVal) {
-        case fields =>
-          NamedAst.Declaration.Struct(doc, ann, mod, sym, tparams, fields, loc)
-      }
+      NamedAst.Declaration.Struct(doc, ann, mod, sym, tparams, fields, loc)
   }
 
   /**
@@ -368,21 +362,21 @@ object Namer {
   /**
     * Performs naming on the given enum case.
     */
-  private def visitCase(case0: DesugaredAst.Case, enumSym: Symbol.EnumSym)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.Declaration.Case, NameError] = case0 match {
+  private def visitCase(case0: DesugaredAst.Case, enumSym: Symbol.EnumSym)(implicit flix: Flix, sctx: SharedContext): NamedAst.Declaration.Case = case0 match {
     case DesugaredAst.Case(ident, tpe, loc) =>
       val t = visitType(tpe)
       val caseSym = Symbol.mkCaseSym(enumSym, ident)
-      Validation.success(NamedAst.Declaration.Case(caseSym, t, loc))
+      NamedAst.Declaration.Case(caseSym, t, loc)
   }
 
   /**
     * Performs naming on the given field.
     */
-  private def visitField(field0: DesugaredAst.StructField, structSym: Symbol.StructSym)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.Declaration.StructField, NameError] = field0 match {
+  private def visitField(field0: DesugaredAst.StructField, structSym: Symbol.StructSym)(implicit flix: Flix, sctx: SharedContext): NamedAst.Declaration.StructField = field0 match {
     case DesugaredAst.StructField(ident, tpe, loc) =>
       val t = visitType(tpe)
       val fieldSym = Symbol.mkStructFieldSym(structSym, ident)
-      Validation.success(NamedAst.Declaration.StructField(fieldSym, t, loc))
+      NamedAst.Declaration.StructField(fieldSym, t, loc)
   }
 
   /**
@@ -789,6 +783,30 @@ object Namer {
     case DesugaredAst.Expr.ArrayLength(exp, loc) =>
       mapN(visitExp(exp, ns0)) {
         case e => NamedAst.Expr.ArrayLength(e, loc)
+      }
+
+    case DesugaredAst.Expr.StructNew(name, exps0, region0, loc) =>
+      val structsym = Symbol.mkStructSym(name.namespace, name.ident)
+      val expsVal = traverse(exps0) {
+        case (n, e) => mapN(visitExp(e, ns0)) {
+          case e => (Symbol.mkStructFieldSym(structsym, n), e)
+        }
+      }
+      val regionVal = visitExp(region0, ns0)
+      mapN(expsVal, regionVal) {
+        case (exps, region) => NamedAst.Expr.StructNew(structsym, exps, region, loc)
+      }
+
+    case DesugaredAst.Expr.StructGet(e, name, loc) =>
+      val structsym = Symbol.mkStructSym(ns0, ns0.idents.last)
+      mapN(visitExp(e, ns0)) {
+        case e => NamedAst.Expr.StructGet(structsym, e, name, loc)
+      }
+
+    case DesugaredAst.Expr.StructPut(e1, name, e2, loc) =>
+      val structsym = Symbol.mkStructSym(ns0, ns0.idents.last)
+      mapN(visitExp(e1, ns0), visitExp(e2, ns0)) {
+        case (e1, e2) => NamedAst.Expr.StructPut(structsym, e1, name, e2, loc)
       }
 
     case DesugaredAst.Expr.VectorLit(exps, loc) =>

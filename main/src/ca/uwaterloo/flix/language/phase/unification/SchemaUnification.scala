@@ -47,9 +47,9 @@ object SchemaUnification {
           }
       }
 
-    case (Type.Cst(TypeConstructor.Error(_), _), _) => Ok((Substitution.empty))
+    case (Type.Cst(TypeConstructor.Error(_, _), _), _) => Ok((Substitution.empty))
 
-    case (_, Type.Cst(TypeConstructor.Error(_), _)) => Ok((Substitution.empty))
+    case (_, Type.Cst(TypeConstructor.Error(_, _), _)) => Ok((Substitution.empty))
 
     case _ => throw InternalCompilerException(s"unexpected types: ($tpe1), ($tpe2)", tpe1.loc)
   }

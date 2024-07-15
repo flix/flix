@@ -636,6 +636,17 @@ object Desugar {
       val e3 = visitExp(exp3)
       Expr.ArrayStore(e1, e2, e3, loc)
 
+    case WeededAst.Expr.StructNew(name, fields0, region0, loc) => 
+      val fields = fields0.map(field => (field._1, visitExp(field._2)))
+      val region = visitExp(region0)
+      Expr.StructNew(name, fields, region, loc)
+
+    case WeededAst.Expr.StructGet(e, name, loc) =>
+      Expr.StructGet(visitExp(e), name, loc)
+
+    case WeededAst.Expr.StructPut(e1, name, e2, loc) =>
+      Expr.StructPut(visitExp(e1), name, visitExp(e2), loc)
+
     case WeededAst.Expr.VectorLit(exps, loc) =>
       val e = visitExps(exps)
       Expr.VectorLit(e, loc)
