@@ -59,9 +59,14 @@ object HtmlDocumentor {
   val FavIcon: String = "/doc/favicon.png"
 
   /**
-    * The path to the the script, relative to the resources folder.
+    * The path to the the `index.js` script, relative to the resources folder.
     */
   val Script: String = "/doc/index.js"
+
+  /**
+    * The path to the `search.js` script, relative to the resources folder.
+    */
+  val SearchScript: String = "/doc/search.js"
 
   /**
     * The path to the the icon directory, relative to the resources folder.
@@ -78,66 +83,88 @@ object HtmlDocumentor {
     val filteredModulesRoot = filterModules(modulesRoot, packageModules)
     val pairedModulesRoot = pairModules(filteredModulesRoot)
 
-    visitMod(pairedModulesRoot)
+    val generatedPages = visitMod(pairedModulesRoot)
+    createSitemap(generatedPages)
+
     writeAssets()
   }
 
   /**
     * Documents the given `Module`, `mod`, and all of its contained items, writing the resulting HTML to disk.
+    *
+    * Returns a list of the names of the generated files.
     */
-  private def visitMod(mod: Module)(implicit flix: Flix): Unit = {
+  private def visitMod(mod: Module)(implicit flix: Flix): List[String] = {
     val out = documentModule(mod)
     writeDocFile(mod.fileName, out)
 
-    mod.submodules.foreach(visitMod)
-    mod.traits.foreach(visitTrait)
-    mod.effects.foreach(visitEffect)
-    mod.enums.foreach(visitEnum)
+    val generatedPages = List(mod.fileName) :::
+      mod.submodules.flatMap(visitMod) :::
+      mod.traits.flatMap(visitTrait) :::
+      mod.effects.flatMap(visitEffect) :::
+      mod.enums.flatMap(visitEnum)
+
+    generatedPages
   }
 
   /**
     * Documents the given `Trait`, `trt`, and all of its contained items, writing the resulting HTML to disk.
+    *
+    * Returns a list of the names of the generated files.
     */
-  private def visitTrait(trt: Trait)(implicit flix: Flix): Unit = {
+  private def visitTrait(trt: Trait)(implicit flix: Flix): List[String] = {
     val out = documentTrait(trt)
     writeDocFile(trt.fileName, out)
 
-    trt.companionMod.foreach { mod =>
-      mod.submodules.foreach(visitMod)
-      mod.traits.foreach(visitTrait)
-      mod.effects.foreach(visitEffect)
-      mod.enums.foreach(visitEnum)
-    }
+    val generatedPages = List(trt.fileName) :::
+      trt.companionMod.map { mod =>
+        mod.submodules.flatMap(visitMod) :::
+          mod.traits.flatMap(visitTrait) :::
+          mod.effects.flatMap(visitEffect) :::
+          mod.enums.flatMap(visitEnum)
+      }.getOrElse(Nil)
+
+    generatedPages
   }
 
   /**
     * Documents the given `Effect`, `eff`, and all of its contained items, writing the resulting HTML to disk.
+    *
+    * Returns a list of the names of the generated files.
     */
-  private def visitEffect(eff: Effect)(implicit flix: Flix): Unit = {
+  private def visitEffect(eff: Effect)(implicit flix: Flix): List[String] = {
     val out = documentEffect(eff)
     writeDocFile(eff.fileName, out)
 
-    eff.companionMod.foreach { mod =>
-      mod.submodules.foreach(visitMod)
-      mod.traits.foreach(visitTrait)
-      mod.effects.foreach(visitEffect)
-      mod.enums.foreach(visitEnum)
-    }
+    val generatedPages = List(eff.fileName) :::
+      eff.companionMod.map { mod =>
+        mod.submodules.flatMap(visitMod) :::
+          mod.traits.flatMap(visitTrait) :::
+          mod.effects.flatMap(visitEffect) :::
+          mod.enums.flatMap(visitEnum)
+      }.getOrElse(Nil)
+
+    generatedPages
   }
 
   /**
     * Documents the given `Enum`, `enm`, and all of its contained items, writing the resulting HTML to disk.
+    *
+    * Returns a list of the names of the generated files.
     */
-  private def visitEnum(enm: Enum)(implicit flix: Flix): Unit = {
+  private def visitEnum(enm: Enum)(implicit flix: Flix): List[String] = {
     val out = documentEnum(enm)
     writeDocFile(enm.fileName, out)
 
-    enm.companionMod.foreach { mod =>
-      mod.submodules.foreach(visitMod)
-      mod.traits.foreach(visitTrait)
-      mod.effects.foreach(visitEffect)
-      mod.enums.foreach(visitEnum)
-    }
+    val generatedPages = List(enm.fileName) :::
+      enm.companionMod.map { mod =>
+        mod.submodules.flatMap(visitMod)
+        mod.traits.flatMap(visitTrait)
+        mod.effects.flatMap(visitEffect)
+        mod.enums.flatMap(visitEnum)
+      }.getOrElse(Nil)
+
+    generatedPages
   }
 
   /**
@@ -508,6 +535,25 @@ object HtmlDocumentor {
   }
 
   /**
+    * Generates the sitemap from the given list of filenames, and writes it to disk.
+    */
+  private def createSitemap(fileNames: List[String]): Unit = {
+    // The sitemap.json file is in a non-standard format for use with the search function.
+    // In contrast to the standard sitemap.xml, the locations are relative to the origin.
+    val sb = new StringBuilder()
+    sb.append("[")
+    for ((fileName, i) <- fileNames.zipWithIndex) {
+      sb.append(s"\"$fileName\"")
+      if (i < fileNames.length - 1) {
+        sb.append(",")
+      }
+    }
+    sb.append("]")
+    val sitemapJson = sb.toString()
+    writeFile("sitemap.json", sitemapJson.getBytes)
+  }
+
+  /**
     * Documents the given `Module`, `mod`, returning a string of HTML.
     */
   private def documentModule(mod: Module)(implicit flix: Flix): String = {
@@ -832,7 +878,8 @@ object HtmlDocumentor {
        |<link href='https://fonts.googleapis.com/css?family=Inter&display=swap' rel='stylesheet'>
        |<link href='styles.css' rel='stylesheet'>
        |<link href='favicon.png' rel='icon'>
-       |<script defer src='index.js'></script>
+       |<script defer type='module' src='./index.js'></script>
+       |<script defer type='module' src='./search.js'></script>
        |<title>Flix | ${esc(name)}</title>
        |</head>
     """.stripMargin
@@ -851,7 +898,7 @@ object HtmlDocumentor {
     sb.append(s"<span class='version'>${Version.CurrentVersion}</span>")
     sb.append("</div>")
 
-    sb.append("<button id='search'>")
+    sb.append("<button id='search-button'>")
     inlineIcon("search")
     sb.append("<span>Search</span>")
     sb.append("</button>")
@@ -876,6 +923,16 @@ object HtmlDocumentor {
     sb.append("</div>")
 
     sb.append("</header>")
+
+    sb.append("<dialog id='search-box'>")
+    sb.append("<div class='input-field'>")
+    sb.append("<input type='text' autofocus>")
+    sb.append("<button id='close-search-box'>")
+    inlineIcon("close")
+    sb.append("</button>")
+    sb.append("</div>")
+    sb.append("<ul class='results'></ul>")
+    sb.append("</dialog>")
   }
 
   /**
@@ -1435,6 +1492,9 @@ object HtmlDocumentor {
 
     val script = readResource(Script)
     writeFile("index.js", script)
+
+    val searchScript = readResource(SearchScript)
+    writeFile("search.js", searchScript)
   }
 
   /**

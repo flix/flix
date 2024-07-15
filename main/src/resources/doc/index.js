@@ -1,3 +1,5 @@
+import { search } from "./search.js";
+
 function initTheme() {
     const storeKey = "flix-html-docs:use-dark-theme";
 
@@ -78,6 +80,50 @@ function initMobileInteractions() {
     }
 }
 
+function initSearch() {
+    const searchButton = document.querySelector("#search-button");
+    const searchBox = document.querySelector("#search-box");
+    const closeSearchBox = document.querySelector("#close-search-box");
+    const input = document.querySelector("#search-box input");
+    const resultList = document.querySelector("#search-box .results");
+
+    async function updateSearchResults() {
+        const phrase = input.value;
+        resultList.innerHTML = "Searching...";
+        const results = await search(phrase);
+
+        if (input.value !== phrase) {
+            // The results are outdated
+            return;
+        }
+
+        resultList.innerHTML = "";
+        if (results.length === 0) {
+            resultList.innerHTML = "No results found";
+        } else {
+            for (const result of results) {
+                const item = document.createElement("li");
+                const link = document.createElement("a");
+                link.href = result.url;
+                link.innerText = result.title;
+                item.appendChild(link);
+                resultList.appendChild(item);
+            }
+        }
+    }
+
+    searchButton.addEventListener("click", () => {
+        input.value = "";
+        updateSearchResults();
+        searchBox.showModal();
+    });
+    closeSearchBox.addEventListener("click", () => {
+        searchBox.close();
+    });
+    input.addEventListener("input", updateSearchResults);
+}
+
 initTheme();
 initCopyLinks();
 initMobileInteractions();
+initSearch();

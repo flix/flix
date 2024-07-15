@@ -269,7 +269,7 @@ header {
     font-size: 0.7rem;
 }
 
-#search {
+#search-button {
     display: flex;
     gap: 0.3rem;
     align-items: center;
@@ -283,9 +283,50 @@ header {
     cursor: text;
     margin: 0 0.5rem;
 }
-#search > svg {
+#search-button > svg {
     width: 1em;
     height: 1em;
+}
+
+#search-box:not([open]) {
+   display: none;
+}
+#search-box {
+    display: flex;
+    flex-direction: column;
+    margin-top: 0.2rem;
+    padding: 0;
+    width: 40rem;
+    border-radius: 0.4rem;
+    border: 1px solid var(--border-color);
+    background-color: var(--bg-color-1);
+    box-shadow: 0 0 10px 0 var(--shadow-color);
+}
+#search-box > .input-field {
+    display: flex;
+    width: 100%;
+    box-sizing: border-box;
+    background-color: var(--bg-color-3);
+    padding: 0.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+#search-box input {
+    outline: none;
+    flex: 1;
+}
+#search-box #close-search-box {
+    display: flex;
+    align-items: center;
+    color: var(--faded-text-color);
+}
+#search-box #close-search-box:hover {
+    color: var(--text-color);
+}
+#search-box .results {
+   list-style: none;
+   overflow: auto;
+   margin: 0;
+   padding: 0.5rem;
 }
 
 header > .toggle {
