@@ -49,7 +49,7 @@ object MonoTypePrinter {
     case MonoType.Arrow(args, result) => Type.Arrow(args.map(print), print(result))
     case MonoType.RecordEmpty => Type.RecordEmpty
     case MonoType.RecordExtend(label, value, rest) => Type.RecordExtend(label, print(value), print(rest))
-    case MonoType.Struct(_) => throw new RuntimeException("JOE TBD")
+    case MonoType.Struct(_, _) => throw new RuntimeException("JOE TBD")
     case MonoType.Native(clazz) => Type.Native(clazz)
   }
 

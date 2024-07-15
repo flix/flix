@@ -1488,8 +1488,31 @@ object GenExpression {
         mv.visitFieldInsn(PUTFIELD, className, s"clo$i", JvmOps.getClosureAbstractClassType(e.tpe).toDescriptor)
       }
 
-    case Expr.StructNew(_, _, _, _, _, _) => throw new RuntimeException("JOE TBD")
-    case Expr.StructGet(_, _, _, _, _, _) => throw new RuntimeException("JOE TBD")
+    case Expr.StructNew(_, exps, region, tpe, _, loc) =>
+      // JOE TODO: Region expression
+      // We get the JvmType of the class for the struct
+      val elmTypes = exps.map(_.tpe)
+      val structType = BackendObjType.Struct(elmTypes.map(BackendType.asErasedBackendType))
+      val internalClassName = structType.jvmName.toInternalName
+      // Instantiating a new object of struct
+      mv.visitTypeInsn(NEW, internalClassName)
+      // Duplicating the class
+      mv.visitInsn(DUP)
+      // Evaluating all the elements to be stored in the struct class
+      exps.foreach(compileExpr)
+      // Descriptor of constructor
+      val constructorDescriptor = MethodDescriptor(structType.elms, VoidableType.Void)
+      // Invoking the constructor
+      mv.visitMethodInsn(INVOKESPECIAL, internalClassName, "<init>", constructorDescriptor.toDescriptor, false)
+
+    case Expr.StructGet(sym, exp, field, tpe, _, _) =>
+      val MonoType.Struct(_, elmTypes) = exp.tpe
+      val structType = BackendObjType.Struct(elmTypes.map(BackendType.asErasedBackendType))
+      // evaluating the `base`
+      compileExpr(exp)
+      val idx = root.structs(sym).fields(Symbol.mkStructFieldSym(sym, Name.Ident(field.name, field.loc))).idx
+      // Retrieving the field `field${offset}`
+      mv.visitFieldInsn(GETFIELD, structType.jvmName.toInternalName, s"field$idx", JvmOps.asErasedJvmType(tpe).toDescriptor)
     case Expr.StructPut(_, _, _, _, _, _, _) => throw new RuntimeException("JOE TBD")
   }
 
@@ -1653,3 +1676,5 @@ object GenExpression {
     }
   }
 }
+
+// joe todo: make everything pretty

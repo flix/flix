@@ -325,8 +325,6 @@ object MonoTypes {
         // Throw away type arguments and fix the kind.
         // `Enum[a, b, c]` becomes `Enum`
         Type.Cst(TypeConstructor.Enum(sym, Kind.Star), tpe.loc)
-      case TypeConstructor.Struct(sym, _) =>
-        Type.Cst(TypeConstructor.Struct(sym, Kind.Star), tpe.loc)
       case _ => tpe match {
         case Type.Cst(_, _) =>
           tpe

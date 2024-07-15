@@ -399,9 +399,10 @@ object Monomorpher {
     }
 
     val structs = ParOps.parMapValues(root.structs) {
-      case LoweredAst.Struct(doc, ann, mod, sym, tparams, fields, tpe, loc) =>
+      case LoweredAst.Struct(doc, ann, mod, sym, tparams0, fields, tpe, loc) =>
         val newFields = fields.map(visitStructField)
-        MonoAst.Struct(doc, ann, mod, sym, newFields, tpe, loc)
+        val tparams = tparams0.map(_.sym)
+        MonoAst.Struct(doc, ann, mod, sym, tparams, newFields, tpe, loc)
     }
     // Reassemble the AST.
     MonoAst.Root(

@@ -212,7 +212,7 @@ object Eraser {
       case Arrow(args, result) => Arrow(args.map(visitType), box(result))
       case RecordEmpty => RecordEmpty
       case RecordExtend(label, value, rest) => RecordExtend(label, erase(value), visitType(rest))
-      case MonoType.Struct(sym) => MonoType.Struct(sym)
+      case MonoType.Struct(sym, elms) => MonoType.Struct(sym, elms.map(erase))
       case Native(clazz) => Native(clazz)
     }
   }
@@ -230,7 +230,7 @@ object Eraser {
       case Int64 => Int64
       case Void |AnyType | Unit | BigDecimal | BigInt | String | Regex |
            Region | Array(_) | Lazy(_) | Ref(_) | Tuple(_) | MonoType.Enum(_) |
-           Arrow(_, _) | RecordEmpty | RecordExtend(_, _, _) | Native(_) | MonoType.Struct(_) =>
+           Arrow(_, _) | RecordEmpty | RecordExtend(_, _, _) | Native(_) | MonoType.Struct(_, _) =>
         MonoType.Object
     }
   }
