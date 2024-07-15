@@ -343,6 +343,25 @@ header {
    margin: 0;
    padding: 0.5rem;
 }
+#search-box .results li {
+    display: flex;
+    border-bottom: 1px solid var(--border-color);
+}
+#search-box .results li:last-child {
+    border-bottom: none;
+}
+#search-box .results a {
+    display: block;
+    width: 100%;
+    padding: 0.5rem;
+}
+#search-box .results a:hover {
+    background-color: var(--bg-color-2);
+}
+#search-box .results .type {
+    color: var(--faded-text-color);
+    font-size: 0.8em;
+}
 
 header > .toggle {
     display: flex;

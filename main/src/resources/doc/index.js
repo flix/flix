@@ -58,7 +58,7 @@ function initCopyLinks() {
             msgNode.style.position = "absolute";
             msgNode.style.top = `${e.clientY}px`;
             msgNode.style.left = `${e.clientX}px`;
-            document.body.appendChild(msgNode);
+            document.body.append(msgNode);
 
             msgNode.addEventListener("animationend", () => {
                 msgNode.remove();
@@ -67,17 +67,21 @@ function initCopyLinks() {
     }
 }
 
-function initMobileInteractions() {
-    const menuToggleCheckbox = document.querySelector("#menu-toggle > input");
-    const menuLinks = document.querySelectorAll("nav a");
+function initLinks() {
+    const links = document.querySelectorAll("a");
+    links.forEach(initLink);
+}
+function initLink(link) {
+    const isAnchor = link.getAttribute("href").includes("#");
 
-    // Hide sidebar when navigating somewhere within the page
-    for (const link of menuLinks) {
-        const isAnchor = link.getAttribute("href").startsWith("#");
-        if (isAnchor) link.addEventListener("click", () => {
-            menuToggleCheckbox.checked = false;
-        });
-    }
+    // Hide menu and search box when navigating somewhere within the page
+    if (isAnchor) link.addEventListener("click", () => {
+        const menuToggleCheckbox = document.querySelector("#menu-toggle > input");
+        menuToggleCheckbox.checked = false;
+
+        const searchBox = document.querySelector("#search-box");
+        searchBox.close();
+    });
 }
 
 function initSearch() {
@@ -105,9 +109,22 @@ function initSearch() {
                 const item = document.createElement("li");
                 const link = document.createElement("a");
                 link.href = result.url;
-                link.innerText = result.title;
-                item.appendChild(link);
-                resultList.appendChild(item);
+
+                const type = document.createElement("span");
+                type.classList.add("type");
+                type.textContent = result.type;
+                link.append(type);
+
+                link.append(" ");
+
+                const title = document.createElement("span");
+                title.classList.add("title");
+                title.textContent = result.title;
+                link.append(title);
+
+                initLink(link);
+                item.append(link);
+                resultList.append(item);
             }
         }
     }
@@ -120,10 +137,17 @@ function initSearch() {
     closeSearchBox.addEventListener("click", () => {
         searchBox.close();
     });
+    searchBox.addEventListener("click", (e) => {
+        // Little hack to detect if the backdrop was clicked.
+        const backdropClicked = e.target === e.currentTarget;
+        if (backdropClicked) {
+            searchBox.close();
+        }
+    });
     input.addEventListener("input", updateSearchResults);
 }
 
 initTheme();
 initCopyLinks();
-initMobileInteractions();
+initLinks();
 initSearch();

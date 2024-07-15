@@ -675,7 +675,7 @@ object HtmlDocumentor {
     sb.append("<main>")
     sb.append(s"<h1>${esc(trt.qualifiedName)}</h1>")
 
-    sb.append(s"<div class='box'>")
+    sb.append(s"<div class='box' id='main-box'>")
     docAnnotations(trt.decl.ann)
     sb.append("<div class='decl'>")
     sb.append("<code>")
@@ -760,7 +760,7 @@ object HtmlDocumentor {
     sb.append("<main>")
     sb.append(s"<h1>${esc(eff.qualifiedName)}</h1>")
 
-    sb.append(s"<div class='box' id='eff-${esc(eff.name)}'>")
+    sb.append(s"<div class='box'  id='main-box'>")
     docAnnotations(eff.decl.ann)
     sb.append("<div class='decl'>")
     sb.append("<code>")
@@ -836,7 +836,7 @@ object HtmlDocumentor {
     sb.append("<main>")
     sb.append(s"<h1>${esc(enm.qualifiedName)}</h1>")
 
-    sb.append(s"<div class='box' id='enum-${esc(enm.name)}'>")
+    sb.append(s"<div class='box' id='main-box'>")
     docAnnotations(enm.decl.ann)
     sb.append("<div class='decl'>")
     sb.append("<code>")
