@@ -197,11 +197,13 @@ a:hover {
 }
 
 button, input {
-    cursor: pointer;
     background-color: transparent;
     border: none;
     font-family: inherit;
     font-size: inherit;
+}
+button, input[type="checkbox"] {
+    cursor: pointer;
 }
 
 @media (prefers-reduced-motion) {
@@ -288,6 +290,15 @@ header {
     height: 1em;
 }
 
+@media screen and (max-width: 800px) {
+    body {
+        transition: filter 0.3s;
+    }
+
+    body:has(#search-box[open]) {
+        filter: blur(10px);
+    }
+}
 #search-box:not([open]) {
    display: none;
 }
@@ -301,6 +312,10 @@ header {
     border: 1px solid var(--border-color);
     background-color: var(--bg-color-1);
     box-shadow: 0 0 10px 0 var(--shadow-color);
+}
+#search-box::backdrop {
+    background-color: transparent;
+    backdrop-filter: contrast(0.8);
 }
 #search-box > .input-field {
     display: flex;
@@ -471,7 +486,7 @@ main {
         transition: filter 0.2s;
     }
     :root:has(#menu-toggle input:checked) main {
-        filter: blur(10px) contrast(0.9);
+        filter: blur(10px) contrast(0.8);
         pointer-events: none;
     }
 }

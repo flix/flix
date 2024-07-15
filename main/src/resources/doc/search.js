@@ -53,7 +53,7 @@ export async function search(phrase) {
         for (const box of boxes) {
             const url = box.querySelector(".copy-link")?.href;
             if (url === undefined) {
-                // Boxes with no link can be ignored
+                // Boxes with no link can be ignored.
                 continue;
             }
 
@@ -62,15 +62,13 @@ export async function search(phrase) {
             const titleLower = title.toLowerCase();
 
             const description = box.querySelector(".doc")?.textContent?.toLowerCase();
-            const inDescription = description !== undefined
-                ? description.toLowerCase().includes(phrase)
-                : false;
+            const descriptionLower = description?.toLowerCase();
 
             if (titleLower === phrase) {
                 results.push({ url, title, priority: 4 });
             } else if (titleLower.includes(phrase)) {
                 results.push({ url, title, priority: 2 });
-            } else if (inDescription) {
+            } else if (descriptionLower?.includes(phrase) ?? false) {
                 results.push({ url, title, priority: 1 });
             }
         }
