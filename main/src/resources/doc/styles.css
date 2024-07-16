@@ -502,7 +502,7 @@ main {
         flex: 1;
         padding: 1rem 5%;
 
-        transition: filter 0.2s;
+        transition: filter 0.3s;
     }
     :root:has(#menu-toggle input:checked) main {
         filter: blur(10px) contrast(0.8);
