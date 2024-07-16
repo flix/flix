@@ -10,12 +10,6 @@ async function initSearchIndex() {
         const res = await fetch(filename);
         const text = await res.text();
         const loadedDoc = parser.parseFromString(text, "text/html");
-
-        // Set correct base URL for relative links.
-        const base = loadedDoc.createElement("base");
-        base.href = filename;
-        loadedDoc.head.append(base);
-
         return loadedDoc;
     }));
 

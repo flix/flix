@@ -565,7 +565,7 @@ object HtmlDocumentor {
     val sortedTypeAliases = mod.typeAliases.sortBy(_.sym.name)
     val sortedDefs = mod.defs.sortBy(_.sym.name)
 
-    sb.append(mkHead(mod.qualifiedName))
+    sb.append(mkHead(mod.qualifiedName, mod.fileName))
     sb.append("<body class='no-script'>")
 
     docHeader()
@@ -628,7 +628,7 @@ object HtmlDocumentor {
     val sortedTypeAliases = mod.map(_.typeAliases).getOrElse(Nil).sortBy(_.sym.name)
     val sortedModuleDefs = mod.map(_.defs).getOrElse(Nil).sortBy(_.sym.name)
 
-    sb.append(mkHead(trt.qualifiedName))
+    sb.append(mkHead(trt.qualifiedName, trt.fileName))
     sb.append("<body class='no-script'>")
 
     docHeader()
@@ -719,7 +719,7 @@ object HtmlDocumentor {
     val sortedTypeAliases = mod.map(_.typeAliases).getOrElse(Nil).sortBy(_.sym.name)
     val sortedModuleDefs = mod.map(_.defs).getOrElse(Nil).sortBy(_.sym.name)
 
-    sb.append(mkHead(eff.qualifiedName))
+    sb.append(mkHead(eff.qualifiedName, eff.fileName))
     sb.append("<body class='no-script'>")
 
     docHeader()
@@ -799,7 +799,7 @@ object HtmlDocumentor {
     val sortedTypeAliases = mod.map(_.typeAliases).getOrElse(Nil).sortBy(_.sym.name)
     val sortedModuleDefs = mod.map(_.defs).getOrElse(Nil).sortBy(_.sym.name)
 
-    sb.append(mkHead(enm.qualifiedName))
+    sb.append(mkHead(enm.qualifiedName, enm.fileName))
     sb.append("<body class='no-script'>")
 
     docHeader()
@@ -865,13 +865,14 @@ object HtmlDocumentor {
   /**
     * Generates the string representing the head of the HTML document.
     */
-  private def mkHead(name: String): String = {
+  private def mkHead(name: String, fileName: String): String = {
     s"""<!doctype html><html lang='en'>
        |<head>
        |<meta charset='utf-8'>
        |<meta name='viewport' content='width=device-width,initial-scale=1'>
-       |<meta name='description' content='API documentation for ${esc(name)}| The Flix Programming Language'>
+       |<meta name='description' content='API documentation for ${esc(name)} | The Flix Programming Language'>
        |<meta name='keywords' content='Flix, Programming, Language, API, Documentation, ${esc(name)}'>
+       |<base href='${fileName}'></base>
        |<link href='https://fonts.googleapis.com/css?family=Fira+Code&display=swap' rel='stylesheet'>
        |<link href='https://fonts.googleapis.com/css?family=Oswald&display=swap' rel='stylesheet'>
        |<link href='https://fonts.googleapis.com/css?family=Noto+Sans&display=swap' rel='stylesheet'>
