@@ -116,7 +116,7 @@ object TreeShaker2 {
     case Expr.StructNew(_, es, e, _, _, _) =>
       visitExps(es) ++ visitExp(e)
 
-    case Expr.StructGet(_, e, _, _, _, _) => 
+    case Expr.StructGet(_, e, _, _, _, _) =>
       visitExp(e)
 
     case Expr.StructPut(_, e1, _, e2, _, _, _) =>

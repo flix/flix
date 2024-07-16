@@ -129,7 +129,10 @@ object Kinder {
           val tparamsVal = traverse(tparams1.tparams)(visitTypeParam(_, kenv))
 
           flatMapN(tparamsVal) {
-            case tparams =>
+            case tparams0 =>
+              val KindedAst.TypeParam(name, ksym, tloc) = tparams0.last
+              val lastTparam = KindedAst.TypeParam(name, Symbol.freshKindedTypeVarSym(ksym.text, Kind.Eff, isRegion = true, ksym.loc), tloc)
+              val tparams = tparams0.init :+ lastTparam
               val targs = tparams.map(tparam => Type.Var(tparam.sym, tparam.loc.asSynthetic))
               val tpe = Type.mkApply(Type.Cst(TypeConstructor.Struct(sym, getStructKind(struct0)), sym.loc.asSynthetic), targs, sym.loc.asSynthetic)
               val fieldsVal = traverse(fields0) {
