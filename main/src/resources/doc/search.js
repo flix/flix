@@ -1,17 +1,22 @@
 /**
- * @returns {Promise<({ filename: string } & Document)[]>}
+ * @returns {Promise<Document[]>}
  */
 async function initSearchIndex() {
     const res = await fetch("sitemap.json");
     const sitemap = await res.json();
 
     const parser = new DOMParser();
-    const documents = await Promise.all(sitemap.map(async (p) => {
-        const res = await fetch(p);
+    const documents = await Promise.all(sitemap.map(async (filename) => {
+        const res = await fetch(filename);
         const text = await res.text();
-        const document = parser.parseFromString(text, "text/html");
-        document.filename = p;
-        return document;
+        const loadedDoc = parser.parseFromString(text, "text/html");
+
+        // Set correct base URL for relative links.
+        const base = loadedDoc.createElement("base");
+        base.href = filename;
+        loadedDoc.head.append(base);
+
+        return loadedDoc;
     }));
 
     return documents;
@@ -26,11 +31,12 @@ const indexPromise = initSearchIndex();
  * @returns {Promise<{ url: string, type: string, title: string }[]>}
  */
 export async function search(phrase) {
-    // Priority is given as follows:
-    // 4. Exact match in title
-    // 3. Page with partial match in title
-    // 2. Box with partial match in title
-    // 1. Match in description
+    const priorityLevels = {
+        exactMatchInTitle: 4,
+        pageWithPartialMatchInTitle: 3,
+        boxWithPartialMatchInTitle: 2,
+        matchInDescription: 1,
+    };
 
     phrase = phrase.toLowerCase();
 
@@ -42,7 +48,7 @@ export async function search(phrase) {
     for (const document of index) {
         const pageTitle = document.querySelector("h1").textContent;
         const pageTitleLower = pageTitle.toLowerCase();
-        const pageFilename = document.filename;
+        const pageFilename = document.querySelector("base").href;
 
         const pageBox = document.querySelector("#main-box");
         const pageType = pageBox?.querySelector(".keyword")?.textContent ?? "mod";
@@ -50,11 +56,26 @@ export async function search(phrase) {
         const pageDescriptionLower = pageDescription?.toLowerCase();
 
         if (pageTitleLower === phrase) {
-            results.push({ url: pageFilename,type: pageType, title: pageTitle, priority: 4 });
+            results.push({
+                url: pageFilename,
+                type: pageType,
+                title: pageTitle,
+                priority: priorityLevels.exactMatchInTitle,
+            });
         } else if (pageTitleLower.includes(phrase)) {
-            results.push({ url: pageFilename, type: pageType, title: pageTitle, priority: 3 });
+            results.push({
+                url: pageFilename,
+                type: pageType,
+                title: pageTitle,
+                priority: priorityLevels.pageWithPartialMatchInTitle,
+            });
         } else if (pageDescriptionLower?.includes(phrase) ?? false) {
-            results.push({ url: pageFilename, type: pageType, title: pageTitle, priority: 1 });
+            results.push({
+                url: pageFilename,
+                type: pageType,
+                title: pageTitle,
+                priority: priorityLevels.matchInDescription,
+            });
         }
 
         const boxes = document.querySelectorAll(".box");
@@ -75,11 +96,26 @@ export async function search(phrase) {
             const descriptionLower = description?.toLowerCase();
 
             if (titleLower === phrase) {
-                results.push({ url, type, title, priority: 4 });
+                results.push({
+                    url,
+                    type,
+                    title,
+                    priority: priorityLevels.exactMatchInTitle,
+                });
             } else if (titleLower.includes(phrase)) {
-                results.push({ url, type, title, priority: 2 });
+                results.push({
+                    url,
+                    type,
+                    title,
+                    priority: priorityLevels.boxWithPartialMatchInTitle,
+                });
             } else if (descriptionLower?.includes(phrase) ?? false) {
-                results.push({ url, type, title, priority: 1 });
+                results.push({
+                    url,
+                    type,
+                    title,
+                    priority: priorityLevels.matchInDescription
+                });
             }
         }
     }
