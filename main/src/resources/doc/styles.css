@@ -313,6 +313,11 @@ header {
     background-color: var(--bg-color-1);
     box-shadow: 0 0 10px 0 var(--shadow-color);
 }
+@media screen and (max-width: 800px) {
+    #search-box {
+        max-height: calc(100svh - 0.5rem);
+    }
+}
 #search-box::backdrop {
     background-color: transparent;
     backdrop-filter: contrast(0.8);
@@ -338,10 +343,11 @@ header {
     color: var(--text-color);
 }
 #search-box .results {
-   list-style: none;
-   overflow: auto;
-   margin: 0;
-   padding: 0.5rem;
+    font-size: 0.9rem;
+    list-style: none;
+    overflow: auto;
+    margin: 0;
+    padding: 0.5rem;
 }
 #search-box .results li {
     display: flex;
