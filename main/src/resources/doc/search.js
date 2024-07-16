@@ -32,7 +32,7 @@ export async function search(phrase) {
         matchInDescription: 1,
     };
 
-    phrase = phrase.toLowerCase();
+    phrase = phrase.toLowerCase().trim();
 
     const index = await indexPromise;
 
