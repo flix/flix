@@ -203,10 +203,10 @@ object EffectVerifier {
       // TODO region stuff
       fields.map(_._2).map(visitExp)
       visitExp(region)
-    case Expr.StructGet(_, e, _, _, _, _) =>
+    case Expr.StructGet(_, e, _, t, _, _) =>
       // TODO region stuff
       visitExp(e)
-    case Expr.StructPut(_, e1, _, e2, _, _, _) =>
+    case Expr.StructPut(_, e1, _, e2, t, _, _) =>
       // TODO region stuff
       visitExp(e1)
       visitExp(e2)

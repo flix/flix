@@ -181,7 +181,7 @@ object PatMatch {
       case Expr.ArrayLoad(base, index, _, _, _) => List(base, index).flatMap(visitExp)
       case Expr.ArrayStore(base, index, elm, _, _) => List(base, index, elm).flatMap(visitExp)
       case Expr.ArrayLength(base, _, _) => visitExp(base)
-      case Expr.StructNew(_, fields, region, _, _, _) =>
+      case Expr.StructNew(_, fields, region, t, _, _) =>
         val fieldExps = fields.map(_._2)
         (region :: fieldExps).flatMap(visitExp)
       case Expr.StructGet(_, e, _, _, _, _) => visitExp(e)

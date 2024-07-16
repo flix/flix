@@ -196,12 +196,10 @@ object Simplifier {
       val fields = fields0.map(visitExp)
       val region = visitExp(region0)
       val tpe = visitType(tpe0)
-      println(eff)
       SimplifiedAst.Expr.StructNew(sym, fields, region, tpe, simplifyEffect(eff), loc)
 
     case MonoAst.Expr.StructGet(sym, e0, field, tpe, eff, loc) =>
       val struct = visitExp(e0)
-      println(eff)
       SimplifiedAst.Expr.StructGet(sym, struct, field, visitType(tpe), simplifyEffect(eff), loc)
 
     case MonoAst.Expr.StructPut(sym, e0, field, e1, tpe, eff, loc) =>

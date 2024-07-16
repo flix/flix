@@ -608,7 +608,7 @@ object ConstraintGen {
         val fieldTpe = struct.fields(Symbol.mkStructFieldSym(sym, Name.Ident(name.name, name.loc))).tpe
         c.unifyType(fieldTpe, tvar, loc)
         // Region type
-        c.unifyType(eff, evar, exp.loc)
+        c.unifyType(Type.mkUnion(eff, ts.last, loc), evar, exp.loc)
 
         val resTpe = tvar
         val resEff = evar
@@ -617,16 +617,18 @@ object ConstraintGen {
       case Expr.StructPut(sym, exp1, name, exp2, tvar, evar, loc) =>
         // JOE TODO: Figure out the effect type
         // JOE TODO: There should be some sort of error here or we should have a `expectHasField` thingy
+        // lhs type
         val (struct, ts) = instantiateStruct(sym, root.structs)
-
         val (tpe1, eff1) = visitExp(exp1)
         c.expectType(Type.mkStruct(sym, ts, exp1.loc), tpe1, exp1.loc)
+        // rhs type
         val (tpe2, eff2) = visitExp(exp2)
         val fieldTpe = struct.fields(Symbol.mkStructFieldSym(sym, Name.Ident(name.name, name.loc))).tpe
         c.expectType(fieldTpe, tpe2, exp2.loc)
-
+        // overall type
         c.unifyType(Type.mkUnit(loc), tvar, loc)
-        c.unifyType(Type.mkUnion(eff1, eff2, loc), evar, loc)
+        // overall effect
+        c.unifyType(Type.mkUnion(eff1, eff2, ts.last, loc), evar, loc)
         (tvar, evar)
 
 
