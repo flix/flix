@@ -70,7 +70,7 @@ object LiftedAstPrinter {
       case LiftedAst.JvmMethod(ident, fparams, clo, retTpe, _, _) =>
         DocAst.JvmMethod(ident, fparams.map(printFormalParam), print(clo), MonoTypePrinter.print(retTpe))
     })
-    case StructNew(sym, exps, region, tpe, _, _) => DocAst.Expr.StructNew(sym, exps.map(print), print(region), MonoTypePrinter.print(tpe))
+    case StructNew(sym, exps, region, tpe, _, _) => DocAst.Expr.StructNew(sym, exps.map(print), print(region))
     case StructGet(_, exp, field, tpe, _, _) => DocAst.Expr.StructGet(print(exp), field, MonoTypePrinter.print(tpe))
     case StructPut(_, exp1, field, exp2, tpe, _, _) => DocAst.Expr.StructPut(print(exp1), field, print(exp2), MonoTypePrinter.print(tpe))
   }

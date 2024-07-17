@@ -208,9 +208,7 @@ object DocAstFormatter {
         ))
       case Native(clazz) =>
         formatJavaClass(clazz)
-      case StructNew(sym, exps, exp, tpe) =>
-        // joe todo: refactor to pass around field names with structs the whole way
-        // joe todo: remove tpe from this class
+      case StructNew(sym, exps, exp) =>
         group(
           text("new") +: text(sym.text) +: curlyTuple(
             exps.map(aux(_, inBlock = true))
