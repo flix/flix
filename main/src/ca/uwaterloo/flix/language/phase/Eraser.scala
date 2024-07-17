@@ -209,6 +209,7 @@ object Eraser {
       case Ref(tpe) => Ref(erase(tpe))
       case Tuple(elms) => Tuple(elms.map(erase))
       case MonoType.Enum(sym) => MonoType.Enum(sym)
+      case MonoType.Struct(sym) => MonoType.Struct(sym)
       case Arrow(args, result) => Arrow(args.map(visitType), box(result))
       case RecordEmpty => RecordEmpty
       case RecordExtend(label, value, rest) => RecordExtend(label, erase(value), visitType(rest))

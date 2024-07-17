@@ -200,7 +200,7 @@ object Safety {
       case TypeConstructor.Int64 => true
       case TypeConstructor.Native(clazz) if clazz == classOf[Object] => true
       // Error is accepted to avoid cascading errors
-      case TypeConstructor.Error(_) => true
+      case TypeConstructor.Error(_, _) => true
       case _ => false
     }
   }

@@ -305,6 +305,7 @@ object Simplifier {
 
           case TypeConstructor.Enum(sym, _) => MonoType.Enum(sym)
 
+          case TypeConstructor.Struct(sym, _) => MonoType.Struct(sym)
 
           case TypeConstructor.RestrictableEnum(sym, _) =>
             val enumSym = new Symbol.EnumSym(sym.namespace, sym.name, sym.loc)
@@ -369,7 +370,7 @@ object Simplifier {
           case TypeConstructor.JvmMethod(_) =>
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
 
-          case TypeConstructor.Error(_) =>
+          case TypeConstructor.Error(_, _) =>
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
 
           case TypeConstructor.Struct(sym, _) =>
