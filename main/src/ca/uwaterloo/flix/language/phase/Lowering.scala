@@ -527,7 +527,7 @@ object Lowering {
       LoweredAst.Expr.ApplyAtomic(AtomicOp.ArrayStore, List(e1, e2, e3), Type.Unit, eff, loc)
 
     case TypedAst.Expr.StructNew(sym, fields0, region0, tpe, eff, loc) =>
-      val fields = fields0.map(field => (field._1, visitExp(field._2))).sortBy(field => field._1.name).map(_._2)
+      val fields = fields0.map(field => (field._1, visitExp(field._2))).sortBy(field => field._1.name)
       val region = visitExp(region0)
       LoweredAst.Expr.StructNew(sym, fields, region, tpe, eff, loc)
 
@@ -1936,7 +1936,7 @@ object Lowering {
       LoweredAst.Expr.VectorLength(e, loc)
 
     case LoweredAst.Expr.StructNew(sym, fields0, region0, tpe, eff, loc) =>
-      val fields = fields0.map(substExp(_, subst))
+      val fields = fields0.map(f => (f._1, substExp(f._2, subst)))
       val region = substExp(region0, subst)
       LoweredAst.Expr.StructNew(sym, fields, region, tpe, eff, loc)
 

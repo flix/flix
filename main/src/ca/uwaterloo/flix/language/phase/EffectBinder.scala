@@ -327,7 +327,7 @@ object EffectBinder {
       ReducedAst.Expr.NewObject(name, clazz, tpe, purity, ms, loc)
 
     case LiftedAst.Expr.StructNew(sym, fields0, region0, tpe, purity, loc) =>
-      val fields = fields0.map(visitExprWithBinders(binders))
+      val fields = fields0.map(f => (f._1, visitExprWithBinders(binders)(f._2)))
       val region = visitExprWithBinders(binders)(region0)
       ReducedAst.Expr.StructNew(sym, fields, region, tpe, purity, loc)
 

@@ -596,7 +596,7 @@ object Monomorpher {
       MonoAst.Expr.VectorLength(e, loc)
 
     case LoweredAst.Expr.StructNew(sym, fields0, region0, tpe, eff, loc) =>
-      val fields = fields0.map(visitExp(_, env0, subst))
+      val fields = fields0.map(f => (f._1, visitExp(f._2, env0, subst)))
       val region = visitExp(region0, env0, subst)
       MonoAst.Expr.StructNew(sym, fields, region, subst(tpe), subst(eff), loc)
 

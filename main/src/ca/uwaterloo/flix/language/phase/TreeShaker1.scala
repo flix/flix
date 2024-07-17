@@ -152,7 +152,7 @@ object TreeShaker1 {
       visitExp(exp)
 
     case Expr.StructNew(sym, fields, region, tpe, eff, loc) =>
-      visitExps(fields) ++ visitExp(region)
+      visitExps(fields.map(_._2)) ++ visitExp(region)
 
     case Expr.StructGet(sym, e, field, tpe, eff, loc) =>
       visitExp(e)

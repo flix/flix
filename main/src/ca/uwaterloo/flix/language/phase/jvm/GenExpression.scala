@@ -1492,7 +1492,7 @@ object GenExpression {
       compileExpr(region) // Region value not actually used?
       BytecodeInstructions.xPop(BackendType.toErasedBackendType(region.tpe))(new BytecodeInstructions.F(mv))
       // We get the JvmType of the class for the struct
-      val elmTypes = exps.map(_.tpe)
+      val elmTypes = exps.map(_._2.tpe)
       val structType = BackendObjType.Struct(elmTypes.map(BackendType.asErasedBackendType))
       val internalClassName = structType.jvmName.toInternalName
       // Instantiating a new object of struct
@@ -1500,7 +1500,7 @@ object GenExpression {
       // Duplicating the class
       mv.visitInsn(DUP)
       // Evaluating all the elements to be stored in the struct class
-      exps.foreach(compileExpr)
+      exps.map(_._2).foreach(compileExpr)
       // Descriptor of constructor
       val constructorDescriptor = MethodDescriptor(structType.elms, VoidableType.Void)
       // Invoking the constructor

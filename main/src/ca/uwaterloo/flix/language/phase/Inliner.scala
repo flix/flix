@@ -285,10 +285,10 @@ object Inliner {
       }
       LiftedAst.Expr.NewObject(name, clazz, tpe, purity, methods, loc)
 
-    case OccurrenceAst.Expr.StructNew(sym, es, region0, tpe, purity, loc) =>
-      val exps = es.map(visitExp(_, subst0))
+    case OccurrenceAst.Expr.StructNew(sym, fs, region0, tpe, purity, loc) =>
+      val fields = fs.map(f => (f._1, visitExp(f._2, subst0)))
       val region = visitExp(region0, subst0)
-      LiftedAst.Expr.StructNew(sym, exps, region, tpe, purity, loc)
+      LiftedAst.Expr.StructNew(sym, fields, region, tpe, purity, loc)
 
     case OccurrenceAst.Expr.StructGet(sym, e, field, tpe, purity, loc) =>
       val exp = visitExp(e, subst0)
@@ -466,10 +466,10 @@ object Inliner {
       }
       LiftedAst.Expr.NewObject(name, clazz, tpe, purity, methods, loc)
 
-    case OccurrenceAst.Expr.StructNew(sym, es, region0, tpe, purity, loc) =>
-      val exps = es.map(substituteExp(_, env0))
+    case OccurrenceAst.Expr.StructNew(sym, fs, region0, tpe, purity, loc) =>
+      val fields = fs.map(f => (f._1, substituteExp(f._2, env0)))
       val region = substituteExp(region0, env0)
-      LiftedAst.Expr.StructNew(sym, exps, region, tpe, purity, loc)
+      LiftedAst.Expr.StructNew(sym, fields, region, tpe, purity, loc)
 
     case OccurrenceAst.Expr.StructGet(sym, e, field, tpe, purity, loc) =>
       val exp = substituteExp(e, env0)

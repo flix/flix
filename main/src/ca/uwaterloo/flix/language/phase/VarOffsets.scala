@@ -130,8 +130,8 @@ object VarOffsets {
       // They don't contain binders so visiting them does nothing.
       i0
 
-    case Expr.StructNew(_, es, e, _, _, _) =>
-      val i1 = visitExps(es, i0)
+    case Expr.StructNew(_, fs, e, _, _, _) =>
+      val i1 = visitExps(fs.map(_._2), i0)
       visitExp(e, i1)
 
     case Expr.StructGet(_, e, _, _, _, _) =>

@@ -128,7 +128,7 @@ object LoweredAst {
       def tpe: Type = Type.Int32
     }
 
-    case class StructNew(sym: Symbol.StructSym, fields: List[Expr], region: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class StructNew(sym: Symbol.StructSym, fields: List[(Symbol.StructFieldSym, Expr)], region: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class StructGet(sym: Symbol.StructSym, exp: Expr, field: Name.Label, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 

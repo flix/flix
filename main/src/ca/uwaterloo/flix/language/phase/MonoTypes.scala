@@ -195,7 +195,7 @@ object MonoTypes {
       Expr.VectorLength(e, loc)
 
     case Expr.StructNew(sym, fields0, region0, tpe0, eff0, loc) =>
-      val fields = fields0.map(visitExp)
+      val fields = fields0.map(f => (f._1, visitExp(f._2)))
       val region = visitExp(region0)
       val tpe = visitType(tpe0)
       val eff = visitType(eff0)

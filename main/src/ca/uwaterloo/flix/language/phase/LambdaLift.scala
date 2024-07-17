@@ -218,7 +218,7 @@ object LambdaLift {
     case SimplifiedAst.Expr.Apply(_, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression.", loc)
 
     case SimplifiedAst.Expr.StructNew(sym, fields0, region0, tpe, purity, loc) =>
-      val fields = fields0.map(visitExp)
+      val fields = fields0.map(f => (f._1, visitExp(f._2)))
       val region = visitExp(region0)
       LiftedAst.Expr.StructNew(sym, fields, region, tpe, purity, loc)
 

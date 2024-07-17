@@ -99,6 +99,7 @@ object KindError {
   // JOE TODO: Test error message quality of
   // bad parsing (e.g. new Struct {a = 3 @ rc
   // Nonexistent struct(e.g. new NonExistentStruct {a = 3} @ rc
+  // Git stuff
   /**
    * An error raised to indicate a `new` struct expression provides too many fields
    *

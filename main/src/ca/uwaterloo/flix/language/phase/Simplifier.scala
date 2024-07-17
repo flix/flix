@@ -193,7 +193,7 @@ object Simplifier {
       SimplifiedAst.Expr.ApplyAtomic(AtomicOp.ArrayLength, List(e), MonoType.Int32, purity, loc)
 
     case MonoAst.Expr.StructNew(sym, fields0, region0, tpe0, eff, loc) =>
-      val fields = fields0.map(visitExp)
+      val fields = fields0.map(f => (f._1, visitExp(f._2)))
       val region = visitExp(region0)
       val tpe = visitType(tpe0)
       SimplifiedAst.Expr.StructNew(sym, fields, region, tpe, simplifyEffect(eff), loc)

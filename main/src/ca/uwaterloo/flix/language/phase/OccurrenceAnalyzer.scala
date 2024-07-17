@@ -268,11 +268,11 @@ object OccurrenceAnalyzer {
       val o2 = o1.foldLeft(OccurInfo.Empty)((acc, o3) => combineAllSeq(acc, o3))
       (OccurrenceAst.Expr.NewObject(name, clazz, tpe, purity, ms, loc), o2.increaseSizeByOne())
 
-    case Expr.StructNew(sym, es0, e0, tpe, purity, loc) =>
-      val (es, o1) = visitExps(sym0, es0)
+    case Expr.StructNew(sym, fs0, e0, tpe, purity, loc) =>
+      val (fs, o1) = visitExps(sym0, fs0.map(_._2))
       val (e, o2) = visitExp(sym0, e0)
       val o3 = combineAllSeq(o1, o2)
-      (OccurrenceAst.Expr.StructNew(sym, es, e, tpe, purity, loc), o3.increaseSizeByOne())
+      (OccurrenceAst.Expr.StructNew(sym, fs0.map(_._1).zip(fs), e, tpe, purity, loc), o3.increaseSizeByOne())
 
     case Expr.StructGet(sym, e0, field, tpe, purity, loc) =>
       val (e, o) = visitExp(sym0, e0)

@@ -173,7 +173,7 @@ object Reducer {
         Expr.NewObject(name, clazz, tpe, purity, specs, loc)
 
     case Expr.StructNew(sym, fields0, region0, tpe, eff, loc) =>
-      val fields = fields0.map(visitExpr)
+      val fields = fields0.map(f => (f._1, visitExpr(f._2)))
       val region = visitExpr(region0)
       Expr.StructNew(sym, fields, region, tpe, eff, loc)
 

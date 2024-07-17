@@ -159,10 +159,10 @@ object ClosureConv {
       }
       Expr.NewObject(name, clazz, tpe, purity, methods, loc)
 
-    case Expr.StructNew(sym, exps, exp, tpe, eff, loc) =>
-      val es = exps.map(visitExp)
+    case Expr.StructNew(sym, fields, exp, tpe, eff, loc) =>
+      val fs = fields.map(f => (f._1, visitExp(f._2)))
       val e = visitExp(exp)
-      Expr.StructNew(sym, es, e, tpe, eff, loc)
+      Expr.StructNew(sym, fs, e, tpe, eff, loc)
 
     case Expr.StructGet(sym, exp1, field, tpe, eff, loc) =>
       val e = visitExp(exp1)
@@ -283,7 +283,7 @@ object ClosureConv {
     case Expr.ApplyDef(_, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.", loc)
 
     case Expr.StructNew(sym, exps, exp, tpe, eff, loc) =>
-      freeVars(exp) ++ freeVarsExps(exps)
+      freeVars(exp) ++ freeVarsExps(exps.map(_._2))
 
     case Expr.StructGet(sym, exp1, _, _, _, _) =>
       freeVars(exp1)
@@ -424,10 +424,10 @@ object ClosureConv {
         val methods = methods0.map(visitJvmMethod)
         Expr.NewObject(name, clazz, tpe, purity, methods, loc)
 
-      case Expr.StructNew (sym, exps, exp, tpe, eff, loc) =>
-        val es = exps.map(visitExp)
+      case Expr.StructNew (sym, fields, exp, tpe, eff, loc) =>
+        val fs = fields.map(f => (f._1, visitExp(f._2)))
         val e = visitExp(exp)
-        Expr.StructNew(sym, es, e, tpe, eff, loc)
+        Expr.StructNew(sym, fs, e, tpe, eff, loc)
 
       case Expr.StructGet(sym, exp1, field, tpe, eff, loc) =>
         val e = visitExp(exp1)

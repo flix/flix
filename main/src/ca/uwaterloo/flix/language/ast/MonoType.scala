@@ -77,7 +77,6 @@ object MonoType {
 
   case class Enum(sym: Symbol.EnumSym) extends MonoType
 
-  // joe todo: refactor to pass around field names with structs the whole way
   case class Struct(sym: Symbol.StructSym, elms: List[MonoType], tparams: List[MonoType]) extends MonoType
 
   case class Arrow(args: List[MonoType], result: MonoType) extends MonoType
