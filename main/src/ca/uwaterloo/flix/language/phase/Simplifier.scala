@@ -377,7 +377,7 @@ object Simplifier {
             val subst = struct.tparams.map(_.id).zip(tpe.typeArguments).toMap
             val structFields = struct.fields.values.toList.sortBy(_.sym.name)
             val substitutedStructFieldTypes = structFields.map(f => ConstraintGen.applyTyVarSubst(f.tpe, subst))
-            MonoType.Struct(sym, substitutedStructFieldTypes.map(visitType))
+            MonoType.Struct(sym, substitutedStructFieldTypes.map(visitType), args)
         }
     }
   }

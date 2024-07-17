@@ -417,13 +417,17 @@ object SemanticTokensProvider {
       visitExp(exp)
 
     case Expr.StructNew(sym, fields, region, _, _, _) =>
-      throw new RuntimeException("Joe todo")
+      val t = SemanticToken(SemanticTokenType.Property, Nil, sym.loc)
+      val ts = fields.map(field => SemanticToken(SemanticTokenType.Property, Nil, field._1.loc))
+      ts.foldLeft(Iterator(t) ++ visitExps(fields.map(_._2)) ++ visitExp(region))(_ ++ Iterator(_))
 
-    case Expr.StructGet(_, exp, _, _, _, _) =>
-      throw new RuntimeException("Joe todo")
+    case Expr.StructGet(_, exp, field, _, _, _) =>
+      val t = SemanticToken(SemanticTokenType.Property, Nil, field.loc)
+      Iterator(t) ++ visitExp(exp)
 
-    case Expr.StructPut(_, exp1, _, exp2, _, _, _) =>
-      throw new RuntimeException("Joe todo")
+    case Expr.StructPut(_, exp1, field, exp2, _, _, _) =>
+      val t = SemanticToken(SemanticTokenType.Property, Nil, field.loc)
+      Iterator(t) ++ visitExp(exp1) ++ visitExp(exp2)
 
     case Expr.VectorLit(exps, _, _, _) =>
       visitExps(exps)

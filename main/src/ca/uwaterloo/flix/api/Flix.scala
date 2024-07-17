@@ -508,8 +508,8 @@ class Flix {
       afterStratifier <- Stratifier.run(afterPredDeps)
       afterPatMatch <- PatMatch.run(afterStratifier)
 
-      // afterRedundancy <- Redundancy.run(afterPatMatch) JOE TODO: RESTORE THIS AND THE NEXT LINE
-      afterSafety <- Safety.run(afterPatMatch)
+      afterRedundancy <- Redundancy.run(afterPatMatch)
+      afterSafety <- Safety.run(afterRedundancy)
     } yield {
       // Update caches for incremental compilation.
       if (options.incremental) {

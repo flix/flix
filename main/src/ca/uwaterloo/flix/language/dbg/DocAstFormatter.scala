@@ -208,6 +208,22 @@ object DocAstFormatter {
         ))
       case Native(clazz) =>
         formatJavaClass(clazz)
+      case StructNew(sym, exps, exp, tpe) =>
+        // joe todo: refactor to pass around field names with structs the whole way
+        // joe todo: remove tpe from this class
+        group(
+          text("new") +: text(sym.text) +: curlyTuple(
+            exps.map(aux(_, inBlock = true))
+          ) +: text("@") +: aux(exp)
+        )
+      case StructGet(exp, field, tpe) =>
+        group(
+          aux(exp) +: text(".") +: text(field.name)
+        )
+      case StructPut(exp1, field, exp2, tpe) =>
+        group(
+          aux(exp1) +: text(".") +: text(field.name) +: text("=") +: aux(exp2)
+        )
     }
     d match {
       case _: Composite if paren => parens(doc)

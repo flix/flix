@@ -70,7 +70,7 @@ object JvmOps {
     case MonoType.RecordEmpty => JvmType.Reference(BackendObjType.Record.jvmName)
     case MonoType.RecordExtend(_, _, _) => JvmType.Reference(BackendObjType.Record.jvmName)
     case MonoType.Enum(_) => JvmType.Object
-    case MonoType.Struct(_, elms) => JvmType.Reference(BackendObjType.Struct(elms.map(BackendType.asErasedBackendType)).jvmName)
+    case MonoType.Struct(_, elms, _) => JvmType.Reference(BackendObjType.Struct(elms.map(BackendType.asErasedBackendType)).jvmName)
     case MonoType.Arrow(_, _) => getFunctionInterfaceType(tpe)
     case MonoType.Native(clazz) => JvmType.Reference(JvmName.ofClass(clazz))
   }
@@ -94,7 +94,7 @@ object JvmOps {
       case Int64 => JvmType.PrimLong
       case Void | AnyType | Unit | BigDecimal | BigInt | String | Regex |
            Region | Array(_) | Lazy(_) | Ref(_) | Tuple(_) | Enum(_) |
-           Arrow(_, _) | RecordEmpty | RecordExtend(_, _, _) | Struct(_, _) | Native(_) =>
+           Arrow(_, _) | RecordEmpty | RecordExtend(_, _, _) | Struct(_, _, _) | Native(_) =>
         JvmType.Object
     }
   }
@@ -118,7 +118,7 @@ object JvmOps {
       case Native(clazz) if clazz == classOf[Object] => JvmType.Object
       case Void | AnyType | Unit | BigDecimal | BigInt | String | Regex |
            Region | Array(_) | Lazy(_) | Ref(_) | Tuple(_) | Enum(_) |
-           Arrow(_, _) | RecordEmpty | RecordExtend(_, _, _) | Struct(_, _) | Native(_) =>
+           Arrow(_, _) | RecordEmpty | RecordExtend(_, _, _) | Struct(_, _, _) | Native(_) =>
         throw InternalCompilerException(s"Unexpected type $tpe", SourceLocation.Unknown)
     }
   }
@@ -354,7 +354,7 @@ object JvmOps {
    */
   def getErasedStructTypesOf(types: Iterable[MonoType]): Set[BackendObjType.Struct] =
     types.foldLeft(Set.empty[BackendObjType.Struct]) {
-      case (acc, MonoType.Struct(_, elms)) =>
+      case (acc, MonoType.Struct(_, elms, _)) =>
         acc + BackendObjType.Struct(elms.map(BackendType.asErasedBackendType))
       case (acc, _) => acc
     }

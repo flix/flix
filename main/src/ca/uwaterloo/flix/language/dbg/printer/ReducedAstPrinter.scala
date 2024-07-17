@@ -68,9 +68,9 @@ object ReducedAstPrinter {
     })
     case Expr.Do(op, exps, _, _, _) => DocAst.Expr.Do(op.sym, exps.map(print))
     case Expr.NewObject(name, clazz, tpe, _, methods, _) => DocAst.Expr.NewObject(name, clazz, MonoTypePrinter.print(tpe), methods.map(printJvmMethod))
-    case Expr.StructNew(_, exps, region, _, _, _) => throw new RuntimeException("Joe TODO")
-    case Expr.StructGet(_, exp, _, _, _, _) => throw new RuntimeException("Joe TODO")
-    case Expr.StructPut(_, exp1, _, exp2, _, _, _) => throw new RuntimeException("Joe TODO")
+    case Expr.StructNew(sym, exps, region, tpe, _, _) => DocAst.Expr.StructNew(sym, exps.map(print), print(region), MonoTypePrinter.print(tpe))
+    case Expr.StructGet(_, exp, field, tpe, _, _) => DocAst.Expr.StructGet(print(exp), field, MonoTypePrinter.print(tpe))
+    case Expr.StructPut(_, exp1, field, exp2, tpe, _, _) => DocAst.Expr.StructPut(print(exp1), field, print(exp2), MonoTypePrinter.print(tpe))
   }
 
   /**

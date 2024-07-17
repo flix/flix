@@ -17,10 +17,12 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Constant
+import ca.uwaterloo.flix.language.ast.Purity.isPure
 import ca.uwaterloo.flix.language.ast.ReducedAst._
-import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoType, SemanticOp, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoType, Name, Purity, SemanticOp, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
+
 import scala.annotation.tailrec
 
 /**
@@ -545,17 +547,52 @@ object Verifier {
       }
       checkEq(tpe, MonoType.Native(clazz), loc)
 
-    case Expr.StructNew(sym, fields, region, tpe, _, loc) =>
-      // JOE STRUCTS TODO
+    case Expr.StructNew(sym0, fields, region, tpe, purity, loc) =>
+      if(isPure(purity)) {
+        throw InternalCompilerException(s"Struct expression should not be pure", loc)
+      }
+      tpe match {
+        case MonoType.Struct(sym, elms, _) => {
+          fields.zip(elms).map(fieldAndElm => checkEq(visitExpr(fieldAndElm._1), fieldAndElm._2, fieldAndElm._1.loc))
+          if(sym0 != sym) {
+            throw InternalCompilerException(s"Expected struct type $sym0, got struct type $sym", loc)
+          }
+        }
+        case _ => failMismatchedShape(tpe, "Struct", loc)
+      }
+      check(MonoType.Region)(visitExpr(region), region.loc)
       tpe
 
-    case Expr.StructGet(sym, struct, field, tpe, _, loc) =>
-      // JOE STRUCTS TODO
-      tpe
+    case Expr.StructGet(sym0, struct, field, tpe, purity, loc) =>
+      if(isPure(purity)) {
+        throw InternalCompilerException(s"Struct expression should not be pure", loc)
+      }
+      visitExpr(struct) match {
+        case MonoType.Struct(sym, elms, _) => {
+          if(sym0 != sym) {
+            throw InternalCompilerException(s"Expected struct type $sym0, got struct type $sym", loc)
+          }
+          val fieldIdx = root.structs(sym).fields(Symbol.mkStructFieldSym(sym0, Name.Ident(field.name, field.loc))).idx
+          checkEq(elms(fieldIdx), tpe, loc)
+        }
+        case _ => failMismatchedShape(tpe, "Struct", loc)
+      }
 
-    case Expr.StructPut(sym, struct, field, value, tpe, _, loc) =>
-      // JOE STRUCTS TODO
-      tpe
+    case Expr.StructPut(sym0, struct, field, value, tpe, purity, loc) =>
+      if(isPure(purity)) {
+        throw InternalCompilerException(s"Struct expression should not be pure", loc)
+      }
+      visitExpr(struct) match {
+        case MonoType.Struct(sym, elms, _) => {
+          if(sym0 != sym) {
+            throw InternalCompilerException(s"Expected struct type $sym0, got struct type $sym", loc)
+          }
+          val fieldIdx = root.structs(sym).fields(Symbol.mkStructFieldSym(sym0, Name.Ident(field.name, field.loc))).idx
+          checkEq(elms(fieldIdx), visitExpr(value), loc)
+          checkEq(tpe, MonoType.Unit, loc)
+        }
+        case _ => failMismatchedShape(tpe, "Struct", loc)
+      }
 
   }
 

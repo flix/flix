@@ -300,22 +300,22 @@ object TypeReconstruction {
     case KindedAst.Expr.StructNew(sym, fields0, region0, tvar, evar, loc) =>
       val region = visitExp(region0)
       val fields = fields0.map(field => (field._1, visitExp(field._2)))
-      val tpe = subst(tvar) // STRUCTS TODO Should be the struct indicated by sym?
-      val eff = subst(evar) // STRUCTS TODO Should be a region eff?
+      val tpe = subst(tvar)
+      val eff = subst(evar)
       TypedAst.Expr.StructNew(sym, fields, region, tpe, eff, loc)
 
     case KindedAst.Expr.StructGet(sym, expr0, label, tvar, evar, loc) =>
       val expr = visitExp(expr0)
-      val tpe = subst(tvar) // STRUCTS TODO Should be the struct indicated by sym?
-      val eff = subst(evar) // STRUCTS TODO Should be a region eff?
+      val tpe = subst(tvar)
+      val eff = subst(evar)
       TypedAst.Expr.StructGet(sym, expr, label, tpe, eff, loc)
 
 
     case KindedAst.Expr.StructPut(sym, exp1, field, exp2, tvar, evar, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      val tpe = subst(tvar) // STRUCTS TODO Should be the struct indicated by sym?
-      val eff = subst(evar) // STRUCTS TODO Should be a region eff?
+      val tpe = subst(tvar)
+      val eff = subst(evar)
       TypedAst.Expr.StructPut(sym, e1, field, e2, tpe, eff, loc)
 
     case KindedAst.Expr.VectorLit(exps, tvar, evar, loc) =>

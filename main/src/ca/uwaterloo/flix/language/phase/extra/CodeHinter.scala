@@ -185,13 +185,13 @@ object CodeHinter {
       visitExp(exp)
 
     case Expr.StructNew(sym, fields, region, _, _, _) =>
-      throw new RuntimeException("Joe todo")
+      fields.map(_._2).flatMap(visitExp) ++ visitExp(region)
 
     case Expr.StructGet(_, exp, _, _, _, _) =>
-      throw new RuntimeException("Joe todo")
+      visitExp(exp)
 
     case Expr.StructPut(_, exp1, _, exp2, _, _, _) =>
-      throw new RuntimeException("Joe todo")
+      visitExp(exp1) ++ visitExp(exp2)
 
     case Expr.VectorLit(exps, _, _, _) =>
       visitExps(exps)

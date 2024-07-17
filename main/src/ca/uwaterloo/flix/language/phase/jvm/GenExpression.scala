@@ -1489,7 +1489,8 @@ object GenExpression {
       }
 
     case Expr.StructNew(_, exps, region, tpe, _, loc) =>
-      // JOE TODO: Region expression
+      compileExpr(region) // Region value not actually used?
+      BytecodeInstructions.xPop(BackendType.toErasedBackendType(region.tpe))(new BytecodeInstructions.F(mv))
       // We get the JvmType of the class for the struct
       val elmTypes = exps.map(_.tpe)
       val structType = BackendObjType.Struct(elmTypes.map(BackendType.asErasedBackendType))
@@ -1506,7 +1507,7 @@ object GenExpression {
       mv.visitMethodInsn(INVOKESPECIAL, internalClassName, "<init>", constructorDescriptor.toDescriptor, false)
 
     case Expr.StructGet(sym, exp, field, tpe, _, _) =>
-      val MonoType.Struct(_, elmTypes) = exp.tpe
+      val MonoType.Struct(_, elmTypes, _) = exp.tpe
       val structType = BackendObjType.Struct(elmTypes.map(BackendType.asErasedBackendType))
       // evaluating the `base`
       compileExpr(exp)
@@ -1515,7 +1516,7 @@ object GenExpression {
       mv.visitFieldInsn(GETFIELD, structType.jvmName.toInternalName, s"field$idx", JvmOps.asErasedJvmType(tpe).toDescriptor)
 
     case Expr.StructPut(sym, exp1, field, exp2, _, _, _) =>
-      val MonoType.Struct(_, elmTypes) = exp1.tpe
+      val MonoType.Struct(_, elmTypes, _) = exp1.tpe
       val structType = BackendObjType.Struct(elmTypes.map(BackendType.asErasedBackendType))
       // evaluating the `base`
       compileExpr(exp1)
@@ -1688,5 +1689,3 @@ object GenExpression {
     }
   }
 }
-
-// joe todo: make everything pretty

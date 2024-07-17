@@ -581,7 +581,7 @@ object ConstraintGen {
         val fieldTypes = fields.map(field => visitExp(field._2))
         val effs = fields.zip(fieldTypes).map {
           case ((fieldSym, expr), (fieldTpe, fieldEff)) =>
-            // JOE TODO: There should be some sort of error here or we should have a `expectHasField` thingy
+            // JOE TODO: There should be some sort of error here or we should have a `expectHasField` constraint
             // ALSO FIGURE OUT A WAY TO ENSURE ALL FIELDS EXIST(both ways)
             val field = structType.fields(fieldSym)
             c.expectType(expected = field.tpe, actual = fieldTpe, expr.loc)
@@ -598,8 +598,7 @@ object ConstraintGen {
         (resTpe, resEff)
 
       case Expr.StructGet(sym, exp, name, tvar, evar, loc) =>
-        // JOE TODO: There should be some sort of error here or we should have a `expectHasField` thingy
-        // JOE TODO: Figure out the effect type
+        // JOE TODO: There should be some sort of error here or we should have a `expectHasField` constraint
         val (struct, ts) = instantiateStruct(sym, root.structs)
         // unify the struct types
         val (tpe, eff) = visitExp(exp)
@@ -615,8 +614,7 @@ object ConstraintGen {
         (resTpe, resEff)
 
       case Expr.StructPut(sym, exp1, name, exp2, tvar, evar, loc) =>
-        // JOE TODO: Figure out the effect type
-        // JOE TODO: There should be some sort of error here or we should have a `expectHasField` thingy
+        // JOE TODO: There should be some sort of error here or we should have a `expectHasField` constraint
         // lhs type
         val (struct, ts) = instantiateStruct(sym, root.structs)
         val (tpe1, eff1) = visitExp(exp1)
@@ -1284,7 +1282,7 @@ object ConstraintGen {
          fieldsym -> KindedAst.StructField(field.sym, tpe, field.loc)
     }
     (KindedAst.Struct(struct.doc, struct.ann, struct.mod, struct.sym, List(), newFields,
-      Type.mkStruct(sym, newTparams, struct.tpe.loc), // JOE STRUCT TODO: Should it be struct.tpe? Or should we have a new tyvar? Does it even matter?
+      Type.mkStruct(sym, newTparams, struct.tpe.loc), // JOE STRUCT TODO: Should this be the original struct.tpe? Or should we have a new tyvar? Does it even matter?
       struct.loc), newTparams)
   }
 
