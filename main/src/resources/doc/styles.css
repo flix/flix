@@ -84,6 +84,8 @@
     --shadow-color: var(--light-shadow-color);
     --highlight-color: var(--light-highlight-color);
     color-scheme: light;
+
+    --border: 1px solid var(--border-color);
 }
 @media (prefers-color-scheme: dark) {
     :root {
@@ -207,7 +209,7 @@ button, input[type="checkbox"] {
 }
 
 kbd {
-    border: 1px solid var(--border-color);
+    border: var(--border);
     border-radius: 0.2em;
     padding: 0 0.25em;
     background-color: var(--bg-color-1);
@@ -256,14 +258,14 @@ header {
 
     background-color: var(--bg-color-1);
     box-shadow: 0 0 10px 0 var(--shadow-color);
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: var(--border);
     padding: 0.5rem 1rem;
     z-index: 2; /* Cast shadows to the top layer */
 }
 @media screen and (max-width: 800px) {
     header {
         border-bottom: none;
-        border-top: 1px solid var(--border-color);
+        border-top: var(--border);
     }
 }
 
@@ -290,7 +292,7 @@ header {
     justify-content: center;
     border-radius: 2rem;
     width: 15rem;
-    border: 1px solid var(--border-color);
+    border: var(--border);
     background-color: var(--bg-color-3);
     color: var(--faded-text-color);
     font-size: 0.9rem;
@@ -321,7 +323,7 @@ header {
     padding: 0;
     width: 40rem;
     border-radius: 0.4rem;
-    border: 1px solid var(--border-color);
+    border: var(--border);
     background-color: var(--bg-color-1);
     box-shadow: 0 0 10px 0 var(--shadow-color);
 }
@@ -340,7 +342,7 @@ header {
     box-sizing: border-box;
     background-color: var(--bg-color-3);
     padding: 0.5rem;
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: var(--border);
 }
 #search-box input {
     outline: none;
@@ -363,7 +365,7 @@ header {
 }
 #search-box .results li {
     display: flex;
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: var(--border);
 }
 #search-box .results li:last-child {
     border-bottom: none;
@@ -432,7 +434,7 @@ nav {
     position: relative;
     background-color: var(--bg-color-1);
     box-shadow: 0 0 10px 0 var(--shadow-color);
-    border-right: 1px solid var(--border-color);
+    border-right: var(--border);
     box-sizing: border-box;
     padding: 0.5rem 1rem;
     width: 20rem;
@@ -449,7 +451,7 @@ nav {
         background-color: var(--bg-color-1);
         border-radius: 0.5rem;
         box-shadow: 0 0 10px 0 var(--shadow-color);
-        border-top: 1px solid var(--border-color);
+        border-top: var(--border);
         padding-bottom: 3rem;
 
         transform: translateY(100%);
@@ -540,7 +542,7 @@ main h2 {
 
     box-shadow: 0 0 10px 0 var(--shadow-color);
     background-color: var(--bg-color-1);
-    border: 1px solid var(--border-color);
+    border: var(--border);
     padding-top: 0.5rem;
     padding-bottom: 0.5rem;
     margin-bottom: 0.8rem;
@@ -587,7 +589,7 @@ main h2 {
     padding: 0.5rem 0;
 }
 .subsection > div:not(:last-child) {
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: var(--border);
 }
 
 .decl {
@@ -617,7 +619,7 @@ main h2 {
     background-color: var(--bg-color-3);
     padding: 0.2em 0.65em;
     border-radius: 0.375rem;
-    border: 1px solid var(--border-color);
+    border: var(--border);
 }
 .actions > *:hover {
     color: var(--text-color);
