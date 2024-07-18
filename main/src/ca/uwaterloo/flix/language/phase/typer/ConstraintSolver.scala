@@ -276,6 +276,7 @@ object ConstraintSolver {
     case TypeConstraint.EqJvmConstructor(cvar, clazz, tpes0, prov) =>
       // Apply substitution now
       val tpes = tpes0.map(subst0.apply)
+      tpes.foreach(t => t.typeArguments.map(subst0.apply))
       // Ensure that simplification for constructor parameters is done
       val allKnown = tpes.forall(isKnown)
 
@@ -295,6 +296,7 @@ object ConstraintSolver {
       // Recall: Subst is applied lazily. Apply it now.
       val tpe = subst0(tpe0)
       val tpes = tpes0.map(subst0.apply)
+      tpes.foreach(t => t.typeArguments.map(subst0.apply))
       // Ensure that simplification for method parameters is done
       val allKnown = isKnown(tpe) && tpes.forall(isKnown)
 
@@ -573,6 +575,8 @@ object ConstraintSolver {
   private def isKnown(t0: Type): Boolean = t0 match { // TODO INTEROP: Actually, it cannot have variables recursively...
     case Type.Var(_, _) => false
     case Type.Apply(Type.Cst(TypeConstructor.MethodReturnType, _), _, _) => false
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Array, _), Type.Cst(tpe, _), _), Type.Cst(eff, _), _) =>
+      isKnown(t0.typeArguments.head)
     case _ => true
   }
 

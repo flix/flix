@@ -25,6 +25,7 @@ import ca.uwaterloo.flix.util.collection.{ListMap, ListOps}
 import java.lang.reflect.Method
 import java.lang.reflect.Constructor
 import java.math.BigInteger
+import scala.annotation.tailrec
 
 object TypeReduction {
 
@@ -141,11 +142,11 @@ object TypeReduction {
    * if there exists such a Java method.
    * Otherwise, either the Java method could not be found with the given method signature, or, there was an ambiguity.
    *
-   * @param thisObj the Java object
+   * @param thisObj     the Java object
    * @param methodName  the Java method, supposedly member of the class of the Java object
-   * @param ts      the list containing the type of thisObj and the arguments of the method
-   * @param loc     the location where the Java method has been called
-   * @return        A JavaMethodResolutionResult object that indicates the status of the resolution progress
+   * @param ts          the list containing the type of thisObj and the arguments of the method
+   * @param loc         the location where the Java method has been called
+   * @return            A JavaMethodResolutionResult object that indicates the status of the resolution progress
    */
   def lookupMethod(thisObj: Type, methodName: String, ts: List[Type], loc: SourceLocation)(implicit flix: Flix): JavaMethodResolutionResult = {
     thisObj match { // there might be a possible factorization
@@ -260,10 +261,23 @@ object TypeReduction {
   private def isSubtype(tpe1: Type, tpe2: Type)(implicit flix: Flix): Boolean = {
     (tpe2, tpe1) match {
       case (t1, t2) if t1 == t2 => true
+      // Base types
       case (Type.Cst(TypeConstructor.Native(clazz1), _), Type.Cst(TypeConstructor.Native(clazz2), _)) => clazz1.isAssignableFrom(clazz2)
       case (Type.Cst(TypeConstructor.Native(clazz), _), Type.Cst(TypeConstructor.Str, _)) => clazz.isAssignableFrom(classOf[String])
       case (Type.Cst(TypeConstructor.Native(clazz), _), Type.Cst(TypeConstructor.BigInt, _)) => clazz.isAssignableFrom(classOf[BigInteger])
       case (Type.Cst(TypeConstructor.Native(clazz), _), Type.Cst(TypeConstructor.BigDecimal, _)) => clazz.isAssignableFrom(classOf[java.math.BigDecimal])
+      // Arrays
+      case (Type.Cst(TypeConstructor.Native(clazz), _), Type.Cst(TypeConstructor.Array, _)) =>
+        //val List(elmType, rc1) = tpe1.typeArguments
+        //if (classOf[java.util.ArrayList[_]].isAssignableFrom(clazz)) {
+        //  clazz.getTypeParameters.forall(t => isSubtype(elmType, t))
+        //}
+        true
+      case (Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Array, _), Type.Cst(tpe, _), _), Type.Cst(eff, _), _),
+              Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Array, _), Type.Var(s, _), _), Type.Var(sym, _), _)) =>
+        val List(elmType1, rc1) = tpe1.typeArguments
+        val List(elmType2, rc2) = tpe2.typeArguments
+        isSubtype(elmType1, elmType2)
       // Null is a sub-type of every Java object and non-primitive Flix type
       case (Type.Cst(TypeConstructor.Native(_), _), Type.Null) => true
       case (Type.Cst(TypeConstructor.Null, _), Type.Null) => true
