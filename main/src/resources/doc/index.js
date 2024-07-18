@@ -160,6 +160,31 @@ function initSearch() {
         }
     }
     input.addEventListener("input", updateSearchResults);
+
+    searchBox.addEventListener("keydown", (e) => {
+        if (["ArrowDown", "ArrowUp"].includes(e.key)) {
+            const orderedElements = [
+                input,
+                ...resultList.querySelectorAll("a"),
+            ];
+            const focusedElement = document.activeElement;
+            const currentIndex = orderedElements.findIndex(e => e === focusedElement);
+
+            const nextIndex = currentIndex + {
+                ArrowUp: -1,
+                ArrowDown: 1,
+            }[e.key];
+            if (nextIndex < 0 || nextIndex >= orderedElements.length) {
+                return;
+            }
+
+            const nextElement = orderedElements[nextIndex];
+            nextElement.focus();
+            e.preventDefault();
+        } else if (!["Control", "Meta", "Alt", "Shift", "Enter"].includes(e.key)) {
+            input.focus();
+        }
+    });
 }
 
 initTheme();
