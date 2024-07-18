@@ -151,7 +151,7 @@
 
 
 
-/* BEGIN RESET */
+/* BEGIN GLOBAL STYLES */
 html, body {
     height: 100dvh;
     width: 100dvw;
@@ -206,13 +206,26 @@ button, input[type="checkbox"] {
     cursor: pointer;
 }
 
+kbd {
+    border: 1px solid var(--border-color);
+    border-radius: 0.2em;
+    padding: 0 0.25em;
+    background-color: var(--bg-color-1);
+}
+
+@media screen and (max-width: 800px) {
+    .keyboard-shortcut {
+        display: none;
+    }
+}
+
 @media (prefers-reduced-motion) {
     * {
         transition: none !important;
         animation: none !important;
     }
 }
-/* END RESET */
+/* END GLOBAL STYLES */
 
 
 

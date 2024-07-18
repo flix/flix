@@ -87,9 +87,40 @@ function initLink(link) {
 function initSearch() {
     const searchButton = document.querySelector("#search-button");
     const searchBox = document.querySelector("#search-box");
-    const closeSearchBox = document.querySelector("#close-search-box");
+    const closeSearchBoxButton = document.querySelector("#close-search-box");
     const input = document.querySelector("#search-box input");
     const resultList = document.querySelector("#search-box .results");
+
+    function openSearchBox() {
+        input.value = "";
+        updateSearchResults();
+        searchBox.showModal();
+    }
+    searchButton.addEventListener("click", openSearchBox);
+    window.addEventListener("keydown", (e) => {
+        if (e.key === "/" && searchBox.open === false) {
+            e.preventDefault();
+            openSearchBox();
+        }
+    });
+
+    function closeSearchBox() {
+        searchBox.close();
+    }
+    closeSearchBoxButton.addEventListener("click", closeSearchBox);
+    searchBox.addEventListener("click", (e) => {
+        // Little hack to detect if the backdrop was clicked.
+        const backdropClicked = e.target === e.currentTarget;
+        if (backdropClicked) {
+            closeSearchBox();
+        }
+    });
+    window.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+            closeSearchBox();
+        }
+    });
+
 
     async function updateSearchResults() {
         const phrase = input.value;
@@ -128,22 +159,6 @@ function initSearch() {
             }
         }
     }
-
-    searchButton.addEventListener("click", () => {
-        input.value = "";
-        updateSearchResults();
-        searchBox.showModal();
-    });
-    closeSearchBox.addEventListener("click", () => {
-        searchBox.close();
-    });
-    searchBox.addEventListener("click", (e) => {
-        // Little hack to detect if the backdrop was clicked.
-        const backdropClicked = e.target === e.currentTarget;
-        if (backdropClicked) {
-            searchBox.close();
-        }
-    });
     input.addEventListener("input", updateSearchResults);
 }
 

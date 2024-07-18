@@ -902,6 +902,7 @@ object HtmlDocumentor {
     sb.append("<button id='search-button'>")
     inlineIcon("search")
     sb.append("<span>Search</span>")
+    sb.append("<kbd class='keyboard-shortcut'>/</kbd>")
     sb.append("</button>")
 
     sb.append("<button id='theme-toggle' class='toggle' aria-label='Toggle theme'>")
