@@ -252,7 +252,6 @@ header {
     grid-area: header;
 
     display: flex;
-    justify-content: space-between;
     gap: 0.5rem;
 
     background-color: var(--bg-color-1);
@@ -296,7 +295,7 @@ header {
     color: var(--faded-text-color);
     font-size: 0.9rem;
     cursor: text;
-    margin: 0 0.5rem;
+    margin: 0 auto;
 }
 #search-button > svg {
     width: 1em;
