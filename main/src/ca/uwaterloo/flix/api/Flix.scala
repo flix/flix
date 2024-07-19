@@ -168,6 +168,7 @@ class Flix {
     "Down.flix" -> LocalResource.get("/src/library/Down.flix"),
     "Float32.flix" -> LocalResource.get("/src/library/Float32.flix"),
     "Float64.flix" -> LocalResource.get("/src/library/Float64.flix"),
+    "HashSet.flix" -> LocalResource.get("/src/library/HashSet.flix"),
     "Int8.flix" -> LocalResource.get("/src/library/Int8.flix"),
     "Int16.flix" -> LocalResource.get("/src/library/Int16.flix"),
     "Int32.flix" -> LocalResource.get("/src/library/Int32.flix"),
