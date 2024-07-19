@@ -905,7 +905,7 @@ object HtmlDocumentor {
     sb.append("<kbd class='keyboard-shortcut'>/</kbd>")
     sb.append("</button>")
 
-    sb.append("<button id='theme-toggle' class='toggle' aria-label='Toggle theme'>")
+    sb.append("<button id='theme-toggle' class='toggle' aria-label='Toggle Theme'>")
     sb.append("<span class='dark icon'>")
     inlineIcon("darkMode")
     sb.append("</span>")
@@ -915,7 +915,7 @@ object HtmlDocumentor {
     sb.append("</button>")
 
     sb.append("<div id='menu-toggle' class='toggle'>")
-    sb.append("<input type='checkbox' aria-label='Toggle navigation menu'>")
+    sb.append("<input type='checkbox' aria-label='Toggle Navigation Menu'>")
     sb.append("<span class='open icon'>")
     inlineIcon("menu")
     sb.append("</span>")
@@ -926,10 +926,10 @@ object HtmlDocumentor {
 
     sb.append("</header>")
 
-    sb.append("<dialog id='search-box'>")
+    sb.append("<dialog id='search-box' aria-label='Search Box'>")
     sb.append("<div class='input-field'>")
-    sb.append("<input type='text' autofocus>")
-    sb.append("<button id='close-search-box'>")
+    sb.append("<input type='text' autofocus placeholder='Search' aria-label='Search Text Input'>")
+    sb.append("<button id='close-search-box' aria-label='Close Search Box'>")
     inlineIcon("close")
     sb.append("</button>")
     sb.append("</div>")
@@ -1371,7 +1371,7 @@ object HtmlDocumentor {
     * This creates a link to the given ID on the current URL.
     */
   private def docLink(id: String)(implicit flix: Flix, sb: StringBuilder): Unit = {
-    sb.append(s"<a href='#${escUrl(id)}' class='copy-link' aria-label='Link'>")
+    sb.append(s"<a href='#${escUrl(id)}' class='copy-link' title='Link To Element'>")
     inlineIcon("link")
     sb.append("</a> ")
   }

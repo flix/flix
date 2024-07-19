@@ -214,6 +214,11 @@ button, input[type="checkbox"] {
     cursor: pointer;
 }
 
+::placeholder {
+    color: var(--faded-text-color);
+    opacity: 1;
+}
+
 kbd {
     border: var(--border);
     border-radius: 0.2em;

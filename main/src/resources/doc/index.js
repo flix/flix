@@ -40,7 +40,6 @@ function initTheme() {
 function initCopyLinks() {
     const links = document.querySelectorAll(".copy-link");
     for (const link of links) {
-        link.setAttribute("title", "Copy link");
         link.addEventListener("click", async (e) => {
             e.preventDefault();
 
