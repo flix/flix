@@ -85,7 +85,7 @@ object Parser2 {
       * The Parsing events emitted during parsing.
       * Note that this is a flat collection that later gets turned into a [[SyntaxTree.Tree]] by [[buildTree()]].
       */
-    var events: ArrayBuffer[Event] = ArrayBuffer.empty
+    val events: ArrayBuffer[Event] = ArrayBuffer.empty
     /**
       * Errors reside both within the produced `Tree` but are also kept here.
       * This is done to avoid crawling the tree for errors.
@@ -157,7 +157,7 @@ object Parser2 {
     // Pop the last event, which must be a Close,
     // to ensure that the stack is not empty when handling event below.
     val lastEvent = s.events.last
-    s.events = s.events.dropRight(1)
+    s.events.dropRightInPlace(1)
     assert(lastEvent match {
       case Event.Close => true
       case _ => false
