@@ -1056,10 +1056,10 @@ object Namer {
       }
 
     case DesugaredAst.Expr.FixpointLambda(pparams, exp, loc) =>
-      val psVal = traverse(pparams)(visitPredicateParam): Validation[List[NamedAst.PredicateParam], NameError]
+      val ps = pparams.map(visitPredicateParam)
       val expVal = visitExp(exp, ns0)
-      mapN(psVal, expVal) {
-        case (ps, e) => NamedAst.Expr.FixpointLambda(ps, e, loc)
+      mapN(expVal) {
+        case e => NamedAst.Expr.FixpointLambda(ps, e, loc)
       }
 
     case DesugaredAst.Expr.FixpointMerge(exp1, exp2, loc) =>
@@ -1451,13 +1451,13 @@ object Namer {
   /**
     * Translates the given weeded predicate parameter to a named predicate parameter.
     */
-  private def visitPredicateParam(pparam: DesugaredAst.PredicateParam)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.PredicateParam, NameError] = pparam match {
+  private def visitPredicateParam(pparam: DesugaredAst.PredicateParam)(implicit flix: Flix, sctx: SharedContext): NamedAst.PredicateParam = pparam match {
     case DesugaredAst.PredicateParam.PredicateParamUntyped(pred, loc) =>
-      Validation.success(NamedAst.PredicateParam.PredicateParamUntyped(pred, loc))
+      NamedAst.PredicateParam.PredicateParamUntyped(pred, loc)
 
     case DesugaredAst.PredicateParam.PredicateParamWithType(pred, den, tpes, loc) =>
       val ts = tpes.map(visitType)
-      Validation.success(NamedAst.PredicateParam.PredicateParamWithType(pred, den, ts, loc))
+      NamedAst.PredicateParam.PredicateParamWithType(pred, den, ts, loc)
   }
 
   /**
