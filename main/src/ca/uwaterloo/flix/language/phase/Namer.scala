@@ -1495,8 +1495,8 @@ object Namer {
   private def visitTypeParams(tparams0: DesugaredAst.TypeParams)(implicit flix: Flix, sctx: SharedContext): NamedAst.TypeParams = {
     tparams0 match {
       case DesugaredAst.TypeParams.Elided => NamedAst.TypeParams.Kinded(Nil)
-      case DesugaredAst.TypeParams.Unkinded(tparams) => getExplicitTypeParams(tparams)
-      case DesugaredAst.TypeParams.Kinded(tparams) => getExplicitKindedTypeParams(tparams)
+      case DesugaredAst.TypeParams.Unkinded(tparams) => visitExplicitTypeParams(tparams)
+      case DesugaredAst.TypeParams.Kinded(tparams) => visitExplicitKindedTypeParams(tparams)
     }
   }
 
@@ -1506,9 +1506,9 @@ object Namer {
     */
   private def getTypeParamsFromFormalParams(tparams0: DesugaredAst.TypeParams, fparams: List[DesugaredAst.FormalParam], tpe: DesugaredAst.Type, eff: Option[DesugaredAst.Type], econstrs: List[DesugaredAst.EqualityConstraint])(implicit flix: Flix, sctx: SharedContext): NamedAst.TypeParams = {
     tparams0 match {
-      case DesugaredAst.TypeParams.Elided => getImplicitTypeParamsFromFormalParams(fparams, tpe, eff, econstrs)
-      case DesugaredAst.TypeParams.Unkinded(tparams) => getExplicitTypeParams(tparams)
-      case DesugaredAst.TypeParams.Kinded(tparams) => getExplicitKindedTypeParams(tparams)
+      case DesugaredAst.TypeParams.Elided => visitImplicitTypeParamsFromFormalParams(fparams, tpe, eff, econstrs)
+      case DesugaredAst.TypeParams.Unkinded(tparams) => visitExplicitTypeParams(tparams)
+      case DesugaredAst.TypeParams.Kinded(tparams) => visitExplicitKindedTypeParams(tparams)
 
     }
   }
@@ -1516,7 +1516,7 @@ object Namer {
   /**
     * Names the explicit kinded type params.
     */
-  private def getExplicitKindedTypeParams(tparams0: List[DesugaredAst.TypeParam.Kinded])(implicit flix: Flix, sctx: SharedContext): NamedAst.TypeParams.Kinded = {
+  private def visitExplicitKindedTypeParams(tparams0: List[DesugaredAst.TypeParam.Kinded])(implicit flix: Flix, sctx: SharedContext): NamedAst.TypeParams.Kinded = {
     val tparams = tparams0.map {
       case DesugaredAst.TypeParam.Kinded(ident, kind) =>
         NamedAst.TypeParam.Kinded(ident, mkTypeVarSym(ident), visitKind(kind), ident.loc)
@@ -1527,7 +1527,7 @@ object Namer {
   /**
     * Returns the explicit unkinded type parameters from the given type parameter names and implicit type parameters.
     */
-  private def getExplicitTypeParams(tparams0: List[DesugaredAst.TypeParam.Unkinded])(implicit flix: Flix, sctx: SharedContext): NamedAst.TypeParams.Unkinded = {
+  private def visitExplicitTypeParams(tparams0: List[DesugaredAst.TypeParam.Unkinded])(implicit flix: Flix, sctx: SharedContext): NamedAst.TypeParams.Unkinded = {
     val tparams = tparams0.map {
       case DesugaredAst.TypeParam.Unkinded(ident) =>
         NamedAst.TypeParam.Unkinded(ident, mkTypeVarSym(ident), ident.loc)
@@ -1549,7 +1549,7 @@ object Namer {
   /**
     * Returns the implicit type parameters constructed from the given formal parameters and type.
     */
-  private def getImplicitTypeParamsFromFormalParams(fparams: List[DesugaredAst.FormalParam], tpe: DesugaredAst.Type, eff: Option[DesugaredAst.Type], econstrs: List[DesugaredAst.EqualityConstraint])(implicit flix: Flix, sctx: SharedContext): NamedAst.TypeParams = {
+  private def visitImplicitTypeParamsFromFormalParams(fparams: List[DesugaredAst.FormalParam], tpe: DesugaredAst.Type, eff: Option[DesugaredAst.Type], econstrs: List[DesugaredAst.EqualityConstraint])(implicit flix: Flix, sctx: SharedContext): NamedAst.TypeParams = {
     // Compute the type variables that occur in the formal parameters.
     val fparamTvars = fparams.flatMap {
       case DesugaredAst.FormalParam(_, _, Some(tpe1), _) => freeTypeVars(tpe1)
