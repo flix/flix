@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import java.util.{List => JList}
+
 ///
 /// The NonEmpty Chain type.
 ///
@@ -142,9 +144,9 @@ instance Iterable[Nec[a]] {
 }
 
 instance ToJava[Nec[a]] {
-    type Out = ##java.util.List
+    type Out = JList
     type Aef = IO
-    pub def toJava(l: Nec[a]): ##java.util.List \ IO = Adaptor.toList(l)
+    pub def toJava(l: Nec[a]): JList \ IO = Adaptor.toList(l)
 }
 
 mod Nec {
