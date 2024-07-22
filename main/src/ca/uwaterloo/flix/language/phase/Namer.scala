@@ -631,9 +631,10 @@ object Namer {
         case (e, es) => NamedAst.Expr.Apply(e, es, loc)
       }
 
-    case DesugaredAst.Expr.Lambda(fparam0, exp, loc) =>
-      mapN(visitFormalParam(fparam0): Validation[NamedAst.FormalParam, NameError], visitExp(exp, ns0)) {
-        case (p, e) => NamedAst.Expr.Lambda(p, e, loc)
+    case DesugaredAst.Expr.Lambda(fparam, exp, loc) =>
+      val fp = visitFormalParam(fparam)
+      mapN(visitExp(exp, ns0)) {
+        case e => NamedAst.Expr.Lambda(fp, e, loc)
       }
 
     case DesugaredAst.Expr.Unary(sop, exp, loc) =>
@@ -898,11 +899,11 @@ object Namer {
     case DesugaredAst.Expr.TryWith(e0, eff, rules0, loc) =>
       val eVal = visitExp(e0, ns0)
       val rulesVal = traverse(rules0) {
-        case DesugaredAst.HandlerRule(op, fparams0, body0) =>
-          val fparamsVal = traverse(fparams0)(visitFormalParam): Validation[List[NamedAst.FormalParam], NameError]
+        case DesugaredAst.HandlerRule(op, fparams, body0) =>
+          val fps = fparams.map(visitFormalParam)
           val bodyVal = visitExp(body0, ns0)
-          mapN(fparamsVal, bodyVal) {
-            (fparams, body) => NamedAst.HandlerRule(op, fparams, body)
+          mapN(bodyVal) {
+            body => NamedAst.HandlerRule(op, fps, body)
           }
       }
       mapN(eVal, rulesVal) {
@@ -1435,7 +1436,7 @@ object Namer {
   /**
     * Translates the given weeded formal parameter to a named formal parameter.
     */
-  private def visitFormalParam(fparam: DesugaredAst.FormalParam)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.FormalParam, NameError] = fparam match {
+  private def visitFormalParam(fparam: DesugaredAst.FormalParam)(implicit flix: Flix, sctx: SharedContext): NamedAst.FormalParam = fparam match {
     case DesugaredAst.FormalParam(ident, mod, tpe, loc) =>
       // Generate a fresh variable symbol for the identifier.
       val freshSym = Symbol.freshVarSym(ident, BoundBy.FormalParam)
@@ -1444,7 +1445,7 @@ object Namer {
       val t = tpe.map(visitType)
 
       // Construct the formal parameter.
-      Validation.success(NamedAst.FormalParam(freshSym, mod, t, loc))
+      NamedAst.FormalParam(freshSym, mod, t, loc)
   }
 
   /**
@@ -1463,23 +1464,21 @@ object Namer {
     * Translates the given weeded JvmMethod to a named JvmMethod.
     */
   private def visitJvmMethod(method: DesugaredAst.JvmMethod, ns0: Name.NName)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.JvmMethod, NameError] = method match {
-    case DesugaredAst.JvmMethod(ident, fparams0, exp0, tpe, eff, loc) =>
-      flatMapN(traverse(fparams0)(visitFormalParam): Validation[List[NamedAst.FormalParam], NameError]) {
-        case fparams =>
-          val exp = visitExp(exp0, ns0)
-          val t = visitType(tpe)
-          val ef = eff.map(visitType)
-          mapN(exp) {
-            case e => NamedAst.JvmMethod(ident, fparams, e, t, ef, loc)
-          }
-      }: Validation[NamedAst.JvmMethod, NameError]
+    case DesugaredAst.JvmMethod(ident, fparams, exp0, tpe, eff, loc) =>
+      val fps = fparams.map(visitFormalParam)
+      val t = visitType(tpe)
+      val ef = eff.map(visitType)
+      val expVal = visitExp(exp0, ns0)
+      mapN(expVal) {
+        case e => NamedAst.JvmMethod(ident, fps, e, t, ef, loc)
+      }
   }
 
   /**
     * Performs naming on the given formal parameters `fparam0`.
     */
   private def getFormalParams(fparams0: List[DesugaredAst.FormalParam])(implicit flix: Flix, sctx: SharedContext): Validation[List[NamedAst.FormalParam], NameError] = {
-    traverse(fparams0)(visitFormalParam)
+    Validation.success(fparams0.map(visitFormalParam))
   }
 
 
