@@ -24,8 +24,8 @@ instance UpperBound[Int32] {
 
 mod Int32 {
 
-    import java.lang.NumberFormatException
     import java.lang.Integer
+    import java.lang.NumberFormatException
     import java.math.BigDecimal
 
     ///
