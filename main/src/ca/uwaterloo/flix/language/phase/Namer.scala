@@ -485,19 +485,19 @@ object Namer {
     * Performs naming on the given signature declaration `sig`.
     */
   private def visitSig(sig: DesugaredAst.Declaration.Sig, ns0: Name.NName, traitSym: Symbol.TraitSym)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.Declaration.Sig, NameError] = sig match {
-    case DesugaredAst.Declaration.Sig(doc, ann, mod0, ident, tparams0, fparams0, exp0, tpe, eff, tconstrs0, econstrs0, loc) =>
-      val tparams = getTypeParamsFromFormalParams(tparams0, fparams0, tpe, eff, econstrs0)
+    case DesugaredAst.Declaration.Sig(doc, ann, mod0, ident, tparams0, fparams, exp0, tpe, eff, tconstrs0, econstrs0, loc) =>
+      val tparams = getTypeParamsFromFormalParams(tparams0, fparams, tpe, eff, econstrs0)
 
       // First visit all the top-level information
       val mod = visitModifiers(mod0, ns0)
-      val fparamsVal = getFormalParams(fparams0)
+      val fps = getFormalParams(fparams)
       val t = visitType(tpe)
       val ef = eff.map(visitType)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint)
       val econstrsVal = traverse(econstrs0)(visitEqualityConstraint)
 
-      flatMapN(fparamsVal, tconstrsVal, econstrsVal) {
-        case (fparams, tconstrs, econstrs) =>
+      flatMapN(tconstrsVal, econstrsVal) {
+        case (tconstrs, econstrs) =>
 
           // Then visit the parts depending on the parameters
           val expVal = traverseOpt(exp0)(visitExp(_, ns0))
@@ -506,7 +506,7 @@ object Namer {
             case exp =>
 
               val sym = Symbol.mkSigSym(traitSym, ident)
-              val spec = NamedAst.Spec(doc, ann, mod, tparams, fparams, t, ef, tconstrs, econstrs, loc)
+              val spec = NamedAst.Spec(doc, ann, mod, tparams, fps, t, ef, tconstrs, econstrs, loc)
               NamedAst.Declaration.Sig(sym, spec, exp)
           }
       }
@@ -516,21 +516,21 @@ object Namer {
     * Performs naming on the given definition declaration `decl0`.
     */
   private def visitDef(decl0: DesugaredAst.Declaration.Def, ns0: Name.NName, defKind: DefKind)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.Declaration.Def, NameError] = decl0 match {
-    case DesugaredAst.Declaration.Def(doc, ann, mod0, ident, tparams0, fparams0, exp, tpe, eff, tconstrs0, econstrs0, loc) =>
+    case DesugaredAst.Declaration.Def(doc, ann, mod0, ident, tparams0, fparams, exp, tpe, eff, tconstrs0, econstrs0, loc) =>
       flix.subtask(ident.name, sample = true)
 
-      val tparams = getTypeParamsFromFormalParams(tparams0, fparams0, tpe, eff, econstrs0)
+      val tparams = getTypeParamsFromFormalParams(tparams0, fparams, tpe, eff, econstrs0)
 
       // First visit all the top-level information
       val mod = visitModifiers(mod0, ns0)
-      val fparamsVal = getFormalParams(fparams0)
+      val fps = getFormalParams(fparams)
       val t = visitType(tpe)
       val ef = eff.map(visitType)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint)
       val econstrsVal = traverse(econstrs0)(visitEqualityConstraint)
 
-      flatMapN(fparamsVal, tconstrsVal, econstrsVal) {
-        case (fparams, tconstrs, econstrs) =>
+      flatMapN(tconstrsVal, econstrsVal) {
+        case (tconstrs, econstrs) =>
 
           // Then visit the parts depending on the parameters
           val expVal = visitExp(exp, ns0)
@@ -545,7 +545,7 @@ object Namer {
                 case DefKind.NonMember => None
               }
               val sym = Symbol.mkDefnSym(ns0, ident, id)
-              val spec = NamedAst.Spec(doc, ann, mod, tparams, fparams, t, ef, tconstrs, econstrs, loc)
+              val spec = NamedAst.Spec(doc, ann, mod, tparams, fps, t, ef, tconstrs, econstrs, loc)
               NamedAst.Declaration.Def(sym, spec, e)
           }
       }
@@ -570,21 +570,21 @@ object Namer {
     * Performs naming on the given effect operation `op0`.
     */
   private def visitOp(op0: DesugaredAst.Declaration.Op, ns0: Name.NName, effSym: Symbol.EffectSym)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.Declaration.Op, NameError] = op0 match {
-    case DesugaredAst.Declaration.Op(doc, ann, mod0, ident, fparams0, tpe, tconstrs0, loc) =>
+    case DesugaredAst.Declaration.Op(doc, ann, mod0, ident, fparams, tpe, tconstrs0, loc) =>
       // First visit all the top-level information
       val mod = visitModifiers(mod0, ns0)
-      val fparamsVal = getFormalParams(fparams0)
+      val fps = getFormalParams(fparams)
       val t = visitType(tpe)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint)
 
-      mapN(fparamsVal, tconstrsVal) {
-        case (fparams, tconstrs) =>
+      mapN(tconstrsVal) {
+        case tconstrs =>
           val tparams = NamedAst.TypeParams.Kinded(Nil) // operations are monomorphic
           val eff = None // operations are pure
           val econstrs = Nil // TODO ASSOC-TYPES allow econstrs here
 
           val sym = Symbol.mkOpSym(effSym, ident)
-          val spec = NamedAst.Spec(doc, ann, mod, tparams, fparams, t, eff, tconstrs, econstrs, loc)
+          val spec = NamedAst.Spec(doc, ann, mod, tparams, fps, t, eff, tconstrs, econstrs, loc)
           NamedAst.Declaration.Op(sym, spec)
       }
   }
@@ -1477,8 +1477,8 @@ object Namer {
   /**
     * Performs naming on the given formal parameters `fparam0`.
     */
-  private def getFormalParams(fparams0: List[DesugaredAst.FormalParam])(implicit flix: Flix, sctx: SharedContext): Validation[List[NamedAst.FormalParam], NameError] = {
-    Validation.success(fparams0.map(visitFormalParam))
+  private def getFormalParams(fparams0: List[DesugaredAst.FormalParam])(implicit flix: Flix, sctx: SharedContext): List[NamedAst.FormalParam] = {
+    fparams0.map(visitFormalParam)
   }
 
 
