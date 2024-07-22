@@ -424,19 +424,19 @@ object Namer {
     * Performs naming on the given trait `trt`.
     */
   private def visitTrait(trt: DesugaredAst.Declaration.Trait, ns0: Name.NName)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.Declaration.Trait, NameError] = trt match {
-    case DesugaredAst.Declaration.Trait(doc, ann, mod0, ident, tparams0, superTraits0, assocs0, signatures, laws0, loc) =>
+    case DesugaredAst.Declaration.Trait(doc, ann, mod0, ident, tparams0, superTraits, assocs0, signatures, laws0, loc) =>
       val sym = Symbol.mkTraitSym(ns0, ident)
       val mod = visitModifiers(mod0, ns0)
       val tparam = visitTypeParam(tparams0)
 
-      val superTraitsVal = traverse(superTraits0)(visitTypeConstraint)
+      val sts = visitTypeConstraints(superTraits)
       val assocsVal = traverse(assocs0)(visitAssocTypeSig(_, sym)) // TODO switch param order to match visitSig
       val sigsVal = traverse(signatures)(visitSig(_, ns0, sym))
       val lawsVal = traverse(laws0)(visitDef(_, ns0, DefKind.Member))
 
-      mapN(superTraitsVal, assocsVal, sigsVal, lawsVal) {
-        case (superTraits, assocs, sigs, laws) =>
-          NamedAst.Declaration.Trait(doc, ann, mod, sym, tparam, superTraits, assocs, sigs, laws, loc)
+      mapN(assocsVal, sigsVal, lawsVal) {
+        case (assocs, sigs, laws) =>
+          NamedAst.Declaration.Trait(doc, ann, mod, sym, tparam, sts, assocs, sigs, laws, loc)
       }
   }
 
@@ -444,28 +444,34 @@ object Namer {
     * Performs naming on the given instance `instance`.
     */
   private def visitInstance(instance: DesugaredAst.Declaration.Instance, ns0: Name.NName)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.Declaration.Instance, NameError] = instance match {
-    case DesugaredAst.Declaration.Instance(doc, ann, mod, clazz, tpe, tconstrs0, assocs0, defs0, loc) =>
+    case DesugaredAst.Declaration.Instance(doc, ann, mod, clazz, tpe, tconstrs, assocs0, defs0, loc) =>
       val tparams = getImplicitTypeParamsFromTypes(List(tpe))
       val t = visitType(tpe)
-      val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint)
+      val tcsts = visitTypeConstraints(tconstrs)
       val assocsVal = traverse(assocs0)(visitAssocTypeDef)
-      flatMapN(tconstrsVal, assocsVal) {
-        case (tconstrs, assocs) =>
+      flatMapN(assocsVal) {
+        case assocs =>
           val defsVal = traverse(defs0)(visitDef(_, ns0, DefKind.Member))
           mapN(defsVal) {
-            defs => NamedAst.Declaration.Instance(doc, ann, mod, clazz, tparams, t, tconstrs, assocs, defs, ns0.parts, loc)
+            defs => NamedAst.Declaration.Instance(doc, ann, mod, clazz, tparams, t, tcsts, assocs, defs, ns0.parts, loc)
           }
       }
   }
 
-
   /**
     * Performs naming on the given type constraint `tconstr`.
     */
-  private def visitTypeConstraint(tconstr: DesugaredAst.TypeConstraint)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.TypeConstraint, NameError] = tconstr match {
+  private def visitTypeConstraint(tconstr: DesugaredAst.TypeConstraint)(implicit flix: Flix, sctx: SharedContext): NamedAst.TypeConstraint = tconstr match {
     case DesugaredAst.TypeConstraint(trt, tparam, loc) =>
       val t = visitType(tparam)
-      Validation.success(NamedAst.TypeConstraint(trt, t, loc))
+      NamedAst.TypeConstraint(trt, t, loc)
+  }
+
+  /**
+    * Performs naming on the given type constraints `tconstrs`.
+    */
+  private def visitTypeConstraints(tconstrs: List[DesugaredAst.TypeConstraint])(implicit flix: Flix, sctx: SharedContext): List[NamedAst.TypeConstraint] = {
+    tconstrs.map(visitTypeConstraint)
   }
 
   /**
@@ -489,7 +495,7 @@ object Namer {
     * Performs naming on the given signature declaration `sig`.
     */
   private def visitSig(sig: DesugaredAst.Declaration.Sig, ns0: Name.NName, traitSym: Symbol.TraitSym)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.Declaration.Sig, NameError] = sig match {
-    case DesugaredAst.Declaration.Sig(doc, ann, mod0, ident, tparams0, fparams, exp0, tpe, eff, tconstrs0, econstrs, loc) =>
+    case DesugaredAst.Declaration.Sig(doc, ann, mod0, ident, tparams0, fparams, exp0, tpe, eff, tconstrs, econstrs, loc) =>
       val tparams = getTypeParamsFromFormalParams(tparams0, fparams, tpe, eff, econstrs)
 
       // First visit all the top-level information
@@ -497,22 +503,17 @@ object Namer {
       val fps = visitFormalParams(fparams)
       val t = visitType(tpe)
       val ef = eff.map(visitType)
-      val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint)
+      val tcsts = visitTypeConstraints(tconstrs)
       val ecsts = visitEqualityConstraints(econstrs)
 
-      flatMapN(tconstrsVal) {
-        case tconstrs =>
+      // Then visit the parts depending on the parameters
+      val expVal = traverseOpt(exp0)(visitExp(_, ns0))
 
-          // Then visit the parts depending on the parameters
-          val expVal = traverseOpt(exp0)(visitExp(_, ns0))
-
-          mapN(expVal) {
-            case exp =>
-
-              val sym = Symbol.mkSigSym(traitSym, ident)
-              val spec = NamedAst.Spec(doc, ann, mod, tparams, fps, t, ef, tconstrs, ecsts, loc)
-              NamedAst.Declaration.Sig(sym, spec, exp)
-          }
+      mapN(expVal) {
+        case e =>
+          val sym = Symbol.mkSigSym(traitSym, ident)
+          val spec = NamedAst.Spec(doc, ann, mod, tparams, fps, t, ef, tcsts, ecsts, loc)
+          NamedAst.Declaration.Sig(sym, spec, e)
       }
   }
 
@@ -520,7 +521,7 @@ object Namer {
     * Performs naming on the given definition declaration `decl0`.
     */
   private def visitDef(decl0: DesugaredAst.Declaration.Def, ns0: Name.NName, defKind: DefKind)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.Declaration.Def, NameError] = decl0 match {
-    case DesugaredAst.Declaration.Def(doc, ann, mod0, ident, tparams0, fparams, exp, tpe, eff, tconstrs0, econstrs, loc) =>
+    case DesugaredAst.Declaration.Def(doc, ann, mod0, ident, tparams0, fparams, exp, tpe, eff, tconstrs, econstrs, loc) =>
       flix.subtask(ident.name, sample = true)
 
       val tparams = getTypeParamsFromFormalParams(tparams0, fparams, tpe, eff, econstrs)
@@ -530,28 +531,23 @@ object Namer {
       val fps = visitFormalParams(fparams)
       val t = visitType(tpe)
       val ef = eff.map(visitType)
-      val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint)
+      val tcsts = visitTypeConstraints(tconstrs)
       val ecsts = visitEqualityConstraints(econstrs)
 
-      flatMapN(tconstrsVal) {
-        case tconstrs =>
+      // Then visit the parts depending on the parameters
+      val expVal = visitExp(exp, ns0)
 
-          // Then visit the parts depending on the parameters
-          val expVal = visitExp(exp, ns0)
-
-          mapN(expVal) {
-            case e =>
-
-              // Give the def an id only if it is an instance def.
-              // This distinguishes instance defs that could share a namespace.
-              val id = defKind match {
-                case DefKind.Member => Some(flix.genSym.freshId())
-                case DefKind.NonMember => None
-              }
-              val sym = Symbol.mkDefnSym(ns0, ident, id)
-              val spec = NamedAst.Spec(doc, ann, mod, tparams, fps, t, ef, tconstrs, ecsts, loc)
-              NamedAst.Declaration.Def(sym, spec, e)
+      mapN(expVal) {
+        case e =>
+          // Give the def an id only if it is an instance def.
+          // This distinguishes instance defs that could share a namespace.
+          val id = defKind match {
+            case DefKind.Member => Some(flix.genSym.freshId())
+            case DefKind.NonMember => None
           }
+          val sym = Symbol.mkDefnSym(ns0, ident, id)
+          val spec = NamedAst.Spec(doc, ann, mod, tparams, fps, t, ef, tcsts, ecsts, loc)
+          NamedAst.Declaration.Def(sym, spec, e)
       }
   }
 
@@ -574,23 +570,20 @@ object Namer {
     * Performs naming on the given effect operation `op0`.
     */
   private def visitOp(op0: DesugaredAst.Declaration.Op, ns0: Name.NName, effSym: Symbol.EffectSym)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.Declaration.Op, NameError] = op0 match {
-    case DesugaredAst.Declaration.Op(doc, ann, mod0, ident, fparams, tpe, tconstrs0, loc) =>
+    case DesugaredAst.Declaration.Op(doc, ann, mod0, ident, fparams, tpe, tconstrs, loc) =>
       // First visit all the top-level information
       val mod = visitModifiers(mod0, ns0)
       val fps = visitFormalParams(fparams)
       val t = visitType(tpe)
-      val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint)
+      val tcsts = visitTypeConstraints(tconstrs)
 
-      mapN(tconstrsVal) {
-        case tconstrs =>
-          val tparams = NamedAst.TypeParams.Kinded(Nil) // operations are monomorphic
-          val eff = None // operations are pure
-          val econstrs = Nil // TODO ASSOC-TYPES allow econstrs here
+      val tparams = NamedAst.TypeParams.Kinded(Nil) // operations are monomorphic
+      val eff = None // operations are pure
+      val econstrs = Nil // TODO ASSOC-TYPES allow econstrs here
 
-          val sym = Symbol.mkOpSym(effSym, ident)
-          val spec = NamedAst.Spec(doc, ann, mod, tparams, fps, t, eff, tconstrs, econstrs, loc)
-          NamedAst.Declaration.Op(sym, spec)
-      }
+      val sym = Symbol.mkOpSym(effSym, ident)
+      val spec = NamedAst.Spec(doc, ann, mod, tparams, fps, t, eff, tcsts, econstrs, loc)
+      Validation.success(NamedAst.Declaration.Op(sym, spec))
   }
 
   /**
