@@ -490,7 +490,7 @@ object Namer {
 
       // First visit all the top-level information
       val mod = visitModifiers(mod0, ns0)
-      val fps = getFormalParams(fparams)
+      val fps = visitFormalParams(fparams)
       val t = visitType(tpe)
       val ef = eff.map(visitType)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint)
@@ -523,7 +523,7 @@ object Namer {
 
       // First visit all the top-level information
       val mod = visitModifiers(mod0, ns0)
-      val fps = getFormalParams(fparams)
+      val fps = visitFormalParams(fparams)
       val t = visitType(tpe)
       val ef = eff.map(visitType)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint)
@@ -573,7 +573,7 @@ object Namer {
     case DesugaredAst.Declaration.Op(doc, ann, mod0, ident, fparams, tpe, tconstrs0, loc) =>
       // First visit all the top-level information
       val mod = visitModifiers(mod0, ns0)
-      val fps = getFormalParams(fparams)
+      val fps = visitFormalParams(fparams)
       val t = visitType(tpe)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint)
 
@@ -900,7 +900,7 @@ object Namer {
       val eVal = visitExp(e0, ns0)
       val rulesVal = traverse(rules0) {
         case DesugaredAst.HandlerRule(op, fparams, body0) =>
-          val fps = fparams.map(visitFormalParam)
+          val fps = visitFormalParams(fparams)
           val bodyVal = visitExp(body0, ns0)
           mapN(bodyVal) {
             body => NamedAst.HandlerRule(op, fps, body)
@@ -1465,7 +1465,7 @@ object Namer {
     */
   private def visitJvmMethod(method: DesugaredAst.JvmMethod, ns0: Name.NName)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.JvmMethod, NameError] = method match {
     case DesugaredAst.JvmMethod(ident, fparams, exp0, tpe, eff, loc) =>
-      val fps = fparams.map(visitFormalParam)
+      val fps = visitFormalParams(fparams)
       val t = visitType(tpe)
       val ef = eff.map(visitType)
       val expVal = visitExp(exp0, ns0)
@@ -1477,7 +1477,7 @@ object Namer {
   /**
     * Performs naming on the given formal parameters `fparam0`.
     */
-  private def getFormalParams(fparams0: List[DesugaredAst.FormalParam])(implicit flix: Flix, sctx: SharedContext): List[NamedAst.FormalParam] = {
+  private def visitFormalParams(fparams0: List[DesugaredAst.FormalParam])(implicit flix: Flix, sctx: SharedContext): List[NamedAst.FormalParam] = {
     fparams0.map(visitFormalParam)
   }
 
