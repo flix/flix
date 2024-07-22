@@ -27,9 +27,10 @@ import ca.uwaterloo.flix.language.phase.PredDeps.termTypesAndDenotation
 import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.collection.ListMap
-import ca.uwaterloo.flix.util.{ParOps, Result, Validation}
+import ca.uwaterloo.flix.util.{ParOps, Result, SharedContext, Validation}
 
 import scala.annotation.tailrec
+import scala.jdk.CollectionConverters._
 
 /**
   * The stratification phase breaks constraints into strata.
@@ -48,6 +49,9 @@ object Stratifier {
     * Returns a stratified version of the given AST `root`.
     */
   def run(root: Root)(implicit flix: Flix): Validation[Root, StratificationError] = flix.phase("Stratifier") {
+    // Construct a new shared context.
+    implicit val sctx: SharedContext[StratificationError] = SharedContext.mk()
+
     implicit val g: LabelledPrecedenceGraph = root.precedenceGraph
     implicit val r: Root = root
 
@@ -56,8 +60,8 @@ object Stratifier {
     val newInstances = ParOps.parTraverseValues(root.instances)(traverse(_)(visitInstance(_)))
     val newTraits = ParOps.parTraverseValues(root.traits)(visitTrait(_))
 
-    mapN(newDefs, newInstances, newTraits) {
-      case (ds, is, ts) => root.copy(defs = ds, instances = is, traits = ts)
+    flatMapN(newDefs, newInstances, newTraits) {
+      case (ds, is, ts) => Validation.toSuccessOrSoftFailure(root.copy(defs = ds, instances = is, traits = ts), sctx.errors.asScala)
     }
   }(DebugValidation())
 
