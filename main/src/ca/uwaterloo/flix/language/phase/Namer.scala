@@ -335,8 +335,8 @@ object Namer {
     * Performs naming on the given enum `enum0`.
     */
   private def visitRestrictableEnum(enum0: DesugaredAst.Declaration.RestrictableEnum, ns0: Name.NName)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.Declaration.RestrictableEnum, NameError] = enum0 match {
-    case DesugaredAst.Declaration.RestrictableEnum(doc, ann, mod0, ident, index0, tparams0, derives0, cases0, loc) =>
-      val caseIdents = cases0.map(_.ident)
+    case DesugaredAst.Declaration.RestrictableEnum(doc, ann, mod0, ident, index0, tparams0, derives0, cases, loc) =>
+      val caseIdents = cases.map(_.ident)
       val sym = Symbol.mkRestrictableEnumSym(ns0, ident, caseIdents)
 
       // Compute the type parameters.
@@ -345,12 +345,9 @@ object Namer {
 
       val mod = visitModifiers(mod0, ns0)
       val derives = visitDerivations(derives0)
-      val casesVal = traverse(cases0)(visitRestrictableCase(_, sym))
+      val cs = cases.map(visitRestrictableCase(_, sym))
 
-      mapN(casesVal) {
-        case cases =>
-          NamedAst.Declaration.RestrictableEnum(doc, ann, mod, sym, index, tparams, derives, cases, loc)
-      }
+      Validation.success(NamedAst.Declaration.RestrictableEnum(doc, ann, mod, sym, index, tparams, derives, cs, loc))
   }
 
   /**
@@ -382,11 +379,11 @@ object Namer {
   /**
     * Performs naming on the given enum case.
     */
-  private def visitRestrictableCase(case0: DesugaredAst.RestrictableCase, enumSym: Symbol.RestrictableEnumSym)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.Declaration.RestrictableCase, NameError] = case0 match {
+  private def visitRestrictableCase(case0: DesugaredAst.RestrictableCase, enumSym: Symbol.RestrictableEnumSym)(implicit flix: Flix, sctx: SharedContext): NamedAst.Declaration.RestrictableCase = case0 match {
     case DesugaredAst.RestrictableCase(ident, tpe, loc) =>
       val t = visitType(tpe)
       val caseSym = Symbol.mkRestrictableCaseSym(enumSym, ident)
-      Validation.success(NamedAst.Declaration.RestrictableCase(caseSym, t, loc))
+      NamedAst.Declaration.RestrictableCase(caseSym, t, loc)
   }
 
   /**
