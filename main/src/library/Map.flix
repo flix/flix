@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import java.util.{Map => JMap}
+
 ///
 /// The Map type.
 ///
@@ -107,9 +109,9 @@ instance Iterable[Map[k, v]] {
 }
 
 instance ToJava[Map[k, v]] with Order[k] {
-    type Out = ##java.util.Map
+    type Out = JMap
     type Aef = IO
-    pub def toJava(m: Map[k, v]): ##java.util.Map \ IO = Adaptor.toMap(m)
+    pub def toJava(m: Map[k, v]): JMap \ IO = Adaptor.toMap(m)
 }
 
 instance FromJava[Map[k, v]] with Order[k] {
