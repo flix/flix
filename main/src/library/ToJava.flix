@@ -25,12 +25,14 @@ pub trait ToJava[t: Type] {
 
 mod ToJava {
 
+    import java.lang.Object
+
     ///
     /// Marshal a type that supports `ToJava` to its respective to `ToJava.Out` type
     /// and upcast it to a `java.lang.Object`
     ///
-    pub def toJavaObject(t: t): ##java.lang.Object \ ToJava.Aef[t] with ToJava[t] =
-        unchecked_cast(ToJava.toJava(t) as ##java.lang.Object)
+    pub def toJavaObject(t: t): Object \ ToJava.Aef[t] with ToJava[t] =
+        unchecked_cast(ToJava.toJava(t) as Object)
 
 }
 
