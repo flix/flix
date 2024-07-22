@@ -23,7 +23,10 @@ instance UpperBound[Int64] {
 }
 
 mod Int64 {
-    import java.math.BigDecimal;
+
+    import java.lang.Long
+    import java.lang.NumberFormatException
+    import java.math.BigDecimal
 
     ///
     /// Returns the number of bits used to represent an `Int64`.
@@ -341,7 +344,7 @@ mod Int64 {
         import static java.lang.Long.parseLong(String): Int64 \ {};
         Some(s |> strip |> parseLong)
     } catch {
-        case _: ##java.lang.NumberFormatException => None
+        case _: NumberFormatException => None
     }
 
     ///
@@ -354,7 +357,7 @@ mod Int64 {
         import static java.lang.Long.parseLong(String, Int32): Int64 \ {};
         Ok(parseLong(strip(s), radix))
     } catch {
-        case _: ##java.lang.NumberFormatException => Err("Int64.parse")
+        case _: NumberFormatException => Err("Int64.parse")
     }
 
     ///
@@ -366,7 +369,7 @@ mod Int64 {
     /// (i.e. -128 to 127).
     ///
     pub def tryToInt8(x: Int64): Option[Int8] =
-        import static java.lang.Long.valueOf(Int64): ##java.lang.Long \ {};
+        import static java.lang.Long.valueOf(Int64): Long \ {};
         import java.lang.Long.byteValue(): Int8 \ {};
         if (x < Int8.toInt64(Int8.minValue()) or x > Int8.toInt64(Int8.maxValue()))
             None
@@ -382,7 +385,7 @@ mod Int64 {
     /// (i.e. -32768 to 32767).
     ///
     pub def tryToInt16(x: Int64): Option[Int16] =
-        import static java.lang.Long.valueOf(Int64): ##java.lang.Long \ {};
+        import static java.lang.Long.valueOf(Int64): Long \ {};
         import java.lang.Long.shortValue(): Int16 \ {};
         if (x < Int16.toInt64(Int16.minValue()) or x > Int16.toInt64(Int16.maxValue()))
             None
@@ -398,7 +401,7 @@ mod Int64 {
     /// (i.e. -2147483648 to 2147483647).
     ///
     pub def tryToInt32(x: Int64): Option[Int32] =
-        import static java.lang.Long.valueOf(Int64): ##java.lang.Long \ {};
+        import static java.lang.Long.valueOf(Int64): Long \ {};
         import java.lang.Long.intValue(): Int32 \ {};
         if (x < Int32.toInt64(Int32.minValue()) or x > Int32.toInt64(Int32.maxValue()))
             None
@@ -410,7 +413,7 @@ mod Int64 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toBigInt(x: Int64): BigInt =
-        import static java.lang.Long.valueOf(Int64): ##java.lang.Long \ {} as i64ValueOf;
+        import static java.lang.Long.valueOf(Int64): Long \ {} as i64ValueOf;
         import java.lang.Long.longValue(): Int64 \ {};
         import static java.math.BigInteger.valueOf(Int64): BigInt \ {} as asBigInt;
         (i64ValueOf(x) |> longValue |> asBigInt)
@@ -421,7 +424,7 @@ mod Int64 {
     /// Warning: The numeric value of `x` may lose precision.
     ///
     pub def toFloat32(x: Int64): Float32 =
-        import static java.lang.Long.valueOf(Int64): ##java.lang.Long \ {};
+        import static java.lang.Long.valueOf(Int64): Long \ {};
         import java.lang.Long.floatValue(): Float32 \ {};
         (valueOf(x) |> floatValue)
 
@@ -431,7 +434,7 @@ mod Int64 {
     /// Warning: The numeric value of `x` may lose precision.
     ///
     pub def toFloat64(x: Int64): Float64 =
-        import static java.lang.Long.valueOf(Int64): ##java.lang.Long \ {};
+        import static java.lang.Long.valueOf(Int64): Long \ {};
         import java.lang.Long.doubleValue(): Float64 \ {};
         (valueOf(x) |> doubleValue)
 
@@ -461,7 +464,7 @@ mod Int64 {
     /// Returns `x` clamped within the Int8 range `min` to `max`.
     ///
     pub def clampToInt8(min: {min = Int8}, max: {max = Int8}, x: Int64): Int8 =
-        import static java.lang.Long.valueOf(Int64): ##java.lang.Long \ {};
+        import static java.lang.Long.valueOf(Int64): Long \ {};
         import java.lang.Long.byteValue(): Int8 \ {};
         let mini64 = Int8.toInt64(min#min);
         let maxi64 = Int8.toInt64(max#max);
@@ -473,7 +476,7 @@ mod Int64 {
     /// Returns `x` clamped within the Int16 range `min` to `max`.
     ///
     pub def clampToInt16(min: {min = Int16}, max: {max = Int16}, x: Int64): Int16 =
-        import static java.lang.Long.valueOf(Int64): ##java.lang.Long \ {};
+        import static java.lang.Long.valueOf(Int64): Long \ {};
         import java.lang.Long.shortValue(): Int16 \ {};
         let mini64 = Int16.toInt64(min#min);
         let maxi64 = Int16.toInt64(max#max);
@@ -486,30 +489,30 @@ mod Int64 {
     /// Returns `x` clamped within the Int32 range `min` to `max`.
     ///
     pub def clampToInt32(min: {min = Int32}, max: {max = Int32}, x: Int64): Int32 =
-        import static java.lang.Long.valueOf(Int64): ##java.lang.Long \ {};
+        import static java.lang.Long.valueOf(Int64): Long \ {};
         import java.lang.Long.intValue(): Int32 \ {};
         let mini64 = Int32.toInt64(min#min);
         let maxi64 = Int32.toInt64(max#max);
         (valueOf(clamp(min = mini64, max = maxi64, x)) |> intValue)
 
     ///
-    /// Get the primitive Int64 value from its object representation (i.e. ##java.lang.Long).
+    /// Get the primitive Int64 value from its object representation (i.e. Long).
     ///
     /// This function is expected to be used when marshaling Int64s from Java. Generally in Flix
-    /// code you should not need to use `##java.lang.Long`.
+    /// code you should not need to use `Long`.
     ///
-    pub def longValue(i: ##java.lang.Long): Int64 =
+    pub def longValue(i: Long): Int64 =
         import java.lang.Long.longValue(): Int64 \ {};
         longValue(i)
 
     ///
-    /// Convert an Int64 value to its object representation (i.e. ##java.lang.Long).
+    /// Convert an Int64 value to its object representation (i.e. Long).
     ///
     /// This function is expected to be used when marshaling Int64s to Java. Generally in Flix
-    /// code you should not need to use `##java.lang.Long`.
+    /// code you should not need to use `Long`.
     ///
-    pub def valueOf(i: Int64): ##java.lang.Long =
-        import static java.lang.Long.valueOf(Int64): ##java.lang.Long \ {};
+    pub def valueOf(i: Int64): Long =
+        import static java.lang.Long.valueOf(Int64): Long \ {};
         valueOf(i)
 
 }
