@@ -96,10 +96,6 @@ object KindError {
     })
   }
 
-  // JOE TODO: Test error message quality of
-  // bad parsing (e.g. new Struct {a = 3 @ rc
-  // Nonexistent struct(e.g. new NonExistentStruct {a = 3} @ rc
-  // Git stuff
   /**
    * An error raised to indicate a `new` struct expression provides too many fields
    *
@@ -143,7 +139,7 @@ object KindError {
   /**
    * An error raised to indicate a struct is missing a required field in `struct.field` or `struct.field = value` expression
    *
-   * @param fields the names of the missing fields
+   * @param field the names of the missing fields
    * @param loc the location where the error occurred.
    */
   case class NonExistentStructField(field: String, loc: SourceLocation) extends KindError with Unrecoverable {
@@ -154,6 +150,24 @@ object KindError {
       s""">> struct expression does not provide a field named ${field}
          |
          |${code(loc, "nonexistent field")}
+         |""".stripMargin
+    }
+  }
+
+  /**
+   * An error raised to indicate a struct does not exist in a `new Struct { ... } @ r` expression
+   *
+   * @param struct the names of the struct
+   * @param loc the location where the error occurred.
+   */
+  case class NonExistentStruct(struct: String, loc: SourceLocation) extends KindError with Unrecoverable {
+    override def summary: String = s"Nonexistent struct type"
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s""">> A struct type with the name `${struct}` does not exist
+         |
+         |${code(loc, "nonexistent struct")}
          |""".stripMargin
     }
   }

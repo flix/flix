@@ -661,27 +661,32 @@ object Kinder {
 
     case ResolvedAst.Expr.StructNew(sym, fields, region, loc) =>
       val providedFieldNames = fields.map(_._1).toSet
-      val expectedFieldNames = root.structs(sym).fields.map(_.sym).toSet
-      val extraFields = providedFieldNames.diff(expectedFieldNames).map(_.name)
-      val unprovidedFields = expectedFieldNames.diff(providedFieldNames).map(_.name)
-      if(extraFields.size > 0) {
-        Validation.toHardFailure(KindError.ExtraStructFields(extraFields, loc))
-      }
-      else if(unprovidedFields.size > 0) {
-        Validation.toHardFailure(KindError.UnprovidedStructFields(unprovidedFields, loc))
+      if (!root.structs.contains(sym)) {
+        Validation.toHardFailure(KindError.NonExistentStruct(sym.name, loc))
       }
       else {
-        val fieldsVal = traverse(fields) {
-          case (field, exp) => mapN(visitExp(exp, kenv0, taenv, henv0, root)) {
-            case e => (field, e)
-          }
+        val expectedFieldNames = root.structs(sym).fields.map(_.sym).toSet
+        val extraFields = providedFieldNames.diff(expectedFieldNames).map(_.name)
+        val unprovidedFields = expectedFieldNames.diff(providedFieldNames).map(_.name)
+        if (extraFields.size > 0) {
+          Validation.toHardFailure(KindError.ExtraStructFields(extraFields, loc))
         }
-        val regionVal = visitExp(region, kenv0, taenv, henv0, root)
-        mapN(fieldsVal, regionVal) {
-          case (fs, r) =>
-            val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-            val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-            KindedAst.Expr.StructNew(sym, fs, r, tvar, evar, loc)
+        else if (unprovidedFields.size > 0) {
+          Validation.toHardFailure(KindError.UnprovidedStructFields(unprovidedFields, loc))
+        }
+        else {
+          val fieldsVal = traverse(fields) {
+            case (field, exp) => mapN(visitExp(exp, kenv0, taenv, henv0, root)) {
+              case e => (field, e)
+            }
+          }
+          val regionVal = visitExp(region, kenv0, taenv, henv0, root)
+          mapN(fieldsVal, regionVal) {
+            case (fs, r) =>
+              val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+              val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
+              KindedAst.Expr.StructNew(sym, fs, r, tvar, evar, loc)
+          }
         }
       }
 
