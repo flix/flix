@@ -114,38 +114,43 @@ object Kinder {
    */
   private def visitStruct(struct0: ResolvedAst.Declaration.Struct, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Struct, KindError] = struct0 match {
     case ResolvedAst.Declaration.Struct(doc, ann, mod, sym, tparams0, fields0, loc) =>
-      // if not annotated tparams are assumed to be Star except the last one which is Eff
-      val tparams1 = tparams0 match {
-        case ResolvedAst.TypeParams.Kinded(t) => ResolvedAst.TypeParams.Kinded(t)
-        case ResolvedAst.TypeParams.Unkinded(t) =>
-          val tparams = t.init.map(tparam => ResolvedAst.TypeParam.Kinded(tparam.name, tparam.sym, Kind.Star, tparam.loc)) :+ ResolvedAst.TypeParam.Kinded(t.last.name, t.last.sym, Kind.Eff, t.last.loc)
-          ResolvedAst.TypeParams.Kinded(tparams)
+      if (tparams0.tparams.isEmpty) {
+        Validation.toHardFailure(KindError.MissingTParams(loc))
       }
-      val kenv0 = getKindEnvFromTypeParamsDefaultStar(tparams1)
-      val kenvVal = kenv0 + (tparams1.tparams.last.sym -> Kind.Eff)
+      else {
+        // if not annotated tparams are assumed to be Star except the last one which is Eff
+        val tparams1 = tparams0 match {
+          case ResolvedAst.TypeParams.Kinded(t) => ResolvedAst.TypeParams.Kinded(t)
+          case ResolvedAst.TypeParams.Unkinded(t) =>
+            val tparams = t.init.map(tparam => ResolvedAst.TypeParam.Kinded(tparam.name, tparam.sym, Kind.Star, tparam.loc)) :+ ResolvedAst.TypeParam.Kinded(t.last.name, t.last.sym, Kind.Eff, t.last.loc)
+            ResolvedAst.TypeParams.Kinded(tparams)
+        }
+        val kenv0 = getKindEnvFromTypeParamsDefaultStar(tparams1)
+        val kenvVal = kenv0 + (tparams1.tparams.last.sym -> Kind.Eff)
 
-      flatMapN(kenvVal) {
-        case kenv =>
-          val tparamsVal = traverse(tparams1.tparams)(visitTypeParam(_, kenv))
+        flatMapN(kenvVal) {
+          case kenv =>
+            val tparamsVal = traverse(tparams1.tparams)(visitTypeParam(_, kenv))
 
-          flatMapN(tparamsVal) {
-            case tparams0 =>
-              val KindedAst.TypeParam(name, ksym, tloc) = tparams0.last
-              val lastTparam = KindedAst.TypeParam(name, Symbol.freshKindedTypeVarSym(ksym.text, Kind.Eff, isRegion = true, ksym.loc), tloc)
-              val tparams = tparams0.init :+ lastTparam
-              val targs = tparams.map(tparam => Type.Var(tparam.sym, tparam.loc.asSynthetic))
-              val tpe = Type.mkApply(Type.Cst(TypeConstructor.Struct(sym, getStructKind(struct0)), sym.loc.asSynthetic), targs, sym.loc.asSynthetic)
-              val fieldsVal = traverse(fields0) {
-                case field0 => mapN(visitStructField(field0, tparams, tpe, kenv, taenv, root)) {
-                  field => field.sym -> field
+            flatMapN(tparamsVal) {
+              case tparams0 =>
+                val KindedAst.TypeParam(name, ksym, tloc) = tparams0.last
+                val lastTparam = KindedAst.TypeParam(name, Symbol.freshKindedTypeVarSym(ksym.text, Kind.Eff, isRegion = true, ksym.loc), tloc)
+                val tparams = tparams0.init :+ lastTparam
+                val targs = tparams.map(tparam => Type.Var(tparam.sym, tparam.loc.asSynthetic))
+                val tpe = Type.mkApply(Type.Cst(TypeConstructor.Struct(sym, getStructKind(struct0)), sym.loc.asSynthetic), targs, sym.loc.asSynthetic)
+                val fieldsVal = traverse(fields0) {
+                  case field0 => mapN(visitStructField(field0, tparams, tpe, kenv, taenv, root)) {
+                    field => field.sym -> field
+                  }
                 }
-              }
-              mapN(fieldsVal) {
-                case fields => KindedAst.Struct(doc, ann, mod, sym, tparams, fields.toMap, tpe, loc)
-              }
-          }
+                mapN(fieldsVal) {
+                  case fields => KindedAst.Struct(doc, ann, mod, sym, tparams, fields.toMap, tpe, loc)
+                }
+            }
+        }
       }
-    }
+  }
 
   /**
     * Performs kinding on the given restrictable enum.

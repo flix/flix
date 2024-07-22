@@ -171,4 +171,16 @@ object KindError {
          |""".stripMargin
     }
   }
+
+  case class MissingTParams(loc: SourceLocation) extends KindError with Unrecoverable {
+    override def summary: String = s"Struct declaration has no type parameters but needs at least one"
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s""">> Struct declaration has no type parameters but needs at least one
+         |
+         |${code(loc, "struct declaration")}
+         |""".stripMargin
+    }
+  }
 }
