@@ -91,7 +91,7 @@ object Namer {
     case decl: DesugaredAst.Declaration.Enum => Validation.success(visitEnum(decl, ns0))
     case decl: DesugaredAst.Declaration.Struct => Validation.success(visitStruct(decl, ns0))
     case decl: DesugaredAst.Declaration.RestrictableEnum => visitRestrictableEnum(decl, ns0)
-    case decl: DesugaredAst.Declaration.TypeAlias => visitTypeAlias(decl, ns0)
+    case decl: DesugaredAst.Declaration.TypeAlias => Validation.success(visitTypeAlias(decl, ns0))
     case decl: DesugaredAst.Declaration.Effect => visitEffect(decl, ns0)
     case decl: DesugaredAst.Declaration.Law => throw InternalCompilerException("unexpected law", decl.loc)
   }
@@ -389,13 +389,13 @@ object Namer {
   /**
     * Performs naming on the given type alias `alias0`.
     */
-  private def visitTypeAlias(alias0: DesugaredAst.Declaration.TypeAlias, ns0: Name.NName)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.Declaration.TypeAlias, NameError] = alias0 match {
+  private def visitTypeAlias(alias0: DesugaredAst.Declaration.TypeAlias, ns0: Name.NName)(implicit flix: Flix, sctx: SharedContext): NamedAst.Declaration.TypeAlias = alias0 match {
     case DesugaredAst.Declaration.TypeAlias(doc, ann, mod0, ident, tparams0, tpe, loc) =>
       val mod = visitModifiers(mod0, ns0)
       val tparams = getTypeParams(tparams0)
       val t = visitType(tpe)
       val sym = Symbol.mkTypeAliasSym(ns0, ident)
-      Validation.success(NamedAst.Declaration.TypeAlias(doc, ann, mod, sym, tparams, t, loc))
+      NamedAst.Declaration.TypeAlias(doc, ann, mod, sym, tparams, t, loc)
   }
 
   /**
