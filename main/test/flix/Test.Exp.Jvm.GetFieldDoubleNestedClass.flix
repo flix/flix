@@ -1,5 +1,7 @@
 mod Test.Exp.Jvm.GetFieldDoubleNestedClass {
 
+    import java.lang.Object
+
     @test
     def testGetBoolField01(): Bool \ IO =
         import java_new dev.flix.test.TestClass$_StaticNestedClass$DoubleNestedClass(): ##dev.flix.test.TestClass$_StaticNestedClass$DoubleNestedClass \ IO as newObject;
@@ -71,7 +73,7 @@ mod Test.Exp.Jvm.GetFieldDoubleNestedClass {
         getField(o) == "Hello World"
 
     @test
-    def testGetObjectField01(): ##java.lang.Object \ IO =
+    def testGetObjectField01(): Object \ IO =
         import java_new dev.flix.test.TestClass$_StaticNestedClass$DoubleNestedClass(): ##dev.flix.test.TestClass$_StaticNestedClass$DoubleNestedClass \ IO as newObject;
         import java_get_field dev.flix.test.TestClass$_StaticNestedClass$DoubleNestedClass.stringField: ##java.lang.Object \ IO as getField;
         let o: ##dev.flix.test.TestClass$_StaticNestedClass$DoubleNestedClass = newObject();
