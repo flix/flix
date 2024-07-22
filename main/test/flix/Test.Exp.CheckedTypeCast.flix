@@ -14,42 +14,48 @@
  * limitations under the License.
  */
 
- mod Test.Exp.CheckedTypeCast {
+mod Test.Exp.CheckedTypeCast {
+
+    import java.io.Serializable
+    import java.lang.Integer
+    import java.lang.Object
+    import java.lang.{String => JString}
+    import java.lang.{StringBuilder => JStringBuilder}
 
     @test
-    def testCheckedTypeCast01(): ##java.lang.Object = checked_cast(null)
+    def testCheckedTypeCast01(): Object = checked_cast(null)
 
     @test
-    def testCheckedTypeCast02(): ##java.lang.String = checked_cast(null)
+    def testCheckedTypeCast02(): JString = checked_cast(null)
 
     @test
-    def testCheckedTypeCast03(): ##java.lang.Integer = checked_cast(null)
+    def testCheckedTypeCast03(): Integer = checked_cast(null)
 
     @test
-    def testCheckedTypeCast04(): ##java.io.Serializable = checked_cast(null)
+    def testCheckedTypeCast04(): Serializable = checked_cast(null)
 
     @test
     def testCheckedTypeCast05(): Array[String, Static] = checked_cast(null)
 
     @test
-    def testCheckedTypeCast06(): ##java.io.Serializable = region rc {
+    def testCheckedTypeCast06(): Serializable = region rc {
         let _ = rc;
-        import java_new java.lang.StringBuilder(): ##java.lang.StringBuilder \ rc as mkSb;
+        import java_new java.lang.StringBuilder(): JStringBuilder \ rc as mkSb;
         checked_cast(mkSb())
     }
 
     @test
-    def testCheckedTypeCast07(): ##java.lang.Object = region rc {
+    def testCheckedTypeCast07(): Object = region rc {
         let _ = rc;
-        import java_new java.lang.StringBuilder(): ##java.lang.StringBuilder \ rc as mkSb;
+        import java_new java.lang.StringBuilder(): JStringBuilder \ rc as mkSb;
         checked_cast(mkSb())
     }
 
     @test
-    def testCheckedTypeCast08(): ##java.lang.Object = checked_cast("ABC")
+    def testCheckedTypeCast08(): Object = checked_cast("ABC")
 
     @test
-    def testCheckedTypeCast09(): ##java.lang.Object = region rc {
+    def testCheckedTypeCast09(): Object = region rc {
         checked_cast(Array#{} @ rc)
     }
 
