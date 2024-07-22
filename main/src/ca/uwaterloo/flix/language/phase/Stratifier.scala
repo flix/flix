@@ -454,35 +454,31 @@ object Stratifier {
 
     case Expr.FixpointConstraintSet(cs0, tpe, loc) =>
       // Compute the stratification.
-      val stf = stratify(g, tpe, loc)
+      stratify(g, tpe, loc)
 
-      mapN(stf) {
-        case _ =>
-          val cs = cs0.map(reorder)
-          Expr.FixpointConstraintSet(cs, tpe, loc)
-      }
+      val cs = cs0.map(reorder)
+      Validation.success(Expr.FixpointConstraintSet(cs, tpe, loc))
 
     case Expr.FixpointLambda(pparams, exp, tpe, eff, loc) =>
       // Compute the stratification.
-      val stf = stratify(g, tpe, loc)
-      mapN(stf) {
-        case _ => Expr.FixpointLambda(pparams, exp, tpe, eff, loc)
-      }
+      stratify(g, tpe, loc)
+
+      Validation.success(Expr.FixpointLambda(pparams, exp, tpe, eff, loc))
 
     case Expr.FixpointMerge(exp1, exp2, tpe, eff, loc) =>
       // Compute the stratification.
-      val stf = stratify(g, tpe, loc)
+      stratify(g, tpe, loc)
 
-      mapN(visitExp(exp1), visitExp(exp2), stf) {
-        case (e1, e2, _) => Expr.FixpointMerge(e1, e2, tpe, eff, loc)
+      mapN(visitExp(exp1), visitExp(exp2)) {
+        case (e1, e2) => Expr.FixpointMerge(e1, e2, tpe, eff, loc)
       }
 
     case Expr.FixpointSolve(exp, tpe, eff, loc) =>
       // Compute the stratification.
-      val stf = stratify(g, tpe, loc)
+      stratify(g, tpe, loc)
 
-      mapN(visitExp(exp), stf) {
-        case (e, _) => Expr.FixpointSolve(e, tpe, eff, loc)
+      mapN(visitExp(exp)) {
+        case e => Expr.FixpointSolve(e, tpe, eff, loc)
       }
 
     case Expr.FixpointFilter(pred, exp, tpe, eff, loc) =>
@@ -538,7 +534,7 @@ object Stratifier {
   /**
     * Computes the stratification of the given labelled graph `g` for the given row type `tpe` at the given source location `loc`.
     */
-  private def stratify(g: LabelledPrecedenceGraph, tpe: Type, loc: SourceLocation)(implicit flix: Flix, sctx: SharedContext[StratificationError]): Validation[Unit, StratificationError] = {
+  private def stratify(g: LabelledPrecedenceGraph, tpe: Type, loc: SourceLocation)(implicit flix: Flix, sctx: SharedContext[StratificationError]): Unit = {
     // The key is the set of predicates that occur in the row type.
     val key = predicateSymbolsOf(tpe)
 
@@ -547,10 +543,10 @@ object Stratifier {
 
     // Compute the stratification.
     UllmansAlgorithm.stratify(labelledGraphToDependencyGraph(rg), tpe, loc) match {
-      case Result.Ok(_) => Validation.success(())
+      case Result.Ok(_) => ()
       case Result.Err(e) =>
         sctx.errors.add(e)
-        Validation.toSoftFailure((), e)
+        ()
     }
   }
 
