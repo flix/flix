@@ -306,7 +306,7 @@ object Namer {
       val sym = Symbol.mkEnumSym(ns0, ident)
 
       // Compute the type parameters.
-      val tparams = getTypeParams(tparams0)
+      val tparams = visitTypeParams(tparams0)
 
       val mod = visitModifiers(mod0, ns0)
       val derives = visitDerivations(derives0)
@@ -323,7 +323,7 @@ object Namer {
       val sym = Symbol.mkStructSym(ns0, ident)
 
       // Compute the type parameters.
-      val tparams = getTypeParams(tparams0)
+      val tparams = visitTypeParams(tparams0)
 
       val mod = visitModifiers(mod0, ns0)
       val fields = fields0.map(visitField(_, sym))
@@ -341,7 +341,7 @@ object Namer {
 
       // Compute the type parameters.
       val index = getTypeParam(index0)
-      val tparams = getTypeParams(tparams0)
+      val tparams = visitTypeParams(tparams0)
 
       val mod = visitModifiers(mod0, ns0)
       val derives = visitDerivations(derives0)
@@ -392,7 +392,7 @@ object Namer {
   private def visitTypeAlias(alias0: DesugaredAst.Declaration.TypeAlias, ns0: Name.NName)(implicit flix: Flix, sctx: SharedContext): NamedAst.Declaration.TypeAlias = alias0 match {
     case DesugaredAst.Declaration.TypeAlias(doc, ann, mod0, ident, tparams0, tpe, loc) =>
       val mod = visitModifiers(mod0, ns0)
-      val tparams = getTypeParams(tparams0)
+      val tparams = visitTypeParams(tparams0)
       val t = visitType(tpe)
       val sym = Symbol.mkTypeAliasSym(ns0, ident)
       NamedAst.Declaration.TypeAlias(doc, ann, mod, sym, tparams, t, loc)
@@ -1492,7 +1492,7 @@ object Namer {
   /**
     * Performs naming on the given type parameters `tparam0` from the given cases `cases`.
     */
-  private def getTypeParams(tparams0: DesugaredAst.TypeParams)(implicit flix: Flix, sctx: SharedContext): NamedAst.TypeParams = {
+  private def visitTypeParams(tparams0: DesugaredAst.TypeParams)(implicit flix: Flix, sctx: SharedContext): NamedAst.TypeParams = {
     tparams0 match {
       case DesugaredAst.TypeParams.Elided => NamedAst.TypeParams.Kinded(Nil)
       case DesugaredAst.TypeParams.Unkinded(tparams) => getExplicitTypeParams(tparams)
