@@ -8,6 +8,7 @@ mod Test.Exp.Jvm.NewObject {
                     TestInt16ArrayInterface, TestInt16Interface, TestInt32ArrayInterface, TestInt32Interface,
                     TestInt64ArrayInterface, TestInt64Interface, TestNonPublicInterface, TestOverloadedMethods,
                     TestStackOffsets, TestThrowingInterface, TestVarargsInterface, TestVoidInterface}
+    import dev.flix.test.{TestClassWithStaticNestedClass$NestedClass => NestedClass}
 
     import java.io.Serializable
 
@@ -322,8 +323,8 @@ mod Test.Exp.Jvm.NewObject {
         toString(anon) == "Array#{1, 2, 3, 4, 5, 6}"
 
     @test
-    def testStaticNestedClass01(): ##dev.flix.test.TestClassWithStaticNestedClass$NestedClass \ IO =
-        new ##dev.flix.test.TestClassWithStaticNestedClass$NestedClass {}
+    def testStaticNestedClass01(): NestedClass \ IO =
+        new NestedClass {}
 
     @test
     def testClassWithProtectedConstructor01(): ##dev.flix.test.TestClassWithProtectedConstructor \ IO =
