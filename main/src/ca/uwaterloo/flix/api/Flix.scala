@@ -507,7 +507,6 @@ class Flix {
       afterPredDeps <- PredDeps.run(afterEntryPoint)
       afterStratifier <- Stratifier.run(afterPredDeps)
       afterPatMatch <- PatMatch.run(afterStratifier)
-
       afterRedundancy <- Redundancy.run(afterPatMatch)
       afterSafety <- Safety.run(afterRedundancy)
     } yield {
