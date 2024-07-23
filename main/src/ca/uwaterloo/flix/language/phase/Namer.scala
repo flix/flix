@@ -420,11 +420,11 @@ object Namer {
   /**
     * Performs naming on the given associated type definition `d0`.
     */
-  private def visitAssocTypeDef(d0: DesugaredAst.Declaration.AssocTypeDef)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.Declaration.AssocTypeDef, NameError] = d0 match {
+  private def visitAssocTypeDef(d0: DesugaredAst.Declaration.AssocTypeDef)(implicit flix: Flix, sctx: SharedContext): NamedAst.Declaration.AssocTypeDef = d0 match {
     case DesugaredAst.Declaration.AssocTypeDef(doc, mod, ident, arg, tpe, loc) =>
       val t1 = visitType(arg)
       val t2 = visitType(tpe)
-      Validation.success(NamedAst.Declaration.AssocTypeDef(doc, mod, ident, t1, t2, loc))
+      NamedAst.Declaration.AssocTypeDef(doc, mod, ident, t1, t2, loc)
   }
 
   /**
@@ -451,17 +451,14 @@ object Namer {
     * Performs naming on the given instance `instance`.
     */
   private def visitInstance(instance: DesugaredAst.Declaration.Instance, ns0: Name.NName)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.Declaration.Instance, NameError] = instance match {
-    case DesugaredAst.Declaration.Instance(doc, ann, mod, clazz, tpe, tconstrs, assocs0, defs0, loc) =>
+    case DesugaredAst.Declaration.Instance(doc, ann, mod, clazz, tpe, tconstrs, assocs, defs0, loc) =>
       val tparams = getImplicitTypeParamsFromTypes(List(tpe))
       val t = visitType(tpe)
       val tcsts = visitTypeConstraints(tconstrs)
-      val assocsVal = traverse(assocs0)(visitAssocTypeDef)
-      flatMapN(assocsVal) {
-        case assocs =>
-          val defsVal = traverse(defs0)(visitDef(_, ns0, DefKind.Member))
-          mapN(defsVal) {
-            defs => NamedAst.Declaration.Instance(doc, ann, mod, clazz, tparams, t, tcsts, assocs, defs, ns0.parts, loc)
-          }
+      val ascs = assocs.map(visitAssocTypeDef)
+      val defsVal = traverse(defs0)(visitDef(_, ns0, DefKind.Member))
+      mapN(defsVal) {
+        defs => NamedAst.Declaration.Instance(doc, ann, mod, clazz, tparams, t, tcsts, ascs, defs, ns0.parts, loc)
       }
   }
 
