@@ -3,8 +3,9 @@ mod Test.Import {
   import java.lang.{StringBuffer, CharSequence => ASeqOfChars}
   import java.lang.{StringBuffer => RenamedBuffer1}
 
-  // Don't cause an error because different names from above
+  // Doesn't cause an error because different names from above
   import java.lang.{StringBuffer => RenamedBuffer2, CharSequence}
+  import java.sql.Time
 
   @test
   def testImport01(): Bool \ IO =
@@ -37,8 +38,8 @@ mod Test.Import {
     Assert.eq(subStr, "world")
 
   @test
-  def testImport04(): ##java.sql.Time \ IO =
-    import java_new java.sql.Time(Int64): ##java.sql.Time \ IO as newTime;
+  def testImport04(): Time \ IO =
+    import java_new java.sql.Time(Int64): Time \ IO as newTime;
     newTime(1000i64)
   }
 
