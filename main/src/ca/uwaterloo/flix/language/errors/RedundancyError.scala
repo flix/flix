@@ -518,7 +518,7 @@ object RedundancyError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s""">> Field '${red(field.name)}' in struct '${cyan(sym.name)} is never read'.
+      s""">> Field '${red(field.name)}' in struct '${cyan(sym.name)}' is never read'.
          |
          |${code(field.loc, "unused field.")}
          |""".stripMargin
