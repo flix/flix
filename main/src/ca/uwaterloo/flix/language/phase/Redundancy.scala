@@ -74,7 +74,7 @@ object Redundancy {
         checkUnusedEffects()(sctx, root) ++
         checkUnusedEnumsAndTags()(sctx, root) ++
         checkUnusedTypeParamsEnums()(root) ++
-        checkUnusedStructs()(sctx, root) ++
+        checkUnusedStructsAndFields()(sctx, root) ++
         checkUnusedTypeParamsStructs()(root) ++
         checkRedundantTypeConstraints()(root, flix)
     }
@@ -150,13 +150,19 @@ object Redundancy {
   /**
    * Checks for unused enum symbols and tags.
    */
-  private def checkUnusedStructs()(implicit sctx: SharedContext, root: Root): List[RedundancyError] = {
+  private def checkUnusedStructsAndFields()(implicit sctx: SharedContext, root: Root): List[RedundancyError] = {
     val result = new ListBuffer[RedundancyError]
     for ((_, struct) <- root.structs) {
       if (deadStruct(struct)) {
         result += UnusedStructSym(struct.sym)
       }
+      for ((field, _) <- struct.fields) {
+        if (deadField(struct, field)) {
+          result += UnusedStructField(struct.sym, field)
+        }
+      }
     }
+
     result.toList
   }
 
@@ -597,8 +603,9 @@ object Redundancy {
       sctx.structSyms.put(sym, ())
       visitExps(fields.map(_._2), env0, rc) ++ visitExp(region, env0, rc)
 
-    case Expr.StructGet(sym, e, _, _, _, _) =>
+    case Expr.StructGet(sym, e, field, _, _, _) =>
       sctx.structSyms.put(sym, ())
+      sctx.fieldSyms.put(Symbol.mkStructFieldSym(sym, Name.Ident(field.name, field.loc)), ())
       visitExp(e, env0, rc)
 
     case Expr.StructPut(sym, e1, _, e2, _, _, _) =>
@@ -1118,6 +1125,15 @@ object Redundancy {
       !ctx.caseSyms.containsKey(tag)
 
   /**
+   * Returns `true` if the given `field` of the given `struct` is unused according to `used`.
+   */
+  private def deadField(struct: Struct, field: Symbol.StructFieldSym)(implicit ctx: SharedContext): Boolean =
+    !struct.sym.name.startsWith("_") &&
+      !struct.mod.isPublic &&
+      !field.name.startsWith("_") &&
+      !ctx.fieldSyms.containsKey(field)
+
+  /**
     * Returns `true` if the type variable `tvar` is unused according to the argument `used`.
     */
   private def deadTypeVar(tvar: Symbol.KindedTypeVarSym, used: Set[Symbol.KindedTypeVarSym]): Boolean = {
@@ -1283,6 +1299,7 @@ object Redundancy {
       new ConcurrentHashMap(),
       new ConcurrentHashMap(),
       new ConcurrentHashMap(),
+      new ConcurrentHashMap(),
       new ConcurrentHashMap())
   }
 
@@ -1300,6 +1317,7 @@ object Redundancy {
                                    effSyms: ConcurrentHashMap[Symbol.EffectSym, Unit],
                                    enumSyms: ConcurrentHashMap[Symbol.EnumSym, Unit],
                                    structSyms: ConcurrentHashMap[Symbol.StructSym, Unit],
+                                   fieldSyms: ConcurrentHashMap[Symbol.StructFieldSym, Unit],
                                    caseSyms: ConcurrentHashMap[Symbol.CaseSym, Unit])
 
   /**
