@@ -7,6 +7,7 @@ mod Test.Exp.Jvm.InvokeConstructor {
     import java.lang.Float
     import java.lang.Integer
     import java.lang.Long
+    import java.lang.Object
     import java.lang.Short
     import java.lang.{String => JString}
     import java.net.URLClassLoader
