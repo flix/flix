@@ -1,16 +1,37 @@
 mod Test.Exp.Jvm.NewObject {
 
-    import java.lang.Object
-    import dev.flix.test.{TestBoolArrayInterface, TestBoolInterface, TestCharArrayInterface, TestCharInterface,
-                    TestClass, TestClassWithDefaultConstructor, TestClassWithNonDefaultConstructor, TestDefaultMethods,
-                    TestFloat32ArrayInterface, TestFloat32Interface, TestFloat64ArrayInterface, TestFloat64Interface,
-                    TestFunctionalInterface, TestGenericInterface, TestGenericMethod, TestInt8ArrayInterface,
-                    TestInt16ArrayInterface, TestInt16Interface, TestInt32ArrayInterface, TestInt32Interface,
-                    TestInt64ArrayInterface, TestInt64Interface, TestNonPublicInterface, TestOverloadedMethods,
-                    TestStackOffsets, TestThrowingInterface, TestVarargsInterface, TestVoidInterface}
+    import dev.flix.test.TestBoolArrayInterface
+    import dev.flix.test.TestBoolInterface
+    import dev.flix.test.TestCharArrayInterface
+    import dev.flix.test.TestCharInterface
+    import dev.flix.test.TestClass
+    import dev.flix.test.TestClassWithDefaultConstructor
+    import dev.flix.test.TestClassWithNonDefaultConstructor
+    import dev.flix.test.TestDefaultMethods
+    import dev.flix.test.TestFloat32ArrayInterface
+    import dev.flix.test.TestFloat32Interface
+    import dev.flix.test.TestFloat64ArrayInterface
+    import dev.flix.test.TestFloat64Interface
+    import dev.flix.test.TestFunctionalInterface
+    import dev.flix.test.TestGenericInterface
+    import dev.flix.test.TestGenericMethod
+    import dev.flix.test.TestInt8ArrayInterface
+    import dev.flix.test.TestInt16ArrayInterface
+    import dev.flix.test.TestInt16Interface
+    import dev.flix.test.TestInt32ArrayInterface
+    import dev.flix.test.TestInt32Interface
+    import dev.flix.test.TestInt64ArrayInterface
+    import dev.flix.test.TestInt64Interface
+    import dev.flix.test.TestNonPublicInterface
+    import dev.flix.test.TestOverloadedMethods
+    import dev.flix.test.TestStackOffsets
+    import dev.flix.test.TestThrowingInterface
+    import dev.flix.test.TestVarargsInterface
+    import dev.flix.test.TestVoidInterface
+    import dev.flix.test.TestClassWithProtectedConstructor
     import dev.flix.test.{TestClassWithStaticNestedClass$NestedClass => NestedClass}
-
     import java.io.Serializable
+    import java.lang.Object
 
     def implementSerializable(): Serializable \ IO =
         new Serializable { }
@@ -242,7 +263,7 @@ mod Test.Exp.Jvm.NewObject {
     def testGenericMethod01(): Bool \ IO =
         import static dev.flix.test.TestGenericMethod.runTest(TestGenericMethod): Bool;
         let anon = new TestGenericMethod {
-            def testMethod(_this: TestGenericMethod, x: ##java.lang.Object): ##java.lang.Object =
+            def testMethod(_this: TestGenericMethod, x: Object): Object =
                 let str = unchecked_cast(x as String);
                 checked_cast("${str}, ${str}")
         };
@@ -317,8 +338,8 @@ mod Test.Exp.Jvm.NewObject {
         import java.lang.Object.toString(): String \ {};
         let x = Array#{1, 2, 3} @ Static;
         let y = Array#{4, 5, 6} @ Static;
-        let anon = new ##java.lang.Object {
-            def toString(_this: ##java.lang.Object): String \ IO = Array.toString(Array.append(Static, x, y))
+        let anon = new Object {
+            def toString(_this: Object): String \ IO = Array.toString(Array.append(Static, x, y))
         };
         toString(anon) == "Array#{1, 2, 3, 4, 5, 6}"
 
@@ -327,6 +348,6 @@ mod Test.Exp.Jvm.NewObject {
         new NestedClass {}
 
     @test
-    def testClassWithProtectedConstructor01(): ##dev.flix.test.TestClassWithProtectedConstructor \ IO =
-        new ##dev.flix.test.TestClassWithProtectedConstructor {}
+    def testClassWithProtectedConstructor01(): TestClassWithProtectedConstructor \ IO =
+        new TestClassWithProtectedConstructor {}
 }
