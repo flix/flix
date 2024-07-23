@@ -1,34 +1,34 @@
 mod Test.Dec.Struct {
-    pub struct Empty {}
+    pub struct Empty[r] {}
 
-    pub struct Singleton {
+    pub struct Singleton[r] {
         a: Int32
     }
 
-    pub struct Poly[a] {
+    pub struct Poly[a, r] {
         zero: Int32,
         one: a
     }
 
-    pub struct PolyMulti[a, b] {
+    pub struct PolyMulti[a, b, r] {
         zero: Int32,
         oneA: a,
         oneB: b,
         two: Map[a, b]
     }
 
-    pub struct Recursive {
+    pub struct Recursive[r] {
         base: Int32,
-        recurse: Recursive
+        recurse: Recursive[r]
     }
 
-    pub struct PolyRecursive[a] {
+    pub struct PolyRecursive[a, r] {
         base: a,
-        recurse: PolyRecursive[a]
+        recurse: PolyRecursive[a, r]
     }
 
-    pub struct PolyRecursiveNonRegular[a] {
+    pub struct PolyRecursiveNonRegular[a, r] {
         simple: a,
-        recurse: PolyRecursiveNonRegular[Poly[a]]
+        recurse: PolyRecursiveNonRegular[Poly[a, r], r]
     }
 }
