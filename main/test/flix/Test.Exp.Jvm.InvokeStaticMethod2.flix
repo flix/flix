@@ -1,9 +1,9 @@
 mod Test.Exp.Jvm.InvokeStaticMethod2 {
 
-    import java.lang.String;
-    import java.nio.file.Path;
-    import java.util.Arrays;
-    //import dev.flix.test.TestClassWithInheritedMethod;
+    import java.lang.{String => JString}
+    // import java.nio.file.Path
+    import java.util.Arrays
+    //import dev.flix.test.TestClassWithInheritedMethod
 
     @test
     def testInvokeStaticMethod2_01(): Bool \ IO =
@@ -30,11 +30,11 @@ mod Test.Exp.Jvm.InvokeStaticMethod2 {
         String¤valueOf(42i64) == "42"
 
     @test
-    def testInvokeObjectStaticMethod01(): ##java.lang.String \ IO =
+    def testInvokeObjectStaticMethod01(): JString \ IO =
         String¤valueOf(true)
 
     //@test
-    //def testInvokeInterfaceStaticMethod02(): ##java.nio.file.Path \ IO = region rc {
+    //def testInvokeInterfaceStaticMethod02(): Path \ IO = region rc {
     //    try {
     //        Path¤of("end", Array#{"p1", "p2", "p3"} @ rc)
     //    } catch {
