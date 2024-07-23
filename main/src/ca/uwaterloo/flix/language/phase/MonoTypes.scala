@@ -200,17 +200,20 @@ object MonoTypes {
       val tpe = visitType(tpe0)
       val eff = visitType(eff0)
       Expr.StructNew(sym, fields, region, tpe, eff, loc)
+
     case Expr.StructGet(sym, e0, field, tpe0, eff0, loc) =>
       val e = visitExp(e0)
       val tpe = visitType(tpe0)
       val eff = visitType(eff0)
       Expr.StructGet(sym, e, field, tpe, eff, loc)
+
     case Expr.StructPut(sym, e0, field, e1, tpe0, eff0, loc) =>
       val e = visitExp(e0)
       val rhs = visitExp(e1)
       val tpe = visitType(tpe0)
       val eff = visitType(eff0)
       Expr.StructPut(sym, e, field, rhs, tpe, eff, loc)
+
     case Expr.Ascribe(exp, tpe, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
