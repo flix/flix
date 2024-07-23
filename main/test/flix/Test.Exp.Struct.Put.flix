@@ -1,84 +1,85 @@
 mod Test.Exp.Struct.Put {
 
-    struct Cowboy [r] {
-        fstName: String,
-        lstName: String,
-        age: Int,
-        cowboy: Bool
+    struct Put [r] {
+        _fstName: String,
+        _lstName: String,
+        _age: Int32,
+        _cowboy: Bool
     }
 
     @test
-    def testStructPut01(): String =
+    def testStructPut01(): Unit =
         region rc {
-            let s = new Cowboy { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true } @ rc;
-            s€fstName = "Unlucky"
+            let s = new Put { _fstName = "Lucky", _lstName = "Luke", _age = 42, _cowboy = true } @ rc;
+            s€_fstName = "Unlucky"
         }
 
     @test
-    def testStructPut02(): String =
+    def testStructPut02(): Unit =
         region rc {
-            let s = new Cowboy { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true } @ rc;
-            s€lstName = "Uriel"
+            let s = new Put { _fstName = "Lucky", _lstName = "Luke", _age = 42, _cowboy = true } @ rc;
+            s€_lstName = "Uriel"
         }
 
     @test
-    def testStructPut03(): Int32 =
+    def testStructPut03(): Unit =
         region rc {
-            let s = new Cowboy { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true } @ rc;
-            s€age = 23
+            let s = new Put { _fstName = "Lucky", _lstName = "Luke", _age = 42, _cowboy = true } @ rc;
+            s€_age = 23
         }
 
     @test
-    def testStructPut04(): Bool =
+    def testStructPut04(): Unit =
         region rc {
-            let s = new Cowboy { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true } @ rc;
-            s€cowboy = false
+            let s = new Put { _fstName = "Lucky", _lstName = "Luke", _age = 42, _cowboy = true } @ rc;
+            s€_cowboy = false
         }
 
     @test
     def testStructMultiPut01(): Unit =
         region rc {
-            let s = new Cowboy { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true } @ rc;
-            s€fstName = "Unlucky";
-            s€lstName = "Uriel";
-            s€age = 23;
-            s€cowboy = false;
+            let s = new Put { _fstName = "Lucky", _lstName = "Luke", _age = 42, _cowboy = true } @ rc;
+            s€_fstName = "Unlucky";
+            s€_lstName = "Uriel";
+            s€_age = 23;
+            s€_cowboy = false;
             ()
         }
 
     @test
     def testStructMultiPut02(): Unit =
         region rc {
-            let s = new Cowboy { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true } @ rc;
-            s€cowboy = false;
-            s€age = 23;
-            s€lstName = "Uriel";
-            s€fstName = "Unlucky";
+            let s = new Put { _fstName = "Lucky", _lstName = "Luke", _age = 42, _cowboy = true } @ rc;
+            s€_cowboy = false;
+            s€_age = 23;
+            s€_lstName = "Uriel";
+            s€_fstName = "Unlucky";
             ()
         }
 
     @test
     def testStructMultiPut03(): Unit =
         region rc {
-            let s = new Cowboy { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true } @ rc;
-            s€fstName = "Unlucky";
-            s€fstName = "Lucky";
-            s€lstName = "Uriel";
-            s€lstName = "Luke";
+            let s = new Put { _fstName = "Lucky", _lstName = "Luke", _age = 42, _cowboy = true } @ rc;
+            s€_fstName = "Unlucky";
+            s€_fstName = "Lucky";
+            s€_lstName = "Uriel";
+            s€_lstName = "Luke";
             ()
         }
 
     @test
     def testStructMultiPut04(): Unit =
         region rc {
-            let s = new Cowboy { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true } @ rc;
-            s€lstName = "Uriel";
-            s€fstName = "Unlucky";
-            s€lstName = "Luke";
-            s€fstName = "Lucky";
+            let s = new Put { _fstName = "Lucky", _lstName = "Luke", _age = 42, _cowboy = true } @ rc;
+            s€_lstName = "Uriel";
+            s€_fstName = "Unlucky";
+            s€_lstName = "Luke";
+            s€_fstName = "Lucky";
             ()
         }
 
+/* Cannot test these while struct name is required to be mod name
     struct Inner [r] {
         x: Int32,
         y: Int32
@@ -127,3 +128,5 @@ mod Test.Exp.Struct.Put {
             s€a€b€c€d = 15;
             ()
         }
+        */
+}

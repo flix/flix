@@ -1,44 +1,44 @@
 mod Test.Exp.Struct.Get {
 
-    struct Cowboy [r] {
+    struct Get [r] {
         fstName: String,
         lstName: String,
-        age: Int,
+        age: Int32,
         cowboy: Bool
     }
 
     @test
     def testStructGet01(): String =
         region rc {
-            let s = new Cowboy { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true } @ rc;
+            let s = new Get { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true } @ rc;
             s€fstName
         }
 
     @test
     def testStructGet02(): String =
         region rc {
-            let s = new Cowboy { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true } @ rc;
+            let s = new Get { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true } @ rc;
             s€lstName
         }
 
     @test
     def testStructGet03(): Int32 =
         region rc {
-            let s = new Cowboy { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true } @ rc;
+            let s = new Get { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true } @ rc;
             s€age
         }
 
     @test
     def testStructGet04(): Bool =
         region rc {
-            let s = new Cowboy { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true } @ rc;
+            let s = new Get { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true } @ rc;
             s€cowboy
         }
 
     @test
     def testStructMultiGet01(): Unit =
         region rc {
-            let s = new Cowboy { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true } @ rc;
+            let s = new Get { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true } @ rc;
             let _fstName = s€fstName;
             let _lstName = s€lstName;
             let _age = s€age;
@@ -49,7 +49,7 @@ mod Test.Exp.Struct.Get {
     @test
     def testStructMultiGet02(): Unit =
         region rc {
-            let s = new Cowboy { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true } @ rc;
+            let s = new Get { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true } @ rc;
             let _cowboy = s€cowboy;
             let _age = s€age;
             let _lstName = s€lstName;
@@ -60,7 +60,7 @@ mod Test.Exp.Struct.Get {
     @test
     def testStructMultiGet03(): Unit =
         region rc {
-            let s = new Cowboy { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true } @ rc;
+            let s = new Get { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true } @ rc;
             let _fstName1 = s€fstName;
             let _fstName2 = s€fstName;
             let _lstName1 = s€lstName;
@@ -71,7 +71,7 @@ mod Test.Exp.Struct.Get {
     @test
     def testStructMultiGet04(): Unit =
         region rc {
-            let s = new Cowboy { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true } @ rc;
+            let s = new Get { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true } @ rc;
             let _lstName1 = s€lstName;
             let _fstName1 = s€fstName;
             let _lstName2 = s€lstName;
@@ -79,6 +79,7 @@ mod Test.Exp.Struct.Get {
             ()
         }
 
+/* These aren't testable until we get struct names working
     struct Inner [r] {
         x: Int32,
         y: Int32
@@ -126,3 +127,6 @@ mod Test.Exp.Struct.Get {
             let _d = s€a€b€c€d;
             ()
         }
+*/
+
+}
