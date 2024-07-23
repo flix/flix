@@ -5,7 +5,6 @@ mod Test.Import {
 
     // Doesn't cause an error because different names from above
     import java.lang.{StringBuffer => RenamedBuffer2, CharSequence}
-    import java.sql.Time
 
     @test
     def testImport01(): Bool \ IO =
@@ -28,6 +27,7 @@ mod Test.Import {
     // Doesn't cause an error because different scope from above
     import java.lang.{StringBuffer => RenamedBuffer1}
     import java.lang.CharSequence
+    import java.sql.Time
 
     @test
     def testImport03(): Bool \ IO =
