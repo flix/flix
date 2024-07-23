@@ -92,7 +92,7 @@ object Namer {
     case decl: DesugaredAst.Declaration.Struct => Validation.success(visitStruct(decl, ns0))
     case decl: DesugaredAst.Declaration.RestrictableEnum => Validation.success(visitRestrictableEnum(decl, ns0))
     case decl: DesugaredAst.Declaration.TypeAlias => Validation.success(visitTypeAlias(decl, ns0))
-    case decl: DesugaredAst.Declaration.Effect => visitEffect(decl, ns0)
+    case decl: DesugaredAst.Declaration.Effect => Validation.success(visitEffect(decl, ns0))
     case decl: DesugaredAst.Declaration.Law => throw InternalCompilerException("unexpected law", decl.loc)
   }
 
@@ -566,14 +566,12 @@ object Namer {
   /**
     * Performs naming on the given effect `eff0`.
     */
-  private def visitEffect(eff0: DesugaredAst.Declaration.Effect, ns0: Name.NName)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.Declaration.Effect, NameError] = eff0 match {
+  private def visitEffect(eff0: DesugaredAst.Declaration.Effect, ns0: Name.NName)(implicit flix: Flix, sctx: SharedContext): NamedAst.Declaration.Effect = eff0 match {
     case DesugaredAst.Declaration.Effect(doc, ann, mod0, ident, ops0, loc) =>
       val sym = Symbol.mkEffectSym(ns0, ident)
-
       val mod = visitModifiers(mod0, ns0)
       val ops = visitOps(ops0, ns0, sym)
-
-      Validation.success(NamedAst.Declaration.Effect(doc, ann, mod, sym, ops, loc))
+      NamedAst.Declaration.Effect(doc, ann, mod, sym, ops, loc)
   }
 
   /**
