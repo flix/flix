@@ -605,95 +605,84 @@ object Namer {
     * Performs naming on the given expression `exp0`.
     */
   // TODO NS-REFACTOR can remove ns0 too?
-  private def visitExp(exp0: DesugaredAst.Expr, ns0: Name.NName)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.Expr, NameError] = exp0 match {
+  private def visitExp(exp0: DesugaredAst.Expr, ns0: Name.NName)(implicit flix: Flix, sctx: SharedContext): NamedAst.Expr = exp0 match {
 
     case DesugaredAst.Expr.Ambiguous(name, loc) =>
-      Validation.success(NamedAst.Expr.Ambiguous(name, loc))
+      NamedAst.Expr.Ambiguous(name, loc)
 
     case DesugaredAst.Expr.OpenAs(name, exp, loc) =>
-      mapN(visitExp(exp, ns0)) {
-        case e => NamedAst.Expr.OpenAs(name, e, loc)
-      }
+      val e = visitExp(exp, ns0)
+      NamedAst.Expr.OpenAs(name, e, loc)
 
     case DesugaredAst.Expr.Open(name, loc) =>
-      Validation.success(NamedAst.Expr.Open(name, loc))
+      NamedAst.Expr.Open(name, loc)
 
     case DesugaredAst.Expr.Hole(name, loc) =>
-      Validation.success(NamedAst.Expr.Hole(name, loc))
+      NamedAst.Expr.Hole(name, loc)
 
     case DesugaredAst.Expr.HoleWithExp(exp, loc) =>
-      mapN(visitExp(exp, ns0)) {
-        case e => NamedAst.Expr.HoleWithExp(e, loc)
-      }
+      val e = visitExp(exp, ns0)
+      NamedAst.Expr.HoleWithExp(e, loc)
 
     case DesugaredAst.Expr.Use(uses0, exp, loc) =>
       val uses = uses0.map(visitUseOrImport)
-
-      mapN(visitExp(exp, ns0)) {
-        case e => uses.foldRight(e) {
-          case (use, acc) => NamedAst.Expr.Use(use, acc, loc)
-        }
+      val e = visitExp(exp, ns0)
+      uses.foldRight(e) {
+        case (use, acc) => NamedAst.Expr.Use(use, acc, loc)
       }
 
     case DesugaredAst.Expr.Cst(cst, loc) =>
-      Validation.success(NamedAst.Expr.Cst(cst, loc))
+      NamedAst.Expr.Cst(cst, loc)
 
     case DesugaredAst.Expr.Apply(exp, exps, loc) =>
-      mapN(visitExp(exp, ns0), traverse(exps)(visitExp(_, ns0))) {
-        case (e, es) => NamedAst.Expr.Apply(e, es, loc)
-      }
+      val e = visitExp(exp, ns0)
+      val es = visitExps(exps, ns0)
+      NamedAst.Expr.Apply(e, es, loc)
 
     case DesugaredAst.Expr.Lambda(fparam, exp, loc) =>
       val fp = visitFormalParam(fparam)
-      mapN(visitExp(exp, ns0)) {
-        case e => NamedAst.Expr.Lambda(fp, e, loc)
-      }
+      val e = visitExp(exp, ns0)
+      NamedAst.Expr.Lambda(fp, e, loc)
 
     case DesugaredAst.Expr.Unary(sop, exp, loc) =>
-      mapN(visitExp(exp, ns0)) {
-        case e => NamedAst.Expr.Unary(sop, e, loc)
-      }
+      val e = visitExp(exp, ns0)
+      NamedAst.Expr.Unary(sop, e, loc)
 
     case DesugaredAst.Expr.Binary(sop, exp1, exp2, loc) =>
-      mapN(visitExp(exp1, ns0), visitExp(exp2, ns0)) {
-        case (e1, e2) => NamedAst.Expr.Binary(sop, e1, e2, loc)
-      }
+      val e1 = visitExp(exp1, ns0)
+      val e2 = visitExp(exp2, ns0)
+      NamedAst.Expr.Binary(sop, e1, e2, loc)
 
     case DesugaredAst.Expr.IfThenElse(exp1, exp2, exp3, loc) =>
       val e1 = visitExp(exp1, ns0)
       val e2 = visitExp(exp2, ns0)
       val e3 = visitExp(exp3, ns0)
-      mapN(e1, e2, e3) {
-        NamedAst.Expr.IfThenElse(_, _, _, loc)
-      }
+      NamedAst.Expr.IfThenElse(e1, e2, e3, loc)
 
     case DesugaredAst.Expr.Stm(exp1, exp2, loc) =>
       val e1 = visitExp(exp1, ns0)
       val e2 = visitExp(exp2, ns0)
-      mapN(e1, e2) {
-        NamedAst.Expr.Stm(_, _, loc)
-      }
+      NamedAst.Expr.Stm(e1, e2, loc)
 
     case DesugaredAst.Expr.Discard(exp, loc) =>
-      mapN(visitExp(exp, ns0)) {
-        case e => NamedAst.Expr.Discard(e, loc)
-      }
+      val e = visitExp(exp, ns0)
+      NamedAst.Expr.Discard(e, loc)
 
     case DesugaredAst.Expr.Let(ident, mod, exp1, exp2, loc) =>
       // make a fresh variable symbol for the local variable.
       val sym = Symbol.freshVarSym(ident, BoundBy.Let)
-      mapN(visitExp(exp1, ns0), visitExp(exp2, ns0)) {
-        case (e1, e2) => NamedAst.Expr.Let(sym, mod, e1, e2, loc)
-      }
+      val e1 = visitExp(exp1, ns0)
+      val e2 = visitExp(exp2, ns0)
+      NamedAst.Expr.Let(sym, mod, e1, e2, loc)
 
     case DesugaredAst.Expr.LetRec(ident, ann, mod, exp1, exp2, loc) =>
       val sym = Symbol.freshVarSym(ident, BoundBy.Let)
-      mapN(visitExp(exp1, ns0), visitExp(exp2, ns0)) {
-        case (e1, e2) => NamedAst.Expr.LetRec(sym, ann, mod, e1, e2, loc)
-      }
+      val e1 = visitExp(exp1, ns0)
+      val e2 = visitExp(exp2, ns0)
+      NamedAst.Expr.LetRec(sym, ann, mod, e1, e2, loc)
 
     case DesugaredAst.Expr.Region(tpe, loc) =>
-      Validation.success(NamedAst.Expr.Region(tpe, loc))
+      NamedAst.Expr.Region(tpe, loc)
 
     case DesugaredAst.Expr.Scope(ident, exp, loc) =>
       // Introduce a fresh variable symbol for the region.
@@ -703,9 +692,8 @@ object Namer {
       val regionVar = Symbol.freshUnkindedTypeVarSym(Ast.VarText.SourceText(sym.text), isRegion = true, loc)
 
       // We must increase the level because we go under a new region scope.
-      mapN(visitExp(exp, ns0)) {
-        case e => NamedAst.Expr.Scope(sym, regionVar, e, loc)
-      }
+      val e = visitExp(exp, ns0)
+      NamedAst.Expr.Scope(sym, regionVar, e, loc)
 
     case DesugaredAst.Expr.Match(exp, rules, loc) =>
       val expVal = visitExp(exp, ns0)
@@ -751,52 +739,50 @@ object Namer {
       }
 
     case DesugaredAst.Expr.Tuple(exps, loc) =>
-      mapN(traverse(exps)(e => visitExp(e, ns0))) {
-        case es => NamedAst.Expr.Tuple(es, loc)
-      }
+      val es = visitExps(exps, ns0)
+      NamedAst.Expr.Tuple(es, loc)
 
     case DesugaredAst.Expr.RecordEmpty(loc) =>
-      Validation.success(NamedAst.Expr.RecordEmpty(loc))
+      NamedAst.Expr.RecordEmpty(loc)
 
     case DesugaredAst.Expr.RecordSelect(exp, label, loc) =>
-      mapN(visitExp(exp, ns0)) {
-        case e => NamedAst.Expr.RecordSelect(e, label, loc)
-      }
+      val e = visitExp(exp, ns0)
+      NamedAst.Expr.RecordSelect(e, label, loc)
 
     case DesugaredAst.Expr.RecordExtend(label, exp1, exp2, loc) =>
-      mapN(visitExp(exp1, ns0), visitExp(exp2, ns0)) {
-        case (v, r) => NamedAst.Expr.RecordExtend(label, v, r, loc)
-      }
+      val e1 = visitExp(exp1, ns0)
+      val e2 = visitExp(exp2, ns0)
+      NamedAst.Expr.RecordExtend(label, e1, e2, loc)
 
     case DesugaredAst.Expr.RecordRestrict(label, exp, loc) =>
-      mapN(visitExp(exp, ns0)) {
-        case r => NamedAst.Expr.RecordRestrict(label, r, loc)
-      }
+      val e = visitExp(exp, ns0)
+      NamedAst.Expr.RecordRestrict(label, e, loc)
 
     case DesugaredAst.Expr.ArrayLit(exps, exp, loc) =>
-      mapN(traverse(exps)(visitExp(_, ns0)), visitExp(exp, ns0)) {
-        case (es, e) => NamedAst.Expr.ArrayLit(es, e, loc)
-      }
+      val es = visitExps(exps, ns0)
+      val e = visitExp(exp, ns0)
+      NamedAst.Expr.ArrayLit(es, e, loc)
 
     case DesugaredAst.Expr.ArrayNew(exp1, exp2, exp3, loc) =>
-      mapN(visitExp(exp1, ns0), visitExp(exp2, ns0), visitExp(exp3, ns0)) {
-        case (e1, e2, e3) => NamedAst.Expr.ArrayNew(e1, e2, e3, loc)
-      }
+      val e1 = visitExp(exp1, ns0)
+      val e2 = visitExp(exp2, ns0)
+      val e3 = visitExp(exp3, ns0)
+      NamedAst.Expr.ArrayNew(e1, e2, e3, loc)
 
     case DesugaredAst.Expr.ArrayLoad(exp1, exp2, loc) =>
-      mapN(visitExp(exp1, ns0), visitExp(exp2, ns0)) {
-        case (e1, e2) => NamedAst.Expr.ArrayLoad(e1, e2, loc)
-      }
+      val e1 = visitExp(exp1, ns0)
+      val e2 = visitExp(exp2, ns0)
+      NamedAst.Expr.ArrayLoad(e1, e2, loc)
 
     case DesugaredAst.Expr.ArrayStore(exp1, exp2, exp3, loc) =>
-      mapN(visitExp(exp1, ns0), visitExp(exp2, ns0), visitExp(exp3, ns0)) {
-        case (e1, e2, e3) => NamedAst.Expr.ArrayStore(e1, e2, e3, loc)
-      }
+      val e1 = visitExp(exp1, ns0)
+      val e2 = visitExp(exp2, ns0)
+      val e3 = visitExp(exp3, ns0)
+      NamedAst.Expr.ArrayStore(e1, e2, e3, loc)
 
     case DesugaredAst.Expr.ArrayLength(exp, loc) =>
-      mapN(visitExp(exp, ns0)) {
-        case e => NamedAst.Expr.ArrayLength(e, loc)
-      }
+      val e = visitExp(exp, ns0)
+      NamedAst.Expr.ArrayLength(e, loc)
 
     case DesugaredAst.Expr.StructNew(name, exps0, region0, loc) =>
       val structsym = Symbol.mkStructSym(name.namespace, name.ident)
@@ -810,77 +796,63 @@ object Namer {
         case (exps, region) => NamedAst.Expr.StructNew(structsym, exps, region, loc)
       }
 
-    case DesugaredAst.Expr.StructGet(e, name, loc) =>
-      val structsym = Symbol.mkStructSym(ns0, ns0.idents.last)
-      mapN(visitExp(e, ns0)) {
-        case e => NamedAst.Expr.StructGet(structsym, e, name, loc)
-      }
+    case DesugaredAst.Expr.StructGet(exp, name, loc) =>
+      val structSym = Symbol.mkStructSym(ns0, ns0.idents.last)
+      val e = visitExp(exp, ns0)
+      NamedAst.Expr.StructGet(structSym, e, name, loc)
 
-    case DesugaredAst.Expr.StructPut(e1, name, e2, loc) =>
-      val structsym = Symbol.mkStructSym(ns0, ns0.idents.last)
-      mapN(visitExp(e1, ns0), visitExp(e2, ns0)) {
-        case (e1, e2) => NamedAst.Expr.StructPut(structsym, e1, name, e2, loc)
-      }
+    case DesugaredAst.Expr.StructPut(exp1, name, exp2, loc) =>
+      val structSym = Symbol.mkStructSym(ns0, ns0.idents.last)
+      val e1 = visitExp(exp1, ns0)
+      val e2 = visitExp(exp2, ns0)
+      NamedAst.Expr.StructPut(structSym, e1, name, e2, loc)
 
     case DesugaredAst.Expr.VectorLit(exps, loc) =>
-      mapN(traverse(exps)(visitExp(_, ns0))) {
-        case es => NamedAst.Expr.VectorLit(es, loc)
-      }
+      val es = visitExps(exps, ns0)
+      NamedAst.Expr.VectorLit(es, loc)
 
     case DesugaredAst.Expr.VectorLoad(exp1, exp2, loc) =>
-      mapN(visitExp(exp1, ns0), visitExp(exp2, ns0)) {
-        case (e1, e2) => NamedAst.Expr.VectorLoad(e1, e2, loc)
-      }
+      val e1 = visitExp(exp1, ns0)
+      val e2 = visitExp(exp2, ns0)
+      NamedAst.Expr.VectorLoad(e1, e2, loc)
 
     case DesugaredAst.Expr.VectorLength(exp, loc) =>
-      mapN(visitExp(exp, ns0)) {
-        case e => NamedAst.Expr.VectorLength(e, loc)
-      }
+      val e = visitExp(exp, ns0)
+      NamedAst.Expr.VectorLength(e, loc)
 
     case DesugaredAst.Expr.Ref(exp1, exp2, loc) =>
-      mapN(visitExp(exp1, ns0), visitExp(exp2, ns0)) {
-        case (e1, e2) =>
-          NamedAst.Expr.Ref(e1, e2, loc)
-      }
+      val e1 = visitExp(exp1, ns0)
+      val e2 = visitExp(exp2, ns0)
+      NamedAst.Expr.Ref(e1, e2, loc)
 
     case DesugaredAst.Expr.Deref(exp, loc) =>
-      mapN(visitExp(exp, ns0)) {
-        case e =>
-          NamedAst.Expr.Deref(e, loc)
-      }
+      val e = visitExp(exp, ns0)
+      NamedAst.Expr.Deref(e, loc)
 
     case DesugaredAst.Expr.Assign(exp1, exp2, loc) =>
-      mapN(visitExp(exp1, ns0), visitExp(exp2, ns0)) {
-        case (e1, e2) =>
-          NamedAst.Expr.Assign(e1, e2, loc)
-      }
+      val e1 = visitExp(exp1, ns0)
+      val e2 = visitExp(exp2, ns0)
+      NamedAst.Expr.Assign(e1, e2, loc)
 
     case DesugaredAst.Expr.Ascribe(exp, tpe, eff, loc) =>
-      val expVal = visitExp(exp, ns0)
+      val e = visitExp(exp, ns0)
       val t = tpe.map(visitType)
       val ef = eff.map(visitType)
-      mapN(expVal) {
-        case e => NamedAst.Expr.Ascribe(e, t, ef, loc)
-      }
+      NamedAst.Expr.Ascribe(e, t, ef, loc)
 
     case DesugaredAst.Expr.InstanceOf(exp, className, loc) =>
-      mapN(visitExp(exp, ns0)) {
-        case e => NamedAst.Expr.InstanceOf(e, className, loc)
-      }
+      val e = visitExp(exp, ns0)
+      NamedAst.Expr.InstanceOf(e, className, loc)
 
     case DesugaredAst.Expr.CheckedCast(c, exp, loc) =>
-      mapN(visitExp(exp, ns0)) {
-        case e => NamedAst.Expr.CheckedCast(c, e, loc)
-      }
+      val e = visitExp(exp, ns0)
+      NamedAst.Expr.CheckedCast(c, e, loc)
 
     case DesugaredAst.Expr.UncheckedCast(exp, tpe, eff, loc) =>
-      val expVal = visitExp(exp, ns0)
+      val e = visitExp(exp, ns0)
       val t = tpe.map(visitType)
       val ef = eff.map(visitType)
-
-      mapN(expVal) {
-        case e => NamedAst.Expr.UncheckedCast(e, t, ef, loc)
-      }
+      NamedAst.Expr.UncheckedCast(e, t, ef, loc)
 
     case DesugaredAst.Expr.UncheckedMaskingCast(exp, loc) =>
       mapN(visitExp(exp, ns0)) {
@@ -1104,6 +1076,10 @@ object Namer {
       // that would duplicate the error inside the Validation.
       Validation.success(NamedAst.Expr.Error(m))
 
+  }
+
+  private def visitExps(exps0: List[DesugaredAst.Expr], ns0: Name.NName)(implicit flix: Flix, sctx: SharedContext): List[NamedAst.Expr] = {
+    exps0.map(visitExp(_, ns0))
   }
 
   /**
