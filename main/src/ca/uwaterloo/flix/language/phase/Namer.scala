@@ -563,7 +563,7 @@ object Namer {
       val sym = Symbol.mkEffectSym(ns0, ident)
 
       val mod = visitModifiers(mod0, ns0)
-      val ops = ops0.map(visitOp(_, ns0, sym))
+      val ops = visitOps(ops0, ns0, sym)
 
       Validation.success(NamedAst.Declaration.Effect(doc, ann, mod, sym, ops, loc))
   }
@@ -586,6 +586,13 @@ object Namer {
       val sym = Symbol.mkOpSym(effSym, ident)
       val spec = NamedAst.Spec(doc, ann, mod, tparams, fps, t, eff, tcsts, econstrs, loc)
       NamedAst.Declaration.Op(sym, spec)
+  }
+
+  /**
+    * Performs naming on the given effect operations `ops0`.
+    */
+  private def visitOps(ops0: List[DesugaredAst.Declaration.Op], ns0: Name.NName, effSym: Symbol.EffectSym)(implicit flix: Flix, sctx: SharedContext): List[NamedAst.Declaration.Op] = {
+    ops0.map(visitOp(_, ns0, effSym))
   }
 
   /**
