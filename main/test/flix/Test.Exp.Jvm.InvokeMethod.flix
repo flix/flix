@@ -1,5 +1,7 @@
 mod Test.Exp.Jvm.InvokeMethod {
 
+    import java.lang.{String => JString}
+
     @test
     def testInvokeMethod01(): Bool \ IO =
         import java.lang.String.toLowerCase(): String \ IO;
@@ -25,7 +27,7 @@ mod Test.Exp.Jvm.InvokeMethod {
         import java.lang.String.replaceAll(String, String): String \ IO;
         replaceAll("hello world", "hello", "goodbye") == "goodbye world"
 
-    type alias MyAliasedString = ##java.lang.String
+    type alias MyAliasedString = JString
 
     @test
     def testInvokeMethod06(): Bool \ IO =
@@ -38,8 +40,8 @@ mod Test.Exp.Jvm.InvokeMethod {
         toLowerCase("HELLO WORLD") == "hello world"
 
     @test
-    def testInvokeObjectMethod01(): ##java.lang.String \ IO =
-        import java.lang.String.toLowerCase(): ##java.lang.String \ IO;
+    def testInvokeObjectMethod01(): JString \ IO =
+        import java.lang.String.toLowerCase(): JString \ IO;
         toLowerCase("HELLO WORLD")
 
     @test
