@@ -46,11 +46,11 @@ mod Test.Exp.Jvm.InvokeConstructor2 {
 
     @test
     def testInvokeConstructor2_09(): JString \ IO =
-        new String("Hello World")
+        new JString("Hello World")
 
     @test
     def testInvokeObjectConstructor2_01(): Object \ IO =
-        let obj = new String("Hello World");
+        let obj = new JString("Hello World");
         (checked_cast(obj) : Object)
 
     @test
