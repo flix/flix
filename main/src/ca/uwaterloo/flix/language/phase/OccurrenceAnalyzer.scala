@@ -281,7 +281,8 @@ object OccurrenceAnalyzer {
     case Expr.StructPut(sym, e1, field, e2, tpe, purity, loc) =>
       val (exp1, o1) = visitExp(sym0, e1)
       val (exp2, o2) = visitExp(sym0, e2)
-      (OccurrenceAst.Expr.StructPut(sym, exp1, field, exp2, tpe, purity, loc), o2)
+      val o3 = combineAllSeq(o1, o2)
+      (OccurrenceAst.Expr.StructPut(sym, exp1, field, exp2, tpe, purity, loc), o3.increaseSizeByOne())
   }
 
   /**
