@@ -242,7 +242,7 @@ object Reducer {
           case Lazy(elm) => taskList.enqueue(elm)
           case Ref(elm) => taskList.enqueue(elm)
           case Tuple(elms) => taskList.enqueueAll(elms)
-          case Struct(_, elms, _) => taskList.enqueueAll(elms)
+          case Struct(_, _, targs) => taskList.enqueueAll(targs)
           case Arrow(targs, tresult) => taskList.enqueueAll(targs).enqueue(tresult)
           case RecordExtend(_, value, rest) => taskList.enqueue(value).enqueue(rest)
         }
