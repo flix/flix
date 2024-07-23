@@ -1,5 +1,9 @@
 mod Test.Exp.Jvm.InvokeStaticMethod {
 
+    import java.lang.{String => JString}
+    import java.nio.file.InvalidPathException
+    import java.nio.file.Path
+
     @test
     def testInvokeStaticMethod01(): Bool \ IO =
         import static java.lang.String.valueOf(Bool): String \ IO;
@@ -36,17 +40,17 @@ mod Test.Exp.Jvm.InvokeStaticMethod {
         valueOf(true) == "true"
 
     @test
-    def testInvokeObjectStaticMethod01(): ##java.lang.String \ IO =
-        import static java.lang.String.valueOf(Bool): ##java.lang.String \ IO;
+    def testInvokeObjectStaticMethod01(): JString \ IO =
+        import static java.lang.String.valueOf(Bool): JString \ IO;
         valueOf(true)
 
     @test
-    def testInvokeInterfaceStaticMethod02(): ##java.nio.file.Path \ IO = region rc {
-        import static java.nio.file.Path.of(String, Array[String, rc]): ##java.nio.file.Path \ IO as of1;
+    def testInvokeInterfaceStaticMethod02(): Path \ IO = region rc {
+        import static java.nio.file.Path.of(String, Array[String, rc]): Path \ IO as of1;
         try {
             of1("end", Array#{"p1", "p2", "p3"} @ rc)
         } catch {
-            case _: ##java.nio.file.InvalidPathException => checked_cast(null)
+            case _: InvalidPathException => checked_cast(null)
         }
     }
 
