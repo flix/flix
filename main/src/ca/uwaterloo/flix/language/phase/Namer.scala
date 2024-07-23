@@ -566,17 +566,15 @@ object Namer {
       val sym = Symbol.mkEffectSym(ns0, ident)
 
       val mod = visitModifiers(mod0, ns0)
-      val opsVal = traverse(ops0)(visitOp(_, ns0, sym))
+      val ops = ops0.map(visitOp(_, ns0, sym))
 
-      mapN(opsVal) {
-        case ops => NamedAst.Declaration.Effect(doc, ann, mod, sym, ops, loc)
-      }
+      Validation.success(NamedAst.Declaration.Effect(doc, ann, mod, sym, ops, loc))
   }
 
   /**
     * Performs naming on the given effect operation `op0`.
     */
-  private def visitOp(op0: DesugaredAst.Declaration.Op, ns0: Name.NName, effSym: Symbol.EffectSym)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.Declaration.Op, NameError] = op0 match {
+  private def visitOp(op0: DesugaredAst.Declaration.Op, ns0: Name.NName, effSym: Symbol.EffectSym)(implicit flix: Flix, sctx: SharedContext): NamedAst.Declaration.Op = op0 match {
     case DesugaredAst.Declaration.Op(doc, ann, mod0, ident, fparams, tpe, tconstrs, loc) =>
       // First visit all the top-level information
       val mod = visitModifiers(mod0, ns0)
@@ -590,7 +588,7 @@ object Namer {
 
       val sym = Symbol.mkOpSym(effSym, ident)
       val spec = NamedAst.Spec(doc, ann, mod, tparams, fps, t, eff, tcsts, econstrs, loc)
-      Validation.success(NamedAst.Declaration.Op(sym, spec))
+      NamedAst.Declaration.Op(sym, spec)
   }
 
   /**
