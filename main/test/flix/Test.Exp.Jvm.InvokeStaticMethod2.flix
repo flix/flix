@@ -7,31 +7,31 @@ mod Test.Exp.Jvm.InvokeStaticMethod2 {
 
     @test
     def testInvokeStaticMethod2_01(): Bool \ IO =
-        String¤valueOf(true) == "true"
+        JString¤valueOf(true) == "true"
 
     @test
     def testInvokeStaticMethod2_02(): Bool \ IO =
-        String¤valueOf('A') == "A"
+        JString¤valueOf('A') == "A"
 
     @test
     def testInvokeStaticMethod2_03(): Bool \ IO =
-        String¤valueOf(21.42f32) == "21.42"
+        JString¤valueOf(21.42f32) == "21.42"
 
     @test
     def testInvokeStaticMethod2_04(): Bool \ IO =
-        String¤valueOf(21.42f64) == "21.42"
+        JString¤valueOf(21.42f64) == "21.42"
 
     @test
     def testInvokeStaticMethod2_05(): Bool \ IO =
-        String¤valueOf(42i32) == "42"
+        JString¤valueOf(42i32) == "42"
 
     @test
     def testInvokeStaticMethod2_06(): Bool \ IO =
-        String¤valueOf(42i64) == "42"
+        JString¤valueOf(42i64) == "42"
 
     @test
     def testInvokeObjectStaticMethod01(): JString \ IO =
-        String¤valueOf(true)
+        JString¤valueOf(true)
 
     //@test
     //def testInvokeInterfaceStaticMethod02(): Path \ IO = region rc {
