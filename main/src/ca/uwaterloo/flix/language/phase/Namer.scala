@@ -401,13 +401,13 @@ object Namer {
   /**
     * Performs naming on the given associated type signature `s0`.
     */
-  private def visitAssocTypeSig(s0: DesugaredAst.Declaration.AssocTypeSig, trt: Symbol.TraitSym)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.Declaration.AssocTypeSig, NameError] = s0 match {
+  private def visitAssocTypeSig(s0: DesugaredAst.Declaration.AssocTypeSig, trt: Symbol.TraitSym)(implicit flix: Flix, sctx: SharedContext): NamedAst.Declaration.AssocTypeSig = s0 match {
     case DesugaredAst.Declaration.AssocTypeSig(doc, mod, ident, tparams0, kind0, tpe, loc) =>
       val sym = Symbol.mkAssocTypeSym(trt, ident)
       val tparam = visitTypeParam(tparams0)
       val kind = visitKind(kind0)
       val t = tpe.map(visitType)
-      Validation.success(NamedAst.Declaration.AssocTypeSig(doc, mod, sym, tparam, kind, t, loc))
+      NamedAst.Declaration.AssocTypeSig(doc, mod, sym, tparam, kind, t, loc)
   }
 
   /**
@@ -430,12 +430,12 @@ object Namer {
       val tparam = visitTypeParam(tparams0)
 
       val sts = visitTypeConstraints(superTraits)
-      val assocsVal = traverse(assocs0)(visitAssocTypeSig(_, sym)) // TODO switch param order to match visitSig
+      val assocs = assocs0.map(visitAssocTypeSig(_, sym)) // TODO switch param order to match visitSig
       val sigsVal = traverse(signatures)(visitSig(_, ns0, sym))
       val lawsVal = traverse(laws0)(visitDef(_, ns0, DefKind.Member))
 
-      mapN(assocsVal, sigsVal, lawsVal) {
-        case (assocs, sigs, laws) =>
+      mapN(sigsVal, lawsVal) {
+        case (sigs, laws) =>
           NamedAst.Declaration.Trait(doc, ann, mod, sym, tparam, sts, assocs, sigs, laws, loc)
       }
   }
