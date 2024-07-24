@@ -759,17 +759,15 @@ object Namer {
       val e = visitExp(exp, ns0)
       NamedAst.Expr.ArrayLength(e, loc)
 
-    case DesugaredAst.Expr.StructNew(name, exps0, region0, loc) =>
+    case DesugaredAst.Expr.StructNew(name, exps, exp, loc) =>
       val structsym = Symbol.mkStructSym(name.namespace, name.ident)
-      val expsVal = traverse(exps0) {
-        case (n, e) => mapN(visitExp(e, ns0)) {
-          case e => (Symbol.mkStructFieldSym(structsym, n), e)
-        }
+      val e = visitExp(exp, ns0)
+      val es = exps.map {
+        case (n, exp1) =>
+          val e = visitExp(exp1, ns0)
+          (Symbol.mkStructFieldSym(structsym, n), e)
       }
-      val regionVal = visitExp(region0, ns0)
-      mapN(expsVal, regionVal) {
-        case (exps, region) => NamedAst.Expr.StructNew(structsym, exps, region, loc)
-      }
+      NamedAst.Expr.StructNew(structsym, es, e, loc)
 
     case DesugaredAst.Expr.StructGet(exp, name, loc) =>
       val structSym = Symbol.mkStructSym(ns0, ns0.idents.last)
@@ -838,33 +836,24 @@ object Namer {
       NamedAst.Expr.Without(e, eff, loc)
 
     case DesugaredAst.Expr.TryCatch(exp, rules, loc) =>
-      val expVal = visitExp(exp, ns0)
-      val rulesVal = traverse(rules) {
+      val e = visitExp(exp, ns0)
+      val rs = rules.map {
         case DesugaredAst.CatchRule(ident, className, body) =>
           val sym = Symbol.freshVarSym(ident, BoundBy.CatchRule)
-          val bodyVal = visitExp(body, ns0)
-          mapN(bodyVal) {
-            b => NamedAst.CatchRule(sym, className, b)
-          }
+          val b = visitExp(body, ns0)
+          NamedAst.CatchRule(sym, className, b)
       }
+      NamedAst.Expr.TryCatch(e, rs, loc)
 
-      mapN(expVal, rulesVal) {
-        case (e, rs) => NamedAst.Expr.TryCatch(e, rs, loc)
-      }
-
-    case DesugaredAst.Expr.TryWith(e0, eff, rules0, loc) =>
-      val eVal = visitExp(e0, ns0)
-      val rulesVal = traverse(rules0) {
+    case DesugaredAst.Expr.TryWith(exp, eff, rules, loc) =>
+      val e = visitExp(exp, ns0)
+      val rs = rules.map {
         case DesugaredAst.HandlerRule(op, fparams, body0) =>
           val fps = visitFormalParams(fparams)
-          val bodyVal = visitExp(body0, ns0)
-          mapN(bodyVal) {
-            body => NamedAst.HandlerRule(op, fps, body)
-          }
+          val b = visitExp(body0, ns0)
+          NamedAst.HandlerRule(op, fps, b)
       }
-      mapN(eVal, rulesVal) {
-        case (e, rules) => NamedAst.Expr.TryWith(e, eff, rules, loc)
-      }
+      NamedAst.Expr.TryWith(e, eff, rs, loc)
 
     case DesugaredAst.Expr.Do(op, exps, loc) =>
       val es = visitExps(exps, ns0)
@@ -1404,7 +1393,7 @@ object Namer {
   /**
     * Translates the given weeded JvmMethod to a named JvmMethod.
     */
-  private def visitJvmMethod(method: DesugaredAst.JvmMethod, ns0: Name.NName)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.JvmMethod, NameError] = method match {
+  private def visitJvmMethod(method: DesugaredAst.JvmMethod, ns0: Name.NName)(implicit flix: Flix, sctx: SharedContext): NamedAst.JvmMethod = method match {
     case DesugaredAst.JvmMethod(ident, fparams, exp0, tpe, eff, loc) =>
       val fps = visitFormalParams(fparams)
       val t = visitType(tpe)
