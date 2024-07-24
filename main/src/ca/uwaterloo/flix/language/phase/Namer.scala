@@ -86,7 +86,7 @@ object Namer {
   private def visitDecl(decl0: DesugaredAst.Declaration, ns0: Name.NName)(implicit sctx: SharedContext, flix: Flix): Validation[NamedAst.Declaration, NameError] = decl0 match {
     case decl: DesugaredAst.Declaration.Namespace => visitNamespace(decl, ns0)
     case decl: DesugaredAst.Declaration.Trait => visitTrait(decl, ns0)
-    case decl: DesugaredAst.Declaration.Instance => visitInstance(decl, ns0)
+    case decl: DesugaredAst.Declaration.Instance => Validation.success(visitInstance(decl, ns0))
     case decl: DesugaredAst.Declaration.Def => Validation.success(visitDef(decl, ns0, DefKind.NonMember))
     case decl: DesugaredAst.Declaration.Enum => Validation.success(visitEnum(decl, ns0))
     case decl: DesugaredAst.Declaration.Struct => Validation.success(visitStruct(decl, ns0))
@@ -454,14 +454,14 @@ object Namer {
   /**
     * Performs naming on the given instance `instance`.
     */
-  private def visitInstance(instance: DesugaredAst.Declaration.Instance, ns0: Name.NName)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.Declaration.Instance, NameError] = instance match {
+  private def visitInstance(instance: DesugaredAst.Declaration.Instance, ns0: Name.NName)(implicit flix: Flix, sctx: SharedContext): NamedAst.Declaration.Instance = instance match {
     case DesugaredAst.Declaration.Instance(doc, ann, mod, clazz, tpe, tconstrs, assocs, defs, loc) =>
       val tparams = getImplicitTypeParamsFromTypes(List(tpe))
       val t = visitType(tpe)
       val tcsts = visitTypeConstraints(tconstrs)
       val ascs = visitAssocTypeDefs(assocs)
       val ds = visitDefs(defs, ns0)
-      Validation.success(NamedAst.Declaration.Instance(doc, ann, mod, clazz, tparams, t, tcsts, ascs, ds, ns0.parts, loc))
+      NamedAst.Declaration.Instance(doc, ann, mod, clazz, tparams, t, tcsts, ascs, ds, ns0.parts, loc)
   }
 
   /**
