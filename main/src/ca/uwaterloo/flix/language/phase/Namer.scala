@@ -445,11 +445,11 @@ object Namer {
 
       val sts = visitTypeConstraints(superTraits)
       val ascs = visitAssocTypeSigs(assocs, sym) // TODO switch param order to match visitSig
-      val sigsVal = traverse(signatures)(visitSig(_, ns0, sym))
+      val sigs = signatures.map(visitSig(_, ns0, sym))
       val lawsVal = traverse(laws0)(visitDef(_, ns0, DefKind.Member))
 
-      mapN(sigsVal, lawsVal) {
-        case (sigs, laws) =>
+      mapN(lawsVal) {
+        case laws =>
           NamedAst.Declaration.Trait(doc, ann, mod, sym, tparam, sts, ascs, sigs, laws, loc)
       }
   }
@@ -505,7 +505,7 @@ object Namer {
   /**
     * Performs naming on the given signature declaration `sig`.
     */
-  private def visitSig(sig: DesugaredAst.Declaration.Sig, ns0: Name.NName, traitSym: Symbol.TraitSym)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.Declaration.Sig, NameError] = sig match {
+  private def visitSig(sig: DesugaredAst.Declaration.Sig, ns0: Name.NName, traitSym: Symbol.TraitSym)(implicit flix: Flix, sctx: SharedContext): NamedAst.Declaration.Sig = sig match {
     case DesugaredAst.Declaration.Sig(doc, ann, mod0, ident, tparams0, fparams, exp, tpe, eff, tconstrs, econstrs, loc) =>
       val tparams = getTypeParamsFromFormalParams(tparams0, fparams, tpe, eff, econstrs)
 
@@ -522,7 +522,7 @@ object Namer {
 
       val sym = Symbol.mkSigSym(traitSym, ident)
       val spec = NamedAst.Spec(doc, ann, mod, tparams, fps, t, ef, tcsts, ecsts, loc)
-      Validation.success(NamedAst.Declaration.Sig(sym, spec, e))
+      NamedAst.Declaration.Sig(sym, spec, e)
   }
 
   /**
@@ -1064,7 +1064,7 @@ object Namer {
   /**
     * Names the given pattern `pat0`
     */
-  private def visitRestrictablePattern(pat0: DesugaredAst.RestrictableChoosePattern)(implicit flix: Flix, sctx: SharedContext): NamedAst.RestrictableChoosePattern = {
+  private def visitRestrictablePattern(pat0: DesugaredAst.RestrictableChoosePattern)(implicit flix: Flix): NamedAst.RestrictableChoosePattern = {
     def visitVarPlace(vp: DesugaredAst.RestrictableChoosePattern.VarOrWild): NamedAst.RestrictableChoosePattern.VarOrWild = vp match {
       case RestrictableChoosePattern.Wild(loc) => NamedAst.RestrictableChoosePattern.Wild(loc)
       case RestrictableChoosePattern.Var(ident, loc) =>
