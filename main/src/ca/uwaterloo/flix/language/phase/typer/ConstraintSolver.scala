@@ -426,7 +426,10 @@ object ConstraintSolver {
         res <- resolveEqualityStar(t1, t2, prov, renv, loc)
       } yield res
 
-    case _ => Err(toTypeError(UnificationError.MismatchedTypes(tpe1, tpe2), prov))
+    case (k1, k2) =>
+      println(k1)
+      println(k2)
+      Err(toTypeError(UnificationError.MismatchedTypes(tpe1, tpe2), prov))
   }
 
   /**
