@@ -759,11 +759,7 @@ object Namer {
     case DesugaredAst.Expr.StructNew(name, exps, exp, loc) =>
       val structSym = Symbol.mkStructSym(name.namespace, name.ident)
       val e = visitExp(exp, ns0)
-      val es = exps.map {
-        case (n, exp1) =>
-          val e = visitExp(exp1, ns0)
-          (Symbol.mkStructFieldSym(structSym, n), e)
-      }
+      val es = visitStructFields(exps, ns0, structSym)
       NamedAst.Expr.StructNew(structSym, es, e, loc)
 
     case DesugaredAst.Expr.StructGet(exp, name, loc) =>
@@ -1052,6 +1048,22 @@ object Namer {
     */
   private def visitRestrictableChooseRules(rules0: List[DesugaredAst.RestrictableChooseRule], ns0: Name.NName)(implicit flix: Flix, sctx: SharedContext): List[NamedAst.RestrictableChooseRule] = {
     rules0.map(visitRestrictableChooseRule(_, ns0))
+  }
+
+  /**
+    * Performs naming on the given struct field expression `exp0`.
+    */
+  private def visitStructField(exp0: (Name.Ident, DesugaredAst.Expr), ns0: Name.NName, structSym: Symbol.StructSym)(implicit flix: Flix, sctx: SharedContext): (Symbol.StructFieldSym, NamedAst.Expr) = exp0 match {
+    case (n, exp1) =>
+      val e = visitExp(exp1, ns0)
+      (Symbol.mkStructFieldSym(structSym, n), e)
+  }
+
+  /**
+    * Performs naming on the given struct field expressions `exps0`.
+    */
+  private def visitStructFields(exps0: List[(Name.Ident, DesugaredAst.Expr)], ns0: Name.NName, structSym: Symbol.StructSym)(implicit flix: Flix, sctx: SharedContext): List[(Symbol.StructFieldSym, NamedAst.Expr)] = {
+    exps0.map(visitStructField(_, ns0, structSym))
   }
 
   /**
