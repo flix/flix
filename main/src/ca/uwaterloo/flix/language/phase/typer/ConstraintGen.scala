@@ -576,11 +576,12 @@ object ConstraintGen {
 
       case Expr.StructNew(sym, fields, region, tvar, evar, loc) =>
         val (structType, ts) = instantiateStruct(sym, root.structs)
-        val fieldTypes = fields.sortBy(_._1.name).map(field => visitExp(field._2))
+        val sortedFields = fields.sortBy(_._1.name)
+        val fieldTypes = sortedFields.map(field => visitExp(field._2))
         // Struct type overall
         c.unifyType(tvar, Type.mkStruct(sym, structType.fields.toList.sortBy(_._1.name).map(_._2.tpe), ts, loc), loc)
         // Fields
-        val effs = fields.zip(fieldTypes).map {
+        val effs = sortedFields.zip(fieldTypes).map {
           case ((fieldSym, expr), (fieldTpe, fieldEff)) =>
             val field = structType.fields(fieldSym)
             c.unifyType(field.tpe, fieldTpe, expr.loc)
