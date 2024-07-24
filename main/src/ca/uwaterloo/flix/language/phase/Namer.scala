@@ -967,40 +967,33 @@ object Namer {
 
     case DesugaredAst.Expr.FixpointLambda(pparams, exp, loc) =>
       val ps = pparams.map(visitPredicateParam)
-      val expVal = visitExp(exp, ns0)
-      mapN(expVal) {
-        case e => NamedAst.Expr.FixpointLambda(ps, e, loc)
-      }
+      val e = visitExp(exp, ns0)
+      NamedAst.Expr.FixpointLambda(ps, e, loc)
 
     case DesugaredAst.Expr.FixpointMerge(exp1, exp2, loc) =>
-      mapN(visitExp(exp1, ns0), visitExp(exp2, ns0)) {
-        case (e1, e2) => NamedAst.Expr.FixpointMerge(e1, e2, loc)
-      }
+      val e1 = visitExp(exp1, ns0)
+      val e2 = visitExp(exp2, ns0)
+      NamedAst.Expr.FixpointMerge(e1, e2, loc)
 
     case DesugaredAst.Expr.FixpointSolve(exp, loc) =>
-      mapN(visitExp(exp, ns0)) {
-        case e => NamedAst.Expr.FixpointSolve(e, loc)
-      }
+      val e = visitExp(exp, ns0)
+      NamedAst.Expr.FixpointSolve(e, loc)
 
     case DesugaredAst.Expr.FixpointFilter(ident, exp, loc) =>
-      mapN(visitExp(exp, ns0)) {
-        case e => NamedAst.Expr.FixpointFilter(ident, e, loc)
-      }
+      val e = visitExp(exp, ns0)
+      NamedAst.Expr.FixpointFilter(ident, e, loc)
 
     case DesugaredAst.Expr.FixpointInject(exp, pred, loc) =>
-      mapN(visitExp(exp, ns0)) {
-        case e => NamedAst.Expr.FixpointInject(e, pred, loc)
-      }
+      val e = visitExp(exp, ns0)
+      NamedAst.Expr.FixpointInject(e, pred, loc)
 
     case DesugaredAst.Expr.FixpointProject(pred, exp1, exp2, loc) =>
-      mapN(visitExp(exp1, ns0), visitExp(exp2, ns0)) {
-        case (e1, e2) => NamedAst.Expr.FixpointProject(pred, e1, e2, loc)
-      }
+      val e1 = visitExp(exp1, ns0)
+      val e2 = visitExp(exp2, ns0)
+      NamedAst.Expr.FixpointProject(pred, e1, e2, loc)
 
     case DesugaredAst.Expr.Error(m) =>
-      // Note: We must NOT use [[Validation.toSoftFailure]] because
-      // that would duplicate the error inside the Validation.
-      Validation.success(NamedAst.Expr.Error(m))
+      NamedAst.Expr.Error(m)
 
   }
 
