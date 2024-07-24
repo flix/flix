@@ -910,14 +910,7 @@ object Namer {
       NamedAst.Expr.PutChannel(e1, e2, loc)
 
     case DesugaredAst.Expr.SelectChannel(rules, exp, loc) =>
-      val rs = rules.map {
-        case DesugaredAst.SelectChannelRule(ident, exp1, exp2) =>
-          // make a fresh variable symbol for the local recursive variable.
-          val sym = Symbol.freshVarSym(ident, BoundBy.SelectRule)
-          val e1 = visitExp(exp1, ns0)
-          val e2 = visitExp(exp2, ns0)
-          NamedAst.SelectChannelRule(sym, e1, e2)
-      }
+      val rs = visitSelectChannelRules(rules, ns0)
       val e = exp.map(visitExp(_, ns0))
       NamedAst.Expr.SelectChannel(rs, e, loc)
 
@@ -1088,6 +1081,25 @@ object Namer {
     */
   private def visitTryWithRules(rules0: List[DesugaredAst.HandlerRule], ns0: Name.NName)(implicit flix: Flix, sctx: SharedContext): List[NamedAst.HandlerRule] = {
     rules0.map(visitTryWithRule(_, ns0))
+  }
+
+  /**
+    * Performs naming on the given select channel rule `rule0`.
+    */
+  private def visitSelectChannelRule(rule0: DesugaredAst.SelectChannelRule, ns0: Name.NName)(implicit flix: Flix, sctx: SharedContext): NamedAst.SelectChannelRule = rule0 match {
+    case DesugaredAst.SelectChannelRule(ident, exp1, exp2) =>
+      // make a fresh variable symbol for the local recursive variable.
+      val sym = Symbol.freshVarSym(ident, BoundBy.SelectRule)
+      val e1 = visitExp(exp1, ns0)
+      val e2 = visitExp(exp2, ns0)
+      NamedAst.SelectChannelRule(sym, e1, e2)
+  }
+
+  /**
+    * Performs naming on the given select channel rules `rules0`.
+    */
+  private def visitSelectChannelRules(rules0: List[DesugaredAst.SelectChannelRule], ns0: Name.NName)(implicit flix: Flix, sctx: SharedContext): List[NamedAst.SelectChannelRule] = {
+    rules0.map(visitSelectChannelRule(_, ns0))
   }
 
   /**
