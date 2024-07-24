@@ -23,7 +23,6 @@ import ca.uwaterloo.flix.language.ast.DesugaredAst.{Declaration, RestrictableCho
 import ca.uwaterloo.flix.language.ast.{NamedAst, _}
 import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.language.errors.NameError
-import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
@@ -49,33 +48,30 @@ object Namer {
         case (macc, root) => macc + (root.loc.source -> root.loc)
       }
 
-      val unitsVal = ParOps.parTraverseValues(program.units)(visitUnit)
+      val units = ParOps.parMap(program.units) { case (s, u) => (s, visitUnit(u)) }.toMap
+      val SymbolTable(symbols0, instances0, uses0) = units.values.foldLeft(SymbolTable.empty)(tableUnit)
 
-      flatMapN(unitsVal) {
-        case units =>
-          val SymbolTable(symbols0, instances0, uses0) = units.values.foldLeft(SymbolTable.empty)(tableUnit)
-          // TODO NS-REFACTOR remove use of NName
-          val symbols = symbols0.map {
-            case (k, v) => Name.mkUnlocatedNName(k) -> v.m
-          }
-          val instances = instances0.map {
-            case (k, v) => Name.mkUnlocatedNName(k) -> v
-          }
-          val uses = uses0.map {
-            case (k, v) => Name.mkUnlocatedNName(k) -> v
-          }
-          Validation.toSuccessOrSoftFailure(NamedAst.Root(symbols, instances, uses, units, program.entryPoint, locations, program.names), sctx.errors.asScala)
+      // TODO NS-REFACTOR remove use of NName
+      val symbols = symbols0.map {
+        case (k, v) => Name.mkUnlocatedNName(k) -> v.m
       }
+      val instances = instances0.map {
+        case (k, v) => Name.mkUnlocatedNName(k) -> v
+      }
+      val uses = uses0.map {
+        case (k, v) => Name.mkUnlocatedNName(k) -> v
+      }
+      Validation.toSuccessOrSoftFailure(NamedAst.Root(symbols, instances, uses, units, program.entryPoint, locations, program.names), sctx.errors.asScala)
     }(DebugValidation())
 
   /**
     * Performs naming on the given compilation unit `unit` under the given (partial) program `prog0`.
     */
-  private def visitUnit(unit: DesugaredAst.CompilationUnit)(implicit sctx: SharedContext, flix: Flix): Validation[NamedAst.CompilationUnit, NameError] = unit match {
+  private def visitUnit(unit: DesugaredAst.CompilationUnit)(implicit sctx: SharedContext, flix: Flix): NamedAst.CompilationUnit = unit match {
     case DesugaredAst.CompilationUnit(usesAndImports0, decls, loc) =>
       val usesAndImports = usesAndImports0.map(visitUseOrImport)
       val ds = visitDecls(decls, Name.RootNS)
-      Validation.success(NamedAst.CompilationUnit(usesAndImports, ds, loc))
+      NamedAst.CompilationUnit(usesAndImports, ds, loc)
   }
 
   /**
