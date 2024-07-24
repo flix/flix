@@ -361,9 +361,6 @@ object TypeError {
     * @param loc       the location where the error occurred.
     */
   case class MismatchedTypes(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    println(fullType1.typeConstructors)
-    println(fullType2.typeConstructors)
-    throw new RuntimeException("HI")
     def summary: String = s"Unable to unify the types '${formatType(fullType1, Some(renv))}' and '${formatType(fullType2, Some(renv))}'."
 
     def message(formatter: Formatter): String = {
