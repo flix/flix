@@ -19,7 +19,6 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, Source}
 import ca.uwaterloo.flix.language.ast.DesugaredAst.Pattern.Record
-import ca.uwaterloo.flix.language.ast.DesugaredAst.RestrictableChoosePattern
 import ca.uwaterloo.flix.language.ast.{NamedAst, _}
 import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.language.errors.NameError
@@ -1157,8 +1156,8 @@ object Namer {
     */
   private def visitRestrictablePattern(pat0: DesugaredAst.RestrictableChoosePattern)(implicit flix: Flix): NamedAst.RestrictableChoosePattern = {
     def visitVarPlace(vp: DesugaredAst.RestrictableChoosePattern.VarOrWild): NamedAst.RestrictableChoosePattern.VarOrWild = vp match {
-      case RestrictableChoosePattern.Wild(loc) => NamedAst.RestrictableChoosePattern.Wild(loc)
-      case RestrictableChoosePattern.Var(ident, loc) =>
+      case DesugaredAst.RestrictableChoosePattern.Wild(loc) => NamedAst.RestrictableChoosePattern.Wild(loc)
+      case DesugaredAst.RestrictableChoosePattern.Var(ident, loc) =>
         // make a fresh variable symbol for the local variable.
         val sym = Symbol.freshVarSym(ident, BoundBy.Pattern)
         NamedAst.RestrictableChoosePattern.Var(sym, loc)
