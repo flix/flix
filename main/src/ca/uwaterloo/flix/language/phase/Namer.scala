@@ -87,7 +87,7 @@ object Namer {
     case decl: DesugaredAst.Declaration.Namespace => visitNamespace(decl, ns0)
     case decl: DesugaredAst.Declaration.Trait => visitTrait(decl, ns0)
     case decl: DesugaredAst.Declaration.Instance => visitInstance(decl, ns0)
-    case decl: DesugaredAst.Declaration.Def => visitDef(decl, ns0, DefKind.NonMember)
+    case decl: DesugaredAst.Declaration.Def => Validation.success(visitDef(decl, ns0, DefKind.NonMember))
     case decl: DesugaredAst.Declaration.Enum => Validation.success(visitEnum(decl, ns0))
     case decl: DesugaredAst.Declaration.Struct => Validation.success(visitStruct(decl, ns0))
     case decl: DesugaredAst.Declaration.RestrictableEnum => Validation.success(visitRestrictableEnum(decl, ns0))
@@ -438,7 +438,7 @@ object Namer {
     * Performs naming on the given trait `trt`.
     */
   private def visitTrait(trt: DesugaredAst.Declaration.Trait, ns0: Name.NName)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.Declaration.Trait, NameError] = trt match {
-    case DesugaredAst.Declaration.Trait(doc, ann, mod0, ident, tparams0, superTraits, assocs, signatures, laws0, loc) =>
+    case DesugaredAst.Declaration.Trait(doc, ann, mod0, ident, tparams0, superTraits, assocs, signatures, laws, loc) =>
       val sym = Symbol.mkTraitSym(ns0, ident)
       val mod = visitModifiers(mod0, ns0)
       val tparam = visitTypeParam(tparams0)
@@ -446,27 +446,22 @@ object Namer {
       val sts = visitTypeConstraints(superTraits)
       val ascs = visitAssocTypeSigs(assocs, sym) // TODO switch param order to match visitSig
       val sigs = visitSigs(signatures, ns0, sym)
-      val lawsVal = traverse(laws0)(visitDef(_, ns0, DefKind.Member))
+      val ls = laws.map(visitDef(_, ns0, DefKind.Member))
 
-      mapN(lawsVal) {
-        case laws =>
-          NamedAst.Declaration.Trait(doc, ann, mod, sym, tparam, sts, ascs, sigs, laws, loc)
-      }
+      Validation.success(NamedAst.Declaration.Trait(doc, ann, mod, sym, tparam, sts, ascs, sigs, ls, loc))
   }
 
   /**
     * Performs naming on the given instance `instance`.
     */
   private def visitInstance(instance: DesugaredAst.Declaration.Instance, ns0: Name.NName)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.Declaration.Instance, NameError] = instance match {
-    case DesugaredAst.Declaration.Instance(doc, ann, mod, clazz, tpe, tconstrs, assocs, defs0, loc) =>
+    case DesugaredAst.Declaration.Instance(doc, ann, mod, clazz, tpe, tconstrs, assocs, defs, loc) =>
       val tparams = getImplicitTypeParamsFromTypes(List(tpe))
       val t = visitType(tpe)
       val tcsts = visitTypeConstraints(tconstrs)
       val ascs = visitAssocTypeDefs(assocs)
-      val defsVal = traverse(defs0)(visitDef(_, ns0, DefKind.Member))
-      mapN(defsVal) {
-        defs => NamedAst.Declaration.Instance(doc, ann, mod, clazz, tparams, t, tcsts, ascs, defs, ns0.parts, loc)
-      }
+      val ds = defs.map(visitDef(_, ns0, DefKind.Member))
+      Validation.success(NamedAst.Declaration.Instance(doc, ann, mod, clazz, tparams, t, tcsts, ascs, ds, ns0.parts, loc))
   }
 
   /**
@@ -535,7 +530,7 @@ object Namer {
   /**
     * Performs naming on the given definition declaration `decl0`.
     */
-  private def visitDef(decl0: DesugaredAst.Declaration.Def, ns0: Name.NName, defKind: DefKind)(implicit flix: Flix, sctx: SharedContext): Validation[NamedAst.Declaration.Def, NameError] = decl0 match {
+  private def visitDef(decl0: DesugaredAst.Declaration.Def, ns0: Name.NName, defKind: DefKind)(implicit flix: Flix, sctx: SharedContext): NamedAst.Declaration.Def = decl0 match {
     case DesugaredAst.Declaration.Def(doc, ann, mod0, ident, tparams0, fparams, exp, tpe, eff, tconstrs, econstrs, loc) =>
       flix.subtask(ident.name, sample = true)
 
@@ -560,7 +555,7 @@ object Namer {
       }
       val sym = Symbol.mkDefnSym(ns0, ident, id)
       val spec = NamedAst.Spec(doc, ann, mod, tparams, fps, t, ef, tcsts, ecsts, loc)
-      Validation.success(NamedAst.Declaration.Def(sym, spec, e))
+      NamedAst.Declaration.Def(sym, spec, e)
   }
 
   /**
