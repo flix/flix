@@ -446,7 +446,7 @@ object Namer {
       val sts = visitTypeConstraints(superTraits)
       val ascs = visitAssocTypeSigs(assocs, sym) // TODO switch param order to match visitSig
       val sigs = visitSigs(signatures, ns0, sym)
-      val ls = laws.map(visitDef(_, ns0, DefKind.Member))
+      val ls = visitDefs(laws, ns0)
 
       Validation.success(NamedAst.Declaration.Trait(doc, ann, mod, sym, tparam, sts, ascs, sigs, ls, loc))
   }
@@ -460,7 +460,7 @@ object Namer {
       val t = visitType(tpe)
       val tcsts = visitTypeConstraints(tconstrs)
       val ascs = visitAssocTypeDefs(assocs)
-      val ds = defs.map(visitDef(_, ns0, DefKind.Member))
+      val ds = visitDefs(defs, ns0)
       Validation.success(NamedAst.Declaration.Instance(doc, ann, mod, clazz, tparams, t, tcsts, ascs, ds, ns0.parts, loc))
   }
 
@@ -556,6 +556,13 @@ object Namer {
       val sym = Symbol.mkDefnSym(ns0, ident, id)
       val spec = NamedAst.Spec(doc, ann, mod, tparams, fps, t, ef, tcsts, ecsts, loc)
       NamedAst.Declaration.Def(sym, spec, e)
+  }
+
+  /**
+    * Performs naming on the given definition declarations `decls0`.
+    */
+  private def visitDefs(decls0: List[Declaration.Def], ns0: Name.NName)(implicit flix: Flix, sctx: SharedContext): List[NamedAst.Declaration.Def] = {
+    decls0.map(visitDef(_, ns0, DefKind.Member))
   }
 
   /**
