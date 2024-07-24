@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, Source}
 import ca.uwaterloo.flix.language.ast.DesugaredAst.Pattern.Record
-import ca.uwaterloo.flix.language.ast.DesugaredAst.{Declaration, RestrictableChoosePattern}
+import ca.uwaterloo.flix.language.ast.DesugaredAst.RestrictableChoosePattern
 import ca.uwaterloo.flix.language.ast.{NamedAst, _}
 import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.language.errors.NameError
@@ -522,7 +522,7 @@ object Namer {
   /**
     * Performs naming on the given signature declarations `sigs0`.
     */
-  private def visitSigs(sigs0: List[Declaration.Sig], ns0: Name.NName, sym: Symbol.TraitSym)(implicit flix: Flix, sctx: SharedContext): List[NamedAst.Declaration.Sig] = {
+  private def visitSigs(sigs0: List[DesugaredAst.Declaration.Sig], ns0: Name.NName, sym: Symbol.TraitSym)(implicit flix: Flix, sctx: SharedContext): List[NamedAst.Declaration.Sig] = {
     sigs0.map(visitSig(_, ns0, sym))
   }
 
@@ -560,7 +560,7 @@ object Namer {
   /**
     * Performs naming on the given definition declarations `decls0`.
     */
-  private def visitDefs(decls0: List[Declaration.Def], ns0: Name.NName)(implicit flix: Flix, sctx: SharedContext): List[NamedAst.Declaration.Def] = {
+  private def visitDefs(decls0: List[DesugaredAst.Declaration.Def], ns0: Name.NName)(implicit flix: Flix, sctx: SharedContext): List[NamedAst.Declaration.Def] = {
     decls0.map(visitDef(_, ns0, DefKind.Member))
   }
 
