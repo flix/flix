@@ -702,13 +702,7 @@ object Namer {
 
     case DesugaredAst.Expr.TypeMatch(exp, rules, loc) =>
       val e = visitExp(exp, ns0)
-      val rs = rules.map {
-        case DesugaredAst.TypeMatchRule(ident, tpe, body) =>
-          val sym = Symbol.freshVarSym(ident, BoundBy.Pattern)
-          val t = visitType(tpe)
-          val b = visitExp(body, ns0)
-          NamedAst.TypeMatchRule(sym, t, b)
-      }
+      val rs = visitTypeMatchRules(rules, ns0)
       NamedAst.Expr.TypeMatch(e, rs, loc)
 
     case DesugaredAst.Expr.RestrictableChoose(star, exp, rules, loc) =>
@@ -1030,6 +1024,23 @@ object Namer {
     rules0.map(visitMatchRule(_, ns0))
   }
 
+  /**
+    * Performs naming on the given typematch rule `rule0`.
+    */
+  private def visitTypeMatchRule(rule0: DesugaredAst.TypeMatchRule, ns0: Name.NName)(implicit flix: Flix, sctx: SharedContext): NamedAst.TypeMatchRule = rule0 match {
+    case DesugaredAst.TypeMatchRule(ident, tpe, body) =>
+      val sym = Symbol.freshVarSym(ident, BoundBy.Pattern)
+      val t = visitType(tpe)
+      val b = visitExp(body, ns0)
+      NamedAst.TypeMatchRule(sym, t, b)
+  }
+
+  /**
+    * Performs naming on the given typematch rules `rules0`.
+    */
+  private def visitTypeMatchRules(rules0: List[DesugaredAst.TypeMatchRule], ns0: Name.NName)(implicit flix: Flix, sctx: SharedContext): List[NamedAst.TypeMatchRule] = {
+    rules0.map(visitTypeMatchRule(_, ns0))
+  }
 
   /**
     * Names the given pattern `pat0`.
