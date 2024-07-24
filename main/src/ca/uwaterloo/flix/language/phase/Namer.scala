@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, Source}
 import ca.uwaterloo.flix.language.ast.DesugaredAst.Pattern.Record
-import ca.uwaterloo.flix.language.ast.DesugaredAst.RestrictableChoosePattern
+import ca.uwaterloo.flix.language.ast.DesugaredAst.{Declaration, RestrictableChoosePattern}
 import ca.uwaterloo.flix.language.ast.{NamedAst, _}
 import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.language.errors.NameError
@@ -445,7 +445,7 @@ object Namer {
 
       val sts = visitTypeConstraints(superTraits)
       val ascs = visitAssocTypeSigs(assocs, sym) // TODO switch param order to match visitSig
-      val sigs = signatures.map(visitSig(_, ns0, sym))
+      val sigs = visitSigs(signatures, ns0, sym)
       val lawsVal = traverse(laws0)(visitDef(_, ns0, DefKind.Member))
 
       mapN(lawsVal) {
@@ -523,6 +523,13 @@ object Namer {
       val sym = Symbol.mkSigSym(traitSym, ident)
       val spec = NamedAst.Spec(doc, ann, mod, tparams, fps, t, ef, tcsts, ecsts, loc)
       NamedAst.Declaration.Sig(sym, spec, e)
+  }
+
+  /**
+    * Performs naming on the given signature declarations `sigs0`.
+    */
+  private def visitSigs(sigs0: List[Declaration.Sig], ns0: Name.NName, sym: Symbol.TraitSym)(implicit flix: Flix, sctx: SharedContext): List[NamedAst.Declaration.Sig] = {
+    sigs0.map(visitSig(_, ns0, sym))
   }
 
   /**
