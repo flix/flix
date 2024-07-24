@@ -835,12 +835,7 @@ object Namer {
 
     case DesugaredAst.Expr.TryWith(exp, eff, rules, loc) =>
       val e = visitExp(exp, ns0)
-      val rs = rules.map {
-        case DesugaredAst.HandlerRule(op, fparams, body0) =>
-          val fps = visitFormalParams(fparams)
-          val b = visitExp(body0, ns0)
-          NamedAst.HandlerRule(op, fps, b)
-      }
+      val rs = visitTryWithRules(rules, ns0)
       NamedAst.Expr.TryWith(e, eff, rs, loc)
 
     case DesugaredAst.Expr.Do(op, exps, loc) =>
@@ -1076,6 +1071,23 @@ object Namer {
     */
   private def visitTryCatchRules(rules0: List[DesugaredAst.CatchRule], ns0: Name.NName)(implicit flix: Flix, sctx: SharedContext): List[NamedAst.CatchRule] = {
     rules0.map(visitTryCatchRule(_, ns0))
+  }
+
+  /**
+    * Performs naming on the given handler rule `rule0`.
+    */
+  private def visitTryWithRule(rule0: DesugaredAst.HandlerRule, ns0: Name.NName)(implicit flix: Flix, sctx: SharedContext): NamedAst.HandlerRule = rule0 match {
+    case DesugaredAst.HandlerRule(op, fparams, body0) =>
+      val fps = visitFormalParams(fparams)
+      val b = visitExp(body0, ns0)
+      NamedAst.HandlerRule(op, fps, b)
+  }
+
+  /**
+    * Performs naming on the given handler rules `rules0`.
+    */
+  private def visitTryWithRules(rules0: List[DesugaredAst.HandlerRule], ns0: Name.NName)(implicit flix: Flix, sctx: SharedContext): List[NamedAst.HandlerRule] = {
+    rules0.map(visitTryWithRule(_, ns0))
   }
 
   /**
