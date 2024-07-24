@@ -765,14 +765,14 @@ object Namer {
       NamedAst.Expr.ArrayLength(e, loc)
 
     case DesugaredAst.Expr.StructNew(name, exps, exp, loc) =>
-      val structsym = Symbol.mkStructSym(name.namespace, name.ident)
+      val structSym = Symbol.mkStructSym(name.namespace, name.ident)
       val e = visitExp(exp, ns0)
       val es = exps.map {
         case (n, exp1) =>
           val e = visitExp(exp1, ns0)
-          (Symbol.mkStructFieldSym(structsym, n), e)
+          (Symbol.mkStructFieldSym(structSym, n), e)
       }
-      NamedAst.Expr.StructNew(structsym, es, e, loc)
+      NamedAst.Expr.StructNew(structSym, es, e, loc)
 
     case DesugaredAst.Expr.StructGet(exp, name, loc) =>
       val structSym = Symbol.mkStructSym(ns0, ns0.idents.last)
