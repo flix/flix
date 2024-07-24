@@ -830,12 +830,7 @@ object Namer {
 
     case DesugaredAst.Expr.TryCatch(exp, rules, loc) =>
       val e = visitExp(exp, ns0)
-      val rs = rules.map {
-        case DesugaredAst.CatchRule(ident, className, body) =>
-          val sym = Symbol.freshVarSym(ident, BoundBy.CatchRule)
-          val b = visitExp(body, ns0)
-          NamedAst.CatchRule(sym, className, b)
-      }
+      val rs = visitTryCatchRules(rules, ns0)
       NamedAst.Expr.TryCatch(e, rs, loc)
 
     case DesugaredAst.Expr.TryWith(exp, eff, rules, loc) =>
@@ -1064,6 +1059,23 @@ object Namer {
     */
   private def visitStructFields(exps0: List[(Name.Ident, DesugaredAst.Expr)], ns0: Name.NName, structSym: Symbol.StructSym)(implicit flix: Flix, sctx: SharedContext): List[(Symbol.StructFieldSym, NamedAst.Expr)] = {
     exps0.map(visitStructField(_, ns0, structSym))
+  }
+
+  /**
+    * Performs naming on the given try-catch rule `rule0`.
+    */
+  private def visitTryCatchRule(rule0: DesugaredAst.CatchRule, ns0: Name.NName)(implicit flix: Flix, sctx: SharedContext): NamedAst.CatchRule = rule0 match {
+    case DesugaredAst.CatchRule(ident, className, body) =>
+      val sym = Symbol.freshVarSym(ident, BoundBy.CatchRule)
+      val b = visitExp(body, ns0)
+      NamedAst.CatchRule(sym, className, b)
+  }
+
+  /**
+    * Performs naming on the given try-catch rules `rules0`.
+    */
+  private def visitTryCatchRules(rules0: List[DesugaredAst.CatchRule], ns0: Name.NName)(implicit flix: Flix, sctx: SharedContext): List[NamedAst.CatchRule] = {
+    rules0.map(visitTryCatchRule(_, ns0))
   }
 
   /**
