@@ -57,10 +57,10 @@ object Simplifier {
   }
 
   private def visitStruct(s: MonoAst.Struct): SimplifiedAst.Struct = s match {
-    case MonoAst.Struct(doc, ann, mod, sym, _, fields0, tpe, loc) =>
+    case MonoAst.Struct(doc, ann, mod, sym, _, fields0, loc) =>
       val fieldIndices = fields0.toList.map(_._1).sortBy(field => field.name).zipWithIndex.toMap
       val fields = fields0.map(visitStructField(fieldIndices))
-      SimplifiedAst.Struct(doc, ann, mod, sym, fields, tpe, loc)
+      SimplifiedAst.Struct(doc, ann, mod, sym, fields, loc)
   }
 
   private def visitStructField(fieldIndices: Map[Symbol.StructFieldSym, Int])(field: (Symbol.StructFieldSym, MonoAst.StructField)) = field match {

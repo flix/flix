@@ -131,9 +131,9 @@ object OccurrenceAnalyzer {
   }
 
   private def visitStruct(s: LiftedAst.Struct): OccurrenceAst.Struct = s match {
-    case LiftedAst.Struct(doc, ann, mod, sym, fields0, tpe, loc) =>
+    case LiftedAst.Struct(doc, ann, mod, sym, fields0, loc) =>
       val fields = fields0.map(visitStructField)
-      OccurrenceAst.Struct(doc, ann, mod, sym, fields, tpe, loc)
+      OccurrenceAst.Struct(doc, ann, mod, sym, fields, loc)
   }
 
   private def visitStructField(field: (Symbol.StructFieldSym, LiftedAst.StructField)) = field match {

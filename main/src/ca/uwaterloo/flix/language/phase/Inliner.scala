@@ -96,9 +96,9 @@ object Inliner {
   }
 
   private def visitStruct(s: OccurrenceAst.Struct): LiftedAst.Struct = s match {
-    case OccurrenceAst.Struct(doc, ann, mod, sym, fields0, tpe, loc) =>
+    case OccurrenceAst.Struct(doc, ann, mod, sym, fields0, loc) =>
       val fields = fields0.map(visitStructField)
-      LiftedAst.Struct(doc, ann, mod, sym, fields, tpe, loc)
+      LiftedAst.Struct(doc, ann, mod, sym, fields, loc)
   }
 
   private def visitStructField(field: (Symbol.StructFieldSym, OccurrenceAst.StructField)) = field match {

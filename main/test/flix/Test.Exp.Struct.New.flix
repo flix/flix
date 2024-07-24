@@ -1,10 +1,16 @@
 mod Test.Exp.Struct.New {
-    struct R[r2] { }
-    struct S[r2] { a: R[r2] }
-    def foo(): Unit = {
+    struct S[r] {
+        a: Int32
+    }
+    struct S2[r] {
+        a: S[r]
+    }
+    @test
+    def foo(): Unit =
         region rc {
-            new S { a = new R {} @ rc } @ rc;
+            let s = new S {a = 5} @ rc;
+            let s2 = new S2 {a = s} @ rc;
             ()
         }
-    }
+
 }

@@ -1281,7 +1281,7 @@ object ConstraintGen {
          fieldsym -> KindedAst.StructField(field.sym, tpe, field.loc)
     }
     val elmTys = newFields.toList.sortBy(_._1.name).map(_._2.tpe)
-    (KindedAst.Struct(struct.doc, struct.ann, struct.mod, struct.sym, List(), newFields, Type.mkStruct(sym, elmTys, newTparams, struct.tpe.loc), struct.loc), newTparams)
+    (KindedAst.Struct(struct.doc, struct.ann, struct.mod, struct.sym, List(), newFields, struct.loc), newTparams)
   }
 
   private def applyTyVarSubst(tpe: Type, subst: Map[KindedTypeVarSym, Type]): Type = {

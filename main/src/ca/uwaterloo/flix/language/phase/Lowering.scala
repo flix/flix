@@ -222,15 +222,14 @@ object Lowering {
    * Lowers the given struct `struct0`.
    */
   private def visitStruct(struct0: TypedAst.Struct)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Struct = struct0 match {
-    case TypedAst.Struct(doc, ann, mod, sym, tparams0, fields0, tpe0, loc) =>
+    case TypedAst.Struct(doc, ann, mod, sym, tparams0, fields0, loc) =>
       val tparams = tparams0.map(visitTypeParam)
-      val tpe = visitType(tpe0)
       val fields = fields0.map {
         case (sym0, TypedAst.StructField(sym1, tpe, loc)) =>
           assert(sym0 == sym1) // sanity check
           (sym0, LoweredAst.StructField(sym0, visitType(tpe), loc))
       }
-      LoweredAst.Struct(doc, ann, mod, sym, tparams, fields, tpe, loc)
+      LoweredAst.Struct(doc, ann, mod, sym, tparams, fields, loc)
   }
 
   /**

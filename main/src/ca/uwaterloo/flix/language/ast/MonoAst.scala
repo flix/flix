@@ -39,7 +39,7 @@ object MonoAst {
 
   case class Op(sym: Symbol.OpSym, spec: Spec)
 
-  case class Struct(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.StructSym, tparams: List[Symbol.KindedTypeVarSym], fields: Map[Symbol.StructFieldSym, StructField], tpe: Type, loc: SourceLocation)
+  case class Struct(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.StructSym, tparams: List[Symbol.KindedTypeVarSym], fields: Map[Symbol.StructFieldSym, StructField], loc: SourceLocation)
 
   sealed trait Expr extends Product {
     def tpe: Type

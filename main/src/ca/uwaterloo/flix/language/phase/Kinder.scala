@@ -138,16 +138,14 @@ object Kinder {
                 val lastTparam = KindedAst.TypeParam(name, ksym.withKind(Kind.Eff), tloc)
                 val tparams = tparams0.init :+ lastTparam
                 val targs = tparams.map(tparam => Type.Var(tparam.sym, tparam.loc.asSynthetic))
-                // JOE TODO: Fix elmTys
-                val tpe = Type.mkApply(Type.Cst(TypeConstructor.Struct(sym, List(Type.Unit), getStructKind(struct0)), sym.loc.asSynthetic), targs, sym.loc.asSynthetic)
                 val fieldsVal = traverse(fields0) {
-                  case field0 => mapN(visitStructField(field0, tparams, tpe, kenv, taenv, root)) {
+                  case field0 => mapN(visitStructField(field0, tparams, kenv, taenv, root)) {
                     field => field.sym -> field
                   }
                 }
                 mapN(fieldsVal) {
                   case fields =>
-                    KindedAst.Struct(doc, ann, mod, sym, tparams, fields.toMap, tpe, loc)
+                    KindedAst.Struct(doc, ann, mod, sym, tparams, fields.toMap, loc)
                 }
             }
         }
@@ -229,7 +227,7 @@ object Kinder {
   /**
    * Performs kinding on the given struct field under the given kind environment.
    */
-  private def visitStructField(field0: ResolvedAst.Declaration.StructField, tparams: List[KindedAst.TypeParam], resTpe: Type, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.StructField, KindError] = field0 match {
+  private def visitStructField(field0: ResolvedAst.Declaration.StructField, tparams: List[KindedAst.TypeParam], kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.StructField, KindError] = field0 match {
     case ResolvedAst.Declaration.StructField(sym, tpe0, loc) =>
       val tpeVal = visitType(tpe0, Kind.Star, kenv, taenv, root)
       mapN(tpeVal) {
