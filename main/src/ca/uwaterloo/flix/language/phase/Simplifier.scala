@@ -371,12 +371,8 @@ object Simplifier {
           case TypeConstructor.Error(_) =>
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
 
-          case TypeConstructor.Struct(sym, _) =>
-            val struct = root.structs(sym)
-            val subst = struct.tparams.map(_.id).zip(tpe.typeArguments).toMap
-            val structFields = struct.fields.values.toList.sortBy(_.sym.name)
-            val substitutedStructFieldTypes = structFields.map(f => ConstraintGen.applyTyVarSubst(f.tpe, subst))
-            MonoType.Struct(sym, substitutedStructFieldTypes.map(visitType), args)
+          case TypeConstructor.Struct(sym, elmTypes, _) =>
+            MonoType.Struct(sym, elmTypes.map(visitType), args)
         }
     }
   }

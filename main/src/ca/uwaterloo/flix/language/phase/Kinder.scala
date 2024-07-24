@@ -135,17 +135,19 @@ object Kinder {
             flatMapN(tparamsVal) {
               case tparams0 =>
                 val KindedAst.TypeParam(name, ksym, tloc) = tparams0.last
-                val lastTparam = KindedAst.TypeParam(name, Symbol.freshKindedTypeVarSym(ksym.text, Kind.Eff, isRegion = true, ksym.loc), tloc)
+                val lastTparam = KindedAst.TypeParam(name, ksym.withKind(Kind.Eff), tloc)
                 val tparams = tparams0.init :+ lastTparam
                 val targs = tparams.map(tparam => Type.Var(tparam.sym, tparam.loc.asSynthetic))
-                val tpe = Type.mkApply(Type.Cst(TypeConstructor.Struct(sym, getStructKind(struct0)), sym.loc.asSynthetic), targs, sym.loc.asSynthetic)
+                // JOE TODO: Fix elmTys
+                val tpe = Type.mkApply(Type.Cst(TypeConstructor.Struct(sym, List(Type.Unit), getStructKind(struct0)), sym.loc.asSynthetic), targs, sym.loc.asSynthetic)
                 val fieldsVal = traverse(fields0) {
                   case field0 => mapN(visitStructField(field0, tparams, tpe, kenv, taenv, root)) {
                     field => field.sym -> field
                   }
                 }
                 mapN(fieldsVal) {
-                  case fields => KindedAst.Struct(doc, ann, mod, sym, tparams, fields.toMap, tpe, loc)
+                  case fields =>
+                    KindedAst.Struct(doc, ann, mod, sym, tparams, fields.toMap, tpe, loc)
                 }
             }
         }
@@ -1352,8 +1354,13 @@ object Kinder {
 
     case UnkindedType.Struct(sym, loc) =>
       val kind = getStructKind(root.structs(sym))
+      val structFieldTys = root.structs(sym).fields.sortBy(_.sym.name).map(_.tpe)
+      val KindedStructFieldTysVal = traverse(structFieldTys)(visitType(_, Kind.Wild, kenv, taenv, root))
       unify(kind, expectedKind) match {
-        case Some(k) => Validation.success(Type.Cst(TypeConstructor.Struct(sym, k), loc))
+        case Some(k) =>
+          flatMapN(KindedStructFieldTysVal) {
+            elmTys => Validation.success(Type.Cst(TypeConstructor.Struct(sym, elmTys, k), loc))
+          }
         case None => Validation.toHardFailure(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc))
       }
 

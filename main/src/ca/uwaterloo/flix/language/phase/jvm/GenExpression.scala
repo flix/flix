@@ -1491,9 +1491,10 @@ object GenExpression {
     case Expr.StructNew(_, exps, region, tpe, _, loc) =>
       compileExpr(region) // Region value not actually used?
       BytecodeInstructions.xPop(BackendType.toErasedBackendType(region.tpe))(new BytecodeInstructions.F(mv))
+      val MonoType.Struct(_, _, targs) = tpe
       // We get the JvmType of the class for the struct
       val elmTypes = exps.map(_._2.tpe)
-      val structType = BackendObjType.Struct(elmTypes.map(BackendType.asErasedBackendType))
+      val structType = BackendObjType.Struct(elmTypes.map(BackendType.toErasedBackendType), targs.map(BackendType.toErasedBackendType))
       val internalClassName = structType.jvmName.toInternalName
       // Instantiating a new object of struct
       mv.visitTypeInsn(NEW, internalClassName)
@@ -1507,8 +1508,8 @@ object GenExpression {
       mv.visitMethodInsn(INVOKESPECIAL, internalClassName, "<init>", constructorDescriptor.toDescriptor, false)
 
     case Expr.StructGet(sym, exp, field, tpe, _, _) =>
-      val MonoType.Struct(_, elmTypes, _) = exp.tpe
-      val structType = BackendObjType.Struct(elmTypes.map(BackendType.asErasedBackendType))
+      val MonoType.Struct(_, elmTypes, targs) = exp.tpe
+      val structType = BackendObjType.Struct(elmTypes.map(BackendType.toErasedBackendType), targs.map(BackendType.toErasedBackendType))
       // evaluating the `base`
       compileExpr(exp)
       val idx = root.structs(sym).fields(Symbol.mkStructFieldSym(sym, Name.Ident(field.name, field.loc))).idx
@@ -1516,8 +1517,8 @@ object GenExpression {
       mv.visitFieldInsn(GETFIELD, structType.jvmName.toInternalName, s"field$idx", JvmOps.asErasedJvmType(tpe).toDescriptor)
 
     case Expr.StructPut(sym, exp1, field, exp2, _, _, _) =>
-      val MonoType.Struct(_, elmTypes, _) = exp1.tpe
-      val structType = BackendObjType.Struct(elmTypes.map(BackendType.asErasedBackendType))
+      val MonoType.Struct(_, elmTypes, targs) = exp1.tpe
+      val structType = BackendObjType.Struct(elmTypes.map(BackendType.asErasedBackendType), targs.map(BackendType.toErasedBackendType))
       // evaluating the `base`
       compileExpr(exp1)
       // evaluating the `rhs`

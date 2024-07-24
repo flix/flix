@@ -326,7 +326,8 @@ object Namer {
       val sym = Symbol.mkStructSym(ns0, ident)
 
       // Compute the type parameters.
-      val tparams = getTypeParams(tparams0)
+      val tparams = getTypeParamsStruct(tparams0)
+
 
       val mod = visitModifiers(mod0, ns0)
       val fieldsVal = traverse(fields0)(visitField(_, sym))
@@ -1510,6 +1511,16 @@ object Namer {
     }
   }
 
+  /**
+   * Performs naming on the given type parameters `tparam0` for a struct
+   */
+  private def getTypeParamsStruct(tparams0: DesugaredAst.TypeParams)(implicit flix: Flix, sctx: SharedContext): NamedAst.TypeParams = {
+    tparams0 match {
+      case DesugaredAst.TypeParams.Elided => NamedAst.TypeParams.Kinded(Nil)
+      case DesugaredAst.TypeParams.Unkinded(tparams) => getExplicitTypeParamsStruct(tparams)
+      case DesugaredAst.TypeParams.Kinded(tparams) => getExplicitKindedTypeParamsStruct(tparams)
+    }
+  }
 
   /**
     * Performs naming on the given type parameters `tparams0` from the given formal params `fparams` and overall type `tpe`.
@@ -1543,6 +1554,30 @@ object Namer {
         NamedAst.TypeParam.Unkinded(ident, mkTypeVarSym(ident), ident.loc)
     }
     NamedAst.TypeParams.Unkinded(tparams)
+  }
+
+  /**
+   * Names the explicit kinded type params.
+   */
+  private def getExplicitTypeParamsStruct(tparams0: List[DesugaredAst.TypeParam.Unkinded])(implicit flix: Flix, sctx: SharedContext): NamedAst.TypeParams.Unkinded = {
+    val tparams1 = tparams0.init.map {
+      case DesugaredAst.TypeParam.Unkinded(ident) =>
+        NamedAst.TypeParam.Unkinded(ident, mkTypeVarSym(ident), ident.loc)
+    }
+    val tparams2 = tparams1 :+ NamedAst.TypeParam.Unkinded(tparams0.last.ident, Symbol.freshUnkindedTypeVarSym(Ast.VarText.SourceText(tparams0.last.ident.name), isRegion = true, loc = tparams0.last.ident.loc),tparams0.last.ident.loc)
+    NamedAst.TypeParams.Unkinded(tparams2)
+  }
+
+  /**
+   * Returns the explicit kinded type parameters from the given type parameter names and implicit type parameters.
+   */
+  private def getExplicitKindedTypeParamsStruct(tparams0: List[DesugaredAst.TypeParam.Kinded])(implicit flix: Flix, sctx: SharedContext): NamedAst.TypeParams.Kinded = {
+    val tparams1 = tparams0.init.map {
+      case DesugaredAst.TypeParam.Kinded(ident, kind) =>
+        NamedAst.TypeParam.Kinded(ident, mkTypeVarSym(ident), visitKind(kind), ident.loc)
+    }
+    val tparams2 = tparams1 :+ NamedAst.TypeParam.Kinded(tparams0.last.ident, Symbol.freshUnkindedTypeVarSym(Ast.VarText.SourceText(tparams0.last.ident.name), isRegion = true, loc = tparams0.last.ident.loc), visitKind(tparams0.last.kind), tparams0.last.ident.loc)
+    NamedAst.TypeParams.Kinded(tparams2)
   }
 
   /**

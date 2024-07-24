@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.KindedAst.Expr
+import ca.uwaterloo.flix.language.ast.Symbol.KindedTypeVarSym
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, Name, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.{InternalCompilerException, SubEffectLevel}
 
@@ -575,14 +576,14 @@ object ConstraintGen {
 
       case Expr.StructNew(sym, fields, region, tvar, evar, loc) =>
         val (structType, ts) = instantiateStruct(sym, root.structs)
+        val fieldTypes = fields.sortBy(_._1.name).map(field => visitExp(field._2))
         // Struct type overall
-        c.unifyType(tvar, Type.mkStruct(sym, ts, loc), loc)
+        c.unifyType(tvar, Type.mkStruct(sym, structType.fields.toList.sortBy(_._1.name).map(_._2.tpe), ts, loc), loc)
         // Fields
-        val fieldTypes = fields.map(field => visitExp(field._2))
         val effs = fields.zip(fieldTypes).map {
           case ((fieldSym, expr), (fieldTpe, fieldEff)) =>
             val field = structType.fields(fieldSym)
-            c.expectType(expected = field.tpe, actual = fieldTpe, expr.loc)
+            c.unifyType(field.tpe, fieldTpe, expr.loc)
             fieldEff
         }
         // Region
@@ -597,9 +598,10 @@ object ConstraintGen {
 
       case Expr.StructGet(sym, exp, name, tvar, evar, loc) =>
         val (struct, ts) = instantiateStruct(sym, root.structs)
+        val elmTys = struct.fields.toList.sortBy(_._1.name).map(_._2.tpe)
         // unify the struct types
         val (tpe, eff) = visitExp(exp)
-        c.expectType(Type.mkStruct(sym, ts, exp.loc), tpe, exp.loc)
+        c.expectType(Type.mkStruct(sym, elmTys, ts, exp.loc), tpe, exp.loc)
         // field type
         val fieldTpe = struct.fields(Symbol.mkStructFieldSym(sym, Name.Ident(name.name, name.loc))).tpe
         c.unifyType(fieldTpe, tvar, loc)
@@ -613,8 +615,9 @@ object ConstraintGen {
       case Expr.StructPut(sym, exp1, name, exp2, tvar, evar, loc) =>
         // lhs type
         val (struct, ts) = instantiateStruct(sym, root.structs)
+        val elmTys = struct.fields.toList.sortBy(_._1.name).map(_._2.tpe)
         val (tpe1, eff1) = visitExp(exp1)
-        c.expectType(Type.mkStruct(sym, ts, exp1.loc), tpe1, exp1.loc)
+        c.expectType(Type.mkStruct(sym, elmTys, ts, exp1.loc), tpe1, exp1.loc)
         // rhs type
         val (tpe2, eff2) = visitExp(exp2)
         val fieldTpe = struct.fields(Symbol.mkStructFieldSym(sym, Name.Ident(name.name, name.loc))).tpe
@@ -1269,21 +1272,22 @@ object ConstraintGen {
     val struct = structs(sym)
     assert(struct.tparams.last.sym.isRegion)
     assert(struct.tparams.last.sym.kind == Kind.Eff)
-    val newTparams = struct.tparams.map(t => Type.freshVar(t.sym.kind, t.loc, isRegion=t.sym.isRegion, text = t.sym.text))
-    val originalTparams = struct.tparams.map(_.sym.id)
+    val newTparams = struct.tparams.map(t => Type.freshVar(t.sym.kind, t.loc, isRegion=t.sym.isRegion, text=t.sym.text))
+    val originalTparams = struct.tparams.map(_.sym)
     val subst = originalTparams.zip(newTparams).toMap
     val newFields = struct.fields.map {mapentry =>
          val (fieldsym, field) = mapentry
          val tpe = applyTyVarSubst(field.tpe, subst)
          fieldsym -> KindedAst.StructField(field.sym, tpe, field.loc)
     }
-    (KindedAst.Struct(struct.doc, struct.ann, struct.mod, struct.sym, List(), newFields, Type.mkStruct(sym, newTparams, struct.tpe.loc), struct.loc), newTparams)
+    val elmTys = newFields.toList.sortBy(_._1.name).map(_._2.tpe)
+    (KindedAst.Struct(struct.doc, struct.ann, struct.mod, struct.sym, List(), newFields, Type.mkStruct(sym, elmTys, newTparams, struct.tpe.loc), struct.loc), newTparams)
   }
 
-  def applyTyVarSubst(tpe: Type, subst: Map[Int, Type]): Type = {
+  private def applyTyVarSubst(tpe: Type, subst: Map[KindedTypeVarSym, Type]): Type = {
     tpe match {
       case Type.Var(sym, loc) =>
-        subst.get(sym.id) match {
+        subst.get(sym) match {
           case None =>
             Type.Var(sym, loc)
           case Some(t) =>

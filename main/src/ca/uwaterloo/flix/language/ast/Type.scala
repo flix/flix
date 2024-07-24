@@ -182,7 +182,13 @@ sealed trait Type {
   def map(f: Type.Var => Type): Type = this match {
     case tvar: Type.Var => f(tvar)
 
-    case Type.Cst(_, _) => this
+    case Type.Cst(cst, loc) =>
+      cst match {
+        case TypeConstructor.Struct(sym, elmTypes, kind) =>
+          Type.Cst(TypeConstructor.Struct(sym, elmTypes.map(_.map(f)), kind), loc)
+        case _ =>
+          this
+      }
 
     case Type.Apply(tpe1, tpe2, loc) =>
       val t1 = tpe1.map(f)
@@ -727,7 +733,7 @@ object Type {
   /**
     * Construct the struct type `Sym[ts]`
     */
-  def mkStruct(sym: Symbol.StructSym, ts: List[Type], loc: SourceLocation): Type = mkApply(Type.Cst(TypeConstructor.Struct(sym, Kind.mkArrow(ts.length)), loc), ts, loc)
+  def mkStruct(sym: Symbol.StructSym, elmTys: List[Type], ts: List[Type], loc: SourceLocation): Type = mkApply(Type.Cst(TypeConstructor.Struct(sym, elmTys, Kind.mkArrow(ts.length)), loc), ts, loc)
 
   /**
     * Constructs the tuple type (A, B, ...) where the types are drawn from the list `ts`.
@@ -1004,7 +1010,12 @@ object Type {
     */
   def eraseAliases(t: Type): Type = t match {
     case tvar: Type.Var => tvar
-    case Type.Cst(_, _) => t
+    case Type.Cst(cst, loc) =>
+      cst match {
+        case TypeConstructor.Struct(sym, elmTypes, kind) =>
+          Type.Cst(TypeConstructor.Struct(sym, elmTypes.map(eraseAliases), kind), loc)
+        case _ => t
+      }
     case Type.Apply(tpe1, tpe2, loc) => Type.Apply(eraseAliases(tpe1), eraseAliases(tpe2), loc)
     case Type.Alias(_, _, tpe, _) => eraseAliases(tpe)
     case Type.AssocType(cst, args, kind, loc) => Type.AssocType(cst, args.map(eraseAliases), kind, loc)
