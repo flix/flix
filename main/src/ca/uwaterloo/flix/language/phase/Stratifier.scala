@@ -357,12 +357,7 @@ object Stratifier {
 
     case Expr.SelectChannel(rules, exp, tpe, eff, loc) =>
       val e = visitExp(exp)
-      val rs = rules.map {
-        case SelectChannelRule(sym, exp1, exp2) =>
-          val e1 = visitExp(exp1)
-          val e2 = visitExp(exp2)
-          SelectChannelRule(sym, e1, e2)
-      }
+      val rs = visitSelectChannelRules(rules)
       Expr.SelectChannel(rs, e, tpe, eff, loc)
 
     case Expr.Spawn(exp1, exp2, tpe, eff, loc) =>
@@ -495,6 +490,17 @@ object Stratifier {
 
   private def visitJvmMethods(methods: List[JvmMethod])(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext[StratificationError]): List[JvmMethod] = {
     methods.map(visitJvmMethod)
+  }
+
+  private def visitSelectChannelRule(rule: SelectChannelRule)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext[StratificationError]): SelectChannelRule = rule match {
+    case SelectChannelRule(sym, exp1, exp2) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      SelectChannelRule(sym, e1, e2)
+  }
+
+  private def visitSelectChannelRules(rules: List[SelectChannelRule])(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext[StratificationError]): List[SelectChannelRule] = {
+    rules.map(visitSelectChannelRule)
   }
 
   /**
