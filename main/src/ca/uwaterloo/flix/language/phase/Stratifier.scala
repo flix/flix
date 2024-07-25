@@ -56,12 +56,12 @@ object Stratifier {
     implicit val r: Root = root
 
     // Compute the stratification at every datalog expression in the ast.
-    val ds = ParOps.parMapValues(root.defs)(visitDef(_))
-    val newInstances = ParOps.parTraverseValues(root.instances)(traverse(_)(visitInstance(_)))
+    val ds = ParOps.parMapValues(root.defs)(visitDef)
+    val is = ParOps.parMapValues(root.instances)(visitInstances)
     val newTraits = ParOps.parTraverseValues(root.traits)(visitTrait(_))
 
-    flatMapN(newInstances, newTraits) {
-      case (is, ts) => Validation.toSuccessOrSoftFailure(root.copy(defs = ds, instances = is, traits = ts), sctx.errors.asScala)
+    flatMapN(newTraits) {
+      case ts => Validation.toSuccessOrSoftFailure(root.copy(defs = ds, instances = is, traits = ts), sctx.errors.asScala)
     }
   }(DebugValidation())
 
@@ -88,9 +88,16 @@ object Stratifier {
   /**
     * Performs Stratification of the given instance `i0`.
     */
-  private def visitInstance(i0: TypedAst.Instance)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext[StratificationError]): Validation[TypedAst.Instance, StratificationError] = {
+  private def visitInstance(i0: TypedAst.Instance)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext[StratificationError]): TypedAst.Instance = {
     val ds = visitDefs(i0.defs)
-    Validation.success(i0.copy(defs = ds))
+    i0.copy(defs = ds)
+  }
+
+  /**
+    * Performs Stratification of the given instances `is0`.
+    */
+  private def visitInstances(is0: List[TypedAst.Instance])(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext[StratificationError]): List[TypedAst.Instance] = {
+    is0.map(visitInstance)
   }
 
   /**
@@ -101,6 +108,9 @@ object Stratifier {
     def0.copy(exp = e)
   }
 
+  /**
+    * Performs stratification of the given definitions `defs0`.
+    */
   private def visitDefs(defs0: List[Def])(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext[StratificationError]): List[Def] = {
     defs0.map(visitDef)
   }
