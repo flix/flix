@@ -186,11 +186,7 @@ object Stratifier {
 
     case Expr.RestrictableChoose(star, exp, rules, tpe, eff, loc) =>
       val e = visitExp(exp)
-      val rs = rules.map {
-        case RestrictableChooseRule(pat, exp1) =>
-          val e1 = visitExp(exp1)
-          RestrictableChooseRule(pat, e1)
-      }
+      val rs = visitRestrictableChooseRules(rules)
       Expr.RestrictableChoose(star, e, rs, tpe, eff, loc)
 
     case Expr.Tag(sym, exp, tpe, eff, loc) =>
@@ -473,6 +469,16 @@ object Stratifier {
     case JvmMethod(ident, fparams, exp, tpe, eff, loc) =>
       val e = visitExp(exp)
       JvmMethod(ident, fparams, e, tpe, eff, loc)
+  }
+
+  private def visitRestrictableChooseRule(rule: RestrictableChooseRule)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext[StratificationError]): RestrictableChooseRule = rule match {
+    case RestrictableChooseRule(pat, exp1) =>
+      val e1 = visitExp(exp1)
+      RestrictableChooseRule(pat, e1)
+  }
+
+  private def visitRestrictableChooseRules(rules: List[RestrictableChooseRule])(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext[StratificationError]): List[RestrictableChooseRule] = {
+    rules.map(visitRestrictableChooseRule)
   }
 
   private def visitJvmMethods(methods: List[JvmMethod])(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext[StratificationError]): List[JvmMethod] = {
