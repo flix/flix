@@ -46,7 +46,7 @@ object Namer {
         case (macc, root) => macc + (root.loc.source -> root.loc)
       }
 
-      val units = ParOps.parMap(program.units) { case (s, u) => (s, visitUnit(u)) }.toMap
+      val units = ParOps.parMapValues(program.units)(visitUnit)
       val SymbolTable(symbols0, instances0, uses0) = units.values.foldLeft(SymbolTable.empty)(tableUnit)
 
       // TODO NS-REFACTOR remove use of NName
