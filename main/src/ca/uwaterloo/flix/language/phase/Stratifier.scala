@@ -468,6 +468,10 @@ object Stratifier {
 
   }
 
+  private def visitExps(exps0: List[Expr])(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext[StratificationError]): List[Expr] = {
+    exps0.map(visitExp)
+  }
+
   private def visitJvmMethod(method: JvmMethod)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext[StratificationError]): Validation[JvmMethod, StratificationError] = method match {
     case JvmMethod(ident, fparams, exp, tpe, eff, loc) =>
       val e = visitExp(exp)
