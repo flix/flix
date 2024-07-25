@@ -80,7 +80,7 @@ object Stratifier {
     * Performs Stratification of the given sig `s0`.
     */
   private def visitSig(s0: TypedAst.Sig)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext[StratificationError]): Validation[TypedAst.Sig, StratificationError] = {
-    val newExp = s0.exp.map(visitExp)
+    val newExp = visitExp(s0.exp)
     Validation.success(s0.copy(exp = newExp))
   }
 
@@ -178,7 +178,7 @@ object Stratifier {
       val e = visitExp(exp)
       val rs = rules.map {
         case MatchRule(pat, exp1, exp2) =>
-          val e1 = exp1.map(visitExp)
+          val e1 = visitExp(exp1)
           val e2 = visitExp(exp2)
           MatchRule(pat, e1, e2)
       }
@@ -377,7 +377,7 @@ object Stratifier {
       Expr.PutChannel(e1, e2, tpe, eff, loc)
 
     case Expr.SelectChannel(rules, exp, tpe, eff, loc) =>
-      val e = exp.map(visitExp)
+      val e = visitExp(exp)
       val rs = rules.map {
         case SelectChannelRule(sym, exp1, exp2) =>
           val e1 = visitExp(exp1)
@@ -448,6 +448,11 @@ object Stratifier {
       Expr.Error(m, tpe, eff)
 
   }
+
+  private def visitExp(exp0: Option[Expr])(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext[StratificationError]): Option[Expr] = {
+    exp0.map(visitExp)
+  }
+
 
   private def visitExps(exps0: List[Expr])(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext[StratificationError]): List[Expr] = {
     exps0.map(visitExp)
