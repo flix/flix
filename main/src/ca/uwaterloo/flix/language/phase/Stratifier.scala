@@ -296,11 +296,7 @@ object Stratifier {
 
     case Expr.TryCatch(exp, rules, tpe, eff, loc) =>
       val e = visitExp(exp)
-      val rs = rules.map {
-        case CatchRule(sym, clazz, exp1) =>
-          val e1 = visitExp(exp1)
-          CatchRule(sym, clazz, e1)
-      }
+      val rs = visitTryCatchRules(rules)
       Expr.TryCatch(e, rs, tpe, eff, loc)
 
     case Expr.TryWith(exp, sym, rules, tpe, eff, loc) =>
@@ -465,12 +461,6 @@ object Stratifier {
     rules.map(visitTypeMatchRule)
   }
 
-  private def visitJvmMethod(method: JvmMethod)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext[StratificationError]): JvmMethod = method match {
-    case JvmMethod(ident, fparams, exp, tpe, eff, loc) =>
-      val e = visitExp(exp)
-      JvmMethod(ident, fparams, e, tpe, eff, loc)
-  }
-
   private def visitRestrictableChooseRule(rule: RestrictableChooseRule)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext[StratificationError]): RestrictableChooseRule = rule match {
     case RestrictableChooseRule(pat, exp1) =>
       val e1 = visitExp(exp1)
@@ -479,6 +469,22 @@ object Stratifier {
 
   private def visitRestrictableChooseRules(rules: List[RestrictableChooseRule])(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext[StratificationError]): List[RestrictableChooseRule] = {
     rules.map(visitRestrictableChooseRule)
+  }
+
+  private def visitTryCatchRule(rule: CatchRule)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext[StratificationError]): CatchRule = rule match {
+    case CatchRule(sym, clazz, exp1) =>
+      val e1 = visitExp(exp1)
+      CatchRule(sym, clazz, e1)
+  }
+
+  private def visitTryCatchRules(rules: List[CatchRule])(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext[StratificationError]): List[CatchRule] = {
+    rules.map(visitTryCatchRule)
+  }
+
+  private def visitJvmMethod(method: JvmMethod)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext[StratificationError]): JvmMethod = method match {
+    case JvmMethod(ident, fparams, exp, tpe, eff, loc) =>
+      val e = visitExp(exp)
+      JvmMethod(ident, fparams, e, tpe, eff, loc)
   }
 
   private def visitJvmMethods(methods: List[JvmMethod])(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext[StratificationError]): List[JvmMethod] = {
