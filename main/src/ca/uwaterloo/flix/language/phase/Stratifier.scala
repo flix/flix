@@ -367,11 +367,7 @@ object Stratifier {
 
     case Expr.ParYield(frags, exp, tpe, eff, loc) =>
       val e = visitExp(exp)
-      val fs = frags.map {
-        case ParYieldFragment(pat, exp1, loc1) =>
-          val e1 = visitExp(exp1)
-          ParYieldFragment(pat, e1, loc1)
-      }
+      val fs = visitParYieldFragments(frags)
       Expr.ParYield(fs, e, tpe, eff, loc)
 
     case Expr.Lazy(exp, tpe, loc) =>
@@ -501,6 +497,16 @@ object Stratifier {
 
   private def visitSelectChannelRules(rules: List[SelectChannelRule])(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext[StratificationError]): List[SelectChannelRule] = {
     rules.map(visitSelectChannelRule)
+  }
+
+  private def visitParYieldFragment(frag: ParYieldFragment)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext[StratificationError]): ParYieldFragment = frag match {
+    case ParYieldFragment(pat, exp1, loc1) =>
+      val e1 = visitExp(exp1)
+      ParYieldFragment(pat, e1, loc1)
+  }
+
+  private def visitParYieldFragments(frags: List[ParYieldFragment])(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext[StratificationError]): List[ParYieldFragment] = {
+    frags.map(visitParYieldFragment)
   }
 
   /**
