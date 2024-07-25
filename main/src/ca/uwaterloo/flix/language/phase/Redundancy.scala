@@ -156,11 +156,6 @@ object Redundancy {
       if (deadStruct(struct)) {
         result += UnusedStructSym(struct.sym)
       }
-      for ((field, _) <- struct.fields) {
-        if (deadField(struct, field)) {
-          result += UnusedStructField(struct.sym, field)
-        }
-      }
     }
 
     result.toList

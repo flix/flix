@@ -329,12 +329,7 @@ object MonoTypes {
         // `Enum[a, b, c]` becomes `Enum`
         Type.Cst(TypeConstructor.Enum(sym, Kind.Star), tpe.loc)
       case _ => tpe match {
-        case Type.Cst(cst, loc) =>
-          cst match {
-            case TypeConstructor.Struct(sym, elmTypes, kind) =>
-              Type.Cst(TypeConstructor.Struct(sym, elmTypes.map(visitType), kind), loc)
-            case _ => tpe
-          }
+        case Type.Cst(_, _) => tpe
         case Type.Apply(tpe1, tpe2, loc) =>
           val t1 = visitType(tpe1)
           val t2 = visitType(tpe2)

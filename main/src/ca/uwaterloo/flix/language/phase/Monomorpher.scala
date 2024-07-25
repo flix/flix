@@ -140,14 +140,9 @@ object Monomorpher {
             default(x)
         }
 
-      case Type.Cst(cst, loc) =>
-        cst match {
-          case TypeConstructor.Struct(sym, elmTypes, kind) =>
-            Type.Cst(TypeConstructor.Struct(sym, elmTypes.map(apply), kind), loc)
-          case _ =>
-            // Performance: Reuse tpe0.
-            tpe0
-        }
+      case Type.Cst(_, _) =>
+        // Performance: Reuse tpe0.
+        tpe0
 
       case Type.Apply(t1, t2, loc) =>
 

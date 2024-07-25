@@ -1357,7 +1357,7 @@ object Kinder {
       unify(kind, expectedKind) match {
         case Some(k) =>
           flatMapN(KindedStructFieldTysVal) {
-            elmTys => Validation.success(Type.Cst(TypeConstructor.Struct(sym, elmTys, k), loc))
+            elmTys => Validation.success(Type.Cst(TypeConstructor.Struct(sym, k), loc))
           }
         case None => Validation.toHardFailure(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc))
       }

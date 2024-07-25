@@ -182,13 +182,7 @@ sealed trait Type {
   def map(f: Type.Var => Type): Type = this match {
     case tvar: Type.Var => f(tvar)
 
-    case Type.Cst(cst, loc) =>
-      cst match {
-        case TypeConstructor.Struct(sym, elmTypes, kind) =>
-          Type.Cst(TypeConstructor.Struct(sym, elmTypes.map(_.map(f)), kind), loc)
-        case _ =>
-          this
-      }
+    case Type.Cst(_, _) => this
 
     case Type.Apply(tpe1, tpe2, loc) =>
       val t1 = tpe1.map(f)
@@ -735,7 +729,7 @@ object Type {
     */
   def mkStruct(sym: Symbol.StructSym, elmTys: List[Type], ts: List[Type], loc: SourceLocation): Type = {
     assert(ts.last.kind == Kind.Eff)
-    mkApply(Type.Cst(TypeConstructor.Struct(sym, elmTys, Kind.mkArrow(ts.map(_.kind))), loc), ts, loc)
+    mkApply(Type.Cst(TypeConstructor.Struct(sym, Kind.mkArrow(ts.map(_.kind))), loc), ts, loc)
   }
 
   /**
@@ -1015,8 +1009,8 @@ object Type {
     case tvar: Type.Var => tvar
     case Type.Cst(cst, loc) =>
       cst match {
-        case TypeConstructor.Struct(sym, elmTypes, kind) =>
-          Type.Cst(TypeConstructor.Struct(sym, elmTypes.map(eraseAliases), kind), loc)
+        case TypeConstructor.Struct(sym, kind) =>
+          Type.Cst(TypeConstructor.Struct(sym, kind), loc)
         case _ => t
       }
     case Type.Apply(tpe1, tpe2, loc) => Type.Apply(eraseAliases(tpe1), eraseAliases(tpe2), loc)

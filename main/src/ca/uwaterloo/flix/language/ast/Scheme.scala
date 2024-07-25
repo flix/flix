@@ -70,14 +70,9 @@ object Scheme {
         // Performance: Reuse tpe0, if possible.
         freshVars.getOrElse(sym.id, tpe0)
 
-      case Type.Cst(cst, loc) =>
-        cst match {
-          case TypeConstructor.Struct(sym, elmTypes, kind) =>
-            Type.Cst(TypeConstructor.Struct(sym, elmTypes.map(visitType), kind), loc)
-          case _ =>
-            // Performance: Reuse tpe0.
-            tpe0
-        }
+      case Type.Cst(_, _) =>
+        // Performance: Reuse tpe0.
+        tpe0
 
       case Type.Apply(tpe1, tpe2, _) =>
         val t1 = visitType(tpe1)

@@ -1285,7 +1285,7 @@ object ConstraintGen {
     (KindedAst.Struct(struct.doc, struct.ann, struct.mod, struct.sym, List(), newFields, struct.loc), newTparams)
   }
 
-  private def applyTyVarSubst(tpe: Type, subst: Map[KindedTypeVarSym, Type]): Type = {
+  def applyTyVarSubst(tpe: Type, subst: Map[KindedTypeVarSym, Type]): Type = {
     tpe match {
       case Type.Var(sym, loc) =>
         subst.get(sym) match {

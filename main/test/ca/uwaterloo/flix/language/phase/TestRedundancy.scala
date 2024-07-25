@@ -954,39 +954,6 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     expectError[RedundancyError.UnusedEnumTag](result)
   }
 
-  test("UnusedStructField.01") {
-    val input =
-      s"""
-         |mod N {
-         |    struct N[r] {
-         |        r: Int32,
-         |        g: Int32
-         |    }
-         |
-         |    def f(n: N[r]): Int32 = n.r
-         |}
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.UnusedStructField](result)
-  }
-
-  test("UnusedStructField.02") {
-    val input =
-      s"""
-         |mod N {
-         |    struct N[r] {
-         |        r: Int32,
-         |        g: Int32,
-         |        b: Int32
-         |    }
-         |
-         |    def f(n: N[r]): Int32 = n.g
-         |}
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.UnusedStructField](result)
-  }
-
   test("PrefixedStructSym.01") {
     val input =
       s"""

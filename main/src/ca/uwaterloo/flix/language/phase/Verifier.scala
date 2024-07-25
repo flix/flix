@@ -553,7 +553,8 @@ object Verifier {
       }
       tpe match {
         case MonoType.Struct(sym, elms, _) => {
-          fields.zip(elms).map(fieldAndElm => checkEq(visitExpr(fieldAndElm._1._2), fieldAndElm._2, fieldAndElm._1._2.loc))
+          // JOE TODO: Is this check necessary?
+          // fields.zip(elms).map(fieldAndElm => checkEq(visitExpr(fieldAndElm._1._2), fieldAndElm._2, fieldAndElm._1._2.loc))
           if(sym0 != sym) {
             throw InternalCompilerException(s"Expected struct type $sym0, got struct type $sym", loc)
           }

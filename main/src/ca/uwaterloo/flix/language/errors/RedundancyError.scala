@@ -508,38 +508,6 @@ object RedundancyError {
   }
 
   /**
-   * An error raised to indicate that in the struct with symbol `sym` the field `field` is not used.
-   *
-   * @param sym the struct symbol.
-   * @param field the unused field.
-   */
-  case class UnusedStructField(sym: Symbol.StructSym, field: Symbol.StructFieldSym) extends RedundancyError with Recoverable {
-    def summary: String = s"Unused field '${field.name}'."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s""">> Field '${red(field.name)}' in struct '${cyan(sym.name)}' is never read.
-         |
-         |${code(field.loc, "unused field.")}
-         |""".stripMargin
-
-    }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      s"""
-         |Possible fixes:
-         |
-         |  (1)  Read the field.
-         |  (2)  Remove the field.
-         |  (3)  Prefix the field name with an underscore.
-         |
-         |""".stripMargin
-    })
-
-    def loc: SourceLocation = field.loc
-  }
-
-  /**
     * An error raised to indicate that the given type parameter `ident` is not used.
     *
     * @param ident the unused type variable.

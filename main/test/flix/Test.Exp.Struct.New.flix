@@ -61,10 +61,6 @@ mod Test.Exp.Struct.New {
         cowboy: Bool
     }
 
-    struct OneInt [r] {
-        x: Int32
-    }
-
     struct TwoInts [r] {
         x: Int32,
         y: Int32
@@ -212,7 +208,7 @@ mod Test.Exp.Struct.New {
     @test
     def testNestedLabels01(): Unit =
         region rc {
-            new A3 {a = new A2 {a = new A1{a = new Empty {} @ rc} @ rc} @ rc} @ rc;
+            new A3 {a = new A2 {a = new A1 {a = new Empty {} @ rc} @ rc} @ rc} @ rc;
             ()
         }
 }

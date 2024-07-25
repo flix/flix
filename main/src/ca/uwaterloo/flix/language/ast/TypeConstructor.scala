@@ -236,19 +236,7 @@ object TypeConstructor {
    * A type constructor that represents the type of structs.
    */
   @IntroducedBy(Kinder.getClass)
-  case class Struct(sym: Symbol.StructSym, elmTypes: List[Type], kind: Kind) extends TypeConstructor {
-    override def equals(obj: Any): Boolean = {
-      obj match {
-        case Struct(sym2, elmTypes2, kind2) => sym2 == sym && kind2 == kind
-        case _ => false
-      }
-    }
-
-    override def hashCode(): Int = {
-      val state = Seq(sym, kind)
-      state.map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)
-    }
-  }
+  case class Struct(sym: Symbol.StructSym, kind: Kind) extends TypeConstructor
 
   /**
     * A type constructor that represents the type of enums.
