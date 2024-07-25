@@ -510,7 +510,7 @@ object Namer {
       val ecsts = visitEqualityConstraints(econstrs)
 
       // Then visit the parts depending on the parameters
-      val e = exp.map(visitExp(_, ns0))
+      val e = visitExp(exp, ns0)
 
       val sym = Symbol.mkSigSym(traitSym, ident)
       val spec = NamedAst.Spec(doc, ann, mod, tparams, fps, t, ef, tcsts, ecsts, loc)
@@ -909,7 +909,7 @@ object Namer {
 
     case DesugaredAst.Expr.SelectChannel(rules, exp, loc) =>
       val rs = visitSelectChannelRules(rules, ns0)
-      val e = exp.map(visitExp(_, ns0))
+      val e = visitExp(exp, ns0)
       NamedAst.Expr.SelectChannel(rs, e, loc)
 
     case DesugaredAst.Expr.Spawn(exp1, exp2, loc) =>
@@ -967,6 +967,13 @@ object Namer {
   }
 
   /**
+    * Performs naming on the given expression `exp0`.
+    */
+  private def visitExp(exp0: Option[DesugaredAst.Expr], ns0: Name.NName)(implicit flix: Flix, sctx: SharedContext): Option[NamedAst.Expr] = {
+    exp0.map(visitExp(_, ns0))
+  }
+
+  /**
     * Performs naming on the given expressions `exps0`.
     */
   private def visitExps(exps0: List[DesugaredAst.Expr], ns0: Name.NName)(implicit flix: Flix, sctx: SharedContext): List[NamedAst.Expr] = {
@@ -979,7 +986,7 @@ object Namer {
   private def visitMatchRule(rule0: DesugaredAst.MatchRule, ns0: Name.NName)(implicit flix: Flix, sctx: SharedContext): NamedAst.MatchRule = rule0 match {
     case DesugaredAst.MatchRule(pat, exp1, exp2) =>
       val p = visitPattern(pat)
-      val e1 = exp1.map(visitExp(_, ns0))
+      val e1 = visitExp(exp1, ns0)
       val e2 = visitExp(exp2, ns0)
       NamedAst.MatchRule(p, e1, e2)
   }
