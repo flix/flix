@@ -301,11 +301,7 @@ object Stratifier {
 
     case Expr.TryWith(exp, sym, rules, tpe, eff, loc) =>
       val e = visitExp(exp)
-      val rs = rules.map {
-        case HandlerRule(op, fparams, exp1) =>
-          val e1 = visitExp(exp1)
-          HandlerRule(op, fparams, e1)
-      }
+      val rs = visitTryWithRules(rules)
       Expr.TryWith(e, sym, rs, tpe, eff, loc)
 
     case Expr.Do(sym, exps, tpe, eff, loc) =>
@@ -479,6 +475,16 @@ object Stratifier {
 
   private def visitTryCatchRules(rules: List[CatchRule])(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext[StratificationError]): List[CatchRule] = {
     rules.map(visitTryCatchRule)
+  }
+
+  private def visitTryWithRule(rule: HandlerRule)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext[StratificationError]): HandlerRule = rule match {
+    case HandlerRule(op, fparams, exp1) =>
+      val e1 = visitExp(exp1)
+      HandlerRule(op, fparams, e1)
+  }
+
+  private def visitTryWithRules(rules: List[HandlerRule])(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext[StratificationError]): List[HandlerRule] = {
+    rules.map(visitTryWithRule)
   }
 
   private def visitJvmMethod(method: JvmMethod)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext[StratificationError]): JvmMethod = method match {
