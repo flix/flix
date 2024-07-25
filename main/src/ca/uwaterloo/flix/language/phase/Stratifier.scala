@@ -58,20 +58,18 @@ object Stratifier {
     // Compute the stratification at every datalog expression in the ast.
     val ds = ParOps.parMapValues(root.defs)(visitDef)
     val is = ParOps.parMapValues(root.instances)(visitInstances)
-    val newTraits = ParOps.parTraverseValues(root.traits)(visitTrait(_))
+    val ts = ParOps.parMapValues(root.traits)(visitTrait)
 
-    flatMapN(newTraits) {
-      case ts => Validation.toSuccessOrSoftFailure(root.copy(defs = ds, instances = is, traits = ts), sctx.errors.asScala)
-    }
+    Validation.toSuccessOrSoftFailure(root.copy(defs = ds, instances = is, traits = ts), sctx.errors.asScala)
   }(DebugValidation())
 
   /**
     * Performs Stratification of the given trait `t0`.
     */
-  private def visitTrait(t0: TypedAst.Trait)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext[StratificationError]): Validation[TypedAst.Trait, StratificationError] = {
+  private def visitTrait(t0: TypedAst.Trait)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext[StratificationError]): TypedAst.Trait = {
     val nl = visitDefs(t0.laws)
     val ns = visitSigs(t0.sigs)
-    Validation.success(t0.copy(laws = nl, sigs = ns))
+    t0.copy(laws = nl, sigs = ns)
   }
 
   /**
