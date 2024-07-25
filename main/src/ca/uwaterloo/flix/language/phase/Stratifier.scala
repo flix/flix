@@ -301,7 +301,7 @@ object Stratifier {
 
     case Expr.TryWith(exp, sym, rules, tpe, eff, loc) =>
       val e = visitExp(exp)
-      val rs = visitTryWithRules(rules)
+      val rs = visitHandlerRules(rules)
       Expr.TryWith(e, sym, rs, tpe, eff, loc)
 
     case Expr.Do(sym, exps, tpe, eff, loc) =>
@@ -483,7 +483,7 @@ object Stratifier {
       HandlerRule(op, fparams, e1)
   }
 
-  private def visitTryWithRules(rules: List[HandlerRule])(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext[StratificationError]): List[HandlerRule] = {
+  private def visitHandlerRules(rules: List[HandlerRule])(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext[StratificationError]): List[HandlerRule] = {
     rules.map(visitTryWithRule)
   }
 
