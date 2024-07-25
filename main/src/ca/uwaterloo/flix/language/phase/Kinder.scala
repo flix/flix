@@ -1352,13 +1352,8 @@ object Kinder {
 
     case UnkindedType.Struct(sym, loc) =>
       val kind = getStructKind(root.structs(sym))
-      val structFieldTys = root.structs(sym).fields.sortBy(_.sym.name).map(_.tpe)
-      val KindedStructFieldTysVal = traverse(structFieldTys)(visitType(_, Kind.Wild, kenv, taenv, root))
       unify(kind, expectedKind) match {
-        case Some(k) =>
-          flatMapN(KindedStructFieldTysVal) {
-            elmTys => Validation.success(Type.Cst(TypeConstructor.Struct(sym, k), loc))
-          }
+        case Some(k) => Validation.success(Type.Cst(TypeConstructor.Struct(sym, k), loc))
         case None => Validation.toHardFailure(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc))
       }
 

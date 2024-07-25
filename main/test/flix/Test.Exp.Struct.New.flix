@@ -93,6 +93,7 @@ mod Test.Exp.Struct.New {
         a: Empty[r]
     }
 
+
     @test
     def testEmptyStruct01(): Unit =
         region rc {

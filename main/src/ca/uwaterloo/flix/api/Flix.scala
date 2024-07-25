@@ -1,3 +1,4 @@
+// JOE TODO: Struct actually check values
 /*
  * Copyright 2015-2016 Magnus Madsen, Ming-Ho Yee
  *
