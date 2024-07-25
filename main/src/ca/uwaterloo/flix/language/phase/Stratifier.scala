@@ -177,35 +177,32 @@ object Stratifier {
       Expr.Discard(e, eff, loc)
 
     case Expr.Match(exp, rules, tpe, eff, loc) =>
-      val matchVal = visitExp(exp)
-      val rulesVal = traverse(rules) {
-        case MatchRule(pat, guard, body) => mapN(traverseOpt(guard)(visitExp), visitExp(body)) {
-          case (gd, b) => MatchRule(pat, gd, b)
-        }
+      val e = visitExp(exp)
+      val rs = rules.map {
+        case MatchRule(pat, exp1, exp2) =>
+          val e1 = exp1.map(visitExp)
+          val e2 = visitExp(exp2)
+          MatchRule(pat, e1, e2)
       }
-      mapN(matchVal, rulesVal) {
-        case (m, rs) => Expr.Match(m, rs, tpe, eff, loc)
-      }
+      Expr.Match(e, rs, tpe, eff, loc)
 
     case Expr.TypeMatch(exp, rules, tpe, eff, loc) =>
-      val matchVal = visitExp(exp)
-      val rulesVal = traverse(rules) {
-        case TypeMatchRule(sym, t, body) => mapN(visitExp(body)) {
-          case b => TypeMatchRule(sym, t, b)
-        }
+      val e = visitExp(exp)
+      val rs = rules.map {
+        case TypeMatchRule(sym, t, exp1) =>
+          val e1 = visitExp(exp1)
+          TypeMatchRule(sym, t, e1)
       }
-      mapN(matchVal, rulesVal) {
-        case (m, rs) => Expr.TypeMatch(m, rs, tpe, eff, loc)
-      }
+      Expr.TypeMatch(e, rs, tpe, eff, loc)
 
     case Expr.RestrictableChoose(star, exp, rules, tpe, eff, loc) =>
-      val expVal = visitExp(exp)
-      val rulesVal = traverse(rules) {
-        case RestrictableChooseRule(pat, body) => mapN(visitExp(body))(RestrictableChooseRule(pat, _))
+      val e = visitExp(exp)
+      val rs = rules.map {
+        case RestrictableChooseRule(pat, exp1) =>
+          val e1 = visitExp(exp1)
+          RestrictableChooseRule(pat, e1)
       }
-      mapN(expVal, rulesVal) {
-        case (e, rs) => Expr.RestrictableChoose(star, e, rs, tpe, eff, loc)
-      }
+      Expr.RestrictableChoose(star, e, rs, tpe, eff, loc)
 
     case Expr.Tag(sym, exp, tpe, eff, loc) =>
       val e = visitExp(exp)
@@ -313,23 +310,22 @@ object Stratifier {
       Expr.Without(e, sym, tpe, eff, loc)
 
     case Expr.TryCatch(exp, rules, tpe, eff, loc) =>
-      val rulesVal = traverse(rules) {
-        case CatchRule(sym, clazz, e) =>
-          mapN(visitExp(e))(CatchRule(sym, clazz, _))
-      }
       val e = visitExp(exp)
-      mapN(rulesVal) {
-        case (rs) => Expr.TryCatch(e, rs, tpe, eff, loc)
+      val rs = rules.map {
+        case CatchRule(sym, clazz, exp1) =>
+          val e1 = visitExp(exp1)
+          CatchRule(sym, clazz, e1)
       }
+      Expr.TryCatch(e, rs, tpe, eff, loc)
 
     case Expr.TryWith(exp, sym, rules, tpe, eff, loc) =>
-      val rulesVal = traverse(rules) {
-        case HandlerRule(op, fparams, e) =>
-          mapN(visitExp(e))(HandlerRule(op, fparams, _))
+      val e = visitExp(exp)
+      val rs = rules.map {
+        case HandlerRule(op, fparams, exp1) =>
+          val e1 = visitExp(exp1)
+          HandlerRule(op, fparams, e1)
       }
-      mapN(visitExp(exp), rulesVal) {
-        case (e, rs) => Expr.TryWith(e, sym, rs, tpe, eff, loc)
-      }
+      Expr.TryWith(e, sym, rs, tpe, eff, loc)
 
     case Expr.Do(sym, exps, tpe, eff, loc) =>
       val es = visitExps(exps)
@@ -341,8 +337,8 @@ object Stratifier {
 
     case Expr.InvokeMethod(method, exp, exps, tpe, eff, loc) =>
       val e = visitExp(exp)
-      val es = (visitExps(exps)
-        Expr.InvokeMethod(method, e, es, tpe, eff, loc)
+      val es = visitExps(exps)
+      Expr.InvokeMethod(method, e, es, tpe, eff, loc)
 
     case Expr.InvokeStaticMethod(method, exps, tpe, eff, loc) =>
       val es = visitExps(exps)
@@ -382,24 +378,15 @@ object Stratifier {
       val e2 = visitExp(exp2)
       Expr.PutChannel(e1, e2, tpe, eff, loc)
 
-    case Expr.SelectChannel(rules, default, tpe, eff, loc) =>
-      val rulesVal = traverse(rules) {
-        case SelectChannelRule(sym, chan, exp) => mapN(visitExp(chan), visitExp(exp)) {
-          case (c, e) => SelectChannelRule(sym, c, e)
-        }
+    case Expr.SelectChannel(rules, exp, tpe, eff, loc) =>
+      val e = exp.map(visitExp)
+      val rs = rules.map {
+        case SelectChannelRule(sym, exp1, exp2) =>
+          val e1 = visitExp(exp1)
+          val e2 = visitExp(exp2)
+          SelectChannelRule(sym, e1, e2)
       }
-
-      val defaultVal = default match {
-        case None => Validation.success(None)
-        case Some(exp) =>
-          mapN(visitExp(exp)) {
-            case e => Some(e)
-          }
-      }
-
-      mapN(rulesVal, defaultVal) {
-        case (rs, d) => Expr.SelectChannel(rs, d, tpe, eff, loc)
-      }
+      Expr.SelectChannel(rs, e, tpe, eff, loc)
 
     case Expr.Spawn(exp1, exp2, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
@@ -407,17 +394,13 @@ object Stratifier {
       Expr.Spawn(e1, e2, tpe, eff, loc)
 
     case Expr.ParYield(frags, exp, tpe, eff, loc) =>
-      val fragsVal = traverse(frags) {
+      val e = visitExp(exp)
+      val fs = frags.map {
         case ParYieldFragment(pat, exp1, loc1) =>
           val e1 = visitExp(exp1)
-          mapN(e1) {
-            case e1 => ParYieldFragment(pat, e1, loc1)
-          }
+          ParYieldFragment(pat, e1, loc1)
       }
-      val e = visitExp(exp)
-      mapN(fragsVal, e) {
-        case (fs, e) => Expr.ParYield(fs, e, tpe, eff, loc)
-      }
+      Expr.ParYield(fs, e, tpe, eff, loc)
 
     case Expr.Lazy(exp, tpe, loc) =>
       val e = visitExp(exp)
