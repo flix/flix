@@ -80,10 +80,8 @@ object Stratifier {
     * Performs Stratification of the given sig `s0`.
     */
   private def visitSig(s0: TypedAst.Sig)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext[StratificationError]): Validation[TypedAst.Sig, StratificationError] = {
-    val newExp = traverseOpt(s0.exp)(visitExp(_))
-    mapN(newExp) {
-      case ne => s0.copy(exp = ne)
-    }
+    val newExp = s0.exp.map(visitExp)
+    Validation.success(s0.copy(exp = newExp))
   }
 
 
@@ -96,10 +94,10 @@ object Stratifier {
   /**
     * Performs stratification of the given definition `def0`.
     */
-  private def visitDef(def0: Def)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext[StratificationError]): Validation[Def, StratificationError] =
-    mapN(visitExp(def0.exp)) {
-      case e => def0.copy(exp = e)
-    }
+  private def visitDef(def0: Def)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext[StratificationError]): Validation[Def, StratificationError] = {
+    val e = visitExp(def0.exp)
+    Validation.success(def0.copy(exp = e))
+  }
 
   /**
     * Performs stratification of the given expression `exp0`.
@@ -455,10 +453,14 @@ object Stratifier {
     exps0.map(visitExp)
   }
 
-  private def visitJvmMethod(method: JvmMethod)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext[StratificationError]): Validation[JvmMethod, StratificationError] = method match {
+  private def visitJvmMethod(method: JvmMethod)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext[StratificationError]): JvmMethod = method match {
     case JvmMethod(ident, fparams, exp, tpe, eff, loc) =>
       val e = visitExp(exp)
       JvmMethod(ident, fparams, e, tpe, eff, loc)
+  }
+
+  private def visitJvmMethods(methods: List[JvmMethod])(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext[StratificationError]): List[JvmMethod] = {
+    methods.map(visitJvmMethod)
   }
 
   /**
