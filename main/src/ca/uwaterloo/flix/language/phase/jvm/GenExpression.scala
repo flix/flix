@@ -1514,18 +1514,18 @@ object GenExpression {
       compileExpr(exp)
       val idx = root.structs(sym).fields(Symbol.mkStructFieldSym(sym, Name.Ident(field.name, field.loc))).idx
       // Retrieving the field `field${offset}`
-      mv.visitFieldInsn(GETFIELD, structType.jvmName.toInternalName, s"field$idx", JvmOps.asErasedJvmType(tpe).toDescriptor)
+      mv.visitFieldInsn(GETFIELD, structType.jvmName.toInternalName, s"field$idx", JvmOps.getErasedJvmType(tpe).toDescriptor)
 
     case Expr.StructPut(sym, exp1, field, exp2, _, _, _) =>
       val MonoType.Struct(_, elmTypes, targs) = exp1.tpe
-      val structType = BackendObjType.Struct(elmTypes.map(BackendType.asErasedBackendType), targs.map(BackendType.toErasedBackendType))
+      val structType = BackendObjType.Struct(elmTypes.map(BackendType.toErasedBackendType), targs.map(BackendType.toErasedBackendType))
       // evaluating the `base`
       compileExpr(exp1)
       // evaluating the `rhs`
       compileExpr(exp2)
       val idx = root.structs(sym).fields(Symbol.mkStructFieldSym(sym, Name.Ident(field.name, field.loc))).idx
       // set the field `field${offset}`
-      mv.visitFieldInsn(PUTFIELD, structType.jvmName.toInternalName, s"field$idx", JvmOps.asErasedJvmType(exp2.tpe).toDescriptor)
+      mv.visitFieldInsn(PUTFIELD, structType.jvmName.toInternalName, s"field$idx", JvmOps.getErasedJvmType(exp2.tpe).toDescriptor)
       // Since the return type is unit, we put an instance of unit on top of the stack
       mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
   }

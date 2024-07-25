@@ -22,6 +22,7 @@ import ca.uwaterloo.flix.language.ast.ReducedAst._
 import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoType, Name, Purity, SemanticOp, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
+import ca.uwaterloo.flix.language.phase.Eraser.erase
 
 import scala.annotation.tailrec
 
@@ -553,8 +554,8 @@ object Verifier {
       }
       tpe match {
         case MonoType.Struct(sym, elms, _) => {
-          // JOE TODO: Is this check necessary?
-          // fields.zip(elms).map(fieldAndElm => checkEq(visitExpr(fieldAndElm._1._2), fieldAndElm._2, fieldAndElm._1._2.loc))
+          val erasedElmTys = fields.map(f => erase(f._2.tpe))
+          erasedElmTys.zip(elms).foreach(tys => checkEq(tys._1, tys._2, loc))
           if(sym0 != sym) {
             throw InternalCompilerException(s"Expected struct type $sym0, got struct type $sym", loc)
           }
@@ -574,7 +575,8 @@ object Verifier {
             throw InternalCompilerException(s"Expected struct type $sym0, got struct type $sym", loc)
           }
           val fieldIdx = root.structs(sym).fields(Symbol.mkStructFieldSym(sym0, Name.Ident(field.name, field.loc))).idx
-          checkEq(elms(fieldIdx), tpe, loc)
+          checkEq(elms(fieldIdx), erase(tpe), loc)
+          tpe
         }
         case _ => failMismatchedShape(tpe, "Struct", loc)
       }
@@ -589,7 +591,7 @@ object Verifier {
             throw InternalCompilerException(s"Expected struct type $sym0, got struct type $sym", loc)
           }
           val fieldIdx = root.structs(sym).fields(Symbol.mkStructFieldSym(sym0, Name.Ident(field.name, field.loc))).idx
-          checkEq(elms(fieldIdx), visitExpr(value), loc)
+          checkEq(elms(fieldIdx), erase(visitExpr(value)), loc)
           checkEq(tpe, MonoType.Unit, loc)
         }
         case _ => failMismatchedShape(tpe, "Struct", loc)
