@@ -56,12 +56,12 @@ object Stratifier {
     implicit val r: Root = root
 
     // Compute the stratification at every datalog expression in the ast.
-    val newDefs = ParOps.parTraverseValues(root.defs)(visitDef(_))
+    val ds = ParOps.parMapValues(root.defs)(visitDef(_))
     val newInstances = ParOps.parTraverseValues(root.instances)(traverse(_)(visitInstance(_)))
     val newTraits = ParOps.parTraverseValues(root.traits)(visitTrait(_))
 
-    flatMapN(newDefs, newInstances, newTraits) {
-      case (ds, is, ts) => Validation.toSuccessOrSoftFailure(root.copy(defs = ds, instances = is, traits = ts), sctx.errors.asScala)
+    flatMapN(newInstances, newTraits) {
+      case (is, ts) => Validation.toSuccessOrSoftFailure(root.copy(defs = ds, instances = is, traits = ts), sctx.errors.asScala)
     }
   }(DebugValidation())
 
@@ -69,10 +69,10 @@ object Stratifier {
     * Performs Stratification of the given trait `t0`.
     */
   private def visitTrait(t0: TypedAst.Trait)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext[StratificationError]): Validation[TypedAst.Trait, StratificationError] = {
-    val newLaws = traverse(t0.laws)(visitDef(_))
+    val nl = t0.laws.map(visitDef)
     val newSigs = traverse(t0.sigs)(visitSig(_))
-    mapN(newLaws, newSigs) {
-      case (nl, ns) => t0.copy(laws = nl, sigs = ns)
+    mapN(newSigs) {
+      case ns => t0.copy(laws = nl, sigs = ns)
     }
   }
 
@@ -88,15 +88,17 @@ object Stratifier {
   /**
     * Performs Stratification of the given instance `i0`.
     */
-  private def visitInstance(i0: TypedAst.Instance)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext[StratificationError]): Validation[TypedAst.Instance, StratificationError] =
-    mapN(traverse(i0.defs)(d => visitDef(d)))(ds => i0.copy(defs = ds))
+  private def visitInstance(i0: TypedAst.Instance)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext[StratificationError]): Validation[TypedAst.Instance, StratificationError] = {
+    val ds = i0.defs.map(visitDef)
+    Validation.success(i0.copy(defs = ds))
+  }
 
   /**
     * Performs stratification of the given definition `def0`.
     */
-  private def visitDef(def0: Def)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext[StratificationError]): Validation[Def, StratificationError] = {
+  private def visitDef(def0: Def)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext[StratificationError]): Def = {
     val e = visitExp(def0.exp)
-    Validation.success(def0.copy(exp = e))
+    def0.copy(exp = e)
   }
 
   /**
