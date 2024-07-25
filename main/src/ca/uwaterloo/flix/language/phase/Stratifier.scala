@@ -70,20 +70,24 @@ object Stratifier {
     */
   private def visitTrait(t0: TypedAst.Trait)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext[StratificationError]): Validation[TypedAst.Trait, StratificationError] = {
     val nl = visitDefs(t0.laws)
-    val newSigs = traverse(t0.sigs)(visitSig(_))
-    mapN(newSigs) {
-      case ns => t0.copy(laws = nl, sigs = ns)
-    }
+    val ns = visitSigs(t0.sigs)
+    Validation.success(t0.copy(laws = nl, sigs = ns))
   }
 
   /**
     * Performs Stratification of the given sig `s0`.
     */
-  private def visitSig(s0: TypedAst.Sig)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext[StratificationError]): Validation[TypedAst.Sig, StratificationError] = {
+  private def visitSig(s0: TypedAst.Sig)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext[StratificationError]): TypedAst.Sig = {
     val newExp = visitExp(s0.exp)
-    Validation.success(s0.copy(exp = newExp))
+    s0.copy(exp = newExp)
   }
 
+  /**
+    * Performs Stratification of the given sigs `s0s`.
+    */
+  private def visitSigs(s0s: List[TypedAst.Sig])(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext[StratificationError]): List[TypedAst.Sig] = {
+    s0s.map(visitSig)
+  }
 
   /**
     * Performs Stratification of the given instance `i0`.
