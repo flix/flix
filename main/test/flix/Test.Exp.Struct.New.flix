@@ -203,6 +203,7 @@ mod Test.Exp.Struct.New {
     def testNestedStructLiteral03(): Unit =
         region rc {
             new A {a = new B {b = new C {c = new D {d = 42} @ rc} @ rc} @ rc} @ rc;
+            ()
         }
 
     @test
