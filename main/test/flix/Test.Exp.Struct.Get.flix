@@ -8,10 +8,10 @@ mod Test.Exp.Struct.Get {
     }
 
     @test
-    def testStructGet01(): String =
+    def testStructGet01(): Bool =
         region rc {
             let s = new Get { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true } @ rc;
-            s€fstName
+            s€fstName == "Lucky" and s€lstName == "Luke" and s€age == 42 and s€cowboy == true
         }
 
     @test

@@ -1,4 +1,3 @@
-// JOE TODO: Double check all diff
 /*
  * Copyright 2019 Magnus Madsen
  *

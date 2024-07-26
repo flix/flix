@@ -8,75 +8,79 @@ mod Test.Exp.Struct.Put {
     }
 
     @test
-    def testStructPut01(): Unit =
+    def testStructPut01(): Bool =
         region rc {
             let s = new Put { _fstName = "Lucky", _lstName = "Luke", _age = 42, _cowboy = true } @ rc;
-            s€_fstName = "Unlucky"
+            s€_fstName = "Unlucky";
+            s€_fstName == "Unlucky"
         }
 
     @test
-    def testStructPut02(): Unit =
+    def testStructPut02(): Bool =
         region rc {
             let s = new Put { _fstName = "Lucky", _lstName = "Luke", _age = 42, _cowboy = true } @ rc;
-            s€_lstName = "Uriel"
+            s€_lstName = "Uriel";
+            s€_lstName == "Uriel"
         }
 
     @test
-    def testStructPut03(): Unit =
+    def testStructPut03(): Bool =
         region rc {
             let s = new Put { _fstName = "Lucky", _lstName = "Luke", _age = 42, _cowboy = true } @ rc;
-            s€_age = 23
+            s€_age = 23;
+            s€_age == 23
         }
 
     @test
-    def testStructPut04(): Unit =
+    def testStructPut04(): Bool =
         region rc {
             let s = new Put { _fstName = "Lucky", _lstName = "Luke", _age = 42, _cowboy = true } @ rc;
-            s€_cowboy = false
+            s€_cowboy = false;
+            not s€_cowboy and s€_fstName == "Lucky" and s€_lstName == "Luke" and s€_age == 42
         }
 
     @test
-    def testStructMultiPut01(): Unit =
+    def testStructMultiPut01(): Bool =
         region rc {
             let s = new Put { _fstName = "Lucky", _lstName = "Luke", _age = 42, _cowboy = true } @ rc;
             s€_fstName = "Unlucky";
             s€_lstName = "Uriel";
             s€_age = 23;
             s€_cowboy = false;
-            ()
+            s€_fstName == "Unlucky" and s€_lstName == "Uriel" and s€_age == 23 and s€_cowboy == false
         }
 
     @test
-    def testStructMultiPut02(): Unit =
+    def testStructMultiPut02(): Bool =
         region rc {
             let s = new Put { _fstName = "Lucky", _lstName = "Luke", _age = 42, _cowboy = true } @ rc;
             s€_cowboy = false;
             s€_age = 23;
             s€_lstName = "Uriel";
             s€_fstName = "Unlucky";
-            ()
+            s€_fstName == "Unlucky" and s€_lstName == "Uriel" and s€_age == 23 and s€_cowboy == false
         }
 
     @test
-    def testStructMultiPut03(): Unit =
+    def testStructMultiPut03(): Bool =
         region rc {
             let s = new Put { _fstName = "Lucky", _lstName = "Luke", _age = 42, _cowboy = true } @ rc;
             s€_fstName = "Unlucky";
             s€_fstName = "Lucky";
             s€_lstName = "Uriel";
             s€_lstName = "Luke";
-            ()
+            s€_lstName == "Luke" and s€_fstName == "Lucky" and s€_age == 42 and s€_cowboy == true
         }
 
     @test
-    def testStructMultiPut04(): Unit =
+    def testStructMultiPut04(): Bool =
         region rc {
             let s = new Put { _fstName = "Lucky", _lstName = "Luke", _age = 42, _cowboy = true } @ rc;
             s€_lstName = "Uriel";
             s€_fstName = "Unlucky";
             s€_lstName = "Luke";
             s€_fstName = "Lucky";
-            ()
+            s€_fstName == "Lucky" and s€_lstName == "Luke" and s€_age == 42 and s€_cowboy == true
         }
 
 /* Cannot test these while struct name is required to be mod name

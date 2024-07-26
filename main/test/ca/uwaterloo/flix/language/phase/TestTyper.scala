@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-// JOE TODO: Test struct type errors
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
