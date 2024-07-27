@@ -1327,6 +1327,13 @@ object Parser2 {
             arguments()
             lhs = close(mark, TreeKind.Expr.Apply)
             lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+          case TokenKind.Currency if nth(1) == TokenKind.NameLowerCase => // invoke method
+            val mark = openBefore(lhs)
+            eat(TokenKind.Currency)
+            name(Set(TokenKind.NameLowerCase), context = SyntacticContext.Expr.OtherExpr)
+            arguments()
+            lhs = close(mark, TreeKind.Expr.InvokeMethod2)
+            lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
           case TokenKind.Hash if nth(1) == TokenKind.NameLowerCase => // record lookup
             val mark = openBefore(lhs)
             eat(TokenKind.Hash)
@@ -1509,7 +1516,6 @@ object Parser2 {
              | TokenKind.LiteralRegex => literalExpr()
         case TokenKind.ParenL => parenOrTupleOrLambdaExpr()
         case TokenKind.Underscore => if (nth(1) == TokenKind.ArrowThinR) unaryLambdaExpr() else name(NAME_VARIABLE, context = SyntacticContext.Expr.OtherExpr)
-        case TokenKind.NameLowerCase if nth(1) == TokenKind.Currency => invokeMethod2Expr()
         case TokenKind.NameUpperCase if nth(1) == TokenKind.Currency => invokeStaticMethod2Expr()
         case TokenKind.NameLowerCase => if (nth(1) == TokenKind.ArrowThinR) unaryLambdaExpr() else name(NAME_FIELD, allowQualified = true, context = SyntacticContext.Expr.OtherExpr)
         case TokenKind.NameUpperCase
@@ -2448,19 +2454,6 @@ object Parser2 {
       name(NAME_QNAME, allowQualified = true, context = SyntacticContext.Expr.Do)
       arguments()
       close(mark, TreeKind.Expr.Do)
-    }
-
-    private def invokeMethod2Expr()(implicit s: State): Mark.Closed = {
-      assert(at(TokenKind.NameLowerCase))
-      val mark = open()
-      name(Set(TokenKind.NameLowerCase), context = SyntacticContext.Expr.OtherExpr)
-      while (eat(TokenKind.Currency)) {
-        val fragmentMark = open()
-        name(Set(TokenKind.NameUpperCase, TokenKind.NameLowerCase), context = SyntacticContext.Expr.OtherExpr)
-        arguments()
-        close(fragmentMark, TreeKind.Expr.InvokeMethod2Fragment)
-      }
-      close(mark, TreeKind.Expr.InvokeMethod2)
     }
 
     private def invokeStaticMethod2Expr()(implicit s: State): Mark.Closed = {
