@@ -28,7 +28,7 @@ object SnippetCompleter extends Completer {
     List(
       // NB: Please keep the list alphabetically sorted.
       ("main",
-        "def main(): Unit \\ IO = \n    println(\"Hello World!\")",
+        s"def main(): Unit \\ IO = ${System.lineSeparator()}    println(\"Hello World!\")",
         "snippet for Hello World Program"),
     ) map { case (name, snippet, documentation) => Completion.SnippetCompletion(name, snippet, documentation)}
   }

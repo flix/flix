@@ -83,7 +83,7 @@ object Debug {
         contents :::
         edges :::
         List("}")
-      ).mkString("\n"))
+      ).mkString(System.lineSeparator()))
   }
 
   /**
@@ -128,7 +128,7 @@ object Debug {
         constrsSubgraph :::
         "invisR -> root [style=\"invis\"];" ::
         List("}")
-      ).mkString("\n"))
+      ).mkString(System.lineSeparator()))
   }
 
   /**
@@ -144,7 +144,7 @@ object Debug {
       val header = s"""${dotId(constr)} [label = "$eff1 ~ ($eff2)[$sym ↦ Pure]"];"""
       val children = nested.map(toSubDot)
       val edges = nested.map { child => s"${dotId(constr)} -> ${dotId(child)};" }
-      (header :: children ::: edges).mkString("\n")
+      (header :: children ::: edges).mkString(System.lineSeparator())
   }
 
   /**

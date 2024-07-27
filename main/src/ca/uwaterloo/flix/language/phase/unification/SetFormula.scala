@@ -337,7 +337,7 @@ object SetFormula {
     * The string is prefixed with a newline (if not empty).
     */
   def formatLowerAndUpperBounds(tpe: Type)(implicit root: TypedAst.Root): String = {
-    "\n" + restrictableEnumBounds(tpe).getOrElse("")
+    System.lineSeparator() + restrictableEnumBounds(tpe).getOrElse("")
   }
 
   /**
@@ -461,7 +461,7 @@ object SetFormula {
   private def formatBounds(lowerBound: Set[Symbol.RestrictableCaseSym], upperBound: Set[Symbol.RestrictableCaseSym]): String = {
     val minStr = lowerBound.map(_.name).mkString("{", ", ", "}")
     val maxStr = upperBound.map(_.name).mkString("{", ", ", "}")
-    s"Lowerbound: $minStr\nUpperbound: $maxStr\n"
+    s"Lowerbound: $minStr${System.lineSeparator()}Upperbound: $maxStr${System.lineSeparator()}"
   }
 
 }

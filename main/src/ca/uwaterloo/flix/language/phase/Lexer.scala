@@ -147,6 +147,7 @@ object Lexer {
     }
 
     val c = s.src.data(s.current.offset)
+    // is this okay?
     if (c == '\n') {
       s.end = new Position(s.current.line, s.current.column, s.current.offset)
       s.current.offset += 1
@@ -169,6 +170,7 @@ object Lexer {
     }
     s.current.offset -= 1
     val c = s.src.data(s.current.offset)
+    // is this okay?
     if (c == '\n') {
       s.current.line -= 1
       s.current.column = 0

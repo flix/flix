@@ -79,13 +79,14 @@ object InstanceCompleter extends Completer {
       s"    pub def ${sig.sym.name}($fparams): $retTpe$eff = ???"
     }
 
+    val doubleNewline = s"${System.lineSeparator()}${System.lineSeparator()}"
     root.traits.map {
       case (_, trt) =>
         val hole = "${1:t}"
         val traitSym = trt.sym
         val signatures = trt.sigs.filter(_.exp.isEmpty)
-        val body = signatures.map(s => fmtSignature(trt, s, hole)).mkString("\n\n")
-        val completion = s"$traitSym[$hole] {\n\n$body\n\n}\n"
+        val body = signatures.map(s => fmtSignature(trt, s, hole)).mkString(doubleNewline)
+        val completion = s"$traitSym[$hole] {$doubleNewline$body$doubleNewline${System.lineSeparator()}"
 
         InstanceCompletion(trt, completion)
     }.toList

@@ -59,8 +59,8 @@ object MatchCompleter extends Completer {
             .mkString(s"$enumName.$caseName(", ", ", s") => $${${arity + z + 1}:???}"), z + arity + 1)
           case _ => (s"$enumName.$caseName($${${z + 1}:_elem}) => $${${z + 2}:???}", z + 2)
         }
-        (acc + "    case " + str + "\n", k)
+        (acc + "    case " + str + System.lineSeparator(), k)
     })
-    Some(MatchCompletion(enm, s"$includeMatch$${1:???} {\n$completion}"))
+    Some(MatchCompletion(enm, s"$includeMatch$${1:???} {${System.lineSeparator()}$completion}"))
   }
 }

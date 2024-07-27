@@ -129,7 +129,7 @@ object Doc {
     def aux(d: SDoc): Unit = d match {
       case SNil => ()
       case SText(s, x) => sb.append(s); aux(x)
-      case SLine(i, x) => sb.append("\n"); sb.append(" " * i); aux(x)
+      case SLine(i, x) => sb.append(System.lineSeparator()); sb.append(" " * i); aux(x)
     }
 
     aux(d)

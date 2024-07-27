@@ -798,7 +798,7 @@ object Monomorpher {
       case Result.Ok((subst, econstrs)) => // TODO ASSOC-TYPES consider econstrs
         StrictSubstitution(subst, root.eqEnv)
       case Result.Err(_) =>
-        throw InternalCompilerException(s"Unable to unify: '$tpe1' and '$tpe2'.\nIn '${sym}'", tpe1.loc)
+        throw InternalCompilerException(s"Unable to unify: '$tpe1' and '$tpe2'.${System.lineSeparator()}In '${sym}'", tpe1.loc)
     }
   }
 

@@ -65,8 +65,8 @@ class FlixSuite(incremental: Boolean) extends AnyFunSuite {
         case Result.Ok(compilationResult) =>
           runTests(compilationResult)
         case Result.Err(errors) =>
-          val es = errors.map(_.messageWithLoc(flix.getFormatter)).mkString("\n")
-          fail(s"Unable to compile. Failed with: ${errors.length} errors.\n\n$es")
+          val es = errors.map(_.messageWithLoc(flix.getFormatter)).mkString(System.lineSeparator())
+          fail(s"Unable to compile. Failed with: ${errors.length} errors.${System.lineSeparator()}${System.lineSeparator()}$es")
       }
     } finally {
       // Remove the source path.

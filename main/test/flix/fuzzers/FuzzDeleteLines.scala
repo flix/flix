@@ -68,7 +68,7 @@ class FuzzDeleteLines extends AnyFunSuite with TestUtils {
     for (i <- 0 until NFixed) {
       val iStepped = Math.min(i * step, numLines)
       val (before, after) = lines.splitAt(iStepped)
-      val src = (before ::: after.drop(1)).mkString("\n")
+      val src = (before ::: after.drop(1)).mkString(System.lineSeparator())
       flix.addSourceCode(s"$name-delete-line-$i", src)
       flix.compile() // We simply care that this does not crash.
     }

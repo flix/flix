@@ -23,7 +23,7 @@ class TestManifestParser extends AnyFunSuite {
         val expected = classTag.runtimeClass
         val actual = error.getClass
         if (!expected.isAssignableFrom(actual)) {
-          fail(s"Expected an error of type ${expected.getSimpleName}, but found:\n\n${actual.getName}")
+          fail(s"Expected an error of type ${expected.getSimpleName}, but found:${System.lineSeparator()}${System.lineSeparator()}${actual.getName}")
         }
     }
 

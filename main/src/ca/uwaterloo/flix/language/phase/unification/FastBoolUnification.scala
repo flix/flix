@@ -1346,7 +1346,7 @@ object FastBoolUnification {
         sb.append(s"x$x")
         sb.append(" -> ")
         sb.append(t)
-        sb.append("\n")
+        sb.append(System.lineSeparator())
       }
       sb.toString()
     }
@@ -1362,7 +1362,7 @@ object FastBoolUnification {
       sb.append(t1.toString)
       sb.append(" ~ ")
       sb.append(t2.toString)
-      sb.append("\n")
+      sb.append(System.lineSeparator())
     }
     sb.toString()
   }
