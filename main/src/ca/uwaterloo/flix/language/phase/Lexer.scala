@@ -328,7 +328,6 @@ object Lexer {
       case '\"' => acceptString()
       case '\'' => acceptChar()
       case '`' => acceptInfixFunction()
-      case _ if isMatch("##") => acceptJavaName()
       case _ if isMatch("#{") => TokenKind.HashCurlyL
       case _ if isMatch("#(") => TokenKind.HashParenL
       case '#' => TokenKind.Hash
@@ -648,22 +647,6 @@ object Lexer {
       advance()
     }
     kind
-  }
-
-
-  /**
-   * Moves current position past a java name. IE. "##java"
-   */
-  private def acceptJavaName()(implicit s: State): TokenKind = {
-    advance()
-    while (!eof()) {
-      val p = peek()
-      if (!p.isLetter && !p.isDigit && p != '_' && p != '!' && p != '$') {
-        return TokenKind.NameJava
-      }
-      advance()
-    }
-    TokenKind.NameJava
   }
 
   /**
