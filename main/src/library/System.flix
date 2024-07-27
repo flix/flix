@@ -19,7 +19,9 @@ mod System {
     /// Operations on the Standard Input Stream.
     ///
     mod StdIn {
-        import java.io.{InputStreamReader, BufferedReader};
+
+        import java.io.BufferedReader
+        import java.io.InputStreamReader
 
         ///
         /// Returns an iterator over lines from the standard input stream.
@@ -92,7 +94,7 @@ mod System {
         /// Returns the standard output stream.
         ///
         def getOutputStream(): PrintStream \ IO =
-            import static java_get_field java.lang.System.out: ##java.io.PrintStream \ IO as getOut;
+            import static java_get_field java.lang.System.out: PrintStream \ IO as getOut;
             getOut()
 
     }
@@ -101,6 +103,8 @@ mod System {
     /// Operations on the Standard Error Stream.
     ///
     mod StdErr {
+
+        import java.io.PrintStream
 
         ///
         /// Prints the given string `s` to the standard error stream.
@@ -133,8 +137,8 @@ mod System {
         ///
         /// Returns the standard error stream.
         ///
-        def getErrorStream(): ##java.io.PrintStream \ IO =
-            import static java_get_field java.lang.System.err: ##java.io.PrintStream \ IO as getErr;
+        def getErrorStream(): PrintStream \ IO =
+            import static java_get_field java.lang.System.err: PrintStream \ IO as getErr;
             getErr()
 
     }
