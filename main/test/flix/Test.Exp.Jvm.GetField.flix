@@ -1,5 +1,7 @@
 mod Test.Exp.Jvm.GetField {
 
+    import java.lang.Object
+
     @test
     def testGetBoolField01(): Bool \ IO =
         import java_new dev.flix.test.TestClass(): ##dev.flix.test.TestClass \ IO as newObject;
@@ -71,7 +73,7 @@ mod Test.Exp.Jvm.GetField {
         getField(o) == "Hello World"
 
     @test
-    def testGetObjectField01(): ##java.lang.Object \ IO =
+    def testGetObjectField01(): Object \ IO =
         import java_new dev.flix.test.TestClass(): ##dev.flix.test.TestClass \ IO as newObject;
         import java_get_field dev.flix.test.TestClass.stringField: ##java.lang.Object \ IO as getField;
         let o = newObject();
