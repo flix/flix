@@ -14,32 +14,37 @@
  * limitations under the License.
  */
 
- mod Test.Exp.UncheckedTypeCast {
+mod Test.Exp.UncheckedTypeCast {
+
+    import java.lang.Integer
+    import java.lang.Object
+    import java.lang.{String => JString}
+    import java.io.Serializable
 
     @test
-    def testUncheckedTypeCast01(): ##java.lang.Object = unchecked_cast(null as ##java.lang.Object)
+    def testUncheckedTypeCast01(): Object = unchecked_cast(null as Object)
 
     @test
-    def testUncheckedTypeCast02(): ##java.lang.String = unchecked_cast(null as ##java.lang.String)
+    def testUncheckedTypeCast02(): JString = unchecked_cast(null as JString)
 
     @test
-    def testUncheckedTypeCast03(): ##java.lang.Integer = unchecked_cast(null as ##java.lang.Integer)
+    def testUncheckedTypeCast03(): Integer = unchecked_cast(null as Integer)
 
     @test
-    def testUncheckedTypeCast04(): ##java.io.Serializable = unchecked_cast(null as ##java.io.Serializable)
+    def testUncheckedTypeCast04(): Serializable = unchecked_cast(null as Serializable)
 
     @test
-    def testUncheckedTypeCast05(): ##java.io.Serializable = region rc {
+    def testUncheckedTypeCast05(): Serializable = region rc {
         let _ = rc;
         import java_new java.lang.StringBuilder(): ##java.lang.StringBuilder \ rc as mkSb;
-        unchecked_cast(mkSb() as ##java.io.Serializable)
+        unchecked_cast(mkSb() as Serializable)
     }
 
     @test
-    def testUncheckedTypeCast06(): ##java.lang.Object = region rc {
+    def testUncheckedTypeCast06(): Object = region rc {
         let _ = rc;
         import java_new java.lang.StringBuilder(): ##java.lang.StringBuilder \ rc as mkSb;
-        unchecked_cast(mkSb() as ##java.lang.Object)
+        unchecked_cast(mkSb() as Object)
     }
 
 }
