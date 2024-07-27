@@ -14,6 +14,17 @@
  *  limitations under the License.
  */
 
+import java.lang.Byte
+import java.lang.Character
+import java.lang.Double
+import java.lang.Float
+import java.lang.Integer
+import java.lang.Long
+import java.lang.Short
+import java.lang.{String => JString}
+import java.math.BigDecimal
+import java.math.BigInteger
+
 ///
 /// A trait for marshaling values to Java objects.
 ///
@@ -25,61 +36,63 @@ pub trait ToJava[t: Type] {
 
 mod ToJava {
 
+    import java.lang.Object
+
     ///
     /// Marshal a type that supports `ToJava` to its respective to `ToJava.Out` type
     /// and upcast it to a `java.lang.Object`
     ///
-    pub def toJavaObject(t: t): ##java.lang.Object \ ToJava.Aef[t] with ToJava[t] =
-        unchecked_cast(ToJava.toJava(t) as ##java.lang.Object)
+    pub def toJavaObject(t: t): Object \ ToJava.Aef[t] with ToJava[t] =
+        unchecked_cast(ToJava.toJava(t) as Object)
 
 }
 
 instance ToJava[Int8] {
-    type Out = ##java.lang.Byte
-    pub def toJava(i: Int8): ##java.lang.Byte = Int8.valueOf(i)
+    type Out = Byte
+    pub def toJava(i: Int8): Byte = Int8.valueOf(i)
 }
 
 instance ToJava[Int16] {
-    type Out = ##java.lang.Short
-    pub def toJava(i: Int16): ##java.lang.Short = Int16.valueOf(i)
+    type Out = Short
+    pub def toJava(i: Int16): Short = Int16.valueOf(i)
 }
 
 instance ToJava[Int32] {
-    type Out = ##java.lang.Integer
-    pub def toJava(i: Int32): ##java.lang.Integer = Int32.valueOf(i)
+    type Out = Integer
+    pub def toJava(i: Int32): Integer = Int32.valueOf(i)
 }
 
 instance ToJava[Int64] {
-    type Out = ##java.lang.Long
-    pub def toJava(i: Int64): ##java.lang.Long = Int64.valueOf(i)
+    type Out = Long
+    pub def toJava(i: Int64): Long = Int64.valueOf(i)
 }
 
 instance ToJava[Float32] {
-    type Out = ##java.lang.Float
-    pub def toJava(d: Float32): ##java.lang.Float = Float32.valueOf(d)
+    type Out = Float
+    pub def toJava(d: Float32): Float = Float32.valueOf(d)
 }
 
 instance ToJava[Float64] {
-    type Out = ##java.lang.Double
-    pub def toJava(d: Float64): ##java.lang.Double = Float64.valueOf(d)
+    type Out = Double
+    pub def toJava(d: Float64): Double = Float64.valueOf(d)
 }
 
 instance ToJava[BigInt] {
-    type Out = ##java.math.BigInteger
-    pub def toJava(i: BigInt): ##java.math.BigInteger = i
+    type Out = BigInteger
+    pub def toJava(i: BigInt): BigInteger = i
 }
 
 instance ToJava[BigDecimal] {
-    type Out = ##java.math.BigDecimal
-    pub def toJava(d: BigDecimal): ##java.math.BigDecimal = d
+    type Out = BigDecimal
+    pub def toJava(d: BigDecimal): BigDecimal = d
 }
 
 instance ToJava[Char] {
-    type Out = ##java.lang.Character
-    pub def toJava(c: Char): ##java.lang.Character = Char.valueOf(c)
+    type Out = Character
+    pub def toJava(c: Char): Character = Char.valueOf(c)
 }
 
 instance ToJava[String] {
-    type Out = ##java.lang.String
-    pub def toJava(s: String): ##java.lang.String = s
+    type Out = JString
+    pub def toJava(s: String): JString = s
 }
