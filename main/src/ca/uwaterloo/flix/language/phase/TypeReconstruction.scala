@@ -297,6 +297,15 @@ object TypeReconstruction {
       val eff = subst(evar)
       TypedAst.Expr.ArrayLength(e, eff, loc)
 
+    case KindedAst.Expr.StructNew(sym, fields, region, tvar, evar, loc) =>
+      throw new RuntimeException("Joe TBD")
+
+    case KindedAst.Expr.StructGet(sym, expr, label, tvar, evar, loc) =>
+      throw new RuntimeException("Joe TBD")
+
+    case KindedAst.Expr.StructPut(sym, expr, field, exp2, tvar, evar, loc) =>
+      throw new RuntimeException("Joe TBD")
+
     case KindedAst.Expr.VectorLit(exps, tvar, evar, loc) =>
       val es = exps.map(visitExp(_))
       val tpe = subst(tvar)

@@ -703,12 +703,11 @@ object Resolver {
             errors += ResolutionError.MissingAssocTypeDef(ascSym.name, loc)
 
             // We recover by introducing a dummy associated type definition.
-            // We assume Kind.Star because we cannot resolve the actually kind here.
             val doc = Ast.Doc(Nil, loc)
             val mod = Ast.Modifiers.Empty
             val use = Ast.AssocTypeSymUse(ascSym, loc)
             val arg = targ
-            val tpe = UnkindedType.Cst(TypeConstructor.Error(Kind.Star), loc)
+            val tpe = UnkindedType.Error(loc)
             val ascDef = ResolvedAst.Declaration.AssocTypeDef(doc, mod, use, arg, tpe, loc)
             m.put(ascSym, ascDef)
           }
@@ -1323,6 +1322,33 @@ object Resolver {
           val bVal = visitExp(base, env0)
           mapN(bVal) {
             b => ResolvedAst.Expr.ArrayLength(b, loc)
+          }
+
+        case NamedAst.Expr.StructNew(name, fields, region, loc) =>
+          val fieldsVal = traverse(fields) {
+            case (f, e) =>
+              val eVal = visitExp(e, env0)
+              mapN(eVal) {
+                case e => (f, e)
+              }
+          }
+          val regionVal = visitExp(region, env0)
+          mapN(fieldsVal, regionVal) {
+            case (fields, region) =>
+              ResolvedAst.Expr.StructNew(name, fields, region, loc)
+          }
+
+        case NamedAst.Expr.StructGet(sym, e, field, loc) =>
+          val eVal = visitExp(e, env0)
+          mapN(eVal) {
+            case e => ResolvedAst.Expr.StructGet(sym, e, field, loc)
+          }
+
+        case NamedAst.Expr.StructPut(sym, e1, name, e2, loc) =>
+          val e1Val = visitExp(e1, env0)
+          val e2Val = visitExp(e2, env0)
+          mapN(e1Val, e2Val) {
+            case (e1, e2) => ResolvedAst.Expr.StructPut(sym, e1, name, e2, loc)
           }
 
         case NamedAst.Expr.VectorLit(exps, loc) =>
@@ -2320,7 +2346,7 @@ object Resolver {
           case Result.Ok(sym) => Validation.success(UnkindedType.Var(sym, loc))
           case Result.Err(e) =>
             // Note: We assume the default type variable has kind Star.
-            Validation.toSoftFailure(UnkindedType.Cst(TypeConstructor.Error(Kind.Star), loc), e)
+            Validation.toSoftFailure(UnkindedType.Error(loc), e)
         }
 
       case NamedAst.Type.Unit(loc) => Validation.success(UnkindedType.Cst(TypeConstructor.Unit, loc))
@@ -3495,7 +3521,7 @@ object Resolver {
         case TypeConstructor.CaseSet(_, _) => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.CaseIntersection(_) => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.CaseUnion(_) => Result.Err(ResolutionError.IllegalType(tpe, loc))
-        case TypeConstructor.Error(_) => Result.Err(ResolutionError.IllegalType(tpe, loc))
+        case TypeConstructor.Error(_, _) => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.MethodReturnType => Result.Err(ResolutionError.IllegalType(tpe, loc))
 
         case TypeConstructor.AnyType => throw InternalCompilerException(s"unexpected type: $tc", tpe.loc)
