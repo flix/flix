@@ -23,7 +23,10 @@ instance UpperBound[Int8] {
 }
 
 mod Int8 {
-    import java.math.BigDecimal;
+
+    import java.lang.Byte
+    import java.lang.NumberFormatException
+    import java.math.BigDecimal
 
     ///
     /// Returns the number of bits used to represent an `Int8`.
@@ -337,7 +340,7 @@ mod Int8 {
         import static java.lang.Byte.parseByte(String): Int8 \ {};
         Some(s |> strip |> parseByte)
     } catch {
-        case _: ##java.lang.NumberFormatException => None
+        case _: NumberFormatException => None
     }
 
     ///
@@ -346,7 +349,7 @@ mod Int8 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toInt16(x: Int8): Int16 =
-        import static java.lang.Byte.valueOf(Int8): ##java.lang.Byte \ {};
+        import static java.lang.Byte.valueOf(Int8): Byte \ {};
         import java.lang.Byte.shortValue(): Int16 \ {};
         (valueOf(x) |> shortValue)
 
@@ -356,7 +359,7 @@ mod Int8 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toInt32(x: Int8): Int32 =
-        import static java.lang.Byte.valueOf(Int8): ##java.lang.Byte \ {};
+        import static java.lang.Byte.valueOf(Int8): Byte \ {};
         import java.lang.Byte.intValue(): Int32 \ {};
         (valueOf(x) |> intValue)
 
@@ -366,7 +369,7 @@ mod Int8 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toInt64(x: Int8): Int64 =
-        import static java.lang.Byte.valueOf(Int8): ##java.lang.Byte \ {};
+        import static java.lang.Byte.valueOf(Int8): Byte \ {};
         import java.lang.Byte.longValue(): Int64 \ {};
         (valueOf(x) |> longValue)
 
@@ -376,7 +379,7 @@ mod Int8 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toBigInt(x: Int8): BigInt =
-        import static java.lang.Byte.valueOf(Int8): ##java.lang.Byte \ {} as i8ValueOf;
+        import static java.lang.Byte.valueOf(Int8): Byte \ {} as i8ValueOf;
         import java.lang.Byte.longValue(): Int64 \ {};
         import static java.math.BigInteger.valueOf(Int64): BigInt \ {} as asBigInt;
         (i8ValueOf(x) |> longValue |> asBigInt)
@@ -387,7 +390,7 @@ mod Int8 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toFloat32(x: Int8): Float32 =
-        import static java.lang.Byte.valueOf(Int8): ##java.lang.Byte \ {};
+        import static java.lang.Byte.valueOf(Int8): Byte \ {};
         import java.lang.Byte.floatValue(): Float32 \ {};
         (valueOf(x) |> floatValue)
 
@@ -397,7 +400,7 @@ mod Int8 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toFloat64(x: Int8): Float64 =
-        import static java.lang.Byte.valueOf(Int8): ##java.lang.Byte \ {};
+        import static java.lang.Byte.valueOf(Int8): Byte \ {};
         import java.lang.Byte.doubleValue(): Float64 \ {};
         (valueOf(x) |> doubleValue)
 
@@ -410,23 +413,23 @@ mod Int8 {
         unsafe new BigDecimal(Int8.toInt32(x))
 
     ///
-    /// Get the primitive Int8 value from its object representation (i.e. ##java.lang.Byte).
+    /// Get the primitive Int8 value from its object representation (i.e. Byte).
     ///
     /// This function is expected to be used when marshaling Int8s from Java. Generally in Flix
-    /// code you should not need to use `##java.lang.Byte`.
+    /// code you should not need to use `Byte`.
     ///
-    pub def byteValue(i: ##java.lang.Byte): Int8 =
+    pub def byteValue(i: Byte): Int8 =
         import java.lang.Byte.byteValue(): Int8 \ {};
         byteValue(i)
 
     ///
-    /// Convert an Int8 value to its object representation (i.e. ##java.lang.Byte).
+    /// Convert an Int8 value to its object representation (i.e. Byte).
     ///
     /// This function is expected to be used when marshaling Int8s to Java. Generally in Flix
-    /// code you should not need to use `##java.lang.Byte`.
+    /// code you should not need to use `Byte`.
     ///
-    pub def valueOf(i: Int8): ##java.lang.Byte =
-        import static java.lang.Byte.valueOf(Int8): ##java.lang.Byte \ {};
+    pub def valueOf(i: Int8): Byte =
+        import static java.lang.Byte.valueOf(Int8): Byte \ {};
         valueOf(i)
 
 }
