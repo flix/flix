@@ -1327,9 +1327,9 @@ object Parser2 {
             arguments()
             lhs = close(mark, TreeKind.Expr.Apply)
             lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
-          case TokenKind.Currency if nth(1) == TokenKind.NameLowerCase => // invoke method
+          case TokenKind.Dot if nth(1) == TokenKind.NameLowerCase => // invoke method
             val mark = openBefore(lhs)
-            eat(TokenKind.Currency)
+            eat(TokenKind.Dot)
             name(Set(TokenKind.NameLowerCase), context = SyntacticContext.Expr.OtherExpr)
             arguments()
             lhs = close(mark, TreeKind.Expr.InvokeMethod2)
@@ -1517,6 +1517,7 @@ object Parser2 {
         case TokenKind.ParenL => parenOrTupleOrLambdaExpr()
         case TokenKind.Underscore => if (nth(1) == TokenKind.ArrowThinR) unaryLambdaExpr() else name(NAME_VARIABLE, context = SyntacticContext.Expr.OtherExpr)
         case TokenKind.NameUpperCase if nth(1) == TokenKind.Currency => invokeStaticMethod2Expr()
+        case TokenKind.NameLowerCase if nth(1) == TokenKind.Dot => invokeMethod2Expr()
         case TokenKind.NameLowerCase => if (nth(1) == TokenKind.ArrowThinR) unaryLambdaExpr() else name(NAME_FIELD, allowQualified = true, context = SyntacticContext.Expr.OtherExpr)
         case TokenKind.NameUpperCase
              | TokenKind.NameMath
@@ -2454,6 +2455,21 @@ object Parser2 {
       name(NAME_QNAME, allowQualified = true, context = SyntacticContext.Expr.Do)
       arguments()
       close(mark, TreeKind.Expr.Do)
+    }
+
+    private def invokeMethod2Expr()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.NameLowerCase))
+      val mark = open()
+
+      // Wrap the lower name as an expression.
+      val mark2 = open()
+      name(Set(TokenKind.NameLowerCase), context = SyntacticContext.Expr.OtherExpr)
+      close(mark2, TreeKind.Expr.Expr)
+
+      eat(TokenKind.Dot)
+      name(Set(TokenKind.NameLowerCase), context = SyntacticContext.Expr.OtherExpr)
+      arguments()
+      close(mark, TreeKind.Expr.InvokeMethod2)
     }
 
     private def invokeStaticMethod2Expr()(implicit s: State): Mark.Closed = {
