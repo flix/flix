@@ -856,8 +856,8 @@ object Weeder2 {
           val error = UnappliedIntrinsic(text(tree).mkString(""), tree.loc)
           Validation.toSoftFailure(Expr.Error(error), error)
         case TreeKind.ErrorTree(err) => Validation.success(Expr.Error(err))
-        case _ =>
-          throw InternalCompilerException(s"Expected expression.", tree.loc)
+        case k =>
+          throw InternalCompilerException(s"Expected expression, got '$k'.", tree.loc)
       }
     }
 
@@ -873,26 +873,7 @@ object Weeder2 {
           val loc = SourceLocation(isReal = true, first.loc.sp1, ident.loc.sp2)
           val nname = Name.NName(nnameIdents, loc)
           val qname = Name.QName(nname, ident, loc)
-          val prefix = idents.takeWhile(_.isUpper)
-          val suffix = idents.dropWhile(_.isUpper)
-
-          suffix match {
-            // Case 1: upper qualified name
-            case Nil =>
-              // NB: We only use the source location of the identifier itself.
-              Validation.success(Expr.Ambiguous(qname, qname.ident.loc))
-            // Case 1: basic qualified name
-            case ident :: Nil =>
-              // NB: We only use the source location of the identifier itself.
-              Validation.success(Expr.Ambiguous(qname, ident.loc))
-            // Case 2: actually a record access
-            case ident :: labels =>
-              // NB: We only use the source location of the identifier itself.
-              val base = Expr.Ambiguous(Name.mkQName(prefix.map(_.toString), ident.name, ident.loc), ident.loc)
-              Validation.success(labels.foldLeft(base: Expr) {
-                case (acc, label) => Expr.RecordSelect(acc, Name.mkLabel(label), label.loc)
-              })
-          }
+          Validation.success(Expr.Ambiguous(qname, qname.loc))
       }
     }
 
@@ -1761,16 +1742,13 @@ object Weeder2 {
 
     private def visitInvokeMethod2Expr(tree: Tree): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.InvokeMethod2)
-      val fragmentsTrees = pickAll(TreeKind.Expr.InvokeMethod2Fragment, tree)
-      val fragments = traverse(fragmentsTrees)(visitInvokeMethod2Fragment)
-      val objName = pickNameIdent(tree)
-      mapN(objName, fragments) {
-        case (objName, fragments) =>
-          val nameExpr = Expr.Ambiguous(Name.QName(Name.RootNS, objName, objName.loc), objName.loc)
-          // TODO INTEROP InvokeMethod2 source location is likely off
-          fragments.foldLeft[Expr](nameExpr) {
-            case (acc, (methodName, arguments)) => Expr.InvokeMethod2(acc, methodName, arguments, tree.loc)
-          }
+      val baseExp = pickExpr(tree)
+      val method = pickNameIdent(tree)
+      val argsExps = pickRawArguments(tree)
+      mapN(baseExp, method, argsExps) {
+        case (b, m, as) =>
+          val result = Expr.InvokeMethod2(b, m, as, tree.loc)
+          result
       }
     }
 
@@ -1780,26 +1758,6 @@ object Weeder2 {
       mapN(tokenToIdent(clazzTree), tokenToIdent(methodTree), pickArguments(tree)) {
         (clazzName, methodName, exps) =>
           Expr.InvokeStaticMethod2(clazzName, methodName, exps, tree.loc)
-      }
-    }
-
-    /**
-      * Helper method to visit a sub-expression of invokeMethod2.
-      * We may consider a sub-expression the following: someCall(x, y, ...)
-      * which contains the method name "someCall" and its arguments x, y, ...
-      *
-      * Its purpose is to ease manipulation of consecutive java calls, e.g.:
-      *
-      * obj#method1()#method2()
-      *
-      * contains two invokeMethod2 fragments.
-      */
-    private def visitInvokeMethod2Fragment(tree: Tree): Validation[(Name.Ident, List[Expr]), CompilationMessage] = {
-      expect(tree, TreeKind.Expr.InvokeMethod2Fragment)
-      val methodName = pickNameIdent(tree)
-      val arguments = pickRawArguments(tree)
-      mapN(methodName, arguments) {
-        (methodName, arguments) => (methodName, arguments)
       }
     }
 
@@ -1817,7 +1775,7 @@ object Weeder2 {
         (expr, ident) => Expr.StructGet(expr, Name.mkLabel(ident), tree.loc)
       }
     }
-    
+
     private def visitStructPutExpr(tree: Tree): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.StructPut)
       val struct = pickExpr(tree)
