@@ -1516,7 +1516,6 @@ object Parser2 {
              | TokenKind.LiteralRegex => literalExpr()
         case TokenKind.ParenL => parenOrTupleOrLambdaExpr()
         case TokenKind.Underscore => if (nth(1) == TokenKind.ArrowThinR) unaryLambdaExpr() else name(NAME_VARIABLE, context = SyntacticContext.Expr.OtherExpr)
-        case TokenKind.NameUpperCase if nth(1) == TokenKind.Currency => invokeStaticMethod2Expr()
         case TokenKind.NameLowerCase if nth(1) == TokenKind.Dot => invokeMethod2Expr()
         case TokenKind.NameLowerCase => if (nth(1) == TokenKind.ArrowThinR) unaryLambdaExpr() else name(NAME_FIELD, allowQualified = true, context = SyntacticContext.Expr.OtherExpr)
         case TokenKind.NameUpperCase
@@ -2470,16 +2469,6 @@ object Parser2 {
       name(Set(TokenKind.NameLowerCase), context = SyntacticContext.Expr.OtherExpr)
       arguments()
       close(mark, TreeKind.Expr.InvokeMethod2)
-    }
-
-    private def invokeStaticMethod2Expr()(implicit s: State): Mark.Closed = {
-      assert(at(TokenKind.NameUpperCase))
-      val mark = open()
-      name(Set(TokenKind.NameUpperCase), context = SyntacticContext.Expr.OtherExpr)
-      eat(TokenKind.Currency)
-      name(Set(TokenKind.NameLowerCase), context = SyntacticContext.Expr.OtherExpr)
-      arguments()
-      close(mark, TreeKind.Expr.InvokeStaticMethod2)
     }
 
     private def ambiguousNewExpr()(implicit s: State): Mark.Closed = {
