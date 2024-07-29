@@ -258,6 +258,7 @@ object TypeReduction {
    * Helper method to define a sub-typing relation between two given Flix types.
    * Returns true if tpe1 is a sub-type of type tpe2, false otherwise.
    */
+  @tailrec
   private def isSubtype(tpe1: Type, tpe2: Type)(implicit flix: Flix): Boolean = {
     (tpe2, tpe1) match {
       case (t1, t2) if t1 == t2 => true
@@ -266,7 +267,7 @@ object TypeReduction {
       case (Type.Cst(TypeConstructor.Native(clazz), _), Type.Cst(TypeConstructor.Str, _)) => clazz.isAssignableFrom(classOf[String])
       case (Type.Cst(TypeConstructor.Native(clazz), _), Type.Cst(TypeConstructor.BigInt, _)) => clazz.isAssignableFrom(classOf[BigInteger])
       case (Type.Cst(TypeConstructor.Native(clazz), _), Type.Cst(TypeConstructor.BigDecimal, _)) => clazz.isAssignableFrom(classOf[java.math.BigDecimal])
-      // Arrays
+      // Arrays (WIP)
       case (Type.Cst(TypeConstructor.Native(clazz), _), Type.Cst(TypeConstructor.Array, _)) =>
         //val List(elmType, rc1) = tpe1.typeArguments
         //if (classOf[java.util.ArrayList[_]].isAssignableFrom(clazz)) {
