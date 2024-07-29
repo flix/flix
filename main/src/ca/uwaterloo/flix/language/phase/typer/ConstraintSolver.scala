@@ -276,7 +276,6 @@ object ConstraintSolver {
     case TypeConstraint.EqJvmConstructor(cvar, clazz, tpes0, prov) =>
       // Apply substitution now
       val tpes = tpes0.map(subst0.apply)
-      tpes.foreach(t => t.typeArguments.map(subst0.apply))
       // Ensure that simplification for constructor parameters is done
       val allKnown = tpes.forall(isKnown)
 
@@ -296,7 +295,6 @@ object ConstraintSolver {
       // Recall: Subst is applied lazily. Apply it now.
       val tpe = subst0(tpe0)
       val tpes = tpes0.map(subst0.apply)
-      tpes.foreach(t => t.typeArguments.map(subst0.apply))
       // Ensure that simplification for method parameters is done
       val allKnown = isKnown(tpe) && tpes.forall(isKnown)
 
