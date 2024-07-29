@@ -184,11 +184,11 @@ object DesugaredAst {
 
     case class InvokeStaticMethod2(clazzName: Name.Ident, methodName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
 
-    case class InvokeConstructor(className: String, exps: List[Expr], sig: List[Type], loc: SourceLocation) extends Expr
+    case class InvokeConstructorOld(className: String, exps: List[Expr], sig: List[Type], loc: SourceLocation) extends Expr
 
-    case class InvokeMethod(className: String, methodName: String, exp: Expr, exps: List[Expr], sig: List[Type], retTpe: Type, loc: SourceLocation) extends Expr
+    case class InvokeMethodOld(className: String, methodName: String, exp: Expr, exps: List[Expr], sig: List[Type], retTpe: Type, loc: SourceLocation) extends Expr
 
-    case class InvokeStaticMethod(className: String, methodName: String, exps: List[Expr], sig: List[Type], retTpe: Type, loc: SourceLocation) extends Expr
+    case class InvokeStaticMethodOld(className: String, methodName: String, exps: List[Expr], sig: List[Type], retTpe: Type, loc: SourceLocation) extends Expr
 
     case class GetField(className: String, fieldName: String, exp: Expr, loc: SourceLocation) extends Expr
 
