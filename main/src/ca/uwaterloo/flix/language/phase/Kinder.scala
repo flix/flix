@@ -887,23 +887,23 @@ object Kinder {
           KindedAst.Expr.InvokeStaticMethod2(clazz, methodName, exps, mvar, tvar, evar, loc)
       }
 
-    case ResolvedAst.Expr.InvokeConstructor(constructor, args0, loc) =>
+    case ResolvedAst.Expr.InvokeConstructorOld(constructor, args0, loc) =>
       val argsVal = traverse(args0)(visitExp(_, kenv0, taenv, henv0, root))
       mapN(argsVal) {
-        args => KindedAst.Expr.InvokeConstructor(constructor, args, loc)
+        args => KindedAst.Expr.InvokeConstructorOld(constructor, args, loc)
       }
 
-    case ResolvedAst.Expr.InvokeMethod(method, clazz, exp0, args0, loc) =>
+    case ResolvedAst.Expr.InvokeMethodOld(method, clazz, exp0, args0, loc) =>
       val expVal = visitExp(exp0, kenv0, taenv, henv0, root)
       val argsVal = traverse(args0)(visitExp(_, kenv0, taenv, henv0, root))
       mapN(expVal, argsVal) {
-        case (exp, args) => KindedAst.Expr.InvokeMethod(method, clazz, exp, args, loc)
+        case (exp, args) => KindedAst.Expr.InvokeMethodOld(method, clazz, exp, args, loc)
       }
 
-    case ResolvedAst.Expr.InvokeStaticMethod(method, args0, loc) =>
+    case ResolvedAst.Expr.InvokeStaticMethodOld(method, args0, loc) =>
       val argsVal = traverse(args0)(visitExp(_, kenv0, taenv, henv0, root))
       mapN(argsVal) {
-        args => KindedAst.Expr.InvokeStaticMethod(method, args, loc)
+        args => KindedAst.Expr.InvokeStaticMethodOld(method, args, loc)
       }
 
     case ResolvedAst.Expr.GetField(field, clazz, exp0, loc) =>
