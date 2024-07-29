@@ -873,26 +873,7 @@ object Weeder2 {
           val loc = SourceLocation(isReal = true, first.loc.sp1, ident.loc.sp2)
           val nname = Name.NName(nnameIdents, loc)
           val qname = Name.QName(nname, ident, loc)
-          val prefix = idents.takeWhile(_.isUpper)
-          val suffix = idents.dropWhile(_.isUpper)
-
-          suffix match {
-            // Case 1: upper qualified name
-            case Nil =>
-              // NB: We only use the source location of the identifier itself.
-              Validation.success(Expr.Ambiguous(qname, qname.ident.loc))
-            // Case 1: basic qualified name
-            case ident :: Nil =>
-              // NB: We only use the source location of the identifier itself.
-              Validation.success(Expr.Ambiguous(qname, ident.loc))
-            // Case 2: actually a record access
-            case ident :: labels =>
-              // NB: We only use the source location of the identifier itself.
-              val base = Expr.Ambiguous(Name.mkQName(prefix.map(_.toString), ident.name, ident.loc), ident.loc)
-              Validation.success(labels.foldLeft(base: Expr) {
-                case (acc, label) => Expr.RecordSelect(acc, Name.mkLabel(label), label.loc)
-              })
-          }
+          Validation.success(Expr.Ambiguous(qname, qname.loc))
       }
     }
 
