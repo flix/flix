@@ -1468,10 +1468,10 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |def main(): Unit \ IO =
         |    import java_new java.lang.StringBuilder(String): ##java.lang.StringBuilder \ IO as newSB;
         |    let a = testInvokeMethod2_01(newSB(""));
-        |    println(a¤toString())
+        |    println(a.toString())
         |
         |def testInvokeMethod2_01(sb: ##java.lang.StringBuilder): ##java.lang.StringBuilder \ IO =
-        |    sb¤append(null)
+        |    sb.append(null)
         |""".stripMargin
     val result = compile(input, Options.Default)
     expectError[TypeError.AmbiguousMethod](result)
@@ -1485,7 +1485,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    testInvokeMethod2_01(newPS(""))
         |
         |def testInvokeMethod2_01(ps: ##java.io.PrintStream): Unit \ IO =
-        |    ps¤println(null)
+        |    ps.println(null)
         |""".stripMargin
     val result = compile(input, Options.Default)
     expectError[TypeError.AmbiguousMethod](result)
