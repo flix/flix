@@ -326,14 +326,14 @@ object Typer {
    * Reconstructs types in the given struct.
    */
   private def visitStruct(struct0: KindedAst.Struct, root: KindedAst.Root)(implicit flix: Flix): (Symbol.StructSym, TypedAst.Struct) = struct0 match {
-    case KindedAst.Struct(doc, ann, mod, sym, tparams0, fields0, loc) =>
+    case KindedAst.Struct(doc, ann, mod, sym, tparams0, sc, fields0, loc) =>
       val tparams = tparams0.map(visitTypeParam(_, root))
       val fields = fields0.map {
         case (name, KindedAst.StructField(fieldSym, tpe, loc)) =>
           name -> TypedAst.StructField(fieldSym, tpe, loc)
       }
 
-      sym -> TypedAst.Struct(doc, ann, mod, sym, tparams, fields, loc)
+      sym -> TypedAst.Struct(doc, ann, mod, sym, tparams, sc, fields, loc)
   }
 
   /**

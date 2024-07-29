@@ -58,7 +58,6 @@ import scala.collection.immutable.SortedSet
 object Kinder {
 
   def run(root: ResolvedAst.Root, oldRoot: KindedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[KindedAst.Root, KindError] = flix.phase("Kinder") {
-
     // Type aliases must be processed first in order to provide a `taenv` for looking up type alias symbols.
     flatMapN(visitTypeAliases(root.taOrder, root)) {
       taenv =>
@@ -145,7 +144,8 @@ object Kinder {
                 }
                 mapN(fieldsVal) {
                   case fields =>
-                    KindedAst.Struct(doc, ann, mod, sym, tparams, fields.toMap, loc)
+                    val sc = Scheme(tparams.map(_.sym), List(), List(), Type.mkStruct(sym, targs, loc))
+                    KindedAst.Struct(doc, ann, mod, sym, tparams, sc, fields.toMap, loc)
                 }
             }
         }

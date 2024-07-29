@@ -38,4 +38,3 @@ class TestAll extends Suites(
   new UtilSuite,
 )
 
-// JOE TODO: flix.scala - printSummary, semantictokensprovider,type.scala fresherror, typeconstructor.scala, namer.scala, resolver.scala, simplifier import, verifier imports, constraintgen.scala imports, summary.scala, bottom of diff

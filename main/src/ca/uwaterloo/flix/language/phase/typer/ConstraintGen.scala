@@ -19,6 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.KindedAst.Expr
 import ca.uwaterloo.flix.language.ast.Symbol.KindedTypeVarSym
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, Name, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.phase.unification.Substitution
 import ca.uwaterloo.flix.util.{InternalCompilerException, SubEffectLevel}
 
 /**
@@ -47,7 +48,7 @@ object ConstraintGen {
 
       case Expr.Def(sym, tvar, loc) =>
         val defn = root.defs(sym)
-        val (tconstrs, econstrs, defTpe) = Scheme.instantiate(defn.spec.sc, loc.asSynthetic)
+        val (tconstrs, econstrs, defTpe, _) = Scheme.instantiate(defn.spec.sc, loc.asSynthetic)
         c.unifyType(tvar, defTpe, loc)
         val constrs = tconstrs.map(_.copy(loc = loc))
         c.addClassConstraints(tconstrs, loc)
@@ -58,7 +59,7 @@ object ConstraintGen {
 
       case Expr.Sig(sym, tvar, loc) =>
         val sig = root.traits(sym.trt).sigs(sym)
-        val (tconstrs, econstrs, sigTpe) = Scheme.instantiate(sig.spec.sc, loc.asSynthetic)
+        val (tconstrs, econstrs, sigTpe, _) = Scheme.instantiate(sig.spec.sc, loc.asSynthetic)
         c.unifyType(tvar, sigTpe, loc)
         val constrs = tconstrs.map(_.copy(loc = loc))
         c.addClassConstraints(constrs, loc)
@@ -103,14 +104,14 @@ object ConstraintGen {
           case KindedAst.Expr.Def(sym, tvar1, loc1) =>
             // Case 1: Lookup the sym and instantiate its scheme.
             val defn = root.defs(sym)
-            val (tconstrs1, econstrs1, declaredType) = Scheme.instantiate(defn.spec.sc, loc1.asSynthetic)
+            val (tconstrs1, econstrs1, declaredType, _) = Scheme.instantiate(defn.spec.sc, loc1.asSynthetic)
             val constrs1 = tconstrs1.map(_.copy(loc = loc))
             Some((sym, tvar1, constrs1, econstrs1, declaredType))
 
           case KindedAst.Expr.Sig(sym, tvar1, loc1) =>
             // Case 2: Lookup the sym and instantiate its scheme.
             val sig = root.traits(sym.trt).sigs(sym)
-            val (tconstrs1, econstrs1, declaredType) = Scheme.instantiate(sig.spec.sc, loc1.asSynthetic)
+            val (tconstrs1, econstrs1, declaredType, _) = Scheme.instantiate(sig.spec.sc, loc1.asSynthetic)
             val constrs1 = tconstrs1.map(_.copy(loc = loc))
             Some((sym, tvar1, constrs1, econstrs1, declaredType))
 
@@ -443,7 +444,7 @@ object ConstraintGen {
         val decl = root.enums(symUse.sym.enumSym)
         val caze = decl.cases(symUse.sym)
         // We ignore constraints as tag schemes do not have them
-        val (_, _, tagType) = Scheme.instantiate(caze.sc, loc.asSynthetic)
+        val (_, _, tagType, _) = Scheme.instantiate(caze.sc, loc.asSynthetic)
 
         // The tag type is a function from the type of variant to the type of the enum.
         val (tpe, eff) = visitExp(exp)
@@ -575,39 +576,37 @@ object ConstraintGen {
         (resTpe, resEff)
 
       case Expr.StructNew(sym, fields, region, tvar, evar, loc) =>
-        val (structType, ts) = instantiateStruct(sym, root.structs)
+        val (instantiedFieldTpes, tpe, regionVar) = instantiateStruct(sym, root.structs)
         val sortedFields = fields.sortBy(_._1.name)
         val fieldTypes = sortedFields.map(field => visitExp(field._2))
         // Struct type overall
-        c.unifyType(tvar, Type.mkStruct(sym, structType.fields.toList.sortBy(_._1.name).map(_._2.tpe), ts, loc), loc)
+        c.unifyType(tvar, tpe, loc)
         // Fields
         val effs = sortedFields.zip(fieldTypes).map {
           case ((fieldSym, expr), (fieldTpe, fieldEff)) =>
-            val field = structType.fields(fieldSym)
-            c.unifyType(field.tpe, fieldTpe, expr.loc)
+            c.unifyType(instantiedFieldTpes(fieldSym), fieldTpe, expr.loc)
             fieldEff
         }
         // Region
-        val regionType = Type.mkRegion(ts.last, loc)
+        val regionType = Type.mkRegion(regionVar, loc)
         val (regionTpe, regionEff) = visitExp(region)
         c.unifyType(regionType, regionTpe, region.loc)
-        c.unifyType(evar, Type.mkUnion(Type.mkUnion(effs, loc), regionEff, ts.last, loc), loc)
+        c.unifyType(evar, Type.mkUnion(Type.mkUnion(effs, loc), regionEff, regionVar, loc), loc)
 
         val resTpe = tvar
         val resEff = evar
         (resTpe, resEff)
 
       case Expr.StructGet(sym, exp, name, tvar, evar, loc) =>
-        val (struct, ts) = instantiateStruct(sym, root.structs)
-        val elmTys = struct.fields.toList.sortBy(_._1.name).map(_._2.tpe)
+        val (instantiatedFieldTpes, structTpe, regionVar) = instantiateStruct(sym, root.structs)
         // unify the struct types
         val (tpe, eff) = visitExp(exp)
-        c.expectType(Type.mkStruct(sym, elmTys, ts, exp.loc), tpe, exp.loc)
+        c.expectType(structTpe, tpe, exp.loc)
         // field type
-        val fieldTpe = struct.fields(Symbol.mkStructFieldSym(sym, Name.Ident(name.name, name.loc))).tpe
+        val fieldTpe = instantiatedFieldTpes(Symbol.mkStructFieldSym(sym, Name.Ident(name.name, name.loc)))
         c.unifyType(fieldTpe, tvar, loc)
         // Region type
-        c.unifyType(Type.mkUnion(eff, ts.last, loc), evar, exp.loc)
+        c.unifyType(Type.mkUnion(eff, regionVar, loc), evar, exp.loc)
 
         val resTpe = tvar
         val resEff = evar
@@ -615,18 +614,17 @@ object ConstraintGen {
 
       case Expr.StructPut(sym, exp1, name, exp2, tvar, evar, loc) =>
         // lhs type
-        val (struct, ts) = instantiateStruct(sym, root.structs)
-        val elmTys = struct.fields.toList.sortBy(_._1.name).map(_._2.tpe)
+        val (instantiatedFieldTpes, structTpe, regionVar) = instantiateStruct(sym, root.structs)
         val (tpe1, eff1) = visitExp(exp1)
-        c.expectType(Type.mkStruct(sym, elmTys, ts, exp1.loc), tpe1, exp1.loc)
+        c.expectType(structTpe, tpe1, exp1.loc)
         // rhs type
         val (tpe2, eff2) = visitExp(exp2)
-        val fieldTpe = struct.fields(Symbol.mkStructFieldSym(sym, Name.Ident(name.name, name.loc))).tpe
+        val fieldTpe = instantiatedFieldTpes(Symbol.mkStructFieldSym(sym, Name.Ident(name.name, name.loc)))
         c.expectType(fieldTpe, tpe2, exp2.loc)
         // overall type
         c.unifyType(Type.mkUnit(loc), tvar, loc)
         // overall effect
-        c.unifyType(Type.mkUnion(eff1, eff2, ts.last, loc), evar, loc)
+        c.unifyType(Type.mkUnion(eff1, eff2, regionVar, loc), evar, loc)
         (tvar, evar)
 
 
@@ -1015,7 +1013,7 @@ object ConstraintGen {
         val decl = root.enums(symUse.sym.enumSym)
         val caze = decl.cases(symUse.sym)
         // We ignore constraints as tag schemes do not have them
-        val (_, _, tagType) = Scheme.instantiate(caze.sc, loc.asSynthetic)
+        val (_, _, tagType, _) = Scheme.instantiate(caze.sc, loc.asSynthetic)
 
         // The tag type is a function from the type of variant to the type of the enum.
         val tpe = visitPattern(pat)
@@ -1269,41 +1267,17 @@ object ConstraintGen {
     }
   }
 
-  private def instantiateStruct(sym: Symbol.StructSym, structs: Map[Symbol.StructSym, KindedAst.Struct])(implicit flix: Flix) : (KindedAst.Struct, List[Type.Var]) = {
+  private def instantiateStruct(sym: Symbol.StructSym, structs: Map[Symbol.StructSym, KindedAst.Struct])(implicit flix: Flix) : (Map[Symbol.StructFieldSym, Type], Type, Type.Var) = {
     val struct = structs(sym)
     assert(struct.tparams.last.sym.kind == Kind.Eff)
-    val newTparams = struct.tparams.map(t => Type.freshVar(t.sym.kind, t.loc, isRegion=t.sym.isRegion, text=t.sym.text))
-    val originalTparams = struct.tparams.map(_.sym)
-    val subst = originalTparams.zip(newTparams).toMap
-    val newFields = struct.fields.map {mapentry =>
-         val (fieldsym, field) = mapentry
-         val tpe = applyTyVarSubst(field.tpe, subst)
-         fieldsym -> KindedAst.StructField(field.sym, tpe, field.loc)
-    }
-    (KindedAst.Struct(struct.doc, struct.ann, struct.mod, struct.sym, List(), newFields, struct.loc), newTparams)
-  }
-
-  def applyTyVarSubst(tpe: Type, subst: Map[KindedTypeVarSym, Type]): Type = {
-    tpe match {
-      case Type.Var(sym, loc) =>
-        subst.get(sym) match {
-          case None =>
-            Type.Var(sym, loc)
-          case Some(t) =>
-            t
-        }
-
-      case Type.Cst(_, _) =>
-        tpe
-
-      case Type.Alias(sym, args, tpe, loc) =>
-        Type.Alias(sym, args.map(applyTyVarSubst(_, subst)), applyTyVarSubst(tpe, subst), loc)
-
-      case Type.AssocType(sym, args, kind, loc) =>
-        Type.AssocType(sym, args.map(applyTyVarSubst(_, subst)), kind, loc)
-
-      case Type.Apply(tpe1, tpe2, loc) =>
-        Type.Apply(applyTyVarSubst(tpe1, subst), applyTyVarSubst(tpe2, subst), loc)
-    }
+    val fields = struct.fields
+    val (_, _, tpe, substMap) = Scheme.instantiate(struct.sc, struct.loc)
+    val subst = Substitution(substMap)
+    val instantiatedFields = fields.map( f => f match {
+        case (_, KindedAst.StructField(fieldSym, tpe, loc)) =>
+          fieldSym -> subst(tpe)
+      }
+    )
+    (instantiatedFields, tpe, substMap(struct.tparams.last.sym))
   }
 }

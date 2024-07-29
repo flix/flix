@@ -22,6 +22,7 @@ import ca.uwaterloo.flix.language.ast.{Purity, Symbol, _}
 import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 import ca.uwaterloo.flix.language.phase.typer.ConstraintGen
+import ca.uwaterloo.flix.language.phase.unification.Substitution
 
 import scala.annotation.tailrec
 
@@ -373,28 +374,10 @@ object Simplifier {
 
           case TypeConstructor.Struct(sym, _) =>
             val struct = root.structs(sym)
-            val subst = struct.tparams.zip(tpe.typeArguments).toMap
+            val subst = Substitution(struct.tparams.zip(tpe.typeArguments).toMap)
             val structFields = struct.fields.values.toList.sortBy(_.sym.name)
-            val substitutedStructFieldTypes = structFields.map(f => ConstraintGen.applyTyVarSubst(f.tpe, subst))
-            // We can erase here because the second argument of the `struct` monotype is not used until codegen
-            // The problem of recursing w/ visitType is that there might be unsubstituted type variables in the
-            // struct field type since they are only a substitution of the type args
-            val erasedFieldTypes = substitutedStructFieldTypes.map(tpe => tpe.typeConstructor match {
-              case Some(tc) => tc match {
-                case TypeConstructor.Bool => MonoType.Bool
-                case TypeConstructor.Char => MonoType.Char
-                case TypeConstructor.Float32 => MonoType.Float32
-                case TypeConstructor.Float64 => MonoType.Float64
-                case TypeConstructor.Int8 => MonoType.Int8
-                case TypeConstructor.Int16 => MonoType.Int16
-                case TypeConstructor.Int32 => MonoType.Int32
-                case TypeConstructor.Int64 => MonoType.Int64
-                case _ => MonoType.Object
-              }
-              case None => throw InternalCompilerException(s"Unexpected type: $tpe", tpe.loc)
-            }
-            )
-            MonoType.Struct(sym, erasedFieldTypes, args)
+            val substitutedStructFieldTypes = structFields.map(f => visitType(subst(f.tpe)))
+            MonoType.Struct(sym, substitutedStructFieldTypes, args)
         }
     }
   }
