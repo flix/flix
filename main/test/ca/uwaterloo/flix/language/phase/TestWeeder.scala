@@ -139,7 +139,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
 
   ignore("DuplicateStructField.01") {
     val input =
-      """struct Person {
+      """struct Person[r] {
          name: String,
          name: String
       }
@@ -150,7 +150,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
 
   ignore("DuplicateStructField.02") {
     val input =
-      """struct Person {
+      """struct Person[r] {
          name: String,
          age: Int32,
          name: String
@@ -162,7 +162,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
 
   ignore("DuplicateStructField.03") {
     val input =
-      """struct Person {
+      """struct Person[r] {
          name: String,
          age: Int32,
          name: String,
@@ -175,7 +175,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
 
   ignore("DuplicateStructField.04") {
     val input =
-      """struct Person {
+      """struct Person[r] {
          name: String,
          age: Int32,
          age: Int32,

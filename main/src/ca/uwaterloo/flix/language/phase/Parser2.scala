@@ -85,7 +85,7 @@ object Parser2 {
       * The Parsing events emitted during parsing.
       * Note that this is a flat collection that later gets turned into a [[SyntaxTree.Tree]] by [[buildTree()]].
       */
-    var events: ArrayBuffer[Event] = ArrayBuffer.empty
+    val events: ArrayBuffer[Event] = ArrayBuffer.empty
     /**
       * Errors reside both within the produced `Tree` but are also kept here.
       * This is done to avoid crawling the tree for errors.
@@ -157,7 +157,7 @@ object Parser2 {
     // Pop the last event, which must be a Close,
     // to ensure that the stack is not empty when handling event below.
     val lastEvent = s.events.last
-    s.events = s.events.dropRight(1)
+    s.events.dropRightInPlace(1)
     assert(lastEvent match {
       case Event.Close => true
       case _ => false
@@ -1102,9 +1102,7 @@ object Parser2 {
       expect(TokenKind.KeywordStruct, SyntacticContext.Decl.Struct)
       val nameLoc = currentSourceLocation()
       name(NAME_TYPE, context = SyntacticContext.Decl.Struct)
-      if (at(TokenKind.BracketL)) {
-        Type.parameters()
-      }
+      Type.parameters()
       zeroOrMore(
         namedTokenSet = NamedTokenSet.FromKinds(NAME_FIELD),
         getItem = structField,
@@ -1329,12 +1327,32 @@ object Parser2 {
             arguments()
             lhs = close(mark, TreeKind.Expr.Apply)
             lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+          case TokenKind.Dot if nth(1) == TokenKind.NameLowerCase => // invoke method
+            val mark = openBefore(lhs)
+            eat(TokenKind.Dot)
+            name(Set(TokenKind.NameLowerCase), context = SyntacticContext.Expr.OtherExpr)
+            arguments()
+            lhs = close(mark, TreeKind.Expr.InvokeMethod2)
+            lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
           case TokenKind.Hash if nth(1) == TokenKind.NameLowerCase => // record lookup
             val mark = openBefore(lhs)
             eat(TokenKind.Hash)
             name(NAME_FIELD, context = SyntacticContext.Expr.OtherExpr)
             lhs = close(mark, TreeKind.Expr.RecordSelect)
             lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+          case TokenKind.Euro if nth(1) == TokenKind.NameLowerCase => // struct get / put
+            val mark = openBefore(lhs)
+            eat(TokenKind.Euro)
+            name(NAME_FIELD, context = SyntacticContext.Expr.OtherExpr)
+            if (at(TokenKind.Equal)) { // struct put
+              eat (TokenKind.Equal)
+              expression(TokenKind.Equal)
+              close(mark, TreeKind.Expr.StructPut)
+              lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+            } else { // struct get
+              lhs = close(mark, TreeKind.Expr.StructGet)
+              lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+            }
           case _ => continue = false
         }
       }
@@ -1498,8 +1516,7 @@ object Parser2 {
              | TokenKind.LiteralRegex => literalExpr()
         case TokenKind.ParenL => parenOrTupleOrLambdaExpr()
         case TokenKind.Underscore => if (nth(1) == TokenKind.ArrowThinR) unaryLambdaExpr() else name(NAME_VARIABLE, context = SyntacticContext.Expr.OtherExpr)
-        case TokenKind.NameLowerCase if nth(1) == TokenKind.Currency => invokeMethod2Expr()
-        case TokenKind.NameUpperCase if nth(1) == TokenKind.Currency => invokeStaticMethod2Expr()
+        case TokenKind.NameLowerCase if nth(1) == TokenKind.Dot => invokeMethod2Expr()
         case TokenKind.NameLowerCase => if (nth(1) == TokenKind.ArrowThinR) unaryLambdaExpr() else name(NAME_FIELD, allowQualified = true, context = SyntacticContext.Expr.OtherExpr)
         case TokenKind.NameUpperCase
              | TokenKind.NameMath
@@ -2442,24 +2459,16 @@ object Parser2 {
     private def invokeMethod2Expr()(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.NameLowerCase))
       val mark = open()
-      name(Set(TokenKind.NameLowerCase), context = SyntacticContext.Expr.OtherExpr)
-      while (eat(TokenKind.Currency)) {
-        val fragmentMark = open()
-        name(Set(TokenKind.NameUpperCase, TokenKind.NameLowerCase), context = SyntacticContext.Expr.OtherExpr)
-        arguments()
-        close(fragmentMark, TreeKind.Expr.InvokeMethod2Fragment)
-      }
-      close(mark, TreeKind.Expr.InvokeMethod2)
-    }
 
-    private def invokeStaticMethod2Expr()(implicit s: State): Mark.Closed = {
-      assert(at(TokenKind.NameUpperCase))
-      val mark = open()
-      name(Set(TokenKind.NameUpperCase), context = SyntacticContext.Expr.OtherExpr)
-      eat(TokenKind.Currency)
+      // Wrap the lower name as an expression.
+      val mark2 = open()
+      name(Set(TokenKind.NameLowerCase), context = SyntacticContext.Expr.OtherExpr)
+      close(mark2, TreeKind.Expr.Expr)
+
+      eat(TokenKind.Dot)
       name(Set(TokenKind.NameLowerCase), context = SyntacticContext.Expr.OtherExpr)
       arguments()
-      close(mark, TreeKind.Expr.InvokeStaticMethod2)
+      close(mark, TreeKind.Expr.InvokeMethod2)
     }
 
     private def ambiguousNewExpr()(implicit s: State): Mark.Closed = {
@@ -2468,8 +2477,24 @@ object Parser2 {
       expect(TokenKind.KeywordNew, SyntacticContext.Expr.OtherExpr)
       Type.ttype()
 
-      // NewObject or InvokeConstructor?
-      if (at(TokenKind.CurlyL)) {
+      // NewStruct, NewObject, or InvokeConstructor?
+      if (at(TokenKind.CurlyL) && (nth(1) == TokenKind.NameLowerCase || (nth(1) == TokenKind.CurlyR && nth(2) == TokenKind.At))) {
+        // case 2: new Struct {field1 = expr1, field2 = expr2, ...} @ region
+        //     or: new Struct {} @ region
+        zeroOrMore(
+          namedTokenSet = NamedTokenSet.FromKinds(NAME_FIELD),
+          checkForItem = NAME_FIELD.contains,
+          getItem = structFieldInit,
+          breakWhen = _.isRecoverExpr,
+          context = SyntacticContext.Expr.OtherExpr,
+          separation = Separation.Required(TokenKind.Comma),
+          delimiterL = TokenKind.CurlyL,
+          delimiterR = TokenKind.CurlyR
+        )
+        expect(TokenKind.At, SyntacticContext.Expr.OtherExpr)
+        expression()
+        close(mark, TreeKind.Expr.NewStruct)
+      } else if (at(TokenKind.CurlyL)) {
         // Case 1: new Type { ... }
         oneOrMore(
           namedTokenSet = NamedTokenSet.FromKinds(Set(TokenKind.KeywordDef)),
@@ -2483,10 +2508,18 @@ object Parser2 {
         )
         close(mark, TreeKind.Expr.NewObject)
       } else {
-        // Case 2: new Type(exps...)
+        // Case 3: new Type(exps...)
         arguments()
         close(mark, TreeKind.Expr.InvokeConstructor2)
       }
+    }
+
+    private def structFieldInit()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      name(NAME_FIELD, context = SyntacticContext.Expr.OtherExpr)
+      expect(TokenKind.Equal, SyntacticContext.Expr.OtherExpr)
+      expression()
+      close(mark, TreeKind.Expr.LiteralStructFieldFragment)
     }
 
     private def jvmMethod()(implicit s: State): Mark.Closed = {

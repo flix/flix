@@ -158,6 +158,8 @@ object WeededAst {
 
     case class ArrayStore(exp1: Expr, exp2: Expr, exp3: Expr, loc: SourceLocation) extends Expr
 
+    case class StructNew(name: Name.QName, exps: List[(Name.Ident, Expr)], region: Expr, loc: SourceLocation) extends Expr
+
     case class VectorLit(exps: List[Expr], loc: SourceLocation) extends Expr
 
     case class VectorLoad(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
@@ -206,21 +208,11 @@ object WeededAst {
 
     case class InvokeStaticMethod2(clazzName: Name.Ident, methodName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
 
-    case class InvokeConstructor(className: String, exps: List[Expr], sig: List[Type], loc: SourceLocation) extends Expr
-
-    case class InvokeMethod(className: String, methodName: String, exp: Expr, exps: List[Expr], sig: List[Type], retTpe: Type, loc: SourceLocation) extends Expr
-
-    case class InvokeStaticMethod(className: String, methodName: String, exps: List[Expr], sig: List[Type], retTpe: Type, loc: SourceLocation) extends Expr
-
-    case class GetField(className: String, fieldName: String, exp: Expr, loc: SourceLocation) extends Expr
-
-    case class PutField(className: String, fieldName: String, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
-
-    case class GetStaticField(className: String, fieldName: String, loc: SourceLocation) extends Expr
-
-    case class PutStaticField(className: String, fieldName: String, exp: Expr, loc: SourceLocation) extends Expr
-
     case class NewObject(tpe: Type, methods: List[JvmMethod], loc: SourceLocation) extends Expr
+
+    case class StructGet(exp: Expr, label: Name.Label, loc: SourceLocation) extends Expr
+
+    case class StructPut(exp1: Expr, label: Name.Label, exp2: Expr, loc: SourceLocation) extends Expr
 
     case class Static(loc: SourceLocation) extends Expr
 

@@ -50,13 +50,13 @@ sealed trait TokenKind {
       case TokenKind.Comma => "','"
       case TokenKind.CurlyL => "'{'"
       case TokenKind.CurlyR => "'}'"
-      case TokenKind.Currency => "'¤'"
       case TokenKind.Dollar => "'$'"
       case TokenKind.Dot => "'.'"
       case TokenKind.DotWhiteSpace => "'. '"
       case TokenKind.DotCurlyL => "'.{'"
       case TokenKind.Equal => "'='"
       case TokenKind.EqualEqual => "'=='"
+      case TokenKind.Euro => "'€'"
       case TokenKind.Hash => "'#'"
       case TokenKind.HashCurlyL => "'#{'"
       case TokenKind.HashParenL => "'#('"
@@ -652,8 +652,6 @@ object TokenKind {
 
   case object CurlyR extends TokenKind
 
-  case object Currency extends TokenKind
-
   case object Dollar extends TokenKind
 
   case object Dot extends TokenKind
@@ -665,6 +663,8 @@ object TokenKind {
   case object Equal extends TokenKind
 
   case object EqualEqual extends TokenKind
+
+  case object Euro extends TokenKind
 
   case object Hash extends TokenKind
 

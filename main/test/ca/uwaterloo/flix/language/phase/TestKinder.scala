@@ -70,11 +70,11 @@ class TestKinder extends AnyFunSuite with TestUtils {
   test("MismatchedTypeParamKind.Implicit.07") {
     val input =
       """
-        |struct E[a] {
+        |struct E[a, r] {
         |    e1: a
         |}
         |
-        |def f(g: E[a -> b \ e]): Int32 \ ~(a & b) = 123
+        |def f(g: E[a -> b \ e, r]): Int32 \ ~(a & b) = 123
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)
@@ -152,7 +152,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
   test("MismatchedTypeParamKind.Struct.01") {
     val input =
       """
-        |struct S[o] {
+        |struct S[o, r] {
         |    a: Int32 -> o \ o
         |}
         |""".stripMargin
@@ -163,7 +163,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
   test("MismatchedTypeParamKind.Struct.02") {
     val input =
       """
-        |struct S[e] {
+        |struct S[e, r] {
         |    a: (Int32 -> Int32 \ e) -> e
         |}
         |""".stripMargin
@@ -174,7 +174,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
   test("MismatchedTypeParamKind.Struct.03") {
     val input =
       """
-        |struct S[a] {
+        |struct S[a, r] {
         |    a: #{| a}, {| a}
         |}
         |""".stripMargin
@@ -185,7 +185,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
   test("MismatchedTypeParamKind.Struct.04") {
     val input =
       """
-        |struct S[a] {
+        |struct S[a, r] {
         |    a: #{X(Int32) | a}, {x = Int32 | a}
         |}
         |""".stripMargin
@@ -196,7 +196,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
   test("MismatchedTypeParamKind.Struct.05") {
     val input =
       """
-        |struct S[e] {
+        |struct S[e, r] {
         |    a: e -> Int32 \ ~e
         |}
         |""".stripMargin
@@ -207,12 +207,43 @@ class TestKinder extends AnyFunSuite with TestUtils {
   test("MismatchedTypeParamKind.Struct.06") {
     val input =
       """
-        |struct D[a] {
+        |struct D[a, r] {
         |    d1: a
         |}
-        |struct E[a, b, e] {
-        |    a: D[a -> b \ e] -> Int32 \ ~(a & b)
+        |struct E[a, b, e, r] {
+        |    a: D[a -> b \ e, r] -> Int32 \ ~(a & b)
         |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[KindError](result)
+  }
+
+  test("MismatchedTypeParamKind.Struct.07") {
+    val input =
+      """
+        |struct D[r] {
+        |    d1: r
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[KindError](result)
+  }
+
+  test("MismatchedTypeParamKind.Struct.08") {
+    val input =
+      """
+        |struct D[r] { }
+        |def f(d: D[Int32]): Int32 = 123
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[KindError](result)
+  }
+
+  test("MismatchedTypeParamKind.Struct.09") {
+    val input =
+      """
+        |struct D[a, r] { }
+        |def f(d: D[Int32, Int32]): Int32 = 123
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)
@@ -265,12 +296,12 @@ class TestKinder extends AnyFunSuite with TestUtils {
   test("MismatchedTypeParamKind.TypeAlias.07") {
     val input =
       """
-        |struct S[a] {
+        |struct S[a, r] {
         |    field1: a
         |    field2: Int32
         |}
         |
-        |type alias T[a, b, e] = S[a -> b \ e] -> Int32 \ ~(a & b)
+        |type alias T[a, b, e, r] = S[a -> b \ e, r] -> Int32 \ ~(a & b)
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)
@@ -406,7 +437,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
   test("IllegalUninhabitedType.12") {
     val input =
       """
-        |struct P[a, b] {}
+        |struct P[a, b, r] {}
         |
         |def f(p: P[Int32]): Int32 = 123
         |""".stripMargin
@@ -506,9 +537,9 @@ class TestKinder extends AnyFunSuite with TestUtils {
   test("IllegalTypeApplication.09") {
     val input =
       """
-        |struct P[a, b] {}
+        |struct P[a, b, r] {}
         |
-        |def f(p: P[Int32, String, String]): Int32 = 123
+        |def f(p: P[Int32, String, String, Region]): Int32 = 123
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)
@@ -611,7 +642,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
   test("KindError.Def.Expression.Ascribe.08") {
     val input =
       """
-        |struct S[a, b]
+        |struct S[a, b, r]
         |
         |pub def foo(): Int32 =
         |    let x: S[Int32] = ???; 0
@@ -663,9 +694,9 @@ class TestKinder extends AnyFunSuite with TestUtils {
   test("KindError.Def.Expression.Cast.05") {
     val input =
       """
-        |struct S { }
+        |struct S [r] { }
         |
-        |pub def foo(): Int32 = unchecked_cast(0 as S[Int32])
+        |pub def foo(): Int32 = unchecked_cast(0 as S[Int32, Region])
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
@@ -739,9 +770,9 @@ class TestKinder extends AnyFunSuite with TestUtils {
   test("KindError.Def.Type.08") {
     val input =
       """
-        |struct S[a]
+        |struct S[a, r]
         |
-        |def f(x: S[Int32, Int32]): Int32 = ???
+        |def f(x: S[Int32, Int32, Region]): Int32 = ???
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
@@ -770,7 +801,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
   test("KindError.Def.Parameter.03") {
     val input =
       """
-        |struct S[a]
+        |struct S[a, r]
         |
         |def f(x: S): Int32 = ???
         |""".stripMargin
@@ -819,7 +850,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
   test("KindError.Def.Return.05") {
     val input =
       """
-        |struct S[a] {}
+        |struct S[a, r] {}
         |
         |def f(): S = ???
         |""".stripMargin
@@ -949,7 +980,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
   test("KindError.Struct.Case.01") {
     val input =
       """
-        |struct S {
+        |struct S [r] {
         |    c: { }
         |}
         |""".stripMargin
@@ -960,9 +991,9 @@ class TestKinder extends AnyFunSuite with TestUtils {
   test("KindError.Struct.Case.02") {
     val input =
       """
-        |struct F[a]
+        |struct F[a, r]
         |
-        |struct E {
+        |struct E[r] {
         |    c: F
         |}
         |""".stripMargin
@@ -971,20 +1002,22 @@ class TestKinder extends AnyFunSuite with TestUtils {
   }
 
   test("KindError.Struct.Case.04") {
+    // When some kinds are specified and some aren't, the nonspecified ones
+    // default to kind Type, which is illegal for `r` in this case
     val input =
       """
-        |struct S[a: Type -> Type] {
+        |struct S[a: Type -> Type, r] {
         |    c: a
         |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[KindError.UnexpectedKind](result)
+    expectError[KindError.MismatchedKinds](result)
   }
 
   test("KindError.Struct.Case.05") {
     val input =
       """
-        |struct S[a] {
+        |struct S[a, r] {
         |    c: {i = Int32 | a}
         |}
         |""".stripMargin
@@ -995,7 +1028,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
   test("KindError.Struct.Type.01") {
     val input =
       """
-        |struct S {
+        |struct S [r] {
         |    c: Int32 -> Int32 \ Int32
         |}
         |""".stripMargin
@@ -1006,7 +1039,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
   test("KindError.Struct.Type.02") {
     val input =
       """
-        |struct S[a] {
+        |struct S[a, r] {
         |    c: Int32-> Int32 \ a
         |}
         |""".stripMargin
@@ -1017,7 +1050,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
   test("KindError.Struct.Type.05") {
     val input =
       """
-        |struct S{
+        |struct S[r]{
         |    c: Int32[Int32
         |}
         |""".stripMargin

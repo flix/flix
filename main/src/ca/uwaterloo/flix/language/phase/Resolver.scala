@@ -703,12 +703,11 @@ object Resolver {
             errors += ResolutionError.MissingAssocTypeDef(ascSym.name, loc)
 
             // We recover by introducing a dummy associated type definition.
-            // We assume Kind.Star because we cannot resolve the actually kind here.
             val doc = Ast.Doc(Nil, loc)
             val mod = Ast.Modifiers.Empty
             val use = Ast.AssocTypeSymUse(ascSym, loc)
             val arg = targ
-            val tpe = UnkindedType.Cst(TypeConstructor.Error(Kind.Star), loc)
+            val tpe = UnkindedType.Error(loc)
             val ascDef = ResolvedAst.Declaration.AssocTypeDef(doc, mod, use, arg, tpe, loc)
             m.put(ascSym, ascDef)
           }
@@ -1325,6 +1324,33 @@ object Resolver {
             b => ResolvedAst.Expr.ArrayLength(b, loc)
           }
 
+        case NamedAst.Expr.StructNew(name, fields, region, loc) =>
+          val fieldsVal = traverse(fields) {
+            case (f, e) =>
+              val eVal = visitExp(e, env0)
+              mapN(eVal) {
+                case e => (f, e)
+              }
+          }
+          val regionVal = visitExp(region, env0)
+          mapN(fieldsVal, regionVal) {
+            case (fields, region) =>
+              ResolvedAst.Expr.StructNew(name, fields, region, loc)
+          }
+
+        case NamedAst.Expr.StructGet(sym, e, field, loc) =>
+          val eVal = visitExp(e, env0)
+          mapN(eVal) {
+            case e => ResolvedAst.Expr.StructGet(sym, e, field, loc)
+          }
+
+        case NamedAst.Expr.StructPut(sym, e1, name, e2, loc) =>
+          val e1Val = visitExp(e1, env0)
+          val e2Val = visitExp(e2, env0)
+          mapN(e1Val, e2Val) {
+            case (e1, e2) => ResolvedAst.Expr.StructPut(sym, e1, name, e2, loc)
+          }
+
         case NamedAst.Expr.VectorLit(exps, loc) =>
           val expsVal = traverse(exps)(visitExp(_, env0))
           mapN(expsVal) {
@@ -1508,7 +1534,7 @@ object Resolver {
             }
           }
 
-        case NamedAst.Expr.InvokeConstructor(className, args, sig, loc) =>
+        case NamedAst.Expr.InvokeConstructorOld(className, args, sig, loc) =>
           lookupJvmClass(className, loc) match {
             case Result.Ok(clazz) =>
               val argsVal = traverse(args)(visitExp(_, env0))
@@ -1518,7 +1544,7 @@ object Resolver {
                   flatMapN(lookupSignature(sig, loc)) {
                     case ts => lookupJvmConstructor(clazz, ts, loc) match {
                       case Result.Ok(constructor) =>
-                        Validation.success(ResolvedAst.Expr.InvokeConstructor(constructor, as, loc))
+                        Validation.success(ResolvedAst.Expr.InvokeConstructorOld(constructor, as, loc))
                       case Result.Err(e) => Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
                     }
                   }
@@ -1526,7 +1552,7 @@ object Resolver {
             case Result.Err(e) => Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
           }
 
-        case NamedAst.Expr.InvokeMethod(className, methodName, exp, args, sig, retTpe, loc) =>
+        case NamedAst.Expr.InvokeMethodOld(className, methodName, exp, args, sig, retTpe, loc) =>
           val expVal = visitExp(exp, env0)
           val argsVal = traverse(args)(visitExp(_, env0))
           val sigVal = traverse(sig)(resolveType(_, Wildness.ForbidWild, env0, taenv, ns0, root))
@@ -1537,13 +1563,13 @@ object Resolver {
               flatMapN(lookupSignature(signature, loc)) {
                 case sig => lookupJvmMethod(clazz, methodName, sig, ret, static = false, loc) match {
                   case Result.Ok(method) =>
-                    Validation.success(ResolvedAst.Expr.InvokeMethod(method, clazz, e, as, loc))
+                    Validation.success(ResolvedAst.Expr.InvokeMethodOld(method, clazz, e, as, loc))
                   case Result.Err(e) => Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
                 }
               }
           }
 
-        case NamedAst.Expr.InvokeStaticMethod(className, methodName, args, sig, retTpe, loc) =>
+        case NamedAst.Expr.InvokeStaticMethodOld(className, methodName, args, sig, retTpe, loc) =>
           val argsVal = traverse(args)(visitExp(_, env0))
           val sigVal = traverse(sig)(resolveType(_, Wildness.ForbidWild, env0, taenv, ns0, root))
           val retVal = resolveType(retTpe, Wildness.ForbidWild, env0, taenv, ns0, root)
@@ -1553,7 +1579,7 @@ object Resolver {
               flatMapN(lookupSignature(signature, loc)) {
                 case sig => lookupJvmMethod(clazz, methodName, sig, ret, static = true, loc) match {
                   case Result.Ok(method) =>
-                    Validation.success(ResolvedAst.Expr.InvokeStaticMethod(method, as, loc))
+                    Validation.success(ResolvedAst.Expr.InvokeStaticMethodOld(method, as, loc))
                   case Result.Err(e) => Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
                 }
               }
@@ -2320,7 +2346,7 @@ object Resolver {
           case Result.Ok(sym) => Validation.success(UnkindedType.Var(sym, loc))
           case Result.Err(e) =>
             // Note: We assume the default type variable has kind Star.
-            Validation.toSoftFailure(UnkindedType.Cst(TypeConstructor.Error(Kind.Star), loc), e)
+            Validation.toSoftFailure(UnkindedType.Error(loc), e)
         }
 
       case NamedAst.Type.Unit(loc) => Validation.success(UnkindedType.Cst(TypeConstructor.Unit, loc))
@@ -3495,7 +3521,7 @@ object Resolver {
         case TypeConstructor.CaseSet(_, _) => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.CaseIntersection(_) => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.CaseUnion(_) => Result.Err(ResolutionError.IllegalType(tpe, loc))
-        case TypeConstructor.Error(_) => Result.Err(ResolutionError.IllegalType(tpe, loc))
+        case TypeConstructor.Error(_, _) => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.MethodReturnType => Result.Err(ResolutionError.IllegalType(tpe, loc))
 
         case TypeConstructor.AnyType => throw InternalCompilerException(s"unexpected type: $tc", tpe.loc)

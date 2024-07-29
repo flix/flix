@@ -636,6 +636,17 @@ object Desugar {
       val e3 = visitExp(exp3)
       Expr.ArrayStore(e1, e2, e3, loc)
 
+    case WeededAst.Expr.StructNew(name, fields0, region0, loc) =>
+      val fields = fields0.map(field => (field._1, visitExp(field._2)))
+      val region = visitExp(region0)
+      Expr.StructNew(name, fields, region, loc)
+
+    case WeededAst.Expr.StructGet(e, name, loc) =>
+      Expr.StructGet(visitExp(e), name, loc)
+
+    case WeededAst.Expr.StructPut(e1, name, e2, loc) =>
+      Expr.StructPut(visitExp(e1), name, visitExp(e2), loc)
+
     case WeededAst.Expr.VectorLit(exps, loc) =>
       val e = visitExps(exps)
       Expr.VectorLit(e, loc)
@@ -742,40 +753,6 @@ object Desugar {
     case WeededAst.Expr.InvokeStaticMethod2(className, methodName, exps, loc) =>
       val es = visitExps(exps)
       Expr.InvokeStaticMethod2(className, methodName, es, loc)
-
-    case WeededAst.Expr.InvokeConstructor(className, exps, sig, loc) =>
-      val es = visitExps(exps)
-      val ts = sig.map(visitType)
-      Expr.InvokeConstructor(className, es, ts, loc)
-
-    case WeededAst.Expr.InvokeMethod(className, methodName, exp, exps, sig, retTpe, loc) =>
-      val e = visitExp(exp)
-      val es = visitExps(exps)
-      val ts = sig.map(visitType)
-      val rt = visitType(retTpe)
-      Expr.InvokeMethod(className, methodName, e, es, ts, rt, loc)
-
-    case WeededAst.Expr.InvokeStaticMethod(className, methodName, exps, sig, retTpe, loc) =>
-      val es = visitExps(exps)
-      val ts = sig.map(visitType)
-      val rt = visitType(retTpe)
-      Expr.InvokeStaticMethod(className, methodName, es, ts, rt, loc)
-
-    case WeededAst.Expr.GetField(className, fieldName, exp, loc) =>
-      val e = visitExp(exp)
-      Expr.GetField(className, fieldName, e, loc)
-
-    case WeededAst.Expr.PutField(className, fieldName, exp1, exp2, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      Expr.PutField(className, fieldName, e1, e2, loc)
-
-    case WeededAst.Expr.GetStaticField(className, fieldName, loc) =>
-      Expr.GetStaticField(className, fieldName, loc)
-
-    case WeededAst.Expr.PutStaticField(className, fieldName, exp, loc) =>
-      val e = visitExp(exp)
-      Expr.PutStaticField(className, fieldName, e, loc)
 
     case WeededAst.Expr.NewObject(tpe, methods, loc) =>
       val t = visitType(tpe)
@@ -1135,7 +1112,7 @@ object Desugar {
     ts match {
       case Nil => // Case 1: No arguments.
         val fparam = DesugaredAst.FormalParam(Name.Ident("_", loc0), Ast.Modifiers.Empty, Some(DesugaredAst.Type.Unit(loc0)), loc0)
-        val call = DesugaredAst.Expr.InvokeConstructor(className, Nil, Nil, loc0)
+        val call = DesugaredAst.Expr.InvokeConstructorOld(className, Nil, Nil, loc0)
         val lambdaBody = jvmCast(call, tpe, eff, loc0)
         val e1 = DesugaredAst.Expr.Lambda(fparam, lambdaBody, loc0)
         DesugaredAst.Expr.Let(ident0, Ast.Modifiers.Empty, e1, e, loc0)
@@ -1156,7 +1133,7 @@ object Desugar {
         }
 
         // Assemble the lambda expression.
-        val call = DesugaredAst.Expr.InvokeConstructor(className, as, ts, loc0)
+        val call = DesugaredAst.Expr.InvokeConstructorOld(className, as, ts, loc0)
         val lambdaBody = jvmCast(call, tpe, eff, loc0)
         val e1 = mkCurried(fs, lambdaBody, loc0)
         DesugaredAst.Expr.Let(ident0, Ast.Modifiers.Empty, e1, e, loc0)
@@ -1215,7 +1192,7 @@ object Desugar {
     }
 
     // Assemble the lambda expression.
-    val call = DesugaredAst.Expr.InvokeMethod(className, methodName, as.head, as.tail, ts, tpe, loc0)
+    val call = DesugaredAst.Expr.InvokeMethodOld(className, methodName, as.head, as.tail, ts, tpe, loc0)
     val lambdaBody = jvmCast(call, tpe, eff, loc0)
     val e1 = mkCurried(fs, lambdaBody, loc0)
     DesugaredAst.Expr.Let(ident, Ast.Modifiers.Empty, e1, e, loc0)
@@ -1240,7 +1217,7 @@ object Desugar {
     ts match {
       case Nil => // Case 1: No arguments.
         val fparam = DesugaredAst.FormalParam(Name.Ident("_", loc0), Ast.Modifiers.Empty, Some(DesugaredAst.Type.Unit(loc0)), loc0)
-        val call = DesugaredAst.Expr.InvokeStaticMethod(className, methodName, Nil, Nil, tpe, loc0)
+        val call = DesugaredAst.Expr.InvokeStaticMethodOld(className, methodName, Nil, Nil, tpe, loc0)
         val lambdaBody = jvmCast(call, tpe, eff, loc0)
         val e1 = DesugaredAst.Expr.Lambda(fparam, lambdaBody, loc0)
         DesugaredAst.Expr.Let(ident, Ast.Modifiers.Empty, e1, e, loc0)
@@ -1261,7 +1238,7 @@ object Desugar {
         }
 
         // Assemble the lambda expression.
-        val call = DesugaredAst.Expr.InvokeStaticMethod(className, methodName, as, ts, tpe, loc0)
+        val call = DesugaredAst.Expr.InvokeStaticMethodOld(className, methodName, as, ts, tpe, loc0)
         val lambdaBody = jvmCast(call, tpe, eff, loc0)
         val e1 = mkCurried(fs, lambdaBody, loc0)
         DesugaredAst.Expr.Let(ident, Ast.Modifiers.Empty, e1, e, loc0)
