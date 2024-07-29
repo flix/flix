@@ -1814,8 +1814,7 @@ object Weeder2 {
     private def visitStructGetExpr(tree: Tree): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.StructGet)
       mapN(pickExpr(tree), pickNameIdent(tree)) {
-        (expr, ident) =>
-          Expr.StructGet(expr, Name.mkLabel(ident), tree.loc)
+        (expr, ident) => Expr.StructGet(expr, Name.mkLabel(ident), tree.loc)
       }
     }
 
@@ -1824,12 +1823,11 @@ object Weeder2 {
 
       val struct = pickExpr(tree)
       val ident = pickNameIdent(tree)
-      val rhs = flatMapN(pick(TreeKind.Expr.StructPutRHS, tree)){
+      val rhs = flatMapN(pick(TreeKind.Expr.StructPutRHS, tree)) {
         tree => pickExpr(tree)
       }
       mapN(struct, ident, rhs) {
-        (struct, ident, rhs) =>
-          Expr.StructPut(struct, Name.mkLabel(ident), rhs, tree.loc)
+        (struct, ident, rhs) => Expr.StructPut(struct, Name.mkLabel(ident), rhs, tree.loc)
       }
     }
 

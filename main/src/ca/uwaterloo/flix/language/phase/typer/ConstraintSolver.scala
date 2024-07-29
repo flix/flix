@@ -426,10 +426,7 @@ object ConstraintSolver {
         res <- resolveEqualityStar(t1, t2, prov, renv, loc)
       } yield res
 
-    case (k1, k2) =>
-      println(k1)
-      println(k2)
-      Err(toTypeError(UnificationError.MismatchedTypes(tpe1, tpe2), prov))
+    case _ => Err(toTypeError(UnificationError.MismatchedTypes(tpe1, tpe2), prov))
   }
 
   /**
@@ -493,8 +490,7 @@ object ConstraintSolver {
     case (Type.Apply(Type.Cst(TypeConstructor.MethodReturnType, _), _, _), _) =>
       Result.Ok(ResolutionResult.constraints(List(TypeConstraint.Equality(tpe1, tpe2, prov)), progress = false))
 
-    case (k1, k2) =>
-      Result.Err(toTypeError(UnificationError.MismatchedTypes(tpe1, tpe2), prov))
+    case _ => Result.Err(toTypeError(UnificationError.MismatchedTypes(tpe1, tpe2), prov))
   }
 
   /**

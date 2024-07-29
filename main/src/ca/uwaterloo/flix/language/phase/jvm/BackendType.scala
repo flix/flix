@@ -183,10 +183,10 @@ object BackendType {
       case MonoType.Ref(tpe) => BackendObjType.Ref(toBackendType(tpe)).toTpe
       case MonoType.Tuple(elms) => BackendObjType.Tuple(elms.map(toBackendType)).toTpe
       case MonoType.Enum(_) => BackendObjType.Tagged.toTpe
+      case MonoType.Struct(_, elms, targs) => BackendObjType.Struct(elms.map(toBackendType), targs.map(toBackendType)).toTpe
       case MonoType.Arrow(args, result) => BackendObjType.Arrow(args.map(toBackendType), toBackendType(result)).toTpe
       case MonoType.RecordEmpty => BackendObjType.RecordEmpty.toTpe
       case MonoType.RecordExtend(_, value, _) => BackendObjType.RecordExtend(toBackendType(value)).toTpe
-      case MonoType.Struct(_, elms, targs) => BackendObjType.Struct(elms.map(toBackendType), targs.map(toBackendType)).toTpe
       case MonoType.Native(clazz) => BackendObjType.Native(JvmName.ofClass(clazz)).toTpe
     }
   }

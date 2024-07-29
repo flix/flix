@@ -1007,12 +1007,7 @@ object Type {
     */
   def eraseAliases(t: Type): Type = t match {
     case tvar: Type.Var => tvar
-    case Type.Cst(cst, loc) =>
-      cst match {
-        case TypeConstructor.Struct(sym, kind) =>
-          Type.Cst(TypeConstructor.Struct(sym, kind), loc)
-        case _ => t
-      }
+    case Type.Cst(_, _) => t
     case Type.Apply(tpe1, tpe2, loc) => Type.Apply(eraseAliases(tpe1), eraseAliases(tpe2), loc)
     case Type.Alias(_, _, tpe, _) => eraseAliases(tpe)
     case Type.AssocType(cst, args, kind, loc) => Type.AssocType(cst, args.map(eraseAliases), kind, loc)

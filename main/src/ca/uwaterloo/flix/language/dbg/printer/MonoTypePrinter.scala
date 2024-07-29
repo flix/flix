@@ -46,10 +46,10 @@ object MonoTypePrinter {
     case MonoType.Ref(tpe) => Type.Ref(print(tpe))
     case MonoType.Tuple(elms) => Type.Tuple(elms.map(print))
     case MonoType.Enum(sym) => Type.Enum(sym, Nil)
+    case MonoType.Struct(sym, _, tparams) => Type.Struct(sym, tparams.map(print))
     case MonoType.Arrow(args, result) => Type.Arrow(args.map(print), print(result))
     case MonoType.RecordEmpty => Type.RecordEmpty
     case MonoType.RecordExtend(label, value, rest) => Type.RecordExtend(label, print(value), print(rest))
-    case MonoType.Struct(sym, _, tparams) => Type.Struct(sym, tparams.map(print))
     case MonoType.Native(clazz) => Type.Native(clazz)
   }
 

@@ -498,7 +498,7 @@ object RedundancyError {
          |
          |  (1)  Use the struct.
          |  (2)  Remove the struct.
-         |  (3)  Mark the enum as struct.
+         |  (3)  Mark the struct as public.
          |  (4)  Prefix the struct name with an underscore.
          |
          |""".stripMargin

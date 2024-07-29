@@ -148,7 +148,7 @@ object Redundancy {
   }
 
   /**
-   * Checks for unused enum symbols and tags.
+   * Checks for unused struct symbols and tags.
    */
   private def checkUnusedStructsAndFields()(implicit sctx: SharedContext, root: Root): List[RedundancyError] = {
     val result = new ListBuffer[RedundancyError]
@@ -162,7 +162,7 @@ object Redundancy {
   }
 
   /**
-   * Checks for unused type parameters in enums.
+   * Checks for unused type parameters in structs.
    */
   private def checkUnusedTypeParamsStructs()(implicit root: Root): List[RedundancyError] = {
     val result = new ListBuffer[RedundancyError]

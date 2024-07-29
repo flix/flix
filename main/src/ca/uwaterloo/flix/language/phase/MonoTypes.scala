@@ -23,9 +23,8 @@ import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 /**
-  * This phase does three things:
+  * This phase does two things:
   * - Erase enums, such that `Option[t]` becomes `Option`
-  * - Erase structs, such that `Person[t]` becomes `Person`
   * - Removes all type aliases in types
   */
 object MonoTypes {
@@ -329,7 +328,8 @@ object MonoTypes {
         // `Enum[a, b, c]` becomes `Enum`
         Type.Cst(TypeConstructor.Enum(sym, Kind.Star), tpe.loc)
       case _ => tpe match {
-        case Type.Cst(_, _) => tpe
+        case Type.Cst(_, _) =>
+          tpe
         case Type.Apply(tpe1, tpe2, loc) =>
           val t1 = visitType(tpe1)
           val t2 = visitType(tpe2)
