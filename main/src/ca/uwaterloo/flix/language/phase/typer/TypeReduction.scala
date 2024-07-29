@@ -274,10 +274,8 @@ object TypeReduction {
         //  clazz.getTypeParameters.forall(t => isSubtype(elmType, t))
         //}
         true
-      case (Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Array, _), Type.Cst(tpe, _), _), Type.Cst(eff, _), _),
-              Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Array, _), Type.Var(s, _), _), Type.Var(sym, _), _)) =>
-        val List(elmType1, rc1) = tpe1.typeArguments
-        val List(elmType2, rc2) = tpe2.typeArguments
+      case (Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Array, _), elmType1, _), rcVar1, _),
+              Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Array, _), elmType2, _), rcVar2, _)) =>
         isSubtype(elmType1, elmType2)
       // Null is a sub-type of every Java object and non-primitive Flix type
       case (Type.Cst(TypeConstructor.Native(_), _), Type.Null) => true
