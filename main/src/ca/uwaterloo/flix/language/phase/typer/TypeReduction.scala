@@ -244,7 +244,7 @@ object TypeReduction {
   private def isCandidateMethod(cand: Method, methodName: String, ts: List[Type])(implicit flix: Flix): Boolean =
     (cand.getName == methodName) &&
     (cand.getParameterCount == ts.length) &&
-    // Parameter types correspondance with subtyping
+    // Parameter types correspondence with subtyping
     (cand.getParameterTypes zip ts).forall {
       case (clazz, tpe) => isSubtype(tpe, Type.getFlixType(clazz))
     } &&
@@ -278,9 +278,8 @@ object TypeReduction {
               Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Array, _), elmType2, _), rcVar2, _)) =>
         isSubtype(elmType1, elmType2)
       // Null is a sub-type of every Java object and non-primitive Flix type
-      case (Type.Cst(TypeConstructor.Native(_), _), Type.Null) => true
-      case (Type.Cst(TypeConstructor.Null, _), Type.Null) => true
-      case (tpe, Type.Null) if !isPrimitive(tpe) => true
+      case (Type.Cst(TypeConstructor.Native(_), _), Type.Cst(TypeConstructor.Null, _)) => true
+      case (tpe, Type.Cst(TypeConstructor.Null, _)) if !isPrimitive(tpe) => true
       case _ => false
     }
   }
