@@ -15,7 +15,8 @@
  */
 
 mod BigInt {
-    import java.math.BigDecimal;
+    import java.math.BigDecimal
+    import java.math.BigInteger
 
     ///
     /// Returns the smaller of `x` and `y`.
@@ -170,8 +171,7 @@ mod BigInt {
     ///
     pub def fromString(s: String): Option[BigInt] = try {
         import java.lang.String.strip(): String \ {};
-        import java_new java.math.BigInteger(String): BigInt \ {} as parseBigInt;
-        Some(s |> strip |> parseBigInt)
+        unsafe Some(new BigInteger(s |> strip))
     } catch {
         case _: ##java.lang.NumberFormatException => None
     }
