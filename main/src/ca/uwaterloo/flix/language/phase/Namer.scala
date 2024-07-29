@@ -755,7 +755,7 @@ object Namer {
       NamedAst.Expr.ArrayLength(e, loc)
 
     case DesugaredAst.Expr.StructNew(name, exps, exp, loc) =>
-      val structSym = Symbol.mkStructSym(name.namespace, name.ident)
+      val structSym = Symbol.mkStructSym(ns0, name.ident)
       val e = visitExp(exp, ns0)
       val es = visitStructFields(exps, ns0, structSym)
       NamedAst.Expr.StructNew(structSym, es, e, loc)

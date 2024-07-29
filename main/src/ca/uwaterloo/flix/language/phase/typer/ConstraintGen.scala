@@ -1271,7 +1271,6 @@ object ConstraintGen {
 
   private def instantiateStruct(sym: Symbol.StructSym, structs: Map[Symbol.StructSym, KindedAst.Struct])(implicit flix: Flix) : (KindedAst.Struct, List[Type.Var]) = {
     val struct = structs(sym)
-    assert(struct.tparams.last.sym.isRegion)
     assert(struct.tparams.last.sym.kind == Kind.Eff)
     val newTparams = struct.tparams.map(t => Type.freshVar(t.sym.kind, t.loc, isRegion=t.sym.isRegion, text=t.sym.text))
     val originalTparams = struct.tparams.map(_.sym)
@@ -1281,7 +1280,6 @@ object ConstraintGen {
          val tpe = applyTyVarSubst(field.tpe, subst)
          fieldsym -> KindedAst.StructField(field.sym, tpe, field.loc)
     }
-    val elmTys = newFields.toList.sortBy(_._1.name).map(_._2.tpe)
     (KindedAst.Struct(struct.doc, struct.ann, struct.mod, struct.sym, List(), newFields, struct.loc), newTparams)
   }
 
