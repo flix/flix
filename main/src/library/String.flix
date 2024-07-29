@@ -21,7 +21,7 @@ mod String {
     ///
     /// Returns the character at position `i` in the string `s`.
     ///
-    pub def charAt(i: Int32, s: String): Char = unsafe s¤charAt(i)
+    pub def charAt(i: Int32, s: String): Char = unsafe s.charAt(i)
 
     ///
     /// Optionally return the character at position `i` in the string `s`.
@@ -35,9 +35,7 @@ mod String {
     ///
     /// Returns the code point at position `i` in the string `s`.
     ///
-    pub def codePointAt(i: Int32, s: String): Int32 =
-        import java.lang.String.codePointAt(Int32): Int32 \ {};
-        codePointAt(s, i)
+    pub def codePointAt(i: Int32, s: String): Int32 = unsafe s.codePointAt(i)
 
     ///
     /// Optionally returns the code point at position `i` in the string `s`.
