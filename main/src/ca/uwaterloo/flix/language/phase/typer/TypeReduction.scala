@@ -268,12 +268,6 @@ object TypeReduction {
       case (Type.Cst(TypeConstructor.Native(clazz), _), Type.Cst(TypeConstructor.BigInt, _)) => clazz.isAssignableFrom(classOf[BigInteger])
       case (Type.Cst(TypeConstructor.Native(clazz), _), Type.Cst(TypeConstructor.BigDecimal, _)) => clazz.isAssignableFrom(classOf[java.math.BigDecimal])
       // Arrays (WIP)
-      case (Type.Cst(TypeConstructor.Native(clazz), _), Type.Cst(TypeConstructor.Array, _)) =>
-        //val List(elmType, rc1) = tpe1.typeArguments
-        //if (classOf[java.util.ArrayList[_]].isAssignableFrom(clazz)) {
-        //  clazz.getTypeParameters.forall(t => isSubtype(elmType, t))
-        //}
-        true
       case (Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Array, _), elmType1, _), rcVar1, _),
               Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Array, _), elmType2, _), rcVar2, _)) =>
         isSubtype(elmType1, elmType2)
