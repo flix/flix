@@ -854,7 +854,7 @@ object Namer {
       NamedAst.Expr.InvokeStaticMethod2(className, methodName, es, loc)
 
     case DesugaredAst.Expr.InvokeConstructorOld(className, exps, sig, loc) =>
-      if (!flix.options.xdeprecated) {
+      if (flix.options.xnodeprecated) {
         val m = NameError.Deprecated(loc)
         sctx.errors.add(m)
         return NamedAst.Expr.Error(m)
@@ -862,10 +862,10 @@ object Namer {
 
       val es = visitExps(exps, ns0)
       val ts = sig.map(visitType)
-      NamedAst.Expr.InvokeConstructor(className, es, ts, loc)
+      NamedAst.Expr.InvokeConstructorOld(className, es, ts, loc)
 
     case DesugaredAst.Expr.InvokeMethodOld(className, methodName, exp, exps, sig, tpe, loc) =>
-      if (!flix.options.xdeprecated) {
+      if (flix.options.xnodeprecated) {
         val m = NameError.Deprecated(loc)
         sctx.errors.add(m)
         return NamedAst.Expr.Error(m)
@@ -875,10 +875,10 @@ object Namer {
       val es = visitExps(exps, ns0)
       val ts = sig.map(visitType)
       val t = visitType(tpe)
-      NamedAst.Expr.InvokeMethod(className, methodName, e, es, ts, t, loc)
+      NamedAst.Expr.InvokeMethodOld(className, methodName, e, es, ts, t, loc)
 
     case DesugaredAst.Expr.InvokeStaticMethodOld(className, methodName, exps, sig, tpe, loc) =>
-      if (!flix.options.xdeprecated) {
+      if (flix.options.xnodeprecated) {
         val m = NameError.Deprecated(loc)
         sctx.errors.add(m)
         return NamedAst.Expr.Error(m)
@@ -887,7 +887,7 @@ object Namer {
       val es = visitExps(exps, ns0)
       val ts = sig.map(visitType)
       val t = visitType(tpe)
-      NamedAst.Expr.InvokeStaticMethod(className, methodName, es, ts, t, loc)
+      NamedAst.Expr.InvokeStaticMethodOld(className, methodName, es, ts, t, loc)
 
     case DesugaredAst.Expr.GetField(className, fieldName, exp, loc) =>
       val e = visitExp(exp, ns0)
