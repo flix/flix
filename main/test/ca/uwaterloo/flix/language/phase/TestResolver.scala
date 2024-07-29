@@ -89,7 +89,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.InaccessibleEnum](result)
   }
 
-  ignore("InaccessibleStruct.01") {
+  test("InaccessibleStruct.01") {
     val input =
       s"""
          |mod A{
@@ -106,7 +106,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.InaccessibleStruct](result)
   }
 
-  ignore("InaccessibleStruct.02") {
+  test("InaccessibleStruct.02") {
     val input =
       s"""
          |mod A {
@@ -157,7 +157,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.InaccessibleEnum](result)
   }
 
-  ignore("InaccessibleType.03") {
+  test("InaccessibleType.03") {
     val input =
       s"""
          |mod A {
