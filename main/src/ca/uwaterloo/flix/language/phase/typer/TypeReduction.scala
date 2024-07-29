@@ -249,8 +249,8 @@ object TypeReduction {
       case (clazz, tpe) => isSubtype(tpe, Type.getFlixType(clazz))
     } &&
     // NB: once methods with same signatures have been filtered out, we should remove super-methods duplicates
-    // if the superclass is abstract or ignore if it is a primitive type, e.g., void
-    (cand.getReturnType.isPrimitive ||
+    // if the superclass is abstract or ignore if it is a primitive type or void
+    (cand.getReturnType.equals(Void.TYPE) || cand.getReturnType.isPrimitive || cand.getReturnType.isArray || // for all arrays return types?
       java.lang.reflect.Modifier.isInterface(cand.getReturnType.getModifiers) || // interfaces are considered primitives
       !java.lang.reflect.Modifier.isAbstract(cand.getReturnType.getModifiers)) // temporary to avoid superclass abstract duplicate
 
