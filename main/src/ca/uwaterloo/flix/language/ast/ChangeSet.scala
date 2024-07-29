@@ -20,9 +20,11 @@ sealed trait ChangeSet {
   /**
     * Returns a new change set with `i` marked as changed.
     */
-  def markChanged(i: Ast.Input): ChangeSet = this match {
-    case ChangeSet.Everything => ChangeSet.Changes(Set(i))
-    case ChangeSet.Changes(s) => ChangeSet.Changes(s + i)
+  def markChanged(i: Ast.Input): ChangeSet = {
+    this match {
+      case ChangeSet.Everything => ChangeSet.Changes(Set(i))
+      case ChangeSet.Changes(s) => ChangeSet.Changes(s + i)
+    }
   }
 
   /**
@@ -43,12 +45,14 @@ sealed trait ChangeSet {
     case ChangeSet.Everything =>
       (newMap, Map.empty)
 
-    case ChangeSet.Changes(_) =>
-      // Note: At the moment we don't use the change set.
-      // We simply consider whether a source is stable.
-      val fresh = oldMap.filter(_._1.src.stable).filter(kv => newMap.contains(kv._1))
+    case ChangeSet.Changes(s) =>
+      // an oldMap key is usable if
+      // - it is still up to date (i.e. not in the changeset)
+      // - it is still needed (i.e. present in newMap)
+      // a newmap key is stale if
+      // - it cannot be reused (i.e. not present in fresh
+      val fresh = oldMap.filter(kv => !s.contains(kv._1.src.input)).filter(kv => newMap.contains(kv._1))
       val stale = newMap.filter(kv => !fresh.contains(kv._1))
-
       (stale, fresh)
   }
 
