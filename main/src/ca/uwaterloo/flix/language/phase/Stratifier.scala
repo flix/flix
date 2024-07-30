@@ -27,8 +27,9 @@ import ca.uwaterloo.flix.language.phase.PredDeps.termTypesAndDenotation
 import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.collection.ListMap
-import ca.uwaterloo.flix.util.{ParOps, Result, SharedContext, Validation}
+import ca.uwaterloo.flix.util.{ParOps, Result, Validation}
 
+import java.util.concurrent.ConcurrentLinkedQueue
 import scala.annotation.tailrec
 import scala.jdk.CollectionConverters._
 
@@ -50,7 +51,7 @@ object Stratifier {
     */
   def run(root: Root)(implicit flix: Flix): Validation[Root, StratificationError] = flix.phase("Stratifier") {
     // Construct a new shared context.
-    implicit val sctx: SharedContext[StratificationError] = SharedContext.mk()
+    implicit val sctx: SharedContext = SharedContext.mk()
 
     implicit val g: LabelledPrecedenceGraph = root.precedenceGraph
     implicit val r: Root = root
@@ -68,7 +69,7 @@ object Stratifier {
   /**
     * Performs Stratification of the given trait `t0`.
     */
-  private def visitTrait(t0: TypedAst.Trait)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext[StratificationError]): Validation[TypedAst.Trait, StratificationError] = {
+  private def visitTrait(t0: TypedAst.Trait)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext) = {
     val newLaws = traverse(t0.laws)(visitDef(_))
     val newSigs = traverse(t0.sigs)(visitSig(_))
     mapN(newLaws, newSigs) {
@@ -79,7 +80,7 @@ object Stratifier {
   /**
     * Performs Stratification of the given sig `s0`.
     */
-  private def visitSig(s0: TypedAst.Sig)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext[StratificationError]): Validation[TypedAst.Sig, StratificationError] = {
+  private def visitSig(s0: TypedAst.Sig)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext) = {
     val newExp = traverseOpt(s0.exp)(visitExp(_))
     mapN(newExp) {
       case ne => s0.copy(exp = ne)
@@ -90,13 +91,13 @@ object Stratifier {
   /**
     * Performs Stratification of the given instance `i0`.
     */
-  private def visitInstance(i0: TypedAst.Instance)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext[StratificationError]): Validation[TypedAst.Instance, StratificationError] =
+  private def visitInstance(i0: TypedAst.Instance)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext) =
     mapN(traverse(i0.defs)(d => visitDef(d)))(ds => i0.copy(defs = ds))
 
   /**
     * Performs stratification of the given definition `def0`.
     */
-  private def visitDef(def0: Def)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext[StratificationError]): Validation[Def, StratificationError] =
+  private def visitDef(def0: Def)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext) =
     mapN(visitExp(def0.exp)) {
       case e => def0.copy(exp = e)
     }
@@ -106,7 +107,7 @@ object Stratifier {
     *
     * Returns [[Success]] if the expression is stratified. Otherwise returns [[HardFailure]] with a [[StratificationError]].
     */
-  private def visitExp(exp0: Expr)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext[StratificationError]): Validation[Expr, StratificationError] = exp0 match {
+  private def visitExp(exp0: Expr)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext) = exp0 match {
     case Expr.Cst(_, _, _) => Validation.success(exp0)
 
     case Expr.Var(_, _, _) => Validation.success(exp0)
@@ -503,7 +504,7 @@ object Stratifier {
 
   }
 
-  private def visitJvmMethod(method: JvmMethod)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext[StratificationError]): Validation[JvmMethod, StratificationError] = method match {
+  private def visitJvmMethod(method: JvmMethod)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext) = method match {
     case JvmMethod(ident, fparams, exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
         case e => JvmMethod(ident, fparams, e, tpe, eff, loc)
@@ -534,7 +535,7 @@ object Stratifier {
   /**
     * Computes the stratification of the given labelled graph `g` for the given row type `tpe` at the given source location `loc`.
     */
-  private def stratify(g: LabelledPrecedenceGraph, tpe: Type, loc: SourceLocation)(implicit flix: Flix, sctx: SharedContext[StratificationError]): Unit = {
+  private def stratify(g: LabelledPrecedenceGraph, tpe: Type, loc: SourceLocation)(implicit flix: Flix, sctx: SharedContext): Unit = {
     // The key is the set of predicates that occur in the row type.
     val key = predicateSymbolsOf(tpe)
 
@@ -602,5 +603,19 @@ object Stratifier {
         // that the strata of the head is strictly higher than the strata of the body.
         UllmansAlgorithm.DependencyEdge.Strong(head, body, loc)
     }.toSet
+
+  private object SharedContext {
+    /**
+      * Returns a fresh shared context.
+      */
+    def mk[T](): SharedContext = new SharedContext(new ConcurrentLinkedQueue())
+  }
+
+  /**
+    * A global shared context. Must be thread-safe.
+    *
+    * @param errors the errors in the AST, if any.
+    */
+  private case class SharedContext(errors: ConcurrentLinkedQueue[StratificationError])
 
 }
