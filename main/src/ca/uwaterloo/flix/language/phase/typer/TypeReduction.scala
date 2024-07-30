@@ -264,8 +264,16 @@ object TypeReduction {
       case (t1, t2) if t1 == t2 => true
       // Base types
       case (Type.Cst(TypeConstructor.Native(clazz1), _), Type.Cst(TypeConstructor.Native(clazz2), _)) => clazz1.isAssignableFrom(clazz2)
-      case (Type.Cst(TypeConstructor.Native(clazz), _), Type.Cst(TypeConstructor.Str, _)) => clazz.isAssignableFrom(classOf[String])
-      case (Type.Cst(TypeConstructor.Native(clazz), _), Type.Cst(TypeConstructor.BigInt, _)) => clazz.isAssignableFrom(classOf[BigInteger])
+      case (Type.Cst(TypeConstructor.Native(clazz), _), Type.Cst(TypeConstructor.Bool, _)) => clazz.isAssignableFrom(classOf[java.lang.Boolean])
+      case (Type.Cst(TypeConstructor.Native(clazz), _), Type.Cst(TypeConstructor.Char, _)) => clazz.isAssignableFrom(classOf[java.lang.Character])
+      case (Type.Cst(TypeConstructor.Native(clazz), _), Type.Cst(TypeConstructor.Float32, _)) => clazz.isAssignableFrom(classOf[java.lang.Float])
+      case (Type.Cst(TypeConstructor.Native(clazz), _), Type.Cst(TypeConstructor.Float64, _)) => clazz.isAssignableFrom(classOf[java.lang.Double])
+      case (Type.Cst(TypeConstructor.Native(clazz), _), Type.Cst(TypeConstructor.Int8, _)) => clazz.isAssignableFrom(classOf[java.lang.Byte])
+      case (Type.Cst(TypeConstructor.Native(clazz), _), Type.Cst(TypeConstructor.Int16, _)) => clazz.isAssignableFrom(classOf[java.lang.Short])
+      case (Type.Cst(TypeConstructor.Native(clazz), _), Type.Cst(TypeConstructor.Int32, _)) => clazz.isAssignableFrom(classOf[java.lang.Integer])
+      case (Type.Cst(TypeConstructor.Native(clazz), _), Type.Cst(TypeConstructor.Int64, _)) => clazz.isAssignableFrom(classOf[java.lang.Long])
+      case (Type.Cst(TypeConstructor.Native(clazz), _), Type.Cst(TypeConstructor.Str, _)) => clazz.isAssignableFrom(classOf[java.lang.String])
+      case (Type.Cst(TypeConstructor.Native(clazz), _), Type.Cst(TypeConstructor.BigInt, _)) => clazz.isAssignableFrom(classOf[java.math.BigInteger])
       case (Type.Cst(TypeConstructor.Native(clazz), _), Type.Cst(TypeConstructor.BigDecimal, _)) => clazz.isAssignableFrom(classOf[java.math.BigDecimal])
       // Arrays (WIP)
       case (Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Array, _), elmType1, _), rcVar1, _),
