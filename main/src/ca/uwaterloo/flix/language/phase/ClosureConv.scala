@@ -274,7 +274,6 @@ object ClosureConv {
 
     case Expr.StructPut(_, _, _, _, _, _, _) => throw new RuntimeException("Joe todo - coming soon")
 
-
     case Expr.LambdaClosure(_, _, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.", loc)
 
     case Expr.ApplyClo(_, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.", loc)
@@ -419,7 +418,6 @@ object ClosureConv {
       case Expr.StructGet(_, _, _, _, _, _) => throw new RuntimeException("Joe todo - coming soon")
 
       case Expr.StructPut(_, _, _, _, _, _, _) => throw new RuntimeException("Joe todo - coming soon")
-
 
     }
 

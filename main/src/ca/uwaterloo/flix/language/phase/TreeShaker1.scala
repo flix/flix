@@ -174,6 +174,7 @@ object TreeShaker1 {
     case Expr.StructGet(_, _, _, _, _, _) => throw new RuntimeException("Joe todo - coming soon")
 
     case Expr.StructPut(_, _, _, _, _, _, _) => throw new RuntimeException("Joe todo - coming soon")
+
   }
 
   /**

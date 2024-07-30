@@ -92,7 +92,6 @@ object LiftedAst {
 
     case class StructPut(sym: Symbol.StructSym, exp1: Expr, field: Name.Label, exp2: Expr, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 
-
   }
 
   case class StructField(sym: Symbol.StructFieldSym, tpe: Type, sc: Scheme, loc: SourceLocation)

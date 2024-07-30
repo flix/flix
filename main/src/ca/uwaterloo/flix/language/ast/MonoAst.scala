@@ -41,7 +41,6 @@ object MonoAst {
 
   case class Struct(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.StructSym, fields: Map[Name.StructField, StructField], tpe: Type, loc: SourceLocation)
 
-
   sealed trait Expr extends Product {
     def tpe: Type
 
@@ -104,6 +103,7 @@ object MonoAst {
 
       def tpe: Type = Type.Int32
     }
+
     case class StructNew(sym: Symbol.StructSym, exps: List[(Symbol.StructFieldSym, Expr)], exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class StructGet(sym: Symbol.StructSym, exp1: Expr, field: Name.Label, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
@@ -220,6 +220,5 @@ object MonoAst {
   case class SelectChannelRule(sym: Symbol.VarSym, chan: Expr, exp: Expr)
 
   case class ParYieldFragment(pat: Pattern, exp: Expr, loc: SourceLocation)
-
 
 }

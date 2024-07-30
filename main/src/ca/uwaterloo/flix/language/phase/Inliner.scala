@@ -279,7 +279,6 @@ object Inliner {
 
     case OccurrenceAst.Expr.StructPut(_, _, _, _, _, _, _) => throw new RuntimeException("Joe todo - coming soon")
 
-
   }
 
   /**

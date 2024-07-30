@@ -517,7 +517,6 @@ object Lowering {
 
     case TypedAst.Expr.StructPut(_, _, _, _, _, _, _) => throw new RuntimeException("Joe todo - coming soon")
 
-
     case TypedAst.Expr.VectorLit(exps, tpe, eff, loc) =>
       val es = visitExps(exps)
       val t = visitType(tpe)
@@ -1944,6 +1943,7 @@ object Lowering {
     case LoweredAst.Expr.StructGet(_, _, _, _, _, _) => throw new RuntimeException("Joe todo - coming soon")
 
     case LoweredAst.Expr.StructPut(_, _, _, _, _, _, _) => throw new RuntimeException("Joe todo - coming soon")
+
   }
 
   /**
