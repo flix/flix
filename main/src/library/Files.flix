@@ -17,7 +17,7 @@ mod Files {
 
     use IOError.{Generic}
     import java.io.{BufferedReader, File, FileInputStream, FileOutputStream, FileWriter, IOException, OutputStream, PrintWriter, Writer}
-    import java.lang.{Class, String}
+    import java.lang.{Class, String => JString}
     import java.nio.charset.Charset
     import java.nio.file.attribute.{FileTime, BasicFileAttributes}
     import java.nio.file.{CopyOption, DirectoryStream, FileVisitOption, LinkOption, Path, StandardCopyOption}
@@ -270,7 +270,7 @@ mod Files {
                         let bytes = Array.empty(rc, opts#count);
                         discard read(stream, bytes, 0, opts#count);
                         let charSet = forName(opts#charSet);
-                        let returnString = new String(bytes, charSet);
+                        let returnString = new JString(bytes, charSet);
                         Ok(returnString)
                     }
                     case Err(msg) => Err(msg)
