@@ -24,9 +24,8 @@ instance UpperBound[Int8] {
 
 mod Int8 {
 
-    import java.lang.Byte
-    import java.lang.NumberFormatException
-    import java.math.BigDecimal
+    import java.lang.{String, Byte, NumberFormatException}
+    import java.math.{BigDecimal, BigInteger}
 
     ///
     /// Returns the number of bits used to represent an `Int8`.
@@ -336,9 +335,7 @@ mod Int8 {
     /// A successful parse is wrapped with `Some(x)`, a parse failure is indicated by `None`.
     ///
     pub def fromString(s: String): Option[Int8] = try {
-        import java.lang.String.strip(): String \ {};
-        import static java.lang.Byte.parseByte(String): Int8 \ {};
-        Some(s |> strip |> parseByte)
+        Some(unsafe Byte.parseByte(s.strip()))
     } catch {
         case _: NumberFormatException => None
     }
@@ -349,9 +346,7 @@ mod Int8 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toInt16(x: Int8): Int16 =
-        import static java.lang.Byte.valueOf(Int8): Byte \ {};
-        import java.lang.Byte.shortValue(): Int16 \ {};
-        (valueOf(x) |> shortValue)
+        unsafe Byte.valueOf(x).shortValue()
 
     ///
     /// Convert `x` to an Int32.
@@ -359,9 +354,7 @@ mod Int8 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toInt32(x: Int8): Int32 =
-        import static java.lang.Byte.valueOf(Int8): Byte \ {};
-        import java.lang.Byte.intValue(): Int32 \ {};
-        (valueOf(x) |> intValue)
+        unsafe Byte.valueOf(x).intValue()
 
     ///
     /// Convert `x` to an Int64.
@@ -369,9 +362,7 @@ mod Int8 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toInt64(x: Int8): Int64 =
-        import static java.lang.Byte.valueOf(Int8): Byte \ {};
-        import java.lang.Byte.longValue(): Int64 \ {};
-        (valueOf(x) |> longValue)
+        unsafe Byte.valueOf(x).longValue()
 
     ///
     /// Convert `x` to a BigInt.
@@ -379,10 +370,7 @@ mod Int8 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toBigInt(x: Int8): BigInt =
-        import static java.lang.Byte.valueOf(Int8): Byte \ {} as i8ValueOf;
-        import java.lang.Byte.longValue(): Int64 \ {};
-        import static java.math.BigInteger.valueOf(Int64): BigInt \ {} as asBigInt;
-        (i8ValueOf(x) |> longValue |> asBigInt)
+        unsafe BigInteger.valueOf(Byte.valueOf(x).longValue())
 
     ///
     /// Convert `x` to a Float32.
@@ -390,9 +378,7 @@ mod Int8 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toFloat32(x: Int8): Float32 =
-        import static java.lang.Byte.valueOf(Int8): Byte \ {};
-        import java.lang.Byte.floatValue(): Float32 \ {};
-        (valueOf(x) |> floatValue)
+        unsafe Byte.valueOf(x).floatValue()
 
     ///
     /// Convert `x` to a Float64.
@@ -400,9 +386,7 @@ mod Int8 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toFloat64(x: Int8): Float64 =
-        import static java.lang.Byte.valueOf(Int8): Byte \ {};
-        import java.lang.Byte.doubleValue(): Float64 \ {};
-        (valueOf(x) |> doubleValue)
+        unsafe Byte.valueOf(x).doubleValue()
 
     ///
     /// Convert `x` to a BigDecimal.
@@ -419,8 +403,7 @@ mod Int8 {
     /// code you should not need to use `Byte`.
     ///
     pub def byteValue(i: Byte): Int8 =
-        import java.lang.Byte.byteValue(): Int8 \ {};
-        byteValue(i)
+        unsafe i.byteValue()
 
     ///
     /// Convert an Int8 value to its object representation (i.e. Byte).
@@ -429,7 +412,6 @@ mod Int8 {
     /// code you should not need to use `Byte`.
     ///
     pub def valueOf(i: Int8): Byte =
-        import static java.lang.Byte.valueOf(Int8): Byte \ {};
-        valueOf(i)
+        unsafe Byte.valueOf(i)
 
 }

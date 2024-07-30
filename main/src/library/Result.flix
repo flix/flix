@@ -49,6 +49,8 @@ instance Monad[Result[e]] {
 
 mod Result {
 
+    import java.lang.Exception
+
     ///
     /// Returns `true` iff `r` is `Ok(v)`.
     ///
@@ -435,9 +437,7 @@ mod Result {
         try {
             Ok(f())
         } catch {
-            case e: ##java.lang.Exception =>
-                import java.lang.Throwable.getMessage(): String \ {};
-                Err(getMessage(checked_cast(e)))
+            case e: Exception => Err(unsafe e.getMessage())
         }
 
 }

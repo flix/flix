@@ -48,7 +48,7 @@ object Options {
     xnooptimizer = false,
     xprintphases = false,
     xnoqmc = false,
-    xdeprecated = false,
+    xnodeprecated = false,
     xsummary = false,
     xfuzzer = false,
     xprinttyper = None,
@@ -102,7 +102,7 @@ object Options {
   * @param xnoqmc              enables the Quine McCluskey algorihm when using BDDs.
   * @param xprintphases        prints all ASTs to the build folder after each phase.
   * @param xsummary            prints a summary of the compiled modules.
-  * @param xdeprecated         enables deprecated features.
+  * @param xnodeprecated       disables deprecated features.
   * @param xfuzzer             enables compiler fuzzing.
   */
 case class Options(lib: LibLevel,
@@ -127,7 +127,7 @@ case class Options(lib: LibLevel,
                    xnoqmc: Boolean,
                    xnooptimizer: Boolean,
                    xprintphases: Boolean,
-                   xdeprecated: Boolean,
+                   xnodeprecated: Boolean,
                    xsummary: Boolean,
                    xfuzzer: Boolean,
                    xprinttyper: Option[String],
