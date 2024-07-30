@@ -223,7 +223,7 @@ object Reducer {
         val taskList1 = tpe match {
           case Void | AnyType | Unit | Bool | Char | Float32 | Float64 | BigDecimal | Int8 | Int16 |
                Int32 | Int64 | BigInt | String | Regex | Region | Enum(_) | Struct(_) | RecordEmpty |
-               Native(_) => taskList
+               Native(_) | Null => taskList
           case Array(elm) => taskList.enqueue(elm)
           case Lazy(elm) => taskList.enqueue(elm)
           case Ref(elm) => taskList.enqueue(elm)
