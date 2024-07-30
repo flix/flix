@@ -59,7 +59,7 @@ object Scheme {
         // Determine the rigidity of the fresh type variable.
         macc + (tvar -> Type.freshVar(tvar.kind, loc, tvar.isRegion, Ast.VarText.Absent))
     }
-    val freshVars = substMap.map(s => s._1.id -> s._2)
+    val freshVars = substMap.map { case (k, v) => k.id -> v }
 
     /**
       * Replaces every variable occurrence in the given type using `freeVars`.
