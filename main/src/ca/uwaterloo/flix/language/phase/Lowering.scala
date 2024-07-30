@@ -526,18 +526,19 @@ object Lowering {
       LoweredAst.Expr.ApplyAtomic(AtomicOp.ArrayStore, List(e1, e2, e3), Type.Unit, eff, loc)
 
     case TypedAst.Expr.StructNew(sym, fields0, region0, tpe, eff, loc) =>
-      val fields = fields0.map(field => (field._1, visitExp(field._2))).sortBy(field => field._1.name)
+      val fields = fields0.map{case (k, v) => (k, visitExp(v))}.sortBy{case (k, _) => k.name}
       val region = visitExp(region0)
-      LoweredAst.Expr.StructNew(sym, fields, region, tpe, eff, loc)
+      val (names, es) = fields.unzip
+      LoweredAst.Expr.ApplyAtomic(AtomicOp.StructNew(sym, names), region :: es, tpe, eff, loc)
 
     case TypedAst.Expr.StructGet(sym, exp0, field, tpe, eff, loc) =>
       val exp = visitExp(exp0)
-      LoweredAst.Expr.StructGet(sym, exp, field, tpe, eff, loc)
+      LoweredAst.Expr.ApplyAtomic(AtomicOp.StructGet(sym, field), List(exp), tpe, eff, loc)
 
     case TypedAst.Expr.StructPut(sym, exp0, field, exp1, tpe, eff, loc) =>
       val struct = visitExp(exp0)
       val rhs = visitExp(exp1)
-      LoweredAst.Expr.StructPut(sym, struct, field, rhs, tpe, eff, loc)
+      LoweredAst.Expr.ApplyAtomic(AtomicOp.StructPut(sym, field), List(struct, rhs), tpe, eff, loc)
 
     case TypedAst.Expr.VectorLit(exps, tpe, eff, loc) =>
       val es = visitExps(exps)
@@ -1933,19 +1934,6 @@ object Lowering {
     case LoweredAst.Expr.VectorLength(exp, loc) =>
       val e = substExp(exp, subst)
       LoweredAst.Expr.VectorLength(e, loc)
-
-    case LoweredAst.Expr.StructNew(sym, fields0, region0, tpe, eff, loc) =>
-      val fields = fields0.map(f => (f._1, substExp(f._2, subst)))
-      val region = substExp(region0, subst)
-      LoweredAst.Expr.StructNew(sym, fields, region, tpe, eff, loc)
-
-    case LoweredAst.Expr.StructGet(sym, exp0, field, tpe, eff, loc) =>
-      val exp = substExp(exp0, subst)
-      LoweredAst.Expr.StructGet(sym, exp, field, tpe, eff, loc)
-
-    case LoweredAst.Expr.StructPut(sym, exp0, field, exp1, tpe, eff, loc) =>
-      LoweredAst.Expr.StructPut(sym, substExp(exp0, subst), field, substExp(exp1, subst), tpe, eff, loc)
-
 
     case LoweredAst.Expr.Ascribe(exp, tpe, eff, loc) =>
       val e = substExp(exp, subst)

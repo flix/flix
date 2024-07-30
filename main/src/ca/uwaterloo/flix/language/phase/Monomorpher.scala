@@ -595,24 +595,6 @@ object Monomorpher {
       val e = visitExp(exp, env0, subst)
       MonoAst.Expr.VectorLength(e, loc)
 
-    case LoweredAst.Expr.StructNew(sym, fields0, region0, tpe, eff, loc) =>
-      val fields = fields0.map(f => (f._1, visitExp(f._2, env0, subst)))
-      val region = visitExp(region0, env0, subst)
-      MonoAst.Expr.StructNew(sym, fields, region, subst(tpe), subst(eff), loc)
-
-    case LoweredAst.Expr.StructGet(sym, e0, field, tpe0, eff0, loc) =>
-      val struct = visitExp(e0, env0, subst)
-      val tpe = subst(tpe0)
-      val eff = subst(eff0)
-      MonoAst.Expr.StructGet(sym, struct, field, tpe, eff, loc)
-
-    case LoweredAst.Expr.StructPut(sym, e0, field, e1, tpe0, eff0, loc) =>
-      val struct = visitExp(e0, env0, subst)
-      val rhs = visitExp(e1, env0, subst)
-      val tpe = subst(tpe0)
-      val eff = subst(eff0)
-      MonoAst.Expr.StructPut(sym, struct, field, rhs, tpe, eff, loc)
-
     case LoweredAst.Expr.Ascribe(exp, tpe, eff, loc) =>
       val e = visitExp(exp, env0, subst)
       MonoAst.Expr.Ascribe(e, subst(tpe), subst(eff), loc)

@@ -151,15 +151,6 @@ object TreeShaker1 {
     case Expr.VectorLength(exp, _) =>
       visitExp(exp)
 
-    case Expr.StructNew(sym, fields, region, tpe, eff, loc) =>
-      visitExps(fields.map(_._2)) ++ visitExp(region)
-
-    case Expr.StructGet(sym, e, field, tpe, eff, loc) =>
-      visitExp(e)
-
-    case Expr.StructPut(sym, e0, field, e1, tpe, eff, loc) =>
-      visitExp(e0) ++ visitExp(e1)
-
     case Expr.Ascribe(exp, _, _, _) =>
       visitExp(exp)
 

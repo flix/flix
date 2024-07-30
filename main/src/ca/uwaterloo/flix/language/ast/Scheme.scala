@@ -1,3 +1,5 @@
+// JOE TODO: Remove all _1 and _1
+// JOE TODO: Use StructFieldSym everywhere or delete it
 /*
  * Copyright 2016 Magnus Madsen
  *

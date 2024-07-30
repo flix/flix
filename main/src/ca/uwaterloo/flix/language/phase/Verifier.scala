@@ -74,7 +74,7 @@ object Verifier {
         checkEq(tpe1, tpe2, loc)
     }
 
-    case Expr.ApplyAtomic(op, exps, tpe, _, loc) =>
+    case Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
       val ts = exps.map(visitExpr)
 
       op match {
@@ -266,6 +266,58 @@ object Verifier {
               checkEq(elmt, t3, loc)
               check(expected = MonoType.Unit)(actual = tpe, loc)
             case _ => failMismatchedShape(t1, "Array", loc)
+          }
+
+        case AtomicOp.StructNew(sym0, fields0) =>
+          val region :: fieldTpes = ts
+          val fields = fields0.zip(fieldTpes).toMap
+          if(isPure(purity)) {
+            throw InternalCompilerException(s"Struct expression should not be pure", loc)
+          }
+          tpe match {
+            case MonoType.Struct(sym, elms, _) => {
+              val erasedElmTys = fields.map(f => f._2)
+              erasedElmTys.zip(elms).foreach(tys => checkEq(erase(tys._1), erase(tys._2), loc))
+              if(sym0 != sym) {
+                throw InternalCompilerException(s"Expected struct type $sym0, got struct type $sym", loc)
+              }
+            }
+            case _ => failMismatchedShape(tpe, "Struct", loc)
+          }
+          check(MonoType.Region)(region, exps(0).loc)
+          tpe
+
+        case AtomicOp.StructGet(sym0, field) =>
+          if(isPure(purity)) {
+            throw InternalCompilerException(s"Struct expression should not be pure", loc)
+          }
+          val List(struct) = ts
+          struct match {
+            case MonoType.Struct(sym, elms, _) =>
+              if(sym0 != sym) {
+                throw InternalCompilerException(s"Expected struct type $sym0, got struct type $sym", loc)
+              }
+              val fieldIdx = root.structs(sym).fields(Symbol.mkStructFieldSym(sym0, Name.Ident(field.name, field.loc))).idx
+              checkEq(erase(elms(fieldIdx)), erase(tpe), loc)
+              tpe
+            case _ => failMismatchedShape(tpe, "Struct", loc)
+          }
+
+        case AtomicOp.StructPut(sym0, field) =>
+          val List(struct, rhs) = ts
+          if(isPure(purity)) {
+            throw InternalCompilerException(s"Struct expression should not be pure", loc)
+          }
+          struct match {
+            case MonoType.Struct(sym, elms, _) => {
+              if(sym0 != sym) {
+                throw InternalCompilerException(s"Expected struct type $sym0, got struct type $sym", loc)
+              }
+              val fieldIdx = root.structs(sym).fields(Symbol.mkStructFieldSym(sym0, Name.Ident(field.name, field.loc))).idx
+              checkEq(erase(elms(fieldIdx)), erase(rhs), loc)
+              checkEq(tpe, MonoType.Unit, loc)
+            }
+            case _ => failMismatchedShape(tpe, "Struct", loc)
           }
 
         case AtomicOp.Ref =>
