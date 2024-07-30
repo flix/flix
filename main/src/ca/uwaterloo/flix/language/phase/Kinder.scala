@@ -111,8 +111,6 @@ object Kinder {
   /**
    * Performs kinding on the given struct.
    */
-    // JOE TODO: Test no tparams somewhere
-    // JOE TODO: Convert to apply atomic
   private def visitStruct(struct0: ResolvedAst.Declaration.Struct, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Struct, KindError] = struct0 match {
     case ResolvedAst.Declaration.Struct(doc, ann, mod, sym, tparams0, fields0, loc) =>
       // In the case in which the user doesn't supply any type params,
