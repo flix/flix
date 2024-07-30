@@ -69,7 +69,7 @@ object Stratifier {
   /**
     * Performs Stratification of the given trait `t0`.
     */
-  private def visitTrait(t0: TypedAst.Trait)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext) = {
+  private def visitTrait(t0: TypedAst.Trait)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext): Validation[TypedAst.Trait, StratificationError] = {
     val newLaws = traverse(t0.laws)(visitDef(_))
     val newSigs = traverse(t0.sigs)(visitSig(_))
     mapN(newLaws, newSigs) {
@@ -80,7 +80,7 @@ object Stratifier {
   /**
     * Performs Stratification of the given sig `s0`.
     */
-  private def visitSig(s0: TypedAst.Sig)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext) = {
+  private def visitSig(s0: TypedAst.Sig)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext): Validation[TypedAst.Sig, StratificationError] = {
     val newExp = traverseOpt(s0.exp)(visitExp(_))
     mapN(newExp) {
       case ne => s0.copy(exp = ne)
@@ -91,13 +91,13 @@ object Stratifier {
   /**
     * Performs Stratification of the given instance `i0`.
     */
-  private def visitInstance(i0: TypedAst.Instance)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext) =
+  private def visitInstance(i0: TypedAst.Instance)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext): Validation[TypedAst.Instance, StratificationError] =
     mapN(traverse(i0.defs)(d => visitDef(d)))(ds => i0.copy(defs = ds))
 
   /**
     * Performs stratification of the given definition `def0`.
     */
-  private def visitDef(def0: Def)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext) =
+  private def visitDef(def0: Def)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext): Validation[Def, StratificationError] =
     mapN(visitExp(def0.exp)) {
       case e => def0.copy(exp = e)
     }
@@ -107,7 +107,7 @@ object Stratifier {
     *
     * Returns [[Success]] if the expression is stratified. Otherwise returns [[HardFailure]] with a [[StratificationError]].
     */
-  private def visitExp(exp0: Expr)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext) = exp0 match {
+  private def visitExp(exp0: Expr)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext): Validation[Expr, StratificationError] = exp0 match {
     case Expr.Cst(_, _, _) => Validation.success(exp0)
 
     case Expr.Var(_, _, _) => Validation.success(exp0)
@@ -504,7 +504,7 @@ object Stratifier {
 
   }
 
-  private def visitJvmMethod(method: JvmMethod)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext) = method match {
+  private def visitJvmMethod(method: JvmMethod)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext): Validation[JvmMethod, StratificationError] = method match {
     case JvmMethod(ident, fparams, exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
         case e => JvmMethod(ident, fparams, e, tpe, eff, loc)
