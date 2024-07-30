@@ -650,6 +650,7 @@ object Verifier {
       case MonoType.Bool    if klazz == classOf[Boolean] => tpe
       case MonoType.Char    if klazz == classOf[Char] => tpe
       case MonoType.Unit    if klazz == classOf[Unit] => tpe
+      case MonoType.Null    if !klazz.isPrimitive => tpe
 
       case MonoType.String if klazz.isAssignableFrom(classOf[java.lang.String]) => tpe
       case MonoType.BigInt if klazz.isAssignableFrom(classOf[java.math.BigInteger]) => tpe

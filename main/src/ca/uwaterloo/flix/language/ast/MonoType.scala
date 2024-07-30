@@ -63,6 +63,8 @@ object MonoType {
 
   case object Region extends MonoType
 
+  case object Null extends MonoType
+
   ///
   /// Compound Types.
   ///

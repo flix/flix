@@ -1,4 +1,3 @@
-// JOE TODO: Double check all comments in PR reviews
 /*
  * Copyright 2015-2016 Magnus Madsen
  *

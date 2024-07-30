@@ -2414,7 +2414,7 @@ object Parser2 {
       expect(TokenKind.Colon, SyntacticContext.Expr.OtherExpr)
       name(NAME_JAVA, allowQualified = true, context = SyntacticContext.Expr.OtherExpr)
       expect(TokenKind.ArrowThickR, SyntacticContext.Expr.OtherExpr)
-      expression()
+      statement()
       close(mark, TreeKind.Expr.TryCatchRuleFragment)
     }
 
