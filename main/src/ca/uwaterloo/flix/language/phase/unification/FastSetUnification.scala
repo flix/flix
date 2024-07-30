@@ -108,16 +108,14 @@ object FastSetUnification {
     * Returns `Err(c, l, s)` where `c` is a conflict, `l` is a list of unsolved equations, and `s` is a partial substitution.
     */
   def solveAll(l: List[Equation]): Result[SetSubstitution, (FastBoolUnificationException, List[Equation], SetSubstitution)] = {
-    val solver = new Solver(l)
-    solver.solve()
+    new Solver(l).solve()
   }
 
   /**
     * Equivalent to [[solveAll]] but also return the index of the last phase working on non-empty equations.
     */
   def solveAllInfo(l: List[Equation]): (Result[SetSubstitution, (FastBoolUnificationException, List[Equation], SetSubstitution)], Int) = {
-    val solver = new Solver(l)
-    solver.solveInfo()
+    new Solver(l).solveInfo()
   }
 
   /**
@@ -179,13 +177,12 @@ object FastSetUnification {
         Result.Ok(currentSubst)
       } catch {
         case _ if !Debugging && Rerun =>
-          // rerun with debugging
-          val old = Debugging
+          // reset and rerun with debugging
           Debugging = true
           currentEqns = l
           currentSubst = SetSubstitution.empty
           val res = solve()
-          Debugging = old
+          Debugging = false
           res
         case ex: ConflictException => Result.Err((ex, currentEqns, currentSubst))
         case ex: TooComplexException => Result.Err((ex, currentEqns, currentSubst))
