@@ -26,7 +26,7 @@ mod StringBuilder {
     /// Returns a new mutable StringBuilder.
     ///
     pub def empty(_: Region[r]): StringBuilder[r] \ r =
-        StringBuilder(checked_ecast(unsafe new JStringBuilder()))
+        StringBuilder(checked_ecast(unsafe new JStringBuilder))
 
     ///
     /// Append `x` to the StringBuilder `sb`.

@@ -112,7 +112,7 @@ mod BigInt {
     /// Returns the integer binary logarithm of `x`.
     ///
     pub def log2(x: BigInt): Int32 =
-        unsafe x.bitLength()
+        unsafe x.bitLength
 
     ///
     /// Returns `x` with the bits shifted left by `y` places

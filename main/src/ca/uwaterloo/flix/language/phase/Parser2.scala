@@ -1158,7 +1158,7 @@ object Parser2 {
       expect(TokenKind.KeywordType, SyntacticContext.Decl.OtherDecl)
       name(NAME_TYPE, context = SyntacticContext.Decl.OtherDecl)
       if (at(TokenKind.BracketL)) {
-        Type.arguments()
+        Type.arguments() // L is checked first
       }
       if (eat(TokenKind.Equal)) {
         Type.ttype()
@@ -1324,14 +1324,14 @@ object Parser2 {
         nth(0) match {
           case TokenKind.ParenL => // function call
             val mark = openBefore(lhs)
-            arguments()
+            arguments() // L is checked first
             lhs = close(mark, TreeKind.Expr.Apply)
             lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
           case TokenKind.Dot if nth(1) == TokenKind.NameLowerCase => // invoke method
             val mark = openBefore(lhs)
             eat(TokenKind.Dot)
             name(Set(TokenKind.NameLowerCase), context = SyntacticContext.Expr.OtherExpr)
-            arguments()
+            arguments() // L is NOT! checked first
             lhs = close(mark, TreeKind.Expr.InvokeMethod2)
             lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
           case TokenKind.Hash if nth(1) == TokenKind.NameLowerCase => // record lookup
@@ -2452,7 +2452,7 @@ object Parser2 {
       val mark = open()
       expect(TokenKind.KeywordDo, SyntacticContext.Expr.Do)
       name(NAME_QNAME, allowQualified = true, context = SyntacticContext.Expr.Do)
-      arguments()
+      arguments() // L is NOT! checked first
       close(mark, TreeKind.Expr.Do)
     }
 
@@ -2467,7 +2467,7 @@ object Parser2 {
 
       eat(TokenKind.Dot)
       name(Set(TokenKind.NameLowerCase), context = SyntacticContext.Expr.OtherExpr)
-      arguments()
+      arguments() // L is NOT! checked first
       close(mark, TreeKind.Expr.InvokeMethod2)
     }
 
@@ -2509,7 +2509,7 @@ object Parser2 {
         close(mark, TreeKind.Expr.NewObject)
       } else {
         // Case 3: new Type(exps...)
-        arguments()
+        arguments() // L is NOT! checked first
         close(mark, TreeKind.Expr.InvokeConstructor2)
       }
     }
@@ -2913,7 +2913,7 @@ object Parser2 {
       // handle Type argument application
       while (at(TokenKind.BracketL)) {
         val mark = openBefore(lhs)
-        arguments()
+        arguments() // L is checked first
         lhs = close(mark, TreeKind.Type.Apply)
         lhs = close(openBefore(lhs), TreeKind.Type.Type)
       }
@@ -3259,7 +3259,7 @@ object Parser2 {
       val mark = open()
       name(NAME_PREDICATE, allowQualified = true, context = SyntacticContext.Type.OtherType)
       if (at(TokenKind.BracketL)) {
-        arguments()
+        arguments() // L is checked first
         close(mark, TreeKind.Type.PredicateWithAlias)
       } else {
         zeroOrMore(
