@@ -78,12 +78,10 @@ instance Eq[Float64] {
 
 instance Eq[BigDecimal] {
     pub def eq(x: BigDecimal, y: BigDecimal): Bool =
-        import java.math.BigDecimal.compareTo(BigDecimal): Int32 \ {};
-        (x `compareTo` y) == 0
+        (unsafe x.compareTo(y)) == 0
 
     pub override def neq(x: BigDecimal, y: BigDecimal): Bool =
-        import java.math.BigDecimal.compareTo(BigDecimal): Int32 \ {};
-        (x `compareTo` y) != 0
+        (unsafe x.compareTo(y)) != 0
 }
 
 instance Eq[Int8] {
@@ -108,19 +106,14 @@ instance Eq[Int64] {
 
 instance Eq[BigInt] {
     pub def eq(x: BigInt, y: BigInt): Bool =
-        import java.math.BigInteger.compareTo(BigInt): Int32 \ {};
-        (x `compareTo` y) == 0
+        (unsafe x.compareTo(y)) == 0
 
     pub override def neq(x: BigInt, y: BigInt): Bool =
-        import java.math.BigInteger.compareTo(BigInt): Int32 \ {};
-        (x `compareTo` y) != 0
+        (unsafe x.compareTo(y)) != 0
 }
 
 instance Eq[String] {
-    pub def eq(x: String, y: String): Bool =
-        import java.lang.String.equals(##java.lang.Object): Bool \ {};
-        equals(x, checked_cast(y))
-
+    pub def eq(x: String, y: String): Bool = unsafe x.equals(y)
 }
 
 instance Eq[(a1, a2)] with Eq[a1], Eq[a2] {
