@@ -1085,7 +1085,11 @@ object Resolver {
                 // We have a static method call.
                 val methodName = qname.ident
                 val expsVal = traverse(exps)(visitExp(_, env0))
+                // Check for a single Unit argument
                 mapN(expsVal) {
+                  case ResolvedAst.Expr.Cst(Ast.Constant.Unit, _) :: Nil =>
+                    // Returns out of visitExp
+                    return Validation.success(ResolvedAst.Expr.InvokeStaticMethod2(clazz, methodName, Nil, outerLoc))
                   case es =>
                     // Returns out of visitExp
                     return Validation.success(ResolvedAst.Expr.InvokeStaticMethod2(clazz, methodName, es, outerLoc))
@@ -1520,18 +1524,6 @@ object Resolver {
           mapN(eVal, esVal) {
             case (e, es) =>
               ResolvedAst.Expr.InvokeMethod2(e, name, es, loc)
-          }
-
-        case NamedAst.Expr.InvokeStaticMethod2(className, methodName, exps, loc) =>
-          val esVal = traverse(exps)(visitExp(_, env0))
-          flatMapN(esVal) {
-            es => env0.get(className.name) match {
-              case Some(List(Resolution.JavaClass(clazz))) =>
-                Validation.success(ResolvedAst.Expr.InvokeStaticMethod2(clazz, methodName, es, loc))
-              case _ =>
-                val m = ResolutionError.UndefinedJvmClass(className.name, "", loc)
-                Validation.toSoftFailure(ResolvedAst.Expr.Error(m), m)
-            }
           }
 
         case NamedAst.Expr.InvokeConstructorOld(className, args, sig, loc) =>

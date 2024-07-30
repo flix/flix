@@ -24,9 +24,8 @@ instance UpperBound[Int32] {
 
 mod Int32 {
 
-    import java.lang.Integer
-    import java.lang.NumberFormatException
-    import java.math.BigDecimal
+    import java.lang.{Integer, NumberFormatException, String}
+    import java.math.{BigDecimal, BigInteger}
 
     ///
     /// Returns the number of bits used to represent an `Int32`.
@@ -340,9 +339,7 @@ mod Int32 {
     /// A successful parse is wrapped with `Some(x)`, a parse failure is indicated by `None`.
     ///
     pub def fromString(s: String): Option[Int32] = try {
-        import java.lang.String.strip(): String \ {};
-        import static java.lang.Integer.parseInt(String): Int32 \ {};
-        Some(s |> strip |> parseInt)
+        Some(unsafe Integer.parseInt(s.strip()))
     } catch {
         case _: NumberFormatException => None
     }
@@ -354,9 +351,7 @@ mod Int32 {
     ///
     pub def parse(radix: Int32, s: String): Result[String, Int32] =
         try {
-            import java.lang.String.strip(): String \ {};
-            import static java.lang.Integer.parseInt(String, Int32): Int32 \ {};
-            Ok(parseInt(strip(s), radix))
+            Ok(unsafe Integer.parseInt(s.strip(), radix))
         } catch {
             case _: NumberFormatException => Err("Int32.parse")
         }
@@ -370,12 +365,10 @@ mod Int32 {
     /// (i.e. -128 to 127).
     ///
     pub def tryToInt8(x: Int32): Option[Int8] =
-        import static java.lang.Integer.valueOf(Int32): Integer \ {};
-        import java.lang.Integer.byteValue(): Int8 \ {};
-        if (x < Int8.toInt32(Int8.minValue()) or x > Int8.toInt32(Int8.maxValue()))
+       if (x < Int8.toInt32(Int8.minValue()) or x > Int8.toInt32(Int8.maxValue()))
             None
         else
-            Some(valueOf(x) |> byteValue)
+            Some(unsafe Integer.valueOf(x).byteValue())
 
     ///
     /// Convert `x` to an `Option[Int16]`.
@@ -386,12 +379,10 @@ mod Int32 {
     /// (i.e. -32768 to 32767).
     ///
     pub def tryToInt16(x: Int32): Option[Int16] =
-        import static java.lang.Integer.valueOf(Int32): Integer \ {};
-        import java.lang.Integer.shortValue(): Int16 \ {};
         if (x < Int16.toInt32(Int16.minValue()) or x > Int16.toInt32(Int16.maxValue()))
             None
         else
-            Some(valueOf(x) |> shortValue)
+            Some(unsafe Integer.valueOf(x).shortValue())
 
     ///
     /// Convert `x` to a Int64.
@@ -399,9 +390,7 @@ mod Int32 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toInt64(x: Int32): Int64 =
-        import static java.lang.Integer.valueOf(Int32): Integer \ {};
-        import java.lang.Integer.longValue(): Int64 \ {};
-        (valueOf(x) |> longValue)
+        unsafe Integer.valueOf(x).longValue()
 
     ///
     /// Convert `x` to a BigInt.
@@ -409,10 +398,7 @@ mod Int32 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toBigInt(x: Int32): BigInt =
-        import static java.lang.Integer.valueOf(Int32): Integer \ {} as i16ValueOf;
-        import java.lang.Integer.longValue(): Int64 \ {};
-        import static java.math.BigInteger.valueOf(Int64): BigInt \ {} as asBigInt;
-        (i16ValueOf(x) |> longValue |> asBigInt)
+        unsafe BigInteger.valueOf(Integer.valueOf(x).longValue())
 
     ///
     /// Convert `x` to an Float32.
@@ -420,9 +406,7 @@ mod Int32 {
     /// The numeric value of `x` may lose precision.
     ///
     pub def toFloat32(x: Int32): Float32 =
-        import static java.lang.Integer.valueOf(Int32): Integer \ {};
-        import java.lang.Integer.floatValue(): Float32 \ {};
-        (valueOf(x) |> floatValue)
+        unsafe Integer.valueOf(x).floatValue()
 
     ///
     /// Convert `x` to a Float64.
@@ -430,9 +414,7 @@ mod Int32 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toFloat64(x: Int32): Float64 =
-        import static java.lang.Integer.valueOf(Int32): Integer \ {};
-        import java.lang.Integer.doubleValue(): Float64 \ {};
-        (valueOf(x) |> doubleValue)
+        unsafe Integer.valueOf(x).doubleValue()
 
     ///
     /// Convert `x` to a BigDecimal.
@@ -460,11 +442,9 @@ mod Int32 {
     /// Returns `x` clamped within the Int8 range `min` to `max`.
     ///
     pub def clampToInt8(min: {min = Int8}, max: {max = Int8}, x: Int32): Int8 =
-        import static java.lang.Integer.valueOf(Int32): Integer \ {};
-        import java.lang.Integer.byteValue(): Int8 \ {};
         let mini32 = Int8.toInt32(min#min);
         let maxi32 = Int8.toInt32(max#max);
-        (valueOf(clamp(min = mini32, max = maxi32, x)) |> byteValue)
+        unsafe Integer.valueOf(clamp(min = mini32, max = maxi32, x)).byteValue()
 
 
     ///
@@ -473,11 +453,9 @@ mod Int32 {
     /// Returns `x` clamped within the Int16 range `min` to `max`.
     ///
     pub def clampToInt16(min: {min = Int16}, max: {max = Int16}, x: Int32): Int16 =
-        import static java.lang.Integer.valueOf(Int32): Integer \ {};
-        import java.lang.Integer.shortValue(): Int16 \ {};
         let mini32 = Int16.toInt32(min#min);
         let maxi32 = Int16.toInt32(max#max);
-        (valueOf(clamp(min = mini32, max = maxi32, x)) |> shortValue)
+        unsafe Integer.valueOf(clamp(min = mini32, max = maxi32, x)).shortValue()
 
     ///
     /// Get the primitive Int32 value from its object representation (i.e. Integer).
@@ -486,8 +464,7 @@ mod Int32 {
     /// code you should not need to use `Integer`.
     ///
     pub def intValue(i: Integer): Int32 =
-        import java.lang.Integer.intValue(): Int32 \ {};
-        intValue(i)
+        unsafe i.intValue()
 
     ///
     /// Convert an Int32 value to its object representation (i.e. Integer).
@@ -496,7 +473,6 @@ mod Int32 {
     /// code you should not need to use `Integer`.
     ///
     pub def valueOf(i: Int32): Integer =
-        import static java.lang.Integer.valueOf(Int32): Integer \ {};
-        valueOf(i)
+        unsafe Integer.valueOf(i)
 
 }

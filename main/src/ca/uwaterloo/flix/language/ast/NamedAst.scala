@@ -194,8 +194,6 @@ object NamedAst {
 
     case class InvokeMethod2(exp: Expr, methodName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
 
-    case class InvokeStaticMethod2(clazzName: Name.Ident, methodName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
-
     case class InvokeConstructorOld(className: String, exps: List[Expr], sig: List[Type], loc: SourceLocation) extends Expr
 
     case class InvokeMethodOld(className: String, methodName: String, exp: Expr, exps: List[Expr], sig: List[Type], retTpe: Type, loc: SourceLocation) extends Expr

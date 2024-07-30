@@ -34,11 +34,10 @@ instance Div[Float64] {
 
 instance Div[BigDecimal] {
     pub def div(x: BigDecimal, y: BigDecimal): BigDecimal =
-        import java.math.BigDecimal.divide(BigDecimal): BigDecimal \ {};
         if (y == 0ff)
             0ff
         else
-            x `divide` y
+            unsafe x.divide(y)
 }
 
 instance Div[Int8] {
@@ -75,11 +74,10 @@ instance Div[Int64] {
 
 instance Div[BigInt] {
     pub def div(x: BigInt, y: BigInt): BigInt =
-        import java.math.BigInteger.divide(BigInt): BigInt \ {};
         if (y == 0ii)
             0ii
         else
-            x `divide` y
+            unsafe x.divide(y)
 }
 
 instance Div[String] {

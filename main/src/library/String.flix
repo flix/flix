@@ -16,6 +16,8 @@
 
 mod String {
 
+    import java.lang.System
+
     use Regex.Flag
 
     ///
@@ -126,9 +128,7 @@ mod String {
     ///
     /// Get the system line separator.
     ///
-    pub def lineSeparator(): String =
-        import static java.lang.System.lineSeparator(): String \ {};
-        lineSeparator()
+    pub def lineSeparator(): String = unsafe System.lineSeparator()
 
     ///
     /// Returns the given string `s` as an array of characters.
