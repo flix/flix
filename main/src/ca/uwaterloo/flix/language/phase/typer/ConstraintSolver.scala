@@ -277,7 +277,7 @@ object ConstraintSolver {
       // Apply substitution now
       val tpes = tpes0.map(subst0.apply)
       // Ensure that simplification for constructor parameters is done
-      val allKnown = tpes.forall(t => isKnown(t) && t.typeVars.forall(isKnown))
+      val allKnown = tpes.forall(isKnown)
 
       if (allKnown) {
         TypeReduction.lookupConstructor(clazz, tpes, cvar.loc) match {
@@ -296,7 +296,7 @@ object ConstraintSolver {
       val tpe = subst0(tpe0)
       val tpes = tpes0.map(subst0.apply)
       // Ensure that simplification for method parameters is done
-      val allKnown = isKnown(tpe) && tpes.forall(t => isKnown(t) && t.typeVars.forall(isKnown))
+      val allKnown = isKnown(tpe) && tpes.forall(isKnown)
 
       if (allKnown) {
         TypeReduction.lookupMethod(tpe, methodName.name, tpes, mvar.loc) match {
