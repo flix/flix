@@ -15,14 +15,14 @@
  */
 
 mod Time.Epoch {
+    import java.lang.System
 
     ///
     /// Returns the number of nano seconds since the Unix epoch.
     ///
     @Experimental
     pub def nanoseconds(): Int64 \ IO =
-        import static java.lang.System.nanoTime(): Int64 \ IO;
-        nanoTime()
+        System.nanoTime()
 
     ///
     /// Returns the number of micro seconds since the Unix epoch.
