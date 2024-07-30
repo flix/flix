@@ -1333,7 +1333,7 @@ object Resolver {
         case NamedAst.Expr.StructNew(sym, fields, region, loc) =>
           lookupStruct(sym, env0, ns0, root) match {
             case Result.Ok(st) =>
-              val providedFieldNames = fields.map(_._1).toSet
+              val providedFieldNames = fields.map {case (k, _) => k}.toSet
               val expectedFieldNames = st.fields.map(_.sym).toSet
               val extraFields = providedFieldNames.diff(expectedFieldNames).map(_.name)
               val unprovidedFields = expectedFieldNames.diff(providedFieldNames).map(_.name)

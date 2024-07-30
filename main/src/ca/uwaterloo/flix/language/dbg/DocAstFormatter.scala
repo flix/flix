@@ -211,7 +211,7 @@ object DocAstFormatter {
       case StructNew(sym, exps, exp) =>
         group(
           text("new") +: text(sym.text) +: curlyTuple(
-            exps.map(f => text(f._1.name) +: text("=") +: aux(f._2, inBlock = true))
+            exps.map {case (k, v) => text(k.name) +: text("=") +: aux(v, inBlock = true)}
           ) +: text("@") +: aux(exp)
         )
       case StructGet(exp, field, tpe) =>

@@ -299,7 +299,7 @@ object TypeReconstruction {
 
     case KindedAst.Expr.StructNew(sym, fields0, region0, tvar, evar, loc) =>
       val region = visitExp(region0)
-      val fields = fields0.map(field => (field._1, visitExp(field._2)))
+      val fields = fields0.map { case (k, v) => (k, visitExp(v)) }
       val tpe = subst(tvar)
       val eff = subst(evar)
       TypedAst.Expr.StructNew(sym, fields, region, tpe, eff, loc)

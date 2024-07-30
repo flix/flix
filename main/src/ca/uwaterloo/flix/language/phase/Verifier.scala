@@ -276,8 +276,8 @@ object Verifier {
           }
           tpe match {
             case MonoType.Struct(sym, elms, _) => {
-              val erasedElmTys = fields.map(f => f._2)
-              erasedElmTys.zip(elms).foreach(tys => checkEq(erase(tys._1), erase(tys._2), loc))
+              val erasedElmTys = fields.map {case (_, tpe) => tpe}
+              erasedElmTys.zip(elms).foreach {case (ty1, ty2) => checkEq(erase(ty1), erase(ty2), loc)}
               if(sym0 != sym) {
                 throw InternalCompilerException(s"Expected struct type $sym0, got struct type $sym", loc)
               }
