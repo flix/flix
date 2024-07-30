@@ -23,7 +23,9 @@ instance UpperBound[Int16] {
 }
 
 mod Int16 {
-    import java.math.BigDecimal;
+
+    import java.lang.{NumberFormatException, Short}
+    import java.math.{BigDecimal, BigInteger}
 
     ///
     /// Returns the number of bits used to represent an `Int16`.
@@ -332,11 +334,9 @@ mod Int16 {
     /// A successful parse is wrapped with `Some(x)`, a parse failure is indicated by `None`.
     ///
     pub def fromString(s: String): Option[Int16] = try {
-        import java.lang.String.strip(): String \ {};
-        import static java.lang.Short.parseShort(String): Int16 \ {};
-        Some(s |> strip |> parseShort)
+        Some(unsafe Short.parseShort(s.strip()))
     } catch {
-        case _: ##java.lang.NumberFormatException => None
+        case _: NumberFormatException => None
     }
 
     ///
@@ -348,12 +348,10 @@ mod Int16 {
     /// (i.e. -128 to 127).
     ///
     pub def tryToInt8(x: Int16): Option[Int8] =
-        import static java.lang.Short.valueOf(Int16): ##java.lang.Short \ {};
-        import java.lang.Short.byteValue(): Int8 \ {};
         if (x < Int8.toInt16(Int8.minValue()) or x > Int8.toInt16(Int8.maxValue()))
             None
         else
-            Some(valueOf(x) |> byteValue)
+            Some(unsafe Short.valueOf(x).byteValue())
 
     ///
     /// Convert `x` to a Int32.
@@ -361,9 +359,7 @@ mod Int16 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toInt32(x: Int16): Int32 =
-        import static java.lang.Short.valueOf(Int16): ##java.lang.Short \ {};
-        import java.lang.Short.intValue(): Int32 \ {};
-        (valueOf(x) |> intValue)
+        unsafe Short.valueOf(x).intValue()
 
     ///
     /// Convert `x` to a Int64.
@@ -371,9 +367,7 @@ mod Int16 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toInt64(x: Int16): Int64 =
-        import static java.lang.Short.valueOf(Int16): ##java.lang.Short \ {};
-        import java.lang.Short.longValue(): Int64 \ {};
-        (valueOf(x) |> longValue)
+        unsafe Short.valueOf(x).longValue()
 
     ///
     /// Convert `x` to a BigInt.
@@ -381,10 +375,7 @@ mod Int16 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toBigInt(x: Int16): BigInt =
-        import static java.lang.Short.valueOf(Int16): ##java.lang.Short \ {} as i16ValueOf;
-        import java.lang.Short.longValue(): Int64 \ {};
-        import static java.math.BigInteger.valueOf(Int64): BigInt \ {} as asBigInt;
-        (i16ValueOf(x) |> longValue |> asBigInt)
+        unsafe BigInteger.valueOf(Short.valueOf(x).longValue())
 
     ///
     /// Convert `x` to a Float32.
@@ -392,9 +383,7 @@ mod Int16 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toFloat32(x: Int16): Float32 =
-        import static java.lang.Short.valueOf(Int16): ##java.lang.Short \ {};
-        import java.lang.Short.floatValue(): Float32 \ {};
-        (valueOf(x) |> floatValue)
+        unsafe Short.valueOf(x).floatValue()
 
     ///
     /// Convert `x` to a Float64.
@@ -402,9 +391,7 @@ mod Int16 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toFloat64(x: Int16): Float64 =
-        import static java.lang.Short.valueOf(Int16): ##java.lang.Short \ {};
-        import java.lang.Short.doubleValue(): Float64 \ {};
-        (valueOf(x) |> doubleValue)
+        unsafe Short.valueOf(x).doubleValue()
 
     ///
     /// Convert `x` to a BigDecimal.
@@ -432,30 +419,26 @@ mod Int16 {
     /// Returns `x` clamped within the Int8 range `min` to `max`.
     ///
     pub def clampToInt8(min: {min = Int8}, max: {max = Int8}, x: Int16): Int8 =
-        import static java.lang.Short.valueOf(Int16): ##java.lang.Short \ {};
-        import java.lang.Short.byteValue(): Int8 \ {};
         let mini16 = Int8.toInt16(min#min);
         let maxi16 = Int8.toInt16(max#max);
-        (valueOf(clamp(min = mini16, max = maxi16, x)) |> byteValue)
+        unsafe Short.valueOf(clamp(min = mini16, max = maxi16, x)).byteValue()
 
     ///
-    /// Get the primitive Int16 value from its object representation (i.e. ##java.lang.Short).
+    /// Get the primitive Int16 value from its object representation (i.e. Short).
     ///
     /// This function is expected to be used when marshaling Int16s from Java. Generally in Flix
-    /// code you should not need to use `##java.lang.Short`.
+    /// code you should not need to use `Short`.
     ///
-    pub def shortValue(i: ##java.lang.Short): Int16 =
-        import java.lang.Short.shortValue(): Int16 \ {};
-        shortValue(i)
+    pub def shortValue(i: Short): Int16 =
+        unsafe i.shortValue()
 
     ///
-    /// Convert an Int16 value to its object representation (i.e. ##java.lang.Short).
+    /// Convert an Int16 value to its object representation (i.e. Short).
     ///
     /// This function is expected to be used when marshaling Int16s to Java. Generally in Flix
-    /// code you should not need to use `##java.lang.Short`.
+    /// code you should not need to use `Short`.
     ///
-    pub def valueOf(i: Int16): ##java.lang.Short =
-        import static java.lang.Short.valueOf(Int16): ##java.lang.Short \ {};
-        valueOf(i)
+    pub def valueOf(i: Int16): Short =
+        unsafe Short.valueOf(i)
 
 }

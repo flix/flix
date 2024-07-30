@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 mod Thread {
+    import java.lang.Thread
+    import java.lang.Long
+
     use Time.Duration
     use Time.Duration.Duration
 
@@ -21,13 +24,10 @@ mod Thread {
     /// Sleeps for the given duration `d`.
     ///
     pub def sleep(d: Duration): Unit \ IO =
-        import static java.lang.Thread.sleep(Int64, Int32): Unit \ IO as jsleep;
-        import static java.lang.Long.valueOf(Int64): ##java.lang.Long \ {};
         import java.lang.Long.intValue(): Int32 \ {};
         let Duration(nsTotal) = d;
         let ms = nsTotal / 1_000_000i64;
-        let ns: Int32 = if (nsTotal > 0i64) intValue(valueOf($INT64_REM$(nsTotal, 1_000_000i64))) else 0;
-        jsleep(ms, ns)
-
+        let ns: Int32 = if (nsTotal > 0i64) intValue(Long.valueOf($INT64_REM$(nsTotal, 1_000_000i64))) else 0;
+        Thread.sleep(ms, ns)
 
 }

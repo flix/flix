@@ -1085,7 +1085,11 @@ object Resolver {
                 // We have a static method call.
                 val methodName = qname.ident
                 val expsVal = traverse(exps)(visitExp(_, env0))
+                // Check for a single Unit argument
                 mapN(expsVal) {
+                  case ResolvedAst.Expr.Cst(Ast.Constant.Unit, _) :: Nil =>
+                    // Returns out of visitExp
+                    return Validation.success(ResolvedAst.Expr.InvokeStaticMethod2(clazz, methodName, Nil, outerLoc))
                   case es =>
                     // Returns out of visitExp
                     return Validation.success(ResolvedAst.Expr.InvokeStaticMethod2(clazz, methodName, es, outerLoc))
@@ -1522,19 +1526,7 @@ object Resolver {
               ResolvedAst.Expr.InvokeMethod2(e, name, es, loc)
           }
 
-        case NamedAst.Expr.InvokeStaticMethod2(className, methodName, exps, loc) =>
-          val esVal = traverse(exps)(visitExp(_, env0))
-          flatMapN(esVal) {
-            es => env0.get(className.name) match {
-              case Some(List(Resolution.JavaClass(clazz))) =>
-                Validation.success(ResolvedAst.Expr.InvokeStaticMethod2(clazz, methodName, es, loc))
-              case _ =>
-                val m = ResolutionError.UndefinedJvmClass(className.name, "", loc)
-                Validation.toSoftFailure(ResolvedAst.Expr.Error(m), m)
-            }
-          }
-
-        case NamedAst.Expr.InvokeConstructor(className, args, sig, loc) =>
+        case NamedAst.Expr.InvokeConstructorOld(className, args, sig, loc) =>
           lookupJvmClass(className, loc) match {
             case Result.Ok(clazz) =>
               val argsVal = traverse(args)(visitExp(_, env0))
@@ -1544,7 +1536,7 @@ object Resolver {
                   flatMapN(lookupSignature(sig, loc)) {
                     case ts => lookupJvmConstructor(clazz, ts, loc) match {
                       case Result.Ok(constructor) =>
-                        Validation.success(ResolvedAst.Expr.InvokeConstructor(constructor, as, loc))
+                        Validation.success(ResolvedAst.Expr.InvokeConstructorOld(constructor, as, loc))
                       case Result.Err(e) => Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
                     }
                   }
@@ -1552,7 +1544,7 @@ object Resolver {
             case Result.Err(e) => Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
           }
 
-        case NamedAst.Expr.InvokeMethod(className, methodName, exp, args, sig, retTpe, loc) =>
+        case NamedAst.Expr.InvokeMethodOld(className, methodName, exp, args, sig, retTpe, loc) =>
           val expVal = visitExp(exp, env0)
           val argsVal = traverse(args)(visitExp(_, env0))
           val sigVal = traverse(sig)(resolveType(_, Wildness.ForbidWild, env0, taenv, ns0, root))
@@ -1563,13 +1555,13 @@ object Resolver {
               flatMapN(lookupSignature(signature, loc)) {
                 case sig => lookupJvmMethod(clazz, methodName, sig, ret, static = false, loc) match {
                   case Result.Ok(method) =>
-                    Validation.success(ResolvedAst.Expr.InvokeMethod(method, clazz, e, as, loc))
+                    Validation.success(ResolvedAst.Expr.InvokeMethodOld(method, clazz, e, as, loc))
                   case Result.Err(e) => Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
                 }
               }
           }
 
-        case NamedAst.Expr.InvokeStaticMethod(className, methodName, args, sig, retTpe, loc) =>
+        case NamedAst.Expr.InvokeStaticMethodOld(className, methodName, args, sig, retTpe, loc) =>
           val argsVal = traverse(args)(visitExp(_, env0))
           val sigVal = traverse(sig)(resolveType(_, Wildness.ForbidWild, env0, taenv, ns0, root))
           val retVal = resolveType(retTpe, Wildness.ForbidWild, env0, taenv, ns0, root)
@@ -1579,7 +1571,7 @@ object Resolver {
               flatMapN(lookupSignature(signature, loc)) {
                 case sig => lookupJvmMethod(clazz, methodName, sig, ret, static = true, loc) match {
                   case Result.Ok(method) =>
-                    Validation.success(ResolvedAst.Expr.InvokeStaticMethod(method, as, loc))
+                    Validation.success(ResolvedAst.Expr.InvokeStaticMethodOld(method, as, loc))
                   case Result.Err(e) => Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
                 }
               }

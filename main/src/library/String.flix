@@ -16,12 +16,14 @@
 
 mod String {
 
+    import java.lang.System
+
     use Regex.Flag
 
     ///
     /// Returns the character at position `i` in the string `s`.
     ///
-    pub def charAt(i: Int32, s: String): Char = unsafe s¤charAt(i)
+    pub def charAt(i: Int32, s: String): Char = unsafe s.charAt(i)
 
     ///
     /// Optionally return the character at position `i` in the string `s`.
@@ -35,9 +37,7 @@ mod String {
     ///
     /// Returns the code point at position `i` in the string `s`.
     ///
-    pub def codePointAt(i: Int32, s: String): Int32 =
-        import java.lang.String.codePointAt(Int32): Int32 \ {};
-        codePointAt(s, i)
+    pub def codePointAt(i: Int32, s: String): Int32 = unsafe s.codePointAt(i)
 
     ///
     /// Optionally returns the code point at position `i` in the string `s`.
@@ -128,9 +128,7 @@ mod String {
     ///
     /// Get the system line separator.
     ///
-    pub def lineSeparator(): String =
-        import static java.lang.System.lineSeparator(): String \ {};
-        lineSeparator()
+    pub def lineSeparator(): String = unsafe System.lineSeparator()
 
     ///
     /// Returns the given string `s` as an array of characters.
