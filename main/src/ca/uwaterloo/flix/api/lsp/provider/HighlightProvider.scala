@@ -28,59 +28,59 @@ object HighlightProvider {
       case None => mkNotFound(uri, pos)
 
       case Some(entity) => entity match {
-        case Entity.Case(caze) => highlightCase(caze.sym)
+        case Entity.Case(caze) => highlightCase(uri, caze.sym)
 
-        case Entity.Def(defn) => highlightDef(defn.sym)
+        case Entity.Def(defn) => highlightDef(uri, defn.sym)
 
-        case Entity.Sig(sig0) => highlightSig(sig0.sym)
+        case Entity.Sig(sig0) => highlightSig(uri, sig0.sym)
 
-        case Entity.Enum(enum) => highlightEnum(enum.sym)
+        case Entity.Enum(enum) => highlightEnum(uri, enum.sym)
 
-        case Entity.TypeAlias(alias) => highlightTypeAlias(alias.sym)
+        case Entity.TypeAlias(alias) => highlightTypeAlias(uri, alias.sym)
 
-        case Entity.AssocType(assoc) => highlightAssocType(assoc.sym)
+        case Entity.AssocType(assoc) => highlightAssocType(uri, assoc.sym)
 
-        case Entity.Effect(eff) => highlightEffect(eff.sym)
+        case Entity.Effect(eff) => highlightEffect(uri, eff.sym)
 
-        case Entity.Op(op) => highlightOp(op.sym)
+        case Entity.Op(op) => highlightOp(uri, op.sym)
 
-        case Entity.VarUse(sym, _, _) => highlightVar(sym)
+        case Entity.VarUse(sym, _, _) => highlightVar(uri, sym)
 
-        case Entity.DefUse(sym, _, _) => highlightDef(sym)
+        case Entity.DefUse(sym, _, _) => highlightDef(uri, sym)
 
-        case Entity.SigUse(sym, _, _) => highlightSig(sym)
+        case Entity.SigUse(sym, _, _) => highlightSig(uri, sym)
 
-        case Entity.CaseUse(sym, _, _) => highlightCase(sym)
+        case Entity.CaseUse(sym, _, _) => highlightCase(uri, sym)
 
         case Entity.Exp(_) => mkNotFound(uri, pos)
 
-        case Entity.Label(label) => highlightLabel(label)
+        case Entity.Label(label) => highlightLabel(uri, label)
 
-        case Entity.FormalParam(fparam) => highlightVar(fparam.sym)
+        case Entity.FormalParam(fparam) => highlightVar(uri, fparam.sym)
 
         case Entity.Pattern(pat) => pat match {
-          case Pattern.Var(sym, _, _) => highlightVar(sym)
-          case Pattern.Tag(Ast.CaseSymUse(sym, _), _, _, _) => highlightCase(sym)
+          case Pattern.Var(sym, _, _) => highlightVar(uri, sym)
+          case Pattern.Tag(Ast.CaseSymUse(sym, _), _, _, _) => highlightCase(uri, sym)
           case _ => mkNotFound(uri, pos)
         }
 
-        case Entity.Pred(pred, _) => highlightPred(pred)
+        case Entity.Pred(pred, _) => highlightPred(uri, pred)
 
-        case Entity.LocalVar(sym, _) => highlightVar(sym)
+        case Entity.LocalVar(sym, _) => highlightVar(uri, sym)
 
         case Entity.Type(t) => t match {
           case Type.Cst(tc, _) => tc match {
-            case TypeConstructor.RecordRowExtend(label) => highlightLabel(label)
-            case TypeConstructor.SchemaRowExtend(pred) => highlightPred(pred)
-            case TypeConstructor.Enum(sym, _) => highlightEnum(sym)
-            case TypeConstructor.Effect(sym) => highlightEffect(sym)
+            case TypeConstructor.RecordRowExtend(label) => highlightLabel(uri, label)
+            case TypeConstructor.SchemaRowExtend(pred) => highlightPred(uri, pred)
+            case TypeConstructor.Enum(sym, _) => highlightEnum(uri, sym)
+            case TypeConstructor.Effect(sym) => highlightEffect(uri, sym)
             case _ => mkNotFound(uri, pos)
           }
-          case Type.Var(sym, _) => highlightTypeVar(sym)
+          case Type.Var(sym, _) => highlightTypeVar(uri, sym)
           case _ => mkNotFound(uri, pos)
         }
 
-        case Entity.OpUse(sym, _, _) => highlightOp(sym)
+        case Entity.OpUse(sym, _, _) => highlightOp(uri, sym)
 
         case Entity.Trait(_) => mkNotFound(uri, pos)
         case Entity.TypeVar(_) => mkNotFound(uri, pos)
@@ -88,9 +88,14 @@ object HighlightProvider {
     }
   }
 
-  private def highlight(occurrences: List[(SourceLocation, DocumentHighlightKind)]): JObject = {
+  private def highlight(uri: String, occurrences: List[(SourceLocation, DocumentHighlightKind)]): JObject = {
+    // Filter out highlights outside of document.
+    val occurrencesInDoc = occurrences filter {
+      case (loc, _) => loc.source.name == uri
+    }
+
     // Construct the highlights.
-    val highlights = occurrences map {
+    val highlights = occurrencesInDoc map {
       case (loc, kind) => DocumentHighlight(Range.from(loc), kind)
     }
 
@@ -98,76 +103,76 @@ object HighlightProvider {
     ("status" -> ResponseStatus.Success) ~ ("result" -> JArray(highlights.map(_.toJSON)))
   }
 
-  private def highlightDef(sym: Symbol.DefnSym)(implicit index: Index): JObject = {
+  private def highlightDef(uri: String, sym: Symbol.DefnSym)(implicit index: Index): JObject = {
     val write = (sym.loc, DocumentHighlightKind.Write)
     val reads = index.usesOf(sym).toList.map(loc => (loc, DocumentHighlightKind.Read))
-    highlight(write :: reads)
+    highlight(uri, write :: reads)
   }
 
-  private def highlightSig(sym: Symbol.SigSym)(implicit index: Index): JObject = {
+  private def highlightSig(uri: String, sym: Symbol.SigSym)(implicit index: Index): JObject = {
     val write = (sym.loc, DocumentHighlightKind.Write)
     val reads = index.usesOf(sym).toList.map(loc => (loc, DocumentHighlightKind.Read))
-    highlight(write :: reads)
+    highlight(uri, write :: reads)
   }
 
-  private def highlightEnum(sym: Symbol.EnumSym)(implicit index: Index): JObject = {
+  private def highlightEnum(uri: String, sym: Symbol.EnumSym)(implicit index: Index): JObject = {
     val write = (sym.loc, DocumentHighlightKind.Write)
     val reads = index.usesOf(sym).toList.map(loc => (loc, DocumentHighlightKind.Read))
-    highlight(write :: reads)
+    highlight(uri, write :: reads)
   }
 
-  private def highlightTypeAlias(sym: Symbol.TypeAliasSym)(implicit index: Index): JObject = {
+  private def highlightTypeAlias(uri: String, sym: Symbol.TypeAliasSym)(implicit index: Index): JObject = {
     val write = (sym.loc, DocumentHighlightKind.Write)
     val reads = index.usesOf(sym).toList.map(loc => (loc, DocumentHighlightKind.Read))
-    highlight(write :: reads)
+    highlight(uri, write :: reads)
   }
 
-  private def highlightAssocType(sym: Symbol.AssocTypeSym)(implicit index: Index): JObject = {
+  private def highlightAssocType(uri: String, sym: Symbol.AssocTypeSym)(implicit index: Index): JObject = {
     val write = (sym.loc, DocumentHighlightKind.Write)
     val reads = index.usesOf(sym).toList.map(loc => (loc, DocumentHighlightKind.Read))
-    highlight(write :: reads)
+    highlight(uri, write :: reads)
   }
 
-  private def highlightLabel(label: Name.Label)(implicit index: Index): JObject = {
+  private def highlightLabel(uri: String, label: Name.Label)(implicit index: Index): JObject = {
     val writes = index.defsOf(label).toList.map(loc => (loc, DocumentHighlightKind.Write))
     val reads = index.usesOf(label).toList.map(loc => (loc, DocumentHighlightKind.Read))
-    highlight(reads ::: writes)
+    highlight(uri, reads ::: writes)
   }
 
-  private def highlightPred(pred: Name.Pred)(implicit index: Index): JObject = {
+  private def highlightPred(uri: String, pred: Name.Pred)(implicit index: Index): JObject = {
     val writes = index.defsOf(pred).toList.map(loc => (loc, DocumentHighlightKind.Write))
     val reads = index.usesOf(pred).toList.map(loc => (loc, DocumentHighlightKind.Read))
-    highlight(reads ::: writes)
+    highlight(uri, reads ::: writes)
   }
 
-  private def highlightCase(sym: Symbol.CaseSym)(implicit index: Index, root: Root): JObject = {
+  private def highlightCase(uri: String, sym: Symbol.CaseSym)(implicit index: Index, root: Root): JObject = {
     val write = (root.enums(sym.enumSym).cases(sym).loc, DocumentHighlightKind.Write)
     val reads = index.usesOf(sym).toList.map(loc => (loc, DocumentHighlightKind.Read))
-    highlight(write :: reads)
+    highlight(uri, write :: reads)
   }
 
-  private def highlightVar(sym: Symbol.VarSym)(implicit index: Index): JObject = {
+  private def highlightVar(uri: String, sym: Symbol.VarSym)(implicit index: Index): JObject = {
     val write = (sym.loc, DocumentHighlightKind.Write)
     val reads = index.usesOf(sym).toList.map(loc => (loc, DocumentHighlightKind.Read))
-    highlight(write :: reads)
+    highlight(uri, write :: reads)
   }
 
-  private def highlightTypeVar(sym: Symbol.KindedTypeVarSym)(implicit index: Index): JObject = {
+  private def highlightTypeVar(uri: String, sym: Symbol.KindedTypeVarSym)(implicit index: Index): JObject = {
     val write = (sym.loc, DocumentHighlightKind.Write)
     val reads = index.usesOf(sym).toList.map(loc => (loc, DocumentHighlightKind.Read))
-    highlight(write :: reads)
+    highlight(uri, write :: reads)
   }
 
-  private def highlightEffect(sym: Symbol.EffectSym)(implicit index: Index): JObject = {
+  private def highlightEffect(uri: String, sym: Symbol.EffectSym)(implicit index: Index): JObject = {
     val write = (sym.loc, DocumentHighlightKind.Write)
     val reads = index.usesOf(sym).toList.map(loc => (loc, DocumentHighlightKind.Read))
-    highlight(write :: reads)
+    highlight(uri, write :: reads)
   }
 
-  private def highlightOp(sym: Symbol.OpSym)(implicit index: Index): JObject = {
+  private def highlightOp(uri: String, sym: Symbol.OpSym)(implicit index: Index): JObject = {
     val write = (sym.loc, DocumentHighlightKind.Write)
     val reads = index.usesOf(sym).toList.map(loc => (loc, DocumentHighlightKind.Read))
-    highlight(write :: reads)
+    highlight(uri, write :: reads)
   }
 
   /**

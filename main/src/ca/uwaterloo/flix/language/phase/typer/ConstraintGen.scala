@@ -573,6 +573,15 @@ object ConstraintGen {
         val resEff = evar
         (resTpe, resEff)
 
+      case Expr.StructNew(sym, fields, region, tvar, evar, loc) =>
+        throw new RuntimeException("joe tbd")
+
+      case Expr.StructGet(sym, exp, name, tvar, evar, loc) =>
+        throw new RuntimeException("joe tbd")
+
+      case Expr.StructPut(sym, exp1, name, exp2, tvar, evar, loc) =>
+        throw new RuntimeException("joe tbd")
+
       case Expr.VectorLit(exps, tvar, evar, loc) =>
         val (tpes, effs) = exps.map(visitExp).unzip
         c.unifyAllTypes(tpes, loc)
@@ -777,14 +786,14 @@ object ConstraintGen {
         val resEff = evar
         (resTpe, resEff)
 
-      case Expr.InvokeConstructor(constructor, exps, _) =>
+      case Expr.InvokeConstructorOld(constructor, exps, _) =>
         val classTpe = Type.getFlixType(constructor.getDeclaringClass)
         val (_, _) = exps.map(visitExp).unzip
         val resTpe = classTpe
         val resEff = Type.IO
         (resTpe, resEff)
 
-      case Expr.InvokeMethod(method, clazz, exp, exps, loc) =>
+      case Expr.InvokeMethodOld(method, clazz, exp, exps, loc) =>
         val classTpe = Type.getFlixType(clazz)
         val (thisTpe, _) = visitExp(exp)
         c.unifyType(thisTpe, classTpe, loc)
@@ -793,7 +802,7 @@ object ConstraintGen {
         val resEff = Type.IO
         (resTpe, resEff)
 
-      case Expr.InvokeStaticMethod(method, exps, _) =>
+      case Expr.InvokeStaticMethodOld(method, exps, _) =>
         val (_, _) = exps.map(visitExp).unzip
         val resTpe = Type.getFlixType(method.getReturnType)
         val resEff = Type.IO

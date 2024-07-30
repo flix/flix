@@ -625,7 +625,7 @@ object PatMatch {
     case Some(TypeConstructor.Tuple(l)) => l
     case Some(TypeConstructor.RecordRowExtend(_)) => 2
     case Some(TypeConstructor.SchemaRowExtend(_)) => 2
-    case Some(TypeConstructor.Error(_)) => 0
+    case Some(TypeConstructor.Error(_, _)) => 0
 
     case _ =>
       // Resilience: OK to throw. We will have replaced the non-star type with Type.Error of star kind.
