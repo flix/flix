@@ -128,6 +128,12 @@ object LoweredAst {
       def tpe: Type = Type.Int32
     }
 
+    case class StructNew(sym: Symbol.StructSym, fields: List[(Symbol.StructFieldSym, Expr)], region: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+
+    case class StructGet(sym: Symbol.StructSym, exp: Expr, field: Name.Label, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+
+    case class StructPut(sym: Symbol.StructSym, exp0: Expr, field: Name.Label, exp1: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+
     case class Ascribe(exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class Cast(exp: Expr, declaredType: Option[Type], declaredEff: Option[Type], tpe: Type, eff: Type, loc: SourceLocation) extends Expr

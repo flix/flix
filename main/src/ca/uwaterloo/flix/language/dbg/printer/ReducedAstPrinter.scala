@@ -68,6 +68,9 @@ object ReducedAstPrinter {
     })
     case Expr.Do(op, exps, _, _, _) => DocAst.Expr.Do(op.sym, exps.map(print))
     case Expr.NewObject(name, clazz, tpe, _, methods, _) => DocAst.Expr.NewObject(name, clazz, MonoTypePrinter.print(tpe), methods.map(printJvmMethod))
+    case Expr.StructNew(_, _, _, _, _, _) => throw new RuntimeException("Joe todo - coming soon")
+    case Expr.StructGet(_, _, _, _, _, _) => throw new RuntimeException("Joe todo - coming soon")
+    case Expr.StructPut(_, _, _, _, _, _, _) => throw new RuntimeException("Joe todo - coming soon")
   }
 
   /**

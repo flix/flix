@@ -558,6 +558,12 @@ object Redundancy {
       val us3 = visitExp(elm, env0, rc)
       us1 ++ us2 ++ us3
 
+    case Expr.StructNew(_, _, _, _, _, _) => throw new RuntimeException("Joe todo - coming soon")
+
+    case Expr.StructGet(_, _, _, _, _, _) => throw new RuntimeException("Joe todo - coming soon")
+
+    case Expr.StructPut(_, _, _, _, _, _, _) => throw new RuntimeException("Joe todo - coming soon")
+
     case Expr.VectorLit(exps, _, _, _) =>
       visitExps(exps, env0, rc)
 

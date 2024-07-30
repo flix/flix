@@ -172,6 +172,12 @@ object Reducer {
 
         Expr.NewObject(name, clazz, tpe, purity, specs, loc)
 
+      case Expr.StructNew(_, _, _, _, _, _) => throw new RuntimeException("Joe todo - coming soon")
+
+      case Expr.StructGet(_, _, _, _, _, _) => throw new RuntimeException("Joe todo - coming soon")
+
+      case Expr.StructPut(_, _, _, _, _, _, _) => throw new RuntimeException("Joe todo - coming soon")
+
     }
   }
 
@@ -222,7 +228,7 @@ object Reducer {
       case Some((tpe, taskList)) =>
         val taskList1 = tpe match {
           case Void | AnyType | Unit | Bool | Char | Float32 | Float64 | BigDecimal | Int8 | Int16 |
-               Int32 | Int64 | BigInt | String | Regex | Region | Enum(_) | Struct(_) | RecordEmpty |
+               Int32 | Int64 | BigInt | String | Regex | Region | Enum(_) | Struct(_, _, _) | RecordEmpty |
                Native(_) => taskList
           case Array(elm) => taskList.enqueue(elm)
           case Lazy(elm) => taskList.enqueue(elm)

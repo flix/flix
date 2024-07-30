@@ -270,6 +270,12 @@ object Stratifier {
         case (b, i, e) => Expr.ArrayStore(b, i, e, eff, loc)
       }
 
+    case Expr.StructNew(_, _, _, _, _, _) => throw new RuntimeException("Joe todo - coming soon")
+
+    case Expr.StructGet(_, _, _, _, _, _) => throw new RuntimeException("Joe todo - coming soon")
+
+    case Expr.StructPut(_, _, _, _, _, _, _) => throw new RuntimeException("Joe todo - coming soon")
+
     case Expr.VectorLit(exps, tpe, eff, loc) =>
       mapN(traverse(exps)(visitExp)) {
         case es => Expr.VectorLit(es, tpe, eff, loc)

@@ -70,6 +70,9 @@ object LiftedAstPrinter {
       case LiftedAst.JvmMethod(ident, fparams, clo, retTpe, _, _) =>
         DocAst.JvmMethod(ident, fparams.map(printFormalParam), print(clo), MonoTypePrinter.print(retTpe))
     })
+    case StructNew(_, _, _, _, _, _) => throw new RuntimeException("Joe todo - coming soon")
+    case StructGet(_, _, _, _, _, _) => throw new RuntimeException("Joe todo - coming soon")
+    case StructPut(_, _, _, _, _, _, _) => throw new RuntimeException("Joe todo - coming soon")
   }
 
   /**

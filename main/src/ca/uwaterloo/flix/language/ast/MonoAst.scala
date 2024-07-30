@@ -41,6 +41,7 @@ object MonoAst {
 
   case class Struct(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.StructSym, fields: Map[Name.StructField, StructField], tpe: Type, loc: SourceLocation)
 
+
   sealed trait Expr extends Product {
     def tpe: Type
 
@@ -103,6 +104,11 @@ object MonoAst {
 
       def tpe: Type = Type.Int32
     }
+    case class StructNew(sym: Symbol.StructSym, exps: List[(Symbol.StructFieldSym, Expr)], exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+
+    case class StructGet(sym: Symbol.StructSym, exp1: Expr, field: Name.Label, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+
+    case class StructPut(sym: Symbol.StructSym, exp1: Expr, field: Name.Label, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class Ascribe(exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
@@ -177,7 +183,7 @@ object MonoAst {
 
   case class Case(sym: Symbol.CaseSym, tpe: Type, sc: Scheme, loc: SourceLocation)
 
-  case class StructField(sym: Symbol.StructFieldSym, tpe: Type, sc: Scheme, loc: SourceLocation)
+  case class StructField(sym: Symbol.StructFieldSym, tpe: Type, loc: SourceLocation)
 
   case class Constraint(cparams: List[ConstraintParam], head: Predicate.Head, body: List[Predicate.Body], loc: SourceLocation)
 

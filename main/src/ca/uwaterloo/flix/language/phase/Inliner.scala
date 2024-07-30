@@ -273,6 +273,13 @@ object Inliner {
       }
       LiftedAst.Expr.NewObject(name, clazz, tpe, purity, methods, loc)
 
+    case OccurrenceAst.Expr.StructNew(_, _, _, _, _, _) => throw new RuntimeException("Joe todo - coming soon")
+
+    case OccurrenceAst.Expr.StructGet(_, _, _, _, _, _) => throw new RuntimeException("Joe todo - coming soon")
+
+    case OccurrenceAst.Expr.StructPut(_, _, _, _, _, _, _) => throw new RuntimeException("Joe todo - coming soon")
+
+
   }
 
   /**
@@ -440,6 +447,12 @@ object Inliner {
           LiftedAst.JvmMethod(ident, f, c, retTpe, purity, loc)
       }
       LiftedAst.Expr.NewObject(name, clazz, tpe, purity, methods, loc)
+
+    case OccurrenceAst.Expr.StructNew(_, _, _, _, _, _) => throw new RuntimeException("Joe todo - coming soon")
+
+    case OccurrenceAst.Expr.StructGet(_, _, _, _, _, _) => throw new RuntimeException("Joe todo - coming soon")
+
+    case OccurrenceAst.Expr.StructPut(_, _, _, _, _, _, _) => throw new RuntimeException("Joe todo - coming soon")
 
   }
 

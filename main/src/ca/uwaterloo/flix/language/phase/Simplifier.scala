@@ -215,6 +215,12 @@ object Simplifier {
       val methods = methods0 map visitJvmMethod
       SimplifiedAst.Expr.NewObject(name, clazz, t, simplifyEffect(eff), methods, loc)
 
+    case MonoAst.Expr.StructNew(_, _, _, _, _, _) => throw new RuntimeException("Joe todo - coming soon")
+
+    case MonoAst.Expr.StructGet(_, _, _, _, _, _) => throw new RuntimeException("Joe todo - coming soon")
+
+    case MonoAst.Expr.StructPut(_, _, _, _, _, _, _) => throw new RuntimeException("Joe todo - coming soon")
+
     case MonoAst.Expr.Sig(_, _, loc) =>
       throw InternalCompilerException(s"Unexpected expression: $exp0.", loc)
 
@@ -275,7 +281,7 @@ object Simplifier {
 
           case TypeConstructor.Enum(sym, _) => MonoType.Enum(sym)
 
-          case TypeConstructor.Struct(sym, _) => MonoType.Struct(sym)
+          case TypeConstructor.Struct(sym, _) => throw new RuntimeException("JOE TODO: Future PR")
 
           case TypeConstructor.RestrictableEnum(sym, _) =>
             val enumSym = new Symbol.EnumSym(sym.namespace, sym.name, sym.loc)

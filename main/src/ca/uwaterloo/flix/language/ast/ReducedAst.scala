@@ -53,7 +53,7 @@ object ReducedAst {
 
   case class Op(sym: Symbol.OpSym, ann: Ast.Annotations, mod: Ast.Modifiers, fparams: List[FormalParam], tpe: MonoType, purity: Purity, loc: SourceLocation)
 
-  case class Struct(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.StructSym, fields: Map[Name.StructField, StructField], tpe: Type, loc: SourceLocation)
+  case class Struct(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.StructSym, fields: Map[Symbol.StructFieldSym, StructField], loc: SourceLocation)
 
   sealed trait Expr {
     def tpe: MonoType
@@ -103,9 +103,15 @@ object ReducedAst {
 
     case class NewObject(name: String, clazz: java.lang.Class[_], tpe: MonoType, purity: Purity, methods: List[JvmMethod], loc: SourceLocation) extends Expr
 
+    case class StructNew(sym: Symbol.StructSym, exps: List[(Symbol.StructFieldSym, Expr)], exp: Expr, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
+
+    case class StructGet(sym: Symbol.StructSym, exp1: Expr, field: Name.Label, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
+
+    case class StructPut(sym: Symbol.StructSym, exp1: Expr, field: Name.Label, exp2: Expr, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
+
   }
 
-  case class StructField(sym: Symbol.StructFieldSym, tpe: Type, sc: Scheme, loc: SourceLocation)
+  case class StructField(sym: Symbol.StructFieldSym, idx: Int, tpe: Type, loc: SourceLocation)
 
   case class AnonClass(name: String, clazz: java.lang.Class[_], tpe: MonoType, methods: List[JvmMethod], loc: SourceLocation)
 

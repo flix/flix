@@ -113,6 +113,12 @@ object TreeShaker2 {
     case Expr.NewObject(_, _, _, _, methods, _) =>
       visitExps(methods.map(_.clo))
 
+    case Expr.StructNew(_, _, _, _, _, _) => throw new RuntimeException("Joe todo - coming soon")
+
+    case Expr.StructGet(_, _, _, _, _, _) => throw new RuntimeException("Joe todo - coming soon")
+
+    case Expr.StructPut(_, _, _, _, _, _, _) => throw new RuntimeException("Joe todo - coming soon")
+
   }
 
   /**

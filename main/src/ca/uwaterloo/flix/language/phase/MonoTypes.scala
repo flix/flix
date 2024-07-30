@@ -248,6 +248,13 @@ object MonoTypes {
           MonoAst.JvmMethod(ident, fs, me, mt, mp, loc)
       }
       Expr.NewObject(name, clazz, t, p, ms, loc)
+
+    case Expr.StructNew(_, _, _, _, _, _) => throw new RuntimeException("Joe todo - coming soon")
+
+    case Expr.StructGet(_, _, _, _, _, _) => throw new RuntimeException("Joe todo - coming soon")
+
+    case Expr.StructPut(_, _, _, _, _, _, _) => throw new RuntimeException("Joe todo - coming soon")
+
   }
 
   /**

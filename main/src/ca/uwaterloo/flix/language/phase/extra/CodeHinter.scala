@@ -259,6 +259,12 @@ object CodeHinter {
         case JvmMethod(_, _, exp, _, _, _) => visitExp(exp)
       }
 
+    case Expr.StructNew(_, _, _, _, _, _) => throw new RuntimeException("Joe todo - coming soon")
+
+    case Expr.StructGet(_, _, _, _, _, _) => throw new RuntimeException("Joe todo - coming soon")
+
+    case Expr.StructPut(_, _, _, _, _, _, _) => throw new RuntimeException("Joe todo - coming soon")
+
     case Expr.NewChannel(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
