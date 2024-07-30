@@ -200,10 +200,10 @@ object EffectVerifier {
       // TODO region stuff
       ()
     case Expr.StructNew(sym, fields, region, tpe, eff, loc) =>
-      val expected = Type.mkUnion(fields.map(_._2.eff) :+ region.eff, loc)
+      val expected = Type.mkUnion(fields.map {case (k, v) => v.eff} :+ region.eff, loc)
       val actual = eff
       expectType(expected, actual, loc)
-      fields.map(_._2).map(visitExp)
+      fields.map {case(k, v) => v}.map(visitExp)
       visitExp(region)
     case Expr.StructGet(_, e, _, t, _, _) =>
       // TODO region stuff

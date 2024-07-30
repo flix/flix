@@ -336,7 +336,7 @@ object Safety {
         visit(base)
 
       case Expr.StructNew(_, fields, region, _, _, _) =>
-        fields.map(_._2).flatMap(visit) ++ visit(region)
+        fields.map{case (_, v) => v}.flatMap(visit) ++ visit(region)
 
       case Expr.StructGet(_, e, _, _, _, _) =>
         visit(e)

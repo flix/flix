@@ -596,7 +596,7 @@ object Redundancy {
 
     case Expr.StructNew(sym, fields, region, _, _, _) =>
       sctx.structSyms.put(sym, ())
-      visitExps(fields.map(_._2), env0, rc) ++ visitExp(region, env0, rc)
+      visitExps(fields.map {case (k, v) => v}, env0, rc) ++ visitExp(region, env0, rc)
 
     case Expr.StructGet(sym, e, field, _, _, _) =>
       sctx.structSyms.put(sym, ())

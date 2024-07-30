@@ -156,7 +156,7 @@ object Regions {
       exps.flatMap(visitExp) ++ checkType(tpe, loc)
 
     case Expr.StructNew(_, fields, region, tpe, _, loc) =>
-      fields.map(_._2).flatMap(visitExp) ++ visitExp(region) ++ checkType(tpe, loc)
+      fields.map{case (k, v) => v}.flatMap(visitExp) ++ visitExp(region) ++ checkType(tpe, loc)
 
     case Expr.StructGet(_, e, _, tpe, _, loc) =>
       visitExp(e) ++ checkType(tpe, loc)
