@@ -750,10 +750,6 @@ object Desugar {
       val es = visitExps(exps)
       Expr.InvokeMethod2(e, name, es, loc)
 
-    case WeededAst.Expr.InvokeStaticMethod2(className, methodName, exps, loc) =>
-      val es = visitExps(exps)
-      Expr.InvokeStaticMethod2(className, methodName, es, loc)
-
     case WeededAst.Expr.NewObject(tpe, methods, loc) =>
       val t = visitType(tpe)
       val ms = methods.map(visitJvmMethod)

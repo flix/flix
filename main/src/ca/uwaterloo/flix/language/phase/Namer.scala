@@ -849,10 +849,6 @@ object Namer {
       val es = visitExps(exps, ns0)
       NamedAst.Expr.InvokeMethod2(e, name, es, loc)
 
-    case DesugaredAst.Expr.InvokeStaticMethod2(className, methodName, exps, loc) =>
-      val es = visitExps(exps, ns0)
-      NamedAst.Expr.InvokeStaticMethod2(className, methodName, es, loc)
-
     case DesugaredAst.Expr.InvokeConstructorOld(className, exps, sig, loc) =>
       if (flix.options.xnodeprecated) {
         val m = NameError.Deprecated(loc)
