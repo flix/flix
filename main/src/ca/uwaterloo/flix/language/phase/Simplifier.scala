@@ -193,21 +193,6 @@ object Simplifier {
       val purity = e.purity
       SimplifiedAst.Expr.ApplyAtomic(AtomicOp.ArrayLength, List(e), MonoType.Int32, purity, loc)
 
-    case MonoAst.Expr.StructNew(sym, fields0, region0, tpe0, eff, loc) =>
-      val fields = fields0.map(f => (f._1, visitExp(f._2)))
-      val region = visitExp(region0)
-      val tpe = visitType(tpe0)
-      SimplifiedAst.Expr.StructNew(sym, fields, region, tpe, simplifyEffect(eff), loc)
-
-    case MonoAst.Expr.StructGet(sym, e0, field, tpe, eff, loc) =>
-      val struct = visitExp(e0)
-      SimplifiedAst.Expr.StructGet(sym, struct, field, visitType(tpe), simplifyEffect(eff), loc)
-
-    case MonoAst.Expr.StructPut(sym, e0, field, e1, tpe, eff, loc) =>
-      val struct = visitExp(e0)
-      val rhs = visitExp(e1)
-      SimplifiedAst.Expr.StructPut(sym, struct, field, rhs, visitType(tpe), simplifyEffect(eff), loc)
-
     case MonoAst.Expr.Ascribe(exp, _, _, _) => visitExp(exp)
 
     case MonoAst.Expr.Cast(exp, _, _, tpe, eff, loc) =>

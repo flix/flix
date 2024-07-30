@@ -112,15 +112,6 @@ object TreeShaker2 {
 
     case Expr.NewObject(_, _, _, _, methods, _) =>
       visitExps(methods.map(_.clo))
-
-    case Expr.StructNew(_, fs, e, _, _, _) =>
-      visitExps(fs.map(_._2)) ++ visitExp(e)
-
-    case Expr.StructGet(_, e, _, _, _, _) =>
-      visitExp(e)
-
-    case Expr.StructPut(_, e1, _, e2, _, _, _) =>
-      visitExp(e1) ++ visitExp(e2)
   }
 
   /**

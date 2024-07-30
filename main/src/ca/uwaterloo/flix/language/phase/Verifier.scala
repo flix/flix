@@ -600,55 +600,6 @@ object Verifier {
       }
       checkEq(tpe, MonoType.Native(clazz), loc)
 
-    case Expr.StructNew(sym0, fields, region, tpe, purity, loc) =>
-      if(isPure(purity)) {
-        throw InternalCompilerException(s"Struct expression should not be pure", loc)
-      }
-      tpe match {
-        case MonoType.Struct(sym, elms, _) => {
-          val erasedElmTys = fields.map(f => f._2.tpe)
-          erasedElmTys.zip(elms).foreach(tys => checkEq(erase(tys._1), erase(tys._2), loc))
-          if(sym0 != sym) {
-            throw InternalCompilerException(s"Expected struct type $sym0, got struct type $sym", loc)
-          }
-        }
-        case _ => failMismatchedShape(tpe, "Struct", loc)
-      }
-      check(MonoType.Region)(visitExpr(region), region.loc)
-      tpe
-
-    case Expr.StructGet(sym0, struct, field, tpe, purity, loc) =>
-      if(isPure(purity)) {
-        throw InternalCompilerException(s"Struct expression should not be pure", loc)
-      }
-      visitExpr(struct) match {
-        case MonoType.Struct(sym, elms, _) => {
-          if(sym0 != sym) {
-            throw InternalCompilerException(s"Expected struct type $sym0, got struct type $sym", loc)
-          }
-          val fieldIdx = root.structs(sym).fields(Symbol.mkStructFieldSym(sym0, Name.Ident(field.name, field.loc))).idx
-          checkEq(erase(elms(fieldIdx)), erase(tpe), loc)
-          tpe
-        }
-        case _ => failMismatchedShape(tpe, "Struct", loc)
-      }
-
-    case Expr.StructPut(sym0, struct, field, value, tpe, purity, loc) =>
-      if(isPure(purity)) {
-        throw InternalCompilerException(s"Struct expression should not be pure", loc)
-      }
-      visitExpr(struct) match {
-        case MonoType.Struct(sym, elms, _) => {
-          if(sym0 != sym) {
-            throw InternalCompilerException(s"Expected struct type $sym0, got struct type $sym", loc)
-          }
-          val fieldIdx = root.structs(sym).fields(Symbol.mkStructFieldSym(sym0, Name.Ident(field.name, field.loc))).idx
-          checkEq(erase(elms(fieldIdx)), erase(visitExpr(value)), loc)
-          checkEq(tpe, MonoType.Unit, loc)
-        }
-        case _ => failMismatchedShape(tpe, "Struct", loc)
-      }
-
   }
 
   /**

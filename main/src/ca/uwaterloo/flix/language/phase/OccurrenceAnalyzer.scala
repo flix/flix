@@ -267,22 +267,6 @@ object OccurrenceAnalyzer {
       }.unzip
       val o2 = o1.foldLeft(OccurInfo.Empty)((acc, o3) => combineAllSeq(acc, o3))
       (OccurrenceAst.Expr.NewObject(name, clazz, tpe, purity, ms, loc), o2.increaseSizeByOne())
-
-    case Expr.StructNew(sym, fs0, e0, tpe, purity, loc) =>
-      val (fs, o1) = visitExps(sym0, fs0.map(_._2))
-      val (e, o2) = visitExp(sym0, e0)
-      val o3 = combineAllSeq(o1, o2)
-      (OccurrenceAst.Expr.StructNew(sym, fs0.map(_._1).zip(fs), e, tpe, purity, loc), o3.increaseSizeByOne())
-
-    case Expr.StructGet(sym, e0, field, tpe, purity, loc) =>
-      val (e, o) = visitExp(sym0, e0)
-      (OccurrenceAst.Expr.StructGet(sym, e, field, tpe, purity, loc), o.increaseSizeByOne())
-
-    case Expr.StructPut(sym, e1, field, e2, tpe, purity, loc) =>
-      val (exp1, o1) = visitExp(sym0, e1)
-      val (exp2, o2) = visitExp(sym0, e2)
-      val o3 = combineAllSeq(o1, o2)
-      (OccurrenceAst.Expr.StructPut(sym, exp1, field, exp2, tpe, purity, loc), o3.increaseSizeByOne())
   }
 
   /**

@@ -102,12 +102,6 @@ object ReducedAst {
     case class Do(op: Ast.OpSymUse, exps: List[Expr], tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 
     case class NewObject(name: String, clazz: java.lang.Class[_], tpe: MonoType, purity: Purity, methods: List[JvmMethod], loc: SourceLocation) extends Expr
-
-    case class StructNew(sym: Symbol.StructSym, exps: List[(Symbol.StructFieldSym, Expr)], exp: Expr, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
-
-    case class StructGet(sym: Symbol.StructSym, exp1: Expr, field: Name.Label, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
-
-    case class StructPut(sym: Symbol.StructSym, exp1: Expr, field: Name.Label, exp2: Expr, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
   }
 
   case class StructField(sym: Symbol.StructFieldSym, idx: Int, tpe: Type, loc: SourceLocation)

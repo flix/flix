@@ -129,17 +129,6 @@ object VarOffsets {
       // always closures) and should not have var offsets here.
       // They don't contain binders so visiting them does nothing.
       i0
-
-    case Expr.StructNew(_, fs, e, _, _, _) =>
-      val i1 = visitExps(fs.map(_._2), i0)
-      visitExp(e, i1)
-
-    case Expr.StructGet(_, e, _, _, _, _) =>
-      visitExp(e, i0)
-
-    case Expr.StructPut(_, e1, _, e2, _, _, _) =>
-      val i1 = visitExp(e1, i0)
-      visitExp(e2, i1)
   }
 
   @tailrec

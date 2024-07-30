@@ -75,9 +75,6 @@ object SimplifiedAstPrinter {
       case SimplifiedAst.JvmMethod(ident, fparams, exp, retTpe, _, _) =>
         DocAst.JvmMethod(ident, fparams.map(printFormalParam), print(exp), MonoTypePrinter.print(retTpe))
     })
-    case StructNew(sym, fields, region, _, _, _) => DocAst.Expr.StructNew(sym, fields.map(f => (f._1, print(f._2))), print(region))
-    case StructGet(_, exp, field, tpe, _, _) => DocAst.Expr.StructGet(print(exp), field, MonoTypePrinter.print(tpe))
-    case StructPut(_, exp1, field, exp2, tpe, _, _) => DocAst.Expr.StructPut(print(exp1), field, print(exp2), MonoTypePrinter.print(tpe))
   }
 
   /**

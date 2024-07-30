@@ -115,9 +115,6 @@ object TailPos {
       case Expr.TryCatch(_, _, _, _, _) => exp0
       case Expr.Do(_, _, _, _, _) => exp0
       case Expr.Var(_, _, _) => exp0
-      case Expr.StructNew(_, _, _, _, _, _) => exp0
-      case Expr.StructGet(_, _, _, _, _, _) => exp0
-      case Expr.StructPut(_, _, _, _, _, _, _) => exp0
     }
 
     defn.copy(expr = visitExp(defn.expr))

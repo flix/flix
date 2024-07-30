@@ -217,19 +217,6 @@ object LambdaLift {
 
     case SimplifiedAst.Expr.Apply(_, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression.", loc)
 
-    case SimplifiedAst.Expr.StructNew(sym, fields0, region0, tpe, purity, loc) =>
-      val fields = fields0.map(f => (f._1, visitExp(f._2)))
-      val region = visitExp(region0)
-      LiftedAst.Expr.StructNew(sym, fields, region, tpe, purity, loc)
-
-    case SimplifiedAst.Expr.StructGet(sym, e0, field, tpe, purity, loc) =>
-      val struct = visitExp(e0)
-      LiftedAst.Expr.StructGet(sym, struct, field, tpe, purity, loc)
-
-    case SimplifiedAst.Expr.StructPut(sym, e0, field, e1, tpe, purity, loc) =>
-      val struct = visitExp(e0)
-      val rhs = visitExp(e1)
-      LiftedAst.Expr.StructPut(sym, struct, field, rhs, tpe, purity, loc)
   }
 
   private def visitJvmMethod(method: SimplifiedAst.JvmMethod)(implicit sym0: Symbol.DefnSym, ctx: SharedContext, flix: Flix): LiftedAst.JvmMethod = method match {

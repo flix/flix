@@ -212,20 +212,6 @@ object EffectBinder {
       val e = visitExprInnerWithBinders(binders)(exp)
       bindBinders(binders, e)
 
-    case LiftedAst.Expr.StructNew(_, _, _, _, _, _) =>
-      val binders = mutable.ArrayBuffer.empty[Binder]
-      val e = visitExprInnerWithBinders(binders)(exp)
-      bindBinders(binders, e)
-
-    case LiftedAst.Expr.StructGet(_, _, _, _, _, _) =>
-      val binders = mutable.ArrayBuffer.empty[Binder]
-      val e = visitExprInnerWithBinders(binders)(exp)
-      bindBinders(binders, e)
-
-    case LiftedAst.Expr.StructPut(_, _, _, _, _, _, _) =>
-      val binders = mutable.ArrayBuffer.empty[Binder]
-      val e = visitExprInnerWithBinders(binders)(exp)
-      bindBinders(binders, e)
   }
 
   /**
@@ -325,20 +311,6 @@ object EffectBinder {
     case LiftedAst.Expr.NewObject(name, clazz, tpe, purity, methods, loc) =>
       val ms = methods.map(visitJvmMethod)
       ReducedAst.Expr.NewObject(name, clazz, tpe, purity, ms, loc)
-
-    case LiftedAst.Expr.StructNew(sym, fields0, region0, tpe, purity, loc) =>
-      val fields = fields0.map(f => (f._1, visitExprWithBinders(binders)(f._2)))
-      val region = visitExprWithBinders(binders)(region0)
-      ReducedAst.Expr.StructNew(sym, fields, region, tpe, purity, loc)
-
-    case LiftedAst.Expr.StructGet(sym, e, field, tpe, purity, loc) =>
-      val exp = visitExprWithBinders(binders)(e)
-      ReducedAst.Expr.StructGet(sym, exp, field, tpe, purity, loc)
-
-    case LiftedAst.Expr.StructPut(sym, e1, field, e2, tpe, purity, loc) =>
-      val exp1 = visitExprWithBinders(binders)(e1)
-      val exp2 = visitExprWithBinders(binders)(e2)
-      ReducedAst.Expr.StructPut(sym, exp1, field, exp2, tpe, purity, loc)
   }
 
   /**
@@ -381,9 +353,6 @@ object EffectBinder {
       case ReducedAst.Expr.TryWith(_, _, _, _, _, _, _) => letBindExpr(binders)(e)
       case ReducedAst.Expr.Do(_, _, _, _, _) => letBindExpr(binders)(e)
       case ReducedAst.Expr.NewObject(_, _, _, _, _, _) => letBindExpr(binders)(e)
-      case ReducedAst.Expr.StructNew(_, _, _, _, _, _) => letBindExpr(binders)(e)
-      case ReducedAst.Expr.StructGet(_, _, _, _, _, _) => letBindExpr(binders)(e)
-      case ReducedAst.Expr.StructPut(_, _, _, _, _, _, _) => letBindExpr(binders)(e)
     }
 
     bind(visitExprInnerWithBinders(binders)(exp))

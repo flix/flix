@@ -171,21 +171,6 @@ object Reducer {
         ctx.anonClasses.add(AnonClass(name, clazz, tpe, specs, loc))
 
         Expr.NewObject(name, clazz, tpe, purity, specs, loc)
-
-    case Expr.StructNew(sym, fields0, region0, tpe, eff, loc) =>
-      val fields = fields0.map(f => (f._1, visitExpr(f._2)))
-      val region = visitExpr(region0)
-      Expr.StructNew(sym, fields, region, tpe, eff, loc)
-
-    case Expr.StructGet(sym, e0, field, tpe, eff, loc) =>
-      val struct = visitExpr(e0)
-      Expr.StructGet(sym, struct, field, tpe, eff, loc)
-
-    case Expr.StructPut(sym, e0, field, e1, tpe, eff, loc) =>
-      val struct = visitExpr(e0)
-      val rhs = visitExpr(e1)
-      Expr.StructPut(sym, struct, field, rhs, tpe, eff, loc)
-
     }
   }
 

@@ -162,12 +162,6 @@ object Eraser {
       Do(op, exps.map(visitExp), visitType(tpe), purity, loc)
     case NewObject(name, clazz, tpe, purity, methods, loc) =>
       NewObject(name, clazz, visitType(tpe), purity, methods.map(visitJvmMethod), loc)
-    case StructNew(sym, fields, exp, tpe, purity, loc) =>
-      StructNew(sym, fields.map(f => (f._1, visitExp(f._2))), visitExp(exp), visitType(tpe), purity, loc)
-    case StructGet(sym, exp1, field, tpe, purity, loc) =>
-      StructGet(sym, visitExp(exp1), field, visitType(tpe), purity, loc)
-    case StructPut(sym, exp1, field, exp2, tpe, purity, loc) =>
-      StructPut(sym, visitExp(exp1), field, visitExp(exp2), visitType(tpe), purity, loc)
   }
 
   private def castExp(exp: Expr, t: MonoType, purity: Purity, loc: SourceLocation): Expr = {

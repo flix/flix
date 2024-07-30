@@ -68,9 +68,6 @@ object ReducedAstPrinter {
     })
     case Expr.Do(op, exps, _, _, _) => DocAst.Expr.Do(op.sym, exps.map(print))
     case Expr.NewObject(name, clazz, tpe, _, methods, _) => DocAst.Expr.NewObject(name, clazz, MonoTypePrinter.print(tpe), methods.map(printJvmMethod))
-    case Expr.StructNew(sym, fields, region, tpe, _, _) => DocAst.Expr.StructNew(sym, fields.map(f => (f._1, print(f._2))), print(region))
-    case Expr.StructGet(_, exp, field, tpe, _, _) => DocAst.Expr.StructGet(print(exp), field, MonoTypePrinter.print(tpe))
-    case Expr.StructPut(_, exp1, field, exp2, tpe, _, _) => DocAst.Expr.StructPut(print(exp1), field, print(exp2), MonoTypePrinter.print(tpe))
   }
 
   /**

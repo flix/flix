@@ -1531,47 +1531,6 @@ object GenExpression {
         compileExpr(e)
         mv.visitFieldInsn(PUTFIELD, className, s"clo$i", JvmOps.getClosureAbstractClassType(e.tpe).toDescriptor)
       }
-
-    case Expr.StructNew(_, exps, region, tpe, _, loc) =>
-      compileExpr(region) // Region value not actually used?
-      BytecodeInstructions.xPop(BackendType.toErasedBackendType(region.tpe))(new BytecodeInstructions.F(mv))
-      val MonoType.Struct(_, _, targs) = tpe
-      // We get the JvmType of the class for the struct
-      val elmTypes = exps.map(_._2.tpe)
-      val structType = BackendObjType.Struct(elmTypes.map(BackendType.toErasedBackendType), targs.map(BackendType.toErasedBackendType))
-      val internalClassName = structType.jvmName.toInternalName
-      // Instantiating a new object of struct
-      mv.visitTypeInsn(NEW, internalClassName)
-      // Duplicating the class
-      mv.visitInsn(DUP)
-      // Evaluating all the elements to be stored in the struct class
-      exps.map(_._2).foreach(compileExpr)
-      // Descriptor of constructor
-      val constructorDescriptor = MethodDescriptor(structType.elms, VoidableType.Void)
-      // Invoking the constructor
-      mv.visitMethodInsn(INVOKESPECIAL, internalClassName, "<init>", constructorDescriptor.toDescriptor, false)
-
-    case Expr.StructGet(sym, exp, field, tpe, _, _) =>
-      val MonoType.Struct(_, elmTypes, targs) = exp.tpe
-      val structType = BackendObjType.Struct(elmTypes.map(BackendType.toErasedBackendType), targs.map(BackendType.toErasedBackendType))
-      // evaluating the `base`
-      compileExpr(exp)
-      val idx = root.structs(sym).fields(Symbol.mkStructFieldSym(sym, Name.Ident(field.name, field.loc))).idx
-      // Retrieving the field `field${offset}`
-      mv.visitFieldInsn(GETFIELD, structType.jvmName.toInternalName, s"field$idx", JvmOps.getErasedJvmType(tpe).toDescriptor)
-
-    case Expr.StructPut(sym, exp1, field, exp2, _, _, _) =>
-      val MonoType.Struct(_, elmTypes, targs) = exp1.tpe
-      val structType = BackendObjType.Struct(elmTypes.map(BackendType.toErasedBackendType), targs.map(BackendType.toErasedBackendType))
-      // evaluating the `base`
-      compileExpr(exp1)
-      // evaluating the `rhs`
-      compileExpr(exp2)
-      val idx = root.structs(sym).fields(Symbol.mkStructFieldSym(sym, Name.Ident(field.name, field.loc))).idx
-      // set the field `field${offset}`
-      mv.visitFieldInsn(PUTFIELD, structType.jvmName.toInternalName, s"field$idx", JvmOps.getErasedJvmType(exp2.tpe).toDescriptor)
-      // Since the return type is unit, we put an instance of unit on top of the stack
-      mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
   }
 
   private def printPc(mv: MethodVisitor, pcPoint: Int): Unit = if (!GenFunAndClosureClasses.onCallDebugging) () else {

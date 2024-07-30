@@ -104,12 +104,6 @@ object MonoAst {
       def tpe: Type = Type.Int32
     }
 
-    case class StructNew(sym: Symbol.StructSym, exps: List[(Symbol.StructFieldSym, Expr)], exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
-
-    case class StructGet(sym: Symbol.StructSym, exp1: Expr, field: Name.Label, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
-
-    case class StructPut(sym: Symbol.StructSym, exp1: Expr, field: Name.Label, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
-
     case class Ascribe(exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class Cast(exp: Expr, declaredType: Option[Type], declaredEff: Option[Type], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
