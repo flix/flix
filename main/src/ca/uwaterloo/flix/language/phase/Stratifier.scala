@@ -608,7 +608,7 @@ object Stratifier {
     /**
       * Returns a fresh shared context.
       */
-    def mk[T](): SharedContext = new SharedContext(new ConcurrentLinkedQueue())
+    def mk(): SharedContext = new SharedContext(new ConcurrentLinkedQueue())
   }
 
   /**
