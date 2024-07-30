@@ -46,39 +46,37 @@ mod Adaptor {
     /// Returns the given Java Optional as a Flix Option.
     ///
     pub def fromOptional(_: Proxy[a], o: Optional): Option[a] =
-        import java.util.Optional.isPresent(): Bool \ {};
-        import java.util.Optional.get(): Object \ {};
-        if (isPresent(o)) {
-            let o1 = get(o);
-            Some(unchecked_cast(o1 as a))
-        } else
-            None
+        unsafe {
+            if (o.isPresent()) {
+                let o1 = o.get();
+                Some(unchecked_cast(o1 as a))
+            } else
+                None
+        }
 
     ///
     /// Returns the given Java `Map.Entry` as a Flix tuple.
     ///
     pub def fromMapEntry(_: Proxy[k], _: Proxy[v], e: Entry): (k, v) =
-        import java.util.Map$Entry.getKey(): Object \ {};
-        import java.util.Map$Entry.getValue(): Object \ {};
-        let k1 = getKey(e);
-        let v1 = getValue(e);
-        (unchecked_cast(k1 as k), unchecked_cast(v1 as v))
+        unsafe {
+            let k1 = e.getKey();
+            let v1 = e.getValue();
+            (unchecked_cast(k1 as k), unchecked_cast(v1 as v))
+        }
 
 
     ///
     /// Returns all elements in the given Java List as a Flix List.
     ///
     pub def fromList(l: JList): List[a] = region rc {
-        import java.util.List.iterator(): ##java.util.Iterator \ rc;
-        iterator(l) |> fromIterator(rc, (Proxy.Proxy: Proxy[a])) |> Iterator.toList
+        unsafe l.iterator() |> fromIterator(rc, (Proxy.Proxy: Proxy[a])) |> Iterator.toList
     }
 
     ///
     /// Returns a Flix Iterator of the elements in the given Java List.
     ///
-    pub def fromListToIterator(rc: Region[r], prx: Proxy[a], l: JList): Iterator[a, r, r] \ r =
-        import java.util.List.iterator(): ##java.util.Iterator \ r;
-        iterator(l) |> fromIterator(rc, prx)
+    pub def fromListToIterator(rc: Region[r], prx: Proxy[a], l: JList): Iterator[a, r, r] =
+        unsafe l.iterator() |> fromIterator(rc, prx)
 
     ///
     /// Returns all elements in the given Java Set as a Flix Set.
@@ -86,16 +84,14 @@ mod Adaptor {
     /// WARNING: The Flix Set will use the ordering defined on `a`.
     ///
     pub def fromSet(l: JSet): Set[a] with Order[a] = region rc {
-        import java.util.Set.iterator(): ##java.util.Iterator \ rc;
-        iterator(l) |> fromIterator(rc, (Proxy.Proxy: Proxy[a])) |> Iterator.toSet
+        unsafe l.iterator() |> fromIterator(rc, (Proxy.Proxy: Proxy[a])) |> Iterator.toSet
     }
 
     ///
     /// Returns a Flix Iterator of the elements in the given Java Set.
     ///
-    pub def fromSetToIterator(rc: Region[r], prx: Proxy[a], s: JSet): Iterator[a, r, r] \ r =
-        import java.util.Set.iterator(): ##java.util.Iterator \ r;
-        iterator(s) |> fromIterator(rc, prx)
+    pub def fromSetToIterator(rc: Region[r], prx: Proxy[a], s: JSet): Iterator[a, r, r] =
+        unsafe s.iterator() |> fromIterator(rc, prx)
 
     ///
     /// Returns all key-value pairs in the given Java Map as a Flix Map.
@@ -113,44 +109,41 @@ mod Adaptor {
     ///
     /// Returns a Flix Iterator of the key-value pairs in the given Java Map.
     ///
-    pub def fromMapToIterator(rc: Region[r], m: JMap): Iterator[(k, v), r, r] \ r =
-        import java.util.Map.entrySet(): JSet \ r;
-        import java.util.Set.iterator(): ##java.util.Iterator \ r;
-        import java.util.Iterator.hasNext(): Bool \ r;
-        import java.util.Iterator.next(): Object \ r;
-        let entries = entrySet(m);
-        let iter = iterator(entries);
-        let getNext = () -> match hasNext(iter) {
-            case true  => {
-                let entry = {let obj = next(iter); unchecked_cast(obj as Entry)};
-                let (k, v) = fromMapEntry((Proxy.Proxy: Proxy[k]), (Proxy.Proxy: Proxy[v]), entry);
-                Some((k, v))
-            }
-            case false => None
-        };
-        Iterator.iterate(rc, getNext)
+    pub def fromMapToIterator(rc: Region[r], m: JMap): Iterator[(k, v), r, r] =
+        unsafe {
+            let entries = m.entrySet();
+            let iter = entries.iterator();
+            let getNext = () -> match iter.hasNext() {
+                case true  => {
+                    let entry = {let obj = iter.next(); unchecked_cast(obj as Entry)};
+                    let (k, v) = fromMapEntry((Proxy.Proxy: Proxy[k]), (Proxy.Proxy: Proxy[v]), entry);
+                    Some((k, v))
+                }
+                case false => None
+            };
+            Iterator.iterate(rc, getNext)
+        }
 
     ///
     /// Returns a fresh Flix `Iterator` from the Java iterator `iter`.
     ///
     pub def fromIterator(rc: Region[r], _: Proxy[a], iter: JIterator): Iterator[a, r, r] =
-        import java.util.Iterator.hasNext(): Bool \ r;
-        import java.util.Iterator.next(): Object \ r;
-        let step = () -> {
-            match hasNext(iter) {
-                case true  => next(iter) |> (o -> unchecked_cast(o as a)) |> Some
-                case false => None
-            }
-        };
-        let iterF = () -> (step());
-        Iterator.iterate(rc, iterF)
+        unsafe {
+            let step = () -> {
+                match iter.hasNext() {
+                    case true  => iter.next() |> (o -> unchecked_cast(o as a)) |> Some
+                    case false => None
+                }
+            };
+            let iterF = () -> (step());
+            Iterator.iterate(rc, iterF)
+        }
 
     ///
     /// Returns a Flix Iterator of the elements in the given Java Stream.
     ///
     pub def fromStreamToIterator(rc: Region[r], proxy: Proxy[a], strm: Stream): Iterator[a, r, r] =
-        import java.util.stream.BaseStream.iterator(): ##java.util.Iterator \ {};
-        let iter = iterator(checked_cast(strm));
+        let iter = unsafe checked_cast(strm).iterator();
         Adaptor.fromIterator(rc, proxy, iter)
 
     ///
