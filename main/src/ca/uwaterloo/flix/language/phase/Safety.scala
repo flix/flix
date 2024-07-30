@@ -250,7 +250,8 @@ object Safety {
         visit(exp)
 
       case Expr.Lambda(_, exp, _, _) =>
-        visit(exp)
+        // The inside expression will be its own function, so inTryCatch is reset
+        visit(exp)(inTryCatch = false)
 
       case Expr.Apply(exp, exps, _, _, _) =>
         visit(exp) ++ exps.flatMap(visit)
