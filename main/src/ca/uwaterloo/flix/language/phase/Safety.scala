@@ -70,7 +70,7 @@ object Safety {
       case (acc, e) => acc.markRigid(e)
     }
     sig.exp match {
-      case Some(exp) => visitExp(exp, renv)
+      case Some(exp) => visitExp(exp, renv)(flix, inTryCatch = false)
       case None => Nil
     }
   }
@@ -83,7 +83,7 @@ object Safety {
     val renv = def0.spec.tparams.map(_.sym).foldLeft(RigidityEnv.empty) {
       case (acc, e) => acc.markRigid(e)
     }
-    val expErrs = visitExp(def0.exp, renv)
+    val expErrs = visitExp(def0.exp, renv)(flix, inTryCatch = false)
     exportErrs ++ expErrs
   }
 
@@ -226,12 +226,10 @@ object Safety {
   /**
     * Performs safety and well-formedness checks on the given expression `exp0`.
     */
-  private def visitExp(e0: Expr, renv: RigidityEnv)(implicit flix: Flix): List[SafetyError] = {
+  private def visitExp(e0: Expr, renv: RigidityEnv)(implicit flix: Flix, inTryCatch: Boolean): List[SafetyError] = {
 
-    /**
-      * Local visitor.
-      */
-    def visit(exp0: Expr): List[SafetyError] = exp0 match {
+    // Nested try-catch generates wrong code in the backend, so it is disallowed.
+    def visit(exp0: Expr)(implicit inTryCatch: Boolean): List[SafetyError] = exp0 match {
       case Expr.Cst(_, _, _) => Nil
 
       case Expr.Var(_, _, _) => Nil
@@ -386,8 +384,9 @@ object Safety {
       case Expr.Without(exp, _, _, _, _) =>
         visit(exp)
 
-      case Expr.TryCatch(exp, rules, _, _, _) =>
-        visit(exp) ++
+      case Expr.TryCatch(exp, rules, _, _, loc) =>
+        val nestedTryCatchError = if (inTryCatch) List(IllegalNestedTryCatch(loc)) else Nil
+        nestedTryCatchError ++ visit(exp)(inTryCatch = true) ++
           rules.flatMap { case CatchRule(sym, clazz, e) => checkCatchClass(clazz, sym.loc) ++ visit(e) }
 
       case Expr.TryWith(exp, _, rules, _, _, _) =>
@@ -590,7 +589,7 @@ object Safety {
   /**
     * Performs safety and well-formedness checks on the given constraint `c0`.
     */
-  private def checkConstraint(c0: Constraint, renv: RigidityEnv)(implicit flix: Flix): List[SafetyError] = {
+  private def checkConstraint(c0: Constraint, renv: RigidityEnv)(implicit flix: Flix, inTryCatch: Boolean): List[SafetyError] = {
     //
     // Compute the set of positively defined variable symbols in the constraint.
     //
@@ -655,7 +654,7 @@ object Safety {
     * Performs safety and well-formedness checks on the given body predicate `p0`
     * with the given positively defined variable symbols `posVars`.
     */
-  private def checkBodyPredicate(p0: Predicate.Body, posVars: Set[Symbol.VarSym], quantVars: Set[Symbol.VarSym], latVars: Set[Symbol.VarSym], renv: RigidityEnv)(implicit flix: Flix): List[SafetyError] = p0 match {
+  private def checkBodyPredicate(p0: Predicate.Body, posVars: Set[Symbol.VarSym], quantVars: Set[Symbol.VarSym], latVars: Set[Symbol.VarSym], renv: RigidityEnv)(implicit flix: Flix, inTryCatch: Boolean): List[SafetyError] = p0 match {
     case Predicate.Body.Atom(_, den, polarity, _, terms, _, loc) =>
       // check for non-positively bound negative variables.
       val err1 = polarity match {

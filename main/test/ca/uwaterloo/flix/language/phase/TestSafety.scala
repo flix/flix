@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.errors.SafetyError
-import ca.uwaterloo.flix.language.errors.SafetyError.{IllegalCatchType, IllegalNegativelyBoundWildCard, IllegalNonPositivelyBoundVar, IllegalPatternInBodyAtom, IllegalRelationalUseOfLatticeVar}
+import ca.uwaterloo.flix.language.errors.SafetyError.{IllegalCatchType, IllegalNegativelyBoundWildCard, IllegalNestedTryCatch, IllegalNonPositivelyBoundVar, IllegalPatternInBodyAtom, IllegalRelationalUseOfLatticeVar}
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -53,6 +53,24 @@ class TestSafety extends AnyFunSuite with TestUtils {
       """.stripMargin
     val result = compile(input, Options.DefaultTest)
     expectError[IllegalCatchType](result)
+  }
+
+  test("IllegalNestedTryCatch.01") {
+    val input =
+      """
+        |pub def f(): String =
+        |    try {
+        |        try {
+        |            "abc"
+        |        } catch {
+        |            case _e1: ##java.lang.Exception => "ok"
+        |        }
+        |    } catch {
+        |        case _e1: ##java.lang.Exception => "ok"
+        |    }
+      """.stripMargin
+    val result = compile(input, Options.DefaultTest)
+    expectError[IllegalNestedTryCatch](result)
   }
 
   test("UnexpectedBodyAtomPattern.01") {
