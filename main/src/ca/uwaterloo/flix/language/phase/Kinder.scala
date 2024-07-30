@@ -111,44 +111,50 @@ object Kinder {
   /**
    * Performs kinding on the given struct.
    */
+    // JOE TODO: Test no tparams somewhere
+    // JOE TODO: Convert to apply atomic
   private def visitStruct(struct0: ResolvedAst.Declaration.Struct, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Struct, KindError] = struct0 match {
     case ResolvedAst.Declaration.Struct(doc, ann, mod, sym, tparams0, fields0, loc) =>
-      if (tparams0.tparams.isEmpty) {
-        Validation.toHardFailure(KindError.MissingTParams(loc))
+      // In the case in which the user doesn't supply any type params,
+      // the parser will have already notified the user of this error
+      // The recovery step here is to simply add a single type param that is never used
+      val tparams1 = if (tparams0.tparams.isEmpty) {
+        val regionTparam = ResolvedAst.TypeParam.Unkinded(Name.Ident("", loc), Symbol.freshUnkindedTypeVarSym(Ast.VarText.Absent, true, loc), loc)
+        ResolvedAst.TypeParams.Unkinded(List(regionTparam))
+      } else {
+        tparams0
       }
-      else {
-        // if not annotated tparams are assumed to be Star except the last one which is Eff
-        val tparams1 = tparams0 match {
-          case ResolvedAst.TypeParams.Kinded(t) => ResolvedAst.TypeParams.Kinded(t)
-          case ResolvedAst.TypeParams.Unkinded(t) =>
-            val tparams = t.init.map(tparam => ResolvedAst.TypeParam.Kinded(tparam.name, tparam.sym, Kind.Star, tparam.loc)) :+ ResolvedAst.TypeParam.Kinded(t.last.name, t.last.sym, Kind.Eff, t.last.loc)
-            ResolvedAst.TypeParams.Kinded(tparams)
-        }
-        val kenv0 = getKindEnvFromTypeParamsDefaultStar(tparams1)
-        val kenvVal = kenv0 + (tparams1.tparams.last.sym -> Kind.Eff)
+      // if not annotated, tparams are assumed to be Star except the last one which is Eff
+      val tparams2 = tparams1 match {
+        case ResolvedAst.TypeParams.Kinded(t) => ResolvedAst.TypeParams.Kinded(t)
+        case ResolvedAst.TypeParams.Unkinded(t) =>
+          val tparams = t.init.map(tparam => ResolvedAst.TypeParam.Kinded(tparam.name, tparam.sym, Kind.Star, tparam.loc)) :+ ResolvedAst.TypeParam.Kinded(t.last.name, t.last.sym, Kind.Eff, t.last.loc)
+          ResolvedAst.TypeParams.Kinded(tparams)
+      }
+      val kenv0 = getKindEnvFromTypeParamsDefaultStar(tparams2)
+      val kenvVal = kenv0 + (tparams2.tparams.last.sym -> Kind.Eff)
 
-        flatMapN(kenvVal) {
-          case kenv =>
-            val tparamsVal = traverse(tparams1.tparams)(visitTypeParam(_, kenv))
+      flatMapN(kenvVal) {
+        case kenv =>
+          val tparamsVal = traverse(tparams2.tparams)(visitTypeParam(_, kenv))
 
-            flatMapN(tparamsVal) {
-              case tparams0 =>
-                val KindedAst.TypeParam(name, ksym, tloc) = tparams0.last
-                val lastTparam = KindedAst.TypeParam(name, ksym.withKind(Kind.Eff), tloc)
-                val tparams = tparams0.init :+ lastTparam
-                val targs = tparams.map(tparam => Type.Var(tparam.sym, tparam.loc.asSynthetic))
-                val fieldsVal = traverse(fields0) {
-                  case field0 => mapN(visitStructField(field0, tparams, kenv, taenv, root)) {
-                    field => field.sym -> field
-                  }
+          flatMapN(tparamsVal) {
+            case tparams0 =>
+              val KindedAst.TypeParam(name, ksym, tloc) = tparams0.last
+              val lastTparam = KindedAst.TypeParam(name, ksym.withKind(Kind.Eff), tloc)
+              val tparams = tparams0.init :+ lastTparam
+              val targs = tparams.map(tparam => Type.Var(tparam.sym, tparam.loc.asSynthetic))
+              val fieldsVal = traverse(fields0) {
+                case field0 => mapN(visitStructField(field0, tparams, kenv, taenv, root)) {
+                  field => field.sym -> field
                 }
-                mapN(fieldsVal) {
-                  case fields =>
-                    val sc = Scheme(tparams.map(_.sym), List(), List(), Type.mkStruct(sym, targs, loc))
-                    KindedAst.Struct(doc, ann, mod, sym, tparams, sc, fields.toMap, loc)
-                }
-            }
-        }
+              }
+              mapN(fieldsVal) {
+                case fields =>
+                  val sc = Scheme(tparams.map(_.sym), List(), List(), Type.mkStruct(sym, targs, loc))
+                  KindedAst.Struct(doc, ann, mod, sym, tparams, sc, fields.toMap, loc)
+              }
+          }
       }
   }
 
@@ -665,64 +671,36 @@ object Kinder {
       }
 
     case ResolvedAst.Expr.StructNew(sym, fields, region, loc) =>
-      val providedFieldNames = fields.map(_._1).toSet
-      if (!root.structs.contains(sym)) {
-        Validation.toHardFailure(KindError.NonExistentStruct(sym.name, loc))
+      val fieldsVal = traverse(fields) {
+        case (field, exp) => mapN(visitExp(exp, kenv0, taenv, henv0, root)) {
+          case e => (field, e)
+        }
       }
-      else {
-        val expectedFieldNames = root.structs(sym).fields.map(_.sym).toSet
-        val extraFields = providedFieldNames.diff(expectedFieldNames).map(_.name)
-        val unprovidedFields = expectedFieldNames.diff(providedFieldNames).map(_.name)
-        if (extraFields.size > 0) {
-          Validation.toHardFailure(KindError.ExtraStructFields(extraFields, loc))
-        }
-        else if (unprovidedFields.size > 0) {
-          Validation.toHardFailure(KindError.UnprovidedStructFields(unprovidedFields, loc))
-        }
-        else {
-          val fieldsVal = traverse(fields) {
-            case (field, exp) => mapN(visitExp(exp, kenv0, taenv, henv0, root)) {
-              case e => (field, e)
-            }
-          }
-          val regionVal = visitExp(region, kenv0, taenv, henv0, root)
-          mapN(fieldsVal, regionVal) {
-            case (fs, r) =>
-              val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-              val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-              KindedAst.Expr.StructNew(sym, fs, r, tvar, evar, loc)
-          }
-        }
+      val regionVal = visitExp(region, kenv0, taenv, henv0, root)
+      mapN(fieldsVal, regionVal) {
+        case (fs, r) =>
+          val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+          val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
+          KindedAst.Expr.StructNew(sym, fs, r, tvar, evar, loc)
       }
 
     case ResolvedAst.Expr.StructGet(sym, e, field, loc) =>
-      if (!root.structs(sym).fields.map(f => f.sym.name).contains(field.name)) {
-        Validation.toHardFailure(KindError.NonExistentStructField(field.name, loc))
+      val expVal = visitExp(e, kenv0, taenv, henv0, root)
+      mapN(expVal) {
+        case exp =>
+          val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+          val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
+          KindedAst.Expr.StructGet(sym, exp, field, tvar, evar, loc)
       }
-      else {
-        val expVal = visitExp(e, kenv0, taenv, henv0, root)
-        mapN(expVal) {
-          case exp =>
-            val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-            val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-            KindedAst.Expr.StructGet(sym, exp, field, tvar, evar, loc)
-        }
-      }
-
 
     case ResolvedAst.Expr.StructPut(sym, e1, field, e2, loc) =>
-      if (!root.structs(sym).fields.map(f => f.sym.name).contains(field.name)) {
-        Validation.toHardFailure(KindError.NonExistentStructField(field.name, loc))
-      }
-      else {
-        val exp1Val = visitExp(e1, kenv0, taenv, henv0, root)
-        val exp2Val = visitExp(e2, kenv0, taenv, henv0, root)
-        mapN(exp1Val, exp2Val) {
-          case (exp1, exp2) =>
-            val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-            val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-            KindedAst.Expr.StructPut(sym, exp1, field, exp2, tvar, evar, loc)
-        }
+      val exp1Val = visitExp(e1, kenv0, taenv, henv0, root)
+      val exp2Val = visitExp(e2, kenv0, taenv, henv0, root)
+      mapN(exp1Val, exp2Val) {
+        case (exp1, exp2) =>
+          val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+          val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
+          KindedAst.Expr.StructPut(sym, exp1, field, exp2, tvar, evar, loc)
       }
 
     case ResolvedAst.Expr.VectorLit(exps, loc) =>

@@ -1574,4 +1574,74 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.MismatchedOpArity](result)
   }
+
+  test("ResolutionError.NonExistentStruct.01") {
+    val input =
+      """
+        |def f(): Unit = {
+        |    region rc {
+        |        new NonExistentStruct{ } @ rc;
+        |        ()
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.NonExistentStruct](result)
+  }
+
+  test("ResoutionError.MissingStructField.01") {
+    val input =
+      """
+        |mod S {
+        |    struct S[r] { }
+        |    def f(s: S[r]): Unit = {
+        |        s€missingField;
+        |        ()
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.NonExistentStructField](result)
+  }
+
+  test("ResolutionError.MissingStructField.02") {
+    val input =
+      """
+        |mod S {
+        |    struct S[r] { }
+        |    def f(s: S[r]): Unit = {
+        |        s€missingField = 3;
+        |        ()
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.NonExistentStructField](result)
+  }
+
+  test("ResolutionError.TooFewFields.01") {
+    val input = """
+                  |struct S[r] {
+                  |    a: Int32
+                  |}
+                  |def f(rc: Region): S[r] = {
+                  |    new S { } @ rc
+                  |}
+                  |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UnprovidedStructFields](result)
+  }
+
+  test("ResolutionError.TooManyFields.01") {
+    val input = """
+                  |struct S[r] {
+                  |    a: Int32
+                  |}
+                  |def f(rc: Region): S[r] = {
+                  |    new S { a = 4, b = "hello" } @ rc
+                  |}
+                  |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.ExtraStructFields](result)
+  }
 }
