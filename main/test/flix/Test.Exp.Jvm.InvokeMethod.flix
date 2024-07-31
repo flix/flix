@@ -1,6 +1,7 @@
 mod Test.Exp.Jvm.InvokeMethod {
 
     import java.lang.{String => JString}
+    import dev.flix.test.TestClassWithInheritedMethod
 
     @test
     def testInvokeMethod01(): Bool \ IO =
@@ -32,8 +33,6 @@ mod Test.Exp.Jvm.InvokeMethod {
 
     @test
     def testInvokeInheritedMethod01(): Bool \ IO =
-        import java_new dev.flix.test.TestClassWithInheritedMethod(): ##dev.flix.test.TestClassWithInheritedMethod as newObj;
-        import dev.flix.test.TestClassWithInheritedMethod.concreteMethod(String): String \ {};
-        let obj = newObj();
-        concreteMethod(obj, "bar") == "foobar"
+        let obj = new TestClassWithInheritedMethod();
+        obj.concreteMethod("bar") == "foobar"
 }
