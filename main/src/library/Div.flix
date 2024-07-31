@@ -14,6 +14,8 @@
  *  limitations under the License.
  */
 
+import java.io.File
+
 ///
 /// A trait for division.
 ///
@@ -82,6 +84,6 @@ instance Div[BigInt] {
 
 instance Div[String] {
     pub def div(x: String, y: String): String =
-        import static java_get_field java.io.File.separator: String \ {} as separator;
-        (x + separator() + y)
+        let s = unsafe File.separator;
+        x + s + y
 }
