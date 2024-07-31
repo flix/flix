@@ -23,7 +23,7 @@ mod Console {
     /// Returns true if there is a `Console` object associated with the current JVM.
     ///
     pub def hasConsole(): Bool \ IO =
-        not Object.isNull(unsafe System.console())
+        not Object.isNull(System.console())
 
     ///
     /// Reads a single line from the console.
@@ -36,7 +36,7 @@ mod Console {
         try {
             match console() {
                 case Option.Some(c) =>
-                    let line = c.consoleReadLine();
+                    let line = c.readLine();
                     if (Object.isNull(line)) Err("EOF")
                     else Ok(line)
                 case Option.None => Err("No JVM console")
@@ -59,7 +59,8 @@ mod Console {
     /// See also `System/StdOut.print`.
     ///
     pub def print(x: a): Unit \ IO with ToString[a] =
-        console() |> Option.forEach(c -> c.writer().print(ToString.toString(x)))
+        import java.io.Console.writer(): ##java.io.PrintWriter \ IO; // TO DO
+        console() |> Option.forEach(c -> writer(c).print(ToString.toString(x)))
 
     ///
     /// Converts `x` to a string and prints it to the console followed by a new line.
@@ -73,7 +74,8 @@ mod Console {
     /// See also `System/StdOut.println`.
     ///
     pub def println(x: a): Unit \ IO with ToString[a] =
-        console() |> Option.forEach(c -> c.writer().println(ToString.toString(x)))
+        import java.io.Console.writer(): ##java.io.PrintWriter \ IO; // TO DO
+        console() |> Option.forEach(c -> writer(c).println(ToString.toString(x)))
 
     ///
     /// Flushes the console output.

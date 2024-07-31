@@ -261,7 +261,7 @@ mod CodePoint {
     pub def toSupplementaryChars(cp: Int32): Option[(Char, Char)] = try {
         region rc {
             let arr : Array[Char, rc] = Array.empty(rc, 2);
-            let i = Character.toChars(cp, arr, 0);
+            let i = unsafe Character.toChars(cp, arr, 0);
             if (i == 2)
                 Some(Array.get(0, arr), Array.get(1, arr))
             else

@@ -191,7 +191,7 @@ mod Char {
     /// This function cannot handle supplementary characters.
     ///
     pub def getNumericValue(c: Char): Option[Int32] =
-        match unsafe Character.getNumericValue(c) {
+        match (unsafe Character.getNumericValue(c)) {
             case i if i < 0 => None
             case i          => Some(i)
         }
@@ -204,7 +204,7 @@ mod Char {
     /// Returns `None` if `c` does not represent a number.
     ///
     pub def digit(radix: {radix = Int32}, c: Char): Option[Int32] =
-        match unsafe Character.digit(c, radix#radix) {
+        match (unsafe Character.digit(c, radix#radix)) {
             case i if i < 0 => None
             case i          => Some(i)
         }
@@ -217,7 +217,7 @@ mod Char {
     /// Returns `None` if `n` is not representable as single character in the radix.
     ///
     pub def forDigit(radix: {radix = Int32}, n: Int32): Option[Char] =
-        match unsafe Character.forDigit(n, radix#radix) {
+        match (unsafe Character.forDigit(n, radix#radix)) {
             case c if c == '\u0000' => None
             case c                  => Some(c)
         }
