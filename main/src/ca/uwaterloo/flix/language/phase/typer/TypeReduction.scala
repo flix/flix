@@ -270,21 +270,21 @@ object TypeReduction {
    */
   @tailrec
   private def isSubtype(tpe1: Type, tpe2: Type)(implicit flix: Flix): Boolean = {
-    (tpe2, tpe1) match {
+    (tpe1, tpe2) match {
       case (t1, t2) if t1 == t2 => true
       // Base types
-      case (Type.Cst(TypeConstructor.Native(clazz1), _), Type.Cst(TypeConstructor.Native(clazz2), _)) => clazz1.isAssignableFrom(clazz2)
-      case (Type.Cst(TypeConstructor.Native(clazz), _), Type.Cst(TypeConstructor.Str, _)) => clazz.isAssignableFrom(classOf[java.lang.String])
-      case (Type.Cst(TypeConstructor.Native(clazz), _), Type.Cst(TypeConstructor.BigInt, _)) => clazz.isAssignableFrom(classOf[java.math.BigInteger])
-      case (Type.Cst(TypeConstructor.Native(clazz), _), Type.Cst(TypeConstructor.BigDecimal, _)) => clazz.isAssignableFrom(classOf[java.math.BigDecimal])
-      case (Type.Cst(TypeConstructor.Native(clazz), _), Type.Cst(TypeConstructor.Regex, _)) => clazz.isAssignableFrom(classOf[java.util.regex.Pattern])
-      // Arrays (WIP)
+      case (Type.Cst(TypeConstructor.Native(clazz1), _), Type.Cst(TypeConstructor.Native(clazz2), _)) => clazz2.isAssignableFrom(clazz1)
+      case (Type.Cst(TypeConstructor.Str, _), Type.Cst(TypeConstructor.Native(clazz), _)) => clazz.isAssignableFrom(classOf[java.lang.String])
+      case (Type.Cst(TypeConstructor.BigInt, _), Type.Cst(TypeConstructor.Native(clazz), _)) => clazz.isAssignableFrom(classOf[java.math.BigInteger])
+      case (Type.Cst(TypeConstructor.BigDecimal, _), Type.Cst(TypeConstructor.Native(clazz), _)) => clazz.isAssignableFrom(classOf[java.math.BigDecimal])
+      case (Type.Cst(TypeConstructor.Regex, _), Type.Cst(TypeConstructor.Native(clazz), _)) => clazz.isAssignableFrom(classOf[java.util.regex.Pattern])
+      // Arrays
       case (Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Array, _), elmType1, _), rcVar1, _),
       Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Array, _), elmType2, _), rcVar2, _)) =>
         isSubtype(elmType1, elmType2)
       // Null is a sub-type of every Java object and non-primitive Flix type
-      case (Type.Cst(TypeConstructor.Native(_), _), Type.Cst(TypeConstructor.Null, _)) => true
-      case (tpe, Type.Cst(TypeConstructor.Null, _)) if !isPrimitive(tpe) => true
+      case (Type.Cst(TypeConstructor.Null, _), Type.Cst(TypeConstructor.Native(_), _)) => true
+      case (Type.Cst(TypeConstructor.Null, _), tpe) if !isPrimitive(tpe) => true
       case _ => false
     }
   }
