@@ -47,23 +47,19 @@ mod Test.Exp.Instanceof {
 
     @test
     def testInstanceof07(): Bool =
-        import static java_get_field java.nio.file.StandardOpenOption.DELETE_ON_CLOSE: ##java.nio.file.StandardOpenOption \ {} as get_DELETE_ON_CLOSE;
-        get_DELETE_ON_CLOSE() instanceof StandardOpenOption
+        unsafe StandardOpenOption.DELETE_ON_CLOSE instanceof StandardOpenOption
 
     @test
     def testInstanceof08(): Bool =
-        import static java_get_field java.nio.file.StandardOpenOption.DELETE_ON_CLOSE: ##java.nio.file.StandardOpenOption \ {} as get_DELETE_ON_CLOSE;
-        get_DELETE_ON_CLOSE() instanceof OpenOption
+        unsafe StandardOpenOption.DELETE_ON_CLOSE instanceof OpenOption
 
     @test
     def testInstanceof09(): Bool =
-        import static java_get_field java.nio.file.StandardOpenOption.DELETE_ON_CLOSE: ##java.nio.file.StandardOpenOption \ {} as get_DELETE_ON_CLOSE;
-        get_DELETE_ON_CLOSE() instanceof JEnum
+        unsafe StandardOpenOption.DELETE_ON_CLOSE instanceof JEnum
 
     @test
     def testInstanceof10(): Bool =
-        import static java_get_field java.nio.file.StandardOpenOption.DELETE_ON_CLOSE: ##java.nio.file.StandardOpenOption \ {} as get_DELETE_ON_CLOSE;
-        get_DELETE_ON_CLOSE() instanceof JObject
+        unsafe StandardOpenOption.DELETE_ON_CLOSE instanceof JObject
 
     @test
     def testInstanceof11(): Bool = (100ii instanceof JLong) == false
