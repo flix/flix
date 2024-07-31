@@ -142,25 +142,33 @@ object TypeReduction {
    * if there exists such a Java method.
    * Otherwise, either the Java method could not be found with the given method signature, or, there was an ambiguity.
    *
-   * @param thisObj the Java object
+   * @param thisObj     the Java object
    * @param methodName  the Java method, supposedly member of the class of the Java object
-   * @param ts      the list containing the type of thisObj and the arguments of the method
-   * @param loc     the location where the Java method has been called
-   * @return        A JavaMethodResolutionResult object that indicates the status of the resolution progress
+   * @param ts          the list containing the type of thisObj and the arguments of the method
+   * @param loc         the location where the Java method has been called
+   * @return            A JavaMethodResolutionResult object that indicates the status of the resolution progress
    */
   def lookupMethod(thisObj: Type, methodName: String, ts: List[Type], loc: SourceLocation)(implicit flix: Flix): JavaMethodResolutionResult = {
     thisObj match { // there might be a possible factorization
       case Type.Cst(TypeConstructor.Str, _) =>
         val clazz = classOf[String]
         retrieveMethod(clazz, methodName, ts, loc = loc)
+
       case Type.Cst(TypeConstructor.BigInt, _) =>
         val clazz = classOf[BigInteger]
         retrieveMethod(clazz, methodName, ts, loc = loc)
+
       case Type.Cst(TypeConstructor.BigDecimal, _) =>
         val clazz = classOf[java.math.BigDecimal]
         retrieveMethod(clazz, methodName, ts, loc = loc)
+
+      case Type.Cst(TypeConstructor.Regex, _) =>
+        val clazz = classOf[java.util.regex.Pattern]
+        retrieveMethod(clazz, methodName, ts, loc = loc)
+
       case Type.Cst(TypeConstructor.Native(clazz), _) =>
         retrieveMethod(clazz, methodName, ts, loc = loc)
+
       case _ => JavaMethodResolutionResult.MethodNotFound
     }
   }
@@ -244,13 +252,13 @@ object TypeReduction {
   private def isCandidateMethod(cand: Method, methodName: String, ts: List[Type])(implicit flix: Flix): Boolean =
     (cand.getName == methodName) &&
     (cand.getParameterCount == ts.length) &&
-    // Parameter types correspondance with subtyping
+    // Parameter types correspondence with subtyping
     (cand.getParameterTypes zip ts).forall {
       case (clazz, tpe) => isSubtype(tpe, Type.getFlixType(clazz))
     } &&
     // NB: once methods with same signatures have been filtered out, we should remove super-methods duplicates
-    // if the superclass is abstract or ignore if it is a primitive type, e.g., void
-    (cand.getReturnType.isPrimitive ||
+    // if the superclass is abstract or ignore if it is a primitive type or void
+    (cand.getReturnType.equals(Void.TYPE) || cand.getReturnType.isPrimitive || cand.getReturnType.isArray || // for all arrays return types?
       java.lang.reflect.Modifier.isInterface(cand.getReturnType.getModifiers) || // interfaces are considered primitives
       !java.lang.reflect.Modifier.isAbstract(cand.getReturnType.getModifiers)) // temporary to avoid superclass abstract duplicate
 
@@ -261,16 +269,37 @@ object TypeReduction {
   @tailrec
   private def isSubtype(tpe1: Type, tpe2: Type)(implicit flix: Flix): Boolean = {
     (tpe2, tpe1) match {
-      case (_, Type.Null) => true // Null is a sub-type of every other type
       case (t1, t2) if t1 == t2 => true
+      // Base types
       case (Type.Cst(TypeConstructor.Native(clazz1), _), Type.Cst(TypeConstructor.Native(clazz2), _)) => clazz1.isAssignableFrom(clazz2)
       case (Type.Cst(TypeConstructor.Native(clazz), _), Type.Cst(TypeConstructor.Str, _)) => clazz.isAssignableFrom(classOf[String])
       case (Type.Cst(TypeConstructor.Native(clazz), _), Type.Cst(TypeConstructor.BigInt, _)) => clazz.isAssignableFrom(classOf[BigInteger])
       case (Type.Cst(TypeConstructor.Native(clazz), _), Type.Cst(TypeConstructor.BigDecimal, _)) => clazz.isAssignableFrom(classOf[java.math.BigDecimal])
-      case (Type.Cst(TypeConstructor.Array, _), Type.Cst(TypeConstructor.Array, _)) =>
-        val List(elmType1, rc1) = tpe1.typeArguments
-        val List(elmType2, rc2) = tpe2.typeArguments
+      case (Type.Cst(TypeConstructor.Native(clazz), _), Type.Cst(TypeConstructor.Regex, _)) => clazz.isAssignableFrom(classOf[java.util.regex.Pattern])
+      // Arrays (WIP)
+      case (Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Array, _), elmType1, _), rcVar1, _),
+              Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Array, _), elmType2, _), rcVar2, _)) =>
         isSubtype(elmType1, elmType2)
+      // Null is a sub-type of every Java object and non-primitive Flix type
+      case (Type.Cst(TypeConstructor.Native(_), _), Type.Cst(TypeConstructor.Null, _)) => true
+      case (tpe, Type.Cst(TypeConstructor.Null, _)) if !isPrimitive(tpe) => true
+      case _ => false
+    }
+  }
+
+  /**
+   * Returns true iff the given type tpe is a Flix primitive.
+   */
+  private def isPrimitive(tpe: Type)(implicit flix: Flix): Boolean = {
+    tpe match {
+      case Type.Cst(TypeConstructor.Bool, _) => true
+      case Type.Cst(TypeConstructor.Char, _) => true
+      case Type.Cst(TypeConstructor.Float32, _) => true
+      case Type.Cst(TypeConstructor.Float64, _) => true
+      case Type.Cst(TypeConstructor.Int8, _) => true
+      case Type.Cst(TypeConstructor.Int16, _) => true
+      case Type.Cst(TypeConstructor.Int32, _) => true
+      case Type.Cst(TypeConstructor.Int64, _) => true
       case _ => false
     }
   }

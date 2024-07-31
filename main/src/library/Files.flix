@@ -17,7 +17,7 @@ mod Files {
 
     use IOError.{Generic}
     import java.io.{BufferedReader, File, FileInputStream, FileOutputStream, FileWriter, IOException, OutputStream, PrintWriter, Writer}
-    import java.lang.Class
+    import java.lang.{Class, String => JString}
     import java.nio.charset.Charset
     import java.nio.file.attribute.{FileTime, BasicFileAttributes}
     import java.nio.file.{CopyOption, DirectoryStream, FileVisitOption, LinkOption, Path, StandardCopyOption}
@@ -262,7 +262,6 @@ mod Files {
             try {
                 import java.io.FileInputStream.read(Array[Int8, rc], Int32, Int32): Int32 \ IO;
                 import static java.nio.charset.Charset.forName(String): Charset \ IO;
-                import java_new java.lang.String(Array[Int8, rc], Charset): String \ IO as newString;
 
                 let javaFile = new File(f);
                 let stream = new FileInputStream(javaFile);
@@ -271,7 +270,7 @@ mod Files {
                         let bytes = Array.empty(rc, opts#count);
                         discard read(stream, bytes, 0, opts#count);
                         let charSet = forName(opts#charSet);
-                        let returnString = newString(bytes, charSet);
+                        let returnString = new JString(bytes, charSet);
                         Ok(returnString)
                     }
                     case Err(msg) => Err(msg)
@@ -806,12 +805,11 @@ mod Files {
     ///
     pub def list(f: String): Result[IOError, List[String]] \ IO = region rc {
         try {
-            import java_new java.io.File(String): File \ IO as newFile;
             import java.io.File.listFiles(): Array[File, rc] \ IO;
             import java.io.File.toPath(): Path \ IO;
             import java.nio.file.Path.toString(): String \ IO as pathToString;
 
-            let javaList = f |> newFile |> listFiles;
+            let javaList = new File(f) |> listFiles;
 
             if (not Object.isNull(javaList)) {
                 let paths = javaList |> Array.map(rc, toPath >> pathToString);
@@ -951,14 +949,13 @@ mod Files {
         IOError.tryCatch(_ -> {
             import java.io.File.toPath(): Path \ IO;
             import static java.nio.file.Files.move(Path, Path, Array[CopyOption, rc]): Path \ IO;
-            import static java_get_field java.nio.file.StandardCopyOption.REPLACE_EXISTING: StandardCopyOption \ IO as getOverwrite;
 
             let dstFile = new File(dst);
             let dstPath = toPath(dstFile);
 
             let srcFile = new File(src#src);
             let srcPath = toPath(srcFile);
-            discard move(srcPath, dstPath, Array#{checked_cast(getOverwrite())} @ rc)
+            discard move(srcPath, dstPath, Array#{checked_cast(StandardCopyOption.REPLACE_EXISTING)} @ rc)
         })
     }
 
@@ -1028,14 +1025,13 @@ mod Files {
         IOError.tryCatch(_ -> {
             import java.io.File.toPath(): Path \ IO;
             import static java.nio.file.Files.copy(Path, Path, Array[CopyOption, rc]): Path \ IO;
-            import static java_get_field java.nio.file.StandardCopyOption.REPLACE_EXISTING: StandardCopyOption \ IO as getOverwrite;
 
             let dstFile = new File(dst);
             let dstPath = toPath(dstFile);
 
             let srcFile = new File(src#src);
             let srcPath = toPath(srcFile);
-            discard copy(srcPath, dstPath, Array#{checked_cast(getOverwrite())} @ rc)
+            discard copy(srcPath, dstPath, Array#{checked_cast(StandardCopyOption.REPLACE_EXISTING)} @ rc)
         })
     }
 

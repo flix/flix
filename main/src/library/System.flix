@@ -22,6 +22,7 @@ mod System {
 
         import java.io.BufferedReader
         import java.io.InputStreamReader
+        import java.lang.{System => JSystem}
 
         ///
         /// Returns an iterator over lines from the standard input stream.
@@ -34,11 +35,10 @@ mod System {
         /// See also `Console.readLine` for reading from the console.
         ///
         pub def readLines(rc: Region[r]): Iterator[String, IO + r, r] \ { r, IO } =
-            import static java_get_field java.lang.System.in: ##java.io.InputStream \ IO as getSystemIn;
             // note: BufferedReader.readLine can block
             import java.io.BufferedReader.readLine(): String \ IO as brReadLine;
 
-            let br = new BufferedReader(new InputStreamReader(getSystemIn())); // up-cast to superclass
+            let br = new BufferedReader(new InputStreamReader(JSystem.in));
             let nextLine = ref None @ rc;
             let next = () -> {
                 let l = match deref nextLine {
@@ -60,6 +60,7 @@ mod System {
     ///
     mod StdOut {
 
+        import java.lang.{System => JSystem}
         import java.io.PrintStream
 
         ///
@@ -93,9 +94,7 @@ mod System {
         ///
         /// Returns the standard output stream.
         ///
-        def getOutputStream(): PrintStream \ IO =
-            import static java_get_field java.lang.System.out: PrintStream \ IO as getOut;
-            getOut()
+        def getOutputStream(): PrintStream \ IO = JSystem.out
 
     }
 
@@ -104,6 +103,7 @@ mod System {
     ///
     mod StdErr {
 
+        import java.lang.{System => JSystem}
         import java.io.PrintStream
 
         ///
@@ -137,9 +137,7 @@ mod System {
         ///
         /// Returns the standard error stream.
         ///
-        def getErrorStream(): PrintStream \ IO =
-            import static java_get_field java.lang.System.err: PrintStream \ IO as getErr;
-            getErr()
+        def getErrorStream(): PrintStream \ IO = JSystem.err
 
     }
 

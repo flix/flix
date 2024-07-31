@@ -1013,8 +1013,32 @@ object Resolver {
         */
       def visitExp(e0: NamedAst.Expr, env0: ListMap[String, Resolution]): Validation[ResolvedAst.Expr, ResolutionError] = e0 match {
 
-        case NamedAst.Expr.Ambiguous(name, loc) =>
-          mapN(lookupQName(name, env0, ns0, root)) {
+        case NamedAst.Expr.Ambiguous(qname, loc) =>
+          // Special Case: We must check if we have a static field access, e.g. Math.PI
+          if (qname.namespace.idents.length == 1) {
+            // We may have an imported class name.
+            val className = qname.namespace.idents.head
+            env0.get(className.name) match {
+              case Some(List(Resolution.JavaClass(clazz))) =>
+                // We have a static field access.
+                val fieldName = qname.ident.name
+                try {
+                  val field = clazz.getField(fieldName)
+                  // Returns out of visitExp
+                  return Validation.success(ResolvedAst.Expr.GetStaticField(field, loc))
+                } catch {
+                  case _: NoSuchFieldException =>
+                    val fields = clazz.getFields.toList
+                    val m = ResolutionError.UndefinedJvmField(clazz.getName, fieldName, static = true, fields, loc)
+                    // Returns out of visitExp
+                    return Validation.toSoftFailure(ResolvedAst.Expr.Error(m), m)
+                }
+              case _ =>
+              // Fallthrough to below.
+            }
+          }
+
+          mapN(lookupQName(qname, env0, ns0, root)) {
             case ResolvedQName.Def(defn) => visitDef(defn, loc)
             case ResolvedQName.Sig(sig) => visitSig(sig, loc)
             case ResolvedQName.Var(sym) => ResolvedAst.Expr.Var(sym, loc)
@@ -1076,7 +1100,7 @@ object Resolver {
           Validation.success(ResolvedAst.Expr.Cst(cst, loc))
 
         case app@NamedAst.Expr.Apply(NamedAst.Expr.Ambiguous(qname, innerLoc), exps, outerLoc) =>
-          // Special Case: We must check if we have a static method call, i.e. ClassName.methodName().
+          // Special Case: We must check if we have a static method call, i.e. Math.abs(123)
           if (qname.namespace.idents.length == 1) {
             // We may have an imported class name.
             val className = qname.namespace.idents.head
@@ -1524,18 +1548,6 @@ object Resolver {
           mapN(eVal, esVal) {
             case (e, es) =>
               ResolvedAst.Expr.InvokeMethod2(e, name, es, loc)
-          }
-
-        case NamedAst.Expr.InvokeStaticMethod2(className, methodName, exps, loc) =>
-          val esVal = traverse(exps)(visitExp(_, env0))
-          flatMapN(esVal) {
-            es => env0.get(className.name) match {
-              case Some(List(Resolution.JavaClass(clazz))) =>
-                Validation.success(ResolvedAst.Expr.InvokeStaticMethod2(clazz, methodName, es, loc))
-              case _ =>
-                val m = ResolutionError.UndefinedJvmClass(className.name, "", loc)
-                Validation.toSoftFailure(ResolvedAst.Expr.Error(m), m)
-            }
           }
 
         case NamedAst.Expr.InvokeConstructorOld(className, args, sig, loc) =>
