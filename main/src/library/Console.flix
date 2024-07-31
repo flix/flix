@@ -60,7 +60,7 @@ mod Console {
     ///
     pub def print(x: a): Unit \ IO with ToString[a] =
         import java.io.Console.writer(): ##java.io.PrintWriter \ IO;
-        import java.io.PrintWriter.println(String): Unit \ IO as printWriterPrintln;
+        import java.io.PrintWriter.print(String): Unit \ IO as printWriterPrint;
         console() |> Option.forEach(c -> printWriterPrint(writer(c), ToString.toString(x)))
 
     ///
