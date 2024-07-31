@@ -43,7 +43,7 @@ mod Test.Exp.Jvm.NewObject {
     def testImplementInterface01(): Bool \ IO =
         import java.lang.Object.toString(): String \ {};
         let anon = checked_cast(implementSerializable());
-        toString(anon) |> String.startsWith(prefix = "Anon")
+        toString(anon).startsWith("Anon")
 
     @test
     def testImplementInterface02(): Bool \ IO =
@@ -232,22 +232,18 @@ mod Test.Exp.Jvm.NewObject {
 
     @test
     def testDefaultMethods01(): Bool \ IO =
-        import dev.flix.test.TestDefaultMethods.methodWithNoImplementation(Int32): Int32;
-        import dev.flix.test.TestDefaultMethods.methodWithDefaultImplementation(Int32): Int32;
         let anon = new TestDefaultMethods {
             def methodWithNoImplementation(_this: TestDefaultMethods, x: Int32): Int32 = x + 1
         };
-        methodWithNoImplementation(anon, 1) == 2 and methodWithDefaultImplementation(anon, 1) == 43
+        anon.methodWithNoImplementation(1) == 2 and anon.methodWithDefaultImplementation(1) == 43
 
     @test
     def testDefaultMethods02(): Bool \ IO =
-        import dev.flix.test.TestDefaultMethods.methodWithNoImplementation(Int32): Int32;
-        import dev.flix.test.TestDefaultMethods.methodWithDefaultImplementation(Int32): Int32;
         let anon = new TestDefaultMethods {
             def methodWithNoImplementation(_this: TestDefaultMethods, x: Int32): Int32 = x + 1
             def methodWithDefaultImplementation(_this: TestDefaultMethods, x: Int32): Int32 = x + 2
         };
-        methodWithNoImplementation(anon, 1) == 2 and methodWithDefaultImplementation(anon, 1) == 3
+        anon.methodWithNoImplementation(1) == 2 and anon.methodWithDefaultImplementation(1) == 3
 
     @test
     def testGenericInterface01(): Bool \ IO =
@@ -306,42 +302,36 @@ mod Test.Exp.Jvm.NewObject {
 
     @test
     def testFunctionalInterface02(): Bool \ IO =
-        import java.util.Comparator.compare(##java.lang.Object, ##java.lang.Object): Int32;
         let anon = new ##java.util.Comparator {
             def compare(_this: ##java.util.Comparator, _t: ##java.lang.Object, _u: ##java.lang.Object): Int32 = 0
         };
-        compare(anon, checked_cast("foo"), checked_cast("bar")) == 0
+        anon.compare("foo", "bar") == 0
 
     @test
     def testClassWithDefaultConstructor01(): Bool \ IO =
-        import dev.flix.test.TestClassWithDefaultConstructor.abstractMethod(Int32): Int32;
-        import dev.flix.test.TestClassWithDefaultConstructor.concreteMethod(String): String;
         let anon = new TestClassWithDefaultConstructor {
             def abstractMethod(_this: TestClassWithDefaultConstructor, x: Int32): Int32 = x + 1
         };
-        abstractMethod(anon, 1) == 2 and
-            concreteMethod(anon, "bar") == "foobar"
+        anon.abstractMethod(1) == 2 and
+            anon.concreteMethod("bar") == "foobar"
 
     @test
     def testClassWithDefaultConstructor02(): Bool \ IO =
-        import dev.flix.test.TestClassWithDefaultConstructor.abstractMethod(Int32): Int32;
-        import dev.flix.test.TestClassWithDefaultConstructor.concreteMethod(String): String;
         let anon = new TestClassWithDefaultConstructor {
             def abstractMethod(_this: TestClassWithDefaultConstructor, x: Int32): Int32 = x + 1
             def concreteMethod(_this: TestClassWithDefaultConstructor, y: String): String = "flix: ${y}"
         };
-        abstractMethod(anon, 1) == 2 and
-            concreteMethod(anon, "bar") == "flix: bar"
+        anon.abstractMethod(1) == 2 and
+            anon.concreteMethod("bar") == "flix: bar"
 
     @test
     def testMethodClosure01(): Bool \ IO =
-        import java.lang.Object.toString(): String \ {};
         let x = Array#{1, 2, 3} @ Static;
         let y = Array#{4, 5, 6} @ Static;
         let anon = new Object {
             def toString(_this: Object): String \ IO = Array.toString(Array.append(Static, x, y))
         };
-        toString(anon) == "Array#{1, 2, 3, 4, 5, 6}"
+        anon.toString() == "Array#{1, 2, 3, 4, 5, 6}"
 
     @test
     def testStaticNestedClass01(): NestedClass \ IO =
