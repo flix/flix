@@ -35,10 +35,9 @@ mod Environment {
     pub def getEnv(): Map[String, String] = region rc {
         import static java.lang.System.getenv(): JMap \ rc;
         import java.util.Map.entrySet(): JSet \ { rc };
-        import java.util.Set.iterator(): JIterator \ { rc };
         let _ = rc; // Avoids redundancy error.
         try {
-            let iter = getenv() |> entrySet |> iterator;
+            let iter = unsafe (getenv() |> entrySet).iterator();
             getEnvHelper(iter, Map.empty())
         } catch {
             case _: Exception => Map.empty()
@@ -128,18 +127,14 @@ mod Environment {
     ///
     pub def getVirtualProcessors(): Int32 =
         import static java.lang.Runtime.getRuntime(): Runtime \ {};
-        import java.lang.Runtime.availableProcessors(): Int32 \ {};
-        (getRuntime() |> availableProcessors)
+        unsafe getRuntime().availableProcessors()
 
     def getEnvHelper(iter: JIterator, m: Map[String, String]): Map[String, String] =
         import java.util.Iterator.hasNext(): Bool \ {};
-        import java.util.Iterator.next(): JObject \ {};
-        import java.util.Map$Entry.getKey(): JObject \ {};
-        import java.util.Map$Entry.getValue(): JObject \ {};
         if (hasNext(iter))
-            let e = unchecked_cast(next(iter) as ##java.util.Map$Entry);
-            let k = unchecked_cast(getKey(e) as String);
-            let v = unchecked_cast(getValue(e) as String);
+            let e = unsafe unchecked_cast(iter.next() as ##java.util.Map$Entry);
+            let k = unsafe unchecked_cast(e.getKey() as String);
+            let v = unsafe unchecked_cast(e.getValue() as String);
             getEnvHelper(iter, Map.insert(k, v, m))
         else
             m
