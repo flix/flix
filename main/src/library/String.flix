@@ -52,15 +52,13 @@ mod String {
     /// Returns the string `s1` followed by the string `s2`.
     ///
     pub def concat(s1: String, s2: String): String =
-        import java.lang.String.concat(String): String \ {};
-        (s1 `concat` s2)
+        unsafe s1.concat(s2)
 
     ///
     /// Returns `true` if the string `s` is the empty string.
     ///
     pub def isEmpty(s: String): Bool =
-        import java.lang.String.isEmpty(): Bool \ {};
-        isEmpty(s)
+        unsafe s.isEmpty()
 
     ///
     /// Returns `true` if the string `s` is non-empty.
@@ -71,22 +69,19 @@ mod String {
     /// Returns the length of the string `s`.
     ///
     pub def length(s: String): Int32 =
-        import java.lang.String.length(): Int32 \ {};
-        length(s)
+        unsafe s.length()
 
     ///
     /// Returns `true` if the string `s` starts with the string `prefix`.
     ///
     pub def startsWith(prefix: {prefix = String}, s: String): Bool =
-        import java.lang.String.startsWith(String): Bool \ {};
-        (s `startsWith` prefix#prefix)
+        unsafe s.startsWith(prefix#prefix)
 
     ///
     /// Returns `true` if the string `s` ends with the string `suffix`.
     ///
     pub def endsWith(suffix: {suffix = String}, s: String): Bool =
-        import java.lang.String.endsWith(String): Bool \ {};
-        (s `endsWith` suffix#suffix)
+        unsafe s.endsWith(suffix#suffix)
 
     ///
     /// Splits the string `s` around matches of the regular expression `regex`.
@@ -1203,11 +1198,10 @@ mod String {
     /// Returns `None` if `substr` is the empty string.
     ///
     pub def indexOfLeftWithOffset(substr: {substr = String}, offset: {offset = Int32}, s: String): Option[Int32] =
-        import java.lang.String.indexOf(String, Int32): Int32 \ {};
         if (isEmpty(substr#substr))
             None
         else {
-            let ix = indexOf(s, substr#substr, offset#offset);
+            let ix = unsafe s.indexOf(substr#substr, offset#offset);
             if (ix < 0) None else Some(ix)
         }
 
@@ -1217,11 +1211,10 @@ mod String {
     /// Returns `None` if `substr` is the empty string.
     ///
     pub def indexOfRightWithOffset(substr: {substr = String}, offset: {offset = Int32}, s: String): Option[Int32] =
-        import java.lang.String.lastIndexOf(String, Int32): Int32 \ {};
         if (isEmpty(substr#substr))
             None
         else {
-            let ix = lastIndexOf(s, substr#substr, offset#offset);
+            let ix = unsafe s.lastIndexOf(substr#substr, offset#offset);
             if (ix < 0) None else Some(ix)
         }
 
