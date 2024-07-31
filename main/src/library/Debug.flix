@@ -1,4 +1,7 @@
 mod Debug {
+
+    import java.lang.System
+
     ///
     /// Prints the stringified representation of `x` with the given `prefix`.
     ///
@@ -6,9 +9,8 @@ mod Debug {
     ///
     @Internal
     pub def debugWithPrefix(prefix: String, x: a): a \ IO =
-        import static java_get_field java.lang.System.out: ##java.io.PrintStream \ IO as getOut;
         import java.io.PrintStream.println(String): Unit \ IO;
-        println(getOut(), "${prefix}%{x}");
+        println(System.out, "${prefix}%{x}");
         x
 
     ///

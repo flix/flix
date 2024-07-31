@@ -153,14 +153,22 @@ object TypeReduction {
       case Type.Cst(TypeConstructor.Str, _) =>
         val clazz = classOf[String]
         retrieveMethod(clazz, methodName, ts, loc = loc)
+
       case Type.Cst(TypeConstructor.BigInt, _) =>
         val clazz = classOf[BigInteger]
         retrieveMethod(clazz, methodName, ts, loc = loc)
+
       case Type.Cst(TypeConstructor.BigDecimal, _) =>
         val clazz = classOf[java.math.BigDecimal]
         retrieveMethod(clazz, methodName, ts, loc = loc)
+
+      case Type.Cst(TypeConstructor.Regex, _) =>
+        val clazz = classOf[java.util.regex.Pattern]
+        retrieveMethod(clazz, methodName, ts, loc = loc)
+
       case Type.Cst(TypeConstructor.Native(clazz), _) =>
         retrieveMethod(clazz, methodName, ts, loc = loc)
+
       case _ => JavaMethodResolutionResult.MethodNotFound
     }
   }
@@ -267,6 +275,7 @@ object TypeReduction {
       case (Type.Cst(TypeConstructor.Native(clazz), _), Type.Cst(TypeConstructor.Str, _)) => clazz.isAssignableFrom(classOf[String])
       case (Type.Cst(TypeConstructor.Native(clazz), _), Type.Cst(TypeConstructor.BigInt, _)) => clazz.isAssignableFrom(classOf[BigInteger])
       case (Type.Cst(TypeConstructor.Native(clazz), _), Type.Cst(TypeConstructor.BigDecimal, _)) => clazz.isAssignableFrom(classOf[java.math.BigDecimal])
+      case (Type.Cst(TypeConstructor.Native(clazz), _), Type.Cst(TypeConstructor.Regex, _)) => clazz.isAssignableFrom(classOf[java.util.regex.Pattern])
       // Arrays (WIP)
       case (Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Array, _), elmType1, _), rcVar1, _),
               Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Array, _), elmType2, _), rcVar2, _)) =>

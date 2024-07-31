@@ -33,6 +33,8 @@
 
 mod Regex {
 
+    import java.util.regex.Pattern
+
     use Regex.Flag
     use Regex.Flag.{CanonEq, CaseInsenstive,
         Comments, Dotall, Literal, Multiline,
@@ -64,25 +66,16 @@ mod Regex {
     /// and can be summed to make a bit mask.
     ///
     def toInt(flag: Flag): Int32 =
-        import static java_get_field java.util.regex.Pattern.CANON_EQ: Int32 \ {} as get_CANON_EQ;
-        import static java_get_field java.util.regex.Pattern.CASE_INSENSITIVE: Int32 \ {} as get_CASE_INSENSITIVE;
-        import static java_get_field java.util.regex.Pattern.COMMENTS: Int32 \ {} as get_COMMENTS;
-        import static java_get_field java.util.regex.Pattern.DOTALL: Int32 \ {} as get_DOTALL;
-        import static java_get_field java.util.regex.Pattern.LITERAL: Int32 \ {} as get_LITERAL;
-        import static java_get_field java.util.regex.Pattern.MULTILINE: Int32 \ {} as get_MULTILINE;
-        import static java_get_field java.util.regex.Pattern.UNICODE_CASE: Int32 \ {} as get_UNICODE_CASE;
-        import static java_get_field java.util.regex.Pattern.UNICODE_CHARACTER_CLASS: Int32 \ {} as get_UNICODE_CHARACTER_CLASS;
-        import static java_get_field java.util.regex.Pattern.UNIX_LINES: Int32 \ {} as get_UNIX_LINES;
         match flag {
-            case CanonEq                => get_CANON_EQ()
-            case CaseInsenstive         => get_CASE_INSENSITIVE()
-            case Comments               => get_COMMENTS()
-            case Dotall                 => get_DOTALL()
-            case Literal                => get_LITERAL()
-            case Multiline              => get_MULTILINE()
-            case UnicodeCase            => get_UNICODE_CASE()
-            case UnicodeCharacterClass  => get_UNICODE_CHARACTER_CLASS()
-            case UnixLines              => get_UNIX_LINES()
+            case CanonEq                => unsafe Pattern.CANON_EQ
+            case CaseInsenstive         => unsafe Pattern.CASE_INSENSITIVE
+            case Comments               => unsafe Pattern.COMMENTS
+            case Dotall                 => unsafe Pattern.DOTALL
+            case Literal                => unsafe Pattern.LITERAL
+            case Multiline              => unsafe Pattern.MULTILINE
+            case UnicodeCase            => unsafe Pattern.UNICODE_CASE
+            case UnicodeCharacterClass  => unsafe Pattern.UNICODE_CHARACTER_CLASS
+            case UnixLines              => unsafe Pattern.UNIX_LINES
         }
 
     ///

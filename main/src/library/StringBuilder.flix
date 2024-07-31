@@ -40,9 +40,8 @@ mod StringBuilder {
     /// Append the String `s` to the StringBuilder `sb`.
     ///
     pub def appendString!(s: String, sb: StringBuilder[r]): Unit \ r =
-        import java.lang.StringBuilder.append(String): ##java.lang.StringBuilder \ r;
         let StringBuilder(msb) = sb;
-        discard msb `append` s;
+        discard unsafe msb.append(s);
         ()
 
     ///
