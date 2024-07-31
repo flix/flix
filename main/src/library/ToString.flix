@@ -14,9 +14,13 @@
  *  limitations under the License.
  */
 
+import java.lang.Byte
 import java.lang.Character
 import java.lang.Double
 import java.lang.Float
+import java.lang.Integer
+import java.lang.Long
+import java.lang.Short
 
 ///
 /// A trait for types that can be converted to strings.
@@ -52,27 +56,19 @@ instance ToString[Float64] {
 }
 
 instance ToString[Int8] {
-    pub def toString(x: Int8): String =
-        import static java.lang.Byte.toString(Int8): String \ {};
-        toString(x)
+    pub def toString(x: Int8): String = unsafe Byte.toString(x)
 }
 
 instance ToString[Int16] {
-    pub def toString(x: Int16): String =
-        import static java.lang.Short.toString(Int16): String \ {};
-        toString(x)
+    pub def toString(x: Int16): String = unsafe Short.toString(x)
 }
 
 instance ToString[Int32] {
-    pub def toString(x: Int32): String =
-        import static java.lang.Integer.toString(Int32): String \ {};
-        toString(x)
+    pub def toString(x: Int32): String = unsafe Integer.toString(x)
 }
 
 instance ToString[Int64] {
-    pub def toString(x: Int64): String =
-        import static java.lang.Long.toString(Int64): String \ {};
-        toString(x)
+    pub def toString(x: Int64): String = unsafe Long.toString(x)
 }
 
 instance ToString[String] {
@@ -80,21 +76,15 @@ instance ToString[String] {
 }
 
 instance ToString[BigInt] {
-    pub def toString(x: BigInt): String =
-        import java.math.BigInteger.toString(): String \ {};
-        toString(x)
+    pub def toString(x: BigInt): String = unsafe x.toString()
 }
 
 instance ToString[BigDecimal] {
-    pub def toString(x: BigDecimal): String =
-        import java.math.BigDecimal.toString(): String \ {};
-        toString(x)
+    pub def toString(x: BigDecimal): String = unsafe x.toString()
 }
 
 instance ToString[Regex] {
-    pub def toString(x: Regex): String =
-        import java.util.regex.Pattern.toString(): String \ {};
-        toString(x)
+    pub def toString(x: Regex): String = unsafe x.toString()
 }
 
 instance ToString[(a1, a2)] with ToString[a1], ToString[a2] {
