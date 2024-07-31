@@ -35,16 +35,13 @@ mod System {
         /// See also `Console.readLine` for reading from the console.
         ///
         pub def readLines(rc: Region[r]): Iterator[String, IO + r, r] \ { r, IO } =
-            // note: BufferedReader.readLine can block
-            import java.io.BufferedReader.readLine(): String \ IO as brReadLine;
-
             let br = new BufferedReader(new InputStreamReader(JSystem.in));
             let nextLine = ref None @ rc;
             let next = () -> {
                 let l = match deref nextLine {
                     case Some(line) => if (Object.isNull(line)) None else Some(line)
                     case None =>
-                        let n = brReadLine(br);
+                        let n = br.readLine();
                         Ref.put(Some(n), nextLine);
                         if (Object.isNull(n)) None else Some(n)
                 };
@@ -67,29 +64,25 @@ mod System {
         /// Prints the given string `s` to the standard output stream.
         ///
         pub def print(s: String): Unit \ IO =
-            import java.io.PrintStream.print(String): Unit \ IO;
-            s |> print(getOutputStream())
+            getOutputStream().print(s)
 
         ///
         /// Prints the given string `s` and a newline to the standard output stream.
         ///
         pub def println(s: String): Unit \ IO =
-            import java.io.PrintStream.println(String): Unit \ IO;
-            s |> println(getOutputStream())
+            getOutputStream().print(s)
 
         ///
         /// Prints a newline to the standard output stream.
         ///
         pub def newLine(): Unit \ IO =
-            import java.io.PrintStream.println(): Unit \ IO;
-            getOutputStream() |> println
+            getOutputStream().println()
 
         ///
         /// Flushes the standard output stream.
         ///
         pub def flush(): Unit \ IO =
-            import java.io.PrintStream.flush(): Unit \ IO;
-            getOutputStream() |> flush
+            getOutputStream().flush()
 
         ///
         /// Returns the standard output stream.
@@ -110,29 +103,25 @@ mod System {
         /// Prints the given string `s` to the standard error stream.
         ///
         pub def print(s: String): Unit \ IO =
-            import java.io.PrintStream.print(String): Unit \ IO;
-            s |> print(getErrorStream())
+            getErrorStream().print(s)
 
         ///
         /// Prints the given string `s` and a newline to the standard error stream.
         ///
         pub def println(s: String): Unit \ IO =
-            import java.io.PrintStream.println(String): Unit \ IO;
-            s |> println(getErrorStream())
+            getErrorStream().println(s)
 
         ///
         /// Prints a newline to the standard error stream.
         ///
         pub def newLine(): Unit \ IO =
-            import java.io.PrintStream.println(): Unit \ IO;
-            getErrorStream() |> println
+            getErrorStream().println()
 
         ///
         /// Flushes the standard error stream.
         ///
         pub def flush(): Unit \ IO =
-            import java.io.PrintStream.flush(): Unit \ IO;
-            getErrorStream() |> flush
+            getErrorStream().flush()
 
         ///
         /// Returns the standard error stream.
