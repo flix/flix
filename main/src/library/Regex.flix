@@ -117,15 +117,13 @@ mod Regex {
     /// Return the regular expression string used to build this Regex.
     ///
     pub def pattern(rgx: Regex): String =
-        import java.util.regex.Pattern.pattern(): String \ {};
-        pattern(rgx)
+        unsafe rgx.pattern()
 
     ///
     /// Return the flags used to build the Regex `rgx`.
     ///
     pub def flags(rgx: Regex): Set[Flag] =
-        import java.util.regex.Pattern.flags(): Int32 \ {};
-        let i = flags(rgx);
+        let i = unsafe rgx.flags();
         listFlags(i) |> List.toSet
 
 
