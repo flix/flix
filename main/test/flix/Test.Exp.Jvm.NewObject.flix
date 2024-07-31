@@ -43,7 +43,7 @@ mod Test.Exp.Jvm.NewObject {
     def testImplementInterface01(): Bool \ IO =
         import java.lang.Object.toString(): String \ {};
         let anon = checked_cast(implementSerializable());
-        toString(anon) |> String.startsWith(prefix = "Anon")
+        toString(anon).startsWith("Anon")
 
     @test
     def testImplementInterface02(): Bool \ IO =
@@ -302,11 +302,10 @@ mod Test.Exp.Jvm.NewObject {
 
     @test
     def testFunctionalInterface02(): Bool \ IO =
-        import java.util.Comparator.compare(##java.lang.Object, ##java.lang.Object): Int32;
         let anon = new ##java.util.Comparator {
             def compare(_this: ##java.util.Comparator, _t: ##java.lang.Object, _u: ##java.lang.Object): Int32 = 0
         };
-        compare(anon, checked_cast("foo"), checked_cast("bar")) == 0
+        anon.compare("foo", "bar") == 0
 
     @test
     def testClassWithDefaultConstructor01(): Bool \ IO =
