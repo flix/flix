@@ -1,3 +1,5 @@
+import java.lang.System
+
 ///
 /// Static denotes the region of global lifetime.
 ///
@@ -104,9 +106,8 @@ pub def coerce(x: t): Coerce.Out[t] with Coerce[t] = Coerce.coerce(x)
 /// Converts `x` to a string and prints it to standard out followed by a new line.
 ///
 pub def println(x: a): Unit \ IO with ToString[a] =
-    import static java_get_field java.lang.System.out: ##java.io.PrintStream \ IO as getOut;
     import java.io.PrintStream.println(String): Unit \ IO;
-    x |> ToString.toString |> println(getOut())
+    x |> ToString.toString |> println(System.out)
 
 ///
 /// Touches the given region capability `rc`.
@@ -117,10 +118,9 @@ pub def touch(_: Region[r]): Unit \ r = checked_ecast(())
 /// Crashes the current process with the given message `m`.
 ///
 pub def bug!(m: String): a = masked_cast({
-    import static java_get_field java.lang.System.err: ##java.io.PrintStream \ {} as getErr;
     import java.io.PrintStream.println(String): Unit \ IO;
     import java.lang.String.repeat(Int32): ##java.lang.String \ {};
-    let prt = println(getErr());
+    let prt = println(System.err);
     prt(repeat("*", 80));
     prt("**") ;
     prt("**  BUG: ${m}") ;

@@ -18,6 +18,7 @@ mod Environment {
     import java.lang.{Exception, Runtime}
     import java.lang.{Object => JObject}
     import java.util.{Iterator => JIterator, Map => JMap, Set => JSet}
+    import java.io.File
 
     ///
     /// Returns the arguments passed to the program via the command line.
@@ -86,16 +87,12 @@ mod Environment {
     ///
     ///  Returns the file separator
     ///
-    pub def getFileSeparator(): String =
-        import static java_get_field java.io.File.separator: String \ {} as sep;
-        sep()
+    pub def getFileSeparator(): String = unsafe File.separator
 
     ///
     /// Returns the path separator
     ///
-    pub def getPathSeparator(): String =
-        import static java_get_field java.io.File.pathSeparator: String \ {} as pathSep;
-        pathSep()
+    pub def getPathSeparator(): String = unsafe File.pathSeparator
 
     ///
     /// Returns the system line separator

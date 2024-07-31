@@ -14,14 +14,15 @@
  * limitations under the License.
  */
 
-
 /// Represents arbitrary-precision signed decimal numbers.
 /// The representation consists of both a "value" and a "scale". Standard
 /// equality (`==` and the `Eq` trait) consider both value and scale,
 /// numerical equality (are the values the same after the scales have been
 /// normalized) is provided by the function `numericEquals`.
 mod BigDecimal {
+
     import java.math.BigDecimal;
+    import java.math.RoundingMode
 
     ///
     /// Returns the smaller of `x` and `y`.
@@ -99,16 +100,12 @@ mod BigDecimal {
     ///
     /// Returns `x` rounded up to a BigDecimal representing the nearest larger integer value.
     ///
-    pub def ceil(x: BigDecimal): BigDecimal =
-        import static java_get_field java.math.RoundingMode.CEILING: ##java.math.RoundingMode \ {} as getCeiling;
-        unsafe x.setScale(0, getCeiling())
+    pub def ceil(x: BigDecimal): BigDecimal = unsafe x.setScale(0, RoundingMode.CEILING)
 
     ///
     /// Returns `x` rounded down to a BigDecimal representing the nearest smaller integer value.
     ///
-    pub def floor(x: BigDecimal): BigDecimal =
-        import static java_get_field java.math.RoundingMode.FLOOR: ##java.math.RoundingMode \ {} as getFloor;
-        unsafe x.setScale(0, getFloor())
+    pub def floor(x: BigDecimal): BigDecimal = unsafe x.setScale(0, RoundingMode.FLOOR)
 
     ///
     /// Returns `x` rounded to a BigDecimal representing the nearest integer value.
@@ -116,9 +113,7 @@ mod BigDecimal {
     /// The rounding may be upwards or downwards. If the rounding up and rounding down are equally
     /// close, `x` will be rounded to an even value (i.e. `round(0.5ff64) == 0.0ff64`).
     ///
-    pub def round(x: BigDecimal): BigDecimal =
-        import static java_get_field java.math.RoundingMode.HALF_EVEN: ##java.math.RoundingMode \ {} as getHalfEven;
-        unsafe x.setScale(0, getHalfEven())
+    pub def round(x: BigDecimal): BigDecimal = unsafe x.setScale(0, RoundingMode.HALF_EVEN)
 
     ///
     /// Convert `x` to an `Option[Int8]`.

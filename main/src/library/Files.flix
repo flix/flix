@@ -949,14 +949,13 @@ mod Files {
         IOError.tryCatch(_ -> {
             import java.io.File.toPath(): Path \ IO;
             import static java.nio.file.Files.move(Path, Path, Array[CopyOption, rc]): Path \ IO;
-            import static java_get_field java.nio.file.StandardCopyOption.REPLACE_EXISTING: StandardCopyOption \ IO as getOverwrite;
 
             let dstFile = new File(dst);
             let dstPath = toPath(dstFile);
 
             let srcFile = new File(src#src);
             let srcPath = toPath(srcFile);
-            discard move(srcPath, dstPath, Array#{checked_cast(getOverwrite())} @ rc)
+            discard move(srcPath, dstPath, Array#{checked_cast(StandardCopyOption.REPLACE_EXISTING)} @ rc)
         })
     }
 
@@ -1026,14 +1025,13 @@ mod Files {
         IOError.tryCatch(_ -> {
             import java.io.File.toPath(): Path \ IO;
             import static java.nio.file.Files.copy(Path, Path, Array[CopyOption, rc]): Path \ IO;
-            import static java_get_field java.nio.file.StandardCopyOption.REPLACE_EXISTING: StandardCopyOption \ IO as getOverwrite;
 
             let dstFile = new File(dst);
             let dstPath = toPath(dstFile);
 
             let srcFile = new File(src#src);
             let srcPath = toPath(srcFile);
-            discard copy(srcPath, dstPath, Array#{checked_cast(getOverwrite())} @ rc)
+            discard copy(srcPath, dstPath, Array#{checked_cast(StandardCopyOption.REPLACE_EXISTING)} @ rc)
         })
     }
 
