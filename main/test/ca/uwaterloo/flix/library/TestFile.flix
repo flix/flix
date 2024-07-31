@@ -43,8 +43,7 @@ mod TestFile {
             }, tempdir)
         } catch {
             case ex: IOException =>
-                import java.lang.Throwable.getMessage(): String \ {};
-                Err(Generic(getMessage(checked_cast(ex))))
+                unsafe Err(Generic(ex.getMessage()))
         }
     }
 

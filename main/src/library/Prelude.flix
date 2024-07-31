@@ -119,13 +119,12 @@ pub def touch(_: Region[r]): Unit \ r = checked_ecast(())
 ///
 pub def bug!(m: String): a = masked_cast({
     import java.io.PrintStream.println(String): Unit \ IO;
-    import java.lang.String.repeat(Int32): ##java.lang.String \ {};
     let prt = println(System.err);
-    prt(repeat("*", 80));
+    prt("*".repeat(80));
     prt("**") ;
     prt("**  BUG: ${m}") ;
     prt("**") ;
-    prt(repeat("*", 80));
+    prt("*".repeat(80));
     prt("");
     ?panic
 })
