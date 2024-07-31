@@ -1,14 +1,12 @@
 mod Test.Handler.ZeroShot.AtomicInteger {
 
-    type alias AtomicInteger = ##java.util.concurrent.atomic.AtomicInteger
+    import java.util.concurrent.atomic.AtomicInteger
 
     def newAtomicInteger(n: Int32): AtomicInteger =
-        import java_new java.util.concurrent.atomic.AtomicInteger(Int32): AtomicInteger \ {} as mk;
-        mk(n)
+        unsafe new AtomicInteger(n)
 
     def toInt(n: AtomicInteger): Int32 =
-        import java.util.concurrent.atomic.AtomicInteger.intValue(): Int32 \ {} as intValue;
-        intValue(n)
+        unsafe n.intValue()
 
     eff Throw {
         pub def throw(): AtomicInteger
