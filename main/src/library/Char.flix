@@ -36,23 +36,20 @@ mod Char {
     /// Returns `true` if the given char `c` is a letter character.
     ///
     pub def isLetter(c: Char): Bool =
-        import static java.lang.Character.isLetter(Char): Bool \ {};
-        isLetter(c)
+        unsafe Character.isLetter(c)
 
     ///
     /// Returns `true` if the given char `c` is a recognized Unicode digit.
     /// This includes the ASCII range 0..9 but also Arabic-Indic digits, Devagari digits and Fullwidth digits.
     ///
     pub def isDigit(c: Char): Bool =
-        import static java.lang.Character.isDigit(Char): Bool \ {};
-        isDigit(c)
+        unsafe Character.isDigit(c)
 
     ///
     /// Returns `true` if the given char `c` is a recognized Unicode letter or digit.
     ///
     pub def isLetterOrDigit(c: Char): Bool =
-        import static java.lang.Character.isLetterOrDigit(Char): Bool \ {};
-        isLetterOrDigit(c)
+        unsafe Character.isLetterOrDigit(c)
 
     ///
     /// Returns `true` if the given char `c` is strictly in the range of ASCII digits 0...9.
@@ -80,67 +77,58 @@ mod Char {
     /// Returns `true` if the given char `c` is lowercase.
     ///
     pub def isLowerCase(c: Char): Bool =
-        import static java.lang.Character.isLowerCase(Char): Bool \ {};
-        isLowerCase(c)
+        unsafe Character.isLowerCase(c)
 
     ///
     /// Returns `true` if the given char `c` is uppercase.
     ///
     pub def isUpperCase(c: Char): Bool =
-        import static java.lang.Character.isUpperCase(Char): Bool \ {};
-        isUpperCase(c)
+        unsafe Character.isUpperCase(c)
 
     ///
     /// Returns `true` if the given char `c` is titlecase, i.e. in the Unicode
     /// category of title case letters.
     ///
     pub def isTitleCase(c: Char): Bool =
-        import static java.lang.Character.isTitleCase(Char): Bool \ {};
-        isTitleCase(c)
+        unsafe Character.isTitleCase(c)
 
     ///
     /// Returns `true` if the given char `c` is a white space character.
     ///
     pub def isWhiteSpace(c: Char): Bool =
-        import static java.lang.Character.isWhitespace(Char): Bool \ {};
-        isWhitespace(c)
+        unsafe Character.isWhitespace(c)
 
     ///
     /// Returns `true` if the given char `c` is defined either as a entry in the
     /// UnicodeData file or a value within a range defined in the UnicodeData file.
     ///
     pub def isDefined(c: Char): Bool =
-        import static java.lang.Character.isDefined(Char): Bool \ {};
-        isDefined(c)
+        unsafe Character.isDefined(c)
 
     ///
     /// Returns `true` if the given char `c` is an ISO control character.
     ///
     pub def isISOControl(c: Char): Bool =
-        import static java.lang.Character.isISOControl(Char): Bool \ {};
-        isISOControl(c)
+        unsafe Character.isISOControl(c)
 
     ///
     /// Returns `true` if the given char `c` is mirrored.
     ///
     pub def isMirrored(c: Char): Bool =
-        import static java.lang.Character.isMirrored(Char): Bool \ {};
-        isMirrored(c)
+        unsafe Character.isMirrored(c)
 
     ///
     /// Returns `true` if the given char `c` is a surrogate code unit.
     ///
     pub def isSurrogate(c: Char): Bool =
-        import static java.lang.Character.isSurrogate(Char): Bool \ {};
-        isSurrogate(c)
+        unsafe Character.isSurrogate(c)
 
     ///
     /// Returns `true` if the given characters `high` and `low` represent a valid
     /// Unicode surrogate pair.
     ///
     pub def isSurrogatePair(high: {high = Char}, low: {low = Char}): Bool =
-        import static java.lang.Character.isSurrogatePair(Char, Char): Bool \ {};
-        isSurrogatePair(high#high, low#low)
+        unsafe Character.isSurrogatePair(high#high, low#low)
 
     ///
     /// Converts a letter to its lowercase version.
@@ -148,8 +136,7 @@ mod Char {
     /// Returns the original character if it does not have a lowercase version.
     ///
     pub def toLowerCase(c: Char): Char =
-        import static java.lang.Character.toLowerCase(Char): Char \ {};
-        toLowerCase(c)
+        unsafe Character.toLowerCase(c)
 
     ///
     /// Converts a letter to its uppercase version.
@@ -157,8 +144,7 @@ mod Char {
     /// Returns the original character if it does not have a uppercase version.
     ///
     pub def toUpperCase(c: Char): Char =
-        import static java.lang.Character.toUpperCase(Char): Char \ {};
-        toUpperCase(c)
+        unsafe Character.toUpperCase(c)
 
     ///
     /// Converts a letter to its titlecase version.
@@ -167,8 +153,7 @@ mod Char {
     /// version or a mapping to uppercase.
     ///
     pub def toTitleCase(c: Char): Char =
-        import static java.lang.Character.toTitleCase(Char): Char \ {};
-        toTitleCase(c)
+        unsafe Character.toTitleCase(c)
 
     ///
     /// Returns the code point representation of Char `c`.
@@ -182,8 +167,7 @@ mod Char {
     /// Caution - this function does no validation, use `isSurrogatePair` to check `high` and `low` are valid.
     ///
     pub def toSupplementaryCodePoint(high: {high = Char}, low: {low = Char}): Int32 =
-        import static java.lang.Character.toCodePoint(Char, Char): Int32 \ {};
-        toCodePoint(high#high, low#low)
+        unsafe Character.toCodePoint(high#high, low#low)
 
     ///
     /// Returns the character `c` as a string.
@@ -207,8 +191,7 @@ mod Char {
     /// This function cannot handle supplementary characters.
     ///
     pub def getNumericValue(c: Char): Option[Int32] =
-        import static java.lang.Character.getNumericValue(Char): Int32 \ {};
-        match getNumericValue(c) {
+        match unsafe Character.getNumericValue(c) {
             case i if i < 0 => None
             case i          => Some(i)
         }
@@ -221,8 +204,7 @@ mod Char {
     /// Returns `None` if `c` does not represent a number.
     ///
     pub def digit(radix: {radix = Int32}, c: Char): Option[Int32] =
-        import static java.lang.Character.digit(Char, Int32): Int32 \ {};
-        match digit(c, radix#radix) {
+        match unsafe Character.digit(c, radix#radix) {
             case i if i < 0 => None
             case i          => Some(i)
         }
@@ -235,8 +217,7 @@ mod Char {
     /// Returns `None` if `n` is not representable as single character in the radix.
     ///
     pub def forDigit(radix: {radix = Int32}, n: Int32): Option[Char] =
-        import static java.lang.Character.forDigit(Int32, Int32): Char \ {};
-        match forDigit(n, radix#radix) {
+        match unsafe Character.forDigit(n, radix#radix) {
             case c if c == '\u0000' => None
             case c                  => Some(c)
         }
@@ -248,8 +229,7 @@ mod Char {
     /// code you should not need to use `java.lang.Character`.
     ///
     pub def charValue(c: Character): Char =
-        import java.lang.Character.charValue(): Char \ {};
-        charValue(c)
+        unsafe c.charValue()
 
     ///
     /// Convert an Char value to its its object representation (i.e. java.lang.Character).
@@ -258,7 +238,6 @@ mod Char {
     /// code you should not need to use `java.lang.Character`.
     ///
     pub def valueOf(c: Char): Character =
-        import static java.lang.Character.valueOf(Char): Character \ {};
-        valueOf(c)
+        unsafe Character.valueOf(c)
 
 }
