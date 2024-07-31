@@ -14,6 +14,10 @@
  *  limitations under the License.
  */
 
+import java.lang.Character
+import java.lang.Double
+import java.lang.Float
+
 ///
 /// A trait for types that can be converted to strings.
 ///
@@ -36,21 +40,15 @@ instance ToString[Bool] {
 }
 
 instance ToString[Char] {
-    pub def toString(x: Char): String =
-        import static java.lang.Character.toString(Char): String \ {};
-        toString(x)
+    pub def toString(x: Char): String = unsafe Character.toString(x)
 }
 
 instance ToString[Float32] {
-    pub def toString(x: Float32): String =
-        import static java.lang.Float.toString(Float32): String \ {};
-        toString(x)
+    pub def toString(x: Float32): String = unsafe Float.toString(x)
 }
 
 instance ToString[Float64] {
-    pub def toString(x: Float64): String =
-        import static java.lang.Double.toString(Float64): String \ {};
-        toString(x)
+    pub def toString(x: Float64): String = unsafe Double.toString(x)
 }
 
 instance ToString[Int8] {
