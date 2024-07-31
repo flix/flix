@@ -54,7 +54,7 @@ mod Test.Exp.Jvm.InvokeStaticMethod {
 
     @test
     def testInvokeStaticMethodWithArrayParam(): Bool \ IO = region rc {
-        let a = Array#{"this", "that"} @ rc;
+        let a : Array[String, rc] = Array#{"this", "that"} @ rc;
         Arrays.fill(a, "foo");
         true
     }
