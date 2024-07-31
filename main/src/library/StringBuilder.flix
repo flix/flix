@@ -40,18 +40,16 @@ mod StringBuilder {
     /// Append the String `s` to the StringBuilder `sb`.
     ///
     pub def appendString!(s: String, sb: StringBuilder[r]): Unit \ r =
-        import java.lang.StringBuilder.append(String): ##java.lang.StringBuilder \ r;
         let StringBuilder(msb) = sb;
-        discard msb `append` s;
+        discard checked_ecast(unsafe msb.append(s));
         ()
 
     ///
     /// Append the code point `cp` to the StringBuilder `sb`.
     ///
     pub def appendCodePoint!(cp: Int32, sb: StringBuilder[r]): Unit \ r =
-        import java.lang.StringBuilder.appendCodePoint(Int32): ##java.lang.StringBuilder \ r;
         let StringBuilder(msb) = sb;
-        discard msb `appendCodePoint` cp;
+        discard checked_ecast(unsafe msb.appendCodePoint(cp));
         ()
 
     ///
@@ -109,9 +107,8 @@ mod StringBuilder {
     /// Returns an iterator over `sb`.
     ///
     pub def iterator(rc: Region[r1], sb: StringBuilder[r2]): Iterator[Char, r1 + r2, r1] \ { r1, r2 } =
-        import java.lang.StringBuilder.charAt(Int32): Char \ r2;
         let StringBuilder(msb) = sb;
-        Iterator.range(rc, 0, length(sb)) |> Iterator.map(i -> charAt(msb, i))
+        Iterator.range(rc, 0, length(sb)) |> Iterator.map(i -> checked_ecast(unsafe msb.charAt(i)))
 
     ///
     /// Returns an iterator over `l` zipped with the indices of the elements.
@@ -123,24 +120,21 @@ mod StringBuilder {
     /// Return the length of the StringBuilder `sb`.
     ///
     pub def length(sb: StringBuilder[r]): Int32 \ r =
-        import java.lang.StringBuilder.length(): Int32 \ r;
         let StringBuilder(msb) = sb;
-        length(msb)
+        checked_ecast(unsafe msb.length())
 
     ///
     /// Sets the length of the StringBuilder `sb`.
     ///
     pub def setLength!(newLength: Int32, sb: StringBuilder[r]): Unit \ r =
-        import java.lang.StringBuilder.setLength(Int32): Unit \ r as setLength;
         let StringBuilder.StringBuilder(msb) = sb;
-        setLength(msb, newLength)
+        checked_ecast(unsafe msb.setLength(newLength))
 
     ///
     /// Convert the StringBuilder `sb` to a string.
     ///
     pub def toString(sb: StringBuilder[r]): String \ r =
-        import java.lang.StringBuilder.toString(): String \ r;
         let StringBuilder(msb) = sb;
-        toString(msb)
+        checked_ecast(unsafe msb.toString())
 
 }
