@@ -2,61 +2,68 @@ mod Test.Exp.Jvm.InvokeStaticMethod {
 
     import java.lang.{String => JString}
     import java.nio.file.InvalidPathException
-    import java.lang.Object
-    import java.util.Arrays
-    import dev.flix.test.TestClassWithInheritedMethod
     import java.nio.file.Path
 
     @test
     def testInvokeStaticMethod01(): Bool \ IO =
-        JString.valueOf(true) == "true"
+        import static java.lang.String.valueOf(Bool): String \ IO;
+        valueOf(true) == "true"
 
     @test
     def testInvokeStaticMethod02(): Bool \ IO =
-        JString.valueOf('A') == "A"
+        import static java.lang.String.valueOf(Char): String \ IO;
+        valueOf('A') == "A"
 
     @test
     def testInvokeStaticMethod03(): Bool \ IO =
-        JString.valueOf(21.42f32) == "21.42"
+        import static java.lang.String.valueOf(Float32): String \ IO;
+        valueOf(21.42f32) == "21.42"
 
     @test
     def testInvokeStaticMethod04(): Bool \ IO =
-        JString.valueOf(21.42f64) == "21.42"
+        import static java.lang.String.valueOf(Float64): String \ IO;
+        valueOf(21.42f64) == "21.42"
 
     @test
     def testInvokeStaticMethod05(): Bool \ IO =
-        JString.valueOf(42i32) == "42"
+        import static java.lang.String.valueOf(Int32): String \ IO;
+        valueOf(42i32) == "42"
 
     @test
     def testInvokeStaticMethod06(): Bool \ IO =
-        JString.valueOf(42i64) == "42"
+        import static java.lang.String.valueOf(Int64): String \ IO;
+        valueOf(42i64) == "42"
 
     @test
     def testInvokePureStaticMethod01(): Bool =
-        unsafe JString.valueOf(true) == "true"
+        import static java.lang.String.valueOf(Bool): String \ {};
+        valueOf(true) == "true"
 
     @test
     def testInvokeObjectStaticMethod01(): JString \ IO =
-        JString.valueOf(true)
+        import static java.lang.String.valueOf(Bool): JString \ IO;
+        valueOf(true)
 
     @test
     def testInvokeInterfaceStaticMethod02(): Path \ IO = region rc {
+        import static java.nio.file.Path.of(String, Array[String, rc]): Path \ IO as of1;
         try {
-            let arr : Array[String, rc] = Array#{"p1", "p2", "p3"} @ rc;
-            Path.of("end", arr)
+            of1("end", Array#{"p1", "p2", "p3"} @ rc)
         } catch {
-            case _: InvalidPathException => (checked_cast(null) : Path)
+            case _: InvalidPathException => checked_cast(null)
         }
     }
 
     @test
     def testInvokeInheritedStaticMethod01(): Bool =
-        unsafe TestClassWithInheritedMethod.staticMethod(1) == 2
+        import static dev.flix.test.TestClassWithInheritedMethod.staticMethod(Int32): Int32 \ {};
+        staticMethod(1) == 2
 
     @test
     def testInvokeStaticMethodWithArrayParam(): Bool \ IO = region rc {
-        let a : Array[Object, rc] = Array#{(checked_cast("this") : Object), (checked_cast("that") : Object)} @ rc;
-        Arrays.fill(a, (checked_cast("foo") : Object));
+        import static java.util.Arrays.fill(Array[##java.lang.Object, rc], ##java.lang.Object): Unit \ IO;
+        let a = Array#{"this", "that"} @ rc;
+        fill(unchecked_cast(a as Array[##java.lang.Object, rc]), checked_cast("foo"));
         true
     }
 }
