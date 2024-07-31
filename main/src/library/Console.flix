@@ -59,8 +59,9 @@ mod Console {
     /// See also `System/StdOut.print`.
     ///
     pub def print(x: a): Unit \ IO with ToString[a] =
-        import java.io.Console.writer(): ##java.io.PrintWriter \ IO; // TO DO
-        console() |> Option.forEach(c -> writer(c).print(ToString.toString(x)))
+        import java.io.Console.writer(): ##java.io.PrintWriter \ IO;
+        import java.io.PrintWriter.println(String): Unit \ IO as printWriterPrintln;
+        console() |> Option.forEach(c -> printWriterPrint(writer(c), ToString.toString(x)))
 
     ///
     /// Converts `x` to a string and prints it to the console followed by a new line.
@@ -74,8 +75,9 @@ mod Console {
     /// See also `System/StdOut.println`.
     ///
     pub def println(x: a): Unit \ IO with ToString[a] =
-        import java.io.Console.writer(): ##java.io.PrintWriter \ IO; // TO DO
-        console() |> Option.forEach(c -> writer(c).println(ToString.toString(x)))
+        import java.io.Console.writer(): ##java.io.PrintWriter \ IO;
+        import java.io.PrintWriter.println(String): Unit \ IO as printWriterPrintln;
+        console() |> Option.forEach(c -> printWriterPrintln(writer(c), ToString.toString(x)))
 
     ///
     /// Flushes the console output.

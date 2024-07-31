@@ -11,8 +11,7 @@ mod Debug {
     ///
     @Internal
     pub def debugWithPrefix(prefix: String, x: a): a \ IO =
-        import java.io.PrintStream.println(String): Unit \ IO;
-        println(System.out, "${prefix}%{x}");
+        (System.out).println("${prefix}%{x}");
         x
 
     ///
