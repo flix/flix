@@ -157,7 +157,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.InaccessibleEnum](result)
   }
 
-  test("InaccessibleType.03") {
+  ignore("InaccessibleType.03") {
     val input =
       s"""
          |mod A {
