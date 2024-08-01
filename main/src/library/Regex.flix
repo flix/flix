@@ -625,9 +625,8 @@ mod Regex {
     ///
     def setBounds!(start: {start = Int32}, end: {end = Int32}, m: Matcher[r]): Result[String, Unit] \ r =
         Result.tryCatch(_ -> {
-            import java.util.regex.Matcher.region(Int32, Int32): ##java.util.regex.Matcher \ r as region1;
             let Matcher(m1) = m;
-            discard region1(m1, start#start, end#end)
+            checked_ecast(unsafe discard m1.₹region(start#start, end#end))
         })
 
 
