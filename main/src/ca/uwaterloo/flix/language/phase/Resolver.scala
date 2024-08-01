@@ -1362,10 +1362,12 @@ object Resolver {
               val extraFields = providedFieldNames.diff(expectedFieldNames).map(_.name)
               val unprovidedFields = expectedFieldNames.diff(providedFieldNames).map(_.name)
               if (extraFields.size > 0) {
-                Validation.toHardFailure(ResolutionError.ExtraStructFields(extraFields, loc))
+                val e = ResolutionError.ExtraStructFields(extraFields, loc)
+                Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
               }
               else if (unprovidedFields.size > 0) {
-                Validation.toHardFailure(ResolutionError.UnprovidedStructFields(unprovidedFields, loc))
+                val e = ResolutionError.ResolutionError.UnprovidedStructFields(unprovidedFields, loc)
+                Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
               }
               else {
                 val fieldsVal = traverse(fields) {
