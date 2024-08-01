@@ -35,12 +35,12 @@ mod Test.Exp.UncheckedTypeCast {
     def testUncheckedTypeCast04(): Serializable = unchecked_cast(null as Serializable)
 
     @test
-    def testUncheckedTypeCast05(): Serializable = {
+    def testUncheckedTypeCast05(): Serializable \ IO = {
         unchecked_cast(new JStringBuilder() as Serializable)
     }
 
     @test
-    def testUncheckedTypeCast06(): Object = region rc {
+    def testUncheckedTypeCast06(): Object \ IO= {
         unchecked_cast(new JStringBuilder() as Object)
     }
 
