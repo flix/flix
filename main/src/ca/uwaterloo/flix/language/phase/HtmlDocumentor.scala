@@ -524,10 +524,7 @@ object HtmlDocumentor {
 
     docThemeToggle()
 
-    docSideBar { () =>
-      mod.parent.map {
-        mod => sb.append(s"<a class='back' href='${escUrl(moduleFileName(mod))}'>${moduleName(mod)}</a>")
-      }
+    docSideBar(mod.parent) { () =>
       docSubModules(mod)
       docSideBarSection(
         "Traits",
@@ -590,8 +587,7 @@ object HtmlDocumentor {
 
     docThemeToggle()
 
-    docSideBar { () =>
-      sb.append(s"<a class='back' href='${escUrl(moduleFileName(trt.parent))}'>${moduleName(trt.parent)}</a>")
+    docSideBar(Some(trt.parent)) { () =>
       mod.foreach(docSubModules)
       docSideBarSection(
         "Signatures",
@@ -682,8 +678,7 @@ object HtmlDocumentor {
 
     docThemeToggle()
 
-    docSideBar { () =>
-      sb.append(s"<a class='back' href='${escUrl(moduleFileName(eff.parent))}'>${moduleName(eff.parent)}</a>")
+    docSideBar(Some(eff.parent)) { () =>
       mod.foreach(docSubModules)
       docSideBarSection(
         "Operations",
@@ -763,8 +758,7 @@ object HtmlDocumentor {
 
     docThemeToggle()
 
-    docSideBar { () =>
-      sb.append(s"<a class='back' href='${escUrl(moduleFileName(enm.parent))}'>${moduleName(enm.parent)}</a>")
+    docSideBar(Some(enm.parent)) { () =>
       mod.foreach(docSubModules)
       docSideBarSection(
         "Traits",
@@ -850,9 +844,14 @@ object HtmlDocumentor {
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
   private def docThemeToggle()(implicit flix: Flix, sb: StringBuilder): Unit = {
-    sb.append("<button id='theme-toggle' disabled aria-label='Toggle theme' aria-describedby='no-script'>")
-    sb.append("<span>Toggle theme.</span>")
-    sb.append("<span role='tooltip' id='no-script'>Requires JavaScript</span>")
+    sb.append("<button id='theme-toggle' disabled aria-label='Toggle theme'>")
+    sb.append("<span class='text'>Toggle theme.</span>")
+    sb.append("<span class='dark-icon'>")
+    inlineIcon("darkMode")
+    sb.append("</span>")
+    sb.append("<span class='light-icon'>")
+    inlineIcon("lightMode")
+    sb.append("</span>")
     sb.append("</button>")
   }
 
@@ -861,15 +860,29 @@ object HtmlDocumentor {
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docSideBar(docContents: () => Unit)(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docSideBar(parent: Option[Symbol.ModuleSym])(docContents: () => Unit)(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append("<nav>")
-    sb.append("<input type='checkbox' id='menu-toggle' aria-label='Show/hide sidebar menu'>")
+    sb.append("<div id='menu-toggle'>")
+    sb.append("<input type='checkbox' aria-label='Show/hide sidebar menu'>")
     sb.append("<label for='menu-toggle'>Toggle the menu</label>")
-    sb.append("<div>")
+    sb.append("<span class='menu icon'>")
+    inlineIcon("menu")
+    sb.append("</span>")
+    sb.append("<span class='close icon'>")
+    inlineIcon("close")
+    sb.append("</span>")
+    sb.append("</div>")
+    sb.append("<div class='sidebar'>")
     sb.append("<div class='flix'>")
     sb.append("<h2><a href='index.html'>flix</a></h2>")
     sb.append(s"<span class='version'>${Version.CurrentVersion}</span>")
     sb.append("</div>")
+    parent.map { p =>
+      sb.append(s"<a class='back' href='${escUrl(moduleFileName(p))}'>")
+      inlineIcon("back")
+      sb.append(moduleName(p))
+      sb.append("</a>")
+    }
     docContents()
     sb.append("</div>")
     sb.append("</nav>")
