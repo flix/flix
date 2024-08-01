@@ -270,8 +270,13 @@ object ConstraintSolver {
       val t1 = TypeMinimization.minimizeType(subst0(tpe1))
       val t2 = TypeMinimization.minimizeType(subst0(tpe2))
       val prov = subst0(prov0)
-      resolveEquality(t1, t2, prov, renv, constr0.loc).map {
-        case ResolutionResult(subst, constrs, p) => ResolutionResult(subst @@ subst0, constrs, progress = p)
+      // A small hack to ensure that we do not add reducible types to the substitution.
+      if (TypeReduction.isReducible(t1) || TypeReduction.isReducible(t2)) {
+        Result.Ok(ResolutionResult.constraints(constr0 :: Nil, progress = false))
+      } else {
+        resolveEquality(t1, t2, prov, renv, constr0.loc).map {
+          case ResolutionResult(subst, constrs, p) => ResolutionResult(subst @@ subst0, constrs, progress = p)
+        }
       }
     case TypeConstraint.EqJvmConstructor(cvar, clazz, tpes0, prov) =>
       // Apply substitution now
