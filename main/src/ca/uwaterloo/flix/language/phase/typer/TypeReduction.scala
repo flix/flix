@@ -123,6 +123,15 @@ object TypeReduction {
   }
 
   /**
+    * Returns `true` if the given type is still reducible, i.e. contains an unreduced MRT, e.g. MRT[a] where a is not known.
+    */
+  // TODO: This method should be recursive and not just look at the top-level type.
+  def isReducible(tpe: Type): Boolean = tpe match {
+    case Type.Apply(Type.Cst(TypeConstructor.MethodReturnType, _), Type.Var(_, _), _) => true
+    case _ => false
+  }
+
+  /**
    * This is the resolution process of the Java constructor designated by a class and the parameter types.
    * Returns the return type of the Java constructor according, if there exists such a Java constructor.
    * Otherwise, either the Java constructor could not be found with the given signature or there was an ambiguity.
