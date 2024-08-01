@@ -16,6 +16,10 @@
 
 mod TestToJava {
 
+    import java.util.{List => JList}
+    import java.util.{Map => JMap}
+    import java.util.{Set => JSet}
+
     /////////////////////////////////////////////////////////////////////////////
     // toJavaObject                                                            //
     /////////////////////////////////////////////////////////////////////////////
@@ -182,21 +186,18 @@ mod TestToJava {
 
     @test
     def chainToJava01(): Bool \ IO =
-        import static java.util.List.of(): ##java.util.List \ {};
         let l: ##java.util.List = ToJava.toJava((Chain.empty() : Chain[String]));
-        of().equals(l)
+        unsafe JList.of().equals(l)
 
     @test
     def chainToJava02(): Bool \ IO =
-        import static java.util.List.of(##java.lang.Object): ##java.util.List \ {};
         let l: ##java.util.List = ToJava.toJava(Chain.singleton("one"));
-        of(checked_cast("one")).equals(l)
+        unsafe JList.of("one").equals(l)
 
     @test
     def chainToJava03(): Bool \ IO =
-        import static java.util.List.of(##java.lang.Object, ##java.lang.Object): ##java.util.List \ {};
         let l: ##java.util.List = ToJava.toJava(Chain.cons("one", Chain.singleton("two")));
-        of(checked_cast("one"), checked_cast("two")).equals(l)
+        unsafe JList.of("one", "two").equals(l)
 
     /////////////////////////////////////////////////////////////////////////////
     // List                                                                     //
@@ -204,21 +205,18 @@ mod TestToJava {
 
     @test
     def listToJava01(): Bool \ IO =
-        import static java.util.List.of(): ##java.util.List \ {};
         let l: ##java.util.List = ToJava.toJava((Nil : List[String]));
-        of().equals(l)
+        unsafe JList.of().equals(l)
 
     @test
     def listToJava02(): Bool \ IO =
-        import static java.util.List.of(##java.lang.Object): ##java.util.List \ {};
         let l: ##java.util.List = ToJava.toJava(List#{"one"});
-        of(checked_cast("one")).equals(l)
+        unsafe JList.of("one").equals(l)
 
     @test
     def listToJava03(): Bool \ IO =
-        import static java.util.List.of(##java.lang.Object, ##java.lang.Object): ##java.util.List \ {};
         let l: ##java.util.List = ToJava.toJava(List#{"one", "two"});
-        of(checked_cast("one"), checked_cast("two")).equals(l)
+        unsafe JList.of("one", "two").equals(l)
 
     /////////////////////////////////////////////////////////////////////////////
     // Map                                                                     //
@@ -226,21 +224,18 @@ mod TestToJava {
 
     @test
     def mapToJava01(): Bool \ IO =
-        import static java.util.Map.of(): ##java.util.Map \ {};
         let m: ##java.util.Map = ToJava.toJava((Map#{} : Map[String, String]));
-        of().equals(m)
+        unsafe JMap.of().equals(m)
 
     @test
     def mapToJava02(): Bool \ IO =
-        import static java.util.Map.of(##java.lang.Object, ##java.lang.Object): ##java.util.Map \ {};
         let m: ##java.util.Map = ToJava.toJava(Map#{"a" => "one"});
-        of(checked_cast("a"), checked_cast("one")).equals(m)
+        unsafe JMap.of("a", "one").equals(m)
 
     @test
     def mapToJava03(): Bool \ IO =
-        import static java.util.Map.of(##java.lang.Object, ##java.lang.Object, ##java.lang.Object, ##java.lang.Object): ##java.util.Map \ {};
         let m: ##java.util.Map = ToJava.toJava(Map#{"a" => "one", "b" => "two"});
-        of(checked_cast("a"), checked_cast("one"), checked_cast("b"), checked_cast("two")).equals(m)
+        unsafe JMap.of("a", "one", "b", "two").equals(m)
 
     /////////////////////////////////////////////////////////////////////////////
     // Nec                                                                     //
@@ -248,15 +243,13 @@ mod TestToJava {
 
     @test
     def necToJava01(): Bool \ IO =
-        import static java.util.List.of(##java.lang.Object): ##java.util.List \ {};
         let l: ##java.util.List = ToJava.toJava(Nec.singleton("one"));
-        of(checked_cast("one")).equals(l)
+        unsafe JList.of("one").equals(l)
 
     @test
     def necToJava02(): Bool \ IO =
-        import static java.util.List.of(##java.lang.Object, ##java.lang.Object): ##java.util.List \ {};
         let l: ##java.util.List = ToJava.toJava(Nec.cons("one", Nec.singleton("two")));
-        of(checked_cast("one"), checked_cast("two")).equals(l)
+        unsafe JList.of("one", "two").equals(l)
 
     /////////////////////////////////////////////////////////////////////////////
     // Nel                                                                     //
@@ -264,15 +257,13 @@ mod TestToJava {
 
     @test
     def nelToJava01(): Bool \ IO =
-        import static java.util.List.of(##java.lang.Object): ##java.util.List \ {};
         let l: ##java.util.List = ToJava.toJava(Nel.singleton("one"));
-        of(checked_cast("one")).equals(l)
+        unsafe JList.of("one").equals(l)
 
     @test
     def nelToJava02(): Bool \ IO =
-        import static java.util.List.of(##java.lang.Object, ##java.lang.Object): ##java.util.List \ {};
         let l: ##java.util.List = ToJava.toJava(Nel.cons("one", Nel.singleton("two")));
-        of(checked_cast("one"), checked_cast("two")).equals(l)
+        unsafe JList.of("one", "two").equals(l)
 
     /////////////////////////////////////////////////////////////////////////////
     // Set                                                                     //
@@ -280,21 +271,18 @@ mod TestToJava {
 
     @test
     def setToJava01(): Bool \ IO =
-        import static java.util.Set.of(): ##java.util.Set \ {};
         let s: ##java.util.Set = ToJava.toJava((Set#{} : Set[String]));
-        of().equals(s)
+        unsafe JSet.of().equals(s)
 
     @test
     def setToJava02(): Bool \ IO =
-        import static java.util.Set.of(##java.lang.Object): ##java.util.Set \ {};
         let s: ##java.util.Set = ToJava.toJava(Set#{"one"});
-        of(checked_cast("one")).equals(s)
+        unsafe JSet.of("one").equals(s)
 
     @test
     def setToJava03(): Bool \ IO =
-        import static java.util.Set.of(##java.lang.Object, ##java.lang.Object): ##java.util.Set \ {};
         let s: ##java.util.Set = ToJava.toJava(Set#{"one", "two"});
-        of(checked_cast("one"), checked_cast("two")).equals(s)
+        unsafe JSet.of("one", "two").equals(s)
 
     /////////////////////////////////////////////////////////////////////////////
     // Vector                                                                  //
@@ -302,20 +290,17 @@ mod TestToJava {
 
     @test
     def vectorToJava01(): Bool \ IO =
-        import static java.util.List.of(): ##java.util.List \ {};
         let v: ##java.util.List = ToJava.toJava((Vector#{} : Vector[String]));
-        of().equals(v)
+        unsafe JList.of().equals(v)
 
     @test
     def vectorToJava02(): Bool \ IO =
-        import static java.util.List.of(##java.lang.Object): ##java.util.List \ {};
         let v: ##java.util.List = ToJava.toJava(Vector#{"one"});
-        of(checked_cast("one")).equals(v)
+        unsafe JList.of("one").equals(v)
 
     @test
     def vectorToJava03(): Bool \ IO =
-        import static java.util.List.of(##java.lang.Object, ##java.lang.Object): ##java.util.List \ {};
         let v: ##java.util.List = ToJava.toJava(Vector#{"one", "two"});
-        of(checked_cast("one"), checked_cast("two")).equals(v)
+        unsafe JList.of("one", "two").equals(v)
 
 }

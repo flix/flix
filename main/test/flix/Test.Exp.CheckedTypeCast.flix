@@ -38,6 +38,7 @@ mod Test.Exp.CheckedTypeCast {
     def testCheckedTypeCast05(): Array[String, Static] = checked_cast(null)
 
     @test
+
     def testCheckedTypeCast06(): Serializable \ IO = {
         checked_cast(new JStringBuilder())
     }
