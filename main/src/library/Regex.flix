@@ -129,9 +129,8 @@ mod Regex {
     /// Returns `true` if the entire string `s` is matched by the Regex `rgx`.
     ///
     pub def isMatch(rgx: Regex, s: String): Bool = region rc {
-        import java.util.regex.Matcher.matches(): Bool \ rc;
         let Matcher(m1) = newMatcher(rc, rgx, s);
-        matches(m1)
+        unsafe m1.matches()
     }
 
     ///
@@ -184,9 +183,8 @@ mod Regex {
     /// Splits the string `s` around matches of the Regex `regex`.
     ///
     pub def split(regex: {regex = Regex}, s: String): List[String] = region rc {
-        import java.util.regex.Pattern.split(##java.lang.CharSequence): Array[String, rc] \ rc;
         let _ = rc; // This avoids a redundancy error.
-        Array.toList(split(regex#regex, checked_cast(s)))
+        unsafe Array.toList(unsafe regex#regex.split(s))
     }
 
 
@@ -194,27 +192,24 @@ mod Regex {
     /// Returns string `s` with every match of the Regex `src` replaced by the string `dst`.
     ///
     pub def replace(src: {src = Regex}, dst: {dst = String}, s: String): String = region rc {
-        import java.util.regex.Matcher.replaceAll(String): String \ rc;
         let Matcher(m1) = newMatcher(rc, src#src, s);
-        replaceAll(m1, dst#dst)
+        unsafe m1.replaceAll(dst#dst)
     }
 
     ///
     /// Returns string `s` with the first match of the regular expression `src` replaced by the string `dst`.
     ///
     pub def replaceFirst(src: {src = Regex}, dst: {dst = String}, s: String): String = region rc {
-        import java.util.regex.Matcher.replaceFirst(String): String \ rc;
         let Matcher(m1) = newMatcher(rc, src#src, s);
-        replaceFirst(m1, dst#dst)
+        unsafe m1.replaceFirst(dst#dst)
     }
 
     ///
     /// Returns `true` if the string `s` starts the Regex `prefix`.
     ///
     pub def startsWith(prefix: {prefix = Regex}, s: String): Bool = region rc {
-        import java.util.regex.Matcher.lookingAt(): Bool \ rc;
         let Matcher(m1) = newMatcher(rc, prefix#prefix, s);
-        lookingAt(m1)
+        unsafe m1.lookingAt()
     }
 
     ///
@@ -421,9 +416,8 @@ mod Regex {
     /// Returns `false` if the entire string does not match or the bounds are invalid.
     ///
     pub def isMatchWithBounds(rgx: Regex, start: {start = Int32}, end: {end = Int32}, s: String): Bool = region rc {
-        import java.util.regex.Matcher.matches(): Bool \ rc;
         match newMatcherWithBounds(rc, rgx, start, end, s) {
-            case Ok(m)  => {let Matcher(m1) = m; matches(m1)}
+            case Ok(m)  => {let Matcher(m1) = m; unsafe m1.matches()}
             case Err(_) => false
         }
     }
