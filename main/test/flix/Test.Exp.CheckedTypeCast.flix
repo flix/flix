@@ -38,17 +38,13 @@ mod Test.Exp.CheckedTypeCast {
     def testCheckedTypeCast05(): Array[String, Static] = checked_cast(null)
 
     @test
-    def testCheckedTypeCast06(): Serializable = region rc {
-        let _ = rc;
-        import java_new java.lang.StringBuilder(): JStringBuilder \ rc as mkSb;
-        checked_cast(mkSb())
+    def testCheckedTypeCast06(): Serializable = {
+        checked_cast(new JStringBuilder())
     }
 
     @test
-    def testCheckedTypeCast07(): Object = region rc {
-        let _ = rc;
-        import java_new java.lang.StringBuilder(): JStringBuilder \ rc as mkSb;
-        checked_cast(mkSb())
+    def testCheckedTypeCast07(): Object = {
+        checked_cast(new JStringBuilder())
     }
 
     @test
