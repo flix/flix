@@ -23,7 +23,7 @@
 ///
 mod CodePoint {
 
-    import java.lang.Character
+    import java.lang.{Character, Exception, Throwable}
 
     ///
     /// Returns the minimum integer value of a Unicode code point.
@@ -45,23 +45,20 @@ mod CodePoint {
     /// Returns `true` if the given code point `cp` represents a letter character.
     ///
     pub def isLetter(cp: Int32): Bool =
-        import static java.lang.Character.isLetter(Int32): Bool \ {};
-        isLetter(cp)
+        unsafe Character.isLetter(cp)
 
     ///
     /// Returns `true` if the given code point `cp` represents a recognized Unicode digit.
     /// This includes the ASCII range 0..9 but also Arabic-Indic digits, Devagari digits and Fullwidth digits.
     ///
     pub def isDigit(cp: Int32): Bool =
-        import static java.lang.Character.isDigit(Int32): Bool \ {};
-        isDigit(cp)
+        unsafe Character.isDigit(cp)
 
     ///
     /// Returns `true` if the given code point `cp` represents a recognized Unicode letter or digit.
     ///
     pub def isLetterOrDigit(cp: Int32): Bool =
-        import static java.lang.Character.isLetterOrDigit(Int32): Bool \ {};
-        isLetterOrDigit(cp)
+        unsafe Character.isLetterOrDigit(cp)
 
     ///
     /// Returns `true` if the given code point `cp` represents a character strictly in the
@@ -90,36 +87,31 @@ mod CodePoint {
     /// Returns `true` if the given code point `cp` represents a lowercase letter.
     ///
     pub def isLowerCase(cp: Int32): Bool =
-        import static java.lang.Character.isLowerCase(Int32): Bool \ {};
-        isLowerCase(cp)
+        unsafe Character.isLowerCase(cp)
 
     ///
     /// Returns `true` if the given code point `cp` represents an uppercase letter.
     ///
     pub def isUpperCase(cp: Int32): Bool =
-        import static java.lang.Character.isUpperCase(Int32): Bool \ {};
-        isUpperCase(cp)
+        unsafe Character.isUpperCase(cp)
 
     ///
     /// Returns `true` if the given code point `cp` represents a titlecase letter.
     ///
     pub def isTitleCase(cp: Int32): Bool =
-        import static java.lang.Character.isTitleCase(Int32): Bool \ {};
-        isTitleCase(cp)
+        unsafe Character.isTitleCase(cp)
 
     ///
     /// Returns `true` if the given code point `cp` represents a white space character.
     ///
     pub def isWhiteSpace(cp: Int32): Bool =
-        import static java.lang.Character.isWhitespace(Int32): Bool \ {};
-        isWhitespace(cp)
+        unsafe Character.isWhitespace(cp)
 
     ///
     /// Returns `true` if the given code point `cp` represents an alphabetic character.
     ///
     pub def isAlphabetic(cp: Int32): Bool =
-        import static java.lang.Character.isAlphabetic(Int32): Bool \ {};
-        isAlphabetic(cp)
+        unsafe Character.isAlphabetic(cp)
 
     ///
     /// Returns `true` if the given code point `cp` is within Unicode's Basic Multilingual Plane.
@@ -127,52 +119,45 @@ mod CodePoint {
     /// If the code point is within the BMP it can be represented by Flix's `Char` datatype.
     ///
     pub def isBmpCodePoint(cp: Int32): Bool =
-        import static java.lang.Character.isBmpCodePoint(Int32): Bool \ {};
-        isBmpCodePoint(cp)
+        unsafe Character.isBmpCodePoint(cp)
 
     ///
     /// Returns `true` if the given code point `cp` is defined either as a entry in the
     /// UnicodeData file or a value within a range defined in the UnicodeData file.
     ///
     pub def isDefined(cp: Int32): Bool =
-        import static java.lang.Character.isDefined(Int32): Bool \ {};
-        isDefined(cp)
+        unsafe Character.isDefined(cp)
 
     ///
     /// Returns `true` if the given code point `cp` is Chinese, Japanase, Korean
     /// or Vietnamese ideograph.
     ///
     pub def isIdeographic(cp: Int32): Bool =
-        import static java.lang.Character.isIdeographic(Int32): Bool \ {};
-        isIdeographic(cp)
+        unsafe Character.isIdeographic(cp)
 
     ///
     /// Returns `true` if the given code point `cp` is an ISO control character.
     ///
     pub def isISOControl(cp: Int32): Bool =
-        import static java.lang.Character.isISOControl(Int32): Bool \ {};
-        isISOControl(cp)
+        unsafe Character.isISOControl(cp)
 
     ///
     /// Returns `true` if the given code point `cp` is mirrored.
     ///
     pub def isMirrored(cp: Int32): Bool =
-        import static java.lang.Character.isMirrored(Int32): Bool \ {};
-        isMirrored(cp)
+        unsafe Character.isMirrored(cp)
 
     ///
     /// Returns `true` if the given code point `cp` is in Unicode's supplementary character range.
     ///
     pub def isSupplementaryCodePoint(cp: Int32): Bool =
-        import static java.lang.Character.isSupplementaryCodePoint(Int32): Bool \ {};
-        isSupplementaryCodePoint(cp)
+        unsafe Character.isSupplementaryCodePoint(cp)
 
     ///
     /// Returns `true` if the code point `cp` is between `U+0000` and `U+10FFFF`.
     ///
     pub def isValidCodePoint(cp: Int32): Bool =
-        import static java.lang.Character.isValidCodePoint(Int32): Bool \ {};
-        isValidCodePoint(cp)
+        unsafe Character.isValidCodePoint(cp)
 
     ///
     /// Converts a code point representing a letter to its lowercase version.
@@ -180,8 +165,7 @@ mod CodePoint {
     /// Returns the original code point if it does not have a lowercase version.
     ///
     pub def toLowerCase(cp: Int32): Int32 =
-        import static java.lang.Character.toLowerCase(Int32): Int32 \ {};
-        toLowerCase(cp)
+        unsafe Character.toLowerCase(cp)
 
     ///
     /// Converts a code point representing a letter to its uppercase version.
@@ -189,8 +173,7 @@ mod CodePoint {
     /// Returns the original code point if it does not have a uppercase version.
     ///
     pub def toUpperCase(cp: Int32): Int32 =
-        import static java.lang.Character.toUpperCase(Int32): Int32 \ {};
-        toUpperCase(cp)
+        unsafe Character.toUpperCase(cp)
 
     ///
     /// Converts a code point representing a letter to its titlecase version.
@@ -199,8 +182,7 @@ mod CodePoint {
     /// version or a mapping to uppercase.
     ///
     pub def toTitleCase(cp: Int32): Int32 =
-        import static java.lang.Character.toTitleCase(Int32): Int32 \ {};
-        toTitleCase(cp)
+        unsafe Character.toTitleCase(cp)
 
     ///
     /// Returns the name of the code point `cp`.
@@ -210,10 +192,9 @@ mod CodePoint {
     ///
     pub def getName(cp: Int32): Option[String] =
         try {
-            import static java.lang.Character.getName(Int32): String \ {};
-            getName(cp) |> Object.toOption
+            unsafe Character.getName(cp) |> Object.toOption
         } catch {
-            case _: ##java.lang.Exception => None
+            case _: Exception => None
         }
 
     ///
@@ -225,8 +206,7 @@ mod CodePoint {
     /// This function handles supplementary characters.
     ///
     pub def getNumericValue(cp: Int32): Option[Int32] =
-        import static java.lang.Character.getNumericValue(Int32): Int32 \ {};
-        match getNumericValue(cp) {
+        match unsafe Character.getNumericValue(cp) {
             case i if i < 0 => None
             case i          => Some(i)
         }
@@ -237,8 +217,7 @@ mod CodePoint {
     /// The answer is either 2 for a supplementary character or 1 for any other character.
     ///
     pub def charCount(cp: Int32): Int32 =
-        import static java.lang.Character.charCount(Int32): Int32 \ {};
-        charCount(cp)
+        unsafe Character.charCount(cp)
 
     ///
     /// Optionally returns a vector of Chars representing the code point `cp`.
@@ -250,13 +229,12 @@ mod CodePoint {
     ///
     pub def toChars(cp: Int32): Option[Vector[Char]] = try {
         region rc {
-            import static java.lang.Character.toChars(Int32, Array[Char, rc], Int32): Int32 \ rc;
-            let arr = Array.empty(rc, 2);
-            let size = toChars(cp, arr, 0);
+            let arr : Array[Char, rc] = Array.empty(rc, 2);
+            let size = unsafe Character.toChars(cp, arr, 0);
             Array.toVector(arr) |> Vector.takeLeft(size) |> Some
         }
     } catch {
-        case _: ##java.lang.Throwable => None
+        case _: Throwable => None
     }
 
     ///
@@ -265,16 +243,15 @@ mod CodePoint {
     ///
     pub def toBmpChar(cp: Int32): Option[Char] = try {
         region rc {
-            import static java.lang.Character.toChars(Int32, Array[Char, rc], Int32): Int32 \ rc;
-            let arr = Array.empty(rc, 2);
-            let i = toChars(cp, arr, 0);
+            let arr : Array[Char, rc] = Array.empty(rc, 2);
+            let i = unsafe Character.toChars(cp, arr, 0);
             if (i == 1)
                 Array.nth(0, arr)
             else
                 None
         }
     } catch {
-        case _: ##java.lang.Exception => None
+        case _: Exception => None
     }
 
     ///
@@ -283,16 +260,15 @@ mod CodePoint {
     ///
     pub def toSupplementaryChars(cp: Int32): Option[(Char, Char)] = try {
         region rc {
-            import static java.lang.Character.toChars(Int32, Array[Char, rc], Int32): Int32 \ rc;
-            let arr = Array.empty(rc, 2);
-            let i = toChars(cp, arr, 0);
+            let arr : Array[Char, rc] = Array.empty(rc, 2);
+            let i = unsafe Character.toChars(cp, arr, 0);
             if (i == 2)
                 Some(Array.get(0, arr), Array.get(1, arr))
             else
                 None
         }
     } catch {
-        case _: ##java.lang.Exception => None
+        case _: Exception => None
     }
 
     ///
@@ -300,10 +276,9 @@ mod CodePoint {
     ///
     pub def toString(cp: Int32): String =
         try {
-            import static java.lang.Character.toString(Int32): String \ {};
-            toString(cp)
+            unsafe Character.toString(cp)
         } catch {
-            case _: ##java.lang.Exception => ""
+            case _: Exception => ""
         }
 
     ///
@@ -311,9 +286,8 @@ mod CodePoint {
     /// if `cp` is a supplementary character.
     ///
     pub def highSurrogate(cp: Int32): Option[Char] =
-        import static java.lang.Character.highSurrogate(Int32): Char \ {};
         if (isSupplementaryCodePoint(cp))
-            Some(highSurrogate(cp))
+            Some(unsafe Character.highSurrogate(cp))
         else
             None
 
@@ -322,9 +296,8 @@ mod CodePoint {
     /// if `cp` is a supplementary character.
     ///
     pub def lowSurrogate(cp: Int32): Option[Char] =
-        import static java.lang.Character.lowSurrogate(Int32): Char \ {};
         if (isSupplementaryCodePoint(cp))
-            Some(lowSurrogate(cp))
+            Some(unsafe Character.lowSurrogate(cp))
         else
             None
 
