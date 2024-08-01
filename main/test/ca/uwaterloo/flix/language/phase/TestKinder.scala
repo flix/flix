@@ -1011,7 +1011,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[KindError.MismatchedKinds](result)
+    expectError[KindError.UnexpectedKind](result)
   }
 
   test("KindError.Struct.Case.05") {

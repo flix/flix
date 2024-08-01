@@ -58,6 +58,7 @@ import scala.collection.immutable.SortedSet
 object Kinder {
 
   def run(root: ResolvedAst.Root, oldRoot: KindedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[KindedAst.Root, KindError] = flix.phase("Kinder") {
+
     // Type aliases must be processed first in order to provide a `taenv` for looking up type alias symbols.
     flatMapN(visitTypeAliases(root.taOrder, root)) {
       taenv =>
@@ -117,7 +118,7 @@ object Kinder {
       // the parser will have already notified the user of this error
       // The recovery step here is to simply add a single type param that is never used
       val tparams1 = if (tparams0.tparams.isEmpty) {
-        val regionTparam = ResolvedAst.TypeParam.Unkinded(Name.Ident("", loc), Symbol.freshUnkindedTypeVarSym(Ast.VarText.Absent, true, loc), loc)
+        val regionTparam = ResolvedAst.TypeParam.Unkinded(Name.Ident("$rc", loc), Symbol.freshUnkindedTypeVarSym(Ast.VarText.Absent, isRegion = false, loc), loc)
         ResolvedAst.TypeParams.Unkinded(List(regionTparam))
       } else {
         tparams0
@@ -129,30 +130,18 @@ object Kinder {
           val tparams = t.init.map(tparam => ResolvedAst.TypeParam.Kinded(tparam.name, tparam.sym, Kind.Star, tparam.loc)) :+ ResolvedAst.TypeParam.Kinded(t.last.name, t.last.sym, Kind.Eff, t.last.loc)
           ResolvedAst.TypeParams.Kinded(tparams)
       }
-      val kenv0 = getKindEnvFromTypeParamsDefaultStar(tparams2)
-      val kenvVal = kenv0 + (tparams2.tparams.last.sym -> Kind.Eff)
-
-      flatMapN(kenvVal) {
-        case kenv =>
-          val tparamsVal = traverse(tparams2.tparams)(visitTypeParam(_, kenv))
-
-          flatMapN(tparamsVal) {
-            case tparams0 =>
-              val KindedAst.TypeParam(name, ksym, tloc) = tparams0.last
-              val lastTparam = KindedAst.TypeParam(name, ksym.withKind(Kind.Eff), tloc)
-              val tparams = tparams0.init :+ lastTparam
-              val targs = tparams.map(tparam => Type.Var(tparam.sym, tparam.loc.asSynthetic))
-              val fieldsVal = traverse(fields0) {
-                case field0 => mapN(visitStructField(field0, tparams, kenv, taenv, root)) {
-                  field => field.sym -> field
-                }
-              }
-              mapN(fieldsVal) {
-                case fields =>
-                  val sc = Scheme(tparams.map(_.sym), List(), List(), Type.mkStruct(sym, targs, loc))
-                  KindedAst.Struct(doc, ann, mod, sym, tparams, sc, fields.toMap, loc)
-              }
-          }
+      val kenv = getKindEnvFromTypeParamsDefaultStar(tparams2)
+      val kindedTparams = tparams2.tparams.map(t => KindedAst.TypeParam(t.name, t.sym.withKind(t.kind), t.loc))
+      val fieldsVal = traverse(fields0) {
+        case field0 => mapN(visitStructField(field0, kindedTparams, kenv, taenv, root)) {
+          field => field.sym -> field
+        }
+      }
+      mapN(fieldsVal) {
+        case fields =>
+          val targs = kindedTparams.map(tparam => Type.Var(tparam.sym, tparam.loc.asSynthetic))
+          val sc = Scheme(tparams2.tparams.map(t => t.sym.withKind(t.kind)), List(), List(), Type.mkStruct(sym, targs, loc))
+          KindedAst.Struct(doc, ann, mod, sym, kindedTparams, sc, fields.toMap, loc)
       }
   }
 

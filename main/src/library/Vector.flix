@@ -14,6 +14,9 @@
  *  limitations under the License.
  */
 
+import java.util.{List => JList}
+import java.util.{Iterator => JIterator}
+
 ///
 /// A Vector data type which is fundamentally like Array but is immutable.
 ///
@@ -104,9 +107,9 @@ instance Iterable[Vector[a]] {
 }
 
 instance ToJava[Vector[a]] {
-    type Out = ##java.util.List
+    type Out = JList
     type Aef = IO
-    pub def toJava(v: Vector[a]): ##java.util.List \ IO = Adaptor.toList(v)
+    pub def toJava(v: Vector[a]): JList \ IO = Adaptor.toList(v)
 }
 
 
