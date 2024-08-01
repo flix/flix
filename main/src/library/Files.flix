@@ -42,7 +42,7 @@ mod Files {
             forM (
                 fileAttributes <- getAttributes(f)
             ) yield
-                (fileAttributes.lastAccessTime(): FileTime).toMillis()
+                fileAttributes.lastAccessTime().toMillis()
         } catch {
             case ex: IOException =>
                 Err(Generic(ex.getMessage()))
@@ -56,7 +56,7 @@ mod Files {
             forM (
                 fileAttributes <- getAttributes(f)
             ) yield
-                (fileAttributes.creationTime(): FileTime).toMillis()
+                fileAttributes.creationTime().toMillis()
         } catch {
             case ex: IOException =>
                 Err(Generic(ex.getMessage()))
@@ -70,7 +70,7 @@ mod Files {
             forM (
                 fileAttributes <- getAttributes(f)
             ) yield
-                (fileAttributes.lastModifiedTime(): FileTime).toMillis()
+                fileAttributes.lastModifiedTime().toMillis()
         } catch {
             case ex: IOException =>
                 Err(Generic(ex.getMessage()))
@@ -237,7 +237,7 @@ mod Files {
                     case Ok(_)    => {
                         let bytes: Array[Int8, _] = Array.empty(rc, opts#count);
                         discard stream.read(bytes, 0, opts#count);
-                        let charSet: Charset = Charset.forName(opts#charSet);
+                        let charSet = Charset.forName(opts#charSet);
                         let returnString = new JString(bytes, charSet);
                         Ok(returnString)
                     }
@@ -307,7 +307,7 @@ mod Files {
         IOError.tryCatch(_ -> {
             let javaFile = new File(f);
             let javaPath = javaFile.toPath();
-            let reader = JFiles.newBufferedReader(javaPath, (Charset.forName(opts#charSet): Charset));
+            let reader = JFiles.newBufferedReader(javaPath, Charset.forName(opts#charSet));
             readAll(reader)
         })
 
@@ -352,7 +352,7 @@ mod Files {
         try {
             let javaFile = new File(f);
             let javaPath = javaFile.toPath();
-            let reader = JFiles.newBufferedReader(javaPath, (Charset.forName(opts#charSet): Charset));
+            let reader = JFiles.newBufferedReader(javaPath, Charset.forName(opts#charSet));
             let line = ref reader.readLine() @ rc;
             let next = () -> ({
                 if (not Object.isNull(deref line)) {
@@ -702,10 +702,10 @@ mod Files {
     ///
     pub def list(f: String): Result[IOError, List[String]] \ IO = region rc {
         try {
-            let javaList = new File(f).listFiles;
+            let javaList = unchecked_cast(new File(f).listFiles() as Array[File, rc]);
 
             if (not Object.isNull(javaList)) {
-                let paths = javaList |> Array.map(rc, f0 -> (f0.toPath(): Path).toString());
+                let paths = javaList |> Array.map(rc, f0 -> f0.toPath().toString());
                 Ok(Array.toList(paths))
             } else {
                 Err(Generic("An error occurred when trying to list the file: '${f}'."))
@@ -729,8 +729,8 @@ mod Files {
             let javaStream = JFiles.newDirectoryStream(javaPath);
             let javaIter = javaStream.iterator();
 
-            let iter = fromJavaIter(rc, javaIter);
-            Iterator.map((x: Path) -> unsafe x.toString(), iter)
+            let iter: Iterator[Path, _, _] = fromJavaIter(rc, javaIter);
+            Iterator.map(x -> unsafe x.toString(), iter)
         })
 
     ///
@@ -747,8 +747,8 @@ mod Files {
             let javaStream = JFiles.walk(javaPath, empty);
             let javaIter = javaStream.iterator();
 
-            let iter = fromJavaIter(rc, javaIter);
-            Iterator.map((x: Path) -> unsafe x.toString(), iter)
+            let iter: Iterator[Path, _, _] = fromJavaIter(rc, javaIter);
+            Iterator.map(x -> unsafe x.toString(), iter)
         })
 
     ///
