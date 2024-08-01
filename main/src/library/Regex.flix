@@ -553,8 +553,7 @@ mod Regex {
     /// Create a Matcher for Regex `rgx` on the source String `input`.
     ///
     def newMatcher(_: Region[r], rgx: Regex, s: String): Matcher[r] \ r =
-        import java.util.regex.Pattern.matcher(##java.lang.CharSequence): ##java.util.regex.Matcher \ r;
-        Matcher(matcher(rgx, checked_cast(s)))
+        Matcher(checked_ecast(unsafe rgx.matcher(s)))
 
     ///
     /// Create a Matcher for Regex `rgx` on the source String `input` with bounds `start` and `end`.
@@ -575,9 +574,8 @@ mod Regex {
     /// The internal state of the matcher is updated.
     ///
     def find!(m: Matcher[r]): Bool \ r =
-        import java.util.regex.Matcher.find(): Bool \ r;
         let Matcher(m1) = m;
-        find(m1)
+        checked_ecast(unsafe m1.find())
 
     ///
     /// Attempt to find the next match after the supplied position `pos`.
@@ -588,9 +586,8 @@ mod Regex {
     ///
     def findFrom!(pos: Int32, m: Matcher[r]): Bool \ r =
         Result.tryCatch(_ -> {
-            import java.util.regex.Matcher.find(Int32): Bool \ r;
             let Matcher(m1) = m;
-            find(m1, pos)
+            checked_ecast(unsafe m1.find(pos))
         }) |> Result.getWithDefault(false)
 
 
@@ -639,9 +636,8 @@ mod Regex {
     ///
     def matcherStart(m: Matcher[r]): Result[String, Int32] \ r =
         Result.tryCatch(_ -> {
-            import java.util.regex.Matcher.start(): Int32 \ r;
             let Matcher(m1) = m;
-            start(m1)
+            checked_ecast(unsafe m1.start())
         })
 
     ///
@@ -649,9 +645,8 @@ mod Regex {
     ///
     def matcherEnd(m: Matcher[r]): Result[String, Int32] \ r =
         Result.tryCatch(_ -> {
-            import java.util.regex.Matcher.end(): Int32 \ r;
             let Matcher(m1) = m;
-            end(m1)
+            checked_ecast(unsafe m1.end())
         })
 
     ///
@@ -668,9 +663,8 @@ mod Regex {
     ///
     def matcherContent(m: Matcher[r]): Result[String, String] \ r =
         Result.tryCatch(_ -> {
-            import java.util.regex.Matcher.group(): String \ r;
             let Matcher(m1) = m;
-            group(m1)
+            checked_ecast(unsafe m1.group())
         })
 
     ///
