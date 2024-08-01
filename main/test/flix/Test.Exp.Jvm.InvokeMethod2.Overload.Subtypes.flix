@@ -1,35 +1,40 @@
 mod Test.Exp.Jvm.InvokeMethod2.Overload.Subtypes {
 
-   @test
-   def testInvokeMethod2_01(): Bool \ IO =
-      let obj = "Hello world";
-      obj.contains("o w")
-
-   // TODO: use CharBuffer with static call once available
+    import java.lang.{Object, StringBuilder, StringBuffer, CharSequence};
+    import java.nio.CharBuffer;
 
    @test
    def testInvokeMethod2_02(): Bool \ IO =
-      import java_new java.lang.StringBuilder(String): ##java.lang.StringBuilder \ IO as newSB;
-      let sb: ##java.lang.StringBuilder = newSB("world");
-      let obj = "Hello world";
-      obj.contains(sb) and obj.contains(sb.toString())
+      let cs = CharBuffer.allocate(5);
+      cs.append('h');
+      cs.append('e');
+      cs.append('l');
+      cs.append('l');
+      cs.append('o');
+      let obj = "hello world";
+      obj.contains(cs)
 
    @test
    def testInvokeMethod2_03(): Bool \ IO =
-      import java_new java.lang.StringBuffer(String): ##java.lang.StringBuffer \ IO as newSB;
-      let sb: ##java.lang.StringBuffer = newSB("llo ");
+      let sb = new StringBuilder("world");
       let obj = "Hello world";
       obj.contains(sb) and obj.contains(sb.toString())
 
    @test
    def testInvokeMethod2_04(): Bool \ IO =
-      let txt = "HeLlO WorlD";
-      let obj: ##java.lang.Object = (checked_cast("HeLlO WorlD") : ##java.lang.Object);
-      txt.equals(obj)
+      let sb = new StringBuffer("llo ");
+      let obj = "Hello world";
+      obj.contains(sb) and obj.contains(sb.toString())
 
    @test
    def testInvokeMethod2_05(): Bool \ IO =
       let txt = "HeLlO WorlD";
-      let obj: ##java.lang.CharSequence = (checked_cast("HeLlO WorlD") : ##java.lang.CharSequence);
+      let obj : Object = (checked_cast("HeLlO WorlD") : Object);
+      txt.equals(obj)
+
+   @test
+   def testInvokeMethod2_06(): Bool \ IO =
+      let txt = "HeLlO WorlD";
+      let obj : CharSequence = (checked_cast("HeLlO WorlD") : CharSequence);
       txt.equals(obj)
 }

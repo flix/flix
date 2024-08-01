@@ -1,7 +1,7 @@
 mod Test.Exp.Jvm.InvokeMethod {
 
     import java.lang.{String => JString}
-    import dev.flix.test.TestClassWithInheritedMethod;
+    import dev.flix.test.TestClassWithInheritedMethod
 
     @test
     def testInvokeMethod01(): Bool \ IO =
