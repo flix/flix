@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider.Priority
-import ca.uwaterloo.flix.api.lsp.{CompletionItem, CompletionItemKind, InsertTextFormat, TextEdit}
+import ca.uwaterloo.flix.api.lsp.{CompletionItem, CompletionItemKind, InsertTextFormat, Range, TextEdit}
 import ca.uwaterloo.flix.language.ast.{Name, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.fmt.{FormatScheme, FormatType}
 import ca.uwaterloo.flix.language.ast.Symbol.{CaseSym, EnumSym, ModuleSym, TypeAliasSym}
@@ -271,6 +271,25 @@ sealed trait Completion {
         sortText = Priority.low(name),
         textEdit = TextEdit(context.range, name),
         kind = CompletionItemKind.Module)
+
+    case Completion.MethodCompletion(ident, method) =>
+      val argsWithName = method.getParameters.map(_.getName)
+      val argsWithNameAndType = method.getParameters.map(p => p.getName + ": " + p.getType.getSimpleName)
+      val returnType = method.getReturnType.getSimpleName
+      val returnEffect = "IO"
+
+      val label = method.getName + "(" + argsWithNameAndType.mkString(", ") + "): " + returnType + " \\ " + returnEffect
+      val text = method.getName + "(" + argsWithName.mkString(", ") + ")"
+      val range = Range.from(ident.loc)
+
+      CompletionItem(
+        label = label,
+        sortText = Priority.low(label),
+        textEdit = TextEdit(range, text),
+        insertTextFormat = InsertTextFormat.PlainText,
+        kind = CompletionItemKind.Method
+      )
+
   }
 }
 
@@ -518,4 +537,13 @@ object Completion {
     * @param modSym the module symbol.
   */
   case class ModCompletion(modSym: ModuleSym) extends Completion
+
+  /**
+   * Represents a Java method completion.
+   *
+   * @param ident  the partial method name.
+   * @param method the candidate method.
+   */
+  case class MethodCompletion(ident: Name.Ident, method: Method) extends Completion
+
 }

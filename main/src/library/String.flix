@@ -88,9 +88,8 @@ mod String {
     /// Splits the string `s` around matches of the regular expression `regex`.
     ///
     pub def split(regex: {regex = String}, s: String): List[String] = region rc {
-        import java.lang.String.split(String): Array[String, rc] \ rc;
         let _ = rc; // This avoids a redundancy error.
-        Array.toList(split(s, regex#regex))
+        unsafe Array.toList(unsafe s.split(regex#regex))
     }
 
     ///
