@@ -230,7 +230,7 @@ mod CodePoint {
     pub def toChars(cp: Int32): Option[Vector[Char]] = try {
         region rc {
             let arr : Array[Char, rc] = Array.empty(rc, 2);
-            let size = unsafe Character.toChars(cp, arr, 0);
+            let size = unchecked_cast(Character.toChars(cp, arr, 0) as _ \ rc);
             Array.toVector(arr) |> Vector.takeLeft(size) |> Some
         }
     } catch {
