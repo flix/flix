@@ -235,9 +235,8 @@ mod TestAdaptor {
 
     @test
     def fromStreamToIterator03(): Bool \ {} = region rc {
-        import static java.util.stream.Stream.of(Array[##java.lang.Object, rc]): ##java.util.stream.Stream \ {};
-        let arr = Array#{checked_cast("hello"), checked_cast("world")} @ rc;
-        let s = of(arr);
+        let arr = Array#{"hello", "world"} @ rc;
+        unsafe let s = Stream.of(unsafe arr);
         Iterator.toList(Adaptor.fromStreamToIterator(rc, (Proxy.Proxy: Proxy[String]), s)) == "hello" :: "world" :: Nil
     }
 

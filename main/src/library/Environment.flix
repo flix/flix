@@ -122,8 +122,7 @@ mod Environment {
     /// The returned value is never less than one.
     ///
     pub def getVirtualProcessors(): Int32 =
-        import static java.lang.Runtime.getRuntime(): Runtime \ {};
-        unsafe getRuntime().availableProcessors()
+        unsafe Runtime.getRuntime().availableProcessors()
 
     def getEnvHelper(iter: JIterator, m: Map[String, String]): Map[String, String] =
         if (unsafe iter.hasNext())
