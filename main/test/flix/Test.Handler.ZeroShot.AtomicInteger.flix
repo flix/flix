@@ -9,72 +9,72 @@ mod Test.Handler.ZeroShot.AtomicInteger {
         unsafe n.intValue()
 
     eff Throw {
-        pub def throw(): AtomicInteger
+        pub def throwEffect(): AtomicInteger
     }
 
     @Test
     def testLinear01(): Bool =
-        def f1() = do Throw.throw();
+        def f1() = do Throw.throwEffect();
         let result = try {
             f1()
         } with Throw {
-            def throw(_k) = newAtomicInteger(42)
+            def throwEffect(_k) = newAtomicInteger(42)
         };
         Assert.eq(toInt(newAtomicInteger(42)), toInt(result))
 
     @Test
     def testLinear02(): Bool =
-        def f1() = do Throw.throw();
+        def f1() = do Throw.throwEffect();
         def f2() = { f1(); unreachable!() };
         let result = try {
             f2()
         } with Throw {
-            def throw(_k) = newAtomicInteger(42)
+            def throwEffect(_k) = newAtomicInteger(42)
         };
         Assert.eq(toInt(newAtomicInteger(42)), toInt(result))
 
     @Test
     def testLinear03(): Bool =
-        def f1() = do Throw.throw();
+        def f1() = do Throw.throwEffect();
         def f2() = { f1(); unreachable!() };
         def f3() = { f2(); unreachable!() };
         let result = try {
             f3()
         } with Throw {
-            def throw(_k) = newAtomicInteger(42)
+            def throwEffect(_k) = newAtomicInteger(42)
         };
         Assert.eq(toInt(newAtomicInteger(42)), toInt(result))
 
     @Test
     def testRecursiveLetRec01(): Bool =
-        def f() = do Throw.throw();
+        def f() = do Throw.throwEffect();
         def r(x) = if (x == 0) f() else { r(x - 1); unreachable!() } ;
         let result = try {
             r(0)
         } with Throw {
-            def throw(_k) = newAtomicInteger(42)
+            def throwEffect(_k) = newAtomicInteger(42)
         };
         Assert.eq(toInt(newAtomicInteger(42)), toInt(result))
 
     @Test
     def testRecursiveLetRec02(): Bool =
-        def f() = do Throw.throw();
+        def f() = do Throw.throwEffect();
         def r(x) = if (x == 0) f() else { r(x - 1); unreachable!() } ;
         let result = try {
             r(1)
         } with Throw {
-            def throw(_k) = newAtomicInteger(42)
+            def throwEffect(_k) = newAtomicInteger(42)
         };
         Assert.eq(toInt(newAtomicInteger(42)), toInt(result))
 
     @Test
     def testRecursiveLetRec03(): Bool =
-        def f() = do Throw.throw();
+        def f() = do Throw.throwEffect();
         def r(x) = if (x == 0) f() else { r(x - 1); unreachable!() } ;
         let result = try {
             r(10)
         } with Throw {
-            def throw(_k) = newAtomicInteger(42)
+            def throwEffect(_k) = newAtomicInteger(42)
         };
         Assert.eq(toInt(newAtomicInteger(42)), toInt(result))
 
@@ -83,7 +83,7 @@ mod Test.Handler.ZeroShot.AtomicInteger {
         let result = try {
             mutual1(0)
         } with Throw {
-            def throw(_k) = newAtomicInteger(42)
+            def throwEffect(_k) = newAtomicInteger(42)
         };
         Assert.eq(toInt(newAtomicInteger(42)), toInt(result))
 
@@ -92,7 +92,7 @@ mod Test.Handler.ZeroShot.AtomicInteger {
         let result = try {
             mutual1(1)
         } with Throw {
-            def throw(_k) = newAtomicInteger(42)
+            def throwEffect(_k) = newAtomicInteger(42)
         };
         Assert.eq(toInt(newAtomicInteger(42)), toInt(result))
 
@@ -101,7 +101,7 @@ mod Test.Handler.ZeroShot.AtomicInteger {
         let result = try {
             mutual1(2)
         } with Throw {
-            def throw(_k) = newAtomicInteger(42)
+            def throwEffect(_k) = newAtomicInteger(42)
         };
         Assert.eq(toInt(newAtomicInteger(42)), toInt(result))
 
@@ -110,7 +110,7 @@ mod Test.Handler.ZeroShot.AtomicInteger {
         let result = try {
             mutual1(3)
         } with Throw {
-            def throw(_k) = newAtomicInteger(42)
+            def throwEffect(_k) = newAtomicInteger(42)
         };
         Assert.eq(toInt(newAtomicInteger(42)), toInt(result))
 
@@ -119,7 +119,7 @@ mod Test.Handler.ZeroShot.AtomicInteger {
         let result = try {
             mutual1(10)
         } with Throw {
-            def throw(_k) = newAtomicInteger(42)
+            def throwEffect(_k) = newAtomicInteger(42)
         };
         Assert.eq(toInt(newAtomicInteger(42)), toInt(result))
 
@@ -128,12 +128,12 @@ mod Test.Handler.ZeroShot.AtomicInteger {
         let result = try {
             mutual1(10)
         } with Throw {
-            def throw(_k) = newAtomicInteger(40)
+            def throwEffect(_k) = newAtomicInteger(40)
         };
         Assert.eq(toInt(newAtomicInteger(40)), toInt(result))
 
     def f(): AtomicInteger \ Throw =
-         do Throw.throw();
+         do Throw.throwEffect();
          unreachable!()
 
     def mutual1(x: Int32): AtomicInteger \ Throw =
