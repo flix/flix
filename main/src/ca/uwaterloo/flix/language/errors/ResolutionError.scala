@@ -1132,7 +1132,7 @@ object ResolutionError {
    * @param fields the names of the extra fields
    * @param loc the location where the error occurred.
    */
-  case class ExtraStructFields(fields: Set[String], loc: SourceLocation) extends ResolutionError with Unrecoverable {
+  case class ExtraStructFields(fields: Set[String], loc: SourceLocation) extends ResolutionError with Recoverable {
     override def summary: String = s"`new` struct expression provides too many fields"
 
     def message(formatter: Formatter): String = {
@@ -1152,7 +1152,7 @@ object ResolutionError {
    * @param fields the names of the missing fields
    * @param loc the location where the error occurred.
    */
-  case class UnprovidedStructFields(fields: Set[String], loc: SourceLocation) extends ResolutionError with Unrecoverable {
+  case class UnprovidedStructFields(fields: Set[String], loc: SourceLocation) extends ResolutionError with Recoverable {
     override def summary: String = s"`new` struct expression provides too few fields"
 
     def message(formatter: Formatter): String = {

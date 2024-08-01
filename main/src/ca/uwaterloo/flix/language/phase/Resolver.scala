@@ -1366,7 +1366,7 @@ object Resolver {
                 Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
               }
               else if (unprovidedFields.size > 0) {
-                val e = ResolutionError.ResolutionError.UnprovidedStructFields(unprovidedFields, loc)
+                val e = ResolutionError.UnprovidedStructFields(unprovidedFields, loc)
                 Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
               }
               else {
