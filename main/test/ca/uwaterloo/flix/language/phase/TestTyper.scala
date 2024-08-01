@@ -491,12 +491,12 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |}
         |
         |eff Throw {
-        |    pub def throw(): Unit
+        |    pub def throwEffect(): Unit
         |}
         |
         |def f(): Unit =
         |    do Print.print();
-        |    do Throw.throw()
+        |    do Throw.throwEffect()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError](result)
