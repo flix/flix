@@ -60,9 +60,9 @@ object Debug {
   /**
     * Records the given typing constraints and substitution as a dot graph.
     */
-  def recordGraph(tconstrs: List[TypeConstraint], subst: Substitution): Unit = {
+  def recordGraph(tconstrs: List[TypeConstraint], effs: List[TypeConstraint], traits: List[TypeConstraint], subst: Substitution): Unit = {
     if (record) {
-      val dot = toDotWithSubst(tconstrs, subst)
+      val dot = toDotWithSubst(tconstrs ::: effs ::: traits, subst)
       val fileName = s"${index.toString.reverse.padTo(4, '0').reverse}.dot"
       val path = graphDir.resolve(fileName)
       Files.writeString(path, dot)
@@ -140,17 +140,21 @@ object Debug {
     case TypeConstraint.EqJvmMethod(mvar, tpe, methodName, tpes, _) => s"""${dotId(constr)} [label = "$mvar # $tpe.${methodName.name}(${tpes.mkString(",")})"];"""
     case TypeConstraint.EqStaticJvmMethod(mvar, clazz, methodName, tpes, _) => s"""${dotId(constr)} [label = "$mvar # ${clazz.getName}.${methodName.name}(${tpes.mkString(",")})"];"""
     case TypeConstraint.Trait(sym, tpe, _) => s"""${dotId(constr)} [label = "$sym[$tpe]"];"""
-    case TypeConstraint.Purification(sym, eff1, eff2, _, nested) =>
+    case TypeConstraint.Purification(sym, eff1, eff2, _, nested, nestedEffs, nestedTraits) =>
       val header = s"""${dotId(constr)} [label = "$eff1 ~ ($eff2)[$sym ↦ Pure]"];"""
-      val children = nested.map(toSubDot)
-      val edges = nested.map { child => s"${dotId(constr)} -> ${dotId(child)};" }
-      (header :: children ::: edges).mkString("\n")
+      val typeChildren = nested.map(toSubDot)
+      val typeEdges = nested.map { child => s"${dotId(constr)} -> ${dotId(child)};" }
+      val effChildren = nestedEffs.map(toSubDot)
+      val effEdges = nestedEffs.map { child => s"${dotId(constr)} -> ${dotId(child)};" }
+      val traitChildren = nestedTraits.map(toSubDot)
+      val traitEdges = nestedTraits.map { child => s"${dotId(constr)} -> ${dotId(child)};" }
+      (header :: typeChildren ::: effChildren ::: traitChildren ::: typeEdges ::: effEdges ::: traitEdges).mkString("\n")
   }
 
   /**
     * Returns a probably-unique ID for the constraint.
     */
-  private def dotId(constr: TypeConstraint): Int = System.identityHashCode(constr: TypeConstraint)
+  private def dotId(constr: TypeConstraint): Int = System.identityHashCode(constr)
 
 
   /**

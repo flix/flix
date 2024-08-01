@@ -19,11 +19,11 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.fmt.{FormatOptions, FormatScheme}
 import ca.uwaterloo.flix.language.phase.typer.ConstraintSolver.ResolutionResult
-import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver, TypeConstraint, TypeReduction}
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
-import ca.uwaterloo.flix.language.phase.unification.{EqualityEnvironment, Substitution, UnificationError}
-import ca.uwaterloo.flix.util.collection.{Chain, ListMap}
-import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
+import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver, TypeConstraint, TypeReduction}
+import ca.uwaterloo.flix.language.phase.unification.{EqualityEnvironment, Substitution}
+import ca.uwaterloo.flix.util.collection.ListMap
+import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
 object Scheme {
 
@@ -144,7 +144,7 @@ object Scheme {
     // TODO ASSOC-TYPES probably these should be narrow from the start
     val tconstrs2_0 = econstrs2_0.map { case Ast.BroadEqualityConstraint(t1, t2) => TypeConstraint.Equality(t1, t2, Provenance.Match(t1, t2, SourceLocation.Unknown)) }
     val (subst, econstrs2_1) = ConstraintSolver.resolve(tconstrs2_0, Substitution.empty, RigidityEnv.empty)(tenv0, eenv0, flix) match {
-      case Result.Ok(ResolutionResult(newSubst, newConstrs, _)) =>
+      case Result.Ok(ResolutionResult(newSubst, newConstrs)) =>
         (newSubst, newConstrs)
       case _ => throw InternalCompilerException("unexpected inconsistent type constraints", SourceLocation.Unknown)
     }
@@ -180,7 +180,7 @@ object Scheme {
     val baseConstr = TypeConstraint.Equality(sc1.base, tpe2, Provenance.Match(sc1.base, tpe2, SourceLocation.Unknown))
     ConstraintSolver.resolve(baseConstr :: cconstrs ::: econstrs, subst, renv)(cenv, eenv, flix) match {
       // We succeed only if there are no leftover constraints
-      case Result.Ok(ResolutionResult(_, Nil, _)) => true
+      case Result.Ok(ResolutionResult(_, Nil)) => true
       case _ => false
     }
 
