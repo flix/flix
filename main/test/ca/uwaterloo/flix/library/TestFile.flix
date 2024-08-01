@@ -28,9 +28,6 @@ mod TestFile {
     /// Use `java.nio.file.Path` functions for platform independence.
     ///
     def makeTempPath(fileName: String): Result[IOError, String] = region rc {
-        import static java.nio.file.Path.of(String, Array[String, rc]): Path \ rc as ofPath;
-        import java.nio.file.Path.toString(): String \ {};
-        import java.nio.file.Path.normalize(): Path \ {};
         let tempdir = match Environment.getTemporaryDirectory() {
             case Some(dir)  => Ok(dir)
             case None       => Err(Generic("Could not find TemporaryDirectory"))
@@ -38,13 +35,12 @@ mod TestFile {
         try {
             Result.flatMap(root ->  {
                 let arr = List.toArray(rc, fileName :: Nil);
-                let path = ofPath(root, arr) |> normalize |> toString;
+                let path = unsafe Path.of(root, arr).normalize().toString();
                 Ok(path)
             }, tempdir)
         } catch {
             case ex: IOException =>
-                import java.lang.Throwable.getMessage(): String \ {};
-                Err(Generic(getMessage(checked_cast(ex))))
+                unsafe Err(Generic(ex.getMessage()))
         }
     }
 

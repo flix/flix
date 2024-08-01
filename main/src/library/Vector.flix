@@ -111,10 +111,9 @@ instance ToJava[Vector[a]] {
 
 
 instance FromJava[Vector[a]] {
-    type In = ##java.util.List
-    pub def fromJava(l: ##java.util.List): Vector[a] = region rc {
-        import java.util.List.iterator(): ##java.util.Iterator \ rc;
-        iterator(l) |> Adaptor.fromIterator(rc, (Proxy.Proxy: Proxy[a])) |> Iterator.toVector
+    type In = JList
+    pub def fromJava(l: JList): Vector[a] = region rc {
+        (unsafe l.iterator()) |> Adaptor.fromIterator(rc, (Proxy.Proxy: Proxy[a])) |> Iterator.toVector
     }
 }
 
