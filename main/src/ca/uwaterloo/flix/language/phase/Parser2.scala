@@ -1461,7 +1461,8 @@ object Parser2 {
       if (lt == rt && rightAssoc.contains(left)) true else rt > lt
     }
 
-    private def arguments()(implicit s: State): Mark.Closed = {
+    private def arguments()(implicit s: State): Unit = {
+      if (nth(0) != TokenKind.ParenL) return
       val mark = open()
       zeroOrMore(
         namedTokenSet = NamedTokenSet.Expression,
@@ -2509,6 +2510,7 @@ object Parser2 {
         close(mark, TreeKind.Expr.NewObject)
       } else {
         // Case 3: new Type(exps...)
+        arguments()
         arguments()
         close(mark, TreeKind.Expr.InvokeConstructor2)
       }
