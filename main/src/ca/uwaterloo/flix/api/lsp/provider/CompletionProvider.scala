@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.api.lsp.provider.completion._
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.SyntacticContext
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, TypedAst}
-import ca.uwaterloo.flix.language.errors.{ParseError, ResolutionError, WeederError}
+import ca.uwaterloo.flix.language.errors.{ParseError, ResolutionError, TypeError, WeederError}
 import ca.uwaterloo.flix.language.fmt.FormatScheme
 import ca.uwaterloo.flix.language.phase.Lexer
 import org.json4s.JsonAST.JObject
@@ -137,6 +137,7 @@ object CompletionProvider {
       //
       case SyntacticContext.Expr.Constraint => PredicateCompleter.getCompletions(context)
       case SyntacticContext.Expr.Do => OpCompleter.getCompletions(context)
+      case SyntacticContext.Expr.InvokeMethod(e) => InvokeMethodCompleter.getCompletions(e, context)
       case _: SyntacticContext.Expr => ExprCompleter.getCompletions(context)
 
       //
@@ -267,6 +268,7 @@ object CompletionProvider {
       case ResolutionError.UndefinedOp(_, _) => (1, SyntacticContext.Expr.Do)
       case WeederError.MalformedIdentifier(_, _) => (2, SyntacticContext.Import)
       case WeederError.UnappliedIntrinsic(_, _) => (5, SyntacticContext.Expr.OtherExpr)
+      case err: TypeError.MethodNotFound => (1, SyntacticContext.Expr.InvokeMethod(err))
       case err: ParseError => (5, err.sctx)
       case _ => (999, SyntacticContext.Unknown)
     }).minByOption(_._1) match {

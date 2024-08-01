@@ -106,8 +106,7 @@ pub def coerce(x: t): Coerce.Out[t] with Coerce[t] = Coerce.coerce(x)
 /// Converts `x` to a string and prints it to standard out followed by a new line.
 ///
 pub def println(x: a): Unit \ IO with ToString[a] =
-    import java.io.PrintStream.println(String): Unit \ IO;
-    x |> ToString.toString |> println(System.out)
+    (System.out).println(x |> ToString.toString)
 
 ///
 /// Touches the given region capability `rc`.
@@ -118,15 +117,12 @@ pub def touch(_: Region[r]): Unit \ r = checked_ecast(())
 /// Crashes the current process with the given message `m`.
 ///
 pub def bug!(m: String): a = masked_cast({
-    import java.io.PrintStream.println(String): Unit \ IO;
-    import java.lang.String.repeat(Int32): ##java.lang.String \ {};
-    let prt = println(System.err);
-    prt(repeat("*", 80));
-    prt("**") ;
-    prt("**  BUG: ${m}") ;
-    prt("**") ;
-    prt(repeat("*", 80));
-    prt("");
+    (System.err).println("*".repeat(80));
+    (System.err).println("**") ;
+    (System.err).println("**  BUG: ${m}") ;
+    (System.err).println("**") ;
+    (System.err).println("*".repeat(80));
+    (System.err).println("");
     ?panic
 })
 
