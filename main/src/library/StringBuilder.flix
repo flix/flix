@@ -139,8 +139,7 @@ mod StringBuilder {
     /// Convert the StringBuilder `sb` to a string.
     ///
     pub def toString(sb: StringBuilder[r]): String \ r =
-        import java.lang.StringBuilder.toString(): String \ r;
         let StringBuilder(msb) = sb;
-        toString(msb)
+        unchecked_cast(unsafe msb.toString() as _ \ r)
 
 }
