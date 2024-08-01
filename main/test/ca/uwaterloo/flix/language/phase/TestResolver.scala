@@ -89,7 +89,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.InaccessibleEnum](result)
   }
 
-  ignore("InaccessibleStruct.01") {
+  test("InaccessibleStruct.01") {
     val input =
       s"""
          |mod A{
@@ -106,7 +106,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.InaccessibleStruct](result)
   }
 
-  ignore("InaccessibleStruct.02") {
+  test("InaccessibleStruct.02") {
     val input =
       s"""
          |mod A {
@@ -157,7 +157,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.InaccessibleEnum](result)
   }
 
-  ignore("InaccessibleType.03") {
+  test("InaccessibleType.03") {
     val input =
       s"""
          |mod A {
@@ -1562,5 +1562,177 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.MismatchedOpArity](result)
+  }
+
+  test("ResolutionError.NonExistentStruct.01") {
+    val input =
+      """
+        |def f(): Unit = {
+        |    region rc {
+        |        new NonExistentStruct{ } @ rc;
+        |        ()
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.NonExistentStruct](result)
+  }
+
+  test("ResolutionError.NonExistentStruct.02") {
+    val input =
+      """
+        |mod M {
+        |    def f(): Unit = {
+        |        region rc {
+        |            s€field;
+        |            ()
+        |        }
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.NonExistentStruct](result)
+  }
+
+  test("ResolutionError.NonExistentStruct.03") {
+    val input =
+      """
+        |mod M {
+        |    def f(): Unit = {
+        |        region rc {
+        |            s€field = 3;
+        |            ()
+        |        }
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.NonExistentStruct](result)
+  }
+
+  test("ResoutionError.MissingStructField.01") {
+    val input =
+      """
+        |mod S {
+        |    struct S[r] { }
+        |    def f(s: S[r]): Unit = {
+        |        s€missingField;
+        |        ()
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.NonExistentStructField](result)
+  }
+
+  test("ResolutionError.MissingStructField.02") {
+    val input =
+      """
+        |mod S {
+        |    struct S[r] { }
+        |    def f(s: S[r]): Unit = {
+        |        s€missingField = 3;
+        |        ()
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.NonExistentStructField](result)
+  }
+
+  test("ResolutionError.MissingStructField.03") {
+    val input =
+      """
+        |mod S {
+        |    struct S[r] { field1: Int32 }
+        |    def f(s: S[r]): Unit = {
+        |        s€missingField = 3;
+        |        ()
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.NonExistentStructField](result)
+  }
+
+  test("ResolutionError.TooFewFields.01") {
+    val input = """
+                  |struct S[r] {
+                  |    a: Int32
+                  |}
+                  |def f(rc: Region): S[r] = {
+                  |    new S { } @ rc
+                  |}
+                  |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UnprovidedStructFields](result)
+  }
+
+  test("ResolutionError.TooFewFields.02") {
+    val input = """
+                  |struct S[r] {
+                  |    a: Int32
+                  |}
+                  |struct S2[r] { }
+                  |def f(rc: Region): S[r] = {
+                  |    new S { } @ rc
+                  |}
+                  |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UnprovidedStructFields](result)
+  }
+
+  test("ResolutionError.TooFewFields.03") {
+    val input = """
+                  |struct S[r] {
+                  |    a: Int32,
+                  |    b: Int32,
+                  |    c: Int32
+                  |}
+                  |def f(rc: Region): S[r] = {
+                  |    new S { a = 4, c = 2 } @ rc
+                  |}
+                  |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UnprovidedStructFields](result)
+  }
+
+  test("ResolutionError.TooManyFields.01") {
+    val input = """
+                  |struct S[r] {
+                  |    a: Int32
+                  |}
+                  |def f(rc: Region): S[r] = {
+                  |    new S { a = 4, b = "hello" } @ rc
+                  |}
+                  |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.ExtraStructFields](result)
+  }
+
+  test("ResolutionError.TooManyFields.02") {
+    val input = """
+                  |struct S[r] {
+                  |    a: Int32
+                  |    b: Int32
+                  |    c: Int32
+                  |}
+                  |def f(rc: Region): S[r] = {
+                  |    new S {b = 4, c = 3, a = 2, extra = 5} @ rc
+                  |}
+                  |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.ExtraStructFields](result)
+  }
+
+  test("ResolutionError.TooManyFields.03") {
+    val input = """
+                  |struct S[r] { }
+                  |def f(rc: Region): S[r] = {
+                  |    new S {a = 3} @ rc
+                  |}
+                  |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.ExtraStructFields](result)
   }
 }
