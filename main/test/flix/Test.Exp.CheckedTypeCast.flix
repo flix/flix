@@ -40,15 +40,13 @@ mod Test.Exp.CheckedTypeCast {
     @test
     def testCheckedTypeCast06(): Serializable = region rc {
         let _ = rc;
-        import java_new java.lang.StringBuilder(): JStringBuilder \ rc as mkSb;
-        checked_cast(mkSb())
+        checked_cast(unsafe new JStringBuilder())
     }
 
     @test
     def testCheckedTypeCast07(): Object = region rc {
         let _ = rc;
-        import java_new java.lang.StringBuilder(): JStringBuilder \ rc as mkSb;
-        checked_cast(mkSb())
+        checked_cast(unsafe new JStringBuilder())
     }
 
     @test

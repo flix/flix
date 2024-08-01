@@ -17,6 +17,7 @@
 mod String {
 
     import java.lang.System
+    import java.util.regex.Pattern
 
     use Regex.Flag
 
@@ -150,8 +151,7 @@ mod String {
     ///
     pub def toRegex(regex: String): Result[String, Regex] =
         Result.tryCatch(_ -> {
-            import static java.util.regex.Pattern.compile(String): ##java.util.regex.Pattern \ {};
-            compile(regex)
+            unsafe Pattern.compile(regex)
         })
 
 
@@ -166,8 +166,7 @@ mod String {
     ///
     pub def toRegexWithFlags(flags: Set[Flag], regex: String): Result[String, Regex] =
         Result.tryCatch(_ -> {
-            import static java.util.regex.Pattern.compile(String, Int32): ##java.util.regex.Pattern \ {};
-            compile(regex, Regex.sumFlags(flags))
+            unsafe Pattern.compile(regex, Regex.sumFlags(flags))
         })
 
 
@@ -298,9 +297,8 @@ mod String {
     /// Note - use `isSubmatch` to search for a substring.
     ///
     pub def isMatch(regex: {regex = String}, s: String): Bool =
-        import java.lang.String.matches(String): Bool \ {};
         try {
-            matches(s, regex#regex)
+            unsafe s.matches(regex#regex)
         } catch {
             case _: ##java.util.regex.PatternSyntaxException => false
         }
@@ -315,14 +313,11 @@ mod String {
     /// Helper function for `isSubmatch`.
     ///
     def isSubmatchHelper(pattern: String, s: String): Bool = region rc {
-        import static java.util.regex.Pattern.compile(String): ##java.util.regex.Pattern \ rc;
-        import java.util.regex.Pattern.matcher(##java.lang.CharSequence): ##java.util.regex.Matcher \ rc;
-        import java.util.regex.Matcher.find(Int32): Bool \ rc;
         let _ = rc; // This avoids a redundancy error.
         try {
-            let p1 = compile(pattern);
-            let m1 = matcher(p1, checked_cast(s));
-            find(m1, 0)
+            let p1 = unsafe Pattern.compile(pattern);
+            let m1 = unsafe p1.matcher(s);
+            unsafe m1.find(0)
         } catch {
             case _: ##java.util.regex.PatternSyntaxException => false
         }
