@@ -19,6 +19,7 @@ mod Test.Exp.UncheckedTypeCast {
     import java.lang.Integer
     import java.lang.Object
     import java.lang.{String => JString}
+    import java.lang.{StringBuilder => JStringBuilder}
     import java.io.Serializable
 
     @test
@@ -34,17 +35,13 @@ mod Test.Exp.UncheckedTypeCast {
     def testUncheckedTypeCast04(): Serializable = unchecked_cast(null as Serializable)
 
     @test
-    def testUncheckedTypeCast05(): Serializable = region rc {
-        let _ = rc;
-        import java_new java.lang.StringBuilder(): ##java.lang.StringBuilder \ rc as mkSb;
-        unchecked_cast(mkSb() as Serializable)
+    def testUncheckedTypeCast05(): Serializable = {
+        unchecked_cast(new JStringBuilder() as Serializable)
     }
 
     @test
     def testUncheckedTypeCast06(): Object = region rc {
-        let _ = rc;
-        import java_new java.lang.StringBuilder(): ##java.lang.StringBuilder \ rc as mkSb;
-        unchecked_cast(mkSb() as Object)
+        unchecked_cast(new JStringBuilder() as Object)
     }
 
 }
