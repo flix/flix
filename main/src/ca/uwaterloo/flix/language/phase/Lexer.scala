@@ -430,6 +430,7 @@ object Lexer {
       case _ if isKeyword("static") => TokenKind.KeywordStatic
       case _ if isKeyword("Static") => TokenKind.KeywordStaticUppercase
       case _ if isKeyword("struct") => TokenKind.KeywordStruct
+      case _ if isKeyword("throw") => TokenKind.KeywordThrow
       case _ if isKeyword("trait") => TokenKind.KeywordTrait
       case _ if isKeywordLiteral("true") => TokenKind.KeywordTrue
       case _ if isKeyword("try") => TokenKind.KeywordTry

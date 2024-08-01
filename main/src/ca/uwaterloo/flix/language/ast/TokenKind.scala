@@ -130,6 +130,7 @@ sealed trait TokenKind {
       case TokenKind.KeywordStatic => "'static'"
       case TokenKind.KeywordStaticUppercase => "'Static'"
       case TokenKind.KeywordStruct => "'struct'"
+      case TokenKind.KeywordThrow => "'throw'"
       case TokenKind.KeywordTrait => "'trait'"
       case TokenKind.KeywordTrue => "'true'"
       case TokenKind.KeywordTry => "'try'"
@@ -817,6 +818,8 @@ object TokenKind {
   case object KeywordStaticUppercase extends TokenKind
 
   case object KeywordStruct extends TokenKind
+
+  case object KeywordThrow extends TokenKind
 
   case object KeywordTrait extends TokenKind
 
