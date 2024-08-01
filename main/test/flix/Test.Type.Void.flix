@@ -2,44 +2,44 @@ mod Test.Type.Void {
 
     // We check that `Void` is given a polymorphic type when used as the type of an effect operation.
 
-    pub eff Throw {
-        pub def throw(): Void
+    pub eff Raise {
+        pub def raise(): Void
     }
 
-    pub def voidable01(): Void \ Throw = do Throw.throw()
+    pub def voidable01(): Void \ Raise = do Raise.raise()
 
-    pub def voidable02(): a \ Throw = do Throw.throw()
+    pub def voidable02(): a \ Raise = do Raise.raise()
 
     @Test
     pub def testVoid01(): Unit =
         try {
-            do Throw.throw()
-        } with Throw {
-            def throw(_k) = ()
+            do Raise.raise()
+        } with Raise {
+            def raise(_k) = ()
         }
 
     @Test
     pub def testVoid02(): Unit =
         try {
-            if(do Throw.throw()) () else ()
-        } with Throw {
-            def throw(_k) = ()
+            if(do Raise.raise()) () else ()
+        } with Raise {
+            def raise(_k) = ()
         }
 
     @Test
     pub def testVoid03(): Unit =
         try {
-            if(true) (do Throw.throw()) else ()
-        } with Throw {
-            def throw(_k) = ()
+            if(true) (do Raise.raise()) else ()
+        } with Raise {
+            def raise(_k) = ()
         }
 
     @Test
     pub def testVoid04(): Unit =
         try {
-            discard (do Throw.throw() + 1); ()
-        } with Throw {
-            def throw(_k) = ()
+            discard (do Raise.raise() + 1); ()
+        } with Raise {
+            def raise(_k) = ()
         }
 
 }

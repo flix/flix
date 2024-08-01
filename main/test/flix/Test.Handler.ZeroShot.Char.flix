@@ -1,72 +1,72 @@
 mod Test.Handler.ZeroShot.Char {
 
-    eff Throw {
-        pub def throwEffect(): Char
+    eff Raise {
+        pub def raise(): Char
     }
 
     @Test
     def testLinear01(): Bool =
-        def f1() = do Throw.throwEffect();
+        def f1() = do Raise.raise();
         let result = try {
             f1()
-        } with Throw {
-            def throwEffect(_k) = 'a'
+        } with Raise {
+            def raise(_k) = 'a'
         };
         Assert.eq('a', result)
 
     @Test
     def testLinear02(): Bool =
-        def f1() = do Throw.throwEffect();
+        def f1() = do Raise.raise();
         def f2() = { f1(); unreachable!() };
         let result = try {
             f2()
-        } with Throw {
-            def throwEffect(_k) = 'a'
+        } with Raise {
+            def raise(_k) = 'a'
         };
         Assert.eq('a', result)
 
     @Test
     def testLinear03(): Bool =
-        def f1() = do Throw.throwEffect();
+        def f1() = do Raise.raise();
         def f2() = { f1(); unreachable!() };
         def f3() = { f2(); unreachable!() };
         let result = try {
             f3()
-        } with Throw {
-            def throwEffect(_k) = 'a'
+        } with Raise {
+            def raise(_k) = 'a'
         };
         Assert.eq('a', result)
 
     @Test
     def testRecursiveLetRec01(): Bool =
-        def f() = do Throw.throwEffect();
+        def f() = do Raise.raise();
         def r(x) = if (x == 0) f() else { r(x - 1); unreachable!() } ;
         let result = try {
             r(0)
-        } with Throw {
-            def throwEffect(_k) = 'a'
+        } with Raise {
+            def raise(_k) = 'a'
         };
         Assert.eq('a', result)
 
     @Test
     def testRecursiveLetRec02(): Bool =
-        def f() = do Throw.throwEffect();
+        def f() = do Raise.raise();
         def r(x) = if (x == 0) f() else { r(x - 1); unreachable!() } ;
         let result = try {
             r(1)
-        } with Throw {
-            def throwEffect(_k) = 'a'
+        } with Raise {
+            def raise(_k) = 'a'
         };
         Assert.eq('a', result)
 
     @Test
     def testRecursiveLetRec03(): Bool =
-        def f() = do Throw.throwEffect();
+        def f() = do Raise.raise();
         def r(x) = if (x == 0) f() else { r(x - 1); unreachable!() } ;
         let result = try {
             r(10)
-        } with Throw {
-            def throwEffect(_k) = 'a'
+        } with Raise {
+            def raise(_k) = 'a'
         };
         Assert.eq('a', result)
 
@@ -74,8 +74,8 @@ mod Test.Handler.ZeroShot.Char {
     def testMutualRecursive01(): Bool =
         let result = try {
             mutual1(0)
-        } with Throw {
-            def throwEffect(_k) = 'a'
+        } with Raise {
+            def raise(_k) = 'a'
         };
         Assert.eq('a', result)
 
@@ -83,8 +83,8 @@ mod Test.Handler.ZeroShot.Char {
     def testMutualRecursive02(): Bool =
         let result = try {
             mutual1(1)
-        } with Throw {
-            def throwEffect(_k) = 'a'
+        } with Raise {
+            def raise(_k) = 'a'
         };
         Assert.eq('a', result)
 
@@ -92,8 +92,8 @@ mod Test.Handler.ZeroShot.Char {
     def testMutualRecursive03(): Bool =
         let result = try {
             mutual1(2)
-        } with Throw {
-            def throwEffect(_k) = 'a'
+        } with Raise {
+            def raise(_k) = 'a'
         };
         Assert.eq('a', result)
 
@@ -101,8 +101,8 @@ mod Test.Handler.ZeroShot.Char {
     def testMutualRecursive04(): Bool =
         let result = try {
             mutual1(3)
-        } with Throw {
-            def throwEffect(_k) = 'a'
+        } with Raise {
+            def raise(_k) = 'a'
         };
         Assert.eq('a', result)
 
@@ -110,8 +110,8 @@ mod Test.Handler.ZeroShot.Char {
     def testMutualRecursive05(): Bool =
         let result = try {
             mutual1(10)
-        } with Throw {
-            def throwEffect(_k) = 'a'
+        } with Raise {
+            def raise(_k) = 'a'
         };
         Assert.eq('a', result)
 
@@ -119,19 +119,19 @@ mod Test.Handler.ZeroShot.Char {
     def testMutualRecursive06(): Bool =
         let result = try {
             mutual1(10)
-        } with Throw {
-            def throwEffect(_k) = 'b'
+        } with Raise {
+            def raise(_k) = 'b'
         };
         Assert.eq('b', result)
 
-    def f(): Char \ Throw =
-         do Throw.throwEffect();
+    def f(): Char \ Raise =
+         do Raise.raise();
          unreachable!()
 
-    def mutual1(x: Int32): Char \ Throw =
+    def mutual1(x: Int32): Char \ Raise =
         if (x == 0) f() else { mutual2(x - 1); unreachable!() }
 
-    def mutual2(x: Int32): Char \ Throw =
+    def mutual2(x: Int32): Char \ Raise =
         if (x == 0) f() else { mutual1(x - 1); unreachable!() }
 
 }
