@@ -16,9 +16,10 @@
 
 mod Test.Exp.Jvm.TestTryCatch {
 
+    import java.lang.Math
+
     def exception(): Unit \ IO =
-        import static java.lang.Math.floorDiv(Int32, Int32): Int32 \ IO;
-        discard floorDiv(1, 0);
+        discard Math.floorDiv(1, 0);
         ()
 
     @test

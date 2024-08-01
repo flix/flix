@@ -100,8 +100,7 @@ mod Regex {
     ///
     pub def unmatchable(): Regex =
         try {
-            import static java.util.regex.Pattern.compile(String): ##java.util.regex.Pattern \ {};
-            compile("^\\b$")
+            unsafe Pattern.compile("^\\b$")
         } catch {
             case _: ##java.lang.Exception => unreachable!()
         }
@@ -110,8 +109,7 @@ mod Regex {
     /// Return the regular expression string that matches the the literal string `s`.
     ///
     pub def quote(s: String): String =
-        import static java.util.regex.Pattern.quote(String): String \ {};
-        quote(s)
+        unsafe Pattern.quote(s)
 
     ///
     /// Return the regular expression string used to build this Regex.
