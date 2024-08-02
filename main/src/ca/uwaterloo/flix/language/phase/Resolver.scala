@@ -1354,25 +1354,28 @@ object Resolver {
 
         case NamedAst.Expr.StructNew(sym, fields, region, loc) =>
           lookupStruct(sym, env0, ns0, root) match {
-            case Result.Ok(st) =>
-              val providedFieldNames = fields.map {case (k, _) => k}.toSet
-              val expectedFieldNames = st.fields.map(_.sym).toSet
-              val extraFields = providedFieldNames.diff(expectedFieldNames).map(_.name)
-              val unprovidedFields = expectedFieldNames.diff(providedFieldNames).map(_.name)
-              val errors = extraFields.map(ResolutionError.ExtraStructField(_, loc)) ++ unprovidedFields.map(ResolutionError.UnprovidedStructField(_, loc))
-              val fieldsVal = traverse(fields) {
-                case (f, e) =>
-                  val eVal = visitExp(e, env0)
-                  mapN(eVal) {
-                    case e => (f, e)
+            case Result.Ok(st0) =>
+              flatMapN(getStructIfAccessible(st0, ns0, loc)) {
+                case st =>
+                  val providedFieldNames = fields.map {case (k, _) => k}.toSet
+                  val expectedFieldNames = st.fields.map(_.sym).toSet
+                  val extraFields = providedFieldNames.diff(expectedFieldNames).map(_.name)
+                  val unprovidedFields = expectedFieldNames.diff(providedFieldNames).map(_.name)
+                  val errors = extraFields.map(ResolutionError.ExtraStructField(_, loc)) ++ unprovidedFields.map(ResolutionError.UnprovidedStructField(_, loc))
+                  val fieldsVal = traverse(fields) {
+                    case (f, e) =>
+                      val eVal = visitExp(e, env0)
+                      mapN(eVal) {
+                        case e => (f, e)
+                      }
                   }
+                  val regionVal = visitExp(region, env0)
+                  val structNew = mapN(fieldsVal, regionVal) {
+                    case (fields, region) =>
+                      ResolvedAst.Expr.StructNew(sym, fields, region, loc)
+                  }
+                  structNew.withSoftFailures(errors)
               }
-              val regionVal = visitExp(region, env0)
-              val structNew = mapN(fieldsVal, regionVal) {
-                case (fields, region) =>
-                  ResolvedAst.Expr.StructNew(sym, fields, region, loc)
-              }
-              structNew.withSoftFailures(errors)
             case Result.Err(e) =>
               Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
           }
@@ -2345,7 +2348,7 @@ object Resolver {
    */
   private def lookupStruct(sym: Symbol.StructSym, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Result[NamedAst.Declaration.Struct, ResolutionError.NonExistentStruct] = {
     // look up the name
-    val qname = Name.mkQName(sym.name, sym.loc)
+    val qname = Name.mkQName(sym.namespace, sym.name, sym.loc)
     val matches = tryLookupName(qname, env, ns0, root) collect {
       case Resolution.Declaration(s: NamedAst.Declaration.Struct) => s
     }

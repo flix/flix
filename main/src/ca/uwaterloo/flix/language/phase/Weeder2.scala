@@ -1795,7 +1795,7 @@ object Weeder2 {
       flatMapN(Types.pickType(tree), traverse(fields)(visitNewStructField), pickExpr(tree)) {
         (tpe, fields, region) =>
           tpe match {
-            case WeededAst.Type.Ambiguous(qname, _) if qname.isUnqualified =>
+            case WeededAst.Type.Ambiguous(qname, _) =>
               Validation.success(Expr.StructNew(qname, fields, region, tree.loc))
             case _ =>
               val m = IllegalQualifiedName(tree.loc)
