@@ -1140,7 +1140,7 @@ object ResolutionError {
          |
          |${code(loc, "extra fields")}
          |
-         |Extra Fields: ${fields.init.foldLeft("")((field, acc) => acc + field + ", " ) + fields.last}
+         |Extra Fields: ${fields.mkString(",")}
          |""".stripMargin
     }
   }
