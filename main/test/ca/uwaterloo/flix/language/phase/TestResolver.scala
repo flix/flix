@@ -1602,8 +1602,8 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    struct S1[r] {}
         |    def f(): Unit = {
         |        region rc {
-        |            new S1 { } @ rc;
         |            new NonExistentStruct{ } @ rc;
+        |            new S1 { } @ rc;
         |            ()
         |        }
         |    }
