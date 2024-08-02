@@ -328,8 +328,8 @@ object Typer {
     case KindedAst.Struct(doc, ann, mod, sym, tparams0, sc, fields0, loc) =>
       val tparams = tparams0.map(visitTypeParam(_, root))
       val fields = fields0.map {
-        case KindedAst.StructField(fieldSym, tpe, loc) =>
-          TypedAst.StructField(fieldSym, tpe, loc)
+        case KindedAst.StructField(name, tpe, loc) =>
+          TypedAst.StructField(name, tpe, loc)
       }
 
       sym -> TypedAst.Struct(doc, ann, mod, sym, tparams, sc, fields, loc)

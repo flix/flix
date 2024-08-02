@@ -1402,7 +1402,7 @@ object Resolver {
         case NamedAst.Expr.StructPut(name, e1, field, e2, loc) =>
           lookupStruct(name, env0, ns0, root) match {
             case Result.Ok(st) =>
-              if(!st.fields.map(_.name).contains(field.name)) {
+              if(!st.fields.map(_.name.name).contains(field.name)) {
                 val e = ResolutionError.NonExistentStructField(st.sym.toString, field.name, loc)
                 Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
               }

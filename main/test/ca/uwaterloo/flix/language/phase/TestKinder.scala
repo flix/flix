@@ -977,7 +977,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
     expectError[KindError.UnexpectedKind](result)
   }
 
-  test("KindError.Struct.Case.01") {
+  test("KindError.Struct.WrongKind.01") {
     val input =
       """
         |struct S [r] {
@@ -988,7 +988,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
     expectError[KindError.UnexpectedKind](result)
   }
 
-  test("KindError.Struct.Case.02") {
+  test("KindError.Struct.WrongKind.02") {
     val input =
       """
         |struct F[a, r]
@@ -1001,7 +1001,29 @@ class TestKinder extends AnyFunSuite with TestUtils {
     expectError[KindError.UnexpectedKind](result)
   }
 
-  test("KindError.Struct.Case.04") {
+  test("KindError.Struct.WrongKind.04") {
+    val input =
+      """
+        |struct S[a: Type, r: Type] {
+        |    c: a
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[KindError.MismatchedKinds](result)
+  }
+
+  test("KindError.Struct.WrongKind.05") {
+    val input =
+      """
+        |struct S[a, r] {
+        |    c: {i = Int32 | a}
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[KindError.UnexpectedKind](result)
+  }
+
+  test("KindError.Struct.WrongKind.06") {
     // When some kinds are specified and some aren't, the nonspecified ones
     // default to kind Type, which is illegal for `r` in this case
     val input =
@@ -1014,15 +1036,17 @@ class TestKinder extends AnyFunSuite with TestUtils {
     expectError[KindError.UnexpectedKind](result)
   }
 
-  test("KindError.Struct.Case.05") {
+  test("KindError.Struct.WrongKind.07") {
+    // When some kinds are specified and some aren't, the nonspecified ones
+    // default to kind Type, which is illegal for `r` in this case
     val input =
       """
-        |struct S[a, r] {
-        |    c: {i = Int32 | a}
+        |struct S[a: Type, r] {
+        |    c: a
         |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[KindError.UnexpectedKind](result)
+    expectError[KindError.MismatchedKinds](result)
   }
 
   test("KindError.Struct.Type.01") {
