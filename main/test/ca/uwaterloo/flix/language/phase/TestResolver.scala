@@ -1582,9 +1582,10 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val input =
       """
         |mod M {
+        |    struct S1[r] {}
         |    def f(): Unit = {
         |        region rc {
-        |            s€field;
+        |            new NonExistentStruct{ } @ rc;
         |            ()
         |        }
         |    }
@@ -1598,9 +1599,11 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val input =
       """
         |mod M {
+        |    struct S1[r] {}
         |    def f(): Unit = {
         |        region rc {
-        |            s€field = 3;
+        |            new S1 { } @ rc;
+        |            new NonExistentStruct{ } @ rc;
         |            ()
         |        }
         |    }
