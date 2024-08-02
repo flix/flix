@@ -32,7 +32,7 @@ object WeederError {
   /**
     * An error raised to indicate that the annotation `name` was used multiple times.
     *
-    * @param name the name of the attribute.
+    * @param name the name of the annotation.
     * @param loc1 the location of the first annotation.
     * @param loc2 the location of the second annotation.
     */

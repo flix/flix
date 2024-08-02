@@ -415,8 +415,6 @@ object WeededAst {
 
   }
 
-  case class Attribute(ident: Name.Ident, tpe: Type, loc: SourceLocation)
-
   case class Case(ident: Name.Ident, tpe: Type, loc: SourceLocation)
 
   case class StructField(ident: Name.Ident, tpe: Type, loc: SourceLocation)
