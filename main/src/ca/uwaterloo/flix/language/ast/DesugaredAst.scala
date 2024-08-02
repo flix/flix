@@ -393,7 +393,7 @@ object DesugaredAst {
 
   case class Case(ident: Name.Ident, tpe: Type, loc: SourceLocation)
 
-  case class StructField(sym: Name.Ident, tpe: Type, loc: SourceLocation)
+  case class StructField(name: Name.Ident, tpe: Type, loc: SourceLocation)
 
   case class RestrictableCase(ident: Name.Ident, tpe: Type, loc: SourceLocation)
 

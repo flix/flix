@@ -101,10 +101,9 @@ object Inliner {
       LiftedAst.Struct(doc, ann, mod, sym, fields, loc)
   }
 
-  private def visitStructField(field: (Symbol.StructFieldSym, OccurrenceAst.StructField)) = field match {
-    case (_, OccurrenceAst.StructField(sym, idx, tpe, loc)) => {
-      (sym, LiftedAst.StructField(sym, idx, tpe, loc))
-    }
+  private def visitStructField(field: OccurrenceAst.StructField) = field match {
+    case OccurrenceAst.StructField(name, idx, tpe, loc) =>
+      LiftedAst.StructField(name, idx, tpe, loc)
   }
 
   /**

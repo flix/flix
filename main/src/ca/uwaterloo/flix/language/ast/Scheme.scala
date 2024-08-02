@@ -1,4 +1,3 @@
-// JOE TODO: Use StructFieldSym everywhere or delete it
 /*
  * Copyright 2016 Magnus Madsen
  *

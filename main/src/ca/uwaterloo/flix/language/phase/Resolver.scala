@@ -1,3 +1,4 @@
+// JOE TODO: Add struct syms to table
 // JOE TODO: More Comprehsive struct namespace testing
 /*
  *  Copyright 2017 Magnus Madsen
@@ -372,7 +373,6 @@ object Resolver {
     case op@NamedAst.Declaration.Op(sym, spec) => throw InternalCompilerException("unexpected op", sym.loc)
     case NamedAst.Declaration.Sig(sym, spec, exp) => throw InternalCompilerException("unexpected sig", sym.loc)
     case NamedAst.Declaration.Case(sym, tpe, _) => throw InternalCompilerException("unexpected case", sym.loc)
-    case NamedAst.Declaration.StructField(sym, tpe, _) => throw InternalCompilerException("unexpected struct field", sym.loc)
     case NamedAst.Declaration.RestrictableCase(sym, tpe, _) => throw InternalCompilerException("unexpected case", sym.loc)
     case NamedAst.Declaration.AssocTypeDef(doc, mod, ident, args, tpe, loc) => throw InternalCompilerException("unexpected associated type definition", ident.loc)
     case NamedAst.Declaration.AssocTypeSig(doc, mod, sym, tparams, kind, tpe, loc) => throw InternalCompilerException("unexpected associated type signature", sym.loc)
@@ -616,11 +616,11 @@ object Resolver {
   /**
     * Performs name resolution on the given struct field `field0` in the given namespace `ns0`.
     */
-  private def resolveStructField(field0: NamedAst.Declaration.StructField, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration.StructField, ResolutionError] = field0 match {
-    case NamedAst.Declaration.StructField(sym, tpe0, loc) =>
+  private def resolveStructField(field0: NamedAst.StructField, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration.StructField, ResolutionError] = field0 match {
+    case NamedAst.StructField(fieldName, tpe0, loc) =>
       val tpeVal = resolveType(tpe0, Wildness.ForbidWild, env, taenv, ns0, root)
       mapN(tpeVal) {
-        tpe => ResolvedAst.Declaration.StructField(sym, tpe, loc)
+        (tpe) => ResolvedAst.Declaration.StructField(fieldName, tpe, loc)
       }
   }
 
@@ -1354,15 +1354,15 @@ object Resolver {
             b => ResolvedAst.Expr.ArrayLength(b, loc)
           }
 
-        case NamedAst.Expr.StructNew(sym, fields, region, loc) =>
-          lookupStruct(sym, env0, ns0, root) match {
+        case NamedAst.Expr.StructNew(name, fields, region, loc) =>
+          lookupStruct(name, env0, ns0, root) match {
             case Result.Ok(st0) =>
               flatMapN(getStructIfAccessible(st0, ns0, loc)) {
                 case st =>
-                  val providedFieldNames = fields.map {case (k, _) => k}.toSet
-                  val expectedFieldNames = st.fields.map(_.sym).toSet
-                  val extraFields = providedFieldNames.diff(expectedFieldNames).map(_.name)
-                  val unprovidedFields = expectedFieldNames.diff(providedFieldNames).map(_.name)
+                  val providedFieldNames = fields.map {case (k, _) => k.name}.toSet
+                  val expectedFieldNames = st.fields.map(_.name.name).toSet
+                  val extraFields = providedFieldNames.diff(expectedFieldNames)
+                  val unprovidedFields = expectedFieldNames.diff(providedFieldNames)
                   val errors = extraFields.map(ResolutionError.ExtraStructField(_, loc)) ++ unprovidedFields.map(ResolutionError.UnprovidedStructField(_, loc))
                   val fieldsVal = traverse(fields) {
                     case (f, e) =>
@@ -1374,7 +1374,7 @@ object Resolver {
                   val regionVal = visitExp(region, env0)
                   val structNew = mapN(fieldsVal, regionVal) {
                     case (fields, region) =>
-                      ResolvedAst.Expr.StructNew(sym, fields, region, loc)
+                      ResolvedAst.Expr.StructNew(st.sym, fields, region, loc)
                   }
                   structNew.withSoftFailures(errors)
               }
@@ -1382,35 +1382,35 @@ object Resolver {
               Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
           }
 
-        case NamedAst.Expr.StructGet(sym, e, field, loc) =>
-          lookupStruct(sym, env0, ns0, root) match {
+        case NamedAst.Expr.StructGet(name, e, field, loc) =>
+          lookupStruct(name, env0, ns0, root) match {
             case Result.Ok(st) =>
-              if(!st.fields.map(_.sym.name).contains(field.name)) {
-                val e = ResolutionError.NonExistentStructField(sym.name, field.name, loc)
+              if(!st.fields.map(_.name.name).contains(field.name)) {
+                val e = ResolutionError.NonExistentStructField(st.sym.toString, field.name, loc)
                 Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
               }
               else {
                 val eVal = visitExp(e, env0)
                 mapN(eVal) {
-                  case e => ResolvedAst.Expr.StructGet(sym, e, field, loc)
+                  case e => ResolvedAst.Expr.StructGet(st.sym, e, field, loc)
                 }
               }
             case Result.Err(e) =>
               Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
           }
 
-        case NamedAst.Expr.StructPut(sym, e1, field, e2, loc) =>
-          lookupStruct(sym, env0, ns0, root) match {
+        case NamedAst.Expr.StructPut(name, e1, field, e2, loc) =>
+          lookupStruct(name, env0, ns0, root) match {
             case Result.Ok(st) =>
-              if(!st.fields.map(_.sym.name).contains(field.name)) {
-                val e = ResolutionError.NonExistentStructField(sym.name, field.name, loc)
+              if(!st.fields.map(_.name).contains(field.name)) {
+                val e = ResolutionError.NonExistentStructField(st.sym.toString, field.name, loc)
                 Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
               }
               else {
                 val e1Val = visitExp (e1, env0)
                 val e2Val = visitExp (e2, env0)
                 mapN (e1Val, e2Val) {
-                  case (e1, e2) => ResolvedAst.Expr.StructPut (sym, e1, field, e2, loc)
+                  case (e1, e2) => ResolvedAst.Expr.StructPut (st.sym, e1, field, e2, loc)
                 }
               }
             case Result.Err(e) =>
@@ -2348,21 +2348,19 @@ object Resolver {
  /**
    * Finds the struct that matches the given symbol `sym` and `tag` in the namespace `ns0`.
    */
-  private def lookupStruct(sym: Symbol.StructSym, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Result[NamedAst.Declaration.Struct, ResolutionError.NonExistentStruct] = {
-    // look up the name
-    val qname = Name.mkQName(sym.namespace, sym.name, sym.loc)
+  private def lookupStruct(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Result[NamedAst.Declaration.Struct, ResolutionError.NonExistentStruct] = {
     val matches = tryLookupName(qname, env, ns0, root) collect {
       case Resolution.Declaration(s: NamedAst.Declaration.Struct) => s
     }
     matches match {
       // Case 0: No matches. Error.
-      case Nil => Result.Err(ResolutionError.NonExistentStruct(sym.name, sym.loc))
+      case Nil => Result.Err(ResolutionError.NonExistentStruct(qname.toString, qname.loc))
       // Case 1: Exactly one match. Success.
       case st :: _ => Result.Ok(st)
       // Case 2: Multiple matches. Error
       case sts => throw InternalCompilerException(s"unexpected duplicate struct: '$qname'.", qname.loc)
     }
-    // TODO NS-REFACTOR check accessibility
+    // JOE TODO NS-REFACTOR check accessibility
   }
 
   /**
@@ -2370,21 +2368,9 @@ object Resolver {
    */
   private def lookupStruct(sym: Symbol.StructSym, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Result[NamedAst.Declaration.Struct, ResolutionError.NonExistentStruct] = {
     // look up the name
-    val qname = Name.mkQName(sym.name, sym.loc)
-    val matches = tryLookupName(qname, env, ns0, root) collect {
-      case Resolution.Declaration(s: NamedAst.Declaration.Struct) => s
-    }
-    matches match {
-      // Case 0: No matches. Error.
-      case Nil => Result.Err(ResolutionError.NonExistentStruct(sym.name, sym.loc))
-      // Case 1: Exactly one match. Success.
-      case st :: _ => Result.Ok(st)
-      // Case 2: Multiple matches. Error
-      case sts => throw InternalCompilerException(s"unexpected duplicate struct: '$qname'.", qname.loc)
-    }
-    // TODO NS-REFACTOR check accessibility
+    val qname = Name.mkQName(sym.namespace, sym.name, sym.loc)
+    lookupStruct(qname, env, ns0, root)
   }
-
   /**
     * Finds the restrictable enum case that matches the given qualified name `qname` and `tag` in the namespace `ns0`.
     */
@@ -3741,7 +3727,6 @@ object Resolver {
     case NamedAst.Declaration.Effect(doc, ann, mod, sym, ops, loc) => sym
     case NamedAst.Declaration.Op(sym, spec) => sym
     case NamedAst.Declaration.Case(sym, tpe, _) => sym
-    case NamedAst.Declaration.StructField(sym, _, _) => sym
     case NamedAst.Declaration.RestrictableCase(sym, tpe, _) => sym
     case NamedAst.Declaration.AssocTypeDef(doc, mod, ident, args, tpe, loc) => throw InternalCompilerException("unexpected associated type definition", loc)
     case NamedAst.Declaration.Instance(doc, ann, mod, clazz, tparams, tpe, tconstrs, _, defs, ns, loc) => throw InternalCompilerException("unexpected instance", loc)
@@ -3756,7 +3741,6 @@ object Resolver {
     case sym: Symbol.StructSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.RestrictableEnumSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.CaseSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
-    case sym: Symbol.StructFieldSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.RestrictableCaseSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.TraitSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.SigSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)

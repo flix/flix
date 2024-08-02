@@ -294,10 +294,11 @@ object Verifier {
           val List(struct) = ts
           struct match {
             case MonoType.Struct(sym, elms, _) =>
+              val fieldsMap = root.structs(sym).fields
               if(sym0 != sym) {
                 throw InternalCompilerException(s"Expected struct type $sym0, got struct type $sym", loc)
               }
-              val fieldIdx = root.structs(sym).fields(Symbol.mkStructFieldSym(sym0, Name.Ident(field.name, field.loc))).idx
+              val fieldIdx = fieldsMap(Name.Ident(field.name, field.loc)).idx
               checkEq(erase(elms(fieldIdx)), erase(tpe), loc)
               tpe
             case _ => failMismatchedShape(tpe, "Struct", loc)
@@ -310,10 +311,11 @@ object Verifier {
           }
           struct match {
             case MonoType.Struct(sym, elms, _) => {
+              val fieldsMap = root.structs(sym).fields
               if(sym0 != sym) {
                 throw InternalCompilerException(s"Expected struct type $sym0, got struct type $sym", loc)
               }
-              val fieldIdx = root.structs(sym).fields(Symbol.mkStructFieldSym(sym0, Name.Ident(field.name, field.loc))).idx
+              val fieldIdx = fieldsMap(Name.Ident(field.name, field.loc)).idx
               checkEq(erase(elms(fieldIdx)), erase(rhs), loc)
               checkEq(tpe, MonoType.Unit, loc)
             }

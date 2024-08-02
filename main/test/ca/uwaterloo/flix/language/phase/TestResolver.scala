@@ -121,7 +121,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.InaccessibleStruct](result)
   }
 
-  ignore("InaccessibleStruct.03") {
+  test("InaccessibleStruct.03") {
     val input =
       s"""
          |mod A{
@@ -1604,16 +1604,10 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val input =
       """
         |mod M {
-<<<<<<< HEAD
-        |    def f(): Unit = {
-        |        region rc {
-        |            s€field;
-=======
         |    struct S1[r] {}
         |    def f(): Unit = {
         |        region rc {
         |            new NonExistentStruct{ } @ rc;
->>>>>>> structs4-reducer
         |            ()
         |        }
         |    }
@@ -1627,17 +1621,11 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val input =
       """
         |mod M {
-<<<<<<< HEAD
-        |    def f(): Unit = {
-        |        region rc {
-        |            s€field = 3;
-=======
         |    struct S1[r] {}
         |    def f(): Unit = {
         |        region rc {
         |            new NonExistentStruct{ } @ rc;
         |            new S1 { } @ rc;
->>>>>>> structs4-reducer
         |            ()
         |        }
         |    }

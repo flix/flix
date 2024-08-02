@@ -606,7 +606,7 @@ object ConstraintGen {
         val (tpe, eff) = visitExp(exp)
         c.expectType(structTpe, tpe, exp.loc)
         // field type
-        val fieldTpe = instantiatedFieldTpes(Symbol.mkStructFieldSym(sym, Name.Ident(name.name, name.loc)))
+        val fieldTpe = instantiatedFieldTpes(Name.Ident(name.name, name.loc))
         c.unifyType(fieldTpe, tvar, loc)
         // Region type
         c.unifyType(Type.mkUnion(eff, regionVar, loc), evar, exp.loc)
@@ -622,7 +622,7 @@ object ConstraintGen {
         c.expectType(structTpe, tpe1, exp1.loc)
         // rhs type
         val (tpe2, eff2) = visitExp(exp2)
-        val fieldTpe = instantiatedFieldTpes(Symbol.mkStructFieldSym(sym, Name.Ident(name.name, name.loc)))
+        val fieldTpe = instantiatedFieldTpes(Name.Ident(name.name, name.loc))
         c.expectType(fieldTpe, tpe2, exp2.loc)
         // overall type
         c.unifyType(Type.mkUnit(loc), tvar, loc)
@@ -1270,17 +1270,17 @@ object ConstraintGen {
     }
   }
 
-  private def instantiateStruct(sym: Symbol.StructSym, structs: Map[Symbol.StructSym, KindedAst.Struct])(implicit flix: Flix) : (Map[Symbol.StructFieldSym, Type], Type, Type.Var) = {
+  private def instantiateStruct(sym: Symbol.StructSym, structs: Map[Symbol.StructSym, KindedAst.Struct])(implicit flix: Flix) : (Map[Name.Ident, Type], Type, Type.Var) = {
     val struct = structs(sym)
     assert(struct.tparams.last.sym.kind == Kind.Eff)
     val fields = struct.fields
     val (_, _, tpe, substMap) = Scheme.instantiate(struct.sc, struct.loc)
     val subst = Substitution(substMap)
     val instantiatedFields = fields.map( f => f match {
-        case (_, KindedAst.StructField(fieldSym, tpe, loc)) =>
+        case KindedAst.StructField(fieldSym, tpe, loc) =>
           fieldSym -> subst(tpe)
       }
     )
-    (instantiatedFields, tpe, substMap(struct.tparams.last.sym))
+    (instantiatedFields.toMap, tpe, substMap(struct.tparams.last.sym))
   }
 }

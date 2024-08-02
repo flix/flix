@@ -59,15 +59,14 @@ object Simplifier {
 
   private def visitStruct(s: MonoAst.Struct): SimplifiedAst.Struct = s match {
     case MonoAst.Struct(doc, ann, mod, sym, _, fields0, loc) =>
-      val fieldIndices = fields0.toList.map {case (k, _) => k}.sortBy(field => field.name).zipWithIndex.toMap
+      val fieldIndices = fields0.sortBy(field => field.name.name).map(_.name).zipWithIndex.toMap
       val fields = fields0.map(visitStructField(fieldIndices))
       SimplifiedAst.Struct(doc, ann, mod, sym, fields, loc)
   }
 
-  private def visitStructField(fieldIndices: Map[Symbol.StructFieldSym, Int])(field: (Symbol.StructFieldSym, MonoAst.StructField)) = field match {
-    case (_, MonoAst.StructField(sym, tpe, loc)) => {
-      (sym, SimplifiedAst.StructField(sym, fieldIndices(sym), tpe, loc))
-    }
+  private def visitStructField(fieldIndices: Map[Name.Ident, Int])(field: MonoAst.StructField): SimplifiedAst.StructField = field match {
+    case MonoAst.StructField(name, tpe, loc) =>
+      SimplifiedAst.StructField(name, fieldIndices(name), tpe, loc)
   }
 
   private def visitExp(exp0: MonoAst.Expr)(implicit flix: Flix, universe: Set[Symbol.EffectSym], root: MonoAst.Root): SimplifiedAst.Expr = exp0 match {
@@ -360,7 +359,7 @@ object Simplifier {
           case TypeConstructor.Struct(sym, _) =>
             val struct = root.structs(sym)
             val subst = Substitution(struct.tparams.zip(tpe.typeArguments).toMap)
-            val structFields = struct.fields.values.toList.sortBy(_.sym.name)
+            val structFields = struct.fields.sortBy(_.name.name)
             val substitutedStructFieldTypes = structFields.map(f => visitType(subst(f.tpe)))
             MonoType.Struct(sym, substitutedStructFieldTypes, args)
         }

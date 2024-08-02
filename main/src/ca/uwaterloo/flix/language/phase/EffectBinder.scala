@@ -85,14 +85,13 @@ object EffectBinder {
 
   private def visitStruct(s: LiftedAst.Struct): ReducedAst.Struct = s match {
     case LiftedAst.Struct(doc, ann, mod, sym, fields0, loc) =>
-      val fields = fields0.map(visitStructField)
+      val fields = fields0.map(visitStructField).map(field => field.name -> field).toMap
       ReducedAst.Struct(doc, ann, mod, sym, fields, loc)
   }
 
-  private def visitStructField(field: (Symbol.StructFieldSym, LiftedAst.StructField)) = field match {
-    case (_, LiftedAst.StructField(sym, idx, tpe, loc)) => {
-      (sym, ReducedAst.StructField(sym, idx, tpe, loc))
-    }
+  private def visitStructField(field: LiftedAst.StructField) = field match {
+    case LiftedAst.StructField(name, idx, tpe, loc) =>
+      ReducedAst.StructField(name, idx, tpe, loc)
   }
 
   private def visitOp(op: LiftedAst.Op): ReducedAst.Op = op match {

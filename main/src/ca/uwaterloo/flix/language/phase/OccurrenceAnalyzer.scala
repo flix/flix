@@ -136,9 +136,9 @@ object OccurrenceAnalyzer {
       OccurrenceAst.Struct(doc, ann, mod, sym, fields, loc)
   }
 
-  private def visitStructField(field: (Symbol.StructFieldSym, LiftedAst.StructField)) = field match {
-    case (_, LiftedAst.StructField(sym, idx, tpe, loc)) => {
-      (sym, OccurrenceAst.StructField(sym, idx, tpe, loc))
+  private def visitStructField(field: LiftedAst.StructField) = field match {
+    case LiftedAst.StructField(name, idx, tpe, loc) => {
+      OccurrenceAst.StructField(name, idx, tpe, loc)
     }
   }
 

@@ -65,9 +65,9 @@ object LambdaLift {
       LiftedAst.Struct(doc, ann, mod, sym, fields, loc)
   }
 
-  private def visitStructField(field: (Symbol.StructFieldSym, SimplifiedAst.StructField)) = field match {
-    case (_, SimplifiedAst.StructField(sym, idx, tpe, loc)) => {
-      (sym, LiftedAst.StructField(sym, idx, tpe, loc))
+  private def visitStructField(field: SimplifiedAst.StructField) = field match {
+    case SimplifiedAst.StructField(name, idx, tpe, loc) => {
+      LiftedAst.StructField(name, idx, tpe, loc)
     }
   }
 

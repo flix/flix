@@ -98,7 +98,6 @@ object Typer {
         case sym: Symbol.ModuleSym => new Symbol.ModuleSym(sym.ns.init)
 
         case sym: Symbol.CaseSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
-        case sym: Symbol.StructFieldSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
         case sym: Symbol.RestrictableCaseSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
         case sym: Symbol.VarSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
         case sym: Symbol.KindedTypeVarSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
@@ -329,8 +328,8 @@ object Typer {
     case KindedAst.Struct(doc, ann, mod, sym, tparams0, sc, fields0, loc) =>
       val tparams = tparams0.map(visitTypeParam(_, root))
       val fields = fields0.map {
-        case (name, KindedAst.StructField(fieldSym, tpe, loc)) =>
-          name -> TypedAst.StructField(fieldSym, tpe, loc)
+        case KindedAst.StructField(fieldSym, tpe, loc) =>
+          TypedAst.StructField(fieldSym, tpe, loc)
       }
 
       sym -> TypedAst.Struct(doc, ann, mod, sym, tparams, sc, fields, loc)

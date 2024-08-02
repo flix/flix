@@ -415,10 +415,10 @@ object Monomorpher {
     )
   }
 
-  def visitStructField(field: (Symbol.StructFieldSym, LoweredAst.StructField)): (Symbol.StructFieldSym, MonoAst.StructField) = {
+  def visitStructField(field: LoweredAst.StructField): MonoAst.StructField = {
     field match {
-      case (sym, LoweredAst.StructField(name, tpe, loc)) =>
-        (sym, MonoAst.StructField(name, tpe, loc))
+      case LoweredAst.StructField(name, tpe, loc) =>
+        MonoAst.StructField(name, tpe, loc)
       }
   }
 

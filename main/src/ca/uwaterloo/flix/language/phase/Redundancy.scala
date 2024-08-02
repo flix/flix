@@ -168,7 +168,7 @@ object Redundancy {
     val result = new ListBuffer[RedundancyError]
     for ((_, decl) <- root.structs) {
       val usedTypeVars = decl.fields.foldLeft(Set.empty[Symbol.KindedTypeVarSym]) {
-        case (acc, (sym2, field)) =>
+        case (acc, field) =>
           acc ++ field.tpe.typeVars.map(_.sym)
       }
       val unusedTypeParams = decl.tparams.init.filter { // the last tparam is implicitly used for the region
@@ -600,7 +600,6 @@ object Redundancy {
 
     case Expr.StructGet(sym, e, field, _, _, _) =>
       sctx.structSyms.put(sym, ())
-      sctx.fieldSyms.put(Symbol.mkStructFieldSym(sym, Name.Ident(field.name, field.loc)), ())
       visitExp(e, env0, rc)
 
     case Expr.StructPut(sym, e1, _, e2, _, _, _) =>
@@ -1120,15 +1119,6 @@ object Redundancy {
       !ctx.caseSyms.containsKey(tag)
 
   /**
-   * Returns `true` if the given `field` of the given `struct` is unused according to `used`.
-   */
-  private def deadField(struct: Struct, field: Symbol.StructFieldSym)(implicit ctx: SharedContext): Boolean =
-    !struct.sym.name.startsWith("_") &&
-      !struct.mod.isPublic &&
-      !field.name.startsWith("_") &&
-      !ctx.fieldSyms.containsKey(field)
-
-  /**
     * Returns `true` if the type variable `tvar` is unused according to the argument `used`.
     */
   private def deadTypeVar(tvar: Symbol.KindedTypeVarSym, used: Set[Symbol.KindedTypeVarSym]): Boolean = {
@@ -1294,7 +1284,6 @@ object Redundancy {
       new ConcurrentHashMap(),
       new ConcurrentHashMap(),
       new ConcurrentHashMap(),
-      new ConcurrentHashMap(),
       new ConcurrentHashMap())
   }
 
@@ -1312,7 +1301,6 @@ object Redundancy {
                                    effSyms: ConcurrentHashMap[Symbol.EffectSym, Unit],
                                    enumSyms: ConcurrentHashMap[Symbol.EnumSym, Unit],
                                    structSyms: ConcurrentHashMap[Symbol.StructSym, Unit],
-                                   fieldSyms: ConcurrentHashMap[Symbol.StructFieldSym, Unit],
                                    caseSyms: ConcurrentHashMap[Symbol.CaseSym, Unit])
 
   /**
