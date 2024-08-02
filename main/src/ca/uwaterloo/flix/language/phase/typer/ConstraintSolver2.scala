@@ -27,37 +27,100 @@ import ca.uwaterloo.flix.util.collection.{ListMap, ListOps}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
 
 import scala.annotation.tailrec
+import scala.util.chaining.scalaUtilChainingOps
 
 object ConstraintSolver2 {
 
-  type ConstraintSet = Nothing
+  sealed trait TypeConstraint
+  object TypeConstraint {
+    case class Equality(tpe1: Type, tpe2: Type) extends TypeConstraint
+    case class Trait(sym: Symbol.TraitSym, tpe: Type) extends TypeConstraint
+  }
 
-  case class Res(rest: ConstraintSet, failed: ConstraintSet)
+  case class Tracker(private var progress: Boolean = false) extends AnyVal {
+    def markProgress(): Unit = {
+      progress = true
+    }
+
+    def query(): Boolean = {
+      progress
+    }
+  }
+
+  type ConstraintSet = List[TypeConstraint]
+
+  def goAll(constrs0: ConstraintSet): (ConstraintSet, Substitution) = {
+    var constrs = constrs0
+    var subst = Substitution.empty
+    var progressMade = true
+    while (progressMade) {
+      val tracker: Tracker = Tracker()
+      val (newConstrs, newSubst) = goOne(constrs)(tracker)
+      // invariant: the new subst is already applied to all the newConstrs
+      constrs = newConstrs
+      subst = newSubst @@ subst
+      progressMade = tracker.query()
+    }
+    (constrs, subst)
+  }
+
+  def goOne(constrs: ConstraintSet)(implicit tracker: Tracker): (ConstraintSet, Substitution) = {
+    constrs
+      .pipe(breakDownConstraints)
+      .pipe(eliminateIdentities)
+      .pipe(evaluateAliases)
+      .pipe(contextReduction)
+      .pipe(makeSubstitution)
+  }
 
 
   // Breaks down constraints syntactically
   // (appU)
-  def breakDownConstraint(constrs: ConstraintSet): Res = ???
+  def breakDownConstraints(constrs: ConstraintSet)(implicit tracker: Tracker): ConstraintSet = {
+    def breakDownConstraint(constr: TypeConstraint): ConstraintSet = constr match {
+      // TODO make sure we're looking at a syntactic type
+      case TypeConstraint.Equality(Type.Apply(tpe11, tpe12, _), Type.Apply(tpe21, tpe22, _)) =>
+        tracker.markProgress()
+        List(TypeConstraint.Equality(tpe11, tpe21), TypeConstraint.Equality(tpe12, tpe22))
+
+      case c: TypeConstraint => List(c)
+    }
+
+    constrs.flatMap(breakDownConstraint)
+  }
 
   // Eliminates constraints that are the same on the left and right
   // (reflU)
-  def eliminateIdentities(constrs: ConstraintSet): Res = ???
+  def eliminateIdentities(constrs: ConstraintSet)(implicit tracker: Tracker): ConstraintSet = {
+    constrs.filter {
+      case TypeConstraint.Equality(tpe1, tpe2) =>
+        if (tpe1 == tpe2) {
+          // Case 1: Identical types. Remove and mark progress.
+          tracker.markProgress()
+          false
+        } else {
+          // Case 2: Different types. Don't remove.
+          true
+        }
+      case TypeConstraint.Trait(_, _) => true
+    }
+  }
 
   // Reduces trait constraints
   // (bchainE) (?)
-  def contextReduction(constrs: ConstraintSet): Res = ???
+  def contextReduction(constrs: ConstraintSet)(implicit tracker: Tracker): ConstraintSet = ???
 
   // Resolve all effect constraints in the set
   // (bool or something)
-  def effectUnification(constrs: ConstraintSet): Res = ???
+  def effectUnification(constrs: ConstraintSet)(implicit tracker: Tracker): (ConstraintSet, Substitution) = ???
 
   // Evaluate type constraints as far as possible
   // (redU)
-  def evaluateAliases(constrs: ConstraintSet): Res = ???
+  def evaluateAliases(constrs: ConstraintSet)(implicit tracker: Tracker): ConstraintSet = ???
 
   // Build a substitution from any variable constraints
   // (varU)
-  def makeSubstitution(constrs: ConstraintSet): (Res, Substitution) = ???
+  def makeSubstitution(constrs: ConstraintSet): (ConstraintSet, Substitution) = ???
 
 
 }
