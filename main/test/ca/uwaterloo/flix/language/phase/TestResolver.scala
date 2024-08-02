@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.language.errors.ResolutionError
+import ca.uwaterloo.flix.language.errors.{ResolutionError, TypeError}
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -661,7 +661,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmMethod](result)
+    expectError[TypeError.MethodNotFound](result)
   }
 
   test("UndefinedJvmMethod.02") {
@@ -674,7 +674,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmMethod](result)
+    expectError[TypeError.MethodNotFound](result)
   }
 
   test("UndefinedJvmMethod.03") {
@@ -687,7 +687,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmMethod](result)
+    expectError[TypeError.MethodNotFound](result)
   }
 
   test("UndefinedJvmMethod.04") {
@@ -700,7 +700,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmMethod](result)
+    expectError[TypeError.MethodNotFound](result)
   }
 
   test("UndefinedJvmMethod.05") {
@@ -712,7 +712,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmMethod](result)
+    expectError[TypeError.MethodNotFound](result)
   }
 
   test("UndefinedJvmMethod.06") {
@@ -725,7 +725,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmMethod](result)
+    expectError[TypeError.MethodNotFound](result)
   }
 
   test("MismatchingReturnType.01") {
