@@ -1091,11 +1091,11 @@ object ResolutionError {
   }
 
   /**
-   * An error raised to indicate a struct does not exist in a `new Struct { ... } @ r` expression
-   *
-   * @param struct the names of the struct
-   * @param loc the location where the error occurred.
-   */
+    * An error raised to indicate a struct does not exist in a `new Struct { ... } @ r` expression
+    *
+    * @param struct the names of the struct
+    * @param loc the location where the error occurred.
+    */
   case class NonExistentStruct(struct: String, loc: SourceLocation) extends ResolutionError with Recoverable {
     override def summary: String = s"Nonexistent struct type"
 
@@ -1109,17 +1109,17 @@ object ResolutionError {
   }
 
   /**
-   * An error raised to indicate a struct is missing a required field in `struct.field` or `struct.field = value` expression
-   *
-   * @param field the names of the missing fields
-   * @param loc the location where the error occurred.
-   */
-  case class NonExistentStructField(field: String, loc: SourceLocation) extends ResolutionError with Recoverable {
+    * An error raised to indicate a struct is missing a required field in `struct.field` or `struct.field = value` expression
+    *
+    * @param field the names of the missing fields
+    * @param loc the location where the error occurred.
+    */
+  case class NonExistentStructField(struct: String, field: String, loc: SourceLocation) extends ResolutionError with Recoverable {
     override def summary: String = s"Struct is missing a field"
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s""">> struct expression does not provide a field named ${field}
+      s""">> Struct $struct does not have field $field
          |
          |${code(loc, "nonexistent field")}
          |""".stripMargin
@@ -1127,44 +1127,45 @@ object ResolutionError {
   }
 
   /**
-   * An error raised to indicate a `new` struct expression provides too many fields
-   *
-   * @param fields the names of the extra fields
-   * @param loc the location where the error occurred.
-   */
-  case class ExtraStructFields(fields: Set[String], loc: SourceLocation) extends ResolutionError with Recoverable {
+    * An error raised to indicate a `new` struct expression provides too many fields
+    *
+    * @param fields the names of the extra fields
+    * @param loc the location where the error occurred.
+    */
+  case class ExtraStructField(field: String, loc: SourceLocation) extends ResolutionError with Recoverable {
     override def summary: String = s"`new` struct expression provides too many fields"
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s""">> `new` struct expression provides fields not present in original declaration of struct type
+      s""">> `new` struct expression provides field not present in original declaration of struct type
          |
          |${code(loc, "extra fields")}
          |
-         |Extra Fields: ${fields.init.foldLeft("")((field, acc) => acc + field + ", " ) + fields.last}
+         |Extra Field: ${field}
          |""".stripMargin
     }
   }
 
   /**
-   * An error raised to indicate a `new` struct expression is missing fields
-   *
-   * @param fields the names of the missing fields
-   * @param loc the location where the error occurred.
-   */
-  case class UnprovidedStructFields(fields: Set[String], loc: SourceLocation) extends ResolutionError with Recoverable {
+    * An error raised to indicate a `new` struct expression is missing fields
+    *
+    * @param fields the names of the missing fields
+    * @param loc the location where the error occurred.
+    */
+  case class UnprovidedStructField(field: String, loc: SourceLocation) extends ResolutionError with Recoverable {
     override def summary: String = s"`new` struct expression provides too few fields"
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s""">> `new` struct expression does not provide fields present in original declaration of struct type
+      s""">> `new` struct expression does not provide required field `$field`
          |
-         |${code(loc, "missing fields")}
+         |${code(loc, "missing field")}
          |
-         |Missing Fields: ${fields.init.foldLeft("")((field, acc) => acc + field + ", " ) + fields.last}
+         |Missing Field: $field
          |""".stripMargin
     }
   }
+
   /**
     * Removes all access modifiers from the given string `s`.
     */

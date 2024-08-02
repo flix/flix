@@ -1356,32 +1356,27 @@ object Resolver {
 
         case NamedAst.Expr.StructNew(sym, fields, region, loc) =>
           lookupStruct(sym, env0, ns0, root) match {
-            case Result.Ok(st) =>
-              val providedFieldNames = fields.map {case (k, _) => k}.toSet
-              val expectedFieldNames = st.fields.map(_.sym).toSet
-              val extraFields = providedFieldNames.diff(expectedFieldNames).map(_.name)
-              val unprovidedFields = expectedFieldNames.diff(providedFieldNames).map(_.name)
-              if (extraFields.size > 0) {
-                val e = ResolutionError.ExtraStructFields(extraFields, loc)
-                Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
-              }
-              else if (unprovidedFields.size > 0) {
-                val e = ResolutionError.UnprovidedStructFields(unprovidedFields, loc)
-                Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
-              }
-              else {
-                val fieldsVal = traverse(fields) {
-                  case (f, e) =>
-                    val eVal = visitExp(e, env0)
-                    mapN(eVal) {
-                      case e => (f, e)
-                    }
-                }
-                val regionVal = visitExp(region, env0)
-                mapN(fieldsVal, regionVal) {
-                  case (fields, region) =>
-                    ResolvedAst.Expr.StructNew(sym, fields, region, loc)
-                }
+            case Result.Ok(st0) =>
+              flatMapN(getStructIfAccessible(st0, ns0, loc)) {
+                case st =>
+                  val providedFieldNames = fields.map {case (k, _) => k}.toSet
+                  val expectedFieldNames = st.fields.map(_.sym).toSet
+                  val extraFields = providedFieldNames.diff(expectedFieldNames).map(_.name)
+                  val unprovidedFields = expectedFieldNames.diff(providedFieldNames).map(_.name)
+                  val errors = extraFields.map(ResolutionError.ExtraStructField(_, loc)) ++ unprovidedFields.map(ResolutionError.UnprovidedStructField(_, loc))
+                  val fieldsVal = traverse(fields) {
+                    case (f, e) =>
+                      val eVal = visitExp(e, env0)
+                      mapN(eVal) {
+                        case e => (f, e)
+                      }
+                  }
+                  val regionVal = visitExp(region, env0)
+                  val structNew = mapN(fieldsVal, regionVal) {
+                    case (fields, region) =>
+                      ResolvedAst.Expr.StructNew(sym, fields, region, loc)
+                  }
+                  structNew.withSoftFailures(errors)
               }
             case Result.Err(e) =>
               Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
@@ -1391,7 +1386,7 @@ object Resolver {
           lookupStruct(sym, env0, ns0, root) match {
             case Result.Ok(st) =>
               if(!st.fields.map(_.sym.name).contains(field.name)) {
-                val e = ResolutionError.NonExistentStructField(field.name, loc)
+                val e = ResolutionError.NonExistentStructField(sym.name, field.name, loc)
                 Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
               }
               else {
@@ -1408,7 +1403,7 @@ object Resolver {
           lookupStruct(sym, env0, ns0, root) match {
             case Result.Ok(st) =>
               if(!st.fields.map(_.sym.name).contains(field.name)) {
-                val e = ResolutionError.NonExistentStructField(field.name, loc)
+                val e = ResolutionError.NonExistentStructField(sym.name, field.name, loc)
                 Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
               }
               else {
@@ -2346,6 +2341,26 @@ object Resolver {
       case caze :: _ => Result.Ok(caze)
       // Case 2: Multiple matches. Error
       case cazes => throw InternalCompilerException(s"unexpected duplicate tag: '$qname'.", qname.loc)
+    }
+    // TODO NS-REFACTOR check accessibility
+  }
+
+ /**
+   * Finds the struct that matches the given symbol `sym` and `tag` in the namespace `ns0`.
+   */
+  private def lookupStruct(sym: Symbol.StructSym, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Result[NamedAst.Declaration.Struct, ResolutionError.NonExistentStruct] = {
+    // look up the name
+    val qname = Name.mkQName(sym.namespace, sym.name, sym.loc)
+    val matches = tryLookupName(qname, env, ns0, root) collect {
+      case Resolution.Declaration(s: NamedAst.Declaration.Struct) => s
+    }
+    matches match {
+      // Case 0: No matches. Error.
+      case Nil => Result.Err(ResolutionError.NonExistentStruct(sym.name, sym.loc))
+      // Case 1: Exactly one match. Success.
+      case st :: _ => Result.Ok(st)
+      // Case 2: Multiple matches. Error
+      case sts => throw InternalCompilerException(s"unexpected duplicate struct: '$qname'.", qname.loc)
     }
     // TODO NS-REFACTOR check accessibility
   }

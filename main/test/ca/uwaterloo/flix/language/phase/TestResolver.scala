@@ -121,6 +121,28 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.InaccessibleStruct](result)
   }
 
+  ignore("InaccessibleStruct.03") {
+    val input =
+      s"""
+         |mod A{
+         |    struct S[r] {
+         |        a: Int32
+         |    }
+         |}
+         |
+         |mod B {
+         |    def g(): Unit = {
+         |        region rc {
+         |            new A.S { a = 3 } @ rc;
+         |            ()
+         |        }
+         |    }
+         |}
+         """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.InaccessibleStruct](result)
+  }
+
   test("InaccessibleType.01") {
     val input =
       s"""
@@ -1582,9 +1604,16 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val input =
       """
         |mod M {
+<<<<<<< HEAD
         |    def f(): Unit = {
         |        region rc {
         |            s€field;
+=======
+        |    struct S1[r] {}
+        |    def f(): Unit = {
+        |        region rc {
+        |            new NonExistentStruct{ } @ rc;
+>>>>>>> structs4-reducer
         |            ()
         |        }
         |    }
@@ -1598,9 +1627,17 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val input =
       """
         |mod M {
+<<<<<<< HEAD
         |    def f(): Unit = {
         |        region rc {
         |            s€field = 3;
+=======
+        |    struct S1[r] {}
+        |    def f(): Unit = {
+        |        region rc {
+        |            new NonExistentStruct{ } @ rc;
+        |            new S1 { } @ rc;
+>>>>>>> structs4-reducer
         |            ()
         |        }
         |    }
@@ -1665,7 +1702,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
                   |}
                   |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UnprovidedStructFields](result)
+    expectError[ResolutionError.UnprovidedStructField](result)
   }
 
   test("ResolutionError.TooFewFields.02") {
@@ -1679,7 +1716,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
                   |}
                   |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UnprovidedStructFields](result)
+    expectError[ResolutionError.UnprovidedStructField](result)
   }
 
   test("ResolutionError.TooFewFields.03") {
@@ -1694,7 +1731,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
                   |}
                   |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UnprovidedStructFields](result)
+    expectError[ResolutionError.UnprovidedStructField](result)
   }
 
   test("ResolutionError.TooManyFields.01") {
@@ -1707,7 +1744,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
                   |}
                   |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.ExtraStructFields](result)
+    expectError[ResolutionError.ExtraStructField](result)
   }
 
   test("ResolutionError.TooManyFields.02") {
@@ -1722,7 +1759,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
                   |}
                   |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.ExtraStructFields](result)
+    expectError[ResolutionError.ExtraStructField](result)
   }
 
   test("ResolutionError.TooManyFields.03") {
@@ -1733,6 +1770,6 @@ class TestResolver extends AnyFunSuite with TestUtils {
                   |}
                   |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.ExtraStructFields](result)
+    expectError[ResolutionError.ExtraStructField](result)
   }
 }
