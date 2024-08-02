@@ -40,5 +40,9 @@ mod Test.Exp.Jvm.Overload.Arity {
       let obj = "HELLO WORLD";
       obj.lastIndexOf("W", 3) == -1
 
-   // TODO: support for split with arrays
+   @test
+   def testInvokeMethod2_09(): Bool \ IO =
+      let obj = "Hello World";
+      let arr : Array[String, IO] = obj.split(" ");
+      Array.get(0, arr) == "Hello"
 }
