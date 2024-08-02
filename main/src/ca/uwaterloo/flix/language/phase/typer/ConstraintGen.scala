@@ -584,7 +584,10 @@ object ConstraintGen {
         // Fields
         val effs = sortedFields.zip(fieldTypes).map {
           case ((fieldSym, expr), (fieldTpe, fieldEff)) =>
-            c.unifyType(instantiedFieldTpes(fieldSym), fieldTpe, expr.loc)
+            instantiedFieldTpes.get(fieldSym) match {
+              case None => ()
+              case Some(tpe) => c.unifyType(tpe, fieldTpe, expr.loc)
+            }
             fieldEff
         }
         // Region
