@@ -1131,16 +1131,16 @@ object ResolutionError {
     * @param fields the names of the extra fields
     * @param loc the location where the error occurred.
     */
-  case class ExtraStructFields(fields: Set[String], loc: SourceLocation) extends ResolutionError with Recoverable {
+  case class ExtraStructField(field: String, loc: SourceLocation) extends ResolutionError with Recoverable {
     override def summary: String = s"`new` struct expression provides too many fields"
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s""">> `new` struct expression provides fields not present in original declaration of struct type
+      s""">> `new` struct expression provides field not present in original declaration of struct type
          |
          |${code(loc, "extra fields")}
          |
-         |Extra Fields: ${fields.mkString(",")}
+         |Extra Field: ${field}
          |""".stripMargin
     }
   }
@@ -1151,16 +1151,16 @@ object ResolutionError {
     * @param fields the names of the missing fields
     * @param loc the location where the error occurred.
     */
-  case class UnprovidedStructFields(fields: Set[String], loc: SourceLocation) extends ResolutionError with Recoverable {
+  case class UnprovidedStructField(field: String, loc: SourceLocation) extends ResolutionError with Recoverable {
     override def summary: String = s"`new` struct expression provides too few fields"
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s""">> `new` struct expression does not provide fields present in original declaration of struct type
+      s""">> `new` struct expression does not provide required field `$field`
          |
-         |${code(loc, "missing fields")}
+         |${code(loc, "missing field")}
          |
-         |Missing Fields: ${fields.init.foldLeft("")((field, acc) => acc + field + ", " ) + fields.last}
+         |Missing Field: $field
          |""".stripMargin
     }
   }

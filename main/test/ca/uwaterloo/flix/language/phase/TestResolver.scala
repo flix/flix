@@ -1665,7 +1665,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
                   |}
                   |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UnprovidedStructFields](result)
+    expectError[ResolutionError.UnprovidedStructField](result)
   }
 
   test("ResolutionError.TooFewFields.02") {
@@ -1679,7 +1679,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
                   |}
                   |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UnprovidedStructFields](result)
+    expectError[ResolutionError.UnprovidedStructField](result)
   }
 
   test("ResolutionError.TooFewFields.03") {
@@ -1694,7 +1694,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
                   |}
                   |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UnprovidedStructFields](result)
+    expectError[ResolutionError.UnprovidedStructField](result)
   }
 
   test("ResolutionError.TooManyFields.01") {
@@ -1707,7 +1707,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
                   |}
                   |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.ExtraStructFields](result)
+    expectError[ResolutionError.ExtraStructField](result)
   }
 
   test("ResolutionError.TooManyFields.02") {
@@ -1722,7 +1722,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
                   |}
                   |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.ExtraStructFields](result)
+    expectError[ResolutionError.ExtraStructField](result)
   }
 
   test("ResolutionError.TooManyFields.03") {
@@ -1733,6 +1733,6 @@ class TestResolver extends AnyFunSuite with TestUtils {
                   |}
                   |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.ExtraStructFields](result)
+    expectError[ResolutionError.ExtraStructField](result)
   }
 }

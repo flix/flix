@@ -1359,28 +1359,20 @@ object Resolver {
               val expectedFieldNames = st.fields.map(_.sym).toSet
               val extraFields = providedFieldNames.diff(expectedFieldNames).map(_.name)
               val unprovidedFields = expectedFieldNames.diff(providedFieldNames).map(_.name)
-              if (extraFields.nonEmpty) {
-                val e = ResolutionError.ExtraStructFields(extraFields, loc)
-                Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
+              val errors = extraFields.map(ResolutionError.ExtraStructField(_, loc)) ++ unprovidedFields.map(ResolutionError.ExtraStructField(_, loc))
+              val fieldsVal = traverse(fields) {
+                case (f, e) =>
+                  val eVal = visitExp(e, env0)
+                  mapN(eVal) {
+                    case e => (f, e)
+                  }
               }
-              else if (unprovidedFields.size > 0) {
-                val e = ResolutionError.UnprovidedStructFields(unprovidedFields, loc)
-                Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
+              val regionVal = visitExp(region, env0)
+              val structNew = mapN(fieldsVal, regionVal) {
+                case (fields, region) =>
+                  ResolvedAst.Expr.StructNew(sym, fields, region, loc)
               }
-              else {
-                val fieldsVal = traverse(fields) {
-                  case (f, e) =>
-                    val eVal = visitExp(e, env0)
-                    mapN(eVal) {
-                      case e => (f, e)
-                    }
-                }
-                val regionVal = visitExp(region, env0)
-                mapN(fieldsVal, regionVal) {
-                  case (fields, region) =>
-                    ResolvedAst.Expr.StructNew(sym, fields, region, loc)
-                }
-              }
+              structNew.withSoftFailures(errors)
             case Result.Err(e) =>
               Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
           }
