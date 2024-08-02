@@ -1113,12 +1113,12 @@ object ResolutionError {
     * @param field the names of the missing fields
     * @param loc the location where the error occurred.
     */
-  case class NonExistentStructField(field: String, loc: SourceLocation) extends ResolutionError with Recoverable {
+  case class NonExistentStructField(struct: String, field: String, loc: SourceLocation) extends ResolutionError with Recoverable {
     override def summary: String = s"Struct is missing a field"
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s""">> struct expression does not provide a field named ${field}
+      s""">> Struct $struct does not have field $field
          |
          |${code(loc, "nonexistent field")}
          |""".stripMargin

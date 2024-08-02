@@ -1359,7 +1359,7 @@ object Resolver {
               val expectedFieldNames = st.fields.map(_.sym).toSet
               val extraFields = providedFieldNames.diff(expectedFieldNames).map(_.name)
               val unprovidedFields = expectedFieldNames.diff(providedFieldNames).map(_.name)
-              if (extraFields.size > 0) {
+              if (extraFields.nonEmpty) {
                 val e = ResolutionError.ExtraStructFields(extraFields, loc)
                 Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
               }
@@ -1389,7 +1389,7 @@ object Resolver {
           lookupStruct(sym, env0, ns0, root) match {
             case Result.Ok(st) =>
               if(!st.fields.map(_.sym.name).contains(field.name)) {
-                val e = ResolutionError.NonExistentStructField(field.name, loc)
+                val e = ResolutionError.NonExistentStructField(sym.name, field.name, loc)
                 Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
               }
               else {
@@ -1406,7 +1406,7 @@ object Resolver {
           lookupStruct(sym, env0, ns0, root) match {
             case Result.Ok(st) =>
               if(!st.fields.map(_.sym.name).contains(field.name)) {
-                val e = ResolutionError.NonExistentStructField(field.name, loc)
+                val e = ResolutionError.NonExistentStructField(sym.name, field.name, loc)
                 Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
               }
               else {
