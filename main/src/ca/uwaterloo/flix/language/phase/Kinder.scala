@@ -140,7 +140,7 @@ object Kinder {
       mapN(fieldsVal) {
         case fields =>
           val targs = kindedTparams.map(tparam => Type.Var(tparam.sym, tparam.loc.asSynthetic))
-          val sc = Scheme(tparams2.tparams.map(t => t.sym.withKind(t.kind)), List(), List(), Type.mkStruct(sym, targs, loc))
+          val sc = Scheme(kindedTparams.map(_.sym), List(), List(), Type.mkStruct(sym, targs, loc))
           KindedAst.Struct(doc, ann, mod, sym, kindedTparams, sc, fields.toMap, loc)
       }
   }
