@@ -1855,14 +1855,6 @@ object Kinder {
   }
 
   /**
-    * Adds a prime symbol to the vartext.
-    */
-  private def prime(text: Ast.VarText): Ast.VarText = text match {
-    case Ast.VarText.Absent => Ast.VarText.Absent
-    case Ast.VarText.SourceText(s) => Ast.VarText.SourceText(s + "'")
-  }
-
-  /**
     * A mapping from type variables to kinds.
     */
   private object KindEnv {
