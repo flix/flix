@@ -331,8 +331,6 @@ object ResolvedAst {
 
   }
 
-  case class Attribute(ident: Name.Ident, tpe: UnkindedType, loc: SourceLocation)
-
   case class Constraint(cparams: List[ConstraintParam], head: Predicate.Head, body: List[Predicate.Body], loc: SourceLocation)
 
   case class ConstraintParam(sym: Symbol.VarSym, loc: SourceLocation)
