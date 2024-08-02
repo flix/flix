@@ -45,7 +45,7 @@ import scala.collection.mutable.ArrayBuffer
   * The tutorial is also a great resource for understanding this parser (and a great read to boot!)
   * https://matklad.github.io/2023/05/21/resilient-ll-parsing-tutorial.html
   */
-object Parser2 {
+object Parser {
 
   private sealed trait Event
 
@@ -117,7 +117,7 @@ object Parser2 {
   }
 
   def run(tokens: Map[Ast.Source, Array[Token]], oldRoot: SyntaxTree.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[SyntaxTree.Root, CompilationMessage] = {
-    flix.phase("Parser2") {
+    flix.phase("Parser") {
       // Compute the stale and fresh sources.
       val (stale, fresh) = changeSet.partition(tokens, oldRoot.units)
 

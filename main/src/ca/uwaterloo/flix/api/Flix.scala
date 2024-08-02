@@ -493,8 +493,8 @@ class Flix {
     val result = for {
       afterReader <- Reader.run(getInputs, knownClassesAndInterfaces)
       afterLexer <- Lexer.run(afterReader, cachedLexerTokens, changeSet)
-      afterParser <- Parser2.run(afterLexer, cachedParserCst, changeSet)
-      afterWeeder <- Weeder2.run(afterReader, entryPoint, afterParser, cachedWeederAst, changeSet)
+      afterParser <- Parser.run(afterLexer, cachedParserCst, changeSet)
+      afterWeeder <- Weeder.run(afterReader, entryPoint, afterParser, cachedWeederAst, changeSet)
       afterDesugar = Desugar.run(afterWeeder, cachedDesugarAst, changeSet)
       afterNamer <- Namer.run(afterDesugar)
       afterResolver <- Resolver.run(afterNamer, cachedResolverAst, changeSet)

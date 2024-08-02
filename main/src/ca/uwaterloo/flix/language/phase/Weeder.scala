@@ -43,12 +43,12 @@ import scala.collection.mutable.ArrayBuffer
   * 3. tryPick* : Works like pick* but only runs the visitor if the child of kind is found. Returns an option containing the result.
   * 3. pickAll* : These will pick all subtrees of a specified kind and run a visitor on it.
   */
-object Weeder2 {
+object Weeder {
 
   import WeededAst._
 
   def run(readRoot: ReadAst.Root, entryPoint: Option[Symbol.DefnSym], root: SyntaxTree.Root, oldRoot: WeededAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[WeededAst.Root, CompilationMessage] = {
-    flix.phase("Weeder2") {
+    flix.phase("Weeder") {
       val (stale, fresh) = changeSet.partition(root.units, oldRoot.units)
       // Parse each source file in parallel and join them into a WeededAst.Root
       val refreshed = ParOps.parMap(stale) {
