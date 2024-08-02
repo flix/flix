@@ -1002,11 +1002,9 @@ class TestKinder extends AnyFunSuite with TestUtils {
   }
 
   test("KindError.Struct.Case.04") {
-    // When some kinds are specified and some aren't, the nonspecified ones
-    // default to kind Type, which is illegal for `r` in this case
     val input =
       """
-        |struct S[a: Type -> Type, r] {
+        |struct S[a: Type, r: Type] {
         |    c: a
         |}
         |""".stripMargin
@@ -1023,6 +1021,32 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
+  }
+
+  test("KindError.Struct.Case.06") {
+    // When some kinds are specified and some aren't, the nonspecified ones
+    // default to kind Type, which is illegal for `r` in this case
+    val input =
+      """
+        |struct S[a: Type -> Type, r] {
+        |    c: a
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[KindError.MismatchedKinds](result)
+  }
+
+  test("KindError.Struct.Case.07") {
+    // When some kinds are specified and some aren't, the nonspecified ones
+    // default to kind Type, which is illegal for `r` in this case
+    val input =
+      """
+        |struct S[a: Type, r] {
+        |    c: a
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[KindError.MismatchedKinds](result)
   }
 
   test("KindError.Struct.Type.01") {
