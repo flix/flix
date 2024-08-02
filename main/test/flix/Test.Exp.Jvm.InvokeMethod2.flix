@@ -30,17 +30,15 @@ mod Test.Exp.Jvm.InvokeMethod2 {
        let val = 500ii;
        val.compareTo(-80ii) == 1
 
-   // TODO: this test doesn't pass because of keyword ambiguity
-   //@test
-   //def testInvokeMethod2_07(): Bool \ IO =
-   //    let val = 150ii;
-   //    val.and(-100ii) == 148ii
+   @test
+   def testInvokeMethod2_07(): Bool \ IO =
+       let val = 150ii;
+       val.and(-100ii) == 148ii
 
-   // TODO: this doesn't pass for the same reason as and method
-   // @test
-   // def testInvokeMethod2_08(): Bool \ IO =
-   //    let val = 123488ii;
-   //    val.mod(23ii) == 1
+    @test
+    def testInvokeMethod2_08(): Bool \ IO =
+       let val = 123488ii;
+       val.mod(23ii) == 1ii
 
    @test
    def testInvokeMethod2_09(): Bool \ IO =

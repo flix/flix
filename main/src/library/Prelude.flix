@@ -106,7 +106,7 @@ pub def coerce(x: t): Coerce.Out[t] with Coerce[t] = Coerce.coerce(x)
 /// Converts `x` to a string and prints it to standard out followed by a new line.
 ///
 pub def println(x: a): Unit \ IO with ToString[a] =
-    (System.out).println(x |> ToString.toString)
+    System.out.println(x |> ToString.toString)
 
 ///
 /// Touches the given region capability `rc`.

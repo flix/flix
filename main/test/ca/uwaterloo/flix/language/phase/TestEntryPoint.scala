@@ -82,11 +82,11 @@ class TestEntryPoint extends AnyFunSuite with TestUtils {
   test("Test.IllegalEntryPointEff.Main.01") {
     val input =
       """
-        |eff Raise {
+        |eff Exc {
         |    pub def raise(): Unit
         |}
         |
-        |def main(): Unit \ Raise = do Raise.raise()
+        |def main(): Unit \ Exc = do Exc.raise()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[EntryPointError.IllegalEntryPointEff](result)
@@ -99,13 +99,13 @@ class TestEntryPoint extends AnyFunSuite with TestUtils {
         |    pub def print(): Unit
         |}
         |
-        |eff Raise {
+        |eff Exc {
         |    pub def raise(): Unit
         |}
         |
-        |def main(): Unit \ Print + Raise  =
+        |def main(): Unit \ Print + Exc  =
         |    do Print.print();
-        |    do Raise.raise()
+        |    do Exc.raise()
         |
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)

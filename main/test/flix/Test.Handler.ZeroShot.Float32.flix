@@ -1,71 +1,71 @@
 mod Test.Handler.ZeroShot.Float32 {
 
-    eff Raise {
+    eff Exc {
         pub def raise(): Float32
     }
 
     @Test
     def testLinear01(): Bool =
-        def f1() = do Raise.raise();
+        def f1() = do Exc.raise();
         let result = try {
             f1()
-        } with Raise {
+        } with Exc {
             def raise(_k) = 42.0f32
         };
         Assert.eq(42.0f32, result)
 
     @Test
     def testLinear02(): Bool =
-        def f1() = do Raise.raise();
+        def f1() = do Exc.raise();
         def f2() = { f1(); unreachable!() };
         let result = try {
             f2()
-        } with Raise {
+        } with Exc {
             def raise(_k) = 42.0f32
         };
         Assert.eq(42.0f32, result)
 
     @Test
     def testLinear03(): Bool =
-        def f1() = do Raise.raise();
+        def f1() = do Exc.raise();
         def f2() = { f1(); unreachable!() };
         def f3() = { f2(); unreachable!() };
         let result = try {
             f3()
-        } with Raise {
+        } with Exc {
             def raise(_k) = 42.0f32
         };
         Assert.eq(42.0f32, result)
 
     @Test
     def testRecursiveLetRec01(): Bool =
-        def f() = do Raise.raise();
+        def f() = do Exc.raise();
         def r(x) = if (x == 0) f() else { r(x - 1); unreachable!() } ;
         let result = try {
             r(0)
-        } with Raise {
+        } with Exc {
             def raise(_k) = 42.0f32
         };
         Assert.eq(42.0f32, result)
 
     @Test
     def testRecursiveLetRec02(): Bool =
-        def f() = do Raise.raise();
+        def f() = do Exc.raise();
         def r(x) = if (x == 0) f() else { r(x - 1); unreachable!() } ;
         let result = try {
             r(1)
-        } with Raise {
+        } with Exc {
             def raise(_k) = 42.0f32
         };
         Assert.eq(42.0f32, result)
 
     @Test
     def testRecursiveLetRec03(): Bool =
-        def f() = do Raise.raise();
+        def f() = do Exc.raise();
         def r(x) = if (x == 0) f() else { r(x - 1); unreachable!() } ;
         let result = try {
             r(10)
-        } with Raise {
+        } with Exc {
             def raise(_k) = 42.0f32
         };
         Assert.eq(42.0f32, result)
@@ -74,7 +74,7 @@ mod Test.Handler.ZeroShot.Float32 {
     def testMutualRecursive01(): Bool =
         let result = try {
             mutual1(0)
-        } with Raise {
+        } with Exc {
             def raise(_k) = 42.0f32
         };
         Assert.eq(42.0f32, result)
@@ -83,7 +83,7 @@ mod Test.Handler.ZeroShot.Float32 {
     def testMutualRecursive02(): Bool =
         let result = try {
             mutual1(1)
-        } with Raise {
+        } with Exc {
             def raise(_k) = 42.0f32
         };
         Assert.eq(42.0f32, result)
@@ -92,7 +92,7 @@ mod Test.Handler.ZeroShot.Float32 {
     def testMutualRecursive03(): Bool =
         let result = try {
             mutual1(2)
-        } with Raise {
+        } with Exc {
             def raise(_k) = 42.0f32
         };
         Assert.eq(42.0f32, result)
@@ -101,7 +101,7 @@ mod Test.Handler.ZeroShot.Float32 {
     def testMutualRecursive04(): Bool =
         let result = try {
             mutual1(3)
-        } with Raise {
+        } with Exc {
             def raise(_k) = 42.0f32
         };
         Assert.eq(42.0f32, result)
@@ -110,7 +110,7 @@ mod Test.Handler.ZeroShot.Float32 {
     def testMutualRecursive05(): Bool =
         let result = try {
             mutual1(10)
-        } with Raise {
+        } with Exc {
             def raise(_k) = 42.0f32
         };
         Assert.eq(42.0f32, result)
@@ -119,19 +119,19 @@ mod Test.Handler.ZeroShot.Float32 {
     def testMutualRecursive06(): Bool =
         let result = try {
             mutual1(10)
-        } with Raise {
+        } with Exc {
             def raise(_k) = 40.0f32
         };
         Assert.eq(40.0f32, result)
 
-    def f(): Float32 \ Raise =
-         do Raise.raise();
+    def f(): Float32 \ Exc =
+         do Exc.raise();
          unreachable!()
 
-    def mutual1(x: Int32): Float32 \ Raise =
+    def mutual1(x: Int32): Float32 \ Exc =
         if (x == 0) f() else { mutual2(x - 1); unreachable!() }
 
-    def mutual2(x: Int32): Float32 \ Raise =
+    def mutual2(x: Int32): Float32 \ Exc =
         if (x == 0) f() else { mutual1(x - 1); unreachable!() }
 
 }

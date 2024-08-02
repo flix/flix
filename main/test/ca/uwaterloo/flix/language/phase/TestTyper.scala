@@ -490,13 +490,13 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    pub def print(): Unit
         |}
         |
-        |eff Raise {
+        |eff Exc {
         |    pub def raise(): Unit
         |}
         |
         |def f(): Unit =
         |    do Print.print();
-        |    do Raise.raise()
+        |    do Exc.raise()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError](result)
