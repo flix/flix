@@ -302,7 +302,7 @@ object Namer {
       val sym = Symbol.mkEnumSym(ns0, ident)
 
       // Compute the type parameters.
-      val tparams = visitTypeParams(tparams0)
+      val tparams = tparams0.map(visitTypeParam)
 
       val mod = visitModifiers(mod0, ns0)
       val derives = visitDerivations(derives0)
@@ -319,7 +319,7 @@ object Namer {
       val sym = Symbol.mkStructSym(ns0, ident)
 
       // Compute the type parameters.
-      val tparams = visitTypeParams(tparams0)
+      val tparams = tparams0.map(visitTypeParam)
 
       val mod = visitModifiers(mod0, ns0)
       val fields = fields0.map(visitField(_, sym))
@@ -337,7 +337,7 @@ object Namer {
 
       // Compute the type parameters.
       val index = visitTypeParam(index0)
-      val tparams = visitTypeParams(tparams0)
+      val tparams = tparams0.map(visitTypeParam)
 
       val mod = visitModifiers(mod0, ns0)
       val derives = visitDerivations(derives0)
@@ -388,7 +388,7 @@ object Namer {
   private def visitTypeAlias(alias0: DesugaredAst.Declaration.TypeAlias, ns0: Name.NName)(implicit flix: Flix, sctx: SharedContext): NamedAst.Declaration.TypeAlias = alias0 match {
     case DesugaredAst.Declaration.TypeAlias(doc, ann, mod0, ident, tparams0, tpe, loc) =>
       val mod = visitModifiers(mod0, ns0)
-      val tparams = visitTypeParams(tparams0)
+      val tparams = tparams0.map(visitTypeParam)
       val t = visitType(tpe)
       val sym = Symbol.mkTypeAliasSym(ns0, ident)
       NamedAst.Declaration.TypeAlias(doc, ann, mod, sym, tparams, t, loc)
@@ -584,7 +584,7 @@ object Namer {
       val t = visitType(tpe)
       val tcsts = visitTypeConstraints(tconstrs)
 
-      val tparams = NamedAst.TypeParams.Kinded(Nil) // operations are monomorphic
+      val tparams = Nil // operations are monomorphic
       val eff = None // operations are pure
       val econstrs = Nil // TODO ASSOC-TYPES allow econstrs here
 
@@ -1524,66 +1524,41 @@ object Namer {
   }
 
   /**
-    * Performs naming on the given type parameters `tparam0` from the given cases `cases`.
-    */
-  private def visitTypeParams(tparams0: DesugaredAst.TypeParams)(implicit flix: Flix, sctx: SharedContext): NamedAst.TypeParams = {
-    tparams0 match {
-      case DesugaredAst.TypeParams.Elided => NamedAst.TypeParams.Kinded(Nil)
-      case DesugaredAst.TypeParams.Unkinded(tparams) => visitExplicitTypeParams(tparams)
-      case DesugaredAst.TypeParams.Kinded(tparams) => visitExplicitKindedTypeParams(tparams)
-    }
-  }
-
-
-  /**
     * Performs naming on the given type parameters `tparams0` from the given formal params `fparams` and overall type `tpe`.
     */
-  private def getTypeParamsFromFormalParams(tparams0: DesugaredAst.TypeParams, fparams: List[DesugaredAst.FormalParam], tpe: DesugaredAst.Type, eff: Option[DesugaredAst.Type], econstrs: List[DesugaredAst.EqualityConstraint])(implicit flix: Flix, sctx: SharedContext): NamedAst.TypeParams = {
+  private def getTypeParamsFromFormalParams(tparams0: List[DesugaredAst.TypeParam], fparams: List[DesugaredAst.FormalParam], tpe: DesugaredAst.Type, eff: Option[DesugaredAst.Type], econstrs: List[DesugaredAst.EqualityConstraint])(implicit flix: Flix, sctx: SharedContext): List[NamedAst.TypeParam] = {
     tparams0 match {
-      case DesugaredAst.TypeParams.Elided => visitImplicitTypeParamsFromFormalParams(fparams, tpe, eff, econstrs)
-      case DesugaredAst.TypeParams.Unkinded(tparams) => visitExplicitTypeParams(tparams)
-      case DesugaredAst.TypeParams.Kinded(tparams) => visitExplicitKindedTypeParams(tparams)
-
+      case Nil => visitImplicitTypeParamsFromFormalParams(fparams, tpe, eff, econstrs)
+      case tparams@(_ :: _) => visitExplicitTypeParams(tparams)
     }
   }
 
   /**
-    * Names the explicit kinded type params.
+    * Returns the explicit type parameters from the given type parameter names.
     */
-  private def visitExplicitKindedTypeParams(tparams0: List[DesugaredAst.TypeParam.Kinded])(implicit flix: Flix): NamedAst.TypeParams.Kinded = {
-    val tparams = tparams0.map {
+  private def visitExplicitTypeParams(tparams0: List[DesugaredAst.TypeParam])(implicit flix: Flix): List[NamedAst.TypeParam] = {
+    tparams0.map {
       case DesugaredAst.TypeParam.Kinded(ident, kind) =>
         NamedAst.TypeParam.Kinded(ident, mkTypeVarSym(ident), visitKind(kind), ident.loc)
-    }
-    NamedAst.TypeParams.Kinded(tparams)
-  }
-
-  /**
-    * Returns the explicit unkinded type parameters from the given type parameter names and implicit type parameters.
-    */
-  private def visitExplicitTypeParams(tparams0: List[DesugaredAst.TypeParam.Unkinded])(implicit flix: Flix): NamedAst.TypeParams.Unkinded = {
-    val tparams = tparams0.map {
       case DesugaredAst.TypeParam.Unkinded(ident) =>
         NamedAst.TypeParam.Unkinded(ident, mkTypeVarSym(ident), ident.loc)
     }
-    NamedAst.TypeParams.Unkinded(tparams)
   }
 
   /**
     * Returns the implicit type parameters constructed from the given types.
     */
-  private def getImplicitTypeParamsFromTypes(types: List[DesugaredAst.Type])(implicit flix: Flix): NamedAst.TypeParams.Implicit = {
+  private def getImplicitTypeParamsFromTypes(types: List[DesugaredAst.Type])(implicit flix: Flix): List[NamedAst.TypeParam] = {
     val tvars = types.flatMap(freeTypeVars).distinct
-    val tparams = tvars.map {
+    tvars.map {
       ident => NamedAst.TypeParam.Implicit(ident, mkTypeVarSym(ident), ident.loc)
     }
-    NamedAst.TypeParams.Implicit(tparams)
   }
 
   /**
     * Returns the implicit type parameters constructed from the given formal parameters and type.
     */
-  private def visitImplicitTypeParamsFromFormalParams(fparams: List[DesugaredAst.FormalParam], tpe: DesugaredAst.Type, eff: Option[DesugaredAst.Type], econstrs: List[DesugaredAst.EqualityConstraint])(implicit flix: Flix): NamedAst.TypeParams = {
+  private def visitImplicitTypeParamsFromFormalParams(fparams: List[DesugaredAst.FormalParam], tpe: DesugaredAst.Type, eff: Option[DesugaredAst.Type], econstrs: List[DesugaredAst.EqualityConstraint])(implicit flix: Flix): List[NamedAst.TypeParam] = {
     // Compute the type variables that occur in the formal parameters.
     val fparamTvars = fparams.flatMap {
       case DesugaredAst.FormalParam(_, _, Some(tpe1), _) => freeTypeVars(tpe1)
@@ -1599,11 +1574,9 @@ object Namer {
       case DesugaredAst.EqualityConstraint(_, _, tpe2, _) => freeTypeVars(tpe2)
     }
 
-    val tparams = (fparamTvars ::: tpeTvars ::: effTvars ::: econstrTvars).distinct.map {
+    (fparamTvars ::: tpeTvars ::: effTvars ::: econstrTvars).distinct.map {
       ident => NamedAst.TypeParam.Implicit(ident, mkTypeVarSym(ident), ident.loc)
     }
-
-    NamedAst.TypeParams.Implicit(tparams)
   }
 
   /**
