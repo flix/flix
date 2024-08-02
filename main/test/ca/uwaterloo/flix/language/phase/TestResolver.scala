@@ -531,7 +531,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmConstructor](result)
+    expectError[TypeError.ConstructorNotFound](result)
   }
 
   test("UndefinedJvmConstructor.02") {
@@ -543,7 +543,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmConstructor](result)
+    expectError[TypeError.ConstructorNotFound](result)
   }
 
   test("UndefinedJvmConstructor.03") {
@@ -555,7 +555,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmConstructor](result)
+    expectError[TypeError.ConstructorNotFound](result)
   }
 
   test("UndefinedJvmConstructor.04") {
@@ -567,7 +567,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmConstructor](result)
+    expectError[TypeError.ConstructorNotFound](result)
   }
 
   test("UndefinedJvmClass.01") {
