@@ -712,7 +712,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[TypeError.MethodNotFound](result)
+    expectError[TypeError.StaticMethodNotFound](result)
   }
 
   test("UndefinedJvmMethod.06") {
@@ -728,7 +728,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[TypeError.MethodNotFound](result)
   }
 
-  test("MismatchingReturnType.01") {
+  test("MismatchingType.01") {
     val input =
       raw"""
            |import java.lang.String
@@ -738,10 +738,10 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.MismatchedReturnType](result)
+    expectError[TypeError.MismatchedTypes](result)
   }
 
-  test("MismatchingReturnType.02") {
+  test("MismatchingType.02") {
     val input =
       raw"""
            |import java.lang.String
@@ -752,10 +752,10 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.MismatchedReturnType](result)
+    expectError[TypeError.MismatchedTypes](result)
   }
 
-  test("MismatchingReturnType.03") {
+  test("MismatchingType.03") {
     val input =
       raw"""
            |import java.lang.String
@@ -767,7 +767,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.MismatchedReturnType](result)
+    expectError[TypeError.MismatchedTypes](result)
   }
 
   test("UndefinedJvmField.01") {
@@ -1049,10 +1049,10 @@ class TestResolver extends AnyFunSuite with TestUtils {
       """
         |import java.util.Objects
         |def isThisThingNull(x: a): Bool =
-        |    Objects.isNull(a)
+        |    unsafe Objects.isNull(x)
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.IllegalType](result)
+    expectError[TypeError.MismatchedTypes](result)
   }
 
   test("IllegalNonJavaType.01") {
@@ -1410,7 +1410,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.IllegalWildType](result)
+    expectError[TypeError.StaticMethodNotFound](result)
   }
 
   test("IllegalWildType.06") {
