@@ -391,8 +391,6 @@ object DesugaredAst {
 
   }
 
-  case class Attribute(ident: Name.Ident, tpe: Type, loc: SourceLocation)
-
   case class Case(ident: Name.Ident, tpe: Type, loc: SourceLocation)
 
   case class StructField(sym: Name.Ident, tpe: Type, loc: SourceLocation)
