@@ -11,7 +11,7 @@ mod Debug {
     ///
     @Internal
     pub def debugWithPrefix(prefix: String, x: a): a \ IO =
-        (System.out).println("${prefix}%{x}");
+        System.out.println("${prefix}%{x}");
         x
 
     ///
