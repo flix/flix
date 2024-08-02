@@ -71,7 +71,7 @@ object NamedAst {
 
   case class Spec(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, tparams: TypeParams, fparams: List[FormalParam], retTpe: Type, eff: Option[Type], tconstrs: List[TypeConstraint], econstrs: List[EqualityConstraint], loc: SourceLocation)
 
-  case class StructField(name: Name.Ident, tpe: Type, loc: SourceLocation)
+  case class StructField(name: Name.Label, tpe: Type, loc: SourceLocation)
 
   sealed trait UseOrImport {
     def alias: Name.Ident
@@ -154,7 +154,7 @@ object NamedAst {
 
     case class ArrayLength(base: Expr, loc: SourceLocation) extends Expr
 
-    case class StructNew(qname: QName, exps: List[(Name.Ident, Expr)], region: Expr, loc: SourceLocation) extends Expr
+    case class StructNew(qname: QName, exps: List[(Name.Label, Expr)], region: Expr, loc: SourceLocation) extends Expr
 
     case class StructGet(st: Name.QName, exp: Expr, name: Name.Label, loc: SourceLocation) extends Expr
 

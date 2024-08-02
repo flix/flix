@@ -810,7 +810,7 @@ object GenExpression {
         val structType = BackendObjType.Struct(elmTypes.map(BackendType.toErasedBackendType), targs.map(BackendType.toErasedBackendType))
         // evaluating the `base`
         compileExpr(exp)
-        val idx = root.structs(sym).fields(Name.Ident(field.name, field.loc)).idx
+        val idx = root.structs(sym).fields(Name.Label(field.name, field.loc)).idx
         // Retrieving the field `field${offset}`
         mv.visitFieldInsn(GETFIELD, structType.jvmName.toInternalName, s"field$idx", JvmOps.getErasedJvmType(tpe).toDescriptor)
 
@@ -822,7 +822,7 @@ object GenExpression {
         compileExpr(exp1)
         // evaluating the `rhs`
         compileExpr(exp2)
-        val idx = root.structs(sym).fields(Name.Ident(field.name, field.loc)).idx
+        val idx = root.structs(sym).fields(Name.Label(field.name, field.loc)).idx
         // set the field `field${offset}`
         mv.visitFieldInsn(PUTFIELD, structType.jvmName.toInternalName, s"field$idx", JvmOps.getErasedJvmType(exp2.tpe).toDescriptor)
         // Since the return type is unit, we put an instance of unit on top of the stack

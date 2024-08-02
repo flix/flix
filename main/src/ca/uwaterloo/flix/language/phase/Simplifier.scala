@@ -64,7 +64,7 @@ object Simplifier {
       SimplifiedAst.Struct(doc, ann, mod, sym, fields, loc)
   }
 
-  private def visitStructField(fieldIndices: Map[Name.Ident, Int])(field: MonoAst.StructField): SimplifiedAst.StructField = field match {
+  private def visitStructField(fieldIndices: Map[Name.Label, Int])(field: MonoAst.StructField): SimplifiedAst.StructField = field match {
     case MonoAst.StructField(name, tpe, loc) =>
       SimplifiedAst.StructField(name, fieldIndices(name), tpe, loc)
   }

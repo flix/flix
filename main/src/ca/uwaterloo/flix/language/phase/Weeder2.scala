@@ -489,7 +489,7 @@ object Weeder2 {
         (ident, ttype) =>
           // Make a source location that spans the name and type
           val loc = SourceLocation(isReal = true, ident.loc.sp1, tree.loc.sp2)
-          StructField(ident, ttype, loc)
+          StructField(Name.mkLabel(ident), ttype, loc)
       }
     }
     private def visitTypeAliasDecl(tree: Tree): Validation[Declaration.TypeAlias, CompilationMessage] = {
@@ -1807,10 +1807,10 @@ object Weeder2 {
        }
     }
 
-    private def visitNewStructField(tree: Tree): Validation[(Name.Ident, Expr), CompilationMessage] = {
+    private def visitNewStructField(tree: Tree): Validation[(Name.Label, Expr), CompilationMessage] = {
       expect(tree, TreeKind.Expr.LiteralStructFieldFragment)
       mapN(pickNameIdent(tree), pickExpr(tree)) {
-        (ident, expr) => (ident, expr)
+        (ident, expr) => (Name.mkLabel(ident), expr)
       }
     }
 

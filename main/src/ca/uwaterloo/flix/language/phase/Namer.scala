@@ -751,7 +751,7 @@ object Namer {
 
     case DesugaredAst.Expr.StructNew(qname, exps, exp, loc) =>
       val e = visitExp(exp, ns0)
-      val es = visitStructFields(exps, ns0, qname)
+      val es = visitStructFields(exps, ns0)
       NamedAst.Expr.StructNew(qname, es, e, loc)
 
     case DesugaredAst.Expr.StructGet(exp, name, loc) =>
@@ -1042,7 +1042,7 @@ object Namer {
   /**
     * Performs naming on the given struct field expression `exp0`.
     */
-  private def visitStructField(ns0: Name.NName)(exp0: (Name.Ident, DesugaredAst.Expr))(implicit flix: Flix, sctx: SharedContext): (Name.Ident, NamedAst.Expr) = exp0 match {
+  private def visitStructField(ns0: Name.NName)(exp0: (Name.Label, DesugaredAst.Expr))(implicit flix: Flix, sctx: SharedContext): (Name.Label, NamedAst.Expr) = exp0 match {
     case (n, exp1) =>
       val e = visitExp(exp1, ns0)
       (n, e)
@@ -1051,7 +1051,7 @@ object Namer {
   /**
     * Performs naming on the given struct field expressions `exps0`.
     */
-  private def visitStructFields(exps0: List[(Name.Ident, DesugaredAst.Expr)], ns0: Name.NName, structName: Name.QName)(implicit flix: Flix, sctx: SharedContext): List[(Name.Ident, NamedAst.Expr)] = {
+  private def visitStructFields(exps0: List[(Name.Label, DesugaredAst.Expr)], ns0: Name.NName)(implicit flix: Flix, sctx: SharedContext): List[(Name.Label, NamedAst.Expr)] = {
     exps0.map(visitStructField(ns0))
   }
 

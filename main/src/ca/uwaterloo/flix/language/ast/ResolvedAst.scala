@@ -65,7 +65,7 @@ object ResolvedAst {
 
     case class Case(sym: Symbol.CaseSym, tpe: UnkindedType, loc: SourceLocation) extends Declaration
 
-    case class StructField(name: Name.Ident, tpe: UnkindedType, loc: SourceLocation)
+    case class StructField(name: Name.Label, tpe: UnkindedType, loc: SourceLocation)
 
     case class RestrictableCase(sym: Symbol.RestrictableCaseSym, tpe: UnkindedType, loc: SourceLocation) extends Declaration
 
@@ -157,7 +157,7 @@ object ResolvedAst {
 
     case class ArrayLength(base: Expr, loc: SourceLocation) extends Expr
 
-    case class StructNew(name: Symbol.StructSym, exps: List[(Name.Ident, Expr)], region: Expr, loc: SourceLocation) extends Expr
+    case class StructNew(name: Symbol.StructSym, exps: List[(Name.Label, Expr)], region: Expr, loc: SourceLocation) extends Expr
 
     case class StructGet(sym: Symbol.StructSym, e: Expr, f: Name.Label, loc: SourceLocation) extends Expr
 

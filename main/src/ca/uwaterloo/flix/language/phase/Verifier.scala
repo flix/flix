@@ -298,7 +298,7 @@ object Verifier {
               if(sym0 != sym) {
                 throw InternalCompilerException(s"Expected struct type $sym0, got struct type $sym", loc)
               }
-              val fieldIdx = fieldsMap(Name.Ident(field.name, field.loc)).idx
+              val fieldIdx = fieldsMap(Name.Label(field.name, field.loc)).idx
               checkEq(erase(elms(fieldIdx)), erase(tpe), loc)
               tpe
             case _ => failMismatchedShape(tpe, "Struct", loc)
@@ -315,7 +315,7 @@ object Verifier {
               if(sym0 != sym) {
                 throw InternalCompilerException(s"Expected struct type $sym0, got struct type $sym", loc)
               }
-              val fieldIdx = fieldsMap(Name.Ident(field.name, field.loc)).idx
+              val fieldIdx = fieldsMap(Name.Label(field.name, field.loc)).idx
               checkEq(erase(elms(fieldIdx)), erase(rhs), loc)
               checkEq(tpe, MonoType.Unit, loc)
             }

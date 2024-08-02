@@ -142,7 +142,7 @@ object DesugaredAst {
 
     case class ArrayStore(exp1: Expr, exp2: Expr, exp3: Expr, loc: SourceLocation) extends Expr
 
-    case class StructNew(name: Name.QName, exps: List[(Name.Ident, Expr)], region: Expr, loc: SourceLocation) extends Expr
+    case class StructNew(name: Name.QName, exps: List[(Name.Label, Expr)], region: Expr, loc: SourceLocation) extends Expr
 
     case class StructGet(exp: Expr, name: Name.Label, loc: SourceLocation) extends Expr
 
@@ -393,7 +393,7 @@ object DesugaredAst {
 
   case class Case(ident: Name.Ident, tpe: Type, loc: SourceLocation)
 
-  case class StructField(name: Name.Ident, tpe: Type, loc: SourceLocation)
+  case class StructField(name: Name.Label, tpe: Type, loc: SourceLocation)
 
   case class RestrictableCase(ident: Name.Ident, tpe: Type, loc: SourceLocation)
 

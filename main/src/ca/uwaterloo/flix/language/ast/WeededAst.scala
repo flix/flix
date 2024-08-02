@@ -158,7 +158,7 @@ object WeededAst {
 
     case class ArrayStore(exp1: Expr, exp2: Expr, exp3: Expr, loc: SourceLocation) extends Expr
 
-    case class StructNew(name: Name.QName, exps: List[(Name.Ident, Expr)], region: Expr, loc: SourceLocation) extends Expr
+    case class StructNew(name: Name.QName, exps: List[(Name.Label, Expr)], region: Expr, loc: SourceLocation) extends Expr
 
     case class VectorLit(exps: List[Expr], loc: SourceLocation) extends Expr
 
@@ -417,7 +417,7 @@ object WeededAst {
 
   case class Case(ident: Name.Ident, tpe: Type, loc: SourceLocation)
 
-  case class StructField(ident: Name.Ident, tpe: Type, loc: SourceLocation)
+  case class StructField(ident: Name.Label, tpe: Type, loc: SourceLocation)
 
   case class RestrictableCase(ident: Name.Ident, tpe: Type, loc: SourceLocation)
 

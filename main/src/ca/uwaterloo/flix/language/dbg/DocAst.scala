@@ -127,7 +127,7 @@ object DocAst {
 
     case class Native(clazz: Class[_]) extends Atom
 
-    case class StructNew(sym: Symbol.StructSym, exps: List[(Name.Ident, Expr)], exp: Expr) extends Composite
+    case class StructNew(sym: Symbol.StructSym, exps: List[(Name.Label, Expr)], exp: Expr) extends Composite
 
     case class StructGet(exp: Expr, field: Name.Label, tpe: Type) extends Composite
 
