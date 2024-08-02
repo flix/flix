@@ -25,12 +25,7 @@ mod Concurrent {
     pub enum ReentrantLock(JReentrantLock)
 
     mod ReentrantLock {
-        // TODO NS-REFACTOR these imports can be removed
-
         import java.util.concurrent.TimeUnit
-
-        use Concurrent.ReentrantLock
-        use Concurrent.ReentrantLock.ReentrantLock
 
         use Concurrent.Condition
         use Concurrent.Condition.Condition
