@@ -419,7 +419,7 @@ object NamedAst {
   case class SelectChannelRule(sym: Symbol.VarSym, chan: Expr, exp: Expr)
 
   sealed trait TypeParam {
-    // TODO redundant?
+    // TODO redundant? #8207
     def name: Name.Ident
 
     def sym: Symbol.UnkindedTypeVarSym

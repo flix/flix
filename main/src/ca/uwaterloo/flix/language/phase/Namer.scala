@@ -1557,6 +1557,8 @@ object Namer {
 
   /**
     * Returns the implicit type parameters constructed from the given formal parameters and type.
+    *
+    * Implicit type parameters may include duplicates. These are handled by the Resolver.
     */
   private def visitImplicitTypeParamsFromFormalParams(fparams: List[DesugaredAst.FormalParam], tpe: DesugaredAst.Type, eff: Option[DesugaredAst.Type], econstrs: List[DesugaredAst.EqualityConstraint])(implicit flix: Flix): List[NamedAst.TypeParam] = {
     // Compute the type variables that occur in the formal parameters.
