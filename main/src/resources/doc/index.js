@@ -1,16 +1,20 @@
+import { search } from "./search.js";
+
 function initTheme() {
     const storeKey = "flix-html-docs:use-dark-theme";
+
+    const root = document.querySelector(":root");
 
     const body = document.querySelector("body");
     body.classList.remove("no-script");
 
     function setTheme(useDarkTheme) {
         if (useDarkTheme) {
-            body.classList.remove("light");
-            body.classList.add("dark");
+            root.classList.remove("light");
+            root.classList.add("dark");
         } else {
-            body.classList.remove("dark");
-            body.classList.add("light");
+            root.classList.remove("dark");
+            root.classList.add("light");
         }
     }
 
@@ -26,7 +30,6 @@ function initTheme() {
     setTheme(dark);
 
     const toggle = document.querySelector("#theme-toggle");
-    toggle.removeAttribute("disabled");
     toggle.addEventListener("click", () => {
         dark = !dark;
         setTheme(dark);
@@ -37,7 +40,6 @@ function initTheme() {
 function initCopyLinks() {
     const links = document.querySelectorAll(".copy-link");
     for (const link of links) {
-        link.setAttribute("title", "Copy link");
         link.addEventListener("click", async (e) => {
             e.preventDefault();
 
@@ -55,7 +57,7 @@ function initCopyLinks() {
             msgNode.style.position = "absolute";
             msgNode.style.top = `${e.clientY}px`;
             msgNode.style.left = `${e.clientX}px`;
-            document.body.appendChild(msgNode);
+            document.body.append(msgNode);
 
             msgNode.addEventListener("animationend", () => {
                 msgNode.remove();
@@ -64,29 +66,127 @@ function initCopyLinks() {
     }
 }
 
-function initMobileInteractions() {
-    const menuToggle = document.querySelector("#menu-toggle");
-    const menuLinks = document.querySelectorAll("nav a");
-    const main = document.querySelector("main");
+function initLinks() {
+    const links = document.querySelectorAll("a");
+    links.forEach(initLink);
+}
+function initLink(link) {
+    const isAnchor = link.getAttribute("href").includes("#");
 
-    function onToggle() {
-        main.style.pointerEvents = menuToggle.checked ? "none" : "all";
+    // Hide menu and search box when navigating somewhere within the page
+    if (isAnchor) link.addEventListener("click", () => {
+        const menuToggleCheckbox = document.querySelector("#menu-toggle > input");
+        menuToggleCheckbox.checked = false;
+
+        const searchBox = document.querySelector("#search-box");
+        searchBox.close();
+    });
+}
+
+function initSearch() {
+    const searchButton = document.querySelector("#search-button");
+    const searchBox = document.querySelector("#search-box");
+    const closeSearchBoxButton = document.querySelector("#close-search-box");
+    const input = document.querySelector("#search-box input");
+    const resultList = document.querySelector("#search-box .results");
+
+    function openSearchBox() {
+        input.value = "";
+        updateSearchResults();
+        searchBox.showModal();
     }
+    searchButton.addEventListener("click", openSearchBox);
+    window.addEventListener("keydown", (e) => {
+        if (e.key === "/" && searchBox.open === false) {
+            e.preventDefault();
+            openSearchBox();
+        }
+    });
 
-    menuToggle.addEventListener("change", onToggle);
-
-    for (const link of menuLinks) {
-        const isAnchor = link.getAttribute("href").startsWith("#");
-        if (isAnchor) link.addEventListener("click", () => {
-            menuToggle.checked = false;
-
-            // This is needed because the change event is not fired when 
-            // the toggle is unchecked programmatically.
-            onToggle();
-        });
+    function closeSearchBox() {
+        searchBox.close();
     }
+    closeSearchBoxButton.addEventListener("click", closeSearchBox);
+    searchBox.addEventListener("click", (e) => {
+        // Little hack to detect if the backdrop was clicked.
+        const backdropClicked = e.target === e.currentTarget;
+        if (backdropClicked) {
+            closeSearchBox();
+        }
+    });
+    window.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+            closeSearchBox();
+        }
+    });
+
+
+    async function updateSearchResults() {
+        const phrase = input.value;
+        resultList.innerHTML = "Searching...";
+        const results = await search(phrase);
+
+        if (input.value !== phrase) {
+            // The results are outdated
+            return;
+        }
+
+        resultList.innerHTML = "";
+        if (results.length === 0) {
+            resultList.innerHTML = "No results found";
+        } else {
+            for (const result of results) {
+                const item = document.createElement("li");
+                const link = document.createElement("a");
+                link.href = result.url;
+
+                const type = document.createElement("span");
+                type.classList.add("type");
+                type.textContent = result.type;
+                link.append(type);
+
+                link.append(" ");
+
+                const title = document.createElement("span");
+                title.classList.add("title");
+                title.textContent = result.title;
+                link.append(title);
+
+                initLink(link);
+                item.append(link);
+                resultList.append(item);
+            }
+        }
+    }
+    input.addEventListener("input", updateSearchResults);
+
+    searchBox.addEventListener("keydown", (e) => {
+        if (["ArrowDown", "ArrowUp"].includes(e.key)) {
+            const orderedElements = [
+                input,
+                ...resultList.querySelectorAll("a"),
+            ];
+            const focusedElement = document.activeElement;
+            const currentIndex = orderedElements.findIndex(e => e === focusedElement);
+
+            const nextIndex = currentIndex + {
+                ArrowUp: -1,
+                ArrowDown: 1,
+            }[e.key];
+            if (nextIndex < 0 || nextIndex >= orderedElements.length) {
+                return;
+            }
+
+            const nextElement = orderedElements[nextIndex];
+            nextElement.focus();
+            e.preventDefault();
+        } else if (!["Control", "Meta", "Alt", "Shift", "Enter"].includes(e.key)) {
+            input.focus();
+        }
+    });
 }
 
 initTheme();
 initCopyLinks();
-initMobileInteractions();
+initLinks();
+initSearch();
