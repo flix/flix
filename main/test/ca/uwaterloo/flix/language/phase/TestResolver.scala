@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.language.errors.ResolutionError
+import ca.uwaterloo.flix.language.errors.{ResolutionError, TypeError}
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -525,52 +525,57 @@ class TestResolver extends AnyFunSuite with TestUtils {
   test("UndefinedJvmConstructor.01") {
     val input =
       raw"""
+           |import java.io.File
            |def foo(): Unit =
-           |    import java_new java.io.File(): ##java.io.File \ IO as _;
+           |    let _ = unsafe new File();
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmConstructor](result)
+    expectError[TypeError.ConstructorNotFound](result)
   }
 
   test("UndefinedJvmConstructor.02") {
     val input =
       raw"""
+           |import java.io.File
            |def foo(): Unit =
-           |    import java_new java.io.File(Int32): ##java.io.File \ IO as _;
+           |    let _ = unsafe new File(0);
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmConstructor](result)
+    expectError[TypeError.ConstructorNotFound](result)
   }
 
   test("UndefinedJvmConstructor.03") {
     val input =
       raw"""
+           |import java.lang.String
            |def foo(): Unit =
-           |    import java_new java.lang.String(Bool): ##java.lang.String \ IO as _;
+           |    let _ = unsafe new String(true);
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmConstructor](result)
+    expectError[TypeError.ConstructorNotFound](result)
   }
 
   test("UndefinedJvmConstructor.04") {
     val input =
       raw"""
+           |import java.lang.String
            |def foo(): Unit =
-           |    import java_new java.lang.String(Bool, Char, String): ##java.lang.String \ IO as _;
+           |    let _ = unsafe new String(true, 'a', "test");
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmConstructor](result)
+    expectError[TypeError.ConstructorNotFound](result)
   }
 
   test("UndefinedJvmClass.01") {
     val input =
       raw"""
+           |import foo.bar.Baz
            |def foo(): Unit =
-           |    import java_new foo.bar.Baz(): Unit \ IO as newObject;
+           |    let _ = unsafe new Baz();
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -580,8 +585,10 @@ class TestResolver extends AnyFunSuite with TestUtils {
   test("UndefinedJvmClass.02") {
     val input =
       raw"""
+           |import foo.bar.Baz
            |def foo(): Unit =
-           |    import foo.bar.Baz.f(): Unit \ IO;
+           |    let obj = unsafe new Baz();
+           |    let _ = unsafe obj.f();
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -591,8 +598,9 @@ class TestResolver extends AnyFunSuite with TestUtils {
   test("UndefinedJvmClass.03") {
     val input =
       raw"""
+           |import foo.bar.Baz
            |def foo(): Unit =
-           |    import static foo.bar.Baz.f(): Unit \ IO;
+           |    let _ = unsafe Baz.f();
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -646,101 +654,143 @@ class TestResolver extends AnyFunSuite with TestUtils {
   test("UndefinedJvmMethod.01") {
     val input =
       raw"""
+           |import java.lang.String
            |def foo(): Unit =
-           |    import java.lang.String.getFoo(): ##java.lang.String \ IO;
+           |    let obj = unsafe new String();
+           |    let _ = unsafe obj.getFoo();
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmMethod](result)
+    expectError[TypeError.MethodNotFound](result)
   }
 
   test("UndefinedJvmMethod.02") {
     val input =
       raw"""
+           |import java.lang.String
            |def foo(): Unit =
-           |    import java.lang.String.charAt(): ##java.lang.String \ IO;
+           |    let obj = unsafe new String();
+           |    let _ = unsafe obj.charAt();
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmMethod](result)
+    expectError[TypeError.MethodNotFound](result)
   }
 
   test("UndefinedJvmMethod.03") {
     val input =
       raw"""
+           |import java.lang.String
            |def foo(): Unit =
-           |    import java.lang.String.charAt(Int32, Int32): ##java.lang.String \ IO;
+           |    let obj = unsafe new String();
+           |    let _ = unsafe obj.charAt(0, 1);
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmMethod](result)
+    expectError[TypeError.MethodNotFound](result)
   }
 
   test("UndefinedJvmMethod.04") {
     val input =
       raw"""
+           |import java.lang.String
            |def foo(): Unit =
-           |    import java.lang.String.isEmpty(Bool): Bool \ IO;
+           |    let obj = unsafe new String();
+           |    let _ = unsafe obj.isEmpty(true);
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmMethod](result)
+    expectError[TypeError.MethodNotFound](result)
   }
 
   test("UndefinedJvmMethod.05") {
     val input =
       raw"""
+           |import java.lang.String
            |def foo(): Unit =
-           |    import static java.lang.String.isEmpty(): Bool \ IO;
+           |    let _ = unsafe String.isEmpty();
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmMethod](result)
+    expectError[TypeError.StaticMethodNotFound](result)
   }
 
   test("UndefinedJvmMethod.06") {
     val input =
       raw"""
+           |import java.lang.String
            |def foo(): Unit =
-           |    import java.lang.String.valueOf(Bool): ##java.lang.String \ IO;
+           |    let obj = unsafe new String();
+           |    let _ = unsafe obj.valueOf(false);
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmMethod](result)
+    expectError[TypeError.MethodNotFound](result)
   }
 
-  test("MismatchingReturnType.01") {
+  test("UndefinedJvmMethod.07") {
     val input =
-      raw"""
-           |def foo(): Unit =
-           |    import java.lang.String.hashCode(): Unit \ IO as _;
-           |    ()
-       """.stripMargin
+      """
+        |import java.util.Arrays
+        |def foo(): String \ IO = {
+        |    Arrays.deepToString(Array#{} @ Static)
+        |}
+        |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.MismatchedReturnType](result)
+    expectError[TypeError.StaticMethodNotFound](result)
   }
 
-  test("MismatchingReturnType.02") {
+  test("MismatchingType.01") {
     val input =
       raw"""
+           |import java.lang.String
            |def foo(): Unit =
-           |    import java.lang.String.subSequence(Int32, Int32): ##java.util.Iterator \ IO as _;
+           |    let obj = unsafe new String();
+           |    let _ : Unit = unsafe obj.hashCode();
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.MismatchedReturnType](result)
+    expectError[TypeError.MismatchedTypes](result)
   }
 
-  test("MismatchingReturnType.03") {
+  test("MismatchingType.02") {
     val input =
       raw"""
-           |type alias AliasedReturnType = ##java.util.Iterator
+           |import java.lang.String
+           |import java.util.Iterator
            |def foo(): Unit =
-           |    import java.lang.String.subSequence(Int32, Int32): AliasedReturnType \ IO as _;
+           |    let obj = unsafe new String();
+           |    let _ : Iterator = unsafe obj.subSequence(4, -1);
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.MismatchedReturnType](result)
+    expectError[TypeError.MismatchedTypes](result)
+  }
+
+  test("MismatchingType.03") {
+    val input =
+      raw"""
+           |import java.lang.String
+           |import java.util.Iterator
+           |type alias AliasedReturnType = Iterator
+           |def foo(): Unit =
+           |    let obj = unsafe new String();
+           |    let _ : AliasedReturnType = unsafe obj.subSequence(-1, 18);
+           |    ()
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[TypeError.MismatchedTypes](result)
+  }
+
+  test("MismatchingType.04") {
+    val input =
+      """
+        |import java.util.Objects
+        |def isThisThingNull(x: a): Bool =
+        |    unsafe Objects.isNull(x)
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.MismatchedTypes](result)
   }
 
   test("UndefinedJvmField.01") {
@@ -1015,17 +1065,6 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedAssocType](result)
-  }
-
-  test("IllegalType.01") {
-    val input =
-      """
-        |def isThisThingNull(x: a): Bool =
-        |    import static java.util.Objects.isNull(a): Bool \ Pure;
-        |    isNull(x)
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.IllegalType](result)
   }
 
   test("IllegalNonJavaType.01") {
@@ -1371,18 +1410,6 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |def foo(): String = unchecked_cast(123 as E[_])
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.IllegalWildType](result)
-  }
-
-  test("IllegalWildType.05") {
-    val input =
-      """
-        |def foo(): String \ IO = {
-        |    import java.util.Arrays.deepToString(Array[_, _], Int32): String \ IO;
-        |    deepToString(Array#{} @ Static)
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
     expectError[ResolutionError.IllegalWildType](result)
   }
 
