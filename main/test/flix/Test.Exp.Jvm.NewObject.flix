@@ -41,31 +41,31 @@ mod Test.Exp.Jvm.NewObject {
 
     @test
     def testImplementInterface01(): Bool \ IO =
-        let anon = checked_cast(implementSerializable());
+        let anon = implementSerializable();
         anon.toString().startsWith("Anon")
 
     @test
     def testImplementInterface02(): Bool \ IO =
-        let anon = checked_cast(implementSerializable());
-        let anon2 = checked_cast(implementSerializable());
+        let anon = implementSerializable();
+        let anon2 = implementSerializable();
         anon.hashCode() != anon2.hashCode()
 
     @test
     def testImplementInterface03(): Bool \ IO =
-        let anon = checked_cast(implementSerializable());
-        let anon2 = checked_cast(implementSerializable());
+        let anon = implementSerializable();
+        let anon2 = implementSerializable();
         not anon.equals(anon2)
 
     @test
     def testImplementInterface04(): Bool \ IO =
-        let anon = checked_cast(implementSerializable());
-        let anon2 = checked_cast(implementSerializable());
+        let anon = implementSerializable();
+        let anon2 = implementSerializable();
         anon.getClass().equals(anon2.getClass())
 
     @test
     def testImplementInterface05(): Bool \ IO =
-        let anon = checked_cast(implementSerializable());
-        let anon2 = checked_cast(implementSerializableAgain());
+        let anon = implementSerializable();
+        let anon2 = implementSerializableAgain();
         not anon.getClass().equals(anon2.getClass())
 
     @test
