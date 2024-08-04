@@ -204,7 +204,6 @@ object Verifier {
             case SemanticOp.Int64Op.Shl => (MonoType.Int64, MonoType.Int32, MonoType.Int64)
             case SemanticOp.Int64Op.Shr => (MonoType.Int64, MonoType.Int32, MonoType.Int64)
 
-            case SemanticOp.StringOp.Concat => (MonoType.String, MonoType.String, MonoType.String)
           }
           check(expected = argTpe1)(t1, loc)
           check(expected = argTpe2)(t2, loc)

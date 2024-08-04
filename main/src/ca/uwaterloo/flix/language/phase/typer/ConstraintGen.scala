@@ -346,15 +346,7 @@ object ConstraintGen {
           val resEff = Type.mkUnion(eff1, eff2, loc)
           (resTpe, resEff)
 
-        case SemanticOp.StringOp.Concat =>
-          val (tpe1, eff1) = visitExp(exp1)
-          val (tpe2, eff2) = visitExp(exp2)
-          c.expectType(expected = Type.Str, actual = tpe1, exp1.loc)
-          c.expectType(expected = Type.Str, actual = tpe2, exp2.loc)
-          c.unifyType(tvar, Type.Str, loc)
-          val resTpe = tvar
-          val resEff = Type.mkUnion(eff1, eff2, loc)
-          (resTpe, resEff)
+        
       }
 
       case Expr.IfThenElse(exp1, exp2, exp3, loc) =>
