@@ -1,7 +1,8 @@
+import java.lang.Thread;
+
 /// Emulates some slow computation.
 def slowFunction(): String = {
-    import static java.lang.Thread.sleep(Int64): Unit \ {};
-    let _ = sleep(5000i64);
+    let _ = unsafe Thread.sleep(5000i64);
     Int32.toString(42)
 }
 

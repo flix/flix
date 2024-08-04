@@ -325,6 +325,10 @@ object Lexer {
           TokenKind.Dot
         }
       case '$' if peek().isUpper => acceptBuiltIn()
+      case '₹' =>
+        // Don't include the rupee sign in the name
+        s.start = new Position(s.current.line, s.current.column, s.current.offset)
+        acceptName(false)
       case '\"' => acceptString()
       case '\'' => acceptChar()
       case '`' => acceptInfixFunction()
@@ -332,7 +336,7 @@ object Lexer {
       case _ if isMatch("#{") => TokenKind.HashCurlyL
       case _ if isMatch("#(") => TokenKind.HashParenL
       case '#' => TokenKind.Hash
-      case '¤' => TokenKind.Currency
+      case '€' => TokenKind.Euro
       case _ if isMatch("//") => acceptLineOrDocComment()
       case _ if isMatch("/*") => acceptBlockComment()
       case '/' => TokenKind.Slash
@@ -430,6 +434,7 @@ object Lexer {
       case _ if isKeyword("static") => TokenKind.KeywordStatic
       case _ if isKeyword("Static") => TokenKind.KeywordStaticUppercase
       case _ if isKeyword("struct") => TokenKind.KeywordStruct
+      case _ if isKeyword("throw") => TokenKind.KeywordThrow
       case _ if isKeyword("trait") => TokenKind.KeywordTrait
       case _ if isKeywordLiteral("true") => TokenKind.KeywordTrue
       case _ if isKeyword("try") => TokenKind.KeywordTry

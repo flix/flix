@@ -238,27 +238,22 @@ instance Order[Float64] {
 instance Order[BigDecimal] {
 
     pub override def less(x: BigDecimal, y: BigDecimal): Bool =
-        import java.math.BigDecimal.compareTo(BigDecimal): Int32 \ {};
-        (x `compareTo` y) < 0
+        (unsafe x.compareTo(y)) < 0
 
     pub override def lessEqual(x: BigDecimal, y: BigDecimal): Bool =
-        import java.math.BigDecimal.compareTo(BigDecimal): Int32 \ {};
-        (x `compareTo` y) <= 0
+        (unsafe x.compareTo(y)) <= 0
 
     pub override def greater(x: BigDecimal, y: BigDecimal): Bool =
-        import java.math.BigDecimal.compareTo(BigDecimal): Int32 \ {};
-        (x `compareTo` y) > 0
+        (unsafe x.compareTo(y)) > 0
 
     pub override def greaterEqual(x: BigDecimal, y: BigDecimal): Bool =
-        import java.math.BigDecimal.compareTo(BigDecimal): Int32 \ {};
-        (x `compareTo` y) >= 0
+        (unsafe x.compareTo(y)) >= 0
 
     pub def compare(x: BigDecimal, y: BigDecimal): Comparison =
-        import java.math.BigDecimal.compareTo(BigDecimal): Int32 \ {};
-        match x `compareTo` y {
+        match (unsafe x.compareTo(y)) {
+            case 0          => Comparison.EqualTo
             case z if z < 0 => Comparison.LessThan
-            case 0 => Comparison.EqualTo
-            case _ => Comparison.GreaterThan
+            case _          => Comparison.GreaterThan
         }
 
 }
@@ -346,27 +341,22 @@ instance Order[Int64] {
 instance Order[BigInt] {
 
     pub override def less(x: BigInt, y: BigInt): Bool =
-        import java.math.BigInteger.compareTo(BigInt): Int32 \ {};
-        (x `compareTo` y) < 0
+        (unsafe x.compareTo(y)) < 0
 
     pub override def lessEqual(x: BigInt, y: BigInt): Bool =
-        import java.math.BigInteger.compareTo(BigInt): Int32 \ {};
-        (x `compareTo` y) <= 0
+        (unsafe x.compareTo(y)) <= 0
 
     pub override def greater(x: BigInt, y: BigInt): Bool =
-        import java.math.BigInteger.compareTo(BigInt): Int32 \ {};
-        (x `compareTo` y) > 0
+        (unsafe x.compareTo(y)) > 0
 
     pub override def greaterEqual(x: BigInt, y: BigInt): Bool =
-        import java.math.BigInteger.compareTo(BigInt): Int32 \ {};
-        (x `compareTo` y) >= 0
+        (unsafe x.compareTo(y)) >= 0
 
     pub def compare(x: BigInt, y: BigInt): Comparison =
-        import java.math.BigInteger.compareTo(BigInt): Int32 \ {};
-        match x `compareTo` y {
+        match (unsafe x.compareTo(y)) {
+            case 0          => Comparison.EqualTo
             case z if z < 0 => Comparison.LessThan
-            case 0 => Comparison.EqualTo
-            case _ => Comparison.GreaterThan
+            case _          => Comparison.GreaterThan
         }
 
 }
@@ -374,8 +364,7 @@ instance Order[BigInt] {
 instance Order[String] {
 
     pub def compare(x: String, y: String): Comparison =
-        import java.lang.String.compareTo(String): Int32 \ {};
-        Comparison.fromInt32((x `compareTo` y))
+        Comparison.fromInt32((unsafe x.compareTo(y)))
 
 }
 

@@ -134,7 +134,7 @@ object Instances {
   private def checkOverlap(inst1: TypedAst.Instance, heads: Map[TypeConstructor, TypedAst.Instance])(implicit flix: Flix): List[InstanceError] = {
     // Note: We have that Type.Error unifies with any other type, hence we filter such instances here.
     unsafeGetHead(inst1) match {
-      case TypeConstructor.Error(_) =>
+      case TypeConstructor.Error(_, _) =>
         // Suppress error for Type.Error.
         Nil
       case tc => heads.get(tc) match {

@@ -41,19 +41,19 @@ object NamedAst {
 
     case class Trait(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.TraitSym, tparam: TypeParam, superTraits: List[TypeConstraint], assocs: List[Declaration.AssocTypeSig], sigs: List[Declaration.Sig], laws: List[Declaration.Def], loc: SourceLocation) extends Declaration
 
-    case class Instance(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, trt: Name.QName, tparams: TypeParams, tpe: Type, tconstrs: List[TypeConstraint], assocs: List[Declaration.AssocTypeDef], defs: List[Declaration.Def], ns: List[String], loc: SourceLocation) extends Declaration
+    case class Instance(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, trt: Name.QName, tparams: List[TypeParam], tpe: Type, tconstrs: List[TypeConstraint], assocs: List[Declaration.AssocTypeDef], defs: List[Declaration.Def], ns: List[String], loc: SourceLocation) extends Declaration
 
     case class Sig(sym: Symbol.SigSym, spec: Spec, exp: Option[Expr]) extends Declaration
 
     case class Def(sym: Symbol.DefnSym, spec: Spec, exp: Expr) extends Declaration
 
-    case class Enum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: TypeParams, derives: Derivations, cases: List[Declaration.Case], loc: SourceLocation) extends Declaration
+    case class Enum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[TypeParam], derives: Derivations, cases: List[Declaration.Case], loc: SourceLocation) extends Declaration
 
-    case class Struct(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.StructSym, tparams: TypeParams, fields: List[Declaration.StructField], loc: SourceLocation) extends Declaration
+    case class Struct(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.StructSym, tparams: List[TypeParam], fields: List[Declaration.StructField], loc: SourceLocation) extends Declaration
 
-    case class RestrictableEnum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.RestrictableEnumSym, index: TypeParam, tparams: TypeParams, derives: Derivations, cases: List[Declaration.RestrictableCase], loc: SourceLocation) extends Declaration
+    case class RestrictableEnum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.RestrictableEnumSym, index: TypeParam, tparams: List[TypeParam], derives: Derivations, cases: List[Declaration.RestrictableCase], loc: SourceLocation) extends Declaration
 
-    case class TypeAlias(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.TypeAliasSym, tparams: TypeParams, tpe: Type, loc: SourceLocation) extends Declaration
+    case class TypeAlias(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.TypeAliasSym, tparams: List[TypeParam], tpe: Type, loc: SourceLocation) extends Declaration
 
     case class AssocTypeSig(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.AssocTypeSym, tparam: TypeParam, kind: Kind, tpe: Option[Type], loc: SourceLocation) extends Declaration
 
@@ -70,7 +70,7 @@ object NamedAst {
     case class RestrictableCase(sym: Symbol.RestrictableCaseSym, tpe: Type, loc: SourceLocation) extends Declaration
   }
 
-  case class Spec(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, tparams: TypeParams, fparams: List[FormalParam], retTpe: Type, eff: Option[Type], tconstrs: List[TypeConstraint], econstrs: List[EqualityConstraint], loc: SourceLocation)
+  case class Spec(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, tparams: List[TypeParam], fparams: List[FormalParam], retTpe: Type, eff: Option[Type], tconstrs: List[TypeConstraint], econstrs: List[EqualityConstraint], loc: SourceLocation)
 
 
   sealed trait UseOrImport {
@@ -154,6 +154,12 @@ object NamedAst {
 
     case class ArrayLength(base: Expr, loc: SourceLocation) extends Expr
 
+    case class StructNew(name: Symbol.StructSym, exps: List[(Symbol.StructFieldSym, Expr)], region: Expr, loc: SourceLocation) extends Expr
+
+    case class StructGet(structsym: Symbol.StructSym, exp: Expr, name: Name.Label, loc: SourceLocation) extends Expr
+
+    case class StructPut(structsym: Symbol.StructSym, exp1: Expr, name: Name.Label, exp2: Expr, loc: SourceLocation) extends Expr
+
     case class VectorLit(exps: List[Expr], loc: SourceLocation) extends Expr
 
     case class VectorLoad(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
@@ -188,13 +194,11 @@ object NamedAst {
 
     case class InvokeMethod2(exp: Expr, methodName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
 
-    case class InvokeStaticMethod2(clazzName: Name.Ident, methodName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
+    case class InvokeConstructorOld(className: String, exps: List[Expr], sig: List[Type], loc: SourceLocation) extends Expr
 
-    case class InvokeConstructor(className: String, exps: List[Expr], sig: List[Type], loc: SourceLocation) extends Expr
+    case class InvokeMethodOld(className: String, methodName: String, exp: Expr, exps: List[Expr], sig: List[Type], retTpe: Type, loc: SourceLocation) extends Expr
 
-    case class InvokeMethod(className: String, methodName: String, exp: Expr, exps: List[Expr], sig: List[Type], retTpe: Type, loc: SourceLocation) extends Expr
-
-    case class InvokeStaticMethod(className: String, methodName: String, exps: List[Expr], sig: List[Type], retTpe: Type, loc: SourceLocation) extends Expr
+    case class InvokeStaticMethodOld(className: String, methodName: String, exps: List[Expr], sig: List[Type], retTpe: Type, loc: SourceLocation) extends Expr
 
     case class GetField(className: String, fieldName: String, exp: Expr, loc: SourceLocation) extends Expr
 
@@ -384,22 +388,6 @@ object NamedAst {
     case class Arrow(k1: Kind, k2: Kind, loc: SourceLocation) extends Kind
   }
 
-  sealed trait TypeParams {
-    val tparams: List[TypeParam]
-  }
-
-  object TypeParams {
-
-    case class Kinded(tparams: List[TypeParam.Kinded]) extends TypeParams
-
-    case class Unkinded(tparams: List[TypeParam.Unkinded]) extends TypeParams
-
-    case class Implicit(tparams: List[TypeParam.Implicit]) extends TypeParams
-
-  }
-
-  case class Attribute(ident: Name.Ident, tpe: Type, loc: SourceLocation)
-
   case class Constraint(cparams: List[ConstraintParam], head: Predicate.Head, body: List[Predicate.Body], loc: SourceLocation)
 
   case class ConstraintParam(sym: Symbol.VarSym, loc: SourceLocation)
@@ -431,6 +419,7 @@ object NamedAst {
   case class SelectChannelRule(sym: Symbol.VarSym, chan: Expr, exp: Expr)
 
   sealed trait TypeParam {
+    // TODO redundant? #8207
     def name: Name.Ident
 
     def sym: Symbol.UnkindedTypeVarSym

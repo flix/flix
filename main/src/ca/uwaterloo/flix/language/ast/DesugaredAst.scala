@@ -40,19 +40,19 @@ object DesugaredAst {
 
     case class Instance(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, trt: Name.QName, tpe: Type, tconstrs: List[TypeConstraint], assocs: List[Declaration.AssocTypeDef], defs: List[Declaration.Def], loc: SourceLocation) extends Declaration
 
-    case class Sig(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparams: KindedTypeParams, fparams: List[FormalParam], exp: Option[Expr], tpe: Type, eff: Option[Type], tconstrs: List[TypeConstraint], econstrs: List[EqualityConstraint], loc: SourceLocation)
+    case class Sig(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparams: List[TypeParam], fparams: List[FormalParam], exp: Option[Expr], tpe: Type, eff: Option[Type], tconstrs: List[TypeConstraint], econstrs: List[EqualityConstraint], loc: SourceLocation)
 
-    case class Def(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparams: KindedTypeParams, fparams: List[FormalParam], exp: Expr, tpe: Type, eff: Option[Type], tconstrs: List[TypeConstraint], constrs: List[EqualityConstraint], loc: SourceLocation) extends Declaration
+    case class Def(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparams: List[TypeParam], fparams: List[FormalParam], exp: Expr, tpe: Type, eff: Option[Type], tconstrs: List[TypeConstraint], constrs: List[EqualityConstraint], loc: SourceLocation) extends Declaration
 
-    case class Law(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparams: KindedTypeParams, fparams: List[FormalParam], exp: Expr, tpe: Type, eff: Type, tconstrs: List[TypeConstraint], loc: SourceLocation) extends Declaration
+    case class Law(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparams: List[TypeParam], fparams: List[FormalParam], exp: Expr, tpe: Type, eff: Type, tconstrs: List[TypeConstraint], loc: SourceLocation) extends Declaration
 
-    case class Enum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparams: TypeParams, derives: Derivations, cases: List[Case], loc: SourceLocation) extends Declaration
+    case class Enum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparams: List[TypeParam], derives: Derivations, cases: List[Case], loc: SourceLocation) extends Declaration
 
-    case class Struct(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparams: TypeParams, fields: List[StructField], loc: SourceLocation) extends Declaration
+    case class Struct(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparams: List[TypeParam], fields: List[StructField], loc: SourceLocation) extends Declaration
 
-    case class RestrictableEnum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, index: TypeParam, tparams: TypeParams, derives: Derivations, cases: List[RestrictableCase], loc: SourceLocation) extends Declaration
+    case class RestrictableEnum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, index: TypeParam, tparams: List[TypeParam], derives: Derivations, cases: List[RestrictableCase], loc: SourceLocation) extends Declaration
 
-    case class TypeAlias(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparams: TypeParams, tpe: Type, loc: SourceLocation) extends Declaration
+    case class TypeAlias(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparams: List[TypeParam], tpe: Type, loc: SourceLocation) extends Declaration
 
     case class AssocTypeSig(doc: Ast.Doc, mod: Ast.Modifiers, ident: Name.Ident, tparam: TypeParam, kind: Kind, tpe: Option[Type], loc: SourceLocation)
 
@@ -142,6 +142,12 @@ object DesugaredAst {
 
     case class ArrayStore(exp1: Expr, exp2: Expr, exp3: Expr, loc: SourceLocation) extends Expr
 
+    case class StructNew(name: Name.QName, exps: List[(Name.Ident, Expr)], region: Expr, loc: SourceLocation) extends Expr
+
+    case class StructGet(exp: Expr, name: Name.Label, loc: SourceLocation) extends Expr
+
+    case class StructPut(exp1: Expr, name: Name.Label, exp2: Expr, loc: SourceLocation) extends Expr
+
     case class VectorLit(exps: List[Expr], loc: SourceLocation) extends Expr
 
     case class VectorLoad(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
@@ -176,13 +182,11 @@ object DesugaredAst {
 
     case class InvokeMethod2(exp: Expr, methodName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
 
-    case class InvokeStaticMethod2(clazzName: Name.Ident, methodName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
+    case class InvokeConstructorOld(className: String, exps: List[Expr], sig: List[Type], loc: SourceLocation) extends Expr
 
-    case class InvokeConstructor(className: String, exps: List[Expr], sig: List[Type], loc: SourceLocation) extends Expr
+    case class InvokeMethodOld(className: String, methodName: String, exp: Expr, exps: List[Expr], sig: List[Type], retTpe: Type, loc: SourceLocation) extends Expr
 
-    case class InvokeMethod(className: String, methodName: String, exp: Expr, exps: List[Expr], sig: List[Type], retTpe: Type, loc: SourceLocation) extends Expr
-
-    case class InvokeStaticMethod(className: String, methodName: String, exps: List[Expr], sig: List[Type], retTpe: Type, loc: SourceLocation) extends Expr
+    case class InvokeStaticMethodOld(className: String, methodName: String, exps: List[Expr], sig: List[Type], retTpe: Type, loc: SourceLocation) extends Expr
 
     case class GetField(className: String, fieldName: String, exp: Expr, loc: SourceLocation) extends Expr
 
@@ -372,22 +376,6 @@ object DesugaredAst {
 
     case class Arrow(k1: Kind, k2: Kind, loc: SourceLocation) extends Kind
   }
-
-  sealed trait TypeParams
-
-  sealed trait KindedTypeParams extends TypeParams
-
-  object TypeParams {
-
-    case object Elided extends TypeParams with KindedTypeParams
-
-    case class Unkinded(tparams: List[TypeParam.Unkinded]) extends TypeParams
-
-    case class Kinded(tparams: List[TypeParam.Kinded]) extends TypeParams with KindedTypeParams
-
-  }
-
-  case class Attribute(ident: Name.Ident, tpe: Type, loc: SourceLocation)
 
   case class Case(ident: Name.Ident, tpe: Type, loc: SourceLocation)
 

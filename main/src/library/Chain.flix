@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+import java.util.{Iterator => JIterator}
+import java.util.{List => JList}
+
 ///
 /// The Chain type.
 ///
@@ -121,16 +124,15 @@ instance Iterable[Chain[a]] {
 }
 
 instance ToJava[Chain[a]] {
-    type Out = ##java.util.List
+    type Out = JList
     type Aef = IO
-    pub def toJava(c: Chain[a]): ##java.util.List \ IO = Adaptor.toList(c)
+    pub def toJava(c: Chain[a]): JList \ IO = Adaptor.toList(c)
 }
 
 instance FromJava[Chain[a]] {
-    type In = ##java.util.List
-    pub def fromJava(l: ##java.util.List): Chain[a] = region rc {
-        import java.util.List.iterator(): ##java.util.Iterator \ rc;
-        iterator(l) |> Adaptor.fromIterator(rc, (Proxy.Proxy: Proxy[a])) |> Iterator.toChain
+    type In = JList
+    pub def fromJava(l: JList): Chain[a] = region rc {
+        unsafe l.iterator() |> Adaptor.fromIterator(rc, (Proxy.Proxy: Proxy[a])) |> Iterator.toChain
     }
 }
 

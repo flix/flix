@@ -195,10 +195,6 @@ object SyntaxTree {
 
       case object InvokeMethod2 extends Expr
 
-      case object InvokeMethod2Fragment extends Expr
-
-      case object InvokeStaticMethod2 extends Expr
-
       case object Debug extends Expr
 
       case object FixpointConstraint extends Expr
@@ -269,6 +265,8 @@ object SyntaxTree {
 
       case object LiteralRecordFieldFragment extends Expr
 
+      case object LiteralStructFieldFragment extends Expr
+
       case object LiteralSet extends Expr
 
       case object LiteralVector extends Expr
@@ -278,6 +276,12 @@ object SyntaxTree {
       case object MatchRuleFragment extends Expr
 
       case object NewObject extends Expr
+
+      case object NewStruct extends Expr
+
+      case object StructGet extends Expr
+
+      case object StructPut extends Expr
 
       case object OpenVariant extends Expr
 
@@ -324,6 +328,8 @@ object SyntaxTree {
       case object StringInterpolation extends Expr
 
       case object Try extends Expr
+
+      case object Throw extends Expr
 
       case object TryCatchBodyFragment extends Expr
 

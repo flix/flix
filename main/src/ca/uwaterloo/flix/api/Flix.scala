@@ -159,6 +159,7 @@ class Flix {
     "BigInt.flix" -> LocalResource.get("/src/library/BigInt.flix"),
     "Boxable.flix" -> LocalResource.get("/src/library/Boxable.flix"),
     "Boxed.flix" -> LocalResource.get("/src/library/Boxed.flix"),
+    "Box.flix" -> LocalResource.get("/src/library/Box.flix"),
     "Chain.flix" -> LocalResource.get("/src/library/Chain.flix"),
     "Char.flix" -> LocalResource.get("/src/library/Char.flix"),
     "CodePoint.flix" -> LocalResource.get("/src/library/CodePoint.flix"),
@@ -534,7 +535,10 @@ class Flix {
 
     // Print summary?
     if (options.xsummary) {
-      Summary.printSummary(result)
+      result.map(root => {
+        val table = Summary.fileSummaryTable(root, nsDepth = Some(1), minLines = Some(125))
+        table.getMarkdownLines.foreach(println)
+      })
     }
 
     // Return the result (which could contain soft failures).
@@ -716,7 +720,8 @@ class Flix {
     l.foldLeft[MultiMap[List[String], String]](MultiMap.empty) {
       case (acc, clazz) =>
         // Given a string `java/util/zip/ZipUtils.class` we convert it to the list `java :: util :: zip :: ZipUtils`.
-        val clazzPath = clazz.stripSuffix(".class").split('/').toList
+        // We strip both the ".class" and ".java" suffix. Order should not matter.
+        val clazzPath = clazz.stripSuffix(".class").stripSuffix(".java").split('/').toList
 
         // Create a multimap from all package prefixes to their sub packages and classes.
         // For example, if we have `java.lang.String`, we want to compute:

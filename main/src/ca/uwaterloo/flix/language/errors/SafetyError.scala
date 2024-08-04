@@ -297,6 +297,28 @@ object SafetyError {
   }
 
   /**
+    * An error raised to indicate that a try-catch expression contains another try-catch expression.
+    *
+    * @param loc the location of the inner try-catch.
+    */
+  case class IllegalNestedTryCatch(loc: SourceLocation) extends SafetyError with Recoverable {
+    def summary: String = s"Try-catch expressions cannot be nested."
+
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s""">> $summary
+         |
+         |${code(loc, "The inner try-catch expression.")}
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"""${underline("Tip:")} Put the inner try-catch expression in a function.""".stripMargin
+    })
+  }
+
+  /**
     * An error raised to indicate an illegal use of a wildcard in a negative atom.
     *
     * @param loc the position of the body atom containing the illegal wildcard.

@@ -297,6 +297,15 @@ object TypeReconstruction {
       val eff = subst(evar)
       TypedAst.Expr.ArrayLength(e, eff, loc)
 
+    case KindedAst.Expr.StructNew(sym, fields, region, tvar, evar, loc) =>
+      throw new RuntimeException("Joe TBD")
+
+    case KindedAst.Expr.StructGet(sym, expr, label, tvar, evar, loc) =>
+      throw new RuntimeException("Joe TBD")
+
+    case KindedAst.Expr.StructPut(sym, expr, field, exp2, tvar, evar, loc) =>
+      throw new RuntimeException("Joe TBD")
+
     case KindedAst.Expr.VectorLit(exps, tvar, evar, loc) =>
       val es = exps.map(visitExp(_))
       val tpe = subst(tvar)
@@ -456,20 +465,20 @@ object TypeReconstruction {
           TypedAst.Expr.Error(TypeError.UnresolvedMethod(loc), methodTpe, eff) // TODO INTEROP: UnresolvedStaticMethod ?
       }
 
-    case KindedAst.Expr.InvokeConstructor(constructor, args, loc) =>
+    case KindedAst.Expr.InvokeConstructorOld(constructor, args, loc) =>
       val as = args.map(visitExp(_))
       val tpe = getFlixType(constructor.getDeclaringClass)
       val eff = Type.IO
       TypedAst.Expr.InvokeConstructor(constructor, as, tpe, eff, loc)
 
-    case KindedAst.Expr.InvokeMethod(method, _, exp, args, loc) =>
+    case KindedAst.Expr.InvokeMethodOld(method, _, exp, args, loc) =>
       val e = visitExp(exp)
       val as = args.map(visitExp(_))
       val tpe = getFlixType(method.getReturnType)
       val eff = Type.IO
       TypedAst.Expr.InvokeMethod(method, e, as, tpe, eff, loc)
 
-    case KindedAst.Expr.InvokeStaticMethod(method, args, loc) =>
+    case KindedAst.Expr.InvokeStaticMethodOld(method, args, loc) =>
       val as = args.map(visitExp(_))
       val tpe = getFlixType(method.getReturnType)
       val eff = Type.IO
