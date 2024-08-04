@@ -94,6 +94,8 @@ object AtomicOp {
 
   case object Force extends AtomicOp
 
+  case class DirectBackend(content: String) extends AtomicOp
+
   case class HoleError(sym: Symbol.HoleSym) extends AtomicOp
 
   case object MatchError extends AtomicOp

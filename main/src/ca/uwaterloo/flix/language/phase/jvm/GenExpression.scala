@@ -1050,6 +1050,10 @@ object GenExpression {
         }
         ins(new BytecodeInstructions.F(mv))
 
+      case AtomicOp.DirectBackend(content) =>
+        addSourceLine(mv, loc)
+        mv.visitInsn(ACONST_NULL)
+
       case AtomicOp.HoleError(sym) =>
         // Add source line number for debugging (failable by design)
         addSourceLine(mv, loc)

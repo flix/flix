@@ -308,6 +308,9 @@ object CodeHinter {
     case Expr.FixpointProject(_, exp, _, _, _) =>
       visitExp(exp)
 
+    case Expr.DirectBackend(_, _, _, _) =>
+      Nil
+
     case Expr.Error(_, _, _) =>
       Nil
 

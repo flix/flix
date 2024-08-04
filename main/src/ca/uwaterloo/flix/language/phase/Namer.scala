@@ -975,6 +975,9 @@ object Namer {
       val e2 = visitExp(exp2, ns0)
       NamedAst.Expr.FixpointProject(pred, e1, e2, loc)
 
+    case DesugaredAst.Expr.DirectBackend(content, loc) =>
+      Validation.success(NamedAst.Expr.DirectBackend(content, loc))
+
     case DesugaredAst.Expr.Error(m) =>
       NamedAst.Expr.Error(m)
 

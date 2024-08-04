@@ -279,6 +279,9 @@ object Regions {
     case Expr.FixpointProject(_, exp, tpe, _, loc) =>
       visitExp(exp) ++ checkType(tpe, loc)
 
+    case Expr.DirectBackend(_, _, tpe, loc) =>
+      checkType(tpe, loc)
+
     case Expr.Error(_, _, _) =>
       Nil
 

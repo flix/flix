@@ -99,6 +99,7 @@ object TypedAstPrinter {
     case Expr.FixpointFilter(pred, exp, tpe, eff, loc) => DocAst.Expr.Unknown
     case Expr.FixpointInject(exp, pred, tpe, eff, loc) => DocAst.Expr.Unknown
     case Expr.FixpointProject(pred, exp, tpe, eff, loc) => DocAst.Expr.Unknown
+    case Expr.DirectBackend(_, _, _, _) => DocAst.Expr.Unknown
     case Expr.Error(_, _, _) => DocAst.Expr.Error
   }
 

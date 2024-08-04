@@ -90,6 +90,12 @@ object Doc {
   def text(s: String): Doc = Text(s)
 
   /**
+    * The document of the string `s` enclosed by double quotes `"s"`.
+    * This string must not contain newlines!
+    */
+  def string(s: String): Doc = Text(s"\"$s\"")
+
+  /**
     * _If_ newlines are printed in `d` they will have another level of
     * indentation.
     */
