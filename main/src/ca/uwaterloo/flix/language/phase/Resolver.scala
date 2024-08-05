@@ -1,4 +1,3 @@
-// JOE TODO: Add struct syms to table
 // JOE TODO: More Comprehsive struct namespace testing
 /*
  *  Copyright 2017 Magnus Madsen
@@ -2360,7 +2359,7 @@ object Resolver {
       // Case 2: Multiple matches. Error
       case sts => throw InternalCompilerException(s"unexpected duplicate struct: '$qname'.", qname.loc)
     }
-    // JOE TODO NS-REFACTOR check accessibility
+    // TODO NS-REFACTOR check accessibility
   }
 
   /**

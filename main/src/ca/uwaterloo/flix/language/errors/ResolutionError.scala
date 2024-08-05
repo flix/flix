@@ -1,4 +1,3 @@
-// JOE TODO: Add at least 3 tests for each user facing errors
 /*
  *  Copyright 2016 Magnus Madsen
  *
