@@ -198,6 +198,8 @@ object WeededAst {
 
     case class TryCatch(exp: Expr, handlers: List[CatchRule], loc: SourceLocation) extends Expr
 
+    case class Throw(exp: Expr, loc: SourceLocation) extends Expr
+
     case class TryWith(exp: Expr, handler: List[WithHandler], loc: SourceLocation) extends Expr
 
     case class Do(op: Name.QName, exps: List[Expr], loc: SourceLocation) extends Expr
@@ -455,7 +457,7 @@ object WeededAst {
 
   case class ParYieldFragment(pat: Pattern, exp: Expr, loc: SourceLocation)
 
-  case class Derivations(classes: List[Name.QName], loc: SourceLocation)
+  case class Derivations(traits: List[Name.QName], loc: SourceLocation)
 
 
   sealed trait ForFragment {
