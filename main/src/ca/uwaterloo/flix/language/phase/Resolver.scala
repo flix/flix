@@ -619,7 +619,7 @@ object Resolver {
     case NamedAst.StructField(fieldName, tpe0, loc) =>
       val tpeVal = resolveType(tpe0, Wildness.ForbidWild, env, taenv, ns0, root)
       mapN(tpeVal) {
-        (tpe) => ResolvedAst.StructField(fieldName, tpe, loc)
+        tpe => ResolvedAst.StructField(fieldName, tpe, loc)
       }
   }
 
@@ -1406,8 +1406,8 @@ object Resolver {
                 Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
               }
               else {
-                val e1Val = visitExp (e1, env0)
-                val e2Val = visitExp (e2, env0)
+                val e1Val = visitExp(e1, env0)
+                val e2Val = visitExp(e2, env0)
                 mapN (e1Val, e2Val) {
                   case (e1, e2) => ResolvedAst.Expr.StructPut (st.sym, e1, field, e2, loc)
                 }
