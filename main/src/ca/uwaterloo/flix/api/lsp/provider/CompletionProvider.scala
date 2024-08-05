@@ -138,7 +138,7 @@ object CompletionProvider {
       case SyntacticContext.Expr.Constraint => PredicateCompleter.getCompletions(context)
       case SyntacticContext.Expr.Do => OpCompleter.getCompletions(context)
       case SyntacticContext.Expr.InvokeMethod(e) => InvokeMethodCompleter.getCompletions(e, context)
-      case SyntacticContext.Expr.StaticFieldOrMethod(e) => InvokeStaticMethodCompleter.getCompletions(e)
+      case SyntacticContext.Expr.StaticFieldOrMethod(e) => GetStaticFieldCompleter.getCompletions(e) ++ InvokeStaticMethodCompleter.getCompletions(e)
       case _: SyntacticContext.Expr => ExprCompleter.getCompletions(context)
 
       //
