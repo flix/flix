@@ -295,15 +295,43 @@ object TypeReduction {
         isSubtype(elmType1, elmType2)
       // Arrow to Java function interface
       case (Type.Apply(Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Arrow(n), _), eff, _), var_arg, _), var_ret, _), Type.Cst(TypeConstructor.Native(clazz), _)) =>
-        val targsVal = tpe1.typeArguments
-        val returnsUnit = tpe1.typeArguments.lastOption
-        false
+        val targsVal = tpe1.typeArguments.map(purifyType)
+        targsVal match { // TODO INTEROP: generics support
+          // Pattern-matching Flix functions of the form: eff -> arg -> ret
+          case eff :: TypeConstructor.Native(_) :: TypeConstructor.Native(_) :: Nil =>
+            clazz.isAssignableFrom(classOf[java.util.function.Consumer[_]])
+          case eff :: TypeConstructor.Native(_) :: TypeConstructor.Unit :: Nil =>
+            clazz.isAssignableFrom(classOf[java.util.function.Function[_, _]])
+          case eff :: TypeConstructor.Native(_) :: TypeConstructor.Bool :: Nil =>
+            clazz.isAssignableFrom(classOf[java.util.function.Predicate[_]])
+          case eff :: TypeConstructor.Str :: TypeConstructor.Bool :: Nil =>
+            clazz.isAssignableFrom(classOf[java.util.function.Predicate[_]])
+          case eff :: TypeConstructor.Int32 :: TypeConstructor.Native(_) :: Nil =>
+            clazz.isAssignableFrom(classOf[java.util.function.IntFunction[_]])
+          case eff :: TypeConstructor.Int32 :: TypeConstructor.Unit :: Nil =>
+            clazz.isAssignableFrom(classOf[java.util.function.IntConsumer])
+          case eff :: TypeConstructor.Int32 :: TypeConstructor.Bool :: Nil =>
+            clazz.isAssignableFrom(classOf[java.util.function.IntPredicate])
+          case eff :: TypeConstructor.Int32 :: TypeConstructor.Int32 :: Nil =>
+            clazz.isAssignableFrom(classOf[java.util.function.IntUnaryOperator])
+          // TODO INTEROP: add other cases from Resolver.scala
+          case _ => false
+        }
       // Null is a sub-type of every Java object and non-primitive Flix type
       case (Type.Cst(TypeConstructor.Null, _), Type.Cst(TypeConstructor.Native(_), _)) => true
       case (Type.Cst(TypeConstructor.Null, _), tpe) if !isPrimitive(tpe) => true
       case _ => false
     }
   }
+
+  /**
+   * Helper method for Flix - Java predicate subtyping, simplifies types for pattern-matching.
+   */
+  private def purifyType(tpe: Type) : TypeConstructor =
+    tpe match {
+      case Type.Cst(tpe, _) => tpe
+      case _ => TypeConstructor.Null // easy simplifier for now
+    }
 
   /**
    * Returns true iff the given type tpe is a Flix primitive.
