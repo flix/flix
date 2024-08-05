@@ -417,7 +417,7 @@ object Desugar {
   private def visitField(field0: WeededAst.StructField): DesugaredAst.StructField = field0 match {
     case WeededAst.StructField(ident, tpe0, loc) =>
       val tpe = visitType(tpe0)
-      DesugaredAst.StructField(ident, tpe, loc)
+      throw new RuntimeException("JOE TO")
   }
 
   /**
@@ -619,7 +619,7 @@ object Desugar {
     case WeededAst.Expr.StructNew(name, fields0, region0, loc) =>
       val fields = fields0.map(field => (field._1, visitExp(field._2)))
       val region = visitExp(region0)
-      Expr.StructNew(name, fields, region, loc)
+      throw new RuntimeException("JOE TBD")
 
     case WeededAst.Expr.StructGet(e, name, loc) =>
       Expr.StructGet(visitExp(e), name, loc)
