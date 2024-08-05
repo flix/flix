@@ -174,6 +174,8 @@ object DesugaredAst {
 
     case class TryCatch(exp: Expr, rules: List[CatchRule], loc: SourceLocation) extends Expr
 
+    case class Throw(exp: Expr, loc: SourceLocation) extends Expr
+
     case class TryWith(exp: Expr, eff: Name.QName, rules: List[HandlerRule], loc: SourceLocation) extends Expr
 
     case class Do(op: Name.QName, exps: List[Expr], loc: SourceLocation) extends Expr
@@ -427,6 +429,6 @@ object DesugaredAst {
 
   case class ParYieldFragment(pat: Pattern, exp: Expr, loc: SourceLocation)
 
-  case class Derivations(classes: List[Name.QName], loc: SourceLocation)
+  case class Derivations(traits: List[Name.QName], loc: SourceLocation)
 
 }
