@@ -455,7 +455,7 @@ object WeededAst {
 
   case class ParYieldFragment(pat: Pattern, exp: Expr, loc: SourceLocation)
 
-  case class Derivations(classes: List[Name.QName], loc: SourceLocation)
+  case class Derivations(traits: List[Name.QName], loc: SourceLocation)
 
 
   sealed trait ForFragment {
