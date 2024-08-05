@@ -59,13 +59,11 @@ object ResolvedAst {
 
     case class Enum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[TypeParam], derives: Ast.Derivations, cases: List[Declaration.Case], loc: SourceLocation) extends Declaration
 
-    case class Struct(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.StructSym, tparams: List[TypeParam], fields: List[Declaration.StructField], loc: SourceLocation) extends Declaration
+    case class Struct(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.StructSym, tparams: List[TypeParam], fields: List[StructField], loc: SourceLocation) extends Declaration
 
     case class RestrictableEnum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.RestrictableEnumSym, index: TypeParam, tparams: List[TypeParam], derives: Ast.Derivations, cases: List[Declaration.RestrictableCase], loc: SourceLocation) extends Declaration
 
     case class Case(sym: Symbol.CaseSym, tpe: UnkindedType, loc: SourceLocation) extends Declaration
-
-    case class StructField(name: Name.Label, tpe: UnkindedType, loc: SourceLocation)
 
     case class RestrictableCase(sym: Symbol.RestrictableCaseSym, tpe: UnkindedType, loc: SourceLocation) extends Declaration
 
@@ -81,6 +79,8 @@ object ResolvedAst {
   }
 
   case class Spec(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, tparams: List[TypeParam], fparams: List[FormalParam], tpe: UnkindedType, eff: Option[UnkindedType], tconstrs: List[TypeConstraint], econstrs: List[EqualityConstraint], loc: SourceLocation)
+
+  case class StructField(name: Name.Label, tpe: UnkindedType, loc: SourceLocation)
 
   sealed trait Expr {
     def loc: SourceLocation
