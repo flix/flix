@@ -1021,15 +1021,14 @@ object Resolver {
             env0.get(className.name) match {
               case Some(List(Resolution.JavaClass(clazz))) =>
                 // We have a static field access.
-                val fieldName = qname.ident.name
+                val fieldName = qname.ident
                 try {
-                  val field = clazz.getField(fieldName)
+                  val field = clazz.getField(fieldName.name)
                   // Returns out of visitExp
                   return Validation.success(ResolvedAst.Expr.GetStaticField(field, loc))
                 } catch {
                   case _: NoSuchFieldException =>
-                    val fields = clazz.getFields.toList
-                    val m = ResolutionError.UndefinedJvmField(clazz.getName, fieldName, static = true, fields, loc)
+                    val m = ResolutionError.UndefinedJvmStaticField(clazz, fieldName, loc)
                     // Returns out of visitExp
                     return Validation.toSoftFailure(ResolvedAst.Expr.Error(m), m)
                 }
