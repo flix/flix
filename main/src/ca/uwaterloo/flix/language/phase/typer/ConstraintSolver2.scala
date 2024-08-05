@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.Ast.TraitContext
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
@@ -48,6 +49,7 @@ object ConstraintSolver2 {
   }
 
   type ConstraintSet = List[TypeConstraint]
+  type TraitEnv = Map[Symbol.TraitSym, TraitContext]
 
   def goAll(constrs0: ConstraintSet): (ConstraintSet, Substitution) = {
     var constrs = constrs0
@@ -64,7 +66,7 @@ object ConstraintSolver2 {
     (constrs, subst)
   }
 
-  def goOne(constrs: ConstraintSet)(implicit tracker: Tracker): (ConstraintSet, Substitution) = {
+  def goOne(constrs: ConstraintSet)(implicit tracker: Tracker, traitEnv: TraitEnv): (ConstraintSet, Substitution) = {
     constrs
       .pipe(breakDownConstraints)
       .pipe(eliminateIdentities)
@@ -108,7 +110,7 @@ object ConstraintSolver2 {
 
   // Reduces trait constraints
   // (bchainE) (?)
-  def contextReduction(constrs: ConstraintSet)(implicit tracker: Tracker): ConstraintSet = ???
+  def contextReduction(constrs: ConstraintSet)(implicit tracker: Tracker, traitEnv: TraitEnv): ConstraintSet = ???
 
   // Resolve all effect constraints in the set
   // (bool or something)
