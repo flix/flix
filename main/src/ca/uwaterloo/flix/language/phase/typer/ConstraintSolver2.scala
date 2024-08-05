@@ -70,13 +70,14 @@ object ConstraintSolver2 {
     constrs
       .pipe(breakDownConstraints)
       .pipe(eliminateIdentities)
-      .pipe(evaluateAliases)
+      .pipe(reduceTypes)
       .pipe(contextReduction)
       .pipe(makeSubstitution)
   }
 
 
   // Breaks down constraints syntactically
+  // TODO examples
   // (appU)
   def breakDownConstraints(constrs: ConstraintSet)(implicit tracker: Tracker): ConstraintSet = {
     def breakDownConstraint(constr: TypeConstraint): ConstraintSet = constr match {
@@ -92,6 +93,7 @@ object ConstraintSolver2 {
   }
 
   // Eliminates constraints that are the same on the left and right
+  // TODO examples
   // (reflU)
   def eliminateIdentities(constrs: ConstraintSet)(implicit tracker: Tracker): ConstraintSet = {
     constrs.filter {
@@ -109,6 +111,7 @@ object ConstraintSolver2 {
   }
 
   // Reduces trait constraints
+  // TODO examples
   // (bchainE) (?)
   def contextReduction(constrs: ConstraintSet)(implicit tracker: Tracker, traitEnv: TraitEnv): ConstraintSet = {
     def contextReduction1(constr: TypeConstraint): ConstraintSet = constr match {
@@ -122,29 +125,79 @@ object ConstraintSolver2 {
         val TraitContext(supers, insts) = traitEnv(sym)
 
         // Find the instance that matches
-        // TODO CONSTR-SOLVER-2 must be exactly 1; should check in Resolver
-        val matches = insts.filter {
-          case Instance(instTpe, instConstrs) => ??? // TODO
+        val matches = insts.flatMap {
+          case Instance(instTpe, instConstrs) =>
+            // TODO need a renv here. tpe must be fully rigid because we need to subst inst -> tpe
+            // Instantiate all the instance constraints according to the substitution.
+            fullyUnify(tpe, instTpe).map {
+              case subst => instConstrs.map(subst.apply)
+            }
+        }
+
+        // TODO CONSTR-SOLVER-2 ought to be exactly 0 or 1; should check in Resolver
+        matches match {
+          // Case 1: No match. Throw the constraint back in the pool.
+          case Nil => List(c)
+
+          // Case 2: One match. Use the instance constraints.
+          case newConstrs :: Nil => newConstrs.map(toTypeConstraint)
+
+          // Case 3: Multiple matches. Throw the constraint back in the pool.
+          // TODO CONSTR-SOLVER-2 Right resiliency strategy?
+          case _ :: _ :: _ => List(c)
         }
     }
+
+    constrs.flatMap(contextReduction1)
   }
 
-  def unify(tpe1: Type, tpe2: Type): Substitution = {
+  // TODO docs
+  def fullyUnify(tpe1: Type, tpe2: Type)(implicit tracker: Tracker): Option[Substitution] = {
     // unification is now defined as taking a single constraint and applying rules until it's done
-    ??? // TODO
+    val constr = TypeConstraint.Equality(tpe1, tpe2)
+    goAll(List(constr)) match {
+      // Case 1: No constraints left. Success.
+      case (Nil, subst) => Some(subst)
+
+      // Case 2: Leftover constraints. Failure
+      case (_ :: _, _) => None
+    }
   }
 
   // Resolve all effect constraints in the set
   // (bool or something)
+  // TODO examples
   def effectUnification(constrs: ConstraintSet)(implicit tracker: Tracker): (ConstraintSet, Substitution) = ???
 
   // Evaluate type constraints as far as possible
   // (redU)
-  def evaluateAliases(constrs: ConstraintSet)(implicit tracker: Tracker): ConstraintSet = ???
+  // TODO examples
+  def reduceTypes(constrs: ConstraintSet)(implicit tracker: Tracker, eqenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef]): ConstraintSet = {
+    def reduce(tpe: Type): Type = tpe match {
+      case t: Type.Var => t
+      case t: Type.Cst => t
+      case Type.Apply(tpe1, tpe2, loc) =>
+        ??? // TODO recursive? I think with Bools it has to be recursive since they don't get broken up, but with syntactic types it should not be recursive
+      case Type.Alias(cst, args, tpe, loc) => tpe
+      case Type.AssocType(cst, arg, kind, loc) =>
+        ??? // similar to trait stuff: look up in env etc.
+    }
+
+    def reduceTypes1(constr: TypeConstraint): TypeConstraint = constr match {
+      case TypeConstraint.Equality(tpe1, tpe2) => TypeConstraint.Equality(reduce(tpe1), reduce(tpe2))
+      case TypeConstraint.Trait(sym, tpe) => TypeConstraint.Trait(sym, reduce(tpe))
+    }
+
+    constrs.map(reduceTypes1)
+  }
 
   // Build a substitution from any variable constraints
   // (varU)
+  // TODO examples
   def makeSubstitution(constrs: ConstraintSet): (ConstraintSet, Substitution) = ???
 
+  def toTypeConstraint(constr: Ast.TypeConstraint): TypeConstraint = constr match {
+    case Ast.TypeConstraint(head, arg, loc) => TypeConstraint.Trait(head.sym, arg)
+  }
 
 }
