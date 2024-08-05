@@ -829,6 +829,7 @@ object Weeder2 {
         case TreeKind.Expr.Unsafe => visitUnsafeExpr(tree)
         case TreeKind.Expr.Without => visitWithoutExpr(tree)
         case TreeKind.Expr.Try => visitTryExpr(tree)
+        case TreeKind.Expr.Throw => visitThrow(tree)
         case TreeKind.Expr.Do => visitDoExpr(tree)
         case TreeKind.Expr.InvokeConstructor2 => visitInvokeConstructor2Expr(tree)
         case TreeKind.Expr.InvokeMethod2 => visitInvokeMethod2Expr(tree)
@@ -1714,6 +1715,11 @@ object Weeder2 {
         val syntheticUnitParam = if (hasSingleNonUnitParam) List(Decls.unitFormalParameter(tree.loc.asSynthetic)) else List.empty
         HandlerRule(ident, (syntheticUnitParam ++ fparams).sortBy(_.loc), expr)
       })
+    }
+
+    private def visitThrow(tree:Tree): Validation[Expr, CompilationMessage] = {
+      expect(tree, TreeKind.Expr.Throw)
+      mapN(pickExpr(tree))(e => Expr.Throw(e, tree.loc))
     }
 
     private def visitDoExpr(tree: Tree): Validation[Expr, CompilationMessage] = {
