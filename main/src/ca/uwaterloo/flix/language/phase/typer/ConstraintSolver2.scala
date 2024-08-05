@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.TraitContext
+import ca.uwaterloo.flix.language.ast.Ast.{Instance, TraitContext}
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
@@ -110,7 +110,29 @@ object ConstraintSolver2 {
 
   // Reduces trait constraints
   // (bchainE) (?)
-  def contextReduction(constrs: ConstraintSet)(implicit tracker: Tracker, traitEnv: TraitEnv): ConstraintSet = ???
+  def contextReduction(constrs: ConstraintSet)(implicit tracker: Tracker, traitEnv: TraitEnv): ConstraintSet = {
+    def contextReduction1(constr: TypeConstraint): ConstraintSet = constr match {
+      // Case 1: Equality constraint. Do nothing.
+      case c: TypeConstraint.Equality => List(c)
+
+      // Case 2: Trait constraint. Perform context reduction.
+      case c@TypeConstraint.Trait(sym, tpe) =>
+
+        // Get all the instances from the context
+        val TraitContext(supers, insts) = traitEnv(sym)
+
+        // Find the instance that matches
+        // TODO CONSTR-SOLVER-2 must be exactly 1; should check in Resolver
+        val matches = insts.filter {
+          case Instance(instTpe, instConstrs) => ??? // TODO
+        }
+    }
+  }
+
+  def unify(tpe1: Type, tpe2: Type): Substitution = {
+    // unification is now defined as taking a single constraint and applying rules until it's done
+    ??? // TODO
+  }
 
   // Resolve all effect constraints in the set
   // (bool or something)
