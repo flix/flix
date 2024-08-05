@@ -151,7 +151,7 @@ object CompletionProvider {
       //
       // Imports.
       //
-      case SyntacticContext.Import => ImportClassCompleter.getCompletions(context)
+      case SyntacticContext.Import => ImportCompleter.getCompletions(context)
 
       //
       // Types.

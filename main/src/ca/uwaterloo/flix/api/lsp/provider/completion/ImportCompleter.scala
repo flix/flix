@@ -17,12 +17,12 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.Index
-import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.ClassCompletion
+import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.ImportCompletion
 import ca.uwaterloo.flix.language.ast.TypedAst
 
-object ImportClassCompleter extends Completer {
+object ImportCompleter extends Completer {
 
-  def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[ClassCompletion] = {
+  def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[ImportCompletion] = {
     val regex = raw"\s*import\s+(?:.*\s+)*(.*)".r
     context.prefix match {
       case regex(clazz) =>
@@ -36,13 +36,13 @@ object ImportClassCompleter extends Completer {
   /**
     * Gets completions from a java path prefix
     */
-  private def javaClassCompletionsFromPrefix(prefix: List[String])(implicit root: TypedAst.Root): Iterable[ClassCompletion] = {
+  private def javaClassCompletionsFromPrefix(prefix: List[String])(implicit root: TypedAst.Root): Iterable[ImportCompletion] = {
     root.names(prefix).map(clazz => {
       val label = prefix match {
         case Nil => clazz
         case v => v.mkString("", ".", s".$clazz")
       }
-      Completion.ClassCompletion(label)
+      Completion.ImportCompletion(label)
     })
   }
 }
