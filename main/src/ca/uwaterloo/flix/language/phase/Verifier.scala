@@ -404,6 +404,8 @@ object Verifier {
           checkJavaSubtype(t, field.getType, loc)
           check(expected = MonoType.Unit)(actual = tpe, loc)
 
+        case AtomicOp.Throw => throw new RuntimeException("JOE TBD")
+
         case AtomicOp.InstanceOf(_) =>
           val List(t) = ts
           checkJavaSubtype(t, new Object().getClass, loc) // must not be primitive type
@@ -422,8 +424,6 @@ object Verifier {
         case AtomicOp.InvokeStaticMethod(method) =>
           checkJavaParameters(ts, method.getParameterTypes.toList, loc)
           checkJavaSubtype(tpe, method.getReturnType, loc)
-
-        case AtomicOp.Throw => throw new RuntimeException("JOE TBD")
       }
 
     case Expr.ApplyClo(exp, exps, ct, tpe, _, loc) =>
