@@ -293,6 +293,11 @@ object TypeReduction {
       case (Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Array, _), elmType1, _), rcVar1, _),
       Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Array, _), elmType2, _), rcVar2, _)) =>
         isSubtype(elmType1, elmType2)
+      // Arrow to Java function interface
+      case (Type.Apply(Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Arrow(n), _), eff, _), var_arg, _), var_ret, _), Type.Cst(TypeConstructor.Native(clazz), _)) =>
+        val targsVal = tpe1.typeArguments
+        val returnsUnit = tpe1.typeArguments.lastOption
+        false
       // Null is a sub-type of every Java object and non-primitive Flix type
       case (Type.Cst(TypeConstructor.Null, _), Type.Cst(TypeConstructor.Native(_), _)) => true
       case (Type.Cst(TypeConstructor.Null, _), tpe) if !isPrimitive(tpe) => true
