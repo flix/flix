@@ -709,6 +709,9 @@ object Desugar {
       val rs = rules.map(visitCatchRule)
       Expr.TryCatch(e, rs, loc)
 
+    case WeededAst.Expr.Throw(exp, loc) =>
+      throw new RuntimeException("JOE Throw TODO")
+
     case WeededAst.Expr.TryWith(exp, handlers, loc) =>
       val e = visitExp(exp)
       handlers.foldLeft(e) {
