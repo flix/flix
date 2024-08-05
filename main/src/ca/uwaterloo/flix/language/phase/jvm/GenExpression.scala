@@ -1073,6 +1073,8 @@ object GenExpression {
         mv.visitInsn(SWAP)
         mv.visitMethodInsn(INVOKESPECIAL, className.toInternalName, "<init>", s"(${BackendObjType.ReifiedSourceLocation.toDescriptor})${JvmType.Void.toDescriptor}", false)
         mv.visitInsn(ATHROW)
+
+      case AtomicOp.Throw => throw new RuntimeException("JOE TBD")
     }
 
     case Expr.ApplyClo(exp, exps, ct, _, purity, loc) =>

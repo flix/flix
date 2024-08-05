@@ -422,6 +422,8 @@ object Verifier {
         case AtomicOp.InvokeStaticMethod(method) =>
           checkJavaParameters(ts, method.getParameterTypes.toList, loc)
           checkJavaSubtype(tpe, method.getReturnType, loc)
+
+        case AtomicOp.Throw => throw new RuntimeException("JOE TBD")
       }
 
     case Expr.ApplyClo(exp, exps, ct, tpe, _, loc) =>

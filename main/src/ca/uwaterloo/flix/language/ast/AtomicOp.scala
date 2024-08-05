@@ -98,4 +98,6 @@ object AtomicOp {
 
   case object MatchError extends AtomicOp
 
+  case object Throw extends AtomicOp
+
 }
