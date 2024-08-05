@@ -1474,6 +1474,12 @@ object Resolver {
             case (e, rs) => ResolvedAst.Expr.TryCatch(e, rs, loc)
           }
 
+        case NamedAst.Expr.Throw(exp, loc) =>
+          val eVal = visitExp(exp, env0)
+          mapN(eVal) {
+            case e => ResolvedAst.Expr.Throw(e, loc)
+          }
+
         case NamedAst.Expr.Without(exp, eff, loc) =>
           lookupEffect(eff, env0, ns0, root) match {
             case Result.Ok(decl) =>

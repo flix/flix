@@ -831,6 +831,10 @@ object Namer {
       val rs = visitTryCatchRules(rules, ns0)
       NamedAst.Expr.TryCatch(e, rs, loc)
 
+    case DesugaredAst.Expr.Throw(exp, loc) =>
+      val e = visitExp(exp, ns0)
+      NamedAst.Expr.Throw(e, loc)
+
     case DesugaredAst.Expr.TryWith(exp, eff, rules, loc) =>
       val e = visitExp(exp, ns0)
       val rs = visitTryWithRules(rules, ns0)
