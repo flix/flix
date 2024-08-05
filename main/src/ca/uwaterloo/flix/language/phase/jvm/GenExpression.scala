@@ -784,6 +784,12 @@ object GenExpression {
         // Pushes the 'length' of the array on top of stack
         mv.visitInsn(ARRAYLENGTH)
 
+      case AtomicOp.StructNew(_, _) => throw new RuntimeException("JOE TBD")
+
+      case AtomicOp.StructGet(_, _) => throw new RuntimeException("JOE TBD")
+
+      case AtomicOp.StructPut(_, _) => throw new RuntimeException("JOE TBD")
+
       case AtomicOp.Ref =>
         val List(exp) = exps
 
