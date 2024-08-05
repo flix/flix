@@ -528,6 +528,13 @@ object Type {
   }
 
   /**
+    * Returns a fresh error type of the given kind `k`.
+    */
+  def freshError(k: Kind, loc: SourceLocation)(implicit flix: Flix): Type = {
+    Type.Cst(TypeConstructor.Error(k), loc)
+  }
+
+  /**
     * Returns the AnyType type with given source location `loc`.
     */
   def mkAnyType(loc: SourceLocation): Type = Type.Cst(TypeConstructor.AnyType, loc)

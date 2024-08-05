@@ -331,6 +331,8 @@ object SyntaxTree {
 
       case object Try extends Expr
 
+      case object Throw extends Expr
+
       case object TryCatchBodyFragment extends Expr
 
       case object TryCatchRuleFragment extends Expr

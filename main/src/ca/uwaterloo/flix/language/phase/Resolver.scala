@@ -224,7 +224,7 @@ object Resolver {
       val tparamsVal = resolveTypeParams(tparams0, env0, ns, root)
       flatMapN(tparamsVal) {
         case tparams =>
-          val env = env0 ++ mkTypeParamEnv(tparams.tparams)
+          val env = env0 ++ mkTypeParamEnv(tparams)
           mapN(semiResolveType(tpe0, Wildness.ForbidWild, env, ns, root)) {
             tpe => ResolvedAst.Declaration.TypeAlias(doc, ann, mod, sym, tparams, tpe, loc)
           }
@@ -466,7 +466,7 @@ object Resolver {
       val tparamsVal = resolveTypeParams(tparams0, env0, ns0, root)
       flatMapN(tparamsVal) {
         case tparams =>
-          val env = env0 ++ mkTypeParamEnv(tparams.tparams)
+          val env = env0 ++ mkTypeParamEnv(tparams)
           val traitVal = lookupTraitForImplementation(trt0, env, ns0, root)
           val tpeVal = resolveType(tpe0, Wildness.ForbidWild, env, taenv, ns0, root)
           val tconstrsVal = traverse(tconstrs0)(resolveTypeConstraint(_, env, taenv, ns0, root))
@@ -528,7 +528,7 @@ object Resolver {
       val tparamsVal = resolveTypeParams(tparams0, env0, ns0, root)
       flatMapN(tparamsVal) {
         case tparams =>
-          val env1 = env0 ++ mkTypeParamEnv(tparams.tparams)
+          val env1 = env0 ++ mkTypeParamEnv(tparams)
           val fparamsVal = resolveFormalParams(fparams0, env1, taenv, ns0, root)
           flatMapN(fparamsVal) {
             case fparams =>
@@ -555,7 +555,7 @@ object Resolver {
       val tparamsVal = resolveTypeParams(tparams0, env0, ns0, root)
       flatMapN(tparamsVal) {
         case tparams =>
-          val env = env0 ++ mkTypeParamEnv(tparams.tparams)
+          val env = env0 ++ mkTypeParamEnv(tparams)
           val derivesVal = resolveDerivations(derives0, env, ns0, root)
           val casesVal = traverse(cases0)(resolveCase(_, env, taenv, ns0, root))
           mapN(derivesVal, casesVal) {
@@ -573,7 +573,7 @@ object Resolver {
       val tparamsVal = resolveTypeParams(tparams0, env0, ns0, root)
       flatMapN(tparamsVal) {
         case tparams =>
-          val env = env0 ++ mkTypeParamEnv(tparams.tparams)
+          val env = env0 ++ mkTypeParamEnv(tparams)
           val fieldsVal = traverse(fields0)(resolveStructField(_, env, taenv, ns0, root))
           mapN(fieldsVal) {
             case (fields) =>
@@ -591,7 +591,7 @@ object Resolver {
       val tparamsVal = resolveTypeParams(tparams0, env0, ns0, root)
       flatMapN(indexVal, tparamsVal) {
         case (index, tparams) =>
-          val env = env0 ++ mkTypeParamEnv(index :: tparams.tparams)
+          val env = env0 ++ mkTypeParamEnv(index :: tparams)
           val derivesVal = resolveDerivations(derives0, env, ns0, root)
           val casesVal = traverse(cases0)(resolveRestrictableCase(_, env, taenv, ns0, root))
           mapN(derivesVal, casesVal) {
@@ -2071,7 +2071,7 @@ object Resolver {
     /**
       * Performs name resolution on the given implicit type parameter `tparam0` in the given namespace `ns0`.
       */
-    def resolveImplicitTparam(tparam0: NamedAst.TypeParam.Implicit, env0: ListMap[String, Resolution]): Option[ResolvedAst.TypeParam.Unkinded] = tparam0 match {
+    def resolveImplicitTparam(tparam0: NamedAst.TypeParam, env0: ListMap[String, Resolution]): Option[ResolvedAst.TypeParam] = tparam0 match {
       case NamedAst.TypeParam.Implicit(name, tpe, loc) =>
         // Check if the tparam is in the environment
         env0(name.name) collectFirst {
@@ -2080,8 +2080,10 @@ object Resolver {
           // Case 1: Already in the environment, this is not a type parameter.
           case Some(_) => None
           // Case 2: Not in the environment. This is a real type parameter.
-          case None => Some(ResolvedAst.TypeParam.Unkinded(name, tpe, loc))
+          case None => Some(ResolvedAst.TypeParam.Implicit(name, tpe, loc))
         }
+      case NamedAst.TypeParam.Kinded(_, _, _, loc) => throw InternalCompilerException("unexpected explicit type parameter", loc)
+      case NamedAst.TypeParam.Unkinded(_, _, loc) => throw InternalCompilerException("unexpected explicit type parameter", loc)
     }
 
     /**
@@ -2111,18 +2113,21 @@ object Resolver {
   /**
     * Performs name resolution on the given type parameters `tparams0`.
     */
-  def resolveTypeParams(tparams0: NamedAst.TypeParams, env0: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[ResolvedAst.TypeParams, ResolutionError] = tparams0 match {
-    case NamedAst.TypeParams.Kinded(tparams1) =>
-      val tparams2Val = traverse(tparams1)(Params.resolveKindedTparam(_, env0, ns0, root))
-      mapN(tparams2Val) {
-        case tparams2 => ResolvedAst.TypeParams.Kinded(tparams2)
-      }
-    case NamedAst.TypeParams.Unkinded(tparams1) =>
-      val tparams2 = tparams1.map(Params.resolveUnkindedTparam)
-      Validation.success(ResolvedAst.TypeParams.Unkinded(tparams2))
-    case NamedAst.TypeParams.Implicit(tparams1) =>
-      val tparams2 = tparams1.flatMap(Params.resolveImplicitTparam(_, env0))
-      Validation.success(ResolvedAst.TypeParams.Unkinded(tparams2))
+  def resolveTypeParams(tparams0: List[NamedAst.TypeParam], env0: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[List[ResolvedAst.TypeParam], ResolutionError] = {
+    // Isolate the implicit type params: these are allowed to have redundancies.
+    val (impTparams0, expTparams0) = tparams0.partition {
+      case _: NamedAst.TypeParam.Implicit => true
+      case _: NamedAst.TypeParam.Kinded => false
+      case _: NamedAst.TypeParam.Unkinded => false
+    }
+
+    val impTparams = impTparams0.flatMap(Params.resolveImplicitTparam(_, env0))
+    val expTparamsVal = traverse(expTparams0)(Params.resolveTparam(_, env0, ns0, root))
+
+    mapN(expTparamsVal) {
+      case expTparams =>
+        impTparams ++ expTparams
+    }
   }
 
   /**
@@ -2645,7 +2650,7 @@ object Resolver {
       * The list of arguments must be the same length as the alias's parameters.
       */
     def applyAlias(alias: ResolvedAst.Declaration.TypeAlias, args: List[UnkindedType], cstLoc: SourceLocation): UnkindedType = {
-      val map = alias.tparams.tparams.map(_.sym).zip(args).toMap[Symbol.UnkindedTypeVarSym, UnkindedType]
+      val map = alias.tparams.map(_.sym).zip(args).toMap[Symbol.UnkindedTypeVarSym, UnkindedType]
       val tpe = alias.tpe.map(map)
       val cst = Ast.AliasConstructor(alias.sym, cstLoc)
       UnkindedType.Alias(cst, args, tpe, tpe0.loc)
@@ -2657,7 +2662,7 @@ object Resolver {
     baseType match {
       case UnkindedType.UnappliedAlias(sym, loc) =>
         val alias = taenv(sym)
-        val tparams = alias.tparams.tparams
+        val tparams = alias.tparams
         val numParams = tparams.length
         if (targs.length < numParams) {
           // Case 1: The type alias is under-applied.
@@ -3828,7 +3833,7 @@ object Resolver {
     */
   private def mkSpecEnv(spec: ResolvedAst.Spec): ListMap[String, Resolution] = spec match {
     case ResolvedAst.Spec(doc, ann, mod, tparams, fparams, tpe, eff, tconstrs, econstrs, loc) =>
-      mkTypeParamEnv(tparams.tparams) ++ mkFormalParamEnv(fparams)
+      mkTypeParamEnv(tparams) ++ mkFormalParamEnv(fparams)
   }
 
   /**

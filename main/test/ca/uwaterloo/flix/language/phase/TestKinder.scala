@@ -1023,19 +1023,6 @@ class TestKinder extends AnyFunSuite with TestUtils {
     expectError[KindError.UnexpectedKind](result)
   }
 
-  test("KindError.Struct.WrongKind.06") {
-    // When some kinds are specified and some aren't, the nonspecified ones
-    // default to kind Type, which is illegal for `r` in this case
-    val input =
-      """
-        |struct S[a: Type, r] {
-        |    c: a
-        |}
-        |""".stripMargin
-    val result = compile(input, DefaultOptions)
-    expectError[KindError.MismatchedKinds](result)
-  }
-
   test("KindError.Struct.Type.01") {
     val input =
       """
@@ -1496,6 +1483,4 @@ class TestKinder extends AnyFunSuite with TestUtils {
     val result = compile(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
-
 }
-

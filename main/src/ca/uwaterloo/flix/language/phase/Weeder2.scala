@@ -519,13 +519,11 @@ object Weeder2 {
           val tpe = Types.tryPickTypeNoWild(tree)
           val tparam = tparams match {
             // Elided: Use class type parameter
-            case TypeParams.Elided => Validation.success(classTypeParam)
+            case Nil => Validation.success(classTypeParam)
             // Single type parameter
-            case TypeParams.Unkinded(head :: Nil) => Validation.success(head)
-            case TypeParams.Kinded(head :: Nil) => Validation.success(head)
+            case head :: Nil => Validation.success(head)
             // Multiple type parameters. Soft fail by picking the first parameter
-            case TypeParams.Unkinded(ts) => Validation.toSoftFailure(ts.head, NonUnaryAssocType(ts.length, ident.loc))
-            case TypeParams.Kinded(ts) => Validation.toSoftFailure(ts.head, NonUnaryAssocType(ts.length, ident.loc))
+            case ts@(head :: _ :: _) => Validation.toSoftFailure(head, NonUnaryAssocType(ts.length, ident.loc))
           }
           mapN(tparam, tpe) {
             (tparam, tpe) => Declaration.AssocTypeSig(doc, mods, ident, tparam, kind, tpe, tree.loc)
@@ -2786,9 +2784,9 @@ object Weeder2 {
       mapN(derivations)(Derivations(_, loc))
     }
 
-    def pickParameters(tree: Tree): Validation[TypeParams, CompilationMessage] = {
+    def pickParameters(tree: Tree): Validation[List[TypeParam], CompilationMessage] = {
       tryPick(TreeKind.TypeParameterList, tree) match {
-        case None => Validation.success(TypeParams.Elided)
+        case None => Validation.success(Nil)
         case Some(tparamsTree) =>
           val parameters = pickAll(TreeKind.Parameter, tparamsTree)
           flatMapN(traverse(parameters)(visitParameter)) {
@@ -2797,16 +2795,12 @@ object Weeder2 {
               val unkinded = tparams.collect { case t: TypeParam.Unkinded => t }
               (kinded, unkinded) match {
                 // Only unkinded type parameters
-                case (Nil, _ :: _) => Validation.success(TypeParams.Unkinded(unkinded))
+                case (Nil, _ :: _) => Validation.success(tparams)
                 // Only kinded type parameters
-                case (_ :: _, Nil) => Validation.success(TypeParams.Kinded(kinded))
-                // Some kinded and some unkinded type parameters. We recover by kinding the unkinded ones as Ambiguous.
+                case (_ :: _, Nil) => Validation.success(tparams)
+                // Some kinded and some unkinded type parameters. Give an error and keep going.
                 case (_ :: _, _ :: _) =>
-                  val syntheticallyKinded = tparams.map {
-                    case p: TypeParam.Kinded => p
-                    case TypeParam.Unkinded(ident) => TypeParam.Kinded(ident, defaultKind(ident))
-                  }
-                  toSoftFailure(TypeParams.Kinded(syntheticallyKinded), MismatchedTypeParameters(tparamsTree.loc))
+                  toSoftFailure(tparams, MismatchedTypeParameters(tparamsTree.loc))
                 case (Nil, Nil) =>
                   throw InternalCompilerException("Parser produced empty type parameter tree", tparamsTree.loc)
               }
@@ -2814,9 +2808,9 @@ object Weeder2 {
       }
     }
 
-    def pickKindedParameters(tree: Tree): Validation[KindedTypeParams, CompilationMessage] = {
+    def pickKindedParameters(tree: Tree): Validation[List[TypeParam], CompilationMessage] = {
       tryPick(TreeKind.TypeParameterList, tree) match {
-        case None => Validation.success(TypeParams.Elided)
+        case None => Validation.success(Nil)
         case Some(tparamsTree) =>
           val parameters = pickAll(TreeKind.Parameter, tparamsTree)
           flatMapN(traverse(parameters)(visitParameter)) {
@@ -2825,18 +2819,13 @@ object Weeder2 {
               val unkinded = tparams.collect { case t: TypeParam.Unkinded => t }
               (kinded, unkinded) match {
                 // Only kinded type parameters
-                case (_ :: _, Nil) => Validation.success(TypeParams.Kinded(kinded))
+                case (_ :: _, Nil) => Validation.success(tparams)
                 // Some kinded and some unkinded type parameters. We recover by kinding the unkinded ones as Ambiguous.
                 case (_, _ :: _) =>
                   val errors = unkinded.map {
                     case TypeParam.Unkinded(ident) => MissingTypeParamKind(ident.loc)
                   }
-                  val syntheticallyKinded = tparams.map {
-                    case p: TypeParam.Kinded => p
-                    case TypeParam.Unkinded(ident) =>
-                      TypeParam.Kinded(ident, Kind.Ambiguous(Name.mkQName("Type"), ident.loc.asSynthetic))
-                  }
-                  toSuccessOrSoftFailure(TypeParams.Kinded(syntheticallyKinded), errors)
+                  toSuccessOrSoftFailure(tparams, errors)
                 case (Nil, Nil) =>
                   throw InternalCompilerException("Parser produced empty type parameter tree", tparamsTree.loc)
               }
