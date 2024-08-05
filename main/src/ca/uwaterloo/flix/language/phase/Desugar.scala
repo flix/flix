@@ -710,7 +710,8 @@ object Desugar {
       Expr.TryCatch(e, rs, loc)
 
     case WeededAst.Expr.Throw(exp, loc) =>
-      throw new RuntimeException("JOE Throw TODO")
+      val e = visitExp(exp)
+      Expr.Throw(e, loc)
 
     case WeededAst.Expr.TryWith(exp, handlers, loc) =>
       val e = visitExp(exp)
