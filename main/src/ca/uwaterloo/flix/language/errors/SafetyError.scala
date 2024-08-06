@@ -315,6 +315,23 @@ object SafetyError {
   }
 
   /**
+   * An error raised to indicate that the object in a `throw` expression is not a Throwable.
+   *
+   * @param loc the location of the object
+   */
+  case class IllegalThrowType(loc: SourceLocation) extends SafetyError with Recoverable {
+    def summary: String = s"Exception type is not a subclass of Throwable."
+
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s""">> $summary
+         |
+         |${code(loc, "Type should be java.lang.Throwable or a subclass.")}
+         |""".stripMargin
+    }
+  }
+
+  /**
     * An error raised to indicate that a try-catch expression contains another try-catch expression.
     *
     * @param loc the location of the inner try-catch.

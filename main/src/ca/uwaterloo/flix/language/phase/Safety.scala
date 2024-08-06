@@ -24,6 +24,7 @@ import scala.annotation.tailrec
   *  - CheckedCast expressions.
   *  - UncheckedCast expressions.
   *  - TypeMatch expressions.
+  *  - Throw expressions
   */
 object Safety {
 
@@ -390,7 +391,8 @@ object Safety {
         nestedTryCatchError ++ visit(exp)(inTryCatch = true) ++
           rules.flatMap { case CatchRule(sym, clazz, e) => checkCatchClass(clazz, sym.loc) ++ visit(e) }
 
-      case Expr.Throw(_, _, _, _) => throw new RuntimeException("JOE THROW TBD")
+      case Expr.Throw(exp, _, _, loc) =>
+        visit(exp) ++ checkThrow(exp)
 
       case Expr.TryWith(exp, _, rules, _, _, _) =>
         visit(exp) ++
@@ -842,6 +844,23 @@ object Safety {
       List(IllegalCatchType(loc))
     } else {
       List.empty
+    }
+  }
+
+  /**
+   * Ensures that the type of the argument to `throw` is Throwable or a subclass.
+   *
+   * @param exp the expression to check
+   */
+  private def checkThrow(exp: Expr): List[SafetyError] = {
+     val valid = exp.tpe match {
+      case Type.Cst(TypeConstructor.Native(clazz), loc) => classOf[Throwable].isAssignableFrom(clazz)
+      case _ => false
+    }
+    if(valid) {
+      List()
+    } else {
+      List(IllegalThrowType(exp.loc))
     }
   }
 
