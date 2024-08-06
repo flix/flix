@@ -30,6 +30,7 @@ case class Source(input: Input, data: Array[Char], stable: Boolean) extends Sour
     case Input.Text(name, _, _) => name
     case Input.TxtFile(path) => path.toString
     case Input.PkgFile(path) => path.toString
+    case Input.Unknown => "unknown"
   }
 
   def src: Source = this
