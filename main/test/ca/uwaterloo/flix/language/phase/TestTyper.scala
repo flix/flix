@@ -1490,5 +1490,4 @@ class TestTyper extends AnyFunSuite with TestUtils {
     val result = compile(input, Options.Default)
     expectError[TypeError.AmbiguousMethod](result)
   }
-
 }
