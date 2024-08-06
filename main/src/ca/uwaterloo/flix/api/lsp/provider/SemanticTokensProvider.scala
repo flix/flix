@@ -460,8 +460,8 @@ object SemanticTokensProvider {
           acc ++ Iterator(t) ++ visitExp(exp)
       }
 
-    case Expr.Throw(_, _, _, _) =>
-      throw new RuntimeException("JOE THROW TBD")
+    case Expr.Throw(exp, _, _, _) =>
+      visitExp(exp)
 
     case Expr.TryWith(exp, eff, rules, _, _, _) =>
       val t = SemanticToken(SemanticTokenType.Type, Nil, eff.loc)
