@@ -45,18 +45,19 @@ object Scheme {
   /**
     * Instantiates the given type scheme `sc` by replacing all quantified variables with fresh type variables.
     */
-  def instantiate(sc: Scheme, loc: SourceLocation)(implicit flix: Flix): (List[Ast.TypeConstraint], List[Ast.BroadEqualityConstraint], Type) = {
+  def instantiate(sc: Scheme, loc: SourceLocation)(implicit flix: Flix): (List[Ast.TypeConstraint], List[Ast.BroadEqualityConstraint], Type, Map[Symbol.KindedTypeVarSym, Type.Var]) = {
     // Compute the base type.
     val baseType = sc.base
 
     //
     // Compute the fresh variables taking the instantiation mode into account.
     //
-    val freshVars = sc.quantifiers.foldLeft(Map.empty[Int, Type.Var]) {
+    val substMap = sc.quantifiers.foldLeft(Map.empty[Symbol.KindedTypeVarSym, Type.Var]) {
       case (macc, tvar) =>
         // Determine the rigidity of the fresh type variable.
-        macc + (tvar.id -> Type.freshVar(tvar.kind, loc, tvar.isRegion, Ast.VarText.Absent))
+        macc + (tvar -> Type.freshVar(tvar.kind, loc, tvar.isRegion, Ast.VarText.Absent))
     }
+    val freshVars = substMap.map { case (k, v) => k.id -> v }
 
     /**
       * Replaces every variable occurrence in the given type using `freeVars`.
@@ -106,7 +107,7 @@ object Scheme {
         Ast.BroadEqualityConstraint(visitType(tpe1), visitType(tpe2))
     }
 
-    (newTconstrs, newEconstrs, newBase)
+    (newTconstrs, newEconstrs, newBase, substMap)
   }
 
   /**
@@ -137,7 +138,7 @@ object Scheme {
   def lessThanEqual(sc1: Scheme, sc2: Scheme, tenv0: Map[Symbol.TraitSym, Ast.TraitContext], eenv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Boolean = {
 
     // Instantiate sc2, creating [T/α₂]π₂ and [T/α₂]τ₂
-    val (cconstrs2_0, econstrs2_0, tpe2_0) = Scheme.instantiate(sc2, SourceLocation.Unknown)
+    val (cconstrs2_0, econstrs2_0, tpe2_0, _) = Scheme.instantiate(sc2, SourceLocation.Unknown)
 
     // Resolve what we can from the new econstrs
     // TODO ASSOC-TYPES probably these should be narrow from the start

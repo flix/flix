@@ -110,7 +110,7 @@ object Desugar {
   private def visitDef(def0: WeededAst.Declaration.Def)(implicit flix: Flix): DesugaredAst.Declaration.Def = def0 match {
     case WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0, fparams0, exp0, tpe0, eff0, tconstrs0, constrs0, loc) =>
       flix.subtask(ident.name, sample = true)
-      val tparams = visitKindedTypeParams(tparams0)
+      val tparams = tparams0.map(visitTypeParam)
       val fparams = visitFormalParams(fparams0)
       val exp = visitExp(exp0)
       val tpe = visitType(tpe0)
@@ -125,7 +125,7 @@ object Desugar {
     */
   private def visitLaw(law0: WeededAst.Declaration.Law)(implicit flix: Flix): DesugaredAst.Declaration.Law = law0 match {
     case WeededAst.Declaration.Law(doc, ann, mod, ident, tparams0, fparams0, exp0, tpe0, eff0, tconstrs0, loc) =>
-      val tparams = visitKindedTypeParams(tparams0)
+      val tparams = tparams0.map(visitTypeParam)
       val fparams = visitFormalParams(fparams0)
       val exp = visitExp(exp0)
       val tpe = visitType(tpe0)
@@ -139,7 +139,7 @@ object Desugar {
     */
   private def visitEnum(enum0: WeededAst.Declaration.Enum): DesugaredAst.Declaration.Enum = enum0 match {
     case WeededAst.Declaration.Enum(doc, ann, mod, ident, tparams0, derives0, cases0, loc) =>
-      val tparams = visitTypeParams(tparams0)
+      val tparams = tparams0.map(visitTypeParam)
       val derives = visitDerivations(derives0)
       val cases = cases0.map(visitCase)
       DesugaredAst.Declaration.Enum(doc, ann, mod, ident, tparams, derives, cases, loc)
@@ -150,7 +150,7 @@ object Desugar {
    */
   private def visitStruct(struct0: WeededAst.Declaration.Struct): DesugaredAst.Declaration.Struct = struct0 match {
     case WeededAst.Declaration.Struct(doc, ann, mod, ident, tparams0, fields0, loc) =>
-      val tparams = visitTypeParams(tparams0)
+      val tparams = tparams0.map(visitTypeParam)
       val fields = fields0.map(visitField)
       DesugaredAst.Declaration.Struct(doc, ann, mod, ident, tparams, fields, loc)
   }
@@ -161,7 +161,7 @@ object Desugar {
   private def visitRestrictableEnum(restrictableEnum0: WeededAst.Declaration.RestrictableEnum): DesugaredAst.Declaration.RestrictableEnum = restrictableEnum0 match {
     case WeededAst.Declaration.RestrictableEnum(doc, ann, mod, ident, index0, tparams0, derives0, cases0, loc) =>
       val index = visitTypeParam(index0)
-      val tparams = visitTypeParams(tparams0)
+      val tparams = tparams0.map(visitTypeParam)
       val derives = visitDerivations(derives0)
       val cases = cases0.map(visitRestrictableCase)
       DesugaredAst.Declaration.RestrictableEnum(doc, ann, mod, ident, index, tparams, derives, cases, loc)
@@ -172,7 +172,7 @@ object Desugar {
     */
   private def visitTypeAlias(typeAlias0: WeededAst.Declaration.TypeAlias): DesugaredAst.Declaration.TypeAlias = typeAlias0 match {
     case WeededAst.Declaration.TypeAlias(doc, ann, mod, ident, tparams0, tpe0, loc) =>
-      val tparams = visitTypeParams(tparams0)
+      val tparams = tparams0.map(visitTypeParam)
       val tpe = visitType(tpe0)
       DesugaredAst.Declaration.TypeAlias(doc, ann, mod, ident, tparams, tpe, loc)
   }
@@ -221,7 +221,7 @@ object Desugar {
     */
   private def visitSig(sig0: WeededAst.Declaration.Sig)(implicit flix: Flix): DesugaredAst.Declaration.Sig = sig0 match {
     case WeededAst.Declaration.Sig(doc, ann, mod, ident, tparams0, fparams0, exp0, tpe0, eff0, tconstrs0, econstrs0, loc) =>
-      val tparams = visitKindedTypeParams(tparams0)
+      val tparams = tparams0.map(visitTypeParam)
       val fparams = visitFormalParams(fparams0)
       val exp = exp0.map(visitExp)
       val tpe = visitType(tpe0)
@@ -370,16 +370,6 @@ object Desugar {
   }
 
   /**
-    * Desugars the given [[WeededAst.KindedTypeParams]] `tparams0`.
-    */
-  private def visitKindedTypeParams(tparams0: WeededAst.KindedTypeParams): DesugaredAst.KindedTypeParams = tparams0 match {
-    case WeededAst.TypeParams.Elided => DesugaredAst.TypeParams.Elided
-    case WeededAst.TypeParams.Kinded(tparams1) =>
-      val tparams = tparams1.map(visitTypeParam).collect { case t: DesugaredAst.TypeParam.Kinded => t }
-      DesugaredAst.TypeParams.Kinded(tparams)
-  }
-
-  /**
     * Desugars the given list of [[WeededAst.FormalParam]] `fparams0`.
     */
   private def visitFormalParams(fparams0: List[WeededAst.FormalParam]): List[DesugaredAst.FormalParam] =
@@ -405,16 +395,6 @@ object Desugar {
   }
 
   /**
-    * Desugars the given [[WeededAst.TypeParams]] `tparams0`.
-    */
-  private def visitTypeParams(tparams0: WeededAst.TypeParams): DesugaredAst.TypeParams = tparams0 match {
-    case params: WeededAst.KindedTypeParams => visitKindedTypeParams(params)
-    case WeededAst.TypeParams.Unkinded(tparams1) =>
-      val tparams = tparams1.map(visitTypeParam).collect { case t: DesugaredAst.TypeParam.Unkinded => t }
-      DesugaredAst.TypeParams.Unkinded(tparams)
-  }
-
-  /**
     * Desugars the given [[WeededAst.Derivations]] `derives0`.
     */
   private def visitDerivations(derives0: WeededAst.Derivations): DesugaredAst.Derivations = derives0 match {
@@ -437,7 +417,7 @@ object Desugar {
   private def visitField(field0: WeededAst.StructField): DesugaredAst.StructField = field0 match {
     case WeededAst.StructField(ident, tpe0, loc) =>
       val tpe = visitType(tpe0)
-      DesugaredAst.StructField(ident, tpe, loc)
+      throw new RuntimeException("JOE TO")
   }
 
   /**
@@ -636,10 +616,10 @@ object Desugar {
       val e3 = visitExp(exp3)
       Expr.ArrayStore(e1, e2, e3, loc)
 
-    case WeededAst.Expr.StructNew(name, fields0, region0, loc) => 
+    case WeededAst.Expr.StructNew(name, fields0, region0, loc) =>
       val fields = fields0.map(field => (field._1, visitExp(field._2)))
       val region = visitExp(region0)
-      Expr.StructNew(name, fields, region, loc)
+      throw new RuntimeException("JOE TBD")
 
     case WeededAst.Expr.StructGet(e, name, loc) =>
       Expr.StructGet(visitExp(e), name, loc)
@@ -729,6 +709,10 @@ object Desugar {
       val rs = rules.map(visitCatchRule)
       Expr.TryCatch(e, rs, loc)
 
+    case WeededAst.Expr.Throw(exp, loc) =>
+      val e = visitExp(exp)
+      Expr.Throw(e, loc)
+
     case WeededAst.Expr.TryWith(exp, handlers, loc) =>
       val e = visitExp(exp)
       handlers.foldLeft(e) {
@@ -749,44 +733,6 @@ object Desugar {
       val e = visitExp(exp)
       val es = visitExps(exps)
       Expr.InvokeMethod2(e, name, es, loc)
-
-    case WeededAst.Expr.InvokeStaticMethod2(className, methodName, exps, loc) =>
-      val es = visitExps(exps)
-      Expr.InvokeStaticMethod2(className, methodName, es, loc)
-
-    case WeededAst.Expr.InvokeConstructor(className, exps, sig, loc) =>
-      val es = visitExps(exps)
-      val ts = sig.map(visitType)
-      Expr.InvokeConstructor(className, es, ts, loc)
-
-    case WeededAst.Expr.InvokeMethod(className, methodName, exp, exps, sig, retTpe, loc) =>
-      val e = visitExp(exp)
-      val es = visitExps(exps)
-      val ts = sig.map(visitType)
-      val rt = visitType(retTpe)
-      Expr.InvokeMethod(className, methodName, e, es, ts, rt, loc)
-
-    case WeededAst.Expr.InvokeStaticMethod(className, methodName, exps, sig, retTpe, loc) =>
-      val es = visitExps(exps)
-      val ts = sig.map(visitType)
-      val rt = visitType(retTpe)
-      Expr.InvokeStaticMethod(className, methodName, es, ts, rt, loc)
-
-    case WeededAst.Expr.GetField(className, fieldName, exp, loc) =>
-      val e = visitExp(exp)
-      Expr.GetField(className, fieldName, e, loc)
-
-    case WeededAst.Expr.PutField(className, fieldName, exp1, exp2, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      Expr.PutField(className, fieldName, e1, e2, loc)
-
-    case WeededAst.Expr.GetStaticField(className, fieldName, loc) =>
-      Expr.GetStaticField(className, fieldName, loc)
-
-    case WeededAst.Expr.PutStaticField(className, fieldName, exp, loc) =>
-      val e = visitExp(exp)
-      Expr.PutStaticField(className, fieldName, e, loc)
 
     case WeededAst.Expr.NewObject(tpe, methods, loc) =>
       val t = visitType(tpe)
@@ -1146,7 +1092,7 @@ object Desugar {
     ts match {
       case Nil => // Case 1: No arguments.
         val fparam = DesugaredAst.FormalParam(Name.Ident("_", loc0), Ast.Modifiers.Empty, Some(DesugaredAst.Type.Unit(loc0)), loc0)
-        val call = DesugaredAst.Expr.InvokeConstructor(className, Nil, Nil, loc0)
+        val call = DesugaredAst.Expr.InvokeConstructorOld(className, Nil, Nil, loc0)
         val lambdaBody = jvmCast(call, tpe, eff, loc0)
         val e1 = DesugaredAst.Expr.Lambda(fparam, lambdaBody, loc0)
         DesugaredAst.Expr.Let(ident0, Ast.Modifiers.Empty, e1, e, loc0)
@@ -1167,7 +1113,7 @@ object Desugar {
         }
 
         // Assemble the lambda expression.
-        val call = DesugaredAst.Expr.InvokeConstructor(className, as, ts, loc0)
+        val call = DesugaredAst.Expr.InvokeConstructorOld(className, as, ts, loc0)
         val lambdaBody = jvmCast(call, tpe, eff, loc0)
         val e1 = mkCurried(fs, lambdaBody, loc0)
         DesugaredAst.Expr.Let(ident0, Ast.Modifiers.Empty, e1, e, loc0)
@@ -1226,7 +1172,7 @@ object Desugar {
     }
 
     // Assemble the lambda expression.
-    val call = DesugaredAst.Expr.InvokeMethod(className, methodName, as.head, as.tail, ts, tpe, loc0)
+    val call = DesugaredAst.Expr.InvokeMethodOld(className, methodName, as.head, as.tail, ts, tpe, loc0)
     val lambdaBody = jvmCast(call, tpe, eff, loc0)
     val e1 = mkCurried(fs, lambdaBody, loc0)
     DesugaredAst.Expr.Let(ident, Ast.Modifiers.Empty, e1, e, loc0)
@@ -1251,7 +1197,7 @@ object Desugar {
     ts match {
       case Nil => // Case 1: No arguments.
         val fparam = DesugaredAst.FormalParam(Name.Ident("_", loc0), Ast.Modifiers.Empty, Some(DesugaredAst.Type.Unit(loc0)), loc0)
-        val call = DesugaredAst.Expr.InvokeStaticMethod(className, methodName, Nil, Nil, tpe, loc0)
+        val call = DesugaredAst.Expr.InvokeStaticMethodOld(className, methodName, Nil, Nil, tpe, loc0)
         val lambdaBody = jvmCast(call, tpe, eff, loc0)
         val e1 = DesugaredAst.Expr.Lambda(fparam, lambdaBody, loc0)
         DesugaredAst.Expr.Let(ident, Ast.Modifiers.Empty, e1, e, loc0)
@@ -1272,7 +1218,7 @@ object Desugar {
         }
 
         // Assemble the lambda expression.
-        val call = DesugaredAst.Expr.InvokeStaticMethod(className, methodName, as, ts, tpe, loc0)
+        val call = DesugaredAst.Expr.InvokeStaticMethodOld(className, methodName, as, ts, tpe, loc0)
         val lambdaBody = jvmCast(call, tpe, eff, loc0)
         val e1 = mkCurried(fs, lambdaBody, loc0)
         DesugaredAst.Expr.Let(ident, Ast.Modifiers.Empty, e1, e, loc0)

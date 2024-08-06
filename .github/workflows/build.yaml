@@ -1,6 +1,6 @@
 name: Compiler Tests
 
-on: [pull_request]
+on: [pull_request, merge_group]
 
 # Cancel previous runs if the PR is updated
 concurrency:
