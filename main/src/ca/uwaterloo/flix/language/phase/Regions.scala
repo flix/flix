@@ -194,6 +194,8 @@ object Regions {
       }
       rulesErrors ++ visitExp(exp) ++ checkType(tpe, loc)
 
+    case Expr.Throw(_, _, _, _) => throw new RuntimeException("JOE THROW TBD")
+
     case Expr.TryWith(exp, _, rules, tpe, _, loc) =>
       val rulesErrors = rules.flatMap {
         case HandlerRule(_, _, e) => visitExp(e)

@@ -247,6 +247,7 @@ object EffectVerifier {
       val expected = Type.mkUnion(exp.eff :: rules.map(_.exp.eff), loc)
       val actual = eff
       expectType(expected, actual, loc)
+    case Expr.Throw(_, _, _, _) => throw new RuntimeException("JOE THROW TBD")
     case Expr.TryWith(exp, effUse, rules, tpe, eff, loc) =>
       visitExp(exp)
       rules.foreach { r => visitExp(r.exp) }
