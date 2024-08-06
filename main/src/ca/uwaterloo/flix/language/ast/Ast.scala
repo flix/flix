@@ -38,6 +38,7 @@ object Ast {
       case Input.Text(name, _, _) => name
       case Input.TxtFile(path) => path.toString
       case Input.PkgFile(path) => path.toString
+      case Input.Unknown => "<unknown>"
     }
 
     def src: Source = this

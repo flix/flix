@@ -7,7 +7,7 @@ object SourcePosition {
   /**
     * Represents an unknown source position.
     */
-  val Unknown: SourcePosition = SourcePosition(Source(Input.Text("<unknown>", "", stable = true), Array.emptyCharArray, stable = true), 0, 0)
+  val Unknown: SourcePosition = SourcePosition(Source(Input.Unknown, Array.emptyCharArray, stable = true), 0, 0)
 }
 
 /**
