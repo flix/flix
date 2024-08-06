@@ -105,9 +105,9 @@ object Eraser {
         case AtomicOp.ArrayLoad => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.ArrayStore => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.ArrayLength => ApplyAtomic(op, es, t, purity, loc)
-        case AtomicOp.StructNew(_, _) => throw new RuntimeException("JOE TBD")
-        case AtomicOp.StructGet(_, _) => throw new RuntimeException("JOE TBD")
-        case AtomicOp.StructPut(_, _) => throw new RuntimeException("JOE TBD")
+        case AtomicOp.StructNew(_, _) => ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.StructGet(_, _) => ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.StructPut(_, _) => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Ref => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Deref =>
           castExp(ApplyAtomic(op, es, erase(tpe), purity, loc), t, purity, loc)
@@ -208,7 +208,7 @@ object Eraser {
       case Ref(tpe) => Ref(erase(tpe))
       case Tuple(elms) => Tuple(elms.map(erase))
       case MonoType.Enum(sym) => MonoType.Enum(sym)
-      case MonoType.Struct(sym, elmTpes, targs) => MonoType.Struct(sym, elmTpes, targs)
+      case MonoType.Struct(sym, elms, tparams) => MonoType.Struct(sym, elms.map(erase), tparams.map(erase))
       case Arrow(args, result) => Arrow(args.map(visitType), box(result))
       case RecordEmpty => RecordEmpty
       case RecordExtend(label, value, rest) => RecordExtend(label, erase(value), visitType(rest))
