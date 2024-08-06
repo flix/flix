@@ -725,7 +725,6 @@ object ConstraintGen {
         val resultEff = evar
         (resultTpe, resultEff)
 
-
       case Expr.TryWith(exp, effUse, rules, tvar, loc) =>
         val (tpe, eff) = visitExp(exp)
         val continuationEffect = Type.freshVar(Kind.Eff, loc)
