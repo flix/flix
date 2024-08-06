@@ -1133,7 +1133,7 @@ object ResolutionError {
     * @param loc the location where the error occurred.
     */
   case class NonExistentStructField(struct: String, field: String, loc: SourceLocation) extends ResolutionError with Recoverable {
-    override def summary: String = s"Struct is missing a field"
+    override def summary: String = s"Struct $struct does not have the field $field"
 
     def message(formatter: Formatter): String = {
       import formatter._
