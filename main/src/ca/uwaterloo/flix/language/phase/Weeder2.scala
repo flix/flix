@@ -910,7 +910,7 @@ object Weeder2 {
             val (processed, errors) = Constants.visitChars(lit, loc)
             val cst = Validation.success(Expr.Cst(Ast.Constant.Str(processed), loc)).withSoftFailures(errors)
             mapN(cst) {
-              cst => Expr.Binary(SemanticOp.StringOp.Concat, acc, cst, tree.loc.asSynthetic)
+              cst => Expr.InvokeMethod2(acc, Name.Ident("concat", tree.loc.asSynthetic), List(cst), tree.loc.asSynthetic)
             }
           }
         // An expression part: Apply 'toString' to it and concat the result
@@ -922,7 +922,7 @@ object Weeder2 {
               "Debug.stringify"
             } else "ToString.toString"
             val str = Expr.Apply(Expr.Ambiguous(Name.mkQName(funcName), loc), List(expr), loc)
-            Expr.Binary(SemanticOp.StringOp.Concat, acc, str, loc)
+            Expr.InvokeMethod2(acc, Name.Ident("concat", loc), List(str), loc)
           })
         // Skip anything else (Parser will have produced an error.)
         case (acc, _) => Validation.success(acc)
