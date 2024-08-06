@@ -121,7 +121,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.InaccessibleStruct](result)
   }
 
-  ignore("InaccessibleStruct.03") {
+  test("InaccessibleStruct.03") {
     val input =
       s"""
          |mod A{
