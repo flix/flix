@@ -230,7 +230,8 @@ object PredDeps {
         case (acc, CatchRule(_, _, e)) => acc + visitExp(e)
       }
 
-    case Expr.Throw(_, _, _, _) => throw new RuntimeException("JOE THROW TBD")
+    case Expr.Throw(exp, _, _, _) =>
+      visitExp(exp)
 
     case Expr.TryWith(exp, _, rules, _, _, _) =>
       rules.foldLeft(visitExp(exp)) {

@@ -342,7 +342,10 @@ object Stratifier {
         case (e, rs) => Expr.TryCatch(e, rs, tpe, eff, loc)
       }
 
-    case Expr.Throw(_, _, _, _) => throw new RuntimeException("JOE THROW TBD")
+    case Expr.Throw(exp, tpe, eff, loc) =>
+      mapN(visitExp(exp)) {
+        case e => Expr.Throw(e, tpe, eff, loc)
+      }
 
     case Expr.TryWith(exp, sym, rules, tpe, eff, loc) =>
       val rulesVal = traverse(rules) {
