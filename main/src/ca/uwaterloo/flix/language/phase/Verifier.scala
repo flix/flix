@@ -413,6 +413,7 @@ object Verifier {
         case AtomicOp.Throw =>
           val List(t) = ts
           checkJavaSubtype(t, classOf[Throwable], loc)
+          tpe
 
         case AtomicOp.InstanceOf(_) =>
           val List(t) = ts
