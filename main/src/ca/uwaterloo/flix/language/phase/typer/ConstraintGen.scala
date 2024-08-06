@@ -719,7 +719,11 @@ object ConstraintGen {
         (resTpe, resEff)
 
       case KindedAst.Expr.Throw(exp, tvar, evar, loc) =>
-        throw new RuntimeException("JOE TODO")
+        val (_, eff) = visitExp(exp)
+        c.unifyType(evar, Type.mkUnion(eff, Type.IO, loc), loc)
+        val resultTpe = tvar
+        val resultEff = evar
+        (resultTpe, resultEff)
 
       case Expr.TryWith(exp, effUse, rules, tvar, loc) =>
         val (tpe, eff) = visitExp(exp)
