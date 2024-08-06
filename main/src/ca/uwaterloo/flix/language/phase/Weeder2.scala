@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast._
 import ca.uwaterloo.flix.language.ast.SyntaxTree.{Child, Tree, TreeKind}
-import ca.uwaterloo.flix.language.ast.shared.Fixity
+import ca.uwaterloo.flix.language.ast.shared.{Fixity, Source}
 import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, Name, ReadAst, SemanticOp, SourceLocation, SourcePosition, Symbol, SyntaxTree, Token, TokenKind, WeededAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.language.errors.ParseError._
@@ -60,7 +60,7 @@ object Weeder2 {
     }(DebugValidation())
   }
 
-  private def weed(src: Ast.Source, tree: Tree): Validation[CompilationUnit, CompilationMessage] = {
+  private def weed(src: Source, tree: Tree): Validation[CompilationUnit, CompilationMessage] = {
     mapN(pickAllUsesAndImports(tree), Decls.pickAllDeclarations(tree)) {
       (usesAndImports, declarations) => CompilationUnit(usesAndImports, declarations, tree.loc)
     }
@@ -461,9 +461,9 @@ object Weeder2 {
       ) {
         (doc, ann, mods, ident, tparams, fields) =>
         // Ensure that each name is unique
-        val errors = getDuplicates(fields, (f: StructField) => f.ident.name)
+        val errors = getDuplicates(fields, (f: StructField) => f.name.name)
         // For each field, only keep the first occurrence of the name
-        val groupedByName = fields.groupBy(_.ident.name)
+        val groupedByName = fields.groupBy(_.name.name)
         val filteredFields = groupedByName.values.map(_.head).toList
         if (errors.isEmpty) {
           Validation.success(Declaration.Struct(
@@ -474,7 +474,7 @@ object Weeder2 {
           Validation.success(Declaration.Struct(
             doc, ann, mods, ident, tparams, filteredFields.sortBy(_.loc), tree.loc
           )).withSoftFailures(errors.map {
-            case (field1, field2) => DuplicateStructField(ident.name, field1.ident.name, field1.ident.loc, field2.ident.loc, ident.loc)
+            case (field1, field2) => DuplicateStructField(ident.name, field1.name.name, field1.name.loc, field2.name.loc, ident.loc)
           })
         }
       }
@@ -489,7 +489,7 @@ object Weeder2 {
         (ident, ttype) =>
           // Make a source location that spans the name and type
           val loc = SourceLocation(isReal = true, ident.loc.sp1, tree.loc.sp2)
-          StructField(ident, ttype, loc)
+          StructField(Name.mkLabel(ident), ttype, loc)
       }
     }
     private def visitTypeAliasDecl(tree: Tree): Validation[Declaration.TypeAlias, CompilationMessage] = {
@@ -829,6 +829,7 @@ object Weeder2 {
         case TreeKind.Expr.Unsafe => visitUnsafeExpr(tree)
         case TreeKind.Expr.Without => visitWithoutExpr(tree)
         case TreeKind.Expr.Try => visitTryExpr(tree)
+        case TreeKind.Expr.Throw => visitThrow(tree)
         case TreeKind.Expr.Do => visitDoExpr(tree)
         case TreeKind.Expr.InvokeConstructor2 => visitInvokeConstructor2Expr(tree)
         case TreeKind.Expr.InvokeMethod2 => visitInvokeMethod2Expr(tree)
@@ -1716,6 +1717,11 @@ object Weeder2 {
       })
     }
 
+    private def visitThrow(tree:Tree): Validation[Expr, CompilationMessage] = {
+      expect(tree, TreeKind.Expr.Throw)
+      mapN(pickExpr(tree))(e => Expr.Throw(e, tree.loc))
+    }
+
     private def visitDoExpr(tree: Tree): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.Do)
       mapN(pickQName(tree), pickArguments(tree)) {
@@ -1768,7 +1774,10 @@ object Weeder2 {
       expect(tree, TreeKind.Expr.StructPut)
       val struct = pickExpr(tree)
       val ident = pickNameIdent(tree)
-      val rhs = pickExpr(tree)
+      val rhs = flatMapN(pick(TreeKind.Expr.StructPutRHS, tree)) {
+        tree => pickExpr(tree)
+      }
+
       mapN(struct, ident, rhs) {
         (struct, ident, rhs) => Expr.StructPut(struct, Name.mkLabel(ident), rhs, tree.loc)
       }
@@ -1793,7 +1802,7 @@ object Weeder2 {
       flatMapN(Types.pickType(tree), traverse(fields)(visitNewStructField), pickExpr(tree)) {
         (tpe, fields, region) =>
           tpe match {
-            case WeededAst.Type.Ambiguous(qname, _) if qname.isUnqualified =>
+            case WeededAst.Type.Ambiguous(qname, _) =>
               Validation.success(Expr.StructNew(qname, fields, region, tree.loc))
             case _ =>
               val m = IllegalQualifiedName(tree.loc)
@@ -1802,10 +1811,10 @@ object Weeder2 {
        }
     }
 
-    private def visitNewStructField(tree: Tree): Validation[(Name.Ident, Expr), CompilationMessage] = {
+    private def visitNewStructField(tree: Tree): Validation[(Name.Label, Expr), CompilationMessage] = {
       expect(tree, TreeKind.Expr.LiteralStructFieldFragment)
       mapN(pickNameIdent(tree), pickExpr(tree)) {
-        (ident, expr) => (ident, expr)
+        (ident, expr) => (Name.mkLabel(ident), expr)
       }
     }
 

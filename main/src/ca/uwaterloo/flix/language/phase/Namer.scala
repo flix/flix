@@ -17,7 +17,8 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, Source}
+import ca.uwaterloo.flix.language.ast.Ast.BoundBy
+import ca.uwaterloo.flix.language.ast.shared.Source
 import ca.uwaterloo.flix.language.ast.{NamedAst, _}
 import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.language.errors.NameError
@@ -350,7 +351,7 @@ object Namer {
     * Performs naming on the given enum derivations.
     */
   private def visitDerivations(derives0: DesugaredAst.Derivations): NamedAst.Derivations =
-    NamedAst.Derivations(derives0.classes, derives0.loc)
+    NamedAst.Derivations(derives0.traits, derives0.loc)
 
   /**
     * Performs naming on the given enum case.
@@ -830,6 +831,10 @@ object Namer {
       val e = visitExp(exp, ns0)
       val rs = visitTryCatchRules(rules, ns0)
       NamedAst.Expr.TryCatch(e, rs, loc)
+
+    case DesugaredAst.Expr.Throw(exp, loc) =>
+      val e = visitExp(exp, ns0)
+      NamedAst.Expr.Throw(e, loc)
 
     case DesugaredAst.Expr.TryWith(exp, eff, rules, loc) =>
       val e = visitExp(exp, ns0)

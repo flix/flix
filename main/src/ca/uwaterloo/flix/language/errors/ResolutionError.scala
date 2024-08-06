@@ -361,7 +361,7 @@ object ResolutionError {
 
   /**
     * Inaccessible Struct Error
-    * 
+    *
     * @param sym the struct symbol
     * @param ns the namespace where the symbol is not accessible
     * @param loc the location where the error occurred
@@ -731,6 +731,25 @@ object ResolutionError {
 
     private def appendFields: String = {
       fields.map(f => "  " + stripAccessModifier(f.toString) + System.lineSeparator()).mkString
+    }
+  }
+
+  /**
+   * An error raised to indicate that a static field name was not found.
+   *
+   * @param clazz the class name.
+   * @param field the field name.
+   * @param loc   the location of the field access.
+   */
+  case class UndefinedJvmStaticField(clazz: Class[_], field: Name.Ident, loc: SourceLocation) extends ResolutionError with Recoverable {
+    def summary: String = s"Undefined static field."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s""">> Undefined static field '${red(field.name)}' in class '${cyan(clazz.getName)}'.
+         |
+         |${code(loc, "undefined static field.")}
+         |""".stripMargin
     }
   }
 

@@ -793,7 +793,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[TypeError.MismatchedTypes](result)
   }
 
-  test("UndefinedJvmField.01") {
+  test("UndefinedJvmStaticField.01") {
     val input =
       raw"""
            |import java.lang.Math
@@ -801,10 +801,10 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |def foo(): Unit = Math.Foo
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmField](result)
+    expectError[ResolutionError.UndefinedJvmStaticField](result)
   }
 
-  test("UndefinedJvmField.02") {
+  test("UndefinedJvmStaticField.02") {
     val input =
       raw"""
            |import java.lang.Math
@@ -812,10 +812,10 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |def foo(): Unit = Math.Abs
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmField](result)
+    expectError[ResolutionError.UndefinedJvmStaticField](result)
   }
 
-  test("UndefinedJvmField.03") {
+  test("UndefinedJvmStaticField.03") {
     val input =
       raw"""
            |import java.lang.Math
@@ -824,7 +824,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |def foo(): Unit = File.PI
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmField](result)
+    expectError[ResolutionError.UndefinedJvmStaticField](result)
   }
 
   test("UndefinedTag.01") {
