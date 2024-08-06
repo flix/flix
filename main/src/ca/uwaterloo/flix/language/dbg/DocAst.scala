@@ -101,6 +101,8 @@ object DocAst {
 
     case class TryCatch(d: Expr, rules: List[(Symbol.VarSym, Class[_], Expr)]) extends Atom
 
+    case class Throw(d: Expr) extends Atom
+
     case class TryWith(d1: Expr, eff: Symbol.EffectSym, rules: List[(Symbol.OpSym, List[Ascription], Expr)]) extends Atom
 
     case class Stm(d1: Expr, d2: Expr) extends LetBinder
