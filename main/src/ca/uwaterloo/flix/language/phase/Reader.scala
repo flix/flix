@@ -43,15 +43,15 @@ object Reader {
       val result = mutable.Map.empty[Source, Unit]
       for (input <- inputs) {
         input match {
-          case Input.Text(_, text, stable) =>
-            val src = Source(input, text.toCharArray, stable)
+          case Input.Text(_, text, _) =>
+            val src = Source(input, text.toCharArray)
             result += (src -> ())
 
           case Input.TxtFile(path) =>
             val bytes = Files.readAllBytes(path)
             val str = new String(bytes, flix.defaultCharset)
             val arr = str.toCharArray
-            val src = Source(input, arr, stable = false)
+            val src = Source(input, arr)
             result += (src -> ())
 
           case Input.PkgFile(path) =>
@@ -88,7 +88,7 @@ object Reader {
           val bytes = StreamOps.readAllBytes(zip.getInputStream(entry))
           val str = new String(bytes, flix.defaultCharset)
           val arr = str.toCharArray
-          result += Source(Input.Text(fullName, str, stable = false), arr, stable = false)
+          result += Source(Input.Text(fullName, str, stable = false), arr)
         }
       }
       result.toList

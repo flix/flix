@@ -46,7 +46,7 @@ object Category {
     */
   def categoryOf(s: String): Category = {
     val input = Input.Text("<shell>", s, stable = false)
-    val source = Source(input, s.toCharArray, stable = false)
+    val source = Source(input, s.toCharArray)
 
     // Tokenize the input and check if the first token looks like the start of a declaration or an expression.
     Validation.mapN(Lexer.lex(source)) {

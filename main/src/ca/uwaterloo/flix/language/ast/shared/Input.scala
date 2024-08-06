@@ -23,6 +23,16 @@ import java.nio.file.Path
 sealed trait Input {
 
   /**
+   * Returns `true` if the input is stable (i.e. cannot be changed once loaded).
+   */
+  def isStable: Boolean = this match {
+    case Input.Text(_, _, stable) => stable
+    case Input.TxtFile(_) => false
+    case Input.PkgFile(_) => false
+    case Input.Unknown => false
+  }
+
+  /**
    * Returns the security context associated with the input.
    */
   def security: SecurityContext = SecurityContext.AllPermissions
