@@ -585,11 +585,11 @@ object Verifier {
   /**
     * Asserts that `tpe` is a subtype of the java class type `klazz`.
     */
-  @tailrec
   private def checkJavaSubtype(tpe: MonoType, klazz: Class[_], loc: SourceLocation): MonoType = {
     tpe match {
       case MonoType.Array(elmt) if klazz.isArray =>
         checkJavaSubtype(elmt, klazz.getComponentType, loc)
+        tpe
 
       case MonoType.Native(k) if klazz.isAssignableFrom(k) =>
         tpe
