@@ -124,7 +124,7 @@ object Summary {
     }
 
     def zero(name: String): FileSummary =
-      FileSummary(Source(Input.Text(name, "", stable = true), Array.emptyCharArray, stable = true), FileData.zero)
+      FileSummary(Source(Input.Text(name, "", stable = true), Array.emptyCharArray), FileData.zero)
 
     sums.groupBy(sum => prefixFileName(sum.src.name, nsDepth)).map {
       case (name, sums) => sums.foldLeft(zero(name))(comb).copy(src = zero(name).src)
@@ -169,7 +169,7 @@ object Summary {
   }
 
   private val unknownSource = {
-    Source(Input.Text("generated", "", stable = true), Array.emptyCharArray, stable = true)
+    Source(Input.Text("generated", "", stable = true), Array.emptyCharArray)
   }
 
   /** debugSrc is just for consistency checking exceptions */

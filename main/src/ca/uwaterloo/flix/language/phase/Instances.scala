@@ -241,8 +241,8 @@ object Instances {
     * Reassembles an instance
     */
   private def checkInstance(inst: TypedAst.Instance, root: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): List[InstanceError] = {
-    val isTraitStable = inst.trt.loc.source.stable
-    val isInstanceStable = inst.loc.source.stable
+    val isTraitStable = inst.trt.loc.source.input.isStable
+    val isInstanceStable = inst.loc.source.input.isStable
     val isIncremental = changeSet.isInstanceOf[ChangeSet.Changes]
     if (isIncremental && isTraitStable && isInstanceStable) {
       return Nil
