@@ -24,10 +24,6 @@ mod Concurrent {
     pub enum Condition(JCondition)
 
     mod Condition {
-        // TODO NS-REFACTOR these imports can be removed
-        use Concurrent.Condition;
-        use Concurrent.Condition.Condition;
-
         ///
         /// Causes the current thread to wait until it is signalled or interrupted.
         ///

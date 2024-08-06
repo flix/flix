@@ -231,6 +231,12 @@ object Verifier {
             case _ => failMismatchedShape(t1, "Array", loc)
           }
 
+        case AtomicOp.StructNew(_, _) => throw new RuntimeException("JOE TBD")
+
+        case AtomicOp.StructGet(_, _) => throw new RuntimeException("JOE TBD")
+
+        case AtomicOp.StructPut(_, _) => throw new RuntimeException("JOE TBD")
+
         case AtomicOp.ArrayNew =>
           val List(t1, t2) = ts
           val arrType = MonoType.Array(t1)
@@ -403,6 +409,11 @@ object Verifier {
           val List(t) = ts
           checkJavaSubtype(t, field.getType, loc)
           check(expected = MonoType.Unit)(actual = tpe, loc)
+
+        case AtomicOp.Throw =>
+          val List(t) = ts
+          checkJavaSubtype(t, classOf[Throwable], loc)
+          tpe
 
         case AtomicOp.InstanceOf(_) =>
           val List(t) = ts
@@ -577,11 +588,11 @@ object Verifier {
   /**
     * Asserts that `tpe` is a subtype of the java class type `klazz`.
     */
-  @tailrec
   private def checkJavaSubtype(tpe: MonoType, klazz: Class[_], loc: SourceLocation): MonoType = {
     tpe match {
       case MonoType.Array(elmt) if klazz.isArray =>
         checkJavaSubtype(elmt, klazz.getComponentType, loc)
+        tpe
 
       case MonoType.Native(k) if klazz.isAssignableFrom(k) =>
         tpe

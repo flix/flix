@@ -18,10 +18,10 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.{Bootstrap, Flix}
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.Ast.{Input, Source}
-import ca.uwaterloo.flix.language.ast.{Ast, ReadAst}
+import ca.uwaterloo.flix.language.ast.shared.{Input, Source}
+import ca.uwaterloo.flix.language.ast.{ReadAst, SourceLocation}
 import ca.uwaterloo.flix.language.dbg.AstPrinter._
-import ca.uwaterloo.flix.util.{StreamOps, Validation}
+import ca.uwaterloo.flix.util.{InternalCompilerException, StreamOps, Validation}
 import ca.uwaterloo.flix.util.collection.MultiMap
 
 import java.nio.file.{Files, Path}
@@ -43,21 +43,23 @@ object Reader {
       val result = mutable.Map.empty[Source, Unit]
       for (input <- inputs) {
         input match {
-          case Input.Text(_, text, stable) =>
-            val src = Source(input, text.toCharArray, stable)
+          case Input.Text(_, text, _) =>
+            val src = Source(input, text.toCharArray)
             result += (src -> ())
 
           case Input.TxtFile(path) =>
             val bytes = Files.readAllBytes(path)
             val str = new String(bytes, flix.defaultCharset)
             val arr = str.toCharArray
-            val src = Source(input, arr, stable = false)
+            val src = Source(input, arr)
             result += (src -> ())
 
           case Input.PkgFile(path) =>
             for (src <- unpack(path)) {
               result += (src -> ())
             }
+
+          case Input.Unknown => throw InternalCompilerException("Impossible to read source code from unknown input.", SourceLocation.Unknown)
         }
       }
 
@@ -86,7 +88,7 @@ object Reader {
           val bytes = StreamOps.readAllBytes(zip.getInputStream(entry))
           val str = new String(bytes, flix.defaultCharset)
           val arr = str.toCharArray
-          result += Source(Ast.Input.Text(fullName, str, stable = false), arr, stable = false)
+          result += Source(Input.Text(fullName, str, stable = false), arr)
         }
       }
       result.toList

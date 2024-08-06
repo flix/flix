@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.shared.Source
 import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, ReadAst, SourceLocation, SourcePosition, Token, TokenKind}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.{DebugNoOp, DebugValidation}
 import ca.uwaterloo.flix.language.errors.LexerError
@@ -27,7 +28,7 @@ import scala.collection.mutable
 import scala.util.Random
 
 /**
- * A lexer that is able to tokenize multiple `Ast.Source`s in parallel.
+ * A lexer that is able to tokenize multiple `Source`s in parallel.
  * This lexer is resilient, meaning that when an unrecognized character is encountered,
  * the lexer will simply produce a token of kind `TokenKind.Err` an move on instead of halting.
  * There are some unrecoverable errors though, for example unterminated block-comments or unclosed string literals.
@@ -79,7 +80,7 @@ object Lexer {
    * `current` will always be on the same character as or past `start`.
    * As tokens are produced they are placed in `tokens`.
    */
-  private class State(val src: Ast.Source) {
+  private class State(val src: Source) {
     var start: Position = new Position(0, 0, 0)
     val current: Position = new Position(0, 0, 0)
     var end: Position = new Position(0, 0, 0)
@@ -93,9 +94,9 @@ object Lexer {
   private class Position(var line: Int, var column: Int, var offset: Int)
 
   /**
-   * Run the lexer on multiple `Ast.Source`s in parallel.
+   * Run the lexer on multiple `Source`s in parallel.
    */
-  def run(root: ReadAst.Root, oldTokens: Map[Ast.Source, Array[Token]], changeSet: ChangeSet)(implicit flix: Flix): Validation[Map[Ast.Source, Array[Token]], CompilationMessage] =
+  def run(root: ReadAst.Root, oldTokens: Map[Source, Array[Token]], changeSet: ChangeSet)(implicit flix: Flix): Validation[Map[Source, Array[Token]], CompilationMessage] =
     flix.phase("Lexer") {
       // Compute the stale and fresh sources.
       val (stale, fresh) = changeSet.partition(root.sources, oldTokens)
@@ -114,7 +115,7 @@ object Lexer {
   /**
    * Lexes a single source (file) into an array of tokens.
    */
-  def lex(src: Ast.Source): Validation[Array[Token], CompilationMessage] = {
+  def lex(src: Source): Validation[Array[Token], CompilationMessage] = {
     implicit val s: State = new State(src)
     while (!eof()) {
       whitespace()
@@ -325,6 +326,10 @@ object Lexer {
           TokenKind.Dot
         }
       case '$' if peek().isUpper => acceptBuiltIn()
+      case '₹' =>
+        // Don't include the rupee sign in the name
+        s.start = new Position(s.current.line, s.current.column, s.current.offset)
+        acceptName(false)
       case '\"' => acceptString()
       case '\'' => acceptChar()
       case '`' => acceptInfixFunction()
@@ -430,6 +435,7 @@ object Lexer {
       case _ if isKeyword("static") => TokenKind.KeywordStatic
       case _ if isKeyword("Static") => TokenKind.KeywordStaticUppercase
       case _ if isKeyword("struct") => TokenKind.KeywordStruct
+      case _ if isKeyword("throw") => TokenKind.KeywordThrow
       case _ if isKeyword("trait") => TokenKind.KeywordTrait
       case _ if isKeywordLiteral("true") => TokenKind.KeywordTrue
       case _ if isKeyword("try") => TokenKind.KeywordTry

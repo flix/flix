@@ -577,6 +577,8 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expr.TryCatch(e, rs, t, eff, loc)
 
+    case TypedAst.Expr.Throw(_, _, _, _) => throw new RuntimeException("JOE THROW TBD")
+
     case TypedAst.Expr.TryWith(exp, sym, rules, tpe, eff, loc) =>
       val e = visitExp(exp)
       val rs = rules.map(visitHandlerRule)

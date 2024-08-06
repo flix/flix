@@ -6,7 +6,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
-import ca.uwaterloo.flix.language.ast.shared.Fixity
+import ca.uwaterloo.flix.language.ast.shared.{Fixity, SecurityContext}
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.language.errors.SafetyError
@@ -390,6 +390,8 @@ object Safety {
         nestedTryCatchError ++ visit(exp)(inTryCatch = true) ++
           rules.flatMap { case CatchRule(sym, clazz, e) => checkCatchClass(clazz, sym.loc) ++ visit(e) }
 
+      case Expr.Throw(_, _, _, _) => throw new RuntimeException("JOE THROW TBD")
+
       case Expr.TryWith(exp, _, rules, _, _, _) =>
         visit(exp) ++
           rules.flatMap { case HandlerRule(_, _, e) => visit(e) }
@@ -397,8 +399,15 @@ object Safety {
       case Expr.Do(_, exps, _, _, _) =>
         exps.flatMap(visit)
 
-      case Expr.InvokeConstructor(_, args, _, _, _) =>
-        args.flatMap(visit)
+      case Expr.InvokeConstructor(_, args, _, _, loc) =>
+        val ctx = loc.security
+        if (ctx == SecurityContext.AllPermissions) {
+          // Permitted
+          args.flatMap(visit)
+        } else {
+          // Forbidden
+          SafetyError.Forbidden(ctx, loc) :: args.flatMap(visit)
+        }
 
       case Expr.InvokeMethod(_, exp, args, _, _, _) =>
         visit(exp) ++ args.flatMap(visit)

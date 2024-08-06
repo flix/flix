@@ -105,6 +105,9 @@ object Eraser {
         case AtomicOp.ArrayLoad => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.ArrayStore => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.ArrayLength => ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.StructNew(_, _) => throw new RuntimeException("JOE TBD")
+        case AtomicOp.StructGet(_, _) => throw new RuntimeException("JOE TBD")
+        case AtomicOp.StructPut(_, _) => throw new RuntimeException("JOE TBD")
         case AtomicOp.Ref => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Deref =>
           castExp(ApplyAtomic(op, es, erase(tpe), purity, loc), t, purity, loc)
@@ -120,6 +123,7 @@ object Eraser {
         case AtomicOp.PutField(_) => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.GetStaticField(_) => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.PutStaticField(_) => ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.Throw => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Spawn => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Lazy => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Force =>
@@ -204,7 +208,7 @@ object Eraser {
       case Ref(tpe) => Ref(erase(tpe))
       case Tuple(elms) => Tuple(elms.map(erase))
       case MonoType.Enum(sym) => MonoType.Enum(sym)
-      case MonoType.Struct(sym) => MonoType.Struct(sym)
+      case MonoType.Struct(sym, elmTpes, targs) => MonoType.Struct(sym, elmTpes, targs)
       case Arrow(args, result) => Arrow(args.map(visitType), box(result))
       case RecordEmpty => RecordEmpty
       case RecordExtend(label, value, rest) => RecordExtend(label, erase(value), visitType(rest))
@@ -225,7 +229,7 @@ object Eraser {
       case Int64 => Int64
       case Void | AnyType | Unit | BigDecimal | BigInt | String | Regex |
            Region | Array(_) | Lazy(_) | Ref(_) | Tuple(_) | MonoType.Enum(_) |
-           MonoType.Struct(_) | Arrow(_, _) | RecordEmpty | RecordExtend(_, _, _) | Native(_) | Null =>
+           MonoType.Struct(_, _, _) | Arrow(_, _) | RecordEmpty | RecordExtend(_, _, _) | Native(_) | Null =>
         MonoType.Object
     }
   }

@@ -2,6 +2,7 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.fmt.FormatType
 import ca.uwaterloo.flix.util.Formatter
@@ -16,6 +17,23 @@ sealed trait SafetyError extends CompilationMessage with Recoverable {
 }
 
 object SafetyError {
+
+  /**
+   * An error raised to indicate a forbidden operation.
+   *
+   * @param loc  the source location of the forbidden operation.
+   */
+  case class Forbidden(ctx: SecurityContext, loc: SourceLocation)(implicit flix: Flix) extends SafetyError with Recoverable {
+    override def summary: String = "Operation not permitted"
+
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s""">> Operation not permitted in security context: $ctx
+         |
+         |${code(loc, "forbidden")}
+         |""".stripMargin
+    }
+  }
 
   /**
     * An error raised to indicate an illegal checked type cast.
