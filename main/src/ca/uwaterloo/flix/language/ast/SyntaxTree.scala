@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.shared.Source
 
 /**
  * Represents the source code of a compilation unit.
@@ -34,7 +35,7 @@ object SyntaxTree {
   /**
     * A root containing syntax trees for multiple sources.
     */
-  case class Root(units: Map[Ast.Source, Tree])
+  case class Root(units: Map[Source, Tree])
 
   /**
     * The empty SyntaxTree

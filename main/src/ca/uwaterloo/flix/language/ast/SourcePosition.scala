@@ -1,7 +1,6 @@
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.ast.Ast.Source
-import ca.uwaterloo.flix.language.ast.shared.Input
+import ca.uwaterloo.flix.language.ast.shared.{Input, Source}
 
 object SourcePosition {
   /**

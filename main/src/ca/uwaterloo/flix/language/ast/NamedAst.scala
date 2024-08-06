@@ -17,8 +17,8 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Source}
-import ca.uwaterloo.flix.language.ast.shared.Fixity
+import ca.uwaterloo.flix.language.ast.Ast.Denotation
+import ca.uwaterloo.flix.language.ast.shared.{Fixity, Source}
 import ca.uwaterloo.flix.util.collection.MultiMap
 
 object NamedAst {
@@ -26,7 +26,7 @@ object NamedAst {
   case class Root(symbols: Map[Name.NName, Map[String, List[Declaration]]],
                   instances: Map[Name.NName, Map[String, List[Declaration.Instance]]],
                   uses: Map[Name.NName, List[UseOrImport]],
-                  units: Map[Ast.Source, CompilationUnit],
+                  units: Map[Source, CompilationUnit],
                   entryPoint: Option[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation],
                   names: MultiMap[List[String], String])
