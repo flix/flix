@@ -15,26 +15,20 @@
  */
 package ca.uwaterloo.flix.language.phase.typer
 
-import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{Instance, TraitContext}
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.language.errors.TypeError
-import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
-import ca.uwaterloo.flix.language.phase.typer.TypeReduction.{JavaConstructorResolutionResult, JavaMethodResolutionResult}
-import ca.uwaterloo.flix.language.phase.unification.Unification.getUnderOrOverAppliedError
+import ca.uwaterloo.flix.language.ast.{Ast, RigidityEnv, Symbol, Type}
 import ca.uwaterloo.flix.language.phase.unification._
-import ca.uwaterloo.flix.util.Result.Err
-import ca.uwaterloo.flix.util.collection.{ListMap, ListOps}
-import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
+import ca.uwaterloo.flix.util.collection.ListMap
 
-import scala.annotation.tailrec
 import scala.util.chaining.scalaUtilChainingOps
 
 object ConstraintSolver2 {
 
   sealed trait TypeConstraint
+
   object TypeConstraint {
     case class Equality(tpe1: Type, tpe2: Type) extends TypeConstraint
+
     case class Trait(sym: Symbol.TraitSym, tpe: Type) extends TypeConstraint
   }
 
@@ -178,15 +172,44 @@ object ConstraintSolver2 {
   // Evaluate type constraints as far as possible
   // (redU)
   // TODO examples
-  def reduceTypes(constrs: ConstraintSet)(implicit tracker: Tracker, eqenv: EqualityEnv): ConstraintSet = {
-    def reduce(tpe: Type): Type = tpe match {
+  def reduceTypes(constrs: ConstraintSet)(implicit tracker: Tracker, renv0: RigidityEnv, trenv: TraitEnv, eqenv: EqualityEnv): ConstraintSet = {
+    def reduce(tpe0: Type): Type = tpe0 match {
       case t: Type.Var => t
       case t: Type.Cst => t
       case Type.Apply(tpe1, tpe2, loc) =>
         ??? // TODO recursive? I think with Bools it has to be recursive since they don't get broken up, but with syntactic types it should not be recursive
       case Type.Alias(cst, args, tpe, loc) => tpe
-      case Type.AssocType(cst, arg, kind, loc) =>
-        ??? // similar to trait stuff: look up in env etc.
+      case Type.AssocType(Ast.AssocTypeConstructor(sym, _), tpe, kind, loc) =>
+
+        // Get all the associated types from the context
+        val assocs = eqenv(sym)
+
+        // Find the instance that matches
+        val matches = assocs.flatMap {
+          case Ast.AssocTypeDef(assocTpe, ret) =>
+            // We fully rigidify `tpe`, because we need the substitution to go from instance type to constraint type.
+            // For example, if our constraint is ToString[Map[Int32, a]] and our instance is ToString[Map[k, v]],
+            // then we want the substitution to include "v -> a" but NOT "a -> v".
+            val renv = tpe.typeVars.map(_.sym).foldLeft(renv0)(_.markRigid(_))
+
+            // Instantiate all the instance constraints according to the substitution.
+            fullyUnify(tpe, assocTpe, renv).map {
+              case subst => subst(ret)
+            }
+        }
+
+        // TODO CONSTR-SOLVER-2 ought to be exactly 0 or 1; should check in Resolver
+        matches match {
+          // Case 1: No match. Can't reduce the type.
+          case Nil => tpe0
+
+          // Case 2: One match. Use it.
+          case newTpe :: Nil => newTpe
+
+          // Case 3: Multiple matches. Give back the original type.
+          // TODO CONSTR-SOLVER-2 Right resiliency strategy?
+          case _ :: _ :: _ => tpe0
+        }
     }
 
     def reduceTypes1(constr: TypeConstraint): TypeConstraint = constr match {
@@ -211,11 +234,30 @@ object ConstraintSolver2 {
       case c: TypeConstraint.Trait => Left(c)
     }
 
-    ??? // TODO fold over constraints, build substitution, apply before each, apply again to everyone at the end
+    var subst = Substitution.empty
+    val newConstrs = constrs.flatMap {
+      constr =>
+        makeSubstitution1(applySubst(subst)(constr)) match {
+          // Case 1: No substitution. Keep the substituted constraint.
+          case Left(newConstr) =>
+            Some(newConstr)
+          // Case 2: Substitution. Compose it with the growing substitution.
+          case Right(newSubst) =>
+            subst = newSubst @@ subst
+            None
+        }
+    }
+
+    (newConstrs, subst)
   }
 
   def toTypeConstraint(constr: Ast.TypeConstraint): TypeConstraint = constr match {
     case Ast.TypeConstraint(head, arg, loc) => TypeConstraint.Trait(head.sym, arg)
+  }
+
+  def applySubst(subst: Substitution)(constr: TypeConstraint): TypeConstraint = constr match {
+    case TypeConstraint.Equality(tpe1, tpe2) => TypeConstraint.Equality(subst(tpe1), subst(tpe2))
+    case TypeConstraint.Trait(sym, tpe) => TypeConstraint.Trait(sym, tpe)
   }
 
 }
