@@ -50,14 +50,15 @@ object ConstraintSolver2 {
 
   type ConstraintSet = List[TypeConstraint]
   type TraitEnv = Map[Symbol.TraitSym, TraitContext]
+  type EqualityEnv = ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef]
 
-  def goAll(constrs0: ConstraintSet): (ConstraintSet, Substitution) = {
+  def goAll(constrs0: ConstraintSet)(implicit renv: RigidityEnv, trenv: TraitEnv, eqenv: EqualityEnv): (ConstraintSet, Substitution) = {
     var constrs = constrs0
     var subst = Substitution.empty
     var progressMade = true
     while (progressMade) {
-      val tracker: Tracker = Tracker()
-      val (newConstrs, newSubst) = goOne(constrs)(tracker)
+      implicit val tracker: Tracker = Tracker()
+      val (newConstrs, newSubst) = goOne(constrs)
       // invariant: the new subst is already applied to all the newConstrs
       constrs = newConstrs
       subst = newSubst @@ subst
@@ -66,7 +67,7 @@ object ConstraintSolver2 {
     (constrs, subst)
   }
 
-  def goOne(constrs: ConstraintSet)(implicit tracker: Tracker, traitEnv: TraitEnv): (ConstraintSet, Substitution) = {
+  def goOne(constrs: ConstraintSet)(implicit tracker: Tracker, renv: RigidityEnv, trenv: TraitEnv, eqenv: EqualityEnv): (ConstraintSet, Substitution) = {
     constrs
       .pipe(breakDownConstraints)
       .pipe(eliminateIdentities)
@@ -113,7 +114,7 @@ object ConstraintSolver2 {
   // Reduces trait constraints
   // TODO examples
   // (bchainE) (?)
-  def contextReduction(constrs: ConstraintSet)(implicit tracker: Tracker, traitEnv: TraitEnv): ConstraintSet = {
+  def contextReduction(constrs: ConstraintSet)(implicit tracker: Tracker, renv0: RigidityEnv, trenv: TraitEnv, eqenv: EqualityEnv): ConstraintSet = {
     def contextReduction1(constr: TypeConstraint): ConstraintSet = constr match {
       // Case 1: Equality constraint. Do nothing.
       case c: TypeConstraint.Equality => List(c)
@@ -122,14 +123,18 @@ object ConstraintSolver2 {
       case c@TypeConstraint.Trait(sym, tpe) =>
 
         // Get all the instances from the context
-        val TraitContext(supers, insts) = traitEnv(sym)
+        val TraitContext(supers, insts) = trenv(sym)
 
         // Find the instance that matches
         val matches = insts.flatMap {
           case Instance(instTpe, instConstrs) =>
-            // TODO need a renv here. tpe must be fully rigid because we need to subst inst -> tpe
+            // We fully rigidify `tpe`, because we need the substitution to go from instance type to constraint type.
+            // For example, if our constraint is ToString[Map[Int32, a]] and our instance is ToString[Map[k, v]],
+            // then we want the substitution to include "v -> a" but NOT "a -> v".
+            val renv = tpe.typeVars.map(_.sym).foldLeft(renv0)(_.markRigid(_))
+
             // Instantiate all the instance constraints according to the substitution.
-            fullyUnify(tpe, instTpe).map {
+            fullyUnify(tpe, instTpe, renv).map {
               case subst => instConstrs.map(subst.apply)
             }
         }
@@ -152,9 +157,10 @@ object ConstraintSolver2 {
   }
 
   // TODO docs
-  def fullyUnify(tpe1: Type, tpe2: Type)(implicit tracker: Tracker): Option[Substitution] = {
+  def fullyUnify(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit trenv: TraitEnv, eqenv: EqualityEnv): Option[Substitution] = {
     // unification is now defined as taking a single constraint and applying rules until it's done
     val constr = TypeConstraint.Equality(tpe1, tpe2)
+    implicit val r = renv
     goAll(List(constr)) match {
       // Case 1: No constraints left. Success.
       case (Nil, subst) => Some(subst)
@@ -172,7 +178,7 @@ object ConstraintSolver2 {
   // Evaluate type constraints as far as possible
   // (redU)
   // TODO examples
-  def reduceTypes(constrs: ConstraintSet)(implicit tracker: Tracker, eqenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef]): ConstraintSet = {
+  def reduceTypes(constrs: ConstraintSet)(implicit tracker: Tracker, eqenv: EqualityEnv): ConstraintSet = {
     def reduce(tpe: Type): Type = tpe match {
       case t: Type.Var => t
       case t: Type.Cst => t
@@ -194,7 +200,19 @@ object ConstraintSolver2 {
   // Build a substitution from any variable constraints
   // (varU)
   // TODO examples
-  def makeSubstitution(constrs: ConstraintSet): (ConstraintSet, Substitution) = ???
+  def makeSubstitution(constrs: ConstraintSet)(implicit renv: RigidityEnv): (ConstraintSet, Substitution) = {
+
+    def makeSubstitution1(constr: TypeConstraint): Either[TypeConstraint, Substitution] = constr match {
+      // TODO occurs check
+      // TODO full simplification check
+      case TypeConstraint.Equality(Type.Var(sym, _), tpe2) if !renv.isRigid(sym) => Right(Substitution.singleton(sym, tpe2))
+      case TypeConstraint.Equality(tpe1, Type.Var(sym, _)) if !renv.isRigid(sym) => Right(Substitution.singleton(sym, tpe1))
+      case c: TypeConstraint.Equality => Left(c)
+      case c: TypeConstraint.Trait => Left(c)
+    }
+
+    ??? // TODO fold over constraints, build substitution, apply before each, apply again to everyone at the end
+  }
 
   def toTypeConstraint(constr: Ast.TypeConstraint): TypeConstraint = constr match {
     case Ast.TypeConstraint(head, arg, loc) => TypeConstraint.Trait(head.sym, arg)
