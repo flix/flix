@@ -20,7 +20,14 @@ import java.nio.file.Path
 /**
   * A common super-type for inputs.
   */
-sealed trait Input
+sealed trait Input {
+
+  /**
+   * Returns the security context associated with the input.
+   */
+  def security: SecurityContext = SecurityContext.AllPermissions
+
+}
 
 object Input {
 
