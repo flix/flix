@@ -15,6 +15,7 @@
  */
 
 mod Concurrent {
+
     import java.util.concurrent.locks.{ReentrantLock => JReentrantLock}
 
     ///
@@ -24,9 +25,7 @@ mod Concurrent {
     pub enum ReentrantLock(JReentrantLock)
 
     mod ReentrantLock {
-        // TODO NS-REFACTOR these imports can be removed
-        use Concurrent.ReentrantLock
-        use Concurrent.ReentrantLock.ReentrantLock
+        import java.util.concurrent.TimeUnit
 
         use Concurrent.Condition
         use Concurrent.Condition.Condition
@@ -90,10 +89,9 @@ mod Concurrent {
         ///
         @Internal
         pub def tryLockNanos(lock: ReentrantLock, nanosTimeout: Int64): Result[##java.lang.InterruptedException, Bool] \ IO =
-            import static java_get_field java.util.concurrent.TimeUnit.NANOSECONDS: ##java.util.concurrent.TimeUnit \ IO as nano;
             let ReentrantLock(l) = lock;
             try {
-                Ok(l.tryLock(nanosTimeout, nano()))
+                Ok(l.tryLock(nanosTimeout, TimeUnit.NANOSECONDS))
             } catch {
                 case e: ##java.lang.InterruptedException => Err(e)
             }

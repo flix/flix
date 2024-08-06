@@ -1055,4 +1055,23 @@ class TestParserHappy extends AnyFunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[ParseError](result)
   }
+
+  // Joe Throw Todo - enable when throw support is completed
+  ignore("BadThrow.01") {
+    val input =
+      """
+        |def main(): Unit \ IO = throw
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
+  ignore("BadThrow.02") {
+    val input =
+      """
+        |def main(): Unit \ IO = throw Type
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError.Legacy](result)
+  }
 }

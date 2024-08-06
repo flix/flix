@@ -30,26 +30,26 @@ import scala.annotation.tailrec
 object TypeReduction {
 
   /**
-    * Simplifies the given type by reducing associated type applications.
-    *
-    * Θ ⊩ τ ⤳ τ'
-    *
-    * Returns the simplified type and a Boolean flag to indicate whether progress was made.
-    *
-    * Applications that cannot be resolved are left as they are.
-    * These are applications to variables and applications to other unresolvable types.
-    *
-    * Applications that are illegal result in an Err.
-    * These are applications to types for which the eqEnv has no corresponding instance.
-    *
-    * For example:
-    * {{{
-    *   Int           ~> Int
-    *   Elm[List[a]]  ~> a
-    *   Elm[Int]      ~> <ERROR>
-    *   Elm[Elm[a]]   ~> Elm[Elm[a]]
-    * }}}
-    */
+   * Simplifies the given type by reducing associated type applications.
+   *
+   * Θ ⊩ τ ⤳ τ'
+   *
+   * Returns the simplified type and a Boolean flag to indicate whether progress was made.
+   *
+   * Applications that cannot be resolved are left as they are.
+   * These are applications to variables and applications to other unresolvable types.
+   *
+   * Applications that are illegal result in an Err.
+   * These are applications to types for which the eqEnv has no corresponding instance.
+   *
+   * For example:
+   * {{{
+   *   Int           ~> Int
+   *   Elm[List[a]]  ~> a
+   *   Elm[Int]      ~> <ERROR>
+   *   Elm[Elm[a]]   ~> Elm[Elm[a]]
+   * }}}
+   */
   def simplify(tpe: Type, renv0: RigidityEnv, loc: SourceLocation)(implicit eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Result[(Type, Boolean), TypeError] = tpe match {
     // A var is already simple.
     case t: Type.Var => Result.Ok((t, false))
@@ -123,6 +123,15 @@ object TypeReduction {
   }
 
   /**
+    * Returns `true` if the given type is still reducible, i.e. contains an unreduced MRT, e.g. MRT[a] where a is not known.
+    */
+  // TODO: This method should be recursive and not just look at the top-level type.
+  def isReducible(tpe: Type): Boolean = tpe match {
+    case Type.Apply(Type.Cst(TypeConstructor.MethodReturnType, _), Type.Var(_, _), _) => true
+    case _ => false
+  }
+
+  /**
    * This is the resolution process of the Java constructor designated by a class and the parameter types.
    * Returns the return type of the Java constructor according, if there exists such a Java constructor.
    * Otherwise, either the Java constructor could not be found with the given signature or there was an ambiguity.
@@ -153,14 +162,22 @@ object TypeReduction {
       case Type.Cst(TypeConstructor.Str, _) =>
         val clazz = classOf[String]
         retrieveMethod(clazz, methodName, ts, loc = loc)
+
       case Type.Cst(TypeConstructor.BigInt, _) =>
         val clazz = classOf[BigInteger]
         retrieveMethod(clazz, methodName, ts, loc = loc)
+
       case Type.Cst(TypeConstructor.BigDecimal, _) =>
         val clazz = classOf[java.math.BigDecimal]
         retrieveMethod(clazz, methodName, ts, loc = loc)
+
+      case Type.Cst(TypeConstructor.Regex, _) =>
+        val clazz = classOf[java.util.regex.Pattern]
+        retrieveMethod(clazz, methodName, ts, loc = loc)
+
       case Type.Cst(TypeConstructor.Native(clazz), _) =>
         retrieveMethod(clazz, methodName, ts, loc = loc)
+
       case _ => JavaMethodResolutionResult.MethodNotFound
     }
   }
@@ -203,7 +220,7 @@ object TypeReduction {
    */
   private def retrieveMethod(clazz: Class[_], methodName: String, ts: List[Type], isStatic: Boolean = false, loc: SourceLocation)(implicit flix: Flix): JavaMethodResolutionResult = {
     // NB: this considers also static methods
-    val candidateMethods = clazz.getMethods.filter(m => isCandidateMethod(m, methodName, ts) && (if (isStatic) java.lang.reflect.Modifier.isStatic(m.getModifiers) else true))
+    val candidateMethods = clazz.getMethods.filter(m => isCandidateMethod(m, methodName, isStatic, ts))
 
     candidateMethods.length match {
       case 0 => JavaMethodResolutionResult.MethodNotFound
@@ -241,18 +258,21 @@ object TypeReduction {
    * @param methodName the potential candidate method's name
    * @param ts         the list of parameter types of the potential candidate method
    */
-  private def isCandidateMethod(cand: Method, methodName: String, ts: List[Type])(implicit flix: Flix): Boolean =
-    (cand.getName == methodName) &&
-    (cand.getParameterCount == ts.length) &&
-    // Parameter types correspondence with subtyping
-    (cand.getParameterTypes zip ts).forall {
-      case (clazz, tpe) => isSubtype(tpe, Type.getFlixType(clazz))
-    } &&
-    // NB: once methods with same signatures have been filtered out, we should remove super-methods duplicates
-    // if the superclass is abstract or ignore if it is a primitive type or void
-    (cand.getReturnType.equals(Void.TYPE) || cand.getReturnType.isPrimitive || cand.getReturnType.isArray || // for all arrays return types?
-      java.lang.reflect.Modifier.isInterface(cand.getReturnType.getModifiers) || // interfaces are considered primitives
-      !java.lang.reflect.Modifier.isAbstract(cand.getReturnType.getModifiers)) // temporary to avoid superclass abstract duplicate
+  private def isCandidateMethod(cand: Method, methodName: String, isStatic: Boolean = false, ts: List[Type])(implicit flix: Flix): Boolean = {
+    val static = java.lang.reflect.Modifier.isStatic(cand.getModifiers)
+    (if (isStatic) static else !static) &&
+      (cand.getName == methodName) &&
+      (cand.getParameterCount == ts.length) &&
+      // Parameter types correspondence with subtyping
+      (cand.getParameterTypes zip ts).forall {
+        case (clazz, tpe) => isSubtype(tpe, Type.getFlixType(clazz))
+      } &&
+      // NB: once methods with same signatures have been filtered out, we should remove super-methods duplicates
+      // if the superclass is abstract or ignore if it is a primitive type or void
+      (cand.getReturnType.equals(Void.TYPE) || cand.getReturnType.isPrimitive || cand.getReturnType.isArray || // for all arrays return types?
+        java.lang.reflect.Modifier.isInterface(cand.getReturnType.getModifiers) || // interfaces are considered primitives
+        !(java.lang.reflect.Modifier.isAbstract(cand.getReturnType.getModifiers) && !isStatic))
+  } // temporary to avoid superclass abstract duplicate, except for static methods
 
   /**
    * Helper method to define a sub-typing relation between two given Flix types.
@@ -260,20 +280,22 @@ object TypeReduction {
    */
   @tailrec
   private def isSubtype(tpe1: Type, tpe2: Type)(implicit flix: Flix): Boolean = {
-    (tpe2, tpe1) match {
+    (tpe1, tpe2) match {
       case (t1, t2) if t1 == t2 => true
       // Base types
-      case (Type.Cst(TypeConstructor.Native(clazz1), _), Type.Cst(TypeConstructor.Native(clazz2), _)) => clazz1.isAssignableFrom(clazz2)
-      case (Type.Cst(TypeConstructor.Native(clazz), _), Type.Cst(TypeConstructor.Str, _)) => clazz.isAssignableFrom(classOf[String])
-      case (Type.Cst(TypeConstructor.Native(clazz), _), Type.Cst(TypeConstructor.BigInt, _)) => clazz.isAssignableFrom(classOf[BigInteger])
-      case (Type.Cst(TypeConstructor.Native(clazz), _), Type.Cst(TypeConstructor.BigDecimal, _)) => clazz.isAssignableFrom(classOf[java.math.BigDecimal])
-      // Arrays (WIP)
+      case (Type.Cst(TypeConstructor.Native(clazz1), _), Type.Cst(TypeConstructor.Native(clazz2), _)) => clazz2.isAssignableFrom(clazz1)
+      case (Type.Cst(TypeConstructor.Unit, _), Type.Cst(TypeConstructor.Native(clazz), _)) if clazz == classOf[java.lang.Object] => true
+      case (Type.Cst(TypeConstructor.Str, _), Type.Cst(TypeConstructor.Native(clazz), _)) => clazz.isAssignableFrom(classOf[java.lang.String])
+      case (Type.Cst(TypeConstructor.BigInt, _), Type.Cst(TypeConstructor.Native(clazz), _)) => clazz.isAssignableFrom(classOf[java.math.BigInteger])
+      case (Type.Cst(TypeConstructor.BigDecimal, _), Type.Cst(TypeConstructor.Native(clazz), _)) => clazz.isAssignableFrom(classOf[java.math.BigDecimal])
+      case (Type.Cst(TypeConstructor.Regex, _), Type.Cst(TypeConstructor.Native(clazz), _)) => clazz.isAssignableFrom(classOf[java.util.regex.Pattern])
+      // Arrays
       case (Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Array, _), elmType1, _), rcVar1, _),
-              Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Array, _), elmType2, _), rcVar2, _)) =>
+      Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Array, _), elmType2, _), rcVar2, _)) =>
         isSubtype(elmType1, elmType2)
       // Null is a sub-type of every Java object and non-primitive Flix type
-      case (Type.Cst(TypeConstructor.Native(_), _), Type.Cst(TypeConstructor.Null, _)) => true
-      case (tpe, Type.Cst(TypeConstructor.Null, _)) if !isPrimitive(tpe) => true
+      case (Type.Cst(TypeConstructor.Null, _), Type.Cst(TypeConstructor.Native(_), _)) => true
+      case (Type.Cst(TypeConstructor.Null, _), tpe) if !isPrimitive(tpe) => true
       case _ => false
     }
   }
@@ -311,19 +333,19 @@ object TypeReduction {
     case object MethodNotFound extends JavaMethodResolutionResult
   }
 
-    /**
-     * Represents the result of a resolution process of a java constructor.
-     *
-     * There are three possible outcomes:
-     *
-     * 1. Resolved(tpe): Indicates that there was some progress in the resolution and returns a simplified type of the java constructor.
-     * 2. AmbiguousConstructor: The resolution lacked some elements to find a java constructor among a set of constructors.
-     * 3. ConstructorNotFound(): The resolution failed to find a corresponding java constructor.
-     */
-    sealed trait JavaConstructorResolutionResult
-    object JavaConstructorResolutionResult {
-      case class Resolved(tpe: Type) extends JavaConstructorResolutionResult
-      case class AmbiguousConstructor(constructors: List[Constructor[_]]) extends JavaConstructorResolutionResult
-      case object ConstructorNotFound extends JavaConstructorResolutionResult
-    }
+  /**
+   * Represents the result of a resolution process of a java constructor.
+   *
+   * There are three possible outcomes:
+   *
+   * 1. Resolved(tpe): Indicates that there was some progress in the resolution and returns a simplified type of the java constructor.
+   * 2. AmbiguousConstructor: The resolution lacked some elements to find a java constructor among a set of constructors.
+   * 3. ConstructorNotFound(): The resolution failed to find a corresponding java constructor.
+   */
+  sealed trait JavaConstructorResolutionResult
+  object JavaConstructorResolutionResult {
+    case class Resolved(tpe: Type) extends JavaConstructorResolutionResult
+    case class AmbiguousConstructor(constructors: List[Constructor[_]]) extends JavaConstructorResolutionResult
+    case object ConstructorNotFound extends JavaConstructorResolutionResult
+  }
 }

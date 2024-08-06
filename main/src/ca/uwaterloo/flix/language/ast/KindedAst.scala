@@ -16,8 +16,8 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Source}
-import ca.uwaterloo.flix.language.ast.shared.Fixity
+import ca.uwaterloo.flix.language.ast.Ast.Denotation
+import ca.uwaterloo.flix.language.ast.shared.{Fixity, Source}
 import ca.uwaterloo.flix.language.{CompilationMessage, ast}
 import ca.uwaterloo.flix.util.collection.MultiMap
 
@@ -302,8 +302,6 @@ object KindedAst {
     }
 
   }
-
-  case class Attribute(ident: Name.Ident, tpe: Type, loc: SourceLocation)
 
   case class Case(sym: Symbol.CaseSym, tpe: Type, sc: Scheme, loc: SourceLocation)
 
