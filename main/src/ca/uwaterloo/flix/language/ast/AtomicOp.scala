@@ -94,6 +94,8 @@ object AtomicOp {
 
   case class PutStaticField(field: Field) extends AtomicOp
 
+  case object Throw extends AtomicOp
+
   case object Spawn extends AtomicOp
 
   case object Lazy extends AtomicOp

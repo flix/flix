@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, VarText}
 import ca.uwaterloo.flix.language.ast.Name.{Ident, NName}
+import ca.uwaterloo.flix.language.ast.shared.Source
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import java.util.Objects
@@ -613,7 +614,7 @@ object Symbol {
     /**
       * Returns the source of `this`.
       */
-    override def src: Ast.Source = loc.source
+    override def src: Source = loc.source
   }
 
   /**
@@ -766,7 +767,7 @@ object Symbol {
     /**
       * Returns the source of `this`.
       */
-    override def src: Ast.Source = loc.source
+    override def src: Source = loc.source
 
     /**
       * Compares `this` and `that` effect sym.

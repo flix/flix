@@ -1022,6 +1022,7 @@ object GenExpression {
         // Push Unit on the stack.
         mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
 
+      case AtomicOp.Throw => throw new RuntimeException("JOE TBD")
 
       case AtomicOp.Spawn =>
         val List(exp1, exp2) = exps

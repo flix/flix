@@ -797,6 +797,8 @@ object Kinder {
         case (exp, rules) => KindedAst.Expr.TryCatch(exp, rules, loc)
       }
 
+    case ResolvedAst.Expr.Throw(exp, loc) => throw new RuntimeException("JOE TODO")
+
     case ResolvedAst.Expr.TryWith(exp0, eff, rules0, loc) =>
       // create a fresh type variable for the handling block (same as resume result)
       // and for the operation result (same as resume argument)

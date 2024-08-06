@@ -17,9 +17,8 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Source}
-import ca.uwaterloo.flix.language.ast.Name.QName
-import ca.uwaterloo.flix.language.ast.shared.Fixity
+import ca.uwaterloo.flix.language.ast.Ast.Denotation
+import ca.uwaterloo.flix.language.ast.shared.{Fixity, Source}
 import ca.uwaterloo.flix.util.collection.MultiMap
 
 object NamedAst {
@@ -27,7 +26,7 @@ object NamedAst {
   case class Root(symbols: Map[Name.NName, Map[String, List[Declaration]]],
                   instances: Map[Name.NName, Map[String, List[Declaration.Instance]]],
                   uses: Map[Name.NName, List[UseOrImport]],
-                  units: Map[Ast.Source, CompilationUnit],
+                  units: Map[Source, CompilationUnit],
                   entryPoint: Option[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation],
                   names: MultiMap[List[String], String])
@@ -154,7 +153,7 @@ object NamedAst {
 
     case class ArrayLength(base: Expr, loc: SourceLocation) extends Expr
 
-    case class StructNew(qname: QName, exps: List[(Name.Label, Expr)], region: Expr, loc: SourceLocation) extends Expr
+    case class StructNew(qname: Name.QName, exps: List[(Name.Label, Expr)], region: Expr, loc: SourceLocation) extends Expr
 
     case class StructGet(st: Name.QName, exp: Expr, name: Name.Label, loc: SourceLocation) extends Expr
 
@@ -185,6 +184,8 @@ object NamedAst {
     case class Without(exp: Expr, eff: Name.QName, loc: SourceLocation) extends Expr
 
     case class TryCatch(exp: Expr, rules: List[CatchRule], loc: SourceLocation) extends Expr
+
+    case class Throw(exp: Expr, loc: SourceLocation) extends Expr
 
     case class TryWith(exp: Expr, eff: Name.QName, rules: List[HandlerRule], loc: SourceLocation) extends Expr
 

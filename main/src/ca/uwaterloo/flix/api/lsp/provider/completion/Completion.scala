@@ -20,9 +20,9 @@ import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider.Priority
 import ca.uwaterloo.flix.api.lsp.{CompletionItem, CompletionItemKind, InsertTextFormat, Range, TextEdit}
 import ca.uwaterloo.flix.language.ast.{Name, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.fmt.{FormatScheme, FormatType}
-import ca.uwaterloo.flix.language.ast.Symbol.{ EnumSym, ModuleSym, TypeAliasSym}
+import ca.uwaterloo.flix.language.ast.Symbol.{EnumSym, ModuleSym, TypeAliasSym}
 
-import java.lang.reflect.Method
+import java.lang.reflect.{Field, Method}
 
 /**
   * A common super-type for auto-completions.
@@ -246,6 +246,19 @@ sealed trait Completion {
         sortText = Priority.low(name),
         textEdit = TextEdit(context.range, name),
         kind = CompletionItemKind.Module)
+
+    case Completion.FieldCompletion(ident, field) =>
+      val label = field.getName
+      val text = field.getName
+      val range = Range.from(ident.loc)
+
+      CompletionItem(
+        label = label,
+        sortText = Priority.low(label),
+        textEdit = TextEdit(range, text),
+        insertTextFormat = InsertTextFormat.PlainText,
+        kind = CompletionItemKind.Method
+      )
 
     case Completion.MethodCompletion(ident, method) =>
       val argsWithName = method.getParameters.map(_.getName)
@@ -485,6 +498,14 @@ object Completion {
     * @param modSym the module symbol.
     */
   case class ModCompletion(modSym: ModuleSym) extends Completion
+
+  /**
+   * Represents a Java field completion.
+   *
+   * @param ident  the partial field name.
+   * @param field the candidate field.
+   */
+  case class FieldCompletion(ident: Name.Ident, field: Field) extends Completion
 
   /**
     * Represents a Java method completion.

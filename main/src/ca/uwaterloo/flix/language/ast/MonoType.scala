@@ -79,7 +79,7 @@ object MonoType {
 
   case class Enum(sym: Symbol.EnumSym) extends MonoType
 
-  case class Struct(sym: Symbol.StructSym, elms: List[MonoType], tparams: List[MonoType]) extends MonoType
+  case class Struct(sym: Symbol.StructSym, elmTpes: List[MonoType], targs: List[MonoType]) extends MonoType
 
   case class Arrow(args: List[MonoType], result: MonoType) extends MonoType
 

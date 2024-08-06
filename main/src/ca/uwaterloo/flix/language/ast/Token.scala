@@ -15,6 +15,8 @@
  */
 package ca.uwaterloo.flix.language.ast
 
+import ca.uwaterloo.flix.language.ast.shared.Source
+
 /**
   * A Token holding a kind, line and column.
   *
@@ -32,7 +34,7 @@ package ca.uwaterloo.flix.language.ast
   * @param sp1   The source position that the lexeme __starts__ on. Must be one-indexed.
   * @param sp2   The source position that the lexeme __ends__ on. Must be one-indexed.
   */
-case class Token(kind: TokenKind, src: Ast.Source, start: Int, end: Int, sp1: SourcePosition, sp2: SourcePosition) extends SyntaxTree.Child {
+case class Token(kind: TokenKind, src: Source, start: Int, end: Int, sp1: SourcePosition, sp2: SourcePosition) extends SyntaxTree.Child {
   /**
     * Computes the lexeme that the token refers to by slicing it from `src`.
     *

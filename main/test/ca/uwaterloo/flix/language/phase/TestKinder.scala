@@ -1002,6 +1002,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
   }
 
   test("KindError.Struct.WrongKind.04") {
+
     val input =
       """
         |struct S[a: Type, r: Type] {

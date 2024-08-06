@@ -123,6 +123,7 @@ object Eraser {
         case AtomicOp.PutField(_) => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.GetStaticField(_) => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.PutStaticField(_) => ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.Throw => throw new RuntimeException("JOE TBD")
         case AtomicOp.Spawn => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Lazy => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Force =>

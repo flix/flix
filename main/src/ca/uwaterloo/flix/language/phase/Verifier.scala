@@ -461,6 +461,8 @@ object Verifier {
           checkJavaSubtype(t, field.getType, loc)
           check(expected = MonoType.Unit)(actual = tpe, loc)
 
+        case AtomicOp.Throw => throw new RuntimeException("JOE TBD")
+
         case AtomicOp.InstanceOf(_) =>
           val List(t) = ts
           checkJavaSubtype(t, new Object().getClass, loc) // must not be primitive type
@@ -634,11 +636,11 @@ object Verifier {
   /**
     * Asserts that `tpe` is a subtype of the java class type `klazz`.
     */
-  @tailrec
   private def checkJavaSubtype(tpe: MonoType, klazz: Class[_], loc: SourceLocation): MonoType = {
     tpe match {
       case MonoType.Array(elmt) if klazz.isArray =>
         checkJavaSubtype(elmt, klazz.getComponentType, loc)
+        tpe
 
       case MonoType.Native(k) if klazz.isAssignableFrom(k) =>
         tpe

@@ -16,8 +16,9 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.ast.Ast.{IntroducedBy, Source}
+import ca.uwaterloo.flix.language.ast.Ast.IntroducedBy
 import ca.uwaterloo.flix.language.ast.Purity.Pure
+import ca.uwaterloo.flix.language.ast.shared.Source
 import ca.uwaterloo.flix.language.phase.ClosureConv
 
 object SimplifiedAst {
