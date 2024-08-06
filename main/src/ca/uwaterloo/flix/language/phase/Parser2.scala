@@ -2569,7 +2569,6 @@ object Parser2 {
       } else {
         // Case 3: new Type(exps...)
         arguments()
-        arguments()
         close(mark, TreeKind.Expr.InvokeConstructor2)
       }
     }
