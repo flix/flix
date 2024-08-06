@@ -55,7 +55,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
     expectError[IllegalCatchType](result)
   }
 
-  // STRUCTS TODO: Enable these tests when ready
+  // THROW TODO: Enable these tests when ready
   ignore("IllegalThrowType.01") {
     val input =
       """
