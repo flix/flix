@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.shared.{Fixity, Input}
-import ca.uwaterloo.flix.language.errors.TypeError
+import ca.uwaterloo.flix.language.errors.{ResolutionError, TypeError}
 
 import java.util.Objects
 import scala.annotation.tailrec
@@ -851,6 +851,8 @@ object Ast {
       case object Do extends Expr
 
       case class InvokeMethod(e: TypeError.MethodNotFound) extends Expr
+
+      case class StaticFieldOrMethod(e: ResolutionError.UndefinedJvmStaticField) extends Expr
 
       case object OtherExpr extends Expr
     }

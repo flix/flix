@@ -231,6 +231,12 @@ object Verifier {
             case _ => failMismatchedShape(t1, "Array", loc)
           }
 
+        case AtomicOp.StructNew(_, _) => throw new RuntimeException("JOE TBD")
+
+        case AtomicOp.StructGet(_, _) => throw new RuntimeException("JOE TBD")
+
+        case AtomicOp.StructPut(_, _) => throw new RuntimeException("JOE TBD")
+
         case AtomicOp.ArrayNew =>
           val List(t1, t2) = ts
           val arrType = MonoType.Array(t1)
@@ -403,6 +409,8 @@ object Verifier {
           val List(t) = ts
           checkJavaSubtype(t, field.getType, loc)
           check(expected = MonoType.Unit)(actual = tpe, loc)
+
+        case AtomicOp.Throw => throw new RuntimeException("JOE TBD")
 
         case AtomicOp.InstanceOf(_) =>
           val List(t) = ts
