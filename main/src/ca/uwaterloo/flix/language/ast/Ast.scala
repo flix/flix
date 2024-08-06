@@ -16,10 +16,9 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.ast.shared.Fixity
+import ca.uwaterloo.flix.language.ast.shared.{Fixity, Input}
 import ca.uwaterloo.flix.language.errors.TypeError
 
-import java.nio.file.Path
 import java.util.Objects
 import scala.annotation.tailrec
 
@@ -27,39 +26,6 @@ import scala.annotation.tailrec
   * A collection of AST nodes that are shared across multiple ASTs.
   */
 object Ast {
-
-  /**
-    * A common super-type for inputs.
-    */
-  sealed trait Input
-
-  object Input {
-
-    /**
-      * A source that is backed by an internal resource.
-      *
-      * A source is stable if it cannot change after being loaded (e.g. the standard library, etc).
-      */
-    case class Text(name: String, text: String, stable: Boolean) extends Input {
-      override def hashCode(): Int = name.hashCode
-
-      override def equals(obj: Any): Boolean = obj match {
-        case that: Text => this.name == that.name
-        case _ => false
-      }
-    }
-
-    /**
-      * A source that is backed by a regular file.
-      */
-    case class TxtFile(path: Path) extends Input
-
-    /**
-      * A source that is backed by flix package file.
-      */
-    case class PkgFile(path: Path) extends Input
-
-  }
 
   /**
     * A source is a name and an array of character data.
