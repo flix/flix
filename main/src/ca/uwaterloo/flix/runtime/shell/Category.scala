@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.runtime.shell
 
 import ca.uwaterloo.flix.language.ast.Ast
-import ca.uwaterloo.flix.language.ast.shared.Input
+import ca.uwaterloo.flix.language.ast.shared.{Input, Source}
 import ca.uwaterloo.flix.language.phase.Lexer
 import ca.uwaterloo.flix.util.Validation
 
@@ -46,7 +46,7 @@ object Category {
     */
   def categoryOf(s: String): Category = {
     val input = Input.Text("<shell>", s, stable = false)
-    val source = Ast.Source(input, s.toCharArray, stable = false)
+    val source = Source(input, s.toCharArray, stable = false)
 
     // Tokenize the input and check if the first token looks like the start of a declaration or an expression.
     Validation.mapN(Lexer.lex(source)) {
