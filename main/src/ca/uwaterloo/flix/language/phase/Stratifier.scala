@@ -25,9 +25,8 @@ import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.language.errors.StratificationError
 import ca.uwaterloo.flix.language.phase.PredDeps.termTypesAndDenotation
 import ca.uwaterloo.flix.language.phase.unification.Unification
-import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.collection.ListMap
-import ca.uwaterloo.flix.util.{ParOps, Result, SharedContext, Validation}
+import ca.uwaterloo.flix.util.{ParOps, Result, Validation}
 
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.annotation.tailrec
@@ -67,7 +66,7 @@ object Stratifier {
   /**
     * Performs Stratification of the given trait `t0`.
     */
-  private def visitTrait(t0: TypedAst.Trait)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext): TypedAst.Trait = {
+  private def visitTrait(t0: TypedAst.Trait)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): TypedAst.Trait = {
     val nl = visitDefs(t0.laws)
     val ns = visitSigs(t0.sigs)
     t0.copy(laws = nl, sigs = ns)
@@ -76,7 +75,7 @@ object Stratifier {
   /**
     * Performs Stratification of the given sig `s0`.
     */
-  private def visitSig(s0: TypedAst.Sig)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext): TypedAst.Sig = {
+  private def visitSig(s0: TypedAst.Sig)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): TypedAst.Sig = {
     val newExp = visitExp(s0.exp)
     s0.copy(exp = newExp)
   }
@@ -84,14 +83,14 @@ object Stratifier {
   /**
     * Performs Stratification of the given sigs `s0s`.
     */
-  private def visitSigs(s0s: List[TypedAst.Sig])(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext): List[TypedAst.Sig] = {
+  private def visitSigs(s0s: List[TypedAst.Sig])(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): List[TypedAst.Sig] = {
     s0s.map(visitSig)
   }
 
   /**
     * Performs Stratification of the given instance `i0`.
     */
-  private def visitInstance(i0: TypedAst.Instance)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext): TypedAst.Instance = {
+  private def visitInstance(i0: TypedAst.Instance)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): TypedAst.Instance = {
     val ds = visitDefs(i0.defs)
     i0.copy(defs = ds)
   }
@@ -99,14 +98,14 @@ object Stratifier {
   /**
     * Performs Stratification of the given instances `is0`.
     */
-  private def visitInstances(is0: List[TypedAst.Instance])(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext): List[TypedAst.Instance] = {
+  private def visitInstances(is0: List[TypedAst.Instance])(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): List[TypedAst.Instance] = {
     is0.map(visitInstance)
   }
 
   /**
     * Performs stratification of the given definition `def0`.
     */
-  private def visitDef(def0: Def)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext): Def = {
+  private def visitDef(def0: Def)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): Def = {
     val e = visitExp(def0.exp)
     def0.copy(exp = e)
   }
@@ -114,14 +113,14 @@ object Stratifier {
   /**
     * Performs stratification of the given definitions `defs0`.
     */
-  private def visitDefs(defs0: List[Def])(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext): List[Def] = {
+  private def visitDefs(defs0: List[Def])(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): List[Def] = {
     defs0.map(visitDef)
   }
 
   /**
     * Performs stratification of the given expression `exp0`.
     */
-  private def visitExp(exp0: Expr)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext): Expr = exp0 match {
+  private def visitExp(exp0: Expr)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): Expr = exp0 match {
     case Expr.Cst(_, _, _) => exp0
 
     case Expr.Var(_, _, _) => exp0
@@ -438,93 +437,93 @@ object Stratifier {
 
   }
 
-  private def visitExp(exp0: Option[Expr])(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext): Option[Expr] = {
+  private def visitExp(exp0: Option[Expr])(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): Option[Expr] = {
     exp0.map(visitExp)
   }
 
-  private def visitExps(exps0: List[Expr])(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext): List[Expr] = {
+  private def visitExps(exps0: List[Expr])(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): List[Expr] = {
     exps0.map(visitExp)
   }
 
-  private def visitMatchRule(rule: MatchRule)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext): MatchRule = rule match {
+  private def visitMatchRule(rule: MatchRule)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): MatchRule = rule match {
     case MatchRule(pat, exp1, exp2) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       MatchRule(pat, e1, e2)
   }
 
-  private def visitMatchRules(rules: List[MatchRule])(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext): List[MatchRule] = {
+  private def visitMatchRules(rules: List[MatchRule])(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): List[MatchRule] = {
     rules.map(visitMatchRule)
   }
 
-  private def visitTypeMatchRule(rule: TypeMatchRule)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext): TypeMatchRule = rule match {
+  private def visitTypeMatchRule(rule: TypeMatchRule)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): TypeMatchRule = rule match {
     case TypeMatchRule(sym, t, exp1) =>
       val e1 = visitExp(exp1)
       TypeMatchRule(sym, t, e1)
   }
 
-  private def visitTypeMatchRules(rules: List[TypeMatchRule])(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext): List[TypeMatchRule] = {
+  private def visitTypeMatchRules(rules: List[TypeMatchRule])(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): List[TypeMatchRule] = {
     rules.map(visitTypeMatchRule)
   }
 
-  private def visitRestrictableChooseRule(rule: RestrictableChooseRule)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext): RestrictableChooseRule = rule match {
+  private def visitRestrictableChooseRule(rule: RestrictableChooseRule)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): RestrictableChooseRule = rule match {
     case RestrictableChooseRule(pat, exp1) =>
       val e1 = visitExp(exp1)
       RestrictableChooseRule(pat, e1)
   }
 
-  private def visitRestrictableChooseRules(rules: List[RestrictableChooseRule])(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext): List[RestrictableChooseRule] = {
+  private def visitRestrictableChooseRules(rules: List[RestrictableChooseRule])(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): List[RestrictableChooseRule] = {
     rules.map(visitRestrictableChooseRule)
   }
 
-  private def visitTryCatchRule(rule: CatchRule)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext): CatchRule = rule match {
+  private def visitTryCatchRule(rule: CatchRule)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): CatchRule = rule match {
     case CatchRule(sym, clazz, exp1) =>
       val e1 = visitExp(exp1)
       CatchRule(sym, clazz, e1)
   }
 
-  private def visitCatchRules(rules: List[CatchRule])(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext): List[CatchRule] = {
+  private def visitCatchRules(rules: List[CatchRule])(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): List[CatchRule] = {
     rules.map(visitTryCatchRule)
   }
 
-  private def visitTryWithRule(rule: HandlerRule)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext): HandlerRule = rule match {
+  private def visitTryWithRule(rule: HandlerRule)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): HandlerRule = rule match {
     case HandlerRule(op, fparams, exp1) =>
       val e1 = visitExp(exp1)
       HandlerRule(op, fparams, e1)
   }
 
-  private def visitHandlerRules(rules: List[HandlerRule])(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext): List[HandlerRule] = {
+  private def visitHandlerRules(rules: List[HandlerRule])(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): List[HandlerRule] = {
     rules.map(visitTryWithRule)
   }
 
-  private def visitJvmMethod(method: JvmMethod)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext): JvmMethod = method match {
+  private def visitJvmMethod(method: JvmMethod)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): JvmMethod = method match {
     case JvmMethod(ident, fparams, exp, tpe, eff, loc) =>
       val e = visitExp(exp)
       JvmMethod(ident, fparams, e, tpe, eff, loc)
   }
 
-  private def visitJvmMethods(methods: List[JvmMethod])(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext): List[JvmMethod] = {
+  private def visitJvmMethods(methods: List[JvmMethod])(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): List[JvmMethod] = {
     methods.map(visitJvmMethod)
   }
 
-  private def visitSelectChannelRule(rule: SelectChannelRule)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext): SelectChannelRule = rule match {
+  private def visitSelectChannelRule(rule: SelectChannelRule)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): SelectChannelRule = rule match {
     case SelectChannelRule(sym, exp1, exp2) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       SelectChannelRule(sym, e1, e2)
   }
 
-  private def visitSelectChannelRules(rules: List[SelectChannelRule])(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext): List[SelectChannelRule] = {
+  private def visitSelectChannelRules(rules: List[SelectChannelRule])(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): List[SelectChannelRule] = {
     rules.map(visitSelectChannelRule)
   }
 
-  private def visitParYieldFragment(frag: ParYieldFragment)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext): ParYieldFragment = frag match {
+  private def visitParYieldFragment(frag: ParYieldFragment)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): ParYieldFragment = frag match {
     case ParYieldFragment(pat, exp1, loc1) =>
       val e1 = visitExp(exp1)
       ParYieldFragment(pat, e1, loc1)
   }
 
-  private def visitParYieldFragments(frags: List[ParYieldFragment])(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix, sctx: SharedContext): List[ParYieldFragment] = {
+  private def visitParYieldFragments(frags: List[ParYieldFragment])(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): List[ParYieldFragment] = {
     frags.map(visitParYieldFragment)
   }
 
@@ -552,7 +551,7 @@ object Stratifier {
   /**
     * Computes the stratification of the given labelled graph `g` for the given row type `tpe` at the given source location `loc`.
     */
-  private def stratify(g: LabelledPrecedenceGraph, tpe: Type, loc: SourceLocation)(implicit flix: Flix, sctx: SharedContext): Unit = {
+  private def stratify(g: LabelledPrecedenceGraph, tpe: Type, loc: SourceLocation)(implicit sctx: SharedContext, flix: Flix): Unit = {
     // The key is the set of predicates that occur in the row type.
     val key = predicateSymbolsOf(tpe)
 
