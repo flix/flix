@@ -1490,4 +1490,35 @@ class TestTyper extends AnyFunSuite with TestUtils {
     val result = compile(input, Options.Default)
     expectError[TypeError.AmbiguousMethod](result)
   }
+
+  test("TypeError.ThrowNonThrowable.01") {
+    val input =
+      """
+        |import java.io.IOException
+        |def main(): Unit \ IO =
+        |    throw new IOException
+        |""".stripMargin
+    val result = compile(input, Options.Default)
+    expectError[TypeError.MismatchedTypes](result)
+  }
+
+  test("TypeError.ThrowNonThrowable.02") {
+    val input =
+      """
+        |def main(): Unit \ IO =
+        |    throw "hello"
+        |""".stripMargin
+    val result = compile(input, Options.Default)
+    expectError[TypeError.MismatchedTypes](result)
+  }
+
+  test("TypeError.ThrowNonThrowable.03") {
+    val input =
+      """
+        |def main(): Unit \ IO =
+        |    throw 1 :: 2 :: 3 :: Nil
+        |""".stripMargin
+    val result = compile(input, Options.Default)
+    expectError[TypeError.MismatchedTypes](result)
+  }
 }

@@ -390,6 +390,8 @@ object Safety {
         nestedTryCatchError ++ visit(exp)(inTryCatch = true) ++
           rules.flatMap { case CatchRule(sym, clazz, e) => checkCatchClass(clazz, sym.loc) ++ visit(e) }
 
+      case Expr.Throw(_, _, _, _) => throw new RuntimeException("JOE THROW TBD")
+
       case Expr.TryWith(exp, _, rules, _, _, _) =>
         visit(exp) ++
           rules.flatMap { case HandlerRule(_, _, e) => visit(e) }
