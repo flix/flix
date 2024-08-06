@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Magnus Madsen
+ * Copyright 2024 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,20 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.language.ast
+package ca.uwaterloo.flix.language.ast.shared
 
-import ca.uwaterloo.flix.language.ast.shared.Source
+/**
+ * A common super-type for security contexts.
+ */
+sealed trait SecurityContext
 
-trait Locatable extends Sourceable {
-
-  /**
-    * Returns the source location of `this`.
-    */
-  def loc: SourceLocation
+object SecurityContext {
 
   /**
-    * Returns the source of `this`.
-    */
-  override def src: Source = loc.source
+   * A security context where everything is permitted.
+   */
+  case object AllPermissions extends SecurityContext
+
+  /**
+   * A security context where no unsafe features are permitted.
+   */
+  case object NoPermissions extends SecurityContext
 
 }

@@ -718,6 +718,9 @@ object ConstraintGen {
         val resEff = Type.mkUnion(eff :: effs, loc)
         (resTpe, resEff)
 
+      case KindedAst.Expr.Throw(exp, tvar, evar, loc) =>
+        throw new RuntimeException("JOE TODO")
+
       case Expr.TryWith(exp, effUse, rules, tvar, loc) =>
         val (tpe, eff) = visitExp(exp)
         val continuationEffect = Type.freshVar(Kind.Eff, loc)

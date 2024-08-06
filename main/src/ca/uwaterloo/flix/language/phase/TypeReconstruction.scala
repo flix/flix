@@ -409,6 +409,9 @@ object TypeReconstruction {
       val eff = Type.mkUnion(e.eff :: rs.map(_.exp.eff), loc)
       TypedAst.Expr.TryCatch(e, rs, tpe, eff, loc)
 
+    case KindedAst.Expr.Throw(exp, tvar, evar, loc) =>
+      throw new RuntimeException("JOE TODO")
+
     case KindedAst.Expr.TryWith(exp, effUse, rules, tvar, loc) =>
       val e = visitExp(exp)
       val rs = rules map {

@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast._
 import ca.uwaterloo.flix.language.ast.SyntaxTree.{Child, Tree, TreeKind}
-import ca.uwaterloo.flix.language.ast.shared.Fixity
+import ca.uwaterloo.flix.language.ast.shared.{Fixity, Source}
 import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, Name, ReadAst, SemanticOp, SourceLocation, SourcePosition, Symbol, SyntaxTree, Token, TokenKind, WeededAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.language.errors.ParseError._
@@ -60,7 +60,7 @@ object Weeder2 {
     }(DebugValidation())
   }
 
-  private def weed(src: Ast.Source, tree: Tree): Validation[CompilationUnit, CompilationMessage] = {
+  private def weed(src: Source, tree: Tree): Validation[CompilationUnit, CompilationMessage] = {
     mapN(pickAllUsesAndImports(tree), Decls.pickAllDeclarations(tree)) {
       (usesAndImports, declarations) => CompilationUnit(usesAndImports, declarations, tree.loc)
     }
@@ -461,9 +461,9 @@ object Weeder2 {
       ) {
         (doc, ann, mods, ident, tparams, fields) =>
         // Ensure that each name is unique
-        val errors = getDuplicates(fields, (f: StructField) => f.ident.name)
+        val errors = getDuplicates(fields, (f: StructField) => f.name.name)
         // For each field, only keep the first occurrence of the name
-        val groupedByName = fields.groupBy(_.ident.name)
+        val groupedByName = fields.groupBy(_.name.name)
         val filteredFields = groupedByName.values.map(_.head).toList
         if (errors.isEmpty) {
           Validation.success(Declaration.Struct(
@@ -474,7 +474,7 @@ object Weeder2 {
           Validation.success(Declaration.Struct(
             doc, ann, mods, ident, tparams, filteredFields.sortBy(_.loc), tree.loc
           )).withSoftFailures(errors.map {
-            case (field1, field2) => DuplicateStructField(ident.name, field1.ident.name, field1.ident.loc, field2.ident.loc, ident.loc)
+            case (field1, field2) => DuplicateStructField(ident.name, field1.name.name, field1.name.loc, field2.name.loc, ident.loc)
           })
         }
       }
@@ -489,7 +489,7 @@ object Weeder2 {
         (ident, ttype) =>
           // Make a source location that spans the name and type
           val loc = SourceLocation(isReal = true, ident.loc.sp1, tree.loc.sp2)
-          StructField(ident, ttype, loc)
+          StructField(Name.mkLabel(ident), ttype, loc)
       }
     }
     private def visitTypeAliasDecl(tree: Tree): Validation[Declaration.TypeAlias, CompilationMessage] = {
@@ -519,13 +519,11 @@ object Weeder2 {
           val tpe = Types.tryPickTypeNoWild(tree)
           val tparam = tparams match {
             // Elided: Use class type parameter
-            case TypeParams.Elided => Validation.success(classTypeParam)
+            case Nil => Validation.success(classTypeParam)
             // Single type parameter
-            case TypeParams.Unkinded(head :: Nil) => Validation.success(head)
-            case TypeParams.Kinded(head :: Nil) => Validation.success(head)
+            case head :: Nil => Validation.success(head)
             // Multiple type parameters. Soft fail by picking the first parameter
-            case TypeParams.Unkinded(ts) => Validation.toSoftFailure(ts.head, NonUnaryAssocType(ts.length, ident.loc))
-            case TypeParams.Kinded(ts) => Validation.toSoftFailure(ts.head, NonUnaryAssocType(ts.length, ident.loc))
+            case ts@(head :: _ :: _) => Validation.toSoftFailure(head, NonUnaryAssocType(ts.length, ident.loc))
           }
           mapN(tparam, tpe) {
             (tparam, tpe) => Declaration.AssocTypeSig(doc, mods, ident, tparam, kind, tpe, tree.loc)
@@ -831,6 +829,7 @@ object Weeder2 {
         case TreeKind.Expr.Unsafe => visitUnsafeExpr(tree)
         case TreeKind.Expr.Without => visitWithoutExpr(tree)
         case TreeKind.Expr.Try => visitTryExpr(tree)
+        case TreeKind.Expr.Throw => visitThrow(tree)
         case TreeKind.Expr.Do => visitDoExpr(tree)
         case TreeKind.Expr.InvokeConstructor2 => visitInvokeConstructor2Expr(tree)
         case TreeKind.Expr.InvokeMethod2 => visitInvokeMethod2Expr(tree)
@@ -1718,6 +1717,11 @@ object Weeder2 {
       })
     }
 
+    private def visitThrow(tree:Tree): Validation[Expr, CompilationMessage] = {
+      expect(tree, TreeKind.Expr.Throw)
+      mapN(pickExpr(tree))(e => Expr.Throw(e, tree.loc))
+    }
+
     private def visitDoExpr(tree: Tree): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.Do)
       mapN(pickQName(tree), pickArguments(tree)) {
@@ -1770,7 +1774,10 @@ object Weeder2 {
       expect(tree, TreeKind.Expr.StructPut)
       val struct = pickExpr(tree)
       val ident = pickNameIdent(tree)
-      val rhs = pickExpr(tree)
+      val rhs = flatMapN(pick(TreeKind.Expr.StructPutRHS, tree)) {
+        tree => pickExpr(tree)
+      }
+
       mapN(struct, ident, rhs) {
         (struct, ident, rhs) => Expr.StructPut(struct, Name.mkLabel(ident), rhs, tree.loc)
       }
@@ -1804,10 +1811,10 @@ object Weeder2 {
        }
     }
 
-    private def visitNewStructField(tree: Tree): Validation[(Name.Ident, Expr), CompilationMessage] = {
+    private def visitNewStructField(tree: Tree): Validation[(Name.Label, Expr), CompilationMessage] = {
       expect(tree, TreeKind.Expr.LiteralStructFieldFragment)
       mapN(pickNameIdent(tree), pickExpr(tree)) {
-        (ident, expr) => (ident, expr)
+        (ident, expr) => (Name.mkLabel(ident), expr)
       }
     }
 
@@ -2783,9 +2790,9 @@ object Weeder2 {
       mapN(derivations)(Derivations(_, loc))
     }
 
-    def pickParameters(tree: Tree): Validation[TypeParams, CompilationMessage] = {
+    def pickParameters(tree: Tree): Validation[List[TypeParam], CompilationMessage] = {
       tryPick(TreeKind.TypeParameterList, tree) match {
-        case None => Validation.success(TypeParams.Elided)
+        case None => Validation.success(Nil)
         case Some(tparamsTree) =>
           val parameters = pickAll(TreeKind.Parameter, tparamsTree)
           flatMapN(traverse(parameters)(visitParameter)) {
@@ -2794,16 +2801,12 @@ object Weeder2 {
               val unkinded = tparams.collect { case t: TypeParam.Unkinded => t }
               (kinded, unkinded) match {
                 // Only unkinded type parameters
-                case (Nil, _ :: _) => Validation.success(TypeParams.Unkinded(unkinded))
+                case (Nil, _ :: _) => Validation.success(tparams)
                 // Only kinded type parameters
-                case (_ :: _, Nil) => Validation.success(TypeParams.Kinded(kinded))
-                // Some kinded and some unkinded type parameters. We recover by kinding the unkinded ones as Ambiguous.
+                case (_ :: _, Nil) => Validation.success(tparams)
+                // Some kinded and some unkinded type parameters. Give an error and keep going.
                 case (_ :: _, _ :: _) =>
-                  val syntheticallyKinded = tparams.map {
-                    case p: TypeParam.Kinded => p
-                    case TypeParam.Unkinded(ident) => TypeParam.Kinded(ident, defaultKind(ident))
-                  }
-                  toSoftFailure(TypeParams.Kinded(syntheticallyKinded), MismatchedTypeParameters(tparamsTree.loc))
+                  toSoftFailure(tparams, MismatchedTypeParameters(tparamsTree.loc))
                 case (Nil, Nil) =>
                   throw InternalCompilerException("Parser produced empty type parameter tree", tparamsTree.loc)
               }
@@ -2811,9 +2814,9 @@ object Weeder2 {
       }
     }
 
-    def pickKindedParameters(tree: Tree): Validation[KindedTypeParams, CompilationMessage] = {
+    def pickKindedParameters(tree: Tree): Validation[List[TypeParam], CompilationMessage] = {
       tryPick(TreeKind.TypeParameterList, tree) match {
-        case None => Validation.success(TypeParams.Elided)
+        case None => Validation.success(Nil)
         case Some(tparamsTree) =>
           val parameters = pickAll(TreeKind.Parameter, tparamsTree)
           flatMapN(traverse(parameters)(visitParameter)) {
@@ -2822,18 +2825,13 @@ object Weeder2 {
               val unkinded = tparams.collect { case t: TypeParam.Unkinded => t }
               (kinded, unkinded) match {
                 // Only kinded type parameters
-                case (_ :: _, Nil) => Validation.success(TypeParams.Kinded(kinded))
+                case (_ :: _, Nil) => Validation.success(tparams)
                 // Some kinded and some unkinded type parameters. We recover by kinding the unkinded ones as Ambiguous.
                 case (_, _ :: _) =>
                   val errors = unkinded.map {
                     case TypeParam.Unkinded(ident) => MissingTypeParamKind(ident.loc)
                   }
-                  val syntheticallyKinded = tparams.map {
-                    case p: TypeParam.Kinded => p
-                    case TypeParam.Unkinded(ident) =>
-                      TypeParam.Kinded(ident, Kind.Ambiguous(Name.mkQName("Type"), ident.loc.asSynthetic))
-                  }
-                  toSuccessOrSoftFailure(TypeParams.Kinded(syntheticallyKinded), errors)
+                  toSuccessOrSoftFailure(tparams, errors)
                 case (Nil, Nil) =>
                   throw InternalCompilerException("Parser produced empty type parameter tree", tparamsTree.loc)
               }

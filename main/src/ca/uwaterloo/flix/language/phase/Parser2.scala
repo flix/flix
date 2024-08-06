@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.SyntacticContext
 import ca.uwaterloo.flix.language.ast.SyntaxTree.TreeKind
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.ast.shared.Source
 import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.language.errors.{ParseError, WeederError}
 import ca.uwaterloo.flix.language.errors.ParseError._
@@ -69,7 +70,7 @@ object Parser2 {
     case object Advance extends Event
   }
 
-  private class State(val tokens: Array[Token], val src: Ast.Source) {
+  private class State(val tokens: Array[Token], val src: Source) {
     /**
       * The current token being considered by the parser.
       */
@@ -116,7 +117,7 @@ object Parser2 {
     case class Closed(index: Int) extends Mark
   }
 
-  def run(tokens: Map[Ast.Source, Array[Token]], oldRoot: SyntaxTree.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[SyntaxTree.Root, CompilationMessage] = {
+  def run(tokens: Map[Source, Array[Token]], oldRoot: SyntaxTree.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[SyntaxTree.Root, CompilationMessage] = {
     flix.phase("Parser2") {
       // Compute the stale and fresh sources.
       val (stale, fresh) = changeSet.partition(tokens, oldRoot.units)
@@ -136,7 +137,7 @@ object Parser2 {
     }(DebugValidation())
   }
 
-  private def parse(src: Ast.Source, tokens: Array[Token]): Validation[SyntaxTree.Tree, CompilationMessage] = {
+  private def parse(src: Source, tokens: Array[Token]): Validation[SyntaxTree.Tree, CompilationMessage] = {
     implicit val s: State = new State(tokens, src)
     // Call the top-most grammar rule to gather all events into state.
     root()
@@ -1392,8 +1393,10 @@ object Parser2 {
             name(NAME_FIELD, context = SyntacticContext.Expr.OtherExpr)
             if (at(TokenKind.Equal)) { // struct put
               eat (TokenKind.Equal)
-              expression(TokenKind.Equal)
-              close(mark, TreeKind.Expr.StructPut)
+              val mark2 = open()
+              expression()
+              close(mark2, TreeKind.Expr.StructPutRHS)
+              lhs = close(mark, TreeKind.Expr.StructPut)
               lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
             } else { // struct get
               lhs = close(mark, TreeKind.Expr.StructGet)
@@ -1600,6 +1603,7 @@ object Parser2 {
         case TokenKind.KeywordUnsafe => unsafeExpr()
         case TokenKind.KeywordMaskedCast => uncheckedMaskingCastExpr()
         case TokenKind.KeywordTry => tryExpr()
+        case TokenKind.KeywordThrow => throwExpr()
         case TokenKind.KeywordDo => doExpr()
         case TokenKind.KeywordNew => ambiguousNewExpr()
         case TokenKind.KeywordStaticUppercase => staticExpr()
@@ -2491,6 +2495,14 @@ object Parser2 {
       expect(TokenKind.Equal, SyntacticContext.Expr.OtherExpr)
       expression()
       close(mark, TreeKind.Expr.TryWithRuleFragment)
+    }
+
+    private def throwExpr()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordThrow))
+      val mark = open()
+      expect(TokenKind.KeywordThrow, SyntacticContext.Expr.OtherExpr)
+      expression()
+      close(mark, TreeKind.Expr.Throw)
     }
 
     private def doExpr()(implicit s: State): Mark.Closed = {

@@ -15,12 +15,14 @@
  */
 package ca.uwaterloo.flix.language.ast
 
+import ca.uwaterloo.flix.language.ast.shared.Input
+
 sealed trait ChangeSet {
 
   /**
     * Returns a new change set with `i` marked as changed.
     */
-  def markChanged(i: Ast.Input): ChangeSet = this match {
+  def markChanged(i: Input): ChangeSet = this match {
     case ChangeSet.Everything => ChangeSet.Changes(Set(i))
     case ChangeSet.Changes(s) => ChangeSet.Changes(s + i)
   }
@@ -64,7 +66,7 @@ object ChangeSet {
   /**
     * Represents the set `s` of changed sources.
     */
-  case class Changes(s: Set[Ast.Input]) extends ChangeSet
+  case class Changes(s: Set[Input]) extends ChangeSet
 
 }
 

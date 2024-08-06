@@ -735,6 +735,25 @@ object ResolutionError {
   }
 
   /**
+   * An error raised to indicate that a static field name was not found.
+   *
+   * @param clazz the class name.
+   * @param field the field name.
+   * @param loc   the location of the field access.
+   */
+  case class UndefinedJvmStaticField(clazz: Class[_], field: Name.Ident, loc: SourceLocation) extends ResolutionError with Recoverable {
+    def summary: String = s"Undefined static field."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s""">> Undefined static field '${red(field.name)}' in class '${cyan(clazz.getName)}'.
+         |
+         |${code(loc, "undefined static field.")}
+         |""".stripMargin
+    }
+  }
+
+  /**
     * An error raised to indicate that a matching method was not found.
     *
     * @param className  the class name.

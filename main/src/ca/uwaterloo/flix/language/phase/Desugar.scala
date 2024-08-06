@@ -110,7 +110,7 @@ object Desugar {
   private def visitDef(def0: WeededAst.Declaration.Def)(implicit flix: Flix): DesugaredAst.Declaration.Def = def0 match {
     case WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0, fparams0, exp0, tpe0, eff0, tconstrs0, constrs0, loc) =>
       flix.subtask(ident.name, sample = true)
-      val tparams = visitKindedTypeParams(tparams0)
+      val tparams = tparams0.map(visitTypeParam)
       val fparams = visitFormalParams(fparams0)
       val exp = visitExp(exp0)
       val tpe = visitType(tpe0)
@@ -125,7 +125,7 @@ object Desugar {
     */
   private def visitLaw(law0: WeededAst.Declaration.Law)(implicit flix: Flix): DesugaredAst.Declaration.Law = law0 match {
     case WeededAst.Declaration.Law(doc, ann, mod, ident, tparams0, fparams0, exp0, tpe0, eff0, tconstrs0, loc) =>
-      val tparams = visitKindedTypeParams(tparams0)
+      val tparams = tparams0.map(visitTypeParam)
       val fparams = visitFormalParams(fparams0)
       val exp = visitExp(exp0)
       val tpe = visitType(tpe0)
@@ -139,7 +139,7 @@ object Desugar {
     */
   private def visitEnum(enum0: WeededAst.Declaration.Enum): DesugaredAst.Declaration.Enum = enum0 match {
     case WeededAst.Declaration.Enum(doc, ann, mod, ident, tparams0, derives0, cases0, loc) =>
-      val tparams = visitTypeParams(tparams0)
+      val tparams = tparams0.map(visitTypeParam)
       val derives = visitDerivations(derives0)
       val cases = cases0.map(visitCase)
       DesugaredAst.Declaration.Enum(doc, ann, mod, ident, tparams, derives, cases, loc)
@@ -150,7 +150,7 @@ object Desugar {
    */
   private def visitStruct(struct0: WeededAst.Declaration.Struct): DesugaredAst.Declaration.Struct = struct0 match {
     case WeededAst.Declaration.Struct(doc, ann, mod, ident, tparams0, fields0, loc) =>
-      val tparams = visitTypeParams(tparams0)
+      val tparams = tparams0.map(visitTypeParam)
       val fields = fields0.map(visitField)
       DesugaredAst.Declaration.Struct(doc, ann, mod, ident, tparams, fields, loc)
   }
@@ -161,7 +161,7 @@ object Desugar {
   private def visitRestrictableEnum(restrictableEnum0: WeededAst.Declaration.RestrictableEnum): DesugaredAst.Declaration.RestrictableEnum = restrictableEnum0 match {
     case WeededAst.Declaration.RestrictableEnum(doc, ann, mod, ident, index0, tparams0, derives0, cases0, loc) =>
       val index = visitTypeParam(index0)
-      val tparams = visitTypeParams(tparams0)
+      val tparams = tparams0.map(visitTypeParam)
       val derives = visitDerivations(derives0)
       val cases = cases0.map(visitRestrictableCase)
       DesugaredAst.Declaration.RestrictableEnum(doc, ann, mod, ident, index, tparams, derives, cases, loc)
@@ -172,7 +172,7 @@ object Desugar {
     */
   private def visitTypeAlias(typeAlias0: WeededAst.Declaration.TypeAlias): DesugaredAst.Declaration.TypeAlias = typeAlias0 match {
     case WeededAst.Declaration.TypeAlias(doc, ann, mod, ident, tparams0, tpe0, loc) =>
-      val tparams = visitTypeParams(tparams0)
+      val tparams = tparams0.map(visitTypeParam)
       val tpe = visitType(tpe0)
       DesugaredAst.Declaration.TypeAlias(doc, ann, mod, ident, tparams, tpe, loc)
   }
@@ -221,7 +221,7 @@ object Desugar {
     */
   private def visitSig(sig0: WeededAst.Declaration.Sig)(implicit flix: Flix): DesugaredAst.Declaration.Sig = sig0 match {
     case WeededAst.Declaration.Sig(doc, ann, mod, ident, tparams0, fparams0, exp0, tpe0, eff0, tconstrs0, econstrs0, loc) =>
-      val tparams = visitKindedTypeParams(tparams0)
+      val tparams = tparams0.map(visitTypeParam)
       val fparams = visitFormalParams(fparams0)
       val exp = exp0.map(visitExp)
       val tpe = visitType(tpe0)
@@ -370,16 +370,6 @@ object Desugar {
   }
 
   /**
-    * Desugars the given [[WeededAst.KindedTypeParams]] `tparams0`.
-    */
-  private def visitKindedTypeParams(tparams0: WeededAst.KindedTypeParams): DesugaredAst.KindedTypeParams = tparams0 match {
-    case WeededAst.TypeParams.Elided => DesugaredAst.TypeParams.Elided
-    case WeededAst.TypeParams.Kinded(tparams1) =>
-      val tparams = tparams1.map(visitTypeParam).collect { case t: DesugaredAst.TypeParam.Kinded => t }
-      DesugaredAst.TypeParams.Kinded(tparams)
-  }
-
-  /**
     * Desugars the given list of [[WeededAst.FormalParam]] `fparams0`.
     */
   private def visitFormalParams(fparams0: List[WeededAst.FormalParam]): List[DesugaredAst.FormalParam] =
@@ -405,16 +395,6 @@ object Desugar {
   }
 
   /**
-    * Desugars the given [[WeededAst.TypeParams]] `tparams0`.
-    */
-  private def visitTypeParams(tparams0: WeededAst.TypeParams): DesugaredAst.TypeParams = tparams0 match {
-    case params: WeededAst.KindedTypeParams => visitKindedTypeParams(params)
-    case WeededAst.TypeParams.Unkinded(tparams1) =>
-      val tparams = tparams1.map(visitTypeParam).collect { case t: DesugaredAst.TypeParam.Unkinded => t }
-      DesugaredAst.TypeParams.Unkinded(tparams)
-  }
-
-  /**
     * Desugars the given [[WeededAst.Derivations]] `derives0`.
     */
   private def visitDerivations(derives0: WeededAst.Derivations): DesugaredAst.Derivations = derives0 match {
@@ -435,9 +415,9 @@ object Desugar {
    * Desugars the given [[WeededAst.StructField]] `field0`.
    */
   private def visitField(field0: WeededAst.StructField): DesugaredAst.StructField = field0 match {
-    case WeededAst.StructField(ident, tpe0, loc) =>
+    case WeededAst.StructField(name, tpe0, loc) =>
       val tpe = visitType(tpe0)
-      DesugaredAst.StructField(ident, tpe, loc)
+      DesugaredAst.StructField(name, tpe, loc)
   }
 
   /**
@@ -728,6 +708,10 @@ object Desugar {
       val e = visitExp(exp)
       val rs = rules.map(visitCatchRule)
       Expr.TryCatch(e, rs, loc)
+
+    case WeededAst.Expr.Throw(exp, loc) =>
+      val e = visitExp(exp)
+      Expr.Throw(e, loc)
 
     case WeededAst.Expr.TryWith(exp, handlers, loc) =>
       val e = visitExp(exp)
