@@ -1664,7 +1664,7 @@ object Namer {
   /**
     * A global shared context. Must be thread-safe.
     *
-    * @param errors the [[NameError]]s if the AST, if any.
+    * @param errors the [[NameError]]s in the AST, if any.
     */
   private case class SharedContext(errors: ConcurrentLinkedQueue[NameError])
 

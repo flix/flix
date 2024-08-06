@@ -29,7 +29,9 @@ import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{ParOps, Result, Validation}
 
+import java.util.concurrent.ConcurrentLinkedQueue
 import scala.annotation.tailrec
+import scala.jdk.CollectionConverters._
 
 /**
   * The stratification phase breaks constraints into strata.
@@ -48,6 +50,9 @@ object Stratifier {
     * Returns a stratified version of the given AST `root`.
     */
   def run(root: Root)(implicit flix: Flix): Validation[Root, StratificationError] = flix.phase("Stratifier") {
+    // Construct a new shared context.
+    implicit val sctx: SharedContext = SharedContext.mk()
+
     implicit val g: LabelledPrecedenceGraph = root.precedenceGraph
     implicit val r: Root = root
 
@@ -56,15 +61,15 @@ object Stratifier {
     val newInstances = ParOps.parTraverseValues(root.instances)(traverse(_)(visitInstance(_)))
     val newTraits = ParOps.parTraverseValues(root.traits)(visitTrait(_))
 
-    mapN(newDefs, newInstances, newTraits) {
-      case (ds, is, ts) => root.copy(defs = ds, instances = is, traits = ts)
+    flatMapN(newDefs, newInstances, newTraits) {
+      case (ds, is, ts) => Validation.toSuccessOrSoftFailure(root.copy(defs = ds, instances = is, traits = ts), sctx.errors.asScala)
     }
   }(DebugValidation())
 
   /**
     * Performs Stratification of the given trait `t0`.
     */
-  private def visitTrait(t0: TypedAst.Trait)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix): Validation[TypedAst.Trait, StratificationError] = {
+  private def visitTrait(t0: TypedAst.Trait)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): Validation[TypedAst.Trait, StratificationError] = {
     val newLaws = traverse(t0.laws)(visitDef(_))
     val newSigs = traverse(t0.sigs)(visitSig(_))
     mapN(newLaws, newSigs) {
@@ -75,7 +80,7 @@ object Stratifier {
   /**
     * Performs Stratification of the given sig `s0`.
     */
-  private def visitSig(s0: TypedAst.Sig)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix): Validation[TypedAst.Sig, StratificationError] = {
+  private def visitSig(s0: TypedAst.Sig)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): Validation[TypedAst.Sig, StratificationError] = {
     val newExp = traverseOpt(s0.exp)(visitExp(_))
     mapN(newExp) {
       case ne => s0.copy(exp = ne)
@@ -86,13 +91,13 @@ object Stratifier {
   /**
     * Performs Stratification of the given instance `i0`.
     */
-  private def visitInstance(i0: TypedAst.Instance)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix): Validation[TypedAst.Instance, StratificationError] =
+  private def visitInstance(i0: TypedAst.Instance)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): Validation[TypedAst.Instance, StratificationError] =
     mapN(traverse(i0.defs)(d => visitDef(d)))(ds => i0.copy(defs = ds))
 
   /**
     * Performs stratification of the given definition `def0`.
     */
-  private def visitDef(def0: Def)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix): Validation[Def, StratificationError] =
+  private def visitDef(def0: Def)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): Validation[Def, StratificationError] =
     mapN(visitExp(def0.exp)) {
       case e => def0.copy(exp = e)
     }
@@ -102,7 +107,7 @@ object Stratifier {
     *
     * Returns [[Success]] if the expression is stratified. Otherwise returns [[HardFailure]] with a [[StratificationError]].
     */
-  private def visitExp(exp0: Expr)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix): Validation[Expr, StratificationError] = exp0 match {
+  private def visitExp(exp0: Expr)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): Validation[Expr, StratificationError] = exp0 match {
     case Expr.Cst(_, _, _) => Validation.success(exp0)
 
     case Expr.Var(_, _, _) => Validation.success(exp0)
@@ -185,7 +190,7 @@ object Stratifier {
       val matchVal = visitExp(exp)
       val rulesVal = traverse(rules) {
         case MatchRule(pat, guard, body) => mapN(traverseOpt(guard)(visitExp), visitExp(body)) {
-          case (g, b) => MatchRule(pat, g, b)
+          case (gd, b) => MatchRule(pat, gd, b)
         }
       }
       mapN(matchVal, rulesVal) {
@@ -450,35 +455,31 @@ object Stratifier {
 
     case Expr.FixpointConstraintSet(cs0, tpe, loc) =>
       // Compute the stratification.
-      val stf = stratify(g, tpe, loc)
+      stratify(g, tpe, loc)
 
-      mapN(stf) {
-        case _ =>
-          val cs = cs0.map(reorder)
-          Expr.FixpointConstraintSet(cs, tpe, loc)
-      }
+      val cs = cs0.map(reorder)
+      Validation.success(Expr.FixpointConstraintSet(cs, tpe, loc))
 
     case Expr.FixpointLambda(pparams, exp, tpe, eff, loc) =>
       // Compute the stratification.
-      val stf = stratify(g, tpe, loc)
-      mapN(stf) {
-        case _ => Expr.FixpointLambda(pparams, exp, tpe, eff, loc)
-      }
+      stratify(g, tpe, loc)
+
+      Validation.success(Expr.FixpointLambda(pparams, exp, tpe, eff, loc))
 
     case Expr.FixpointMerge(exp1, exp2, tpe, eff, loc) =>
       // Compute the stratification.
-      val stf = stratify(g, tpe, loc)
+      stratify(g, tpe, loc)
 
-      mapN(visitExp(exp1), visitExp(exp2), stf) {
-        case (e1, e2, _) => Expr.FixpointMerge(e1, e2, tpe, eff, loc)
+      mapN(visitExp(exp1), visitExp(exp2)) {
+        case (e1, e2) => Expr.FixpointMerge(e1, e2, tpe, eff, loc)
       }
 
     case Expr.FixpointSolve(exp, tpe, eff, loc) =>
       // Compute the stratification.
-      val stf = stratify(g, tpe, loc)
+      stratify(g, tpe, loc)
 
-      mapN(visitExp(exp), stf) {
-        case (e, _) => Expr.FixpointSolve(e, tpe, eff, loc)
+      mapN(visitExp(exp)) {
+        case e => Expr.FixpointSolve(e, tpe, eff, loc)
       }
 
     case Expr.FixpointFilter(pred, exp, tpe, eff, loc) =>
@@ -503,7 +504,7 @@ object Stratifier {
 
   }
 
-  private def visitJvmMethod(method: JvmMethod)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix): Validation[JvmMethod, StratificationError] = method match {
+  private def visitJvmMethod(method: JvmMethod)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): Validation[JvmMethod, StratificationError] = method match {
     case JvmMethod(ident, fparams, exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
         case e => JvmMethod(ident, fparams, e, tpe, eff, loc)
@@ -534,7 +535,7 @@ object Stratifier {
   /**
     * Computes the stratification of the given labelled graph `g` for the given row type `tpe` at the given source location `loc`.
     */
-  private def stratify(g: LabelledPrecedenceGraph, tpe: Type, loc: SourceLocation)(implicit flix: Flix): Validation[Unit, StratificationError] = {
+  private def stratify(g: LabelledPrecedenceGraph, tpe: Type, loc: SourceLocation)(implicit sctx: SharedContext, flix: Flix): Unit = {
     // The key is the set of predicates that occur in the row type.
     val key = predicateSymbolsOf(tpe)
 
@@ -543,8 +544,10 @@ object Stratifier {
 
     // Compute the stratification.
     UllmansAlgorithm.stratify(labelledGraphToDependencyGraph(rg), tpe, loc) match {
-      case Result.Ok(_) => Validation.success(())
-      case Result.Err(e) => Validation.toSoftFailure((), e)
+      case Result.Ok(_) => ()
+      case Result.Err(e) =>
+        sctx.errors.add(e)
+        ()
     }
   }
 
@@ -600,5 +603,19 @@ object Stratifier {
         // that the strata of the head is strictly higher than the strata of the body.
         UllmansAlgorithm.DependencyEdge.Strong(head, body, loc)
     }.toSet
+
+  private object SharedContext {
+    /**
+      * Returns a fresh shared context.
+      */
+    def mk(): SharedContext = new SharedContext(new ConcurrentLinkedQueue())
+  }
+
+  /**
+    * A global shared context. Must be thread-safe.
+    *
+    * @param errors the errors in the AST, if any.
+    */
+  private case class SharedContext(errors: ConcurrentLinkedQueue[StratificationError])
 
 }
