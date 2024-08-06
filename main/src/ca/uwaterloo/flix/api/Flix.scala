@@ -257,6 +257,9 @@ class Flix {
 
     "Eff/Random.flix" -> LocalResource.get("/src/library/Eff/Random.flix"),
 
+    "Data/Range.flix" -> LocalResource.get("/src/library/Data/Range.flix"),
+    "Data/Discrete.flix" -> LocalResource.get("/src/library/Data/Discrete.flix"),
+
     "Graph.flix" -> LocalResource.get("/src/library/Graph.flix"),
     "Vector.flix" -> LocalResource.get("/src/library/Vector.flix"),
     "Regex.flix" -> LocalResource.get("/src/library/Regex.flix"),
