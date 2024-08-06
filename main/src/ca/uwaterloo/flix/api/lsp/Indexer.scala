@@ -356,8 +356,8 @@ object Indexer {
       }
       i0 ++ i1
 
-    case Expr.Throw(_, _, _, _) =>
-      throw new RuntimeException("JOE THROW TBD")
+    case Expr.Throw(exp, _, _, _) =>
+      visitExp(exp) ++ Index.occurrenceOf(exp0)
 
     case Expr.TryWith(exp, effUse, rules, _, _, _) =>
       val parent = Entity.Exp(exp0)
