@@ -16,9 +16,8 @@
 
 package ca.uwaterloo.flix.language
 
-import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.language.ast.SourceLocation
-import ca.uwaterloo.flix.language.errors.Severity
+import ca.uwaterloo.flix.language.ast.shared.Source
 import ca.uwaterloo.flix.util.Formatter
 
 /**
