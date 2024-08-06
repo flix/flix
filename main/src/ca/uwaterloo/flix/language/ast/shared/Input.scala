@@ -48,4 +48,9 @@ object Input {
     */
   case class PkgFile(path: Path) extends Input
 
+  /**
+   * Represents an input from an unknown source.
+   */
+   case object Unknown extends Input
+
 }

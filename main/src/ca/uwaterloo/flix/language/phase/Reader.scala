@@ -19,9 +19,9 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.{Bootstrap, Flix}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.shared.{Input, Source}
-import ca.uwaterloo.flix.language.ast.ReadAst
+import ca.uwaterloo.flix.language.ast.{ReadAst, SourceLocation}
 import ca.uwaterloo.flix.language.dbg.AstPrinter._
-import ca.uwaterloo.flix.util.{StreamOps, Validation}
+import ca.uwaterloo.flix.util.{InternalCompilerException, StreamOps, Validation}
 import ca.uwaterloo.flix.util.collection.MultiMap
 
 import java.nio.file.{Files, Path}
@@ -58,6 +58,8 @@ object Reader {
             for (src <- unpack(path)) {
               result += (src -> ())
             }
+
+          case Input.Unknown => throw InternalCompilerException("Impossible to read source code from unknown input.", SourceLocation.Unknown)
         }
       }
 
