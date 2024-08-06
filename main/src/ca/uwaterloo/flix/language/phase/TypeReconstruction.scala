@@ -410,7 +410,10 @@ object TypeReconstruction {
       TypedAst.Expr.TryCatch(e, rs, tpe, eff, loc)
 
     case KindedAst.Expr.Throw(exp, tvar, evar, loc) =>
-      throw new RuntimeException("JOE TODO")
+      val e = visitExp(exp)
+      val tpe = subst(tvar)
+      val eff = subst(evar)
+      TypedAst.Expr.Throw(e, tpe, eff, loc)
 
     case KindedAst.Expr.TryWith(exp, effUse, rules, tvar, loc) =>
       val e = visitExp(exp)

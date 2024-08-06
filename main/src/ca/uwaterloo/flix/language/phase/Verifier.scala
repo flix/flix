@@ -410,7 +410,10 @@ object Verifier {
           checkJavaSubtype(t, field.getType, loc)
           check(expected = MonoType.Unit)(actual = tpe, loc)
 
-        case AtomicOp.Throw => throw new RuntimeException("JOE TBD")
+        case AtomicOp.Throw =>
+          val List(t) = ts
+          checkJavaSubtype(t, classOf[Throwable], loc)
+          tpe
 
         case AtomicOp.InstanceOf(_) =>
           val List(t) = ts
