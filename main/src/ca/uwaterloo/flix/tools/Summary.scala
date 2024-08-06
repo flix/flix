@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.tools
 
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
+import ca.uwaterloo.flix.language.ast.shared.Input
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, SourceLocation, SourcePosition, Type, TypedAst}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -123,7 +124,7 @@ object Summary {
     }
 
     def zero(name: String): FileSummary =
-      FileSummary(Ast.Source(Ast.Input.Text(name, "", stable = true), Array.emptyCharArray, stable = true), FileData.zero)
+      FileSummary(Ast.Source(Input.Text(name, "", stable = true), Array.emptyCharArray, stable = true), FileData.zero)
 
     sums.groupBy(sum => prefixFileName(sum.src.name, nsDepth)).map {
       case (name, sums) => sums.foldLeft(zero(name))(comb).copy(src = zero(name).src)
@@ -168,7 +169,7 @@ object Summary {
   }
 
   private val unknownSource = {
-    Ast.Source(Ast.Input.Text("generated", "", stable = true), Array.emptyCharArray, stable = true)
+    Ast.Source(Input.Text("generated", "", stable = true), Array.emptyCharArray, stable = true)
   }
 
   /** debugSrc is just for consistency checking exceptions */

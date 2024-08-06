@@ -16,8 +16,8 @@
 
 package ca.uwaterloo.flix.api
 
-import ca.uwaterloo.flix.language.ast.Ast.Input
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.ast.shared.Input
 import ca.uwaterloo.flix.language.dbg.AstPrinter
 import ca.uwaterloo.flix.language.fmt.FormatOptions
 import ca.uwaterloo.flix.language.phase._
