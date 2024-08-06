@@ -231,11 +231,39 @@ object Verifier {
             case _ => failMismatchedShape(t1, "Array", loc)
           }
 
-        case AtomicOp.StructNew(_, _) => throw new RuntimeException("JOE TBD")
+        case AtomicOp.StructNew(sym0, fields0) =>
+          val region :: fieldTpes = ts
+          tpe match {
+            case MonoType.Struct(sym, _, _) =>
+              if(sym0 != sym) {
+                throw InternalCompilerException(s"Expected struct type $sym0, got struct type $sym", loc)
+              }
+            case _ => failMismatchedShape(tpe, "Struct", loc)
+          }
+          check(MonoType.Region)(region, exps(0).loc)
+          tpe
 
-        case AtomicOp.StructGet(_, _) => throw new RuntimeException("JOE TBD")
+        case AtomicOp.StructGet(sym0, field) =>
+          val List(struct) = ts
+          struct match {
+            case MonoType.Struct(sym, _, _) =>
+              if(sym0 != sym) {
+                throw InternalCompilerException(s"Expected struct type $sym0, got struct type $sym", loc)
+              }
+              tpe
+            case _ => failMismatchedShape(tpe, "Struct", loc)
+          }
 
-        case AtomicOp.StructPut(_, _) => throw new RuntimeException("JOE TBD")
+        case AtomicOp.StructPut(sym0, _) =>
+          val List(struct, _) = ts
+          struct match {
+            case MonoType.Struct(sym, _, _) =>
+              if(sym0 != sym) {
+                throw InternalCompilerException(s"Expected struct type $sym0, got struct type $sym", loc)
+              }
+              checkEq(tpe, MonoType.Unit, loc)
+            case _ => failMismatchedShape(tpe, "Struct", loc)
+          }
 
         case AtomicOp.ArrayNew =>
           val List(t1, t2) = ts
