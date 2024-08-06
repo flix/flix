@@ -48,7 +48,6 @@ object TypeError {
     private val assocType: Type = Type.AssocType(Ast.AssocTypeConstructor(sym, SourceLocation.Unknown), tpe, Kind.Wild, SourceLocation.Unknown)
 
     def summary: String = s"Irreducible associated type: ${formatType(assocType)}"
-    throw new RuntimeException(summary)
 
     def message(formatter: Formatter): String = {
       import formatter._
@@ -74,7 +73,6 @@ object TypeError {
   case class ConstructorNotFound(clazz: Class[_], tpes: List[Type], constructors: List[JvmConstructor], renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     // TODO INTEROP better comment, e.g., list possible constructors
     def summary: String = s"Java '${clazz.getName}' constructor with arguments types (${tpes.mkString(", ")}) not found."
-    throw new RuntimeException(summary)
 
     def message(formatter: Formatter): String = {
       import formatter._
@@ -95,7 +93,6 @@ object TypeError {
    */
   case class MethodNotFound(methodName: Name.Ident, tpe: Type, tpes: List[Type], loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def summary: String = s"Java method '$methodName' in type '$tpe' with arguments types (${tpes.mkString(", ")}) not found."
-    throw new RuntimeException(summary)
 
     def message(formatter: Formatter): String = {
       import formatter._
@@ -118,7 +115,6 @@ object TypeError {
   case class StaticMethodNotFound(clazz: Class[_], methodName: String, tpes: List[Type], methods: List[JvmMethod], renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     // TODO INTEROP better comment, e.g., list possible methods
     def summary: String = s"Static Java method '$methodName' from class ${clazz.getName} with arguments types (${tpes.mkString(", ")}) not found."
-    throw new RuntimeException(summary)
 
     def message(formatter: Formatter): String = {
       import formatter._
@@ -140,7 +136,6 @@ object TypeError {
   case class AmbiguousConstructor(clazz: Class[_], tpes: List[Type], constructors: List[Constructor[_]], renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     // TODO INTEROP better comment with candidate constructors formatting
     def summary: String = s"Ambiguous Java '${clazz.getName}' constructor with arguments types (${tpes.mkString(", ")})."
-    throw new RuntimeException(summary)
 
     def message(formatter: Formatter): String = {
       import formatter._
@@ -169,7 +164,6 @@ object TypeError {
   case class AmbiguousMethod(methodName: String, tpe0: Type, tpes: List[Type], methods: List[Method], renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     // TODO INTEROP better comment with candidate methods formatting
     def summary: String = s"Ambiguous Java method '$methodName' in type '$tpe0' with arguments types (${tpes.mkString(", ")})."
-    throw new RuntimeException(summary)
 
     def message(formatter: Formatter): String = {
       import formatter._
@@ -197,7 +191,6 @@ object TypeError {
   case class AmbiguousStaticMethod(clazz: Class[_], methodName: String, tpes: List[Type], methods: List[Method], renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     // TODO INTEROP better comment with candidate methods formatting
     def summary: String = s"Ambiguous static Java method '$methodName' from class '${clazz.getName}' with arguments types (${tpes.mkString(", ")})."
-    throw new RuntimeException(summary)
 
     def message(formatter: Formatter): String = {
       import formatter._
@@ -228,7 +221,6 @@ object TypeError {
    */
   case class UnresolvedMethod(loc: SourceLocation) extends TypeError with Recoverable {
     def summary: String = s"Unresolved method"
-    throw new RuntimeException(summary)
 
     def message(formatter: Formatter): String = s"Unresolved method"
   }
@@ -244,7 +236,6 @@ object TypeError {
     */
   case class MismatchedArity(tpe1: Type, tpe2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def summary: String = s"Unable to unify the types '${formatType(tpe1, Some(renv))}' and '${formatType(tpe2, Some(renv))}'."
-    throw new RuntimeException(summary)
 
     def message(formatter: Formatter): String = {
       import formatter._
@@ -268,7 +259,6 @@ object TypeError {
     */
   case class MismatchedArrowEffects(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def summary: String = s"Mismatched Pure and Effectful Functions."
-    throw new RuntimeException(summary)
 
     def message(formatter: Formatter): String = {
       import formatter._
@@ -294,7 +284,6 @@ object TypeError {
     */
   case class MismatchedBools(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def summary: String = s"Unable to unify the Boolean formulas '${formatType(baseType1, Some(renv))}' and '${formatType(baseType2, Some(renv))}'."
-    throw new RuntimeException(summary)
 
     def message(formatter: Formatter): String = {
       import formatter._
@@ -320,7 +309,6 @@ object TypeError {
     */
   case class MismatchedCaseSets(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def summary: String = s"Unable to unify the case set formulas '${formatType(baseType1, Some(renv))}' and '${formatType(baseType2, Some(renv))}'."
-    throw new RuntimeException(summary)
 
     def message(formatter: Formatter): String = {
       import formatter._
@@ -346,7 +334,6 @@ object TypeError {
     */
   case class MismatchedEffects(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def summary: String = s"Unable to unify the effect formulas '${formatType(baseType1, Some(renv))}' and '${formatType(baseType2, Some(renv))}'."
-    throw new RuntimeException(summary)
 
     def message(formatter: Formatter): String = {
       import formatter._
@@ -372,7 +359,6 @@ object TypeError {
     */
   case class MismatchedTypes(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def summary: String = s"Unable to unify the types '${formatType(fullType1, Some(renv))}' and '${formatType(fullType2, Some(renv))}'."
-    throw new RuntimeException(summary)
 
     def message(formatter: Formatter): String = {
       import formatter._
@@ -396,7 +382,6 @@ object TypeError {
     */
   case class MissingInstance(trt: Symbol.TraitSym, tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def summary: String = s"No instance of the '$trt' class for the type '${formatType(tpe, Some(renv))}'."
-    throw new RuntimeException(summary)
 
     def message(formatter: Formatter): String = {
       import formatter._
@@ -418,7 +403,6 @@ object TypeError {
     */
   case class MissingInstanceArrow(trt: Symbol.TraitSym, tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def summary: String = s"No instance of the '$trt' class for the function type '${formatType(tpe, Some(renv))}'."
-    throw new RuntimeException(summary)
 
     def message(formatter: Formatter): String = {
       import formatter._
@@ -441,7 +425,6 @@ object TypeError {
     */
   case class MissingInstanceEq(tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def summary: String = s"Equality is not defined on '${formatType(tpe, Some(renv))}'. Define or derive instance of Eq."
-    throw new RuntimeException(summary)
 
     def message(formatter: Formatter): String = {
       import formatter._
@@ -475,7 +458,6 @@ object TypeError {
     */
   case class MissingInstanceOrder(tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def summary: String = s"Order is not defined on '${formatType(tpe, Some(renv))}'. Define or derive instance of Order."
-    throw new RuntimeException(summary)
 
     def message(formatter: Formatter): String = {
       import formatter._
@@ -510,7 +492,6 @@ object TypeError {
     */
   case class MissingInstanceSendable(tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def summary: String = s"Sendable is not defined for '${formatType(tpe, Some(renv))}'. Define or derive instance of Sendable."
-    throw new RuntimeException(summary)
 
     def message(formatter: Formatter): String = {
       import formatter._
@@ -544,7 +525,6 @@ object TypeError {
     */
   case class MissingInstanceToString(tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def summary: String = s"ToString is not defined for '${formatType(tpe, Some(renv))}'. Define or derive instance of ToString."
-    throw new RuntimeException(summary)
 
     def message(formatter: Formatter): String = {
       import formatter._
@@ -578,7 +558,6 @@ object TypeError {
     */
   case class NonRecordType(tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def summary: String = s"Unexpected non-record type '$tpe'."
-    throw new RuntimeException(summary)
 
     def message(formatter: Formatter): String = {
       import formatter._
@@ -598,7 +577,6 @@ object TypeError {
     */
   case class NonSchemaType(tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def summary: String = s"Unexpected non-schema type '$tpe'."
-    throw new RuntimeException(summary)
 
     def message(formatter: Formatter): String = {
       import formatter._
@@ -622,7 +600,6 @@ object TypeError {
     */
   case class OccursCheck(baseVar: Type.Var, baseType: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def summary: String = s"Unable to unify the type variable '$baseVar' with the type '$baseType'."
-    throw new RuntimeException(summary)
 
     def message(formatter: Formatter): String = {
       import formatter._
@@ -646,7 +623,6 @@ object TypeError {
     */
   case class OverApplied(excessArgument: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def summary: String = s"Over-applied function. Excess argument of type: '${formatType(excessArgument)}'."
-    throw new RuntimeException(summary)
 
     def message(formatter: Formatter): String = {
       import formatter._
@@ -667,7 +643,6 @@ object TypeError {
     */
   case class PossibleCheckedTypeCast(expected: Type, inferred: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def summary: String = s"Expected type '${formatType(expected, Some(renv))}' but found type: '${formatType(inferred, Some(renv))}'."
-    throw new RuntimeException(summary)
 
     def message(formatter: Formatter): String = {
       import formatter._
@@ -700,7 +675,6 @@ object TypeError {
     */
   case class RegionVarEscapes(rvar: Type.Var, tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError with Recoverable {
     def summary: String = s"Region variable '${formatType(rvar)}' escapes its scope."
-    throw new RuntimeException(summary)
 
     def message(formatter: Formatter): String = {
       import formatter._
@@ -728,7 +702,6 @@ object TypeError {
     */
   case class TooComplex(loc: SourceLocation) extends TypeError {
     def summary: String = s"Type inference too complex."
-    throw new RuntimeException(summary)
 
     def message(formatter: Formatter): String = {
       import formatter._
@@ -753,7 +726,6 @@ object TypeError {
     */
   case class UndefinedLabel(label: Name.Label, labelType: Type, recordType: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def summary: String = s"Missing label '$label' of type '$labelType'."
-    throw new RuntimeException(summary)
 
     def message(formatter: Formatter): String = {
       import formatter._
@@ -781,7 +753,6 @@ object TypeError {
     */
   case class UndefinedPred(pred: Name.Pred, predType: Type, schemaType: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def summary: String = s"Missing predicate '${pred.name}' of type '$predType'."
-    throw new RuntimeException(summary)
 
     def message(formatter: Formatter): String = {
       import formatter._
@@ -806,7 +777,6 @@ object TypeError {
     */
   case class UnderApplied(missingArgument: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def summary: String = s"Under-applied function. Missing argument of type: '${formatType(missingArgument)}'."
-    throw new RuntimeException(summary)
 
     def message(formatter: Formatter): String = {
       import formatter._
@@ -828,7 +798,6 @@ object TypeError {
     */
   case class UnexpectedArg(sym: Symbol, ith: Int, expected: Type, actual: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def summary: String = s"Expected argument of type '${formatType(expected, Some(renv))}', but got '${formatType(actual, Some(renv))}'."
-    throw new RuntimeException(summary)
 
     def message(formatter: Formatter): String = {
       import formatter._
@@ -854,7 +823,6 @@ object TypeError {
     */
   case class UnexpectedEffect(expected: Type, inferred: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def summary: String = s"Expected type '${formatType(expected, Some(renv))}' but found type: '${formatType(inferred, Some(renv))}'."
-    throw new RuntimeException(summary)
 
     def message(formatter: Formatter): String = {
       import formatter._
@@ -875,7 +843,6 @@ object TypeError {
     */
   case class UnexpectedType(expected: Type, inferred: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def summary: String = s"Expected type '${formatType(expected, Some(renv))}' but found type: '${formatType(inferred, Some(renv))}'."
-    throw new RuntimeException(summary)
 
     def message(formatter: Formatter): String = {
       import formatter._
@@ -894,7 +861,6 @@ object TypeError {
     */
   case class UnsupportedEquality(econstr: BroadEqualityConstraint, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def summary: String = s"Unsupported type equality: ${formatEqualityConstraint(econstr)}"
-    throw new RuntimeException(summary)
 
     def message(formatter: Formatter): String = {
       import formatter._
@@ -919,7 +885,6 @@ object TypeError {
     */
   case class MissingTraitConstraint(trt: Symbol.TraitSym, tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError with Recoverable {
     def summary: String = s"No constraint of the '$trt' trait for the type '${formatType(tpe, Some(renv))}'"
-    throw new RuntimeException(summary)
 
     def message(formatter: Formatter): String = {
       import formatter._

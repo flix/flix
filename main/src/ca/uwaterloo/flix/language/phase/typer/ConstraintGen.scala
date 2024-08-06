@@ -719,14 +719,8 @@ object ConstraintGen {
         (resTpe, resEff)
 
       case KindedAst.Expr.Throw(exp, tvar, evar, loc) =>
-        val (tpe, eff) = visitExp(exp)
+        val (_, eff) = visitExp(exp)
         c.unifyType(evar, Type.mkUnion(eff, Type.IO, loc), loc)
-
-        val t = Type.Cst(TypeConstructor.MethodReturnType, loc)
-
-        val clazz = classOf[Throwable]
-        c.unifyType(Type.mkApply(t, List(Type.getFlixType(clazz)), loc), Type.mkApply(t, List(tpe), loc), loc) // unify method return type
-
         val resultTpe = tvar
         val resultEff = evar
         (resultTpe, resultEff)
