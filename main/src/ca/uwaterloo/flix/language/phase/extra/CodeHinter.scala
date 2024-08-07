@@ -225,7 +225,7 @@ object CodeHinter {
         case CatchRule(_, _, exp) => visitExp(exp)
       }
 
-    case Expr.Throw(_, _, _, _) => throw new RuntimeException("JOE THROW TBD")
+    case Expr.Throw(exp, _, _, _) => visitExp(exp)
 
     case Expr.TryWith(exp, _, rules, _, _, _) =>
       visitExp(exp) ++ rules.flatMap {
