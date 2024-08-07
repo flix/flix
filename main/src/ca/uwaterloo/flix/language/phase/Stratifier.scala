@@ -318,9 +318,8 @@ object Stratifier {
       Expr.TryCatch(e, rs, tpe, eff, loc)
 
     case Expr.Throw(exp, tpe, eff, loc) =>
-      mapN(visitExp(exp)) {
-        case e => Expr.Throw(e, tpe, eff, loc)
-      }
+      val e = visitExp(exp)
+      Expr.Throw(e, tpe, eff, loc)
 
     case Expr.TryWith(exp, sym, rules, tpe, eff, loc) =>
       val e = visitExp(exp)
