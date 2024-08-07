@@ -1354,14 +1354,16 @@ object Resolver {
 
         case NamedAst.Expr.StructNew(name, fields, region, loc) =>
           lookupStruct(name, env0, ns0, root) match {
+
             case Result.Ok(st0) =>
               flatMapN(getStructIfAccessible(st0, ns0, loc)) {
                 case st =>
-                  val providedFieldNames = fields.map {case (k, _) => k.name}.toSet
-                  val expectedFieldNames = st.fields.map(_.name.name).toSet
+                  val providedFieldNames = fields.map {case (k, _) => k}.toSet
+                  val expectedFieldNames = st.fields.map(_.name).toSet
                   val extraFields = providedFieldNames.diff(expectedFieldNames)
-                  val unprovidedFields = expectedFieldNames.diff(providedFieldNames)
-                  val errors = extraFields.map(ResolutionError.ExtraStructField(_, loc)) ++ unprovidedFields.map(ResolutionError.UnprovidedStructField(_, loc))
+                  val missingFields = expectedFieldNames.diff(providedFieldNames)
+
+                  val errors = extraFields.map(ResolutionError.ExtraStructField(st0.sym, _, loc)) ++ missingFields.map(ResolutionError.MissingStructField(st0.sym, _, loc))
                   val fieldsVal = traverse(fields) {
                     case (f, e) =>
                       val eVal = visitExp(e, env0)
@@ -1380,14 +1382,15 @@ object Resolver {
               Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
           }
 
+          // JOE TODO: Make sure that availableFields maps _.name and also it's !availableFields.contains(field) in master
         case NamedAst.Expr.StructGet(name, e, field, loc) =>
           lookupStruct(name, env0, ns0, root) match {
             case Result.Ok(st) =>
-              if(!st.fields.map(_.name.name).contains(field.name)) {
-                val e = ResolutionError.NonExistentStructField(st.sym.toString, field.name, loc)
+              val availableFields = st.fields.map(_.name)
+              if(!availableFields.contains(field)) {
+                val e = ResolutionError.UndefinedStructField(st.sym, field, loc)
                 Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
-              }
-              else {
+              } else {
                 val eVal = visitExp(e, env0)
                 mapN(eVal) {
                   case e => ResolvedAst.Expr.StructGet(st.sym, e, field, loc)
@@ -1400,15 +1403,15 @@ object Resolver {
         case NamedAst.Expr.StructPut(name, e1, field, e2, loc) =>
           lookupStruct(name, env0, ns0, root) match {
             case Result.Ok(st) =>
-              if(!st.fields.map(_.name.name).contains(field.name)) {
-                val e = ResolutionError.NonExistentStructField(st.sym.toString, field.name, loc)
+              val availableFields = st.fields.map(_.name)
+              if(!availableFields.contains(field)) {
+                val e = ResolutionError.UndefinedStructField(st.sym, field, loc)
                 Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
-              }
-              else {
+              } else {
                 val e1Val = visitExp(e1, env0)
                 val e2Val = visitExp(e2, env0)
                 mapN (e1Val, e2Val) {
-                  case (e1, e2) => ResolvedAst.Expr.StructPut (st.sym, e1, field, e2, loc)
+                  case (e1, e2) => ResolvedAst.Expr.StructPut(st.sym, e1, field, e2, loc)
                 }
               }
             case Result.Err(e) =>
@@ -2357,13 +2360,13 @@ object Resolver {
  /**
    * Finds the struct that matches the given symbol `sym` and `tag` in the namespace `ns0`.
    */
-  private def lookupStruct(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Result[NamedAst.Declaration.Struct, ResolutionError.NonExistentStruct] = {
+  private def lookupStruct(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Result[NamedAst.Declaration.Struct, ResolutionError.UndefinedStruct] = {
     val matches = tryLookupName(qname, env, ns0, root) collect {
       case Resolution.Declaration(s: NamedAst.Declaration.Struct) => s
     }
     matches match {
       // Case 0: No matches. Error.
-      case Nil => Result.Err(ResolutionError.NonExistentStruct(qname.toString, qname.loc))
+      case Nil => Result.Err(ResolutionError.UndefinedStruct(qname, qname.loc))
       // Case 1: Exactly one match. Success.
       case st :: _ => Result.Ok(st)
       // Case 2: Multiple matches. Error
@@ -2375,11 +2378,12 @@ object Resolver {
   /**
    * Finds the struct that matches the given symbol `sym` and `tag` in the namespace `ns0`.
    */
-  private def lookupStruct(sym: Symbol.StructSym, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Result[NamedAst.Declaration.Struct, ResolutionError.NonExistentStruct] = {
+  private def lookupStruct(sym: Symbol.StructSym, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Result[NamedAst.Declaration.Struct, ResolutionError.UndefinedStruct] = {
     // look up the name
     val qname = Name.mkQName(sym.namespace, sym.name, sym.loc)
     lookupStruct(qname, env, ns0, root)
   }
+
   /**
     * Finds the restrictable enum case that matches the given qualified name `qname` and `tag` in the namespace `ns0`.
     */

@@ -1510,7 +1510,8 @@ object Parser2 {
       if (lt == rt && rightAssoc.contains(left)) true else rt > lt
     }
 
-    private def arguments()(implicit s: State): Mark.Closed = {
+    private def arguments()(implicit s: State): Unit = {
+      if (nth(0) != TokenKind.ParenL) return
       val mark = open()
       zeroOrMore(
         namedTokenSet = NamedTokenSet.Expression,

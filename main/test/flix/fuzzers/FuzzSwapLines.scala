@@ -75,7 +75,7 @@ class FuzzSwapLines extends AnyFunSuite with TestUtils {
       for (j <- i + 1 until numSwapLinesFixed) {
         val jStepped = Math.min(j * step, numLines)
         val src = lines.updated(iStepped, lines(jStepped)).updated(jStepped, lines(iStepped)).mkString("\n")
-        flix.addSourceCode(s"$name-swap-lines-$iStepped-and-$jStepped", src)
+        flix.addUnmanagedSourceCode(s"$name-swap-lines-$iStepped-and-$jStepped", src)
         flix.compile() // We simply care that this does not crash.
       }
     }

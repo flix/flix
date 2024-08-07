@@ -43,15 +43,19 @@ object Reader {
       val result = mutable.Map.empty[Source, Unit]
       for (input <- inputs) {
         input match {
-          case Input.Text(_, text, stable) =>
-            val src = Source(input, text.toCharArray, stable)
+          case Input.Text(_, text, _) =>
+            val src = Source(input, text.toCharArray)
+            result += (src -> ())
+
+          case Input.StandardLibrary(_, text) =>
+            val src = Source(input, text.toCharArray)
             result += (src -> ())
 
           case Input.TxtFile(path) =>
             val bytes = Files.readAllBytes(path)
             val str = new String(bytes, flix.defaultCharset)
             val arr = str.toCharArray
-            val src = Source(input, arr, stable = false)
+            val src = Source(input, arr)
             result += (src -> ())
 
           case Input.PkgFile(path) =>
@@ -59,7 +63,9 @@ object Reader {
               result += (src -> ())
             }
 
-          case Input.Unknown => throw InternalCompilerException("Impossible to read source code from unknown input.", SourceLocation.Unknown)
+          case Input.FileInPackage(_, _, _) => throw InternalCompilerException("Impossible.", SourceLocation.Unknown)
+
+          case Input.Unknown => throw InternalCompilerException("Impossible.", SourceLocation.Unknown)
         }
       }
 
@@ -84,11 +90,12 @@ object Reader {
         val entry = iterator.nextElement()
         val name = entry.getName
         if (name.endsWith(".flix")) {
-          val fullName = p.getFileName.toString + ":" + name
+          val virtualPath = p.getFileName.toString + ":" + name
           val bytes = StreamOps.readAllBytes(zip.getInputStream(entry))
           val str = new String(bytes, flix.defaultCharset)
           val arr = str.toCharArray
-          result += Source(Input.Text(fullName, str, stable = false), arr, stable = false)
+          val input = Input.FileInPackage(p, virtualPath, str)
+          result += Source(input, arr)
         }
       }
       result.toList

@@ -17,13 +17,10 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Constant
-import ca.uwaterloo.flix.language.ast.Purity.isPure
 import ca.uwaterloo.flix.language.ast.ReducedAst._
-import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoType, Name, Purity, SemanticOp, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoType, SemanticOp, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
-import ca.uwaterloo.flix.language.phase.Eraser.erase
-
 import scala.annotation.tailrec
 
 /**
@@ -47,7 +44,6 @@ object Verifier {
     val ret = visitExpr(decl.expr)(root, env, Map.empty)
     checkEq(decl.tpe, ret, decl.loc)
   }
-
 
   private def visitExpr(expr: Expr)(implicit root: Root, env: Map[Symbol.VarSym, MonoType], lenv: Map[Symbol.LabelSym, MonoType]): MonoType = expr match {
 
@@ -74,7 +70,7 @@ object Verifier {
         checkEq(tpe1, tpe2, loc)
     }
 
-    case Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
+    case Expr.ApplyAtomic(op, exps, tpe, _, loc) =>
       val ts = exps.map(visitExpr)
 
       op match {
@@ -234,6 +230,34 @@ object Verifier {
             case _ => failMismatchedShape(t1, "Array", loc)
           }
 
+        case AtomicOp.StructNew(sym0, _) =>
+          ts match {
+            case region :: _ =>
+              checkStructType(tpe, sym0, loc)
+              check(MonoType.Region)(region, exps(0).loc)
+              tpe
+            case _ => throw InternalCompilerException(s"Struct $sym0 missing region tparam", loc)
+          }
+
+        case AtomicOp.StructGet(sym0, _) =>
+          ts match {
+            case tpe1 :: Nil =>
+              checkStructType(tpe1, sym0, loc)
+              tpe
+            case _ => failMismatchedShape(tpe, "Struct", loc)
+          }
+
+        case AtomicOp.StructPut(sym0, _) =>
+          ts match {
+            // JOE TODO: Add tpe2
+            case tpe1 :: tpe2 :: Nil =>
+              checkStructType(tpe1, sym0, loc)
+              tpe
+            case _ =>
+              println(ts)
+              failMismatchedShape(tpe, "Struct", loc)
+          }
+
         case AtomicOp.ArrayNew =>
           val List(t1, t2) = ts
           val arrType = MonoType.Array(t1)
@@ -266,60 +290,6 @@ object Verifier {
               checkEq(elmt, t3, loc)
               check(expected = MonoType.Unit)(actual = tpe, loc)
             case _ => failMismatchedShape(t1, "Array", loc)
-          }
-
-        case AtomicOp.StructNew(sym0, fields0) =>
-          val region :: fieldTpes = ts
-          val fields = fields0.zip(fieldTpes).toMap
-          if(isPure(purity)) {
-            throw InternalCompilerException(s"Struct expression should not be pure", loc)
-          }
-          tpe match {
-            case MonoType.Struct(sym, elms, _) => {
-              val erasedElmTys = fields.map {case (_, tpe) => tpe}
-              erasedElmTys.zip(elms).foreach {case (ty1, ty2) => checkEq(erase(ty1), erase(ty2), loc)}
-              if(sym0 != sym) {
-                throw InternalCompilerException(s"Expected struct type $sym0, got struct type $sym", loc)
-              }
-            }
-            case _ => failMismatchedShape(tpe, "Struct", loc)
-          }
-          check(MonoType.Region)(region, exps(0).loc)
-          tpe
-
-        case AtomicOp.StructGet(sym0, field) =>
-          if(isPure(purity)) {
-            throw InternalCompilerException(s"Struct expression should not be pure", loc)
-          }
-          val List(struct) = ts
-          struct match {
-            case MonoType.Struct(sym, elms, _) =>
-              val fieldsMap = root.structs(sym).fields
-              if(sym0 != sym) {
-                throw InternalCompilerException(s"Expected struct type $sym0, got struct type $sym", loc)
-              }
-              val fieldIdx = fieldsMap(Name.Label(field.name, field.loc)).idx
-              checkEq(erase(elms(fieldIdx)), erase(tpe), loc)
-              tpe
-            case _ => failMismatchedShape(tpe, "Struct", loc)
-          }
-
-        case AtomicOp.StructPut(sym0, field) =>
-          val List(struct, rhs) = ts
-          if(isPure(purity)) {
-            throw InternalCompilerException(s"Struct expression should not be pure", loc)
-          }
-          struct match {
-            case MonoType.Struct(sym, elms, _) => {
-              val fieldsMap = root.structs(sym).fields
-              if(sym0 != sym) {
-                throw InternalCompilerException(s"Expected struct type $sym0, got struct type $sym", loc)
-              }
-              val fieldIdx = fieldsMap(Name.Label(field.name, field.loc)).idx
-              checkEq(erase(elms(fieldIdx)), erase(rhs), loc)
-              checkEq(tpe, MonoType.Unit, loc)
-            }
-            case _ => failMismatchedShape(tpe, "Struct", loc)
           }
 
         case AtomicOp.Ref =>
@@ -461,7 +431,10 @@ object Verifier {
           checkJavaSubtype(t, field.getType, loc)
           check(expected = MonoType.Unit)(actual = tpe, loc)
 
-        case AtomicOp.Throw => throw new RuntimeException("JOE TBD")
+        case AtomicOp.Throw =>
+          val List(t) = ts
+          checkJavaSubtype(t, classOf[Throwable], loc)
+          tpe
 
         case AtomicOp.InstanceOf(_) =>
           val List(t) = ts
@@ -631,6 +604,19 @@ object Verifier {
     if (ts.length != cs.length)
       throw InternalCompilerException("Number of types in constructor call mismatch with parameter list", loc)
     ts.zip(cs).foreach { case (tp, klazz) => checkJavaSubtype(tp, klazz, loc) }
+  }
+
+  /**
+    * Asserts that the type `tpe` is a `Struct` type whose name is `sym0`
+    */
+  private def checkStructType(tpe: MonoType, sym0: Symbol.StructSym, loc: SourceLocation): Unit = {
+    tpe match {
+      case MonoType.Struct(sym, _, _) =>
+        if(sym0 != sym) {
+          throw InternalCompilerException(s"Expected struct type $sym0, got struct type $sym", loc)
+        }
+      case _ => failMismatchedShape(tpe, "Struct", loc)
+    }
   }
 
   /**

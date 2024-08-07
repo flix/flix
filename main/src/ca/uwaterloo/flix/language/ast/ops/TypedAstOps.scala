@@ -86,6 +86,7 @@ object TypedAstOps {
     case Expr.UncheckedMaskingCast(exp, _, _, _) => sigSymsOf(exp)
     case Expr.Without(exp, _, _, _, _) => sigSymsOf(exp)
     case Expr.TryCatch(exp, rules, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp))
+    case Expr.Throw(exp, _, _, _) => sigSymsOf(exp)
     case Expr.TryWith(exp, _, rules, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp))
     case Expr.Do(_, exps, _, _, _) => exps.flatMap(sigSymsOf).toSet
     case Expr.InvokeConstructor(_, args, _, _, _) => args.flatMap(sigSymsOf).toSet
@@ -291,6 +292,8 @@ object TypedAstOps {
       rules.foldLeft(freeVars(exp)) {
         case (acc, CatchRule(sym, _, exp)) => acc ++ freeVars(exp) - sym
       }
+
+    case Expr.Throw(exp, _, _, _) => freeVars(exp)
 
     case Expr.TryWith(exp, _, rules, _, _, _) =>
       rules.foldLeft(freeVars(exp)) {

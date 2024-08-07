@@ -140,7 +140,7 @@ object Namer {
       val table1 = tryAddToTable(table0, sym.namespace, sym.name, decl)
       cases.foldLeft(table1)(tableDecl)
 
-    case NamedAst.Declaration.Struct(_, _, _, sym, _, fields, _) =>
+    case NamedAst.Declaration.Struct(_, _, _, sym, _, _, _) =>
       tryAddToTable(table0, sym.namespace, sym.name, decl)
 
     case NamedAst.Declaration.RestrictableEnum(_, _, _, sym, _, _, _, cases, _) =>
@@ -1655,7 +1655,7 @@ object Namer {
   /**
     * A global shared context. Must be thread-safe.
     *
-    * @param errors the [[NameError]]s if the AST, if any.
+    * @param errors the [[NameError]]s in the AST, if any.
     */
   private case class SharedContext(errors: ConcurrentLinkedQueue[NameError])
 

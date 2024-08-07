@@ -48,7 +48,7 @@ sealed trait ChangeSet {
     case ChangeSet.Changes(_) =>
       // Note: At the moment we don't use the change set.
       // We simply consider whether a source is stable.
-      val fresh = oldMap.filter(_._1.src.stable).filter(kv => newMap.contains(kv._1))
+      val fresh = oldMap.filter(_._1.src.input.isStable).filter(kv => newMap.contains(kv._1))
       val stale = newMap.filter(kv => !fresh.contains(kv._1))
 
       (stale, fresh)

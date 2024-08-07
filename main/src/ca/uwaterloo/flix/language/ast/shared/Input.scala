@@ -20,14 +20,31 @@ import java.nio.file.Path
 /**
   * A common super-type for inputs.
   */
-sealed trait Input
+sealed trait Input {
+
+  /**
+    * Returns `true` if the input is stable (i.e. cannot be changed once loaded).
+    */
+  def isStable: Boolean = this match {
+    case Input.Text(_, _, stable) => stable
+    case Input.StandardLibrary(_, _) => true
+    case Input.TxtFile(_) => false
+    case Input.PkgFile(_) => false
+    case Input.FileInPackage(_, _, _) => false
+    case Input.Unknown => false
+  }
+
+  /**
+    * Returns the security context associated with the input.
+    */
+  def security: SecurityContext = SecurityContext.AllPermissions
+
+}
 
 object Input {
 
   /**
-    * A source that is backed by an internal resource.
-    *
-    * A source is stable if it cannot change after being loaded (e.g. the standard library, etc).
+    * Represents an input that originates from a virtual path.
     */
   case class Text(name: String, text: String, stable: Boolean) extends Input {
     override def hashCode(): Int = name.hashCode
@@ -39,18 +56,28 @@ object Input {
   }
 
   /**
-    * A source that is backed by a regular file.
+    * Represent an input that originates from the built-in Standard Library.
+    */
+  case class StandardLibrary(virtualPath: String, text: String) extends Input
+
+  /**
+    * Represents an input that originates from the filesystem.
     */
   case class TxtFile(path: Path) extends Input
 
   /**
-    * A source that is backed by flix package file.
+    * Represents an input, which is a package, on the filesystem.
     */
-  case class PkgFile(path: Path) extends Input
+  case class PkgFile(packagePath: Path) extends Input
 
   /**
-   * Represents an input from an unknown source.
-   */
-   case object Unknown extends Input
+    * Represents an input that originates from inside a package.
+    */
+  case class FileInPackage(packagePath: Path, virtualPath: String, text: String) extends Input
+
+  /**
+    * Represents an input from an unknown source.
+    */
+  case object Unknown extends Input
 
 }

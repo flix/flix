@@ -241,6 +241,9 @@ object PredDeps {
         case (acc, CatchRule(_, _, e)) => acc + visitExp(e)
       }
 
+    case Expr.Throw(exp, _, _, _) =>
+      visitExp(exp)
+
     case Expr.TryWith(exp, _, rules, _, _, _) =>
       rules.foldLeft(visitExp(exp)) {
         case (acc, HandlerRule(_, _, e)) => acc + visitExp(e)
