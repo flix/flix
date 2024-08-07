@@ -1359,9 +1359,9 @@ object Resolver {
                   val providedFieldNames = fields.map {case (k, _) => k}.toSet
                   val expectedFieldNames = st.fields.map(_.name).toSet
                   val extraFields = providedFieldNames.diff(expectedFieldNames)
-                  val unprovidedFields = expectedFieldNames.diff(providedFieldNames)
+                  val missingFields = expectedFieldNames.diff(providedFieldNames)
 
-                  val errors = extraFields.map(ResolutionError.ExtraStructField(st0.sym, _, loc)) ++ unprovidedFields.map(ResolutionError.MissingStructField(st0.sym, _, loc))
+                  val errors = extraFields.map(ResolutionError.ExtraStructField(st0.sym, _, loc)) ++ missingFields.map(ResolutionError.MissingStructField(st0.sym, _, loc))
                   val fieldsVal = traverse(fields) {
                     case (f, e) =>
                       val eVal = visitExp(e, env0)

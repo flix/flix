@@ -1171,11 +1171,11 @@ object ResolutionError {
     * @param loc the location where the error occurred.
     */
   case class MissingStructField(struct: Symbol.StructSym, field: Name.Label, loc: SourceLocation) extends ResolutionError with Recoverable {
-    override def summary: String = s"`new` struct expression provides too few fields"
+    override def summary: String = s"Missing field `$field` in new `$struct` expression`"
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s""">> `new` struct expression does not provide required field `$field`
+      s""">> Missing field `$field` in new `$struct` expression`
          |
          |${code(loc, "missing field")}
          |
