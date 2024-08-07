@@ -225,10 +225,10 @@ object Reducer {
                Int32 | Int64 | BigInt | String | Regex | Region | Enum(_) | RecordEmpty |
                Native(_) | Null => taskList
           case Array(elm) => taskList.enqueue(elm)
-          case Struct(_, _, _) => throw new RuntimeException("JOE TODO")
           case Lazy(elm) => taskList.enqueue(elm)
           case Ref(elm) => taskList.enqueue(elm)
           case Tuple(elms) => taskList.enqueueAll(elms)
+          case Struct(_, elms, _) => taskList.enqueueAll(elms)
           case Arrow(targs, tresult) => taskList.enqueueAll(targs).enqueue(tresult)
           case RecordExtend(_, value, rest) => taskList.enqueue(value).enqueue(rest)
         }
