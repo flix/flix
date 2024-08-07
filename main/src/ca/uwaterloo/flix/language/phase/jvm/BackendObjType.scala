@@ -332,7 +332,7 @@ object BackendObjType {
     }))
 
     def ToStringMethod: InstanceMethod = JavaObject.ToStringMethod.implementation(this.jvmName, Some(_ => {
-      // [...] -> [..., "(v1, v2, ...)"]
+      // [...] -> [..., "Struct(v1, v2, ...)"]
       def commaSepElmString(): InstructionSet = {
         // new String[elms.length] // referred to as `elms`
         cheat(mv => GenExpression.compileInt(elms.length)(mv)) ~ ANEWARRAY(String.jvmName) ~
@@ -340,7 +340,7 @@ object BackendObjType {
           // current stack [elms, j]
           composeN(elms.indices.map(i => {
             val field = IndexField(i)
-            // j = j + 1
+            // [elms, j] -> [elms, j+1]
             ICONST_1() ~ IADD() ~
               // [elms, j] -> [elms, j, elms, j]
               DUP2() ~
@@ -356,9 +356,9 @@ object BackendObjType {
       }
       // new String[3] // referred to as `arr`
       ICONST_3() ~ ANEWARRAY(String.jvmName) ~
-        // arr[0] = "("
-        DUP() ~ ICONST_0() ~ pushString("(") ~ AASTORE() ~
-        // arr[1] = "(v1, v2, v3)"
+        // arr[0] = "Struct("
+        DUP() ~ ICONST_0() ~ pushString("Struct(") ~ AASTORE() ~
+        // arr[1] = "v1, v2, v3"
         DUP() ~ ICONST_1() ~ commaSepElmString() ~ AASTORE() ~
         // arr[2] = ")"
         DUP() ~ ICONST_2() ~ pushString(")") ~ AASTORE() ~
