@@ -29,6 +29,7 @@ case class Source(input: Input, data: Array[Char]) extends Sourceable {
     case Input.StandardLibrary(virtualPath, _) => virtualPath
     case Input.TxtFile(path) => path.toString
     case Input.PkgFile(path) => path.toString
+    case Input.FileInPackage(_, virtualPath, _) => virtualPath
     case Input.Unknown => "unknown"
   }
 

@@ -30,6 +30,7 @@ sealed trait Input {
     case Input.StandardLibrary(_, _) => true
     case Input.TxtFile(_) => false
     case Input.PkgFile(_) => false
+    case Input.FileInPackage(_, _, _) => false
     case Input.Unknown => false
   }
 
@@ -56,22 +57,23 @@ object Input {
 
   /**
     * Represent an input that originates from the built-in Standard Library.
-    *
-    * @param virtualPath the virtual path of the source code.
-    * @param text        the source code text.
-    *
     */
   case class StandardLibrary(virtualPath: String, text: String) extends Input
 
   /**
-    * Represents an input originates from the filesystem.
+    * Represents an input that originates from the filesystem.
     */
   case class TxtFile(path: Path) extends Input
 
   /**
     * Represents an input, which is a package, on the filesystem.
     */
-  case class PkgFile(path: Path) extends Input
+  case class PkgFile(packagePath: Path) extends Input
+
+  /**
+    * Represents an input that originates from inside a package.
+    */
+  case class FileInPackage(packagePath: Path, virtualPath: String, text: String) extends Input
 
   /**
     * Represents an input from an unknown source.
