@@ -1157,9 +1157,9 @@ object ResolutionError {
       import formatter._
       s""">> Unexpected field `$field`. The struct `$struct` does not declare `$field`
          |
-         |${code(loc, "extra fields")}
+         |${code(loc, "unexpected field")}
          |
-         |Extra Field: ${field}
+         |Unexpected Field: ${field}
          |""".stripMargin
     }
   }
