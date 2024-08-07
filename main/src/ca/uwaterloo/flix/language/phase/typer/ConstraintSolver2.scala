@@ -30,9 +30,11 @@ object ConstraintSolver2 {
     case class Equality(tpe1: Type, tpe2: Type) extends TypeConstraint
 
     case class Trait(sym: Symbol.TraitSym, tpe: Type) extends TypeConstraint
+
+    case class Purification(sym: Symbol.VarSym, eff1: Type, eff2: Type, nested: ConstraintSet) extends TypeConstraint
   }
 
-  case class Tracker(private var progress: Boolean = false) extends AnyVal {
+  case class Tracker(private var progress: Boolean = false) {
     def markProgress(): Unit = {
       progress = true
     }
@@ -81,7 +83,9 @@ object ConstraintSolver2 {
         tracker.markProgress()
         List(TypeConstraint.Equality(tpe11, tpe21), TypeConstraint.Equality(tpe12, tpe22))
 
-      case c: TypeConstraint => List(c)
+      case c: TypeConstraint.Trait => List(c)
+
+      case c: TypeConstraint.Purification => List(c)
     }
 
     constrs.flatMap(breakDownConstraint)
@@ -110,8 +114,9 @@ object ConstraintSolver2 {
   // (bchainE) (?)
   def contextReduction(constrs: ConstraintSet)(implicit tracker: Tracker, renv0: RigidityEnv, trenv: TraitEnv, eqenv: EqualityEnv): ConstraintSet = {
     def contextReduction1(constr: TypeConstraint): ConstraintSet = constr match {
-      // Case 1: Equality constraint. Do nothing.
+      // Case 1: Non-trait constraint. Do nothing.
       case c: TypeConstraint.Equality => List(c)
+      case c: TypeConstraint.Purification => List(c)
 
       // Case 2: Trait constraint. Perform context reduction.
       case c@TypeConstraint.Trait(sym, tpe) =>
@@ -232,6 +237,7 @@ object ConstraintSolver2 {
       case TypeConstraint.Equality(tpe1, Type.Var(sym, _)) if !renv.isRigid(sym) => Right(Substitution.singleton(sym, tpe1))
       case c: TypeConstraint.Equality => Left(c)
       case c: TypeConstraint.Trait => Left(c)
+      case c: TypeConstraint.Purification => Left(c)
     }
 
     var subst = Substitution.empty
@@ -257,7 +263,8 @@ object ConstraintSolver2 {
 
   def applySubst(subst: Substitution)(constr: TypeConstraint): TypeConstraint = constr match {
     case TypeConstraint.Equality(tpe1, tpe2) => TypeConstraint.Equality(subst(tpe1), subst(tpe2))
-    case TypeConstraint.Trait(sym, tpe) => TypeConstraint.Trait(sym, tpe)
+    case TypeConstraint.Trait(sym, tpe) => TypeConstraint.Trait(sym, subst(tpe))
+    case TypeConstraint.Purification(sym, eff1, eff2, nested) => TypeConstraint.Purification(subst(eff1), subst(eff2), nested.map(applySubst(subst)))
   }
 
 }
