@@ -304,14 +304,14 @@ object TypeReduction {
           case _ => false
         }
       case (Type.Apply(Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Arrow(n), _), eff, _), var_arg, _), var_ret, _), Type.Cst(TypeConstructor.Native(clazz), _))
-        if clazz == classOf[java.util.function.IntPredicate] =>
+      if clazz == classOf[java.util.function.IntPredicate] =>
         val targsVal = tpe1.typeArguments.map(purifyType)
         targsVal match {
           case eff :: _ :: TypeConstructor.Bool :: Nil => true
           case _ => false
         }
       case (Type.Apply(Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Arrow(n), _), eff, _), var_arg, _), var_ret, _), Type.Cst(TypeConstructor.Native(clazz), _))
-        if clazz == classOf[java.util.function.IntUnaryOperator] =>
+      if clazz == classOf[java.util.function.IntUnaryOperator] =>
         val targsVal = tpe1.typeArguments.map(purifyType)
         targsVal match {
           case eff :: _ :: TypeConstructor.Int32 :: Nil => true
