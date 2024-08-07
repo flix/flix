@@ -1114,14 +1114,14 @@ object ResolutionError {
     * @param struct the names of the struct
     * @param loc the location where the error occurred.
     */
-  case class NonExistentStruct(struct: String, loc: SourceLocation) extends ResolutionError with Recoverable {
-    override def summary: String = s"Nonexistent struct type"
+  case class UndefinedStruct(struct: Name.QName, loc: SourceLocation) extends ResolutionError with Recoverable {
+    override def summary: String = s"Undefined struct type"
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s""">> A struct type with the name `${struct}` does not exist
+      s""">> Undefined struct `${struct}`
          |
-         |${code(loc, "nonexistent struct")}
+         |${code(loc, "undefined struct")}
          |""".stripMargin
     }
   }
@@ -1132,14 +1132,14 @@ object ResolutionError {
     * @param field the names of the missing fields
     * @param loc the location where the error occurred.
     */
-  case class NonExistentStructField(struct: String, field: String, loc: SourceLocation) extends ResolutionError with Recoverable {
-    override def summary: String = s"Struct $struct does not have the field $field"
+  case class UndefinedStructField(struct: Symbol.StructSym, field: Name.Label, loc: SourceLocation) extends ResolutionError with Recoverable {
+    override def summary: String = s"Undefined struct field `$field` on `$struct`"
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s""">> Struct $struct does not have field $field
+      s""">> Undefined struct field `$field` on `$struct`
          |
-         |${code(loc, "nonexistent field")}
+         |${code(loc, "undefined field")}
          |""".stripMargin
     }
   }
@@ -1150,8 +1150,8 @@ object ResolutionError {
     * @param fields the names of the extra fields
     * @param loc the location where the error occurred.
     */
-  case class ExtraStructField(field: String, loc: SourceLocation) extends ResolutionError with Recoverable {
-    override def summary: String = s"`new` struct expression provides too many fields"
+  case class ExtraStructField(struct: Symbol.StructSym, field: Name.Label, loc: SourceLocation) extends ResolutionError with Recoverable {
+    override def summary: String = s"Unexpected field `$field`. the struct `$struct` does not declare `$field`"
 
     def message(formatter: Formatter): String = {
       import formatter._
@@ -1170,7 +1170,7 @@ object ResolutionError {
     * @param fields the names of the missing fields
     * @param loc the location where the error occurred.
     */
-  case class UnprovidedStructField(field: String, loc: SourceLocation) extends ResolutionError with Recoverable {
+  case class MissingStructField(struct: Symbol.StructSym, field: Name.Label, loc: SourceLocation) extends ResolutionError with Recoverable {
     override def summary: String = s"`new` struct expression provides too few fields"
 
     def message(formatter: Formatter): String = {
