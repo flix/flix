@@ -45,6 +45,15 @@ object Verifier {
     checkEq(decl.tpe, ret, decl.loc)
   }
 
+  private def checkStructType(tpe: MonoType, sym0: Symbol.StructSym, loc: SourceLocation): Unit = {
+    tpe match {
+      case MonoType.Struct(sym, _, _) =>
+        if(sym0 != sym) {
+          throw InternalCompilerException(s"Expected struct type $sym0, got struct type $sym", loc)
+        }
+      case _ => failMismatchedShape(tpe, "Struct", loc)
+    }
+  }
 
   private def visitExpr(expr: Expr)(implicit root: Root, env: Map[Symbol.VarSym, MonoType], lenv: Map[Symbol.LabelSym, MonoType]): MonoType = expr match {
 
@@ -231,37 +240,28 @@ object Verifier {
             case _ => failMismatchedShape(t1, "Array", loc)
           }
 
-        case AtomicOp.StructNew(sym0, fields0) =>
-          val region :: fieldTpes = ts
-          tpe match {
-            case MonoType.Struct(sym, _, _) =>
-              if(sym0 != sym) {
-                throw InternalCompilerException(s"Expected struct type $sym0, got struct type $sym", loc)
-              }
-            case _ => failMismatchedShape(tpe, "Struct", loc)
+        case AtomicOp.StructNew(sym0, _) =>
+          ts match {
+            case region :: _ =>
+              checkStructType(tpe, sym0, loc)
+              check(MonoType.Region)(region, exps(0).loc)
+              tpe
+            case _ => throw InternalCompilerException(s"Struct $sym0 missing region tparam", loc)
           }
-          check(MonoType.Region)(region, exps(0).loc)
-          tpe
 
-        case AtomicOp.StructGet(sym0, field) =>
-          val List(struct) = ts
-          struct match {
-            case MonoType.Struct(sym, _, _) =>
-              if(sym0 != sym) {
-                throw InternalCompilerException(s"Expected struct type $sym0, got struct type $sym", loc)
-              }
+        case AtomicOp.StructGet(sym0, _) =>
+          ts match {
+            case tpe1 :: Nil =>
+              checkStructType(tpe1, sym0, loc)
               tpe
             case _ => failMismatchedShape(tpe, "Struct", loc)
           }
 
         case AtomicOp.StructPut(sym0, _) =>
-          val List(struct, _) = ts
-          struct match {
-            case MonoType.Struct(sym, _, _) =>
-              if(sym0 != sym) {
-                throw InternalCompilerException(s"Expected struct type $sym0, got struct type $sym", loc)
-              }
-              checkEq(tpe, MonoType.Unit, loc)
+          ts match {
+            case tpe1 :: Nil =>
+              checkStructType(tpe1, sym0, loc)
+              tpe
             case _ => failMismatchedShape(tpe, "Struct", loc)
           }
 
