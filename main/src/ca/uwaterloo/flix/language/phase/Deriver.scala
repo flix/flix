@@ -901,7 +901,7 @@ object Deriver {
     * Builds a string concatenation expression from the given expressions.
     */
   private def concat(exp1: KindedAst.Expr, exp2: KindedAst.Expr, loc: SourceLocation)(implicit flix: Flix): KindedAst.Expr = {
-    KindedAst.Expr.InvokeMethod2(exp1, Name.Ident("concat", loc), List(exp2), Type.freshVar(Kind.JvmConstructorOrMethod, loc), Type.freshVar(Kind.Star, loc), Type.freshVar(Kind.Eff, loc), loc)
+    KindedAst.Expr.UncheckedMaskingCast(KindedAst.Expr.InvokeMethod2(exp1, Name.Ident("concat", loc), List(exp2), Type.freshVar(Kind.JvmConstructorOrMethod, loc), Type.freshVar(Kind.Star, loc), Type.freshVar(Kind.Eff, loc), loc), loc)
   }
 
   /**
