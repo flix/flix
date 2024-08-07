@@ -41,7 +41,7 @@ sealed trait BackendObjType {
     case BackendObjType.Lazy(tpe) => JvmName(RootPackage, mkClassName("Lazy", tpe))
     case BackendObjType.Ref(tpe) => JvmName(RootPackage, mkClassName("Ref", tpe))
     case BackendObjType.Tuple(elms) => JvmName(RootPackage, mkClassName("Tuple", elms))
-    case BackendObjType.Struct(elms, targs) => JvmName(RootPackage, mkClassName("Struct", elms))
+    case BackendObjType.Struct(elms) => JvmName(RootPackage, mkClassName("Struct", elms))
     case BackendObjType.Tagged => JvmName(RootPackage, mkClassName("Tagged"))
     case BackendObjType.Tag(tpe) => JvmName(RootPackage, mkClassName("Tag", tpe))
     case BackendObjType.Arrow(args, result) => JvmName(RootPackage, mkClassName(s"Fn${args.length}", args :+ result))
@@ -302,7 +302,7 @@ object BackendObjType {
     }))
 
   }
-  case class Struct(elms: List[BackendType], targs: List[BackendType]) extends BackendObjType with Generatable {
+  case class Struct(elms: List[BackendType]) extends BackendObjType with Generatable {
 
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = ClassMaker.mkClass(this.jvmName, IsFinal)

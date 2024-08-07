@@ -71,7 +71,7 @@ object JvmOps {
     case MonoType.RecordEmpty => JvmType.Reference(BackendObjType.Record.jvmName)
     case MonoType.RecordExtend(_, _, _) => JvmType.Reference(BackendObjType.Record.jvmName)
     case MonoType.Enum(_) => JvmType.Object
-    case MonoType.Struct(_, elms, targs) => JvmType.Reference(BackendObjType.Struct(elms.map(BackendType.toErasedBackendType), targs.map(BackendType.toErasedBackendType)).jvmName)
+    case MonoType.Struct(_, elms, targs) => JvmType.Reference(BackendObjType.Struct(elms.map(BackendType.toErasedBackendType)).jvmName)
     case MonoType.Arrow(_, _) => getFunctionInterfaceType(tpe)
     case MonoType.Native(clazz) => JvmType.Reference(JvmName.ofClass(clazz))
   }
@@ -356,7 +356,7 @@ object JvmOps {
   def getErasedStructTypesOf(types: Iterable[MonoType]): Set[BackendObjType.Struct] =
     types.foldLeft(Set.empty[BackendObjType.Struct]) {
       case (acc, MonoType.Struct(_, elms, targs)) =>
-        acc + BackendObjType.Struct(elms.map(BackendType.asErasedBackendType), targs.map(BackendType.toErasedBackendType))
+        acc + BackendObjType.Struct(elms.map(BackendType.asErasedBackendType))
       case (acc, _) => acc
     }
 
