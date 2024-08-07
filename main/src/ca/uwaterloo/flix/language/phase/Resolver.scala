@@ -614,11 +614,11 @@ object Resolver {
   /**
     * Performs name resolution on the given struct field `field0` in the given namespace `ns0`.
     */
-  private def resolveStructField(field0: NamedAst.StructField, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration.StructField, ResolutionError] = field0 match {
-    case NamedAst.StructField(name, tpe0, loc) =>
+  private def resolveStructField(field0: NamedAst.StructField, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.StructField, ResolutionError] = field0 match {
+    case NamedAst.StructField(fieldName, tpe0, loc) =>
       val tpeVal = resolveType(tpe0, Wildness.ForbidWild, env, taenv, ns0, root)
       mapN(tpeVal) {
-        tpe => throw new RuntimeException("JOE TBD")
+        tpe => ResolvedAst.StructField(fieldName, tpe, loc)
       }
   }
 
@@ -1351,30 +1351,68 @@ object Resolver {
           }
 
         case NamedAst.Expr.StructNew(name, fields, region, loc) =>
-          val fieldsVal = traverse(fields) {
-            case (f, e) =>
-              val eVal = visitExp(e, env0)
-              mapN(eVal) {
-                case e => (f, e)
+          lookupStruct(name, env0, ns0, root) match {
+
+            case Result.Ok(st0) =>
+              flatMapN(getStructIfAccessible(st0, ns0, loc)) {
+                case st =>
+                  val providedFieldNames = fields.map {case (k, _) => k}.toSet
+                  val expectedFieldNames = st.fields.map(_.name).toSet
+                  val extraFields = providedFieldNames.diff(expectedFieldNames)
+                  val missingFields = expectedFieldNames.diff(providedFieldNames)
+
+                  val errors = extraFields.map(ResolutionError.ExtraStructField(st0.sym, _, loc)) ++ missingFields.map(ResolutionError.MissingStructField(st0.sym, _, loc))
+                  val fieldsVal = traverse(fields) {
+                    case (f, e) =>
+                      val eVal = visitExp(e, env0)
+                      mapN(eVal) {
+                        case e => (f, e)
+                      }
+                  }
+                  val regionVal = visitExp(region, env0)
+                  val structNew = mapN(fieldsVal, regionVal) {
+                    case (fields, region) =>
+                      ResolvedAst.Expr.StructNew(st.sym, fields, region, loc)
+                  }
+                  structNew.withSoftFailures(errors)
               }
-          }
-          val regionVal = visitExp(region, env0)
-          mapN(fieldsVal, regionVal) {
-            case (fields, region) =>
-              throw new RuntimeException("Joe TBD")
+            case Result.Err(e) =>
+              Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
           }
 
-        case NamedAst.Expr.StructGet(sym, e, field, loc) =>
-          val eVal = visitExp(e, env0)
-          mapN(eVal) {
-            throw new RuntimeException("Joe TBD")
+        case NamedAst.Expr.StructGet(name, e, field, loc) =>
+          lookupStruct(name, env0, ns0, root) match {
+            case Result.Ok(st) =>
+              val availableFields = st.fields
+              if(availableFields.contains(field)) {
+                val e = ResolutionError.UndefinedStructField(st.sym, field, loc)
+                Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
+              } else {
+                val eVal = visitExp(e, env0)
+                mapN(eVal) {
+                  case e => ResolvedAst.Expr.StructGet(st.sym, e, field, loc)
+                }
+              }
+            case Result.Err(e) =>
+              Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
           }
 
-        case NamedAst.Expr.StructPut(sym, e1, name, e2, loc) =>
-          val e1Val = visitExp(e1, env0)
-          val e2Val = visitExp(e2, env0)
-          mapN(e1Val, e2Val) {
-            throw new RuntimeException("Joe TBD")
+        case NamedAst.Expr.StructPut(name, e1, field, e2, loc) =>
+          lookupStruct(name, env0, ns0, root) match {
+            case Result.Ok(st) =>
+              val availableFields = st.fields
+              if(!availableFields.contains(field)) {
+                val e = ResolutionError.UndefinedStructField(st.sym, field, loc)
+                Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
+              } else {
+                val e1Val = visitExp(e1, env0)
+                val e2Val = visitExp(e2, env0)
+                mapN (e1Val, e2Val) {
+                  case (e1, e2) => ResolvedAst.Expr.StructPut(st.sym, e1, field, e2, loc)
+                }
+              }
+            case Result.Err(e) =>
+              Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
           }
 
         case NamedAst.Expr.VectorLit(exps, loc) =>
@@ -2314,6 +2352,33 @@ object Resolver {
       case cazes => throw InternalCompilerException(s"unexpected duplicate tag: '$qname'.", qname.loc)
     }
     // TODO NS-REFACTOR check accessibility
+  }
+
+ /**
+   * Finds the struct that matches the given symbol `sym` and `tag` in the namespace `ns0`.
+   */
+  private def lookupStruct(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Result[NamedAst.Declaration.Struct, ResolutionError.UndefinedStruct] = {
+    val matches = tryLookupName(qname, env, ns0, root) collect {
+      case Resolution.Declaration(s: NamedAst.Declaration.Struct) => s
+    }
+    matches match {
+      // Case 0: No matches. Error.
+      case Nil => Result.Err(ResolutionError.UndefinedStruct(qname, qname.loc))
+      // Case 1: Exactly one match. Success.
+      case st :: _ => Result.Ok(st)
+      // Case 2: Multiple matches. Error
+      case sts => throw InternalCompilerException(s"unexpected duplicate struct: '$qname'.", qname.loc)
+    }
+    // TODO NS-REFACTOR check accessibility
+  }
+
+  /**
+   * Finds the struct that matches the given symbol `sym` and `tag` in the namespace `ns0`.
+   */
+  private def lookupStruct(sym: Symbol.StructSym, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Result[NamedAst.Declaration.Struct, ResolutionError.UndefinedStruct] = {
+    // look up the name
+    val qname = Name.mkQName(sym.namespace, sym.name, sym.loc)
+    lookupStruct(qname, env, ns0, root)
   }
 
   /**
