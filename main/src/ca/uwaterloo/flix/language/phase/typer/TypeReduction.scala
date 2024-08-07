@@ -296,25 +296,70 @@ object TypeReduction {
       // Arrow to Java function interface
       // TODO INTEROP: generics support
       // Pattern-matching Flix functions of the form: eff -> arg -> ret
+      // IntStream
       case (Type.Apply(Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Arrow(n), _), eff, _), var_arg, _), var_ret, _), Type.Cst(TypeConstructor.Native(clazz), _))
       if clazz == classOf[java.util.function.IntConsumer] =>
         val targsVal = tpe1.typeArguments.map(purifyType)
         targsVal match {
-          case eff :: _ :: TypeConstructor.Unit :: Nil => true
+          case eff :: TypeConstructor.Int32 :: TypeConstructor.Unit :: Nil => true
           case _ => false
         }
       case (Type.Apply(Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Arrow(n), _), eff, _), var_arg, _), var_ret, _), Type.Cst(TypeConstructor.Native(clazz), _))
       if clazz == classOf[java.util.function.IntPredicate] =>
         val targsVal = tpe1.typeArguments.map(purifyType)
         targsVal match {
-          case eff :: _ :: TypeConstructor.Bool :: Nil => true
+          case eff :: TypeConstructor.Int32 :: TypeConstructor.Bool :: Nil => true
           case _ => false
         }
       case (Type.Apply(Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Arrow(n), _), eff, _), var_arg, _), var_ret, _), Type.Cst(TypeConstructor.Native(clazz), _))
       if clazz == classOf[java.util.function.IntUnaryOperator] =>
         val targsVal = tpe1.typeArguments.map(purifyType)
         targsVal match {
-          case eff :: _ :: TypeConstructor.Int32 :: Nil => true
+          case eff :: TypeConstructor.Int32 :: TypeConstructor.Int32 :: Nil => true
+          case _ => false
+        }
+      // DoubleStream
+      case (Type.Apply(Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Arrow(n), _), eff, _), var_arg, _), var_ret, _), Type.Cst(TypeConstructor.Native(clazz), _))
+        if clazz == classOf[java.util.function.DoubleConsumer] =>
+        val targsVal = tpe1.typeArguments.map(purifyType)
+        targsVal match {
+          case eff :: TypeConstructor.Float64 :: TypeConstructor.Unit :: Nil => true
+          case _ => false
+        }
+      case (Type.Apply(Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Arrow(n), _), eff, _), var_arg, _), var_ret, _), Type.Cst(TypeConstructor.Native(clazz), _))
+        if clazz == classOf[java.util.function.DoublePredicate] =>
+        val targsVal = tpe1.typeArguments.map(purifyType)
+        targsVal match {
+          case eff :: TypeConstructor.Float64 :: TypeConstructor.Bool :: Nil => true
+          case _ => false
+        }
+      case (Type.Apply(Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Arrow(n), _), eff, _), var_arg, _), var_ret, _), Type.Cst(TypeConstructor.Native(clazz), _))
+        if clazz == classOf[java.util.function.DoubleUnaryOperator] =>
+        val targsVal = tpe1.typeArguments.map(purifyType)
+        targsVal match {
+          case eff :: TypeConstructor.Float64 :: TypeConstructor.Float64 :: Nil => true
+          case _ => false
+        }
+      // LongStream
+      case (Type.Apply(Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Arrow(n), _), eff, _), var_arg, _), var_ret, _), Type.Cst(TypeConstructor.Native(clazz), _))
+        if clazz == classOf[java.util.function.LongConsumer] =>
+        val targsVal = tpe1.typeArguments.map(purifyType)
+        targsVal match {
+          case eff :: TypeConstructor.Int64 :: TypeConstructor.Unit :: Nil => true
+          case _ => false
+        }
+      case (Type.Apply(Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Arrow(n), _), eff, _), var_arg, _), var_ret, _), Type.Cst(TypeConstructor.Native(clazz), _))
+        if clazz == classOf[java.util.function.LongPredicate] =>
+        val targsVal = tpe1.typeArguments.map(purifyType)
+        targsVal match {
+          case eff :: TypeConstructor.Int64 :: TypeConstructor.Bool :: Nil => true
+          case _ => false
+        }
+      case (Type.Apply(Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Arrow(n), _), eff, _), var_arg, _), var_ret, _), Type.Cst(TypeConstructor.Native(clazz), _))
+        if clazz == classOf[java.util.function.LongUnaryOperator] =>
+        val targsVal = tpe1.typeArguments.map(purifyType)
+        targsVal match {
+          case eff :: TypeConstructor.Int64 :: TypeConstructor.Int64 :: Nil => true
           case _ => false
         }
       // Null is a sub-type of every Java object and non-primitive Flix type
