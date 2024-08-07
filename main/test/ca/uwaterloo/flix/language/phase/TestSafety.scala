@@ -55,27 +55,26 @@ class TestSafety extends AnyFunSuite with TestUtils {
     expectError[IllegalCatchType](result)
   }
 
-  // THROW TODO: Enable these tests when ready
-  ignore("IllegalThrowType.01") {
+  test("IllegalThrowType.01") {
     val input =
       """
-        |pub def f(): String = throw "hello"
+        |def f(): String = throw "hello"
       """.stripMargin
     val result = compile(input, Options.DefaultTest)
     expectError[IllegalThrowType](result)
   }
 
-  ignore("IllegalThrowType.02") {
+  test("IllegalThrowType.02") {
     val input =
       """
         |import java.io.IOException
-        |pub def f(): String = throw (throw new IOException)
+        |def f(): String = throw (throw new IOException())
       """.stripMargin
     val result = compile(input, Options.DefaultTest)
     expectError[IllegalThrowType](result)
   }
 
-  ignore("IllegalThrowType.03") {
+  test("IllegalThrowType.03") {
     val input =
       """
         |import java.io.IOException
