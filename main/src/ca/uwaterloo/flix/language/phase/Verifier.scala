@@ -45,7 +45,6 @@ object Verifier {
     checkEq(decl.tpe, ret, decl.loc)
   }
 
-
   private def visitExpr(expr: Expr)(implicit root: Root, env: Map[Symbol.VarSym, MonoType], lenv: Map[Symbol.LabelSym, MonoType]): MonoType = expr match {
 
     case Expr.Cst(cst, tpe, loc) => cst match {
@@ -231,11 +230,30 @@ object Verifier {
             case _ => failMismatchedShape(t1, "Array", loc)
           }
 
-        case AtomicOp.StructNew(_, _) => throw new RuntimeException("JOE TBD")
+        case AtomicOp.StructNew(sym0, _) =>
+          ts match {
+            case region :: _ =>
+              checkStructType(tpe, sym0, loc)
+              check(MonoType.Region)(region, exps(0).loc)
+              tpe
+            case _ => throw InternalCompilerException(s"Struct $sym0 missing region tparam", loc)
+          }
 
-        case AtomicOp.StructGet(_, _) => throw new RuntimeException("JOE TBD")
+        case AtomicOp.StructGet(sym0, _) =>
+          ts match {
+            case tpe1 :: Nil =>
+              checkStructType(tpe1, sym0, loc)
+              tpe
+            case _ => failMismatchedShape(tpe, "Struct", loc)
+          }
 
-        case AtomicOp.StructPut(_, _) => throw new RuntimeException("JOE TBD")
+        case AtomicOp.StructPut(sym0, _) =>
+          ts match {
+            case tpe1 :: Nil =>
+              checkStructType(tpe1, sym0, loc)
+              tpe
+            case _ => failMismatchedShape(tpe, "Struct", loc)
+          }
 
         case AtomicOp.ArrayNew =>
           val List(t1, t2) = ts
@@ -583,6 +601,19 @@ object Verifier {
     if (ts.length != cs.length)
       throw InternalCompilerException("Number of types in constructor call mismatch with parameter list", loc)
     ts.zip(cs).foreach { case (tp, klazz) => checkJavaSubtype(tp, klazz, loc) }
+  }
+
+  /**
+    * Asserts that the type `tpe` is a `Struct` type whose name is `sym0`
+    */
+  private def checkStructType(tpe: MonoType, sym0: Symbol.StructSym, loc: SourceLocation): Unit = {
+    tpe match {
+      case MonoType.Struct(sym, _, _) =>
+        if(sym0 != sym) {
+          throw InternalCompilerException(s"Expected struct type $sym0, got struct type $sym", loc)
+        }
+      case _ => failMismatchedShape(tpe, "Struct", loc)
+    }
   }
 
   /**
