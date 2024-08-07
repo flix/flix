@@ -45,16 +45,6 @@ object Verifier {
     checkEq(decl.tpe, ret, decl.loc)
   }
 
-  private def checkStructType(tpe: MonoType, sym0: Symbol.StructSym, loc: SourceLocation): Unit = {
-    tpe match {
-      case MonoType.Struct(sym, _, _) =>
-        if(sym0 != sym) {
-          throw InternalCompilerException(s"Expected struct type $sym0, got struct type $sym", loc)
-        }
-      case _ => failMismatchedShape(tpe, "Struct", loc)
-    }
-  }
-
   private def visitExpr(expr: Expr)(implicit root: Root, env: Map[Symbol.VarSym, MonoType], lenv: Map[Symbol.LabelSym, MonoType]): MonoType = expr match {
 
     case Expr.Cst(cst, tpe, loc) => cst match {
@@ -608,6 +598,19 @@ object Verifier {
     if (ts.length != cs.length)
       throw InternalCompilerException("Number of types in constructor call mismatch with parameter list", loc)
     ts.zip(cs).foreach { case (tp, klazz) => checkJavaSubtype(tp, klazz, loc) }
+  }
+
+  /**
+    * Asserts that the type `tpe` is a `Struct` type whose name is `sym0`
+    */
+  private def checkStructType(tpe: MonoType, sym0: Symbol.StructSym, loc: SourceLocation): Unit = {
+    tpe match {
+      case MonoType.Struct(sym, _, _) =>
+        if(sym0 != sym) {
+          throw InternalCompilerException(s"Expected struct type $sym0, got struct type $sym", loc)
+        }
+      case _ => failMismatchedShape(tpe, "Struct", loc)
+    }
   }
 
   /**
