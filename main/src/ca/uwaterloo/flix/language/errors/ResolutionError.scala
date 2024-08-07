@@ -1151,11 +1151,11 @@ object ResolutionError {
     * @param loc the location where the error occurred.
     */
   case class ExtraStructField(struct: Symbol.StructSym, field: Name.Label, loc: SourceLocation) extends ResolutionError with Recoverable {
-    override def summary: String = s"Unexpected field `$field`. the struct `$struct` does not declare `$field`"
+    override def summary: String = s"Unexpected field `$field`. The struct `$struct` does not declare `$field`"
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s""">> `new` struct expression provides field not present in original declaration of struct type
+      s""">> Unexpected field `$field`. The struct `$struct` does not declare `$field`
          |
          |${code(loc, "extra fields")}
          |

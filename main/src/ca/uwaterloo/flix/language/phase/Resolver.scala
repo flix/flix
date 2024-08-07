@@ -1386,8 +1386,7 @@ object Resolver {
               if(!st.fields.map(_.name.name).contains(field.name)) {
                 val e = ResolutionError.UndefinedStructField(st.sym, field, loc)
                 Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
-              }
-              else {
+              } else {
                 val eVal = visitExp(e, env0)
                 mapN(eVal) {
                   case e => ResolvedAst.Expr.StructGet(st.sym, e, field, loc)
@@ -1403,8 +1402,7 @@ object Resolver {
               if(!st.fields.map(_.name.name).contains(field.name)) {
                 val e = ResolutionError.UndefinedStructField(st.sym, field, loc)
                 Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
-              }
-              else {
+              } else {
                 val e1Val = visitExp(e1, env0)
                 val e2Val = visitExp(e2, env0)
                 mapN (e1Val, e2Val) {
