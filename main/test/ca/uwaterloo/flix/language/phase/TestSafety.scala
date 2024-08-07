@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.errors.SafetyError
-import ca.uwaterloo.flix.language.errors.SafetyError.{IllegalCatchType, IllegalNegativelyBoundWildCard, IllegalNestedTryCatch, IllegalNonPositivelyBoundVar, IllegalPatternInBodyAtom, IllegalRelationalUseOfLatticeVar}
+import ca.uwaterloo.flix.language.errors.SafetyError.{IllegalThrowType, IllegalCatchType, IllegalNegativelyBoundWildCard, IllegalNestedTryCatch, IllegalNonPositivelyBoundVar, IllegalPatternInBodyAtom, IllegalRelationalUseOfLatticeVar}
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -53,6 +53,36 @@ class TestSafety extends AnyFunSuite with TestUtils {
       """.stripMargin
     val result = compile(input, Options.DefaultTest)
     expectError[IllegalCatchType](result)
+  }
+
+  // THROW TODO: Enable these tests when ready
+  ignore("IllegalThrowType.01") {
+    val input =
+      """
+        |pub def f(): String = throw "hello"
+      """.stripMargin
+    val result = compile(input, Options.DefaultTest)
+    expectError[IllegalThrowType](result)
+  }
+
+  ignore("IllegalThrowType.02") {
+    val input =
+      """
+        |import java.io.IOException
+        |pub def f(): String = throw (throw new IOException)
+      """.stripMargin
+    val result = compile(input, Options.DefaultTest)
+    expectError[IllegalThrowType](result)
+  }
+
+  ignore("IllegalThrowType.03") {
+    val input =
+      """
+        |import java.io.IOException
+        |pub def f(): String = throw None
+      """.stripMargin
+    val result = compile(input, Options.DefaultTest)
+    expectError[IllegalThrowType](result)
   }
 
   test("IllegalNestedTryCatch.01") {

@@ -636,6 +636,9 @@ object Redundancy {
       }
       usedExp ++ usedRules
 
+    case Expr.Throw(exp, _, _, _) =>
+      visitExp(exp, env0, rc)
+
     case Expr.TryWith(exp, effUse, rules, _, _, _) =>
       sctx.effSyms.put(effUse.sym, ())
       val usedExp = visitExp(exp, env0, rc)

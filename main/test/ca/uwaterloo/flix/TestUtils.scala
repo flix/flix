@@ -33,13 +33,13 @@ trait TestUtils {
     * Checks the given input string `s` with the given compilation options `o`.
     */
   def check(s: String, o: Options): Validation[TypedAst.Root, CompilationMessage] =
-    new Flix().setOptions(o).addSourceCode("<test>", s).check()
+    new Flix().setOptions(o).addUnmanagedSourceCode("<test>", s).check()
 
   /**
    * Compiles the given input string `s` with the given compilation options `o`.
    */
   def compile(s: String, o: Options): Validation[CompilationResult, CompilationMessage] =
-    new Flix().setOptions(o).addSourceCode("<test>", s).compile()
+    new Flix().setOptions(o).addUnmanagedSourceCode("<test>", s).compile()
 
   private def errorString(errors: Seq[CompilationMessage]): String = {
     errors.map(_.messageWithLoc(Formatter.NoFormatter)).mkString("\n\n")
