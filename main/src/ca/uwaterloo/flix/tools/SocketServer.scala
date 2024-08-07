@@ -160,7 +160,7 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
       logSourceCode(input)
 
       // Compile the program.
-      flix.addSourceCode("<input>", input)
+      flix.addPlaygroundSourceCode(input)
 
       flix.compile().toHardResult match {
         case Result.Ok(compilationResult) =>

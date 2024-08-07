@@ -334,6 +334,17 @@ class Flix {
 
   /**
     * Adds the given string `text` with the given `name`.
+    */
+  def addPlaygroundSourceCode(text: String): Flix = {
+    val name = "<playground>"
+    if (text == null)
+      throw new IllegalArgumentException("'text' must be non-null.")
+    addInput(name, Input.Text(name, text, stable = false))
+    this
+  }
+
+  /**
+    * Adds the given string `text` with the given `name`.
     *
     * This method is only for internal use. Unmanaged source code is not subject to a security context.
     */
