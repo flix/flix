@@ -26,6 +26,7 @@ case class Source(input: Input, data: Array[Char]) extends Sourceable {
 
   def name: String = input match {
     case Input.Text(name, _, _) => name
+    case Input.StandardLibrary(virtualPath, _) => virtualPath
     case Input.TxtFile(path) => path.toString
     case Input.PkgFile(path) => path.toString
     case Input.Unknown => "unknown"
