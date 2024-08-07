@@ -190,10 +190,6 @@ object DocAstFormatter {
           text("try") +: curly(bodyf) +:
             text("catch") +: curly(rs)
         )
-      case Throw(exp) =>
-        group(
-          text("throw") +: aux(exp, paren = false, inBlock = true)
-        )
       case TryWith(d, eff, rules) =>
         val rs = semiSepOpt(rules.map {
           case (sym, params, rule) =>
