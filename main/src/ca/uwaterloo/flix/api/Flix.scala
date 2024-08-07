@@ -333,6 +333,20 @@ class Flix {
   }
 
   /**
+    * Adds the given string `text` with the given `name`.
+    *
+    * This method is only for internal use. Unmanaged source code is not subject to a security context.
+    */
+  def addUnmanagedSourceCode(name: String, text: String): Flix = {
+    if (name == null)
+      throw new IllegalArgumentException("'name' must be non-null.")
+    if (text == null)
+      throw new IllegalArgumentException("'text' must be non-null.")
+    addInput(name, Input.Text(name, text, stable = false))
+    this
+  }
+
+  /**
     * Adds the given path `p` as Flix source file.
     */
   def addFlix(p: Path): Flix = {
