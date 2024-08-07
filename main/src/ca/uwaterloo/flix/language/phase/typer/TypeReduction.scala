@@ -294,27 +294,27 @@ object TypeReduction {
       Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Array, _), elmType2, _), rcVar2, _)) =>
         isSubtype(elmType1, elmType2)
       // Arrow to Java function interface
-      case (Type.Apply(Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Arrow(n), _), eff, _), var_arg, _), var_ret, _), Type.Cst(TypeConstructor.Native(clazz), _)) =>
+      // TODO INTEROP: generics support
+      // Pattern-matching Flix functions of the form: eff -> arg -> ret
+      case (Type.Apply(Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Arrow(n), _), eff, _), var_arg, _), var_ret, _), Type.Cst(TypeConstructor.Native(clazz), _))
+      if clazz == classOf[java.util.function.IntConsumer] =>
         val targsVal = tpe1.typeArguments.map(purifyType)
-        targsVal match { // TODO INTEROP: generics support
-          // Pattern-matching Flix functions of the form: eff -> arg -> ret
-          case eff :: TypeConstructor.Native(_) :: TypeConstructor.Native(_) :: Nil =>
-            clazz.isAssignableFrom(classOf[java.util.function.Consumer[_]])
-          case eff :: TypeConstructor.Native(_) :: TypeConstructor.Unit :: Nil =>
-            clazz.isAssignableFrom(classOf[java.util.function.Function[_, _]])
-          case eff :: TypeConstructor.Native(_) :: TypeConstructor.Bool :: Nil =>
-            clazz.isAssignableFrom(classOf[java.util.function.Predicate[_]])
-          case eff :: TypeConstructor.Str :: TypeConstructor.Bool :: Nil =>
-            clazz.isAssignableFrom(classOf[java.util.function.Predicate[_]])
-          case eff :: TypeConstructor.Int32 :: TypeConstructor.Native(_) :: Nil =>
-            clazz.isAssignableFrom(classOf[java.util.function.IntFunction[_]])
-          case eff :: TypeConstructor.Int32 :: TypeConstructor.Unit :: Nil =>
-            clazz.isAssignableFrom(classOf[java.util.function.IntConsumer])
-          case eff :: TypeConstructor.Int32 :: TypeConstructor.Bool :: Nil =>
-            clazz.isAssignableFrom(classOf[java.util.function.IntPredicate])
-          case eff :: TypeConstructor.Int32 :: TypeConstructor.Int32 :: Nil =>
-            clazz.isAssignableFrom(classOf[java.util.function.IntUnaryOperator])
-          // TODO INTEROP: add other cases from Resolver.scala
+        targsVal match {
+          case eff :: _ :: TypeConstructor.Unit :: Nil => true
+          case _ => false
+        }
+      case (Type.Apply(Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Arrow(n), _), eff, _), var_arg, _), var_ret, _), Type.Cst(TypeConstructor.Native(clazz), _))
+        if clazz == classOf[java.util.function.IntPredicate] =>
+        val targsVal = tpe1.typeArguments.map(purifyType)
+        targsVal match {
+          case eff :: _ :: TypeConstructor.Bool :: Nil => true
+          case _ => false
+        }
+      case (Type.Apply(Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Arrow(n), _), eff, _), var_arg, _), var_ret, _), Type.Cst(TypeConstructor.Native(clazz), _))
+        if clazz == classOf[java.util.function.IntUnaryOperator] =>
+        val targsVal = tpe1.typeArguments.map(purifyType)
+        targsVal match {
+          case eff :: _ :: TypeConstructor.Int32 :: Nil => true
           case _ => false
         }
       // Null is a sub-type of every Java object and non-primitive Flix type
