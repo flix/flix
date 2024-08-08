@@ -1383,8 +1383,8 @@ object Resolver {
         case NamedAst.Expr.StructGet(name, e, field, loc) =>
           lookupStruct(name, env0, ns0, root) match {
             case Result.Ok(st) =>
-              val availableFields = st.fields
-              if(availableFields.contains(field)) {
+              val availableFields = st.fields.map(_.name)
+              if(!availableFields.contains(field)) {
                 val e = ResolutionError.UndefinedStructField(st.sym, field, loc)
                 Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
               } else {
@@ -1400,7 +1400,7 @@ object Resolver {
         case NamedAst.Expr.StructPut(name, e1, field, e2, loc) =>
           lookupStruct(name, env0, ns0, root) match {
             case Result.Ok(st) =>
-              val availableFields = st.fields
+              val availableFields = st.fields.map(_.name)
               if(!availableFields.contains(field)) {
                 val e = ResolutionError.UndefinedStructField(st.sym, field, loc)
                 Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
