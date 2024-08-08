@@ -140,7 +140,7 @@ object CompletionProvider {
       case SyntacticContext.Expr.Do => OpCompleter.getCompletions(context)
       case SyntacticContext.Expr.InvokeMethod(e) => InvokeMethodCompleter.getCompletions(e, context)
       case SyntacticContext.Expr.StaticFieldOrMethod(e) => GetStaticFieldCompleter.getCompletions(e) ++ InvokeStaticMethodCompleter.getCompletions(e)
-      case SyntacticContext.Expr.NewObject => NewObjectCompleter.getCompletions(context)
+      // case SyntacticContext.Expr.NewObject => NewObjectCompleter.getCompletions(context)
       case _: SyntacticContext.Expr => ExprCompleter.getCompletions(context)
 
       //
@@ -160,7 +160,7 @@ object CompletionProvider {
       // Types.
       //
       case SyntacticContext.Type.Eff => EffSymCompleter.getCompletions(context)
-      case SyntacticContext.Type.OtherType => TypeCompleter.getCompletions(context) ++ EffSymCompleter.getCompletions(context)
+      case SyntacticContext.Type.OtherType => TypeCompleter.getCompletions(context) ++ EffSymCompleter.getCompletions(context) ++ NewObjectCompleter.getCompletions(context)
 
       //
       // Patterns.
