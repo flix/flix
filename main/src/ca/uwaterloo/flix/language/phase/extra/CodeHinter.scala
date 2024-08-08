@@ -184,6 +184,10 @@ object CodeHinter {
     case Expr.ArrayLength(exp, _, _) =>
       visitExp(exp)
 
+    case Expr.StructNew(sym, fields, region, tpe, eff, loc) => throw new RuntimeException("JOE TBD")
+    case Expr.StructGet(sym, exp, field, tpe, eff, loc) => throw new RuntimeException("JOE TBD")
+    case Expr.StructPut(sym, exp1, field, exp2, tpe, eff, loc) => throw new RuntimeException("JOE TBD")
+
     case Expr.VectorLit(exps, _, _, _) =>
       visitExps(exps)
 
@@ -224,6 +228,8 @@ object CodeHinter {
       visitExp(exp) ++ rules.flatMap {
         case CatchRule(_, _, exp) => visitExp(exp)
       }
+
+    case Expr.Throw(exp, _, _, _) => visitExp(exp)
 
     case Expr.TryWith(exp, _, rules, _, _, _) =>
       visitExp(exp) ++ rules.flatMap {

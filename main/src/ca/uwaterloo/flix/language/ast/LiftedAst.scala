@@ -16,8 +16,9 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.ast.Ast.{IntroducedBy, Source}
+import ca.uwaterloo.flix.language.ast.Ast.IntroducedBy
 import ca.uwaterloo.flix.language.ast.Purity.Pure
+import ca.uwaterloo.flix.language.ast.shared.Source
 import ca.uwaterloo.flix.language.phase.Inliner
 
 object LiftedAst {
@@ -37,7 +38,7 @@ object LiftedAst {
 
   case class Op(sym: Symbol.OpSym, ann: Ast.Annotations, mod: Ast.Modifiers, fparams: List[FormalParam], tpe: MonoType, purity: Purity, loc: SourceLocation)
 
-  case class Struct(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.StructSym, fields: Map[Name.StructField, StructField], tpe: Type, loc: SourceLocation)
+  case class Struct(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.StructSym, fields: List[StructField], loc: SourceLocation)
 
   sealed trait Expr {
     def tpe: MonoType
@@ -88,7 +89,7 @@ object LiftedAst {
 
   }
 
-  case class StructField(sym: Symbol.StructFieldSym, tpe: Type, sc: Scheme, loc: SourceLocation)
+  case class StructField(name: Name.Label, idx: Int, tpe: Type, loc: SourceLocation)
 
   case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], clo: Expr, retTpe: MonoType, purity: Purity, loc: SourceLocation)
 

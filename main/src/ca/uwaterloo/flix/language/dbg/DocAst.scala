@@ -219,6 +219,9 @@ object DocAst {
     def Force(d: Expr): Expr =
       Keyword("force", d)
 
+    def Throw(d: Expr): Expr =
+      Keyword("throw", d)
+
     def Index(idx: Int, d: Expr): Expr =
       Dot(d, AsIs(s"_$idx"))
 

@@ -214,12 +214,12 @@ object Kinder {
   /**
    * Performs kinding on the given struct field under the given kind environment.
    */
-  private def visitStructField(field0: ResolvedAst.Declaration.StructField, tparams: List[KindedAst.TypeParam], resTpe: Type, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.StructField, KindError] = field0 match {
-    case ResolvedAst.Declaration.StructField(sym, tpe0, loc) =>
+  private def visitStructField(field0: ResolvedAst.StructField, tparams: List[KindedAst.TypeParam], resTpe: Type, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.StructField, KindError] = field0 match {
+    case ResolvedAst.StructField(sym, tpe0, loc) =>
       val tpeVal = visitType(tpe0, Kind.Star, kenv, taenv, root)
       mapN(tpeVal) {
         case tpe =>
-          KindedAst.StructField(sym, tpe, loc)
+          throw new RuntimeException("JOE TBD")
       }
     }
 
@@ -787,6 +787,14 @@ object Kinder {
       val rulesVal = traverse(rules0)(visitCatchRule(_, kenv0, taenv, henv0, root))
       mapN(expVal, rulesVal) {
         case (exp, rules) => KindedAst.Expr.TryCatch(exp, rules, loc)
+      }
+
+    case ResolvedAst.Expr.Throw(exp0, loc) =>
+      val tvar = Type.freshVar(Kind.Star, loc)
+      val evar = Type.freshVar(Kind.Eff, loc)
+      val expVal = visitExp(exp0, kenv0, taenv, henv0, root)
+      mapN(expVal) {
+        case exp => KindedAst.Expr.Throw(exp, tvar, evar, loc)
       }
 
     case ResolvedAst.Expr.TryWith(exp0, eff, rules0, loc) =>

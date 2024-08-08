@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.ast.Ast.Source
+import ca.uwaterloo.flix.language.ast.shared.{SecurityContext, Source}
 
 /**
   * Companion object for the [[SourceLocation]] class.
@@ -35,9 +35,14 @@ case class SourceLocation(isReal: Boolean, sp1: SourcePosition, sp2: SourcePosit
   assert(sp1.source eq sp2.source)
 
   /**
-    * Returns the source of the entity.
+    * Returns the source associated with the source location.
     */
   def source: Source = sp1.source
+
+  /**
+   * Returns the security context associated with the source location.
+   */
+  def security: SecurityContext = sp1.source.input.security
 
   /**
     * Returns the line where the entity begins.

@@ -17,6 +17,7 @@ package flix.fuzzers
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.nio.file.{Files, Paths}
@@ -66,7 +67,7 @@ class FuzzPrefixes extends AnyFunSuite with TestUtils {
     for (i <- 1 until N) {
       val e = Math.min(i * step, length)
       val prefix = input.substring(0, e)
-      flix.addSourceCode(s"$name-prefix-$e", prefix)
+      flix.addSourceCode(s"$name-prefix-$e", prefix)(SecurityContext.AllPermissions)
       flix.compile() // We simply care that this does not crash.
     }
   }

@@ -558,6 +558,10 @@ object Redundancy {
       val us3 = visitExp(elm, env0, rc)
       us1 ++ us2 ++ us3
 
+    case Expr.StructNew(sym, fields, region, tpe, eff, loc) => throw new RuntimeException("JOE TBD")
+    case Expr.StructGet(sym, exp, field, tpe, eff, loc) => throw new RuntimeException("JOE TBD")
+    case Expr.StructPut(sym, exp1, field, exp2, tpe, eff, loc) => throw new RuntimeException("JOE TBD")
+
     case Expr.VectorLit(exps, _, _, _) =>
       visitExps(exps, env0, rc)
 
@@ -635,6 +639,9 @@ object Redundancy {
             acc ++ usedBody
       }
       usedExp ++ usedRules
+
+    case Expr.Throw(exp, _, _, _) =>
+      visitExp(exp, env0, rc)
 
     case Expr.TryWith(exp, effUse, rules, _, _, _) =>
       sctx.effSyms.put(effUse.sym, ())

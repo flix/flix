@@ -152,6 +152,10 @@ object Regions {
     case Expr.ArrayStore(exp1, exp2, exp3, _, loc) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
+    case Expr.StructNew(sym, fields, region, tpe, eff, loc) => throw new RuntimeException("JOE TBD")
+    case Expr.StructGet(sym, exp, field, tpe, eff, loc) => throw new RuntimeException("JOE TBD")
+    case Expr.StructPut(sym, exp1, field, exp2, tpe, eff, loc) => throw new RuntimeException("JOE TBD")
+
     case Expr.VectorLit(exps, tpe, _, loc) =>
       exps.flatMap(visitExp) ++ checkType(tpe, loc)
 
@@ -193,6 +197,9 @@ object Regions {
         case CatchRule(sym, clazz, e) => visitExp(e)
       }
       rulesErrors ++ visitExp(exp) ++ checkType(tpe, loc)
+
+    case Expr.Throw(exp, tpe, eff, loc) =>
+      visitExp(exp) ++ checkType(tpe, loc)
 
     case Expr.TryWith(exp, _, rules, tpe, _, loc) =>
       val rulesErrors = rules.flatMap {
