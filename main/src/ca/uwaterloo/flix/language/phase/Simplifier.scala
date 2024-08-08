@@ -102,6 +102,12 @@ object Simplifier {
           val t = visitType(tpe)
           SimplifiedAst.Expr.ApplyAtomic(op, es1, t, purity, loc)
 
+        case AtomicOp.InvokeMethod(m) =>
+          //if (m.isVarArgs)
+            // TODO INTEROP: convert varargs to Java array
+          val t = visitType(tpe)
+          SimplifiedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
+
         case AtomicOp.Spawn =>
           // Wrap the expression in a closure: () -> tpe \ ef
           val List(e1, e2) = es
