@@ -114,7 +114,7 @@ object Simplifier {
             // val varArrType = Type.getFlixType(m.getParameterTypes.last.getComponentType)
             val varArr = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.ArrayNew, varargs, MonoType.Array(MonoType.Object), purity, loc)
             val reqParams = args.slice(reqParamsNb, args.length)
-            SimplifiedAst.Expr.ApplyAtomic(op, (reqParams ++ List(varArr)), t, purity, loc)
+            SimplifiedAst.Expr.ApplyAtomic(op, List(es.head) ++ (reqParams ++ List(varArr)), t, purity, loc)
           } else {
             SimplifiedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
           }
