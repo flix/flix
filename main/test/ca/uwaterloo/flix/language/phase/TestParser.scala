@@ -690,12 +690,11 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
   test("ChainedApplyRecordSelect.01") {
     val input =
       """
+        |def main(): Unit = ()
+        |
         |def foo(): Int32 =
         |    let f = () -> { g = () -> { h = () -> 12 } };
         |    f()#
-        |
-        |def main(): Unit = ()
-        |
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
     expectErrorOnCheck[ParseError](result)
@@ -705,12 +704,11 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
   test("ChainedApplyRecordSelect.02") {
     val input =
       """
+        |def main(): Unit = ()
+        |
         |def foo(): Int32 =
         |    let f = () -> { g = () -> { h = () -> 12 } };
         |    f()#g()#
-        |
-        |def main(): Unit = ()
-        |
         |""".stripMargin
     val result = check(input, Options.TestWithLibNix)
     expectErrorOnCheck[ParseError](result)
