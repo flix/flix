@@ -1,3 +1,17 @@
+mod Mod1 {
+    pub struct S [r] {}
+    struct S2 [r] {}
+
+    mod Mod2 {
+        @test
+        def foo(): Unit =
+            region rc {
+                new Mod1.S2 {} @ rc;
+                ()
+            }
+    }
+}
+
 mod Test.Exp.Struct.New {
 
     struct Empty [r] { }
@@ -209,6 +223,13 @@ mod Test.Exp.Struct.New {
     def testNestedLabels01(): Unit =
         region rc {
             new A3 {a = new A2 {a = new A1 {a = new Empty {} @ rc} @ rc} @ rc} @ rc;
+            ()
+        }
+
+    @test
+    def testOtherMod01(): Unit =
+        region rc {
+            new Mod1.S {} @ rc;
             ()
         }
 }
