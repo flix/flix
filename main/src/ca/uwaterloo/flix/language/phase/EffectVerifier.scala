@@ -199,6 +199,9 @@ object EffectVerifier {
       visitExp(exp3)
       // TODO region stuff
       ()
+    case Expr.StructNew(sym, fields, region, tpe, eff, loc) => throw new RuntimeException("JOE TBD")
+    case Expr.StructGet(sym, exp, field, tpe, eff, loc) => throw new RuntimeException("JOE TBD")
+    case Expr.StructPut(sym, exp1, field, exp2, tpe, eff, loc) => throw new RuntimeException("JOE TBD")
     case Expr.VectorLit(exps, tpe, eff, loc) =>
       exps.foreach(visitExp)
       val expected = Type.mkUnion(exps.map(_.eff), loc)

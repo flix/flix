@@ -261,6 +261,10 @@ object Stratifier {
       val e3 = visitExp(exp3)
       Expr.ArrayStore(e1, e2, e3, eff, loc)
 
+    case Expr.StructNew(sym, fields, region, tpe, eff, loc) => throw new RuntimeException("JOE TBD")
+    case Expr.StructGet(sym, exp, field, tpe, eff, loc) => throw new RuntimeException("JOE TBD")
+    case Expr.StructPut(sym, exp1, field, exp2, tpe, eff, loc) => throw new RuntimeException("JOE TBD")
+
     case Expr.VectorLit(exps, tpe, eff, loc) =>
       val es = visitExps(exps)
       Expr.VectorLit(es, tpe, eff, loc)

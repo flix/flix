@@ -18,6 +18,7 @@ package ca.uwaterloo.flix
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.ast.{SourceLocation, TypedAst}
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.{Formatter, Options, Result, Validation}
@@ -32,14 +33,18 @@ trait TestUtils {
   /**
     * Checks the given input string `s` with the given compilation options `o`.
     */
-  def check(s: String, o: Options): Validation[TypedAst.Root, CompilationMessage] =
-    new Flix().setOptions(o).addUnmanagedSourceCode("<test>", s).check()
+  def check(s: String, o: Options): Validation[TypedAst.Root, CompilationMessage] = {
+    implicit val sctx: SecurityContext = SecurityContext.AllPermissions
+    new Flix().setOptions(o).addSourceCode("<test>", s).check()
+  }
 
   /**
    * Compiles the given input string `s` with the given compilation options `o`.
    */
-  def compile(s: String, o: Options): Validation[CompilationResult, CompilationMessage] =
-    new Flix().setOptions(o).addUnmanagedSourceCode("<test>", s).compile()
+  def compile(s: String, o: Options): Validation[CompilationResult, CompilationMessage] = {
+    implicit val sctx: SecurityContext = SecurityContext.AllPermissions
+    new Flix().setOptions(o).addSourceCode("<test>", s).compile()
+  }
 
   private def errorString(errors: Seq[CompilationMessage]): String = {
     errors.map(_.messageWithLoc(Formatter.NoFormatter)).mkString("\n\n")

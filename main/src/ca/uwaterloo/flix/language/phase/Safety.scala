@@ -338,6 +338,10 @@ object Safety {
       case Expr.ArrayStore(base, index, elm, _, _) =>
         visit(base) ++ visit(index) ++ visit(elm)
 
+      case Expr.StructNew(sym, fields, region, tpe, eff, loc) => throw new RuntimeException("JOE TBD")
+      case Expr.StructGet(sym, exp, field, tpe, eff, loc) => throw new RuntimeException("JOE TBD")
+      case Expr.StructPut(sym, exp1, field, exp2, tpe, eff, loc) => throw new RuntimeException("JOE TBD")
+
       case Expr.VectorLit(elms, _, _, _) =>
         elms.flatMap(visit)
 
