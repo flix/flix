@@ -1801,15 +1801,8 @@ object Kinder {
   private def getStructKind(struct0: ResolvedAst.Declaration.Struct)(implicit flix: Flix): Kind = struct0 match {
     case ResolvedAst.Declaration.Struct(_, _, _, _, tparams0, _, _) =>
       // tparams default to zero except for the region param
-      val tparamsStart = tparams0.init.map {
-        _ match
-        {
-          case ResolvedAst.TypeParam.Kinded(name, sym, kind, loc) => ResolvedAst.TypeParam.Kinded(name, sym, kind, loc)
-          case ResolvedAst.TypeParam.Unkinded(name, sym, loc) => ResolvedAst.TypeParam.Kinded(name, sym, Kind.Star, loc)
-          case ResolvedAst.TypeParam.Implicit(name, sym, loc) => ResolvedAst.TypeParam.Kinded(name, sym, Kind.Star, loc)
-        }
-      }
-      val tparams = tparamsStart :+ ResolvedAst.TypeParam.Kinded(tparams0.last.name, tparams0.last.sym, Kind.Eff, tparams0.last.sym.loc)
+      val tparamsStart = tparams0.init.map(makeKinded(_, Kind.Star))
+      val tparams = tparamsStart :+ makeKinded(tparams0.last, Kind.Eff)
       val kenv = getKindEnvFromTypeParams(tparams)
       tparams.foldRight(Kind.Star: Kind) {
         case (tparam, acc) => kenv.map(tparam.sym) ->: acc
