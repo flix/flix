@@ -3162,7 +3162,7 @@ object Parser2 {
         case TokenKind.KeywordStaticUppercase => name(Set(TokenKind.KeywordStaticUppercase), context = SyntacticContext.Type.OtherType)
         case t =>
           val mark = open()
-          val error = UnexpectedToken(expected = NamedTokenSet.Type, actual = Some(t), SyntacticContext.Type.OtherType, loc = currentSourceLocation())
+          val error = UnexpectedToken(expected = NamedTokenSet.Type, actual = Some(t), context, loc = currentSourceLocation())
           closeWithError(mark, error)
       }
       close(mark, TreeKind.Type.Type)
