@@ -1566,7 +1566,7 @@ object Parser2 {
              | TokenKind.LiteralRegex => literalExpr()
         case TokenKind.ParenL => parenOrTupleOrLambdaExpr()
         case TokenKind.Underscore => if (nth(1) == TokenKind.ArrowThinR) unaryLambdaExpr() else name(NAME_VARIABLE, context = SyntacticContext.Expr.OtherExpr)
-        case TokenKind.NameLowerCase if nth(1) == TokenKind.Dot => invokeMethod2Expr() // TODO: this escapes the newobject context and tries to parse arguments
+        case TokenKind.NameLowerCase if nth(1) == TokenKind.Dot => invokeMethod2Expr() // TODO: this escapes the newobject context and tries to parse arguments. Solution: add context as parameter to exprDelimited and invokeMethodExpr2?
         case TokenKind.NameLowerCase => if (nth(1) == TokenKind.ArrowThinR) unaryLambdaExpr() else name(NAME_FIELD, allowQualified = true, context = SyntacticContext.Expr.OtherExpr)
         case TokenKind.NameUpperCase
              | TokenKind.NameMath
