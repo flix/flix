@@ -1,3 +1,4 @@
+// JOE TODO one day: pub/private for fields, mut/const
 /*
  * Copyright 2023 Magnus Madsen
  *
@@ -254,7 +255,6 @@ object Verifier {
               checkStructType(tpe1, sym0, loc)
               tpe
             case _ =>
-              println(ts)
               failMismatchedShape(tpe, "Struct", loc)
           }
 
