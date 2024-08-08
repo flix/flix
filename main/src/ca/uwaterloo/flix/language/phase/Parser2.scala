@@ -2555,6 +2555,7 @@ object Parser2 {
         close(mark, TreeKind.Expr.NewStruct)
       } else if (at(TokenKind.CurlyL)) {
         // Case 1: new Type { ... }
+        // Should this be zeroOrMore? An interface can have 0 methods.
         oneOrMore(
           namedTokenSet = NamedTokenSet.FromKinds(Set(TokenKind.KeywordDef)),
           checkForItem = t => t.isComment || t == TokenKind.KeywordDef,
