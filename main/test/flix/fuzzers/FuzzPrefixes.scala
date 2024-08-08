@@ -66,7 +66,7 @@ class FuzzPrefixes extends AnyFunSuite with TestUtils {
     for (i <- 1 until N) {
       val e = Math.min(i * step, length)
       val prefix = input.substring(0, e)
-      flix.addSourceCode(s"$name-prefix-$e", prefix)
+      flix.addUnmanagedSourceCode(s"$name-prefix-$e", prefix)
       flix.compile() // We simply care that this does not crash.
     }
   }

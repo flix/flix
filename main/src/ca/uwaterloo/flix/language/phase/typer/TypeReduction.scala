@@ -259,7 +259,8 @@ object TypeReduction {
    * @param ts         the list of parameter types of the potential candidate method
    */
   private def isCandidateMethod(cand: Method, methodName: String, isStatic: Boolean = false, ts: List[Type])(implicit flix: Flix): Boolean = {
-    (if (isStatic) java.lang.reflect.Modifier.isStatic(cand.getModifiers) else true) &&
+    val static = java.lang.reflect.Modifier.isStatic(cand.getModifiers)
+    (if (isStatic) static else !static) &&
       (cand.getName == methodName) &&
       (cand.getParameterCount == ts.length) &&
       // Parameter types correspondence with subtyping

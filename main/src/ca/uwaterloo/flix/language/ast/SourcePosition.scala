@@ -1,12 +1,12 @@
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.ast.Ast.Source
+import ca.uwaterloo.flix.language.ast.shared.{Input, Source}
 
 object SourcePosition {
   /**
     * Represents an unknown source position.
     */
-  val Unknown: SourcePosition = SourcePosition(Source(Ast.Input.Text("<unknown>", "", stable = true), Array.emptyCharArray, stable = true), 0, 0)
+  val Unknown: SourcePosition = SourcePosition(Source(Input.Unknown, Array.emptyCharArray), 0, 0)
 }
 
 /**

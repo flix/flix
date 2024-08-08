@@ -69,7 +69,7 @@ class FuzzDuplicateLines extends AnyFunSuite with TestUtils {
       val iStepped = Math.min(i * step, numLines)
       val (before, after) = lines.splitAt(iStepped)
       val src = (before ::: after.head :: after).mkString("\n")
-      flix.addSourceCode(s"$name-duplicate-line-$iStepped", src)
+      flix.addUnmanagedSourceCode(s"$name-duplicate-line-$iStepped", src)
       flix.compile() // We simply care that this does not crash.
     }
   }

@@ -361,7 +361,7 @@ object ResolutionError {
 
   /**
     * Inaccessible Struct Error
-    * 
+    *
     * @param sym the struct symbol
     * @param ns the namespace where the symbol is not accessible
     * @param loc the location where the error occurred
@@ -735,6 +735,25 @@ object ResolutionError {
   }
 
   /**
+   * An error raised to indicate that a static field name was not found.
+   *
+   * @param clazz the class name.
+   * @param field the field name.
+   * @param loc   the location of the field access.
+   */
+  case class UndefinedJvmStaticField(clazz: Class[_], field: Name.Ident, loc: SourceLocation) extends ResolutionError with Recoverable {
+    def summary: String = s"Undefined static field."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s""">> Undefined static field '${red(field.name)}' in class '${cyan(clazz.getName)}'.
+         |
+         |${code(loc, "undefined static field.")}
+         |""".stripMargin
+    }
+  }
+
+  /**
     * An error raised to indicate that a matching method was not found.
     *
     * @param className  the class name.
@@ -1087,6 +1106,82 @@ object ResolutionError {
       * Returns a formatted string with helpful suggestions.
       */
     override def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * An error raised to indicate a struct does not exist in a `new Struct { ... } @ r` expression
+    *
+    * @param struct the names of the struct
+    * @param loc the location where the error occurred.
+    */
+  case class UndefinedStruct(struct: Name.QName, loc: SourceLocation) extends ResolutionError with Recoverable {
+    override def summary: String = s"Undefined struct type"
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s""">> Undefined struct `${struct}`
+         |
+         |${code(loc, "undefined struct")}
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate a struct is missing a required field in `struct.field` or `struct.field = value` expression
+    *
+    * @param field the names of the missing fields
+    * @param loc the location where the error occurred.
+    */
+  case class UndefinedStructField(struct: Symbol.StructSym, field: Name.Label, loc: SourceLocation) extends ResolutionError with Recoverable {
+    override def summary: String = s"Undefined struct field `$field` on `$struct`"
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s""">> Undefined struct field `$field` on `$struct`
+         |
+         |${code(loc, "undefined field")}
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate a `new` struct expression provides too many fields
+    *
+    * @param fields the names of the extra fields
+    * @param loc the location where the error occurred.
+    */
+  case class ExtraStructField(struct: Symbol.StructSym, field: Name.Label, loc: SourceLocation) extends ResolutionError with Recoverable {
+    override def summary: String = s"Unexpected field `$field`. The struct `$struct` does not declare `$field`"
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s""">> Unexpected field `$field`. The struct `$struct` does not declare `$field`
+         |
+         |${code(loc, "unexpected field")}
+         |
+         |Unexpected Field: ${field}
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate a `new` struct expression is missing fields
+    *
+    * @param fields the names of the missing fields
+    * @param loc the location where the error occurred.
+    */
+  case class MissingStructField(struct: Symbol.StructSym, field: Name.Label, loc: SourceLocation) extends ResolutionError with Recoverable {
+    override def summary: String = s"Missing struct field `$field` in initializer"
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s""">> Missing struct field `$field` in initializer
+         |
+         |${code(loc, "missing field")}
+         |
+         |Missing Field: $field
+         |""".stripMargin
+    }
   }
 
   /**
