@@ -795,7 +795,6 @@ object Ast {
 
       case object OtherExpr extends Expr
 
-      case object NewObject extends Expr
     }
 
     case object Import extends SyntacticContext
@@ -821,9 +820,6 @@ object Ast {
     case object Unknown extends SyntacticContext
 
     def join(ctx1: SyntacticContext, ctx2: SyntacticContext): SyntacticContext = (ctx1, ctx2) match {
-      case (_, SyntacticContext.Expr.NewObject) => SyntacticContext.Expr.NewObject
-      case (SyntacticContext.Expr.NewObject, _) => SyntacticContext.Expr.NewObject
-
       case (_, SyntacticContext.Expr.OtherExpr) => ctx1
       case (SyntacticContext.Expr.OtherExpr, _) => ctx2
 
