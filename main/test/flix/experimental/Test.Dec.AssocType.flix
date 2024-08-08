@@ -43,7 +43,7 @@ mod Test.Dec.AssocType {
     }
 
     instance Iterable2[String] {
-        type Eff[String] = Pure
+        type Eff[String] = {}
         type Elem[String] = Char
 
         pub def iterator(rc: Region[r], x: String): Iterator[Char, r, r] \ r = String.iterator(rc, x)

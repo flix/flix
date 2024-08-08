@@ -19,6 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.ExpPosition
 import ca.uwaterloo.flix.language.ast.{MonoType, Purity}
 import ca.uwaterloo.flix.language.ast.ReducedAst._
+import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.util.ParOps
 
 import java.util.concurrent.{ConcurrentHashMap, ConcurrentLinkedQueue}
@@ -222,11 +223,12 @@ object Reducer {
         val taskList1 = tpe match {
           case Void | AnyType | Unit | Bool | Char | Float32 | Float64 | BigDecimal | Int8 | Int16 |
                Int32 | Int64 | BigInt | String | Regex | Region | Enum(_) | RecordEmpty |
-               Native(_) => taskList
+               Native(_) | Null => taskList
           case Array(elm) => taskList.enqueue(elm)
           case Lazy(elm) => taskList.enqueue(elm)
           case Ref(elm) => taskList.enqueue(elm)
           case Tuple(elms) => taskList.enqueueAll(elms)
+          case Struct(_, elms, _) => taskList.enqueueAll(elms)
           case Arrow(targs, tresult) => taskList.enqueueAll(targs).enqueue(tresult)
           case RecordExtend(_, value, rest) => taskList.enqueue(value).enqueue(rest)
         }

@@ -15,9 +15,7 @@
  */
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
-import ca.uwaterloo.flix.language.fmt.FormatEff
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
 
 /**
   * A common super-type for code hints.
@@ -122,18 +120,6 @@ object CodeHint {
     def summary: String = "Sequential: Use a pure function to enable parallel evaluation (see purity reflection)."
 
     def severity: Severity = Severity.Hint
-  }
-
-  /**
-    * A code hint that indicates that an expression has a non-trivial effect.
-    *
-    * @param tpe the type of the expression.
-    * @param loc the location of the expression.
-    */
-  case class NonTrivialEffect(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends CodeHint {
-    def summary: String = s"Expression has a non-trivial effect: ${FormatEff.formatEff(tpe)}"
-
-    def severity: Severity = Severity.Info
   }
 
 }

@@ -119,9 +119,9 @@ object Indexer {
     * Returns a reverse index for the given instance `instance0`.
     */
   private def visitInstance(instance0: Instance): Index = instance0 match {
-    case Instance(_, _, _, clazz, tpe, tconstrs, assocs, defs, _, _) =>
+    case Instance(_, _, _, trt, tpe, tconstrs, assocs, defs, _, _) =>
       Index.all(
-        Index.useOf(clazz.sym, clazz.loc),
+        Index.useOf(trt.sym, trt.loc),
         visitType(tpe),
         traverse(tconstrs)(visitTypeConstraint),
         traverse(assocs)(visitAssocTypeDef),
@@ -355,6 +355,9 @@ object Indexer {
         case CatchRule(_, _, exp) => visitExp(exp)
       }
       i0 ++ i1
+
+    case Expr.Throw(exp, _, _, _) =>
+      visitExp(exp) ++ Index.occurrenceOf(exp0)
 
     case Expr.TryWith(exp, effUse, rules, _, _, _) =>
       val parent = Entity.Exp(exp0)

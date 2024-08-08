@@ -21,6 +21,13 @@ pub enum MutMap[k: Type, v: Type, r: Region] {
     case MutMap(Region[r], Ref[Map[k, v], r])
 }
 
+instance Iterable[MutMap[k, v, r]] {
+    type Elm = (k, v)
+    type Aef = r
+    pub def iterator(rc: Region[r1], m: MutMap[k, v, r]): Iterator[(k, v), r + r1, r1] \ (r + r1) =
+        MutMap.iterator(rc, m)
+}
+
 mod MutMap {
 
     ///
@@ -547,6 +554,20 @@ mod MutMap {
         Map.toList(deref mm)
 
     ///
+    /// Returns the mutable map `m` as a vector of key-value pairs.
+    ///
+    pub def toVector(m: MutMap[k, v, r]): Vector[(k, v)] \ r =
+        let MutMap(_, mm) = m;
+        Map.toVector(deref mm)
+
+    ///
+    /// Returns the mutable map `m` as an array of key-value pairs.
+    ///
+    pub def toArray(rc1: Region[r1], m: MutMap[k, v, r]): Array[(k, v), r1] \ {r, r1} =
+        let MutMap(_, mm) = m;
+        Map.toArray(rc1, deref mm)
+
+    ///
     /// Returns the mutable map `m` as a set of key-value pairs.
     ///
     pub def toSet(m: MutMap[k, v, r]): Set[(k, v)] \ r with Order[k], Order[v] =
@@ -574,21 +595,21 @@ mod MutMap {
     ///
     pub def iterator(rc: Region[r1], m: MutMap[k, v, r2]): Iterator[(k, v), r1 + r2, r1] \ { r1, r2 } =
         let MutMap(_, mm) = m;
-        Map.iterator(rc, deref mm) |> Iterator.map(x -> { discard deref mm; x })
+        Map.iterator(rc, deref mm) |> Iterator.map(eidentity)
 
     ///
     /// Returns an iterator over keys in `m`.
     ///
     pub def iteratorKeys(rc: Region[r1], m: MutMap[k, v, r2]): Iterator[k, r1 + r2, r1] \ { r1, r2 } =
         let MutMap(_, mm) = m;
-        Map.iteratorKeys(rc, deref mm) |> Iterator.map(x -> { discard deref mm; x })
+        Map.iteratorKeys(rc, deref mm) |> Iterator.map(eidentity)
 
     ///
     /// Returns an iterator over values in `m`.
     ///
     pub def iteratorValues(rc: Region[r1], m: MutMap[k, v, r2]): Iterator[v, r1 + r2, r1] \ { r1, r2 } =
         let MutMap(_, mm) = m;
-        Map.iteratorValues(rc, deref mm) |> Iterator.map(x -> { discard deref mm; x })
+        Map.iteratorValues(rc, deref mm) |> Iterator.map(eidentity)
 
     ///
     /// Extracts a range of key-value pairs from the mutable map `m`.

@@ -18,8 +18,11 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Denotation.{Latticenal, Relational}
 import ca.uwaterloo.flix.language.ast.Ast._
+import ca.uwaterloo.flix.language.ast.Type.eraseAliases
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
+import ca.uwaterloo.flix.language.ast.shared.Fixity
 import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, Kind, LoweredAst, Name, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugLoweredAst
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 /**
@@ -124,6 +127,7 @@ object Lowering {
     lazy val Boxed: Type = Type.mkEnum(Enums.Boxed, Nil, SourceLocation.Unknown)
 
     lazy val ChannelMpmcAdmin: Type = Type.mkEnum(Enums.ChannelMpmcAdmin, Nil, SourceLocation.Unknown)
+    lazy val ChannelMpmc: Type = Type.Cst(TypeConstructor.Enum(Enums.ChannelMpmc, Kind.Star ->: Kind.Eff ->: Kind.Star), SourceLocation.Unknown)
 
     lazy val ConcurrentReentrantLock: Type = Type.mkEnum(Enums.ConcurrentReentrantLock, Nil, SourceLocation.Unknown)
 
@@ -148,6 +152,7 @@ object Lowering {
     val sigs = ParOps.parMapValues(root.sigs)(visitSig)
     val instances = ParOps.parMapValues(root.instances)(insts => insts.map(visitInstance))
     val enums = ParOps.parMapValues(root.enums)(visitEnum)
+    val structs = Map.empty[Symbol.StructSym, LoweredAst.Struct]
     val restrictableEnums = ParOps.parMapValues(root.restrictableEnums)(visitRestrictableEnum)
     val effects = ParOps.parMapValues(root.effects)(visitEffect)
     val aliases = ParOps.parMapValues(root.typeAliases)(visitTypeAlias)
@@ -160,7 +165,7 @@ object Lowering {
       case (_, v) => v.sym -> v
     }
 
-    LoweredAst.Root(traits, instances, sigs, defs, newEnums, effects, aliases, root.entryPoint, root.reachable, root.sources, root.traitEnv, root.eqEnv)
+    LoweredAst.Root(traits, instances, sigs, defs, newEnums, structs, effects, aliases, root.entryPoint, root.reachable, root.sources, root.traitEnv, root.eqEnv)
   }
 
   /**
@@ -572,6 +577,11 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expr.TryCatch(e, rs, t, eff, loc)
 
+    case TypedAst.Expr.Throw(exp, tpe, eff, loc) =>
+      val e = visitExp(exp)
+      val t = visitType(tpe)
+      LoweredAst.Expr.ApplyAtomic(AtomicOp.Throw, List(e), t, eff, loc)
+
     case TypedAst.Expr.TryWith(exp, sym, rules, tpe, eff, loc) =>
       val e = visitExp(exp)
       val rs = rules.map(visitHandlerRule)
@@ -878,15 +888,17 @@ object Lowering {
       case _ => tpe0 // Performance: Reuse tpe0.
     }
 
-    // Rewrite Sender[t, _] to Concurrent/Channel.Mpmc[t]
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Sender, loc), tpe, _), _, _) =>
-      val t = visitType(tpe)
-      Type.Apply(Type.Cst(TypeConstructor.Enum(Enums.ChannelMpmc, Kind.Star ->: Kind.Star), loc), t, loc)
+    // Rewrite Sender[t, r] to Concurrent.Channel.Mpmc[t, r]
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Sender, loc), tpe1, _), tpe2, _) =>
+      val t1 = visitType(tpe1)
+      val t2 = visitType(tpe2)
+      mkChannelTpe(t1, t2, loc)
 
-    // Rewrite Receiver[t, _] to Concurrent/Channel.Mpmc[t]
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Receiver, loc), tpe, _), _, _) =>
-      val t = visitType(tpe)
-      Type.Apply(Type.Cst(TypeConstructor.Enum(Enums.ChannelMpmc, Kind.Star ->: Kind.Star), loc), t, loc)
+    // Rewrite Receiver[t, r] to Concurrent.Channel.Mpmc[t, r]
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Receiver, loc), tpe1, _), tpe2, _) =>
+      val t1 = visitType(tpe1)
+      val t2 = visitType(tpe2)
+      mkChannelTpe(t1, t2, loc)
 
     case Type.Apply(tpe1, tpe2, loc) =>
       val t1 = visitType(tpe1)
@@ -1214,7 +1226,7 @@ object Lowering {
   /**
     * Constructs a `Fixpoint/Ast/Datalog.Fixity` from the given fixity `f`.
     */
-  private def mkFixity(f: Ast.Fixity, loc: SourceLocation): LoweredAst.Expr = f match {
+  private def mkFixity(f: Fixity, loc: SourceLocation): LoweredAst.Expr = f match {
     case Fixity.Loose =>
       val innerExp = LoweredAst.Expr.Cst(Ast.Constant.Unit, Type.Unit, loc)
       mkTag(Enums.Fixity, "Loose", innerExp, Types.Fixity, loc)
@@ -1467,10 +1479,7 @@ object Lowering {
       case ((LoweredAst.SelectChannelRule(sym, chan, exp), (chSym, _)), i) =>
         val locksSym = mkLetSym("locks", loc)
         val pat = mkTuplePattern(List(LoweredAst.Pattern.Cst(Ast.Constant.Int32(i), Type.Int32, loc), LoweredAst.Pattern.Var(locksSym, locksType, loc)), loc)
-        val getTpe = Type.eraseTopAliases(chan.tpe) match {
-          case Type.Apply(_, t, _) => t
-          case _ => throw InternalCompilerException("Unexpected channel type found.", loc)
-        }
+        val (getTpe, _) = extractChannelTpe(chan.tpe)
         val get = LoweredAst.Expr.Def(Defs.ChannelUnsafeGetAndUnlock, Type.mkIoUncurriedArrow(List(chan.tpe, locksType), getTpe, loc), loc)
         val getExp = LoweredAst.Expr.Apply(get, List(LoweredAst.Expr.Var(chSym, chan.tpe, loc), LoweredAst.Expr.Var(locksSym, locksType, loc)), getTpe, eff, loc)
         val e = LoweredAst.Expr.Let(sym, Ast.Modifiers.Empty, getExp, exp, exp.tpe, eff, loc)
@@ -1644,10 +1653,25 @@ object Lowering {
   }
 
   /**
-    * The type of a channel which can transmit variables of type `tpe`
+    * The type of a channel which can transmit variables of type `tpe`.
     */
   private def mkChannelTpe(tpe: Type, loc: SourceLocation): Type = {
-    Type.Apply(Type.Cst(TypeConstructor.Enum(Enums.ChannelMpmc, Kind.Star ->: Kind.Star), loc), tpe, loc)
+    mkChannelTpe(tpe, Type.IO, loc)
+  }
+
+  /**
+    * The type of a channel which can transmit variables of type `tpe1` in region `tpe2`.
+    */
+  private def mkChannelTpe(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = {
+    Type.Apply(Type.Apply(Types.ChannelMpmc, tpe1, loc), tpe2, loc)
+  }
+
+  /**
+    * Returns `(t1, t2)` where `tpe = Concurrent.Channel.Mpmc[t1, t2]`.
+    */
+  private def extractChannelTpe(tpe: Type): (Type, Type) = eraseAliases(tpe) match {
+    case Type.Apply(Type.Apply(Types.ChannelMpmc, elmType, _), regionType, _) => (elmType, regionType)
+    case _ => throw InternalCompilerException(s"Cannot interpret '$tpe' as a channel type", tpe.loc)
   }
 
   /**

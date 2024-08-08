@@ -16,19 +16,21 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.ast.Ast.{Denotation, EliminatedBy, Source}
+import ca.uwaterloo.flix.language.ast.Ast.{Denotation, EliminatedBy}
+import ca.uwaterloo.flix.language.ast.shared.{Fixity, Source}
 import ca.uwaterloo.flix.language.phase.Monomorpher
 import ca.uwaterloo.flix.util.collection.ListMap
 
 object LoweredAst {
 
-  val empty: Root = Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, None, Set.empty, Map.empty, Map.empty, ListMap.empty)
+  val empty: Root = Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, None, Set.empty, Map.empty, Map.empty, ListMap.empty)
 
   case class Root(traits: Map[Symbol.TraitSym, Trait],
                   instances: Map[Symbol.TraitSym, List[Instance]],
                   sigs: Map[Symbol.SigSym, Sig],
                   defs: Map[Symbol.DefnSym, Def],
                   enums: Map[Symbol.EnumSym, Enum],
+                  structs: Map[Symbol.StructSym, Struct],
                   effects: Map[Symbol.EffectSym, Effect],
                   typeAliases: Map[Symbol.TypeAliasSym, TypeAlias],
                   entryPoint: Option[Symbol.DefnSym],
@@ -39,7 +41,7 @@ object LoweredAst {
 
   case class Trait(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.TraitSym, tparam: TypeParam, superTraits: List[Ast.TypeConstraint], assocs: List[AssocTypeSig], signatures: List[Sig], laws: List[Def], loc: SourceLocation)
 
-  case class Instance(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, clazz: Ast.TraitSymUse, tpe: Type, tconstrs: List[Ast.TypeConstraint], assocs: List[AssocTypeDef], defs: List[Def], ns: Name.NName, loc: SourceLocation)
+  case class Instance(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, trt: Ast.TraitSymUse, tpe: Type, tconstrs: List[Ast.TypeConstraint], assocs: List[AssocTypeDef], defs: List[Def], ns: Name.NName, loc: SourceLocation)
 
   case class Sig(sym: Symbol.SigSym, spec: Spec, exp: Option[Expr])
 
@@ -48,6 +50,8 @@ object LoweredAst {
   case class Spec(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, tparams: List[TypeParam], fparams: List[FormalParam], declaredScheme: Scheme, retTpe: Type, eff: Type, tconstrs: List[Ast.TypeConstraint], loc: SourceLocation)
 
   case class Enum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[TypeParam], derives: Ast.Derivations, cases: Map[Symbol.CaseSym, Case], tpe: Type, loc: SourceLocation)
+
+  case class Struct(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.StructSym, tparams: List[TypeParam], fields: Map[Name.StructField, StructField], tpe: Type, loc: SourceLocation)
 
   case class TypeAlias(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.TypeAliasSym, tparams: List[TypeParam], tpe: Type, loc: SourceLocation)
 
@@ -183,7 +187,7 @@ object LoweredAst {
 
     object Body {
 
-      case class Atom(pred: Name.Pred, den: Denotation, polarity: Ast.Polarity, fixity: Ast.Fixity, terms: List[Pattern], tpe: Type, loc: SourceLocation) extends Predicate.Body
+      case class Atom(pred: Name.Pred, den: Denotation, polarity: Ast.Polarity, fixity: Fixity, terms: List[Pattern], tpe: Type, loc: SourceLocation) extends Predicate.Body
 
       case class Functional(outVars: List[Symbol.VarSym], exp: Expr, loc: SourceLocation) extends Predicate.Body
 
@@ -193,9 +197,9 @@ object LoweredAst {
 
   }
 
-  case class Attribute(name: String, tpe: Type, loc: SourceLocation)
-
   case class Case(sym: Symbol.CaseSym, tpe: Type, sc: Scheme, loc: SourceLocation)
+
+  case class StructField(sym: Symbol.StructFieldSym, tpe: Type, loc: SourceLocation)
 
   case class Constraint(cparams: List[ConstraintParam], head: Predicate.Head, body: List[Predicate.Body], loc: SourceLocation)
 

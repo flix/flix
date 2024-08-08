@@ -23,6 +23,7 @@ import ca.uwaterloo.flix.language.ast.Type.eraseAliases
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor}
+import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
 /**
@@ -45,7 +46,7 @@ object PredDeps {
     }, _ + _)
 
     Validation.success(root.copy(precedenceGraph = g))
-  }
+  }(DebugValidation())
 
   /**
     * Returns the term types of the given relational or latticenal type.
@@ -62,10 +63,10 @@ object PredDeps {
         case Type.Cst(TypeConstructor.Unit, _) => (Nil, den)
         case _ => (List(t), den) // Unary
       }
-    case _: Type.Var =>
-      // This could occur when querying or projecting a non-existent predicate
+    case _ =>
+      // Resilience: We would want a relation or lattice, but type inference may have failed.
+      // If so, we simply return the empty list of term types with a relational denotation.
       (Nil, Denotation.Relational)
-    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe.'", tpe.loc)
   }
 
   /**
@@ -229,6 +230,9 @@ object PredDeps {
         case (acc, CatchRule(_, _, e)) => acc + visitExp(e)
       }
 
+    case Expr.Throw(exp, _, _, _) =>
+      visitExp(exp)
+
     case Expr.TryWith(exp, _, rules, _, _, _) =>
       rules.foldLeft(visitExp(exp)) {
         case (acc, HandlerRule(_, _, e)) => acc + visitExp(e)
@@ -327,7 +331,6 @@ object PredDeps {
 
     case Expr.Error(_, _, _) =>
       LabelledPrecedenceGraph.empty
-
   }
 
   /**

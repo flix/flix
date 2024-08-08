@@ -48,7 +48,7 @@ object Debug {
     */
   def startRecording()(implicit flix: Flix): Unit = {
     graphDir = flix.options.output.getOrElse(Path.of("./build/")).resolve("constraint-graphs")
-    Files.createDirectory(graphDir)
+    Files.createDirectories(graphDir)
     record = true
   }
 
@@ -136,6 +136,9 @@ object Debug {
     */
   private def toSubDot(constr: TypeConstraint): String = constr match {
     case TypeConstraint.Equality(tpe1, tpe2, _) => s"""${dotId(constr)} [label = "$tpe1 ~ $tpe2"];"""
+    case TypeConstraint.EqJvmConstructor(mvar, clazz, _, _) => s"""${dotId(constr)} [label = "$mvar # $clazz"];"""
+    case TypeConstraint.EqJvmMethod(mvar, tpe, methodName, tpes, _) => s"""${dotId(constr)} [label = "$mvar # $tpe.${methodName.name}(${tpes.mkString(",")})"];"""
+    case TypeConstraint.EqStaticJvmMethod(mvar, clazz, methodName, tpes, _) => s"""${dotId(constr)} [label = "$mvar # ${clazz.getName}.${methodName.name}(${tpes.mkString(",")})"];"""
     case TypeConstraint.Trait(sym, tpe, _) => s"""${dotId(constr)} [label = "$sym[$tpe]"];"""
     case TypeConstraint.Purification(sym, eff1, eff2, _, nested) =>
       val header = s"""${dotId(constr)} [label = "$eff1 ~ ($eff2)[$sym ↦ Pure]"];"""

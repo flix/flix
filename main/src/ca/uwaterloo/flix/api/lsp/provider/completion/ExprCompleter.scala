@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst
 
 object ExprCompleter extends Completer {
 
-  def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[Completion] = {
+  def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] = {
     DefCompleter.getCompletions(context) ++
       LabelCompleter.getCompletions(context) ++
       KeywordExprCompleter.getCompletions(context) ++

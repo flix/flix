@@ -1374,7 +1374,6 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError](result)
-    rejectError[RedundancyError](result)
   }
 
   test("UnusedVarSym.PreviousError.02") {
@@ -1385,7 +1384,6 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError](result)
-    rejectError[RedundancyError](result)
   }
 
   test("UselessExpression.01") {

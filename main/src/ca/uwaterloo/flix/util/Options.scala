@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.util
 
 import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.util.SubEffectLevel.toInt
 
 import java.nio.file.Path
 
@@ -45,12 +46,14 @@ object Options {
     xnoboolspecialcases = false,
     xnoboolunif = false,
     xnooptimizer = false,
-    xprintphase = Set.empty,
+    xprintphases = false,
     xnoqmc = false,
+    xnodeprecated = false,
     xsummary = false,
     xfuzzer = false,
-    xparser = false,
     xprinttyper = None,
+    xverifyeffects = false,
+    xsubeffecting = SubEffectLevel.Nothing,
     XPerfN = None,
     XPerfFrontend = false
   )
@@ -82,7 +85,7 @@ object Options {
   * @param lib                 selects the level of libraries to include.
   * @param entryPoint          specifies the main entry point.
   * @param explain             enables additional explanations.
-  * @param githubToken           the API key to use for GitHub dependency resolution.
+  * @param githubToken         the API key to use for GitHub dependency resolution.
   * @param incremental         enables incremental compilation.
   * @param installDeps         enables automatic installation of dependencies.
   * @param json                enable json output.
@@ -97,10 +100,10 @@ object Options {
   * @param xnoboolcache        disable Boolean caches.
   * @param xnoboolspecialcases disable Boolean unification shortcuts.
   * @param xnoqmc              enables the Quine McCluskey algorihm when using BDDs.
-  * @param xprintphase         prints the chosen phase ASTs to the build folder.
+  * @param xprintphases        prints all ASTs to the build folder after each phase.
   * @param xsummary            prints a summary of the compiled modules.
+  * @param xnodeprecated       disables deprecated features.
   * @param xfuzzer             enables compiler fuzzing.
-  * @param xparser             disables new lexer and parser.
   */
 case class Options(lib: LibLevel,
                    entryPoint: Option[Symbol.DefnSym],
@@ -123,11 +126,13 @@ case class Options(lib: LibLevel,
                    xnoboolunif: Boolean,
                    xnoqmc: Boolean,
                    xnooptimizer: Boolean,
-                   xprintphase: Set[String],
+                   xprintphases: Boolean,
+                   xnodeprecated: Boolean,
                    xsummary: Boolean,
                    xfuzzer: Boolean,
-                   xparser: Boolean,
                    xprinttyper: Option[String],
+                   xverifyeffects: Boolean,
+                   xsubeffecting: SubEffectLevel,
                    XPerfFrontend: Boolean,
                    XPerfN: Option[Int],
                   )
@@ -164,5 +169,46 @@ object LibLevel {
     * Include the full standard library.
     */
   case object All extends LibLevel
+
+}
+
+/**
+  * Compare [[LibLevel]]s based on how much sub-effecting they allow.
+  */
+sealed trait SubEffectLevel extends Ordered[SubEffectLevel] {
+  override def compare(that: SubEffectLevel): Int = toInt(this).compare(toInt(that))
+}
+
+object SubEffectLevel {
+
+  /**
+    * Do not use sub-effecting anywhere.
+    */
+  case object Nothing extends SubEffectLevel
+
+  /**
+    * Allow sub-effecting on lambdas.
+    */
+  case object Lambdas extends SubEffectLevel
+
+  /**
+    * Allow sub-effecting on lambdas and instance def bodies
+    */
+  case object LambdasAndInstances extends SubEffectLevel
+
+  /**
+    * Allow sub-effecting on lambdas and def bodies
+    */
+  case object LambdasAndDefs extends SubEffectLevel
+
+  /**
+    * Returns an integer where a larger number means more sub-effecting.
+    */
+  def toInt(level: SubEffectLevel): Int = level match {
+    case Nothing => 0
+    case Lambdas => 1
+    case LambdasAndInstances => 2
+    case LambdasAndDefs => 3
+  }
 
 }

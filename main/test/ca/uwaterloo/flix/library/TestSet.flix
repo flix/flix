@@ -1117,6 +1117,52 @@ def toList03(): Bool = Set.toList(Set#{1, 2}) == 1 :: 2 :: Nil
 def toList04(): Bool = Set.toList(Set#{1, 2, 3}) == 1 :: 2 :: 3 :: Nil
 
 /////////////////////////////////////////////////////////////////////////////
+// toArray                                                                 //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def toArray01(): Bool = region rc {
+    Array.sameElements(Set.toArray(rc, (Set#{}: Set[Unit])), (Array#{} @ rc))
+}
+
+@test
+def toArray02(): Bool = region rc {
+    Array.sameElements(Set.toArray(rc, Set#{1}), Array#{1} @ rc)
+}
+
+@test
+def toArray03(): Bool = region rc {
+    Array.sameElements(Set.toArray(rc, Set#{1, 2}), Array#{1, 2} @ rc)
+}
+
+@test
+def toArray04(): Bool = region rc {
+    Array.sameElements(Set.toArray(rc, Set#{1, 2, 3}), Array#{1, 2, 3} @ rc)
+}
+
+@test
+def toArray05(): Bool = region rc {
+    Array.sameElements(Set.toArray(rc, Set#{3, 2, 1}), Array#{1, 2, 3} @ rc)
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// toVector                                                                //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def toVector01(): Bool = Set.toVector((Set#{}: Set[Unit])) == Vector.empty()
+
+@test
+def toVector02(): Bool = Set.toVector(Set#{1}) == Vector#{1}
+
+@test
+def toVector03(): Bool = Set.toVector(Set#{1, 2}) == Vector#{1, 2}
+
+@test
+def toVector04(): Bool = Set.toVector(Set#{1, 2, 3}) == Vector#{1, 2, 3}
+
+@test
+def toVector05(): Bool = Set.toVector(Set#{3, 2, 1}) == Vector#{1, 2, 3}
+
+/////////////////////////////////////////////////////////////////////////////
 // toChain                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 

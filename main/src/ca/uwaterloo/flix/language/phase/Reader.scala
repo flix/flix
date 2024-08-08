@@ -18,12 +18,12 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.{Bootstrap, Flix}
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.Ast.{Input, Source}
-import ca.uwaterloo.flix.language.ast.{Ast, ReadAst}
-import ca.uwaterloo.flix.util.{StreamOps, Validation}
+import ca.uwaterloo.flix.language.ast.shared.{Input, Source}
+import ca.uwaterloo.flix.language.ast.{ReadAst, SourceLocation}
+import ca.uwaterloo.flix.language.dbg.AstPrinter._
+import ca.uwaterloo.flix.util.{InternalCompilerException, StreamOps, Validation}
 import ca.uwaterloo.flix.util.collection.MultiMap
 
-import java.io.IOException
 import java.nio.file.{Files, Path}
 import java.util.zip.ZipFile
 import scala.collection.mutable
@@ -37,34 +37,41 @@ object Reader {
   /**
     * Reads the given source inputs into memory.
     */
-  def run(inputs: List[Input])(implicit flix: Flix): Validation[ReadAst.Root, CompilationMessage] =
+  def run(inputs: List[Input], names: MultiMap[List[String], String])(implicit flix: Flix): Validation[ReadAst.Root, CompilationMessage] =
     flix.phase("Reader") {
 
       val result = mutable.Map.empty[Source, Unit]
       for (input <- inputs) {
         input match {
-          case Input.Text(name, text, stable) =>
-            val src = Source(input, text.toCharArray, stable)
+          case Input.Text(_, text, _) =>
+            val src = Source(input, text.toCharArray)
+            result += (src -> ())
+
+          case Input.StandardLibrary(_, text) =>
+            val src = Source(input, text.toCharArray)
             result += (src -> ())
 
           case Input.TxtFile(path) =>
             val bytes = Files.readAllBytes(path)
             val str = new String(bytes, flix.defaultCharset)
             val arr = str.toCharArray
-            val src = Source(input, arr, stable = false)
+            val src = Source(input, arr)
             result += (src -> ())
 
           case Input.PkgFile(path) =>
             for (src <- unpack(path)) {
               result += (src -> ())
             }
+
+          case Input.FileInPackage(_, _, _) => throw InternalCompilerException("Impossible.", SourceLocation.Unknown)
+
+          case Input.Unknown => throw InternalCompilerException("Impossible.", SourceLocation.Unknown)
         }
       }
 
       val sources = result.toMap
-      val names = findClasses()
       Validation.success(ReadAst.Root(sources, names))
-    }
+    }(DebugValidation()(DebugNoOp()))
 
   /**
     * Returns a list of sources extracted from the given flix package at path `p`.
@@ -83,56 +90,16 @@ object Reader {
         val entry = iterator.nextElement()
         val name = entry.getName
         if (name.endsWith(".flix")) {
-          val fullName = p.getFileName.toString + ":" + name
+          val virtualPath = p.getFileName.toString + ":" + name
           val bytes = StreamOps.readAllBytes(zip.getInputStream(entry))
           val str = new String(bytes, flix.defaultCharset)
           val arr = str.toCharArray
-          result += Source(Ast.Input.Text(fullName, str, stable = false), arr, stable = false)
+          val input = Input.FileInPackage(p, virtualPath, str)
+          result += Source(input, arr)
         }
       }
       result.toList
     }.get // TODO Return a Result instead, see https://github.com/flix/flix/issues/3132
   }
 
-  /**
-    * Returns the java classes in the JDK classlist file.
-    */
-  private def findClasses(): MultiMap[List[String], String] = sys.env.get("JAVA_HOME") match {
-    case None => MultiMap.empty
-    case Some(home) =>
-      val path = java.nio.file.Paths.get(home, "lib", "classlist")
-      if (Files.exists(path) && Files.isRegularFile(path) && Files.isReadable(path)) {
-        try {
-          val fileContents = Files.readString(path)
-          fileContents.linesIterator
-            // Filter out comments
-            .filter(line => !line.startsWith("#"))
-            // Filter out inner classes
-            .filter(clazz => !clazz.contains("$"))
-            // Filter out lambda-invoke/lambda-proxy lines
-            .filter(clazz => !clazz.contains("@"))
-            // Create a multimap from all class path prefixes to the next packages/classes
-            // I.e java.lang.string
-            // [] => {java}
-            // [java] => {lang}
-            // [java, lang] => {String}
-            .foldLeft[MultiMap[List[String], String]](MultiMap.empty) {
-              case (acc, clazz) =>
-                val clazzPath = clazz.split('/').toList
-
-                clazzPath.inits.foldLeft(acc) {
-                  // Case 1: Nonempty path: split prefix and package
-                  case (acc1, prefix :+ pkg) => acc1 + (prefix -> pkg)
-                  // Case 2: Empty path: skip it
-                  case (acc1, _) => acc1
-                }
-            }
-        } catch {
-          // If any IO error occurs, i.e the file not existing in the users JDK, we return an empty map.
-          case _: IOException => MultiMap.empty
-        }
-      } else {
-        MultiMap.empty
-      }
-  }
 }

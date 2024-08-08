@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Modifiers
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, LoweredAst, MonoAst, Name, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnvironment, Substitution, Unification}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.collection.{ListMap, ListOps}
@@ -115,6 +116,8 @@ object Monomorpher {
       case Kind.Predicate => Type.mkAnyType(tpe0.loc)
       case Kind.CaseSet(sym) => Type.Cst(TypeConstructor.CaseSet(SortedSet.empty, sym), tpe0.loc)
       case Kind.Arrow(_, _) => Type.mkAnyType(tpe0.loc)
+      case Kind.JvmConstructorOrMethod => throw InternalCompilerException(s"Unexpected type: '$tpe0'.", tpe0.loc)
+      case Kind.Error => throw InternalCompilerException(s"Unexpected type '$tpe0'.", tpe0.loc)
     }
 
     /**
@@ -232,7 +235,7 @@ object Monomorpher {
       *
       * Note: This is not synchronized.
       */
-    def nonEmpty: Boolean = {
+    def nonEmpty: Boolean = synchronized {
       !defQueue.isEmpty
     }
 
@@ -241,7 +244,7 @@ object Monomorpher {
       *
       * Note: This is not synchronized.
       */
-    def enqueue(sym: Symbol.DefnSym, defn: LoweredAst.Def, subst: StrictSubstitution): Unit = {
+    def enqueue(sym: Symbol.DefnSym, defn: LoweredAst.Def, subst: StrictSubstitution): Unit = synchronized {
       defQueue.add((sym, defn, subst))
     }
 
@@ -250,7 +253,7 @@ object Monomorpher {
       *
       * Note: This is not synchronized.
       */
-    def dequeueAll: Array[(Symbol.DefnSym, LoweredAst.Def, StrictSubstitution)] = {
+    def dequeueAll: Array[(Symbol.DefnSym, LoweredAst.Def, StrictSubstitution)] = synchronized {
       val r = defQueue.toArray(Array.empty[(Symbol.DefnSym, LoweredAst.Def, StrictSubstitution)])
       defQueue.clear()
       r
@@ -395,9 +398,11 @@ object Monomorpher {
         MonoAst.Effect(doc, ann, mod, sym, ops, loc)
     }
 
+    val structs = Map.empty[Symbol.StructSym, MonoAst.Struct]
     // Reassemble the AST.
     MonoAst.Root(
       ctx.toMap,
+      structs,
       effects,
       root.entryPoint,
       root.reachable,
@@ -732,27 +737,29 @@ object Monomorpher {
     */
   private def specializeDef(defn: LoweredAst.Def, tpe: Type)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): Symbol.DefnSym = {
     // Unify the declared and actual type to obtain the substitution map.
-    val subst = infallibleUnify(defn.spec.declaredScheme.base, tpe)
+    val subst = infallibleUnify(defn.spec.declaredScheme.base, tpe, defn.sym)
 
     // Check whether the function definition has already been specialized.
-    ctx.getDef2Def(defn.sym, tpe) match {
-      case None =>
-        // Case 1: The function has not been specialized.
-        // Generate a fresh specialized definition symbol.
-        val freshSym = Symbol.freshDefnSym(defn.sym)
+    ctx synchronized {
+      ctx.getDef2Def(defn.sym, tpe) match {
+        case None =>
+          // Case 1: The function has not been specialized.
+          // Generate a fresh specialized definition symbol.
+          val freshSym = Symbol.freshDefnSym(defn.sym)
 
-        // Register the fresh symbol (and actual type) in the symbol2symbol map.
-        ctx.putDef2Def(defn.sym, tpe, freshSym)
+          // Register the fresh symbol (and actual type) in the symbol2symbol map.
+          ctx.putDef2Def(defn.sym, tpe, freshSym)
 
-        // Enqueue the fresh symbol with the definition and substitution.
-        ctx.enqueue(freshSym, defn, subst)
+          // Enqueue the fresh symbol with the definition and substitution.
+          ctx.enqueue(freshSym, defn, subst)
 
-        // Now simply refer to the freshly generated symbol.
-        freshSym
-      case Some(specializedSym) =>
-        // Case 2: The function has already been specialized.
-        // Simply refer to the already existing specialized symbol.
-        specializedSym
+          // Now simply refer to the freshly generated symbol.
+          freshSym
+        case Some(specializedSym) =>
+          // Case 2: The function has already been specialized.
+          // Simply refer to the already existing specialized symbol.
+          specializedSym
+      }
     }
 
   }
@@ -786,12 +793,12 @@ object Monomorpher {
   /**
     * Unifies `tpe1` and `tpe2` which must be unifiable.
     */
-  private def infallibleUnify(tpe1: Type, tpe2: Type)(implicit root: LoweredAst.Root, flix: Flix): StrictSubstitution = {
+  private def infallibleUnify(tpe1: Type, tpe2: Type, sym: Symbol.DefnSym)(implicit root: LoweredAst.Root, flix: Flix): StrictSubstitution = {
     Unification.unifyTypes(tpe1, tpe2, RigidityEnv.empty) match {
       case Result.Ok((subst, econstrs)) => // TODO ASSOC-TYPES consider econstrs
         StrictSubstitution(subst, root.eqEnv)
       case Result.Err(_) =>
-        throw InternalCompilerException(s"Unable to unify: '$tpe1' and '$tpe2'.", tpe1.loc)
+        throw InternalCompilerException(s"Unable to unify: '$tpe1' and '$tpe2'.\nIn '${sym}'", tpe1.loc)
     }
   }
 

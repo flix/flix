@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.ast.Symbol.EnumSym
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, ParYieldFragment, Pattern, Root}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
+import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.language.errors.NonExhaustiveMatchError
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
@@ -122,7 +123,7 @@ object PatMatch {
       val errors = classDefErrs ++ defErrs ++ instanceDefErrs ++ sigsErrs
 
       Validation.toSuccessOrSoftFailure(root, errors)
-    }
+    }(DebugValidation())
 
   /**
     * Check that all patterns in an expression are exhaustive
@@ -196,6 +197,8 @@ object PatMatch {
       case Expr.TryCatch(exp, rules, _, _, _) =>
         val ruleExps = rules.map(_.exp)
         (exp :: ruleExps).flatMap(visitExp)
+
+      case TypedAst.Expr.Throw(exp, _, _, _) => visitExp(exp)
 
       case Expr.TryWith(exp, _, rules, _, _, _) =>
         val ruleExps = rules.map(_.exp)
@@ -619,13 +622,16 @@ object PatMatch {
     case Some(TypeConstructor.Vector) => 1
     case Some(TypeConstructor.Ref) => 0
     case Some(TypeConstructor.Lazy) => 1
-    case Some(TypeConstructor.Enum(sym, kind)) => 0 // TODO: Correct?
-    case Some(TypeConstructor.Native(clazz)) => 0
+    case Some(TypeConstructor.Enum(_, _)) => 0
+    case Some(TypeConstructor.Native(_)) => 0
     case Some(TypeConstructor.Tuple(l)) => l
     case Some(TypeConstructor.RecordRowExtend(_)) => 2
     case Some(TypeConstructor.SchemaRowExtend(_)) => 2
-    case Some(TypeConstructor.Error(_)) => 0
-    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
+    case Some(TypeConstructor.Error(_, _)) => 0
+
+    case _ =>
+      // Resilience: OK to throw. We will have replaced the non-star type with Type.Error of star kind.
+      throw InternalCompilerException(s"Unexpected type: '$tpe' with wrong kind.", tpe.loc)
   }
 
   /**
@@ -705,8 +711,6 @@ object PatMatch {
     case Pattern.Cst(Ast.Constant.Int64(_), _, _) => TyCon.Int64
     case Pattern.Cst(Ast.Constant.BigInt(_), _, _) => TyCon.BigInt
     case Pattern.Cst(Ast.Constant.Str(_), _, _) => TyCon.Str
-    case Pattern.Cst(Ast.Constant.Regex(_), _, _) => throw InternalCompilerException("unexpected regex pattern", pattern.loc)
-    case Pattern.Cst(Ast.Constant.Null, _, _) => throw InternalCompilerException("unexpected null pattern", pattern.loc)
     case Pattern.Tag(Ast.CaseSymUse(sym, _), pat, _, _) =>
       val args = pat match {
         case Pattern.Cst(Ast.Constant.Unit, _, _) => List.empty[TyCon]
@@ -723,7 +727,16 @@ object PatMatch {
       val pVal = patToCtor(pat)
       TyCon.Record(patsVal, pVal)
     case Pattern.RecordEmpty(_, _) => TyCon.RecordEmpty
+
     case Pattern.Error(_, _) => TyCon.Wild
+
+    case Pattern.Cst(Ast.Constant.Regex(_), _, _) =>
+      // Resilience: OK to throw. We will have replaced the erroneous pattern by Pattern.Error.
+      throw InternalCompilerException("Unexpected Regex pattern", pattern.loc)
+
+    case Pattern.Cst(Ast.Constant.Null, _, _) =>
+      // Resilience: OK to throw. We will have replaced the erroneous pattern by Pattern.Error.
+      throw InternalCompilerException("Unexpected Null pattern", pattern.loc)
   }
 
   /**

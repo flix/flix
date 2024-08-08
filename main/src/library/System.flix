@@ -20,6 +20,10 @@ mod System {
     ///
     mod StdIn {
 
+        import java.io.BufferedReader
+        import java.io.InputStreamReader
+        import java.lang.{System => JSystem}
+
         ///
         /// Returns an iterator over lines from the standard input stream.
         ///
@@ -31,19 +35,13 @@ mod System {
         /// See also `Console.readLine` for reading from the console.
         ///
         pub def readLines(rc: Region[r]): Iterator[String, IO + r, r] \ { r, IO } =
-            import static java_get_field java.lang.System.in: ##java.io.InputStream \ IO as getSystemIn;
-            import java_new java.io.InputStreamReader(##java.io.InputStream): ##java.io.InputStreamReader \ IO as newInputStream;
-            import java_new java.io.BufferedReader(##java.io.Reader): ##java.io.BufferedReader \ IO as newBufferedReader;
-            // note: BufferedReader.readLine can block
-            import java.io.BufferedReader.readLine(): String \ IO as brReadLine;
-
-            let br = newBufferedReader(checked_cast(newInputStream(getSystemIn()))); // up-cast to superclass
+            let br = new BufferedReader(new InputStreamReader(JSystem.in));
             let nextLine = ref None @ rc;
             let next = () -> {
                 let l = match deref nextLine {
                     case Some(line) => if (Object.isNull(line)) None else Some(line)
                     case None =>
-                        let n = brReadLine(br);
+                        let n = br.readLine();
                         Ref.put(Some(n), nextLine);
                         if (Object.isNull(n)) None else Some(n)
                 };
@@ -59,40 +57,37 @@ mod System {
     ///
     mod StdOut {
 
+        import java.lang.{System => JSystem}
+        import java.io.PrintStream
+
         ///
         /// Prints the given string `s` to the standard output stream.
         ///
         pub def print(s: String): Unit \ IO =
-            import java.io.PrintStream.print(String): Unit \ IO;
-            s |> print(getOutputStream())
+            getOutputStream().print(s)
 
         ///
         /// Prints the given string `s` and a newline to the standard output stream.
         ///
         pub def println(s: String): Unit \ IO =
-            import java.io.PrintStream.println(String): Unit \ IO;
-            s |> println(getOutputStream())
+            getOutputStream().print(s)
 
         ///
         /// Prints a newline to the standard output stream.
         ///
         pub def newLine(): Unit \ IO =
-            import java.io.PrintStream.println(): Unit \ IO;
-            getOutputStream() |> println
+            getOutputStream().println()
 
         ///
         /// Flushes the standard output stream.
         ///
         pub def flush(): Unit \ IO =
-            import java.io.PrintStream.flush(): Unit \ IO;
-            getOutputStream() |> flush
+            getOutputStream().flush()
 
         ///
         /// Returns the standard output stream.
         ///
-        def getOutputStream(): ##java.io.PrintStream \ IO =
-            import static java_get_field java.lang.System.out: ##java.io.PrintStream \ IO as getOut;
-            getOut()
+        def getOutputStream(): PrintStream \ IO = JSystem.out
 
     }
 
@@ -101,40 +96,37 @@ mod System {
     ///
     mod StdErr {
 
+        import java.lang.{System => JSystem}
+        import java.io.PrintStream
+
         ///
         /// Prints the given string `s` to the standard error stream.
         ///
         pub def print(s: String): Unit \ IO =
-            import java.io.PrintStream.print(String): Unit \ IO;
-            s |> print(getErrorStream())
+            getErrorStream().print(s)
 
         ///
         /// Prints the given string `s` and a newline to the standard error stream.
         ///
         pub def println(s: String): Unit \ IO =
-            import java.io.PrintStream.println(String): Unit \ IO;
-            s |> println(getErrorStream())
+            getErrorStream().println(s)
 
         ///
         /// Prints a newline to the standard error stream.
         ///
         pub def newLine(): Unit \ IO =
-            import java.io.PrintStream.println(): Unit \ IO;
-            getErrorStream() |> println
+            getErrorStream().println()
 
         ///
         /// Flushes the standard error stream.
         ///
         pub def flush(): Unit \ IO =
-            import java.io.PrintStream.flush(): Unit \ IO;
-            getErrorStream() |> flush
+            getErrorStream().flush()
 
         ///
         /// Returns the standard error stream.
         ///
-        def getErrorStream(): ##java.io.PrintStream \ IO =
-            import static java_get_field java.lang.System.err: ##java.io.PrintStream \ IO as getErr;
-            getErr()
+        def getErrorStream(): PrintStream \ IO = JSystem.err
 
     }
 

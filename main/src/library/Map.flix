@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import java.util.{Map => JMap}
+
 ///
 /// The Map type.
 ///
@@ -101,13 +103,20 @@ instance MeetLattice[Map[k, v]] with Order[k], Eq[v], MeetLattice[v] {
         Map.intersectionWith(MeetLattice.greatestLowerBound, m1, m2)
 }
 
-instance Iterable[Map[k]] {
-    pub def iterator(rc: Region[r], m: Map[k, v]): Iterator[v, r, r] \ r = Map.iteratorValues(rc, m)
+instance Iterable[Map[k, v]] {
+    type Elm = (k, v)
+    pub def iterator(rc: Region[r], m: Map[k, v]): Iterator[(k, v), r, r] \ r = Map.iterator(rc, m)
 }
 
 instance ToJava[Map[k, v]] with Order[k] {
-    type O = ##java.util.Map
-    pub def toJava(m: Map[k, v]): ##java.util.Map \ IO = Adaptor.toMap(m)
+    type Out = JMap
+    type Aef = IO
+    pub def toJava(m: Map[k, v]): JMap \ IO = Adaptor.toMap(m)
+}
+
+instance FromJava[Map[k, v]] with Order[k] {
+    type In = ##java.util.Map
+    pub def fromJava(m: ##java.util.Map): Map[k, v] = Adaptor.fromMap(m)
 }
 
 mod Map {
@@ -780,6 +789,26 @@ mod Map {
         foldRightWithKey((k, v, acc) -> (k, v) :: acc, Nil, m)
 
     ///
+    /// Returns the map `m` as an array.
+    ///
+    pub def toArray(rc: Region[r], m: Map[k, v]): Array[(k, v), r] \ r = match size(m) {
+        case 0  => Array#{} @ rc
+        case sz =>
+            let a = Array.empty(rc, sz);
+            forEachWithIndex((i, k, v) -> Array.put((k, v), i, a), m);
+            a
+        }
+
+    ///
+    /// Returns the map `m` as a vector.
+    ///
+    pub def toVector(m: Map[k, v]): Vector[(k, v)] = region rc {
+        let arr = Array.empty(rc, size(m));
+        forEachWithIndex((i, k, v) -> Array.put((k, v), i, arr), m);
+        Array.toVector(arr)
+    }
+
+    ///
     /// Returns the map `m` as a set of key-value pairs.
     ///
     pub def toSet(m: Map[k, v]): Set[(k, v)] with Order[k], Order[v] =
@@ -858,7 +887,7 @@ mod Map {
     ///
     /// Returns the set of tuples `(k, v)` where `v` is a value in `t` and `k => t`.
     ///
-    pub def explode(m: Map[k, t[v]]): Set[(k, v)] with Foldable[t], Order[k], Order[v] =
+    pub def explode(m: Map[k, t[v]]): Set[(k, v)] \ Foldable.Aef[t] with Foldable[t], Order[k], Order[v] =
         foldLeftWithKey((acc, k, t) -> Foldable.toSet(t) |> Set.map(e -> (k, e)) |> Set.union(acc), Set.empty(), m)
 
     ///

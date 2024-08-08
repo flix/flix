@@ -149,7 +149,8 @@ instance Monoid[Option[a]] with Monoid[a] {
 
 instance CommutativeMonoid[Option[a]] with CommutativeMonoid[a]
 
-instance Iterable[Option] {
+instance Iterable[Option[a]] {
+    type Elm = a
     pub def iterator(rc: Region[r], o: Option[a]): Iterator[a, r, r] \ r = Option.iterator(rc, o)
 }
 
@@ -185,7 +186,7 @@ mod Option {
     /// Returns `o` if it is `Some(v)`. Otherwise returns `default`.
     ///
     pub def withDefault(default: {default = Option[a]}, o: Option[a]): Option[a] = match o {
-        case None    => default.default
+        case None    => default#default
         case Some(_) => o
     }
 
@@ -194,7 +195,7 @@ mod Option {
     ///
     pub def replace(src: {src = a}, dst: {dst = a}, o: Option[a]): Option[a] with Eq[a] = match o {
         case None    => o
-        case Some(v) => Some(if (v == src.src) dst.dst else v)
+        case Some(v) => Some(if (v == src#src) dst#dst else v)
     }
 
     ///

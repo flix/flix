@@ -95,10 +95,10 @@ mod Test.Derives.ToString {
     def testToString18(): Bool = "${PolyMultiEnum.BothCase(123, true)}" == "BothCase(123, true)"
 
     @test
-    def testToString19(): Bool = "${(PolyBoolEnum.EmptyCase: PolyBoolEnum[Pure])}" == "EmptyCase"
+    def testToString19(): Bool = "${(PolyBoolEnum.EmptyCase: PolyBoolEnum[{}])}" == "EmptyCase"
 
     @test
-    def testToString20(): Bool = "${(PolyBoolEnum.RecursiveCase(PolyBoolEnum.EmptyCase): PolyBoolEnum[Pure])}" == "RecursiveCase(EmptyCase)"
+    def testToString20(): Bool = "${(PolyBoolEnum.RecursiveCase(PolyBoolEnum.EmptyCase): PolyBoolEnum[{}])}" == "RecursiveCase(EmptyCase)"
 
     @test
     def testToString21(): Bool = "${MutRecursiveEnum1.EmptyCase}" == "EmptyCase"

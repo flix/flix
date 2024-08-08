@@ -27,6 +27,7 @@ import java.nio.file.{Files, Path, Paths}
 import com.github.rjeschke.txtmark
 
 import java.net.URLEncoder
+import scala.annotation.tailrec
 
 /**
   * A phase that emits a JSON file for library documentation.
@@ -275,7 +276,25 @@ object HtmlDocumentor {
     * * leaving the companion module unpopulated.
     */
   private def mkEnum(sym: Symbol.EnumSym, parent: Symbol.ModuleSym, root: TypedAst.Root): Enum = {
-    Enum(root.enums(sym), parent, None)
+
+    /**
+      * Checks if a [[TypedAst.Instance]] with the given type `tpe` should be included on the page of the given enum.
+      */
+    @tailrec
+    def enumMatchesInstance(enm: Symbol.EnumSym, tpe: Type): Boolean = tpe match {
+      // An instance should be included if:
+      // 1. An instance exists directly, e.g. `Eq[Boxed]`
+      case Type.Cst(TypeConstructor.Enum(s, _), _) => enm == s
+      // 2. An instance exists, consisting of the enum having been applied with some number of parameters, e.g. `Eq[Chain[a]] with Eq[a]`
+      case Type.Apply(t, _, _) => enumMatchesInstance(enm, t)
+      // Othwerwise not
+      case _ => false
+    }
+
+    val allInstances = root.instances.values.flatten
+    val instances = allInstances.filter(i => enumMatchesInstance(sym, i.tpe)).toList
+
+    Enum(root.enums(sym), instances, parent, None)
   }
 
   /**
@@ -383,9 +402,10 @@ object HtmlDocumentor {
     * i.e. this should be called before `pairModules`.
     */
   private def filterEnum(enm: Enum): Enum = enm match {
-    case Enum(enm, parent, _) =>
+    case Enum(enm, instances, parent, _) =>
       Enum(
         enm,
+        instances,
         parent,
         None,
       )
@@ -729,6 +749,8 @@ object HtmlDocumentor {
   private def documentEnum(enm: Enum)(implicit flix: Flix): String = {
     implicit val sb: StringBuilder = new StringBuilder()
 
+    val sortedInstances = enm.instances.sortBy(_.trt.sym.name)
+
     val mod = enm.companionMod
     val sortedTraits = mod.map(_.traits).getOrElse(Nil).sortBy(_.name)
     val sortedEnums = mod.map(_.enums).getOrElse(Nil).sortBy(_.name)
@@ -787,6 +809,7 @@ object HtmlDocumentor {
     sb.append("</div>")
     docCases(enm.decl.cases.values.toList)
     docDoc(enm.decl.doc)
+    docCollapsableSubSection("Instances", sortedInstances, docInstance)
     sb.append("</div>")
 
     docSection("Type Aliases", sortedTypeAliases, docTypeAlias)
@@ -1084,7 +1107,10 @@ object HtmlDocumentor {
     sb.append("<div class='decl'>")
     sb.append("<code>")
     sb.append("<span class='keyword'>instance</span> ")
+    docTraitName(instance.trt.sym)
+    sb.append("[")
     docType(instance.tpe)
+    sb.append("]")
     docTypeConstraints(instance.tconstrs)
     sb.append("</code>")
     docActions(None, instance.loc)
@@ -1108,14 +1134,21 @@ object HtmlDocumentor {
 
     sb.append("<span> <span class='keyword'>with</span> ")
     docList(tconsts.sortBy(_.loc)) { t =>
-      sb.append(s"<a class='tpe-constraint' href='${escUrl(traitFileName(t.head.sym))}' title='trait ${esc(traitName(t.head.sym))}'>")
-      sb.append(esc(t.head.sym.name))
-      sb.append("</a>")
+      docTraitName(t.head.sym)
       sb.append("[")
       docType(t.arg)
       sb.append("]")
     }
     sb.append("</span>")
+  }
+
+  /**
+    * Document the name of the given trait symbol, creating a link to the trait's documentation.
+    */
+  private def docTraitName(sym: Symbol.TraitSym)(implicit flix: Flix, sb: StringBuilder): Unit = {
+    sb.append(s"<a class='tpe-constraint' href='${escUrl(traitFileName(sym))}' title='trait ${esc(traitName(sym))}'>")
+    sb.append(esc(sym.name))
+    sb.append("</a>")
   }
 
   /**
@@ -1133,7 +1166,10 @@ object HtmlDocumentor {
 
     sb.append("<span> <span class='keyword'>where</span> ")
     docList(econsts.sortBy(_.loc)) { e =>
-      sb.append(s"${esc(e.cst.sym.clazz.name)}.${esc(e.cst.sym.name)}[")
+      docTraitName(e.cst.sym.trt)
+      sb.append(".")
+      sb.append(esc(e.cst.sym.name))
+      sb.append("[")
       docType(e.tpe1)
       sb.append("] ~ ")
       docType(e.tpe2)
@@ -1156,9 +1192,7 @@ object HtmlDocumentor {
 
     sb.append("<span> <span class='keyword'>with</span> ")
     docList(derives.traits.sortBy(_.loc)) { t =>
-      sb.append(s"<a class='tpe-constraint' href='${escUrl(traitFileName(t.trt))}' title='trait ${esc(traitName(t.trt))}'>")
-      sb.append(s"${esc(t.trt.name)}")
-      sb.append("</a>")
+      docTraitName(t.trt)
     }
     sb.append("</span>")
   }
@@ -1436,7 +1470,7 @@ object HtmlDocumentor {
     */
   private def createLink(loc: SourceLocation): String = {
     // TODO make it also work for local user code
-    s"$LibraryGitHub${escUrl(loc.source.name)}#L${loc.beginLine}-L${loc.beginLine}"
+    s"$LibraryGitHub${escUrl(loc.source.name)}#L${loc.beginLine}-L${loc.endLine}"
   }
 
   /**
@@ -1515,6 +1549,7 @@ object HtmlDocumentor {
     * A representation of an enum that's easier to work with while generating documentation.
     */
   private case class Enum(decl: TypedAst.Enum,
+                          instances: List[TypedAst.Instance],
                           parent: Symbol.ModuleSym,
                           companionMod: Option[Module]) extends Item {
     override def name: String = enumName(this.decl.sym)

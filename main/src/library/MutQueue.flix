@@ -27,6 +27,12 @@ pub enum MutQueue[a: Type, r: Region] {
     case MutQueue(Region[r], Ref[Array[a, r], r], Ref[Int32, r])
 }
 
+instance Iterable[MutQueue[a, r]] {
+    type Elm = a
+    type Aef = r
+    pub def iterator(rc: Region[r1], q: MutQueue[a, r]): Iterator[a, r + r1, r1] \ (r + r1) = MutQueue.iterator(rc, q)
+}
+
 mod MutQueue {
 
     ///
@@ -106,9 +112,9 @@ mod MutQueue {
         else None
 
     ///
-    /// Enqueues each element in `l` into `mq`.
+    /// Enqueues each element in `m` into `mq`.
     ///
-    pub def enqueueAll(mq: MutQueue[a, r], m: m[a]): Unit \ r with Order[a], Iterable[m] =
+    pub def enqueueAll(mq: MutQueue[elt, r], m: m): Unit \ (r + Iterable.Aef[m]) with Iterable[m], Order[elt] where Iterable.Elm[m] ~ elt =
         foreach(x <- m) {
             enqueue(mq, x)
         }
@@ -146,6 +152,15 @@ mod MutQueue {
     pub def toArray(rc: Region[r1], mq: MutQueue[a, r2]): Array[a, r1] \ {r1, r2} =
         let MutQueue(_, arr, s) = mq;
         Array.takeLeft(rc, deref s, deref arr)
+
+    ///
+    /// Returns an Vector representation of `mq`.
+    ///
+    /// Note that a MutQueue's element order depends on the order in which the elements were enqueued.
+    ///
+    pub def toVector(mq: MutQueue[a, r]): Vector[a] \ r = region rc {
+        toArray(rc, mq) |> Array.toVector
+    }
 
     ///
     /// Reinforces the max heap invariant from `idx` after an element is added to `mq`.

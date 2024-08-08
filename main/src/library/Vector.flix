@@ -14,6 +14,9 @@
  *  limitations under the License.
  */
 
+import java.util.{List => JList}
+import java.util.{Iterator => JIterator}
+
 ///
 /// A Vector data type which is fundamentally like Array but is immutable.
 ///
@@ -93,17 +96,28 @@ instance Monoid[Vector[a]] {
     pub def empty(): Vector[a] = Vector.empty()
 }
 
-instance Collectable[Vector] {
-    pub def collect(iter: Iterator[a, ef, r]): Vector[a] \ { r, ef } with Order[a] = Iterator.toVector(iter)
+instance Collectable[Vector[a]] {
+    type Elm = a
+    pub def collect(iter: Iterator[a, ef, r]): Vector[a] \ (ef + r) = Iterator.toVector(iter)
 }
 
-instance Iterable[Vector] {
+instance Iterable[Vector[a]] {
+    type Elm = a
     pub def iterator(rc: Region[r], v: Vector[a]): Iterator[a, r, r] \ r = Vector.iterator(rc, v)
 }
 
 instance ToJava[Vector[a]] {
-    type O = ##java.util.List
-    pub def toJava(v: Vector[a]): ##java.util.List \ IO = Adaptor.toList(v)
+    type Out = JList
+    type Aef = IO
+    pub def toJava(v: Vector[a]): JList \ IO = Adaptor.toList(v)
+}
+
+
+instance FromJava[Vector[a]] {
+    type In = JList
+    pub def fromJava(l: JList): Vector[a] = region rc {
+        (unsafe l.iterator()) |> Adaptor.fromIterator(rc, (Proxy.Proxy: Proxy[a])) |> Iterator.toVector
+    }
 }
 
 mod Vector {
@@ -724,7 +738,7 @@ mod Vector {
     /// Returns a copy of `v` with every occurrence of `src` replaced by `dst`.
     ///
     pub def replace(src: {src = a}, dst: {dst = a}, v: Vector[a]): Vector[a] with Eq[a] =
-        map(e -> if (e == src.src) dst.dst else e, v)
+        map(e -> if (e == src#src) dst#dst else e, v)
 
     ///
     /// Returns `true` if and only if `a` is a prefix of `b`.

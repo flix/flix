@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.SimplifiedAst._
 import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, MonoType, Purity, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugSimplifiedAst
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import scala.collection.immutable.SortedSet
@@ -97,6 +98,11 @@ object ClosureConv {
       val e2 = visitExp(exp2)
       val e3 = visitExp(exp3)
       Expr.IfThenElse(e1, e2, e3, tpe, purity, loc)
+
+    case Expr.Stm(exp1, exp2, tpe, purity, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      Expr.Stm(e1, e2, tpe, purity, loc)
 
     case Expr.Branch(exp, branches, tpe, purity, loc) =>
       val e = visitExp(exp)
@@ -220,6 +226,9 @@ object ClosureConv {
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)
 
+    case Expr.Stm(exp1, exp2, _, _, _) =>
+      freeVars(exp1) ++ freeVars(exp2)
+
     case Expr.Branch(exp, branches, _, _, _) =>
       freeVars(exp) ++ (branches flatMap {
         case (_, br) => freeVars(br)
@@ -331,6 +340,11 @@ object ClosureConv {
         val e2 = visitExp(exp2)
         val e3 = visitExp(exp3)
         Expr.IfThenElse(e1, e2, e3, tpe, purity, loc)
+
+      case Expr.Stm(exp1, exp2, tpe, purity, loc) =>
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
+        Expr.Stm(e1, e2, tpe, purity, loc)
 
       case Expr.Branch(exp, branches, tpe, purity, loc) =>
         val e = visitExp(exp)

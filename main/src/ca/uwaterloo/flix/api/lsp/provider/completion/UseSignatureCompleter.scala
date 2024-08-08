@@ -25,7 +25,7 @@ object UseSignatureCompleter extends Completer {
   /**
    * Returns an Iterable of UseSignatureCompletions for the completer.
    */
-  override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[UseSignatureCompletion] = {
+  override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[UseSignatureCompletion] = {
     stripWord(context) match {
       case Some(word) =>
         val uri = context.uri

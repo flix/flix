@@ -18,7 +18,7 @@ package ca.uwaterloo.flix
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.SourceLocation
+import ca.uwaterloo.flix.language.ast.{SourceLocation, TypedAst}
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.{Formatter, Options, Result, Validation}
 import org.scalatest.funsuite.AnyFunSuite
@@ -30,34 +30,41 @@ trait TestUtils {
   this: AnyFunSuite =>
 
   /**
+    * Checks the given input string `s` with the given compilation options `o`.
+    */
+  def check(s: String, o: Options): Validation[TypedAst.Root, CompilationMessage] =
+    new Flix().setOptions(o).addUnmanagedSourceCode("<test>", s).check()
+
+  /**
    * Compiles the given input string `s` with the given compilation options `o`.
    */
   def compile(s: String, o: Options): Validation[CompilationResult, CompilationMessage] =
-    new Flix().setOptions(o).addSourceCode("<test>", s).compile()
+    new Flix().setOptions(o).addUnmanagedSourceCode("<test>", s).compile()
 
   private def errorString(errors: Seq[CompilationMessage]): String = {
-    errors.map(_.message(Formatter.NoFormatter)).mkString("\n\n")
+    errors.map(_.messageWithLoc(Formatter.NoFormatter)).mkString("\n\n")
   }
 
   /**
-   * Asserts that the validation is a failure with a value of the parametric type `T`.
+    * Asserts that the result of a compiler check is a failure with a value of the parametric type `T`.
+    */
+  def expectErrorOnCheck[T](result: Validation[TypedAst.Root, CompilationMessage])(implicit classTag: ClassTag[T]): Unit = expectErrorGen[TypedAst.Root, T](result)
+
+  /**
+   * Asserts that the compilation result is a failure with a value of the parametric type `T`.
    */
-  def expectError[T](result: Validation[CompilationResult, CompilationMessage])(implicit classTag: ClassTag[T]): Unit = result.toHardResult match {
-    case Result.Ok(_) => fail(s"Expected Failure, but got Success.")
+  def expectError[T](result: Validation[CompilationResult, CompilationMessage])(implicit classTag: ClassTag[T]): Unit = expectErrorGen[CompilationResult, T](result)
 
-    case Result.Err(errors) =>
-      val expected = classTag.runtimeClass
-      val actuals = errors.map(e => (e, e.getClass)).toList
-      actuals.find(p => expected.isAssignableFrom(p._2)) match {
-        case Some((actual, _)) =>
-          // Require known source location only on the expected error.
-          if (actual.loc == SourceLocation.Unknown) {
-            fail("Error contains unknown source location.")
-          }
-        case None => fail(s"Expected an error of type ${expected.getSimpleName}, but found:\n\n${actuals.map(p => p._2.getName)}.")
+  /**
+    * Asserts that validation contains a defined entrypoint.
+    */
+  def expectMain(result: Validation[TypedAst.Root, CompilationMessage]): Unit = {
+    result.toSoftResult match {
+      case Result.Ok((res, _)) => if (res.entryPoint.isEmpty) {
+        fail("Expected 'main' to be defined.")
       }
-
-
+      case Result.Err(_) => fail("Expected 'main' to be defined.")
+    }
   }
 
   /**
@@ -81,5 +88,25 @@ trait TestUtils {
     case Result.Ok(_) => ()
     case Result.Err(errors) =>
       fail(s"Expected success, but found errors:\n\n${errorString(errors.toSeq)}.")
+  }
+
+  /**
+    * Private generic version of expectError.
+    * Asserts that the validation is a failure with a value of the parametric type `T`.
+    */
+  private def expectErrorGen[R, T](result: Validation[R, CompilationMessage])(implicit classTag: ClassTag[T]): Unit = result.toHardResult match {
+    case Result.Ok(_) => fail(s"Expected Failure, but got Success.")
+
+    case Result.Err(errors) =>
+      val expected = classTag.runtimeClass
+      val actuals = errors.map(e => (e, e.getClass)).toList
+      actuals.find(p => expected.isAssignableFrom(p._2)) match {
+        case Some((actual, _)) =>
+          // Require known source location only on the expected error.
+          if (actual.loc == SourceLocation.Unknown) {
+            fail("Error contains unknown source location.")
+          }
+        case None => fail(s"Expected an error of type ${expected.getSimpleName}, but found:\n\n${actuals.map(p => p._2.getName)}.")
+      }
   }
 }

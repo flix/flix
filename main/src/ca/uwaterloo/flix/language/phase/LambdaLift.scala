@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.BoundBy
 import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, LiftedAst, MonoType, Purity, SimplifiedAst, Symbol}
+import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -40,7 +41,9 @@ object LambdaLift {
       case (macc, (sym, defn)) => macc + (sym -> defn)
     }
 
-    LiftedAst.Root(newDefs, effects, root.entryPoint, root.reachable, root.sources)
+    val structs = Map.empty[Symbol.StructSym, LiftedAst.Struct]
+
+    LiftedAst.Root(newDefs, structs, effects, root.entryPoint, root.reachable, root.sources)
   }
 
   private def visitDef(def0: SimplifiedAst.Def)(implicit ctx: SharedContext, flix: Flix): LiftedAst.Def = def0 match {
@@ -126,6 +129,11 @@ object LambdaLift {
       val e2 = visitExp(exp2)
       val e3 = visitExp(exp3)
       LiftedAst.Expr.IfThenElse(e1, e2, e3, tpe, purity, loc)
+
+    case SimplifiedAst.Expr.Stm(exp1, exp2, tpe, purity, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      LiftedAst.Expr.Stm(e1, e2, tpe, purity, loc)
 
     case SimplifiedAst.Expr.Branch(exp, branches, tpe, purity, loc) =>
       val e = visitExp(exp)

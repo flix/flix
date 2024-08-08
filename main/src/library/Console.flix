@@ -16,12 +16,14 @@
  */
 mod Console {
 
+    import java.lang.{System, Throwable, Integer, NumberFormatException};
+    import java.io.{Console, IOError, PrintWriter};
+
     ///
     /// Returns true if there is a `Console` object associated with the current JVM.
     ///
     pub def hasConsole(): Bool \ IO =
-        import static java.lang.System.console(): ##java.io.Console \ IO;
-        not Object.isNull(console())
+        not Object.isNull(System.console())
 
     ///
     /// Reads a single line from the console.
@@ -31,19 +33,17 @@ mod Console {
     /// See also `System/StdIn.readLines`.
     ///
     pub def readLine(): Result[String, String] \ IO = {
-        import java.io.Console.readLine(): String \ IO as consoleReadLine;
         try {
             match console() {
                 case Option.Some(c) =>
-                    let line = consoleReadLine(c);
+                    let line = c.readLine();
                     if (Object.isNull(line)) Err("EOF")
                     else Ok(line)
                 case Option.None => Err("No JVM console")
             }
         } catch {
-            case e: ##java.io.IOError =>
-                import java.lang.Throwable.getMessage(): String;
-                Err(getMessage(checked_cast(e)))
+            case e: IOError =>
+                Err(e.getMessage())
         }
     }
 
@@ -59,9 +59,7 @@ mod Console {
     /// See also `System/StdOut.print`.
     ///
     pub def print(x: a): Unit \ IO with ToString[a] =
-        import java.io.Console.writer(): ##java.io.PrintWriter \ IO;
-        import java.io.PrintWriter.print(String): Unit \ IO as printWriterPrint;
-        console() |> Option.forEach(c -> printWriterPrint(writer(c), ToString.toString(x)))
+        console() |> Option.forEach(c -> c.writer().print(ToString.toString(x)))
 
     ///
     /// Converts `x` to a string and prints it to the console followed by a new line.
@@ -75,9 +73,7 @@ mod Console {
     /// See also `System/StdOut.println`.
     ///
     pub def println(x: a): Unit \ IO with ToString[a] =
-        import java.io.Console.writer(): ##java.io.PrintWriter \ IO;
-        import java.io.PrintWriter.println(String): Unit \ IO as printWriterPrintln;
-        console() |> Option.forEach(c -> printWriterPrintln(writer(c), ToString.toString(x)))
+        console() |> Option.forEach(c -> c.writer().println(ToString.toString(x)))
 
     ///
     /// Flushes the console output.
@@ -89,8 +85,7 @@ mod Console {
     /// See also `System/StdOut.flush`.
     ///
     pub def flush(): Unit \ IO =
-        import java.io.Console.flush(): Unit \ IO as consoleFlush;
-        console() |> Option.forEach(consoleFlush)
+        console() |> Option.forEach(c -> c.flush())
 
     ///
     /// Returns `s` formatted as bold.
@@ -172,19 +167,17 @@ mod Console {
     /// Retrieves the console of the JVM if there is one, otherwise None.
     ///
     def console(): Option[##java.io.Console] \ IO =
-        import static java.lang.System.console(): ##java.io.Console \ IO as getConsole;
-        getConsole() |> Object.toOption
+        System.console() |> Object.toOption
 
     ///
     /// Helper for `hex`.
     /// Returns `hexNo` as a hex number.
     ///
     def stringToHex(hexNo: String): Option[Int32] \ {} =
-        import static java.lang.Integer.parseInt(String, Int32): Int32 \ {};
         try {
-            Some(parseInt(hexNo, 16))
+            Some(unsafe Integer.parseInt(hexNo, 16))
         } catch {
-            case _: ##java.lang.NumberFormatException =>
+            case _: NumberFormatException =>
                 Option.None
         }
 
@@ -195,10 +188,10 @@ mod Console {
         match colorSupport() {
             case ColorSupport.None      => s
             case ColorSupport.Ansi      =>
-                let color = downsample(c, opts.isFg);
+                let color = downsample(c, opts#isFg);
                 formatAnsi(color, s)
             case ColorSupport.TrueColor =>
-                formatTrueColor(c, s, opts.isFg)
+                formatTrueColor(c, s, opts#isFg)
         }
 
     ///

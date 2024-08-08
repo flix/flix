@@ -24,7 +24,7 @@ object SnippetCompleter extends Completer {
   /**
     * Returns a List of Completion for snippet.
     */
-  override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[SnippetCompletion] = {
+  override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[SnippetCompletion] = {
     List(
       // NB: Please keep the list alphabetically sorted.
       ("main",

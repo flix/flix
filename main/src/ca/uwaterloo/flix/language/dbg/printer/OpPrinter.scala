@@ -19,8 +19,8 @@ package ca.uwaterloo.flix.language.dbg.printer
 import ca.uwaterloo.flix.language.ast.SemanticOp._
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.dbg.DocAst
-import ca.uwaterloo.flix.language.dbg.DocAst.Expression
-import ca.uwaterloo.flix.language.dbg.DocAst.Expression._
+import ca.uwaterloo.flix.language.dbg.DocAst.Expr
+import ca.uwaterloo.flix.language.dbg.DocAst.Expr._
 
 object OpPrinter {
 
@@ -163,9 +163,9 @@ object OpPrinter {
   }
 
   /**
-    * Returns the [[DocAst.Expression]] representation of `op`.
+    * Returns the [[DocAst.Expr]] representation of `op`.
     */
-  def print(op: AtomicOp, ds: List[Expression], tpe: DocAst.Type): Expression = (op, ds) match {
+  def print(op: AtomicOp, ds: List[Expr], tpe: DocAst.Type): Expr = (op, ds) match {
     case (AtomicOp.Region, Nil) => Region
     case (AtomicOp.RecordEmpty, Nil) => RecordEmpty
     case (AtomicOp.GetStaticField(field), Nil) => JavaGetStaticField(field)

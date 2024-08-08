@@ -21,8 +21,6 @@ import ca.uwaterloo.flix.language.errors.WeederError
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
-// NOTE: Weeder2 already passes many of these. All tests that don't have a 'TODO' pass.
-
 class TestWeeder extends AnyFunSuite with TestUtils {
 
   test("DuplicateAnnotation.01") {
@@ -137,6 +135,55 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.DuplicateTag](result)
+  }
+
+  ignore("DuplicateStructField.01") {
+    val input =
+      """struct Person[r] {
+         name: String,
+         name: String
+      }
+    """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.DuplicateStructField](result)
+  }
+
+  ignore("DuplicateStructField.02") {
+    val input =
+      """struct Person[r] {
+         name: String,
+         age: Int32,
+         name: String
+      }
+    """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.DuplicateStructField](result)
+  }
+
+  ignore("DuplicateStructField.03") {
+    val input =
+      """struct Person[r] {
+         name: String,
+         age: Int32,
+         name: String,
+         age: Int32
+      }
+    """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.DuplicateStructField](result)
+  }
+
+  ignore("DuplicateStructField.04") {
+    val input =
+      """struct Person[r] {
+         name: String,
+         age: Int32,
+         age: Int32,
+         height: Int32
+      }
+    """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.DuplicateStructField](result)
   }
 
   test("EmptyForFragment.01") {
@@ -788,15 +835,13 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalTypeConstraintParameter](result)
   }
 
-  // TODO: unignore with Parser2
-  ignore("MalformedFloat64.01") {
+  test("MalformedFloat64.01") {
     val input = "def f(): Float64 = 1.7976931348623158e+308"
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.MalformedFloat](result)
   }
 
-  // TODO: unignore with Parser2
-  ignore("MalformedFloat64.02") {
+  test("MalformedFloat64.02") {
     val input = "def f(): Float64 = -1.7976931348623158e+308"
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.MalformedFloat](result)

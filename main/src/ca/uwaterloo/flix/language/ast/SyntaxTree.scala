@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.shared.Source
 
 /**
  * Represents the source code of a compilation unit.
@@ -34,12 +35,18 @@ object SyntaxTree {
   /**
     * A root containing syntax trees for multiple sources.
     */
-  case class Root(units: Map[Ast.Source, Tree])
+  case class Root(units: Map[Source, Tree])
 
   /**
     * The empty SyntaxTree
     */
   val empty: Root = Root(Map.empty)
+
+  /**
+    * A marker trait for a child node in a syntax tree.
+    * In practice this is implemented by [[Tree]] and [[Token]].
+    */
+  trait Child
 
   /**
    * A node in a [[SyntaxTree]]
@@ -48,24 +55,7 @@ object SyntaxTree {
    * @param loc      The location that the node spans in the source file.
    * @param children The children of the node.
    */
-  case class Tree(kind: TreeKind, var children: Array[Child], var loc: SourceLocation)
-
-  sealed trait Child
-
-  /**
-   * A child in a [[SyntaxTree]].
-   */
-  object Child {
-    /**
-     * A [[SyntaxTree]] child holding a [[Token]].
-     */
-    case class TokenChild(token: Token) extends Child
-
-    /**
-     * A [[SyntaxTree]] child holding a nested [[SyntaxTree.Tree]]
-     */
-    case class TreeChild(tree: Tree) extends Child
-  }
+  case class Tree(kind: TreeKind, var children: Array[Child], var loc: SourceLocation) extends Child
 
 
   /**
@@ -83,6 +73,13 @@ object SyntaxTree {
      * A special error kind wrapping a [[CompilationMessage]].
      */
     case class ErrorTree(error: CompilationMessage) extends TreeKind
+
+    /**
+      * A special [[TreeKind]] used as a placeholder when a new mark is opened and the actual kind is not yet known.
+      * [[UnclosedMark]] always gets overwritten with another [[TreeKind]] as parsing happens.
+      * Failure to do so is a compiler error and gets caught when building the syntax tree.
+      */
+    case object UnclosedMark extends TreeKind
 
     case object AnnotationList extends TreeKind
 
@@ -115,6 +112,8 @@ object SyntaxTree {
     case object QName extends TreeKind
 
     case object Root extends TreeKind
+
+    case object StructField extends TreeKind
 
     case object TypeParameter extends TreeKind
 
@@ -154,6 +153,8 @@ object SyntaxTree {
 
       case object Signature extends Decl
 
+      case object Struct extends Decl
+
       case object TypeAlias extends Decl
     }
 
@@ -190,6 +191,10 @@ object SyntaxTree {
       case object CheckedTypeCast extends Expr
 
       case object Do extends Expr
+
+      case object InvokeConstructor2 extends Expr
+
+      case object InvokeMethod2 extends Expr
 
       case object Debug extends Expr
 
@@ -261,6 +266,8 @@ object SyntaxTree {
 
       case object LiteralRecordFieldFragment extends Expr
 
+      case object LiteralStructFieldFragment extends Expr
+
       case object LiteralSet extends Expr
 
       case object LiteralVector extends Expr
@@ -270,6 +277,14 @@ object SyntaxTree {
       case object MatchRuleFragment extends Expr
 
       case object NewObject extends Expr
+
+      case object NewStruct extends Expr
+
+      case object StructGet extends Expr
+
+      case object StructPut extends Expr
+
+      case object StructPutRHS extends Expr
 
       case object OpenVariant extends Expr
 
@@ -317,6 +332,8 @@ object SyntaxTree {
 
       case object Try extends Expr
 
+      case object Throw extends Expr
+
       case object TryCatchBodyFragment extends Expr
 
       case object TryCatchRuleFragment extends Expr
@@ -336,6 +353,8 @@ object SyntaxTree {
       case object UncheckedCast extends Expr
 
       case object UncheckedMaskingCast extends Expr
+
+      case object Unsafe extends Expr
 
       case object Use extends Expr
 
@@ -378,6 +397,8 @@ object SyntaxTree {
       case object Constraint extends Type
 
       case object ConstraintList extends Type
+
+      case object Effect extends Type
 
       case object EffectSet extends Type
 

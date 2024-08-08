@@ -33,9 +33,6 @@ object SemanticTokensProvider {
     * Processes a request for (full) semantic tokens.
     */
   def provideSemanticTokens(uri: String)(implicit index: Index, root: Root): JObject = {
-    if (root == null)
-      throw new IllegalArgumentException("The argument 'root' must be non-null.")
-
     //
     // This class uses iterators over lists to ensure fast append (!)
     //
@@ -113,7 +110,7 @@ object SemanticTokensProvider {
     //
     // Construct the JSON result.
     //
-    ("status" -> ResponseStatus.Success) ~ ("result" -> ("data" -> encodedTokens))
+    ("result" -> ("data" -> encodedTokens))
   }
 
   /**
@@ -463,6 +460,9 @@ object SemanticTokensProvider {
           acc ++ Iterator(t) ++ visitExp(exp)
       }
 
+    case Expr.Throw(exp, _, _, _) =>
+      visitExp(exp)
+
     case Expr.TryWith(exp, eff, rules, _, _, _) =>
       val t = SemanticToken(SemanticTokenType.Type, Nil, eff.loc)
       val st1 = Iterator(t)
@@ -675,8 +675,12 @@ object SemanticTokensProvider {
     case TypeConstructor.Receiver => true
     case TypeConstructor.Lazy => true
     case TypeConstructor.Enum(_, _) => true
+    case TypeConstructor.Struct(_, _) => true
     case TypeConstructor.RestrictableEnum(_, _) => true
     case TypeConstructor.Native(_) => true
+    case TypeConstructor.JvmConstructor(_) => false
+    case TypeConstructor.JvmMethod(_) => false
+    case TypeConstructor.MethodReturnType => false
     case TypeConstructor.Array => true
     case TypeConstructor.Vector => true
     case TypeConstructor.Ref => true
@@ -709,7 +713,7 @@ object SemanticTokensProvider {
     case TypeConstructor.CaseUnion(_) => false
     case TypeConstructor.CaseIntersection(_) => false
     case TypeConstructor.CaseSet(_, _) => false
-    case TypeConstructor.Error(_) => false
+    case TypeConstructor.Error(_, _) => false
   }
 
   /**

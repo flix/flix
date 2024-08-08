@@ -37,8 +37,8 @@ object PredefinedTraits {
   /**
     * Returns the sig symbol with the given `clazz` and name `sig`.
     */
-  def lookupSigSym(clazz: String, sig: String, root: KindedAst.Root): Symbol.SigSym = {
-    val trtKey = new Symbol.TraitSym(Nil, clazz, SourceLocation.Unknown)
+  def lookupSigSym(trt: String, sig: String, root: KindedAst.Root): Symbol.SigSym = {
+    val trtKey = new Symbol.TraitSym(Nil, trt, SourceLocation.Unknown)
     val sigKey = new Symbol.SigSym(trtKey, sig, SourceLocation.Unknown)
     root.traits.getOrElse(trtKey, throw InternalCompilerException(s"The trait: '$trtKey' is not defined.", SourceLocation.Unknown))
       .sigs.getOrElse(sigKey, throw InternalCompilerException(s"The signature '$sigKey' is not defined.", SourceLocation.Unknown))

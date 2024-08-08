@@ -70,7 +70,7 @@ object GenNamespaceClasses {
     */
   private def compileShimMethod(visitor: ClassWriter, defn: Def): Unit = {
     // Name of the shim
-    val name = JvmOps.getDefMethodNameInNamespaceClass(defn.sym)
+    val name = JvmOps.getDefMethodNameInNamespaceClass(defn)
 
     // Erased argument and result type.
     val erasedArgs = defn.fparams.map(_.tpe).map(JvmOps.getErasedJvmType)

@@ -16,70 +16,15 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import java.nio.file.Path
+import ca.uwaterloo.flix.language.ast.shared.Fixity
+import ca.uwaterloo.flix.language.errors.{ResolutionError, TypeError}
+
 import java.util.Objects
 
 /**
   * A collection of AST nodes that are shared across multiple ASTs.
   */
 object Ast {
-
-  /**
-    * A common super-type for inputs.
-    */
-  sealed trait Input
-
-  object Input {
-
-    /**
-      * A source that is backed by an internal resource.
-      *
-      * A source is stable if it cannot change after being loaded (e.g. the standard library, etc).
-      */
-    case class Text(name: String, text: String, stable: Boolean) extends Input {
-      override def hashCode(): Int = name.hashCode
-
-      override def equals(obj: Any): Boolean = obj match {
-        case that: Text => this.name == that.name
-        case _ => false
-      }
-    }
-
-    /**
-      * A source that is backed by a regular file.
-      */
-    case class TxtFile(path: Path) extends Input
-
-    /**
-      * A source that is backed by flix package file.
-      */
-    case class PkgFile(path: Path) extends Input
-
-  }
-
-  /**
-    * A source is a name and an array of character data.
-    *
-    * A source is stable if it cannot change after being loaded (e.g. the standard library, etc).
-    */
-  case class Source(input: Input, data: Array[Char], stable: Boolean) extends Sourceable {
-
-    def name: String = input match {
-      case Input.Text(name, _, _) => name
-      case Input.TxtFile(path) => path.toString
-      case Input.PkgFile(path) => path.toString
-    }
-
-    def src: Source = this
-
-    override def equals(o: scala.Any): Boolean = o match {
-      case that: Source => this.input == that.input
-    }
-
-    override def hashCode(): Int = input.hashCode()
-
-    override def toString: String = name
-  }
 
   /**
     * A common supertype for casts.
@@ -174,6 +119,15 @@ object Ast {
     }
 
     /**
+      * An annotation that marks a function to exported.
+      *
+      * @param loc the source location of the annotation.
+      */
+    case class Export(loc: SourceLocation) extends Annotation {
+      override def toString: String = "@Export"
+    }
+
+    /**
       * An annotation that marks a construct as internal.
       *
       * @param loc the source location of the annotation.
@@ -250,22 +204,22 @@ object Ast {
     }
 
     /**
-     * An AST node that represents a `@TailRec` annotation.
-     *
-     * A function marked with `@TailRec` is guaranteed to be tail recursive by the compiler.
-     *
-     * @param loc the source location of the annotation.
-     */
+      * An AST node that represents a `@TailRec` annotation.
+      *
+      * A function marked with `@TailRec` is guaranteed to be tail recursive by the compiler.
+      *
+      * @param loc the source location of the annotation.
+      */
     case class TailRecursive(loc: SourceLocation) extends Annotation {
       override def toString: String = "@Tailrec"
     }
 
     /**
-     * An AST node that represents an undefined (i.e. erroneous) annotation.
-     *
-     * @param name the name of the annotation.
-     * @param loc the source location of the annotation.
-     */
+      * An AST node that represents an undefined (i.e. erroneous) annotation.
+      *
+      * @param name the name of the annotation.
+      * @param loc  the source location of the annotation.
+      */
     case class Error(name: String, loc: SourceLocation) extends Annotation {
       override def toString: String = "@" + name
     }
@@ -301,6 +255,11 @@ object Ast {
       * Returns `true` if `this` sequence contains the `@Experimental` annotation.
       */
     def isExperimental: Boolean = annotations exists (_.isInstanceOf[Annotation.Experimental])
+
+    /**
+      * Returns `true` if `this` sequence contains the `@Export` annotation.
+      */
+    def isExport: Boolean = annotations exists (_.isInstanceOf[Annotation.Export])
 
     /**
       * Returns `true` if `this` sequence contains the `@Internal` annotation.
@@ -499,25 +458,6 @@ object Ast {
       * The atom is negative.
       */
     case object Negative extends Polarity
-
-  }
-
-  /**
-    * A common super-type for the fixity of an atom.
-    */
-  sealed trait Fixity
-
-  object Fixity {
-
-    /**
-      * The atom is loose (it does not have to be fully materialized before it can be used).
-      */
-    case object Loose extends Fixity
-
-    /**
-      * The atom is fixed (it must be fully materialized before it can be used).
-      */
-    case object Fixed extends Fixity
 
   }
 
@@ -838,6 +778,8 @@ object Ast {
       case object Instance extends Decl
 
       case object OtherDecl extends Decl
+
+      case object Struct extends Decl
     }
 
     sealed trait Expr extends SyntacticContext
@@ -846,6 +788,10 @@ object Ast {
       case object Constraint extends Expr
 
       case object Do extends Expr
+
+      case class InvokeMethod(e: TypeError.MethodNotFound) extends Expr
+
+      case class StaticFieldOrMethod(e: ResolutionError.UndefinedJvmStaticField) extends Expr
 
       case object OtherExpr extends Expr
     }

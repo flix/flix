@@ -30,7 +30,7 @@ class TestCaseSetUnification extends AnyFunSuite with TestUtils {
 
   private val loc: SourceLocation = SourceLocation.Unknown
 
-  private def mkIdent(name: String): Name.Ident = Name.Ident(SourcePosition.Unknown, name, SourcePosition.Unknown)
+  private def mkIdent(name: String): Name.Ident = Name.Ident(name, SourceLocation.Unknown)
 
   private val E = Symbol.mkRestrictableEnumSym(
     Name.RootNS,

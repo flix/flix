@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import java.util.{List => JList}
+
 ///
 /// The NonEmptyList type.
 ///
@@ -111,13 +113,15 @@ instance SemiGroup[Nel[a]] {
     pub def combine(x: Nel[a], y: Nel[a]): Nel[a] = Nel.append(x, y)
 }
 
-instance Iterable[Nel] {
+instance Iterable[Nel[a]] {
+    type Elm = a
     pub def iterator(rc: Region[r], l: Nel[a]): Iterator[a, r, r] \ r = Nel.iterator(rc, l)
 }
 
 instance ToJava[Nel[a]] {
-    type O = ##java.util.List
-    pub def toJava(l: Nel[a]): ##java.util.List \ IO = Adaptor.toList(l)
+    type Out = JList
+    type Aef = IO
+    pub def toJava(l: Nel[a]): JList \ IO = Adaptor.toList(l)
 }
 
 mod Nel {
@@ -312,7 +316,7 @@ mod Nel {
     /// Returns `l` with every occurrence of `src` replaced by `dst`.
     ///
     pub def replace(src: {src = a}, dst: {dst = a}, l: Nel[a]): Nel[a] with Eq[a] =
-        map(e -> if (e == src.src) dst.dst else e, l)
+        map(e -> if (e == src#src) dst#dst else e, l)
 
     ///
     /// Returns all permutations of `l` in lexicographical order by element indices in `l`.

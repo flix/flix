@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, VarText}
 import ca.uwaterloo.flix.language.ast.Name.{Ident, NName}
+import ca.uwaterloo.flix.language.ast.shared.Source
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import java.util.Objects
@@ -31,7 +32,7 @@ object Symbol {
   /**
     * The symbol for the IO effect.
     */
-  val IO: EffectSym = mkEffectSym(Name.RootNS, Ident(SourcePosition.Unknown, "IO", SourcePosition.Unknown))
+  val IO: EffectSym = mkEffectSym(Name.RootNS, Ident("IO", SourceLocation.Unknown))
 
   /**
     * Returns a fresh def symbol based on the given symbol.
@@ -136,6 +137,13 @@ object Symbol {
   }
 
   /**
+   * Returns the struct symbol for the given name `ident` in the given namespace `ns`.
+   */
+  def mkStructSym(ns: NName, ident: Ident): StructSym = {
+    new StructSym(ns.parts, ident.name, ident.loc)
+  }
+
+  /**
     * Returns the restrictable enum symbol for the given name `ident` in the given namespace `ns`.
     */
   def mkRestrictableEnumSym(ns: NName, ident: Ident, cases: List[Ident]): RestrictableEnumSym = {
@@ -155,6 +163,10 @@ object Symbol {
     */
   def mkCaseSym(sym: Symbol.EnumSym, ident: Ident): CaseSym = {
     new CaseSym(sym, ident.name, ident.loc)
+  }
+
+  def mkStructFieldSym(sym: Symbol.StructSym, ident: Ident): StructFieldSym = {
+    new StructFieldSym(sym, ident.name, ident.loc)
   }
 
   /**
@@ -453,6 +465,34 @@ object Symbol {
   }
 
   /**
+   * Struct Symbol.
+   */
+  final class StructSym(val namespace: List[String], val text: String, val loc: SourceLocation) extends Symbol {
+    /**
+      * Returns the name of `this` symbol.
+      */
+    def name: String = text
+
+    /**
+      * Returns `true` if this symbol is equal to `that` symbol.
+      */
+    override def equals(obj: scala.Any): Boolean = obj match {
+      case that: StructSym => this.namespace == that.namespace && this.text == that.text
+      case _ => false
+    }
+
+    /**
+      * Returns the hash code of this symbol.
+      */
+    override val hashCode: Int = 5 * namespace.hashCode() + 7 * text.hashCode()
+
+    /**
+      * Human readable representation.
+      */
+    override def toString: String = if (namespace.isEmpty) name else namespace.mkString(".") + "." + name
+  }
+
+  /**
     * Restrictable Enum Symbol.
     */
   final class RestrictableEnumSym(val namespace: List[String], val name: String, cases: List[Name.Ident], val loc: SourceLocation) extends Symbol {
@@ -509,6 +549,34 @@ object Symbol {
       * The symbol's namespace.
       */
     def namespace: List[String] = enumSym.namespace :+ enumSym.name
+  }
+
+  /**
+   * Struct Field Symbol.
+   */
+  final class StructFieldSym(val structSym: Symbol.StructSym, val name: String, val loc: SourceLocation) extends Symbol {
+    /**
+     * Returns `true` if this symbol is equal to `that` symbol.
+     */
+    override def equals(obj: scala.Any): Boolean = obj match {
+      case that: StructFieldSym => this.structSym == that.structSym && this.name == that.name
+      case _ => false
+    }
+
+    /**
+     * Returns the hash code of this symbol.
+     */
+    override val hashCode: Int = Objects.hash(structSym, name)
+
+    /**
+     * Human readable representation.
+     */
+    override def toString: String = structSym.toString + "." + name
+
+    /**
+     * The symbol's namespace.
+     */
+    def namespace: List[String] = structSym.namespace :+ structSym.name
   }
 
   /**
@@ -570,7 +638,7 @@ object Symbol {
     /**
       * Returns the source of `this`.
       */
-    override def src: Ast.Source = loc.source
+    override def src: Source = loc.source
   }
 
   /**
@@ -673,29 +741,29 @@ object Symbol {
   /**
     * Associated Type Symbol.
     */
-  final class AssocTypeSym(val clazz: Symbol.TraitSym, val name: String, val loc: SourceLocation) extends Symbol {
+  final class AssocTypeSym(val trt: Symbol.TraitSym, val name: String, val loc: SourceLocation) extends Symbol {
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
       */
     override def equals(obj: scala.Any): Boolean = obj match {
-      case that: AssocTypeSym => this.clazz == that.clazz && this.name == that.name
+      case that: AssocTypeSym => this.trt == that.trt && this.name == that.name
       case _ => false
     }
 
     /**
       * Returns the hash code of this symbol.
       */
-    override val hashCode: Int = Objects.hash(clazz, name)
+    override val hashCode: Int = Objects.hash(trt, name)
 
     /**
       * Human readable representation.
       */
-    override def toString: String = clazz.toString + "." + name
+    override def toString: String = trt.toString + "." + name
 
     /**
       * The symbol's namespace.
       */
-    def namespace: List[String] = clazz.namespace :+ clazz.name
+    def namespace: List[String] = trt.namespace :+ trt.name
   }
 
   /**
@@ -723,7 +791,7 @@ object Symbol {
     /**
       * Returns the source of `this`.
       */
-    override def src: Ast.Source = loc.source
+    override def src: Source = loc.source
 
     /**
       * Compares `this` and `that` effect sym.

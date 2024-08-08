@@ -15,12 +15,14 @@
  */
 package ca.uwaterloo.flix.language.ast
 
+import ca.uwaterloo.flix.language.ast.shared.Input
+
 sealed trait ChangeSet {
 
   /**
     * Returns a new change set with `i` marked as changed.
     */
-  def markChanged(i: Ast.Input): ChangeSet = this match {
+  def markChanged(i: Input): ChangeSet = this match {
     case ChangeSet.Everything => ChangeSet.Changes(Set(i))
     case ChangeSet.Changes(s) => ChangeSet.Changes(s + i)
   }
@@ -46,7 +48,7 @@ sealed trait ChangeSet {
     case ChangeSet.Changes(_) =>
       // Note: At the moment we don't use the change set.
       // We simply consider whether a source is stable.
-      val fresh = oldMap.filter(_._1.src.stable).filter(kv => newMap.contains(kv._1))
+      val fresh = oldMap.filter(_._1.src.input.isStable).filter(kv => newMap.contains(kv._1))
       val stale = newMap.filter(kv => !fresh.contains(kv._1))
 
       (stale, fresh)
@@ -64,7 +66,7 @@ object ChangeSet {
   /**
     * Represents the set `s` of changed sources.
     */
-  case class Changes(s: Set[Ast.Input]) extends ChangeSet
+  case class Changes(s: Set[Input]) extends ChangeSet
 
 }
 

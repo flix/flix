@@ -13,9 +13,9 @@ def main(): Unit \ IO =
   // Get statistics of the file 'README.md'.
   match Files.stat(f) {
     case Ok(stats) => {
-      println("${f} is of type: ${stats.fileType}");
-      println("The size of ${f} is: ${stats.size}.");
-      println("The creation time of ${f} is: ${stats.creationTime}.")
+      println("${f} is of type: ${stats#fileType}");
+      println("The size of ${f} is: ${stats#size}.");
+      println("The creation time of ${f} is: ${stats#creationTime}.")
     }
-    case Err(msg)    => println("An error occurred with message: ${msg}")
+    case Err(msg) => println("An error occurred with message: ${msg}")
   }

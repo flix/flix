@@ -505,7 +505,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |  pub def f(x: a): Bool
         |  pub def g(x: a): Bool
         |
-        |  law l: forall (x: a) . C.f(x)
+        |  law l: forall (x: a) C.f(x)
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)

@@ -25,7 +25,7 @@ object TypeAliasCompleter extends Completer {
   /**
     * Returns a List of Completion for alias types.
     */
-  override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[TypeAliasCompletion] = {
+  override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[TypeAliasCompletion] = {
     root.typeAliases.map {
       case (_, t) =>
         val name = t.sym.name

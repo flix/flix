@@ -79,53 +79,53 @@ pub lawful trait Order[a] with Eq[a] {
     ///
     /// Reflexivity: An element `x` is lower or equal to itself.
     ///
-    law reflexivity: forall(x: a). x <= x
+    law reflexivity: forall(x: a) x <= x
 
     ///
     /// Antisymmetry: If `x` is lower or equal to `y` and `y` is lower or equal to `x` then `x` must be equal to `y`.
     ///
-    law symmetry: forall(x: a, y: a). ((x <= y) and (y <= x)) ==> (x == y)
+    law symmetry: forall(x: a, y: a) ((x <= y) and (y <= x)) ==> (x == y)
 
     ///
     /// Transitivity: If `x` is lower or equal to `y` and `y` is lower equal to `z` then `x` must be lower or equal to `z`.
     ///
-    law transitivity: forall(x: a, y: a, z: a). ((x <= y) and (y <= z)) ==> (x <= z)
+    law transitivity: forall(x: a, y: a, z: a) ((x <= y) and (y <= z)) ==> (x <= z)
 
     ///
     /// Totality: For each two elements `x` and `y` either `x` is lower or equal to `y` or the other way round.
     ///
-    law totality: forall(x: a, y: a). ((x <= y) or (y <= x))
+    law totality: forall(x: a, y: a) ((x <= y) or (y <= x))
 
     ///
     /// Definition of the minimum function.
     ///
-    law min: forall(x: a, y: a). ((x <= y) ==> (Order.min(x, y) == x)) and ((y <= x) ==> (Order.min(x, y) == y))
+    law min: forall(x: a, y: a) ((x <= y) ==> (Order.min(x, y) == x)) and ((y <= x) ==> (Order.min(x, y) == y))
 
     ///
     /// Definition of the maximum function.
     ///
-    law max: forall(x: a, y: a). ((y <= x) ==> (Order.max(x, y) == x)) and ((x <= y) ==> (Order.max(x, y) == y))
+    law max: forall(x: a, y: a) ((y <= x) ==> (Order.max(x, y) == x)) and ((x <= y) ==> (Order.max(x, y) == y))
 
     ///
     /// x < y is logically equivalent to not (y <= x).
     /// This law defines the associated strict total order "<" associated with "<=".
     ///
-    law strictTotalOrder: forall(x: a, y: a). (x < y) <==> (not (y <= x))
+    law strictTotalOrder: forall(x: a, y: a) (x < y) <==> (not (y <= x))
 
     ///
     /// This law defines ">" based on "<".
     ///
-    law inverseOrder1: forall(x: a, y: a). (x > y) <==> (y < x)
+    law inverseOrder1: forall(x: a, y: a) (x > y) <==> (y < x)
 
     ///
     /// This law defines ">=" based on "<=".
     ///
-    law inverseOrder2: forall(x: a, y: a). (x >= y) <==> (y <= x)
+    law inverseOrder2: forall(x: a, y: a) (x >= y) <==> (y <= x)
 
     ///
     /// Definition of `compare` based on the defined total order.
     ///
-    law compare: forall(x: a, y: a). ((x < y) ==> (Order.compare(x, y) == Comparison.LessThan)) and ((x == y) ==> (Order.compare(x, y) == Comparison.EqualTo)) and ((x > y) ==> (Order.compare(x, y) == Comparison.GreaterThan))
+    law compare: forall(x: a, y: a) ((x < y) ==> (Order.compare(x, y) == Comparison.LessThan)) and ((x == y) ==> (Order.compare(x, y) == Comparison.EqualTo)) and ((x > y) ==> (Order.compare(x, y) == Comparison.GreaterThan))
 }
 
 mod Order {
@@ -238,27 +238,22 @@ instance Order[Float64] {
 instance Order[BigDecimal] {
 
     pub override def less(x: BigDecimal, y: BigDecimal): Bool =
-        import java.math.BigDecimal.compareTo(BigDecimal): Int32 \ {};
-        (x `compareTo` y) < 0
+        (unsafe x.compareTo(y)) < 0
 
     pub override def lessEqual(x: BigDecimal, y: BigDecimal): Bool =
-        import java.math.BigDecimal.compareTo(BigDecimal): Int32 \ {};
-        (x `compareTo` y) <= 0
+        (unsafe x.compareTo(y)) <= 0
 
     pub override def greater(x: BigDecimal, y: BigDecimal): Bool =
-        import java.math.BigDecimal.compareTo(BigDecimal): Int32 \ {};
-        (x `compareTo` y) > 0
+        (unsafe x.compareTo(y)) > 0
 
     pub override def greaterEqual(x: BigDecimal, y: BigDecimal): Bool =
-        import java.math.BigDecimal.compareTo(BigDecimal): Int32 \ {};
-        (x `compareTo` y) >= 0
+        (unsafe x.compareTo(y)) >= 0
 
     pub def compare(x: BigDecimal, y: BigDecimal): Comparison =
-        import java.math.BigDecimal.compareTo(BigDecimal): Int32 \ {};
-        match x `compareTo` y {
+        match (unsafe x.compareTo(y)) {
+            case 0          => Comparison.EqualTo
             case z if z < 0 => Comparison.LessThan
-            case 0 => Comparison.EqualTo
-            case _ => Comparison.GreaterThan
+            case _          => Comparison.GreaterThan
         }
 
 }
@@ -346,27 +341,22 @@ instance Order[Int64] {
 instance Order[BigInt] {
 
     pub override def less(x: BigInt, y: BigInt): Bool =
-        import java.math.BigInteger.compareTo(BigInt): Int32 \ {};
-        (x `compareTo` y) < 0
+        (unsafe x.compareTo(y)) < 0
 
     pub override def lessEqual(x: BigInt, y: BigInt): Bool =
-        import java.math.BigInteger.compareTo(BigInt): Int32 \ {};
-        (x `compareTo` y) <= 0
+        (unsafe x.compareTo(y)) <= 0
 
     pub override def greater(x: BigInt, y: BigInt): Bool =
-        import java.math.BigInteger.compareTo(BigInt): Int32 \ {};
-        (x `compareTo` y) > 0
+        (unsafe x.compareTo(y)) > 0
 
     pub override def greaterEqual(x: BigInt, y: BigInt): Bool =
-        import java.math.BigInteger.compareTo(BigInt): Int32 \ {};
-        (x `compareTo` y) >= 0
+        (unsafe x.compareTo(y)) >= 0
 
     pub def compare(x: BigInt, y: BigInt): Comparison =
-        import java.math.BigInteger.compareTo(BigInt): Int32 \ {};
-        match x `compareTo` y {
+        match (unsafe x.compareTo(y)) {
+            case 0          => Comparison.EqualTo
             case z if z < 0 => Comparison.LessThan
-            case 0 => Comparison.EqualTo
-            case _ => Comparison.GreaterThan
+            case _          => Comparison.GreaterThan
         }
 
 }
@@ -374,8 +364,7 @@ instance Order[BigInt] {
 instance Order[String] {
 
     pub def compare(x: String, y: String): Comparison =
-        import java.lang.String.compareTo(String): Int32 \ {};
-        Comparison.fromInt32((x `compareTo` y))
+        Comparison.fromInt32((unsafe x.compareTo(y)))
 
 }
 

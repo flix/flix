@@ -1,5 +1,16 @@
 # Changelog
 
+Version 0.48.0:
+- Compiler: Added support for resilient lexing and parsing (thanks Herluf!)
+
+Version 0.47.0:
+- Language: Added support for associated effects (thanks Matt!)
+- Library: Added `Iterable` instances for maps (thanks Stephen!)
+- Library: Added associated effects to `Iterable` and `Foldable` (thanks Stephen!)
+- Library: Added `FromJava` and `ToJava` and instances (thanks Stephen!)
+- Library: Added missing `toVector` functions (thanks Stephen!)
+- Compiler: Reduced memory usage of types (thanks Magnus!)
+
 Version 0.46.0: 
 - Language: Added support for associated types (thanks Matt!)
 - Compiler: Reworked type inference to use constraints (thanks Matt!)

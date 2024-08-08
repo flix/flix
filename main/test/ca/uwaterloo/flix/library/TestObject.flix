@@ -53,13 +53,13 @@ mod TestObject {
     def isNullBigInt01(): Bool = not Object.isNull(123ii)
 
     @test
-    def isNullBigInt02(): Bool = Object.isNull(unchecked_cast(null as BigInt))
+    def isNullBigInt02(): Bool = Object.isNull((checked_cast(null): BigInt))
 
     @test
     def isNullString01(): Bool = not Object.isNull("hello")
 
     @test
-    def isNullString02(): Bool = Object.isNull(unchecked_cast(null as String))
+    def isNullString02(): Bool = Object.isNull((checked_cast(null): String))
 
     @test
     def isNullArray01(): Bool \ IO = not Object.isNull(Array#{} @ Static)
@@ -67,7 +67,7 @@ mod TestObject {
     @test
     def isNullArray02(): Bool = region rc {
         let _ = rc;
-        Object.isNull(unchecked_cast(null as Array[Int32, rc]))
+        Object.isNull((checked_cast(null): Array[Int32, rc]))
     }
 
     @test
@@ -80,7 +80,7 @@ mod TestObject {
     // toOption                                                                //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def toOption01(): Bool = Object.toOption(unchecked_cast(null as String)) == None
+    def toOption01(): Bool = Object.toOption((checked_cast(null): String)) == None
 
     @test
     def toOption02(): Bool = Object.toOption("") == Some("")

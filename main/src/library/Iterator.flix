@@ -292,7 +292,7 @@ mod Iterator {
     /// Does *not* consume any elements from the iterator.
     ///
     pub def replace(src: {src = a}, dst: {dst = a}, iter: Iterator[a, ef, r]): Iterator[a, ef, r] with Eq[a] =
-        map(a -> if (a == src.src) dst.dst else a, iter)
+        map(a -> if (a == src#src) dst#dst else a, iter)
 
     ///
     /// Returns `iterB` appended to (the end of) `iterA`.
@@ -646,7 +646,7 @@ mod Iterator {
     ///
     /// The original iterators `sep` and `iter` should not be reused.
     ///
-    pub def intercalate(sep: t[a], iter: Iterator[Iterator[a, ef, r], ef, r]): Iterator[a, ef + r, r] \ r with Foldable[t] =
+    pub def intercalate(sep: t[a], iter: Iterator[Iterator[a, ef, r], ef, r]): Iterator[a, ef + r, r] \ (r + Foldable.Aef[t]) with Foldable[t] =
         let Iterator(rc, _) = iter;
         let start = ref true @ rc;
         let sepL = Foldable.toList(sep);
@@ -666,7 +666,7 @@ mod Iterator {
     /// Note - this is not the "best" return type. Ideally it should be `Iterator[a, r, r]` but
     /// then `intercalate` fails.
     ///
-    def ofList(rc: Region[r], xs: List[a]): Iterator[a, Pure, r] \ r =
+    def ofList(rc: Region[r], xs: List[a]): Iterator[a, {}, r] \ r =
         let ls = ref xs @ rc;
         let next = () -> {
             match (deref ls) {

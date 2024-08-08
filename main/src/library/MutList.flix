@@ -25,6 +25,12 @@ pub enum MutList[a: Type, r: Region] {
     case MutList(Region[r], Ref[Array[a, r], r], Ref[Int32, r])
 }
 
+instance Iterable[MutList[a, r]] {
+    type Elm = a
+    type Aef = r
+    pub def iterator(rc: Region[r1], l: MutList[a, r]): Iterator[a, r + r1, r1] \ (r + r1) = MutList.iterator(rc, l)
+}
+
 mod MutList {
 
     ///
@@ -633,13 +639,13 @@ mod MutList {
     ///
     /// Appends `m` to `v` i.e. inserts all elements from `m` into the end of `v`.
     ///
-    pub def pushAll!(m: m[a], v: MutList[a, r]): Unit \ r with Foldable[m] =
+    pub def pushAll!(m: m[a], v: MutList[a, r]): Unit \ (r + Foldable.Aef[m]) with Foldable[m] =
         Foldable.forEach(x -> MutList.push!(x, v), m)
 
     ///
     /// Appends `m` to `v` i.e. inserts all elements from `m` into the end of `v`.
     ///
-    pub def append!(m: m[a], v: MutList[a, r]): Unit \ r with Foldable[m] =
+    pub def append!(m: m[a], v: MutList[a, r]): Unit \ (r + Foldable.Aef[m]) with Foldable[m] =
         pushAll!(m, v)
 
     ///
@@ -657,7 +663,7 @@ mod MutList {
     /// Replaces all occurrences of the `src` with `dst` in the given mutable list `v`.
     ///
     pub def replace!(src: {src = a}, dst: {dst = a}, v: MutList[a, r]): Unit \ r with Eq[a] =
-        transform!(e -> if (e == src.src) dst.dst else e, v)
+        transform!(e -> if (e == src#src) dst#dst else e, v)
 
     ///
     /// Reverses the order of the elements in the given mutable list `v`.

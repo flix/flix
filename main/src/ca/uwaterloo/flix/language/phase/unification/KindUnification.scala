@@ -48,6 +48,10 @@ object KindUnification {
     case (Kind.CaseSet(sym), Kind.WildCaseSet) =>
       Some(Kind.CaseSet(sym))
 
+    case (Kind.Error, k) => Some(k)
+
+    case (k, Kind.Error) => Some(k)
+
     // else fail
     case _ => None
   }

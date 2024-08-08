@@ -1,8 +1,11 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.Ast.{EliminatedBy, IntroducedBy}
-import ca.uwaterloo.flix.language.phase.{Kinder, Lowering, Monomorpher}
+import ca.uwaterloo.flix.language.phase.typer.TypeReduction
+import ca.uwaterloo.flix.language.phase.{Kinder, Lowering, Monomorpher, TypeReconstruction}
 
+import java.lang.reflect.Method
+import java.lang.reflect.Constructor
 import scala.collection.immutable.SortedSet
 
 /**
@@ -230,6 +233,12 @@ object TypeConstructor {
   case class Enum(sym: Symbol.EnumSym, kind: Kind) extends TypeConstructor
 
   /**
+   * A type constructor that represents the type of structs.
+   */
+  @IntroducedBy(Kinder.getClass)
+  case class Struct(sym: Symbol.StructSym, kind: Kind) extends TypeConstructor
+
+  /**
     * A type constructor that represents the type of enums.
     */
   @IntroducedBy(Kinder.getClass)
@@ -240,6 +249,38 @@ object TypeConstructor {
     */
   case class Native(clazz: Class[_]) extends TypeConstructor {
     def kind: Kind = Kind.Star
+  }
+
+  /**
+   * A type constructor that represents the type of a Java constructor.
+   * */
+  case class JvmConstructor(constructor: Constructor[_]) extends TypeConstructor {
+    def kind: Kind = Kind.JvmConstructorOrMethod
+  }
+
+  /**
+   * A type constructor that represents the type of a Java method.
+   */
+  case class JvmMethod(method: Method) extends TypeConstructor {
+    def kind: Kind = Kind.JvmConstructorOrMethod
+  }
+
+  /**
+   * A type constructor that represents the _return type_ of a Java method.
+   *
+   * A method return type can be resolved when the receiver object and argument types are known.
+   *
+   * A few examples:
+   *
+   * - The type: `Apply(InvokeMethod("length", 0), String)` is equivalent to `Int32`.
+   * - The type: `Apply(Apply(InvokeMethod("startsWith", 1), String), String)` is equivalent to `Bool`.
+   * - The type: `Apply(Apply(Apply(InvokeMethod("substring", 2), String), Int32), Int32)` is equivalent to `String`.
+   *
+   * The type constructor requires a java method or constructor type constructor.
+   */
+  @EliminatedBy(TypeReconstruction.getClass)
+  case object MethodReturnType extends TypeConstructor {
+    def kind: Kind = Kind.JvmConstructorOrMethod ->: Kind.Star
   }
 
   /**
@@ -414,6 +455,6 @@ object TypeConstructor {
   /**
     * A type constructor which represents an erroneous type of the given `kind`.
     */
-  case class Error(kind: Kind) extends TypeConstructor
+  case class Error(id: Int, kind: Kind) extends TypeConstructor
 
 }

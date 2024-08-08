@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.errors.SafetyError
-import ca.uwaterloo.flix.language.errors.SafetyError.{IllegalCatchType, IllegalNegativelyBoundWildCard, IllegalNonPositivelyBoundVar, IllegalPatternInBodyAtom, IllegalRelationalUseOfLatticeVar}
+import ca.uwaterloo.flix.language.errors.SafetyError.{IllegalThrowType, IllegalCatchType, IllegalNegativelyBoundWildCard, IllegalNestedTryCatch, IllegalNonPositivelyBoundVar, IllegalPatternInBodyAtom, IllegalRelationalUseOfLatticeVar}
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -53,6 +53,54 @@ class TestSafety extends AnyFunSuite with TestUtils {
       """.stripMargin
     val result = compile(input, Options.DefaultTest)
     expectError[IllegalCatchType](result)
+  }
+
+  // THROW TODO: Enable these tests when ready
+  ignore("IllegalThrowType.01") {
+    val input =
+      """
+        |pub def f(): String = throw "hello"
+      """.stripMargin
+    val result = compile(input, Options.DefaultTest)
+    expectError[IllegalThrowType](result)
+  }
+
+  ignore("IllegalThrowType.02") {
+    val input =
+      """
+        |import java.io.IOException
+        |pub def f(): String = throw (throw new IOException)
+      """.stripMargin
+    val result = compile(input, Options.DefaultTest)
+    expectError[IllegalThrowType](result)
+  }
+
+  ignore("IllegalThrowType.03") {
+    val input =
+      """
+        |import java.io.IOException
+        |pub def f(): String = throw None
+      """.stripMargin
+    val result = compile(input, Options.DefaultTest)
+    expectError[IllegalThrowType](result)
+  }
+
+  test("IllegalNestedTryCatch.01") {
+    val input =
+      """
+        |pub def f(): String =
+        |    try {
+        |        try {
+        |            "abc"
+        |        } catch {
+        |            case _e1: ##java.lang.Exception => "ok"
+        |        }
+        |    } catch {
+        |        case _e1: ##java.lang.Exception => "ok"
+        |    }
+      """.stripMargin
+    val result = compile(input, Options.DefaultTest)
+    expectError[IllegalNestedTryCatch](result)
   }
 
   test("UnexpectedBodyAtomPattern.01") {
@@ -771,6 +819,79 @@ class TestSafety extends AnyFunSuite with TestUtils {
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[SafetyError.IllegalEntryPointSignature](result)
+  }
+
+  test("IllegalExportFunction.01") {
+    val input =
+      """
+        |mod Mod { @Export def id(x: Int32): Int32 = x }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.NonPublicExport](result)
+  }
+
+  test("IllegalExportFunction.02") {
+    val input =
+      """
+        |@Export pub def id(x: Int32): Int32 = x
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalExportNamespace](result)
+  }
+
+  test("IllegalExportFunction.03") {
+    val input =
+      """
+        |mod Mod { @Export pub def <><(x: Int32, _y: Int32): Int32 = x }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalExportName](result)
+  }
+
+  test("IllegalExportFunction.04") {
+    val input =
+      """
+        |eff Print
+        |def println(x: t): t \ Print = ???()
+        |mod Mod { @Export pub def id(x: Int32): Int32 \ Print = println(x) }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalExportEffect](result)
+  }
+
+  test("IllegalExportFunction.05") {
+    val input =
+      """
+        |enum Option[t] {
+        |  case Some(t)
+        |  case None
+        |}
+        |mod Mod { @Export pub def id(x: Int32): Option[Int32] = Some(x) }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalExportType](result)
+  }
+
+  test("IllegalExportFunction.06") {
+    val input =
+      """
+        |enum Option[t] {
+        |  case Some(t)
+        |  case None
+        |}
+        |mod Mod { @Export pub def id(x: Int32, _y: Option[Int32]): Int32 = x }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalExportType](result)
+  }
+
+  test("IllegalExportFunction.07") {
+    val input =
+      """
+        |mod Mod { @Export pub def id[t](x: t): t = x }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalExportPolymorphism](result)
   }
 
 }

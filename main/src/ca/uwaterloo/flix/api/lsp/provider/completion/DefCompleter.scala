@@ -24,7 +24,7 @@ object DefCompleter extends Completer {
   /**
     * Returns a List of Completion for defs.
     */
-  override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[DefCompletion] = {
+  override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[DefCompletion] = {
     val word = context.word
     val uri = context.uri
 

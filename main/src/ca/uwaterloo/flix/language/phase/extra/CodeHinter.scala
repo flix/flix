@@ -21,7 +21,6 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.CodeHint
-import ca.uwaterloo.flix.language.phase.unification.TypeMinimization
 
 object CodeHinter {
 
@@ -29,9 +28,9 @@ object CodeHinter {
     * Returns a collection of code quality hints for the given AST `root`.
     */
   def run(root: TypedAst.Root, sources: Set[String])(implicit flix: Flix, index: Index): List[CodeHint] = {
-    val traitHints = root.traits.values.flatMap(visitTrait(_)(root, index)).toList
+    val traitHints = root.traits.values.flatMap(visitTrait(_)(index)).toList
     val defsHints = root.defs.values.flatMap(visitDef(_)(root, flix)).toList
-    val enumsHints = root.enums.values.flatMap(visitEnum(_)(root, index)).toList
+    val enumsHints = root.enums.values.flatMap(visitEnum(_)(index)).toList
     (traitHints ++ defsHints ++ enumsHints).filter(include(_, sources))
   }
 
@@ -44,7 +43,7 @@ object CodeHinter {
   /**
     * Computes code quality hints for the given enum `enum`.
     */
-  private def visitEnum(enum0: TypedAst.Enum)(implicit root: Root, index: Index): List[CodeHint] = {
+  private def visitEnum(enum0: TypedAst.Enum)(implicit index: Index): List[CodeHint] = {
     val tagUses = enum0.cases.keys.flatMap(sym => index.usesOf(sym))
     val enumUses = index.usesOf(enum0.sym)
     val uses = enumUses ++ tagUses
@@ -58,7 +57,7 @@ object CodeHinter {
   /**
     * Computes code quality hints for the given trait `trt`.
     */
-  private def visitTrait(trt: TypedAst.Trait)(implicit root: Root, index: Index): List[CodeHint] = {
+  private def visitTrait(trt: TypedAst.Trait)(implicit index: Index): List[CodeHint] = {
     val uses = index.usesOf(trt.sym)
     val isDeprecated = trt.ann.isDeprecated
     val deprecated = if (isDeprecated) uses.map(CodeHint.Deprecated) else Nil
@@ -99,16 +98,15 @@ object CodeHinter {
     case Expr.Cst(_, _, _) => Nil
 
     case Expr.Lambda(_, exp, _, _) =>
-      checkEffect(exp.eff, exp.loc) ++ visitExp(exp)
+      visitExp(exp)
 
-    case Expr.Apply(exp, exps, _, eff, loc) =>
+    case Expr.Apply(exp, exps, _, _, loc) =>
       val hints0 = (exp, exps) match {
         case (Expr.Def(sym, _, _), lambda :: _) =>
           checkEffect(sym, lambda.tpe, loc)
         case _ => Nil
       }
-      val hints1 = checkEffect(eff, loc)
-      hints0 ++ hints1 ++ visitExp(exp) ++ visitExps(exps)
+      hints0 ++ visitExp(exp) ++ visitExps(exps)
 
     case Expr.Unary(_, exp, _, _, _) =>
       visitExp(exp)
@@ -116,8 +114,8 @@ object CodeHinter {
     case Expr.Binary(_, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expr.Let(_, _, exp1, exp2, _, eff, loc) =>
-      checkEffect(eff, loc) ++ visitExp(exp1) ++ visitExp(exp2)
+    case Expr.Let(_, _, exp1, exp2, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2)
 
     case Expr.LetRec(_, _, _, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
@@ -130,8 +128,8 @@ object CodeHinter {
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
-    case Expr.Stm(exp1, exp2, _, eff, loc) =>
-      checkEffect(eff, loc) ++ visitExp(exp1) ++ visitExp(exp2)
+    case Expr.Stm(exp1, exp2, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2)
 
     case Expr.Discard(exp, _, _) =>
       visitExp(exp)
@@ -213,7 +211,7 @@ object CodeHinter {
     case Expr.CheckedCast(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expr.UncheckedCast(exp, _, _, tpe, eff, loc) =>
+    case Expr.UncheckedCast(exp, _, _, _, _, _) =>
       visitExp(exp)
 
     case Expr.UncheckedMaskingCast(exp, _, _, _) =>
@@ -226,6 +224,8 @@ object CodeHinter {
       visitExp(exp) ++ rules.flatMap {
         case CatchRule(_, _, exp) => visitExp(exp)
       }
+
+    case Expr.Throw(exp, _, _, _) => visitExp(exp)
 
     case Expr.TryWith(exp, _, rules, _, _, _) =>
       visitExp(exp) ++ rules.flatMap {
@@ -381,28 +381,6 @@ object CodeHinter {
   }
 
   /**
-    * Checks whether `tpe` is a non-trivial effect.
-    *
-    * NB: Not currently checked for every expression.
-    */
-  private def checkEffect(tpe: Type, loc: SourceLocation)(implicit flix: Flix): List[CodeHint] = {
-    if (numberOfVarOccurs(tpe) < 5) {
-      // Case 1: Formula is small. Good.
-      Nil
-    } else {
-      // Case 2: Formula is big. Try to minimize it.
-      val minType = TypeMinimization.minimizeType(tpe)
-      if (numberOfVarOccurs(minType) < 5) {
-        // Case 2.1: Formula is small. Good.
-        Nil
-      } else {
-        // Case 2.2: Formula is still big. Report a code hint.
-        CodeHint.NonTrivialEffect(minType, loc) :: Nil
-      }
-    }
-  }
-
-  /**
     * Checks whether the given definition symbol `sym` is deprecated.
     */
   private def checkDeprecated(sym: Symbol.DefnSym, loc: SourceLocation)(implicit root: Root): List[CodeHint] = {
@@ -460,17 +438,6 @@ object CodeHinter {
   private def isPureFunction(tpe: Type): Boolean = tpe.typeConstructor match {
     case Some(TypeConstructor.Arrow(_)) => tpe.arrowEffectType == Type.Pure
     case _ => false
-  }
-
-  /**
-    * Returns the total number of variable *occurrences* in the given type `tpe`.
-    */
-  private def numberOfVarOccurs(tpe: Type): Int = tpe match {
-    case Type.Var(_, _) => 1
-    case Type.Cst(_, _) => 0
-    case Type.Apply(tpe1, tpe2, _) => numberOfVarOccurs(tpe1) + numberOfVarOccurs(tpe2)
-    case Type.Alias(_, _, tpe, _) => numberOfVarOccurs(tpe)
-    case Type.AssocType(_, arg, _, _) => numberOfVarOccurs(arg)
   }
 
 }

@@ -16,6 +16,8 @@
 package ca.uwaterloo.flix.language.fmt
 
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.errors.KindError
+import ca.uwaterloo.flix.language.fmt
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 /**
@@ -264,6 +266,11 @@ object SimpleType {
   case class Tuple(elms: List[SimpleType]) extends SimpleType
 
   /**
+   * A method return type.
+   */
+  case class MethodReturnType(tpe: SimpleType) extends SimpleType
+
+  /**
     * An error type.
     */
   case object Error extends SimpleType
@@ -422,8 +429,17 @@ object SimpleType {
         case TypeConstructor.Receiver => mkApply(Receiver, t.typeArguments.map(visit))
         case TypeConstructor.Lazy => mkApply(Lazy, t.typeArguments.map(visit))
         case TypeConstructor.Enum(sym, _) => mkApply(Name(sym.name), t.typeArguments.map(visit))
+        case TypeConstructor.Struct(sym, _) => mkApply(Name(sym.name), t.typeArguments.map(visit))
         case TypeConstructor.RestrictableEnum(sym, _) => mkApply(Name(sym.name), t.typeArguments.map(visit))
         case TypeConstructor.Native(clazz) => Name(clazz.getName)
+        case TypeConstructor.JvmConstructor(constructor) => Name(constructor.getName)
+        case TypeConstructor.JvmMethod(method) => Name(method.getName)
+        case TypeConstructor.MethodReturnType =>
+          t.typeArguments.size match {
+            case 0 => SimpleType.MethodReturnType(SimpleType.Hole)
+            case 1 => SimpleType.MethodReturnType(fromWellKindedType(t.typeArguments.head))
+            case _ => throw InternalCompilerException(s"Unexpected wrong kinded type $t", t.loc)
+          }
         case TypeConstructor.Ref => mkApply(Ref, t.typeArguments.map(visit))
         case TypeConstructor.Tuple(l) =>
           val tpes = t.typeArguments.map(visit).padTo(l, Hole)
@@ -546,7 +562,7 @@ object SimpleType {
         case TypeConstructor.Effect(sym) => mkApply(SimpleType.Name(sym.name), t.typeArguments.map(visit))
         case TypeConstructor.RegionToStar => mkApply(Region, t.typeArguments.map(visit))
 
-        case TypeConstructor.Error(_) => SimpleType.Error
+        case TypeConstructor.Error(_, _) => SimpleType.Error
       }
     }
 

@@ -15,6 +15,8 @@
  */
 
 mod BigInt {
+    import java.math.BigDecimal
+    import java.math.BigInteger
 
     ///
     /// Returns the smaller of `x` and `y`.
@@ -35,19 +37,17 @@ mod BigInt {
     /// Returns `x` raised to the power of `n`.
     ///
     pub def pow(x: BigInt, n: Int32): BigInt =
-        import java.math.BigInteger.pow(Int32): ##java.math.BigInteger \ {};
-        pow(x, n)
+        unsafe x.pow(n)
 
     ///
     /// Returns the Euclidean modulo of `x` and `n`.
     /// The result is always non-negative.
     ///
     pub def modulo(x: BigInt, n: BigInt): BigInt =
-        import java.math.BigInteger.remainder(BigInt): BigInt \ {};
         if (n == 0ii)
             0ii
         else
-            ((x `remainder` n) + n) `remainder` n
+            unsafe ((x.remainder(n)) + n).remainder(n)
 
     ///
     /// Returns the remainder of `x / n`.
@@ -56,11 +56,10 @@ mod BigInt {
     /// See also `BigInt.modulo`.
     ///
     pub def remainder(x: BigInt, n: BigInt): BigInt =
-        import java.math.BigInteger.remainder(BigInt): BigInt \ {};
         if (n == 0ii)
             0ii
         else
-            x `remainder` n
+            unsafe x.remainder(n)
 
     ///
     /// Returns the distance between `x` and `y`.
@@ -113,50 +112,43 @@ mod BigInt {
     /// Returns the integer binary logarithm of `x`.
     ///
     pub def log2(x: BigInt): Int32 =
-        import java.math.BigInteger.bitLength(): Int32 \ {};
-        bitLength(x)
+        unsafe x.bitLength()
 
     ///
     /// Returns `x` with the bits shifted left by `y` places
     ///
     pub def leftShift(x: BigInt, y: Int32): BigInt =
-        import java.math.BigInteger.shiftLeft(Int32): BigInt \ {};
-        x `shiftLeft` y
+        unsafe x.shiftLeft(y)
 
     ///
     /// Returns `x` with the bits shifted right by `y` places
     ///
     pub def rightShift(x: BigInt, y: Int32): BigInt =
-        import java.math.BigInteger.shiftRight(Int32): BigInt \ {};
-        x `shiftRight` y
+        unsafe x.shiftRight(y)
 
     ///
     /// Returns the bitwise AND of `x` and `y`.
     ///
     pub def bitwiseAnd(x: BigInt, y: BigInt): BigInt =
-        import java.math.BigInteger.and(BigInt): BigInt \ {};
-        x `and` y
+        unsafe x.and(y)
 
     ///
     /// Returns the bitwise NOT of `x`.
     ///
     pub def bitwiseNot(x: BigInt): BigInt =
-        import java.math.BigInteger.not(): BigInt \ {} as bNot;
-        bNot(x)
+        unsafe x.not()
 
     ///
     /// Returns the bitwise OR of `x` and `y`.
     ///
     pub def bitwiseOr(x: BigInt, y: BigInt): BigInt =
-        import java.math.BigInteger.or(BigInt): BigInt \ {};
-        x `or` y
+        unsafe x.or(y)
 
     ///
     /// Returns the bitwise XOR of `x` and `y`.
     ///
     pub def bitwiseXor(x: BigInt, y: BigInt): BigInt =
-        import java.math.BigInteger.xor(BigInt): BigInt \ {};
-        x `xor` y
+        unsafe x.xor(y)
 
     ///
     /// Return a string representation of `x`.
@@ -168,9 +160,7 @@ mod BigInt {
     /// A successful parse is wrapped with `Some(x)`, a parse failure is indicated by `None`.
     ///
     pub def fromString(s: String): Option[BigInt] = try {
-        import java.lang.String.strip(): String \ {};
-        import java_new java.math.BigInteger(String): BigInt \ {} as parseBigInt;
-        Some(s |> strip |> parseBigInt)
+        Some(unsafe new BigInteger(s.strip()))
     } catch {
         case _: ##java.lang.NumberFormatException => None
     }
@@ -184,9 +174,8 @@ mod BigInt {
     /// (i.e. -128 to 127).
     ///
     pub def tryToInt8(x: BigInt): Option[Int8] =
-        import java.math.BigInteger.byteValueExact(): Int8 \ {};
         try {
-            Some(byteValueExact(x))
+            Some(unsafe x.byteValueExact())
         } catch {
             case _ : ##java.lang.ArithmeticException => None
         }
@@ -200,9 +189,8 @@ mod BigInt {
     /// (i.e. -32768 to 32767).
     ///
     pub def tryToInt16(x: BigInt): Option[Int16] =
-        import java.math.BigInteger.shortValueExact(): Int16 \ {};
         try {
-            Some(shortValueExact(x))
+            Some(unsafe x.shortValueExact())
         } catch {
             case _ : ##java.lang.ArithmeticException => None
         }
@@ -216,9 +204,8 @@ mod BigInt {
     /// (i.e. -2147483648 to 2147483647).
     ///
     pub def tryToInt32(x: BigInt): Option[Int32] =
-        import java.math.BigInteger.intValueExact(): Int32 \ {};
         try {
-            Some(intValueExact(x))
+            Some(unsafe x.intValueExact())
         } catch {
             case _ : ##java.lang.ArithmeticException => None
         }
@@ -232,9 +219,8 @@ mod BigInt {
     /// (i.e. -9223372036854775808 to 9223372036854775807).
     ///
     pub def tryToInt64(x: BigInt): Option[Int64] =
-        import java.math.BigInteger.longValueExact(): Int64 \ {};
         try {
-            Some(longValueExact(x))
+            Some(unsafe x.longValueExact())
         } catch {
             case _ : ##java.lang.ArithmeticException => None
         }
@@ -250,10 +236,8 @@ mod BigInt {
     /// (i.e. 1.4E-45 to 3.4028235E38).
     ///
     pub def tryToFloat32(x: BigInt): Option[Float32] =
-        import java_new java.math.BigDecimal(BigInt): BigDecimal \ {} as newBigDecimal;
-        import java.math.BigDecimal.floatValue(): Float32 \ {};
-        let xd = newBigDecimal(x);
-        let d = floatValue(xd);
+        let xd = unsafe new BigDecimal(x);
+        let d = unsafe xd.floatValue();
         forM (
             f32min <- Float32.tryToBigInt(Float32.minValue());
             f32max <- Float32.tryToBigInt(Float32.maxValue());
@@ -271,10 +255,8 @@ mod BigInt {
     /// (i.e 4.9E-324 to 1.7976931348623157E308).
     ///
     pub def tryToFloat64(x: BigInt): Option[Float64] =
-        import java_new java.math.BigDecimal(BigInt): BigDecimal \ {} as newBigDecimal;
-        import java.math.BigDecimal.doubleValue(): Float64 \ {};
-        let xd = newBigDecimal(x);
-        let d = doubleValue(xd);
+        let xd = unsafe new BigDecimal(x);
+        let d = unsafe xd.doubleValue();
         forM (
             f64min <- Float64.tryToBigInt(Float64.minValue());
             f64max <- Float64.tryToBigInt(Float64.maxValue());
@@ -285,8 +267,7 @@ mod BigInt {
     /// Convert `x` to an `BigDecimal`.
     ///
     pub def toBigDecimal(x: BigInt): BigDecimal =
-        import java_new java.math.BigDecimal(BigInt): BigDecimal \ {} as fromBigInteger;
-        fromBigInteger(x)
+        unsafe new BigDecimal(x)
 
     ///
     /// Helper function for the `clamp` conversion functions.
@@ -306,11 +287,11 @@ mod BigInt {
     /// Returns `x` clamped within the Int8 range `minimum` to `maximum`.
     ///
     pub def clampToInt8(x: BigInt, minimum: Int8, maximum: Int8): Int8 =
-        import java.math.BigInteger.byteValueExact(): Int8 \ {};
         let minii = Int8.toBigInt(minimum);
         let maxii = Int8.toBigInt(maximum);
         try {
-            byteValueExact(clamp(x, minii, maxii))
+            let y = clamp(x, minii, maxii);
+            unsafe y.byteValueExact()
         } catch {
             // This should be impossible!
             case _ : ##java.lang.ArithmeticException => minimum
@@ -322,11 +303,11 @@ mod BigInt {
     /// Returns `x` clamped within the Int16 range `minimum` to `maximum`.
     ///
     pub def clampToInt16(x: BigInt, minimum: Int16, maximum: Int16): Int16 =
-        import java.math.BigInteger.shortValueExact(): Int16 \ {};
         let minii = Int16.toBigInt(minimum);
         let maxii = Int16.toBigInt(maximum);
         try {
-            shortValueExact(clamp(x, minii, maxii))
+            let y = clamp(x, minii, maxii);
+            unsafe y.shortValueExact()
         } catch {
             // This should be impossible!
             case _ : ##java.lang.ArithmeticException => minimum
@@ -338,11 +319,11 @@ mod BigInt {
     /// Returns `x` clamped within the Int32 range `minimum` to `maximum`.
     ///
     pub def clampToInt32(x: BigInt, minimum: Int32, maximum: Int32): Int32 =
-        import java.math.BigInteger.intValueExact(): Int32 \ {};
         let minii = Int32.toBigInt(minimum);
         let maxii = Int32.toBigInt(maximum);
         try {
-            intValueExact(clamp(x, minii, maxii))
+            let y = clamp(x, minii, maxii);
+            unsafe y.intValueExact()
         } catch {
             // This should be impossible!
             case _ : ##java.lang.ArithmeticException => minimum
@@ -354,11 +335,11 @@ mod BigInt {
     /// Returns `x` clamped within the Int64 range `minimum` to `maximum`.
     ///
     pub def clampToInt64(x: BigInt, minimum: Int64, maximum: Int64): Int64 =
-        import java.math.BigInteger.longValueExact(): Int64 \ {};
         let minii = Int64.toBigInt(minimum);
         let maxii = Int64.toBigInt(maximum);
         try {
-            longValueExact(clamp(x, minii, maxii))
+            let y = clamp(x, minii, maxii);
+            unsafe y.longValueExact()
         } catch {
             // This should be impossible!
             case _ : ##java.lang.ArithmeticException => minimum
@@ -370,16 +351,14 @@ mod BigInt {
     /// Returns `x` clamped within the Float32 range `minimum` to `maximum`.
     ///
     pub def clampToFloat32(x: BigInt, minimum: Float32, maximum: Float32): Float32 =
-        import java_new java.math.BigDecimal(BigInt): BigDecimal \ {} as newBigDecimal;
-        import java.math.BigDecimal.floatValue(): Float32 \ {};
         let step = () -> {
             forM (
                 f32min <- Float32.tryToBigInt(minimum);
                 f32max <- Float32.tryToBigInt(maximum)
             ) yield {
                 let x1 = clamp(x, f32min, f32max);
-                let xd = newBigDecimal(x1);
-                floatValue(xd)
+                let xd = unsafe new BigDecimal(x1);
+                unsafe xd.floatValue()
             }
         };
         match step() {
@@ -393,16 +372,14 @@ mod BigInt {
     /// Returns `x` clamped within the Float64 range `minimum` to `maximum`.
     ///
     pub def clampToFloat64(x: BigInt, minimum: Float64, maximum: Float64): Float64 =
-        import java_new java.math.BigDecimal(BigInt): BigDecimal \ {} as newBigDecimal;
-        import java.math.BigDecimal.doubleValue(): Float64 \ {};
         let step = () -> {
             forM (
                 f64min <- Float64.tryToBigInt(minimum);
                 f64max <- Float64.tryToBigInt(maximum)
             ) yield {
                 let x1 = clamp(x, f64min, f64max);
-                let xd = newBigDecimal(x1);
-                doubleValue(xd)
+                let xd = unsafe new BigDecimal(x1);
+                unsafe xd.doubleValue()
             }
         };
         match step() {

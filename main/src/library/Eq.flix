@@ -34,22 +34,22 @@ pub lawful trait Eq[a] {
     ///
     /// Reflexivity: An element `x` is equal to itself.
     ///
-    law reflexivity: forall(x: a). x == x
+    law reflexivity: forall(x: a) x == x
 
     ///
     /// Symmetry: If `x` is equal to `y` then `y` must also be equal to `x`.
     ///
-    law symmetry: forall(x: a, y: a). (x == y) ==> (y == x)
+    law symmetry: forall(x: a, y: a) (x == y) ==> (y == x)
 
     ///
     /// Transitivity: If `x` is equal to `y` and `y` is equal to `z` then `x` must be equal to `z`.
     ///
-    law transitivity: forall(x: a, y: a, z: a). ((x == y) and (y == z)) ==> (x == z)
+    law transitivity: forall(x: a, y: a, z: a) ((x == y) and (y == z)) ==> (x == z)
 
     ///
     /// x != y is logically equivalent to not (x == y).
     ///
-    law inverseNeq: forall(x: a, y: a). (x != y) <==> (not (x == y))
+    law inverseNeq: forall(x: a, y: a) (x != y) <==> (not (x == y))
 }
 
 instance Eq[Unit] {
@@ -78,12 +78,10 @@ instance Eq[Float64] {
 
 instance Eq[BigDecimal] {
     pub def eq(x: BigDecimal, y: BigDecimal): Bool =
-        import java.math.BigDecimal.compareTo(BigDecimal): Int32 \ {};
-        (x `compareTo` y) == 0
+        (unsafe x.compareTo(y)) == 0
 
     pub override def neq(x: BigDecimal, y: BigDecimal): Bool =
-        import java.math.BigDecimal.compareTo(BigDecimal): Int32 \ {};
-        (x `compareTo` y) != 0
+        (unsafe x.compareTo(y)) != 0
 }
 
 instance Eq[Int8] {
@@ -108,19 +106,14 @@ instance Eq[Int64] {
 
 instance Eq[BigInt] {
     pub def eq(x: BigInt, y: BigInt): Bool =
-        import java.math.BigInteger.compareTo(BigInt): Int32 \ {};
-        (x `compareTo` y) == 0
+        (unsafe x.compareTo(y)) == 0
 
     pub override def neq(x: BigInt, y: BigInt): Bool =
-        import java.math.BigInteger.compareTo(BigInt): Int32 \ {};
-        (x `compareTo` y) != 0
+        (unsafe x.compareTo(y)) != 0
 }
 
 instance Eq[String] {
-    pub def eq(x: String, y: String): Bool =
-        import java.lang.String.equals(##java.lang.Object): Bool \ {};
-        equals(x, checked_cast(y))
-
+    pub def eq(x: String, y: String): Bool = unsafe x.equals(y)
 }
 
 instance Eq[(a1, a2)] with Eq[a1], Eq[a2] {

@@ -47,6 +47,12 @@ class FuzzDuplicateLines extends AnyFunSuite with TestUtils {
     compileWithDuplicateLine(filepath.getFileName.toString, lines)
   }
 
+  test("ford-fulkerson") {
+    val filepath = Paths.get("examples/larger-examples/datalog/ford-fulkerson.flix")
+    val lines = Files.lines(filepath)
+    compileWithDuplicateLine(filepath.getFileName.toString, lines)
+  }
+
   /**
     * Compile N variants of the given program with a single line duplicated.
     * The program may not be valid: We just care that it does not crash the compiler.
@@ -63,7 +69,7 @@ class FuzzDuplicateLines extends AnyFunSuite with TestUtils {
       val iStepped = Math.min(i * step, numLines)
       val (before, after) = lines.splitAt(iStepped)
       val src = (before ::: after.head :: after).mkString("\n")
-      flix.addSourceCode(s"$name-duplicate-line-$iStepped", src)
+      flix.addUnmanagedSourceCode(s"$name-duplicate-line-$iStepped", src)
       flix.compile() // We simply care that this does not crash.
     }
   }

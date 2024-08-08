@@ -91,7 +91,7 @@ mod Test.Exp.Effect {
 
     pub def arrowWithEffect03(f: a -> b \ Console + (ef - Fail)): Bool = ???
 
-    pub def enumWithEffect01(f: Do[{Pure}]): Bool = ???
+    pub def enumWithEffect01(f: Do[{}]): Bool = ???
 
     pub def enumWithEffect02(f: Do[{ef}]): Bool = ???
 

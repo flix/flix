@@ -42,14 +42,14 @@ mod ClassHierarchyAnalysis {
     /// Returns a set of relations representing the class hierarchy analysis results.
     ///
     def classHierarchyAnalysis(p: Program): #{ Subtype(String, String), AvailableField(String, String), AvailableMethod(String, String), InheritedMethod(String, String, String) | r } =
-        let cs    = inject p.classes          into Class;
-        let is    = inject p.interfaces       into Interface;
-        let impls = inject p.classImplements  into ClassImplements;
-        let ce    = inject p.classExtends     into ClassExtends;
-        let ies   = inject p.interfaceExtends into InterfaceExtends;
-        let fs    = inject p.fields           into Field;
-        let ms    = inject p.classMethods     into ClassMethod;
-        let ams   = inject p.abstractMethods  into AbstractMethod;
+        let cs    = inject p#classes          into Class;
+        let is    = inject p#interfaces       into Interface;
+        let impls = inject p#classImplements  into ClassImplements;
+        let ce    = inject p#classExtends     into ClassExtends;
+        let ies   = inject p#interfaceExtends into InterfaceExtends;
+        let fs    = inject p#fields           into Field;
+        let ms    = inject p#classMethods     into ClassMethod;
+        let ams   = inject p#abstractMethods  into AbstractMethod;
         let rules = #{
             Subtype(x, x)       :- Class(x).
             Subtype(x, x)       :- Interface(x).
@@ -94,7 +94,7 @@ mod ClassHierarchyAnalysis {
     /// `class` in the program `p`.
     ///
     pub def missingMethods(p: Program): Vector[(String, String)] =
-        let cs   = inject p.classes into Class;
+        let cs   = inject p#classes into Class;
         let rule = #{
             ConcreteMethod(class, method) :- InheritedMethod(class, method, _).
             MissingMethod(class, method)  :- Class(class), AvailableMethod(class, method), not ConcreteMethod(class, method).
@@ -105,7 +105,7 @@ mod ClassHierarchyAnalysis {
     /// Returns a vector of types that extend the final classes in the program `p`.
     ///
     pub def illegalFinalClassExtension(p: Program): Vector[String] =
-        let fcs  = inject p.finalClasses into Final;
+        let fcs  = inject p#finalClasses into Final;
         let rule = #{
             ExtendsFinalClass(sub, super)  :- Final(super), Subtype(sub, super), if sub != super.
         };
@@ -115,7 +115,7 @@ mod ClassHierarchyAnalysis {
     /// Returns a vector of types that are thrown in the `p` program but are not subtypes of `java.lang.Throwable`.
     ///
     pub def illegalNonThrowable(p: Program): Vector[String] =
-        let ths = inject p.throws into Throws;
+        let ths = inject p#throws into Throws;
         let rule = #{
             IllegalThrowable(t) :- Throws(t), not Subtype(t, "java.lang.Throwable").
         };
@@ -125,7 +125,7 @@ mod ClassHierarchyAnalysis {
     /// Finds and returns a vector of tuples representing illegal multiple inheritance in the program `p`.
     ///
     pub def illegalMultipleInheritance(p: Program): Vector[(String, String, String)] =
-        let cs   = inject p.classes into Class;
+        let cs   = inject p#classes into Class;
         let rule = #{
             IllegalMultipleInheritance(class, super1, super2) :-
                 Class(class),
@@ -218,7 +218,7 @@ mod ClassHierarchyAnalysis {
         @Test
         def testHasMethod01(): Bool =
             let result = ClassHierarchyAnalysis.hasMethod(facts(), "toString");
-            let expected = facts().classes |> Vector.sort;
+            let expected = facts()#classes |> Vector.sort;
             Assert.eq(expected, result)
 
         @Test
@@ -262,13 +262,13 @@ mod ClassHierarchyAnalysis {
         @Test
         def testIllegalFinalClassExtension03(): Bool =
             let result = ClassHierarchyAnalysis.illegalFinalClassExtension({ finalClasses = Vector#{"java.lang.Object"} | facts() });
-            let expected = facts().classes |> Vector.filter(x -> x != "java.lang.Object") |> Vector.sort;
+            let expected = facts()#classes |> Vector.filter(x -> x != "java.lang.Object") |> Vector.sort;
             Assert.eq(expected, result)
 
         @Test
         def testIllegalFinalClassExtension04(): Bool =
             let result = ClassHierarchyAnalysis.illegalFinalClassExtension({ finalClasses = Vector#{"java.lang.Object", "java.util.ArrayList"} | facts() } );
-            let expected = facts().classes |> Vector.filter(x -> x != "java.lang.Object") |> Vector.sort;
+            let expected = facts()#classes |> Vector.filter(x -> x != "java.lang.Object") |> Vector.sort;
             Assert.eq(expected, result)
 
         @Test

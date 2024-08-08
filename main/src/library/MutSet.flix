@@ -21,6 +21,12 @@ pub enum MutSet[t: Type, r: Region] {
     case MutSet(Region[r], Ref[Set[t], r])
 }
 
+instance Iterable[MutSet[a, r]] {
+    type Elm = a
+    type Aef = r
+    pub def iterator(rc: Region[r1], s: MutSet[a, r]): Iterator[a, r + r1, r1] \ (r + r1) = MutSet.iterator(rc, s)
+}
+
 mod MutSet {
 
     ///
@@ -61,7 +67,7 @@ mod MutSet {
     ///
     /// Adds all elements in the collection `m` to the mutable set `s`.
     ///
-    pub def addAll!(m: m[a], s: MutSet[a, r]): Unit \ r with Order[a], Foldable[m] =
+    pub def addAll!(m: m[a], s: MutSet[a, r]): Unit \ (r + Foldable.Aef[m]) with Order[a], Foldable[m] =
         Foldable.forEach(x -> add!(x, s), m)
 
     ///
@@ -81,7 +87,7 @@ mod MutSet {
     ///
     /// Removes all elements in the collection `m` from the mutable set `s`.
     ///
-    pub def removeAll!(m: m[a], s: MutSet[a, r]): Unit \ r with Order[a], Foldable[m] =
+    pub def removeAll!(m: m[a], s: MutSet[a, r]): Unit \ (r + Foldable.Aef[m]) with Order[a], Foldable[m] =
         let MutSet(_, ms) = s;
         let s2 = Foldable.toSet(m);
         Ref.put(Set.difference(deref ms, s2), ms)
@@ -89,7 +95,7 @@ mod MutSet {
     ///
     /// Removes all elements from the mutable set `s` that are not in collection `m`.
     ///
-    pub def retainAll!(m: m[a], s: MutSet[a, r]): Unit \ r with Order[a], Foldable[m] =
+    pub def retainAll!(m: m[a], s: MutSet[a, r]): Unit \ (r + Foldable.Aef[m]) with Order[a], Foldable[m] =
         let MutSet(_, ms) = s;
         let s2 = Foldable.toSet(m);
         Ref.put(Set.intersection(s2, deref ms), ms)
@@ -110,7 +116,7 @@ mod MutSet {
     ///
     pub def replace!(src: {src = a}, dst: {dst = a}, s: MutSet[a, r]): Unit \ r with Order[a] =
         let MutSet(_, ms) = s;
-        Ref.put(Set.replace(src = src.src, dst = dst.dst, deref ms), ms)
+        Ref.put(Set.replace(src = src#src, dst = dst#dst, deref ms), ms)
 
     ///
     /// Applies the function `f` to every element in the mutable set `s`.
@@ -397,7 +403,7 @@ mod MutSet {
     ///
     pub def iterator(rc: Region[r1], s: MutSet[a, r2]): Iterator[a, r1 + r2, r1] \ { r1, r2 } =
         let MutSet(_, ms) = s;
-        Set.iterator(rc, deref ms) |> Iterator.map(x -> { discard deref ms; x })
+        Set.iterator(rc, deref ms) |> Iterator.map(eidentity)
 
     ///
     /// Returns an enumerator over `s`.

@@ -16,9 +16,10 @@
 
 mod Test.Exp.Jvm.TestTryCatch {
 
+    import java.lang.Math
+
     def exception(): Unit \ IO =
-        import static java.lang.Math.floorDiv(Int32, Int32): Int32 \ IO;
-        discard floorDiv(1, 0);
+        discard Math.floorDiv(1, 0);
         ()
 
     @test
@@ -71,25 +72,21 @@ mod Test.Exp.Jvm.TestTryCatch {
 
     @test
     def testBinding01(): Bool \ IO =
-        import java.lang.Object.toString(): ##java.lang.String \ IO;
-        import java.lang.String.isEmpty(): Bool \ IO;
         try {
             exception();
             false
         } catch {
-            case e: ##java.lang.ArithmeticException => if (isEmpty(toString(checked_cast(e)))) false else true
+            case e: ##java.lang.ArithmeticException => if (e.toString().isEmpty()) false else true
             case _: ##java.lang.Exception => false
         }
 
     @test
     def testBinding02(): Bool \ IO =
-        import java.lang.String.isEmpty(): Bool \ IO;
-        import java.lang.Throwable.getMessage(): String \ IO;
         try {
             exception();
             false
         } catch {
-            case e: ##java.lang.ArithmeticException => if (isEmpty(getMessage(checked_cast(e)))) false else true
+            case e: ##java.lang.ArithmeticException => if (e.getMessage().isEmpty()) false else true
             case _: ##java.lang.Exception => false
         }
 

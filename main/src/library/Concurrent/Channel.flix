@@ -17,6 +17,8 @@
 //
 
 mod Concurrent.Channel {
+    import dev.flix.runtime.Global
+
     use Concurrent.ReentrantLock.lock
     use Concurrent.ReentrantLock
     use Concurrent.ReentrantLock.newLock
@@ -35,6 +37,9 @@ mod Concurrent.Channel {
     ///   `elementDeque` - a deque of the channel elements but only used as a
     ///       queue.
     /// )
+    ///
+    /// The region type parameter is here to avoid losing type constraints in
+    /// Monomorpher/Lowering. `Mpmc[t, Static]` should always be used.
     ///
     /// -- Conditions and Signalling --
     /// When a channel needs to notify threads about available space or elements
@@ -79,14 +84,14 @@ mod Concurrent.Channel {
     /// structure on which select can operate.
     ///
     @Internal
-    pub enum Mpmc[a](
+    pub enum Mpmc[a: Type, _r: Region](
         MpmcAdmin, // admin
         MutDeque[a, Static] // elementDeque
     )
 
     /// Returns the `MpmcAdmin` of `c`.
     @Internal
-    pub def mpmcAdmin(c: Mpmc[a]): MpmcAdmin = {
+    pub def mpmcAdmin(c: Mpmc[a, Static]): MpmcAdmin = {
         let Mpmc.Mpmc(admin, _) = c;
         admin
     }
@@ -135,15 +140,14 @@ mod Concurrent.Channel {
     /// receiving is syncronized.
     ///
     @Internal
-    pub def newChannel(bufferSize: Int32): Mpmc[a] \ IO =
-        import static dev.flix.runtime.Global.newId(): Int64 \ IO;
+    pub def newChannel(bufferSize: Int32): Mpmc[a, Static] \ IO =
         let _bufferCheck = if (bufferSize < 0) bug!("bufferSize < 0") else ();
         let unBuffered = bufferSize == 0;
         let reentrantLock = newLock(fairness());
         let size = ref 0 @ Static;
         Mpmc.Mpmc(
             MpmcAdmin.MpmcAdmin(
-                newId(),
+                Global.newId(),
                 reentrantLock,
                 unBuffered,
                 if (unBuffered) 1 else bufferSize,
@@ -159,7 +163,7 @@ mod Concurrent.Channel {
     /// Creates a new channel tuple (sender, receiver)
     ///
     @Internal
-    pub def newChannelTuple(bufferSize: Int32): (Mpmc[a], Mpmc[a]) \ IO =
+    pub def newChannelTuple(bufferSize: Int32): (Mpmc[a, Static], Mpmc[a, Static]) \ IO =
         let c = newChannel(bufferSize);
         (c, c)
 
@@ -170,7 +174,7 @@ mod Concurrent.Channel {
     /// Implements the expression `c <- e`.
     ///
     @Internal
-    pub def put(e: a, c: Mpmc[a]): Unit \ IO =
+    pub def put(e: a, c: Mpmc[a, Static]): Unit \ IO =
         let Mpmc.Mpmc(admin, elementDeque) = c;
         let MpmcAdmin.MpmcAdmin(_, channelLock, unBuffered, _, size, _, rendezvous, _) = admin;
         lock(channelLock);
@@ -199,7 +203,7 @@ mod Concurrent.Channel {
     /// Implements to the expression `<- c`.
     ///
     @Internal
-    pub def get(c: Mpmc[a]): a \ IO =
+    pub def get(c: Mpmc[a, Static]): a \ IO =
         let MpmcAdmin.MpmcAdmin(_, channelLock, _, _, _, _, _, _) = mpmcAdmin(c);
         lock(channelLock);
 
@@ -212,7 +216,7 @@ mod Concurrent.Channel {
     /// Assumes the channel to be non-empty.
     ///
     @Internal
-    pub def unsafeGetAndUnlock(c: Mpmc[a], locks: List[ReentrantLock]): a \ IO = {
+    pub def unsafeGetAndUnlock(c: Mpmc[a, Static], locks: List[ReentrantLock]): a \ IO = {
         let Mpmc.Mpmc(admin, elementDeque) = c;
         let MpmcAdmin.MpmcAdmin(_, channelLock, _, _, size, _, _, _) = admin;
         lock(channelLock);
@@ -295,7 +299,7 @@ mod Concurrent.Channel {
     ///
     /// The channel lock is expected to be held, and will be unlocked on return.
     ///
-    def getHelper(c: Mpmc[a]): a \ IO =
+    def getHelper(c: Mpmc[a, Static]): a \ IO =
         let Mpmc.Mpmc(admin, elementDeque) = c;
         let MpmcAdmin.MpmcAdmin(_, channelLock, _, _, size, waitingGetters, _, _) = admin;
 

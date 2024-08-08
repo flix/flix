@@ -215,87 +215,87 @@ mod Test.Exp.ForEachYield {
             yield (x, y, z)
 
     @test
-    def testForEachYieldMix15(): List[(Int32, Int32, Bool)] =
+    def testForEachYieldMix15(): List[(Int32, Int32, String, Bool)] =
         let a = List.toSet((1, 2) :: (3, 4) :: Nil);
         let b = Map#{"1" => true, "2" => true, "3" => true};
-        foreach ((x, y) <- a; z <- b)
-            yield (x, y, z)
+        foreach ((x, y) <- a; (k, v) <- b)
+            yield (x, y, k, v)
 
     @test
-    def testForEachYieldMix16(): Set[(Int32, Int32, Bool)] =
+    def testForEachYieldMix16(): Set[(Int32, Int32, String, Bool)] =
         let a = List.toSet((1, 2) :: (3, 4) :: Nil);
         let b = Map#{"1" => true, "2" => true, "3" => true};
-        foreach ((x, y) <- a; z <- b)
-            yield (x, y, z)
+        foreach ((x, y) <- a; (k, v) <- b)
+            yield (x, y, k, v)
 
     @test
-    def testForEachYieldMix17(): Chain[(Int32, Int32, Bool)] =
+    def testForEachYieldMix17(): Chain[(Int32, Int32, String, Bool)] =
         let a = List.toSet((1, 2) :: (3, 4) :: Nil);
         let b = Map#{"1" => true, "2" => true, "3" => true};
-        foreach ((x, y) <- a; z <- b)
-            yield (x, y, z)
+        foreach ((x, y) <- a; (k, v) <- b)
+            yield (x, y, k, v)
 
     // N.B. There is no instance of `Order` on `Chain` so we cannot have `m[Chain[a]] with Collectable[m]`
 
     @test
-    def testForEachYieldMix18(): List[List[(Int32, String, Bool, Int32)]] =
+    def testForEachYieldMix18(): List[List[(Int32, String, String, Bool, Int32)]] =
         let a = List.toSet((1, 2) :: (3, 4) :: Nil);
         let b = Map#{"1" => true, "2" => true, "3" => true};
         let c = Set#{"5", "6", "7"};
-        foreach ((x, y) <- a; z <- b)
+        foreach ((x, y) <- a; (k, v) <- b)
             yield
                 foreach (q <- c)
-                    yield (x, q, z, y)
+                    yield (x, q, k, v, y)
 
     @test
-    def testForEachYieldMix19(): List[Set[(Int32, String, Bool, Int32)]] =
+    def testForEachYieldMix19(): List[Set[(Int32, String, String, Bool, Int32)]] =
         let a = List.toSet((1, 2) :: (3, 4) :: Nil);
         let b = Map#{"1" => true, "2" => true, "3" => true};
         let c = Set#{"5", "6", "7"};
-        foreach ((x, y) <- a; z <- b)
+        foreach ((x, y) <- a; (k, v) <- b)
             yield
                 foreach (q <- c)
-                    yield (x, q, z, y)
+                    yield (x, q, k, v, y)
 
     @test
-    def testForEachYieldMix20(): Set[List[(Int32, String, Bool, Int32)]] =
+    def testForEachYieldMix20(): Set[List[(Int32, String, String, Bool, Int32)]] =
         let a = List.toSet((1, 2) :: (3, 4) :: Nil);
         let b = Map#{"1" => true, "2" => true, "3" => true};
         let c = Set#{"5", "6", "7"};
-        foreach ((x, y) <- a; z <- b)
+        foreach ((x, y) <- a; (k, v) <- b)
             yield
                 foreach (q <- c)
-                    yield (x, q, z, y)
+                    yield (x, q, k, v, y)
 
     @test
-    def testForEachYieldMix21(): Set[Set[(Int32, String, Bool, Int32)]] =
+    def testForEachYieldMix21(): Set[Set[(Int32, String, String, Bool, Int32)]] =
         let a = List.toSet((1, 2) :: (3, 4) :: Nil);
         let b = Map#{"1" => true, "2" => true, "3" => true};
         let c = Set#{"5", "6", "7"};
-        foreach ((x, y) <- a; z <- b)
+        foreach ((x, y) <- a; (k, v) <- b)
             yield
                 foreach (q <- c)
-                    yield (x, q, z, y)
+                    yield (x, q, k, v, y)
 
     @test
-    def testForEachYieldMix22(): Chain[List[(Int32, String, Bool, Int32)]] =
+    def testForEachYieldMix22(): Chain[List[(Int32, String, String, Bool, Int32)]] =
         let a = List.toSet((1, 2) :: (3, 4) :: Nil);
         let b = Map#{"1" => true, "2" => true, "3" => true};
         let c = Set#{"5", "6", "7"};
-        foreach ((x, y) <- a; z <- b)
+        foreach ((x, y) <- a; (k, v) <- b)
             yield
                 foreach (q <- c)
-                    yield (x, q, z, y)
+                    yield (x, q, k, v, y)
 
     @test
-    def testForEachYieldMix23(): Chain[Set[(Int32, String, Bool, Int32)]] =
+    def testForEachYieldMix23(): Chain[Set[(Int32, String, String, Bool, Int32)]] =
         let a = List.toSet((1, 2) :: (3, 4) :: Nil);
         let b = Map#{"1" => true, "2" => true, "3" => true};
         let c = Set#{"5", "6", "7"};
-        foreach ((x, y) <- a; z <- b)
+        foreach ((x, y) <- a; (k, v) <- b)
             yield
                 foreach (q <- c)
-                    yield (x, q, z, y)
+                    yield (x, q, k, v, y)
 
     @test
     def testForEachYieldLet01(): List[(Int32, Int32)] =

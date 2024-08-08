@@ -16,16 +16,17 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.language.ast.Purity.Pure
+import ca.uwaterloo.flix.language.ast.shared.Source
 
 import java.lang.reflect.Method
 
 object ReducedAst {
 
-  val empty: Root = Root(Map.empty, Map.empty, Set.empty, List.empty, None, Set.empty, Map.empty)
+  val empty: Root = Root(Map.empty, Map.empty, Map.empty, Set.empty, List.empty, None, Set.empty, Map.empty)
 
   case class Root(defs: Map[Symbol.DefnSym, Def],
+                  structs: Map[Symbol.StructSym, Struct],
                   effects: Map[Symbol.EffectSym, Effect],
                   types: Set[MonoType],
                   anonClasses: List[AnonClass],
@@ -51,6 +52,8 @@ object ReducedAst {
   case class Effect(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EffectSym, ops: List[Op], loc: SourceLocation)
 
   case class Op(sym: Symbol.OpSym, ann: Ast.Annotations, mod: Ast.Modifiers, fparams: List[FormalParam], tpe: MonoType, purity: Purity, loc: SourceLocation)
+
+  case class Struct(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.StructSym, fields: Map[Name.StructField, StructField], tpe: Type, loc: SourceLocation)
 
   sealed trait Expr {
     def tpe: MonoType
@@ -101,6 +104,8 @@ object ReducedAst {
     case class NewObject(name: String, clazz: java.lang.Class[_], tpe: MonoType, purity: Purity, methods: List[JvmMethod], loc: SourceLocation) extends Expr
 
   }
+
+  case class StructField(sym: Symbol.StructFieldSym, tpe: Type, sc: Scheme, loc: SourceLocation)
 
   case class AnonClass(name: String, clazz: java.lang.Class[_], tpe: MonoType, methods: List[JvmMethod], loc: SourceLocation)
 

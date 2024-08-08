@@ -37,7 +37,8 @@ import scala.collection.mutable
 ///   1. We propagate ground terms (true/false/constant) in a fixpoint.
 ///   2. We propagate variables (i.e. resolving constraints of the form x = y).
 ///   3. We perform trivial assignments where the left-hand variables does not occur in the RHS.
-///   4. We do full-blown Boolean unification with SVE.
+///   4. We eliminate (now) trivial and redundant constraints.
+///   5. We do full-blown Boolean unification with SVE.
 /// - We represent a conjunction with n >= 2 terms.
 ///   - We group the terms into three: a set of constants, a set of variables, and a list of sub-terms.
 ///   - We flatten conjunctions at least one level per call to `mkAnd`.
@@ -151,7 +152,8 @@ object FastBoolUnification {
         phase1ConstantPropagation()
         phase2VarPropagation()
         phase3VarAssignment()
-        phase4SVE()
+        phase4TrivialAndRedundant()
+        phase5SVE()
         verifySolution()
         verifySolutionSize()
 
@@ -206,9 +208,21 @@ object FastBoolUnification {
       debugln()
     }
 
-    private def phase4SVE(): Unit = {
+    private def phase4TrivialAndRedundant(): Unit = {
       debugln("-".repeat(80))
-      debugln("--- Phase 4: Boolean Unification")
+      debugln("--- Phase 4: Eliminate Trivial and Redundant Equations")
+      debugln("    (eliminates equations of the form X = X and duplicated equations)")
+      debugln("-".repeat(80))
+      val s = eliminateTrivialAndRedundant(currentEqns)
+      updateState(s)
+      printEquations()
+      printSubstitution()
+      debugln()
+    }
+
+    private def phase5SVE(): Unit = {
+      debugln("-".repeat(80))
+      debugln("--- Phase 5: Boolean Unification")
       debugln("    (resolves all remaining equations using SVE.)")
       debugln("-".repeat(80))
       val newSubst = boolUnifyAllPickSmallest(currentEqns)
@@ -552,6 +566,64 @@ object FastBoolUnification {
 
     // Reverse the unsolved equations to ensure they are returned in the original order.
     (unsolved.reverse, subst)
+  }
+
+  /**
+    * Eliminates trivial and redundant equations.
+    *
+    * An equation is trivial if its LHS and RHS are the same.
+    *
+    * An equation is redundant if it appears multiple times in the list of equations.
+    *
+    * For example, given the equation system:
+    *
+    * {{{
+    *   (c9 ∧ c0) ~ (c9 ∧ c0)
+    *         c10 ~ c11
+    * }}}
+    *
+    * We return the new equation system:
+    *
+    * {{{
+    *   c10 ~ c11
+    * }}}
+    *
+    * For example, given the equation system:
+    *
+    * {{{
+    *   (c1 ∧ c3) ~ (c1 ∧ c3)
+    *   (c1 ∧ c3) ~ (c1 ∧ c3)
+    * }}}
+    *
+    * We return the new equation system:
+    *
+    * {{{
+    *   (c1 ∧ c3) ~ (c1 ∧ c3)
+    * }}}
+    *
+    * We only remove equations, hence the returned substitution is always empty.
+    *
+    * Note: We only consider *syntactic equality*.
+    */
+  private def eliminateTrivialAndRedundant(l: List[Equation]): (List[Equation], BoolSubstitution) = {
+    var result = List.empty[Equation]
+    val seen = mutable.Set.empty[Equation]
+
+    // We rely on equations and terms having correct equals and hashCode functions.
+    // Note: We are purely working with *syntactic equality*, not *semantic equality*.
+    for (eqn <- l) {
+      if (!seen.contains(eqn)) {
+        // The equation has not been seen before.
+        if (eqn.t1 != eqn.t2) {
+          // The LHS and RHS are different.
+          seen += eqn
+          result = eqn :: result
+        }
+      }
+    }
+
+    // We reverse the list of equations to preserve the initial order.
+    (result.reverse, BoolSubstitution.empty)
   }
 
   /**

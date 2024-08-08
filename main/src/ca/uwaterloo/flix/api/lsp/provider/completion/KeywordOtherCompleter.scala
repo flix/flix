@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst
 
 object KeywordOtherCompleter extends Completer {
 
-  def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[KeywordCompletion] =
+  def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[KeywordCompletion] =
     List(
       "@Deprecated",
       "@Parallel",
