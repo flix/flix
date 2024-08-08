@@ -249,7 +249,7 @@ object Verifier {
 
         case AtomicOp.StructPut(sym0, _) =>
           ts match {
-            case tpe1 :: Nil =>
+            case tpe1 :: _ :: Nil =>
               checkStructType(tpe1, sym0, loc)
               tpe
             case _ => failMismatchedShape(tpe, "Struct", loc)
