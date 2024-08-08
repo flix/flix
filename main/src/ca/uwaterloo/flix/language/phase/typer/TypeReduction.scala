@@ -290,7 +290,7 @@ object TypeReduction {
         case (clazz, tpe) => isSubtype(tpe, Type.getFlixType(clazz))
       }) ||
         // Or check candidate method as if it is variadic
-         (isVariadic && isVariadicMethod(cand, ts))) &&
+         (isVariadic && isCandidateVariadicMethod(cand, ts))) &&
       // NB: once methods with same signatures have been filtered out, we should remove super-methods duplicates
       // if the superclass is abstract or ignore if it is a primitive type or void
       (cand.getReturnType.equals(Void.TYPE) || cand.getReturnType.isPrimitive || cand.getReturnType.isArray || // for all arrays return types?
@@ -306,9 +306,9 @@ object TypeReduction {
    * @param flix
    * @return
    */
-  private def isVariadicMethod(cand: Method, ts: List[Type])(implicit flix: Flix): Boolean = {
-    val paramCount = cand.getParameterCount
-    if (paramCount >= 1 && cand.getParameterTypes.last.isArray) {
+  private def isCandidateVariadicMethod(cand: Method, ts: List[Type])(implicit flix: Flix): Boolean = {
+    if (cand.isVarArgs) {
+      val paramCount = cand.getParameterCount
       val varArr = cand.getParameterTypes.last
       val tpe = varArr.getComponentType
       // Check minimum required arity
@@ -321,9 +321,8 @@ object TypeReduction {
         } &&
         // Check subtyping for varargs
         ts.slice(argsDiff + 1, ts.length).forall(t => isSubtype(t, Type.getFlixType(tpe)))
-      }
-    }
-    false
+      } else false
+    } else false
   }
 
   /**
