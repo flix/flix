@@ -17,15 +17,15 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.Ast.{Denotation, LabelledPrecedenceGraph, Source}
-import ca.uwaterloo.flix.language.ast.shared.Fixity
+import ca.uwaterloo.flix.language.ast.Ast.{Denotation, LabelledPrecedenceGraph}
+import ca.uwaterloo.flix.language.ast.shared.{Fixity, Source}
 import ca.uwaterloo.flix.util.collection.{ListMap, MultiMap}
 
 import java.lang.reflect.{Constructor, Field, Method}
 
 object TypedAst {
 
-  val empty: Root = Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, None, Set.empty, Map.empty, Map.empty, ListMap.empty, MultiMap.empty, LabelledPrecedenceGraph.empty)
+  val empty: Root = Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, None, Set.empty, Map.empty, Map.empty, ListMap.empty, MultiMap.empty, LabelledPrecedenceGraph.empty)
 
   case class Root(modules: Map[Symbol.ModuleSym, List[Symbol]],
                   traits: Map[Symbol.TraitSym, Trait],
@@ -33,6 +33,7 @@ object TypedAst {
                   sigs: Map[Symbol.SigSym, Sig],
                   defs: Map[Symbol.DefnSym, Def],
                   enums: Map[Symbol.EnumSym, Enum],
+                  structs: Map[Symbol.StructSym, Struct],
                   restrictableEnums: Map[Symbol.RestrictableEnumSym, RestrictableEnum],
                   effects: Map[Symbol.EffectSym, Effect],
                   typeAliases: Map[Symbol.TypeAliasSym, TypeAlias],
@@ -56,6 +57,8 @@ object TypedAst {
   case class Spec(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, tparams: List[TypeParam], fparams: List[FormalParam], declaredScheme: Scheme, retTpe: Type, eff: Type, tconstrs: List[Ast.TypeConstraint], econstrs: List[Ast.EqualityConstraint], loc: SourceLocation)
 
   case class Enum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[TypeParam], derives: Ast.Derivations, cases: Map[Symbol.CaseSym, Case], tpe: Type, loc: SourceLocation)
+
+  case class Struct(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.StructSym, tparams: List[TypeParam], sc: Scheme, fields: List[StructField], loc: SourceLocation)
 
   case class RestrictableEnum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.RestrictableEnumSym, index: TypeParam, tparams: List[TypeParam], derives: Ast.Derivations, cases: Map[Symbol.RestrictableCaseSym, RestrictableCase], tpe: Type, loc: SourceLocation)
 
@@ -177,6 +180,12 @@ object TypedAst {
       def tpe: Type = Type.Unit
     }
 
+    case class StructNew(sym: Symbol.StructSym, fields: List[(Name.Label, Expr)], region: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+
+    case class StructGet(sym: Symbol.StructSym, exp: Expr, field: Name.Label, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+
+    case class StructPut(Sym: Symbol.StructSym, exp1: Expr, field: Name.Label, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+
     case class VectorLit(exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class VectorLoad(exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
@@ -210,6 +219,8 @@ object TypedAst {
     case class Without(exp: Expr, effUse: Ast.EffectSymUse, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class TryCatch(exp: Expr, rules: List[CatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+
+    case class Throw(exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class TryWith(exp: Expr, effUse: Ast.EffectSymUse, rules: List[HandlerRule], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
@@ -342,9 +353,9 @@ object TypedAst {
 
   }
 
-  case class Attribute(name: String, tpe: Type, loc: SourceLocation)
-
   case class Case(sym: Symbol.CaseSym, tpe: Type, sc: Scheme, loc: SourceLocation)
+
+  case class StructField(name: Name.Label, tpe: Type, loc: SourceLocation)
 
   case class RestrictableCase(sym: Symbol.RestrictableCaseSym, tpe: Type, sc: Scheme, loc: SourceLocation)
 

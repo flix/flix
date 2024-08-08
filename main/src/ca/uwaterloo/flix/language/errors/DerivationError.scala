@@ -41,8 +41,7 @@ object DerivationError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
-         |>> Illegal derivation '${red(sym.name)}'.
+      s""">> Illegal derivation '${red(sym.name)}'.
          |
          |${code(loc, "Illegal derivation.")}
          |""".stripMargin
@@ -66,8 +65,7 @@ object DerivationError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
-         |>> Cannot derive '${magenta(classSym.name)}' for the empty enum '${red(sym.name)}'.
+      s""">> Cannot derive '${magenta(classSym.name)}' for the empty enum '${red(sym.name)}'.
          |
          |${code(loc, "illegal derivation")}
          |
@@ -87,8 +85,7 @@ object DerivationError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
-         |>> Cannot derive '${magenta("Coerce")}' for the non-singleton enum '${red(sym.name)}'.
+      s""">> Cannot derive '${magenta("Coerce")}' for the non-singleton enum '${red(sym.name)}'.
          |
          |${code(loc, "illegal derivation")}
          |

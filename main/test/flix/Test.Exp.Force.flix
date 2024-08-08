@@ -175,14 +175,14 @@ mod Test.Exp.Force {
     @test
     def testPrecedenceForce02(): Bool =
         let x = {f = 2};
-        let y = lazy x.f;
+        let y = lazy x#f;
         let z = force y;
         z == 2
 
     @test
     def testPrecedenceForce03(): Bool =
         let x = {l = lazy 2};
-        let y = force x.l;
+        let y = force x#l;
         y == 2
 
     @test

@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.typer
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.KindedAst.Expr
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, Name, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.{InternalCompilerException, SubEffectLevel}
 
 /**
   * This phase generates a list of type constraints, which include
@@ -46,7 +46,7 @@ object ConstraintGen {
 
       case Expr.Def(sym, tvar, loc) =>
         val defn = root.defs(sym)
-        val (tconstrs, econstrs, defTpe) = Scheme.instantiate(defn.spec.sc, loc.asSynthetic)
+        val (tconstrs, econstrs, defTpe, _) = Scheme.instantiate(defn.spec.sc, loc.asSynthetic)
         c.unifyType(tvar, defTpe, loc)
         val constrs = tconstrs.map(_.copy(loc = loc))
         c.addClassConstraints(tconstrs, loc)
@@ -57,7 +57,7 @@ object ConstraintGen {
 
       case Expr.Sig(sym, tvar, loc) =>
         val sig = root.traits(sym.trt).sigs(sym)
-        val (tconstrs, econstrs, sigTpe) = Scheme.instantiate(sig.spec.sc, loc.asSynthetic)
+        val (tconstrs, econstrs, sigTpe, _) = Scheme.instantiate(sig.spec.sc, loc.asSynthetic)
         c.unifyType(tvar, sigTpe, loc)
         val constrs = tconstrs.map(_.copy(loc = loc))
         c.addClassConstraints(constrs, loc)
@@ -102,14 +102,14 @@ object ConstraintGen {
           case KindedAst.Expr.Def(sym, tvar1, loc1) =>
             // Case 1: Lookup the sym and instantiate its scheme.
             val defn = root.defs(sym)
-            val (tconstrs1, econstrs1, declaredType) = Scheme.instantiate(defn.spec.sc, loc1.asSynthetic)
+            val (tconstrs1, econstrs1, declaredType, _) = Scheme.instantiate(defn.spec.sc, loc1.asSynthetic)
             val constrs1 = tconstrs1.map(_.copy(loc = loc))
             Some((sym, tvar1, constrs1, econstrs1, declaredType))
 
           case KindedAst.Expr.Sig(sym, tvar1, loc1) =>
             // Case 2: Lookup the sym and instantiate its scheme.
             val sig = root.traits(sym.trt).sigs(sym)
-            val (tconstrs1, econstrs1, declaredType) = Scheme.instantiate(sig.spec.sc, loc1.asSynthetic)
+            val (tconstrs1, econstrs1, declaredType, _) = Scheme.instantiate(sig.spec.sc, loc1.asSynthetic)
             val constrs1 = tconstrs1.map(_.copy(loc = loc))
             Some((sym, tvar1, constrs1, econstrs1, declaredType))
 
@@ -156,7 +156,9 @@ object ConstraintGen {
 
       case Expr.Lambda(fparam, exp, loc) =>
         c.unifyType(fparam.sym.tvar, fparam.tpe, loc)
-        val (tpe, eff) = visitExp(exp)
+        val (tpe, eff0) = visitExp(exp)
+        // Use sub-effecting for lambdas if the appropriate option is set
+        val eff = if (flix.options.xsubeffecting < SubEffectLevel.Lambdas) eff0 else Type.mkUnion(eff0, Type.freshVar(Kind.Eff, loc), loc)
         val resTpe = Type.mkArrowWithEffect(fparam.tpe, eff, tpe, loc)
         val resEff = Type.Pure
         (resTpe, resEff)
@@ -440,7 +442,7 @@ object ConstraintGen {
         val decl = root.enums(symUse.sym.enumSym)
         val caze = decl.cases(symUse.sym)
         // We ignore constraints as tag schemes do not have them
-        val (_, _, tagType) = Scheme.instantiate(caze.sc, loc.asSynthetic)
+        val (_, _, tagType, _) = Scheme.instantiate(caze.sc, loc.asSynthetic)
 
         // The tag type is a function from the type of variant to the type of the enum.
         val (tpe, eff) = visitExp(exp)
@@ -561,14 +563,24 @@ object ConstraintGen {
         val resEff = evar
         (resTpe, resEff)
 
-      case Expr.ArrayLength(exp, loc) =>
+      case Expr.ArrayLength(exp, evar, loc) =>
         val elmVar = Type.freshVar(Kind.Star, loc)
         val regionVar = Type.freshVar(Kind.Eff, loc)
         val (tpe, eff) = visitExp(exp)
         c.expectType(Type.mkArray(elmVar, regionVar, loc), tpe, exp.loc)
+        c.unifyType(evar, Type.mkUnion(regionVar, eff, loc), loc)
         val resTpe = Type.Int32
-        val resEff = eff
+        val resEff = evar
         (resTpe, resEff)
+
+      case Expr.StructNew(sym, fields, region, tvar, evar, loc) =>
+        throw new RuntimeException("joe tbd")
+
+      case Expr.StructGet(sym, exp, name, tvar, evar, loc) =>
+        throw new RuntimeException("joe tbd")
+
+      case Expr.StructPut(sym, exp1, name, exp2, tvar, evar, loc) =>
+        throw new RuntimeException("joe tbd")
 
       case Expr.VectorLit(exps, tvar, evar, loc) =>
         val (tpes, effs) = exps.map(visitExp).unzip
@@ -706,6 +718,13 @@ object ConstraintGen {
         val resEff = Type.mkUnion(eff :: effs, loc)
         (resTpe, resEff)
 
+      case KindedAst.Expr.Throw(exp, tvar, evar, loc) =>
+        val (_, eff) = visitExp(exp)
+        c.unifyType(evar, Type.mkUnion(eff, Type.IO, loc), loc)
+        val resultTpe = tvar
+        val resultEff = evar
+        (resultTpe, resultEff)
+
       case Expr.TryWith(exp, effUse, rules, tvar, loc) =>
         val (tpe, eff) = visitExp(exp)
         val continuationEffect = Type.freshVar(Kind.Eff, loc)
@@ -743,31 +762,45 @@ object ConstraintGen {
 
         (resTpe, resEff)
 
-      case Expr.InvokeConstructor2(clazz, exps, loc) =>
-        throw InternalCompilerException(s"Unexpected InvokeConstructor2 call.", loc)
+      case Expr.InvokeConstructor2(clazz, exps, cvar, evar, loc) =>
+        val tpe = Type.getFlixType(clazz)
+        val (tpes, effs) = exps.map(visitExp).unzip
+        c.unifyJvmConstructorType(cvar, tpe, clazz, tpes, loc) // unify constructor
+        c.unifyType(evar, Type.mkUnion(Type.IO :: effs, loc), loc) // unify effects
+        val resTpe = tpe
+        val resEff = evar
+        (resTpe, resEff)
 
-      case Expr.InvokeMethod2(exp, name, exps, mvar, tvar, evar, loc) =>
+      case Expr.InvokeMethod2(exp, methodName, exps, mvar, tvar, evar, loc) =>
         val (tpe, eff) = visitExp(exp)
         val (tpes, effs) = exps.map(visitExp).unzip
         val t = Type.Cst(TypeConstructor.MethodReturnType, loc)
-        c.unifyJvmMethodType(mvar, tpe, name, tpes, loc) // unify method
+        c.unifyJvmMethodType(mvar, tpe, methodName, tpes, loc) // unify method
         c.unifyType(tvar, Type.mkApply(t, List(mvar), loc), loc) // unify method return type
         c.unifyType(evar, Type.mkUnion(Type.IO :: eff :: effs, loc), loc) // unify effects
         val resTpe = tvar
         val resEff = evar
         (resTpe, resEff)
 
-      case Expr.InvokeStaticMethod2(clazz, methodName, exps, loc) =>
-        throw InternalCompilerException(s"Unexpected InvokeConstructor2 call.", loc)
+      case Expr.InvokeStaticMethod2(clazz, methodName, exps, mvar, tvar, evar, loc) =>
+        val tpe = Type.getFlixType(clazz)
+        val (tpes, effs) = exps.map(visitExp).unzip
+        val t = Type.Cst(TypeConstructor.MethodReturnType, loc)
+        c.unifyStaticJvmMethodType(mvar, clazz, tpe, methodName, tpes, loc)
+        c.unifyType(tvar, Type.mkApply(t, List(mvar), loc), loc)
+        c.unifyType(evar, Type.mkUnion(Type.IO :: effs, loc), loc)
+        val resTpe = tvar
+        val resEff = evar
+        (resTpe, resEff)
 
-      case Expr.InvokeConstructor(constructor, exps, _) =>
+      case Expr.InvokeConstructorOld(constructor, exps, _) =>
         val classTpe = Type.getFlixType(constructor.getDeclaringClass)
         val (_, _) = exps.map(visitExp).unzip
         val resTpe = classTpe
         val resEff = Type.IO
         (resTpe, resEff)
 
-      case Expr.InvokeMethod(method, clazz, exp, exps, loc) =>
+      case Expr.InvokeMethodOld(method, clazz, exp, exps, loc) =>
         val classTpe = Type.getFlixType(clazz)
         val (thisTpe, _) = visitExp(exp)
         c.unifyType(thisTpe, classTpe, loc)
@@ -776,7 +809,7 @@ object ConstraintGen {
         val resEff = Type.IO
         (resTpe, resEff)
 
-      case Expr.InvokeStaticMethod(method, exps, _) =>
+      case Expr.InvokeStaticMethodOld(method, exps, _) =>
         val (_, _) = exps.map(visitExp).unzip
         val resTpe = Type.getFlixType(method.getReturnType)
         val resEff = Type.IO
@@ -941,7 +974,7 @@ object ConstraintGen {
         val decl = root.enums(symUse.sym.enumSym)
         val caze = decl.cases(symUse.sym)
         // We ignore constraints as tag schemes do not have them
-        val (_, _, tagType) = Scheme.instantiate(caze.sc, loc.asSynthetic)
+        val (_, _, tagType, _) = Scheme.instantiate(caze.sc, loc.asSynthetic)
 
         // The tag type is a function from the type of variant to the type of the enum.
         val tpe = visitPattern(pat)

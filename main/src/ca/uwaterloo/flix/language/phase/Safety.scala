@@ -6,7 +6,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
-import ca.uwaterloo.flix.language.ast.shared.Fixity
+import ca.uwaterloo.flix.language.ast.shared.{Fixity, SecurityContext}
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.language.errors.SafetyError
@@ -24,6 +24,7 @@ import scala.annotation.tailrec
   *  - CheckedCast expressions.
   *  - UncheckedCast expressions.
   *  - TypeMatch expressions.
+  *  - Throw expressions
   */
 object Safety {
 
@@ -70,7 +71,7 @@ object Safety {
       case (acc, e) => acc.markRigid(e)
     }
     sig.exp match {
-      case Some(exp) => visitExp(exp, renv)
+      case Some(exp) => visitExp(exp, renv)(inTryCatch = false, flix)
       case None => Nil
     }
   }
@@ -83,7 +84,7 @@ object Safety {
     val renv = def0.spec.tparams.map(_.sym).foldLeft(RigidityEnv.empty) {
       case (acc, e) => acc.markRigid(e)
     }
-    val expErrs = visitExp(def0.exp, renv)
+    val expErrs = visitExp(def0.exp, renv)(inTryCatch = false, flix)
     exportErrs ++ expErrs
   }
 
@@ -200,7 +201,7 @@ object Safety {
       case TypeConstructor.Int64 => true
       case TypeConstructor.Native(clazz) if clazz == classOf[Object] => true
       // Error is accepted to avoid cascading errors
-      case TypeConstructor.Error(_) => true
+      case TypeConstructor.Error(_, _) => true
       case _ => false
     }
   }
@@ -226,12 +227,10 @@ object Safety {
   /**
     * Performs safety and well-formedness checks on the given expression `exp0`.
     */
-  private def visitExp(e0: Expr, renv: RigidityEnv)(implicit flix: Flix): List[SafetyError] = {
+  private def visitExp(e0: Expr, renv: RigidityEnv)(implicit inTryCatch: Boolean, flix: Flix): List[SafetyError] = {
 
-    /**
-      * Local visitor.
-      */
-    def visit(exp0: Expr): List[SafetyError] = exp0 match {
+    // Nested try-catch generates wrong code in the backend, so it is disallowed.
+    def visit(exp0: Expr)(implicit inTryCatch: Boolean): List[SafetyError] = exp0 match {
       case Expr.Cst(_, _, _) => Nil
 
       case Expr.Var(_, _, _) => Nil
@@ -252,7 +251,8 @@ object Safety {
         visit(exp)
 
       case Expr.Lambda(_, exp, _, _) =>
-        visit(exp)
+        // The inside expression will be its own function, so inTryCatch is reset
+        visit(exp)(inTryCatch = false)
 
       case Expr.Apply(exp, exps, _, _, _) =>
         visit(exp) ++ exps.flatMap(visit)
@@ -338,6 +338,10 @@ object Safety {
       case Expr.ArrayStore(base, index, elm, _, _) =>
         visit(base) ++ visit(index) ++ visit(elm)
 
+      case Expr.StructNew(sym, fields, region, tpe, eff, loc) => throw new RuntimeException("JOE TBD")
+      case Expr.StructGet(sym, exp, field, tpe, eff, loc) => throw new RuntimeException("JOE TBD")
+      case Expr.StructPut(sym, exp1, field, exp2, tpe, eff, loc) => throw new RuntimeException("JOE TBD")
+
       case Expr.VectorLit(elms, _, _, _) =>
         elms.flatMap(visit)
 
@@ -386,9 +390,13 @@ object Safety {
       case Expr.Without(exp, _, _, _, _) =>
         visit(exp)
 
-      case Expr.TryCatch(exp, rules, _, _, _) =>
-        visit(exp) ++
+      case Expr.TryCatch(exp, rules, _, _, loc) =>
+        val nestedTryCatchError = if (inTryCatch) List(IllegalNestedTryCatch(loc)) else Nil
+        nestedTryCatchError ++ visit(exp)(inTryCatch = true) ++
           rules.flatMap { case CatchRule(sym, clazz, e) => checkCatchClass(clazz, sym.loc) ++ visit(e) }
+
+      case Expr.Throw(exp, _, _, loc) =>
+        visit(exp) ++ checkThrow(exp)
 
       case Expr.TryWith(exp, _, rules, _, _, _) =>
         visit(exp) ++
@@ -397,8 +405,15 @@ object Safety {
       case Expr.Do(_, exps, _, _, _) =>
         exps.flatMap(visit)
 
-      case Expr.InvokeConstructor(_, args, _, _, _) =>
-        args.flatMap(visit)
+      case Expr.InvokeConstructor(_, args, _, _, loc) =>
+        val ctx = loc.security
+        if (ctx == SecurityContext.AllPermissions) {
+          // Permitted
+          args.flatMap(visit)
+        } else {
+          // Forbidden
+          SafetyError.Forbidden(ctx, loc) :: args.flatMap(visit)
+        }
 
       case Expr.InvokeMethod(_, exp, args, _, _, _) =>
         visit(exp) ++ args.flatMap(visit)
@@ -590,7 +605,7 @@ object Safety {
   /**
     * Performs safety and well-formedness checks on the given constraint `c0`.
     */
-  private def checkConstraint(c0: Constraint, renv: RigidityEnv)(implicit flix: Flix): List[SafetyError] = {
+  private def checkConstraint(c0: Constraint, renv: RigidityEnv)(implicit inTryCatch: Boolean, flix: Flix): List[SafetyError] = {
     //
     // Compute the set of positively defined variable symbols in the constraint.
     //
@@ -655,7 +670,7 @@ object Safety {
     * Performs safety and well-formedness checks on the given body predicate `p0`
     * with the given positively defined variable symbols `posVars`.
     */
-  private def checkBodyPredicate(p0: Predicate.Body, posVars: Set[Symbol.VarSym], quantVars: Set[Symbol.VarSym], latVars: Set[Symbol.VarSym], renv: RigidityEnv)(implicit flix: Flix): List[SafetyError] = p0 match {
+  private def checkBodyPredicate(p0: Predicate.Body, posVars: Set[Symbol.VarSym], quantVars: Set[Symbol.VarSym], latVars: Set[Symbol.VarSym], renv: RigidityEnv)(implicit inTryCatch: Boolean, flix: Flix): List[SafetyError] = p0 match {
     case Predicate.Body.Atom(_, den, polarity, _, terms, _, loc) =>
       // check for non-positively bound negative variables.
       val err1 = polarity match {
@@ -833,6 +848,23 @@ object Safety {
       List(IllegalCatchType(loc))
     } else {
       List.empty
+    }
+  }
+
+  /**
+   * Ensures that the type of the argument to `throw` is Throwable or a subclass.
+   *
+   * @param exp the expression to check
+   */
+  private def checkThrow(exp: Expr): List[SafetyError] = {
+     val valid = exp.tpe match {
+      case Type.Cst(TypeConstructor.Native(clazz), loc) => classOf[Throwable].isAssignableFrom(clazz)
+      case _ => false
+    }
+    if(valid) {
+      List()
+    } else {
+      List(IllegalThrowType(exp.loc))
     }
   }
 

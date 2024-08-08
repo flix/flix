@@ -233,6 +233,12 @@ object TypeConstructor {
   case class Enum(sym: Symbol.EnumSym, kind: Kind) extends TypeConstructor
 
   /**
+   * A type constructor that represents the type of structs.
+   */
+  @IntroducedBy(Kinder.getClass)
+  case class Struct(sym: Symbol.StructSym, kind: Kind) extends TypeConstructor
+
+  /**
     * A type constructor that represents the type of enums.
     */
   @IntroducedBy(Kinder.getClass)
@@ -257,22 +263,6 @@ object TypeConstructor {
    */
   case class JvmMethod(method: Method) extends TypeConstructor {
     def kind: Kind = Kind.JvmConstructorOrMethod
-  }
-
-  /**
-   * A type constructor that represents the _return type_ of a Java static method.
-   *
-   * A static method return type can be resolved when the argument types are known.
-   *
-   * A few examples:
-   *
-   * - The type: `Apply(InvokeStaticMethod(String.class, "valueOf", 1), Bool)` is equivalent to `String`.
-   * - The type: `Apply(InvokeStaticMethod(String.class, "valueOf", 1), Char)` is equivalent to `String`.
-   *
-   * The type constructor does not require any arguments.
-   */
-  case class StaticMethodReturnType(clazz: Class[_], name: String, arity: Int) extends TypeConstructor {
-    def kind: Kind = Kind.mkArrow(arity)
   }
 
   /**
@@ -465,6 +455,6 @@ object TypeConstructor {
   /**
     * A type constructor which represents an erroneous type of the given `kind`.
     */
-  case class Error(kind: Kind) extends TypeConstructor
+  case class Error(id: Int, kind: Kind) extends TypeConstructor
 
 }

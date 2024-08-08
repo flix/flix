@@ -33,9 +33,7 @@ instance Neg[Float64] {
 }
 
 instance Neg[BigDecimal] {
-    pub def neg(x: BigDecimal): BigDecimal =
-        import java.math.BigDecimal.negate(): BigDecimal \ {};
-        negate(x)
+    pub def neg(x: BigDecimal): BigDecimal = unsafe x.negate()
 }
 
 instance Neg[Int8] {
@@ -55,7 +53,5 @@ instance Neg[Int64] {
 }
 
 instance Neg[BigInt] {
-    pub def neg(x: BigInt): BigInt =
-        import java.math.BigInteger.negate(): BigInt \ {};
-        negate(x)
+    pub def neg(x: BigInt): BigInt = unsafe x.negate()
 }

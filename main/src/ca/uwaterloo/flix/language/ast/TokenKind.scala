@@ -50,13 +50,13 @@ sealed trait TokenKind {
       case TokenKind.Comma => "','"
       case TokenKind.CurlyL => "'{'"
       case TokenKind.CurlyR => "'}'"
-      case TokenKind.Currency => "'¤'"
       case TokenKind.Dollar => "'$'"
       case TokenKind.Dot => "'.'"
       case TokenKind.DotWhiteSpace => "'. '"
       case TokenKind.DotCurlyL => "'.{'"
       case TokenKind.Equal => "'='"
       case TokenKind.EqualEqual => "'=='"
+      case TokenKind.Euro => "'€'"
       case TokenKind.Hash => "'#'"
       case TokenKind.HashCurlyL => "'#{'"
       case TokenKind.HashParenL => "'#('"
@@ -129,6 +129,8 @@ sealed trait TokenKind {
       case TokenKind.KeywordSpawn => "'spawn'"
       case TokenKind.KeywordStatic => "'static'"
       case TokenKind.KeywordStaticUppercase => "'Static'"
+      case TokenKind.KeywordStruct => "'struct'"
+      case TokenKind.KeywordThrow => "'throw'"
       case TokenKind.KeywordTrait => "'trait'"
       case TokenKind.KeywordTrue => "'true'"
       case TokenKind.KeywordTry => "'try'"
@@ -282,6 +284,7 @@ sealed trait TokenKind {
     case TokenKind.KeywordSolve => true
     case TokenKind.KeywordSpawn => true
     case TokenKind.KeywordStatic => true
+    case TokenKind.KeywordStruct => true
     case TokenKind.KeywordTrait => true
     case TokenKind.KeywordTrue => true
     case TokenKind.KeywordTry => true
@@ -321,6 +324,7 @@ sealed trait TokenKind {
          | TokenKind.KeywordMod
          | TokenKind.KeywordDef
          | TokenKind.KeywordEnum
+         | TokenKind.KeywordStruct
          | TokenKind.KeywordTrait
          | TokenKind.KeywordInstance
          | TokenKind.KeywordType
@@ -649,8 +653,6 @@ object TokenKind {
 
   case object CurlyR extends TokenKind
 
-  case object Currency extends TokenKind
-
   case object Dollar extends TokenKind
 
   case object Dot extends TokenKind
@@ -662,6 +664,8 @@ object TokenKind {
   case object Equal extends TokenKind
 
   case object EqualEqual extends TokenKind
+
+  case object Euro extends TokenKind
 
   case object Hash extends TokenKind
 
@@ -812,6 +816,10 @@ object TokenKind {
   case object KeywordStatic extends TokenKind
 
   case object KeywordStaticUppercase extends TokenKind
+
+  case object KeywordStruct extends TokenKind
+
+  case object KeywordThrow extends TokenKind
 
   case object KeywordTrait extends TokenKind
 

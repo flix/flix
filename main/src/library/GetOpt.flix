@@ -107,9 +107,9 @@ mod GetOpt {
     /// Format each option descriptor.
     ///
     def formatOpt(opts: OptionDescr[a]): List[(String, String, String)] =
-        let shorts  = List.map(formatShort(opts.argDescriptor),  opts.optionIds)   |> sepBy(',');
-        let longs   = List.map(formatLong(opts.argDescriptor),   opts.optionNames) |> sepBy(',');
-        match String.lines(opts.explanation) {
+        let shorts  = List.map(formatShort(opts#argDescriptor),  opts#optionIds)   |> sepBy(',');
+        let longs   = List.map(formatLong(opts#argDescriptor),   opts#optionNames) |> sepBy(',');
+        match String.lines(opts#explanation) {
             case Nil => (shorts, longs, "") :: Nil
             case d :: ds => (shorts, longs, d) :: List.map(x -> ("", "", x), ds)
         }
@@ -153,8 +153,8 @@ mod GetOpt {
                    optDescriptors: List[OptionDescr[a]],
                    sourceArgs: List[String]): Validation[String, {options = List[a], nonOptions = List[String]}] =
         let answers = getOpt1(ordering, optDescriptors, sourceArgs);
-        match answers.errors ::: List.map(errUnrec, answers.unknowns) {
-            case Nil => Validation.Success({options = answers.options, nonOptions = answers.nonOptions})
+        match answers#errors ::: List.map(errUnrec, answers#unknowns) {
+            case Nil => Validation.Success({options = answers#options, nonOptions = answers#nonOptions})
             case e :: es => match List.toNec(es) {
                 case None    => Validation.Failure(Nec.singleton(e))
                 case Some(c) => Validation.Failure(Nec.cons(e, c))
@@ -220,7 +220,7 @@ mod GetOpt {
         let (optname, arg)  = String.breakOnLeft({substr = "="}, xstr);
         let optStr      = "--${optname}";
         match findOptionByName(optname, optDescrs) {
-            case Ok(opt) => match (opt.argDescriptor, deconsLeft(arg), tokens) {
+            case Ok(opt) => match (opt#argDescriptor, deconsLeft(arg), tokens) {
                 case (ArgDescr.NoArg(a),     None,               rest)          => (OptionKind.Opt(a), rest)
                 case (ArgDescr.NoArg(_),     Some(('=', _)),     rest)          => (errNoArgReq(optStr), rest)
                 case (ArgDescr.ReqArg(_, d), None,               Nil)           => (errReq(d, optStr), Nil)
@@ -253,7 +253,7 @@ mod GetOpt {
     def shortOpt(xc: Char, xstr: String, optDescrs: List[OptionDescr[a]], tokens: List[String]): (OptionKind[a], List[String]) =
         let optStr  = "-${xc}";
         match findOptionById(xc, optDescrs) {
-            case Ok(opt) => match (opt.argDescriptor, xstr, tokens)  {
+            case Ok(opt) => match (opt#argDescriptor, xstr, tokens)  {
                 case (ArgDescr.NoArg(a), "", rest)           => (OptionKind.Opt(a), rest)
                 case (ArgDescr.NoArg(a), str, rest)          => (OptionKind.Opt(a), "-${str}" :: rest)
                 case (ArgDescr.ReqArg(_, d), "", Nil)        => (errReq(d, optStr), Nil)
@@ -299,7 +299,7 @@ mod GetOpt {
     /// It returns `Err(Ambiguous(xs))` if `xc` identifies more than one option descriptor.
     ///
     def findOptionByName(optname: String, optDescrs: List[OptionDescr[a]]): Result[GetOptionFailure[a], OptionDescr[a]] =
-        let getWith     = p -> List.filterMap(o -> { let xs = o.optionNames; if (List.exists(p(optname), xs)) Some(o) else None}, optDescrs);
+        let getWith     = p -> List.filterMap(o -> { let xs = o#optionNames; if (List.exists(p(optname), xs)) Some(o) else None}, optDescrs);
         // Exact match of `optname` ...
         let exact       = getWith((x,y) -> x == y);
         // Otherwise use `optname` as a prefix...
@@ -319,7 +319,7 @@ mod GetOpt {
     ///
     def findOptionById(xc: Char, optDescrs: List[OptionDescr[a]]): Result[GetOptionFailure[a], OptionDescr[a]] =
         // This finds 0, 1, or more results. "more" is a failure (ambiguous), 0 is ignored, 1 is success.
-        let options = List.filterMap(o -> { let ss = o.optionIds; if (List.exists(s -> s == xc, ss)) Some(o) else None}, optDescrs);
+        let options = List.filterMap(o -> { let ss = o#optionIds; if (List.exists(s -> s == xc, ss)) Some(o) else None}, optDescrs);
         match options {
             case optd :: Nil    => Ok(optd)
             case x :: xs        => Err(GetOptionFailure.Ambiguous(Nel.Nel(x, xs)))
@@ -373,9 +373,9 @@ mod GetOpt {
     /// have to be double quotes).
     ///
     pub def preprocess(options: {quoteOpen = String, quoteClose = String, stripQuoteMarks = Bool}, args: List[String]): List[String] =
-        let args1 = groupWhenQuoted(options.quoteOpen, options.quoteClose, args);
-        if (options.stripQuoteMarks)
-            removeQuoteMarks(options.quoteOpen, options.quoteClose, args1)
+        let args1 = groupWhenQuoted(options#quoteOpen, options#quoteClose, args);
+        if (options#stripQuoteMarks)
+            removeQuoteMarks(options#quoteOpen, options#quoteClose, args1)
         else
             args1
 

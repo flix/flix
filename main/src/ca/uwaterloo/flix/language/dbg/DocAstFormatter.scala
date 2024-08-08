@@ -147,6 +147,8 @@ object DocAstFormatter {
         aux(d1) :: text(".") :: aux(d2)
       case DoubleDot(d1, d2) =>
         aux(d1) :: text("..") :: aux(d2)
+      case Hash(d1, d2) =>
+        aux(d1) :: text("#") :: aux(d2)
       case s: Stm =>
         formatLetBlock(s, inBlock)
       case l: Let =>
@@ -438,7 +440,7 @@ object DocAstFormatter {
   private def formatEffect(effect: Eff, paren: Boolean = true)(implicit i: Indent): Doc = effect match {
     case Eff.Pure => empty
     case Eff.Impure => text(" ") :: text("\\") +: text("Impure")
-    case Eff.ControlImpure =>  text(" ") :: text("\\") +: text("ControlImpure")
+    case Eff.ControlImpure => text(" ") :: text("\\") +: text("ControlImpure")
     case Eff.AsIs(s) => text(" ") :: text("\\") +: text(s)
   }
 

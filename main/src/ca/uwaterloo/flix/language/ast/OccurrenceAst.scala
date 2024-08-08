@@ -16,12 +16,13 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.language.ast.Purity.Pure
+import ca.uwaterloo.flix.language.ast.shared.Source
 
 object OccurrenceAst {
 
   case class Root(defs: Map[Symbol.DefnSym, OccurrenceAst.Def],
+                  structs: Map[Symbol.StructSym, OccurrenceAst.Struct],
                   effects: Map[Symbol.EffectSym, OccurrenceAst.Effect],
                   entryPoint: Option[Symbol.DefnSym],
                   reachable: Set[Symbol.DefnSym],
@@ -32,6 +33,8 @@ object OccurrenceAst {
   case class Effect(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EffectSym, ops: List[Op], loc: SourceLocation)
 
   case class Op(sym: Symbol.OpSym, ann: Ast.Annotations, mod: Ast.Modifiers, fparams: List[FormalParam], tpe: MonoType, purity: Purity, loc: SourceLocation)
+
+  case class Struct(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.StructSym, fields: List[StructField], loc: SourceLocation)
 
   sealed trait Expr {
     def tpe: MonoType
@@ -80,6 +83,8 @@ object OccurrenceAst {
     case class NewObject(name: String, clazz: java.lang.Class[_], tpe: MonoType, purity: Purity, methods: List[OccurrenceAst.JvmMethod], loc: SourceLocation) extends OccurrenceAst.Expr
 
   }
+
+  case class StructField(name: Name.Label, idx: Int, tpe: Type, loc: SourceLocation)
 
   case class JvmMethod(ident: Name.Ident, fparams: List[OccurrenceAst.FormalParam], clo: OccurrenceAst.Expr, retTpe: MonoType, purity: Purity, loc: SourceLocation)
 

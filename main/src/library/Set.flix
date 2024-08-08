@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import java.util.{Set => JSet}
+
 ///
 /// The Set type.
 ///
@@ -98,9 +100,9 @@ instance Iterable[Set[a]] {
 }
 
 instance ToJava[Set[a]] with Order[a] {
-    type Out = ##java.util.Set
+    type Out = JSet
     type Aef = IO
-    pub def toJava(s: Set[a]): ##java.util.Set \ IO = Adaptor.toSet(s)
+    pub def toJava(s: Set[a]): JSet \ IO = Adaptor.toSet(s)
 }
 
 instance FromJava[Set[a]] with Order[a] {
@@ -492,7 +494,7 @@ mod Set {
     /// Note: The returned set may be smaller than `s`.
     ///
     pub def replace(src: {src = a}, dst: {dst = a}, s: Set[a]): Set[a] with Order[a] =
-        if (memberOf(src.src, s)) insert(dst.dst, remove(src.src, s)) else s
+        if (memberOf(src#src, s)) insert(dst#dst, remove(src#src, s)) else s
 
     ///
     /// Returns a pair of sets `(s1, s2)`.

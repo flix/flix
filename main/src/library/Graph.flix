@@ -68,7 +68,7 @@ mod Graph {
     /// graph `g`.
     ///
     pub def reachable(src: {src = t}, dst: {dst = t}, g: m[(t, t)]): Bool \ Foldable.Aef[m] with Foldable[m], Order[t] =
-        reachableFrom(src.src, g) |> Set.exists(x -> dst.dst == x)
+        reachableFrom(src#src, g) |> Set.exists(x -> dst#dst == x)
 
     ///
     /// Returns the strongly connected components of the directed graph `g`.
@@ -245,7 +245,7 @@ mod Graph {
     /// directed graph `g`.
     ///
     pub def distance(src: { src = t }, dst: { dst = t }, g: m[(t, Int32, t)]): Option[Int32] \ Foldable.Aef[m] with Foldable[m], Order[t] =
-        distancesFrom(src.src, g) |> Map.get(dst.dst)
+        distancesFrom(src#src, g) |> Map.get(dst#dst)
 
     ///
     /// Returns a copy of the directed graph `g` where all flipped edges are

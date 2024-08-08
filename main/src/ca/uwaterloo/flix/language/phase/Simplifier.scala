@@ -33,8 +33,9 @@ object Simplifier {
     implicit val universe: Set[Symbol.EffectSym] = root.effects.keys.toSet
     val defs = ParOps.parMapValues(root.defs)(visitDef)
     val effects = ParOps.parMapValues(root.effects)(visitEffect)
+    val structs = Map.empty[Symbol.StructSym, SimplifiedAst.Struct]
 
-    SimplifiedAst.Root(defs, effects, root.entryPoint, root.reachable, root.sources)
+    SimplifiedAst.Root(defs, structs, effects, root.entryPoint, root.reachable, root.sources)
   }
 
   private def visitDef(decl: MonoAst.Def)(implicit flix: Flix, universe: Set[Symbol.EffectSym]): SimplifiedAst.Def = decl match {
@@ -238,7 +239,7 @@ object Simplifier {
 
           case TypeConstructor.Unit => MonoType.Unit
 
-          case TypeConstructor.Null => MonoType.Unit
+          case TypeConstructor.Null => MonoType.Null
 
           case TypeConstructor.Bool => MonoType.Bool
 
@@ -273,6 +274,8 @@ object Simplifier {
           case TypeConstructor.Lazy => MonoType.Lazy(args.head)
 
           case TypeConstructor.Enum(sym, _) => MonoType.Enum(sym)
+
+          case TypeConstructor.Struct(sym, _) => throw new RuntimeException("JOE TBD")
 
           case TypeConstructor.RestrictableEnum(sym, _) =>
             val enumSym = new Symbol.EnumSym(sym.namespace, sym.name, sym.loc)
@@ -331,16 +334,13 @@ object Simplifier {
           case TypeConstructor.MethodReturnType =>
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
 
-          case TypeConstructor.StaticMethodReturnType(_, _, _) =>
-            throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
-
           case TypeConstructor.JvmConstructor(_) =>
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
 
           case TypeConstructor.JvmMethod(_) =>
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
 
-          case TypeConstructor.Error(_) =>
+          case TypeConstructor.Error(_, _) =>
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
         }
     }

@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.tools
 
 import ca.uwaterloo.flix.api.{Flix, Version}
+import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util._
@@ -27,7 +28,10 @@ import org.json4s.ParserUtil.ParseException
 import org.json4s.native.JsonMethods
 import org.json4s.native.JsonMethods._
 
+import java.io.IOException
 import java.net.InetSocketAddress
+import java.nio.file.{Files, Paths}
+import java.security.MessageDigest
 import java.text.SimpleDateFormat
 import java.util.Date
 
@@ -74,14 +78,14 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
     * Invoked when a client connects.
     */
   override def onOpen(ws: WebSocket, ch: ClientHandshake): Unit = {
-    log("Client Connected.")(ws)
+    log("Client Connected.")
   }
 
   /**
     * Invoked when a client disconnects.
     */
   override def onClose(ws: WebSocket, i: Int, s: String, b: Boolean): Unit = {
-    log("Client Disconnected.")(ws)
+    // nop
   }
 
   /**
@@ -89,7 +93,7 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
     */
   override def onMessage(ws: WebSocket, data: String): Unit = {
     // Log the length and size of the received data.
-    log(s"Received ${data.length} characters of input (${data.getBytes.length} bytes).")(ws)
+    log(s"Received ${data.length} characters of source code.")
 
     // Parse and process request.
     for {
@@ -104,10 +108,10 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
     */
   override def onError(ws: WebSocket, e: Exception): Unit = e match {
     case _: InternalCompilerException =>
-      log(s"Unexpected error: ${e.getMessage}")(ws)
+      log(s"Unexpected error: ${e.getMessage}")
       e.printStackTrace()
     case _: RuntimeException =>
-      log(s"Unexpected error: ${e.getMessage}")(ws)
+      log(s"Unexpected error: ${e.getMessage}")
       e.printStackTrace()
     case ex => throw ex
   }
@@ -138,29 +142,11 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
     * Process the request.
     */
   private def processRequest(src: String)(implicit ws: WebSocket): Unit = {
-    // Log the string.
-    for (line <- src.split("\n")) {
-      log("  >  " + line)(ws)
-    }
-
     // Evaluate the string.
-    val result = eval(src)(ws)
-
-    // Log whether evaluation was successful.
-    log("")(ws)
-    result match {
-      case Ok(_) => log("Evaluation was successful. Sending response:")(ws)
-      case Err(_) => log("Evaluation failure. Sending response:")(ws)
-    }
-    log("")(ws)
+    val result = eval(src)
 
     // Convert the result to JSON.
     val json = JsonMethods.pretty(JsonMethods.render(getJSON(result)))
-
-    // Log the JSON data.
-    for (line <- json.split("\n")) {
-      log("  <  " + line)(ws)
-    }
 
     // And finally send the JSON data.
     ws.send(json)
@@ -169,10 +155,13 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
   /**
     * Evaluates the given string `input` as a Flix program.
     */
-  private def eval(input: String)(implicit ws: WebSocket): Result[(String, Long, Long), String] = {
+  private def eval(input: String): Result[(String, Long, Long), String] = {
     try {
+      // Log the source code to compile.
+      logSourceCode(input)
+
       // Compile the program.
-      flix.addSourceCode("<input>", input)
+      flix.addSourceCode("<playground>", input)(SecurityContext.NoPermissions)
 
       flix.compile().toHardResult match {
         case Result.Ok(compilationResult) =>
@@ -194,7 +183,7 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
 
         case Result.Err(errors) =>
           // Compilation failed. Retrieve and format the first error message.
-          Err(errors.head.get.message(flix.getFormatter))
+          Err(errors.head.get.messageWithLoc(flix.getFormatter))
       }
     } catch {
       case ex: RuntimeException => Err(ex.getMessage)
@@ -223,11 +212,45 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
   /**
     * Logs the given message `msg` along with information about the connection `ws`.
     */
-  private def log(msg: String)(implicit ws: WebSocket): Unit = {
+  private def log(msg: String): Unit = {
     val dateFormat = new SimpleDateFormat(DateFormat)
     val datePart = dateFormat.format(new Date())
-    val clientPart = if (ws == null) "n/a" else ws.getRemoteSocketAddress
-    Console.println(s"[$datePart] [$clientPart]: $msg")
+    Console.println(s"[$datePart]: $msg")
+  }
+
+  /**
+    * Logs the given program.
+    */
+  private def logSourceCode(input: String): Unit = try {
+    val hash = sha1(input)
+    val p = Paths.get(s"./cache/$hash.flix")
+    Files.createDirectories(p.getParent)
+    Files.writeString(p, input)
+  } catch {
+    case ex: IOException =>
+      ex.printStackTrace()
+  }
+
+  /**
+    * Returns the `SHA1` of the given string `s`.
+    */
+  private def sha1(s: String): String = {
+    val crypt = MessageDigest.getInstance("SHA-1")
+    crypt.update(s.getBytes("UTF-8"))
+    byteToHex(crypt.digest)
+  }
+
+  /**
+    * Returns the given byte array as a String.
+    */
+  private def byteToHex(hash: Array[Byte]): String = {
+    val formatter = new java.util.Formatter()
+    for (b <- hash) {
+      formatter.format("%02x", b)
+    }
+    val result = formatter.toString
+    formatter.close()
+    result
   }
 
   /**

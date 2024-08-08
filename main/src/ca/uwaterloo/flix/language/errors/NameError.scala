@@ -30,6 +30,25 @@ sealed trait NameError extends CompilationMessage with Recoverable {
 object NameError {
 
   /**
+    * An error raised to indicate a deprecated feature
+    * *
+    * @param loc the location of the deprecated feature.
+    */
+  case class Deprecated(loc: SourceLocation) extends NameError with Recoverable {
+    def summary: String = s"Deprecated feature."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s""">> Deprecated feature. Use --Xdeprecated to enable.
+         |
+         |${code(loc, "deprecated")}
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
     * An error raised to indicate that the given `name` is defined multiple time.
     *
     * @param name the name.
@@ -41,8 +60,7 @@ object NameError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
-         |>> Duplicate definition of '${red(name)}'.
+      s""">> Duplicate definition of '${red(name)}'.
          |
          |${code(loc1, "the first definition was here.")}
          |
@@ -76,8 +94,7 @@ object NameError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
-         |>> Duplicate definition of '${red(name)}'.
+      s""">> Duplicate definition of '${red(name)}'.
          |
          |${code(loc1, "the first definition was here.")}
          |
@@ -100,9 +117,7 @@ object NameError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
-         |
-         |>> Suspicious type variable '${red(name)}'. Did you mean: '${cyan(name.capitalize)}'?
+      s""">> Suspicious type variable '${red(name)}'. Did you mean: '${cyan(name.capitalize)}'?
          |
          |${code(loc, "suspicious type variable.")}
          |""".stripMargin

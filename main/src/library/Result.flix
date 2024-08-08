@@ -49,6 +49,8 @@ instance Monad[Result[e]] {
 
 mod Result {
 
+    import java.lang.Exception
+
     ///
     /// Returns `true` iff `r` is `Ok(v)`.
     ///
@@ -78,14 +80,14 @@ mod Result {
     ///
     pub def withDefault(default: {default = Result[e2, t]}, r: Result[e1, t]): Result[e2, t] = match r {
         case Ok(v)  => Ok(v)
-        case Err(_) => default.default
+        case Err(_) => default#default
     }
 
     ///
     /// Returns `Ok(dst)` if `r` is `Ok(src)`. Otherwise returns `r`.
     ///
     pub def replace(src: {src = t}, dst: {dst = t}, r: Result[e, t]): Result[e, t] with Eq[t] = match r {
-        case Ok(v)  => Ok(if (v == src.src) dst.dst else v)
+        case Ok(v)  => Ok(if (v == src#src) dst#dst else v)
         case Err(_) => r
     }
 
@@ -435,9 +437,7 @@ mod Result {
         try {
             Ok(f())
         } catch {
-            case e: ##java.lang.Exception =>
-                import java.lang.Throwable.getMessage(): String \ {};
-                Err(getMessage(checked_cast(e)))
+            case e: Exception => Err(unsafe e.getMessage())
         }
 
 }

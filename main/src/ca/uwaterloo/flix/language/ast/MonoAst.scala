@@ -16,15 +16,16 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.ast.Ast.{Denotation, EliminatedBy, Source}
-import ca.uwaterloo.flix.language.ast.shared.Fixity
+import ca.uwaterloo.flix.language.ast.Ast.{Denotation, EliminatedBy}
+import ca.uwaterloo.flix.language.ast.shared.{Fixity, Source}
 import ca.uwaterloo.flix.language.phase.Monomorpher
 
 object MonoAst {
 
-  val empty: Root = Root(Map.empty, Map.empty, None, Set.empty, Map.empty)
+  val empty: Root = Root(Map.empty, Map.empty, Map.empty, None, Set.empty, Map.empty)
 
   case class Root(defs: Map[Symbol.DefnSym, Def],
+                  structs: Map[Symbol.StructSym, Struct],
                   effects: Map[Symbol.EffectSym, Effect],
                   entryPoint: Option[Symbol.DefnSym],
                   reachable: Set[Symbol.DefnSym],
@@ -37,6 +38,8 @@ object MonoAst {
   case class Effect(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EffectSym, ops: List[Op], loc: SourceLocation)
 
   case class Op(sym: Symbol.OpSym, spec: Spec)
+
+  case class Struct(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.StructSym, tparams: List[Symbol.KindedTypeVarSym], fields: List[StructField], loc: SourceLocation)
 
   sealed trait Expr extends Product {
     def tpe: Type
@@ -170,9 +173,9 @@ object MonoAst {
 
   }
 
-  case class Attribute(name: String, tpe: Type, loc: SourceLocation)
-
   case class Case(sym: Symbol.CaseSym, tpe: Type, sc: Scheme, loc: SourceLocation)
+
+  case class StructField(name: Name.Label, tpe: Type, loc: SourceLocation)
 
   case class Constraint(cparams: List[ConstraintParam], head: Predicate.Head, body: List[Predicate.Body], loc: SourceLocation)
 

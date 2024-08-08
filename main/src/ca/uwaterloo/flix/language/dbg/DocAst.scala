@@ -94,6 +94,11 @@ object DocAst {
     /** e.g. `r..toString()`. It is used for java "dots" */
     case class DoubleDot(d1: Expr, d2: Expr) extends Atom
 
+    /**
+      * e.g. `r#x` for [[RecordSelect]].
+      */
+    case class Hash(d1: Expr, d2: Expr) extends Atom
+
     case class TryCatch(d: Expr, rules: List[(Symbol.VarSym, Class[_], Expr)]) extends Atom
 
     case class TryWith(d1: Expr, eff: Symbol.EffectSym, rules: List[(Symbol.OpSym, List[Ascription], Expr)]) extends Atom
@@ -214,6 +219,9 @@ object DocAst {
     def Force(d: Expr): Expr =
       Keyword("force", d)
 
+    def Throw(d: Expr): Expr =
+      Keyword("throw", d)
+
     def Index(idx: Int, d: Expr): Expr =
       Dot(d, AsIs(s"_$idx"))
 
@@ -286,7 +294,7 @@ object DocAst {
       Keyword("goto", AsIs(sym.toString))
 
     def RecordSelect(label: Name.Label, d: Expr): Expr =
-      Dot(d, AsIs(label.name))
+      Hash(d, AsIs(label.name))
 
     def Regex(p: java.util.regex.Pattern): Expr =
       App(AsIs("Regex"), List(AsIs(s""""${p.toString}"""")))
@@ -366,6 +374,8 @@ object DocAst {
 
     val Region: Type = AsIs("Region")
 
+    val Null: Type = AsIs("Null")
+
     def Array(t: Type): Type = App("Array", List(t))
 
     def Lazy(t: Type): Type = App("Lazy", List(t))
@@ -373,6 +383,8 @@ object DocAst {
     def Ref(t: Type): Type = App("Ref", List(t))
 
     def Enum(sym: Symbol.EnumSym, args: List[Type]): Type = App(sym.toString, args)
+
+    def Struct(sym: Symbol.StructSym, args: List[Type]): Type = App(sym.toString, args)
 
     def Var(id: Int): Type = AsIs(s"var$id")
   }

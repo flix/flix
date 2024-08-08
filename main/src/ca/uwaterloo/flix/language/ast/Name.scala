@@ -192,6 +192,33 @@ object Name {
   }
 
   /**
+   * The name of a struct field.
+   *
+   * @param name the name of the struct field.
+   * @param loc  the specific occurrence of the name.
+   */
+  case class StructField(name: String, loc: SourceLocation) {
+
+    /**
+     * Two struct field names are equal if their names are the same.
+     */
+    override def equals(o: Any): Boolean = o match {
+      case that: StructField => this.name == that.name
+      case _ => false
+    }
+
+    /**
+     * Two struct field names are equal if their names are the same.
+     */
+    override def hashCode(): Int = name.hashCode
+
+    /**
+     * Human readable representation.
+     */
+    override def toString: String = name
+  }
+
+  /**
     * The name of a predicate.
     *
     * @param name the name of the predicate.
@@ -215,6 +242,33 @@ object Name {
     /**
       * Human readable representation.
       */
+    override def toString: String = name
+  }
+
+  /**
+   * The name of a field.
+   *
+   * @param name the name of the struct field.
+   * @param loc  the specific occurrence of the name.
+   */
+  case class Field(name: String, loc: SourceLocation) {
+
+    /**
+     * Two label names are equal if their names are the same.
+     */
+    override def equals(o: Any): Boolean = o match {
+      case that: Label => this.name == that.name
+      case _ => false
+    }
+
+    /**
+     * Two label names are equal if their names are the same.
+     */
+    override def hashCode(): Int = name.hashCode
+
+    /**
+     * Human readable representation.
+     */
     override def toString: String = name
   }
 

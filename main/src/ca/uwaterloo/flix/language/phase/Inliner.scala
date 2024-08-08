@@ -63,8 +63,9 @@ object Inliner {
   def run(root: OccurrenceAst.Root)(implicit flix: Flix): Validation[LiftedAst.Root, CompilationMessage] = {
     val defs = ParOps.parMapValues(root.defs)(d => visitDef(d)(flix, root))
     val effects = ParOps.parMapValues(root.effects)(visitEffect)
+    val structs = Map.empty[Symbol.StructSym, LiftedAst.Struct]
 
-    Validation.success(LiftedAst.Root(defs, effects, root.entryPoint, root.reachable, root.sources))
+    Validation.success(LiftedAst.Root(defs, structs, effects, root.entryPoint, root.reachable, root.sources))
   }
 
   /**

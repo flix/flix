@@ -181,6 +181,9 @@ object PatMatch {
       case Expr.ArrayLoad(base, index, _, _, _) => List(base, index).flatMap(visitExp)
       case Expr.ArrayStore(base, index, elm, _, _) => List(base, index, elm).flatMap(visitExp)
       case Expr.ArrayLength(base, _, _) => visitExp(base)
+      case Expr.StructNew(sym, fields, region, tpe, eff, loc) => throw new RuntimeException("JOE TBD")
+      case Expr.StructGet(sym, exp, field, tpe, eff, loc) => throw new RuntimeException("JOE TBD")
+      case Expr.StructPut(sym, exp1, field, exp2, tpe, eff, loc) => throw new RuntimeException("JOE TBD")
       case Expr.VectorLit(exps, _, _, _) => exps.flatMap(visitExp)
       case Expr.VectorLoad(exp1, exp2, _, _, _) => List(exp1, exp2).flatMap(visitExp)
       case Expr.VectorLength(exp, _) => visitExp(exp)
@@ -197,6 +200,8 @@ object PatMatch {
       case Expr.TryCatch(exp, rules, _, _, _) =>
         val ruleExps = rules.map(_.exp)
         (exp :: ruleExps).flatMap(visitExp)
+
+      case TypedAst.Expr.Throw(exp, _, _, _) => visitExp(exp)
 
       case Expr.TryWith(exp, _, rules, _, _, _) =>
         val ruleExps = rules.map(_.exp)
@@ -625,7 +630,7 @@ object PatMatch {
     case Some(TypeConstructor.Tuple(l)) => l
     case Some(TypeConstructor.RecordRowExtend(_)) => 2
     case Some(TypeConstructor.SchemaRowExtend(_)) => 2
-    case Some(TypeConstructor.Error(_)) => 0
+    case Some(TypeConstructor.Error(_, _)) => 0
 
     case _ =>
       // Resilience: OK to throw. We will have replaced the non-star type with Type.Error of star kind.

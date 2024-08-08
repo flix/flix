@@ -15,16 +15,14 @@
  */
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation}
 import ca.uwaterloo.flix.language.fmt.FormatKind.formatKind
-import ca.uwaterloo.flix.language.fmt.FormatType.formatType
 import ca.uwaterloo.flix.util.Formatter
 
 /**
- * A common super-type for kind errors.
- */
+  * A common super-type for kind errors.
+  */
 sealed trait KindError extends CompilationMessage {
   val kind: String = "Kind Error"
 }
@@ -32,19 +30,18 @@ sealed trait KindError extends CompilationMessage {
 object KindError {
 
   /**
-   * An error raised to indicate two incompatible kinds.
-   *
-   * @param k1  the first kind.
-   * @param k2  the second kind.
-   * @param loc the location where the error occurred.
-   */
+    * An error raised to indicate two incompatible kinds.
+    *
+    * @param k1  the first kind.
+    * @param k2  the second kind.
+    * @param loc the location where the error occurred.
+    */
   case class MismatchedKinds(k1: Kind, k2: Kind, loc: SourceLocation) extends KindError with Unrecoverable {
     override def summary: String = s"Mismatched kinds: '${formatKind(k1)}' and '${formatKind(k2)}''"
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
-         |>> This type variable was used as both kind '${red(formatKind(k1))}' and kind '${red(formatKind(k2))}'.
+      s""">> This type variable was used as both kind '${red(formatKind(k1))}' and kind '${red(formatKind(k2))}'.
          |
          |${code(loc, "mismatched kind.")}
          |
@@ -55,19 +52,18 @@ object KindError {
   }
 
   /**
-   * An error describing a kind that doesn't match the expected kind.
-   *
-   * @param expectedKind the expected kind.
-   * @param actualKind   the actual kind.
-   * @param loc          the location where the error occurred.
-   */
+    * An error describing a kind that doesn't match the expected kind.
+    *
+    * @param expectedKind the expected kind.
+    * @param actualKind   the actual kind.
+    * @param loc          the location where the error occurred.
+    */
   case class UnexpectedKind(expectedKind: Kind, actualKind: Kind, loc: SourceLocation) extends KindError with Unrecoverable {
     override def summary: String = s"Kind ${formatKind(expectedKind)} was expected, but found ${formatKind(actualKind)}."
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
-         |>> Expected kind '${red(formatKind(expectedKind))}' here, but kind '${red(formatKind(actualKind))}' is used.
+      s""">> Expected kind '${red(formatKind(expectedKind))}' here, but kind '${red(formatKind(actualKind))}' is used.
          |
          |${code(loc, "unexpected kind.")}
          |
@@ -78,17 +74,16 @@ object KindError {
   }
 
   /**
-   * An error resulting from a type whose kind cannot be inferred.
-   *
-   * @param loc The location where the error occurred.
-   */
+    * An error resulting from a type whose kind cannot be inferred.
+    *
+    * @param loc The location where the error occurred.
+    */
   case class UninferrableKind(loc: SourceLocation) extends KindError with Recoverable {
     override def summary: String = "Unable to infer kind."
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
-         |>> Unable to infer kind.
+      s""">> Unable to infer kind.
          |
          |${code(loc, "uninferred kind.")}
          |

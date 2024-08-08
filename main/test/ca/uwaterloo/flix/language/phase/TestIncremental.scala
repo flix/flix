@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.errors.TypeError.UnexpectedArg
 import org.scalatest.BeforeAndAfter
 import org.scalatest.funsuite.AnyFunSuite
@@ -35,8 +36,10 @@ class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
   private val FileH = "FileH.flix"
 
   // A new Flix instance is created and initialized with some source code for each test.
-
   private var flix: Flix = _
+
+  // The default security context.
+  private implicit val sctx: SecurityContext = SecurityContext.AllPermissions
 
   before {
     flix = new Flix()
@@ -61,7 +64,7 @@ class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
          |    }
          |    pub def cga(g: G[a]): a =
          |        let G.G(r) = g;
-         |        r.el
+         |        r#el
          |}
          |""".stripMargin)
     flix.addSourceCode(FileD,
@@ -275,7 +278,7 @@ class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
          |pub trait C[a] {
          |    pub def cf(x: Bool, y: a, z: a): a = if (f(x) == x) y else z
          |    pub def cd(x: a): L[a] = { x = x }
-         |    pub def cda(l: L[a]): a = l.x
+         |    pub def cda(l: L[a]): a = l#x
          |}
          |""".stripMargin)
     flix.addSourceCode(FileF,

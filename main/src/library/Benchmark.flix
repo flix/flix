@@ -24,6 +24,7 @@ pub enum Benchmark {
 
 mod Benchmark {
 
+    import java.lang.System
 
     ///
     /// Returns the minimum number of iterations a benchmark can be executed.
@@ -68,8 +69,7 @@ mod Benchmark {
             println("No benchmarks");
             1
         } else {
-            import static java.lang.System.nanoTime(): Int64 \ IO;
-            let t = nanoTime();
+            let t = System.nanoTime();
             printHeader();
             println("");
             let benchmarksWithEstimates = warmupAndEstimate(rc, bs);
@@ -78,7 +78,7 @@ mod Benchmark {
             printCols();
             runAll(benchmarksWithEstimates, budget);
             println("");
-            let e = nanoTime() - t;
+            let e = System.nanoTime() - t;
             println("Total time elapsed: ${toSeconds(e)} seconds. Time budget was: ${toSeconds(budget)} seconds.");
             0
         }
@@ -111,12 +111,11 @@ mod Benchmark {
     /// Runs the given benchmark `b` exactly `n` times.
     ///
     def runBenchmark(b: Benchmark, n: Int32): BenchmarkResult \ IO =
-        import static java.lang.System.nanoTime(): Int64 \ IO;
         let Benchmark(r) = b;
-        let t = nanoTime();
-        loop(r.f, n);
-        let e = nanoTime() - t;
-        BenchmarkResult.Success({name = r.name, rounds = n, total = e})
+        let t = System.nanoTime();
+        loop(r#f, n);
+        let e = System.nanoTime() - t;
+        BenchmarkResult.Success({name = r#name, rounds = n, total = e})
 
     ///
     /// Returns the number of nanoseconds it is estimated that a warm JVM
@@ -126,10 +125,9 @@ mod Benchmark {
     ///
     def runBenchmarkOnce(b: Benchmark): Int64 \ IO =
         let Benchmark(r) = b;
-        import static java.lang.System.nanoTime(): Int64 \ IO;
-        let t = nanoTime();
-        (r.f)();
-        (nanoTime() - t) / scaleFactor()
+        let t = System.nanoTime();
+        (r#f)();
+        (System.nanoTime() - t) / scaleFactor()
 
     ///
     /// Executes the given function `f` exactly `n` times.
@@ -174,10 +172,10 @@ mod Benchmark {
     ///
     def printRow(s: BenchmarkResult): Unit \ IO = {
         let BenchmarkResult.Success(r) = s;
-        let avgNs = r.total / Int32.toInt64(r.rounds);
+        let avgNs = r#total / Int32.toInt64(r#rounds);
         let avgMs = toMicroSeconds(avgNs);
-        let namePart = String.padRight(40, ' ', r.name);
-        let iterPart = String.padLeft(20, ' ', "${r.rounds}");
+        let namePart = String.padRight(40, ' ', r#name);
+        let iterPart = String.padLeft(20, ' ', "${r#rounds}");
         let avgTimePart = String.padLeft(20, ' ', "${avgMs} us/op");
         "${namePart}${iterPart}${avgTimePart}" |> println
     }

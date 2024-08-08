@@ -586,7 +586,7 @@ mod DelayList {
     ///
     @Experimental @Lazy
     pub def replace(src: {src = a}, dst: {dst = a}, l: DelayList[a]): DelayList[a] with Eq[a] =
-        map(e -> if (src.src == e) dst.dst else e, l)
+        map(e -> if (src#src == e) dst#dst else e, l)
 
     ///
     /// Applies `f` to a start value `s` and all elements in `l` going from left to right.

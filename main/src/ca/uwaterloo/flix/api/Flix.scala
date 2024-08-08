@@ -16,8 +16,8 @@
 
 package ca.uwaterloo.flix.api
 
-import ca.uwaterloo.flix.language.ast.Ast.Input
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext, Source}
 import ca.uwaterloo.flix.language.dbg.AstPrinter
 import ca.uwaterloo.flix.language.fmt.FormatOptions
 import ca.uwaterloo.flix.language.phase._
@@ -27,15 +27,17 @@ import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.Summary
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util._
-import ca.uwaterloo.flix.util.collection.Chain
+import ca.uwaterloo.flix.util.collection.{Chain, MultiMap}
 import ca.uwaterloo.flix.util.tc.Debug
 
 import java.nio.charset.Charset
 import java.nio.file.{Files, Path}
 import java.util.concurrent.ForkJoinPool
+import java.util.zip.ZipFile
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.language.implicitConversions
+import scala.util.Using
 
 object Flix {
   /**
@@ -75,27 +77,20 @@ class Flix {
   private var changeSet: ChangeSet = ChangeSet.Everything
 
   /**
+    * The set of known Java classes and interfaces.
+    */
+  private var knownClassesAndInterfaces: MultiMap[List[String], String] = getJavaPlatformClassesAndInterfaces()
+
+  /**
     * A cache of ASTs for incremental compilation.
     */
-  private var cachedLexerTokens: Map[Ast.Source, Array[Token]] = Map.empty
+  private var cachedLexerTokens: Map[Source, Array[Token]] = Map.empty
   private var cachedParserCst: SyntaxTree.Root = SyntaxTree.empty
   private var cachedWeederAst: WeededAst.Root = WeededAst.empty
   private var cachedDesugarAst: DesugaredAst.Root = DesugaredAst.empty
   private var cachedKinderAst: KindedAst.Root = KindedAst.empty
   private var cachedResolverAst: ResolvedAst.Root = ResolvedAst.empty
   private var cachedTyperAst: TypedAst.Root = TypedAst.empty
-
-  def getParserCst: SyntaxTree.Root = cachedParserCst
-
-  def getWeederAst: WeededAst.Root = cachedWeederAst
-
-  def getDesugarAst: DesugaredAst.Root = cachedDesugarAst
-
-  def getKinderAst: KindedAst.Root = cachedKinderAst
-
-  def getResolverAst: ResolvedAst.Root = cachedResolverAst
-
-  def getTyperAst: TypedAst.Root = cachedTyperAst
 
   /**
     * A sequence of internal inputs to be parsed into Flix ASTs.
@@ -164,6 +159,7 @@ class Flix {
     "BigInt.flix" -> LocalResource.get("/src/library/BigInt.flix"),
     "Boxable.flix" -> LocalResource.get("/src/library/Boxable.flix"),
     "Boxed.flix" -> LocalResource.get("/src/library/Boxed.flix"),
+    "Box.flix" -> LocalResource.get("/src/library/Box.flix"),
     "Chain.flix" -> LocalResource.get("/src/library/Chain.flix"),
     "Char.flix" -> LocalResource.get("/src/library/Char.flix"),
     "CodePoint.flix" -> LocalResource.get("/src/library/CodePoint.flix"),
@@ -317,11 +313,13 @@ class Flix {
   /**
     * Adds the given string `text` with the given `name`.
     */
-  def addSourceCode(name: String, text: String): Flix = {
+  def addSourceCode(name: String, text: String)(implicit sctx: SecurityContext): Flix = {
     if (name == null)
       throw new IllegalArgumentException("'name' must be non-null.")
     if (text == null)
       throw new IllegalArgumentException("'text' must be non-null.")
+    if (sctx == null)
+      throw new IllegalArgumentException("'sctx' must be non-null.")
     addInput(name, Input.Text(name, text, stable = false))
     this
   }
@@ -399,6 +397,7 @@ class Flix {
       throw new IllegalArgumentException(s"'$p' must be a readable file.")
 
     jarLoader.addURL(p.toUri.toURL)
+    extendKnownJavaClassesAndInterfaces(p)
     this
   }
 
@@ -465,9 +464,9 @@ class Flix {
     */
   def mkMessages(errors: Chain[CompilationMessage]): List[String] = {
     if (options.explain)
-      errors.toSeq.sortBy(_.loc).map(cm => cm.message(formatter) + cm.explain(formatter).getOrElse("")).toList
+      errors.toSeq.sortBy(_.loc).map(cm => cm.messageWithLoc(formatter) + cm.explain(formatter).getOrElse("")).toList
     else
-      errors.toSeq.sortBy(_.loc).map(cm => cm.message(formatter)).toList
+      errors.toSeq.sortBy(_.loc).map(cm => cm.messageWithLoc(formatter)).toList
   }
 
   /**
@@ -494,7 +493,7 @@ class Flix {
 
     /** Remember to update [[AstPrinter]] about the list of phases. */
     val result = for {
-      afterReader <- Reader.run(getInputs)
+      afterReader <- Reader.run(getInputs, knownClassesAndInterfaces)
       afterLexer <- Lexer.run(afterReader, cachedLexerTokens, changeSet)
       afterParser <- Parser2.run(afterLexer, cachedParserCst, changeSet)
       afterWeeder <- Weeder2.run(afterReader, entryPoint, afterParser, cachedWeederAst, changeSet)
@@ -535,7 +534,10 @@ class Flix {
 
     // Print summary?
     if (options.xsummary) {
-      Summary.printSummary(result)
+      result.map(root => {
+        val table = Summary.fileSummaryTable(root, nsDepth = Some(1), minLines = Some(125))
+        table.getMarkdownLines.foreach(println)
+      })
     }
 
     // Return the result (which could contain soft failures).
@@ -661,7 +663,7 @@ class Flix {
     * Returns the inputs for the given list of (path, text) pairs.
     */
   private def getLibraryInputs(xs: List[(String, String)]): List[Input] = xs.foldLeft(List.empty[Input]) {
-    case (xs, (name, text)) => Input.Text(name, text, stable = true) :: xs
+    case (xs, (virtualPath, text)) => Input.Text(virtualPath, text, stable = true) :: xs
   }
 
   /**
@@ -676,6 +678,62 @@ class Flix {
     */
   private def shutdownForkJoinPool(): Unit = {
     threadPool.shutdown()
+  }
+
+  /**
+    * Extends the set of known Java classes and interfaces with those in the given JAR-file `p`.
+    */
+  private def extendKnownJavaClassesAndInterfaces(p: Path): Unit = {
+    knownClassesAndInterfaces = knownClassesAndInterfaces ++ getPackageContent(getClassesAndInterfacesOfJar(p))
+  }
+
+  /**
+    * Returns all Java classes and interfaces in the current Java Platform.
+    */
+  private def getJavaPlatformClassesAndInterfaces(): MultiMap[List[String], String] = {
+    getPackageContent(ClassList.TheList)
+  }
+
+  /**
+    * Returns the names of all classes and interfaces in the given JAR-file `p`.
+    */
+  private def getClassesAndInterfacesOfJar(p: Path): List[String] = {
+    Using(new ZipFile(p.toFile)) { zip =>
+      val result = mutable.ListBuffer.empty[String]
+      val iterator = zip.entries()
+      while (iterator.hasMoreElements) {
+        val entry = iterator.nextElement()
+        val name = entry.getName
+        if (name.endsWith(".class")) {
+          result += name
+        }
+      }
+      result.toList
+    }.get
+  }
+
+  /**
+    * Returns a multimap from Java packages to sub-packages, classes, and interfaces.
+    */
+  private def getPackageContent(l: List[String]): MultiMap[List[String], String] = {
+    l.foldLeft[MultiMap[List[String], String]](MultiMap.empty) {
+      case (acc, clazz) =>
+        // Given a string `java/util/zip/ZipUtils.class` we convert it to the list `java :: util :: zip :: ZipUtils`.
+        // We strip both the ".class" and ".java" suffix. Order should not matter.
+        val clazzPath = clazz.stripSuffix(".class").stripSuffix(".java").split('/').toList
+
+        // Create a multimap from all package prefixes to their sub packages and classes.
+        // For example, if we have `java.lang.String`, we want to compute:
+        // Nil                  => {java}
+        // List("java")         => {lang}
+        // List("java", "lang") => {String}
+        clazzPath.inits.foldLeft(acc) {
+          // Case 1: Nonempty path: split prefix and package
+          case (acc1, prefix :+ pkg) => acc1 + (prefix -> pkg)
+          // Case 2: Empty path: skip it
+          case (acc1, _) => acc1
+        }
+    }
   }
 
 }

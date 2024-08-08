@@ -101,12 +101,15 @@ object Main {
       xnoqmc = cmdOpts.xnoqmc,
       xnooptimizer = cmdOpts.xnooptimizer,
       xprintphases = cmdOpts.xprintphases,
+      xnodeprecated = cmdOpts.xnodeprecated,
       xsummary = cmdOpts.xsummary,
       xfuzzer = cmdOpts.xfuzzer,
       xprinttyper = cmdOpts.xprinttyper,
       xverifyeffects = cmdOpts.xverifyeffects,
+      xsubeffecting = cmdOpts.xsubeffecting,
       XPerfFrontend = cmdOpts.XPerfFrontend,
-      XPerfN = cmdOpts.XPerfN
+      XPerfN = cmdOpts.XPerfN,
+      xiterations = cmdOpts.xiterations,
     )
 
     // Don't use progress bar if benchmarking.
@@ -356,6 +359,7 @@ object Main {
                      xbenchmarkPhases: Boolean = false,
                      xbenchmarkFrontend: Boolean = false,
                      xbenchmarkThroughput: Boolean = false,
+                     xnodeprecated: Boolean = false,
                      xbddthreshold: Option[Int] = None,
                      xlib: LibLevel = LibLevel.All,
                      xnoboolcache: Boolean = false,
@@ -368,8 +372,10 @@ object Main {
                      xfuzzer: Boolean = false,
                      xprinttyper: Option[String] = None,
                      xverifyeffects: Boolean = false,
+                     xsubeffecting: SubEffectLevel = SubEffectLevel.Nothing,
                      XPerfN: Option[Int] = None,
                      XPerfFrontend: Boolean = false,
+                     xiterations: Int = 1000,
                      files: Seq[File] = Seq())
 
   /**
@@ -421,10 +427,18 @@ object Main {
     * @param args the arguments array.
     */
   def parseCmdOpts(args: Array[String]): Option[CmdOpts] = {
-    implicit val readInclusion: scopt.Read[LibLevel] = scopt.Read.reads {
+    implicit val readLibLevel: scopt.Read[LibLevel] = scopt.Read.reads {
       case "nix" => LibLevel.Nix
       case "min" => LibLevel.Min
       case "all" => LibLevel.All
+      case arg => throw new IllegalArgumentException(s"'$arg' is not a valid library level. Valid options are 'all', 'min', and 'nix'.")
+    }
+
+    implicit val readSubEffectLevel: scopt.Read[SubEffectLevel] = scopt.Read.reads {
+      case "nothing" => SubEffectLevel.Nothing
+      case "lambdas" => SubEffectLevel.Lambdas
+      case "lambdas-and-instances" => SubEffectLevel.LambdasAndInstances
+      case "lambdas-and-defs" => SubEffectLevel.LambdasAndDefs
       case arg => throw new IllegalArgumentException(s"'$arg' is not a valid library level. Valid options are 'all', 'min', and 'nix'.")
     }
 
@@ -546,6 +560,10 @@ object Main {
       opt[LibLevel]("Xlib").action((arg, c) => c.copy(xlib = arg)).
         text("[experimental] controls the amount of std. lib. to include (nix, min, all).")
 
+      // Xnl-deprecated
+      opt[Unit]("Xno-deprecated").action((_, c) => c.copy(xnodeprecated = true)).
+        text("[experimental] disables deprecated features.")
+
       // Xno-optimizer
       opt[Unit]("Xno-optimizer").action((_, c) => c.copy(xnooptimizer = true)).
         text("[experimental] disables compiler optimizations.")
@@ -589,6 +607,14 @@ object Main {
       // Xverify-effects
       opt[String]("Xverify-effects").action((_, c) => c.copy(xverifyeffects = true)).
         text("[experimental] verifies consistency of effects after typechecking")
+
+      // Xsubeffecting
+      opt[SubEffectLevel]("Xsubeffecting").action((level, c) => c.copy(xsubeffecting = level)).
+        text("[experimental] enables sub-effecting in select places")
+
+      // Xiterations
+      opt[Int]("Xiterations").action((n, c) => c.copy(xiterations = n)).
+        text("[experimental] sets the maximum number of constraint resolution iterations during typechecking")
 
       note("")
 

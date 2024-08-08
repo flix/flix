@@ -26,14 +26,14 @@ mod IFDS {
         with Order[n], Order[d], Order[p] =
 
         // Extract main.
-        let main = ifds.main;
+        let main = ifds#main;
 
-        def prependZero(v) = Vector#{ifds.zero} ++ v;
-        def augmentForZero(d, v) = if (d == ifds.zero) prependZero(v) else v;
+        def prependZero(v) = Vector#{ifds#zero} ++ v;
+        def augmentForZero(d, v) = if (d == ifds#zero) prependZero(v) else v;
 
-        def eshIntra1(n, d) = augmentForZero(d, ifds.eshIntra(n, d));
-        def eshCallStart1(n, d, p) = augmentForZero(d, ifds.eshCallStart(n, d, p));
-        def eshEndReturn1(p, d, n) = augmentForZero(d, ifds.eshEndReturn(p, d, n));
+        def eshIntra1(n, d) = augmentForZero(d, ifds#eshIntra(n, d));
+        def eshCallStart1(n, d, p) = augmentForZero(d, ifds#eshCallStart(n, d, p));
+        def eshEndReturn1(p, d, n) = augmentForZero(d, ifds#eshEndReturn(p, d, n));
 
         //
         // The core IFDS Framework.
@@ -68,7 +68,7 @@ mod IFDS {
                 StartNode(target, start).
 
             // Line [2] from Figure 3 in IFDS paper
-            PathEdge(ifds.zero, n, ifds.zero) :- StartNode(main, n).
+            PathEdge(ifds#zero, n, ifds#zero) :- StartNode(main, n).
 
             // compute summary
             SummaryEdge(call, d4, d5) :-
@@ -83,7 +83,7 @@ mod IFDS {
         };
 
 
-        let f1 = inject ifds.cfg, ifds.callGraph, ifds.startNodes, ifds.endNodes into CFG, CallGraph, StartNode, EndNode;
+        let f1 = inject ifds#cfg, ifds#callGraph, ifds#startNodes, ifds#endNodes into CFG, CallGraph, StartNode, EndNode;
 
         query p, f1 select (n, d) from Results(n, d)
 

@@ -14,6 +14,9 @@
  *  limitations under the License.
  */
 
+import java.util.{List => JList}
+import java.util.{Iterator => JIterator}
+
 ///
 /// A Vector data type which is fundamentally like Array but is immutable.
 ///
@@ -104,17 +107,16 @@ instance Iterable[Vector[a]] {
 }
 
 instance ToJava[Vector[a]] {
-    type Out = ##java.util.List
+    type Out = JList
     type Aef = IO
-    pub def toJava(v: Vector[a]): ##java.util.List \ IO = Adaptor.toList(v)
+    pub def toJava(v: Vector[a]): JList \ IO = Adaptor.toList(v)
 }
 
 
 instance FromJava[Vector[a]] {
-    type In = ##java.util.List
-    pub def fromJava(l: ##java.util.List): Vector[a] = region rc {
-        import java.util.List.iterator(): ##java.util.Iterator \ rc;
-        iterator(l) |> Adaptor.fromIterator(rc, (Proxy.Proxy: Proxy[a])) |> Iterator.toVector
+    type In = JList
+    pub def fromJava(l: JList): Vector[a] = region rc {
+        (unsafe l.iterator()) |> Adaptor.fromIterator(rc, (Proxy.Proxy: Proxy[a])) |> Iterator.toVector
     }
 }
 
@@ -736,7 +738,7 @@ mod Vector {
     /// Returns a copy of `v` with every occurrence of `src` replaced by `dst`.
     ///
     pub def replace(src: {src = a}, dst: {dst = a}, v: Vector[a]): Vector[a] with Eq[a] =
-        map(e -> if (e == src.src) dst.dst else e, v)
+        map(e -> if (e == src#src) dst#dst else e, v)
 
     ///
     /// Returns `true` if and only if `a` is a prefix of `b`.

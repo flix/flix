@@ -292,10 +292,19 @@ object TypeReconstruction {
       val eff = subst(evar)
       TypedAst.Expr.ArrayStore(e1, e2, e3, eff, loc)
 
-    case KindedAst.Expr.ArrayLength(exp, loc) =>
+    case KindedAst.Expr.ArrayLength(exp, evar, loc) =>
       val e = visitExp(exp)
-      val eff = e.eff
+      val eff = subst(evar)
       TypedAst.Expr.ArrayLength(e, eff, loc)
+
+    case KindedAst.Expr.StructNew(sym, fields, region, tvar, evar, loc) =>
+      throw new RuntimeException("Joe TBD")
+
+    case KindedAst.Expr.StructGet(sym, expr, label, tvar, evar, loc) =>
+      throw new RuntimeException("Joe TBD")
+
+    case KindedAst.Expr.StructPut(sym, expr, field, exp2, tvar, evar, loc) =>
+      throw new RuntimeException("Joe TBD")
 
     case KindedAst.Expr.VectorLit(exps, tvar, evar, loc) =>
       val es = exps.map(visitExp(_))
@@ -400,6 +409,12 @@ object TypeReconstruction {
       val eff = Type.mkUnion(e.eff :: rs.map(_.exp.eff), loc)
       TypedAst.Expr.TryCatch(e, rs, tpe, eff, loc)
 
+    case KindedAst.Expr.Throw(exp, tvar, evar, loc) =>
+      val e = visitExp(exp)
+      val tpe = subst(tvar)
+      val eff = subst(evar)
+      TypedAst.Expr.Throw(e, tpe, eff, loc)
+
     case KindedAst.Expr.TryWith(exp, effUse, rules, tvar, loc) =>
       val e = visitExp(exp)
       val rs = rules map {
@@ -419,9 +434,17 @@ object TypeReconstruction {
       val eff = Type.mkUnion(eff1 :: es.map(_.eff), loc)
       TypedAst.Expr.Do(op, es, tpe, eff, loc)
 
-    case KindedAst.Expr.InvokeConstructor2(clazz, exps, loc) =>
+    case KindedAst.Expr.InvokeConstructor2(clazz, exps, cvar, evar, loc) =>
       val es = exps.map(visitExp)
-      throw InternalCompilerException(s"Unexpected InvokeConstructor2 call.", loc)
+      val constructorTpe = subst(cvar)
+      val tpe = Type.getFlixType(clazz)
+      val eff = subst(evar)
+      constructorTpe match {
+        case Type.Cst(TypeConstructor.JvmConstructor(constructor), loc) =>
+          TypedAst.Expr.InvokeConstructor(constructor, es, tpe, eff, loc)
+        case _ =>
+          TypedAst.Expr.Error(TypeError.UnresolvedConstructor(loc), tpe, eff)
+      }
 
     case KindedAst.Expr.InvokeMethod2(exp, _, exps, mvar, tvar, evar, loc) =>
       val e = visitExp(exp)
@@ -436,24 +459,32 @@ object TypeReconstruction {
           TypedAst.Expr.Error(TypeError.UnresolvedMethod(loc), methodTpe, eff)
       }
 
-    case KindedAst.Expr.InvokeStaticMethod2(clazz, methodName, exps, loc) =>
+    case KindedAst.Expr.InvokeStaticMethod2(_, _, exps, mvar, tvar, evar, loc) =>
       val es = exps.map(visitExp)
-      throw InternalCompilerException(s"Unexpected InvokeStaticMethod2 call.", loc)
+      val methodTpe = subst(mvar)
+      val returnTpe = subst(tvar)
+      val eff = subst(evar)
+      methodTpe match {
+        case Type.Cst(TypeConstructor.JvmMethod(method), loc) =>
+          TypedAst.Expr.InvokeStaticMethod(method, es, returnTpe, eff, loc)
+        case _ =>
+          TypedAst.Expr.Error(TypeError.UnresolvedMethod(loc), methodTpe, eff) // TODO INTEROP: UnresolvedStaticMethod ?
+      }
 
-    case KindedAst.Expr.InvokeConstructor(constructor, args, loc) =>
+    case KindedAst.Expr.InvokeConstructorOld(constructor, args, loc) =>
       val as = args.map(visitExp(_))
       val tpe = getFlixType(constructor.getDeclaringClass)
       val eff = Type.IO
       TypedAst.Expr.InvokeConstructor(constructor, as, tpe, eff, loc)
 
-    case KindedAst.Expr.InvokeMethod(method, _, exp, args, loc) =>
+    case KindedAst.Expr.InvokeMethodOld(method, _, exp, args, loc) =>
       val e = visitExp(exp)
       val as = args.map(visitExp(_))
       val tpe = getFlixType(method.getReturnType)
       val eff = Type.IO
       TypedAst.Expr.InvokeMethod(method, e, as, tpe, eff, loc)
 
-    case KindedAst.Expr.InvokeStaticMethod(method, args, loc) =>
+    case KindedAst.Expr.InvokeStaticMethodOld(method, args, loc) =>
       val as = args.map(visitExp(_))
       val tpe = getFlixType(method.getReturnType)
       val eff = Type.IO

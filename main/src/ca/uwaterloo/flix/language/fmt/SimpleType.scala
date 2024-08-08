@@ -429,6 +429,7 @@ object SimpleType {
         case TypeConstructor.Receiver => mkApply(Receiver, t.typeArguments.map(visit))
         case TypeConstructor.Lazy => mkApply(Lazy, t.typeArguments.map(visit))
         case TypeConstructor.Enum(sym, _) => mkApply(Name(sym.name), t.typeArguments.map(visit))
+        case TypeConstructor.Struct(sym, _) => mkApply(Name(sym.name), t.typeArguments.map(visit))
         case TypeConstructor.RestrictableEnum(sym, _) => mkApply(Name(sym.name), t.typeArguments.map(visit))
         case TypeConstructor.Native(clazz) => Name(clazz.getName)
         case TypeConstructor.JvmConstructor(constructor) => Name(constructor.getName)
@@ -439,7 +440,6 @@ object SimpleType {
             case 1 => SimpleType.MethodReturnType(fromWellKindedType(t.typeArguments.head))
             case _ => throw InternalCompilerException(s"Unexpected wrong kinded type $t", t.loc)
           }
-        case TypeConstructor.StaticMethodReturnType(clazz, name, arity) => mkApply(Name(name), t.typeArguments.map(visit))
         case TypeConstructor.Ref => mkApply(Ref, t.typeArguments.map(visit))
         case TypeConstructor.Tuple(l) =>
           val tpes = t.typeArguments.map(visit).padTo(l, Hole)
@@ -562,7 +562,7 @@ object SimpleType {
         case TypeConstructor.Effect(sym) => mkApply(SimpleType.Name(sym.name), t.typeArguments.map(visit))
         case TypeConstructor.RegionToStar => mkApply(Region, t.typeArguments.map(visit))
 
-        case TypeConstructor.Error(_) => SimpleType.Error
+        case TypeConstructor.Error(_, _) => SimpleType.Error
       }
     }
 

@@ -784,6 +784,12 @@ object GenExpression {
         // Pushes the 'length' of the array on top of stack
         mv.visitInsn(ARRAYLENGTH)
 
+      case AtomicOp.StructNew(_, _) => throw new RuntimeException("JOE TBD")
+
+      case AtomicOp.StructGet(_, _) => throw new RuntimeException("JOE TBD")
+
+      case AtomicOp.StructPut(_, _) => throw new RuntimeException("JOE TBD")
+
       case AtomicOp.Ref =>
         val List(exp) = exps
 
@@ -978,6 +984,12 @@ object GenExpression {
         // Push Unit on the stack.
         mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
 
+      case AtomicOp.Throw =>
+        // Add source line number for debugging (can fail when handling exception)
+        addSourceLine(mv, loc)
+        val List(exp) = exps
+        compileExpr(exp)
+        mv.visitInsn(ATHROW)
 
       case AtomicOp.Spawn =>
         val List(exp1, exp2) = exps

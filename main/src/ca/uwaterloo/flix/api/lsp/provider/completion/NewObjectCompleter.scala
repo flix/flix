@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.Index
-import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.{ClassCompletion, NewObjectCompletion}
+import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.{ImportCompletion, NewObjectCompletion}
 import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.fmt.FormatType
 
@@ -33,7 +33,7 @@ object NewObjectCompleter extends Completer {
             // A package/class was found by javaClassCompletionsFromPrefix but it is not yet a valid
             // class, so we change it to a ClassCompletion so VSCode can assist the user in finding the
             // correct package/class.
-            Some(ClassCompletion(name))
+            Some(ImportCompletion(name))
         }
       }
       .filter(_.isDefined)

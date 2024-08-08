@@ -53,18 +53,18 @@ mod IDE {
              Order[n], Order[d], Order[p], Order[f],  Order[l] =
 
         // Extract main.
-        let main = ide.main;
+        let main = ide#main;
 
         // Extract apply and compose.
-        let apply = ide.apply;
-        let compose = ide.compose;
+        let apply = ide#apply;
+        let compose = ide#compose;
 
-        def prependId(v) = Vector#{(ide.zero, ide.id)} ++ v;
-        def augmentForZero(d, v) = if (d == ide.zero) prependId(v) else v;
+        def prependId(v) = Vector#{(ide#zero, ide#id)} ++ v;
+        def augmentForZero(d, v) = if (d == ide#zero) prependId(v) else v;
 
-        def eshIntra1(n, d) = augmentForZero(d, ide.eshIntra(n, d));
-        def eshCallStart1(n, d, p) = augmentForZero(d, ide.eshCallStart(n, d, p));
-        def eshEndReturn1(p, d, n) = augmentForZero(d, ide.eshEndReturn(p, d, n));
+        def eshIntra1(n, d) = augmentForZero(d, ide#eshIntra(n, d));
+        def eshCallStart1(n, d, p) = augmentForZero(d, ide#eshCallStart(n, d, p));
+        def eshEndReturn1(p, d, n) = augmentForZero(d, ide#eshEndReturn(p, d, n));
 
         //
         // The core IDE Framework.
@@ -94,12 +94,12 @@ mod IDE {
                 CallGraph(call, target),
                 let (d3, f) = eshCallStart1(call, d2, target).
 
-            JumpFn(d3, start, d3; ide.id) :-
+            JumpFn(d3, start, d3; ide#id) :-
                 EshCallStart(call, d2, target, d3, nonbottom2),
                 StartNode(target, start).
 
             // Phase I line [6] from paper
-            JumpFn(ide.zero, n, ide.zero; ide.id) :- StartNode(main, n).
+            JumpFn(ide#zero, n, ide#zero; ide#id) :- StartNode(main, n).
 
             // compute summary
             SummaryFn(call, d4, d5; compose(compose(cs, se), er)) :-
@@ -116,7 +116,7 @@ mod IDE {
                 EshCallStart(call, d, proc, dp, cs).
 
             // Phase II line [2] from paper
-            ResultProc(ide.main, ide.zero; UpperBound.maxValue()).
+            ResultProc(ide#main, ide#zero; UpperBound.maxValue()).
 
             // tabulate result
             Results(n, d; apply(fn, vp)) :-
@@ -127,7 +127,7 @@ mod IDE {
         };
 
 
-        let f1 = inject ide.cfg, ide.callGraph, ide.startNodes, ide.endNodes into CFG, CallGraph, StartNode, EndNode;
+        let f1 = inject ide#cfg, ide#callGraph, ide#startNodes, ide#endNodes into CFG, CallGraph, StartNode, EndNode;
 
         query p, f1 select (n, d, l) from Results(n, d; l)
 
