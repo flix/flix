@@ -103,10 +103,21 @@ object Simplifier {
           SimplifiedAst.Expr.ApplyAtomic(op, es1, t, purity, loc)
 
         case AtomicOp.InvokeMethod(m) =>
-          //if (m.isVarArgs)
-            // TODO INTEROP: convert varargs to Java array
           val t = visitType(tpe)
-          SimplifiedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
+          if (m.isVarArgs) {
+            // Get the required parameters (non varargs)
+            val reqParamsNb = m.getParameterCount - 1 // minus the var array
+            // Convert the varargs into a Java array
+            var args = es.tail
+            val varargs = args.slice(0, reqParamsNb)
+            // Match varArrType with the specific monotype for ArrayNew?
+            // val varArrType = Type.getFlixType(m.getParameterTypes.last.getComponentType)
+            val varArr = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.ArrayNew, varargs, MonoType.Array(MonoType.Object), purity, loc)
+            val reqParams = args.slice(reqParamsNb, args.length)
+            SimplifiedAst.Expr.ApplyAtomic(op, (reqParams ++ List(varArr)), t, purity, loc)
+          } else {
+            SimplifiedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
+          }
 
         case AtomicOp.Spawn =>
           // Wrap the expression in a closure: () -> tpe \ ef

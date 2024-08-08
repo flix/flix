@@ -316,6 +316,7 @@ object TypeReduction {
       val argsDiff = paramCount - ts.length
       if (argsDiff <= 1) { // We remove the vararg array and check for required arguments
         // Check subtyping for required args
+        // if (argsDiff <= 0) TODO INTEROP: support where argsDiff <= 0
         (cand.getParameterTypes zip ts.slice(0, argsDiff + 1)).forall {
           case (clazz, tpe) => isSubtype(tpe, Type.getFlixType(clazz))
         } &&
