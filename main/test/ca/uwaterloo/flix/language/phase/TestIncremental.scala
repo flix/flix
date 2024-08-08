@@ -40,18 +40,18 @@ class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
 
   before {
     flix = new Flix()
-    flix.addSourceCode(FileA,
+    flix.addUnmanagedSourceCode(FileA,
       s"""
          |pub def f(x: Bool): Bool = not x
          |
          |""".stripMargin)
-    flix.addSourceCode(FileB,
+    flix.addUnmanagedSourceCode(FileB,
       raw"""
            |def main(): Unit \ IO =
            |    println(f(true));
            |    println(C.cd(1) |> C.cda)
            |""".stripMargin)
-    flix.addSourceCode(FileC,
+    flix.addUnmanagedSourceCode(FileC,
       s"""
          |pub trait C[a] {
          |    pub def cf(x: Bool, y: a, z: a): a = if (f(x) == x) y else z
@@ -64,25 +64,25 @@ class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
          |        r#el
          |}
          |""".stripMargin)
-    flix.addSourceCode(FileD,
+    flix.addUnmanagedSourceCode(FileD,
       s"""
          |pub enum D[a] {
          |    case DA(a)
          |}
          |""".stripMargin)
-    flix.addSourceCode(FileE,
+    flix.addUnmanagedSourceCode(FileE,
       s"""
          |instance C[Int32] {}
          |""".stripMargin)
-    flix.addSourceCode(FileF,
+    flix.addUnmanagedSourceCode(FileF,
       s"""
          |pub type alias L[a] = D[a]
          |""".stripMargin)
-    flix.addSourceCode(FileG,
+    flix.addUnmanagedSourceCode(FileG,
       s"""
          |pub enum G[a]({ el = a })
          |""".stripMargin)
-    flix.addSourceCode(FileH,
+    flix.addUnmanagedSourceCode(FileH,
       s"""
          |pub trait H[a] with C[a] {
          |    pub def cf(x: Bool, y: a, z: a): a = C.cf(x, y, z)
@@ -93,17 +93,17 @@ class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
   }
 
   test("Incremental.01") {
-    flix.addSourceCode(FileA,
+    flix.addUnmanagedSourceCode(FileA,
       s"""
          |pub def f(x: Int32): Int32 = x + 1i32
          |
          |""".stripMargin)
-    flix.addSourceCode(FileB,
+    flix.addUnmanagedSourceCode(FileB,
       raw"""
            |def main(): Unit \ IO =
            |    println(f(123))
            |""".stripMargin)
-    flix.addSourceCode(FileC,
+    flix.addUnmanagedSourceCode(FileC,
       s"""
          |pub trait C[a] {
          |    pub def cf(x: Int32, y: a, z: a): a = if (f(x) == x) y else z
@@ -120,22 +120,22 @@ class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
   }
 
   test("Incremental.02") {
-    flix.addSourceCode(FileA,
+    flix.addUnmanagedSourceCode(FileA,
       s"""
          |pub def f(x: String): String = String.toUpperCase(x)
          |""".stripMargin)
-    flix.addSourceCode(FileB,
+    flix.addUnmanagedSourceCode(FileB,
       raw"""
            |def main(): Unit \ IO =
            |    println(f("Hello World"))
            |""".stripMargin)
-    flix.addSourceCode(FileC,
+    flix.addUnmanagedSourceCode(FileC,
       s"""
          |pub trait C[a] {
          |    pub def cf(x: String, y: a, z: a): a = if (f(x) == x) y else z
          |}
          |""".stripMargin)
-    flix.addSourceCode(FileH,
+    flix.addUnmanagedSourceCode(FileH,
       s"""
          |pub trait H[a] with C[a] {
          |    pub def cf(x: String, y: a, z: a): a = C.cf(x, y, z)
@@ -145,7 +145,7 @@ class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
   }
 
   test("Incremental.03") {
-    flix.addSourceCode(FileA,
+    flix.addUnmanagedSourceCode(FileA,
       s"""
          |pub trait C[a] {
          |    pub def cf(x: Bool, y: a, z: a): a = if (f(x) == x) y else z
@@ -155,7 +155,7 @@ class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
          |    }
          |}
          |""".stripMargin)
-    flix.addSourceCode(FileC,
+    flix.addUnmanagedSourceCode(FileC,
       s"""
          |pub def f(x: Bool): Bool = not x
          |
@@ -164,7 +164,7 @@ class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
   }
 
   test("Incremental.04") {
-    flix.addSourceCode(FileA,
+    flix.addUnmanagedSourceCode(FileA,
       s"""
          |pub def f(x: Int32): Bool = x == 0
          |
@@ -173,18 +173,18 @@ class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
   }
 
   test("Incremental.05") {
-    flix.addSourceCode(FileA,
+    flix.addUnmanagedSourceCode(FileA,
       s"""
          |pub def f(x: Int64, y: Int64): Bool = x == y
          |
          |""".stripMargin)
-    flix.addSourceCode(FileB,
+    flix.addUnmanagedSourceCode(FileB,
       raw"""
            |def main(): Unit \ IO =
            |    println(f(1i64, 2i64));
            |    println(C.cd(1i64) |> C.cda)
            |""".stripMargin)
-    flix.addSourceCode(FileC,
+    flix.addUnmanagedSourceCode(FileC,
       s"""
          |pub trait C[a] {
          |    pub def cf(x: Int64, b: Int64, y: a, z: a): a = if (f(x, b)) y else z
@@ -196,14 +196,14 @@ class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
          |    pub def cdaf(x: a, y: a, d: D[a]): Bool
          |}
          |""".stripMargin)
-    flix.addSourceCode(FileD,
+    flix.addUnmanagedSourceCode(FileD,
       s"""
          |pub enum D[a] {
          |    case DA(a, a)
          |    case DB(a, a, a)
          |}
          |""".stripMargin)
-    flix.addSourceCode(FileE,
+    flix.addUnmanagedSourceCode(FileE,
       s"""
          |instance C[Int64] {
          |    pub def cd(x: Int64): D[Int64] = D.DB(x, x, x)
@@ -213,7 +213,7 @@ class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
          |    }
          |}
          |""".stripMargin)
-    flix.addSourceCode(FileH,
+    flix.addUnmanagedSourceCode(FileH,
       s"""
          |pub trait H[a] with C[a] {
          |    pub def cf(x: Int64, b: Int64, y: a, z: a): a = C.cf(x, b, y, z)
@@ -223,19 +223,19 @@ class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
   }
 
   test("Incremental.06") {
-    flix.addSourceCode(FileA,
+    flix.addUnmanagedSourceCode(FileA,
       s"""
          |mod F {
          |    pub def f(x: Bool): Bool = not x
          |}
          |""".stripMargin)
-    flix.addSourceCode(FileB,
+    flix.addUnmanagedSourceCode(FileB,
       raw"""
            |def main(): Unit \ IO =
            |    println(F.f(true));
            |    println(C.cd(1i8) |> C.cda)
            |""".stripMargin)
-    flix.addSourceCode(FileC,
+    flix.addUnmanagedSourceCode(FileC,
       s"""
          |pub trait C[a] {
          |    pub def cf(x: Bool, y: a, z: a): a = if (F.f(x) == x) y else z
@@ -249,7 +249,7 @@ class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
          |        }
          |}
          |""".stripMargin)
-    flix.addSourceCode(FileD,
+    flix.addUnmanagedSourceCode(FileD,
       s"""
          |mod DDD {
          |    pub enum D[a] {
@@ -257,11 +257,11 @@ class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
          |    }
          |}
          |""".stripMargin)
-    flix.addSourceCode(FileE,
+    flix.addUnmanagedSourceCode(FileE,
       s"""
          |instance C[Int8] {}
          |""".stripMargin)
-    flix.addSourceCode(FileF,
+    flix.addUnmanagedSourceCode(FileF,
       s"""
          |pub type alias L[a] = DDD.D[a]
          |""".stripMargin)
@@ -270,7 +270,7 @@ class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
   }
 
   test("Incremental.07") {
-    flix.addSourceCode(FileC,
+    flix.addUnmanagedSourceCode(FileC,
       s"""
          |pub trait C[a] {
          |    pub def cf(x: Bool, y: a, z: a): a = if (f(x) == x) y else z
@@ -278,7 +278,7 @@ class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
          |    pub def cda(l: L[a]): a = l#x
          |}
          |""".stripMargin)
-    flix.addSourceCode(FileF,
+    flix.addUnmanagedSourceCode(FileF,
       s"""
          |pub type alias L[a] = { x = a }
          |""".stripMargin)
@@ -287,7 +287,7 @@ class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
   }
 
   test("Incremental.08") {
-    flix.addSourceCode(FileC,
+    flix.addUnmanagedSourceCode(FileC,
       s"""
          |pub trait C[a] {
          |    pub def cf(x: Bool, y: a, z: a): a = if (f(x) == x) y else z
@@ -302,7 +302,7 @@ class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
          |        }
          |}
          |""".stripMargin)
-    flix.addSourceCode(FileG,
+    flix.addUnmanagedSourceCode(FileG,
       s"""
          |pub enum G[a](D[a])
          |""".stripMargin)

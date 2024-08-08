@@ -356,6 +356,9 @@ object Indexer {
       }
       i0 ++ i1
 
+    case Expr.Throw(exp, _, _, _) =>
+      visitExp(exp) ++ Index.occurrenceOf(exp0)
+
     case Expr.TryWith(exp, effUse, rules, _, _, _) =>
       val parent = Entity.Exp(exp0)
       val i0 = visitExp(exp) ++ Index.occurrenceOf(exp0) ++ Index.useOf(effUse.sym, effUse.loc)
