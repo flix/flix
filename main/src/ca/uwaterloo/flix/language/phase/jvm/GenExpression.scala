@@ -532,8 +532,7 @@ object GenExpression {
             compileExpr(exp2)
             mv.visitInsn(LREM)
 
-          case StringOp.Concat =>
-            throw InternalCompilerException(s"Unexpected BinaryOperator StringOp.Concat. It should have been eliminated by Simplifier", loc)
+          
         }
 
       case AtomicOp.Region =>

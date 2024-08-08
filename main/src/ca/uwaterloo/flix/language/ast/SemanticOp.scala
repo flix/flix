@@ -651,18 +651,4 @@ object SemanticOp {
 
   }
 
-  /**
-    * String Operators.
-    */
-  sealed trait StringOp extends SemanticOp
-
-  object StringOp {
-
-    /**
-      * Concatenate.
-      */
-    case object Concat extends StringOp with BinaryOp
-
-  }
-
 }

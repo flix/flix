@@ -83,12 +83,6 @@ object Simplifier {
       val es = exps map visitExp
       val purity = simplifyEffect(eff)
       op match {
-        case AtomicOp.Binary(SemanticOp.StringOp.Concat) =>
-          // Translate to InvokeMethod exp
-          val strClass = Class.forName("java.lang.String")
-          val method = strClass.getMethod("concat", strClass)
-          val t = visitType(tpe)
-          SimplifiedAst.Expr.ApplyAtomic(AtomicOp.InvokeMethod(method), es, t, purity, loc)
 
         case AtomicOp.ArrayLit | AtomicOp.ArrayNew =>
           // The region expression is dropped (head of exps / es)

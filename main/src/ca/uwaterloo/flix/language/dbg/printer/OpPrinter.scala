@@ -112,8 +112,7 @@ object OpPrinter {
          Int16Op.Add |
          Int32Op.Add |
          Int64Op.Add |
-         Int64Op.And |
-         StringOp.Concat => plus
+         Int64Op.And => plus
     case Float32Op.Sub |
          Float64Op.Sub |
          Int8Op.Sub |
