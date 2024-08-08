@@ -3144,7 +3144,7 @@ object Parser2 {
         case TokenKind.NameMath
              | TokenKind.NameGreek
              | TokenKind.Underscore => name(NAME_VARIABLE, context = SyntacticContext.Type.OtherType)
-        case TokenKind.NameLowerCase => variableType()
+        case TokenKind.NameLowerCase => variableType(context)
         case TokenKind.KeywordUniv
              | TokenKind.KeywordFalse
              | TokenKind.KeywordTrue => constantType()
@@ -3170,9 +3170,9 @@ object Parser2 {
 
     private val TYPE_VAR: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameGreek, TokenKind.NameMath, TokenKind.Underscore)
 
-    private def variableType()(implicit s: State): Mark.Closed = {
+    private def variableType(context: SyntacticContext = SyntacticContext.Type.OtherType)(implicit s: State): Mark.Closed = {
       val mark = open()
-      expectAny(TYPE_VAR, SyntacticContext.Type.OtherType)
+      expectAny(TYPE_VAR, context)
       close(mark, TreeKind.Type.Variable)
     }
 
