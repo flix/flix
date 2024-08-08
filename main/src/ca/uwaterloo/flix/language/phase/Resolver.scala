@@ -1,4 +1,3 @@
-// JOE TODO: More Comprehsive struct namespace testing
 /*
  *  Copyright 2017 Magnus Madsen
  *

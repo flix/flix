@@ -249,8 +249,8 @@ object Verifier {
 
         case AtomicOp.StructPut(sym0, _) =>
           ts match {
-            // JOE TODO: Add tpe2
-            case tpe1 :: tpe2 :: Nil =>
+            // JOE TODO: Add the second type
+            case tpe1 :: _ :: Nil =>
               checkStructType(tpe1, sym0, loc)
               tpe
             case _ =>
