@@ -1392,7 +1392,7 @@ object Parser2 {
             eat(TokenKind.Euro)
             name(NAME_FIELD, context = SyntacticContext.Expr.OtherExpr)
             if (at(TokenKind.Equal)) { // struct put
-              eat (TokenKind.Equal)
+              eat(TokenKind.Equal)
               val mark2 = open()
               expression()
               close(mark2, TreeKind.Expr.StructPutRHS)
@@ -2533,8 +2533,8 @@ object Parser2 {
     private def ambiguousNewExpr()(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.KeywordNew))
       val mark = open()
-      expect(TokenKind.KeywordNew, SyntacticContext.Expr.NewObject)
-      Type.ttype()
+      expect(TokenKind.KeywordNew, SyntacticContext.Expr.OtherExpr)
+      Type.ttype(context = SyntacticContext.Expr.NewObject)
 
       // NewStruct, NewObject, or InvokeConstructor?
       if (at(TokenKind.CurlyL) && (nth(1) == TokenKind.NameLowerCase || (nth(1) == TokenKind.CurlyR && nth(2) == TokenKind.At))) {
@@ -2968,8 +2968,8 @@ object Parser2 {
       } else lhs
     }
 
-    def ttype(left: TokenKind = TokenKind.Eof)(implicit s: State): Mark.Closed = {
-      var lhs = if (left == TokenKind.ArrowThinR) typeAndEffect() else typeDelimited()
+    def ttype(left: TokenKind = TokenKind.Eof, context: SyntacticContext = SyntacticContext.Type.OtherType)(implicit s: State): Mark.Closed = {
+      var lhs = if (left == TokenKind.ArrowThinR) typeAndEffect() else typeDelimited(context)
       // handle Type argument application
       while (at(TokenKind.BracketL)) {
         val mark = openBefore(lhs)
@@ -2991,7 +2991,7 @@ object Parser2 {
           val markOp = open()
           advance()
           close(markOp, TreeKind.Operator)
-          ttype(right)
+          ttype(right, context)
           lhs = close(mark, TreeKind.Type.Binary)
           lhs = close(openBefore(lhs), TreeKind.Type.Type)
         } else {
@@ -3136,11 +3136,11 @@ object Parser2 {
       close(mark, TreeKind.DerivationList)
     }
 
-    private def typeDelimited()(implicit s: State): Mark.Closed = {
+    private def typeDelimited(context: SyntacticContext)(implicit s: State): Mark.Closed = {
       // If a new type is added here, remember to add it to TYPE_FIRST too.
       val mark = open()
       nth(0) match {
-        case TokenKind.NameUpperCase => name(NAME_TYPE, allowQualified = true, context = SyntacticContext.Type.OtherType)
+        case TokenKind.NameUpperCase => name(NAME_TYPE, allowQualified = true, context = context)
         case TokenKind.NameMath
              | TokenKind.NameGreek
              | TokenKind.Underscore => name(NAME_VARIABLE, context = SyntacticContext.Type.OtherType)
