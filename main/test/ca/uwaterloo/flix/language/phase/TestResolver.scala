@@ -89,7 +89,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.InaccessibleEnum](result)
   }
 
-  ignore("InaccessibleStruct.01") {
+  test("InaccessibleStruct.01") {
     val input =
       s"""
          |mod A{
@@ -106,7 +106,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.InaccessibleStruct](result)
   }
 
-  ignore("InaccessibleStruct.02") {
+  test("InaccessibleStruct.02") {
     val input =
       s"""
          |mod A {
@@ -117,6 +117,28 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |    }
          |}
        """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.InaccessibleStruct](result)
+  }
+
+  test("InaccessibleStruct.03") {
+    val input =
+      s"""
+         |mod A{
+         |    struct S[r] {
+         |        a: Int32
+         |    }
+         |}
+         |
+         |mod B {
+         |    def g(): Unit = {
+         |        region rc {
+         |            new A.S { a = 3 } @ rc;
+         |            ()
+         |        }
+         |    }
+         |}
+         """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.InaccessibleStruct](result)
   }
@@ -1589,5 +1611,182 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.MismatchedOpArity](result)
+  }
+
+  test("ResolutionError.UndefinedStruct.01") {
+    val input =
+      """
+        |def f(): Unit = {
+        |    region rc {
+        |        new UndefinedStruct{ } @ rc;
+        |        ()
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedStruct](result)
+  }
+
+  test("ResolutionError.UndefinedStruct.02") {
+    val input =
+      """
+        |mod M {
+        |    struct S1[r] {}
+        |    def f(): Unit = {
+        |        region rc {
+        |            new UndefinedStruct{ } @ rc;
+        |            ()
+        |        }
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedStruct](result)
+  }
+
+  test("ResolutionError.UndefinedStruct.03") {
+    val input =
+      """
+        |mod M {
+        |    struct S1[r] {}
+        |    def f(): Unit = {
+        |        region rc {
+        |            new UndefinedStruct{ } @ rc;
+        |            new S1 { } @ rc;
+        |            ()
+        |        }
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedStruct](result)
+  }
+
+  // A bug was introduced into the kinder when it was refactored, so this test fails, but
+  // will reenable it once my next struct kinder support pr is merged
+  ignore("ResoutionError.MissingStructField.01") {
+    val input =
+      """
+        |mod S {
+        |    struct S[r] { }
+        |    def f(s: S[r]): Unit = {
+        |        s€missingField;
+        |        ()
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedStructField](result)
+  }
+
+  test("ResolutionError.MissingStructField.02") {
+    val input =
+      """
+        |mod S {
+        |    struct S[r] { }
+        |    def f(s: S[r]): Unit = {
+        |        s€missingField = 3;
+        |        ()
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedStructField](result)
+  }
+
+  test("ResolutionError.MissingStructField.03") {
+    val input =
+      """
+        |mod S {
+        |    struct S[r] { field1: Int32 }
+        |    def f(s: S[r]): Unit = {
+        |        s€missingField = 3;
+        |        ()
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedStructField](result)
+  }
+
+  test("ResolutionError.TooFewFields.01") {
+    val input = """
+                  |struct S[r] {
+                  |    a: Int32
+                  |}
+                  |def f(rc: Region): S[r] = {
+                  |    new S { } @ rc
+                  |}
+                  |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.MissingStructField](result)
+  }
+
+  test("ResolutionError.TooFewFields.02") {
+    val input = """
+                  |struct S[r] {
+                  |    a: Int32
+                  |}
+                  |struct S2[r] { }
+                  |def f(rc: Region): S[r] = {
+                  |    new S { } @ rc
+                  |}
+                  |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.MissingStructField](result)
+  }
+
+  test("ResolutionError.TooFewFields.03") {
+    val input = """
+                  |struct S[r] {
+                  |    a: Int32,
+                  |    b: Int32,
+                  |    c: Int32
+                  |}
+                  |def f(rc: Region): S[r] = {
+                  |    new S { a = 4, c = 2 } @ rc
+                  |}
+                  |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.MissingStructField](result)
+  }
+
+  test("ResolutionError.TooManyFields.01") {
+    val input = """
+                  |struct S[r] {
+                  |    a: Int32
+                  |}
+                  |def f(rc: Region): S[r] = {
+                  |    new S { a = 4, b = "hello" } @ rc
+                  |}
+                  |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.ExtraStructField](result)
+  }
+
+  test("ResolutionError.TooManyFields.02") {
+    val input = """
+                  |struct S[r] {
+                  |    a: Int32
+                  |    b: Int32
+                  |    c: Int32
+                  |}
+                  |def f(rc: Region): S[r] = {
+                  |    new S {b = 4, c = 3, a = 2, extra = 5} @ rc
+                  |}
+                  |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.ExtraStructField](result)
+  }
+
+  test("ResolutionError.TooManyFields.03") {
+    val input = """
+                  |struct S[r] { }
+                  |def f(rc: Region): S[r] = {
+                  |    new S {a = 3} @ rc
+                  |}
+                  |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.ExtraStructField](result)
   }
 }
