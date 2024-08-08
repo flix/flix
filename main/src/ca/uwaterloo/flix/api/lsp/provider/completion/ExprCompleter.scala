@@ -31,6 +31,7 @@ object ExprCompleter extends Completer {
       EnumTagCompleter.getCompletions(context) ++
       SnippetCompleter.getCompletions(context) ++
       EnumCompleter.getCompletions(context) ++
-      ModuleCompleter.getCompletions(context)
+      ModuleCompleter.getCompletions(context) ++
+      NewObjectCompleter.getCompletions(context)
   }
 }
