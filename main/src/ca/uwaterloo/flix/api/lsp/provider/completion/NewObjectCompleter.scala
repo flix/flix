@@ -12,26 +12,27 @@ object NewObjectCompleter extends Completer {
     * Returns a List of Completion for completer.
     */
   override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] = {
-    val regex = raw"\s*n?e?w?\s+(?:##)?(?:.*\s+)*(.*)".r
+    val regex = raw"\s*n?e?w?\s+(?:.*\s+)*(.*)".r
     context.prefix match {
       case regex(clazz) =>
-        val path = clazz.replaceFirst("##", "").split('.').toList
+        println("regex matches")
+        val path = clazz.split('.').toList
         // Get completions for if we are currently typing the next package/class and if we have just finished typing a package
         val names = javaClassCompletionsFromPrefix(path)(root) ++ javaClassCompletionsFromPrefix(path.dropRight(1))(root)
-        mkCompletions(context, names)
+        mkCompletions(names)
       case _ => Nil
     }
   }
 
-  private def mkCompletions(context: CompletionContext, names: Iterable[String])(implicit flix: Flix) = {
+  private def mkCompletions(names: Iterable[String])(implicit flix: Flix) = {
     names.map { name =>
         try {
           val clazz = Class.forName(name.replaceAll("\\[L", ""))
-          newObjectCompletion(context, clazz)
+          newObjectCompletion(clazz)
         } catch {
           case _: ClassNotFoundException =>
             // A package/class was found by javaClassCompletionsFromPrefix but it is not yet a valid
-            // class, so we change it to a ClassCompletion so VSCode can assist the user in finding the
+            // class, so we change it to an Import completion so VSCode can assist the user in finding the
             // correct package/class.
             Some(ImportCompletion(name))
         }
@@ -40,9 +41,8 @@ object NewObjectCompleter extends Completer {
       .map(_.get)
   }
 
-  private def newObjectCompletion(context: CompletionContext, clazz: Class[_])(implicit flix: Flix): Option[NewObjectCompletion] = {
+  private def newObjectCompletion(clazz: Class[_])(implicit flix: Flix): Option[NewObjectCompletion] = {
     val name = clazz.getName
-    val prependHash = if (context.prefix.contains(s"##")) "" else "##"
 
     if (isAbstractClass(clazz) && isPublicClass(clazz)) {
       val completion = clazz.getMethods
@@ -53,7 +53,7 @@ object NewObjectCompleter extends Completer {
         .map(toMethodCompletion(name))
         .mkString(System.lineSeparator())
 
-      Some(NewObjectCompletion(name, s"$prependHash$name {${System.lineSeparator()}${System.lineSeparator()}$completion${System.lineSeparator()}}"))
+      Some(NewObjectCompletion(name, s"$name {${System.lineSeparator()}${System.lineSeparator()}$completion${System.lineSeparator()}}"))
     } else
       None
   }
@@ -81,7 +81,7 @@ object NewObjectCompleter extends Completer {
     val name = method.getName
     val params = method.getParameters
       .map(p => s"${p.getName}: ${toTypeCompletion(p.getType)}")
-      .prepended(s"_this: ##$className")
+      .prepended(s"_this: $className")
       .mkString(", ")
     val result = toTypeCompletion(method.getReturnType)
     val indentation = "    "
@@ -90,13 +90,8 @@ object NewObjectCompleter extends Completer {
 
   private def toTypeCompletion(clazz: Class[_])(implicit flix: Flix): String = {
     val tpe = Type.getFlixType(clazz)
-    val isNative = tpe match {
-      case Type.Cst(TypeConstructor.Native(_), _) => true
-      case _ => false
-    }
-    val prependHash = if (isNative) s"##" else ""
     // TODO: Handle arrays
-    prependHash ++ FormatType.formatType(tpe)
+    FormatType.formatType(tpe)
   }
 
   /**
