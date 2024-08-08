@@ -696,7 +696,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |    let f = () -> { g = () -> { h = () -> 12 } };
         |    f()#
         |""".stripMargin
-    val result = check(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibMin)
     expectErrorOnCheck[ParseError](result)
     expectMain(result)
   }
@@ -710,7 +710,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |    let f = () -> { g = () -> { h = () -> 12 } };
         |    f()#g()#
         |""".stripMargin
-    val result = check(input, Options.TestWithLibNix)
+    val result = check(input, Options.TestWithLibMin)
     expectErrorOnCheck[ParseError](result)
     expectMain(result)
   }
