@@ -353,10 +353,10 @@ object Namer {
     * Performs naming on the given enum case.
     */
   private def visitCase(case0: DesugaredAst.Case, enumSym: Symbol.EnumSym)(implicit flix: Flix, sctx: SharedContext): NamedAst.Declaration.Case = case0 match {
-    case DesugaredAst.Case(ident, tpe, loc) =>
-      val t = visitType(tpe)
+    case DesugaredAst.Case(ident, tpes, loc) =>
+      val ts = tpes.map(visitType)
       val caseSym = Symbol.mkCaseSym(enumSym, ident)
-      NamedAst.Declaration.Case(caseSym, t, loc)
+      NamedAst.Declaration.Case(caseSym, ts, loc)
   }
 
   /**
@@ -372,10 +372,10 @@ object Namer {
     * Performs naming on the given enum case.
     */
   private def visitRestrictableCase(case0: DesugaredAst.RestrictableCase, enumSym: Symbol.RestrictableEnumSym)(implicit flix: Flix, sctx: SharedContext): NamedAst.Declaration.RestrictableCase = case0 match {
-    case DesugaredAst.RestrictableCase(ident, tpe, loc) =>
-      val t = visitType(tpe)
+    case DesugaredAst.RestrictableCase(ident, tpes, loc) =>
+      val ts = tpes.map(visitType)
       val caseSym = Symbol.mkRestrictableCaseSym(enumSym, ident)
-      NamedAst.Declaration.RestrictableCase(caseSym, t, loc)
+      NamedAst.Declaration.RestrictableCase(caseSym, ts, loc)
   }
 
   /**

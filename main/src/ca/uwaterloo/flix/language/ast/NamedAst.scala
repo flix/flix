@@ -63,9 +63,9 @@ object NamedAst {
 
     case class Op(sym: Symbol.OpSym, spec: Spec) extends Declaration
 
-    case class Case(sym: Symbol.CaseSym, tpe: Type, loc: SourceLocation) extends Declaration
+    case class Case(sym: Symbol.CaseSym, tpes: List[Type], loc: SourceLocation) extends Declaration
 
-    case class RestrictableCase(sym: Symbol.RestrictableCaseSym, tpe: Type, loc: SourceLocation) extends Declaration
+    case class RestrictableCase(sym: Symbol.RestrictableCaseSym, tpes: List[Type], loc: SourceLocation) extends Declaration
   }
 
   case class Spec(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, tparams: List[TypeParam], fparams: List[FormalParam], retTpe: Type, eff: Option[Type], tconstrs: List[TypeConstraint], econstrs: List[EqualityConstraint], loc: SourceLocation)

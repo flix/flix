@@ -406,9 +406,9 @@ object Desugar {
     * Desugars the given [[WeededAst.Case]] `case0`.
     */
   private def visitCase(case0: WeededAst.Case): DesugaredAst.Case = case0 match {
-    case WeededAst.Case(ident, tpe0, loc) =>
-      val tpe = visitType(tpe0)
-      DesugaredAst.Case(ident, tpe, loc)
+    case WeededAst.Case(ident, tpes0, loc) =>
+      val tpes = tpes0.map(visitType)
+      DesugaredAst.Case(ident, tpes, loc)
   }
 
   /**
@@ -424,9 +424,9 @@ object Desugar {
     * Desugars the given [[WeededAst.RestrictableCase]] `case0`.
     */
   private def visitRestrictableCase(case0: WeededAst.RestrictableCase): DesugaredAst.RestrictableCase = case0 match {
-    case WeededAst.RestrictableCase(ident, tpe0, loc) =>
-      val tpe = visitType(tpe0)
-      DesugaredAst.RestrictableCase(ident, tpe, loc)
+    case WeededAst.RestrictableCase(ident, tpes0, loc) =>
+      val tpes = tpes0.map(visitType)
+      DesugaredAst.RestrictableCase(ident, tpes, loc)
   }
 
   /**

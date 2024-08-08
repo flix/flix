@@ -376,21 +376,25 @@ object Weeder2 {
         // TODO: Doc comments on enum cases. It is not available on [[Case]] yet.
       ) {
         (ident, maybeType) =>
-          val tpe = maybeType
+          val tpes = maybeType
             .map(flattenEnumCaseType)
-            .getOrElse(Type.Unit(ident.loc))
+            .getOrElse(Nil)
           // Make a source location that spans the name and type, excluding 'case'.
           val loc = SourceLocation(isReal = true, ident.loc.sp1, tree.loc.sp2)
-          Case(ident, tpe, loc)
+          Case(ident, tpes, loc)
       }
     }
 
-    private def flattenEnumCaseType(tpe: Type): Type = {
+    /**
+      * Extracts the types from a tuple type.
+      * // TODO NARY-ENUMS just parse differently
+      */
+    private def flattenEnumCaseType(tpe: Type): List[Type] = {
       tpe match {
-        // Single type in case -> flatten to ambiguous.
-        case Type.Tuple(t :: Nil, _) => t
-        // Multiple types in case -> do nothing
-        case tpe => tpe
+        // A tuple. Extract the types
+        case Type.Tuple(ts, _) => ts
+        // A single type.
+        case t => throw InternalCompilerException("unexpected non-tuple shape in enum", SourceLocation.Unknown)
       }
     }
 
@@ -441,10 +445,10 @@ object Weeder2 {
         // TODO: Doc comments on enum cases. It is not available on [[Case]] yet.
       ) {
         (ident, maybeType) =>
-          val tpe = maybeType
+          val tpes = maybeType
             .map(flattenEnumCaseType)
-            .getOrElse(Type.Unit(ident.loc))
-          RestrictableCase(ident, tpe, tree.loc)
+            .getOrElse(Nil)
+          RestrictableCase(ident, tpes, tree.loc)
       }
     }
 

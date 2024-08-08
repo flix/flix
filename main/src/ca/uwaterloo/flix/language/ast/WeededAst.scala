@@ -403,11 +403,11 @@ object WeededAst {
     case class Arrow(k1: Kind, k2: Kind, loc: SourceLocation) extends Kind
   }
 
-  case class Case(ident: Name.Ident, tpe: Type, loc: SourceLocation)
+  case class Case(ident: Name.Ident, tpes: List[Type], loc: SourceLocation)
 
   case class StructField(name: Name.Label, tpe: Type, loc: SourceLocation)
 
-  case class RestrictableCase(ident: Name.Ident, tpe: Type, loc: SourceLocation)
+  case class RestrictableCase(ident: Name.Ident, tpes: List[Type], loc: SourceLocation)
 
   case class FormalParam(ident: Name.Ident, mod: Ast.Modifiers, tpe: Option[Type], loc: SourceLocation)
 
