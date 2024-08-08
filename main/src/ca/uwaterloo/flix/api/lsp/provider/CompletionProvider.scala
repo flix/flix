@@ -131,6 +131,7 @@ object CompletionProvider {
   }
 
   private def getCompletions()(implicit context: CompletionContext, flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] = {
+    println(context.sctx)
     context.sctx match {
       //
       // Expressions.
