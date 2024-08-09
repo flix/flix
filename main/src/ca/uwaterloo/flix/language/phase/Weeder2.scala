@@ -2160,11 +2160,13 @@ object Weeder2 {
       mapN(pickQName(tree), traverseOpt(maybePat)(visitTuplePat(_, seen))) {
         (qname, maybePat) =>
           maybePat match {
-            case None =>
-              // Synthetically add unit pattern to tag
-              val lit = Pattern.Cst(Ast.Constant.Unit, tree.loc.asSynthetic)
-              Pattern.Tag(qname, lit, tree.loc)
-            case Some(pat) => Pattern.Tag(qname, pat, tree.loc)
+            // TODO NARY-ENUMS parse properly instead of indirection
+            // Case 1: Empty. No arguments.
+            case None => Pattern.Tag(qname, Nil, tree.loc)
+            // Case 2: Tuple. Unpack it.
+            case Some(Pattern.Tuple(elms, _)) => Pattern.Tag(qname, elms, tree.loc)
+            // Case 3: Non-tuple. Singleton
+            case Some(subPat) => Pattern.Tag(qname, List(subPat), tree.loc)
           }
       }
     }

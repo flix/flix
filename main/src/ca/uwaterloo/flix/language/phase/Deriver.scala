@@ -180,13 +180,13 @@ object Deriver {
     * Creates an Eq match rule for the given enum case.
     */
   private def mkEqMatchRule(caze: KindedAst.Case, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.MatchRule = caze match {
-    case KindedAst.Case(sym, tpe, _, _) =>
+    case KindedAst.Case(sym, tpes, _, _) =>
       val eqSym = PredefinedTraits.lookupSigSym("Eq", "eq", root)
 
       // get a pattern corresponding to this case, e.g.
       // `case C2(x0, x1)`
-      val (pat1, varSyms1) = mkPattern(sym, tpe, "x", loc)
-      val (pat2, varSyms2) = mkPattern(sym, tpe, "y", loc)
+      val (pat1, varSyms1) = mkPattern(sym, tpes, "x", loc)
+      val (pat2, varSyms2) = mkPattern(sym, tpes, "y", loc)
       val pat = KindedAst.Pattern.Tuple(List(pat1, pat2), loc)
 
       // call eq on each variable pair
@@ -929,17 +929,10 @@ object Deriver {
   /**
     * Creates a pattern corresponding to the given tag type.
     */
-  private def mkPattern(sym: Symbol.CaseSym, tpe: Type, varPrefix: String, loc: SourceLocation)(implicit flix: Flix): (KindedAst.Pattern, List[Symbol.VarSym]) = {
-    unpack(tpe) match {
-      case Nil => (KindedAst.Pattern.Tag(Ast.CaseSymUse(sym, loc), KindedAst.Pattern.Cst(Ast.Constant.Unit, loc), Type.freshVar(Kind.Star, loc), loc), Nil)
-      case _ :: Nil =>
-        val varSym = Symbol.freshVarSym(s"${varPrefix}0", BoundBy.Pattern, loc)
-        (KindedAst.Pattern.Tag(Ast.CaseSymUse(sym, loc), mkVarPattern(varSym, loc), Type.freshVar(Kind.Star, loc), loc), List(varSym))
-      case tpes =>
-        val varSyms = tpes.zipWithIndex.map { case (_, index) => Symbol.freshVarSym(s"$varPrefix$index", BoundBy.Pattern, loc) }
-        val subPats = varSyms.map(varSym => mkVarPattern(varSym, loc))
-        (KindedAst.Pattern.Tag(Ast.CaseSymUse(sym, loc), KindedAst.Pattern.Tuple(subPats, loc), Type.freshVar(Kind.Star, loc), loc), varSyms)
-    }
+  private def mkPattern(sym: Symbol.CaseSym, tpes: List[Type], varPrefix: String, loc: SourceLocation)(implicit flix: Flix): (KindedAst.Pattern, List[Symbol.VarSym]) = {
+    val varSyms = tpes.zipWithIndex.map { case (_, index) => Symbol.freshVarSym(s"$varPrefix$index", BoundBy.Pattern, loc) }
+    val subPats = varSyms.map(varSym => mkVarPattern(varSym, loc))
+    (KindedAst.Pattern.Tag(Ast.CaseSymUse(sym, loc), subPats, Type.freshVar(Kind.Star, loc), loc), varSyms)
   }
 
   /**

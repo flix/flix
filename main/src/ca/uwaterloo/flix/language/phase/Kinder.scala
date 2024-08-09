@@ -1106,10 +1106,10 @@ object Kinder {
     case ResolvedAst.Pattern.Wild(loc) => Validation.success(KindedAst.Pattern.Wild(Type.freshVar(Kind.Star, loc.asSynthetic), loc))
     case ResolvedAst.Pattern.Var(sym, loc) => Validation.success(KindedAst.Pattern.Var(sym, Type.freshVar(Kind.Star, loc.asSynthetic), loc))
     case ResolvedAst.Pattern.Cst(cst, loc) => Validation.success(KindedAst.Pattern.Cst(cst, loc))
-    case ResolvedAst.Pattern.Tag(sym, pat0, loc) =>
-      val patVal = visitPattern(pat0, kenv, root)
-      mapN(patVal) {
-        pat => KindedAst.Pattern.Tag(sym, pat, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
+    case ResolvedAst.Pattern.Tag(sym, pats0, loc) =>
+      val patsVal = traverse(pats0)(visitPattern(_, kenv, root))
+      mapN(patsVal) {
+        pats => KindedAst.Pattern.Tag(sym, pats, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }
     case ResolvedAst.Pattern.Tuple(elms0, loc) =>
       val elmsVal = traverse(elms0)(visitPattern(_, kenv, root))

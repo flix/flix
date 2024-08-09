@@ -248,7 +248,7 @@ object KindedAst {
 
     case class Cst(cst: Ast.Constant, loc: SourceLocation) extends Pattern
 
-    case class Tag(sym: Ast.CaseSymUse, pat: Pattern, tvar: ast.Type.Var, loc: SourceLocation) extends Pattern
+    case class Tag(sym: Ast.CaseSymUse, pats: List[Pattern], tvar: ast.Type.Var, loc: SourceLocation) extends Pattern
 
     case class Tuple(elms: List[Pattern], loc: SourceLocation) extends Pattern
 

@@ -857,9 +857,9 @@ object Desugar {
     case WeededAst.Pattern.Cst(cst, loc) =>
       DesugaredAst.Pattern.Cst(cst, loc)
 
-    case WeededAst.Pattern.Tag(qname, pat, loc) =>
-      val p = visitPattern(pat)
-      DesugaredAst.Pattern.Tag(qname, p, loc)
+    case WeededAst.Pattern.Tag(qname, pats, loc) =>
+      val ps = pats.map(visitPattern)
+      DesugaredAst.Pattern.Tag(qname, ps, loc)
 
     case WeededAst.Pattern.Tuple(elms, loc) =>
       val es = elms.map(visitPattern)

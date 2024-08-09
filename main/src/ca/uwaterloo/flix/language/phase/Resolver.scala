@@ -1884,10 +1884,10 @@ object Resolver {
         case NamedAst.Pattern.Cst(cst, loc) =>
           Validation.success(ResolvedAst.Pattern.Cst(cst, loc))
 
-        case NamedAst.Pattern.Tag(qname, pat, loc) =>
+        case NamedAst.Pattern.Tag(qname, pats, loc) =>
           lookupTag(qname, env, ns0, root) match {
-            case Result.Ok(c) => mapN(visit(pat)) {
-              case p => ResolvedAst.Pattern.Tag(Ast.CaseSymUse(c.sym, qname.loc), p, loc)
+            case Result.Ok(c) => mapN(traverse(pats)(visit)) {
+              case ps => ResolvedAst.Pattern.Tag(Ast.CaseSymUse(c.sym, qname.loc), ps, loc)
             }
             case Result.Err(e) => Validation.toSoftFailure(ResolvedAst.Pattern.Error(loc), e)
           }

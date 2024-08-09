@@ -1141,8 +1141,8 @@ object Namer {
 
     case DesugaredAst.Pattern.Cst(cst, loc) => NamedAst.Pattern.Cst(cst, loc)
 
-    case DesugaredAst.Pattern.Tag(qname, pat, loc) =>
-      NamedAst.Pattern.Tag(qname, visitPattern(pat), loc)
+    case DesugaredAst.Pattern.Tag(qname, pats, loc) =>
+      NamedAst.Pattern.Tag(qname, pats.map(visitPattern), loc)
 
     case DesugaredAst.Pattern.Tuple(elms, loc) =>
       NamedAst.Pattern.Tuple(elms.map(visitPattern), loc)

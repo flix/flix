@@ -259,7 +259,7 @@ object NamedAst {
 
     case class Cst(cst: Ast.Constant, loc: SourceLocation) extends Pattern
 
-    case class Tag(qname: Name.QName, pat: Pattern, loc: SourceLocation) extends Pattern
+    case class Tag(qname: Name.QName, pats: List[Pattern], loc: SourceLocation) extends Pattern
 
     case class Tuple(elms: List[Pattern], loc: SourceLocation) extends Pattern
 
