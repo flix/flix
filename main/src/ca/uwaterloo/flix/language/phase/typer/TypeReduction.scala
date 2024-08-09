@@ -333,7 +333,7 @@ object TypeReduction {
   private def purifyType(tpe: Type) : TypeConstructor =
     tpe match {
       case Type.Cst(tpe, _) => tpe
-      case _ => TypeConstructor.Null // easy simplifier for now
+      case _ => ???
     }
 
   /**
