@@ -733,6 +733,14 @@ object Type {
   def mkEnum(sym: Symbol.EnumSym, ts: List[Type], loc: SourceLocation): Type = mkApply(Type.Cst(TypeConstructor.Enum(sym, Kind.mkArrow(ts.length)), loc), ts, loc)
 
   /**
+    * Construct the struct type `Sym[ts]`
+    */
+  def mkStruct(sym: Symbol.StructSym, ts: List[Type], loc: SourceLocation): Type = {
+    assert(ts.last.kind == Kind.Eff)
+    mkApply(Type.Cst(TypeConstructor.Struct(sym, Kind.mkArrow(ts.map(_.kind))), loc), ts, loc)
+  }
+
+  /**
     * Constructs the tuple type (A, B, ...) where the types are drawn from the list `ts`.
     */
   def mkTuple(ts: List[Type], loc: SourceLocation): Type = {
