@@ -219,8 +219,8 @@ object TypeReduction {
    * Returns a JavaMethodResolutionResult either containing the Java method or a MethodNotFound object.
    */
   private def retrieveMethod(clazz: Class[_], methodName: String, ts: List[Type], isStatic: Boolean = false, loc: SourceLocation)(implicit flix: Flix): JavaMethodResolutionResult = {
-    // NB: this considers also static methods
-    val candidateMethods = clazz.getMethods.filter(m => isCandidateMethod(m, methodName, isStatic, ts))
+    val objectMethods = if (clazz.isInterface && clazz.getInterfaces.isEmpty) classOf[java.lang.Object].getMethods.toList else Nil
+    val candidateMethods = (clazz.getMethods.toList ++ objectMethods).filter(m => isCandidateMethod(m, methodName, isStatic, ts))
 
     candidateMethods.length match {
       case 0 => JavaMethodResolutionResult.MethodNotFound
