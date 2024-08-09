@@ -1354,8 +1354,6 @@ object Resolver {
         case NamedAst.Expr.StructNew(name, fields, region, loc) =>
           lookupStruct(name, env0, ns0, root) match {
 
-            // JOE TODO: Test for duplicate field names
-            // JOE TODO: Test for errors w/ out of order
             case Result.Ok(st0) =>
               flatMapN(getStructIfAccessible(st0, ns0, loc)) {
                 case st =>
