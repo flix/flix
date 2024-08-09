@@ -18,8 +18,9 @@ package ca.uwaterloo.flix.language.phase.typer
 import ca.uwaterloo.flix.language.ast.Ast.{Instance, TraitContext}
 import ca.uwaterloo.flix.language.ast.{Ast, RigidityEnv, Symbol, Type}
 import ca.uwaterloo.flix.language.phase.unification._
-import ca.uwaterloo.flix.util.collection.ListMap
+import ca.uwaterloo.flix.util.collection.{ListMap, MapOps}
 
+import scala.collection.mutable
 import scala.util.chaining.scalaUtilChainingOps
 
 object ConstraintSolver2 {
@@ -31,7 +32,7 @@ object ConstraintSolver2 {
 
     case class Trait(sym: Symbol.TraitSym, tpe: Type) extends TypeConstraint
 
-    case class Purification(sym: Symbol.VarSym, eff1: Type, eff2: Type, nested: ConstraintSet) extends TypeConstraint
+    case class Purification(sym: Symbol.KindedTypeVarSym, eff1: Type, eff2: Type, nested: ConstraintSet) extends TypeConstraint
   }
 
   case class Tracker(private var progress: Boolean = false) {
@@ -44,11 +45,25 @@ object ConstraintSolver2 {
     }
   }
 
+  /**
+    * The substitution tree represents the substitutions that apply to different region scopes.
+    * It is structured as a map rather than a proper tree,
+    * since regions are uniquely identified by their region variable.
+    *
+    * @param root   the substitutions at the top level
+    * @param branches a map from region variables to the substitutions for those regions
+    */
+  case class SubstitutionTree(root: Substitution, branches: Map[Symbol.KindedTypeVarSym, SubstitutionTree])
+
+  object SubstitutionTree {
+    val empty: SubstitutionTree = SubstitutionTree(Substitution.empty, Map.empty)
+  }
+
   type ConstraintSet = List[TypeConstraint]
   type TraitEnv = Map[Symbol.TraitSym, TraitContext]
   type EqualityEnv = ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef]
 
-  def goAll(constrs0: ConstraintSet)(implicit renv: RigidityEnv, trenv: TraitEnv, eqenv: EqualityEnv): (ConstraintSet, Substitution) = {
+  def goAll(constrs0: ConstraintSet)(implicit renv: RigidityEnv, trenv: TraitEnv, eqenv: EqualityEnv): (ConstraintSet, SubstitutionTree) = {
     var constrs = constrs0
     var subst = Substitution.empty
     var progressMade = true
@@ -72,6 +87,35 @@ object ConstraintSolver2 {
       .pipe(makeSubstitution)
   }
 
+  def enterRegions(constrs0: ConstraintSet)(implicit tracker: Tracker, renv: RigidityEnv, trenv: TraitEnv, eqenv: EqualityEnv): (ConstraintSet, SubstitutionTree) = {
+    val branches = mutable.Map.empty[Symbol.KindedTypeVarSym, SubstitutionTree]
+
+    def enterRegion(constr: TypeConstraint): TypeConstraint = constr match {
+      case c: TypeConstraint.Equality => c
+      case c: TypeConstraint.Trait => c
+      case TypeConstraint.Purification(sym, eff1, eff2, nested0) =>
+        val (nested, tree) = goAll(nested0) // TODO must specify that outside stuff is rigid
+        branches += (sym -> tree)
+        TypeConstraint.Purification(sym, eff1, eff2, nested)
+    }
+
+    val constrs = constrs0.map(enterRegion)
+    val tree = SubstitutionTree(Substitution.empty, branches.toMap)
+
+    (constrs, tree)
+  }
+
+  def purifyEmptyRegions(constrs0: ConstraintSet)(implicit tracker: Tracker, renv: RigidityEnv, trenv: TraitEnv, eqenv: EqualityEnv): ConstraintSet = {
+    def purifyEmptyRegion(constr: TypeConstraint): TypeConstraint = constr match {
+      case c: TypeConstraint.Equality => c
+      case c: TypeConstraint.Trait => c
+      case TypeConstraint.Purification(sym, eff1, eff2, Nil) =>
+        val purified = Substitution.singleton(sym, Type.Pure)(eff2)
+        TypeConstraint.Equality(eff1, purified)
+    }
+
+    constrs0.map(purifyEmptyRegion)
+  }
 
   // Breaks down constraints syntactically
   // TODO examples
@@ -264,7 +308,14 @@ object ConstraintSolver2 {
   def applySubst(subst: Substitution)(constr: TypeConstraint): TypeConstraint = constr match {
     case TypeConstraint.Equality(tpe1, tpe2) => TypeConstraint.Equality(subst(tpe1), subst(tpe2))
     case TypeConstraint.Trait(sym, tpe) => TypeConstraint.Trait(sym, subst(tpe))
-    case TypeConstraint.Purification(sym, eff1, eff2, nested) => TypeConstraint.Purification(subst(eff1), subst(eff2), nested.map(applySubst(subst)))
+    case TypeConstraint.Purification(sym, eff1, eff2, nested) => TypeConstraint.Purification(sym, subst(eff1), subst(eff2), nested.map(applySubst(subst)))
+  }
+
+  def compose(subst: Substitution, tree: SubstitutionTree): SubstitutionTree = tree match {
+    case SubstitutionTree(root0, branches0) =>
+      val root = subst @@ root0
+      val branches = MapOps.mapValues(branches0)(compose(subst, _))
+      SubstitutionTree(root, branches)
   }
 
 }
