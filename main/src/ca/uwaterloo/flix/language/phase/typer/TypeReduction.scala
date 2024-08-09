@@ -296,28 +296,32 @@ object TypeReduction {
       // Arrow to Java function interface
       // TODO INTEROP: generics support
       case (Type.Apply(Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Arrow(2), _), eff, _), var_arg, _), var_ret, _), Type.Cst(TypeConstructor.Native(clazz), _)) =>
-        (purifyType(var_arg), purifyType(var_ret)) match {
-          // IntStream
-          case (TypeConstructor.Int32, TypeConstructor.Unit) =>
-            clazz == classOf[java.util.function.IntConsumer]
-          case (TypeConstructor.Int32, TypeConstructor.Bool) =>
-            clazz == classOf[java.util.function.IntPredicate]
-          case (TypeConstructor.Int32, TypeConstructor.Int32) =>
-            clazz == classOf[java.util.function.IntUnaryOperator]
-          // DoubleStream
-          case (TypeConstructor.Float64, TypeConstructor.Unit) =>
-            clazz == classOf[java.util.function.DoubleConsumer]
-          case (TypeConstructor.Float64, TypeConstructor.Bool) =>
-            clazz == classOf[java.util.function.DoublePredicate]
-          case (TypeConstructor.Float64, TypeConstructor.Float64) =>
-            clazz == classOf[java.util.function.DoubleUnaryOperator]
-          // LongStream
-          case (TypeConstructor.Int64, TypeConstructor.Unit) =>
-            clazz == classOf[java.util.function.LongConsumer]
-          case (TypeConstructor.Int64, TypeConstructor.Bool) =>
-            clazz == classOf[java.util.function.LongPredicate]
-          case (TypeConstructor.Int64, TypeConstructor.Int64) =>
-            clazz == classOf[java.util.function.LongUnaryOperator]
+        (var_arg, var_ret) match {
+          case (Type.Cst(tc1, _), Type.Cst(tc2, _)) =>
+            (tc1, tc2) match {
+              // IntStream
+              case (TypeConstructor.Int32, TypeConstructor.Unit) =>
+                clazz == classOf[java.util.function.IntConsumer]
+              case (TypeConstructor.Int32, TypeConstructor.Bool) =>
+                clazz == classOf[java.util.function.IntPredicate]
+              case (TypeConstructor.Int32, TypeConstructor.Int32) =>
+                clazz == classOf[java.util.function.IntUnaryOperator]
+              // DoubleStream
+              case (TypeConstructor.Float64, TypeConstructor.Unit) =>
+                clazz == classOf[java.util.function.DoubleConsumer]
+              case (TypeConstructor.Float64, TypeConstructor.Bool) =>
+                clazz == classOf[java.util.function.DoublePredicate]
+              case (TypeConstructor.Float64, TypeConstructor.Float64) =>
+                clazz == classOf[java.util.function.DoubleUnaryOperator]
+              // LongStream
+              case (TypeConstructor.Int64, TypeConstructor.Unit) =>
+                clazz == classOf[java.util.function.LongConsumer]
+              case (TypeConstructor.Int64, TypeConstructor.Bool) =>
+                clazz == classOf[java.util.function.LongPredicate]
+              case (TypeConstructor.Int64, TypeConstructor.Int64) =>
+                clazz == classOf[java.util.function.LongUnaryOperator]
+              case _ => false
+            }
           case _ => false
         }
       // Null is a sub-type of every Java object and non-primitive Flix type
@@ -326,15 +330,6 @@ object TypeReduction {
       case _ => false
     }
   }
-
-  /**
-   * Helper method for Flix - Java predicate subtyping, simplifies types for pattern-matching.
-   */
-  private def purifyType(tpe: Type) : TypeConstructor =
-    tpe match {
-      case Type.Cst(tpe, _) => tpe
-      case _ => ???
-    }
 
   /**
    * Returns true iff the given type tpe is a Flix primitive.
