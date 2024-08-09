@@ -332,7 +332,7 @@ object BackendObjType {
     }))
 
     def ToStringMethod: InstanceMethod = JavaObject.ToStringMethod.implementation(this.jvmName, Some(_ => {
-      // [...] -> [..., "Struct(v1, v2, ...)"]
+      // [...] -> [..., "v1, v2, ..."]
       def commaSepElmString(): InstructionSet = {
         // new String[elms.length] // referred to as `elms`
         cheat(mv => GenExpression.compileInt(elms.length)(mv)) ~ ANEWARRAY(String.jvmName) ~
@@ -342,11 +342,11 @@ object BackendObjType {
             val field = IndexField(i)
             // [elms, j] -> [elms, j+1]
             ICONST_1() ~ IADD() ~
-              // [elms, j] -> [elms, j, elms, j]
+              // [elms, j + 1] -> [elms, j + 1, elms, j + 1]
               DUP2() ~
               // this.field$i.toString
               thisLoad() ~ GETFIELD(field) ~ xToString(field.tpe) ~
-              // [elms, j, elms, j, string] -> [elms, j]
+              // [elms, j + 1, elms, j + 1, string] -> [elms, j + 1]
               AASTORE()
           })) ~
           POP() ~
