@@ -103,7 +103,6 @@ object SimplifiedAst {
     case class Do(op: Ast.OpSymUse, exps: List[Expr], tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 
     case class NewObject(name: String, clazz: java.lang.Class[_], tpe: MonoType, purity: Purity, methods: List[JvmMethod], loc: SourceLocation) extends Expr
-
   }
 
   case class StructField(name: Name.Label, idx: Int, tpe: Type, loc: SourceLocation)

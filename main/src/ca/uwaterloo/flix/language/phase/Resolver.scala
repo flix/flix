@@ -702,11 +702,12 @@ object Resolver {
             errors += ResolutionError.MissingAssocTypeDef(ascSym.name, loc)
 
             // We recover by introducing a dummy associated type definition.
+            // We assume Kind.Star because we cannot resolve the actually kind here.
             val doc = Ast.Doc(Nil, loc)
             val mod = Ast.Modifiers.Empty
             val use = Ast.AssocTypeSymUse(ascSym, loc)
             val arg = targ
-            val tpe = UnkindedType.Error(loc)
+            val tpe = UnkindedType.Cst(TypeConstructor.Error(Kind.Star), loc)
             val ascDef = ResolvedAst.Declaration.AssocTypeDef(doc, mod, use, arg, tpe, loc)
             m.put(ascSym, ascDef)
           }
@@ -1356,12 +1357,18 @@ object Resolver {
             case Result.Ok(st0) =>
               flatMapN(getStructIfAccessible(st0, ns0, loc)) {
                 case st =>
-                  val providedFieldNames = fields.map {case (k, _) => k}.toSet
-                  val expectedFieldNames = st.fields.map(_.name).toSet
+                  val providedFieldNames = fields.map {case (k, _) => k}
+                  val expectedFieldNames = st.fields.map(_.name)
                   val extraFields = providedFieldNames.diff(expectedFieldNames)
                   val missingFields = expectedFieldNames.diff(providedFieldNames)
+                  val errors = if (!extraFields.isEmpty || !missingFields.isEmpty) {
+                    extraFields.map(ResolutionError.ExtraStructField(st0.sym, _, loc)) ++ missingFields.map(ResolutionError.MissingStructField(st0.sym, _, loc))
+                  } else if (providedFieldNames != expectedFieldNames) {
+                    List(ResolutionError.WrongStructFieldOrdering(st.sym, providedFieldNames, expectedFieldNames, loc))
+                  } else {
+                    Nil
+                  }
 
-                  val errors = extraFields.map(ResolutionError.ExtraStructField(st0.sym, _, loc)) ++ missingFields.map(ResolutionError.MissingStructField(st0.sym, _, loc))
                   val fieldsVal = traverse(fields) {
                     case (f, e) =>
                       val eVal = visitExp(e, env0)
@@ -2436,7 +2443,7 @@ object Resolver {
           case Result.Ok(sym) => Validation.success(UnkindedType.Var(sym, loc))
           case Result.Err(e) =>
             // Note: We assume the default type variable has kind Star.
-            Validation.toSoftFailure(UnkindedType.Error(loc), e)
+            Validation.toSoftFailure(UnkindedType.Cst(TypeConstructor.Error(Kind.Star), loc), e)
         }
 
       case NamedAst.Type.Unit(loc) => Validation.success(UnkindedType.Cst(TypeConstructor.Unit, loc))
@@ -3611,7 +3618,7 @@ object Resolver {
         case TypeConstructor.CaseSet(_, _) => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.CaseIntersection(_) => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.CaseUnion(_) => Result.Err(ResolutionError.IllegalType(tpe, loc))
-        case TypeConstructor.Error(_, _) => Result.Err(ResolutionError.IllegalType(tpe, loc))
+        case TypeConstructor.Error(_) => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.MethodReturnType => Result.Err(ResolutionError.IllegalType(tpe, loc))
 
         case TypeConstructor.AnyType => throw InternalCompilerException(s"unexpected type: $tc", tpe.loc)
@@ -3751,7 +3758,6 @@ object Resolver {
     case sym: Symbol.StructSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.RestrictableEnumSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.CaseSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
-    case sym: Symbol.StructFieldSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.RestrictableCaseSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.TraitSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.SigSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)

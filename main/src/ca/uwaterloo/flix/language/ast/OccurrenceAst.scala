@@ -81,7 +81,6 @@ object OccurrenceAst {
     case class Do(op: Ast.OpSymUse, exps: List[OccurrenceAst.Expr], tpe: MonoType, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expr
 
     case class NewObject(name: String, clazz: java.lang.Class[_], tpe: MonoType, purity: Purity, methods: List[OccurrenceAst.JvmMethod], loc: SourceLocation) extends OccurrenceAst.Expr
-
   }
 
   case class StructField(name: Name.Label, idx: Int, tpe: Type, loc: SourceLocation)

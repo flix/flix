@@ -1185,6 +1185,28 @@ object ResolutionError {
   }
 
   /**
+   * An error raised to indicate a `new` struct expression declares fields in the wrong order
+   *
+   * @param providedFields the order in which fields were declared
+   * @param expectedFields the order in which fields were expected to be declared
+   * @param loc the location where the error occurred
+   */
+  case class WrongStructFieldOrdering(struct: Symbol.StructSym, providedFields: List[Name.Label], expectedFields: List[Name.Label], loc: SourceLocation) extends  ResolutionError with Recoverable {
+    override def summary: String = s"Incorrect ordering of struct field declarations in initializer of struct `$struct`"
+
+    def message(formatter: Formatter) : String = {
+      import formatter._
+      s""">> Incorrect ordering of struct field declarations in initializer of struct `$struct`
+         |
+         |The struct $struct expected order $expectedFields
+         |but $providedFields was provided
+         |
+         |${code(loc, "incorrect field ordering")}
+         |""".stripMargin
+    }
+  }
+
+  /**
     * Removes all access modifiers from the given string `s`.
     */
   private def stripAccessModifier(s: String): String =

@@ -1,3 +1,6 @@
+// JOE TODO one day: pub/private for fields, mut/const, error checking for the rhs of struct.undefinedfield = rhs
+// JOE TODO: Make sure struct fields are evaluated in order
+// JOE TODO: Add structs to TestDebug.flix
 /*
  * Copyright 2023 Magnus Madsen
  *
@@ -230,7 +233,11 @@ object Verifier {
             case _ => failMismatchedShape(t1, "Array", loc)
           }
 
-        case AtomicOp.StructNew(sym0, _) =>
+        case AtomicOp.StructNew(sym0, names) =>
+          val expectedFields = root.structs(sym0).fields.map(_._1)
+          if(names != expectedFields) {
+            throw InternalCompilerException(s"struct $sym0 expected fields declared in order $expectedFields but got $names", loc)
+          }
           ts match {
             case region :: _ =>
               checkStructType(tpe, sym0, loc)
@@ -252,7 +259,8 @@ object Verifier {
             case tpe1 :: _ :: Nil =>
               checkStructType(tpe1, sym0, loc)
               tpe
-            case _ => failMismatchedShape(tpe, "Struct", loc)
+            case _ =>
+              failMismatchedShape(tpe, "Struct", loc)
           }
 
         case AtomicOp.ArrayNew =>

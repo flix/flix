@@ -1048,16 +1048,17 @@ object Namer {
     * Performs naming on the given struct field expression `exp0`.
     */
   private def visitStructField(ns0: Name.NName)(exp0: (Name.Label, DesugaredAst.Expr))(implicit flix: Flix, sctx: SharedContext): (Name.Label, NamedAst.Expr) = exp0 match {
-    case (n, exp0) =>
-      val e = visitExp(exp0, ns0)
+    case (n, exp1) =>
+      val e = visitExp(exp1, ns0)
       (n, e)
   }
 
   /**
     * Performs naming on the given struct field expressions `exps0`.
     */
-  private def visitStructFields(exps0: List[(Name.Label, DesugaredAst.Expr)], ns0: Name.NName)(implicit flix: Flix, sctx: SharedContext): List[(Name.Label, NamedAst.Expr)] =
+  private def visitStructFields(exps0: List[(Name.Label, DesugaredAst.Expr)], ns0: Name.NName)(implicit flix: Flix, sctx: SharedContext): List[(Name.Label, NamedAst.Expr)] = {
     exps0.map(visitStructField(ns0))
+  }
 
   /**
     * Performs naming on the given try-catch rule `rule0`.

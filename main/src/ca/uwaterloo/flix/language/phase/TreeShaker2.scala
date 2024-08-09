@@ -112,7 +112,6 @@ object TreeShaker2 {
 
     case Expr.NewObject(_, _, _, _, methods, _) =>
       visitExps(methods.map(_.clo))
-
   }
 
   /**

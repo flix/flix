@@ -216,7 +216,7 @@ object Eraser {
     }
   }
 
-  private def erase(tpe: MonoType): MonoType = {
+  def erase(tpe: MonoType): MonoType = {
     import MonoType._
     tpe match {
       case Bool => Bool

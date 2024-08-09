@@ -532,14 +532,6 @@ class Flix {
     // Reset the progress bar.
     progressBar.complete()
 
-    // Print summary?
-    if (options.xsummary) {
-      result.map(root => {
-        val table = Summary.fileSummaryTable(root, nsDepth = Some(1), minLines = Some(125))
-        table.getMarkdownLines.foreach(println)
-      })
-    }
-
     // Return the result (which could contain soft failures).
     result
   } catch {

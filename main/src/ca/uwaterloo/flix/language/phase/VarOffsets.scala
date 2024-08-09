@@ -129,7 +129,6 @@ object VarOffsets {
       // always closures) and should not have var offsets here.
       // They don't contain binders so visiting them does nothing.
       i0
-
   }
 
   @tailrec

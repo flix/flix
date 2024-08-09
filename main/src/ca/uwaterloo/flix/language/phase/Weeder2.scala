@@ -1772,6 +1772,7 @@ object Weeder2 {
 
     private def visitStructPutExpr(tree: Tree): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.StructPut)
+
       val struct = pickExpr(tree)
       val ident = pickNameIdent(tree)
       val rhs = flatMapN(pick(TreeKind.Expr.StructPutRHS, tree)) {

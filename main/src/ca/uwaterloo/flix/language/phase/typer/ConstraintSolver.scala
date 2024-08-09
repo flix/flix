@@ -490,8 +490,7 @@ object ConstraintSolver {
     case (Type.Apply(Type.Cst(TypeConstructor.MethodReturnType, _), _, _), _) =>
       Result.Ok(ResolutionResult.constraints(List(TypeConstraint.Equality(tpe1, tpe2, prov)), progress = false))
 
-    case _ =>
-      Result.Err(toTypeError(UnificationError.MismatchedTypes(tpe1, tpe2), prov))
+    case _ => Result.Err(toTypeError(UnificationError.MismatchedTypes(tpe1, tpe2), prov))
   }
 
   /**

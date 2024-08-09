@@ -56,6 +56,7 @@ class FlixSuite(incremental: Boolean) extends AnyFunSuite {
     // Set options.
     flix.setOptions(options)
 
+
     // Add the given path.
     flix.addFlix(path)
 

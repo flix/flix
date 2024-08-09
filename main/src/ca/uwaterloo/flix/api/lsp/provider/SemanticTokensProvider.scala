@@ -416,9 +416,18 @@ object SemanticTokensProvider {
     case Expr.ArrayLength(exp, _, _) =>
       visitExp(exp)
 
-    case Expr.StructNew(sym, fields, region, tpe, eff, loc) => throw new RuntimeException("JOE TBD")
-    case Expr.StructGet(sym, exp, field, tpe, eff, loc) => throw new RuntimeException("JOE TBD")
-    case Expr.StructPut(sym, exp1, field, exp2, tpe, eff, loc) => throw new RuntimeException("JOE TBD")
+    case Expr.StructNew(sym, fields, region, _, _, _) =>
+      val t = SemanticToken(SemanticTokenType.Property, Nil, sym.loc)
+      val ts = fields.map {case (k, v) => SemanticToken(SemanticTokenType.Property, Nil, k.loc)}
+      ts.foldLeft(Iterator(t) ++ visitExps(fields.map {case (_, v) => v}) ++ visitExp(region))(_ ++ Iterator(_))
+
+    case Expr.StructGet(_, exp, field, _, _, _) =>
+      val t = SemanticToken(SemanticTokenType.Property, Nil, field.loc)
+      Iterator(t) ++ visitExp(exp)
+
+    case Expr.StructPut(_, exp1, field, exp2, _, _, _) =>
+      val t = SemanticToken(SemanticTokenType.Property, Nil, field.loc)
+      Iterator(t) ++ visitExp(exp1) ++ visitExp(exp2)
 
     case Expr.VectorLit(exps, _, _, _) =>
       visitExps(exps)
@@ -717,7 +726,7 @@ object SemanticTokensProvider {
     case TypeConstructor.CaseUnion(_) => false
     case TypeConstructor.CaseIntersection(_) => false
     case TypeConstructor.CaseSet(_, _) => false
-    case TypeConstructor.Error(_, _) => false
+    case TypeConstructor.Error(_) => false
   }
 
   /**

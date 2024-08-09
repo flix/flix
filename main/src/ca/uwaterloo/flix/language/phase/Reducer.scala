@@ -171,7 +171,6 @@ object Reducer {
         ctx.anonClasses.add(AnonClass(name, clazz, tpe, specs, loc))
 
         Expr.NewObject(name, clazz, tpe, purity, specs, loc)
-
     }
   }
 
