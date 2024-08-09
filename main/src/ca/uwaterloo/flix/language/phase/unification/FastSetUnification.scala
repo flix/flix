@@ -447,6 +447,16 @@ object FastSetUnification {
         case _ => None
       }
     }
+
+    def variableAlias(eq: Equation): Option[SetSubstitution] = {
+      val Equation(t1, t2, _) = eq
+      (t1, t2) match {
+        case (Term.Var(x), y@Term.Var(_)) =>
+          Some(SetSubstitution.singleton(x, y))
+        case _ =>
+          None
+      }
+    }
   }
 
   /**
@@ -539,6 +549,10 @@ object FastSetUnification {
   }
 
   private def runRule(rule: Equation => Output, selfFeeding: Boolean)(l: List[Equation]): Output = {
+    // TODO optimization:
+    // - Sometimes the @@ can be ++
+    // - Sometimes the outer loop can be skipped
+    // - the outerloop .reverse could be done once at the end, depending on the parity of the loop count
     var subst = SetSubstitution.empty
     var todo = l
     var leftover: List[Equation] = Nil
