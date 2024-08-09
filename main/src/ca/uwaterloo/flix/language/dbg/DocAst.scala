@@ -127,6 +127,12 @@ object DocAst {
 
     case class Native(clazz: Class[_]) extends Atom
 
+    case class StructNew(sym: Symbol.StructSym, exps: List[(Name.Label, Expr)], exp: Expr) extends Composite
+
+    case class StructGet(exp: Expr, field: Name.Label, tpe: Type) extends Composite
+
+    case class StructPut(exp1: Expr, field: Name.Label, exp2: Expr, tpe: Type) extends Composite
+
     val Unknown: Expr =
       Meta("unknown exp")
 
