@@ -59,7 +59,7 @@ object Simplifier {
 
   private def visitStruct(s: MonoAst.Struct): SimplifiedAst.Struct = s match {
     case MonoAst.Struct(doc, ann, mod, sym, _, fields0, loc) =>
-      val fieldIndices = fields0.sortBy(field => field.name.name).map(_.name).zipWithIndex.toMap
+      val fieldIndices = fields0.map(_.name).zipWithIndex.toMap
       val fields = fields0.map(visitStructField(fieldIndices))
       SimplifiedAst.Struct(doc, ann, mod, sym, fields, loc)
   }
@@ -359,8 +359,7 @@ object Simplifier {
           case TypeConstructor.Struct(sym, _) =>
             val struct = root.structs(sym)
             val subst = Substitution(struct.tparams.zip(tpe.typeArguments).toMap)
-            val structFields = struct.fields.sortBy(_.name.name)
-            val substitutedStructFieldTypes = structFields.map(f => visitType(subst(f.tpe)))
+            val substitutedStructFieldTypes = struct.fields.map(f => visitType(subst(f.tpe)))
             MonoType.Struct(sym, substitutedStructFieldTypes, args)
         }
     }

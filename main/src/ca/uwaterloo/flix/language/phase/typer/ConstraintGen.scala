@@ -577,6 +577,7 @@ object ConstraintGen {
 
       case Expr.StructNew(sym, fields, region, tvar, evar, loc) =>
         val (instantiedFieldTpes, tpe, regionVar) = instantiateStruct(sym, root.structs)
+        // JOE TODO: Remove this sort
         val sortedFields = fields.sortBy {case (k, v) => k.name}
         val fieldTypes = sortedFields.map{case (k, v) => visitExp(v)}
         // Struct type overall

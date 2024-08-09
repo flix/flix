@@ -228,7 +228,8 @@ object Lowering {
         case TypedAst.StructField(name, tpe, loc) =>
           LoweredAst.StructField(name, visitType(tpe), loc)
       }
-      LoweredAst.Struct(doc, ann, mod, sym, tparams, fields, loc)
+      val sortedFields = fields.sortBy(_.name.name)
+      LoweredAst.Struct(doc, ann, mod, sym, tparams, sortedFields, loc)
   }
 
   /**
