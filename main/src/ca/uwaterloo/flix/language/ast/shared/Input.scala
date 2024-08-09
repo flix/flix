@@ -27,7 +27,6 @@ sealed trait Input {
     */
   def isStable: Boolean = this match {
     case Input.Text(_, _, stable) => stable
-    case Input.StandardLibrary(_, _) => true
     case Input.TxtFile(_) => false
     case Input.PkgFile(_) => false
     case Input.FileInPackage(_, _, _) => false
@@ -54,11 +53,6 @@ object Input {
       case _ => false
     }
   }
-
-  /**
-    * Represent an input that originates from the built-in Standard Library.
-    */
-  case class StandardLibrary(virtualPath: String, text: String) extends Input
 
   /**
     * Represents an input that originates from the filesystem.

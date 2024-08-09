@@ -518,12 +518,6 @@ object Lowering {
       val e = visitExp(exp)
       LoweredAst.Expr.ApplyAtomic(AtomicOp.ArrayLength, List(e), Type.Int32, eff, loc)
 
-    case TypedAst.Expr.ArrayStore(exp1, exp2, exp3, eff, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      val e3 = visitExp(exp3)
-      LoweredAst.Expr.ApplyAtomic(AtomicOp.ArrayStore, List(e1, e2, e3), Type.Unit, eff, loc)
-
     case TypedAst.Expr.StructNew(sym, fields0, region0, tpe, eff, loc) =>
       val fields = fields0.map{case (k, v) => (k, visitExp(v))}
       val region = visitExp(region0)
@@ -538,6 +532,12 @@ object Lowering {
       val struct = visitExp(exp0)
       val rhs = visitExp(exp1)
       LoweredAst.Expr.ApplyAtomic(AtomicOp.StructPut(sym, field), List(struct, rhs), tpe, eff, loc)
+
+    case TypedAst.Expr.ArrayStore(exp1, exp2, exp3, eff, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      val e3 = visitExp(exp3)
+      LoweredAst.Expr.ApplyAtomic(AtomicOp.ArrayStore, List(e1, e2, e3), Type.Unit, eff, loc)
 
     case TypedAst.Expr.VectorLit(exps, tpe, eff, loc) =>
       val es = visitExps(exps)

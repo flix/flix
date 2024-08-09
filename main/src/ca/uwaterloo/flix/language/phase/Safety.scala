@@ -335,6 +335,9 @@ object Safety {
       case Expr.ArrayLength(base, _, _) =>
         visit(base)
 
+      case Expr.ArrayStore(base, index, elm, _, _) =>
+        visit(base) ++ visit(index) ++ visit(elm)
+
       case Expr.StructNew(_, fields, region, _, _, _) =>
         fields.map{case (_, v) => v}.flatMap(visit) ++ visit(region)
 
@@ -343,9 +346,6 @@ object Safety {
 
       case Expr.StructPut(_, e1, _, e2, _, _, _) =>
         visit(e1) ++ visit(e2)
-
-      case Expr.ArrayStore(base, index, elm, _, _) =>
-        visit(base) ++ visit(index) ++ visit(elm)
 
       case Expr.VectorLit(elms, _, _, _) =>
         elms.flatMap(visit)

@@ -41,11 +41,6 @@ import scala.annotation.tailrec
 object ConstraintSolver {
 
   /**
-    * The maximum number of resolution iterations before we throw an error.
-    */
-  private val MaxIterations = 1000
-
-  /**
     * Resolves constraints in the given definition using the given inference result.
     */
   def visitDef(defn: KindedAst.Def, infResult: InfResult, renv0: RigidityEnv, tconstrs0: List[Ast.TypeConstraint], tenv0: Map[Symbol.TraitSym, Ast.TraitContext], eqEnv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], root: KindedAst.Root)(implicit flix: Flix): Validation[Substitution, TypeError] = defn match {
@@ -217,7 +212,7 @@ object ConstraintSolver {
     var progress = true
 
     while (progress) {
-      if (count >= MaxIterations) {
+      if (count >= flix.options.xiterations) {
         return Result.Err(TypeError.TooComplex(constrs.head.loc))
       }
 

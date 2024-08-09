@@ -14,6 +14,22 @@
  * limitations under the License.
  */
 package ca.uwaterloo.flix.api.lsp
+// JOE TODO: One day be able to index structs + fields
+/* joe todo merge
+- ignores
+- Test.*.Struct.*.Flix
+- TestTyper + ConstraintGen
+- SemanticTokensProvider
+- Symbol.scala
+- DocAst, DocAstFormatter, OpPrinter, TYpedAstPrinter
+- EffectBinder
+- Inliner
+- LambdaLift
+- Monomorpher
+- OccurrenceAnalyzer
+- Typer + tests
+- ConstraintGen
+ */
 
 import ca.uwaterloo.flix.api.lsp.Index.traverse
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
@@ -311,6 +327,19 @@ object Indexer {
     case Expr.ArrayStore(exp1, exp2, exp3, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) ++ Index.occurrenceOf(exp0)
 
+    case Expr.StructNew(sym, fields, region, tpe, eff, loc) =>
+      val i0 = visitExp(region) ++ Index.occurrenceOf(exp0)
+      val i1 = traverse(fields) {
+        case (_, e) => visitExp(e)
+      }
+      i0 ++ i1
+
+    case Expr.StructGet(sym, exp, field, tpe, eff, loc) =>
+      visitExp(exp) ++ Index.occurrenceOf(exp0)
+
+    case Expr.StructPut(sym, exp1, field, exp2, tpe, eff, loc) =>
+      visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
+
     case Expr.VectorLit(exps, _, _, _) =>
       visitExps(exps) ++ Index.occurrenceOf(exp0)
 
@@ -431,19 +460,6 @@ object Indexer {
 
     case Expr.Force(exp, _, _, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0)
-
-    case Expr.StructNew(sym, fields, region, tpe, eff, loc) =>
-      val i0 = visitExp(region) ++ Index.occurrenceOf(exp0)
-      val i1 = traverse(fields) {
-        case (_, e) => visitExp(e)
-      }
-      i0 ++ i1
-
-    case Expr.StructGet(sym, exp, field, tpe, eff, loc) =>
-      visitExp(exp) ++ Index.occurrenceOf(exp0)
-
-    case Expr.StructPut(sym, exp1, field, exp2, tpe, eff, loc) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
 
     case Expr.FixpointConstraintSet(cs, _, _) => traverse(cs)(visitConstraint)
 

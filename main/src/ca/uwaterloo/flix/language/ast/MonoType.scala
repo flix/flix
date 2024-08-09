@@ -75,7 +75,7 @@ object MonoType {
 
   case class Ref(tpe: MonoType) extends MonoType
 
-  case class Tuple(elms: List[MonoType]) extends MonoType
+  case class Tuple(tpes: List[MonoType]) extends MonoType
 
   case class Enum(sym: Symbol.EnumSym) extends MonoType
 
