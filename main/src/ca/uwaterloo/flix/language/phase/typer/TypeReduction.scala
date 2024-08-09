@@ -295,8 +295,6 @@ object TypeReduction {
         isSubtype(elmType1, elmType2)
       // Arrow to Java function interface
       // TODO INTEROP: generics support
-      // Pattern-matching Flix functions of the form: eff -> arg -> ret
-      // IntStream
       case (Type.Apply(Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Arrow(2), _), eff, _), var_arg, _), var_ret, _), Type.Cst(TypeConstructor.Native(clazz), _)) =>
         (purifyType(var_arg), purifyType(var_ret)) match {
           // IntStream
