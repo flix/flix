@@ -374,8 +374,9 @@ object Deriver {
     * `case C2(_) => 2`
     */
   private def mkCompareIndexMatchRule(caze: KindedAst.Case, index: Int, loc: SourceLocation)(implicit Flix: Flix): KindedAst.MatchRule = caze match {
-    case KindedAst.Case(sym, _, _, _) =>
-      val pat = KindedAst.Pattern.Tag(Ast.CaseSymUse(sym, loc), KindedAst.Pattern.Wild(Type.freshVar(Kind.Star, loc), loc), Type.freshVar(Kind.Star, loc), loc)
+    case KindedAst.Case(sym, tpes, _, _) =>
+      val pats = tpes.map { _ => KindedAst.Pattern.Wild(Type.freshVar(Kind.Star, loc), loc) }
+      val pat = KindedAst.Pattern.Tag(Ast.CaseSymUse(sym, loc), pats, Type.freshVar(Kind.Star, loc), loc)
       val exp = KindedAst.Expr.Cst(Ast.Constant.Int32(index), loc)
       KindedAst.MatchRule(pat, None, exp)
   }
@@ -778,7 +779,7 @@ object Deriver {
         val (_, caze) = cases.head
 
         val outSym = new Symbol.AssocTypeSym(coerceTraitSym, "Out", loc)
-        val outTpe = caze.tpe
+        val outTpe = Type.mkTuplish(caze.tpes, loc)
         val out = KindedAst.AssocTypeDef(
           Ast.Doc(Nil, loc),
           Ast.Modifiers.Empty,
@@ -833,7 +834,7 @@ object Deriver {
     case KindedAst.Enum(_, _, _, _, tparams, _, cases, tpe, _) =>
       val coerceTraitSym = PredefinedTraits.lookupTraitSym("Coerce", root)
       val (_, caze) = cases.head
-      val retTpe = caze.tpe
+      val retTpe = Type.mkTuplish(caze.tpes, loc)
       KindedAst.Spec(
         doc = Ast.Doc(Nil, loc),
         ann = Ast.Annotations.Empty,
@@ -858,11 +859,12 @@ object Deriver {
     * Creates a Coerce match rule for the given enum case.
     */
   private def mkCoerceMatchRule(caze: KindedAst.Case, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.MatchRule = caze match {
-    case KindedAst.Case(sym, tpe, _, _) =>
+    case KindedAst.Case(sym, tpes, _, _) =>
       // get a pattern corresponding to this case, e.g.
       // `case C(x0)`
       // Unlike other derivations, we do not unpack tuples
       val varSym = Symbol.freshVarSym("x0", BoundBy.Pattern, loc)
+      // MATT
       val pat = KindedAst.Pattern.Tag(Ast.CaseSymUse(sym, loc), mkVarPattern(varSym, loc), Type.freshVar(Kind.Star, loc), loc)
 
       // the body is just whatever we extracted
