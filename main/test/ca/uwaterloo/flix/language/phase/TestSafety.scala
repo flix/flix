@@ -516,6 +516,43 @@ class TestSafety extends AnyFunSuite with TestUtils {
     expectError[SafetyError.ImpossibleUncheckedCast](result)
   }
 
+  // JOE TODO: Reenable these when ready
+  ignore("ImpossibleCast.10") {
+    val input =
+      """
+        |struct A[r] {
+        |    a: Bool
+        |}
+        |def f(): A[r] = unchecked_cast(true as A[r])
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.ImpossibleUncheckedCast](result)
+  }
+
+  ignore("ImpossibleCast.11") {
+    val input =
+      """
+        |struct A[r] {
+        |    a: Int32
+        |}
+        |def f(): A[r] = unchecked_cast(1 as A[r])
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.ImpossibleUncheckedCast](result)
+  }
+
+  ignore("ImpossibleCast.12") {
+    val input =
+      """
+        |struct A[r] {
+        |    a: String
+        |}
+        |def f(): A[r] = unchecked_cast("a" as A[r])
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.ImpossibleUncheckedCast](result)
+  }
+
   test("IllegalCheckedTypeCast.01") {
     val input =
       """
