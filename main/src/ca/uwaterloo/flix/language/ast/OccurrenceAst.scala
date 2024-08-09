@@ -22,7 +22,6 @@ import ca.uwaterloo.flix.language.ast.shared.Source
 object OccurrenceAst {
 
   case class Root(defs: Map[Symbol.DefnSym, OccurrenceAst.Def],
-                  structs: Map[Symbol.StructSym, OccurrenceAst.Struct],
                   effects: Map[Symbol.EffectSym, OccurrenceAst.Effect],
                   entryPoint: Option[Symbol.DefnSym],
                   reachable: Set[Symbol.DefnSym],

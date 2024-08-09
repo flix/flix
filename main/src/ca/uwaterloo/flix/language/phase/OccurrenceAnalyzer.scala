@@ -63,9 +63,8 @@ object OccurrenceAnalyzer {
 
     val defs = visitDefs(root.defs)
     val effects = root.effects.map { case (k, v) => k -> visitEffect(v) }
-    val structs = Map.empty[Symbol.StructSym, OccurrenceAst.Struct]
 
-    val result = OccurrenceAst.Root(defs, structs, effects, root.entryPoint, root.reachable, root.sources)
+    val result = OccurrenceAst.Root(defs, effects, root.entryPoint, root.reachable, root.sources)
 
     Validation.success(result)
   }

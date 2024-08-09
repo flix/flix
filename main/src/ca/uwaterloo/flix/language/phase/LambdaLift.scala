@@ -41,9 +41,7 @@ object LambdaLift {
       case (macc, (sym, defn)) => macc + (sym -> defn)
     }
 
-    val structs = Map.empty[Symbol.StructSym, LiftedAst.Struct]
-
-    LiftedAst.Root(newDefs, structs, effects, root.entryPoint, root.reachable, root.sources)
+    LiftedAst.Root(newDefs, effects, root.entryPoint, root.reachable, root.sources)
   }
 
   private def visitDef(def0: SimplifiedAst.Def)(implicit ctx: SharedContext, flix: Flix): LiftedAst.Def = def0 match {
