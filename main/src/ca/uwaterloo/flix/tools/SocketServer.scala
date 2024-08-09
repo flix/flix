@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.tools
 
 import ca.uwaterloo.flix.api.{Flix, Version}
+import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util._
@@ -160,7 +161,7 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
       logSourceCode(input)
 
       // Compile the program.
-      flix.addSourceCode("<input>", input)
+      flix.addSourceCode("<playground>", input)(SecurityContext.NoPermissions)
 
       flix.compile().toHardResult match {
         case Result.Ok(compilationResult) =>

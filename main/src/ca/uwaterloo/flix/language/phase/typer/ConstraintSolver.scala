@@ -41,11 +41,6 @@ import scala.annotation.tailrec
 object ConstraintSolver {
 
   /**
-    * The maximum number of resolution iterations before we throw an error.
-    */
-  private val MaxIterations = 1000
-
-  /**
     * Resolves constraints in the given definition using the given inference result.
     */
   def visitDef(defn: KindedAst.Def, infResult: InfResult, renv0: RigidityEnv, tconstrs0: List[Ast.TypeConstraint], tenv0: Map[Symbol.TraitSym, Ast.TraitContext], eqEnv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], root: KindedAst.Root)(implicit flix: Flix): Validation[Substitution, TypeError] = defn match {
@@ -217,7 +212,7 @@ object ConstraintSolver {
     var progress = true
 
     while (progress) {
-      if (count >= MaxIterations) {
+      if (count >= flix.options.xiterations) {
         return Result.Err(TypeError.TooComplex(constrs.head.loc))
       }
 
@@ -270,14 +265,19 @@ object ConstraintSolver {
       val t1 = TypeMinimization.minimizeType(subst0(tpe1))
       val t2 = TypeMinimization.minimizeType(subst0(tpe2))
       val prov = subst0(prov0)
-      resolveEquality(t1, t2, prov, renv, constr0.loc).map {
-        case ResolutionResult(subst, constrs, p) => ResolutionResult(subst @@ subst0, constrs, progress = p)
+      // A small hack to ensure that we do not add reducible types to the substitution.
+      if (TypeReduction.isReducible(t1) || TypeReduction.isReducible(t2)) {
+        Result.Ok(ResolutionResult.constraints(constr0 :: Nil, progress = false))
+      } else {
+        resolveEquality(t1, t2, prov, renv, constr0.loc).map {
+          case ResolutionResult(subst, constrs, p) => ResolutionResult(subst @@ subst0, constrs, progress = p)
+        }
       }
     case TypeConstraint.EqJvmConstructor(cvar, clazz, tpes0, prov) =>
       // Apply substitution now
       val tpes = tpes0.map(subst0.apply)
       // Ensure that simplification for constructor parameters is done
-      val allKnown = tpes.forall(t => isKnown(t) && t.typeVars.forall(isKnown))
+      val allKnown = tpes.forall(isKnown)
 
       if (allKnown) {
         TypeReduction.lookupConstructor(clazz, tpes, cvar.loc) match {
@@ -296,7 +296,7 @@ object ConstraintSolver {
       val tpe = subst0(tpe0)
       val tpes = tpes0.map(subst0.apply)
       // Ensure that simplification for method parameters is done
-      val allKnown = isKnown(tpe) && tpes.forall(t => isKnown(t) && t.typeVars.forall(isKnown))
+      val allKnown = isKnown(tpe) && tpes.forall(isKnown)
 
       if (allKnown) {
         TypeReduction.lookupMethod(tpe, methodName.name, tpes, mvar.loc) match {
@@ -304,7 +304,7 @@ object ConstraintSolver {
             val subst = Substitution.singleton(mvar.sym, tpe)
             Result.Ok(ResolutionResult(subst @@ subst0, Nil, progress = true))
           case JavaMethodResolutionResult.AmbiguousMethod(methods) => Result.Err(TypeError.AmbiguousMethod(methodName.name, tpe, tpes, methods, renv, mvar.loc))
-          case JavaMethodResolutionResult.MethodNotFound => Result.Err(TypeError.MethodNotFound(methodName.name, tpe, tpes, List(), renv, mvar.loc)) // TODO INTEROP: fill in candidate methods
+          case JavaMethodResolutionResult.MethodNotFound => Result.Err(TypeError.MethodNotFound(methodName, tpe, tpes, mvar.loc))
         }
       } else {
         // Otherwise other constraints may still need to be solved.

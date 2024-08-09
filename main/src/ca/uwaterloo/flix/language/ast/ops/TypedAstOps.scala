@@ -70,6 +70,9 @@ object TypedAstOps {
     case Expr.ArrayLoad(base, index, _, _, _) => sigSymsOf(base) ++ sigSymsOf(index)
     case Expr.ArrayLength(base, _, _) => sigSymsOf(base)
     case Expr.ArrayStore(base, index, elm, _, _) => sigSymsOf(base) ++ sigSymsOf(index) ++ sigSymsOf(elm)
+    case Expr.StructNew(sym, fields, region, tpe, eff, loc) => throw new RuntimeException("JOE TBD")
+    case Expr.StructGet(sym, exp, field, tpe, eff, loc) => throw new RuntimeException("JOE TBD")
+    case Expr.StructPut(sym, exp1, field, exp2, tpe, eff, loc) => throw new RuntimeException("JOE TBD")
     case Expr.VectorLit(exps, _, _, _) => exps.flatMap(sigSymsOf).toSet
     case Expr.VectorLoad(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expr.VectorLength(exp, _) => sigSymsOf(exp)
@@ -83,6 +86,7 @@ object TypedAstOps {
     case Expr.UncheckedMaskingCast(exp, _, _, _) => sigSymsOf(exp)
     case Expr.Without(exp, _, _, _, _) => sigSymsOf(exp)
     case Expr.TryCatch(exp, rules, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp))
+    case Expr.Throw(exp, _, _, _) => sigSymsOf(exp)
     case Expr.TryWith(exp, _, rules, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp))
     case Expr.Do(_, exps, _, _, _) => exps.flatMap(sigSymsOf).toSet
     case Expr.InvokeConstructor(_, args, _, _, _) => args.flatMap(sigSymsOf).toSet
@@ -237,6 +241,10 @@ object TypedAstOps {
     case Expr.ArrayStore(base, index, elm, _, _) =>
       freeVars(base) ++ freeVars(index) ++ freeVars(elm)
 
+    case Expr.StructNew(sym, fields, region, tpe, eff, loc) => throw new RuntimeException("JOE TBD")
+    case Expr.StructGet(sym, exp, field, tpe, eff, loc) => throw new RuntimeException("JOE TBD")
+    case Expr.StructPut(sym, exp1, field, exp2, tpe, eff, loc) => throw new RuntimeException("JOE TBD")
+
     case Expr.VectorLit(elms, _, _, _) =>
       elms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
         case (acc, e) => acc ++ freeVars(e)
@@ -279,6 +287,8 @@ object TypedAstOps {
       rules.foldLeft(freeVars(exp)) {
         case (acc, CatchRule(sym, _, exp)) => acc ++ freeVars(exp) - sym
       }
+
+    case Expr.Throw(exp, _, _, _) => freeVars(exp)
 
     case Expr.TryWith(exp, _, rules, _, _, _) =>
       rules.foldLeft(freeVars(exp)) {

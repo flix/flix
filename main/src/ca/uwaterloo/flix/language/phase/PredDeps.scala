@@ -187,6 +187,10 @@ object PredDeps {
     case Expr.ArrayStore(base, index, elm, _, _) =>
       visitExp(base) + visitExp(index) + visitExp(elm)
 
+    case Expr.StructNew(sym, fields, region, tpe, eff, loc) => throw new RuntimeException("JOE TBD")
+    case Expr.StructGet(sym, exp, field, tpe, eff, loc) => throw new RuntimeException("JOE TBD")
+    case Expr.StructPut(sym, exp1, field, exp2, tpe, eff, loc) => throw new RuntimeException("JOE TBD")
+
     case Expr.VectorLit(exps, _, _, _) =>
       exps.foldLeft(LabelledPrecedenceGraph.empty) {
         case (acc, e) => acc + visitExp(e)
@@ -229,6 +233,9 @@ object PredDeps {
       rules.foldLeft(visitExp(exp)) {
         case (acc, CatchRule(_, _, e)) => acc + visitExp(e)
       }
+
+    case Expr.Throw(exp, _, _, _) =>
+      visitExp(exp)
 
     case Expr.TryWith(exp, _, rules, _, _, _) =>
       rules.foldLeft(visitExp(exp)) {

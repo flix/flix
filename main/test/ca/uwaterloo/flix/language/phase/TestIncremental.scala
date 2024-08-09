@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.errors.TypeError.UnexpectedArg
 import org.scalatest.BeforeAndAfter
 import org.scalatest.funsuite.AnyFunSuite
@@ -35,8 +36,10 @@ class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
   private val FileH = "FileH.flix"
 
   // A new Flix instance is created and initialized with some source code for each test.
-
   private var flix: Flix = _
+
+  // The default security context.
+  private implicit val sctx: SecurityContext = SecurityContext.AllPermissions
 
   before {
     flix = new Flix()

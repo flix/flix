@@ -63,6 +63,8 @@ object MonoType {
 
   case object Region extends MonoType
 
+  case object Null extends MonoType
+
   ///
   /// Compound Types.
   ///
@@ -73,11 +75,11 @@ object MonoType {
 
   case class Ref(tpe: MonoType) extends MonoType
 
-  case class Tuple(elms: List[MonoType]) extends MonoType
+  case class Tuple(tpes: List[MonoType]) extends MonoType
 
   case class Enum(sym: Symbol.EnumSym) extends MonoType
 
-  case class Struct(sym: Symbol.StructSym) extends MonoType
+  case class Struct(sym: Symbol.StructSym, elmTpes: List[MonoType], targs: List[MonoType]) extends MonoType
 
   case class Arrow(args: List[MonoType], result: MonoType) extends MonoType
 

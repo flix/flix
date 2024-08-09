@@ -219,6 +219,9 @@ object DocAst {
     def Force(d: Expr): Expr =
       Keyword("force", d)
 
+    def Throw(d: Expr): Expr =
+      Keyword("throw", d)
+
     def Index(idx: Int, d: Expr): Expr =
       Dot(d, AsIs(s"_$idx"))
 
@@ -370,6 +373,8 @@ object DocAst {
     val Regex: Type = AsIs("Regex")
 
     val Region: Type = AsIs("Region")
+
+    val Null: Type = AsIs("Null")
 
     def Array(t: Type): Type = App("Array", List(t))
 

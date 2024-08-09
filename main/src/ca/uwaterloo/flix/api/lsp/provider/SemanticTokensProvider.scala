@@ -416,6 +416,10 @@ object SemanticTokensProvider {
     case Expr.ArrayLength(exp, _, _) =>
       visitExp(exp)
 
+    case Expr.StructNew(sym, fields, region, tpe, eff, loc) => throw new RuntimeException("JOE TBD")
+    case Expr.StructGet(sym, exp, field, tpe, eff, loc) => throw new RuntimeException("JOE TBD")
+    case Expr.StructPut(sym, exp1, field, exp2, tpe, eff, loc) => throw new RuntimeException("JOE TBD")
+
     case Expr.VectorLit(exps, _, _, _) =>
       visitExps(exps)
 
@@ -459,6 +463,9 @@ object SemanticTokensProvider {
           val t = SemanticToken(SemanticTokenType.Variable, Nil, sym.loc)
           acc ++ Iterator(t) ++ visitExp(exp)
       }
+
+    case Expr.Throw(exp, _, _, _) =>
+      visitExp(exp)
 
     case Expr.TryWith(exp, eff, rules, _, _, _) =>
       val t = SemanticToken(SemanticTokenType.Type, Nil, eff.loc)

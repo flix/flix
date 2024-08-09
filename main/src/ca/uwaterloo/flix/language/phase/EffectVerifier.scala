@@ -199,6 +199,9 @@ object EffectVerifier {
       visitExp(exp3)
       // TODO region stuff
       ()
+    case Expr.StructNew(sym, fields, region, tpe, eff, loc) => throw new RuntimeException("JOE TBD")
+    case Expr.StructGet(sym, exp, field, tpe, eff, loc) => throw new RuntimeException("JOE TBD")
+    case Expr.StructPut(sym, exp1, field, exp2, tpe, eff, loc) => throw new RuntimeException("JOE TBD")
     case Expr.VectorLit(exps, tpe, eff, loc) =>
       exps.foreach(visitExp)
       val expected = Type.mkUnion(exps.map(_.eff), loc)
@@ -247,6 +250,9 @@ object EffectVerifier {
       val expected = Type.mkUnion(exp.eff :: rules.map(_.exp.eff), loc)
       val actual = eff
       expectType(expected, actual, loc)
+    case Expr.Throw(exp, eff, _, loc) =>
+      visitExp(exp)
+      expectType(eff, Type.mkUnion(exp.eff, Type.IO, loc), loc)
     case Expr.TryWith(exp, effUse, rules, tpe, eff, loc) =>
       visitExp(exp)
       rules.foreach { r => visitExp(r.exp) }

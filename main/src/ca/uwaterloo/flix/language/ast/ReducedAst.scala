@@ -16,8 +16,8 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.language.ast.Purity.Pure
+import ca.uwaterloo.flix.language.ast.shared.Source
 
 import java.lang.reflect.Method
 
@@ -53,7 +53,7 @@ object ReducedAst {
 
   case class Op(sym: Symbol.OpSym, ann: Ast.Annotations, mod: Ast.Modifiers, fparams: List[FormalParam], tpe: MonoType, purity: Purity, loc: SourceLocation)
 
-  case class Struct(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.StructSym, fields: Map[Name.StructField, StructField], tpe: Type, loc: SourceLocation)
+  case class Struct(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.StructSym, fields: Map[Name.Label, StructField], loc: SourceLocation)
 
   sealed trait Expr {
     def tpe: MonoType
@@ -105,7 +105,7 @@ object ReducedAst {
 
   }
 
-  case class StructField(sym: Symbol.StructFieldSym, tpe: Type, sc: Scheme, loc: SourceLocation)
+  case class StructField(name: Name.Label, idx: Int, tpe: Type, loc: SourceLocation)
 
   case class AnonClass(name: String, clazz: java.lang.Class[_], tpe: MonoType, methods: List[JvmMethod], loc: SourceLocation)
 

@@ -17,8 +17,8 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Source}
-import ca.uwaterloo.flix.language.ast.shared.Fixity
+import ca.uwaterloo.flix.language.ast.Ast.Denotation
+import ca.uwaterloo.flix.language.ast.shared.{Fixity, Source}
 import ca.uwaterloo.flix.util.collection.MultiMap
 
 import java.lang.reflect.{Constructor, Field, Method}
@@ -57,19 +57,17 @@ object ResolvedAst {
 
     case class Def(sym: Symbol.DefnSym, spec: Spec, exp: Expr) extends Declaration
 
-    case class Enum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: TypeParams, derives: Ast.Derivations, cases: List[Declaration.Case], loc: SourceLocation) extends Declaration
+    case class Enum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[TypeParam], derives: Ast.Derivations, cases: List[Declaration.Case], loc: SourceLocation) extends Declaration
 
-    case class Struct(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.StructSym, tparams: TypeParams, fields: List[Declaration.StructField], loc: SourceLocation) extends Declaration
+    case class Struct(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.StructSym, tparams: List[TypeParam], fields: List[StructField], loc: SourceLocation) extends Declaration
 
-    case class RestrictableEnum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.RestrictableEnumSym, index: TypeParam, tparams: TypeParams, derives: Ast.Derivations, cases: List[Declaration.RestrictableCase], loc: SourceLocation) extends Declaration
+    case class RestrictableEnum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.RestrictableEnumSym, index: TypeParam, tparams: List[TypeParam], derives: Ast.Derivations, cases: List[Declaration.RestrictableCase], loc: SourceLocation) extends Declaration
 
     case class Case(sym: Symbol.CaseSym, tpe: UnkindedType, loc: SourceLocation) extends Declaration
 
-    case class StructField(sym: Symbol.StructFieldSym, tpe: UnkindedType, loc: SourceLocation)
-
     case class RestrictableCase(sym: Symbol.RestrictableCaseSym, tpe: UnkindedType, loc: SourceLocation) extends Declaration
 
-    case class TypeAlias(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.TypeAliasSym, tparams: TypeParams, tpe: UnkindedType, loc: SourceLocation) extends Declaration
+    case class TypeAlias(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.TypeAliasSym, tparams: List[TypeParam], tpe: UnkindedType, loc: SourceLocation) extends Declaration
 
     case class AssocTypeSig(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.AssocTypeSym, tparam: TypeParam, kind: Kind, tpe: Option[UnkindedType], loc: SourceLocation) extends Declaration
 
@@ -80,7 +78,9 @@ object ResolvedAst {
     case class Op(sym: Symbol.OpSym, spec: Spec) extends Declaration
   }
 
-  case class Spec(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, tparams: TypeParams, fparams: List[FormalParam], tpe: UnkindedType, eff: Option[UnkindedType], tconstrs: List[TypeConstraint], econstrs: List[EqualityConstraint], loc: SourceLocation)
+  case class Spec(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, tparams: List[TypeParam], fparams: List[FormalParam], tpe: UnkindedType, eff: Option[UnkindedType], tconstrs: List[TypeConstraint], econstrs: List[EqualityConstraint], loc: SourceLocation)
+
+  case class StructField(name: Name.Label, tpe: UnkindedType, loc: SourceLocation)
 
   sealed trait Expr {
     def loc: SourceLocation
@@ -137,7 +137,7 @@ object ResolvedAst {
 
     case class RestrictableTag(sym: Ast.RestrictableCaseSymUse, exp: Expr, isOpen: Boolean, loc: SourceLocation) extends Expr
 
-    case class Tuple(elms: List[Expr], loc: SourceLocation) extends Expr
+    case class Tuple(exps: List[Expr], loc: SourceLocation) extends Expr
 
     case class RecordEmpty(loc: SourceLocation) extends Expr
 
@@ -157,7 +157,7 @@ object ResolvedAst {
 
     case class ArrayLength(base: Expr, loc: SourceLocation) extends Expr
 
-    case class StructNew(name: Symbol.StructSym, exps: List[(Symbol.StructFieldSym, Expr)], region: Expr, loc: SourceLocation) extends Expr
+    case class StructNew(name: Symbol.StructSym, exps: List[(Name.Label, Expr)], region: Expr, loc: SourceLocation) extends Expr
 
     case class StructGet(sym: Symbol.StructSym, e: Expr, f: Name.Label, loc: SourceLocation) extends Expr
 
@@ -188,6 +188,8 @@ object ResolvedAst {
     case class Without(exp: Expr, eff: Ast.EffectSymUse, loc: SourceLocation) extends Expr
 
     case class TryCatch(exp: Expr, rules: List[CatchRule], loc: SourceLocation) extends Expr
+
+    case class Throw(exp: Expr, loc: SourceLocation) extends Expr
 
     case class TryWith(exp: Expr, eff: Ast.EffectSymUse, rules: List[HandlerRule], loc: SourceLocation) extends Expr
 
@@ -265,7 +267,7 @@ object ResolvedAst {
 
     case class Tag(sym: Ast.CaseSymUse, pat: Pattern, loc: SourceLocation) extends Pattern
 
-    case class Tuple(elms: List[Pattern], loc: SourceLocation) extends Pattern
+    case class Tuple(pats: List[Pattern], loc: SourceLocation) extends Pattern
 
     case class Record(pats: List[Record.RecordLabelPattern], pat: Pattern, loc: SourceLocation) extends Pattern
 
@@ -319,20 +321,6 @@ object ResolvedAst {
 
   }
 
-  sealed trait TypeParams {
-    val tparams: List[TypeParam]
-  }
-
-  object TypeParams {
-
-    case class Kinded(tparams: List[TypeParam.Kinded]) extends TypeParams
-
-    case class Unkinded(tparams: List[TypeParam.Unkinded]) extends TypeParams
-
-  }
-
-  case class Attribute(ident: Name.Ident, tpe: UnkindedType, loc: SourceLocation)
-
   case class Constraint(cparams: List[ConstraintParam], head: Predicate.Head, body: List[Predicate.Body], loc: SourceLocation)
 
   case class ConstraintParam(sym: Symbol.VarSym, loc: SourceLocation)
@@ -369,11 +357,11 @@ object ResolvedAst {
   }
 
   object TypeParam {
-
     case class Kinded(name: Name.Ident, sym: Symbol.UnkindedTypeVarSym, kind: Kind, loc: SourceLocation) extends TypeParam
 
     case class Unkinded(name: Name.Ident, sym: Symbol.UnkindedTypeVarSym, loc: SourceLocation) extends TypeParam
 
+    case class Implicit(name: Name.Ident, sym: Symbol.UnkindedTypeVarSym, loc: SourceLocation) extends TypeParam
   }
 
   case class TypeConstraint(head: Ast.TypeConstraint.Head, tpe: UnkindedType, loc: SourceLocation)
