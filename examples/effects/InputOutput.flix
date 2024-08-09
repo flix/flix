@@ -6,12 +6,12 @@ mod InputOutputExample {
     }
 
     pub def main(): Result[String, Unit] \ IO = {
-        
+
         println("");
         println("First with hardcoded input:");
         try helloExample() with InputOutput {
             def read(k) = k("Alice")
-            def write(s, k) = {println(s); k()} 
+            def write(s, k) = {println(s); k()}
         };
 
         println("");
@@ -32,7 +32,7 @@ mod InputOutputExample {
 
     pub def helloExample(): Unit \ InputOutput = {
         do InputOutput.write("What is your name?");
-        let name = do InputOutput.read();
+        let name = do InputOutput.read;
         do InputOutput.write("Hello ${name}!")
     }
 
