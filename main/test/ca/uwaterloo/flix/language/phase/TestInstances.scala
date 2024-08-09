@@ -101,6 +101,24 @@ class TestInstances extends AnyFunSuite with TestUtils {
     expectError[InstanceError.OverlappingInstances](result)
   }
 
+  // JOE STRUCTS TODO: Reenable when kinder is ready
+  ignore("Test.OverlappingInstance.06") {
+    val input =
+      """
+        |struct S[a, r] {
+        |    s: a
+        |}
+        |
+        |trait C[a, r]
+        |
+        |instance C[S[a, r]
+        |
+        |instance C[S[b, r]]
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[InstanceError.OverlappingInstances](result)
+  }
+
   test("Test.ComplexInstanceType.01") {
     val input =
       """
@@ -133,6 +151,22 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |trait C[a]
         |
         |instance C[Box[Int32]]
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[InstanceError.ComplexInstance](result)
+  }
+
+  // JOE STRUCTS TODO: Reenable when kinder is ready
+  ignore("Test.ComplexInstanceType.04") {
+    val input =
+      """
+        |struct Box[a, r] {
+        |    box: Box[a, r]
+        |}
+        |
+        |trait C[a]
+        |
+        |instance C[Box[Int32, r]]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[InstanceError.ComplexInstance](result)
