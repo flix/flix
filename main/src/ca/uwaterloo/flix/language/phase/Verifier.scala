@@ -265,7 +265,7 @@ object Verifier {
         case AtomicOp.ArrayLit =>
           tpe match {
             case MonoType.Array(elmt) =>
-              ts.foreach(t => checkEq(elmt, t, loc))
+              ts.foreach(t => checkJavaSubtype(t, classOf[java.lang.Object], loc)) // Java arrays are covariant
               tpe
             case _ => failMismatchedShape(tpe, "Array", loc)
           }
