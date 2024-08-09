@@ -202,7 +202,7 @@ object Kinder {
     */
   private def visitCase(caze0: ResolvedAst.Declaration.Case, tparams: List[KindedAst.TypeParam], resTpe: Type, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Case, KindError] = caze0 match {
     case ResolvedAst.Declaration.Case(sym, tpes0, loc) =>
-      val tpesVal = tpes0.map(visitType(_, Kind.Star, kenv, taenv, root))
+      val tpesVal = traverse(tpes0)(visitType(_, Kind.Star, kenv, taenv, root))
       mapN(tpesVal) {
         case tpes =>
           val quants = tparams.map(_.sym)
@@ -232,7 +232,7 @@ object Kinder {
       mapN(tpesVal) {
         case tpes =>
           val quants = (index :: tparams).map(_.sym)
-          val sc = Scheme(quants, Nil, Nil, Type.mkPureArrow(tpes, resTpe, sym.loc.asSynthetic))
+          val sc = Scheme(quants, Nil, Nil, Type.mkPureUncurriedArrow(tpes, resTpe, sym.loc.asSynthetic))
           KindedAst.RestrictableCase(sym, tpes, sc, loc) // TODO RESTR-VARS the scheme is different for these. REVISIT
       }
   }
