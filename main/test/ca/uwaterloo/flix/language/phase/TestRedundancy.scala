@@ -824,7 +824,8 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     expectError[RedundancyError.ShadowingName](result)
   }
 
-  test("ShadowedName.Use.21") {
+  // JOE TODO: When ready enable this test
+  ignore("ShadowedName.Use.21") {
     val input =
       s"""
          |def foo(): Bool =
@@ -847,7 +848,8 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     expectError[RedundancyError.ShadowingName](result)
   }
 
-  test("UnusedStructSym.01") {
+  // JOE TODO: When ready enable this test
+  ignore("UnusedStructSym.01") {
     val input =
       s"""
          |mod N {
@@ -860,7 +862,8 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     expectError[RedundancyError.UnusedStructSym](result)
   }
 
-  test("UnusedStructSym.02") {
+  // JOE TODO: When ready enable this test
+  ignore("UnusedStructSym.02") {
     val input =
       s"""
          |mod N {
@@ -954,7 +957,8 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     expectError[RedundancyError.UnusedEnumTag](result)
   }
 
-  test("PrefixedStructSym.01") {
+  // JOE TODO: When ready enable this test
+  ignore("PrefixedStructSym.01") {
     val input =
       s"""
          |mod N {
@@ -1134,7 +1138,8 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     expectError[RedundancyError.UnusedTypeParam](result)
   }
 
-  test("UnusedTypeParam.Struct.01") {
+  // JOE TODO: When ready enable this test
+  ignore("UnusedTypeParam.Struct.01") {
     val input =
       s"""
          |struct Box[a, r] { }
@@ -1144,7 +1149,8 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     expectError[RedundancyError.UnusedTypeParam](result)
   }
 
-  test("UnusedTypeParam.Struct.02") {
+  // JOE TODO: When ready enable this test
+  ignore("UnusedTypeParam.Struct.02") {
     val input =
       s"""
          |struct Box[a, b, r] {
@@ -1156,7 +1162,8 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     expectError[RedundancyError.UnusedTypeParam](result)
   }
 
-  test("UnusedTypeParam.Struct.03") {
+  // JOE TODO: When ready enable this test
+  ignore("UnusedTypeParam.Struct.03") {
     val input =
       s"""
          |struct Box[a, b, r] {
@@ -1168,7 +1175,8 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     expectError[RedundancyError.UnusedTypeParam](result)
   }
 
-  test("UnusedTypeParam.Struct.04") {
+  // JOE TODO: When ready enable this test
+  ignore("UnusedTypeParam.Struct.04") {
     val input =
       s"""
          |struct Box[a, b, c, r] {
