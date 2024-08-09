@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{Ast, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.unification.Unification
-import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
+import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.collection.{ListMap, ListOps}
 
 import java.lang.reflect.Method
@@ -220,10 +220,30 @@ object TypeReduction {
    */
   private def retrieveMethod(clazz: Class[_], methodName: String, ts: List[Type], isStatic: Boolean = false, loc: SourceLocation)(implicit flix: Flix): JavaMethodResolutionResult = {
     // NB: this considers also static methods
-    val candidateMethods = clazz.getMethods.filter(m => isCandidateMethod(m, methodName, isStatic, ts))
+    val candidateMethods = clazz.getMethods.filter(m => isCandidateMethod(m, methodName, isStatic, isVariadic = false, ts))
 
     candidateMethods.length match {
-      case 0 => JavaMethodResolutionResult.MethodNotFound
+      case 0 =>
+        // If no method was found, check if it is potentially a variadic method
+        val varMethods = clazz.getMethods.filter(m => isCandidateMethod(m, methodName, isStatic, isVariadic = true, ts))
+        varMethods.length match {
+          case 0 => JavaMethodResolutionResult.MethodNotFound
+          case 1 =>
+            val tpe = Type.Cst(TypeConstructor.JvmMethod(varMethods.head), loc)
+            JavaMethodResolutionResult.Resolved(tpe)
+          case _ =>
+            // Find a potential method with exactly-matched signature
+            val exactMethod = varMethods.filter(m => {
+              val varArrTpe = m.getParameterTypes.last
+              val argsDiff = m.getParameterCount - ts.length
+              ts.slice(argsDiff, ts.length).forall(t => t == Type.getFlixType(varArrTpe))
+            })
+            exactMethod.length match {
+              case 1 => JavaMethodResolutionResult.Resolved(Type.Cst(TypeConstructor.JvmMethod(exactMethod.head), loc))
+              case _ => JavaMethodResolutionResult.AmbiguousMethod(candidateMethods.toList)
+            }
+        }
+
       case 1 =>
         val tpe = Type.Cst(TypeConstructor.JvmMethod(candidateMethods.head), loc)
         JavaMethodResolutionResult.Resolved(tpe)
@@ -258,21 +278,57 @@ object TypeReduction {
    * @param methodName the potential candidate method's name
    * @param ts         the list of parameter types of the potential candidate method
    */
-  private def isCandidateMethod(cand: Method, methodName: String, isStatic: Boolean = false, ts: List[Type])(implicit flix: Flix): Boolean = {
+  private def isCandidateMethod(cand: Method, methodName: String, isStatic: Boolean = false, isVariadic: Boolean = false, ts: List[Type])(implicit flix: Flix): Boolean = {
     val static = java.lang.reflect.Modifier.isStatic(cand.getModifiers)
-    (if (isStatic) static else !static) &&
-      (cand.getName == methodName) &&
-      (cand.getParameterCount == ts.length) &&
-      // Parameter types correspondence with subtyping
-      (cand.getParameterTypes zip ts).forall {
-        case (clazz, tpe) => isSubtype(tpe, Type.getFlixType(clazz))
-      } &&
-      // NB: once methods with same signatures have been filtered out, we should remove super-methods duplicates
-      // if the superclass is abstract or ignore if it is a primitive type or void
-      (cand.getReturnType.equals(Void.TYPE) || cand.getReturnType.isPrimitive || cand.getReturnType.isArray || // for all arrays return types?
-        java.lang.reflect.Modifier.isInterface(cand.getReturnType.getModifiers) || // interfaces are considered primitives
-        !(java.lang.reflect.Modifier.isAbstract(cand.getReturnType.getModifiers) && !isStatic))
-  } // temporary to avoid superclass abstract duplicate, except for static methods
+    if (isStatic != static) return false
+    if (!cand.getName.equals(methodName)) return false
+    // Check candidate depending on if it is variadic
+    if (isVariadic && !isCandidateVariadicMethod(cand, ts)) return false
+    else {
+      val validSubtyping =
+        (cand.getParameterCount == ts.length) &&
+        // Parameter types correspondence with subtyping
+        (cand.getParameterTypes zip ts).forall {
+          case (clazz, tpe) => isSubtype(tpe, Type.getFlixType(clazz))
+        }
+      if (!validSubtyping) return false
+    }
+    // NB: once methods with same signatures have been filtered out, we should remove super-methods duplicates
+    // if the superclass is abstract or ignore if it is a primitive type or void
+    val duplicatesFilter = (cand.getReturnType.equals(Void.TYPE) || cand.getReturnType.isPrimitive || cand.getReturnType.isArray || // for all arrays return types?
+      java.lang.reflect.Modifier.isInterface(cand.getReturnType.getModifiers) || // interfaces are considered primitives
+      !(java.lang.reflect.Modifier.isAbstract(cand.getReturnType.getModifiers) && !isStatic)) // temporary to avoid superclass abstract duplicate, except for static methods
+
+    duplicatesFilter
+  }
+
+  /**
+   * Helper method used in isCandidateMethod to check if the given method corresponds to a variadic method given
+   * an arguments list.
+   * @param cand
+   * @param ts
+   * @param flix
+   * @return
+   */
+  private def isCandidateVariadicMethod(cand: Method, ts: List[Type])(implicit flix: Flix): Boolean = {
+    if (!cand.isVarArgs)
+      return false
+    val paramCount = cand.getParameterCount
+    val varArr = cand.getParameterTypes.last
+    val tpe = varArr.getComponentType
+    // Check minimum required arity
+    // e.g., for a defined function f(T arg1, T... args) arg1 is required.
+    val argsDiff = paramCount - ts.length
+    if (argsDiff > 1) // We remove the vararg array and check for required arguments
+      return false
+    // Check subtyping for required args
+    // if (argsDiff <= 0) TODO INTEROP: support where argsDiff <= 0
+    (cand.getParameterTypes zip ts.slice(0, argsDiff + 1)).forall {
+      case (clazz, tpe) => isSubtype(tpe, Type.getFlixType(clazz))
+    } &&
+    // Check subtyping for varargs
+    ts.slice(argsDiff + 1, ts.length).forall(t => isSubtype(t, Type.getFlixType(tpe)))
+  }
 
   /**
    * Helper method to define a sub-typing relation between two given Flix types.
