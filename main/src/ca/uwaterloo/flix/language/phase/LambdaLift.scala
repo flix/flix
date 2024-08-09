@@ -41,9 +41,7 @@ object LambdaLift {
       case (macc, (sym, defn)) => macc + (sym -> defn)
     }
 
-    val structs = ParOps.parMapValues(root.structs)(visitStruct)
-
-    LiftedAst.Root(newDefs, structs, effects, root.entryPoint, root.reachable, root.sources)
+    LiftedAst.Root(newDefs, effects, root.entryPoint, root.reachable, root.sources)
   }
 
   private def visitDef(def0: SimplifiedAst.Def)(implicit ctx: SharedContext, flix: Flix): LiftedAst.Def = def0 match {
@@ -57,17 +55,6 @@ object LambdaLift {
     case SimplifiedAst.Effect(ann, mod, sym, ops0, loc) =>
       val ops = ops0.map(visitOp)
       LiftedAst.Effect(ann, mod, sym, ops, loc)
-  }
-
-  private def visitStruct(s: SimplifiedAst.Struct): LiftedAst.Struct = s match {
-    case SimplifiedAst.Struct(doc, ann, mod, sym, fields0, loc) =>
-      val fields = fields0.map(visitStructField)
-      LiftedAst.Struct(doc, ann, mod, sym, fields, loc)
-  }
-
-  private def visitStructField(field: SimplifiedAst.StructField) = field match {
-    case SimplifiedAst.StructField(name, idx, tpe, loc) =>
-      LiftedAst.StructField(name, idx, tpe, loc)
   }
 
   private def visitOp(op: SimplifiedAst.Op): LiftedAst.Op = op match {

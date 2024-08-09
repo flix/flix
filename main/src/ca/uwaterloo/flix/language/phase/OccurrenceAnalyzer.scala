@@ -63,9 +63,8 @@ object OccurrenceAnalyzer {
 
     val defs = visitDefs(root.defs)
     val effects = root.effects.map { case (k, v) => k -> visitEffect(v) }
-    val structs = root.structs.map {case (k, v) => k -> visitStruct(v)}
 
-    val result = OccurrenceAst.Root(defs, structs, effects, root.entryPoint, root.reachable, root.sources)
+    val result = OccurrenceAst.Root(defs, effects, root.entryPoint, root.reachable, root.sources)
 
     Validation.success(result)
   }
@@ -80,17 +79,6 @@ object OccurrenceAnalyzer {
     case LiftedAst.Op(sym, ann, mod, fparams0, tpe, purity, loc) =>
       val fparams = fparams0.map(visitFormalParam)
       OccurrenceAst.Op(sym, ann, mod, fparams, tpe, purity, loc)
-  }
-
-  private def visitStruct(s: LiftedAst.Struct): OccurrenceAst.Struct = s match {
-    case LiftedAst.Struct(doc, ann, mod, sym, fields0, loc) =>
-      val fields = fields0.map(visitStructField)
-      OccurrenceAst.Struct(doc, ann, mod, sym, fields, loc)
-  }
-
-  private def visitStructField(field: LiftedAst.StructField) = field match {
-    case LiftedAst.StructField(name, idx, tpe, loc) =>
-      OccurrenceAst.StructField(name, idx, tpe, loc)
   }
 
   /**
