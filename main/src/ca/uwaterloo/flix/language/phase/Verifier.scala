@@ -1,6 +1,5 @@
 // JOE TODO one day: pub/private for fields, mut/const, error checking for the rhs of struct.undefinedfield = rhs
-// JOE TODO: Make sure struct fields are evaluated in order
-// JOE TODO: Add structs to TestDebug.flix
+// JOE TODO: Add structs to dervier + TestDebug.flix
 /*
  * Copyright 2023 Magnus Madsen
  *
