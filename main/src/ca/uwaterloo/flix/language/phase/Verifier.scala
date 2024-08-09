@@ -265,7 +265,7 @@ object Verifier {
         case AtomicOp.ArrayLit =>
           tpe match {
             case MonoType.Array(elmt) =>
-              ts.foreach(t => checkJavaSubtype(t, classOf[java.lang.Object], loc)) // Java arrays are covariant
+              ts.foreach(t => checkJavaSubtype(t, getJavaType(elmt, loc), loc)) // Java arrays are covariant
               tpe
             case _ => failMismatchedShape(tpe, "Array", loc)
           }
@@ -617,6 +617,49 @@ object Verifier {
   }
 
   /**
+   * Returns a corresponding Java class for the given monotype.
+   */
+  def getJavaType(tpe: MonoType, loc: SourceLocation): Class[_] = {
+    tpe match {
+      case MonoType.Array(elmt) =>
+        Class.forName("[L" + getJavaType(elmt, loc).getCanonicalName + ";")
+      case MonoType.Native(k) =>
+        k
+      case MonoType.Int8    => classOf[Byte]
+      case MonoType.Int16   => classOf[Short]
+      case MonoType.Int32   => classOf[Int]
+      case MonoType.Int64   => classOf[Long]
+      case MonoType.Float32 => classOf[Float]
+      case MonoType.Float64 => classOf[Double]
+      case MonoType.Bool    => classOf[Boolean]
+      case MonoType.Char    => classOf[Char]
+      case MonoType.Unit    => classOf[Unit]
+      case MonoType.Null    => classOf[Object]
+
+      case MonoType.String  => classOf[String]
+      case MonoType.BigInt => classOf[java.math.BigInteger]
+      case MonoType.BigDecimal => classOf[java.math.BigDecimal]
+      case MonoType.Regex => classOf[java.util.regex.Pattern]
+      case MonoType.Arrow(List(MonoType.Object), MonoType.Unit) => classOf[java.util.function.Consumer[Object]]
+      case MonoType.Arrow(List(MonoType.Object), MonoType.Bool) => classOf[java.util.function.Predicate[Object]]
+      case MonoType.Arrow(List(MonoType.Int32), MonoType.Unit) => classOf[java.util.function.IntConsumer]
+      case MonoType.Arrow(List(MonoType.Int32), MonoType.Object) => classOf[java.util.function.IntFunction[Object]]
+      case MonoType.Arrow(List(MonoType.Int32), MonoType.Bool) => classOf[java.util.function.IntPredicate]
+      case MonoType.Arrow(List(MonoType.Int32), MonoType.Int32) => classOf[java.util.function.IntUnaryOperator]
+      case MonoType.Arrow(List(MonoType.Int32), MonoType.Unit) => classOf[java.util.function.IntConsumer]
+      case MonoType.Arrow(List(MonoType.Int64), MonoType.Unit) => classOf[java.util.function.LongConsumer]
+      case MonoType.Arrow(List(MonoType.Int64), MonoType.Object) => classOf[java.util.function.LongFunction[Object]]
+      case MonoType.Arrow(List(MonoType.Int64), MonoType.Bool) => classOf[java.util.function.LongPredicate]
+      case MonoType.Arrow(List(MonoType.Int64), MonoType.Int64) => classOf[java.util.function.LongUnaryOperator]
+      case MonoType.Arrow(List(MonoType.Float64), MonoType.Unit) => classOf[java.util.function.DoubleConsumer]
+      case MonoType.Arrow(List(MonoType.Float64), MonoType.Object) => classOf[java.util.function.DoubleFunction[Object]]
+      case MonoType.Arrow(List(MonoType.Float64), MonoType.Bool) => classOf[java.util.function.DoublePredicate]
+      case MonoType.Arrow(List(MonoType.Float64), MonoType.Float64) => classOf[java.util.function.DoubleUnaryOperator]
+      case _ => failUnresolvedType(tpe, loc)
+    }
+  }
+
+  /**
     * Asserts that `tpe` is a subtype of the java class type `klazz`.
     */
   private def checkJavaSubtype(tpe: MonoType, klazz: Class[_], loc: SourceLocation): MonoType = {
@@ -706,6 +749,14 @@ object Verifier {
   private def failUnexpectedType(found: MonoType, expected: MonoType, loc: SourceLocation): Nothing =
     throw InternalCompilerException(
       s"Unexpected type near ${loc.format}: expected = $expected, found = $found", loc
+    )
+
+  /**
+   * Throw `InternalCompilerException` because the `tpe` type couldn't be resolved to a Java class.
+   */
+  private def failUnresolvedType(tpe: MonoType, loc: SourceLocation): Nothing =
+    throw InternalCompilerException(
+      s"Unresolved type near ${loc.format}: tpe = $tpe corresponds to no Java class", loc
     )
 
   /**

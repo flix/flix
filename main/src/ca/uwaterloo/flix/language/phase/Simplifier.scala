@@ -112,8 +112,8 @@ object Simplifier {
             val reqParams = args.slice(0, reqParamsNb)
             val varargs = args.slice(reqParamsNb, args.length)
             // Match varArrType with the specific monotype for ArrayLit?
-            // val varArrType = Type.getFlixType(m.getParameterTypes.last.getComponentType)
-            val varArr = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.ArrayLit, varargs, MonoType.Array(MonoType.Object), purity, loc)
+            val varArrType = Type.getFlixType(m.getParameterTypes.last.getComponentType)
+            val varArr = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.ArrayLit, varargs, MonoType.Array(getMonotype(varArrType)), purity, loc)
             SimplifiedAst.Expr.ApplyAtomic(op, List(es.head) ++ (reqParams ++ List(varArr)), t, purity, loc)
           } else {
             SimplifiedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
@@ -238,6 +238,35 @@ object Simplifier {
     case MonoAst.Expr.TypeMatch(_, _, _, _, loc) =>
       throw InternalCompilerException(s"Unexpected expression: $exp0.", loc)
   }
+
+  /**
+   * Helper method to get a corresponding monotype to the given type.
+   */
+  private def getMonotype(tpe: Type): MonoType =
+    tpe match {
+      case Type.Cst(tc, loc) =>
+        tc match {
+          case TypeConstructor.Void => MonoType.Void
+          case TypeConstructor.Unit => MonoType.Unit
+          case TypeConstructor.Null => MonoType.Null
+          case TypeConstructor.Bool => MonoType.Bool
+          case TypeConstructor.Char => MonoType.Char
+          case TypeConstructor.Float32 => MonoType.Float32
+          case TypeConstructor.Float64 => MonoType.Float64
+          case TypeConstructor.BigDecimal => MonoType.BigDecimal
+          case TypeConstructor.Int8 => MonoType.Int8
+          case TypeConstructor.Int16 => MonoType.Int8
+          case TypeConstructor.Int32 => MonoType.Int32
+          case TypeConstructor.Int64 => MonoType.Int64
+          case TypeConstructor.BigInt => MonoType.BigInt
+          case TypeConstructor.Str => MonoType.String
+          case TypeConstructor.Regex => MonoType.Regex
+          case TypeConstructor.Native(clazz) => MonoType.Native(clazz)
+          //case TypeConstructor.Array => MonoType.Array(tpe.typeArguments.head)
+          case _ => ???
+        }
+      case _ => ???
+    }
 
   private def visitType(tpe: Type)(implicit flix: Flix): MonoType = {
     val base = tpe.typeConstructor
