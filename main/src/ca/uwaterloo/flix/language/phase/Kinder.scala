@@ -144,12 +144,6 @@ object Kinder {
       }
   }
 
-  private def makeKinded(tparam: ResolvedAst.TypeParam, defaultKind: Kind): ResolvedAst.TypeParam.Kinded = tparam match {
-    case ResolvedAst.TypeParam.Kinded(name, sym, kind, loc) => ResolvedAst.TypeParam.Kinded(name, sym, kind, loc)
-    case ResolvedAst.TypeParam.Unkinded(name, sym, loc) => ResolvedAst.TypeParam.Kinded(name, sym, defaultKind, loc)
-    case ResolvedAst.TypeParam.Implicit(name, sym, loc) => ResolvedAst.TypeParam.Kinded(name, sym, defaultKind, loc)
-  }
-
   /**
     * Performs kinding on the given restrictable enum.
     */
@@ -1814,10 +1808,11 @@ object Kinder {
   private def getStructKind(struct0: ResolvedAst.Declaration.Struct)(implicit flix: Flix): Kind = struct0 match {
     case ResolvedAst.Declaration.Struct(_, _, _, _, tparams0, _, _) =>
       // tparams default to zero except for the region param
-      val tparamsStart = tparams0.init.map(makeKinded(_, Kind.Star))
-      val tparams = tparamsStart :+ makeKinded(tparams0.last, Kind.Eff)
-      val kenv = getKindEnvFromTypeParams(tparams)
-      tparams.foldRight(Kind.Star: Kind) {
+      val kenv1 = getKindEnvFromTypeParams(tparams0.init)
+      val kenv2 = getKindEnvFromRegion(tparams0.last)
+      // The last add is simply to verify that the last tparam was marked as Eff
+      val kenv = KindEnv.disjointAppend(kenv1, kenv2)
+      tparams0.foldRight(Kind.Star: Kind) {
         case (tparam, acc) => kenv.map(tparam.sym) ->: acc
       }
   }
