@@ -123,19 +123,23 @@ object Kinder {
       } else {
         tparams0
       }
-      // if not annotated, tparams are assumed to be Star except the last one which is Eff
-      val tparams2 = tparams1.init.map(makeKinded(_, Kind.Star)) :+ makeKinded(tparams1.last, Kind.Eff)
-      val kenv0 = getKindEnvFromTypeParams(tparams2)
-      val kenvVal = kenv0 + (tparams2.last.sym -> Kind.Eff) // check that the last tparam is an effect
+      val kenv1 = getKindEnvFromTypeParams(tparams1.init)
+      val kenv2 = getKindEnvFromRegion(tparams1.last)
+      // The last add is simply to verify that the last tparam was marked as Eff
+      val kenvVal = KindEnv.disjointAppend(kenv1, kenv2) + (tparams1.last.sym -> Kind.Eff)
       flatMapN(kenvVal) {
         case kenv =>
-          val kindedTparams = tparams2.map(t => KindedAst.TypeParam(t.name, t.sym.withKind(t.kind), t.sym.loc))
-          val fieldsVal = traverse(fields0)(visitStructField(_, kindedTparams, kenv, taenv, root))
-          mapN(fieldsVal) {
-            case fields =>
-              val targs = kindedTparams.map(tparam => Type.Var(tparam.sym, tparam.loc.asSynthetic))
-              val sc = Scheme(kindedTparams.map(_.sym), List(), List(), Type.mkStruct(sym, targs, loc))
-              KindedAst.Struct(doc, ann, mod, sym, kindedTparams, sc, fields, loc)
+          val tparamsVal = traverse(tparams1)(visitTypeParam(_, kenv))
+
+          flatMapN(tparamsVal) {
+            case kindedTparams =>
+              val fieldsVal = traverse(fields0)(visitStructField(_, kindedTparams, kenv, taenv, root))
+              mapN(fieldsVal) {
+                case fields =>
+                  val targs = kindedTparams.map(tparam => Type.Var(tparam.sym, tparam.loc.asSynthetic))
+                  val sc = Scheme(kindedTparams.map(_.sym), List(), List(), Type.mkStruct(sym, targs, loc))
+                  KindedAst.Struct(doc, ann, mod, sym, kindedTparams, sc, fields, loc)
+              }
           }
       }
   }
@@ -1763,6 +1767,15 @@ object Kinder {
   private def getKindEnvFromIndex(index0: ResolvedAst.TypeParam, sym: Symbol.RestrictableEnumSym)(implicit flix: Flix): KindEnv = index0 match {
     case ResolvedAst.TypeParam.Kinded(_, tvar, kind, _) => KindEnv.singleton(tvar -> kind)
     case ResolvedAst.TypeParam.Unkinded(_, tvar, _) => KindEnv.singleton(tvar -> Kind.CaseSet(sym))
+    case ResolvedAst.TypeParam.Implicit(_, _, _) => KindEnv.empty
+  }
+
+  /**
+    * Gets a kind environment from the type param, defaulting to `Kind.Eff` if it is unspecified
+   */
+  private def getKindEnvFromRegion(tparam0: ResolvedAst.TypeParam)(implicit flix: Flix): KindEnv = tparam0 match {
+    case ResolvedAst.TypeParam.Kinded(_, tvar, kind, _) => KindEnv.singleton(tvar -> kind)
+    case ResolvedAst.TypeParam.Unkinded(_, tvar, _) => KindEnv.singleton(tvar -> Kind.Eff)
     case ResolvedAst.TypeParam.Implicit(_, _, _) => KindEnv.empty
   }
 
