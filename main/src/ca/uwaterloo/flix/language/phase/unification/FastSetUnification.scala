@@ -51,6 +51,8 @@ import scala.collection.mutable
 ///
 object FastSetUnification {
 
+  import ca.uwaterloo.flix.language.phase.unification.FastSetUnification.Rules.Output
+
   /**
     * The threshold for when a solution is considered too complex.
     *
@@ -325,6 +327,128 @@ object FastSetUnification {
 
   }
 
+  //
+  // A general rule is of type Equation => (List[Equation], Substitution).
+  //
+  // The returned list might be an Option or just an Equation..
+  // The returned substitution might be omitted
+  //
+  private object Rules {
+
+    type Output = Option[(List[Equation], SetSubstitution)]
+
+    def trivial(eq: Equation): Option[Equation] = {
+      val Equation(t1, t2, _) = eq
+      (t1, t2) match {
+        case (Term.Univ, Term.Univ) => None
+        case (Term.Empty, Term.Empty) => None
+        case (Term.Cst(c1), Term.Cst(c2)) if c1 == c2 => None
+        case (Term.Var(x1), Term.Var(x2)) if x1 == x2 => None
+        case (Term.ElemSet(s1), Term.ElemSet(s2)) if s1 == s2 => None
+        case _ => Some(eq)
+      }
+    }
+
+    def triviallyWrong(eq: Equation): Result[Equation, ConflictException] = {
+      // Possible additions
+      // - compare elements/constants to intersections
+      val Equation(t1, t2, loc) = eq
+
+      @inline
+      def error: Result[Equation, ConflictException] = Result.Err(ConflictException(t1, t2, loc))
+
+      (t1, t2) match {
+        case (Term.Univ, Term.Empty) => error
+        case (Term.Univ, Term.ElemSet(_)) => error
+        case (Term.Univ, Term.Cst(_)) => error
+        case (Term.Univ, inter: Term.Inter) if inter.triviallyNonUniv => error
+        case (Term.Empty, Term.Univ) => error
+        case (Term.Empty, Term.ElemSet(_)) => error
+        case (Term.Empty, Term.Cst(_)) => error
+        case (Term.Empty, union: Term.Union) if union.triviallyNonEmpty => error
+        case (Term.ElemSet(_), Term.Univ) => error
+        case (Term.ElemSet(_), Term.Empty) => error
+        case (Term.ElemSet(i1), Term.ElemSet(i2)) if i1 != i2 => error
+        case (Term.ElemSet(_), Term.Cst(_)) => error
+        case (Term.Cst(_), Term.Univ) => error
+        case (Term.Cst(_), Term.Empty) => error
+        case (Term.Cst(_), Term.ElemSet(_)) => error
+        case (Term.Cst(c1), Term.Cst(c2)) if c1 != c2 => error
+        case (inter: Term.Inter, Term.Univ) if inter.triviallyNonUniv => error
+        case (union: Term.Union, Term.Empty) if union.triviallyNonEmpty => error
+        case _ => Result.Ok(eq)
+      }
+    }
+
+    def constantAssignment(eq: Equation): Output = {
+      val Equation(t1, t2, loc) = eq
+      (t1, t2) match {
+        // x ~ t, where t has no variables
+        // ---
+        // [],
+        // [x -> t]
+        case (Term.Var(x), t) if t.noFreeVars =>
+          Some((Nil, SetSubstitution.singleton(x, t)))
+
+        // x ∩ y ∩ !z ∩ ... ∩ rest_i ~ univ
+        // ---
+        // [rest_i ~ univ],
+        // [x -> univ, y -> univ, z -> empty, ...]
+        case (inter@Term.Inter(_, _, posVars, _, _, negVars, rest), Term.Univ) if inter.mightBeUniv =>
+          // note: posVars and negVars are guaranteed to be disjoint
+          var subst = SetSubstitution.empty
+          var changed = false
+          // x -> univ
+          for (Term.Var(x) <- posVars) {
+            subst = subst.extended(x, Term.Univ, loc)
+            changed = true
+          }
+          // z -> empty
+          for (Term.Var(x) <- negVars) {
+            subst = subst.extended(x, Term.Empty, loc)
+            changed = true
+          }
+          if (rest.nonEmpty) {
+            val constraints = rest.map(Equation.mk(_, Term.Univ, loc))
+            Some((constraints, subst))
+          } else if (changed) {
+            Some((Nil, subst))
+          } else {
+            None
+          }
+
+        // x ∪ y ∪ !z ∪ ... ∪ rest ~ empty
+        // ---
+        // [rest_i ~ empty],
+        // [x -> empty, y -> empty, z -> univ, ...]
+        case (union@Term.Union(_, _, posVars, _, _, negVars, rest), Term.Empty) if union.mightBeEmpty =>
+          // note: posVars and negVars are guaranteed to be disjoint
+          var subst = SetSubstitution.empty
+          var changed = false
+          // x -> empty
+          for (Term.Var(x) <- posVars) {
+            subst = subst.extended(x, Term.Empty, loc)
+            changed = true
+          }
+          // z -> univ
+          for (Term.Var(x) <- negVars) {
+            subst = subst.extended(x, Term.Univ, loc)
+            changed = true
+          }
+          if (rest.nonEmpty) {
+            val constraints = rest.map(Equation.mk(_, Term.Empty, loc))
+            Some((constraints, subst))
+          } else if (changed) {
+            Some((Nil, subst))
+          } else {
+            None
+          }
+
+        case _ => None
+      }
+    }
+  }
+
   /**
     * Returns a list of non-trivial unification equations computed from the given list `l`.
     *
@@ -336,49 +460,15 @@ object FastSetUnification {
     * -        e ~ e        (same element)
     * -        c ~ c        (same constant)
     * -        x ~ x        (same variable)
-    *
-    *
-    * An unsolvable (conflicted) equation is a trivial inequality involving
-    * a combination of univ, empty, constants, and elements.
-    *
-    * In the future, we could:
-    * - Consider unions and intersections, e.g. `e ∩ ... ~ univ` is trivially false
     */
-  private def checkAndSimplify(l: List[Equation]): List[Equation] = l match {
-    case Nil => Nil
-    case Equation(t1, t2, loc) :: es => (t1, t2) match {
-      // Trivial equations: skip them.
-      case (Term.Univ, Term.Univ) => checkAndSimplify(es)
-      case (Term.Empty, Term.Empty) => checkAndSimplify(es)
-      case (Term.Cst(c1), Term.Cst(c2)) if c1 == c2 => checkAndSimplify(es)
-      case (Term.Var(x1), Term.Var(x2)) if x1 == x2 => checkAndSimplify(es)
-      case (Term.ElemSet(s1), Term.ElemSet(s2)) if s1 == s2 => checkAndSimplify(es)
-
-      // Unsolvable (conflicted) equations: raise an exception.
-      // Note: A constraint with two different variables is of course solvable!
-      case (Term.Univ, Term.Empty) => throw ConflictException(t1, t2, loc)
-      case (Term.Univ, Term.ElemSet(_)) => throw ConflictException(t1, t2, loc)
-      case (Term.Univ, Term.Cst(_)) => throw ConflictException(t1, t2, loc)
-      case (Term.Univ, inter: Term.Inter) if inter.trivialNonUniv => throw ConflictException(t1, t2, loc)
-      case (Term.Empty, Term.Univ) => throw ConflictException(t1, t2, loc)
-      case (Term.Empty, Term.ElemSet(_)) => throw ConflictException(t1, t2, loc)
-      case (Term.Empty, Term.Cst(_)) => throw ConflictException(t1, t2, loc)
-      case (Term.Empty, union: Term.Union) if union.trivialNonEmpty => throw ConflictException(t1, t2, loc)
-      case (Term.ElemSet(_), Term.Univ) => throw ConflictException(t1, t2, loc)
-      case (Term.ElemSet(_), Term.Empty) => throw ConflictException(t1, t2, loc)
-      case (Term.ElemSet(i1), Term.ElemSet(i2)) if i1 != i2 => throw ConflictException(t1, t2, loc)
-      case (Term.ElemSet(_), Term.Cst(_)) => throw ConflictException(t1, t2, loc)
-      case (Term.Cst(_), Term.Univ) => throw ConflictException(t1, t2, loc)
-      case (Term.Cst(_), Term.Empty) => throw ConflictException(t1, t2, loc)
-      case (Term.Cst(_), Term.ElemSet(_)) => throw ConflictException(t1, t2, loc)
-      case (Term.Cst(c1), Term.Cst(c2)) if c1 != c2 => throw ConflictException(t1, t2, loc)
-      case (inter: Term.Inter, Term.Univ) if inter.trivialNonUniv => throw ConflictException(t1, t2, loc)
-      case (union: Term.Union, Term.Empty) if union.trivialNonEmpty => throw ConflictException(t1, t2, loc)
-      // TODO can check trivially impossible `element ~ intersection` and `constant ~ intersection`
-
-      // Non-trivial and non-conflicted equation: keep it.
-      case _ => Equation(t1, t2, loc) :: checkAndSimplify(es)
+  private def checkAndSimplify(l: List[Equation]): List[Equation] = {
+    /** Throws exception of [[Rules.triviallyWrong]] if found. */
+    def checkWrong(eq: Equation): Equation = Rules.triviallyWrong(eq) match {
+      case Result.Ok(t) => t
+      case Result.Err(e) => throw e
     }
+
+    l.flatMap(eq => Rules.trivial(eq).map(checkWrong))
   }
 
   /**
@@ -445,94 +535,41 @@ object FastSetUnification {
     * learn that `x -> univ` then we will try to extend s with the new binding which will raise a [[ConflictException]].
     */
   private def propagateConstants(l: List[Equation]): (List[Equation], SetSubstitution) = {
-    var pending = l
-    var subst = SetSubstitution.empty
+    runRule(Rules.constantAssignment, selfFeeding = true)(l).getOrElse((l, SetSubstitution.empty))
+  }
 
-    // We iterate until no changes are detected.
+  private def runRule(rule: Equation => Output, selfFeeding: Boolean)(l: List[Equation]): Output = {
+    var subst = SetSubstitution.empty
+    var todo = l
+    var leftover: List[Equation] = Nil
     var changed = true
+    var overallChanged = false
     while (changed) {
       changed = false
-
-      var unsolved: List[Equation] = Nil
-      // OBS: subst.extended checks for conflicting mappings
-      for (e <- pending) {
-        e match {
-          // Case 1: x ~ univ
-          case Equation(Term.Var(x), Term.Univ, loc) =>
-            subst = subst.extended(x, Term.Univ, loc)
-            changed = true
-
-          // Case 2: x ~ empty
-          case Equation(Term.Var(x), Term.Empty, loc) =>
-            subst = subst.extended(x, Term.Empty, loc)
-            changed = true
-
-          // Case 3: x ~ c
-          case Equation(Term.Var(x), c@Term.Cst(_), loc) =>
-            subst = subst.extended(x, c, loc)
-            changed = true
-
-          // Case 3.5: x ~ !c
-          case Equation(Term.Var(x), c@Term.Compl(Term.Cst(_)), loc) =>
-            subst = subst.extended(x, c, loc)
-            changed = true
-
-          // Case 4: x ~ e
-          case Equation(Term.Var(x), e@Term.ElemSet(_), loc) =>
-            subst = subst.extended(x, e, loc)
-            changed = true
-
-          // Case 4.5: x ~ !e
-          case Equation(Term.Var(x), e@Term.Compl(Term.ElemSet(_)), loc) =>
-            subst = subst.extended(x, e, loc)
-            changed = true
-
-          // Case 5: x ∩ y ∩ !z ∩ ... ∩ rest ~ univ
-          case Equation(Term.Inter(None, posCsts, posVars, negElem, negCsts, negVars, rest), Term.Univ, loc) if
-            posCsts.isEmpty && negElem.isEmpty && negCsts.isEmpty =>
-          {
-            for (Term.Var(x) <- posVars) {
-              subst = subst.extended(x, Term.Univ, loc)
+      while (todo != Nil) todo match {
+        case eq0 :: tail =>
+          val eq = subst.apply(eq0)
+          todo = tail
+          rule(eq) match {
+            case Some((eqs, s)) =>
               changed = true
-            }
-            for (Term.Var(x) <- negVars) {
-              subst = subst.extended(x, Term.Empty, loc)
-              changed = true
-            }
-            if (rest.nonEmpty) {
-              unsolved = rest.map(Equation.mk(_, Term.Univ, loc)) ++ unsolved
-              changed = true
-            }
+              overallChanged = true
+              if (selfFeeding) todo = eqs ++ todo
+              else leftover = eqs ++ leftover
+              subst = s @@ subst
+            case None =>
+              leftover = eq :: leftover
           }
-
-          // Case 6: x ∪ y ∪ !z ∪ ... ∪ rest ~ empty
-          case Equation(Term.Union(posElem, posCsts, posVars, negElem, negCsts, negVars, rest), Term.Empty, loc) if
-            posElem.isEmpty && posCsts.isEmpty && negElem.isEmpty && negCsts.isEmpty =>
-          {
-            for (Term.Var(x) <- posVars) {
-              subst = subst.extended(x, Term.Empty, loc)
-              changed = true
-            }
-            for (Term.Var(x) <- negVars) {
-              subst = subst.extended(x, Term.Univ, loc)
-              changed = true
-            }
-            if (rest.nonEmpty) {
-              unsolved = rest.map(Equation.mk(_, Term.Empty, loc)) ++ unsolved
-              changed = true
-            }
-          }
-
-          case _ =>
-            unsolved = e :: unsolved
-        }
+        case Nil => ()
       }
-      // INVARIANT: We apply the current substitution to all unsolved equations.
-      pending = subst(unsolved)
+      todo = leftover.reverse
+      leftover = Nil
     }
-
-    // Reverse the unsolved equations to ensure they are returned in the original order.
-    (pending.reverse, subst)
+    if (overallChanged) {
+      Some(todo.map(subst.apply), subst)
+    } else {
+      None
+    }
   }
 
   /**
@@ -926,7 +963,8 @@ object FastSetUnification {
     * No concrete set is ever equivalent to universe.
     */
   sealed trait SetEval {
-    import SetEval.{Set, Compl}
+
+    import SetEval.{Compl, Set}
 
     /**
       * Returns `true` if this set is universe.
@@ -1058,6 +1096,7 @@ object FastSetUnification {
         if (s eq s0) t else Term.mkElemSet(s)
       }
     }
+
     // `setX` assigns elements/constants/variables to univ or empty, where
     // elements/constants/variables not in the map are just themselves.
     def visit(t: Term, setElems: SortedMap[Int, Term], setCsts: SortedMap[Int, Term], setVars: SortedMap[Int, Term]): Term = t match {
@@ -1301,6 +1340,8 @@ object FastSetUnification {
 
     /**
       * Returns all variables that occur in `this` term.
+      *
+      * Note: use [[freeVarsContains]] or [[noFreeVars]] when possible.
       */
     final def freeVars: SortedSet[Int] = this match {
       case Term.Univ => SortedSet.empty
@@ -1345,6 +1386,22 @@ object FastSetUnification {
         SortedSet.empty[Int] ++ posCsts.map(_.c) ++ posVars.map(_.x) ++ negCsts.map(_.c) ++ negVars.map(_.x) ++ rest.flatMap(_.freeUnknowns)
       case Term.Union(_, posCsts, posVars, _, negCsts, negVars, rest) =>
         SortedSet.empty[Int] ++ posCsts.map(_.c) ++ posVars.map(_.x) ++ negCsts.map(_.c) ++ negVars.map(_.x) ++ rest.flatMap(_.freeUnknowns)
+    }
+
+    /**
+      * Returns true if there is no variables in this term.
+      */
+    final def noFreeVars: Boolean = this match {
+      case Term.Univ => true
+      case Term.Empty => true
+      case Term.Cst(_) => true
+      case Term.Var(_) => false
+      case Term.ElemSet(_) => true
+      case Term.Compl(t) => t.noFreeVars
+      case Term.Inter(_, _, posVars, _, _, negVars, rest) =>
+        posVars.isEmpty && negVars.isEmpty && rest.forall(_.noFreeVars)
+      case Term.Union(_, _, posVars, _, _, negVars, rest) =>
+        posVars.isEmpty && negVars.isEmpty && rest.forall(_.noFreeVars)
     }
 
     /**
@@ -1449,7 +1506,14 @@ object FastSetUnification {
       * `None, Set(c1), Set(x4, x7), Set(), Set(), Set(x2), List(e1 ∪ x9)`.
       */
     case class Inter(posElem: Option[Term.ElemSet], posCsts: Set[Term.Cst], posVars: Set[Term.Var], negElem: Option[Term.ElemSet], negCsts: Set[Term.Cst], negVars: Set[Term.Var], rest: List[Term]) extends Term {
-      def trivialNonUniv: Boolean = posElem.isDefined || posCsts.nonEmpty || negElem.isDefined || negCsts.nonEmpty
+      assert(posVars.intersect(negVars).isEmpty, this.toString)
+      assert(posCsts.intersect(negCsts).isEmpty, this.toString)
+
+      /** Returns true if any elements or constants exist in the outer intersection */
+      def triviallyNonUniv: Boolean = posElem.isDefined || posCsts.nonEmpty || negElem.isDefined || negCsts.nonEmpty
+
+      /** Returns false if any elements or constants exist in the outer intersection */
+      def mightBeUniv: Boolean = !triviallyNonUniv
     }
 
     /**
@@ -1460,7 +1524,14 @@ object FastSetUnification {
       * Represented similarly to [[Inter]].
       */
     case class Union(posElem: Option[Term.ElemSet], posCsts: Set[Term.Cst], posVars: Set[Term.Var], negElem: Option[Term.ElemSet], negCsts: Set[Term.Cst], negVars: Set[Term.Var], rest: List[Term]) extends Term {
-      def trivialNonEmpty: Boolean = posElem.isDefined || posCsts.nonEmpty || negElem.isDefined || negCsts.nonEmpty
+      assert(posVars.intersect(negVars).isEmpty, this.toString)
+      assert(posCsts.intersect(negCsts).isEmpty, this.toString)
+
+      /** Returns true if any elements or constants exist in the outer union */
+      def triviallyNonEmpty: Boolean = posElem.isDefined || posCsts.nonEmpty || negElem.isDefined || negCsts.nonEmpty
+
+      /** Returns false if any elements or constants exist in the outer union */
+      def mightBeEmpty: Boolean = !triviallyNonEmpty
     }
 
     final def mkElemSet(i: Int): ElemSet = {
@@ -1927,7 +1998,7 @@ object FastSetUnification {
       *
       * The returned substitution has all bindings from `this` and `that` substitution.
       *
-      * The domains of the two substitutions must not overlap.
+      * The variables in the two substitutions must not overlap.
       */
     def ++(that: SetSubstitution): SetSubstitution = {
       val intersection = this.m.keySet.intersect(that.m.keySet)

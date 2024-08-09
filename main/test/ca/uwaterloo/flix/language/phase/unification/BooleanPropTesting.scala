@@ -89,7 +89,7 @@ object BooleanPropTesting {
   }
 
   def main(args: Array[String]): Unit = {
-    testSolvableConstraints(new Random(), explodedRandomXor, 10_000, 1, -1)
+    testSolvableConstraints(new Random(), explodedRandomXor, 1_000_000, 1, -1)
   }
 
   // TODO add testing of t ~ propagation(t)
@@ -159,7 +159,7 @@ object BooleanPropTesting {
   def explodedRandomXor(random: Random): List[Equation] = {
     val former = termFormer()
     val t = randomTerm(former, random, 4, 3, 3, 3)
-    groupAssignments(explodeKnownEquation(random, eqPropagatedSelf(t)), 1)
+    groupAssignments(explodeKnownEquation(random, eqPropagatedSelf(t)), 0)
   }
 
   private sealed trait Res
