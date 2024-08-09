@@ -1,4 +1,4 @@
-// JOE TODO one day: pub/private for fields, mut/const
+// JOE TODO one day: pub/private for fields, mut/const, error checking for the rhs of struct.undefinedfield = rhs
 /*
  * Copyright 2023 Magnus Madsen
  *

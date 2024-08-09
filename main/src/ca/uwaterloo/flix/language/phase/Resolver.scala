@@ -1354,15 +1354,23 @@ object Resolver {
         case NamedAst.Expr.StructNew(name, fields, region, loc) =>
           lookupStruct(name, env0, ns0, root) match {
 
+            // JOE TODO: Test for duplicate field names
+            // JOE TODO: Test for errors w/ out of order
             case Result.Ok(st0) =>
               flatMapN(getStructIfAccessible(st0, ns0, loc)) {
                 case st =>
-                  val providedFieldNames = fields.map {case (k, _) => k}.toSet
-                  val expectedFieldNames = st.fields.map(_.name).toSet
+                  val providedFieldNames = fields.map {case (k, _) => k}
+                  val expectedFieldNames = st.fields.map(_.name)
                   val extraFields = providedFieldNames.diff(expectedFieldNames)
                   val missingFields = expectedFieldNames.diff(providedFieldNames)
+                  val errors = if (!extraFields.isEmpty || !missingFields.isEmpty) {
+                    extraFields.map(ResolutionError.ExtraStructField(st0.sym, _, loc)) ++ missingFields.map(ResolutionError.MissingStructField(st0.sym, _, loc))
+                  } else if (providedFieldNames != expectedFieldNames) {
+                    List(ResolutionError.WrongStructFieldOrdering(st.sym, providedFieldNames, expectedFieldNames, loc))
+                  } else {
+                    Nil
+                  }
 
-                  val errors = extraFields.map(ResolutionError.ExtraStructField(st0.sym, _, loc)) ++ missingFields.map(ResolutionError.MissingStructField(st0.sym, _, loc))
                   val fieldsVal = traverse(fields) {
                     case (f, e) =>
                       val eVal = visitExp(e, env0)
@@ -1381,7 +1389,6 @@ object Resolver {
               Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
           }
 
-          // JOE TODO: Make sure that availableFields maps _.name and also it's !availableFields.contains(field) in master
         case NamedAst.Expr.StructGet(name, e, field, loc) =>
           lookupStruct(name, env0, ns0, root) match {
             case Result.Ok(st) =>

@@ -228,8 +228,7 @@ object Lowering {
         case TypedAst.StructField(name, tpe, loc) =>
           LoweredAst.StructField(name, visitType(tpe), loc)
       }
-      val sortedFields = fields.sortBy(_.name.name)
-      LoweredAst.Struct(doc, ann, mod, sym, tparams, sortedFields, loc)
+      LoweredAst.Struct(doc, ann, mod, sym, tparams, fields, loc)
   }
 
   /**
@@ -526,7 +525,7 @@ object Lowering {
       LoweredAst.Expr.ApplyAtomic(AtomicOp.ArrayStore, List(e1, e2, e3), Type.Unit, eff, loc)
 
     case TypedAst.Expr.StructNew(sym, fields0, region0, tpe, eff, loc) =>
-      val fields = fields0.map{case (k, v) => (k, visitExp(v))}.sortBy{case (k, _) => k.name}
+      val fields = fields0.map{case (k, v) => (k, visitExp(v))}
       val region = visitExp(region0)
       val (names, es) = fields.unzip
       LoweredAst.Expr.ApplyAtomic(AtomicOp.StructNew(sym, names), region :: es, tpe, eff, loc)
