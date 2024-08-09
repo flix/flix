@@ -219,8 +219,26 @@ object TypeReduction {
    * Returns a JavaMethodResolutionResult either containing the Java method or a MethodNotFound object.
    */
   private def retrieveMethod(clazz: Class[_], methodName: String, ts: List[Type], isStatic: Boolean = false, loc: SourceLocation)(implicit flix: Flix): JavaMethodResolutionResult = {
-    val objectMethods = if (clazz.isInterface && clazz.getInterfaces.isEmpty) classOf[java.lang.Object].getMethods.toList else Nil
-    val candidateMethods = (clazz.getMethods.toList ++ objectMethods).filter(m => isCandidateMethod(m, methodName, isStatic, ts))
+    def hasSimilarSignature(m1: Method, m2: Method): Boolean =
+      m1.getName.equals(m2.getName) && (m1.getParameterTypes zip m2.getParameterTypes).forall{ case (c1, c2) => c1 == c2 }
+
+    val candidateMethods =
+      if (clazz.isInterface && clazz.getInterfaces.isEmpty) {
+        // We consider Object's methods in addition to clazz's methods
+        val objectMethods = classOf[java.lang.Object].getMethods.toList
+
+        // Build candidate methods list and remove duplicates from object
+        (clazz.getMethods.toList ++ objectMethods).filter(m => isCandidateMethod(m, methodName, isStatic, ts))
+          .foldLeft(List[Method]()) { (acc, method) =>
+            if (!acc.exists(existingMethod => hasSimilarSignature(method, existingMethod))) {
+              acc :+ method
+            } else {
+              acc
+            }
+          }
+      } else {
+        clazz.getMethods.toList.filter(m => isCandidateMethod(m, methodName, isStatic, ts))
+      }
 
     candidateMethods.length match {
       case 0 => JavaMethodResolutionResult.MethodNotFound
