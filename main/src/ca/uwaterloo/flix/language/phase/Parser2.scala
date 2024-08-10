@@ -596,7 +596,7 @@ object Parser2 {
     *
     * @return An optional parse error. If one or more item is found, None is returned.
     */
-  def oneOrMore(
+  private def oneOrMore(
                  namedTokenSet: NamedTokenSet,
                  getItem: () => Mark.Closed,
                  checkForItem: TokenKind => Boolean,
