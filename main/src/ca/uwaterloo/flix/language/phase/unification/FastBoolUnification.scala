@@ -885,7 +885,7 @@ object FastBoolUnification {
         val vars = termVars -- trueVars
 
         // Recompose the conjunction. We use the smart constructor because some sets may have become empty.
-        Term.mkAnd(csts.toList.map(Term.Cst) ++ vars.toList.map(Term.Var) ++ rest)
+        Term.mkAnd(csts.toList.map(Term.Cst.apply) ++ vars.toList.map(Term.Var.apply) ++ rest)
 
       case Term.Or(ts) => Term.mkOr(ts.map(visit(_, trueCsts, trueVars)))
     }
