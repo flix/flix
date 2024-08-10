@@ -63,9 +63,8 @@ object OccurrenceAnalyzer {
 
     val defs = visitDefs(root.defs)
     val effects = root.effects.map { case (k, v) => k -> visitEffect(v) }
-    val structs = root.structs.map {case (k, v) => k -> visitStruct(v)}
 
-    val result = OccurrenceAst.Root(defs, structs, effects, root.entryPoint, root.reachable, root.sources)
+    val result = OccurrenceAst.Root(defs, effects, root.entryPoint, root.reachable, root.sources)
 
     Validation.success(result)
   }
@@ -128,18 +127,6 @@ object OccurrenceAnalyzer {
     }
     val defContext = DefContext(isDirectCall, oi.defs.getOrElse(defn.sym, Dead), oi.size, isSelfRecursive)
     (OccurrenceAst.Def(defn.ann, defn.mod, defn.sym, cparams, fparams, e, defContext, defn.tpe, defn.purity, defn.loc), oi)
-  }
-
-  private def visitStruct(s: LiftedAst.Struct): OccurrenceAst.Struct = s match {
-    case LiftedAst.Struct(doc, ann, mod, sym, fields0, loc) =>
-      val fields = fields0.map(visitStructField)
-      OccurrenceAst.Struct(doc, ann, mod, sym, fields, loc)
-  }
-
-  private def visitStructField(field: LiftedAst.StructField) = field match {
-    case LiftedAst.StructField(name, idx, tpe, loc) => {
-      OccurrenceAst.StructField(name, idx, tpe, loc)
-    }
   }
 
   /**
@@ -267,6 +254,7 @@ object OccurrenceAnalyzer {
       }.unzip
       val o2 = o1.foldLeft(OccurInfo.Empty)((acc, o3) => combineAllSeq(acc, o3))
       (OccurrenceAst.Expr.NewObject(name, clazz, tpe, purity, ms, loc), o2.increaseSizeByOne())
+
   }
 
   /**

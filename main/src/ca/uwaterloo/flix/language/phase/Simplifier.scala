@@ -36,9 +36,8 @@ object Simplifier {
     implicit val r = root
     val defs = ParOps.parMapValues(root.defs)(visitDef)
     val effects = ParOps.parMapValues(root.effects)(visitEffect)
-    val structs = ParOps.parMapValues(root.structs)(visitStruct)
 
-    SimplifiedAst.Root(defs, structs, effects, root.entryPoint, root.reachable, root.sources)
+    SimplifiedAst.Root(defs, effects, root.entryPoint, root.reachable, root.sources)
   }
 
   private def visitDef(decl: MonoAst.Def)(implicit flix: Flix, universe: Set[Symbol.EffectSym], root: MonoAst.Root): SimplifiedAst.Def = decl match {
@@ -55,18 +54,6 @@ object Simplifier {
     case MonoAst.Effect(_, ann, mod, sym, ops0, loc) =>
       val ops = ops0.map(visitEffOp)
       SimplifiedAst.Effect(ann, mod, sym, ops, loc)
-  }
-
-  private def visitStruct(s: MonoAst.Struct): SimplifiedAst.Struct = s match {
-    case MonoAst.Struct(doc, ann, mod, sym, _, fields0, loc) =>
-      val fieldIndices = fields0.map(_.name).zipWithIndex.toMap
-      val fields = fields0.map(visitStructField(fieldIndices))
-      SimplifiedAst.Struct(doc, ann, mod, sym, fields, loc)
-  }
-
-  private def visitStructField(fieldIndices: Map[Name.Label, Int])(field: MonoAst.StructField): SimplifiedAst.StructField = field match {
-    case MonoAst.StructField(name, tpe, loc) =>
-      SimplifiedAst.StructField(name, fieldIndices(name), tpe, loc)
   }
 
   private def visitExp(exp0: MonoAst.Expr)(implicit flix: Flix, universe: Set[Symbol.EffectSym], root: MonoAst.Root): SimplifiedAst.Expr = exp0 match {

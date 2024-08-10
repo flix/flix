@@ -233,10 +233,6 @@ object Verifier {
           }
 
         case AtomicOp.StructNew(sym0, names) =>
-          val expectedFields = root.structs(sym0).fields.map(_._1)
-          if(names != expectedFields) {
-            throw InternalCompilerException(s"struct $sym0 expected fields declared in order $expectedFields but got $names", loc)
-          }
           ts match {
             case region :: _ =>
               checkStructType(tpe, sym0, loc)
@@ -245,7 +241,7 @@ object Verifier {
             case _ => throw InternalCompilerException(s"Struct $sym0 missing region tparam", loc)
           }
 
-        case AtomicOp.StructGet(sym0, _) =>
+        case AtomicOp.StructGet(sym0, _, _) =>
           ts match {
             case tpe1 :: Nil =>
               checkStructType(tpe1, sym0, loc)
@@ -253,7 +249,7 @@ object Verifier {
             case _ => failMismatchedShape(tpe, "Struct", loc)
           }
 
-        case AtomicOp.StructPut(sym0, _) =>
+        case AtomicOp.StructPut(sym0, _, _) =>
           ts match {
             case tpe1 :: _ :: Nil =>
               checkStructType(tpe1, sym0, loc)

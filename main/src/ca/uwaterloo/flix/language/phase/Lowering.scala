@@ -222,13 +222,14 @@ object Lowering {
    * Lowers the given struct `struct0`.
    */
   private def visitStruct(struct0: TypedAst.Struct)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Struct = struct0 match {
-    case TypedAst.Struct(doc, ann, mod, sym, tparams0, _, fields0, loc) =>
+    case TypedAst.Struct(doc, ann, mod, sym, tparams0, _, fieldsMap, loc) =>
       val tparams = tparams0.map(visitTypeParam)
+      val fields0 = fieldsMap.map(_._2)
       val fields = fields0.map {
-        case TypedAst.StructField(name, tpe, loc) =>
+        case TypedAst.StructField(name, tpe, _, loc) =>
           LoweredAst.StructField(name, visitType(tpe), loc)
       }
-      LoweredAst.Struct(doc, ann, mod, sym, tparams, fields, loc)
+      LoweredAst.Struct(doc, ann, mod, sym, tparams, fields.toList, loc)
   }
 
   /**
@@ -526,12 +527,14 @@ object Lowering {
 
     case TypedAst.Expr.StructGet(sym, exp0, field, tpe, eff, loc) =>
       val exp = visitExp(exp0)
-      LoweredAst.Expr.ApplyAtomic(AtomicOp.StructGet(sym, field), List(exp), tpe, eff, loc)
+      val idx = root.structs(sym).fields(field).idx
+      LoweredAst.Expr.ApplyAtomic(AtomicOp.StructGet(sym, idx, field), List(exp), tpe, eff, loc)
 
     case TypedAst.Expr.StructPut(sym, exp0, field, exp1, tpe, eff, loc) =>
       val struct = visitExp(exp0)
       val rhs = visitExp(exp1)
-      LoweredAst.Expr.ApplyAtomic(AtomicOp.StructPut(sym, field), List(struct, rhs), tpe, eff, loc)
+      val idx = root.structs(sym).fields(field).idx
+      LoweredAst.Expr.ApplyAtomic(AtomicOp.StructPut(sym, idx, field), List(struct, rhs), tpe, eff, loc)
 
     case TypedAst.Expr.ArrayStore(exp1, exp2, exp3, eff, loc) =>
       val e1 = visitExp(exp1)

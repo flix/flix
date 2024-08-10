@@ -327,12 +327,12 @@ object Typer {
   private def visitStruct(struct0: KindedAst.Struct, root: KindedAst.Root)(implicit flix: Flix): (Symbol.StructSym, TypedAst.Struct) = struct0 match {
     case KindedAst.Struct(doc, ann, mod, sym, tparams0, sc, fields0, loc) =>
       val tparams = tparams0.map(visitTypeParam(_, root))
-      val fields = fields0.map {
-        case KindedAst.StructField(name, tpe, loc) =>
-          TypedAst.StructField(name, tpe, loc)
+      val fields = fields0.zipWithIndex.map {
+        case (field, idx) =>
+          field.name -> TypedAst.StructField(field.name, field.tpe, idx, loc)
       }
 
-      sym -> TypedAst.Struct(doc, ann, mod, sym, tparams, sc, fields, loc)
+      sym -> TypedAst.Struct(doc, ann, mod, sym, tparams, sc, fields.toMap, loc)
   }
 
   /**

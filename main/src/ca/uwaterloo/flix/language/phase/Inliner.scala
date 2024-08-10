@@ -63,9 +63,8 @@ object Inliner {
   def run(root: OccurrenceAst.Root)(implicit flix: Flix): Validation[LiftedAst.Root, CompilationMessage] = {
     val defs = ParOps.parMapValues(root.defs)(d => visitDef(d)(flix, root))
     val effects = ParOps.parMapValues(root.effects)(visitEffect)
-    val structs = ParOps.parMapValues(root.structs)(visitStruct)
 
-    Validation.success(LiftedAst.Root(defs, structs, effects, root.entryPoint, root.reachable, root.sources))
+    Validation.success(LiftedAst.Root(defs, effects, root.entryPoint, root.reachable, root.sources))
   }
 
   /**
@@ -93,17 +92,6 @@ object Inliner {
     case OccurrenceAst.Op(sym, ann, mod, fparams0, tpe, purity, loc) =>
       val fparams = fparams0.map(visitFormalParam)
       LiftedAst.Op(sym, ann, mod, fparams, tpe, purity, loc)
-  }
-
-  private def visitStruct(s: OccurrenceAst.Struct): LiftedAst.Struct = s match {
-    case OccurrenceAst.Struct(doc, ann, mod, sym, fields0, loc) =>
-      val fields = fields0.map(visitStructField)
-      LiftedAst.Struct(doc, ann, mod, sym, fields, loc)
-  }
-
-  private def visitStructField(field: OccurrenceAst.StructField) = field match {
-    case OccurrenceAst.StructField(name, idx, tpe, loc) =>
-      LiftedAst.StructField(name, idx, tpe, loc)
   }
 
   /**
@@ -283,6 +271,7 @@ object Inliner {
           LiftedAst.JvmMethod(ident, f, c, retTpe, purity, loc)
       }
       LiftedAst.Expr.NewObject(name, clazz, tpe, purity, methods, loc)
+
   }
 
   /**

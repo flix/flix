@@ -804,17 +804,16 @@ object GenExpression {
         // Invoking the constructor
         mv.visitMethodInsn(INVOKESPECIAL, internalClassName, "<init>", constructorDescriptor.toDescriptor, false)
 
-      case AtomicOp.StructGet(sym, field) =>
+      case AtomicOp.StructGet(sym, idx, _) =>
         val List(exp) = exps
         val MonoType.Struct(_, elmTypes, targs) = exp.tpe
         val structType = BackendObjType.Struct(elmTypes.map(BackendType.toErasedBackendType), targs.map(BackendType.toErasedBackendType))
         // evaluating the `base`
         compileExpr(exp)
-        val idx = root.structs(sym).fields(Name.Label(field.name, field.loc)).idx
         // Retrieving the field `field${offset}`
         mv.visitFieldInsn(GETFIELD, structType.jvmName.toInternalName, s"field$idx", JvmOps.getErasedJvmType(tpe).toDescriptor)
 
-      case AtomicOp.StructPut(sym, field) =>
+      case AtomicOp.StructPut(sym, idx, _) =>
         val List(exp1, exp2) = exps
         val MonoType.Struct(_, elmTypes, targs) = exp1.tpe
         val structType = BackendObjType.Struct(elmTypes.map(BackendType.toErasedBackendType), targs.map(BackendType.toErasedBackendType))
@@ -822,7 +821,6 @@ object GenExpression {
         compileExpr(exp1)
         // evaluating the `rhs`
         compileExpr(exp2)
-        val idx = root.structs(sym).fields(Name.Label(field.name, field.loc)).idx
         // set the field `field${offset}`
         mv.visitFieldInsn(PUTFIELD, structType.jvmName.toInternalName, s"field$idx", JvmOps.getErasedJvmType(exp2.tpe).toDescriptor)
         // Since the return type is unit, we put an instance of unit on top of the stack
