@@ -651,7 +651,7 @@ object Redundancy {
           val usedBody = visitExp(body, env0, rc)
           val syms = fparams.map(_.sym)
           val dead = syms.filter(deadVarSym(_, usedBody))
-          acc ++ usedBody ++ dead.map(UnusedVarSym)
+          acc ++ usedBody ++ dead.map(UnusedVarSym.apply)
       }
       usedExp ++ usedRules
 
@@ -828,7 +828,7 @@ object Redundancy {
     * it is a member of the returned set.
     */
   private def findUnusedVarSyms(freeVars: Set[Symbol.VarSym], usedSyms: Used): Set[UnusedVarSym] = {
-    freeVars.filter(sym => deadVarSym(sym, usedSyms)).map(UnusedVarSym)
+    freeVars.filter(sym => deadVarSym(sym, usedSyms)).map(UnusedVarSym.apply)
   }
 
   /**
