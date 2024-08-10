@@ -287,7 +287,7 @@ object Typer {
   private def visitEnums(root: KindedAst.Root)(implicit flix: Flix): Map[Symbol.EnumSym, TypedAst.Enum] = {
       // Visit every enum in the ast.
       val result = root.enums.toList.map {
-        case (_, enum) => visitEnum(enum, root)
+        case (_, enum0) => visitEnum(enum0, root)
       }
 
       // Sequence the results and convert them back to a map.
