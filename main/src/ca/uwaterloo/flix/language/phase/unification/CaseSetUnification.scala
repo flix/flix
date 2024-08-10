@@ -235,7 +235,7 @@ object CaseSetUnification {
   private def nnf(t: SetFormula)(implicit univ: Set[Int]): Nnf = t match {
     case Cst(syms) =>
       val lits: Set[Nnf] = syms.map(sym => Nnf.Singleton(Literal.Positive(Atom.Case(sym))))
-      lits.reduceLeftOption(Nnf.Union).getOrElse(Nnf.Empty)
+      lits.reduceLeftOption(Nnf.Union.apply).getOrElse(Nnf.Empty)
     case Var(sym) => Nnf.Singleton(Literal.Positive(Atom.Var(sym)))
     case Not(tpe) => nnfNot(tpe)
     case Or(tpe1, tpe2) => Nnf.Union(nnf(tpe1), nnf(tpe2))
@@ -249,7 +249,7 @@ object CaseSetUnification {
   private def nnfNot(t: SetFormula)(implicit univ: Set[Int]): Nnf = t match {
     case Cst(syms) =>
       val lits: Set[Nnf] = syms.map(sym => Nnf.Singleton(Literal.Negative(Atom.Case(sym))))
-      lits.reduceLeftOption(Nnf.Intersection).getOrElse(Nnf.All)
+      lits.reduceLeftOption(Nnf.Intersection.apply).getOrElse(Nnf.All)
     case Var(sym) => Nnf.Singleton(Literal.Negative(Atom.Var(sym)))
     case Not(tpe) => nnf(tpe)
     case Or(tpe1, tpe2) => Nnf.Intersection(
