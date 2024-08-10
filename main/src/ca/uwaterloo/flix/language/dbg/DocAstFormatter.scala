@@ -324,9 +324,9 @@ object DocAstFormatter {
       case arrow@Type.Arrow(_, _) =>
         val (curriedArgs, res) = collectArrowTypes(arrow)
         val formattedArgs = curriedArgs.map {
-          case ts@(Type.Tuple(_) :: Nil) =>
+          case ts@Type.Tuple(_) :: Nil =>
             tuple(ts.map(formatType(_, paren = false)))
-          case ts@(_ :: Nil) =>
+          case ts@_ :: Nil =>
             tuplish(ts.map(formatType(_, paren = true)))
           case ts =>
             tuplish(ts.map(formatType(_, paren = false)))
