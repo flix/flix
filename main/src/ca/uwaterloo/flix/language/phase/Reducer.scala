@@ -200,7 +200,7 @@ object Reducer {
     * Returns all types contained in the given `Effect`.
     */
   private def typesOfEffect(e: Effect): Set[MonoType] = e.ops.toSet.map {
-    op: Op =>
+    (op: Op) =>
       val paramTypes = op.fparams.map(_.tpe)
       val resType = op.tpe
       val continuationType = MonoType.Object
