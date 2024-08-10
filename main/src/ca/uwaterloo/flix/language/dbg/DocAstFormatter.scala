@@ -22,6 +22,7 @@ import ca.uwaterloo.flix.language.dbg.DocAst.Expr._
 import ca.uwaterloo.flix.language.dbg.DocAst._
 
 import scala.annotation.tailrec
+import scala.collection.immutable.::
 
 object DocAstFormatter {
 
@@ -46,7 +47,7 @@ object DocAstFormatter {
         ((sym.namespace :+ sym.name: Seq[String], sym.name), d)
     }
     val defs = defs0.map {
-      case Def(_, _, sym, parameters, resType, effect, body) =>
+      case DocAst.Def(_, _, sym, parameters, resType, effect, body) =>
         val name = sym.toString
         val args = parameters.map(aux(_, paren = false))
         val resTypef = formatType(resType, paren = false)
