@@ -343,12 +343,12 @@ object SimpleType {
             case Nil =>
               val lastArrow: SimpleType = PolyArrow(Hole, Hole, Hole)
               // NB: safe to subtract 2 since arity is always at least 2
-              List.fill(arity - 2)(Hole).foldRight(lastArrow)(PureArrow)
+              List.fill(arity - 2)(Hole).foldRight(lastArrow)(PureArrow.apply)
 
             // Case 2: Pure function.
             case eff :: tpes if eff == Pure =>
               // NB: safe to reduce because arity is always at least 2
-              tpes.padTo(arity, Hole).reduceRight(PureArrow)
+              tpes.padTo(arity, Hole).reduceRight(PureArrow.apply)
 
             // Case 3: Impure function.
             case eff :: tpes =>
@@ -356,7 +356,7 @@ object SimpleType {
               val allTpes = tpes.padTo(arity, Hole)
               val List(lastArg, ret) = allTpes.takeRight(2)
               val lastArrow: SimpleType = PolyArrow(lastArg, eff, ret)
-              allTpes.dropRight(2).foldRight(lastArrow)(PureArrow)
+              allTpes.dropRight(2).foldRight(lastArrow)(PureArrow.apply)
           }
 
         case TypeConstructor.RecordRowEmpty => RecordRow(Nil)
