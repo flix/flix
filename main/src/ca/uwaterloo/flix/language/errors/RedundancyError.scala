@@ -417,7 +417,7 @@ object RedundancyError {
   }
 
   /**
-    * An error raised to indicate that the enum with the symbol `sym` is not used.
+    * An error raised to indicate that the struct with the symbol `sym` is not used.
     *
     * @param sym the unused struct symbol.
     */
