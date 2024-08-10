@@ -85,7 +85,7 @@ object Resolver {
     // Skip over anything we can't find
     // in order to support LibMin/LibNix
     val defaultUses: ListMap[String, Resolution] = ListMap(MapOps.mapValues(DefaultCases) {
-      case sym => root.symbols.getOrElse(Name.mkUnlocatedNName(sym.namespace), Map.empty).getOrElse(sym.name, Nil).map(Resolution.Declaration)
+      case sym => root.symbols.getOrElse(Name.mkUnlocatedNName(sym.namespace), Map.empty).getOrElse(sym.name, Nil).map(Resolution.Declaration.apply)
     })
 
     val usesVal = root.uses.map {
@@ -140,9 +140,9 @@ object Resolver {
     case trt: ResolvedAst.Declaration.Trait => SymbolTable.empty.addTrait(trt)
     case inst: ResolvedAst.Declaration.Instance => SymbolTable.empty.addInstance(inst)
     case defn: ResolvedAst.Declaration.Def => SymbolTable.empty.addDef(defn)
-    case enum: ResolvedAst.Declaration.Enum => SymbolTable.empty.addEnum(enum)
+    case enum0: ResolvedAst.Declaration.Enum => SymbolTable.empty.addEnum(enum0)
     case struct: ResolvedAst.Declaration.Struct => SymbolTable.empty.addStruct(struct)
-    case enum: ResolvedAst.Declaration.RestrictableEnum => SymbolTable.empty.addRestrictableEnum(enum)
+    case enum0: ResolvedAst.Declaration.RestrictableEnum => SymbolTable.empty.addRestrictableEnum(enum0)
     case alias: ResolvedAst.Declaration.TypeAlias => SymbolTable.empty.addTypeAlias(alias)
     case effect: ResolvedAst.Declaration.Effect => SymbolTable.empty.addEffect(effect)
     case ResolvedAst.Declaration.Case(sym, _, _) => throw InternalCompilerException(s"Unexpected declaration: $sym", sym.loc)
@@ -218,7 +218,7 @@ object Resolver {
     *
     * Type aliases within the type are given temporary placeholders.
     */
-  def semiResolveTypeAlias(alias: NamedAst.Declaration.TypeAlias, env0: ListMap[String, Resolution], ns: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration.TypeAlias, ResolutionError] = alias match {
+  private def semiResolveTypeAlias(alias: NamedAst.Declaration.TypeAlias, env0: ListMap[String, Resolution], ns: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration.TypeAlias, ResolutionError] = alias match {
     case NamedAst.Declaration.TypeAlias(doc, ann, mod, sym, tparams0, tpe0, loc) =>
       val tparamsVal = resolveTypeParams(tparams0, env0, ns, root)
       flatMapN(tparamsVal) {
@@ -238,7 +238,7 @@ object Resolver {
     *   - a list of the aliases in a processing order,
     *     such that any alias only depends on those earlier in the list
     */
-  def resolveTypeAliases(defaultUses: ListMap[String, Resolution], root: NamedAst.Root)(implicit flix: Flix): Validation[(Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], List[Symbol.TypeAliasSym]), ResolutionError] = {
+  private def resolveTypeAliases(defaultUses: ListMap[String, Resolution], root: NamedAst.Root)(implicit flix: Flix): Validation[(Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], List[Symbol.TypeAliasSym]), ResolutionError] = {
     flatMapN(semiResolveTypeAliases(defaultUses, root)) {
       case semiResolved =>
         flatMapN(findResolutionOrder(semiResolved.values)) {
@@ -358,12 +358,12 @@ object Resolver {
       resolveInstance(inst, env0, taenv, ns0, root)
     case defn@NamedAst.Declaration.Def(sym, spec, exp) =>
       resolveDef(defn, None, env0, taenv, ns0, root)
-    case enum@NamedAst.Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc) =>
-      resolveEnum(enum, env0, taenv, ns0, root)
+    case enum0@NamedAst.Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc) =>
+      resolveEnum(enum0, env0, taenv, ns0, root)
     case struct@NamedAst.Declaration.Struct(_, _, _, _, _, _, _) =>
       resolveStruct(struct, env0, taenv, ns0, root)
-    case enum@NamedAst.Declaration.RestrictableEnum(doc, ann, mod, sym, index, tparams, derives, cases, loc) =>
-      resolveRestrictableEnum(enum, env0, taenv, ns0, root)
+    case enum0@NamedAst.Declaration.RestrictableEnum(doc, ann, mod, sym, index, tparams, derives, cases, loc) =>
+      resolveRestrictableEnum(enum0, env0, taenv, ns0, root)
     case NamedAst.Declaration.TypeAlias(doc, ann, mod, sym, tparams, tpe, loc) =>
       Validation.success(taenv(sym))
     case eff@NamedAst.Declaration.Effect(doc, ann, mod, sym, ops, loc) =>
@@ -408,7 +408,7 @@ object Resolver {
     }
   }
 
-  object Constraints {
+  private object Constraints {
 
     /**
       * Performs name resolution on the given `constraints` in the given namespace `ns0`.
@@ -565,8 +565,8 @@ object Resolver {
   }
 
   /**
-   * Performs name resolution on the given struct `s0` in the given namespace `ns0`.
-   */
+    * Performs name resolution on the given struct `s0` in the given namespace `ns0`.
+    */
   def resolveStruct(s0: NamedAst.Declaration.Struct, env0: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration.Struct, ResolutionError] = s0 match {
     case NamedAst.Declaration.Struct(doc, ann, mod, sym, tparams0, fields0, loc) =>
       val tparamsVal = resolveTypeParams(tparams0, env0, ns0, root)
@@ -767,8 +767,8 @@ object Resolver {
         Kinds.get(name) match {
           case None =>
             lookupRestrictableEnum(qname, env, ns0, root).toHardResult match {
-              case Result.Ok(enum) =>
-                Validation.success(Kind.CaseSet(enum.sym))
+              case Result.Ok(enum0) =>
+                Validation.success(Kind.CaseSet(enum0.sym))
               case Result.Err(_) =>
                 // We don't know the kind, but we can find the best match.
                 val closestMatch = Similarity.closestMatch(name, Kinds)
@@ -778,7 +778,7 @@ object Resolver {
         }
       } else {
         lookupRestrictableEnum(qname, env, ns0, root).toHardResult match {
-          case Result.Ok(enum) => Validation.success(Kind.CaseSet(enum.sym))
+          case Result.Ok(enum0) => Validation.success(Kind.CaseSet(enum0.sym))
           case Result.Err(_) =>
             // We don't know the kind, so default to Star.
             Validation.toSoftFailure(Kind.Star, ResolutionError.UndefinedKind(qname, ns0, loc))
@@ -1059,7 +1059,7 @@ object Resolver {
           val enumVal = lookupRestrictableEnum(name, env0, ns0, root)
           val eVal = visitExp(exp, env0)
           mapN(enumVal, eVal) {
-            case (enum, e) => ResolvedAst.Expr.OpenAs(Ast.RestrictableEnumSymUse(enum.sym, name.loc), e, loc)
+            case (enum0, e) => ResolvedAst.Expr.OpenAs(Ast.RestrictableEnumSymUse(enum0.sym, name.loc), e, loc)
           }
 
         case NamedAst.Expr.Hole(nameOpt, loc) =>
@@ -1117,7 +1117,7 @@ object Resolver {
                     return Validation.success(ResolvedAst.Expr.InvokeStaticMethod2(clazz, methodName, es, outerLoc))
                 }
               case _ =>
-                // Fallthrough to below.
+              // Fallthrough to below.
             }
           }
 
@@ -1356,7 +1356,7 @@ object Resolver {
             case Result.Ok(st0) =>
               flatMapN(getStructIfAccessible(st0, ns0, loc)) {
                 case st =>
-                  val providedFieldNames = fields.map {case (k, _) => k}.toSet
+                  val providedFieldNames = fields.map { case (k, _) => k }.toSet
                   val expectedFieldNames = st.fields.map(_.name).toSet
                   val extraFields = providedFieldNames.diff(expectedFieldNames)
                   val missingFields = expectedFieldNames.diff(providedFieldNames)
@@ -1384,7 +1384,7 @@ object Resolver {
           lookupStruct(name, env0, ns0, root) match {
             case Result.Ok(st) =>
               val availableFields = st.fields.map(_.name)
-              if(!availableFields.contains(field)) {
+              if (!availableFields.contains(field)) {
                 val e = ResolutionError.UndefinedStructField(st.sym, field, loc)
                 Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
               } else {
@@ -1401,13 +1401,13 @@ object Resolver {
           lookupStruct(name, env0, ns0, root) match {
             case Result.Ok(st) =>
               val availableFields = st.fields.map(_.name)
-              if(!availableFields.contains(field)) {
+              if (!availableFields.contains(field)) {
                 val e = ResolutionError.UndefinedStructField(st.sym, field, loc)
                 Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
               } else {
                 val e1Val = visitExp(e1, env0)
                 val e2Val = visitExp(e2, env0)
-                mapN (e1Val, e2Val) {
+                mapN(e1Val, e2Val) {
                   case (e1, e2) => ResolvedAst.Expr.StructPut(st.sym, e1, field, e2, loc)
                 }
               }
@@ -1575,13 +1575,14 @@ object Resolver {
         case NamedAst.Expr.InvokeConstructor2(className, exps, loc) =>
           val esVal = traverse(exps)(visitExp(_, env0))
           flatMapN(esVal) {
-            es => env0.get(className.name) match {
-              case Some(List(Resolution.JavaClass(clazz))) =>
-                Validation.success(ResolvedAst.Expr.InvokeConstructor2(clazz, es, loc))
-              case _ =>
-                val m = ResolutionError.UndefinedJvmClass(className.name, "", loc)
-                Validation.toSoftFailure(ResolvedAst.Expr.Error(m), m)
-            }
+            es =>
+              env0.get(className.name) match {
+                case Some(List(Resolution.JavaClass(clazz))) =>
+                  Validation.success(ResolvedAst.Expr.InvokeConstructor2(clazz, es, loc))
+                case _ =>
+                  val m = ResolutionError.UndefinedJvmClass(className.name, "", loc)
+                  Validation.toSoftFailure(ResolvedAst.Expr.Error(m), m)
+              }
           }
 
         case NamedAst.Expr.InvokeMethod2(exp, name, exps, loc) =>
@@ -2354,9 +2355,9 @@ object Resolver {
     // TODO NS-REFACTOR check accessibility
   }
 
- /**
-   * Finds the struct that matches the given symbol `sym` and `tag` in the namespace `ns0`.
-   */
+  /**
+    * Finds the struct that matches the given symbol `sym` and `tag` in the namespace `ns0`.
+    */
   private def lookupStruct(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Result[NamedAst.Declaration.Struct, ResolutionError.UndefinedStruct] = {
     val matches = tryLookupName(qname, env, ns0, root) collect {
       case Resolution.Declaration(s: NamedAst.Declaration.Struct) => s
@@ -2373,8 +2374,8 @@ object Resolver {
   }
 
   /**
-   * Finds the struct that matches the given symbol `sym` and `tag` in the namespace `ns0`.
-   */
+    * Finds the struct that matches the given symbol `sym` and `tag` in the namespace `ns0`.
+    */
   private def lookupStruct(sym: Symbol.StructSym, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Result[NamedAst.Declaration.Struct, ResolutionError.UndefinedStruct] = {
     // look up the name
     val qname = Name.mkQName(sym.namespace, sym.name, sym.loc)
@@ -2412,7 +2413,7 @@ object Resolver {
 
     matches match {
       case Nil => Validation.toHardFailure(ResolutionError.UndefinedRestrictableType(qname, ns0, qname.loc))
-      case enum :: _ => Validation.success(enum)
+      case enum0 :: _ => Validation.success(enum0)
     }
   }
 
@@ -2469,9 +2470,9 @@ object Resolver {
         // Disambiguate type.
         case typeName =>
           lookupType(qname, env, ns0, root) match {
-            case TypeLookupResult.Enum(enum) => getEnumTypeIfAccessible(enum, ns0, loc)
+            case TypeLookupResult.Enum(enum0) => getEnumTypeIfAccessible(enum0, ns0, loc)
             case TypeLookupResult.Struct(struct) => getStructTypeIfAccessible(struct, ns0, loc)
-            case TypeLookupResult.RestrictableEnum(enum) => getRestrictableEnumTypeIfAccessible(enum, ns0, loc)
+            case TypeLookupResult.RestrictableEnum(enum0) => getRestrictableEnumTypeIfAccessible(enum0, ns0, loc)
             case TypeLookupResult.TypeAlias(typeAlias) => getTypeAliasTypeIfAccessible(typeAlias, ns0, root, loc)
             case TypeLookupResult.Effect(eff) => getEffectTypeIfAccessible(eff, ns0, root, loc)
             case TypeLookupResult.JavaClass(clazz) => Validation.success(flixifyType(clazz, loc))
@@ -2484,9 +2485,9 @@ object Resolver {
       case NamedAst.Type.Ambiguous(qname, loc) =>
         // Disambiguate type.
         lookupType(qname, env, ns0, root) match {
-          case TypeLookupResult.Enum(enum) => getEnumTypeIfAccessible(enum, ns0, loc)
+          case TypeLookupResult.Enum(enum0) => getEnumTypeIfAccessible(enum0, ns0, loc)
           case TypeLookupResult.Struct(struct) => getStructTypeIfAccessible(struct, ns0, loc)
-          case TypeLookupResult.RestrictableEnum(enum) => getRestrictableEnumTypeIfAccessible(enum, ns0, loc)
+          case TypeLookupResult.RestrictableEnum(enum0) => getRestrictableEnumTypeIfAccessible(enum0, ns0, loc)
           case TypeLookupResult.TypeAlias(typeAlias) => getTypeAliasTypeIfAccessible(typeAlias, ns0, root, loc)
           case TypeLookupResult.Effect(eff) => getEffectTypeIfAccessible(eff, ns0, root, loc)
           case TypeLookupResult.JavaClass(clazz) => Validation.success(flixifyType(clazz, loc))
@@ -2863,15 +2864,15 @@ object Resolver {
       case Resolution.Declaration(alias: NamedAst.Declaration.TypeAlias) =>
         // Case 1: found a type alias
         TypeLookupResult.TypeAlias(alias)
-      case Resolution.Declaration(enum: NamedAst.Declaration.Enum) =>
+      case Resolution.Declaration(enum0: NamedAst.Declaration.Enum) =>
         // Case 2: found an enum
-        TypeLookupResult.Enum(enum)
+        TypeLookupResult.Enum(enum0)
       case Resolution.Declaration(struct: NamedAst.Declaration.Struct) =>
         // Case 3: found a struct
         TypeLookupResult.Struct(struct)
-      case Resolution.Declaration(enum: NamedAst.Declaration.RestrictableEnum) =>
+      case Resolution.Declaration(enum0: NamedAst.Declaration.RestrictableEnum) =>
         // Case 4: found a restrictable enum
-        TypeLookupResult.RestrictableEnum(enum)
+        TypeLookupResult.RestrictableEnum(enum0)
       case Resolution.Declaration(effect: NamedAst.Declaration.Effect) =>
         // Case 5: found an effect
         TypeLookupResult.Effect(effect)
@@ -2954,26 +2955,26 @@ object Resolver {
       val envNames = env(qname.ident.name)
 
       // 2nd priority: names in the current namespace
-      val localNames = root.symbols.getOrElse(ns0, Map.empty).getOrElse(qname.ident.name, Nil).map(Resolution.Declaration)
+      val localNames = root.symbols.getOrElse(ns0, Map.empty).getOrElse(qname.ident.name, Nil).map(Resolution.Declaration.apply)
 
       // 3rd priority: the name of the current namespace
       val currentNamespace = {
         if (ns0.idents.lastOption.contains(qname.ident)) {
           // Case 1.1.1.1: We are referring to the current namespace. Use that.
-          root.symbols.getOrElse(Name.mkUnlocatedNName(ns0.parts.init), Map.empty).getOrElse(ns0.parts.last, Nil).map(Resolution.Declaration)
+          root.symbols.getOrElse(Name.mkUnlocatedNName(ns0.parts.init), Map.empty).getOrElse(ns0.parts.last, Nil).map(Resolution.Declaration.apply)
         } else {
           Nil
         }
       }
 
       // 4th priority: names in the root namespace
-      val rootNames = root.symbols.getOrElse(Name.RootNS, Map.empty).getOrElse(qname.ident.name, Nil).map(Resolution.Declaration)
+      val rootNames = root.symbols.getOrElse(Name.RootNS, Map.empty).getOrElse(qname.ident.name, Nil).map(Resolution.Declaration.apply)
 
       envNames ::: localNames ::: currentNamespace ::: rootNames
 
     } else {
       // Case 2. Qualified name. Look it up directly.
-      tryLookupQualifiedName(qname, env, ns0, root).getOrElse(Nil).map(Resolution.Declaration)
+      tryLookupQualifiedName(qname, env, ns0, root).getOrElse(Nil).map(Resolution.Declaration.apply)
     }
   }
 
@@ -3000,9 +3001,9 @@ object Resolver {
     env(name).collectFirst {
       case Resolution.Declaration(ns: NamedAst.Declaration.Namespace) => ns.sym.ns
       case Resolution.Declaration(trt: NamedAst.Declaration.Trait) => trt.sym.namespace :+ trt.sym.name
-      case Resolution.Declaration(enum: NamedAst.Declaration.Enum) => enum.sym.namespace :+ enum.sym.name
+      case Resolution.Declaration(enum0: NamedAst.Declaration.Enum) => enum0.sym.namespace :+ enum0.sym.name
       case Resolution.Declaration(struct: NamedAst.Declaration.Struct) => struct.sym.namespace :+ struct.sym.name
-      case Resolution.Declaration(enum: NamedAst.Declaration.RestrictableEnum) => enum.sym.namespace :+ enum.sym.name
+      case Resolution.Declaration(enum0: NamedAst.Declaration.RestrictableEnum) => enum0.sym.namespace :+ enum0.sym.name
       case Resolution.Declaration(eff: NamedAst.Declaration.Effect) => eff.sym.namespace :+ eff.sym.name
     }.orElse {
       // Then see if there's a module with this name declared in our namespace
@@ -3263,7 +3264,7 @@ object Resolver {
     */
   private def getEnumTypeIfAccessible(enum0: NamedAst.Declaration.Enum, ns0: Name.NName, loc: SourceLocation): Validation[UnkindedType, ResolutionError] =
     mapN(getEnumIfAccessible(enum0, ns0, loc)) {
-      case enum => mkEnum(enum.sym, loc)
+      case enum0 => mkEnum(enum0.sym, loc)
     }
 
   /**
@@ -3283,7 +3284,7 @@ object Resolver {
     */
   private def getRestrictableEnumTypeIfAccessible(enum0: NamedAst.Declaration.RestrictableEnum, ns0: Name.NName, loc: SourceLocation): Validation[UnkindedType, ResolutionError] =
     mapN(getRestrictableEnumIfAccessible(enum0, ns0, loc)) {
-      case enum => mkRestrictableEnum(enum.sym, loc)
+      case enum0 => mkRestrictableEnum(enum0.sym, loc)
     }
 
   /**
@@ -4010,11 +4011,11 @@ object Resolver {
 
     def addDef(defn: ResolvedAst.Declaration.Def): SymbolTable = copy(defs = defs + (defn.sym -> defn))
 
-    def addEnum(`enum`: ResolvedAst.Declaration.Enum): SymbolTable = copy(enums = enums + (`enum`.sym -> `enum`))
+    def addEnum(enum0: ResolvedAst.Declaration.Enum): SymbolTable = copy(enums = enums + (enum0.sym -> enum0))
 
     def addStruct(struct: ResolvedAst.Declaration.Struct): SymbolTable = copy(structs = structs + (struct.sym -> struct))
 
-    def addRestrictableEnum(`enum`: ResolvedAst.Declaration.RestrictableEnum): SymbolTable = copy(restrictableEnums = restrictableEnums + (`enum`.sym -> `enum`))
+    def addRestrictableEnum(enum0: ResolvedAst.Declaration.RestrictableEnum): SymbolTable = copy(restrictableEnums = restrictableEnums + (enum0.sym -> enum0))
 
     def addEffect(effect: ResolvedAst.Declaration.Effect): SymbolTable = copy(effects = effects + (effect.sym -> effect))
 
