@@ -231,7 +231,7 @@ object JvmBackend {
     // Construct the reflected function.
     (args: Array[AnyRef]) => {
       // Construct the arguments array.
-      val argsArray = if (args.isEmpty) Array(null) else args
+      val argsArray = if (args.isEmpty) Array(null: AnyRef) else args
       val parameterCount = defn.method.getParameterCount
       val argumentCount = argsArray.length
       if (argumentCount != parameterCount) {
