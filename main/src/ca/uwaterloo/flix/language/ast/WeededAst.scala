@@ -274,7 +274,7 @@ object WeededAst {
 
     case class Tag(qname: Name.QName, pat: Pattern, loc: SourceLocation) extends Pattern
 
-    case class Tuple(elms: scala.List[Pattern], loc: SourceLocation) extends Pattern
+    case class Tuple(pats: List[Pattern], loc: SourceLocation) extends Pattern
 
     case class Record(pats: List[Record.RecordLabelPattern], pat: Pattern, loc: SourceLocation) extends Pattern
 
@@ -341,7 +341,7 @@ object WeededAst {
 
     case class Unit(loc: SourceLocation) extends Type
 
-    case class Tuple(elms: List[Type], loc: SourceLocation) extends Type
+    case class Tuple(tpes: List[Type], loc: SourceLocation) extends Type
 
     case class RecordRowEmpty(loc: SourceLocation) extends Type
 

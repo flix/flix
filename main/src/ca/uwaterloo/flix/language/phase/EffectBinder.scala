@@ -52,8 +52,7 @@ object EffectBinder {
   def run(root: LiftedAst.Root)(implicit flix: Flix): ReducedAst.Root = flix.phase("EffectBinder") {
     val newDefs = ParOps.parMapValues(root.defs)(visitDef)
     val newEffects = ParOps.parMapValues(root.effects)(visitEffect)
-    val structs = Map.empty[Symbol.StructSym, ReducedAst.Struct]
-    ReducedAst.Root(newDefs, structs, newEffects, Set.empty, Nil, root.entryPoint, root.reachable, root.sources)
+    ReducedAst.Root(newDefs, newEffects, Set.empty, Nil, root.entryPoint, root.reachable, root.sources)
   }
 
   private sealed trait Binder
