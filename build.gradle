@@ -13,8 +13,8 @@ repositories {
 
 dependencies {
     implementation("org.scala-lang:scala3-compiler_3:3.2.2")
-    // implementation("org.scala-lang:scala3-library_3:3.2.2")
-    implementation 'org.scala-lang:scala-library:2.13.14!!'
+    implementation("org.scala-lang:scala3-library_3:3.2.2")
+    // implementation 'org.scala-lang:scala-library:2.13.14!!'
     implementation 'org.scala-lang:scala-reflect:2.13.14!!'
 
     implementation('org.java-websocket:Java-WebSocket:1.5.6')
@@ -50,7 +50,8 @@ tasks.withType(ScalaCompile) {
             // "-language:postfixOps",
             "-Xfatal-warnings",
             // "-Ypatmat-exhaust-depth", "400",
-            "-release", "11"
+            "-release", "11",
+            "-rewrite"
     ]
     compileScala.sourceCompatibility = 21
     compileScala.targetCompatibility = 21
