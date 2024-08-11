@@ -504,7 +504,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     flix.compile().toHardResult match {
       case Result.Ok(r: CompilationResult) =>
         Validation.success(r)
-      case Result.Err(errors: Chain[CompilationMessage]) =>
+      case Result.Err(errors) =>
         Validation.toHardFailure(BootstrapError.GeneralError(flix.mkMessages(errors)))
     }
   }
@@ -696,7 +696,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }.toHardResult match {
       case Result.Ok(_) =>
         Validation.success(())
-      case Result.Err(errors: Chain[CompilationMessage]) =>
+      case Result.Err(errors) =>
         Validation.toHardFailure(BootstrapError.GeneralError(flix.mkMessages(errors)))
     }
   }
