@@ -2341,7 +2341,7 @@ object Resolver {
       // Case 1: Exactly one match. Success.
       case caze :: _ => Result.Ok(caze)
       // Case 2: Multiple matches. Error
-      case cazes => throw InternalCompilerException(s"unexpected duplicate tag: '$qname'.", qname.loc)
+      case null => throw InternalCompilerException(s"unexpected duplicate tag: '$qname'.", qname.loc)
     }
     // TODO NS-REFACTOR check accessibility
   }
@@ -2359,7 +2359,7 @@ object Resolver {
       // Case 1: Exactly one match. Success.
       case st :: _ => Result.Ok(st)
       // Case 2: Multiple matches. Error
-      case sts => throw InternalCompilerException(s"unexpected duplicate struct: '$qname'.", qname.loc)
+      case null => throw InternalCompilerException(s"unexpected duplicate struct: '$qname'.", qname.loc)
     }
     // TODO NS-REFACTOR check accessibility
   }
