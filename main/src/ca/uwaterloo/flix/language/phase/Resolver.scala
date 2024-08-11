@@ -1837,7 +1837,7 @@ object Resolver {
         */
       def visitJvmMethod(method: NamedAst.JvmMethod, env0: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.JvmMethod, ResolutionError] = method match {
         case NamedAst.JvmMethod(ident, fparams, exp, tpe, eff, loc) =>
-          val fparamsVal = traverse(fparams)(resolveFormalParams(_, env0, taenv, ns0, root))
+          val fparamsVal = traverse(fparams)(resolveFormalParam(_, env0, taenv, ns0, root))
           flatMapN(fparamsVal) {
             case fparams =>
               val env = env0 ++ mkFormalParamEnv(fparams)
@@ -2104,14 +2104,6 @@ object Resolver {
         // Case 2: Not in the environment. This is a real constraint parameter.
         case None => Some(ResolvedAst.ConstraintParam(sym, loc))
       }
-  }
-
-  /**
-    * Performs name resolution on the given formal parameters `fparams0`.
-    */
-  @deprecated
-  def resolveFormalParams(fparams0: List[NamedAst.FormalParam], env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[List[ResolvedAst.FormalParam], ResolutionError] = {
-    traverse(fparams0)(fparam => resolveFormalParam(fparam, env, taenv, ns0, root))
   }
 
   /**
