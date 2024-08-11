@@ -17,7 +17,7 @@ dependencies {
     implementation 'org.scala-lang:scala-reflect:2.13.14!!'
 
     implementation('org.java-websocket:Java-WebSocket:1.5.6')
-    implementation('org.jline:jline:3.25.1')
+    implementation('org.jline:jline:3.26.3')
     implementation('org.json4s:json4s-native_2.13:4.0.7')
     implementation('org.ow2.asm:asm:9.7')
     implementation('com.github.rjeschke:txtmark:0.13')
