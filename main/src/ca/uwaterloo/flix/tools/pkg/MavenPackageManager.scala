@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.tools.pkg
 
 import ca.uwaterloo.flix.api.Bootstrap
 import ca.uwaterloo.flix.language.ast.SourceLocation
-import ca.uwaterloo.flix.tools.pkg.Dependency.MavenDependency
+import ca.uwaterloo.flix.tools.pkg.FDependency.MavenDependency
 import ca.uwaterloo.flix.util.{Formatter, InternalCompilerException, Result}
 import ca.uwaterloo.flix.util.Result.{Err, Ok, ToOk}
 
@@ -86,7 +86,7 @@ object MavenPackageManager {
   /**
     * Creates Coursier dependencies from a list of Strings
     */
-  private def createCoursierDependencies(depString: String): Result[Dependency, PackageError] =
+  private def createCoursierDependencies(depString: String): Result[coursier.Dependency, PackageError] =
     coursier.parse.DependencyParser.dependency(depString, scalaVersion) match {
       case Left(error) => throw InternalCompilerException(s"Coursier error: $error", SourceLocation.Unknown)
       case Right(cDep) => Ok(cDep)

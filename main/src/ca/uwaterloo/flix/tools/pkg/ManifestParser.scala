@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.tools.pkg
 
 import ca.uwaterloo.flix.language.ast.Symbol
-import ca.uwaterloo.flix.tools.pkg.Dependency.{FlixDependency, JarDependency, MavenDependency}
+import ca.uwaterloo.flix.tools.pkg.FDependency.{FlixDependency, JarDependency, MavenDependency}
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.{Err, Ok, ToOk, traverse}
@@ -255,7 +255,7 @@ object ManifestParser {
    * overrides `flixDep` and `prodDep`.
    * Returns an error if anything is not as expected.
    */
-  private def collectDependencies(deps: Option[TomlTable], flixDep: Boolean, jarDep: Boolean, p: Path): Result[List[Dependency], ManifestError] = {
+  private def collectDependencies(deps: Option[TomlTable], flixDep: Boolean, jarDep: Boolean, p: Path): Result[List[FDependency], ManifestError] = {
     deps match {
       case None => Ok(List.empty)
       case Some(deps) =>
@@ -288,7 +288,7 @@ object ManifestParser {
       artifactId <- getArtifactId(depName, p);
       version <- getMavenVersion(depVer, p)
     ) yield {
-      Dependency.MavenDependency(groupId, artifactId, version)
+      FDependency.MavenDependency(groupId, artifactId, version)
     }
   }
 
@@ -360,7 +360,7 @@ object ManifestParser {
         // If the dependency maps to a string, parse the version.
         if (deps.isString(depKey)) {
           getFlixVersion(deps, depKey, p).flatMap(
-            Dependency.FlixDependency(repo, username, projectName, _, Nil).toOk
+            FDependency.FlixDependency(repo, username, projectName, _, Nil).toOk
           )
 
           // If the dependency maps to a table, get the version and permissions.
@@ -429,7 +429,7 @@ object ManifestParser {
       url <- getUrl(depUrl, p);
       fileName <- getFileName(depName, p)
     ) yield {
-      Dependency.JarDependency(url, fileName)
+      FDependency.JarDependency(url, fileName)
     }
   }
 

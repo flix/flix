@@ -17,14 +17,14 @@ package ca.uwaterloo.flix.tools.pkg
 
 import java.net.URL
 
-sealed trait Dependency
+sealed trait FDependency
 
-object Dependency {
+object FDependency {
 
-  case class FlixDependency(repo: Repository, username: String, projectName: String, version: SemVer, permissions: List[Permission]) extends Dependency
+  case class FlixDependency(repo: Repository, username: String, projectName: String, version: SemVer, permissions: List[Permission]) extends FDependency
 
-  case class MavenDependency(groupId: String, artifactId: String, versionTag: String) extends Dependency
+  case class MavenDependency(groupId: String, artifactId: String, versionTag: String) extends FDependency
 
-  case class JarDependency(url: URL, fileName: String) extends Dependency
+  case class JarDependency(url: URL, fileName: String) extends FDependency
 
 }
