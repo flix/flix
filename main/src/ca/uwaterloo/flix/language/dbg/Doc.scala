@@ -35,7 +35,7 @@ object Doc {
     /**
       * Concatenates two docs.
       */
-    def ::(d: Doc): Doc = Doc.::(d, this.d)
+    def |::|(d: Doc): Doc = Doc.|::|(d, this.d)
 
     /**
       * Concatenates two docs with a space.
@@ -51,9 +51,9 @@ object Doc {
     def \:(d: Doc): Doc = Doc.\:(d, this.d)
   }
 
-  private case object Nil extends Doc
+  private case object DNil extends Doc
 
-  private case class Cons(d1: Doc, d2: Doc) extends Doc
+  private case class DCons(d1: Doc, d2: Doc) extends Doc
 
   private case class Text(s: String) extends Doc
 
@@ -76,12 +76,12 @@ object Doc {
   /**
     * Concatenates two docs.
     */
-  def ::(d1: Doc, d2: Doc): Doc = Cons(d1, d2)
+  def |::|(d1: Doc, d2: Doc): Doc = DCons(d1, d2)
 
   /**
     * The empty document.
     */
-  def empty: Doc = Nil
+  def empty: Doc = DNil
 
   /**
     * The document of the string `s`.
@@ -155,8 +155,8 @@ object Doc {
   private def fits(w: Int, l: List[(Int, Mode, Doc)]): Boolean = l match {
     case _ if w < 0 => false
     case immutable.Nil => true
-    case (_, _, Nil) :: z => fits(w, z)
-    case (i, m, Cons(x, y)) :: z =>
+    case (_, _, DNil) :: z => fits(w, z)
+    case (i, m, DCons(x, y)) :: z =>
       fits(w, (i, m, x) :: (i, m, y) :: z)
     case (i, m, Nest(j, x)) :: z => fits(w, (i + j, m, x) :: z)
     case (_, _, Text(s)) :: z => fits(w - s.length, z)
@@ -176,9 +176,9 @@ object Doc {
   private def format(w: Int, k: Int, l: List[(Int, Mode, Doc)], cont: SDoc => SDoc): SDoc = l match {
     case immutable.Nil =>
       cont(SNil)
-    case (_, _, Nil) :: z =>
+    case (_, _, DNil) :: z =>
       format(w, k, z, cont)
-    case (i, m, Cons(x, y)) :: z =>
+    case (i, m, DCons(x, y)) :: z =>
       format(w, k, (i, m, x) :: (i, m, y) :: z, cont)
     case (i, m, Nest(j, x)) :: z =>
       format(w, k, (i + j, m, x) :: z, cont)
@@ -213,17 +213,17 @@ object Doc {
     * Concatenates two docs with a space.
     */
   def +:(d1: Doc, d2: Doc): Doc =
-    d1 :: text(" ") :: d2
+    d1 |::| text(" ") |::| d2
 
   /**
     * Concatenates two docs with a space _or_ an ungrouped newline.
     */
   def +\:(d1: Doc, d2: Doc): Doc =
-    d1 :: breakWith(" ") :: d2
+    d1 |::| breakWith(" ") |::| d2
 
   /** Concatenates two docs with an ungrouped optional newline. */
   def \:(d1: Doc, d2: Doc): Doc =
-    d1 :: breakWith("") :: d2
+    d1 |::| breakWith("") |::| d2
 
   /**
     * Concatenates two docs with a space _or_ a grouped optional newline with
@@ -231,13 +231,13 @@ object Doc {
     * `d2` is included in the group.
     */
   def groupBreakIndent(d1: Doc, d2: Doc)(implicit i: Indent): Doc =
-    d1 :: group(nest(breakWith(" ") :: d2))
+    d1 |::| group(nest(breakWith(" ") |::| d2))
 
   /**
     * Prefix `d` with a space, or an indented newline if space is needed.
     */
   def breakIndent(d: Doc)(implicit i: Indent): Doc =
-    nest(breakWith(" ") :: d)
+    nest(breakWith(" ") |::| d)
 
   /**
     * Right fold of `d` with `f`.
@@ -252,19 +252,19 @@ object Doc {
     * Inserts the separator between elements of `d`.
     */
   def sep(sep: Doc, d: List[Doc]): Doc =
-    fold(_ :: sep :: _, d)
+    fold(_ |::| sep |::| _, d)
 
   /**
     * Insert a comma with an ungrouped optional newline.
     */
   def commaSep(d: List[Doc]): Doc =
-    sep(text(",") :: breakWith(" "), d)
+    sep(text(",") |::| breakWith(" "), d)
 
   /**
     * Insert a semicolon with an ungrouped optional newline.
     */
   def semiSep(d: List[Doc]): Doc =
-    sep(text(";") :: breakWith(" "), d)
+    sep(text(";") |::| breakWith(" "), d)
 
   /**
     * Insert a semicolon and a space _or_ an ungrouped newline.
@@ -276,7 +276,7 @@ object Doc {
     * Enclose `x` with `l` and `r` with ungrouped newlines inside `l` and `r`.
     */
   def enclose(l: String, x: Doc, r: String)(implicit i: Indent): Doc = {
-    text(l) :: nest(breakWith("") :: x) \: text(r)
+    text(l) |::| nest(breakWith("") |::| x) \: text(r)
   }
 
   /**
