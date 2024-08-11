@@ -36,7 +36,7 @@ dependencies {
 
     implementation('org.slf4j:slf4j-nop:2.0.13')
 
-    testImplementation('org.scalatest:scalatest_2.13:3.2.18')
+    testImplementation('org.scalatest:scalatest_3:3.2.19')
 }
 
 tasks.withType(ScalaCompile) {
