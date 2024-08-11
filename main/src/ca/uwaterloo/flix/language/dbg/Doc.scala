@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.dbg
 
 import scala.annotation.tailrec
-import scala.collection.{immutable, mutable}
+import scala.collection.mutable
 
 sealed trait Doc
 
@@ -154,7 +154,7 @@ object Doc {
   @tailrec
   private def fits(w: Int, l: List[(Int, Mode, Doc)]): Boolean = l match {
     case _ if w < 0 => false
-    case immutable.Nil => true
+    case Nil => true
     case (_, _, DNil) :: z => fits(w, z)
     case (i, m, DCons(x, y)) :: z =>
       fits(w, (i, m, x) :: (i, m, y) :: z)
@@ -174,7 +174,7 @@ object Doc {
     */
   @tailrec
   private def format(w: Int, k: Int, l: List[(Int, Mode, Doc)], cont: SDoc => SDoc): SDoc = l match {
-    case immutable.Nil =>
+    case Nil =>
       cont(SNil)
     case (_, _, DNil) :: z =>
       format(w, k, z, cont)
@@ -243,8 +243,8 @@ object Doc {
     * Right fold of `d` with `f`.
     */
   def fold(f: (Doc, Doc) => Doc, d: List[Doc]): Doc = d match {
-    case immutable.Nil => empty
-    case x :: immutable.Nil => x
+    case Nil => empty
+    case x :: Nil => x
     case x :: xs => f(x, fold(f, xs))
   }
 
@@ -312,8 +312,8 @@ object Doc {
     * }}}
     */
   def curlyTuple(xs: List[Doc])(implicit i: Indent): Doc = xs match {
-    case immutable.Nil => text("{}")
-    case immutable.::(d, immutable.Nil) => group(curly(d))
+    case Nil => text("{}")
+    case d :: Nil => group(curly(d))
     case _ => group(curly(commaSep(xs)))
   }
 
@@ -332,8 +332,8 @@ object Doc {
     * }}}
     */
   def squareTuple(xs: List[Doc])(implicit i: Indent): Doc = xs match {
-    case immutable.Nil => text("[]")
-    case immutable.::(d, immutable.Nil) => square(d)
+    case Nil => text("[]")
+    case d :: Nil => square(d)
     case _ => square(commaSep(xs))
   }
 
@@ -352,8 +352,8 @@ object Doc {
     * }}}
     */
   def doubleSquareTuple(xs: List[Doc])(implicit i: Indent): Doc = xs match {
-    case immutable.Nil => text("[||]")
-    case immutable.::(d, immutable.Nil) => doubleSquare(d)
+    case Nil => text("[||]")
+    case d :: Nil => doubleSquare(d)
     case _ => doubleSquare(commaSep(xs))
   }
 
@@ -366,8 +366,8 @@ object Doc {
     * }}}
     */
   def tuple(xs: List[Doc])(implicit i: Indent): Doc = xs match {
-    case immutable.Nil => text("()")
-    case immutable.::(d, immutable.Nil) => parens(d)
+    case Nil => text("()")
+    case d :: Nil => parens(d)
     case _ => parens(commaSep(xs))
   }
 
@@ -380,8 +380,8 @@ object Doc {
     * }}}
     */
   def tuplish(xs: List[Doc])(implicit i: Indent): Doc = xs match {
-    case immutable.Nil => text("()")
-    case immutable.::(d, immutable.Nil) => d
+    case Nil => text("()")
+    case d :: Nil => d
     case _ => tuple(xs)
   }
 
