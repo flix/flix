@@ -46,7 +46,7 @@ tasks.withType(ScalaCompile) {
     scalaCompileOptions.additionalParameters = [
             "-source:3.0-migration",
             "-Xignore-scala2-macros",
-            "-Xfatal-warnings",
+            "-Werror",
             "-release", "11",
             "-rewrite"
     ]
