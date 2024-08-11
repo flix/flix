@@ -25,4 +25,4 @@ case class Manifest(name: String,
                     flix: SemVer,
                     license: Option[String],
                     authors: List[String],
-                    dependencies: List[FDependency]) {}
+                    dependencies: List[Dependency]) {}

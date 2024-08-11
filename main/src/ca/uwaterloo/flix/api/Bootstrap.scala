@@ -19,10 +19,10 @@ import ca.uwaterloo.flix.api.Bootstrap.{getArtifactDirectory, getManifestFile, g
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.phase.HtmlDocumentor
 import ca.uwaterloo.flix.runtime.CompilationResult
-import ca.uwaterloo.flix.tools.pkg.FDependency.FlixDependency
+import ca.uwaterloo.flix.tools.pkg.Dependency.FlixDependency
 import ca.uwaterloo.flix.tools.pkg.FlixPackageManager.findFlixDependencies
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
-import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, PackageModules, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, ReleaseError, FDependency}
+import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, PackageModules, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, ReleaseError, Dependency}
 import ca.uwaterloo.flix.tools.{Benchmarker, Tester}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.flatMapN
