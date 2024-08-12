@@ -90,7 +90,8 @@ object BooleanPropTesting {
   }
 
   def main(args: Array[String]): Unit = {
-    testSolvableConstraints(new Random(), explodedRandomXor, 700_000, 1, -1, wait = false)(RunOptions.default)
+    val clickAndGo = false
+    testSolvableConstraints(new Random(), explodedRandomXor, 700_000, 1, -1, wait = clickAndGo)(RunOptions.default.copy(debugging = clickAndGo))
   }
 
   // TODO add testing of t ~ propagation(t)

@@ -93,6 +93,7 @@ object FastSetUnification {
     def solve(l: List[Equation])(implicit opts: RunOptions = RunOptions.default): (Result[SetSubstitution, (FastBoolUnificationException, List[Equation], SetSubstitution)], (Option[String], Option[Int])) = {
       import FastSetUnification.{Phases => P}
       val state = new State(l)
+      def checkAndSimplify(s: State) = runPhase("Check and Simplify", "trivial correct and incorrect equations", P.filteringPhase(P.checkAndSimplify))(s)(opts.copy(debugging = false))
       debugState(state)
       try {
         runPhase(
@@ -100,21 +101,25 @@ object FastSetUnification {
           "resolves all equations of the form: x = c where x is a var and c is univ/empty/constant/element)",
           P.propagateConstants
         )(state)
+        checkAndSimplify(state)
         runPhase(
           "Variable Propagation",
           "resolves all equations of the form: x = y where x and y are vars)",
           P.propagateVars
         )(state)
+        checkAndSimplify(state)
         runPhase(
           "Variable Assignment",
           "resolves all equations of the form: x = t where x is free in t",
           P.varAssignment
         )(state)
+        checkAndSimplify(state)
         runPhase(
           "Eliminate Trivial and Redundant Equations",
           "eliminates equations of the form X = X and duplicated equations",
-          P.substlessPhase(P.eliminateTrivialAndRedundant)
+          P.filteringPhase(P.eliminateTrivialAndRedundant)
         )(state)
+        checkAndSimplify(state)
         runPhase(
           "Set Unification",
           "resolves all remaining equations using SVE.",
@@ -139,7 +144,7 @@ object FastSetUnification {
 
     }
 
-    def runPhase(name: String, description: String, phase: Phase)(state: State)(implicit opts: RunOptions): Unit = {
+    private def runPhase(name: String, description: String, phase: Phase)(state: State)(implicit opts: RunOptions): Unit = {
       if (state.eqs.isEmpty) return
       val phaseNumber = state.phase.getOrElse(0) + 1
       state.phase = Some(phaseNumber)
@@ -179,21 +184,21 @@ object FastSetUnification {
       }
     }
 
-    def verifySubstSize(subst: SetSubstitution)(implicit opts: RunOptions): Unit = {
+    private def verifySubstSize(subst: SetSubstitution)(implicit opts: RunOptions): Unit = {
       val size = subst.size
       if (size > opts.sizeThreshold) {
         throw TooComplexException(s"Too large a substitution (threshold: ${opts.sizeThreshold}, found: $size)")
       }
     }
 
-    def debugPhase(number: Int, name: String, description: String)(implicit opts: RunOptions): Unit = {
+    private def debugPhase(number: Int, name: String, description: String)(implicit opts: RunOptions): Unit = {
       debugln("-".repeat(80))
       debugln(s"--- Phase $number: $name")
       debugln(s"    ($description)")
       debugln("-".repeat(80))
     }
 
-    def debugState(state: State)(implicit opts: RunOptions): Unit = {
+    private def debugState(state: State)(implicit opts: RunOptions): Unit = {
       debugln(s"Equations (${state.eqs.size}):")
       debugln(format(state.eqs))
       debugln(s"Substitution (${state.subst.numberOfBindings}):")
@@ -219,15 +224,15 @@ object FastSetUnification {
     type Output = Option[(List[Equation], SetSubstitution)]
     type Rule = Equation => Output
 
-    def trivial(eq: Equation): Option[Equation] = {
+    def triviallyHolds(eq: Equation): Boolean = {
       val Equation(t1, t2, _) = eq
       (t1, t2) match {
-        case (Term.Univ, Term.Univ) => None
-        case (Term.Empty, Term.Empty) => None
-        case (Term.Cst(c1), Term.Cst(c2)) if c1 == c2 => None
-        case (Term.Var(x1), Term.Var(x2)) if x1 == x2 => None
-        case (Term.ElemSet(s1), Term.ElemSet(s2)) if s1 == s2 => None
-        case _ => Some(eq)
+        case (Term.Univ, Term.Univ) => true
+        case (Term.Empty, Term.Empty) => true
+        case (Term.Cst(c1), Term.Cst(c2)) if c1 == c2 => true
+        case (Term.Var(x1), Term.Var(x2)) if x1 == x2 => true
+        case (Term.ElemSet(s1), Term.ElemSet(s2)) if s1 == s2 => true
+        case _ => false
       }
     }
 
@@ -378,7 +383,7 @@ object FastSetUnification {
 
     type Phase = List[Equation] => Output
 
-    def substlessPhase(f: List[Equation] => Option[List[Equation]]): Phase = {
+    def filteringPhase(f: List[Equation] => Option[List[Equation]]): Phase = {
       eqs0 => f(eqs0).map(eqs1 => (eqs1, SetSubstitution.empty))
     }
 
@@ -401,7 +406,7 @@ object FastSetUnification {
     def checkAndSimplify(l: List[Equation]): Option[List[Equation]] = {
       var changed = false
       // unwrap to check triviallyWrong no matter if trivial did anything
-      val res0 = runEqRule(Rules.trivial)(l) match {
+      val res0 = runEqRule(Rules.triviallyHolds)(l) match {
         case Some(eqs) =>
           changed = true
           eqs
@@ -705,8 +710,9 @@ object FastSetUnification {
       }
     }
 
-    private def runEqRule(rule: Equation => Option[Equation])(l: List[Equation]): Option[List[Equation]] = {
-      val rule1 = (eq0: Equation) => rule(eq0).map(eq1 => (List(eq1), SetSubstitution.empty))
+    /** If the rule returns `true` that means that the constraint should be removed */
+    private def runEqRule(rule: Equation => Boolean)(l: List[Equation]): Option[List[Equation]] = {
+      val rule1 = (eq0: Equation) => if (rule(eq0)) Some((Nil, SetSubstitution.empty)) else None
       runRule(rule1, selfFeeding = false, substInduced = false)(l).map(_._1)
     }
 
@@ -717,8 +723,8 @@ object FastSetUnification {
 
     private def runSubstResRule(rule: Equation => Result[SetSubstitution, Throwable])(l: List[Equation]): SetSubstitution = {
       val rule1 = (eq0: Equation) => rule(eq0) match {
-        case Result.Ok(subst) => Some((Nil: List[Equation], subst))
-        case Result.Err(ex) => throw ex
+        case Result.Ok(subst: SetSubstitution) => Some((Nil: List[Equation], subst))
+        case Result.Err(ex: Throwable) => throw ex
       }
       val res = runRule(rule1, selfFeeding = false, substInduced = false)(l)
       res.map {
@@ -777,11 +783,6 @@ object FastSetUnification {
       * Returns the set of `s`.
       */
     def set(s: SortedSet[Int]): SetEval = Set(s)
-
-    /**
-      * Returns the singleton set containing `i`.
-      */
-    def single(i: Int): SetEval = Set(SortedSet(i))
 
     /**
       * Returns the union of two sets.
@@ -1459,7 +1460,7 @@ object FastSetUnification {
     /**
       * Returns the Minus of `x` and `y` (`-`). Implemented by de-sugaring: `x ∩ !y`.
       */
-    final def mkMinus(x: Term, y: Term): Term = mkInter(x, mkCompl(y))
+    final private def mkMinus(x: Term, y: Term): Term = mkInter(x, mkCompl(y))
 
 
     /**
