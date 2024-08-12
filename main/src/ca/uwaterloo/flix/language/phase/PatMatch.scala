@@ -125,6 +125,22 @@ object PatMatch {
       Validation.toSuccessOrSoftFailure(root, errors)
     }(DebugValidation())
 
+  private def isSubtype(sub: java.lang.Class[_], sup: java.lang.Class[_]): Boolean = {
+    sup.isAssignableFrom(sub)
+  }
+
+  private def checkExceptionOrder(rules: List[TypedAst.CatchRule]): Boolean = {
+    for (i <- rules.indices; j <- 0 until i) {
+      val laterRule = rules(i)
+      val earlierRule = rules(j)
+      if (isSubtype(laterRule.clazz, earlierRule.clazz)) {
+        return false
+      }
+    }
+    true
+  }
+
+
   /**
     * Check that all patterns in an expression are exhaustive
     *
@@ -195,6 +211,9 @@ object PatMatch {
       case Expr.Without(exp, _, _, _, _) => visitExp(exp)
 
       case Expr.TryCatch(exp, rules, _, _, _) =>
+        if (!checkExceptionOrder(rules)) {
+          throw new IllegalArgumentException("Exceptions are ordered incorrectly. Subtype exception cannot follow supertype exception.")
+        }
         val ruleExps = rules.map(_.exp)
         (exp :: ruleExps).flatMap(visitExp)
 
