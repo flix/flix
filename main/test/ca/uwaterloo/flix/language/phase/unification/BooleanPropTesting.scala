@@ -131,7 +131,7 @@ object BooleanPropTesting {
     }
     val (smallestError, smallestTimeout) = printTestOutput(errs, timeouts, tests)
     def askAndRun(description: String)(l: List[Equation]) = askYesNo(s"Do you want to run $description?") match {
-      case true => runEquationsWithDebug(l)
+      case true => runEquations(l)(debugging = true)
       case false => ()
     }
     smallestError.map(askAndRun("smallest error"))
@@ -182,7 +182,7 @@ object BooleanPropTesting {
     case object Timeout extends Res
   }
 
-  private def runEquations(eqs: List[Equation]): (Res, Int) = {
+  private def runEquations(eqs: List[Equation])(implicit debugging: Boolean = false): (Res, Int) = {
     val (res, phase) = FastSetUnification.solveAllInfo(eqs)
     res match {
       case Result.Ok(subst) => try {
@@ -196,14 +196,6 @@ object BooleanPropTesting {
       case Result.Err((_, _, _)) =>
         (Res.Fail(false), phase)
     }
-  }
-
-  private def runEquationsWithDebug(l: List[Equation]): (Res, Int) = {
-    val old = FastSetUnification.Debugging
-    FastSetUnification.Debugging = true
-    val res = runEquations(l)
-    FastSetUnification.Debugging = old
-    res
   }
 
   /** Defaults to no in case of err */

@@ -84,23 +84,13 @@ object FastSetUnification {
     */
   private val PermutationLimit: Int = 10
 
-  /**
-    * Enable debugging (prints information during set unification).
-    */
-  var Debugging: Boolean = false
-  private val Rerun: Boolean = false
+  case class RunOptions(
+    debugging: Boolean = false,
+    rerun: Boolean = false,
+    verify: Boolean = false
+  )
 
-  /**
-    * Enable verification (i.e. check that the computed most-general unifier is a solution to the original equation system.)
-    *
-    * Note: Verification is _very expensive_ and may not terminate in reasonable time.
-    */
-  private val Verify: Boolean = false
-
-  /**
-    * Internal formatter. Used for debugging.
-    */
-  private val formatter: Formatter = Formatter.NoFormatter
+  object RunOptions { val default: RunOptions = RunOptions() }
 
   /**
     * Attempts to solve all the given unification equations `l`.
@@ -109,14 +99,14 @@ object FastSetUnification {
     *
     * Returns `Err(c, l, s)` where `c` is a conflict, `l` is a list of unsolved equations, and `s` is a partial substitution.
     */
-  def solveAll(l: List[Equation]): Result[SetSubstitution, (FastBoolUnificationException, List[Equation], SetSubstitution)] = {
+  def solveAll(l: List[Equation])(implicit opts: RunOptions = RunOptions.default): Result[SetSubstitution, (FastBoolUnificationException, List[Equation], SetSubstitution)] = {
     new Solver(l).solve()
   }
 
   /**
     * Equivalent to [[solveAll]] but also return the index of the last phase working on non-empty equations.
     */
-  def solveAllInfo(l: List[Equation]): (Result[SetSubstitution, (FastBoolUnificationException, List[Equation], SetSubstitution)], Int) = {
+  def solveAllInfo(l: List[Equation])(implicit opts: RunOptions = RunOptions.default): (Result[SetSubstitution, (FastBoolUnificationException, List[Equation], SetSubstitution)], Int) = {
     new Solver(l).solveInfo()
   }
 
@@ -165,7 +155,7 @@ object FastSetUnification {
       *
       * Returns `Result.Err((ex, l, s))` where `c` is a conflict, `l` is a list of unsolved equations, and `s` is a partial substitution.
       */
-    def solve(): Result[SetSubstitution, (FastBoolUnificationException, List[Equation], SetSubstitution)] = {
+    def solve()(implicit opts: RunOptions): Result[SetSubstitution, (FastBoolUnificationException, List[Equation], SetSubstitution)] = {
       try {
         phase0Init()
         phase1ConstantPropagation()
@@ -178,14 +168,11 @@ object FastSetUnification {
 
         Result.Ok(currentSubst)
       } catch {
-        case _ if !Debugging && Rerun =>
+        case _ if !opts.debugging && opts.rerun =>
           // reset and rerun with debugging
-          Debugging = true
           currentEqns = l
           currentSubst = SetSubstitution.empty
-          val res = solve()
-          Debugging = false
-          res
+          solve()(opts.copy(debugging = true))
         case ex: ConflictException => Result.Err((ex, currentEqns, currentSubst))
         case ex: TooComplexException => Result.Err((ex, currentEqns, currentSubst))
       }
@@ -194,11 +181,11 @@ object FastSetUnification {
     /**
       * Equivalent to [[solve]] but also return the index of the last phase working on non-empty equations.
       */
-    def solveInfo(): (Result[SetSubstitution, (FastBoolUnificationException, List[Equation], SetSubstitution)], Int) = {
+    def solveInfo()(implicit opts: RunOptions): (Result[SetSubstitution, (FastBoolUnificationException, List[Equation], SetSubstitution)], Int) = {
       (solve(), this.phase)
     }
 
-    private def phase0Init(): Unit = {
+    private def phase0Init()(implicit opts: RunOptions): Unit = {
       debugln("-".repeat(80))
       debugln("--- Phase 0: Input")
       debugln("-".repeat(80))
@@ -206,7 +193,7 @@ object FastSetUnification {
       debugln()
     }
 
-    private def phase1ConstantPropagation(): Unit = if (currentEqns.nonEmpty) {
+    private def phase1ConstantPropagation()(implicit opts: RunOptions): Unit = if (currentEqns.nonEmpty) {
       debugln("-".repeat(80))
       debugln("--- Phase 1: Constant Propagation")
       // TODO this is lying
@@ -220,7 +207,7 @@ object FastSetUnification {
       debugln()
     }
 
-    private def phase2VarPropagation(): Unit = if (currentEqns.nonEmpty) {
+    private def phase2VarPropagation()(implicit opts: RunOptions): Unit = if (currentEqns.nonEmpty) {
       debugln("-".repeat(80))
       debugln("--- Phase 2: Variable Propagation")
       debugln("    (resolves all equations of the form: x = y where x and y are vars)")
@@ -233,7 +220,7 @@ object FastSetUnification {
       debugln()
     }
 
-    private def phase3VarAssignment(): Unit = if (currentEqns.nonEmpty) {
+    private def phase3VarAssignment()(implicit opts: RunOptions): Unit = if (currentEqns.nonEmpty) {
       debugln("-".repeat(80))
       debugln("--- Phase 3: Variable Assignment")
       debugln("    (resolves all equations of the form: x = t where x is free in t)")
@@ -246,7 +233,7 @@ object FastSetUnification {
       debugln()
     }
 
-    private def phase4TrivialAndRedundant(): Unit = if (currentEqns.nonEmpty) {
+    private def phase4TrivialAndRedundant()(implicit opts: RunOptions): Unit = if (currentEqns.nonEmpty) {
       debugln("-".repeat(80))
       debugln("--- Phase 4: Eliminate Trivial and Redundant Equations")
       debugln("    (eliminates equations of the form X = X and duplicated equations)")
@@ -259,7 +246,7 @@ object FastSetUnification {
       debugln()
     }
 
-    private def phase5SVE(): Unit = if (currentEqns.nonEmpty) {
+    private def phase5SVE()(implicit opts: RunOptions): Unit = if (currentEqns.nonEmpty) {
       debugln("-".repeat(80))
       debugln("--- Phase 5: Set Unification")
       debugln("    (resolves all remaining equations using SVE.)")
@@ -284,16 +271,14 @@ object FastSetUnification {
 
     /**
       * Verifies that the current substitution is a valid solution to the original equations `l`
-      * if [[Verify]] is set.
+      * if [[opts.verify]] is set.
       *
       * Note: Does not make sense to call before the equation system has been fully solved.
       *
       * Throws a [[ConflictException]] if an equation is not solved by the current substitution.
       */
-    private def verifySolution(): Unit = {
-      if (Verify) {
-        verify(currentSubst, l)
-      }
+    private def verifySolution()(implicit opts: RunOptions): Unit = {
+      if (opts.verify) verify(currentSubst, l)
     }
 
     /**
@@ -306,23 +291,21 @@ object FastSetUnification {
       }
     }
 
-    private def debugEquations(): Unit = {
+    private def debugEquations()(implicit opts: RunOptions): Unit = {
       debugln(s"Equations (${currentEqns.size}):")
       debugln(format(currentEqns))
     }
 
-    private def debugSubstitution(): Unit = {
+    private def debugSubstitution()(implicit opts: RunOptions): Unit = {
       debugln(s"Substitution (${currentSubst.numberOfBindings}):")
       debugln(currentSubst.toString)
     }
 
-    private def debugln(): Unit = debugln("")
+    private def debugln()(implicit opts: RunOptions): Unit = debugln("")
 
     // Note: By-name to ensure that we do not compute expensive strings.
-    private def debugln(s: => String): Unit = {
-      if (Debugging) {
-        Console.println(s)
-      }
+    private def debugln(s: => String)(implicit opts: RunOptions): Unit = {
+      if (opts.debugging) Console.println(s)
     }
 
   }
@@ -1427,10 +1410,12 @@ object FastSetUnification {
         ((posElem.size + posCsts.size + posVars.size + negElem.size + negCsts.size + negVars.size + rest.size) - 1) + rest.map(_.size).sum
     }
 
+    override def toString: String = toFormattedString(Formatter.NoFormatter)
+
     /**
       * Returns a human-readable representation of `this` term.
       */
-    override def toString: String = this match {
+    def toFormattedString(formatter: Formatter): String = this match {
       case Term.Univ => formatter.red("univ")
       case Term.Empty => formatter.red("empty")
       case Term.Cst(c) => formatter.blue(s"c$c")
