@@ -19,6 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.KindedAst.Expr
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, Name, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.{InternalCompilerException, SubEffectLevel}
+import ca.uwaterloo.flix.language.phase.unification.Substitution
 
 /**
   * This phase generates a list of type constraints, which include
@@ -574,13 +575,58 @@ object ConstraintGen {
         (resTpe, resEff)
 
       case Expr.StructNew(sym, fields, region, tvar, evar, loc) =>
-        throw new RuntimeException("joe tbd")
+        val (instantiedFieldTpes, tpe, regionVar) = instantiateStruct(sym, root.structs)
+        // Struct type overall
+        c.unifyType(tvar, tpe, loc)
+        val fieldTypes = fields.map{case (k, v) => visitExp(v)}
+        // Fields
+        val effs = fields.zip(fieldTypes).map {
+          case ((fieldSym, expr), (fieldTpe, fieldEff)) =>
+            instantiedFieldTpes.get(fieldSym) match {
+              case None => ()
+              case Some(tpe) => c.unifyType(tpe, fieldTpe, expr.loc)
+            }
+            fieldEff
+        }
+        // Region
+        val regionType = Type.mkRegion(regionVar, loc)
+        val (regionTpe, regionEff) = visitExp(region)
+        c.unifyType(regionType, regionTpe, region.loc)
+        c.unifyType(evar, Type.mkUnion(Type.mkUnion(effs, loc), regionEff, regionVar, loc), loc)
+
+        val resTpe = tvar
+        val resEff = evar
+        (resTpe, resEff)
 
       case Expr.StructGet(sym, exp, name, tvar, evar, loc) =>
-        throw new RuntimeException("joe tbd")
+        val (instantiatedFieldTpes, structTpe, regionVar) = instantiateStruct(sym, root.structs)
+        // unify the struct types
+        val (tpe, eff) = visitExp(exp)
+        c.expectType(structTpe, tpe, exp.loc)
+        // field type
+        val fieldTpe = instantiatedFieldTpes(Name.Label(name.name, name.loc))
+        c.unifyType(fieldTpe, tvar, loc)
+        // Region type
+        c.unifyType(Type.mkUnion(eff, regionVar, loc), evar, exp.loc)
+
+        val resTpe = tvar
+        val resEff = evar
+        (resTpe, resEff)
 
       case Expr.StructPut(sym, exp1, name, exp2, tvar, evar, loc) =>
-        throw new RuntimeException("joe tbd")
+        // lhs type
+        val (instantiatedFieldTpes, structTpe, regionVar) = instantiateStruct(sym, root.structs)
+        val (tpe1, eff1) = visitExp(exp1)
+        c.expectType(structTpe, tpe1, exp1.loc)
+        // rhs type
+        val (tpe2, eff2) = visitExp(exp2)
+        val fieldTpe = instantiatedFieldTpes(Name.Label(name.name, name.loc))
+        c.expectType(fieldTpe, tpe2, exp2.loc)
+        // overall type
+        c.unifyType(Type.mkUnit(loc), tvar, loc)
+        // overall effect
+        c.unifyType(Type.mkUnion(eff1, eff2, regionVar, loc), evar, loc)
+        (tvar, evar)
 
       case Expr.VectorLit(exps, tvar, evar, loc) =>
         val (tpes, effs) = exps.map(visitExp).unzip
@@ -1228,4 +1274,17 @@ object ConstraintGen {
     }
   }
 
+  private def instantiateStruct(sym: Symbol.StructSym, structs: Map[Symbol.StructSym, KindedAst.Struct])(implicit flix: Flix) : (Map[Name.Label, Type], Type, Type.Var) = {
+    val struct = structs(sym)
+    assert(struct.tparams.last.sym.kind == Kind.Eff)
+    val fields = struct.fields
+    val (_, _, tpe, substMap) = Scheme.instantiate(struct.sc, struct.loc)
+    val subst = Substitution(substMap)
+    val instantiatedFields = fields.map( f => f match {
+      case KindedAst.StructField(fieldSym, tpe, loc) =>
+        fieldSym -> subst(tpe)
+    }
+    )
+    (instantiatedFields.toMap, tpe, substMap(struct.tparams.last.sym))
+  }
 }
