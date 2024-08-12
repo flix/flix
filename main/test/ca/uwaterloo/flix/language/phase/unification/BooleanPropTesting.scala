@@ -162,7 +162,7 @@ object BooleanPropTesting {
   def propagationTesting(random: Random): List[Equation] = {
     val former = termFormer()
     val t = randomTerm(former, random, 4, 3, 3, 3)
-    List(t ~ FastSetUnification.propagation(t))
+    List(t ~ FastSetUnification.Term.propagation(t))
   }
 
   def explodedRandomXor(random: Random): List[Equation] = {
@@ -206,7 +206,7 @@ object BooleanPropTesting {
   }
 
   private def eqPropagatedSelf(t: Term): Equation = {
-    t ~ FastSetUnification.propagation(t)
+    t ~ FastSetUnification.Term.propagation(t)
   }
 
   /** Returns an empty equivalent term */

@@ -202,7 +202,7 @@ object FastSetUnification {
       debugln("    (resolves all equations of the form: x = c where x is a var and c is univ/empty/constant/element)")
       debugln("-".repeat(80))
       setPhase(1)
-      val s = propagateConstants(currentEqns)
+      val s = Phases.propagateConstants(currentEqns)
       updateState(s)
       debugEquations()
       debugSubstitution()
@@ -215,7 +215,7 @@ object FastSetUnification {
       debugln("    (resolves all equations of the form: x = y where x and y are vars)")
       debugln("-".repeat(80))
       setPhase(2)
-      val s = propagateVars(currentEqns)
+      val s = Phases.propagateVars(currentEqns)
       updateState(s)
       debugEquations()
       debugSubstitution()
@@ -228,7 +228,7 @@ object FastSetUnification {
       debugln("    (resolves all equations of the form: x = t where x is free in t)")
       debugln("-".repeat(80))
       setPhase(3)
-      val s = varAssignment(currentEqns)
+      val s = Phases.varAssignment(currentEqns)
       updateState(s)
       debugEquations()
       debugSubstitution()
@@ -241,7 +241,7 @@ object FastSetUnification {
       debugln("    (eliminates equations of the form X = X and duplicated equations)")
       debugln("-".repeat(80))
       setPhase(4)
-      val s = eliminateTrivialAndRedundant(currentEqns)
+      val s = Phases.eliminateTrivialAndRedundant(currentEqns)
       updateState(s)
       debugEquations()
       debugSubstitution()
@@ -254,7 +254,7 @@ object FastSetUnification {
       debugln("    (resolves all remaining equations using SVE.)")
       debugln("-".repeat(80))
       setPhase(5)
-      val newSubst = setUnifyAllPickSmallest(currentEqns)
+      val newSubst = Phases.setUnifyAllPickSmallest(currentEqns)
       updateState(Nil, newSubst) // Note: Pass Nil because SVE will have solved all equations.
       debugSubstitution()
       debugln()
@@ -267,7 +267,7 @@ object FastSetUnification {
       */
     private def updateState(l: (List[Equation], SetSubstitution)): Unit = {
       val (nextEqns, nextSubst) = l
-      currentEqns = checkAndSimplify(nextEqns)
+      currentEqns = Phases.checkAndSimplify(nextEqns)
       currentSubst = nextSubst @@ currentSubst
     }
 
@@ -373,7 +373,7 @@ object FastSetUnification {
         // [],
         // [x -> t]
         case (Term.Var(x), t) if t.noFreeVars =>
-          Some((Nil, SetSubstitution.singleton(x, propagation(t))))
+          Some((Nil, SetSubstitution.singleton(x, Term.propagation(t))))
 
         // x ∩ y ∩ !z ∩ ... ∩ rest_i ~ univ
         // ---
@@ -450,7 +450,7 @@ object FastSetUnification {
           // We have found an equation: `x ~ t` where `x` is not free in `t`.
           // Construct a singleton substitution `[x -> y]`.
           // Apply propagation to simplify the rhs before it goes into the substitution.
-          Some(SetSubstitution.singleton(x, propagation(rhs)))
+          Some(SetSubstitution.singleton(x, Term.propagation(rhs)))
         case _ =>
           None
       }
@@ -471,95 +471,270 @@ object FastSetUnification {
       val fvs = query.freeVars.toList
 
       // Eliminate all variables one by one in the order specified by fvs.
-      Result.Ok(successiveVariableElimination(query, fvs))
+      Result.Ok(Term.successiveVariableElimination(query, fvs))
     } catch {
       case _: BoolUnificationException => Result.Err(ConflictException(e.t1, e.t2, e.loc))
     }
   }
 
-  /**
-    * Returns a list of non-trivial unification equations computed from the given list `l`.
-    *
-    * Throws a [[ConflictException]] if an unsolvable equation is encountered.
-    *
-    * A trivial equation is one of:
-    * -     univ ~ univ
-    * -    empty ~ empty
-    * -        e ~ e        (same element)
-    * -        c ~ c        (same constant)
-    * -        x ~ x        (same variable)
-    */
-  private def checkAndSimplify(l: List[Equation]): List[Equation] = {
-    val res0 = runEqRule(Rules.trivial)(l).getOrElse(l)
-    val res1 = runErrRule(Rules.triviallyWrong)(res0)
-    res1
-  }
+  private object Phases {
 
-  /**
-    * Propagates constants and truth values through the equation system.
-    *
-    * The implementation saturates the system, i.e. it computes a fixpoint.
-    *
-    * The implementation uses five rewrite rules:
-    *
-    * - `x ~ univ` becomes `[x -> univ]`.
-    * - `x ~ c` becomes `[x -> c]`.
-    * - `x ~ e` becomes `[x -> e]`.
-    * - `x ∩ y ∩ !z ∩ ... ∩ rest ~ univ` becomes `[x -> univ, y -> univ, z -> empty, ...]` and `rest ~ univ`.
-    * - `x ∪ y ∪ !z ∪ ... ∪ rest ~ empty` becomes `[x -> empty, y -> empty, z -> univ, ...]` and `rest ~ empty`.
-    *
-    * For example, if the equation system is:
-    *
-    * {{{
-    *     c1794221043 ~ (x55062 ∩ x55050 ∩ x55046 ∩ x55060 ∩ x55066 ∩ x55040 ∩ x55075 ∩ x55042 ∩ x55058 ∩ x55078)
-    *     x55078 ~ x112431
-    *     c1794221043 ~ x55040
-    *     x55042 ~ x112433
-    *     x55044 ~ x112437
-    *     x55046 ~ (x112435 ∩ x55044)
-    *     x55048 ~ univ
-    *     x55050 ~ (x112439 ∩ x55048)
-    *     x55052 ~ x112443
-    *     x55055 ~ univ
-    *     x55058 ~ (x55052 ∩ x112441 ∩ x55055)
-    *     x55060 ~ x112446
-    *     x55062 ~ x112448
-    *     x55066 ~ univ
-    *     x55075 ~ x112453
-    * }}}
-    *
-    * then after constant propagation it is:
-    *
-    * {{{
-    *     c1794221043 ~ (c1794221043 ∩ x55062 ∩ x55050 ∩ x55046 ∩ x55060 ∩ x55075 ∩ x55042 ∩ x55058 ∩ x55078)
-    *     x55078 ~ x112431
-    *     x55042 ~ x112433
-    *     x55044 ~ x112437
-    *     x55046 ~ (x112435 ∩ x55044)
-    *     x112439 ~ x55050
-    *     x55052 ~ x112443
-    *     x55058 ~ (x55052 ∩ x112441)
-    *     x55060 ~ x112446
-    *     x55062 ~ x112448
-    *     x55075 ~ x112453
-    * }}}
-    *
-    * with the substitution:
-    *
-    * {{{
-    *     x55048 -> univ
-    *     x55055 -> univ
-    *     x55066 -> univ
-    *     x55040 -> c1794221043
-    * }}}
-    *
-    * Note that several equations were simplified.
-    *
-    * Note: We use `subst.extended` to check for conflicts. For example, if we already know that `s = [x -> c17]` and we
-    * learn that `x -> univ` then we will try to extend s with the new binding which will raise a [[ConflictException]].
-    */
-  private def propagateConstants(l: List[Equation]): (List[Equation], SetSubstitution) = {
-    runRule(Rules.constantAssignment, selfFeeding = true, substInduced = true)(l).getOrElse((l, SetSubstitution.empty))
+    /**
+      * Returns a list of non-trivial unification equations computed from the given list `l`.
+      *
+      * Throws a [[ConflictException]] if an unsolvable equation is encountered.
+      *
+      * A trivial equation is one of:
+      * -     univ ~ univ
+      * -    empty ~ empty
+      * -        e ~ e        (same element)
+      * -        c ~ c        (same constant)
+      * -        x ~ x        (same variable)
+      */
+    def checkAndSimplify(l: List[Equation]): List[Equation] = {
+      val res0 = runEqRule(Rules.trivial)(l).getOrElse(l)
+      val res1 = runErrRule(Rules.triviallyWrong)(res0)
+      res1
+    }
+
+
+    /**
+      * Propagates constants and truth values through the equation system.
+      *
+      * The implementation saturates the system, i.e. it computes a fixpoint.
+      *
+      * The implementation uses five rewrite rules:
+      *
+      * - `x ~ univ` becomes `[x -> univ]`.
+      * - `x ~ c` becomes `[x -> c]`.
+      * - `x ~ e` becomes `[x -> e]`.
+      * - `x ∩ y ∩ !z ∩ ... ∩ rest ~ univ` becomes `[x -> univ, y -> univ, z -> empty, ...]` and `rest ~ univ`.
+      * - `x ∪ y ∪ !z ∪ ... ∪ rest ~ empty` becomes `[x -> empty, y -> empty, z -> univ, ...]` and `rest ~ empty`.
+      *
+      * For example, if the equation system is:
+      *
+      * {{{
+      *     c1794221043 ~ (x55062 ∩ x55050 ∩ x55046 ∩ x55060 ∩ x55066 ∩ x55040 ∩ x55075 ∩ x55042 ∩ x55058 ∩ x55078)
+      *     x55078 ~ x112431
+      *     c1794221043 ~ x55040
+      *     x55042 ~ x112433
+      *     x55044 ~ x112437
+      *     x55046 ~ (x112435 ∩ x55044)
+      *     x55048 ~ univ
+      *     x55050 ~ (x112439 ∩ x55048)
+      *     x55052 ~ x112443
+      *     x55055 ~ univ
+      *     x55058 ~ (x55052 ∩ x112441 ∩ x55055)
+      *     x55060 ~ x112446
+      *     x55062 ~ x112448
+      *     x55066 ~ univ
+      *     x55075 ~ x112453
+      * }}}
+      *
+      * then after constant propagation it is:
+      *
+      * {{{
+      *     c1794221043 ~ (c1794221043 ∩ x55062 ∩ x55050 ∩ x55046 ∩ x55060 ∩ x55075 ∩ x55042 ∩ x55058 ∩ x55078)
+      *     x55078 ~ x112431
+      *     x55042 ~ x112433
+      *     x55044 ~ x112437
+      *     x55046 ~ (x112435 ∩ x55044)
+      *     x112439 ~ x55050
+      *     x55052 ~ x112443
+      *     x55058 ~ (x55052 ∩ x112441)
+      *     x55060 ~ x112446
+      *     x55062 ~ x112448
+      *     x55075 ~ x112453
+      * }}}
+      *
+      * with the substitution:
+      *
+      * {{{
+      *     x55048 -> univ
+      *     x55055 -> univ
+      *     x55066 -> univ
+      *     x55040 -> c1794221043
+      * }}}
+      *
+      * Note that several equations were simplified.
+      *
+      * Note: We use `subst.extended` to check for conflicts. For example, if we already know that `s = [x -> c17]` and we
+      * learn that `x -> univ` then we will try to extend s with the new binding which will raise a [[ConflictException]].
+      */
+    def propagateConstants(l: List[Equation]): (List[Equation], SetSubstitution) = {
+      runRule(Rules.constantAssignment, selfFeeding = true, substInduced = true)(l).getOrElse((l, SetSubstitution.empty))
+    }
+
+    /**
+      * Propagates variables through the equation system. Cannot fail.
+      *
+      * The observation is that we if we have simple equations of the form: `x ~ y`
+      * then we can create a substitution that binds `[x -> y]`. Every time we create
+      * a binding, we must be careful to update both unsolved and pending equations.
+      *
+      * For example, if the equation system is:
+      *
+      * {{{
+      *     x78914 ~ (c1498 ∩ c1500 ∩ c1501)
+      *     x78914 ~ (x78926 ∩ x78923 ∩ x78917)
+      *     x78917 ~ x127244
+      *     x78921 ~ x127251
+      *     x78923 ~ (x127249 ∩ x127247 ∩ x127248)
+      *     x78926 ~ (x127254 ∩ x127252)
+      * }}}
+      *
+      * then after variable propagation it is:
+      *
+      * {{{
+      *     x78914 ~ (c1498 ∩ c1500 ∩ c1501)
+      *     x78914 ~ (x78926 ∩ x78923 ∩ x127244)
+      *     x78923 ~ (x127249 ∩ x127247 ∩ x127248)
+      *     x78926 ~ (x127254 ∩ x127252)
+      * }}}
+      *
+      * with the substitution:
+      *
+      * {{{
+      *      x78917 -> x127244
+      *     x127251 -> x78921
+      * }}}
+      *
+      * Returns a list of unsolved equations and a partial substitution.
+      */
+    def propagateVars(l: List[Equation]): (List[Equation], SetSubstitution) = {
+      runSubstRule(Rules.variableAlias)(l).getOrElse((l, SetSubstitution.empty))
+    }
+
+
+    /**
+      * Assigns variables. Given a unification equation `x ~ t` we can assign `[x -> t]` if `x` does not occur in `t`.
+      *
+      * For example, given the equation system:
+      *
+      * {{{
+      *    x78914 ~ (c1498 ∩ c1500 ∩ c1501)
+      *    x78914 ~ (x78926 ∩ x78923 ∩ x127244)
+      *    x78923 ~ (x127249 ∩ x127247 ∩ x127248)
+      *    x78926 ~ (x127254 ∩ x127252)
+      * }}}
+      *
+      * We compute the substitution:
+      *
+      * {{{
+      *     x78926 -> (x127254 ∩ x127252)
+      *     x78914 -> (c1498 ∩ c1500 ∩ c1501)
+      *     x78923 -> (x127249 ∩ x127247 ∩ x127248)
+      * }}}
+      *
+      * and we have the remaining equations:
+      *
+      * {{{
+      *     (c1498 ∩ c1500 ∩ c1501) ~ (x127248 ∩ x127244 ∩ x127254 ∩ x127252 ∩ x127249 ∩ x127247)
+      * }}}
+      */
+    def varAssignment(l: List[Equation]): (List[Equation], SetSubstitution) = {
+      runSubstRule(Rules.variableAssignment)(l).getOrElse((l, SetSubstitution.empty))
+    }
+
+    /**
+      * Eliminates trivial and redundant equations.
+      *
+      * An equation is trivial if its LHS and RHS are the same.
+      *
+      * An equation is redundant if it appears multiple times in the list of equations.
+      *
+      * For example, given the equation system:
+      *
+      * {{{
+      *   (c9 ∩ c0) ~ (c9 ∩ c0)
+      *         c10 ~ c11
+      * }}}
+      *
+      * We return the new equation system:
+      *
+      * {{{
+      *   c10 ~ c11
+      * }}}
+      *
+      * For example, given the equation system:
+      *
+      * {{{
+      *   (c1 ∩ c3) ~ (c1 ∩ c3)
+      *   (c1 ∩ c3) ~ (c1 ∩ c3)
+      * }}}
+      *
+      * We return the new equation system:
+      *
+      * {{{
+      *   (c1 ∩ c3) ~ (c1 ∩ c3)
+      * }}}
+      *
+      * We only remove equations, hence the returned substitution is always empty.
+      *
+      * Note: We only consider *syntactic equality*.
+      */
+    def eliminateTrivialAndRedundant(l: List[Equation]): (List[Equation], SetSubstitution) = {
+      var result = List.empty[Equation]
+      val seen = mutable.Set.empty[Equation]
+
+      // We rely on equations and terms having correct equals and hashCode functions.
+      // Note: We are purely working with *syntactic equality*, not *semantic equality*.
+      for (eqn <- l) {
+        if (!seen.contains(eqn)) {
+          // The equation has not been seen before.
+          if (eqn.t1 != eqn.t2) {
+            // The LHS and RHS are different.
+            seen += eqn
+            result = eqn :: result
+          }
+        }
+      }
+
+      // We reverse the list of equations to preserve the initial order.
+      (result.reverse, SetSubstitution.empty)
+    }
+
+    /**
+      * Given a unification equation system `l` computes a most-general unifier for all its equations.
+      *
+      * If multiple equations are involved then we try to solve them in different order to find a small substitution.
+      */
+    def setUnifyAllPickSmallest(l: List[Equation]): SetSubstitution = {
+      // Case 1: We have at most one equation to solve: just solve immediately.
+      if (l.length <= 1) {
+        return setUnifyAll(l)
+      }
+
+      // Case 2: Check that there are not too many complex equations.
+      if (l.length > ComplexThreshold) {
+        throw TooComplexException(s"Too many complex equations (threshold: $ComplexThreshold, found: ${l.length})")
+      }
+
+      // Case 3: We solve the first [[PermutationLimit]] permutations and pick the one that gives rise to the smallest substitution.
+      val results = l.permutations.take(PermutationLimit).toList.map {
+        p => (p, setUnifyAll(p))
+      }.sortBy {
+        case (_, s) => s.size
+      }
+
+      // Pick the smallest substitution.
+      results.head._2
+    }
+
+
+    /**
+      * Computes the most-general unifier of all the given equations `l`.
+      *
+      * Throws a [[ConflictException]] if an equation in `l` cannot be solved.
+      *
+      * Note: We assume that any existing substitution has already been applied to the equations in `l`.
+      *
+      * Note: We assume that any existing substitution will be composed with the substitution returned by this function.
+      */
+    def setUnifyAll(l: List[Equation]): SetSubstitution = {
+      runSubstResRule(Rules.setUnifyOne)(l)
+    }
+
   }
 
   /**
@@ -639,289 +814,6 @@ object FastSetUnification {
     val res = runRule(rule1, selfFeeding = false, substInduced = false)(l)
     assert(res.isEmpty)
     l
-  }
-
-  /**
-    * Propagates variables through the equation system. Cannot fail.
-    *
-    * The observation is that we if we have simple equations of the form: `x ~ y`
-    * then we can create a substitution that binds `[x -> y]`. Every time we create
-    * a binding, we must be careful to update both unsolved and pending equations.
-    *
-    * For example, if the equation system is:
-    *
-    * {{{
-    *     x78914 ~ (c1498 ∩ c1500 ∩ c1501)
-    *     x78914 ~ (x78926 ∩ x78923 ∩ x78917)
-    *     x78917 ~ x127244
-    *     x78921 ~ x127251
-    *     x78923 ~ (x127249 ∩ x127247 ∩ x127248)
-    *     x78926 ~ (x127254 ∩ x127252)
-    * }}}
-    *
-    * then after variable propagation it is:
-    *
-    * {{{
-    *     x78914 ~ (c1498 ∩ c1500 ∩ c1501)
-    *     x78914 ~ (x78926 ∩ x78923 ∩ x127244)
-    *     x78923 ~ (x127249 ∩ x127247 ∩ x127248)
-    *     x78926 ~ (x127254 ∩ x127252)
-    * }}}
-    *
-    * with the substitution:
-    *
-    * {{{
-    *      x78917 -> x127244
-    *     x127251 -> x78921
-    * }}}
-    *
-    * Returns a list of unsolved equations and a partial substitution.
-    */
-  private def propagateVars(l: List[Equation]): (List[Equation], SetSubstitution) = {
-    runSubstRule(Rules.variableAlias)(l).getOrElse((l, SetSubstitution.empty))
-  }
-
-  /**
-    * Assigns variables. Given a unification equation `x ~ t` we can assign `[x -> t]` if `x` does not occur in `t`.
-    *
-    * For example, given the equation system:
-    *
-    * {{{
-    *    x78914 ~ (c1498 ∩ c1500 ∩ c1501)
-    *    x78914 ~ (x78926 ∩ x78923 ∩ x127244)
-    *    x78923 ~ (x127249 ∩ x127247 ∩ x127248)
-    *    x78926 ~ (x127254 ∩ x127252)
-    * }}}
-    *
-    * We compute the substitution:
-    *
-    * {{{
-    *     x78926 -> (x127254 ∩ x127252)
-    *     x78914 -> (c1498 ∩ c1500 ∩ c1501)
-    *     x78923 -> (x127249 ∩ x127247 ∩ x127248)
-    * }}}
-    *
-    * and we have the remaining equations:
-    *
-    * {{{
-    *     (c1498 ∩ c1500 ∩ c1501) ~ (x127248 ∩ x127244 ∩ x127254 ∩ x127252 ∩ x127249 ∩ x127247)
-    * }}}
-    */
-  private def varAssignment(l: List[Equation]): (List[Equation], SetSubstitution) = {
-    runSubstRule(Rules.variableAssignment)(l).getOrElse((l, SetSubstitution.empty))
-  }
-
-  /**
-    * Eliminates trivial and redundant equations.
-    *
-    * An equation is trivial if its LHS and RHS are the same.
-    *
-    * An equation is redundant if it appears multiple times in the list of equations.
-    *
-    * For example, given the equation system:
-    *
-    * {{{
-    *   (c9 ∩ c0) ~ (c9 ∩ c0)
-    *         c10 ~ c11
-    * }}}
-    *
-    * We return the new equation system:
-    *
-    * {{{
-    *   c10 ~ c11
-    * }}}
-    *
-    * For example, given the equation system:
-    *
-    * {{{
-    *   (c1 ∩ c3) ~ (c1 ∩ c3)
-    *   (c1 ∩ c3) ~ (c1 ∩ c3)
-    * }}}
-    *
-    * We return the new equation system:
-    *
-    * {{{
-    *   (c1 ∩ c3) ~ (c1 ∩ c3)
-    * }}}
-    *
-    * We only remove equations, hence the returned substitution is always empty.
-    *
-    * Note: We only consider *syntactic equality*.
-    */
-  private def eliminateTrivialAndRedundant(l: List[Equation]): (List[Equation], SetSubstitution) = {
-    var result = List.empty[Equation]
-    val seen = mutable.Set.empty[Equation]
-
-    // We rely on equations and terms having correct equals and hashCode functions.
-    // Note: We are purely working with *syntactic equality*, not *semantic equality*.
-    for (eqn <- l) {
-      if (!seen.contains(eqn)) {
-        // The equation has not been seen before.
-        if (eqn.t1 != eqn.t2) {
-          // The LHS and RHS are different.
-          seen += eqn
-          result = eqn :: result
-        }
-      }
-    }
-
-    // We reverse the list of equations to preserve the initial order.
-    (result.reverse, SetSubstitution.empty)
-  }
-
-  /**
-    * Given a unification equation system `l` computes a most-general unifier for all its equations.
-    *
-    * If multiple equations are involved then we try to solve them in different order to find a small substitution.
-    */
-  private def setUnifyAllPickSmallest(l: List[Equation]): SetSubstitution = {
-    // Case 1: We have at most one equation to solve: just solve immediately.
-    if (l.length <= 1) {
-      return setUnifyAll(l)
-    }
-
-    // Case 2: Check that there are not too many complex equations.
-    if (l.length > ComplexThreshold) {
-      throw TooComplexException(s"Too many complex equations (threshold: $ComplexThreshold, found: ${l.length})")
-    }
-
-    // Case 3: We solve the first [[PermutationLimit]] permutations and pick the one that gives rise to the smallest substitution.
-    val results = l.permutations.take(PermutationLimit).toList.map {
-      p => (p, setUnifyAll(p))
-    }.sortBy {
-      case (_, s) => s.size
-    }
-
-    // Pick the smallest substitution.
-    results.head._2
-  }
-
-  /**
-    * Computes the most-general unifier of all the given equations `l`.
-    *
-    * Throws a [[ConflictException]] if an equation in `l` cannot be solved.
-    *
-    * Note: We assume that any existing substitution has already been applied to the equations in `l`.
-    *
-    * Note: We assume that any existing substitution will be composed with the substitution returned by this function.
-    */
-  private def setUnifyAll(l: List[Equation]): SetSubstitution = {
-    runSubstResRule(Rules.setUnifyOne)(l)
-  }
-
-  /**
-    * The Successive Variable Elimination algorithm.
-    *
-    * Computes the most-general unifier of the given term `t ~ empty` where `fvs` is the list of free variables in `t`.
-    *
-    * Eliminates variables one-by-one from the given list `fvs`.
-    *
-    * Throws a [[BoolUnificationException]] if there is no solution.
-    */
-  private def successiveVariableElimination(t: Term, fvs: List[Int]): SetSubstitution = fvs match {
-    case Nil =>
-      // [[emptyEquivalent]] now treats the remaining constants as variables and
-      // goes through all assignments of those
-      if (emptyEquivalent(t))
-        SetSubstitution.empty
-      else
-        throw BoolUnificationException()
-
-    case x :: xs =>
-      val t0 = SetSubstitution.singleton(x, Term.Empty)(t)
-      val t1 = SetSubstitution.singleton(x, Term.Univ)(t)
-      val se = successiveVariableElimination(propagation(Term.mkInter(t0, t1)), xs)
-
-      val f1 = propagation(Term.mkUnion(se(t0), Term.mkMinus(Term.Var(x), se(t1))))
-      val st = SetSubstitution.singleton(x, f1)
-      st ++ se
-  }
-
-  /**
-    * Returns `true` if the given term `t` is equivalent to empty, i.e. if all assignments to its
-    * variables and constants makes the whole term evaluate to empty.
-    *
-    * Note that a constant can never be empty equivalent because we do not know if it is univ or empty.
-    *
-    * OBS: This function requires that variables and constants use disjoint integers.
-    */
-  private def emptyEquivalent(t: Term): Boolean = t match {
-    case Term.Univ => false
-    case Term.Cst(_) => false
-    case Term.Var(_) => false
-    case Term.ElemSet(_) => false
-    case Term.Empty => true
-    case Term.Union(posElem, posCsts, posVars, negElem, negCsts, negVars, _)
-      if posElem.nonEmpty || posCsts.nonEmpty || posVars.nonEmpty || negElem.nonEmpty || negCsts.nonEmpty || negVars.nonEmpty => false
-    case _ => evaluateAll(t, t.freeUnknowns.toList, SortedSet.empty) // Evaluate t on all its valuations.
-  }
-
-  /**
-    * Returns `true` if `t` is equivalent to empty under the assumption that `fvs` is the vars
-    * and constants of `t` ([[Term.freeUnknowns]]) and that unknowns in `univUnknowns` are set to `univ`.
-    *
-    * For each unknown `x`, the function recursively explores both when `x` is univ and when `x` is empty.
-    *
-    * OBS: This function requires that variables and constants use disjoint integers.
-    */
-  private def evaluateAll(t: Term, fvs: List[Int], univUnknowns: SortedSet[Int]): Boolean = fvs match {
-    case Nil =>
-      // All unknowns are bound. Compute the truth value.
-      evaluate(t, univUnknowns).isEmpty
-    case x :: xs =>
-      // Recurse on two cases: x = univ and x = empty.
-      evaluateAll(t, xs, univUnknowns + x) && evaluateAll(t, xs, univUnknowns)
-  }
-
-  /**
-    * Returns the evaluation of the formula assuming that unknowns in `univUnknowns` are univ
-    * and unknowns not in `univUnknowns` are empty.
-    *
-    * OBS: This function requires that variables and constants use disjoint integers.
-    */
-  private def evaluate(t: Term, univUnknowns: SortedSet[Int]): SetEval = t match {
-    case Term.Univ => SetEval.univ
-    case Term.Empty => SetEval.empty
-    case Term.Cst(c) => if (univUnknowns.contains(c)) SetEval.univ else SetEval.empty
-    case Term.ElemSet(s) => SetEval.set(s)
-    case Term.Var(x) => if (univUnknowns.contains(x)) SetEval.univ else SetEval.empty
-    case Term.Compl(t) => SetEval.complement(evaluate(t, univUnknowns))
-
-    case Term.Inter(posElem, posCsts, posVars, negElem, negCsts, negVars, rest) =>
-      // Evaluate the sub-terms, exiting early in case the running set is empty
-      var running = SetEval.univ
-      for (t <- posElem.iterator ++ posCsts.iterator ++ posVars.iterator) {
-        running = SetEval.intersection(running, evaluate(t, univUnknowns))
-        if (running.isEmpty) return running
-      }
-      for (t <- negElem.iterator ++ negCsts.iterator ++ negVars.iterator) {
-        // Note that these are negated implicitly, so evaluate complement.
-        running = SetEval.intersection(running, SetEval.complement(evaluate(t, univUnknowns)))
-        if (running.isEmpty) return running
-      }
-      for (t <- rest) {
-        running = SetEval.intersection(running, evaluate(t, univUnknowns))
-        if (running.isEmpty) return running
-      }
-      running
-
-    case Term.Union(posElem, posCsts, posVars, negElem, negCsts, negVars, rest) =>
-      // Evaluate the sub-terms, exiting early in case the running set is univ
-      var running = SetEval.empty
-      for (t <- posElem.iterator ++ posCsts.iterator ++ posVars.iterator) {
-        running = SetEval.union(running, evaluate(t, univUnknowns))
-        if (running.isUniv) return running
-      }
-      for (t <- negElem.iterator ++ negCsts.iterator ++ negVars.iterator) {
-        // Note that these are negated implicitly, so evaluate complement.
-        running = SetEval.union(running, SetEval.complement(evaluate(t, univUnknowns)))
-        if (running.isUniv) return running
-      }
-      for (t <- rest) {
-        running = SetEval.union(running, evaluate(t, univUnknowns))
-        if (running.isUniv) return running
-      }
-      running
   }
 
   /**
@@ -1029,206 +921,6 @@ object FastSetUnification {
         // s
         Set(s)
     }
-  }
-
-  private def setElem(elem: Option[Term.ElemSet], target: Term): SortedMap[Int, Term] = elem match {
-    case Some(e) => setElem(e, target)
-    case _ => SortedMap.empty[Int, Term]
-  }
-
-  private def setElem(elem: Term.ElemSet, target: Term): SortedMap[Int, Term] = {
-    if (elem.s.sizeIs == 1) SortedMap(elem.s.head -> target)
-    else SortedMap.empty[Int, Term]
-  }
-
-  /**
-    * Use the four rewrites
-    *
-    * * `x ∩ f == x ∩ f[x -> Univ]`
-    * * `!x ∩ f == !x ∩ f[x -> Empty]`
-    * * `x ∪ f == x ∪ f[x -> Empty]`
-    * * `!x ∪ f == !x ∪ f[x -> Univ]`
-    *
-    * where `x` can be an element, a constant, or a variable.
-    */
-  def propagation(t: Term): Term = {
-    // instantiates elements, returning either Univ, Empty, or Term.ElemSet
-    def instElemSet(s0: SortedSet[Int], setElems: SortedMap[Int, Term]): Term = {
-      if (setElems.nonEmpty && s0.exists(i => setElems.get(i).contains(Term.Univ))) {
-        // if any of the elements are univ, the whole term is univ
-        Term.Univ
-      } else {
-        // remove elements set to empty
-        val s = s0.filterNot(i => setElems.get(i).contains(Term.Empty))
-        if (s eq s0) t else Term.mkElemSet(s)
-      }
-    }
-
-    // `setX` assigns elements/constants/variables to univ or empty, where
-    // elements/constants/variables not in the map are just themselves.
-    def visit(t: Term, setElems: SortedMap[Int, Term], setCsts: SortedMap[Int, Term], setVars: SortedMap[Int, Term]): Term = t match {
-      case Term.Univ => t
-      case Term.Empty => t
-      case Term.Cst(c) => setCsts.getOrElse(c, t) // use mapping, if present
-      case Term.Var(x) => setVars.getOrElse(x, t) // use mapping, if present
-      case Term.ElemSet(s) => instElemSet(s, setElems)
-
-      case Term.Compl(t0) =>
-        val compl0 = visit(t0, setElems, setCsts, setVars)
-        // avoid reconstruction if `visit` did nothing
-        if (compl0 eq t0) t else Term.mkCompl(compl0)
-
-      case Term.Inter(posElem0, posCsts0, posVars0, negElem0, negCsts0, negVars0, rest0) =>
-        // check for trivial cases where elements/constants/variables are empty
-        val instPosElem = posElem0.map(e => instElemSet(e.s, setElems))
-        val posElem = instPosElem match {
-          case Some(e) => e match {
-            case Term.Univ => None // redundant
-            case Term.Empty => return Term.Empty
-            case e@Term.ElemSet(_) => Some(e)
-            case _ => ??? // unreachable
-          }
-          case None => None
-        }
-        if (setCsts.nonEmpty && posCsts0.exists(c => setCsts.get(c.c).contains(Term.Empty))) return Term.Empty
-        if (setVars.nonEmpty && posVars0.exists(x => setVars.get(x.x).contains(Term.Empty))) return Term.Empty
-        val instNegElem = negElem0.map(e => instElemSet(e.s, setElems))
-        val negElem = instNegElem match {
-          case Some(e) => e match {
-            case Term.Univ => return Term.Empty
-            case Term.Empty => None // redundant
-            case e@Term.ElemSet(_) => Some(e)
-            case _ => ??? // unreachable
-          }
-          case None => None
-        }
-        if (setCsts.nonEmpty && negCsts0.exists(c => setCsts.get(c.c).contains(Term.Univ))) return Term.Empty
-        if (setVars.nonEmpty && negVars0.exists(x => setVars.get(x.x).contains(Term.Univ))) return Term.Empty
-
-        // Compute new constant and variable sets by removing constants and variables that are univ (redundant).
-        val posCsts = if (setCsts.isEmpty) posCsts0 else posCsts0.filterNot(c => setCsts.get(c.c).contains(Term.Univ))
-        val posVars = if (setVars.isEmpty) posVars0 else posVars0.filterNot(x => setVars.get(x.x).contains(Term.Univ))
-        val negCsts = if (setCsts.isEmpty) negCsts0 else negCsts0.filterNot(c => setCsts.get(c.c).contains(Term.Empty))
-        val negVars = if (setVars.isEmpty) negVars0 else negVars0.filterNot(x => setVars.get(x.x).contains(Term.Empty))
-
-        // Add the new propagated elements/constants/variables
-        var currentElems = setElems ++ setElem(posElem0, Term.Univ) ++ setElem(negElem0, Term.Empty)
-        var currentCsts = setCsts ++
-          posCsts0.iterator.map(_.c -> Term.Univ) ++
-          negCsts0.iterator.map(_.c -> Term.Empty)
-        var currentVars = setVars ++
-          posVars0.iterator.map(_.x -> Term.Univ) ++
-          negVars0.iterator.map(_.x -> Term.Empty)
-
-        // Recurse on the sub-terms with the updated maps.
-        // If a sub-term becomes a elements/constants/variables after visiting,
-        // add it to the propagated atoms.
-        val rest = rest0.map { t =>
-          val res = visit(t, currentElems, currentCsts, currentVars)
-          res match {
-            case Term.Univ => res
-            case Term.Empty => res
-            case Term.Cst(c) =>
-              currentCsts += (c -> Term.Univ)
-              res
-            case Term.Compl(Term.Cst(c)) =>
-              currentCsts += (c -> Term.Empty)
-              res
-            case Term.Var(x) =>
-              currentVars += (x -> Term.Univ)
-              res
-            case Term.Compl(Term.Var(x)) =>
-              currentVars += (x -> Term.Empty)
-              res
-            case e@Term.ElemSet(_) =>
-              currentElems ++= setElem(e, Term.Univ)
-              res
-            case Term.Compl(e@Term.ElemSet(_)) =>
-              currentElems ++= setElem(e, Term.Empty)
-              res
-            case Term.Compl(_) => res
-            case Term.Inter(_, _, _, _, _, _, _) => res
-            case Term.Union(_, _, _, _, _, _, _) => res
-          }
-        }
-
-        Term.mkInter(posElem, posCsts, posVars, negElem, negCsts, negVars, rest)
-
-      case Term.Union(posElem0, posCsts0, posVars0, negElem0, negCsts0, negVars0, rest0) =>
-        // check for trivial cases
-        val instPosElem = posElem0.map(e => instElemSet(e.s, setElems))
-        val posElem = instPosElem match {
-          case Some(e) => e match {
-            case Term.Univ => return Term.Univ
-            case Term.Empty => None // redundant
-            case e@Term.ElemSet(_) => Some(e)
-            case _ => ??? // unreachable
-          }
-          case None => None
-        }
-        if (setCsts.nonEmpty && posCsts0.exists(c => setCsts.get(c.c).contains(Term.Univ))) return Term.Univ
-        if (setVars.nonEmpty && posVars0.exists(x => setVars.get(x.x).contains(Term.Univ))) return Term.Univ
-        val instNegElem = negElem0.map(e => instElemSet(e.s, setElems))
-        val negElem = instNegElem match {
-          case Some(e) => e match {
-            case Term.Univ => None // redundant
-            case Term.Empty => return Term.Univ
-            case e@Term.ElemSet(_) => Some(e)
-            case _ => ??? // unreachable
-          }
-          case None => None
-        }
-        if (setCsts.nonEmpty && negCsts0.exists(c => setCsts.get(c.c).contains(Term.Empty))) return Term.Univ
-        if (setVars.nonEmpty && negVars0.exists(x => setVars.get(x.x).contains(Term.Empty))) return Term.Univ
-
-        // Compute new constant and variable sets by removing constants and variables that hold.
-        val posCsts = if (setCsts.isEmpty) posCsts0 else posCsts0.filterNot(c => setCsts.get(c.c).contains(Term.Empty))
-        val posVars = if (setVars.isEmpty) posVars0 else posVars0.filterNot(x => setVars.get(x.x).contains(Term.Empty))
-        val negCsts = if (setCsts.isEmpty) negCsts0 else negCsts0.filterNot(c => setCsts.get(c.c).contains(Term.Univ))
-        val negVars = if (setVars.isEmpty) negVars0 else negVars0.filterNot(x => setVars.get(x.x).contains(Term.Univ))
-
-        var currentElems = setElems ++ setElem(posElem0, Term.Empty) ++ setElem(negElem0, Term.Univ)
-        var currentCsts = setCsts ++
-          posCsts0.iterator.map(_.c -> Term.Empty) ++
-          negCsts0.iterator.map(_.c -> Term.Univ)
-        var currentVars = setVars ++
-          posVars0.iterator.map(_.x -> Term.Empty) ++
-          negVars0.iterator.map(_.x -> Term.Univ)
-
-        // Recurse on the sub-terms with the updated maps.
-        val rest = rest0.map { t =>
-          val res = visit(t, currentElems, currentCsts, currentVars)
-          res match {
-            case Term.Univ => res
-            case Term.Empty => res
-            case Term.Cst(c) =>
-              currentCsts += (c -> Term.Empty)
-              res
-            case Term.Compl(Term.Cst(c)) =>
-              currentCsts += (c -> Term.Univ)
-              res
-            case Term.Var(x) =>
-              currentVars += (x -> Term.Empty)
-              res
-            case Term.Compl(Term.Var(x)) =>
-              currentVars += (x -> Term.Univ)
-              res
-            case e@Term.ElemSet(_) =>
-              currentElems ++= setElem(e, Term.Empty)
-              res
-            case Term.Compl(e@Term.ElemSet(_)) =>
-              currentElems ++= setElem(e, Term.Univ)
-              res
-            case Term.Compl(_) => res
-            case Term.Inter(_, _, _, _, _, _, _) => res
-            case Term.Union(_, _, _, _, _, _, _) => res
-          }
-        }
-
-        Term.mkUnion(posElem, posCsts, posVars, negElem, negCsts, negVars, rest)
-    }
-
-    visit(t, SortedMap.empty, SortedMap.empty, SortedMap.empty)
   }
 
   /**
@@ -1848,6 +1540,322 @@ object FastSetUnification {
       * Returns the Minus of `x` and `y` (`-`). Implemented by de-sugaring: `x ∩ !y`.
       */
     final def mkMinus(x: Term, y: Term): Term = mkInter(x, mkCompl(y))
+
+
+    /**
+      * The Successive Variable Elimination algorithm.
+      *
+      * Computes the most-general unifier of the given term `t ~ empty` where `fvs` is the list of free variables in `t`.
+      *
+      * Eliminates variables one-by-one from the given list `fvs`.
+      *
+      * Throws a [[BoolUnificationException]] if there is no solution.
+      */
+    def successiveVariableElimination(t: Term, fvs: List[Int]): SetSubstitution = fvs match {
+      case Nil =>
+        // [[emptyEquivalent]] now treats the remaining constants as variables and
+        // goes through all assignments of those
+        if (emptyEquivalent(t))
+          SetSubstitution.empty
+        else
+          throw BoolUnificationException()
+
+      case x :: xs =>
+        val t0 = SetSubstitution.singleton(x, Term.Empty)(t)
+        val t1 = SetSubstitution.singleton(x, Term.Univ)(t)
+        val se = successiveVariableElimination(Term.propagation(Term.mkInter(t0, t1)), xs)
+
+        val f1 = Term.propagation(Term.mkUnion(se(t0), Term.mkMinus(Term.Var(x), se(t1))))
+        val st = SetSubstitution.singleton(x, f1)
+        st ++ se
+    }
+
+    /**
+      * Returns `true` if the given term `t` is equivalent to empty, i.e. if all assignments to its
+      * variables and constants makes the whole term evaluate to empty.
+      *
+      * Note that a constant can never be empty equivalent because we do not know if it is univ or empty.
+      *
+      * OBS: This function requires that variables and constants use disjoint integers.
+      */
+    def emptyEquivalent(t: Term): Boolean = t match {
+      case Term.Univ => false
+      case Term.Cst(_) => false
+      case Term.Var(_) => false
+      case Term.ElemSet(_) => false
+      case Term.Empty => true
+      case Term.Union(posElem, posCsts, posVars, negElem, negCsts, negVars, _)
+        if posElem.nonEmpty || posCsts.nonEmpty || posVars.nonEmpty || negElem.nonEmpty || negCsts.nonEmpty || negVars.nonEmpty => false
+      case _ => evaluateAll(t, t.freeUnknowns.toList, SortedSet.empty) // Evaluate t on all its valuations.
+    }
+
+    /**
+      * Returns `true` if `t` is equivalent to empty under the assumption that `fvs` is the vars
+      * and constants of `t` ([[Term.freeUnknowns]]) and that unknowns in `univUnknowns` are set to `univ`.
+      *
+      * For each unknown `x`, the function recursively explores both when `x` is univ and when `x` is empty.
+      *
+      * OBS: This function requires that variables and constants use disjoint integers.
+      */
+    private def evaluateAll(t: Term, fvs: List[Int], univUnknowns: SortedSet[Int]): Boolean = fvs match {
+      case Nil =>
+        // All unknowns are bound. Compute the truth value.
+        evaluate(t, univUnknowns).isEmpty
+      case x :: xs =>
+        // Recurse on two cases: x = univ and x = empty.
+        evaluateAll(t, xs, univUnknowns + x) && evaluateAll(t, xs, univUnknowns)
+    }
+
+    /**
+      * Returns the evaluation of the formula assuming that unknowns in `univUnknowns` are univ
+      * and unknowns not in `univUnknowns` are empty.
+      *
+      * OBS: This function requires that variables and constants use disjoint integers.
+      */
+    private def evaluate(t: Term, univUnknowns: SortedSet[Int]): SetEval = t match {
+      case Term.Univ => SetEval.univ
+      case Term.Empty => SetEval.empty
+      case Term.Cst(c) => if (univUnknowns.contains(c)) SetEval.univ else SetEval.empty
+      case Term.ElemSet(s) => SetEval.set(s)
+      case Term.Var(x) => if (univUnknowns.contains(x)) SetEval.univ else SetEval.empty
+      case Term.Compl(t) => SetEval.complement(evaluate(t, univUnknowns))
+
+      case Term.Inter(posElem, posCsts, posVars, negElem, negCsts, negVars, rest) =>
+        // Evaluate the sub-terms, exiting early in case the running set is empty
+        var running = SetEval.univ
+        for (t <- posElem.iterator ++ posCsts.iterator ++ posVars.iterator) {
+          running = SetEval.intersection(running, evaluate(t, univUnknowns))
+          if (running.isEmpty) return running
+        }
+        for (t <- negElem.iterator ++ negCsts.iterator ++ negVars.iterator) {
+          // Note that these are negated implicitly, so evaluate complement.
+          running = SetEval.intersection(running, SetEval.complement(evaluate(t, univUnknowns)))
+          if (running.isEmpty) return running
+        }
+        for (t <- rest) {
+          running = SetEval.intersection(running, evaluate(t, univUnknowns))
+          if (running.isEmpty) return running
+        }
+        running
+
+      case Term.Union(posElem, posCsts, posVars, negElem, negCsts, negVars, rest) =>
+        // Evaluate the sub-terms, exiting early in case the running set is univ
+        var running = SetEval.empty
+        for (t <- posElem.iterator ++ posCsts.iterator ++ posVars.iterator) {
+          running = SetEval.union(running, evaluate(t, univUnknowns))
+          if (running.isUniv) return running
+        }
+        for (t <- negElem.iterator ++ negCsts.iterator ++ negVars.iterator) {
+          // Note that these are negated implicitly, so evaluate complement.
+          running = SetEval.union(running, SetEval.complement(evaluate(t, univUnknowns)))
+          if (running.isUniv) return running
+        }
+        for (t <- rest) {
+          running = SetEval.union(running, evaluate(t, univUnknowns))
+          if (running.isUniv) return running
+        }
+        running
+    }
+
+    private def setElem(elem: Option[Term.ElemSet], target: Term): SortedMap[Int, Term] = elem match {
+      case Some(e) => setElem(e, target)
+      case _ => SortedMap.empty[Int, Term]
+    }
+
+    private def setElem(elem: Term.ElemSet, target: Term): SortedMap[Int, Term] = {
+      if (elem.s.sizeIs == 1) SortedMap(elem.s.head -> target)
+      else SortedMap.empty[Int, Term]
+    }
+
+    /**
+      * Use the four rewrites
+      *
+      * * `x ∩ f == x ∩ f[x -> Univ]`
+      * * `!x ∩ f == !x ∩ f[x -> Empty]`
+      * * `x ∪ f == x ∪ f[x -> Empty]`
+      * * `!x ∪ f == !x ∪ f[x -> Univ]`
+      *
+      * where `x` can be an element, a constant, or a variable.
+      */
+    def propagation(t: Term): Term = {
+      // instantiates elements, returning either Univ, Empty, or Term.ElemSet
+      def instElemSet(s0: SortedSet[Int], setElems: SortedMap[Int, Term]): Term = {
+        if (setElems.nonEmpty && s0.exists(i => setElems.get(i).contains(Term.Univ))) {
+          // if any of the elements are univ, the whole term is univ
+          Term.Univ
+        } else {
+          // remove elements set to empty
+          val s = s0.filterNot(i => setElems.get(i).contains(Term.Empty))
+          if (s eq s0) t else Term.mkElemSet(s)
+        }
+      }
+
+      // `setX` assigns elements/constants/variables to univ or empty, where
+      // elements/constants/variables not in the map are just themselves.
+      def visit(t: Term, setElems: SortedMap[Int, Term], setCsts: SortedMap[Int, Term], setVars: SortedMap[Int, Term]): Term = t match {
+        case Term.Univ => t
+        case Term.Empty => t
+        case Term.Cst(c) => setCsts.getOrElse(c, t) // use mapping, if present
+        case Term.Var(x) => setVars.getOrElse(x, t) // use mapping, if present
+        case Term.ElemSet(s) => instElemSet(s, setElems)
+
+        case Term.Compl(t0) =>
+          val compl0 = visit(t0, setElems, setCsts, setVars)
+          // avoid reconstruction if `visit` did nothing
+          if (compl0 eq t0) t else Term.mkCompl(compl0)
+
+        case Term.Inter(posElem0, posCsts0, posVars0, negElem0, negCsts0, negVars0, rest0) =>
+          // check for trivial cases where elements/constants/variables are empty
+          val instPosElem = posElem0.map(e => instElemSet(e.s, setElems))
+          val posElem = instPosElem match {
+            case Some(e) => e match {
+              case Term.Univ => None // redundant
+              case Term.Empty => return Term.Empty
+              case e@Term.ElemSet(_) => Some(e)
+              case _ => ??? // unreachable
+            }
+            case None => None
+          }
+          if (setCsts.nonEmpty && posCsts0.exists(c => setCsts.get(c.c).contains(Term.Empty))) return Term.Empty
+          if (setVars.nonEmpty && posVars0.exists(x => setVars.get(x.x).contains(Term.Empty))) return Term.Empty
+          val instNegElem = negElem0.map(e => instElemSet(e.s, setElems))
+          val negElem = instNegElem match {
+            case Some(e) => e match {
+              case Term.Univ => return Term.Empty
+              case Term.Empty => None // redundant
+              case e@Term.ElemSet(_) => Some(e)
+              case _ => ??? // unreachable
+            }
+            case None => None
+          }
+          if (setCsts.nonEmpty && negCsts0.exists(c => setCsts.get(c.c).contains(Term.Univ))) return Term.Empty
+          if (setVars.nonEmpty && negVars0.exists(x => setVars.get(x.x).contains(Term.Univ))) return Term.Empty
+
+          // Compute new constant and variable sets by removing constants and variables that are univ (redundant).
+          val posCsts = if (setCsts.isEmpty) posCsts0 else posCsts0.filterNot(c => setCsts.get(c.c).contains(Term.Univ))
+          val posVars = if (setVars.isEmpty) posVars0 else posVars0.filterNot(x => setVars.get(x.x).contains(Term.Univ))
+          val negCsts = if (setCsts.isEmpty) negCsts0 else negCsts0.filterNot(c => setCsts.get(c.c).contains(Term.Empty))
+          val negVars = if (setVars.isEmpty) negVars0 else negVars0.filterNot(x => setVars.get(x.x).contains(Term.Empty))
+
+          // Add the new propagated elements/constants/variables
+          var currentElems = setElems ++ setElem(posElem0, Term.Univ) ++ setElem(negElem0, Term.Empty)
+          var currentCsts = setCsts ++
+            posCsts0.iterator.map(_.c -> Term.Univ) ++
+            negCsts0.iterator.map(_.c -> Term.Empty)
+          var currentVars = setVars ++
+            posVars0.iterator.map(_.x -> Term.Univ) ++
+            negVars0.iterator.map(_.x -> Term.Empty)
+
+          // Recurse on the sub-terms with the updated maps.
+          // If a sub-term becomes a elements/constants/variables after visiting,
+          // add it to the propagated atoms.
+          val rest = rest0.map { t =>
+            val res = visit(t, currentElems, currentCsts, currentVars)
+            res match {
+              case Term.Univ => res
+              case Term.Empty => res
+              case Term.Cst(c) =>
+                currentCsts += (c -> Term.Univ)
+                res
+              case Term.Compl(Term.Cst(c)) =>
+                currentCsts += (c -> Term.Empty)
+                res
+              case Term.Var(x) =>
+                currentVars += (x -> Term.Univ)
+                res
+              case Term.Compl(Term.Var(x)) =>
+                currentVars += (x -> Term.Empty)
+                res
+              case e@Term.ElemSet(_) =>
+                currentElems ++= setElem(e, Term.Univ)
+                res
+              case Term.Compl(e@Term.ElemSet(_)) =>
+                currentElems ++= setElem(e, Term.Empty)
+                res
+              case Term.Compl(_) => res
+              case Term.Inter(_, _, _, _, _, _, _) => res
+              case Term.Union(_, _, _, _, _, _, _) => res
+            }
+          }
+
+          Term.mkInter(posElem, posCsts, posVars, negElem, negCsts, negVars, rest)
+
+        case Term.Union(posElem0, posCsts0, posVars0, negElem0, negCsts0, negVars0, rest0) =>
+          // check for trivial cases
+          val instPosElem = posElem0.map(e => instElemSet(e.s, setElems))
+          val posElem = instPosElem match {
+            case Some(e) => e match {
+              case Term.Univ => return Term.Univ
+              case Term.Empty => None // redundant
+              case e@Term.ElemSet(_) => Some(e)
+              case _ => ??? // unreachable
+            }
+            case None => None
+          }
+          if (setCsts.nonEmpty && posCsts0.exists(c => setCsts.get(c.c).contains(Term.Univ))) return Term.Univ
+          if (setVars.nonEmpty && posVars0.exists(x => setVars.get(x.x).contains(Term.Univ))) return Term.Univ
+          val instNegElem = negElem0.map(e => instElemSet(e.s, setElems))
+          val negElem = instNegElem match {
+            case Some(e) => e match {
+              case Term.Univ => None // redundant
+              case Term.Empty => return Term.Univ
+              case e@Term.ElemSet(_) => Some(e)
+              case _ => ??? // unreachable
+            }
+            case None => None
+          }
+          if (setCsts.nonEmpty && negCsts0.exists(c => setCsts.get(c.c).contains(Term.Empty))) return Term.Univ
+          if (setVars.nonEmpty && negVars0.exists(x => setVars.get(x.x).contains(Term.Empty))) return Term.Univ
+
+          // Compute new constant and variable sets by removing constants and variables that hold.
+          val posCsts = if (setCsts.isEmpty) posCsts0 else posCsts0.filterNot(c => setCsts.get(c.c).contains(Term.Empty))
+          val posVars = if (setVars.isEmpty) posVars0 else posVars0.filterNot(x => setVars.get(x.x).contains(Term.Empty))
+          val negCsts = if (setCsts.isEmpty) negCsts0 else negCsts0.filterNot(c => setCsts.get(c.c).contains(Term.Univ))
+          val negVars = if (setVars.isEmpty) negVars0 else negVars0.filterNot(x => setVars.get(x.x).contains(Term.Univ))
+
+          var currentElems = setElems ++ setElem(posElem0, Term.Empty) ++ setElem(negElem0, Term.Univ)
+          var currentCsts = setCsts ++
+            posCsts0.iterator.map(_.c -> Term.Empty) ++
+            negCsts0.iterator.map(_.c -> Term.Univ)
+          var currentVars = setVars ++
+            posVars0.iterator.map(_.x -> Term.Empty) ++
+            negVars0.iterator.map(_.x -> Term.Univ)
+
+          // Recurse on the sub-terms with the updated maps.
+          val rest = rest0.map { t =>
+            val res = visit(t, currentElems, currentCsts, currentVars)
+            res match {
+              case Term.Univ => res
+              case Term.Empty => res
+              case Term.Cst(c) =>
+                currentCsts += (c -> Term.Empty)
+                res
+              case Term.Compl(Term.Cst(c)) =>
+                currentCsts += (c -> Term.Univ)
+                res
+              case Term.Var(x) =>
+                currentVars += (x -> Term.Empty)
+                res
+              case Term.Compl(Term.Var(x)) =>
+                currentVars += (x -> Term.Univ)
+                res
+              case e@Term.ElemSet(_) =>
+                currentElems ++= setElem(e, Term.Empty)
+                res
+              case Term.Compl(e@Term.ElemSet(_)) =>
+                currentElems ++= setElem(e, Term.Univ)
+                res
+              case Term.Compl(_) => res
+              case Term.Inter(_, _, _, _, _, _, _) => res
+              case Term.Union(_, _, _, _, _, _, _) => res
+            }
+          }
+
+          Term.mkUnion(posElem, posCsts, posVars, negElem, negCsts, negVars, rest)
+      }
+
+      visit(t, SortedMap.empty, SortedMap.empty, SortedMap.empty)
+    }
   }
 
   /**
@@ -2005,7 +2013,7 @@ object FastSetUnification {
 
       // Add all bindings in `that`. (Applying the current substitution).
       for ((x, t) <- that.m) {
-        result.update(x, propagation(this.apply(t)))
+        result.update(x, Term.propagation(this.apply(t)))
       }
 
       // Add all bindings in `this` that are not in `that`.
@@ -2068,7 +2076,7 @@ object FastSetUnification {
       val t1 = s(e.t1)
       val t2 = s(e.t2)
       val query = Term.mkXor(t1, t2)
-      if (!emptyEquivalent(query)) {
+      if (!Term.emptyEquivalent(query)) {
         println(s"  Original  : ${e.t1} ~ ${e.t2}")
         println(s"  with Subst: $t1 ~ $t2")
         throw InternalCompilerException(s"Incorrectly solved equation", SourceLocation.Unknown)
