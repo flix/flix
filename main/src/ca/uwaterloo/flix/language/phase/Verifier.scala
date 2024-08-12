@@ -230,7 +230,7 @@ object Verifier {
             case _ => failMismatchedShape(t1, "Array", loc)
           }
 
-        case AtomicOp.StructNew(sym0, names) =>
+        case AtomicOp.StructNew(sym0, _) =>
           ts match {
             case region :: _ =>
               checkStructType(tpe, sym0, loc)
