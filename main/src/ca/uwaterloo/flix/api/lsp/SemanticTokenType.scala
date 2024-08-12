@@ -110,4 +110,5 @@ object SemanticTokenType {
     * For identifiers that declare or reference a local or global variable.
     */
   case object Variable extends SemanticTokenType
+
 }
