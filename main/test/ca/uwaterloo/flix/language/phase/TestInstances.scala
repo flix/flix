@@ -101,6 +101,24 @@ class TestInstances extends AnyFunSuite with TestUtils {
     expectError[InstanceError.OverlappingInstances](result)
   }
 
+  // JOE STRUCTS TODO: Reenable when kinder is ready
+  ignore("Test.OverlappingInstance.06") {
+    val input =
+      """
+        |struct S[a, r] {
+        |    s: a
+        |}
+        |
+        |trait C[a, r]
+        |
+        |instance C[S[a, r]
+        |
+        |instance C[S[b, r]]
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[InstanceError.OverlappingInstances](result)
+  }
+
   test("Test.ComplexInstanceType.01") {
     val input =
       """
@@ -133,6 +151,22 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |trait C[a]
         |
         |instance C[Box[Int32]]
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[InstanceError.ComplexInstance](result)
+  }
+
+  // JOE STRUCTS TODO: Reenable when kinder is ready
+  ignore("Test.ComplexInstanceType.04") {
+    val input =
+      """
+        |struct Box[a, r] {
+        |    box: Box[a, r]
+        |}
+        |
+        |trait C[a]
+        |
+        |instance C[Box[Int32, r]]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[InstanceError.ComplexInstance](result)
@@ -186,6 +220,22 @@ class TestInstances extends AnyFunSuite with TestUtils {
     expectError[InstanceError.ComplexInstance](result)
   }
 
+  // JOE STRUCTS TODO: Enable when kinder is ready
+  ignore("Test.ComplexInstanceType.09") {
+    val input =
+      """
+        |struct Box[a, r] {
+        |    box: Box[a, r]
+        |}
+        |
+        |trait C[a]
+        |
+        |instance C[Box[a, r] -> b \ e]
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[InstanceError.ComplexInstance](result)
+  }
+
   test("Test.DuplicateTypeParameter.01") {
     val input =
       """
@@ -218,6 +268,22 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |trait C[a]
         |
         |instance C[DoubleBox[a, a]]
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[InstanceError.DuplicateTypeVar](result)
+  }
+
+  // JOE STRUCTS TODO: Enable when kinder is ready
+  ignore("Test.DuplicateTypeParameter.04") {
+    val input =
+      """
+        |struct DoubleBox[a, b, r] {
+        |    double_box: (a, b)
+        |}
+        |
+        |trait C[a]
+        |
+        |instance C[DoubleBox[a, a, r]]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[InstanceError.DuplicateTypeVar](result)
@@ -372,6 +438,51 @@ class TestInstances extends AnyFunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibMin)
     expectError[InstanceError.MismatchedSignatures](result)
 
+  }
+
+  // JOE STRUCTS TODO: Enable when kinder is done
+  ignore("Test.MismatchedSignatures.08") {
+    val input =
+      """
+        |trait C[a] {
+        |    pub def f(x: a): Bool
+        |}
+        |
+        |struct Box[t, r] {
+        |    box: t
+        |}
+        |
+        |instance C[Box[a, r]] {
+        |    pub def f(_x: Box[a, r]): Bool with C[a] = false
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[InstanceError.MismatchedSignatures](result)
+  }
+
+  test("Test.MismatchSignatures.09") {
+    val input =
+      """
+        |trait C[a] {
+        |    pub def f(x: a): String
+        |}
+        |
+        |struct Box[a, r] {
+        |    box: a
+        |}
+        |
+        |instance C[Int32] {
+        |    pub def f(x: Int32): String = ""
+        |}
+        |
+        |instance C[Box[a, r]] {
+        |    def f[a: C](x: Box[a, r]): String = {
+        |        f(x.box)
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[CompilationMessage](result) // TODO should be MismatchedSignature
   }
 
   test("Test.ExtraneousDefinition.01") {
