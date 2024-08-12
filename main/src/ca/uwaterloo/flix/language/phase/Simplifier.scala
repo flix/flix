@@ -1,4 +1,5 @@
 // JOE TODO: Is monomorpher where I should do the subst? Ask magnus? Or maybe constraintgen
+// JOE TODO: ALSO ASK MAGNUS ABOUT -> INSTEAD OF . syntax
 /*
  * Copyright 2015-2016 Magnus Madsen, Ming-Ho Yee
  *
