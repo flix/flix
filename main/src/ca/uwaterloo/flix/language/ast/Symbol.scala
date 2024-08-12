@@ -165,10 +165,6 @@ object Symbol {
     new CaseSym(sym, ident.name, ident.loc)
   }
 
-  def mkStructFieldSym(sym: Symbol.StructSym, ident: Ident): StructFieldSym = {
-    new StructFieldSym(sym, ident.name, ident.loc)
-  }
-
   /**
     * Returns the restrictable case symbol for the given name `ident` in the given `enum`.
     */
@@ -549,34 +545,6 @@ object Symbol {
       * The symbol's namespace.
       */
     def namespace: List[String] = enumSym.namespace :+ enumSym.name
-  }
-
-  /**
-   * Struct Field Symbol.
-   */
-  final class StructFieldSym(val structSym: Symbol.StructSym, val name: String, val loc: SourceLocation) extends Symbol {
-    /**
-     * Returns `true` if this symbol is equal to `that` symbol.
-     */
-    override def equals(obj: scala.Any): Boolean = obj match {
-      case that: StructFieldSym => this.structSym == that.structSym && this.name == that.name
-      case _ => false
-    }
-
-    /**
-     * Returns the hash code of this symbol.
-     */
-    override val hashCode: Int = Objects.hash(structSym, name)
-
-    /**
-     * Human readable representation.
-     */
-    override def toString: String = structSym.toString + "." + name
-
-    /**
-     * The symbol's namespace.
-     */
-    def namespace: List[String] = structSym.namespace :+ structSym.name
   }
 
   /**
