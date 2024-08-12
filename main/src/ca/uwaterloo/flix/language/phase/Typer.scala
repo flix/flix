@@ -98,6 +98,7 @@ object Typer {
         case sym: Symbol.ModuleSym => new Symbol.ModuleSym(sym.ns.init)
 
         case sym: Symbol.CaseSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
+        case sym: Symbol.StructFieldSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
         case sym: Symbol.RestrictableCaseSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
         case sym: Symbol.VarSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
         case sym: Symbol.KindedTypeVarSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
@@ -313,7 +314,7 @@ object Typer {
    */
   private def visitStructs(root: KindedAst.Root)(implicit flix: Flix): Map[Symbol.StructSym, TypedAst.Struct] = {
     // Visit every struct in the ast.
-    val result = root.structs.toList.map {
+    val result = root.structs.map {
       case (_, struct) => visitStruct(struct, root)
     }
 
