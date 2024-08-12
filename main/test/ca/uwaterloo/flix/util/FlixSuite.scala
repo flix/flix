@@ -92,7 +92,7 @@ class FlixSuite(incremental: Boolean) extends AnyFunSuite {
             // Expect the true value, if boolean.
             result match {
               case res: java.lang.Boolean =>
-                if (res != true) {
+                if (!res.booleanValue()) {
                   fail("Expected true, but got false.")
                 }
               case _ =>
