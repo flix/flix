@@ -225,8 +225,8 @@ object Lowering {
     case TypedAst.Struct(doc, ann, mod, sym, tparams0, _, fields0, loc) =>
       val tparams = tparams0.map(visitTypeParam)
       val fields = fields0.map {
-        case (k, v) =>
-          LoweredAst.StructField(v.name, visitType(v.tpe), v.loc)
+        case (name, field) =>
+          LoweredAst.StructField(name, visitType(field.tpe), loc)
       }
       LoweredAst.Struct(doc, ann, mod, sym, tparams, fields.toList, loc)
   }

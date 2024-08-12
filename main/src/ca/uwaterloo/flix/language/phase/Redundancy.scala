@@ -168,7 +168,7 @@ object Redundancy {
     val result = new ListBuffer[RedundancyError]
     for ((_, decl) <- root.structs) {
       val usedTypeVars = decl.fields.foldLeft(Set.empty[Symbol.KindedTypeVarSym]) {
-        case (acc, (_, field)) =>
+        case (acc, (name, field)) =>
           acc ++ field.tpe.typeVars.map(_.sym)
       }
       val unusedTypeParams = decl.tparams.init.filter { // the last tparam is implicitly used for the region
