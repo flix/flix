@@ -113,7 +113,7 @@ object SemanticTokenType {
   case object Variable extends SemanticTokenType
 
   /**
-    * For identifiers that declare or reference a struct declaration
+    * For identifiers that declare or reference a struct
     */
   case object Struct extends SemanticTokenType
 }
