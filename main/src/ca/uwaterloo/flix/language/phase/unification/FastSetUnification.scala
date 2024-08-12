@@ -52,6 +52,7 @@ import scala.collection.mutable
 object FastSetUnification {
 
   import ca.uwaterloo.flix.language.phase.unification.FastSetUnification.Rules.Output
+  import ca.uwaterloo.flix.language.phase.unification.FastSetUnification.Phases.Phase
 
   /**
     * The threshold for when a solution is considered too complex.
@@ -87,68 +88,21 @@ object FastSetUnification {
   case class RunOptions(
                          debugging: Boolean = false,
                          rerun: Boolean = false,
-                         verify: Boolean = false
+                         verifySubst: Boolean = false,
+                         verifySize: Boolean = true
                        )
 
   object RunOptions {
     val default: RunOptions = RunOptions()
   }
 
-  /**
-    * Attempts to solve all the given unification equations `l`.
-    *
-    * Returns `Ok(s)` where `s` is a most-general unifier for all equations.
-    *
-    * Returns `Err(c, l, s)` where `c` is a conflict, `l` is a list of unsolved equations, and `s` is a partial substitution.
-    */
-  def solveAll(l: List[Equation])(implicit opts: RunOptions = RunOptions.default): Result[SetSubstitution, (FastBoolUnificationException, List[Equation], SetSubstitution)] = {
-    new Solver(l).solve()
-  }
+  object Solver {
 
-  /**
-    * Equivalent to [[solveAll]] but also return the index of the last phase working on non-empty equations.
-    */
-  def solveAllInfo(l: List[Equation])(implicit opts: RunOptions = RunOptions.default): (Result[SetSubstitution, (FastBoolUnificationException, List[Equation], SetSubstitution)], Int) = {
-    new Solver(l).solveInfo()
-  }
-
-  /**
-    * A stateful phased solver for set unification equations. The solver maintains two fields that change over time:
-    *
-    * - The current (pending) unification equations to solve.
-    * - The current (partial) substitution which represents the solution.
-    *
-    * @param l The input list of set unification equations to solve.
-    */
-  private class Solver(l: List[Equation]) {
-
-    /**
-      * The max phase reached that operated on non-empty equations.
-      *
-      * This is used for debugging.
-      */
-    private var phase: Int = 0
-
-    /**
-      * Updates [[phase]] if less than `p`.
-      */
-    private def setPhase(p: Int): Unit = phase = phase max p
-
-    /**
-      * The current (pending) equations to solve.
-      *
-      * The list of pending equations decrease as the solver progresses.
-      *
-      * Note that the pending equations is not a strict subset of the original equations because they may be simplified during computation.
-      *
-      * If set unification is successful, the list of pending equations will become empty at the end of the computation.
-      */
-    private var currentEqns: List[Equation] = l
-
-    /**
-      * The current substitution. Initially empty, but grows during computation.
-      */
-    private var currentSubst: SetSubstitution = SetSubstitution.empty
+    private class State(var eqs: List[Equation]) {
+      var subst: SetSubstitution = SetSubstitution.empty
+      var lastPhase: Option[String] = None
+      var phase: Option[Int] = None
+    }
 
     /**
       * Attempts to solve the equation system that this solver was instantiated with.
@@ -157,153 +111,116 @@ object FastSetUnification {
       *
       * Returns `Result.Err((ex, l, s))` where `c` is a conflict, `l` is a list of unsolved equations, and `s` is a partial substitution.
       */
-    def solve()(implicit opts: RunOptions): Result[SetSubstitution, (FastBoolUnificationException, List[Equation], SetSubstitution)] = {
+    def solve(l: List[Equation])(implicit opts: RunOptions = RunOptions.default): (Result[SetSubstitution, (FastBoolUnificationException, List[Equation], SetSubstitution)], (Option[String], Option[Int])) = {
+      import FastSetUnification.{Phases => P}
+      val state = new State(l)
+      debugState(state)
       try {
-        phase0Init()
-        phase1ConstantPropagation()
-        phase2VarPropagation()
-        phase3VarAssignment()
-        phase4TrivialAndRedundant()
-        phase5SVE()
-        verifySolution()
-        verifySolutionSize()
-
-        Result.Ok(currentSubst)
+        runPhase(
+          "Constant Propagation",
+          "resolves all equations of the form: x = c where x is a var and c is univ/empty/constant/element)",
+          P.propagateConstants
+        )(state)
+        runPhase(
+          "Variable Propagation",
+          "resolves all equations of the form: x = y where x and y are vars)",
+          P.propagateVars
+        )(state)
+        runPhase(
+          "Variable Assignment",
+          "resolves all equations of the form: x = t where x is free in t",
+          P.varAssignment
+        )(state)
+        runPhase(
+          "Eliminate Trivial and Redundant Equations",
+          "eliminates equations of the form X = X and duplicated equations",
+          P.substlessPhase(P.eliminateTrivialAndRedundant)
+        )(state)
+        runPhase(
+          "Set Unification",
+          "resolves all remaining equations using SVE.",
+          P.completePhase(P.setUnifyAllPickSmallest)
+        )(state)
+        if (opts.verifySubst) verifySubst(state.subst, l)
+        if (opts.verifySize) verifySubstSize(state.subst)
+        assert(state.eqs.isEmpty)
+        val res = Result.Ok(state.subst)
+        (res, (state.lastPhase, state.phase))
       } catch {
         case _ if !opts.debugging && opts.rerun =>
-          // reset and rerun with debugging
-          currentEqns = l
-          currentSubst = SetSubstitution.empty
-          solve()(opts.copy(debugging = true))
-        case ex: ConflictException => Result.Err((ex, currentEqns, currentSubst))
-        case ex: TooComplexException => Result.Err((ex, currentEqns, currentSubst))
+          // rerun with debugging
+          solve(l)(opts.copy(debugging = true, rerun = false))
+        case ex: ConflictException =>
+          val res = Result.Err((ex, state.eqs, state.subst))
+          (res, (state.lastPhase, state.phase))
+        case ex: TooComplexException =>
+          val res = Result.Err((ex, state.eqs, state.subst))
+          (res, (state.lastPhase, state.phase))
+      }
+
+    }
+
+    def runPhase(name: String, description: String, phase: Phase)(state: State)(implicit opts: RunOptions): Unit = {
+      if (state.eqs.isEmpty) return
+      val phaseNumber = state.phase.getOrElse(0) + 1
+      state.phase = Some(phaseNumber)
+      state.lastPhase = Some(name)
+      debugPhase(phaseNumber, name, description)
+      phase(state.eqs) match {
+        case Some((eqs, subst)) =>
+          state.eqs = eqs
+          state.subst = subst @@ state.subst
+        case None =>
+          ()
+      }
+      debugState(state)
+    }
+
+    /**
+      * Verifies that `s` is a solution to the given set unification equations.
+      *
+      * Throws an exception if the solution is incorrect.
+      *
+      * Note: The function verifies that it is _a solution_, not that it is _the most general_.
+      *
+      * Note: Unfortunately this function is very slow since the SAT solver is very slow.
+      */
+    def verifySubst(subst: SetSubstitution, l: List[Equation]): Unit = {
+      // Apply the substitution to every equation and check that it is solved.
+      for (e <- l) {
+        // We want to check that `s(t1) == s(t2)` by checking that `s(t1) xor s(t2) = empty`
+        val t1 = subst.apply(e.t1)
+        val t2 = subst.apply(e.t2)
+        val query = Term.mkXor(t1, t2)
+        if (!Term.emptyEquivalent(query)) {
+          println(s"  Original  : ${e.t1} ~ ${e.t2}")
+          println(s"  with Subst: $t1 ~ $t2")
+          throw InternalCompilerException(s"Incorrectly solved equation", SourceLocation.Unknown)
+        }
       }
     }
 
-    /**
-      * Equivalent to [[solve]] but also return the index of the last phase working on non-empty equations.
-      */
-    def solveInfo()(implicit opts: RunOptions): (Result[SetSubstitution, (FastBoolUnificationException, List[Equation], SetSubstitution)], Int) = {
-      (solve(), this.phase)
-    }
-
-    private def phase0Init()(implicit opts: RunOptions): Unit = {
-      debugln("-".repeat(80))
-      debugln("--- Phase 0: Input")
-      debugln("-".repeat(80))
-      debugEquations()
-      debugln()
-    }
-
-    private def phase1ConstantPropagation()(implicit opts: RunOptions): Unit = if (currentEqns.nonEmpty) {
-      debugln("-".repeat(80))
-      debugln("--- Phase 1: Constant Propagation")
-      // TODO this is lying
-      debugln("    (resolves all equations of the form: x = c where x is a var and c is univ/empty/constant/element)")
-      debugln("-".repeat(80))
-      setPhase(1)
-      val s = Phases.propagateConstants(currentEqns)
-      updateState(s)
-      debugEquations()
-      debugSubstitution()
-      debugln()
-    }
-
-    private def phase2VarPropagation()(implicit opts: RunOptions): Unit = if (currentEqns.nonEmpty) {
-      debugln("-".repeat(80))
-      debugln("--- Phase 2: Variable Propagation")
-      debugln("    (resolves all equations of the form: x = y where x and y are vars)")
-      debugln("-".repeat(80))
-      setPhase(2)
-      val s = Phases.propagateVars(currentEqns)
-      updateState(s)
-      debugEquations()
-      debugSubstitution()
-      debugln()
-    }
-
-    private def phase3VarAssignment()(implicit opts: RunOptions): Unit = if (currentEqns.nonEmpty) {
-      debugln("-".repeat(80))
-      debugln("--- Phase 3: Variable Assignment")
-      debugln("    (resolves all equations of the form: x = t where x is free in t)")
-      debugln("-".repeat(80))
-      setPhase(3)
-      val s = Phases.varAssignment(currentEqns)
-      updateState(s)
-      debugEquations()
-      debugSubstitution()
-      debugln()
-    }
-
-    private def phase4TrivialAndRedundant()(implicit opts: RunOptions): Unit = if (currentEqns.nonEmpty) {
-      debugln("-".repeat(80))
-      debugln("--- Phase 4: Eliminate Trivial and Redundant Equations")
-      debugln("    (eliminates equations of the form X = X and duplicated equations)")
-      debugln("-".repeat(80))
-      setPhase(4)
-      val s = Phases.eliminateTrivialAndRedundant(currentEqns)
-      updateState(s)
-      debugEquations()
-      debugSubstitution()
-      debugln()
-    }
-
-    private def phase5SVE()(implicit opts: RunOptions): Unit = if (currentEqns.nonEmpty) {
-      debugln("-".repeat(80))
-      debugln("--- Phase 5: Set Unification")
-      debugln("    (resolves all remaining equations using SVE.)")
-      debugln("-".repeat(80))
-      setPhase(5)
-      val newSubst = Phases.setUnifyAllPickSmallest(currentEqns)
-      updateState(Nil, newSubst) // Note: Pass Nil because SVE will have solved all equations.
-      debugSubstitution()
-      debugln()
-    }
-
-    /**
-      * Updates the internal state with the given list of pending equations and partial substitution `l`.
-      *
-      * Simplifies the pending equations. Throws [[ConflictException]] if an unsolvable equation is detected.
-      */
-    private def updateState(l: (List[Equation], SetSubstitution)): Unit = {
-      val (nextEqns, nextSubst) = l
-      currentEqns = Phases.checkAndSimplify(nextEqns)
-      currentSubst = nextSubst @@ currentSubst
-    }
-
-    /**
-      * Verifies that the current substitution is a valid solution to the original equations `l`
-      * if [[opts.verify]] is set.
-      *
-      * Note: Does not make sense to call before the equation system has been fully solved.
-      *
-      * Throws a [[ConflictException]] if an equation is not solved by the current substitution.
-      */
-    private def verifySolution()(implicit opts: RunOptions): Unit = {
-      if (opts.verify) verify(currentSubst, l)
-    }
-
-    /**
-      * Checks that current substitution has not grown too large according to [[SizeThreshold]].
-      */
-    private def verifySolutionSize(): Unit = {
-      val size = currentSubst.size
+    def verifySubstSize(subst: SetSubstitution): Unit = {
+      val size = subst.size
       if (size > SizeThreshold) {
         throw TooComplexException(s"Too large a substitution (threshold: $SizeThreshold, found: $size)")
       }
     }
 
-    private def debugEquations()(implicit opts: RunOptions): Unit = {
-      debugln(s"Equations (${currentEqns.size}):")
-      debugln(format(currentEqns))
+    def debugPhase(number: Int, name: String, description: String)(implicit opts: RunOptions): Unit = {
+      debugln("-".repeat(80))
+      debugln(s"--- Phase $number: $name")
+      debugln(s"    ($description)")
+      debugln("-".repeat(80))
     }
 
-    private def debugSubstitution()(implicit opts: RunOptions): Unit = {
-      debugln(s"Substitution (${currentSubst.numberOfBindings}):")
-      debugln(currentSubst.toString)
+    def debugState(state: State)(implicit opts: RunOptions): Unit = {
+      debugln(s"Equations (${state.eqs.size}):")
+      debugln(format(state.eqs))
+      debugln(s"Substitution (${state.subst.numberOfBindings}):")
+      debugln(state.subst.toString)
+      debugln("")
     }
-
-    private def debugln()(implicit opts: RunOptions): Unit = debugln("")
 
     // Note: By-name to ensure that we do not compute expensive strings.
     private def debugln(s: => String)(implicit opts: RunOptions): Unit = {
@@ -321,6 +238,7 @@ object FastSetUnification {
   private object Rules {
 
     type Output = Option[(List[Equation], SetSubstitution)]
+    type Rule = Equation => Output
 
     def trivial(eq: Equation): Option[Equation] = {
       val Equation(t1, t2, _) = eq
@@ -479,6 +397,16 @@ object FastSetUnification {
 
   private object Phases {
 
+    type Phase = List[Equation] => Output
+
+    def substlessPhase(f: List[Equation] => Option[List[Equation]]): Phase = {
+      eqs0 => f(eqs0).map(eqs1 => (eqs1, SetSubstitution.empty))
+    }
+
+    def completePhase(f: List[Equation] => SetSubstitution): Phase = {
+      eqs0 => Some((Nil, f(eqs0)))
+    }
+
     /**
       * Returns a list of non-trivial unification equations computed from the given list `l`.
       *
@@ -491,10 +419,18 @@ object FastSetUnification {
       * -        c ~ c        (same constant)
       * -        x ~ x        (same variable)
       */
-    def checkAndSimplify(l: List[Equation]): List[Equation] = {
-      val res0 = runEqRule(Rules.trivial)(l).getOrElse(l)
-      val res1 = runErrRule(Rules.triviallyWrong)(res0)
-      res1
+    def checkAndSimplify(l: List[Equation]): Option[List[Equation]] = {
+      var changed = false
+      // unwrap to check triviallyWrong no matter if trivial did anything
+      val res0 = runEqRule(Rules.trivial)(l) match {
+        case Some(eqs) =>
+          changed = true
+          eqs
+        case None =>
+          l
+      }
+      runErrRule(Rules.triviallyWrong)(res0)
+      if (changed) Some(res0) else None
     }
 
 
@@ -561,8 +497,8 @@ object FastSetUnification {
       * Note: We use `subst.extended` to check for conflicts. For example, if we already know that `s = [x -> c17]` and we
       * learn that `x -> univ` then we will try to extend s with the new binding which will raise a [[ConflictException]].
       */
-    def propagateConstants(l: List[Equation]): (List[Equation], SetSubstitution) = {
-      runRule(Rules.constantAssignment, selfFeeding = true, substInduced = true)(l).getOrElse((l, SetSubstitution.empty))
+    def propagateConstants(l: List[Equation]): Output = {
+      runRule(Rules.constantAssignment, selfFeeding = true, substInduced = true)(l)
     }
 
     /**
@@ -601,8 +537,8 @@ object FastSetUnification {
       *
       * Returns a list of unsolved equations and a partial substitution.
       */
-    def propagateVars(l: List[Equation]): (List[Equation], SetSubstitution) = {
-      runSubstRule(Rules.variableAlias)(l).getOrElse((l, SetSubstitution.empty))
+    def propagateVars(l: List[Equation]): Output = {
+      runSubstRule(Rules.variableAlias)(l)
     }
 
 
@@ -632,8 +568,8 @@ object FastSetUnification {
       *     (c1498 ∩ c1500 ∩ c1501) ~ (x127248 ∩ x127244 ∩ x127254 ∩ x127252 ∩ x127249 ∩ x127247)
       * }}}
       */
-    def varAssignment(l: List[Equation]): (List[Equation], SetSubstitution) = {
-      runSubstRule(Rules.variableAssignment)(l).getOrElse((l, SetSubstitution.empty))
+    def varAssignment(l: List[Equation]): Output = {
+      runSubstRule(Rules.variableAssignment)(l)
     }
 
     /**
@@ -673,25 +609,29 @@ object FastSetUnification {
       *
       * Note: We only consider *syntactic equality*.
       */
-    def eliminateTrivialAndRedundant(l: List[Equation]): (List[Equation], SetSubstitution) = {
+    def eliminateTrivialAndRedundant(l: List[Equation]): Option[List[Equation]] = {
       var result = List.empty[Equation]
       val seen = mutable.Set.empty[Equation]
+      var changed = false
 
       // We rely on equations and terms having correct equals and hashCode functions.
       // Note: We are purely working with *syntactic equality*, not *semantic equality*.
-      for (eqn <- l) {
-        if (!seen.contains(eqn)) {
+      for (eq <- l) {
+        if (!seen.contains(eq)) {
           // The equation has not been seen before.
-          if (eqn.t1 != eqn.t2) {
+          if (eq.t1 != eq.t2) {
             // The LHS and RHS are different.
-            seen += eqn
-            result = eqn :: result
+            seen += eq
+            result = eq :: result
+          } else {
+            changed = true
           }
+        } else {
+          changed = true
         }
       }
 
-      // We reverse the list of equations to preserve the initial order.
-      (result.reverse, SetSubstitution.empty)
+      if (changed) Some(result.reverse) else None
     }
 
     /**
@@ -735,85 +675,86 @@ object FastSetUnification {
       runSubstResRule(Rules.setUnifyOne)(l)
     }
 
-  }
+    // Converting Rule into Phase
 
-  /**
-    * @param rule a solving rule that optionally produces constraints, cs, and a substitution subst.
-    * @param selfFeeding can the rule potentially solve any constrains in cs?
-    * @param substInduced can the rule potentially discover new solvable constraints via any subst it returns?
-    * @param l the constraints to run the rule on
-    * @return the remaining constraints and the found substitution.
-    */
-  private def runRule(rule: Equation => Output, selfFeeding: Boolean, substInduced: Boolean)(l: List[Equation]): Output = {
-    // TODO optimization:
-    // - Sometimes the @@ can be ++
-    // - Sometimes the outer loop can be skipped (aren't all rules discoverable by subst?)
-    var subst = SetSubstitution.empty
-    var workList = l
-    var leftover: List[Equation] = Nil
-    var changed = true // has there been progress in the inner loop
-    var overallChanged = false // has there been progress at any point in the loops
-    var flipped = false // is the `workList` list flipped compared to the initial order
-    while (changed) {
-      flipped = !flipped
-      changed = false
-      while (workList != Nil) workList match {
-        case eq0 :: tail =>
-          val eq = subst.apply(eq0)
-          workList = tail
-          rule(eq) match {
-            case Some((eqs, s)) =>
-              changed = true
-              overallChanged = true
-              // add the new eqs to `workList` if declared applicable
-              if (selfFeeding) workList = eqs ++ workList
-              else leftover = eqs ++ leftover
-              subst = s @@ subst
-            case None =>
-              leftover = eq :: leftover
-          }
-        case Nil => ()
+    /**
+      * @param rule a solving rule that optionally produces constraints, cs, and a substitution subst.
+      * @param selfFeeding can the rule potentially solve any constrains in cs?
+      * @param substInduced can the rule potentially discover new solvable constraints via any subst it returns?
+      * @param l the constraints to run the rule on
+      * @return the remaining constraints and the found substitution.
+      */
+    private def runRule(rule: Equation => Output, selfFeeding: Boolean, substInduced: Boolean)(l: List[Equation]): Output = {
+      // TODO optimization:
+      // - Sometimes the @@ can be ++
+      // - Sometimes the outer loop can be skipped (aren't all rules discoverable by subst?)
+      var subst = SetSubstitution.empty
+      var workList = l
+      var leftover: List[Equation] = Nil
+      var changed = true // has there been progress in the inner loop
+      var overallChanged = false // has there been progress at any point in the loops
+      var flipped = false // is the `workList` list flipped compared to the initial order
+      while (changed) {
+        flipped = !flipped
+        changed = false
+        while (workList != Nil) workList match {
+          case eq0 :: tail =>
+            val eq = subst.apply(eq0)
+            workList = tail
+            rule(eq) match {
+              case Some((eqs, s)) =>
+                changed = true
+                overallChanged = true
+                // add the new eqs to `workList` if declared applicable
+                if (selfFeeding) workList = eqs ++ workList
+                else leftover = eqs ++ leftover
+                subst = s @@ subst
+              case None =>
+                leftover = eq :: leftover
+            }
+          case Nil => ()
+        }
+        workList = leftover
+        leftover = Nil
+        if (!substInduced) changed = false // stop the outer loop is it is declared unnecessary
       }
-      workList = leftover
-      leftover = Nil
-      if (!substInduced) changed = false // stop the outer loop is it is declared unnecessary
+      if (overallChanged) {
+        val correctedTodo = if (flipped) workList.reverse else workList
+        Some(correctedTodo.map(subst.apply), subst)
+      } else {
+        None
+      }
     }
-    if (overallChanged) {
-      val correctedTodo = if (flipped) workList.reverse else workList
-      Some(correctedTodo.map(subst.apply), subst)
-    } else {
-      None
+
+    private def runEqRule(rule: Equation => Option[Equation])(l: List[Equation]): Option[List[Equation]] = {
+      val rule1 = (eq0: Equation) => rule(eq0).map(eq1 => (List(eq1), SetSubstitution.empty))
+      runRule(rule1, selfFeeding = false, substInduced = false)(l).map(_._1)
     }
-  }
 
-  private def runEqRule(rule: Equation => Option[Equation])(l: List[Equation]): Option[List[Equation]] = {
-    val rule1 = (eq0: Equation) => rule(eq0).map(eq1 => (List(eq1), SetSubstitution.empty))
-    runRule(rule1, selfFeeding = false, substInduced = false)(l).map(_._1)
-  }
-
-  private def runSubstRule(rule: Equation => Option[SetSubstitution])(l: List[Equation]): Output = {
-    val rule1 = (eq0: Equation) => rule(eq0).map(subst => (Nil, subst))
-    runRule(rule1, selfFeeding = false, substInduced = true)(l)
-  }
-
-  private def runSubstResRule(rule: Equation => Result[SetSubstitution, Throwable])(l: List[Equation]): SetSubstitution = {
-    val rule1 = (eq0: Equation) => rule(eq0) match {
-      case Result.Ok(subst) => Some((Nil: List[Equation], subst))
-      case Result.Err(ex) => throw ex
+    private def runSubstRule(rule: Equation => Option[SetSubstitution])(l: List[Equation]): Output = {
+      val rule1 = (eq0: Equation) => rule(eq0).map(subst => (Nil, subst))
+      runRule(rule1, selfFeeding = false, substInduced = true)(l)
     }
-    val res = runRule(rule1, selfFeeding = false, substInduced = false)(l)
-    res.map{
-      case (eqs, subst) =>
-        assert(eqs.isEmpty)
-        subst
-    }.getOrElse(SetSubstitution.empty)
-  }
 
-  private def runErrRule(rule: Equation => Option[Throwable])(l: List[Equation]): List[Equation] = {
-    val rule1 = (eq0: Equation) => rule(eq0).map[(List[Equation], SetSubstitution)](ex => throw ex)
-    val res = runRule(rule1, selfFeeding = false, substInduced = false)(l)
-    assert(res.isEmpty)
-    l
+    private def runSubstResRule(rule: Equation => Result[SetSubstitution, Throwable])(l: List[Equation]): SetSubstitution = {
+      val rule1 = (eq0: Equation) => rule(eq0) match {
+        case Result.Ok(subst) => Some((Nil: List[Equation], subst))
+        case Result.Err(ex) => throw ex
+      }
+      val res = runRule(rule1, selfFeeding = false, substInduced = false)(l)
+      res.map {
+        case (eqs, subst) =>
+          assert(eqs.isEmpty)
+          subst
+      }.getOrElse(SetSubstitution.empty)
+    }
+
+    private def runErrRule(rule: Equation => Option[Throwable])(l: List[Equation]): Unit = {
+      val rule1 = (eq0: Equation) => rule(eq0).map[(List[Equation], SetSubstitution)](ex => throw ex)
+      val res = runRule(rule1, selfFeeding = false, substInduced = false)(l)
+      assert(res.isEmpty)
+    }
+
   }
 
   /**
@@ -2058,30 +1999,6 @@ object FastSetUnification {
       sb.append("\n")
     }
     sb.toString()
-  }
-
-  /**
-    * Verifies that `s` is a solution to the given set unification equations.
-    *
-    * Throws an exception if the solution is incorrect.
-    *
-    * Note: The function verifies that it is _a solution_, not that it is _the most general_.
-    *
-    * Note: Unfortunately this function is very slow since the SAT solver is very slow.
-    */
-  def verify(s: SetSubstitution, l: List[Equation]): Unit = {
-    // Apply the substitution to every equation and check that it is solved.
-    for (e <- l) {
-      // We want to check that `s(t1) == s(t2)` by checking that `s(t1) xor s(t2) = empty`
-      val t1 = s(e.t1)
-      val t2 = s(e.t2)
-      val query = Term.mkXor(t1, t2)
-      if (!Term.emptyEquivalent(query)) {
-        println(s"  Original  : ${e.t1} ~ ${e.t2}")
-        println(s"  with Subst: $t1 ~ $t2")
-        throw InternalCompilerException(s"Incorrectly solved equation", SourceLocation.Unknown)
-      }
-    }
   }
 
   /**

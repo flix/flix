@@ -90,12 +90,12 @@ object BooleanPropTesting {
   }
 
   def main(args: Array[String]): Unit = {
-    testSolvableConstraints(new Random(), explodedRandomXor, 500_000, 1, -1)(RunOptions.default)
+    testSolvableConstraints(new Random(), explodedRandomXor, 700_000, 1, -1, wait = false)(RunOptions.default)
   }
 
   // TODO add testing of t ~ propagation(t)
 
-  def testSolvableConstraints(random: Random, genSolvable: Random => List[Equation], testLimit: Int, errLimit: Int, timeoutLimit: Int)(implicit opts: RunOptions): Boolean = {
+  def testSolvableConstraints(random: Random, genSolvable: Random => List[Equation], testLimit: Int, errLimit: Int, timeoutLimit: Int, wait: Boolean)(implicit opts: RunOptions): Boolean = {
     def printProgress(tests: Int, errAmount: Int, timeoutAmount: Int): Unit = {
       val passed = tests - errAmount - timeoutAmount
       println(s"${tests / 1000}k (${passed} passed, $errAmount errs, $timeoutAmount t.o.)")
@@ -117,7 +117,7 @@ object BooleanPropTesting {
       }
       tests += 1
       val input = genSolvable(random)
-      val (res, phase) = runEquations(input)
+      val (res, (_, phase)) = runEquations(input)
       res match {
         case Res.Pass =>
           passes += phase
@@ -128,6 +128,7 @@ object BooleanPropTesting {
           timeouts += ((input, phase))
           if (timeoutLimit > 0 && timeouts.sizeIs >= timeoutLimit) continue = false
       }
+      if (wait) scala.io.StdIn.readLine()
     }
     val (smallestError, smallestTimeout) = printTestOutput(errs, timeouts, tests)
     def askAndRun(description: String)(l: List[Equation]): Unit = {
@@ -167,8 +168,8 @@ object BooleanPropTesting {
 
   def explodedRandomXor(random: Random): List[Equation] = {
     val former = termFormer()
-    val t = randomTerm(former, random, 4, 3, 3, 3)
-    groupAssignments(explodeKnownEquation(random, eqPropagatedSelf(t)), 0)
+    val t = randomTerm(former, random, 5, 3, 3, 3)
+    groupAssignments(explodeKnownEquation(random, eqPropagatedSelf(t)), 1)
   }
 
   private sealed trait Res
@@ -181,19 +182,20 @@ object BooleanPropTesting {
     case object Timeout extends Res
   }
 
-  private def runEquations(eqs: List[Equation])(implicit opts: RunOptions = RunOptions.default): (Res, Int) = {
-    val (res, phase) = FastSetUnification.solveAllInfo(eqs)
+  private def runEquations(eqs: List[Equation])(implicit opts: RunOptions = RunOptions.default): (Res, (String, Int)) = {
+    val (res, lastPhase0) = FastSetUnification.Solver.solve(eqs)
+    val lastPhase = (lastPhase0._1.getOrElse("Nothing"), lastPhase0._2.getOrElse(-1))
     res match {
       case Result.Ok(subst) => try {
-        FastSetUnification.verify(subst, eqs)
-        (Res.Pass, phase)
+        FastSetUnification.Solver.verifySubst(subst, eqs)
+        (Res.Pass, lastPhase)
       } catch {
-        case _: InternalCompilerException => (Res.Fail(true), phase)
+        case _: InternalCompilerException => (Res.Fail(true), lastPhase)
       }
       case Result.Err((ex, _, _)) if ex.isInstanceOf[FastSetUnification.TooComplexException] =>
-        (Res.Timeout, phase)
+        (Res.Timeout, lastPhase)
       case Result.Err((_, _, _)) =>
-        (Res.Fail(false), phase)
+        (Res.Fail(false), lastPhase)
     }
   }
 
