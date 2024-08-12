@@ -93,7 +93,7 @@ object FastSetUnification {
     def solve(l: List[Equation])(implicit opts: RunOptions = RunOptions.default): (Result[SetSubstitution, (FastBoolUnificationException, List[Equation], SetSubstitution)], (Option[String], Option[Int])) = {
       import FastSetUnification.{Phases => P}
       val state = new State(l)
-      def checkAndSimplify(s: State) = runPhase("Check and Simplify", "trivial correct and incorrect equations", P.filteringPhase(P.checkAndSimplify))(s)(opts.copy(debugging = false))
+      def checkAndSimplify(s: State): Unit = runPhase("Check and Simplify", "trivial correct and incorrect equations", P.filteringPhase(P.checkAndSimplify))(s)(opts.copy(debugging = false))
       debugState(state)
       try {
         runPhase(
