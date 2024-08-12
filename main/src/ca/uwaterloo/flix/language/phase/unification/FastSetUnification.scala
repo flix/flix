@@ -51,41 +51,16 @@ import scala.collection.mutable
 ///
 object FastSetUnification {
 
-  import ca.uwaterloo.flix.language.phase.unification.FastSetUnification.Rules.Output
   import ca.uwaterloo.flix.language.phase.unification.FastSetUnification.Phases.Phase
-
-  /**
-    * The threshold for when a solution is considered too complex.
-    *
-    * The threshold is specified as an upper bound on the permitted connectives in a substitution.
-    *
-    * If a solution is too complex an [[TooComplexException]] exception is thrown.
-    */
-  private val SizeThreshold: Int = 800
-
-  /**
-    * The threshold for how many complex equation we will try to solve.
-    *
-    * If there are more than the threshold number of non-trivial equations an [[TooComplexException]] exception is thrown.
-    */
-  private val ComplexThreshold: Int = 10
-
-  /**
-    * The maximum number of permutations to try while solving a system of unification equations using SVE.
-    *
-    * Recall that for a list of length
-    * 0, 1, 2, 3,  4,   5,   6,    7,      8
-    * there are
-    * 1, 1, 2, 6, 24, 120, 720, 5040, 40,320
-    * permutations.
-    *
-    * If the PermutationLimit is 10 and there are 3 equations we will cover 6/6.
-    *
-    * If the PermutationLimit is 10 and there are 5 equations we will cover 10/120.
-    */
-  private val PermutationLimit: Int = 10
+  import ca.uwaterloo.flix.language.phase.unification.FastSetUnification.Rules.Output
 
   case class RunOptions(
+                         // The upper limit of the amount of connectives in the substitution
+                         sizeThreshold: Int,
+                         // The upper limit of mappings in the substitution
+                         complexThreshold: Int,
+                         // The number of permutations given to SVE
+                         permutationLimit: Int,
                          debugging: Boolean = false,
                          rerun: Boolean = false,
                          verifySubst: Boolean = false,
@@ -93,7 +68,11 @@ object FastSetUnification {
                        )
 
   object RunOptions {
-    val default: RunOptions = RunOptions()
+    val default: RunOptions = RunOptions(
+      sizeThreshold = 800,
+      complexThreshold = 10,
+      permutationLimit = 10
+    )
   }
 
   object Solver {
@@ -139,7 +118,7 @@ object FastSetUnification {
         runPhase(
           "Set Unification",
           "resolves all remaining equations using SVE.",
-          P.completePhase(P.setUnifyAllPickSmallest)
+          P.completePhase(P.setUnifyAllPickSmallest(opts.complexThreshold, opts.permutationLimit))
         )(state)
         if (opts.verifySubst) verifySubst(state.subst, l)
         if (opts.verifySize) verifySubstSize(state.subst)
@@ -200,10 +179,10 @@ object FastSetUnification {
       }
     }
 
-    def verifySubstSize(subst: SetSubstitution): Unit = {
+    def verifySubstSize(subst: SetSubstitution)(implicit opts: RunOptions): Unit = {
       val size = subst.size
-      if (size > SizeThreshold) {
-        throw TooComplexException(s"Too large a substitution (threshold: $SizeThreshold, found: $size)")
+      if (size > opts.sizeThreshold) {
+        throw TooComplexException(s"Too large a substitution (threshold: ${opts.sizeThreshold}, found: $size)")
       }
     }
 
@@ -639,19 +618,19 @@ object FastSetUnification {
       *
       * If multiple equations are involved then we try to solve them in different order to find a small substitution.
       */
-    def setUnifyAllPickSmallest(l: List[Equation]): SetSubstitution = {
+    def setUnifyAllPickSmallest(complexThreshold: Int, permutationLimit: Int)(l: List[Equation]): SetSubstitution = {
       // Case 1: We have at most one equation to solve: just solve immediately.
       if (l.length <= 1) {
         return setUnifyAll(l)
       }
 
       // Case 2: Check that there are not too many complex equations.
-      if (l.length > ComplexThreshold) {
-        throw TooComplexException(s"Too many complex equations (threshold: $ComplexThreshold, found: ${l.length})")
+      if (l.length > complexThreshold) {
+        throw TooComplexException(s"Too many complex equations (threshold: $complexThreshold, found: ${l.length})")
       }
 
       // Case 3: We solve the first [[PermutationLimit]] permutations and pick the one that gives rise to the smallest substitution.
-      val results = l.permutations.take(PermutationLimit).toList.map {
+      val results = l.permutations.take(permutationLimit).toList.map {
         p => (p, setUnifyAll(p))
       }.sortBy {
         case (_, s) => s.size
