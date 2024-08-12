@@ -200,7 +200,9 @@ object BooleanPropTesting {
   /** Defaults to no in case of err */
   private def askYesNo(question: String): Boolean = {
     println(question)
-    scala.io.StdIn.readBoolean()
+    try scala.io.StdIn.readBoolean() catch {
+      case _: java.io.EOFException => false
+    }
   }
 
   private def eqPropagatedSelf(t: Term): Equation = {
