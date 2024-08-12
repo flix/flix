@@ -334,13 +334,13 @@ object FastSetUnification {
       }
     }
 
-    def triviallyWrong(eq: Equation): Result[Equation, ConflictException] = {
+    def triviallyWrong(eq: Equation): Option[ConflictException] = {
       // Possible additions
       // - compare elements/constants to intersections
       val Equation(t1, t2, loc) = eq
 
       @inline
-      def error: Result[Equation, ConflictException] = Result.Err(ConflictException(t1, t2, loc))
+      def error: Option[ConflictException] = Some(ConflictException(t1, t2, loc))
 
       (t1, t2) match {
         case (Term.Univ, Term.Empty) => error
@@ -361,7 +361,7 @@ object FastSetUnification {
         case (Term.Cst(c1), Term.Cst(c2)) if c1 != c2 => error
         case (inter: Term.Inter, Term.Univ) if inter.triviallyNonUniv => error
         case (union: Term.Union, Term.Empty) if union.triviallyNonEmpty => error
-        case _ => Result.Ok(eq)
+        case _ => None
       }
     }
 
@@ -455,6 +455,26 @@ object FastSetUnification {
           None
       }
     }
+
+    /**
+      * Set unification using the SVE algorithm.
+      *
+      * Returns a most-general unifier that solves the given equation `e`.
+      *
+      * Throws a [[ConflictException]] if the equation cannot be solved.
+      */
+    def setUnifyOne(e: Equation): Result[SetSubstitution, ConflictException] = try {
+      // The set expression we want to show is empty.
+      val query = Term.mkXor(e.t1, e.t2)
+
+      // Determine the order in which to eliminate the variables.
+      val fvs = query.freeVars.toList
+
+      // Eliminate all variables one by one in the order specified by fvs.
+      Result.Ok(successiveVariableElimination(query, fvs))
+    } catch {
+      case _: BoolUnificationException => Result.Err(ConflictException(e.t1, e.t2, e.loc))
+    }
   }
 
   /**
@@ -470,15 +490,9 @@ object FastSetUnification {
     * -        x ~ x        (same variable)
     */
   private def checkAndSimplify(l: List[Equation]): List[Equation] = {
-    /** Throws exception of [[Rules.triviallyWrong]] if found. */
-    def checkWrong(eq: Equation): Unit = Rules.triviallyWrong(eq) match {
-      case Result.Ok(_) => ()
-      case Result.Err(e) => throw e
-    }
-
-    val res = runEqRule(Rules.trivial)(l).getOrElse(l)
-    res.foreach(checkWrong)
-    res
+    val res0 = runEqRule(Rules.trivial)(l).getOrElse(l)
+    val res1 = runErrRule(Rules.triviallyWrong)(res0)
+    res1
   }
 
   /**
@@ -605,6 +619,26 @@ object FastSetUnification {
   private def runSubstRule(rule: Equation => Option[SetSubstitution])(l: List[Equation]): Output = {
     val rule1 = (eq0: Equation) => rule(eq0).map(subst => (Nil, subst))
     runRule(rule1, selfFeeding = false, substInduced = true)(l)
+  }
+
+  private def runSubstResRule(rule: Equation => Result[SetSubstitution, Throwable])(l: List[Equation]): SetSubstitution = {
+    val rule1 = (eq0: Equation) => rule(eq0) match {
+      case Result.Ok(subst) => Some((Nil: List[Equation], subst))
+      case Result.Err(ex) => throw ex
+    }
+    val res = runRule(rule1, selfFeeding = false, substInduced = false)(l)
+    res.map{
+      case (eqs, subst) =>
+        assert(eqs.isEmpty)
+        subst
+    }.getOrElse(SetSubstitution.empty)
+  }
+
+  private def runErrRule(rule: Equation => Option[Throwable])(l: List[Equation]): List[Equation] = {
+    val rule1 = (eq0: Equation) => rule(eq0).map[(List[Equation], SetSubstitution)](ex => throw ex)
+    val res = runRule(rule1, selfFeeding = false, substInduced = false)(l)
+    assert(res.isEmpty)
+    l
   }
 
   /**
@@ -772,43 +806,7 @@ object FastSetUnification {
     * Note: We assume that any existing substitution will be composed with the substitution returned by this function.
     */
   private def setUnifyAll(l: List[Equation]): SetSubstitution = {
-    var subst = SetSubstitution.empty
-    var pending = l
-    while (pending.nonEmpty) {
-      val e = pending.head
-      pending = pending.tail
-
-      // Compute the most-general unifier for the current equation `e`.
-      val newSubst = setUnifyOne(e)
-
-      // Apply the computed substitution to all pending equations.
-      pending = newSubst(pending)
-
-      // Compose the new substitution with the current substitution.
-      subst = newSubst @@ subst
-    }
-
-    subst
-  }
-
-  /**
-    * Set unification using the SVE algorithm.
-    *
-    * Returns a most-general unifier that solves the given equation `e`.
-    *
-    * Throws a [[ConflictException]] if the equation cannot be solved.
-    */
-  private def setUnifyOne(e: Equation): SetSubstitution = try {
-    // The set expression we want to show is empty.
-    val query = Term.mkXor(e.t1, e.t2)
-
-    // Determine the order in which to eliminate the variables.
-    val fvs = query.freeVars.toList
-
-    // Eliminate all variables one by one in the order specified by fvs.
-    successiveVariableElimination(query, fvs)
-  } catch {
-    case _: BoolUnificationException => throw ConflictException(e.t1, e.t2, e.loc)
+    runSubstResRule(Rules.setUnifyOne)(l)
   }
 
   /**
