@@ -33,7 +33,7 @@ import scala.jdk.CollectionConverters._
   * 1. Collect a list of the local parameters of each def
   * 2. Collect a set of all anonymous class / new object expressions
   * 3. Collect a flat set of all types of the program, i.e., if `List[String]` is
-  *   in the list, so is `String`.
+  * in the list, so is `String`.
   */
 object Reducer {
 
@@ -199,13 +199,19 @@ object Reducer {
   /**
     * Returns all types contained in the given `Effect`.
     */
-  private def typesOfEffect(e: Effect): Set[MonoType] = e.ops.toSet.map {
-    (op: Op) =>
-      val paramTypes = op.fparams.map(_.tpe)
-      val resType = op.tpe
-      val continuationType = MonoType.Object
-      val correctedFunctionType = MonoType.Arrow(paramTypes :+ continuationType, resType)
-      correctedFunctionType
+  private def typesOfEffect(e: Effect): Set[MonoType] = {
+    e.ops.toSet.map(extractFunctionType)
+  }
+
+  /**
+    * Returns the function type based `op` represents.
+    */
+  private def extractFunctionType(op: Op): MonoType = {
+    val paramTypes = op.fparams.map(_.tpe)
+    val resType = op.tpe
+    val continuationType = MonoType.Object
+    val correctedFunctionType = MonoType.Arrow(paramTypes :+ continuationType, resType)
+    correctedFunctionType
   }
 
   /**
