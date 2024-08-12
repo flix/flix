@@ -20,7 +20,6 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.runtime.{CompilationResult, TestFn}
 import org.scalatest.funsuite.AnyFunSuite
 
-import java.lang
 import java.nio.file.{Files, Path, Paths}
 import scala.jdk.CollectionConverters.*
 
