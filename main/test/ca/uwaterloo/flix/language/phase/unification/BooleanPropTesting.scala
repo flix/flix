@@ -130,9 +130,8 @@ object BooleanPropTesting {
       }
     }
     val (smallestError, smallestTimeout) = printTestOutput(errs, timeouts, tests)
-    def askAndRun(description: String)(l: List[Equation]) = askYesNo(s"Do you want to run $description?") match {
-      case true => runEquations(l)(debugging = true)
-      case false => ()
+    def askAndRun(description: String)(l: List[Equation]) = {
+      if (askYesNo(s"Do you want to run $description?")) runEquations(l)(debugging = true)
     }
     smallestError.map(askAndRun("smallest error"))
     smallestTimeout.map(askAndRun("smallest timeout"))
