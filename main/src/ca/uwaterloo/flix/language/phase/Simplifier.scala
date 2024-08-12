@@ -1,3 +1,4 @@
+// JOE TODO: Is monomorpher where I should do the subst? Ask magnus
 /*
  * Copyright 2015-2016 Magnus Madsen, Ming-Ho Yee
  *
