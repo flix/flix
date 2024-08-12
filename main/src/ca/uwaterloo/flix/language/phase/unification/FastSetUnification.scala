@@ -373,7 +373,7 @@ object FastSetUnification {
         // [],
         // [x -> t]
         case (Term.Var(x), t) if t.noFreeVars =>
-          Some((Nil, SetSubstitution.singleton(x, t)))
+          Some((Nil, SetSubstitution.singleton(x, propagation(t))))
 
         // x ∩ y ∩ !z ∩ ... ∩ rest_i ~ univ
         // ---
@@ -438,6 +438,19 @@ object FastSetUnification {
       (t1, t2) match {
         case (Term.Var(x), y@Term.Var(_)) =>
           Some(SetSubstitution.singleton(x, y))
+        case _ =>
+          None
+      }
+    }
+
+    def variableAssignment(eq: Equation): Option[SetSubstitution] = {
+      val Equation(t1, t2, _) = eq
+      (t1, t2) match {
+        case (v@Term.Var(x), rhs) if !rhs.freeVarsContains(v) =>
+          // We have found an equation: `x ~ t` where `x` is not free in `t`.
+          // Construct a singleton substitution `[x -> y]`.
+          // Apply propagation to simplify the rhs before it goes into the substitution.
+          Some(SetSubstitution.singleton(x, propagation(rhs)))
         case _ =>
           None
       }
@@ -661,39 +674,7 @@ object FastSetUnification {
     * }}}
     */
   private def varAssignment(l: List[Equation]): (List[Equation], SetSubstitution) = {
-    var pending = l
-    var subst = SetSubstitution.empty
-
-    var unsolved: List[Equation] = Nil
-
-    // INVARIANT: The current substitution has been applied to BOTH the unsolved AND pending equations.
-    while (pending.nonEmpty) {
-      // Extract the next equation and update the pending equations.
-      val e = pending.head
-      pending = pending.tail
-
-      e match {
-        case Equation(v@Term.Var(x), rhs, _) if !rhs.freeVarsContains(v) =>
-          // Case 1: We have found an equation: `x ~ t` where `x` is not free in `t`.
-          // Construct a singleton substitution `[x -> y]`.
-          // Apply propagation to simplify the rhs before it goes into the substitution.
-          val singleton = SetSubstitution.singleton(x, propagation(rhs))
-
-          // Apply the singleton substitution to the unsolved equations.
-          pending = singleton(pending)
-
-          // Apply the singleton substitution to the unsolved equations.
-          unsolved = singleton(unsolved)
-
-          // Compose the new substitution with the current substitution.
-          subst = singleton @@ subst
-
-        case _ => unsolved = e :: unsolved
-      }
-    }
-
-    // Reverse the unsolved equations to ensure they are returned in the original order.
-    (unsolved.reverse, subst)
+    runSubstRule(Rules.variableAssignment)(l).getOrElse((l, SetSubstitution.empty))
   }
 
   /**

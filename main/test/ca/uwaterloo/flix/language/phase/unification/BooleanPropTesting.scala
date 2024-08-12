@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.phase.typer.ConstraintSolver
 import ca.uwaterloo.flix.language.phase.unification.BooleanPropTesting.RawString.toRawStringEqs
 import ca.uwaterloo.flix.language.phase.unification.FastSetUnification.Term._
-import ca.uwaterloo.flix.language.phase.unification.FastSetUnification.{Equation, Term}
+import ca.uwaterloo.flix.language.phase.unification.FastSetUnification.{Equation, RunOptions, Term}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
 import scala.annotation.tailrec
@@ -90,12 +90,12 @@ object BooleanPropTesting {
   }
 
   def main(args: Array[String]): Unit = {
-    testSolvableConstraints(new Random(), explodedRandomXor, 500_000, 1, -1)
+    testSolvableConstraints(new Random(), explodedRandomXor, 500_000, 1, -1)(RunOptions.default)
   }
 
   // TODO add testing of t ~ propagation(t)
 
-  def testSolvableConstraints(random: Random, genSolvable: Random => List[Equation], testLimit: Int, errLimit: Int, timeoutLimit: Int): Boolean = {
+  def testSolvableConstraints(random: Random, genSolvable: Random => List[Equation], testLimit: Int, errLimit: Int, timeoutLimit: Int)(implicit opts: RunOptions): Boolean = {
     def printProgress(tests: Int, errAmount: Int, timeoutAmount: Int): Unit = {
       val passed = tests - errAmount - timeoutAmount
       println(s"${tests / 1000}k (${passed} passed, $errAmount errs, $timeoutAmount t.o.)")
@@ -130,11 +130,11 @@ object BooleanPropTesting {
       }
     }
     val (smallestError, smallestTimeout) = printTestOutput(errs, timeouts, tests)
-    def askAndRun(description: String)(l: List[Equation]) = {
-      if (askYesNo(s"Do you want to run $description?")) runEquations(l)(debugging = true)
+    def askAndRun(description: String)(l: List[Equation]): Unit = {
+      if (askYesNo(s"Do you want to run $description?")) runEquations(l)(opts.copy(debugging = true))
     }
-    smallestError.map(askAndRun("smallest error"))
-    smallestTimeout.map(askAndRun("smallest timeout"))
+    smallestError.foreach(askAndRun("smallest error"))
+    smallestTimeout.foreach(askAndRun("smallest timeout"))
     errs.isEmpty
   }
 
@@ -181,7 +181,7 @@ object BooleanPropTesting {
     case object Timeout extends Res
   }
 
-  private def runEquations(eqs: List[Equation])(implicit debugging: Boolean = false): (Res, Int) = {
+  private def runEquations(eqs: List[Equation])(implicit opts: RunOptions = RunOptions.default): (Res, Int) = {
     val (res, phase) = FastSetUnification.solveAllInfo(eqs)
     res match {
       case Result.Ok(subst) => try {
