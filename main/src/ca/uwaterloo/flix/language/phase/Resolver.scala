@@ -1108,13 +1108,12 @@ object Resolver {
                 val methodName = qname.ident
                 val expsVal = traverse(exps)(visitExp(_, env0))
                 // Check for a single Unit argument
-                mapN(expsVal) {
+                // Returns out of visitExp
+                return flatMapN(expsVal) {
                   case ResolvedAst.Expr.Cst(Ast.Constant.Unit, _) :: Nil =>
-                    // Returns out of visitExp
-                    return Validation.success(ResolvedAst.Expr.InvokeStaticMethod2(clazz, methodName, Nil, outerLoc))
+                    Validation.success(ResolvedAst.Expr.InvokeStaticMethod2(clazz, methodName, Nil, outerLoc))
                   case es =>
-                    // Returns out of visitExp
-                    return Validation.success(ResolvedAst.Expr.InvokeStaticMethod2(clazz, methodName, es, outerLoc))
+                    Validation.success(ResolvedAst.Expr.InvokeStaticMethod2(clazz, methodName, es, outerLoc))
                 }
               case _ =>
               // Fallthrough to below.
