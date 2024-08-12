@@ -786,9 +786,9 @@ object GenExpression {
 
       case AtomicOp.StructNew(_, _) => throw new RuntimeException("JOE TBD")
 
-      case AtomicOp.StructGet(_, _) => throw new RuntimeException("JOE TBD")
+      case AtomicOp.StructGet(_, _, _) => throw new RuntimeException("JOE TBD")
 
-      case AtomicOp.StructPut(_, _) => throw new RuntimeException("JOE TBD")
+      case AtomicOp.StructPut(_, _, _) => throw new RuntimeException("JOE TBD")
 
       case AtomicOp.Ref =>
         val List(exp) = exps
