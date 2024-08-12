@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.language.ast.SourceLocation
+import ca.uwaterloo.flix.language.phase.typer.ConstraintSolver
 import ca.uwaterloo.flix.language.phase.unification.BooleanPropTesting.RawString.toRawStringEqs
 import ca.uwaterloo.flix.language.phase.unification.FastSetUnification.Term._
 import ca.uwaterloo.flix.language.phase.unification.FastSetUnification.{Equation, Term}
@@ -89,7 +90,7 @@ object BooleanPropTesting {
   }
 
   def main(args: Array[String]): Unit = {
-    testSolvableConstraints(new Random(), explodedRandomXor, 1_000_000, 1, -1)
+    testSolvableConstraints(new Random(), explodedRandomXor, 500_000, 1, -1)
   }
 
   // TODO add testing of t ~ propagation(t)
@@ -128,11 +129,17 @@ object BooleanPropTesting {
           if (timeoutLimit > 0 && timeouts.sizeIs >= timeoutLimit) continue = false
       }
     }
-    printTestOutput(errs, timeouts, tests)
+    val (smallestError, smallestTimeout) = printTestOutput(errs, timeouts, tests)
+    def askAndRun(description: String)(l: List[Equation]) = askYesNo(s"Do you want to run $description?") match {
+      case true => runEquationsWithDebug(l)
+      case false => ()
+    }
+    smallestError.map(askAndRun("smallest error"))
+    smallestTimeout.map(askAndRun("smallest timeout"))
     errs.isEmpty
   }
 
-  private def printTestOutput(errs: ListBuffer[(List[Equation], Boolean, Int)], timeouts: ListBuffer[(List[Equation], Int)], tests: Int): Unit = {
+  private def printTestOutput(errs: ListBuffer[(List[Equation], Boolean, Int)], timeouts: ListBuffer[(List[Equation], Int)], tests: Int): (Option[List[Equation]], Option[List[Equation]]) = {
     println()
     println(s"   Tests: $tests")
     val errSize = errs.size
@@ -141,13 +148,16 @@ object BooleanPropTesting {
     val timeoutSize = timeouts.size
     println(s"Timeouts: $timeoutSize (${timeoutSize / (1.0 * tests) * 100} %)")
     if (errs.nonEmpty) println(s"\nSmallest error:")
-    errs.sortBy { case (a, _, p) => (p, a.map(_.size).sum) }.headOption.foreach {
+    val smallestError = errs.sortBy { case (a, _, p) => (p, a.map(_.size).sum) }.headOption
+    smallestError.foreach {
       case (err, verf, phase) => println(s">${if (verf) "v" else ""}$phase: ${err.mkString("\n")}\n>${if (verf) "v" else ""}$phase: ${toRawStringEqs(err)}")
     }
     if (timeouts.nonEmpty) println(s"\nSmallest timeout:")
-    timeouts.sortBy(p => (p._2, p._1.map(_.size).sum)).headOption.foreach {
+    val smallestTimeout = timeouts.sortBy(p => (p._2, p._1.map(_.size).sum)).headOption
+    smallestTimeout.foreach {
       case (timeout, phase) => println(s">$phase: ${timeout.mkString("\n")}\n>$phase: ${toRawStringEqs(timeout)}")
     }
+    (smallestError.map(_._1), smallestTimeout.map(_._1))
   }
 
   def propagationTesting(random: Random): List[Equation] = {
@@ -186,6 +196,20 @@ object BooleanPropTesting {
       case Result.Err((_, _, _)) =>
         (Res.Fail(false), phase)
     }
+  }
+
+  private def runEquationsWithDebug(l: List[Equation]): (Res, Int) = {
+    val old = FastSetUnification.Debugging
+    FastSetUnification.Debugging = true
+    val res = runEquations(l)
+    FastSetUnification.Debugging = old
+    res
+  }
+
+  /** Defaults to no in case of err */
+  private def askYesNo(question: String): Boolean = {
+    println(question)
+    scala.io.StdIn.readBoolean()
   }
 
   private def eqPropagatedSelf(t: Term): Equation = {

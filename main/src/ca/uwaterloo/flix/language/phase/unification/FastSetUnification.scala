@@ -87,7 +87,7 @@ object FastSetUnification {
   /**
     * Enable debugging (prints information during set unification).
     */
-  private var Debugging: Boolean = false
+  var Debugging: Boolean = false
   private val Rerun: Boolean = false
 
   /**
