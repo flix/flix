@@ -208,10 +208,6 @@ object DocAstFormatter {
         ))
       case Native(clazz) =>
         formatJavaClass(clazz)
-      case StructNew(sym, exps, exp) =>
-          text("new") +: text(sym.toString) +: curlyTuple(
-            exps.map {case (name, v) => text(name.name) +: text("=") +: aux(v)}
-          ) +: text("@") +: aux(exp)
     }
     d match {
       case _: Composite if paren => parens(doc)
