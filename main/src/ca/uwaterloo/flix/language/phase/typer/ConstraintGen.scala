@@ -1281,7 +1281,7 @@ object ConstraintGen {
     val (_, _, tpe, substMap) = Scheme.instantiate(struct.sc, struct.loc)
     val subst = Substitution(substMap)
     val instantiatedFields = fields.map( f => f match {
-      case KindedAst.StructField(fieldSym, tpe, loc) =>
+      case KindedAst.StructField(fieldSym, tpe, _) =>
         fieldSym -> subst(tpe)
     }
     )
