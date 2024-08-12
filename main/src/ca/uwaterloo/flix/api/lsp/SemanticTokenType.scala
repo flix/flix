@@ -41,6 +41,7 @@ sealed trait SemanticTokenType {
     case SemanticTokenType.Type => 10
     case SemanticTokenType.TypeParameter => 11
     case SemanticTokenType.Variable => 12
+    case SemanticTokenType.Struct => 13
   }
 }
 
@@ -111,4 +112,8 @@ object SemanticTokenType {
     */
   case object Variable extends SemanticTokenType
 
+  /**
+    * For identifiers that declare or reference a struct declaration
+    */
+  case object Struct extends SemanticTokenType
 }
