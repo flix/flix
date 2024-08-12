@@ -358,15 +358,14 @@ class TestManifestParser extends AnyFunSuite {
                   |[dependencies]
                   |"github:jls/tic-tac-toe" = { version = "1.2.3", permissions = [] }
                   |""".stripMargin
-    assertResult(expected = Set.empty)(actual =
-      ManifestParser.parse(toml, null) match {
-        case Ok(m) =>
+    assertResult(expected = Ok(Set.empty))(actual =
+      ManifestParser.parse(toml, null).map {
+        m =>
           m.dependencies
             .head
             .asInstanceOf[Dependency.FlixDependency]
             .permissions
             .toSet
-        case Err(e) => e.message(f)
       }
     )
   }
