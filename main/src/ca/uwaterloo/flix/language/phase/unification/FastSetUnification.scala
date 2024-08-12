@@ -473,12 +473,14 @@ object FastSetUnification {
     */
   private def checkAndSimplify(l: List[Equation]): List[Equation] = {
     /** Throws exception of [[Rules.triviallyWrong]] if found. */
-    def checkWrong(eq: Equation): Equation = Rules.triviallyWrong(eq) match {
-      case Result.Ok(t) => t
+    def checkWrong(eq: Equation): Unit = Rules.triviallyWrong(eq) match {
+      case Result.Ok(_) => ()
       case Result.Err(e) => throw e
     }
 
-    l.flatMap(eq => Rules.trivial(eq).map(checkWrong))
+    val res = runEqRule(Rules.trivial)(l).getOrElse(l)
+    res.foreach(checkWrong)
+    res
   }
 
   /**
@@ -545,31 +547,39 @@ object FastSetUnification {
     * learn that `x -> univ` then we will try to extend s with the new binding which will raise a [[ConflictException]].
     */
   private def propagateConstants(l: List[Equation]): (List[Equation], SetSubstitution) = {
-    runRule(Rules.constantAssignment, selfFeeding = true)(l).getOrElse((l, SetSubstitution.empty))
+    runRule(Rules.constantAssignment, selfFeeding = true, substInduced = true)(l).getOrElse((l, SetSubstitution.empty))
   }
 
-  private def runRule(rule: Equation => Output, selfFeeding: Boolean)(l: List[Equation]): Output = {
+  /**
+    * @param rule a solving rule that optionally produces constraints, cs, and a substitution subst.
+    * @param selfFeeding can the rule potentially solve any constrains in cs?
+    * @param substInduced can the rule potentially discover new solvable constraints via any subst it returns?
+    * @param l the constraints to run the rule on
+    * @return the remaining constraints and the found substitution.
+    */
+  private def runRule(rule: Equation => Output, selfFeeding: Boolean, substInduced: Boolean)(l: List[Equation]): Output = {
     // TODO optimization:
     // - Sometimes the @@ can be ++
     // - Sometimes the outer loop can be skipped (aren't all rules discoverable by subst?)
     var subst = SetSubstitution.empty
-    var todo = l
+    var workList = l
     var leftover: List[Equation] = Nil
     var changed = true // has there been progress in the inner loop
     var overallChanged = false // has there been progress at any point in the loops
-    var flipped = false // is the `todo` list flipped compared to the initial order
+    var flipped = false // is the `workList` list flipped compared to the initial order
     while (changed) {
       flipped = !flipped
       changed = false
-      while (todo != Nil) todo match {
+      while (workList != Nil) workList match {
         case eq0 :: tail =>
           val eq = subst.apply(eq0)
-          todo = tail
+          workList = tail
           rule(eq) match {
             case Some((eqs, s)) =>
               changed = true
               overallChanged = true
-              if (selfFeeding) todo = eqs ++ todo
+              // add the new eqs to `workList` if declared applicable
+              if (selfFeeding) workList = eqs ++ workList
               else leftover = eqs ++ leftover
               subst = s @@ subst
             case None =>
@@ -577,15 +587,26 @@ object FastSetUnification {
           }
         case Nil => ()
       }
-      todo = leftover
+      workList = leftover
       leftover = Nil
+      if (!substInduced) changed = false // stop the outer loop is it is declared unnecessary
     }
     if (overallChanged) {
-      val correctedTodo = if (flipped) todo.reverse else todo
+      val correctedTodo = if (flipped) workList.reverse else workList
       Some(correctedTodo.map(subst.apply), subst)
     } else {
       None
     }
+  }
+
+  private def runEqRule(rule: Equation => Option[Equation])(l: List[Equation]): Option[List[Equation]] = {
+    val rule1 = (eq0: Equation) => rule(eq0).map(eq1 => (List(eq1), SetSubstitution.empty))
+    runRule(rule1, selfFeeding = false, substInduced = false)(l).map(_._1)
+  }
+
+  private def runSubstRule(rule: Equation => Option[SetSubstitution])(l: List[Equation]): Output = {
+    val rule1 = (eq0: Equation) => rule(eq0).map(subst => (Nil, subst))
+    runRule(rule1, selfFeeding = false, substInduced = true)(l)
   }
 
   /**
@@ -625,41 +646,7 @@ object FastSetUnification {
     * Returns a list of unsolved equations and a partial substitution.
     */
   private def propagateVars(l: List[Equation]): (List[Equation], SetSubstitution) = {
-    var pending = l
-    var subst = SetSubstitution.empty
-
-    var unsolved: List[Equation] = Nil
-
-    // INVARIANT: The current substitution has been applied to BOTH unsolved AND pending equations.
-    while (pending.nonEmpty) {
-      // Extract the next equation and update the pending equations.
-      val e = pending.head
-      pending = pending.tail
-
-      e match {
-        case Equation(Term.Var(x), y@Term.Var(_), _) =>
-          // Case 1: We have found an equation: `x ~ y`.
-          // Construct a singleton substitution `[x -> y]`.
-          val singleton = SetSubstitution.singleton(x, y)
-
-          // Apply the singleton substitution to the pending equations.
-          pending = singleton(pending)
-
-          // Apply the singleton substitution to the unsolved equations.
-          unsolved = singleton(unsolved)
-
-          // Update the current substitution with the new binding.
-          subst = singleton @@ subst
-
-        case _ =>
-          // Case 2: We have some other type of equation. Add it to the list of unsolved equations.
-          // The invariant ensures that the current substitution has already been applied to the equation.
-          unsolved = e :: unsolved
-      }
-    }
-
-    // Reverse the unsolved equations to ensure they are returned in the original order.
-    (unsolved.reverse, subst)
+    runSubstRule(Rules.variableAlias)(l).getOrElse((l, SetSubstitution.empty))
   }
 
   /**
