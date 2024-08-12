@@ -20,8 +20,9 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.runtime.{CompilationResult, TestFn}
 import org.scalatest.funsuite.AnyFunSuite
 
+import java.lang
 import java.nio.file.{Files, Path, Paths}
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 class FlixSuite(incremental: Boolean) extends AnyFunSuite {
 
@@ -90,10 +91,12 @@ class FlixSuite(incremental: Boolean) extends AnyFunSuite {
             // Evaluate the function.
             val result = run()
             // Expect the true value, if boolean.
-            if (result.isInstanceOf[java.lang.Boolean]) {
-              if (result != true) {
-                fail("Expected true, but got false.")
-              }
+            result match {
+              case res: lang.Boolean =>
+                if (res != true) {
+                  fail("Expected true, but got false.")
+                }
+              case _ =>
             }
           }
         }
