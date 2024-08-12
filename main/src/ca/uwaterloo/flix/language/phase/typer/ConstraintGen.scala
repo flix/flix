@@ -615,8 +615,8 @@ object ConstraintGen {
         (resTpe, resEff)
 
       case Expr.StructPut(sym, exp1, field, exp2, tvar, evar, loc) =>
-        // lhs struct type
         val (instantiatedFieldTpes, structTpe, regionVar) = instantiateStruct(sym, root.structs)
+        // lhs struct type
         val (tpe1, eff1) = visitExp(exp1)
         c.expectType(structTpe, tpe1, exp1.loc)
         // rhs field type
