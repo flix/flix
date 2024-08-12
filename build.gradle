@@ -48,7 +48,8 @@ tasks.withType(ScalaCompile) {
             "-Xignore-scala2-macros",
             "-Werror",
             "-release", "11",
-            "-rewrite"
+            "-rewrite",
+            "-no-indent"
     ]
     compileScala.sourceCompatibility = 21
     compileScala.targetCompatibility = 21
