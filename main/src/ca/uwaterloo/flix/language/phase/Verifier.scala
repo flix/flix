@@ -231,10 +231,6 @@ object Verifier {
           }
 
         case AtomicOp.StructNew(sym0, names) =>
-          val expectedFields = root.structs(sym0).fields.map(_._1)
-          if(names != expectedFields) {
-            throw InternalCompilerException(s"struct $sym0 expected fields declared in order $expectedFields but got $names", loc)
-          }
           ts match {
             case region :: _ =>
               checkStructType(tpe, sym0, loc)
