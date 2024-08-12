@@ -419,16 +419,16 @@ object SemanticTokensProvider {
     case Expr.StructNew(sym, fields, region, _, _, _) =>
       val (names, exps) = fields.unzip
       val ts = names.map(name => SemanticToken(SemanticTokenType.Property, Nil, name.loc))
-      val t = SemanticToken(SemanticTokenType.Struct, Nil, sym.loc)
+      val t = SemanticToken(SemanticTokenType.Type, Nil, sym.loc)
       visitExps(exps) ++ visitExp(region) ++ ts ++ Iterator(t)
 
     case Expr.StructGet(sym, exp, field, _, _, _) =>
-      val t1 = SemanticToken(SemanticTokenType.Struct, Nil, sym.loc)
+      val t1 = SemanticToken(SemanticTokenType.Type, Nil, sym.loc)
       val t2 = SemanticToken(SemanticTokenType.Property, Nil, field.loc)
       visitExp(exp) ++ Iterator(t1) ++ Iterator(t2)
 
     case Expr.StructPut(sym, exp1, field, exp2, _, _, _) =>
-      val t1 = SemanticToken(SemanticTokenType.Struct, Nil, sym.loc)
+      val t1 = SemanticToken(SemanticTokenType.Type, Nil, sym.loc)
       val t2 = SemanticToken(SemanticTokenType.Property, Nil, field.loc)
       visitExp(exp1) ++ visitExp(exp2) ++ Iterator(t1) ++ Iterator(t2)
 
