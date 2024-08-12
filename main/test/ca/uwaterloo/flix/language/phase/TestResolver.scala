@@ -462,6 +462,18 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.UndefinedNameUnrecoverable](result)
   }
 
+  test("UndefinedName.04") {
+    val input =
+      """
+        |import java.util.Objects
+        |import java.lang.Object
+        |
+        |pub def check(): Bool \ IO = Objects.isNull((x: Object))
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedName](result)
+  }
+
   test("UndefinedEffect.01") {
     val input =
       """
@@ -1794,4 +1806,37 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.ExtraStructField](result)
   }
+  test("ResolutionError.StructFieldIncorrectOrder.01") {
+    val input = """
+                  |struct S[r] {a: Int32, b: Int32}
+                  |def f(rc: Region): S[r] = {
+                  |    new S {b = 3, a = 4} @ rc
+                  |}
+                  |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalNewStruct](result)
+  }
+
+  test("ResolutionError.StructFieldIncorrectOrder.02") {
+    val input = """
+                  |struct S[r] {f: Int32, l: Int32, i: Int32, x: Int32}
+                  |def f(rc: Region): S[r] = {
+                  |    new S {f = 3, l = 4, x = 2, i = 9} @ rc
+                  |}
+                  |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalNewStruct](result)
+  }
+
+  test("ResolutionError.StructFieldIncorrectOrder.03") {
+    val input = """
+                  |struct S[r] {s1: String, f: Int32, l: Int32, i: Int32, x: Int32, s2: String}
+                  |def f(rc: Region): S[r] = {
+                  |    new S {s2 = "s", f = 1, l = 1, i = 1, x = 1, s1 = "s"} @ rc
+                  |}
+                  |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalNewStruct](result)
+  }
+
 }
