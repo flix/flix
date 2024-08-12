@@ -1,4 +1,4 @@
-// JOE TODO: Is monomorpher where I should do the subst? Ask magnus
+// JOE TODO: Is monomorpher where I should do the subst? Ask magnus? Or maybe constraintgen
 /*
  * Copyright 2015-2016 Magnus Madsen, Ming-Ho Yee
  *

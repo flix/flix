@@ -15,21 +15,6 @@
  */
 package ca.uwaterloo.flix.api.lsp
 // JOE TODO: One day be able to index structs + fields
-/* joe todo merge
-- ignores
-- Test.*.Struct.*.Flix
-- TestTyper + ConstraintGen
-- SemanticTokensProvider
-- Symbol.scala
-- DocAst, DocAstFormatter, OpPrinter, TYpedAstPrinter
-- EffectBinder
-- Inliner
-- LambdaLift
-- Monomorpher
-- OccurrenceAnalyzer
-- Typer + tests
-- ConstraintGen
- */
 
 import ca.uwaterloo.flix.api.lsp.Index.traverse
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
