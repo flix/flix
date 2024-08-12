@@ -1197,8 +1197,8 @@ object ResolutionError {
       import formatter._
       s""">> Structs fields must be initialized in the same order as they are declared
          |
-         |Expected initialization order: '${expectedFields.mkString(",")}'
-         |Actual initialized order: '${providedFields.mkString(",")}' was provided
+         |Expected initialization order: ${expectedFields.mkString(",")}
+         |Actual initialized order: ${providedFields.mkString(",")}
          |
          |${code(loc, "incorrect order")}
          |""".stripMargin
