@@ -432,8 +432,6 @@ object SemanticTokensProvider {
       val t2 = SemanticToken(SemanticTokenType.Property, Nil, field.loc)
       visitExp(exp1) ++ visitExp(exp2) ++ Iterator(t1) ++ Iterator(t2)
 
-    case Expr.StructPut(sym, exp1, field, exp2, tpe, eff, loc) => throw new RuntimeException("JOE TBD")
-
     case Expr.VectorLit(exps, _, _, _) =>
       visitExps(exps)
 
