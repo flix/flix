@@ -575,19 +575,23 @@ object ConstraintGen {
         (resTpe, resEff)
 
       case Expr.StructNew(sym, fields, region, tvar, evar, loc) =>
+        // This case needs to handle expressions like `new S { f = rhs } @ r` where `f` was not present in the struct declaration
+        // Here, we check that `rhs` is itself valid by visiting it but make sure not to unify it with anything
         val (instantiatedFieldTpes, structTpe, regionVar) = instantiateStruct(sym, root.structs)
         val visitedFields = fields.map { case (k, v) => visitExp(v) }
+        val (regionTpe, regionEff) = visitExp(region)
         val (fieldTpes, fieldEffs) = visitedFields.unzip
         c.unifyType(tvar, structTpe, loc)
-        fields.zip(fieldTpes).foreach {
-          case ((fieldSym, expr), fieldTpe1) =>
-            instantiatedFieldTpes.get(fieldSym) match {
-              case None => () // Field does not exist. A resolution error will already have been generated
-              case Some(fieldTpe2) => c.unifyType(fieldTpe1, fieldTpe2, expr.loc)
-            }
+        for {
+          (fieldSym, expr) <- fields
+          fieldTpe1 <- fieldTpes
+        } {
+          instantiatedFieldTpes.get(fieldSym) match {
+            case None => ()
+            case Some(fieldTpe2) => c.unifyType(fieldTpe1, fieldTpe2, expr.loc)
+          }
         }
         val regionType = Type.mkRegion(regionVar, loc)
-        val (regionTpe, regionEff) = visitExp(region)
         c.unifyType(regionType, regionTpe, region.loc)
         c.unifyType(evar, Type.mkUnion(Type.mkUnion(fieldEffs, loc), regionEff, regionVar, loc), loc)
         val resTpe = tvar
@@ -608,8 +612,8 @@ object ConstraintGen {
       case Expr.StructPut(sym, exp1, field, exp2, tvar, evar, loc) =>
         val (instantiatedFieldTpes, structTpe, regionVar) = instantiateStruct(sym, root.structs)
         val (tpe1, eff1) = visitExp(exp1)
-        c.expectType(structTpe, tpe1, exp1.loc)
         val (tpe2, eff2) = visitExp(exp2)
+        c.expectType(structTpe, tpe1, exp1.loc)
         val fieldTpe = instantiatedFieldTpes(field)
         c.expectType(fieldTpe, tpe2, exp2.loc)
         c.unifyType(Type.mkUnit(loc), tvar, loc)
@@ -1264,13 +1268,22 @@ object ConstraintGen {
     }
   }
 
+  /**
+    * Instantiates the scheme of the struct in `structs` corresponding to `sym`
+    * Returns a map from field name to its instantiated type, the type of the instantiated struct itself, and the type variable corresponding to the instantiated struct's region
+    *
+    * For example, for the struct `struct S [v, r] { a: v, b: Int32 }` where `v` instantiates to `v'` and `r` instantiates to `r'`
+    *   The first element of the return tuple would be a map with entries `a -> v'` and `b -> Int32`
+    *   The second element of the return tuple would be(locations omitted) `Apply(Apply(Cst(Struct(S), lo), v'), r')`
+    *   The third element of the return tuple would be `r'`
+    */
   private def instantiateStruct(sym: Symbol.StructSym, structs: Map[Symbol.StructSym, KindedAst.Struct])(implicit flix: Flix) : (Map[Name.Label, Type], Type, Type.Var) = {
     val struct = structs(sym)
     assert(struct.tparams.last.sym.kind == Kind.Eff)
     val fields = struct.fields
     val (_, _, tpe, substMap) = Scheme.instantiate(struct.sc, struct.loc)
     val subst = Substitution(substMap)
-    val instantiatedFields = fields.map( f => f match {
+    val instantiatedFields = fields.map(f => f match {
       case KindedAst.StructField(fieldSym, tpe, _) =>
         fieldSym -> subst(tpe)
     }
