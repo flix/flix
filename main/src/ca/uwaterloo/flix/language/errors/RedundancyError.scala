@@ -417,6 +417,37 @@ object RedundancyError {
   }
 
   /**
+    * An error raised to indicate that the struct with the symbol `sym` is not used.
+    *
+    * @param sym the unused struct symbol.
+    */
+  case class UnusedStructSym(sym: Symbol.StructSym) extends RedundancyError with Recoverable {
+    def summary: String = "Unused struct."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s""">> Unused struct '${red(sym.name)}'.
+         |
+         |${code(sym.loc, "unused struct.")}
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = Some({
+      s"""
+         |Possible fixes:
+         |
+         |  (1)  Use the struct.
+         |  (2)  Remove the struct.
+         |  (3)  Mark the struct as public.
+         |  (4)  Prefix the struct name with an underscore.
+         |
+         |""".stripMargin
+    })
+
+    def loc: SourceLocation = sym.loc
+  }
+
+  /**
     * An error raised to indicate that the given formal parameter symbol `sym` is not used.
     *
     * @param sym the unused variable symbol.
@@ -474,37 +505,6 @@ object RedundancyError {
          |
          |""".stripMargin
     })
-  }
-
-  /**
-   * An error raised to indicate that the enum with the symbol `sym` is not used.
-   *
-   * @param sym the unused struct symbol.
-   */
-  case class UnusedStructSym(sym: Symbol.StructSym) extends RedundancyError with Recoverable {
-    def summary: String = "Unused struct."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s""">> Unused struct '${red(sym.name)}'.
-         |
-         |${code(sym.loc, "unused struct.")}
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      s"""
-         |Possible fixes:
-         |
-         |  (1)  Use the struct.
-         |  (2)  Remove the struct.
-         |  (3)  Mark the struct as public.
-         |  (4)  Prefix the struct name with an underscore.
-         |
-         |""".stripMargin
-    })
-
-    def loc: SourceLocation = sym.loc
   }
 
   /**

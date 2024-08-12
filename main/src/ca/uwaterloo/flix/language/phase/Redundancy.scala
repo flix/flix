@@ -148,8 +148,8 @@ object Redundancy {
   }
 
   /**
-   * Checks for unused struct symbols and tags.
-   */
+    * Checks for unused struct symbols and tags.
+    */
   private def checkUnusedStructsAndFields()(implicit sctx: SharedContext, root: Root): List[RedundancyError] = {
     val result = new ListBuffer[RedundancyError]
     for ((_, struct) <- root.structs) {
@@ -1105,8 +1105,8 @@ object Redundancy {
       !sctx.enumSyms.containsKey(enm.sym)
 
   /**
-   * Returns `true` if the given `struct` is unused according to `used`.
-   */
+    * Returns `true` if the given `struct` is unused according to `used`.
+    */
   private def deadStruct(struct: Struct)(implicit sctx: SharedContext): Boolean =
     !struct.sym.name.startsWith("_") &&
       !struct.mod.isPublic &&
@@ -1302,8 +1302,8 @@ object Redundancy {
   private case class SharedContext(defSyms: ConcurrentHashMap[Symbol.DefnSym, Unit],
                                    sigSyms: ConcurrentHashMap[Symbol.SigSym, Unit],
                                    effSyms: ConcurrentHashMap[Symbol.EffectSym, Unit],
-                                   enumSyms: ConcurrentHashMap[Symbol.EnumSym, Unit],
                                    structSyms: ConcurrentHashMap[Symbol.StructSym, Unit],
+                                   enumSyms: ConcurrentHashMap[Symbol.EnumSym, Unit],
                                    caseSyms: ConcurrentHashMap[Symbol.CaseSym, Unit])
 
   /**

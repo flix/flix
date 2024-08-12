@@ -219,15 +219,14 @@ object Lowering {
   }
 
   /**
-   * Lowers the given struct `struct0`.
-   */
+    * Lowers the given struct `struct0`.
+    */
   private def visitStruct(struct0: TypedAst.Struct)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Struct = struct0 match {
-    case TypedAst.Struct(doc, ann, mod, sym, tparams0, _, fieldsMap, loc) =>
+    case TypedAst.Struct(doc, ann, mod, sym, tparams0, _, fields0, loc) =>
       val tparams = tparams0.map(visitTypeParam)
-      val fields0 = fieldsMap.map(_._2)
       val fields = fields0.map {
-        case TypedAst.StructField(name, tpe, _, loc) =>
-          LoweredAst.StructField(name, visitType(tpe), loc)
+        case (k, v) =>
+          LoweredAst.StructField(v.name, visitType(v.tpe), v.loc)
       }
       LoweredAst.Struct(doc, ann, mod, sym, tparams, fields.toList, loc)
   }
@@ -519,8 +518,14 @@ object Lowering {
       val e = visitExp(exp)
       LoweredAst.Expr.ApplyAtomic(AtomicOp.ArrayLength, List(e), Type.Int32, eff, loc)
 
+    case TypedAst.Expr.ArrayStore(exp1, exp2, exp3, eff, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      val e3 = visitExp(exp3)
+      LoweredAst.Expr.ApplyAtomic(AtomicOp.ArrayStore, List(e1, e2, e3), Type.Unit, eff, loc)
+
     case TypedAst.Expr.StructNew(sym, fields0, region0, tpe, eff, loc) =>
-      val fields = fields0.map{case (k, v) => (k, visitExp(v))}
+      val fields = fields0.map { case (k, v) => (k, visitExp(v)) }
       val region = visitExp(region0)
       val (names, es) = fields.unzip
       LoweredAst.Expr.ApplyAtomic(AtomicOp.StructNew(sym, names), region :: es, tpe, eff, loc)
@@ -535,12 +540,6 @@ object Lowering {
       val rhs = visitExp(exp1)
       val idx = root.structs(sym).fields(field).idx
       LoweredAst.Expr.ApplyAtomic(AtomicOp.StructPut(sym, idx, field), List(struct, rhs), tpe, eff, loc)
-
-    case TypedAst.Expr.ArrayStore(exp1, exp2, exp3, eff, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      val e3 = visitExp(exp3)
-      LoweredAst.Expr.ApplyAtomic(AtomicOp.ArrayStore, List(e1, e2, e3), Type.Unit, eff, loc)
 
     case TypedAst.Expr.VectorLit(exps, tpe, eff, loc) =>
       val es = visitExps(exps)

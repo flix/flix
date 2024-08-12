@@ -41,7 +41,7 @@ sealed trait BackendObjType {
     case BackendObjType.Lazy(tpe) => JvmName(RootPackage, mkClassName("Lazy", tpe))
     case BackendObjType.Ref(tpe) => JvmName(RootPackage, mkClassName("Ref", tpe))
     case BackendObjType.Tuple(elms) => JvmName(RootPackage, mkClassName("Tuple", elms))
-    case BackendObjType.Struct(elms, targs) => JvmName(RootPackage, mkClassName("Struct", elms))
+    case BackendObjType.Struct(elms) => JvmName(RootPackage, mkClassName("Struct", elms))
     case BackendObjType.Tagged => JvmName(RootPackage, mkClassName("Tagged"))
     case BackendObjType.Tag(tpe) => JvmName(RootPackage, mkClassName("Tag", tpe))
     case BackendObjType.Arrow(args, result) => JvmName(RootPackage, mkClassName(s"Fn${args.length}", args :+ result))
@@ -235,74 +235,6 @@ object BackendObjType {
     def ValueField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "value", tpe)
   }
 
-  case class Struct(elms: List[BackendType], targs: List[BackendType]) extends BackendObjType with Generatable {
-
-    def genByteCode()(implicit flix: Flix): Array[Byte] = {
-      val cm = ClassMaker.mkClass(this.jvmName, IsFinal)
-
-      elms.indices.foreach(i => cm.mkField(IndexField(i)))
-      cm.mkConstructor(Constructor)
-      cm.mkMethod(ToStringMethod)
-
-      cm.closeClassMaker()
-    }
-
-    def IndexField(i: Int): InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, s"field$i", elms(i))
-
-    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, elms, Some(_ => {
-      withNames(1, elms){ case (_, variables) =>
-        thisLoad() ~
-          // super()
-          DUP() ~ INVOKESPECIAL(JavaObject.Constructor) ~
-          // this.field$i = var$j
-          // fields are numbered consecutively while variables skip indices based
-          // on their stack size
-          composeN(variables.zipWithIndex.map{case (elm, i) =>
-            DUP() ~ elm.load() ~ PUTFIELD(IndexField(i))
-          }) ~
-          RETURN()
-      }
-    }))
-
-    def ToStringMethod: InstanceMethod = JavaObject.ToStringMethod.implementation(this.jvmName, Some(_ => {
-      // [...] -> [..., "(v1, v2, ...)"]
-      def commaSepElmString(): InstructionSet = {
-        // new String[elms.length] // referred to as `elms`
-        cheat(mv => GenExpression.compileInt(elms.length)(mv)) ~ ANEWARRAY(String.jvmName) ~
-          ICONST_M1() ~ // running index referred to as `j`
-          // current stack [elms, j]
-          composeN(elms.indices.map(i => {
-            val field = IndexField(i)
-            // j = j + 1
-            ICONST_1() ~ IADD() ~
-              // [elms, j] -> [elms, j, elms, j]
-              DUP2() ~
-              // this.field$i.toString
-              thisLoad() ~ GETFIELD(field) ~ xToString(field.tpe) ~
-              // [elms, j, elms, j, string] -> [elms, j]
-              AASTORE()
-          })) ~
-          POP() ~
-          // [elms] -> [", ", elms]
-          pushString(", ") ~ SWAP() ~
-          INVOKESTATIC(String.JoinMethod)
-      }
-      // new String[3] // referred to as `arr`
-      ICONST_3() ~ ANEWARRAY(String.jvmName) ~
-        // arr[0] = "("
-        DUP() ~ ICONST_0() ~ pushString("(") ~ AASTORE() ~
-        // arr[1] = "(v1, v2, v3)"
-        DUP() ~ ICONST_1() ~ commaSepElmString() ~ AASTORE() ~
-        // arr[2] = ")"
-        DUP() ~ ICONST_2() ~ pushString(")") ~ AASTORE() ~
-        // ["", arr]
-        pushString("") ~ SWAP() ~
-        INVOKESTATIC(String.JoinMethod) ~
-        xReturn(String.toTpe)
-    }))
-
-  }
-
   case class Tuple(elms: List[BackendType]) extends BackendObjType with Generatable {
 
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
@@ -367,6 +299,73 @@ object BackendObjType {
       pushString("") ~ SWAP() ~
       INVOKESTATIC(String.JoinMethod) ~
       xReturn(String.toTpe)
+    }))
+
+  }
+  case class Struct(elms: List[BackendType]) extends BackendObjType with Generatable {
+
+    def genByteCode()(implicit flix: Flix): Array[Byte] = {
+      val cm = ClassMaker.mkClass(this.jvmName, IsFinal)
+
+      elms.indices.foreach(i => cm.mkField(IndexField(i)))
+      cm.mkConstructor(Constructor)
+      cm.mkMethod(ToStringMethod)
+
+      cm.closeClassMaker()
+    }
+
+    def IndexField(i: Int): InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, s"field$i", elms(i))
+
+    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, elms, Some(_ => {
+      withNames(1, elms){ case (_, variables) =>
+        thisLoad() ~
+          // super()
+          DUP() ~ INVOKESPECIAL(JavaObject.Constructor) ~
+          // this.field$i = var$j
+          // fields are numbered consecutively while variables skip indices based
+          // on their stack size
+          composeN(variables.zipWithIndex.map{case (elm, i) =>
+            DUP() ~ elm.load() ~ PUTFIELD(IndexField(i))
+          }) ~
+          RETURN()
+      }
+    }))
+
+    def ToStringMethod: InstanceMethod = JavaObject.ToStringMethod.implementation(this.jvmName, Some(_ => {
+      // [...] -> [..., "v1, v2, ..."]
+      def commaSepElmString(): InstructionSet = {
+        // new String[elms.length] // referred to as `elms`
+        cheat(mv => GenExpression.compileInt(elms.length)(mv)) ~ ANEWARRAY(String.jvmName) ~
+          ICONST_M1() ~ // running index referred to as `j`
+          // current stack [elms, j]
+          composeN(elms.indices.map(i => {
+            val field = IndexField(i)
+            // [elms, j] -> [elms, j+1]
+            ICONST_1() ~ IADD() ~
+              // [elms, j + 1] -> [elms, j + 1, elms, j + 1]
+              DUP2() ~
+              // this.field$i.toString
+              thisLoad() ~ GETFIELD(field) ~ xToString(field.tpe) ~
+              // [elms, j + 1, elms, j + 1, string] -> [elms, j + 1]
+              AASTORE()
+          })) ~
+          POP() ~
+          // [elms] -> [", ", elms]
+          pushString(", ") ~ SWAP() ~
+          INVOKESTATIC(String.JoinMethod)
+      }
+      // new String[3] // referred to as `arr`
+      ICONST_3() ~ ANEWARRAY(String.jvmName) ~
+        // arr[0] = "Struct("
+        DUP() ~ ICONST_0() ~ pushString("Struct(") ~ AASTORE() ~
+        // arr[1] = "v1, v2, v3"
+        DUP() ~ ICONST_1() ~ commaSepElmString() ~ AASTORE() ~
+        // arr[2] = ")"
+        DUP() ~ ICONST_2() ~ pushString(")") ~ AASTORE() ~
+        // ["", arr]
+        pushString("") ~ SWAP() ~
+        INVOKESTATIC(String.JoinMethod) ~
+        xReturn(String.toTpe)
     }))
 
   }
