@@ -930,4 +930,28 @@ class TestSafety extends AnyFunSuite with TestUtils {
     expectError[SafetyError.IllegalExportPolymorphism](result)
   }
 
+
+  ignore("IllegalExportFunction.08") {
+    val input =
+      """
+        |struct S[t, r] {
+        |    v: t
+        |}
+        |mod Mod { @Export pub def id(x: Int32): S[Int32, r] = ??? }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalExportPolymorphism](result)
+  }
+
+  ignore("IllegalExportFunction.09") {
+    val input =
+      """
+        |struct S[t, r] {
+        |    v: t
+        |}
+        |mod Mod { @Export pub def id(x: Int32, _y: S[Int32, r]): Int32 = x }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalExportPolymorphism](result)
+  }
 }
