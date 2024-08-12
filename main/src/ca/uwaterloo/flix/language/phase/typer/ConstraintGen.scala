@@ -1269,12 +1269,12 @@ object ConstraintGen {
   }
 
   /**
-    * Instantiates the scheme of the struct in `structs` corresponding to `sym`
-    * Returns a map from field name to its instantiated type, the type of the instantiated struct itself, and the type variable corresponding to the instantiated struct's region
+    * Instantiates the scheme of the struct in corresponding to `sym` in `structs`
+    * Returns a map from field name to its instantiated type, the type of the instantiated struct, and the instantiated struct's region variable
     *
     * For example, for the struct `struct S [v, r] { a: v, b: Int32 }` where `v` instantiates to `v'` and `r` instantiates to `r'`
     *   The first element of the return tuple would be a map with entries `a -> v'` and `b -> Int32`
-    *   The second element of the return tuple would be(locations omitted) `Apply(Apply(Cst(Struct(S), lo), v'), r')`
+    *   The second element of the return tuple would be(locations omitted) `Apply(Apply(Cst(Struct(S)), v'), r')`
     *   The third element of the return tuple would be `r'`
     */
   private def instantiateStruct(sym: Symbol.StructSym, structs: Map[Symbol.StructSym, KindedAst.Struct])(implicit flix: Flix) : (Map[Name.Label, Type], Type, Type.Var) = {
