@@ -1286,8 +1286,7 @@ object ConstraintGen {
     val instantiatedFields = fields.map(f => f match {
       case KindedAst.StructField(fieldSym, tpe, _) =>
         fieldSym -> subst(tpe)
-    }
-    )
+    })
     (instantiatedFields.toMap, tpe, substMap(struct.tparams.last.sym))
   }
 }
