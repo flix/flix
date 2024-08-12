@@ -85,12 +85,14 @@ object FastSetUnification {
   private val PermutationLimit: Int = 10
 
   case class RunOptions(
-    debugging: Boolean = false,
-    rerun: Boolean = false,
-    verify: Boolean = false
-  )
+                         debugging: Boolean = false,
+                         rerun: Boolean = false,
+                         verify: Boolean = false
+                       )
 
-  object RunOptions { val default: RunOptions = RunOptions() }
+  object RunOptions {
+    val default: RunOptions = RunOptions()
+  }
 
   /**
     * Attempts to solve all the given unification equations `l`.
