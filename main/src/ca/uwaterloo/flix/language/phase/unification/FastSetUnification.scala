@@ -551,14 +551,15 @@ object FastSetUnification {
   private def runRule(rule: Equation => Output, selfFeeding: Boolean)(l: List[Equation]): Output = {
     // TODO optimization:
     // - Sometimes the @@ can be ++
-    // - Sometimes the outer loop can be skipped
-    // - the outerloop .reverse could be done once at the end, depending on the parity of the loop count
+    // - Sometimes the outer loop can be skipped (aren't all rules discoverable by subst?)
     var subst = SetSubstitution.empty
     var todo = l
     var leftover: List[Equation] = Nil
-    var changed = true
-    var overallChanged = false
+    var changed = true // has there been progress in the inner loop
+    var overallChanged = false // has there been progress at any point in the loops
+    var flipped = false // is the `todo` list flipped compared to the initial order
     while (changed) {
+      flipped = !flipped
       changed = false
       while (todo != Nil) todo match {
         case eq0 :: tail =>
@@ -576,11 +577,12 @@ object FastSetUnification {
           }
         case Nil => ()
       }
-      todo = leftover.reverse
+      todo = leftover
       leftover = Nil
     }
     if (overallChanged) {
-      Some(todo.map(subst.apply), subst)
+      val correctedTodo = if (flipped) todo.reverse else todo
+      Some(correctedTodo.map(subst.apply), subst)
     } else {
       None
     }
@@ -1928,35 +1930,37 @@ object FastSetUnification {
       *
       * We must use the smart constructors from [[Term]] to ensure that the constructed term is normalized.
       */
-    def apply(t: Term): Term = t match {
-      case Term.Univ => t
-      case Term.Empty => t
-      case Term.Cst(_) => t
-      case Term.ElemSet(_) => t
+    def apply(t: Term): Term = {
+      if (m.isEmpty) t else t match {
+        case Term.Univ => t
+        case Term.Empty => t
+        case Term.Cst(_) => t
+        case Term.ElemSet(_) => t
 
-      case Term.Var(x) => m.get(x) match {
-        case None => t // Case 1: The substitution has a binding for `x`. Return the bound term.
-        case Some(t0) => t0 // Case 2: The substitution has no binding for `x`. Return the original term.
+        case Term.Var(x) => m.get(x) match {
+          case None => t // Case 1: The substitution has a binding for `x`. Return the bound term.
+          case Some(t0) => t0 // Case 2: The substitution has no binding for `x`. Return the original term.
+        }
+
+        case Term.Compl(t0) =>
+          val app = apply(t0)
+          // reuse objects when apply did no change
+          if (app eq t0) t else Term.mkCompl(app)
+
+        case Term.Inter(posElem, posCsts, posVars, negElem, negCsts, negVars, rest) =>
+          val ts = mutable.ListBuffer.empty[Term]
+          for (x <- posVars) ts += apply(x)
+          for (x <- negVars) ts += Term.mkCompl(apply(x))
+          for (t <- rest) ts += apply(t)
+          Term.mkInter(posElem, posCsts, Set.empty, negElem, negCsts, Set.empty, ts.toList)
+
+        case Term.Union(posElem, posCsts, posVars, negElem, negCsts, negVars, rest) =>
+          val ts = mutable.ListBuffer.empty[Term]
+          for (x <- posVars) ts += apply(x)
+          for (x <- negVars) ts += Term.mkCompl(apply(x))
+          for (t <- rest) ts += apply(t)
+          Term.mkUnion(posElem, posCsts, Set.empty, negElem, negCsts, Set.empty, ts.toList)
       }
-
-      case Term.Compl(t0) =>
-        val app = apply(t0)
-        // reuse objects when apply did no change
-        if (app eq t0) t else Term.mkCompl(app)
-
-      case Term.Inter(posElem, posCsts, posVars, negElem, negCsts, negVars, rest) =>
-        val ts = mutable.ListBuffer.empty[Term]
-        for (x <- posVars) ts += apply(x)
-        for (x <- negVars) ts += Term.mkCompl(apply(x))
-        for (t <- rest) ts += apply(t)
-        Term.mkInter(posElem, posCsts, Set.empty, negElem, negCsts, Set.empty, ts.toList)
-
-      case Term.Union(posElem, posCsts, posVars, negElem, negCsts, negVars, rest) =>
-        val ts = mutable.ListBuffer.empty[Term]
-        for (x <- posVars) ts += apply(x)
-        for (x <- negVars) ts += Term.mkCompl(apply(x))
-        for (t <- rest) ts += apply(t)
-        Term.mkUnion(posElem, posCsts, Set.empty, negElem, negCsts, Set.empty, ts.toList)
     }
 
     /**
@@ -1978,7 +1982,9 @@ object FastSetUnification {
     /**
       * Applies `this` substitution to the given list of equations `l`.
       */
-    def apply(l: List[Equation]): List[Equation] = l.map(apply)
+    def apply(l: List[Equation]): List[Equation] = {
+      if (m.isEmpty) l else l.map(apply)
+    }
 
     /**
       * Returns the number of bindings in `this` substitution.
