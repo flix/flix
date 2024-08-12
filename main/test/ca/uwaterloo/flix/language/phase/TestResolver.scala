@@ -1802,7 +1802,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
                   |}
                   |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.WrongStructFieldOrdering](result)
+    expectError[ResolutionError.IllegalNewStruct](result)
   }
 
   test("ResolutionError.StructFieldIncorrectOrder.02") {
@@ -1813,7 +1813,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
                   |}
                   |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.WrongStructFieldOrdering](result)
+    expectError[ResolutionError.IllegalNewStruct](result)
   }
 
   test("ResolutionError.StructFieldIncorrectOrder.03") {
@@ -1824,7 +1824,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
                   |}
                   |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.WrongStructFieldOrdering](result)
+    expectError[ResolutionError.IllegalNewStruct](result)
   }
 
 }
