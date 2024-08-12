@@ -197,6 +197,11 @@ object PatMatch {
       case Expr.ArrayLoad(base, index, _, _, _) => List(base, index).flatMap(visitExp)
       case Expr.ArrayStore(base, index, elm, _, _) => List(base, index, elm).flatMap(visitExp)
       case Expr.ArrayLength(base, _, _) => visitExp(base)
+      case Expr.StructNew(_, fields, region, t, _, _) =>
+        val fieldExps = fields.map {case (_, v) => v}
+        (region :: fieldExps).flatMap(visitExp)
+      case Expr.StructGet(_, e, _, _, _, _) => visitExp(e)
+      case Expr.StructPut(_, e1, _, e2, _, _, _) => List(e1, e2).flatMap(visitExp)
       case Expr.VectorLit(exps, _, _, _) => exps.flatMap(visitExp)
       case Expr.VectorLoad(exp1, exp2, _, _, _) => List(exp1, exp2).flatMap(visitExp)
       case Expr.VectorLength(exp, _) => visitExp(exp)
@@ -216,6 +221,8 @@ object PatMatch {
         }
         val ruleExps = rules.map(_.exp)
         (exp :: ruleExps).flatMap(visitExp)
+
+      case TypedAst.Expr.Throw(exp, _, _, _) => visitExp(exp)
 
       case Expr.TryWith(exp, _, rules, _, _, _) =>
         val ruleExps = rules.map(_.exp)

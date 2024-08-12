@@ -18,14 +18,14 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.Denotation
-import ca.uwaterloo.flix.language.ast.shared.Fixity
+import ca.uwaterloo.flix.language.ast.shared.{Fixity, Source}
 import ca.uwaterloo.flix.util.collection.MultiMap
 
 object WeededAst {
 
   val empty: Root = Root(Map.empty, None, MultiMap.empty)
 
-  case class Root(units: Map[Ast.Source, CompilationUnit], entryPoint: Option[Symbol.DefnSym], names: MultiMap[List[String], String])
+  case class Root(units: Map[Source, CompilationUnit], entryPoint: Option[Symbol.DefnSym], names: MultiMap[List[String], String])
 
   case class CompilationUnit(usesAndImports: List[UseOrImport], decls: List[Declaration], loc: SourceLocation)
 
@@ -158,7 +158,7 @@ object WeededAst {
 
     case class ArrayStore(exp1: Expr, exp2: Expr, exp3: Expr, loc: SourceLocation) extends Expr
 
-    case class StructNew(name: Name.QName, exps: List[(Name.Ident, Expr)], region: Expr, loc: SourceLocation) extends Expr
+    case class StructNew(name: Name.QName, exps: List[(Name.Label, Expr)], region: Expr, loc: SourceLocation) extends Expr
 
     case class VectorLit(exps: List[Expr], loc: SourceLocation) extends Expr
 
@@ -197,6 +197,8 @@ object WeededAst {
     case class Without(exp: Expr, eff: Name.QName, loc: SourceLocation) extends Expr
 
     case class TryCatch(exp: Expr, handlers: List[CatchRule], loc: SourceLocation) extends Expr
+
+    case class Throw(exp: Expr, loc: SourceLocation) extends Expr
 
     case class TryWith(exp: Expr, handler: List[WithHandler], loc: SourceLocation) extends Expr
 
@@ -272,7 +274,7 @@ object WeededAst {
 
     case class Tag(qname: Name.QName, pat: Pattern, loc: SourceLocation) extends Pattern
 
-    case class Tuple(elms: scala.List[Pattern], loc: SourceLocation) extends Pattern
+    case class Tuple(pats: List[Pattern], loc: SourceLocation) extends Pattern
 
     case class Record(pats: List[Record.RecordLabelPattern], pat: Pattern, loc: SourceLocation) extends Pattern
 
@@ -339,7 +341,7 @@ object WeededAst {
 
     case class Unit(loc: SourceLocation) extends Type
 
-    case class Tuple(elms: List[Type], loc: SourceLocation) extends Type
+    case class Tuple(tpes: List[Type], loc: SourceLocation) extends Type
 
     case class RecordRowEmpty(loc: SourceLocation) extends Type
 
@@ -403,7 +405,7 @@ object WeededAst {
 
   case class Case(ident: Name.Ident, tpe: Type, loc: SourceLocation)
 
-  case class StructField(ident: Name.Ident, tpe: Type, loc: SourceLocation)
+  case class StructField(name: Name.Label, tpe: Type, loc: SourceLocation)
 
   case class RestrictableCase(ident: Name.Ident, tpe: Type, loc: SourceLocation)
 
@@ -455,7 +457,7 @@ object WeededAst {
 
   case class ParYieldFragment(pat: Pattern, exp: Expr, loc: SourceLocation)
 
-  case class Derivations(classes: List[Name.QName], loc: SourceLocation)
+  case class Derivations(traits: List[Name.QName], loc: SourceLocation)
 
 
   sealed trait ForFragment {

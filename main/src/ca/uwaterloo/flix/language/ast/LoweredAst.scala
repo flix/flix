@@ -16,8 +16,8 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.ast.Ast.{Denotation, EliminatedBy, Source}
-import ca.uwaterloo.flix.language.ast.shared.Fixity
+import ca.uwaterloo.flix.language.ast.Ast.{Denotation, EliminatedBy}
+import ca.uwaterloo.flix.language.ast.shared.{Fixity, Source}
 import ca.uwaterloo.flix.language.phase.Monomorpher
 import ca.uwaterloo.flix.util.collection.ListMap
 
@@ -51,7 +51,7 @@ object LoweredAst {
 
   case class Enum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[TypeParam], derives: Ast.Derivations, cases: Map[Symbol.CaseSym, Case], tpe: Type, loc: SourceLocation)
 
-  case class Struct(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.StructSym, tparams: List[TypeParam], fields: Map[Name.StructField, StructField], tpe: Type, loc: SourceLocation)
+  case class Struct(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.StructSym, tparams: List[TypeParam], fields: List[StructField], loc: SourceLocation)
 
   case class TypeAlias(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.TypeAliasSym, tparams: List[TypeParam], tpe: Type, loc: SourceLocation)
 
@@ -158,7 +158,7 @@ object LoweredAst {
 
     case class Tag(sym: Ast.CaseSymUse, pat: Pattern, tpe: Type, loc: SourceLocation) extends Pattern
 
-    case class Tuple(elms: List[Pattern], tpe: Type, loc: SourceLocation) extends Pattern
+    case class Tuple(pats: List[Pattern], tpe: Type, loc: SourceLocation) extends Pattern
 
     case class Record(pats: List[Pattern.Record.RecordLabelPattern], pat: Pattern, tpe: Type, loc: SourceLocation) extends Pattern
 
@@ -199,7 +199,7 @@ object LoweredAst {
 
   case class Case(sym: Symbol.CaseSym, tpe: Type, sc: Scheme, loc: SourceLocation)
 
-  case class StructField(sym: Symbol.StructFieldSym, tpe: Type, loc: SourceLocation)
+  case class StructField(name: Name.Label, tpe: Type, loc: SourceLocation)
 
   case class Constraint(cparams: List[ConstraintParam], head: Predicate.Head, body: List[Predicate.Body], loc: SourceLocation)
 

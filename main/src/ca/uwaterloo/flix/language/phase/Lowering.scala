@@ -152,7 +152,7 @@ object Lowering {
     val sigs = ParOps.parMapValues(root.sigs)(visitSig)
     val instances = ParOps.parMapValues(root.instances)(insts => insts.map(visitInstance))
     val enums = ParOps.parMapValues(root.enums)(visitEnum)
-    val structs = Map.empty[Symbol.StructSym, LoweredAst.Struct]
+    val structs = ParOps.parMapValues(root.structs)(visitStruct)
     val restrictableEnums = ParOps.parMapValues(root.restrictableEnums)(visitRestrictableEnum)
     val effects = ParOps.parMapValues(root.effects)(visitEffect)
     val aliases = ParOps.parMapValues(root.typeAliases)(visitTypeAlias)
@@ -216,6 +216,19 @@ object Lowering {
           (caseSym, LoweredAst.Case(caseSym, caseTpeDeprecated, caseSc, loc))
       }
       LoweredAst.Enum(doc, ann, mod, sym, tparams, derives, cases, tpe, loc)
+  }
+
+  /**
+    * Lowers the given struct `struct0`.
+    */
+  private def visitStruct(struct0: TypedAst.Struct)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Struct = struct0 match {
+    case TypedAst.Struct(doc, ann, mod, sym, tparams0, _, fields0, loc) =>
+      val tparams = tparams0.map(visitTypeParam)
+      val fields = fields0.map {
+        case TypedAst.StructField(name, tpe, loc) =>
+          LoweredAst.StructField(name, visitType(tpe), loc)
+      }
+      LoweredAst.Struct(doc, ann, mod, sym, tparams, fields, loc)
   }
 
   /**
@@ -511,6 +524,21 @@ object Lowering {
       val e3 = visitExp(exp3)
       LoweredAst.Expr.ApplyAtomic(AtomicOp.ArrayStore, List(e1, e2, e3), Type.Unit, eff, loc)
 
+    case TypedAst.Expr.StructNew(sym, fields0, region0, tpe, eff, loc) =>
+      val fields = fields0.map { case (k, v) => (k, visitExp(v)) }
+      val region = visitExp(region0)
+      val (names, es) = fields.unzip
+      LoweredAst.Expr.ApplyAtomic(AtomicOp.StructNew(sym, names), region :: es, tpe, eff, loc)
+
+    case TypedAst.Expr.StructGet(sym, exp0, field, tpe, eff, loc) =>
+      val exp = visitExp(exp0)
+      LoweredAst.Expr.ApplyAtomic(AtomicOp.StructGet(sym, field), List(exp), tpe, eff, loc)
+
+    case TypedAst.Expr.StructPut(sym, exp0, field, exp1, tpe, eff, loc) =>
+      val struct = visitExp(exp0)
+      val rhs = visitExp(exp1)
+      LoweredAst.Expr.ApplyAtomic(AtomicOp.StructPut(sym, field), List(struct, rhs), tpe, eff, loc)
+
     case TypedAst.Expr.VectorLit(exps, tpe, eff, loc) =>
       val es = visitExps(exps)
       val t = visitType(tpe)
@@ -576,6 +604,11 @@ object Lowering {
       val rs = rules.map(visitCatchRule)
       val t = visitType(tpe)
       LoweredAst.Expr.TryCatch(e, rs, t, eff, loc)
+
+    case TypedAst.Expr.Throw(exp, tpe, eff, loc) =>
+      val e = visitExp(exp)
+      val t = visitType(tpe)
+      LoweredAst.Expr.ApplyAtomic(AtomicOp.Throw, List(e), t, eff, loc)
 
     case TypedAst.Expr.TryWith(exp, sym, rules, tpe, eff, loc) =>
       val e = visitExp(exp)

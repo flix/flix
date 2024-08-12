@@ -114,30 +114,35 @@ object Kinder {
    */
   private def visitStruct(struct0: ResolvedAst.Declaration.Struct, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Struct, KindError] = struct0 match {
     case ResolvedAst.Declaration.Struct(doc, ann, mod, sym, tparams0, fields0, loc) =>
-      // if not annotated tparams are assumed to be Star except the last one which is Eff
-      val tparams1 = tparams0
-      val kenv0 = getKindEnvFromTypeParams(tparams1)
-      val kenvVal = kenv0 + (tparams1.last.sym -> Kind.Eff)
-
+      // In the case in which the user doesn't supply any type params,
+      // the parser will have already notified the user of this error
+      // The recovery step here is to simply add a single type param that is never used
+      val tparams1 = if (tparams0.isEmpty) {
+        val regionTparam = ResolvedAst.TypeParam.Unkinded(Name.Ident("$rc", loc), Symbol.freshUnkindedTypeVarSym(Ast.VarText.Absent, isRegion = false, loc), loc)
+        List(regionTparam)
+      } else {
+        tparams0
+      }
+      val kenv1 = getKindEnvFromTypeParams(tparams1.init)
+      val kenv2 = getKindEnvFromRegion(tparams1.last)
+      // The last add is simply to verify that the last tparam was marked as Eff
+      val kenvVal = KindEnv.disjointAppend(kenv1, kenv2) + (tparams1.last.sym -> Kind.Eff)
       flatMapN(kenvVal) {
         case kenv =>
           val tparamsVal = traverse(tparams1)(visitTypeParam(_, kenv))
 
           flatMapN(tparamsVal) {
-            case tparams =>
-              val targs = tparams.map(tparam => Type.Var(tparam.sym, tparam.loc.asSynthetic))
-              val tpe = Type.mkApply(Type.Cst(TypeConstructor.Struct(sym, getStructKind(struct0)), sym.loc.asSynthetic), targs, sym.loc.asSynthetic)
-              val fieldsVal = traverse(fields0) {
-                case field0 => mapN(visitStructField(field0, tparams, tpe, kenv, taenv, root)) {
-                  field => field.sym -> field
-                }
-              }
+            case kindedTparams =>
+              val fieldsVal = traverse(fields0)(visitStructField(_, kindedTparams, kenv, taenv, root))
               mapN(fieldsVal) {
-                case fields => KindedAst.Struct(doc, ann, mod, sym, tparams, fields.toMap, tpe, loc)
+                case fields =>
+                  val targs = kindedTparams.map(tparam => Type.Var(tparam.sym, tparam.loc.asSynthetic))
+                  val sc = Scheme(kindedTparams.map(_.sym), List(), List(), Type.mkStruct(sym, targs, loc))
+                  KindedAst.Struct(doc, ann, mod, sym, kindedTparams, sc, fields, loc)
               }
           }
       }
-    }
+  }
 
   /**
     * Performs kinding on the given restrictable enum.
@@ -214,14 +219,14 @@ object Kinder {
   /**
    * Performs kinding on the given struct field under the given kind environment.
    */
-  private def visitStructField(field0: ResolvedAst.Declaration.StructField, tparams: List[KindedAst.TypeParam], resTpe: Type, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.StructField, KindError] = field0 match {
-    case ResolvedAst.Declaration.StructField(sym, tpe0, loc) =>
+  private def visitStructField(field0: ResolvedAst.StructField, tparams: List[KindedAst.TypeParam], kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.StructField, KindError] = field0 match {
+    case ResolvedAst.StructField(name, tpe0, loc) =>
       val tpeVal = visitType(tpe0, Kind.Star, kenv, taenv, root)
       mapN(tpeVal) {
         case tpe =>
-          KindedAst.StructField(sym, tpe, loc)
+          KindedAst.StructField(name, tpe, loc)
       }
-    }
+  }
 
   /**
     * Performs kinding on the given enum case under the given kind environment.
@@ -787,6 +792,14 @@ object Kinder {
       val rulesVal = traverse(rules0)(visitCatchRule(_, kenv0, taenv, henv0, root))
       mapN(expVal, rulesVal) {
         case (exp, rules) => KindedAst.Expr.TryCatch(exp, rules, loc)
+      }
+
+    case ResolvedAst.Expr.Throw(exp0, loc) =>
+      val tvar = Type.freshVar(Kind.Star, loc)
+      val evar = Type.freshVar(Kind.Eff, loc)
+      val expVal = visitExp(exp0, kenv0, taenv, henv0, root)
+      mapN(expVal) {
+        case exp => KindedAst.Expr.Throw(exp, tvar, evar, loc)
       }
 
     case ResolvedAst.Expr.TryWith(exp0, eff, rules0, loc) =>
@@ -1752,6 +1765,15 @@ object Kinder {
   }
 
   /**
+    * Gets a kind environment from the type param, defaulting to `Kind.Eff` if it is unspecified
+   */
+  private def getKindEnvFromRegion(tparam0: ResolvedAst.TypeParam)(implicit flix: Flix): KindEnv = tparam0 match {
+    case ResolvedAst.TypeParam.Kinded(_, tvar, kind, _) => KindEnv.singleton(tvar -> kind)
+    case ResolvedAst.TypeParam.Unkinded(_, tvar, _) => KindEnv.singleton(tvar -> Kind.Eff)
+    case ResolvedAst.TypeParam.Implicit(_, tvar, _) => KindEnv.singleton(tvar -> Kind.Eff)
+  }
+
+  /**
     * Gets a kind environment from the spec.
     */
   private def getKindEnvFromSpec(spec0: ResolvedAst.Spec, kenv0: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindEnv, KindError] = spec0 match {
@@ -1786,9 +1808,11 @@ object Kinder {
   private def getStructKind(struct0: ResolvedAst.Declaration.Struct)(implicit flix: Flix): Kind = struct0 match {
     case ResolvedAst.Declaration.Struct(_, _, _, _, tparams0, _, _) =>
       // tparams default to zero except for the region param
-      val tparams = tparams0
-      val kenv = getKindEnvFromTypeParams(tparams)
-      tparams.foldRight(Kind.Star: Kind) {
+      val kenv1 = getKindEnvFromTypeParams(tparams0.init)
+      val kenv2 = getKindEnvFromRegion(tparams0.last)
+      // The last add is simply to verify that the last tparam was marked as Eff
+      val kenv = KindEnv.disjointAppend(kenv1, kenv2)
+      tparams0.foldRight(Kind.Star: Kind) {
         case (tparam, acc) => kenv.map(tparam.sym) ->: acc
       }
   }

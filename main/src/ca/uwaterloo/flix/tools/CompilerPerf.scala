@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.tools
 
 import ca.uwaterloo.flix.api.{Flix, PhaseTime}
 import ca.uwaterloo.flix.language.ast.SourceLocation
+import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.phase.unification.UnificationCache
 import ca.uwaterloo.flix.util.StatUtils.{average, median}
 import ca.uwaterloo.flix.util.{FileOps, InternalCompilerException, LocalResource, Options, StatUtils}
@@ -210,7 +211,10 @@ object CompilerPerf {
   /**
     * Run compiler performance experiments.
     */
-  def run(o: Options): Unit = {
+  def run(opts: Options): Unit = {
+    // Options
+    val o = opts.copy(progress = false, loadClassFiles = false)
+
     // The number of iterations.
     val N = o.XPerfN.getOrElse(DefaultN)
 
@@ -392,7 +396,7 @@ object CompilerPerf {
       flushCaches()
 
       val flix = new Flix()
-      flix.setOptions(o.copy(threads = MinThreads, incremental = false, progress = false, loadClassFiles = false))
+      flix.setOptions(o.copy(threads = MinThreads, incremental = false))
 
       addInputs(flix)
       runSingle(flix)
@@ -408,7 +412,7 @@ object CompilerPerf {
       flushCaches()
 
       val flix = new Flix()
-      flix.setOptions(o.copy(threads = MaxThreads, incremental = false, progress = false, loadClassFiles = false))
+      flix.setOptions(o.copy(threads = MaxThreads, incremental = false))
 
       addInputs(flix)
       runSingle(flix)
@@ -421,7 +425,7 @@ object CompilerPerf {
   private def perfBaseLineWithParInc(N: Int, o: Options): IndexedSeq[Run] = {
     // Note: The Flix object is created _once_.
     val flix: Flix = new Flix()
-    flix.setOptions(o.copy(threads = MaxThreads, incremental = true, loadClassFiles = false))
+    flix.setOptions(o.copy(threads = MaxThreads, incremental = true))
     (0 until N).map { _ =>
       flushCaches()
 
@@ -494,6 +498,7 @@ object CompilerPerf {
     * Adds test code to the benchmarking suite.
     */
   private def addInputs(flix: Flix): Unit = {
+    implicit val sctx: SecurityContext = SecurityContext.AllPermissions
     flix.addSourceCode("TestArray.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestArray.flix"))
     flix.addSourceCode("TestChain.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestChain.flix"))
     flix.addSourceCode("TestIterator.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestIterator.flix"))

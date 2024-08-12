@@ -415,9 +415,9 @@ object Desugar {
    * Desugars the given [[WeededAst.StructField]] `field0`.
    */
   private def visitField(field0: WeededAst.StructField): DesugaredAst.StructField = field0 match {
-    case WeededAst.StructField(ident, tpe0, loc) =>
+    case WeededAst.StructField(name, tpe0, loc) =>
       val tpe = visitType(tpe0)
-      DesugaredAst.StructField(ident, tpe, loc)
+      DesugaredAst.StructField(name, tpe, loc)
   }
 
   /**
@@ -708,6 +708,10 @@ object Desugar {
       val e = visitExp(exp)
       val rs = rules.map(visitCatchRule)
       Expr.TryCatch(e, rs, loc)
+
+    case WeededAst.Expr.Throw(exp, loc) =>
+      val e = visitExp(exp)
+      Expr.Throw(e, loc)
 
     case WeededAst.Expr.TryWith(exp, handlers, loc) =>
       val e = visitExp(exp)

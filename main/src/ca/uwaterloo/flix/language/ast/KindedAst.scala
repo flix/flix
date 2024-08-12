@@ -16,8 +16,8 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Source}
-import ca.uwaterloo.flix.language.ast.shared.Fixity
+import ca.uwaterloo.flix.language.ast.Ast.Denotation
+import ca.uwaterloo.flix.language.ast.shared.{Fixity, Source}
 import ca.uwaterloo.flix.language.{CompilationMessage, ast}
 import ca.uwaterloo.flix.util.collection.MultiMap
 
@@ -52,7 +52,7 @@ object KindedAst {
 
   case class Enum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[TypeParam], derives: Ast.Derivations, cases: Map[Symbol.CaseSym, Case], tpe: Type, loc: SourceLocation)
 
-  case class Struct(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.StructSym, tparams: List[TypeParam], fields: Map[Symbol.StructFieldSym, StructField], tpe: Type, loc: SourceLocation)
+  case class Struct(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.StructSym, tparams: List[TypeParam], sc: Scheme, fields: List[StructField], loc: SourceLocation)
 
   case class RestrictableEnum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.RestrictableEnumSym, index: TypeParam, tparams: List[TypeParam], derives: Ast.Derivations, cases: Map[Symbol.RestrictableCaseSym, RestrictableCase], tpe: Type, loc: SourceLocation)
 
@@ -120,7 +120,7 @@ object KindedAst {
 
     case class RestrictableTag(sym: Ast.RestrictableCaseSymUse, exp: Expr, isOpen: Boolean, tvar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class Tuple(elms: List[Expr], loc: SourceLocation) extends Expr
+    case class Tuple(exps: List[Expr], loc: SourceLocation) extends Expr
 
     case class RecordEmpty(loc: SourceLocation) extends Expr
 
@@ -140,7 +140,7 @@ object KindedAst {
 
     case class ArrayLength(base: Expr, evar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class StructNew(sym: Symbol.StructSym, fields: List[(Symbol.StructFieldSym, Expr)], region: Expr, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
+    case class StructNew(sym: Symbol.StructSym, fields: List[(Name.Label, Expr)], region: Expr, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
     case class StructGet(sym: Symbol.StructSym, exp: Expr, field: Name.Label, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
@@ -171,6 +171,8 @@ object KindedAst {
     case class Without(exp: Expr, eff: Ast.EffectSymUse, loc: SourceLocation) extends Expr
 
     case class TryCatch(exp: Expr, rules: List[CatchRule], loc: SourceLocation) extends Expr
+
+    case class Throw(exp: Expr, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
     case class TryWith(exp: Expr, eff: Ast.EffectSymUse, rules: List[HandlerRule], tvar: Type.Var, loc: SourceLocation) extends Expr
 
@@ -248,7 +250,7 @@ object KindedAst {
 
     case class Tag(sym: Ast.CaseSymUse, pat: Pattern, tvar: ast.Type.Var, loc: SourceLocation) extends Pattern
 
-    case class Tuple(elms: List[Pattern], loc: SourceLocation) extends Pattern
+    case class Tuple(pats: List[Pattern], loc: SourceLocation) extends Pattern
 
     case class Record(pats: List[Record.RecordLabelPattern], pat: Pattern, tvar: ast.Type.Var, loc: SourceLocation) extends Pattern
 
@@ -305,7 +307,7 @@ object KindedAst {
 
   case class Case(sym: Symbol.CaseSym, tpe: Type, sc: Scheme, loc: SourceLocation)
 
-  case class StructField(sym: Symbol.StructFieldSym, tpe: Type, loc: SourceLocation)
+  case class StructField(name: Name.Label, tpe: Type, loc: SourceLocation)
 
   case class RestrictableCase(sym: Symbol.RestrictableCaseSym, tpe: Type, sc: Scheme, loc: SourceLocation)
 

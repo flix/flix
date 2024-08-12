@@ -55,7 +55,8 @@ object Options {
     xverifyeffects = false,
     xsubeffecting = SubEffectLevel.Nothing,
     XPerfN = None,
-    XPerfFrontend = false
+    XPerfFrontend = false,
+    xiterations = 1000
   )
 
   /**
@@ -135,6 +136,7 @@ case class Options(lib: LibLevel,
                    xsubeffecting: SubEffectLevel,
                    XPerfFrontend: Boolean,
                    XPerfN: Option[Int],
+                   xiterations: Int,
                   )
 
 /**

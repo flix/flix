@@ -17,7 +17,8 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, Source}
+import ca.uwaterloo.flix.language.ast.Ast.BoundBy
+import ca.uwaterloo.flix.language.ast.shared.Source
 import ca.uwaterloo.flix.language.ast.{NamedAst, _}
 import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.language.errors.NameError
@@ -139,9 +140,8 @@ object Namer {
       val table1 = tryAddToTable(table0, sym.namespace, sym.name, decl)
       cases.foldLeft(table1)(tableDecl)
 
-    case NamedAst.Declaration.Struct(_, _, _, sym, _, fields, _) =>
-      val table1 = tryAddToTable(table0, sym.namespace, sym.name, decl)
-      fields.foldLeft(table1)(tableDecl)
+    case NamedAst.Declaration.Struct(_, _, _, sym, _, _, _) =>
+      tryAddToTable(table0, sym.namespace, sym.name, decl)
 
     case NamedAst.Declaration.RestrictableEnum(_, _, _, sym, _, _, _, cases, _) =>
       val table1 = tryAddToTable(table0, sym.namespace, sym.name, decl)
@@ -162,9 +162,6 @@ object Namer {
 
     case caze@NamedAst.Declaration.Case(sym, _, _) =>
       tryAddToTable(table0, sym.namespace, sym.name, caze)
-
-    case field@NamedAst.Declaration.StructField(sym, _, _) =>
-      tryAddToTable(table0, sym.namespace, sym.name, field)
 
     case caze@NamedAst.Declaration.RestrictableCase(sym, _, _) =>
       tryAddToTable(table0, sym.namespace, sym.name, caze)
@@ -322,7 +319,7 @@ object Namer {
       val tparams = tparams0.map(visitTypeParam)
 
       val mod = visitModifiers(mod0, ns0)
-      val fields = fields0.map(visitField(_, sym))
+      val fields = fields0.map(visitField)
 
       NamedAst.Declaration.Struct(doc, ann, mod, sym, tparams, fields, loc)
   }
@@ -350,7 +347,7 @@ object Namer {
     * Performs naming on the given enum derivations.
     */
   private def visitDerivations(derives0: DesugaredAst.Derivations): NamedAst.Derivations =
-    NamedAst.Derivations(derives0.classes, derives0.loc)
+    NamedAst.Derivations(derives0.traits, derives0.loc)
 
   /**
     * Performs naming on the given enum case.
@@ -365,11 +362,10 @@ object Namer {
   /**
     * Performs naming on the given field.
     */
-  private def visitField(field0: DesugaredAst.StructField, structSym: Symbol.StructSym)(implicit flix: Flix, sctx: SharedContext): NamedAst.Declaration.StructField = field0 match {
+  private def visitField(field0: DesugaredAst.StructField)(implicit flix: Flix, sctx: SharedContext): NamedAst.StructField = field0 match {
     case DesugaredAst.StructField(ident, tpe, loc) =>
       val t = visitType(tpe)
-      val fieldSym = Symbol.mkStructFieldSym(structSym, ident)
-      NamedAst.Declaration.StructField(fieldSym, t, loc)
+      NamedAst.StructField(ident, t, loc)
   }
 
   /**
@@ -754,22 +750,19 @@ object Namer {
       val e = visitExp(exp, ns0)
       NamedAst.Expr.ArrayLength(e, loc)
 
-    case DesugaredAst.Expr.StructNew(name, exps, exp, loc) =>
-      val structSym = Symbol.mkStructSym(name.namespace, name.ident)
+    case DesugaredAst.Expr.StructNew(qname, exps, exp, loc) =>
       val e = visitExp(exp, ns0)
-      val es = visitStructFields(exps, ns0, structSym)
-      NamedAst.Expr.StructNew(structSym, es, e, loc)
+      val es = visitStructFields(exps, ns0)
+      NamedAst.Expr.StructNew(qname, es, e, loc)
 
     case DesugaredAst.Expr.StructGet(exp, name, loc) =>
-      val structSym = Symbol.mkStructSym(ns0, ns0.idents.last)
       val e = visitExp(exp, ns0)
-      NamedAst.Expr.StructGet(structSym, e, name, loc)
+      NamedAst.Expr.StructGet(Name.mkQName(ns0.idents.last.name, ns0.loc), e, name, loc)
 
     case DesugaredAst.Expr.StructPut(exp1, name, exp2, loc) =>
-      val structSym = Symbol.mkStructSym(ns0, ns0.idents.last)
       val e1 = visitExp(exp1, ns0)
       val e2 = visitExp(exp2, ns0)
-      NamedAst.Expr.StructPut(structSym, e1, name, e2, loc)
+      NamedAst.Expr.StructPut(Name.mkQName(ns0.idents.last.name, ns0.loc), e1, name, e2, loc)
 
     case DesugaredAst.Expr.VectorLit(exps, loc) =>
       val es = visitExps(exps, ns0)
@@ -830,6 +823,10 @@ object Namer {
       val e = visitExp(exp, ns0)
       val rs = visitTryCatchRules(rules, ns0)
       NamedAst.Expr.TryCatch(e, rs, loc)
+
+    case DesugaredAst.Expr.Throw(exp, loc) =>
+      val e = visitExp(exp, ns0)
+      NamedAst.Expr.Throw(e, loc)
 
     case DesugaredAst.Expr.TryWith(exp, eff, rules, loc) =>
       val e = visitExp(exp, ns0)
@@ -1050,18 +1047,17 @@ object Namer {
   /**
     * Performs naming on the given struct field expression `exp0`.
     */
-  private def visitStructField(exp0: (Name.Ident, DesugaredAst.Expr), ns0: Name.NName, structSym: Symbol.StructSym)(implicit flix: Flix, sctx: SharedContext): (Symbol.StructFieldSym, NamedAst.Expr) = exp0 match {
-    case (n, exp1) =>
-      val e = visitExp(exp1, ns0)
-      (Symbol.mkStructFieldSym(structSym, n), e)
+  private def visitStructField(ns0: Name.NName)(exp0: (Name.Label, DesugaredAst.Expr))(implicit flix: Flix, sctx: SharedContext): (Name.Label, NamedAst.Expr) = exp0 match {
+    case (n, exp0) =>
+      val e = visitExp(exp0, ns0)
+      (n, e)
   }
 
   /**
     * Performs naming on the given struct field expressions `exps0`.
     */
-  private def visitStructFields(exps0: List[(Name.Ident, DesugaredAst.Expr)], ns0: Name.NName, structSym: Symbol.StructSym)(implicit flix: Flix, sctx: SharedContext): List[(Symbol.StructFieldSym, NamedAst.Expr)] = {
-    exps0.map(visitStructField(_, ns0, structSym))
-  }
+  private def visitStructFields(exps0: List[(Name.Label, DesugaredAst.Expr)], ns0: Name.NName)(implicit flix: Flix, sctx: SharedContext): List[(Name.Label, NamedAst.Expr)] =
+    exps0.map(visitStructField(ns0))
 
   /**
     * Performs naming on the given try-catch rule `rule0`.
@@ -1595,7 +1591,6 @@ object Namer {
     case NamedAst.Declaration.Effect(_, _, _, sym, _, _) => sym.loc
     case NamedAst.Declaration.Op(sym, _) => sym.loc
     case NamedAst.Declaration.Case(sym, _, _) => sym.loc
-    case NamedAst.Declaration.StructField(sym, _, _) => sym.loc
     case NamedAst.Declaration.RestrictableCase(sym, _, _) => sym.loc
     case NamedAst.Declaration.AssocTypeSig(_, _, sym, _, _, _, _) => sym.loc
     case NamedAst.Declaration.AssocTypeDef(_, _, _, _, _, loc) => throw InternalCompilerException("Unexpected associated type definition", loc)
@@ -1659,7 +1654,7 @@ object Namer {
   /**
     * A global shared context. Must be thread-safe.
     *
-    * @param errors the [[NameError]]s if the AST, if any.
+    * @param errors the [[NameError]]s in the AST, if any.
     */
   private case class SharedContext(errors: ConcurrentLinkedQueue[NameError])
 

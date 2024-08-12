@@ -204,6 +204,18 @@ object DocAst {
     def ArrayStore(d1: Expr, index: Expr, d2: Expr): Expr =
       Assign(SquareApp(d1, List(index)), d2)
 
+    def StructNew(sym: Symbol.StructSym, exps: List[(Name.Label, Expr)], d2: Expr): Expr = {
+      val beforeRecord = "new " + sym.toString
+      val record = exps.foldRight(RecordEmpty: Expr) { case (cur, acc) => RecordExtend(cur._1, cur._2, acc)}
+      DoubleKeyword(beforeRecord, record, "@", Left(d2))
+    }
+
+    def StructGet(d1: Expr, field: Name.Label): Expr =
+      Dot(d1, AsIs(field.name))
+
+    def StructPut(d1: Expr, field: Name.Label, d2: Expr): Expr =
+      Assign(Dot(d1, AsIs(field.name)), d2)
+
     def VectorLit(ds: List[Expr]): Expr =
       DoubleSquareApp(AsIs(""), ds)
 
@@ -218,6 +230,9 @@ object DocAst {
 
     def Force(d: Expr): Expr =
       Keyword("force", d)
+
+    def Throw(d: Expr): Expr =
+      Keyword("throw", d)
 
     def Index(idx: Int, d: Expr): Expr =
       Dot(d, AsIs(s"_$idx"))
