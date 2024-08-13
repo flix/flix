@@ -51,6 +51,8 @@ object NamedAst {
 
     case class Struct(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.StructSym, tparams: List[TypeParam], fields: List[StructField], indices: Map[Name.Label, Int], loc: SourceLocation) extends Declaration
 
+    case class StructField(sym: Name.Label, tpe: Type, loc: SourceLocation)
+
     case class RestrictableEnum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.RestrictableEnumSym, index: TypeParam, tparams: List[TypeParam], derives: Derivations, cases: List[Declaration.RestrictableCase], loc: SourceLocation) extends Declaration
 
     case class TypeAlias(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.TypeAliasSym, tparams: List[TypeParam], tpe: Type, loc: SourceLocation) extends Declaration
@@ -69,8 +71,6 @@ object NamedAst {
   }
 
   case class Spec(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, tparams: List[TypeParam], fparams: List[FormalParam], retTpe: Type, eff: Option[Type], tconstrs: List[TypeConstraint], econstrs: List[EqualityConstraint], loc: SourceLocation)
-
-  case class StructField(name: Name.Label, tpe: Type, loc: SourceLocation)
 
   sealed trait UseOrImport {
     def alias: Name.Ident

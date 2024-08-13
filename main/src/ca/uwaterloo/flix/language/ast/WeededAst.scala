@@ -54,6 +54,8 @@ object WeededAst {
 
     case class Struct(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparams: List[TypeParam], fields: List[StructField], loc: SourceLocation) extends Declaration
 
+    case class StructField(name: Name.Label, tpe: Type, loc: SourceLocation)
+
     case class TypeAlias(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparams: List[TypeParam], tpe: Type, loc: SourceLocation) extends Declaration
 
     case class AssocTypeSig(doc: Ast.Doc, mod: Ast.Modifiers, ident: Name.Ident, tparam: TypeParam, kind: Kind, tpe: Option[Type], loc: SourceLocation)
@@ -404,8 +406,6 @@ object WeededAst {
   }
 
   case class Case(ident: Name.Ident, tpe: Type, loc: SourceLocation)
-
-  case class StructField(name: Name.Label, tpe: Type, loc: SourceLocation)
 
   case class RestrictableCase(ident: Name.Ident, tpe: Type, loc: SourceLocation)
 

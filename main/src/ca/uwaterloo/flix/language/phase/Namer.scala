@@ -140,8 +140,7 @@ object Namer {
       val table1 = tryAddToTable(table0, sym.namespace, sym.name, decl)
       cases.foldLeft(table1)(tableDecl)
 
-    case NamedAst.Declaration.Struct(_, _, _, sym, _, _, _, _) =>
-      // TODO: Add field here too
+    case NamedAst.Declaration.Struct(_, _, _, sym, _, fields, _, _) =>
       tryAddToTable(table0, sym.namespace, sym.name, decl)
 
     case NamedAst.Declaration.RestrictableEnum(_, _, _, sym, _, _, _, cases, _) =>
@@ -321,7 +320,7 @@ object Namer {
 
       val mod = visitModifiers(mod0, ns0)
       val fields = fields0.map(visitField)
-      val indices = fields.map(_.name).zipWithIndex.toMap
+      val indices = fields.map(_.sym).zipWithIndex.toMap
 
       NamedAst.Declaration.Struct(doc, ann, mod, sym, tparams, fields, indices, loc)
   }
@@ -364,10 +363,10 @@ object Namer {
   /**
     * Performs naming on the given field.
     */
-  private def visitField(field0: DesugaredAst.StructField)(implicit flix: Flix, sctx: SharedContext): NamedAst.StructField = field0 match {
-    case DesugaredAst.StructField(ident, tpe, loc) =>
+  private def visitField(field0: DesugaredAst.Declaration.StructField)(implicit flix: Flix, sctx: SharedContext): NamedAst.Declaration.StructField = field0 match {
+    case DesugaredAst.Declaration.StructField(ident, tpe, loc) =>
       val t = visitType(tpe)
-      NamedAst.StructField(ident, t, loc)
+      NamedAst.Declaration.StructField(ident, t, loc)
   }
 
   /**

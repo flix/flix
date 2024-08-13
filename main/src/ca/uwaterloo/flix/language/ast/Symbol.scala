@@ -558,6 +558,9 @@ object Symbol {
    * Struct Field Symbol.
    */
   final class StructFieldSym(val structSym: Symbol.StructSym, val name: String, val idx: Int, val loc: SourceLocation) extends Symbol {
+
+    val namespace = structSym.namespace :+ structSym.name
+
     /**
      * Returns `true` if this symbol is equal to `that` symbol.
      */

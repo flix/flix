@@ -104,7 +104,7 @@ object ReducedAst {
 
   }
 
-  case class StructField(name: Symbol.StructFieldSym, idx: Int, tpe: Type, loc: SourceLocation)
+  case class StructField(sym: Symbol.StructFieldSym, idx: Int, tpe: Type, loc: SourceLocation)
 
   case class AnonClass(name: String, clazz: java.lang.Class[_], tpe: MonoType, methods: List[JvmMethod], loc: SourceLocation)
 

@@ -70,6 +70,7 @@ object Typer {
         case sym: Symbol.DefnSym => sym.namespace
         case sym: Symbol.EnumSym => sym.namespace
         case sym: Symbol.StructSym => sym.namespace
+        case sym: Symbol.StructFieldSym => sym.namespace
         case sym: Symbol.RestrictableEnumSym => sym.namespace
         case sym: Symbol.TraitSym => sym.namespace
         case sym: Symbol.TypeAliasSym => sym.namespace
@@ -86,6 +87,7 @@ object Typer {
         case sym: Symbol.DefnSym => new Symbol.ModuleSym(sym.namespace)
         case sym: Symbol.EnumSym => new Symbol.ModuleSym(sym.namespace)
         case sym: Symbol.StructSym => new Symbol.ModuleSym(sym.namespace)
+        case sym: Symbol.StructFieldSym => new Symbol.ModuleSym(sym.namespace)
         case sym: Symbol.RestrictableEnumSym => new Symbol.ModuleSym(sym.namespace)
         case sym: Symbol.TraitSym => new Symbol.ModuleSym(sym.namespace)
         case sym: Symbol.TypeAliasSym => new Symbol.ModuleSym(sym.namespace)
@@ -98,7 +100,6 @@ object Typer {
         case sym: Symbol.ModuleSym => new Symbol.ModuleSym(sym.ns.init)
 
         case sym: Symbol.CaseSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
-        case sym: Symbol.StructFieldSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
         case sym: Symbol.RestrictableCaseSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
         case sym: Symbol.VarSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
         case sym: Symbol.KindedTypeVarSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
@@ -330,7 +331,7 @@ object Typer {
       val tparams = tparams0.map(visitTypeParam(_, root))
       val fields = fields0.zipWithIndex.map {
         case (field, idx) =>
-          field.name -> TypedAst.StructField(field.name, field.tpe, loc)
+          field.sym -> TypedAst.StructField(field.sym, field.tpe, loc)
       }
 
       sym -> TypedAst.Struct(doc, ann, mod, sym, tparams, sc, fields.toMap, loc)

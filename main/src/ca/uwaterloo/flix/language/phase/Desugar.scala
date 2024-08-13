@@ -412,12 +412,12 @@ object Desugar {
   }
 
   /**
-   * Desugars the given [[WeededAst.StructField]] `field0`.
+   * Desugars the given [[WeededAst.Declaration.StructField]] `field0`.
    */
-  private def visitField(field0: WeededAst.StructField): DesugaredAst.StructField = field0 match {
-    case WeededAst.StructField(name, tpe0, loc) =>
+  private def visitField(field0: WeededAst.Declaration.StructField): DesugaredAst.Declaration.StructField = field0 match {
+    case WeededAst.Declaration.StructField(name, tpe0, loc) =>
       val tpe = visitType(tpe0)
-      DesugaredAst.StructField(name, tpe, loc)
+      DesugaredAst.Declaration.StructField(name, tpe, loc)
   }
 
   /**

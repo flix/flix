@@ -614,12 +614,12 @@ object Resolver {
   /**
     * Performs name resolution on the given struct field `field0` in the given namespace `ns0`.
     */
-  private def resolveStructField(structSym: Symbol.StructSym, idx: Int, field0: NamedAst.StructField, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.StructField, ResolutionError] = field0 match {
-    case NamedAst.StructField(fieldName, tpe0, loc) =>
+  private def resolveStructField(structSym: Symbol.StructSym, idx: Int, field0: NamedAst.Declaration.StructField, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration.StructField, ResolutionError] = field0 match {
+    case NamedAst.Declaration.StructField(fieldName, tpe0, loc) =>
       val tpeVal = resolveType(tpe0, Wildness.ForbidWild, env, taenv, ns0, root)
       val fieldSym = Symbol.mkStructFieldSym(structSym, idx, fieldName)
       mapN(tpeVal) {
-        tpe => ResolvedAst.StructField(fieldSym, tpe, loc)
+        tpe => ResolvedAst.Declaration.StructField(fieldSym, tpe, loc)
       }
   }
 
@@ -1371,7 +1371,7 @@ object Resolver {
                   }
                   // Potential errors
                   val providedFieldNames = fields.map { case (k, _) => k }
-                  val expectedFieldNames = st.fields.map(_.name)
+                  val expectedFieldNames = st.fields.map(_.sym)
                   val extraFields = providedFieldNames.diff(expectedFieldNames)
                   val missingFields = expectedFieldNames.diff(providedFieldNames)
 
@@ -1395,7 +1395,7 @@ object Resolver {
         case NamedAst.Expr.StructGet(name, e, field, loc) =>
           lookupStruct(name, env0, ns0, root) match {
             case Result.Ok(st) =>
-              val availableFields = st.fields.map(_.name)
+              val availableFields = st.fields.map(_.sym)
               if (!availableFields.contains(field)) {
                 val e = ResolutionError.UndefinedStructField(st.sym, field, loc)
                 Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
@@ -1413,7 +1413,7 @@ object Resolver {
         case NamedAst.Expr.StructPut(name, e1, field, e2, loc) =>
           lookupStruct(name, env0, ns0, root) match {
             case Result.Ok(st) =>
-              val availableFields = st.fields.map(_.name)
+              val availableFields = st.fields.map(_.sym)
               if (!availableFields.contains(field)) {
                 val e = ResolutionError.UndefinedStructField(st.sym, field, loc)
                 Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
@@ -3756,7 +3756,7 @@ object Resolver {
     case sym: Symbol.StructSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.RestrictableEnumSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.CaseSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
-    case sym: Symbol.StructFieldSym => root.symbols(Name.mkUnlocatedNName(sym.structSym.namespace :+ sym.structSym.name))(sym.name)
+    case sym: Symbol.StructFieldSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.RestrictableCaseSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.TraitSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.SigSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
@@ -4008,6 +4008,7 @@ object Resolver {
                                  defs: Map[Symbol.DefnSym, ResolvedAst.Declaration.Def],
                                  enums: Map[Symbol.EnumSym, ResolvedAst.Declaration.Enum],
                                  structs: Map[Symbol.StructSym, ResolvedAst.Declaration.Struct],
+                                 structFields: Map[Symbol.StructFieldSym, ResolvedAst.Declaration.StructField],
                                  restrictableEnums: Map[Symbol.RestrictableEnumSym, ResolvedAst.Declaration.RestrictableEnum],
                                  effects: Map[Symbol.EffectSym, ResolvedAst.Declaration.Effect],
                                  typeAliases: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias]) {
@@ -4018,6 +4019,8 @@ object Resolver {
     def addEnum(`enum`: ResolvedAst.Declaration.Enum): SymbolTable = copy(enums = enums + (`enum`.sym -> `enum`))
 
     def addStruct(struct: ResolvedAst.Declaration.Struct): SymbolTable = copy(structs = structs + (struct.sym -> struct))
+
+    def addStructField(field: ResolvedAst.Declaration.StructField): SymbolTable = copy(structFields = structFields + (field.sym -> field))
 
     def addRestrictableEnum(`enum`: ResolvedAst.Declaration.RestrictableEnum): SymbolTable = copy(restrictableEnums = restrictableEnums + (`enum`.sym -> `enum`))
 
@@ -4034,6 +4037,7 @@ object Resolver {
         defs = this.defs ++ that.defs,
         enums = this.enums ++ that.enums,
         structs = this.structs ++ that.structs,
+        structFields = this.structFields ++ that.structFields,
         restrictableEnums = this.restrictableEnums ++ that.restrictableEnums,
         effects = this.effects ++ that.effects,
         typeAliases = this.typeAliases ++ that.typeAliases
@@ -4042,7 +4046,7 @@ object Resolver {
   }
 
   private object SymbolTable {
-    val empty: SymbolTable = SymbolTable(Map.empty, ListMap.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty)
+    val empty: SymbolTable = SymbolTable(Map.empty, ListMap.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty)
 
     /**
       * Traverses `xs`, gathering the symbols from each element by applying the function `f`.

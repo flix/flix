@@ -219,12 +219,12 @@ object Kinder {
   /**
    * Performs kinding on the given struct field under the given kind environment.
    */
-  private def visitStructField(field0: ResolvedAst.StructField, tparams: List[KindedAst.TypeParam], kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.StructField, KindError] = field0 match {
-    case ResolvedAst.StructField(name, tpe0, loc) =>
+  private def visitStructField(field0: ResolvedAst.Declaration.StructField, tparams: List[KindedAst.TypeParam], kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.StructField, KindError] = field0 match {
+    case ResolvedAst.Declaration.StructField(sym, tpe0, loc) =>
       val tpeVal = visitType(tpe0, Kind.Star, kenv, taenv, root)
       mapN(tpeVal) {
         case tpe =>
-          KindedAst.StructField(name, tpe, loc)
+          KindedAst.StructField(sym, tpe, loc)
       }
   }
 
@@ -679,14 +679,14 @@ object Kinder {
           KindedAst.Expr.StructGet(exp, field, tvar, evar, loc)
       }
 
-    case ResolvedAst.Expr.StructPut(e1, name, e2, loc) =>
+    case ResolvedAst.Expr.StructPut(e1, sym, e2, loc) =>
       val exp1Val = visitExp(e1, kenv0, taenv, henv0, root)
       val exp2Val = visitExp(e2, kenv0, taenv, henv0, root)
       mapN(exp1Val, exp2Val) {
         case (exp1, exp2) =>
           val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
           val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-          KindedAst.Expr.StructPut(exp1, name, exp2, tvar, evar, loc)
+          KindedAst.Expr.StructPut(exp1, sym, exp2, tvar, evar, loc)
       }
 
     case ResolvedAst.Expr.VectorLit(exps, loc) =>
