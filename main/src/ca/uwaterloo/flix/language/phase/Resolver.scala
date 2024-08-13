@@ -1376,13 +1376,13 @@ object Resolver {
                   val extraFields = providedFieldNames.diff(expectedFieldNames)
                   val missingFields = expectedFieldNames.diff(providedFieldNames)
 
-                  val extraFieldErrors = extraFields.map(ResolutionError.ExtraStructField(st0.sym, _, loc))
-                  val missingFieldErrors = missingFields.map(ResolutionError.MissingStructField(st0.sym, _, loc))
+                  val extraFieldErrors = extraFields.map(ResolutionError.ExtraStructFieldInNew(st0.sym, _, loc))
+                  val missingFieldErrors = missingFields.map(ResolutionError.MissingStructFieldInNew(st0.sym, _, loc))
                   val errors0 = extraFieldErrors ++ missingFieldErrors
                   val errors = if (!errors0.isEmpty) {
                     errors0
                   } else if (providedFieldNames != expectedFieldNames) {
-                    List(ResolutionError.IllegalNewStruct(st.sym, providedFieldNames, expectedFieldNames, loc))
+                    List(ResolutionError.IllegalFieldOrderInNew(st.sym, providedFieldNames, expectedFieldNames, loc))
                   } else {
                     Nil
                   }
