@@ -280,7 +280,7 @@ object Simplifier {
             // We must do this here because the `MonoTypes` requires the individual types of each element
             // but the `Type` type only carries around the type arguments. i.e. for `struct S[v, r] {a: List[v]}`
             // at this point we would know `v` but we would need the type of `a`. We also erase to avoid infinitely
-            // expanding infinite types
+            // expanding recursive types
             val struct = root.structs(sym)
             val subst = Substitution(struct.tparams.zip(tpe.typeArguments).toMap)
             val substitutedStructFieldTypes = struct.fields.map { f =>
