@@ -1359,7 +1359,11 @@ object Resolver {
                   val fieldsVal = traverse(fields) {
                     case (f, e) =>
                       val eVal = visitExp(e, env0)
-                      val fieldSym = Symbol.mkStructFieldSym(st0.sym, st0.indices(f), f)
+                      val idx = st0.indices.get(f) match {
+                        case Some(value) => value
+                        case None => 0
+                      }
+                      val fieldSym = Symbol.mkStructFieldSym(st0.sym, idx, f)
                       mapN(eVal) {
                         case e => (fieldSym, e)
                       }
@@ -1401,7 +1405,11 @@ object Resolver {
                 Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
               } else {
                 val eVal = visitExp(e, env0)
-                val fieldSym = Symbol.mkStructFieldSym(st.sym, st.indices(field), field)
+                val idx = st.indices.get(field) match {
+                  case Some(value) => value
+                  case None => 0
+                }
+                val fieldSym = Symbol.mkStructFieldSym(st.sym, idx, field)
                 mapN(eVal) {
                   case e => ResolvedAst.Expr.StructGet(e, fieldSym, loc)
                 }
@@ -1420,7 +1428,11 @@ object Resolver {
               } else {
                 val e1Val = visitExp(e1, env0)
                 val e2Val = visitExp(e2, env0)
-                val fieldSym = Symbol.mkStructFieldSym(st.sym, st.indices(field), field)
+                val idx = st.indices.get(field) match {
+                  case Some(value) => value
+                  case None => 0
+                }
+                val fieldSym = Symbol.mkStructFieldSym(st.sym, idx, field)
                 mapN(e1Val, e2Val) {
                   case (e1, e2) => ResolvedAst.Expr.StructPut(e1, fieldSym, e2, loc)
                 }
