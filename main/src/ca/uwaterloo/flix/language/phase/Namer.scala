@@ -140,7 +140,7 @@ object Namer {
       val table1 = tryAddToTable(table0, sym.namespace, sym.name, decl)
       cases.foldLeft(table1)(tableDecl)
 
-    case NamedAst.Declaration.Struct(_, _, _, sym, _, fields, _, _) =>
+    case NamedAst.Declaration.Struct(_, _, _, sym, _, _, _, _) =>
       tryAddToTable(table0, sym.namespace, sym.name, decl)
 
     case NamedAst.Declaration.RestrictableEnum(_, _, _, sym, _, _, _, cases, _) =>
