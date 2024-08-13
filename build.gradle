@@ -46,8 +46,8 @@ tasks.withType(ScalaCompile) {
     scalaCompileOptions.additionalParameters = [
             "-source:3.0-migration", // TODO: remove this once we decide to migrate to Scala 3
             "-Werror",
-            "-release", "11",
-            "-no-indent"
+            "-no-indent",
+            "-release", "11"
     ]
     compileScala.sourceCompatibility = 21
     compileScala.targetCompatibility = 21
