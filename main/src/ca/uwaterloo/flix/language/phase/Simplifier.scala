@@ -277,6 +277,9 @@ object Simplifier {
           case TypeConstructor.Enum(sym, _) => MonoType.Enum(sym)
 
           case TypeConstructor.Struct(sym, _) =>
+            // We must do this here because the `MonoTypes` requires the individual types of each element
+            // but the `Type` type only carries around the type arguments. i.e. for `struct S[v, r] {a: List[v]}`
+            // at this point we would know `v` but we would need the type of `a`
             val struct = root.structs(sym)
             val subst = Substitution(struct.tparams.zip(tpe.typeArguments).toMap)
             val substitutedStructFieldTypes = struct.fields.map(f => visitType(subst(f.tpe)))
