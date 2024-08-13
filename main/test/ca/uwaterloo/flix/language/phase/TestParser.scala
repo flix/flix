@@ -1093,8 +1093,7 @@ class TestParserHappy extends AnyFunSuite with TestUtils {
     expectError[ParseError](result)
   }
 
-  // JOE TODO: Reenable
-  ignore("StructNoTParams.01") {
+  test("StructNoTParams.01") {
     val input =
       """
         |struct S { }

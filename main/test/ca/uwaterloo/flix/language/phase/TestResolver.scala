@@ -123,7 +123,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
 
   // this test is temporarily ignored because it recovers and proceeds
   // to fail in future unimplemented phases
-  ignore("InaccessibleStruct.03") {
+  test("InaccessibleStruct.03") {
     val input =
       s"""
          |mod A{
@@ -181,7 +181,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.InaccessibleEnum](result)
   }
 
-  ignore("InaccessibleType.03") {
+  test("InaccessibleType.03") {
     val input =
       s"""
          |mod A {
@@ -410,7 +410,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.CyclicTypeAliases](result)
   }
 
-  ignore("CyclicTypeAliases.06") {
+  test("CyclicTypeAliases.06") {
     val input =
       s"""
          |struct S[t, r] {
@@ -1661,7 +1661,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
   // This test is temporarily disabled because the creation of S1 is valid
   // and thus the compiler attempts to continue to compile this program and
   // fails in future unimplemented phases.
-  ignore("ResolutionError.UndefinedStruct.03") {
+  test("ResolutionError.UndefinedStruct.03") {
     val input =
       """
         |mod M {
@@ -1681,7 +1681,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
 
   // A bug was introduced into the kinder when it was refactored, so this test fails, but
   // will reenable it once my next struct kinder support pr is merged
-  ignore("ResoutionError.MissingStructField.01") {
+  test("ResoutionError.MissingStructField.01") {
     val input =
       """
         |mod S {
@@ -1806,6 +1806,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.ExtraStructField](result)
   }
+
   test("ResolutionError.StructFieldIncorrectOrder.01") {
     val input = """
                   |struct S[r] {a: Int32, b: Int32}

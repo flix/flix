@@ -516,8 +516,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
     expectError[SafetyError.ImpossibleUncheckedCast](result)
   }
 
-  // JOE TODO: Reenable these when ready
-  ignore("ImpossibleCast.10") {
+  test("ImpossibleCast.10") {
     val input =
       """
         |struct A[r] {
@@ -529,7 +528,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
     expectError[SafetyError.ImpossibleUncheckedCast](result)
   }
 
-  ignore("ImpossibleCast.11") {
+  test("ImpossibleCast.11") {
     val input =
       """
         |struct A[r] {
@@ -541,7 +540,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
     expectError[SafetyError.ImpossibleUncheckedCast](result)
   }
 
-  ignore("ImpossibleCast.12") {
+  test("ImpossibleCast.12") {
     val input =
       """
         |struct A[r] {
@@ -930,8 +929,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
     expectError[SafetyError.IllegalExportPolymorphism](result)
   }
 
-
-  ignore("IllegalExportFunction.08") {
+  test("IllegalExportFunction.08") {
     val input =
       """
         |struct S[t, r] {
@@ -943,7 +941,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
     expectError[SafetyError.IllegalExportPolymorphism](result)
   }
 
-  ignore("IllegalExportFunction.09") {
+  test("IllegalExportFunction.09") {
     val input =
       """
         |struct S[t, r] {

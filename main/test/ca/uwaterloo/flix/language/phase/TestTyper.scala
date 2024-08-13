@@ -1491,8 +1491,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError.AmbiguousMethod](result)
   }
 
-  // JOE TBD: Reenable when structs are completed
-  ignore("TypeError.NewStruct.01") {
+  test("TypeError.NewStruct.01") {
     val input =
       """
         |struct S [v, r] {
@@ -1512,7 +1511,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError](result)
   }
 
-  ignore("TypeError.NewStruct.02") {
+  test("TypeError.NewStruct.02") {
     val input =
       """
         |struct S [v, r] {
@@ -1532,7 +1531,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError](result)
   }
 
-  ignore("TypeError.NewStruct.03") {
+  test("TypeError.NewStruct.03") {
     val input =
       """
         |struct S [v, r] {
@@ -1552,7 +1551,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError](result)
   }
 
-  ignore("TypeError.StructGet.01") {
+  test("TypeError.StructGet.01") {
     val input =
       """
         |mod S {
@@ -1575,7 +1574,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError](result)
   }
 
-  ignore("TypeError.StructGet.02") {
+  test("TypeError.StructGet.02") {
     val input =
       """
         |mod S {
@@ -1597,7 +1596,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError](result)
   }
 
-  ignore("TypeError.StructPut.01") {
+  test("TypeError.StructPut.01") {
     val input =
       """
         |mod S {
@@ -1620,7 +1619,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError](result)
   }
 
-  ignore("TypeError.StructPut.02") {
+  test("TypeError.StructPut.02") {
     val input =
       """
         |mod S {
