@@ -239,7 +239,7 @@ object Verifier {
             case _ => throw InternalCompilerException(s"Struct $sym0 missing region tparam", loc)
           }
 
-        case AtomicOp.StructGet(sym0, _) =>
+        case AtomicOp.StructGet(sym0, _, _) =>
           ts match {
             case tpe1 :: Nil =>
               checkStructType(tpe1, sym0, loc)
@@ -247,7 +247,7 @@ object Verifier {
             case _ => failMismatchedShape(tpe, "Struct", loc)
           }
 
-        case AtomicOp.StructPut(sym0, _) =>
+        case AtomicOp.StructPut(sym0, _, _) =>
           ts match {
             case tpe1 :: _ :: Nil =>
               checkStructType(tpe1, sym0, loc)

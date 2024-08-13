@@ -1490,4 +1490,155 @@ class TestTyper extends AnyFunSuite with TestUtils {
     val result = compile(input, Options.Default)
     expectError[TypeError.AmbiguousMethod](result)
   }
+
+  // JOE TBD: Reenable when structs are completed
+  ignore("TypeError.NewStruct.01") {
+    val input =
+      """
+        |struct S [v, r] {
+        |    a: Int32,
+        |    b: String,
+        |    c: v
+        |}
+        |
+        |def Foo(): Unit = {
+        |    region rc {
+        |        new S {a = 3, b = 4, c = "hello"} @ rc;
+        |        ()
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.Default)
+    expectError[TypeError](result)
+  }
+
+  ignore("TypeError.NewStruct.02") {
+    val input =
+      """
+        |struct S [v, r] {
+        |    a: Int32,
+        |    b: String,
+        |    c: v
+        |}
+        |
+        |def Foo(): Unit = {
+        |    region rc {
+        |        new S {a = (), b = "hi", c = "hello"} @ rc;
+        |        ()
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.Default)
+    expectError[TypeError](result)
+  }
+
+  ignore("TypeError.NewStruct.03") {
+    val input =
+      """
+        |struct S [v, r] {
+        |    a: Int32,
+        |    b: String,
+        |    c: v
+        |}
+        |
+        |def Foo(): Unit = {
+        |    region rc {
+        |        new S {a = 3, b = "hi", c = new S {a = 4, b = 3, c = ()} @ rc } @ rc;
+        |        ()
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.Default)
+    expectError[TypeError](result)
+  }
+
+  ignore("TypeError.StructGet.01") {
+    val input =
+      """
+        |mod S {
+        |    struct S [v, r] {
+        |        a: Int32,
+        |        b: String,
+        |        c: v
+        |    }
+        |
+        |    def Foo(): Unit = {
+        |        region rc {
+        |            let s = new S {a = 4, b = "hi", c = "hello"} @ rc;
+        |            s€a + s€b;
+        |            ()
+        |        }
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.Default)
+    expectError[TypeError](result)
+  }
+
+  ignore("TypeError.StructGet.02") {
+    val input =
+      """
+        |mod S {
+        |    struct S [v, r] {
+        |        c: v
+        |    }
+        |
+        |    def Foo(): Unit = {
+        |        region rc {
+        |            let s1 = new S {c = 3} @ rc;
+        |            let s2 = new S {c = "hello"} @ rc;
+        |            s1€c + s2€c;
+        |            ()
+        |        }
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.Default)
+    expectError[TypeError](result)
+  }
+
+  ignore("TypeError.StructPut.01") {
+    val input =
+      """
+        |mod S {
+        |    struct S [v, r] {
+        |        a: Int32,
+        |        b: String,
+        |        c: v
+        |    }
+        |
+        |    def Foo(): Unit = {
+        |        region rc {
+        |            let s = new S {a = 4, b = "hi", c = "hello"} @ rc;
+        |            s€a = s€b;
+        |            ()
+        |        }
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.Default)
+    expectError[TypeError](result)
+  }
+
+  ignore("TypeError.StructPut.02") {
+    val input =
+      """
+        |mod S {
+        |    struct S [v, r] {
+        |        c: v
+        |    }
+        |
+        |    def Foo(): Unit = {
+        |        region rc {
+        |            let s1 = new S {c = 3} @ rc;
+        |            let s2 = new S {c = "hello"} @ rc;
+        |            s1€c = s2€c;
+        |            ()
+        |        }
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.Default)
+    expectError[TypeError](result)
+  }
 }
