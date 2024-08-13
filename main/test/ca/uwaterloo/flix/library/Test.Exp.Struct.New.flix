@@ -178,13 +178,6 @@ mod Test.Exp.Struct.New {
         }
 
     @test
-    def testStructLiteralOrder01(): Unit =
-        region rc {
-            new ThreeInts { x = 1, y = 2, z = 3 } @ rc;
-            ()
-        }
-
-    @test
     def testNestedStructLiteral01(): Unit =
         region rc {
             new TwoIntsHolder { a = new TwoInts { x = 1, y = 2 } @ rc} @ rc;

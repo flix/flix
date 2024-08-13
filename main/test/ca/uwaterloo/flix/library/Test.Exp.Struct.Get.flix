@@ -36,47 +36,47 @@ mod Test.Exp.Struct.Get {
         }
 
     @test
-    def testStructMultiGet01(): Unit =
+    def testStructMultiGet01(): Bool =
         region rc {
             let s = new Get { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true } @ rc;
-            let _fstName = s€fstName;
-            let _lstName = s€lstName;
-            let _age = s€age;
-            let _cowboy = s€cowboy;
-            ()
+            let fstName = s€fstName;
+            let lstName = s€lstName;
+            let age = s€age;
+            let cowboy = s€cowboy;
+            fstName == "Lucky" and lstName == "Luke" and age == 42 and cowboy
         }
 
     @test
-    def testStructMultiGet02(): Unit =
+    def testStructMultiGet02(): Bool =
         region rc {
             let s = new Get { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true } @ rc;
-            let _cowboy = s€cowboy;
-            let _age = s€age;
-            let _lstName = s€lstName;
-            let _fstName = s€fstName;
-            ()
+            let cowboy = s€cowboy;
+            let age = s€age;
+            let lstName = s€lstName;
+            let fstName = s€fstName;
+            fstName == "Lucky" and lstName == "Luke" and age == 42 and cowboy
         }
 
     @test
-    def testStructMultiGet03(): Unit =
+    def testStructMultiGet03(): Bool =
         region rc {
             let s = new Get { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true } @ rc;
-            let _fstName1 = s€fstName;
-            let _fstName2 = s€fstName;
-            let _lstName1 = s€lstName;
-            let _lstName2 = s€lstName;
-            ()
+            let fstName1 = s€fstName;
+            let fstName2 = s€fstName;
+            let lstName1 = s€lstName;
+            let lstName2 = s€lstName;
+            fstName1 == "Lucky" and fstName2 == "Lucky" and lstName1 == "Luke" and lstName2 == "Luke"
         }
 
     @test
-    def testStructMultiGet04(): Unit =
+    def testStructMultiGet04(): Bool =
         region rc {
             let s = new Get { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true } @ rc;
-            let _lstName1 = s€lstName;
-            let _fstName1 = s€fstName;
-            let _lstName2 = s€lstName;
-            let _fstName2 = s€fstName;
-            ()
+            let lstName1 = s€lstName;
+            let fstName1 = s€fstName;
+            let lstName2 = s€lstName;
+            let fstName2 = s€fstName;
+            fstName1 == "Lucky" and fstName2 == "Lucky" and lstName1 == "Luke" and lstName2 == "Luke"
         }
 
 /* These aren't testable until we get struct names working
