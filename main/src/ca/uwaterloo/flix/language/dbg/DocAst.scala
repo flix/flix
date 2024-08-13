@@ -1,8 +1,3 @@
-// JOE TODO: Add comment in simplifier
-// JOE TODO: Add idx to field sym, remove struct and idx from ast nodes and atomicop
-// JOE TODO: Make sure infallible sym lookup sworks
-// joe todo: mut, pub, and error recovery for a.field = 3 when field dne
-// JOE TODO: Indexer
 /*
  * Copyright 2023 Jonathan Lindegaard Starup
  *
