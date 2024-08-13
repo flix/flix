@@ -48,7 +48,8 @@ tasks.withType(ScalaCompile) {
             "-Werror",
             "-release", "11",
             "-rewrite",
-            "-no-indent"
+            "-no-indent",
+            "-old-syntax"
     ]
     compileScala.sourceCompatibility = 21
     compileScala.targetCompatibility = 21
