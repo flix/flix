@@ -131,6 +131,7 @@ object CompletionProvider {
   }
 
   private def getCompletions()(implicit context: CompletionContext, flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] = {
+    println(context.sctx)
     context.sctx match {
       //
       // Expressions.
@@ -139,6 +140,7 @@ object CompletionProvider {
       case SyntacticContext.Expr.Do => OpCompleter.getCompletions(context)
       case SyntacticContext.Expr.InvokeMethod(e) => InvokeMethodCompleter.getCompletions(e, context)
       case SyntacticContext.Expr.StaticFieldOrMethod(e) => GetStaticFieldCompleter.getCompletions(e) ++ InvokeStaticMethodCompleter.getCompletions(e)
+      // case SyntacticContext.Expr.NewObject => NewObjectCompleter.getCompletions(context)
       case _: SyntacticContext.Expr => ExprCompleter.getCompletions(context)
 
       //
@@ -158,7 +160,7 @@ object CompletionProvider {
       // Types.
       //
       case SyntacticContext.Type.Eff => EffSymCompleter.getCompletions(context)
-      case SyntacticContext.Type.OtherType => TypeCompleter.getCompletions(context) ++ EffSymCompleter.getCompletions(context)
+      case SyntacticContext.Type.OtherType => TypeCompleter.getCompletions(context) ++ EffSymCompleter.getCompletions(context) ++ NewObjectCompleter.getCompletions(context)
 
       //
       // Patterns.
@@ -261,6 +263,7 @@ object CompletionProvider {
     }).map({
       // We can have multiple errors, so we rank them, and pick the highest priority.
       case WeederError.UnqualifiedUse(_) => (1, SyntacticContext.Use)
+      case WeederError.IllegalQualifiedName(_) => (1, SyntacticContext.Expr.NewObject)
       case ResolutionError.UndefinedJvmClass(_, _, _) => (1, SyntacticContext.Import)
       case ResolutionError.UndefinedName(_, _, _, isUse, _) => if (isUse) (1, SyntacticContext.Use) else (2, SyntacticContext.Expr.OtherExpr)
       case ResolutionError.UndefinedNameUnrecoverable(_, _, _, isUse, _) => if (isUse) (1, SyntacticContext.Use) else (2, SyntacticContext.Expr.OtherExpr)

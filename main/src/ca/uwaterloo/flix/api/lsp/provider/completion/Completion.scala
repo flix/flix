@@ -101,7 +101,13 @@ sealed trait Completion {
         documentation = None,
         insertTextFormat = InsertTextFormat.PlainText,
         kind = CompletionItemKind.Class)
-
+    case Completion.NewObjectCompletion(name, completion) =>
+      CompletionItem(label = name,
+        sortText = Priority.high(name),
+        textEdit = TextEdit(context.range, completion),
+        documentation = None,
+        insertTextFormat = InsertTextFormat.Snippet,
+        kind = CompletionItemKind.Snippet)
     case Completion.SnippetCompletion(name, snippet, documentation) =>
       CompletionItem(label = name,
         sortText = Priority.snippet(name),
@@ -368,6 +374,8 @@ object Completion {
     * @param name the name to be completed.
     */
   case class ImportCompletion(name: String) extends Completion
+
+  case class NewObjectCompletion(name: String, completion: String) extends Completion
 
   /**
     * Represents a Snippet completion
