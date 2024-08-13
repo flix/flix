@@ -44,10 +44,9 @@ tasks.withType(ScalaCompile) {
         memoryMaximumSize = '1536m'
     }
     scalaCompileOptions.additionalParameters = [
-            "-source:3.0-migration",
+            "-source:3.0-migration", // TODO: remove this once we decide to migrate to Scala 3
             "-Werror",
             "-release", "11",
-            "-rewrite",
             "-no-indent"
     ]
     compileScala.sourceCompatibility = 21
