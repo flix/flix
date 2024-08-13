@@ -206,10 +206,10 @@ object EffectVerifier {
       fields.map {case(k, v) => v}.map(visitExp)
       visitExp(region)
     case Expr.StructGet(_, e, _, t, _, _) =>
-      // TODO region stuff
+      // JOE TODO region stuff
       visitExp(e)
     case Expr.StructPut(_, e1, _, e2, t, _, _) =>
-      // TODO region stuff
+      // JOE TODO region stuff
       visitExp(e1)
       visitExp(e2)
     case Expr.VectorLit(exps, tpe, eff, loc) =>

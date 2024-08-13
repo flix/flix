@@ -1108,13 +1108,12 @@ object Resolver {
                 val methodName = qname.ident
                 val expsVal = traverse(exps)(visitExp(_, env0))
                 // Check for a single Unit argument
-                mapN(expsVal) {
+                // Returns out of visitExp
+                return flatMapN(expsVal) {
                   case ResolvedAst.Expr.Cst(Ast.Constant.Unit, _) :: Nil =>
-                    // Returns out of visitExp
-                    return Validation.success(ResolvedAst.Expr.InvokeStaticMethod2(clazz, methodName, Nil, outerLoc))
+                    Validation.success(ResolvedAst.Expr.InvokeStaticMethod2(clazz, methodName, Nil, outerLoc))
                   case es =>
-                    // Returns out of visitExp
-                    return Validation.success(ResolvedAst.Expr.InvokeStaticMethod2(clazz, methodName, es, outerLoc))
+                    Validation.success(ResolvedAst.Expr.InvokeStaticMethod2(clazz, methodName, es, outerLoc))
                 }
               case _ =>
               // Fallthrough to below.
@@ -1356,18 +1355,6 @@ object Resolver {
             case Result.Ok(st0) =>
               flatMapN(getStructIfAccessible(st0, ns0, loc)) {
                 case st =>
-                  val providedFieldNames = fields.map { case (k, _) => k }
-                  val expectedFieldNames = st.fields.map(_.name)
-                  val extraFields = providedFieldNames.diff(expectedFieldNames)
-                  val missingFields = expectedFieldNames.diff(providedFieldNames)
-                  val errors = if (!extraFields.isEmpty || !missingFields.isEmpty) {
-                    extraFields.map(ResolutionError.ExtraStructField(st0.sym, _, loc)) ++ missingFields.map(ResolutionError.MissingStructField(st0.sym, _, loc))
-                  } else if (providedFieldNames != expectedFieldNames) {
-                    List(ResolutionError.WrongStructFieldOrdering(st.sym, providedFieldNames, expectedFieldNames, loc))
-                  } else {
-                    Nil
-                  }
-
                   val fieldsVal = traverse(fields) {
                     case (f, e) =>
                       val eVal = visitExp(e, env0)
@@ -1380,6 +1367,23 @@ object Resolver {
                     case (fields, region) =>
                       ResolvedAst.Expr.StructNew(st.sym, fields, region, loc)
                   }
+                  // Potential errors
+                  val providedFieldNames = fields.map { case (k, _) => k }
+                  val expectedFieldNames = st.fields.map(_.name)
+                  val extraFields = providedFieldNames.diff(expectedFieldNames)
+                  val missingFields = expectedFieldNames.diff(providedFieldNames)
+
+                  val extraFieldErrors = extraFields.map(ResolutionError.ExtraStructField(st0.sym, _, loc))
+                  val missingFieldErrors = missingFields.map(ResolutionError.MissingStructField(st0.sym, _, loc))
+                  val errors0 = extraFieldErrors ++ missingFieldErrors
+                  val errors = if (!errors0.isEmpty) {
+                    errors0
+                  } else if (providedFieldNames != expectedFieldNames) {
+                    List(ResolutionError.IllegalNewStruct(st.sym, providedFieldNames, expectedFieldNames, loc))
+                  } else {
+                    Nil
+                  }
+
                   structNew.withSoftFailures(errors)
               }
             case Result.Err(e) =>

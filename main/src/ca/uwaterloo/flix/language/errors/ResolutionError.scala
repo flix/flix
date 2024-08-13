@@ -1183,25 +1183,24 @@ object ResolutionError {
          |""".stripMargin
     }
   }
-
   /**
-   * An error raised to indicate a `new` struct expression declares fields in the wrong order
-   *
-   * @param providedFields the order in which fields were declared
-   * @param expectedFields the order in which fields were expected to be declared
-   * @param loc the location where the error occurred
-   */
-  case class WrongStructFieldOrdering(struct: Symbol.StructSym, providedFields: List[Name.Label], expectedFields: List[Name.Label], loc: SourceLocation) extends  ResolutionError with Recoverable {
-    override def summary: String = s"Incorrect ordering of struct field declarations in initializer of struct `$struct`"
+    * An error raised to indicate a `new` struct expression initializes its fields in the wrong order
+    *
+    * @param providedFields the order in which fields were initialized
+    * @param expectedFields the order in which fields were expected to be initialized
+    * @param loc the location where the error occurred
+    */
+  case class IllegalNewStruct(struct: Symbol.StructSym, providedFields: List[Name.Label], expectedFields: List[Name.Label], loc: SourceLocation) extends  ResolutionError with Recoverable {
+    override def summary: String = s"Structs fields must be initialized in the same order as they are declared"
 
     def message(formatter: Formatter) : String = {
       import formatter._
-      s""">> Incorrect ordering of struct field declarations in initializer of struct `$struct`
+      s""">> Structs fields must be initialized in the same order as they are declared
          |
-         |The struct $struct expected order $expectedFields
-         |but $providedFields was provided
+         |Expected initialization order: ${expectedFields.mkString(",")}
+         |Actual initialized order: ${providedFields.mkString(",")}
          |
-         |${code(loc, "incorrect field ordering")}
+         |${code(loc, "incorrect order")}
          |""".stripMargin
     }
   }

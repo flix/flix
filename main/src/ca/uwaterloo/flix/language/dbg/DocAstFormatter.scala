@@ -208,20 +208,6 @@ object DocAstFormatter {
         ))
       case Native(clazz) =>
         formatJavaClass(clazz)
-      case StructNew(sym, exps, exp) =>
-        group(
-          text("new") +: text(sym.text) +: curlyTuple(
-            exps.map {case (k, v) => text(k.name) +: text("=") +: aux(v, inBlock = true)}
-          ) +: text("@") +: aux(exp)
-        )
-      case StructGet(exp, field, tpe) =>
-        group(
-          aux(exp) +: text(".") +: text(field.name)
-        )
-      case StructPut(exp1, field, exp2, tpe) =>
-        group(
-          aux(exp1) +: text(".") +: text(field.name) +: text("=") +: aux(exp2)
-        )
     }
     d match {
       case _: Composite if paren => parens(doc)

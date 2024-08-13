@@ -57,7 +57,7 @@ object Simplifier {
       SimplifiedAst.Effect(ann, mod, sym, ops, loc)
   }
 
-  private def visitExp(exp0: MonoAst.Expr)(implicit flix: Flix, universe: Set[Symbol.EffectSym], root: MonoAst.Root): SimplifiedAst.Expr = exp0 match {
+  private def visitExp(exp0: MonoAst.Expr)(implicit universe: Set[Symbol.EffectSym], root: MonoAst.Root, flix: Flix): SimplifiedAst.Expr = exp0 match {
     case MonoAst.Expr.Var(sym, tpe, loc) =>
       val t = visitType(tpe)
       SimplifiedAst.Expr.Var(sym, t, loc)
