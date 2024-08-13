@@ -47,7 +47,9 @@ tasks.withType(ScalaCompile) {
             "-Xfatal-warnings",
             "-Ypatmat-exhaust-depth", "400",
             "-release", "11",
-            "-Xsource:3" // Scala 3 migration flag
+            "-opt:inline:ca.uwaterloo.**",
+            "-Xsource:3",    // Scala 3 migration flag
+            "-Ytasty-reader" // Scala 3 migration flag
     ]
     compileScala.sourceCompatibility = 21
     compileScala.targetCompatibility = 21
