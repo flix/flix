@@ -815,13 +815,13 @@ object GenExpression {
       case AtomicOp.StructPut(_, idx, _) =>
         val List(exp1, exp2) = exps
         val MonoType.Struct(_, elmTypes, _) = exp1.tpe
-        val structType = BackendObjType.Struct(elmTypes.map(BackendType.asErasedBackendType))
+        val structType = BackendObjType.Struct(elmTypes.map(BackendType.toErasedBackendType))
         // evaluating the `base`
         compileExpr(exp1)
         // evaluating the `rhs`
         compileExpr(exp2)
         // set the field `field${offset}`
-        mv.visitFieldInsn(PUTFIELD, structType.jvmName.toInternalName, s"field$idx", JvmOps.asErasedJvmType(exp2.tpe).toDescriptor)
+        mv.visitFieldInsn(PUTFIELD, structType.jvmName.toInternalName, s"field$idx", JvmOps.getErasedJvmType(exp2.tpe).toDescriptor)
         // Since the return type is unit, we put an instance of unit on top of the stack
         mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
 
