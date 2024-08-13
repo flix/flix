@@ -786,9 +786,9 @@ object GenExpression {
 
       case AtomicOp.StructNew(sym, fields) =>
         val region :: fieldExps = exps
-        compileExpr(region) // Region value not actually used?
+        // Evaluate the region and ignore its value
+        compileExpr(region)
         BytecodeInstructions.xPop(BackendType.toErasedBackendType(region.tpe))(new BytecodeInstructions.F(mv))
-        val MonoType.Struct(_, _, targs) = tpe
         // We get the JvmType of the class for the struct
         val elmTypes = fieldExps.map(_.tpe)
         val structType = BackendObjType.Struct(elmTypes.map(BackendType.toErasedBackendType))
@@ -804,18 +804,18 @@ object GenExpression {
         // Invoking the constructor
         mv.visitMethodInsn(INVOKESPECIAL, internalClassName, "<init>", constructorDescriptor.toDescriptor, false)
 
-      case AtomicOp.StructGet(sym, idx, _) =>
+      case AtomicOp.StructGet(_, idx, _) =>
         val List(exp) = exps
-        val MonoType.Struct(_, elmTypes, targs) = exp.tpe
+        val MonoType.Struct(_, elmTypes, _) = exp.tpe
         val structType = BackendObjType.Struct(elmTypes.map(BackendType.toErasedBackendType))
         // evaluating the `base`
         compileExpr(exp)
         // Retrieving the field `field${offset}`
         mv.visitFieldInsn(GETFIELD, structType.jvmName.toInternalName, s"field$idx", JvmOps.getErasedJvmType(tpe).toDescriptor)
 
-      case AtomicOp.StructPut(sym, idx, _) =>
+      case AtomicOp.StructPut(_, idx, _) =>
         val List(exp1, exp2) = exps
-        val MonoType.Struct(_, elmTypes, targs) = exp1.tpe
+        val MonoType.Struct(_, elmTypes, _) = exp1.tpe
         val structType = BackendObjType.Struct(elmTypes.map(BackendType.toErasedBackendType))
         // evaluating the `base`
         compileExpr(exp1)
@@ -1535,6 +1535,7 @@ object GenExpression {
         compileExpr(e)
         mv.visitFieldInsn(PUTFIELD, className, s"clo$i", JvmOps.getClosureAbstractClassType(e.tpe).toDescriptor)
       }
+
   }
 
   private def printPc(mv: MethodVisitor, pcPoint: Int): Unit = if (!GenFunAndClosureClasses.onCallDebugging) () else {

@@ -123,7 +123,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
 
   // this test is temporarily ignored because it recovers and proceeds
   // to fail in future unimplemented phases
-  ignore("InaccessibleStruct.03") {
+  test("InaccessibleStruct.03") {
     val input =
       s"""
          |mod A{
