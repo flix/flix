@@ -1,6 +1,6 @@
 mod Test.Exp.Struct.Get {
 
-    struct Get [r] {
+    struct Get[r] {
         fstName: String,
         lstName: String,
         age: Int32,
@@ -80,12 +80,12 @@ mod Test.Exp.Struct.Get {
         }
 
 /* These aren't testable until we get struct names working
-    struct Inner [r] {
+    struct Inner[r] {
         x: Int32,
         y: Int32
     }
 
-    struct Outer [r] {
+    struct Outer[r] {
         a: TwoInts[r]
         b: TwoInts[r]
     }
@@ -101,19 +101,19 @@ mod Test.Exp.Struct.Get {
             ()
         }
 
-    struct A [r] {
+    struct A[r] {
         a: B
     }
 
-    struct B [r] {
+    struct B[r] {
         b: C
     }
 
-    struct C [r] {
+    struct C[r] {
         c: D
     }
 
-    struct D [r] {
+    struct D[r] {
         d: Int32
     }
 

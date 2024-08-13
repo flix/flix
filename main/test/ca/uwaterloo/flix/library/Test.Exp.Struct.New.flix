@@ -1,6 +1,6 @@
 mod Mod1 {
-    pub struct S [r] {}
-    struct S2 [r] {}
+    pub struct S[r] {}
+    struct S2[r] {}
 
     mod Mod2 {
         @test
@@ -14,96 +14,96 @@ mod Mod1 {
 
 mod Test.Exp.Struct.New {
 
-    struct Empty [r] { }
+    struct Empty[r] { }
 
-    struct OneEmpty [r] {
+    struct OneEmpty[r] {
         a: Empty[r]
     }
 
-    struct TwoEmpty [r] {
+    struct TwoEmpty[r] {
         a: Empty[r],
         b: Empty[r]
     }
 
-    struct EmptyC [r] {
+    struct EmptyC[r] {
         c: Empty[r]
     }
 
-    struct EmptyB [r] {
+    struct EmptyB[r] {
         b: EmptyC[r]
     }
 
-    struct EmptyA [r] {
+    struct EmptyA[r] {
         a: EmptyB[r]
     }
 
-    struct A [r] {
+    struct A[r] {
         a: B[r]
     }
 
-    struct B [r] {
+    struct B[r] {
         b: C[r]
     }
 
-    struct C [r] {
+    struct C[r] {
         c: D[r]
     }
 
-    struct D [r] {
+    struct D[r] {
         d: Int32
     }
 
-    struct Name [r] {
+    struct Name[r] {
         name: String
     }
 
-    struct FullName [r] {
+    struct FullName[r] {
         fstName: String,
         lstName: String
     }
 
-    struct Person [r] {
+    struct Person[r] {
         fstName: String,
         lstName: String,
         age: Int32
     }
 
-    struct Cowboy [r] {
+    struct Cowboy[r] {
         fstName: String,
         lstName: String,
         age: Int32,
         cowboy: Bool
     }
 
-    struct TwoInts [r] {
+    struct TwoInts[r] {
         x: Int32,
         y: Int32
     }
 
-    struct ThreeInts [r] {
+    struct ThreeInts[r] {
         x: Int32,
         y: Int32,
         z: Int32
     }
 
-    struct Outer [r] {
+    struct Outer[r] {
         a: TwoInts[r],
         b: TwoInts[r]
     }
 
-    struct TwoIntsHolder [r] {
+    struct TwoIntsHolder[r] {
         a: TwoInts[r]
     }
 
-    struct A3 [r] {
+    struct A3[r] {
         a: A2[r]
     }
 
-    struct A2 [r] {
+    struct A2[r] {
         a: A1[r]
     }
 
-    struct A1 [r] {
+    struct A1[r] {
         a: Empty[r]
     }
 

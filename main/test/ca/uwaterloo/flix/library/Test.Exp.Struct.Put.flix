@@ -1,6 +1,6 @@
 mod Test.Exp.Struct.Put {
 
-    struct Put [r] {
+    struct Put[r] {
         _fstName: String,
         _lstName: String,
         _age: Int32,
@@ -84,12 +84,12 @@ mod Test.Exp.Struct.Put {
         }
 
 /* Cannot test these while struct name is required to be mod name
-    struct Inner [r] {
+    struct Inner[r] {
         x: Int32,
         y: Int32
     }
 
-    struct Outer [r] {
+    struct Outer[r] {
         a: Inner[r]
         b: Inner[r]
     }
@@ -105,19 +105,19 @@ mod Test.Exp.Struct.Put {
             ()
         }
 
-    struct A [r] {
+    struct A[r] {
         a: B
     }
 
-    struct B [r] {
+    struct B[r] {
         b: C
     }
 
-    struct C [r] {
+    struct C[r] {
         c: D
     }
 
-    struct D [r] {
+    struct D[r] {
         d: Int32
     }
 
