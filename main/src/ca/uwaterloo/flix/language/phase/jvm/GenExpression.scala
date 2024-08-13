@@ -815,7 +815,7 @@ object GenExpression {
       case AtomicOp.StructPut(_, idx, _) =>
         val List(exp1, exp2) = exps
         val MonoType.Struct(_, elmTypes, _) = exp1.tpe
-        val structType = BackendObjType.Struct(elmTypes.map(BackendType.toErasedBackendType))
+        val structType = BackendObjType.Struct(elmTypes.map(BackendType.asErasedBackendType))
         // evaluating the `base`
         compileExpr(exp1)
         // evaluating the `rhs`
