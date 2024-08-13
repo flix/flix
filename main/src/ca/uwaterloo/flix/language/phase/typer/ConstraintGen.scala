@@ -587,7 +587,7 @@ object ConstraintGen {
           fieldTpe1 <- fieldTpes
         } {
           instantiatedFieldTpes.get(fieldSym) match {
-            case None => ()
+            case None => () // if not an actual field, there is nothing to unify
             case Some(fieldTpe2) => c.unifyType(fieldTpe1, fieldTpe2, expr.loc)
           }
         }
