@@ -591,9 +591,7 @@ object ConstraintGen {
             case Some(fieldTpe2) => c.unifyType(fieldTpe1, fieldTpe2, expr.loc)
           }
         }
-        val regionType = Type.mkRegion(regionVar, loc)
-        c.unifyType(regionType, regionTpe, region.loc)
-        c.unifyType(evar, Type.mkUnion(Type.mkUnion(fieldEffs, loc), regionEff, regionVar, loc), loc)
+        c.unifyType(Type.mkRegion(regionVar, loc), regionTpe, region.loc)
         c.unifyType(evar, Type.mkUnion(fieldEffs :+ regionEff :+ regionVar, loc), loc)
         val resTpe = tvar
         val resEff = evar
