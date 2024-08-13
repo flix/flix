@@ -43,10 +43,10 @@ tasks.withType(ScalaCompile) {
         memoryMaximumSize = '1536m'
     }
     scalaCompileOptions.additionalParameters = [
-            "-language:postfixOps",
             "-Xfatal-warnings",
             "-Ypatmat-exhaust-depth", "400",
-            "-release", "11"
+            "-release", "11",
+            "-opt:inline:ca.uwaterloo.**"
     ]
     compileScala.sourceCompatibility = 21
     compileScala.targetCompatibility = 21

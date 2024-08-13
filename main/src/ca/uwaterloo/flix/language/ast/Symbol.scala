@@ -161,8 +161,8 @@ object Symbol {
   /**
    * Returns the struct field symbol for the given name `name` in the given struct `struct`
    */
-  def mkStructFieldSym(sym: Symbol.StructSym, name: Name.Label): StructFieldSym = {
-    new StructFieldSym(sym, name.name, name.loc)
+  def mkStructFieldSym(sym: Symbol.StructSym, idx: Int, name: Name.Label): StructFieldSym = {
+    new StructFieldSym(sym, name.name, idx, name.loc)
   }
 
   /**
@@ -565,19 +565,19 @@ object Symbol {
   /**
    * Struct Field Symbol.
    */
-  final class StructFieldSym(val structSym: Symbol.StructSym, val name: String, val loc: SourceLocation) extends Symbol {
+  final class StructFieldSym(val structSym: Symbol.StructSym, val name: String, val idx: Int, val loc: SourceLocation) extends Symbol {
     /**
      * Returns `true` if this symbol is equal to `that` symbol.
      */
     override def equals(obj: scala.Any): Boolean = obj match {
-      case that: StructFieldSym => this.structSym == that.structSym && this.name == that.name
+      case that: StructFieldSym => this.structSym == that.structSym && this.name == that.name && this.idx == that.idx
       case _ => false
     }
 
     /**
      * Returns the hash code of this symbol.
      */
-    override val hashCode: Int = Objects.hash(structSym, name)
+    override val hashCode: Int = Objects.hash(structSym, name, idx)
 
     /**
      * Human readable representation.

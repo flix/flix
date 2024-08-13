@@ -1,5 +1,5 @@
 // JOE TODO: Add comment in simplifier
-// JOE TODO: Add idx to field sym
+// JOE TODO: Add idx to field sym, remove struct and idx from ast nodes
 // JOE TODO: Make sure infallible sym lookup sworks
 /*
  * Copyright 2023 Jonathan Lindegaard Starup

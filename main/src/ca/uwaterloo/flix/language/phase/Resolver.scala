@@ -573,9 +573,9 @@ object Resolver {
       flatMapN(tparamsVal) {
         case tparams =>
           val env = env0 ++ mkTypeParamEnv(tparams)
-          val fieldsVal = traverse(fields0)(resolveStructField(s0.sym, _, env, taenv, ns0, root))
+          val fieldsVal = traverse(fields0.zipWithIndex) { case (name, idx) => resolveStructField(s0.sym, idx, name, env, taenv, ns0, root) }
           mapN(fieldsVal) {
-            case (fields) =>
+            case fields =>
               ResolvedAst.Declaration.Struct(doc, ann, mod, sym, tparams, fields, loc)
           }
       }
@@ -614,10 +614,10 @@ object Resolver {
   /**
     * Performs name resolution on the given struct field `field0` in the given namespace `ns0`.
     */
-  private def resolveStructField(sym: Symbol.StructSym, field0: NamedAst.StructField, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.StructField, ResolutionError] = field0 match {
+  private def resolveStructField(sym: Symbol.StructSym, idx: Int, field0: NamedAst.StructField, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.StructField, ResolutionError] = field0 match {
     case NamedAst.StructField(fieldName, tpe0, loc) =>
       val tpeVal = resolveType(tpe0, Wildness.ForbidWild, env, taenv, ns0, root)
-      val fieldSym = Symbol.mkStructFieldSym(sym, fieldName)
+      val fieldSym = Symbol.mkStructFieldSym(sym, idx, fieldName)
       mapN(tpeVal) {
         tpe => ResolvedAst.StructField(fieldSym, tpe, loc)
       }
@@ -1356,10 +1356,10 @@ object Resolver {
             case Result.Ok(st0) =>
               flatMapN(getStructIfAccessible(st0, ns0, loc)) {
                 case st =>
-                  val fieldsVal = traverse(fields) {
-                    case (f, e) =>
+                  val fieldsVal = traverse(fields.zipWithIndex) {
+                    case ((f, e), idx) =>
                       val eVal = visitExp(e, env0)
-                      val fieldSym = Symbol.mkStructFieldSym(st.sym, f)
+                      val fieldSym = Symbol.mkStructFieldSym(st.sym, idx, f)
                       mapN(eVal) {
                         case e => (fieldSym, e)
                       }
