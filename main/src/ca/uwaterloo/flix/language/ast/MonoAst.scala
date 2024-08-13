@@ -175,7 +175,7 @@ object MonoAst {
 
   case class Case(sym: Symbol.CaseSym, tpe: Type, sc: Scheme, loc: SourceLocation)
 
-  case class StructField(name: Name.Label, tpe: Type, loc: SourceLocation)
+  case class StructField(name: Symbol.StructFieldSym, tpe: Type, loc: SourceLocation)
 
   case class Constraint(cparams: List[ConstraintParam], head: Predicate.Head, body: List[Predicate.Body], loc: SourceLocation)
 

@@ -87,7 +87,7 @@ object LiftedAst {
     case class NewObject(name: String, clazz: java.lang.Class[_], tpe: MonoType, purity: Purity, methods: List[JvmMethod], loc: SourceLocation) extends Expr
   }
 
-  case class StructField(name: Name.Label, idx: Int, tpe: Type, loc: SourceLocation)
+  case class StructField(name: Symbol.StructFieldSym, idx: Int, tpe: Type, loc: SourceLocation)
 
   case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], clo: Expr, retTpe: MonoType, purity: Purity, loc: SourceLocation)
 

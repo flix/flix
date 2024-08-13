@@ -1,3 +1,4 @@
+// joe todo: ide support
 // JOE TODO: Is monomorpher where I should do the subst? Ask magnus? Or maybe constraintgen
 // JOE TODO: ALSO ASK MAGNUS ABOUT -> INSTEAD OF . syntax
 /*

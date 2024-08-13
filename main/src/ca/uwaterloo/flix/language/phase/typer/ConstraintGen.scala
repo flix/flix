@@ -1278,7 +1278,7 @@ object ConstraintGen {
     }
   }
 
-  private def instantiateStruct(sym: Symbol.StructSym, structs: Map[Symbol.StructSym, KindedAst.Struct])(implicit flix: Flix) : (Map[Name.Label, Type], Type, Type.Var) = {
+  private def instantiateStruct(sym: Symbol.StructSym, structs: Map[Symbol.StructSym, KindedAst.Struct])(implicit flix: Flix) : (Map[Symbol.StructFieldSym, Type], Type, Type.Var) = {
     val struct = structs(sym)
     assert(struct.tparams.last.sym.kind == Kind.Eff)
     val fields = struct.fields

@@ -159,6 +159,13 @@ object Symbol {
   }
 
   /**
+   * Returns the struct field symbol for the given name `name` in the given struct `struct`
+   */
+  def mkStructFieldSym(sym: Symbol.StructSym, name: Name.Label): StructFieldSym = {
+    new StructFieldSym(sym, name.name, name.loc)
+  }
+
+  /**
    * Returns the struct symbol for the given fully qualified name.
    */
   def mkStructSym(fqn: String): StructSym = split(fqn) match {
@@ -553,6 +560,29 @@ object Symbol {
       * The symbol's namespace.
       */
     def namespace: List[String] = enumSym.namespace :+ enumSym.name
+  }
+
+  /**
+   * Struct Field Symbol.
+   */
+  final class StructFieldSym(val structSym: Symbol.StructSym, val name: String, val loc: SourceLocation) extends Symbol {
+    /**
+     * Returns `true` if this symbol is equal to `that` symbol.
+     */
+    override def equals(obj: scala.Any): Boolean = obj match {
+      case that: StructFieldSym => this.structSym == that.structSym && this.name == that.name
+      case _ => false
+    }
+
+    /**
+     * Returns the hash code of this symbol.
+     */
+    override val hashCode: Int = Objects.hash(structSym, name)
+
+    /**
+     * Human readable representation.
+     */
+    override def toString: String = structSym.toString + "." + name
   }
 
   /**

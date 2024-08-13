@@ -573,7 +573,7 @@ object Resolver {
       flatMapN(tparamsVal) {
         case tparams =>
           val env = env0 ++ mkTypeParamEnv(tparams)
-          val fieldsVal = traverse(fields0)(resolveStructField(_, env, taenv, ns0, root))
+          val fieldsVal = traverse(fields0)(resolveStructField(s0.sym, _, env, taenv, ns0, root))
           mapN(fieldsVal) {
             case (fields) =>
               ResolvedAst.Declaration.Struct(doc, ann, mod, sym, tparams, fields, loc)
@@ -614,11 +614,12 @@ object Resolver {
   /**
     * Performs name resolution on the given struct field `field0` in the given namespace `ns0`.
     */
-  private def resolveStructField(field0: NamedAst.StructField, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.StructField, ResolutionError] = field0 match {
+  private def resolveStructField(sym: Symbol.StructSym, field0: NamedAst.StructField, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.StructField, ResolutionError] = field0 match {
     case NamedAst.StructField(fieldName, tpe0, loc) =>
       val tpeVal = resolveType(tpe0, Wildness.ForbidWild, env, taenv, ns0, root)
+      val fieldSym = Symbol.mkStructFieldSym(sym, fieldName)
       mapN(tpeVal) {
-        tpe => ResolvedAst.StructField(fieldName, tpe, loc)
+        tpe => ResolvedAst.StructField(fieldSym, tpe, loc)
       }
   }
 
@@ -1358,8 +1359,9 @@ object Resolver {
                   val fieldsVal = traverse(fields) {
                     case (f, e) =>
                       val eVal = visitExp(e, env0)
+                      val fieldSym = Symbol.mkStructFieldSym(st.sym, f)
                       mapN(eVal) {
-                        case e => (f, e)
+                        case e => (fieldSym, e)
                       }
                   }
                   val regionVal = visitExp(region, env0)
@@ -1399,8 +1401,9 @@ object Resolver {
                 Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
               } else {
                 val eVal = visitExp(e, env0)
+                val fieldSym = Symbol.mkStructFieldSym(st.sym, field)
                 mapN(eVal) {
-                  case e => ResolvedAst.Expr.StructGet(st.sym, e, field, loc)
+                  case e => ResolvedAst.Expr.StructGet(st.sym, e, fieldSym, loc)
                 }
               }
             case Result.Err(e) =>
@@ -1417,8 +1420,9 @@ object Resolver {
               } else {
                 val e1Val = visitExp(e1, env0)
                 val e2Val = visitExp(e2, env0)
+                val fieldSym = Symbol.mkStructFieldSym(st.sym, field)
                 mapN(e1Val, e2Val) {
-                  case (e1, e2) => ResolvedAst.Expr.StructPut(st.sym, e1, field, e2, loc)
+                  case (e1, e2) => ResolvedAst.Expr.StructPut(st.sym, e1, fieldSym, e2, loc)
                 }
               }
             case Result.Err(e) =>
@@ -3752,6 +3756,7 @@ object Resolver {
     case sym: Symbol.StructSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.RestrictableEnumSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.CaseSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
+    case sym: Symbol.StructFieldSym => root.symbols(Name.mkUnlocatedNName(sym.structSym.namespace :+ sym.structSym.name))(sym.name)
     case sym: Symbol.RestrictableCaseSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.TraitSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.SigSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
