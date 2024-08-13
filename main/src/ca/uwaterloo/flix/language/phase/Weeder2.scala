@@ -461,7 +461,7 @@ object Weeder2 {
       ) {
         (doc, ann, mods, ident, tparams, fields) =>
         // Ensure that each name is unique
-        val errors = getDuplicates(fields, (f: Declaration.StructField) => f.name.name)
+        val errors = getDuplicates(fields, (f: StructField) => f.name.name)
         // For each field, only keep the first occurrence of the name
         val groupedByName = fields.groupBy(_.name.name)
         val filteredFields = groupedByName.values.map(_.head).toList
@@ -480,7 +480,7 @@ object Weeder2 {
       }
     }
 
-    private def visitStructField(tree: Tree): Validation[Declaration.StructField, CompilationMessage] = {
+    private def visitStructField(tree: Tree): Validation[StructField, CompilationMessage] = {
       expect(tree, TreeKind.StructField)
       mapN(
         pickNameIdent(tree),
@@ -489,7 +489,7 @@ object Weeder2 {
         (ident, ttype) =>
           // Make a source location that spans the name and type
           val loc = SourceLocation(isReal = true, ident.loc.sp1, tree.loc.sp2)
-          Declaration.StructField(Name.mkLabel(ident), ttype, loc)
+          StructField(Name.mkLabel(ident), ttype, loc)
       }
     }
     private def visitTypeAliasDecl(tree: Tree): Validation[Declaration.TypeAlias, CompilationMessage] = {
