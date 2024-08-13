@@ -1379,7 +1379,7 @@ object Resolver {
                   val errors = if (!errors0.isEmpty) {
                     errors0
                   } else if (providedFieldNames != expectedFieldNames) {
-                    List(ResolutionError.IllegalNewStruct(st.sym, providedFieldNames, expectedFieldNames, loc))
+                    List(ResolutionError.IllegalFieldOrderInNew(st.sym, providedFieldNames, expectedFieldNames, loc))
                   } else {
                     Nil
                   }
