@@ -319,10 +319,10 @@ object Indexer {
       }
       i0 ++ i1
 
-    case Expr.StructGet(sym, exp, field, tpe, eff, loc) =>
+    case Expr.StructGet(exp, field, tpe, eff, loc) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0)
 
-    case Expr.StructPut(sym, exp1, field, exp2, tpe, eff, loc) =>
+    case Expr.StructPut(exp1, field, exp2, tpe, eff, loc) =>
       visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
 
     case Expr.VectorLit(exps, _, _, _) =>

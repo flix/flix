@@ -418,8 +418,8 @@ object Monomorpher {
 
   def visitStructField(field: LoweredAst.StructField): MonoAst.StructField = {
     field match {
-      case LoweredAst.StructField(name, tpe, loc) =>
-        MonoAst.StructField(name, tpe, loc)
+      case LoweredAst.StructField(fieldSym, tpe, loc) =>
+        MonoAst.StructField(fieldSym, tpe, loc)
     }
   }
 

@@ -341,10 +341,10 @@ object Safety {
       case Expr.StructNew(_, fields, region, _, _, _) =>
         fields.map{case (_, v) => v}.flatMap(visit) ++ visit(region)
 
-      case Expr.StructGet(_, e, _, _, _, _) =>
+      case Expr.StructGet(e, _, _, _, _) =>
         visit(e)
 
-      case Expr.StructPut(_, e1, _, e2, _, _, _) =>
+      case Expr.StructPut(e1, _, e2, _, _, _) =>
         visit(e1) ++ visit(e2)
 
       case Expr.VectorLit(elms, _, _, _) =>

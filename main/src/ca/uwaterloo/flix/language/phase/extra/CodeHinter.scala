@@ -187,10 +187,10 @@ object CodeHinter {
     case Expr.StructNew(sym, fields, region, _, _, _) =>
       fields.map{case (k, v) => v}.flatMap(visitExp) ++ visitExp(region)
 
-    case Expr.StructGet(_, exp, _, _, _, _) =>
+    case Expr.StructGet(exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expr.StructPut(_, exp1, _, exp2, _, _, _) =>
+    case Expr.StructPut(exp1, _, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
     case Expr.VectorLit(exps, _, _, _) =>

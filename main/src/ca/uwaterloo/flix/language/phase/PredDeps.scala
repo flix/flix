@@ -192,10 +192,10 @@ object PredDeps {
         case (acc, (_, e)) => acc + visitExp(e)
       }
 
-    case Expr.StructGet(_, e, _, _, _, _) =>
+    case Expr.StructGet(e, _, _, _, _) =>
       visitExp(e)
 
-    case Expr.StructPut(_, e1, _, e2, _, _, _) =>
+    case Expr.StructPut(e1, _, e2, _, _, _) =>
       visitExp(e1) + visitExp(e2)
 
     case Expr.VectorLit(exps, _, _, _) =>

@@ -60,11 +60,11 @@ object AtomicOp {
 
   case object ArrayLength extends AtomicOp
 
-  case class StructNew(sym: Symbol.StructSym, fields: List[Name.Label]) extends AtomicOp
+  case class StructNew(sym: Symbol.StructSym, fields: List[Symbol.StructFieldSym]) extends AtomicOp
 
-  case class StructPut(sym: Symbol.StructSym, idx: Int, field: Name.Label) extends AtomicOp
+  case class StructGet(sym: Symbol.StructFieldSym) extends AtomicOp
 
-  case class StructGet(sym: Symbol.StructSym, idx: Int, field: Name.Label) extends AtomicOp
+  case class StructPut(sym: Symbol.StructFieldSym) extends AtomicOp
 
   case object Ref extends AtomicOp
 
