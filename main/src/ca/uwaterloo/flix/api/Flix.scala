@@ -320,7 +320,7 @@ class Flix {
       throw new IllegalArgumentException("'text' must be non-null.")
     if (sctx == null)
       throw new IllegalArgumentException("'sctx' must be non-null.")
-    addInput(name, Input.Text(name, text, stable = false))
+    addInput(name, Input.Text(name, text, stable = false, sctx))
     this
   }
 
@@ -330,14 +330,14 @@ class Flix {
   def remSourceCode(name: String): Flix = {
     if (name == null)
       throw new IllegalArgumentException("'name' must be non-null.")
-    remInput(name, Input.Text(name, "", stable = false))
+    remInput(name, Input.Text(name, "", stable = false, SecurityContext.AllPermissions))
     this
   }
 
   /**
     * Adds the given path `p` as Flix source file.
     */
-  def addFlix(p: Path): Flix = {
+  def addFlix(p: Path)(implicit sctx: SecurityContext): Flix = {
     if (p == null)
       throw new IllegalArgumentException(s"'p' must be non-null.")
     if (!Files.exists(p))
@@ -349,14 +349,14 @@ class Flix {
     if (!p.getFileName.toString.endsWith(".flix"))
       throw new IllegalArgumentException(s"'$p' must be a *.flix file.")
 
-    addInput(p.toString, Input.TxtFile(p))
+    addInput(p.toString, Input.TxtFile(p, sctx))
     this
   }
 
   /**
     * Adds the given path `p` as a Flix package file.
     */
-  def addPkg(p: Path): Flix = {
+  def addPkg(p: Path)(implicit sctx: SecurityContext): Flix = {
     if (p == null)
       throw new IllegalArgumentException(s"'p' must be non-null.")
     if (!Files.exists(p))
@@ -368,7 +368,7 @@ class Flix {
     if (!p.getFileName.toString.endsWith(".fpkg"))
       throw new IllegalArgumentException(s"'$p' must be a *.pkg file.")
 
-    addInput(p.toString, Input.PkgFile(p))
+    addInput(p.toString, Input.PkgFile(p, sctx))
     this
   }
 
@@ -379,7 +379,7 @@ class Flix {
     if (!p.getFileName.toString.endsWith(".flix"))
       throw new IllegalArgumentException(s"'$p' must be a *.flix file.")
 
-    remInput(p.toString, Input.TxtFile(p))
+    remInput(p.toString, Input.TxtFile(p, SecurityContext.NoPermissions))
     this
   }
 
@@ -421,7 +421,7 @@ class Flix {
     case None => // nop
     case Some(_) =>
       changeSet = changeSet.markChanged(input)
-      inputs += name -> Input.Text(name, "", stable = false)
+      inputs += name -> Input.Text(name, "", stable = false, SecurityContext.NoPermissions)
   }
 
   /**
@@ -663,7 +663,7 @@ class Flix {
     * Returns the inputs for the given list of (path, text) pairs.
     */
   private def getLibraryInputs(xs: List[(String, String)]): List[Input] = xs.foldLeft(List.empty[Input]) {
-    case (xs, (virtualPath, text)) => Input.Text(virtualPath, text, stable = true) :: xs
+    case (xs, (virtualPath, text)) => Input.Text(virtualPath, text, stable = true, SecurityContext.AllPermissions) :: xs
   }
 
   /**
