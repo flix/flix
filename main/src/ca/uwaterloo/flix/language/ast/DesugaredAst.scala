@@ -50,8 +50,6 @@ object DesugaredAst {
 
     case class Struct(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparams: List[TypeParam], fields: List[StructField], loc: SourceLocation) extends Declaration
 
-    case class StructField(name: Name.Label, tpe: Type, loc: SourceLocation)
-
     case class RestrictableEnum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, index: TypeParam, tparams: List[TypeParam], derives: Derivations, cases: List[RestrictableCase], loc: SourceLocation) extends Declaration
 
     case class TypeAlias(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparams: List[TypeParam], tpe: Type, loc: SourceLocation) extends Declaration
@@ -382,6 +380,8 @@ object DesugaredAst {
   }
 
   case class Case(ident: Name.Ident, tpe: Type, loc: SourceLocation)
+
+  case class StructField(name: Name.Label, tpe: Type, loc: SourceLocation)
 
   case class RestrictableCase(ident: Name.Ident, tpe: Type, loc: SourceLocation)
 

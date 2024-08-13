@@ -363,8 +363,8 @@ object Namer {
   /**
     * Performs naming on the given field.
     */
-  private def visitField(field0: DesugaredAst.Declaration.StructField)(implicit flix: Flix, sctx: SharedContext): NamedAst.Declaration.StructField = field0 match {
-    case DesugaredAst.Declaration.StructField(ident, tpe, loc) =>
+  private def visitField(field0: DesugaredAst.StructField)(implicit flix: Flix, sctx: SharedContext): NamedAst.Declaration.StructField = field0 match {
+    case DesugaredAst.StructField(ident, tpe, loc) =>
       val t = visitType(tpe)
       NamedAst.Declaration.StructField(ident, t, loc)
   }
