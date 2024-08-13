@@ -166,7 +166,7 @@ object Symbol {
   }
 
   /**
-    * Returns the struct field symbol for the given name `name` in the given struct `struct`
+    * Returns the struct field symbol for the given name `name` which has position `idx` in the given struct `struct`
     */
   def mkStructFieldSym(struct: Symbol.StructSym, idx: Int, name: Name.Label): StructFieldSym = {
     new StructFieldSym(struct, name.name, idx, name.loc)
