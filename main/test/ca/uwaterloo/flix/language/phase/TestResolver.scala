@@ -1661,7 +1661,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
   // This test is temporarily disabled because the creation of S1 is valid
   // and thus the compiler attempts to continue to compile this program and
   // fails in future unimplemented phases.
-  ignore("ResolutionError.UndefinedStruct.03") {
+  test("ResolutionError.UndefinedStruct.03") {
     val input =
       """
         |mod M {
@@ -1681,7 +1681,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
 
   // A bug was introduced into the kinder when it was refactored, so this test fails, but
   // will reenable it once my next struct kinder support pr is merged
-  ignore("ResoutionError.MissingStructField.01") {
+  test("ResoutionError.MissingStructField.01") {
     val input =
       """
         |mod S {

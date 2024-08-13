@@ -314,7 +314,7 @@ object Typer {
    */
   private def visitStructs(root: KindedAst.Root)(implicit flix: Flix): Map[Symbol.StructSym, TypedAst.Struct] = {
     // Visit every struct in the ast.
-    val result = root.structs.toList.map {
+    val result = root.structs.map {
       case (_, struct) => visitStruct(struct, root)
     }
 

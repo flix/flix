@@ -7,4 +7,5 @@ class CompilerSuite extends FlixSuite(incremental = true) {
 
   mkTestDir("main/test/flix")
 
+
 }
