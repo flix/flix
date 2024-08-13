@@ -330,7 +330,7 @@ object Typer {
       val tparams = tparams0.map(visitTypeParam(_, root))
       val fields = fields0.zipWithIndex.map {
         case (field, idx) =>
-          field.name -> TypedAst.StructField(field.name, field.tpe, idx, loc)
+          field.name -> TypedAst.StructField(field.name, field.tpe, loc)
       }
 
       sym -> TypedAst.Struct(doc, ann, mod, sym, tparams, sc, fields.toMap, loc)

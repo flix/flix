@@ -804,7 +804,8 @@ object GenExpression {
         // Invoking the constructor
         mv.visitMethodInsn(INVOKESPECIAL, internalClassName, "<init>", constructorDescriptor.toDescriptor, false)
 
-      case AtomicOp.StructGet(_, idx, _) =>
+      case AtomicOp.StructGet(field) =>
+        val idx = field.idx
         val List(exp) = exps
         val MonoType.Struct(_, elmTypes, _) = exp.tpe
         val structType = BackendObjType.Struct(elmTypes.map(BackendType.toErasedBackendType))
@@ -813,7 +814,8 @@ object GenExpression {
         // Retrieving the field `field${offset}`
         mv.visitFieldInsn(GETFIELD, structType.jvmName.toInternalName, s"field$idx", JvmOps.getErasedJvmType(tpe).toDescriptor)
 
-      case AtomicOp.StructPut(_, idx, _) =>
+      case AtomicOp.StructPut(field) =>
+        val idx = field.idx
         val List(exp1, exp2) = exps
         val MonoType.Struct(_, elmTypes, _) = exp1.tpe
         val structType = BackendObjType.Struct(elmTypes.map(BackendType.toErasedBackendType))

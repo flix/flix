@@ -530,16 +530,16 @@ object Lowering {
       val (names, es) = fields.unzip
       LoweredAst.Expr.ApplyAtomic(AtomicOp.StructNew(sym, names), region :: es, tpe, eff, loc)
 
-    case TypedAst.Expr.StructGet(sym, exp0, field, tpe, eff, loc) =>
+    case TypedAst.Expr.StructGet(exp0, field, tpe, eff, loc) =>
       val exp = visitExp(exp0)
-      val idx = root.structs(sym).fields(field).idx
-      LoweredAst.Expr.ApplyAtomic(AtomicOp.StructGet(sym, idx, field), List(exp), tpe, eff, loc)
+      val idx = field.idx
+      LoweredAst.Expr.ApplyAtomic(AtomicOp.StructGet(field), List(exp), tpe, eff, loc)
 
-    case TypedAst.Expr.StructPut(sym, exp0, field, exp1, tpe, eff, loc) =>
+    case TypedAst.Expr.StructPut(exp0, field, exp1, tpe, eff, loc) =>
       val struct = visitExp(exp0)
       val rhs = visitExp(exp1)
-      val idx = root.structs(sym).fields(field).idx
-      LoweredAst.Expr.ApplyAtomic(AtomicOp.StructPut(sym, idx, field), List(struct, rhs), tpe, eff, loc)
+      val idx = field.idx
+      LoweredAst.Expr.ApplyAtomic(AtomicOp.StructPut(field), List(struct, rhs), tpe, eff, loc)
 
     case TypedAst.Expr.VectorLit(exps, tpe, eff, loc) =>
       val es = visitExps(exps)

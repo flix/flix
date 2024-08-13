@@ -52,7 +52,7 @@ object ReducedAst {
 
   case class Op(sym: Symbol.OpSym, ann: Ast.Annotations, mod: Ast.Modifiers, fparams: List[FormalParam], tpe: MonoType, purity: Purity, loc: SourceLocation)
 
-  case class Struct(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.StructSym, fields: Map[Name.Label, StructField], loc: SourceLocation)
+  case class Struct(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.StructSym, fields: Map[Symbol.StructFieldSym, StructField], loc: SourceLocation)
 
   sealed trait Expr {
     def tpe: MonoType
@@ -104,7 +104,7 @@ object ReducedAst {
 
   }
 
-  case class StructField(name: Name.Label, idx: Int, tpe: Type, loc: SourceLocation)
+  case class StructField(name: Symbol.StructFieldSym, idx: Int, tpe: Type, loc: SourceLocation)
 
   case class AnonClass(name: String, clazz: java.lang.Class[_], tpe: MonoType, methods: List[JvmMethod], loc: SourceLocation)
 

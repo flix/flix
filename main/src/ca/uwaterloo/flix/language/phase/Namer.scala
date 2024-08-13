@@ -140,7 +140,8 @@ object Namer {
       val table1 = tryAddToTable(table0, sym.namespace, sym.name, decl)
       cases.foldLeft(table1)(tableDecl)
 
-    case NamedAst.Declaration.Struct(_, _, _, sym, _, _, _) =>
+    case NamedAst.Declaration.Struct(_, _, _, sym, _, _, _, _) =>
+      // TODO: Add field here too
       tryAddToTable(table0, sym.namespace, sym.name, decl)
 
     case NamedAst.Declaration.RestrictableEnum(_, _, _, sym, _, _, _, cases, _) =>
@@ -320,8 +321,9 @@ object Namer {
 
       val mod = visitModifiers(mod0, ns0)
       val fields = fields0.map(visitField)
+      val indices = fields.map(_.name).zipWithIndex.toMap
 
-      NamedAst.Declaration.Struct(doc, ann, mod, sym, tparams, fields, loc)
+      NamedAst.Declaration.Struct(doc, ann, mod, sym, tparams, fields, indices, loc)
   }
 
   /**
@@ -1585,7 +1587,7 @@ object Namer {
     case NamedAst.Declaration.Sig(sym, _, _) => sym.loc
     case NamedAst.Declaration.Def(sym, _, _) => sym.loc
     case NamedAst.Declaration.Enum(_, _, _, sym, _, _, _, _) => sym.loc
-    case NamedAst.Declaration.Struct(_, _, _, sym, _, _, _) => sym.loc
+    case NamedAst.Declaration.Struct(_, _, _, sym, _, _, _, _) => sym.loc
     case NamedAst.Declaration.RestrictableEnum(_, _, _, sym, _, _, _, _, _) => sym.loc
     case NamedAst.Declaration.TypeAlias(_, _, _, sym, _, _, _) => sym.loc
     case NamedAst.Declaration.Effect(_, _, _, sym, _, _) => sym.loc

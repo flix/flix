@@ -304,18 +304,18 @@ object TypeReconstruction {
       val eff = subst(evar)
       TypedAst.Expr.StructNew(sym, fields, region, tpe, eff, loc)
 
-    case KindedAst.Expr.StructGet(sym, exp0, field, tvar, evar, loc) =>
+    case KindedAst.Expr.StructGet(exp0, field, tvar, evar, loc) =>
       val e = visitExp(exp0)
       val tpe = subst(tvar)
       val eff = subst(evar)
-      TypedAst.Expr.StructGet(sym, e, field, tpe, eff, loc)
+      TypedAst.Expr.StructGet(e, field, tpe, eff, loc)
 
-    case KindedAst.Expr.StructPut(sym, exp1, field, exp2, tvar, evar, loc) =>
+    case KindedAst.Expr.StructPut(exp1, field, exp2, tvar, evar, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val tpe = subst(tvar)
       val eff = subst(evar)
-      TypedAst.Expr.StructPut(sym, e1, field, e2, tpe, eff, loc)
+      TypedAst.Expr.StructPut(e1, field, e2, tpe, eff, loc)
 
     case KindedAst.Expr.VectorLit(exps, tvar, evar, loc) =>
       val es = exps.map(visitExp(_))

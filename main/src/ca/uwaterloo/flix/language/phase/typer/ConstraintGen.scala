@@ -596,8 +596,8 @@ object ConstraintGen {
         val resEff = evar
         (resTpe, resEff)
 
-      case Expr.StructGet(sym, exp, field, tvar, evar, loc) =>
-        val (instantiatedFieldTpes, structTpe, regionVar) = instantiateStruct(sym, root.structs)
+      case Expr.StructGet(exp, field, tvar, evar, loc) =>
+        val (instantiatedFieldTpes, structTpe, regionVar) = instantiateStruct(field.structSym, root.structs)
         val (tpe, eff) = visitExp(exp)
         c.expectType(structTpe, tpe, exp.loc)
         val fieldTpe = instantiatedFieldTpes(field)
@@ -607,8 +607,8 @@ object ConstraintGen {
         val resEff = evar
         (resTpe, resEff)
 
-      case Expr.StructPut(sym, exp1, field, exp2, tvar, evar, loc) =>
-        val (instantiatedFieldTpes, structTpe, regionVar) = instantiateStruct(sym, root.structs)
+      case Expr.StructPut(exp1, field, exp2, tvar, evar, loc) =>
+        val (instantiatedFieldTpes, structTpe, regionVar) = instantiateStruct(field.structSym, root.structs)
         val (tpe1, eff1) = visitExp(exp1)
         val (tpe2, eff2) = visitExp(exp2)
         c.expectType(structTpe, tpe1, exp1.loc)
@@ -1275,7 +1275,7 @@ object ConstraintGen {
     *   The second element of the return tuple would be(locations omitted) `Apply(Apply(Cst(Struct(S)), v'), r')`
     *   The third element of the return tuple would be `r'`
     */
-  private def instantiateStruct(sym: Symbol.StructSym, structs: Map[Symbol.StructSym, KindedAst.Struct])(implicit flix: Flix) : (Map[Name.Label, Type], Type, Type.Var) = {
+  private def instantiateStruct(sym: Symbol.StructSym, structs: Map[Symbol.StructSym, KindedAst.Struct])(implicit flix: Flix) : (Map[Symbol.StructFieldSym, Type], Type, Type.Var) = {
     val struct = structs(sym)
     assert(struct.tparams.last.sym.kind == Kind.Eff)
     val fields = struct.fields
