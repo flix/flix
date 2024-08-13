@@ -330,7 +330,7 @@ class Flix {
   def remSourceCode(name: String): Flix = {
     if (name == null)
       throw new IllegalArgumentException("'name' must be non-null.")
-    remInput(name, Input.Text(name, "", stable = false, SecurityContext.AllPermissions))
+    remInput(name, Input.Text(name, "", stable = false, /* unused */ SecurityContext.NoPermissions))
     this
   }
 
@@ -379,7 +379,7 @@ class Flix {
     if (!p.getFileName.toString.endsWith(".flix"))
       throw new IllegalArgumentException(s"'$p' must be a *.flix file.")
 
-    remInput(p.toString, Input.TxtFile(p, SecurityContext.NoPermissions))
+    remInput(p.toString, Input.TxtFile(p, /* unused */ SecurityContext.NoPermissions))
     this
   }
 
@@ -421,7 +421,7 @@ class Flix {
     case None => // nop
     case Some(_) =>
       changeSet = changeSet.markChanged(input)
-      inputs += name -> Input.Text(name, "", stable = false, SecurityContext.NoPermissions)
+      inputs += name -> Input.Text(name, "", stable = false, /* unused */ SecurityContext.NoPermissions)
   }
 
   /**
