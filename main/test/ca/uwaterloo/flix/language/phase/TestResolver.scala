@@ -410,7 +410,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.CyclicTypeAliases](result)
   }
 
-  ignore("CyclicTypeAliases.06") {
+  test("CyclicTypeAliases.06") {
     val input =
       s"""
          |struct S[t, r] {
