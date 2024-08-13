@@ -360,7 +360,7 @@ object Resolver {
       resolveDef(defn, None, env0, taenv, ns0, root)
     case enum@NamedAst.Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc) =>
       resolveEnum(enum, env0, taenv, ns0, root)
-    case struct@NamedAst.Declaration.Struct(_, _, _, _, _, _, _) =>
+    case struct@NamedAst.Declaration.Struct(_, _, _, _, _, _, _, _) =>
       resolveStruct(struct, env0, taenv, ns0, root)
     case enum@NamedAst.Declaration.RestrictableEnum(doc, ann, mod, sym, index, tparams, derives, cases, loc) =>
       resolveRestrictableEnum(enum, env0, taenv, ns0, root)
@@ -568,7 +568,7 @@ object Resolver {
     * Performs name resolution on the given struct `s0` in the given namespace `ns0`.
     */
   def resolveStruct(s0: NamedAst.Declaration.Struct, env0: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration.Struct, ResolutionError] = s0 match {
-    case NamedAst.Declaration.Struct(doc, ann, mod, sym, tparams0, fields0, loc) =>
+    case NamedAst.Declaration.Struct(doc, ann, mod, sym, tparams0, fields0, _, loc) =>
       val tparamsVal = resolveTypeParams(tparams0, env0, ns0, root)
       flatMapN(tparamsVal) {
         case tparams =>
@@ -1401,7 +1401,7 @@ object Resolver {
                 Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
               } else {
                 val eVal = visitExp(e, env0)
-                val fieldSym = Symbol.mkStructFieldSym(st.sym, field)
+                val fieldSym = Symbol.mkStructFieldSym(st.sym, st.indices(field), field)
                 mapN(eVal) {
                   case e => ResolvedAst.Expr.StructGet(st.sym, e, fieldSym, loc)
                 }
@@ -1420,7 +1420,7 @@ object Resolver {
               } else {
                 val e1Val = visitExp(e1, env0)
                 val e2Val = visitExp(e2, env0)
-                val fieldSym = Symbol.mkStructFieldSym(st.sym, field)
+                val fieldSym = Symbol.mkStructFieldSym(st.sym, st.indices(field), field)
                 mapN(e1Val, e2Val) {
                   case (e1, e2) => ResolvedAst.Expr.StructPut(st.sym, e1, fieldSym, e2, loc)
                 }
@@ -3015,7 +3015,7 @@ object Resolver {
         case Declaration.Namespace(sym, usesAndImports, decls, loc) => sym.ns
         case Declaration.Trait(doc, ann, mod, sym, tparam, superClasses, _, sigs, laws, loc) => sym.namespace :+ sym.name
         case Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc) => sym.namespace :+ sym.name
-        case Declaration.Struct(doc, ann, mod, sym, tparams, fields, loc) => sym.namespace :+ sym.name
+        case Declaration.Struct(doc, ann, mod, sym, tparams, fields, indices, loc) => sym.namespace :+ sym.name
         case Declaration.RestrictableEnum(doc, ann, mod, sym, ident, tparams, derives, cases, loc) => sym.namespace :+ sym.name
         case Declaration.Effect(doc, ann, mod, sym, ops, loc) => sym.namespace :+ sym.name
       }
@@ -3025,7 +3025,7 @@ object Resolver {
         case Declaration.Namespace(sym, usesAndImports, decls, loc) => sym.ns
         case Declaration.Trait(doc, ann, mod, sym, tparam, superTraits, _, sigs, laws, loc) => sym.namespace :+ sym.name
         case Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc) => sym.namespace :+ sym.name
-        case Declaration.Struct(doc, ann, mod, sym, tparams, fields, loc) => sym.namespace :+ sym.name
+        case Declaration.Struct(doc, ann, mod, sym, tparams, fields, indices, loc) => sym.namespace :+ sym.name
         case Declaration.RestrictableEnum(doc, ann, mod, sym, ident, tparams, derives, cases, loc) => sym.namespace :+ sym.name
         case Declaration.Effect(doc, ann, mod, sym, ops, loc) => sym.namespace :+ sym.name
       }
@@ -3735,7 +3735,7 @@ object Resolver {
     case NamedAst.Declaration.Sig(sym, spec, exp) => sym
     case NamedAst.Declaration.Def(sym, spec, exp) => sym
     case NamedAst.Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc) => sym
-    case NamedAst.Declaration.Struct(doc, ann, mod, sym, tparams, fields, loc) => sym
+    case NamedAst.Declaration.Struct(doc, ann, mod, sym, tparams, fields, indices, loc) => sym
     case NamedAst.Declaration.RestrictableEnum(doc, ann, mod, sym, ident, tparams, derives, cases, loc) => sym
     case NamedAst.Declaration.TypeAlias(doc, ann, mod, sym, tparams, tpe, loc) => sym
     case NamedAst.Declaration.AssocTypeSig(doc, mod, sym, tparams, kind, tpe, loc) => sym

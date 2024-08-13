@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.api.lsp
 // JOE TODO: One day be able to index structs + fields
+// JOE TODO: Move structfield to declaration everywhere
 
 import ca.uwaterloo.flix.api.lsp.Index.traverse
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
