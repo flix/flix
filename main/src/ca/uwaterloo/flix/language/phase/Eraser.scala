@@ -106,8 +106,8 @@ object Eraser {
         case AtomicOp.ArrayStore => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.ArrayLength => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.StructNew(_, _) => ApplyAtomic(op, es, t, purity, loc)
-        case AtomicOp.StructGet(_, _, _) => ApplyAtomic(op, es, t, purity, loc)
-        case AtomicOp.StructPut(_, _, _) => ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.StructGet(_) => castExp(ApplyAtomic(op, es, erase(tpe), purity, loc), t, purity, loc)
+        case AtomicOp.StructPut(_) => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Ref => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Deref =>
           castExp(ApplyAtomic(op, es, erase(tpe), purity, loc), t, purity, loc)

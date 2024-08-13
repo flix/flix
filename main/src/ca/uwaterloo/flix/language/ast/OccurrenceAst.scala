@@ -83,7 +83,7 @@ object OccurrenceAst {
 
   }
 
-  case class StructField(name: Name.Label, idx: Int, tpe: Type, loc: SourceLocation)
+  case class StructField(sym: Symbol.StructFieldSym, idx: Int, tpe: Type, loc: SourceLocation)
 
   case class JvmMethod(ident: Name.Ident, fparams: List[OccurrenceAst.FormalParam], clo: OccurrenceAst.Expr, retTpe: MonoType, purity: Purity, loc: SourceLocation)
 

@@ -268,14 +268,14 @@ object Stratifier {
       val region = visitExp(region0)
       Expr.StructNew(sym, fields, region, tpe, eff, loc)
 
-    case Expr.StructGet(sym, e0, field, tpe, eff, loc) =>
+    case Expr.StructGet(e0, field, tpe, eff, loc) =>
       val e = visitExp(e0)
-      Expr.StructGet(sym, e, field, tpe, eff, loc)
+      Expr.StructGet(e, field, tpe, eff, loc)
 
-    case Expr.StructPut(sym, exp1, field, exp2, tpe, eff, loc) =>
+    case Expr.StructPut(exp1, field, exp2, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      Expr.StructPut(sym, e1, field, e2, tpe, eff, loc)
+      Expr.StructPut(e1, field, e2, tpe, eff, loc)
 
     case Expr.VectorLit(exps, tpe, eff, loc) =>
       val es = visitExps(exps)

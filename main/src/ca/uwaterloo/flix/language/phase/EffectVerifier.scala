@@ -205,10 +205,10 @@ object EffectVerifier {
       expectType(expected, actual, loc)
       fields.map {case(k, v) => v}.map(visitExp)
       visitExp(region)
-    case Expr.StructGet(_, e, _, t, _, _) =>
+    case Expr.StructGet(e, _, t, _, _) =>
       // JOE TODO region stuff
       visitExp(e)
-    case Expr.StructPut(_, e1, _, e2, t, _, _) =>
+    case Expr.StructPut(e1, _, e2, t, _, _) =>
       // JOE TODO region stuff
       visitExp(e1)
       visitExp(e2)
