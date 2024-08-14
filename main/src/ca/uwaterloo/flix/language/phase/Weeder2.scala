@@ -483,13 +483,14 @@ object Weeder2 {
     private def visitStructField(tree: Tree): Validation[StructField, CompilationMessage] = {
       expect(tree, TreeKind.StructField)
       mapN(
+        pickModifiers(tree, allowed = Set(TokenKind.KeywordPub, TokenKind.KeywordMut)),
         pickNameIdent(tree),
         Types.pickType(tree)
       ) {
-        (ident, ttype) =>
+        (mod, ident, ttype) =>
           // Make a source location that spans the name and type
           val loc = SourceLocation(isReal = true, ident.loc.sp1, tree.loc.sp2)
-          StructField(Name.mkLabel(ident), ttype, loc)
+          StructField(mod, Name.mkLabel(ident), ttype, loc)
       }
     }
     private def visitTypeAliasDecl(tree: Tree): Validation[Declaration.TypeAlias, CompilationMessage] = {
@@ -666,6 +667,7 @@ object Weeder2 {
       TokenKind.KeywordSealed,
       TokenKind.KeywordLawful,
       TokenKind.KeywordPub,
+      TokenKind.KeywordMut,
       TokenKind.KeywordOverride,
       TokenKind.KeywordInline)
 
@@ -701,6 +703,7 @@ object Weeder2 {
         case TokenKind.KeywordSealed => Validation.success(Ast.Modifier.Sealed)
         case TokenKind.KeywordLawful => Validation.success(Ast.Modifier.Lawful)
         case TokenKind.KeywordPub => Validation.success(Ast.Modifier.Public)
+        case TokenKind.KeywordMut => Validation.success(Ast.Modifier.Mutable)
         case TokenKind.KeywordOverride => Validation.success(Ast.Modifier.Override)
         case kind => throw InternalCompilerException(s"Parser passed unknown modifier '$kind'", token.mkSourceLocation())
       }

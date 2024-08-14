@@ -1165,6 +1165,7 @@ object Parser2 {
     private def structField()(implicit s: State): Mark.Closed = {
       val mark = open()
       docComment()
+      modifiers()
       name(NAME_FIELD, context = SyntacticContext.Decl.Struct)
       expect(TokenKind.Colon, SyntacticContext.Decl.Struct)
       Type.ttype()

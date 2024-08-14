@@ -320,9 +320,11 @@ object Namer {
 
       val mod = visitModifiers(mod0, ns0)
       val fields = fields0.map(visitField)
-      val indices = fields.map(_.sym).zipWithIndex.toMap
+      val indicesAndMut = fields0.zipWithIndex.map {
+        case (field, idx) => field.name -> (idx, field.mod.isMutable)
+      }
 
-      NamedAst.Declaration.Struct(doc, ann, mod, sym, tparams, fields, indices, loc)
+      NamedAst.Declaration.Struct(doc, ann, mod, sym, tparams, fields, indicesAndMut.toMap, loc)
   }
 
   /**
@@ -364,9 +366,9 @@ object Namer {
     * Performs naming on the given field.
     */
   private def visitField(field0: DesugaredAst.StructField)(implicit flix: Flix, sctx: SharedContext): NamedAst.Declaration.StructField = field0 match {
-    case DesugaredAst.StructField(ident, tpe, loc) =>
+    case DesugaredAst.StructField(mod, ident, tpe, loc) =>
       val t = visitType(tpe)
-      NamedAst.Declaration.StructField(ident, t, loc)
+      NamedAst.Declaration.StructField(mod, ident, t, loc)
   }
 
   /**

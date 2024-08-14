@@ -105,6 +105,7 @@ sealed trait TokenKind {
       case TokenKind.KeywordMaskedCast => "'masked_cast'"
       case TokenKind.KeywordMatch => "'match'"
       case TokenKind.KeywordMod => "'mod'"
+      case TokenKind.KeywordMut => "'mut'"
       case TokenKind.KeywordNew => "'new'"
       case TokenKind.KeywordNot => "'not'"
       case TokenKind.KeywordNull => "'null'"
@@ -261,6 +262,7 @@ sealed trait TokenKind {
     case TokenKind.KeywordMaskedCast => true
     case TokenKind.KeywordMatch => true
     case TokenKind.KeywordMod => true
+    case TokenKind.KeywordMut => true
     case TokenKind.KeywordNew => true
     case TokenKind.KeywordNot => true
     case TokenKind.KeywordNull => true
@@ -309,6 +311,7 @@ sealed trait TokenKind {
     case TokenKind.KeywordSealed
          | TokenKind.KeywordLawful
          | TokenKind.KeywordPub
+         | TokenKind.KeywordMut
          | TokenKind.KeywordInline
          | TokenKind.KeywordOverride => true
     case _ => false
@@ -768,6 +771,8 @@ object TokenKind {
   case object KeywordMatch extends TokenKind
 
   case object KeywordMod extends TokenKind
+
+  case object KeywordMut extends TokenKind
 
   case object KeywordNew extends TokenKind
 

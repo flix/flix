@@ -373,6 +373,11 @@ object Ast {
     def isPublic: Boolean = mod contains Modifier.Public
 
     /**
+     * Returns `true` if these modifiers contain the mutable modifier.
+     */
+    def isMutable: Boolean = mod contains Modifier.Mutable
+
+    /**
       * Returns `true` if these modifiers contain the sealed modifier.
       */
     def isSealed: Boolean = mod contains Modifier.Sealed
@@ -395,6 +400,12 @@ object Ast {
   sealed trait Modifier
 
   object Modifier {
+
+    /**
+      * The mutable modifier.
+      */
+
+    case object Mutable extends Modifier
 
     /**
       * The lawful modifier.
