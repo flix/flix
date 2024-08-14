@@ -27,8 +27,8 @@ import ca.uwaterloo.flix.language.ast.shared.Source
  * more children. Each child is either a [[Child.TokenChild]] or a [[Child.TreeChild]].
  *
  * Note that [[SyntaxTree]] offers few guarantees. In particular:
- *     - There is no guarantee that a specific node is present or absent as a child.
- *     - There is no guarantee that a specific node has a specific number of children.
+ *   - There is no guarantee that a specific node is present or absent as a child.
+ *   - There is no guarantee that a specific node has a specific number of children.
  */
 object SyntaxTree {
 

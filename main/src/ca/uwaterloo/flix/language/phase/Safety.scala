@@ -19,12 +19,12 @@ import scala.annotation.tailrec
 /**
   * Performs safety and well-formedness checks on:
   *
-  *  - Datalog constraints.
-  *  - New object expressions.
-  *  - CheckedCast expressions.
-  *  - UncheckedCast expressions.
-  *  - TypeMatch expressions.
-  *  - Throw expressions
+  *   - Datalog constraints.
+  *   - New object expressions.
+  *   - CheckedCast expressions.
+  *   - UncheckedCast expressions.
+  *   - TypeMatch expressions.
+  *   - Throw expressions
   */
 object Safety {
 
@@ -564,8 +564,8 @@ object Safety {
   /**
     * Checks if there are any impossible casts, i.e. casts that always fail.
     *
-    * - No primitive type can be cast to a reference type and vice-versa.
-    * - No Bool type can be cast to a non-Bool type  and vice-versa.
+    *   - No primitive type can be cast to a reference type and vice-versa.
+    *   - No Bool type can be cast to a non-Bool type  and vice-versa.
     */
   private def verifyUncheckedCast(cast: Expr.UncheckedCast)(implicit flix: Flix): List[SafetyError.ImpossibleUncheckedCast] = {
     val tpe1 = Type.eraseAliases(cast.exp.tpe).baseType
