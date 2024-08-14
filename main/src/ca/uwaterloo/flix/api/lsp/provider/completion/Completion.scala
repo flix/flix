@@ -260,6 +260,14 @@ sealed trait Completion {
         kind = CompletionItemKind.Method
       )
 
+    case Completion.StructFieldCompletion(field) =>
+      CompletionItem(
+        label = field,
+        sortText = Priority.low(field),
+        textEdit = TextEdit(context.range, field),
+        kind = CompletionItemKind.Property
+      )
+
     case Completion.MethodCompletion(ident, method) =>
       val argsWithName = method.getParameters.map(_.getName)
       val argsWithNameAndType = method.getParameters.map(p => p.getName + ": " + p.getType.getSimpleName)
@@ -491,6 +499,13 @@ object Completion {
     * @param arity   the arity of the enumTag.
     */
   case class EnumTagCompletion(enumSym: EnumSym, cas: TypedAst.Case, arity: Int) extends Completion
+
+  /**
+   * Represents a struct field completion.
+   *
+   * @param field the candidate field.
+   */
+  case class StructFieldCompletion(field: String) extends Completion
 
   /**
     * Represents a Module completion.
