@@ -334,15 +334,16 @@ object Indexer {
       }
       val parent = Entity.Exp(exp0)
       val i2 = Index.useOf(sym, loc)
-      i0 ++ i1 ++ i2
+      val fieldSymIndices = fields.map { case (sym, _) => Index.useOf(sym, sym.loc, parent) }
+      fieldSymIndices.foldLeft(i0 ++ i1 ++ i2)(_ ++ _)
 
     case Expr.StructGet(exp, field, tpe, eff, loc) =>
       val parent = Entity.Exp(exp0)
-      visitExp(exp) ++ Index.occurrenceOf(exp0) ++ Index.useOf(field, loc, parent)
+      visitExp(exp) ++ Index.occurrenceOf(exp0) ++ Index.useOf(field, field.loc, parent)
 
     case Expr.StructPut(exp1, field, exp2, tpe, eff, loc) =>
       val parent = Entity.Exp(exp0)
-      visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0) ++ Index.useOf(field, loc, parent)
+      visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0) ++ Index.useOf(field, field.loc, parent)
 
     case Expr.VectorLit(exps, _, _, _) =>
       visitExps(exps) ++ Index.occurrenceOf(exp0)
