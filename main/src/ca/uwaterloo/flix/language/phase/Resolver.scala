@@ -992,8 +992,8 @@ object Resolver {
       }
 
       /**
-       * Resolves the tag application.
-       */
+        * Resolves the tag application.
+        */
       def visitApplyRestrictableTag(caze: NamedAst.Declaration.RestrictableCase, exps: List[NamedAst.Expr], isOpen: Boolean, env0: ListMap[String, Resolution], innerLoc: SourceLocation, outerLoc: SourceLocation): Validation[ResolvedAst.Expr, ResolutionError] = {
         val esVal = traverse(exps)(visitExp(_, env0))
         mapN(esVal) {
@@ -1010,7 +1010,7 @@ object Resolver {
 
       /**
         * Local visitor.
-       */
+        */
       def visitExp(e0: NamedAst.Expr, env0: ListMap[String, Resolution]): Validation[ResolvedAst.Expr, ResolutionError] = e0 match {
 
         case NamedAst.Expr.Ambiguous(qname, loc) =>
