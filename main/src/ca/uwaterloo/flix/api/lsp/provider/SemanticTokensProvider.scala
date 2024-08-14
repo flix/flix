@@ -200,7 +200,7 @@ object SemanticTokensProvider {
         visitTypeParams(tparams),
         fields.foldLeft(Iterator.empty[SemanticToken]) {
           case (acc, (_, field)) => acc ++ visitField(field)
-        },
+        }
       )
   }
 
