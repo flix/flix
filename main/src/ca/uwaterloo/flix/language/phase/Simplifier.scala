@@ -286,18 +286,6 @@ object Simplifier {
             val substitutedStructFieldTypes = struct.fields.map { f =>
               subst(f.tpe).typeConstructor match {
                 case Some(value) => value match {
-                  case TypeConstructor.AnyType | TypeConstructor.Unit | TypeConstructor.Null | TypeConstructor.BigDecimal |
-                       TypeConstructor.BigInt | TypeConstructor.Str | TypeConstructor.Regex | TypeConstructor.Arrow(_) |
-                       TypeConstructor.RecordRowEmpty | TypeConstructor.RecordRowExtend(_) | TypeConstructor.Record | TypeConstructor.SchemaRowEmpty |
-                       TypeConstructor.SchemaRowExtend(_) | TypeConstructor.Schema | TypeConstructor.Sender | TypeConstructor.Receiver |
-                       TypeConstructor.Lazy | TypeConstructor.Enum(_, _) | TypeConstructor.Struct(_, _) | TypeConstructor.RestrictableEnum(_, _)  |
-                       TypeConstructor.Native(_) | TypeConstructor.JvmConstructor(_) | TypeConstructor.JvmMethod(_) | TypeConstructor.MethodReturnType |
-                       TypeConstructor.Array | TypeConstructor.Vector | TypeConstructor.Ref | TypeConstructor.Tuple(_) | TypeConstructor.Relation | TypeConstructor.Lattice |
-                       TypeConstructor.True | TypeConstructor.False | TypeConstructor.Not | TypeConstructor.And | TypeConstructor.Or | TypeConstructor.Pure |
-                       TypeConstructor.Univ | TypeConstructor.Complement | TypeConstructor.Union | TypeConstructor.Intersection | TypeConstructor.Effect(_) |
-                       TypeConstructor.CaseComplement(_) | TypeConstructor.CaseUnion(_) | TypeConstructor.CaseIntersection(_) | TypeConstructor.CaseSet(_, _) |
-                       TypeConstructor.RegionToStar | TypeConstructor.Error(_, _) | TypeConstructor.Void =>
-                    MonoType.Object
                   case TypeConstructor.Bool => MonoType.Bool
                   case TypeConstructor.Char => MonoType.Char
                   case TypeConstructor.Float32 => MonoType.Float32
@@ -306,6 +294,7 @@ object Simplifier {
                   case TypeConstructor.Int16 => MonoType.Int16
                   case TypeConstructor.Int32 => MonoType.Int32
                   case TypeConstructor.Int64 => MonoType.Int64
+                  case _ => MonoType.Object
                 }
                 case None => throw InternalCompilerException(s"Unexpected type: $tpe", tpe.loc)
               }
