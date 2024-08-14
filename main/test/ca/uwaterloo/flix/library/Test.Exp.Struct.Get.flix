@@ -124,6 +124,6 @@ mod Test.Exp.Struct.Nested {
     def nestedPut01(): Bool =
         region rc {
             let nested = new Nested{ value = new Nested { value = new Nested {value = new Nested {value = 15} @ rc } @ rc} @ rc } @ rc;
-            nested€value€value€value€value == 15;
+            nested€value€value€value€value == 15
         }
 }
