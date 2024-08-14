@@ -150,3 +150,18 @@ mod Test.Exp.Struct.BinaryTree {
             binaryTreeSum(Some(tree)) == 94
         }
 }
+
+mod Test.Exp.Struct.Nested {
+    struct Nested[v, r] {
+        value: v
+    }
+
+    @test
+    def nestedPut01(): Bool =
+        region rc {
+            let nested = new Nested{ value = new Nested { value = new Nested {value = new Nested {value = 15} @ rc } @ rc} @ rc } @ rc;
+            nested€value€value€value€value == 15;
+            nested€value€value€value€value = 37;
+            nested€value€value€value€value == 37
+        }
+}
