@@ -295,8 +295,8 @@ object TypeReduction {
         isSubtype(elmType1, elmType2)
       // Arrow to Java function interface
       // TODO INTEROP: generics support
-      case (Type.Apply(Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Arrow(2), _), eff, _), var_arg, _), var_ret, _), Type.Cst(TypeConstructor.Native(clazz), _)) =>
-        (var_arg, var_ret) match {
+      case (Type.Apply(Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Arrow(2), _), eff, _), varArg, _), varRet, _), Type.Cst(TypeConstructor.Native(clazz), _)) =>
+        (varArg, varRet) match {
           case (Type.Cst(tc1, _), Type.Cst(tc2, _)) =>
             (tc1, tc2) match {
               // IntStream
