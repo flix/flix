@@ -1,4 +1,5 @@
 /*
+ *  Copyright 2024 Magnus Madsen
  *  Copyright 2024 Jonathan Lindegaard Starup
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,56 +23,52 @@ import scala.collection.immutable.{SortedMap, SortedSet}
 import scala.collection.mutable
 
 /**
-  *  Fast Type Inference with Systems of Set Unification Equations
+  *  Fast Type Inference with Systems of Set Unification [[Equation]]s of [[Term]]s.
   *
   * A set unification solver based on the following ideas:
   *   - Work on all the equations as one whole system.
-  *   - Assume the equation system has been put into normal form. This avoids the need to mirror a lot of cases.
-  *     - See [[Equation.mk]] for details.
-  *   - Progress in the following order:
-  *     1. Propagate ground terms (univ/empty/element/constant) in a fixpoint.
-  *     2. Propagate variables (i.e. resolving constraints of the form x = y).
-  *     3. Perform trivial assignments where the left-hand variables does not occur in the RHS.
-  *     4. Eliminate (now) trivial and redundant constraints.
-  *     5. Do full-blown set unification with SVE.
-  *   - Represent n-ary unions and intersections.
-  *     - Group the terms into seven:
-  *       - A set of positive/negative elements
-  *       - A set of positive/negative constants
-  *       - A set of positive/negative variables
-  *       - A list of sub-terms.
-  *     - Flatten unions and intersections at least one level per call to `mkUnion`/`mkInter`.
-  *   - Push down complement immediately, this means that only "atoms" have complement.
-  *   - Assume open-world assumption, i.e. the universe of elements is infinite.
+  *   - Assume all equations has been put into normal form. This avoids the need to mirror a
+  *     lot of cases ([[Equation.mk]] for details).
+  *   - Instead of applying rules ad-hoc, work in phases ([[Solver.solve]] for details).
+  *   - Represent n-ary operations with seperated parts for easy simplification
+  *     ([[Term]] for details]]).
+  *   - Use rewriting term constructors to keep formulas structured
+  *     ([[Term.mkCompl]], [[Term.mkUnion]], and [[Term.mkInter]] for details).
+  *   - Assume an open-world, i.e. the universe of elements is infinite.
   * */
 object FastSetUnification {
 
   import ca.uwaterloo.flix.language.phase.unification.FastSetUnification.Phases.Phase
   import ca.uwaterloo.flix.language.phase.unification.FastSetUnification.Rules.Output
 
-  case class RunOptions(
-                         // The upper limit of the amount of connectives in the substitution
-                         sizeThreshold: Int,
-                         // The upper limit of mappings in the substitution
-                         complexThreshold: Int,
-                         // The number of permutations given to SVE
-                         permutationLimit: Int,
-                         debugging: Boolean = false,
-                         rerun: Boolean = false,
-                         verifySubst: Boolean = false,
-                         verifySize: Boolean = true
-                       )
-
-  object RunOptions {
-    val default: RunOptions = RunOptions(
-      sizeThreshold = 800,
-      complexThreshold = 10,
-      permutationLimit = 10
-    )
-  }
-
   object Solver {
 
+    /**
+      * @param sizeThreshold the upper limit of the amount of connectives in the substitution
+      * @param complexThreshold the upper limit of mappings in the substitution
+      * @param permutationLimit the number of permutations given to SVE
+      * @param debugging prints information to terminal during solving
+      * @param rerun if a system couldn't be solved, rerun it with `debugging = true`
+      * @param verifySubst verify that the solution substitution is a solution (VERY SLOW)
+      * @param verifySize verify that the solution substitution is less than `sizeThreshold`
+      */
+    case class RunOptions(
+                           sizeThreshold: Int = 800,
+                           complexThreshold: Int = 10,
+                           permutationLimit: Int = 10,
+                           debugging: Boolean = false,
+                           rerun: Boolean = false,
+                           verifySubst: Boolean = false,
+                           verifySize: Boolean = true
+                         )
+
+    /**
+      * Represents the running state of the solver
+      *   - eqs: the remaining equations to solve
+      *   - subst: the current substitution, which has already been applied to `eqs`
+      *   - lastPhase: the name of the last phase that was run and made progress
+      *   - phase: the number of the last phase that was run and made progress
+      */
     private class State(var eqs: List[Equation]) {
       var subst: SetSubstitution = SetSubstitution.empty
       var lastPhase: Option[String] = None
@@ -85,7 +82,7 @@ object FastSetUnification {
       *
       * Returns `Result.Err((ex, l, s))` where `c` is a conflict, `l` is a list of unsolved equations, and `s` is a partial substitution.
       */
-    def solve(l: List[Equation])(implicit opts: RunOptions = RunOptions.default): (Result[SetSubstitution, (FastBoolUnificationException, List[Equation], SetSubstitution)], (Option[String], Option[Int])) = {
+    def solve(l: List[Equation])(implicit opts: RunOptions = RunOptions()): (Result[SetSubstitution, (FastBoolUnificationException, List[Equation], SetSubstitution)], (Option[String], Option[Int])) = {
       import FastSetUnification.{Phases => P}
       val state = new State(l)
 
@@ -1082,7 +1079,7 @@ object FastSetUnification {
       *
       * `None, Set(c1), Set(x4, x7), Set(), Set(), Set(x2), List(e1 ∪ x9)`.
       */
-    case class Inter(posElem: Option[Term.ElemSet], posCsts: Set[Term.Cst], posVars: Set[Term.Var], negElem: Option[Term.ElemSet], negCsts: Set[Term.Cst], negVars: Set[Term.Var], rest: List[Term]) extends Term {
+    case class Inter private(posElem: Option[Term.ElemSet], posCsts: Set[Term.Cst], posVars: Set[Term.Var], negElem: Option[Term.ElemSet], negCsts: Set[Term.Cst], negVars: Set[Term.Var], rest: List[Term]) extends Term {
       assert(posVars.intersect(negVars).isEmpty, this.toString)
       assert(posCsts.intersect(negCsts).isEmpty, this.toString)
 

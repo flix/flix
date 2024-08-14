@@ -16,10 +16,10 @@
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.language.ast.SourceLocation
-import ca.uwaterloo.flix.language.phase.typer.ConstraintSolver
 import ca.uwaterloo.flix.language.phase.unification.BooleanPropTesting.RawString.toRawStringEqs
+import ca.uwaterloo.flix.language.phase.unification.FastSetUnification.Solver.RunOptions
 import ca.uwaterloo.flix.language.phase.unification.FastSetUnification.Term._
-import ca.uwaterloo.flix.language.phase.unification.FastSetUnification.{Equation, RunOptions, Term}
+import ca.uwaterloo.flix.language.phase.unification.FastSetUnification.{Equation, Term}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
 import scala.annotation.tailrec
@@ -91,7 +91,7 @@ object BooleanPropTesting {
 
   def main(args: Array[String]): Unit = {
     val clickAndGo = false
-    testSolvableConstraints(new Random(), explodedRandomXor, 700_000, 1, -1, wait = clickAndGo)(RunOptions.default.copy(debugging = clickAndGo))
+    testSolvableConstraints(new Random(), explodedRandomXor, 700_000, 1, -1, wait = clickAndGo)(RunOptions().copy(debugging = clickAndGo))
   }
 
   // TODO add testing of t ~ propagation(t)
@@ -132,9 +132,11 @@ object BooleanPropTesting {
       if (wait) scala.io.StdIn.readLine()
     }
     val (smallestError, smallestTimeout) = printTestOutput(errs, timeouts, tests)
+
     def askAndRun(description: String)(l: List[Equation]): Unit = {
       if (askYesNo(s"Do you want to run $description?")) runEquations(l)(opts.copy(debugging = true))
     }
+
     smallestError.foreach(askAndRun("smallest error"))
     smallestTimeout.foreach(askAndRun("smallest timeout"))
     errs.isEmpty
@@ -183,7 +185,7 @@ object BooleanPropTesting {
     case object Timeout extends Res
   }
 
-  private def runEquations(eqs: List[Equation])(implicit opts: RunOptions = RunOptions.default): (Res, (String, Int)) = {
+  private def runEquations(eqs: List[Equation])(implicit opts: RunOptions = RunOptions()): (Res, (String, Int)) = {
     val (res, lastPhase0) = FastSetUnification.Solver.solve(eqs)
     val lastPhase = (lastPhase0._1.getOrElse("Nothing"), lastPhase0._2.getOrElse(-1))
     res match {
@@ -223,16 +225,18 @@ object BooleanPropTesting {
     var prev: Option[(Term.Var, Term)] = None
     var collections = 0
 
-    for (eq <- l) {(eq, prev) match {
-      case (Equation(x@Term.Var(_), t1, loc), Some((y, t2))) if maxAmount > 0 && collections < maxAmount =>
-        collections += 1
-        prev = None
-        res = Equation.mk(Term.mkUnion(x, y), Term.mkUnion(t1, t2), loc) :: res
-      case (Equation(x@Term.Var(_), t, _), None) =>
-        prev = Some(x, t)
-      case (other, _) => res = other :: res
-    }}
-    prev.foreach{case (x, t) => res = (x ~ t) :: res}
+    for (eq <- l) {
+      (eq, prev) match {
+        case (Equation(x@Term.Var(_), t1, loc), Some((y, t2))) if maxAmount > 0 && collections < maxAmount =>
+          collections += 1
+          prev = None
+          res = Equation.mk(Term.mkUnion(x, y), Term.mkUnion(t1, t2), loc) :: res
+        case (Equation(x@Term.Var(_), t, _), None) =>
+          prev = Some(x, t)
+        case (other, _) => res = other :: res
+      }
+    }
+    prev.foreach { case (x, t) => res = (x ~ t) :: res }
     res
   }
 

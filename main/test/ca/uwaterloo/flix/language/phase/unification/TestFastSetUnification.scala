@@ -17,8 +17,8 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.ast.SourceLocation
-import ca.uwaterloo.flix.language.phase.unification.FastSetUnification.{RunOptions, Term}
-import ca.uwaterloo.flix.language.phase.unification.FastSetUnification.Solver.{solve, verifySubst}
+import ca.uwaterloo.flix.language.phase.unification.FastSetUnification.Solver.{RunOptions, solve, verifySubst}
+import ca.uwaterloo.flix.language.phase.unification.FastSetUnification.Term
 import org.scalatest.funsuite.AnyFunSuite
 
 import scala.util.Random
@@ -820,7 +820,7 @@ class TestFastSetUnification extends AnyFunSuite with TestUtils {
 
   test("Custom.Fuzzer") {
     val random = new Random(seed = 56238265)
-    assert(BooleanPropTesting.testSolvableConstraints(random, BooleanPropTesting.explodedRandomXor, 50_000, 1, -1, wait = false)(RunOptions.default))
+    assert(BooleanPropTesting.testSolvableConstraints(random, BooleanPropTesting.explodedRandomXor, 50_000, 1, -1, wait = false)(RunOptions()))
   }
 
 }
