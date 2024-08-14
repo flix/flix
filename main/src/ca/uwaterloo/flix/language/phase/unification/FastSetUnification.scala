@@ -21,34 +21,29 @@ import ca.uwaterloo.flix.util.{Formatter, InternalCompilerException, Result}
 import scala.collection.immutable.{SortedMap, SortedSet}
 import scala.collection.mutable
 
-///
-/// Fast Type Inference with Systems of Set Unification Equations
-///
-/// Work smarter, not harder -- Proverb
-///
-/// A fast set unification solver based on the following ideas:
-///
-/// - Work on all the equations as one whole system.
-/// - Assume the equation system has been put into normal form. This avoids the need to mirror a lot of cases.
-///   - We move univ, empty, and single elements to the rhs.
-///   - We move a single variable to the lhs.
-///   - See the definition of `Equation.mk` for details.
-/// - Progress in the following order:
-///   1. Propagate ground terms (univ/empty/element/constant) in a fixpoint.
-///   2. Propagate variables (i.e. resolving constraints of the form x = y).
-///   3. Perform trivial assignments where the left-hand variables does not occur in the RHS.
-///   4. Eliminate (now) trivial and redundant constraints.
-///   5. Do full-blown set unification with SVE.
-/// - Represent n-ary unions and intersections.
-///   - Group the terms into seven:
-///     - A set of positive/negative elements
-///     - A set of positive/negative constants
-///     - A set of positive/negative variables
-///     - A list of sub-terms.
-///   - Flatten unions and intersections at least one level per call to `mkUnion`/`mkInter`.
-/// - Push down complement immediately, this means that only "atoms" have complement.
-/// - Assume open-world assumption, i.e. the universe of elements is infinite.
-///
+/**
+  *  Fast Type Inference with Systems of Set Unification Equations
+  *
+  * A set unification solver based on the following ideas:
+  *   - Work on all the equations as one whole system.
+  *   - Assume the equation system has been put into normal form. This avoids the need to mirror a lot of cases.
+  *     - See [[Equation.mk]] for details.
+  *   - Progress in the following order:
+  *     1. Propagate ground terms (univ/empty/element/constant) in a fixpoint.
+  *     2. Propagate variables (i.e. resolving constraints of the form x = y).
+  *     3. Perform trivial assignments where the left-hand variables does not occur in the RHS.
+  *     4. Eliminate (now) trivial and redundant constraints.
+  *     5. Do full-blown set unification with SVE.
+  *   - Represent n-ary unions and intersections.
+  *     - Group the terms into seven:
+  *       - A set of positive/negative elements
+  *       - A set of positive/negative constants
+  *       - A set of positive/negative variables
+  *       - A list of sub-terms.
+  *     - Flatten unions and intersections at least one level per call to `mkUnion`/`mkInter`.
+  *   - Push down complement immediately, this means that only "atoms" have complement.
+  *   - Assume open-world assumption, i.e. the universe of elements is infinite.
+  * */
 object FastSetUnification {
 
   import ca.uwaterloo.flix.language.phase.unification.FastSetUnification.Phases.Phase
@@ -93,7 +88,9 @@ object FastSetUnification {
     def solve(l: List[Equation])(implicit opts: RunOptions = RunOptions.default): (Result[SetSubstitution, (FastBoolUnificationException, List[Equation], SetSubstitution)], (Option[String], Option[Int])) = {
       import FastSetUnification.{Phases => P}
       val state = new State(l)
+
       def checkAndSimplify(s: State): Unit = runPhase("Check and Simplify", "trivial correct and incorrect equations", P.filteringPhase(P.checkAndSimplify))(s)(opts.copy(debugging = false))
+
       debugState(state)
       try {
         runPhase(
@@ -844,15 +841,13 @@ object FastSetUnification {
     }
   }
 
-  /**
-    * Companion object for [[Equation]].
-    */
+  /** Companion object for [[Equation]]. */
   object Equation {
     /**
       * Returns a unification equation  `t1 ~ t2` between the terms `t1` and `t2`.
       *
       * The smart constructor performs normalization:
-      * - We move univ and empty to the rhs.
+      * - We move univ, empty to the rhs.
       * - We move a single variable to the lhs.
       * - We reorder constant/variables so that the smaller constant/variable is on the lhs.
       *
