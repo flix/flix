@@ -71,7 +71,7 @@ object JvmOps {
     case MonoType.RecordEmpty => JvmType.Reference(BackendObjType.Record.jvmName)
     case MonoType.RecordExtend(_, _, _) => JvmType.Reference(BackendObjType.Record.jvmName)
     case MonoType.Enum(_) => JvmType.Object
-    case MonoType.Struct(_, _, _) => JvmType.Object
+    case MonoType.Struct(_, elms, targs) => JvmType.Reference(BackendObjType.Struct(elms.map(BackendType.toErasedBackendType)).jvmName)
     case MonoType.Arrow(_, _) => getFunctionInterfaceType(tpe)
     case MonoType.Native(clazz) => JvmType.Reference(JvmName.ofClass(clazz))
   }
@@ -347,6 +347,16 @@ object JvmOps {
     types.foldLeft(Set.empty[BackendObjType.Tuple]) {
       case (acc, MonoType.Tuple(elms)) =>
         acc + BackendObjType.Tuple(elms.map(BackendType.asErasedBackendType))
+      case (acc, _) => acc
+    }
+
+  /**
+    * Returns the set of erased struct types in `types` without searching recursively.
+    */
+  def getErasedStructTypesOf(types: Iterable[MonoType]): Set[BackendObjType.Struct] =
+    types.foldLeft(Set.empty[BackendObjType.Struct]) {
+      case (acc, MonoType.Struct(_, elms, targs)) =>
+        acc + BackendObjType.Struct(elms.map(BackendType.asErasedBackendType))
       case (acc, _) => acc
     }
 

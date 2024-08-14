@@ -17,6 +17,8 @@ package flix.fuzzers
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.shared.SecurityContext
+
 import scala.jdk.CollectionConverters._
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -69,7 +71,7 @@ class FuzzDeleteLines extends AnyFunSuite with TestUtils {
       val iStepped = Math.min(i * step, numLines)
       val (before, after) = lines.splitAt(iStepped)
       val src = (before ::: after.drop(1)).mkString("\n")
-      flix.addUnmanagedSourceCode(s"$name-delete-line-$i", src)
+      flix.addSourceCode(s"$name-delete-line-$i", src)(SecurityContext.AllPermissions)
       flix.compile() // We simply care that this does not crash.
     }
   }

@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.ast.shared.{Input, Source}
+import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext, Source}
 import ca.uwaterloo.flix.language.dbg.AstPrinter
 import ca.uwaterloo.flix.language.fmt.FormatOptions
 import ca.uwaterloo.flix.language.phase._
@@ -313,12 +313,14 @@ class Flix {
   /**
     * Adds the given string `text` with the given `name`.
     */
-  def addSourceCode(name: String, text: String): Flix = {
+  def addSourceCode(name: String, text: String)(implicit sctx: SecurityContext): Flix = {
     if (name == null)
       throw new IllegalArgumentException("'name' must be non-null.")
     if (text == null)
       throw new IllegalArgumentException("'text' must be non-null.")
-    addInput(name, Input.Text(name, text, stable = false))
+    if (sctx == null)
+      throw new IllegalArgumentException("'sctx' must be non-null.")
+    addInput(name, Input.Text(name, text, stable = false, sctx))
     this
   }
 
@@ -328,39 +330,14 @@ class Flix {
   def remSourceCode(name: String): Flix = {
     if (name == null)
       throw new IllegalArgumentException("'name' must be non-null.")
-    remInput(name, Input.Text(name, "", stable = false))
-    this
-  }
-
-  /**
-    * Adds the given string `text` with the given `name`.
-    */
-  def addPlaygroundSourceCode(text: String): Flix = {
-    val name = "<playground>"
-    if (text == null)
-      throw new IllegalArgumentException("'text' must be non-null.")
-    addInput(name, Input.Text(name, text, stable = false))
-    this
-  }
-
-  /**
-    * Adds the given string `text` with the given `name`.
-    *
-    * This method is only for internal use. Unmanaged source code is not subject to a security context.
-    */
-  def addUnmanagedSourceCode(name: String, text: String): Flix = {
-    if (name == null)
-      throw new IllegalArgumentException("'name' must be non-null.")
-    if (text == null)
-      throw new IllegalArgumentException("'text' must be non-null.")
-    addInput(name, Input.Text(name, text, stable = false))
+    remInput(name, Input.Text(name, "", stable = false, /* unused */ SecurityContext.NoPermissions))
     this
   }
 
   /**
     * Adds the given path `p` as Flix source file.
     */
-  def addFlix(p: Path): Flix = {
+  def addFlix(p: Path)(implicit sctx: SecurityContext): Flix = {
     if (p == null)
       throw new IllegalArgumentException(s"'p' must be non-null.")
     if (!Files.exists(p))
@@ -372,14 +349,14 @@ class Flix {
     if (!p.getFileName.toString.endsWith(".flix"))
       throw new IllegalArgumentException(s"'$p' must be a *.flix file.")
 
-    addInput(p.toString, Input.TxtFile(p))
+    addInput(p.toString, Input.TxtFile(p, sctx))
     this
   }
 
   /**
     * Adds the given path `p` as a Flix package file.
     */
-  def addPkg(p: Path): Flix = {
+  def addPkg(p: Path)(implicit sctx: SecurityContext): Flix = {
     if (p == null)
       throw new IllegalArgumentException(s"'p' must be non-null.")
     if (!Files.exists(p))
@@ -391,7 +368,7 @@ class Flix {
     if (!p.getFileName.toString.endsWith(".fpkg"))
       throw new IllegalArgumentException(s"'$p' must be a *.pkg file.")
 
-    addInput(p.toString, Input.PkgFile(p))
+    addInput(p.toString, Input.PkgFile(p, sctx))
     this
   }
 
@@ -402,7 +379,7 @@ class Flix {
     if (!p.getFileName.toString.endsWith(".flix"))
       throw new IllegalArgumentException(s"'$p' must be a *.flix file.")
 
-    remInput(p.toString, Input.TxtFile(p))
+    remInput(p.toString, Input.TxtFile(p, /* unused */ SecurityContext.NoPermissions))
     this
   }
 
@@ -444,7 +421,7 @@ class Flix {
     case None => // nop
     case Some(_) =>
       changeSet = changeSet.markChanged(input)
-      inputs += name -> Input.Text(name, "", stable = false)
+      inputs += name -> Input.Text(name, "", stable = false, /* unused */ SecurityContext.NoPermissions)
   }
 
   /**
@@ -686,7 +663,7 @@ class Flix {
     * Returns the inputs for the given list of (path, text) pairs.
     */
   private def getLibraryInputs(xs: List[(String, String)]): List[Input] = xs.foldLeft(List.empty[Input]) {
-    case (xs, (virtualPath, text)) => Input.StandardLibrary(virtualPath, text) :: xs
+    case (xs, (virtualPath, text)) => Input.Text(virtualPath, text, stable = true, SecurityContext.AllPermissions) :: xs
   }
 
   /**

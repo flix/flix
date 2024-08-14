@@ -74,6 +74,8 @@ object Redundancy {
         checkUnusedEffects()(sctx, root) ++
         checkUnusedEnumsAndTags()(sctx, root) ++
         checkUnusedTypeParamsEnums()(root) ++
+        checkUnusedStructsAndFields()(sctx, root) ++
+        checkUnusedTypeParamsStructs()(root) ++
         checkRedundantTypeConstraints()(root, flix)
     }
 
@@ -136,6 +138,40 @@ object Redundancy {
         case (sacc, (_, Case(_, tpe, _, _))) => sacc ++ tpe.typeVars.map(_.sym)
       }
       val unusedTypeParams = decl.tparams.filter {
+        tparam =>
+          !usedTypeVars.contains(tparam.sym) &&
+            !tparam.name.name.startsWith("_")
+      }
+      result ++= unusedTypeParams.map(tparam => UnusedTypeParam(tparam.name, tparam.loc))
+    }
+    result.toList
+  }
+
+  /**
+    * Checks for unused struct symbols and tags.
+    */
+  private def checkUnusedStructsAndFields()(implicit sctx: SharedContext, root: Root): List[RedundancyError] = {
+    val result = new ListBuffer[RedundancyError]
+    for ((_, struct) <- root.structs) {
+      if (deadStruct(struct)) {
+        result += UnusedStructSym(struct.sym)
+      }
+    }
+
+    result.toList
+  }
+
+  /**
+   * Checks for unused type parameters in structs.
+   */
+  private def checkUnusedTypeParamsStructs()(implicit root: Root): List[RedundancyError] = {
+    val result = new ListBuffer[RedundancyError]
+    for ((_, decl) <- root.structs) {
+      val usedTypeVars = decl.fields.foldLeft(Set.empty[Symbol.KindedTypeVarSym]) {
+        case (acc, (name, field)) =>
+          acc ++ field.tpe.typeVars.map(_.sym)
+      }
+      val unusedTypeParams = decl.tparams.init.filter { // the last tparam is implicitly used for the region
         tparam =>
           !usedTypeVars.contains(tparam.sym) &&
             !tparam.name.name.startsWith("_")
@@ -557,6 +593,18 @@ object Redundancy {
       val us2 = visitExp(index, env0, rc)
       val us3 = visitExp(elm, env0, rc)
       us1 ++ us2 ++ us3
+
+    case Expr.StructNew(sym, fields, region, _, _, _) =>
+      sctx.structSyms.put(sym, ())
+      visitExps(fields.map {case (k, v) => v}, env0, rc) ++ visitExp(region, env0, rc)
+
+    case Expr.StructGet(e, field, _, _, _) =>
+      sctx.structFieldSyms.put(field, ())
+      visitExp(e, env0, rc)
+
+    case Expr.StructPut(e1, field, e2, _, _, _) =>
+      sctx.structFieldSyms.put(field, ())
+      visitExp(e1, env0, rc) ++ visitExp(e2, env0, rc)
 
     case Expr.VectorLit(exps, _, _, _) =>
       visitExps(exps, env0, rc)
@@ -1057,6 +1105,14 @@ object Redundancy {
       !sctx.enumSyms.containsKey(enm.sym)
 
   /**
+    * Returns `true` if the given `struct` is unused according to `used`.
+    */
+  private def deadStruct(struct: Struct)(implicit sctx: SharedContext): Boolean =
+    !struct.sym.name.startsWith("_") &&
+      !struct.mod.isPublic &&
+      !sctx.structSyms.containsKey(struct.sym)
+
+  /**
     * Returns `true` if the given `tag` of the given `enm` is unused according to `used`.
     */
   private def deadTag(enm: Enum, tag: Symbol.CaseSym)(implicit ctx: SharedContext): Boolean =
@@ -1230,6 +1286,8 @@ object Redundancy {
       new ConcurrentHashMap(),
       new ConcurrentHashMap(),
       new ConcurrentHashMap(),
+      new ConcurrentHashMap(),
+      new ConcurrentHashMap(),
       new ConcurrentHashMap())
   }
 
@@ -1245,6 +1303,8 @@ object Redundancy {
   private case class SharedContext(defSyms: ConcurrentHashMap[Symbol.DefnSym, Unit],
                                    sigSyms: ConcurrentHashMap[Symbol.SigSym, Unit],
                                    effSyms: ConcurrentHashMap[Symbol.EffectSym, Unit],
+                                   structSyms: ConcurrentHashMap[Symbol.StructSym, Unit],
+                                   structFieldSyms: ConcurrentHashMap[Symbol.StructFieldSym, Unit],
                                    enumSyms: ConcurrentHashMap[Symbol.EnumSym, Unit],
                                    caseSyms: ConcurrentHashMap[Symbol.CaseSym, Unit])
 

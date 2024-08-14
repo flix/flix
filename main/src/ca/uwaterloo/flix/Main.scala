@@ -108,7 +108,8 @@ object Main {
       xverifyeffects = cmdOpts.xverifyeffects,
       xsubeffecting = cmdOpts.xsubeffecting,
       XPerfFrontend = cmdOpts.XPerfFrontend,
-      XPerfN = cmdOpts.XPerfN
+      XPerfN = cmdOpts.XPerfN,
+      xiterations = cmdOpts.xiterations,
     )
 
     // Don't use progress bar if benchmarking.
@@ -374,6 +375,7 @@ object Main {
                      xsubeffecting: SubEffectLevel = SubEffectLevel.Nothing,
                      XPerfN: Option[Int] = None,
                      XPerfFrontend: Boolean = false,
+                     xiterations: Int = 1000,
                      files: Seq[File] = Seq())
 
   /**
@@ -609,6 +611,10 @@ object Main {
       // Xsubeffecting
       opt[SubEffectLevel]("Xsubeffecting").action((level, c) => c.copy(xsubeffecting = level)).
         text("[experimental] enables sub-effecting in select places")
+
+      // Xiterations
+      opt[Int]("Xiterations").action((n, c) => c.copy(xiterations = n)).
+        text("[experimental] sets the maximum number of constraint resolution iterations during typechecking")
 
       note("")
 

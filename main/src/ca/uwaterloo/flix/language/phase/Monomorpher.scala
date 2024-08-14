@@ -398,7 +398,13 @@ object Monomorpher {
         MonoAst.Effect(doc, ann, mod, sym, ops, loc)
     }
 
-    val structs = Map.empty[Symbol.StructSym, MonoAst.Struct]
+    val structs =  ParOps.parMapValues(root.structs) {
+      case LoweredAst.Struct(doc, ann, mod, sym, tparams0, fields, loc) =>
+        val newFields = fields.map(visitStructField)
+        val tparams = tparams0.map(_.sym)
+        MonoAst.Struct(doc, ann, mod, sym, tparams, newFields, loc)
+    }
+
     // Reassemble the AST.
     MonoAst.Root(
       ctx.toMap,
@@ -408,6 +414,13 @@ object Monomorpher {
       root.reachable,
       root.sources
     )
+  }
+
+  def visitStructField(field: LoweredAst.StructField): MonoAst.StructField = {
+    field match {
+      case LoweredAst.StructField(fieldSym, tpe, loc) =>
+        MonoAst.StructField(fieldSym, tpe, loc)
+    }
   }
 
   /**

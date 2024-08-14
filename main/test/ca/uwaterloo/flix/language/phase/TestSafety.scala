@@ -55,27 +55,26 @@ class TestSafety extends AnyFunSuite with TestUtils {
     expectError[IllegalCatchType](result)
   }
 
-  // THROW TODO: Enable these tests when ready
-  ignore("IllegalThrowType.01") {
+  test("IllegalThrowType.01") {
     val input =
       """
-        |pub def f(): String = throw "hello"
+        |def f(): String = throw "hello"
       """.stripMargin
     val result = compile(input, Options.DefaultTest)
     expectError[IllegalThrowType](result)
   }
 
-  ignore("IllegalThrowType.02") {
+  test("IllegalThrowType.02") {
     val input =
       """
         |import java.io.IOException
-        |pub def f(): String = throw (throw new IOException)
+        |def f(): String = throw (throw new IOException())
       """.stripMargin
     val result = compile(input, Options.DefaultTest)
     expectError[IllegalThrowType](result)
   }
 
-  ignore("IllegalThrowType.03") {
+  test("IllegalThrowType.03") {
     val input =
       """
         |import java.io.IOException
@@ -517,6 +516,42 @@ class TestSafety extends AnyFunSuite with TestUtils {
     expectError[SafetyError.ImpossibleUncheckedCast](result)
   }
 
+  test("ImpossibleCast.10") {
+    val input =
+      """
+        |struct A[r] {
+        |    a: Bool
+        |}
+        |def f(): A[r] = unchecked_cast(true as A[r])
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.ImpossibleUncheckedCast](result)
+  }
+
+  test("ImpossibleCast.11") {
+    val input =
+      """
+        |struct A[r] {
+        |    a: Int32
+        |}
+        |def f(): A[r] = unchecked_cast(1 as A[r])
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.ImpossibleUncheckedCast](result)
+  }
+
+  test("ImpossibleCast.12") {
+    val input =
+      """
+        |struct A[r] {
+        |    a: String
+        |}
+        |def f(): A[r] = unchecked_cast("a" as A[r])
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.ImpossibleUncheckedCast](result)
+  }
+
   test("IllegalCheckedTypeCast.01") {
     val input =
       """
@@ -894,4 +929,27 @@ class TestSafety extends AnyFunSuite with TestUtils {
     expectError[SafetyError.IllegalExportPolymorphism](result)
   }
 
+  test("IllegalExportFunction.08") {
+    val input =
+      """
+        |struct S[t, r] {
+        |    v: t
+        |}
+        |mod Mod { @Export pub def id(x: Int32): S[Int32, r] = ??? }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalExportPolymorphism](result)
+  }
+
+  test("IllegalExportFunction.09") {
+    val input =
+      """
+        |struct S[t, r] {
+        |    v: t
+        |}
+        |mod Mod { @Export pub def id(x: Int32, _y: S[Int32, r]): Int32 = x }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalExportPolymorphism](result)
+  }
 }
