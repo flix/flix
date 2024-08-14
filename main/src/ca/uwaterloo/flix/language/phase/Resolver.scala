@@ -1417,15 +1417,16 @@ object Resolver {
             case Result.Ok(st) =>
               st.indicesAndMut.get(field) match {
                 case Some((idx, mut)) =>
-                  if(!mut) {
-                    throw new RuntimeException("JOE TODO: Resolver error here")
+                  val e1Val = visitExp(e1, env0)
+                  val e2Val = visitExp(e2, env0)
+                  val fieldSym = Symbol.mkStructFieldSym(st.sym, idx, field)
+                  val structPut = mapN(e1Val, e2Val) {
+                    case (e1, e2) => ResolvedAst.Expr.StructPut(e1, fieldSym, e2, loc)
+                  }
+                  if(mut) {
+                    structPut
                   } else {
-                    val e1Val = visitExp(e1, env0)
-                    val e2Val = visitExp(e2, env0)
-                    val fieldSym = Symbol.mkStructFieldSym(st.sym, idx, field)
-                    mapN(e1Val, e2Val) {
-                      case (e1, e2) => ResolvedAst.Expr.StructPut(e1, fieldSym, e2, loc)
-                    }
+                    structPut.withSoftFailure(IllegalPut(loc))
                   }
                 case None =>
                   val e = ResolutionError.UndefinedStructField(st.sym, field, loc)

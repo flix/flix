@@ -1208,6 +1208,23 @@ object ResolutionError {
   }
 
   /**
+   * An error raised to indicate a `put` struct expression attempts to modify an immutable field
+   *
+   * @param loc    the location where the error occurred
+   */
+  case class IllegalPut(loc: SourceLocation) extends ResolutionError with Recoverable {
+    override def summary: String = s"Modification of struct field not marked as `mut`"
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s""">> Modification of struct field not marked as `mut`
+         |
+         |${code(loc, "field not marked `mut`")}
+         |""".stripMargin
+    }
+  }
+
+  /**
     * Removes all access modifiers from the given string `s`.
     */
   private def stripAccessModifier(s: String): String =
