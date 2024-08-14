@@ -107,6 +107,12 @@ mod Test.Exp.Struct.New {
         a: Empty[r]
     }
 
+    struct BinaryTree[t, r] {
+        left: Option[BinaryTree[t, r]],
+        right: Option[BinaryTree[t, r]],
+        value: t
+    }
+
     @test
     def testEmptyStruct01(): Unit =
         region rc {
@@ -209,6 +215,54 @@ mod Test.Exp.Struct.New {
     def testOtherMod01(): Unit =
         region rc {
             new Mod1.S {} @ rc;
+            ()
+        }
+
+    @test
+    def binaryTree01(): Unit =
+        region rc {
+            new BinaryTree {
+                left = None,
+                right = None,
+                value = 3
+            } @ rc;
+            ()
+        }
+
+    @test
+    def binaryTree02(): Unit =
+        region rc {
+            let leaf = new BinaryTree {
+                left = None,
+                right = None,
+                value = 3
+            } @ rc;
+            new BinaryTree {
+                left = Some(leaf),
+                right = Some(leaf),
+                value = 3
+            } @ rc;
+            ()
+        }
+
+    @test
+    def binaryTree03(): Unit =
+        region rc {
+            let leaf = new BinaryTree {
+                left = None,
+                right = None,
+                value = 3
+            } @ rc;
+            let innernode = new BinaryTree {
+                left = Some(leaf),
+                right = Some(leaf),
+                value = 3
+            } @ rc;
+            new BinaryTree {
+                left = Some(innernode),
+                right = Some(innernode),
+                value = 3
+            } @ rc;
             ()
         }
 }

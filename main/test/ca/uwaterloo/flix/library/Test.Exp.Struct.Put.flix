@@ -83,3 +83,70 @@ mod Test.Exp.Struct.Put {
             s€fstName == "Lucky" and s€lstName == "Luke" and s€age == 42 and s€cowboy == true
         }
 }
+
+mod Test.Exp.Struct.BinaryTree {
+
+    struct BinaryTree[t, r] {
+        left: Option[BinaryTree[t, r]],
+        right: Option[BinaryTree[t, r]],
+        value: t
+    }
+
+    def binaryTreeSum(tree: Option[BinaryTree[Int32, r]]): Int32 \ r =
+        match tree {
+            case None => 0
+            case Some(t) => t€value + binaryTreeSum(t€left) + binaryTreeSum(t€right)
+        }
+
+    def doubleTree(tree: Option[BinaryTree[Int32, r]]): Unit \ {r, IO} =
+        match tree {
+            case None => ()
+            case Some(t) =>
+                t€value = t€value + t€value;
+                doubleTree(t€left);
+                doubleTree(t€right)
+        }
+
+    @test
+    def binaryTree01(): Bool \ IO =
+        region rc {
+            let leaf1 = new BinaryTree {
+                left = None,
+                right = None,
+                value = 10
+            } @ rc;
+            let leaf2 = new BinaryTree {
+                left = None,
+                right = None,
+                value = 9
+            } @ rc;
+            let leaf3 = new BinaryTree {
+                left = None,
+                right = None,
+                value = 8
+            } @ rc;
+            let leaf4 = new BinaryTree {
+                left = None,
+                right = None,
+                value = 7
+            } @ rc;
+            let innernode1 = new BinaryTree {
+                left = Some(leaf1),
+                right = Some(leaf2),
+                value = 4
+            } @ rc;
+            let innernode2 = new BinaryTree {
+                left = Some(leaf3),
+                right = Some(leaf4),
+                value = 4
+            } @ rc;
+            let tree = new BinaryTree {
+                left = Some(innernode1),
+                right = Some(innernode2),
+                value = 5
+            } @ rc;
+            doubleTree(Some(tree));
+            println(binaryTreeSum(Some(tree)));
+            binaryTreeSum(Some(tree)) == 94
+        }
+}

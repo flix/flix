@@ -79,3 +79,39 @@ mod Test.Exp.Struct.Get {
             fstName1 == "Lucky" and fstName2 == "Lucky" and lstName1 == "Luke" and lstName2 == "Luke"
         }
 }
+
+mod Test.Exp.Struct.BinaryTree {
+
+    struct BinaryTree[t, r] {
+        left: Option[BinaryTree[t, r]],
+        right: Option[BinaryTree[t, r]],
+        value: t
+    }
+
+    def binaryTreeSum(tree: Option[BinaryTree[Int32, r]]): Int32 \ r =
+        match tree {
+            case None => 0
+            case Some(t) => t€value + binaryTreeSum(t€left) + binaryTreeSum(t€right)
+        }
+
+    @test
+    def binaryTree01(): Bool =
+        region rc {
+            let leaf = new BinaryTree {
+                left = None,
+                right = None,
+                value = 3
+            } @ rc;
+            let innernode = new BinaryTree {
+                left = Some(leaf),
+                right = Some(leaf),
+                value = 4
+            } @ rc;
+            let tree = new BinaryTree {
+                left = Some(innernode),
+                right = Some(innernode),
+                value = 5
+            } @ rc;
+            binaryTreeSum(Some(tree)) == 25
+        }
+}
