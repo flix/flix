@@ -98,7 +98,7 @@ object SemanticTokensProvider {
     //
     // Collect all tokens into one list.
     //
-    val allTokens = (traitTokens ++ instanceTokens ++ defnTokens ++ enumTokens ++ typeAliasTokens ++ effectTokens).toList
+    val allTokens = (traitTokens ++ instanceTokens ++ defnTokens ++ enumTokens ++ structTokens ++ typeAliasTokens ++ effectTokens).toList
 
     //
     // We keep all tokens that are: (i) single-line tokens, (ii) have the same source as `uri`, and (iii) come from real source locations.
