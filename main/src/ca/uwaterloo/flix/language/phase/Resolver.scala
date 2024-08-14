@@ -802,8 +802,8 @@ object Resolver {
     def resolve(exp0: NamedAst.Expr, env00: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Expr, ResolutionError] = {
 
       /**
-       * Creates `arity` fresh fparams for use in a curried def or sig application.
-       */
+        * Creates `arity` fresh fparams for use in a curried def or sig application.
+        */
       def mkFreshFparams(arity: Int, loc: SourceLocation): List[ResolvedAst.FormalParam] = {
         // Introduce a fresh variable symbol for each argument of the function definition.
         val varSyms = (0 until arity).map(i => Symbol.freshVarSym(Flix.Delimiter + i, BoundBy.FormalParam, loc)).toList
@@ -813,8 +813,8 @@ object Resolver {
       }
 
       /**
-       * Creates a lambda for use in a curried dif or sig application.
-       */
+        * Creates a lambda for use in a curried dif or sig application.
+        */
       def mkCurriedLambda(fparams: List[ResolvedAst.FormalParam], baseExp: ResolvedAst.Expr, loc: SourceLocation): ResolvedAst.Expr = {
         val l = loc.asSynthetic
 
@@ -831,8 +831,8 @@ object Resolver {
       }
 
       /**
-       * Curry the def, wrapping it in lambda expressions.
-       */
+        * Curry the def, wrapping it in lambda expressions.
+        */
       def visitDef(defn: NamedAst.Declaration.Def, loc: SourceLocation): ResolvedAst.Expr = {
         // Find the arity of the function definition.
         val arity = defn.spec.fparams.length
@@ -848,8 +848,8 @@ object Resolver {
       }
 
       /**
-       * Curry the sig, wrapping it in lambda expressions.
-       */
+        * Curry the sig, wrapping it in lambda expressions.
+        */
       def visitSig(sig: NamedAst.Declaration.Sig, loc: SourceLocation): ResolvedAst.Expr = {
         // Find the arity of the function definition.
         val arity = sig.spec.fparams.length
@@ -865,8 +865,8 @@ object Resolver {
       }
 
       /**
-       * Curry the tag, wrapping it in a lambda expression if it is not nullary.
-       */
+        * Curry the tag, wrapping it in a lambda expression if it is not nullary.
+        */
       def visitTag(caze: NamedAst.Declaration.Case, loc: SourceLocation): ResolvedAst.Expr = {
         // Check if the tag value has Unit type.
         if (isUnitType(caze.tpe)) {
@@ -895,8 +895,8 @@ object Resolver {
       }
 
       /**
-       * Curry the tag, wrapping it in a lambda expression if it is not nullary.
-       */
+        * Curry the tag, wrapping it in a lambda expression if it is not nullary.
+        */
       def visitRestrictableTag(caze: NamedAst.Declaration.RestrictableCase, isOpen: Boolean, loc: SourceLocation): ResolvedAst.Expr = {
         // Check if the tag value has Unit type.
         if (isUnitType(caze.tpe)) {
@@ -925,8 +925,8 @@ object Resolver {
       }
 
       /**
-       * Resolve the application expression, performing currying over the subexpressions.
-       */
+        * Resolve the application expression, performing currying over the subexpressions.
+        */
       def visitApply(exp: NamedAst.Expr.Apply, env0: ListMap[String, Resolution]): Validation[ResolvedAst.Expr, ResolutionError] = exp match {
         case NamedAst.Expr.Apply(exp0, exps0, loc) =>
           val expVal = visitExp(exp0, env0)
@@ -940,8 +940,8 @@ object Resolver {
       }
 
       /**
-       * Resolve the application expression, applying `defn` to `exps`.
-       */
+        * Resolve the application expression, applying `defn` to `exps`.
+        */
       def visitApplyDef(app: NamedAst.Expr.Apply, defn: NamedAst.Declaration.Def, exps: List[NamedAst.Expr], env0: ListMap[String, Resolution], innerLoc: SourceLocation, outerLoc: SourceLocation): Validation[ResolvedAst.Expr, ResolutionError] = {
         if (defn.spec.fparams.length == exps.length) {
           // Case 1: Hooray! We can call the function directly.
@@ -958,8 +958,8 @@ object Resolver {
       }
 
       /**
-       * Resolve the application expression, applying `sig` to `exps`.
-       */
+        * Resolve the application expression, applying `sig` to `exps`.
+        */
       def visitApplySig(app: NamedAst.Expr.Apply, sig: NamedAst.Declaration.Sig, exps: List[NamedAst.Expr], env0: ListMap[String, Resolution], innerLoc: SourceLocation, outerLoc: SourceLocation): Validation[ResolvedAst.Expr, ResolutionError] = {
         if (sig.spec.fparams.length == exps.length) {
           // Case 1: Hooray! We can call the function directly.
@@ -976,8 +976,8 @@ object Resolver {
       }
 
       /**
-       * Resolves the tag application.
-       */
+        * Resolves the tag application.
+        */
       def visitApplyTag(caze: NamedAst.Declaration.Case, exps: List[NamedAst.Expr], env0: ListMap[String, Resolution], innerLoc: SourceLocation, outerLoc: SourceLocation): Validation[ResolvedAst.Expr, ResolutionError] = {
         val esVal = traverse(exps)(visitExp(_, env0))
         mapN(esVal) {
@@ -1009,7 +1009,7 @@ object Resolver {
 
 
       /**
-       * Local visitor.
+        * Local visitor.
        */
       def visitExp(e0: NamedAst.Expr, env0: ListMap[String, Resolution]): Validation[ResolvedAst.Expr, ResolutionError] = e0 match {
 
