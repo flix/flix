@@ -139,6 +139,7 @@ object CompletionProvider {
       case SyntacticContext.Expr.Do => OpCompleter.getCompletions(context)
       case SyntacticContext.Expr.InvokeMethod(e) => InvokeMethodCompleter.getCompletions(e, context)
       case SyntacticContext.Expr.StaticFieldOrMethod(e) => GetStaticFieldCompleter.getCompletions(e) ++ InvokeStaticMethodCompleter.getCompletions(e)
+      case SyntacticContext.Expr.StructGet(e) => StructFieldCompleter.getCompletions(e)
       case _: SyntacticContext.Expr => ExprCompleter.getCompletions(context)
 
       //
@@ -267,6 +268,7 @@ object CompletionProvider {
       case ResolutionError.UndefinedType(_, _, _) => (1, SyntacticContext.Type.OtherType)
       case ResolutionError.UndefinedTag(_, _, _) => (1, SyntacticContext.Pat.OtherPat)
       case ResolutionError.UndefinedOp(_, _) => (1, SyntacticContext.Expr.Do)
+      case ResolutionError.UndefinedStructField(_, _, _) => (1, SyntacticContext.Expr.StructGet)
       case WeederError.MalformedIdentifier(_, _) => (2, SyntacticContext.Import)
       case WeederError.UnappliedIntrinsic(_, _) => (5, SyntacticContext.Expr.OtherExpr)
       case err: ResolutionError.UndefinedJvmStaticField => (1, SyntacticContext.Expr.StaticFieldOrMethod(err))
