@@ -1153,7 +1153,7 @@ object Parser2 {
       zeroOrMore(
         namedTokenSet = NamedTokenSet.FromKinds(NAME_FIELD),
         getItem = structField,
-        checkForItem = NAME_FIELD.contains,
+        checkForItem = (token => NAME_FIELD.contains(token) || token.isModifier),
         breakWhen = _.isRecoverExpr,
         delimiterL = TokenKind.CurlyL,
         delimiterR = TokenKind.CurlyR,

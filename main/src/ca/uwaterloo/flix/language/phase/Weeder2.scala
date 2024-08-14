@@ -667,7 +667,6 @@ object Weeder2 {
       TokenKind.KeywordSealed,
       TokenKind.KeywordLawful,
       TokenKind.KeywordPub,
-      TokenKind.KeywordMut,
       TokenKind.KeywordOverride,
       TokenKind.KeywordInline)
 

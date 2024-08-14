@@ -1601,7 +1601,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
       """
         |mod S {
         |    struct S [v, r] {
-        |        a: Int32,
+        |        mut a: Int32,
         |        b: String,
         |        c: v
         |    }
@@ -1624,7 +1624,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
       """
         |mod S {
         |    struct S [v, r] {
-        |        c: v
+        |        mut c: v
         |    }
         |
         |    def Foo(): Unit = {
