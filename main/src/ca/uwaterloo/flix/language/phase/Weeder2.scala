@@ -668,9 +668,10 @@ object Weeder2 {
       TokenKind.KeywordLawful,
       TokenKind.KeywordPub,
       TokenKind.KeywordOverride,
+      TokenKind.KeywordMut,
       TokenKind.KeywordInline)
 
-    private def pickModifiers(tree: Tree, allowed: Set[TokenKind] = ALL_MODIFIERS, mustBePublic: Boolean = false): Validation[Ast.Modifiers, CompilationMessage] = {
+    private def pickModifiers(tree: Tree, allowed: Set[TokenKind] = ALL_MODIFIERS - TokenKind.KeywordMut, mustBePublic: Boolean = false): Validation[Ast.Modifiers, CompilationMessage] = {
       tryPick(TreeKind.ModifierList, tree) match {
         case None => Validation.success(Ast.Modifiers(List.empty))
         case Some(modTree) =>
