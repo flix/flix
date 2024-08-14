@@ -43,6 +43,7 @@ object KeywordOtherCompleter extends Completer {
       "pub",
       "Record",
       "Schema",
+      "struct",
       "sealed",
       "trait",
       "type",
