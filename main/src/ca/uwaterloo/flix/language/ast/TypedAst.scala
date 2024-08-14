@@ -58,7 +58,7 @@ object TypedAst {
 
   case class Enum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[TypeParam], derives: Ast.Derivations, cases: Map[Symbol.CaseSym, Case], tpe: Type, loc: SourceLocation)
 
-  case class Struct(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.StructSym, tparams: List[TypeParam], sc: Scheme, fields: List[StructField], loc: SourceLocation)
+  case class Struct(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.StructSym, tparams: List[TypeParam], sc: Scheme, fields: Map[Symbol.StructFieldSym, StructField], loc: SourceLocation)
 
   case class RestrictableEnum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.RestrictableEnumSym, index: TypeParam, tparams: List[TypeParam], derives: Ast.Derivations, cases: Map[Symbol.RestrictableCaseSym, RestrictableCase], tpe: Type, loc: SourceLocation)
 
@@ -154,7 +154,7 @@ object TypedAst {
 
     case class RestrictableTag(sym: Ast.RestrictableCaseSymUse, exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class Tuple(elms: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class Tuple(exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class RecordEmpty(tpe: Type, loc: SourceLocation) extends Expr {
       def eff: Type = Type.Pure
@@ -180,11 +180,11 @@ object TypedAst {
       def tpe: Type = Type.Unit
     }
 
-    case class StructNew(sym: Symbol.StructSym, fields: List[(Name.Label, Expr)], region: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class StructNew(sym: Symbol.StructSym, fields: List[(Symbol.StructFieldSym, Expr)], region: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class StructGet(sym: Symbol.StructSym, exp: Expr, field: Name.Label, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class StructGet(exp: Expr, sym: Symbol.StructFieldSym, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class StructPut(Sym: Symbol.StructSym, exp1: Expr, field: Name.Label, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class StructPut(exp1: Expr, sym: Symbol.StructFieldSym, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class VectorLit(exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
@@ -298,7 +298,7 @@ object TypedAst {
 
     case class Tag(sym: Ast.CaseSymUse, pat: Pattern, tpe: Type, loc: SourceLocation) extends Pattern
 
-    case class Tuple(elms: List[Pattern], tpe: Type, loc: SourceLocation) extends Pattern
+    case class Tuple(pats: List[Pattern], tpe: Type, loc: SourceLocation) extends Pattern
 
     case class Record(pats: List[Record.RecordLabelPattern], pat: Pattern, tpe: Type, loc: SourceLocation) extends Pattern
 
@@ -355,7 +355,7 @@ object TypedAst {
 
   case class Case(sym: Symbol.CaseSym, tpe: Type, sc: Scheme, loc: SourceLocation)
 
-  case class StructField(name: Name.Label, tpe: Type, loc: SourceLocation)
+  case class StructField(sym: Symbol.StructFieldSym, tpe: Type, loc: SourceLocation)
 
   case class RestrictableCase(sym: Symbol.RestrictableCaseSym, tpe: Type, sc: Scheme, loc: SourceLocation)
 

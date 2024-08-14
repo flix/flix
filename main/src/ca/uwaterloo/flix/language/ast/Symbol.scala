@@ -165,8 +165,11 @@ object Symbol {
     new CaseSym(sym, ident.name, ident.loc)
   }
 
-  def mkStructFieldSym(sym: Symbol.StructSym, ident: Ident): StructFieldSym = {
-    new StructFieldSym(sym, ident.name, ident.loc)
+  /**
+    * Returns the struct field symbol for the given name `name` which has position `idx` in the given struct `struct`
+    */
+  def mkStructFieldSym(struct: Symbol.StructSym, idx: Int, name: Name.Label): StructFieldSym = {
+    new StructFieldSym(struct, name.name, idx, name.loc)
   }
 
   /**
@@ -554,19 +557,20 @@ object Symbol {
   /**
    * Struct Field Symbol.
    */
-  final class StructFieldSym(val structSym: Symbol.StructSym, val name: String, val loc: SourceLocation) extends Symbol {
+  final class StructFieldSym(val structSym: Symbol.StructSym, val name: String, val idx: Int, val loc: SourceLocation) extends Symbol {
+
     /**
      * Returns `true` if this symbol is equal to `that` symbol.
      */
     override def equals(obj: scala.Any): Boolean = obj match {
-      case that: StructFieldSym => this.structSym == that.structSym && this.name == that.name
+      case that: StructFieldSym => this.structSym == that.structSym && this.name == that.name && this.idx == that.idx
       case _ => false
     }
 
     /**
      * Returns the hash code of this symbol.
      */
-    override val hashCode: Int = Objects.hash(structSym, name)
+    override val hashCode: Int = Objects.hash(structSym, name, idx)
 
     /**
      * Human readable representation.
@@ -574,7 +578,7 @@ object Symbol {
     override def toString: String = structSym.toString + "." + name
 
     /**
-     * The symbol's namespace.
+     * The symbol's namespace
      */
     def namespace: List[String] = structSym.namespace :+ structSym.name
   }

@@ -23,10 +23,9 @@ import ca.uwaterloo.flix.language.phase.Inliner
 
 object LiftedAst {
 
-  val empty: Root = Root(Map.empty, Map.empty, Map.empty, None, Set.empty, Map.empty)
+  val empty: Root = Root(Map.empty, Map.empty, None, Set.empty, Map.empty)
 
   case class Root(defs: Map[Symbol.DefnSym, Def],
-                  structs: Map[Symbol.StructSym, Struct],
                   effects: Map[Symbol.EffectSym, Effect],
                   entryPoint: Option[Symbol.DefnSym],
                   reachable: Set[Symbol.DefnSym],
@@ -89,7 +88,7 @@ object LiftedAst {
 
   }
 
-  case class StructField(name: Name.Label, idx: Int, tpe: Type, loc: SourceLocation)
+  case class StructField(sym: Symbol.StructFieldSym, idx: Int, tpe: Type, loc: SourceLocation)
 
   case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], clo: Expr, retTpe: MonoType, purity: Purity, loc: SourceLocation)
 

@@ -22,7 +22,6 @@ import ca.uwaterloo.flix.language.ast.shared.Source
 object OccurrenceAst {
 
   case class Root(defs: Map[Symbol.DefnSym, OccurrenceAst.Def],
-                  structs: Map[Symbol.StructSym, OccurrenceAst.Struct],
                   effects: Map[Symbol.EffectSym, OccurrenceAst.Effect],
                   entryPoint: Option[Symbol.DefnSym],
                   reachable: Set[Symbol.DefnSym],
@@ -84,7 +83,7 @@ object OccurrenceAst {
 
   }
 
-  case class StructField(name: Name.Label, idx: Int, tpe: Type, loc: SourceLocation)
+  case class StructField(sym: Symbol.StructFieldSym, idx: Int, tpe: Type, loc: SourceLocation)
 
   case class JvmMethod(ident: Name.Ident, fparams: List[OccurrenceAst.FormalParam], clo: OccurrenceAst.Expr, retTpe: MonoType, purity: Purity, loc: SourceLocation)
 

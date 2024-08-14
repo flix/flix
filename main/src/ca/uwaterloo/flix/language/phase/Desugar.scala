@@ -412,7 +412,7 @@ object Desugar {
   }
 
   /**
-   * Desugars the given [[WeededAst.StructField]] `field0`.
+   * Desugars the given [[WeededAst.Declaration.StructField]] `field0`.
    */
   private def visitField(field0: WeededAst.StructField): DesugaredAst.StructField = field0 match {
     case WeededAst.StructField(name, tpe0, loc) =>

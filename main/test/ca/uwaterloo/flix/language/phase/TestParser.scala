@@ -687,6 +687,34 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
     expectMain(result)
   }
 
+  test("ChainedApplyRecordSelect.01") {
+    val input =
+      """
+        |def main(): Unit = ()
+        |
+        |def foo(): Int32 =
+        |    let f = () -> { g = () -> { h = () -> 12 } };
+        |    f()#
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("ChainedApplyRecordSelect.02") {
+    val input =
+      """
+        |def main(): Unit = ()
+        |
+        |def foo(): Int32 =
+        |    let f = () -> { g = () -> { h = () -> 12 } };
+        |    f()#g()#
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
   test("LetMatchNoStatement.01") {
     val input =
       """
@@ -1060,6 +1088,15 @@ class TestParserHappy extends AnyFunSuite with TestUtils {
     val input =
       """
         |def foo(): Unit \ IO = throw
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
+  test("StructNoTParams.01") {
+    val input =
+      """
+        |struct S { }
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ParseError](result)

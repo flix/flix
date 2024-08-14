@@ -338,9 +338,14 @@ object Safety {
       case Expr.ArrayStore(base, index, elm, _, _) =>
         visit(base) ++ visit(index) ++ visit(elm)
 
-      case Expr.StructNew(sym, fields, region, tpe, eff, loc) => throw new RuntimeException("JOE TBD")
-      case Expr.StructGet(sym, exp, field, tpe, eff, loc) => throw new RuntimeException("JOE TBD")
-      case Expr.StructPut(sym, exp1, field, exp2, tpe, eff, loc) => throw new RuntimeException("JOE TBD")
+      case Expr.StructNew(_, fields, region, _, _, _) =>
+        fields.map{case (_, v) => v}.flatMap(visit) ++ visit(region)
+
+      case Expr.StructGet(e, _, _, _, _) =>
+        visit(e)
+
+      case Expr.StructPut(e1, _, e2, _, _, _) =>
+        visit(e1) ++ visit(e2)
 
       case Expr.VectorLit(elms, _, _, _) =>
         elms.flatMap(visit)
