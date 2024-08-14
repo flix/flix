@@ -71,7 +71,7 @@ object GenFunAndClosureClasses {
   /**
     * `(a|b)` is used to represent the function (left) or closure version (right)
     *
-    * ```
+    * {{{
     * public final class (Def$example|Clo$example$152) extends (Fn2$Obj$Int$Obj|Clo2$Obj$Int$Obj) implements Frame {
     *   // locals variables (present for both functions and closures)
     *   public int l0;
@@ -122,7 +122,7 @@ object GenFunAndClosureClasses {
     *     return x;
     *   }
     * }
-    * ```
+    * }}}
     */
   private def genCode(classType: JvmType.Reference, kind: FunctionKind, defn: Def)(implicit root: Root, flix: Flix): Array[Byte] = {
     val visitor = AsmOps.mkClassWriter()

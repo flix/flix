@@ -120,7 +120,7 @@ object SyntaxTree {
     case object TypeParameterList extends TreeKind
 
     //////////////////////////////////////////////////////////////////////////////////////////
-    /// DECLARATIONS                                                                        //
+    // DECLARATIONS                                                                         //
     //////////////////////////////////////////////////////////////////////////////////////////
     sealed trait Decl extends TreeKind
 
