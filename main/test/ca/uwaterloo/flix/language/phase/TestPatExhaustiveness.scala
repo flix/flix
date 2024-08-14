@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.errors.NonExhaustiveMatchError
+import ca.uwaterloo.flix.language.errors.PatMatchError
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -32,7 +33,7 @@ class TestPatExhaustiveness extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
+    expectError[PatMatchError.NonExhaustiveMatchError](result)
   }
 
   test("Pattern.Literal.Int32.01") {
@@ -44,7 +45,7 @@ class TestPatExhaustiveness extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
+    expectError[PatMatchError.NonExhaustiveMatchError](result)
   }
 
   test("Pattern.Literal.Int64.01") {
@@ -56,7 +57,7 @@ class TestPatExhaustiveness extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
+    expectError[PatMatchError.NonExhaustiveMatchError](result)
   }
 
   test("Pattern.Literal.Str.01") {
@@ -68,7 +69,7 @@ class TestPatExhaustiveness extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
+    expectError[PatMatchError.NonExhaustiveMatchError](result)
   }
 
   test("Pattern.Literal.Tuples.01") {
@@ -84,7 +85,7 @@ class TestPatExhaustiveness extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
+    expectError[PatMatchError.NonExhaustiveMatchError](result)
   }
 
   test("Pattern.Literal.Tuples.02") {
@@ -96,7 +97,7 @@ class TestPatExhaustiveness extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
+    expectError[PatMatchError.NonExhaustiveMatchError](result)
   }
 
   test("Pattern.Literal.Tuples.03") {
@@ -111,7 +112,7 @@ class TestPatExhaustiveness extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
+    expectError[PatMatchError.NonExhaustiveMatchError](result)
   }
 
   test("Pattern.Literal.Lists.01") {
@@ -126,7 +127,7 @@ class TestPatExhaustiveness extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
+    expectError[PatMatchError.NonExhaustiveMatchError](result)
   }
 
   test("Pattern.Literal.Lists.02") {
@@ -141,7 +142,7 @@ class TestPatExhaustiveness extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
+    expectError[PatMatchError.NonExhaustiveMatchError](result)
   }
 
   test("Pattern.Literal.Lists.03") {
@@ -155,7 +156,7 @@ class TestPatExhaustiveness extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
+    expectError[PatMatchError.NonExhaustiveMatchError](result)
   }
 
   test("Expression.LetMatch01") {
@@ -167,7 +168,7 @@ class TestPatExhaustiveness extends AnyFunSuite with TestUtils {
         |def f(e: E): Int8 = let E.A(true, 'a', i) = e; i
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
+    expectError[PatMatchError.NonExhaustiveMatchError](result)
   }
 
   test("Expression.LetMatch02") {
@@ -175,7 +176,7 @@ class TestPatExhaustiveness extends AnyFunSuite with TestUtils {
       """def f(e: (Int8, Int8)): Int8 = let (a,1i8) = e; a
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
+    expectError[PatMatchError.NonExhaustiveMatchError](result)
   }
 
   test("Pattern.Deep.01") {
@@ -190,7 +191,7 @@ class TestPatExhaustiveness extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
+    expectError[PatMatchError.NonExhaustiveMatchError](result)
   }
 
   test("Expression.MatchLambda.01") {
@@ -205,7 +206,7 @@ class TestPatExhaustiveness extends AnyFunSuite with TestUtils {
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
+    expectError[PatMatchError.NonExhaustiveMatchError](result)
   }
 
   test("Expression.MatchLambda.02") {
@@ -220,7 +221,7 @@ class TestPatExhaustiveness extends AnyFunSuite with TestUtils {
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
+    expectError[PatMatchError.NonExhaustiveMatchError](result)
   }
 
   test("Pattern.Nested.01") {
@@ -241,7 +242,7 @@ class TestPatExhaustiveness extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
+    expectError[PatMatchError.NonExhaustiveMatchError](result)
   }
 
   test("Pattern.Nested.02") {
@@ -258,7 +259,7 @@ class TestPatExhaustiveness extends AnyFunSuite with TestUtils {
         |     }
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
+    expectError[PatMatchError.NonExhaustiveMatchError](result)
   }
 
   test("Pattern.Nested.03") {
@@ -276,7 +277,7 @@ class TestPatExhaustiveness extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
+    expectError[PatMatchError.NonExhaustiveMatchError](result)
   }
 
   test("Pattern.Nested.04") {
@@ -295,7 +296,7 @@ class TestPatExhaustiveness extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
+    expectError[PatMatchError.NonExhaustiveMatchError](result)
   }
 
   test("Pattern.Instance.01") {
@@ -317,7 +318,7 @@ class TestPatExhaustiveness extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
+    expectError[PatMatchError.NonExhaustiveMatchError](result)
   }
 
   test("Pattern.Trait.01") {
@@ -335,7 +336,7 @@ class TestPatExhaustiveness extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
+    expectError[PatMatchError.NonExhaustiveMatchError](result)
   }
 
   test("Pattern.ParYield.01") {
@@ -349,7 +350,7 @@ class TestPatExhaustiveness extends AnyFunSuite with TestUtils {
         |def f(): E = par (E.E1 <- if (true) E.E1 else E.E2) yield E.E1
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
+    expectError[PatMatchError.NonExhaustiveMatchError](result)
   }
 
   test("Pattern.Guard.01") {
@@ -366,7 +367,7 @@ class TestPatExhaustiveness extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
+    expectError[PatMatchError.NonExhaustiveMatchError](result)
   }
 
   test("Pattern.Record.01") {
@@ -377,7 +378,7 @@ class TestPatExhaustiveness extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
+    expectError[PatMatchError.NonExhaustiveMatchError](result)
   }
 
   test("Pattern.Record.02") {
@@ -388,7 +389,7 @@ class TestPatExhaustiveness extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
+    expectError[PatMatchError.NonExhaustiveMatchError](result)
   }
 
   test("Pattern.Record.03") {
@@ -399,7 +400,7 @@ class TestPatExhaustiveness extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
+    expectError[PatMatchError.NonExhaustiveMatchError](result)
   }
 
   test("Pattern.Record.04") {
@@ -410,7 +411,7 @@ class TestPatExhaustiveness extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
+    expectError[PatMatchError.NonExhaustiveMatchError](result)
   }
 
   test("Pattern.Record.05") {
@@ -421,7 +422,7 @@ class TestPatExhaustiveness extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
+    expectError[PatMatchError.NonExhaustiveMatchError](result)
   }
 
   test("Pattern.Record.06") {
@@ -437,7 +438,7 @@ class TestPatExhaustiveness extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
+    expectError[PatMatchError.NonExhaustiveMatchError](result)
   }
 
   test("Pattern.Record.07") {
@@ -453,7 +454,7 @@ class TestPatExhaustiveness extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
+    expectError[PatMatchError.NonExhaustiveMatchError](result)
   }
 
   test("Pattern.Record.08") {
@@ -469,7 +470,7 @@ class TestPatExhaustiveness extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
+    expectError[PatMatchError.NonExhaustiveMatchError](result)
   }
 
   test("Pattern.Record.09") {
@@ -485,7 +486,7 @@ class TestPatExhaustiveness extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
+    expectError[PatMatchError.NonExhaustiveMatchError](result)
   }
 
   test("Pattern.Record.10") {
@@ -501,7 +502,7 @@ class TestPatExhaustiveness extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
+    expectError[PatMatchError.NonExhaustiveMatchError](result)
   }
 
   test("Pattern.Record.11") {
@@ -517,7 +518,7 @@ class TestPatExhaustiveness extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
+    expectError[PatMatchError.NonExhaustiveMatchError](result)
   }
 
   test("Pattern.Record.12") {
@@ -533,7 +534,7 @@ class TestPatExhaustiveness extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
+    expectError[PatMatchError.NonExhaustiveMatchError](result)
   }
 
   test("Pattern.Record.13") {
@@ -550,6 +551,6 @@ class TestPatExhaustiveness extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
+    expectError[PatMatchError.NonExhaustiveMatchError](result)
   }
 }
