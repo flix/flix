@@ -152,8 +152,8 @@ mod Test.Exp.Struct.BinaryTree {
 }
 
 mod Test.Exp.Struct.Nested {
-    struct Nested[v, r] {
-        value: v
+    struct Nested[t, r] {
+        value: t
     }
 
     @test
@@ -163,5 +163,102 @@ mod Test.Exp.Struct.Nested {
             nested€value€value€value€value == 15;
             nested€value€value€value€value = 37;
             nested€value€value€value€value == 37
+        }
+}
+
+mod Test.Exp.Struct.List {
+    struct List[t, r] {
+        value: t,
+        next: Option[List[t, r]]
+    }
+
+    def listAppend(list: List[t, r], rc: Region[r], value: t): Unit \ r = match list€next {
+        case Some(l) => listAppend(l, rc, value)
+        case None => list€next = Some(new List {value = value, next = None} @ rc)
+    }
+
+    def listSum(list: List[Int32, r]): Int32 \ r =
+        list€value + match list€next {
+            case Some(l) => listSum(l)
+            case None => 0
+        }
+
+    def listDifference(list: List[Int32, r]): Int32 \ r =
+        list€value - match list€next {
+            case Some(l) => listSum(l)
+            case None => 0
+        }
+
+    def listReverse(list: List[Int32, r], rc: Region[r]): List[Int32, r] \ r =
+        match list€next {
+            case None => list
+            case Some(l) =>
+                let reversed = listReverse(l, rc);
+                listAppend(reversed, rc, list€value);
+                reversed
+        }
+
+    @test
+    def testList01(): Bool =
+        region rc {
+            let list = new List { value = 1, next = None } @ rc;
+            listAppend(list, rc, 2);
+            listAppend(list, rc, 3);
+            listAppend(list, rc, 4);
+            listAppend(list, rc, 5);
+            listAppend(list, rc, 6);
+            listAppend(list, rc, 7);
+            listAppend(list, rc, 8);
+            listAppend(list, rc, 9);
+            listAppend(list, rc, 10);
+            listSum(list) == 55
+        }
+
+    @test
+    def testList02(): Bool =
+        region rc {
+            let list = new List { value = 1, next = None } @ rc;
+            listAppend(list, rc, 2);
+            listAppend(list, rc, 3);
+            listAppend(list, rc, 4);
+            listAppend(list, rc, 5);
+            listAppend(list, rc, 6);
+            listAppend(list, rc, 7);
+            listAppend(list, rc, 8);
+            listAppend(list, rc, 9);
+            listAppend(list, rc, 10);
+            listSum(list) == 55
+        }
+
+    @test
+    def testList03(): Bool =
+        region rc {
+            let list = new List { value = 1, next = None } @ rc;
+            listAppend(list, rc, 2);
+            listAppend(list, rc, 3);
+            listAppend(list, rc, 4);
+            listAppend(list, rc, 5);
+            listAppend(list, rc, 6);
+            listAppend(list, rc, 7);
+            listAppend(list, rc, 8);
+            listAppend(list, rc, 9);
+            listAppend(list, rc, 10);
+            listSum(list) == 55 and listSum(listReverse(list, rc)) == 55
+        }
+
+    @test
+    def testList04(): Bool =
+        region rc {
+            let list = new List { value = 1, next = None } @ rc;
+            listAppend(list, rc, 2);
+            listAppend(list, rc, 3);
+            listAppend(list, rc, 4);
+            listAppend(list, rc, 5);
+            listAppend(list, rc, 6);
+            listAppend(list, rc, 7);
+            listAppend(list, rc, 8);
+            listAppend(list, rc, 9);
+            listAppend(list, rc, 10);
+            listDifference(list) == -53 and listDifference(listReverse(list, rc)) == -35
         }
 }
