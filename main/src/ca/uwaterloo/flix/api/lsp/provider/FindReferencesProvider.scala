@@ -39,6 +39,8 @@ object FindReferencesProvider {
 
         case Entity.Enum(enum0) => findEnumReferences(enum0.sym)
 
+        case Entity.Struct(struct0) => findStructReferences(struct0.sym)
+
         case Entity.TypeAlias(alias0) => findTypeAliasReferences(alias0.sym)
 
         case Entity.AssocType(assoc) => findAssocTypeReferences(assoc.sym)
@@ -54,6 +56,10 @@ object FindReferencesProvider {
         case Entity.VarUse(sym, _, _) => findVarReferences(sym)
 
         case Entity.CaseUse(sym, _, _) => findCaseReferences(sym)
+
+        case Entity.StructFieldUse(sym, _, _) => findStructFieldReferences(sym)
+
+        case Entity.StructField(field0) => findStructFieldReferences(field0.sym)
 
         case Entity.Exp(_) => mkNotFound(uri, pos)
 
@@ -119,6 +125,13 @@ object FindReferencesProvider {
     ("status" -> ResponseStatus.Success) ~ ("result" -> locs.map(_.toJSON))
   }
 
+  private def findStructReferences(sym: Symbol.StructSym)(implicit index: Index, root: Root): JObject = {
+    val defSite = Location.from(sym.loc)
+    val useSites = index.usesOf(sym)
+    val locs = defSite :: useSites.toList.map(Location.from)
+    ("status" -> ResponseStatus.Success) ~ ("result" -> locs.map(_.toJSON))
+  }
+
   private def findTypeAliasReferences(sym: Symbol.TypeAliasSym)(implicit index: Index, root: Root): JObject = {
     val defSite = Location.from(sym.loc)
     val useSites = index.usesOf(sym)
@@ -144,6 +157,13 @@ object FindReferencesProvider {
     val defSites = index.defsOf(pred)
     val useSites = index.usesOf(pred)
     val locs = (defSites ++ useSites).toList.map(Location.from)
+    ("status" -> ResponseStatus.Success) ~ ("result" -> locs.map(_.toJSON))
+  }
+
+  private def findStructFieldReferences(sym: Symbol.StructFieldSym)(implicit index: Index, root: Root): JObject = {
+    val defSite = Location.from(root.structs(sym.structSym).fields(sym).loc)
+    val useSites = index.usesOf(sym)
+    val locs = defSite :: useSites.toList.map(Location.from)
     ("status" -> ResponseStatus.Success) ~ ("result" -> locs.map(_.toJSON))
   }
 
