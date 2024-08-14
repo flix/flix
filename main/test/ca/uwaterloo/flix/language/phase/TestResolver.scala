@@ -1840,4 +1840,49 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.IllegalFieldOrderInNew](result)
   }
 
+  test("ResolutionError.MutateImmutableField.01") {
+    val input = """
+                  |mod S {
+                  |    struct S[r] {f: Int32}
+                  |    def f(rc: Region): Unit = {
+                  |        new S {f = 3} @ rc;
+                  |        s€f = 2;
+                  |        ()
+                  |    }
+                  |}
+                  |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalPut](result)
+  }
+
+  test("ResolutionError.MutateImmutableField.02") {
+    val input = """
+                  |mod S {
+                  |    struct S[r] {f1: Int32, mut f2: Int32, f3: Int32}
+                  |    def f(rc: Region): Unit = {
+                  |        new S {f1 = 3, f2 = 4, f3 = 5} @ rc;
+                  |        s€f2 = 2;
+                  |        s€f1 = 2;
+                  |        ()
+                  |    }
+                  |}
+                  |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalPut](result)
+  }
+
+  test("ResolutionError.MutateImmutableField.03") {
+    val input = """
+                  |mod S {
+                  |    struct S[v, r] {f: Int32, mut f2: v}
+                  |    def f(rc: Region): Unit = {
+                  |        new S {f = 3, f2 = new S {f = 4, f2 = 5} @ rc} @ rc;
+                  |        s€f2€f = 2;
+                  |        ()
+                  |    }
+                  |}
+                  |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalPut](result)
+  }
 }
