@@ -182,11 +182,8 @@ mod Regex {
     ///
     /// Splits the string `s` around matches of the Regex `regex`.
     ///
-    pub def split(regex: {regex = Regex}, s: String): List[String] = region rc {
-        let _ = rc; // This avoids a redundancy error.
+    pub def split(regex: {regex = Regex}, s: String): List[String] =
         unsafe Array.toList(unsafe regex#regex.split(s))
-    }
-
 
     ///
     /// Returns string `s` with every match of the Regex `src` replaced by the string `dst`.

@@ -25,23 +25,19 @@ mod Environment {
     ///
     /// Returns the arguments passed to the program via the command line.
     ///
-    pub def getArgs(): List[String] = region rc {
-        let _ = rc; // Avoids redundancy error.
+    pub def getArgs(): List[String] =
         unsafe Array.toList(unsafe Global.getArgs())
-    }
 
     ///
     /// Returns an map of the current system environment.
     ///
-    pub def getEnv(): Map[String, String] = region rc {
-        let _ = rc; // Avoids redundancy error.
+    pub def getEnv(): Map[String, String] =
         try {
             let iter = unsafe (System.getenv().entrySet()).iterator();
             getEnvHelper(iter, Map.empty())
         } catch {
             case _: Exception => Map.empty()
         }
-    }
 
     ///
     /// Returns the value of the specified environment variable.
