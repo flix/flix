@@ -101,8 +101,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
     expectError[InstanceError.OverlappingInstances](result)
   }
 
-  // JOE STRUCTS TODO: Reenable when kinder is ready
-  ignore("Test.OverlappingInstance.06") {
+  test("Test.OverlappingInstance.06") {
     val input =
       """
         |struct S[a, r] {
@@ -156,8 +155,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
     expectError[InstanceError.ComplexInstance](result)
   }
 
-  // JOE STRUCTS TODO: Reenable when kinder is ready
-  ignore("Test.ComplexInstanceType.04") {
+  test("Test.ComplexInstanceType.04") {
     val input =
       """
         |struct Box[a, r] {
@@ -220,8 +218,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
     expectError[InstanceError.ComplexInstance](result)
   }
 
-  // JOE STRUCTS TODO: Enable when kinder is ready
-  ignore("Test.ComplexInstanceType.09") {
+  test("Test.ComplexInstanceType.09") {
     val input =
       """
         |struct Box[a, r] {
@@ -273,8 +270,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
     expectError[InstanceError.DuplicateTypeVar](result)
   }
 
-  // JOE STRUCTS TODO: Enable when kinder is ready
-  ignore("Test.DuplicateTypeParameter.04") {
+  test("Test.DuplicateTypeParameter.04") {
     val input =
       """
         |struct DoubleBox[a, b, r] {
@@ -440,8 +436,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
 
   }
 
-  // JOE STRUCTS TODO: Enable when kinder is done
-  ignore("Test.MismatchedSignatures.08") {
+  test("Test.MismatchedSignatures.08") {
     val input =
       """
         |trait C[a] {

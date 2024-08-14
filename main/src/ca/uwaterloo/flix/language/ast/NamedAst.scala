@@ -49,7 +49,9 @@ object NamedAst {
 
     case class Enum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[TypeParam], derives: Derivations, cases: List[Declaration.Case], loc: SourceLocation) extends Declaration
 
-    case class Struct(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.StructSym, tparams: List[TypeParam], fields: List[StructField], loc: SourceLocation) extends Declaration
+    case class Struct(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.StructSym, tparams: List[TypeParam], fields: List[StructField], indices: Map[Name.Label, Int], loc: SourceLocation) extends Declaration
+
+    case class StructField(sym: Name.Label, tpe: Type, loc: SourceLocation)
 
     case class RestrictableEnum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.RestrictableEnumSym, index: TypeParam, tparams: List[TypeParam], derives: Derivations, cases: List[Declaration.RestrictableCase], loc: SourceLocation) extends Declaration
 
@@ -69,8 +71,6 @@ object NamedAst {
   }
 
   case class Spec(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, tparams: List[TypeParam], fparams: List[FormalParam], retTpe: Type, eff: Option[Type], tconstrs: List[TypeConstraint], econstrs: List[EqualityConstraint], loc: SourceLocation)
-
-  case class StructField(name: Name.Label, tpe: Type, loc: SourceLocation)
 
   sealed trait UseOrImport {
     def alias: Name.Ident
@@ -420,7 +420,6 @@ object NamedAst {
   case class SelectChannelRule(sym: Symbol.VarSym, chan: Expr, exp: Expr)
 
   sealed trait TypeParam {
-    // TODO redundant? #8207
     def name: Name.Ident
 
     def sym: Symbol.UnkindedTypeVarSym

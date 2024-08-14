@@ -123,7 +123,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
 
   // this test is temporarily ignored because it recovers and proceeds
   // to fail in future unimplemented phases
-  ignore("InaccessibleStruct.03") {
+  test("InaccessibleStruct.03") {
     val input =
       s"""
          |mod A{
@@ -181,7 +181,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.InaccessibleEnum](result)
   }
 
-  ignore("InaccessibleType.03") {
+  test("InaccessibleType.03") {
     val input =
       s"""
          |mod A {
@@ -410,7 +410,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.CyclicTypeAliases](result)
   }
 
-  ignore("CyclicTypeAliases.06") {
+  test("CyclicTypeAliases.06") {
     val input =
       s"""
          |struct S[t, r] {
@@ -460,6 +460,18 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedNameUnrecoverable](result)
+  }
+
+  test("UndefinedName.04") {
+    val input =
+      """
+        |import java.util.Objects
+        |import java.lang.Object
+        |
+        |pub def check(): Bool \ IO = Objects.isNull((x: Object))
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedName](result)
   }
 
   test("UndefinedEffect.01") {
@@ -1649,7 +1661,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
   // This test is temporarily disabled because the creation of S1 is valid
   // and thus the compiler attempts to continue to compile this program and
   // fails in future unimplemented phases.
-  ignore("ResolutionError.UndefinedStruct.03") {
+  test("ResolutionError.UndefinedStruct.03") {
     val input =
       """
         |mod M {
@@ -1669,7 +1681,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
 
   // A bug was introduced into the kinder when it was refactored, so this test fails, but
   // will reenable it once my next struct kinder support pr is merged
-  ignore("ResoutionError.MissingStructField.01") {
+  test("ResoutionError.MissingStructField.01") {
     val input =
       """
         |mod S {
@@ -1724,7 +1736,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
                   |}
                   |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.MissingStructField](result)
+    expectError[ResolutionError.MissingStructFieldInNew](result)
   }
 
   test("ResolutionError.TooFewFields.02") {
@@ -1738,7 +1750,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
                   |}
                   |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.MissingStructField](result)
+    expectError[ResolutionError.MissingStructFieldInNew](result)
   }
 
   test("ResolutionError.TooFewFields.03") {
@@ -1753,7 +1765,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
                   |}
                   |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.MissingStructField](result)
+    expectError[ResolutionError.MissingStructFieldInNew](result)
   }
 
   test("ResolutionError.TooManyFields.01") {
@@ -1766,7 +1778,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
                   |}
                   |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.ExtraStructField](result)
+    expectError[ResolutionError.ExtraStructFieldInNew](result)
   }
 
   test("ResolutionError.TooManyFields.02") {
@@ -1781,7 +1793,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
                   |}
                   |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.ExtraStructField](result)
+    expectError[ResolutionError.ExtraStructFieldInNew](result)
   }
 
   test("ResolutionError.TooManyFields.03") {
@@ -1792,6 +1804,40 @@ class TestResolver extends AnyFunSuite with TestUtils {
                   |}
                   |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.ExtraStructField](result)
+    expectError[ResolutionError.ExtraStructFieldInNew](result)
   }
+
+  test("ResolutionError.StructFieldIncorrectOrder.01") {
+    val input = """
+                  |struct S[r] {a: Int32, b: Int32}
+                  |def f(rc: Region): S[r] = {
+                  |    new S {b = 3, a = 4} @ rc
+                  |}
+                  |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalFieldOrderInNew](result)
+  }
+
+  test("ResolutionError.StructFieldIncorrectOrder.02") {
+    val input = """
+                  |struct S[r] {f: Int32, l: Int32, i: Int32, x: Int32}
+                  |def f(rc: Region): S[r] = {
+                  |    new S {f = 3, l = 4, x = 2, i = 9} @ rc
+                  |}
+                  |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalFieldOrderInNew](result)
+  }
+
+  test("ResolutionError.StructFieldIncorrectOrder.03") {
+    val input = """
+                  |struct S[r] {s1: String, f: Int32, l: Int32, i: Int32, x: Int32, s2: String}
+                  |def f(rc: Region): S[r] = {
+                  |    new S {s2 = "s", f = 1, l = 1, i = 1, x = 1, s1 = "s"} @ rc
+                  |}
+                  |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalFieldOrderInNew](result)
+  }
+
 }

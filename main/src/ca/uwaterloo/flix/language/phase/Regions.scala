@@ -152,9 +152,14 @@ object Regions {
     case Expr.ArrayStore(exp1, exp2, exp3, _, loc) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
-    case Expr.StructNew(sym, fields, region, tpe, eff, loc) => throw new RuntimeException("JOE TBD")
-    case Expr.StructGet(sym, exp, field, tpe, eff, loc) => throw new RuntimeException("JOE TBD")
-    case Expr.StructPut(sym, exp1, field, exp2, tpe, eff, loc) => throw new RuntimeException("JOE TBD")
+    case Expr.StructNew(_, fields, region, tpe, _, loc) =>
+      fields.map{case (k, v) => v}.flatMap(visitExp) ++ visitExp(region) ++ checkType(tpe, loc)
+
+    case Expr.StructGet(e, _, tpe, _, loc) =>
+      visitExp(e) ++ checkType(tpe, loc)
+
+    case Expr.StructPut(e1, _, e2, tpe, _, loc) =>
+      visitExp(e1) ++ visitExp(e2) ++ checkType(tpe, loc)
 
     case Expr.VectorLit(exps, tpe, _, loc) =>
       exps.flatMap(visitExp) ++ checkType(tpe, loc)
