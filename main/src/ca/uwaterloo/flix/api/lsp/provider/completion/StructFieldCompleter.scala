@@ -22,13 +22,11 @@ import ca.uwaterloo.flix.language.ast.TypedAst
 import java.lang.reflect.{Field, Method, Modifier}
 
 object StructFieldCompleter {
-  def getCompletions(e: ResolutionError.UndefinedStructField, root: TypedAst.Root): Iterable[FieldCompletion] = {
-    root.names.
-  }
-
-  private def getFields(clazz: Class[_]): List[Field] = {
-    val availableFields = clazz.getFields.toList
-    val staticFields = availableFields.filter(m => Modifier.isStatic(m.getModifiers))
-    staticFields.sortBy(_.getName)
+  def getCompletions(e: ResolutionError.UndefinedStructField, root: TypedAst.Root): Iterable[Completion.StructFieldCompletion] = {
+    val struct = e.sym
+    val completions = root.structs(struct).fields.filter {
+      case (k, v) => k.name.startsWith(e.field.name)
+    }
+    completions.values.map(field => Completion.StructFieldCompletion(field.sym.name))
   }
 }
