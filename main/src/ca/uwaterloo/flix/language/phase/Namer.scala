@@ -140,7 +140,11 @@ object Namer {
       val table1 = tryAddToTable(table0, sym.namespace, sym.name, decl)
       cases.foldLeft(table1)(tableDecl)
 
-    case NamedAst.Declaration.Struct(_, _, _, sym, _, _, _, _) =>
+    case NamedAst.Declaration.Struct(_, _, _, sym, _, fields, _, _) =>
+      val table1 = tryAddToTable(table0, sym.namespace, sym.name, decl)
+      fields.foldLeft(table1)(tableDecl)
+
+    case NamedAst.Declaration.StructField(sym, tpe, loc) =>
       tryAddToTable(table0, sym.namespace, sym.name, decl)
 
     case NamedAst.Declaration.RestrictableEnum(_, _, _, sym, _, _, _, cases, _) =>
@@ -319,8 +323,8 @@ object Namer {
       val tparams = tparams0.map(visitTypeParam)
 
       val mod = visitModifiers(mod0, ns0)
-      val fields = fields0.map(visitField)
-      val indices = fields.map(_.sym).zipWithIndex.toMap
+      val indices = fields0.map(_.name).zipWithIndex.toMap
+      val fields = fields0.map(visitField(sym, _, indices))
 
       NamedAst.Declaration.Struct(doc, ann, mod, sym, tparams, fields, indices, loc)
   }
@@ -363,10 +367,11 @@ object Namer {
   /**
     * Performs naming on the given field.
     */
-  private def visitField(field0: DesugaredAst.StructField)(implicit flix: Flix, sctx: SharedContext): NamedAst.Declaration.StructField = field0 match {
-    case DesugaredAst.StructField(ident, tpe, loc) =>
+  private def visitField(struct: Symbol.StructSym, field0: DesugaredAst.StructField, indices: Map[Name.Label, Int])(implicit flix: Flix, sctx: SharedContext): NamedAst.Declaration.StructField = field0 match {
+    case DesugaredAst.StructField(name, tpe, loc) =>
       val t = visitType(tpe)
-      NamedAst.Declaration.StructField(ident, t, loc)
+      val sym = Symbol.mkStructFieldSym(struct, indices(name), name)
+      NamedAst.Declaration.StructField(sym, t, loc)
   }
 
   /**
@@ -1587,6 +1592,7 @@ object Namer {
     case NamedAst.Declaration.Def(sym, _, _) => sym.loc
     case NamedAst.Declaration.Enum(_, _, _, sym, _, _, _, _) => sym.loc
     case NamedAst.Declaration.Struct(_, _, _, sym, _, _, _, _) => sym.loc
+    case NamedAst.Declaration.StructField(sym, _, _) => sym.loc
     case NamedAst.Declaration.RestrictableEnum(_, _, _, sym, _, _, _, _, _) => sym.loc
     case NamedAst.Declaration.TypeAlias(_, _, _, sym, _, _, _) => sym.loc
     case NamedAst.Declaration.Effect(_, _, _, sym, _, _) => sym.loc
