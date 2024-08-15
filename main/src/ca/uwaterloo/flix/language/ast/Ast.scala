@@ -402,15 +402,15 @@ object Ast {
   object Modifier {
 
     /**
-      * The mutable modifier.
-      */
-
-    case object Mutable extends Modifier
-
-    /**
       * The lawful modifier.
       */
     case object Lawful extends Modifier
+
+    /**
+     * The mutable modifier.
+     */
+
+    case object Mutable extends Modifier
 
     /**
       * The override modifier.
