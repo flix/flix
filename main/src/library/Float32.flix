@@ -27,7 +27,6 @@ mod Float32 {
     import java.lang.Double
     import java.lang.Float
     import java.lang.Math
-    import java.lang.{String => JString}
 
     ///
     /// Returns the number of bits used to represent a `Float32`.

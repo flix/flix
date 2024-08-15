@@ -26,7 +26,6 @@ mod Float64 {
 
     import java.lang.Double
     import java.lang.Math
-    import java.lang.{String => JString}
     import java.math.BigDecimal
 
     ///
