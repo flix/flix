@@ -23,11 +23,11 @@ import ca.uwaterloo.flix.util._
 import org.java_websocket.WebSocket
 import org.java_websocket.handshake.ClientHandshake
 import org.java_websocket.server.WebSocketServer
-import org.json4s.JsonAST.*
+import org.json4s.JsonAST._
 import org.json4s.jvalue2monadic
 import org.json4s.ParserUtil.ParseException
 import org.json4s.native.JsonMethods
-import org.json4s.native.JsonMethods.*
+import org.json4s.native.JsonMethods._
 
 import java.io.IOException
 import java.net.InetSocketAddress

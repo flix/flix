@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.runtime.{CompilationResult, TestFn}
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.nio.file.{Files, Path, Paths}
-import scala.jdk.CollectionConverters.*
+import scala.jdk.CollectionConverters._
 
 class FlixSuite(incremental: Boolean) extends AnyFunSuite {
 
