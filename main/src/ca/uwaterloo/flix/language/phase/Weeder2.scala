@@ -257,7 +257,7 @@ object Weeder2 {
         Types.pickType(tree),
         Types.pickConstraints(tree),
         traverse(pickAll(TreeKind.Decl.Def, tree))(visitDefinitionDecl(_, allowedModifiers = Set(TokenKind.KeywordPub, TokenKind.KeywordOverride), mustBePublic = true)),
-        traverse(pickAll(TreeKind.Decl.Redef, tree))(visitDefinitionDecl(_, allowedModifiers = Set(TokenKind.KeywordPub), mustBePublic = true, expectedTreeKind = TreeKind.Decl.Redef)),
+        traverse(pickAll(TreeKind.Decl.Redef, tree))(visitRedefinitionDecl),
       ) {
         (doc, annotations, modifiers, clazz, tpe, tconstrs, defs, redefs) =>
           val assocs = pickAll(TreeKind.Decl.AssociatedTypeDef, tree)
@@ -288,8 +288,8 @@ object Weeder2 {
       }
     }
 
-    private def visitDefinitionDecl(tree: Tree, allowedModifiers: Set[TokenKind] = Set(TokenKind.KeywordPub), mustBePublic: Boolean = false, expectedTreeKind: TreeKind.Decl = TreeKind.Decl.Def): Validation[Declaration.Def, CompilationMessage] = {
-      expect(tree, expectedTreeKind)
+    private def visitDefinitionDecl(tree: Tree, allowedModifiers: Set[TokenKind] = Set(TokenKind.KeywordPub), mustBePublic: Boolean = false): Validation[Declaration.Def, CompilationMessage] = {
+      expect(tree, TreeKind.Decl.Def)
       mapN(
         pickDocumentation(tree),
         pickAnnotations(tree),
@@ -304,7 +304,27 @@ object Weeder2 {
         Types.tryPickEffect(tree)
       ) {
         (doc, annotations, modifiers, ident, tparams, fparams, exp, ttype, tconstrs, constrs, eff) =>
-          Declaration.Def(doc, annotations, if (expectedTreeKind == TreeKind.Decl.Redef) modifiers.copy(mod = Modifier.Override :: modifiers.mod) else modifiers, ident, tparams, fparams, exp, ttype, eff, tconstrs, constrs, tree.loc)
+          Declaration.Def(doc, annotations, modifiers, ident, tparams, fparams, exp, ttype, eff, tconstrs, constrs, tree.loc)
+      }
+    }
+
+    private def visitRedefinitionDecl(tree: Tree): Validation[Declaration.Def, CompilationMessage] = {
+      expect(tree, TreeKind.Decl.Redef)
+      mapN(
+        pickDocumentation(tree),
+        pickAnnotations(tree),
+        pickModifiers(tree, allowed = Set(TokenKind.KeywordPub), mustBePublic = true),
+        pickNameIdent(tree),
+        Types.pickKindedParameters(tree),
+        pickFormalParameters(tree),
+        Exprs.pickExpr(tree),
+        Types.pickType(tree),
+        Types.pickConstraints(tree),
+        pickEqualityConstraints(tree),
+        Types.tryPickEffect(tree)
+      ) {
+        (doc, annotations, modifiers, ident, tparams, fparams, exp, ttype, tconstrs, constrs, eff) =>
+          Declaration.Def(doc, annotations, modifiers.copy(mod = Modifier.Override :: modifiers.mod), ident, tparams, fparams, exp, ttype, eff, tconstrs, constrs, tree.loc)
       }
     }
 
