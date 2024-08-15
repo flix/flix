@@ -32,9 +32,9 @@ import scala.annotation.tailrec
   * Constraint resolution works by iteratively building up a substitution from the constraints.
   *
   * Given a constraint set, we
-  * 1. select a constraint from the set,
-  * 2. attempt to resolve it, yielding a substitution and new constraints
-  * 3. apply the substitution to the accumulated substitution and add the new constraints to our set
+  *   1. select a constraint from the set,
+  *   1. attempt to resolve it, yielding a substitution and new constraints
+  *   1. apply the substitution to the accumulated substitution and add the new constraints to our set
   *
   * We repeat this until we cannot make any more progress or we discover an invalid constraint.
   */
@@ -190,8 +190,8 @@ object ConstraintSolver {
     * The initial substitution should come from e.g., formal parameter type ascriptions.
     *
     * Returns a result, either:
-    * - a substitution and leftover constraints, or
-    * - an error if resolution failed
+    *   - a substitution and leftover constraints, or
+    *   - an error if resolution failed
     */
   def resolve(constrs: List[TypeConstraint], subst0: Substitution, renv: RigidityEnv)(implicit tenv: Map[Symbol.TraitSym, Ast.TraitContext], eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Result[ResolutionResult, TypeError] = {
 
@@ -657,28 +657,28 @@ object ConstraintSolver {
     * Converts the given unification error into a type error.
     *
     * ExpectType
-    * - pretend it's just unifyType
-    * - if mismatchedtypes then map the error to PossibleChecked or UnexpectedType
-    * - else return as is
+    *   - pretend it's just unifyType
+    *   - if mismatchedtypes then map the error to PossibleChecked or UnexpectedType
+    *   - else return as is
     *
     * ExpectEffect
-    * - pretend it's just unifyType
-    * - if mismatchedEffects then map the error to possiblechecke or unexpectedeffect
-    * - else return as is
+    *   - pretend it's just unifyType
+    *   - if mismatchedEffects then map the error to possiblechecke or unexpectedeffect
+    *   - else return as is
     *
     * ExpectTypeArguments
-    * - pretend it's just unifytype
-    * - if mismatchedbools or mismatchedarroweffects or mismatchedtypes then map the error to unexpectedarg
-    * - else return as is
+    *   - pretend it's just unifytype
+    *   - if mismatchedbools or mismatchedarroweffects or mismatchedtypes then map the error to unexpectedarg
+    *   - else return as is
     *
     * Match
-    * - mismatched types
-    *   - check for over/under applied
-    *   - else return as is
-    *     - mismatched bools -> mismatched bools
-    *     - mismatched effects
-    *   - check for mismatched arrow effects
-    *   - else return as is
+    *   - mismatched types
+    *     - check for over/under applied
+    *     - else return as is
+    *       - mismatched bools -> mismatched bools
+    *       - mismatched effects
+    *     - check for mismatched arrow effects
+    *     - else return as is
     *     - mismatched case sets -> mismatched case sets
     *     - mismatched arity -> mismatched arity
     *     - rigid var -> mismatched types
@@ -694,7 +694,7 @@ object ConstraintSolver {
     *     - ord
     *     - hash
     *     - ?
-    *       - (other cases should be impossible on this branch)
+    *     - (other cases should be impossible on this branch)
     */
   // TODO ASSOC-TYPES This translation does not work well
   // TODO ASSOC-TYPES because provenance is not propogated properly.
@@ -802,9 +802,9 @@ object ConstraintSolver {
     /**
       * Composes `this` equality result with `that` equality result.
       *
-      * - Composes the substitution,
-      * - combines the leftover constraints, and
-      * - indicates progress if one of the two made progress.
+      *   - Composes the substitution,
+      *   - combines the leftover constraints, and
+      *   - indicates progress if one of the two made progress.
       */
     def @@(that: ResolutionResult): ResolutionResult = {
       val ResolutionResult(s1, cs1, p1) = this

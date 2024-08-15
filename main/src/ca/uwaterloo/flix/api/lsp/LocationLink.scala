@@ -64,6 +64,18 @@ object LocationLink {
   /**
     * Returns a location link to the given symbol `sym`.
     */
+  def fromStructSym(sym: Symbol.StructSym, loc: SourceLocation)(implicit root: Root): LocationLink = {
+    val structDecl = root.structs(sym)
+    val originSelectionRange = Range.from(loc)
+    val targetUri = sym.loc.source.name
+    val targetRange = Range.from(structDecl.loc)
+    val targetSelectionRange = Range.from(sym.loc)
+    LocationLink(originSelectionRange, targetUri, targetRange, targetSelectionRange)
+  }
+
+  /**
+    * Returns a location link to the given symbol `sym`.
+    */
   def fromCaseSym(sym: Symbol.CaseSym, loc: SourceLocation)(implicit root: Root): LocationLink = {
     val enumDecl = root.enums(sym.enumSym)
     val caseDecl = enumDecl.cases(sym)
@@ -71,6 +83,19 @@ object LocationLink {
     val targetUri = sym.loc.source.name
     val targetRange = Range.from(caseDecl.loc)
     val targetSelectionRange = Range.from(caseDecl.loc)
+    LocationLink(originSelectionRange, targetUri, targetRange, targetSelectionRange)
+  }
+
+  /**
+    * Returns a location link to the given symbol `sym`.
+    */
+  def fromStructFieldSym(sym: Symbol.StructFieldSym, loc: SourceLocation)(implicit root: Root): LocationLink = {
+    val structDecl = root.structs(sym.structSym)
+    val fieldDecl = structDecl.fields(sym)
+    val originSelectionRange = Range.from(loc)
+    val targetUri = sym.loc.source.name
+    val targetRange = Range.from(fieldDecl.loc)
+    val targetSelectionRange = Range.from(fieldDecl.loc)
     LocationLink(originSelectionRange, targetUri, targetRange, targetSelectionRange)
   }
 

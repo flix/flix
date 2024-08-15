@@ -145,12 +145,12 @@ object TraitEnvironment {
     * Returns the list of constraints that hold if the given constraint `tconstr` holds, using the super traits of the constraint.
     *
     * E.g. if we have 3 traits: `A`, `B`, `C` where
-    * - `A` extends `B`
-    * - `B` extends `C`
+    *   - `A` extends `B`
+    *   - `B` extends `C`
     * Then for the constraint `t : A`, we return:
-    * - `t : A` (given)
-    * - `t : B` (because `B` is a super trait of `A`)
-    * - `t : C` (because `C` is a super trait of `B`, and transitively a super trait of `A`)
+    *   - `t : A` (given)
+    *   - `t : B` (because `B` is a super trait of `A`)
+    *   - `t : C` (because `C` is a super trait of `B`, and transitively a super trait of `A`)
     *
     */
   private def bySuper(tconstr: Ast.TypeConstraint, traitEnv: Map[Symbol.TraitSym, Ast.TraitContext]): List[Ast.TypeConstraint] = {
