@@ -130,15 +130,16 @@ object PatMatch {
     sup.isAssignableFrom(sub)
   }
 
-  private def checkExceptionOrder(rules: List[TypedAst.CatchRule]): (Boolean, Option[(java.lang.Class[_], java.lang.Class[_])]) = {
-    for (i <- rules.indices; j <- 0 until i) {
-      val laterRule = rules(i)
-      val earlierRule = rules(j)
-      if (isSubtype(laterRule.clazz, earlierRule.clazz)) {
-        return (false, Some((laterRule.clazz, earlierRule.clazz)))
-      }
-    }
-    (true, None)
+  private def checkExceptionOrder(rules: List[TypedAst.CatchRule]): List[(java.lang.Class[_], java.lang.Class[_])] = {
+    val invalidPairs = for {
+      i <- rules.indices
+      j <- 0 until i
+      laterRule = rules(i)
+      earlierRule = rules(j)
+      if isSubtype(laterRule.clazz, earlierRule.clazz)
+    } yield (laterRule.clazz, earlierRule.clazz)
+
+    invalidPairs.toList
   }
 
 
@@ -217,14 +218,12 @@ object PatMatch {
       case Expr.Without(exp, _, _, _, _) => visitExp(exp)
 
       case Expr.TryCatch(exp, rules, _, _, loc) =>
-        val (isValid, conflictingExceptions) = checkExceptionOrder(rules)
-        if (!isValid) {
-
-          conflictingExceptions match {
-            case Some((later, earlier)) => List(PatMatchError.ExceptionTypeMatchError(later, earlier, loc))
-            case None => Nil
+        val invalidExceptionPairs = checkExceptionOrder(rules)
+        if (invalidExceptionPairs.nonEmpty) {
+          invalidExceptionPairs.map { case (later, earlier) =>
+            PatMatchError.ExceptionTypeMatchError(later, earlier, loc)
           }
-        }
+        } 
         else {
           val ruleExps = rules.map(_.exp)
           (exp :: ruleExps).flatMap(visitExp)
