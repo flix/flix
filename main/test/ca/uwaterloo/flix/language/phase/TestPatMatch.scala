@@ -576,7 +576,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         | }
         |"""
     val result = compile(input, Options.TestWithLibNix)
-    expectError(PatMatchError.ExceptionTypeMatchError)(result)
+    expectError[PatMatchError.ExceptionTypeMatchError](result)
   }
 
   test("Expression.TryCatch.02") {
@@ -594,7 +594,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         | }
         |"""
     val result = compile(input, Options.TestWithLibNix)
-    expectError(PatMatchError.ExceptionTypeMatchError)(result)
+    expectError[PatMatchError.ExceptionTypeMatchError](result)
   }
 
   test("Expression.TryCatch.03") {
@@ -614,7 +614,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         | }
         |"""
     val result = compile(input, Options.TestWithLibNix)
-    expectError(PatMatchError.ExceptionTypeMatchError)(result)
+    expectError[PatMatchError.ExceptionTypeMatchError](result)
   }
 
   test("Expression.TryCatch.04") {
@@ -636,6 +636,6 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         | }
         |"""
     val result = compile(input, Options.TestWithLibNix)
-    expectError(PatMatchError.ExceptionTypeMatchError)(result)
+    expectError[PatMatchError.ExceptionTypeMatchError](result)
   }
 }
