@@ -399,8 +399,10 @@ object Safety {
       case Expr.UncheckedMaskingCast(exp, _, _, loc) =>
         val ctx = loc.security
         if (ctx == SecurityContext.AllPermissions) {
+          // Allowed...
           visit(exp)
         } else {
+          // Extra Forbidden!!
           SafetyError.Forbidden(ctx, loc) :: Nil
         }
 
@@ -413,7 +415,14 @@ object Safety {
           rules.flatMap { case CatchRule(sym, clazz, e) => checkCatchClass(clazz, sym.loc) ++ visit(e) }
 
       case Expr.Throw(exp, _, _, loc) =>
-        visit(exp) ++ checkThrow(exp)
+        val ctx = loc.security
+        if (ctx == SecurityContext.AllPermissions) {
+          // Permitted
+          visit(exp) ++ checkThrow(exp)
+        } else {
+          // Forbidden
+          SafetyError.Forbidden(ctx, loc) :: Nil
+        }
 
       case Expr.TryWith(exp, _, rules, _, _, _) =>
         visit(exp) ++
