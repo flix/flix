@@ -32,8 +32,8 @@ object ShowAstProvider {
   /**
     * Returns a JSON object with
     *
-    * - `title` (a string like `Namer.flix.ir`)
-    * - `text` (a string with the ir representation).
+    *   - `title` (a string like `Namer.flix.ir`)
+    *   - `text` (a string with the ir representation).
     */
   def showAst()(implicit flix: Flix): JObject = {
     val oldOpts = flix.options

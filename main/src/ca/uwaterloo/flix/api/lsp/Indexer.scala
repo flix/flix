@@ -29,6 +29,7 @@ object Indexer {
     Index.all(
       traverse(root.defs.values)(visitDef),
       traverse(root.enums.values)(visitEnum),
+      traverse(root.structs.values)(visitStruct),
       traverse(root.traits.values)(visitTrait),
       traverse(root.instances.values) {
         instances => traverse(instances)(visitInstance)
@@ -98,6 +99,20 @@ object Indexer {
   private def visitCase(caze0: Case): Index = caze0 match {
     case Case(_, tpe, _, _) =>
       Index.occurrenceOf(caze0) ++ visitType(tpe)
+  }
+
+  /**
+   * Returns a reverse index for the given struct `struct0`.
+   */
+  private def visitStruct(struct0: Struct): Index = struct0 match {
+    case Struct(doc, ann, mod, sym, tparams, sc, fields, loc) =>
+      Index.all(
+        Index.occurrenceOf(struct0),
+        traverse(tparams)(visitTypeParam),
+        traverse(fields.values) {
+          case f@StructField(sym, tpe, loc) => Index.occurrenceOf(f) ++ visitType(tpe)
+        },
+      )
   }
 
   /**
@@ -317,13 +332,18 @@ object Indexer {
       val i1 = traverse(fields) {
         case (_, e) => visitExp(e)
       }
-      i0 ++ i1
+      val parent = Entity.Exp(exp0)
+      val i2 = Index.useOf(sym, loc)
+      val fieldSymIndices = fields.map { case (sym, _) => Index.useOf(sym, sym.loc, parent) }
+      fieldSymIndices.foldLeft(i0 ++ i1 ++ i2)(_ ++ _)
 
     case Expr.StructGet(exp, field, tpe, eff, loc) =>
-      visitExp(exp) ++ Index.occurrenceOf(exp0)
+      val parent = Entity.Exp(exp0)
+      visitExp(exp) ++ Index.occurrenceOf(exp0) ++ Index.useOf(field, field.loc, parent)
 
     case Expr.StructPut(exp1, field, exp2, tpe, eff, loc) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
+      val parent = Entity.Exp(exp0)
+      visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0) ++ Index.useOf(field, field.loc, parent)
 
     case Expr.VectorLit(exps, _, _, _) =>
       visitExps(exps) ++ Index.occurrenceOf(exp0)

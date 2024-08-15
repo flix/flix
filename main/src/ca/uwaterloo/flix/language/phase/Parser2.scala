@@ -34,17 +34,19 @@ import scala.collection.mutable.ArrayBuffer
   * A resilient LL parser.
   * Parses a stream of tokens into a [[SyntaxTree.Tree]].
   * This parser works in two steps:
+  *
   * 1. First the list of tokens is traversed while emitting Open, Advance and Close events.
   * Conceptually this is exactly the same as inserting parenthesis in a stream of tokens, only here each parenthesis is annotated with a kind.
   * For instance:
-  * def main(): Int32 = 123
+  * {{{def main(): Int32 = 123}}}
   * Becomes:
-  * (Def 'def' (Name 'main' ) '(' ')' ':' (Type 'Int32' ) '=' (Literal '123' ) )
+  * {{{(Def 'def' (Name 'main' ) '(' ')' ':' (Type 'Int32' ) '=' (Literal '123' ) )}}}
+  *
   * 2. The flat list of events is automatically turned into a SyntaxTree.Tree.
   *
   * This parser is adopted from 'Resilient LL Parsing Tutorial' by Alex Kladov who works on rust-analyzer.
   * The tutorial is also a great resource for understanding this parser (and a great read to boot!)
-  * https://matklad.github.io/2023/05/21/resilient-ll-parsing-tutorial.html
+  * [[https://matklad.github.io/2023/05/21/resilient-ll-parsing-tutorial.html]]
   */
 object Parser2 {
 

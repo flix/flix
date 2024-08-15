@@ -38,10 +38,10 @@ import scala.collection.mutable.ArrayBuffer
   * Weeder2 walks a [[Tree]], validates it and thereby transforms it into a [[WeededAst]].
   *
   * Function names in Weeder2 follow this pattern:
-  * 1. visit* : Visits a Tree of a known kind. These functions assert that the kind is indeed known.
-  * 2. pick* : Picks first sub-Tree of a kind and visits it.
-  * 3. tryPick* : Works like pick* but only runs the visitor if the child of kind is found. Returns an option containing the result.
-  * 3. pickAll* : These will pick all subtrees of a specified kind and run a visitor on it.
+  *   1. visit* : Visits a Tree of a known kind. These functions assert that the kind is indeed known.
+  *   1. pick* : Picks first sub-Tree of a kind and visits it.
+  *   1. tryPick* : Works like pick* but only runs the visitor if the child of kind is found. Returns an option containing the result.
+  *   1. pickAll* : These will pick all subtrees of a specified kind and run a visitor on it.
   */
 object Weeder2 {
 

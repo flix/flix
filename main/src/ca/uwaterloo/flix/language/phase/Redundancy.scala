@@ -37,9 +37,9 @@ import scala.collection.mutable.ListBuffer
   *
   * For example, the redundancy phase ensures that there are no:
   *
-  * - unused local variables.
-  * - unused enums, definitions, ...
-  * - useless expressions.
+  *   - unused local variables.
+  *   - unused enums, definitions, ...
+  *   - useless expressions.
   *
   * and so on.
   *
@@ -827,12 +827,9 @@ object Redundancy {
     * Visits the [[ParYieldFragment]]s `frags`.
     *
     * Returns a tuple of three entries:
-    *
-    * 1. The used variables
-    *
-    * 2. An updated environment with the free variables
-    *
-    * 3. All the free variables.
+    *   1. The used variables
+    *   1. An updated environment with the free variables
+    *   1. All the free variables.
     */
   private def visitParYieldFragments(frags: List[ParYieldFragment], env0: Env, rc: RecursionContext)(implicit lctx: LocalContext, sctx: SharedContext, root: Root, flix: Flix): (Used, Env, Set[Symbol.VarSym]) = {
     frags.foldLeft((Used.empty, env0, Set.empty[Symbol.VarSym])) {

@@ -408,29 +408,18 @@ object Resolver {
     }
   }
 
-  object Constraints {
-
-    /**
-      * Performs name resolution on the given `constraints` in the given namespace `ns0`.
-      */
-    def resolve(constraints: List[NamedAst.Constraint], env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[List[ResolvedAst.Constraint], ResolutionError] = {
-      traverse(constraints)(c => resolve(c, env, taenv, ns0, root))
-    }
-
-    /**
-      * Performs name resolution on the given constraint `c0` in the given namespace `ns0`.
-      */
-    def resolve(c0: NamedAst.Constraint, env0: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Constraint, ResolutionError] = c0 match {
-      case NamedAst.Constraint(cparams0, head0, body0, loc) =>
-        val cparams = resolveConstraintParams(cparams0, env0)
-        val env = env0 ++ mkConstraintParamEnv(cparams)
-        val headVal = Predicates.Head.resolve(head0, env, taenv, ns0, root)
-        val bodyVal = traverse(body0)(Predicates.Body.resolve(_, env, taenv, ns0, root))
-        mapN(headVal, bodyVal) {
-          case (head, body) => ResolvedAst.Constraint(cparams, head, body, loc)
-        }
-    }
-
+  /**
+    * Performs name resolution on the given constraint `c0` in the given namespace `ns0`.
+    */
+  private def resolveConstraint(c0: NamedAst.Constraint, env0: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Constraint, ResolutionError] = c0 match {
+    case NamedAst.Constraint(cparams0, head0, body0, loc) =>
+      val cparams = resolveConstraintParams(cparams0, env0)
+      val env = env0 ++ mkConstraintParamEnv(cparams)
+      val headVal = Predicates.Head.resolve(head0, env, taenv, ns0, root)
+      val bodyVal = traverse(body0)(Predicates.Body.resolve(_, env, taenv, ns0, root))
+      mapN(headVal, bodyVal) {
+        case (head, body) => ResolvedAst.Constraint(cparams, head, body, loc)
+      }
   }
 
   /**
@@ -1803,7 +1792,7 @@ object Resolver {
           }
 
         case NamedAst.Expr.FixpointConstraintSet(cs0, loc) =>
-          val csVal = traverse(cs0)(Constraints.resolve(_, env0, taenv, ns0, root))
+          val csVal = traverse(cs0)(resolveConstraint(_, env0, taenv, ns0, root))
           mapN(csVal) {
             cs => ResolvedAst.Expr.FixpointConstraintSet(cs, loc)
           }

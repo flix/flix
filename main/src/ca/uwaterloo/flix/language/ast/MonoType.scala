@@ -24,9 +24,9 @@ sealed trait MonoType
 
 object MonoType {
 
-  ///
-  /// Primitive Types.
-  ///
+  //
+  // Primitive Types.
+  //
 
   /**
     * Represents an uninhabited type, not an absent value like in Java.
@@ -65,9 +65,9 @@ object MonoType {
 
   case object Null extends MonoType
 
-  ///
-  /// Compound Types.
-  ///
+  //
+  // Compound Types.
+  //
 
   case class Array(tpe: MonoType) extends MonoType
 
