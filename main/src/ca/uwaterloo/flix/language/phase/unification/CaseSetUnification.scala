@@ -240,7 +240,6 @@ object CaseSetUnification {
     case Not(tpe) => nnfNot(tpe)
     case Or(tpe1, tpe2) => Nnf.Union(nnf(tpe1), nnf(tpe2))
     case And(tpe1, tpe2) => Nnf.Intersection(nnf(tpe1), nnf(tpe2))
-    case null => throw InternalCompilerException(s"unexpected type: $t", SourceLocation.Unknown)
   }
 
   /**
@@ -260,7 +259,6 @@ object CaseSetUnification {
       nnf(mkNot(tpe1)),
       nnf(mkNot(tpe2))
     )
-    case null => throw InternalCompilerException(s"unexpected type: $t", SourceLocation.Unknown)
   }
 
   /**
