@@ -272,9 +272,9 @@ object TypeConstructor {
    *
    * A few examples:
    *
-   * - The type: `Apply(InvokeMethod("length", 0), String)` is equivalent to `Int32`.
-   * - The type: `Apply(Apply(InvokeMethod("startsWith", 1), String), String)` is equivalent to `Bool`.
-   * - The type: `Apply(Apply(Apply(InvokeMethod("substring", 2), String), Int32), Int32)` is equivalent to `String`.
+   *   - The type: `Apply(InvokeMethod("length", 0), String)` is equivalent to `Int32`.
+   *   - The type: `Apply(Apply(InvokeMethod("startsWith", 1), String), String)` is equivalent to `Bool`.
+   *   - The type: `Apply(Apply(Apply(InvokeMethod("substring", 2), String), Int32), Int32)` is equivalent to `String`.
    *
    * The type constructor requires a java method or constructor type constructor.
    */

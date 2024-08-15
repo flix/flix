@@ -14,21 +14,21 @@ import ca.uwaterloo.flix.util.ParOps
   * This means that expressions should cast their output but assume correct
   * input types.
   *
-  * - Ref
-  *   - component type erasure
-  *   - deref casting
-  * - Tuple
-  *   - component type erasure
-  *   - index casting
-  * - Record
-  *   - component type erasure
-  *   - select casting
-  * - Lazy
-  *   - component type erasure
-  *   - force casting
-  * - Function
-  *   - result type boxing, this includes return types of defs and their applications
-  *   - function call return value casting
+  *   - Ref
+  *     - component type erasure
+  *     - deref casting
+  *   - Tuple
+  *     - component type erasure
+  *     - index casting
+  *   - Record
+  *     - component type erasure
+  *     - select casting
+  *   - Lazy
+  *     - component type erasure
+  *     - force casting
+  *   - Function
+  *     - result type boxing, this includes return types of defs and their applications
+  *     - function call return value casting
   */
 object Eraser {
 

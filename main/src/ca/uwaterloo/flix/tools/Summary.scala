@@ -133,12 +133,12 @@ object Summary {
   }
 
   /**
-    * - prefixFileName("a/b", None) = "a/b"
-    * - prefixFileName("a/b", Some(1)) = "a/..."
-    * - prefixFileName("a/b", Some(2)) = "a/b"
-    * - prefixFileName("a/b/c", Some(2)) = "a/b/..."
-    * - prefixFileName("a/b", Some(0) = "a/b"
-    * - prefixFileName("a/b", Some(-1) = "a/b"
+    *   - prefixFileName("a/b", None) = "a/b"
+    *   - prefixFileName("a/b", Some(1)) = "a/..."
+    *   - prefixFileName("a/b", Some(2)) = "a/b"
+    *   - prefixFileName("a/b/c", Some(2)) = "a/b/..."
+    *   - prefixFileName("a/b", Some(0) = "a/b"
+    *   - prefixFileName("a/b", Some(-1) = "a/b"
     */
   private def prefixFileName(name: String, nsDepth: Option[Int]): String = {
     nsDepth match {
@@ -244,9 +244,9 @@ object Summary {
 
   /**
     * Represents the direct effect of a function
-    * - `def f(x: Int32): Int32` is `Pure`
-    * - `def f(x: Int32): Unit \ IO` is `JustIO`
-    * - `def f(x: Array[Int32, r]): IO + r` is `Poly`
+    *   - `def f(x: Int32): Int32` is `Pure`
+    *   - `def f(x: Int32): Unit \ IO` is `JustIO`
+    *   - `def f(x: Array[Int32, r]): IO + r` is `Poly`
     */
   private sealed trait ResEffect
 
@@ -260,9 +260,9 @@ object Summary {
 
   /**
     * This type is used to differentiate between
-    * - normal defs
-    * - instance defs, and
-    * - trait defs with implementation
+    *   - normal defs
+    *   - instance defs, and
+    *   - trait defs with implementation
     */
   private sealed trait FunctionSym {
     def loc: SourceLocation
