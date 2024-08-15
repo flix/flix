@@ -98,7 +98,11 @@ object FastSetUnification {
       import FastSetUnification.{Phases => P}
       val state = new State(l)
 
-      def checkAndSimplify(s: State): Unit = runPhase("Check and Simplify", "trivial correct and incorrect equations", P.filteringPhase(P.checkAndSimplify))(s)(opts.copy(debugging = false))
+      def checkAndSimplify(s: State): Unit = runPhase(
+        "Check and Simplify",
+        "trivial correct and incorrect equations",
+        P.filteringPhase(P.checkAndSimplify)
+      )(s)(opts.copy(debugging = false))
 
       debugState(state)
       try {
@@ -150,6 +154,9 @@ object FastSetUnification {
 
     }
 
+    /**
+      * Runs the given [[Phase]] on the given [[State]], debugging information if required by [[RunOptions]].
+      */
     private def runPhase(name: String, description: String, phase: Phase)(state: State)(implicit opts: RunOptions): Unit = {
       if (state.eqs.isEmpty) return
       val phaseNumber = state.phase.getOrElse(0) + 1
@@ -167,22 +174,21 @@ object FastSetUnification {
     }
 
     /**
-      * Verifies that `s` is a solution to the given set unification equations.
+      * Verifies that `subst` is a solution to `eqs`.
       *
-      * Throws an exception if the solution is incorrect.
+      * Throws [[InternalCompilerException]] if the solution is incorrect.
       *
-      * Note: The function verifies that it is _a solution_, not that it is _the most general_.
+      * Note: Does not verify that `subst` is the most general solution.
       *
-      * Note: Unfortunately this function is very slow since the SAT solver is very slow.
+      * Note: This function is very slow since [[Term.emptyEquivalent]] is very slow.
       */
-    def verifySubst(subst: SetSubstitution, l: List[Equation]): Unit = {
+    def verifySubst(subst: SetSubstitution, eqs: List[Equation]): Unit = {
       // Apply the substitution to every equation and check that it is solved.
-      for (e <- l) {
-        // We want to check that `s(t1) == s(t2)` by checking that `s(t1) xor s(t2) = empty`
+      for (e <- eqs) {
+        // We want to check that `s(t1) == s(t2)`
         val t1 = subst.apply(e.t1)
         val t2 = subst.apply(e.t2)
-        val query = Term.mkXor(t1, t2)
-        if (!Term.emptyEquivalent(query)) {
+        if (!Term.equivalent(t1, t2)) {
           println(s"  Original  : ${e.t1} ~ ${e.t2}")
           println(s"  with Subst: $t1 ~ $t2")
           throw InternalCompilerException(s"Incorrectly solved equation", SourceLocation.Unknown)
@@ -958,6 +964,8 @@ object FastSetUnification {
 
     /**
       * Returns all variables and constants that occur in `this` term.
+      *
+      * OBS: [[Term.Cst]] and [[Term.Var]] must use disjoint integers.
       */
     final def freeUnknowns: SortedSet[Int] = this match {
       case Term.Univ => SortedSet.empty
@@ -1486,12 +1494,10 @@ object FastSetUnification {
     }
 
     /**
-      * Returns `true` if the given term `t` is equivalent to empty, i.e. if all assignments to its
-      * variables and constants makes the whole term evaluate to empty.
+      * Returns `true` if the given term `t` is equivalent to empty.
+      * Exponential time in the number of unknowns.
       *
-      * Note that a constant can never be empty equivalent because we do not know if it is univ or empty.
-      *
-      * OBS: This function requires that variables and constants use disjoint integers.
+      * OBS: [[Term.Cst]] and [[Term.Var]] must use disjoint integers (see [[Term.emptyEquivalent]]).
       */
     def emptyEquivalent(t: Term): Boolean = t match {
       case Term.Univ => false
@@ -1501,24 +1507,43 @@ object FastSetUnification {
       case Term.Empty => true
       case Term.Union(posElem, posCsts, posVars, negElem, negCsts, negVars, _)
         if posElem.nonEmpty || posCsts.nonEmpty || posVars.nonEmpty || negElem.nonEmpty || negCsts.nonEmpty || negVars.nonEmpty => false
-      case _ => evaluateAll(t, t.freeUnknowns.toList, SortedSet.empty) // Evaluate t on all its valuations.
+      case _ =>
+        /** Try all instantiations of [[Term.Cst]] and [[Term.Var]] and check that those formulas are empty */
+        emptyEquivalentExhaustive(t)
     }
 
     /**
-      * Returns `true` if `t` is equivalent to empty under the assumption that `fvs` is the vars
-      * and constants of `t` ([[Term.freeUnknowns]]) and that unknowns in `univUnknowns` are set to `univ`.
+      * Returns `true` if the given term `t` is equivalent to empty.
+      * Exponential time in the number of unknowns.
       *
-      * For each unknown `x`, the function recursively explores both when `x` is univ and when `x` is empty.
-      *
-      * OBS: This function requires that variables and constants use disjoint integers.
+      * OBS: [[Term.Cst]] and [[Term.Var]] must use disjoint integers (see [[Term.emptyEquivalent]]).
       */
-    private def evaluateAll(t: Term, fvs: List[Int], univUnknowns: SortedSet[Int]): Boolean = fvs match {
-      case Nil =>
-        // All unknowns are bound. Compute the truth value.
-        evaluate(t, univUnknowns).isEmpty
-      case x :: xs =>
-        // Recurse on two cases: x = univ and x = empty.
-        evaluateAll(t, xs, univUnknowns + x) && evaluateAll(t, xs, univUnknowns)
+    private def emptyEquivalentExhaustive(t: Term): Boolean = {
+      /**
+        * Checks that all possible instantiations of unknowns result in an empty set.
+        * The unknowns not present either set is implicitly instantiated to [[Term.Empty]].
+        * @param unknowns the unknowns in `t` that has not yet been instantiated
+        * @param univUnknowns the unknowns that are instantiated to [[Term.Univ]]
+        */
+      def loop(unknowns: List[Int], univUnknowns: SortedSet[Int]): Boolean = unknowns match {
+        case Nil =>
+          // All unknowns are bound. Compute the truth value.
+          evaluate(t, univUnknowns).isEmpty
+        case x :: xs =>
+          // `t` is empty equivalent if and only if
+          // both `t[x -> univ]` and `t[x -> empty]` are empty equivalent.
+          loop(xs, univUnknowns + x) && loop(xs, univUnknowns)
+      }
+      loop(t.freeUnknowns.toList, SortedSet.empty)
+    }
+
+    /**
+      * Returns `true` if `t1` and `t2` are equivalent formulas.
+      */
+    def equivalent(t1: Term, t2: Term): Boolean = {
+      if (t1 == Term.Empty) emptyEquivalent(t2)
+      else if (t2 == Term.Empty) emptyEquivalent(t1)
+      else Term.emptyEquivalent(Term.mkXor(t1, t2))
     }
 
     /**
