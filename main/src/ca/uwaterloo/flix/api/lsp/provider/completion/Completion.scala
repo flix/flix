@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider.Priority
 import ca.uwaterloo.flix.api.lsp.{CompletionItem, CompletionItemKind, InsertTextFormat, Range, TextEdit}
 import ca.uwaterloo.flix.language.ast.{Name, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.fmt.{FormatScheme, FormatType}
-import ca.uwaterloo.flix.language.ast.Symbol.{EnumSym, ModuleSym, TypeAliasSym}
+import ca.uwaterloo.flix.language.ast.Symbol.{EnumSym, StructSym, ModuleSym, TypeAliasSym}
 
 import java.lang.reflect.{Field, Method}
 
@@ -78,6 +78,13 @@ sealed trait Completion {
         documentation = documentation,
         insertTextFormat = InsertTextFormat.Snippet,
         kind = CompletionItemKind.Enum)
+    case Completion.StructCompletion(structSym, nameSuffix, priority, textEdit, documentation) =>
+      CompletionItem(label = s"${structSym.toString}$nameSuffix",
+        sortText = priority,
+        textEdit = textEdit,
+        documentation = documentation,
+        insertTextFormat = InsertTextFormat.Snippet,
+        kind = CompletionItemKind.Struct)
     case Completion.TypeAliasCompletion(aliasSym, nameSuffix, priority, textEdit, documentation) =>
       CompletionItem(label = s"${aliasSym.name}$nameSuffix",
         sortText = priority,
@@ -344,6 +351,18 @@ object Completion {
     * @param documentation a human-readable string that represents a doc-comment.
     */
   case class EnumCompletion(enumSym: EnumSym, nameSuffix: String, priority: String, textEdit: TextEdit,
+                            documentation: Option[String]) extends Completion
+
+  /**
+    * Represents a type completion for struct
+    *
+    * @param structSym     the struct symbol.
+    * @param nameSuffix    the suffix for the name of the Struct.
+    * @param priority      the priority of the Struct.
+    * @param textEdit      the edit which is applied to a document when selecting this completion.
+    * @param documentation a human-readable string that represents a doc-comment.
+    */
+  case class StructCompletion(structSym: StructSym, nameSuffix: String, priority: String, textEdit: TextEdit,
                             documentation: Option[String]) extends Completion
 
   /**

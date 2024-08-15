@@ -27,7 +27,8 @@ object TypeCompleter extends Completer {
     */
   override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] = {
     EnumCompleter.getCompletions(context) ++ TypeAliasCompleter.getCompletions(context) ++
-      TypeBuiltinCompleter.getCompletions(context) ++ ModuleCompleter.getCompletions(context)
+      TypeBuiltinCompleter.getCompletions(context) ++ ModuleCompleter.getCompletions(context) ++
+      StructCompleter.getCompletions(context)
   }
 
   /**
