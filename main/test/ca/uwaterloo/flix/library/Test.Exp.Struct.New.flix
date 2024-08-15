@@ -21,8 +21,8 @@ mod Test.Exp.Struct.New {
     }
 
     struct TwoEmpty[r] {
-        a: Empty[r],
-        b: Empty[r]
+        two_a: Empty[r],
+        two_b: Empty[r]
     }
 
     struct EmptyC[r] {
@@ -34,23 +34,23 @@ mod Test.Exp.Struct.New {
     }
 
     struct EmptyA[r] {
-        a: EmptyB[r]
+        emptyb: EmptyB[r]
     }
 
     struct A[r] {
-        a: B[r]
+        bstruct: B[r]
     }
 
     struct B[r] {
-        b: C[r]
+        cstruct: C[r]
     }
 
     struct C[r] {
-        c: D[r]
+        dstruct: D[r]
     }
 
     struct D[r] {
-        d: Int32
+        i: Int32
     }
 
     struct Name[r] {
@@ -63,15 +63,15 @@ mod Test.Exp.Struct.New {
     }
 
     struct Person[r] {
-        fstName: String,
-        lstName: String,
-        age: Int32
+        person_fstName: String,
+        person_lstName: String,
+        person_age: Int32
     }
 
     struct Cowboy[r] {
-        fstName: String,
-        lstName: String,
-        age: Int32,
+        cowboy_fstName: String,
+        cowboy_lstName: String,
+        cowboy_age: Int32,
         cowboy: Bool
     }
 
@@ -81,30 +81,30 @@ mod Test.Exp.Struct.New {
     }
 
     struct ThreeInts[r] {
-        x: Int32,
-        y: Int32,
-        z: Int32
+        three_x: Int32,
+        three_y: Int32,
+        three_z: Int32
     }
 
     struct Outer[r] {
-        a: TwoInts[r],
-        b: TwoInts[r]
+        inner1: TwoInts[r],
+        inner2: TwoInts[r]
     }
 
     struct TwoIntsHolder[r] {
-        a: TwoInts[r]
+        twoints: TwoInts[r]
     }
 
     struct A3[r] {
-        a: A2[r]
+        a2: A2[r]
     }
 
     struct A2[r] {
-        a: A1[r]
+        a1: A1[r]
     }
 
     struct A1[r] {
-        a: Empty[r]
+        empty: Empty[r]
     }
 
     struct BinaryTree[t, r] {
@@ -130,14 +130,14 @@ mod Test.Exp.Struct.New {
     @test
     def testEmptyStruct03(): Unit =
         region rc {
-            new TwoEmpty {a = new Empty {} @ rc, b = new Empty {} @ rc} @ rc;
+            new TwoEmpty {two_a = new Empty {} @ rc, two_b = new Empty {} @ rc} @ rc;
             ()
         }
 
     @test
     def testEmptyStruct04(): Unit =
         region rc {
-            new EmptyA { a = new EmptyB { b = new EmptyC { c = new Empty {} @ rc } @ rc } @ rc } @ rc;
+            new EmptyA { emptyb = new EmptyB { b = new EmptyC { c = new Empty {} @ rc } @ rc } @ rc } @ rc;
             ()
         }
 
@@ -158,14 +158,14 @@ mod Test.Exp.Struct.New {
     @test
     def testStructLiteral03(): Unit =
         region rc {
-            new Person { fstName = "Lucky", lstName = "Luke", age = 42 } @ rc;
+            new Person { person_fstName = "Lucky", person_lstName = "Luke", person_age = 42 } @ rc;
             ()
         }
 
     @test
     def testStructLiteral04(): Unit =
         region rc {
-            new Cowboy { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true } @ rc;
+            new Cowboy { cowboy_fstName = "Lucky", cowboy_lstName = "Luke", cowboy_age = 42, cowboy = true } @ rc;
             ()
         }
 
@@ -179,35 +179,35 @@ mod Test.Exp.Struct.New {
     @test
     def testStructLiteral06(): Unit =
         region rc {
-            new ThreeInts { x = 0, y = 0, z = 0 } @ rc;
+            new ThreeInts { three_x = 0, three_y = 0, three_z = 0 } @ rc;
             ()
         }
 
     @test
     def testNestedStructLiteral01(): Unit =
         region rc {
-            new TwoIntsHolder { a = new TwoInts { x = 1, y = 2 } @ rc} @ rc;
+            new TwoIntsHolder { twoints = new TwoInts { x = 1, y = 2 } @ rc} @ rc;
             ()
         }
 
     @test
     def testNestedStructLiteral02(): Unit =
         region rc {
-            new Outer { a = new TwoInts { x = 1, y = 2 } @ rc, b = new TwoInts { x = 3, y = 4 } @ rc } @ rc;
+            new Outer { inner1 = new TwoInts { x = 1, y = 2 } @ rc, inner2 = new TwoInts { x = 3, y = 4 } @ rc } @ rc;
             ()
         }
 
     @test
     def testNestedStructLiteral03(): Unit =
         region rc {
-            new A {a = new B {b = new C {c = new D {d = 42} @ rc} @ rc} @ rc} @ rc;
+            new A {bstruct = new B {cstruct = new C {dstruct = new D {i = 42} @ rc} @ rc} @ rc} @ rc;
             ()
         }
 
     @test
     def testNestedLabels01(): Unit =
         region rc {
-            new A3 {a = new A2 {a = new A1 {a = new Empty {} @ rc} @ rc} @ rc} @ rc;
+            new A3 {a2 = new A2 {a1 = new A1 {empty = new Empty {} @ rc} @ rc} @ rc} @ rc;
             ()
         }
 
