@@ -1,10 +1,10 @@
 mod Test.Exp.Struct.Put {
 
     struct Put[r] {
-        fstName: String,
-        lstName: String,
-        age: Int32,
-        cowboy: Bool
+        mut fstName: String,
+        mut lstName: String,
+        mut age: Int32,
+        mut cowboy: Bool
     }
 
     @test
@@ -87,9 +87,9 @@ mod Test.Exp.Struct.Put {
 mod Test.Exp.Struct.BinaryTree {
 
     struct BinaryTree[t, r] {
-        left: Option[BinaryTree[t, r]],
-        right: Option[BinaryTree[t, r]],
-        value: t
+        mut left: Option[BinaryTree[t, r]],
+        mut right: Option[BinaryTree[t, r]],
+        mut value: t
     }
 
     def binaryTreeSum(tree: Option[BinaryTree[Int32, r]]): Int32 \ r =
@@ -153,7 +153,7 @@ mod Test.Exp.Struct.BinaryTree {
 
 mod Test.Exp.Struct.Nested {
     struct Nested[t, r] {
-        value: t
+        mut value: t
     }
 
     @test
@@ -168,8 +168,8 @@ mod Test.Exp.Struct.Nested {
 
 mod Test.Exp.Struct.List {
     struct List[t, r] {
-        value: t,
-        next: Option[List[t, r]]
+        mut value: t,
+        mut next: Option[List[t, r]]
     }
 
     def listAppend(list: List[t, r], rc: Region[r], value: t): Unit \ r = match list€next {
