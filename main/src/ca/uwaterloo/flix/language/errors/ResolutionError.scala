@@ -1129,7 +1129,6 @@ object ResolutionError {
   /**
     * An error raised to indicate an undefined field in a `struct.field` or `struct.field = value` expression.
     *
-    * @param sym   the symbol of the struct.
     * @param field the name of the missing field.
     * @param loc   the location where the error occurred.
     */
