@@ -33,7 +33,7 @@ import scala.collection.mutable
   *   - Represent n-ary operations with seperated parts for easy simplification
   *     ([[Term]] for details]]).
   *   - Use rewriting term constructors to keep formulas structured
-  *     ([[Term.mkCompl]], [[Term.mkUnion]], and [[Term.mkInter]] for details).
+  *     ([[Term.mkCompl]], [[Term.mkUnionAll]], and [[Term.mkInterAll]] for details).
   *   - Assume an open-world, i.e. the universe of elements is infinite.
   * */
 object FastSetUnification {
@@ -891,12 +891,12 @@ object FastSetUnification {
   sealed trait Term {
 
     /**
-      * Syntactic sugar for [[Term.mkInter]].
+      * Syntactic sugar for [[Term.reconstructInter]].
       */
     def inter(that: Term): Term = Term.mkInter(this, that)
 
     /**
-      * Syntactic sugar for [[Term.mkUnion]].
+      * Syntactic sugar for [[Term.mkUnionAll]].
       */
     def union(that: Term): Term = Term.mkUnion(this, that)
 
@@ -1071,7 +1071,7 @@ object FastSetUnification {
     /**
       * Represents a intersection of terms (`∩`). An empty intersection is univ.
       *
-      * Should NEVER be build outside of [[mkInter]] methods.
+      * Should NEVER be build outside of [[reconstructInter]] methods.
       *
       * We use a clever representation where we have a intersection of elements, constants, variables, and then sub-terms.
       *
@@ -1093,7 +1093,7 @@ object FastSetUnification {
     /**
       * A union of the terms `ts` (`∪`). An empty union is empty.
       *
-      * Should NEVER be build outside of [[mkUnion]] methods.
+      * Should NEVER be build outside of [[mkUnionAll]] methods.
       *
       * Represented similarly to [[Inter]].
       */
@@ -1128,9 +1128,9 @@ object FastSetUnification {
       case ElemSet(_) => Compl(t)
       case Compl(t0) => t0
       case Inter(posElem, posCsts, posVars, negElem, negCsts, negVars, rest) =>
-        mkUnion(negElem, negCsts, negVars, posElem, posCsts, posVars, rest.map(mkCompl))
+        reconstructUnion(negElem, negCsts, negVars, posElem, posCsts, posVars, rest.map(mkCompl))
       case Union(posElem, posCsts, posVars, negElem, negCsts, negVars, rest) =>
-        mkInter(negElem, negCsts, negVars, posElem, posCsts, posVars, rest.map(mkCompl))
+        reconstructInter(negElem, negCsts, negVars, posElem, posCsts, posVars, rest.map(mkCompl))
     }
 
     /**
@@ -1141,7 +1141,7 @@ object FastSetUnification {
       case (_, Empty) => Empty
       case (Univ, _) => t2
       case (_, Univ) => t1
-      case _ => mkInter(List(t1, t2))
+      case _ => mkInterAll(List(t1, t2))
     }
 
     /**
@@ -1152,7 +1152,7 @@ object FastSetUnification {
       case (_, Univ) => Univ
       case (Empty, _) => t2
       case (_, Empty) => t1
-      case _ => mkUnion(List(t1, t2))
+      case _ => mkUnionAll(List(t1, t2))
     }
 
     /**
@@ -1162,12 +1162,7 @@ object FastSetUnification {
       * (a) pos/neg elements (b) pos/neg constants, (c) pos/neg variables, and (d) other sub-terms.
       * Moreover, we look into those sub-terms and flatten any intersections we find within.
       */
-    final def mkInter(ts: List[Term]): Term = {
-      ts match {
-        case Nil => return Term.Univ
-        // OBS: do not short-circuit single element lists - some intersection creation relies on the re-computation
-        case _ => ()
-      }
+    final def mkInterAll(ts: List[Term]): Term = {
       // Mutable data structures to hold elements, constants, variables, and other sub-terms.
       var posElemTerm0: Option[SortedSet[Int]] = None // None represents univ
       val posCstTerms = mutable.Set.empty[Term.Cst]
@@ -1299,20 +1294,15 @@ object FastSetUnification {
       * OBS: must be composed of collections form existing intersections/unions
       * to preserve invariants.
       */
-    final def mkInter(posElem: Option[Term.ElemSet], posCsts: Set[Term.Cst], posVars: Set[Term.Var], negElem: Option[Term.ElemSet], negCsts: Set[Term.Cst], negVars: Set[Term.Var], rest: List[Term]): Term = {
+    final def reconstructInter(posElem: Option[Term.ElemSet], posCsts: Set[Term.Cst], posVars: Set[Term.Var], negElem: Option[Term.ElemSet], negCsts: Set[Term.Cst], negVars: Set[Term.Var], rest: List[Term]): Term = {
       val maintain = Term.Inter(posElem, posCsts, posVars, negElem, negCsts, negVars, Nil)
-      Term.mkInter(maintain :: rest)
+      Term.mkInterAll(maintain :: rest)
     }
 
     /**
       * Smart constructor for union (`∪`).
       */
-    final def mkUnion(ts: List[Term]): Term = {
-      ts match {
-        case Nil => return Term.Empty
-        // OBS: do not short-circuit single element lists - some union creation relies on the re-computation
-        case _ => ()
-      }
+    final def mkUnionAll(ts: List[Term]): Term = {
       // Mutable data structures to hold elements, constants, variables, and other sub-terms.
       var posElemTerm0: SortedSet[Int] = SortedSet.empty
       val posCstTerms = mutable.Set.empty[Term.Cst]
@@ -1439,9 +1429,9 @@ object FastSetUnification {
       *
       * More efficient than the other constructors when building a union based on an existing union.
       */
-    final def mkUnion(posElem: Option[Term.ElemSet], posCsts: Set[Term.Cst], posVars: Set[Term.Var], negElem: Option[Term.ElemSet], negCsts: Set[Term.Cst], negVars: Set[Term.Var], rest: List[Term]): Term = {
+    final def reconstructUnion(posElem: Option[Term.ElemSet], posCsts: Set[Term.Cst], posVars: Set[Term.Var], negElem: Option[Term.ElemSet], negCsts: Set[Term.Cst], negVars: Set[Term.Var], rest: List[Term]): Term = {
       val maintain = Term.Union(posElem, posCsts, posVars, negElem, negCsts, negVars, Nil)
-      Term.mkUnion(maintain :: rest)
+      Term.mkUnionAll(maintain :: rest)
     }
 
     /**
@@ -1691,7 +1681,7 @@ object FastSetUnification {
             }
           }
 
-          Term.mkInter(posElem, posCsts, posVars, negElem, negCsts, negVars, rest)
+          Term.reconstructInter(posElem, posCsts, posVars, negElem, negCsts, negVars, rest)
 
         case Term.Union(posElem0, posCsts0, posVars0, negElem0, negCsts0, negVars0, rest0) =>
           // check for trivial cases
@@ -1764,7 +1754,7 @@ object FastSetUnification {
             }
           }
 
-          Term.mkUnion(posElem, posCsts, posVars, negElem, negCsts, negVars, rest)
+          Term.reconstructUnion(posElem, posCsts, posVars, negElem, negCsts, negVars, rest)
       }
 
       visit(t, SortedMap.empty, SortedMap.empty, SortedMap.empty)
@@ -1826,14 +1816,14 @@ object FastSetUnification {
           for (x <- posVars) ts += apply(x)
           for (x <- negVars) ts += Term.mkCompl(apply(x))
           for (t <- rest) ts += apply(t)
-          Term.mkInter(posElem, posCsts, Set.empty, negElem, negCsts, Set.empty, ts.toList)
+          Term.reconstructInter(posElem, posCsts, Set.empty, negElem, negCsts, Set.empty, ts.toList)
 
         case Term.Union(posElem, posCsts, posVars, negElem, negCsts, negVars, rest) =>
           val ts = mutable.ListBuffer.empty[Term]
           for (x <- posVars) ts += apply(x)
           for (x <- negVars) ts += Term.mkCompl(apply(x))
           for (t <- rest) ts += apply(t)
-          Term.mkUnion(posElem, posCsts, Set.empty, negElem, negCsts, Set.empty, ts.toList)
+          Term.reconstructUnion(posElem, posCsts, Set.empty, negElem, negCsts, Set.empty, ts.toList)
       }
     }
 

@@ -54,8 +54,8 @@ object BooleanPropTesting {
     Term.Cst,
     Term.Var,
     Term.mkElemSet(_: Int),
-    Term.mkUnion(_: List[Term]),
-    Term.mkInter(_: List[Term]),
+    Term.mkUnionAll(_: List[Term]),
+    Term.mkInterAll(_: List[Term]),
     Term.mkCompl
   )
 
@@ -269,9 +269,9 @@ object BooleanPropTesting {
         (fresh, Equation.mk(fresh, Term.mkCompl(t1), loc) :: eqs)
       } else (t, eqs)
     case Term.Inter(posElem, posCsts, posVars, negElem, negCsts, negVars, rest) =>
-      splitTerms(Term.mkInter, r, loc, gen, posElem, posCsts, posVars, negElem, negCsts, negVars, rest)
+      splitTerms(Term.mkInterAll, r, loc, gen, posElem, posCsts, posVars, negElem, negCsts, negVars, rest)
     case Term.Union(posElem, posCsts, posVars, negElem, negCsts, negVars, rest) =>
-      splitTerms(Term.mkUnion, r, loc, gen, posElem, posCsts, posVars, negElem, negCsts, negVars, rest)
+      splitTerms(Term.mkUnionAll, r, loc, gen, posElem, posCsts, posVars, negElem, negCsts, negVars, rest)
   }
 
   private def splitTerms(build: List[Term] => Term, r: Random, loc: SourceLocation, gen: => Int, posElem: Option[Term.ElemSet], posCsts: Set[Term.Cst], posVars: Set[Term.Var], negElem: Option[Term.ElemSet], negCsts: Set[Term.Cst], negVars: Set[Term.Var], rest0: List[Term]): (Term, List[Equation]) = {
