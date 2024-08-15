@@ -257,11 +257,12 @@ object Weeder2 {
         Types.pickType(tree),
         Types.pickConstraints(tree),
         traverse(pickAll(TreeKind.Decl.Def, tree))(visitDefinitionDecl(_, allowedModifiers = Set(TokenKind.KeywordPub, TokenKind.KeywordOverride), mustBePublic = true)),
+        traverse(pickAll(TreeKind.Decl.Redef, tree))(visitDefinitionDecl(_, allowedModifiers = Set(TokenKind.KeywordPub), mustBePublic = true)),
       ) {
-        (doc, annotations, modifiers, clazz, tpe, tconstrs, defs) =>
+        (doc, annotations, modifiers, clazz, tpe, tconstrs, defs, redefs) =>
           val assocs = pickAll(TreeKind.Decl.AssociatedTypeDef, tree)
           mapN(traverse(assocs)(visitAssociatedTypeDefDecl(_, tpe))) {
-            assocs => Declaration.Instance(doc, annotations, modifiers, clazz, tpe, tconstrs, assocs, defs, tree.loc)
+            assocs => Declaration.Instance(doc, annotations, modifiers, clazz, tpe, tconstrs, assocs, defs ++ redefs, tree.loc)
           }
       }
     }
