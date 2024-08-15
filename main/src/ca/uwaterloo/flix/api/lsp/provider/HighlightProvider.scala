@@ -30,11 +30,15 @@ object HighlightProvider {
       case Some(entity) => entity match {
         case Entity.Case(caze) => highlightCase(uri, caze.sym)
 
+        case Entity.StructField(field) => throw new RuntimeException("JOE TODO")
+
         case Entity.Def(defn) => highlightDef(uri, defn.sym)
 
         case Entity.Sig(sig0) => highlightSig(uri, sig0.sym)
 
         case Entity.Enum(enum) => highlightEnum(uri, enum.sym)
+
+        case Entity.Struct(enum) => throw new RuntimeException("JOE TODO")
 
         case Entity.TypeAlias(alias) => highlightTypeAlias(uri, alias.sym)
 
@@ -51,6 +55,8 @@ object HighlightProvider {
         case Entity.SigUse(sym, _, _) => highlightSig(uri, sym)
 
         case Entity.CaseUse(sym, _, _) => highlightCase(uri, sym)
+
+        case Entity.StructFieldUse(sym, _, _) => throw new RuntimeException("JOE TODO")
 
         case Entity.Exp(_) => mkNotFound(uri, pos)
 
@@ -73,6 +79,7 @@ object HighlightProvider {
             case TypeConstructor.RecordRowExtend(label) => highlightLabel(uri, label)
             case TypeConstructor.SchemaRowExtend(pred) => highlightPred(uri, pred)
             case TypeConstructor.Enum(sym, _) => highlightEnum(uri, sym)
+            case TypeConstructor.Struct(sym, _) => throw new RuntimeException("JOE TODO")
             case TypeConstructor.Effect(sym) => highlightEffect(uri, sym)
             case _ => mkNotFound(uri, pos)
           }

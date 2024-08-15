@@ -34,6 +34,8 @@ object RenameProvider {
 
         case Entity.Case(caze) => renameCase(caze.sym, newName)
 
+        case Entity.StructField(field) => throw new RuntimeException("JOE TODO")
+
         case Entity.Def(defn) => renameDef(defn.sym, newName)
 
         case Entity.TypeAlias(alias) => renameTypeAlias(alias.sym, newName)
@@ -43,6 +45,8 @@ object RenameProvider {
         case Entity.DefUse(sym, _, _) => renameDef(sym, newName)
 
         case Entity.CaseUse(sym, _, _) => renameCase(sym, newName)
+
+        case Entity.StructFieldUse(sym, _, _) => throw new RuntimeException("JOE TODO")
 
         case Entity.Exp(exp) => mkNotFound(uri, pos)
 
@@ -74,6 +78,7 @@ object RenameProvider {
         case Entity.AssocType(_) => mkNotFound(uri, pos)
         case Entity.Effect(_) => mkNotFound(uri, pos)
         case Entity.Enum(_) => mkNotFound(uri, pos)
+        case Entity.Struct(_) => mkNotFound(uri, pos)
         case Entity.Op(_) => mkNotFound(uri, pos)
         case Entity.OpUse(_, _, _) => mkNotFound(uri, pos)
         case Entity.Sig(_) => mkNotFound(uri, pos)
