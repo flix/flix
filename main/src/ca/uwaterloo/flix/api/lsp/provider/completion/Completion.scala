@@ -346,14 +346,14 @@ object Completion {
                             documentation: Option[String]) extends Completion
 
   /**
-   * Represents a type completion for struct
-   *
-   * @param structSym       the struct symbol.
-   * @param nameSuffix    the suffix for the name of the Struct.
-   * @param priority      the priority of the Struct.
-   * @param textEdit      the edit which is applied to a document when selecting this completion.
-   * @param documentation a human-readable string that represents a doc-comment.
-   */
+    * Represents a type completion for struct
+    *
+    * @param structSym     the struct symbol.
+    * @param nameSuffix    the suffix for the name of the Struct.
+    * @param priority      the priority of the Struct.
+    * @param textEdit      the edit which is applied to a document when selecting this completion.
+    * @param documentation a human-readable string that represents a doc-comment.
+    */
   case class StructCompletion(structSym: StructSym, nameSuffix: String, priority: String, textEdit: TextEdit,
                             documentation: Option[String]) extends Completion
 
