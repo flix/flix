@@ -103,6 +103,7 @@ object FastSetUnification {
         "trivial correct and incorrect equations",
         P.filteringPhase(P.checkAndSimplify)
       )(s)(opts.copy(debugging = false))
+
       val propagateConstants = runPhase(
         "Constant Propagation",
         "resolves all equations of the form: x = c where x is a var and c is univ/empty/constant/element)",
@@ -386,7 +387,9 @@ object FastSetUnification {
       */
     def setUnifyOne(e: Equation): Result[SetSubstitution, ConflictException] = try {
       // The set expression we want to show is empty.
-      val query = Term.mkXor(e.t1, e.t2)
+      val query = if (e.t1 == Term.Empty) e.t2
+      else if (e.t2 == Term.Empty) e.t1
+      else Term.mkXor(e.t1, e.t2)
 
       // Determine the order in which to eliminate the variables.
       val fvs = query.freeVars.toList
@@ -1834,18 +1837,10 @@ object FastSetUnification {
     }
   }
 
-  /**
-    * Companion object of [[SetSubstitution]].
-    */
   private object SetSubstitution {
-    /**
-      * The empty substitution.
-      */
     val empty: SetSubstitution = SetSubstitution(Map.empty)
 
-    /**
-      * Returns a singleton substitution where the variable `x` is bound to the term `t`.
-      */
+    /** Returns the singleton substitution `[x -> t]`. */
     def singleton(x: Int, t: Term): SetSubstitution = SetSubstitution(Map(x -> t))
   }
 
