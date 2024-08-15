@@ -808,31 +808,31 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalRecordExtensionPattern](result)
   }
 
-  test("IllegalTypeConstraintParameter.01") {
+  test("IllegalTraitConstraintParameter.01") {
     val input =
       """
         |trait C[a] with D[Int32]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalTypeConstraintParameter](result)
+    expectError[WeederError.IllegalTraitConstraintParameter](result)
   }
 
-  test("IllegalTypeConstraintParameter.02") {
+  test("IllegalTraitConstraintParameter.02") {
     val input =
       """
         |instance C[a] with D[Some[a]]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalTypeConstraintParameter](result)
+    expectError[WeederError.IllegalTraitConstraintParameter](result)
   }
 
-  test("IllegalTypeConstraintParameter.03") {
+  test("IllegalTraitConstraintParameter.03") {
     val input =
       """
         |instance C[a] with C[C[C[String]]]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalTypeConstraintParameter](result)
+    expectError[WeederError.IllegalTraitConstraintParameter](result)
   }
 
   test("MalformedFloat64.01") {
