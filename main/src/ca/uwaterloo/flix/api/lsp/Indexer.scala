@@ -71,7 +71,7 @@ object Indexer {
       Index.all(
         traverse(tparams)(visitTypeParam),
         traverse(fparams)(visitFormalParam),
-        traverse(tconstrs)(visitTypeConstraint),
+        traverse(tconstrs)(visitTraitConstraint),
         traverse(econstrs)(visitEqualityConstraint),
         visitType(retTpe),
         visitType(eff),
@@ -123,7 +123,7 @@ object Indexer {
       Index.all(
         Index.occurrenceOf(trait0),
         visitTypeParam(tparam),
-        traverse(superTraits)(visitTypeConstraint),
+        traverse(superTraits)(visitTraitConstraint),
         traverse(assocs)(visitAssocTypeSig),
         traverse(signatures)(visitSig),
         //        laws.map(visitDef) // TODO visit laws?
@@ -138,7 +138,7 @@ object Indexer {
       Index.all(
         Index.useOf(trt.sym, trt.loc),
         visitType(tpe),
-        traverse(tconstrs)(visitTypeConstraint),
+        traverse(tconstrs)(visitTraitConstraint),
         traverse(assocs)(visitAssocTypeDef),
         traverse(defs)(visitDef),
       )
@@ -597,21 +597,21 @@ object Indexer {
   }
 
   /**
-    * Returns a reverse index for the given type constraint `tconstr0`.
+    * Returns a reverse index for the given trait constraint `tconstr0`.
     */
-  private def visitTypeConstraint(tconstr0: Ast.TypeConstraint): Index = tconstr0 match {
-    case Ast.TypeConstraint(head, arg, _) => visitTypeConstraintHead(head) ++ visitType(arg)
+  private def visitTraitConstraint(tconstr0: Ast.TraitConstraint): Index = tconstr0 match {
+    case Ast.TraitConstraint(head, arg, _) => visitTraitConstraintHead(head) ++ visitType(arg)
   }
 
   /**
-    * Returns a reverse index for the given type constraint `head`.
+    * Returns a reverse index for the given trait constraint `head`.
     */
-  private def visitTypeConstraintHead(head0: Ast.TypeConstraint.Head): Index = head0 match {
-    case Ast.TypeConstraint.Head(sym, loc) => Index.useOf(sym, loc)
+  private def visitTraitConstraintHead(head0: Ast.TraitConstraint.Head): Index = head0 match {
+    case Ast.TraitConstraint.Head(sym, loc) => Index.useOf(sym, loc)
   }
 
   /**
-    * Returns a reverse index for the given type constraint `tconstr0`.
+    * Returns a reverse index for the given equality constraint `econstr0`.
     */
   private def visitEqualityConstraint(econstr0: Ast.EqualityConstraint): Index = econstr0 match {
     case Ast.EqualityConstraint(cst, tpe1, tpe2, loc) =>
