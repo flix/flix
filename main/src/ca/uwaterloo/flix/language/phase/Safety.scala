@@ -441,8 +441,13 @@ object Safety {
           SafetyError.Forbidden(ctx, loc) :: args.flatMap(visit)
         }
 
-      case Expr.InvokeMethod(_, exp, args, _, _, _) =>
-        visit(exp) ++ args.flatMap(visit)
+      case Expr.InvokeMethod(_, exp, args, _, _, loc) =>
+        val ctx = loc.security
+        if (ctx == SecurityContext.AllPermissions) {
+          visit(exp) ++ args.flatMap(visit)
+        } else {
+          SafetyError.Forbidden(ctx, loc) :: Nil
+        }
 
       case Expr.InvokeStaticMethod(_, args, _, _, _) =>
         args.flatMap(visit)
