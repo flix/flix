@@ -2338,7 +2338,7 @@ object Resolver {
   }
 
   /**
-    * Finds the struct that matches the given symbol `sym` in the namespace `ns0`.
+    * Finds the struct that matches the given name `qname` in the namespace `ns0`.
     */
   private def lookupStruct(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Result[NamedAst.Declaration.Struct, ResolutionError.UndefinedStruct] = {
     val matches = tryLookupName(qname, env, ns0, root) collect {
