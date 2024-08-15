@@ -267,12 +267,13 @@ sealed trait Completion {
         kind = CompletionItemKind.Method
       )
 
-    case Completion.StructFieldCompletion(field) =>
+    case Completion.StructFieldCompletion(field, tpe) =>
       CompletionItem(
         label = field,
         sortText = Priority.low(field),
         textEdit = TextEdit(context.range, field),
-        kind = CompletionItemKind.Property
+        detail = Some(FormatType.formatType(tpe)(flix)),
+        kind = CompletionItemKind.Property,
       )
 
     case Completion.MethodCompletion(ident, method) =>
@@ -524,7 +525,7 @@ object Completion {
    *
    * @param field the candidate field.
    */
-  case class StructFieldCompletion(field: String) extends Completion
+  case class StructFieldCompletion(field: String, tpe: Type) extends Completion
 
   /**
     * Represents a Module completion.
