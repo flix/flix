@@ -363,6 +363,11 @@ object Ast {
     def isLawful: Boolean = mod contains Modifier.Lawful
 
     /**
+     * Returns `true` if these modifiers contain the mutable modifier.
+     */
+    def isMutable: Boolean = mod contains Modifier.Mutable
+
+    /**
       * Returns `true` if these modifiers contain the override modifier.
       */
     def isOverride: Boolean = mod contains Modifier.Override
@@ -371,11 +376,6 @@ object Ast {
       * Returns `true` if these modifiers contain the public modifier.
       */
     def isPublic: Boolean = mod contains Modifier.Public
-
-    /**
-     * Returns `true` if these modifiers contain the mutable modifier.
-     */
-    def isMutable: Boolean = mod contains Modifier.Mutable
 
     /**
       * Returns `true` if these modifiers contain the sealed modifier.
