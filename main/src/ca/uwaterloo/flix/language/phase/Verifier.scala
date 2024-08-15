@@ -24,8 +24,8 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 import scala.annotation.tailrec
 
 /**
-  * Verify the AST before bytecode generation.
-  */
+ * Verify the AST before bytecode generation.
+ */
 object Verifier {
 
   def run(root: Root)(implicit flix: Flix): Root = flix.phase("Verifier") {
@@ -265,7 +265,7 @@ object Verifier {
         case AtomicOp.ArrayLit =>
           tpe match {
             case MonoType.Array(elmt) =>
-              ts.foreach(t => checkJavaSubtype(t, getJavaType(elmt, loc), loc)) // Java arrays are covariant
+              ts.foreach(t => checkEq(elmt, t, loc))
               tpe
             case _ => failMismatchedShape(tpe, "Array", loc)
           }
@@ -577,8 +577,8 @@ object Verifier {
   }
 
   /**
-    * Asserts that the the given type `expected` is equal to the `actual` type.
-    */
+   * Asserts that the the given type `expected` is equal to the `actual` type.
+   */
   private def check(expected: MonoType)(actual: MonoType, loc: SourceLocation): MonoType = {
     if (expected == actual)
       expected
@@ -586,8 +586,8 @@ object Verifier {
   }
 
   /**
-    * Asserts that the two given types `tpe1` and `tpe2` are the same.
-    */
+   * Asserts that the two given types `tpe1` and `tpe2` are the same.
+   */
   private def checkEq(tpe1: MonoType, tpe2: MonoType, loc: SourceLocation): MonoType = {
     if (tpe1 == tpe2)
       tpe1
@@ -595,8 +595,8 @@ object Verifier {
   }
 
   /**
-    * Asserts that the list of types `ts` matches the list of java classes `cs`
-    */
+   * Asserts that the list of types `ts` matches the list of java classes `cs`
+   */
   private def checkJavaParameters(ts: List[MonoType], cs: List[Class[_]], loc: SourceLocation): Unit = {
     if (ts.length != cs.length)
       throw InternalCompilerException("Number of types in constructor call mismatch with parameter list", loc)
@@ -604,8 +604,8 @@ object Verifier {
   }
 
   /**
-    * Asserts that the type `tpe` is a `Struct` type whose name is `sym0`
-    */
+   * Asserts that the type `tpe` is a `Struct` type whose name is `sym0`
+   */
   private def checkStructType(tpe: MonoType, sym0: Symbol.StructSym, loc: SourceLocation): Unit = {
     tpe match {
       case MonoType.Struct(sym, _, _) =>
@@ -617,51 +617,8 @@ object Verifier {
   }
 
   /**
-   * Returns a corresponding Java class for the given monotype.
+   * Asserts that `tpe` is a subtype of the java class type `klazz`.
    */
-  def getJavaType(tpe: MonoType, loc: SourceLocation): Class[_] = {
-    tpe match {
-      case MonoType.Array(elmt) =>
-        Class.forName("[L" + getJavaType(elmt, loc).getCanonicalName + ";")
-      case MonoType.Native(k) =>
-        k
-      case MonoType.Int8    => classOf[Byte]
-      case MonoType.Int16   => classOf[Short]
-      case MonoType.Int32   => classOf[Int]
-      case MonoType.Int64   => classOf[Long]
-      case MonoType.Float32 => classOf[Float]
-      case MonoType.Float64 => classOf[Double]
-      case MonoType.Bool    => classOf[Boolean]
-      case MonoType.Char    => classOf[Char]
-      case MonoType.Unit    => classOf[Unit]
-      case MonoType.Null    => classOf[Object]
-
-      case MonoType.String  => classOf[String]
-      case MonoType.BigInt => classOf[java.math.BigInteger]
-      case MonoType.BigDecimal => classOf[java.math.BigDecimal]
-      case MonoType.Regex => classOf[java.util.regex.Pattern]
-      case MonoType.Arrow(List(MonoType.Object), MonoType.Unit) => classOf[java.util.function.Consumer[Object]]
-      case MonoType.Arrow(List(MonoType.Object), MonoType.Bool) => classOf[java.util.function.Predicate[Object]]
-      case MonoType.Arrow(List(MonoType.Int32), MonoType.Unit) => classOf[java.util.function.IntConsumer]
-      case MonoType.Arrow(List(MonoType.Int32), MonoType.Object) => classOf[java.util.function.IntFunction[Object]]
-      case MonoType.Arrow(List(MonoType.Int32), MonoType.Bool) => classOf[java.util.function.IntPredicate]
-      case MonoType.Arrow(List(MonoType.Int32), MonoType.Int32) => classOf[java.util.function.IntUnaryOperator]
-      case MonoType.Arrow(List(MonoType.Int32), MonoType.Unit) => classOf[java.util.function.IntConsumer]
-      case MonoType.Arrow(List(MonoType.Int64), MonoType.Unit) => classOf[java.util.function.LongConsumer]
-      case MonoType.Arrow(List(MonoType.Int64), MonoType.Object) => classOf[java.util.function.LongFunction[Object]]
-      case MonoType.Arrow(List(MonoType.Int64), MonoType.Bool) => classOf[java.util.function.LongPredicate]
-      case MonoType.Arrow(List(MonoType.Int64), MonoType.Int64) => classOf[java.util.function.LongUnaryOperator]
-      case MonoType.Arrow(List(MonoType.Float64), MonoType.Unit) => classOf[java.util.function.DoubleConsumer]
-      case MonoType.Arrow(List(MonoType.Float64), MonoType.Object) => classOf[java.util.function.DoubleFunction[Object]]
-      case MonoType.Arrow(List(MonoType.Float64), MonoType.Bool) => classOf[java.util.function.DoublePredicate]
-      case MonoType.Arrow(List(MonoType.Float64), MonoType.Float64) => classOf[java.util.function.DoubleUnaryOperator]
-      case _ => failUnresolvedType(tpe, loc)
-    }
-  }
-
-  /**
-    * Asserts that `tpe` is a subtype of the java class type `klazz`.
-    */
   private def checkJavaSubtype(tpe: MonoType, klazz: Class[_], loc: SourceLocation): MonoType = {
     tpe match {
       case MonoType.Array(elmt) if klazz.isArray =>
@@ -706,9 +663,9 @@ object Verifier {
   }
 
   /**
-    * Remove the type associated with `label` from the given record type `rec`.
-    * If `rec` is not a record, return `None`.
-    */
+   * Remove the type associated with `label` from the given record type `rec`.
+   * If `rec` is not a record, return `None`.
+   */
   private def removeFromRecordType(rec: MonoType, label: String, loc: SourceLocation): (MonoType, Option[MonoType]) = rec match {
     case MonoType.RecordEmpty => (rec, None)
     case MonoType.RecordExtend(lbl, valtype, rest) =>
@@ -721,9 +678,9 @@ object Verifier {
   }
 
   /**
-    * Get the type associated with `label` in the given record type `rec`.
-    * If `rec` is not a record, return `None`.
-    */
+   * Get the type associated with `label` in the given record type `rec`.
+   * If `rec` is not a record, return `None`.
+   */
   @tailrec
   private def selectFromRecordType(rec: MonoType, label: String, loc: SourceLocation): Option[MonoType] = rec match {
     case MonoType.RecordExtend(lbl, valtype, rest) =>
@@ -736,40 +693,32 @@ object Verifier {
   }
 
   /**
-    * Throw `InternalCompilerException` because the `found` does not match the shape specified by `expected`.
-    */
+   * Throw `InternalCompilerException` because the `found` does not match the shape specified by `expected`.
+   */
   private def failMismatchedShape(found: MonoType, expected: String, loc: SourceLocation): Nothing =
     throw InternalCompilerException(
       s"Mismatched shape near ${loc.format}: expected = \'$expected\', found = $found", loc
     )
 
   /**
-    * Throw `InternalCompilerException` because the `expected` type does not match the `found` type.
-    */
+   * Throw `InternalCompilerException` because the `expected` type does not match the `found` type.
+   */
   private def failUnexpectedType(found: MonoType, expected: MonoType, loc: SourceLocation): Nothing =
     throw InternalCompilerException(
       s"Unexpected type near ${loc.format}: expected = $expected, found = $found", loc
     )
 
   /**
-   * Throw `InternalCompilerException` because the `tpe` type couldn't be resolved to a Java class.
+   * Throw `InternalCompilerException` because `tpe1` is not equal to `tpe2`.
    */
-  private def failUnresolvedType(tpe: MonoType, loc: SourceLocation): Nothing =
-    throw InternalCompilerException(
-      s"Unresolved type near ${loc.format}: tpe = $tpe corresponds to no Java class", loc
-    )
-
-  /**
-    * Throw `InternalCompilerException` because `tpe1` is not equal to `tpe2`.
-    */
   private def failMismatchedTypes(tpe1: MonoType, tpe2: MonoType, loc: SourceLocation): Nothing =
     throw InternalCompilerException(
       s"Mismatched types near ${loc.format}: tpe1 = $tpe1, tpe2 = $tpe2", loc
     )
 
   /**
-    * Throw `InternalCompilerException` because `tpe` does not match `klazz`.
-    */
+   * Throw `InternalCompilerException` because `tpe` does not match `klazz`.
+   */
   private def failMismatchedTypes(tpe: MonoType, klazz: Class[_], loc: SourceLocation): Nothing =
     throw InternalCompilerException(
       s"Mismatched types near ${loc.format}: tpe1 = $tpe, class = $klazz", loc
