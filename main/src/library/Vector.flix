@@ -21,6 +21,18 @@ import java.util.{Iterator => JIterator}
 /// A Vector data type which is fundamentally like Array but is immutable.
 ///
 
+instance Index[Vector[a]] {
+    type Idx = Int32
+    type Elm = a
+    type Aef = KeyNotFound
+    pub def get(i: Int32, t: Vector[a]): a \ KeyNotFound = {
+        if (0 <= i and i < Vector.length(t))
+            Vector.get(i, t)
+        else
+            do KeyNotFound.error("index ${i} is out of bounds for vector of length ${Vector.length(t)}")
+    }
+}
+
 instance ToString[Vector[a]] with ToString[a] {
     pub def toString(v: Vector[a]): String = Vector.toString(v)
 }

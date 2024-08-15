@@ -1,5 +1,6 @@
 /*
  * Copyright 2019 Magnus Madsen, Stephen Tetley
+ * Copyright 2024 Jonathan Lindegaard Starup
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,6 +14,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+instance Index[Array[a, r]] {
+    type Idx = Int32
+    type Elm = a
+    type Aef = r + KeyNotFound
+    pub def get(i: Int32, t: Array[a, r]): a \ r + KeyNotFound = {
+        if (0 <= i and i < Array.length(t))
+            Array.get(i, t)
+        else
+            do KeyNotFound.error("index ${i} is out of bounds for array of length ${Array.length(t)}")
+    }
+}
+
+instance IndexMut[Array[a, r]] {
+    type Idx = Int32
+    type Elm = a
+    type Aef = r + KeyNotFound
+    pub def put(i: Int32, v: a, t: Array[a, r]): Unit \ r + KeyNotFound = {
+        if (0 <= i and i < Array.length(t))
+            Array.put(v, i, t)
+        else
+            do KeyNotFound.error("index ${i} is out of bounds for array of length ${Array.length(t)}")
+    }
+}
 
 instance Iterable[Array[a, r]] {
     type Elm = a
