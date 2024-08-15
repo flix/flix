@@ -62,8 +62,8 @@ object LocationLink {
   }
 
   /**
-   * Returns a location link to the given symbol `sym`.
-   */
+    * Returns a location link to the given symbol `sym`.
+    */
   def fromStructSym(sym: Symbol.StructSym, loc: SourceLocation)(implicit root: Root): LocationLink = {
     val structDecl = root.structs(sym)
     val originSelectionRange = Range.from(loc)
@@ -87,8 +87,8 @@ object LocationLink {
   }
 
   /**
-   * Returns a location link to the given symbol `sym`.
-   */
+    * Returns a location link to the given symbol `sym`.
+    */
   def fromStructFieldSym(sym: Symbol.StructFieldSym, loc: SourceLocation)(implicit root: Root): LocationLink = {
     val structDecl = root.structs(sym.structSym)
     val fieldDecl = structDecl.fields(sym)
