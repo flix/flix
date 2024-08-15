@@ -1393,40 +1393,26 @@ object Resolver {
               Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
           }
 
-        case NamedAst.Expr.StructGet(name, e, field, loc) =>
-          lookupStruct(name, env0, ns0, root) match {
-            case Result.Ok(st) =>
-              val availableFields = st.fields.map(_.sym)
-              if (!availableFields.contains(field)) {
-                val e = ResolutionError.UndefinedStructField(st.sym, field, loc)
-                Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
-              } else {
-                val eVal = visitExp(e, env0)
-                val idx = st.indices.getOrElse(field, 0)
-                val fieldSym = Symbol.mkStructFieldSym(st.sym, idx, field)
-                mapN(eVal) {
-                  case e => ResolvedAst.Expr.StructGet(e, fieldSym, loc)
-                }
+        case NamedAst.Expr.StructGet(e, field0, loc) =>
+          lookupStructField(field0, env0, ns0, root) match {
+            case Result.Ok(field) =>
+              val eVal = visitExp(e, env0)
+              val idx = field.sym.idx
+              mapN(eVal) {
+                case e => ResolvedAst.Expr.StructGet(e, field.sym, loc)
               }
             case Result.Err(e) =>
               Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
           }
 
-        case NamedAst.Expr.StructPut(name, e1, field, e2, loc) =>
-          lookupStruct(name, env0, ns0, root) match {
-            case Result.Ok(st) =>
-              val availableFields = st.fields.map(_.sym)
-              if (!availableFields.contains(field)) {
-                val e = ResolutionError.UndefinedStructField(st.sym, field, loc)
-                Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
-              } else {
-                val e1Val = visitExp(e1, env0)
-                val e2Val = visitExp(e2, env0)
-                val idx = st.indices.getOrElse(field, 0)
-                val fieldSym = Symbol.mkStructFieldSym(st.sym, idx, field)
-                mapN(e1Val, e2Val) {
-                  case (e1, e2) => ResolvedAst.Expr.StructPut(e1, fieldSym, e2, loc)
-                }
+        case NamedAst.Expr.StructPut(e1, field0, e2, loc) =>
+          lookupStructField(field0, env0, ns0, root) match {
+            case Result.Ok(field) =>
+              val e1Val = visitExp(e1, env0)
+              val e2Val = visitExp(e2, env0)
+              val idx = field.sym.idx
+              mapN(e1Val, e2Val) {
+                case (e1, e2) => ResolvedAst.Expr.StructPut(e1, field.sym, e2, loc)
               }
             case Result.Err(e) =>
               Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)

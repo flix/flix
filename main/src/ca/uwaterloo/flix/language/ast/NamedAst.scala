@@ -155,9 +155,9 @@ object NamedAst {
 
     case class StructNew(qname: Name.QName, exps: List[(Name.Label, Expr)], region: Expr, loc: SourceLocation) extends Expr
 
-    case class StructGet(st: Name.QName, exp: Expr, name: Name.Label, loc: SourceLocation) extends Expr
+    case class StructGet(exp: Expr, name: Name.Label, loc: SourceLocation) extends Expr
 
-    case class StructPut(st: Name.QName, exp1: Expr, name: Name.Label, exp2: Expr, loc: SourceLocation) extends Expr
+    case class StructPut(exp1: Expr, name: Name.Label, exp2: Expr, loc: SourceLocation) extends Expr
 
     case class VectorLit(exps: List[Expr], loc: SourceLocation) extends Expr
 

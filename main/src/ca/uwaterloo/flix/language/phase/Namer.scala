@@ -763,12 +763,12 @@ object Namer {
 
     case DesugaredAst.Expr.StructGet(exp, name, loc) =>
       val e = visitExp(exp, ns0)
-      NamedAst.Expr.StructGet(Name.mkQName(ns0.idents.last.name, ns0.loc), e, name, loc)
+      NamedAst.Expr.StructGet(e, name, loc)
 
     case DesugaredAst.Expr.StructPut(exp1, name, exp2, loc) =>
       val e1 = visitExp(exp1, ns0)
       val e2 = visitExp(exp2, ns0)
-      NamedAst.Expr.StructPut(Name.mkQName(ns0.idents.last.name, ns0.loc), e1, name, e2, loc)
+      NamedAst.Expr.StructPut(e1, name, e2, loc)
 
     case DesugaredAst.Expr.VectorLit(exps, loc) =>
       val es = visitExps(exps, ns0)
