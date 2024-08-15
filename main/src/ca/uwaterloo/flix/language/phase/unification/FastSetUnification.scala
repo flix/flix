@@ -103,38 +103,43 @@ object FastSetUnification {
         "trivial correct and incorrect equations",
         P.filteringPhase(P.checkAndSimplify)
       )(s)(opts.copy(debugging = false))
+      val propagateConstants = runPhase(
+        "Constant Propagation",
+        "resolves all equations of the form: x = c where x is a var and c is univ/empty/constant/element)",
+        P.propagateConstants
+      )(_)
+      val variablePropagation = runPhase(
+        "Variable Propagation",
+        "resolves all equations of the form: x = y where x and y are vars)",
+        P.propagateVars
+      )(_)
+      val variableAssignment = runPhase(
+        "Variable Assignment",
+        "resolves all equations of the form: x = t where x is free in t",
+        P.varAssignment
+      )(_)
+      val trivialAndRedundant = runPhase(
+        "Eliminate Trivial and Redundant Equations",
+        "eliminates equations of the form X = X and duplicated equations",
+        P.filteringPhase(P.eliminateTrivialAndRedundant)
+      )(_)
+      val sve = runPhase(
+        "Set Unification",
+        "resolves all remaining equations using SVE.",
+        P.completePhase(P.setUnifyAllPickSmallest(opts.complexThreshold, opts.permutationLimit))
+      )(_)
 
       debugState(state)
       try {
-        runPhase(
-          "Constant Propagation",
-          "resolves all equations of the form: x = c where x is a var and c is univ/empty/constant/element)",
-          P.propagateConstants
-        )(state)
+        propagateConstants(state)
         checkAndSimplify(state)
-        runPhase(
-          "Variable Propagation",
-          "resolves all equations of the form: x = y where x and y are vars)",
-          P.propagateVars
-        )(state)
+        variablePropagation(state)
         checkAndSimplify(state)
-        runPhase(
-          "Variable Assignment",
-          "resolves all equations of the form: x = t where x is free in t",
-          P.varAssignment
-        )(state)
+        variableAssignment(state)
         checkAndSimplify(state)
-        runPhase(
-          "Eliminate Trivial and Redundant Equations",
-          "eliminates equations of the form X = X and duplicated equations",
-          P.filteringPhase(P.eliminateTrivialAndRedundant)
-        )(state)
+        trivialAndRedundant(state)
         checkAndSimplify(state)
-        runPhase(
-          "Set Unification",
-          "resolves all remaining equations using SVE.",
-          P.completePhase(P.setUnifyAllPickSmallest(opts.complexThreshold, opts.permutationLimit))
-        )(state)
+        sve(state)
         if (opts.verifySubst) verifySubst(state.subst, l)
         if (opts.verifySize) verifySubstSize(state.subst)
         assert(state.eqs.isEmpty)
@@ -180,7 +185,7 @@ object FastSetUnification {
       *
       * Note: Does not verify that `subst` is the most general solution.
       *
-      * Note: This function is very slow since [[Term.emptyEquivalent]] is very slow.
+      * Note: This function is very slow since [[Term.equivalent]] is very slow.
       */
     def verifySubst(subst: SetSubstitution, eqs: List[Equation]): Unit = {
       // Apply the substitution to every equation and check that it is solved.
@@ -196,6 +201,11 @@ object FastSetUnification {
       }
     }
 
+    /**
+      * Checks that [[SetSubstitution.size]] is less than [[RunOptions.sizeThreshold]].
+      *
+      * @throws TooComplexException if the substitution is too big
+      */
     private def verifySubstSize(subst: SetSubstitution)(implicit opts: RunOptions): Unit = {
       val size = subst.size
       if (size > opts.sizeThreshold) {
@@ -203,24 +213,21 @@ object FastSetUnification {
       }
     }
 
-    private def debugPhase(number: Int, name: String, description: String)(implicit opts: RunOptions): Unit = {
-      debugln("-".repeat(80))
-      debugln(s"--- Phase $number: $name")
-      debugln(s"    ($description)")
-      debugln("-".repeat(80))
+    /** Prints the phase number, name, and description if enabled by [[RunOptions]]. */
+    private def debugPhase(number: Int, name: String, description: String)(implicit opts: RunOptions): Unit = if (opts.debugging) {
+      Console.println("-".repeat(80))
+      Console.println(s"--- Phase $number: $name")
+      Console.println(s"    ($description)")
+      Console.println("-".repeat(80))
     }
 
-    private def debugState(state: State)(implicit opts: RunOptions): Unit = {
-      debugln(s"Equations (${state.eqs.size}):")
-      debugln(format(state.eqs))
-      debugln(s"Substitution (${state.subst.numberOfBindings}):")
-      debugln(state.subst.toString)
-      debugln("")
-    }
-
-    // Note: By-name to ensure that we do not compute expensive strings.
-    private def debugln(s: => String)(implicit opts: RunOptions): Unit = {
-      if (opts.debugging) Console.println(s)
+    /** Prints the state equations and substitution if enabled by [[RunOptions]]. */
+    private def debugState(state: State)(implicit opts: RunOptions): Unit = if (opts.debugging) {
+      Console.println(s"Equations (${state.eqs.size}):")
+      Console.println(format(state.eqs))
+      Console.println(s"Substitution (${state.subst.numberOfBindings}):")
+      Console.println(state.subst.toString)
+      Console.println("")
     }
 
   }
@@ -998,22 +1005,16 @@ object FastSetUnification {
 
     /**
       * Returns the number of connectives in `this` term.
-      *
-      * For example, `size(x) = 0`, `size(x ∩ y) = 1`, and `size(x ∩ !y) = 2`.
       */
     final def size: Int = this match {
       case Term.Univ => 0
       case Term.Empty => 0
-      case Term.Cst(_) => 0
-      case Term.ElemSet(_) => 0
-      case Term.Var(_) => 0
-      case Term.Compl(t) => t.size + 1
-      case Term.Inter(posElem, posCsts, posVars, negElem, negCsts, negVars, rest) =>
-        // We need a connective for each constant, variable, and term minus one.
-        // We then add the size of all the sub-terms in `rest`.
-        ((posElem.size + posCsts.size + posVars.size + negElem.size + negCsts.size + negVars.size + rest.size) - 1) + rest.map(_.size).sum
-      case Term.Union(posElem, posCsts, posVars, negElem, negCsts, negVars, rest) =>
-        ((posElem.size + posCsts.size + posVars.size + negElem.size + negCsts.size + negVars.size + rest.size) - 1) + rest.map(_.size).sum
+      case Term.Cst(c) => 0
+      case Term.Var(x) => 0
+      case Term.ElemSet(s) => 0
+      case Term.Compl(_) => Term.sizes(List(this))
+      case Term.Inter(_, _, _, _, _, _, _) => Term.sizes(List(this))
+      case Term.Union(_, _, _, _, _, _, _) => Term.sizes(List(this))
     }
 
     override def toString: String = toFormattedString(Formatter.NoFormatter)
@@ -1506,6 +1507,7 @@ object FastSetUnification {
       case Term.Union(posElem, posCsts, posVars, negElem, negCsts, negVars, _)
         if posElem.nonEmpty || posCsts.nonEmpty || posVars.nonEmpty || negElem.nonEmpty || negCsts.nonEmpty || negVars.nonEmpty => false
       case _ =>
+
         /** Try all instantiations of [[Term.Cst]] and [[Term.Var]] and check that those formulas are empty */
         emptyEquivalentExhaustive(t)
     }
@@ -1530,6 +1532,7 @@ object FastSetUnification {
           // both `t[x -> univ]` and `t[x -> empty]` are empty equivalent.
           loop(xs, univUnknowns + x) && loop(xs, univUnknowns)
       }
+
       loop(t.freeUnknowns.toList, SortedSet.empty)
     }
 
@@ -1790,6 +1793,45 @@ object FastSetUnification {
 
       visit(t, SortedMap.empty, SortedMap.empty, SortedMap.empty)
     }
+
+    /**
+      * Returns the number of connectives in the terms `ts`.
+      */
+    def sizes(ts: List[Term]): Int = {
+      var workList = ts
+      var counter = 0
+
+      @inline
+      def countTerms(posElem: Option[Term.ElemSet], posCsts: Set[Term.Cst], posVars: Set[Term.Var], negElem: Option[Term.ElemSet], negCsts: Set[Term.Cst], negVars: Set[Term.Var], rest: List[Term]): Unit = {
+        val negElemSize = negElem.size
+        val negCstsSize = negCsts.size
+        val negVarsSize = negVars.size
+        val terms = posElem.size + posCsts.size + posVars.size + negElemSize + negCstsSize + negVarsSize + rest.size
+        val connectives = negElemSize + negCstsSize + negVarsSize
+        counter += (terms - 1) + connectives
+        workList = rest ++ workList
+      }
+
+      while (workList.nonEmpty) {
+        val t :: next = workList
+        workList = next
+        t match {
+          case Term.Univ => ()
+          case Term.Empty => ()
+          case Term.Cst(_) => ()
+          case Term.Var(_) => ()
+          case Term.ElemSet(_) => ()
+          case Term.Compl(t) =>
+            counter += 1
+            workList = t :: workList
+          case Term.Inter(posElem, posCsts, posVars, negElem, negCsts, negVars, rest) =>
+            countTerms(posElem, posCsts, posVars, negElem, negCsts, negVars, rest)
+          case Term.Union(posElem, posCsts, posVars, negElem, negCsts, negVars, rest) =>
+            countTerms(posElem, posCsts, posVars, negElem, negCsts, negVars, rest)
+        }
+      }
+      counter
+    }
   }
 
   /**
@@ -1891,7 +1933,7 @@ object FastSetUnification {
       *
       * The size of a substitution is the sum of the sizes of all terms in its co-domain.
       */
-    def size: Int = m.values.map(_.size).sum
+    def size: Int = Term.sizes(m.values.toList)
 
     /**
       * Extends `this` substitution with a new binding from the variable `x` to the term `t`.
