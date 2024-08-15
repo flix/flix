@@ -566,7 +566,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         | discard Math.floorDiv(1, 0);
         | ()
         |
-        |def main(): Unit \ IO =
+        |def f(): Unit \ IO =
         | try {
         |   exception();
         |   ()
@@ -585,7 +585,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |import java.io.FileNotFoundException
         |import java.io.IOException
         |
-        |def main(): Unit =
+        |def f(): Unit =
         | try { 
         |   ()
         | } catch {
@@ -604,7 +604,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |import java.io.FileNotFoundException
         |import java.io.IOException
         |
-        |def main(): Unit =
+        |def f(): Unit =
         | try { 
         |   ()
         | } catch {
@@ -625,7 +625,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |import java.io.IOException
         |import java.lang.ArithmeticException
         |
-        |def main(): Unit =
+        |def f(): Unit =
         | try { 
         |   ()
         | } catch {
