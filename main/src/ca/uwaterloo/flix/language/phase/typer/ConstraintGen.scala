@@ -23,9 +23,9 @@ import ca.uwaterloo.flix.language.phase.unification.Substitution
 
 /**
   * This phase generates a list of type constraints, which include
-  * - equality constraints `tpe1 ~ tpe2`
-  * - trait constraints `C[tpe1]`
-  * - purification constraints `eff1 ~ eff2[sym ↦ Pure]`
+  *   - equality constraints `tpe1 ~ tpe2`
+  *   - trait constraints `C[tpe1]`
+  *   - purification constraints `eff1 ~ eff2[sym ↦ Pure]`
   *
   * We gather constraints as we traverse each def.
   * Constraints are later resolved in ConstraintResolution.

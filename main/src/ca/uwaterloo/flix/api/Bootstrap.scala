@@ -95,6 +95,7 @@ object Bootstrap {
          |artifact/
          |build/
          |lib/
+         |crash_report_*.txt
          |""".stripMargin
     }
 
