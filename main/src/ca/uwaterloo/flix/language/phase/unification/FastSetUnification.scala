@@ -904,7 +904,7 @@ object FastSetUnification {
   /**
     * A common super-type for set terms.
     *
-    * Note: We assume that the integers used for constants and variables are disjoint.
+    * OBS: [[Term.Cst]] and [[Term.Var]] must use disjoint integers (see [[Term.freeUnknowns]]).
     */
   sealed trait Term {
 
@@ -1496,8 +1496,6 @@ object FastSetUnification {
     /**
       * Returns `true` if the given term `t` is equivalent to empty.
       * Exponential time in the number of unknowns.
-      *
-      * OBS: [[Term.Cst]] and [[Term.Var]] must use disjoint integers (see [[Term.emptyEquivalent]]).
       */
     def emptyEquivalent(t: Term): Boolean = t match {
       case Term.Univ => false
@@ -1515,8 +1513,6 @@ object FastSetUnification {
     /**
       * Returns `true` if the given term `t` is equivalent to empty.
       * Exponential time in the number of unknowns.
-      *
-      * OBS: [[Term.Cst]] and [[Term.Var]] must use disjoint integers (see [[Term.emptyEquivalent]]).
       */
     private def emptyEquivalentExhaustive(t: Term): Boolean = {
       /**
@@ -1547,10 +1543,8 @@ object FastSetUnification {
     }
 
     /**
-      * Returns the evaluation of the formula assuming that unknowns in `univUnknowns` are univ
-      * and unknowns not in `univUnknowns` are empty.
-      *
-      * OBS: This function requires that variables and constants use disjoint integers.
+      * Returns the [[SetEval]] evaluation of `t`, interpreting unknowns in `univUnknowns` as [[Term.Univ]]
+      * and unknowns not in `univUnknowns` as [[Term.Empty]].
       */
     private def evaluate(t: Term, univUnknowns: SortedSet[Int]): SetEval = t match {
       case Term.Univ => SetEval.univ

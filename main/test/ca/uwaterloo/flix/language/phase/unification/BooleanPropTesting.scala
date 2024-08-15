@@ -173,7 +173,7 @@ object BooleanPropTesting {
 
   def explodedRandomXor(random: Random): List[Equation] = {
     val former = termFormer()
-    val t = randomTerm(former, random, 5, 3, 3, 3)
+    val t = randomTerm(former, random, 4, 3, 3, 3)
     groupAssignments(explodeKnownEquation(random, eqPropagatedSelf(t)), 1)
   }
 
