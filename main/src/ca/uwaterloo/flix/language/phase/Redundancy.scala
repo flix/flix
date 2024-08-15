@@ -37,9 +37,9 @@ import scala.collection.mutable.ListBuffer
   *
   * For example, the redundancy phase ensures that there are no:
   *
-  * - unused local variables.
-  * - unused enums, definitions, ...
-  * - useless expressions.
+  *   - unused local variables.
+  *   - unused enums, definitions, ...
+  *   - useless expressions.
   *
   * and so on.
   *
@@ -74,6 +74,8 @@ object Redundancy {
         checkUnusedEffects()(sctx, root) ++
         checkUnusedEnumsAndTags()(sctx, root) ++
         checkUnusedTypeParamsEnums()(root) ++
+        checkUnusedStructsAndFields()(sctx, root) ++
+        checkUnusedTypeParamsStructs()(root) ++
         checkRedundantTypeConstraints()(root, flix)
     }
 
@@ -136,6 +138,40 @@ object Redundancy {
         case (sacc, (_, Case(_, tpe, _, _))) => sacc ++ tpe.typeVars.map(_.sym)
       }
       val unusedTypeParams = decl.tparams.filter {
+        tparam =>
+          !usedTypeVars.contains(tparam.sym) &&
+            !tparam.name.name.startsWith("_")
+      }
+      result ++= unusedTypeParams.map(tparam => UnusedTypeParam(tparam.name, tparam.loc))
+    }
+    result.toList
+  }
+
+  /**
+    * Checks for unused struct symbols and tags.
+    */
+  private def checkUnusedStructsAndFields()(implicit sctx: SharedContext, root: Root): List[RedundancyError] = {
+    val result = new ListBuffer[RedundancyError]
+    for ((_, struct) <- root.structs) {
+      if (deadStruct(struct)) {
+        result += UnusedStructSym(struct.sym)
+      }
+    }
+
+    result.toList
+  }
+
+  /**
+   * Checks for unused type parameters in structs.
+   */
+  private def checkUnusedTypeParamsStructs()(implicit root: Root): List[RedundancyError] = {
+    val result = new ListBuffer[RedundancyError]
+    for ((_, decl) <- root.structs) {
+      val usedTypeVars = decl.fields.foldLeft(Set.empty[Symbol.KindedTypeVarSym]) {
+        case (acc, (name, field)) =>
+          acc ++ field.tpe.typeVars.map(_.sym)
+      }
+      val unusedTypeParams = decl.tparams.init.filter { // the last tparam is implicitly used for the region
         tparam =>
           !usedTypeVars.contains(tparam.sym) &&
             !tparam.name.name.startsWith("_")
@@ -558,9 +594,17 @@ object Redundancy {
       val us3 = visitExp(elm, env0, rc)
       us1 ++ us2 ++ us3
 
-    case Expr.StructNew(sym, fields, region, tpe, eff, loc) => throw new RuntimeException("JOE TBD")
-    case Expr.StructGet(sym, exp, field, tpe, eff, loc) => throw new RuntimeException("JOE TBD")
-    case Expr.StructPut(sym, exp1, field, exp2, tpe, eff, loc) => throw new RuntimeException("JOE TBD")
+    case Expr.StructNew(sym, fields, region, _, _, _) =>
+      sctx.structSyms.put(sym, ())
+      visitExps(fields.map {case (k, v) => v}, env0, rc) ++ visitExp(region, env0, rc)
+
+    case Expr.StructGet(e, field, _, _, _) =>
+      sctx.structFieldSyms.put(field, ())
+      visitExp(e, env0, rc)
+
+    case Expr.StructPut(e1, field, e2, _, _, _) =>
+      sctx.structFieldSyms.put(field, ())
+      visitExp(e1, env0, rc) ++ visitExp(e2, env0, rc)
 
     case Expr.VectorLit(exps, _, _, _) =>
       visitExps(exps, env0, rc)
@@ -783,12 +827,9 @@ object Redundancy {
     * Visits the [[ParYieldFragment]]s `frags`.
     *
     * Returns a tuple of three entries:
-    *
-    * 1. The used variables
-    *
-    * 2. An updated environment with the free variables
-    *
-    * 3. All the free variables.
+    *   1. The used variables
+    *   1. An updated environment with the free variables
+    *   1. All the free variables.
     */
   private def visitParYieldFragments(frags: List[ParYieldFragment], env0: Env, rc: RecursionContext)(implicit lctx: LocalContext, sctx: SharedContext, root: Root, flix: Flix): (Used, Env, Set[Symbol.VarSym]) = {
     frags.foldLeft((Used.empty, env0, Set.empty[Symbol.VarSym])) {
@@ -1061,6 +1102,14 @@ object Redundancy {
       !sctx.enumSyms.containsKey(enm.sym)
 
   /**
+    * Returns `true` if the given `struct` is unused according to `used`.
+    */
+  private def deadStruct(struct: Struct)(implicit sctx: SharedContext): Boolean =
+    !struct.sym.name.startsWith("_") &&
+      !struct.mod.isPublic &&
+      !sctx.structSyms.containsKey(struct.sym)
+
+  /**
     * Returns `true` if the given `tag` of the given `enm` is unused according to `used`.
     */
   private def deadTag(enm: Enum, tag: Symbol.CaseSym)(implicit ctx: SharedContext): Boolean =
@@ -1234,6 +1283,8 @@ object Redundancy {
       new ConcurrentHashMap(),
       new ConcurrentHashMap(),
       new ConcurrentHashMap(),
+      new ConcurrentHashMap(),
+      new ConcurrentHashMap(),
       new ConcurrentHashMap())
   }
 
@@ -1249,6 +1300,8 @@ object Redundancy {
   private case class SharedContext(defSyms: ConcurrentHashMap[Symbol.DefnSym, Unit],
                                    sigSyms: ConcurrentHashMap[Symbol.SigSym, Unit],
                                    effSyms: ConcurrentHashMap[Symbol.EffectSym, Unit],
+                                   structSyms: ConcurrentHashMap[Symbol.StructSym, Unit],
+                                   structFieldSyms: ConcurrentHashMap[Symbol.StructFieldSym, Unit],
                                    enumSyms: ConcurrentHashMap[Symbol.EnumSym, Unit],
                                    caseSyms: ConcurrentHashMap[Symbol.CaseSym, Unit])
 

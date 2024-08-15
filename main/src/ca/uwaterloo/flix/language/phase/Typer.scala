@@ -39,7 +39,7 @@ object Typer {
     val instancesVal = visitInstances(root, traitEnv, eqEnv)
     val defsVal = visitDefs(root, oldRoot, changeSet, traitEnv, eqEnv)
     val enums = visitEnums(root)
-    val structs = Map.empty[Symbol.StructSym, TypedAst.Struct]
+    val structs = visitStructs(root)
     val restrictableEnums = visitRestrictableEnums(root)
     val effs = visitEffs(root)
     val typeAliases = visitTypeAliases(root)
@@ -62,13 +62,15 @@ object Typer {
       val sigs = traits.values.flatMap { trt => trt.sigs.values.map(_.sym) }
       val ops = effects.values.flatMap { eff => eff.ops.map(_.sym) }
 
-      val syms0 = traits.keys ++ defs.keys ++ enums.keys ++ effects.keys ++ typeAliases.keys ++ sigs ++ ops
+      val syms0 = traits.keys ++ defs.keys ++ enums.keys ++ structs.keys ++ effects.keys ++ typeAliases.keys ++ sigs ++ ops
 
       // collect namespaces from prefixes of other symbols
       // TODO this should be done in resolver once the duplicate namespace issue is managed
       val namespaces = syms0.collect {
         case sym: Symbol.DefnSym => sym.namespace
         case sym: Symbol.EnumSym => sym.namespace
+        case sym: Symbol.StructSym => sym.namespace
+        case sym: Symbol.StructFieldSym => sym.namespace
         case sym: Symbol.RestrictableEnumSym => sym.namespace
         case sym: Symbol.TraitSym => sym.namespace
         case sym: Symbol.TypeAliasSym => sym.namespace
@@ -85,6 +87,7 @@ object Typer {
         case sym: Symbol.DefnSym => new Symbol.ModuleSym(sym.namespace)
         case sym: Symbol.EnumSym => new Symbol.ModuleSym(sym.namespace)
         case sym: Symbol.StructSym => new Symbol.ModuleSym(sym.namespace)
+        case sym: Symbol.StructFieldSym => new Symbol.ModuleSym(sym.namespace)
         case sym: Symbol.RestrictableEnumSym => new Symbol.ModuleSym(sym.namespace)
         case sym: Symbol.TraitSym => new Symbol.ModuleSym(sym.namespace)
         case sym: Symbol.TypeAliasSym => new Symbol.ModuleSym(sym.namespace)
@@ -97,7 +100,6 @@ object Typer {
         case sym: Symbol.ModuleSym => new Symbol.ModuleSym(sym.ns.init)
 
         case sym: Symbol.CaseSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
-        case sym: Symbol.StructFieldSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
         case sym: Symbol.RestrictableCaseSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
         case sym: Symbol.VarSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
         case sym: Symbol.KindedTypeVarSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
@@ -306,6 +308,33 @@ object Typer {
       }
 
       enumSym -> TypedAst.Enum(doc, ann, mod, enumSym, tparams, derives, cases, tpe, loc)
+  }
+
+  /**
+   * Reconstructs types in the given structs.
+   */
+  private def visitStructs(root: KindedAst.Root)(implicit flix: Flix): Map[Symbol.StructSym, TypedAst.Struct] = {
+    // Visit every struct in the ast.
+    val result = root.structs.map {
+      case (_, struct) => visitStruct(struct, root)
+    }
+
+    // Sequence the results and convert them back to a map.
+    result.toMap
+  }
+
+  /**
+   * Reconstructs types in the given struct.
+   */
+  private def visitStruct(struct0: KindedAst.Struct, root: KindedAst.Root)(implicit flix: Flix): (Symbol.StructSym, TypedAst.Struct) = struct0 match {
+    case KindedAst.Struct(doc, ann, mod, sym, tparams0, sc, fields0, loc) =>
+      val tparams = tparams0.map(visitTypeParam(_, root))
+      val fields = fields0.zipWithIndex.map {
+        case (field, idx) =>
+          field.sym -> TypedAst.StructField(field.sym, field.tpe, field.loc)
+      }
+
+      sym -> TypedAst.Struct(doc, ann, mod, sym, tparams, sc, fields.toMap, loc)
   }
 
   /**

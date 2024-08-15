@@ -72,6 +72,14 @@ object SemanticTokensProvider {
     }
 
     //
+    // Construct an iterator of the semantic tokens from structs.
+    //
+    val structTokens = root.structs.values.flatMap {
+      case decl if include(uri, decl.loc) => visitStruct(decl)
+      case _ => Nil
+    }
+
+    //
     // Construct an iterator of the semantic tokens from type aliases.
     //
     val typeAliasTokens = root.typeAliases.flatMap {
@@ -90,7 +98,7 @@ object SemanticTokensProvider {
     //
     // Collect all tokens into one list.
     //
-    val allTokens = (traitTokens ++ instanceTokens ++ defnTokens ++ enumTokens ++ typeAliasTokens ++ effectTokens).toList
+    val allTokens = (traitTokens ++ instanceTokens ++ defnTokens ++ enumTokens ++ structTokens ++ typeAliasTokens ++ effectTokens).toList
 
     //
     // We keep all tokens that are: (i) single-line tokens, (ii) have the same source as `uri`, and (iii) come from real source locations.
@@ -176,6 +184,32 @@ object SemanticTokensProvider {
   private def visitCase(case0: TypedAst.Case): Iterator[SemanticToken] = case0 match {
     case TypedAst.Case(sym, tpe, _, _) =>
       val t = SemanticToken(SemanticTokenType.EnumMember, Nil, sym.loc)
+      Iterator(t) ++ visitType(tpe)
+  }
+
+  /**
+    * Returns all semantic tokens in the given struct `struct0`.
+    *
+    * Returns tokens for the symbol, the type parameters, and the fields.
+    */
+  private def visitStruct(struct0: TypedAst.Struct): Iterator[SemanticToken] = struct0 match {
+    case TypedAst.Struct(doc, ann, mod, sym, tparams, sc, fields, loc) =>
+      val t = SemanticToken(SemanticTokenType.Type, Nil, sym.loc)
+      IteratorOps.all(
+        Iterator(t),
+        visitTypeParams(tparams),
+        fields.foldLeft(Iterator.empty[SemanticToken]) {
+          case (acc, (_, field)) => acc ++ visitField(field)
+        }
+      )
+  }
+
+  /**
+    * Returns all semantic tokens in the given field `field0`
+    */
+  private def visitField(field0: StructField): Iterator[SemanticToken] = field0 match {
+    case StructField(sym, tpe, loc) =>
+      val t = SemanticToken(SemanticTokenType.Property, Nil, sym.loc)
       Iterator(t) ++ visitType(tpe)
   }
 
@@ -416,9 +450,19 @@ object SemanticTokensProvider {
     case Expr.ArrayLength(exp, _, _) =>
       visitExp(exp)
 
-    case Expr.StructNew(sym, fields, region, tpe, eff, loc) => throw new RuntimeException("JOE TBD")
-    case Expr.StructGet(sym, exp, field, tpe, eff, loc) => throw new RuntimeException("JOE TBD")
-    case Expr.StructPut(sym, exp1, field, exp2, tpe, eff, loc) => throw new RuntimeException("JOE TBD")
+    case Expr.StructNew(sym, fields, region, _, _, _) =>
+      val (names, exps) = fields.unzip
+      val ts = names.map(name => SemanticToken(SemanticTokenType.Property, Nil, name.loc))
+      val t = SemanticToken(SemanticTokenType.Type, Nil, sym.loc)
+      visitExps(exps) ++ visitExp(region) ++ ts ++ Iterator(t)
+
+    case Expr.StructGet(exp, field, _, _, _) =>
+      val t = SemanticToken(SemanticTokenType.Property, Nil, field.loc)
+      visitExp(exp) ++ Iterator(t)
+
+    case Expr.StructPut(exp1, field, exp2, _, _, _) =>
+      val t = SemanticToken(SemanticTokenType.Property, Nil, field.loc)
+      visitExp(exp1) ++ visitExp(exp2) ++ Iterator(t)
 
     case Expr.VectorLit(exps, _, _, _) =>
       visitExps(exps)

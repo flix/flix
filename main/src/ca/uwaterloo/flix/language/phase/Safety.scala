@@ -19,12 +19,12 @@ import scala.annotation.tailrec
 /**
   * Performs safety and well-formedness checks on:
   *
-  *  - Datalog constraints.
-  *  - New object expressions.
-  *  - CheckedCast expressions.
-  *  - UncheckedCast expressions.
-  *  - TypeMatch expressions.
-  *  - Throw expressions
+  *   - Datalog constraints.
+  *   - New object expressions.
+  *   - CheckedCast expressions.
+  *   - UncheckedCast expressions.
+  *   - TypeMatch expressions.
+  *   - Throw expressions
   */
 object Safety {
 
@@ -338,9 +338,14 @@ object Safety {
       case Expr.ArrayStore(base, index, elm, _, _) =>
         visit(base) ++ visit(index) ++ visit(elm)
 
-      case Expr.StructNew(sym, fields, region, tpe, eff, loc) => throw new RuntimeException("JOE TBD")
-      case Expr.StructGet(sym, exp, field, tpe, eff, loc) => throw new RuntimeException("JOE TBD")
-      case Expr.StructPut(sym, exp1, field, exp2, tpe, eff, loc) => throw new RuntimeException("JOE TBD")
+      case Expr.StructNew(_, fields, region, _, _, _) =>
+        fields.map{case (_, v) => v}.flatMap(visit) ++ visit(region)
+
+      case Expr.StructGet(e, _, _, _, _) =>
+        visit(e)
+
+      case Expr.StructPut(e1, _, e2, _, _, _) =>
+        visit(e1) ++ visit(e2)
 
       case Expr.VectorLit(elms, _, _, _) =>
         elms.flatMap(visit)
@@ -559,8 +564,8 @@ object Safety {
   /**
     * Checks if there are any impossible casts, i.e. casts that always fail.
     *
-    * - No primitive type can be cast to a reference type and vice-versa.
-    * - No Bool type can be cast to a non-Bool type  and vice-versa.
+    *   - No primitive type can be cast to a reference type and vice-versa.
+    *   - No Bool type can be cast to a non-Bool type  and vice-versa.
     */
   private def verifyUncheckedCast(cast: Expr.UncheckedCast)(implicit flix: Flix): List[SafetyError.ImpossibleUncheckedCast] = {
     val tpe1 = Type.eraseAliases(cast.exp.tpe).baseType

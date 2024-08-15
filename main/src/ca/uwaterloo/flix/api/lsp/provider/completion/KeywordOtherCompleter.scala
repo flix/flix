@@ -44,6 +44,7 @@ object KeywordOtherCompleter extends Completer {
       "Record",
       "Schema",
       "sealed",
+      "struct",
       "trait",
       "type",
       "where",

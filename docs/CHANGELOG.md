@@ -1,5 +1,9 @@
 # Changelog
 
+Version 0.49.0:
+- Language: Significantly improved Java interoperability (thanks Chanattan!)
+- Language: Added support for `throw` for Java interoperability (thanks Joseph!)
+
 Version 0.48.0:
 - Compiler: Added support for resilient lexing and parsing (thanks Herluf!)
 

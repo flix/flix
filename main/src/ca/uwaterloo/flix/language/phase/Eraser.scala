@@ -14,21 +14,21 @@ import ca.uwaterloo.flix.util.ParOps
   * This means that expressions should cast their output but assume correct
   * input types.
   *
-  * - Ref
-  *   - component type erasure
-  *   - deref casting
-  * - Tuple
-  *   - component type erasure
-  *   - index casting
-  * - Record
-  *   - component type erasure
-  *   - select casting
-  * - Lazy
-  *   - component type erasure
-  *   - force casting
-  * - Function
-  *   - result type boxing, this includes return types of defs and their applications
-  *   - function call return value casting
+  *   - Ref
+  *     - component type erasure
+  *     - deref casting
+  *   - Tuple
+  *     - component type erasure
+  *     - index casting
+  *   - Record
+  *     - component type erasure
+  *     - select casting
+  *   - Lazy
+  *     - component type erasure
+  *     - force casting
+  *   - Function
+  *     - result type boxing, this includes return types of defs and their applications
+  *     - function call return value casting
   */
 object Eraser {
 
@@ -106,8 +106,8 @@ object Eraser {
         case AtomicOp.ArrayStore => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.ArrayLength => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.StructNew(_, _) => ApplyAtomic(op, es, t, purity, loc)
-        case AtomicOp.StructGet(_, _) => ApplyAtomic(op, es, t, purity, loc)
-        case AtomicOp.StructPut(_, _) => ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.StructGet(_) => castExp(ApplyAtomic(op, es, erase(tpe), purity, loc), t, purity, loc)
+        case AtomicOp.StructPut(_) => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Ref => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Deref =>
           castExp(ApplyAtomic(op, es, erase(tpe), purity, loc), t, purity, loc)

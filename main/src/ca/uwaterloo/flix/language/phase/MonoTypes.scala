@@ -24,8 +24,8 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 /**
   * This phase does two things:
-  * - Erase enums, such that `Option[t]` becomes `Option`
-  * - Removes all type aliases in types
+  *   - Erase enums, such that `Option[t]` becomes `Option`
+  *   - Removes all type aliases in types
   */
 object MonoTypes {
 
@@ -291,12 +291,12 @@ object MonoTypes {
 
   /**
     * Returns the given type where
-    * - aliases have been removed.
-    * - `Enum[a, b, c]` have been replaced by `Enum`.
+    *   - aliases have been removed.
+    *   - `Enum[a, b, c]` have been replaced by `Enum`.
     *
     * Assumes that the type has no
-    * - Associated types.
-    * - Variables.
+    *   - Associated types.
+    *   - Variables.
     *
     * Performance Note: We are on a hot path. We take extra care to avoid redundant type objects.
     */

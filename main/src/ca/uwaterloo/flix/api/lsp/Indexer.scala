@@ -29,6 +29,7 @@ object Indexer {
     Index.all(
       traverse(root.defs.values)(visitDef),
       traverse(root.enums.values)(visitEnum),
+      traverse(root.structs.values)(visitStruct),
       traverse(root.traits.values)(visitTrait),
       traverse(root.instances.values) {
         instances => traverse(instances)(visitInstance)
@@ -98,6 +99,20 @@ object Indexer {
   private def visitCase(caze0: Case): Index = caze0 match {
     case Case(_, tpe, _, _) =>
       Index.occurrenceOf(caze0) ++ visitType(tpe)
+  }
+
+  /**
+   * Returns a reverse index for the given struct `struct0`.
+   */
+  private def visitStruct(struct0: Struct): Index = struct0 match {
+    case Struct(doc, ann, mod, sym, tparams, sc, fields, loc) =>
+      Index.all(
+        Index.occurrenceOf(struct0),
+        traverse(tparams)(visitTypeParam),
+        traverse(fields.values) {
+          case f@StructField(sym, tpe, loc) => Index.occurrenceOf(f) ++ visitType(tpe)
+        },
+      )
   }
 
   /**
@@ -311,9 +326,24 @@ object Indexer {
     case Expr.ArrayStore(exp1, exp2, exp3, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) ++ Index.occurrenceOf(exp0)
 
-    case Expr.StructNew(sym, fields, region, tpe, eff, loc) => throw new RuntimeException("JOE TBD")
-    case Expr.StructGet(sym, exp, field, tpe, eff, loc) => throw new RuntimeException("JOE TBD")
-    case Expr.StructPut(sym, exp1, field, exp2, tpe, eff, loc) => throw new RuntimeException("JOE TBD")
+    // STRUCTS TODO: Add indexing support for symbols and fields
+    case Expr.StructNew(sym, fields, region, tpe, eff, loc) =>
+      val i0 = visitExp(region) ++ Index.occurrenceOf(exp0)
+      val i1 = traverse(fields) {
+        case (_, e) => visitExp(e)
+      }
+      val parent = Entity.Exp(exp0)
+      val i2 = Index.useOf(sym, loc)
+      val fieldSymIndices = fields.map { case (sym, _) => Index.useOf(sym, sym.loc, parent) }
+      fieldSymIndices.foldLeft(i0 ++ i1 ++ i2)(_ ++ _)
+
+    case Expr.StructGet(exp, field, tpe, eff, loc) =>
+      val parent = Entity.Exp(exp0)
+      visitExp(exp) ++ Index.occurrenceOf(exp0) ++ Index.useOf(field, field.loc, parent)
+
+    case Expr.StructPut(exp1, field, exp2, tpe, eff, loc) =>
+      val parent = Entity.Exp(exp0)
+      visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0) ++ Index.useOf(field, field.loc, parent)
 
     case Expr.VectorLit(exps, _, _, _) =>
       visitExps(exps) ++ Index.occurrenceOf(exp0)

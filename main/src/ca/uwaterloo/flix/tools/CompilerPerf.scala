@@ -211,7 +211,10 @@ object CompilerPerf {
   /**
     * Run compiler performance experiments.
     */
-  def run(o: Options): Unit = {
+  def run(opts: Options): Unit = {
+    // Options
+    val o = opts.copy(progress = false, loadClassFiles = false)
+
     // The number of iterations.
     val N = o.XPerfN.getOrElse(DefaultN)
 
@@ -288,9 +291,9 @@ object CompilerPerf {
         })
     writeFile("speedupWithInc.json", speedupInc)
 
-    ///
-    /// Throughput
-    ///
+    //
+    // Throughput
+    //
     val throughoutBaseLine =
     ("timestamp" -> timestamp) ~
       ("threads" -> MinThreads) ~
@@ -393,7 +396,7 @@ object CompilerPerf {
       flushCaches()
 
       val flix = new Flix()
-      flix.setOptions(o.copy(threads = MinThreads, incremental = false, progress = false, loadClassFiles = false))
+      flix.setOptions(o.copy(threads = MinThreads, incremental = false))
 
       addInputs(flix)
       runSingle(flix)
@@ -409,7 +412,7 @@ object CompilerPerf {
       flushCaches()
 
       val flix = new Flix()
-      flix.setOptions(o.copy(threads = MaxThreads, incremental = false, progress = false, loadClassFiles = false))
+      flix.setOptions(o.copy(threads = MaxThreads, incremental = false))
 
       addInputs(flix)
       runSingle(flix)
@@ -422,7 +425,7 @@ object CompilerPerf {
   private def perfBaseLineWithParInc(N: Int, o: Options): IndexedSeq[Run] = {
     // Note: The Flix object is created _once_.
     val flix: Flix = new Flix()
-    flix.setOptions(o.copy(threads = MaxThreads, incremental = true, loadClassFiles = false))
+    flix.setOptions(o.copy(threads = MaxThreads, incremental = true))
     (0 until N).map { _ =>
       flushCaches()
 
