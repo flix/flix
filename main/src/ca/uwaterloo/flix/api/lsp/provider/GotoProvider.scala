@@ -43,7 +43,8 @@ object GotoProvider {
         case Entity.CaseUse(sym, loc, _) =>
           ("status" -> ResponseStatus.Success) ~ ("result" -> LocationLink.fromCaseSym(sym, loc)(root).toJSON)
 
-        case Entity.StructFieldUse(sym, loc, _) => throw new RuntimeException("JOE TODO")
+        case Entity.StructFieldUse(sym, loc, _) =>
+          ("status" -> ResponseStatus.Success) ~ ("result" -> LocationLink.fromStructFieldSym(sym, loc)(root).toJSON)
 
         case Entity.Exp(_) => mkNotFound(uri, pos)
 
@@ -57,6 +58,9 @@ object GotoProvider {
         case Entity.Type(t) => t match {
           case Type.Cst(TypeConstructor.Enum(sym, _), loc) =>
             ("status" -> ResponseStatus.Success) ~ ("result" -> LocationLink.fromEnumSym(sym, loc)(root).toJSON)
+
+          case Type.Cst(TypeConstructor.Struct(sym, _), loc) =>
+            ("status" -> ResponseStatus.Success) ~ ("result" -> LocationLink.fromStructSym(sym, loc)(root).toJSON)
 
           case Type.Cst(TypeConstructor.Effect(sym), loc) =>
             ("status" -> ResponseStatus.Success) ~ ("result" -> LocationLink.fromEffectSym(sym, loc).toJSON)

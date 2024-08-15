@@ -30,7 +30,7 @@ object HighlightProvider {
       case Some(entity) => entity match {
         case Entity.Case(caze) => highlightCase(uri, caze.sym)
 
-        case Entity.StructField(field) => throw new RuntimeException("JOE TODO")
+        case Entity.StructField(field) => highlightStructField(uri, field.sym)
 
         case Entity.Def(defn) => highlightDef(uri, defn.sym)
 
@@ -38,7 +38,7 @@ object HighlightProvider {
 
         case Entity.Enum(enum) => highlightEnum(uri, enum.sym)
 
-        case Entity.Struct(enum) => throw new RuntimeException("JOE TODO")
+        case Entity.Struct(struct) => highlightStruct(uri, struct.sym)
 
         case Entity.TypeAlias(alias) => highlightTypeAlias(uri, alias.sym)
 
@@ -56,7 +56,7 @@ object HighlightProvider {
 
         case Entity.CaseUse(sym, _, _) => highlightCase(uri, sym)
 
-        case Entity.StructFieldUse(sym, _, _) => throw new RuntimeException("JOE TODO")
+        case Entity.StructFieldUse(sym, _, _) => highlightStructField(uri, sym)
 
         case Entity.Exp(_) => mkNotFound(uri, pos)
 
@@ -79,7 +79,6 @@ object HighlightProvider {
             case TypeConstructor.RecordRowExtend(label) => highlightLabel(uri, label)
             case TypeConstructor.SchemaRowExtend(pred) => highlightPred(uri, pred)
             case TypeConstructor.Enum(sym, _) => highlightEnum(uri, sym)
-            case TypeConstructor.Struct(sym, _) => throw new RuntimeException("JOE TODO")
             case TypeConstructor.Effect(sym) => highlightEffect(uri, sym)
             case _ => mkNotFound(uri, pos)
           }
@@ -128,6 +127,12 @@ object HighlightProvider {
     highlight(uri, write :: reads)
   }
 
+  private def highlightStruct(uri: String, sym: Symbol.StructSym)(implicit index: Index): JObject = {
+    val write = (sym.loc, DocumentHighlightKind.Write)
+    val reads = index.usesOf(sym).toList.map(loc => (loc, DocumentHighlightKind.Read))
+    highlight(uri, write :: reads)
+  }
+
   private def highlightTypeAlias(uri: String, sym: Symbol.TypeAliasSym)(implicit index: Index): JObject = {
     val write = (sym.loc, DocumentHighlightKind.Write)
     val reads = index.usesOf(sym).toList.map(loc => (loc, DocumentHighlightKind.Read))
@@ -154,6 +159,12 @@ object HighlightProvider {
 
   private def highlightCase(uri: String, sym: Symbol.CaseSym)(implicit index: Index, root: Root): JObject = {
     val write = (root.enums(sym.enumSym).cases(sym).loc, DocumentHighlightKind.Write)
+    val reads = index.usesOf(sym).toList.map(loc => (loc, DocumentHighlightKind.Read))
+    highlight(uri, write :: reads)
+  }
+
+  private def highlightStructField(uri: String, sym: Symbol.StructFieldSym)(implicit index: Index, root: Root): JObject = {
+    val write = (root.structs(sym.structSym).fields(sym).loc, DocumentHighlightKind.Write)
     val reads = index.usesOf(sym).toList.map(loc => (loc, DocumentHighlightKind.Read))
     highlight(uri, write :: reads)
   }

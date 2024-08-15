@@ -34,7 +34,7 @@ object RenameProvider {
 
         case Entity.Case(caze) => renameCase(caze.sym, newName)
 
-        case Entity.StructField(field) => throw new RuntimeException("JOE TODO")
+        case Entity.StructField(field) => renameStructField(field.sym, newName)
 
         case Entity.Def(defn) => renameDef(defn.sym, newName)
 
@@ -46,7 +46,7 @@ object RenameProvider {
 
         case Entity.CaseUse(sym, _, _) => renameCase(sym, newName)
 
-        case Entity.StructFieldUse(sym, _, _) => throw new RuntimeException("JOE TODO")
+        case Entity.StructFieldUse(sym, _, _) => renameStructField(sym, newName)
 
         case Entity.Exp(exp) => mkNotFound(uri, pos)
 
@@ -144,6 +144,12 @@ object RenameProvider {
   }
 
   private def renameCase(sym: Symbol.CaseSym, newName: String)(implicit index: Index, root: Root): JObject = {
+    val defn = sym.loc
+    val uses = index.usesOf(sym)
+    rename(newName, uses + defn)
+  }
+
+  private def renameStructField(sym: Symbol.StructFieldSym, newName: String)(implicit index: Index, root: Root): JObject = {
     val defn = sym.loc
     val uses = index.usesOf(sym)
     rename(newName, uses + defn)
