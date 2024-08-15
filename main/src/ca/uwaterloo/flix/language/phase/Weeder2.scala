@@ -304,7 +304,7 @@ object Weeder2 {
         Types.tryPickEffect(tree)
       ) {
         (doc, annotations, modifiers, ident, tparams, fparams, exp, ttype, tconstrs, constrs, eff) =>
-          Declaration.Def(doc, annotations, modifiers, ident, tparams, fparams, exp, ttype, eff, tconstrs, constrs, tree.loc)
+          Declaration.Def(doc, annotations, if (expectedTreeKind == TreeKind.Decl.Redef) modifiers.copy(mod = Modifier.Override :: modifiers.mod) else modifiers, ident, tparams, fparams, exp, ttype, eff, tconstrs, constrs, tree.loc)
       }
     }
 
