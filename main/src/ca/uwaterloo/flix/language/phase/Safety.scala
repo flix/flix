@@ -469,11 +469,18 @@ object Safety {
           SafetyError.Forbidden(ctx, loc) :: res
         }
 
-      case Expr.GetField(_, exp, _, _, _) =>
-        visit(exp)
+      case Expr.GetField(_, exp, _, _, loc) =>
+        val res = visit(exp)
+
+        val ctx = loc.security
+        if (ctx == SecurityContext.AllPermissions) {
+          res
+        } else {
+          SafetyError.Forbidden(ctx, loc) :: res
+        }
 
       case Expr.PutField(_, exp1, exp2, _, _, _) =>
-        visit(exp1) ++ visit(exp2)
+        val res = visit(exp1) ++ visit(exp2)
 
       case Expr.GetStaticField(_, _, _, _) =>
         Nil
@@ -488,7 +495,6 @@ object Safety {
             methods.flatMap {
               case JvmMethod(_, _, exp, _, _, _) => visit(exp)
             }
-
 
         val ctx = loc.security
         if (ctx == SecurityContext.AllPermissions) {
