@@ -43,6 +43,8 @@ object GotoProvider {
         case Entity.CaseUse(sym, loc, _) =>
           ("status" -> ResponseStatus.Success) ~ ("result" -> LocationLink.fromCaseSym(sym, loc)(root).toJSON)
 
+        case Entity.StructFieldUse(sym, loc, _) => throw new RuntimeException("JOE TODO")
+
         case Entity.Exp(_) => mkNotFound(uri, pos)
 
         case Entity.Pattern(pat) => pat match {
@@ -69,10 +71,12 @@ object GotoProvider {
           ("status" -> ResponseStatus.Success) ~ ("result" -> LocationLink.fromOpSym(sym, loc).toJSON)
 
         case Entity.Case(_) => mkNotFound(uri, pos)
+        case Entity.StructField(_) => mkNotFound(uri, pos)
         case Entity.Trait(_) => mkNotFound(uri, pos)
         case Entity.Def(_) => mkNotFound(uri, pos)
         case Entity.Effect(_) => mkNotFound(uri, pos)
         case Entity.Enum(_) => mkNotFound(uri, pos)
+        case Entity.Struct(_) => mkNotFound(uri, pos)
         case Entity.TypeAlias(_) => mkNotFound(uri, pos)
         case Entity.AssocType(_) => mkNotFound(uri, pos)
         case Entity.Label(_) => mkNotFound(uri, pos)

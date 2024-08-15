@@ -39,6 +39,8 @@ object FindReferencesProvider {
 
         case Entity.Enum(enum0) => findEnumReferences(enum0.sym)
 
+        case Entity.Struct(struct0) => throw new RuntimeException("JOE TODO")
+
         case Entity.TypeAlias(alias0) => findTypeAliasReferences(alias0.sym)
 
         case Entity.AssocType(assoc) => findAssocTypeReferences(assoc.sym)
@@ -54,6 +56,10 @@ object FindReferencesProvider {
         case Entity.VarUse(sym, _, _) => findVarReferences(sym)
 
         case Entity.CaseUse(sym, _, _) => findCaseReferences(sym)
+
+        case Entity.StructFieldUse(sym, _, _) => throw new RuntimeException("JOE TODO")
+
+        case Entity.StructField(field0) => throw new RuntimeException("JOE TODO")
 
         case Entity.Exp(_) => mkNotFound(uri, pos)
 
