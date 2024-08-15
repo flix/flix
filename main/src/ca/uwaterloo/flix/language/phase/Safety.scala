@@ -385,9 +385,16 @@ object Safety {
             visit(exp)
         }
 
-      case e@Expr.UncheckedCast(exp, _, _, _, _, _) =>
-        val errors = verifyUncheckedCast(e)
-        visit(exp) ++ errors
+      case e@Expr.UncheckedCast(exp, _, _, _, _, loc) =>
+        val ctx = loc.security
+        if (ctx == SecurityContext.AllPermissions) {
+          // Permitted
+          val errors = verifyUncheckedCast(e)
+          visit(exp) ++ errors
+        } else {
+          // Forbidden
+          SafetyError.Forbidden(ctx, loc) :: Nil
+        }
 
       case Expr.UncheckedMaskingCast(exp, _, _, _) =>
         visit(exp)
