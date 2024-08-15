@@ -139,7 +139,7 @@ object CompletionProvider {
       case SyntacticContext.Expr.Do => OpCompleter.getCompletions(context)
       case SyntacticContext.Expr.InvokeMethod(e) => InvokeMethodCompleter.getCompletions(e, context)
       case SyntacticContext.Expr.StaticFieldOrMethod(e) => GetStaticFieldCompleter.getCompletions(e) ++ InvokeStaticMethodCompleter.getCompletions(e)
-      case SyntacticContext.Expr.StructAccess(struct, e) => StructFieldCompleter.getCompletions(struct, e, root)
+      case SyntacticContext.Expr.StructAccess(e) => StructFieldCompleter.getCompletions(e, root)
       case _: SyntacticContext.Expr => ExprCompleter.getCompletions(context)
 
       //
