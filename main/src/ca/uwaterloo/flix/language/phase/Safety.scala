@@ -446,11 +446,16 @@ object Safety {
         if (ctx == SecurityContext.AllPermissions) {
           visit(exp) ++ args.flatMap(visit)
         } else {
-          SafetyError.Forbidden(ctx, loc) :: Nil
+          SafetyError.Forbidden(ctx, loc) :: args.flatMap(visit)
         }
 
-      case Expr.InvokeStaticMethod(_, args, _, _, _) =>
-        args.flatMap(visit)
+      case Expr.InvokeStaticMethod(_, args, _, _, loc) =>
+        val ctx = loc.security
+        if (ctx == SecurityContext.AllPermissions) {
+          args.flatMap(visit)
+        } else {
+          SafetyError.Forbidden(ctx, loc) :: args.flatMap(visit)
+        }
 
       case Expr.GetField(_, exp, _, _, _) =>
         visit(exp)
