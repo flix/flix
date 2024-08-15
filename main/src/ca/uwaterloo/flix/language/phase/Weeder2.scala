@@ -257,7 +257,7 @@ object Weeder2 {
         Types.pickType(tree),
         Types.pickConstraints(tree),
         traverse(pickAll(TreeKind.Decl.Def, tree))(visitDefinitionDecl(_, allowedModifiers = Set(TokenKind.KeywordPub, TokenKind.KeywordOverride), mustBePublic = true)),
-        traverse(pickAll(TreeKind.Decl.Redef, tree))(visitDefinitionDecl(_, allowedModifiers = Set(TokenKind.KeywordPub), mustBePublic = true)),
+        traverse(pickAll(TreeKind.Decl.Redef, tree))(visitDefinitionDecl(_, allowedModifiers = Set(TokenKind.KeywordPub), mustBePublic = true, expectedTreeKind = TreeKind.Decl.Redef)),
       ) {
         (doc, annotations, modifiers, clazz, tpe, tconstrs, defs, redefs) =>
           val assocs = pickAll(TreeKind.Decl.AssociatedTypeDef, tree)
@@ -288,8 +288,8 @@ object Weeder2 {
       }
     }
 
-    private def visitDefinitionDecl(tree: Tree, allowedModifiers: Set[TokenKind] = Set(TokenKind.KeywordPub), mustBePublic: Boolean = false): Validation[Declaration.Def, CompilationMessage] = {
-      expect(tree, TreeKind.Decl.Def)
+    private def visitDefinitionDecl(tree: Tree, allowedModifiers: Set[TokenKind] = Set(TokenKind.KeywordPub), mustBePublic: Boolean = false, expectedTreeKind: TreeKind.Decl = TreeKind.Decl.Def): Validation[Declaration.Def, CompilationMessage] = {
+      expect(tree, expectedTreeKind)
       mapN(
         pickDocumentation(tree),
         pickAnnotations(tree),
