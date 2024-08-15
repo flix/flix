@@ -18,12 +18,12 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.FieldCompletion
 import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.language.ast.TypedAst
+import ca.uwaterloo.flix.language.ast.Symbol
 
 import java.lang.reflect.{Field, Method, Modifier}
 
 object StructFieldCompleter {
-  def getCompletions(e: ResolutionError.UndefinedStructField, root: TypedAst.Root): Iterable[Completion.StructFieldCompletion] = {
-    val struct = e.sym
+  def getCompletions(struct: Symbol.StructSym, e: ResolutionError.UndefinedStructField, root: TypedAst.Root): Iterable[Completion.StructFieldCompletion] = {
     val completions = root.structs(struct).fields.filter {
       case (k, v) => k.name.startsWith(e.field.name)
     }
