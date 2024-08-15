@@ -1852,7 +1852,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
                   |}
                   |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.IllegalPut](result)
+    expectError[ResolutionError.NonModifiableField](result)
   }
 
   test("ResolutionError.MutateImmutableField.02") {
@@ -1868,7 +1868,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
                   |}
                   |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.IllegalPut](result)
+    expectError[ResolutionError.NonModifiableField](result)
   }
 
   test("ResolutionError.MutateImmutableField.03") {
@@ -1883,6 +1883,6 @@ class TestResolver extends AnyFunSuite with TestUtils {
                   |}
                   |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.IllegalPut](result)
+    expectError[ResolutionError.NonModifiableField](result)
   }
 }

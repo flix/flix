@@ -1426,7 +1426,7 @@ object Resolver {
                   if(mut) {
                     structPut
                   } else {
-                    structPut.withSoftFailure(IllegalPut(loc))
+                    structPut.withSoftFailure(NonModifiableField(fieldSym, loc))
                   }
                 case None =>
                   val e = ResolutionError.UndefinedStructField(st.sym, field, loc)
