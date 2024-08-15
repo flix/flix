@@ -433,7 +433,7 @@ object Resolver {
           val env = env0 ++ mkTypeParamEnv(List(tparam))
           // ignore the parameter of the super traits; we don't use it
           val superTraitsVal = traverse(superTraits0)(tconstr => resolveSuperTrait(tconstr, env, taenv, ns0, root))
-          val tconstr = ResolvedAst.TypeConstraint(Ast.TypeConstraint.Head(sym, sym.loc), UnkindedType.Var(tparam.sym, tparam.sym.loc), sym.loc)
+          val tconstr = ResolvedAst.TraitConstraint(Ast.TraitConstraint.Head(sym, sym.loc), UnkindedType.Var(tparam.sym, tparam.sym.loc), sym.loc)
           val assocsVal = traverse(assocs0)(resolveAssocTypeSig(_, env, taenv, ns0, root))
           val sigsListVal = traverse(signatures)(resolveSig(_, sym, tparam.sym, env, taenv, ns0, root))
           val lawsVal = traverse(laws0)(resolveDef(_, Some(tconstr), env, taenv, ns0, root))
@@ -457,11 +457,11 @@ object Resolver {
           val env = env0 ++ mkTypeParamEnv(tparams)
           val traitVal = lookupTraitForImplementation(trt0, env, ns0, root)
           val tpeVal = resolveType(tpe0, Wildness.ForbidWild, env, taenv, ns0, root)
-          val tconstrsVal = traverse(tconstrs0)(resolveTypeConstraint(_, env, taenv, ns0, root))
+          val tconstrsVal = traverse(tconstrs0)(resolveTraitConstraint(_, env, taenv, ns0, root))
           flatMapN(traitVal, tpeVal, tconstrsVal) {
             case (trt, tpe, tconstrs) =>
               val assocsVal = resolveAssocTypeDefs(assocs0, trt, tpe, env, taenv, ns0, root, loc)
-              val tconstr = ResolvedAst.TypeConstraint(Ast.TypeConstraint.Head(trt.sym, trt0.loc), tpe, trt0.loc)
+              val tconstr = ResolvedAst.TraitConstraint(Ast.TraitConstraint.Head(trt.sym, trt0.loc), tpe, trt0.loc)
               val defsVal = traverse(defs0)(resolveDef(_, Some(tconstr), env, taenv, ns0, root))
               mapN(defsVal, assocsVal) {
                 case (defs, assocs) =>
@@ -477,7 +477,7 @@ object Resolver {
     */
   def resolveSig(s0: NamedAst.Declaration.Sig, trt: Symbol.TraitSym, traitTvar: Symbol.UnkindedTypeVarSym, env0: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration.Sig, ResolutionError] = s0 match {
     case NamedAst.Declaration.Sig(sym, spec0, exp0) =>
-      val tconstr = ResolvedAst.TypeConstraint(Ast.TypeConstraint.Head(trt, trt.loc), UnkindedType.Var(traitTvar, traitTvar.loc), trt.loc)
+      val tconstr = ResolvedAst.TraitConstraint(Ast.TraitConstraint.Head(trt, trt.loc), UnkindedType.Var(traitTvar, traitTvar.loc), trt.loc)
       val specVal = resolveSpec(spec0, Some(tconstr), env0, taenv, ns0, root)
       flatMapN(specVal) {
         case spec =>
@@ -493,7 +493,7 @@ object Resolver {
   /**
     * Performs name resolution on the given definition `d0` in the given namespace `ns0`.
     */
-  def resolveDef(d0: NamedAst.Declaration.Def, tconstr: Option[ResolvedAst.TypeConstraint], env0: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration.Def, ResolutionError] = d0 match {
+  def resolveDef(d0: NamedAst.Declaration.Def, tconstr: Option[ResolvedAst.TraitConstraint], env0: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration.Def, ResolutionError] = d0 match {
     case NamedAst.Declaration.Def(sym, spec0, exp0) =>
       flix.subtask(sym.toString, sample = true)
 
@@ -511,7 +511,7 @@ object Resolver {
   /**
     * Performs name resolution on the given spec `s0` in the given namespace `ns0`.
     */
-  def resolveSpec(s0: NamedAst.Spec, tconstr: Option[ResolvedAst.TypeConstraint], env0: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Spec, ResolutionError] = s0 match {
+  def resolveSpec(s0: NamedAst.Spec, tconstr: Option[ResolvedAst.TraitConstraint], env0: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Spec, ResolutionError] = s0 match {
     case NamedAst.Spec(doc, ann, mod, tparams0, fparams0, tpe0, eff0, tconstrs0, econstrs0, loc) =>
       val tparamsVal = resolveTypeParams(tparams0, env0, ns0, root)
       flatMapN(tparamsVal) {
@@ -523,7 +523,7 @@ object Resolver {
               val env = env1 ++ mkFormalParamEnv(fparams)
               val tpeVal = resolveType(tpe0, Wildness.AllowWild, env, taenv, ns0, root)
               val effVal = traverseOpt(eff0)(resolveType(_, Wildness.AllowWild, env, taenv, ns0, root))
-              val tconstrsVal = traverse(tconstrs0)(resolveTypeConstraint(_, env, taenv, ns0, root))
+              val tconstrsVal = traverse(tconstrs0)(resolveTraitConstraint(_, env, taenv, ns0, root))
               val econstrsVal = traverse(econstrs0)(resolveEqualityConstraint(_, env, taenv, ns0, root))
 
               mapN(tpeVal, effVal, tconstrsVal, econstrsVal) {
@@ -2142,15 +2142,15 @@ object Resolver {
   /**
     * Performs name resolution on the given type constraint `tconstr0`.
     */
-  def resolveTypeConstraint(tconstr0: NamedAst.TypeConstraint, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.TypeConstraint, ResolutionError] = tconstr0 match {
-    case NamedAst.TypeConstraint(trt0, tpe0, loc) =>
+  def resolveTraitConstraint(tconstr0: NamedAst.TraitConstraint, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.TraitConstraint, ResolutionError] = tconstr0 match {
+    case NamedAst.TraitConstraint(trt0, tpe0, loc) =>
       val traitVal = lookupTrait(trt0, env, ns0, root)
       val tpeVal = resolveType(tpe0, Wildness.ForbidWild, env, taenv, ns0, root)
 
       mapN(traitVal, tpeVal) {
         case (trt, tpe) =>
-          val head = Ast.TypeConstraint.Head(trt.sym, trt0.loc)
-          ResolvedAst.TypeConstraint(head, tpe, loc)
+          val head = Ast.TraitConstraint.Head(trt.sym, trt0.loc)
+          ResolvedAst.TraitConstraint(head, tpe, loc)
       }
   }
 
@@ -2174,15 +2174,15 @@ object Resolver {
   /**
     * Performs name resolution on the given supertrait constraint `tconstr0`.
     */
-  def resolveSuperTrait(tconstr0: NamedAst.TypeConstraint, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.TypeConstraint, ResolutionError] = tconstr0 match {
-    case NamedAst.TypeConstraint(trt0, tpe0, loc) =>
+  def resolveSuperTrait(tconstr0: NamedAst.TraitConstraint, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.TraitConstraint, ResolutionError] = tconstr0 match {
+    case NamedAst.TraitConstraint(trt0, tpe0, loc) =>
       val traitVal = lookupTraitForImplementation(trt0, env, ns0, root)
       val tpeVal = resolveType(tpe0, Wildness.ForbidWild, env, taenv, ns0, root)
 
       mapN(traitVal, tpeVal) {
         case (trt, tpe) =>
-          val head = Ast.TypeConstraint.Head(trt.sym, trt0.loc)
-          ResolvedAst.TypeConstraint(head, tpe, loc)
+          val head = Ast.TraitConstraint.Head(trt.sym, trt0.loc)
+          ResolvedAst.TraitConstraint(head, tpe, loc)
       }
   }
 

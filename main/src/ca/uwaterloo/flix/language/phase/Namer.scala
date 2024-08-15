@@ -437,7 +437,7 @@ object Namer {
       val mod = visitModifiers(mod0, ns0)
       val tparam = visitTypeParam(tparams0)
 
-      val sts = visitTypeConstraints(superTraits)
+      val sts = visitTraitConstraints(superTraits)
       val ascs = visitAssocTypeSigs(assocs, sym) // TODO switch param order to match visitSig
       val sigs = visitSigs(signatures, ns0, sym)
       val ls = visitDefs(laws, ns0)
@@ -452,26 +452,26 @@ object Namer {
     case DesugaredAst.Declaration.Instance(doc, ann, mod, clazz, tpe, tconstrs, assocs, defs, loc) =>
       val tparams = getImplicitTypeParamsFromTypes(List(tpe))
       val t = visitType(tpe)
-      val tcsts = visitTypeConstraints(tconstrs)
+      val tcsts = visitTraitConstraints(tconstrs)
       val ascs = visitAssocTypeDefs(assocs)
       val ds = visitDefs(defs, ns0)
       NamedAst.Declaration.Instance(doc, ann, mod, clazz, tparams, t, tcsts, ascs, ds, ns0.parts, loc)
   }
 
   /**
-    * Performs naming on the given type constraint `tconstr`.
+    * Performs naming on the given trait constraint `tconstr`.
     */
-  private def visitTypeConstraint(tconstr: DesugaredAst.TypeConstraint)(implicit flix: Flix, sctx: SharedContext): NamedAst.TypeConstraint = tconstr match {
-    case DesugaredAst.TypeConstraint(trt, tparam, loc) =>
+  private def visitTraitConstraint(tconstr: DesugaredAst.TraitConstraint)(implicit flix: Flix, sctx: SharedContext): NamedAst.TraitConstraint = tconstr match {
+    case DesugaredAst.TraitConstraint(trt, tparam, loc) =>
       val t = visitType(tparam)
-      NamedAst.TypeConstraint(trt, t, loc)
+      NamedAst.TraitConstraint(trt, t, loc)
   }
 
   /**
-    * Performs naming on the given type constraints `tconstrs`.
+    * Performs naming on the given trait constraints `tconstrs`.
     */
-  private def visitTypeConstraints(tconstrs: List[DesugaredAst.TypeConstraint])(implicit flix: Flix, sctx: SharedContext): List[NamedAst.TypeConstraint] = {
-    tconstrs.map(visitTypeConstraint)
+  private def visitTraitConstraints(tconstrs: List[DesugaredAst.TraitConstraint])(implicit flix: Flix, sctx: SharedContext): List[NamedAst.TraitConstraint] = {
+    tconstrs.map(visitTraitConstraint)
   }
 
   /**
@@ -503,7 +503,7 @@ object Namer {
       val fps = visitFormalParams(fparams)
       val t = visitType(tpe)
       val ef = eff.map(visitType)
-      val tcsts = visitTypeConstraints(tconstrs)
+      val tcsts = visitTraitConstraints(tconstrs)
       val ecsts = visitEqualityConstraints(econstrs)
 
       // Then visit the parts depending on the parameters
@@ -535,7 +535,7 @@ object Namer {
       val fps = visitFormalParams(fparams)
       val t = visitType(tpe)
       val ef = eff.map(visitType)
-      val tcsts = visitTypeConstraints(tconstrs)
+      val tcsts = visitTraitConstraints(tconstrs)
       val ecsts = visitEqualityConstraints(econstrs)
 
       // Then visit the parts depending on the parameters
@@ -579,7 +579,7 @@ object Namer {
       val mod = visitModifiers(mod0, ns0)
       val fps = visitFormalParams(fparams)
       val t = visitType(tpe)
-      val tcsts = visitTypeConstraints(tconstrs)
+      val tcsts = visitTraitConstraints(tconstrs)
 
       val tparams = Nil // operations are monomorphic
       val eff = None // operations are pure
