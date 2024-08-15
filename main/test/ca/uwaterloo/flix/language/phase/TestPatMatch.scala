@@ -557,24 +557,24 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
   test("Expression.TryCatch.01") {
     val input = 
       """ 
-        |import java.lang.Exception
-        |import java.lang.ArithmeticException
-        |
-        |import java.lang.Math
-        |
-        |def exception(): Unit \ IO =
-        | discard Math.floorDiv(1, 0);
-        | ()
-        |
-        |def f(): Unit \ IO =
-        | try {
-        |   exception();
-        |   ()
-        | } catch {
-        |     case _: java.lang.Exception => ()
-        |     case _: java.lang.ArithmeticException => ()
-        | }
-        |"""
+        import java.lang.Exception
+        import java.lang.ArithmeticException
+        
+        import java.lang.Math
+        
+        def exception(): Unit \ IO =
+         discard Math.floorDiv(1, 0);
+         ()
+        
+        def f(): Unit \ IO =
+         try {
+           exception();
+           ()
+         } catch {
+             case _: java.lang.Exception => ()
+             case _: java.lang.ArithmeticException => ()
+         }
+        """
     val result = compile(input, Options.TestWithLibNix)
     expectError[PatMatchError.ExceptionTypeMatchError](result)
   }
@@ -582,17 +582,17 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
   test("Expression.TryCatch.02") {
     val input = 
       """ 
-        |import java.io.FileNotFoundException
-        |import java.io.IOException
-        |
-        |def f(): Unit =
-        | try { 
-        |   ()
-        | } catch {
-        |     case _: java.io.IOException => ()
-        |     case _: java.io.FileNotFoundException => ()
-        | }
-        |"""
+        import java.io.FileNotFoundException
+        import java.io.IOException
+        
+        def f(): Unit =
+         try { 
+           ()
+         } catch {
+             case _: java.io.IOException => ()
+             case _: java.io.FileNotFoundException => ()
+         }
+        """
     val result = compile(input, Options.TestWithLibNix)
     expectError[PatMatchError.ExceptionTypeMatchError](result)
   }
@@ -600,19 +600,19 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
   test("Expression.TryCatch.03") {
     val input = 
       """ 
-        |import java.lang.Exception
-        |import java.io.FileNotFoundException
-        |import java.io.IOException
-        |
-        |def f(): Unit =
-        | try { 
-        |   ()
-        | } catch {
-        |     case _: java.lang.Exception => ()
-        |     case _: java.io.IOException => ()
-        |     case _: java.io.FileNotFoundException => ()
-        | }
-        |"""
+        import java.lang.Exception
+        import java.io.FileNotFoundException
+        import java.io.IOException
+        
+        def f(): Unit =
+         try { 
+           ()
+         } catch {
+             case _: java.lang.Exception => ()
+             case _: java.io.IOException => ()
+             case _: java.io.FileNotFoundException => ()
+         }
+        """
     val result = compile(input, Options.TestWithLibNix)
     expectError[PatMatchError.ExceptionTypeMatchError](result)
   }
@@ -620,21 +620,21 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
   test("Expression.TryCatch.04") {
     val input = 
       """ 
-        |import java.lang.Exception
-        |import java.io.FileNotFoundException
-        |import java.io.IOException
-        |import java.lang.ArithmeticException
-        |
-        |def f(): Unit =
-        | try { 
-        |   ()
-        | } catch {
-        |     case _: java.io.IOException => ()
-        |     case _: java.lang.Exception => ()
-        |     case _: java.io.FileNotFoundException => ()
-        |     case _: java.lang.ArithmeticException => ()
-        | }
-        |"""
+        import java.lang.Exception
+        import java.io.FileNotFoundException
+        import java.io.IOException
+        import java.lang.ArithmeticException
+        
+        def f(): Unit =
+         try { 
+           ()
+         } catch {
+             case _: java.io.IOException => ()
+             case _: java.lang.Exception => ()
+             case _: java.io.FileNotFoundException => ()
+             case _: java.lang.ArithmeticException => ()
+         }
+        """
     val result = compile(input, Options.TestWithLibNix)
     expectError[PatMatchError.ExceptionTypeMatchError](result)
   }
