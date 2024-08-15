@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.language.ast.Ast.AssocTypeConstructor
 import ca.uwaterloo.flix.language.ast.{Kind, Rigidity, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.phase.unification.FastSetUnification.Solver.RunOptions
 import ca.uwaterloo.flix.language.phase.unification.FastSetUnification.Term.mkCompl
 import ca.uwaterloo.flix.language.phase.unification.FastSetUnification.{ConflictException, Equation, Term, TooComplexException}
 import ca.uwaterloo.flix.util.collection.Bimap
@@ -41,7 +42,7 @@ object EffUnification2 {
     }
 
     // Compute the most-general unifier of all the equations.
-    FastSetUnification.Solver.solve(equations)._1 match {
+    FastSetUnification.Solver.solve(equations)(RunOptions.default)._1 match {
       case Result.Ok(subst) => Result.Ok(fromSetSubst(subst))
 
       case Result.Err((ex: ConflictException, _, _)) =>

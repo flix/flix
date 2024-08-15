@@ -29,6 +29,8 @@ class TestFastSetUnification extends AnyFunSuite with TestUtils {
 
   private implicit val defaultLoc: SourceLocation = SourceLocation.Unknown
 
+  private implicit val defaultOptions: RunOptions = RunOptions.default
+
   test("Array.copyOfRange") {
     val l = List(
       (Cst(22553) inter Cst(22551)) ~ (Var(90584) inter (Var(90592) inter (Var(90600) inter (Var(90608) inter (Var(90616) inter (Var(90625) inter (Var(90633) inter (Var(90641) inter (Var(90649) inter (Var(90657) inter (Var(90666) inter (Var(90675) inter (Var(90684) inter Var(90688)))))))))))))),
@@ -820,7 +822,7 @@ class TestFastSetUnification extends AnyFunSuite with TestUtils {
 
   test("Custom.Fuzzer") {
     val random = new Random(seed = 56238265)
-    assert(BooleanPropTesting.testSolvableConstraints(random, BooleanPropTesting.explodedRandomXor, 50_000, 1, -1, wait = false)(RunOptions()))
+    assert(BooleanPropTesting.testSolvableConstraints(random, BooleanPropTesting.explodedRandomXor, 50_000, 1, -1, wait = false))
   }
 
 }

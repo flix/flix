@@ -90,8 +90,10 @@ object BooleanPropTesting {
   }
 
   def main(args: Array[String]): Unit = {
+    // `clickAndGo` means that debugging is enabled and that every run will wait for input from StdIn.
     val clickAndGo = false
-    testSolvableConstraints(new Random(), explodedRandomXor, 700_000, 1, -1, wait = clickAndGo)(RunOptions().copy(debugging = clickAndGo))
+    val options = RunOptions.default.copy(debugging = clickAndGo)
+    testSolvableConstraints(new Random(), explodedRandomXor, 700_000, 1, -1, wait = clickAndGo)(options)
   }
 
   // TODO add testing of t ~ propagation(t)
@@ -185,7 +187,7 @@ object BooleanPropTesting {
     case object Timeout extends Res
   }
 
-  private def runEquations(eqs: List[Equation])(implicit opts: RunOptions = RunOptions()): (Res, (String, Int)) = {
+  private def runEquations(eqs: List[Equation])(implicit opts: RunOptions): (Res, (String, Int)) = {
     val (res, lastPhase0) = FastSetUnification.Solver.solve(eqs)
     val lastPhase = (lastPhase0._1.getOrElse("Nothing"), lastPhase0._2.getOrElse(-1))
     res match {

@@ -53,14 +53,26 @@ object FastSetUnification {
       * @param verifySize verify that the solution substitution is less than `sizeThreshold`
       */
     case class RunOptions(
-                           sizeThreshold: Int = 800,
-                           complexThreshold: Int = 10,
-                           permutationLimit: Int = 10,
-                           debugging: Boolean = false,
-                           rerun: Boolean = false,
-                           verifySubst: Boolean = false,
-                           verifySize: Boolean = true
+                           sizeThreshold: Int,
+                           complexThreshold: Int,
+                           permutationLimit: Int,
+                           debugging: Boolean,
+                           rerun: Boolean,
+                           verifySubst: Boolean,
+                           verifySize: Boolean
                          )
+
+    object RunOptions {
+      val default: RunOptions = RunOptions(
+        sizeThreshold = 800,
+        complexThreshold = 10,
+        permutationLimit = 10,
+        debugging = false,
+        rerun = false,
+        verifySubst = false,
+        verifySize = true
+      )
+    }
 
     /**
       * Represents the running state of the solver
@@ -82,7 +94,7 @@ object FastSetUnification {
       *
       * Returns `Result.Err((ex, l, s))` where `c` is a conflict, `l` is a list of unsolved equations, and `s` is a partial substitution.
       */
-    def solve(l: List[Equation])(implicit opts: RunOptions = RunOptions()): (Result[SetSubstitution, (FastBoolUnificationException, List[Equation], SetSubstitution)], (Option[String], Option[Int])) = {
+    def solve(l: List[Equation])(implicit opts: RunOptions): (Result[SetSubstitution, (FastBoolUnificationException, List[Equation], SetSubstitution)], (Option[String], Option[Int])) = {
       import FastSetUnification.{Phases => P}
       val state = new State(l)
 
