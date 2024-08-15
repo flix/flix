@@ -479,14 +479,33 @@ object Safety {
           SafetyError.Forbidden(ctx, loc) :: res
         }
 
-      case Expr.PutField(_, exp1, exp2, _, _, _) =>
+      case Expr.PutField(_, exp1, exp2, _, _, loc) =>
         val res = visit(exp1) ++ visit(exp2)
 
-      case Expr.GetStaticField(_, _, _, _) =>
-        Nil
+        val ctx = loc.security
+        if (ctx == SecurityContext.AllPermissions) {
+          res
+        } else {
+          SafetyError.Forbidden(ctx, loc) :: res
+        }
 
-      case Expr.PutStaticField(_, exp, _, _, _) =>
-        visit(exp)
+      case Expr.GetStaticField(_, _, _, loc) =>
+        val ctx = loc.security
+        if (ctx == SecurityContext.AllPermissions) {
+          Nil
+        } else {
+          SafetyError.Forbidden(ctx, loc) :: Nil
+        }
+
+      case Expr.PutStaticField(_, exp, _, _, loc) =>
+        val res = visit(exp)
+
+        val ctx = loc.security
+        if (ctx == SecurityContext.AllPermissions) {
+          res
+        } else {
+          SafetyError.Forbidden(ctx, loc) :: res
+        }
 
       case Expr.NewObject(_, clazz, tpe, _, methods, loc) =>
         val erasedType = Type.eraseAliases(tpe)
