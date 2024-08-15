@@ -396,8 +396,13 @@ object Safety {
           SafetyError.Forbidden(ctx, loc) :: Nil
         }
 
-      case Expr.UncheckedMaskingCast(exp, _, _, _) =>
-        visit(exp)
+      case Expr.UncheckedMaskingCast(exp, _, _, loc) =>
+        val ctx = loc.security
+        if (ctx == SecurityContext.AllPermissions) {
+          visit(exp)
+        } else {
+          SafetyError.Forbidden(ctx, loc) :: Nil
+        }
 
       case Expr.Without(exp, _, _, _, _) =>
         visit(exp)
