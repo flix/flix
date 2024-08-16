@@ -262,7 +262,7 @@ object Weeder2 {
         (doc, annotations, modifiers, clazz, tpe, tconstrs, defs, redefs) =>
           val assocs = pickAll(TreeKind.Decl.AssociatedTypeDef, tree)
           mapN(traverse(assocs)(visitAssociatedTypeDefDecl(_, tpe))) {
-            assocs => Declaration.Instance(doc, annotations, modifiers, clazz, tpe, tconstrs, assocs, defs ++ redefs, tree.loc)
+            assocs => Declaration.Instance(doc, annotations, modifiers, clazz, tpe, tconstrs, assocs, defs, redefs, tree.loc)
           }
       }
     }
@@ -308,7 +308,7 @@ object Weeder2 {
       }
     }
 
-    private def visitRedefinitionDecl(tree: Tree): Validation[Declaration.Def, CompilationMessage] = {
+    private def visitRedefinitionDecl(tree: Tree): Validation[Declaration.Redef, CompilationMessage] = {
       expect(tree, TreeKind.Decl.Redef)
       mapN(
         pickDocumentation(tree),
@@ -324,7 +324,7 @@ object Weeder2 {
         Types.tryPickEffect(tree)
       ) {
         (doc, annotations, modifiers, ident, tparams, fparams, exp, ttype, tconstrs, constrs, eff) =>
-          Declaration.Def(doc, annotations, modifiers.copy(mod = Modifier.Override :: modifiers.mod), ident, tparams, fparams, exp, ttype, eff, tconstrs, constrs, tree.loc)
+          Declaration.Redef(doc, annotations, modifiers, ident, tparams, fparams, exp, ttype, eff, tconstrs, constrs, tree.loc)
       }
     }
 
