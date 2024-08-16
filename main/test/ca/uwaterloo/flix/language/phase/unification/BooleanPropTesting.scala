@@ -99,9 +99,10 @@ object BooleanPropTesting {
   // TODO add testing of t ~ propagation(t)
 
   def testSolvableConstraints(random: Random, genSolvable: Random => List[Equation], testLimit: Int, errLimit: Int, timeoutLimit: Int, wait: Boolean, opts: RunOptions = RunOptions.default): Boolean = {
-    def printProgress(tests: Int, errAmount: Int, timeoutAmount: Int): Unit = {
+    def printProgress(tests: Int, errAmount: Int, timeoutAmount: Int, durationSeconds: Long): Unit = {
       val passed = tests - errAmount - timeoutAmount
-      println(s"${tests / 1000}k (${passed} passed, $errAmount errs, $timeoutAmount t.o.)")
+      val runsPerSec = tests / durationSeconds.max(1)
+      println(s"${tests / 1000}k (${passed} passed, $errAmount errs, $timeoutAmount t.o., $durationSeconds s, $runsPerSec tests/s)")
     }
 
     val passes: ListBuffer[Int] = ListBuffer.empty
@@ -110,13 +111,14 @@ object BooleanPropTesting {
     val timeouts: ListBuffer[(List[Equation], Int)] = ListBuffer.empty
     var continue = true
     var tests = 0
-    var start = System.currentTimeMillis()
+    val start = System.currentTimeMillis()
+    var lastProgressPrint = start
 
     while (continue && (testLimit <= 0 || tests < testLimit)) {
       val now = System.currentTimeMillis()
-      if (now - start >= 2000) {
-        start = now
-        printProgress(tests, errs.length, timeouts.length)
+      if (now - lastProgressPrint >= 2000) {
+        lastProgressPrint = now
+        printProgress(tests, errs.length, timeouts.length, durationSeconds = (now - start) / 1000)
       }
       tests += 1
       val input = genSolvable(random)
