@@ -21,21 +21,19 @@ pub enum MutMap[k: Type, v: Type, r: Region] {
     case MutMap(Region[r], Ref[Map[k, v], r])
 }
 
-instance Index[MutMap[k, v, r]] with Order[k], ToString[k] {
+instance Index[MutMap[k, v, r]] with Order[k] {
     type Idx = k
     type Elm = v
-    type Aef = r + KeyNotFound
-    pub def get(i: k, t: MutMap[k, v, r]): v \ r + KeyNotFound = {
+    type Aef = r + InvalidKey
+    pub def get(i: k, t: MutMap[k, v, r]): v \ r + InvalidKey = {
         match MutMap.get(i, t) {
             case Some(v) => v
-            case None => do KeyNotFound.error("key not found: ${i}")
+            case None => do InvalidKey.error("key not found")
         }
     }
 }
 
-instance IndexMut[MutMap[k, v, r]] with Order[k], ToString[k] {
-    type Idx = k
-    type Elm = v
+instance IndexMut[MutMap[k, v, r]] with Order[k] {
     type Aef = r
     pub def put(i: k, v: v, t: MutMap[k, v, r]): Unit \ r = MutMap.put!(i, v, t)
 }

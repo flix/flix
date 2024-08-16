@@ -18,24 +18,22 @@
 instance Index[Array[a, r]] {
     type Idx = Int32
     type Elm = a
-    type Aef = r + KeyNotFound
-    pub def get(i: Int32, t: Array[a, r]): a \ r + KeyNotFound = {
+    type Aef = r + InvalidKey
+    pub def get(i: Int32, t: Array[a, r]): a \ r + InvalidKey = {
         if (0 <= i and i < Array.length(t))
             Array.get(i, t)
         else
-            do KeyNotFound.error("index ${i} is out of bounds for array of length ${Array.length(t)}")
+            do InvalidKey.error("index ${i} is out of bounds for Array of length ${Array.length(t)}")
     }
 }
 
 instance IndexMut[Array[a, r]] {
-    type Idx = Int32
-    type Elm = a
-    type Aef = r + KeyNotFound
-    pub def put(i: Int32, v: a, t: Array[a, r]): Unit \ r + KeyNotFound = {
+    type Aef = r + InvalidKey
+    pub def put(i: Int32, v: a, t: Array[a, r]): Unit \ r + InvalidKey = {
         if (0 <= i and i < Array.length(t))
             Array.put(v, i, t)
         else
-            do KeyNotFound.error("index ${i} is out of bounds for array of length ${Array.length(t)}")
+            do InvalidKey.error("index ${i} is out of bounds for Array of length ${Array.length(t)}")
     }
 }
 

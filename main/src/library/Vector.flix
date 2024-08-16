@@ -24,12 +24,12 @@ import java.util.{Iterator => JIterator}
 instance Index[Vector[a]] {
     type Idx = Int32
     type Elm = a
-    type Aef = KeyNotFound
-    pub def get(i: Int32, t: Vector[a]): a \ KeyNotFound = {
+    type Aef = InvalidKey
+    pub def get(i: Int32, t: Vector[a]): a \ InvalidKey = {
         if (0 <= i and i < Vector.length(t))
             Vector.get(i, t)
         else
-            do KeyNotFound.error("index ${i} is out of bounds for vector of length ${Vector.length(t)}")
+            do InvalidKey.error("index ${i} is out of bounds for Vector of length ${Vector.length(t)}")
     }
 }
 

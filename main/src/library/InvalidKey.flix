@@ -14,10 +14,25 @@
  * limitations under the License.
  */
 
-/// Indicates that a lookup was made with an undefined key.
-eff KeyNotFound {
+///
+/// Indicates that a key was invalid.
+/// Useful for instances of `Index` or `IndexMut`.
+///
+eff InvalidKey {
 
-    /// Halts computation with an error message.
+    /// Stops execution with an error message.
     pub def error(msg: String): Void
+
+}
+
+mod InvalidKey {
+
+    /// Removes the `InvalidKey` effect from a function `f`, if `f` `do` `InvalidKey`.
+    pub def asRes(f: a -> b \ ef): (a -> Result[String, b] \ ef - InvalidKey) = {
+        // TODO: remove annotations and casts once try-with typing works.
+        x -> (checked_ecast(try (Ok(f(x)): _ \ ef) with InvalidKey {
+            def error(msg, _) = Err(msg)
+        }): _ \ ef - InvalidKey)
+    }
 
 }
