@@ -1628,7 +1628,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     expectError[RedundancyError.RedundantUncheckedEffectCast](result)
   }
 
-  test("RedundantTypeConstraint.Trait.01") {
+  test("RedundantTraitConstraint.Trait.01") {
     val input =
       """
         |trait C[a]
@@ -1636,10 +1636,10 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |trait D[a] with C[a], C[a]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.RedundantTypeConstraint](result)
+    expectError[RedundancyError.RedundantTraitConstraint](result)
   }
 
-  test("RedundantTypeConstraint.Trait.02") {
+  test("RedundantTraitConstraint.Trait.02") {
     val input =
       """
         |trait C[a]
@@ -1649,10 +1649,10 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |trait E[a] with C[a], D[a]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.RedundantTypeConstraint](result)
+    expectError[RedundancyError.RedundantTraitConstraint](result)
   }
 
-  test("RedundantTypeConstraint.Def.01") {
+  test("RedundantTraitConstraint.Def.01") {
     val input =
       """
         |trait C[a]
@@ -1660,10 +1660,10 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |pub def f(x: a): Bool with C[a], C[a] = ???
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.RedundantTypeConstraint](result)
+    expectError[RedundancyError.RedundantTraitConstraint](result)
   }
 
-  test("RedundantTypeConstraint.Def.02") {
+  test("RedundantTraitConstraint.Def.02") {
     val input =
       """
         |trait C[a]
@@ -1673,10 +1673,10 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |pub def f(x: a): Bool with C[a], D[a] = ???
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.RedundantTypeConstraint](result)
+    expectError[RedundancyError.RedundantTraitConstraint](result)
   }
 
-  test("RedundantTypeConstraint.Sig.01") {
+  test("RedundantTraitConstraint.Sig.01") {
     val input =
       """
         |trait C[a]
@@ -1686,10 +1686,10 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.RedundantTypeConstraint](result)
+    expectError[RedundancyError.RedundantTraitConstraint](result)
   }
 
-  test("RedundantTypeConstraint.Sig.02") {
+  test("RedundantTraitConstraint.Sig.02") {
     val input =
       """
         |trait C[a]
@@ -1701,10 +1701,10 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.RedundantTypeConstraint](result)
+    expectError[RedundancyError.RedundantTraitConstraint](result)
   }
 
-  test("RedundantTypeConstraint.Instance.01") {
+  test("RedundantTraitConstraint.Instance.01") {
     val input =
       """
         |enum Box[a](a)
@@ -1716,10 +1716,10 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |instance D[Box[a]] with C[a], C[a]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.RedundantTypeConstraint](result)
+    expectError[RedundancyError.RedundantTraitConstraint](result)
   }
 
-  test("RedundantTypeConstraint.Instance.02") {
+  test("RedundantTraitConstraint.Instance.02") {
     val input =
       """
         |enum Box[a](a)
@@ -1733,7 +1733,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |instance E[Box[a]] with C[a], C[a]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.RedundantTypeConstraint](result)
+    expectError[RedundancyError.RedundantTraitConstraint](result)
   }
 
   test("UnusedFormalParam.Trait.01") {

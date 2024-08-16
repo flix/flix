@@ -2856,22 +2856,22 @@ object Weeder2 {
       }
     }
 
-    def pickConstraints(tree: Tree): Validation[List[TypeConstraint], CompilationMessage] = {
+    def pickConstraints(tree: Tree): Validation[List[TraitConstraint], CompilationMessage] = {
       val maybeWithClause = tryPick(TreeKind.Type.ConstraintList, tree)
       maybeWithClause.map(
         withClauseTree => traverse(pickAll(TreeKind.Type.Constraint, withClauseTree))(visitConstraint)
       ).getOrElse(Validation.success(List.empty))
     }
 
-    private def visitConstraint(tree: Tree): Validation[TypeConstraint, CompilationMessage] = {
+    private def visitConstraint(tree: Tree): Validation[TraitConstraint, CompilationMessage] = {
       expect(tree, TreeKind.Type.Constraint)
       flatMapN(pickQName(tree), Types.pickType(tree)) {
         (qname, tpe) =>
           // Check for illegal type constraint parameter
           if (!isAllVariables(tpe)) {
-            Validation.toHardFailure(IllegalTypeConstraintParameter(tree.loc))
+            Validation.toHardFailure(IllegalTraitConstraintParameter(tree.loc))
           } else {
-            Validation.success(TypeConstraint(qname, tpe, tree.loc))
+            Validation.success(TraitConstraint(qname, tpe, tree.loc))
           }
       }
     }

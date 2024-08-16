@@ -27,6 +27,6 @@ object StructFieldCompleter {
     val completions = root.structs(struct).fields.filter {
       case (k, v) => k.name.startsWith(e.field.name)
     }
-    completions.values.map(field => Completion.StructFieldCompletion(field.sym.name))
+    completions.values.map(field => Completion.StructFieldCompletion(field.sym.name, field.tpe))
   }
 }

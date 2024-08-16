@@ -385,12 +385,30 @@ object Safety {
             visit(exp)
         }
 
-      case e@Expr.UncheckedCast(exp, _, _, _, _, _) =>
+      case e@Expr.UncheckedCast(exp, _, _, _, _, loc) =>
         val errors = verifyUncheckedCast(e)
-        visit(exp) ++ errors
+        val res = visit(exp) ++ errors
 
-      case Expr.UncheckedMaskingCast(exp, _, _, _) =>
-        visit(exp)
+        val ctx = loc.security
+        if (ctx == SecurityContext.AllPermissions) {
+          // Permitted
+          res
+        } else {
+          // Forbidden
+          SafetyError.Forbidden(ctx, loc) :: res
+        }
+
+      case Expr.UncheckedMaskingCast(exp, _, _, loc) =>
+        val res = visit(exp)
+
+        val ctx = loc.security
+        if (ctx == SecurityContext.AllPermissions) {
+          // Allowed...
+          res
+        } else {
+          // Extra Forbidden!!
+          SafetyError.Forbidden(ctx, loc) :: res
+        }
 
       case Expr.Without(exp, _, _, _, _) =>
         visit(exp)
@@ -401,7 +419,16 @@ object Safety {
           rules.flatMap { case CatchRule(sym, clazz, e) => checkCatchClass(clazz, sym.loc) ++ visit(e) }
 
       case Expr.Throw(exp, _, _, loc) =>
-        visit(exp) ++ checkThrow(exp)
+        val res = visit(exp) ++ checkThrow(exp)
+
+        val ctx = loc.security
+        if (ctx == SecurityContext.AllPermissions) {
+          // Permitted
+          res
+        } else {
+          // Forbidden
+          SafetyError.Forbidden(ctx, loc) :: res
+        }
 
       case Expr.TryWith(exp, _, rules, _, _, _) =>
         visit(exp) ++
@@ -411,39 +438,89 @@ object Safety {
         exps.flatMap(visit)
 
       case Expr.InvokeConstructor(_, args, _, _, loc) =>
+        val res = args.flatMap(visit)
+
         val ctx = loc.security
         if (ctx == SecurityContext.AllPermissions) {
           // Permitted
-          args.flatMap(visit)
+          res
         } else {
           // Forbidden
-          SafetyError.Forbidden(ctx, loc) :: args.flatMap(visit)
+          SafetyError.Forbidden(ctx, loc) :: res
         }
 
-      case Expr.InvokeMethod(_, exp, args, _, _, _) =>
-        visit(exp) ++ args.flatMap(visit)
+      case Expr.InvokeMethod(_, exp, args, _, _, loc) =>
+        val res = visit(exp) ++ args.flatMap(visit)
 
-      case Expr.InvokeStaticMethod(_, args, _, _, _) =>
-        args.flatMap(visit)
+        val ctx = loc.security
+        if (ctx == SecurityContext.AllPermissions) {
+          res
+        } else {
+          SafetyError.Forbidden(ctx, loc) :: res
+        }
 
-      case Expr.GetField(_, exp, _, _, _) =>
-        visit(exp)
+      case Expr.InvokeStaticMethod(_, args, _, _, loc) =>
+        val res = args.flatMap(visit)
 
-      case Expr.PutField(_, exp1, exp2, _, _, _) =>
-        visit(exp1) ++ visit(exp2)
+        val ctx = loc.security
+        if (ctx == SecurityContext.AllPermissions) {
+          res
+        } else {
+          SafetyError.Forbidden(ctx, loc) :: res
+        }
 
-      case Expr.GetStaticField(_, _, _, _) =>
-        Nil
+      case Expr.GetField(_, exp, _, _, loc) =>
+        val res = visit(exp)
 
-      case Expr.PutStaticField(_, exp, _, _, _) =>
-        visit(exp)
+        val ctx = loc.security
+        if (ctx == SecurityContext.AllPermissions) {
+          res
+        } else {
+          SafetyError.Forbidden(ctx, loc) :: res
+        }
+
+      case Expr.PutField(_, exp1, exp2, _, _, loc) =>
+        val res = visit(exp1) ++ visit(exp2)
+
+        val ctx = loc.security
+        if (ctx == SecurityContext.AllPermissions) {
+          res
+        } else {
+          SafetyError.Forbidden(ctx, loc) :: res
+        }
+
+      case Expr.GetStaticField(_, _, _, loc) =>
+        val ctx = loc.security
+        if (ctx == SecurityContext.AllPermissions) {
+          Nil
+        } else {
+          SafetyError.Forbidden(ctx, loc) :: Nil
+        }
+
+      case Expr.PutStaticField(_, exp, _, _, loc) =>
+        val res = visit(exp)
+
+        val ctx = loc.security
+        if (ctx == SecurityContext.AllPermissions) {
+          res
+        } else {
+          SafetyError.Forbidden(ctx, loc) :: res
+        }
 
       case Expr.NewObject(_, clazz, tpe, _, methods, loc) =>
         val erasedType = Type.eraseAliases(tpe)
-        checkObjectImplementation(clazz, erasedType, methods, loc) ++
-          methods.flatMap {
-            case JvmMethod(_, _, exp, _, _, _) => visit(exp)
-          }
+        val res =
+          checkObjectImplementation(clazz, erasedType, methods, loc) ++
+            methods.flatMap {
+              case JvmMethod(_, _, exp, _, _, _) => visit(exp)
+            }
+
+        val ctx = loc.security
+        if (ctx == SecurityContext.AllPermissions) {
+          res
+        } else {
+          SafetyError.Forbidden(ctx, loc) :: res
+        }
 
       case Expr.NewChannel(exp1, exp2, _, _, _) =>
         visit(exp1) ++ visit(exp2)
