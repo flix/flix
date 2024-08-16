@@ -265,4 +265,9 @@ mod Test.Exp.Struct.New {
             } @ rc;
             ()
         }
+
+    @test
+    def testVariableNameSameAsFieldName01(): Unit =
+        let left = ();
+        left
 }

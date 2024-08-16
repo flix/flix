@@ -122,4 +122,5 @@ mod Test.Exp.Struct.Get {
             let nested = new Nested{ v = new Nested { v = new Nested {v = new Nested {v = 15} @ rc } @ rc} @ rc } @ rc;
             nested€v€v€v€v == 15
         }
+
 }
