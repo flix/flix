@@ -78,23 +78,32 @@ object FastSetUnification {
       * Represents the running state of the solver
       *   - eqs: the remaining equations to solve
       *   - subst: the current substitution, which has already been applied to `eqs`
-      *   - lastPhase: the name of the last phase that was run and made progress
-      *   - phase: the number of the last phase that was run and made progress
+      *   - lastProgressPhase: the name of the last phase that was run and made progress
+      *   - currentPhase: the number of the last phase that was run
       */
     private class State(var eqs: List[Equation]) {
       var subst: SetSubstitution = SetSubstitution.empty
-      var lastPhase: Option[String] = None
-      var phase: Option[Int] = None
+      var lastProgressPhase: Option[(String, Int)] = None
+      var currentPhase: Int = -1
     }
 
     /**
-      * Attempts to solve the equation system that this solver was instantiated with.
+      * Attempts to solve the equation system `eqs`.
       *
-      * Returns `Result.Ok(s)` with a most-general substitution which solves the equations system.
-      *
-      * Returns `Result.Err((ex, l, s))` where `c` is a conflict, `l` is a list of unsolved equations, and `s` is a partial substitution.
+      *   - Returns `Result.Ok(s)` with a most-general substitution that solves the equations system
+      *     , or
+      *   - Returns `Result.Err((ex, rest, s))` where `ex` is the error, `rest` is a list of
+      *     unsolved equations, and `s` is a partial substitution.
       */
-    def solve(l: List[Equation], opts: RunOptions = RunOptions.default): (Result[SetSubstitution, (FastBoolUnificationException, List[Equation], SetSubstitution)], (Option[String], Option[Int])) = {
+    def solve(eqs: List[Equation], opts: RunOptions = RunOptions.default): Result[SetSubstitution, (FastBoolUnificationException, List[Equation], SetSubstitution)] =
+      solveWithInfo(eqs, opts)._1
+
+    /**
+      * Attempts to solve the equation system `eqs`, like [[solve]].
+      *
+      * Additionally returns the name and number of the last phase to make progress, if any.
+      */
+    def solveWithInfo(l: List[Equation], opts: RunOptions = RunOptions.default): (Result[SetSubstitution, (FastBoolUnificationException, List[Equation], SetSubstitution)], Option[(String, Int)]) = {
       import FastSetUnification.{Phases => P}
       implicit val implOpts: RunOptions = opts
       val state = new State(l)
@@ -142,41 +151,43 @@ object FastSetUnification {
         trivialAndRedundant(state)
         checkAndSimplify(state)
         sve(state)
+
+        // SVE can solve anything that is solvable, so eqs is always empty
+        assert(state.eqs.isEmpty)
         if (opts.verifySubst) verifySubst(state.subst, l)
         if (opts.verifySize) verifySubstSize(state.subst)
-        assert(state.eqs.isEmpty)
-        val res = Result.Ok(state.subst)
-        (res, (state.lastPhase, state.phase))
+        (Result.Ok(state.subst), state.lastProgressPhase)
       } catch {
-        case _ if !opts.debugging && opts.rerun =>
+        case _: ConflictException | _: TooComplexException if !opts.debugging && opts.rerun =>
           // rerun with debugging
-          solve(l, opts.copy(debugging = true, rerun = false))
+          solveWithInfo(l, opts.copy(debugging = true, rerun = false))
         case ex: ConflictException =>
-          val res = Result.Err((ex, state.eqs, state.subst))
-          (res, (state.lastPhase, state.phase))
+          (Result.Err((ex, state.eqs, state.subst)), state.lastProgressPhase)
         case ex: TooComplexException =>
-          val res = Result.Err((ex, state.eqs, state.subst))
-          (res, (state.lastPhase, state.phase))
+          (Result.Err((ex, state.eqs, state.subst)), state.lastProgressPhase)
       }
 
     }
 
     /**
-      * Runs the given [[Phase]] on the given [[State]], debugging information if required by [[RunOptions]].
+      * Runs the given [[Phase]] on the given [[State]], debugging information if required
+      * by [[RunOptions]].
       */
     private def runPhase(name: String, description: String, phase: Phase)(state: State)(implicit opts: RunOptions): Unit = {
       if (state.eqs.isEmpty) return
-      val phaseNumber = state.phase.getOrElse(0) + 1
-      state.phase = Some(phaseNumber)
-      state.lastPhase = Some(name)
-      debugPhase(phaseNumber, name, description)
+
+      state.currentPhase += 1
+      debugPhase(state.currentPhase, name, description)
+
       phase(state.eqs) match {
         case Some((eqs, subst)) =>
+          state.lastProgressPhase = Some((name, state.currentPhase))
           state.eqs = eqs
           state.subst = subst @@ state.subst
         case None =>
           ()
       }
+
       debugState(state)
     }
 

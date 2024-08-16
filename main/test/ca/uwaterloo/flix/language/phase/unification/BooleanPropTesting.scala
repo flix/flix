@@ -99,7 +99,6 @@ object BooleanPropTesting {
   // TODO add testing of t ~ propagation(t)
 
   def testSolvableConstraints(random: Random, genSolvable: Random => List[Equation], testLimit: Int, errLimit: Int, timeoutLimit: Int, wait: Boolean, opts: RunOptions = RunOptions.default): Boolean = {
-    implicit val implOpts: RunOptions = opts
     def printProgress(tests: Int, errAmount: Int, timeoutAmount: Int): Unit = {
       val passed = tests - errAmount - timeoutAmount
       println(s"${tests / 1000}k (${passed} passed, $errAmount errs, $timeoutAmount t.o.)")
@@ -121,7 +120,7 @@ object BooleanPropTesting {
       }
       tests += 1
       val input = genSolvable(random)
-      val (res, (_, phase)) = runEquations(input)
+      val (res, (_, phase)) = runEquations(input, opts)
       res match {
         case Res.Pass =>
           passes += phase
@@ -137,7 +136,7 @@ object BooleanPropTesting {
     val (smallestError, smallestTimeout) = printTestOutput(errs, timeouts, tests)
 
     def askAndRun(description: String)(l: List[Equation]): Unit = {
-      if (askYesNo(s"Do you want to run $description?")) runEquations(l)(opts.copy(debugging = true))
+      if (askYesNo(s"Do you want to run $description?")) runEquations(l, opts.copy(debugging = true))
     }
 
     smallestError.foreach(askAndRun("smallest error"))
@@ -188,9 +187,9 @@ object BooleanPropTesting {
     case object Timeout extends Res
   }
 
-  private def runEquations(eqs: List[Equation])(implicit opts: RunOptions): (Res, (String, Int)) = {
-    val (res, lastPhase0) = FastSetUnification.Solver.solve(eqs)
-    val lastPhase = (lastPhase0._1.getOrElse("Nothing"), lastPhase0._2.getOrElse(-1))
+  private def runEquations(eqs: List[Equation], opts: RunOptions): (Res, (String, Int)) = {
+    val (res, lastPhaseOpt) = FastSetUnification.Solver.solveWithInfo(eqs, opts)
+    val lastPhase = lastPhaseOpt.getOrElse(("Nothing", -1))
     res match {
       case Result.Ok(subst) => try {
         FastSetUnification.Solver.verifySubst(subst, eqs)

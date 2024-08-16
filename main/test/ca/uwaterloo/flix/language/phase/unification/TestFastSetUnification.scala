@@ -73,7 +73,7 @@ class TestFastSetUnification extends AnyFunSuite with TestUtils {
       Var(90684) ~ (Var(134604) inter Var(90682)),
       Var(90688) ~ Univ
     )
-    val s = solve(l)._1.get
+    val s = solve(l).get
     // verify(s, l) -- TOO SLOW
   }
 
@@ -85,7 +85,7 @@ class TestFastSetUnification extends AnyFunSuite with TestUtils {
       Var(87081) ~ (Var(132325) inter Var(132323)),
       Var(87084) ~ ((Var(132328) inter Var(132329)) inter Var(132326))
     )
-    val s = solve(l)._1.get
+    val s = solve(l).get
     verifySubst(s, l)
   }
 
@@ -113,7 +113,7 @@ class TestFastSetUnification extends AnyFunSuite with TestUtils {
       Var(65575) ~ (Var(119122) inter Var(119121)),
       Var(65577) ~ (Var(119119) inter Var(119118))
     )
-    val s = solve(l)._1.get
+    val s = solve(l).get
     verifySubst(s, l)
   }
 
@@ -123,7 +123,7 @@ class TestFastSetUnification extends AnyFunSuite with TestUtils {
       Var(56476) ~ (Var(113308) inter Var(56474)),
       Var(56478) ~ Var(56476)
     )
-    val s = solve(l)._1.get
+    val s = solve(l).get
     verifySubst(s, l)
   }
 
@@ -142,7 +142,7 @@ class TestFastSetUnification extends AnyFunSuite with TestUtils {
       Var(68983) ~ Cst(1794221043),
       Var(68987) ~ Var(121165)
     )
-    val s = solve(l)._1.get
+    val s = solve(l).get
     verifySubst(s, l)
   }
 
@@ -180,7 +180,7 @@ class TestFastSetUnification extends AnyFunSuite with TestUtils {
       Var(86092) ~ Var(131678),
       Var(86094) ~ (Var(131672) inter (Var(86084) inter Var(86092)))
     )
-    val s = solve(l)._1.get
+    val s = solve(l).get
     verifySubst(s, l)
   }
 
@@ -212,7 +212,7 @@ class TestFastSetUnification extends AnyFunSuite with TestUtils {
       Var(90244) ~ (Var(134344) inter Var(90242)),
       Var(90246) ~ (Var(134306) inter (Var(90240) inter Var(90244)))
     )
-    val s = solve(l)._1.get
+    val s = solve(l).get
     verifySubst(s, l)
   }
 
@@ -234,7 +234,7 @@ class TestFastSetUnification extends AnyFunSuite with TestUtils {
       Var(55066) ~ Univ,
       Var(55075) ~ Var(112453)
     )
-    val s = solve(l)._1.get
+    val s = solve(l).get
     verifySubst(s, l)
   }
 
@@ -270,7 +270,7 @@ class TestFastSetUnification extends AnyFunSuite with TestUtils {
       Var(50299) ~ Univ,
       Var(50301) ~ Var(50299)
     )
-    val s = solve(l)._1.get
+    val s = solve(l).get
     verifySubst(s, l)
   }
 
@@ -303,7 +303,7 @@ class TestFastSetUnification extends AnyFunSuite with TestUtils {
       Var(97857) ~ Univ,
       Var(97859) ~ (Var(97854) inter Var(97857))
     )
-    val s = solve(l)._1.get
+    val s = solve(l).get
     verifySubst(s, l)
   }
 
@@ -359,7 +359,7 @@ class TestFastSetUnification extends AnyFunSuite with TestUtils {
       Var(101131) ~ (Var(108498) inter Var(101129)),
       Var(101134) ~ Var(108500)
     )
-    val s = solve(l)._1.get
+    val s = solve(l).get
     verifySubst(s, l)
   }
 
@@ -391,7 +391,7 @@ class TestFastSetUnification extends AnyFunSuite with TestUtils {
       Var(74050) ~ Var(124208),
       Var(74053) ~ Var(124210)
     )
-    val s = solve(l)._1.get
+    val s = solve(l).get
     // verify(s, l) -- TOO SLOW
   }
 
@@ -442,7 +442,7 @@ class TestFastSetUnification extends AnyFunSuite with TestUtils {
       Var(70132) ~ Univ,
       Var(70135) ~ Var(70132)
     )
-    val s = solve(l)._1.get
+    val s = solve(l).get
     // verify(s, l) -- TOO SLOW
   }
 
@@ -476,7 +476,7 @@ class TestFastSetUnification extends AnyFunSuite with TestUtils {
       Var(69172) ~ Var(121267),
       Var(69174) ~ Var(121265)
     )
-    val s = solve(l)._1.get
+    val s = solve(l).get
     verifySubst(s, l)
   }
 
@@ -508,7 +508,7 @@ class TestFastSetUnification extends AnyFunSuite with TestUtils {
       Var(66684) ~ Univ,
       Var(66689) ~ Univ
     )
-    val s = solve(l)._1.get
+    val s = solve(l).get
     verifySubst(s, l)
   }
 
@@ -540,7 +540,7 @@ class TestFastSetUnification extends AnyFunSuite with TestUtils {
       Var(58681) ~ Univ,
       Var(58683) ~ (Var(114664) inter Var(58681))
     )
-    val s = solve(l)._1.get
+    val s = solve(l).get
     verifySubst(s, l)
   }
 
@@ -579,7 +579,7 @@ class TestFastSetUnification extends AnyFunSuite with TestUtils {
       Var(65762) ~ Univ,
       Var(65765) ~ Cst(1794221043)
     )
-    val s = solve(l)._1.get
+    val s = solve(l).get
     verifySubst(s, l)
   }
 
@@ -596,7 +596,7 @@ class TestFastSetUnification extends AnyFunSuite with TestUtils {
       Var(101431) ~ (Var(101433) inter Var(101439)),
       (Cst(101436) inter Cst(101435)) ~ (Var(101434) inter Var(101432))
     )
-    val s = solve(l)._1.get
+    val s = solve(l).get
     verifySubst(s, l)
   }
 
@@ -607,7 +607,7 @@ class TestFastSetUnification extends AnyFunSuite with TestUtils {
       Var(55257) ~ Var(112582),
       Var(55261) ~ Var(112585)
     )
-    val s = solve(l)._1.get
+    val s = solve(l).get
     verifySubst(s, l)
   }
 
@@ -620,7 +620,7 @@ class TestFastSetUnification extends AnyFunSuite with TestUtils {
       Var(78923) ~ ((Var(127248) inter Var(127247)) inter Var(127249)),
       Var(78926) ~ (Var(127254) inter Var(127252))
     )
-    val s = solve(l)._1.get
+    val s = solve(l).get
     verifySubst(s, l)
   }
 
@@ -646,7 +646,7 @@ class TestFastSetUnification extends AnyFunSuite with TestUtils {
       Var(86465) ~ Univ,
       Var(86467) ~ (Var(131918) inter Var(86462))
     )
-    val s = solve(l)._1.get
+    val s = solve(l).get
     verifySubst(s, l)
   }
 
@@ -679,7 +679,7 @@ class TestFastSetUnification extends AnyFunSuite with TestUtils {
       Var(144678) ~ (Var(144681) inter Var(144686)),
       Var(144686) ~ (Var(144683) inter Var(144693))
     )
-    val s = solve(l)._1.get
+    val s = solve(l).get
     verifySubst(s, l)
   }
 
@@ -702,7 +702,7 @@ class TestFastSetUnification extends AnyFunSuite with TestUtils {
       Var(90841) ~ (Var(134710) inter Var(134708) inter Var(90835) inter Var(90837) inter Var(90839)),
       Var(90844) ~ (Var(134718) inter Var(134719))
     )
-    val s = solve(l)._1.get
+    val s = solve(l).get
     // verify(s, l) -- TOO SLOW
   }
 
@@ -723,7 +723,7 @@ class TestFastSetUnification extends AnyFunSuite with TestUtils {
       Var(85268) ~ ((Var(131218) inter Var(131216)) inter Var(85266)),
       Var(85270) ~ (((Var(131209) inter Var(131210)) inter Var(131207)) inter (Var(85263) inter Var(85268)))
     )
-    val s = solve(l)._1.get
+    val s = solve(l).get
     verifySubst(s, l)
   }
 
@@ -763,7 +763,7 @@ class TestFastSetUnification extends AnyFunSuite with TestUtils {
       Var(68025) ~ Var(120574),
       Var(68027) ~ (Var(120566) inter Var(68022))
     )
-    val s = solve(l)._1.get
+    val s = solve(l).get
     verifySubst(s, l)
   }
 
@@ -790,7 +790,7 @@ class TestFastSetUnification extends AnyFunSuite with TestUtils {
       Var(73550) ~ (Var(123923) inter Var(73545)),
       Var(73552) ~ Var(73550)
     )
-    val s = solve(l)._1.get
+    val s = solve(l).get
     verifySubst(s, l)
   }
 
@@ -798,7 +798,7 @@ class TestFastSetUnification extends AnyFunSuite with TestUtils {
     val l = List(
       Empty ~ (mkElemSet(0) inter mkElemSet(1))
     )
-    val s = solve(l)._1.get
+    val s = solve(l).get
     verifySubst(s, l)
   }
 
@@ -806,7 +806,7 @@ class TestFastSetUnification extends AnyFunSuite with TestUtils {
     val l = List(
       (mkElemSet(0) union mkElemSet(1)) ~ ((mkElemSet(0) union mkElemSet(1) union mkElemSet(2)) inter Term.mkCompl(mkElemSet(2)))
     )
-    val s = solve(l)._1.get
+    val s = solve(l).get
     verifySubst(s, l)
   }
 
@@ -814,7 +814,7 @@ class TestFastSetUnification extends AnyFunSuite with TestUtils {
     val l = List(
       (Cst(0) inter Term.mkCompl(Cst(1))) ~ ((Cst(0) union Cst(1)) inter Term.mkCompl(Cst(1)))
     )
-    val s = solve(l)._1.get
+    val s = solve(l).get
     verifySubst(s, l)
   }
 
