@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp._
-import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, TypeConstraint}
+import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
@@ -134,7 +134,7 @@ object SemanticTokensProvider {
       val t = SemanticToken(SemanticTokenType.Interface, Nil, sym.loc)
       IteratorOps.all(
         Iterator(t),
-        superTraits.flatMap(visitTypeConstraint),
+        superTraits.flatMap(visitTraitConstraint),
         assocs.flatMap(visitAssocTypeSig),
         visitTypeParam(tparam),
         signatures.flatMap(visitSig),
@@ -153,7 +153,7 @@ object SemanticTokensProvider {
         Iterator(t),
         visitType(tpe),
         assocs.flatMap(visitAssocTypeDef),
-        tconstrs.flatMap(visitTypeConstraint),
+        tconstrs.flatMap(visitTraitConstraint),
         defs.flatMap(visitDef),
       )
   }
@@ -247,7 +247,7 @@ object SemanticTokensProvider {
       IteratorOps.all(
         visitTypeParams(tparams),
         visitFormalParams(fparams),
-        tconstrs.iterator.flatMap(visitTypeConstraint),
+        tconstrs.iterator.flatMap(visitTraitConstraint),
         econstrs.iterator.flatMap(visitEqualityConstraint),
         visitType(retTpe),
         visitType(eff),
@@ -767,16 +767,16 @@ object SemanticTokensProvider {
   /**
     * Returns all semantic tokens in the given type constraint `tc0`.
     */
-  private def visitTypeConstraint(tc0: TypeConstraint): Iterator[SemanticToken] = tc0 match {
-    case TypeConstraint(head, arg, _) =>
-      visitTypeConstraintHead(head) ++ visitType(arg)
+  private def visitTraitConstraint(tc0: TraitConstraint): Iterator[SemanticToken] = tc0 match {
+    case TraitConstraint(head, arg, _) =>
+      visitTraitConstraintHead(head) ++ visitType(arg)
   }
 
   /**
     * Returns all semantic tokens in the given type constraint head `head0`.
     */
-  private def visitTypeConstraintHead(head0: TypeConstraint.Head): Iterator[SemanticToken] = head0 match {
-    case TypeConstraint.Head(_, loc) =>
+  private def visitTraitConstraintHead(head0: TraitConstraint.Head): Iterator[SemanticToken] = head0 match {
+    case TraitConstraint.Head(_, loc) =>
       val o = SemanticTokenType.Class
       val t = SemanticToken(o, Nil, loc)
       Iterator(t)

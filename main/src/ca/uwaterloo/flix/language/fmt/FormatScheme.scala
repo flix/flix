@@ -31,7 +31,7 @@ object FormatScheme {
       if (sc.tconstrs.isEmpty)
         ""
       else
-        " with " + sc.tconstrs.map(FormatTypeConstraint.formatTypeConstraint).mkString(", ")
+        " with " + sc.tconstrs.map(FormatTraitConstraint.formatTraitConstraint).mkString(", ")
 
     val econstrPart =
       if (sc.econstrs.isEmpty)
@@ -53,7 +53,7 @@ object FormatScheme {
       if (sc.tconstrs.isEmpty)
         ""
       else
-        " with " + sc.tconstrs.map(FormatTypeConstraint.formatTypeConstraintWithOptions(_, fmt)).mkString(", ")
+        " with " + sc.tconstrs.map(FormatTraitConstraint.formatTraitConstraintWithOptions(_, fmt)).mkString(", ")
 
     val econstrPart =
       if (sc.econstrs.isEmpty)
