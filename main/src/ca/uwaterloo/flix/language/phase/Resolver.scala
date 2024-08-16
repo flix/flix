@@ -1984,7 +1984,7 @@ object Resolver {
         */
       def resolve(h0: NamedAst.Predicate.Head, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Predicate.Head, ResolutionError] = h0 match {
         case NamedAst.Predicate.Head.Atom(pred, den, terms, loc) =>
-          val tsVal = traverse(terms)(t => Expressions.resolveExp(t, env, taenv, ns0, root))
+          val tsVal = traverse(terms)(t => resolveExp(t, env, taenv, ns0, root))
           mapN(tsVal) {
             ts => ResolvedAst.Predicate.Head.Atom(pred, den, ts, loc)
           }
@@ -2008,13 +2008,13 @@ object Resolver {
               case Resolution.Var(sym) => sym
             }.getOrElse(throw InternalCompilerException(s"Unbound variable in functional predicate: '$ident'.", ident.loc))
           }
-          val eVal = Expressions.resolveExp(exp, env, taenv, ns0, root)
+          val eVal = resolveExp(exp, env, taenv, ns0, root)
           mapN(eVal) {
             case e => ResolvedAst.Predicate.Body.Functional(outVars, e, loc)
           }
 
         case NamedAst.Predicate.Body.Guard(exp, loc) =>
-          val eVal = Expressions.resolveExp(exp, env, taenv, ns0, root)
+          val eVal = resolveExp(exp, env, taenv, ns0, root)
           mapN(eVal) {
             e => ResolvedAst.Predicate.Body.Guard(e, loc)
           }
