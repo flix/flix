@@ -38,7 +38,7 @@ import scala.collection.mutable
   * */
 object FastSetUnification {
 
-  import ca.uwaterloo.flix.language.phase.unification.FastSetUnification.Phases.Phase
+  import ca.uwaterloo.flix.language.phase.unification.FastSetUnification.Phases.{DescribedPhase, Phase}
   import ca.uwaterloo.flix.language.phase.unification.FastSetUnification.Rules.Output
 
   object Solver {
@@ -108,49 +108,17 @@ object FastSetUnification {
       implicit val implOpts: RunOptions = opts
       val state = new State(l)
 
-      def checkAndSimplify(s: State): Unit = runPhase(
-        "Check and Simplify",
-        "trivial correct and incorrect equations",
-        P.filteringPhase(P.checkAndSimplify)
-      )(s)(opts.copy(debugging = false))
-
-      val propagateConstants = runPhase(
-        "Constant Propagation",
-        "resolves all equations of the form: x = c where x is a var and c is univ/empty/constant/element)",
-        P.propagateConstants
-      )(_)
-      val variablePropagation = runPhase(
-        "Variable Propagation",
-        "resolves all equations of the form: x = y where x and y are vars)",
-        P.propagateVars
-      )(_)
-      val variableAssignment = runPhase(
-        "Variable Assignment",
-        "resolves all equations of the form: x = t where x is free in t",
-        P.varAssignment
-      )(_)
-      val trivialAndRedundant = runPhase(
-        "Eliminate Trivial and Redundant Equations",
-        "eliminates equations of the form X = X and duplicated equations",
-        P.filteringPhase(P.eliminateTrivialAndRedundant)
-      )(_)
-      val sve = runPhase(
-        "Set Unification",
-        "resolves all remaining equations using SVE.",
-        P.completePhase(P.setUnifyAllPickSmallest(opts.complexThreshold, opts.permutationLimit))
-      )(_)
-
       debugState(state)
       try {
-        propagateConstants(state)
-        checkAndSimplify(state)
-        variablePropagation(state)
-        checkAndSimplify(state)
-        variableAssignment(state)
-        checkAndSimplify(state)
-        trivialAndRedundant(state)
-        checkAndSimplify(state)
-        sve(state)
+        runPhase(P.propagateConstantsDescr)(state)
+        runPhase(P.checkAndSimplifyDescr)(state)
+        runPhase(P.propagateVarsDescr)(state)
+        runPhase(P.checkAndSimplifyDescr)(state)
+        runPhase(P.varAssignmentDescr)(state)
+        runPhase(P.checkAndSimplifyDescr)(state)
+        runPhase(P.eliminateTrivialAndRedundantDescr)(state)
+        runPhase(P.checkAndSimplifyDescr)(state)
+        runPhase(P.setUnifyPickSmallestDescr(complexThreshold = opts.complexThreshold, permutationLimit = opts.permutationLimit))(state)
 
         // SVE can solve anything that is solvable, so eqs is always empty
         assert(state.eqs.isEmpty)
@@ -173,8 +141,9 @@ object FastSetUnification {
       * Runs the given [[Phase]] on the given [[State]], debugging information if required
       * by [[RunOptions]].
       */
-    private def runPhase(name: String, description: String, phase: Phase)(state: State)(implicit opts: RunOptions): Unit = {
+    private def runPhase(phaseDescr: DescribedPhase)(state: State)(implicit opts: RunOptions): Unit = {
       if (state.eqs.isEmpty) return
+      val DescribedPhase(name, description, phase) = phaseDescr
 
       state.currentPhase += 1
       debugPhase(state.currentPhase, name, description)
@@ -417,6 +386,8 @@ object FastSetUnification {
 
     type Phase = List[Equation] => Output
 
+    case class DescribedPhase(name: String, description: String, phase: Phase)
+
     def filteringPhase(f: List[Equation] => Option[List[Equation]]): Phase = {
       eqs0 => f(eqs0).map(eqs1 => (eqs1, SetSubstitution.empty))
     }
@@ -440,7 +411,7 @@ object FastSetUnification {
     def checkAndSimplify(l: List[Equation]): Option[List[Equation]] = {
       var changed = false
       // unwrap to check triviallyWrong no matter if trivial did anything
-      val res0 = runEqRule(Rules.triviallyHolds)(l) match {
+      val res0 = runFilterNotRule(Rules.triviallyHolds)(l) match {
         case Some(eqs) =>
           changed = true
           eqs
@@ -451,6 +422,11 @@ object FastSetUnification {
       if (changed) Some(res0) else None
     }
 
+    def checkAndSimplifyDescr: DescribedPhase = DescribedPhase(
+      "Check and Simplify",
+      "trivial correct and incorrect equations",
+      filteringPhase(checkAndSimplify)
+    )
 
     /**
       * Propagates constants and truth values through the equation system.
@@ -519,6 +495,12 @@ object FastSetUnification {
       runRule(Rules.constantAssignment, selfFeeding = true, substInduced = true)(l)
     }
 
+    def propagateConstantsDescr: DescribedPhase = DescribedPhase(
+      "Constant Propagation",
+      "resolves all equations of the form: x = c where x is a var and c is univ/empty/constant/element)",
+      propagateConstants
+    )
+
     /**
       * Propagates variables through the equation system. Cannot fail.
       *
@@ -559,6 +541,12 @@ object FastSetUnification {
       runSubstRule(Rules.variableAlias)(l)
     }
 
+    def propagateVarsDescr: DescribedPhase = DescribedPhase(
+      "Variable Propagation",
+      "resolves all equations of the form: x = y where x and y are vars)",
+      propagateVars
+    )
+
 
     /**
       * Assigns variables. Given a unification equation `x ~ t` we can assign `[x -> t]` if `x` does not occur in `t`.
@@ -589,6 +577,12 @@ object FastSetUnification {
     def varAssignment(l: List[Equation]): Output = {
       runSubstRule(Rules.variableAssignment)(l)
     }
+
+    def varAssignmentDescr: DescribedPhase = DescribedPhase(
+      "Variable Assignment",
+      "resolves all equations of the form: x = t where x is free in t",
+      varAssignment
+    )
 
     /**
       * Eliminates trivial and redundant equations.
@@ -652,6 +646,12 @@ object FastSetUnification {
       if (changed) Some(result.reverse) else None
     }
 
+    def eliminateTrivialAndRedundantDescr: DescribedPhase = DescribedPhase(
+      "Eliminate Trivial and Redundant Equations",
+      "eliminates equations of the form X = X and duplicated equations",
+      filteringPhase(eliminateTrivialAndRedundant)
+    )
+
     /**
       * Given a unification equation system `l` computes a most-general unifier for all its equations.
       *
@@ -679,6 +679,12 @@ object FastSetUnification {
       results.head._2
     }
 
+    def setUnifyPickSmallestDescr(complexThreshold: Int, permutationLimit: Int): DescribedPhase = DescribedPhase(
+      "Set Unification",
+      "resolves all remaining equations using SVE, trying multiple permutations to minimize the solution",
+      completePhase(setUnifyAllPickSmallest(complexThreshold, permutationLimit))
+    )
+
 
     /**
       * Computes the most-general unifier of all the given equations `l`.
@@ -693,6 +699,12 @@ object FastSetUnification {
       runSubstResRule(Rules.setUnifyOne)(l)
     }
 
+    def setUnifyAllDescr: DescribedPhase = DescribedPhase(
+      "Set Unification",
+      "resolves all remaining equations using SVE.",
+      completePhase(setUnifyAll)
+    )
+
     // Converting Rule into Phase
 
     /**
@@ -705,7 +717,6 @@ object FastSetUnification {
     private def runRule(rule: Equation => Output, selfFeeding: Boolean, substInduced: Boolean)(l: List[Equation]): Output = {
       // TODO optimization:
       // - Sometimes the @@ can be ++
-      // - Sometimes the outer loop can be skipped (aren't all rules discoverable by subst?)
       var subst = SetSubstitution.empty
       var workList = l
       var leftover: List[Equation] = Nil
@@ -744,12 +755,13 @@ object FastSetUnification {
       }
     }
 
-    /** If the rule returns `true` that means that the constraint should be removed */
-    private def runEqRule(rule: Equation => Boolean)(l: List[Equation]): Option[List[Equation]] = {
+    /** If the rule returns `true` that means that the constraint is solved by the empty substitution */
+    private def runFilterNotRule(rule: Equation => Boolean)(l: List[Equation]): Option[List[Equation]] = {
       val rule1 = (eq0: Equation) => if (rule(eq0)) Some((Nil, SetSubstitution.empty)) else None
       runRule(rule1, selfFeeding = false, substInduced = false)(l).map(_._1)
     }
 
+    /** If the rule returns Some(s), then the equation is solved with s */
     private def runSubstRule(rule: Equation => Option[SetSubstitution])(l: List[Equation]): Output = {
       val rule1 = (eq0: Equation) => rule(eq0).map(subst => (Nil, subst))
       runRule(rule1, selfFeeding = false, substInduced = true)(l)
