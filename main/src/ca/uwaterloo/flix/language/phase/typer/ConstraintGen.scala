@@ -1085,7 +1085,7 @@ object ConstraintGen {
       // This marking only really affects wildcards,
       // as non-wildcard variables must come from the function signature
       // and are therefore already rigid.
-      declTpe.typeVars.map(_.sym).foreach(c.rigidify)
+      declTpe.typeVars.foreach(c.rigidify)
 
       // Unify the variable's type with the declared type
       c.unifyType(sym.tvar, declTpe, sym.loc)

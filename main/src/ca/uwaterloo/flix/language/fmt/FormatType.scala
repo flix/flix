@@ -44,15 +44,15 @@ object FormatType {
     */
   private def alphaRename(tpe: Type, renv: RigidityEnv): Type = {
     // Compute the free type variables.
-    val freeVars = tpe.typeVars.toList.sortBy(_.sym.id)
+    val freeVars = tpe.typeVars.toList.sortBy(_.id)
 
     // Compute the flexible variables (i.e. the free variables that are not rigid).
     val flexibleVars = renv.getFlexibleVarsOf(freeVars)
 
     // Compute a substitution that maps the first flexible variable to id 1 and so forth.
     val m = flexibleVars.zipWithIndex.map {
-      case (tvar@Type.Var(sym, loc), index) =>
-        sym -> (Type.Var(new Symbol.KindedTypeVarSym(index, sym.text, sym.kind, sym.isRegion, loc), loc): Type)
+      case (sym, index) =>
+        sym -> (Type.Var(new Symbol.KindedTypeVarSym(index, sym.text, sym.kind, sym.isRegion, SourceLocation.Unknown), SourceLocation.Unknown): Type)
     }
     val s = Substitution(m.toMap)
 

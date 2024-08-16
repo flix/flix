@@ -135,7 +135,7 @@ object Redundancy {
     val result = new ListBuffer[RedundancyError]
     for ((_, decl) <- root.enums) {
       val usedTypeVars = decl.cases.foldLeft(Set.empty[Symbol.KindedTypeVarSym]) {
-        case (sacc, (_, Case(_, tpe, _, _))) => sacc ++ tpe.typeVars.map(_.sym)
+        case (sacc, (_, Case(_, tpe, _, _))) => sacc ++ tpe.typeVars
       }
       val unusedTypeParams = decl.tparams.filter {
         tparam =>
@@ -169,7 +169,7 @@ object Redundancy {
     for ((_, decl) <- root.structs) {
       val usedTypeVars = decl.fields.foldLeft(Set.empty[Symbol.KindedTypeVarSym]) {
         case (acc, (name, field)) =>
-          acc ++ field.tpe.typeVars.map(_.sym)
+          acc ++ field.tpe.typeVars
       }
       val unusedTypeParams = decl.tparams.init.filter { // the last tparam is implicitly used for the region
         tparam =>
@@ -276,7 +276,7 @@ object Redundancy {
   private def findUnusedTypeParameters(spec: Spec): List[UnusedTypeParam] = spec match {
     case Spec(_, _, _, tparams, fparams, _, tpe, eff, tconstrs, econstrs, _) =>
       val tpes = fparams.map(_.tpe) ::: tpe :: eff :: tconstrs.map(_.arg) ::: econstrs.map(_.tpe1) ::: econstrs.map(_.tpe2)
-      val used = tpes.flatMap { t => t.typeVars.map(_.sym) }.toSet
+      val used = tpes.flatMap { t => t.typeVars }.toSet
       tparams.collect {
         case tparam if deadTypeVar(tparam.sym, used) => UnusedTypeParam(tparam.name, tparam.loc)
       }

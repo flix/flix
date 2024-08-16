@@ -41,10 +41,10 @@ object CaseSetUnification {
     /// Get rid of of trivial variable cases.
     ///
     (tpe1, tpe2) match {
-      case (t1@Type.Var(x, _), t2) if renv0.isFlexible(x) && !t2.typeVars.contains(t1) =>
+      case (Type.Var(x, _), t2) if renv0.isFlexible(x) && !t2.typeVars.contains(x) =>
         return Ok(Substitution.singleton(x, t2))
 
-      case (t1, t2@Type.Var(x, _)) if renv0.isFlexible(x) && !t1.typeVars.contains(t2) =>
+      case (t1, Type.Var(x, _)) if renv0.isFlexible(x) && !t1.typeVars.contains(x) =>
         return Ok(Substitution.singleton(x, t1))
 
       case _ => // nop

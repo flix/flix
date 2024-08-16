@@ -23,10 +23,10 @@ import ca.uwaterloo.flix.language.ast.TypeConstructor.JvmMethod
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.dbg.DocAst.Type.JvmConstructor
 import ca.uwaterloo.flix.language.fmt.FormatEqualityConstraint.formatEqualityConstraint
-import ca.uwaterloo.flix.language.fmt.FormatType.formatType
+import ca.uwaterloo.flix.language.fmt.FormatType.{formatType, formatTypeVarSym}
 import ca.uwaterloo.flix.util.{Formatter, Grammar}
 
-import java.lang.reflect.{Method, Constructor};
+import java.lang.reflect.{Constructor, Method};
 
 /**
   * A common super-type for type errors.
@@ -673,12 +673,12 @@ object TypeError {
     * @param tpe  the type wherein the region variable escapes.
     * @param loc  the location where the error occurred.
     */
-  case class RegionVarEscapes(rvar: Type.Var, tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError with Recoverable {
-    def summary: String = s"Region variable '${formatType(rvar)}' escapes its scope."
+  case class RegionVarEscapes(rvar: Symbol.KindedTypeVarSym, tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError with Recoverable {
+    def summary: String = s"Region variable '${formatTypeVarSym(rvar)}' escapes its scope."
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s""">> The region variable '${red(formatType(rvar))}' escapes its scope.
+      s""">> The region variable '${red(formatTypeVarSym(rvar))}' escapes its scope.
          |
          |${code(loc, "region variable escapes.")}
          |

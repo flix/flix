@@ -84,7 +84,7 @@ object ConstraintSolver {
       // 2. rigid variables from type inference (e.g. regions)
       // 3. rigid variables from declared function type parameters
       val renv = allTparams.foldLeft(infRenv ++ renv0) {
-        case (acc, Type.Var(sym, _)) => acc.markRigid(sym)
+        case (acc, sym) => acc.markRigid(sym)
       }
 
       // The trait and equality environments are made up of:
@@ -340,7 +340,7 @@ object ConstraintSolver {
           // purify the inner type
           val e2Raw = subst1(eff2)
           val e2 = Substitution.singleton(sym, Type.Pure)(e2Raw)
-          val qvars = e2Raw.typeVars.map(_.sym)
+          val qvars = e2Raw.typeVars
           val subst = qvars.foldLeft(subst1)(_.unbind(_))
           val constr = TypeConstraint.Equality(e1, TypeMinimization.minimizeType(e2), prov)
           ResolutionResult(subst, List(constr), progress = true)
@@ -439,12 +439,12 @@ object ConstraintSolver {
     case (x: Type.Var, y: Type.Var) if (x == y) => Result.Ok(ResolutionResult.elimination)
 
     // varU
-    case (x: Type.Var, t) if renv.isFlexible(x.sym) && !t.typeVars.contains(x) =>
-      Result.Ok(ResolutionResult.newSubst(Substitution.singleton(x.sym, t)))
+    case (Type.Var(sym, _), t) if renv.isFlexible(sym) && !t.typeVars.contains(sym) =>
+      Result.Ok(ResolutionResult.newSubst(Substitution.singleton(sym, t)))
 
     // varU
-    case (t, x: Type.Var) if renv.isFlexible(x.sym) && !t.typeVars.contains(x) =>
-      Result.Ok(ResolutionResult.newSubst(Substitution.singleton(x.sym, t)))
+    case (t, Type.Var(sym, _)) if renv.isFlexible(sym) && !t.typeVars.contains(sym) =>
+      Result.Ok(ResolutionResult.newSubst(Substitution.singleton(sym, t)))
 
     // reflU
     case (Type.Cst(c1, _), Type.Cst(c2, _)) if c1 == c2 => Result.Ok(ResolutionResult.elimination)
@@ -531,7 +531,7 @@ object ConstraintSolver {
           // Case 3: Something rigid (const or rigid var). We can look this up immediately.
           case _ =>
             // we mark t's tvars as rigid so we get the substitution in the right direction
-            val renv = t.typeVars.map(_.sym).foldLeft(renv0)(_.markRigid(_))
+            val renv = t.typeVars.foldLeft(renv0)(_.markRigid(_))
             val insts = tenv(trt).instances
             // find the first (and only) instance that matches
             val tconstrsOpt = ListOps.findMap(insts) {

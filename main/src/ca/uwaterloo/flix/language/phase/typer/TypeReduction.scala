@@ -72,7 +72,7 @@ object TypeReduction {
       simplify(arg, renv0, loc).flatMap {
         case (t, p) =>
           // we mark t's tvars as rigid so we get the substitution in the right direction
-          val renv = t.typeVars.map(_.sym).foldLeft(RigidityEnv.empty)(_.markRigid(_))
+          val renv = t.typeVars.foldLeft(RigidityEnv.empty)(_.markRigid(_))
           val insts = eenv(cst.sym)
 
           // find the first (and only) instance that matches

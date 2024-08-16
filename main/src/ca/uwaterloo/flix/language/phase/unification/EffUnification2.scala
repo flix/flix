@@ -35,7 +35,7 @@ object EffUnification2 {
     */
   def unifyAll(l: List[(Type, Type, SourceLocation)], renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix): Result[Substitution, UnificationError] = {
     // Compute a bi-directional map from type variables to ints.
-    implicit val bimap: Bimap[Type.Var, Int] = mkBidirectionalVarMap(l)
+    implicit val bimap: Bimap[Symbol.KindedTypeVarSym, Int] = mkBidirectionalVarMap(l)
 
     // Translate all unification problems from equations on types to equations on terms.
     val equations = l.map {
@@ -59,22 +59,22 @@ object EffUnification2 {
   /**
     * Returns a bi-directional map from type variables to ints computed from the given list of unification equations `l`.
     */
-  private def mkBidirectionalVarMap(l: List[(Type, Type, SourceLocation)]): Bimap[Type.Var, Int] = {
+  private def mkBidirectionalVarMap(l: List[(Type, Type, SourceLocation)]): Bimap[Symbol.KindedTypeVarSym, Int] = {
     // Find all type variables that occur in anywhere in `l`.
-    val allVars = mutable.Set.empty[Type.Var]
+    val allVars = mutable.Set.empty[Symbol.KindedTypeVarSym]
     for ((t1, t2, _) <- l) {
       allVars ++= t1.typeVars
       allVars ++= t2.typeVars
     }
 
     // Construct the forward map from type variables to ints.
-    val forward = allVars.foldLeft(Map.empty[Type.Var, Int]) {
-      case (macc, tvar) => macc + (tvar -> tvar.sym.id)
+    val forward = allVars.foldLeft(Map.empty[Symbol.KindedTypeVarSym, Int]) {
+      case (macc, tvar) => macc + (tvar -> tvar.id)
     }
 
     // Construct the reverse map from ints to type variables.
-    val backward = allVars.foldLeft(Map.empty[Int, Type.Var]) {
-      case (macc, tvar) => macc + (tvar.sym.id -> tvar)
+    val backward = allVars.foldLeft(Map.empty[Int, Symbol.KindedTypeVarSym]) {
+      case (macc, tvar) => macc + (tvar.id -> tvar)
     }
     Bimap(forward, backward)
   }
@@ -82,7 +82,7 @@ object EffUnification2 {
   /**
     * Translates the given unification equation on types `p` into a unification equation on terms.
     */
-  private def toEquation(p: (Type, Type, SourceLocation))(implicit renv: RigidityEnv, m: Bimap[Type.Var, Int]): Equation = {
+  private def toEquation(p: (Type, Type, SourceLocation))(implicit renv: RigidityEnv, m: Bimap[Symbol.KindedTypeVarSym, Int]): Equation = {
     val (tpe1, tpe2, loc) = p
     Equation.mk(toTerm(tpe1), toTerm(tpe2), loc)
   }
@@ -94,13 +94,13 @@ object EffUnification2 {
     *
     * The rigidity environment `renv` is used to map rigid type variables to constants and flexible type variables to term variables.
     */
-  private def toTerm(t: Type)(implicit renv: RigidityEnv, m: Bimap[Type.Var, Int]): Term = Type.eraseTopAliases(t) match {
+  private def toTerm(t: Type)(implicit renv: RigidityEnv, m: Bimap[Symbol.KindedTypeVarSym, Int]): Term = Type.eraseTopAliases(t) match {
     case Type.Pure => Term.True
     case Type.Univ => Term.False
 
-    case t: Type.Var => m.getForward(t) match {
+    case Type.Var(sym, _) => m.getForward(sym) match {
       case None => throw InternalCompilerException(s"Unexpected unbound type variable: '$t'.", t.loc)
-      case Some(x) => renv.get(t.sym) match {
+      case Some(x) => renv.get(sym) match {
         case Rigidity.Flexible => Term.Var(x) // A flexible variable is a real variable.
         case Rigidity.Rigid => Term.Cst(x) // A rigid variable is a constant.
       }
@@ -116,10 +116,10 @@ object EffUnification2 {
   /**
     * Returns a regular type substitution obtained from the given Boolean substitution `s`.
     */
-  private def fromBoolSubst(s: FastBoolUnification.BoolSubstitution)(implicit m: Bimap[Type.Var, Int]): Substitution = {
+  private def fromBoolSubst(s: FastBoolUnification.BoolSubstitution)(implicit m: Bimap[Symbol.KindedTypeVarSym, Int]): Substitution = {
     Substitution(s.m.foldLeft(Map.empty[Symbol.KindedTypeVarSym, Type]) {
       case (macc, (k, v)) =>
-        val tvar = m.getBackward(k).get.sym
+        val tvar = m.getBackward(k).get
         macc + (tvar -> fromTerm(v, tvar.loc))
     })
   }
@@ -133,11 +133,11 @@ object EffUnification2 {
     * Both constants and variables are mapped back to type variables. The rigidity environment, in the type world,
     * distinguishes their rigidity or flexibility.
     */
-  private def fromTerm(t: Term, loc: SourceLocation)(implicit m: Bimap[Type.Var, Int]): Type = t match {
+  private def fromTerm(t: Term, loc: SourceLocation)(implicit m: Bimap[Symbol.KindedTypeVarSym, Int]): Type = t match {
     case Term.True => Type.Pure
     case Term.False => Type.Univ
-    case Term.Cst(c) => m.getBackward(c).get // Safe: We never introduce new variables.
-    case Term.Var(x) => m.getBackward(x).get // Safe: We never introduce new variables.
+    case Term.Cst(c) => Type.Var(m.getBackward(c).get, loc) // Safe: We never introduce new variables.
+    case Term.Var(x) => Type.Var(m.getBackward(x).get, loc) // Safe: We never introduce new variables.
     case Term.Not(t) => Type.mkComplement(fromTerm(t, loc), loc)
     case Term.And(csts, vars, rest) =>
       val ts = csts.toList.map(fromTerm(_, loc)) ++ vars.toList.map(fromTerm(_, loc)) ++ rest.map(fromTerm(_, loc))

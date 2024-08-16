@@ -77,7 +77,7 @@ object RecordUnification {
       case (tvar: Type.Var, Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(label1), _), labelType1, _), _, _)) =>
         val tv = tvar
         // Case 2: The row is a type variable.
-        if (staticRow.typeVars.contains(tv)) {
+        if (staticRow.typeVars.contains(tv.sym)) {
           Err(UnificationError.OccursCheck(tv, staticRow))
         } else {
           // Introduce a fresh type variable to represent one more level of the row.

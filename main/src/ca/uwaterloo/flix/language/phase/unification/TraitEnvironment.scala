@@ -113,7 +113,7 @@ object TraitEnvironment {
     case Ast.TraitConstraint(head, arg, loc) =>
       val matchingInstances = traitEnv.get(head.sym).map(_.instances).getOrElse(Nil)
 
-      val renv = RigidityEnv.ofRigidVars(arg.typeVars.map(_.sym))
+      val renv = RigidityEnv.ofRigidVars(arg.typeVars)
 
       def tryInst(inst: Ast.Instance): Validation[List[Ast.TraitConstraint], UnificationError] = {
         val substVal = Unification.unifyTypes(inst.tpe, arg, renv).toValidation

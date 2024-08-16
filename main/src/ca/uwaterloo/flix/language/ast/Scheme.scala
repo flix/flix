@@ -116,7 +116,7 @@ object Scheme {
   def generalize(tconstrs: List[Ast.TraitConstraint], econstrs: List[Ast.BroadEqualityConstraint], tpe0: Type, renv: RigidityEnv): Scheme = {
     val tvars = tpe0.typeVars ++ tconstrs.flatMap(tconstr => tconstr.arg.typeVars) ++ econstrs.flatMap(econstr => econstr.tpe1.typeVars ++ econstr.tpe2.typeVars)
     val quantifiers = renv.getFlexibleVarsOf(tvars.toList)
-    Scheme(quantifiers.map(_.sym), tconstrs, econstrs, tpe0)
+    Scheme(quantifiers, tconstrs, econstrs, tpe0)
   }
 
   /**
@@ -171,7 +171,7 @@ object Scheme {
     val tvars = cconstrs2.flatMap(_.arg.typeVars) ++
       econstrs2.flatMap { econstr => econstr.tpe1.typeVars ++ econstr.tpe2.typeVars } ++
       tpe2.typeVars
-    val renv = tvars.foldLeft(RigidityEnv.empty) { case (r, tvar) => r.markRigid(tvar.sym) }
+    val renv = tvars.foldLeft(RigidityEnv.empty) { case (r, tvar) => r.markRigid(tvar) }
 
     // Check that the constraints from sc1 hold
     // And that the bases unify

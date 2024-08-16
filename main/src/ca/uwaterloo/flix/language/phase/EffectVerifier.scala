@@ -374,7 +374,7 @@ object EffectVerifier {
     */
   private def expectType(expected: Type, actual: Type, loc: SourceLocation)(implicit eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Unit = {
     // mark everything as rigid
-    val renv = RigidityEnv.ofRigidVars(expected.typeVars.map(_.sym) ++ actual.typeVars.map(_.sym))
+    val renv = RigidityEnv.ofRigidVars(expected.typeVars ++ actual.typeVars)
     if (!Unification.unifiesWith(expected, actual, renv, eqEnv)) {
       throw InternalCompilerException(s"Expected type $expected but found $actual at $loc", loc)
     }

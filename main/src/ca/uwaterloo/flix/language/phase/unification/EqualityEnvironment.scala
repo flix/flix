@@ -83,7 +83,7 @@ object EqualityEnvironment {
     * Only performs one reduction step. The result may itself contain associated types.
     */
   def reduceAssocTypeStep(cst: Ast.AssocTypeConstructor, arg: Type, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Result[Type, UnificationError] = {
-    val renv = arg.typeVars.map(_.sym).foldLeft(RigidityEnv.empty)(_.markRigid(_))
+    val renv = arg.typeVars.foldLeft(RigidityEnv.empty)(_.markRigid(_))
     val insts = eqEnv(cst.sym)
     insts.iterator.flatMap { // TODO ASSOC-TYPES generalize this pattern (also in monomorph)
       inst =>

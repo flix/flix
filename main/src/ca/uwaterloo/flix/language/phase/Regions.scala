@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Type}
+import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.unification.Substitution
@@ -44,7 +44,7 @@ object Regions {
   private def visitDef(def0: Def)(implicit flix: Flix): List[TypeError.RegionVarEscapes] =
     visitExp(def0.exp)(Nil, flix)
 
-  private def visitExp(exp0: Expr)(implicit scope: List[Type.Var], flix: Flix): List[TypeError.RegionVarEscapes] = exp0 match {
+  private def visitExp(exp0: Expr)(implicit scope: List[Symbol.KindedTypeVarSym], flix: Flix): List[TypeError.RegionVarEscapes] = exp0 match {
     case Expr.Cst(_, _, _) => Nil
 
     case Expr.Var(_, tpe, loc) => checkType(tpe, loc)
@@ -85,7 +85,7 @@ object Regions {
       Nil
 
     case Expr.Scope(_, regionVar, exp, tpe, _, loc) =>
-      visitExp(exp)(regionVar :: scope, flix) ++ checkType(tpe, loc)
+      visitExp(exp)(regionVar.sym :: scope, flix) ++ checkType(tpe, loc)
 
     case Expr.IfThenElse(exp1, exp2, exp3, tpe, _, loc) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) ++ checkType(tpe, loc)
@@ -296,7 +296,7 @@ object Regions {
 
   }
 
-  def visitJvmMethod(method: JvmMethod)(implicit scope: List[Type.Var], flix: Flix): List[TypeError.RegionVarEscapes] = method match {
+  def visitJvmMethod(method: JvmMethod)(implicit scope: List[Symbol.KindedTypeVarSym], flix: Flix): List[TypeError.RegionVarEscapes] = method match {
     case JvmMethod(_, _, exp, tpe, _, loc) =>
       visitExp(exp) ++ checkType(tpe, loc)
   }
@@ -304,7 +304,7 @@ object Regions {
   /**
     * Ensures that no region escapes inside `tpe`.
     */
-  private def checkType(tpe: Type, loc: SourceLocation)(implicit scope: List[Type.Var], flix: Flix): List[TypeError.RegionVarEscapes] = {
+  private def checkType(tpe: Type, loc: SourceLocation)(implicit scope: List[Symbol.KindedTypeVarSym], flix: Flix): List[TypeError.RegionVarEscapes] = {
     // Compute the region variables that escape.
     // We should minimize `tpe`, but we do not because of the performance cost.
     val regs = regionVarsOf(tpe)
@@ -322,7 +322,7 @@ object Regions {
     * A type variable is essential if its ascription has a bearing on the resulting value.
     * For example, in the type `a and (not a)`, `a` is not essential since the result is always `false`.
     */
-  def essentialTo(tvar: Type.Var, tpe: Type)(implicit flix: Flix): Boolean = {
+  def essentialTo(tvar: Symbol.KindedTypeVarSym, tpe: Type)(implicit flix: Flix): Boolean = {
     if (!tpe.typeVars.contains(tvar)) {
       // Case 1: The type variable is not present in the type. It cannot be essential.
       false
@@ -336,12 +336,12 @@ object Regions {
     * Returns true iff the type variable `tvar` is essential to the boolean formula `tpe`.
     * Assumes that `tvar` is present in the type.
     */
-  def essentialToBool(tvar: Type.Var, tpe: Type)(implicit flix: Flix): Boolean = {
+  def essentialToBool(tvar: Symbol.KindedTypeVarSym, tpe: Type)(implicit flix: Flix): Boolean = {
     // t0 = tpe[tvar -> False]
-    val t0 = Substitution.singleton(tvar.sym, Type.Univ).apply(tpe)
+    val t0 = Substitution.singleton(tvar, Type.Univ).apply(tpe)
 
     // t1 = tpe[tvar -> True]
-    val t1 = Substitution.singleton(tvar.sym, Type.Pure).apply(tpe)
+    val t1 = Substitution.singleton(tvar, Type.Pure).apply(tpe)
 
     // tvar is essential if t0 != t1
     !sameType(t0, t1)
@@ -370,13 +370,13 @@ object Regions {
       * where `trueVars` are the variables ascribed the value TRUE,
       * and all other variables are ascribed the value FALSE.
       */
-    def eval(tpe: Type, trueVars: SortedSet[Type.Var]): Boolean = tpe match {
+    def eval(tpe: Type, trueVars: SortedSet[Symbol.KindedTypeVarSym]): Boolean = tpe match {
       case Type.Pure => true
       case Type.Univ => false
       case Type.Apply(Type.Complement, x, _) => eval(x, trueVars)
       case Type.Apply(Type.Apply(Type.Union, x1, _), x2, _) => eval(x1, trueVars) && eval(x2, trueVars)
       case Type.Apply(Type.Apply(Type.Intersection, x1, _), x2, _) => eval(x1, trueVars) || eval(x2, trueVars)
-      case tvar: Type.Var => trueVars.contains(tvar)
+      case Type.Var(sym, loc) => trueVars.contains(sym)
       case _ => throw InternalCompilerException(s"unexpected type $tpe", tpe.loc)
     }
 
@@ -387,10 +387,10 @@ object Regions {
   /**
     * Returns all region variables in the given type `tpe`.
     */
-  private def regionVarsOf(tpe: Type): SortedSet[Type.Var] = tpe.typeVars.filter {
-    case tvar =>
-      val isBool = tvar.sym.kind == Kind.Eff
-      val isRegion = tvar.sym.isRegion
+  private def regionVarsOf(tpe: Type): SortedSet[Symbol.KindedTypeVarSym] = tpe.typeVars.filter {
+    case sym =>
+      val isBool = sym.kind == Kind.Eff
+      val isRegion = sym.isRegion
       isBool && isRegion
   }
 

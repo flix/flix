@@ -58,7 +58,7 @@ object Unification {
       // TODO ASSOC-TYPES probably the same situation for type aliases
       case assoc: Type.AssocType =>
         // don't do the substitution if the var is in the assoc type
-        if (assoc.typeVars contains x) {
+        if (assoc.typeVars.contains(x.sym)) {
           Result.Ok((Substitution.empty, List(Ast.BroadEqualityConstraint(x, assoc))))
         } else {
           Result.Ok((Substitution.singleton(x.sym, assoc), Nil))
@@ -72,7 +72,7 @@ object Unification {
         }
 
         // Check if `x` occurs within `tpe`.
-        if (tpe.typeVars contains x) {
+        if (tpe.typeVars.contains(x.sym)) {
           return Result.Err(UnificationError.OccursCheck(x, tpe))
         }
 

@@ -104,7 +104,7 @@ trait BoolAlg[F] {
   def getEnv(fs: List[Type]): Bimap[BoolFormula.VarOrEff, Int] = {
     // Compute the variables in `tpe`.
     val tvars =
-      fs.foldLeft(SortedSet.empty[Symbol.KindedTypeVarSym])((acc, tpe) => acc ++ tpe.typeVars.map(_.sym))
+      fs.foldLeft(SortedSet.empty[Symbol.KindedTypeVarSym])((acc, tpe) => acc ++ tpe.typeVars)
         .toList.map(BoolFormula.VarOrEff.Var)
 
     val effs =

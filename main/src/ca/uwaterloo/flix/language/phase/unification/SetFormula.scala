@@ -221,7 +221,7 @@ object SetFormula {
     * Creates an environment for mapping between proper types and formulas.
     */
   def mkEnv(ts: List[Type], univ: SortedSet[Symbol.RestrictableCaseSym]): (Bimap[VarOrCase, Int], Set[Int]) = {
-    val vars = ts.flatMap(_.typeVars).map(_.sym).distinct.map(VarOrCase.Var)
+    val vars = ts.flatMap(_.typeVars).distinct.map(VarOrCase.Var)
     val cases = (univ.toSet ++ ts.flatMap(_.cases)).map(VarOrCase.Case)
     // TODO RESTR-VARS do I even need the ts part here?
 

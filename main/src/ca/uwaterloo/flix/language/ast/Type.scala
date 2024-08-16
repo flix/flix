@@ -48,13 +48,13 @@ sealed trait Type {
     *
     * Note: We cache `typeVars` to improve performance.
     */
-  lazy val typeVars: SortedSet[Type.Var] = this match {
-    case x: Type.Var => SortedSet(x)
+  lazy val typeVars: SortedSet[Symbol.KindedTypeVarSym] = this match {
+    case Type.Var(sym, _) => SortedSet(sym)
 
-    case Type.Cst(tc, _) => SortedSet.empty
+    case Type.Cst(_, _) => SortedSet.empty
 
     case Type.Apply(tpe1, tpe2, _) => tpe1.typeVars ++ tpe2.typeVars
-    case Type.Alias(_, args, _, _) => args.foldLeft(SortedSet.empty[Type.Var])((acc, t) => acc ++ t.typeVars)
+    case Type.Alias(_, args, _, _) => args.foldLeft(SortedSet.empty[Symbol.KindedTypeVarSym])((acc, t) => acc ++ t.typeVars)
     case Type.AssocType(_, arg, _, _) => arg.typeVars // TODO ASSOC-TYPES throw error?
   }
 

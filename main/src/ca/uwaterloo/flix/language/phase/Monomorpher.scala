@@ -561,7 +561,7 @@ object Monomorpher {
       // make the tvars in `exp`'s type rigid
       // so that Nil: List[x%123] can only match List[_]
       val renv = expTpe.typeVars.foldLeft(RigidityEnv.empty) {
-        case (acc, Type.Var(sym, _)) => acc.markRigid(sym)
+        case (acc, sym) => acc.markRigid(sym)
       }
       ListOps.findMap(rules) {
         case LoweredAst.TypeMatchRule(sym, t, body0) =>

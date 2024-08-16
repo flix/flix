@@ -62,7 +62,7 @@ case class RigidityEnv(s: SortedSet[Symbol.KindedTypeVarSym]) {
   /**
     * Returns the flexible vars from the given list.
     */
-  def getFlexibleVarsOf(tvars: List[Type.Var]): List[Type.Var] = tvars.filter(tvar => isFlexible(tvar.sym))
+  def getFlexibleVarsOf(tvars: List[Symbol.KindedTypeVarSym]): List[Symbol.KindedTypeVarSym] = tvars.filter(isFlexible)
 
   /**
     * Marks the given `sym` as rigid in this environment.

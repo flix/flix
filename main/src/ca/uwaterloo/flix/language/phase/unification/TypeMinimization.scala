@@ -49,7 +49,7 @@ object TypeMinimization {
   def minimizeScheme(sc: Scheme): Scheme = sc match {
     case Scheme(quantifiers, tconstrs, econstrs, base) =>
       val newBase = minimizeType(base)
-      val tvars = newBase.typeVars.map(_.sym)
+      val tvars = newBase.typeVars
 
       // filter out unused quantifiers
       val newQuants = quantifiers.filter(tvars.contains)
@@ -88,7 +88,7 @@ object TypeMinimization {
     }
 
     // Compute the variables in `tpe`.
-    val tvars = tpe.typeVars.toList.map(tvar => BoolFormula.VarOrEff.Var(tvar.sym))
+    val tvars = tpe.typeVars.toList.map(tvar => BoolFormula.VarOrEff.Var(tvar))
     val effs = tpe.effects.toList.map(BoolFormula.VarOrEff.Eff)
     val assocs = tpe.assocs.toList.map(assoc => BoolFormula.VarOrEff.Assoc(assoc.cst.sym, assoc.arg))
 
