@@ -93,7 +93,7 @@ object BooleanPropTesting {
     // `clickAndGo` means that debugging is enabled and that every run will wait for input from StdIn.
     val clickAndGo = false
     val options = RunOptions.default.copy(debugging = clickAndGo)
-    testSolvableConstraints(new Random(), explodedRandomXor, 700_000, 1, -1, wait = clickAndGo, options)
+    testSolvableConstraints(new Random(-1827123978312874L), explodedRandomXor, 700_000, 1, -1, wait = clickAndGo, options)
   }
 
   // TODO add testing of t ~ propagation(t)

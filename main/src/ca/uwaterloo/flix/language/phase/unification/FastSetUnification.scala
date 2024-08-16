@@ -492,7 +492,7 @@ object FastSetUnification {
       * learn that `x -> univ` then we will try to extend s with the new binding which will raise a [[ConflictException]].
       */
     def propagateConstants(l: List[Equation]): Output = {
-      runRule(Rules.constantAssignment, selfFeeding = true, substInduced = true)(l)
+      runRule(Rules.constantAssignment, simpleSubst = true)(l)
     }
 
     def propagateConstantsDescr: DescribedPhase = DescribedPhase(
@@ -714,9 +714,7 @@ object FastSetUnification {
       * @param l the constraints to run the rule on
       * @return the remaining constraints and the found substitution.
       */
-    private def runRule(rule: Equation => Output, selfFeeding: Boolean, substInduced: Boolean)(l: List[Equation]): Output = {
-      // TODO optimization:
-      // - Sometimes the @@ can be ++
+    private def runRule(rule: Equation => Output, selfFeeding: Boolean = true, substInduced: Boolean = true, simpleSubst: Boolean = false)(l: List[Equation]): Output = {
       var subst = SetSubstitution.empty
       var workList = l
       var leftover: List[Equation] = Nil
@@ -737,7 +735,7 @@ object FastSetUnification {
                 // add the new eqs to `workList` if declared applicable
                 if (selfFeeding) workList = eqs ++ workList
                 else leftover = eqs ++ leftover
-                subst = s @@ subst
+                subst = if (simpleSubst) s ++ subst else s @@ subst
               case None =>
                 leftover = eq :: leftover
             }
@@ -758,13 +756,13 @@ object FastSetUnification {
     /** If the rule returns `true` that means that the constraint is solved by the empty substitution */
     private def runFilterNotRule(rule: Equation => Boolean)(l: List[Equation]): Option[List[Equation]] = {
       val rule1 = (eq0: Equation) => if (rule(eq0)) Some((Nil, SetSubstitution.empty)) else None
-      runRule(rule1, selfFeeding = false, substInduced = false)(l).map(_._1)
+      runRule(rule1, selfFeeding = false, substInduced = false, simpleSubst = true)(l).map(_._1)
     }
 
     /** If the rule returns Some(s), then the equation is solved with s */
     private def runSubstRule(rule: Equation => Option[SetSubstitution])(l: List[Equation]): Output = {
       val rule1 = (eq0: Equation) => rule(eq0).map(subst => (Nil, subst))
-      runRule(rule1, selfFeeding = false, substInduced = true)(l)
+      runRule(rule1, selfFeeding = false)(l)
     }
 
     private def runSubstResRule(rule: Equation => Result[SetSubstitution, Throwable])(l: List[Equation]): SetSubstitution = {
@@ -782,7 +780,7 @@ object FastSetUnification {
 
     private def runErrRule(rule: Equation => Option[Throwable])(l: List[Equation]): Unit = {
       val rule1 = (eq0: Equation) => rule(eq0).map[(List[Equation], SetSubstitution)](ex => throw ex)
-      val res = runRule(rule1, selfFeeding = false, substInduced = false)(l)
+      val res = runRule(rule1, selfFeeding = false, substInduced = false, simpleSubst = true)(l)
       assert(res.isEmpty)
     }
 
@@ -1975,14 +1973,21 @@ object FastSetUnification {
       * The returned substitution has all bindings from `this` and `that` substitution.
       *
       * The variables in the two substitutions must not overlap.
+      *
+      * It is faster to call `smaller ++ larger` than to call `larger ++ smaller`.
       */
     def ++(that: SetSubstitution): SetSubstitution = {
-      val intersection = this.m.keySet.intersect(that.m.keySet)
-      if (intersection.nonEmpty) {
-        throw InternalCompilerException(s"Substitutions are not disjoint on: '${intersection.mkString(",")}'.", SourceLocation.Unknown)
-      }
+      if (this.m.isEmpty) that
+      else if (that.m.isEmpty) this
+      else {
+        val notDisjoint = this.m.keySet.exists(that.m.keySet.contains)
+        if (notDisjoint) {
+          val intersection = this.m.keySet.intersect(that.m.keySet)
+          throw InternalCompilerException(s"Substitutions are not disjoint on: '${intersection.mkString(",")}'.", SourceLocation.Unknown)
+        }
 
-      SetSubstitution(this.m ++ that.m)
+        SetSubstitution(that.m ++ this.m)
+      }
     }
 
     /**
