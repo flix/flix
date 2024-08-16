@@ -93,12 +93,13 @@ object BooleanPropTesting {
     // `clickAndGo` means that debugging is enabled and that every run will wait for input from StdIn.
     val clickAndGo = false
     val options = RunOptions.default.copy(debugging = clickAndGo)
-    testSolvableConstraints(new Random(), explodedRandomXor, 700_000, 1, -1, wait = clickAndGo)(options)
+    testSolvableConstraints(new Random(), explodedRandomXor, 700_000, 1, -1, wait = clickAndGo, options)
   }
 
   // TODO add testing of t ~ propagation(t)
 
-  def testSolvableConstraints(random: Random, genSolvable: Random => List[Equation], testLimit: Int, errLimit: Int, timeoutLimit: Int, wait: Boolean)(implicit opts: RunOptions): Boolean = {
+  def testSolvableConstraints(random: Random, genSolvable: Random => List[Equation], testLimit: Int, errLimit: Int, timeoutLimit: Int, wait: Boolean, opts: RunOptions = RunOptions.default): Boolean = {
+    implicit val implOpts: RunOptions = opts
     def printProgress(tests: Int, errAmount: Int, timeoutAmount: Int): Unit = {
       val passed = tests - errAmount - timeoutAmount
       println(s"${tests / 1000}k (${passed} passed, $errAmount errs, $timeoutAmount t.o.)")

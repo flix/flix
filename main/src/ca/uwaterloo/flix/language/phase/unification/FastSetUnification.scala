@@ -94,8 +94,9 @@ object FastSetUnification {
       *
       * Returns `Result.Err((ex, l, s))` where `c` is a conflict, `l` is a list of unsolved equations, and `s` is a partial substitution.
       */
-    def solve(l: List[Equation])(implicit opts: RunOptions): (Result[SetSubstitution, (FastBoolUnificationException, List[Equation], SetSubstitution)], (Option[String], Option[Int])) = {
+    def solve(l: List[Equation], opts: RunOptions = RunOptions.default): (Result[SetSubstitution, (FastBoolUnificationException, List[Equation], SetSubstitution)], (Option[String], Option[Int])) = {
       import FastSetUnification.{Phases => P}
+      implicit val implOpts: RunOptions = opts
       val state = new State(l)
 
       def checkAndSimplify(s: State): Unit = runPhase(
@@ -149,7 +150,7 @@ object FastSetUnification {
       } catch {
         case _ if !opts.debugging && opts.rerun =>
           // rerun with debugging
-          solve(l)(opts.copy(debugging = true, rerun = false))
+          solve(l, opts.copy(debugging = true, rerun = false))
         case ex: ConflictException =>
           val res = Result.Err((ex, state.eqs, state.subst))
           (res, (state.lastPhase, state.phase))
