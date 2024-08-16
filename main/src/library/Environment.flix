@@ -15,12 +15,15 @@
  */
 mod Environment {
 
-    import java.lang.{Exception, Runtime}
-    import java.lang.{Object => JObject}
-    import java.util.{Iterator => JIterator, Map => JMap, Set => JSet}
-    import java.io.File
-    import java.lang.System
     import dev.flix.runtime.Global
+    import java.lang.Exception
+    import java.lang.Runtime
+    import java.lang.System
+    import java.io.{File => JFile}
+    import java.util.{Iterator => JIterator}
+    import java.util.{Map => JMap}
+    import java.util.{Set => JSet}
+    import java.util.{Map$Entry => Entry}
 
     ///
     /// Returns the arguments passed to the program via the command line.
@@ -79,12 +82,12 @@ mod Environment {
     ///
     ///  Returns the file separator
     ///
-    pub def getFileSeparator(): String = unsafe File.separator
+    pub def getFileSeparator(): String = unsafe JFile.separator
 
     ///
     /// Returns the path separator
     ///
-    pub def getPathSeparator(): String = unsafe File.pathSeparator
+    pub def getPathSeparator(): String = unsafe JFile.pathSeparator
 
     ///
     /// Returns the system line separator
@@ -122,7 +125,7 @@ mod Environment {
 
     def getEnvHelper(iter: JIterator, m: Map[String, String]): Map[String, String] =
         if (unsafe iter.hasNext())
-            let e = unsafe unchecked_cast(iter.next() as ##java.util.Map$Entry);
+            let e = unsafe unchecked_cast(iter.next() as Entry);
             let k = unsafe unchecked_cast(e.getKey() as String);
             let v = unsafe unchecked_cast(e.getValue() as String);
             getEnvHelper(iter, Map.insert(k, v, m))
