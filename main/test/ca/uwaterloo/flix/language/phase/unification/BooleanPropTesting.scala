@@ -176,7 +176,7 @@ object BooleanPropTesting {
   def explodedRandomXor(random: Random): List[Equation] = {
     val former = termFormer()
     val t = randomTerm(former, random, 4, 3, 3, 3)
-    groupAssignments(explodeKnownEquation(random, eqPropagatedSelf(t)), 1)
+    groupAssignments(explodeKnownEquation(random, eqPropagatedSelf(t), 4), 1)
   }
 
   private sealed trait Res
@@ -247,12 +247,14 @@ object BooleanPropTesting {
   /**
     * Takes an equation and creates equations that names some subterms as variables via extra equations.
     */
-  private def explodeKnownEquation(r: Random, eq: Equation): List[Equation] = {
-    var next = maxId(eq.t1) max maxId(eq.t2)
+  private def explodeKnownEquation(r: Random, eq: Equation, maxAmount: Int): List[Equation] = {
+    val first = maxId(eq.t1) max maxId(eq.t2)
+    var next = first
 
-    def getId(): Int = {
+    def getId(): Option[Int] = {
       next += 1
-      next
+      if (next - first > maxAmount) None
+      else Some(next)
     }
 
     val (left, leftEqs) = explode(r, eq.t1, eq.loc, getId())
@@ -260,25 +262,37 @@ object BooleanPropTesting {
     Equation.mk(left, right, eq.loc) :: leftEqs ++ rightEqs
   }
 
-  private def explode(r: Random, t: Term, loc: SourceLocation, gen: => Int): (Term, List[Equation]) = t match {
+  private def explode(r: Random, t: Term, loc: SourceLocation, gen: => Option[Int]): (Term, List[Equation]) = t match {
     case Term.Univ | Term.Empty | Term.Cst(_) | Term.ElemSet(_) | Term.Var(_) =>
       if (r.nextInt(7) == 0) {
-        val fresh = Term.Var(gen)
-        (fresh, List(Equation.mk(fresh, t, loc)))
+        gen match {
+          case Some(id) =>
+            val fresh = Term.Var(id)
+            (fresh, List(Equation.mk(fresh, t, loc)))
+          case None =>
+            (t, Nil)
+        }
       } else (t, Nil)
     case Term.Compl(t0) =>
+      val bind = r.nextInt(5) == 0
+      val gen1 = if (bind) gen else None
       val (t1, eqs) = explode(r, t0, loc, gen)
-      if (r.nextInt(5) == 0) {
-        val fresh = Term.Var(gen)
-        (fresh, Equation.mk(fresh, Term.mkCompl(t1), loc) :: eqs)
-      } else (t, eqs)
+      if (bind) {
+        gen1 match {
+          case Some(id) =>
+            val fresh = Term.Var(id)
+            (fresh, Equation.mk(fresh, Term.mkCompl(t1), loc) :: eqs)
+          case None =>
+            (t1, eqs)
+        }
+      } else (t1, eqs)
     case Term.Inter(posElem, posCsts, posVars, negElem, negCsts, negVars, rest) =>
       splitTerms(Term.mkInterAll, r, loc, gen, posElem, posCsts, posVars, negElem, negCsts, negVars, rest)
     case Term.Union(posElem, posCsts, posVars, negElem, negCsts, negVars, rest) =>
       splitTerms(Term.mkUnionAll, r, loc, gen, posElem, posCsts, posVars, negElem, negCsts, negVars, rest)
   }
 
-  private def splitTerms(build: List[Term] => Term, r: Random, loc: SourceLocation, gen: => Int, posElem: Option[Term.ElemSet], posCsts: Set[Term.Cst], posVars: Set[Term.Var], negElem: Option[Term.ElemSet], negCsts: Set[Term.Cst], negVars: Set[Term.Var], rest0: List[Term]): (Term, List[Equation]) = {
+  private def splitTerms(build: List[Term] => Term, r: Random, loc: SourceLocation, gen: => Option[Int], posElem: Option[Term.ElemSet], posCsts: Set[Term.Cst], posVars: Set[Term.Var], negElem: Option[Term.ElemSet], negCsts: Set[Term.Cst], negVars: Set[Term.Var], rest0: List[Term]): (Term, List[Equation]) = {
     var eqs: List[Equation] = Nil
     var rest: List[Term] = Nil
     for (r0 <- rest0) {
@@ -311,9 +325,14 @@ object BooleanPropTesting {
     var finalTerms: List[Term] = Nil
     for (chunk <- chunks) {
       if (r.nextInt(4) != 0) {
-        val fresh = Term.Var(gen)
-        eqs = Equation.mk(fresh, build(chunk), loc) :: eqs
-        finalTerms = fresh :: finalTerms
+        gen match {
+          case Some(id) =>
+            val fresh = Term.Var(id)
+            eqs = Equation.mk(fresh, build(chunk), loc) :: eqs
+            finalTerms = fresh :: finalTerms
+          case None =>
+            finalTerms = chunk ++ finalTerms
+        }
       } else {
         finalTerms = chunk ++ finalTerms
       }

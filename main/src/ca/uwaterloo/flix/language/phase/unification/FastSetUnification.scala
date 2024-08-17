@@ -118,6 +118,7 @@ object FastSetUnification {
         runPhase(P.checkAndSimplifyDescr)(state)
         runPhase(P.eliminateTrivialAndRedundantDescr)(state)
         runPhase(P.checkAndSimplifyDescr)(state)
+        if (state.eqs.nonEmpty) debugState(state)(opts.copy(debugging = true))
         runPhase(P.setUnifyPickSmallestDescr(complexThreshold = opts.complexThreshold, permutationLimit = opts.permutationLimit))(state)
 
         // SVE can solve anything that is solvable, so eqs is always empty
@@ -1906,7 +1907,8 @@ object FastSetUnification {
           // reuse objects when apply did no change
           if (app eq t0) t else Term.mkCompl(app)
 
-        case Term.Inter(_, _, posVars, _, _, negVars, Nil) if posVars.isEmpty && negVars.isEmpty =>
+        case Term.Inter(_, _, posVars, _, _, negVars, Nil)
+          if posVars.forall(v => !this.m.contains(v.x)) && negVars.forall(v => !this.m.contains(v.x)) =>
           t
 
         case Term.Inter(posElem, posCsts, posVars, negElem, negCsts, negVars, rest) =>
@@ -1928,7 +1930,8 @@ object FastSetUnification {
           }
           Term.reconstructInter(posElem, posCsts, Set.empty, negElem, negCsts, Set.empty, ts.toList)
 
-        case Term.Union(_, _, posVars, _, _, negVars, Nil) if posVars.isEmpty && negVars.isEmpty =>
+        case Term.Union(_, _, posVars, _, _, negVars, Nil)
+          if posVars.forall(v => !this.m.contains(v.x)) && negVars.forall(v => !this.m.contains(v.x)) =>
           t
 
         case Term.Union(posElem, posCsts, posVars, negElem, negCsts, negVars, rest) =>
