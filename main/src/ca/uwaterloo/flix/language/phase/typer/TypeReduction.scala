@@ -283,8 +283,9 @@ object TypeReduction {
     if (isStatic != static) return false
     if (!cand.getName.equals(methodName)) return false
     // Check candidate depending on if it is variadic
-    if (isVariadic && !isCandidateVariadicMethod(cand, ts)) return false
-    else {
+    if (isVariadic) {
+      if (!isCandidateVariadicMethod(cand, ts)) return false
+    } else {
       val validSubtyping =
         (cand.getParameterCount == ts.length) &&
         // Parameter types correspondence with subtyping
@@ -305,10 +306,6 @@ object TypeReduction {
   /**
    * Helper method used in isCandidateMethod to check if the given method corresponds to a variadic method given
    * an arguments list.
-   * @param cand
-   * @param ts
-   * @param flix
-   * @return
    */
   private def isCandidateVariadicMethod(cand: Method, ts: List[Type])(implicit flix: Flix): Boolean = {
     if (!cand.isVarArgs)
@@ -323,7 +320,7 @@ object TypeReduction {
       return false
     // Check subtyping for required args
     // if (argsDiff <= 0) TODO INTEROP: support where argsDiff <= 0
-    (cand.getParameterTypes zip ts.slice(0, argsDiff + 1)).forall {
+    (cand.getParameterTypes.slice(0, argsDiff + 1) zip ts.slice(0, argsDiff + 1)).forall {
       case (clazz, tpe) => isSubtype(tpe, Type.getFlixType(clazz))
     } &&
     // Check subtyping for varargs

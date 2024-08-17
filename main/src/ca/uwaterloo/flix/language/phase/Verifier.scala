@@ -443,14 +443,21 @@ object Verifier {
           checkJavaSubtype(tpe, constructor.getDeclaringClass, loc)
 
         case AtomicOp.InvokeMethod(method) =>
-          val t :: pts = ts
-          checkJavaParameters(pts, method.getParameterTypes.toList, loc)
-          checkJavaSubtype(t, method.getDeclaringClass, loc)
-          checkJavaSubtype(tpe, method.getReturnType, loc)
-
+          if (!method.isVarArgs) {
+            val t :: pts = ts
+            checkJavaParameters(pts, method.getParameterTypes.toList, loc)
+            checkJavaSubtype(t, method.getDeclaringClass, loc)
+            checkJavaSubtype(tpe, method.getReturnType, loc)
+          } else {
+            tpe
+          }
         case AtomicOp.InvokeStaticMethod(method) =>
-          checkJavaParameters(ts, method.getParameterTypes.toList, loc)
-          checkJavaSubtype(tpe, method.getReturnType, loc)
+          if (!method.isVarArgs) {
+            checkJavaParameters(ts, method.getParameterTypes.toList, loc)
+            checkJavaSubtype(tpe, method.getReturnType, loc)
+          } else {
+            tpe
+          }
       }
 
     case Expr.ApplyClo(exp, exps, ct, tpe, _, loc) =>

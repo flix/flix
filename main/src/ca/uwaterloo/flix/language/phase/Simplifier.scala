@@ -112,7 +112,6 @@ object Simplifier {
             val args = es.tail
             val reqParams = args.slice(0, reqParamsNb)
             val varargs = args.slice(reqParamsNb, args.length)
-            // Match varArrType with the specific monotype for ArrayLit?
             val varArrType = Type.getFlixType(m.getParameterTypes.last.getComponentType)
             val varArr = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.ArrayLit, varargs, MonoType.Array(visitType(varArrType)), purity, loc)
             SimplifiedAst.Expr.ApplyAtomic(op, List(es.head) ++ (reqParams ++ List(varArr)), t, purity, loc)
