@@ -936,7 +936,7 @@ object FastSetUnification {
   /**
     * A common super-type for set terms.
     *
-    * OBS: [[Term.Cst]] and [[Term.Var]] must use disjoint integers (see [[Term.freeUnknowns]]).
+    * OBS: [[Term.Cst]] and [[Term.Var]] must use disjoint integers (see [[Term.freeUnknowns]] and [[Term.propagation]]).
     */
   sealed trait Term {
 
@@ -1632,37 +1632,40 @@ object FastSetUnification {
     /**
       * Use the four rewrites
       *
-      * * `x ∩ f == x ∩ f[x -> Univ]`
-      * * `!x ∩ f == !x ∩ f[x -> Empty]`
-      * * `x ∪ f == x ∪ f[x -> Empty]`
-      * * `!x ∪ f == !x ∪ f[x -> Univ]`
+      *   - `x ∩ f == x ∩ f[x -> Univ]`
+      *   - `!x ∩ f == !x ∩ f[x -> Empty]`
+      *   - `x ∪ f == x ∪ f[x -> Empty]`
+      *   - `!x ∪ f == !x ∪ f[x -> Univ]`
       *
       * where `x` can be an element, a constant, or a variable.
+      *
+      * OBS: [[Term.Cst]] and [[Term.Var]] must use disjoint integers.
+      *
       */
     def propagation(t: Term): Term = {
       // instantiates elements, returning either Univ, Empty, or Term.ElemSet
-      def instElemSet(s0: SortedSet[Int], setElems: SortedMap[Int, Term]): Term = {
-        if (setElems.nonEmpty && s0.exists(i => setElems.get(i).contains(Term.Univ))) {
+      def instElemSet(s0: SortedSet[Int], setUnknowns: SortedMap[Int, Term]): Term = {
+        if (setUnknowns.nonEmpty && s0.exists(i => setUnknowns.get(i).contains(Term.Univ))) {
           // if any of the elements are univ, the whole term is univ
           Term.Univ
         } else {
           // remove elements set to empty
-          val s = s0.filterNot(i => setElems.get(i).contains(Term.Empty))
+          val s = s0.filterNot(i => setUnknowns.get(i).contains(Term.Empty))
           if (s eq s0) t else Term.mkElemSet(s)
         }
       }
 
       // `setX` assigns elements/constants/variables to univ or empty, where
       // elements/constants/variables not in the map are just themselves.
-      def visit(t: Term, setElems: SortedMap[Int, Term], setCsts: SortedMap[Int, Term], setVars: SortedMap[Int, Term]): Term = t match {
+      def visit(t: Term, setElems: SortedMap[Int, Term], setUnknowns: SortedMap[Int, Term]): Term = t match {
         case Term.Univ => t
         case Term.Empty => t
-        case Term.Cst(c) => setCsts.getOrElse(c, t) // use mapping, if present
-        case Term.Var(x) => setVars.getOrElse(x, t) // use mapping, if present
+        case Term.Cst(c) => setUnknowns.getOrElse(c, t) // use mapping, if present
+        case Term.Var(x) => setUnknowns.getOrElse(x, t) // use mapping, if present
         case Term.ElemSet(s) => instElemSet(s, setElems)
 
         case Term.Compl(t0) =>
-          val compl0 = visit(t0, setElems, setCsts, setVars)
+          val compl0 = visit(t0, setElems, setUnknowns)
           // avoid reconstruction if `visit` did nothing
           if (compl0 eq t0) t else Term.mkCompl(compl0)
 
@@ -1678,8 +1681,8 @@ object FastSetUnification {
             }
             case None => None
           }
-          if (setCsts.nonEmpty && posCsts0.exists(c => setCsts.get(c.c).contains(Term.Empty))) return Term.Empty
-          if (setVars.nonEmpty && posVars0.exists(x => setVars.get(x.x).contains(Term.Empty))) return Term.Empty
+          if (setUnknowns.nonEmpty && posCsts0.exists(c => setUnknowns.get(c.c).contains(Term.Empty))) return Term.Empty
+          if (setUnknowns.nonEmpty && posVars0.exists(x => setUnknowns.get(x.x).contains(Term.Empty))) return Term.Empty
           val instNegElem = negElem0.map(e => instElemSet(e.s, setElems))
           val negElem = instNegElem match {
             case Some(e) => e match {
@@ -1690,21 +1693,20 @@ object FastSetUnification {
             }
             case None => None
           }
-          if (setCsts.nonEmpty && negCsts0.exists(c => setCsts.get(c.c).contains(Term.Univ))) return Term.Empty
-          if (setVars.nonEmpty && negVars0.exists(x => setVars.get(x.x).contains(Term.Univ))) return Term.Empty
+          if (setUnknowns.nonEmpty && negCsts0.exists(c => setUnknowns.get(c.c).contains(Term.Univ))) return Term.Empty
+          if (setUnknowns.nonEmpty && negVars0.exists(x => setUnknowns.get(x.x).contains(Term.Univ))) return Term.Empty
 
           // Compute new constant and variable sets by removing constants and variables that are univ (redundant).
-          val posCsts = if (setCsts.isEmpty) posCsts0 else posCsts0.filterNot(c => setCsts.get(c.c).contains(Term.Univ))
-          val posVars = if (setVars.isEmpty) posVars0 else posVars0.filterNot(x => setVars.get(x.x).contains(Term.Univ))
-          val negCsts = if (setCsts.isEmpty) negCsts0 else negCsts0.filterNot(c => setCsts.get(c.c).contains(Term.Empty))
-          val negVars = if (setVars.isEmpty) negVars0 else negVars0.filterNot(x => setVars.get(x.x).contains(Term.Empty))
+          val posCsts = if (setUnknowns.isEmpty) posCsts0 else posCsts0.filterNot(c => setUnknowns.get(c.c).contains(Term.Univ))
+          val posVars = if (setUnknowns.isEmpty) posVars0 else posVars0.filterNot(x => setUnknowns.get(x.x).contains(Term.Univ))
+          val negCsts = if (setUnknowns.isEmpty) negCsts0 else negCsts0.filterNot(c => setUnknowns.get(c.c).contains(Term.Empty))
+          val negVars = if (setUnknowns.isEmpty) negVars0 else negVars0.filterNot(x => setUnknowns.get(x.x).contains(Term.Empty))
 
           // Add the new propagated elements/constants/variables
           var currentElems = setElems ++ setElem(posElem0, Term.Univ) ++ setElem(negElem0, Term.Empty)
-          var currentCsts = setCsts ++
+          var currentUnknowns = setUnknowns ++
             posCsts0.iterator.map(_.c -> Term.Univ) ++
-            negCsts0.iterator.map(_.c -> Term.Empty)
-          var currentVars = setVars ++
+            negCsts0.iterator.map(_.c -> Term.Empty) ++
             posVars0.iterator.map(_.x -> Term.Univ) ++
             negVars0.iterator.map(_.x -> Term.Empty)
 
@@ -1712,21 +1714,21 @@ object FastSetUnification {
           // If a sub-term becomes a elements/constants/variables after visiting,
           // add it to the propagated atoms.
           val rest = rest0.map { t =>
-            val res = visit(t, currentElems, currentCsts, currentVars)
+            val res = visit(t, currentElems, currentUnknowns)
             res match {
               case Term.Univ => res
               case Term.Empty => res
               case Term.Cst(c) =>
-                currentCsts += (c -> Term.Univ)
+                currentUnknowns += (c -> Term.Univ)
                 res
               case Term.Compl(Term.Cst(c)) =>
-                currentCsts += (c -> Term.Empty)
+                currentUnknowns += (c -> Term.Empty)
                 res
               case Term.Var(x) =>
-                currentVars += (x -> Term.Univ)
+                currentUnknowns += (x -> Term.Univ)
                 res
               case Term.Compl(Term.Var(x)) =>
-                currentVars += (x -> Term.Empty)
+                currentUnknowns += (x -> Term.Empty)
                 res
               case e@Term.ElemSet(_) =>
                 currentElems ++= setElem(e, Term.Univ)
@@ -1754,8 +1756,8 @@ object FastSetUnification {
             }
             case None => None
           }
-          if (setCsts.nonEmpty && posCsts0.exists(c => setCsts.get(c.c).contains(Term.Univ))) return Term.Univ
-          if (setVars.nonEmpty && posVars0.exists(x => setVars.get(x.x).contains(Term.Univ))) return Term.Univ
+          if (setUnknowns.nonEmpty && posCsts0.exists(c => setUnknowns.get(c.c).contains(Term.Univ))) return Term.Univ
+          if (setUnknowns.nonEmpty && posVars0.exists(x => setUnknowns.get(x.x).contains(Term.Univ))) return Term.Univ
           val instNegElem = negElem0.map(e => instElemSet(e.s, setElems))
           val negElem = instNegElem match {
             case Some(e) => e match {
@@ -1766,40 +1768,39 @@ object FastSetUnification {
             }
             case None => None
           }
-          if (setCsts.nonEmpty && negCsts0.exists(c => setCsts.get(c.c).contains(Term.Empty))) return Term.Univ
-          if (setVars.nonEmpty && negVars0.exists(x => setVars.get(x.x).contains(Term.Empty))) return Term.Univ
+          if (setUnknowns.nonEmpty && negCsts0.exists(c => setUnknowns.get(c.c).contains(Term.Empty))) return Term.Univ
+          if (setUnknowns.nonEmpty && negVars0.exists(x => setUnknowns.get(x.x).contains(Term.Empty))) return Term.Univ
 
           // Compute new constant and variable sets by removing constants and variables that hold.
-          val posCsts = if (setCsts.isEmpty) posCsts0 else posCsts0.filterNot(c => setCsts.get(c.c).contains(Term.Empty))
-          val posVars = if (setVars.isEmpty) posVars0 else posVars0.filterNot(x => setVars.get(x.x).contains(Term.Empty))
-          val negCsts = if (setCsts.isEmpty) negCsts0 else negCsts0.filterNot(c => setCsts.get(c.c).contains(Term.Univ))
-          val negVars = if (setVars.isEmpty) negVars0 else negVars0.filterNot(x => setVars.get(x.x).contains(Term.Univ))
+          val posCsts = if (setUnknowns.isEmpty) posCsts0 else posCsts0.filterNot(c => setUnknowns.get(c.c).contains(Term.Empty))
+          val posVars = if (setUnknowns.isEmpty) posVars0 else posVars0.filterNot(x => setUnknowns.get(x.x).contains(Term.Empty))
+          val negCsts = if (setUnknowns.isEmpty) negCsts0 else negCsts0.filterNot(c => setUnknowns.get(c.c).contains(Term.Univ))
+          val negVars = if (setUnknowns.isEmpty) negVars0 else negVars0.filterNot(x => setUnknowns.get(x.x).contains(Term.Univ))
 
           var currentElems = setElems ++ setElem(posElem0, Term.Empty) ++ setElem(negElem0, Term.Univ)
-          var currentCsts = setCsts ++
+          var currentUnknowns = setUnknowns ++
             posCsts0.iterator.map(_.c -> Term.Empty) ++
-            negCsts0.iterator.map(_.c -> Term.Univ)
-          var currentVars = setVars ++
+            negCsts0.iterator.map(_.c -> Term.Univ) ++
             posVars0.iterator.map(_.x -> Term.Empty) ++
             negVars0.iterator.map(_.x -> Term.Univ)
 
           // Recurse on the sub-terms with the updated maps.
           val rest = rest0.map { t =>
-            val res = visit(t, currentElems, currentCsts, currentVars)
+            val res = visit(t, currentElems, currentUnknowns)
             res match {
               case Term.Univ => res
               case Term.Empty => res
               case Term.Cst(c) =>
-                currentCsts += (c -> Term.Empty)
+                currentUnknowns += (c -> Term.Empty)
                 res
               case Term.Compl(Term.Cst(c)) =>
-                currentCsts += (c -> Term.Univ)
+                currentUnknowns += (c -> Term.Univ)
                 res
               case Term.Var(x) =>
-                currentVars += (x -> Term.Empty)
+                currentUnknowns += (x -> Term.Empty)
                 res
               case Term.Compl(Term.Var(x)) =>
-                currentVars += (x -> Term.Univ)
+                currentUnknowns += (x -> Term.Univ)
                 res
               case e@Term.ElemSet(_) =>
                 currentElems ++= setElem(e, Term.Empty)
@@ -1816,7 +1817,7 @@ object FastSetUnification {
           Term.reconstructUnion(posElem, posCsts, posVars, negElem, negCsts, negVars, rest)
       }
 
-      visit(t, SortedMap.empty, SortedMap.empty, SortedMap.empty)
+      visit(t, SortedMap.empty, SortedMap.empty)
     }
 
     /**
@@ -2019,7 +2020,8 @@ object FastSetUnification {
 
       // Add all bindings in `that`. (Applying the current substitution).
       for ((x, t) <- that.m) {
-        result.update(x, Term.propagation(this.apply(t)))
+        val t1 = this.apply(t)
+        result.update(x, if (t1 eq t) t else Term.propagation(t1))
       }
 
       // Add all bindings in `this` that are not in `that`.
