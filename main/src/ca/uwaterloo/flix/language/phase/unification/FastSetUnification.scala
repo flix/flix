@@ -111,14 +111,14 @@ object FastSetUnification {
       debugState(state)
       try {
         runPhase(P.propagateConstantsDescr)(state)
-        runPhase(P.checkAndSimplifyDescr)(state)
+        runPhase(P.checkAndSimplifyDescr)(state)(opts.copy(debugging = false))
         runPhase(P.propagateVarsDescr)(state)
-        runPhase(P.checkAndSimplifyDescr)(state)
+        runPhase(P.checkAndSimplifyDescr)(state)(opts.copy(debugging = false))
         runPhase(P.varAssignmentDescr)(state)
-        runPhase(P.checkAndSimplifyDescr)(state)
+        runPhase(P.checkAndSimplifyDescr)(state)(opts.copy(debugging = false))
         runPhase(P.eliminateTrivialAndRedundantDescr)(state)
-        runPhase(P.checkAndSimplifyDescr)(state)
-        if (state.eqs.nonEmpty) debugState(state)(opts.copy(debugging = true))
+        runPhase(P.checkAndSimplifyDescr)(state)(opts.copy(debugging = false))
+//        if (state.eqs.nonEmpty) debugState(state)(opts.copy(debugging = true))
         runPhase(P.setUnifyPickSmallestDescr(complexThreshold = opts.complexThreshold, permutationLimit = opts.permutationLimit))(state)
 
         // SVE can solve anything that is solvable, so eqs is always empty
@@ -941,6 +941,8 @@ object FastSetUnification {
     */
   sealed trait Term {
 
+    def vars: SortedSet[Int]
+
     /**
       * Syntactic sugar for [[Term.reconstructInter]].
       */
@@ -966,34 +968,12 @@ object FastSetUnification {
       *
       * Note: use [[freeVarsContains]] or [[noFreeVars]] when possible.
       */
-    final def freeVars: SortedSet[Int] = this match {
-      case Term.Univ => SortedSet.empty
-      case Term.Empty => SortedSet.empty
-      case Term.Cst(_) => SortedSet.empty
-      case Term.ElemSet(_) => SortedSet.empty
-      case Term.Var(x) => SortedSet(x)
-      case Term.Compl(t) => t.freeVars
-      case Term.Inter(_, _, posVars, _, _, negVars, rest) =>
-        SortedSet.empty[Int] ++ posVars.map(_.x) ++ negVars.map(_.x) ++ rest.flatMap(_.freeVars)
-      case Term.Union(_, _, posVars, _, _, negVars, rest) =>
-        SortedSet.empty[Int] ++ posVars.map(_.x) ++ negVars.map(_.x) ++ rest.flatMap(_.freeVars)
-    }
+    final def freeVars: SortedSet[Int] = this.vars
 
     /**
       * Returns `true` if [[freeVars]] contains `v`.
       */
-    final def freeVarsContains(v: Term.Var): Boolean = this match {
-      case Term.Univ => false
-      case Term.Empty => false
-      case Term.Cst(_) => false
-      case Term.ElemSet(_) => false
-      case Term.Var(_) => this == v
-      case Term.Compl(t) => t.freeVarsContains(v)
-      case Term.Inter(_, _, posVars, _, _, negVars, rest) =>
-        posVars.contains(v) || negVars.contains(v) || rest.exists(t => t.freeVarsContains(v))
-      case Term.Union(_, _, posVars, _, _, negVars, rest) =>
-        posVars.contains(v) || negVars.contains(v) || rest.exists(t => t.freeVarsContains(v))
-    }
+    final def freeVarsContains(v: Term.Var): Boolean = v.vars.contains(v.x)
 
     /**
       * Returns all variables and constants that occur in `this` term.
@@ -1016,18 +996,7 @@ object FastSetUnification {
     /**
       * Returns true if there is no variables in this term.
       */
-    final def noFreeVars: Boolean = this match {
-      case Term.Univ => true
-      case Term.Empty => true
-      case Term.Cst(_) => true
-      case Term.Var(_) => false
-      case Term.ElemSet(_) => true
-      case Term.Compl(t) => t.noFreeVars
-      case Term.Inter(_, _, posVars, _, _, negVars, rest) =>
-        posVars.isEmpty && negVars.isEmpty && rest.forall(_.noFreeVars)
-      case Term.Union(_, _, posVars, _, _, negVars, rest) =>
-        posVars.isEmpty && negVars.isEmpty && rest.forall(_.noFreeVars)
-    }
+    final def noFreeVars: Boolean = this.vars.isEmpty
 
     /**
       * Returns the number of connectives in `this` term.
@@ -1078,26 +1047,34 @@ object FastSetUnification {
     /**
       * The UNIV symbol.
       */
-    case object Univ extends Term
+    case object Univ extends Term {
+      override val vars: SortedSet[Int] = SortedSet.empty
+    }
 
     /**
       * The EMPTY symbol.
       */
-    case object Empty extends Term
+    case object Empty extends Term {
+      override val vars: SortedSet[Int] = SortedSet.empty
+    }
 
     /**
       * Represents an uninterpreted constant ("rigid variable").
       *
       * Note: We assume that constants and variables are disjoint.
       */
-    case class Cst(c: Int) extends Term
+    case class Cst(c: Int) extends Term {
+      override val vars: SortedSet[Int] = SortedSet.empty
+    }
 
     /**
       * Represents a set variable ("flexible variable").
       *
       * Note: We assume that constants and variables are disjoint.
       */
-    case class Var(x: Int) extends Term
+    case class Var(x: Int) extends Term {
+      override val vars: SortedSet[Int] = SortedSet(x)
+    }
 
     /**
       * Represents a concrete set of elements.
@@ -1106,6 +1083,8 @@ object FastSetUnification {
       */
     case class ElemSet(s: SortedSet[Int]) extends Term {
       assert(s.nonEmpty)
+
+      override val vars: SortedSet[Int] = SortedSet.empty
     }
 
     /**
@@ -1113,7 +1092,9 @@ object FastSetUnification {
       *
       * Should NEVER be build outside of [[mkCompl]].
       */
-    case class Compl(t: Term) extends Term
+    case class Compl(t: Term) extends Term {
+      override val vars: SortedSet[Int] = t.vars
+    }
 
     /**
       * Represents a intersection of terms (`∩`). An empty intersection is univ.
@@ -1135,6 +1116,8 @@ object FastSetUnification {
 
       /** Returns false if any elements or constants exist in the outer intersection */
       def mightBeUniv: Boolean = !triviallyNonUniv
+
+      override val vars: SortedSet[Int] = SortedSet.from(posVars.map(_.x)) ++ negVars.map(_.x) ++ rest.flatMap(_.vars)
     }
 
     /**
@@ -1153,6 +1136,8 @@ object FastSetUnification {
 
       /** Returns false if any elements or constants exist in the outer union */
       def mightBeEmpty: Boolean = !triviallyNonEmpty
+
+      override val vars: SortedSet[Int] = SortedSet.from(posVars.map(_.x)) ++ negVars.map(_.x) ++ rest.flatMap(_.vars)
     }
 
     final def mkElemSet(i: Int): ElemSet = {
@@ -1649,16 +1634,16 @@ object FastSetUnification {
       */
     def propagation(t: Term): Term = {
       // instantiates elements, returning either Univ, Empty, or Term.ElemSet
-      def instElemSet(s0: SortedSet[Int], setUnknowns: SortedMap[Int, Term]): Term = {
-        if (setUnknowns.nonEmpty && s0.exists(i => setUnknowns.get(i).contains(Term.Univ))) {
+      def instElemSet(s0: SortedSet[Int], setElems: SortedMap[Int, Term]): Term = if (setElems.nonEmpty) {
+        if (s0.exists(i => setElems.get(i).contains(Term.Univ))) {
           // if any of the elements are univ, the whole term is univ
           Term.Univ
         } else {
           // remove elements set to empty
-          val s = s0.filterNot(i => setUnknowns.get(i).contains(Term.Empty))
+          val s = s0.filterNot(i => setElems.get(i).contains(Term.Empty))
           if (s eq s0) t else Term.mkElemSet(s)
         }
-      }
+      } else Term.mkElemSet(s0)
 
       // `setX` assigns elements/constants/variables to univ or empty, where
       // elements/constants/variables not in the map are just themselves.
@@ -1667,6 +1652,7 @@ object FastSetUnification {
         case Term.Empty => t
         case Term.Cst(c) => setUnknowns.getOrElse(c, t) // use mapping, if present
         case Term.Var(x) => setUnknowns.getOrElse(x, t) // use mapping, if present
+        case Term.ElemSet(_) if setElems.isEmpty => t
         case Term.ElemSet(s) => instElemSet(s, setElems)
 
         case Term.Compl(t0) =>
@@ -1708,12 +1694,12 @@ object FastSetUnification {
           val negVars = if (setUnknowns.isEmpty) negVars0 else negVars0.filterNot(x => setUnknowns.get(x.x).contains(Term.Empty))
 
           // Add the new propagated elements/constants/variables
-          var currentElems = setElems ++ setElem(posElem0, Term.Univ) ++ setElem(negElem0, Term.Empty)
+          var currentElems = setElems ++ setElem(posElem, Term.Univ) ++ setElem(negElem, Term.Empty)
           var currentUnknowns = setUnknowns ++
-            posCsts0.iterator.map(_.c -> Term.Univ) ++
-            negCsts0.iterator.map(_.c -> Term.Empty) ++
-            posVars0.iterator.map(_.x -> Term.Univ) ++
-            negVars0.iterator.map(_.x -> Term.Empty)
+            posCsts.iterator.map(_.c -> Term.Univ) ++
+            negCsts.iterator.map(_.c -> Term.Empty) ++
+            posVars.iterator.map(_.x -> Term.Univ) ++
+            negVars.iterator.map(_.x -> Term.Empty)
 
           // Recurse on the sub-terms with the updated maps.
           // If a sub-term becomes a elements/constants/variables after visiting,
@@ -1782,12 +1768,12 @@ object FastSetUnification {
           val negCsts = if (setUnknowns.isEmpty) negCsts0 else negCsts0.filterNot(c => setUnknowns.get(c.c).contains(Term.Univ))
           val negVars = if (setUnknowns.isEmpty) negVars0 else negVars0.filterNot(x => setUnknowns.get(x.x).contains(Term.Univ))
 
-          var currentElems = setElems ++ setElem(posElem0, Term.Empty) ++ setElem(negElem0, Term.Univ)
+          var currentElems = setElems ++ setElem(posElem, Term.Empty) ++ setElem(negElem, Term.Univ)
           var currentUnknowns = setUnknowns ++
-            posCsts0.iterator.map(_.c -> Term.Empty) ++
-            negCsts0.iterator.map(_.c -> Term.Univ) ++
-            posVars0.iterator.map(_.x -> Term.Empty) ++
-            negVars0.iterator.map(_.x -> Term.Univ)
+            posCsts.iterator.map(_.c -> Term.Empty) ++
+            negCsts.iterator.map(_.c -> Term.Univ) ++
+            posVars.iterator.map(_.x -> Term.Empty) ++
+            negVars.iterator.map(_.x -> Term.Univ)
 
           // Recurse on the sub-terms with the updated maps.
           val rest = rest0.map { t =>
@@ -1891,7 +1877,16 @@ object FastSetUnification {
       * We must use the smart constructors from [[Term]] to ensure that the constructed term is normalized.
       */
     def apply(t: Term): Term = {
-      if (m.isEmpty) t else t match {
+      if (m.isEmpty || t.vars.isEmpty || !t.vars.exists(m.contains)) t else applyInner(t)
+    }
+
+    /**
+      * Applies `this` substitution to the given term `t`.
+      *
+      * We must use the smart constructors from [[Term]] to ensure that the constructed term is normalized.
+      */
+    def applyInner(t: Term): Term = {
+      t match {
         case Term.Univ => t
         case Term.Empty => t
         case Term.Cst(_) => t
@@ -1903,7 +1898,7 @@ object FastSetUnification {
         }
 
         case Term.Compl(t0) =>
-          val app = apply(t0)
+          val app = applyInner(t0)
           // reuse objects when apply did no change
           if (app eq t0) t else Term.mkCompl(app)
 
@@ -1914,17 +1909,17 @@ object FastSetUnification {
         case Term.Inter(posElem, posCsts, posVars, negElem, negCsts, negVars, rest) =>
           val ts = mutable.ListBuffer.empty[Term]
           for (x <- posVars) {
-            val x1 = apply(x)
+            val x1 = applyInner(x)
             if (x1 == Term.Empty) return x1
             ts += x1
           }
           for (x <- negVars) {
-            val x1 = apply(x)
+            val x1 = applyInner(x)
             if (x1 == Term.Univ) return Term.Empty
             ts += Term.mkCompl(x1)
           }
           for (t <- rest) {
-            val t1 = apply(t)
+            val t1 = applyInner(t)
             if (t1 == Term.Empty) return t1
             ts += t1
           }
@@ -1937,17 +1932,17 @@ object FastSetUnification {
         case Term.Union(posElem, posCsts, posVars, negElem, negCsts, negVars, rest) =>
           val ts = mutable.ListBuffer.empty[Term]
           for (x <- posVars) {
-            val x1 = apply(x)
+            val x1 = applyInner(x)
             if (x1 == Term.Univ) return x1
             ts += x1
           }
           for (x <- negVars) {
-            val x1 = apply(x)
+            val x1 = applyInner(x)
             if (x1 == Term.Empty) return Term.Univ
             ts += Term.mkCompl(x1)
           }
           for (t <- rest) {
-            val t1 = apply(t)
+            val t1 = applyInner(t)
             if (t1 == Term.Univ) return t1
             ts += t1
           }

@@ -176,7 +176,7 @@ object BooleanPropTesting {
   def explodedRandomXor(random: Random): List[Equation] = {
     val former = termFormer()
     val t = randomTerm(former, random, 4, 3, 3, 3)
-    groupAssignments(explodeKnownEquation(random, eqPropagatedSelf(t), 4), 1)
+    groupAssignments(explodeKnownEquation(random, eqPropagatedSelf(t), 2), 0)
   }
 
   private sealed trait Res
@@ -283,9 +283,9 @@ object BooleanPropTesting {
             val fresh = Term.Var(id)
             (fresh, Equation.mk(fresh, Term.mkCompl(t1), loc) :: eqs)
           case None =>
-            (t1, eqs)
+            (Term.mkCompl(t1), eqs)
         }
-      } else (t1, eqs)
+      } else (Term.mkCompl(t1), eqs)
     case Term.Inter(posElem, posCsts, posVars, negElem, negCsts, negVars, rest) =>
       splitTerms(Term.mkInterAll, r, loc, gen, posElem, posCsts, posVars, negElem, negCsts, negVars, rest)
     case Term.Union(posElem, posCsts, posVars, negElem, negCsts, negVars, rest) =>
