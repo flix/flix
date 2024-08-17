@@ -1901,12 +1901,18 @@ object FastSetUnification {
           // reuse objects when apply did no change
           if (app eq t0) t else Term.mkCompl(app)
 
+        case Term.Inter(_, _, posVars, _, _, negVars, Nil) if posVars.isEmpty && negVars.isEmpty =>
+          t
+
         case Term.Inter(posElem, posCsts, posVars, negElem, negCsts, negVars, rest) =>
           val ts = mutable.ListBuffer.empty[Term]
           for (x <- posVars) ts += apply(x)
           for (x <- negVars) ts += Term.mkCompl(apply(x))
           for (t <- rest) ts += apply(t)
           Term.reconstructInter(posElem, posCsts, Set.empty, negElem, negCsts, Set.empty, ts.toList)
+
+        case Term.Union(_, _, posVars, _, _, negVars, Nil) if posVars.isEmpty && negVars.isEmpty =>
+          t
 
         case Term.Union(posElem, posCsts, posVars, negElem, negCsts, negVars, rest) =>
           val ts = mutable.ListBuffer.empty[Term]
