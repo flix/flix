@@ -1907,9 +1907,21 @@ object FastSetUnification {
 
         case Term.Inter(posElem, posCsts, posVars, negElem, negCsts, negVars, rest) =>
           val ts = mutable.ListBuffer.empty[Term]
-          for (x <- posVars) ts += apply(x)
-          for (x <- negVars) ts += Term.mkCompl(apply(x))
-          for (t <- rest) ts += apply(t)
+          for (x <- posVars) {
+            val x1 = apply(x)
+            if (x1 == Term.Empty) return x1
+            ts += x1
+          }
+          for (x <- negVars) {
+            val x1 = apply(x)
+            if (x1 == Term.Univ) return Term.Empty
+            ts += Term.mkCompl(x1)
+          }
+          for (t <- rest) {
+            val t1 = apply(t)
+            if (t1 == Term.Empty) return t1
+            ts += t1
+          }
           Term.reconstructInter(posElem, posCsts, Set.empty, negElem, negCsts, Set.empty, ts.toList)
 
         case Term.Union(_, _, posVars, _, _, negVars, Nil) if posVars.isEmpty && negVars.isEmpty =>
@@ -1917,9 +1929,21 @@ object FastSetUnification {
 
         case Term.Union(posElem, posCsts, posVars, negElem, negCsts, negVars, rest) =>
           val ts = mutable.ListBuffer.empty[Term]
-          for (x <- posVars) ts += apply(x)
-          for (x <- negVars) ts += Term.mkCompl(apply(x))
-          for (t <- rest) ts += apply(t)
+          for (x <- posVars) {
+            val x1 = apply(x)
+            if (x1 == Term.Univ) return x1
+            ts += x1
+          }
+          for (x <- negVars) {
+            val x1 = apply(x)
+            if (x1 == Term.Empty) return Term.Univ
+            ts += Term.mkCompl(x1)
+          }
+          for (t <- rest) {
+            val t1 = apply(t)
+            if (t1 == Term.Univ) return t1
+            ts += t1
+          }
           Term.reconstructUnion(posElem, posCsts, Set.empty, negElem, negCsts, Set.empty, ts.toList)
       }
     }
