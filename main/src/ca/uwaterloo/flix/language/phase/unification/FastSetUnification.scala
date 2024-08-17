@@ -1034,9 +1034,9 @@ object FastSetUnification {
     final def size: Int = this match {
       case Term.Univ => 0
       case Term.Empty => 0
-      case Term.Cst(c) => 0
-      case Term.Var(x) => 0
-      case Term.ElemSet(s) => 0
+      case Term.Cst(_) => 0
+      case Term.Var(_) => 0
+      case Term.ElemSet(_) => 0
       case Term.Compl(_) => Term.sizes(List(this))
       case Term.Inter(_, _, _, _, _, _, _) => Term.sizes(List(this))
       case Term.Union(_, _, _, _, _, _, _) => Term.sizes(List(this))
@@ -1126,8 +1126,8 @@ object FastSetUnification {
       * `None, Set(c1), Set(x4, x7), Set(), Set(), Set(x2), List(e1 ∪ x9)`.
       */
     case class Inter private(posElem: Option[Term.ElemSet], posCsts: Set[Term.Cst], posVars: Set[Term.Var], negElem: Option[Term.ElemSet], negCsts: Set[Term.Cst], negVars: Set[Term.Var], rest: List[Term]) extends Term {
-      assert(posVars.intersect(negVars).isEmpty, this.toString)
-      assert(posCsts.intersect(negCsts).isEmpty, this.toString)
+      assert(!posVars.exists(negVars.contains), this.toString)
+      assert(!posCsts.exists(negCsts.contains), this.toString)
 
       /** Returns true if any elements or constants exist in the outer intersection */
       def triviallyNonUniv: Boolean = posElem.isDefined || posCsts.nonEmpty || negElem.isDefined || negCsts.nonEmpty
@@ -1144,8 +1144,8 @@ object FastSetUnification {
       * Represented similarly to [[Inter]].
       */
     case class Union(posElem: Option[Term.ElemSet], posCsts: Set[Term.Cst], posVars: Set[Term.Var], negElem: Option[Term.ElemSet], negCsts: Set[Term.Cst], negVars: Set[Term.Var], rest: List[Term]) extends Term {
-      assert(posVars.intersect(negVars).isEmpty, this.toString)
-      assert(posCsts.intersect(negCsts).isEmpty, this.toString)
+      assert(!posVars.exists(negVars.contains), this.toString)
+      assert(!posCsts.exists(negCsts.contains), this.toString)
 
       /** Returns true if any elements or constants exist in the outer union */
       def triviallyNonEmpty: Boolean = posElem.isDefined || posCsts.nonEmpty || negElem.isDefined || negCsts.nonEmpty
@@ -1173,8 +1173,12 @@ object FastSetUnification {
       case Var(_) => Compl(t)
       case ElemSet(_) => Compl(t)
       case Compl(t0) => t0
+      case Inter(posElem, posCsts, posVars, negElem, negCsts, negVars, Nil) =>
+        Term.Union(negElem, negCsts, negVars, posElem, posCsts, posVars, Nil)
       case Inter(posElem, posCsts, posVars, negElem, negCsts, negVars, rest) =>
         reconstructUnion(negElem, negCsts, negVars, posElem, posCsts, posVars, rest.map(mkCompl))
+      case Union(posElem, posCsts, posVars, negElem, negCsts, negVars, Nil) =>
+        Term.Inter(negElem, negCsts, negVars, posElem, posCsts, posVars, Nil)
       case Union(posElem, posCsts, posVars, negElem, negCsts, negVars, rest) =>
         reconstructInter(negElem, negCsts, negVars, posElem, posCsts, posVars, rest.map(mkCompl))
     }
