@@ -27,10 +27,10 @@ instance Index[Vector[a]] {
     type Aef = InvalidKey
 
     pub def get(i: Int32, t: Vector[a]): a \ InvalidKey = {
-        if (0 <= i and i < Vector.length(t))
-            Vector.get(i, t)
-        else
-            do InvalidKey.invalidKey("index ${i} is out of bounds for Vector of length ${Vector.length(t)}")
+        if (0 <= i and i < Vector.length(t)) Vector.get(i, t)
+        else do InvalidKey.invalidKey(
+            "index ${i} is out of bounds for Vector of length ${Vector.length(t)}"
+        )
     }
 }
 
