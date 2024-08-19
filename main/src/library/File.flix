@@ -29,9 +29,12 @@ instance Reader[File] {
 
 mod File {
 
-    use IOError.{Generic}
-    use File.Mode.{ReadOnly, ReadWrite, ReadWriteS, ReadWriteD}
-    import java.io.RandomAccessFile;
+    use IOError.Generic
+    use File.Mode.ReadOnly
+    use File.Mode.ReadWrite
+    use File.Mode.ReadWriteS
+    use File.Mode.ReadWriteD
+    import java.io.RandomAccessFile
 
     ///
     /// Represents a mode for opening files used by the function `open`.
@@ -83,9 +86,8 @@ mod File {
     ///
     pub def close!(f: File): Result[IOError, Unit] \ IO =
         IOError.tryCatch(_ -> {
-            import java.io.RandomAccessFile.close(): Unit \ IO;
             let File(f1) = f;
-            close(f1)
+            f1.close()
         })
 
     ///
@@ -93,9 +95,8 @@ mod File {
     ///
     pub def length(f: File): Result[IOError, Int64] \ IO =
         IOError.tryCatch(_ -> {
-            import java.io.RandomAccessFile.length(): Int64 \ IO;
             let File(f1) = f;
-            length(f1)
+            f1.length()
         })
 
     ///
@@ -103,9 +104,8 @@ mod File {
     ///
     pub def seek!(pos: Int64, f: File): Result[IOError, Unit] \ IO =
         IOError.tryCatch(_ -> {
-            import java.io.RandomAccessFile.seek(Int64): Unit \ IO;
             let File(f1) = f;
-            seek(f1, pos)
+            f1.seek(pos)
         })
 
     ///
@@ -115,9 +115,8 @@ mod File {
     ///
     pub def skipBytes!(n: Int32, f: File): Result[IOError, Int32] \ IO =
         IOError.tryCatch(_ -> {
-            import java.io.RandomAccessFile.skipBytes(Int32): Int32 \ IO;
             let File(f1) = f;
-            skipBytes(f1, n)
+            f1.skipBytes(n)
         })
 
     ///
@@ -129,9 +128,8 @@ mod File {
     ///
     pub def setLength!(len: Int64, f: File): Result[IOError, Unit] \ IO =
         IOError.tryCatch(_ -> {
-            import java.io.RandomAccessFile.setLength(Int64): Unit \ IO;
             let File(f1) = f;
-            setLength(f1, len)
+            f1.setLength(len)
         })
 
     ///
@@ -140,9 +138,8 @@ mod File {
     ///
     pub def read!(buf: Array[Int8, r], f: File): Result[IOError, Int32] \ {IO, r} =
         IOError.tryCatch(_ -> {
-            import java.io.RandomAccessFile.read(Array[Int8, r]): Int32 \ {IO, r};
             let File(f1) = f;
-            read(f1, buf)
+            unchecked_cast(f1.read(buf) as _ \ IO + r)
         })
 
     ///
@@ -151,9 +148,8 @@ mod File {
     ///
     pub def readWith!(destOffset: {destOffset = Int32}, length: {length = Int32}, buf: Array[Int8, r], f: File): Result[IOError, Int32] \ {IO, r} =
         IOError.tryCatch(_ -> {
-            import java.io.RandomAccessFile.read(Array[Int8, r], Int32, Int32): Int32 \ {IO, r};
             let File(f1) = f;
-            read(f1, buf, destOffset#destOffset, length#length)
+            unchecked_cast(f1.read(buf, destOffset#destOffset, length#length) as _ \ IO + r)
         })
 
     ///
@@ -162,9 +158,8 @@ mod File {
     ///
     pub def readFully!(buf: Array[Int8, r], f: File): Result[IOError, Unit] \ {IO, r} =
         IOError.tryCatch(_ -> {
-            import java.io.RandomAccessFile.readFully(Array[Int8, r]): Unit \ {IO, r};
             let File(f1) = f;
-            readFully(f1, buf)
+            unchecked_cast(f1.readFully(buf) as _ \ IO + r)
         })
 
     ///
@@ -173,9 +168,8 @@ mod File {
     ///
     pub def readFullyWith!(destOffset: {destOffset = Int32}, length: {length = Int32}, buf: Array[Int8, r], f: File): Result[IOError, Unit] \ {IO, r} =
         IOError.tryCatch(_ -> {
-            import java.io.RandomAccessFile.readFully(Array[Int8, r], Int32, Int32): Unit \ {IO, r};
             let File(f1) = f;
-            readFully(f1, buf, destOffset#destOffset, length#length)
+            unchecked_cast(f1.readFully(buf, destOffset#destOffset, length#length) as _ \ IO + r)
         })
 
     ///
@@ -188,9 +182,8 @@ mod File {
     ///
     pub def readByte!(f: File): Result[IOError, Int32] \ IO =
         IOError.tryCatch(_ -> {
-            import java.io.RandomAccessFile.read(): Int32 \ IO;
             let File(f1) = f;
-            read(f1)
+            f1.read()
         })
 
     ///
@@ -200,9 +193,8 @@ mod File {
     ///
     pub def readBool!(f: File): Result[IOError, Bool] \ IO =
         IOError.tryCatch(_ -> {
-            import java.io.RandomAccessFile.readBoolean(): Bool \ IO;
             let File(f1) = f;
-            readBoolean(f1)
+            f1.readBoolean()
         })
 
 
@@ -213,9 +205,8 @@ mod File {
     ///
     pub def readChar!(f: File): Result[IOError, Char] \ IO =
         IOError.tryCatch(_ -> {
-            import java.io.RandomAccessFile.readChar(): Char \ IO;
             let File(f1) = f;
-            readChar(f1)
+            f1.readChar()
         })
 
     ///
@@ -223,9 +214,8 @@ mod File {
     ///
     pub def readInt8!(f: File): Result[IOError, Int8] \ IO =
         IOError.tryCatch(_ -> {
-            import java.io.RandomAccessFile.readByte(): Int8 \ IO;
             let File(f1) = f;
-            readByte(f1)
+            f1.readByte()
         })
 
     ///
@@ -235,9 +225,8 @@ mod File {
     ///
     pub def readInt16!(f: File): Result[IOError, Int16] \ IO =
         IOError.tryCatch(_ -> {
-            import java.io.RandomAccessFile.readShort(): Int16 \ IO;
             let File(f1) = f;
-            readShort(f1)
+            f1.readShort()
         })
 
     ///
@@ -247,9 +236,8 @@ mod File {
     ///
     pub def readInt32!(f: File): Result[IOError, Int32] \ IO =
         IOError.tryCatch(_ -> {
-            import java.io.RandomAccessFile.readInt(): Int32 \ IO;
             let File(f1) = f;
-            readInt(f1)
+            f1.readInt()
         })
 
     ///
@@ -259,9 +247,8 @@ mod File {
     ///
     pub def readInt64!(f: File): Result[IOError, Int64] \ IO =
         IOError.tryCatch(_ -> {
-            import java.io.RandomAccessFile.readLong(): Int64 \ IO;
             let File(f1) = f;
-            readLong(f1)
+            f1.readLong()
         })
 
     ///
@@ -271,9 +258,8 @@ mod File {
     ///
     pub def readFloat32!(f: File): Result[IOError, Float32] \ IO =
         IOError.tryCatch(_ -> {
-            import java.io.RandomAccessFile.readFloat(): Float32 \ IO;
             let File(f1) = f;
-            readFloat(f1)
+            f1.readFloat()
         })
 
     ///
@@ -283,9 +269,8 @@ mod File {
     ///
     pub def readFloat64!(f: File): Result[IOError, Float64] \ IO =
         IOError.tryCatch(_ -> {
-            import java.io.RandomAccessFile.readDouble(): Float64 \ IO;
             let File(f1) = f;
-            readDouble(f1)
+            f1.readDouble()
         })
 
     ///
@@ -296,9 +281,8 @@ mod File {
     ///
     pub def readUnsignedByte!(f: File): Result[IOError, Int32] \ IO =
         IOError.tryCatch(_ -> {
-            import java.io.RandomAccessFile.readUnsignedByte(): Int32 \ IO;
             let File(f1) = f;
-            readUnsignedByte(f1)
+            f1.readUnsignedByte()
         })
 
     ///
@@ -308,9 +292,8 @@ mod File {
     ///
     pub def readUnsignedShort!(f: File): Result[IOError, Int32] \ IO =
         IOError.tryCatch(_ -> {
-            import java.io.RandomAccessFile.readUnsignedShort(): Int32 \ IO;
             let File(f1) = f;
-            readUnsignedShort(f1)
+            f1.readUnsignedShort()
         })
 
     ///
@@ -320,9 +303,8 @@ mod File {
     ///
     pub def readLine!(f: File): Result[IOError, String] \ IO =
         IOError.tryCatch(_ -> {
-            import java.io.RandomAccessFile.readLine(): String \ IO;
             let File(f1) = f;
-            readLine(f1)
+            f1.readLine()
         })
 
 
@@ -338,9 +320,8 @@ mod File {
     ///
     pub def readModifiedUTF!(f: File): Result[IOError, String] \ IO =
         IOError.tryCatch(_ -> {
-            import java.io.RandomAccessFile.readUTF(): String \ IO;
             let File(f1) = f;
-            readUTF(f1)
+            f1.readUTF()
         })
 
     ///
@@ -349,9 +330,8 @@ mod File {
     ///
     pub def write!(buf: Array[Int8, r], f: File): Result[IOError, Unit] \ {IO, r} =
         IOError.tryCatch(_ -> {
-            import java.io.RandomAccessFile.write(Array[Int8, r]): Unit \ {IO, r};
             let File(f1) = f;
-            write(f1, buf)
+            unchecked_cast(f1.write(buf) as _ \ IO + r)
         })
 
     ///
@@ -360,9 +340,8 @@ mod File {
     ///
     pub def writeWith!(sourceOffset: {sourceOffset = Int32}, length: {length = Int32}, buf: Array[Int8, r], f: File): Result[IOError, Unit] \ {IO, r} =
         IOError.tryCatch(_ -> {
-            import java.io.RandomAccessFile.write(Array[Int8, r], Int32, Int32): Unit \ {IO, r};
             let File(f1) = f;
-            write(f1, buf, sourceOffset#sourceOffset, length#length)
+            unchecked_cast(f1.write(buf, sourceOffset#sourceOffset, length#length) as _ \ IO + r)
         })
 
     ///
@@ -374,9 +353,8 @@ mod File {
     ///
     pub def writeBool!(b: Bool, f: File): Result[IOError, Unit] \ IO =
         IOError.tryCatch(_ -> {
-            import java.io.RandomAccessFile.writeBoolean(Bool): Unit \ IO;
             let File(f1) = f;
-            writeBoolean(f1, b)
+            f1.writeBoolean(b)
         })
 
     ///
@@ -385,9 +363,8 @@ mod File {
     ///
     pub def writeAsChar!(c: Int32, f: File): Result[IOError, Unit] \ IO =
         IOError.tryCatch(_ -> {
-            import java.io.RandomAccessFile.writeChar(Int32): Unit \ IO;
             let File(f1) = f;
-            writeChar(f1, c)
+            f1.writeChar(c)
         })
 
     ///
@@ -396,9 +373,8 @@ mod File {
     ///
     pub def writeAsByte!(i: Int32, f: File): Result[IOError, Unit] \ IO =
         IOError.tryCatch(_ -> {
-            import java.io.RandomAccessFile.writeByte(Int32): Unit \ IO;
             let File(f1) = f;
-            writeByte(f1, i)
+            f1.writeByte(i)
         })
 
     ///
@@ -407,9 +383,8 @@ mod File {
     ///
     pub def writeAsShort!(i: Int32, f: File): Result[IOError, Unit] \ IO =
         IOError.tryCatch(_ -> {
-            import java.io.RandomAccessFile.writeShort(Int32): Unit \ IO;
             let File(f1) = f;
-            writeShort(f1, i)
+            f1.writeShort(i)
         })
 
     ///
@@ -418,9 +393,8 @@ mod File {
     ///
     pub def writeInt32!(i: Int32, f: File): Result[IOError, Unit] \ IO =
         IOError.tryCatch(_ -> {
-            import java.io.RandomAccessFile.writeInt(Int32): Unit \ IO;
             let File(f1) = f;
-            writeInt(f1, i)
+            f1.writeInt(i)
         })
 
     ///
@@ -429,9 +403,8 @@ mod File {
     ///
     pub def writeInt64!(i: Int64, f: File): Result[IOError, Unit] \ IO =
         IOError.tryCatch(_ -> {
-            import java.io.RandomAccessFile.writeLong(Int64): Unit \ IO;
             let File(f1) = f;
-            writeLong(f1, i)
+            f1.writeLong(i)
         })
 
     ///
@@ -441,9 +414,8 @@ mod File {
     ///
     pub def writeFloat32!(d: Float32, f: File): Result[IOError, Unit] \ IO =
         IOError.tryCatch(_ -> {
-            import java.io.RandomAccessFile.writeFloat(Float32): Unit \ IO;
             let File(f1) = f;
-            writeFloat(f1, d)
+            f1.writeFloat(d)
         })
 
 
@@ -454,9 +426,8 @@ mod File {
     ///
     pub def writeFloat64!(d: Float64, f: File): Result[IOError, Unit] \ IO =
         IOError.tryCatch(_ -> {
-            import java.io.RandomAccessFile.writeDouble(Float64): Unit \ IO;
             let File(f1) = f;
-            writeDouble(f1, d)
+            f1.writeDouble(d)
         })
 
     ///
@@ -467,9 +438,8 @@ mod File {
     ///
     pub def writeModifiedUTF!(s: String, f: File): Result[IOError, Unit] \ IO =
         IOError.tryCatch(_ -> {
-            import java.io.RandomAccessFile.writeUTF(String): Unit \ IO;
             let File(f1) = f;
-            writeUTF(f1, s)
+            f1.writeUTF(s)
         })
 
 }

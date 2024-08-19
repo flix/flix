@@ -14,9 +14,25 @@
  *  limitations under the License.
  */
 
+import java.util.{List => JList}
+import java.util.{Iterator => JIterator}
+
 ///
 /// A Vector data type which is fundamentally like Array but is immutable.
 ///
+
+instance Index[Vector[a]] {
+    type Idx = Int32
+    type Elm = a
+    type Aef = OutOfBounds
+
+    pub def get(i: Int32, t: Vector[a]): a \ OutOfBounds = {
+        if (0 <= i and i < Vector.length(t)) Vector.get(i, t)
+        else do OutOfBounds.outOfBounds(
+            "index ${i} is out of bounds for Vector of length ${Vector.length(t)}"
+        )
+    }
+}
 
 instance ToString[Vector[a]] with ToString[a] {
     pub def toString(v: Vector[a]): String = Vector.toString(v)
@@ -104,17 +120,16 @@ instance Iterable[Vector[a]] {
 }
 
 instance ToJava[Vector[a]] {
-    type Out = ##java.util.List
+    type Out = JList
     type Aef = IO
-    pub def toJava(v: Vector[a]): ##java.util.List \ IO = Adaptor.toList(v)
+    pub def toJava(v: Vector[a]): JList \ IO = Adaptor.toList(v)
 }
 
 
 instance FromJava[Vector[a]] {
-    type In = ##java.util.List
-    pub def fromJava(l: ##java.util.List): Vector[a] = region rc {
-        import java.util.List.iterator(): ##java.util.Iterator \ rc;
-        iterator(l) |> Adaptor.fromIterator(rc, (Proxy.Proxy: Proxy[a])) |> Iterator.toVector
+    type In = JList
+    pub def fromJava(l: JList): Vector[a] = region rc {
+        (unsafe l.iterator()) |> Adaptor.fromIterator(rc, (Proxy.Proxy: Proxy[a])) |> Iterator.toVector
     }
 }
 

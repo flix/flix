@@ -1,55 +1,54 @@
 mod Test.Exp.Jvm.InvokeStaticMethod2 {
 
-    import java.lang.String;
-    import java.nio.file.Path;
-    import java.util.Arrays;
-    //import dev.flix.test.TestClassWithInheritedMethod;
+    import java.lang.{String => JString}
+    import java.nio.file.{Path, InvalidPathException}
+    import java.util.Arrays
+    import dev.flix.test.TestClassWithInheritedMethod
 
     @test
     def testInvokeStaticMethod2_01(): Bool \ IO =
-        String¤valueOf(true) == "true"
+        JString.valueOf(true) == "true"
 
     @test
     def testInvokeStaticMethod2_02(): Bool \ IO =
-        String¤valueOf('A') == "A"
+        JString.valueOf('A') == "A"
 
     @test
     def testInvokeStaticMethod2_03(): Bool \ IO =
-        String¤valueOf(21.42f32) == "21.42"
+        JString.valueOf(21.42f32) == "21.42"
 
     @test
     def testInvokeStaticMethod2_04(): Bool \ IO =
-        String¤valueOf(21.42f64) == "21.42"
+        JString.valueOf(21.42f64) == "21.42"
 
     @test
     def testInvokeStaticMethod2_05(): Bool \ IO =
-        String¤valueOf(42i32) == "42"
+        JString.valueOf(42i32) == "42"
 
     @test
     def testInvokeStaticMethod2_06(): Bool \ IO =
-        String¤valueOf(42i64) == "42"
+        JString.valueOf(42i64) == "42"
 
     @test
-    def testInvokeObjectStaticMethod01(): ##java.lang.String \ IO =
-        String¤valueOf(true)
+    def testInvokeObjectStaticMethod01(): JString \ IO =
+        JString.valueOf(true)
 
-    //@test
-    //def testInvokeInterfaceStaticMethod02(): ##java.nio.file.Path \ IO = region rc {
-    //    try {
-    //        Path¤of("end", Array#{"p1", "p2", "p3"} @ rc)
-    //    } catch {
-    //        case _: ##java.nio.file.InvalidPathException => checked_cast(null)
-    //    }
-    //}
+    @test
+    def testInvokeInterfaceStaticMethod02(): Path \ IO = region rc {
+        try {
+            Path.of("end", Array#{"p1", "p2", "p3"} @ rc)
+        } catch {
+            case _: InvalidPathException => (checked_cast(null) : Path)
+        }
+    }
 
-    //@test
-    //def testInvokeInheritedStaticMethod01(): Bool =
-    //    TestClassWithInheritedMethod¤staticMethod(1) == 2
+    @test
+    def testInvokeInheritedStaticMethod01(): Bool =
+        unsafe TestClassWithInheritedMethod.staticMethod(1) == 2
 
-    //@test
-    //def testInvokeStaticMethod2_WithArrayParam(): Bool \ IO = region rc {
-    //    let a = Array#{"this", "that"} @ rc;
-    //    fill(unchecked_cast(a as Array[##java.lang.Object, rc]), checked_cast("foo"));
-    //    true
-    //}
+    @test
+    def testInvokeStaticMethod2_WithArrayParam(): Bool \ IO = region rc {
+        Arrays.fill(Array#{"this", "that"} @ rc, "foo");
+        true
+    }
 }

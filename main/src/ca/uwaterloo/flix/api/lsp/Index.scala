@@ -25,9 +25,9 @@ object Index {
   /**
     * Represents the empty reverse index.
     */
-  val empty: Index = Index(Map.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty,
+  val empty: Index = Index(Map.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty,
     MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty,
-    MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty)
+    MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty)
 
   /**
     * Merges all the given indices.
@@ -45,6 +45,11 @@ object Index {
   def occurrenceOf(case0: Case): Index = empty + Entity.Case(case0)
 
   /**
+    * Returns an index for the given `field0`.
+    */
+  def occurrenceOf(field0: StructField): Index = empty + Entity.StructField(field0)
+
+  /**
     * Returns an index for the given `defn0`.
     */
   def occurrenceOf(defn0: Def): Index = empty + Entity.Def(defn0)
@@ -58,6 +63,11 @@ object Index {
     * Returns an index for the given `enum0`.
     */
   def occurrenceOf(enum0: Enum): Index = empty + Entity.Enum(enum0)
+
+  /**
+    * Returns an index for the given `struct0`.
+    */
+  def occurrenceOf(struct0: Struct): Index = empty + Entity.Struct(struct0)
 
   /**
     * Returns an index for the given `alias0`.
@@ -142,9 +152,19 @@ object Index {
   def useOf(sym: Symbol.EnumSym, loc: SourceLocation): Index = Index.empty.copy(enumUses = MultiMap.singleton(sym, loc))
 
   /**
+   * Returns an index with the symbol `sym` used at location `loc.`
+   */
+  def useOf(sym: Symbol.StructSym, loc: SourceLocation): Index = Index.empty.copy(structUses = MultiMap.singleton(sym, loc))
+
+  /**
     * Returns an index with the symbol `sym` used at location `loc.`
     */
   def useOf(sym: Symbol.CaseSym, loc: SourceLocation, parent: Entity): Index = Index.empty.copy(tagUses = MultiMap.singleton(sym, loc)) + Entity.CaseUse(sym, loc, parent)
+
+  /**
+   * Returns an index with the symbol `sym` used at location `loc.`
+   */
+  def useOf(sym: Symbol.StructFieldSym, loc: SourceLocation, parent: Entity): Index = Index.empty.copy(structFieldUses = MultiMap.singleton(sym, loc)) + Entity.StructFieldUse(sym, loc, parent)
 
   /**
     * Returns an index with the symbol `sym` used at location `loc.`
@@ -216,9 +236,11 @@ case class Index(m: Map[(String, Int), List[Entity]],
                  sigUses: MultiMap[Symbol.SigSym, SourceLocation],
                  defUses: MultiMap[Symbol.DefnSym, SourceLocation],
                  enumUses: MultiMap[Symbol.EnumSym, SourceLocation],
+                 structUses: MultiMap[Symbol.StructSym, SourceLocation],
                  aliasUses: MultiMap[Symbol.TypeAliasSym, SourceLocation],
                  assocUses: MultiMap[Symbol.AssocTypeSym, SourceLocation],
                  tagUses: MultiMap[Symbol.CaseSym, SourceLocation],
+                 structFieldUses: MultiMap[Symbol.StructFieldSym, SourceLocation],
                  labelDefs: MultiMap[Name.Label, SourceLocation],
                  labelUses: MultiMap[Name.Label, SourceLocation],
                  predDefs: MultiMap[Name.Pred, SourceLocation],
@@ -313,6 +335,11 @@ case class Index(m: Map[(String, Int), List[Entity]],
   def usesOf(sym: Symbol.EnumSym): Set[SourceLocation] = enumUses(sym)
 
   /**
+   * Returns all uses of the given symbol `sym`.
+   */
+  def usesOf(sym: Symbol.StructSym): Set[SourceLocation] = structUses(sym)
+
+  /**
     * Returns all uses of the given symbol `sym`.
     */
   def usesOf(sym: Symbol.TypeAliasSym): Set[SourceLocation] = aliasUses(sym)
@@ -326,6 +353,11 @@ case class Index(m: Map[(String, Int), List[Entity]],
     * Returns all uses of the given symbol `sym` and `tag`.
     */
   def usesOf(sym: Symbol.CaseSym): Set[SourceLocation] = tagUses(sym)
+
+  /**
+   * Returns all uses of the given symbol `sym`
+   */
+  def usesOf(sym: Symbol.StructFieldSym): Set[SourceLocation] = structFieldUses(sym)
 
   /**
     * Returns all uses of the given symbol `sym`.
@@ -407,9 +439,11 @@ case class Index(m: Map[(String, Int), List[Entity]],
       this.sigUses ++ that.sigUses,
       this.defUses ++ that.defUses,
       this.enumUses ++ that.enumUses,
+      this.structUses ++ that.structUses,
       this.aliasUses ++ that.aliasUses,
       this.assocUses ++ that.assocUses,
       this.tagUses ++ that.tagUses,
+      this.structFieldUses ++ that.structFieldUses,
       this.labelDefs ++ that.labelDefs,
       this.labelUses ++ that.labelUses,
       this.predDefs ++ that.predDefs,

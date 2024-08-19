@@ -50,7 +50,6 @@ sealed trait TokenKind {
       case TokenKind.Comma => "','"
       case TokenKind.CurlyL => "'{'"
       case TokenKind.CurlyR => "'}'"
-      case TokenKind.Currency => "'¤'"
       case TokenKind.Dollar => "'$'"
       case TokenKind.Dot => "'.'"
       case TokenKind.DotWhiteSpace => "'. '"
@@ -117,6 +116,7 @@ sealed trait TokenKind {
       case TokenKind.KeywordPub => "'pub'"
       case TokenKind.KeywordProject => "'project'"
       case TokenKind.KeywordQuery => "'query'"
+      case TokenKind.KeywordRedef => "'redef'"
       case TokenKind.KeywordRef => "'ref'"
       case TokenKind.KeywordRegion => "'region'"
       case TokenKind.KeywordRestrictable => "'restrictable'"
@@ -131,6 +131,7 @@ sealed trait TokenKind {
       case TokenKind.KeywordStatic => "'static'"
       case TokenKind.KeywordStaticUppercase => "'Static'"
       case TokenKind.KeywordStruct => "'struct'"
+      case TokenKind.KeywordThrow => "'throw'"
       case TokenKind.KeywordTrait => "'trait'"
       case TokenKind.KeywordTrue => "'true'"
       case TokenKind.KeywordTry => "'try'"
@@ -653,8 +654,6 @@ object TokenKind {
 
   case object CurlyR extends TokenKind
 
-  case object Currency extends TokenKind
-
   case object Dollar extends TokenKind
 
   case object Dot extends TokenKind
@@ -793,6 +792,8 @@ object TokenKind {
 
   case object KeywordQuery extends TokenKind
 
+  case object KeywordRedef extends TokenKind
+
   case object KeywordRef extends TokenKind
 
   case object KeywordRegion extends TokenKind
@@ -820,6 +821,8 @@ object TokenKind {
   case object KeywordStaticUppercase extends TokenKind
 
   case object KeywordStruct extends TokenKind
+
+  case object KeywordThrow extends TokenKind
 
   case object KeywordTrait extends TokenKind
 

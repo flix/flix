@@ -27,16 +27,16 @@ object TypeNormalization {
     * normalized form, which will be the same for all other equivalent types.
     *
     * Returns a type where
-    * 1. Formulas in types have been fully evaluated (and ordered in the case of
-    *    sets)
-    * 2. Types involving rows have been sorted alphabetically (respecting
-    *    duplicate label ordering)
-    * 3. The assumptions still hold
+    *   1. Formulas in types have been fully evaluated (and ordered in the case of
+    *      sets)
+    *   1. Types involving rows have been sorted alphabetically (respecting
+    *      duplicate label ordering)
+    *   1. The assumptions still hold
     *
     * Assumes that
-    * 1. `tpe` is ground (no type variables)
-    * 2. `tpe` has no aliases
-    * 3. `tpe` has no associated types
+    *   1. `tpe` is ground (no type variables)
+    *   1. `tpe` has no aliases
+    *   1. `tpe` has no associated types
     */
   def normalizeType(tpe: Type): Type = tpe match {
     case Type.Var(sym, loc) =>

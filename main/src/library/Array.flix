@@ -1,5 +1,6 @@
 /*
  * Copyright 2019 Magnus Madsen, Stephen Tetley
+ * Copyright 2024 Jonathan Lindegaard Starup
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,14 +15,41 @@
  * limitations under the License.
  */
 
+instance Index[Array[a, r]] {
+    type Idx = Int32
+    type Elm = a
+    type Aef = r + OutOfBounds
+
+    pub def get(i: Int32, t: Array[a, r]): a \ r + OutOfBounds = {
+        if (0 <= i and i < Array.length(t)) Array.get(i, t)
+        else do OutOfBounds.outOfBounds(
+            "index ${i} is out of bounds for Array of length ${Array.length(t)}"
+        )
+    }
+}
+
+instance IndexMut[Array[a, r]] {
+    type Aef = r + OutOfBounds
+
+    pub def put(i: Int32, v: a, t: Array[a, r]): Unit \ r + OutOfBounds = {
+        if (0 <= i and i < Array.length(t)) Array.put(v, i, t)
+        else do OutOfBounds.outOfBounds(
+            "index ${i} is out of bounds for Array of length ${Array.length(t)}"
+        )
+    }
+}
+
 instance Iterable[Array[a, r]] {
     type Elm = a
     type Aef = r
+
     pub def iterator(rc: Region[r1], a: Array[a, r]): Iterator[a, r + r1, r1] \ (r + r1) =
         Array.iterator(rc, a)
 }
 
 mod Array {
+    import java.util.Arrays
+    import java.lang.Object
 
     ///
     /// Compares `a` and `b` lexicographically.
@@ -1610,50 +1638,27 @@ mod Array {
     pub def copyOfRange(_: Region[r2], b: Int32, e: Int32, a: Array[a, r1]): Array[a, r2] \ { r1, r2 } =
         // All of the below casts are required to cast the type to `Array[a, ...]`.
         typematch a {
-            case arr: Array[Unit, r1] =>
-                import static java.util.Arrays.copyOfRange(Array[##java.lang.Object, r1], Int32, Int32): Array[##java.lang.Object, r2] \ { r1, r2 } as copy;
-                let arg = unchecked_cast(arr as Array[##java.lang.Object, r1]);
-                unchecked_cast(copy(arg, b, e) as Array[a, r2])
+            // The casts here are used to both modify the java method type and to simulate GADT typing
             case arr: Array[Bool, r1] =>
-                import static java.util.Arrays.copyOfRange(Array[Bool, r1], Int32, Int32): Array[Bool, r2] \ { r1, r2 } as copy;
-                unchecked_cast(copy(arr, b, e) as Array[a, r2])
+                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ r1 + r2)
             case arr: Array[Char, r1] =>
-                import static java.util.Arrays.copyOfRange(Array[Char, r1], Int32, Int32): Array[Char, r2] \ { r1, r2 } as copy;
-                unchecked_cast(copy(arr, b, e) as Array[a, r2])
+                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ r1 + r2)
             case arr: Array[Float32, r1] =>
-                import static java.util.Arrays.copyOfRange(Array[Float32, r1], Int32, Int32): Array[Float32, r2] \ { r1, r2 } as copy;
-                unchecked_cast(copy(arr, b, e) as Array[a, r2])
+                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ r1 + r2)
             case arr: Array[Float64, r1] =>
-                import static java.util.Arrays.copyOfRange(Array[Float64, r1], Int32, Int32): Array[Float64, r2] \ { r1, r2 } as copy;
-                unchecked_cast(copy(arr, b, e) as Array[a, r2])
-            case arr: Array[BigDecimal, r1] =>
-                import static java.util.Arrays.copyOfRange(Array[##java.lang.Object, r1], Int32, Int32): Array[##java.lang.Object, r2] \ { r1, r2 } as copy;
-                let arg = unchecked_cast(arr as Array[##java.lang.Object, r1]);
-                unchecked_cast(copy(arg, b, e) as Array[a, r2])
+                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ r1 + r2)
             case arr: Array[Int8, r1] =>
-                import static java.util.Arrays.copyOfRange(Array[Int8, r1], Int32, Int32): Array[Int8, r2] \ { r1, r2 } as copy;
-                unchecked_cast(copy(arr, b, e) as Array[a, r2])
+                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ r1 + r2)
             case arr: Array[Int16, r1] =>
-                import static java.util.Arrays.copyOfRange(Array[Int16, r1], Int32, Int32): Array[Int16, r2] \ { r1, r2 } as copy;
-                unchecked_cast(copy(arr, b, e) as Array[a, r2])
+                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ r1 + r2)
             case arr: Array[Int32, r1] =>
-                import static java.util.Arrays.copyOfRange(Array[Int32, r1], Int32, Int32): Array[Int32, r2] \ { r1, r2 } as copy;
-                unchecked_cast(copy(arr, b, e) as Array[a, r2])
+                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ r1 + r2)
             case arr: Array[Int64, r1] =>
-                import static java.util.Arrays.copyOfRange(Array[Int64, r1], Int32, Int32): Array[Int64, r2] \ { r1, r2 } as copy;
-                unchecked_cast(copy(arr, b, e) as Array[a, r2])
-            case arr: Array[BigInt, r1] =>
-                import static java.util.Arrays.copyOfRange(Array[##java.lang.Object, r1], Int32, Int32): Array[##java.lang.Object, r2] \ { r1, r2 } as copy;
-                let arg = unchecked_cast(arr as Array[##java.lang.Object, r1]);
-                unchecked_cast(copy(arg, b, e) as Array[a, r2])
-            case arr: Array[String, r1] =>
-                import static java.util.Arrays.copyOfRange(Array[##java.lang.Object, r1], Int32, Int32): Array[##java.lang.Object, r2] \ { r1, r2 } as copy;
-                let arg = unchecked_cast(arr as Array[##java.lang.Object, r1]);
-                unchecked_cast(copy(arg, b, e) as Array[a, r2])
+                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ r1 + r2)
             case arr: Array[a, r1] =>
-                import static java.util.Arrays.copyOfRange(Array[##java.lang.Object, r1], Int32, Int32): Array[##java.lang.Object, r2] \ { r1, r2 } as copy;
-                let arg = unchecked_cast(arr as Array[##java.lang.Object, r1]);
-                unchecked_cast(copy(arg, b, e) as Array[a, r2])
+                // `a` must be non-primitive now
+                let arrObj = unchecked_cast(arr as Array[Object, r1]);
+                unchecked_cast(Arrays.copyOfRange(arrObj, b, e) as Array[a, r2] \ r1 + r2)
             case _: _ => unreachable!()
         }
 

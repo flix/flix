@@ -29,30 +29,10 @@ sealed trait WeederError extends CompilationMessage {
 
 object WeederError {
 
-
-  /**
-   * An error raised to indicate a deprecated feature
-   * *
-   * @param loc the location of the deprecated feature.
-   */
-  case class Deprecated(loc: SourceLocation) extends WeederError with Recoverable {
-    def summary: String = s"Deprecated feature."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s""">> Deprecated feature. Use --Xdeprecated to enable.
-         |
-         |${code(loc, "deprecated")}
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = None
-  }
-
   /**
     * An error raised to indicate that the annotation `name` was used multiple times.
     *
-    * @param name the name of the attribute.
+    * @param name the name of the annotation.
     * @param loc1 the location of the first annotation.
     * @param loc2 the location of the second annotation.
     */
@@ -653,11 +633,11 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate an illegal type constraint parameter.
+    * An error raised to indicate an illegal trait constraint parameter.
     *
     * @param loc the location where the error occurred.
     */
-  case class IllegalTypeConstraintParameter(loc: SourceLocation) extends WeederError with Unrecoverable {
+  case class IllegalTraitConstraintParameter(loc: SourceLocation) extends WeederError with Unrecoverable {
     def summary: String = s"Illegal type constraint parameter."
 
     def message(formatter: Formatter): String = {

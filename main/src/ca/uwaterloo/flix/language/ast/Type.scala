@@ -528,6 +528,14 @@ object Type {
   }
 
   /**
+    * Returns a fresh error type of the given kind `k`.
+    */
+  def freshError(k: Kind, loc: SourceLocation)(implicit flix: Flix): Type = {
+    val id = flix.genSym.freshId()
+    Type.Cst(TypeConstructor.Error(id, k), loc)
+  }
+
+  /**
     * Returns the AnyType type with given source location `loc`.
     */
   def mkAnyType(loc: SourceLocation): Type = Type.Cst(TypeConstructor.AnyType, loc)
@@ -723,6 +731,14 @@ object Type {
     * Construct the enum type `Sym[ts]`.
     */
   def mkEnum(sym: Symbol.EnumSym, ts: List[Type], loc: SourceLocation): Type = mkApply(Type.Cst(TypeConstructor.Enum(sym, Kind.mkArrow(ts.length)), loc), ts, loc)
+
+  /**
+    * Construct the struct type `Sym[ts]`
+    */
+  def mkStruct(sym: Symbol.StructSym, ts: List[Type], loc: SourceLocation): Type = {
+    assert(ts.last.kind == Kind.Eff)
+    mkApply(Type.Cst(TypeConstructor.Struct(sym, Kind.mkArrow(ts.map(_.kind))), loc), ts, loc)
+  }
 
   /**
     * Constructs the tuple type (A, B, ...) where the types are drawn from the list `ts`.
