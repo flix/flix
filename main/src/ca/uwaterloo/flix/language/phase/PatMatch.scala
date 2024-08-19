@@ -23,6 +23,7 @@ import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.language.errors.NonExhaustiveMatchError
+import ca.uwaterloo.flix.language.errors.PatMatchError
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
 /**
@@ -108,7 +109,7 @@ object PatMatch {
   /**
     * Returns an error message if a pattern match is not exhaustive
     */
-  def run(root: TypedAst.Root)(implicit flix: Flix): Validation[Root, NonExhaustiveMatchError] =
+  def run(root: TypedAst.Root)(implicit flix: Flix): Validation[Root, PatMatchError] =
     flix.phase("PatMatch") {
       implicit val r: TypedAst.Root = root
 
@@ -125,13 +126,30 @@ object PatMatch {
       Validation.toSuccessOrSoftFailure(root, errors)
     }(DebugValidation())
 
+  private def isSubtype(sub: java.lang.Class[_], sup: java.lang.Class[_]): Boolean = {
+    sup.isAssignableFrom(sub)
+  }
+
+  private def checkExceptionOrder(rules: List[TypedAst.CatchRule]): List[(java.lang.Class[_], java.lang.Class[_])] = {
+    val invalidPairs = for {
+      i <- rules.indices
+      j <- 0 until i
+      laterRule = rules(i)
+      earlierRule = rules(j)
+      if isSubtype(laterRule.clazz, earlierRule.clazz)
+    } yield (laterRule.clazz, earlierRule.clazz)
+
+    invalidPairs.toList
+  }
+
+
   /**
     * Check that all patterns in an expression are exhaustive
     *
     * @param tast The expression to check
     * @param root The AST root
     */
-  private def visitExp(tast: TypedAst.Expr)(implicit root: TypedAst.Root, flix: Flix): List[NonExhaustiveMatchError] = {
+  private def visitExp(tast: TypedAst.Expr)(implicit root: TypedAst.Root, flix: Flix): List[PatMatchError] = {
     tast match {
       case Expr.Var(_, _, _) => Nil
       case Expr.Def(_, _, _) => Nil
@@ -199,9 +217,17 @@ object PatMatch {
       case Expr.UncheckedMaskingCast(exp, _, _, _) => visitExp(exp)
       case Expr.Without(exp, _, _, _, _) => visitExp(exp)
 
-      case Expr.TryCatch(exp, rules, _, _, _) =>
-        val ruleExps = rules.map(_.exp)
-        (exp :: ruleExps).flatMap(visitExp)
+      case Expr.TryCatch(exp, rules, _, _, loc) =>
+        val invalidExceptionPairs = checkExceptionOrder(rules)
+        if (invalidExceptionPairs.nonEmpty) {
+          invalidExceptionPairs.map { case (later, earlier) =>
+            PatMatchError.ExceptionTypeMatchError(later, earlier, loc)
+          }
+        } 
+        else {
+          val ruleExps = rules.map(_.exp)
+          (exp :: ruleExps).flatMap(visitExp)
+        }
 
       case TypedAst.Expr.Throw(exp, _, _, _) => visitExp(exp)
 
@@ -251,18 +277,18 @@ object PatMatch {
   /**
     * Performs exhaustive checking on the given constraint `c`.
     */
-  private def visitConstraint(c0: TypedAst.Constraint)(implicit root: TypedAst.Root, flix: Flix): List[NonExhaustiveMatchError] = c0 match {
+  private def visitConstraint(c0: TypedAst.Constraint)(implicit root: TypedAst.Root, flix: Flix): List[PatMatchError] = c0 match {
     case TypedAst.Constraint(_, head0, body0, _) =>
       val headErrs = visitHeadPred(head0)
       val bodyErrs = body0.flatMap(visitBodyPred)
       headErrs ::: bodyErrs
   }
 
-  private def visitHeadPred(h0: TypedAst.Predicate.Head)(implicit root: TypedAst.Root, flix: Flix): List[NonExhaustiveMatchError] = h0 match {
+  private def visitHeadPred(h0: TypedAst.Predicate.Head)(implicit root: TypedAst.Root, flix: Flix): List[PatMatchError] = h0 match {
     case TypedAst.Predicate.Head.Atom(_, _, terms, _, _) => terms.flatMap(visitExp)
   }
 
-  private def visitBodyPred(b0: TypedAst.Predicate.Body)(implicit root: TypedAst.Root, flix: Flix): List[NonExhaustiveMatchError] = b0 match {
+  private def visitBodyPred(b0: TypedAst.Predicate.Body)(implicit root: TypedAst.Root, flix: Flix): List[PatMatchError] = b0 match {
     case TypedAst.Predicate.Body.Atom(_, _, _, _, _, _, _) => Nil
     case TypedAst.Predicate.Body.Guard(exp, _) => visitExp(exp)
     case TypedAst.Predicate.Body.Functional(_, exp, _) => visitExp(exp)
@@ -276,11 +302,11 @@ object PatMatch {
     * @param loc   the source location of the ParYield expression.
     * @return
     */
-  private def checkFrags(frags: List[ParYieldFragment], root: TypedAst.Root, loc: SourceLocation): List[NonExhaustiveMatchError] = {
+  private def checkFrags(frags: List[ParYieldFragment], root: TypedAst.Root, loc: SourceLocation): List[PatMatchError] = {
     // Call findNonMatchingPat for each pattern individually
     frags.flatMap(f => findNonMatchingPat(List(List(f.pat)), 1, root) match {
       case Exhaustive => Nil
-      case NonExhaustive(ctors) => NonExhaustiveMatchError(prettyPrintCtor(ctors.head), loc) :: Nil
+      case NonExhaustive(ctors) => PatMatchError.NonExhaustiveMatchError(prettyPrintCtor(ctors.head), loc) :: Nil
     })
   }
 
@@ -292,13 +318,13 @@ object PatMatch {
     * @param rules The rules to check
     * @return
     */
-  private def checkRules(exp: TypedAst.Expr, rules: List[TypedAst.MatchRule], root: TypedAst.Root): List[NonExhaustiveMatchError] = {
+  private def checkRules(exp: TypedAst.Expr, rules: List[TypedAst.MatchRule], root: TypedAst.Root): List[PatMatchError] = {
     // Filter down to the unguarded rules.
     // Guarded rules cannot contribute to exhaustiveness (the guard could be e.g. `false`)
     val unguardedRules = rules.filter(r => r.guard.isEmpty)
     findNonMatchingPat(unguardedRules.map(r => List(r.pat)), 1, root) match {
       case Exhaustive => Nil
-      case NonExhaustive(ctors) => List(NonExhaustiveMatchError(prettyPrintCtor(ctors.head), exp.loc))
+      case NonExhaustive(ctors) => List(PatMatchError.NonExhaustiveMatchError(prettyPrintCtor(ctors.head), exp.loc))
     }
   }
 

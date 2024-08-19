@@ -91,16 +91,6 @@ mod Test.Exp.Jvm.TestTryCatch {
         }
 
     @test
-    def testPriority01(): Bool \ IO =
-        try {
-            exception();
-            false
-        } catch {
-            case _: ##java.lang.Exception => true
-            case _: ##java.lang.ArithmeticException => false
-        }
-
-    @test
     def testPriority02(): Bool \ IO =
         try {
             exception();

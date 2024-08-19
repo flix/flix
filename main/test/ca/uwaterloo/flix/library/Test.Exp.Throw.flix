@@ -100,16 +100,6 @@ mod Test.Exp.Jvm.Throw {
         }
 
     @test
-    def testPriority01(): Bool \ IO =
-        try {
-            throw new ArithmeticException("TEST");
-            false
-        } catch {
-            case _: Exception => true
-            case _: ArithmeticException => false
-        }
-
-    @test
     def testPriority02(): Bool \ IO =
         try {
             throw new ArithmeticException("TEST");
