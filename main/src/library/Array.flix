@@ -1,5 +1,6 @@
 /*
  * Copyright 2019 Magnus Madsen, Stephen Tetley
+ * Copyright 2024 Jonathan Lindegaard Starup
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,9 +15,34 @@
  * limitations under the License.
  */
 
+instance Index[Array[a, r]] {
+    type Idx = Int32
+    type Elm = a
+    type Aef = r + OutOfBounds
+
+    pub def get(i: Int32, t: Array[a, r]): a \ r + OutOfBounds = {
+        if (0 <= i and i < Array.length(t)) Array.get(i, t)
+        else do OutOfBounds.outOfBounds(
+            "index ${i} is out of bounds for Array of length ${Array.length(t)}"
+        )
+    }
+}
+
+instance IndexMut[Array[a, r]] {
+    type Aef = r + OutOfBounds
+
+    pub def put(i: Int32, v: a, t: Array[a, r]): Unit \ r + OutOfBounds = {
+        if (0 <= i and i < Array.length(t)) Array.put(v, i, t)
+        else do OutOfBounds.outOfBounds(
+            "index ${i} is out of bounds for Array of length ${Array.length(t)}"
+        )
+    }
+}
+
 instance Iterable[Array[a, r]] {
     type Elm = a
     type Aef = r
+
     pub def iterator(rc: Region[r1], a: Array[a, r]): Iterator[a, r + r1, r1] \ (r + r1) =
         Array.iterator(rc, a)
 }
