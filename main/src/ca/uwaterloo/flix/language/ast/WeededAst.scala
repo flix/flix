@@ -40,11 +40,13 @@ object WeededAst {
     // TODO change laws to Law
     case class Trait(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparam: TypeParam, superTraits: List[TraitConstraint], assocs: List[Declaration.AssocTypeSig], sigs: List[Declaration.Sig], laws: List[Declaration.Def], loc: SourceLocation) extends Declaration
 
-    case class Instance(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, clazz: Name.QName, tpe: Type, tconstrs: List[TraitConstraint], assocs: List[Declaration.AssocTypeDef], defs: List[Declaration.Def], loc: SourceLocation) extends Declaration
+    case class Instance(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, clazz: Name.QName, tpe: Type, tconstrs: List[TraitConstraint], assocs: List[Declaration.AssocTypeDef], defs: List[Declaration.Def], redefs: List[Declaration.Redef], loc: SourceLocation) extends Declaration
 
     case class Sig(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparams: List[TypeParam], fparams: List[FormalParam], exp: Option[Expr], tpe: Type, eff: Option[Type], tconstrs: List[TraitConstraint], econstrs: List[EqualityConstraint], loc: SourceLocation)
 
     case class Def(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparams: List[TypeParam], fparams: List[FormalParam], exp: Expr, tpe: Type, eff: Option[Type], tconstrs: List[TraitConstraint], constrs: List[EqualityConstraint], loc: SourceLocation) extends Declaration
+
+    case class Redef(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparams: List[TypeParam], fparams: List[FormalParam], exp: Expr, tpe: Type, eff: Option[Type], tconstrs: List[TraitConstraint], constrs: List[EqualityConstraint], loc: SourceLocation) extends Declaration
 
     case class Law(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparams: List[TypeParam], fparams: List[FormalParam], exp: Expr, tpe: Type, eff: Type, tconstrs: List[TraitConstraint], loc: SourceLocation) extends Declaration
 
