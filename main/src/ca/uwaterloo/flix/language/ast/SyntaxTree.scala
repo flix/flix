@@ -133,6 +133,8 @@ object SyntaxTree {
 
       case object Def extends Decl
 
+      case object Redef extends Decl
+
       case object Effect extends Decl
 
       case object Enum extends Decl
