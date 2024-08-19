@@ -21,10 +21,10 @@ instance Index[Array[a, r]] {
     type Aef = r + OutOfBounds
 
     pub def get(i: Int32, t: Array[a, r]): a \ r + OutOfBounds = {
-        if (0 <= i and i < Array.length(t))
-            Array.get(i, t)
-        else
-            do OutOfBounds.outOfBounds("index ${i} is out of bounds for Array of length ${Array.length(t)}")
+        if (0 <= i and i < Array.length(t)) Array.get(i, t)
+        else do OutOfBounds.outOfBounds(
+            "index ${i} is out of bounds for Array of length ${Array.length(t)}"
+        )
     }
 }
 
@@ -32,10 +32,10 @@ instance IndexMut[Array[a, r]] {
     type Aef = r + OutOfBounds
 
     pub def put(i: Int32, v: a, t: Array[a, r]): Unit \ r + OutOfBounds = {
-        if (0 <= i and i < Array.length(t))
-            Array.put(v, i, t)
-        else
-            do OutOfBounds.outOfBounds("index ${i} is out of bounds for Array of length ${Array.length(t)}")
+        if (0 <= i and i < Array.length(t)) Array.put(v, i, t)
+        else do OutOfBounds.outOfBounds(
+            "index ${i} is out of bounds for Array of length ${Array.length(t)}"
+        )
     }
 }
 
