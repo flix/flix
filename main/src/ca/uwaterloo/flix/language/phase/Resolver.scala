@@ -1204,7 +1204,7 @@ object Resolver {
       case NamedAst.Expr.Match(exp, rules, loc) =>
         val rulesVal = traverse(rules) {
           case NamedAst.MatchRule(pat, guard, body) =>
-            val pVal = Patterns.resolve(pat, env0, ns0, root)
+            val pVal = resolvePattern(pat, env0, ns0, root)
             flatMapN(pVal) {
               case p =>
                 val env = env0 ++ mkPatternEnv(p)
@@ -1756,7 +1756,7 @@ object Resolver {
 
         val fragsVal = traverse(frags) {
           case NamedAst.ParYieldFragment(pat, e0, l0) =>
-            val pVal = Patterns.resolve(pat, env0, ns0, root)
+            val pVal = resolvePattern(pat, env0, ns0, root)
             flatMapN(pVal) {
               case p =>
                 val patEnv = mkPatternEnv(p)
@@ -1857,13 +1857,11 @@ object Resolver {
     visitExp(exp0, env00)
   }
 
-  object Patterns {
-
     /**
       * Performs name resolution on the given constraint pattern `pat0` in the namespace `ns0`.
       * Constraint patterns do not introduce new variables.
       */
-    def resolveInConstraint(pat0: NamedAst.Pattern, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[ResolvedAst.Pattern, ResolutionError] = {
+    def resolvePatternInConstraint(pat0: NamedAst.Pattern, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[ResolvedAst.Pattern, ResolutionError] = {
 
       def visit(p0: NamedAst.Pattern): Validation[ResolvedAst.Pattern, ResolutionError] = p0 match {
         case NamedAst.Pattern.Wild(loc) =>
@@ -1926,7 +1924,7 @@ object Resolver {
     /**
       * Performs name resolution on the given pattern `pat0` in the namespace `ns0`.
       */
-    def resolve(pat0: NamedAst.Pattern, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[ResolvedAst.Pattern, ResolutionError] = {
+    def resolvePattern(pat0: NamedAst.Pattern, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[ResolvedAst.Pattern, ResolutionError] = {
 
       def visit(p0: NamedAst.Pattern): Validation[ResolvedAst.Pattern, ResolutionError] = p0 match {
         case NamedAst.Pattern.Wild(loc) =>
@@ -1974,8 +1972,6 @@ object Resolver {
       visit(pat0)
     }
 
-  }
-
   object Predicates {
 
     object Head {
@@ -1997,7 +1993,7 @@ object Resolver {
         */
       def resolve(b0: NamedAst.Predicate.Body, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Predicate.Body, ResolutionError] = b0 match {
         case NamedAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, loc) =>
-          val tsVal = traverse(terms)(Patterns.resolveInConstraint(_, env, ns0, root))
+          val tsVal = traverse(terms)(resolvePatternInConstraint(_, env, ns0, root))
           mapN(tsVal) {
             ts => ResolvedAst.Predicate.Body.Atom(pred, den, polarity, fixity, ts, loc)
           }
