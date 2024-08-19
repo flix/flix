@@ -16,11 +16,8 @@
  */
 
 instance Index[Array[a, r]] {
-
     type Idx = Int32
-
     type Elm = a
-
     type Aef = r + OutOfBounds
 
     pub def get(i: Int32, t: Array[a, r]): a \ r + OutOfBounds = {
@@ -29,11 +26,9 @@ instance Index[Array[a, r]] {
         else
             do OutOfBounds.outOfBounds("index ${i} is out of bounds for Array of length ${Array.length(t)}")
     }
-
 }
 
 instance IndexMut[Array[a, r]] {
-
     type Aef = r + OutOfBounds
 
     pub def put(i: Int32, v: a, t: Array[a, r]): Unit \ r + OutOfBounds = {
@@ -42,18 +37,14 @@ instance IndexMut[Array[a, r]] {
         else
             do OutOfBounds.outOfBounds("index ${i} is out of bounds for Array of length ${Array.length(t)}")
     }
-
 }
 
 instance Iterable[Array[a, r]] {
-
     type Elm = a
-
     type Aef = r
 
     pub def iterator(rc: Region[r1], a: Array[a, r]): Iterator[a, r + r1, r1] \ (r + r1) =
         Array.iterator(rc, a)
-
 }
 
 mod Array {

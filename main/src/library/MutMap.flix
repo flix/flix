@@ -39,11 +39,8 @@ instance Index[MutMap[k, v, r]] with Order[k] {
 }
 
 instance IndexMut[MutMap[k, v, r]] with Order[k] {
-
     type Aef = r
-
     pub def put(i: k, v: v, t: MutMap[k, v, r]): Unit \ r = MutMap.put!(i, v, t)
-
 }
 
 instance Iterable[MutMap[k, v, r]] {
