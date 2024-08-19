@@ -108,7 +108,7 @@ object Stratifier {
 
     case Expr.Sig(_, _, _) => exp0
 
-    case Expr.Hole(_, _, _) => exp0
+    case Expr.Hole(_, _, _, _) => exp0
 
     case Expr.HoleWithExp(exp, tpe, eff, loc) =>
       val e = visitExp(exp)

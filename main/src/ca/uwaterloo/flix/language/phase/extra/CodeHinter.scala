@@ -87,7 +87,7 @@ object CodeHinter {
 
     case Expr.Sig(_, _, _) => Nil
 
-    case Expr.Hole(_, _, _) => Nil
+    case Expr.Hole(_, _, _, _) => Nil
 
     case Expr.HoleWithExp(exp, _, _, _) => visitExp(exp)
 

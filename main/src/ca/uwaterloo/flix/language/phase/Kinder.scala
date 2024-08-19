@@ -436,7 +436,7 @@ object Kinder {
 
     case ResolvedAst.Expr.Sig(sym, loc) => Validation.success(KindedAst.Expr.Sig(sym, Type.freshVar(Kind.Star, loc.asSynthetic), loc))
 
-    case ResolvedAst.Expr.Hole(sym, loc) => Validation.success(KindedAst.Expr.Hole(sym, Type.freshVar(Kind.Star, loc.asSynthetic), loc))
+    case ResolvedAst.Expr.Hole(sym, loc) => Validation.success(KindedAst.Expr.Hole(sym, Type.freshVar(Kind.Star, loc.asSynthetic), Type.freshVar(Kind.Eff, loc.asSynthetic), loc))
 
     case ResolvedAst.Expr.HoleWithExp(exp0, loc) =>
       val expVal = visitExp(exp0, kenv0, taenv, henv0, root)

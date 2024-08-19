@@ -362,9 +362,9 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expr.Sig(sym, t, loc)
 
-    case TypedAst.Expr.Hole(sym, tpe, loc) =>
+    case TypedAst.Expr.Hole(sym, tpe, eff, loc) =>
       val t = visitType(tpe)
-      LoweredAst.Expr.ApplyAtomic(AtomicOp.HoleError(sym), List.empty, t, Type.Pure, loc)
+      LoweredAst.Expr.ApplyAtomic(AtomicOp.HoleError(sym), List.empty, t, eff, loc)
 
     case TypedAst.Expr.HoleWithExp(_, tpe, _, loc) =>
       val sym = Symbol.freshHoleSym(loc)

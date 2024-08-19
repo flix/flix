@@ -63,7 +63,7 @@ object EffectVerifier {
     case Expr.Var(sym, tpe, loc) => ()
     case Expr.Def(sym, tpe, loc) => ()
     case Expr.Sig(sym, tpe, loc) => ()
-    case Expr.Hole(sym, tpe, loc) => ()
+    case Expr.Hole(sym, tpe, eff, loc) => ()
     case Expr.HoleWithExp(exp, tpe, eff, loc) =>
       visitExp(exp)
     // TODO ?

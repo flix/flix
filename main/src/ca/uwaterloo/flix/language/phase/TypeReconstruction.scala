@@ -97,8 +97,8 @@ object TypeReconstruction {
     case KindedAst.Expr.Sig(sym, tvar, loc) =>
       TypedAst.Expr.Sig(sym, subst(tvar), loc)
 
-    case KindedAst.Expr.Hole(sym, tpe, loc) =>
-      TypedAst.Expr.Hole(sym, subst(tpe), loc)
+    case KindedAst.Expr.Hole(sym, tpe, evar, loc) =>
+      TypedAst.Expr.Hole(sym, subst(tpe), subst(evar), loc)
 
     case KindedAst.Expr.HoleWithExp(exp, tvar, evar, loc) =>
       val e = visitExp(exp)

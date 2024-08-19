@@ -100,9 +100,7 @@ object TypedAst {
       def eff: Type = Type.Pure
     }
 
-    case class Hole(sym: Symbol.HoleSym, tpe: Type, loc: SourceLocation) extends Expr {
-      def eff: Type = Type.Pure
-    }
+    case class Hole(sym: Symbol.HoleSym, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class HoleWithExp(exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 

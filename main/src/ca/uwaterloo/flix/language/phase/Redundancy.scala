@@ -316,7 +316,7 @@ object Redundancy {
       } else
         Used.empty
 
-    case Expr.Hole(sym, _, _) =>
+    case Expr.Hole(sym, _, _, _) =>
       lctx.holeSyms += sym
       Used.empty
 
@@ -998,7 +998,7 @@ object Redundancy {
     * Returns true if the expression is a hole.
     */
   private def isHole(exp: Expr): Boolean = exp match {
-    case Expr.Hole(_, _, _) => true
+    case Expr.Hole(_, _, _, _) => true
     case Expr.HoleWithExp(_, _, _, _) => true
     case _ => false
   }

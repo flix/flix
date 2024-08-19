@@ -69,9 +69,9 @@ object ConstraintGen {
         val resEff = Type.Pure
         (resTpe, resEff)
 
-      case Expr.Hole(_, tpe, _) =>
+      case Expr.Hole(_, tpe, eff, _) =>
         val resTpe = tpe
-        val resEff = Type.Pure
+        val resEff = eff
         (resTpe, resEff)
 
       case Expr.HoleWithExp(exp, tvar, evar, loc) =>

@@ -40,7 +40,7 @@ object TypedAstOps {
     case Expr.Var(_, _, _) => Set.empty
     case Expr.Def(_, _, _) => Set.empty
     case Expr.Sig(sym, _, _) => Set(sym)
-    case Expr.Hole(_, _, _) => Set.empty
+    case Expr.Hole(_, _, _, _) => Set.empty
     case Expr.HoleWithExp(exp, _, _, _) => sigSymsOf(exp)
     case Expr.OpenAs(_, exp, _, _) => sigSymsOf(exp)
     case Expr.Use(_, _, exp, _) => sigSymsOf(exp)
@@ -135,7 +135,7 @@ object TypedAstOps {
 
     case Expr.Sig(_, _, _) => Map.empty
 
-    case Expr.Hole(_, _, _) => Map.empty
+    case Expr.Hole(_, _, _, _) => Map.empty
 
     case Expr.HoleWithExp(exp, _, _, _) =>
       freeVars(exp)
