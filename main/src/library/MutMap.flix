@@ -28,7 +28,7 @@ instance Index[MutMap[k, v, r]] with Order[k] {
     pub def get(i: k, t: MutMap[k, v, r]): v \ r + InvalidKey = {
         match MutMap.get(i, t) {
             case Some(v) => v
-            case None => do InvalidKey.error("key not found")
+            case None => do InvalidKey.invalidKey("key not found")
         }
     }
 }

@@ -29,7 +29,7 @@ instance Index[Vector[a]] {
         if (0 <= i and i < Vector.length(t))
             Vector.get(i, t)
         else
-            do InvalidKey.error("index ${i} is out of bounds for Vector of length ${Vector.length(t)}")
+            do InvalidKey.invalidKey("index ${i} is out of bounds for Vector of length ${Vector.length(t)}")
     }
 }
 

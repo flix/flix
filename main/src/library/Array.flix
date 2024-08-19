@@ -23,7 +23,7 @@ instance Index[Array[a, r]] {
         if (0 <= i and i < Array.length(t))
             Array.get(i, t)
         else
-            do InvalidKey.error("index ${i} is out of bounds for Array of length ${Array.length(t)}")
+            do InvalidKey.invalidKey("index ${i} is out of bounds for Array of length ${Array.length(t)}")
     }
 }
 
@@ -33,7 +33,7 @@ instance IndexMut[Array[a, r]] {
         if (0 <= i and i < Array.length(t))
             Array.put(v, i, t)
         else
-            do InvalidKey.error("index ${i} is out of bounds for Array of length ${Array.length(t)}")
+            do InvalidKey.invalidKey("index ${i} is out of bounds for Array of length ${Array.length(t)}")
     }
 }
 

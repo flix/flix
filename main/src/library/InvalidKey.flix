@@ -21,7 +21,7 @@
 eff InvalidKey {
 
     /// Stops execution with an error message.
-    pub def error(msg: String): Void
+    pub def invalidKey(msg: String): Void
 
 }
 
@@ -31,7 +31,7 @@ mod InvalidKey {
     pub def asRes(f: a -> b \ ef): (a -> Result[String, b] \ ef - InvalidKey) = {
         // TODO: remove annotations and casts once try-with typing works.
         x -> (checked_ecast(try (Ok(f(x)): _ \ ef) with InvalidKey {
-            def error(msg, _) = Err(msg)
+            def invalidKey(msg, _) = Err(msg)
         }): _ \ ef - InvalidKey)
     }
 
