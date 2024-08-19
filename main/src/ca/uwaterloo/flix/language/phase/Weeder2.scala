@@ -257,11 +257,12 @@ object Weeder2 {
         Types.pickType(tree),
         Types.pickConstraints(tree),
         traverse(pickAll(TreeKind.Decl.Def, tree))(visitDefinitionDecl(_, allowedModifiers = Set(TokenKind.KeywordPub, TokenKind.KeywordOverride), mustBePublic = true)),
+        traverse(pickAll(TreeKind.Decl.Redef, tree))(visitRedefinitionDecl),
       ) {
-        (doc, annotations, modifiers, clazz, tpe, tconstrs, defs) =>
+        (doc, annotations, modifiers, clazz, tpe, tconstrs, defs, redefs) =>
           val assocs = pickAll(TreeKind.Decl.AssociatedTypeDef, tree)
           mapN(traverse(assocs)(visitAssociatedTypeDefDecl(_, tpe))) {
-            assocs => Declaration.Instance(doc, annotations, modifiers, clazz, tpe, tconstrs, assocs, defs, tree.loc)
+            assocs => Declaration.Instance(doc, annotations, modifiers, clazz, tpe, tconstrs, assocs, defs, redefs, tree.loc)
           }
       }
     }
@@ -304,6 +305,26 @@ object Weeder2 {
       ) {
         (doc, annotations, modifiers, ident, tparams, fparams, exp, ttype, tconstrs, constrs, eff) =>
           Declaration.Def(doc, annotations, modifiers, ident, tparams, fparams, exp, ttype, eff, tconstrs, constrs, tree.loc)
+      }
+    }
+
+    private def visitRedefinitionDecl(tree: Tree): Validation[Declaration.Redef, CompilationMessage] = {
+      expect(tree, TreeKind.Decl.Redef)
+      mapN(
+        pickDocumentation(tree),
+        pickAnnotations(tree),
+        pickModifiers(tree, allowed = Set(TokenKind.KeywordPub), mustBePublic = true),
+        pickNameIdent(tree),
+        Types.pickKindedParameters(tree),
+        pickFormalParameters(tree),
+        Exprs.pickExpr(tree),
+        Types.pickType(tree),
+        Types.pickConstraints(tree),
+        pickEqualityConstraints(tree),
+        Types.tryPickEffect(tree)
+      ) {
+        (doc, annotations, modifiers, ident, tparams, fparams, exp, ttype, tconstrs, constrs, eff) =>
+          Declaration.Redef(doc, annotations, modifiers, ident, tparams, fparams, exp, ttype, eff, tconstrs, constrs, tree.loc)
       }
     }
 

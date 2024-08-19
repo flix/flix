@@ -673,6 +673,16 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalModifier](result)
   }
 
+  test("IllegalModifier.05") {
+    val input =
+      """instance Sub[String] {
+        |    pub override redef sub(x: String, y: String): String = ???
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalModifier](result)
+  }
+
   test("IllegalNullPattern.01") {
     val input =
       s"""
