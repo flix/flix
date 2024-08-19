@@ -22,11 +22,8 @@ pub enum MutMap[k: Type, v: Type, r: Region] {
 }
 
 instance Index[MutMap[k, v, r]] with Order[k] {
-
     type Idx = k
-
     type Elm = v
-
     type Aef = r + InvalidKey
 
     pub def get(i: k, t: MutMap[k, v, r]): v \ r + InvalidKey = {
@@ -35,11 +32,11 @@ instance Index[MutMap[k, v, r]] with Order[k] {
             case None => do InvalidKey.invalidKey("key not found")
         }
     }
-
 }
 
 instance IndexMut[MutMap[k, v, r]] with Order[k] {
     type Aef = r
+
     pub def put(i: k, v: v, t: MutMap[k, v, r]): Unit \ r = MutMap.put!(i, v, t)
 }
 
