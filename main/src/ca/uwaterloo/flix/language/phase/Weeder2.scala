@@ -205,8 +205,8 @@ object Weeder2 {
         traverse(typeAliases)(visitTypeAliasDecl),
         traverse(effects)(visitEffectDecl)
       ) {
-        case (modules, traits, instances, definitions, enums, structs, rEnums, typeAliases, effects) =>
-          (modules ++ traits ++ instances ++ definitions ++ enums ++ structs ++ rEnums ++ typeAliases ++ effects).sortBy(_.loc)
+        case (modules, traits, instances, definitions, enums, rEnums, structs, typeAliases, effects) =>
+          (modules ++ traits ++ instances ++ definitions ++ enums ++ rEnums ++ structs ++ typeAliases ++ effects).sortBy(_.loc)
       }
     }
 
