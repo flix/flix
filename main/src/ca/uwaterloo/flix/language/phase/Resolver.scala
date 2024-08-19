@@ -595,10 +595,10 @@ private def resolveRestrictableEnum(e0: NamedAst.Declaration.RestrictableEnum, e
     * Performs name resolution on the given case `caze0` in the given namespace `ns0`.
     */
   private def resolveCase(caze0: NamedAst.Declaration.Case, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration.Case, ResolutionError] = caze0 match {
-    case NamedAst.Declaration.Case(sym, tpe0, loc) =>
-      val tpeVal = resolveType(tpe0, Wildness.ForbidWild, env, taenv, ns0, root)
-      mapN(tpeVal) {
-        tpe => ResolvedAst.Declaration.Case(sym, tpe, loc)
+    case NamedAst.Declaration.Case(sym, tpes0, loc) =>
+      val tpesVal = traverse(tpes0)(resolveType(_, Wildness.ForbidWild, env, taenv, ns0, root))
+      mapN(tpesVal) {
+        tpes => ResolvedAst.Declaration.Case(sym, tpes, loc)
       }
   }
 
@@ -617,10 +617,10 @@ private def resolveRestrictableEnum(e0: NamedAst.Declaration.RestrictableEnum, e
     * Performs name resolution on the given case `caze0` in the given namespace `ns0`.
     */
   private def resolveRestrictableCase(caze0: NamedAst.Declaration.RestrictableCase, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration.RestrictableCase, ResolutionError] = caze0 match {
-    case NamedAst.Declaration.RestrictableCase(sym, tpe0, loc) =>
-      val tpeVal = resolveType(tpe0, Wildness.ForbidWild, env, taenv, ns0, root)
-      mapN(tpeVal) {
-        tpe => ResolvedAst.Declaration.RestrictableCase(sym, tpe, loc)
+    case NamedAst.Declaration.RestrictableCase(sym, tpes0, loc) =>
+      val tpesVal = traverse(tpes0)(resolveType(_, Wildness.ForbidWild, env, taenv, ns0, root))
+      mapN(tpesVal) {
+        tpes => ResolvedAst.Declaration.RestrictableCase(sym, tpes, loc)
       }
   }
 
@@ -900,7 +900,7 @@ private def resolveExp(exp0: NamedAst.Expr, env0: ListMap[String, Resolution])(i
         case ResolvedQName.Def(defn) => visitApplyDef(app, defn, exps, env0, innerLoc, outerLoc)
         case ResolvedQName.Sig(sig) => visitApplySig(app, sig, exps, env0, innerLoc, outerLoc)
         case ResolvedQName.Var(_) => visitApply(app, env0)
-        case ResolvedQName.Tag(caze) => visitApplyTag(caze, exps, env0, innerLoc, outerLoc)
+        case ResolvedQName.Tag(caze) => visitApplyTag(app, caze, exps, env0, innerLoc, outerLoc)
         case ResolvedQName.RestrictableTag(caze) => visitApplyRestrictableTag(caze, exps, isOpen = false, env0, innerLoc, outerLoc)
         case ResolvedQName.Error(e) => Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
 
@@ -911,7 +911,7 @@ private def resolveExp(exp0: NamedAst.Expr, env0: ListMap[String, Resolution])(i
         case ResolvedQName.Def(defn) => visitApplyDef(app, defn, exps, env0, innerLoc, outerLoc)
         case ResolvedQName.Sig(sig) => visitApplySig(app, sig, exps, env0, innerLoc, outerLoc)
         case ResolvedQName.Var(_) => visitApply(app, env0)
-        case ResolvedQName.Tag(caze) => visitApplyTag(caze, exps, env0, innerLoc, outerLoc)
+        case ResolvedQName.Tag(caze) => visitApplyTag(app, caze, exps, env0, innerLoc, outerLoc)
         case ResolvedQName.RestrictableTag(caze) => visitApplyRestrictableTag(caze, exps, isOpen = true, env0, innerLoc, outerLoc)
         case ResolvedQName.Error(e) => Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
       }
@@ -1844,10 +1844,10 @@ private def resolvePatternInConstraint(pat0: NamedAst.Pattern, env: ListMap[Stri
       case NamedAst.Pattern.Cst(cst, loc) =>
         Validation.success(ResolvedAst.Pattern.Cst(cst, loc))
 
-      case NamedAst.Pattern.Tag(qname, pat, loc) =>
+      case NamedAst.Pattern.Tag(qname, pats, loc) =>
         lookupTag(qname, env, ns0, root) match {
-          case Result.Ok(c) => mapN(visit(pat)) {
-            case p => ResolvedAst.Pattern.Tag(Ast.CaseSymUse(c.sym, qname.loc), p, loc)
+          case Result.Ok(c) => mapN(traverse(pats)(visit)) {
+            case ps => ResolvedAst.Pattern.Tag(Ast.CaseSymUse(c.sym, qname.loc), ps, loc)
           }
           case Result.Err(e) => Validation.toSoftFailure(ResolvedAst.Pattern.Error(loc), e)
         }
@@ -1895,10 +1895,10 @@ private def resolvePattern(pat0: NamedAst.Pattern, env: ListMap[String, Resoluti
       case NamedAst.Pattern.Cst(cst, loc) =>
         Validation.success(ResolvedAst.Pattern.Cst(cst, loc))
 
-      case NamedAst.Pattern.Tag(qname, pat, loc) =>
+      case NamedAst.Pattern.Tag(qname, pats, loc) =>
         lookupTag(qname, env, ns0, root) match {
-          case Result.Ok(c) => mapN(visit(pat)) {
-            case p => ResolvedAst.Pattern.Tag(Ast.CaseSymUse(c.sym, qname.loc), p, loc)
+          case Result.Ok(c) => mapN(traverse(pats)(visit)) {
+            case ps => ResolvedAst.Pattern.Tag(Ast.CaseSymUse(c.sym, qname.loc), ps, loc)
           }
           case Result.Err(e) => Validation.toSoftFailure(ResolvedAst.Pattern.Error(loc), e)
         }
@@ -3811,12 +3811,11 @@ private def mkUnappliedAssocType(sym: Symbol.AssocTypeSym, loc: SourceLocation):
   /**
     * Creates an environment from the given pattern.
     */
-  @tailrec
   private def mkPatternEnv(pat0: ResolvedAst.Pattern): ListMap[String, Resolution] = pat0 match {
     case ResolvedAst.Pattern.Wild(loc) => ListMap.empty
     case ResolvedAst.Pattern.Var(sym, loc) => mkVarEnv(sym)
     case ResolvedAst.Pattern.Cst(cst, loc) => ListMap.empty
-    case ResolvedAst.Pattern.Tag(sym, pat, loc) => mkPatternEnv(pat)
+    case ResolvedAst.Pattern.Tag(sym, pats, loc) => mkPatternsEnv(pats)
     case ResolvedAst.Pattern.Tuple(elms, loc) => mkPatternsEnv(elms)
     case ResolvedAst.Pattern.Record(pats, pat, _) => mkRecordPatternEnv(pats, pat)
     case ResolvedAst.Pattern.RecordEmpty(_) => ListMap.empty

@@ -242,7 +242,7 @@ object DesugaredAst {
 
     case class Cst(cst: Ast.Constant, loc: SourceLocation) extends Pattern
 
-    case class Tag(qname: Name.QName, pat: Pattern, loc: SourceLocation) extends Pattern
+    case class Tag(qname: Name.QName, pats: List[Pattern], loc: SourceLocation) extends Pattern
 
     case class Tuple(pats: List[Pattern], loc: SourceLocation) extends Pattern
 
@@ -373,11 +373,11 @@ object DesugaredAst {
     case class Arrow(k1: Kind, k2: Kind, loc: SourceLocation) extends Kind
   }
 
-  case class Case(ident: Name.Ident, tpe: Type, loc: SourceLocation)
+  case class Case(ident: Name.Ident, tpes: List[Type], loc: SourceLocation)
 
   case class StructField(name: Name.Label, tpe: Type, loc: SourceLocation)
 
-  case class RestrictableCase(ident: Name.Ident, tpe: Type, loc: SourceLocation)
+  case class RestrictableCase(ident: Name.Ident, tpes: List[Type], loc: SourceLocation)
 
   case class FormalParam(ident: Name.Ident, mod: Ast.Modifiers, tpe: Option[Type], loc: SourceLocation)
 

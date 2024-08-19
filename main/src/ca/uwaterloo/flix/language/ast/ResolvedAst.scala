@@ -65,9 +65,9 @@ object ResolvedAst {
 
     case class RestrictableEnum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.RestrictableEnumSym, index: TypeParam, tparams: List[TypeParam], derives: Ast.Derivations, cases: List[Declaration.RestrictableCase], loc: SourceLocation) extends Declaration
 
-    case class Case(sym: Symbol.CaseSym, tpe: UnkindedType, loc: SourceLocation) extends Declaration
+    case class Case(sym: Symbol.CaseSym, tpes: List[UnkindedType], loc: SourceLocation) extends Declaration
 
-    case class RestrictableCase(sym: Symbol.RestrictableCaseSym, tpe: UnkindedType, loc: SourceLocation) extends Declaration
+    case class RestrictableCase(sym: Symbol.RestrictableCaseSym, tpes: List[UnkindedType], loc: SourceLocation) extends Declaration
 
     case class TypeAlias(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.TypeAliasSym, tparams: List[TypeParam], tpe: UnkindedType, loc: SourceLocation) extends Declaration
 
@@ -133,7 +133,7 @@ object ResolvedAst {
 
     case class RestrictableChoose(star: Boolean, exp: Expr, rules: List[RestrictableChooseRule], loc: SourceLocation) extends Expr
 
-    case class Tag(sym: Ast.CaseSymUse, exp: Expr, loc: SourceLocation) extends Expr
+    case class Tag(sym: Ast.CaseSymUse, loc: SourceLocation) extends Expr
 
     case class RestrictableTag(sym: Ast.RestrictableCaseSymUse, exp: Expr, isOpen: Boolean, loc: SourceLocation) extends Expr
 
@@ -259,7 +259,7 @@ object ResolvedAst {
 
     case class Cst(cst: Ast.Constant, loc: SourceLocation) extends Pattern
 
-    case class Tag(sym: Ast.CaseSymUse, pat: Pattern, loc: SourceLocation) extends Pattern
+    case class Tag(sym: Ast.CaseSymUse, pats: List[Pattern], loc: SourceLocation) extends Pattern
 
     case class Tuple(pats: List[Pattern], loc: SourceLocation) extends Pattern
 

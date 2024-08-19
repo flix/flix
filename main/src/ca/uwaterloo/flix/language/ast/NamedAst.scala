@@ -65,9 +65,9 @@ object NamedAst {
 
     case class Op(sym: Symbol.OpSym, spec: Spec) extends Declaration
 
-    case class Case(sym: Symbol.CaseSym, tpe: Type, loc: SourceLocation) extends Declaration
+    case class Case(sym: Symbol.CaseSym, tpes: List[Type], loc: SourceLocation) extends Declaration
 
-    case class RestrictableCase(sym: Symbol.RestrictableCaseSym, tpe: Type, loc: SourceLocation) extends Declaration
+    case class RestrictableCase(sym: Symbol.RestrictableCaseSym, tpes: List[Type], loc: SourceLocation) extends Declaration
   }
 
   case class Spec(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, tparams: List[TypeParam], fparams: List[FormalParam], retTpe: Type, eff: Option[Type], tconstrs: List[TraitConstraint], econstrs: List[EqualityConstraint], loc: SourceLocation)
@@ -253,7 +253,7 @@ object NamedAst {
 
     case class Cst(cst: Ast.Constant, loc: SourceLocation) extends Pattern
 
-    case class Tag(qname: Name.QName, pat: Pattern, loc: SourceLocation) extends Pattern
+    case class Tag(qname: Name.QName, pats: List[Pattern], loc: SourceLocation) extends Pattern
 
     case class Tuple(pats: List[Pattern], loc: SourceLocation) extends Pattern
 

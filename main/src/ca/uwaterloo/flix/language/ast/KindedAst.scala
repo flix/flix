@@ -116,7 +116,7 @@ object KindedAst {
 
     case class RestrictableChoose(star: Boolean, exp: Expr, rules: List[RestrictableChooseRule], tvar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class Tag(sym: Ast.CaseSymUse, exp: Expr, tvar: Type.Var, loc: SourceLocation) extends Expr
+    case class Tag(sym: Ast.CaseSymUse, tvar: Type.Var, loc: SourceLocation) extends Expr
 
     case class RestrictableTag(sym: Ast.RestrictableCaseSymUse, exp: Expr, isOpen: Boolean, tvar: Type.Var, loc: SourceLocation) extends Expr
 
@@ -242,7 +242,7 @@ object KindedAst {
 
     case class Cst(cst: Ast.Constant, loc: SourceLocation) extends Pattern
 
-    case class Tag(sym: Ast.CaseSymUse, pat: Pattern, tvar: ast.Type.Var, loc: SourceLocation) extends Pattern
+    case class Tag(sym: Ast.CaseSymUse, pats: List[Pattern], tvar: ast.Type.Var, loc: SourceLocation) extends Pattern
 
     case class Tuple(pats: List[Pattern], loc: SourceLocation) extends Pattern
 
@@ -299,11 +299,11 @@ object KindedAst {
 
   }
 
-  case class Case(sym: Symbol.CaseSym, tpe: Type, sc: Scheme, loc: SourceLocation)
+  case class Case(sym: Symbol.CaseSym, tpes: List[Type], sc: Scheme, loc: SourceLocation)
 
   case class StructField(sym: Symbol.StructFieldSym, tpe: Type, loc: SourceLocation)
 
-  case class RestrictableCase(sym: Symbol.RestrictableCaseSym, tpe: Type, sc: Scheme, loc: SourceLocation)
+  case class RestrictableCase(sym: Symbol.RestrictableCaseSym, tpes: List[Type], sc: Scheme, loc: SourceLocation)
 
   case class Constraint(cparams: List[ConstraintParam], head: Predicate.Head, body: List[Predicate.Body], loc: SourceLocation)
 
