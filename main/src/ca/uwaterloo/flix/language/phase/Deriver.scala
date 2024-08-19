@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.BoundBy
+import ca.uwaterloo.flix.language.ast.Ast.TypeSource.Ascribed
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, Name, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugKindedAst
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugValidation
@@ -44,17 +45,205 @@ object Deriver {
 
   def run(root: KindedAst.Root)(implicit flix: Flix): Validation[KindedAst.Root, DerivationError] = flix.phase("Deriver") {
     val derivedInstances = ParOps.parTraverse(root.enums.values)(getDerivedInstances(_, root))
+    val structFieldInstances = root.structs.values.map(getInstancesOfStruct(_, root))
+    val fieldNames = root.structs.values.flatMap(struct => struct.fields).map(field => Name.Label(field.sym.name, field.sym.loc)).toSet
+    val traits = getTraits(fieldNames)
 
     mapN(derivedInstances) {
       instances =>
-        val newInstances = instances.flatten.foldLeft(root.instances) {
+        val newInstances = (instances ++ structFieldInstances).flatten.foldLeft(root.instances) {
           case (acc, inst) =>
             val accInsts = acc.getOrElse(inst.trt.sym, Nil)
             acc + (inst.trt.sym -> (inst :: accInsts))
         }
-        root.copy(instances = newInstances)
+        val newTraits = traits.foldLeft(root.traits) {
+          case (acc, trt) =>
+            acc + (trt.sym -> trt)
+        }
+        root.copy(instances = newInstances, traits = newTraits)
     }
   }(DebugValidation())
+
+  /**
+    * Builds the traits for this struct
+    */
+  private def getTraits(fieldNames: Set[Name.Label])(implicit flix: Flix): List[KindedAst.Trait] =
+    fieldNames.toList.map(field => getTraitOfField(field.name, field.loc))
+
+  /**
+    * Builds the trait for this struct field
+    */
+  private def getTraitOfField(name: String, loc: SourceLocation)(implicit flix: Flix): KindedAst.Trait = {
+    val tparamSym = Symbol.freshKindedTypeVarSym(Ast.VarText.Absent, Kind.Star, isRegion = false, loc)
+    val tparam = KindedAst.TypeParam(Name.Ident("a", loc), tparamSym, loc)
+    val structType = Type.Var(tparamSym, loc)
+    val traitSym = Symbol.mkTraitSym("Dot_" + name)
+    val assocTpeSym = Symbol.mkAssocTypeSym(traitSym, Name.Ident("FieldType", loc))
+    val assocEffSym = Symbol.mkAssocTypeSym(traitSym, Name.Ident("Aef", loc))
+    val assocTpe = Type.AssocType(Ast.AssocTypeConstructor(assocTpeSym, loc), Type.Var(tparamSym, loc), Kind.Star, loc)
+    val assocEff = Type.AssocType(Ast.AssocTypeConstructor(assocEffSym, loc), Type.Var(tparamSym, loc), Kind.Eff, loc)
+    val assocTpeSig = KindedAst.AssocTypeSig(
+      doc = Ast.Doc(Nil, loc),
+      mod = Ast.Modifiers.Empty,
+      sym = assocTpeSym,
+      tparam = tparam,
+      kind = Kind.Star,
+      tpe = None,
+      loc = loc
+    )
+    val assocEffSig = KindedAst.AssocTypeSig(
+      doc = Ast.Doc(Nil, loc),
+      mod = Ast.Modifiers.Empty,
+      sym = assocEffSym,
+      tparam = tparam,
+      kind = Kind.Eff,
+      tpe = None,
+      loc = loc
+    )
+    val putSpec = fieldPutSpec(structType, assocEff, assocTpe, List(tparam), loc)
+    val getSpec = fieldGetSpec(structType, assocEff, assocTpe, List(tparam), loc)
+    val getSym = Symbol.mkSigSym(traitSym, Name.Ident("get", loc))
+    val putSym = Symbol.mkSigSym(traitSym, Name.Ident("put", loc))
+    val getSig = KindedAst.Sig(getSym, getSpec, None)
+    val putSig = KindedAst.Sig(putSym, putSpec, None)
+    val sigs = Map(getSym -> getSig, putSym -> putSig)
+    KindedAst.Trait(
+      doc = Ast.Doc(Nil, loc),
+      ann = Ast.Annotations.Empty,
+      mod = Ast.Modifiers.Empty,
+      sym = traitSym,
+      tparam = tparam,
+      superTraits = Nil,
+      assocs = List(assocTpeSig, assocEffSig),
+      sigs = sigs,
+      laws = Nil,
+      loc = loc
+    )
+  }
+
+  /**
+    * Builds the instances for this struct
+    */
+  private def getInstancesOfStruct(struct0: KindedAst.Struct, root: KindedAst.Root)(implicit flix: Flix): List[KindedAst.Instance] =
+      struct0.fields.map(f => getInstanceOfField(struct0, f, root))
+
+  /**
+    * Builds the instances for this struct field
+    */
+  private def getInstanceOfField(struct0: KindedAst.Struct, field: KindedAst.StructField, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Instance = {
+    val loc = field.loc
+    val (fields, structType, eff) = Kinder.instantiateStruct(struct0.sym, root.structs)
+    val fieldType = fields(field.sym)
+    val traitSym = Symbol.mkTraitSym("Dot_" + field.sym.name)
+    val assocTypeSym = Symbol.mkAssocTypeSym(traitSym, Name.Ident("FieldType", loc))
+    val assocEffSym = Symbol.mkAssocTypeSym(traitSym, Name.Ident("Aef", loc))
+    val assocTypeSymUse = Ast.AssocTypeSymUse(assocTypeSym, loc)
+    val assocEffSymUse = Ast.AssocTypeSymUse(assocEffSym, loc)
+    val assocTpe = KindedAst.AssocTypeDef(
+      doc = Ast.Doc(Nil, loc),
+      mod = Ast.Modifiers.Empty,
+      sym = assocTypeSymUse,
+      arg = structType,
+      tpe = fieldType,
+      loc
+    )
+    val assocEff = KindedAst.AssocTypeDef(
+      doc = Ast.Doc(Nil, loc),
+      mod = Ast.Modifiers.Empty,
+      sym = assocEffSymUse,
+      arg = structType,
+      tpe = eff,
+      loc
+    )
+    // JOE TODO: Unify this and weeder into 1 function. Also, make sure the weeder names are modular in general
+    // JOE TODO: Remove all old structput/structget unnecessary stuff(errors, ast nodes, etc)
+    val getSpec = fieldGetSpec(structType, eff, fieldType, struct0.tparams, loc)
+    val getExpr = KindedAst.Expr.StructGet(
+      exp = KindedAst.Expr.Var(Symbol.freshVarSym("st_val", Ast.BoundBy.FormalParam, loc), loc),
+      sym = field.sym,
+      tvar = Type.freshVar(Kind.Star, loc),
+      evar = Type.freshVar(Kind.Eff, loc),
+      loc = loc
+    )
+    val putSpec = fieldPutSpec(structType, eff, fieldType, struct0.tparams, loc)
+    val putExpr = KindedAst.Expr.StructPut(
+      exp1 = KindedAst.Expr.Var(Symbol.freshVarSym("st_val", Ast.BoundBy.FormalParam, loc), loc),
+      sym = field.sym,
+      exp2 = KindedAst.Expr.Var(Symbol.freshVarSym("field_val", Ast.BoundBy.FormalParam, loc), loc),
+      tvar = Type.freshVar(Kind.Star, loc),
+      evar = Type.freshVar(Kind.Eff, loc),
+      loc = loc
+    )
+    val putDef = KindedAst.Def(
+      sym = Symbol.mkDefnSym("put"),
+      spec = putSpec,
+      exp = putExpr
+    )
+    val getDef = KindedAst.Def(
+      sym = Symbol.mkDefnSym("get"),
+      spec = getSpec,
+      exp = getExpr
+    )
+    KindedAst.Instance(
+      doc = Ast.Doc(Nil, loc),
+      ann = Ast.Annotations.Empty,
+      mod = Ast.Modifiers.Empty,
+      trt = Ast.TraitSymUse(traitSym, loc),
+      tpe = structType,
+      tconstrs = List(),
+      assocs = List(assocTpe, assocEff),
+      defs = List(getDef, putDef),
+      ns = Name.RootNS,
+      loc)
+  }
+
+  /**
+    * Builds the spec for this struct field's `get` operation
+    */
+  private def fieldGetSpec(structType: Type, structEff: Type, fieldType: Type, tparams: List[KindedAst.TypeParam], loc: SourceLocation)(implicit flix: Flix): KindedAst.Spec =
+    KindedAst.Spec(
+      doc = Ast.Doc(Nil, loc),
+      ann = Ast.Annotations.Empty,
+      mod = Ast.Modifiers.Empty,
+      tparams = tparams,
+      fparams = List(KindedAst.FormalParam(Symbol.freshVarSym("st_val", BoundBy.FormalParam, loc), Ast.Modifiers.Empty, structType, Ast.TypeSource.Ascribed, loc)),
+      sc = Scheme(
+        tparams.map(_.sym),
+        Nil,
+        Nil,
+        Type.mkUncurriedArrowWithEffect(List(structType), structEff, fieldType, loc)
+      ),
+      tpe = fieldType,
+      eff = structEff,
+      tconstrs = List(),
+      econstrs = List(),
+      loc = loc
+    )
+  // JOE TODO: Maybe should be the same as in the trait generation
+  /**
+    * Builds the spec for this struct field's `put` operation
+    */
+  private def fieldPutSpec(structType: Type, structEff: Type, fieldType: Type, tparams: List[KindedAst.TypeParam], loc: SourceLocation)(implicit flix: Flix): KindedAst.Spec =
+    KindedAst.Spec(
+      doc = Ast.Doc(Nil, loc),
+      ann = Ast.Annotations.Empty,
+      mod = Ast.Modifiers.Empty,
+      tparams = tparams,
+      fparams = List(
+        KindedAst.FormalParam(Symbol.freshVarSym("st_val", BoundBy.FormalParam, loc), Ast.Modifiers.Empty, structType, Ast.TypeSource.Ascribed, loc),
+        KindedAst.FormalParam(Symbol.freshVarSym("field_val", BoundBy.FormalParam, loc), Ast.Modifiers.Empty, structType, Ast.TypeSource.Ascribed, loc)),
+      sc = Scheme(
+        tparams.map(_.sym),
+        Nil,
+        Nil,
+        Type.mkUncurriedArrowWithEffect(List(structType, fieldType), structEff, Type.Unit, loc)
+      ),
+      tpe = Type.Unit,
+      eff = structEff,
+      tconstrs = List(),
+      econstrs = List(),
+      loc = loc
+    )
 
   /**
     * Builds the instances derived from this enum.
