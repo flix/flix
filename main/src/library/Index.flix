@@ -20,7 +20,7 @@
 /// (`Idx`) to elements (`Elm`). The mapping can be accessed by `get`.
 ///
 /// If all indices might not be defined (e.g. only a range of integers is valid) then then `Aef`
-/// should include an error like `InvalidKey`.
+/// should include an error like `OutOfBounds` or `KeyNotFound`.
 ///
 /// Note that the set of defined indices can be infinite which does not naturally allow iteration.
 /// An integer map with a default element would always contain all integers indices. This implies

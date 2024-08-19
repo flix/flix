@@ -21,7 +21,7 @@
 /// The mapping can be accessed by `Index.get` and modified by `put`.
 ///
 /// If only a subset of indices are allowed to be modified (e.g. only a range of integers is valid)
-/// then then `Aef` should include an error like `InvalidKey`.
+/// then then `Aef` should include an error like `OutOfBounds` or `KeyNotFound`.
 ///
 /// An instance of `IndexMut` requires an instance of `Index` where the type of indices and elements
 /// are defined. The associated effect here can be different from `Index`, because some data

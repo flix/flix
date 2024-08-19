@@ -15,25 +15,25 @@
  */
 
 ///
-/// Indicates that a key was invalid.
+/// Indicates that a key was not found.
 /// Useful for instances of `Index` or `IndexMut`.
 ///
-eff InvalidKey {
+eff KeyNotFound {
 
     /// Stops execution with an error message.
-    pub def invalidKey(msg: String): Void
+    pub def keyNotFound(msg: String): Void
 
 }
 
-mod InvalidKey {
+mod KeyNotFound {
 
-    /// Turns the `InvalidKey` effect into `Err(msg)`.
+    /// Turns the `KeyNotFound` effect into `Err(msg)`.
     @Experimental
-    pub def asRes(f: a -> b \ ef): (a -> Result[String, b] \ ef - InvalidKey) = {
+    pub def asRes(f: a -> b \ ef): (a -> Result[String, b] \ ef - KeyNotFound) = {
         // TODO: remove annotations and casts once try-with typing works.
-        x -> (checked_ecast(try (Ok(f(x)): _ \ ef) with InvalidKey {
-            def invalidKey(msg, _) = Err(msg)
-        }): _ \ ef - InvalidKey)
+        x -> (checked_ecast(try (Ok(f(x)): _ \ ef) with KeyNotFound {
+            def keyNotFound(msg, _) = Err(msg)
+        }): _ \ ef - KeyNotFound)
     }
 
 }

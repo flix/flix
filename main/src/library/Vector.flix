@@ -24,11 +24,11 @@ import java.util.{Iterator => JIterator}
 instance Index[Vector[a]] {
     type Idx = Int32
     type Elm = a
-    type Aef = InvalidKey
+    type Aef = OutOfBounds
 
-    pub def get(i: Int32, t: Vector[a]): a \ InvalidKey = {
+    pub def get(i: Int32, t: Vector[a]): a \ OutOfBounds = {
         if (0 <= i and i < Vector.length(t)) Vector.get(i, t)
-        else do InvalidKey.invalidKey(
+        else do OutOfBounds.outOfBounds(
             "index ${i} is out of bounds for Vector of length ${Vector.length(t)}"
         )
     }
