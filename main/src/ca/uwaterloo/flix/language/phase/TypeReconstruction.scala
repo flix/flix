@@ -228,10 +228,8 @@ object TypeReconstruction {
       val eff = Type.mkUnion(rs.map(_.exp.eff), loc)
       TypedAst.Expr.RestrictableChoose(star, e, rs, subst(tvar), eff, loc)
 
-    case KindedAst.Expr.Tag(sym, exp, tvar, loc) =>
-      val e = visitExp(exp)
-      val eff = e.eff
-      TypedAst.Expr.Tag(sym, e, subst(tvar), eff, loc)
+    case KindedAst.Expr.Tag(sym, tvar, loc) =>
+      TypedAst.Expr.Tag(sym, subst(tvar), loc)
 
     case KindedAst.Expr.RestrictableTag(sym, exp, _, tvar, loc) =>
       val e = visitExp(exp)

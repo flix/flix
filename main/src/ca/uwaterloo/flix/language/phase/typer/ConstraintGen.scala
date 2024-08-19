@@ -441,17 +441,16 @@ object ConstraintGen {
 
       case e: Expr.RestrictableChoose => RestrictableChooseConstraintGen.visitRestrictableChoose(e)
 
-      case KindedAst.Expr.Tag(symUse, exp, tvar, loc) =>
+      case KindedAst.Expr.Tag(symUse, tvar, loc) =>
         val decl = root.enums(symUse.sym.enumSym)
         val caze = decl.cases(symUse.sym)
         // We ignore constraints as tag schemes do not have them
         val (_, _, tagType, _) = Scheme.instantiate(caze.sc, loc.asSynthetic)
 
         // The tag type is a function from the type of variant to the type of the enum.
-        val (tpe, eff) = visitExp(exp)
-        c.unifyType(tagType, Type.mkPureArrow(tpe, tvar, loc), loc)
+        c.unifyType(tagType, tvar, loc)
         val resTpe = tvar
-        val resEff = eff
+        val resEff = Type.Pure
         (resTpe, resEff)
 
       case e: Expr.RestrictableTag => RestrictableChooseConstraintGen.visitRestrictableTag(e)

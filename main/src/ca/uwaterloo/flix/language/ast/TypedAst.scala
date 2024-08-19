@@ -150,7 +150,9 @@ object TypedAst {
 
     case class RestrictableChoose(star: Boolean, exp: Expr, rules: List[RestrictableChooseRule], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class Tag(sym: Ast.CaseSymUse, exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class Tag(sym: Ast.CaseSymUse, tpe: Type, loc: SourceLocation) extends Expr {
+      def eff: Type = Type.Pure
+    }
 
     case class RestrictableTag(sym: Ast.RestrictableCaseSymUse, exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
@@ -290,7 +292,7 @@ object TypedAst {
 
     case class Cst(cst: Ast.Constant, tpe: Type, loc: SourceLocation) extends Pattern
 
-    case class Tag(sym: Ast.CaseSymUse, pat: Pattern, tpe: Type, loc: SourceLocation) extends Pattern
+    case class Tag(sym: Ast.CaseSymUse, pats: List[Pattern], tpe: Type, loc: SourceLocation) extends Pattern
 
     case class Tuple(pats: List[Pattern], tpe: Type, loc: SourceLocation) extends Pattern
 
@@ -347,7 +349,7 @@ object TypedAst {
 
   }
 
-  case class Case(sym: Symbol.CaseSym, tpe: Type, sc: Scheme, loc: SourceLocation)
+  case class Case(sym: Symbol.CaseSym, tpes: List[Type], sc: Scheme, loc: SourceLocation)
 
   case class StructField(sym: Symbol.StructFieldSym, tpe: Type, loc: SourceLocation)
 
