@@ -28,6 +28,7 @@ eff InvalidKey {
 mod InvalidKey {
 
     /// Removes the `InvalidKey` effect from a function `f`, if `f` `do` `InvalidKey`.
+    @Experimental
     pub def asRes(f: a -> b \ ef): (a -> Result[String, b] \ ef - InvalidKey) = {
         // TODO: remove annotations and casts once try-with typing works.
         x -> (checked_ecast(try (Ok(f(x)): _ \ ef) with InvalidKey {
