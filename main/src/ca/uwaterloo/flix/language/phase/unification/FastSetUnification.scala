@@ -245,7 +245,7 @@ object FastSetUnification {
     }
 
     /**
-      * Returns [[Some]] if `eq` can never hold (e.g. `empty ~ univ`)
+      * Returns [[Some]] if `eq` can never hold (e.g. `empty ~ univ`).
       *
       * Returns [[None]] if it is unknown whether `eq` holds or not.
       */
@@ -294,7 +294,7 @@ object FastSetUnification {
         // [],
         // {x -> t}
         case (Term.Var(x), t) if t.noFreeVars =>
-          Some((Nil, SetSubstitution.singleton(x, Term.propagation(t))))
+          Some((Nil, SetSubstitution.singleton(x, t)))
 
         // t1 ∩ t2 ∩ ... ~ univ
         // ---
@@ -353,46 +353,56 @@ object FastSetUnification {
       }
     }
 
+    /**
+      * Solves equations variable alias equations (e.g. `x1 ~ x2`).
+      *
+      *   - `x1 ~ x2` becomes `([], {x1 -> x2})`
+      */
     def variableAlias(eq: Equation): Option[SetSubstitution] = {
       val Equation(t1, t2, _) = eq
       (t1, t2) match {
+        // x1 ~ x2
+        // ---
+        // [],
+        // {x1 -> x2}
         case (Term.Var(x), y@Term.Var(_)) =>
           Some(SetSubstitution.singleton(x, y))
-        case _ =>
-          None
-      }
-    }
 
-    def variableAssignment(eq: Equation): Option[SetSubstitution] = {
-      val Equation(t1, t2, _) = eq
-      (t1, t2) match {
-        case (v@Term.Var(x), rhs) if !rhs.freeVarsContains(v) =>
-          // We have found an equation: `x ~ t` where `x` is not free in `t`.
-          // Construct a singleton substitution `[x -> y]`.
-          // Apply propagation to simplify the rhs before it goes into the substitution.
-          Some(SetSubstitution.singleton(x, Term.propagation(rhs)))
         case _ =>
           None
       }
     }
 
     /**
-      * Set unification using the SVE algorithm.
+      * Solves non-recursive variable assignments (e.g. `x1 ~ x2 ∪ c4`).
       *
-      * Returns a most-general unifier that solves the given equation `e`.
+      *   - `x ~ t` where [[Term.freeVarsContains]] on `t` is false in regards to `x`.
+      *     This becomes `([], {x -> t})`
+      */
+    def variableAssignment(eq: Equation): Option[SetSubstitution] = {
+      val Equation(t1, t2, _) = eq
+      (t1, t2) match {
+        // x ~ t, where x is not in t
+        // ---
+        // [],
+        // {x -> t}
+        case (v@Term.Var(x), rhs) if !rhs.freeVarsContains(v) =>
+          Some(SetSubstitution.singleton(x, rhs))
+
+        case _ =>
+          None
+      }
+    }
+
+    /**
+      * Solves all solvable equations using successive-variable-elimination,
+      * i.e. exhaustive instantiation.
       *
-      * Throws a [[ConflictException]] if the equation cannot be solved.
+      * Returns a [[ConflictException]] if the equation cannot be solved.
       */
     def setUnifyOne(e: Equation): Result[SetSubstitution, ConflictException] = try {
-      // The set expression we want to show is empty.
-      val query = if (e.t1 == Term.Empty) e.t2
-      else if (e.t2 == Term.Empty) e.t1
-      else Term.mkXor(e.t1, e.t2)
-
-      // Determine the order in which to eliminate the variables.
+      val query = Term.emptyTest(e.t1, e.t2)
       val fvs = query.freeVars.toList
-
-      // Eliminate all variables one by one in the order specified by fvs.
       Result.Ok(Term.successiveVariableElimination(query, fvs))
     } catch {
       case _: BoolUnificationException => Result.Err(ConflictException(e.t1, e.t2, e.loc))
@@ -1520,8 +1530,7 @@ object FastSetUnification {
         val t1 = SetSubstitution.singleton(x, Term.Univ)(t)
         val se = successiveVariableElimination(Term.propagation(Term.mkInter(t0, t1)), xs)
 
-        val f1 = Term.propagation(Term.mkUnion(se(t0), Term.mkMinus(Term.Var(x), se(t1))))
-        val st = SetSubstitution.singleton(x, f1)
+        val st = SetSubstitution.singleton(x, Term.mkUnion(se(t0), Term.mkMinus(Term.Var(x), se(t1))))
         st ++ se
     }
 
@@ -1541,6 +1550,13 @@ object FastSetUnification {
 
         /** Try all instantiations of [[Term.Cst]] and [[Term.Var]] and check that those formulas are empty */
         emptyEquivalentExhaustive(t)
+    }
+
+    /** Returs a Term that is empty-equivalent if and only if `t1` and `t2` are equivalent. */
+    def emptyTest(t1: Term, t2: Term): Term = {
+      if (t1 == Term.Empty) t2
+      if (t2 == Term.Empty) t1
+      else Term.mkXor(t1, t2)
     }
 
     /**
@@ -1570,11 +1586,8 @@ object FastSetUnification {
     /**
       * Returns `true` if `t1` and `t2` are equivalent formulas.
       */
-    def equivalent(t1: Term, t2: Term): Boolean = {
-      if (t1 == Term.Empty) emptyEquivalent(t2)
-      else if (t2 == Term.Empty) emptyEquivalent(t1)
-      else Term.emptyEquivalent(Term.mkXor(t1, t2))
-    }
+    def equivalent(t1: Term, t2: Term): Boolean =
+      Term.emptyEquivalent(Term.emptyTest(t1, t2))
 
     /**
       * Returns the [[SetEval]] evaluation of `t`, interpreting unknowns in `univUnknowns` as [[Term.Univ]]
@@ -1891,7 +1904,7 @@ object FastSetUnification {
     val empty: SetSubstitution = SetSubstitution(Map.empty)
 
     /** Returns the singleton substitution `[x -> t]`. */
-    def singleton(x: Int, t: Term): SetSubstitution = SetSubstitution(Map(x -> t))
+    def singleton(x: Int, t: Term): SetSubstitution = SetSubstitution(Map(x -> Term.propagation(t)))
   }
 
   /**
