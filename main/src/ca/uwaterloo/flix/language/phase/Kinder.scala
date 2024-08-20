@@ -678,19 +678,22 @@ object Kinder {
           val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
           val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
           KindedAst.Expr.Apply(
-            KindedAst.Expr.Sig(Symbol.mkSigSym(Symbol.mkTraitSym("Dot_" + field.name), Name.Ident("get", loc)), Type.freshVar(Kind.Star, loc), loc),
+            KindedAst.Expr.Sig(Symbol.mkSigSym(Symbol.mkTraitSym("Dot_" + field.name), Name.Ident("_get", loc)), Type.freshVar(Kind.Star, loc), loc),
             List(exp), tvar, evar, loc
           )
       }
 
-    case ResolvedAst.Expr.StructPut(e1, sym, e2, loc) =>
+    case ResolvedAst.Expr.StructPut(e1, field, e2, loc) =>
       val exp1Val = visitExp(e1, kenv0, taenv, henv0, root)
       val exp2Val = visitExp(e2, kenv0, taenv, henv0, root)
       mapN(exp1Val, exp2Val) {
         case (exp1, exp2) =>
           val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
           val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-          KindedAst.Expr.StructPut(exp1, sym, exp2, tvar, evar, loc)
+          KindedAst.Expr.Apply(
+            KindedAst.Expr.Sig(Symbol.mkSigSym(Symbol.mkTraitSym("Dot_" + field.name), Name.Ident("_put", loc)), Type.freshVar(Kind.Star, loc), loc),
+            List(exp1, exp2), tvar, evar, loc
+          )
       }
 
     case ResolvedAst.Expr.VectorLit(exps, loc) =>

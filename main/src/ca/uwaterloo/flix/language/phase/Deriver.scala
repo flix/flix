@@ -74,6 +74,8 @@ object Deriver {
     * Builds the trait for this struct field
     */
   private def getTraitOfField(name: String, loc: SourceLocation)(implicit flix: Flix): KindedAst.Trait = {
+    val param1Symbol = Symbol.freshVarSym("st_val", BoundBy.FormalParam, loc)
+    val param2Symbol = Symbol.freshVarSym("field_val", BoundBy.FormalParam, loc)
     val tparamSym = Symbol.freshKindedTypeVarSym(Ast.VarText.Absent, Kind.Star, isRegion = false, loc)
     val tparam = KindedAst.TypeParam(Name.Ident("a", loc), tparamSym, loc)
     val structType = Type.Var(tparamSym, loc)
@@ -100,8 +102,8 @@ object Deriver {
       tpe = None,
       loc = loc
     )
-    val putSpec = fieldPutSpec(structType, assocEff, assocTpe, List(tparam), loc)
-    val getSpec = fieldGetSpec(structType, assocEff, assocTpe, List(tparam), loc)
+    val putSpec = fieldPutSpec(structType, assocEff, assocTpe, List(tparam), param1Symbol, param2Symbol, loc)
+    val getSpec = fieldGetSpec(structType, assocEff, assocTpe, List(tparam), param1Symbol, loc)
     val getSym = Symbol.mkSigSym(traitSym, Name.Ident("get", loc))
     val putSym = Symbol.mkSigSym(traitSym, Name.Ident("put", loc))
     val getSig = KindedAst.Sig(getSym, getSpec, None)
@@ -157,19 +159,21 @@ object Deriver {
     )
     // JOE TODO: Unify this and weeder into 1 function. Also, make sure the weeder names are modular in general
     // JOE TODO: Remove all old structput/structget unnecessary stuff(errors, ast nodes, etc)
-    val getSpec = fieldGetSpec(structType, eff, fieldType, struct0.tparams, loc)
+    val param1Symbol = Symbol.freshVarSym("st_val", BoundBy.FormalParam, loc)
+    val param2Symbol = Symbol.freshVarSym("field_val", BoundBy.FormalParam, loc)
+    val getSpec = fieldGetSpec(structType, eff, fieldType, struct0.tparams, param1Symbol, loc)
     val getExpr = KindedAst.Expr.StructGet(
-      exp = KindedAst.Expr.Var(Symbol.freshVarSym("st_val", Ast.BoundBy.FormalParam, loc), loc),
+      exp = KindedAst.Expr.Var(param1Symbol, loc),
       sym = field.sym,
       tvar = Type.freshVar(Kind.Star, loc),
       evar = Type.freshVar(Kind.Eff, loc),
       loc = loc
     )
-    val putSpec = fieldPutSpec(structType, eff, fieldType, struct0.tparams, loc)
+    val putSpec = fieldPutSpec(structType, eff, fieldType, struct0.tparams, param1Symbol, param2Symbol, loc)
     val putExpr = KindedAst.Expr.StructPut(
-      exp1 = KindedAst.Expr.Var(Symbol.freshVarSym("st_val", Ast.BoundBy.FormalParam, loc), loc),
+      exp1 = KindedAst.Expr.Var(param1Symbol, loc),
       sym = field.sym,
-      exp2 = KindedAst.Expr.Var(Symbol.freshVarSym("field_val", Ast.BoundBy.FormalParam, loc), loc),
+      exp2 = KindedAst.Expr.Var(param2Symbol, loc),
       tvar = Type.freshVar(Kind.Star, loc),
       evar = Type.freshVar(Kind.Eff, loc),
       loc = loc
@@ -194,19 +198,19 @@ object Deriver {
       assocs = List(assocTpe, assocEff),
       defs = List(getDef, putDef),
       ns = Name.RootNS,
-      loc)
+      loc = loc)
   }
 
   /**
     * Builds the spec for this struct field's `get` operation
     */
-  private def fieldGetSpec(structType: Type, structEff: Type, fieldType: Type, tparams: List[KindedAst.TypeParam], loc: SourceLocation)(implicit flix: Flix): KindedAst.Spec =
+  private def fieldGetSpec(structType: Type, structEff: Type, fieldType: Type, tparams: List[KindedAst.TypeParam], param1Symbol: Symbol.VarSym, loc: SourceLocation)(implicit flix: Flix): KindedAst.Spec =
     KindedAst.Spec(
       doc = Ast.Doc(Nil, loc),
       ann = Ast.Annotations.Empty,
       mod = Ast.Modifiers.Empty,
       tparams = tparams,
-      fparams = List(KindedAst.FormalParam(Symbol.freshVarSym("st_val", BoundBy.FormalParam, loc), Ast.Modifiers.Empty, structType, Ast.TypeSource.Ascribed, loc)),
+      fparams = List(KindedAst.FormalParam(param1Symbol, Ast.Modifiers.Empty, structType, Ast.TypeSource.Ascribed, loc)),
       sc = Scheme(
         tparams.map(_.sym),
         Nil,
@@ -223,15 +227,15 @@ object Deriver {
   /**
     * Builds the spec for this struct field's `put` operation
     */
-  private def fieldPutSpec(structType: Type, structEff: Type, fieldType: Type, tparams: List[KindedAst.TypeParam], loc: SourceLocation)(implicit flix: Flix): KindedAst.Spec =
+  private def fieldPutSpec(structType: Type, structEff: Type, fieldType: Type, tparams: List[KindedAst.TypeParam], param1Symbol: Symbol.VarSym, param2Symbol: Symbol.VarSym, loc: SourceLocation)(implicit flix: Flix): KindedAst.Spec =
     KindedAst.Spec(
       doc = Ast.Doc(Nil, loc),
       ann = Ast.Annotations.Empty,
       mod = Ast.Modifiers.Empty,
       tparams = tparams,
       fparams = List(
-        KindedAst.FormalParam(Symbol.freshVarSym("st_val", BoundBy.FormalParam, loc), Ast.Modifiers.Empty, structType, Ast.TypeSource.Ascribed, loc),
-        KindedAst.FormalParam(Symbol.freshVarSym("field_val", BoundBy.FormalParam, loc), Ast.Modifiers.Empty, structType, Ast.TypeSource.Ascribed, loc)),
+        KindedAst.FormalParam(param1Symbol, Ast.Modifiers.Empty, structType, Ast.TypeSource.Ascribed, loc),
+        KindedAst.FormalParam(param2Symbol, Ast.Modifiers.Empty, fieldType, Ast.TypeSource.Ascribed, loc)),
       sc = Scheme(
         tparams.map(_.sym),
         Nil,
