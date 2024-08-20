@@ -1138,7 +1138,7 @@ mod Test.Exp.Regions {
                 MutMap.put!(1, l, Ref.get(m));
                 match MutMap.get(1, Ref.get(m)) {
                     case Some(k) => MutList.nth(0, Ref.get(k)) |> Option.flatMap(arr -> Array.nth(0, Ref.get(arr)))
-                                                            |> Option.flatMap(m1 -> MutMap.get(1, Ref.get(m1))) == Some(1)
+                                                               |> Option.flatMap(m1 -> MutMap.get(1, Ref.get(m1))) == Some(1)
                     case _       => unreachable!()
                 }
             }
@@ -1355,7 +1355,7 @@ mod Test.Exp.Regions {
                     MutMap.put!(1, 1, Ref.get(Array.get(0, Ref.get(a))));
                     match MutMap.get(1, Ref.get(m)) {
                         case Some(k) => MutList.nth(0, Ref.get(k)) |> Option.flatMap(arr -> Array.nth(0, Ref.get(arr)))
-                                                                |> Option.flatMap(m1 -> MutMap.get(1, Ref.get(m1))) == Some(1)
+                                                                   |> Option.flatMap(m1 -> MutMap.get(1, Ref.get(m1))) == Some(1)
                         case _       => unreachable!()
                     }
                 }

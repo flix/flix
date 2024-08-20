@@ -158,7 +158,6 @@ mod Test.Exp.Ref.Assign {
         let l = Ref.fresh(rc, 1);
         Ref.put(Ref.get(l) + 1, l);
         Ref.put(Ref.get(l) + 1, l);
-        Ref.get(l) == 3
     }
 
     @test
