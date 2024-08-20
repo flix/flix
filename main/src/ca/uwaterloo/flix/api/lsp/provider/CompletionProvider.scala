@@ -272,6 +272,7 @@ object CompletionProvider {
       case WeederError.UnappliedIntrinsic(_, _) => (5, SyntacticContext.Expr.OtherExpr)
       case err: ResolutionError.UndefinedJvmStaticField => (1, SyntacticContext.Expr.StaticFieldOrMethod(err))
       case err: TypeError.MethodNotFound => (1, SyntacticContext.Expr.InvokeMethod(err))
+      case err: ResolutionError.UndefinedStructField => (1, SyntacticContext.Expr.StructAccess(err))
       case err: ParseError => (5, err.sctx)
       case _ => (999, SyntacticContext.Unknown)
     }).minByOption(_._1) match {

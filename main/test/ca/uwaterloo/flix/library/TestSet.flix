@@ -1339,14 +1339,14 @@ def eq19(): Bool = Set#{1, 2, 3} == Set#{2, 1, 3}
 
 @test
 def forEach01(): Bool = region rc {
-    let ri = ref 21 @ rc;
+    let ri = Ref.fresh(rc, 21);
     Set.forEach(x -> Ref.put(x, ri), Set#{});
     21 == deref ri
 }
 
 @test
 def forEach02(): Bool = region rc {
-    let ri = ref 21 @ rc;
+    let ri = Ref.fresh(rc, 21);
     Set.forEach(x -> Ref.put(x, ri), Set#{42});
     42 == deref ri
 }
@@ -1357,14 +1357,14 @@ def forEach02(): Bool = region rc {
 
 @test
 def forEachWithIndex01(): Bool = region rc {
-    let ri = ref 21 @ rc;
+    let ri = Ref.fresh(rc, 21);
     Set.forEachWithIndex((i, _) -> Ref.put(i, ri), Set#{});
     21 == deref ri
 }
 
 @test
 def forEachWithIndex02(): Bool = region rc {
-    let ri = ref 21 @ rc;
+    let ri = Ref.fresh(rc, 21);
     Set.forEachWithIndex((i, _) -> Ref.put(i, ri), Set#{42});
     0 == deref ri
 }
@@ -1403,7 +1403,7 @@ def unfold06(): Bool =
 
 @test
 def unfoldWithIter01(): Bool = region rc {
-    let x = ref 0 @ rc;
+    let x = Ref.fresh(rc, 0);
     let step = () ->
         if (true)
             None
@@ -1417,7 +1417,7 @@ def unfoldWithIter01(): Bool = region rc {
 
 @test
 def unfoldWithIter02(): Bool = region rc {
-    let x = ref 0 @ rc;
+    let x = Ref.fresh(rc, 0);
     let step = () ->
         if (deref x > 0)
             None
@@ -1431,7 +1431,7 @@ def unfoldWithIter02(): Bool = region rc {
 
 @test
 def unfoldWithIter03(): Bool = region rc {
-    let x = ref 0 @ rc;
+    let x = Ref.fresh(rc, 0);
     let step = () ->
         if (deref x > 1)
             None
@@ -1445,7 +1445,7 @@ def unfoldWithIter03(): Bool = region rc {
 
 @test
 def unfoldWithIter04(): Bool = region rc {
-    let x = ref 0 @ rc;
+    let x = Ref.fresh(rc, 0);
     let step = () ->
         if (deref x >= 10)
             None
@@ -1459,7 +1459,7 @@ def unfoldWithIter04(): Bool = region rc {
 
 @test
 def unfoldWithIter05(): Bool = region rc {
-    let x = ref 5 @ rc;
+    let x = Ref.fresh(rc, 5);
     let step = () ->
         if (deref x >= 10)
             None
@@ -1473,7 +1473,7 @@ def unfoldWithIter05(): Bool = region rc {
 
 @test
 def unfoldWithIter06(): Bool = region rc {
-    let x = ref 0 @ rc;
+    let x = Ref.fresh(rc, 0);
     let step = () ->
         if (deref x >= 10)
             None

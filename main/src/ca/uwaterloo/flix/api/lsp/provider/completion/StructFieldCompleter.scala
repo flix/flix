@@ -23,9 +23,8 @@ import java.lang.reflect.{Field, Method, Modifier}
 
 object StructFieldCompleter {
   def getCompletions(e: ResolutionError.UndefinedStructField, root: TypedAst.Root): Iterable[Completion.StructFieldCompletion] = {
-    val completions = root.structs(???).fields.filter {
-      case (k, v) => k.name.startsWith(e.field.name)
-    }
-    completions.values.map(field => Completion.StructFieldCompletion(field.sym.name, field.tpe))
+    val fields = root.structs.values.flatMap(struct => struct.fields.values)
+    val completions = fields.filter (_.sym.name.startsWith(e.field.name))
+    completions.map(field => Completion.StructFieldCompletion(field.sym.name, field.tpe))
   }
 }

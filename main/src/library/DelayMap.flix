@@ -769,7 +769,7 @@ mod DelayMap {
     ///
     @Experimental @Parallel
     pub def toMutMap(rc: Region[r], m: DelayMap[k, v]): MutMap[k, v, r] \ r =
-        MutMap.MutMap(rc, ref toMap(m) @ rc)
+        MutMap.MutMap(rc, Ref.fresh(rc, toMap(m)))
 
     ///
     /// Returns the map `m` as a set of key-value pairs.
@@ -817,7 +817,7 @@ mod DelayMap {
     ///
     @Experimental
     pub def forEachWithIndex(f: (Int32, k, v) -> Unit \ ef, m: DelayMap[k, v]): Unit \ ef = region rc {
-       let ix = ref 0 @ rc;
+       let ix = Ref.fresh(rc, 0);
        let f1 = (k, v) -> { let i =  deref ix; f(i, k, v); Ref.put(i + 1, ix) };
        forEach(f1, m)
     }
