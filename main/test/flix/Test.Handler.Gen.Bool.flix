@@ -20,7 +20,7 @@ mod Test.Handler.Gen.Bool {
         }
 
     def getAndInc(r: Ref[(Int32, Bool), r]): (Int32, Bool) \ r =
-        let (i, b) = deref r;
+        let (i, b) = Ref.get(r);
         Ref.put((i + 1, not b), r);
         (i, b)
 

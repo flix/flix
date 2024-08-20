@@ -1336,7 +1336,7 @@ mod List {
     pub def iterator(rc: Region[r], xs: List[a]): Iterator[a, r, r] \ r =
         let ls = Ref.fresh(rc, xs);
         let next = () -> {
-            match (deref ls) {
+            match (Ref.get(ls)) {
                 case Nil     => None
                 case x :: rs => Ref.put(rs, ls); Some(x)
             }
