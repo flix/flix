@@ -49,6 +49,7 @@ object Namer {
 
       val units = ParOps.parMapValues(program.units)(visitUnit)
       val SymbolTable(symbols0, instances0, uses0) = units.values.foldLeft(SymbolTable.empty)(tableUnit)
+      val structFields = collectStructFields(units)
 
       // TODO NS-REFACTOR remove use of NName
       val symbols = symbols0.map {
@@ -60,7 +61,7 @@ object Namer {
       val uses = uses0.map {
         case (k, v) => Name.mkUnlocatedNName(k) -> v
       }
-      Validation.toSuccessOrSoftFailure(NamedAst.Root(symbols, instances, uses, units, program.entryPoint, locations, program.names), sctx.errors.asScala)
+      Validation.toSuccessOrSoftFailure(NamedAst.Root(symbols, structFields, instances, uses, units, program.entryPoint, locations, program.names), sctx.errors.asScala)
     }(DebugValidation())
 
   /**
@@ -141,12 +142,7 @@ object Namer {
       cases.foldLeft(table1)(tableDecl)
 
     case NamedAst.Declaration.Struct(_, _, _, sym, _, fields, _, _) =>
-      val table1 = tryAddToTable(table0, sym.namespace, sym.name, decl)
-      fields.foldLeft(table1)(tableDecl)
-
-    case NamedAst.Declaration.StructField(sym, tpe, loc) =>
-      // Add a `€` to the beginning of the name to prevent collisions with other kinds of names
-      tryAddToTable(table0, sym.namespace, "€" + sym.name, decl)
+      tryAddToTable(table0, sym.namespace, sym.name, decl)
 
     case NamedAst.Declaration.RestrictableEnum(_, _, _, sym, _, _, _, cases, _) =>
       val table1 = tryAddToTable(table0, sym.namespace, sym.name, decl)
@@ -174,6 +170,8 @@ object Namer {
     case NamedAst.Declaration.AssocTypeDef(_, _, _, _, _, loc) =>
       throw InternalCompilerException("unexpected tabling of associated type definition", loc)
 
+    case NamedAst.Declaration.StructField(sym, tpe, loc) =>
+      throw InternalCompilerException("unexpected tabling of struct field", loc)
   }
 
   /**
@@ -238,6 +236,20 @@ object Namer {
       sctx.errors.add(NameError.DuplicateLowerName(name, loc1, loc2))
       sctx.errors.add(NameError.DuplicateLowerName(name, loc2, loc1))
     }
+  }
+
+  private def collectStructFields(sourceToUnit: Map[Source, NamedAst.CompilationUnit]): Set[Name.Label] = {
+    sourceToUnit.values.flatMap(collectStructFields).toSet
+  }
+
+  private def collectStructFields(unit: NamedAst.CompilationUnit): List[Name.Label] = {
+    val structs = unit match {
+      case NamedAst.CompilationUnit(usesAndImports, decls, loc) =>
+        decls.collect {
+          case s: NamedAst.Declaration.Struct => s
+        }
+    }
+    structs.flatMap(_.fields.map(field => Name.Label(field.sym.name, field.sym.loc)))
   }
 
   /**

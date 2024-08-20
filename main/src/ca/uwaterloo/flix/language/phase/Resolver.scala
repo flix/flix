@@ -1381,28 +1381,24 @@ object Resolver {
         }
 
       case NamedAst.Expr.StructGet(e, field0, loc) =>
-        lookupStructField(field0, env0, ns0, root) match {
-          case Result.Ok(field) =>
-            val eVal = visitExp(e, env0)
-            val idx = field.sym.idx
-            mapN(eVal) {
-              case e => ResolvedAst.Expr.StructGet(e, field.sym, loc)
-            }
-          case Result.Err(e) =>
-            Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
+        if(root.structFields.contains(field0)) {
+          val eVal = visitExp(e, env0)
+          mapN(eVal) {
+            case e => ResolvedAst.Expr.StructGet(e, field0, loc)
+          }
+        } else {
+          ResolutionError.UndefinedStructField(field0, loc)
         }
 
       case NamedAst.Expr.StructPut(e1, field0, e2, loc) =>
-        lookupStructField(field0, env0, ns0, root) match {
-          case Result.Ok(field) =>
-            val e1Val = visitExp(e1, env0)
-            val e2Val = visitExp(e2, env0)
-            val idx = field.sym.idx
-            mapN(e1Val, e2Val) {
-              case (e1, e2) => ResolvedAst.Expr.StructPut(e1, field.sym, e2, loc)
-            }
-          case Result.Err(e) =>
-            Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
+        if(root.structFields.contains(field0)) {
+          val e1Val = visitExp(e1, env0)
+          val e2Val = visitExp(e2, env0)
+          mapN(e1Val, e2Val) {
+            case (e1, e2) => ResolvedAst.Expr.StructPut(e1, field0, e2, loc)
+          }
+        } else {
+          ResolutionError.UndefinedStructField(field0, loc)
         }
 
       case NamedAst.Expr.VectorLit(exps, loc) =>
@@ -2339,32 +2335,7 @@ object Resolver {
     // TODO NS-REFACTOR check accessibility
   }
 
-  /**
-   * Finds the struct field that matches the given name `name` in the namespace `ns0`.
-   */
-  private def lookupStructField(name: Name.Label, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Result[NamedAst.Declaration.StructField, ResolutionError.UndefinedStructField] = {
-    val matches = tryLookupName(Name.mkQName("€" + name.name, name.loc), env, ns0, root) collect {
-      case Resolution.Declaration(s: NamedAst.Declaration.StructField) => s
-    }
-    matches match {
-      // Case 0: No matches. Error.
-      case Nil => Result.Err(ResolutionError.UndefinedStructField(name, name.loc))
-      // Case 1: Exactly one match. Success.
-      case field :: _ => Result.Ok(field)
-      // Case 2: Multiple matches. Error
-      case sts => throw InternalCompilerException(s"unexpected duplicate struct field: '$name'.", name.loc)
-    }
-    // TODO NS-REFACTOR check accessibility
-  }
-
-  /**
-    * Finds the struct that matches the given symbol `sym` and `tag` in the namespace `ns0`.
-    */
-  private def lookupStruct(sym: Symbol.StructSym, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Result[NamedAst.Declaration.Struct, ResolutionError.UndefinedStruct] = {
-    // look up the name
-    val qname = Name.mkQName(sym.namespace, sym.name, sym.loc)
-    lookupStruct(qname, env, ns0, root)
-  }
+  // JOE TODO: Test a.v where a has type A but A has no v field but B does
 
   /**
     * Finds the restrictable enum case that matches the given qualified name `qname` and `tag` in the namespace `ns0`.
