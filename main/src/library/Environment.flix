@@ -36,7 +36,7 @@ mod Environment {
     ///
     pub def getEnv(): Map[String, String] =
         try {
-            let iter = unsafe (System.getenv().entrySet()).iterator();
+            let iter = unsafe System.getenv().entrySet().iterator();
             getEnvHelper(iter, Map.empty())
         } catch {
             case _: Exception => Map.empty()
