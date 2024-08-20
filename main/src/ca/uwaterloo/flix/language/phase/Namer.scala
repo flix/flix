@@ -145,7 +145,8 @@ object Namer {
       fields.foldLeft(table1)(tableDecl)
 
     case NamedAst.Declaration.StructField(sym, tpe, loc) =>
-      tryAddToTable(table0, sym.namespace, sym.name, decl)
+      // Add a `€` to the beginning of the name to prevent collisions with other kinds of names
+      tryAddToTable(table0, sym.namespace, "€" + sym.name, decl)
 
     case NamedAst.Declaration.RestrictableEnum(_, _, _, sym, _, _, _, cases, _) =>
       val table1 = tryAddToTable(table0, sym.namespace, sym.name, decl)
