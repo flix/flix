@@ -792,14 +792,14 @@ mod TestNel {
 
     @test
     def forEach01(): Bool = region rc {
-        let ri = ref 21 @ rc;
+        let ri = Ref.fresh(rc, 21);
         Nel.forEach(x -> Ref.put(x, ri), Nel.singleton(1));
         1 == deref ri
     }
 
     @test
     def forEach02(): Bool = region rc {
-        let ri = ref 21 @ rc;
+        let ri = Ref.fresh(rc, 21);
         Nel.forEach(x -> Ref.put(x, ri), Nel(1, 2 :: 3 :: Nil));
         3 == deref ri
     }
@@ -810,14 +810,14 @@ mod TestNel {
 
     @test
     def forEachWithIndex01(): Bool = region rc {
-        let ri = ref 21 @ rc;
+        let ri = Ref.fresh(rc, 21);
         Nel.forEachWithIndex((i, _) -> Ref.put(i, ri), Nel.singleton(1));
         0 == deref ri
     }
 
     @test
     def forEachWithIndex02(): Bool = region rc {
-        let ri = ref 21 @ rc;
+        let ri = Ref.fresh(rc, 21);
         Nel.forEachWithIndex((i, _) -> Ref.put(i, ri), Nel(1, List#{2, 3}));
         2 == deref ri
     }
@@ -1056,7 +1056,7 @@ mod TestNel {
 
     @test
     def traverse01(): Bool = region rc {
-        let st = ref 0 @ rc;
+        let st = Ref.fresh(rc, 0);
         let l = Nel.singleton(1);
         let ans = Nel.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, l);
         ans == Identity.Identity(Nel.singleton(1)) and deref st == 1
@@ -1064,7 +1064,7 @@ mod TestNel {
 
     @test
     def traverse02(): Bool = region rc {
-        let st = ref 0 @ rc;
+        let st = Ref.fresh(rc, 0);
         let l = Nel.cons(1, Nel.singleton(2));
         let ans = Nel.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, l);
         ans == Identity.Identity(Nel.cons(1, Nel.singleton(2))) and deref st == 2
@@ -1072,7 +1072,7 @@ mod TestNel {
 
     @test
     def traverse03(): Bool = region rc {
-        let st = ref 0 @ rc;
+        let st = Ref.fresh(rc, 0);
         let l = Nel.cons(1, Nel.cons(2, Nel.singleton(3)));
         let ans = Nel.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, l);
         ans == Identity.Identity(Nel.cons(1, Nel.cons(2, Nel.singleton(3)))) and deref st == 3

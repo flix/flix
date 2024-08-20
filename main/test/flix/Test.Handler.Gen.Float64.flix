@@ -9,7 +9,7 @@ mod Test.Handler.Gen.Float64 {
 
     def sample(limit: Float64): List[Float64] =
         region rc {
-            let counter = ref 0.0f64 @ rc;
+            let counter = Ref.fresh(rc, 0.0f64);
             try {
                 generator(); Nil
             } with Gen {

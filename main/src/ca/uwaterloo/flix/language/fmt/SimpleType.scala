@@ -263,7 +263,7 @@ object SimpleType {
   /**
     * A tuple.
     */
-  case class Tuple(elms: List[SimpleType]) extends SimpleType
+  case class Tuple(tpes: List[SimpleType]) extends SimpleType
 
   /**
    * A method return type.

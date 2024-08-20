@@ -9,7 +9,7 @@ mod Test.Handler.Gen.Int32 {
 
     def sample(limit: Int32): List[Int32] =
         region rc {
-            let counter = ref 0 @ rc;
+            let counter = Ref.fresh(rc, 0);
             try {
                 generator(); Nil
             } with Gen {

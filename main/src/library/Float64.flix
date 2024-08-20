@@ -24,8 +24,9 @@ instance UpperBound[Float64] {
 
 mod Float64 {
 
-    import java.lang.{Double, String, Math}
-    import java.math.BigDecimal;
+    import java.lang.Double
+    import java.lang.Math
+    import java.math.BigDecimal
 
     ///
     /// Returns the number of bits used to represent a `Float64`.

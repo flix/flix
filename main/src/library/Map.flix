@@ -780,7 +780,7 @@ mod Map {
     /// Returns `m` as a mutable map.
     ///
     pub def toMutMap(rc: Region[r], m: Map[k, v]): MutMap[k, v, r] \ r =
-        MutMap.MutMap(rc, ref m @ rc)
+        MutMap.MutMap(rc, Ref.fresh(rc, m))
 
     ///
     /// Returns the map `m` as a list of key-value pairs.

@@ -116,6 +116,7 @@ sealed trait TokenKind {
       case TokenKind.KeywordPub => "'pub'"
       case TokenKind.KeywordProject => "'project'"
       case TokenKind.KeywordQuery => "'query'"
+      case TokenKind.KeywordRedef => "'redef'"
       case TokenKind.KeywordRef => "'ref'"
       case TokenKind.KeywordRegion => "'region'"
       case TokenKind.KeywordRestrictable => "'restrictable'"
@@ -790,6 +791,8 @@ object TokenKind {
   case object KeywordProject extends TokenKind
 
   case object KeywordQuery extends TokenKind
+
+  case object KeywordRedef extends TokenKind
 
   case object KeywordRef extends TokenKind
 

@@ -29,9 +29,12 @@ instance Reader[File] {
 
 mod File {
 
-    use IOError.{Generic}
-    use File.Mode.{ReadOnly, ReadWrite, ReadWriteS, ReadWriteD}
-    import java.io.RandomAccessFile;
+    use IOError.Generic
+    use File.Mode.ReadOnly
+    use File.Mode.ReadWrite
+    use File.Mode.ReadWriteS
+    use File.Mode.ReadWriteD
+    import java.io.RandomAccessFile
 
     ///
     /// Represents a mode for opening files used by the function `open`.

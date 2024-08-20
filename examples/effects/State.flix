@@ -6,7 +6,7 @@ mod StateExample {
     }
 
     pub def main(): Unit \ IO = region rc {
-        let n = ref 0 @ rc;
+        let n = Ref.fresh(rc, 0);
         try {
             let number = 573;
             // Counting how many steps 573 takes to go to 1 in collatz conjecture
