@@ -55,7 +55,7 @@ mod Test.Exp.MonadicFor {
 
     @test
     def testMonadicFor08(): Bool = region rc {
-        let l1 = ref Nil @ rc;
+        let l1 = Ref.fresh(rc, Nil);
         let l2 =
             forM (x <- 1 :: 2 :: 3 :: Nil) yield {
                 Ref.put(x :: deref l1, l1);

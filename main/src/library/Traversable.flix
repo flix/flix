@@ -68,7 +68,7 @@ mod Traversable {
     ///
     pub def mapAccumLeft(f: (acc, a) -> (acc, b) \ ef, start: acc, t: t[a]): (acc, t[b]) \ (ef + Foldable.Aef[t]) with Traversable[t] =
         region rc {
-            let acc = ref start @ rc;
+            let acc = Ref.fresh(rc, start);
             let Identity.Identity(tb) = t |> Traversable.traverse(x -> {
                 let st = deref acc;
                 let (acc1, b) = f(st, x);
