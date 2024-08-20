@@ -1,3 +1,10 @@
+struct S[r] {
+    foo: Int32
+}
+
+@test
+def foo(): Unit = ()
+
 mod Test.Dec.Struct {
     pub struct Empty[r] {}
 
