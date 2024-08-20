@@ -177,7 +177,7 @@ mod Option {
     ///
     /// Returns `1` for `Some(_)` and `0` for `None`.
     ///
-    pub def size(o: Option[a]): Bool = match o {
+    pub def size(o: Option[a]): Int32 = match o {
         case Some(_) => 1
         case None => 0
     }
