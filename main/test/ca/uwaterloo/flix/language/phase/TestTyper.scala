@@ -1657,7 +1657,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError](result)
   }
 
-  test("TypeError.StructGet.03") {
+  test("TypeError.StructPut.03") {
     val input =
       """
         |mod S {
