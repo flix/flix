@@ -678,7 +678,7 @@ object Kinder {
           val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
           val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
           KindedAst.Expr.Apply(
-            KindedAst.Expr.Sig(Symbol.mkSigSym(Symbol.mkTraitSym("Dot_" + field.name), Name.Ident("_get", loc)), Type.freshVar(Kind.Star, loc), loc),
+            KindedAst.Expr.Sig(Symbol.mkSigSym(Symbol.mkTraitSym("Dot_" + field.name), Name.Ident("get", loc)), Type.freshVar(Kind.Star, loc), loc),
             List(exp), tvar, evar, loc
           )
       }
@@ -691,7 +691,7 @@ object Kinder {
           val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
           val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
           KindedAst.Expr.Apply(
-            KindedAst.Expr.Sig(Symbol.mkSigSym(Symbol.mkTraitSym("Dot_" + field.name), Name.Ident("_put", loc)), Type.freshVar(Kind.Star, loc), loc),
+            KindedAst.Expr.Sig(Symbol.mkSigSym(Symbol.mkTraitSym("Dot_" + field.name), Name.Ident("put", loc)), Type.freshVar(Kind.Star, loc), loc),
             List(exp1, exp2), tvar, evar, loc
           )
       }
