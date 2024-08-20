@@ -338,9 +338,9 @@ mod Files {
             let reader = JFiles.newBufferedReader(javaPath);
             let line = Ref.fresh(rc, reader.readLine());
             let next = () -> ({
-                if (not Object.isNull(deref line)) {
+                if (not Object.isNull(Ref.get(line))) {
                     try {
-                        let l = deref line;
+                        let l = Ref.get(line);
                         Ref.put(reader.readLine(), line);
                         Some(Ok(l))
                     } catch {
@@ -371,9 +371,9 @@ mod Files {
             let reader = JFiles.newBufferedReader(javaPath, Charset.forName(opts#charSet));
             let line = Ref.fresh(rc, reader.readLine());
             let next = () -> ({
-                if (not Object.isNull(deref line)) {
+                if (not Object.isNull(Ref.get(line))) {
                     try {
-                        let l = deref line;
+                        let l = Ref.get(line);
                         Ref.put(reader.readLine(), line);
                         Some(Ok(l))
                     } catch {
@@ -459,14 +459,14 @@ mod Files {
                 let javaFile = new JFile(f);
                 let stream = new FileInputStream(javaFile);
                 let bytes: Ref[Array[Int8, _], _] = Ref.fresh(rc, Array.empty(rc, chunkSize));
-                let numberRead = Ref.fresh(rc, unchecked_cast(stream.read(deref bytes) as _ \ IO + r));
+                let numberRead = Ref.fresh(rc, unchecked_cast(stream.read(Ref.get(bytes)) as _ \ IO + r));
                 let next = () -> ({
-                    if (deref numberRead >= 0) {
+                    if (Ref.get(numberRead) >= 0) {
                         try {
-                            let chunk = deref bytes;
+                            let chunk = Ref.get(bytes);
                             Ref.put(Array.empty(rc, chunkSize), bytes);
-                            let accRead = deref numberRead;
-                            Ref.put(unchecked_cast(stream.read(deref bytes) as _ \ IO + r), numberRead);
+                            let accRead = Ref.get(numberRead);
+                            Ref.put(unchecked_cast(stream.read(Ref.get(bytes)) as _ \ IO + r), numberRead);
                             Some(Ok(readBytesWithHelper(rc, chunk, accRead, chunkSize)))
                         } catch {
                             case ex: IOException => {

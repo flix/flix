@@ -24,7 +24,7 @@ mod TestMutList {
     ///
     def capacity(v: MutList[a, r]): Int32 \ r =
         let MutList(_, a, _) = v;
-        Array.length(deref a)
+        Array.length(Ref.get(a))
 
     /////////////////////////////////////////////////////////////////////////////
     // toString                                                                //
@@ -991,7 +991,7 @@ mod TestMutList {
         let v1 = MutList.range(rc, 0, 1000);
         let MutList(_, l1, n1) = v1;
         let MutList(_, l2, n2) = MutList.copy(rc, v1);
-        (deref n1 == deref n2) and (deref l1 `Array.sameElements` deref l2)
+        (Ref.get(n1) == Ref.get(n2)) and (Ref.get(l1) `Array.sameElements` Ref.get(l2))
     }
 
     @test
@@ -999,8 +999,8 @@ mod TestMutList {
         let v1 = MutList.range(rc, 0, 3);
         let MutList(_, l1, n1) = v1;
         let MutList(_, l2, n2) = MutList.copy(rc, v1);
-        (deref n1 == deref n2) and (deref l1 `Array.sameElements` deref l2) and
-            (Array.length(deref l2) == 8)
+        (Ref.get(n1) == Ref.get(n2)) and (Ref.get(l1) `Array.sameElements` Ref.get(l2)) and
+            (Array.length(Ref.get(l2)) == 8)
     }
 
 
@@ -1684,9 +1684,9 @@ mod TestMutList {
         let c = capacity(v);
         let i = Ref.fresh(rc, 0);
         let f = _ -> {
-            if (deref i < 76) {
+            if (Ref.get(i) < 76) {
                 discard MutList.pop!(v);
-                Ref.put(deref i + 1, i)
+                Ref.put(Ref.get(i) + 1, i)
             }
             else ()
         };

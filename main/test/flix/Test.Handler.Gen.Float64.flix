@@ -20,7 +20,7 @@ mod Test.Handler.Gen.Float64 {
         }
 
     def getAndInc(r: Ref[Float64, r]): Float64 \ r =
-        let i = deref r;
+        let i = Ref.get(r);
         Ref.put(i + 1.0f64, r);
         i
 

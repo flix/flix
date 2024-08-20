@@ -26,7 +26,7 @@ mod StateExample {
             let steps = do State.get();
             println("${number} took ${steps} steps to go to 1")
         } with State {
-            def get(k) = k(deref n)
+            def get(k) = k(Ref.get(n))
             def put(value, k) = {
                 Ref.put(value, n);
                 k()
