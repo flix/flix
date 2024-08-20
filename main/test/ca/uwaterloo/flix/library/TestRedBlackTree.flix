@@ -397,7 +397,7 @@ mod TestRedBlackTree {
         let x = Ref.fresh(rc, 21);
         let Map.Map(t) = Map#{};
         RedBlackTree.forEach((k, _) -> Ref.put(k, x), t);
-        21 == deref x
+        21 == Ref.get(x)
     }
 
     @test
@@ -405,7 +405,7 @@ mod TestRedBlackTree {
         let x = Ref.fresh(rc, 21);
         let Map.Map(t) = Map#{1 => "Hello World!"};
         RedBlackTree.forEach((k, _) -> Ref.put(k, x), t);
-        1 == deref x
+        1 == Ref.get(x)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -417,7 +417,7 @@ mod TestRedBlackTree {
         let x = Ref.fresh(rc, 21);
         let Map.Map(t) = Map#{};
         RedBlackTree.forEachWithIndex((i, _, _) -> Ref.put(i, x), t);
-        21 == deref x
+        21 == Ref.get(x)
     }
 
     @test
@@ -425,7 +425,7 @@ mod TestRedBlackTree {
         let x = Ref.fresh(rc, 21);
         let Map.Map(t) = Map#{1 => "Hello World!"};
         RedBlackTree.forEachWithIndex((i, _, _) -> Ref.put(i, x), t);
-        0 == deref x
+        0 == Ref.get(x)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -752,7 +752,7 @@ mod TestRedBlackTree {
         let st = Ref.fresh(rc, '#');
         let t: RedBlackTree[Int32, Char] = RedBlackTree.empty();
         let ans = RedBlackTree.mapAWithKey((_, x) -> {Ref.put(x, st); Identity.Identity(x)}, t);
-        ans == Identity.Identity(RedBlackTree.empty()) and deref st == '#'
+        ans == Identity.Identity(RedBlackTree.empty()) and Ref.get(st) == '#'
     }
 
     @test
@@ -760,7 +760,7 @@ mod TestRedBlackTree {
         let st = Ref.fresh(rc, '#');
         let t = RedBlackTree.empty() |> RedBlackTree.insert(1, 'a');
         let ans = RedBlackTree.mapAWithKey((_, x) -> {Ref.put(x, st); Identity.Identity(x)}, t);
-        ans == Identity.Identity(RedBlackTree.empty() |> RedBlackTree.insert(1, 'a')) and deref st == 'a'
+        ans == Identity.Identity(RedBlackTree.empty() |> RedBlackTree.insert(1, 'a')) and Ref.get(st) == 'a'
     }
 
     @test
@@ -768,7 +768,7 @@ mod TestRedBlackTree {
         let st = Ref.fresh(rc, '#');
         let t = RedBlackTree.empty() |> RedBlackTree.insert(1, 'a') |> RedBlackTree.insert(2, 'b');
         let ans = RedBlackTree.mapAWithKey((_, x) -> {Ref.put(x, st); Identity.Identity(x)}, t);
-        ans == Identity.Identity(RedBlackTree.empty() |> RedBlackTree.insert(1, 'a') |> RedBlackTree.insert(2, 'b')) and deref st == 'b'
+        ans == Identity.Identity(RedBlackTree.empty() |> RedBlackTree.insert(1, 'a') |> RedBlackTree.insert(2, 'b')) and Ref.get(st) == 'b'
     }
 
     @test
@@ -778,7 +778,7 @@ mod TestRedBlackTree {
         let ans = RedBlackTree.mapAWithKey((_, x) -> {Ref.put(x, st); Identity.Identity(x)}, t);
         ans == Identity.Identity(RedBlackTree.empty()
                             |> RedBlackTree.insert(1, 'a')
-                            |> RedBlackTree.insert(2, 'b') |> RedBlackTree.insert(3, 'c')) and deref st == 'c'
+                            |> RedBlackTree.insert(2, 'b') |> RedBlackTree.insert(3, 'c')) and Ref.get(st) == 'c'
     }
 
     /////////////////////////////////////////////////////////////////////////////

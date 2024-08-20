@@ -117,7 +117,7 @@ mod Test.Exp.IfThenElse {
         let y = Ref.fresh(rc, 1);
         let r =
             if ({ Ref.put(2, y); true } or true)
-                deref y
+                Ref.get(y)
             else
                 3;
         r == 2
@@ -130,7 +130,7 @@ mod Test.Exp.IfThenElse {
             if ({ Ref.put(2, y); true } and false)
                 3
             else
-                deref y;
+                Ref.get(y);
         r == 2
     }
 

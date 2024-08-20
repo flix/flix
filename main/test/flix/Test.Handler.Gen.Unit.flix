@@ -20,7 +20,7 @@ mod Test.Handler.Gen.Unit {
         }
 
     def getAndInc(r: Ref[Int32, r]): Int32 \ r =
-        let i = deref r;
+        let i = Ref.get(r);
         Ref.put(i + 1, r);
         i
 

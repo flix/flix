@@ -1140,9 +1140,9 @@ mod TestMutDeque {
     def forEach01(): Bool = region rc {
         let d = MutDeque.empty(rc);
         let l = Ref.fresh(rc, Nil);
-        let fn = x -> if (x > 0) Ref.put("T" :: deref l, l) else Ref.put("F" :: deref l, l);
+        let fn = x -> if (x > 0) Ref.put("T" :: Ref.get(l), l) else Ref.put("F" :: Ref.get(l), l);
         MutDeque.forEach(fn, d);
-        List.reverse(deref l) |> List.join("") == ""
+        List.reverse(Ref.get(l)) |> List.join("") == ""
     }
 
     @test
@@ -1150,9 +1150,9 @@ mod TestMutDeque {
         let d = MutDeque.empty(rc);
         MutDeque.pushBack(0, d);
         let l = Ref.fresh(rc, Nil);
-        let fn = x -> if (x > 0) Ref.put("T" :: deref l, l) else Ref.put("F" :: deref l, l);
+        let fn = x -> if (x > 0) Ref.put("T" :: Ref.get(l), l) else Ref.put("F" :: Ref.get(l), l);
         MutDeque.forEach(fn, d);
-        List.reverse(deref l) |> List.join("") == "F"
+        List.reverse(Ref.get(l)) |> List.join("") == "F"
     }
 
     @test
@@ -1160,9 +1160,9 @@ mod TestMutDeque {
         let d = MutDeque.empty(rc);
         MutDeque.pushBack(1, d);
         let l = Ref.fresh(rc, Nil);
-        let fn = x -> if (x > 0) Ref.put("T" :: deref l, l) else Ref.put("F" :: deref l, l);
+        let fn = x -> if (x > 0) Ref.put("T" :: Ref.get(l), l) else Ref.put("F" :: Ref.get(l), l);
         MutDeque.forEach(fn, d);
-        List.reverse(deref l) |> List.join("") == "T"
+        List.reverse(Ref.get(l)) |> List.join("") == "T"
     }
 
     @test
@@ -1171,9 +1171,9 @@ mod TestMutDeque {
         MutDeque.pushBack(0, d);
         MutDeque.pushBack(1, d);
         let l = Ref.fresh(rc, Nil);
-        let fn = x -> if (x > 0) Ref.put("T" :: deref l, l) else Ref.put("F" :: deref l, l);
+        let fn = x -> if (x > 0) Ref.put("T" :: Ref.get(l), l) else Ref.put("F" :: Ref.get(l), l);
         MutDeque.forEach(fn, d);
-        List.reverse(deref l) |> List.join("") == "FT"
+        List.reverse(Ref.get(l)) |> List.join("") == "FT"
     }
 
     @test
@@ -1182,9 +1182,9 @@ mod TestMutDeque {
         MutDeque.pushBack(1, d);
         MutDeque.pushFront(0, d);
         let l = Ref.fresh(rc, Nil);
-        let fn = x -> if (x > 0) Ref.put("T" :: deref l, l) else Ref.put("F" :: deref l, l);
+        let fn = x -> if (x > 0) Ref.put("T" :: Ref.get(l), l) else Ref.put("F" :: Ref.get(l), l);
         MutDeque.forEach(fn, d);
-        List.reverse(deref l) |> List.join("") == "FT"
+        List.reverse(Ref.get(l)) |> List.join("") == "FT"
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1196,7 +1196,7 @@ mod TestMutDeque {
         let d = MutDeque.empty(rc);
         let ri = Ref.fresh(rc, 21);
         MutDeque.forEachWithIndex((i, _) -> Ref.put(i, ri), d);
-        21 == deref ri
+        21 == Ref.get(ri)
     }
 
     @test
@@ -1205,7 +1205,7 @@ mod TestMutDeque {
         let ri = Ref.fresh(rc, 21);
         MutDeque.pushBack(0, d);
         MutDeque.forEachWithIndex((i, _) -> Ref.put(i, ri), d);
-        0 == deref ri
+        0 == Ref.get(ri)
     }
 
     @test
@@ -1215,7 +1215,7 @@ mod TestMutDeque {
         MutDeque.pushBack(0, d);
         MutDeque.pushBack(1, d);
         MutDeque.forEachWithIndex((i, _) -> Ref.put(i, ri), d);
-        1 == deref ri
+        1 == Ref.get(ri)
     }
 
     /////////////////////////////////////////////////////////////////////////////
