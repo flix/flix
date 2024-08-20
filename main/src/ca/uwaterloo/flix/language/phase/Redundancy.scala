@@ -61,9 +61,8 @@ object Redundancy {
       case (acc, (_, decl)) => acc ++ visitSig(decl)(sctx, root, flix)
     }, _ ++ _).errors.toList
 
-    val errorsFromInst = ParOps.parAgg(TypedAstOps.instanceDefsOf(root), Used.empty)({
-      case (acc, decl) => acc ++ visitDef(decl)(sctx, root, flix)
-    }, _ ++ _).errors.toList
+    // JOE TODO: Restore this
+    val errorsFromInst = Nil
 
     // Check for unused symbols.
     val errors = {

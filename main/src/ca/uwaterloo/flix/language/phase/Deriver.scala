@@ -104,8 +104,8 @@ object Deriver {
     )
     val putSpec = fieldPutSpec(structType, assocEff, assocTpe, List(tparam), param1Symbol, param2Symbol, loc)
     val getSpec = fieldGetSpec(structType, assocEff, assocTpe, List(tparam), param1Symbol, loc)
-    val getSym = Symbol.mkSigSym(traitSym, Name.Ident("get", loc))
-    val putSym = Symbol.mkSigSym(traitSym, Name.Ident("put", loc))
+    val getSym = Symbol.mkSigSym(traitSym, Name.Ident("structget", loc))
+    val putSym = Symbol.mkSigSym(traitSym, Name.Ident("structput", loc))
     val getSig = KindedAst.Sig(getSym, getSpec, None)
     val putSig = KindedAst.Sig(putSym, putSpec, None)
     val sigs = Map(getSym -> getSig, putSym -> putSig)
@@ -179,12 +179,12 @@ object Deriver {
       loc = loc
     )
     val putDef = KindedAst.Def(
-      sym = Symbol.mkDefnSym("put"),
+      sym = Symbol.mkDefnSym("Dot_" + field.sym.name + ".structput", Some(flix.genSym.freshId())),
       spec = putSpec,
       exp = putExpr
     )
     val getDef = KindedAst.Def(
-      sym = Symbol.mkDefnSym("get"),
+      sym = Symbol.mkDefnSym("Dot_" + field.sym.name + ".structget", Some(flix.genSym.freshId())),
       spec = getSpec,
       exp = getExpr
     )
