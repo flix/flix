@@ -161,7 +161,7 @@ object Deriver {
     // JOE TODO: Remove all old structput/structget unnecessary stuff(errors, ast nodes, etc)
     val param1Symbol = Symbol.freshVarSym("st_val", BoundBy.FormalParam, loc)
     val param2Symbol = Symbol.freshVarSym("field_val", BoundBy.FormalParam, loc)
-    val getSpec = fieldGetSpec(structType, eff, fieldType, struct0.tparams, param1Symbol, loc)
+    val getSpec = fieldGetSpec(structType, eff, fieldType, Nil, param1Symbol, loc)
     val getExpr = KindedAst.Expr.StructGet(
       exp = KindedAst.Expr.Var(param1Symbol, loc),
       sym = field.sym,
@@ -169,7 +169,7 @@ object Deriver {
       evar = Type.freshVar(Kind.Eff, loc),
       loc = loc
     )
-    val putSpec = fieldPutSpec(structType, eff, fieldType, struct0.tparams, param1Symbol, param2Symbol, loc)
+    val putSpec = fieldPutSpec(structType, eff, fieldType, Nil, param1Symbol, param2Symbol, loc)
     val putExpr = KindedAst.Expr.StructPut(
       exp1 = KindedAst.Expr.Var(param1Symbol, loc),
       sym = field.sym,
