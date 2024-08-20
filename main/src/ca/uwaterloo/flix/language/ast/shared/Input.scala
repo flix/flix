@@ -20,16 +20,38 @@ import java.nio.file.Path
 /**
   * A common super-type for inputs.
   */
-sealed trait Input
+sealed trait Input {
+
+  /**
+    * Returns `true` if the input is stable (i.e. cannot be changed once loaded).
+    */
+  def isStable: Boolean = this match {
+    case Input.Text(_, _, stable, _) => stable
+    case Input.TxtFile(_, _) => false
+    case Input.PkgFile(_, _) => false
+    case Input.FileInPackage(_, _, _, _) => false
+    case Input.Unknown => false
+  }
+
+  /**
+    * Returns the security context associated with the input.
+    */
+  def security: SecurityContext = this match {
+    case Input.Text(_, _, _, sctx) => sctx
+    case Input.TxtFile(_, sctx) => sctx
+    case Input.PkgFile(_, sctx) => sctx
+    case Input.FileInPackage(_, _, _, sctx) => sctx
+    case Input.Unknown => SecurityContext.AllPermissions
+  }
+
+}
 
 object Input {
 
   /**
-    * A source that is backed by an internal resource.
-    *
-    * A source is stable if it cannot change after being loaded (e.g. the standard library, etc).
+    * Represents an input that originates from a virtual path.
     */
-  case class Text(name: String, text: String, stable: Boolean) extends Input {
+  case class Text(name: String, text: String, stable: Boolean, sctx: SecurityContext) extends Input {
     override def hashCode(): Int = name.hashCode
 
     override def equals(obj: Any): Boolean = obj match {
@@ -39,18 +61,23 @@ object Input {
   }
 
   /**
-    * A source that is backed by a regular file.
+    * Represents an input that originates from the filesystem.
     */
-  case class TxtFile(path: Path) extends Input
+  case class TxtFile(path: Path, sctx: SecurityContext) extends Input
 
   /**
-    * A source that is backed by flix package file.
+    * Represents an input, which is a package, on the filesystem.
     */
-  case class PkgFile(path: Path) extends Input
+  case class PkgFile(packagePath: Path, sctx: SecurityContext) extends Input
 
   /**
-   * Represents an input from an unknown source.
-   */
-   case object Unknown extends Input
+    * Represents an input that originates from inside a package.
+    */
+  case class FileInPackage(packagePath: Path, virtualPath: String, text: String, sctx: SecurityContext) extends Input
+
+  /**
+    * Represents an input from an unknown source.
+    */
+  case object Unknown extends Input
 
 }

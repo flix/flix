@@ -21,15 +21,14 @@ import scala.annotation.tailrec
 
 /**
  * A source is a name and an array of character data.
- *
- * A source is stable if it cannot change after being loaded (e.g. the standard library, etc).
  */
-case class Source(input: Input, data: Array[Char], stable: Boolean) extends Sourceable {
+case class Source(input: Input, data: Array[Char]) extends Sourceable {
 
   def name: String = input match {
-    case Input.Text(name, _, _) => name
-    case Input.TxtFile(path) => path.toString
-    case Input.PkgFile(path) => path.toString
+    case Input.Text(name, _, _, _) => name
+    case Input.TxtFile(path, _) => path.toString
+    case Input.PkgFile(path, _) => path.toString
+    case Input.FileInPackage(_, virtualPath, _, _) => virtualPath
     case Input.Unknown => "unknown"
   }
 

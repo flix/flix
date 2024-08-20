@@ -87,10 +87,8 @@ mod String {
     ///
     /// Splits the string `s` around matches of the regular expression `regex`.
     ///
-    pub def split(regex: {regex = String}, s: String): List[String] = region rc {
-        let _ = rc; // This avoids a redundancy error.
+    pub def split(regex: {regex = String}, s: String): List[String] =
         unsafe Array.toList(unsafe s.split(regex#regex))
-    }
 
     ///
     /// Returns the lower case version of the string `s`.
@@ -311,8 +309,7 @@ mod String {
     ///
     /// Helper function for `isSubmatch`.
     ///
-    def isSubmatchHelper(pattern: String, s: String): Bool = region rc {
-        let _ = rc; // This avoids a redundancy error.
+    def isSubmatchHelper(pattern: String, s: String): Bool =
         try {
             let p1 = unsafe Pattern.compile(pattern);
             let m1 = unsafe p1.matcher(s);
@@ -320,7 +317,6 @@ mod String {
         } catch {
             case _: ##java.util.regex.PatternSyntaxException => false
         }
-    }
 
     ///
     /// Returns the substring of `s` from index `b` (inclusive) to index `e` (exclusive).

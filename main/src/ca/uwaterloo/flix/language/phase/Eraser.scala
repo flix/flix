@@ -14,21 +14,21 @@ import ca.uwaterloo.flix.util.ParOps
   * This means that expressions should cast their output but assume correct
   * input types.
   *
-  * - Ref
-  *   - component type erasure
-  *   - deref casting
-  * - Tuple
-  *   - component type erasure
-  *   - index casting
-  * - Record
-  *   - component type erasure
-  *   - select casting
-  * - Lazy
-  *   - component type erasure
-  *   - force casting
-  * - Function
-  *   - result type boxing, this includes return types of defs and their applications
-  *   - function call return value casting
+  *   - Ref
+  *     - component type erasure
+  *     - deref casting
+  *   - Tuple
+  *     - component type erasure
+  *     - index casting
+  *   - Record
+  *     - component type erasure
+  *     - select casting
+  *   - Lazy
+  *     - component type erasure
+  *     - force casting
+  *   - Function
+  *     - result type boxing, this includes return types of defs and their applications
+  *     - function call return value casting
   */
 object Eraser {
 
@@ -105,9 +105,9 @@ object Eraser {
         case AtomicOp.ArrayLoad => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.ArrayStore => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.ArrayLength => ApplyAtomic(op, es, t, purity, loc)
-        case AtomicOp.StructNew(_, _) => throw new RuntimeException("JOE TBD")
-        case AtomicOp.StructGet(_, _) => throw new RuntimeException("JOE TBD")
-        case AtomicOp.StructPut(_, _) => throw new RuntimeException("JOE TBD")
+        case AtomicOp.StructNew(_, _) => ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.StructGet(_) => castExp(ApplyAtomic(op, es, erase(tpe), purity, loc), t, purity, loc)
+        case AtomicOp.StructPut(_) => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Ref => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Deref =>
           castExp(ApplyAtomic(op, es, erase(tpe), purity, loc), t, purity, loc)
@@ -123,7 +123,7 @@ object Eraser {
         case AtomicOp.PutField(_) => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.GetStaticField(_) => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.PutStaticField(_) => ApplyAtomic(op, es, t, purity, loc)
-        case AtomicOp.Throw => throw new RuntimeException("JOE TBD")
+        case AtomicOp.Throw => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Spawn => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Lazy => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Force =>
@@ -208,7 +208,7 @@ object Eraser {
       case Ref(tpe) => Ref(erase(tpe))
       case Tuple(elms) => Tuple(elms.map(erase))
       case MonoType.Enum(sym) => MonoType.Enum(sym)
-      case MonoType.Struct(sym, elmTpes, targs) => MonoType.Struct(sym, elmTpes, targs)
+      case MonoType.Struct(sym, elms, tparams) => MonoType.Struct(sym, elms.map(erase), tparams.map(erase))
       case Arrow(args, result) => Arrow(args.map(visitType), box(result))
       case RecordEmpty => RecordEmpty
       case RecordExtend(label, value, rest) => RecordExtend(label, erase(value), visitType(rest))

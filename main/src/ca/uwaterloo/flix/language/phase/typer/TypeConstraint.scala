@@ -112,8 +112,8 @@ object TypeConstraint {
 
   /**
     * A constraint indicating that:
-    * - `eff1` is equivalent to `eff2` when the region `sym` is purified in `eff2`, and
-    * - the nested constraints all hold
+    *   - `eff1` is equivalent to `eff2` when the region `sym` is purified in `eff2`, and
+    *   - the nested constraints all hold
     *
     * This constraint arises when exiting a region.
     * All nested constraints must be resolved before determining the equality of `eff1` and `eff2`,

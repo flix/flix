@@ -114,30 +114,35 @@ object Kinder {
    */
   private def visitStruct(struct0: ResolvedAst.Declaration.Struct, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Struct, KindError] = struct0 match {
     case ResolvedAst.Declaration.Struct(doc, ann, mod, sym, tparams0, fields0, loc) =>
-      // if not annotated tparams are assumed to be Star except the last one which is Eff
-      val tparams1 = tparams0
-      val kenv0 = getKindEnvFromTypeParams(tparams1)
-      val kenvVal = kenv0 + (tparams1.last.sym -> Kind.Eff)
-
+      // In the case in which the user doesn't supply any type params,
+      // the parser will have already notified the user of this error
+      // The recovery step here is to simply add a single type param that is never used
+      val tparams1 = if (tparams0.isEmpty) {
+        val regionTparam = ResolvedAst.TypeParam.Unkinded(Name.Ident("$rc", loc), Symbol.freshUnkindedTypeVarSym(Ast.VarText.Absent, isRegion = false, loc), loc)
+        List(regionTparam)
+      } else {
+        tparams0
+      }
+      val kenv1 = getKindEnvFromTypeParams(tparams1.init)
+      val kenv2 = getKindEnvFromRegion(tparams1.last)
+      // The last add is simply to verify that the last tparam was marked as Eff
+      val kenvVal = KindEnv.disjointAppend(kenv1, kenv2) + (tparams1.last.sym -> Kind.Eff)
       flatMapN(kenvVal) {
         case kenv =>
           val tparamsVal = traverse(tparams1)(visitTypeParam(_, kenv))
 
           flatMapN(tparamsVal) {
-            case tparams =>
-              val targs = tparams.map(tparam => Type.Var(tparam.sym, tparam.loc.asSynthetic))
-              val tpe = Type.mkApply(Type.Cst(TypeConstructor.Struct(sym, getStructKind(struct0)), sym.loc.asSynthetic), targs, sym.loc.asSynthetic)
-              val fieldsVal = traverse(fields0) {
-                case field0 => mapN(visitStructField(field0, tparams, tpe, kenv, taenv, root)) {
-                  field => field.sym -> field
-                }
-              }
+            case kindedTparams =>
+              val fieldsVal = traverse(fields0)(visitStructField(_, kindedTparams, kenv, taenv, root))
               mapN(fieldsVal) {
-                case fields => KindedAst.Struct(doc, ann, mod, sym, tparams, fields.toMap, tpe, loc)
+                case fields =>
+                  val targs = kindedTparams.map(tparam => Type.Var(tparam.sym, tparam.loc.asSynthetic))
+                  val sc = Scheme(kindedTparams.map(_.sym), List(), List(), Type.mkStruct(sym, targs, loc))
+                  KindedAst.Struct(doc, ann, mod, sym, kindedTparams, sc, fields, loc)
               }
           }
       }
-    }
+  }
 
   /**
     * Performs kinding on the given restrictable enum.
@@ -214,14 +219,14 @@ object Kinder {
   /**
    * Performs kinding on the given struct field under the given kind environment.
    */
-  private def visitStructField(field0: ResolvedAst.Declaration.StructField, tparams: List[KindedAst.TypeParam], resTpe: Type, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.StructField, KindError] = field0 match {
+  private def visitStructField(field0: ResolvedAst.Declaration.StructField, tparams: List[KindedAst.TypeParam], kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.StructField, KindError] = field0 match {
     case ResolvedAst.Declaration.StructField(sym, tpe0, loc) =>
       val tpeVal = visitType(tpe0, Kind.Star, kenv, taenv, root)
       mapN(tpeVal) {
         case tpe =>
           KindedAst.StructField(sym, tpe, loc)
       }
-    }
+  }
 
   /**
     * Performs kinding on the given enum case under the given kind environment.
@@ -255,7 +260,7 @@ object Kinder {
       val kenv = getKindEnvFromTypeParam(tparam0)
 
       val tparamsVal = visitTypeParam(tparam0, kenv)
-      val superTraitsVal = traverse(superTraits0)(visitTypeConstraint(_, kenv, taenv, root))
+      val superTraitsVal = traverse(superTraits0)(visitTraitConstraint(_, kenv, taenv, root))
       val assocsVal = traverse(assocs0)(visitAssocTypeSig(_, kenv, taenv, root))
       flatMapN(tparamsVal, superTraitsVal, assocsVal) {
         case (tparam, superTraits, assocs) =>
@@ -281,7 +286,7 @@ object Kinder {
       flatMapN(kenvVal) {
         kenv =>
           val tpeVal = visitType(tpe0, kind, kenv, taenv, root)
-          val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint(_, kenv, taenv, root))
+          val tconstrsVal = traverse(tconstrs0)(visitTraitConstraint(_, kenv, taenv, root))
           val assocsVal = traverse(assocs0)(visitAssocTypeDef(_, kind, kenv, taenv, root))
           flatMapN(tpeVal, tconstrsVal, assocsVal) {
             case (tpe, tconstrs, assocs) =>
@@ -317,7 +322,7 @@ object Kinder {
   /**
     * Performs kinding on the given def under the given kind environment.
     */
-  private def visitDef(def0: ResolvedAst.Declaration.Def, extraTconstrs: List[Ast.TypeConstraint], kenv0: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Def, KindError] = def0 match {
+  private def visitDef(def0: ResolvedAst.Declaration.Def, extraTconstrs: List[Ast.TraitConstraint], kenv0: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Def, KindError] = def0 match {
     case ResolvedAst.Declaration.Def(sym, spec0, exp0) =>
       flix.subtask(sym.toString, sample = true)
 
@@ -336,7 +341,7 @@ object Kinder {
   /**
     * Performs kinding on the given sig under the given kind environment.
     */
-  private def visitSig(sig0: ResolvedAst.Declaration.Sig, traitTparam: KindedAst.TypeParam, traitConstraints: List[Ast.TypeConstraint], kenv0: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Sig, KindError] = sig0 match {
+  private def visitSig(sig0: ResolvedAst.Declaration.Sig, traitTparam: KindedAst.TypeParam, traitConstraints: List[Ast.TraitConstraint], kenv0: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Sig, KindError] = sig0 match {
     case ResolvedAst.Declaration.Sig(sym, spec0, exp0) =>
       val kenvVal = getKindEnvFromSpec(spec0, kenv0, taenv, root)
       flatMapN(kenvVal) {
@@ -370,13 +375,13 @@ object Kinder {
     *
     * Adds `quantifiers` to the generated scheme's quantifier list.
     */
-  private def visitSpec(spec0: ResolvedAst.Spec, quantifiers: List[Symbol.KindedTypeVarSym], extraTconstrs: List[Ast.TypeConstraint], kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Spec, KindError] = spec0 match {
+  private def visitSpec(spec0: ResolvedAst.Spec, quantifiers: List[Symbol.KindedTypeVarSym], extraTconstrs: List[Ast.TraitConstraint], kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Spec, KindError] = spec0 match {
     case ResolvedAst.Spec(doc, ann, mod, tparams0, fparams0, tpe0, eff0, tconstrs0, econstrs0, loc) =>
       val tparamsVal = traverse(tparams0)(visitTypeParam(_, kenv))
       val fparamsVal = traverse(fparams0)(visitFormalParam(_, kenv, taenv, root))
       val tpeVal = visitType(tpe0, Kind.Star, kenv, taenv, root)
       val effVal = visitEffectDefaultPure(eff0, kenv, taenv, root)
-      val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint(_, kenv, taenv, root))
+      val tconstrsVal = traverse(tconstrs0)(visitTraitConstraint(_, kenv, taenv, root))
       val econstrsVal = traverse(econstrs0)(visitEqualityConstraint(_, kenv, taenv, root))
 
       mapN(tparamsVal, fparamsVal, tpeVal, effVal, tconstrsVal, econstrsVal) {
@@ -665,23 +670,23 @@ object Kinder {
           KindedAst.Expr.StructNew(sym, fs, r, tvar, evar, loc)
       }
 
-    case ResolvedAst.Expr.StructGet(sym, e, field, loc) =>
+    case ResolvedAst.Expr.StructGet(e, field, loc) =>
       val expVal = visitExp(e, kenv0, taenv, henv0, root)
       mapN(expVal) {
         case exp =>
           val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
           val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-          KindedAst.Expr.StructGet(sym, exp, field, tvar, evar, loc)
+          KindedAst.Expr.StructGet(exp, field, tvar, evar, loc)
       }
 
-    case ResolvedAst.Expr.StructPut(sym, e1, name, e2, loc) =>
+    case ResolvedAst.Expr.StructPut(e1, sym, e2, loc) =>
       val exp1Val = visitExp(e1, kenv0, taenv, henv0, root)
       val exp2Val = visitExp(e2, kenv0, taenv, henv0, root)
       mapN(exp1Val, exp2Val) {
         case (exp1, exp2) =>
           val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
           val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-          KindedAst.Expr.StructPut(sym, exp1, name, exp2, tvar, evar, loc)
+          KindedAst.Expr.StructPut(exp1, sym, exp2, tvar, evar, loc)
       }
 
     case ResolvedAst.Expr.VectorLit(exps, loc) =>
@@ -789,7 +794,13 @@ object Kinder {
         case (exp, rules) => KindedAst.Expr.TryCatch(exp, rules, loc)
       }
 
-    case ResolvedAst.Expr.Throw(exp, loc) => throw new RuntimeException("JOE TODO")
+    case ResolvedAst.Expr.Throw(exp0, loc) =>
+      val tvar = Type.freshVar(Kind.Star, loc)
+      val evar = Type.freshVar(Kind.Eff, loc)
+      val expVal = visitExp(exp0, kenv0, taenv, henv0, root)
+      mapN(expVal) {
+        case exp => KindedAst.Expr.Throw(exp, tvar, evar, loc)
+      }
 
     case ResolvedAst.Expr.TryWith(exp0, eff, rules0, loc) =>
       // create a fresh type variable for the handling block (same as resume result)
@@ -1231,7 +1242,7 @@ object Kinder {
   /**
     * Performs kinding on the given type under the given kind environment, with `expectedKind` expected from context.
     * This is roughly analogous to the reassembly of expressions under a type environment, except that:
-    * - Kind errors may be discovered here as they may not have been found during inference (or inference may not have happened at all).
+    *   - Kind errors may be discovered here as they may not have been found during inference (or inference may not have happened at all).
     */
   private def visitType(tpe0: UnkindedType, expectedKind: Kind, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[Type, KindError] = tpe0 match {
     case tvar: UnkindedType.Var => visitTypeVar(tvar, expectedKind, kenv)
@@ -1431,13 +1442,13 @@ object Kinder {
   }
 
   /**
-    * Performs kinding on the given type constraint under the given kind environment.
+    * Performs kinding on the given trait constraint under the given kind environment.
     */
-  private def visitTypeConstraint(tconstr: ResolvedAst.TypeConstraint, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[Ast.TypeConstraint, KindError] = tconstr match {
-    case ResolvedAst.TypeConstraint(head, tpe0, loc) =>
+  private def visitTraitConstraint(tconstr: ResolvedAst.TraitConstraint, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[Ast.TraitConstraint, KindError] = tconstr match {
+    case ResolvedAst.TraitConstraint(head, tpe0, loc) =>
       val traitKind = getTraitKind(root.traits(head.sym))
       mapN(visitType(tpe0, traitKind, kenv, taenv, root)) {
-        tpe => Ast.TypeConstraint(head, tpe, loc)
+        tpe => Ast.TraitConstraint(head, tpe, loc)
       }
   }
 
@@ -1542,7 +1553,7 @@ object Kinder {
       val fparamKenvsVal = traverse(fparams)(inferFormalParam(_, kenv, taenv, root))
       val tpeKenvVal = inferType(tpe, Kind.Star, kenv, taenv, root)
       val effKenvsVal = traverse(eff0)(inferType(_, Kind.Eff, kenv, taenv, root))
-      val tconstrsKenvsVal = traverse(tconstrs)(inferTypeConstraint(_, kenv, taenv, root))
+      val tconstrsKenvsVal = traverse(tconstrs)(inferTraitConstraint(_, kenv, taenv, root))
       val econstrsKenvsVal = traverse(econstrs)(inferEqualityConstraint(_, kenv, taenv, root))
 
       flatMapN(fparamKenvsVal, tpeKenvVal, effKenvsVal, tconstrsKenvsVal, econstrsKenvsVal) {
@@ -1565,8 +1576,8 @@ object Kinder {
   /**
     * Infers a kind environment from the given type constraint.
     */
-  private def inferTypeConstraint(tconstr: ResolvedAst.TypeConstraint, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindEnv, KindError] = tconstr match {
-    case ResolvedAst.TypeConstraint(head, tpe, _) =>
+  private def inferTraitConstraint(tconstr: ResolvedAst.TraitConstraint, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindEnv, KindError] = tconstr match {
+    case ResolvedAst.TraitConstraint(head, tpe, _) =>
       val kind = getTraitKind(root.traits(head.sym))
       inferType(tpe, kind, kenv: KindEnv, taenv, root)
   }
@@ -1590,8 +1601,8 @@ object Kinder {
     * Infers a kind environment from the given type, with an expectation from context.
     * The inference is roughly analogous to the inference of types for expressions.
     * The primary differences are:
-    * - There are no kind variables; kinds that cannot be determined are instead marked with [[Kind.Wild]].
-    * - Subkinding may allow a variable to be ascribed with two different kinds; the most specific is used in the returned environment.
+    *   - There are no kind variables; kinds that cannot be determined are instead marked with [[Kind.Wild]].
+    *   - Subkinding may allow a variable to be ascribed with two different kinds; the most specific is used in the returned environment.
     */
   private def inferType(tpe: UnkindedType, expectedKind: Kind, kenv0: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindEnv, KindError] = tpe.baseType match {
     // Case 1: the type constructor is a variable: all args are * and the constructor is * -> * -> * ... -> expectedType
@@ -1754,6 +1765,15 @@ object Kinder {
   }
 
   /**
+    * Gets a kind environment from the type param, defaulting to `Kind.Eff` if it is unspecified
+   */
+  private def getKindEnvFromRegion(tparam0: ResolvedAst.TypeParam)(implicit flix: Flix): KindEnv = tparam0 match {
+    case ResolvedAst.TypeParam.Kinded(_, tvar, kind, _) => KindEnv.singleton(tvar -> kind)
+    case ResolvedAst.TypeParam.Unkinded(_, tvar, _) => KindEnv.singleton(tvar -> Kind.Eff)
+    case ResolvedAst.TypeParam.Implicit(_, tvar, _) => KindEnv.singleton(tvar -> Kind.Eff)
+  }
+
+  /**
     * Gets a kind environment from the spec.
     */
   private def getKindEnvFromSpec(spec0: ResolvedAst.Spec, kenv0: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindEnv, KindError] = spec0 match {
@@ -1788,9 +1808,11 @@ object Kinder {
   private def getStructKind(struct0: ResolvedAst.Declaration.Struct)(implicit flix: Flix): Kind = struct0 match {
     case ResolvedAst.Declaration.Struct(_, _, _, _, tparams0, _, _) =>
       // tparams default to zero except for the region param
-      val tparams = tparams0
-      val kenv = getKindEnvFromTypeParams(tparams)
-      tparams.foldRight(Kind.Star: Kind) {
+      val kenv1 = getKindEnvFromTypeParams(tparams0.init)
+      val kenv2 = getKindEnvFromRegion(tparams0.last)
+      // The last add is simply to verify that the last tparam was marked as Eff
+      val kenv = KindEnv.disjointAppend(kenv1, kenv2)
+      tparams0.foldRight(Kind.Star: Kind) {
         case (tparam, acc) => kenv.map(tparam.sym) ->: acc
       }
   }

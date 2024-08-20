@@ -15,8 +15,7 @@
  */
 package ca.uwaterloo.flix.runtime.shell
 
-import ca.uwaterloo.flix.language.ast.Ast
-import ca.uwaterloo.flix.language.ast.shared.{Input, Source}
+import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext, Source}
 import ca.uwaterloo.flix.language.phase.Lexer
 import ca.uwaterloo.flix.util.Validation
 
@@ -45,8 +44,8 @@ object Category {
     * Returns the syntactic category of the given source code string `s`.
     */
   def categoryOf(s: String): Category = {
-    val input = Input.Text("<shell>", s, stable = false)
-    val source = Source(input, s.toCharArray, stable = false)
+    val input = Input.Text("<shell>", s, stable = false, SecurityContext.AllPermissions)
+    val source = Source(input, s.toCharArray)
 
     // Tokenize the input and check if the first token looks like the start of a declaration or an expression.
     Validation.mapN(Lexer.lex(source)) {

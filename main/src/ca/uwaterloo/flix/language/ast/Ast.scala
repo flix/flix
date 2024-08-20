@@ -541,7 +541,7 @@ object Ast {
     */
   case class EliminatedBy(clazz: java.lang.Class[_]) extends scala.annotation.StaticAnnotation
 
-  case object TypeConstraint {
+  case object TraitConstraint {
     /**
       * Represents the head (located class) of a type constraint.
       */
@@ -549,11 +549,11 @@ object Ast {
   }
 
   /**
-    * Represents that the type `arg` must belong to class `sym`.
+    * Represents that the type `arg` must belong to trait `sym`.
     */
-  case class TypeConstraint(head: TypeConstraint.Head, arg: Type, loc: SourceLocation) {
+  case class TraitConstraint(head: TraitConstraint.Head, arg: Type, loc: SourceLocation) {
     override def equals(o: Any): Boolean = o match {
-      case that: TypeConstraint =>
+      case that: TraitConstraint =>
         this.head.sym == that.head.sym && this.arg == that.arg
       case _ => false
     }
@@ -610,7 +610,7 @@ object Ast {
   /**
     * Represents that an instance on type `tpe` has the type constraints `tconstrs`.
     */
-  case class Instance(tpe: Type, tconstrs: List[Ast.TypeConstraint])
+  case class Instance(tpe: Type, tconstrs: List[Ast.TraitConstraint])
 
   /**
     * Represents the super traits and instances available for a particular traits.
@@ -792,6 +792,8 @@ object Ast {
       case class InvokeMethod(e: TypeError.MethodNotFound) extends Expr
 
       case class StaticFieldOrMethod(e: ResolutionError.UndefinedJvmStaticField) extends Expr
+
+      case class StructAccess(e: ResolutionError.UndefinedStructField) extends Expr
 
       case object OtherExpr extends Expr
     }

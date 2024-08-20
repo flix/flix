@@ -30,9 +30,9 @@ import scala.jdk.CollectionConverters._
 
 /**
   * Objectives of this phase:
-  * 1. Collect a list of the local parameters of each def
-  * 2. Collect a set of all anonymous class / new object expressions
-  * 3. Collect a flat set of all types of the program, i.e., if `List[String]` is
+  *   1. Collect a list of the local parameters of each def
+  *   1. Collect a set of all anonymous class / new object expressions
+  *   1. Collect a flat set of all types of the program, i.e., if `List[String]` is
   *   in the list, so is `String`.
   */
 object Reducer {
@@ -225,10 +225,10 @@ object Reducer {
                Int32 | Int64 | BigInt | String | Regex | Region | Enum(_) | RecordEmpty |
                Native(_) | Null => taskList
           case Array(elm) => taskList.enqueue(elm)
-          case Struct(_, _, _) => throw new RuntimeException("JOE TODO")
           case Lazy(elm) => taskList.enqueue(elm)
           case Ref(elm) => taskList.enqueue(elm)
           case Tuple(elms) => taskList.enqueueAll(elms)
+          case Struct(_, elms, _) => taskList.enqueueAll(elms)
           case Arrow(targs, tresult) => taskList.enqueueAll(targs).enqueue(tresult)
           case RecordExtend(_, value, rest) => taskList.enqueue(value).enqueue(rest)
         }

@@ -38,10 +38,10 @@ import scala.collection.mutable.ArrayBuffer
   * Weeder2 walks a [[Tree]], validates it and thereby transforms it into a [[WeededAst]].
   *
   * Function names in Weeder2 follow this pattern:
-  * 1. visit* : Visits a Tree of a known kind. These functions assert that the kind is indeed known.
-  * 2. pick* : Picks first sub-Tree of a kind and visits it.
-  * 3. tryPick* : Works like pick* but only runs the visitor if the child of kind is found. Returns an option containing the result.
-  * 3. pickAll* : These will pick all subtrees of a specified kind and run a visitor on it.
+  *   1. visit* : Visits a Tree of a known kind. These functions assert that the kind is indeed known.
+  *   1. pick* : Picks first sub-Tree of a kind and visits it.
+  *   1. tryPick* : Works like pick* but only runs the visitor if the child of kind is found. Returns an option containing the result.
+  *   1. pickAll* : These will pick all subtrees of a specified kind and run a visitor on it.
   */
 object Weeder2 {
 
@@ -257,11 +257,12 @@ object Weeder2 {
         Types.pickType(tree),
         Types.pickConstraints(tree),
         traverse(pickAll(TreeKind.Decl.Def, tree))(visitDefinitionDecl(_, allowedModifiers = Set(TokenKind.KeywordPub, TokenKind.KeywordOverride), mustBePublic = true)),
+        traverse(pickAll(TreeKind.Decl.Redef, tree))(visitRedefinitionDecl),
       ) {
-        (doc, annotations, modifiers, clazz, tpe, tconstrs, defs) =>
+        (doc, annotations, modifiers, clazz, tpe, tconstrs, defs, redefs) =>
           val assocs = pickAll(TreeKind.Decl.AssociatedTypeDef, tree)
           mapN(traverse(assocs)(visitAssociatedTypeDefDecl(_, tpe))) {
-            assocs => Declaration.Instance(doc, annotations, modifiers, clazz, tpe, tconstrs, assocs, defs, tree.loc)
+            assocs => Declaration.Instance(doc, annotations, modifiers, clazz, tpe, tconstrs, assocs, defs, redefs, tree.loc)
           }
       }
     }
@@ -304,6 +305,26 @@ object Weeder2 {
       ) {
         (doc, annotations, modifiers, ident, tparams, fparams, exp, ttype, tconstrs, constrs, eff) =>
           Declaration.Def(doc, annotations, modifiers, ident, tparams, fparams, exp, ttype, eff, tconstrs, constrs, tree.loc)
+      }
+    }
+
+    private def visitRedefinitionDecl(tree: Tree): Validation[Declaration.Redef, CompilationMessage] = {
+      expect(tree, TreeKind.Decl.Redef)
+      mapN(
+        pickDocumentation(tree),
+        pickAnnotations(tree),
+        pickModifiers(tree, allowed = Set(TokenKind.KeywordPub), mustBePublic = true),
+        pickNameIdent(tree),
+        Types.pickKindedParameters(tree),
+        pickFormalParameters(tree),
+        Exprs.pickExpr(tree),
+        Types.pickType(tree),
+        Types.pickConstraints(tree),
+        pickEqualityConstraints(tree),
+        Types.tryPickEffect(tree)
+      ) {
+        (doc, annotations, modifiers, ident, tparams, fparams, exp, ttype, tconstrs, constrs, eff) =>
+          Declaration.Redef(doc, annotations, modifiers, ident, tparams, fparams, exp, ttype, eff, tconstrs, constrs, tree.loc)
       }
     }
 
@@ -2856,22 +2877,22 @@ object Weeder2 {
       }
     }
 
-    def pickConstraints(tree: Tree): Validation[List[TypeConstraint], CompilationMessage] = {
+    def pickConstraints(tree: Tree): Validation[List[TraitConstraint], CompilationMessage] = {
       val maybeWithClause = tryPick(TreeKind.Type.ConstraintList, tree)
       maybeWithClause.map(
         withClauseTree => traverse(pickAll(TreeKind.Type.Constraint, withClauseTree))(visitConstraint)
       ).getOrElse(Validation.success(List.empty))
     }
 
-    private def visitConstraint(tree: Tree): Validation[TypeConstraint, CompilationMessage] = {
+    private def visitConstraint(tree: Tree): Validation[TraitConstraint, CompilationMessage] = {
       expect(tree, TreeKind.Type.Constraint)
       flatMapN(pickQName(tree), Types.pickType(tree)) {
         (qname, tpe) =>
           // Check for illegal type constraint parameter
           if (!isAllVariables(tpe)) {
-            Validation.toHardFailure(IllegalTypeConstraintParameter(tree.loc))
+            Validation.toHardFailure(IllegalTraitConstraintParameter(tree.loc))
           } else {
-            Validation.success(TypeConstraint(qname, tpe, tree.loc))
+            Validation.success(TraitConstraint(qname, tpe, tree.loc))
           }
       }
     }

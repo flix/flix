@@ -32,23 +32,18 @@ import scala.annotation.tailrec
   * Constraint resolution works by iteratively building up a substitution from the constraints.
   *
   * Given a constraint set, we
-  * 1. select a constraint from the set,
-  * 2. attempt to resolve it, yielding a substitution and new constraints
-  * 3. apply the substitution to the accumulated substitution and add the new constraints to our set
+  *   1. select a constraint from the set,
+  *   1. attempt to resolve it, yielding a substitution and new constraints
+  *   1. apply the substitution to the accumulated substitution and add the new constraints to our set
   *
   * We repeat this until we cannot make any more progress or we discover an invalid constraint.
   */
 object ConstraintSolver {
 
   /**
-    * The maximum number of resolution iterations before we throw an error.
-    */
-  private val MaxIterations = 1000
-
-  /**
     * Resolves constraints in the given definition using the given inference result.
     */
-  def visitDef(defn: KindedAst.Def, infResult: InfResult, renv0: RigidityEnv, tconstrs0: List[Ast.TypeConstraint], tenv0: Map[Symbol.TraitSym, Ast.TraitContext], eqEnv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], root: KindedAst.Root)(implicit flix: Flix): Validation[Substitution, TypeError] = defn match {
+  def visitDef(defn: KindedAst.Def, infResult: InfResult, renv0: RigidityEnv, tconstrs0: List[Ast.TraitConstraint], tenv0: Map[Symbol.TraitSym, Ast.TraitContext], eqEnv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], root: KindedAst.Root)(implicit flix: Flix): Validation[Substitution, TypeError] = defn match {
     case KindedAst.Def(sym, spec, _) =>
       if (flix.options.xprinttyper.contains(sym.toString)) {
         Debug.startRecording()
@@ -59,7 +54,7 @@ object ConstraintSolver {
   /**
     * Resolves constraints in the given signature using the given inference result.
     */
-  def visitSig(sig: KindedAst.Sig, infResult: InfResult, renv0: RigidityEnv, tconstrs0: List[Ast.TypeConstraint], tenv0: Map[Symbol.TraitSym, Ast.TraitContext], eqEnv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], root: KindedAst.Root)(implicit flix: Flix): Validation[Substitution, TypeError] = sig match {
+  def visitSig(sig: KindedAst.Sig, infResult: InfResult, renv0: RigidityEnv, tconstrs0: List[Ast.TraitConstraint], tenv0: Map[Symbol.TraitSym, Ast.TraitContext], eqEnv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], root: KindedAst.Root)(implicit flix: Flix): Validation[Substitution, TypeError] = sig match {
     case KindedAst.Sig(_, _, None) => Validation.success(Substitution.empty)
     case KindedAst.Sig(sym, spec, Some(_)) =>
       if (flix.options.xprinttyper.contains(sym.toString)) {
@@ -71,7 +66,7 @@ object ConstraintSolver {
   /**
     * Resolves constraints in the given spec using the given inference result.
     */
-  def visitSpec(spec: KindedAst.Spec, infResult: InfResult, renv0: RigidityEnv, tconstrs0: List[Ast.TypeConstraint], tenv0: Map[Symbol.TraitSym, Ast.TraitContext], eqEnv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], root: KindedAst.Root)(implicit flix: Flix): Validation[Substitution, TypeError] = spec match {
+  def visitSpec(spec: KindedAst.Spec, infResult: InfResult, renv0: RigidityEnv, tconstrs0: List[Ast.TraitConstraint], tenv0: Map[Symbol.TraitSym, Ast.TraitContext], eqEnv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], root: KindedAst.Root)(implicit flix: Flix): Validation[Substitution, TypeError] = spec match {
     case KindedAst.Spec(_, _, _, _, fparams, _, tpe, eff, tconstrs, econstrs, loc) =>
 
       val InfResult(infConstrs, infTpe, infEff, infRenv) = infResult
@@ -149,9 +144,9 @@ object ConstraintSolver {
     *   instance Order[b]
     * }}}
     */
-  def expandTraitEnv(tenv: Map[Symbol.TraitSym, Ast.TraitContext], tconstrs: List[Ast.TypeConstraint]): Map[Symbol.TraitSym, Ast.TraitContext] = {
+  def expandTraitEnv(tenv: Map[Symbol.TraitSym, Ast.TraitContext], tconstrs: List[Ast.TraitConstraint]): Map[Symbol.TraitSym, Ast.TraitContext] = {
     tconstrs.flatMap(withSupers(_, tenv)).foldLeft(tenv) {
-      case (acc, Ast.TypeConstraint(Ast.TypeConstraint.Head(sym, _), arg, loc)) =>
+      case (acc, Ast.TraitConstraint(Ast.TraitConstraint.Head(sym, _), arg, loc)) =>
         val inst = Ast.Instance(arg, Nil)
         val context = acc.get(sym) match {
           case Some(Ast.TraitContext(supers, insts)) => Ast.TraitContext(supers, inst :: insts)
@@ -195,8 +190,8 @@ object ConstraintSolver {
     * The initial substitution should come from e.g., formal parameter type ascriptions.
     *
     * Returns a result, either:
-    * - a substitution and leftover constraints, or
-    * - an error if resolution failed
+    *   - a substitution and leftover constraints, or
+    *   - an error if resolution failed
     */
   def resolve(constrs: List[TypeConstraint], subst0: Substitution, renv: RigidityEnv)(implicit tenv: Map[Symbol.TraitSym, Ast.TraitContext], eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Result[ResolutionResult, TypeError] = {
 
@@ -217,7 +212,7 @@ object ConstraintSolver {
     var progress = true
 
     while (progress) {
-      if (count >= MaxIterations) {
+      if (count >= flix.options.xiterations) {
         return Result.Err(TypeError.TooComplex(constrs.head.loc))
       }
 
@@ -560,7 +555,7 @@ object ConstraintSolver {
               case Some(tconstrs) =>
                 // simplify all the implied constraints
                 Result.traverse(tconstrs) {
-                  case Ast.TypeConstraint(Ast.TypeConstraint.Head(c, _), arg, _) =>
+                  case Ast.TraitConstraint(Ast.TraitConstraint.Head(c, _), arg, _) =>
                     resolveTraitConstraint(c, arg, renv0, loc)
                 } map {
                   case res =>
@@ -624,10 +619,10 @@ object ConstraintSolver {
     *
     * For example, `Order[a]` implies `Order[a]` and `Eq[a]`
     */
-  def withSupers(tconstr: Ast.TypeConstraint, tenv: Map[Symbol.TraitSym, Ast.TraitContext]): List[Ast.TypeConstraint] = {
+  def withSupers(tconstr: Ast.TraitConstraint, tenv: Map[Symbol.TraitSym, Ast.TraitContext]): List[Ast.TraitConstraint] = {
     val superSyms = tenv(tconstr.head.sym).superTraits
     val directSupers = superSyms.map {
-      case sym => Ast.TypeConstraint(Ast.TypeConstraint.Head(sym, SourceLocation.Unknown), tconstr.arg, tconstr.loc)
+      case sym => Ast.TraitConstraint(Ast.TraitConstraint.Head(sym, SourceLocation.Unknown), tconstr.arg, tconstr.loc)
     }
     val allSupers = directSupers.flatMap(withSupers(_, tenv))
     tconstr :: allSupers
@@ -662,28 +657,28 @@ object ConstraintSolver {
     * Converts the given unification error into a type error.
     *
     * ExpectType
-    * - pretend it's just unifyType
-    * - if mismatchedtypes then map the error to PossibleChecked or UnexpectedType
-    * - else return as is
+    *   - pretend it's just unifyType
+    *   - if mismatchedtypes then map the error to PossibleChecked or UnexpectedType
+    *   - else return as is
     *
     * ExpectEffect
-    * - pretend it's just unifyType
-    * - if mismatchedEffects then map the error to possiblechecke or unexpectedeffect
-    * - else return as is
+    *   - pretend it's just unifyType
+    *   - if mismatchedEffects then map the error to possiblechecke or unexpectedeffect
+    *   - else return as is
     *
     * ExpectTypeArguments
-    * - pretend it's just unifytype
-    * - if mismatchedbools or mismatchedarroweffects or mismatchedtypes then map the error to unexpectedarg
-    * - else return as is
+    *   - pretend it's just unifytype
+    *   - if mismatchedbools or mismatchedarroweffects or mismatchedtypes then map the error to unexpectedarg
+    *   - else return as is
     *
     * Match
-    * - mismatched types
-    *   - check for over/under applied
-    *   - else return as is
-    *     - mismatched bools -> mismatched bools
-    *     - mismatched effects
-    *   - check for mismatched arrow effects
-    *   - else return as is
+    *   - mismatched types
+    *     - check for over/under applied
+    *     - else return as is
+    *       - mismatched bools -> mismatched bools
+    *       - mismatched effects
+    *     - check for mismatched arrow effects
+    *     - else return as is
     *     - mismatched case sets -> mismatched case sets
     *     - mismatched arity -> mismatched arity
     *     - rigid var -> mismatched types
@@ -699,7 +694,7 @@ object ConstraintSolver {
     *     - ord
     *     - hash
     *     - ?
-    *       - (other cases should be impossible on this branch)
+    *     - (other cases should be impossible on this branch)
     */
   // TODO ASSOC-TYPES This translation does not work well
   // TODO ASSOC-TYPES because provenance is not propogated properly.
@@ -807,9 +802,9 @@ object ConstraintSolver {
     /**
       * Composes `this` equality result with `that` equality result.
       *
-      * - Composes the substitution,
-      * - combines the leftover constraints, and
-      * - indicates progress if one of the two made progress.
+      *   - Composes the substitution,
+      *   - combines the leftover constraints, and
+      *   - indicates progress if one of the two made progress.
       */
     def @@(that: ResolutionResult): ResolutionResult = {
       val ResolutionResult(s1, cs1, p1) = this
