@@ -2947,7 +2947,8 @@ object Resolver {
 
       // 3rd priority: the name of the current namespace
       val currentNamespace = {
-        if (ns0.idents.lastOption.contains(qname.ident)) {
+        // Make sure we don't duplicate results in `rootNames`
+        if (ns0.idents.size > 1 && ns0.idents.lastOption.contains(qname.ident)) {
           // Case 1.1.1.1: We are referring to the current namespace. Use that.
           root.symbols.getOrElse(Name.mkUnlocatedNName(ns0.parts.init), Map.empty).getOrElse(ns0.parts.last, Nil).map(Resolution.Declaration)
         } else {
