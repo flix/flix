@@ -1380,30 +1380,30 @@ object Resolver {
             Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
         }
 
-        case NamedAst.Expr.StructGet(e, field0, loc) =>
-          lookupStructField(field0, env0, ns0, root) match {
-            case Result.Ok(field) =>
-              val eVal = visitExp(e, env0)
-              val idx = field.sym.idx
-              mapN(eVal) {
-                case e => ResolvedAst.Expr.StructGet(e, field.sym, loc)
-              }
-            case Result.Err(e) =>
-              Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
-          }
+      case NamedAst.Expr.StructGet(e, field0, loc) =>
+        lookupStructField(field0, env0, ns0, root) match {
+          case Result.Ok(field) =>
+            val eVal = visitExp(e, env0)
+            val idx = field.sym.idx
+            mapN(eVal) {
+              case e => ResolvedAst.Expr.StructGet(e, field.sym, loc)
+            }
+          case Result.Err(e) =>
+            Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
+        }
 
-        case NamedAst.Expr.StructPut(e1, field0, e2, loc) =>
-          lookupStructField(field0, env0, ns0, root) match {
-            case Result.Ok(field) =>
-              val e1Val = visitExp(e1, env0)
-              val e2Val = visitExp(e2, env0)
-              val idx = field.sym.idx
-              mapN(e1Val, e2Val) {
-                case (e1, e2) => ResolvedAst.Expr.StructPut(e1, field.sym, e2, loc)
-              }
-            case Result.Err(e) =>
-              Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
-          }
+      case NamedAst.Expr.StructPut(e1, field0, e2, loc) =>
+        lookupStructField(field0, env0, ns0, root) match {
+          case Result.Ok(field) =>
+            val e1Val = visitExp(e1, env0)
+            val e2Val = visitExp(e2, env0)
+            val idx = field.sym.idx
+            mapN(e1Val, e2Val) {
+              case (e1, e2) => ResolvedAst.Expr.StructPut(e1, field.sym, e2, loc)
+            }
+          case Result.Err(e) =>
+            Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
+        }
 
       case NamedAst.Expr.VectorLit(exps, loc) =>
         val expsVal = traverse(exps)(visitExp(_, env0))
