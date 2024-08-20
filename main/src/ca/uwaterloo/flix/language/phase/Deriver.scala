@@ -43,6 +43,11 @@ object Deriver {
 
   val DerivableSyms = List(EqSym, OrderSym, ToStringSym, HashSym, SendableSym, CoerceSym)
 
+  val Param1Name = "a"
+  val Param2Name = "b"
+  val GetMethodName = "get"
+  val PutMethodName = "put"
+
   def run(root: KindedAst.Root)(implicit flix: Flix): Validation[KindedAst.Root, DerivationError] = flix.phase("Deriver") {
     val derivedInstances = ParOps.parTraverse(root.enums.values)(getDerivedInstances(_, root))
     val structFieldInstances = root.structs.values.map(getInstancesOfStruct(_, root))
@@ -71,15 +76,20 @@ object Deriver {
     fieldNames.toList.map(field => getTraitOfField(field.name, field.loc))
 
   /**
+    * Build the name of the trait for this struct field
+    */
+  def structFieldTraitName(fieldName: String): String = structFieldTraitName(fieldName)
+
+  /**
     * Builds the trait for this struct field
     */
   private def getTraitOfField(name: String, loc: SourceLocation)(implicit flix: Flix): KindedAst.Trait = {
-    val param1Symbol = Symbol.freshVarSym("st_val", BoundBy.FormalParam, loc)
-    val param2Symbol = Symbol.freshVarSym("field_val", BoundBy.FormalParam, loc)
+    val param1Symbol = Symbol.freshVarSym(Param1Name, BoundBy.FormalParam, loc)
+    val param2Symbol = Symbol.freshVarSym(Param2Name, BoundBy.FormalParam, loc)
     val tparamSym = Symbol.freshKindedTypeVarSym(Ast.VarText.Absent, Kind.Star, isRegion = false, loc)
     val tparam = KindedAst.TypeParam(Name.Ident("a", loc), tparamSym, loc)
     val structType = Type.Var(tparamSym, loc)
-    val traitSym = Symbol.mkTraitSym("Dot_" + name)
+    val traitSym = Symbol.mkTraitSym(structFieldTraitName(name))
     val assocTpeSym = Symbol.mkAssocTypeSym(traitSym, Name.Ident("FieldType", loc))
     val assocEffSym = Symbol.mkAssocTypeSym(traitSym, Name.Ident("Aef", loc))
     val assocTpe = Type.AssocType(Ast.AssocTypeConstructor(assocTpeSym, loc), Type.Var(tparamSym, loc), Kind.Star, loc)
@@ -104,8 +114,8 @@ object Deriver {
     )
     val putSpec = fieldPutSpec(structType, assocEff, assocTpe, List(tparam), param1Symbol, param2Symbol, loc)
     val getSpec = fieldGetSpec(structType, assocEff, assocTpe, List(tparam), param1Symbol, loc)
-    val getSym = Symbol.mkSigSym(traitSym, Name.Ident("structget", loc))
-    val putSym = Symbol.mkSigSym(traitSym, Name.Ident("structput", loc))
+    val getSym = Symbol.mkSigSym(traitSym, Name.Ident(GetMethodName, loc))
+    val putSym = Symbol.mkSigSym(traitSym, Name.Ident(PutMethodName, loc))
     val getSig = KindedAst.Sig(getSym, getSpec, None)
     val putSig = KindedAst.Sig(putSym, putSpec, None)
     val sigs = Map(getSym -> getSig, putSym -> putSig)
@@ -136,7 +146,7 @@ object Deriver {
     val loc = field.loc
     val (fields, structType, eff) = Kinder.instantiateStruct(struct0.sym, root.structs)
     val fieldType = fields(field.sym)
-    val traitSym = Symbol.mkTraitSym("Dot_" + field.sym.name)
+    val traitSym = Symbol.mkTraitSym(structFieldTraitName(field.sym.name))
     val assocTypeSym = Symbol.mkAssocTypeSym(traitSym, Name.Ident("FieldType", loc))
     val assocEffSym = Symbol.mkAssocTypeSym(traitSym, Name.Ident("Aef", loc))
     val assocTypeSymUse = Ast.AssocTypeSymUse(assocTypeSym, loc)
@@ -157,10 +167,8 @@ object Deriver {
       tpe = eff,
       loc
     )
-    // JOE TODO: Unify this and weeder into 1 function. Also, make sure the weeder names are modular in general
-    // JOE TODO: Remove all old structput/structget unnecessary stuff(errors, ast nodes, etc)
-    val param1Symbol = Symbol.freshVarSym("st_val", BoundBy.FormalParam, loc)
-    val param2Symbol = Symbol.freshVarSym("field_val", BoundBy.FormalParam, loc)
+    val param1Symbol = Symbol.freshVarSym(Param1Name, BoundBy.FormalParam, loc)
+    val param2Symbol = Symbol.freshVarSym(Param2Name, BoundBy.FormalParam, loc)
     val getSpec = fieldGetSpec(structType, eff, fieldType, Nil, param1Symbol, loc)
     val getExpr = KindedAst.Expr.StructGet(
       exp = KindedAst.Expr.Var(param1Symbol, loc),
@@ -179,12 +187,12 @@ object Deriver {
       loc = loc
     )
     val putDef = KindedAst.Def(
-      sym = Symbol.mkDefnSym("Dot_" + field.sym.name + ".structput", Some(flix.genSym.freshId())),
+      sym = Symbol.mkDefnSym(structFieldTraitName(field.sym.name) + "." + PutMethodName, Some(flix.genSym.freshId())),
       spec = putSpec,
       exp = putExpr
     )
     val getDef = KindedAst.Def(
-      sym = Symbol.mkDefnSym("Dot_" + field.sym.name + ".structget", Some(flix.genSym.freshId())),
+      sym = Symbol.mkDefnSym(structFieldTraitName(field.sym.name) + "." + GetMethodName, Some(flix.genSym.freshId())),
       spec = getSpec,
       exp = getExpr
     )
