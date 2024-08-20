@@ -19,7 +19,7 @@ mod Test.Handler.Gen.AtomicInteger {
 
     def sample(limit: Int32): List[AtomicInteger] =
         region rc {
-            let counter = ref newAtomicInteger(0) @ rc;
+            let counter = Ref.fresh(rc, newAtomicInteger(0));
             try {
                 generator(); Nil
             } with Gen {

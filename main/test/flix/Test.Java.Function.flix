@@ -41,7 +41,7 @@ mod Test.Java.Function {
         let mkObject = i -> new Object {
             def toString(_this: Object): String = "${i}"
         };
-        let st = ref "<none>" @ Static;
+        let st = Ref.fresh(Static, "<none>");
         let stream = of(mkObject(8));
         let _ = forEach(stream, obj -> let s1 = toString(obj); Ref.put(s1, st));
         deref st == "8"
@@ -81,7 +81,7 @@ mod Test.Java.Function {
     def testIntConsumer(): Bool \ IO = {
         import static java.util.stream.IntStream.range(Int32, Int32): IntStream \ IO;
         import java.util.stream.IntStream.forEach(IntConsumer): Unit \ IO;
-        let st = ref 0 @ Static;
+        let st = Ref.fresh(Static, 0);
         let stream = range(0, 9);
         let _ = forEach(stream, i -> Ref.put(i, st));
         deref st == 8
@@ -126,7 +126,7 @@ mod Test.Java.Function {
     def testLongConsumer(): Bool \ IO = {
         import static java.util.stream.LongStream.range(Int64, Int64): LongStream \ IO;
         import java.util.stream.LongStream.forEach(LongConsumer): Unit \ IO;
-        let st = ref 0i64 @ Static;
+        let st = Ref.fresh(Static, 0i64);
         let stream = range(0i64, 9i64);
         let _ = forEach(stream, i -> Ref.put(i, st));
         deref st == 8i64
@@ -174,7 +174,7 @@ mod Test.Java.Function {
     def testDoubleConsumer(): Bool \ IO = {
         import static java.util.stream.DoubleStream.of(Array[Float64, Static]): DoubleStream \ IO;
         import java.util.stream.DoubleStream.forEach(DoubleConsumer): Unit \ IO;
-        let st = ref 0.0f64 @ Static;
+        let st = Ref.fresh(Static, 0.0f64);
         let stream = of(Array#{0.0f64, 1.0f64, 2.0f64, 3.0f64, 4.0f64, 5.0f64, 6.0f64, 7.0f64, 8.0f64} @ Static);
         let _ = forEach(stream, i -> Ref.put(i, st));
         let last = deref st;

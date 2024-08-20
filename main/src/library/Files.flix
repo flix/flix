@@ -366,7 +366,7 @@ mod Files {
             let javaFile = new File(f);
             let javaPath = toPath(javaFile);
             let reader = newBufferedReader(javaPath);
-            let line = ref readLine(reader) @ rc;
+            let line = Ref.fresh(rc, readLine(reader));
             let next = () -> ({
                 if (not Object.isNull(deref line)) {
                     try {
@@ -406,7 +406,7 @@ mod Files {
             let javaFile = new File(f);
             let javaPath = toPath(javaFile);
             let reader = newBufferedReader(javaPath, forName(opts#charSet));
-            let line = ref readLine(reader) @ rc;
+            let line = Ref.fresh(rc, readLine(reader));
             let next = () -> ({
                 if (not Object.isNull(deref line)) {
                     try {
@@ -506,8 +506,8 @@ mod Files {
 
                 let javaFile = new File(f);
                 let stream = new FileInputStream(javaFile);
-                let bytes = ref Array.empty(rc, chunkSize) @ rc;
-                let numberRead = ref read(stream, deref bytes) @ rc;
+                let bytes = Ref.fresh(rc, Array.empty(rc, chunkSize));
+                let numberRead = Ref.fresh(rc, read(stream, deref bytes));
                 let next = () -> ({
                     if (deref numberRead >= 0) {
                         try {

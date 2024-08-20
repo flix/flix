@@ -39,7 +39,7 @@ mod System {
             import java.io.BufferedReader.readLine(): String \ IO as brReadLine;
 
             let br = new BufferedReader(new InputStreamReader(getSystemIn())); // up-cast to superclass
-            let nextLine = ref None @ rc;
+            let nextLine = Ref.fresh(rc, None);
             let next = () -> {
                 let l = match deref nextLine {
                     case Some(line) => if (Object.isNull(line)) None else Some(line)

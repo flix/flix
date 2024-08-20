@@ -20,7 +20,7 @@ mod Ref {
     /// Returns a new reference to `x` in the region `rc`.
     ///
     pub def fresh(rc: Region[r], x: a): Ref[a, r] \ r =
-        ref x @ rc
+        Ref.fresh(rc, x)
 
     ///
     /// Returns the element referenced by `rf`.

@@ -820,7 +820,7 @@ mod Chain {
     /// Returns an iterator over `c`.
     ///
     pub def iterator(rc: Region[r], c: Chain[a]): Iterator[a, r, r] \ r =
-        let cursor = ref viewLeft(c) @ rc;
+        let cursor = Ref.fresh(rc, viewLeft(c));
         let next = () -> match (deref cursor) {
             case ViewLeft.NoneLeft        => None
             case ViewLeft.SomeLeft(x, xs) =>

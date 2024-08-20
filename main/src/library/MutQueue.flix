@@ -57,7 +57,7 @@ mod MutQueue {
     /// Returns an empty MutQueue.
     ///
     pub def empty(rc: Region[r]): MutQueue[a, r] \ r =
-        MutQueue(rc, ref Array.empty(rc, 8) @ rc, ref 0 @ rc)
+        MutQueue(rc, Ref.fresh(rc, Array.empty(rc, 8)), Ref.fresh(rc, 0))
 
     ///
     /// Returns the number of elements in `mq`.

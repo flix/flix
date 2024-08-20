@@ -50,13 +50,13 @@ mod MutMap {
     /// Returns a fresh empty mutable map.
     ///
     pub def empty(rc: Region[r]): MutMap[k, v, r] \ r =
-        MutMap(rc, ref Map.empty() @ rc)
+        MutMap(rc, Ref.fresh(rc, Map.empty()))
 
     ///
     /// Returns the singleton map where key `k` is mapped to value `v`.
     ///
     pub def singleton(rc: Region[r], k: k, v: v): MutMap[k, v, r] \ r with Order[k] =
-        MutMap(rc, ref Map.singleton(k, v) @ rc)
+        MutMap(rc, Ref.fresh(rc, Map.singleton(k, v)))
 
     ///
     /// Returns `true` if and only if the mutable map `m` contains the key `k`.
@@ -369,7 +369,7 @@ mod MutMap {
     ///
     pub def mapWithKey(rc: Region[r1], f: (k, v1) -> v2 \ ef, m: MutMap[k, v1, r]): MutMap[k, v2, r1] \ { ef, r, r1 } =
         let MutMap(_, mm) = m;
-        MutMap(rc, ref Map.mapWithKey(f, deref mm) @ rc)
+        MutMap(rc, Ref.fresh(rc, Map.mapWithKey(f, deref mm)))
 
     ///
     /// Alias for `foldLeftWithKey`.
@@ -530,7 +530,7 @@ mod MutMap {
     ///
     pub def copy(rc: Region[r1], m: MutMap[k, v, r]): MutMap[k, v, r1] \ { r, r1 } =
         let MutMap(_, mm) = m;
-        MutMap(rc, ref (deref mm) @ rc)
+        MutMap(rc, Ref.fresh(rc, deref mm))
 
     ///
     /// Returns the mutable map `m` as an immutable map.
@@ -586,7 +586,7 @@ mod MutMap {
     /// along with that element's index.
     ///
     pub def forEachWithIndex(f: (Int32, k, v) -> Unit \ ef, m: MutMap[k, v, r]): Unit \ { ef, r } = region rc {
-        let ix = ref 0 @ rc;
+        let ix = Ref.fresh(rc, 0);
         forEach((k, v) -> { let i = deref ix; f(i, k, v); Ref.put(i + 1, ix) }, m)
     }
 

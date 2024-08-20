@@ -91,7 +91,7 @@ mod TestDelayMap {
 
     @test
     def insertWithFusion01(): Bool = region rc {
-        let l = ref Nil @ rc;
+        let l = Ref.fresh(rc, Nil);
         discard List.toDelayMap((1, 1) :: Nil) |>
             DelayMap.insertWith((v, _) -> { Ref.put("a" :: deref l, l); v }, 1, 1) |>
             DelayMap.insertWith((v, _) -> { Ref.put("a" :: deref l, l); v }, 1, 1) |>
@@ -104,7 +104,7 @@ mod TestDelayMap {
 
     //@test
     //def insertWithFusion02(): Bool = region rc {
-    //    let l = ref Nil @ rc;
+    //    let l = Ref.fresh(rc, Nil);
     //    let m = List.toDelayMap((1, 1) :: Nil) |>
     //    DelayMap.insertWith((v, _) -> unchecked_cast({ Ref.put("a" :: deref l, l); v } as _ \ {}), 1, 1) |>
     //    DelayMap.insertWith((v, _) -> unchecked_cast({ Ref.put("a" :: deref l, l); v } as _ \ {}), 1, 1) |>
@@ -266,7 +266,7 @@ mod TestDelayMap {
 
     @test
     def mapFusion01(): Bool = region rc {
-        let l = ref Nil @ rc;
+        let l = Ref.fresh(rc, Nil);
         discard ((1, 1) :: (2, 2) :: (3, 3) :: Nil) |> List.toDelayMap |>
             DelayMap.map(v -> { Ref.put("a" :: deref l, l); v }) |>
             DelayMap.map(v -> { Ref.put("b" :: deref l, l); v });
@@ -275,7 +275,7 @@ mod TestDelayMap {
 
     //@test
     //def mapFusion02(): Bool = region rc {
-    //    let l = ref Nil @ rc;
+    //    let l = Ref.fresh(rc, Nil);
     //    let m = ((1, 1) :: (2, 2) :: (3, 3) :: Nil) |> List.toDelayMap |>
     //    DelayMap.map(v -> unchecked_cast({ Ref.put("a" :: deref l, l); v } as _ \ {})) |>
     //    DelayMap.map(v -> unchecked_cast({ Ref.put("b" :: deref l, l); v } as _ \ {}));
@@ -756,7 +756,7 @@ mod TestDelayMap {
 
     @test
     def unionWithKeyFusion01(): Bool = region rc {
-        let l = ref Nil @ rc;
+        let l = Ref.fresh(rc, Nil);
         discard Map#{1 => 1, 2 => 2, 3 => 3} |> Map.toDelayMap |>
             DelayMap.unionWithKey((_, _, v) -> { Ref.put("a" :: deref l, l); v }, Map.toDelayMap(Map#{1 => 1, 2 => 2, 3 => 3})) |>
             DelayMap.unionWithKey((_, _, v) -> { Ref.put("b" :: deref l, l); v }, Map.toDelayMap(Map#{1 => 1, 2 => 2, 3 => 3}));
@@ -765,7 +765,7 @@ mod TestDelayMap {
 
     //@test
     //def unionWithKeyFusion02(): Bool = region rc {
-    //    let l = ref Nil @ rc;
+    //    let l = Ref.fresh(rc, Nil);
     //    let m = Map#{1 => 1, 2 => 2, 3 => 3} |> Map.toDelayMap |>
     //    DelayMap.unionWithKey((_, _, v) -> unchecked_cast({ Ref.put("a" :: deref l, l); v } as _ \ {}), Map.toDelayMap(Map#{1 => 1, 2 => 2, 3 => 3})) |>
     //    DelayMap.unionWithKey((_, _, v) -> unchecked_cast({ Ref.put("b" :: deref l, l); v } as _ \ {}), Map.toDelayMap(Map#{1 => 1, 2 => 2, 3 => 3}));
@@ -1050,7 +1050,7 @@ mod TestDelayMap {
 
     @test
     def updateWithKeyFusion01(): Bool = region rc {
-        let l = ref Nil @ rc;
+        let l = Ref.fresh(rc, Nil);
         discard Map.toDelayMap(Map#{1 => 1, 2 => 2, 3 => 3}) |>
             DelayMap.updateWithKey((_, v) -> { Ref.put("a" :: deref l, l); Some(v) }, 1) |>
             DelayMap.updateWithKey((_, v) -> { Ref.put("a" :: deref l, l); Some(v) }, 2) |>
@@ -1063,7 +1063,7 @@ mod TestDelayMap {
 
     //@test
     //def updateWithKeyFusion02(): Bool = region rc {
-    //    let l = ref Nil @ rc;
+    //    let l = Ref.fresh(rc, Nil);
     //    let _ = Map.toDelayMap(Map#{1 => 1, 2 => 2, 3 => 3}) |>
     //        DelayMap.updateWithKey((_, v) -> unchecked_cast({ Ref.put("a" :: deref l, l); Some(v) } as _ \ {}), 1) |>
     //        DelayMap.updateWithKey((_, v) -> unchecked_cast({ Ref.put("a" :: deref l, l); Some(v) } as _ \ {}), 2) |>
@@ -1426,7 +1426,7 @@ mod TestDelayMap {
 
     @test
     def forEach01(): Bool = region rc {
-        let ri = ref 21 @ rc;
+        let ri = Ref.fresh(rc, 21);
         Map#{} |> Map.toDelayMap |>
             DelayMap.forEach((k, _) -> Ref.put(k, ri));
         21 == deref ri
@@ -1434,7 +1434,7 @@ mod TestDelayMap {
 
     @test
     def forEach02(): Bool = region rc {
-        let ri = ref 21 @ rc;
+        let ri = Ref.fresh(rc, 21);
         Map#{1 => "Hello World!"} |> Map.toDelayMap |>
             DelayMap.forEach((k, _) -> Ref.put(k, ri));
         1 == deref ri
@@ -1446,7 +1446,7 @@ mod TestDelayMap {
 
     @test
     def forEachWithIndex01(): Bool = region rc {
-        let ri = ref 21 @ rc;
+        let ri = Ref.fresh(rc, 21);
         Map#{} |> Map.toDelayMap |>
             DelayMap.forEachWithIndex((i, _, _) -> Ref.put(i, ri));
         21 == deref ri
@@ -1454,7 +1454,7 @@ mod TestDelayMap {
 
     @test
     def forEachWithIndex02(): Bool = region rc {
-        let ri = ref 21 @ rc;
+        let ri = Ref.fresh(rc, 21);
         Map#{1 => "Hello World!"} |> Map.toDelayMap |>
             DelayMap.forEachWithIndex((i, _, _) -> Ref.put(i, ri));
         0 == deref ri
