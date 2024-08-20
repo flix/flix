@@ -1603,7 +1603,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    struct S1[r] { field1: Int32 }
         |    struct S2[r] { field2: Int32 }
         |    def f(s: S1[r]): Unit = {
-        |        s€field2 = 3;
+        |        s€field2;
         |        ()
         |    }
         |}
@@ -1611,7 +1611,6 @@ class TestTyper extends AnyFunSuite with TestUtils {
     val result = compile(input, Options.Default)
     expectError[TypeError](result)
   }
-
 
   test("TypeError.StructPut.01") {
     val input =
@@ -1651,6 +1650,22 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |            s1€c = s2€c;
         |            ()
         |        }
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.Default)
+    expectError[TypeError](result)
+  }
+
+  test("TypeError.StructGet.03") {
+    val input =
+      """
+        |mod S {
+        |    struct S1[r] { field1: Int32 }
+        |    struct S2[r] { field2: Int32 }
+        |    def f(s: S1[r]): Unit = {
+        |        s€field2 = 3;
+        |        ()
         |    }
         |}
         |""".stripMargin

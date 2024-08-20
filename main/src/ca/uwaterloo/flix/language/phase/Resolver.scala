@@ -2337,8 +2337,6 @@ object Resolver {
     // TODO NS-REFACTOR check accessibility
   }
 
-  // JOE TODO: Test a.v where a has type A but A has no v field but B does
-
   /**
     * Finds the restrictable enum case that matches the given qualified name `qname` and `tag` in the namespace `ns0`.
     */
