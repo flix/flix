@@ -23,7 +23,7 @@ import org.scalatest.funsuite.AnyFunSuite
 
 class TestResolver extends AnyFunSuite with TestUtils {
 
-  t test("InaccessibleDef.01") {
+  test("InaccessibleDef.01") {
     val input =
       s"""
          |mod A {
