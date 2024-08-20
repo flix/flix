@@ -179,9 +179,9 @@ mod Test.Exp.LetRec {
     ///
     @test
     def testLetRecAscribed03(): Bool = region rc {
-        def incr(x): Unit \ rc = Ref.put(deref x + 1, x);
-        let r = ref 1 @ rc;
+        def incr(x): Unit \ rc = Ref.put(Ref.get(x) + 1, x);
+        let r = Ref.fresh(rc, 1);
         incr(r);
-        deref r == 2
+        Ref.get(r) == 2
     }
 }

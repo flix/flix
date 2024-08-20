@@ -82,11 +82,11 @@ mod Iterator {
     /// Returns an empty iterator if `b >= e`.
     ///
     pub def range(rc: Region[r], b: Int32, e: Int32): Iterator[Int32, r, r] \ r =
-        let pos = ref b @ rc;
+        let pos = Ref.fresh(rc, b);
         if (e <= b)
             empty(rc)
         else {
-            let iterF = () -> match (deref pos) {
+            let iterF = () -> match (Ref.get(pos)) {
                 case i if i < e => Ref.put(i + 1, pos); Ans(i)
                 case _          => Done
             };
@@ -99,9 +99,9 @@ mod Iterator {
     /// Returns an empty iterator if `n < 0`.
     ///
     pub def repeat(rc: Region[r], n: Int32, x: a): Iterator[a, r, r] \ r =
-        let ix = ref n @ rc;
+        let ix = Ref.fresh(rc, n);
         let iterF = () -> {
-            let i = deref ix;
+            let i = Ref.get(ix);
             if (i < 1)
                 Done
             else {
@@ -277,9 +277,9 @@ mod Iterator {
     ///
     pub def mapWithIndex(f: (Int32, a) -> b \ ef2, iter: Iterator[a, ef1, r]): Iterator[b, ef1 + ef2, r] \ r =
         let Iterator(rc, iterF) = iter;
-        let ix = ref 0 @ rc;
+        let ix = Ref.fresh(rc, 0);
         let step = x -> match x {
-            case Ans(a) => { let i = deref ix; Ref.put(i + 1, ix); Ans(f(i, a)) }
+            case Ans(a) => { let i = Ref.get(ix); Ref.put(i + 1, ix); Ans(f(i, a)) }
             case Skip   => Skip
             case Done   => Done
         };
@@ -386,8 +386,8 @@ mod Iterator {
     ///
     pub def zipWithIndex(iter: Iterator[a, ef, r]): Iterator[(Int32, a), ef + r, r] \ r =
         let Iterator(rc, _) = iter;
-        let ix = ref 0 @ rc;
-        map(x -> {let i = deref ix; Ref.put(i + 1, ix); (i, x)}, iter)
+        let ix = Ref.fresh(rc, 0);
+        map(x -> {let i = Ref.get(ix); Ref.put(i + 1, ix); (i, x)}, iter)
 
     ///
     /// Alias for `zipWithIndex`.
@@ -489,9 +489,9 @@ mod Iterator {
     ///
     pub def drop(n: Int32, iter: Iterator[a, ef, r]): Iterator[a, ef + r, r] \ r =
         let Iterator(rc, iterF) = iter;
-        let ix = ref n @ rc;
+        let ix = Ref.fresh(rc, n);
         def loop() = {
-            let i = deref ix;
+            let i = Ref.get(ix);
             Ref.put(i - 1, ix);
             match iterF() {
                 case Ans(a)  => if (i > 0) loop() else Ans(a)
@@ -514,9 +514,9 @@ mod Iterator {
     ///
     pub def take(n: Int32, iter: Iterator[a, ef, r]): Iterator[a, ef + r, r] \ r =
         let Iterator(rc, iterF) = iter;
-        let ix = ref n @ rc;
+        let ix = Ref.fresh(rc, n);
         def loop() = {
-            let i = deref ix;
+            let i = Ref.get(ix);
             if (i < 1)
                 Done
             else
@@ -555,10 +555,10 @@ mod Iterator {
     ///
     pub def dropWhile(f: a -> Bool \ ef2, iter: Iterator[a, ef1, r]): Iterator[a, r + ef1 + ef2, r] \ r =
         let Iterator(rc, iterF) = iter;
-        let start = ref true @ rc;
+        let start = Ref.fresh(rc, true);
         def loop() = match iterF() {
             case Ans(a) =>
-                if (deref start) {
+                if (Ref.get(start)) {
                     if (f(a)) Skip else { Ref.put(false, start); Ans(a) }
                 } else {
                     Ans(a)
@@ -578,10 +578,10 @@ mod Iterator {
     ///
     pub def flatMap(f: a -> Iterator[b, ef2, r] \ ef3, ma: Iterator[a, ef1, r]): Iterator[b, r + ef1 + ef2 + ef3, r] \ r =
         let Iterator(rc, iterF) = ma;
-        let innerIter = ref polymorphicEmpty(rc) @ rc;
-        let inside = ref false @ rc;
+        let innerIter = Ref.fresh(rc, polymorphicEmpty(rc));
+        let inside = Ref.fresh(rc, false);
         def innerLoop() = {
-            let Iterator(_, innerF) = deref innerIter;
+            let Iterator(_, innerF) = Ref.get(innerIter);
             match innerF() {
                 case Ans(b) => Ans(b)
                 case Skip   => innerLoop()
@@ -589,7 +589,7 @@ mod Iterator {
             }
         };
         def outerLoop() = {
-            if (deref inside) {
+            if (Ref.get(inside)) {
                 match innerLoop() {
                     case Done => Ref.put(false, inside); outerLoop()
                     case ans  => ans
@@ -627,9 +627,9 @@ mod Iterator {
     ///
     pub def intersperse(sep: a, iter: Iterator[a, ef, r]): Iterator[a, ef + r, r] \ r =
         let Iterator(rc, _) = iter;
-        let start = ref true @ rc;
+        let start = Ref.fresh(rc, true);
         let step = x ->
-            if (deref start) {
+            if (Ref.get(start)) {
                 Ref.put(false, start);
                 singleton(rc, x)
             } else {
@@ -648,10 +648,10 @@ mod Iterator {
     ///
     pub def intercalate(sep: t[a], iter: Iterator[Iterator[a, ef, r], ef, r]): Iterator[a, ef + r, r] \ (r + Foldable.Aef[t]) with Foldable[t] =
         let Iterator(rc, _) = iter;
-        let start = ref true @ rc;
+        let start = Ref.fresh(rc, true);
         let sepL = Foldable.toList(sep);
         let step = innerIter -> {
-            if (deref start) {
+            if (Ref.get(start)) {
                 Ref.put(false, start);
                 innerIter
             } else {
@@ -667,9 +667,9 @@ mod Iterator {
     /// then `intercalate` fails.
     ///
     def ofList(rc: Region[r], xs: List[a]): Iterator[a, {}, r] \ r =
-        let ls = ref xs @ rc;
+        let ls = Ref.fresh(rc, xs);
         let next = () -> {
-            match (deref ls) {
+            match (Ref.get(ls)) {
                 case Nil     => Done
                 case x :: rs => Ref.put(rs, ls); Ans(x)
             }
@@ -734,9 +734,9 @@ mod Iterator {
     ///
     pub def cons(x: a, iter: Iterator[a, ef, r]): Iterator[a, ef, r] \ r =
         let Iterator(rc, iterF) = iter;
-        let first = ref true @ rc;
+        let first = Ref.fresh(rc, true);
         let f = () ->  {
-            if (deref first) {
+            if (Ref.get(first)) {
                 Ref.put(false, first);
                 Ans(x)
             }

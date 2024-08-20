@@ -371,6 +371,7 @@ object Resolver {
     case op@NamedAst.Declaration.Op(sym, spec) => throw InternalCompilerException("unexpected op", sym.loc)
     case NamedAst.Declaration.Sig(sym, spec, exp) => throw InternalCompilerException("unexpected sig", sym.loc)
     case NamedAst.Declaration.Case(sym, tpe, _) => throw InternalCompilerException("unexpected case", sym.loc)
+    case NamedAst.Declaration.StructField(sym, tpe, _) => throw InternalCompilerException("unexpected struct field", sym.loc)
     case NamedAst.Declaration.RestrictableCase(sym, tpe, _) => throw InternalCompilerException("unexpected case", sym.loc)
     case NamedAst.Declaration.AssocTypeDef(doc, mod, ident, args, tpe, loc) => throw InternalCompilerException("unexpected associated type definition", ident.loc)
     case NamedAst.Declaration.AssocTypeSig(doc, mod, sym, tparams, kind, tpe, loc) => throw InternalCompilerException("unexpected associated type signature", sym.loc)
@@ -604,11 +605,10 @@ object Resolver {
     * Performs name resolution on the given struct field `field0` in the given namespace `ns0`.
     */
   private def resolveStructField(structSym: Symbol.StructSym, idx: Int, field0: NamedAst.Declaration.StructField, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration.StructField, ResolutionError] = field0 match {
-    case NamedAst.Declaration.StructField(fieldName, tpe0, loc) =>
+    case NamedAst.Declaration.StructField(sym, tpe0, loc) =>
       val tpeVal = resolveType(tpe0, Wildness.ForbidWild, env, taenv, ns0, root)
-      val fieldSym = Symbol.mkStructFieldSym(structSym, idx, fieldName)
       mapN(tpeVal) {
-        tpe => ResolvedAst.Declaration.StructField(fieldSym, tpe, loc)
+        tpe => ResolvedAst.Declaration.StructField(sym, tpe, loc)
       }
   }
 
@@ -1358,8 +1358,8 @@ object Resolver {
                     ResolvedAst.Expr.StructNew(st.sym, fields, region, loc)
                 }
                 // Potential errors
-                val providedFieldNames = fields.map { case (k, _) => k }
-                val expectedFieldNames = st.fields.map(_.sym)
+                val providedFieldNames = fields.map { case (k, _) => Name.Label(k.name, k.loc) }
+                val expectedFieldNames = st.fields.map( field => Name.Label(field.sym.name, field.sym.loc) )
                 val extraFields = providedFieldNames.diff(expectedFieldNames)
                 val missingFields = expectedFieldNames.diff(providedFieldNames)
 
@@ -1380,40 +1380,26 @@ object Resolver {
             Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
         }
 
-      case NamedAst.Expr.StructGet(name, e, field, loc) =>
-        lookupStruct(name, env0, ns0, root) match {
-          case Result.Ok(st) =>
-            val availableFields = st.fields.map(_.sym)
-            if (!availableFields.contains(field)) {
-              val e = ResolutionError.UndefinedStructField(st.sym, field, loc)
-              Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
-            } else {
-              val eVal = visitExp(e, env0)
-              val idx = st.indices.getOrElse(field, 0)
-              val fieldSym = Symbol.mkStructFieldSym(st.sym, idx, field)
-              mapN(eVal) {
-                case e => ResolvedAst.Expr.StructGet(e, fieldSym, loc)
-              }
+      case NamedAst.Expr.StructGet(e, field0, loc) =>
+        lookupStructField(field0, env0, ns0, root) match {
+          case Result.Ok(field) =>
+            val eVal = visitExp(e, env0)
+            val idx = field.sym.idx
+            mapN(eVal) {
+              case e => ResolvedAst.Expr.StructGet(e, field.sym, loc)
             }
           case Result.Err(e) =>
             Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
         }
 
-      case NamedAst.Expr.StructPut(name, e1, field, e2, loc) =>
-        lookupStruct(name, env0, ns0, root) match {
-          case Result.Ok(st) =>
-            val availableFields = st.fields.map(_.sym)
-            if (!availableFields.contains(field)) {
-              val e = ResolutionError.UndefinedStructField(st.sym, field, loc)
-              Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
-            } else {
-              val e1Val = visitExp(e1, env0)
-              val e2Val = visitExp(e2, env0)
-              val idx = st.indices.getOrElse(field, 0)
-              val fieldSym = Symbol.mkStructFieldSym(st.sym, idx, field)
-              mapN(e1Val, e2Val) {
-                case (e1, e2) => ResolvedAst.Expr.StructPut(e1, fieldSym, e2, loc)
-              }
+      case NamedAst.Expr.StructPut(e1, field0, e2, loc) =>
+        lookupStructField(field0, env0, ns0, root) match {
+          case Result.Ok(field) =>
+            val e1Val = visitExp(e1, env0)
+            val e2Val = visitExp(e2, env0)
+            val idx = field.sym.idx
+            mapN(e1Val, e2Val) {
+              case (e1, e2) => ResolvedAst.Expr.StructPut(e1, field.sym, e2, loc)
             }
           case Result.Err(e) =>
             Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
@@ -2336,7 +2322,7 @@ object Resolver {
   }
 
   /**
-    * Finds the struct that matches the given symbol `sym` and `tag` in the namespace `ns0`.
+    * Finds the struct that matches the given name `qname` in the namespace `ns0`.
     */
   private def lookupStruct(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Result[NamedAst.Declaration.Struct, ResolutionError.UndefinedStruct] = {
     val matches = tryLookupName(qname, env, ns0, root) collect {
@@ -2346,9 +2332,27 @@ object Resolver {
       // Case 0: No matches. Error.
       case Nil => Result.Err(ResolutionError.UndefinedStruct(qname, qname.loc))
       // Case 1: Exactly one match. Success.
-      case st :: _ => Result.Ok(st)
+      case st :: Nil => Result.Ok(st)
       // Case 2: Multiple matches. Error
       case sts => throw InternalCompilerException(s"unexpected duplicate struct: '$qname'.", qname.loc)
+    }
+    // TODO NS-REFACTOR check accessibility
+  }
+
+  /**
+   * Finds the struct field that matches the given name `name` in the namespace `ns0`.
+   */
+  private def lookupStructField(name: Name.Label, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Result[NamedAst.Declaration.StructField, ResolutionError.UndefinedStructField] = {
+    val matches = tryLookupName(Name.mkQName("€" + name.name, name.loc), env, ns0, root) collect {
+      case Resolution.Declaration(s: NamedAst.Declaration.StructField) => s
+    }
+    matches match {
+      // Case 0: No matches. Error.
+      case Nil => Result.Err(ResolutionError.UndefinedStructField(name, name.loc))
+      // Case 1: Exactly one match. Success.
+      case field :: _ => Result.Ok(field)
+      // Case 2: Multiple matches. Error
+      case sts => throw InternalCompilerException(s"unexpected duplicate struct field: '$name'.", name.loc)
     }
     // TODO NS-REFACTOR check accessibility
   }
@@ -2935,11 +2939,16 @@ object Resolver {
       val envNames = env(qname.ident.name)
 
       // 2nd priority: names in the current namespace
-      val localNames = root.symbols.getOrElse(ns0, Map.empty).getOrElse(qname.ident.name, Nil).map(Resolution.Declaration)
+      val localNames = if(!ns0.idents.isEmpty) {
+        root.symbols.getOrElse(ns0, Map.empty).getOrElse(qname.ident.name, Nil).map(Resolution.Declaration)
+      } else {
+        Nil
+      }
 
       // 3rd priority: the name of the current namespace
       val currentNamespace = {
-        if (ns0.idents.lastOption.contains(qname.ident)) {
+        // Make sure we don't duplicate results in `rootNames`
+        if (ns0.idents.size > 1 && ns0.idents.lastOption.contains(qname.ident)) {
           // Case 1.1.1.1: We are referring to the current namespace. Use that.
           root.symbols.getOrElse(Name.mkUnlocatedNName(ns0.parts.init), Map.empty).getOrElse(ns0.parts.last, Nil).map(Resolution.Declaration)
         } else {
@@ -3712,6 +3721,7 @@ object Resolver {
     case NamedAst.Declaration.Def(sym, spec, exp) => sym
     case NamedAst.Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc) => sym
     case NamedAst.Declaration.Struct(doc, ann, mod, sym, tparams, fields, indices, loc) => sym
+    case NamedAst.Declaration.StructField(sym, _, _) => sym
     case NamedAst.Declaration.RestrictableEnum(doc, ann, mod, sym, ident, tparams, derives, cases, loc) => sym
     case NamedAst.Declaration.TypeAlias(doc, ann, mod, sym, tparams, tpe, loc) => sym
     case NamedAst.Declaration.AssocTypeSig(doc, mod, sym, tparams, kind, tpe, loc) => sym
