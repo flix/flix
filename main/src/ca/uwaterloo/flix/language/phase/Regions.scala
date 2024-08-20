@@ -116,8 +116,8 @@ object Regions {
       }
       expErrors ++ rulesErrors ++ checkType(tpe, loc)
 
-    case Expr.Tag(_, exp, tpe, _, loc) =>
-      visitExp(exp) ++ checkType(tpe, loc)
+    case Expr.Tag(_, tpe, loc) =>
+      Nil
 
     case Expr.RestrictableTag(_, exp, tpe, _, loc) =>
       visitExp(exp) ++ checkType(tpe, loc)

@@ -55,7 +55,7 @@ object DocAst {
 
     case class Tuple(elms: List[Expr]) extends Atom
 
-    case class Tag(sym: Symbol.CaseSym, args: List[Expr]) extends Atom
+    case class Tag(sym: Symbol.CaseSym) extends Atom
 
     /** inserted string printed as-is (assumed not to require parenthesis) */
     case class AsIs(s: String) extends Atom

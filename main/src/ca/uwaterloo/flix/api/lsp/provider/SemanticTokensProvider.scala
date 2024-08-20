@@ -410,9 +410,9 @@ object SemanticTokensProvider {
           acc ++ visitRestrictableChoosePat(pat) ++ visitExp(exp)
       }
 
-    case Expr.Tag(Ast.CaseSymUse(_, loc), exp, _, _, _) =>
+    case Expr.Tag(Ast.CaseSymUse(_, loc), _, _) =>
       val t = SemanticToken(SemanticTokenType.EnumMember, Nil, loc)
-      Iterator(t) ++ visitExp(exp)
+      Iterator(t)
 
     case Expr.RestrictableTag(Ast.RestrictableCaseSymUse(_, loc), exp, _, _, _) =>
       val t = SemanticToken(SemanticTokenType.EnumMember, Nil, loc)

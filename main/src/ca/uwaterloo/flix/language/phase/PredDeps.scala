@@ -147,8 +147,8 @@ object PredDeps {
       }
       dg1 + dg2
 
-    case Expr.Tag(_, exp, _, _, _) =>
-      visitExp(exp)
+    case Expr.Tag(_, _, _) =>
+      LabelledPrecedenceGraph.empty
 
     case Expr.RestrictableTag(_, exp, _, _, _) =>
       visitExp(exp)
