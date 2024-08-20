@@ -391,6 +391,6 @@ mod Foldable {
     ///
     /// Returns the length of `t`, i.e. the number of times it can be folded over.
     ///
-    pub def size(t: t[a]): Int32 \ Foldable.Aef[t] = Foldable.length(t)
+    pub def size(t: t[a]): Int32 \ Foldable.Aef[t] with Foldable[t] = Foldable.length(t)
 
 }

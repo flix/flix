@@ -189,17 +189,17 @@ mod TestArray {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def testLength01(): Bool = region rc {
+    def testSize01(): Bool = region rc {
         Array.size(Array#{} @ rc) == 0
     }
 
     @test
-    def testLength02(): Bool = region rc {
+    def testSize02(): Bool = region rc {
         Array.size(Array#{1} @ rc) == 1
     }
 
     @test
-    def testLength03(): Bool = region rc {
+    def testSize03(): Bool = region rc {
         Array.size(Array#{1, 2, 3} @ rc) == 3
     }
 

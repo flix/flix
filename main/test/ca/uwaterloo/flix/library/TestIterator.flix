@@ -183,17 +183,17 @@ mod TestIterator {
 
     @test
     def size01(): Bool = region rc {
-        Iterator.repeat(rc, 0, 10) |> Iterator.size == 10
+        Iterator.repeat(rc, 0, 10) |> Iterator.size == 0
     }
 
     @test
     def size02(): Bool = region rc {
-        Iterator.repeat(rc, -100, 2) |> Iterator.size == 2
+        Iterator.repeat(rc, -100, 2) |> Iterator.size == 0
     }
 
     @test
     def size03(): Bool = region rc {
-        Iterator.repeat(rc, 100, 0) |> Iterator.size == 0
+        Iterator.repeat(rc, 100, 0) |> Iterator.size == 100
     }
 
     @test

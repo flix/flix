@@ -67,7 +67,7 @@ mod TestIterable {
     }
 
     @test
-    def iterableDelayMap03(): Bool = region rc {
+    def iterableDelayMap03(): Bool = {
         let m = Map#{2 => 'A', 5 => 'B', 11 => 'D', 8 => 'C'} |> Map.toDelayMap;
         Iterable.size(m) == 4
     }
@@ -101,7 +101,7 @@ mod TestIterable {
     }
 
     @test
-    def iterableList05(): Bool = region rc {
+    def iterableList05(): Bool = {
         let l = List#{(2, 'A'), (5, 'B'), (11, 'D'), (8, 'C')};
         Iterable.size(l) == 4
     }
@@ -123,7 +123,7 @@ mod TestIterable {
     }
 
     @test
-    def iterableMap03(): Bool = region rc {
+    def iterableMap03(): Bool = {
         let m = Map#{2 => 'A', 5 => 'B', 11 => 'D', 8 => 'C'};
         Iterable.size(m) == 4
     }
@@ -295,7 +295,7 @@ mod TestIterable {
     }
 
     @test
-    def iterableRedBlackTree03(): Bool = region rc {
+    def iterableRedBlackTree03(): Bool = {
         let Map.Map(t) = Map#{2 => 'A', 5 => 'B', 11 => 'D', 8 => 'C'};
         Iterable.size(t) == 4
     }
@@ -329,7 +329,7 @@ mod TestIterable {
     }
 
     @test
-    def iterableSet05(): Bool = region rc {
+    def iterableSet05(): Bool = {
         let s = Set#{(2, 'A'), (5, 'B'), (11, 'D'), (8, 'C')};
         Iterable.size(s) == 4
     }

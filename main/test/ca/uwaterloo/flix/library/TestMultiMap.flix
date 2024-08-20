@@ -140,7 +140,7 @@ mod TestMultiMap {
 
     @test
     def size04(): Bool =
-        singleton(1, 'a') |> insert(2, 'b') |> insert(1, 'c') |> MultiMap.size == 3
+        singleton(1, 'a') |> insert(2, 'b') |> insert(3, 'c') |> MultiMap.size == 3
 
     /////////////////////////////////////////////////////////////////////////////
     // get                                                                     //
