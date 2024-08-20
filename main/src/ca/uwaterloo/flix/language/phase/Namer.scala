@@ -49,7 +49,7 @@ object Namer {
 
       val units = ParOps.parMapValues(program.units)(visitUnit)
       val SymbolTable(symbols0, instances0, uses0) = units.values.foldLeft(SymbolTable.empty)(tableUnit)
-      val structFields = collectStructFields(units)
+      val structFields = collectStructFields(symbols0.values.flatMap(_.m.flatMap(_._2)))
 
       // TODO NS-REFACTOR remove use of NName
       val symbols = symbols0.map {
@@ -238,18 +238,13 @@ object Namer {
     }
   }
 
-  private def collectStructFields(sourceToUnit: Map[Source, NamedAst.CompilationUnit]): Set[Name.Label] = {
-    sourceToUnit.values.flatMap(collectStructFields).toSet
-  }
-
-  private def collectStructFields(unit: NamedAst.CompilationUnit): List[Name.Label] = {
-    val structs = unit match {
-      case NamedAst.CompilationUnit(usesAndImports, decls, loc) =>
-        decls.collect {
-          case s: NamedAst.Declaration.Struct => s
-        }
+  private def collectStructFields(decls: Iterable[NamedAst.Declaration]): Set[Name.Label] = {
+    val structs = decls.collect { decl =>
+      decl match {
+        case s: NamedAst.Declaration.Struct => s
+      }
     }
-    structs.flatMap(_.fields.map(field => Name.Label(field.sym.name, field.sym.loc)))
+    structs.flatMap(struct => struct.fields.map(field => Name.Label(field.sym.name, field.sym.loc))).toSet
   }
 
   /**
