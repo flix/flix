@@ -1370,7 +1370,7 @@ mod Test.Exp.Regions {
                     let m: Ref[Ref[Ref[Ref[MutMap[Int32, Ref[MutList[Ref[Array[Ref[Ref[Ref[Ref[MutMap[Int32, Int32, rc1], rc3], rc2], rc1], rc3], rc3], rc2], rc1], rc1], rc2], rc1], rc3], rc2], rc3] =
                         Ref.fresh(rc3, Ref.fresh(rc2, Ref.fresh(rc3, Ref.fresh(rc1, MutMap.empty(rc2)))));
                     let l = Ref.fresh(rc1, MutList.empty(rc1));
-                    let a = Ref.fresh(rc2, Array.repeat(rc3, 8, Ref.fresh(rc3, Ref.fresh(rc1, Ref.fresh(rc2, Ref.fresh(rc3, MutMap.empty(rc1))))));
+                    let a = Ref.fresh(rc2, Array.repeat(rc3, 8, Ref.fresh(rc3, Ref.fresh(rc1, Ref.fresh(rc2, Ref.fresh(rc3, MutMap.empty(rc1)))))));
                     MutMap.put!(1, l, deref deref deref deref m);
                     MutList.push!(a, deref l);
                     MutMap.put!(1, 1, deref deref deref deref Array.get(0, deref a));
