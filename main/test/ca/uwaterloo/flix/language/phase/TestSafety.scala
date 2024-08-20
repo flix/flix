@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.errors.SafetyError
-import ca.uwaterloo.flix.language.errors.SafetyError.{IllegalCatchType, IllegalNegativelyBoundWildCard, IllegalNonPositivelyBoundVar, IllegalPatternInBodyAtom, IllegalRelationalUseOfLatticeVar}
+import ca.uwaterloo.flix.language.errors.SafetyError.{IllegalThrowType, IllegalCatchType, IllegalNegativelyBoundWildCard, IllegalNestedTryCatch, IllegalNonPositivelyBoundVar, IllegalPatternInBodyAtom, IllegalRelationalUseOfLatticeVar}
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -53,6 +53,53 @@ class TestSafety extends AnyFunSuite with TestUtils {
       """.stripMargin
     val result = compile(input, Options.DefaultTest)
     expectError[IllegalCatchType](result)
+  }
+
+  test("IllegalThrowType.01") {
+    val input =
+      """
+        |def f(): String = throw "hello"
+      """.stripMargin
+    val result = compile(input, Options.DefaultTest)
+    expectError[IllegalThrowType](result)
+  }
+
+  test("IllegalThrowType.02") {
+    val input =
+      """
+        |import java.io.IOException
+        |def f(): String = throw (throw new IOException())
+      """.stripMargin
+    val result = compile(input, Options.DefaultTest)
+    expectError[IllegalThrowType](result)
+  }
+
+  test("IllegalThrowType.03") {
+    val input =
+      """
+        |import java.io.IOException
+        |pub def f(): String = throw None
+      """.stripMargin
+    val result = compile(input, Options.DefaultTest)
+    expectError[IllegalThrowType](result)
+  }
+
+  test("IllegalNestedTryCatch.01") {
+    val input =
+      """
+        |pub def f(): String =
+        |    try {
+        |        try {
+        |            "abc"
+        |        } catch {
+        |            case _e1: ##java.lang.Exception => "ok"
+        |        }
+        |    } catch {
+        |        case _e1: ##java.lang.Exception => "ok"
+        |    }
+      """.stripMargin
+    val result = compile(input, Options.DefaultTest)
+    expectError[IllegalNestedTryCatch](result)
   }
 
   test("UnexpectedBodyAtomPattern.01") {
@@ -469,6 +516,42 @@ class TestSafety extends AnyFunSuite with TestUtils {
     expectError[SafetyError.ImpossibleUncheckedCast](result)
   }
 
+  test("ImpossibleCast.10") {
+    val input =
+      """
+        |struct A[r] {
+        |    a: Bool
+        |}
+        |def f(): A[r] = unchecked_cast(true as A[r])
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.ImpossibleUncheckedCast](result)
+  }
+
+  test("ImpossibleCast.11") {
+    val input =
+      """
+        |struct A[r] {
+        |    a: Int32
+        |}
+        |def f(): A[r] = unchecked_cast(1 as A[r])
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.ImpossibleUncheckedCast](result)
+  }
+
+  test("ImpossibleCast.12") {
+    val input =
+      """
+        |struct A[r] {
+        |    a: String
+        |}
+        |def f(): A[r] = unchecked_cast("a" as A[r])
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.ImpossibleUncheckedCast](result)
+  }
+
   test("IllegalCheckedTypeCast.01") {
     val input =
       """
@@ -846,4 +929,27 @@ class TestSafety extends AnyFunSuite with TestUtils {
     expectError[SafetyError.IllegalExportPolymorphism](result)
   }
 
+  test("IllegalExportFunction.08") {
+    val input =
+      """
+        |struct S[t, r] {
+        |    v: t
+        |}
+        |mod Mod { @Export pub def id(x: Int32): S[Int32, r] = ??? }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalExportPolymorphism](result)
+  }
+
+  test("IllegalExportFunction.09") {
+    val input =
+      """
+        |struct S[t, r] {
+        |    v: t
+        |}
+        |mod Mod { @Export pub def id(x: Int32, _y: S[Int32, r]): Int32 = x }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalExportPolymorphism](result)
+  }
 }

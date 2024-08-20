@@ -2,6 +2,7 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.fmt.FormatType
 import ca.uwaterloo.flix.util.Formatter
@@ -16,6 +17,23 @@ sealed trait SafetyError extends CompilationMessage with Recoverable {
 }
 
 object SafetyError {
+
+  /**
+   * An error raised to indicate a forbidden operation.
+   *
+   * @param loc  the source location of the forbidden operation.
+   */
+  case class Forbidden(ctx: SecurityContext, loc: SourceLocation)(implicit flix: Flix) extends SafetyError with Recoverable {
+    override def summary: String = "Operation not permitted"
+
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s""">> Operation not permitted in security context: $ctx
+         |
+         |${code(loc, "forbidden")}
+         |""".stripMargin
+    }
+  }
 
   /**
     * An error raised to indicate an illegal checked type cast.
@@ -294,6 +312,45 @@ object SafetyError {
          |${code(loc, "Type should be java.lang.Throwable or a subclass.")}
          |""".stripMargin
     }
+  }
+
+  /**
+   * An error raised to indicate that the object in a `throw` expression is not a Throwable.
+   *
+   * @param loc the location of the object
+   */
+  case class IllegalThrowType(loc: SourceLocation) extends SafetyError with Recoverable {
+    def summary: String = s"Exception type is not a subclass of Throwable."
+
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s""">> $summary
+         |
+         |${code(loc, "Type should be java.lang.Throwable or a subclass.")}
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate that a try-catch expression contains another try-catch expression.
+    *
+    * @param loc the location of the inner try-catch.
+    */
+  case class IllegalNestedTryCatch(loc: SourceLocation) extends SafetyError with Recoverable {
+    def summary: String = s"Try-catch expressions cannot be nested."
+
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s""">> $summary
+         |
+         |${code(loc, "The inner try-catch expression.")}
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"""${underline("Tip:")} Put the inner try-catch expression in a function.""".stripMargin
+    })
   }
 
   /**

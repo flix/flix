@@ -25,12 +25,11 @@ mod Test.Java.Function {
         import static java.util.stream.Stream.of(Object): Stream \ IO;
         import java.util.stream.Stream.findFirst(): ##java.util.Optional \ IO;
         import java.util.Optional.get(): Object;
-        import java.lang.Object.toString(): String;
         let mkObject = i -> new Object {
             def toString(_this: Object): String = "${i}"
         };
         let stream = of(mkObject(42));
-        toString(get(findFirst(stream))) == "42"
+        get(findFirst(stream)).toString() == "42"
     }
 
     @Test
@@ -53,13 +52,12 @@ mod Test.Java.Function {
         import java.util.stream.Stream.filter(Predicate): Stream \ IO;
         import java.util.stream.Stream.findFirst(): ##java.util.Optional \ IO;
         import java.util.Optional.get(): Object;
-        import java.lang.Object.toString(): String;
         let mkObject = i -> new Object {
             def toString(_this: Object): String = "${i}"
         };
         let stream0 = of(Array#{mkObject(1), mkObject(2), mkObject(3), mkObject(4), mkObject(5)} @ rc);
-        let stream1 = filter(stream0, obj -> toString(obj) == "5");
-        toString(get(findFirst(stream1))) == "5"
+        let stream1 = filter(stream0, obj -> obj.toString() == "5");
+        get(findFirst(stream1)).toString() == "5"
     }
 
     @Test
@@ -68,13 +66,12 @@ mod Test.Java.Function {
         import java.util.stream.IntStream.mapToObj(IntFunction): Stream \ IO;
         import java.util.stream.Stream.findFirst(): ##java.util.Optional \ IO;
         import java.util.Optional.get(): Object;
-        import java.lang.Object.toString(): String;
         let stream0 = of(42);
         let f = i -> new Object {
             def toString(_this: Object): String = "${i}"
         };
         let stream1 = mapToObj(stream0, f);
-        toString(get(findFirst(stream1))) == "42"
+        get(findFirst(stream1)).toString() == "42"
     }
 
     @Test
@@ -91,20 +88,18 @@ mod Test.Java.Function {
     def testIntPredicate(): Bool \ IO = {
         import static java.util.stream.IntStream.range(Int32, Int32): IntStream \ IO;
         import java.util.stream.IntStream.filter(IntPredicate): IntStream \ IO;
-        import java.util.stream.IntStream.sum(): Int32 \ IO;
         let stream0 = range(0, 9);
         let stream1 = filter(stream0, i -> checked_ecast(i `Int32.remainder` 2 == 0));
-        sum(stream1) == 20
+        stream1.sum() == 20
     }
 
     @Test
     def testIntUnaryOperator(): Bool \ IO = {
         import static java.util.stream.IntStream.of(Int32): IntStream \ IO;
         import java.util.stream.IntStream.map(IntUnaryOperator): IntStream \ IO;
-        import java.util.stream.IntStream.sum(): Int32 \ IO;
         let stream0 = of(5);
         let stream1 = map(stream0, i -> checked_ecast(i+7));
-        sum(stream1) == 12
+        stream1.sum() == 12
     }
 
     @Test
@@ -113,13 +108,12 @@ mod Test.Java.Function {
         import java.util.stream.LongStream.mapToObj(LongFunction): Stream \ IO;
         import java.util.stream.Stream.findFirst(): ##java.util.Optional \ IO;
         import java.util.Optional.get(): Object;
-        import java.lang.Object.toString(): String;
         let stream0 = of(42i64);
         let f = i -> new Object {
             def toString(_this: Object): String = "${i}"
         };
         let stream1 = mapToObj(stream0, f);
-        toString(get(findFirst(stream1))) == "42"
+        get(findFirst(stream1)).toString() == "42"
     }
 
     @Test
@@ -136,20 +130,18 @@ mod Test.Java.Function {
     def testLongPredicate(): Bool \ IO = {
         import static java.util.stream.LongStream.range(Int64, Int64): LongStream \ IO;
         import java.util.stream.LongStream.filter(LongPredicate): LongStream \ IO;
-        import java.util.stream.LongStream.sum(): Int64 \ IO;
         let stream0 = range(0i64, 9i64);
         let stream1 = filter(stream0, i -> checked_ecast(i `Int64.remainder` 2i64 == 0i64));
-        sum(stream1) == 20i64
+        stream1.sum() == 20i64
     }
 
     @Test
     def testLongUnaryOperator(): Bool \ IO = {
         import static java.util.stream.LongStream.of(Int64): LongStream \ IO;
         import java.util.stream.LongStream.map(LongUnaryOperator): LongStream \ IO;
-        import java.util.stream.LongStream.sum(): Int64 \ IO;
         let stream0 = of(5i64);
         let stream1 = map(stream0, i -> checked_ecast(i+7i64));
-        sum(stream1) == 12i64
+        stream1.sum() == 12i64
     }
 
     @Test
@@ -158,7 +150,6 @@ mod Test.Java.Function {
         import java.util.stream.DoubleStream.mapToObj(DoubleFunction): Stream \ IO;
         import java.util.stream.Stream.findFirst(): ##java.util.Optional \ IO;
         import java.util.Optional.get(): Object;
-        import java.lang.Object.toString(): String;
         let stream0 = of(42.0f64);
         let f = d -> new Object {
             def toString(_this: Object): String = match Float64.tryToInt32(d) {
@@ -167,7 +158,7 @@ mod Test.Java.Function {
            }
         };
         let stream1 = mapToObj(stream0, f);
-        toString(get(findFirst(stream1))) == "42"
+        get(findFirst(stream1)).toString() == "42"
     }
 
     @Test
@@ -185,13 +176,12 @@ mod Test.Java.Function {
     def testDoublePredicate(): Bool \ IO = region rc {
         import static java.util.stream.DoubleStream.of(Array[Float64, rc]): DoubleStream \ IO;
         import java.util.stream.DoubleStream.filter(DoublePredicate): DoubleStream \ IO;
-        import java.util.stream.DoubleStream.sum(): Float64 \ IO;
         let stream0 = of(Array#{0.0f64, 1.0f64, 2.0f64, 3.0f64, 4.0f64, 5.0f64, 6.0f64, 7.0f64, 8.0f64} @ rc);
         let stream1 = filter(stream0, d -> checked_ecast(match Float64.tryToInt32(d) {
             case Some(i) => i `Int32.remainder` 2 == 0
             case None    => false
             }));
-        let tot = sum(stream1);
+        let tot = stream1.sum();
         Float64.tryToInt32(tot) == Some(20)
     }
 
@@ -199,10 +189,9 @@ mod Test.Java.Function {
     def testDoubleUnaryOperator(): Bool \ IO = {
         import static java.util.stream.DoubleStream.of(Float64): DoubleStream \ IO;
         import java.util.stream.DoubleStream.map(DoubleUnaryOperator): DoubleStream \ IO;
-        import java.util.stream.DoubleStream.sum(): Float64 \ IO;
         let stream0 = of(5.0f64);
         let stream1 = map(stream0, d -> checked_ecast(d + 7.0f64));
-        let tot = sum(stream1);
+        let tot = stream1.sum();
         Float64.tryToInt32(tot) == Some(12)
     }
 

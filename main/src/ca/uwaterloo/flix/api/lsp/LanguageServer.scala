@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.api.{CrashHandler, Flix, Version}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
+import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.phase.extra.CodeHinter
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
@@ -190,7 +191,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
     * Add the given source code to the compiler
     */
   private def addSourceCode(uri: String, src: String): Unit = {
-    flix.addSourceCode(uri, src)
+    flix.addSourceCode(uri, src)(SecurityContext.AllPermissions) // TODO
     sources += (uri -> src)
   }
 

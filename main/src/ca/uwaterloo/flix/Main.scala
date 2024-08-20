@@ -101,14 +101,15 @@ object Main {
       xnoqmc = cmdOpts.xnoqmc,
       xnooptimizer = cmdOpts.xnooptimizer,
       xprintphases = cmdOpts.xprintphases,
-      xdeprecated = cmdOpts.xdeprecated,
+      xnodeprecated = cmdOpts.xnodeprecated,
       xsummary = cmdOpts.xsummary,
       xfuzzer = cmdOpts.xfuzzer,
       xprinttyper = cmdOpts.xprinttyper,
       xverifyeffects = cmdOpts.xverifyeffects,
       xsubeffecting = cmdOpts.xsubeffecting,
       XPerfFrontend = cmdOpts.XPerfFrontend,
-      XPerfN = cmdOpts.XPerfN
+      XPerfN = cmdOpts.XPerfN,
+      xiterations = cmdOpts.xiterations,
     )
 
     // Don't use progress bar if benchmarking.
@@ -358,7 +359,7 @@ object Main {
                      xbenchmarkPhases: Boolean = false,
                      xbenchmarkFrontend: Boolean = false,
                      xbenchmarkThroughput: Boolean = false,
-                     xdeprecated: Boolean = false,
+                     xnodeprecated: Boolean = false,
                      xbddthreshold: Option[Int] = None,
                      xlib: LibLevel = LibLevel.All,
                      xnoboolcache: Boolean = false,
@@ -374,6 +375,7 @@ object Main {
                      xsubeffecting: SubEffectLevel = SubEffectLevel.Nothing,
                      XPerfN: Option[Int] = None,
                      XPerfFrontend: Boolean = false,
+                     xiterations: Int = 1000,
                      files: Seq[File] = Seq())
 
   /**
@@ -558,9 +560,9 @@ object Main {
       opt[LibLevel]("Xlib").action((arg, c) => c.copy(xlib = arg)).
         text("[experimental] controls the amount of std. lib. to include (nix, min, all).")
 
-      // Xdeprecated
-      opt[Unit]("Xdeprecated").action((_, c) => c.copy(xdeprecated = true)).
-        text("[experimental] enables deprecated features.")
+      // Xnl-deprecated
+      opt[Unit]("Xno-deprecated").action((_, c) => c.copy(xnodeprecated = true)).
+        text("[experimental] disables deprecated features.")
 
       // Xno-optimizer
       opt[Unit]("Xno-optimizer").action((_, c) => c.copy(xnooptimizer = true)).
@@ -609,6 +611,10 @@ object Main {
       // Xsubeffecting
       opt[SubEffectLevel]("Xsubeffecting").action((level, c) => c.copy(xsubeffecting = level)).
         text("[experimental] enables sub-effecting in select places")
+
+      // Xiterations
+      opt[Int]("Xiterations").action((n, c) => c.copy(xiterations = n)).
+        text("[experimental] sets the maximum number of constraint resolution iterations during typechecking")
 
       note("")
 

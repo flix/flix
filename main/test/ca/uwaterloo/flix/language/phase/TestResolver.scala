@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.language.errors.ResolutionError
+import ca.uwaterloo.flix.language.errors.{ResolutionError, TypeError}
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -89,7 +89,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.InaccessibleEnum](result)
   }
 
-  ignore("InaccessibleStruct.01") {
+  test("InaccessibleStruct.01") {
     val input =
       s"""
          |mod A{
@@ -106,7 +106,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.InaccessibleStruct](result)
   }
 
-  ignore("InaccessibleStruct.02") {
+  test("InaccessibleStruct.02") {
     val input =
       s"""
          |mod A {
@@ -117,6 +117,30 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |    }
          |}
        """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.InaccessibleStruct](result)
+  }
+
+  // this test is temporarily ignored because it recovers and proceeds
+  // to fail in future unimplemented phases
+  test("InaccessibleStruct.03") {
+    val input =
+      s"""
+         |mod A{
+         |    struct S[r] {
+         |        a: Int32
+         |    }
+         |}
+         |
+         |mod B {
+         |    def g(): Unit = {
+         |        region rc {
+         |            new A.S { a = 3 } @ rc;
+         |            ()
+         |        }
+         |    }
+         |}
+         """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.InaccessibleStruct](result)
   }
@@ -157,7 +181,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.InaccessibleEnum](result)
   }
 
-  ignore("InaccessibleType.03") {
+  test("InaccessibleType.03") {
     val input =
       s"""
          |mod A {
@@ -386,7 +410,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.CyclicTypeAliases](result)
   }
 
-  ignore("CyclicTypeAliases.06") {
+  test("CyclicTypeAliases.06") {
     val input =
       s"""
          |struct S[t, r] {
@@ -436,6 +460,18 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedNameUnrecoverable](result)
+  }
+
+  test("UndefinedName.04") {
+    val input =
+      """
+        |import java.util.Objects
+        |import java.lang.Object
+        |
+        |pub def check(): Bool \ IO = Objects.isNull((x: Object))
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedName](result)
   }
 
   test("UndefinedEffect.01") {
@@ -525,52 +561,57 @@ class TestResolver extends AnyFunSuite with TestUtils {
   test("UndefinedJvmConstructor.01") {
     val input =
       raw"""
+           |import java.io.File
            |def foo(): Unit =
-           |    import java_new java.io.File(): ##java.io.File \ IO as _;
+           |    let _ = unsafe new File();
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmConstructor](result)
+    expectError[TypeError.ConstructorNotFound](result)
   }
 
   test("UndefinedJvmConstructor.02") {
     val input =
       raw"""
+           |import java.io.File
            |def foo(): Unit =
-           |    import java_new java.io.File(Int32): ##java.io.File \ IO as _;
+           |    let _ = unsafe new File(0);
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmConstructor](result)
+    expectError[TypeError.ConstructorNotFound](result)
   }
 
   test("UndefinedJvmConstructor.03") {
     val input =
       raw"""
+           |import java.lang.String
            |def foo(): Unit =
-           |    import java_new java.lang.String(Bool): ##java.lang.String \ IO as _;
+           |    let _ = unsafe new String(true);
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmConstructor](result)
+    expectError[TypeError.ConstructorNotFound](result)
   }
 
   test("UndefinedJvmConstructor.04") {
     val input =
       raw"""
+           |import java.lang.String
            |def foo(): Unit =
-           |    import java_new java.lang.String(Bool, Char, String): ##java.lang.String \ IO as _;
+           |    let _ = unsafe new String(true, 'a', "test");
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmConstructor](result)
+    expectError[TypeError.ConstructorNotFound](result)
   }
 
   test("UndefinedJvmClass.01") {
     val input =
       raw"""
+           |import foo.bar.Baz
            |def foo(): Unit =
-           |    import java_new foo.bar.Baz(): Unit \ IO as newObject;
+           |    let _ = unsafe new Baz();
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -580,8 +621,10 @@ class TestResolver extends AnyFunSuite with TestUtils {
   test("UndefinedJvmClass.02") {
     val input =
       raw"""
+           |import foo.bar.Baz
            |def foo(): Unit =
-           |    import foo.bar.Baz.f(): Unit \ IO;
+           |    let obj = unsafe new Baz();
+           |    let _ = unsafe obj.f();
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -591,8 +634,9 @@ class TestResolver extends AnyFunSuite with TestUtils {
   test("UndefinedJvmClass.03") {
     val input =
       raw"""
+           |import foo.bar.Baz
            |def foo(): Unit =
-           |    import static foo.bar.Baz.f(): Unit \ IO;
+           |    let _ = unsafe Baz.f();
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -646,146 +690,177 @@ class TestResolver extends AnyFunSuite with TestUtils {
   test("UndefinedJvmMethod.01") {
     val input =
       raw"""
+           |import java.lang.String
            |def foo(): Unit =
-           |    import java.lang.String.getFoo(): ##java.lang.String \ IO;
+           |    let obj = unsafe new String();
+           |    let _ = unsafe obj.getFoo();
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmMethod](result)
+    expectError[TypeError.MethodNotFound](result)
   }
 
   test("UndefinedJvmMethod.02") {
     val input =
       raw"""
+           |import java.lang.String
            |def foo(): Unit =
-           |    import java.lang.String.charAt(): ##java.lang.String \ IO;
+           |    let obj = unsafe new String();
+           |    let _ = unsafe obj.charAt();
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmMethod](result)
+    expectError[TypeError.MethodNotFound](result)
   }
 
   test("UndefinedJvmMethod.03") {
     val input =
       raw"""
+           |import java.lang.String
            |def foo(): Unit =
-           |    import java.lang.String.charAt(Int32, Int32): ##java.lang.String \ IO;
+           |    let obj = unsafe new String();
+           |    let _ = unsafe obj.charAt(0, 1);
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmMethod](result)
+    expectError[TypeError.MethodNotFound](result)
   }
 
   test("UndefinedJvmMethod.04") {
     val input =
       raw"""
+           |import java.lang.String
            |def foo(): Unit =
-           |    import java.lang.String.isEmpty(Bool): Bool \ IO;
+           |    let obj = unsafe new String();
+           |    let _ = unsafe obj.isEmpty(true);
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmMethod](result)
+    expectError[TypeError.MethodNotFound](result)
   }
 
   test("UndefinedJvmMethod.05") {
     val input =
       raw"""
+           |import java.lang.String
            |def foo(): Unit =
-           |    import static java.lang.String.isEmpty(): Bool \ IO;
+           |    let _ = unsafe String.isEmpty();
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmMethod](result)
+    expectError[TypeError.StaticMethodNotFound](result)
   }
 
   test("UndefinedJvmMethod.06") {
     val input =
       raw"""
+           |import java.lang.String
            |def foo(): Unit =
-           |    import java.lang.String.valueOf(Bool): ##java.lang.String \ IO;
+           |    let obj = unsafe new String();
+           |    let _ = unsafe obj.valueOf(false);
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmMethod](result)
+    expectError[TypeError.MethodNotFound](result)
   }
 
-  test("MismatchingReturnType.01") {
+  test("UndefinedJvmMethod.07") {
+    val input =
+      """
+        |import java.util.Arrays
+        |def foo(): String \ IO = {
+        |    Arrays.deepToString(Array#{} @ Static)
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[TypeError.StaticMethodNotFound](result)
+  }
+
+  test("MismatchingType.01") {
     val input =
       raw"""
+           |import java.lang.String
            |def foo(): Unit =
-           |    import java.lang.String.hashCode(): Unit \ IO as _;
+           |    let obj = unsafe new String();
+           |    let _ : Unit = unsafe obj.hashCode();
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.MismatchedReturnType](result)
+    expectError[TypeError.MismatchedTypes](result)
   }
 
-  test("MismatchingReturnType.02") {
+  test("MismatchingType.02") {
     val input =
       raw"""
+           |import java.lang.String
+           |import java.util.Iterator
            |def foo(): Unit =
-           |    import java.lang.String.subSequence(Int32, Int32): ##java.util.Iterator \ IO as _;
+           |    let obj = unsafe new String();
+           |    let _ : Iterator = unsafe obj.subSequence(4, -1);
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.MismatchedReturnType](result)
+    expectError[TypeError.MismatchedTypes](result)
   }
 
-  test("MismatchingReturnType.03") {
+  test("MismatchingType.03") {
     val input =
       raw"""
-           |type alias AliasedReturnType = ##java.util.Iterator
+           |import java.lang.String
+           |import java.util.Iterator
+           |type alias AliasedReturnType = Iterator
            |def foo(): Unit =
-           |    import java.lang.String.subSequence(Int32, Int32): AliasedReturnType \ IO as _;
+           |    let obj = unsafe new String();
+           |    let _ : AliasedReturnType = unsafe obj.subSequence(-1, 18);
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.MismatchedReturnType](result)
+    expectError[TypeError.MismatchedTypes](result)
   }
 
-  test("UndefinedJvmField.01") {
+  test("MismatchingType.04") {
+    val input =
+      """
+        |import java.util.Objects
+        |def isThisThingNull(x: a): Bool =
+        |    unsafe Objects.isNull(x)
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.MismatchedTypes](result)
+  }
+
+  test("UndefinedJvmStaticField.01") {
     val input =
       raw"""
-           |def foo(): Unit =
-           |    import java_get_field java.lang.Character.foo: ##java.lang.Character \ IO as getFoo;
-           |    ()
+           |import java.lang.Math
            |
+           |def foo(): Unit = Math.Foo
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmField](result)
+    expectError[ResolutionError.UndefinedJvmStaticField](result)
   }
 
-  test("UndefinedJvmField.02") {
+  test("UndefinedJvmStaticField.02") {
     val input =
       raw"""
-           |def foo(): Unit =
-           |    import java_set_field java.lang.Character.foo: ##java.lang.Character \ IO as setFoo;
-           |    ()
+           |import java.lang.Math
+           |
+           |def foo(): Unit = Math.Abs
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmField](result)
+    expectError[ResolutionError.UndefinedJvmStaticField](result)
   }
 
-  test("UndefinedJvmField.03") {
+  test("UndefinedJvmStaticField.03") {
     val input =
       raw"""
-           |def foo(): Unit =
-           |    import static java_get_field java.lang.Character.foo: ##java.lang.Character \ IO as getFoo;
-           |    ()
+           |import java.lang.Math
+           |import java.io.File
+           |
+           |def foo(): Unit = File.PI
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmField](result)
-  }
-
-  test("UndefinedJvmField.04") {
-    val input =
-      raw"""
-           |def foo(): Unit =
-           |    import static java_set_field java.lang.Character.foo: Unit \ IO as setFoo;
-           |    ()
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmField](result)
+    expectError[ResolutionError.UndefinedJvmStaticField](result)
   }
 
   test("UndefinedTag.01") {
@@ -1026,17 +1101,6 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedAssocType](result)
-  }
-
-  test("IllegalType.01") {
-    val input =
-      """
-        |def isThisThingNull(x: a): Bool =
-        |    import static java.util.Objects.isNull(a): Bool \ Pure;
-        |    isNull(x)
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.IllegalType](result)
   }
 
   test("IllegalNonJavaType.01") {
@@ -1385,18 +1449,6 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.IllegalWildType](result)
   }
 
-  test("IllegalWildType.05") {
-    val input =
-      """
-        |def foo(): String \ IO = {
-        |    import java.util.Arrays.deepToString(Array[_, _], Int32): String \ IO;
-        |    deepToString(Array#{} @ Static)
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.IllegalWildType](result)
-  }
-
   test("IllegalWildType.06") {
     val input =
       """
@@ -1574,4 +1626,218 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.MismatchedOpArity](result)
   }
+
+  test("ResolutionError.UndefinedStruct.01") {
+    val input =
+      """
+        |def f(): Unit = {
+        |    region rc {
+        |        new UndefinedStruct{ } @ rc;
+        |        ()
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedStruct](result)
+  }
+
+  test("ResolutionError.UndefinedStruct.02") {
+    val input =
+      """
+        |mod M {
+        |    struct S1[r] {}
+        |    def f(): Unit = {
+        |        region rc {
+        |            new UndefinedStruct{ } @ rc;
+        |            ()
+        |        }
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedStruct](result)
+  }
+
+  // This test is temporarily disabled because the creation of S1 is valid
+  // and thus the compiler attempts to continue to compile this program and
+  // fails in future unimplemented phases.
+  test("ResolutionError.UndefinedStruct.03") {
+    val input =
+      """
+        |mod M {
+        |    struct S1[r] {}
+        |    def f(): Unit = {
+        |        region rc {
+        |            new UndefinedStruct{ } @ rc;
+        |            new S1 { } @ rc;
+        |            ()
+        |        }
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedStruct](result)
+  }
+
+  // A bug was introduced into the kinder when it was refactored, so this test fails, but
+  // will reenable it once my next struct kinder support pr is merged
+  test("ResoutionError.MissingStructField.01") {
+    val input =
+      """
+        |mod S {
+        |    struct S[r] { }
+        |    def f(s: S[r]): Unit = {
+        |        s€missingField;
+        |        ()
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedStructField](result)
+  }
+
+  test("ResolutionError.MissingStructField.02") {
+    val input =
+      """
+        |mod S {
+        |    struct S[r] { }
+        |    def f(s: S[r]): Unit = {
+        |        s€missingField = 3;
+        |        ()
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedStructField](result)
+  }
+
+  test("ResolutionError.MissingStructField.03") {
+    val input =
+      """
+        |mod S {
+        |    struct S[r] { field1: Int32 }
+        |    def f(s: S[r]): Unit = {
+        |        s€missingField = 3;
+        |        ()
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedStructField](result)
+  }
+
+  test("ResolutionError.TooFewFields.01") {
+    val input = """
+                  |struct S[r] {
+                  |    a: Int32
+                  |}
+                  |def f(rc: Region): S[r] = {
+                  |    new S { } @ rc
+                  |}
+                  |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.MissingStructFieldInNew](result)
+  }
+
+  test("ResolutionError.TooFewFields.02") {
+    val input = """
+                  |struct S[r] {
+                  |    a: Int32
+                  |}
+                  |struct S2[r] { }
+                  |def f(rc: Region): S[r] = {
+                  |    new S { } @ rc
+                  |}
+                  |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.MissingStructFieldInNew](result)
+  }
+
+  test("ResolutionError.TooFewFields.03") {
+    val input = """
+                  |struct S[r] {
+                  |    a: Int32,
+                  |    b: Int32,
+                  |    c: Int32
+                  |}
+                  |def f(rc: Region): S[r] = {
+                  |    new S { a = 4, c = 2 } @ rc
+                  |}
+                  |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.MissingStructFieldInNew](result)
+  }
+
+  test("ResolutionError.TooManyFields.01") {
+    val input = """
+                  |struct S[r] {
+                  |    a: Int32
+                  |}
+                  |def f(rc: Region): S[r] = {
+                  |    new S { a = 4, b = "hello" } @ rc
+                  |}
+                  |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.ExtraStructFieldInNew](result)
+  }
+
+  test("ResolutionError.TooManyFields.02") {
+    val input = """
+                  |struct S[r] {
+                  |    a: Int32
+                  |    b: Int32
+                  |    c: Int32
+                  |}
+                  |def f(rc: Region): S[r] = {
+                  |    new S {b = 4, c = 3, a = 2, extra = 5} @ rc
+                  |}
+                  |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.ExtraStructFieldInNew](result)
+  }
+
+  test("ResolutionError.TooManyFields.03") {
+    val input = """
+                  |struct S[r] { }
+                  |def f(rc: Region): S[r] = {
+                  |    new S {a = 3} @ rc
+                  |}
+                  |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.ExtraStructFieldInNew](result)
+  }
+
+  test("ResolutionError.StructFieldIncorrectOrder.01") {
+    val input = """
+                  |struct S[r] {a: Int32, b: Int32}
+                  |def f(rc: Region): S[r] = {
+                  |    new S {b = 3, a = 4} @ rc
+                  |}
+                  |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalFieldOrderInNew](result)
+  }
+
+  test("ResolutionError.StructFieldIncorrectOrder.02") {
+    val input = """
+                  |struct S[r] {f: Int32, l: Int32, i: Int32, x: Int32}
+                  |def f(rc: Region): S[r] = {
+                  |    new S {f = 3, l = 4, x = 2, i = 9} @ rc
+                  |}
+                  |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalFieldOrderInNew](result)
+  }
+
+  test("ResolutionError.StructFieldIncorrectOrder.03") {
+    val input = """
+                  |struct S[r] {s1: String, f: Int32, l: Int32, i: Int32, x: Int32, s2: String}
+                  |def f(rc: Region): S[r] = {
+                  |    new S {s2 = "s", f = 1, l = 1, i = 1, x = 1, s1 = "s"} @ rc
+                  |}
+                  |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalFieldOrderInNew](result)
+  }
+
 }

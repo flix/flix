@@ -17,6 +17,8 @@
 //
 
 mod Concurrent.Channel {
+    import dev.flix.runtime.Global
+
     use Concurrent.ReentrantLock.lock
     use Concurrent.ReentrantLock
     use Concurrent.ReentrantLock.newLock
@@ -139,14 +141,13 @@ mod Concurrent.Channel {
     ///
     @Internal
     pub def newChannel(bufferSize: Int32): Mpmc[a, Static] \ IO =
-        import static dev.flix.runtime.Global.newId(): Int64 \ IO;
         let _bufferCheck = if (bufferSize < 0) bug!("bufferSize < 0") else ();
         let unBuffered = bufferSize == 0;
         let reentrantLock = newLock(fairness());
         let size = Ref.fresh(Static, 0);
         Mpmc.Mpmc(
             MpmcAdmin.MpmcAdmin(
-                newId(),
+                Global.newId(),
                 reentrantLock,
                 unBuffered,
                 if (unBuffered) 1 else bufferSize,

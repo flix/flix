@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 mod Object {
+    import java.util.Objects
+    import java.lang.{Object => JObject}
 
     ///
     /// Returns `true` if the given value `x` is `null`.
@@ -29,8 +31,7 @@ mod Object {
             case _: Int32 => false
             case _: Int64 => false
             case _: _ =>
-                import static java.util.Objects.isNull(##java.lang.Object): Bool \ {};
-                isNull(unchecked_cast(x as ##java.lang.Object))
+                unsafe Objects.isNull(unchecked_cast(x as JObject))
         }
 
     ///

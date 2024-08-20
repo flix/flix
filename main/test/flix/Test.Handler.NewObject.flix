@@ -45,30 +45,27 @@ mod Test.Handler.NewObject {
 
     @Test
     def testRunnable01(): Bool \ IO =
-        import java.lang.Runnable.run(): Unit \ IO;
         region rc {
-            let r = Ref.fresh(0, rc);
-            run(newAskRunnable(r));
+            let r = Ref.fresh(rc, 0);
+            newAskRunnable(r).run();
             let result = Ref.get(r);
             Assert.eq(42, result)
         }
 
     @Test
     def testRunnable02(): Bool \ IO =
-        import java.lang.Runnable.run(): Unit \ IO;
         region rc {
-            let r = Ref.fresh(0, rc);
-            run(newGenRunnable(r));
+            let r = Ref.fresh(rc, 0);
+            newGenRunnable(r).run();
             let result = Ref.get(r);
             Assert.eq(42, result)
         }
 
     @Test
     def testRunnable03(): Bool \ IO =
-        import java.lang.Runnable.run(): Unit \ IO;
         region rc {
-            let r = Ref.fresh(0, rc);
-            run(newGenAskRunnable(r));
+            let r = Ref.fresh(rc, 0);
+            newGenAskRunnable(r).run();
             let result = Ref.get(r);
             Assert.eq(84, result)
         }
