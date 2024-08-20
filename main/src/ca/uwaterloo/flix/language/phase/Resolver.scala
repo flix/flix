@@ -1387,7 +1387,8 @@ object Resolver {
             case e => ResolvedAst.Expr.StructGet(e, field0, loc)
           }
         } else {
-          ResolutionError.UndefinedStructField(field0, loc)
+          val error = ResolutionError.UndefinedStructField(field0, loc)
+          Validation.toSoftFailure(ResolvedAst.Expr.Error(error), error)
         }
 
       case NamedAst.Expr.StructPut(e1, field0, e2, loc) =>
@@ -1398,7 +1399,8 @@ object Resolver {
             case (e1, e2) => ResolvedAst.Expr.StructPut(e1, field0, e2, loc)
           }
         } else {
-          ResolutionError.UndefinedStructField(field0, loc)
+          val error = ResolutionError.UndefinedStructField(field0, loc)
+          Validation.toSoftFailure(ResolvedAst.Expr.Error(error), error)
         }
 
       case NamedAst.Expr.VectorLit(exps, loc) =>
