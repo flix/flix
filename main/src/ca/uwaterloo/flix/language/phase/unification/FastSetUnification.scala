@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.language.ast.SourceLocation
+import ca.uwaterloo.flix.language.phase.unification.FastSetUnification.Term.emptyEquivalent
 import ca.uwaterloo.flix.util.{Formatter, InternalCompilerException, Result}
 
 import scala.collection.immutable.{SortedMap, SortedSet}
@@ -118,7 +119,6 @@ object FastSetUnification {
         runPhase(P.checkAndSimplifyDescr)(state)(opts.copy(debugging = false))
         runPhase(P.eliminateTrivialAndRedundantDescr)(state)
         runPhase(P.checkAndSimplifyDescr)(state)(opts.copy(debugging = false))
-//        if (state.eqs.nonEmpty) debugState(state)(opts.copy(debugging = true))
         runPhase(P.setUnifyPickSmallestDescr(complexThreshold = opts.complexThreshold, permutationLimit = opts.permutationLimit))(state)
 
         // SVE can solve anything that is solvable, so eqs is always empty
@@ -215,17 +215,23 @@ object FastSetUnification {
 
   }
 
-  //
-  // A general rule is of type Equation => (List[Equation], Substitution).
-  //
-  // The returned list might be an Option or just an Equation..
-  // The returned substitution might be omitted
-  //
+  /** A collection of [[Rule]]s that can be used to solve [[Equation]]s. */
   private object Rules {
 
+    /**
+      * The output of a rule is a list of new equations to solve, and the
+      * substitution that solved the given equation.
+      */
     type Output = Option[(List[Equation], SetSubstitution)]
+
+    /** A rule takes an equation and might produce a solution that might give additional equations. */
     type Rule = Equation => Output
 
+    /**
+      * Returns `true` if `eq` trivially holds (e.g. `univ ~ univ`).
+      *
+      * Returns `false` if it is unknown whether `eq` holds or not.
+      */
     def triviallyHolds(eq: Equation): Boolean = {
       val Equation(t1, t2, _) = eq
       (t1, t2) match {
@@ -238,9 +244,12 @@ object FastSetUnification {
       }
     }
 
+    /**
+      * Returns [[Some]] if `eq` can never hold (e.g. `empty ~ univ`)
+      *
+      * Returns [[None]] if it is unknown whether `eq` holds or not.
+      */
     def triviallyWrong(eq: Equation): Option[ConflictException] = {
-      // Possible additions
-      // - compare elements/constants to intersections
       val Equation(t1, t2, loc) = eq
 
       @inline
@@ -269,69 +278,76 @@ object FastSetUnification {
       }
     }
 
+    /**
+      * Solves equations of ground assignments to variables (e.g. `x ~ c1 ∪ e2`).
+      *
+      *   - `x ~ t` where [[Term.noFreeVars]] on `t` becomes `([], {x -> t})`
+      *   - `t1 ∩ t2 ∩ ... ~ univ` becomes `([t1 ~ univ, t2 ~ univ, ...], {})`
+      *   - `t1 ∪ t2 ∪ ... ~ univ` becomes `([t1 ~ empty, t2 ~ empty, ...], {})`
+      *   - `!t1 ~ t2` where [[Term.noFreeVars]] on `t2` becomes `([t1 ~ !t2], {})`
+      */
     def constantAssignment(eq: Equation): Output = {
       val Equation(t1, t2, loc) = eq
       (t1, t2) match {
         // x ~ t, where t has no variables
         // ---
         // [],
-        // [x -> t]
+        // {x -> t}
         case (Term.Var(x), t) if t.noFreeVars =>
           Some((Nil, SetSubstitution.singleton(x, Term.propagation(t))))
 
-        // x ∩ y ∩ !z ∩ ... ∩ rest_i ~ univ
+        // t1 ∩ t2 ∩ ... ~ univ
         // ---
-        // [rest_i ~ univ],
-        // [x -> univ, y -> univ, z -> empty, ...]
-        case (inter@Term.Inter(_, _, posVars, _, _, negVars, rest), Term.Univ) if inter.mightBeUniv =>
-          // note: posVars and negVars are guaranteed to be disjoint
-          var subst = SetSubstitution.empty
-          var changed = false
-          // x -> univ
-          for (Term.Var(x) <- posVars) {
-            subst = subst.extended(x, Term.Univ, loc)
-            changed = true
-          }
-          // z -> empty
-          for (Term.Var(x) <- negVars) {
-            subst = subst.extended(x, Term.Empty, loc)
-            changed = true
-          }
-          if (rest.nonEmpty) {
-            val constraints = rest.map(Equation.mk(_, Term.Univ, loc))
-            Some((constraints, subst))
-          } else if (changed) {
-            Some((Nil, subst))
-          } else {
-            None
-          }
+        // [t1 ~ univ, t2 ~ univ, ...],
+        // {}
+        case (Term.Inter(posElem, posCsts, posVars, negElem, negCsts, negVars, rest), Term.Univ) =>
+          var ts: List[Term] = rest
+          for (e <- posElem) ts ::= e
+          for (c <- posCsts) ts ::= c
+          for (v <- posVars) ts ::= v
+          for (e <- negElem) ts ::= Term.mkCompl(e)
+          for (c <- negCsts) ts ::= Term.mkCompl(c)
+          for (v <- negVars) ts ::= Term.mkCompl(v)
+          Some((ts.map(Equation.mk(_, Term.Univ, loc)), SetSubstitution.empty))
 
-        // x ∪ y ∪ !z ∪ ... ∪ rest ~ empty
+        // t1 ∪ t2 ∪ ... ~ empty
         // ---
-        // [rest_i ~ empty],
-        // [x -> empty, y -> empty, z -> univ, ...]
-        case (union@Term.Union(_, _, posVars, _, _, negVars, rest), Term.Empty) if union.mightBeEmpty =>
-          // note: posVars and negVars are guaranteed to be disjoint
-          var subst = SetSubstitution.empty
-          var changed = false
-          // x -> empty
-          for (Term.Var(x) <- posVars) {
-            subst = subst.extended(x, Term.Empty, loc)
-            changed = true
-          }
-          // z -> univ
-          for (Term.Var(x) <- negVars) {
-            subst = subst.extended(x, Term.Univ, loc)
-            changed = true
-          }
-          if (rest.nonEmpty) {
-            val constraints = rest.map(Equation.mk(_, Term.Empty, loc))
-            Some((constraints, subst))
-          } else if (changed) {
-            Some((Nil, subst))
-          } else {
-            None
-          }
+        // [t1 ~ empty, t2 ~ empty, ...],
+        // {}
+        case (Term.Union(posElem, posCsts, posVars, negElem, negCsts, negVars, rest), Term.Empty) =>
+          var ts: List[Term] = rest
+          for (e <- posElem) ts ::= e
+          for (c <- posCsts) ts ::= c
+          for (v <- posVars) ts ::= v
+          for (e <- negElem) ts ::= Term.mkCompl(e)
+          for (c <- negCsts) ts ::= Term.mkCompl(c)
+          for (v <- negVars) ts ::= Term.mkCompl(v)
+          Some((ts.map(Equation.mk(_, Term.Empty, loc)), SetSubstitution.empty))
+
+        // t1 ~ t2, where t1 and t2 has no variables
+        // ---
+        // None
+        // We have this case such that the two following doesn't loop.
+        case (t1, t2) if t1.noFreeVars && t2.noFreeVars =>
+          // We could check if `t1 ~ t2` since there is no variables.
+          // But if that answer is no, we need to give an error, which we can't
+          // with the current signature. Leaving it untouched if it doesn't hold
+          // would mean that we could compute Term.equivalent again and again.
+          None
+
+        // !t1 ~ t2, where t2 has no variables
+        // ---
+        // [t1 ~ !t2],
+        // {}
+        case (Term.Compl(xt1), t) if t.noFreeVars =>
+          Some((List(Equation.mk(xt1, Term.mkCompl(t), loc)), SetSubstitution.empty))
+
+        // t1 ~ !t2, where t1 has no variables
+        // ---
+        // [!t1 ~ t2],
+        // {}
+        case (t, Term.Compl(xt2)) if t.noFreeVars =>
+          Some((List(Equation.mk(Term.mkCompl(t), xt2, loc)), SetSubstitution.empty))
 
         case _ => None
       }
@@ -973,7 +989,7 @@ object FastSetUnification {
     /**
       * Returns `true` if [[freeVars]] contains `v`.
       */
-    final def freeVarsContains(v: Term.Var): Boolean = v.vars.contains(v.x)
+    final def freeVarsContains(v: Term.Var): Boolean = this.vars.contains(v.x)
 
     /**
       * Returns all variables and constants that occur in `this` term.
@@ -1609,14 +1625,34 @@ object FastSetUnification {
         running
     }
 
-    private def setElem(elem: Option[Term.ElemSet], target: Term): SortedMap[Int, Term] = elem match {
-      case Some(e) => setElem(e, target)
+    /** Returns a point-wise substitution for `{e1 ∪ e2 ∪ .. -> target}`` if possible, otherwise an empty map. */
+    private def setElemOne(elem: Option[Term.ElemSet], target: Term): SortedMap[Int, Term] = elem match {
+      case Some(e) => setElemOne(e, target)
       case _ => SortedMap.empty[Int, Term]
     }
 
-    private def setElem(elem: Term.ElemSet, target: Term): SortedMap[Int, Term] = {
+    /**
+      * Returns a point-wise substitution for `{e1 ∪ e2 ∪ .. -> target}`` if possible, otherwise an empty map.
+      *
+      *   - `{e1 -> target}` becomes `Map(e1 -> target)`
+      *   - `{e1 ∪ e2 ∪ .. -> empty` becomes `Map(e1 -> empty, e2 -> empty, ..)`
+      *   - otherwise `empty`
+      */
+    private def setElemOne(elem: Term.ElemSet, target: Term): SortedMap[Int, Term] = {
       if (elem.s.sizeIs == 1) SortedMap(elem.s.head -> target)
+      else if (target == Term.Empty) setElemPointwise(elem, target)
       else SortedMap.empty[Int, Term]
+    }
+
+    /** Returns a map with `e -> target` for each `e` in `elem`. */
+    private def setElemPointwise(elem: Option[Term.ElemSet], target: Term): SortedMap[Int, Term] = elem match {
+      case Some(e) => setElemPointwise(e, target)
+      case _ => SortedMap.empty[Int, Term]
+    }
+
+    /** Returns a map with `e -> target` for each `e` in `elem`. */
+    private def setElemPointwise(elem: Term.ElemSet, target: Term): SortedMap[Int, Term] = {
+      elem.s.foldLeft(SortedMap.empty[Int, Term]){case (acc, i) => acc + (i -> target)}
     }
 
     /**
@@ -1694,7 +1730,7 @@ object FastSetUnification {
           val negVars = if (setUnknowns.isEmpty) negVars0 else negVars0.filterNot(x => setUnknowns.get(x.x).contains(Term.Empty))
 
           // Add the new propagated elements/constants/variables
-          var currentElems = setElems ++ setElem(posElem, Term.Univ) ++ setElem(negElem, Term.Empty)
+          var currentElems = setElems ++ setElemOne(posElem, Term.Univ) ++ setElemOne(negElem, Term.Empty)
           var currentUnknowns = setUnknowns ++
             posCsts.iterator.map(_.c -> Term.Univ) ++
             negCsts.iterator.map(_.c -> Term.Empty) ++
@@ -1722,10 +1758,10 @@ object FastSetUnification {
                 currentUnknowns += (x -> Term.Empty)
                 res
               case e@Term.ElemSet(_) =>
-                currentElems ++= setElem(e, Term.Univ)
+                currentElems ++= setElemOne(e, Term.Univ)
                 res
               case Term.Compl(e@Term.ElemSet(_)) =>
-                currentElems ++= setElem(e, Term.Empty)
+                currentElems ++= setElemOne(e, Term.Empty)
                 res
               case Term.Compl(_) => res
               case Term.Inter(_, _, _, _, _, _, _) => res
@@ -1768,7 +1804,7 @@ object FastSetUnification {
           val negCsts = if (setUnknowns.isEmpty) negCsts0 else negCsts0.filterNot(c => setUnknowns.get(c.c).contains(Term.Univ))
           val negVars = if (setUnknowns.isEmpty) negVars0 else negVars0.filterNot(x => setUnknowns.get(x.x).contains(Term.Univ))
 
-          var currentElems = setElems ++ setElem(posElem, Term.Empty) ++ setElem(negElem, Term.Univ)
+          var currentElems = setElems ++ setElemOne(posElem, Term.Empty) ++ setElemOne(negElem, Term.Univ)
           var currentUnknowns = setUnknowns ++
             posCsts.iterator.map(_.c -> Term.Empty) ++
             negCsts.iterator.map(_.c -> Term.Univ) ++
@@ -1794,10 +1830,10 @@ object FastSetUnification {
                 currentUnknowns += (x -> Term.Univ)
                 res
               case e@Term.ElemSet(_) =>
-                currentElems ++= setElem(e, Term.Empty)
+                currentElems ++= setElemOne(e, Term.Empty)
                 res
               case Term.Compl(e@Term.ElemSet(_)) =>
-                currentElems ++= setElem(e, Term.Univ)
+                currentElems ++= setElemOne(e, Term.Univ)
                 res
               case Term.Compl(_) => res
               case Term.Inter(_, _, _, _, _, _, _) => res
@@ -1877,7 +1913,7 @@ object FastSetUnification {
       * We must use the smart constructors from [[Term]] to ensure that the constructed term is normalized.
       */
     def apply(t: Term): Term = {
-      if (m.isEmpty || t.vars.isEmpty || !t.vars.exists(m.contains)) t else applyInner(t)
+      if (m.isEmpty || t.vars.isEmpty || !t.vars.exists(m.contains)) t else Term.propagation(applyInner(t))
     }
 
     /**
@@ -2092,6 +2128,11 @@ object FastSetUnification {
       sb.append("\n")
     }
     sb.toString()
+  }
+
+  private def printlnReturn[T](x: T): T = {
+    println(x)
+    x
   }
 
   /**
