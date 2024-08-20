@@ -162,7 +162,7 @@ mod Vector {
     ///
     pub def toString(v: Vector[a]): String with ToString[a] = region rc {
         let sb = StringBuilder.empty(rc);
-        let first = ref true @ rc;
+        let first = Ref.fresh(rc, true);
 
         StringBuilder.appendString!("Vector#{", sb);
 
@@ -469,7 +469,7 @@ mod Vector {
     ///
     pub def scanLeft(f: (b, a) -> b \ ef, s: b, v: Vector[a]): Vector[b] \ ef = region rc {
         let arr = Array.empty(rc, length(v) + 1);
-        let acc = ref s @ rc;
+        let acc = Ref.fresh(rc, s);
         Array.put(s, 0, arr);
         let step = (i, x) -> {
             let s1 = f(deref acc, x);
@@ -488,7 +488,7 @@ mod Vector {
     pub def scanRight(f: (a, b) -> b \ ef, s: b, v: Vector[a]): Vector[b] \ ef = region rc {
         let len = length(v);
         let arr = Array.empty(rc, len + 1);
-        let acc = ref s @ rc;
+        let acc = Ref.fresh(rc, s);
         Array.put(s, len, arr);
         def loop(i) = {
             if (i < 0)
@@ -697,7 +697,7 @@ mod Vector {
         let sepLength = length(sep);
         let sepCount = if (count < 2) 0 else count - 1;
         let len = sumLengths(vs) + (sepCount * sepLength);
-        let pos = ref 0 @ rc;
+        let pos = Ref.fresh(rc, 0);
         let arr = Array.empty(rc, len);
         let f = (i, v) -> {
             if (i == 0) {
@@ -945,7 +945,7 @@ mod Vector {
     ///
     pub def flatten(vs: Vector[Vector[a]]): Vector[a] = region rc {
         let len = sumLengths(vs);
-        let pos = ref 0 @ rc;
+        let pos = Ref.fresh(rc, 0);
         let arr = Array.empty(rc, len);
         forEach(v -> {
             let i = deref pos;

@@ -84,7 +84,7 @@ mod MutDeque {
     /// Returns an empty MutDeque.
     ///
     pub def empty(rc: Region[r]): MutDeque[a, r] \ r =
-        MutDeque(rc, ref Array.empty(rc, minCapacity()) @ rc, ref 0 @ rc, ref 0 @ rc)
+        MutDeque(rc, Ref.fresh(rc, Array.empty(rc, minCapacity())), Ref.fresh(rc, 0), Ref.fresh(rc, 0))
 
     ///
     /// Returns the number of elements in `d`.
@@ -425,7 +425,7 @@ mod MutDeque {
     ///
     pub def iterator(rc: Region[r1], d: MutDeque[a, r2]): Iterator[a, r1 + r2, r1] \ { r1, r2 } =
         let MutDeque(_, a, f, b) = d;
-        let i = ref (deref f) @ rc;
+        let i = Ref.fresh(rc, deref f);
         let next = () -> {
             if (deref i < deref b) {
                 let x = Array.get(deref i, deref a);
@@ -462,7 +462,7 @@ mod MutDeque {
     /// along with that element's index.
     ///
     pub def forEachWithIndex(f: (Int32, a) -> Unit \ ef, d: MutDeque[a, r]): Unit \ { ef, r } = region rc {
-        let ix = ref 0 @ rc;
+        let ix = Ref.fresh(rc, 0);
         forEach(x -> { let i = deref ix; f(i, x); Ref.put(i + 1, ix) }, d)
     }
 

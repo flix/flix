@@ -9,7 +9,7 @@ mod Test.Handler.Gen.Int16 {
 
     def sample(limit: Int16): List[Int16] =
         region rc {
-            let counter = ref 0i16 @ rc;
+            let counter = Ref.fresh(rc, 0i16);
             try {
                 generator(); Nil
             } with Gen {

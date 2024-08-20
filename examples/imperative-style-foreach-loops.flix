@@ -54,7 +54,7 @@ def main(): Unit \ IO = region rc {
     // expression in the foreach loop must be
     // of type unit.
     //
-    let z = ref Nil @ rc;
+    let z = Ref.fresh(rc, Nil);
     foreach (x <- l)
         Ref.put(x :: deref z, z);
 
@@ -65,7 +65,7 @@ def main(): Unit \ IO = region rc {
     // However, foreach-loops can be much easier
     // to read than `foreach` function calls.
     //
-    let q = ref Nil @ rc;
+    let q = Ref.fresh(rc, Nil);
     List.iterator(rc, l) |>
     Iterator.forEach(match x -> Ref.put(x :: deref q, q));
 
@@ -74,7 +74,7 @@ def main(): Unit \ IO = region rc {
     // foreach-loops.
     //
     let k = 4 :: 5 :: 6 :: Nil;
-    let w = ref Nil @ rc;
+    let w = Ref.fresh(rc, Nil);
     foreach (a <- l) {
         Ref.put(a :: deref w, w);
         foreach (b <- k)
@@ -86,7 +86,7 @@ def main(): Unit \ IO = region rc {
     // to the functional style expression
     // below.
     //
-    let v = ref Nil @ rc;
+    let v = Ref.fresh(rc, Nil);
     List.iterator(rc, l) |>
     Iterator.forEach(match a -> {
         Ref.put(a :: deref v, v);
@@ -104,7 +104,7 @@ def main(): Unit \ IO = region rc {
     // This may be familiar to you if you have
     // some experience with Scala's for-loops.
     //
-    let e = ref Nil @ rc;
+    let e = Ref.fresh(rc, Nil);
     foreach (a <- l;
              b <- k)
                 Ref.put((a, b) :: deref e, e);
@@ -113,7 +113,7 @@ def main(): Unit \ IO = region rc {
     // The equivalent functional style expression
     // has a bit more visual noise.
     //
-    let e1 = ref Nil @ rc;
+    let e1 = Ref.fresh(rc, Nil);
     List.iterator(rc, l) |>
     Iterator.forEach(match a -> {
         List.iterator(rc, k) |>
@@ -134,7 +134,7 @@ def main(): Unit \ IO = region rc {
     // Again, this is similar to Scala's
     // for-loops.
     //
-    let c = ref Nil @ rc;
+    let c = Ref.fresh(rc, Nil);
     foreach (a <- l;
              if a > 1;
              b <- k;
@@ -145,7 +145,7 @@ def main(): Unit \ IO = region rc {
     // Alternatively, we can put a single guard
     // at the end of the parenthesis.
     //
-    let d = ref Nil @ rc;
+    let d = Ref.fresh(rc, Nil);
     foreach (a <- l;
              b <- k;
              if a > 1 and b < 6)
@@ -167,7 +167,7 @@ def main(): Unit \ IO = region rc {
     // the same parenthesis, match on the exact pattern
     // and include guards.
     //
-    let cf = ref Nil @ rc;
+    let cf = Ref.fresh(rc, Nil);
     List.iterator(rc, l) |>
     Iterator.forEach(match a -> {
         List.iterator(rc, k) |>
