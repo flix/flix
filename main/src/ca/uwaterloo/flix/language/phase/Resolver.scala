@@ -2448,7 +2448,7 @@ object Resolver {
         case "Lazy" => Validation.success(UnkindedType.Cst(TypeConstructor.Lazy, loc))
         case "Array" => Validation.success(UnkindedType.Cst(TypeConstructor.Array, loc))
         case "Vector" => Validation.success(UnkindedType.Cst(TypeConstructor.Vector, loc))
-        case "Ref" => Validation.success(UnkindedType.Cst(TypeConstructor.Ref, loc))
+        // case "Ref" => Validation.success(UnkindedType.Cst(TypeConstructor.Ref, loc))
         case "Region" => Validation.success(UnkindedType.Cst(TypeConstructor.RegionToStar, loc))
 
         // Disambiguate type.
