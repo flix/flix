@@ -43,8 +43,7 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 object Lowering {
 
   private object Defs {
-    lazy val Box: Symbol.DefnSym = Symbol.mkDefnSym("Boxable.box")
-
+    lazy val Box: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Boxable.box")
     lazy val Solve: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Solver.run")
     lazy val Merge: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Solver.union")
     lazy val Filter: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Solver.projectSym")
