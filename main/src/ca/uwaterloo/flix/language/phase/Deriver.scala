@@ -78,7 +78,7 @@ object Deriver {
   /**
     * Build the name of the trait for this struct field
     */
-  def structFieldTraitName(fieldName: String): String = structFieldTraitName(fieldName)
+  def structFieldTraitName(fieldName: String): String = "Dot_" + fieldName
 
   /**
     * Builds the trait for this struct field
