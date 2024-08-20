@@ -963,6 +963,7 @@ object Parser2 {
           nth(0) match {
             case TokenKind.CurlyR => continue = false
             case TokenKind.KeywordDef => definitionDecl(openBefore(docMark))
+            case TokenKind.KeywordRedef => definitionDecl(openBefore(docMark), declKind = TokenKind.KeywordRedef)
             case TokenKind.KeywordType => associatedTypeDefDecl(openBefore(docMark))
             case at =>
               val errMark = open()
@@ -1003,9 +1004,9 @@ object Parser2 {
       close(mark, TreeKind.Decl.Signature)
     }
 
-    private def definitionDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
-      assert(at(TokenKind.KeywordDef))
-      expect(TokenKind.KeywordDef, SyntacticContext.Decl.OtherDecl)
+    private def definitionDecl(mark: Mark.Opened, declKind: TokenKind = TokenKind.KeywordDef)(implicit s: State): Mark.Closed = {
+      assert(at(declKind))
+      expect(declKind, SyntacticContext.Decl.OtherDecl)
       name(NAME_DEFINITION, context = SyntacticContext.Decl.OtherDecl)
       if (at(TokenKind.BracketL)) {
         Type.parameters()
@@ -1030,7 +1031,8 @@ object Parser2 {
         expect(TokenKind.Equal, SyntacticContext.Decl.OtherDecl) // Produce an error for missing '='
       }
 
-      close(mark, TreeKind.Decl.Def)
+      val treeKind = if (declKind == TokenKind.KeywordRedef) TreeKind.Decl.Redef else TreeKind.Decl.Def
+      close(mark, treeKind)
     }
 
     private def lawDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {

@@ -415,8 +415,8 @@ object Resolver {
     case NamedAst.Constraint(cparams0, head0, body0, loc) =>
       val cparams = resolveConstraintParams(cparams0, env0)
       val env = env0 ++ mkConstraintParamEnv(cparams)
-      val headVal = Predicates.Head.resolve(head0, env, taenv, ns0, root)
-      val bodyVal = traverse(body0)(Predicates.Body.resolve(_, env, taenv, ns0, root))
+      val headVal = resolvePredicateHead(head0, env, taenv, ns0, root)
+      val bodyVal = traverse(body0)(resolvePredicateBody(_, env, taenv, ns0, root))
       mapN(headVal, bodyVal) {
         case (head, body) => ResolvedAst.Constraint(cparams, head, body, loc)
       }
@@ -1204,7 +1204,7 @@ object Resolver {
       case NamedAst.Expr.Match(exp, rules, loc) =>
         val rulesVal = traverse(rules) {
           case NamedAst.MatchRule(pat, guard, body) =>
-            val pVal = Patterns.resolve(pat, env0, ns0, root)
+            val pVal = resolvePattern(pat, env0, ns0, root)
             flatMapN(pVal) {
               case p =>
                 val env = env0 ++ mkPatternEnv(p)
@@ -1756,7 +1756,7 @@ object Resolver {
 
         val fragsVal = traverse(frags) {
           case NamedAst.ParYieldFragment(pat, e0, l0) =>
-            val pVal = Patterns.resolve(pat, env0, ns0, root)
+            val pVal = resolvePattern(pat, env0, ns0, root)
             flatMapN(pVal) {
               case p =>
                 val patEnv = mkPatternEnv(p)
@@ -1857,170 +1857,158 @@ object Resolver {
     visitExp(exp0, env00)
   }
 
-  object Patterns {
+  /**
+    * Performs name resolution on the given constraint pattern `pat0` in the namespace `ns0`.
+    * Constraint patterns do not introduce new variables.
+    */
+  def resolvePatternInConstraint(pat0: NamedAst.Pattern, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[ResolvedAst.Pattern, ResolutionError] = {
 
-    /**
-      * Performs name resolution on the given constraint pattern `pat0` in the namespace `ns0`.
-      * Constraint patterns do not introduce new variables.
-      */
-    def resolveInConstraint(pat0: NamedAst.Pattern, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[ResolvedAst.Pattern, ResolutionError] = {
+    def visit(p0: NamedAst.Pattern): Validation[ResolvedAst.Pattern, ResolutionError] = p0 match {
+      case NamedAst.Pattern.Wild(loc) =>
+        Validation.success(ResolvedAst.Pattern.Wild(loc))
 
-      def visit(p0: NamedAst.Pattern): Validation[ResolvedAst.Pattern, ResolutionError] = p0 match {
-        case NamedAst.Pattern.Wild(loc) =>
+      case NamedAst.Pattern.Var(sym0, loc) =>
+        // TODO NS-REFACTOR wild patterns should not be counted as vars
+        // if the sym is wild then just call the pattern wild
+        if (sym0.isWild) {
           Validation.success(ResolvedAst.Pattern.Wild(loc))
+        } else {
+          env(sym0.text).collectFirst {
+            case Resolution.Var(sym) => sym
+          } match {
+            case Some(sym) =>
+              Validation.success(ResolvedAst.Pattern.Var(sym, loc))
+            case None => throw InternalCompilerException("unexpected unrecognized sym in constraint pattern", loc)
+          }
+        }
 
-        case NamedAst.Pattern.Var(sym0, loc) =>
-          // TODO NS-REFACTOR wild patterns should not be counted as vars
-          // if the sym is wild then just call the pattern wild
-          if (sym0.isWild) {
-            Validation.success(ResolvedAst.Pattern.Wild(loc))
-          } else {
-            env(sym0.text).collectFirst {
-              case Resolution.Var(sym) => sym
-            } match {
-              case Some(sym) =>
-                Validation.success(ResolvedAst.Pattern.Var(sym, loc))
-              case None => throw InternalCompilerException("unexpected unrecognized sym in constraint pattern", loc)
+      case NamedAst.Pattern.Cst(cst, loc) =>
+        Validation.success(ResolvedAst.Pattern.Cst(cst, loc))
+
+      case NamedAst.Pattern.Tag(qname, pat, loc) =>
+        lookupTag(qname, env, ns0, root) match {
+          case Result.Ok(c) => mapN(visit(pat)) {
+            case p => ResolvedAst.Pattern.Tag(Ast.CaseSymUse(c.sym, qname.loc), p, loc)
+          }
+          case Result.Err(e) => Validation.toSoftFailure(ResolvedAst.Pattern.Error(loc), e)
+        }
+
+      case NamedAst.Pattern.Tuple(elms, loc) =>
+        val esVal = traverse(elms)(visit)
+        mapN(esVal) {
+          es => ResolvedAst.Pattern.Tuple(es, loc)
+        }
+
+      case NamedAst.Pattern.Record(pats, pat, loc) =>
+        val psVal = traverse(pats) {
+          case NamedAst.Pattern.Record.RecordLabelPattern(label, pat1, loc1) =>
+            mapN(visit(pat1)) {
+              case p => ResolvedAst.Pattern.Record.RecordLabelPattern(label, p, loc1)
             }
-          }
+        }
+        val pVal = visit(pat)
+        mapN(psVal, pVal) {
+          case (ps, p) => ResolvedAst.Pattern.Record(ps, p, loc)
+        }
 
-        case NamedAst.Pattern.Cst(cst, loc) =>
-          Validation.success(ResolvedAst.Pattern.Cst(cst, loc))
+      case NamedAst.Pattern.RecordEmpty(loc) =>
+        Validation.success(ResolvedAst.Pattern.RecordEmpty(loc))
 
-        case NamedAst.Pattern.Tag(qname, pat, loc) =>
-          lookupTag(qname, env, ns0, root) match {
-            case Result.Ok(c) => mapN(visit(pat)) {
-              case p => ResolvedAst.Pattern.Tag(Ast.CaseSymUse(c.sym, qname.loc), p, loc)
-            }
-            case Result.Err(e) => Validation.toSoftFailure(ResolvedAst.Pattern.Error(loc), e)
-          }
-
-        case NamedAst.Pattern.Tuple(elms, loc) =>
-          val esVal = traverse(elms)(visit)
-          mapN(esVal) {
-            es => ResolvedAst.Pattern.Tuple(es, loc)
-          }
-
-        case NamedAst.Pattern.Record(pats, pat, loc) =>
-          val psVal = traverse(pats) {
-            case NamedAst.Pattern.Record.RecordLabelPattern(label, pat1, loc1) =>
-              mapN(visit(pat1)) {
-                case p => ResolvedAst.Pattern.Record.RecordLabelPattern(label, p, loc1)
-              }
-          }
-          val pVal = visit(pat)
-          mapN(psVal, pVal) {
-            case (ps, p) => ResolvedAst.Pattern.Record(ps, p, loc)
-          }
-
-        case NamedAst.Pattern.RecordEmpty(loc) =>
-          Validation.success(ResolvedAst.Pattern.RecordEmpty(loc))
-
-        case NamedAst.Pattern.Error(loc) =>
-          Validation.success(ResolvedAst.Pattern.Error(loc))
-      }
-
-      visit(pat0)
+      case NamedAst.Pattern.Error(loc) =>
+        Validation.success(ResolvedAst.Pattern.Error(loc))
     }
 
-    /**
-      * Performs name resolution on the given pattern `pat0` in the namespace `ns0`.
-      */
-    def resolve(pat0: NamedAst.Pattern, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[ResolvedAst.Pattern, ResolutionError] = {
-
-      def visit(p0: NamedAst.Pattern): Validation[ResolvedAst.Pattern, ResolutionError] = p0 match {
-        case NamedAst.Pattern.Wild(loc) =>
-          Validation.success(ResolvedAst.Pattern.Wild(loc))
-
-        case NamedAst.Pattern.Var(sym, loc) =>
-          Validation.success(ResolvedAst.Pattern.Var(sym, loc))
-
-        case NamedAst.Pattern.Cst(cst, loc) =>
-          Validation.success(ResolvedAst.Pattern.Cst(cst, loc))
-
-        case NamedAst.Pattern.Tag(qname, pat, loc) =>
-          lookupTag(qname, env, ns0, root) match {
-            case Result.Ok(c) => mapN(visit(pat)) {
-              case p => ResolvedAst.Pattern.Tag(Ast.CaseSymUse(c.sym, qname.loc), p, loc)
-            }
-            case Result.Err(e) => Validation.toSoftFailure(ResolvedAst.Pattern.Error(loc), e)
-          }
-
-        case NamedAst.Pattern.Tuple(elms, loc) =>
-          val esVal = traverse(elms)(visit)
-          mapN(esVal) {
-            es => ResolvedAst.Pattern.Tuple(es, loc)
-          }
-
-        case NamedAst.Pattern.Record(pats, pat, loc) =>
-          val psVal = traverse(pats) {
-            case NamedAst.Pattern.Record.RecordLabelPattern(label, pat1, loc1) =>
-              mapN(visit(pat1)) {
-                case p => ResolvedAst.Pattern.Record.RecordLabelPattern(label, p, loc1)
-              }
-          }
-          val pVal = visit(pat)
-          mapN(psVal, pVal) {
-            case (ps, p) => ResolvedAst.Pattern.Record(ps, p, loc)
-          }
-
-        case NamedAst.Pattern.RecordEmpty(loc) =>
-          Validation.success(ResolvedAst.Pattern.RecordEmpty(loc))
-
-        case NamedAst.Pattern.Error(loc) =>
-          Validation.success(ResolvedAst.Pattern.Error(loc))
-      }
-
-      visit(pat0)
-    }
-
+    visit(pat0)
   }
 
-  object Predicates {
+  /**
+    * Performs name resolution on the given pattern `pat0` in the namespace `ns0`.
+    */
+  def resolvePattern(pat0: NamedAst.Pattern, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[ResolvedAst.Pattern, ResolutionError] = {
 
-    object Head {
-      /**
-        * Performs name resolution on the given head predicate `h0` in the given namespace `ns0`.
-        */
-      def resolve(h0: NamedAst.Predicate.Head, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Predicate.Head, ResolutionError] = h0 match {
-        case NamedAst.Predicate.Head.Atom(pred, den, terms, loc) =>
-          val tsVal = traverse(terms)(t => resolveExp(t, env, taenv, ns0, root))
-          mapN(tsVal) {
-            ts => ResolvedAst.Predicate.Head.Atom(pred, den, ts, loc)
+    def visit(p0: NamedAst.Pattern): Validation[ResolvedAst.Pattern, ResolutionError] = p0 match {
+      case NamedAst.Pattern.Wild(loc) =>
+        Validation.success(ResolvedAst.Pattern.Wild(loc))
+
+      case NamedAst.Pattern.Var(sym, loc) =>
+        Validation.success(ResolvedAst.Pattern.Var(sym, loc))
+
+      case NamedAst.Pattern.Cst(cst, loc) =>
+        Validation.success(ResolvedAst.Pattern.Cst(cst, loc))
+
+      case NamedAst.Pattern.Tag(qname, pat, loc) =>
+        lookupTag(qname, env, ns0, root) match {
+          case Result.Ok(c) => mapN(visit(pat)) {
+            case p => ResolvedAst.Pattern.Tag(Ast.CaseSymUse(c.sym, qname.loc), p, loc)
           }
-      }
+          case Result.Err(e) => Validation.toSoftFailure(ResolvedAst.Pattern.Error(loc), e)
+        }
+
+      case NamedAst.Pattern.Tuple(elms, loc) =>
+        val esVal = traverse(elms)(visit)
+        mapN(esVal) {
+          es => ResolvedAst.Pattern.Tuple(es, loc)
+        }
+
+      case NamedAst.Pattern.Record(pats, pat, loc) =>
+        val psVal = traverse(pats) {
+          case NamedAst.Pattern.Record.RecordLabelPattern(label, pat1, loc1) =>
+            mapN(visit(pat1)) {
+              case p => ResolvedAst.Pattern.Record.RecordLabelPattern(label, p, loc1)
+            }
+        }
+        val pVal = visit(pat)
+        mapN(psVal, pVal) {
+          case (ps, p) => ResolvedAst.Pattern.Record(ps, p, loc)
+        }
+
+      case NamedAst.Pattern.RecordEmpty(loc) =>
+        Validation.success(ResolvedAst.Pattern.RecordEmpty(loc))
+
+      case NamedAst.Pattern.Error(loc) =>
+        Validation.success(ResolvedAst.Pattern.Error(loc))
     }
 
-    object Body {
-      /**
-        * Performs name resolution on the given body predicate `b0` in the given namespace `ns0`.
-        */
-      def resolve(b0: NamedAst.Predicate.Body, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Predicate.Body, ResolutionError] = b0 match {
-        case NamedAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, loc) =>
-          val tsVal = traverse(terms)(Patterns.resolveInConstraint(_, env, ns0, root))
-          mapN(tsVal) {
-            ts => ResolvedAst.Predicate.Body.Atom(pred, den, polarity, fixity, ts, loc)
-          }
+    visit(pat0)
+  }
 
-        case NamedAst.Predicate.Body.Functional(idents, exp, loc) =>
-          val outVars = idents.map {
-            case ident => env(ident.name).collectFirst {
-              case Resolution.Var(sym) => sym
-            }.getOrElse(throw InternalCompilerException(s"Unbound variable in functional predicate: '$ident'.", ident.loc))
-          }
-          val eVal = resolveExp(exp, env, taenv, ns0, root)
-          mapN(eVal) {
-            case e => ResolvedAst.Predicate.Body.Functional(outVars, e, loc)
-          }
-
-        case NamedAst.Predicate.Body.Guard(exp, loc) =>
-          val eVal = resolveExp(exp, env, taenv, ns0, root)
-          mapN(eVal) {
-            e => ResolvedAst.Predicate.Body.Guard(e, loc)
-          }
+  /**
+    * Performs name resolution on the given head predicate `h0` in the given namespace `ns0`.
+    */
+  def resolvePredicateHead(h0: NamedAst.Predicate.Head, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Predicate.Head, ResolutionError] = h0 match {
+    case NamedAst.Predicate.Head.Atom(pred, den, terms, loc) =>
+      val tsVal = traverse(terms)(t => resolveExp(t, env, taenv, ns0, root))
+      mapN(tsVal) {
+        ts => ResolvedAst.Predicate.Head.Atom(pred, den, ts, loc)
       }
-    }
+  }
 
+  /**
+    * Performs name resolution on the given body predicate `b0` in the given namespace `ns0`.
+    */
+  def resolvePredicateBody(b0: NamedAst.Predicate.Body, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Predicate.Body, ResolutionError] = b0 match {
+    case NamedAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, loc) =>
+      val tsVal = traverse(terms)(resolvePatternInConstraint(_, env, ns0, root))
+      mapN(tsVal) {
+        ts => ResolvedAst.Predicate.Body.Atom(pred, den, polarity, fixity, ts, loc)
+      }
+
+    case NamedAst.Predicate.Body.Functional(idents, exp, loc) =>
+      val outVars = idents.map {
+        case ident => env(ident.name).collectFirst {
+          case Resolution.Var(sym) => sym
+        }.getOrElse(throw InternalCompilerException(s"Unbound variable in functional predicate: '$ident'.", ident.loc))
+      }
+      val eVal = resolveExp(exp, env, taenv, ns0, root)
+      mapN(eVal) {
+        case e => ResolvedAst.Predicate.Body.Functional(outVars, e, loc)
+      }
+
+    case NamedAst.Predicate.Body.Guard(exp, loc) =>
+      val eVal = resolveExp(exp, env, taenv, ns0, root)
+      mapN(eVal) {
+        e => ResolvedAst.Predicate.Body.Guard(e, loc)
+      }
   }
 
   /**
@@ -2358,7 +2346,7 @@ object Resolver {
       // Case 0: No matches. Error.
       case Nil => Result.Err(ResolutionError.UndefinedStruct(qname, qname.loc))
       // Case 1: Exactly one match. Success.
-      case st :: _ => Result.Ok(st)
+      case st :: Nil => Result.Ok(st)
       // Case 2: Multiple matches. Error
       case sts => throw InternalCompilerException(s"unexpected duplicate struct: '$qname'.", qname.loc)
     }
@@ -2947,7 +2935,11 @@ object Resolver {
       val envNames = env(qname.ident.name)
 
       // 2nd priority: names in the current namespace
-      val localNames = root.symbols.getOrElse(ns0, Map.empty).getOrElse(qname.ident.name, Nil).map(Resolution.Declaration)
+      val localNames = if(!ns0.idents.isEmpty) {
+        root.symbols.getOrElse(ns0, Map.empty).getOrElse(qname.ident.name, Nil).map(Resolution.Declaration)
+      } else {
+        Nil
+      }
 
       // 3rd priority: the name of the current namespace
       val currentNamespace = {
