@@ -2332,7 +2332,7 @@ object Resolver {
       // Case 0: No matches. Error.
       case Nil => Result.Err(ResolutionError.UndefinedStruct(qname, qname.loc))
       // Case 1: Exactly one match. Success.
-      case st :: _ => Result.Ok(st)
+      case st :: Nil => Result.Ok(st)
       // Case 2: Multiple matches. Error
       case sts => throw InternalCompilerException(s"unexpected duplicate struct: '$qname'.", qname.loc)
     }
@@ -2939,11 +2939,16 @@ object Resolver {
       val envNames = env(qname.ident.name)
 
       // 2nd priority: names in the current namespace
-      val localNames = root.symbols.getOrElse(ns0, Map.empty).getOrElse(qname.ident.name, Nil).map(Resolution.Declaration)
+      val localNames = if(!ns0.idents.isEmpty) {
+        root.symbols.getOrElse(ns0, Map.empty).getOrElse(qname.ident.name, Nil).map(Resolution.Declaration)
+      } else {
+        Nil
+      }
 
       // 3rd priority: the name of the current namespace
       val currentNamespace = {
-        if (ns0.idents.lastOption.contains(qname.ident)) {
+        // Make sure we don't duplicate results in `rootNames`
+        if (ns0.idents.size > 1 && ns0.idents.lastOption.contains(qname.ident)) {
           // Case 1.1.1.1: We are referring to the current namespace. Use that.
           root.symbols.getOrElse(Name.mkUnlocatedNName(ns0.parts.init), Map.empty).getOrElse(ns0.parts.last, Nil).map(Resolution.Declaration)
         } else {

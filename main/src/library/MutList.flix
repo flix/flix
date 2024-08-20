@@ -59,7 +59,7 @@ mod MutList {
     /// Returns an empty empty mutable list with a default capacity.
     ///
     pub def empty(rc: Region[r]): MutList[a, r] \ r =
-        MutList(rc, ref Array.empty(rc, minCapacity()) @ rc, ref 0 @ rc)
+        MutList(rc, Ref.fresh(rc, Array.empty(rc, minCapacity())), Ref.fresh(rc, 0))
 
     ///
     /// Returns a mutable list of all integers between `b` (inclusive) and `e` (exclusive).
@@ -71,7 +71,7 @@ mod MutList {
         let d = e - b;
         let c = Order.max(d, minCap);
         let f = i -> { let x = b + i; if (x < e) x else Reflect.default() };
-        MutList(rc, ref Array.init(rc, f, c) @ rc, ref d @ rc)
+        MutList(rc, Ref.fresh(rc, Array.init(rc, f, c)), Ref.fresh(rc, d))
 
     ///
     /// Optionally returns the element at position `i` in the mutable list `v`.
@@ -321,7 +321,7 @@ mod MutList {
             }
         };
         loop(1, s);
-        MutList(rc1, ref b @ rc1, ref n @ rc1)
+        MutList(rc1, Ref.fresh(rc1, b), Ref.fresh(rc1, n))
 
     ///
     /// Accumulates the result of applying `f` to `v` going right to left.
@@ -342,7 +342,7 @@ mod MutList {
             }
         };
         loop(l - 1, s);
-        MutList(rc1, ref b @ rc1, ref n @ rc1)
+        MutList(rc1, Ref.fresh(rc1, b), Ref.fresh(rc1, n))
 
     ///
     /// Apply `f` to every element in `v`.
@@ -367,14 +367,14 @@ mod MutList {
                 }
             };
             loop(1);
-            MutList(rc1, ref b @ rc1, ref l @ rc1)
+            MutList(rc1, Ref.fresh(rc1, b), Ref.fresh(rc1, l))
         }
 
     ///
     /// Concatenates all the contained MutLists.
     ///
     pub def flatten(rc1: Region[r1], v: MutList[MutList[a, r], r]): MutList[a, r1] \ {r, r1}=
-        let rdestIndex = ref 0 @ rc1;
+        let rdestIndex = Ref.fresh(rc1, 0);
         let size = MutList.sumWith(MutList.length, v);
         let destArray = Array.empty(rc1, Int32.max(size, minCapacity()));
         v |> MutList.forEach(bs -> {
@@ -384,7 +384,7 @@ mod MutList {
             Array.patch!(destIndex, bl, deref rb, destArray);
             Ref.put(destIndex + bl, rdestIndex)
          });
-         MutList(rc1, ref destArray @ rc1, ref size @ rc1)
+         MutList(rc1, Ref.fresh(rc1, destArray), Ref.fresh(rc1, size))
 
 
     ///
@@ -416,7 +416,7 @@ mod MutList {
                 }
             };
             loop(1);
-            MutList(rc1, ref b @ rc1, ref l @ rc1)
+            MutList(rc1, Ref.fresh(rc1, b), Ref.fresh(rc1, l))
         }
 
     ///
@@ -556,9 +556,9 @@ mod MutList {
         let MutList(_, a, l) = v;
         let len = deref l;
         if (len > minCapacity())
-            MutList(rc1, ref Array.copyOfRange(rc1, 0, len, deref a) @ rc1, ref len @ rc1)
+            MutList(rc1, Ref.fresh(rc1, Array.copyOfRange(rc1, 0, len, deref a)), Ref.fresh(rc1, len))
         else
-            MutList(rc1, ref Array.copyOfRange(rc1, 0, capacity(v), deref a) @ rc1, ref len @ rc1)
+            MutList(rc1, Ref.fresh(rc1, Array.copyOfRange(rc1, 0, capacity(v), deref a)), Ref.fresh(rc1, len))
 
     ///
     /// Optionally removes and returns the last element in the given mutable list `v`.
@@ -829,7 +829,7 @@ mod MutList {
     pub def iterator(rc: Region[r1], l: MutList[a, r2]): Iterator[a, r1 + r2, r1] \ { r1, r2 } =
         let MutList(_, a, len) = l;
         let len1 = deref len;
-        let ix = ref 0 @ rc;
+        let ix = Ref.fresh(rc, 0);
         let next = () -> {
             let i = deref ix;
             if (i < len1) {
