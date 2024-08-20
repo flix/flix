@@ -513,7 +513,7 @@ mod TestMutSet {
         let s = MutSet.empty(rc);
         let ri = Ref.fresh(rc, 21);
         MutSet.forEach(x -> Ref.put(x, ri), s);
-        21 == deref ri
+        21 == Ref.get(ri)
     }
 
     @test
@@ -522,7 +522,7 @@ mod TestMutSet {
         let ri = Ref.fresh(rc, 21);
         MutSet.add!(0, s);
         MutSet.forEach(x -> Ref.put(x, ri), s);
-        0 == deref ri
+        0 == Ref.get(ri)
     }
 
     @test
@@ -533,7 +533,7 @@ mod TestMutSet {
         MutSet.add!(1, s);
         MutSet.add!(2, s);
         MutSet.forEach(x -> Ref.put(x, ri), s);
-        2 == deref ri
+        2 == Ref.get(ri)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -545,7 +545,7 @@ mod TestMutSet {
         let s = MutSet.empty(rc);
         let ri = Ref.fresh(rc, 21);
         MutSet.forEachWithIndex((i, _) -> Ref.put(i, ri), s);
-        21 == deref ri
+        21 == Ref.get(ri)
     }
 
     @test
@@ -554,7 +554,7 @@ mod TestMutSet {
         let ri = Ref.fresh(rc, 21);
         MutSet.add!(100, s);
         MutSet.forEachWithIndex((i, _) -> Ref.put(i, ri), s);
-        0 == deref ri
+        0 == Ref.get(ri)
     }
 
     @test
@@ -565,7 +565,7 @@ mod TestMutSet {
         MutSet.add!(101, s);
         MutSet.add!(102, s);
         MutSet.forEachWithIndex((i, _) -> Ref.put(i, ri), s);
-        2 == deref ri
+        2 == Ref.get(ri)
     }
 
 }

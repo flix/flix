@@ -20,7 +20,7 @@ mod Test.Handler.Gen.Int8 {
         }
 
     def getAndInc(r: Ref[Int8, r]): Int8 \ r =
-        let i = deref r;
+        let i = Ref.get(r);
         Ref.put(i + 1i8, r);
         i
 

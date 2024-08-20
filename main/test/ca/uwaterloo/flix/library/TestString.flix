@@ -1674,8 +1674,8 @@ def unfoldWithIter01(): Bool = region rc {
         if (true)
             None
         else {
-            let c = Some(toChar(deref x + 97));
-            Ref.put(deref x + 1, x);
+            let c = Some(toChar(Ref.get(x) + 97));
+            Ref.put(Ref.get(x) + 1, x);
             c
         };
     String.unfoldWithIter(step) == ""
@@ -1685,11 +1685,11 @@ def unfoldWithIter01(): Bool = region rc {
 def unfoldWithIter02(): Bool = region rc {
     let x = Ref.fresh(rc, 0);
     let step = () ->
-        if (deref x > 0)
+        if (Ref.get(x) > 0)
             None
         else {
-            let c = Some(toChar(deref x + 97));
-            Ref.put(deref x + 1, x);
+            let c = Some(toChar(Ref.get(x) + 97));
+            Ref.put(Ref.get(x) + 1, x);
             c
         };
     String.unfoldWithIter(step) == "a"
@@ -1699,11 +1699,11 @@ def unfoldWithIter02(): Bool = region rc {
 def unfoldWithIter03(): Bool = region rc {
     let x = Ref.fresh(rc, 0);
     let step = () ->
-        if (deref x > 1)
+        if (Ref.get(x) > 1)
             None
         else {
-            let c = Some(toChar(deref x + 97));
-            Ref.put(deref x + 1, x);
+            let c = Some(toChar(Ref.get(x) + 97));
+            Ref.put(Ref.get(x) + 1, x);
             c
         };
     String.unfoldWithIter(step) == "ab"
@@ -1713,11 +1713,11 @@ def unfoldWithIter03(): Bool = region rc {
 def unfoldWithIter04(): Bool = region rc {
     let x = Ref.fresh(rc, 0);
     let step = () ->
-        if (deref x >= 10)
+        if (Ref.get(x) >= 10)
             None
         else {
-            let c = Some(toChar(deref x + 97));
-            Ref.put(deref x + 1, x);
+            let c = Some(toChar(Ref.get(x) + 97));
+            Ref.put(Ref.get(x) + 1, x);
             c
         };
     String.unfoldWithIter(step) == "abcdefghij"
@@ -1727,11 +1727,11 @@ def unfoldWithIter04(): Bool = region rc {
 def unfoldWithIter05(): Bool = region rc {
     let x = Ref.fresh(rc, 5);
     let step = () ->
-        if (deref x >= 10)
+        if (Ref.get(x) >= 10)
             None
         else {
-            let c = Some(toChar(deref x + 97));
-            Ref.put(deref x + 1, x);
+            let c = Some(toChar(Ref.get(x) + 97));
+            Ref.put(Ref.get(x) + 1, x);
             c
         };
     String.unfoldWithIter(step) == "fghij"
@@ -1741,11 +1741,11 @@ def unfoldWithIter05(): Bool = region rc {
 def unfoldWithIter06(): Bool = region rc {
     let x = Ref.fresh(rc, 0);
     let step = () ->
-        if (deref x >= 10)
+        if (Ref.get(x) >= 10)
             None
         else {
-            let c = Some(toChar(deref x + 97));
-            Ref.put(deref x + 2, x);
+            let c = Some(toChar(Ref.get(x) + 97));
+            Ref.put(Ref.get(x) + 2, x);
             c
         };
     String.unfoldWithIter(step) == "acegi"
@@ -1799,10 +1799,10 @@ def unfoldStringWithIter01(): Bool = region rc {
         if (true)
             None
         else {
-            let c1 = toChar(deref x + 65);
-            let c2 = toChar(deref x + 97);
+            let c1 = toChar(Ref.get(x) + 65);
+            let c2 = toChar(Ref.get(x) + 97);
             let s = List.joinWith(Char.toString, "", c1 :: c2 :: '.' :: Nil);
-            Ref.put(deref x + 1, x);
+            Ref.put(Ref.get(x) + 1, x);
             Some(s)
         };
     String.unfoldStringWithIter(step) == ""
@@ -1812,13 +1812,13 @@ def unfoldStringWithIter01(): Bool = region rc {
 def unfoldStringWithIter02(): Bool = region rc {
     let x = Ref.fresh(rc, 0);
     let step = () ->
-        if (deref x > 0)
+        if (Ref.get(x) > 0)
             None
         else {
-            let c1 = toChar(deref x + 65);
-            let c2 = toChar(deref x + 97);
+            let c1 = toChar(Ref.get(x) + 65);
+            let c2 = toChar(Ref.get(x) + 97);
             let s = List.joinWith(Char.toString, "", c1 :: c2 :: '.' :: Nil);
-            Ref.put(deref x + 1, x);
+            Ref.put(Ref.get(x) + 1, x);
             Some(s)
         };
     String.unfoldStringWithIter(step) == "Aa."
@@ -1828,13 +1828,13 @@ def unfoldStringWithIter02(): Bool = region rc {
 def unfoldStringWithIter03(): Bool = region rc {
     let x = Ref.fresh(rc, 0);
     let step = () ->
-        if (deref x > 1)
+        if (Ref.get(x) > 1)
             None
         else {
-            let c1 = toChar(deref x + 65);
-            let c2 = toChar(deref x + 97);
+            let c1 = toChar(Ref.get(x) + 65);
+            let c2 = toChar(Ref.get(x) + 97);
             let s = List.joinWith(Char.toString, "", c1 :: c2 :: '.' :: Nil);
-            Ref.put(deref x + 1, x);
+            Ref.put(Ref.get(x) + 1, x);
             Some(s)
         };
     String.unfoldStringWithIter(step) == "Aa.Bb."
@@ -1844,13 +1844,13 @@ def unfoldStringWithIter03(): Bool = region rc {
 def unfoldStringWithIter04(): Bool = region rc {
     let x = Ref.fresh(rc, 0);
     let step = () ->
-        if (deref x >= 10)
+        if (Ref.get(x) >= 10)
             None
         else {
-            let c1 = toChar(deref x + 65);
-            let c2 = toChar(deref x + 97);
+            let c1 = toChar(Ref.get(x) + 65);
+            let c2 = toChar(Ref.get(x) + 97);
             let s = List.joinWith(Char.toString, "", c1 :: c2 :: '.' :: Nil);
-            Ref.put(deref x + 1, x);
+            Ref.put(Ref.get(x) + 1, x);
             Some(s)
         };
     String.unfoldStringWithIter(step) == "Aa.Bb.Cc.Dd.Ee.Ff.Gg.Hh.Ii.Jj."
@@ -1860,13 +1860,13 @@ def unfoldStringWithIter04(): Bool = region rc {
 def unfoldStringWithIter05(): Bool = region rc {
     let x = Ref.fresh(rc, 5);
     let step = () ->
-        if (deref x >= 10)
+        if (Ref.get(x) >= 10)
             None
         else {
-            let c1 = toChar(deref x + 65);
-            let c2 = toChar(deref x + 97);
+            let c1 = toChar(Ref.get(x) + 65);
+            let c2 = toChar(Ref.get(x) + 97);
             let s = List.joinWith(Char.toString, "", c1 :: c2 :: '.' :: Nil);
-            Ref.put(deref x + 1, x);
+            Ref.put(Ref.get(x) + 1, x);
             Some(s)
         };
     String.unfoldStringWithIter(step) == "Ff.Gg.Hh.Ii.Jj."
@@ -1876,13 +1876,13 @@ def unfoldStringWithIter05(): Bool = region rc {
 def unfoldStringWithIter06(): Bool = region rc {
     let x = Ref.fresh(rc, 0);
     let step = () ->
-        if (deref x >= 10)
+        if (Ref.get(x) >= 10)
             None
         else {
-            let c1 = toChar(deref x + 65);
-            let c2 = toChar(deref x + 97);
+            let c1 = toChar(Ref.get(x) + 65);
+            let c2 = toChar(Ref.get(x) + 97);
             let s = List.joinWith(Char.toString, "", c1 :: c2 :: '.' :: Nil);
-            Ref.put(deref x + 2, x);
+            Ref.put(Ref.get(x) + 2, x);
             Some(s)
         };
     String.unfoldStringWithIter(step) == "Aa.Cc.Ee.Gg.Ii."

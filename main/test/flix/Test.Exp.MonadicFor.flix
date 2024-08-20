@@ -58,10 +58,10 @@ mod Test.Exp.MonadicFor {
         let l1 = Ref.fresh(rc, Nil);
         let l2 =
             forM (x <- 1 :: 2 :: 3 :: Nil) yield {
-                Ref.put(x :: deref l1, l1);
+                Ref.put(x :: Ref.get(l1), l1);
                 x
             };
-        List.reverse(deref l1) == l2
+        List.reverse(Ref.get(l1)) == l2
     }
 
     @test
