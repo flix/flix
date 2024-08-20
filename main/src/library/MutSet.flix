@@ -49,13 +49,13 @@ mod MutSet {
     /// Returns a fresh empty set.
     ///
     pub def empty(rc: Region[r]): MutSet[a, r] \ r =
-        MutSet(rc, ref Set.empty() @ rc)
+        MutSet(rc, Ref.fresh(rc, Set.empty()))
 
     ///
     /// Returns the singleton set containing `x`.
     ///
     pub def singleton(rc: Region[r], x: a): MutSet[a, r] \ r with Order[a] =
-        MutSet(rc, ref Set.singleton(x) @ rc)
+        MutSet(rc, Ref.fresh(rc, Set.singleton(x)))
 
     ///
     /// Adds the element `x` to the mutable set `s`.
@@ -337,7 +337,7 @@ mod MutSet {
     ///
     pub def copy(rc1: Region[r1], s: MutSet[a, r]): MutSet[a, r1] \ { r, r1 } =
         let MutSet(_, ms) = s;
-        MutSet(rc1, ref (deref ms) @ rc1)
+        MutSet(rc1, Ref.fresh(rc1, deref ms))
 
     ///
     /// Returns a pair of mutable sets `(s1, s2)` such that:
@@ -350,7 +350,7 @@ mod MutSet {
     pub def partition(rc1: Region[r1], rc2: Region[r2], f: a -> Bool, s: MutSet[a, r]): (MutSet[a, r1], MutSet[a, r2]) \ { r, r1, r2 } with Order[a] =
         let MutSet(_, ms) = s;
         let (ys, zs) = Set.partition(f, deref ms);
-        (MutSet(rc1, ref ys @ rc1), MutSet(rc2, ref zs @ rc2))
+        (MutSet(rc1, Ref.fresh(rc1, ys)), MutSet(rc2, Ref.fresh(rc2, zs)))
 
     ///
     /// Returns the mutable set `s` as an immutable set.
@@ -394,7 +394,7 @@ mod MutSet {
     /// Applies `f` to every element of the mutable set `s` along with that element's index.
     ///
     pub def forEachWithIndex(f: (Int32, a) -> Unit \ ef, s: MutSet[a, r]): Unit \ { ef, r } = region rc {
-        let ix = ref 0 @ rc;
+        let ix = Ref.fresh(rc, 0);
         forEach(x -> { let i = deref ix; f(i, x); Ref.put(i + 1, ix) }, s)
     }
 
