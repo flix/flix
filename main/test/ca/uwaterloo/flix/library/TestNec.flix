@@ -1002,14 +1002,14 @@ mod TestNec {
 
     @test
     def forEach01(): Bool = region rc {
-        let ri = ref 21 @ rc;
+        let ri = Ref.fresh(rc, 21);
         Nec.forEach(x -> Ref.put(x, ri), singleton(1));
         1 == deref ri
     }
 
     @test
     def forEach02(): Bool = region rc {
-        let ri = ref 21 @ rc;
+        let ri = Ref.fresh(rc, 21);
         Nec.forEach(x -> Ref.put(x, ri), necOf3(1, 2, 3));
         3 == deref ri
     }
@@ -1020,14 +1020,14 @@ mod TestNec {
 
     @test
     def forEachWithIndex01(): Bool = region rc {
-        let ri = ref 21 @ rc;
+        let ri = Ref.fresh(rc, 21);
         Nec.forEachWithIndex((i, _) -> Ref.put(i, ri), singleton(1));
         0 == deref ri
     }
 
     @test
     def forEachWithIndex02(): Bool = region rc {
-        let ri = ref 21 @ rc;
+        let ri = Ref.fresh(rc, 21);
         Nec.forEachWithIndex((i, _) -> Ref.put(i, ri), necOf3(1, 2, 3));
         2 == deref ri
     }
@@ -1431,7 +1431,7 @@ mod TestNec {
 
     @test
     def traverse05(): Bool = region rc {
-        let st = ref 0 @ rc;
+        let st = Ref.fresh(rc, 0);
         let l = Nec.singleton(1);
         let ans = Nec.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, l);
         ans == Identity.Identity(Nec.singleton(1)) and deref st == 1
@@ -1439,7 +1439,7 @@ mod TestNec {
 
     @test
     def traverse06(): Bool = region rc {
-        let st = ref 0 @ rc;
+        let st = Ref.fresh(rc, 0);
         let l = necOf2(1, 2);
         let ans = Nec.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, l);
         ans == Identity.Identity(necOf2(1, 2)) and deref st == 2
@@ -1447,7 +1447,7 @@ mod TestNec {
 
     @test
     def traverse07(): Bool = region rc {
-        let st = ref 0 @ rc;
+        let st = Ref.fresh(rc, 0);
         let l = necOf3(1, 2, 3);
         let ans = Nec.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, l);
         ans == Identity.Identity(necOf3(1, 2, 3)) and deref st == 3
