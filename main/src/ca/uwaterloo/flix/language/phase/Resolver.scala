@@ -2343,7 +2343,7 @@ object Resolver {
    * Finds the struct field that matches the given name `name` in the namespace `ns0`.
    */
   private def lookupStructField(name: Name.Label, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Result[NamedAst.Declaration.StructField, ResolutionError.UndefinedStructField] = {
-    val matches = tryLookupName(Name.mkQName(name.name, name.loc), env, ns0, root) collect {
+    val matches = tryLookupName(Name.mkQName("€" + name.name, name.loc), env, ns0, root) collect {
       case Resolution.Declaration(s: NamedAst.Declaration.StructField) => s
     }
     matches match {
