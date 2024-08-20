@@ -396,11 +396,11 @@ mod MutDeque {
     /// Modifying `d` while using an iterator has undefined behavior and is dangerous.
     ///
     pub def iterator(rc: Region[r1], d: MutDeque[a, r2]): Iterator[a, r1 + r2, r1] \ { r1, r2 } =
-        let i = ref (d€front) @ rc;
+        let i = Ref.fresh(rc, d€front);
         let next = () -> {
-            if (deref i < d€back) {
-                let x = Array.get(deref i, d€values);
-                Ref.put(deref i + Int32.bitwiseAnd(1, capacity(d) - 1), i);
+            if (Ref.get(i) < d€back) {
+                let x = Array.get(Ref.get(i), d€values);
+                Ref.put(Ref.get(i) + Int32.bitwiseAnd(1, capacity(d) - 1), i);
                 Some(x)
             } else {
                 None
@@ -432,8 +432,8 @@ mod MutDeque {
     /// along with that element's index.
     ///
     pub def forEachWithIndex(f: (Int32, a) -> Unit \ ef, d: MutDeque[a, r]): Unit \ { ef, r } = region rc {
-        let ix = ref 0 @ rc;
-        forEach(x -> { let i = deref ix; f(i, x); Ref.put(i + 1, ix) }, d)
+        let ix = Ref.fresh(rc, 0);
+        forEach(x -> { let i = Ref.get(ix); f(i, x); Ref.put(i + 1, ix) }, d)
     }
 
     ///
