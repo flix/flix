@@ -779,15 +779,33 @@ object Namer {
       NamedAst.Expr.VectorLength(e, loc)
 
     case DesugaredAst.Expr.Ref(exp1, exp2, loc) =>
+      if (flix.options.xnodeprecated) {
+        val m = NameError.Deprecated(loc)
+        sctx.errors.add(m)
+        return NamedAst.Expr.Error(m)
+      }
+
       val e1 = visitExp(exp1, ns0)
       val e2 = visitExp(exp2, ns0)
       NamedAst.Expr.Ref(e1, e2, loc)
 
     case DesugaredAst.Expr.Deref(exp, loc) =>
+      if (flix.options.xnodeprecated) {
+        val m = NameError.Deprecated(loc)
+        sctx.errors.add(m)
+        return NamedAst.Expr.Error(m)
+      }
+
       val e = visitExp(exp, ns0)
       NamedAst.Expr.Deref(e, loc)
 
     case DesugaredAst.Expr.Assign(exp1, exp2, loc) =>
+      if (flix.options.xnodeprecated) {
+        val m = NameError.Deprecated(loc)
+        sctx.errors.add(m)
+        return NamedAst.Expr.Error(m)
+      }
+
       val e1 = visitExp(exp1, ns0)
       val e2 = visitExp(exp2, ns0)
       NamedAst.Expr.Assign(e1, e2, loc)
