@@ -673,7 +673,7 @@ mod DelayList {
     ///
     @Experimental
     pub def forEachWithIndex(f: (Int32, a) -> Unit \ ef, l: DelayList[a]): Unit \ ef = region rc {
-        let ix = ref 0 @ rc;
+        let ix = Ref.fresh(rc, 0);
         let f1 = x -> { let i = deref ix; f(i, x); Ref.put(i + 1, ix) };
         forEach(f1, l)
     }
@@ -1207,7 +1207,7 @@ mod DelayList {
     ///
     @Experimental @Lazy
     pub def iterator(rc: Region[r], l: DelayList[a]): Iterator[a, r, r] \ r =
-        let cursor = ref l @ rc;
+        let cursor = Ref.fresh(rc, l);
         let next = () -> match head(deref cursor) {
             case None    => None
             case Some(x) =>

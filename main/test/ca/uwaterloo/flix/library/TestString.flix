@@ -1679,7 +1679,7 @@ def toChar(step: Int32): Char = match step {
 
 @test
 def unfoldWithIter01(): Bool = region rc {
-    let x = ref 0 @ rc;
+    let x = Ref.fresh(rc, 0);
     let step = () ->
         if (true)
             None
@@ -1693,7 +1693,7 @@ def unfoldWithIter01(): Bool = region rc {
 
 @test
 def unfoldWithIter02(): Bool = region rc {
-    let x = ref 0 @ rc;
+    let x = Ref.fresh(rc, 0);
     let step = () ->
         if (deref x > 0)
             None
@@ -1707,7 +1707,7 @@ def unfoldWithIter02(): Bool = region rc {
 
 @test
 def unfoldWithIter03(): Bool = region rc {
-    let x = ref 0 @ rc;
+    let x = Ref.fresh(rc, 0);
     let step = () ->
         if (deref x > 1)
             None
@@ -1721,7 +1721,7 @@ def unfoldWithIter03(): Bool = region rc {
 
 @test
 def unfoldWithIter04(): Bool = region rc {
-    let x = ref 0 @ rc;
+    let x = Ref.fresh(rc, 0);
     let step = () ->
         if (deref x >= 10)
             None
@@ -1735,7 +1735,7 @@ def unfoldWithIter04(): Bool = region rc {
 
 @test
 def unfoldWithIter05(): Bool = region rc {
-    let x = ref 5 @ rc;
+    let x = Ref.fresh(rc, 5);
     let step = () ->
         if (deref x >= 10)
             None
@@ -1749,7 +1749,7 @@ def unfoldWithIter05(): Bool = region rc {
 
 @test
 def unfoldWithIter06(): Bool = region rc {
-    let x = ref 0 @ rc;
+    let x = Ref.fresh(rc, 0);
     let step = () ->
         if (deref x >= 10)
             None
@@ -1804,7 +1804,7 @@ def unfoldString08(): Bool =
 
 @test
 def unfoldStringWithIter01(): Bool = region rc {
-    let x = ref 0 @ rc;
+    let x = Ref.fresh(rc, 0);
     let step = () ->
         if (true)
             None
@@ -1820,7 +1820,7 @@ def unfoldStringWithIter01(): Bool = region rc {
 
 @test
 def unfoldStringWithIter02(): Bool = region rc {
-    let x = ref 0 @ rc;
+    let x = Ref.fresh(rc, 0);
     let step = () ->
         if (deref x > 0)
             None
@@ -1836,7 +1836,7 @@ def unfoldStringWithIter02(): Bool = region rc {
 
 @test
 def unfoldStringWithIter03(): Bool = region rc {
-    let x = ref 0 @ rc;
+    let x = Ref.fresh(rc, 0);
     let step = () ->
         if (deref x > 1)
             None
@@ -1852,7 +1852,7 @@ def unfoldStringWithIter03(): Bool = region rc {
 
 @test
 def unfoldStringWithIter04(): Bool = region rc {
-    let x = ref 0 @ rc;
+    let x = Ref.fresh(rc, 0);
     let step = () ->
         if (deref x >= 10)
             None
@@ -1868,7 +1868,7 @@ def unfoldStringWithIter04(): Bool = region rc {
 
 @test
 def unfoldStringWithIter05(): Bool = region rc {
-    let x = ref 5 @ rc;
+    let x = Ref.fresh(rc, 5);
     let step = () ->
         if (deref x >= 10)
             None
@@ -1884,7 +1884,7 @@ def unfoldStringWithIter05(): Bool = region rc {
 
 @test
 def unfoldStringWithIter06(): Bool = region rc {
-    let x = ref 0 @ rc;
+    let x = Ref.fresh(rc, 0);
     let step = () ->
         if (deref x >= 10)
             None
