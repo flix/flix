@@ -219,7 +219,7 @@ object Deriver {
       econstrs = List(),
       loc = loc
     )
-  // JOE TODO: Maybe should be the same as in the trait generation
+
   /**
     * Builds the spec for this struct field's `put` operation
     */
