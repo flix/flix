@@ -123,6 +123,26 @@ mod TestMultiMap {
         MultiMap.nonEmpty(singleton(1, 'a')) == true
 
     /////////////////////////////////////////////////////////////////////////////
+    // size                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def size01(): Bool =
+        MultiMap.empty() |> MultiMap.size == 0
+
+    @test
+    def size02(): Bool =
+        singleton("a", 1) |> MultiMap.size == 1
+
+    @test
+    def size03(): Bool =
+        singleton(1, 'a') |> insert(2, 'b') |> MultiMap.size == 2
+
+    @test
+    def size04(): Bool =
+        singleton(1, 'a') |> insert(2, 'b') |> insert(1, 'c') |> MultiMap.size == 3
+
+    /////////////////////////////////////////////////////////////////////////////
     // get                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 

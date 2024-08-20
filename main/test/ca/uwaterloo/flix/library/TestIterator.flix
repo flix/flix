@@ -178,6 +178,31 @@ mod TestIterator {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // size                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def size01(): Bool = region rc {
+        Iterator.repeat(rc, 0, 10) |> Iterator.size == 10
+    }
+
+    @test
+    def size02(): Bool = region rc {
+        Iterator.repeat(rc, -100, 2) |> Iterator.size == 2
+    }
+
+    @test
+    def size03(): Bool = region rc {
+        Iterator.repeat(rc, 100, 0) |> Iterator.size == 0
+    }
+
+    @test
+    def size04(): Bool = region rc {
+        Iterator.repeat(rc, 3, 1) |> Iterator.size == 3
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // toList                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 

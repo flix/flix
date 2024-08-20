@@ -49,6 +49,18 @@ def nonEmpty02(): Bool = Option.nonEmpty(Some(0)) == true
 def nonEmpty03(): Bool = Option.nonEmpty(Some(22ii)) == true
 
 /////////////////////////////////////////////////////////////////////////////
+// size                                                                    //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def size01(): Bool = Option.size(None) == 0
+
+@test
+def size02(): Bool = Option.size(Some(0)) == 1
+
+@test
+def size03(): Bool = Option.size(Some(22ii)) == 1
+
+/////////////////////////////////////////////////////////////////////////////
 // getWithDefault                                                          //
 /////////////////////////////////////////////////////////////////////////////
 @test

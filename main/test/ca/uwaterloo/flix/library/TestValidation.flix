@@ -371,6 +371,19 @@ mod TestValidation {
     def traverseX07(): Bool = Validation.traverseX(x -> if (x == 2) Success(x + 1) else Failure(singleton(x)), 1 :: 2 :: 3 :: Nil) == Failure(necOf2(1, 3))
 
     /////////////////////////////////////////////////////////////////////////////
+    // size                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def size01(): Bool = Success(123) |> Validation.size == 1
+
+    @test
+    def size02(): Bool = Failure(singleton("fail")) |> Validation.size == 0
+
+    @test
+    def size03(): Bool = Failure(necOf2('a', 'b')) |> Validation.size == 0
+
+    /////////////////////////////////////////////////////////////////////////////
     // toOption                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
