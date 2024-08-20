@@ -1340,28 +1340,28 @@ object Resolver {
       case NamedAst.Expr.StructNew(name, fields, region, loc) =>
         lookupStruct(name, env0, ns0, root) match {
 
-            case Result.Ok(st0) =>
-              flatMapN(getStructIfAccessible(st0, ns0, loc)) {
-                case st =>
-                  val fieldsVal = traverse(fields) {
-                    case (f, e) =>
-                      val eVal = visitExp(e, env0)
-                      val idx = st0.indices.getOrElse(f, 0)
-                      val fieldSym = Symbol.mkStructFieldSym(st0.sym, idx, f)
-                      mapN(eVal) {
-                        case e => (fieldSym, e)
-                      }
-                  }
-                  val regionVal = visitExp(region, env0)
-                  val structNew = mapN(fieldsVal, regionVal) {
-                    case (fields, region) =>
-                      ResolvedAst.Expr.StructNew(st.sym, fields, region, loc)
-                  }
-                  // Potential errors
-                  val providedFieldNames = fields.map { case (k, _) => Name.Label(k.name, k.loc) }
-                  val expectedFieldNames = st.fields.map( field => Name.Label(field.sym.name, field.sym.loc) )
-                  val extraFields = providedFieldNames.diff(expectedFieldNames)
-                  val missingFields = expectedFieldNames.diff(providedFieldNames)
+          case Result.Ok(st0) =>
+            flatMapN(getStructIfAccessible(st0, ns0, loc)) {
+              case st =>
+                val fieldsVal = traverse(fields) {
+                  case (f, e) =>
+                    val eVal = visitExp(e, env0)
+                    val idx = st0.indices.getOrElse(f, 0)
+                    val fieldSym = Symbol.mkStructFieldSym(st0.sym, idx, f)
+                    mapN(eVal) {
+                      case e => (fieldSym, e)
+                    }
+                }
+                val regionVal = visitExp(region, env0)
+                val structNew = mapN(fieldsVal, regionVal) {
+                  case (fields, region) =>
+                    ResolvedAst.Expr.StructNew(st.sym, fields, region, loc)
+                }
+                // Potential errors
+                val providedFieldNames = fields.map { case (k, _) => Name.Label(k.name, k.loc) }
+                val expectedFieldNames = st.fields.map( field => Name.Label(field.sym.name, field.sym.loc) )
+                val extraFields = providedFieldNames.diff(expectedFieldNames)
+                val missingFields = expectedFieldNames.diff(providedFieldNames)
 
                 val extraFieldErrors = extraFields.map(ResolutionError.ExtraStructFieldInNew(st0.sym, _, loc))
                 val missingFieldErrors = missingFields.map(ResolutionError.MissingStructFieldInNew(st0.sym, _, loc))
