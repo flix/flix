@@ -242,6 +242,11 @@ mod Chain {
     pub def length(c: Chain[a]): Int32 = foldRight((_, acc) -> acc + 1, 0, c)
 
     ///
+    /// Returns the length of `c`.
+    ///
+    pub def size(c: Chain[a]): Int32 = length(c)
+
+    ///
     /// Returns a new chain formed by appending the chains `c1` and `c2`.
     ///
     pub def append(c1: Chain[a], c2: Chain[a]): Chain[a] = match (c1, c2) {

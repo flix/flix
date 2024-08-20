@@ -187,6 +187,14 @@ mod Validation {
     }
 
     ///
+    /// Returns `1` for `Success(_)` and `0` for `Failure(_)`.
+    ///
+    def size(v: Validation[e, t]): Int32 = match v {
+        case Success(_) => 1
+        case Failure(_) => 0
+    }
+
+    ///
     /// Converts a Validation to an Option.
     ///
     /// Returns `Some(t)` if `v` is `Success(t)`.

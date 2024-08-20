@@ -175,6 +175,14 @@ mod Option {
     pub def nonEmpty(o: Option[a]): Bool = not isEmpty(o)
 
     ///
+    /// Returns `1` for `Some(_)` and `0` for `None`.
+    ///
+    pub def size(o: Option[a]): Bool = match o {
+        case Some(_) => 1
+        case None => 0
+    }
+
+    ///
     /// Returns `v` if `o` is `Some(v).` Otherwise returns `d`.
     ///
     pub def getWithDefault(d: a, o: Option[a]): a = match o {

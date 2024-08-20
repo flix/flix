@@ -50,6 +50,11 @@ pub trait Foldable[t : Type -> Type] {
         Foldable.foldLeft((acc, _) -> acc + 1, 0, t)
 
     ///
+    /// Returns the length of `t`, i.e. the number of times it can be folded over.
+    ///
+    pub def size(t: t[a]): Int32 \ Foldable.Aef[t] = Foldable.length(t)
+
+    ///
     /// Returns the number of elements in `t` that satisfy the predicate `f`.
     ///
     pub def count(f: a -> Bool \ ef, t: t[a]): Int32 \ (ef + Foldable.Aef[t]) =

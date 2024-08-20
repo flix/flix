@@ -42,4 +42,11 @@ pub trait Iterable[t] {
     pub def enumerator(rc: Region[r], t: t): Iterator[(Int32, Iterable.Elm[t]), r + aef, r] \ (r + aef) where Iterable.Aef[t] ~ aef =
         Iterable.iterator(rc, t) |> Iterator.zipWithIndex
 
+    ///
+    /// Returns the size of `t`.
+    ///
+    pub def size(t: t): Int32 \ Iterable.Aef[t] = region rc {
+        t |> Iterable.iterator(rc) |> Iterator.size
+    }
+
 }

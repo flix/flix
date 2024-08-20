@@ -91,6 +91,11 @@ mod MutList {
         deref l
 
     ///
+    /// Returns the number of elements in the given mutable list `v`.
+    ///
+    pub def size(v: MutList[a, r]): Int32 \ r = length(v)
+
+    ///
     /// Returns `true` if the given mutable list `v` is empty.
     ///
     pub def isEmpty(v: MutList[a, r]): Bool \ r =

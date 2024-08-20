@@ -128,6 +128,14 @@ mod Iterator {
         foldLeft((acc, x) -> acc + f(x), 0, iter)
 
     ///
+    /// Returns the size of the iterator.
+    ///
+    /// Consumes the entire iterator.
+    ///
+    pub def size(iter: Iterator[a, ef1, r]): Int32 \ { ef1, r } =
+        foldLeft((acc, _) -> acc + 1, 0, iter)
+
+    ///
     /// Returns the contents of `iter` as an array.
     ///
     /// Consumes the entire iterator.

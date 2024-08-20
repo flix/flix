@@ -240,6 +240,11 @@ mod Vector {
     pub def length(v: Vector[a]): Int32 = $VECTOR_LENGTH$(v)
 
     ///
+    /// Returns the length of the vector `v`.
+    ///
+    pub def size(v: Vector[a]): Int32 = length(v)
+
+    ///
     /// Returns a fresh array with the elements from the vector `v` from index `b` (inclusive) until index `e` (exclusive).
     ///
     pub def slice(start: {start = Int32}, end: {end = Int32}, v: Vector[a]): Vector[a] = region rc {

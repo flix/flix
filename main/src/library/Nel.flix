@@ -193,6 +193,11 @@ mod Nel {
     }
 
     ///
+    /// Returns the length of `l`.
+    ///
+    pub def size(l: Nel[a]): Int32 = length(l)
+
+    ///
     /// Returns `l2` appended to `l1`.
     ///
     pub def append(l1: Nel[a], l2: Nel[a]): Nel[a] = match (l1, l2) {
