@@ -459,7 +459,7 @@ mod Files {
                 let javaFile = new JFile(f);
                 let stream = new FileInputStream(javaFile);
                 let bytes: Ref[Array[Int8, _], _] = Ref.fresh(rc, Array.empty(rc, chunkSize));
-                let numberRead = Ref.fresh(rc, unchecked_cast(stream.read(deref bytes) as _ \ IO + r))
+                let numberRead = Ref.fresh(rc, unchecked_cast(stream.read(deref bytes) as _ \ IO + r));
                 let next = () -> ({
                     if (deref numberRead >= 0) {
                         try {
