@@ -60,14 +60,14 @@ object Symbol {
   /**
     * Returns a fresh variable symbol for the given identifier.
     */
-  def freshVarSym(ident: Name.Ident, boundBy: BoundBy)(implicit flix: Flix): VarSym = {
+  def freshVarSym(ident: Name.Ident, boundBy: BoundBy)(implicit scope: Scope, flix: Flix): VarSym = {
     new VarSym(flix.genSym.freshId(), ident.name, Type.freshVar(Kind.Star, ident.loc), boundBy, ident.loc)
   }
 
   /**
     * Returns a fresh variable symbol with the given text.
     */
-  def freshVarSym(text: String, boundBy: BoundBy, loc: SourceLocation)(implicit flix: Flix): VarSym = {
+  def freshVarSym(text: String, boundBy: BoundBy, loc: SourceLocation)(implicit scope: Scope, flix: Flix): VarSym = {
     new VarSym(flix.genSym.freshId(), text, Type.freshVar(Kind.Star, loc), boundBy, loc)
   }
 

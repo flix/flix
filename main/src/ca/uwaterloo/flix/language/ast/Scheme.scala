@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.fmt.{FormatOptions, FormatScheme}
 import ca.uwaterloo.flix.language.phase.typer.ConstraintSolver.ResolutionResult
 import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver, TypeConstraint, TypeReduction}
@@ -45,7 +46,7 @@ object Scheme {
   /**
     * Instantiates the given type scheme `sc` by replacing all quantified variables with fresh type variables.
     */
-  def instantiate(sc: Scheme, loc: SourceLocation)(implicit flix: Flix): (List[Ast.TraitConstraint], List[Ast.BroadEqualityConstraint], Type, Map[Symbol.KindedTypeVarSym, Type.Var]) = {
+  def instantiate(sc: Scheme, loc: SourceLocation)(implicit scope: Scope, flix: Flix): (List[Ast.TraitConstraint], List[Ast.BroadEqualityConstraint], Type, Map[Symbol.KindedTypeVarSym, Type.Var]) = {
     // Compute the base type.
     val baseType = sc.base
 
@@ -138,7 +139,8 @@ object Scheme {
   def lessThanEqual(sc1: Scheme, sc2: Scheme, tenv0: Map[Symbol.TraitSym, Ast.TraitContext], eenv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Boolean = {
 
     // Instantiate sc2, creating [T/α₂]π₂ and [T/α₂]τ₂
-    val (cconstrs2_0, econstrs2_0, tpe2_0, _) = Scheme.instantiate(sc2, SourceLocation.Unknown)
+    // We use the top scope because this function is only used for comparing schemes, which are at top-level.
+    val (cconstrs2_0, econstrs2_0, tpe2_0, _) = Scheme.instantiate(sc2, SourceLocation.Unknown)(Scope.Top, flix)
 
     // Resolve what we can from the new econstrs
     // TODO ASSOC-TYPES probably these should be narrow from the start

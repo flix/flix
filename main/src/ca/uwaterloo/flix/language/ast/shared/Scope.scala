@@ -18,9 +18,19 @@ package ca.uwaterloo.flix.language.ast.shared
 import ca.uwaterloo.flix.language.ast.Symbol
 
 case class Scope(syms: List[Symbol.KindedTypeVarSym]) {
+
+  /**
+    * Returns the scope corresponding to the given region sym, nested inside the current region.
+    */
   def enter(sym: Symbol.KindedTypeVarSym): Scope = Scope(sym :: syms)
 }
 
 object Scope {
+
+  /**
+    * The scope that is not inside any region.
+    */
+  // TODO LEVELS is declaration level higher?
   val Top: Scope = Scope(Nil)
+
 }
