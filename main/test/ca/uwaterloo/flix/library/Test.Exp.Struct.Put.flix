@@ -86,20 +86,20 @@ mod Test.Exp.Struct.Put {
     struct BinaryTree[t, r] {
         left: Option[BinaryTree[t, r]],
         right: Option[BinaryTree[t, r]],
-        node_value: t
+        value: t
     }
 
     def binaryTreeSum(tree: Option[BinaryTree[Int32, r]]): Int32 \ r =
         match tree {
             case None => 0
-            case Some(t) => t€node_value + binaryTreeSum(t€left) + binaryTreeSum(t€right)
+            case Some(t) => t€value + binaryTreeSum(t€left) + binaryTreeSum(t€right)
         }
 
     def doubleTree(tree: Option[BinaryTree[Int32, r]]): Unit \ {r, IO} =
         match tree {
             case None => ()
             case Some(t) =>
-                t€node_value = t€node_value + t€node_value;
+                t€value = t€value + t€value;
                 doubleTree(t€left);
                 doubleTree(t€right)
         }
@@ -110,53 +110,53 @@ mod Test.Exp.Struct.Put {
             let leaf1 = new BinaryTree {
                 left = None,
                 right = None,
-                node_value = 10
+                value = 10
             } @ rc;
             let leaf2 = new BinaryTree {
                 left = None,
                 right = None,
-                node_value = 9
+                value = 9
             } @ rc;
             let leaf3 = new BinaryTree {
                 left = None,
                 right = None,
-                node_value = 8
+                value = 8
             } @ rc;
             let leaf4 = new BinaryTree {
                 left = None,
                 right = None,
-                node_value = 7
+                value = 7
             } @ rc;
             let innernode1 = new BinaryTree {
                 left = Some(leaf1),
                 right = Some(leaf2),
-                node_value = 4
+                value = 4
             } @ rc;
             let innernode2 = new BinaryTree {
                 left = Some(leaf3),
                 right = Some(leaf4),
-                node_value = 4
+                value = 4
             } @ rc;
             let tree = new BinaryTree {
                 left = Some(innernode1),
                 right = Some(innernode2),
-                node_value = 5
+                value = 5
             } @ rc;
             doubleTree(Some(tree));
             binaryTreeSum(Some(tree)) == 94
         }
 
     struct Nested[t, r] {
-        v : t
+        value : t
     }
 
     @test
     def nestedPut01(): Bool =
         region rc {
-            let nested = new Nested{ v = new Nested { v = new Nested {v = new Nested {v = 15} @ rc } @ rc} @ rc } @ rc;
-            nested€v€v€v€v == 15;
-            nested€v€v€v€v = 37;
-            nested€v€v€v€v == 37
+            let nested = new Nested{ value = new Nested { value = new Nested {value = new Nested {value = 15} @ rc } @ rc} @ rc } @ rc;
+            nested€value€value€value€value == 15;
+            nested€value€value€value€value = 37;
+            nested€value€value€value€value == 37
         }
 
     struct List[t, r] {
