@@ -1,3 +1,4 @@
+/// A mutable struct that represents a person
 struct Person[r] {
     name: String,
     age: Int32,
