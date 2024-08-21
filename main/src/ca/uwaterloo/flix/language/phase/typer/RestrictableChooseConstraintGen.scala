@@ -19,6 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.KindedAst.RestrictableChoosePattern
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
 import ConstraintGen.visitExp
+import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import scala.collection.immutable.SortedSet
@@ -171,7 +172,7 @@ object RestrictableChooseConstraintGen {
   /**
     * Performs type inference on the given restrictable tag expression.
     */
-  def visitRestrictableTag(exp: KindedAst.Expr.RestrictableTag)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
+  def visitRestrictableTag(exp: KindedAst.Expr.RestrictableTag)(implicit scope: Scope, c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
     exp match {
       case KindedAst.Expr.RestrictableTag(symUse, exp, isOpen, tvar, loc) =>
 
