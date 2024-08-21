@@ -103,6 +103,11 @@ class TypeContext {
   def getTypeConstraints: List[TypeConstraint] = currentScopeConstraints.getConstraints
 
   /**
+    * Returns the current scope.
+    */
+  def getScope: Scope = currentScopeConstraints.scope
+
+  /**
     * Generates constraints unifying the given types.
     *
     * {{{
