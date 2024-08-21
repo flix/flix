@@ -94,24 +94,8 @@ object Deriver {
     val assocEffSym = Symbol.mkAssocTypeSym(traitSym, Name.Ident("Aef", loc))
     val assocTpe = Type.AssocType(Ast.AssocTypeConstructor(assocTpeSym, loc), Type.Var(tparamSym, loc), Kind.Star, loc)
     val assocEff = Type.AssocType(Ast.AssocTypeConstructor(assocEffSym, loc), Type.Var(tparamSym, loc), Kind.Eff, loc)
-    val assocTpeSig = KindedAst.AssocTypeSig(
-      doc = Ast.Doc(Nil, loc),
-      mod = Ast.Modifiers.Empty,
-      sym = assocTpeSym,
-      tparam = tparam,
-      kind = Kind.Star,
-      tpe = None,
-      loc = loc
-    )
-    val assocEffSig = KindedAst.AssocTypeSig(
-      doc = Ast.Doc(Nil, loc),
-      mod = Ast.Modifiers.Empty,
-      sym = assocEffSym,
-      tparam = tparam,
-      kind = Kind.Eff,
-      tpe = None,
-      loc = loc
-    )
+    val assocTpeSig = structAssocTypeSig(tparam, Kind.Star, assocTpeSym, loc)
+    val assocEffSig = structAssocTypeSig(tparam, Kind.Eff, assocEffSym, loc)
     val putSpec = fieldPutSpec(structType, assocEff, assocTpe, List(tparam), param1Symbol, param2Symbol, loc)
     val getSpec = fieldGetSpec(structType, assocEff, assocTpe, List(tparam), param1Symbol, loc)
     val getSym = Symbol.mkSigSym(traitSym, Name.Ident(GetMethodName, loc))
@@ -134,6 +118,19 @@ object Deriver {
   }
 
   /**
+    * Builds the associated type signature for the struct field
+    */
+  def structAssocTypeSig(tparam: KindedAst.TypeParam, kind: Kind, sym: Symbol.AssocTypeSym, loc: SourceLocation) =
+    KindedAst.AssocTypeSig(
+      doc = Ast.Doc(Nil, loc),
+      mod = Ast.Modifiers.Empty,
+      sym = sym,
+      tparam = tparam,
+      kind = kind,
+      tpe = None,
+      loc = loc
+    )
+  /**
     * Builds the instances for this struct
     */
   private def getInstancesOfStruct(struct0: KindedAst.Struct, root: KindedAst.Root)(implicit flix: Flix): List[KindedAst.Instance] =
@@ -151,51 +148,16 @@ object Deriver {
     val assocEffSym = Symbol.mkAssocTypeSym(traitSym, Name.Ident("Aef", loc))
     val assocTypeSymUse = Ast.AssocTypeSymUse(assocTypeSym, loc)
     val assocEffSymUse = Ast.AssocTypeSymUse(assocEffSym, loc)
-    val assocTpe = KindedAst.AssocTypeDef(
-      doc = Ast.Doc(Nil, loc),
-      mod = Ast.Modifiers.Empty,
-      sym = assocTypeSymUse,
-      arg = structType,
-      tpe = fieldType,
-      loc
-    )
-    val assocEff = KindedAst.AssocTypeDef(
-      doc = Ast.Doc(Nil, loc),
-      mod = Ast.Modifiers.Empty,
-      sym = assocEffSymUse,
-      arg = structType,
-      tpe = eff,
-      loc
-    )
+    val assocTpe = fieldAssocTypeDef(assocTypeSymUse, structType, fieldType, loc)
+    val assocEff = fieldAssocTypeDef(assocEffSymUse, structType, eff, loc)
     val param1Symbol = Symbol.freshVarSym(Param1Name, BoundBy.FormalParam, loc)
     val param2Symbol = Symbol.freshVarSym(Param2Name, BoundBy.FormalParam, loc)
     val getSpec = fieldGetSpec(structType, eff, fieldType, Nil, param1Symbol, loc)
-    val getExpr = KindedAst.Expr.StructGet(
-      exp = KindedAst.Expr.Var(param1Symbol, loc),
-      sym = field.sym,
-      tvar = Type.freshVar(Kind.Star, loc),
-      evar = Type.freshVar(Kind.Eff, loc),
-      loc = loc
-    )
+    val getExpr = fieldGetImpl(param1Symbol, field, loc)
     val putSpec = fieldPutSpec(structType, eff, fieldType, Nil, param1Symbol, param2Symbol, loc)
-    val putExpr = KindedAst.Expr.StructPut(
-      exp1 = KindedAst.Expr.Var(param1Symbol, loc),
-      sym = field.sym,
-      exp2 = KindedAst.Expr.Var(param2Symbol, loc),
-      tvar = Type.freshVar(Kind.Star, loc),
-      evar = Type.freshVar(Kind.Eff, loc),
-      loc = loc
-    )
-    val putDef = KindedAst.Def(
-      sym = Symbol.mkDefnSym(structFieldTraitName(field.sym.name) + "." + PutMethodName, Some(flix.genSym.freshId())),
-      spec = putSpec,
-      exp = putExpr
-    )
-    val getDef = KindedAst.Def(
-      sym = Symbol.mkDefnSym(structFieldTraitName(field.sym.name) + "." + GetMethodName, Some(flix.genSym.freshId())),
-      spec = getSpec,
-      exp = getExpr
-    )
+    val putExpr = fieldPutImpl(param1Symbol, param2Symbol, field, loc)
+    val putDef = KindedAst.Def( fieldDefnSymbol(field, PutMethodName), putSpec, putExpr )
+    val getDef = KindedAst.Def( fieldDefnSymbol(field, GetMethodName), getSpec, getExpr )
     KindedAst.Instance(
       doc = Ast.Doc(Nil, loc),
       ann = Ast.Annotations.Empty,
@@ -208,6 +170,50 @@ object Deriver {
       ns = Name.RootNS,
       loc = loc)
   }
+
+  /**
+    * Builds the definition for the associated type
+    */
+  private def fieldAssocTypeDef(sym: Ast.AssocTypeSymUse, arg: Type, tpe: Type, loc: SourceLocation): KindedAst.AssocTypeDef =
+    KindedAst.AssocTypeDef(
+      doc = Ast.Doc(Nil, loc),
+      mod = Ast.Modifiers.Empty,
+      sym = sym,
+      arg = arg,
+      tpe = tpe,
+      loc = loc
+    )
+
+  /**
+    * Builds the definition symbol for the struct instance method
+    */
+  def fieldDefnSymbol(field: KindedAst.StructField, methodName: String)(implicit flix: Flix): Symbol.DefnSym =
+    Symbol.mkDefnSym(structFieldTraitName(field.sym.name) + "." + methodName, Some(flix.genSym.freshId()))
+
+  /**
+   * Builds the body for the `put` operation
+   */
+  private def fieldPutImpl(param1Symbol: Symbol.VarSym, param2Symbol: Symbol.VarSym, field: KindedAst.StructField, loc: SourceLocation)(implicit flix: Flix): KindedAst.Expr.StructPut =
+    KindedAst.Expr.StructPut(
+      exp1 = KindedAst.Expr.Var(param1Symbol, loc),
+      sym = field.sym,
+      exp2 = KindedAst.Expr.Var(param2Symbol, loc),
+      tvar = Type.freshVar(Kind.Star, loc),
+      evar = Type.freshVar(Kind.Eff, loc),
+      loc = loc
+    )
+
+  /**
+   * Builds the body for the `get` operation
+   */
+  private def fieldGetImpl(param1Symbol: Symbol.VarSym, field: KindedAst.StructField, loc: SourceLocation)(implicit flix: Flix): KindedAst.Expr.StructGet =
+    KindedAst.Expr.StructGet(
+      exp = KindedAst.Expr.Var(param1Symbol, loc),
+      sym = field.sym,
+      tvar = Type.freshVar(Kind.Star, loc),
+      evar = Type.freshVar(Kind.Eff, loc),
+      loc = loc
+    )
 
   /**
     * Builds the spec for this struct field's `get` operation

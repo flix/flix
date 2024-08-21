@@ -113,14 +113,14 @@ mod Test.Exp.Struct.Get {
         }
 
     struct Nested[v, r] {
-        v: v
+        value: v
     }
 
     @test
     def nestedPut01(): Bool =
         region rc {
-            let nested = new Nested{ v = new Nested { v = new Nested {v = new Nested {v = 15} @ rc } @ rc} @ rc } @ rc;
-            nested€v€v€v€v == 15
+            let nested = new Nested{ value = new Nested { value = new Nested {value = new Nested {value = 15} @ rc } @ rc} @ rc } @ rc;
+            nested€value€value€value€value == 15
         }
 
 }
