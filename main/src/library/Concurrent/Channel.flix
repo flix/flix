@@ -144,7 +144,7 @@ mod Concurrent.Channel {
         let _bufferCheck = if (bufferSize < 0) bug!("bufferSize < 0") else ();
         let unBuffered = bufferSize == 0;
         let reentrantLock = newLock(fairness());
-        let size = ref 0 @ Static;
+        let size = Ref.fresh(Static, 0);
         Mpmc.Mpmc(
             MpmcAdmin.MpmcAdmin(
                 Global.newId(),
@@ -184,7 +184,7 @@ mod Concurrent.Channel {
 
         // Insert the new element and update size
         MutDeque.pushBack(e, elementDeque);
-        Ref.put(deref size + 1, size);
+        Ref.put(Ref.get(size) + 1, size);
 
         // Signal the waiting getters that an element has arrived
         signalGetters(admin);
@@ -233,7 +233,7 @@ mod Concurrent.Channel {
 
             case Some(element) =>
                 // Signal waiting setters that the channel has space
-                Ref.put(deref size - 1, size);
+                Ref.put(Ref.get(size) - 1, size);
                 onGetComplete(admin);
                 // channelLock is now unlocked
                 element
@@ -283,7 +283,7 @@ mod Concurrent.Channel {
     @Internal
     def awaitAvailableSpace(c: MpmcAdmin): Unit \ IO =
         let MpmcAdmin.MpmcAdmin(_, _, _, maxSize, size, _, _, waitingPutters) = c;
-        if ((deref size) == maxSize) {
+        if (Ref.get(size) == maxSize) {
             awaitCondition(waitingPutters);
             awaitAvailableSpace(c)
         } else {
@@ -333,7 +333,7 @@ mod Concurrent.Channel {
 
             case Some(e) =>
                 // Signal waiting setters that the channel has space
-                Ref.put(deref size - 1, size);
+                Ref.put(Ref.get(size) - 1, size);
                 onGetComplete(admin);
                 // channelLock is now unlocked
                 e
@@ -371,7 +371,7 @@ mod Concurrent.Channel {
         */
         let index = channels |>
             List.mapWithIndex(i -> match MpmcAdmin.MpmcAdmin(_, _, _, _, size, _, _, _) -> {
-                (deref size > 0, i)
+                (Ref.get(size) > 0, i)
             }) |>
             List.findLeft(match (b, _) -> b) |>
             Option.map(snd);

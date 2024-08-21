@@ -78,12 +78,12 @@ mod Array {
     ///
     pub def toString(a: Array[a, r]): String \ r with ToString[a] = region rc2 {
         let sb = StringBuilder.empty(rc2);
-        let first = ref true @ rc2;
+        let first = Ref.fresh(rc2, true);
 
         StringBuilder.appendString!("Array#{", sb);
 
         let f = x -> {
-            if (not deref first) StringBuilder.appendString!(", ", sb) else Ref.put(false, first);
+            if (not Ref.get(first)) StringBuilder.appendString!(", ", sb) else Ref.put(false, first);
             StringBuilder.appendString!("${x}", sb)
         };
         forEach(f, a);
@@ -1312,7 +1312,7 @@ mod Array {
         let len = length(a);
         let c = Order.max(len, minCap);
         let copy = copyOfRange(rc1, 0, c, a);
-        MutList.MutList(rc1, ref copy @ rc1, ref len @ rc1)
+        MutList.MutList(rc1, Ref.fresh(rc1, copy), Ref.fresh(rc1, len))
 
     ///
     /// Alias for `findIndexOfLeft`.
