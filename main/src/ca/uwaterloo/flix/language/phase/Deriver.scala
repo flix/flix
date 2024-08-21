@@ -76,18 +76,18 @@ object Deriver {
     fieldNames.toList.flatMap(field => List(fieldGetTrait(field.name, field.loc), fieldPutTrait(field.name, field.loc)))
 
   /**
-   * Build the name of the get trait for this struct field
-   */
+    * Build the name of the get trait for this struct field
+    */
   def structFieldGetTraitName(fieldName: String): String = "DotGet_" + fieldName
 
   /**
-   * Build the name of the put trait for this struct field
-   */
+    * Build the name of the put trait for this struct field
+    */
   def structFieldPutTraitName(fieldName: String): String = "DotPut_" + fieldName
 
   /**
-   * Builds the `get` trait for this struct field
-   */
+    * Builds the `get` trait for this struct field
+    */
   private def fieldGetTrait(name: String, loc: SourceLocation)(implicit flix: Flix): KindedAst.Trait = {
     val param1Symbol = Symbol.freshVarSym(Param1Name, BoundBy.FormalParam, loc)
     val tparamSym = Symbol.freshKindedTypeVarSym(Ast.VarText.Absent, Kind.Star, isRegion = false, loc)
@@ -119,8 +119,8 @@ object Deriver {
   }
 
   /**
-   * Builds the `get` trait for this struct field
-   */
+    * Builds the `get` trait for this struct field
+    */
   private def fieldPutTrait(name: String, loc: SourceLocation)(implicit flix: Flix): KindedAst.Trait = {
     val param1Symbol = Symbol.freshVarSym(Param1Name, BoundBy.FormalParam, loc)
     val param2Symbol = Symbol.freshVarSym(Param2Name, BoundBy.FormalParam, loc)
@@ -203,8 +203,8 @@ object Deriver {
   }
 
   /**
-   * Builds the instance for this `put` operation of this struct field
-   */
+    * Builds the instance for this `put` operation of this struct field
+    */
   private def fieldPutInstance(struct0: KindedAst.Struct, field: KindedAst.StructField, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Instance = {
     val loc = field.loc
     val (fields, structType, eff) = Kinder.instantiateStruct(struct0.sym, root.structs)
@@ -254,8 +254,8 @@ object Deriver {
     Symbol.mkDefnSym(traitName + "." + methodName, Some(flix.genSym.freshId()))
 
   /**
-   * Builds the body for the `put` operation
-   */
+    * Builds the body for the `put` operation
+    */
   private def fieldPutImpl(param1Symbol: Symbol.VarSym, param2Symbol: Symbol.VarSym, field: KindedAst.StructField, loc: SourceLocation)(implicit flix: Flix): KindedAst.Expr.StructPut =
     KindedAst.Expr.StructPut(
       exp1 = KindedAst.Expr.Var(param1Symbol, loc),
@@ -267,8 +267,8 @@ object Deriver {
     )
 
   /**
-   * Builds the body for the `get` operation
-   */
+    * Builds the body for the `get` operation
+    */
   private def fieldGetImpl(param1Symbol: Symbol.VarSym, field: KindedAst.StructField, loc: SourceLocation)(implicit flix: Flix): KindedAst.Expr.StructGet =
     KindedAst.Expr.StructGet(
       exp = KindedAst.Expr.Var(param1Symbol, loc),
