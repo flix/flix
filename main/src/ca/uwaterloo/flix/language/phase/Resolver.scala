@@ -2173,7 +2173,7 @@ object Resolver {
   /**
     * Performs name resolution on the given derivations `derives0`.
     */
-  private pdef resolveDerivations(derives0: NamedAst.Derivations, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[Ast.Derivations, ResolutionError] = {
+  private def resolveDerivations(derives0: NamedAst.Derivations, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[Ast.Derivations, ResolutionError] = {
     val qnames = derives0.traits
     val derivesVal = Validation.traverse(qnames)(resolveDerivation(_, env, ns0, root))
     flatMapN(derivesVal) {
