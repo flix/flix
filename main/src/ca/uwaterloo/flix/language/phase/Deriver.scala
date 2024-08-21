@@ -52,7 +52,7 @@ object Deriver {
     val derivedInstances = ParOps.parTraverse(root.enums.values)(getDerivedInstances(_, root))
     val structFieldInstances = root.structs.values.map(getInstancesOfStruct(_, root))
     val fieldNames = root.structs.values.flatMap(struct => struct.fields).map(field => Name.Label(field.sym.name, field.sym.loc)).toSet
-    val traits = getTraits(fieldNames)
+    val fieldTraits = getFieldTraits(fieldNames)
 
     mapN(derivedInstances) {
       instances =>
@@ -61,7 +61,7 @@ object Deriver {
             val accInsts = acc.getOrElse(inst.trt.sym, Nil)
             acc + (inst.trt.sym -> (inst :: accInsts))
         }
-        val newTraits = traits.foldLeft(root.traits) {
+        val newTraits = fieldTraits.foldLeft(root.traits) {
           case (acc, trt) =>
             acc + (trt.sym -> trt)
         }
@@ -72,7 +72,7 @@ object Deriver {
   /**
     * Builds the traits for this struct
     */
-  private def getTraits(fieldNames: Set[Name.Label])(implicit flix: Flix): List[KindedAst.Trait] =
+  private def getFieldTraits(fieldNames: Set[Name.Label])(implicit flix: Flix): List[KindedAst.Trait] =
     fieldNames.toList.flatMap(field => List(fieldGetTrait(field.name, field.loc), fieldPutTrait(field.name, field.loc)))
 
   /**
