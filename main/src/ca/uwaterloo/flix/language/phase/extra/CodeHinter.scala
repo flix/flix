@@ -149,8 +149,7 @@ object CodeHinter {
         case RestrictableChooseRule(_, body) => visitExp(body)
       }
 
-    case Expr.Tag(_, exp, _, _, _) =>
-      visitExp(exp)
+    case Expr.Tag(_, _, _, _) => Nil
 
     case Expr.RestrictableTag(_, exp, _, _, _) =>
       visitExp(exp)

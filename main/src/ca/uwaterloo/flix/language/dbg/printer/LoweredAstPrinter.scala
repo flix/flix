@@ -121,7 +121,8 @@ object LoweredAstPrinter {
     case Pattern.Wild(tpe, loc) => DocAst.Expr.Wild
     case Pattern.Var(sym, tpe, loc) => DocAst.Expr.Var(sym)
     case Pattern.Cst(cst, tpe, loc) => DocAst.Expr.Cst(cst)
-    case Pattern.Tag(sym, pat, tpe, loc) => DocAst.Expr.Tag(sym.sym, List(printPattern(pat)))
+    case Pattern.Tag(sym, Nil, tpe, loc) => DocAst.Expr.Tag(sym.sym)
+    case Pattern.Tag(sym, pats@(_ :: _), tpe, loc) => DocAst.Expr.App(DocAst.Expr.Tag(sym.sym), pats.map(printPattern))
     case Pattern.Tuple(elms, tpe, loc) => DocAst.Expr.Tuple(elms.map(printPattern))
     case Pattern.Record(pats, pat, tpe, loc) => printRecordPattern(pats, pat)
     case Pattern.RecordEmpty(_, _) => DocAst.Expr.RecordEmpty

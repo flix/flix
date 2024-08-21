@@ -303,8 +303,7 @@ object Safety {
         visit(exp) ++
           rules.flatMap { case RestrictableChooseRule(_, exp) => visit(exp) }
 
-      case Expr.Tag(_, exp, _, _, _) =>
-        visit(exp)
+      case Expr.Tag(_, _, _) => Nil
 
       case Expr.RestrictableTag(_, exp, _, _, _) =>
         visit(exp)

@@ -156,7 +156,7 @@ object LoweredAst {
 
     case class Cst(cst: Ast.Constant, tpe: Type, loc: SourceLocation) extends Pattern
 
-    case class Tag(sym: Ast.CaseSymUse, pat: Pattern, tpe: Type, loc: SourceLocation) extends Pattern
+    case class Tag(sym: Ast.CaseSymUse, pats: List[Pattern], tpe: Type, loc: SourceLocation) extends Pattern
 
     case class Tuple(pats: List[Pattern], tpe: Type, loc: SourceLocation) extends Pattern
 

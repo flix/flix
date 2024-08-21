@@ -661,7 +661,9 @@ object TypeReconstruction {
     case KindedAst.Pattern.Var(sym, tvar, loc) => TypedAst.Pattern.Var(sym, subst(tvar), loc)
     case KindedAst.Pattern.Cst(cst, loc) => TypedAst.Pattern.Cst(cst, Type.constantType(cst), loc)
 
-    case KindedAst.Pattern.Tag(sym, pat, tvar, loc) => TypedAst.Pattern.Tag(sym, visitPattern(pat), subst(tvar), loc)
+    case KindedAst.Pattern.Tag(sym, pats, tvar, loc) =>
+      val ps = pats.map(visitPattern)
+      TypedAst.Pattern.Tag(sym, ps, subst(tvar), loc)
 
     case KindedAst.Pattern.Tuple(elms, loc) =>
       val es = elms.map(visitPattern)

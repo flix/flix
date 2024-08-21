@@ -1349,19 +1349,19 @@ object Weeder2 {
     private def pickRestrictableChoosePattern(isStar: Boolean, tree: Tree): Validation[RestrictableChoosePattern, CompilationMessage] = {
       expect(tree, TreeKind.Expr.MatchRuleFragment)
       flatMapN(Patterns.pickPattern(tree)) {
-        case Pattern.Tag(qname, pat, loc) =>
-          val inner = pat match {
-            case Pattern.Wild(loc) => Validation.success(List(WeededAst.RestrictableChoosePattern.Wild(loc)))
-            case Pattern.Var(ident, loc) => Validation.success(List(WeededAst.RestrictableChoosePattern.Var(ident, loc)))
-            case Pattern.Cst(Ast.Constant.Unit, loc) => Validation.success(List(WeededAst.RestrictableChoosePattern.Wild(loc)))
-            case Pattern.Tuple(elms, _) =>
+        case Pattern.Tag(qname, pats, loc) =>
+          val inner = pats match {
+            case Pattern.Wild(loc) :: Nil => Validation.success(List(WeededAst.RestrictableChoosePattern.Wild(loc)))
+            case Pattern.Var(ident, loc) :: Nil => Validation.success(List(WeededAst.RestrictableChoosePattern.Var(ident, loc)))
+            case Pattern.Cst(Ast.Constant.Unit, loc) :: Nil => Validation.success(List(WeededAst.RestrictableChoosePattern.Wild(loc)))
+            case Pattern.Tuple(elms, _) :: Nil =>
               traverse(elms) {
                 case Pattern.Wild(loc) => Validation.success(WeededAst.RestrictableChoosePattern.Wild(loc))
                 case Pattern.Var(ident, loc) => Validation.success(WeededAst.RestrictableChoosePattern.Var(ident, loc))
                 case Pattern.Cst(Ast.Constant.Unit, loc) => Validation.success(WeededAst.RestrictableChoosePattern.Wild(loc))
                 case other => Validation.toHardFailure(UnsupportedRestrictedChoicePattern(isStar, other.loc))
               }
-            case other => Validation.toHardFailure(UnsupportedRestrictedChoicePattern(isStar, other.loc))
+            case other => Validation.toHardFailure(UnsupportedRestrictedChoicePattern(isStar, loc))
           }
           mapN(inner)(RestrictableChoosePattern.Tag(qname, _, loc))
         case other => Validation.toHardFailure(UnsupportedRestrictedChoicePattern(isStar, other.loc))
@@ -2252,8 +2252,7 @@ object Weeder2 {
       mapN(traverse(patterns)(visitPattern(_, seen))) {
         case pat1 :: pat2 :: Nil =>
           val qname = Name.mkQName("List.Cons", tree.loc)
-          val pat = Pattern.Tuple(List(pat1, pat2), tree.loc)
-          Pattern.Tag(qname, pat, tree.loc)
+          Pattern.Tag(qname, List(pat1, pat2), tree.loc)
         case pats => throw InternalCompilerException(s"Pattern.FCons expected 2 but found '${pats.length}' sub-patterns", tree.loc)
       }
     }

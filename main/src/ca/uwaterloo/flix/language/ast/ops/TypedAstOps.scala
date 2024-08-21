@@ -199,8 +199,7 @@ object TypedAstOps {
       }
       e ++ rs
 
-    case Expr.Tag(_, exp, _, _, _) =>
-      freeVars(exp)
+    case Expr.Tag(_, _, _) => Map.empty
 
     case Expr.RestrictableTag(_, exp, _, _, _) =>
       freeVars(exp)
@@ -388,7 +387,10 @@ object TypedAstOps {
     case Pattern.Wild(_, _) => Map.empty
     case Pattern.Var(sym, tpe, _) => Map(sym -> tpe)
     case Pattern.Cst(_, _, _) => Map.empty
-    case Pattern.Tag(_, pat, _, _) => freeVars(pat)
+    case Pattern.Tag(_, pats, _, _) =>
+      pats.foldLeft(Map.empty[Symbol.VarSym, Type]) {
+        case (acc, pat) => acc ++ freeVars(pat)
+      }
     case Pattern.Tuple(elms, _, _) =>
       elms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
         case (acc, pat) => acc ++ freeVars(pat)

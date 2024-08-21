@@ -1009,7 +1009,9 @@ object Redundancy {
     case Pattern.Wild(_, _) => Set.empty
     case Pattern.Var(sym, _, _) => Set(sym)
     case Pattern.Cst(_, _, _) => Set.empty
-    case Pattern.Tag(_, pat, _, _) => freeVars(pat)
+    case Pattern.Tag(_, pats, _, _) => pats.foldLeft(Set.empty[Symbol.VarSym]) {
+      case (acc, pat) => acc ++ freeVars(pat)
+    }
     case Pattern.Tuple(pats, _, _) => pats.foldLeft(Set.empty[Symbol.VarSym]) {
       case (acc, pat) => acc ++ freeVars(pat)
     }
