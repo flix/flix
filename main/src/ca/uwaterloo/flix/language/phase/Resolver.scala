@@ -1359,7 +1359,7 @@ object Resolver {
                 }
                 // Potential errors
                 val providedFieldNames = fields.map { case (k, _) => Name.Label(k.name, k.loc) }
-                val expectedFieldNames = st.fields.map( field => Name.Label(field.sym.name, field.sym.loc) )
+                val expectedFieldNames = st.fields.map(field => Name.Label(field.sym.name, field.sym.loc))
                 val extraFields = providedFieldNames.diff(expectedFieldNames)
                 val missingFields = expectedFieldNames.diff(providedFieldNames)
 
@@ -2341,8 +2341,8 @@ object Resolver {
   }
 
   /**
-   * Finds the struct field that matches the given name `name` in the namespace `ns0`.
-   */
+    * Finds the struct field that matches the given name `name` in the namespace `ns0`.
+    */
   private def lookupStructField(name: Name.Label, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Result[NamedAst.Declaration.StructField, ResolutionError.UndefinedStructField] = {
     val matches = tryLookupName(Name.mkQName("€" + name.name, name.loc), env, ns0, root) collect {
       case Resolution.Declaration(s: NamedAst.Declaration.StructField) => s
@@ -2940,8 +2940,11 @@ object Resolver {
       val envNames = env(qname.ident.name)
 
       // 2nd priority: names in the current namespace
-      val localNames = if(!ns0.idents.isEmpty) {
-        root.symbols.getOrElse(ns0, Map.empty).getOrElse(qname.ident.name, Nil).map(Resolution.Declaration.apply)
+      val moduleContainsSymbols = ns0.idents.nonEmpty
+      val localNames = if (moduleContainsSymbols) {
+        val declsInNamespace = root.symbols.getOrElse(ns0, Map.empty)
+        val declarationsOfQname = declsInNamespace.getOrElse(qname.ident.name, Nil)
+        declarationsOfQname.map(Resolution.Declaration.apply)
       } else {
         Nil
       }
@@ -2960,7 +2963,7 @@ object Resolver {
       // 4th priority: names in the root namespace
       val rootNames = root.symbols.getOrElse(Name.RootNS, Map.empty).getOrElse(qname.ident.name, Nil).map(Resolution.Declaration.apply)
 
-      envNames ::: localNames ::: currentNamespace ::: rootNames
+      (envNames ::: localNames ::: currentNamespace ::: rootNames).distinct
 
     } else {
       // Case 2. Qualified name. Look it up directly.
