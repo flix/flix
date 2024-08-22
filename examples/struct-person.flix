@@ -9,7 +9,7 @@ def giveBirth(name: String, rc: Region[r]): Person[r] \ r =
     new Person { name = name, age = 0, height = 30 } @ rc
 
 def displayPerson(person: Person[r]): Unit \ {r, IO} =
-    let message = person€name + " is " + ToString.toString(person€age) + " years old and is " + ToString.toString(person€height) + " cm tall";
+    let message = "${person€name} is ${person€age} years old and is ${person€height} cm tall";
     println(message)
 
 def birthday(person: Person[r]): Unit \ r =
