@@ -387,8 +387,6 @@ object DocAst {
 
     def Lazy(t: Type): Type = App("Lazy", List(t))
 
-    def Ref(t: Type): Type = App("Ref", List(t))
-
     def Enum(sym: Symbol.EnumSym, args: List[Type]): Type = App(sym.toString, args)
 
     def Struct(sym: Symbol.StructSym, args: List[Type]): Type = App(sym.toString, args)

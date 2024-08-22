@@ -226,7 +226,6 @@ object Reducer {
                Native(_) | Null => taskList
           case Array(elm) => taskList.enqueue(elm)
           case Lazy(elm) => taskList.enqueue(elm)
-          case Ref(elm) => taskList.enqueue(elm)
           case Tuple(elms) => taskList.enqueueAll(elms)
           case Struct(_, elms, _) => taskList.enqueueAll(elms)
           case Arrow(targs, tresult) => taskList.enqueueAll(targs).enqueue(tresult)

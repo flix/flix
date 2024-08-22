@@ -305,8 +305,6 @@ object Simplifier {
 
           case TypeConstructor.Vector => MonoType.Array(args.head)
 
-          case TypeConstructor.Ref => MonoType.Ref(args.head)
-
           case TypeConstructor.RegionToStar => MonoType.Region
 
           case TypeConstructor.Tuple(_) => MonoType.Tuple(args)

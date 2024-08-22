@@ -722,7 +722,6 @@ object SemanticTokensProvider {
     case TypeConstructor.MethodReturnType => false
     case TypeConstructor.Array => true
     case TypeConstructor.Vector => true
-    case TypeConstructor.Ref => true
     case TypeConstructor.Pure => true
     case TypeConstructor.Univ => true
     case TypeConstructor.True => true

@@ -622,7 +622,6 @@ object PatMatch {
     case Some(TypeConstructor.Arrow(length)) => length
     case Some(TypeConstructor.Array) => 1
     case Some(TypeConstructor.Vector) => 1
-    case Some(TypeConstructor.Ref) => 0
     case Some(TypeConstructor.Lazy) => 1
     case Some(TypeConstructor.Enum(_, _)) => 0
     case Some(TypeConstructor.Native(_)) => 0

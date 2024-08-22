@@ -44,7 +44,6 @@ object MonoTypePrinter {
     case MonoType.Null => Type.Null
     case MonoType.Array(tpe) => Type.Array(print(tpe))
     case MonoType.Lazy(tpe) => Type.Lazy(print(tpe))
-    case MonoType.Ref(tpe) => Type.Ref(print(tpe))
     case MonoType.Tuple(elms) => Type.Tuple(elms.map(print))
     case MonoType.Enum(sym) => Type.Enum(sym, Nil)
     case MonoType.Struct(sym, _, targs) => Type.Struct(sym, targs.map(print))

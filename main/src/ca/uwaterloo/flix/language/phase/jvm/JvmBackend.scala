@@ -62,7 +62,6 @@ object JvmBackend {
       val types = root.types ++ requiredTypes
 
       // Filter the program types into different sets
-      val erasedRefTypes = JvmOps.getErasedRefsOf(types)
       val erasedLazyTypes = JvmOps.getErasedLazyTypesOf(types)
       val erasedExtendTypes = JvmOps.getErasedRecordExtendsOf(types)
       val erasedFunctionTypes = JvmOps.getErasedArrowsOf(types)
@@ -93,8 +92,6 @@ object JvmBackend {
       val recordInterfaces = Map(genClass(BackendObjType.Record))
       val recordEmptyClasses = Map(genClass(BackendObjType.RecordEmpty))
       val recordExtendClasses = erasedExtendTypes.map(genClass).toMap
-
-      val refClasses = erasedRefTypes.map(genClass).toMap
 
       val lazyClasses = erasedLazyTypes.map(genClass).toMap
 
@@ -146,7 +143,6 @@ object JvmBackend {
         recordInterfaces,
         recordEmptyClasses,
         recordExtendClasses,
-        refClasses,
         lazyClasses,
         anonClasses,
         unitClass,

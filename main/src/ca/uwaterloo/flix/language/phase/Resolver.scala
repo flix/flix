@@ -3525,8 +3525,6 @@ object Resolver {
 
         case TypeConstructor.Receiver => Result.Ok(Class.forName("java.lang.Object"))
 
-        case TypeConstructor.Ref => Result.Ok(Class.forName("java.lang.Object"))
-
         case TypeConstructor.Tuple(_) => Result.Ok(Class.forName("java.lang.Object"))
 
         case TypeConstructor.Array =>

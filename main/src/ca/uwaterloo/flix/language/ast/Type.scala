@@ -655,12 +655,6 @@ object Type {
     Apply(Cst(TypeConstructor.Vector, loc), tpe, loc)
 
   /**
-    * Returns the type `Ref[tpe, reg]` with the given source location `loc`.
-    */
-  def mkRef(tpe: Type, reg: Type, loc: SourceLocation): Type =
-    Apply(Apply(Cst(TypeConstructor.Ref, loc), tpe, loc), reg, loc)
-
-  /**
     * Constructs the pure arrow type A -> B.
     */
   def mkPureArrow(a: Type, b: Type, loc: SourceLocation): Type = mkArrowWithEffect(a, Pure, b, loc)
