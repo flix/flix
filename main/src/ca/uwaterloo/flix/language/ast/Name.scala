@@ -27,12 +27,11 @@ object Name {
     * Returns the given string `fqn` as a qualified name.
     */
   def mkQName(fqn: String, loc: SourceLocation = SourceLocation.Unknown): QName = {
-    if (!fqn.contains('.'))
+    val split = fqn.split('.')
+    if (split.length == 1)
       return QName(Name.RootNS, Ident(fqn, loc), loc)
-
-    val index = fqn.indexOf('.')
-    val parts = fqn.substring(0, index).split('/').toList
-    val name = fqn.substring(index + 1, fqn.length)
+    val parts = split.init.toList
+    val name = split.last
     mkQName(parts, name, loc)
   }
 

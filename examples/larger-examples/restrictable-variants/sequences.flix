@@ -96,7 +96,7 @@ mod Seq {
     }
 
     ///
-    /// Returns the length of `l`.
+    /// Returns the number of elements in `l`.
     ///
     pub def length(l: Seq[s][a]): Int32 = choose l{
         case Seq.Nil => 0

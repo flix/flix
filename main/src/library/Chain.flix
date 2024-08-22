@@ -237,7 +237,7 @@ mod Chain {
     }
 
     ///
-    /// Returns the length of `c`.
+    /// Returns the number of elements in `c`.
     ///
     pub def length(c: Chain[a]): Int32 = foldRight((_, acc) -> acc + 1, 0, c)
 

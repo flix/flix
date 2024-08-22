@@ -17,6 +17,9 @@
 mod Test.Exp.Jvm.TestTryCatch {
 
     import java.lang.Math
+    import java.lang.ArithmeticException
+    import java.lang.IllegalArgumentException
+    import java.lang.Exception
 
     def exception(): Unit \ IO =
         discard Math.floorDiv(1, 0);
@@ -27,7 +30,7 @@ mod Test.Exp.Jvm.TestTryCatch {
         try {
             true
         } catch {
-            case _: ##java.lang.Exception => false
+            case _: Exception => false
         }
 
     @test
@@ -36,7 +39,7 @@ mod Test.Exp.Jvm.TestTryCatch {
             exception();
             false
         } catch {
-            case _: ##java.lang.Exception => true
+            case _: Exception => true
         }
 
     @test
@@ -45,8 +48,8 @@ mod Test.Exp.Jvm.TestTryCatch {
             exception();
             false
         } catch {
-            case _: ##java.lang.ArithmeticException => true
-            case _: ##java.lang.IllegalArgumentException => false
+            case _: ArithmeticException => true
+            case _: IllegalArgumentException => false
         }
 
     @test
@@ -55,8 +58,8 @@ mod Test.Exp.Jvm.TestTryCatch {
             exception();
             false
         } catch {
-            case _: ##java.lang.IllegalArgumentException => false
-            case _: ##java.lang.ArithmeticException => true
+            case _: IllegalArgumentException => false
+            case _: ArithmeticException => true
         }
 
     @test
@@ -65,9 +68,9 @@ mod Test.Exp.Jvm.TestTryCatch {
             exception();
             false
         } catch {
-            case _: ##java.lang.IllegalArgumentException => false
+            case _: IllegalArgumentException => false
         } catch {
-            case _: ##java.lang.ArithmeticException => true
+            case _: ArithmeticException => true
         }
 
     @test
@@ -76,8 +79,8 @@ mod Test.Exp.Jvm.TestTryCatch {
             exception();
             false
         } catch {
-            case e: ##java.lang.ArithmeticException => if (e.toString().isEmpty()) false else true
-            case _: ##java.lang.Exception => false
+            case e: ArithmeticException => if (e.toString().isEmpty()) false else true
+            case _: Exception => false
         }
 
     @test
@@ -86,8 +89,8 @@ mod Test.Exp.Jvm.TestTryCatch {
             exception();
             false
         } catch {
-            case e: ##java.lang.ArithmeticException => if (e.getMessage().isEmpty()) false else true
-            case _: ##java.lang.Exception => false
+            case e: ArithmeticException => if (e.getMessage().isEmpty()) false else true
+            case _: Exception => false
         }
 
     @test
@@ -96,8 +99,8 @@ mod Test.Exp.Jvm.TestTryCatch {
             exception();
             false
         } catch {
-            case _: ##java.lang.Exception => true
-            case _: ##java.lang.ArithmeticException => false
+            case _: Exception => true
+            case _: ArithmeticException => false
         }
 
     @test
@@ -106,8 +109,8 @@ mod Test.Exp.Jvm.TestTryCatch {
             exception();
             false
         } catch {
-            case _: ##java.lang.ArithmeticException => true
-            case _: ##java.lang.Exception => false
+            case _: ArithmeticException => true
+            case _: Exception => false
         }
 
 }

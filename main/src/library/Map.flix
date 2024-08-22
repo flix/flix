@@ -156,7 +156,7 @@ mod Map {
         minSize >= 1024
 
     ///
-    /// Returns the size of `m`.
+    /// Returns the number of keys in `m`.
     ///
     pub def size(m: Map[k, v]): Int32 =
         let Map(xs) = m;
