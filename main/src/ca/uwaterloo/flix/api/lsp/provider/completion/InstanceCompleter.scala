@@ -61,6 +61,13 @@ object InstanceCompleter extends Completer {
       FormatType.formatType(replaceText(trt.tparam.sym, tpe, hole))
 
     /**
+      * Formats the given associated type `assoc`.
+      */
+    def fmtAssocType(assoc: TypedAst.AssocTypeSig, holeIndex: Int)(implicit flix: Flix): String = {
+      s"    type ${assoc.sym.name} = $$$holeIndex"
+    }
+
+    /**
       * Formats the given formal parameters in `spec`.
       */
     def fmtFormalParams(trt: TypedAst.Trait, spec: TypedAst.Spec, hole: String)(implicit flix: Flix): String =
@@ -84,7 +91,11 @@ object InstanceCompleter extends Completer {
         val hole = "${1:t}"
         val traitSym = trt.sym
         val signatures = trt.sigs.filter(_.exp.isEmpty)
-        val body = signatures.map(s => fmtSignature(trt, s, hole)).mkString("\n\n")
+        val body = {
+          trt.assocs.zipWithIndex.map { case (a, i) => fmtAssocType(a, i + 2) } ++
+            signatures.map(s => fmtSignature(trt, s, hole))
+        }.mkString("\n\n")
+
         val completion = s"$traitSym[$hole] {\n\n$body\n\n}\n"
 
         InstanceCompletion(trt, completion)
