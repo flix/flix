@@ -2941,7 +2941,7 @@ object Resolver {
 
       // 2nd priority: names in the current namespace
       val localNames = if(!ns0.idents.isEmpty) {
-        root.symbols.getOrElse(ns0, Map.empty).getOrElse(qname.ident.name, Nil).map(Resolution.Declaration)
+        root.symbols.getOrElse(ns0, Map.empty).getOrElse(qname.ident.name, Nil).map(Resolution.Declaration.apply)
       } else {
         Nil
       }
