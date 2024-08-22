@@ -1540,7 +1540,7 @@ object Lowering {
     */
   private def liftX(exp0: LoweredAst.Expr, argTypes: List[Type], resultType: Type): LoweredAst.Expr = {
     // Compute the liftXb symbol.
-    val sym = Symbol.mkDefnSym(s"Fixpoint/Boxable.lift${argTypes.length}")
+    val sym = Symbol.mkDefnSym(s"Fixpoint.Boxable.lift${argTypes.length}")
 
     //
     // The liftX family of functions are of the form: a -> b -> c -> `resultType` and
@@ -1567,7 +1567,7 @@ object Lowering {
     */
   private def liftXb(exp0: LoweredAst.Expr, argTypes: List[Type]): LoweredAst.Expr = {
     // Compute the liftXb symbol.
-    val sym = Symbol.mkDefnSym(s"Fixpoint/Boxable.lift${argTypes.length}b")
+    val sym = Symbol.mkDefnSym(s"Fixpoint.Boxable.lift${argTypes.length}b")
 
     //
     // The liftX family of functions are of the form: a -> b -> c -> Bool and
@@ -1600,7 +1600,7 @@ object Lowering {
 
     // Compute the liftXY symbol.
     // For example, lift3X2 is a function from three arguments to a Vector of pairs.
-    val sym = Symbol.mkDefnSym(s"Fixpoint/Boxable.lift${numberOfInVars}X${numberOfOutVars}")
+    val sym = Symbol.mkDefnSym(s"Fixpoint.Boxable.lift${numberOfInVars}X${numberOfOutVars}")
 
     //
     // The liftXY family of functions are of the form: i1 -> i2 -> i3 -> Vector[(o1, o2, o3, ...)] and
