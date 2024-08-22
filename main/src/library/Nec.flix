@@ -240,7 +240,7 @@ mod Nec {
     }
 
     ///
-    /// Returns the length of `c`.
+    /// Returns the number of elements in `c`.
     ///
     pub def length(c: Nec[a]): Int32 = foldRight((_, acc) -> acc + 1, 0, c)
 
@@ -817,8 +817,8 @@ mod Nec {
     /// Returns an iterator over `l`.
     ///
     def iteratorHelper(rc: Region[r], vl: Option[ViewLeft[a]]): Iterator[a, r, r] \ r =
-        let cursor = ref vl @ rc;
-        let next = () -> match (deref cursor) {
+        let cursor = Ref.fresh(rc, vl);
+        let next = () -> match (Ref.get(cursor)) {
             case None             => None
             case Some(OneLeft(x)) =>
                 Ref.put(None, cursor);

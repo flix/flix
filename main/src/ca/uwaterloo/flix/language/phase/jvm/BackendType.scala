@@ -184,7 +184,7 @@ object BackendType {
       case MonoType.Ref(tpe) => BackendObjType.Ref(toBackendType(tpe)).toTpe
       case MonoType.Tuple(elms) => BackendObjType.Tuple(elms.map(toBackendType)).toTpe
       case MonoType.Enum(_) => BackendObjType.Tagged.toTpe
-      case MonoType.Struct(_, _, _) => throw new RuntimeException("Joe tbd")
+      case MonoType.Struct(_, elms, _) => BackendObjType.Struct(elms.map(toBackendType)).toTpe
       case MonoType.Arrow(args, result) => BackendObjType.Arrow(args.map(toBackendType), toBackendType(result)).toTpe
       case MonoType.RecordEmpty => BackendObjType.RecordEmpty.toTpe
       case MonoType.RecordExtend(_, value, _) => BackendObjType.RecordExtend(toBackendType(value)).toTpe

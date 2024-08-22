@@ -116,8 +116,8 @@ object FastBoolUnification {
   /**
     * A stateful phased solver for Boolean unification equations. The solver maintains two fields that change over time:
     *
-    * - The current (pending) unification equations to solve.
-    * - The current (partial) substitution which represents the solution.
+    *   - The current (pending) unification equations to solve.
+    *   - The current (partial) substitution which represents the solution.
     *
     * @param l The input list of Boolean unification equations to solve.
     */
@@ -292,18 +292,18 @@ object FastBoolUnification {
     * Throws a [[ConflictException]] if an unsolvable equation is encountered.
     *
     * A trivial equation is one of:
-    * -     true ~ true
-    * -    false ~ false
-    * -        c ~ c        (same constant)
-    * -        x ~ x        (same variable)
+    *   -     true ~ true
+    *   -    false ~ false
+    *   -        c ~ c        (same constant)
+    *   -        x ~ x        (same variable)
     *
     *
     * An unsolvable (conflicted) equation is one of:
     *
-    * -      true ~ false   (and mirrored)
-    * -       c_i ~ c_j     (different constants)
-    * -        c ~ true     (and mirrored)
-    * -        c ~ false    (and mirrored)
+    *   -      true ~ false   (and mirrored)
+    *   -       c_i ~ c_j     (different constants)
+    *   -        c ~ true     (and mirrored)
+    *   -        c ~ false    (and mirrored)
     */
   private def checkAndSimplify(l: List[Equation]): List[Equation] = l match {
     case Nil => Nil
@@ -336,9 +336,9 @@ object FastBoolUnification {
     *
     * The implementation uses three rewrite rules:
     *
-    * - `x ~ true` becomes `[x -> true]`.
-    * - `x ~ c` becomes `[x -> c]`.
-    * - `x /\ y /\ ... = true` becomes `[x -> true, y -> true, ...]`.
+    *   - `x ~ true` becomes `[x -> true]`.
+    *   - `x ~ c` becomes `[x -> c]`.
+    *   - `x /\ y /\ ... = true` becomes `[x -> true, y -> true, ...]`.
     *
     * For example, if the equation system is:
     *
@@ -901,15 +901,15 @@ object FastBoolUnification {
       * Returns a unification equation  `t1 ~ t2` between the terms `t1` and `t2`.
       *
       * The smart constructor performs normalization:
-      * - We move true and false to the rhs.
-      * - We move a single variable to the lhs.
-      * - We reorder constant/variables so that the smaller constant/variable is on the lhs.
+      *   - We move true and false to the rhs.
+      *   - We move a single variable to the lhs.
+      *   - We reorder constant/variables so that the smaller constant/variable is on the lhs.
       *
       * Examples:
-      * -     true ~ x7 ==> x7 ~ true
-      * -       c3 ~ c2 ==> c2 ~ c3
-      * -       x7 ~ x5 ==> x5 ~ x7
-      * - x3 /\ x7 ~ x4 ==> x4 ~ x3 /\ x7
+      *   -     true ~ x7 ==> x7 ~ true
+      *   -       c3 ~ c2 ==> c2 ~ c3
+      *   -       x7 ~ x5 ==> x5 ~ x7
+      *   - x3 /\ x7 ~ x4 ==> x4 ~ x3 /\ x7
       */
     def mk(t1: Term, t2: Term, loc: SourceLocation): Equation = (t1, t2) match {
       case (Term.Cst(c1), Term.Cst(c2)) => if (c1 <= c2) Equation(t1, t2, loc) else Equation(t2, t1, loc)

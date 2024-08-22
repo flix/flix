@@ -34,17 +34,19 @@ import scala.collection.mutable.ArrayBuffer
   * A resilient LL parser.
   * Parses a stream of tokens into a [[SyntaxTree.Tree]].
   * This parser works in two steps:
+  *
   * 1. First the list of tokens is traversed while emitting Open, Advance and Close events.
   * Conceptually this is exactly the same as inserting parenthesis in a stream of tokens, only here each parenthesis is annotated with a kind.
   * For instance:
-  * def main(): Int32 = 123
+  * {{{def main(): Int32 = 123}}}
   * Becomes:
-  * (Def 'def' (Name 'main' ) '(' ')' ':' (Type 'Int32' ) '=' (Literal '123' ) )
+  * {{{(Def 'def' (Name 'main' ) '(' ')' ':' (Type 'Int32' ) '=' (Literal '123' ) )}}}
+  *
   * 2. The flat list of events is automatically turned into a SyntaxTree.Tree.
   *
   * This parser is adopted from 'Resilient LL Parsing Tutorial' by Alex Kladov who works on rust-analyzer.
   * The tutorial is also a great resource for understanding this parser (and a great read to boot!)
-  * https://matklad.github.io/2023/05/21/resilient-ll-parsing-tutorial.html
+  * [[https://matklad.github.io/2023/05/21/resilient-ll-parsing-tutorial.html]]
   */
 object Parser2 {
 
@@ -961,6 +963,7 @@ object Parser2 {
           nth(0) match {
             case TokenKind.CurlyR => continue = false
             case TokenKind.KeywordDef => definitionDecl(openBefore(docMark))
+            case TokenKind.KeywordRedef => definitionDecl(openBefore(docMark), declKind = TokenKind.KeywordRedef)
             case TokenKind.KeywordType => associatedTypeDefDecl(openBefore(docMark))
             case at =>
               val errMark = open()
@@ -1001,9 +1004,9 @@ object Parser2 {
       close(mark, TreeKind.Decl.Signature)
     }
 
-    private def definitionDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
-      assert(at(TokenKind.KeywordDef))
-      expect(TokenKind.KeywordDef, SyntacticContext.Decl.OtherDecl)
+    private def definitionDecl(mark: Mark.Opened, declKind: TokenKind = TokenKind.KeywordDef)(implicit s: State): Mark.Closed = {
+      assert(at(declKind))
+      expect(declKind, SyntacticContext.Decl.OtherDecl)
       name(NAME_DEFINITION, context = SyntacticContext.Decl.OtherDecl)
       if (at(TokenKind.BracketL)) {
         Type.parameters()
@@ -1028,7 +1031,8 @@ object Parser2 {
         expect(TokenKind.Equal, SyntacticContext.Decl.OtherDecl) // Produce an error for missing '='
       }
 
-      close(mark, TreeKind.Decl.Def)
+      val treeKind = if (declKind == TokenKind.KeywordRedef) TreeKind.Decl.Redef else TreeKind.Decl.Def
+      close(mark, treeKind)
     }
 
     private def lawDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {

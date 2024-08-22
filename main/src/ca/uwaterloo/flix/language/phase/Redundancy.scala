@@ -37,9 +37,9 @@ import scala.collection.mutable.ListBuffer
   *
   * For example, the redundancy phase ensures that there are no:
   *
-  * - unused local variables.
-  * - unused enums, definitions, ...
-  * - useless expressions.
+  *   - unused local variables.
+  *   - unused enums, definitions, ...
+  *   - useless expressions.
   *
   * and so on.
   *
@@ -76,7 +76,7 @@ object Redundancy {
         checkUnusedTypeParamsEnums()(root) ++
         checkUnusedStructsAndFields()(sctx, root) ++
         checkUnusedTypeParamsStructs()(root) ++
-        checkRedundantTypeConstraints()(root, flix)
+        checkRedundantTraitConstraints()(root, flix)
     }
 
     // Determine whether to return success or soft failure.
@@ -168,7 +168,7 @@ object Redundancy {
     val result = new ListBuffer[RedundancyError]
     for ((_, decl) <- root.structs) {
       val usedTypeVars = decl.fields.foldLeft(Set.empty[Symbol.KindedTypeVarSym]) {
-        case (acc, field) =>
+        case (acc, (name, field)) =>
           acc ++ field.tpe.typeVars.map(_.sym)
       }
       val unusedTypeParams = decl.tparams.init.filter { // the last tparam is implicitly used for the region
@@ -184,25 +184,25 @@ object Redundancy {
   /**
     * Checks for redundant type constraints in the given `root`.
     */
-  private def checkRedundantTypeConstraints()(implicit root: Root, flix: Flix): List[RedundancyError] = {
-    val defErrors = ParOps.parMap(root.defs.values)(defn => redundantTypeConstraints(defn.spec.declaredScheme.tconstrs))
-    val classErrors = ParOps.parMap(root.traits.values)(trt => redundantTypeConstraints(trt.superTraits))
-    val instErrors = ParOps.parMap(root.instances.values.flatten)(inst => redundantTypeConstraints(inst.tconstrs))
-    val sigErrors = ParOps.parMap(root.sigs.values)(sig => redundantTypeConstraints(sig.spec.declaredScheme.tconstrs))
+  private def checkRedundantTraitConstraints()(implicit root: Root, flix: Flix): List[RedundancyError] = {
+    val defErrors = ParOps.parMap(root.defs.values)(defn => redundantTraitConstraints(defn.spec.declaredScheme.tconstrs))
+    val classErrors = ParOps.parMap(root.traits.values)(trt => redundantTraitConstraints(trt.superTraits))
+    val instErrors = ParOps.parMap(root.instances.values.flatten)(inst => redundantTraitConstraints(inst.tconstrs))
+    val sigErrors = ParOps.parMap(root.sigs.values)(sig => redundantTraitConstraints(sig.spec.declaredScheme.tconstrs))
 
     (defErrors.flatten ++ classErrors.flatten ++ instErrors.flatten ++ sigErrors.flatten).toList
   }
 
   /**
-    * Finds redundant type constraints in `tconstrs`.
+    * Finds redundant trait constraints in `tconstrs`.
     */
-  private def redundantTypeConstraints(tconstrs: List[Ast.TypeConstraint])(implicit root: Root, flix: Flix): List[RedundancyError] = {
+  private def redundantTraitConstraints(tconstrs: List[Ast.TraitConstraint])(implicit root: Root, flix: Flix): List[RedundancyError] = {
     for {
       (tconstr1, i1) <- tconstrs.zipWithIndex
       (tconstr2, i2) <- tconstrs.zipWithIndex
       // don't compare a constraint against itself
       if i1 != i2 && TraitEnvironment.entails(tconstr1, tconstr2, root.traitEnv)
-    } yield RedundancyError.RedundantTypeConstraint(tconstr1, tconstr2, tconstr2.loc)
+    } yield RedundancyError.RedundantTraitConstraint(tconstr1, tconstr2, tconstr2.loc)
   }
 
   /**
@@ -598,12 +598,12 @@ object Redundancy {
       sctx.structSyms.put(sym, ())
       visitExps(fields.map {case (k, v) => v}, env0, rc) ++ visitExp(region, env0, rc)
 
-    case Expr.StructGet(sym, e, field, _, _, _) =>
-      sctx.structSyms.put(sym, ())
+    case Expr.StructGet(e, field, _, _, _) =>
+      sctx.structFieldSyms.put(field, ())
       visitExp(e, env0, rc)
 
-    case Expr.StructPut(sym, e1, _, e2, _, _, _) =>
-      sctx.structSyms.put(sym, ())
+    case Expr.StructPut(e1, field, e2, _, _, _) =>
+      sctx.structFieldSyms.put(field, ())
       visitExp(e1, env0, rc) ++ visitExp(e2, env0, rc)
 
     case Expr.VectorLit(exps, _, _, _) =>
@@ -827,12 +827,9 @@ object Redundancy {
     * Visits the [[ParYieldFragment]]s `frags`.
     *
     * Returns a tuple of three entries:
-    *
-    * 1. The used variables
-    *
-    * 2. An updated environment with the free variables
-    *
-    * 3. All the free variables.
+    *   1. The used variables
+    *   1. An updated environment with the free variables
+    *   1. All the free variables.
     */
   private def visitParYieldFragments(frags: List[ParYieldFragment], env0: Env, rc: RecursionContext)(implicit lctx: LocalContext, sctx: SharedContext, root: Root, flix: Flix): (Used, Env, Set[Symbol.VarSym]) = {
     frags.foldLeft((Used.empty, env0, Set.empty[Symbol.VarSym])) {
@@ -1287,6 +1284,7 @@ object Redundancy {
       new ConcurrentHashMap(),
       new ConcurrentHashMap(),
       new ConcurrentHashMap(),
+      new ConcurrentHashMap(),
       new ConcurrentHashMap())
   }
 
@@ -1303,6 +1301,7 @@ object Redundancy {
                                    sigSyms: ConcurrentHashMap[Symbol.SigSym, Unit],
                                    effSyms: ConcurrentHashMap[Symbol.EffectSym, Unit],
                                    structSyms: ConcurrentHashMap[Symbol.StructSym, Unit],
+                                   structFieldSyms: ConcurrentHashMap[Symbol.StructFieldSym, Unit],
                                    enumSyms: ConcurrentHashMap[Symbol.EnumSym, Unit],
                                    caseSyms: ConcurrentHashMap[Symbol.CaseSym, Unit])
 

@@ -36,9 +36,9 @@ mod System {
         ///
         pub def readLines(rc: Region[r]): Iterator[String, IO + r, r] \ { r, IO } =
             let br = new BufferedReader(new InputStreamReader(JSystem.in));
-            let nextLine = ref None @ rc;
+            let nextLine = Ref.fresh(rc, None);
             let next = () -> {
-                let l = match deref nextLine {
+                let l = match Ref.get(nextLine) {
                     case Some(line) => if (Object.isNull(line)) None else Some(line)
                     case None =>
                         let n = br.readLine();

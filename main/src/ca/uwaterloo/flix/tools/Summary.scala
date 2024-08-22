@@ -16,7 +16,8 @@
 package ca.uwaterloo.flix.tools
 
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
-import ca.uwaterloo.flix.language.ast.shared.{Input, Source}
+import ca.uwaterloo.flix.language.ast.shared.SecurityContext.AllPermissions
+import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext, Source}
 import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, SourcePosition, Type, TypedAst}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -124,7 +125,7 @@ object Summary {
     }
 
     def zero(name: String): FileSummary =
-      FileSummary(Source(Input.Text(name, "", stable = true), Array.emptyCharArray), FileData.zero)
+      FileSummary(Source(Input.Text(name, "", stable = true, SecurityContext.AllPermissions), Array.emptyCharArray), FileData.zero)
 
     sums.groupBy(sum => prefixFileName(sum.src.name, nsDepth)).map {
       case (name, sums) => sums.foldLeft(zero(name))(comb).copy(src = zero(name).src)
@@ -132,12 +133,12 @@ object Summary {
   }
 
   /**
-    * - prefixFileName("a/b", None) = "a/b"
-    * - prefixFileName("a/b", Some(1)) = "a/..."
-    * - prefixFileName("a/b", Some(2)) = "a/b"
-    * - prefixFileName("a/b/c", Some(2)) = "a/b/..."
-    * - prefixFileName("a/b", Some(0) = "a/b"
-    * - prefixFileName("a/b", Some(-1) = "a/b"
+    *   - prefixFileName("a/b", None) = "a/b"
+    *   - prefixFileName("a/b", Some(1)) = "a/..."
+    *   - prefixFileName("a/b", Some(2)) = "a/b"
+    *   - prefixFileName("a/b/c", Some(2)) = "a/b/..."
+    *   - prefixFileName("a/b", Some(0) = "a/b"
+    *   - prefixFileName("a/b", Some(-1) = "a/b"
     */
   private def prefixFileName(name: String, nsDepth: Option[Int]): String = {
     nsDepth match {
@@ -169,7 +170,7 @@ object Summary {
   }
 
   private val unknownSource = {
-    Source(Input.Text("generated", "", stable = true), Array.emptyCharArray)
+    Source(Input.Text("generated", "", stable = true, SecurityContext.AllPermissions), Array.emptyCharArray)
   }
 
   /** debugSrc is just for consistency checking exceptions */
@@ -243,9 +244,9 @@ object Summary {
 
   /**
     * Represents the direct effect of a function
-    * - `def f(x: Int32): Int32` is `Pure`
-    * - `def f(x: Int32): Unit \ IO` is `JustIO`
-    * - `def f(x: Array[Int32, r]): IO + r` is `Poly`
+    *   - `def f(x: Int32): Int32` is `Pure`
+    *   - `def f(x: Int32): Unit \ IO` is `JustIO`
+    *   - `def f(x: Array[Int32, r]): IO + r` is `Poly`
     */
   private sealed trait ResEffect
 
@@ -259,9 +260,9 @@ object Summary {
 
   /**
     * This type is used to differentiate between
-    * - normal defs
-    * - instance defs, and
-    * - trait defs with implementation
+    *   - normal defs
+    *   - instance defs, and
+    *   - trait defs with implementation
     */
   private sealed trait FunctionSym {
     def loc: SourceLocation

@@ -291,9 +291,9 @@ object CompilerPerf {
         })
     writeFile("speedupWithInc.json", speedupInc)
 
-    ///
-    /// Throughput
-    ///
+    //
+    // Throughput
+    //
     val throughoutBaseLine =
     ("timestamp" -> timestamp) ~
       ("threads" -> MinThreads) ~

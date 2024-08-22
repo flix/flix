@@ -155,10 +155,10 @@ object Regions {
     case Expr.StructNew(_, fields, region, tpe, _, loc) =>
       fields.map{case (k, v) => v}.flatMap(visitExp) ++ visitExp(region) ++ checkType(tpe, loc)
 
-    case Expr.StructGet(_, e, _, tpe, _, loc) =>
+    case Expr.StructGet(e, _, tpe, _, loc) =>
       visitExp(e) ++ checkType(tpe, loc)
 
-    case Expr.StructPut(_, e1, _, e2, tpe, _, loc) =>
+    case Expr.StructPut(e1, _, e2, tpe, _, loc) =>
       visitExp(e1) ++ visitExp(e2) ++ checkType(tpe, loc)
 
     case Expr.VectorLit(exps, tpe, _, loc) =>

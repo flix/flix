@@ -184,8 +184,8 @@ object CaseSetUnification {
 
   /**
     * A DNF formula is either:
-    * - a union of intersections of literals.
-    * - the universal set
+    *   - a union of intersections of literals.
+    *   - the universal set
     */
   private sealed trait Dnf
 

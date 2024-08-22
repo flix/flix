@@ -237,7 +237,7 @@ mod Chain {
     }
 
     ///
-    /// Returns the length of `c`.
+    /// Returns the number of elements in `c`.
     ///
     pub def length(c: Chain[a]): Int32 = foldRight((_, acc) -> acc + 1, 0, c)
 
@@ -819,8 +819,8 @@ mod Chain {
     /// Returns an iterator over `c`.
     ///
     pub def iterator(rc: Region[r], c: Chain[a]): Iterator[a, r, r] \ r =
-        let cursor = ref viewLeft(c) @ rc;
-        let next = () -> match (deref cursor) {
+        let cursor = Ref.fresh(rc, viewLeft(c));
+        let next = () -> match (Ref.get(cursor)) {
             case ViewLeft.NoneLeft        => None
             case ViewLeft.SomeLeft(x, xs) =>
                 Ref.put(viewLeft(xs), cursor);

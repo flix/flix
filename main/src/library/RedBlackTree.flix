@@ -470,11 +470,11 @@ mod RedBlackTree {
     /// Applies `f` to every key-value pair of `t` along with that element's index.
     ///
     pub def forEachWithIndex(f: (Int32, k, v) -> Unit \ ef, t: RedBlackTree[k, v]): Unit \ ef = region rc {
-        let ix = ref 0 @ rc;
+        let ix = Ref.fresh(rc, 0);
         def loop(tt) = match tt {
             case Node(_, a, k, v, b) =>
                 loop(a);
-                let i = deref ix; f(i, k, v);
+                let i = Ref.get(ix); f(i, k, v);
                 Ref.put(i + 1, ix); loop(b)
             case _                   => ()
         };
@@ -973,8 +973,8 @@ mod RedBlackTree {
     ///
     pub def iterator(rc: Region[r], t: RedBlackTree[k, v]): Iterator[(k, v), r, r] \ r =
         let stack1 = leftmost(t, Nil);
-        let state = ref stack1 @ rc;
-        let next = () -> match deref state {
+        let state = Ref.fresh(rc, stack1);
+        let next = () -> match Ref.get(state) {
             case Nil                 => None
             case (k, v, rtree) :: es =>
                 Ref.put(leftmost(rtree, es), state);

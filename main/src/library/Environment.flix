@@ -15,33 +15,32 @@
  */
 mod Environment {
 
-    import java.lang.{Exception, Runtime}
-    import java.lang.{Object => JObject}
-    import java.util.{Iterator => JIterator, Map => JMap, Set => JSet}
-    import java.io.File
-    import java.lang.System
     import dev.flix.runtime.Global
+    import java.lang.Exception
+    import java.lang.Runtime
+    import java.lang.System
+    import java.io.{File => JFile}
+    import java.util.{Iterator => JIterator}
+    import java.util.{Map => JMap}
+    import java.util.{Set => JSet}
+    import java.util.{Map$Entry => Entry}
 
     ///
     /// Returns the arguments passed to the program via the command line.
     ///
-    pub def getArgs(): List[String] = region rc {
-        let _ = rc; // Avoids redundancy error.
+    pub def getArgs(): List[String] =
         unsafe Array.toList(unsafe Global.getArgs())
-    }
 
     ///
     /// Returns an map of the current system environment.
     ///
-    pub def getEnv(): Map[String, String] = region rc {
-        let _ = rc; // Avoids redundancy error.
+    pub def getEnv(): Map[String, String] =
         try {
-            let iter = unsafe (System.getenv().entrySet()).iterator();
+            let iter = unsafe System.getenv().entrySet().iterator();
             getEnvHelper(iter, Map.empty())
         } catch {
             case _: Exception => Map.empty()
         }
-    }
 
     ///
     /// Returns the value of the specified environment variable.
@@ -83,12 +82,12 @@ mod Environment {
     ///
     ///  Returns the file separator
     ///
-    pub def getFileSeparator(): String = unsafe File.separator
+    pub def getFileSeparator(): String = unsafe JFile.separator
 
     ///
     /// Returns the path separator
     ///
-    pub def getPathSeparator(): String = unsafe File.pathSeparator
+    pub def getPathSeparator(): String = unsafe JFile.pathSeparator
 
     ///
     /// Returns the system line separator
@@ -126,7 +125,7 @@ mod Environment {
 
     def getEnvHelper(iter: JIterator, m: Map[String, String]): Map[String, String] =
         if (unsafe iter.hasNext())
-            let e = unsafe unchecked_cast(iter.next() as ##java.util.Map$Entry);
+            let e = unsafe unchecked_cast(iter.next() as Entry);
             let k = unsafe unchecked_cast(e.getKey() as String);
             let v = unsafe unchecked_cast(e.getValue() as String);
             getEnvHelper(iter, Map.insert(k, v, m))

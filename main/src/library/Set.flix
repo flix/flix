@@ -106,8 +106,8 @@ instance ToJava[Set[a]] with Order[a] {
 }
 
 instance FromJava[Set[a]] with Order[a] {
-    type In = ##java.util.Set
-    pub def fromJava(s: ##java.util.Set): Set[a] = Adaptor.fromSet(s)
+    type In = JSet
+    pub def fromJava(s: JSet): Set[a] = Adaptor.fromSet(s)
 }
 
 mod Set {
@@ -147,7 +147,7 @@ mod Set {
         minSize >= 1024
 
     ///
-    /// Returns the size of `s`.
+    /// Returns the number of elements in `s`.
     ///
     pub def size(s: Set[a]): Int32 =
         let Set(t) = s;
@@ -570,7 +570,7 @@ mod Set {
     /// Returns the set `s` as a `MutSet`.
     ///
     pub def toMutSet(rc: Region[r], s: Set[a]): MutSet[a, r] \ r =
-        MutSet.MutSet(rc, ref s @ rc)
+        MutSet.MutSet(rc, Ref.fresh(rc, s))
 
     ///
     /// Applies `f` to every element of `s`.

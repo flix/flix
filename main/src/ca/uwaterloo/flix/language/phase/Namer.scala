@@ -140,8 +140,13 @@ object Namer {
       val table1 = tryAddToTable(table0, sym.namespace, sym.name, decl)
       cases.foldLeft(table1)(tableDecl)
 
-    case NamedAst.Declaration.Struct(_, _, _, sym, _, _, _) =>
-      tryAddToTable(table0, sym.namespace, sym.name, decl)
+    case NamedAst.Declaration.Struct(_, _, _, sym, _, fields, _, _) =>
+      val table1 = tryAddToTable(table0, sym.namespace, sym.name, decl)
+      fields.foldLeft(table1)(tableDecl)
+
+    case NamedAst.Declaration.StructField(sym, tpe, loc) =>
+      // Add a `€` to the beginning of the name to prevent collisions with other kinds of names
+      tryAddToTable(table0, sym.namespace, "€" + sym.name, decl)
 
     case NamedAst.Declaration.RestrictableEnum(_, _, _, sym, _, _, _, cases, _) =>
       val table1 = tryAddToTable(table0, sym.namespace, sym.name, decl)
@@ -319,9 +324,10 @@ object Namer {
       val tparams = tparams0.map(visitTypeParam)
 
       val mod = visitModifiers(mod0, ns0)
-      val fields = fields0.map(visitField)
+      val indices = fields0.map(_.name).zipWithIndex.toMap
+      val fields = fields0.map(visitField(sym, _, indices))
 
-      NamedAst.Declaration.Struct(doc, ann, mod, sym, tparams, fields, loc)
+      NamedAst.Declaration.Struct(doc, ann, mod, sym, tparams, fields, indices, loc)
   }
 
   /**
@@ -362,10 +368,11 @@ object Namer {
   /**
     * Performs naming on the given field.
     */
-  private def visitField(field0: DesugaredAst.StructField)(implicit flix: Flix, sctx: SharedContext): NamedAst.StructField = field0 match {
-    case DesugaredAst.StructField(ident, tpe, loc) =>
+  private def visitField(struct: Symbol.StructSym, field0: DesugaredAst.StructField, indices: Map[Name.Label, Int])(implicit flix: Flix, sctx: SharedContext): NamedAst.Declaration.StructField = field0 match {
+    case DesugaredAst.StructField(name, tpe, loc) =>
       val t = visitType(tpe)
-      NamedAst.StructField(ident, t, loc)
+      val sym = Symbol.mkStructFieldSym(struct, indices(name), name)
+      NamedAst.Declaration.StructField(sym, t, loc)
   }
 
   /**
@@ -436,7 +443,7 @@ object Namer {
       val mod = visitModifiers(mod0, ns0)
       val tparam = visitTypeParam(tparams0)
 
-      val sts = visitTypeConstraints(superTraits)
+      val sts = visitTraitConstraints(superTraits)
       val ascs = visitAssocTypeSigs(assocs, sym) // TODO switch param order to match visitSig
       val sigs = visitSigs(signatures, ns0, sym)
       val ls = visitDefs(laws, ns0)
@@ -451,26 +458,26 @@ object Namer {
     case DesugaredAst.Declaration.Instance(doc, ann, mod, clazz, tpe, tconstrs, assocs, defs, loc) =>
       val tparams = getImplicitTypeParamsFromTypes(List(tpe))
       val t = visitType(tpe)
-      val tcsts = visitTypeConstraints(tconstrs)
+      val tcsts = visitTraitConstraints(tconstrs)
       val ascs = visitAssocTypeDefs(assocs)
       val ds = visitDefs(defs, ns0)
       NamedAst.Declaration.Instance(doc, ann, mod, clazz, tparams, t, tcsts, ascs, ds, ns0.parts, loc)
   }
 
   /**
-    * Performs naming on the given type constraint `tconstr`.
+    * Performs naming on the given trait constraint `tconstr`.
     */
-  private def visitTypeConstraint(tconstr: DesugaredAst.TypeConstraint)(implicit flix: Flix, sctx: SharedContext): NamedAst.TypeConstraint = tconstr match {
-    case DesugaredAst.TypeConstraint(trt, tparam, loc) =>
+  private def visitTraitConstraint(tconstr: DesugaredAst.TraitConstraint)(implicit flix: Flix, sctx: SharedContext): NamedAst.TraitConstraint = tconstr match {
+    case DesugaredAst.TraitConstraint(trt, tparam, loc) =>
       val t = visitType(tparam)
-      NamedAst.TypeConstraint(trt, t, loc)
+      NamedAst.TraitConstraint(trt, t, loc)
   }
 
   /**
-    * Performs naming on the given type constraints `tconstrs`.
+    * Performs naming on the given trait constraints `tconstrs`.
     */
-  private def visitTypeConstraints(tconstrs: List[DesugaredAst.TypeConstraint])(implicit flix: Flix, sctx: SharedContext): List[NamedAst.TypeConstraint] = {
-    tconstrs.map(visitTypeConstraint)
+  private def visitTraitConstraints(tconstrs: List[DesugaredAst.TraitConstraint])(implicit flix: Flix, sctx: SharedContext): List[NamedAst.TraitConstraint] = {
+    tconstrs.map(visitTraitConstraint)
   }
 
   /**
@@ -502,7 +509,7 @@ object Namer {
       val fps = visitFormalParams(fparams)
       val t = visitType(tpe)
       val ef = eff.map(visitType)
-      val tcsts = visitTypeConstraints(tconstrs)
+      val tcsts = visitTraitConstraints(tconstrs)
       val ecsts = visitEqualityConstraints(econstrs)
 
       // Then visit the parts depending on the parameters
@@ -534,7 +541,7 @@ object Namer {
       val fps = visitFormalParams(fparams)
       val t = visitType(tpe)
       val ef = eff.map(visitType)
-      val tcsts = visitTypeConstraints(tconstrs)
+      val tcsts = visitTraitConstraints(tconstrs)
       val ecsts = visitEqualityConstraints(econstrs)
 
       // Then visit the parts depending on the parameters
@@ -578,7 +585,7 @@ object Namer {
       val mod = visitModifiers(mod0, ns0)
       val fps = visitFormalParams(fparams)
       val t = visitType(tpe)
-      val tcsts = visitTypeConstraints(tconstrs)
+      val tcsts = visitTraitConstraints(tconstrs)
 
       val tparams = Nil // operations are monomorphic
       val eff = None // operations are pure
@@ -757,12 +764,12 @@ object Namer {
 
     case DesugaredAst.Expr.StructGet(exp, name, loc) =>
       val e = visitExp(exp, ns0)
-      NamedAst.Expr.StructGet(Name.mkQName(ns0.idents.last.name, ns0.loc), e, name, loc)
+      NamedAst.Expr.StructGet(e, name, loc)
 
     case DesugaredAst.Expr.StructPut(exp1, name, exp2, loc) =>
       val e1 = visitExp(exp1, ns0)
       val e2 = visitExp(exp2, ns0)
-      NamedAst.Expr.StructPut(Name.mkQName(ns0.idents.last.name, ns0.loc), e1, name, e2, loc)
+      NamedAst.Expr.StructPut(e1, name, e2, loc)
 
     case DesugaredAst.Expr.VectorLit(exps, loc) =>
       val es = visitExps(exps, ns0)
@@ -1585,7 +1592,8 @@ object Namer {
     case NamedAst.Declaration.Sig(sym, _, _) => sym.loc
     case NamedAst.Declaration.Def(sym, _, _) => sym.loc
     case NamedAst.Declaration.Enum(_, _, _, sym, _, _, _, _) => sym.loc
-    case NamedAst.Declaration.Struct(_, _, _, sym, _, _, _) => sym.loc
+    case NamedAst.Declaration.Struct(_, _, _, sym, _, _, _, _) => sym.loc
+    case NamedAst.Declaration.StructField(sym, _, _) => sym.loc
     case NamedAst.Declaration.RestrictableEnum(_, _, _, sym, _, _, _, _, _) => sym.loc
     case NamedAst.Declaration.TypeAlias(_, _, _, sym, _, _, _) => sym.loc
     case NamedAst.Declaration.Effect(_, _, _, sym, _, _) => sym.loc

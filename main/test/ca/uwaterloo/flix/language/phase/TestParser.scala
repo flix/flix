@@ -20,10 +20,10 @@ class TestParser extends Suites(
   * There is an theoretically infinite amount of possible syntax errors (we could just start fuzzing random strings),
   * so these test cover some "sensible amount" of broad errors.
   * Some areas that could use more test are:
-  * - Declarations other than definitions (module, enum, trait, signature, effect).
-  * - Patterns
-  * - Map, Set, List, Vector and Array literals.
-  * - "Niche" expressions (OpenAs, JVMops, Fixpoint expressions).
+  *   - Declarations other than definitions (module, enum, trait, signature, effect).
+  *   - Patterns
+  *   - Map, Set, List, Vector and Array literals.
+  *   - "Niche" expressions (OpenAs, JVMops, Fixpoint expressions).
   *
   * Note that these tests use [[check]] rather than [[compile]].
   * That's because a compile converts any check failure into a HardFailure before running, codegen so the result we would like to expect is lost.
@@ -1093,8 +1093,7 @@ class TestParserHappy extends AnyFunSuite with TestUtils {
     expectError[ParseError](result)
   }
 
-  // JOE TODO: Reenable
-  ignore("StructNoTParams.01") {
+  test("StructNoTParams.01") {
     val input =
       """
         |struct S { }

@@ -66,7 +66,7 @@ mod Test.Exp.Jvm.GetField {
 
     @test
     def testGetObjectField01(): Object \ IO =
-        import java_get_field dev.flix.test.TestClass.stringField: ##java.lang.Object \ IO as getField;
+        import java_get_field dev.flix.test.TestClass.stringField: Object \ IO as getField;
         let o = unsafe new TestClass();
         getField(o)
 

@@ -42,6 +42,8 @@ object HoverProvider {
 
     case Entity.Case(caze) => hoverType(caze.tpe, caze.sym.loc)
 
+    case Entity.StructField(field) => hoverType(field.tpe, field.sym.loc)
+
     case Entity.DefUse(sym, loc, _) => hoverDef(sym, loc)
 
     case Entity.SigUse(sym, loc, _) => hoverSig(sym, loc)
@@ -49,6 +51,8 @@ object HoverProvider {
     case Entity.VarUse(_, _, parent) => hoverEntity(parent, uri, pos)
 
     case Entity.CaseUse(_, _, parent) => hoverEntity(parent, uri, pos)
+
+    case Entity.StructFieldUse(_, _, parent) => hoverEntity(parent, uri, pos)
 
     case Entity.Exp(exp) => hoverTypeAndEff(exp.tpe, exp.eff, exp.loc)
 
@@ -68,6 +72,7 @@ object HoverProvider {
     case Entity.Def(_) => mkNotFound(uri, pos)
     case Entity.Effect(_) => mkNotFound(uri, pos)
     case Entity.Enum(_) => mkNotFound(uri, pos)
+    case Entity.Struct(_) => mkNotFound(uri, pos)
     case Entity.TypeAlias(_) => mkNotFound(uri, pos)
     case Entity.AssocType(_) => mkNotFound(uri, pos)
     case Entity.Label(_) => mkNotFound(uri, pos)

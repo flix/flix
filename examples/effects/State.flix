@@ -6,7 +6,7 @@ mod StateExample {
     }
 
     pub def main(): Unit \ IO = region rc {
-        let n = ref 0 @ rc;
+        let n = Ref.fresh(rc, 0);
         try {
             let number = 573;
             // Counting how many steps 573 takes to go to 1 in collatz conjecture
@@ -26,7 +26,7 @@ mod StateExample {
             let steps = do State.get();
             println("${number} took ${steps} steps to go to 1")
         } with State {
-            def get(k) = k(deref n)
+            def get(k) = k(Ref.get(n))
             def put(value, k) = {
                 Ref.put(value, n);
                 k()
