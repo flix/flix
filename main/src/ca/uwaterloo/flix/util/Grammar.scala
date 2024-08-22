@@ -31,7 +31,7 @@ object Grammar {
     * Returns a string representation of a count of `n` things called `name` that optionally `are` something.
     * When `n` is 1, the sentence will be singular, otherwise it will be plural.
     *
-    * It is assumes that `name` is a regular noun, that can be pluralized by appending an "s".
+    * It is assumed that `name` is a regular noun, that can be pluralized by appending an "s".
     *
     * For example, given `count(1, Some("cat"), are=true)` returns "1 cat is",
     * and given `count(2, Some("cat"), are=true)` returns "2 cats are".
