@@ -18,6 +18,8 @@ mod String {
 
     import java.lang.System
     import java.util.regex.Pattern
+    import java.util.regex.PatternSyntaxException
+    import java.lang.IndexOutOfBoundsException
 
     use Regex.Flag
 
@@ -302,7 +304,7 @@ mod String {
         try {
             unsafe s.matches(regex#regex)
         } catch {
-            case _: ##java.util.regex.PatternSyntaxException => false
+            case _: PatternSyntaxException => false
         }
 
     ///
@@ -320,7 +322,7 @@ mod String {
             let m1 = unsafe p1.matcher(s);
             unsafe m1.find(0)
         } catch {
-            case _: ##java.util.regex.PatternSyntaxException => false
+            case _: PatternSyntaxException => false
         }
 
     ///
@@ -331,7 +333,7 @@ mod String {
     pub def slice(start: {start = Int32}, end: {end = Int32}, s: String): String = try {
         unsafe s.substring(start#start, end#end)
     } catch {
-        case _: ##java.lang.IndexOutOfBoundsException => ""
+        case _: IndexOutOfBoundsException => ""
     }
 
     ///

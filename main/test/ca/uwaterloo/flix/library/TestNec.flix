@@ -1017,14 +1017,14 @@ mod TestNec {
     def forEach01(): Bool = region rc {
         let ri = Ref.fresh(rc, 21);
         Nec.forEach(x -> Ref.put(x, ri), singleton(1));
-        1 == deref ri
+        1 == Ref.get(ri)
     }
 
     @test
     def forEach02(): Bool = region rc {
         let ri = Ref.fresh(rc, 21);
         Nec.forEach(x -> Ref.put(x, ri), necOf3(1, 2, 3));
-        3 == deref ri
+        3 == Ref.get(ri)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1035,14 +1035,14 @@ mod TestNec {
     def forEachWithIndex01(): Bool = region rc {
         let ri = Ref.fresh(rc, 21);
         Nec.forEachWithIndex((i, _) -> Ref.put(i, ri), singleton(1));
-        0 == deref ri
+        0 == Ref.get(ri)
     }
 
     @test
     def forEachWithIndex02(): Bool = region rc {
         let ri = Ref.fresh(rc, 21);
         Nec.forEachWithIndex((i, _) -> Ref.put(i, ri), necOf3(1, 2, 3));
-        2 == deref ri
+        2 == Ref.get(ri)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1447,7 +1447,7 @@ mod TestNec {
         let st = Ref.fresh(rc, 0);
         let l = Nec.singleton(1);
         let ans = Nec.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, l);
-        ans == Identity.Identity(Nec.singleton(1)) and deref st == 1
+        ans == Identity.Identity(Nec.singleton(1)) and Ref.get(st) == 1
     }
 
     @test
@@ -1455,7 +1455,7 @@ mod TestNec {
         let st = Ref.fresh(rc, 0);
         let l = necOf2(1, 2);
         let ans = Nec.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, l);
-        ans == Identity.Identity(necOf2(1, 2)) and deref st == 2
+        ans == Identity.Identity(necOf2(1, 2)) and Ref.get(st) == 2
     }
 
     @test
@@ -1463,7 +1463,7 @@ mod TestNec {
         let st = Ref.fresh(rc, 0);
         let l = necOf3(1, 2, 3);
         let ans = Nec.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, l);
-        ans == Identity.Identity(necOf3(1, 2, 3)) and deref st == 3
+        ans == Identity.Identity(necOf3(1, 2, 3)) and Ref.get(st) == 3
     }
 
     /////////////////////////////////////////////////////////////////////////////

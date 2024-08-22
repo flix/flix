@@ -20,7 +20,7 @@ mod Test.Handler.Gen.Int64 {
         }
 
     def getAndInc(r: Ref[Int64, r]): Int64 \ r =
-        let i = deref r;
+        let i = Ref.get(r);
         Ref.put(i + 1i64, r);
         i
 

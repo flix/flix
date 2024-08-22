@@ -14,13 +14,15 @@
  * limitations under the License.
  */
 
+ import java.io.RandomAccessFile
+
 ///
 /// Represents a RandomAccessFile - a read-only or read-write file with random access.
 ///
 /// File does not properly support Unicode and uses Java / JVM conventions for representing
 /// numbers so it is inadequate for serializing data portably.
 ///
-enum File(##java.io.RandomAccessFile)
+enum File(RandomAccessFile)
 
 instance Reader[File] {
     pub def read(b: Array[Int8, r], r: File): Result[IOError, Int32] \ {IO, r} =

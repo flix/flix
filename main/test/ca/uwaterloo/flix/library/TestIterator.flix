@@ -575,7 +575,7 @@ mod TestIterator {
         let res = Ref.fresh(rc, 21);
         Nil |> List.iterator(rc) |>
             Iterator.forEach(x -> Ref.put(x, res));
-        21 == deref res
+        21 == Ref.get(res)
     }
 
     @test
@@ -583,7 +583,7 @@ mod TestIterator {
         let res = Ref.fresh(rc, 21);
         (1 :: 2 :: 3 :: Nil) |> List.iterator(rc) |>
             Iterator.forEach(x -> Ref.put(x, res));
-        3 == deref res
+        3 == Ref.get(res)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -595,7 +595,7 @@ mod TestIterator {
         let res = Ref.fresh(rc, 21);
         Nil |> List.iterator(rc) |>
             Iterator.forEachWithIndex((i, _) -> Ref.put(i, res));
-        21 == deref res
+        21 == Ref.get(res)
     }
 
     @test
@@ -603,7 +603,7 @@ mod TestIterator {
         let res = Ref.fresh(rc, 21);
         (1 :: 2 :: 3 :: Nil) |> List.iterator(rc) |>
             Iterator.forEachWithIndex((i, _) -> Ref.put(i, res));
-        2 == deref res
+        2 == Ref.get(res)
     }
 
     /////////////////////////////////////////////////////////////////////////////
