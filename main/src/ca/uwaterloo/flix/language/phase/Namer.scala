@@ -47,17 +47,16 @@ object Namer {
         case (macc, root) => macc + (root.loc.source -> root.loc)
       }
 
-      val units0 = ParOps.parMapValues(program.units)(visitUnit)
-      val table0@SymbolTable(s, _, _) = units0.values.foldLeft(SymbolTable.empty)(tableUnit)
+      val units = ParOps.parMapValues(program.units)(visitUnit)
+      val table0@SymbolTable(s, _, _) = units.values.foldLeft(SymbolTable.empty)(tableUnit)
       val structFields = collectStructFields(s.values.flatMap(_.m.flatMap(_._2)))
       val structFieldTraits = fieldTraits(structFields)
 
-      val units = units0.map {
-        case (k, v) => k -> v.copy(decls = v.decls ++ structFieldTraits)
-      }
       val table = structFieldTraits.foldLeft(table0) {
         case(acc, cur) =>
-          tryAddToTable(acc, Name.RootNS.parts, cur.sym.name, cur)
+          val table1 = tryAddToTable(acc, Name.RootNS.parts, cur.sym.name, cur)
+          val assocsAndSigs = cur.assocs ++ cur.sigs
+          assocsAndSigs.foldLeft(table1)(tableDecl)
       }
       val SymbolTable(symbols0, instances0, uses0) = table
       // TODO NS-REFACTOR remove use of NName
@@ -70,7 +69,7 @@ object Namer {
       val uses = uses0.map {
         case (k, v) => Name.mkUnlocatedNName(k) -> v
       }
-      Validation.toSuccessOrSoftFailure(NamedAst.Root(symbols, structFields, instances, uses, units, program.entryPoint, locations, program.names), sctx.errors.asScala)
+      Validation.toSuccessOrSoftFailure(NamedAst.Root(symbols, structFields, structFieldTraits, instances, uses, units, program.entryPoint, locations, program.names), sctx.errors.asScala)
     }(DebugValidation())
 
   /**

@@ -95,6 +95,7 @@ object Resolver {
         }
     }
 
+
     // Type aliases must be processed first in order to provide a `taenv` for looking up type alias symbols.
     flatMapN(sequence(usesVal), resolveTypeAliases(defaultUses, root)) {
       case (uses, (taenv, taOrder)) =>
@@ -103,10 +104,12 @@ object Resolver {
         flatMapN(unitsVal) {
           case units =>
             val table = SymbolTable.traverse(units)(tableUnit)
-            mapN(checkSuperTraitDag(table.traits)) {
-              case () =>
+            val structFieldTraitsVal = traverse(root.structFieldTraits)(resolveTrait(_, ListMap.empty, taenv, Name.RootNS, root))
+            mapN(checkSuperTraitDag(table.traits), structFieldTraitsVal) {
+              case ((), structFieldTraitsList) =>
+                val structFieldTraits = structFieldTraitsList.map(t => t.sym -> t)
                 ResolvedAst.Root(
-                  table.traits,
+                  table.traits ++ structFieldTraits,
                   table.instances.m, // TODO NS-REFACTOR use ListMap elsewhere for this too
                   table.defs,
                   table.enums,
