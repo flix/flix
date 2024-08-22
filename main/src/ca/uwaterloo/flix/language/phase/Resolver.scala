@@ -1997,7 +1997,6 @@ object Resolver {
       }
   }
 
-
   /**
     * Performs name resolution on the given formal parameter `fparam0` in the given namespace `ns0`.
     */
