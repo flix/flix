@@ -473,15 +473,6 @@ object SemanticTokensProvider {
     case Expr.VectorLength(exp, _) =>
       visitExp(exp)
 
-    case Expr.Ref(exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
-
-    case Expr.Deref(exp, _, _, _) =>
-      visitExp(exp)
-
-    case Expr.Assign(exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
-
     case Expr.Ascribe(exp, tpe, _, _) =>
       visitExp(exp) ++ visitType(tpe)
 

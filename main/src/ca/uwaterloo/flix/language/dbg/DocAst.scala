@@ -170,12 +170,6 @@ object DocAst {
     def Ret(d: Expr): Expr =
       Keyword("ret", d)
 
-    def Ref(d: Expr): Expr =
-      Keyword("ref", d)
-
-    def Deref(d: Expr): Expr =
-      Keyword("deref", d)
-
     def Discard(d: Expr): Expr =
       Keyword("discard", d)
 

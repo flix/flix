@@ -827,63 +827,6 @@ object GenExpression {
         // Since the return type is unit, we put an instance of unit on top of the stack
         mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
 
-      case AtomicOp.Ref =>
-        val List(exp) = exps
-
-        val MonoType.Ref(refValueType) = tpe
-        val refType = BackendObjType.Ref(BackendType.asErasedBackendType(refValueType))
-        val internalClassName = refType.jvmName.toInternalName
-
-        // Create a new reference object
-        mv.visitTypeInsn(NEW, internalClassName)
-        // Duplicate it since one instance will get consumed by constructor
-        mv.visitInsn(DUP)
-        // Call the constructor
-        mv.visitMethodInsn(INVOKESPECIAL, internalClassName, "<init>", MethodDescriptor.NothingToVoid.toDescriptor, false)
-        // Duplicate it since one instance will get consumed by putfield
-        mv.visitInsn(DUP)
-        // Evaluate the underlying expression
-        compileExpr(exp)
-        // set the field with the ref value
-        mv.visitFieldInsn(PUTFIELD, internalClassName, refType.ValueField.name, refType.tpe.toDescriptor)
-
-      case AtomicOp.Deref =>
-        val List(exp) = exps
-        // Add source line number for debugging (can fail with ???)
-        addSourceLine(mv, loc)
-
-        // Evaluate the exp
-        compileExpr(exp)
-
-        // the previous function is already partial
-        val MonoType.Ref(refValueType) = exp.tpe
-        val refType = BackendObjType.Ref(BackendType.asErasedBackendType(refValueType))
-        val internalClassName = refType.jvmName.toInternalName
-
-        // Cast the ref
-        mv.visitTypeInsn(CHECKCAST, internalClassName)
-        // Dereference the expression
-        mv.visitFieldInsn(GETFIELD, internalClassName, refType.ValueField.name, refType.tpe.toDescriptor)
-
-      case AtomicOp.Assign =>
-        val List(exp1, exp2) = exps
-
-        // Add source line number for debugging (can fail with ??? same as deref)
-        addSourceLine(mv, loc)
-
-        // Evaluate the reference address
-        compileExpr(exp1)
-        // Evaluating the value to be assigned to the reference
-        compileExpr(exp2)
-
-        // the previous function is already partial
-        val MonoType.Ref(refValueType) = exp1.tpe
-        val refType = BackendObjType.Ref(BackendType.asErasedBackendType(refValueType))
-        // Invoke `setValue` method to set the value to the given number
-        mv.visitFieldInsn(PUTFIELD, refType.jvmName.toInternalName, refType.ValueField.name, refType.tpe.toDescriptor)
-        // Since the return type is unit, we put an instance of unit on top of the stack
-        mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
-
       case AtomicOp.InstanceOf(clazz) =>
         val List(exp) = exps
         val className = asm.Type.getInternalName(clazz)

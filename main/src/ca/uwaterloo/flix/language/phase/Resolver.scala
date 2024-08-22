@@ -1424,27 +1424,6 @@ object Resolver {
           case e => ResolvedAst.Expr.VectorLength(e, loc)
         }
 
-      case NamedAst.Expr.Ref(exp1, exp2, loc) =>
-        val e1Val = visitExp(exp1, env0)
-        val e2Val = visitExp(exp2, env0)
-        mapN(e1Val, e2Val) {
-          case (e1, e2) =>
-            ResolvedAst.Expr.Ref(e1, e2, loc)
-        }
-
-      case NamedAst.Expr.Deref(exp, loc) =>
-        val eVal = visitExp(exp, env0)
-        mapN(eVal) {
-          e => ResolvedAst.Expr.Deref(e, loc)
-        }
-
-      case NamedAst.Expr.Assign(exp1, exp2, loc) =>
-        val e1Val = visitExp(exp1, env0)
-        val e2Val = visitExp(exp2, env0)
-        mapN(e1Val, e2Val) {
-          case (e1, e2) => ResolvedAst.Expr.Assign(e1, e2, loc)
-        }
-
       case NamedAst.Expr.Ascribe(exp, expectedType, expectedEff, loc) =>
         val expectedTypVal = traverseOpt(expectedType)(resolveType(_, Wildness.AllowWild, env0, taenv, ns0, root))
         val expectedEffVal = traverseOpt(expectedEff)(resolveType(_, Wildness.AllowWild, env0, taenv, ns0, root))

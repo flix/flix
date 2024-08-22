@@ -784,20 +784,6 @@ object Namer {
       val e = visitExp(exp, ns0)
       NamedAst.Expr.VectorLength(e, loc)
 
-    case DesugaredAst.Expr.Ref(exp1, exp2, loc) =>
-      val e1 = visitExp(exp1, ns0)
-      val e2 = visitExp(exp2, ns0)
-      NamedAst.Expr.Ref(e1, e2, loc)
-
-    case DesugaredAst.Expr.Deref(exp, loc) =>
-      val e = visitExp(exp, ns0)
-      NamedAst.Expr.Deref(e, loc)
-
-    case DesugaredAst.Expr.Assign(exp1, exp2, loc) =>
-      val e1 = visitExp(exp1, ns0)
-      val e2 = visitExp(exp2, ns0)
-      NamedAst.Expr.Assign(e1, e2, loc)
-
     case DesugaredAst.Expr.Ascribe(exp, tpe, eff, loc) =>
       val e = visitExp(exp, ns0)
       val t = tpe.map(visitType)

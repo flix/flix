@@ -97,12 +97,6 @@ object Simplifier {
           val t = visitType(tpe)
           SimplifiedAst.Expr.ApplyAtomic(op, es1, t, purity, loc)
 
-        case AtomicOp.Ref =>
-          // The region expression is dropped (tail of exps / es)
-          val es1 = List(es.head)
-          val t = visitType(tpe)
-          SimplifiedAst.Expr.ApplyAtomic(op, es1, t, purity, loc)
-
         case AtomicOp.Spawn =>
           // Wrap the expression in a closure: () -> tpe \ ef
           val List(e1, e2) = es
