@@ -86,7 +86,7 @@ object Unification {
   // NB: The order of cases has been determined by code coverage analysis.
   def unifyTypes(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError] = (tpe1.kind, tpe2.kind) match {
 
-    case (Kind.Eff, Kind.Eff) => EffUnification.unify(tpe1, tpe2, renv)
+    case (Kind.Eff, Kind.Eff) => EffUnification2.unifyHelper(tpe1, tpe2, renv)
 
     case (Kind.Bool, Kind.Bool) => BoolUnification.unify(tpe1, tpe2, renv)
 

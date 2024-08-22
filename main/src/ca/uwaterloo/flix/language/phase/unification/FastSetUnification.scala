@@ -65,7 +65,7 @@ object FastSetUnification {
 
     object RunOptions {
       val default: RunOptions = RunOptions(
-        sizeThreshold = 800,
+        sizeThreshold = 1800,
         complexThreshold = 10,
         permutationLimit = 10,
         debugging = false,

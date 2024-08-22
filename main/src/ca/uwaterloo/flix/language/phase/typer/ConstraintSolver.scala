@@ -362,7 +362,7 @@ object ConstraintSolver {
       for {
         (t1, p1) <- TypeReduction.simplify(tpe1, renv, loc)
         (t2, p2) <- TypeReduction.simplify(tpe2, renv, loc)
-        res0 <- EffUnification.unify(t1, t2, renv).mapErr(toTypeError(_, prov))
+        res0 <- EffUnification2.unifyHelper(t1, t2, renv).mapErr(toTypeError(_, prov))
         res =
           if (res0._2.isEmpty) {
             ResolutionResult.newSubst(res0._1)

@@ -16,8 +16,7 @@
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.language.ast.Ast.AssocTypeConstructor
-import ca.uwaterloo.flix.language.ast.{Kind, Rigidity, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.language.phase.unification.FastSetUnification.Solver.RunOptions
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, Rigidity, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.unification.FastSetUnification.Term.mkCompl
 import ca.uwaterloo.flix.language.phase.unification.FastSetUnification.{ConflictException, Equation, Term, TooComplexException}
 import ca.uwaterloo.flix.util.collection.Bimap
@@ -55,6 +54,37 @@ object EffUnification2 {
     }
   }
 
+  def unifyHelper(tpe1: Type, tpe2: Type, renv: RigidityEnv): Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError] = {
+    unify(tpe1, tpe2, tpe1.loc, renv).map{
+      case None => (Substitution.empty, List(Ast.BroadEqualityConstraint(tpe1, tpe2)))
+      case Some(subst) => (subst, Nil)
+    }
+  }
+
+  def unify(tpe1: Type, tpe2: Type, loc: SourceLocation, renv: RigidityEnv): Result[Option[Substitution], UnificationError] = {
+    implicit val bimap: Bimap[Atom, Int] = try {mkBidirectionalVarMap(tpe1, tpe2)} catch {
+      case InternalCompilerException(_, _) => return Result.Ok(None)
+    }
+
+    val equation = try {
+      toEquation(tpe1, tpe2, loc)(renv, bimap)
+    } catch {
+      case InternalCompilerException(_, _) => return Result.Ok(None)
+    }
+
+    FastSetUnification.Solver.solve(List(equation)) match {
+      case Result.Ok(subst) => Result.Ok(Some(fromSetSubst(subst)))
+
+      case Result.Err((ex: ConflictException, _, _)) =>
+      val tpe1 = fromTerm(ex.x, ex.loc)
+      val tpe2 = fromTerm(ex.y, ex.loc)
+      Result.Err(UnificationError.MismatchedEffects(tpe1, tpe2))
+
+      case Result.Err((ex: TooComplexException, _, _)) =>
+      Result.Err(UnificationError.TooComplex(ex.msg, loc))
+    }
+  }
+
   /**
     * Returns a bi-directional map from type variables to ints computed from the given list of unification equations `l`.
     */
@@ -65,8 +95,16 @@ object EffUnification2 {
     }
 
     // Construct the map from atoms to ints.
-    val mapping = atoms.toList.zipWithIndex
-    Bimap.from(mapping)
+    mkBidirectionalVarMap(atoms)
+  }
+
+  private def mkBidirectionalVarMap(tpe1: Type, tpe2: Type): Bimap[Atom, Int] = {
+    mkBidirectionalVarMap(getAtoms(tpe1) ++ getAtoms(tpe2))
+  }
+
+
+  private def mkBidirectionalVarMap(atoms: Set[Atom]): Bimap[Atom, Int] = {
+    Bimap.from(atoms.toList.zipWithIndex)
   }
 
   /**
@@ -146,13 +184,28 @@ object EffUnification2 {
   /**
     * Returns the Atom representation of the given Type.
     */
-  private def toAtom(t: Type): Atom = Type.eraseTopAliases(t) match {
+  private def toAtom(t: Type)(implicit renv: RigidityEnv): Atom = Type.eraseTopAliases(t) match {
     case Type.Var(sym, _) => Atom.Var(sym)
     case Type.Cst(TypeConstructor.Effect(sym), _) => Atom.Eff(sym)
     case Type.AssocType(AssocTypeConstructor(sym, _), arg0, kind, _) =>
-      val arg = toAtom(arg0)
-      Atom.Assoc(sym, arg, kind)
+    val arg = rigidToAtom(arg0)
+    Atom.Assoc(sym, arg, kind)
     case Type.Cst(TypeConstructor.Error(id, kind), _) => Atom.Error(id, kind)
+    case tpe => throw InternalCompilerException(s"Unexpected non-atom type: $tpe", tpe.loc)
+  }
+
+  /**
+    * Returns the Atom representation of the given Type.
+    */
+  private def rigidToAtom(t: Type)(implicit renv: RigidityEnv): Atom = Type.eraseTopAliases(t) match {
+    case tpe@Type.Var(sym, _) =>
+      if (renv.isRigid(sym)) Atom.Var(sym)
+      else throw InternalCompilerException(s"Unexpected non-atom type: $tpe", tpe.loc)
+//    case Type.Cst(TypeConstructor.Effect(sym), _) => Atom.Eff(sym)
+//    case Type.AssocType(AssocTypeConstructor(sym, _), arg0, kind, _) =>
+//      val arg = rigidToAtom(arg0)
+//      Atom.Assoc(sym, arg, kind)
+//    case Type.Cst(TypeConstructor.Error(id, kind), _) => Atom.Error(id, kind)
     case tpe => throw InternalCompilerException(s"Unexpected non-atom type: $tpe", tpe.loc)
   }
 
