@@ -16,7 +16,6 @@ import ca.uwaterloo.flix.util.ParOps
   *
   *   - Ref
   *     - component type erasure
-  *     - deref casting
   *   - Tuple
   *     - component type erasure
   *     - index casting
