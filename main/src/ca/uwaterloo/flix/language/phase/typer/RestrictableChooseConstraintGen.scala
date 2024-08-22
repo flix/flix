@@ -248,6 +248,7 @@ object RestrictableChooseConstraintGen {
     * Γ ⊢ open_as X e : X[s + φ][α1 ... αn]
     */
   def visitOpenAs(exp0: KindedAst.Expr.OpenAs)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
+    implicit val scope: Scope = c.getScope
     exp0 match {
       case KindedAst.Expr.OpenAs(Ast.RestrictableEnumSymUse(sym, _), exp, tvar, loc) =>
         val `enum` = root.restrictableEnums(sym)

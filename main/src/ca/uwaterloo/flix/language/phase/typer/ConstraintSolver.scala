@@ -16,10 +16,11 @@
 package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
-import ca.uwaterloo.flix.language.phase.typer.TypeReduction.{JavaMethodResolutionResult, JavaConstructorResolutionResult}
+import ca.uwaterloo.flix.language.phase.typer.TypeReduction.{JavaConstructorResolutionResult, JavaMethodResolutionResult}
 import ca.uwaterloo.flix.language.phase.unification.Unification.getUnderOrOverAppliedError
 import ca.uwaterloo.flix.language.phase.unification._
 import ca.uwaterloo.flix.util.Result.Err
@@ -73,7 +74,7 @@ object ConstraintSolver {
 
       // The initial substitution maps from formal parameters to their types
       val initialSubst = fparams.foldLeft(Substitution.empty) {
-        case (acc, KindedAst.FormalParam(sym, mod, tpe, src, loc)) => acc ++ Substitution.singleton(sym.tvar.sym, openOuterSchema(tpe))
+        case (acc, KindedAst.FormalParam(sym, mod, tpe, src, loc)) => acc ++ Substitution.singleton(sym.tvar.sym, openOuterSchema(tpe)(Scope.Top, flix))
       }
 
       // Wildcard tparams are not counted in the tparams, so we need to traverse the types to get them.
@@ -633,7 +634,7 @@ object ConstraintSolver {
     * `r`. This only happens for if the row type is the topmost type, i.e. this
     * doesn't happen inside tuples or other such nesting.
     */
-  private def openOuterSchema(tpe: Type)(implicit flix: Flix): Type = {
+  private def openOuterSchema(tpe: Type)(implicit scope: Scope, flix: Flix): Type = {
     @tailrec
     def transformRow(tpe: Type, acc: Type => Type): Type = tpe match {
       case Type.Cst(TypeConstructor.SchemaRowEmpty, loc) =>
