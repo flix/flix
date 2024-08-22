@@ -1,10 +1,13 @@
 
+import java.util.{Random => JRandom};
+
 ///
 /// Represents a random number generator.
 ///
-pub enum Random(##java.util.Random)
+pub enum Random(JRandom)
 
 mod Random {
+
     import java.util.{Random => JRandom};
 
     ///
@@ -37,55 +40,48 @@ mod Random {
     /// Returns the next pseudorandom boolean from the given random number generator `r`.
     ///
     pub def nextBool(r: Random): Bool \ IO =
-        import java.util.Random.nextBoolean(): Bool \ IO;
         let Random(o) = r;
-        nextBoolean(o)
+        o.nextBoolean()
 
     ///
     /// Returns the next pseudorandom 32-bit floating point number from the given random number generator `r`.
     ///
     pub def nextFloat32(r: Random): Float32 \ IO =
-        import java.util.Random.nextFloat(): Float32 \ IO;
         let Random(o) = r;
-        nextFloat(o)
+        o.nextFloat()
 
     ///
     /// Returns the next pseudorandom 64-bit floating point number from the given random number generator `r`.
     ///
     pub def nextFloat64(r: Random): Float64 \ IO =
-        import java.util.Random.nextDouble(): Float64 \ IO;
         let Random(o) = r;
-        nextDouble(o)
+        o.nextDouble()
 
     ///
     /// Returns the next pseudorandom 32-bit integer value from the given random number generator `r`.
     ///
     pub def nextInt32(r: Random): Int32 \ IO =
-        import java.util.Random.nextInt(): Int32 \ IO;
         let Random(o) = r;
-        nextInt(o)
+        o.nextInt()
 
     ///
     /// Returns the next pseudorandom 64-bit integer value from the given random number generator `r`.
     ///
     pub def nextInt64(r: Random): Int64 \ IO =
-        import java.util.Random.nextLong(): Int64 \ IO;
         let Random(o) = r;
-        nextLong(o)
+        o.nextLong()
 
     ///
     /// Returns the next pseudorandom Gaussian distributed 64-bit floating point number.
     ///
     pub def nextGaussian(r: Random): Float64 \ IO =
-        import java.util.Random.nextGaussian(): Float64 \ IO;
         let Random(o) = r;
-        nextGaussian(o)
+        o.nextGaussian()
 
     ///
     /// Returns the next pseudorandom 32-bit integer value between `0` and `m` (exclusive) using the given random number generator `r`.
     ///
     pub def nextNatWithMax(r: Random, m: Int32): Int32 \ IO =
-        import java.util.Random.nextInt(Int32): Int32 \ IO;
         let Random(o) = r;
-        nextInt(o, m)
+        o.nextInt(m)
 }

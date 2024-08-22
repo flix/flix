@@ -14,9 +14,25 @@
  *  limitations under the License.
  */
 
+import java.util.{List => JList}
+import java.util.{Iterator => JIterator}
+
 ///
 /// A Vector data type which is fundamentally like Array but is immutable.
 ///
+
+instance Index[Vector[a]] {
+    type Idx = Int32
+    type Elm = a
+    type Aef = OutOfBounds
+
+    pub def get(i: Int32, t: Vector[a]): a \ OutOfBounds = {
+        if (0 <= i and i < Vector.length(t)) Vector.get(i, t)
+        else do OutOfBounds.outOfBounds(
+            "index ${i} is out of bounds for Vector of length ${Vector.length(t)}"
+        )
+    }
+}
 
 instance ToString[Vector[a]] with ToString[a] {
     pub def toString(v: Vector[a]): String = Vector.toString(v)
@@ -104,17 +120,16 @@ instance Iterable[Vector[a]] {
 }
 
 instance ToJava[Vector[a]] {
-    type Out = ##java.util.List
+    type Out = JList
     type Aef = IO
-    pub def toJava(v: Vector[a]): ##java.util.List \ IO = Adaptor.toList(v)
+    pub def toJava(v: Vector[a]): JList \ IO = Adaptor.toList(v)
 }
 
 
 instance FromJava[Vector[a]] {
-    type In = ##java.util.List
-    pub def fromJava(l: ##java.util.List): Vector[a] = region rc {
-        import java.util.List.iterator(): ##java.util.Iterator \ rc;
-        iterator(l) |> Adaptor.fromIterator(rc, (Proxy.Proxy: Proxy[a])) |> Iterator.toVector
+    type In = JList
+    pub def fromJava(l: JList): Vector[a] = region rc {
+        (unsafe l.iterator()) |> Adaptor.fromIterator(rc, (Proxy.Proxy: Proxy[a])) |> Iterator.toVector
     }
 }
 
@@ -147,12 +162,12 @@ mod Vector {
     ///
     pub def toString(v: Vector[a]): String with ToString[a] = region rc {
         let sb = StringBuilder.empty(rc);
-        let first = ref true @ rc;
+        let first = Ref.fresh(rc, true);
 
         StringBuilder.appendString!("Vector#{", sb);
 
         let f = x -> {
-            if (not deref first) StringBuilder.appendString!(", ", sb) else Ref.put(false, first);
+            if (not Ref.get(first)) StringBuilder.appendString!(", ", sb) else Ref.put(false, first);
             StringBuilder.appendString!("${x}", sb)
         };
         forEach(f, v);
@@ -220,7 +235,7 @@ mod Vector {
     pub def nonEmpty(v: Vector[a]): Bool = not isEmpty(v)
 
     ///
-    /// Returns the length of the vector `v`.
+    /// Returns the number of elements in the vector `v`.
     ///
     pub def length(v: Vector[a]): Int32 = $VECTOR_LENGTH$(v)
 
@@ -454,10 +469,10 @@ mod Vector {
     ///
     pub def scanLeft(f: (b, a) -> b \ ef, s: b, v: Vector[a]): Vector[b] \ ef = region rc {
         let arr = Array.empty(rc, length(v) + 1);
-        let acc = ref s @ rc;
+        let acc = Ref.fresh(rc, s);
         Array.put(s, 0, arr);
         let step = (i, x) -> {
-            let s1 = f(deref acc, x);
+            let s1 = f(Ref.get(acc), x);
             Ref.put(s1, acc);
             Array.put(s1, i+1, arr)
         };
@@ -473,13 +488,13 @@ mod Vector {
     pub def scanRight(f: (a, b) -> b \ ef, s: b, v: Vector[a]): Vector[b] \ ef = region rc {
         let len = length(v);
         let arr = Array.empty(rc, len + 1);
-        let acc = ref s @ rc;
+        let acc = Ref.fresh(rc, s);
         Array.put(s, len, arr);
         def loop(i) = {
             if (i < 0)
                 ()
             else {
-                let s1 = f(get(i, v), deref acc);
+                let s1 = f(get(i, v), Ref.get(acc));
                 Ref.put(s1, acc);
                 Array.put(s1, i, arr);
                 loop(i - 1)
@@ -682,14 +697,14 @@ mod Vector {
         let sepLength = length(sep);
         let sepCount = if (count < 2) 0 else count - 1;
         let len = sumLengths(vs) + (sepCount * sepLength);
-        let pos = ref 0 @ rc;
+        let pos = Ref.fresh(rc, 0);
         let arr = Array.empty(rc, len);
         let f = (i, v) -> {
             if (i == 0) {
                 arrayUpdateSeqV!(0, v, arr);
                 Ref.put(length(v), pos)
             } else {
-                let ix = deref pos;
+                let ix = Ref.get(pos);
                 arrayUpdateSeqV!(ix, sep, arr);
                 let ix1 = ix + sepLength;
                 arrayUpdateSeqV!(ix1, v, arr);
@@ -930,10 +945,10 @@ mod Vector {
     ///
     pub def flatten(vs: Vector[Vector[a]]): Vector[a] = region rc {
         let len = sumLengths(vs);
-        let pos = ref 0 @ rc;
+        let pos = Ref.fresh(rc, 0);
         let arr = Array.empty(rc, len);
         forEach(v -> {
-            let i = deref pos;
+            let i = Ref.get(pos);
             Ref.put(i + length(v), pos);
             arrayUpdateSeqV!(i, v, arr)
         }, vs);

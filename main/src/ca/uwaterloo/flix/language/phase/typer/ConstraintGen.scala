@@ -19,12 +19,13 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.KindedAst.Expr
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, Name, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.{InternalCompilerException, SubEffectLevel}
+import ca.uwaterloo.flix.language.phase.unification.Substitution
 
 /**
   * This phase generates a list of type constraints, which include
-  * - equality constraints `tpe1 ~ tpe2`
-  * - trait constraints `C[tpe1]`
-  * - purification constraints `eff1 ~ eff2[sym ↦ Pure]`
+  *   - equality constraints `tpe1 ~ tpe2`
+  *   - trait constraints `C[tpe1]`
+  *   - purification constraints `eff1 ~ eff2[sym ↦ Pure]`
   *
   * We gather constraints as we traverse each def.
   * Constraints are later resolved in ConstraintResolution.
@@ -46,7 +47,7 @@ object ConstraintGen {
 
       case Expr.Def(sym, tvar, loc) =>
         val defn = root.defs(sym)
-        val (tconstrs, econstrs, defTpe) = Scheme.instantiate(defn.spec.sc, loc.asSynthetic)
+        val (tconstrs, econstrs, defTpe, _) = Scheme.instantiate(defn.spec.sc, loc.asSynthetic)
         c.unifyType(tvar, defTpe, loc)
         val constrs = tconstrs.map(_.copy(loc = loc))
         c.addClassConstraints(tconstrs, loc)
@@ -57,7 +58,7 @@ object ConstraintGen {
 
       case Expr.Sig(sym, tvar, loc) =>
         val sig = root.traits(sym.trt).sigs(sym)
-        val (tconstrs, econstrs, sigTpe) = Scheme.instantiate(sig.spec.sc, loc.asSynthetic)
+        val (tconstrs, econstrs, sigTpe, _) = Scheme.instantiate(sig.spec.sc, loc.asSynthetic)
         c.unifyType(tvar, sigTpe, loc)
         val constrs = tconstrs.map(_.copy(loc = loc))
         c.addClassConstraints(constrs, loc)
@@ -102,14 +103,14 @@ object ConstraintGen {
           case KindedAst.Expr.Def(sym, tvar1, loc1) =>
             // Case 1: Lookup the sym and instantiate its scheme.
             val defn = root.defs(sym)
-            val (tconstrs1, econstrs1, declaredType) = Scheme.instantiate(defn.spec.sc, loc1.asSynthetic)
+            val (tconstrs1, econstrs1, declaredType, _) = Scheme.instantiate(defn.spec.sc, loc1.asSynthetic)
             val constrs1 = tconstrs1.map(_.copy(loc = loc))
             Some((sym, tvar1, constrs1, econstrs1, declaredType))
 
           case KindedAst.Expr.Sig(sym, tvar1, loc1) =>
             // Case 2: Lookup the sym and instantiate its scheme.
             val sig = root.traits(sym.trt).sigs(sym)
-            val (tconstrs1, econstrs1, declaredType) = Scheme.instantiate(sig.spec.sc, loc1.asSynthetic)
+            val (tconstrs1, econstrs1, declaredType, _) = Scheme.instantiate(sig.spec.sc, loc1.asSynthetic)
             val constrs1 = tconstrs1.map(_.copy(loc = loc))
             Some((sym, tvar1, constrs1, econstrs1, declaredType))
 
@@ -442,7 +443,7 @@ object ConstraintGen {
         val decl = root.enums(symUse.sym.enumSym)
         val caze = decl.cases(symUse.sym)
         // We ignore constraints as tag schemes do not have them
-        val (_, _, tagType) = Scheme.instantiate(caze.sc, loc.asSynthetic)
+        val (_, _, tagType, _) = Scheme.instantiate(caze.sc, loc.asSynthetic)
 
         // The tag type is a function from the type of variant to the type of the enum.
         val (tpe, eff) = visitExp(exp)
@@ -570,6 +571,52 @@ object ConstraintGen {
         c.expectType(Type.mkArray(elmVar, regionVar, loc), tpe, exp.loc)
         c.unifyType(evar, Type.mkUnion(regionVar, eff, loc), loc)
         val resTpe = Type.Int32
+        val resEff = evar
+        (resTpe, resEff)
+
+      case Expr.StructNew(sym, fields, region, tvar, evar, loc) =>
+        // This case needs to handle expressions like `new S { f = rhs } @ r` where `f` was not present in the struct declaration
+        // Here, we check that `rhs` is itself valid by visiting it but make sure not to unify it with anything
+        val (instantiatedFieldTpes, structTpe, regionVar) = instantiateStruct(sym, root.structs)
+        val visitedFields = fields.map { case (k, v) => visitExp(v) }
+        val (regionTpe, regionEff) = visitExp(region)
+        val (fieldTpes, fieldEffs) = visitedFields.unzip
+        c.unifyType(tvar, structTpe, loc)
+        for {
+          ((fieldSym, expr), fieldTpe1) <- fields.zip(fieldTpes)
+        } {
+          instantiatedFieldTpes.get(fieldSym) match {
+            case None => () // if not an actual field, there is nothing to unify
+            case Some(fieldTpe2) => c.unifyType(fieldTpe1, fieldTpe2, expr.loc)
+          }
+        }
+        c.unifyType(Type.mkRegion(regionVar, loc), regionTpe, region.loc)
+        c.unifyType(evar, Type.mkUnion(fieldEffs :+ regionEff :+ regionVar, loc), loc)
+        val resTpe = tvar
+        val resEff = evar
+        (resTpe, resEff)
+
+      case Expr.StructGet(exp, field, tvar, evar, loc) =>
+        val (instantiatedFieldTpes, structTpe, regionVar) = instantiateStruct(field.structSym, root.structs)
+        val (tpe, eff) = visitExp(exp)
+        c.expectType(structTpe, tpe, exp.loc)
+        val fieldTpe = instantiatedFieldTpes(field)
+        c.unifyType(fieldTpe, tvar, loc)
+        c.unifyType(Type.mkUnion(eff, regionVar, loc), evar, exp.loc)
+        val resTpe = tvar
+        val resEff = evar
+        (resTpe, resEff)
+
+      case Expr.StructPut(exp1, field, exp2, tvar, evar, loc) =>
+        val (instantiatedFieldTpes, structTpe, regionVar) = instantiateStruct(field.structSym, root.structs)
+        val (tpe1, eff1) = visitExp(exp1)
+        val (tpe2, eff2) = visitExp(exp2)
+        c.expectType(structTpe, tpe1, exp1.loc)
+        val fieldTpe = instantiatedFieldTpes(field)
+        c.expectType(fieldTpe, tpe2, exp2.loc)
+        c.unifyType(Type.mkUnit(loc), tvar, loc)
+        c.unifyType(Type.mkUnion(eff1, eff2, regionVar, loc), evar, loc)
+        val resTpe = tvar
         val resEff = evar
         (resTpe, resEff)
 
@@ -709,6 +756,13 @@ object ConstraintGen {
         val resEff = Type.mkUnion(eff :: effs, loc)
         (resTpe, resEff)
 
+      case KindedAst.Expr.Throw(exp, tvar, evar, loc) =>
+        val (_, eff) = visitExp(exp)
+        c.unifyType(evar, Type.mkUnion(eff, Type.IO, loc), loc)
+        val resultTpe = tvar
+        val resultEff = evar
+        (resultTpe, resultEff)
+
       case Expr.TryWith(exp, effUse, rules, tvar, loc) =>
         val (tpe, eff) = visitExp(exp)
         val continuationEffect = Type.freshVar(Kind.Eff, loc)
@@ -777,14 +831,14 @@ object ConstraintGen {
         val resEff = evar
         (resTpe, resEff)
 
-      case Expr.InvokeConstructor(constructor, exps, _) =>
+      case Expr.InvokeConstructorOld(constructor, exps, _) =>
         val classTpe = Type.getFlixType(constructor.getDeclaringClass)
         val (_, _) = exps.map(visitExp).unzip
         val resTpe = classTpe
         val resEff = Type.IO
         (resTpe, resEff)
 
-      case Expr.InvokeMethod(method, clazz, exp, exps, loc) =>
+      case Expr.InvokeMethodOld(method, clazz, exp, exps, loc) =>
         val classTpe = Type.getFlixType(clazz)
         val (thisTpe, _) = visitExp(exp)
         c.unifyType(thisTpe, classTpe, loc)
@@ -793,7 +847,7 @@ object ConstraintGen {
         val resEff = Type.IO
         (resTpe, resEff)
 
-      case Expr.InvokeStaticMethod(method, exps, _) =>
+      case Expr.InvokeStaticMethodOld(method, exps, _) =>
         val (_, _) = exps.map(visitExp).unzip
         val resTpe = Type.getFlixType(method.getReturnType)
         val resEff = Type.IO
@@ -958,7 +1012,7 @@ object ConstraintGen {
         val decl = root.enums(symUse.sym.enumSym)
         val caze = decl.cases(symUse.sym)
         // We ignore constraints as tag schemes do not have them
-        val (_, _, tagType) = Scheme.instantiate(caze.sc, loc.asSynthetic)
+        val (_, _, tagType, _) = Scheme.instantiate(caze.sc, loc.asSynthetic)
 
         // The tag type is a function from the type of variant to the type of the enum.
         val tpe = visitPattern(pat)
@@ -1212,4 +1266,25 @@ object ConstraintGen {
     }
   }
 
+  /**
+    * Instantiates the scheme of the struct in corresponding to `sym` in `structs`
+    * Returns a map from field name to its instantiated type, the type of the instantiated struct, and the instantiated struct's region variable
+    *
+    * For example, for the struct `struct S [v, r] { a: v, b: Int32 }` where `v` instantiates to `v'` and `r` instantiates to `r'`
+    *   The first element of the return tuple would be a map with entries `a -> v'` and `b -> Int32`
+    *   The second element of the return tuple would be(locations omitted) `Apply(Apply(Cst(Struct(S)), v'), r')`
+    *   The third element of the return tuple would be `r'`
+    */
+  private def instantiateStruct(sym: Symbol.StructSym, structs: Map[Symbol.StructSym, KindedAst.Struct])(implicit flix: Flix) : (Map[Symbol.StructFieldSym, Type], Type, Type.Var) = {
+    val struct = structs(sym)
+    assert(struct.tparams.last.sym.kind == Kind.Eff)
+    val fields = struct.fields
+    val (_, _, tpe, substMap) = Scheme.instantiate(struct.sc, struct.loc)
+    val subst = Substitution(substMap)
+    val instantiatedFields = fields.map(f => f match {
+      case KindedAst.StructField(fieldSym, tpe, _) =>
+        fieldSym -> subst(tpe)
+    })
+    (instantiatedFields.toMap, tpe, substMap(struct.tparams.last.sym))
+  }
 }

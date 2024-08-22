@@ -15,8 +15,9 @@
  */
 package ca.uwaterloo.flix.language.ast
 
+import ca.uwaterloo.flix.language.ast.shared.Source
 import ca.uwaterloo.flix.util.collection.MultiMap
 
 case object ReadAst {
-  case class Root(sources: Map[Ast.Source, Unit], names: MultiMap[List[String], String])
+  case class Root(sources: Map[Source, Unit], names: MultiMap[List[String], String])
 }

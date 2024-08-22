@@ -178,11 +178,13 @@ object BackendType {
       case MonoType.String => BackendObjType.String.toTpe
       case MonoType.Regex => BackendObjType.Regex.toTpe
       case MonoType.Region => BackendObjType.Region.toTpe
+      case MonoType.Null => BackendObjType.Native(JvmName.ofClass(classOf[Object])).toTpe
       case MonoType.Array(tpe) => Array(toBackendType(tpe))
       case MonoType.Lazy(tpe) => BackendObjType.Lazy(toBackendType(tpe)).toTpe
       case MonoType.Ref(tpe) => BackendObjType.Ref(toBackendType(tpe)).toTpe
       case MonoType.Tuple(elms) => BackendObjType.Tuple(elms.map(toBackendType)).toTpe
       case MonoType.Enum(_) => BackendObjType.Tagged.toTpe
+      case MonoType.Struct(_, elms, _) => BackendObjType.Struct(elms.map(toBackendType)).toTpe
       case MonoType.Arrow(args, result) => BackendObjType.Arrow(args.map(toBackendType), toBackendType(result)).toTpe
       case MonoType.RecordEmpty => BackendObjType.RecordEmpty.toTpe
       case MonoType.RecordExtend(_, value, _) => BackendObjType.RecordExtend(toBackendType(value)).toTpe
@@ -219,8 +221,8 @@ object BackendType {
     case MonoType.Float64 => BackendType.Float64
     case MonoType.Void | MonoType.AnyType | MonoType.Unit | MonoType.BigDecimal | MonoType.BigInt |
          MonoType.String | MonoType.Regex | MonoType.Array(_) | MonoType.Lazy(_) | MonoType.Ref(_) |
-         MonoType.Tuple(_) | MonoType.Enum(_) | MonoType.Arrow(_, _) | MonoType.RecordEmpty |
-         MonoType.RecordExtend(_, _, _) | MonoType.Native(_) | MonoType.Region =>
+         MonoType.Tuple(_) | MonoType.Enum(_) | MonoType.Struct(_, _, _) | MonoType.Arrow(_, _) | MonoType.RecordEmpty |
+         MonoType.RecordExtend(_, _, _) | MonoType.Native(_) | MonoType.Region | MonoType.Null =>
       BackendObjType.JavaObject.toTpe
   }
 
@@ -236,8 +238,8 @@ object BackendType {
     case MonoType.Native(clazz) if clazz == classOf[Object] => BackendObjType.JavaObject.toTpe
     case MonoType.Void | MonoType.AnyType | MonoType.Unit | MonoType.BigDecimal | MonoType.BigInt |
          MonoType.String | MonoType.Regex | MonoType.Array(_) | MonoType.Lazy(_) | MonoType.Ref(_) |
-         MonoType.Tuple(_) | MonoType.Enum(_) | MonoType.Arrow(_, _) | MonoType.RecordEmpty |
-         MonoType.RecordExtend(_, _, _) | MonoType.Native(_) | MonoType.Region =>
+         MonoType.Tuple(_) | MonoType.Enum(_) | MonoType.Struct(_, _, _) | MonoType.Arrow(_, _) | MonoType.RecordEmpty |
+         MonoType.RecordExtend(_, _, _) | MonoType.Native(_) | MonoType.Region | MonoType.Null =>
       throw InternalCompilerException(s"Unexpected type $tpe", SourceLocation.Unknown)
   }
 
@@ -264,7 +266,7 @@ object BackendType {
     case MonoType.Native(clazz) => JvmName.ofClass(clazz).toTpe
     case MonoType.Void | MonoType.AnyType | MonoType.Unit | MonoType.Lazy(_) | MonoType.Ref(_) |
          MonoType.Tuple(_) | MonoType.Arrow(_, _) | MonoType.RecordEmpty |
-         MonoType.RecordExtend(_, _, _) | MonoType.Region | MonoType.Enum(_) =>
+         MonoType.RecordExtend(_, _, _) | MonoType.Region | MonoType.Enum(_) | MonoType.Struct(_, _, _) | MonoType.Null =>
       BackendObjType.JavaObject.toTpe
   }
 

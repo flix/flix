@@ -45,24 +45,24 @@ object Lowering {
   private object Defs {
     lazy val Box: Symbol.DefnSym = Symbol.mkDefnSym("Boxable.box")
 
-    lazy val Solve: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Solver.run")
-    lazy val Merge: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Solver.union")
-    lazy val Filter: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Solver.projectSym")
-    lazy val Rename: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Solver.rename")
+    lazy val Solve: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.Solver.run")
+    lazy val Merge: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.Solver.union")
+    lazy val Filter: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.Solver.projectSym")
+    lazy val Rename: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.Solver.rename")
 
-    def ProjectInto(arity: Int): Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint/Solver.injectInto$arity")
+    def ProjectInto(arity: Int): Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint.Solver.injectInto$arity")
 
-    def Facts(arity: Int): Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint/Solver.facts$arity")
+    def Facts(arity: Int): Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint.Solver.facts$arity")
 
     lazy val DebugWithPrefix: Symbol.DefnSym = Symbol.mkDefnSym("Debug.debugWithPrefix")
 
-    lazy val ChannelNew: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent/Channel.newChannel")
-    lazy val ChannelNewTuple: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent/Channel.newChannelTuple")
-    lazy val ChannelPut: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent/Channel.put")
-    lazy val ChannelGet: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent/Channel.get")
-    lazy val ChannelMpmcAdmin: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent/Channel.mpmcAdmin")
-    lazy val ChannelSelectFrom: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent/Channel.selectFrom")
-    lazy val ChannelUnsafeGetAndUnlock: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent/Channel.unsafeGetAndUnlock")
+    lazy val ChannelNew: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.newChannel")
+    lazy val ChannelNewTuple: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.newChannelTuple")
+    lazy val ChannelPut: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.put")
+    lazy val ChannelGet: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.get")
+    lazy val ChannelMpmcAdmin: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.mpmcAdmin")
+    lazy val ChannelSelectFrom: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.selectFrom")
+    lazy val ChannelUnsafeGetAndUnlock: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.unsafeGetAndUnlock")
 
     /**
       * Returns the definition associated with the given symbol `sym`.
@@ -74,30 +74,30 @@ object Lowering {
   }
 
   private object Enums {
-    lazy val Datalog: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast/Datalog.Datalog")
-    lazy val Constraint: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast/Datalog.Constraint")
+    lazy val Datalog: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint.Ast.Datalog.Datalog")
+    lazy val Constraint: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint.Ast.Datalog.Constraint")
 
-    lazy val HeadPredicate: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast/Datalog.HeadPredicate")
-    lazy val BodyPredicate: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast/Datalog.BodyPredicate")
+    lazy val HeadPredicate: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint.Ast.Datalog.HeadPredicate")
+    lazy val BodyPredicate: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint.Ast.Datalog.BodyPredicate")
 
-    lazy val HeadTerm: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast/Datalog.HeadTerm")
-    lazy val BodyTerm: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast/Datalog.BodyTerm")
+    lazy val HeadTerm: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint.Ast.Datalog.HeadTerm")
+    lazy val BodyTerm: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint.Ast.Datalog.BodyTerm")
 
-    lazy val PredSym: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast/Shared.PredSym")
-    lazy val VarSym: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast/Datalog.VarSym")
+    lazy val PredSym: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint.Ast.Shared.PredSym")
+    lazy val VarSym: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint.Ast.Datalog.VarSym")
 
-    lazy val Denotation: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast/Shared.Denotation")
-    lazy val Polarity: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast/Datalog.Polarity")
-    lazy val Fixity: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast/Datalog.Fixity")
-    lazy val SourceLocation: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.SourceLocation")
+    lazy val Denotation: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint.Ast.Shared.Denotation")
+    lazy val Polarity: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint.Ast.Datalog.Polarity")
+    lazy val Fixity: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint.Ast.Datalog.Fixity")
+    lazy val SourceLocation: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint.Ast.SourceLocation")
 
     lazy val Comparison: Symbol.EnumSym = Symbol.mkEnumSym("Comparison")
     lazy val Boxed: Symbol.EnumSym = Symbol.mkEnumSym("Boxed")
 
     lazy val FList: Symbol.EnumSym = Symbol.mkEnumSym("List")
 
-    lazy val ChannelMpmc: Symbol.EnumSym = Symbol.mkEnumSym("Concurrent/Channel.Mpmc")
-    lazy val ChannelMpmcAdmin: Symbol.EnumSym = Symbol.mkEnumSym("Concurrent/Channel.MpmcAdmin")
+    lazy val ChannelMpmc: Symbol.EnumSym = Symbol.mkEnumSym("Concurrent.Channel.Mpmc")
+    lazy val ChannelMpmcAdmin: Symbol.EnumSym = Symbol.mkEnumSym("Concurrent.Channel.MpmcAdmin")
 
     lazy val ConcurrentReentrantLock: Symbol.EnumSym = Symbol.mkEnumSym("Concurrent.ReentrantLock")
   }
@@ -152,7 +152,7 @@ object Lowering {
     val sigs = ParOps.parMapValues(root.sigs)(visitSig)
     val instances = ParOps.parMapValues(root.instances)(insts => insts.map(visitInstance))
     val enums = ParOps.parMapValues(root.enums)(visitEnum)
-    val structs = Map.empty[Symbol.StructSym, LoweredAst.Struct]
+    val structs = ParOps.parMapValues(root.structs)(visitStruct)
     val restrictableEnums = ParOps.parMapValues(root.restrictableEnums)(visitRestrictableEnum)
     val effects = ParOps.parMapValues(root.effects)(visitEffect)
     val aliases = ParOps.parMapValues(root.typeAliases)(visitTypeAlias)
@@ -194,7 +194,7 @@ object Lowering {
   private def visitInstance(inst0: TypedAst.Instance)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Instance = inst0 match {
     case TypedAst.Instance(doc, ann, mod, sym, tpe0, tconstrs0, assocs0, defs0, ns, loc) =>
       val tpe = visitType(tpe0)
-      val tconstrs = tconstrs0.map(visitTypeConstraint)
+      val tconstrs = tconstrs0.map(visitTraitConstraint)
       val assocs = assocs0.map {
         case TypedAst.AssocTypeDef(doc, mod, sym, args, tpe, loc) => LoweredAst.AssocTypeDef(doc, mod, sym, args, tpe, loc)
       }
@@ -216,6 +216,19 @@ object Lowering {
           (caseSym, LoweredAst.Case(caseSym, caseTpeDeprecated, caseSc, loc))
       }
       LoweredAst.Enum(doc, ann, mod, sym, tparams, derives, cases, tpe, loc)
+  }
+
+  /**
+    * Lowers the given struct `struct0`.
+    */
+  private def visitStruct(struct0: TypedAst.Struct)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Struct = struct0 match {
+    case TypedAst.Struct(doc, ann, mod, sym, tparams0, _, fields0, loc) =>
+      val tparams = tparams0.map(visitTypeParam)
+      val fields = fields0.map {
+        case (fieldSym, field) =>
+          LoweredAst.StructField(fieldSym, visitType(field.tpe), loc)
+      }
+      LoweredAst.Struct(doc, ann, mod, sym, tparams, fields.toList, loc)
   }
 
   /**
@@ -291,10 +304,10 @@ object Lowering {
   /**
     * Lowers the given type constraint `tconstr0`.
     */
-  private def visitTypeConstraint(tconstr0: Ast.TypeConstraint)(implicit root: TypedAst.Root, flix: Flix): Ast.TypeConstraint = tconstr0 match {
-    case Ast.TypeConstraint(head, tpe0, loc) =>
+  private def visitTraitConstraint(tconstr0: Ast.TraitConstraint)(implicit root: TypedAst.Root, flix: Flix): Ast.TraitConstraint = tconstr0 match {
+    case Ast.TraitConstraint(head, tpe0, loc) =>
       val tpe = visitType(tpe0)
-      Ast.TypeConstraint(head, tpe, loc)
+      Ast.TraitConstraint(head, tpe, loc)
   }
 
   /**
@@ -303,7 +316,7 @@ object Lowering {
   private def visitTrait(trt0: TypedAst.Trait, sigs: Map[Symbol.SigSym, LoweredAst.Sig])(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Trait = trt0 match {
     case TypedAst.Trait(doc, ann, mod, sym, tparam0, superTraits0, assocs0, signatures0, laws0, loc) =>
       val tparam = visitTypeParam(tparam0)
-      val superTraits = superTraits0.map(visitTypeConstraint)
+      val superTraits = superTraits0.map(visitTraitConstraint)
       val assocs = assocs0.map {
         case TypedAst.AssocTypeSig(doc, mod, sym, tparam, kind, tpe, loc) => LoweredAst.AssocTypeSig(doc, mod, sym, tparam, kind, loc)
       }
@@ -511,6 +524,23 @@ object Lowering {
       val e3 = visitExp(exp3)
       LoweredAst.Expr.ApplyAtomic(AtomicOp.ArrayStore, List(e1, e2, e3), Type.Unit, eff, loc)
 
+    case TypedAst.Expr.StructNew(sym, fields0, region0, tpe, eff, loc) =>
+      val fields = fields0.map { case (k, v) => (k, visitExp(v)) }
+      val region = visitExp(region0)
+      val (names, es) = fields.unzip
+      LoweredAst.Expr.ApplyAtomic(AtomicOp.StructNew(sym, names), region :: es, tpe, eff, loc)
+
+    case TypedAst.Expr.StructGet(exp0, field, tpe, eff, loc) =>
+      val exp = visitExp(exp0)
+      val idx = field.idx
+      LoweredAst.Expr.ApplyAtomic(AtomicOp.StructGet(field), List(exp), tpe, eff, loc)
+
+    case TypedAst.Expr.StructPut(exp0, field, exp1, tpe, eff, loc) =>
+      val struct = visitExp(exp0)
+      val rhs = visitExp(exp1)
+      val idx = field.idx
+      LoweredAst.Expr.ApplyAtomic(AtomicOp.StructPut(field), List(struct, rhs), tpe, eff, loc)
+
     case TypedAst.Expr.VectorLit(exps, tpe, eff, loc) =>
       val es = visitExps(exps)
       val t = visitType(tpe)
@@ -576,6 +606,11 @@ object Lowering {
       val rs = rules.map(visitCatchRule)
       val t = visitType(tpe)
       LoweredAst.Expr.TryCatch(e, rs, t, eff, loc)
+
+    case TypedAst.Expr.Throw(exp, tpe, eff, loc) =>
+      val e = visitExp(exp)
+      val t = visitType(tpe)
+      LoweredAst.Expr.ApplyAtomic(AtomicOp.Throw, List(e), t, eff, loc)
 
     case TypedAst.Expr.TryWith(exp, sym, rules, tpe, eff, loc) =>
       val e = visitExp(exp)
@@ -1194,10 +1229,10 @@ object Lowering {
           // The type `Denotation[Boxed]`.
           val boxedDenotationType = Types.Denotation
 
-          val Lattice: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Ast/Shared.lattice")
+          val Lattice: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.Ast.Shared.lattice")
           val LatticeType: Type = Type.mkPureArrow(Type.Unit, unboxedDenotationType, loc)
 
-          val Box: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Ast/Shared.box")
+          val Box: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.Ast.Shared.box")
           val BoxType: Type = Type.mkPureArrow(unboxedDenotationType, boxedDenotationType, loc)
 
           val innerApply = LoweredAst.Expr.Apply(LoweredAst.Expr.Def(Lattice, LatticeType, loc), List(LoweredAst.Expr.Cst(Ast.Constant.Unit, Type.Unit, loc)), unboxedDenotationType, Type.Pure, loc)

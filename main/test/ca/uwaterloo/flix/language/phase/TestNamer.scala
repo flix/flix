@@ -251,6 +251,20 @@ class TestNamer extends AnyFunSuite with TestUtils {
     expectError[NameError.DuplicateLowerName](result)
   }
 
+  test("DuplicateLowerName.14") {
+    val input =
+      """
+        |struct S[r] {
+        |    a: Int32
+        |}
+        |struct S2[r] {
+        |    a: Unit
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[NameError.DuplicateLowerName](result)
+  }
+
   test("DuplicateUpperName.01") {
     val input =
       s"""
@@ -599,7 +613,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
     expectError[NameError.DuplicateUpperName](result)
   }
 
-  ignore("DuplicateUpperName.28") {
+  test("DuplicateUpperName.28") {
     val input =
       """
         |struct S[r] {}

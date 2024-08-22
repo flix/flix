@@ -263,7 +263,7 @@ object SimpleType {
   /**
     * A tuple.
     */
-  case class Tuple(elms: List[SimpleType]) extends SimpleType
+  case class Tuple(tpes: List[SimpleType]) extends SimpleType
 
   /**
    * A method return type.
@@ -562,7 +562,7 @@ object SimpleType {
         case TypeConstructor.Effect(sym) => mkApply(SimpleType.Name(sym.name), t.typeArguments.map(visit))
         case TypeConstructor.RegionToStar => mkApply(Region, t.typeArguments.map(visit))
 
-        case TypeConstructor.Error(_) => SimpleType.Error
+        case TypeConstructor.Error(_, _) => SimpleType.Error
       }
     }
 

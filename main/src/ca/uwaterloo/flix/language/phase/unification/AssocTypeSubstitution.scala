@@ -98,7 +98,7 @@ case class AssocTypeSubstitution(m: Map[(Symbol.AssocTypeSym, Symbol.KindedTypeV
   /**
     * Applies `this` substitution to the given type constraint `tc`.
     */
-  def apply(tc: Ast.TypeConstraint): Ast.TypeConstraint = if (isEmpty) tc else tc.copy(arg = apply(tc.arg))
+  def apply(tc: Ast.TraitConstraint): Ast.TraitConstraint = if (isEmpty) tc else tc.copy(arg = apply(tc.arg))
 
   /**
     * Applies `this` substitution to the given type scheme `sc`.

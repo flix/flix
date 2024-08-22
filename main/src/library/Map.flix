@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import java.util.{Map => JMap}
+
 ///
 /// The Map type.
 ///
@@ -107,14 +109,14 @@ instance Iterable[Map[k, v]] {
 }
 
 instance ToJava[Map[k, v]] with Order[k] {
-    type Out = ##java.util.Map
+    type Out = JMap
     type Aef = IO
-    pub def toJava(m: Map[k, v]): ##java.util.Map \ IO = Adaptor.toMap(m)
+    pub def toJava(m: Map[k, v]): JMap \ IO = Adaptor.toMap(m)
 }
 
 instance FromJava[Map[k, v]] with Order[k] {
-    type In = ##java.util.Map
-    pub def fromJava(m: ##java.util.Map): Map[k, v] = Adaptor.fromMap(m)
+    type In = JMap
+    pub def fromJava(m: JMap): Map[k, v] = Adaptor.fromMap(m)
 }
 
 mod Map {
@@ -154,7 +156,7 @@ mod Map {
         minSize >= 1024
 
     ///
-    /// Returns the size of `m`.
+    /// Returns the number of keys in `m`.
     ///
     pub def size(m: Map[k, v]): Int32 =
         let Map(xs) = m;
@@ -778,7 +780,7 @@ mod Map {
     /// Returns `m` as a mutable map.
     ///
     pub def toMutMap(rc: Region[r], m: Map[k, v]): MutMap[k, v, r] \ r =
-        MutMap.MutMap(rc, ref m @ rc)
+        MutMap.MutMap(rc, Ref.fresh(rc, m))
 
     ///
     /// Returns the map `m` as a list of key-value pairs.

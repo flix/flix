@@ -14,14 +14,16 @@
  * limitations under the License.
  */
 
-
 /// Represents arbitrary-precision signed decimal numbers.
 /// The representation consists of both a "value" and a "scale". Standard
 /// equality (`==` and the `Eq` trait) consider both value and scale,
 /// numerical equality (are the values the same after the scales have been
 /// normalized) is provided by the function `numericEquals`.
 mod BigDecimal {
-    import java.math.BigDecimal;
+
+    import java.math.BigDecimal
+    import java.math.RoundingMode
+    import java.lang.NumberFormatException
 
     ///
     /// Returns the smaller of `x` and `y`.
@@ -37,15 +39,13 @@ mod BigDecimal {
     /// Returns the absolute value of `x`.
     ///
     pub def abs(x: BigDecimal): BigDecimal =
-        import java.math.BigDecimal.abs(): BigDecimal \ {};
-        abs(x)
+        unsafe x.abs()
 
     ///
     /// Returns `x` raised to the power of `n`.
     ///
     pub def pow(x: BigDecimal, n: Int32): BigDecimal =
-        import java.math.BigDecimal.pow(Int32): ##java.math.BigDecimal \ {};
-        pow(x, n)
+        unsafe x.pow(n)
 
     ///
     /// Returns the distance between `x` and `y`.
@@ -56,70 +56,57 @@ mod BigDecimal {
     /// Returns `1` if `x > y`, `-1` if `x < y`, and `0` if `x = y`.
     ///
     pub def compare(x: BigDecimal, y: BigDecimal): Int32 =
-        import java.math.BigDecimal.compareTo(BigDecimal): Int32 \ {};
-        compareTo(x, y)
+        unsafe x.compareTo(y)
 
     ///
     /// Returns `1` if `x > 0`, `-1` if `x < 0`, and `0` if `x = 0`.
     ///
     pub def signum(x: BigDecimal): Int32 =
-        import java.math.BigDecimal.signum(): Int32 \ {};
-        signum(x)
+        unsafe x.signum()
 
     ///
     /// Parse the string `s` as an BigDecimal, leading or trailing whitespace is trimmed.
     /// A successful parse is wrapped with `Some(x)`, a parse failure is indicated by `None`.
     ///
     pub def fromString(s: String): Option[BigDecimal] = try {
-        import java.lang.String.strip(): String \ {};
-        Some(unsafe new BigDecimal(s |> strip))
+        Some(unsafe new BigDecimal(s.strip()))
     } catch {
-        case _: ##java.lang.NumberFormatException => None
+        case _: NumberFormatException => None
     }
 
     ///
     /// Returns `x` as a "plain string" without an exponent field.
     ///
     pub def toPlainString(x: BigDecimal): String =
-        import java.math.BigDecimal.toPlainString(): String \ {};
-        toPlainString(x)
+        unsafe x.toPlainString()
 
     ///
     /// Compare `x` and `y` for equality normalizing any difference in scale.
     ///
     pub def numericEquals(x: BigDecimal, y: BigDecimal): Bool =
-        import java.math.BigDecimal.compareTo(BigDecimal): Int32 \ {};
-        compareTo(x, y) == 0
+        unsafe x.compareTo(y) == 0
 
     ///
     /// Returns the scale of `x`.
     ///
     pub def scale(x: BigDecimal): Int32 =
-        import java.math.BigDecimal.scale(): Int32 \ {};
-        scale(x)
+        unsafe x.scale()
 
     ///
     /// Returns the precision of `x`.
     ///
     pub def precision(x: BigDecimal): Int32 =
-        import java.math.BigDecimal.precision(): Int32 \ {};
-        precision(x)
+        unsafe x.precision()
 
     ///
     /// Returns `x` rounded up to a BigDecimal representing the nearest larger integer value.
     ///
-    pub def ceil(x: BigDecimal): BigDecimal =
-        import java.math.BigDecimal.setScale(Int32, ##java.math.RoundingMode): BigDecimal \ {};
-        import static java_get_field java.math.RoundingMode.CEILING: ##java.math.RoundingMode \ {} as getCeiling;
-        setScale(x, 0, getCeiling())
+    pub def ceil(x: BigDecimal): BigDecimal = unsafe x.setScale(0, RoundingMode.CEILING)
 
     ///
     /// Returns `x` rounded down to a BigDecimal representing the nearest smaller integer value.
     ///
-    pub def floor(x: BigDecimal): BigDecimal =
-        import java.math.BigDecimal.setScale(Int32, ##java.math.RoundingMode): BigDecimal \ {};
-        import static java_get_field java.math.RoundingMode.FLOOR: ##java.math.RoundingMode \ {} as getFloor;
-        setScale(x, 0, getFloor())
+    pub def floor(x: BigDecimal): BigDecimal = unsafe x.setScale(0, RoundingMode.FLOOR)
 
     ///
     /// Returns `x` rounded to a BigDecimal representing the nearest integer value.
@@ -127,10 +114,7 @@ mod BigDecimal {
     /// The rounding may be upwards or downwards. If the rounding up and rounding down are equally
     /// close, `x` will be rounded to an even value (i.e. `round(0.5ff64) == 0.0ff64`).
     ///
-    pub def round(x: BigDecimal): BigDecimal =
-        import java.math.BigDecimal.setScale(Int32, ##java.math.RoundingMode): BigDecimal \ {};
-        import static java_get_field java.math.RoundingMode.HALF_EVEN: ##java.math.RoundingMode \ {} as getHalfEven;
-        setScale(x, 0, getHalfEven())
+    pub def round(x: BigDecimal): BigDecimal = unsafe x.setScale(0, RoundingMode.HALF_EVEN)
 
     ///
     /// Convert `x` to an `Option[Int8]`.
@@ -166,11 +150,10 @@ mod BigDecimal {
     /// (i.e. -2147483648 to 2147483647).
     ///
     pub def tryToInt32(x: BigDecimal): Option[Int32] =
-        import java.math.BigDecimal.intValue(): Int32 \ {};
         if (x < Int32.toBigDecimal(Int32.minValue()) or x > Int32.toBigDecimal(Int32.maxValue()))
             None
         else
-            Some(intValue(x))
+            Some(unsafe x.intValue())
 
     ///
     /// Convert `x` to an `Option[Int64]`.
@@ -182,18 +165,16 @@ mod BigDecimal {
     /// (i.e. -9223372036854775808 to 9223372036854775807).
     ///
     pub def tryToInt64(x: BigDecimal): Option[Int64] =
-        import java.math.BigDecimal.longValue(): Int64 \ {};
         if (x < Int64.toBigDecimal(Int64.minValue()) or x > Int64.toBigDecimal(Int64.maxValue()))
             None
         else
-            Some(longValue(x))
+            Some(unsafe x.longValue())
 
     ///
     /// Convert `x` to a `BigInt`.
     ///
     pub def toBigInt(x: BigDecimal): BigInt =
-        import java.math.BigDecimal.toBigInteger(): BigInt \ {};
-        toBigInteger(x)
+        unsafe x.toBigInteger()
 
     ///
     /// Convert `x` to an `Option[Float32]`.
@@ -205,8 +186,7 @@ mod BigDecimal {
     /// (i.e. 1.4E-45 to 3.4028235E38).
     ///
     pub def tryToFloat32(x: BigDecimal): Option[Float32] =
-        import java.math.BigDecimal.floatValue(): Float32 \ {};
-        let d = floatValue(x);
+        let d = unsafe x.floatValue();
         if (Float32.isFinite(d))
             Some(d)
         else
@@ -222,8 +202,7 @@ mod BigDecimal {
     /// (i.e 4.9E-324 to 1.7976931348623157E308).
     ///
     pub def tryToFloat64(x: BigDecimal): Option[Float64] =
-        import java.math.BigDecimal.doubleValue(): Float64 \ {};
-        let d = doubleValue(x);
+        let d = unsafe x.doubleValue();
         if (Float64.isFinite(d))
             Some(d)
         else

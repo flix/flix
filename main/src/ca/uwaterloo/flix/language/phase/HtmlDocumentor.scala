@@ -636,7 +636,7 @@ object HtmlDocumentor {
     sb.append("<span class='keyword'>trait</span> ")
     sb.append(s"<span class='name'>${esc(trt.name)}</span>")
     docTypeParams(List(trt.decl.tparam))
-    docTypeConstraints(trt.decl.superTraits)
+    docTraitConstraints(trt.decl.superTraits)
     sb.append("</code>")
     docActions(None, trt.decl.loc)
     sb.append("</div>")
@@ -1081,7 +1081,7 @@ object HtmlDocumentor {
     sb.append(": ")
     docType(spec.retTpe)
     docEffectType(spec.eff)
-    docTypeConstraints(spec.tconstrs)
+    docTraitConstraints(spec.tconstrs)
     docEqualityConstraints(spec.econstrs)
     sb.append("</code>")
     docActions(linkId, spec.loc)
@@ -1124,7 +1124,7 @@ object HtmlDocumentor {
     sb.append("[")
     docType(instance.tpe)
     sb.append("]")
-    docTypeConstraints(instance.tconstrs)
+    docTraitConstraints(instance.tconstrs)
     sb.append("</code>")
     docActions(None, instance.loc)
     sb.append("</div>")
@@ -1133,14 +1133,14 @@ object HtmlDocumentor {
   }
 
   /**
-    * Documents the given list of `TypeConstraint`s, `tconsts`.
+    * Documents the given list of `TraitConstraint`s, `tconsts`.
     * E.g. "with Functor[m]".
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     *
     * If `tconsts` is empty, nothing will be generated.
     */
-  private def docTypeConstraints(tconsts: List[Ast.TypeConstraint])(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docTraitConstraints(tconsts: List[Ast.TraitConstraint])(implicit flix: Flix, sb: StringBuilder): Unit = {
     if (tconsts.isEmpty) {
       return
     }

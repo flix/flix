@@ -361,9 +361,9 @@ object ResolutionError {
 
   /**
     * Inaccessible Struct Error
-    * 
+    *
     * @param sym the struct symbol
-    * @param ns the namespace where the symbol is not accessible
+    * @param ns  the namespace where the symbol is not accessible
     * @param loc the location where the error occurred
     */
   case class InaccessibleStruct(sym: Symbol.StructSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError with Recoverable {
@@ -735,6 +735,25 @@ object ResolutionError {
   }
 
   /**
+    * An error raised to indicate that a static field name was not found.
+    *
+    * @param clazz the class name.
+    * @param field the field name.
+    * @param loc   the location of the field access.
+    */
+  case class UndefinedJvmStaticField(clazz: Class[_], field: Name.Ident, loc: SourceLocation) extends ResolutionError with Recoverable {
+    def summary: String = s"Undefined static field."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s""">> Undefined static field '${red(field.name)}' in class '${cyan(clazz.getName)}'.
+         |
+         |${code(loc, "undefined static field.")}
+         |""".stripMargin
+    }
+  }
+
+  /**
     * An error raised to indicate that a matching method was not found.
     *
     * @param className  the class name.
@@ -1064,8 +1083,8 @@ object ResolutionError {
     * @param loc      the location where the error occurred.
     */
   case class MismatchedOpArity(op: Symbol.OpSym, expected: Int, actual: Int, loc: SourceLocation) extends ResolutionError with Recoverable {
-    val params = if (expected == 1) "parameter" else "parameters"
-    val be = if (actual == 1) "is" else "are"
+    val params: String = if (expected == 1) "parameter" else "parameters"
+    val be: String = if (actual == 1) "is" else "are"
 
     override def summary: String = s"Expected $expected $params but found $actual."
 
@@ -1087,6 +1106,104 @@ object ResolutionError {
       * Returns a formatted string with helpful suggestions.
       */
     override def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * An error raised to indicate an undefined struct in a `new S { ... } @ r` expression.
+    *
+    * @param name the name of the undefined struct.
+    * @param loc  the location where the error occurred.
+    */
+  case class UndefinedStruct(name: Name.QName, loc: SourceLocation) extends ResolutionError with Recoverable {
+    override def summary: String = s"Undefined struct"
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s""">> Undefined struct '${red(name.toString)}'.
+         |
+         |${code(loc, "undefined struct")}
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate an undefined field in a `struct.field` or `struct.field = value` expression.
+    *
+    * @param field the name of the missing field.
+    * @param loc   the location where the error occurred.
+    */
+  case class UndefinedStructField(field: Name.Label, loc: SourceLocation) extends ResolutionError with Recoverable {
+    override def summary: String = s"Undefined struct field '$field'"
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s""">> Undefined struct field '${red(field.toString)}'.
+         |
+         |${code(loc, "undefined field")}
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate a `new` struct expression provides an extra unknown field.
+    *
+    * @param sym   the symbol of the struct.
+    * @param field the name of the extra field.
+    * @param loc   the location where the error occurred.
+    */
+  case class ExtraStructFieldInNew(sym: Symbol.StructSym, field: Name.Label, loc: SourceLocation) extends ResolutionError with Recoverable {
+    override def summary: String = s"Unexpected field '$field' in new struct expression"
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s""">> Unexpected field '${red(field.toString)}' in new struct expression.
+         |
+         |>> The struct '${cyan(sym.toString)}' does not declare a '${red(field.toString)}' field.
+         |
+         |${code(loc, "unexpected field")}
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate a `new` struct expression is missing a field.
+    *
+    * @param sym   the symbol of the struct.
+    * @param field the name of the missing fields.
+    * @param loc   the location where the error occurred.
+    */
+  case class MissingStructFieldInNew(sym: Symbol.StructSym, field: Name.Label, loc: SourceLocation) extends ResolutionError with Recoverable {
+    override def summary: String = s"Missing struct field '$field' in new struct expression"
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s""">> Missing struct field '${red(field.toString)}' in new struct expression for struct '${cyan(sym.toString)}'.
+         |
+         |${code(loc, "missing field")}
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate a `new` struct expression initializes its fields in the wrong order.
+    *
+    * @param providedFields the order in which fields were initialized.
+    * @param expectedFields the order in which fields were declared.
+    * @param loc            the location where the error occurred
+    */
+  case class IllegalFieldOrderInNew(sym: Symbol.StructSym, providedFields: List[Name.Label], expectedFields: List[Name.Label], loc: SourceLocation) extends ResolutionError with Recoverable {
+    override def summary: String = s"Structs fields must be initialized in their declaration order"
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s""">> Structs fields must be initialized in their declaration order
+         |
+         |Expected Order: ${expectedFields.mkString(", ")}
+         |Actual Order:   ${providedFields.mkString(", ")}
+         |
+         |${code(loc, "incorrect order")}
+         |""".stripMargin
+    }
   }
 
   /**

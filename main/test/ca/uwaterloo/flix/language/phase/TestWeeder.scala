@@ -137,7 +137,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.DuplicateTag](result)
   }
 
-  ignore("DuplicateStructField.01") {
+  test("DuplicateStructField.01") {
     val input =
       """struct Person[r] {
          name: String,
@@ -148,7 +148,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.DuplicateStructField](result)
   }
 
-  ignore("DuplicateStructField.02") {
+  test("DuplicateStructField.02") {
     val input =
       """struct Person[r] {
          name: String,
@@ -160,7 +160,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.DuplicateStructField](result)
   }
 
-  ignore("DuplicateStructField.03") {
+  test("DuplicateStructField.03") {
     val input =
       """struct Person[r] {
          name: String,
@@ -173,7 +173,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.DuplicateStructField](result)
   }
 
-  ignore("DuplicateStructField.04") {
+  test("DuplicateStructField.04") {
     val input =
       """struct Person[r] {
          name: String,
@@ -673,6 +673,16 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalModifier](result)
   }
 
+  test("IllegalModifier.05") {
+    val input =
+      """instance Sub[String] {
+        |    pub override redef sub(x: String, y: String): String = ???
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalModifier](result)
+  }
+
   test("IllegalNullPattern.01") {
     val input =
       s"""
@@ -808,31 +818,31 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalRecordExtensionPattern](result)
   }
 
-  test("IllegalTypeConstraintParameter.01") {
+  test("IllegalTraitConstraintParameter.01") {
     val input =
       """
         |trait C[a] with D[Int32]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalTypeConstraintParameter](result)
+    expectError[WeederError.IllegalTraitConstraintParameter](result)
   }
 
-  test("IllegalTypeConstraintParameter.02") {
+  test("IllegalTraitConstraintParameter.02") {
     val input =
       """
         |instance C[a] with D[Some[a]]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalTypeConstraintParameter](result)
+    expectError[WeederError.IllegalTraitConstraintParameter](result)
   }
 
-  test("IllegalTypeConstraintParameter.03") {
+  test("IllegalTraitConstraintParameter.03") {
     val input =
       """
         |instance C[a] with C[C[C[String]]]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalTypeConstraintParameter](result)
+    expectError[WeederError.IllegalTraitConstraintParameter](result)
   }
 
   test("MalformedFloat64.01") {

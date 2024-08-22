@@ -509,16 +509,16 @@ mod TestResult {
 
     @test
     def forEach01(): Bool = region rc {
-        let ri = ref 21 @ rc;
+        let ri = Ref.fresh(rc, 21);
         Result.forEach(x -> Ref.put(x, ri), (Ok(42): Result[Int32, Int32]));
-        42 == deref ri
+        42 == Ref.get(ri)
     }
 
     @test
     def forEach02(): Bool = region rc {
-        let ri = ref 21 @ rc;
+        let ri = Ref.fresh(rc, 21);
         Result.forEach(x -> Ref.put(x, ri), (Err(42): Result[Int32, Int32]));
-        21 == deref ri
+        21 == Ref.get(ri)
     }
 
     /////////////////////////////////////////////////////////////////////////////

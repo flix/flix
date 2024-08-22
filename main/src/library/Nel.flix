@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import java.util.{List => JList}
+
 ///
 /// The NonEmptyList type.
 ///
@@ -117,9 +119,9 @@ instance Iterable[Nel[a]] {
 }
 
 instance ToJava[Nel[a]] {
-    type Out = ##java.util.List
+    type Out = JList
     type Aef = IO
-    pub def toJava(l: Nel[a]): ##java.util.List \ IO = Adaptor.toList(l)
+    pub def toJava(l: Nel[a]): JList \ IO = Adaptor.toList(l)
 }
 
 mod Nel {
@@ -184,7 +186,7 @@ mod Nel {
     }
 
     ///
-    /// Returns the length of `l`.
+    /// Returns the number of elements in `l`.
     ///
     pub def length(l: Nel[a]): Int32 = match l {
         case Nel(_, xs) => 1 + List.length(xs)

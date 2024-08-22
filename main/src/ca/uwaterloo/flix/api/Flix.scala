@@ -16,8 +16,8 @@
 
 package ca.uwaterloo.flix.api
 
-import ca.uwaterloo.flix.language.ast.Ast.Input
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext, Source}
 import ca.uwaterloo.flix.language.dbg.AstPrinter
 import ca.uwaterloo.flix.language.fmt.FormatOptions
 import ca.uwaterloo.flix.language.phase._
@@ -84,7 +84,7 @@ class Flix {
   /**
     * A cache of ASTs for incremental compilation.
     */
-  private var cachedLexerTokens: Map[Ast.Source, Array[Token]] = Map.empty
+  private var cachedLexerTokens: Map[Source, Array[Token]] = Map.empty
   private var cachedParserCst: SyntaxTree.Root = SyntaxTree.empty
   private var cachedWeederAst: WeededAst.Root = WeededAst.empty
   private var cachedDesugarAst: DesugaredAst.Root = DesugaredAst.empty
@@ -159,6 +159,7 @@ class Flix {
     "BigInt.flix" -> LocalResource.get("/src/library/BigInt.flix"),
     "Boxable.flix" -> LocalResource.get("/src/library/Boxable.flix"),
     "Boxed.flix" -> LocalResource.get("/src/library/Boxed.flix"),
+    "Box.flix" -> LocalResource.get("/src/library/Box.flix"),
     "Chain.flix" -> LocalResource.get("/src/library/Chain.flix"),
     "Char.flix" -> LocalResource.get("/src/library/Char.flix"),
     "CodePoint.flix" -> LocalResource.get("/src/library/CodePoint.flix"),
@@ -174,12 +175,14 @@ class Flix {
     "Int64.flix" -> LocalResource.get("/src/library/Int64.flix"),
     "Iterable.flix" -> LocalResource.get("/src/library/Iterable.flix"),
     "Iterator.flix" -> LocalResource.get("/src/library/Iterator.flix"),
+    "KeyNotFound.flix" -> LocalResource.get("/src/library/KeyNotFound.flix"),
     "List.flix" -> LocalResource.get("/src/library/List.flix"),
     "Map.flix" -> LocalResource.get("/src/library/Map.flix"),
     "Nec.flix" -> LocalResource.get("/src/library/Nec.flix"),
     "Nel.flix" -> LocalResource.get("/src/library/Nel.flix"),
     "Object.flix" -> LocalResource.get("/src/library/Object.flix"),
     "Option.flix" -> LocalResource.get("/src/library/Option.flix"),
+    "OutOfBounds.flix" -> LocalResource.get("/src/library/OutOfBounds.flix"),
     "Random.flix" -> LocalResource.get("/src/library/Random.flix"),
     "Result.flix" -> LocalResource.get("/src/library/Result.flix"),
     "Set.flix" -> LocalResource.get("/src/library/Set.flix"),
@@ -211,6 +214,8 @@ class Flix {
     "Filterable.flix" -> LocalResource.get("/src/library/Filterable.flix"),
     "Group.flix" -> LocalResource.get("/src/library/Group.flix"),
     "Identity.flix" -> LocalResource.get("/src/library/Identity.flix"),
+    "Index.flix" -> LocalResource.get("/src/library/Index.flix"),
+    "IndexMut.flix" -> LocalResource.get("/src/library/IndexMut.flix"),
     "Monad.flix" -> LocalResource.get("/src/library/Monad.flix"),
     "MonadZero.flix" -> LocalResource.get("/src/library/MonadZero.flix"),
     "MonadZip.flix" -> LocalResource.get("/src/library/MonadZip.flix"),
@@ -312,12 +317,14 @@ class Flix {
   /**
     * Adds the given string `text` with the given `name`.
     */
-  def addSourceCode(name: String, text: String): Flix = {
+  def addSourceCode(name: String, text: String)(implicit sctx: SecurityContext): Flix = {
     if (name == null)
       throw new IllegalArgumentException("'name' must be non-null.")
     if (text == null)
       throw new IllegalArgumentException("'text' must be non-null.")
-    addInput(name, Input.Text(name, text, stable = false))
+    if (sctx == null)
+      throw new IllegalArgumentException("'sctx' must be non-null.")
+    addInput(name, Input.Text(name, text, stable = false, sctx))
     this
   }
 
@@ -327,14 +334,14 @@ class Flix {
   def remSourceCode(name: String): Flix = {
     if (name == null)
       throw new IllegalArgumentException("'name' must be non-null.")
-    remInput(name, Input.Text(name, "", stable = false))
+    remInput(name, Input.Text(name, "", stable = false, /* unused */ SecurityContext.NoPermissions))
     this
   }
 
   /**
     * Adds the given path `p` as Flix source file.
     */
-  def addFlix(p: Path): Flix = {
+  def addFlix(p: Path)(implicit sctx: SecurityContext): Flix = {
     if (p == null)
       throw new IllegalArgumentException(s"'p' must be non-null.")
     if (!Files.exists(p))
@@ -346,14 +353,14 @@ class Flix {
     if (!p.getFileName.toString.endsWith(".flix"))
       throw new IllegalArgumentException(s"'$p' must be a *.flix file.")
 
-    addInput(p.toString, Input.TxtFile(p))
+    addInput(p.toString, Input.TxtFile(p, sctx))
     this
   }
 
   /**
     * Adds the given path `p` as a Flix package file.
     */
-  def addPkg(p: Path): Flix = {
+  def addPkg(p: Path)(implicit sctx: SecurityContext): Flix = {
     if (p == null)
       throw new IllegalArgumentException(s"'p' must be non-null.")
     if (!Files.exists(p))
@@ -365,7 +372,7 @@ class Flix {
     if (!p.getFileName.toString.endsWith(".fpkg"))
       throw new IllegalArgumentException(s"'$p' must be a *.pkg file.")
 
-    addInput(p.toString, Input.PkgFile(p))
+    addInput(p.toString, Input.PkgFile(p, sctx))
     this
   }
 
@@ -376,7 +383,7 @@ class Flix {
     if (!p.getFileName.toString.endsWith(".flix"))
       throw new IllegalArgumentException(s"'$p' must be a *.flix file.")
 
-    remInput(p.toString, Input.TxtFile(p))
+    remInput(p.toString, Input.TxtFile(p, /* unused */ SecurityContext.NoPermissions))
     this
   }
 
@@ -418,7 +425,7 @@ class Flix {
     case None => // nop
     case Some(_) =>
       changeSet = changeSet.markChanged(input)
-      inputs += name -> Input.Text(name, "", stable = false)
+      inputs += name -> Input.Text(name, "", stable = false, /* unused */ SecurityContext.NoPermissions)
   }
 
   /**
@@ -531,7 +538,10 @@ class Flix {
 
     // Print summary?
     if (options.xsummary) {
-      Summary.printSummary(result)
+      result.map(root => {
+        val table = Summary.fileSummaryTable(root, nsDepth = Some(1), minLines = Some(125))
+        table.getMarkdownLines.foreach(println)
+      })
     }
 
     // Return the result (which could contain soft failures).
@@ -657,7 +667,7 @@ class Flix {
     * Returns the inputs for the given list of (path, text) pairs.
     */
   private def getLibraryInputs(xs: List[(String, String)]): List[Input] = xs.foldLeft(List.empty[Input]) {
-    case (xs, (name, text)) => Input.Text(name, text, stable = true) :: xs
+    case (xs, (virtualPath, text)) => Input.Text(virtualPath, text, stable = true, SecurityContext.AllPermissions) :: xs
   }
 
   /**
@@ -713,7 +723,8 @@ class Flix {
     l.foldLeft[MultiMap[List[String], String]](MultiMap.empty) {
       case (acc, clazz) =>
         // Given a string `java/util/zip/ZipUtils.class` we convert it to the list `java :: util :: zip :: ZipUtils`.
-        val clazzPath = clazz.stripSuffix(".class").split('/').toList
+        // We strip both the ".class" and ".java" suffix. Order should not matter.
+        val clazzPath = clazz.stripSuffix(".class").stripSuffix(".java").split('/').toList
 
         // Create a multimap from all package prefixes to their sub packages and classes.
         // For example, if we have `java.lang.String`, we want to compute:
