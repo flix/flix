@@ -68,14 +68,6 @@ mod Result {
     }
 
     ///
-    /// Returns `1` for `Ok(_)` and `0` for `Err(_)`.
-    ///
-    pub def size(r: Result[e, t]): Int32 = match r {
-        case Ok(_) => 1
-        case Err(_) => 0
-    }
-
-    ///
     /// Returns `v` if `r` is `Ok(v)`. Otherwise returns `d`.
     ///
     pub def getWithDefault(d: t, r: Result[e, t]): t = match r {
