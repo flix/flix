@@ -75,19 +75,6 @@ object Deriver {
   def structFieldPutTraitName(fieldName: String): String = "DotPut_" + fieldName
 
   /**
-    * Builds the associated type signature for the struct field
-    */
-  def structAssocTypeSig(tparam: KindedAst.TypeParam, kind: Kind, sym: Symbol.AssocTypeSym, loc: SourceLocation) =
-    KindedAst.AssocTypeSig(
-      doc = Ast.Doc(Nil, loc),
-      mod = Ast.Modifiers.Empty,
-      sym = sym,
-      tparam = tparam,
-      kind = kind,
-      tpe = None,
-      loc = loc
-    )
-  /**
     * Builds the instances for this struct
     */
   private def getInstancesOfStruct(struct0: KindedAst.Struct, root: KindedAst.Root)(implicit flix: Flix): List[KindedAst.Instance] =
