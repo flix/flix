@@ -677,18 +677,13 @@ object Desugar {
       desugarMapLit(exps, loc)
 
     case WeededAst.Expr.Ref(exp1, exp2, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      Expr.Ref(e1, e2, loc)
+???
 
     case WeededAst.Expr.Deref(exp, loc) =>
-      val e = visitExp(exp)
-      Expr.Deref(e, loc)
+   ???
 
     case WeededAst.Expr.Assign(exp1, exp2, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      Expr.Assign(e1, e2, loc)
+      ???
 
     case WeededAst.Expr.Ascribe(exp, expectedType, expectedEff, loc) =>
       val e = visitExp(exp)

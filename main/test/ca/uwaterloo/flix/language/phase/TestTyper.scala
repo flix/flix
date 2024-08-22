@@ -565,14 +565,14 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |pub def f(): Int32 =
         |    let _ = {
         |        region rc {
-        |            let x = ref 123 @ rc;
+        |            let x = Ref.fresh(123, rc);
         |            x
         |        }
         |    };
         |    42
         |
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError](result)
   }
 
@@ -582,14 +582,14 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |pub def f(): Int32 =
         |    let _ = {
         |        region rc {
-        |            let x = ref 123 @ rc;
+        |            let x = Ref.fresh(123, rc);
         |            (123, x)
         |        }
         |    };
         |    42
         |
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError](result)
   }
 
@@ -599,14 +599,14 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |pub def f(): Int32 =
         |    let _ = {
         |        region rc {
-        |            let x = ref 123 @ rc;
+        |            let x = Ref.fresh(123, rc);
         |            _w -> x
         |        }
         |    };
         |    42
         |
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError](result)
   }
 
@@ -616,9 +616,9 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |pub def f(): Int32 =
         |    let _ = {
         |        region rc {
-        |            let x = ref 123 @ rc;
+        |            let x = Ref.fresh(123, rc);
         |            w -> {
-        |                discard deref x;
+        |                discard Ref.get(x);
         |                w
         |            }
         |        }
@@ -626,7 +626,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    42
         |
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError](result)
   }
 
@@ -639,9 +639,9 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |}
         |
         |pub def f(): Unit \ IO =
-        |    let m = ref None @ Static;
+        |    let m = Ref.fresh(Static, None);
         |    region rc {
-        |        let x = ref 123 @ rc;
+        |        let x = Ref.fresh(123, rc);
         |        Ref.put(Some(x), m);
         |        ()
         |    }
@@ -659,9 +659,9 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |}
         |
         |pub def f(): Unit \ IO =
-        |    let m = ref None @ Static;
+        |    let m = Ref.fresh(Static, None);
         |    region rc {
-        |        let x = ref 123 @ rc;
+        |        let x = Ref.fresh(123, rc);
         |        Ref.put(Some(_ -> x), m);
         |        ()
         |    }
