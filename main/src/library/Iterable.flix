@@ -46,7 +46,7 @@ pub trait Iterable[t] {
     /// Returns the size of `t`.
     ///
     pub def size(t: t): Int32 \ Iterable.Aef[t] = region rc {
-        t |> Iterable.iterator(rc) |> Iterator.size
+        t |> Iterable.iterator(rc) |> Iterator.foldLeft(acc -> _ -> acc + 1, 0)
     }
 
 }
