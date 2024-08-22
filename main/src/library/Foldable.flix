@@ -44,7 +44,7 @@ pub trait Foldable[t : Type -> Type] {
     pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, t: t[a]): b \ (ef + Foldable.Aef[t])
 
     ///
-    /// Returns the length of `t`, i.e. the number of times it can be folded over.
+    /// Returns the number of elements in `t`.
     ///
     pub def length(t: t[a]): Int32 \ Foldable.Aef[t] =
         Foldable.foldLeft((acc, _) -> acc + 1, 0, t)
