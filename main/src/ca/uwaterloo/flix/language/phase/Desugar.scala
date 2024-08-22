@@ -676,15 +676,6 @@ object Desugar {
     case WeededAst.Expr.MapLit(exps, loc) =>
       desugarMapLit(exps, loc)
 
-    case WeededAst.Expr.Ref(exp1, exp2, loc) =>
-???
-
-    case WeededAst.Expr.Deref(exp, loc) =>
-   ???
-
-    case WeededAst.Expr.Assign(exp1, exp2, loc) =>
-      ???
-
     case WeededAst.Expr.Ascribe(exp, expectedType, expectedEff, loc) =>
       val e = visitExp(exp)
       val ts = expectedType.map(visitType)
