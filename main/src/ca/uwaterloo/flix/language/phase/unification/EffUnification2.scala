@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.AssocTypeConstructor
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, Rigidity, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.unification.FastSetUnification.Term.mkCompl
@@ -54,10 +55,60 @@ object EffUnification2 {
     }
   }
 
-  def unifyHelper(tpe1: Type, tpe2: Type, renv: RigidityEnv): Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError] = {
-    unify(tpe1, tpe2, tpe1.loc, renv).map{
+  def unifyHelper(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError] = {
+    val old = EffUnification.unify(tpe1, tpe2, renv)
+    val neww = unify(tpe1, tpe2, tpe1.loc, renv).map {
       case None => (Substitution.empty, List(Ast.BroadEqualityConstraint(tpe1, tpe2)))
       case Some(subst) => (subst, Nil)
+    }
+    //compare(tpe1, tpe2, old = old, neww = neww, renv)
+    neww
+  }
+
+  private type Unified = Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError]
+
+  private def compare(tpe1: Type, tpe2: Type, old: Unified, neww: Unified, renv: RigidityEnv): Unit = {
+    for {
+      (sOld, restOld) <- old
+      (sNeww, newwRest) <- neww
+    } yield {
+      if (sOld.isEmpty && sNeww.isEmpty) () else {
+        if (sOld.m.keySet != sNeww.m.keySet) {
+//          println(s"\nold:\n$sOld\n$restOld\nnew:\n$sNeww\n$newwRest\nfrom\n$tpe1 ~~~ $tpe2\nwith\n$renv")
+//          scala.io.StdIn.readLine()
+          ()
+        }
+        for (k <- sOld.m.keySet) {
+          sNeww.m.get(k).foreach(ki => checkEq(tpeOld = sOld.m(k), tpeNew = ki, SourceLocation.Unknown, renv))
+
+        }
+      }
+    }
+  }
+
+  private def checkEq(tpeOld: Type, tpeNew: Type, loc: SourceLocation, renv: RigidityEnv): Unit = {
+    implicit val bimap: Bimap[Atom, Int] = try {
+      mkBidirectionalVarMap(tpeOld, tpeNew)
+    } catch {
+      case InternalCompilerException(_, _) => ???
+    }
+
+    val equation = try {
+      toEquation(tpeOld, tpeNew, loc)(renv, bimap)
+    } catch {
+      case InternalCompilerException(_, _) => ???
+    }
+
+    if (!FastSetUnification.Term.equivalent(equation.t1, equation.t2)) {
+      println(s"tpeOld:\n$tpeOld\ntpeNew:\n$tpeNew")
+      scala.io.StdIn.readLine()
+    }
+
+    val sz1 = tpeOld.size
+    val sz2 = tpeNew.size
+    if (sz2 - sz1 > 10 && (sz2 < sz1 * 0.9 || sz2 > sz1 * 1.1)) {
+      println(s"too big diff\nold:\n$tpeOld\nnew:\n$tpeNew")
+      scala.io.StdIn.readLine()
     }
   }
 
@@ -76,12 +127,12 @@ object EffUnification2 {
       case Result.Ok(subst) => Result.Ok(Some(fromSetSubst(subst)))
 
       case Result.Err((ex: ConflictException, _, _)) =>
-      val tpe1 = fromTerm(ex.x, ex.loc)
-      val tpe2 = fromTerm(ex.y, ex.loc)
-      Result.Err(UnificationError.MismatchedEffects(tpe1, tpe2))
+        val tpe1 = fromTerm(ex.x, ex.loc)
+        val tpe2 = fromTerm(ex.y, ex.loc)
+        Result.Err(UnificationError.MismatchedEffects(tpe1, tpe2))
 
       case Result.Err((ex: TooComplexException, _, _)) =>
-      Result.Err(UnificationError.TooComplex(ex.msg, loc))
+        Result.Err(UnificationError.TooComplex(ex.msg, loc))
     }
   }
 
@@ -188,8 +239,8 @@ object EffUnification2 {
     case Type.Var(sym, _) => Atom.Var(sym)
     case Type.Cst(TypeConstructor.Effect(sym), _) => Atom.Eff(sym)
     case Type.AssocType(AssocTypeConstructor(sym, _), arg0, kind, _) =>
-    val arg = rigidToAtom(arg0)
-    Atom.Assoc(sym, arg, kind)
+      val arg = rigidToAtom(arg0)
+      Atom.Assoc(sym, arg, kind)
     case Type.Cst(TypeConstructor.Error(id, kind), _) => Atom.Error(id, kind)
     case tpe => throw InternalCompilerException(s"Unexpected non-atom type: $tpe", tpe.loc)
   }
@@ -201,11 +252,11 @@ object EffUnification2 {
     case tpe@Type.Var(sym, _) =>
       if (renv.isRigid(sym)) Atom.Var(sym)
       else throw InternalCompilerException(s"Unexpected non-atom type: $tpe", tpe.loc)
-//    case Type.Cst(TypeConstructor.Effect(sym), _) => Atom.Eff(sym)
-//    case Type.AssocType(AssocTypeConstructor(sym, _), arg0, kind, _) =>
-//      val arg = rigidToAtom(arg0)
-//      Atom.Assoc(sym, arg, kind)
-//    case Type.Cst(TypeConstructor.Error(id, kind), _) => Atom.Error(id, kind)
+    //    case Type.Cst(TypeConstructor.Effect(sym), _) => Atom.Eff(sym)
+    //    case Type.AssocType(AssocTypeConstructor(sym, _), arg0, kind, _) =>
+    //      val arg = rigidToAtom(arg0)
+    //      Atom.Assoc(sym, arg, kind)
+    //    case Type.Cst(TypeConstructor.Error(id, kind), _) => Atom.Error(id, kind)
     case tpe => throw InternalCompilerException(s"Unexpected non-atom type: $tpe", tpe.loc)
   }
 
@@ -214,6 +265,7 @@ object EffUnification2 {
     */
   private def fromSetSubst(s: FastSetUnification.SetSubstitution)(implicit m: Bimap[Atom, Int]): Substitution = {
     Substitution(s.m.foldLeft(Map.empty[Symbol.KindedTypeVarSym, Type]) {
+      case (macc, (k, Term.Var(x))) if k == x => macc
       case (macc, (k, v)) =>
         m.getBackward(k).get match {
           // Case 1: A proper var. Add it to the substitution.
