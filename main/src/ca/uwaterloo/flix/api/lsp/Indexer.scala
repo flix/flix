@@ -97,8 +97,8 @@ object Indexer {
     * Returns a reverse index for the given enum case `caze0`.
     */
   private def visitCase(caze0: Case): Index = caze0 match {
-    case Case(_, tpe, _, _) =>
-      Index.occurrenceOf(caze0) ++ visitType(tpe)
+    case Case(_, tpes, _, _) =>
+      Index.occurrenceOf(caze0) ++ traverse(tpes)(visitType)
   }
 
   /**
@@ -495,9 +495,9 @@ object Indexer {
     case Pattern.Var(sym, tpe, _) =>
       Index.occurrenceOf(pat0) ++ Index.occurrenceOf(sym, tpe)
     case Pattern.Cst(_, _, _) => Index.occurrenceOf(pat0)
-    case Pattern.Tag(Ast.CaseSymUse(sym, loc), pat, _, _) =>
+    case Pattern.Tag(Ast.CaseSymUse(sym, loc), pats, _, _) =>
       val parent = Entity.Pattern(pat0)
-      Index.occurrenceOf(pat0) ++ visitPat(pat) ++ Index.useOf(sym, loc, parent)
+      Index.occurrenceOf(pat0) ++ traverse(pats)(visitPat) ++ Index.useOf(sym, loc, parent)
     case Pattern.Tuple(elms, _, _) => Index.occurrenceOf(pat0) ++ visitPats(elms)
     case Pattern.Record(pats, pat, _, _) =>
       Index.occurrenceOf(pat0) ++ traverse(pats)(visitRecordLabelPattern) ++ visitPat(pat)

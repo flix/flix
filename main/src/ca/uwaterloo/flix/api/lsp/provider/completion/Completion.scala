@@ -518,6 +518,7 @@ object Completion {
     * @param cas     the case (for that specific enum).
     * @param arity   the arity of the enumTag.
     */
+    // TODO NARY-ENUMS arity is redundant
   case class EnumTagCompletion(enumSym: EnumSym, cas: TypedAst.Case, arity: Int) extends Completion
 
   /**

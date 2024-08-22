@@ -866,13 +866,15 @@ object Deriver {
     case KindedAst.Case(sym, tpes, _, _) =>
       // get a pattern corresponding to this case, e.g.
       // `case C(x0)`
-      // Unlike other derivations, we do not unpack tuples
-      val varSym = Symbol.freshVarSym("x0", BoundBy.Pattern, loc)
-      // MATT
-      val pat = KindedAst.Pattern.Tag(Ast.CaseSymUse(sym, loc), mkVarPattern(varSym, loc), Type.freshVar(Kind.Star, loc), loc)
+      val (pat, varSyms) = mkPattern(sym, tpes, "x", loc)
 
-      // the body is just whatever we extracted
-      val exp = KindedAst.Expr.Var(varSym, loc)
+      // the body is a tuplish of whatever we extracted
+      val vars = varSyms.map(KindedAst.Expr.Var(_, loc))
+      val exp = vars match {
+        case Nil => KindedAst.Expr.Cst(Ast.Constant.Unit, loc)
+        case x :: Nil => x
+        case xs@(_ :: _ :: _) => KindedAst.Expr.Tuple(xs, loc)
+      }
 
       KindedAst.MatchRule(pat, None, exp)
   }

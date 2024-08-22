@@ -55,8 +55,7 @@ object CompletionUtils {
   def getLabelForEnumTags(name: String, cas: TypedAst.Case, arity: Int)(implicit flix: Flix): String = {
     arity match {
       case 0 => name
-      case 1 => s"$name(${FormatType.formatType(cas.tpe)})"
-      case _ => s"$name${FormatType.formatType(cas.tpe)}"
+      case _ => s"$name(${cas.tpes.map(FormatType.formatType(_)).mkString(", ")})"
     }
   }
 

@@ -18,7 +18,9 @@ object TypedAstOps {
     case Pattern.Wild(tpe, loc) => Map.empty
     case Pattern.Var(sym, tpe, loc) => Map(sym -> tpe)
     case Pattern.Cst(_, _, _) => Map.empty
-    case Pattern.Tag(sym, pat, tpe, loc) => binds(pat)
+    case Pattern.Tag(sym, pats, tpe, loc) => pats.foldLeft(Map.empty[Symbol.VarSym, Type]) {
+      case (macc, elm) => macc ++ binds(elm)
+    }
     case Pattern.Tuple(elms, tpe, loc) => elms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
       case (macc, elm) => macc ++ binds(elm)
     }

@@ -207,9 +207,7 @@ object Stratifier {
       val rs = visitRestrictableChooseRules(rules)
       Expr.RestrictableChoose(star, e, rs, tpe, eff, loc)
 
-    case Expr.Tag(sym, exp, tpe, eff, loc) =>
-      val e = visitExp(exp)
-      Expr.Tag(sym, e, tpe, eff, loc)
+    case Expr.Tag(_, _, _) => exp0
 
     case Expr.RestrictableTag(sym, exp, tpe, eff, loc) =>
       val e = visitExp(exp)

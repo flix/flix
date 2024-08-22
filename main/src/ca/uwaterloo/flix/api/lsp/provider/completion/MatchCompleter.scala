@@ -52,12 +52,13 @@ object MatchCompleter extends Completer {
       case ((acc, z), (sym, cas)) =>
         val enumName = enm.sym.toString
         val caseName = sym.name
-        val (str, k) = cas.tpe.typeConstructor match {
-          case Some(TypeConstructor.Unit) => (s"$enumName.$caseName => $${${z + 1}:???}", z + 1)
-          case Some(TypeConstructor.Tuple(arity)) => (List.range(1, arity + 1)
+        val (str, k) = cas.tpes match {
+          case Nil => (s"$enumName.$caseName => $${${z + 1}:???}", z + 1)
+          case ts@(_ :: _) =>
+            val arity = ts.length
+            (List.range(1, arity + 1)
             .map(elem => s"$${${elem + z}:_elem$elem}")
             .mkString(s"$enumName.$caseName(", ", ", s") => $${${arity + z + 1}:???}"), z + arity + 1)
-          case _ => (s"$enumName.$caseName($${${z + 1}:_elem}) => $${${z + 2}:???}", z + 2)
         }
         (acc + "    case " + str + "\n", k)
     })
