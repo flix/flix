@@ -14,6 +14,8 @@
  *  limitations under the License.
  */
 
+ import java.lang.Object
+
 ///
 /// Represents a boxed value.
 ///
@@ -27,8 +29,8 @@ pub enum Boxed with Sendable {
     case BoxedFloat32(Float32)
     case BoxedFloat64(Float64)
     case BoxedObject(
-        ##java.lang.Object,
-        (##java.lang.Object, ##java.lang.Object) -> Comparison
+        Object,
+        (Object, Object) -> Comparison
     )
 }
 
