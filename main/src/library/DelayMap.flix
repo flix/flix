@@ -818,7 +818,7 @@ mod DelayMap {
     @Experimental
     pub def forEachWithIndex(f: (Int32, k, v) -> Unit \ ef, m: DelayMap[k, v]): Unit \ ef = region rc {
        let ix = Ref.fresh(rc, 0);
-       let f1 = (k, v) -> { let i =  deref ix; f(i, k, v); Ref.put(i + 1, ix) };
+       let f1 = (k, v) -> { let i =  Ref.get(ix); f(i, k, v); Ref.put(i + 1, ix) };
        forEach(f1, m)
     }
 

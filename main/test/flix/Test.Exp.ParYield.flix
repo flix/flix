@@ -53,13 +53,13 @@ mod Test.Exp.ParYield {
     @test
     def testParYield13(): Int32 = region rc {
         let a = Ref.fresh(rc, 10);
-        par (x <- 1) yield x + deref a
+        par (x <- 1) yield x + Ref.get(a)
     }
 
     @test
     def testParYield14(): Bool = region rc {
         let a = Ref.fresh(rc, 10);
-        (par (x <- 1) yield x + deref a) == 11
+        (par (x <- 1) yield x + Ref.get(a)) == 11
     }
 
     @test

@@ -16,10 +16,12 @@
 
 mod Time {
 
+    import java.time.{Instant => JInstant}
+
     ///
     /// A wrapper around a Java instant.
     ///
-    enum Instant(##java.time.Instant)
+    enum Instant(JInstant)
 
     instance ToString[Instant] {
         pub def toString(x: Time.Instant): String = Instant.toString(x)

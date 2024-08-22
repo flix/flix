@@ -28,7 +28,7 @@ mod Test.Handler.Gen.AtomicInteger {
         }
 
     def getAndInc(r: Ref[AtomicInteger, r]): AtomicInteger \ r =
-        let i = toInt(deref r);
+        let i = toInt(Ref.get(r));
         Ref.put(newAtomicInteger(i + 1), r);
         newAtomicInteger(i)
 

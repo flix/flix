@@ -43,7 +43,7 @@ mod Test.Java.Function {
         let st = Ref.fresh(Static, "<none>");
         let stream = of(mkObject(8));
         let _ = forEach(stream, obj -> let s1 = toString(obj); Ref.put(s1, st));
-        deref st == "8"
+        Ref.get(st) == "8"
     }
 
     @Test
@@ -81,7 +81,7 @@ mod Test.Java.Function {
         let st = Ref.fresh(Static, 0);
         let stream = range(0, 9);
         let _ = forEach(stream, i -> Ref.put(i, st));
-        deref st == 8
+        Ref.get(st) == 8
     }
 
     @Test
@@ -123,7 +123,7 @@ mod Test.Java.Function {
         let st = Ref.fresh(Static, 0i64);
         let stream = range(0i64, 9i64);
         let _ = forEach(stream, i -> Ref.put(i, st));
-        deref st == 8i64
+        Ref.get(st) == 8i64
     }
 
     @Test
@@ -168,7 +168,7 @@ mod Test.Java.Function {
         let st = Ref.fresh(Static, 0.0f64);
         let stream = of(Array#{0.0f64, 1.0f64, 2.0f64, 3.0f64, 4.0f64, 5.0f64, 6.0f64, 7.0f64, 8.0f64} @ Static);
         let _ = forEach(stream, i -> Ref.put(i, st));
-        let last = deref st;
+        let last = Ref.get(st);
         Float64.tryToInt32(last) == Some(8)
     }
 
