@@ -52,7 +52,6 @@ object Deriver {
     val derivedInstances = ParOps.parTraverse(root.enums.values)(getDerivedInstances(_, root))
     val structFieldInstances = root.structs.values.map(getInstancesOfStruct(_, root))
     val fieldNames = root.structs.values.flatMap(struct => struct.fields).map(field => Name.Label(field.sym.name, field.sym.loc)).toSet
-    val fieldTraits = getFieldTraits(fieldNames)
 
     mapN(derivedInstances) {
       instances =>
@@ -61,19 +60,9 @@ object Deriver {
             val accInsts = acc.getOrElse(inst.trt.sym, Nil)
             acc + (inst.trt.sym -> (inst :: accInsts))
         }
-        val newTraits = fieldTraits.foldLeft(root.traits) {
-          case (acc, trt) =>
-            acc + (trt.sym -> trt)
-        }
-        root.copy(instances = newInstances, traits = newTraits)
+        root.copy(instances = newInstances)
     }
   }(DebugValidation())
-
-  /**
-    * Builds the traits for this struct
-    */
-  private def getFieldTraits(fieldNames: Set[Name.Label])(implicit flix: Flix): List[KindedAst.Trait] =
-    fieldNames.toList.flatMap(field => List(fieldGetTrait(field.name, field.loc), fieldPutTrait(field.name, field.loc)))
 
   /**
     * Build the name of the get trait for this struct field
@@ -84,73 +73,6 @@ object Deriver {
     * Build the name of the put trait for this struct field
     */
   def structFieldPutTraitName(fieldName: String): String = "DotPut_" + fieldName
-
-  /**
-    * Builds the `get` trait for this struct field
-    */
-  private def fieldGetTrait(name: String, loc: SourceLocation)(implicit flix: Flix): KindedAst.Trait = {
-    val param1Symbol = Symbol.freshVarSym(Param1Name, BoundBy.FormalParam, loc)
-    val tparamSym = Symbol.freshKindedTypeVarSym(Ast.VarText.Absent, Kind.Star, isRegion = false, loc)
-    val tparam = KindedAst.TypeParam(Name.Ident("a", loc), tparamSym, loc)
-    val structType = Type.Var(tparamSym, loc)
-    val traitSym = Symbol.mkTraitSym(structFieldGetTraitName(name))
-    val assocTpeSym = Symbol.mkAssocTypeSym(traitSym, Name.Ident("FieldType", loc))
-    val assocEffSym = Symbol.mkAssocTypeSym(traitSym, Name.Ident("Aef", loc))
-    val assocTpe = Type.AssocType(Ast.AssocTypeConstructor(assocTpeSym, loc), Type.Var(tparamSym, loc), Kind.Star, loc)
-    val assocEff = Type.AssocType(Ast.AssocTypeConstructor(assocEffSym, loc), Type.Var(tparamSym, loc), Kind.Eff, loc)
-    val assocTpeSig = structAssocTypeSig(tparam, Kind.Star, assocTpeSym, loc)
-    val assocEffSig = structAssocTypeSig(tparam, Kind.Eff, assocEffSym, loc)
-    val getSpec = fieldGetSpec(structType, assocEff, assocTpe, List(tparam), param1Symbol, loc)
-    val getSym = Symbol.mkSigSym(traitSym, Name.Ident(GetMethodName, loc))
-    val getSig = KindedAst.Sig(getSym, getSpec, None)
-    val sigs = Map(getSym -> getSig)
-    KindedAst.Trait(
-      doc = Ast.Doc(Nil, loc),
-      ann = Ast.Annotations.Empty,
-      mod = Ast.Modifiers.Empty,
-      sym = traitSym,
-      tparam = tparam,
-      superTraits = Nil,
-      assocs = List(assocTpeSig, assocEffSig),
-      sigs = sigs,
-      laws = Nil,
-      loc = loc
-    )
-  }
-
-  /**
-    * Builds the `get` trait for this struct field
-    */
-  private def fieldPutTrait(name: String, loc: SourceLocation)(implicit flix: Flix): KindedAst.Trait = {
-    val param1Symbol = Symbol.freshVarSym(Param1Name, BoundBy.FormalParam, loc)
-    val param2Symbol = Symbol.freshVarSym(Param2Name, BoundBy.FormalParam, loc)
-    val tparamSym = Symbol.freshKindedTypeVarSym(Ast.VarText.Absent, Kind.Star, isRegion = false, loc)
-    val tparam = KindedAst.TypeParam(Name.Ident("a", loc), tparamSym, loc)
-    val structType = Type.Var(tparamSym, loc)
-    val traitSym = Symbol.mkTraitSym(structFieldPutTraitName(name))
-    val assocTpeSym = Symbol.mkAssocTypeSym(traitSym, Name.Ident("FieldType", loc))
-    val assocEffSym = Symbol.mkAssocTypeSym(traitSym, Name.Ident("Aef", loc))
-    val assocTpe = Type.AssocType(Ast.AssocTypeConstructor(assocTpeSym, loc), Type.Var(tparamSym, loc), Kind.Star, loc)
-    val assocEff = Type.AssocType(Ast.AssocTypeConstructor(assocEffSym, loc), Type.Var(tparamSym, loc), Kind.Eff, loc)
-    val assocTpeSig = structAssocTypeSig(tparam, Kind.Star, assocTpeSym, loc)
-    val assocEffSig = structAssocTypeSig(tparam, Kind.Eff, assocEffSym, loc)
-    val putSpec = fieldPutSpec(structType, assocEff, assocTpe, List(tparam), param1Symbol, param2Symbol, loc)
-    val putSym = Symbol.mkSigSym(traitSym, Name.Ident(PutMethodName, loc))
-    val putSig = KindedAst.Sig(putSym, putSpec, None)
-    val sigs = Map(putSym -> putSig)
-    KindedAst.Trait(
-      doc = Ast.Doc(Nil, loc),
-      ann = Ast.Annotations.Empty,
-      mod = Ast.Modifiers.Empty,
-      sym = traitSym,
-      tparam = tparam,
-      superTraits = Nil,
-      assocs = List(assocTpeSig, assocEffSig),
-      sigs = sigs,
-      laws = Nil,
-      loc = loc
-    )
-  }
 
   /**
     * Builds the associated type signature for the struct field
