@@ -147,7 +147,7 @@ mod Set {
         minSize >= 1024
 
     ///
-    /// Returns the size of `s`.
+    /// Returns the number of elements in `s`.
     ///
     pub def size(s: Set[a]): Int32 =
         let Set(t) = s;

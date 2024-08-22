@@ -185,7 +185,7 @@ mod MutSet {
         Set.maximumBy(cmp, Ref.get(ms))
 
     ///
-    /// Returns the size of the mutable set `s`.
+    /// Returns the number of elements in the mutable set `s`.
     ///
     pub def size(s: MutSet[a, r]): Int32 \ r =
         let MutSet(_, ms) = s;
