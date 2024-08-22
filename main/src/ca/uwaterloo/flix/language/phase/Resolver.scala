@@ -2315,9 +2315,9 @@ object Resolver {
       // Case 0: No matches. Error.
       case Nil => Result.Err(ResolutionError.UndefinedTag(qname.ident.name, ns0, qname.loc))
       // Case 1: Exactly one match. Success.
-      case caze :: _ => Result.Ok(caze)
+      case caze :: Nil => Result.Ok(caze)
       // Case 2: Multiple matches. Error
-      case null => throw InternalCompilerException(s"unexpected duplicate tag: '$qname'.", qname.loc)
+      case cases => throw InternalCompilerException(s"unexpected duplicate tag: '$qname'.", qname.loc)
     }
     // TODO NS-REFACTOR check accessibility
   }
@@ -2335,7 +2335,7 @@ object Resolver {
       // Case 1: Exactly one match. Success.
       case st :: Nil => Result.Ok(st)
       // Case 2: Multiple matches. Error
-      case null => throw InternalCompilerException(s"unexpected duplicate struct: '$qname'.", qname.loc)
+      case sts => throw InternalCompilerException(s"unexpected duplicate struct: '$qname'.", qname.loc)
     }
     // TODO NS-REFACTOR check accessibility
   }
@@ -2351,9 +2351,9 @@ object Resolver {
       // Case 0: No matches. Error.
       case Nil => Result.Err(ResolutionError.UndefinedStructField(name, name.loc))
       // Case 1: Exactly one match. Success.
-      case field :: _ => Result.Ok(field)
+      case field :: Nil => Result.Ok(field)
       // Case 2: Multiple matches. Error
-      case sts => throw InternalCompilerException(s"unexpected duplicate struct field: '$name'.", name.loc)
+      case fields => throw InternalCompilerException(s"unexpected duplicate struct field: '$name'.", name.loc)
     }
     // TODO NS-REFACTOR check accessibility
   }
