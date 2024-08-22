@@ -166,7 +166,7 @@ mod Console {
     ///
     /// Retrieves the console of the JVM if there is one, otherwise None.
     ///
-    def console(): Option[##java.io.Console] \ IO =
+    def console(): Option[Console] \ IO =
         System.console() |> Object.toOption
 
     ///
