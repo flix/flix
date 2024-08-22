@@ -44,4 +44,14 @@ mod Test.Dec.Struct {
         right: Option[BinaryTree[t, r]],
         value: t
     }
+
+    pub struct S[r] {
+        x: Int32
+    }
+
+    def _testStructTrait01(p: a): t \ DotGet_x.Aef[a] with DotGet_x[a] where DotGet_x.FieldType[a] ~ t =
+        (p€x)
+
+    def _testStructTrait02(p: a): Unit \ DotPut_x.Aef[a] with DotPut_x[a] where DotPut_x.FieldType[a] ~ Int32 =
+        (p€x = 3)
 }

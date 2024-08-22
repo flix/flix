@@ -95,7 +95,6 @@ object Resolver {
         }
     }
 
-
     // Type aliases must be processed first in order to provide a `taenv` for looking up type alias symbols.
     flatMapN(sequence(usesVal), resolveTypeAliases(defaultUses, root)) {
       case (uses, (taenv, taOrder)) =>

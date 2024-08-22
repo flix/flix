@@ -1683,8 +1683,8 @@ object Namer {
 
 
   /**
-   * Builds the traits for this struct
-   */
+    * Builds the traits for this struct
+    */
   private def fieldTraits(fieldNames: Set[Name.Label])(implicit flix: Flix): List[NamedAst.Declaration.Trait] =
     fieldNames.toList.flatMap(field => List(fieldGetTrait(field.name, field.loc), fieldPutTrait(field.name, field.loc)))
 
@@ -1696,7 +1696,6 @@ object Namer {
     val eff = NamedAst.Kind.Ambiguous(Name.mkQName("Eff", loc), loc)
     val param1Symbol = Symbol.freshVarSym(Deriver.Param1Name, BoundBy.FormalParam, loc)
     val tparamSym = Symbol.freshUnkindedTypeVarSym(Ast.VarText.Absent, isRegion = false, loc)
-    val kindedTparamSym = tparamSym.withKind(Kind.Star)
     val tparam = NamedAst.TypeParam.Kinded(Name.Ident("a", loc), tparamSym, star, loc)
     val structType = NamedAst.Type.Var(tparam.name, loc)
     val traitSym = Symbol.mkTraitSym(Deriver.structFieldGetTraitName(name))
@@ -1733,7 +1732,6 @@ object Namer {
     val param1Symbol = Symbol.freshVarSym(Deriver.Param1Name, BoundBy.FormalParam, loc)
     val param2Symbol = Symbol.freshVarSym(Deriver.Param2Name, BoundBy.FormalParam, loc)
     val tparamSym = Symbol.freshUnkindedTypeVarSym(Ast.VarText.Absent, isRegion = false, loc)
-    val kindedTparamSym = tparamSym.withKind(Kind.Star)
     val tparam = NamedAst.TypeParam.Kinded(Name.Ident("a", loc), tparamSym, star, loc)
     val structType = NamedAst.Type.Var(tparam.name, loc)
     val traitSym = Symbol.mkTraitSym(Deriver.structFieldPutTraitName(name))
