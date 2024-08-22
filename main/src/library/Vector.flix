@@ -235,7 +235,7 @@ mod Vector {
     pub def nonEmpty(v: Vector[a]): Bool = not isEmpty(v)
 
     ///
-    /// Returns the length of the vector `v`.
+    /// Returns the number of elements in the vector `v`.
     ///
     pub def length(v: Vector[a]): Int32 = $VECTOR_LENGTH$(v)
 

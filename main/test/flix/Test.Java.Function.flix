@@ -1,5 +1,7 @@
 mod Test.Java.Function {
+
     import java.lang.Object
+    import java.util.Optional
     import java.util.function.Function
     import java.util.function.Consumer
     import java.util.function.Predicate
@@ -23,7 +25,7 @@ mod Test.Java.Function {
     @Test
     def testFunction(): Bool \ IO = {
         import static java.util.stream.Stream.of(Object): Stream \ IO;
-        import java.util.stream.Stream.findFirst(): ##java.util.Optional \ IO;
+        import java.util.stream.Stream.findFirst(): Optional \ IO;
         import java.util.Optional.get(): Object;
         let mkObject = i -> new Object {
             def toString(_this: Object): String = "${i}"
@@ -50,7 +52,7 @@ mod Test.Java.Function {
     def testPredicate(): Bool \ IO = region rc {
         import static java.util.stream.Stream.of(Array[Object, rc]): Stream \ IO;
         import java.util.stream.Stream.filter(Predicate): Stream \ IO;
-        import java.util.stream.Stream.findFirst(): ##java.util.Optional \ IO;
+        import java.util.stream.Stream.findFirst(): Optional \ IO;
         import java.util.Optional.get(): Object;
         let mkObject = i -> new Object {
             def toString(_this: Object): String = "${i}"
@@ -64,7 +66,7 @@ mod Test.Java.Function {
     def testIntFunction(): Bool \ IO = {
         import static java.util.stream.IntStream.of(Int32): IntStream \ IO;
         import java.util.stream.IntStream.mapToObj(IntFunction): Stream \ IO;
-        import java.util.stream.Stream.findFirst(): ##java.util.Optional \ IO;
+        import java.util.stream.Stream.findFirst(): Optional \ IO;
         import java.util.Optional.get(): Object;
         let stream0 = of(42);
         let f = i -> new Object {
@@ -106,7 +108,7 @@ mod Test.Java.Function {
     def testLongFunction(): Bool \ IO = {
         import static java.util.stream.LongStream.of(Int64): LongStream \ IO;
         import java.util.stream.LongStream.mapToObj(LongFunction): Stream \ IO;
-        import java.util.stream.Stream.findFirst(): ##java.util.Optional \ IO;
+        import java.util.stream.Stream.findFirst(): Optional \ IO;
         import java.util.Optional.get(): Object;
         let stream0 = of(42i64);
         let f = i -> new Object {
@@ -148,7 +150,7 @@ mod Test.Java.Function {
     def testDoubleFunction(): Bool \ IO = {
         import static java.util.stream.DoubleStream.of(Float64): DoubleStream \ IO;
         import java.util.stream.DoubleStream.mapToObj(DoubleFunction): Stream \ IO;
-        import java.util.stream.Stream.findFirst(): ##java.util.Optional \ IO;
+        import java.util.stream.Stream.findFirst(): Optional \ IO;
         import java.util.Optional.get(): Object;
         let stream0 = of(42.0f64);
         let f = d -> new Object {

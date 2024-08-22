@@ -115,8 +115,8 @@ instance ToJava[Map[k, v]] with Order[k] {
 }
 
 instance FromJava[Map[k, v]] with Order[k] {
-    type In = ##java.util.Map
-    pub def fromJava(m: ##java.util.Map): Map[k, v] = Adaptor.fromMap(m)
+    type In = JMap
+    pub def fromJava(m: JMap): Map[k, v] = Adaptor.fromMap(m)
 }
 
 mod Map {
@@ -156,7 +156,7 @@ mod Map {
         minSize >= 1024
 
     ///
-    /// Returns the size of `m`.
+    /// Returns the number of keys in `m`.
     ///
     pub def size(m: Map[k, v]): Int32 =
         let Map(xs) = m;
