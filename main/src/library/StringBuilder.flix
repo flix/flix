@@ -119,7 +119,7 @@ mod StringBuilder {
         iterator(rc1, sb) |> Iterator.zipWithIndex
 
     ///
-    /// Return the length of the StringBuilder `sb`.
+    /// Return the number of characters in the StringBuilder `sb`.
     ///
     pub def length(sb: StringBuilder[r]): Int32 \ r =
         let StringBuilder(msb) = sb;

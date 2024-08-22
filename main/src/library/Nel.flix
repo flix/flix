@@ -186,7 +186,7 @@ mod Nel {
     }
 
     ///
-    /// Returns the length of `l`.
+    /// Returns the number of elements in `l`.
     ///
     pub def length(l: Nel[a]): Int32 = match l {
         case Nel(_, xs) => 1 + List.length(xs)
