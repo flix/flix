@@ -130,7 +130,7 @@ mod Array {
     pub def nonEmpty(a: Array[a, r]): Bool \ r = not isEmpty(a)
 
     ///
-    /// Returns the length of the array `a`.
+    /// Returns the number of elements in the array `a`.
     ///
     pub def length(a: Array[a, r]): Int32 \ r = $ARRAY_LENGTH$(a)
 

@@ -192,7 +192,7 @@ mod List {
     }
 
     ///
-    /// Returns the length of `l`.
+    /// Returns the number of elements in `l`.
     ///
     pub def length(l: List[a]): Int32 =
         def loop(ll, acc) = match ll {

@@ -193,7 +193,7 @@ mod MutMap {
         Map.valuesOf(Ref.get(mm))
 
     ///
-    /// Returns the size of the mutable map `m`.
+    /// Returns the number of keys in the mutable map `m`.
     ///
     pub def size(m: MutMap[k, v, r]): Int32 \ r =
         let MutMap(_, mm) = m;
