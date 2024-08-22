@@ -50,7 +50,7 @@ mod Test.Handler.Gen.String {
     }
 
     def getAndInc(r: Ref[String, r]): String \ r =
-        let c = deref r;
+        let c = Ref.get(r);
         Ref.put(next(c), r);
         c
 

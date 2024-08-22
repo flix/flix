@@ -1357,14 +1357,14 @@ mod TestChain {
     def forEach01(): Bool = region rc {
         let ri = Ref.fresh(rc, 21);
         Chain.forEach(x -> Ref.put(x, ri), Chain.empty());
-        21 == deref ri
+        21 == Ref.get(ri)
     }
 
     @test
     def forEach02(): Bool = region rc {
         let ri = Ref.fresh(rc, 21);
         Chain.forEach(x -> Ref.put(x, ri), List.toChain(1 :: 2 :: 3 :: Nil));
-        3 == deref ri
+        3 == Ref.get(ri)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1375,14 +1375,14 @@ mod TestChain {
     def forEachWithIndex01(): Bool = region rc {
         let ri = Ref.fresh(rc, 21);
         Chain.forEachWithIndex((i, _) -> Ref.put(i, ri), Chain.empty());
-        21 == deref ri
+        21 == Ref.get(ri)
     }
 
     @test
     def forEachWithIndex02(): Bool = region rc {
         let ri = Ref.fresh(rc, 21);
         Chain.forEachWithIndex((i, _) -> Ref.put(i, ri), List.toChain(1 :: 2 :: 3 :: Nil));
-        2 == deref ri
+        2 == Ref.get(ri)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1883,7 +1883,7 @@ mod TestChain {
         let st = Ref.fresh(rc, 0);
         let c = Chain.empty();
         let ans = Chain.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, c);
-        ans == Identity.Identity(Chain.empty()) and deref st == 0
+        ans == Identity.Identity(Chain.empty()) and Ref.get(st) == 0
     }
 
     @test
@@ -1891,7 +1891,7 @@ mod TestChain {
         let st = Ref.fresh(rc, 0);
         let c = Chain.singleton(1);
         let ans = Chain.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, c);
-        ans == Identity.Identity(Chain.singleton(1)) and deref st == 1
+        ans == Identity.Identity(Chain.singleton(1)) and Ref.get(st) == 1
     }
 
     @test
@@ -1899,7 +1899,7 @@ mod TestChain {
         let st = Ref.fresh(rc, 0);
         let c = List.toChain(1 :: 2 :: Nil);
         let ans = Chain.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, c);
-        ans == Identity.Identity(List.toChain(1 :: 2 :: Nil)) and deref st == 2
+        ans == Identity.Identity(List.toChain(1 :: 2 :: Nil)) and Ref.get(st) == 2
     }
 
     @test
@@ -1907,7 +1907,7 @@ mod TestChain {
         let st = Ref.fresh(rc, 0);
         let c = List.toChain(1 :: 2 :: 3 :: Nil);
         let ans = Chain.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, c);
-        ans == Identity.Identity(List.toChain(1 :: 2 :: 3 :: Nil)) and deref st == 3
+        ans == Identity.Identity(List.toChain(1 :: 2 :: 3 :: Nil)) and Ref.get(st) == 3
     }
 
     /////////////////////////////////////////////////////////////////////////////

@@ -1341,14 +1341,14 @@ def eq19(): Bool = Set#{1, 2, 3} == Set#{2, 1, 3}
 def forEach01(): Bool = region rc {
     let ri = Ref.fresh(rc, 21);
     Set.forEach(x -> Ref.put(x, ri), Set#{});
-    21 == deref ri
+    21 == Ref.get(ri)
 }
 
 @test
 def forEach02(): Bool = region rc {
     let ri = Ref.fresh(rc, 21);
     Set.forEach(x -> Ref.put(x, ri), Set#{42});
-    42 == deref ri
+    42 == Ref.get(ri)
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1359,14 +1359,14 @@ def forEach02(): Bool = region rc {
 def forEachWithIndex01(): Bool = region rc {
     let ri = Ref.fresh(rc, 21);
     Set.forEachWithIndex((i, _) -> Ref.put(i, ri), Set#{});
-    21 == deref ri
+    21 == Ref.get(ri)
 }
 
 @test
 def forEachWithIndex02(): Bool = region rc {
     let ri = Ref.fresh(rc, 21);
     Set.forEachWithIndex((i, _) -> Ref.put(i, ri), Set#{42});
-    0 == deref ri
+    0 == Ref.get(ri)
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1408,8 +1408,8 @@ def unfoldWithIter01(): Bool = region rc {
         if (true)
             None
         else {
-            let c = Some(deref x + 48);
-            Ref.put(deref x + 1, x);
+            let c = Some(Ref.get(x) + 48);
+            Ref.put(Ref.get(x) + 1, x);
             c
         };
     Set.unfoldWithIter(step) == Set#{}
@@ -1419,11 +1419,11 @@ def unfoldWithIter01(): Bool = region rc {
 def unfoldWithIter02(): Bool = region rc {
     let x = Ref.fresh(rc, 0);
     let step = () ->
-        if (deref x > 0)
+        if (Ref.get(x) > 0)
             None
         else {
-            let c = Some(deref x + 48);
-            Ref.put(deref x + 1, x);
+            let c = Some(Ref.get(x) + 48);
+            Ref.put(Ref.get(x) + 1, x);
             c
         };
     Set.unfoldWithIter(step) == Set#{48}
@@ -1433,11 +1433,11 @@ def unfoldWithIter02(): Bool = region rc {
 def unfoldWithIter03(): Bool = region rc {
     let x = Ref.fresh(rc, 0);
     let step = () ->
-        if (deref x > 1)
+        if (Ref.get(x) > 1)
             None
         else {
-            let c = Some(deref x + 48);
-            Ref.put(deref x + 1, x);
+            let c = Some(Ref.get(x) + 48);
+            Ref.put(Ref.get(x) + 1, x);
             c
         };
     Set.unfoldWithIter(step) == Set#{48, 49}
@@ -1447,11 +1447,11 @@ def unfoldWithIter03(): Bool = region rc {
 def unfoldWithIter04(): Bool = region rc {
     let x = Ref.fresh(rc, 0);
     let step = () ->
-        if (deref x >= 10)
+        if (Ref.get(x) >= 10)
             None
         else {
-            let c = Some(deref x + 48);
-            Ref.put(deref x + 1, x);
+            let c = Some(Ref.get(x) + 48);
+            Ref.put(Ref.get(x) + 1, x);
             c
         };
     Set.unfoldWithIter(step) == Set#{48, 49, 50, 51, 52, 53, 54, 55, 56, 57}
@@ -1461,11 +1461,11 @@ def unfoldWithIter04(): Bool = region rc {
 def unfoldWithIter05(): Bool = region rc {
     let x = Ref.fresh(rc, 5);
     let step = () ->
-        if (deref x >= 10)
+        if (Ref.get(x) >= 10)
             None
         else {
-            let c = Some(deref x + 48);
-            Ref.put(deref x + 1, x);
+            let c = Some(Ref.get(x) + 48);
+            Ref.put(Ref.get(x) + 1, x);
             c
         };
     Set.unfoldWithIter(step) == Set#{53, 54, 55, 56, 57}
@@ -1475,11 +1475,11 @@ def unfoldWithIter05(): Bool = region rc {
 def unfoldWithIter06(): Bool = region rc {
     let x = Ref.fresh(rc, 0);
     let step = () ->
-        if (deref x >= 10)
+        if (Ref.get(x) >= 10)
             None
         else {
-            let c = Some(deref x + 48);
-            Ref.put(deref x + 2, x);
+            let c = Some(Ref.get(x) + 48);
+            Ref.put(Ref.get(x) + 2, x);
             c
         };
     Set.unfoldWithIter(step) == Set#{48, 50, 52, 54, 56}

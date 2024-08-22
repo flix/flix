@@ -20,7 +20,7 @@ mod Test.Handler.Gen.Int16 {
         }
 
     def getAndInc(r: Ref[Int16, r]): Int16 \ r =
-        let i = deref r;
+        let i = Ref.get(r);
         Ref.put(i + 1i16, r);
         i
 

@@ -51,7 +51,7 @@ object NamedAst {
 
     case class Struct(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.StructSym, tparams: List[TypeParam], fields: List[StructField], indices: Map[Name.Label, Int], loc: SourceLocation) extends Declaration
 
-    case class StructField(sym: Name.Label, tpe: Type, loc: SourceLocation)
+    case class StructField(sym: Symbol.StructFieldSym, tpe: Type, loc: SourceLocation) extends Declaration
 
     case class RestrictableEnum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.RestrictableEnumSym, index: TypeParam, tparams: List[TypeParam], derives: Derivations, cases: List[Declaration.RestrictableCase], loc: SourceLocation) extends Declaration
 
@@ -155,9 +155,9 @@ object NamedAst {
 
     case class StructNew(qname: Name.QName, exps: List[(Name.Label, Expr)], region: Expr, loc: SourceLocation) extends Expr
 
-    case class StructGet(st: Name.QName, exp: Expr, name: Name.Label, loc: SourceLocation) extends Expr
+    case class StructGet(exp: Expr, name: Name.Label, loc: SourceLocation) extends Expr
 
-    case class StructPut(st: Name.QName, exp1: Expr, name: Name.Label, exp2: Expr, loc: SourceLocation) extends Expr
+    case class StructPut(exp1: Expr, name: Name.Label, exp2: Expr, loc: SourceLocation) extends Expr
 
     case class VectorLit(exps: List[Expr], loc: SourceLocation) extends Expr
 

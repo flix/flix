@@ -511,7 +511,7 @@ mod TestMutMap {
         let m = MutMap.empty(rc);
         let ri = Ref.fresh(rc, 21);
         MutMap.forEach((k, v) -> Ref.put(k+v, ri), m);
-        21 == deref ri
+        21 == Ref.get(ri)
     }
 
     @test
@@ -520,7 +520,7 @@ mod TestMutMap {
         let ri = Ref.fresh(rc, 21);
         MutMap.put!(0, 100, m);
         MutMap.forEach((k, v) -> Ref.put(k+v, ri), m);
-        100 == deref ri
+        100 == Ref.get(ri)
     }
 
     @test
@@ -531,7 +531,7 @@ mod TestMutMap {
         MutMap.put!(1, 101, m);
         MutMap.put!(2, 102, m);
         MutMap.forEach((k, v) -> Ref.put(k+v, ri), m);
-        104 == deref ri
+        104 == Ref.get(ri)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -543,7 +543,7 @@ mod TestMutMap {
         let m = MutMap.empty(rc);
         let ri = Ref.fresh(rc, 21);
         MutMap.forEachWithIndex((i, _, _) -> Ref.put(i, ri), m);
-        21 == deref ri
+        21 == Ref.get(ri)
     }
 
     @test
@@ -552,7 +552,7 @@ mod TestMutMap {
         let ri = Ref.fresh(rc, 21);
         MutMap.put!(0, 100, m);
         MutMap.forEachWithIndex((i, _, _) -> Ref.put(i, ri), m);
-        0 == deref ri
+        0 == Ref.get(ri)
     }
 
     @test
@@ -563,7 +563,7 @@ mod TestMutMap {
         MutMap.put!(1, 101, m);
         MutMap.put!(2, 102, m);
         MutMap.forEachWithIndex((i, _, _) -> Ref.put(i, ri), m);
-        2 == deref ri
+        2 == Ref.get(ri)
     }
 
 }
