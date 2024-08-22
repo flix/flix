@@ -24,5 +24,5 @@ def main(): Unit \ IO = region rc {
     birthday(joe);
     birthday(joe);
     birthday(joe);
-    println("${person€name} is ${person€age} years old and is ${person€height} cm tall")
+    println("${joe€name} is ${joe€age} years old and is ${joe€height} cm tall")
 }
