@@ -1364,7 +1364,6 @@ object Namer {
     case "string" => true
     case "array" => true
     case "vector" => true
-    case "ref" => true
     case "pure" => true
     case "univ" => true
     case _ => false
