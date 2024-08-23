@@ -2313,10 +2313,8 @@ object Resolver {
     matches match {
       // Case 0: No matches. Error.
       case Nil => Result.Err(ResolutionError.UndefinedTag(qname.ident.name, ns0, qname.loc))
-      // Case 1: Exactly one match. Success.
-      case caze :: Nil => Result.Ok(caze)
-      // Case 2: Multiple matches. Error
-      case _ => throw InternalCompilerException(s"unexpected duplicate tag: '$qname'.", qname.loc)
+      // Case 1: A match was found. Success. Note that multiple matches can be found but they are prioritized by tryLookupName so this is fine.
+      case caze :: _ => Result.Ok(caze)
     }
     // TODO NS-REFACTOR check accessibility
   }
@@ -2331,10 +2329,8 @@ object Resolver {
     matches match {
       // Case 0: No matches. Error.
       case Nil => Result.Err(ResolutionError.UndefinedStruct(qname, qname.loc))
-      // Case 1: Exactly one match. Success.
-      case st :: Nil => Result.Ok(st)
-      // Case 2: Multiple matches. Error
-      case _ => throw InternalCompilerException(s"unexpected duplicate struct: '$qname'.", qname.loc)
+      // Case 1: A match was found. Success. Note that multiple matches can be found but they are prioritized by tryLookupName so this is fine.
+      case st :: _ => Result.Ok(st)
     }
     // TODO NS-REFACTOR check accessibility
   }
@@ -2349,7 +2345,7 @@ object Resolver {
     matches match {
       // Case 0: No matches. Error.
       case Nil => Result.Err(ResolutionError.UndefinedStructField(name, name.loc))
-      // Case 1: Multiple matches, but locality rules in tryLookupName places the nearest definition in the head of the list. This is intentional
+      // Case 1: A match was found. Success. Note that multiple matches can be found but they are prioritized by tryLookupName so this is fine.
       case field :: _ => Result.Ok(field)
     }
     // TODO NS-REFACTOR check accessibility
@@ -2937,10 +2933,8 @@ object Resolver {
 
       // 2nd priority: names in the current namespace
       val moduleContainsSymbols = ns0.idents.nonEmpty
-      val localNames = if (moduleContainsSymbols) {
-        val declsInNamespace = root.symbols.getOrElse(ns0, Map.empty)
-        val declarationsOfQname = declsInNamespace.getOrElse(qname.ident.name, Nil)
-        declarationsOfQname.map(Resolution.Declaration.apply)
+      val localNames = if (ns0.idents.nonEmpty) {
+        root.symbols.getOrElse(ns0, Map.empty).getOrElse(qname.ident.name, Nil).map(Resolution.Declaration)
       } else {
         Nil
       }
