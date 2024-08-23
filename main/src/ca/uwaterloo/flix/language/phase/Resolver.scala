@@ -2978,7 +2978,7 @@ object Resolver {
       case Some(prefix) =>
         val ns = prefix ::: qname0.namespace.parts.tail
         val qname = Name.mkQName(ns, qname0.ident.name, SourceLocation.Unknown)
-        root.symbols.getOrElse(qname.namespace, Map.empty).get(qname.ident.name).map(_.distinct)
+        root.symbols.getOrElse(qname.namespace, Map.empty).get(qname.ident.name)
     }
   }
 
