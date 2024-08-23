@@ -90,7 +90,7 @@ object InstanceCompleter extends Completer {
       val retTpe = fmtType(sig.spec.retTpe, holes)
       val eff = sig.spec.eff match {
         case Type.Cst(TypeConstructor.Pure, _) => ""
-        case e => raw" \ " + FormatType.formatType(e)
+        case e => raw" \ " + fmtType(e, holes)
       }
       s"    pub def ${sig.sym.name}($fparams): $retTpe$eff = ???"
     }
