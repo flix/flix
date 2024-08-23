@@ -18,8 +18,7 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, UnkindedType}
-import ca.uwaterloo.flix.util.Formatter
-import ca.uwaterloo.flix.util.Grammar.count
+import ca.uwaterloo.flix.util.{Formatter, Grammar}
 
 import java.lang.reflect.{Constructor, Field, Method}
 
@@ -1084,7 +1083,7 @@ object ResolutionError {
     * @param loc      the location where the error occurred.
     */
   case class MismatchedOpArity(op: Symbol.OpSym, expected: Int, actual: Int, loc: SourceLocation) extends ResolutionError with Recoverable {
-    override def summary: String = s"Expected ${count(expected, Some("parameter"))} but found $actual."
+    override def summary: String = s"Expected ${Grammar.count(expected, Some("parameter"))} but found $actual."
 
     /**
       * Returns the formatted error message.
@@ -1093,10 +1092,10 @@ object ResolutionError {
       import formatter._
       s""">> Mismatched arity.
          |
-         |The operation $op expects ${count(expected, Some("parameter"))},
-         |but ${count(actual, None, are=true)} provided here.
+         |The operation $op expects ${Grammar.count(expected, Some("parameter"))},
+         |but ${Grammar.count(actual, None, are=true)} provided here.
          |
-         |${code(loc, s"expected ${count(expected, Some("parameter"))} but found $actual")}
+         |${code(loc, s"expected ${Grammar.count(expected, Some("parameter"))} but found $actual")}
          |""".stripMargin
     }
 
