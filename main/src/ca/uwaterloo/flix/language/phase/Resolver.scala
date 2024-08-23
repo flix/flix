@@ -2349,7 +2349,7 @@ object Resolver {
     matches match {
       // Case 0: No matches. Error.
       case Nil => Result.Err(ResolutionError.UndefinedStructField(name, name.loc))
-      // Case 1: Multiple matches, but locality rules in tryLookupName places the nearest definition in the head of the list
+      // Case 1: Multiple matches, but locality rules in tryLookupName places the nearest definition in the head of the list. This is intentional
       case field :: _ => Result.Ok(field)
     }
     // TODO NS-REFACTOR check accessibility
