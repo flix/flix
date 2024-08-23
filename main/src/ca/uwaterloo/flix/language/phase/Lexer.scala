@@ -207,7 +207,7 @@ object Lexer {
     if (s.current.offset <= 2) {
       None
     } else {
-      Some(s.src.data(s.current.offset - 2))
+      Some(s.src.data(s.current.offset - 3))
     }
   }
 
