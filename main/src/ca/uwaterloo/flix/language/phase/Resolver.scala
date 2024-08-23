@@ -2959,7 +2959,7 @@ object Resolver {
       // 4th priority: names in the root namespace
       val rootNames = root.symbols.getOrElse(Name.RootNS, Map.empty).getOrElse(qname.ident.name, Nil).map(Resolution.Declaration.apply)
 
-      (envNames ::: localNames ::: currentNamespace ::: rootNames).distinct
+      envNames ::: localNames ::: currentNamespace ::: rootNames
 
     } else {
       // Case 2. Qualified name. Look it up directly.
