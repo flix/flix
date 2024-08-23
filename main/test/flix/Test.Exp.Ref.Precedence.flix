@@ -2,23 +2,23 @@ mod Test.Exp.Ref.Precedence {
 
     @test
     def testRefPrecedence01(): Bool = region reg {
-        let l = ref ref 123 @ reg @ reg;
-        let r = deref deref l;
+        let l = Ref.fresh(reg, Ref.fresh(reg, 123));
+        let r = Ref.get(Ref.get(l));
         r == 123
     }
 
     @test
     def testRefPrecedence02(): Bool = region reg {
-        let l = ref ref ref 123 @ reg @ reg @ reg;
-        let r = deref deref deref l;
+        let l = Ref.fresh(reg, Ref.fresh(reg, Ref.fresh(reg, 123)));
+        let r = Ref.get(Ref.get(Ref.get(l)));
         r == 123
     }
 
     @test
     def testRefPrecedence03(): Bool = region reg {
-        let x = ref 123 @ reg;
-        let y = ref 123 @ reg;
-        let r = deref x + deref y;
+        let x = Ref.fresh(reg, 123);
+        let y = Ref.fresh(reg, 123);
+        let r = Ref.get(x) + Ref.get(y);
         r == (123 + 123)
     }
 }

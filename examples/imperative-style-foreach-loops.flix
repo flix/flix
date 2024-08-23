@@ -54,9 +54,9 @@ def main(): Unit \ IO = region rc {
     // expression in the foreach loop must be
     // of type unit.
     //
-    let z = ref Nil @ rc;
+    let z = Ref.fresh(rc, Nil);
     foreach (x <- l)
-        Ref.put(x :: deref z, z);
+        Ref.put(x :: Ref.get(z), z);
 
     //
     // The loop above is actually equivalent to
@@ -65,20 +65,20 @@ def main(): Unit \ IO = region rc {
     // However, foreach-loops can be much easier
     // to read than `foreach` function calls.
     //
-    let q = ref Nil @ rc;
+    let q = Ref.fresh(rc, Nil);
     List.iterator(rc, l) |>
-    Iterator.forEach(match x -> Ref.put(x :: deref q, q));
+    Iterator.forEach(match x -> Ref.put(x :: Ref.get(q), q));
 
     //
     // This is true in particular for nested
     // foreach-loops.
     //
     let k = 4 :: 5 :: 6 :: Nil;
-    let w = ref Nil @ rc;
+    let w = Ref.fresh(rc, Nil);
     foreach (a <- l) {
-        Ref.put(a :: deref w, w);
+        Ref.put(a :: Ref.get(w), w);
         foreach (b <- k)
-            Ref.put(b :: deref w, w)
+            Ref.put(b :: Ref.get(w), w)
     };
 
     //
@@ -86,12 +86,12 @@ def main(): Unit \ IO = region rc {
     // to the functional style expression
     // below.
     //
-    let v = ref Nil @ rc;
+    let v = Ref.fresh(rc, Nil);
     List.iterator(rc, l) |>
     Iterator.forEach(match a -> {
-        Ref.put(a :: deref v, v);
+        Ref.put(a :: Ref.get(v), v);
         List.iterator(rc, k) |>
-        Iterator.forEach(match b -> Ref.put(b :: deref v, v))
+        Iterator.forEach(match b -> Ref.put(b :: Ref.get(v), v))
     });
 
     //
@@ -104,20 +104,20 @@ def main(): Unit \ IO = region rc {
     // This may be familiar to you if you have
     // some experience with Scala's for-loops.
     //
-    let e = ref Nil @ rc;
+    let e = Ref.fresh(rc, Nil);
     foreach (a <- l;
              b <- k)
-                Ref.put((a, b) :: deref e, e);
+                Ref.put((a, b) :: Ref.get(e), e);
 
     //
     // The equivalent functional style expression
     // has a bit more visual noise.
     //
-    let e1 = ref Nil @ rc;
+    let e1 = Ref.fresh(rc, Nil);
     List.iterator(rc, l) |>
     Iterator.forEach(match a -> {
         List.iterator(rc, k) |>
-        Iterator.forEach(match b -> Ref.put((a, b) :: deref e1, e1))
+        Iterator.forEach(match b -> Ref.put((a, b) :: Ref.get(e1), e1))
     });
 
     //
@@ -134,22 +134,22 @@ def main(): Unit \ IO = region rc {
     // Again, this is similar to Scala's
     // for-loops.
     //
-    let c = ref Nil @ rc;
+    let c = Ref.fresh(rc, Nil);
     foreach (a <- l;
              if a > 1;
              b <- k;
              if b < 6)
-                Ref.put((a, b) :: deref c, c);
+                Ref.put((a, b) :: Ref.get(c), c);
 
     //
     // Alternatively, we can put a single guard
     // at the end of the parenthesis.
     //
-    let d = ref Nil @ rc;
+    let d = Ref.fresh(rc, Nil);
     foreach (a <- l;
              b <- k;
              if a > 1 and b < 6)
-                Ref.put((a, b) :: deref d, d);
+                Ref.put((a, b) :: Ref.get(d), d);
 
     //
     // Here's the equivalent functional expression
@@ -167,24 +167,24 @@ def main(): Unit \ IO = region rc {
     // the same parenthesis, match on the exact pattern
     // and include guards.
     //
-    let cf = ref Nil @ rc;
+    let cf = Ref.fresh(rc, Nil);
     List.iterator(rc, l) |>
     Iterator.forEach(match a -> {
         List.iterator(rc, k) |>
         Iterator.forEach(match b -> {
-            if (a > 1 and b < 6) Ref.put((a, b) :: deref cf, cf) else ()
+            if (a > 1 and b < 6) Ref.put((a, b) :: Ref.get(cf), cf) else ()
         })
     });
 
-    println("z == q? ${deref z == deref q}");
+    println("z == q? ${Ref.get(z) == Ref.get(q)}");
     println("w == l with k prepended to every element of l");
-    println("w == ${deref w}? ${deref w == 6 :: 5 :: 4 :: 3 :: 6 :: 5 :: 4 :: 2 :: 6 :: 5 :: 4 :: 1 :: Nil}");
-    println("w == v? ${deref w == deref v}");
+    println("w == ${Ref.get(w)}? ${Ref.get(w) == 6 :: 5 :: 4 :: 3 :: 6 :: 5 :: 4 :: 2 :: 6 :: 5 :: 4 :: 1 :: Nil}");
+    println("w == v? ${Ref.get(w) == Ref.get(v)}");
     println("e contains all combinations of pairs from l and k");
-    println("e (sorted) == ${List.sortBy(match (a, _) -> a, deref e)}");
-    println("e == e1? ${deref e == deref e1}");
+    println("e (sorted) == ${List.sortBy(match (a, _) -> a, Ref.get(e))}");
+    println("e == e1? ${Ref.get(e) == Ref.get(e1)}");
     println("c contains all combinations of pairs from l and k excluding 1 and 6");
-    println("c (sorted) == ${List.sortBy(match (a, _) -> a, deref c)}");
-    println("c == d? ${deref c == deref d}");
-    println("c == cf? ${deref c == deref cf}")
+    println("c (sorted) == ${List.sortBy(match (a, _) -> a, Ref.get(c))}");
+    println("c == d? ${Ref.get(c) == Ref.get(d)}");
+    println("c == cf? ${Ref.get(c) == Ref.get(cf)}")
 }

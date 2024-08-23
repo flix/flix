@@ -1,77 +1,77 @@
 mod Test.Exp.Ref.Ref {
 
     @test
-    def testRef01(): Unit = region rc { discard ref () @ rc }
+    def testRef01(): Unit = region rc { discard Ref.fresh(rc, ()) }
 
     @test
-    def testRef02(): Unit = region rc { discard ref true @ rc }
+    def testRef02(): Unit = region rc { discard Ref.fresh(rc, true) }
 
     @test
-    def testRef03(): Unit = region rc { discard ref false @ rc }
+    def testRef03(): Unit = region rc { discard Ref.fresh(rc, false) }
 
     @test
-    def testRef04(): Unit = region rc { discard ref 'a' @ rc }
+    def testRef04(): Unit = region rc { discard Ref.fresh(rc, 'a') }
 
     @test
-    def testRef05(): Unit = region rc { discard ref 0.0f32 @ rc }
+    def testRef05(): Unit = region rc { discard Ref.fresh(rc, 0.0f32) }
 
     @test
-    def testRef06(): Unit = region rc { discard ref 0.0f64 @ rc }
+    def testRef06(): Unit = region rc { discard Ref.fresh(rc, 0.0f64) }
 
     @test
-    def testRef07(): Unit = region rc { discard ref 0i8 @ rc }
+    def testRef07(): Unit = region rc { discard Ref.fresh(rc, 0i8) }
 
     @test
-    def testRef08(): Unit = region rc { discard ref 0i16 @ rc }
+    def testRef08(): Unit = region rc { discard Ref.fresh(rc, 0i16) }
 
     @test
-    def testRef09(): Unit = region rc { discard ref 0i32 @ rc }
+    def testRef09(): Unit = region rc { discard Ref.fresh(rc, 0i32) }
 
     @test
-    def testRef10(): Unit = region rc { discard ref 0i64 @ rc }
+    def testRef10(): Unit = region rc { discard Ref.fresh(rc, 0i64) }
 
     @test
-    def testRef11(): Unit = region rc { discard ref 0ii @ rc }
+    def testRef11(): Unit = region rc { discard Ref.fresh(rc, 0ii) }
 
     @test
-    def testRef12(): Unit = region rc { discard ref 0.0ff @ rc }
+    def testRef12(): Unit = region rc { discard Ref.fresh(rc, 0.0ff) }
 
     @test
-    def testRef13(): Unit = region rc { discard ref "Hello World!" @ rc }
+    def testRef13(): Unit = region rc { discard Ref.fresh(rc, "Hello World!") }
 
     @test
-    def testRef14(): Unit = region rc { discard ref (1, 2, 3) @ rc }
+    def testRef14(): Unit = region rc { discard Ref.fresh(rc, (1, 2, 3)) }
 
     @test
-    def testRef15(): Unit = region rc { discard ref (None : Option[Int32]) @ rc }
+    def testRef15(): Unit = region rc { discard Ref.fresh(rc, (None : Option[Int32])) }
 
     @test
-    def testRef16(): Unit = region rc { discard ref Some(42) @ rc }
+    def testRef16(): Unit = region rc { discard Ref.fresh(rc, Some(42)) }
 
     @test
-    def testRef17(): Unit = region rc { discard ref (Ok(42): Result[String, Int32]) @ rc }
+    def testRef17(): Unit = region rc { discard Ref.fresh(rc, (Ok(42): Result[String, Int32])) }
 
     @test
-    def testRef18(): Unit = region rc { discard ref (Err("Goodbye World!"): Result[String, Int32]) @ rc }
+    def testRef18(): Unit = region rc { discard Ref.fresh(rc, (Err("Goodbye World!"): Result[String, Int32])) }
 
     @test
     def testRefRegion01(): Unit = // Pure
         region rc {
-            let _u = ref () @ rc;
+            let _u = Ref.fresh(rc, ());
             ()
         }
 
     @test
     def testRefRegion02(): Unit = // Pure
         region rc {
-            let _u = ref true @ rc;
+            let _u = Ref.fresh(rc, true);
             ()
         }
 
     @test
     def testRefRegion03(): Unit = // Pure
         region rc {
-            let _u = ref 'a' @ rc;
+            let _u = Ref.fresh(rc, 'a');
             ()
         }
 

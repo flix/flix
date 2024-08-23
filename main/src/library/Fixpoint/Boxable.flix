@@ -13,9 +13,12 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-mod Boxable {
+mod Fixpoint.Boxable {
+
+    import java.lang.Object
 
     use Vector.get
+    use Fixpoint.Boxed
 
     ///
     /// Boxes the given `x`.
@@ -31,7 +34,7 @@ mod Boxable {
         case v: Float64 => Boxed.BoxedFloat64(v)
         case _: _ =>
             let cmp = (o1, o2) -> Order.compare(unchecked_cast(o1 as a), unchecked_cast(o2 as a));
-            Boxed.BoxedObject(unchecked_cast(x as ##java.lang.Object), cmp)
+            Boxed.BoxedObject(unchecked_cast(x as Object), cmp)
     }
 
     ///

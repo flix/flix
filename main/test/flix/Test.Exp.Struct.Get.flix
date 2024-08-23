@@ -78,9 +78,6 @@ mod Test.Exp.Struct.Get {
             let fstName2 = s€fstName;
             fstName1 == "Lucky" and fstName2 == "Lucky" and lstName1 == "Luke" and lstName2 == "Luke"
         }
-}
-
-mod Test.Exp.Struct.BinaryTree {
 
     struct BinaryTree[t, r] {
         left: Option[BinaryTree[t, r]],
@@ -114,16 +111,16 @@ mod Test.Exp.Struct.BinaryTree {
             } @ rc;
             binaryTreeSum(Some(tree)) == 25
         }
-}
-mod Test.Exp.Struct.Nested {
+
     struct Nested[v, r] {
-        value: v
+        v: v
     }
 
     @test
     def nestedPut01(): Bool =
         region rc {
-            let nested = new Nested{ value = new Nested { value = new Nested {value = new Nested {value = 15} @ rc } @ rc} @ rc } @ rc;
-            nested€value€value€value€value == 15
+            let nested = new Nested{ v = new Nested { v = new Nested {v = new Nested {v = 15} @ rc } @ rc} @ rc } @ rc;
+            nested€v€v€v€v == 15
         }
+
 }

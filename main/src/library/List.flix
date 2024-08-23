@@ -192,7 +192,7 @@ mod List {
     }
 
     ///
-    /// Returns the length of `l`.
+    /// Returns the number of elements in `l`.
     ///
     pub def length(l: List[a]): Int32 =
         def loop(ll, acc) = match ll {
@@ -1334,9 +1334,9 @@ mod List {
     /// Returns an iterator over `l`.
     ///
     pub def iterator(rc: Region[r], xs: List[a]): Iterator[a, r, r] \ r =
-        let ls = ref xs @ rc;
+        let ls = Ref.fresh(rc, xs);
         let next = () -> {
-            match (deref ls) {
+            match (Ref.get(ls)) {
                 case Nil     => None
                 case x :: rs => Ref.put(rs, ls); Some(x)
             }

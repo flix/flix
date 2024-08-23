@@ -43,12 +43,12 @@ mod MutQueue {
         let sb = StringBuilder.empty(reg);
         StringBuilder.appendString!("MutQueue {", sb);
         Array.forEachWithIndex((i, x) -> {
-            if (i < deref s) {
+            if (i < Ref.get(s)) {
                 if (i == 0) StringBuilder.appendString!("${x}", sb)
                 else        StringBuilder.appendString!(", ${x}", sb)
             }
             else ()
-        }, deref arr);
+        }, Ref.get(arr));
         StringBuilder.appendString!("}", sb);
         StringBuilder.toString(sb)
     }
@@ -57,21 +57,21 @@ mod MutQueue {
     /// Returns an empty MutQueue.
     ///
     pub def empty(rc: Region[r]): MutQueue[a, r] \ r =
-        MutQueue(rc, ref Array.empty(rc, 8) @ rc, ref 0 @ rc)
+        MutQueue(rc, Ref.fresh(rc, Array.empty(rc, 8)), Ref.fresh(rc, 0))
 
     ///
     /// Returns the number of elements in `mq`.
     ///
     pub def size(mq: MutQueue[a, r]): Int32 \ r =
         let MutQueue(_, _, s) = mq;
-        deref s
+        Ref.get(s)
 
     ///
     /// Returns whether `mq` is empty.
     ///
     pub def isEmpty(mq: MutQueue[a, r]): Bool \ r =
         let MutQueue(_, _, s) = mq;
-        deref s == 0
+        Ref.get(s) == 0
 
     ///
     /// Returns whether `mq` is non-empty.
@@ -83,8 +83,8 @@ mod MutQueue {
     ///
     pub def peek(mq: MutQueue[a, r]): Option[a] \ r =
         let MutQueue(_, arr, s) = mq;
-        if (deref s == 0) None
-        else Some(Array.get(0, deref arr))
+        if (Ref.get(s) == 0) None
+        else Some(Array.get(0, Ref.get(arr)))
 
     ///
     /// Enqueues an element `x` into a `mq`.
@@ -92,9 +92,9 @@ mod MutQueue {
     pub def enqueue(mq: MutQueue[a, r], x: a): Unit \ r with Order[a] = {
         let MutQueue(_, arr, s) = mq;
         expand(mq);
-        Array.put(x, deref s, deref arr);
-        heapifyUp(deref s, mq);
-        Ref.put(deref s + 1, s)
+        Array.put(x, Ref.get(s), Ref.get(arr));
+        heapifyUp(Ref.get(s), mq);
+        Ref.put(Ref.get(s) + 1, s)
     }
 
     ///
@@ -102,11 +102,11 @@ mod MutQueue {
     ///
     pub def dequeue(mq: MutQueue[a, r]): Option[a] \ r with Order[a] =
         let MutQueue(_, arr, s) = mq;
-        if (deref s > 0) {
+        if (Ref.get(s) > 0) {
             let top = peek(mq);
-            Array.put(Array.get(deref s - 1, deref arr), 0, deref arr);
+            Array.put(Array.get(Ref.get(s) - 1, Ref.get(arr)), 0, Ref.get(arr));
             heapifyDown(0, mq);
-            Ref.put(deref s - 1, s);
+            Ref.put(Ref.get(s) - 1, s);
             top
         }
         else None
@@ -126,8 +126,8 @@ mod MutQueue {
     ///
     pub def iterator(rc: Region[r1], mq: MutQueue[a, r2]): Iterator[a, r1 + r2, r1] \ {r1, r2} =
         let MutQueue(_, arr, s) = mq;
-        let it1 = Iterator.range(rc, 0, deref s);
-        Iterator.map(x -> Array.get(x, deref arr), it1)
+        let it1 = Iterator.range(rc, 0, Ref.get(s));
+        Iterator.map(x -> Array.get(x, Ref.get(arr)), it1)
 
     ///
     /// Returns a List representation of `mq`.
@@ -136,7 +136,7 @@ mod MutQueue {
     ///
     pub def toList(mq: MutQueue[a, r]): List[a] \ r with Order[a] =
         let MutQueue(_, arr, s) = mq;
-        List.take(deref s, Array.foldRight((x, acc) -> x :: acc, Nil, deref arr))
+        List.take(Ref.get(s), Array.foldRight((x, acc) -> x :: acc, Nil, Ref.get(arr)))
 
     ///
     /// Optionally returns a Nel representation of `mq`.
@@ -151,7 +151,7 @@ mod MutQueue {
     ///
     pub def toArray(rc: Region[r1], mq: MutQueue[a, r2]): Array[a, r1] \ {r1, r2} =
         let MutQueue(_, arr, s) = mq;
-        Array.takeLeft(rc, deref s, deref arr)
+        Array.takeLeft(rc, Ref.get(s), Ref.get(arr))
 
     ///
     /// Returns an Vector representation of `mq`.
@@ -169,11 +169,11 @@ mod MutQueue {
         let MutQueue(_, arr, _) = mq;
         if (idx != 0) {
             let parentIdx = (idx - 1) / 2;
-            let cur  = Array.get(idx, deref arr);
-            let parent = Array.get(parentIdx, deref arr);
+            let cur  = Array.get(idx, Ref.get(arr));
+            let parent = Array.get(parentIdx, Ref.get(arr));
             if (cur > parent) {
-                Array.put(parent, idx, deref arr);
-                Array.put(cur, parentIdx, deref arr);
+                Array.put(parent, idx, Ref.get(arr));
+                Array.put(cur, parentIdx, Ref.get(arr));
                 heapifyUp(parentIdx, mq)
             }
             else ()
@@ -185,31 +185,31 @@ mod MutQueue {
     ///
     def heapifyDown(idx: Int32, mq: MutQueue[a, r]): Unit \ r with Order[a] =
         let MutQueue(_, arr, s) = mq;
-        let size = deref s;
+        let size = Ref.get(s);
         let lChildIdx = idx * 2 + 1;
         let rChildIdx = idx * 2 + 2;
-        let cur = Array.get(idx, deref arr);
+        let cur = Array.get(idx, Ref.get(arr));
         if (size >= rChildIdx) {
             if (size == rChildIdx) {
-                let child = Array.get(lChildIdx, deref arr);
+                let child = Array.get(lChildIdx, Ref.get(arr));
                 if (cur < child) {
-                    Array.put(child, idx, deref arr);
-                    Array.put(cur, lChildIdx, deref arr)
+                    Array.put(child, idx, Ref.get(arr));
+                    Array.put(cur, lChildIdx, Ref.get(arr))
                 }
                 else ()
             }
             else {
-                let lChild = Array.get(lChildIdx, deref arr);
-                let rChild = Array.get(rChildIdx, deref arr);
+                let lChild = Array.get(lChildIdx, Ref.get(arr));
+                let rChild = Array.get(rChildIdx, Ref.get(arr));
                 if ((lChild > cur) or (rChild > cur)) {
                     if (lChild > rChild) {
-                        Array.put(cur, lChildIdx, deref arr);
-                        Array.put(lChild, idx, deref arr);
+                        Array.put(cur, lChildIdx, Ref.get(arr));
+                        Array.put(lChild, idx, Ref.get(arr));
                         heapifyDown(lChildIdx, mq)
                     }
                     else {
-                        Array.put(cur, rChildIdx, deref arr);
-                        Array.put(rChild, idx, deref arr);
+                        Array.put(cur, rChildIdx, Ref.get(arr));
+                        Array.put(rChild, idx, Ref.get(arr));
                         heapifyDown(rChildIdx, mq)
                     }
                 }
@@ -223,11 +223,11 @@ mod MutQueue {
     ///
     def expand(mq: MutQueue[a, r]): Unit \ r =
         let MutQueue(reg, arr, s) = mq;
-        let oldCapacity = Array.length(deref arr);
-        if (oldCapacity == deref s) {
+        let oldCapacity = Array.length(Ref.get(arr));
+        if (oldCapacity == Ref.get(s)) {
             let newCapacity = 2 + (oldCapacity * 2);
             let newArr  = Array.empty(reg, newCapacity);
-            Array.forEachWithIndex((idx, x) -> Array.put(x, idx, newArr), deref arr);
+            Array.forEachWithIndex((idx, x) -> Array.put(x, idx, newArr), Ref.get(arr));
             Ref.put(newArr, arr)
         }
         else ()

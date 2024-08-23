@@ -24,6 +24,9 @@ mod Concurrent {
     pub enum Condition(JCondition)
 
     mod Condition {
+
+        import java.lang.IllegalMonitorStateException
+
         ///
         /// Causes the current thread to wait until it is signalled or interrupted.
         ///
@@ -46,24 +49,24 @@ mod Concurrent {
         /// Wakes up one waiting thread.
         ///
         @Internal
-        pub def signal(condition: Condition): Result[##java.lang.IllegalMonitorStateException, Unit] \ IO =
+        pub def signal(condition: Condition): Result[IllegalMonitorStateException, Unit] \ IO =
             let Condition(c) = condition;
             try {
                 Ok(c.signal())
             } catch {
-                case e: ##java.lang.IllegalMonitorStateException => Err(e)
+                case e: IllegalMonitorStateException => Err(e)
             }
 
         ///
         /// Wakes up all waiting threads.
         ///
         @Internal
-        pub def signalAll(condition: Condition): Result[##java.lang.IllegalMonitorStateException, Unit] \ IO =
+        pub def signalAll(condition: Condition): Result[IllegalMonitorStateException, Unit] \ IO =
             let Condition(c) = condition;
             try {
                 Ok(c.signalAll())
             } catch {
-                case e: ##java.lang.IllegalMonitorStateException => Err(e)
+                case e: IllegalMonitorStateException => Err(e)
             }
     }
 }
