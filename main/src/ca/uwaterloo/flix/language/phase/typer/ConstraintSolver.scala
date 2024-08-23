@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor, Name}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.language.phase.typer.TypeReduction.{JavaMethodResolutionResult, JavaConstructorResolutionResult}
@@ -597,7 +597,10 @@ object ConstraintSolver {
     val orderSym = Symbol.mkTraitSym("Order")
     val sendableSym = Symbol.mkTraitSym("Sendable")
     val toStringSym = Symbol.mkTraitSym("ToString")
-    if (sym == eqSym) {
+    if(sym.name.startsWith("DotGet_") || sym.name.startsWith("DotPut_")) {
+      val field = Name.Label(sym.name.substring("DotGet_".length), loc)
+      TypeError.UndefinedStructField(tpe, renv, field, loc)
+    } else if (sym == eqSym) {
       TypeError.MissingInstanceEq(tpe, renv, loc)
     } else if (sym == orderSym) {
       TypeError.MissingInstanceOrder(tpe, renv, loc)

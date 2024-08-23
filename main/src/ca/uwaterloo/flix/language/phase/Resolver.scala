@@ -1383,26 +1383,16 @@ object Resolver {
         }
 
       case NamedAst.Expr.StructGet(e, field0, loc) =>
-        if(root.structFields.contains(field0)) {
-          val eVal = visitExp(e, env0)
-          mapN(eVal) {
-            case e => ResolvedAst.Expr.StructGet(e, field0, loc)
-          }
-        } else {
-          val error = ResolutionError.UndefinedStructField(field0, loc)
-          Validation.toSoftFailure(ResolvedAst.Expr.Error(error), error)
+        val eVal = visitExp(e, env0)
+        mapN(eVal) {
+          case e => ResolvedAst.Expr.StructGet(e, field0, loc)
         }
 
       case NamedAst.Expr.StructPut(e1, field0, e2, loc) =>
-        if(root.structFields.contains(field0)) {
-          val e1Val = visitExp(e1, env0)
-          val e2Val = visitExp(e2, env0)
-          mapN(e1Val, e2Val) {
-            case (e1, e2) => ResolvedAst.Expr.StructPut(e1, field0, e2, loc)
-          }
-        } else {
-          val error = ResolutionError.UndefinedStructField(field0, loc)
-          Validation.toSoftFailure(ResolvedAst.Expr.Error(error), error)
+        val e1Val = visitExp(e1, env0)
+        val e2Val = visitExp(e2, env0)
+        mapN(e1Val, e2Val) {
+          case (e1, e2) => ResolvedAst.Expr.StructPut(e1, field0, e2, loc)
         }
 
       case NamedAst.Expr.VectorLit(exps, loc) =>

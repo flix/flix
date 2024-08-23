@@ -24,7 +24,6 @@ import ca.uwaterloo.flix.util.collection.MultiMap
 object NamedAst {
 
   case class Root(symbols: Map[Name.NName, Map[String, List[Declaration]]],
-                  structFields: Set[Name.Label],
                   structFieldTraits: List[Declaration.Trait],
                   instances: Map[Name.NName, Map[String, List[Declaration.Instance]]],
                   uses: Map[Name.NName, List[UseOrImport]],

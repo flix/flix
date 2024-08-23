@@ -16,14 +16,20 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.FieldCompletion
-import ca.uwaterloo.flix.language.errors.ResolutionError
-import ca.uwaterloo.flix.language.ast.TypedAst
+import ca.uwaterloo.flix.language.errors.TypeError
+import ca.uwaterloo.flix.language.ast.{TypeConstructor, TypedAst}
 
 import java.lang.reflect.{Field, Method, Modifier}
 
 object StructFieldCompleter {
-  def getCompletions(e: ResolutionError.UndefinedStructField, root: TypedAst.Root): Iterable[Completion.StructFieldCompletion] = {
-    val fields = root.structs.values.flatMap(struct => struct.fields.values)
+  def getCompletions(e: TypeError.UndefinedStructField, root: TypedAst.Root): Iterable[Completion.StructFieldCompletion] = {
+    val fields = e.tpe.typeConstructor match {
+      case Some(tc) => tc match {
+        case TypeConstructor.Struct(sym, kind) => root.structs(sym).fields.values
+        case _ => Nil
+      }
+      case None => Nil
+    }
     val completions = fields.filter (_.sym.name.startsWith(e.field.name))
     completions.map(field => Completion.StructFieldCompletion(field.sym.name, field.tpe))
   }

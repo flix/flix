@@ -1612,6 +1612,16 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError](result)
   }
 
+  test("TypeError.StructGet.04") {
+    val input =
+      """
+        |struct S[r] { }
+        |def foo(s: S[r]): Int32 = s€field
+        |""".stripMargin
+    val result = compile(input, Options.Default)
+    expectError[TypeError](result)
+  }
+
   test("TypeError.StructPut.01") {
     val input =
       """
@@ -1668,6 +1678,16 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |        ()
         |    }
         |}
+        |""".stripMargin
+    val result = compile(input, Options.Default)
+    expectError[TypeError](result)
+  }
+
+  test("TypeError.StructPut.04") {
+    val input =
+      """
+        |struct S[r] { }
+        |def foo(s: S[r]): Int32 = s€field = 3
         |""".stripMargin
     val result = compile(input, Options.Default)
     expectError[TypeError](result)

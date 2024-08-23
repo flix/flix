@@ -49,7 +49,10 @@ object Namer {
 
       val units = ParOps.parMapValues(program.units)(visitUnit)
       val table0@SymbolTable(s, _, _) = units.values.foldLeft(SymbolTable.empty)(tableUnit)
-      val structFields = collectStructFields(s.values.flatMap(_.m.flatMap(_._2)))
+      val structFields0 = collectStructFields(s.values.flatMap(_.m.flatMap(_._2)))
+      val structFields = sctx.usedFields.iterator().asScala.foldLeft(structFields0) {
+        case (acc, cur) => acc + cur
+      }
       val structFieldTraits = fieldTraits(structFields)
 
       val table = structFieldTraits.foldLeft(table0) {
@@ -69,7 +72,7 @@ object Namer {
       val uses = uses0.map {
         case (k, v) => Name.mkUnlocatedNName(k) -> v
       }
-      Validation.toSuccessOrSoftFailure(NamedAst.Root(symbols, structFields, structFieldTraits, instances, uses, units, program.entryPoint, locations, program.names), sctx.errors.asScala)
+      Validation.toSuccessOrSoftFailure(NamedAst.Root(symbols, structFieldTraits, instances, uses, units, program.entryPoint, locations, program.names), sctx.errors.asScala)
     }(DebugValidation())
 
   /**
@@ -778,10 +781,12 @@ object Namer {
       NamedAst.Expr.StructNew(qname, es, e, loc)
 
     case DesugaredAst.Expr.StructGet(exp, name, loc) =>
+      sctx.usedFields.add(name)
       val e = visitExp(exp, ns0)
       NamedAst.Expr.StructGet(e, name, loc)
 
     case DesugaredAst.Expr.StructPut(exp1, name, exp2, loc) =>
+      sctx.usedFields.add(name)
       val e1 = visitExp(exp1, ns0)
       val e2 = visitExp(exp2, ns0)
       NamedAst.Expr.StructPut(e1, name, e2, loc)
@@ -1671,7 +1676,7 @@ object Namer {
     /**
       * Returns a fresh shared context.
       */
-    def mk(): SharedContext = new SharedContext(new ConcurrentLinkedQueue())
+    def mk(): SharedContext = new SharedContext(new ConcurrentLinkedQueue(), new ConcurrentLinkedQueue())
   }
 
   /**
@@ -1679,7 +1684,7 @@ object Namer {
     *
     * @param errors the [[NameError]]s in the AST, if any.
     */
-  private case class SharedContext(errors: ConcurrentLinkedQueue[NameError])
+  private case class SharedContext(errors: ConcurrentLinkedQueue[NameError], usedFields: ConcurrentLinkedQueue[Name.Label])
 
 
   /**

@@ -1679,53 +1679,6 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.UndefinedStruct](result)
   }
 
-  // A bug was introduced into the kinder when it was refactored, so this test fails, but
-  // will reenable it once my next struct kinder support pr is merged
-  test("ResoutionError.MissingStructField.01") {
-    val input =
-      """
-        |mod S {
-        |    struct S[r] { }
-        |    def f(s: S[r]): Unit = {
-        |        s€missingField;
-        |        ()
-        |    }
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UndefinedStructField](result)
-  }
-
-  test("ResolutionError.MissingStructField.02") {
-    val input =
-      """
-        |mod S {
-        |    struct S[r] { }
-        |    def f(s: S[r]): Unit = {
-        |        s€missingField = 3;
-        |        ()
-        |    }
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UndefinedStructField](result)
-  }
-
-  test("ResolutionError.MissingStructField.03") {
-    val input =
-      """
-        |mod S {
-        |    struct S[r] { field1: Int32 }
-        |    def f(s: S[r]): Unit = {
-        |        s€missingField = 3;
-        |        ()
-        |    }
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UndefinedStructField](result)
-  }
-
   test("ResolutionError.TooFewFields.01") {
     val input = """
                   |struct S[r] {
