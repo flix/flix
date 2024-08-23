@@ -56,12 +56,12 @@ object EffUnification2 {
   }
 
   def unifyHelper(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError] = {
-    val old = EffUnification.unify(tpe1, tpe2, renv)
+//    val old = EffUnification.unify(tpe1, tpe2, renv)
     val neww = unify(tpe1, tpe2, tpe1.loc, renv).map {
       case None => (Substitution.empty, List(Ast.BroadEqualityConstraint(tpe1, tpe2)))
       case Some(subst) => (subst, Nil)
     }
-    //compare(tpe1, tpe2, old = old, neww = neww, renv)
+//    compare(tpe1, tpe2, old = old, neww = neww, renv)
     neww
   }
 
@@ -74,8 +74,8 @@ object EffUnification2 {
     } yield {
       if (sOld.isEmpty && sNeww.isEmpty) () else {
         if (sOld.m.keySet != sNeww.m.keySet) {
-//          println(s"\nold:\n$sOld\n$restOld\nnew:\n$sNeww\n$newwRest\nfrom\n$tpe1 ~~~ $tpe2\nwith\n$renv")
-//          scala.io.StdIn.readLine()
+          println(s"\nold:\n$sOld\n$restOld\nnew:\n$sNeww\n$newwRest\nfrom\n$tpe1 ~~~ $tpe2\nwith\n$renv")
+          scala.io.StdIn.readLine()
           ()
         }
         for (k <- sOld.m.keySet) {
@@ -96,7 +96,7 @@ object EffUnification2 {
     val equation = try {
       toEquation(tpeOld, tpeNew, loc)(renv, bimap)
     } catch {
-      case InternalCompilerException(_, _) => ???
+      case InternalCompilerException(_, _) => return
     }
 
     if (!FastSetUnification.Term.equivalent(equation.t1, equation.t2)) {
@@ -113,6 +113,16 @@ object EffUnification2 {
   }
 
   def unify(tpe1: Type, tpe2: Type, loc: SourceLocation, renv: RigidityEnv): Result[Option[Substitution], UnificationError] = {
+    (tpe1, tpe2) match {
+      case (t1@Type.Var(x, _), t2) if renv.isFlexible(x) && !t2.typeVars.contains(t1) =>
+        return Result.Ok(Some(Substitution.singleton(x, t2)))
+
+      case (t1, t2@Type.Var(x, _)) if renv.isFlexible(x) && !t1.typeVars.contains(t2) =>
+        return Result.Ok(Some(Substitution.singleton(x, t1)))
+
+      case _ => ()
+    }
+
     implicit val bimap: Bimap[Atom, Int] = try {mkBidirectionalVarMap(tpe1, tpe2)} catch {
       case InternalCompilerException(_, _) => return Result.Ok(None)
     }
