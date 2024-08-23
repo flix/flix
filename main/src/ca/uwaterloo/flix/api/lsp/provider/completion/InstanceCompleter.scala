@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.InstanceCompletion
-import ca.uwaterloo.flix.language.ast.{Ast, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.fmt.FormatType
 
 object InstanceCompleter extends Completer {
@@ -31,54 +31,63 @@ object InstanceCompleter extends Completer {
     }
 
     /**
-      * Replaces the text in the given variable symbol `sym` everywhere in the type `tpe`
-      * with an equivalent variable symbol with the given `newText`.
+      * Replaces the given symbol with a variable named by the given `newText`.
       */
-    def replaceText(tvar: Symbol.KindedTypeVarSym, tpe: Type, newText: String): Type = tpe match {
-      case Type.Var(sym, loc) if tvar == sym => Type.Var(sym.withText(Ast.VarText.SourceText(newText)), loc)
+    def replaceText(oldSym: Symbol, tpe: Type, newText: String): Type = tpe match {
+      case Type.Var(sym, loc) if oldSym == sym =>Type.Var(sym.withText(Ast.VarText.SourceText(newText)), loc)
       case Type.Var(_, _) => tpe
       case Type.Cst(_, _) => tpe
 
       case Type.Apply(tpe1, tpe2, loc) =>
-        val t1 = replaceText(tvar, tpe1, newText)
-        val t2 = replaceText(tvar, tpe2, newText)
+        val t1 = replaceText(oldSym, tpe1, newText)
+        val t2 = replaceText(oldSym, tpe2, newText)
         Type.Apply(t1, t2, loc)
 
-      case Type.Alias(sym, args0, tpe0, loc) =>
-        val args = args0.map(replaceText(tvar, _, newText))
-        val t = replaceText(tvar, tpe0, newText)
-        Type.Alias(sym, args, t, loc)
+      case Type.Alias(cst, args0, tpe0, loc) =>
+        if (oldSym == cst.sym) {
+          Type.freshVar(Kind.Star, loc, text = Ast.VarText.SourceText(newText))
+        } else {
+          val args = args0.map(replaceText(oldSym, _, newText))
+          val t = replaceText(oldSym, tpe0, newText)
+          Type.Alias(cst, args, t, loc)
+        }
 
-      case Type.AssocType(sym, args0, kind, loc) =>
-        val args = args0.map(replaceText(tvar, _, newText))
-        Type.AssocType(sym, args, kind, loc)
+      case Type.AssocType(cst, args0, kind, loc) =>
+        if (oldSym == cst.sym) {
+          Type.freshVar(Kind.Star, loc, text = Ast.VarText.SourceText(newText))
+        } else {
+          val args = args0.map(replaceText(oldSym, _, newText))
+          Type.AssocType(cst, args, kind, loc)
+        }
     }
 
     /**
       * Formats the given type `tpe`.
       */
-    def fmtType(trt: TypedAst.Trait, tpe: Type, hole: String)(implicit flix: Flix): String =
-      FormatType.formatType(replaceText(trt.tparam.sym, tpe, hole))
+    def fmtType(tpe: Type, holes: Map[Symbol, String])(implicit flix: Flix): String = {
+      val replaced = holes.foldLeft(tpe) { case (t, (sym, hole)) => replaceText(sym, t, hole) }
+      FormatType.formatType(replaced)
+    }
 
     /**
       * Formats the given associated type `assoc`.
       */
-    def fmtAssocType(assoc: TypedAst.AssocTypeSig, holeIndex: Int)(implicit flix: Flix): String = {
-      s"    type ${assoc.sym.name} = $$$holeIndex"
+    def fmtAssocType(assoc: TypedAst.AssocTypeSig, holes: Map[Symbol, String])(implicit flix: Flix): String = {
+      s"    type ${assoc.sym.name} = ${holes(assoc.sym)}"
     }
 
     /**
       * Formats the given formal parameters in `spec`.
       */
-    def fmtFormalParams(trt: TypedAst.Trait, spec: TypedAst.Spec, hole: String)(implicit flix: Flix): String =
-      spec.fparams.map(fparam => s"${fparam.sym.text}: ${fmtType(trt, fparam.tpe, hole)}").mkString(", ")
+    def fmtFormalParams(spec: TypedAst.Spec, holes: Map[Symbol, String])(implicit flix: Flix): String =
+      spec.fparams.map(fparam => s"${fparam.sym.text}: ${fmtType(fparam.tpe, holes)}").mkString(", ")
 
     /**
       * Formats the given signature `sig`.
       */
-    def fmtSignature(trt: TypedAst.Trait, sig: TypedAst.Sig, hole: String)(implicit flix: Flix): String = {
-      val fparams = fmtFormalParams(trt, sig.spec, hole)
-      val retTpe = fmtType(trt, sig.spec.retTpe, hole)
+    def fmtSignature(sig: TypedAst.Sig, holes: Map[Symbol, String])(implicit flix: Flix): String = {
+      val fparams = fmtFormalParams(sig.spec, holes)
+      val retTpe = fmtType(sig.spec.retTpe, holes)
       val eff = sig.spec.eff match {
         case Type.Cst(TypeConstructor.Pure, _) => ""
         case e => raw" \ " + FormatType.formatType(e)
@@ -88,15 +97,21 @@ object InstanceCompleter extends Completer {
 
     root.traits.map {
       case (_, trt) =>
-        val hole = "${1:t}"
+        val instanceHole = "${1:t}"
+        val holes: Map[Symbol, String] = {
+          (trt.tparam.sym -> instanceHole) +:
+            trt.assocs.zipWithIndex.map { case (a, i) => a.sym -> s"$$${i + 2}" }
+        }.toMap
+
         val traitSym = trt.sym
         val signatures = trt.sigs.filter(_.exp.isEmpty)
+
         val body = {
-          trt.assocs.zipWithIndex.map { case (a, i) => fmtAssocType(a, i + 2) } ++
-            signatures.map(s => fmtSignature(trt, s, hole))
+          trt.assocs.map(a => fmtAssocType(a, holes)) ++
+            signatures.map(s => fmtSignature(s, holes))
         }.mkString("\n\n")
 
-        val completion = s"$traitSym[$hole] {\n\n$body\n\n}\n"
+        val completion = s"$traitSym[$instanceHole] {\n\n$body\n\n}\n"
 
         InstanceCompletion(trt, completion)
     }.toList
