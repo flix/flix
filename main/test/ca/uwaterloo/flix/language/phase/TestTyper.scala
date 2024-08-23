@@ -1564,7 +1564,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    def Foo(): Unit = {
         |        region rc {
         |            let s = new S {a = 4, b = "hi", c = "hello"} @ rc;
-        |            s€a + s€b;
+        |            s->a + s->b;
         |            ()
         |        }
         |    }
@@ -1586,7 +1586,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |        region rc {
         |            let s1 = new S {c = 3} @ rc;
         |            let s2 = new S {c = "hello"} @ rc;
-        |            s1€c + s2€c;
+        |            s1->c + s2->c;
         |            ()
         |        }
         |    }
@@ -1609,7 +1609,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    def Foo(): Unit = {
         |        region rc {
         |            let s = new S {a = 4, b = "hi", c = "hello"} @ rc;
-        |            s€a = s€b;
+        |            s->a = s->b;
         |            ()
         |        }
         |    }
@@ -1631,7 +1631,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |        region rc {
         |            let s1 = new S {c = 3} @ rc;
         |            let s2 = new S {c = "hello"} @ rc;
-        |            s1€c = s2€c;
+        |            s1->c = s2->c;
         |            ()
         |        }
         |    }
