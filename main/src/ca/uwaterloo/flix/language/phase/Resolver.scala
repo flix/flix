@@ -2316,7 +2316,7 @@ object Resolver {
       // Case 1: Exactly one match. Success.
       case caze :: Nil => Result.Ok(caze)
       // Case 2: Multiple matches. Error
-      case cases => throw InternalCompilerException(s"unexpected duplicate tag: '$qname'.", qname.loc)
+      case _ => throw InternalCompilerException(s"unexpected duplicate tag: '$qname'.", qname.loc)
     }
     // TODO NS-REFACTOR check accessibility
   }
@@ -2334,7 +2334,7 @@ object Resolver {
       // Case 1: Exactly one match. Success.
       case st :: Nil => Result.Ok(st)
       // Case 2: Multiple matches. Error
-      case sts => throw InternalCompilerException(s"unexpected duplicate struct: '$qname'.", qname.loc)
+      case _ => throw InternalCompilerException(s"unexpected duplicate struct: '$qname'.", qname.loc)
     }
     // TODO NS-REFACTOR check accessibility
   }
@@ -2349,10 +2349,8 @@ object Resolver {
     matches match {
       // Case 0: No matches. Error.
       case Nil => Result.Err(ResolutionError.UndefinedStructField(name, name.loc))
-      // Case 1: Exactly one match. Success.
-      case field :: Nil => Result.Ok(field)
-      // Case 2: Multiple matches. Error
-      case fields => throw InternalCompilerException(s"unexpected duplicate struct field: '$name'.", name.loc)
+      // Case 1: Multiple matches, but locality rules in tryLookupName places the nearest definition in the head of the list
+      case field :: _ => Result.Ok(field)
     }
     // TODO NS-REFACTOR check accessibility
   }
@@ -2980,7 +2978,7 @@ object Resolver {
       case Some(prefix) =>
         val ns = prefix ::: qname0.namespace.parts.tail
         val qname = Name.mkQName(ns, qname0.ident.name, SourceLocation.Unknown)
-        root.symbols.getOrElse(qname.namespace, Map.empty).get(qname.ident.name)
+        root.symbols.getOrElse(qname.namespace, Map.empty).get(qname.ident.name).map(_.distinct)
     }
   }
 
