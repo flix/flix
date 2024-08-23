@@ -69,6 +69,8 @@ object RestrictableChooseConstraintGen {
     * Performs type inference on the given restrictable choose expression.
     */
   def visitRestrictableChoose(exp: KindedAst.Expr.RestrictableChoose)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
+    implicit val scope: Scope = c.getScope
+
     exp match {
       case KindedAst.Expr.RestrictableChoose(false, exp0, rules0, tpe0, loc) =>
 
@@ -288,7 +290,7 @@ object RestrictableChooseConstraintGen {
     *
     * The first and the second instantiation share all variables except the index.
     */
-  private def instantiatedEnumType(enumSym: Symbol.RestrictableEnumSym, decl: KindedAst.RestrictableEnum, loc: SourceLocation)(implicit flix: Flix): (Type, Type.Var, List[Type]) = {
+  private def instantiatedEnumType(enumSym: Symbol.RestrictableEnumSym, decl: KindedAst.RestrictableEnum, loc: SourceLocation)(implicit scope: Scope, flix: Flix): (Type, Type.Var, List[Type]) = {
     // TODO RESTR-VARS can get rid of enumSym since it's in the decl
     // Make fresh vars for all the type parameters
     // This will unify with the enum type to extract the index
@@ -314,6 +316,8 @@ object RestrictableChooseConstraintGen {
     * Infers the type of the given restrictable choice pattern `pat0`.
     */
   private def visitRestrictableChoosePattern(pat0: KindedAst.RestrictableChoosePattern)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): Type = {
+    implicit val scope: Scope = c.getScope
+
     /**
       * Local pattern visitor.
       */

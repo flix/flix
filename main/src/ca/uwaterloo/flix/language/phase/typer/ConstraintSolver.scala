@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.language.phase.unification.Unification.getUnderOrOverAp
 import ca.uwaterloo.flix.language.phase.unification._
 import ca.uwaterloo.flix.util.Result.Err
 import ca.uwaterloo.flix.util.collection.{ListMap, ListOps}
-import ca.uwaterloo.flix.util.{InternalCompilerException, Result, SubEffectLevel, Validation}
+import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
 
 import scala.annotation.tailrec
 
@@ -40,6 +40,9 @@ import scala.annotation.tailrec
   * We repeat this until we cannot make any more progress or we discover an invalid constraint.
   */
 object ConstraintSolver {
+
+  // TODO LEVELS: using top scope just to compile for now as we introduce levels
+  private implicit val S: Scope = Scope.Top
 
   /**
     * Resolves constraints in the given definition using the given inference result.
@@ -74,7 +77,7 @@ object ConstraintSolver {
 
       // The initial substitution maps from formal parameters to their types
       val initialSubst = fparams.foldLeft(Substitution.empty) {
-        case (acc, KindedAst.FormalParam(sym, mod, tpe, src, loc)) => acc ++ Substitution.singleton(sym.tvar.sym, openOuterSchema(tpe)(Scope.Top, flix))
+        case (acc, KindedAst.FormalParam(sym, mod, tpe, src, loc)) => acc ++ Substitution.singleton(sym.tvar.sym, openOuterSchema(tpe))
       }
 
       // Wildcard tparams are not counted in the tparams, so we need to traverse the types to get them.
@@ -569,8 +572,8 @@ object ConstraintSolver {
   }
 
   /**
-   * Helper method which returns true if the given type type t0 does not have any variables.
-   */
+    * Helper method which returns true if the given type type t0 does not have any variables.
+    */
   private def isKnown(t0: Type): Boolean = t0 match { // TODO INTEROP: Actually, it cannot have variables recursively...
     case Type.Var(_, _) => false
     case Type.Apply(Type.Cst(TypeConstructor.MethodReturnType, _), _, _) => false
@@ -591,8 +594,8 @@ object ConstraintSolver {
   }
 
   /**
-   * Constructs a specific missing instance error for the given trait symbol `sym` and type `tpe`.
-   */
+    * Constructs a specific missing instance error for the given trait symbol `sym` and type `tpe`.
+    */
   def mkMissingInstance(sym: Symbol.TraitSym, tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix): TypeError = {
     val eqSym = Symbol.mkTraitSym("Eq")
     val orderSym = Symbol.mkTraitSym("Order")
@@ -634,7 +637,7 @@ object ConstraintSolver {
     * `r`. This only happens for if the row type is the topmost type, i.e. this
     * doesn't happen inside tuples or other such nesting.
     */
-  private def openOuterSchema(tpe: Type)(implicit scope: Scope, flix: Flix): Type = {
+  private def openOuterSchema(tpe: Type)(implicit flix: Flix): Type = {
     @tailrec
     def transformRow(tpe: Type, acc: Type => Type): Type = tpe match {
       case Type.Cst(TypeConstructor.SchemaRowEmpty, loc) =>
