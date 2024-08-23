@@ -44,10 +44,12 @@ object Grammar {
     val plural = n != 1
     var s = n.toString
 
-    name.foreach { ns =>
-      s += " " + ns
-      if (plural)
-        s += "s"
+    name match {
+      case Some(ns) =>
+        s += " " + ns
+        if (plural)
+          s += "s"
+      case None => // Do nothing
     }
 
     if (are)
