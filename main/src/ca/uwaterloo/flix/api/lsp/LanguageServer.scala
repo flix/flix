@@ -87,7 +87,13 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
 
   /**
     * The current reverse index. The index is empty until the source code is compiled.
+    *
+    * Note: The index is updated *asynchronously* by a different thread, hence:
+    *
+    * - The field must volatile.
+    * - The index may not always reflect the very latest version of the program.
     */
+  @volatile
   private var index: Index = Index.empty
 
   /**
@@ -345,10 +351,12 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
     * Helper function for [[processCheck]] which handles successful and soft failure compilations.
     */
   private def processSuccessfulCheck(requestId: String, root: Root, errors: Chain[CompilationMessage], explain: Boolean, t0: Long): JValue = {
-    val oldRoot = this.root
+    // Update the root and the errors.
     this.root = root
-    this.index = Indexer.visitRoot(root)
     this.currentErrors = errors.toList
+
+    // Asynchronously compute the reverse index.
+    asynchronouslyComputeIndex(root)
 
     // Compute elapsed time.
     val e = System.nanoTime() - t0
@@ -362,6 +370,19 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
     // Determine the status based on whether there are errors.
     val results = PublishDiagnosticsParams.fromMessages(currentErrors, explain) ::: PublishDiagnosticsParams.fromCodeHints(codeHints)
     ("id" -> requestId) ~ ("status" -> ResponseStatus.Success) ~ ("time" -> e) ~ ("result" -> results.map(_.toJSON))
+  }
+
+  /**
+    * Asynchronously compute the reverse index in a new thread.
+    */
+  private def asynchronouslyComputeIndex(root: Root): Unit = {
+    val t = new Thread {
+      override def run(): Unit = {
+        LanguageServer.this.index = Indexer.visitRoot(root)
+      }
+    }
+    t.setDaemon(true)
+    t.start()
   }
 
   /**
