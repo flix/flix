@@ -580,7 +580,7 @@ object Symbol {
     /**
      * The symbol's namespace
      */
-    def namespace: List[String] = structSym.namespace
+    def namespace: List[String] = structSym.namespace :+ structSym.name
   }
 
   /**

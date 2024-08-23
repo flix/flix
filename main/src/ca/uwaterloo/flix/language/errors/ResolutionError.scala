@@ -1129,15 +1129,20 @@ object ResolutionError {
   /**
     * An error raised to indicate an undefined field in a `struct.field` or `struct.field = value` expression.
     *
+    * @param struct the name of the struct
     * @param field the name of the missing field.
     * @param loc   the location where the error occurred.
     */
-  case class UndefinedStructField(field: Name.Label, loc: SourceLocation) extends ResolutionError with Recoverable {
-    override def summary: String = s"Undefined struct field '$field'"
+  case class UndefinedStructField(struct: Option[Symbol.StructSym], field: Name.Label, loc: SourceLocation) extends ResolutionError with Recoverable {
+    private def structMessage: String = struct match {
+      case Some(sym) => s" on struct $sym"
+      case None => ""
+    }
+    override def summary: String = s"Undefined struct field '$field'$structMessage"
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s""">> Undefined struct field '${red(field.toString)}'.
+      s""">> Undefined struct field '${red(field.toString)}'$structMessage.
          |
          |${code(loc, "undefined field")}
          |""".stripMargin
