@@ -580,7 +580,7 @@ object Symbol {
     /**
      * The symbol's namespace
      */
-    def namespace: List[String] = structSym.namespace :+ structSym.name
+    def namespace: List[String] = structSym.namespace
   }
 
   /**
@@ -867,12 +867,11 @@ object Symbol {
     * Returns `None` if the `fqn` is not qualified.
     */
   private def split(fqn: String): Option[(List[String], String)] = {
-    if (!fqn.contains('.'))
+    val split = fqn.split('.')
+    if (split.length < 2)
       return None
-
-    val index = fqn.indexOf('.')
-    val namespace = fqn.substring(0, index).split('/').toList
-    val name = fqn.substring(index + 1, fqn.length)
+    val namespace = split.init.toList
+    val name = split.last
     Some((namespace, name))
   }
 

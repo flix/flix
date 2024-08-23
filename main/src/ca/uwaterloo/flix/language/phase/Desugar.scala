@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.Ast.Modifier
 import ca.uwaterloo.flix.language.ast.DesugaredAst.Expr
 import ca.uwaterloo.flix.language.ast.WeededAst.Predicate
 import ca.uwaterloo.flix.language.ast.shared.Fixity
@@ -71,6 +72,7 @@ object Desugar {
     case d: WeededAst.Declaration.Trait => visitTrait(d)
     case d: WeededAst.Declaration.Instance => visitInstance(d)
     case d: WeededAst.Declaration.Def => visitDef(d)
+    case d: WeededAst.Declaration.Redef => visitRedef(d)
     case d: WeededAst.Declaration.Law => visitLaw(d)
     case d: WeededAst.Declaration.Enum => visitEnum(d)
     case d: WeededAst.Declaration.RestrictableEnum => visitRestrictableEnum(d)
@@ -96,12 +98,14 @@ object Desugar {
     * Desugars the given [[WeededAst.Declaration.Instance]] `instance0`.
     */
   private def visitInstance(instance0: WeededAst.Declaration.Instance)(implicit flix: Flix): DesugaredAst.Declaration.Instance = instance0 match {
-    case WeededAst.Declaration.Instance(doc, ann, mod, trt, tpe0, tconstrs0, assocs0, defs0, loc) =>
+    case WeededAst.Declaration.Instance(doc, ann, mod, trt, tpe0, tconstrs0, assocs0, defs0, redefs0, loc) =>
       val tpe = visitType(tpe0)
       val tconstrs = tconstrs0.map(visitTraitConstraint)
       val assocs = assocs0.map(visitAssocTypeDef)
       val defs = defs0.map(visitDef)
-      DesugaredAst.Declaration.Instance(doc, ann, mod, trt, tpe, tconstrs, assocs, defs, loc)
+      val redefs = redefs0.map(visitRedef)
+      val defsAndRedefs = defs ++ redefs
+      DesugaredAst.Declaration.Instance(doc, ann, mod, trt, tpe, tconstrs, assocs, defsAndRedefs, loc)
   }
 
   /**
@@ -110,6 +114,23 @@ object Desugar {
   private def visitDef(def0: WeededAst.Declaration.Def)(implicit flix: Flix): DesugaredAst.Declaration.Def = def0 match {
     case WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0, fparams0, exp0, tpe0, eff0, tconstrs0, econstrs0, loc) =>
       flix.subtask(ident.name, sample = true)
+      val tparams = tparams0.map(visitTypeParam)
+      val fparams = visitFormalParams(fparams0)
+      val exp = visitExp(exp0)
+      val tpe = visitType(tpe0)
+      val eff = eff0.map(visitType)
+      val tconstrs = tconstrs0.map(visitTraitConstraint)
+      val econstrs = econstrs0.map(visitEqualityConstraint)
+      DesugaredAst.Declaration.Def(doc, ann, mod, ident, tparams, fparams, exp, tpe, eff, tconstrs, econstrs, loc)
+  }
+
+  /**
+    * Desugars the given [[WeededAst.Declaration.Redef]] `def0`.
+    */
+  private def visitRedef(def0: WeededAst.Declaration.Redef)(implicit flix: Flix): DesugaredAst.Declaration.Def = def0 match {
+    case WeededAst.Declaration.Redef(doc, ann, mod0, ident, tparams0, fparams0, exp0, tpe0, eff0, tconstrs0, econstrs0, loc) =>
+      flix.subtask(ident.name, sample = true)
+      val mod = mod0.copy(mod = Modifier.Override :: mod0.mod)
       val tparams = tparams0.map(visitTypeParam)
       val fparams = visitFormalParams(fparams0)
       val exp = visitExp(exp0)

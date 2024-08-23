@@ -1,10 +1,13 @@
 
+import java.util.{Random => JRandom};
+
 ///
 /// Represents a random number generator.
 ///
-pub enum Random(##java.util.Random)
+pub enum Random(JRandom)
 
 mod Random {
+
     import java.util.{Random => JRandom};
 
     ///
