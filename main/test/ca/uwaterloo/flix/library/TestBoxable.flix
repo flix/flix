@@ -16,7 +16,7 @@
 
 mod TestBoxable {
 
-    use Boxable.{box, unbox}
+    use Fixpoint.Boxable.{box, unbox}
 
     /////////////////////////////////////////////////////////////////////////////
     // Unit                                                                    //

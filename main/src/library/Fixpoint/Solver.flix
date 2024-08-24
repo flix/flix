@@ -18,7 +18,6 @@ mod Fixpoint.Solver {
 
     import dev.flix.runtime.Global
 
-    use Boxable.{box, unbox}
     use Fixpoint.Ast.Datalog.{Datalog, Constraint, HeadTerm}
     use Fixpoint.Ast.Datalog.Datalog.{Datalog, Model, Join}
     use Fixpoint.Ast.Datalog.Constraint.Constraint
@@ -28,6 +27,8 @@ mod Fixpoint.Solver {
     use Fixpoint.Ast.Shared.Denotation.{Relational, Latticenal}
     use Fixpoint.Ast.Shared.PredSym
     use Fixpoint.Ast.Shared.PredSym.PredSym
+    use Fixpoint.Boxable.{box, unbox}
+    use Fixpoint.Boxed
     use Fixpoint.Interpreter.Database
 
     ///

@@ -215,7 +215,7 @@ mod DelayList {
     }
 
     ///
-    /// Returns the length of `l`.
+    /// Returns the number of elements in `l`.
     ///
     /// Forces the entire list `l`.
     ///

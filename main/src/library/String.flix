@@ -69,7 +69,7 @@ mod String {
     pub def nonEmpty(s: String): Bool = not isEmpty(s)
 
     ///
-    /// Returns the length of the string `s`.
+    /// Returns the number of characters the string `s`.
     ///
     pub def length(s: String): Int32 =
         unsafe s.length()

@@ -1,5 +1,7 @@
 mod Test.Exp.Concurrency.Spawn {
 
+    import java.lang.NullPointerException
+
     @test
     def testSpawn01(): Unit \ IO = region rc { spawn () @ rc }
 
@@ -65,7 +67,7 @@ mod Test.Exp.Concurrency.Spawn {
                 false
             }
         } catch {
-            case _: ##java.lang.NullPointerException => true
+            case _: NullPointerException => true
         }
 
 
@@ -76,7 +78,7 @@ mod Test.Exp.Concurrency.Spawn {
                 try {
                     String.concat(checked_cast(null), "foo")
                 } catch {
-                    case _: ##java.lang.NullPointerException => ""
+                    case _: NullPointerException => ""
                 }
             } @ rc
         } @ rc;
