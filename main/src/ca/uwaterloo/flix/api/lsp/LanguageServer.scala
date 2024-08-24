@@ -97,10 +97,18 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
   @volatile
   private var index: Index = Index.empty
 
-  private val pool: ExecutorService = Executors.newFixedThreadPool(1)
+  /**
+    * A thread pool, with a single thread, which we use to execute the indexing operation.
+    */
+  private val indexingPool: ExecutorService = Executors.newFixedThreadPool(1)
 
+  /**
+    * A (possibly-null) volatile reference to a future that represents the latest indexing operation.
+    *
+    * Note: Multiple indexing operations may be pending in the thread pool. This field points to the latest submitted.
+    */
   @volatile
-  private var future: Future[_] = null
+  private var indexingFuture: Future[_] = _
 
   /**
     * The current compilation errors.
@@ -305,9 +313,9 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
       ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ SemanticTokensProvider.provideSemanticTokens(uri)(index, root)
 
     case Request.InlayHint(id, _, _) =>
-        // InlayHints disabled due to poor ergonomics.
-        // ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> InlayHintProvider.processInlayHints(uri, range)(index, flix).map(_.toJSON))
-        ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> Nil)
+      // InlayHints disabled due to poor ergonomics.
+      // ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> InlayHintProvider.processInlayHints(uri, range)(index, flix).map(_.toJSON))
+      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> Nil)
 
     case Request.ShowAst(id) =>
       ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> ShowAstProvider.showAst()(flix))
@@ -363,7 +371,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
     this.currentErrors = errors.toList
 
     // Asynchronously compute the reverse index.
-    asynchronouslyComputeIndex(root)
+    asynchronouslyUpdateIndex(root)
 
     // Compute elapsed time.
     val e = System.nanoTime() - t0
@@ -382,20 +390,21 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
   /**
     * Asynchronously compute the reverse index in a new thread.
     */
-  private def asynchronouslyComputeIndex(root: Root): Unit = {
-    val future = pool.submit(new Runnable {
+  private def asynchronouslyUpdateIndex(root: Root): Unit = {
+    this.indexingFuture = indexingPool.submit(new Runnable {
       override def run(): Unit = {
         LanguageServer.this.index = Indexer.visitRoot(root)
       }
     })
-    this.future = future
   }
 
   /**
+    * Synchronously awaits for the most recent indexing operation to complete.
     *
+    * This function is used to ensure the index is up-to-date before certain operations.
     */
   private def synchronouslyAwaitIndex(): Unit = {
-    if (future != null) future.get()
+    if (indexingFuture != null) indexingFuture.get()
   }
 
   /**
@@ -407,8 +416,8 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
   }
 
   /**
-   * Processes a disconnection request.
-   */
+    * Processes a disconnection request.
+    */
   private def processDisconnect()(implicit ws: WebSocket): JValue = {
     val code = 1013 // 'Try again later'
     ws.closeConnection(code, "Simulating disconnection...")
