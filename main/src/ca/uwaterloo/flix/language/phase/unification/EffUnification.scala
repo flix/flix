@@ -124,11 +124,11 @@ object EffUnification {
         case (_, Type.Cst(TypeConstructor.Error(_, _), _)) =>
           return Ok((Substitution.empty, Nil))
 
-        case (t1@Type.Var(x, _), t2) if renv0.isFlexible(x) && !t2.typeVars.contains(t1) =>
-          return Ok(Substitution.singleton(x, t2), Nil)
-
-        case (t1, t2@Type.Var(x, _)) if renv0.isFlexible(x) && !t1.typeVars.contains(t2) =>
-          return Ok(Substitution.singleton(x, t1), Nil)
+//        case (t1@Type.Var(x, _), t2) if renv0.isFlexible(x) && !t2.typeVars.contains(t1) =>
+//          return Ok(Substitution.singleton(x, t2), Nil)
+//
+//        case (t1, t2@Type.Var(x, _)) if renv0.isFlexible(x) && !t1.typeVars.contains(t2) =>
+//          return Ok(Substitution.singleton(x, t1), Nil)
 
         case _ => // nop
       }

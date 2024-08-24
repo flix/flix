@@ -23,6 +23,8 @@ import ca.uwaterloo.flix.language.phase.unification.FastSetUnification.{Conflict
 import ca.uwaterloo.flix.util.collection.Bimap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
+import scala.io.AnsiColor
+
 object EffUnification2 {
 
   /**
@@ -56,72 +58,25 @@ object EffUnification2 {
   }
 
   def unifyHelper(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError] = {
-//    val old = EffUnification.unify(tpe1, tpe2, renv)
     val neww = unify(tpe1, tpe2, tpe1.loc, renv).map {
       case None => (Substitution.empty, List(Ast.BroadEqualityConstraint(tpe1, tpe2)))
       case Some(subst) => (subst, Nil)
     }
-//    compare(tpe1, tpe2, old = old, neww = neww, renv)
+    // `old` is by-name, so don't let-bind it.
+    Checking.compare(checkThings = false, tpe1, tpe2, old = EffUnification.unify(tpe1, tpe2, renv), neww = neww, renv)
     neww
   }
 
-  private type Unified = Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError]
-
-  private def compare(tpe1: Type, tpe2: Type, old: Unified, neww: Unified, renv: RigidityEnv): Unit = {
-    for {
-      (sOld, restOld) <- old
-      (sNeww, newwRest) <- neww
-    } yield {
-      if (sOld.isEmpty && sNeww.isEmpty) () else {
-        if (sOld.m.keySet != sNeww.m.keySet) {
-          println(s"\nold:\n$sOld\n$restOld\nnew:\n$sNeww\n$newwRest\nfrom\n$tpe1 ~~~ $tpe2\nwith\n$renv")
-          scala.io.StdIn.readLine()
-          ()
-        }
-        for (k <- sOld.m.keySet) {
-          sNeww.m.get(k).foreach(ki => checkEq(tpeOld = sOld.m(k), tpeNew = ki, SourceLocation.Unknown, renv))
-
-        }
-      }
-    }
-  }
-
-  private def checkEq(tpeOld: Type, tpeNew: Type, loc: SourceLocation, renv: RigidityEnv): Unit = {
-    implicit val bimap: Bimap[Atom, Int] = try {
-      mkBidirectionalVarMap(tpeOld, tpeNew)
-    } catch {
-      case InternalCompilerException(_, _) => ???
-    }
-
-    val equation = try {
-      toEquation(tpeOld, tpeNew, loc)(renv, bimap)
-    } catch {
-      case InternalCompilerException(_, _) => return
-    }
-
-    if (!FastSetUnification.Term.equivalent(equation.t1, equation.t2)) {
-      println(s"tpeOld:\n$tpeOld\ntpeNew:\n$tpeNew")
-      scala.io.StdIn.readLine()
-    }
-
-    val sz1 = tpeOld.size
-    val sz2 = tpeNew.size
-    if (sz2 - sz1 > 10 && (sz2 < sz1 * 0.9 || sz2 > sz1 * 1.1)) {
-      println(s"too big diff\nold:\n$tpeOld\nnew:\n$tpeNew")
-      scala.io.StdIn.readLine()
-    }
-  }
-
   def unify(tpe1: Type, tpe2: Type, loc: SourceLocation, renv: RigidityEnv): Result[Option[Substitution], UnificationError] = {
-    (tpe1, tpe2) match {
-      case (t1@Type.Var(x, _), t2) if renv.isFlexible(x) && !t2.typeVars.contains(t1) =>
-        return Result.Ok(Some(Substitution.singleton(x, t2)))
-
-      case (t1, t2@Type.Var(x, _)) if renv.isFlexible(x) && !t1.typeVars.contains(t2) =>
-        return Result.Ok(Some(Substitution.singleton(x, t1)))
-
-      case _ => ()
-    }
+//    (tpe1, tpe2) match {
+//      case (t1@Type.Var(x, _), t2) if renv.isFlexible(x) && !t2.typeVars.contains(t1) =>
+//        return Result.Ok(Some(Substitution.singleton(x, t2)))
+//
+//      case (t1, t2@Type.Var(x, _)) if renv.isFlexible(x) && !t1.typeVars.contains(t2) =>
+//        return Result.Ok(Some(Substitution.singleton(x, t1)))
+//
+//      case _ => ()
+//    }
 
     implicit val bimap: Bimap[Atom, Int] = try {mkBidirectionalVarMap(tpe1, tpe2)} catch {
       case InternalCompilerException(_, _) => return Result.Ok(None)
@@ -365,6 +320,117 @@ object EffUnification2 {
       * An atom representing an invalid type.
       */
     case class Error(id: Int, kind: Kind) extends Atom
+  }
+
+  private object Checking {
+
+    type UnifiedI = (Substitution, List[Ast.BroadEqualityConstraint])
+    type Unified = Result[UnifiedI, UnificationError]
+
+    def compare(checkThings: Boolean, tpe1: Type, tpe2: Type, old: => Unified, neww: Unified, renv: RigidityEnv): Unit = {
+      if (!checkThings) () else {
+        handleResults(old, neww, tpe1, tpe2, renv)
+      }
+//      for {
+//        (sOld, restOld) <- old
+//        (sNeww, newwRest) <- neww
+//      } yield {
+//        if (sOld.isEmpty && sNeww.isEmpty) () else {
+//          if (sOld.m.keySet != sNeww.m.keySet) {
+//            println(s"\nold:\n$sOld\n$restOld\nnew:\n$sNeww\n$newwRest\nfrom\n$tpe1 ~~~ $tpe2\nwith\n$renv")
+//            scala.io.StdIn.readLine()
+//            ()
+//          }
+//          for (k <- sOld.m.keySet) {
+//            sNeww.m.get(k).foreach(ki => checkEq(tpeOld = sOld.m(k), tpeNew = ki, SourceLocation.Unknown, renv))
+//
+//          }
+//        }
+//      }
+    }
+
+    private def checkUnifiedI(old: UnifiedI, neww: UnifiedI, tpe1: Type, tpe2: Type, renv: RigidityEnv): Unit = {
+      (old, neww) match {
+        case ((subst1, Nil), (subst2, Nil)) =>
+          checkSubst(subst1, subst2, tpe1, tpe2, renv)
+        case ((_, rest1), (_, rest2)) if rest1 != rest2 =>
+          println()
+          println(s"-- Rest Disagree! -- ${tpe1.loc}")
+          printEq(tpe1, tpe2, renv)
+          println(s"old rest:")
+          printConstraints(rest1)
+          println(s"new rest:")
+          printConstraints(rest2)
+          halt()
+        case _ => ()
+      }
+    }
+
+    private def checkSubst(old: Substitution, neww: Substitution, tpe1: Type, tpe2: Type, renv: RigidityEnv): Unit = {
+      val fvs = freeVars(old) ++ freeVars(neww)
+      ()
+    }
+
+    private def freeVars(s: Substitution): Set[Symbol.KindedTypeVarSym] = {
+      s.m.foldLeft(Set.empty[Symbol.KindedTypeVarSym]){
+        case (acc, (sym, tpe)) => acc + sym ++ tpe.typeVars.map(_.sym)
+      }
+    }
+
+    private def handleResults(old: Unified, neww: Unified, tpe1: Type, tpe2: Type, renv: RigidityEnv): Unit = {
+      (old, neww) match {
+        case (Result.Ok(v1), Result.Ok(v2)) =>
+          checkUnifiedI(v1, v2, tpe1, tpe2, renv)
+        case (Result.Err(_), Result.Err(_)) =>
+          // we don't assert anything about simultaneous errors - it's ok
+          ()
+        case (Result.Ok(v), Result.Err(err)) =>
+          println()
+          println(s"-- Results Disagree! -- ${tpe1.loc}")
+          printEq(tpe1, tpe2, renv)
+          println(s"old Ok:")
+          printUnifiedI(v)
+          println(s"new Err:")
+          println(err)
+          halt()
+        case (Result.Err(err), Result.Ok(v)) =>
+          println()
+          println(s"-- Results Disagree! -- ${tpe1.loc}")
+          printEq(tpe1, tpe2, renv)
+          println(s"old Err:")
+          println(err)
+          println(s"new Ok:")
+          printUnifiedI(v)
+          halt()
+      }
+    }
+
+    private def halt(): Unit = {
+      println()
+      print(s"${AnsiColor.GREEN}<press enter to continue ..>${AnsiColor.RESET}")
+      scala.io.StdIn.readLine()
+    }
+
+    private def printEq(tpe1: Type, tpe2: Type, renv: RigidityEnv): Unit = {
+      println(s"$tpe1 ~ $tpe2")
+      println(s"\t(${renv.s.mkString(",")})")
+    }
+
+    private def printConstraints(eqs: List[Ast.BroadEqualityConstraint]): Unit = {
+      println(eqs.mkString("{", ",", "}"))
+    }
+
+    private def printUnifiedI(u: UnifiedI): Unit = {
+      val (subst, eqs) = u
+      if (eqs.isEmpty) println(subst.m)
+      else if (subst.isEmpty) printConstraints(eqs)
+      else {
+        println(subst.m)
+        print("and ")
+        printConstraints(eqs)
+      }
+    }
+
   }
 
 }
