@@ -91,14 +91,14 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
     *
     * Note: The index is updated *asynchronously* by a different thread, hence:
     *
-    * - The field must volatile.
+    * - The field must volatile because it is modified by a different thread.
     * - The index may not always reflect the very latest version of the program.
     */
   @volatile
   private var index: Index = Index.empty
 
   /**
-    * A thread pool, with a single thread, which we use to execute the indexing operation.
+    * A thread pool, with a single thread, which we use to execute indexing operations.
     */
   private val indexingPool: ExecutorService = Executors.newFixedThreadPool(1)
 
@@ -107,7 +107,6 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
     *
     * Note: Multiple indexing operations may be pending in the thread pool. This field points to the latest submitted.
     */
-  @volatile
   private var indexingFuture: Future[_] = _
 
   /**
@@ -388,7 +387,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
   }
 
   /**
-    * Asynchronously compute the reverse index in a new thread.
+    * Asynchronously compute the reverse index using the thread pool.
     */
   private def asynchronouslyUpdateIndex(root: Root): Unit = {
     this.indexingFuture = indexingPool.submit(new Runnable {
@@ -399,9 +398,9 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
   }
 
   /**
-    * Synchronously awaits for the most recent indexing operation to complete.
+    * Synchronously wait for the most recent indexing operation to complete.
     *
-    * This function is used to ensure the index is up-to-date before certain operations.
+    * This function is used to ensure the index is up-to-date before certain operations, e.g. rename.
     */
   private def synchronouslyAwaitIndex(): Unit = {
     if (indexingFuture != null) indexingFuture.get()
