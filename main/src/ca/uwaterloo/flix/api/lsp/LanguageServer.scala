@@ -42,6 +42,7 @@ import java.nio.charset.Charset
 import java.nio.file.Path
 import java.text.SimpleDateFormat
 import java.util.Date
+import java.util.concurrent.{ExecutorService, Executors, Future}
 import java.util.zip.ZipInputStream
 import scala.collection.mutable
 
@@ -95,6 +96,11 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
     */
   @volatile
   private var index: Index = Index.empty
+
+  private val pool: ExecutorService = Executors.newFixedThreadPool(1)
+
+  @volatile
+  private var future: Future[_] = null
 
   /**
     * The current compilation errors.
@@ -283,6 +289,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
       ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> ImplementationProvider.processImplementation(uri, pos)(root).map(_.toJSON))
 
     case Request.Rename(id, newName, uri, pos) =>
+      synchronouslyAwaitIndex()
       ("id" -> id) ~ RenameProvider.processRename(newName, uri, pos)(index, root)
 
     case Request.DocumentSymbols(id, uri) =>
@@ -376,13 +383,19 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
     * Asynchronously compute the reverse index in a new thread.
     */
   private def asynchronouslyComputeIndex(root: Root): Unit = {
-    val t = new Thread {
+    val future = pool.submit(new Runnable {
       override def run(): Unit = {
         LanguageServer.this.index = Indexer.visitRoot(root)
       }
-    }
-    t.setDaemon(true)
-    t.start()
+    })
+    this.future = future
+  }
+
+  /**
+    *
+    */
+  private def synchronouslyAwaitIndex(): Unit = {
+    if (future != null) future.get()
   }
 
   /**
