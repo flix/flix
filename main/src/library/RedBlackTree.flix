@@ -66,9 +66,9 @@ instance Foldable[RedBlackTree[k]] {
 
 instance UnorderedFoldable[RedBlackTree[k]] {
     pub def foldMap(f: v -> b \ ef, t: RedBlackTree[k, v]): b \ ef with CommutativeMonoid[b] = RedBlackTree.foldMap(_ -> f, t)
-    override pub def isEmpty(t: RedBlackTree[k, v]): Bool = RedBlackTree.isEmpty(t)
-    override pub def exists(f: v -> Bool \ ef, t: RedBlackTree[k, v]): Bool \ ef = RedBlackTree.exists(_ -> f, t)
-    override pub def forAll(f: v -> Bool \ ef, t: RedBlackTree[k, v]): Bool \ ef = RedBlackTree.forAll(_ -> f, t)
+    pub redef isEmpty(t: RedBlackTree[k, v]): Bool = RedBlackTree.isEmpty(t)
+    pub redef exists(f: v -> Bool \ ef, t: RedBlackTree[k, v]): Bool \ ef = RedBlackTree.exists(_ -> f, t)
+    pub redef forAll(f: v -> Bool \ ef, t: RedBlackTree[k, v]): Bool \ ef = RedBlackTree.forAll(_ -> f, t)
 }
 
 instance Traversable[RedBlackTree[k]] {

@@ -71,15 +71,15 @@ instance Foldable[DelayList] {
     pub def foldLeft(f: (b, a) -> b \ ef, s: b, l: DelayList[a]): b \ ef = DelayList.foldLeft(f, s, l)
     pub def foldRight(f: (a, b) -> b \ ef, s: b, l: DelayList[a]): b \ ef = DelayList.foldRight(f, s, l)
     pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, l: DelayList[a]): b \ ef = DelayList.foldRightWithCont(f, s, l)
-    override pub def toDelayList(l: DelayList[a]): DelayList[a] = l
+    pub redef toDelayList(l: DelayList[a]): DelayList[a] = l
 }
 
 instance UnorderedFoldable[DelayList] {
     pub def foldMap(f: a -> b \ ef, l: DelayList[a]): b \ ef with CommutativeMonoid[b] = DelayList.foldMap(f, l)
-    override pub def isEmpty(l: DelayList[a]): Bool = DelayList.isEmpty(l)
-    override pub def exists(f: a -> Bool \ ef, l: DelayList[a]): Bool \ ef = DelayList.exists(f, l)
-    override pub def forAll(f: a -> Bool \ ef, l: DelayList[a]): Bool \ ef = DelayList.forAll(f, l)
-    override pub def memberOf(x: a, l: DelayList[a]): Bool with Eq[a] = DelayList.memberOf(x, l)
+    pub redef isEmpty(l: DelayList[a]): Bool = DelayList.isEmpty(l)
+    pub redef exists(f: a -> Bool \ ef, l: DelayList[a]): Bool \ ef = DelayList.exists(f, l)
+    pub redef forAll(f: a -> Bool \ ef, l: DelayList[a]): Bool \ ef = DelayList.forAll(f, l)
+    pub redef memberOf(x: a, l: DelayList[a]): Bool with Eq[a] = DelayList.memberOf(x, l)
 }
 
 instance Functor[DelayList] {

@@ -92,10 +92,10 @@ instance Foldable[List] {
 
 instance UnorderedFoldable[List] {
     pub def foldMap(f: a -> b \ ef, l: List[a]): b \ ef with CommutativeMonoid[b] = List.foldMap(f, l)
-    override pub def isEmpty(l: List[a]): Bool = List.isEmpty(l)
-    override pub def exists(f: a -> Bool \ ef, l: List[a]): Bool \ ef = List.exists(f, l)
-    override pub def forAll(f: a -> Bool \ ef, l: List[a]): Bool \ ef = List.forAll(f, l)
-    override pub def memberOf(x: a, l: List[a]): Bool with Eq[a] = List.memberOf(x, l)
+    pub redef isEmpty(l: List[a]): Bool = List.isEmpty(l)
+    pub redef exists(f: a -> Bool \ ef, l: List[a]): Bool \ ef = List.exists(f, l)
+    pub redef forAll(f: a -> Bool \ ef, l: List[a]): Bool \ ef = List.forAll(f, l)
+    pub redef memberOf(x: a, l: List[a]): Bool with Eq[a] = List.memberOf(x, l)
 }
 
 instance Traversable[List] {

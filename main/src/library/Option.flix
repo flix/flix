@@ -71,10 +71,10 @@ instance Applicative[Option] {
     pub def ap(f: Option[a -> b \ ef], x: Option[a]) : Option[b] \ ef = Option.ap(f, x)
 
     // Same as the default implementation using `map` and `ap` but with less indirection.
-    override pub def map2(f: t1 -> t2 -> r \ ef, x1: Option[t1], x2: Option[t2]): Option[r] \ ef = Option.map2(f, x1, x2)
-    override pub def map3(f: t1 -> t2 -> t3 -> r \ ef, x1: Option[t1], x2: Option[t2], x3: Option[t3]): Option[r] \ ef = Option.map3(f, x1, x2, x3)
-    override pub def map4(f: t1 -> t2 -> t3 -> t4 -> r \ ef, x1: Option[t1], x2: Option[t2], x3: Option[t3], x4: Option[t4]): Option[r] \ ef = Option.map4(f, x1, x2, x3, x4)
-    override pub def map5(f: t1 -> t2 -> t3 -> t4 -> t5 -> r \ ef, x1: Option[t1], x2: Option[t2], x3: Option[t3], x4: Option[t4], x5: Option[t5]): Option[r] \ ef = Option.map5(f, x1, x2, x3, x4, x5)
+    pub redef map2(f: t1 -> t2 -> r \ ef, x1: Option[t1], x2: Option[t2]): Option[r] \ ef = Option.map2(f, x1, x2)
+    pub redef map3(f: t1 -> t2 -> t3 -> r \ ef, x1: Option[t1], x2: Option[t2], x3: Option[t3]): Option[r] \ ef = Option.map3(f, x1, x2, x3)
+    pub redef map4(f: t1 -> t2 -> t3 -> t4 -> r \ ef, x1: Option[t1], x2: Option[t2], x3: Option[t3], x4: Option[t4]): Option[r] \ ef = Option.map4(f, x1, x2, x3, x4)
+    pub redef map5(f: t1 -> t2 -> t3 -> t4 -> t5 -> r \ ef, x1: Option[t1], x2: Option[t2], x3: Option[t3], x4: Option[t4], x5: Option[t5]): Option[r] \ ef = Option.map5(f, x1, x2, x3, x4, x5)
 }
 
 instance Monad[Option] {

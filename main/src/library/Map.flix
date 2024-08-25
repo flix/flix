@@ -56,9 +56,9 @@ instance Foldable[Map[k]] {
 
 instance UnorderedFoldable[Map[k]] {
     pub def foldMap(f: v -> b \ ef, m: Map[k, v]): b \ ef with CommutativeMonoid[b] = Map.foldMap(f, m)
-    override pub def isEmpty(m: Map[k, v]): Bool = Map.isEmpty(m)
-    override pub def exists(f: v -> Bool \ ef, m: Map[k, v]): Bool \ ef = Map.exists(_ -> f, m)
-    override pub def forAll(f: v -> Bool \ ef, m: Map[k, v]): Bool \ ef = Map.forAll(_ -> f, m)
+    pub redef isEmpty(m: Map[k, v]): Bool = Map.isEmpty(m)
+    pub redef exists(f: v -> Bool \ ef, m: Map[k, v]): Bool \ ef = Map.exists(_ -> f, m)
+    pub redef forAll(f: v -> Bool \ ef, m: Map[k, v]): Bool \ ef = Map.forAll(_ -> f, m)
 }
 
 instance Traversable[Map[k]] {

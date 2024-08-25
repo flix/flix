@@ -78,10 +78,10 @@ instance Foldable[Nel] {
 
 instance UnorderedFoldable[Nel] {
     pub def foldMap(f: a -> b \ ef, l: Nel[a]): b \ ef with CommutativeMonoid[b] = Nel.foldMap(f, l)
-    override pub def isEmpty(_: Nel[a]): Bool = false
-    override pub def exists(f: a -> Bool \ ef, l: Nel[a]): Bool \ ef = Nel.exists(f, l)
-    override pub def forAll(f: a -> Bool \ ef, l: Nel[a]): Bool \ ef = Nel.forAll(f, l)
-    override pub def memberOf(x: a, l: Nel[a]): Bool with Eq[a] = Nel.memberOf(x, l)
+    pub redef isEmpty(_: Nel[a]): Bool = false
+    pub redef exists(f: a -> Bool \ ef, l: Nel[a]): Bool \ ef = Nel.exists(f, l)
+    pub redef forAll(f: a -> Bool \ ef, l: Nel[a]): Bool \ ef = Nel.forAll(f, l)
+    pub redef memberOf(x: a, l: Nel[a]): Bool with Eq[a] = Nel.memberOf(x, l)
 }
 
 instance Traversable[Nel] {
@@ -92,21 +92,21 @@ instance Traversable[Nel] {
 instance Reducible[Nel] {
     pub def reduceLeftTo(f: (b, a) -> b \ ef1, g: a -> b \ ef2, l: Nel[a]): b \ {ef1, ef2} = Nel.reduceLeftTo(f, g, l)
     pub def reduceRightTo(f: (a, b) -> b \ ef1, g: a -> b \ ef2, l: Nel[a]): b \ {ef1, ef2} = Nel.reduceRightTo(f, g, l)
-    override pub def head(l: Nel[a]): a = Nel.head(l)
-    override pub def last(l: Nel[a]): a = Nel.last(l)
-    override pub def init(l: Nel[a]): List[a] = Nel.init(l)
-    override pub def tail(l: Nel[a]): List[a] = Nel.tail(l)
-    override pub def exists(f: a -> Bool \ ef, l: Nel[a]): Bool \ ef = Nel.exists(f, l)
-    override pub def forAll(f: a -> Bool \ ef, l: Nel[a]): Bool \ ef = Nel.forAll(f, l)
-    override pub def find(f: a -> Bool \ ef, l: Nel[a]): Option[a] \ ef = Nel.find(f, l)
-    override pub def findLeft(f: a -> Bool \ ef, l: Nel[a]): Option[a] \ ef = Nel.findLeft(f, l)
-    override pub def findRight(f: a -> Bool \ ef, l: Nel[a]): Option[a] \ ef = Nel.findRight(f, l)
-    override pub def memberOf(a: a, l: Nel[a]): Bool with Eq[a] = Nel.memberOf(a, l)
-    override pub def dropWhile(f: a -> Bool \ ef, l: Nel[a]): List[a] \ ef = Nel.dropWhile(f, l)
-    override pub def takeWhile(f: a -> Bool \ ef, l: Nel[a]): List[a] \ ef = Nel.takeWhile(f, l)
-    override pub def toArray(rc: Region[r], l: Nel[a]): Array[a, r] \ r = Nel.toArray(rc, l)
-    override pub def toVector(l: Nel[a]): Vector[a] = Nel.toVector(l)
-    override pub def toList(l: Nel[a]): List[a] = Nel.toList(l)
+    pub redef head(l: Nel[a]): a = Nel.head(l)
+    pub redef last(l: Nel[a]): a = Nel.last(l)
+    pub redef init(l: Nel[a]): List[a] = Nel.init(l)
+    pub redef tail(l: Nel[a]): List[a] = Nel.tail(l)
+    pub redef exists(f: a -> Bool \ ef, l: Nel[a]): Bool \ ef = Nel.exists(f, l)
+    pub redef forAll(f: a -> Bool \ ef, l: Nel[a]): Bool \ ef = Nel.forAll(f, l)
+    pub redef find(f: a -> Bool \ ef, l: Nel[a]): Option[a] \ ef = Nel.find(f, l)
+    pub redef findLeft(f: a -> Bool \ ef, l: Nel[a]): Option[a] \ ef = Nel.findLeft(f, l)
+    pub redef findRight(f: a -> Bool \ ef, l: Nel[a]): Option[a] \ ef = Nel.findRight(f, l)
+    pub redef memberOf(a: a, l: Nel[a]): Bool with Eq[a] = Nel.memberOf(a, l)
+    pub redef dropWhile(f: a -> Bool \ ef, l: Nel[a]): List[a] \ ef = Nel.dropWhile(f, l)
+    pub redef takeWhile(f: a -> Bool \ ef, l: Nel[a]): List[a] \ ef = Nel.takeWhile(f, l)
+    pub redef toArray(rc: Region[r], l: Nel[a]): Array[a, r] \ r = Nel.toArray(rc, l)
+    pub redef toVector(l: Nel[a]): Vector[a] = Nel.toVector(l)
+    pub redef toList(l: Nel[a]): List[a] = Nel.toList(l)
 }
 
 instance SemiGroup[Nel[a]] {

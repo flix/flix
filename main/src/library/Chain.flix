@@ -80,10 +80,10 @@ instance Foldable[Chain] {
 
 instance UnorderedFoldable[Chain] {
     pub def foldMap(f: a -> b \ ef, c: Chain[a]): b \ ef with CommutativeMonoid[b] = Chain.foldMap(f, c)
-    override pub def isEmpty(c: Chain[a]): Bool = Chain.isEmpty(c)
-    override pub def exists(f: a -> Bool \ ef, c: Chain[a]): Bool \ ef = Chain.exists(f, c)
-    override pub def forAll(f: a -> Bool \ ef, c: Chain[a]): Bool \ ef = Chain.forAll(f, c)
-    override pub def memberOf(x: a, c: Chain[a]): Bool with Eq[a] = Chain.memberOf(x, c)
+    pub redef isEmpty(c: Chain[a]): Bool = Chain.isEmpty(c)
+    pub redef exists(f: a -> Bool \ ef, c: Chain[a]): Bool \ ef = Chain.exists(f, c)
+    pub redef forAll(f: a -> Bool \ ef, c: Chain[a]): Bool \ ef = Chain.forAll(f, c)
+    pub redef memberOf(x: a, c: Chain[a]): Bool with Eq[a] = Chain.memberOf(x, c)
 }
 
 instance Traversable[Chain] {
