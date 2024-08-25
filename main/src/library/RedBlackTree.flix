@@ -75,13 +75,13 @@ instance Traversable[RedBlackTree[k]] {
     pub def traverse(f: a -> m[b] \ ef, t: RedBlackTree[k, a]): m[RedBlackTree[k, b]] \ ef with Applicative[m] =
         RedBlackTree.mapAWithKey((_, v) -> f(v), t)
 
-    pub override def sequence(t: RedBlackTree[k, m[a]]): m[RedBlackTree[k, a]] with Applicative[m] =
+    pub redef sequence(t: RedBlackTree[k, m[a]]): m[RedBlackTree[k, a]] with Applicative[m] =
         RedBlackTree.mapAWithKey((_, v) -> v, t)
 }
 
 instance Filterable[RedBlackTree[k]] with Order[k] {
     pub def filterMap(f: a -> Option[b] \ ef, t: RedBlackTree[k, a]): RedBlackTree[k, b] \ ef = RedBlackTree.filterMap(f, t)
-    pub override def filter(f: a -> Bool \ ef, t: RedBlackTree[k, a]): RedBlackTree[k, a] \ ef = RedBlackTree.filter(f, t)
+    pub redef filter(f: a -> Bool \ ef, t: RedBlackTree[k, a]): RedBlackTree[k, a] \ ef = RedBlackTree.filter(f, t)
 }
 
 instance Witherable[RedBlackTree[k]] with Order[k]

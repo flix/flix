@@ -63,12 +63,12 @@ instance UnorderedFoldable[Map[k]] {
 
 instance Traversable[Map[k]] {
     pub def traverse(f: a -> m[b] \ ef, t: Map[k, a]): m[Map[k, b]] \ ef with Applicative[m] = Map.traverse(f, t)
-    pub override def sequence(t: Map[k, m[a]]): m[Map[k, a]] with Applicative[m] = Map.sequence(t)
+    pub redef sequence(t: Map[k, m[a]]): m[Map[k, a]] with Applicative[m] = Map.sequence(t)
 }
 
 instance Filterable[Map[k]] with Order[k] {
     pub def filterMap(f: a -> Option[b] \ ef, m: Map[k, a]): Map[k, b] \ ef = Map.filterMap(f, m)
-    pub override def filter(f: a -> Bool \ ef, m: Map[k, a]): Map[k, a] \ ef = Map.filter(f, m)
+    pub redef filter(f: a -> Bool \ ef, m: Map[k, a]): Map[k, a] \ ef = Map.filter(f, m)
 }
 
 instance Witherable[Map[k]] with Order[k]

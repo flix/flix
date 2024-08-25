@@ -101,12 +101,12 @@ instance MonadZero[DelayList] {
 
 instance Traversable[DelayList] {
     pub def traverse(f: a -> m[b] \ ef, l: DelayList[a]): m[DelayList[b]] \ ef with Applicative[m] = DelayList.traverse(f, l)
-    pub override def sequence(l: DelayList[m[a]]): m[DelayList[a]] with Applicative[m] = DelayList.sequence(l)
+    pub redef sequence(l: DelayList[m[a]]): m[DelayList[a]] with Applicative[m] = DelayList.sequence(l)
 }
 
 instance Filterable[DelayList] {
     pub def filterMap(f: a -> Option[b] \ ef, x: DelayList[a]): DelayList[b] \ ef = DelayList.filterMap(f, x)
-    pub override def filter(f: a -> Bool \ ef, x: DelayList[a]): DelayList[a] \ ef = DelayList.filter(f, x)
+    pub redef filter(f: a -> Bool \ ef, x: DelayList[a]): DelayList[a] \ ef = DelayList.filter(f, x)
 }
 
 instance Witherable[DelayList]

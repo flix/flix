@@ -68,8 +68,8 @@ instance MonadZero[Chain] {
 instance MonadZip[Chain] {
     pub def zipWith(f: (a, b) -> c \ ef, xs: Chain[a], ys: Chain[b]): Chain[c] \ ef = Chain.zipWith(f, xs, ys)
     pub def zipWithA(f: (a, b) -> f[c] \ ef, xs: Chain[a], ys: Chain[b]): f[Chain[c]] \ ef with Applicative[f] = Chain.zipWithA(f, xs, ys)
-    pub override def zip(xs: Chain[a], ys: Chain[b]): Chain[(a, b)] = Chain.zip(xs, ys)
-    pub override def unzip(xs: Chain[(a, b)]): (Chain[a], Chain[b]) = Chain.unzip(xs)
+    pub redef zip(xs: Chain[a], ys: Chain[b]): Chain[(a, b)] = Chain.zip(xs, ys)
+    pub redef unzip(xs: Chain[(a, b)]): (Chain[a], Chain[b]) = Chain.unzip(xs)
 }
 
 instance Foldable[Chain] {
@@ -88,12 +88,12 @@ instance UnorderedFoldable[Chain] {
 
 instance Traversable[Chain] {
     pub def traverse(f: a -> m[b] \ ef, t: Chain[a]): m[Chain[b]] \ ef with Applicative[m] = Chain.traverse(f, t)
-    pub override def sequence(t: Chain[m[a]]): m[Chain[a]] with Applicative[m] = Chain.sequence(t)
+    pub redef sequence(t: Chain[m[a]]): m[Chain[a]] with Applicative[m] = Chain.sequence(t)
 }
 
 instance Filterable[Chain] {
     pub def filterMap(f: a -> Option[b] \ ef, x: Chain[a]): Chain[b] \ ef = Chain.filterMap(f, x)
-    pub override def filter(f: a -> Bool \ ef, x: Chain[a]): Chain[a] \ ef = Chain.filter(f, x)
+    pub redef filter(f: a -> Bool \ ef, x: Chain[a]): Chain[a] \ ef = Chain.filter(f, x)
 }
 
 instance Witherable[Chain]

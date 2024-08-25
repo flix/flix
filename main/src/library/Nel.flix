@@ -66,8 +66,8 @@ instance Monad[Nel] {
 instance MonadZip[Nel] {
     pub def zipWith(f: (a, b) -> c \ ef, xs: Nel[a], ys: Nel[b]): Nel[c] \ ef = Nel.zipWith(f, xs, ys)
     pub def zipWithA(f: (a, b) -> f[c] \ ef, xs: Nel[a], ys: Nel[b]): f[Nel[c]] \ ef with Applicative[f] = Nel.zipWithA(f, xs, ys)
-    pub override def zip(xs: Nel[a], ys: Nel[b]): Nel[(a, b)] = Nel.zip(xs, ys)
-    pub override def unzip(xs: Nel[(a, b)]): (Nel[a], Nel[b]) = Nel.unzip(xs)
+    pub redef zip(xs: Nel[a], ys: Nel[b]): Nel[(a, b)] = Nel.zip(xs, ys)
+    pub redef unzip(xs: Nel[(a, b)]): (Nel[a], Nel[b]) = Nel.unzip(xs)
 }
 
 instance Foldable[Nel] {
@@ -86,7 +86,7 @@ instance UnorderedFoldable[Nel] {
 
 instance Traversable[Nel] {
     pub def traverse(f: a -> m[b] \ ef, t: Nel[a]): m[Nel[b]] \ ef with Applicative[m] = Nel.traverse(f, t)
-    pub override def sequence(t: Nel[m[a]]): m[Nel[a]] with Applicative[m] = Nel.sequence(t)
+    pub redef sequence(t: Nel[m[a]]): m[Nel[a]] with Applicative[m] = Nel.sequence(t)
 }
 
 instance Reducible[Nel] {

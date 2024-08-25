@@ -87,7 +87,7 @@ instance MonadZero[Option] {
 
 instance MonadZip[Option] {
     pub def zipWith(f: (a, b) -> c \ ef, ma: Option[a], mb: Option[b]): Option[c] \ ef = Applicative.map2(f, ma, mb)
-    pub override def zip(ma: Option[a], mb: Option[b]): Option[(a, b)] = Applicative.map2((x, y) -> (x, y), ma, mb)
+    pub redef zip(ma: Option[a], mb: Option[b]): Option[(a, b)] = Applicative.map2((x, y) -> (x, y), ma, mb)
 
     pub def zipWithA(f: (a, b) -> f[c] \ ef, x: Option[a], y: Option[b]): f[Option[c]] \ ef with Applicative[f] =
         use Functor.{<$>};
@@ -116,7 +116,7 @@ instance Traversable[Option] {
             case Some(a) => f(a) |> map(Some)
         }
 
-    pub override def sequence(t: Option[m[a]]): m[Option[a]] with Applicative[m] =
+    pub redef sequence(t: Option[m[a]]): m[Option[a]] with Applicative[m] =
         use Applicative.{point};
         use Functor.{map};
         match t {
@@ -128,7 +128,7 @@ instance Traversable[Option] {
 
 instance Filterable[Option] {
     pub def filterMap(f: a -> Option[b] \ ef, o: Option[a]): Option[b] \ ef = Option.flatMap(f, o)
-    pub override def filter(f: a -> Bool \ ef, o: Option[a]): Option[a] \ ef = Option.filter(f, o)
+    pub redef filter(f: a -> Bool \ ef, o: Option[a]): Option[a] \ ef = Option.filter(f, o)
 }
 
 instance Witherable[Option]
