@@ -256,7 +256,7 @@ object Weeder2 {
         pickQName(tree),
         Types.pickType(tree),
         Types.pickConstraints(tree),
-        traverse(pickAll(TreeKind.Decl.Def, tree))(visitDefinitionDecl(_, allowedModifiers = Set(TokenKind.KeywordPub, TokenKind.KeywordOverride), mustBePublic = true)),
+        traverse(pickAll(TreeKind.Decl.Def, tree))(visitDefinitionDecl(_, allowedModifiers = Set(TokenKind.KeywordPub, TokenKind.KeywordOverride))),
         traverse(pickAll(TreeKind.Decl.Redef, tree))(visitRedefinitionDecl),
       ) {
         (doc, annotations, modifiers, clazz, tpe, tconstrs, defs, redefs) =>
