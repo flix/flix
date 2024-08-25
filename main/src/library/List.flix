@@ -28,7 +28,7 @@ pub enum List[t] with Sendable {
 }
 
 instance ToString[List[a]] with ToString[a] {
-    pub def toString(l: List[a]): String = List.toString(l)
+    def toString(l: List[a]): String = List.toString(l)
 }
 
 instance Hash[List[a]] with Hash[a] {
