@@ -309,9 +309,9 @@ object Weeder2 {
       }
     }
 
-    private def visitRedefinitionDecl(tree: Tree): Validation[Declaration.Redef, CompilationMessage] = {
+    private def visitRedefinitionDecl(tree: Tree)(implicit flix: Flix): Validation[Declaration.Redef, CompilationMessage] = {
       expect(tree, TreeKind.Decl.Redef)
-      val allowedModifiers: Set[TokenKind] = Set(TokenKind.KeywordPub)
+      val allowedModifiers: Set[TokenKind] = if (flix.options.xnodeprecated) Set.empty else Set(TokenKind.KeywordPub)
       mapN(
         pickDocumentation(tree),
         pickAnnotations(tree),
