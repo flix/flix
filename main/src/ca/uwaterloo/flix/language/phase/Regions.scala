@@ -170,15 +170,6 @@ object Regions {
     case Expr.VectorLength(exp, loc) =>
       visitExp(exp)
 
-    case Expr.Ref(exp1, exp2, tpe, _, loc) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ checkType(tpe, loc)
-
-    case Expr.Deref(exp, tpe, _, loc) =>
-      visitExp(exp) ++ checkType(tpe, loc)
-
-    case Expr.Assign(exp1, exp2, tpe, _, loc) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ checkType(tpe, loc)
-
     case Expr.Ascribe(exp, tpe, _, loc) =>
       visitExp(exp) ++ checkType(tpe, loc)
 

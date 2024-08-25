@@ -356,15 +356,6 @@ object Safety {
       case Expr.VectorLength(exp, _) =>
         visit(exp)
 
-      case Expr.Ref(exp1, exp2, _, _, _) =>
-        visit(exp1) ++ visit(exp2)
-
-      case Expr.Deref(exp, _, _, _) =>
-        visit(exp)
-
-      case Expr.Assign(exp1, exp2, _, _, _) =>
-        visit(exp1) ++ visit(exp2)
-
       case Expr.Ascribe(exp, _, _, _) =>
         visit(exp)
 

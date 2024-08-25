@@ -73,8 +73,6 @@ object MonoType {
 
   case class Lazy(tpe: MonoType) extends MonoType
 
-  case class Ref(tpe: MonoType) extends MonoType
-
   case class Tuple(tpes: List[MonoType]) extends MonoType
 
   case class Enum(sym: Symbol.EnumSym) extends MonoType
