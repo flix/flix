@@ -28,7 +28,7 @@ pub enum List[t] with Sendable {
 }
 
 instance ToString[List[a]] with ToString[a] {
-    def toString(l: List[a]): String = List.toString(l)
+    pub def toString(l: List[a]): String = List.toString(l)
 }
 
 instance Hash[List[a]] with Hash[a] {
@@ -80,7 +80,7 @@ instance MonadZero[List] {
 instance MonadZip[List] {
     pub def zipWith(f: (a, b) -> c \ ef, xs: List[a], ys: List[b]): List[c] \ ef = List.zipWith(f, xs, ys)
     pub def zipWithA(f: (a, b) -> f[c] \ ef, xs: List[a], ys: List[b]): f[List[c]] \ ef with Applicative[f] = List.zipWithA(f, xs, ys)
-    pub override def zip(xs: List[a], ys: List[b]): List[(a, b)] = List.zip(xs, ys)
+    redef zip(xs: List[a], ys: List[b]): List[(a, b)] = List.zip(xs, ys)
     pub override def unzip(xs: List[(a, b)]): (List[a], List[b]) = List.unzip(xs)
 }
 
