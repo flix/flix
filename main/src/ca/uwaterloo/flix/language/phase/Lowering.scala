@@ -556,23 +556,6 @@ object Lowering {
       val b = visitExp(base)
       LoweredAst.Expr.VectorLength(b, loc)
 
-    case TypedAst.Expr.Ref(exp1, exp2, tpe, eff, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      val t = visitType(tpe)
-      LoweredAst.Expr.ApplyAtomic(AtomicOp.Ref, List(e1, e2), t, eff, loc)
-
-    case TypedAst.Expr.Deref(exp, tpe, eff, loc) =>
-      val e = visitExp(exp)
-      val t = visitType(tpe)
-      LoweredAst.Expr.ApplyAtomic(AtomicOp.Deref, List(e), t, eff, loc)
-
-    case TypedAst.Expr.Assign(exp1, exp2, tpe, eff, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      val t = visitType(tpe)
-      LoweredAst.Expr.ApplyAtomic(AtomicOp.Assign, List(e1, e2), t, eff, loc)
-
     case TypedAst.Expr.Ascribe(exp, tpe, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)

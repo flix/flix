@@ -189,9 +189,6 @@ object PatMatch {
       case Expr.VectorLit(exps, _, _, _) => exps.flatMap(visitExp)
       case Expr.VectorLoad(exp1, exp2, _, _, _) => List(exp1, exp2).flatMap(visitExp)
       case Expr.VectorLength(exp, _) => visitExp(exp)
-      case Expr.Ref(exp1, exp2, _, _, _) => List(exp1, exp2).flatMap(visitExp)
-      case Expr.Deref(exp, _, _, _) => visitExp(exp)
-      case Expr.Assign(exp1, exp2, _, _, _) => List(exp1, exp2).flatMap(visitExp)
       case Expr.Ascribe(exp, _, _, _) => visitExp(exp)
       case Expr.InstanceOf(exp, _, _) => visitExp(exp)
       case Expr.CheckedCast(_, exp, _, _, _) => visitExp(exp)
@@ -625,7 +622,6 @@ object PatMatch {
     case Some(TypeConstructor.Arrow(length)) => length
     case Some(TypeConstructor.Array) => 1
     case Some(TypeConstructor.Vector) => 1
-    case Some(TypeConstructor.Ref) => 0
     case Some(TypeConstructor.Lazy) => 1
     case Some(TypeConstructor.Enum(_, _)) => 0
     case Some(TypeConstructor.Native(_)) => 0

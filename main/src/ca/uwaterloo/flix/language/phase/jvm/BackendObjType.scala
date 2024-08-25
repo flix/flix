@@ -39,7 +39,6 @@ sealed trait BackendObjType {
   val jvmName: JvmName = this match {
     case BackendObjType.Unit => JvmName(DevFlixRuntime, mkClassName("Unit"))
     case BackendObjType.Lazy(tpe) => JvmName(RootPackage, mkClassName("Lazy", tpe))
-    case BackendObjType.Ref(tpe) => JvmName(RootPackage, mkClassName("Ref", tpe))
     case BackendObjType.Tuple(elms) => JvmName(RootPackage, mkClassName("Tuple", elms))
     case BackendObjType.Struct(elms) => JvmName(RootPackage, mkClassName("Struct", elms))
     case BackendObjType.Tagged => JvmName(RootPackage, mkClassName("Tagged"))
@@ -218,21 +217,6 @@ object BackendObjType {
         unlockLock ~ xReturn(tpe)
     }))
 
-  }
-
-  case class Ref(tpe: BackendType) extends BackendObjType with Generatable {
-    def genByteCode()(implicit flix: Flix): Array[Byte] = {
-      val cm = ClassMaker.mkClass(this.jvmName, IsFinal)
-
-      cm.mkField(ValueField)
-      cm.mkConstructor(Constructor)
-
-      cm.closeClassMaker()
-    }
-
-    def Constructor: ConstructorMethod = nullarySuperConstructor(JavaObject.Constructor)
-
-    def ValueField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "value", tpe)
   }
 
   case class Tuple(elms: List[BackendType]) extends BackendObjType with Generatable {

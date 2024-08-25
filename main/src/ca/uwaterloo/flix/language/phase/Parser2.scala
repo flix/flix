@@ -1488,7 +1488,7 @@ object Parser2 {
       (OpKind.Unary, Array(TokenKind.KeywordDiscard)), // discard
       (OpKind.Binary, Array(TokenKind.InfixFunction)), // `my_function`
       (OpKind.Binary, Array(TokenKind.UserDefinedOperator, TokenKind.NameMath)), // +=+ user defined op like '+=+' or '++'
-      (OpKind.Unary, Array(TokenKind.KeywordLazy, TokenKind.KeywordForce, TokenKind.KeywordDeref)), // lazy, force, deref
+      (OpKind.Unary, Array(TokenKind.KeywordLazy, TokenKind.KeywordForce)), // lazy, force
       (OpKind.Unary, Array(TokenKind.Plus, TokenKind.Minus, TokenKind.TripleTilde)), // +, -, ~~~
       (OpKind.Unary, Array(TokenKind.KeywordNot))
     )
@@ -1581,8 +1581,7 @@ object Parser2 {
              | TokenKind.TripleTilde
              | TokenKind.KeywordLazy
              | TokenKind.KeywordForce
-             | TokenKind.KeywordDiscard
-             | TokenKind.KeywordDeref => unaryExpr()
+             | TokenKind.KeywordDiscard => unaryExpr()
         case TokenKind.KeywordIf => ifThenElseExpr()
         case TokenKind.KeywordLet => letMatchExpr()
         case TokenKind.Annotation | TokenKind.KeywordDef => letRecDefExpr()
@@ -1601,7 +1600,6 @@ object Parser2 {
         case TokenKind.ListHash => listLiteralExpr()
         case TokenKind.SetHash => setLiteralExpr()
         case TokenKind.MapHash => mapLiteralExpr()
-        case TokenKind.KeywordRef => refExpr()
         case TokenKind.KeywordCheckedCast => checkedTypeCastExpr()
         case TokenKind.KeywordCheckedECast => checkedEffectCastExpr()
         case TokenKind.KeywordUncheckedCast => uncheckedCastExpr()
@@ -1801,8 +1799,8 @@ object Parser2 {
       TokenKind.TripleTilde,
       TokenKind.KeywordLazy,
       TokenKind.KeywordForce,
-      TokenKind.KeywordDiscard,
-      TokenKind.KeywordDeref)
+      TokenKind.KeywordDiscard
+    )
 
     private def unaryExpr()(implicit s: State): Mark.Closed = {
       val mark = open()
@@ -2357,15 +2355,6 @@ object Parser2 {
       expect(TokenKind.ArrowThickR, SyntacticContext.Expr.OtherExpr)
       expression()
       close(mark, TreeKind.Expr.LiteralMapKeyValueFragment)
-    }
-
-    private def refExpr()(implicit s: State): Mark.Closed = {
-      assert(at(TokenKind.KeywordRef))
-      val mark = open()
-      expect(TokenKind.KeywordRef, SyntacticContext.Expr.OtherExpr)
-      expression()
-      scopeName()
-      close(mark, TreeKind.Expr.Ref)
     }
 
     private def checkedTypeCastExpr()(implicit s: State): Mark.Closed = {
