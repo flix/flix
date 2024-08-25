@@ -313,7 +313,7 @@ object Weeder2 {
       mapN(
         pickDocumentation(tree),
         pickAnnotations(tree),
-        pickModifiers(tree, allowed = Set(TokenKind.KeywordPub), mustBePublic = true),
+        pickModifiers(tree, allowed = Set(TokenKind.KeywordPub)),
         pickNameIdent(tree),
         Types.pickKindedParameters(tree),
         pickFormalParameters(tree),
