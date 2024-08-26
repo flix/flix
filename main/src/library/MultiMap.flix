@@ -56,9 +56,9 @@ instance Foldable[MultiMap[k]] {
 
 instance UnorderedFoldable[MultiMap[k]] {
     pub def foldMap(f: v -> b \ ef, m: MultiMap[k, v]): b \ ef with CommutativeMonoid[b] = MultiMap.foldMap(f, m)
-    pub redef isEmpty(m: MultiMap[k, v]): Bool = MultiMap.isEmpty(m)
-    pub redef exists(f: v -> Bool \ ef, m: MultiMap[k, v]): Bool \ ef = MultiMap.exists(_ -> f, m)
-    pub redef forAll(f: v -> Bool \ ef, m: MultiMap[k, v]): Bool \ ef = MultiMap.forAll(_ -> f, m)
+    redef isEmpty(m: MultiMap[k, v]): Bool = MultiMap.isEmpty(m)
+    redef exists(f: v -> Bool \ ef, m: MultiMap[k, v]): Bool \ ef = MultiMap.exists(_ -> f, m)
+    redef forAll(f: v -> Bool \ ef, m: MultiMap[k, v]): Bool \ ef = MultiMap.forAll(_ -> f, m)
 }
 
 instance SemiGroup[MultiMap[k,v]] with Order[k], Order[v] {
