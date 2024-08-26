@@ -16,7 +16,6 @@ import ca.uwaterloo.flix.util.ParOps
   *
   *   - Ref
   *     - component type erasure
-  *     - deref casting
   *   - Tuple
   *     - component type erasure
   *     - index casting
@@ -108,10 +107,6 @@ object Eraser {
         case AtomicOp.StructNew(_, _) => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.StructGet(_) => castExp(ApplyAtomic(op, es, erase(tpe), purity, loc), t, purity, loc)
         case AtomicOp.StructPut(_) => ApplyAtomic(op, es, t, purity, loc)
-        case AtomicOp.Ref => ApplyAtomic(op, es, t, purity, loc)
-        case AtomicOp.Deref =>
-          castExp(ApplyAtomic(op, es, erase(tpe), purity, loc), t, purity, loc)
-        case AtomicOp.Assign => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.InstanceOf(_) => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Cast => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Unbox => ApplyAtomic(op, es, t, purity, loc)
@@ -205,7 +200,6 @@ object Eraser {
       case Null => Null
       case Array(tpe) => Array(visitType(tpe))
       case Lazy(tpe) => Lazy(erase(tpe))
-      case Ref(tpe) => Ref(erase(tpe))
       case Tuple(elms) => Tuple(elms.map(erase))
       case MonoType.Enum(sym) => MonoType.Enum(sym)
       case MonoType.Struct(sym, elms, tparams) => MonoType.Struct(sym, elms.map(erase), tparams.map(erase))
@@ -228,7 +222,7 @@ object Eraser {
       case Int32 => Int32
       case Int64 => Int64
       case Void | AnyType | Unit | BigDecimal | BigInt | String | Regex |
-           Region | Array(_) | Lazy(_) | Ref(_) | Tuple(_) | MonoType.Enum(_) |
+           Region | Array(_) | Lazy(_) | Tuple(_) | MonoType.Enum(_) |
            MonoType.Struct(_, _, _) | Arrow(_, _) | RecordEmpty | RecordExtend(_, _, _) | Native(_) | Null =>
         MonoType.Object
     }

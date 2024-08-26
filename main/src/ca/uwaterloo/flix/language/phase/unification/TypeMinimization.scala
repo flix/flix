@@ -89,7 +89,7 @@ object TypeMinimization {
 
     // Compute the variables in `tpe`.
     val tvars = tpe.typeVars.toList.map(tvar => BoolFormula.VarOrEff.Var(tvar.sym))
-    val effs = tpe.effects.toList.map(BoolFormula.VarOrEff.Eff)
+    val effs = tpe.effects.toList.map(BoolFormula.VarOrEff.Eff.apply)
     val assocs = tpe.assocs.toList.map(assoc => BoolFormula.VarOrEff.Assoc(assoc.cst.sym, assoc.arg))
 
     // Construct a bi-directional map from type variables to indices.
