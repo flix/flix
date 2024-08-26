@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.phase.unification.FastSetUnification.Term.emptyEquivalent
 import ca.uwaterloo.flix.util.{Formatter, InternalCompilerException, Result}
 
+import scala.annotation.nowarn
 import scala.collection.immutable.{SortedMap, SortedSet}
 import scala.collection.mutable
 
@@ -947,7 +948,12 @@ object FastSetUnification {
     * Represents a unification equation `t1 ~ t2` between the terms `t1` and `t2`.
     *
     * WARNING: Equations should be normalized. Use the smart constructor [[Equation.mk]] to create a new equation.
+    *
+    * the `@nowarn` annotation is required for Scala 3 compatiblity, since the derived `copy` method is private
+    * in Scala 3 due to the private constructor. In Scala 2 the `copy` method is still public.
+    * However, we do not use the `copy` method anywhere for [[Equation]], so this is fine.
     */
+  @nowarn
   case class Equation private(t1: Term, t2: Term, loc: SourceLocation) {
     /**
       * Returns the size of this equation which is the sum of its lhs and rhs.
@@ -1132,7 +1138,12 @@ object FastSetUnification {
       * For example, the intersection: `x7 ∩ !x2 ∩ c1 ∩ x4 ∩ (e1 ∪ x9)` is represented as:
       *
       * `None, Set(c1), Set(x4, x7), Set(), Set(), Set(x2), List(e1 ∪ x9)`.
+      *
+      * the `@nowarn` annotation is required for Scala 3 compatiblity, since the derived `copy` method is private
+      * in Scala 3 due to the private constructor. In Scala 2 the `copy` method is still public.
+      * However, we do not use the `copy` method anywhere for [[Equation]], so this is fine.
       */
+    @nowarn
     case class Inter private(posElem: Option[Term.ElemSet], posCsts: Set[Term.Cst], posVars: Set[Term.Var], negElem: Option[Term.ElemSet], negCsts: Set[Term.Cst], negVars: Set[Term.Var], rest: List[Term]) extends Term {
       assert(!posVars.exists(negVars.contains), this.toString)
       assert(!posCsts.exists(negCsts.contains), this.toString)
@@ -1152,8 +1163,13 @@ object FastSetUnification {
       * Should NEVER be build outside of [[mkUnionAll]] methods.
       *
       * Represented similarly to [[Inter]].
+      *
+      * the `@nowarn` annotation is required for Scala 3 compatiblity, since the derived `copy` method is private
+      * in Scala 3 due to the private constructor. In Scala 2 the `copy` method is still public.
+      * However, we do not use the `copy` method anywhere for [[Equation]], so this is fine.
       */
-    case class Union(posElem: Option[Term.ElemSet], posCsts: Set[Term.Cst], posVars: Set[Term.Var], negElem: Option[Term.ElemSet], negCsts: Set[Term.Cst], negVars: Set[Term.Var], rest: List[Term]) extends Term {
+    @nowarn
+    case class Union private(posElem: Option[Term.ElemSet], posCsts: Set[Term.Cst], posVars: Set[Term.Var], negElem: Option[Term.ElemSet], negCsts: Set[Term.Cst], negVars: Set[Term.Var], rest: List[Term]) extends Term {
       assert(!posVars.exists(negVars.contains), this.toString)
       assert(!posCsts.exists(negCsts.contains), this.toString)
 
