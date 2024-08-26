@@ -66,12 +66,6 @@ object AtomicOp {
 
   case class StructPut(sym: Symbol.StructFieldSym) extends AtomicOp
 
-  case object Ref extends AtomicOp
-
-  case object Deref extends AtomicOp
-
-  case object Assign extends AtomicOp
-
   case class InstanceOf(clazz: Class[_]) extends AtomicOp
 
   case object Cast extends AtomicOp

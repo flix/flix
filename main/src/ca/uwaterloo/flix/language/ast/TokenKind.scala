@@ -74,7 +74,6 @@ sealed trait TokenKind {
       case TokenKind.KeywordDebugBang => "'debug!'"
       case TokenKind.KeywordDebugBangBang => "'debug!'"
       case TokenKind.KeywordDef => "'def'"
-      case TokenKind.KeywordDeref => "'deref'"
       case TokenKind.KeywordDiscard => "'discard'"
       case TokenKind.KeywordDo => "'do'"
       case TokenKind.KeywordEff => "'eff'"
@@ -117,7 +116,6 @@ sealed trait TokenKind {
       case TokenKind.KeywordProject => "'project'"
       case TokenKind.KeywordQuery => "'query'"
       case TokenKind.KeywordRedef => "'redef'"
-      case TokenKind.KeywordRef => "'ref'"
       case TokenKind.KeywordRegion => "'region'"
       case TokenKind.KeywordRestrictable => "'restrictable'"
       case TokenKind.KeywordRvadd => "'rvadd'"
@@ -231,7 +229,6 @@ sealed trait TokenKind {
     case TokenKind.KeywordDebugBang => true
     case TokenKind.KeywordDebugBangBang => true
     case TokenKind.KeywordDef => true
-    case TokenKind.KeywordDeref => true
     case TokenKind.KeywordDiscard => true
     case TokenKind.KeywordDo => true
     case TokenKind.KeywordEff => true
@@ -273,7 +270,6 @@ sealed trait TokenKind {
     case TokenKind.KeywordPub => true
     case TokenKind.KeywordProject => true
     case TokenKind.KeywordQuery => true
-    case TokenKind.KeywordRef => true
     case TokenKind.KeywordRegion => true
     case TokenKind.KeywordRestrictable => true
     case TokenKind.KeywordRvadd => true
@@ -406,7 +402,6 @@ sealed trait TokenKind {
          | TokenKind.KeywordLazy
          | TokenKind.KeywordForce
          | TokenKind.KeywordDiscard
-         | TokenKind.KeywordDeref
          | TokenKind.KeywordIf
          | TokenKind.KeywordLet
          | TokenKind.Annotation
@@ -426,7 +421,6 @@ sealed trait TokenKind {
          | TokenKind.ListHash
          | TokenKind.SetHash
          | TokenKind.MapHash
-         | TokenKind.KeywordRef
          | TokenKind.KeywordCheckedCast
          | TokenKind.KeywordCheckedECast
          | TokenKind.KeywordUncheckedCast
@@ -708,8 +702,6 @@ object TokenKind {
 
   case object KeywordDef extends TokenKind
 
-  case object KeywordDeref extends TokenKind
-
   case object KeywordDiscard extends TokenKind
 
   case object KeywordDo extends TokenKind
@@ -793,8 +785,6 @@ object TokenKind {
   case object KeywordQuery extends TokenKind
 
   case object KeywordRedef extends TokenKind
-
-  case object KeywordRef extends TokenKind
 
   case object KeywordRegion extends TokenKind
 

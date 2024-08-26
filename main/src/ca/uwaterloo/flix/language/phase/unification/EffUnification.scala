@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.util.Result.{Ok, ToErr, ToOk}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 import org.sosy_lab.pjbdd.api.DD
@@ -212,7 +213,8 @@ object EffUnification {
         } yield Type.Apply(t1, t2, loc)
       case Type.Alias(_, _, tpe, _) => visit(tpe)
       case Type.AssocType(Ast.AssocTypeConstructor(assoc, _), Type.Var(tvar, _), kind, _) if renv.isRigid(tvar) =>
-        val sym = cache.getOrElseUpdate((assoc, tvar), Symbol.freshKindedTypeVarSym(Ast.VarText.Absent, kind, isRegion = false, SourceLocation.Unknown))
+        // We use top scope as the variables will be marked as rigid anyway
+        val sym = cache.getOrElseUpdate((assoc, tvar), Symbol.freshKindedTypeVarSym(Ast.VarText.Absent, kind, isRegion = false, SourceLocation.Unknown)(Scope.Top, flix))
         Some(Type.Var(sym, SourceLocation.Unknown))
       case Type.AssocType(_, _, _, _) => None
     }

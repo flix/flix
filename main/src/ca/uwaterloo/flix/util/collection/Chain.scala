@@ -97,8 +97,8 @@ sealed trait Chain[+A] {
     // since it calls the equals method which
     // depends on foreach.
     case _: Chain.Empty.type => ()
-    case c: Chain.Link[A] => c.l.foreach(f); c.r.foreach(f)
-    case c: Chain.Proxy[A] => c.xs.foreach(f)
+    case c: Chain.Link[_] => c.l.foreach(f); c.r.foreach(f)
+    case c: Chain.Proxy[_] => c.xs.foreach(f)
   }
 
   /**

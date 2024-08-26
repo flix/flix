@@ -308,8 +308,6 @@ object SyntaxTree {
 
       case object RecordSelect extends Expr
 
-      case object Ref extends Expr
-
       case object RestrictableChoose extends Expr
 
       case object RestrictableChooseStar extends Expr

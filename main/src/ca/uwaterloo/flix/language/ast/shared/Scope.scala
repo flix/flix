@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Magnus Madsen
+ * Copyright 2024 Matthew Lutze
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,16 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.tools.pkg
+package ca.uwaterloo.flix.language.ast.shared
 
-import ca.uwaterloo.flix.tools.pkg.github.GitHub
+import ca.uwaterloo.flix.language.ast.Symbol
 
-case class Manifest(name: String,
-                    description: String,
-                    version: SemVer,
-                    repository: Option[GitHub.Project],
-                    modules: PackageModules,
-                    flix: SemVer,
-                    license: Option[String],
-                    authors: List[String],
-                    dependencies: List[Dependency]) {}
+case class Scope(syms: List[Symbol.KindedTypeVarSym]) {
+
+  /**
+    * Returns the scope corresponding to the given region sym, nested inside the current region.
+    */
+  def enter(sym: Symbol.KindedTypeVarSym): Scope = Scope(sym :: syms)
+}
+
+object Scope {
+
+  /**
+    * The scope that is not inside any region.
+    */
+  // TODO LEVELS is declaration level higher?
+  val Top: Scope = Scope(Nil)
+
+}

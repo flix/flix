@@ -94,10 +94,12 @@ class FlixSuite(incremental: Boolean) extends AnyFunSuite {
             // Evaluate the function.
             val result = run()
             // Expect the true value, if boolean.
-            if (result.isInstanceOf[java.lang.Boolean]) {
-              if (result != true) {
-                fail("Expected true, but got false.")
-              }
+            result match {
+              case res: java.lang.Boolean =>
+                if (!res.booleanValue()) {
+                  fail("Expected true, but got false.")
+                }
+              case _ => // nop
             }
           }
         }
