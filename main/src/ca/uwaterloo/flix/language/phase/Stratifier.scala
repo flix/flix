@@ -290,20 +290,6 @@ object Stratifier {
       val e = visitExp(exp)
       Expr.VectorLength(e, loc)
 
-    case Expr.Ref(exp1, exp2, tpe, eff, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      Expr.Ref(e1, e2, tpe, eff, loc)
-
-    case Expr.Deref(exp, tpe, eff, loc) =>
-      val e = visitExp(exp)
-      Expr.Deref(e, tpe, eff, loc)
-
-    case Expr.Assign(exp1, exp2, tpe, eff, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      Expr.Assign(e1, e2, tpe, eff, loc)
-
     case Expr.Ascribe(exp, tpe, eff, loc) =>
       val e = visitExp(exp)
       Expr.Ascribe(e, tpe, eff, loc)

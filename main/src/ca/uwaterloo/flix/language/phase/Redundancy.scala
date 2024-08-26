@@ -617,19 +617,6 @@ object Redundancy {
     case Expr.VectorLength(exp, _) =>
       visitExp(exp, env0, rc)
 
-    case Expr.Ref(exp1, exp2, _, _, _) =>
-      val us1 = visitExp(exp1, env0, rc)
-      val us2 = visitExp(exp2, env0, rc)
-      us1 ++ us2
-
-    case Expr.Deref(exp, _, _, _) =>
-      visitExp(exp, env0, rc)
-
-    case Expr.Assign(exp1, exp2, _, _, _) =>
-      val us1 = visitExp(exp1, env0, rc)
-      val us2 = visitExp(exp2, env0, rc)
-      us1 ++ us2
-
     case Expr.Ascribe(exp, _, _, _) =>
       visitExp(exp, env0, rc)
 

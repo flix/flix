@@ -79,8 +79,6 @@ object SimpleType {
 
   case object Vector extends SimpleType
 
-  case object Ref extends SimpleType
-
   case object Sender extends SimpleType
 
   case object Receiver extends SimpleType
@@ -440,7 +438,6 @@ object SimpleType {
             case 1 => SimpleType.MethodReturnType(fromWellKindedType(t.typeArguments.head))
             case _ => throw InternalCompilerException(s"Unexpected wrong kinded type $t", t.loc)
           }
-        case TypeConstructor.Ref => mkApply(Ref, t.typeArguments.map(visit))
         case TypeConstructor.Tuple(l) =>
           val tpes = t.typeArguments.map(visit).padTo(l, Hole)
           Tuple(tpes)

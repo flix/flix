@@ -354,15 +354,6 @@ object Indexer {
     case Expr.VectorLength(exp, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0)
 
-    case Expr.Ref(exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
-
-    case Expr.Deref(exp1, _, _, _) =>
-      visitExp(exp1) ++ Index.occurrenceOf(exp0)
-
-    case Expr.Assign(exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
-
     case Expr.Ascribe(exp, tpe, eff, _) =>
       visitExp(exp) ++ visitType(tpe) ++ visitType(eff) ++ Index.occurrenceOf(exp0)
 

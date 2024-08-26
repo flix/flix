@@ -177,7 +177,6 @@ object FormatType {
       case SimpleType.Regex => true
       case SimpleType.Array => true
       case SimpleType.Vector => true
-      case SimpleType.Ref => true
       case SimpleType.Sender => true
       case SimpleType.Receiver => true
       case SimpleType.Lazy => true
@@ -244,7 +243,6 @@ object FormatType {
       case SimpleType.Regex => "Regex"
       case SimpleType.Array => "Array"
       case SimpleType.Vector => "Vector"
-      case SimpleType.Ref => "Ref"
       case SimpleType.Sender => "Sender"
       case SimpleType.Receiver => "Receiver"
       case SimpleType.Lazy => "Lazy"
