@@ -201,13 +201,13 @@ object Lexer {
   }
 
   /**
-   * Peeks the character two before the previous that state was on if available.
+   * Peeks the character that is `n` characters before the current if available
    */
-  private def previousPreviousPrevious()(implicit s: State): Option[Char] = {
-    if (s.current.offset <= 2) {
+  private def previousN(n: Int)(implicit s: State): Option[Char] = {
+    if (s.current.offset <= n) {
       None
     } else {
-      Some(s.src.data(s.current.offset - 3))
+      Some(s.src.data(s.current.offset - (n + 1)))
     }
   }
 
@@ -363,8 +363,12 @@ object Lexer {
       case _ if isOperator("**") => TokenKind.StarStar
       case _ if isOperator("<-") => TokenKind.ArrowThinL
       case _ if isOperator("->") =>
-        // Check for whitespace around arrow.
-        if (previousPreviousPrevious().exists(_.isWhitespace) || peek().isWhitespace) {
+        // If any whitespace exists around the `->`, it is `ArrowThinR`. Otherwise it is `StructArrow`
+        // a->b:   StructArrow
+        // a ->b:  ArrowThinR
+        // a-> b:  ArrowThinR
+        // a -> b: ArrowThinR
+        if (previousN(2).exists(_.isWhitespace) || peek().isWhitespace) {
           TokenKind.ArrowThinR
         } else {
           TokenKind.StructArrow
@@ -395,7 +399,6 @@ object Lexer {
       case _ if isKeyword("debug!") => TokenKind.KeywordDebugBang
       case _ if isKeyword("debug!!") => TokenKind.KeywordDebugBangBang
       case _ if isKeyword("def") => TokenKind.KeywordDef
-      case _ if isKeyword("deref") => TokenKind.KeywordDeref
       case _ if isKeyword("discard") => TokenKind.KeywordDiscard
       case _ if isKeyword("do") => TokenKind.KeywordDo
       case _ if isKeyword("eff") => TokenKind.KeywordEff
@@ -438,7 +441,6 @@ object Lexer {
       case _ if isKeyword("project") => TokenKind.KeywordProject
       case _ if isKeyword("query") => TokenKind.KeywordQuery
       case _ if isKeyword("redef") => TokenKind.KeywordRedef
-      case _ if isKeyword("ref") => TokenKind.KeywordRef
       case _ if isKeyword("region") => TokenKind.KeywordRegion
       case _ if isKeyword("restrictable") => TokenKind.KeywordRestrictable
       case _ if isKeyword("rvadd") => TokenKind.KeywordRvadd

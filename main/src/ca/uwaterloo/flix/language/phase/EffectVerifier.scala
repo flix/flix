@@ -225,20 +225,6 @@ object EffectVerifier {
       expectType(expected, actual, loc)
     case Expr.VectorLength(exp, loc) =>
       visitExp(exp)
-    case Expr.Ref(exp1, exp2, tpe, eff, loc) =>
-      visitExp(exp1)
-      visitExp(exp2)
-      // TODO region stuff
-      ()
-    case Expr.Deref(exp, tpe, eff, loc) =>
-      visitExp(exp)
-      // TODO region stuff
-      ()
-    case Expr.Assign(exp1, exp2, tpe, eff, loc) =>
-      visitExp(exp1)
-      visitExp(exp2)
-      // TODO region stuff
-      ()
     case Expr.Ascribe(exp, tpe, eff, loc) =>
       visitExp(exp)
     case Expr.InstanceOf(exp, clazz, loc) =>

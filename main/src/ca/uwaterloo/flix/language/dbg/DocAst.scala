@@ -170,12 +170,6 @@ object DocAst {
     def Ret(d: Expr): Expr =
       Keyword("ret", d)
 
-    def Ref(d: Expr): Expr =
-      Keyword("ref", d)
-
-    def Deref(d: Expr): Expr =
-      Keyword("deref", d)
-
     def Discard(d: Expr): Expr =
       Keyword("discard", d)
 
@@ -392,8 +386,6 @@ object DocAst {
     def Array(t: Type): Type = App("Array", List(t))
 
     def Lazy(t: Type): Type = App("Lazy", List(t))
-
-    def Ref(t: Type): Type = App("Ref", List(t))
 
     def Enum(sym: Symbol.EnumSym, args: List[Type]): Type = App(sym.toString, args)
 

@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.util.{Formatter, InternalCompilerException, Result}
 import ca.uwaterloo.flix.util.Result.{Err, Ok, ToOk}
 
 import java.io.PrintStream
-import coursier._
+import coursier.{Dependency => CoursierDependency, Fetch, Resolve}
 import coursier.cache.{Cache, FileCache}
 import coursier.util.Task
 
@@ -86,7 +86,7 @@ object MavenPackageManager {
   /**
     * Creates Coursier dependencies from a list of Strings
     */
-  private def createCoursierDependencies(depString: String): Result[Dependency, PackageError] =
+  private def createCoursierDependencies(depString: String): Result[CoursierDependency, PackageError] =
     coursier.parse.DependencyParser.dependency(depString, scalaVersion) match {
       case Left(error) => throw InternalCompilerException(s"Coursier error: $error", SourceLocation.Unknown)
       case Right(cDep) => Ok(cDep)
