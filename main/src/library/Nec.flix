@@ -245,7 +245,7 @@ mod Nec {
     pub def length(c: Nec[a]): Int32 = foldRight((_, acc) -> acc + 1, 0, c)
 
     ///
-    /// Returns the length of `c`.
+    /// Returns the number of elements in `c`.
     ///
     pub def size(c: Nec[a]): Int32 = length(c)
 

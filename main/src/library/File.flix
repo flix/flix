@@ -102,7 +102,7 @@ mod File {
         })
 
     ///
-    /// Get the length of an open file.
+    /// Returns the number of bytes in the file.
     ///
     pub def size(f: File): Result[IOError, Int64] \ IO = length(f)
 

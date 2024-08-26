@@ -44,12 +44,6 @@ mod TestIterable {
         Iterable.iterator(rc, a) |> Iterator.toList == List#{(2, 'A'), (5, 'B'), (11, 'D'), (8, 'C')}
     }
 
-    @test
-    def iterableArray05(): Bool = region rc {
-        let a = Array#{(2, 'A'), (5, 'B'), (11, 'D'), (8, 'C')} @ rc;
-        Iterable.size(a) == 4
-    }
-
     /////////////////////////////////////////////////////////////////////////////
     // DelayMap instance                                                       //
     /////////////////////////////////////////////////////////////////////////////
@@ -64,12 +58,6 @@ mod TestIterable {
     def iterableDelayMap02(): Bool = region rc {
         let m = Map#{2 => 'A', 5 => 'B', 11 => 'D', 8 => 'C'} |> Map.toDelayMap;
         Iterable.iterator(rc, m) |> Iterator.toList == List#{(2, 'A'), (5, 'B'), (8, 'C'), (11, 'D')}
-    }
-
-    @test
-    def iterableDelayMap03(): Bool = {
-        let m = Map#{2 => 'A', 5 => 'B', 11 => 'D', 8 => 'C'} |> Map.toDelayMap;
-        Iterable.size(m) == 4
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -100,12 +88,6 @@ mod TestIterable {
         Iterable.iterator(rc, l) |> Iterator.toList == List#{(2, 'A'), (5, 'B'), (11, 'D'), (8, 'C')}
     }
 
-    @test
-    def iterableList05(): Bool = {
-        let l = List#{(2, 'A'), (5, 'B'), (11, 'D'), (8, 'C')};
-        Iterable.size(l) == 4
-    }
-
     /////////////////////////////////////////////////////////////////////////////
     // Map instance                                                            //
     /////////////////////////////////////////////////////////////////////////////
@@ -120,12 +102,6 @@ mod TestIterable {
     def iterableMap02(): Bool = region rc {
         let m = Map#{2 => 'A', 5 => 'B', 11 => 'D', 8 => 'C'};
         Iterable.iterator(rc, m) |> Iterator.toList == List#{(2, 'A'), (5, 'B'), (8, 'C'), (11, 'D')}
-    }
-
-    @test
-    def iterableMap03(): Bool = {
-        let m = Map#{2 => 'A', 5 => 'B', 11 => 'D', 8 => 'C'};
-        Iterable.size(m) == 4
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -154,12 +130,6 @@ mod TestIterable {
     def iterableMutDeque04(): Bool = region rc {
         let d = List#{(2, 'A'), (5, 'B'), (11, 'D'), (8, 'C')} |> List.toMutDeque(rc);
         Iterable.iterator(rc, d) |> Iterator.toList == List#{(2, 'A'), (5, 'B'), (11, 'D'), (8, 'C')}
-    }
-
-    @test
-    def iterableMutDeque05(): Bool = region rc {
-        let d = List#{(2, 'A'), (5, 'B'), (11, 'D'), (8, 'C')} |> List.toMutDeque(rc);
-        Iterable.size(d) == 4
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -237,13 +207,6 @@ mod TestIterable {
         Iterable.iterator(rc, mq) |> Iterator.toList == List#{'D', 'C', 'B', 'A'}
     }
 
-    @test
-    def iterableMutQueue04(): Bool = region rc {
-        let mq = MutQueue.empty(rc);
-        MutQueue.enqueueAll(mq, List#{(2, 'A'), (5, 'B'), (11, 'D'), (8, 'C')});
-        Iterable.size(mq) == 4
-    }
-
     /////////////////////////////////////////////////////////////////////////////
     // MutSet instance                                                         //
     /////////////////////////////////////////////////////////////////////////////
@@ -272,12 +235,6 @@ mod TestIterable {
         Iterable.iterator(rc, s) |> Iterator.toSet == Set#{(2, 'A'), (5, 'B'), (8, 'C'), (11, 'D')}
     }
 
-    @test
-    def iterableMutSet05(): Bool = region rc {
-        let s = Set#{(2, 'A'), (5, 'B'), (11, 'D'), (8, 'C')} |> Set.toMutSet(rc);
-        Iterable.size(s) == 4
-    }
-
     /////////////////////////////////////////////////////////////////////////////
     // RedBlackTree instance                                                   //
     /////////////////////////////////////////////////////////////////////////////
@@ -292,12 +249,6 @@ mod TestIterable {
     def iterableRedBlackTree02(): Bool = region rc {
         let Map.Map(t) = Map#{2 => 'A', 5 => 'B', 11 => 'D', 8 => 'C'};
         Iterable.iterator(rc, t) |> Iterator.toList == List#{(2, 'A'), (5, 'B'), (8, 'C'), (11, 'D')}
-    }
-
-    @test
-    def iterableRedBlackTree03(): Bool = {
-        let Map.Map(t) = Map#{2 => 'A', 5 => 'B', 11 => 'D', 8 => 'C'};
-        Iterable.size(t) == 4
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -326,12 +277,6 @@ mod TestIterable {
     def iterableSet04(): Bool = region rc {
         let s = Set#{(2, 'A'), (5, 'B'), (11, 'D'), (8, 'C')};
         Iterable.iterator(rc, s) |> Iterator.toSet == Set#{(2, 'A'), (5, 'B'), (8, 'C'), (11, 'D')}
-    }
-
-    @test
-    def iterableSet05(): Bool = {
-        let s = Set#{(2, 'A'), (5, 'B'), (11, 'D'), (8, 'C')};
-        Iterable.size(s) == 4
     }
 
 }

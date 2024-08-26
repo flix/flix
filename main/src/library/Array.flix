@@ -135,7 +135,7 @@ mod Array {
     pub def length(a: Array[a, r]): Int32 \ r = $ARRAY_LENGTH$(a)
 
     ///
-    /// Returns the length of the array `a`.
+    /// Returns the number of elements in the array `a`.
     ///
     pub def size(a: Array[a, r]): Int32 \ r = length(a)
 

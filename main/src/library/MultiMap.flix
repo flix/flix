@@ -115,7 +115,7 @@ mod MultiMap {
     pub def nonEmpty(m: MultiMap[k, v]): Bool = not isEmpty(m)
 
     ///
-    /// Returns the size of `m`.
+    /// Returns the number of keys in `m`.
     ///
     pub def size(m: MultiMap[k, v]): Int32 =
         let MultiMap(t) = m;

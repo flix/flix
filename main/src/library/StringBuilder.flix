@@ -126,7 +126,7 @@ mod StringBuilder {
         unchecked_cast((unsafe msb.length()) as _ \ r)
 
     ///
-    /// Return the length of the StringBuilder `sb`.
+    /// Return the number of characters in the StringBuilder `sb`.
     ///
     pub def size(sb: StringBuilder[r]): Int32 \ r = length(sb)
 

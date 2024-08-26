@@ -134,11 +134,6 @@ pub trait Reducible[t: Type -> Type] {
         Reducible.foldLeft((acc, _) -> 1 + acc, 0, t)
 
     ///
-    /// Returns the number of elements in `t`.
-    ///
-    pub def size(t: t[a]): Int32 = Reducible.length(t)
-
-    ///
     /// Returns the sum of all elements in `t`.
     ///
     pub def sum(t: t[Int32]): Int32 =
@@ -288,5 +283,14 @@ pub trait Reducible[t: Type -> Type] {
     ///
     pub def toSet(t: t[a]): Set[a] with Order[a] =
         Reducible.foldLeft((acc, a) -> Set.insert(a, acc), Set.empty(), t)
+
+}
+
+mod Reducible {
+
+    ///
+    /// Returns the number of elements in `t`.
+    ///
+    pub def size(t: t[a]): Int32 with Reducible[t] = Reducible.length(t)
 
 }

@@ -389,7 +389,7 @@ mod Foldable {
         Foldable.foldLeft((acc, x) -> Monoid.combine(acc, x), Monoid.empty(), t)
 
     ///
-    /// Returns the length of `t`, i.e. the number of times it can be folded over.
+    /// Returns the number of elements in `t`.
     ///
     pub def size(t: t[a]): Int32 \ Foldable.Aef[t] with Foldable[t] = Foldable.length(t)
 

@@ -240,7 +240,7 @@ mod Vector {
     pub def length(v: Vector[a]): Int32 = $VECTOR_LENGTH$(v)
 
     ///
-    /// Returns the length of the vector `v`.
+    /// Returns the number of elements in the vector `v`.
     ///
     pub def size(v: Vector[a]): Int32 = length(v)
 

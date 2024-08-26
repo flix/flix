@@ -75,7 +75,7 @@ mod String {
         unsafe s.length()
 
     ///
-    /// Returns the length of the string `s`.
+    /// Returns the number of characters the string `s`.
     ///
     pub def size(s: String): Int32 = length(s)
 

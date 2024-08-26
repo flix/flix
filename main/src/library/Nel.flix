@@ -193,7 +193,7 @@ mod Nel {
     }
 
     ///
-    /// Returns the length of `l`.
+    /// Returns the number of elements in `l`.
     ///
     pub def size(l: Nel[a]): Int32 = length(l)
 
