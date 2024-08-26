@@ -165,12 +165,6 @@ object NamedAst {
 
     case class VectorLength(exp: Expr, loc: SourceLocation) extends Expr
 
-    case class Ref(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
-
-    case class Deref(exp: Expr, loc: SourceLocation) extends Expr
-
-    case class Assign(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
-
     case class Ascribe(exp: Expr, expectedType: Option[Type], expectedEff: Option[Type], loc: SourceLocation) extends Expr
 
     case class InstanceOf(exp: Expr, className: Name.Ident, loc: SourceLocation) extends Expr

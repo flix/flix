@@ -395,7 +395,6 @@ object Lexer {
       case _ if isKeyword("debug!") => TokenKind.KeywordDebugBang
       case _ if isKeyword("debug!!") => TokenKind.KeywordDebugBangBang
       case _ if isKeyword("def") => TokenKind.KeywordDef
-      case _ if isKeyword("deref") => TokenKind.KeywordDeref
       case _ if isKeyword("discard") => TokenKind.KeywordDiscard
       case _ if isKeyword("do") => TokenKind.KeywordDo
       case _ if isKeyword("eff") => TokenKind.KeywordEff
@@ -438,7 +437,6 @@ object Lexer {
       case _ if isKeyword("project") => TokenKind.KeywordProject
       case _ if isKeyword("query") => TokenKind.KeywordQuery
       case _ if isKeyword("redef") => TokenKind.KeywordRedef
-      case _ if isKeyword("ref") => TokenKind.KeywordRef
       case _ if isKeyword("region") => TokenKind.KeywordRegion
       case _ if isKeyword("restrictable") => TokenKind.KeywordRestrictable
       case _ if isKeyword("rvadd") => TokenKind.KeywordRvadd

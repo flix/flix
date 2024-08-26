@@ -334,26 +334,6 @@ object TypeReconstruction {
       val e = visitExp(exp)
       TypedAst.Expr.VectorLength(e, loc)
 
-    case KindedAst.Expr.Ref(exp1, exp2, tvar, evar, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      val tpe = subst(tvar)
-      val eff = subst(evar)
-      TypedAst.Expr.Ref(e1, e2, tpe, eff, loc)
-
-    case KindedAst.Expr.Deref(exp, tvar, evar, loc) =>
-      val e = visitExp(exp)
-      val tpe = subst(tvar)
-      val eff = subst(evar)
-      TypedAst.Expr.Deref(e, tpe, eff, loc)
-
-    case KindedAst.Expr.Assign(exp1, exp2, evar, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      val tpe = Type.Unit
-      val eff = subst(evar)
-      TypedAst.Expr.Assign(e1, e2, tpe, eff, loc)
-
     case KindedAst.Expr.Ascribe(exp, _, _, tvar, loc) =>
       val e = visitExp(exp)
       val eff = e.eff

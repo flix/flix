@@ -152,12 +152,6 @@ object KindedAst {
 
     case class VectorLength(exp: Expr, loc: SourceLocation) extends Expr
 
-    case class Ref(exp1: Expr, exp2: Expr, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
-
-    case class Deref(exp: Expr, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
-
-    case class Assign(exp1: Expr, exp2: Expr, evar: Type.Var, loc: SourceLocation) extends Expr
-
     case class Ascribe(exp: Expr, expectedType: Option[Type], expectedPur: Option[Type], tvar: Type.Var, loc: SourceLocation) extends Expr
 
     case class InstanceOf(exp: Expr, clazz: java.lang.Class[_], loc: SourceLocation) extends Expr

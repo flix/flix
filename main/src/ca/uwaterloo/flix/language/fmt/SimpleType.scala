@@ -79,8 +79,6 @@ object SimpleType {
 
   case object Vector extends SimpleType
 
-  case object Ref extends SimpleType
-
   case object Sender extends SimpleType
 
   case object Receiver extends SimpleType
@@ -343,12 +341,12 @@ object SimpleType {
             case Nil =>
               val lastArrow: SimpleType = PolyArrow(Hole, Hole, Hole)
               // NB: safe to subtract 2 since arity is always at least 2
-              List.fill(arity - 2)(Hole).foldRight(lastArrow)(PureArrow)
+              List.fill(arity - 2)(Hole).foldRight(lastArrow)(PureArrow.apply)
 
             // Case 2: Pure function.
             case eff :: tpes if eff == Pure =>
               // NB: safe to reduce because arity is always at least 2
-              tpes.padTo(arity, Hole).reduceRight(PureArrow)
+              tpes.padTo(arity, Hole).reduceRight(PureArrow.apply)
 
             // Case 3: Impure function.
             case eff :: tpes =>
@@ -356,7 +354,7 @@ object SimpleType {
               val allTpes = tpes.padTo(arity, Hole)
               val List(lastArg, ret) = allTpes.takeRight(2)
               val lastArrow: SimpleType = PolyArrow(lastArg, eff, ret)
-              allTpes.dropRight(2).foldRight(lastArrow)(PureArrow)
+              allTpes.dropRight(2).foldRight(lastArrow)(PureArrow.apply)
           }
 
         case TypeConstructor.RecordRowEmpty => RecordRow(Nil)
@@ -440,7 +438,6 @@ object SimpleType {
             case 1 => SimpleType.MethodReturnType(fromWellKindedType(t.typeArguments.head))
             case _ => throw InternalCompilerException(s"Unexpected wrong kinded type $t", t.loc)
           }
-        case TypeConstructor.Ref => mkApply(Ref, t.typeArguments.map(visit))
         case TypeConstructor.Tuple(l) =>
           val tpes = t.typeArguments.map(visit).padTo(l, Hole)
           Tuple(tpes)

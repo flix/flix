@@ -713,26 +713,6 @@ object Kinder {
         e => KindedAst.Expr.VectorLength(e, loc)
       }
 
-    case ResolvedAst.Expr.Ref(exp1, exp2, loc) =>
-      val e1Val = visitExp(exp1, kenv0, taenv, henv0, root)
-      val e2Val = visitExp(exp2, kenv0, taenv, henv0, root)
-      mapN(e1Val, e2Val) {
-        case (e1, e2) => KindedAst.Expr.Ref(e1, e2, Type.freshVar(Kind.Star, loc.asSynthetic), Type.freshVar(Kind.Eff, loc), loc)
-      }
-
-    case ResolvedAst.Expr.Deref(exp0, loc) =>
-      val expVal = visitExp(exp0, kenv0, taenv, henv0, root)
-      mapN(expVal) {
-        case exp => KindedAst.Expr.Deref(exp, Type.freshVar(Kind.Star, loc.asSynthetic), Type.freshVar(Kind.Eff, loc), loc)
-      }
-
-    case ResolvedAst.Expr.Assign(exp10, exp20, loc) =>
-      val exp1Val = visitExp(exp10, kenv0, taenv, henv0, root)
-      val exp2Val = visitExp(exp20, kenv0, taenv, henv0, root)
-      mapN(exp1Val, exp2Val) {
-        case (exp1, exp2) => KindedAst.Expr.Assign(exp1, exp2, Type.freshVar(Kind.Eff, loc.asSynthetic), loc)
-      }
-
     case ResolvedAst.Expr.Ascribe(exp0, expectedType0, expectedEff0, loc) =>
       val expVal = visitExp(exp0, kenv0, taenv, henv0, root)
       val expectedTypeVal = traverseOpt(expectedType0)(visitType(_, Kind.Star, kenv0, taenv, root))

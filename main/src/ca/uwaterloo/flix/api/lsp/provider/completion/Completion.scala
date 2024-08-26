@@ -283,14 +283,14 @@ sealed trait Completion {
       val returnEffect = "IO"
 
       val label = method.getName + "(" + argsWithNameAndType.mkString(", ") + "): " + returnType + " \\ " + returnEffect
-      val text = method.getName + "(" + argsWithName.mkString(", ") + ")"
+      val text = method.getName + "(" + argsWithName.zipWithIndex.map {case (arg, i) => s"$${${i + 1}:$arg}" }.mkString(", ") + ")"
       val range = Range.from(ident.loc)
 
       CompletionItem(
         label = label,
         sortText = Priority.low(label),
         textEdit = TextEdit(range, text),
-        insertTextFormat = InsertTextFormat.PlainText,
+        insertTextFormat = InsertTextFormat.Snippet,
         kind = CompletionItemKind.Method
       )
 
