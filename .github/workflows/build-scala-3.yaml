@@ -5,7 +5,7 @@ on: [ pull_request ]
 # Cancel previous runs if the PR is updated
 concurrency:
   cancel-in-progress: true
-  group: build-scala3-${{ github.ref }}
+  group: scala3-check-${{ github.ref }}
 
 jobs:
   build:
