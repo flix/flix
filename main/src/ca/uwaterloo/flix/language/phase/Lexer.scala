@@ -363,7 +363,7 @@ object Lexer {
       case _ if isOperator("**") => TokenKind.StarStar
       case _ if isOperator("<-") => TokenKind.ArrowThinL
       case _ if isOperator("->") =>
-        // If any whitespace exists around the `->`, it is `ArrowThinR`
+        // If any whitespace exists around the `->`, it is `ArrowThinR`. Otherwise it is `StructArrow`
         // a->b: StructArrow
         // a ->b: ArrowThinR
         // a-> b: ArrowThinR
