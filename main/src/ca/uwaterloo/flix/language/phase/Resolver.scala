@@ -1968,7 +1968,6 @@ private def resolvePredicateBody(b0: NamedAst.Predicate.Body, env: ListMap[Strin
       }
   }
 
-
   /**
     * Performs name resolution on the given formal parameter `fparam0` in the given namespace `ns0`.
     */
