@@ -60,7 +60,7 @@ object Weeder2 {
     }(DebugValidation())
   }
 
-  private def weed(src: Source, tree: Tree): Validation[CompilationUnit, CompilationMessage] = {
+  private def weed(src: Source, tree: Tree)(implicit flix: Flix): Validation[CompilationUnit, CompilationMessage] = {
     mapN(pickAllUsesAndImports(tree), Decls.pickAllDeclarations(tree)) {
       (usesAndImports, declarations) => CompilationUnit(usesAndImports, declarations, tree.loc)
     }
@@ -183,7 +183,7 @@ object Weeder2 {
   }
 
   private object Decls {
-    def pickAllDeclarations(tree: Tree): Validation[List[Declaration], CompilationMessage] = {
+    def pickAllDeclarations(tree: Tree)(implicit flix: Flix): Validation[List[Declaration], CompilationMessage] = {
       expectAny(tree, List(TreeKind.Root, TreeKind.Decl.Module))
       val modules = pickAll(TreeKind.Decl.Module, tree)
       val traits = pickAll(TreeKind.Decl.Trait, tree)
@@ -210,7 +210,7 @@ object Weeder2 {
       }
     }
 
-    private def visitModuleDecl(tree: Tree): Validation[Declaration.Namespace, CompilationMessage] = {
+    private def visitModuleDecl(tree: Tree)(implicit flix: Flix): Validation[Declaration.Namespace, CompilationMessage] = {
       expect(tree, TreeKind.Decl.Module)
       mapN(
         pickQName(tree),
@@ -247,8 +247,9 @@ object Weeder2 {
       }
     }
 
-    private def visitInstanceDecl(tree: Tree): Validation[Declaration.Instance, CompilationMessage] = {
+    private def visitInstanceDecl(tree: Tree)(implicit flix: Flix): Validation[Declaration.Instance, CompilationMessage] = {
       expect(tree, TreeKind.Decl.Instance)
+      val allowedDefModifiers: Set[TokenKind] = if (flix.options.xnodeprecated) Set(TokenKind.KeywordPub) else Set(TokenKind.KeywordPub, TokenKind.KeywordOverride)
       flatMapN(
         pickDocumentation(tree),
         pickAnnotations(tree),
@@ -256,7 +257,7 @@ object Weeder2 {
         pickQName(tree),
         Types.pickType(tree),
         Types.pickConstraints(tree),
-        traverse(pickAll(TreeKind.Decl.Def, tree))(visitDefinitionDecl(_, allowedModifiers = Set(TokenKind.KeywordPub, TokenKind.KeywordOverride), mustBePublic = true)),
+        traverse(pickAll(TreeKind.Decl.Def, tree))(visitDefinitionDecl(_, allowedModifiers = allowedDefModifiers, mustBePublic = true)),
         traverse(pickAll(TreeKind.Decl.Redef, tree))(visitRedefinitionDecl),
       ) {
         (doc, annotations, modifiers, clazz, tpe, tconstrs, defs, redefs) =>
@@ -2919,10 +2920,10 @@ object Weeder2 {
         case TreeKind.JvmOp.Constructor => visitConstructor(inner)
         case TreeKind.JvmOp.Method => visitMethod(inner)
         case TreeKind.JvmOp.StaticMethod => visitMethod(inner, isStatic = true)
-        case TreeKind.JvmOp.GetField => visitField(inner, WeededAst.JvmOp.GetField)
-        case TreeKind.JvmOp.PutField => visitField(inner, WeededAst.JvmOp.PutField)
-        case TreeKind.JvmOp.StaticGetField => visitField(inner, WeededAst.JvmOp.GetStaticField)
-        case TreeKind.JvmOp.StaticPutField => visitField(inner, WeededAst.JvmOp.PutStaticField)
+        case TreeKind.JvmOp.GetField => visitField(inner, WeededAst.JvmOp.GetField.apply)
+        case TreeKind.JvmOp.PutField => visitField(inner, WeededAst.JvmOp.PutField.apply)
+        case TreeKind.JvmOp.StaticGetField => visitField(inner, WeededAst.JvmOp.GetStaticField.apply)
+        case TreeKind.JvmOp.StaticPutField => visitField(inner, WeededAst.JvmOp.PutStaticField.apply)
         // TODO: This double reports the same error. We should be able to handle this resiliently if we had JvmOp.Error.
         case TreeKind.ErrorTree(_) => Validation.HardFailure(Chain(UnexpectedToken(NamedTokenSet.JvmOp, actual = None, SyntacticContext.Expr.OtherExpr, loc = tree.loc)))
         case kind => throw InternalCompilerException(s"child of kind '$kind' under JvmOp.JvmOp", tree.loc)

@@ -171,7 +171,7 @@ object Safety {
     */
   private def checkExportableTypes(defn: Def): List[SafetyError] = {
     val types = defn.spec.fparams.map(_.tpe) :+ defn.spec.retTpe
-    types.flatMap{ t =>
+    types.flatMap { t =>
       if (isExportableType(t)) Nil
       else List(SafetyError.IllegalExportType(t, t.loc))
     }
@@ -339,7 +339,7 @@ object Safety {
         visit(base) ++ visit(index) ++ visit(elm)
 
       case Expr.StructNew(_, fields, region, _, _, _) =>
-        fields.map{case (_, v) => v}.flatMap(visit) ++ visit(region)
+        fields.map { case (_, v) => v }.flatMap(visit) ++ visit(region)
 
       case Expr.StructGet(e, _, _, _, _) =>
         visit(e)
@@ -911,11 +911,11 @@ object Safety {
   }
 
   /**
-   * Ensures that the Java type in a catch clause is Throwable or a subclass.
-   *
-   * @param clazz the Java class specified in the catch clause
-   * @param loc   the location of the catch parameter.
-   */
+    * Ensures that the Java type in a catch clause is Throwable or a subclass.
+    *
+    * @param clazz the Java class specified in the catch clause
+    * @param loc   the location of the catch parameter.
+    */
   private def checkCatchClass(clazz: java.lang.Class[_], loc: SourceLocation): List[SafetyError] = {
     if (!classOf[Throwable].isAssignableFrom(clazz)) {
       List(IllegalCatchType(loc))
@@ -925,16 +925,16 @@ object Safety {
   }
 
   /**
-   * Ensures that the type of the argument to `throw` is Throwable or a subclass.
-   *
-   * @param exp the expression to check
-   */
+    * Ensures that the type of the argument to `throw` is Throwable or a subclass.
+    *
+    * @param exp the expression to check
+    */
   private def checkThrow(exp: Expr): List[SafetyError] = {
-     val valid = exp.tpe match {
+    val valid = exp.tpe match {
       case Type.Cst(TypeConstructor.Native(clazz), loc) => classOf[Throwable].isAssignableFrom(clazz)
       case _ => false
     }
-    if(valid) {
+    if (valid) {
       List()
     } else {
       List(IllegalThrowType(exp.loc))
