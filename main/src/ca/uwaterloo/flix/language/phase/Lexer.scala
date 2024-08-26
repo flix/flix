@@ -363,7 +363,11 @@ object Lexer {
       case _ if isOperator("**") => TokenKind.StarStar
       case _ if isOperator("<-") => TokenKind.ArrowThinL
       case _ if isOperator("->") =>
-        // Check for whitespace around arrow.
+        // If any whitespace exists around the `->`, it is `ArrowThinR`
+        // a->b: StructArrow
+        // a ->b: ArrowThinR
+        // a-> b: ArrowThinR
+        // a -> b: ArrowThinR
         if (previousN(2).exists(_.isWhitespace) || peek().isWhitespace) {
           TokenKind.ArrowThinR
         } else {
