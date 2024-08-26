@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider.Priority
 import ca.uwaterloo.flix.api.lsp.{CompletionItem, CompletionItemKind, InsertTextFormat, Range, TextEdit}
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.fmt.{FormatScheme, FormatType}
-import ca.uwaterloo.flix.language.ast.Symbol.{EnumSym, ModuleSym, StructSym, TypeAliasSym}
+import ca.uwaterloo.flix.language.ast.Symbol.{EnumSym, StructSym, ModuleSym, TypeAliasSym}
 
 import java.lang.reflect.{Field, Method}
 
