@@ -493,6 +493,19 @@ class TestInstances extends AnyFunSuite with TestUtils {
     expectError[InstanceError.ExtraneousDef](result)
   }
 
+  test("Test.ExtraneousDefinition.02") {
+    val input =
+      """
+        |trait C[a]
+        |
+        |instance C[Bool] {
+        |    redef get(): Bool = false
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[InstanceError.ExtraneousDef](result)
+  }
+
   test("Test.OrphanInstance.01") {
     val input =
       """

@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.ast.Ast.Constant
 import ca.uwaterloo.flix.language.fmt.{FormatOptions, FormatType}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.ast.shared.Scope
 
 import java.util.Objects
 import scala.annotation.tailrec
@@ -522,7 +523,7 @@ object Type {
   /**
     * Returns a fresh type variable of the given kind `k` and rigidity `r`.
     */
-  def freshVar(k: Kind, loc: SourceLocation, isRegion: Boolean = false, text: Ast.VarText = Ast.VarText.Absent)(implicit flix: Flix): Type.Var = {
+  def freshVar(k: Kind, loc: SourceLocation, isRegion: Boolean = false, text: Ast.VarText = Ast.VarText.Absent)(implicit scope: Scope, flix: Flix): Type.Var = {
     val sym = Symbol.freshKindedTypeVarSym(text, k, isRegion, loc)
     Type.Var(sym, loc)
   }
@@ -653,12 +654,6 @@ object Type {
     */
   def mkVector(tpe: Type, loc: SourceLocation): Type =
     Apply(Cst(TypeConstructor.Vector, loc), tpe, loc)
-
-  /**
-    * Returns the type `Ref[tpe, reg]` with the given source location `loc`.
-    */
-  def mkRef(tpe: Type, reg: Type, loc: SourceLocation): Type =
-    Apply(Apply(Cst(TypeConstructor.Ref, loc), tpe, loc), reg, loc)
 
   /**
     * Constructs the pure arrow type A -> B.

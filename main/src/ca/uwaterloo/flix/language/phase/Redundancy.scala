@@ -617,19 +617,6 @@ object Redundancy {
     case Expr.VectorLength(exp, _) =>
       visitExp(exp, env0, rc)
 
-    case Expr.Ref(exp1, exp2, _, _, _) =>
-      val us1 = visitExp(exp1, env0, rc)
-      val us2 = visitExp(exp2, env0, rc)
-      us1 ++ us2
-
-    case Expr.Deref(exp, _, _, _) =>
-      visitExp(exp, env0, rc)
-
-    case Expr.Assign(exp1, exp2, _, _, _) =>
-      val us1 = visitExp(exp1, env0, rc)
-      val us2 = visitExp(exp2, env0, rc)
-      us1 ++ us2
-
     case Expr.Ascribe(exp, _, _, _) =>
       visitExp(exp, env0, rc)
 
@@ -695,7 +682,7 @@ object Redundancy {
           val usedBody = visitExp(body, env0, rc)
           val syms = fparams.map(_.sym)
           val dead = syms.filter(deadVarSym(_, usedBody))
-          acc ++ usedBody ++ dead.map(UnusedVarSym)
+          acc ++ usedBody ++ dead.map(UnusedVarSym.apply)
       }
       usedExp ++ usedRules
 
@@ -869,7 +856,7 @@ object Redundancy {
     * it is a member of the returned set.
     */
   private def findUnusedVarSyms(freeVars: Set[Symbol.VarSym], usedSyms: Used): Set[UnusedVarSym] = {
-    freeVars.filter(sym => deadVarSym(sym, usedSyms)).map(UnusedVarSym)
+    freeVars.filter(sym => deadVarSym(sym, usedSyms)).map(UnusedVarSym.apply)
   }
 
   /**

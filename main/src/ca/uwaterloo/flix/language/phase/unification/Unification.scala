@@ -17,12 +17,16 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
 
 object Unification {
+
+  // TODO LEVELS: using top scope just to compile for now as we introduce levels
+  private implicit val S: Scope = Scope.Top
 
   /**
     * Unify the two type variables `x` and `y`.
