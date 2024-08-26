@@ -30,13 +30,13 @@ mod Ref {
     /// Returns the element referenced by `rf`.
     ///
     pub def get(rf: Ref[a, r]): a \ r =
-        rf€v
+        rf->v
 
     ///
     /// Updates `rf` to reference `x`.
     ///
     pub def put(x: a, rf: Ref[a, r]): Unit \ r =
-        rf€v = x
+        rf->v = x
 
 
     ///
@@ -45,6 +45,6 @@ mod Ref {
     /// I.e. if `rf` references `x` then `rf` is updated to reference `f(x)`.
     ///
     pub def transform(f: a -> a \ ef, rf: Ref[a, r]): Unit \ { r, ef } =
-        put(f(rf€v), rf)
+        put(f(rf->v), rf)
 
 }
