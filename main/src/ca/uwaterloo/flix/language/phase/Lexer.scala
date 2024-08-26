@@ -201,7 +201,7 @@ object Lexer {
   }
 
   /**
-   * Peeks the character that is `n` characters before the previous that state was on if available.
+   * Peeks the character that is `n` characters before the current if available
    */
   private def previousN(n: Int)(implicit s: State): Option[Char] = {
     if (s.current.offset <= (n)) {
