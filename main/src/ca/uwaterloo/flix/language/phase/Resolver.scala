@@ -2903,7 +2903,6 @@ private def resolveType(tpe0: NamedAst.Type, wildness: Wildness, env: ListMap[St
       val envNames = env(qname.ident.name)
 
       // 2nd priority: names in the current namespace
-
       val localNames = if (ns0.idents.nonEmpty) {
         root.symbols.getOrElse(ns0, Map.empty).getOrElse(qname.ident.name, Nil).map(Resolution.Declaration.apply)
       } else {
