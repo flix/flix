@@ -213,10 +213,10 @@ mod MutDeque {
     /// Pushes `x` to the front of `d`.
     ///
     pub def pushFront(x: a, d: MutDeque[a, r]): Unit \ r =
-        let f1 = (d->front - 1) `Int32.modulo` capacity(d);      // Update index such that it points to an empty index. This will never overlap with the back index.
-        Array.put(x, f1, d->values);                             // Store `x` in the array.
-        d->front = f1;                                           // Update the front index reference.
-        expand!(d)                                               // Optionally expand `d`.
+        let f1 = (d->front - 1) `Int32.modulo` capacity(d);     // Update index such that it points to an empty index. This will never overlap with the back index.
+        Array.put(x, f1, d->values);                            // Store `x` in the array.
+        d->front = f1;                                          // Update the front index reference.
+        expand!(d)                                              // Optionally expand `d`.
 
     ///
     /// Pushes `x` to the back of `d`.
