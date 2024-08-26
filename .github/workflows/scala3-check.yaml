@@ -8,7 +8,7 @@ concurrency:
   group: scala3-check-${{ github.ref }}
 
 jobs:
-  check:
+  check-tests:
     runs-on: ubuntu-latest
     env:
       GRADLE_OPTS: "-Xms128m -Xmx4g"
@@ -25,4 +25,22 @@ jobs:
         run: cat .github/workflows/scala3-build-def.txt > build.gradle
       - name: Build with gradle
         run: ./gradlew clean compileTestScala --console=plain
+
+  check-jar:
+    runs-on: ubuntu-latest
+    env:
+      GRADLE_OPTS: "-Xms128m -Xmx4g"
+
+    steps:
+      - name: Check out master
+        uses: actions/checkout@v4
+      - name: Install JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+      - name: Setup Scala 3 build
+        run: cat .github/workflows/scala3-build-def.txt > build.gradle
+      - name: Build jar
+        run: ./gradlew clean jar
 
