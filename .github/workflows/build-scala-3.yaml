@@ -22,7 +22,7 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
       - name: Setup Scala 3 build
-        run: echo .github/workflows/scala3-build-def.txt > build.gradle
+        run: cat .github/workflows/scala3-build-def.txt > build.gradle
       - name: Build with gradle
         run: ./gradlew clean compileTestScala --console=plain
       - name: Run tests with timeout
