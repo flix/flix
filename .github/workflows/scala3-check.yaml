@@ -8,7 +8,7 @@ concurrency:
   group: scala3-check-${{ github.ref }}
 
 jobs:
-  build:
+  check:
     runs-on: ubuntu-latest
     env:
       GRADLE_OPTS: "-Xms128m -Xmx4g"
