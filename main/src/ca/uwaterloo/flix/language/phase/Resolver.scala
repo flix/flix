@@ -834,7 +834,7 @@ private def resolveExp(exp0: NamedAst.Expr, env0: ListMap[String, Resolution])(i
       val enumVal = lookupRestrictableEnum(name, env0, ns0, root)
       val eVal = resolveExp(exp, env0)
       mapN(enumVal, eVal) {
-        case (enum, e) => ResolvedAst.Expr.OpenAs(Ast.RestrictableEnumSymUse(enum.sym, name.loc), e, loc)
+        case (enum0, e) => ResolvedAst.Expr.OpenAs(Ast.RestrictableEnumSymUse(enum0.sym, name.loc), e, loc)
       }
 
     case NamedAst.Expr.Hole(nameOpt, loc) =>
