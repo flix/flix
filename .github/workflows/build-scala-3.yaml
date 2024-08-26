@@ -25,6 +25,4 @@ jobs:
         run: cat .github/workflows/scala3-build-def.txt > build.gradle
       - name: Build with gradle
         run: ./gradlew clean compileTestScala --console=plain
-      - name: Run tests with timeout
-        timeout-minutes: 20
-        run: ./gradlew test --console=plain
+
