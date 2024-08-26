@@ -127,7 +127,7 @@ object JvmBackend {
       val handlerInterface = Map(genClass(BackendObjType.Handler))
       val effectCallClass = Map(genClass(BackendObjType.EffectCall))
       val effectClasses = GenEffectClasses.gen(root.effects.values)
-      val resumptionWrappers = BackendType.erasedTypes.map(BackendObjType.ResumptionWrapper).map(genClass).toMap
+      val resumptionWrappers = BackendType.erasedTypes.map(BackendObjType.ResumptionWrapper.apply).map(genClass).toMap
 
       // Collect all the classes and interfaces together.
       List(
@@ -227,7 +227,7 @@ object JvmBackend {
     // Construct the reflected function.
     (args: Array[AnyRef]) => {
       // Construct the arguments array.
-      val argsArray = if (args.isEmpty) Array(null) else args
+      val argsArray = if (args.isEmpty) Array(null: AnyRef) else args
       val parameterCount = defn.method.getParameterCount
       val argumentCount = argsArray.length
       if (argumentCount != parameterCount) {

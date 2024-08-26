@@ -199,13 +199,19 @@ object Reducer {
   /**
     * Returns all types contained in the given `Effect`.
     */
-  private def typesOfEffect(e: Effect): Set[MonoType] = e.ops.toSet.map {
-    op: Op =>
-      val paramTypes = op.fparams.map(_.tpe)
-      val resType = op.tpe
-      val continuationType = MonoType.Object
-      val correctedFunctionType = MonoType.Arrow(paramTypes :+ continuationType, resType)
-      correctedFunctionType
+  private def typesOfEffect(e: Effect): Set[MonoType] = {
+    e.ops.toSet.map(extractFunctionType)
+  }
+
+  /**
+    * Returns the function type based `op` represents.
+    */
+  private def extractFunctionType(op: Op): MonoType = {
+    val paramTypes = op.fparams.map(_.tpe)
+    val resType = op.tpe
+    val continuationType = MonoType.Object
+    val correctedFunctionType = MonoType.Arrow(paramTypes :+ continuationType, resType)
+    correctedFunctionType
   }
 
   /**

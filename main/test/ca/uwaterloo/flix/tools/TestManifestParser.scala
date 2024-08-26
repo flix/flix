@@ -189,10 +189,10 @@ class TestManifestParser extends AnyFunSuite {
 
   test("Ok.dependencies") {
     assertResult(expected = List(Dependency.FlixDependency(Repository.GitHub, "jls", "tic-tac-toe", SemVer(1, 2, 3), Nil),
-                                 Dependency.FlixDependency(Repository.GitHub, "mlutze", "flixball", SemVer(3, 2, 1), Nil),
-                                 Dependency.MavenDependency("org.postgresql", "postgresql", "1.2.3.4"),
-                                 Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", "4.7.0-M1"),
-                                 Dependency.JarDependency(new URI("https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar").toURL, "myJar.jar")))(actual = {
+      Dependency.FlixDependency(Repository.GitHub, "mlutze", "flixball", SemVer(3, 2, 1), Nil),
+      Dependency.MavenDependency("org.postgresql", "postgresql", "1.2.3.4"),
+      Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", "4.7.0-M1"),
+      Dependency.JarDependency(new URI("https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar").toURL, "myJar.jar")))(actual = {
       ManifestParser.parse(tomlCorrect, null) match {
         case Ok(manifest) => manifest.dependencies
         case Err(e) => e.message(f)
@@ -218,7 +218,7 @@ class TestManifestParser extends AnyFunSuite {
         |""".stripMargin
     }
     assertResult(expected = List(Dependency.MavenDependency("org.postgresql", "postgresql", "1.2.3"),
-                                  Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", "470")))(ManifestParser.parse(toml, null) match {
+      Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", "470")))(ManifestParser.parse(toml, null) match {
       case Ok(manifest) => manifest.dependencies
       case Err(e) => e.message(f)
     })
@@ -242,7 +242,7 @@ class TestManifestParser extends AnyFunSuite {
         |""".stripMargin
     }
     assertResult(expected = List(Dependency.MavenDependency("org.postgresql", "postgresql", "1.2.3"),
-                                  Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", "47")))(ManifestParser.parse(toml, null) match {
+      Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", "47")))(ManifestParser.parse(toml, null) match {
       case Ok(manifest) => manifest.dependencies
       case Err(e) => e.message(f)
     })
@@ -266,7 +266,7 @@ class TestManifestParser extends AnyFunSuite {
         |""".stripMargin
     }
     assertResult(expected = List(Dependency.MavenDependency("org.postgresql", "postgresql", "1.2.3"),
-                                 Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", "a.7.0")))(ManifestParser.parse(toml, null) match {
+      Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", "a.7.0")))(ManifestParser.parse(toml, null) match {
       case Ok(manifest) => manifest.dependencies
       case Err(e) => e.message(f)
     })
@@ -290,7 +290,7 @@ class TestManifestParser extends AnyFunSuite {
         |""".stripMargin
     }
     assertResult(expected = Set(Dependency.MavenDependency("org.postgresql", "postgresql", "1.2.3"),
-                                  Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", "4.b.0")))(ManifestParser.parse(toml, null) match {
+      Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", "4.b.0")))(ManifestParser.parse(toml, null) match {
       case Ok(manifest) => manifest.dependencies.toSet
       case Err(e) => e.message(f)
     })
@@ -314,7 +314,7 @@ class TestManifestParser extends AnyFunSuite {
         |""".stripMargin
     }
     assertResult(expected = List(Dependency.MavenDependency("org.postgresql", "postgresql", "1.2.3"),
-                                  Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", "4.7.c")))(ManifestParser.parse(toml, null) match {
+      Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", "4.7.c")))(ManifestParser.parse(toml, null) match {
       case Ok(manifest) => manifest.dependencies
       case Err(e) => e.message(f)
     })
@@ -358,15 +358,14 @@ class TestManifestParser extends AnyFunSuite {
                   |[dependencies]
                   |"github:jls/tic-tac-toe" = { version = "1.2.3", permissions = [] }
                   |""".stripMargin
-    assertResult(expected = Set.empty)(actual =
-      ManifestParser.parse(toml, null) match {
-        case Ok(m) =>
+    assertResult(expected = Ok(Set.empty))(actual =
+      ManifestParser.parse(toml, null).map {
+        m =>
           m.dependencies
             .head
             .asInstanceOf[Dependency.FlixDependency]
             .permissions
             .toSet
-        case Err(e) => e.message(f)
       }
     )
   }

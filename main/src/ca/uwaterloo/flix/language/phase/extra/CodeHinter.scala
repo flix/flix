@@ -49,8 +49,8 @@ object CodeHinter {
     val uses = enumUses ++ tagUses
     val isDeprecated = enum0.ann.isDeprecated
     val isExperimental = enum0.ann.isExperimental
-    val deprecated = if (isDeprecated) uses.map(CodeHint.Deprecated) else Nil
-    val experimental = if (isExperimental) uses.map(CodeHint.Experimental) else Nil
+    val deprecated = if (isDeprecated) uses.map(CodeHint.Deprecated.apply) else Nil
+    val experimental = if (isExperimental) uses.map(CodeHint.Experimental.apply) else Nil
     (deprecated ++ experimental).toList
   }
 
@@ -60,9 +60,9 @@ object CodeHinter {
   private def visitTrait(trt: TypedAst.Trait)(implicit index: Index): List[CodeHint] = {
     val uses = index.usesOf(trt.sym)
     val isDeprecated = trt.ann.isDeprecated
-    val deprecated = if (isDeprecated) uses.map(CodeHint.Deprecated) else Nil
+    val deprecated = if (isDeprecated) uses.map(CodeHint.Deprecated.apply) else Nil
     val isExperimental = trt.ann.isExperimental
-    val experimental = if (isExperimental) uses.map(CodeHint.Experimental) else Nil
+    val experimental = if (isExperimental) uses.map(CodeHint.Experimental.apply) else Nil
     (deprecated ++ experimental).toList
   }
 

@@ -30,7 +30,7 @@ object UseEnumCompleter extends Completer {
     ctx.prefix match {
       case regex(word) =>
         val enums = getLocalEnumSyms(word)
-        enums.map(enum => getUseEnumCompletion(root.enums(enum)))
+        enums.map(enum0 => getUseEnumCompletion(root.enums(enum0)))
       case _ => Nil
     }
   }
