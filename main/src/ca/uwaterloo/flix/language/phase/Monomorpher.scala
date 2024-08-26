@@ -651,9 +651,9 @@ object Monomorpher {
       val freshSym = Symbol.freshVarSym(sym)
       (MonoAst.Pattern.Var(freshSym, subst(tpe), loc), Map(sym -> freshSym))
     case LoweredAst.Pattern.Cst(cst, tpe, loc) => (MonoAst.Pattern.Cst(cst, subst(tpe), loc), Map.empty)
-    case LoweredAst.Pattern.Tag(sym, pat, tpe, loc) =>
-      val (p, env1) = visitPat(pat, subst)
-      (MonoAst.Pattern.Tag(sym, p, subst(tpe), loc), env1)
+    case LoweredAst.Pattern.Tag(sym, pats, tpe, loc) =>
+      val (ps, envs) = pats.map(visitPat(_, subst)).unzip
+      (MonoAst.Pattern.Tag(sym, ps, subst(tpe), loc), envs.reduce(_ ++ _))
     case LoweredAst.Pattern.Tuple(elms, tpe, loc) =>
       val (ps, envs) = elms.map(visitPat(_, subst)).unzip
       (MonoAst.Pattern.Tuple(ps, subst(tpe), loc), envs.reduce(_ ++ _))
