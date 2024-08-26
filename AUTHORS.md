@@ -71,3 +71,4 @@ By adding your name to this document, you agree to release all your contribution
 - [Felix Berg](https://github.com/felix-berg)
 - [Surya Somayyajula](https://github.com/saisoma123)
 - [Joseph Tan](https://github.com/dghosef)
+- [Alexander Dybdahl Troelsen](https://github.com/LoZander)

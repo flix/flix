@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase.unification
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.util.{Formatter, InternalCompilerException, Result}
 
+import scala.annotation.nowarn
 import scala.collection.immutable.SortedSet
 import scala.collection.mutable
 
@@ -925,7 +926,12 @@ object FastBoolUnification {
     * Represents a unification equation `t1 ~ t2` between the terms `t1` and `t2`.
     *
     * WARNING: Equations should be normalized. Use the smart constructor [[Equation.mk]] to create a new equation.
+    *
+    * the `@nowarn` annotation is required for Scala 3 compatiblity, since the derived `copy` method is private
+    * in Scala 3 due to the private constructor. In Scala 2 the `copy` method is still public.
+    * However, we do not use the `copy` method anywhere for [[Equation]], so this is fine.
     */
+  @nowarn
   case class Equation private(t1: Term, t2: Term, loc: SourceLocation) {
     /**
       * Returns the size of this equation which is the sum of its lhs and rhs.

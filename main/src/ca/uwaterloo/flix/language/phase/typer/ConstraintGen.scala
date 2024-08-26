@@ -648,43 +648,6 @@ object ConstraintGen {
         val resEff = eff
         (resTpe, resEff)
 
-      case Expr.Ref(exp1, exp2, tvar, evar, loc) =>
-        val regionVar = Type.freshVar(Kind.Eff, loc)
-        val regionType = Type.mkRegion(regionVar, loc)
-        val (tpe1, eff1) = visitExp(exp1)
-        val (tpe2, eff2) = visitExp(exp2)
-        c.expectType(tpe2, regionType, exp2.loc)
-        c.unifyType(tvar, Type.mkRef(tpe1, regionVar, loc), loc)
-        c.unifyType(evar, Type.mkUnion(eff1, eff2, regionVar, loc), loc)
-        val resTpe = tvar
-        val resEff = evar
-        (resTpe, resEff)
-
-      case Expr.Deref(exp, tvar, evar, loc) =>
-        val elmVar = Type.freshVar(Kind.Star, loc)
-        val regionVar = Type.freshVar(Kind.Eff, loc)
-        val refType = Type.mkRef(elmVar, regionVar, loc)
-        val (tpe, eff) = visitExp(exp)
-        c.expectType(expected = refType, actual = tpe, exp.loc)
-        c.unifyType(tvar, elmVar, loc)
-        c.unifyType(evar, Type.mkUnion(eff, regionVar, loc), loc)
-        val resTpe = tvar
-        val resEff = evar
-        (resTpe, resEff)
-
-      case Expr.Assign(exp1, exp2, evar, loc) =>
-        val elmVar = Type.freshVar(Kind.Star, loc)
-        val regionVar = Type.freshVar(Kind.Eff, loc)
-        val refType = Type.mkRef(elmVar, regionVar, loc)
-        val (tpe1, eff1) = visitExp(exp1)
-        val (tpe2, eff2) = visitExp(exp2)
-        c.expectType(expected = refType, actual = tpe1, exp1.loc)
-        c.unifyType(elmVar, tpe2, exp2.loc)
-        c.unifyType(evar, Type.mkUnion(eff1, eff2, regionVar, loc), loc)
-        val resTpe = Type.Unit
-        val resEff = evar
-        (resTpe, resEff)
-
       case Expr.Ascribe(exp, expectedTpe, expectedEff, tvar, loc) =>
         // An ascribe expression is sound; the type system checks that the declared type matches the inferred type.
         val (actualTpe, actualEff) = visitExp(exp)

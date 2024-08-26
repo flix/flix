@@ -99,7 +99,7 @@ class FlixSuite(incremental: Boolean) extends AnyFunSuite {
                 if (!res.booleanValue()) {
                   fail("Expected true, but got false.")
                 }
-              case _ =>
+              case _ => // nop
             }
           }
         }

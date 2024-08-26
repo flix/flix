@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast._
 import ca.uwaterloo.flix.language.ast.SyntaxTree.{Child, Tree, TreeKind}
 import ca.uwaterloo.flix.language.ast.shared.{Fixity, Source}
-import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, Name, ReadAst, SemanticOp, SourceLocation, SourcePosition, Symbol, SyntaxTree, Token, TokenKind, WeededAst}
+import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, Name, ReadAst, SemanticOp, SourceLocation, Symbol, SyntaxTree, Token, TokenKind, WeededAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.language.errors.ParseError._
 import ca.uwaterloo.flix.language.errors.WeederError._
@@ -60,7 +60,7 @@ object Weeder2 {
     }(DebugValidation())
   }
 
-  private def weed(src: Source, tree: Tree): Validation[CompilationUnit, CompilationMessage] = {
+  private def weed(src: Source, tree: Tree)(implicit flix: Flix): Validation[CompilationUnit, CompilationMessage] = {
     mapN(pickAllUsesAndImports(tree), Decls.pickAllDeclarations(tree)) {
       (usesAndImports, declarations) => CompilationUnit(usesAndImports, declarations, tree.loc)
     }
@@ -183,7 +183,7 @@ object Weeder2 {
   }
 
   private object Decls {
-    def pickAllDeclarations(tree: Tree): Validation[List[Declaration], CompilationMessage] = {
+    def pickAllDeclarations(tree: Tree)(implicit flix: Flix): Validation[List[Declaration], CompilationMessage] = {
       expectAny(tree, List(TreeKind.Root, TreeKind.Decl.Module))
       val modules = pickAll(TreeKind.Decl.Module, tree)
       val traits = pickAll(TreeKind.Decl.Trait, tree)
@@ -210,7 +210,7 @@ object Weeder2 {
       }
     }
 
-    private def visitModuleDecl(tree: Tree): Validation[Declaration.Namespace, CompilationMessage] = {
+    private def visitModuleDecl(tree: Tree)(implicit flix: Flix): Validation[Declaration.Namespace, CompilationMessage] = {
       expect(tree, TreeKind.Decl.Module)
       mapN(
         pickQName(tree),
@@ -247,8 +247,9 @@ object Weeder2 {
       }
     }
 
-    private def visitInstanceDecl(tree: Tree): Validation[Declaration.Instance, CompilationMessage] = {
+    private def visitInstanceDecl(tree: Tree)(implicit flix: Flix): Validation[Declaration.Instance, CompilationMessage] = {
       expect(tree, TreeKind.Decl.Instance)
+      val allowedDefModifiers: Set[TokenKind] = if (flix.options.xnodeprecated) Set(TokenKind.KeywordPub) else Set(TokenKind.KeywordPub, TokenKind.KeywordOverride)
       flatMapN(
         pickDocumentation(tree),
         pickAnnotations(tree),
@@ -256,7 +257,7 @@ object Weeder2 {
         pickQName(tree),
         Types.pickType(tree),
         Types.pickConstraints(tree),
-        traverse(pickAll(TreeKind.Decl.Def, tree))(visitDefinitionDecl(_, allowedModifiers = Set(TokenKind.KeywordPub, TokenKind.KeywordOverride), mustBePublic = true)),
+        traverse(pickAll(TreeKind.Decl.Def, tree))(visitDefinitionDecl(_, allowedModifiers = allowedDefModifiers, mustBePublic = true)),
         traverse(pickAll(TreeKind.Decl.Redef, tree))(visitRedefinitionDecl),
       ) {
         (doc, annotations, modifiers, clazz, tpe, tconstrs, defs, redefs) =>
@@ -313,7 +314,7 @@ object Weeder2 {
       mapN(
         pickDocumentation(tree),
         pickAnnotations(tree),
-        pickModifiers(tree, allowed = Set(TokenKind.KeywordPub), mustBePublic = true),
+        pickModifiers(tree, allowed = Set(TokenKind.KeywordPub)),
         pickNameIdent(tree),
         Types.pickKindedParameters(tree),
         pickFormalParameters(tree),
@@ -841,7 +842,6 @@ object Weeder2 {
         case TreeKind.Expr.LiteralList => visitLiteralListExpr(tree)
         case TreeKind.Expr.LiteralMap => visitLiteralMapExpr(tree)
         case TreeKind.Expr.LiteralSet => visitLiteralSetExpr(tree)
-        case TreeKind.Expr.Ref => visitRefExpr(tree)
         case TreeKind.Expr.Ascribe => visitAscribeExpr(tree)
         case TreeKind.Expr.CheckedTypeCast => visitCheckedTypeCastExpr(tree)
         case TreeKind.Expr.CheckedEffectCast => visitCheckedEffectCastExpr(tree)
@@ -1118,7 +1118,6 @@ object Weeder2 {
                   visitLiteralExpr(syntheticLiteral)
                 case _ => mapN(visitExpr(exprTree))(expr => {
                   opToken.text match {
-                    case "deref" => Expr.Deref(expr, tree.loc)
                     case "discard" => Expr.Discard(expr, tree.loc)
                     case "force" => Expr.Force(expr, tree.loc)
                     case "lazy" => Expr.Lazy(expr, tree.loc)
@@ -1187,7 +1186,6 @@ object Weeder2 {
             case "and" => Validation.success(Expr.Binary(SemanticOp.BoolOp.And, e1, e2, tree.loc))
             case "or" => Validation.success(Expr.Binary(SemanticOp.BoolOp.Or, e1, e2, tree.loc))
             // SPECIAL
-            case ":=" => Validation.success(Expr.Assign(e1, e2, tree.loc))
             case "::" => Validation.success(Expr.FCons(e1, e2, tree.loc))
             case ":::" => Validation.success(Expr.FAppend(e1, e2, tree.loc))
             case "<+>" => Validation.success(Expr.FixpointMerge(e1, e2, tree.loc))
@@ -1602,17 +1600,6 @@ object Weeder2 {
       expect(tree, TreeKind.Expr.LiteralSet)
       val exprs = pickAll(TreeKind.Expr.Expr, tree)
       mapN(traverse(exprs)(visitExpr))(Expr.SetLit(_, tree.loc))
-    }
-
-    private def visitRefExpr(tree: Tree): Validation[Expr, CompilationMessage] = {
-      expect(tree, TreeKind.Expr.Ref)
-      val scopeName = tryPick(TreeKind.Expr.ScopeName, tree)
-      flatMapN(pickExpr(tree), traverseOpt(scopeName)(visitScopeName)) {
-        case (expr1, Some(expr2)) => Validation.success(Expr.Ref(expr1, expr2, tree.loc))
-        case (expr1, None) =>
-          val err = MissingScope(TokenKind.KeywordRef, SyntacticContext.Expr.OtherExpr, tree.loc)
-          Validation.toSoftFailure(Expr.Ref(expr1, Expr.Error(err), tree.loc), err)
-      }
     }
 
     private def visitAscribeExpr(tree: Tree): Validation[Expr, CompilationMessage] = {
@@ -2100,7 +2087,6 @@ object Weeder2 {
         case ("ARRAY_STORE", e1 :: e2 :: e3 :: Nil) => Validation.success(Expr.ArrayStore(e1, e2, e3, loc))
         case ("VECTOR_GET", e1 :: e2 :: Nil) => Validation.success(Expr.VectorLoad(e1, e2, loc))
         case ("VECTOR_LENGTH", e1 :: Nil) => Validation.success(Expr.VectorLength(e1, loc))
-        case ("REF_ASSIGN", e1 :: e2 :: Nil) => Validation.success(Expr.Assign(e1, e2, loc))
         case _ =>
           val err = UndefinedIntrinsic(loc)
           Validation.toSoftFailure(Expr.Error(err), err)
@@ -2531,7 +2517,7 @@ object Weeder2 {
     }
 
     private def tryPickLatticeTermPattern(tree: Tree): Validation[Option[Pattern], CompilationMessage] = {
-      traverseOpt(tryPick(TreeKind.Predicate.LatticeTerm, tree))(Patterns.pickPattern(_))
+      traverseOpt(tryPick(TreeKind.Predicate.LatticeTerm, tree))(Patterns.pickPattern)
     }
 
   }
