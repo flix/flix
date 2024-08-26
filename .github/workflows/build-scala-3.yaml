@@ -1,0 +1,30 @@
+name: Compiler Tests
+
+on: [ pull_request, merge_group ]
+
+# Cancel previous runs if the PR is updated
+concurrency:
+  cancel-in-progress: true
+  group: build-scala3-${{ github.ref }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      GRADLE_OPTS: "-Xms128m -Xmx4g"
+
+    steps:
+      - name: Check out master
+        uses: actions/checkout@v4
+      - name: Install JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+      - name: Setup Scala 3 build
+        run: echo .github/workflows/scala3-build-def.txt > build.gradle
+      - name: Build with gradle
+        run: ./gradlew clean compileTestScala --console=plain
+      - name: Run tests with timeout
+        timeout-minutes: 20
+        run: ./gradlew test --console=plain
