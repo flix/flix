@@ -201,13 +201,13 @@ object Lexer {
   }
 
   /**
-   * Peeks the character two before the previous that state was on if available.
+   * Peeks the character that is `n` characters before the previous that state was on if available.
    */
-  private def previousPreviousPrevious()(implicit s: State): Option[Char] = {
-    if (s.current.offset <= 2) {
+  private def previousN(n: Int)(implicit s: State): Option[Char] = {
+    if (s.current.offset <= (n)) {
       None
     } else {
-      Some(s.src.data(s.current.offset - 3))
+      Some(s.src.data(s.current.offset - (n + 1)))
     }
   }
 
@@ -364,7 +364,7 @@ object Lexer {
       case _ if isOperator("<-") => TokenKind.ArrowThinL
       case _ if isOperator("->") =>
         // Check for whitespace around arrow.
-        if (previousPreviousPrevious().exists(_.isWhitespace) || peek().isWhitespace) {
+        if (previousN(2).exists(_.isWhitespace) || peek().isWhitespace) {
           TokenKind.ArrowThinR
         } else {
           TokenKind.StructArrow
