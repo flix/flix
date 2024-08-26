@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.BoundBy
+import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.{Purity, Symbol, _}
 import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
@@ -29,6 +30,9 @@ import scala.annotation.tailrec
   * A phase that simplifies the MonoAst by elimination of pattern matching and other rewritings.
   */
 object Simplifier {
+
+  // We are safe to use the top scope everywhere because we do not use unification in this or future phases.
+  private implicit val S: Scope = Scope.Top
 
   def run(root: MonoAst.Root)(implicit flix: Flix): SimplifiedAst.Root = flix.phase("Simplifier") {
     implicit val universe: Set[Symbol.EffectSym] = root.effects.keys.toSet
