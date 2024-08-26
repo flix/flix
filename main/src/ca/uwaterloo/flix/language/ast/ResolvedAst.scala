@@ -135,7 +135,7 @@ object ResolvedAst {
 
     case class Tag(sym: Ast.CaseSymUse, loc: SourceLocation) extends Expr
 
-    case class RestrictableTag(sym: Ast.RestrictableCaseSymUse, exp: Expr, isOpen: Boolean, loc: SourceLocation) extends Expr
+    case class RestrictableTag(sym: Ast.RestrictableCaseSymUse, isOpen: Boolean, loc: SourceLocation) extends Expr
 
     case class Tuple(exps: List[Expr], loc: SourceLocation) extends Expr
 
