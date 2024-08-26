@@ -81,7 +81,7 @@ instance MonadZip[List] {
     pub def zipWith(f: (a, b) -> c \ ef, xs: List[a], ys: List[b]): List[c] \ ef = List.zipWith(f, xs, ys)
     pub def zipWithA(f: (a, b) -> f[c] \ ef, xs: List[a], ys: List[b]): f[List[c]] \ ef with Applicative[f] = List.zipWithA(f, xs, ys)
     redef zip(xs: List[a], ys: List[b]): List[(a, b)] = List.zip(xs, ys)
-    pub override def unzip(xs: List[(a, b)]): (List[a], List[b]) = List.unzip(xs)
+    pub redef unzip(xs: List[(a, b)]): (List[a], List[b]) = List.unzip(xs)
 }
 
 instance Foldable[List] {
@@ -92,20 +92,20 @@ instance Foldable[List] {
 
 instance UnorderedFoldable[List] {
     pub def foldMap(f: a -> b \ ef, l: List[a]): b \ ef with CommutativeMonoid[b] = List.foldMap(f, l)
-    override pub def isEmpty(l: List[a]): Bool = List.isEmpty(l)
-    override pub def exists(f: a -> Bool \ ef, l: List[a]): Bool \ ef = List.exists(f, l)
-    override pub def forAll(f: a -> Bool \ ef, l: List[a]): Bool \ ef = List.forAll(f, l)
-    override pub def memberOf(x: a, l: List[a]): Bool with Eq[a] = List.memberOf(x, l)
+    pub redef isEmpty(l: List[a]): Bool = List.isEmpty(l)
+    pub redef exists(f: a -> Bool \ ef, l: List[a]): Bool \ ef = List.exists(f, l)
+    pub redef forAll(f: a -> Bool \ ef, l: List[a]): Bool \ ef = List.forAll(f, l)
+    pub redef memberOf(x: a, l: List[a]): Bool with Eq[a] = List.memberOf(x, l)
 }
 
 instance Traversable[List] {
     pub def traverse(f: a -> m[b] \ ef, t: List[a]): m[List[b]] \ ef with Applicative[m] = List.traverse(f, t)
-    pub override def sequence(t: List[m[a]]): m[List[a]] with Applicative[m] = List.sequence(t)
+    pub redef sequence(t: List[m[a]]): m[List[a]] with Applicative[m] = List.sequence(t)
 }
 
 instance Filterable[List] {
     pub def filterMap(f: a -> Option[b] \ ef, x: List[a]): List[b] \ ef = List.filterMap(f, x)
-    pub override def filter(f: a -> Bool \ ef, x: List[a]): List[a] \ ef = List.filter(f, x)
+    pub redef filter(f: a -> Bool \ ef, x: List[a]): List[a] \ ef = List.filter(f, x)
 }
 
 instance Witherable[List]
