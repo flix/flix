@@ -204,7 +204,7 @@ object Lexer {
    * Peeks the character that is `n` characters before the current if available
    */
   private def previousN(n: Int)(implicit s: State): Option[Char] = {
-    if (s.current.offset <= (n)) {
+    if (s.current.offset <= n) {
       None
     } else {
       Some(s.src.data(s.current.offset - (n + 1)))
