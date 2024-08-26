@@ -1,6 +1,6 @@
 name: Scala 3 Compatibility Check
 
-on: [ pull_request, merge_group ]
+on: [ pull_request ]
 
 # Cancel previous runs if the PR is updated
 concurrency:
