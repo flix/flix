@@ -63,7 +63,7 @@ object EffUnification2 {
       case Some(subst) => (subst, Nil)
     }
     // `old` is by-name, so don't let-bind it.
-    Checking.compare(checkThings = false, tpe1, tpe2, old = EffUnification.unify(tpe1, tpe2, renv), neww = neww, renv)
+    Checking.compare(checkThings = true, tpe1, tpe2, old = EffUnification.unify(tpe1, tpe2, renv), neww = neww, renv)
     neww
   }
 
@@ -217,6 +217,8 @@ object EffUnification2 {
     case tpe@Type.Var(sym, _) =>
       if (renv.isRigid(sym)) Atom.Var(sym)
       else throw InternalCompilerException(s"Unexpected non-atom type: $tpe", tpe.loc)
+    // This is omitted to align with the "wrong" behaviour of the existing solver
+    //
     //    case Type.Cst(TypeConstructor.Effect(sym), _) => Atom.Eff(sym)
     //    case Type.AssocType(AssocTypeConstructor(sym, _), arg0, kind, _) =>
     //      val arg = rigidToAtom(arg0)
@@ -367,7 +369,23 @@ object EffUnification2 {
     }
 
     private def checkSubst(old: Substitution, neww: Substitution, tpe1: Type, tpe2: Type, renv: RigidityEnv): Unit = {
-      val fvs = freeVars(old) ++ freeVars(neww)
+      checkGeneralSubst(general = old, specific = neww, tpe1, tpe2, renv)
+    }
+
+    /**
+      * Checks that `general` is a more general substitution than `specific` by checking that, for
+      * all variables(*1), there exists a new substitution(*2) `fix`, where
+      * `fix(general(x)) = specific(x)`.
+      *
+      *   - (*1): all variables are limited to variables that appear in either substitution on either
+      *     side. The variables not included in this will always have the solution that `fix` uses
+      *     the identity mapping.
+      *   - (*2): How do we find this substitution? we have to ask the old or the new solver which
+      *     gives different correctness implications - trying both is best.
+      */
+    private def checkGeneralSubst(general: Substitution, specific: Substitution, tpe1: Type, tpe2: Type, renv: RigidityEnv): Unit = {
+      // the set of relevant variables to the two substitutions
+      val fvs = freeVars(general) ++ freeVars(specific)
       ()
     }
 
