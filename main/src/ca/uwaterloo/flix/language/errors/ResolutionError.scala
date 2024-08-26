@@ -1135,7 +1135,7 @@ object ResolutionError {
     */
   case class UndefinedStructField(struct: Option[Symbol.StructSym], field: Name.Label, loc: SourceLocation) extends ResolutionError with Recoverable {
     private def structMessage: String = struct match {
-      case Some(sym) => s" on struct $sym"
+      case Some(sym) => s" on struct '$sym'"
       case None => ""
     }
     override def summary: String = s"Undefined struct field '$field'$structMessage"
