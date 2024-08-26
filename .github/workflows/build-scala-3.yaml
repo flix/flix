@@ -1,4 +1,4 @@
-name: Compiler Tests
+name: Scala 3 Compatibility Check
 
 on: [ pull_request, merge_group ]
 
