@@ -353,8 +353,6 @@ object EffUnification2 {
 
     private def checkUnifiedI(old: UnifiedI, neww: UnifiedI, tpe1: Type, tpe2: Type, renv: RigidityEnv): Unit = {
       (old, neww) match {
-        case ((subst1, Nil), (subst2, Nil)) =>
-          checkSubst(subst1, subst2, tpe1, tpe2, renv)
         case ((_, rest1), (_, rest2)) if rest1 != rest2 =>
           println()
           println(s"-- Rest Disagree! -- ${tpe1.loc}")
