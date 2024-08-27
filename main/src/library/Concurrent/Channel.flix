@@ -17,6 +17,7 @@
 //
 
 mod Concurrent.Channel {
+
     import dev.flix.runtime.Global
 
     use Concurrent.ReentrantLock.lock
