@@ -1509,12 +1509,10 @@ object FastSetUnification {
       Term.mkUnionAll(maintain :: rest)
     }
 
-    /** Returns the Xor of `x` and `y`, `(x - y) ∪ (y - x)`. */
+    /** Returns the Xor of `x` and `y` with the formula `(x - y) ∪ (y - x)`. */
     final def mkXor(x: Term, y: Term): Term = mkUnion(mkMinus(x, y), mkMinus(y, x))
 
-    /**
-      * Returns the Minus of `x` and `y` (`-`). Implemented by de-sugaring: `x ∩ !y`.
-      */
+    /** Returns the Minus of `x` and `y` (`-`) with the formula `x ∩ !y`. */
     final private def mkMinus(x: Term, y: Term): Term = mkInter(x, mkCompl(y))
 
 
