@@ -1,9 +1,10 @@
 mod Test.Exp.Jvm.InvokeStaticMethod2 {
 
-    import java.lang.{String => JString}
-    import java.nio.file.{Path, InvalidPathException}
-    import java.util.Arrays
     import dev.flix.test.TestClassWithInheritedMethod
+    import java.lang.{String => JString}
+    import java.nio.file.InvalidPathException
+    import java.nio.file.Path
+    import java.util.Arrays
 
     @test
     def testInvokeStaticMethod2_01(): Bool \ IO =
