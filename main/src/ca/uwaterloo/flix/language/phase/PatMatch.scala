@@ -541,7 +541,7 @@ object PatMatch {
       // other enums
       case TyCon.Enum(sym, _) => {
         root.enums(sym.enumSym).cases.map {
-          case (_, caze) => TyCon.Enum(sym, List.fill(countTypeArgs(caze.tpe))(TyCon.Wild))
+          case (otherSym, caze) => TyCon.Enum(otherSym, List.fill(countTypeArgs(caze.tpe))(TyCon.Wild))
         }
       }.toList ::: xs
 
