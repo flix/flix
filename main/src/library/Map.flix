@@ -44,6 +44,18 @@ instance Hash[Map[k, v]] with Hash[k], Hash[v] {
         Map.foldLeftWithKey((acc, k, v) -> acc `Hash.combine` Hash.hash(k) `Hash.combine` Hash.hash(v), Hash.magic(), m)
 }
 
+instance Indexable[Map[k, v]] with Order[k] {
+    type Idx = k
+    type Elm = v
+    type Aef = KeyNotFound
+    pub def get(i: k, t: Map[k, v]): v \ KeyNotFound = match Map.get(i, t) {
+        case Some(v) => v
+        case None    => do KeyNotFound.keyNotFound(
+            "key not found"
+        )
+    }
+}
+
 instance Functor[Map[k]] {
     pub def map(f: v1 -> v2 \ ef, m: Map[k, v1]): Map[k, v2] \ ef = Map.map(f, m)
 }
