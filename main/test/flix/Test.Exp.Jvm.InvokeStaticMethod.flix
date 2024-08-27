@@ -1,9 +1,10 @@
 mod Test.Exp.Jvm.InvokeStaticMethod {
 
-    import java.lang.{Object, String => JString}
+    import dev.flix.test.TestClassWithInheritedMethod
+    import java.lang.Object
+    import java.lang.{String => JString}
     import java.nio.file.InvalidPathException
     import java.nio.file.Path
-    import dev.flix.test.TestClassWithInheritedMethod
     import java.util.Arrays
 
     @test

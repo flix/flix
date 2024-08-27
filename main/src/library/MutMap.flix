@@ -21,7 +21,7 @@ pub enum MutMap[k: Type, v: Type, r: Region] {
     case MutMap(Region[r], Ref[Map[k, v], r])
 }
 
-instance Index[MutMap[k, v, r]] with Order[k] {
+instance Indexable[MutMap[k, v, r]] with Order[k] {
     type Idx = k
     type Elm = v
     type Aef = r + KeyNotFound
@@ -34,7 +34,7 @@ instance Index[MutMap[k, v, r]] with Order[k] {
     }
 }
 
-instance IndexMut[MutMap[k, v, r]] with Order[k] {
+instance IndexableMut[MutMap[k, v, r]] with Order[k] {
     type Aef = r
 
     pub def put(i: k, v: v, t: MutMap[k, v, r]): Unit \ r = MutMap.put!(i, v, t)

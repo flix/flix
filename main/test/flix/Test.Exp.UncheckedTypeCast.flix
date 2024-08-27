@@ -18,7 +18,6 @@ mod Test.Exp.UncheckedTypeCast {
 
     import java.lang.Integer
     import java.lang.Object
-    import java.lang.{String => JString}
     import java.io.Serializable
     import java.lang.StringBuilder
 
@@ -26,7 +25,7 @@ mod Test.Exp.UncheckedTypeCast {
     def testUncheckedTypeCast01(): Object = unchecked_cast(null as Object)
 
     @test
-    def testUncheckedTypeCast02(): JString = unchecked_cast(null as JString)
+    def testUncheckedTypeCast02(): String = unchecked_cast(null as String)
 
     @test
     def testUncheckedTypeCast03(): Integer = unchecked_cast(null as Integer)

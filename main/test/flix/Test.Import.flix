@@ -1,11 +1,13 @@
 mod Test.Import {
 
-    import java.lang.{StringBuffer, CharSequence => ASeqOfChars}
+    import java.lang.{CharSequence => ASeqOfChars}
+    import java.lang.StringBuffer
     import java.lang.{StringBuffer => RenamedBuffer1}
     import java.sql.Time
 
     // Doesn't cause an error because different names from above
-    import java.lang.{StringBuffer => RenamedBuffer2, CharSequence}
+    import java.lang.CharSequence
+    import java.lang.{StringBuffer => RenamedBuffer2}
 
     @test
     def testImport01(): Bool \ IO =
