@@ -356,7 +356,7 @@ object Parser2 {
     */
   private def atAnyOpt(kinds: Set[TokenKind])(implicit s: State): Option[TokenKind] = {
     val token = nth(0)
-    if (kinds.contains(token)) Some(token) else None
+    Some(token).filter(kinds.contains)
   }
 
   /**
@@ -599,16 +599,16 @@ object Parser2 {
     * @return An optional parse error. If one or more item is found, None is returned.
     */
   private def oneOrMore(
-                 namedTokenSet: NamedTokenSet,
-                 getItem: () => Mark.Closed,
-                 checkForItem: TokenKind => Boolean,
-                 breakWhen: TokenKind => Boolean,
-                 context: SyntacticContext,
-                 separation: Separation = Separation.Required(TokenKind.Comma),
-                 delimiterL: TokenKind = TokenKind.ParenL,
-                 delimiterR: TokenKind = TokenKind.ParenR,
-                 optionallyWith: Option[(TokenKind, () => Unit)] = None
-               )(implicit s: State): Option[ParseError] = {
+                         namedTokenSet: NamedTokenSet,
+                         getItem: () => Mark.Closed,
+                         checkForItem: TokenKind => Boolean,
+                         breakWhen: TokenKind => Boolean,
+                         context: SyntacticContext,
+                         separation: Separation = Separation.Required(TokenKind.Comma),
+                         delimiterL: TokenKind = TokenKind.ParenL,
+                         delimiterR: TokenKind = TokenKind.ParenR,
+                         optionallyWith: Option[(TokenKind, () => Unit)] = None
+                       )(implicit s: State): Option[ParseError] = {
     val locBefore = currentSourceLocation()
     val itemCount = zeroOrMore(namedTokenSet, getItem, checkForItem, breakWhen, context, separation, delimiterL, delimiterR, optionallyWith)
     val locAfter = previousSourceLocation()
@@ -1305,7 +1305,7 @@ object Parser2 {
 
     def docComment()(implicit s: State): Mark.Closed = {
       // Let `open` handle consuming the doc-comments, since it is already capable of doing so.
-      val mark = open(consumeDocComments = true)
+      val mark = open()
       close(mark, TreeKind.Doc)
     }
 
@@ -1396,7 +1396,7 @@ object Parser2 {
             eat(TokenKind.StructArrow)
             name(NAME_FIELD, context = SyntacticContext.Expr.OtherExpr)
             if (at(TokenKind.Equal)) { // struct put
-              eat (TokenKind.Equal)
+              eat(TokenKind.Equal)
               val mark2 = open()
               expression()
               close(mark2, TreeKind.Expr.StructPutRHS)
@@ -3654,7 +3654,7 @@ object Parser2 {
     * Utility function that computes a textual representation of a [[SyntaxTree.Tree]].
     * Meant for debugging use.
     */
-  def syntaxTreeToDebugString(tree: SyntaxTree.Tree, nesting: Int = 1): String = {
+  private def syntaxTreeToDebugString(tree: SyntaxTree.Tree, nesting: Int = 1): String = {
     s"${tree.kind}${
       tree.children.map {
         case token@Token(_, _, _, _, _, _) => s"\n${"  " * nesting}'${token.text}'"
