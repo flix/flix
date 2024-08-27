@@ -28,7 +28,7 @@ instance Indexable[Array[a, r]] {
     }
 }
 
-instance IndexMut[Array[a, r]] {
+instance IndexableMut[Array[a, r]] {
     type Aef = r + OutOfBounds
 
     pub def put(i: Int32, v: a, t: Array[a, r]): Unit \ r + OutOfBounds = {
