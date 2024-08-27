@@ -19,14 +19,13 @@ mod Test.Exp.CheckedTypeCast {
     import java.io.Serializable
     import java.lang.Integer
     import java.lang.Object
-    import java.lang.{String => JString}
     import java.lang.{StringBuilder => JStringBuilder}
 
     @test
     def testCheckedTypeCast01(): Object = checked_cast(null)
 
     @test
-    def testCheckedTypeCast02(): JString = checked_cast(null)
+    def testCheckedTypeCast02(): String = checked_cast(null)
 
     @test
     def testCheckedTypeCast03(): Integer = checked_cast(null)

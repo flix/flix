@@ -29,7 +29,7 @@ mod Concurrent {
         import java.util.concurrent.TimeUnit
         import java.lang.InterruptedException
         import java.lang.IllegalMonitorStateException
-        import java.util.concurrent.locks.{ReentrantLock => JReentrantLock};
+        import java.util.concurrent.locks.{ReentrantLock => JReentrantLock}
 
         use Concurrent.Condition
         use Concurrent.Condition.Condition
