@@ -110,7 +110,7 @@ object TypeReduction {
    * @param loc the location where the java method has been called
    * @return
    */
-  private def simplifyJava(tpe: Type, renv0: RigidityEnv, loc: SourceLocation)(implicit flix: Flix): Result[(Type, Boolean), TypeError] = {
+  private def simplifyJava(tpe: Type, renv0: RigidityEnv, loc: SourceLocation): Result[(Type, Boolean), TypeError] = {
     tpe.typeConstructor match {
       case Some(TypeConstructor.MethodReturnType) =>
         val methodType = tpe.typeArguments.head
@@ -141,7 +141,7 @@ object TypeReduction {
    * @param loc     the location where the java constructor has been invoked
    * @return        A JavaConstructorResolutionResult object that indicates the status of the resolution progress
    */
-  def lookupConstructor(clazz: Class[_], ts: List[Type], loc: SourceLocation)(implicit flix: Flix): JavaConstructorResolutionResult = {
+  def lookupConstructor(clazz: Class[_], ts: List[Type], loc: SourceLocation): JavaConstructorResolutionResult = {
     retrieveConstructor(clazz, ts, loc)
   }
 
@@ -157,7 +157,7 @@ object TypeReduction {
    * @param loc         the location where the Java method has been called
    * @return            A JavaMethodResolutionResult object that indicates the status of the resolution progress
    */
-  def lookupMethod(thisObj: Type, methodName: String, ts: List[Type], loc: SourceLocation)(implicit flix: Flix): JavaMethodResolutionResult = {
+  def lookupMethod(thisObj: Type, methodName: String, ts: List[Type], loc: SourceLocation): JavaMethodResolutionResult = {
     thisObj match { // there might be a possible factorization
       case Type.Cst(TypeConstructor.Str, _) =>
         val clazz = classOf[String]
@@ -182,7 +182,7 @@ object TypeReduction {
     }
   }
 
-  def lookupStaticMethod(clazz: Class[_], methodName: String, ts: List[Type], loc: SourceLocation)(implicit flix: Flix): JavaMethodResolutionResult = {
+  def lookupStaticMethod(clazz: Class[_], methodName: String, ts: List[Type], loc: SourceLocation): JavaMethodResolutionResult = {
     retrieveMethod(clazz, methodName, ts, isStatic = true, loc = loc)
   }
 
@@ -191,7 +191,7 @@ object TypeReduction {
    * Returns a JavaConstructorResolutionResult containing either the constructor, a list of candidate constructors or
    * a ConstructorNotFound object. The working process is similar to retrieveMethod and differs in the selection of candidate constructors.
    */
-  private def retrieveConstructor(clazz: Class[_], ts: List[Type], loc: SourceLocation)(implicit flix: Flix): JavaConstructorResolutionResult = {
+  private def retrieveConstructor(clazz: Class[_], ts: List[Type], loc: SourceLocation): JavaConstructorResolutionResult = {
     val candidateConstructors = clazz.getConstructors.filter(c => isCandidateConstructor(c, ts))
 
     candidateConstructors.length match {
@@ -218,7 +218,7 @@ object TypeReduction {
    * Helper method to retrieve a method given its name and parameter types.
    * Returns a JavaMethodResolutionResult either containing the Java method or a MethodNotFound object.
    */
-  private def retrieveMethod(clazz: Class[_], methodName: String, ts: List[Type], isStatic: Boolean = false, loc: SourceLocation)(implicit flix: Flix): JavaMethodResolutionResult = {
+  private def retrieveMethod(clazz: Class[_], methodName: String, ts: List[Type], isStatic: Boolean = false, loc: SourceLocation): JavaMethodResolutionResult = {
     // NB: this considers also static methods
     val candidateMethods = clazz.getMethods.filter(m => isCandidateMethod(m, methodName, isStatic, ts))
 
@@ -245,7 +245,7 @@ object TypeReduction {
   /**
    * Helper method that returns if the given constructor is a candidate constructor given a signature.
    */
-  private def isCandidateConstructor(cand: Constructor[_], ts: List[Type])(implicit flix: Flix): Boolean =
+  private def isCandidateConstructor(cand: Constructor[_], ts: List[Type]): Boolean =
     (cand.getParameterCount == ts.length) &&
       (cand.getParameterTypes zip ts).forall {
         case (clazz, tpe) => isSubtype(tpe, Type.getFlixType(clazz))
@@ -258,7 +258,7 @@ object TypeReduction {
    * @param methodName the potential candidate method's name
    * @param ts         the list of parameter types of the potential candidate method
    */
-  private def isCandidateMethod(cand: Method, methodName: String, isStatic: Boolean = false, ts: List[Type])(implicit flix: Flix): Boolean = {
+  private def isCandidateMethod(cand: Method, methodName: String, isStatic: Boolean = false, ts: List[Type]): Boolean = {
     val static = java.lang.reflect.Modifier.isStatic(cand.getModifiers)
     (if (isStatic) static else !static) &&
       (cand.getName == methodName) &&
@@ -279,7 +279,7 @@ object TypeReduction {
    * Returns true if tpe1 is a sub-type of type tpe2, false otherwise.
    */
   @tailrec
-  private def isSubtype(tpe1: Type, tpe2: Type)(implicit flix: Flix): Boolean = {
+  private def isSubtype(tpe1: Type, tpe2: Type): Boolean = {
     (tpe1, tpe2) match {
       case (t1, t2) if t1 == t2 => true
       // Base types
@@ -303,7 +303,7 @@ object TypeReduction {
   /**
    * Returns true iff the given type tpe is a Flix primitive.
    */
-  private def isPrimitive(tpe: Type)(implicit flix: Flix): Boolean = {
+  private def isPrimitive(tpe: Type): Boolean = {
     tpe match {
       case Type.Cst(TypeConstructor.Bool, _) => true
       case Type.Cst(TypeConstructor.Char, _) => true
