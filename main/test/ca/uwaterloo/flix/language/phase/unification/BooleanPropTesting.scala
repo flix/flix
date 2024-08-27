@@ -51,8 +51,8 @@ object BooleanPropTesting {
   def termFormer(): FormulaFormer[Term] = FormulaFormer(
     Term.Univ,
     Term.Empty,
-    Term.Cst,
-    Term.Var,
+    Term.Cst.apply,
+    Term.Var.apply,
     Term.mkElemSet(_: Int),
     Term.mkUnionAll(_: List[Term]),
     Term.mkInterAll(_: List[Term]),

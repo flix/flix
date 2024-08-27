@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase.unification
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.AssocTypeConstructor
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, Rigidity, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.phase.unification.FastSetUnification.Solver.RunOptions
 import ca.uwaterloo.flix.language.phase.unification.FastSetUnification.Term.mkCompl
 import ca.uwaterloo.flix.language.phase.unification.FastSetUnification.{ConflictException, Equation, Term, TooComplexException}
 import ca.uwaterloo.flix.util.collection.Bimap
@@ -34,7 +35,7 @@ object EffUnification2 {
     * @param renv the rigidity environment.
     * @param loc  the source location of the entire equation system, e.g. the entire function body.
     */
-  def unifyAll(l: List[(Type, Type, SourceLocation)], renv: RigidityEnv, loc: SourceLocation): Result[Substitution, UnificationError] = {
+  def unifyAll(l: List[(Type, Type, SourceLocation)], renv: RigidityEnv, loc: SourceLocation, opts: RunOptions = RunOptions.default): Result[Substitution, UnificationError] = {
     // Compute a bi-directional map from type variables to ints.
     implicit val bimap: Bimap[Atom, Int] = mkBidirectionalVarMap(l)
 
@@ -44,7 +45,7 @@ object EffUnification2 {
     }
 
     // Compute the most-general unifier of all the equations.
-    FastSetUnification.Solver.solve(equations) match {
+    FastSetUnification.Solver.solve(equations, opts) match {
       case Result.Ok(subst) => Result.Ok(fromSetSubst(subst))
 
       case Result.Err((ex: ConflictException, _, _)) =>
@@ -63,7 +64,7 @@ object EffUnification2 {
       case Some(subst) => (subst, Nil)
     }
     // `old` is by-name, so don't let-bind it.
-    Checking.compare(checkThings = true, tpe1, tpe2, old = EffUnification.unify(tpe1, tpe2, renv), neww = neww, renv)
+    Checking.compare(checkThings = true, crash = true, wait = false, tpe1, tpe2, old = EffUnification.unify(tpe1, tpe2, renv), neww = neww, renv)
     neww
   }
 
@@ -329,33 +330,17 @@ object EffUnification2 {
     type UnifiedI = (Substitution, List[Ast.BroadEqualityConstraint])
     type Unified = Result[UnifiedI, UnificationError]
 
-    def compare(checkThings: Boolean, tpe1: Type, tpe2: Type, old: => Unified, neww: Unified, renv: RigidityEnv): Unit = {
+    def compare(checkThings: Boolean, crash: Boolean, wait: Boolean, tpe1: Type, tpe2: Type, old: => Unified, neww: Unified, renv: RigidityEnv)(implicit flix: Flix): Unit = {
       if (!checkThings) () else {
-        handleResults(old, neww, tpe1, tpe2, renv)
+        handleResults(old, neww, crash, wait, tpe1, tpe2, renv)
       }
-//      for {
-//        (sOld, restOld) <- old
-//        (sNeww, newwRest) <- neww
-//      } yield {
-//        if (sOld.isEmpty && sNeww.isEmpty) () else {
-//          if (sOld.m.keySet != sNeww.m.keySet) {
-//            println(s"\nold:\n$sOld\n$restOld\nnew:\n$sNeww\n$newwRest\nfrom\n$tpe1 ~~~ $tpe2\nwith\n$renv")
-//            scala.io.StdIn.readLine()
-//            ()
-//          }
-//          for (k <- sOld.m.keySet) {
-//            sNeww.m.get(k).foreach(ki => checkEq(tpeOld = sOld.m(k), tpeNew = ki, SourceLocation.Unknown, renv))
-//
-//          }
-//        }
-//      }
     }
 
-    private def checkUnifiedI(old: UnifiedI, neww: UnifiedI, tpe1: Type, tpe2: Type, renv: RigidityEnv): Unit = {
+    private def checkUnifiedI(old: UnifiedI, neww: UnifiedI, crash: Boolean, wait: Boolean, tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Unit = {
       (old, neww) match {
         case ((subst1, Nil), (subst2, Nil)) =>
-          checkSubst(subst1, subst2, tpe1, tpe2, renv)
-        case ((_, rest1), (_, rest2)) if rest1 != rest2 =>
+          checkSubst(subst1, subst2, crash, wait, tpe1, tpe2, renv)
+        case ((subst1, rest1), (subst2, rest2)) if rest1 != rest2 =>
           println()
           println(s"-- Rest Disagree! -- ${tpe1.loc}")
           printEq(tpe1, tpe2, renv)
@@ -363,13 +348,16 @@ object EffUnification2 {
           printConstraints(rest1)
           println(s"new rest:")
           printConstraints(rest2)
-          halt()
+          halt(crash, wait)
+          assert(subst1.isEmpty, subst1)
+          assert(subst2.isEmpty, subst2)
         case _ => ()
       }
     }
 
-    private def checkSubst(old: Substitution, neww: Substitution, tpe1: Type, tpe2: Type, renv: RigidityEnv): Unit = {
-      checkGeneralSubst(general = old, specific = neww, tpe1, tpe2, renv)
+    private def checkSubst(old: Substitution, neww: Substitution, crash: Boolean, wait: Boolean, tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Unit = {
+      checkGeneralSubst(msg = "old does not generalize new!", genLabel = "old", general = old, specLabel = "new", specific = neww, crash, wait, tpe1, tpe2, renv)
+      checkGeneralSubst(msg = "new does not generalize old!", genLabel = "new", general = neww, specLabel = "old", specific = old, crash, wait, tpe1, tpe2, renv)
     }
 
     /**
@@ -383,10 +371,63 @@ object EffUnification2 {
       *   - (*2): How do we find this substitution? we have to ask the old or the new solver which
       *     gives different correctness implications - trying both is best.
       */
-    private def checkGeneralSubst(general: Substitution, specific: Substitution, tpe1: Type, tpe2: Type, renv: RigidityEnv): Unit = {
+    private def checkGeneralSubst(msg: String, genLabel: String, general: Substitution, specLabel: String, specific: Substitution, crash: Boolean, wait: Boolean, tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Unit = {
       // the set of relevant variables to the two substitutions
-      val fvs = freeVars(general) ++ freeVars(specific)
-      ()
+      val vars = freeVars(general) ++ freeVars(specific)
+
+      // for each variable `x`, create an equation `general(x) ~ specific(x)`
+      // these equations allow us to find `fix`. `fix` should map __into__ `specific(x)`
+      // so variables in `specific(x)` should be converted into a fresh set of rigid variables
+      //
+      // we use the new solver to find `fix`.
+      val generated: Array[Map[Type.Var, Type.Var]] = Array(Map.empty) // Pretend Ref[List[Type.Var]]
+      val eqs = vars.toList.map(v => {
+        val genInst = general.apply(Type.Var(v, SourceLocation.Unknown))
+        val specInst0 = specific.apply(Type.Var(v, SourceLocation.Unknown))
+        val specInst = newVars(specInst0, renv, generated)
+        (genInst, specInst, SourceLocation.Unknown)
+      })
+      // mark the left side rigid
+      val renv1 = generated(0).foldLeft(renv){case (acc, (_, v)) => acc.markRigid(v.sym)}
+      unifyAll(eqs, renv1, SourceLocation.Unknown, RunOptions.default.copy(verifySize = false)) match {
+        case Result.Ok(_) =>
+          // everything is good!
+          ()
+        case Result.Err(err) =>
+          println()
+          println(s"-- $msg -- ${tpe1.loc}")
+          printEq(tpe1, tpe2, renv)
+          println("err:")
+          println(err)
+          println(s"$genLabel subst")
+          println(general.m)
+          println(s"$specLabel subst")
+          println(specific.m)
+          println("vars:")
+          println(vars)
+          println("equations:")
+          eqs.foreach{case (t1, t2, _) => printEq(t1, t2, renv1)}
+          halt(crash, wait)
+      }
+    }
+
+    private def newVars(tpe: Type, renv: RigidityEnv, generated: Array[Map[Type.Var, Type.Var]])(implicit flix: Flix): Type = tpe match {
+      case Type.Var(sym, _) if renv.isRigid(sym) => tpe // rigid, nothing
+      case v@Type.Var(_, _) =>
+        getOrSomething(v, generated)
+      case Type.Cst(_, _) => tpe
+      case Type.Apply(tpe1, tpe2, loc) => Type.Apply(newVars(tpe1, renv, generated), newVars(tpe2, renv, generated), loc)
+      case Type.Alias(cst, args, tpe, loc) => Type.Alias(cst, args.map(newVars(_, renv, generated)), newVars(tpe, renv, generated), loc)
+      case Type.AssocType(cst, arg, kind, loc) => Type.AssocType(cst, newVars(arg, renv, generated), kind, loc)
+    }
+
+    private def getOrSomething(v: Type.Var, generated: Array[Map[Type.Var, Type.Var]])(implicit flix: Flix): Type.Var = {
+      if (generated(0).contains(v)) generated(0)(v)
+      else {
+        val v1 = Type.freshVar(v.sym.kind, v.loc, v.sym.isRegion, v.sym.text)(null, flix)
+        generated(0) = generated(0) + (v -> v1)
+        v1
+      }
     }
 
     private def freeVars(s: Substitution): Set[Symbol.KindedTypeVarSym] = {
@@ -395,10 +436,10 @@ object EffUnification2 {
       }
     }
 
-    private def handleResults(old: Unified, neww: Unified, tpe1: Type, tpe2: Type, renv: RigidityEnv): Unit = {
+    private def handleResults(old: Unified, neww: Unified, crash: Boolean, wait: Boolean, tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Unit = {
       (old, neww) match {
         case (Result.Ok(v1), Result.Ok(v2)) =>
-          checkUnifiedI(v1, v2, tpe1, tpe2, renv)
+          checkUnifiedI(v1, v2, crash, wait, tpe1, tpe2, renv)
         case (Result.Err(_), Result.Err(_)) =>
           // we don't assert anything about simultaneous errors - it's ok
           ()
@@ -410,7 +451,7 @@ object EffUnification2 {
           printUnifiedI(v)
           println(s"new Err:")
           println(err)
-          halt()
+          halt(crash, wait)
         case (Result.Err(err), Result.Ok(v)) =>
           println()
           println(s"-- Results Disagree! -- ${tpe1.loc}")
@@ -419,14 +460,15 @@ object EffUnification2 {
           println(err)
           println(s"new Ok:")
           printUnifiedI(v)
-          halt()
+          halt(crash, wait)
       }
     }
 
-    private def halt(): Unit = {
+    private def halt(crash: Boolean, wait: Boolean): Unit = {
       println()
       print(s"${AnsiColor.GREEN}<press enter to continue ..>${AnsiColor.RESET}")
-      scala.io.StdIn.readLine()
+      if (crash) throw InternalCompilerException("", SourceLocation.Unknown)
+      if (wait) scala.io.StdIn.readLine()
     }
 
     private def printEq(tpe1: Type, tpe2: Type, renv: RigidityEnv): Unit = {
