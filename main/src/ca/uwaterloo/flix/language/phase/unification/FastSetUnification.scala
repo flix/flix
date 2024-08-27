@@ -1934,102 +1934,94 @@ object FastSetUnification {
     */
   case class SetSubstitution(m: Map[Int, Term]) {
 
-    /**
-      * Applies `this` substitution to the given term `t`.
-      *
-      * We must use the smart constructors from [[Term]] to ensure that the constructed term is normalized.
-      */
+    /** Applies `this` substitution to the given term `t`. */
     def apply(t: Term): Term = {
-      if (m.isEmpty || t.vars.isEmpty || !t.vars.exists(m.contains)) t else Term.propagation(applyInner(t))
+      if (m.isEmpty || t.vars.isEmpty || !t.vars.exists(m.contains)) t else Term.propagation(applyInternal(t))
     }
 
     /**
-      * Applies `this` substitution to the given term `t`.
+      * Applies `this` substitution to the term `t0` without early exit checks.
       *
-      * We must use the smart constructors from [[Term]] to ensure that the constructed term is normalized.
+      * Maintain and exploit reference equality for performance.
       */
-    def applyInner(t: Term): Term = {
-      t match {
-        case Term.Univ => t
-        case Term.Empty => t
-        case Term.Cst(_) => t
-        case Term.ElemSet(_) => t
+    private def applyInternal(t0: Term): Term = t0 match {
+      case Term.Univ => t0
+      case Term.Empty => t0
+      case Term.Cst(_) => t0
+      case Term.ElemSet(_) => t0
 
-        case Term.Var(x) => m.get(x) match {
-          case None => t // Case 1: The substitution has a binding for `x`. Return the bound term.
-          case Some(t0) => t0 // Case 2: The substitution has no binding for `x`. Return the original term.
-        }
-
-        case Term.Compl(t0) =>
-          val app = applyInner(t0)
-          // reuse objects when apply did no change
-          if (app eq t0) t else Term.mkCompl(app)
-
-        case Term.Inter(_, _, posVars, _, _, negVars, Nil)
-          if posVars.forall(v => !this.m.contains(v.x)) && negVars.forall(v => !this.m.contains(v.x)) =>
-          t
-
-        case Term.Inter(posElem, posCsts, posVars, negElem, negCsts, negVars, rest) =>
-          val ts = mutable.ListBuffer.empty[Term]
-          for (x <- posVars) {
-            val x1 = applyInner(x)
-            if (x1 == Term.Empty) return x1
-            ts += x1
-          }
-          for (x <- negVars) {
-            val x1 = applyInner(x)
-            if (x1 == Term.Univ) return Term.Empty
-            ts += Term.mkCompl(x1)
-          }
-          for (t <- rest) {
-            val t1 = applyInner(t)
-            if (t1 == Term.Empty) return t1
-            ts += t1
-          }
-          Term.reconstructInter(posElem, posCsts, Set.empty, negElem, negCsts, Set.empty, ts.toList)
-
-        case Term.Union(_, _, posVars, _, _, negVars, Nil)
-          if posVars.forall(v => !this.m.contains(v.x)) && negVars.forall(v => !this.m.contains(v.x)) =>
-          t
-
-        case Term.Union(posElem, posCsts, posVars, negElem, negCsts, negVars, rest) =>
-          val ts = mutable.ListBuffer.empty[Term]
-          for (x <- posVars) {
-            val x1 = applyInner(x)
-            if (x1 == Term.Univ) return x1
-            ts += x1
-          }
-          for (x <- negVars) {
-            val x1 = applyInner(x)
-            if (x1 == Term.Empty) return Term.Univ
-            ts += Term.mkCompl(x1)
-          }
-          for (t <- rest) {
-            val t1 = applyInner(t)
-            if (t1 == Term.Univ) return t1
-            ts += t1
-          }
-          Term.reconstructUnion(posElem, posCsts, Set.empty, negElem, negCsts, Set.empty, ts.toList)
+      case Term.Var(x) => m.get(x) match {
+        case None => t0
+        case Some(t1) => t1
       }
+
+      case Term.Compl(t1) =>
+        val t1Applied = applyInternal(t1)
+        if (t1Applied eq t1) t0 else Term.mkCompl(t1Applied)
+
+      case Term.Inter(_, _, posVars, _, _, negVars, Nil)
+        if posVars.forall(v => !this.m.contains(v.x)) && negVars.forall(v => !this.m.contains(v.x)) =>
+        t0
+
+      case Term.Inter(posElem, posCsts, posVars, negElem, negCsts, negVars, rest) =>
+        val ts = mutable.ListBuffer.empty[Term]
+        for (x <- posVars) {
+          val x1 = applyInternal(x)
+          if (x1 == Term.Empty) return x1
+          ts += x1
+        }
+        for (x <- negVars) {
+          val x1 = applyInternal(x)
+          if (x1 == Term.Univ) return Term.Empty
+          ts += Term.mkCompl(x1)
+        }
+        for (t <- rest) {
+          val t1 = applyInternal(t)
+          if (t1 == Term.Empty) return t1
+          ts += t1
+        }
+        Term.reconstructInter(posElem, posCsts, Set.empty, negElem, negCsts, Set.empty, ts.toList)
+
+      case Term.Union(_, _, posVars, _, _, negVars, Nil)
+        if posVars.forall(v => !this.m.contains(v.x)) && negVars.forall(v => !this.m.contains(v.x)) =>
+        t0
+
+      case Term.Union(posElem, posCsts, posVars, negElem, negCsts, negVars, rest) =>
+        val ts = mutable.ListBuffer.empty[Term]
+        for (x <- posVars) {
+          val x1 = applyInternal(x)
+          if (x1 == Term.Univ) return x1
+          ts += x1
+        }
+        for (x <- negVars) {
+          val x1 = applyInternal(x)
+          if (x1 == Term.Empty) return Term.Univ
+          ts += Term.mkCompl(x1)
+        }
+        for (t <- rest) {
+          val t1 = applyInternal(t)
+          if (t1 == Term.Univ) return t1
+          ts += t1
+        }
+        Term.reconstructUnion(posElem, posCsts, Set.empty, negElem, negCsts, Set.empty, ts.toList)
     }
 
     /**
-      * Applies `this` substitution to the given equation `e`.
+      * Applies `this` substitution to the equation `eq`.
       *
-      * Intuitively, applies `this` to the lhs and rhs of `e` and reconstructs the equation.
-      *
-      * Applying the substitution and reconstructing the equation may "flip" the lhs and rhs. For example:
-      *
-      * If `s = [x -> y]` and `e = univ ~ x and y` then `s(e) = y ~ univ` which has flipped lhs and rhs.
+      * The equation may be "flipped", for example:
+      * {{{
+      *   {x -> y}.apply(univ ~ x ∩ y) = y ~ univ
+      * }}}
       */
-    def apply(e: Equation): Equation = e match {
+    def apply(eq: Equation): Equation = eq match {
       case Equation(t1, t2, loc) =>
         val app1 = apply(t1)
         val app2 = apply(t2)
-        if ((app1 eq t1) && (app2 eq t2)) e else Equation.mk(app1, app2, loc)
+        if ((app1 eq t1) && (app2 eq t2)) eq else Equation.mk(app1, app2, loc)
     }
 
-    /** Applies `this` substitution to the given list of equations `l`. */
+    /** Applies `this` substitution to the list of equations `l`. */
     def apply(l: List[Equation]): List[Equation] =
       if (m.isEmpty) l else l.map(apply)
 
@@ -2042,7 +2034,7 @@ object FastSetUnification {
     /**
       * Extends `this` substitution with a new binding from the variable `x` to the term `t`.
       *
-      * Throws a [[ConflictException]] if `x` is already bound to a term different from `t`.
+      * Throws a [[ConflictException]] if `x` is already bound to a term syntactically different from `t`.
       */
     def extended(x: Int, t: Term, loc: SourceLocation): SetSubstitution = m.get(x) match {
       case None => SetSubstitution(m + (x -> t))
@@ -2146,11 +2138,6 @@ object FastSetUnification {
       sb.append("\n")
     }
     sb.toString()
-  }
-
-  private def printlnReturn[T](x: T): T = {
-    println(x)
-    x
   }
 
   /**
