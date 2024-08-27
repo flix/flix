@@ -1024,21 +1024,17 @@ object FastSetUnification {
         SortedSet.empty[Int] ++ posCsts.map(_.c) ++ posVars.map(_.x) ++ negCsts.map(_.c) ++ negVars.map(_.x) ++ rest.flatMap(_.freeUnknowns)
     }
 
-    /**
-      * Returns true if there is no variables in this term.
-      */
+    /** Returns true if [[vars]] is empty. */
     final def noFreeVars: Boolean = this.vars.isEmpty
 
-    /**
-      * Returns the number of connectives in `this` term.
-      */
+    /** Returns the number of connectives in `this` term. */
     final def size: Int = this match {
       case Term.Univ => 0
       case Term.Empty => 0
       case Term.Cst(_) => 0
       case Term.Var(_) => 0
       case Term.ElemSet(_) => 0
-      case Term.Compl(_) => Term.sizes(List(this))
+      case Term.Compl(t) => t.size + 1
       case Term.Inter(_, _, _, _, _, _, _) => Term.sizes(List(this))
       case Term.Union(_, _, _, _, _, _, _) => Term.sizes(List(this))
     }
@@ -1111,8 +1107,14 @@ object FastSetUnification {
       * Represents a concrete set of elements.
       *
       * Note: `s` must be non-empty
+      *
+      * The `@nowarn` annotation is required for Scala 3 compatibility, since the derived `copy`
+      * method is private in Scala 3 due to the private constructor. In Scala 2 the `copy` method is
+      * still public. However, we do not use the `copy` method anywhere for [[ElemSet]], so this is
+      * fine.
       */
-    case class ElemSet(s: SortedSet[Int]) extends Term {
+    @nowarn
+    case class ElemSet private(s: SortedSet[Int]) extends Term {
       assert(s.nonEmpty)
 
       override val vars: SortedSet[Int] = SortedSet.empty
@@ -1150,7 +1152,7 @@ object FastSetUnification {
       *
       * The `@nowarn` annotation is required for Scala 3 compatibility, since the derived `copy`
       * method is private in Scala 3 due to the private constructor. In Scala 2 the `copy` method is
-      * still public. However, we do not use the `copy` method anywhere for [[Equation]], so this is
+      * still public. However, we do not use the `copy` method anywhere for [[Inter]], so this is
       * fine.
       */
     @nowarn
@@ -1187,7 +1189,7 @@ object FastSetUnification {
       *
       * The `@nowarn` annotation is required for Scala 3 compatibility, since the derived `copy`
       * method is private in Scala 3 due to the private constructor. In Scala 2 the `copy` method is
-      * still public. However, we do not use the `copy` method anywhere for [[Equation]], so this is
+      * still public. However, we do not use the `copy` method anywhere for [[Union]], so this is
       * fine.
       */
     @nowarn
@@ -1718,17 +1720,22 @@ object FastSetUnification {
       *
       */
     def propagation(t: Term): Term = {
-      // instantiates elements, returning either Univ, Empty, or Term.ElemSet
-      def instElemSet(s0: SortedSet[Int], setElems: SortedMap[Int, Term]): Term = if (setElems.nonEmpty) {
-        if (s0.exists(i => setElems.get(i).contains(Term.Univ))) {
-          // if any of the elements are univ, the whole term is univ
-          Term.Univ
-        } else {
-          // remove elements set to empty
-          val s = s0.filterNot(i => setElems.get(i).contains(Term.Empty))
-          if (s eq s0) t else Term.mkElemSet(s)
+      /**
+        * Instantiates unions of elements, returning either [[Term.Univ]], [[Term.Empty]], or
+        * [[Term.ElemSet]].
+        */
+      def instElemSet(e: Term.ElemSet, setElems: SortedMap[Int, Term]): Term = {
+        if (setElems.isEmpty) e else {
+          if (e.s.exists(i => setElems.get(i).contains(Term.Univ))) {
+            // instElemSet(e1 ∪ e2 ∪ e3, {e2 -> univ, ..}) = e1 ∪ univ ∪ e3 = univ
+            Term.Univ
+          } else {
+            // instElemSet(e1 ∪ e2 ∪ e3, {e2 -> empty}) = e1 ∪ empty ∪ e3 = e1 ∪ e3
+            val s1 = e.s.filterNot(i => setElems.get(i).contains(Term.Empty))
+            if (s1 eq e.s) e else Term.mkElemSet(s1)
+          }
         }
-      } else Term.mkElemSet(s0)
+      }
 
       // `setX` assigns elements/constants/variables to univ or empty, where
       // elements/constants/variables not in the map are just themselves.
@@ -1738,7 +1745,7 @@ object FastSetUnification {
         case Term.Cst(c) => setUnknowns.getOrElse(c, t) // use mapping, if present
         case Term.Var(x) => setUnknowns.getOrElse(x, t) // use mapping, if present
         case Term.ElemSet(_) if setElems.isEmpty => t
-        case Term.ElemSet(s) => instElemSet(s, setElems)
+        case e@Term.ElemSet(_) => instElemSet(e, setElems)
 
         case Term.Compl(t0) =>
           val compl0 = visit(t0, setElems, setUnknowns)
@@ -1747,7 +1754,7 @@ object FastSetUnification {
 
         case Term.Inter(posElem0, posCsts0, posVars0, negElem0, negCsts0, negVars0, rest0) =>
           // check for trivial cases where elements/constants/variables are empty
-          val instPosElem = posElem0.map(e => instElemSet(e.s, setElems))
+          val instPosElem = posElem0.map(instElemSet(_, setElems))
           val posElem = instPosElem match {
             case Some(e) => e match {
               case Term.Univ => None // redundant
@@ -1759,7 +1766,7 @@ object FastSetUnification {
           }
           if (setUnknowns.nonEmpty && posCsts0.exists(c => setUnknowns.get(c.c).contains(Term.Empty))) return Term.Empty
           if (setUnknowns.nonEmpty && posVars0.exists(x => setUnknowns.get(x.x).contains(Term.Empty))) return Term.Empty
-          val instNegElem = negElem0.map(e => instElemSet(e.s, setElems))
+          val instNegElem = negElem0.map(instElemSet(_, setElems))
           val negElem = instNegElem match {
             case Some(e) => e match {
               case Term.Univ => return Term.Empty
@@ -1822,7 +1829,7 @@ object FastSetUnification {
 
         case Term.Union(posElem0, posCsts0, posVars0, negElem0, negCsts0, negVars0, rest0) =>
           // check for trivial cases
-          val instPosElem = posElem0.map(e => instElemSet(e.s, setElems))
+          val instPosElem = posElem0.map(instElemSet(_, setElems))
           val posElem = instPosElem match {
             case Some(e) => e match {
               case Term.Univ => return Term.Univ
@@ -1834,7 +1841,7 @@ object FastSetUnification {
           }
           if (setUnknowns.nonEmpty && posCsts0.exists(c => setUnknowns.get(c.c).contains(Term.Univ))) return Term.Univ
           if (setUnknowns.nonEmpty && posVars0.exists(x => setUnknowns.get(x.x).contains(Term.Univ))) return Term.Univ
-          val instNegElem = negElem0.map(e => instElemSet(e.s, setElems))
+          val instNegElem = negElem0.map(instElemSet(_, setElems))
           val negElem = instNegElem match {
             case Some(e) => e match {
               case Term.Univ => None // redundant
