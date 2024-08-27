@@ -1087,9 +1087,12 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
   test("UnusedFormalParam.NewObject.01") {
     val input =
       """
-        |def f(): ##java.lang.Comparable \ IO =
-        |   new ##java.lang.Comparable {
-        |     def compareTo(x: ##java.lang.Object, _y: ##java.lang.Object): Int32 =
+        |import java.lang.Comparable
+        |import java.lang.Object
+        |
+        |def f(): Comparable \ IO =
+        |   new Comparable {
+        |     def compareTo(x: Object, _y: Object): Int32 =
         |       0
         |   }
         """.stripMargin
