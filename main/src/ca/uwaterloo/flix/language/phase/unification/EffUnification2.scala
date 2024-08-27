@@ -64,7 +64,7 @@ object EffUnification2 {
       case Some(subst) => (subst, Nil)
     }
     // `old` is by-name, so don't let-bind it.
-    Checking.compare(checkThings = true, crash = true, wait = false, tpe1, tpe2, old = EffUnification.unify(tpe1, tpe2, renv), neww = neww, renv)
+    Checking.compare(checkThings = false, crash = true, wait = false, tpe1, tpe2, old = EffUnification.unify(tpe1, tpe2, renv), neww = neww, renv)
     neww
   }
 
