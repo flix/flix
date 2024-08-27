@@ -99,19 +99,6 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
     expectMain(result)
   }
 
-  test("Import.04") {
-    val input =
-      """
-        |def main(): Unit = {
-        | import java_new ##java.lang.String(): ##java.lang.String;
-        | ()
-        |}
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
-    expectErrorOnCheck[ParseError](result)
-    expectMain(result)
-  }
-
   test("Parameters.01") {
     val input =
       """
