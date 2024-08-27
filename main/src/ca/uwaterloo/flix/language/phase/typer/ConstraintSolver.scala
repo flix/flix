@@ -21,7 +21,6 @@ import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, RigidityEnv, Source
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.language.phase.typer.TypeReduction.{JavaConstructorResolutionResult, JavaMethodResolutionResult}
-import ca.uwaterloo.flix.language.phase.unification.Unification.getUnderOrOverAppliedError
 import ca.uwaterloo.flix.language.phase.unification._
 import ca.uwaterloo.flix.util.Result.Err
 import ca.uwaterloo.flix.util.collection.{ListMap, ListOps}
@@ -741,11 +740,7 @@ object ConstraintSolver {
       }
 
     case (UnificationError.MismatchedTypes(baseType1, baseType2), Provenance.Match(type1, type2, loc)) =>
-      (baseType1.typeConstructor, baseType2.typeConstructor) match {
-        case (Some(TypeConstructor.Arrow(_)), _) => getUnderOrOverAppliedError(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc)
-        case (_, Some(TypeConstructor.Arrow(_))) => getUnderOrOverAppliedError(baseType2, baseType1, type2, type1, RigidityEnv.empty, loc)
-        case _ => TypeError.MismatchedTypes(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc)
-      }
+      TypeError.MismatchedTypes(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc)
 
     case (UnificationError.MismatchedBools(baseType1, baseType2), Provenance.Match(type1, type2, loc)) =>
       TypeError.MismatchedBools(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc)

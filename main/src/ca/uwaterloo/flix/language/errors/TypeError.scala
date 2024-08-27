@@ -634,24 +634,6 @@ object TypeError {
   }
 
   /**
-    * Over-applied Function.
-    *
-    * @param excessArgument the type of the excess argument.
-    * @param loc            the location where the error occurred.
-    */
-  case class OverApplied(excessArgument: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"Over-applied function. Excess argument of type: '${formatType(excessArgument)}'."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s""">> Over-applied function. Excess argument of type: '${red(formatType(excessArgument))}'.
-         |
-         |${code(loc, "over-applied function.")}
-         |""".stripMargin
-    }
-  }
-
-  /**
     * Unexpected type, but a checked type cast might work.
     *
     * @param expected the expected type.
@@ -783,24 +765,6 @@ object TypeError {
          |  ${formatType(schemaType, Some(renv))}
          |
          |does not contain the predicate '${red(pred.name)}' of type ${cyan(formatType(predType, Some(renv)))}.
-         |""".stripMargin
-    }
-  }
-
-  /**
-    * Under-applied Function.
-    *
-    * @param missingArgument the type of the missing argument.
-    * @param loc             the location where the error occurred.
-    */
-  case class UnderApplied(missingArgument: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"Under-applied function. Missing argument of type: '${formatType(missingArgument)}'."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s""">> Under-applied function. Missing argument of type: '${red(formatType(missingArgument))}'.
-         |
-         |${code(loc, "under-applied function.")}
          |""".stripMargin
     }
   }
