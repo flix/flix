@@ -598,7 +598,10 @@ object PatMatch {
     * @param tpe the type to count
     * @return the number of arguments a type constructor expects
     */
-  private def countTypeArgs(tpe: Type): Int = tpe.typeArguments.length
+  private def countTypeArgs(tpe: Type): Int = tpe.typeConstructor match {
+    case Some(TypeConstructor.Tuple(l)) => l
+    case _ => 0
+  }
 
   /**
     * Pretty print a constructor
