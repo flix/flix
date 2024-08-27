@@ -1,6 +1,6 @@
 mod Test.Exp.Jvm.InvokeMethod2.Overload.Null {
 
-    import java.lang.{String => JString}
+
     import java.lang.StringBuilder
 
    @test
