@@ -17,7 +17,6 @@
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.language.ast.SourceLocation
-import ca.uwaterloo.flix.language.phase.unification.FastSetUnification.Term.emptyEquivalent
 import ca.uwaterloo.flix.util.{Formatter, InternalCompilerException, Result}
 
 import scala.annotation.nowarn
@@ -25,7 +24,7 @@ import scala.collection.immutable.{SortedMap, SortedSet}
 import scala.collection.mutable
 
 /**
-  *  Fast Type Inference with Systems of Set Unification [[Equation]]s of [[Term]]s.
+  * Fast Type Inference with Systems of Set Unification [[Equation]]s of [[Term]]s.
   *
   * A set unification solver based on the following ideas:
   *   - Work on all the equations as one whole system.
@@ -46,13 +45,13 @@ object FastSetUnification {
   object Solver {
 
     /**
-      * @param sizeThreshold the upper limit of the amount of connectives in the substitution
+      * @param sizeThreshold    the upper limit of the amount of connectives in the substitution
       * @param complexThreshold the upper limit of mappings in the substitution
       * @param permutationLimit the number of permutations given to SVE
-      * @param debugging prints information to terminal during solving
-      * @param rerun if a system couldn't be solved, rerun it with `debugging = true`
-      * @param verifySubst verify that the solution substitution is a solution (VERY SLOW)
-      * @param verifySize verify that the solution substitution is less than `sizeThreshold`
+      * @param debugging        prints information to terminal during solving
+      * @param rerun            if a system couldn't be solved, rerun it with `debugging = true`
+      * @param verifySubst      verify that the solution substitution is a solution (VERY SLOW)
+      * @param verifySize       verify that the solution substitution is less than `sizeThreshold`
       */
     case class RunOptions(
                            sizeThreshold: Int,
@@ -106,7 +105,7 @@ object FastSetUnification {
       * Additionally returns the name and number of the last phase to make progress, if any.
       */
     def solveWithInfo(l: List[Equation], opts: RunOptions = RunOptions.default): (Result[SetSubstitution, (FastBoolUnificationException, List[Equation], SetSubstitution)], Option[(String, Int)]) = {
-      import FastSetUnification.{Phases => P}
+      import FastSetUnification.Phases as P
       implicit val implOpts: RunOptions = opts
       val state = new State(l)
 
@@ -736,10 +735,10 @@ object FastSetUnification {
     // Converting Rule into Phase
 
     /**
-      * @param rule a solving rule that optionally produces constraints, cs, and a substitution subst.
-      * @param selfFeeding can the rule potentially solve any constrains in cs?
+      * @param rule         a solving rule that optionally produces constraints, cs, and a substitution subst.
+      * @param selfFeeding  can the rule potentially solve any constrains in cs?
       * @param substInduced can the rule potentially discover new solvable constraints via any subst it returns?
-      * @param l the constraints to run the rule on
+      * @param l            the constraints to run the rule on
       * @return the remaining constraints and the found substitution.
       */
     private def runRule(rule: Equation => Output, selfFeeding: Boolean = true, substInduced: Boolean = true, simpleSubst: Boolean = false)(l: List[Equation]): Output = {
@@ -1583,7 +1582,8 @@ object FastSetUnification {
       /**
         * Checks that all possible instantiations of unknowns result in an empty set.
         * The unknowns not present either set is implicitly instantiated to [[Term.Empty]].
-        * @param unknowns the unknowns in `t` that has not yet been instantiated
+        *
+        * @param unknowns     the unknowns in `t` that has not yet been instantiated
         * @param univUnknowns the unknowns that are instantiated to [[Term.Univ]]
         */
       def loop(unknowns: List[Int], univUnknowns: SortedSet[Int]): Boolean = unknowns match {
@@ -1681,7 +1681,7 @@ object FastSetUnification {
 
     /** Returns a map with `e -> target` for each `e` in `elem`. */
     private def setElemPointwise(elem: Term.ElemSet, target: Term): SortedMap[Int, Term] = {
-      elem.s.foldLeft(SortedMap.empty[Int, Term]){case (acc, i) => acc + (i -> target)}
+      elem.s.foldLeft(SortedMap.empty[Int, Term]) { case (acc, i) => acc + (i -> target) }
     }
 
     /**
