@@ -598,9 +598,42 @@ object PatMatch {
     * @param tpe the type to count
     * @return the number of arguments a type constructor expects
     */
+  // TODO: Maybe we can use the kind instead?
   private def countTypeArgs(tpe: Type): Int = tpe.typeConstructor match {
+    case None => 0
+    case Some(TypeConstructor.Unit) => 0
+    case Some(TypeConstructor.Bool) => 0
+    case Some(TypeConstructor.Char) => 0
+    case Some(TypeConstructor.Float32) => 0
+    case Some(TypeConstructor.Float64) => 0
+    case Some(TypeConstructor.BigDecimal) => 0
+    case Some(TypeConstructor.Int8) => 0
+    case Some(TypeConstructor.Int16) => 0
+    case Some(TypeConstructor.Int32) => 0
+    case Some(TypeConstructor.Int64) => 0
+    case Some(TypeConstructor.BigInt) => 0
+    case Some(TypeConstructor.Str) => 0
+    case Some(TypeConstructor.Regex) => 0
+    case Some(TypeConstructor.Relation) => 0
+    case Some(TypeConstructor.Lattice) => 0
+    case Some(TypeConstructor.RecordRowEmpty) => 0
+    case Some(TypeConstructor.SchemaRowEmpty) => 0
+    case Some(TypeConstructor.Record) => 0
+    case Some(TypeConstructor.Schema) => 0
+    case Some(TypeConstructor.Arrow(length)) => length
+    case Some(TypeConstructor.Array) => 1
+    case Some(TypeConstructor.Vector) => 1
+    case Some(TypeConstructor.Lazy) => 1
+    case Some(TypeConstructor.Enum(_, _)) => 0
+    case Some(TypeConstructor.Native(_)) => 0
     case Some(TypeConstructor.Tuple(l)) => l
-    case _ => 0
+    case Some(TypeConstructor.RecordRowExtend(_)) => 2
+    case Some(TypeConstructor.SchemaRowExtend(_)) => 2
+    case Some(TypeConstructor.Error(_, _)) => 0
+
+    case _ =>
+      // Resilience: OK to throw. We will have replaced the non-star type with Type.Error of star kind.
+      throw InternalCompilerException(s"Unexpected type: '$tpe' with wrong kind.", tpe.loc)
   }
 
   /**
