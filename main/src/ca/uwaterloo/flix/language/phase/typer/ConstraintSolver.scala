@@ -737,19 +737,17 @@ object ConstraintSolver {
       }
 
     case (UnificationError.MismatchedTypes(baseType1, baseType2), Provenance.Match(type1, type2, loc)) =>
-      (baseType1.typeConstructor, baseType2.typeConstructor) match {
-        case (Some(TypeConstructor.Arrow(_)), _) =>
-          TypeError.MismatchedTypes(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc)
-        case (_, Some(TypeConstructor.Arrow(_))) =>
-          TypeError.MismatchedTypes(baseType2, baseType1, type2, type1, RigidityEnv.empty, loc)
-        case _ => TypeError.MismatchedTypes(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc)
-      }
+      TypeError.MismatchedTypes(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc)
 
     case (UnificationError.MismatchedBools(baseType1, baseType2), Provenance.Match(type1, type2, loc)) =>
       TypeError.MismatchedBools(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc)
 
     case (UnificationError.MismatchedEffects(baseType1, baseType2), Provenance.Match(type1, type2, loc)) =>
-      TypeError.MismatchedEffects(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc)
+      (type1.typeConstructor, type2.typeConstructor) match {
+        case (Some(TypeConstructor.Arrow(_)), _) => TypeError.MismatchedArrowEffects(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc)
+        case (_, Some(TypeConstructor.Arrow(_))) => TypeError.MismatchedArrowEffects(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc)
+        case _ => TypeError.MismatchedEffects(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc)
+      }
 
     case (UnificationError.MismatchedCaseSets(baseType1, baseType2), Provenance.Match(type1, type2, loc)) =>
       TypeError.MismatchedCaseSets(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc)
