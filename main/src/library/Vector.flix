@@ -21,7 +21,7 @@ import java.util.{Iterator => JIterator}
 /// A Vector data type which is fundamentally like Array but is immutable.
 ///
 
-instance Index[Vector[a]] {
+instance Indexable[Vector[a]] {
     type Idx = Int32
     type Elm = a
     type Aef = OutOfBounds

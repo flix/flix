@@ -1,7 +1,7 @@
 mod Test.Exp.Jvm.GetFieldStaticInnerClass {
 
-    import java.lang.Object
     import dev.flix.test.TestClass$_StaticNestedClass
+    import java.lang.Object
 
     @test
     def testGetBoolField01(): Bool \ IO =

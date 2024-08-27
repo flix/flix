@@ -56,7 +56,6 @@ sealed trait TokenKind {
       case TokenKind.DotCurlyL => "'.{'"
       case TokenKind.Equal => "'='"
       case TokenKind.EqualEqual => "'=='"
-      case TokenKind.Euro => "'€'"
       case TokenKind.Hash => "'#'"
       case TokenKind.HashCurlyL => "'#{'"
       case TokenKind.HashParenL => "'#('"
@@ -155,6 +154,7 @@ sealed trait TokenKind {
       case TokenKind.Slash => "'/'"
       case TokenKind.Star => "'*'"
       case TokenKind.StarStar => "'**'"
+      case TokenKind.StructArrow => "'->'"
       case TokenKind.Tilde => "'~'"
       case TokenKind.TripleAmpersand => "'&&&'"
       case TokenKind.TripleAngleL => "'<<<'"
@@ -660,8 +660,6 @@ object TokenKind {
 
   case object EqualEqual extends TokenKind
 
-  case object Euro extends TokenKind
-
   case object Hash extends TokenKind
 
   case object HashCurlyL extends TokenKind
@@ -903,6 +901,8 @@ object TokenKind {
   case object Star extends TokenKind
 
   case object StarStar extends TokenKind
+
+  case object StructArrow extends TokenKind
 
   case object Tilde extends TokenKind
 

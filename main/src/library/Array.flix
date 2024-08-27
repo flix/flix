@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-instance Index[Array[a, r]] {
+instance Indexable[Array[a, r]] {
     type Idx = Int32
     type Elm = a
     type Aef = r + OutOfBounds
@@ -28,7 +28,7 @@ instance Index[Array[a, r]] {
     }
 }
 
-instance IndexMut[Array[a, r]] {
+instance IndexableMut[Array[a, r]] {
     type Aef = r + OutOfBounds
 
     pub def put(i: Int32, v: a, t: Array[a, r]): Unit \ r + OutOfBounds = {
