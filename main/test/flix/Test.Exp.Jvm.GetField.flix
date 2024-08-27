@@ -2,7 +2,7 @@ mod Test.Exp.Jvm.GetField {
 
     import dev.flix.test.TestClass
     import dev.flix.test.TestClassWithInheritedMethod
-    import java.lang.{Object => JObject}
+    import java.lang.Object
 
     @test
     def testGetBoolField01(): Bool \ IO =
@@ -65,8 +65,8 @@ mod Test.Exp.Jvm.GetField {
         getField(o) == "Hello World"
 
     @test
-    def testGetObjectField01(): JObject \ IO =
-        import java_get_field dev.flix.test.TestClass.stringField: JObject \ IO as getField;
+    def testGetObjectField01(): Object \ IO =
+        import java_get_field dev.flix.test.TestClass.stringField: Object \ IO as getField;
         let o = unsafe new TestClass();
         getField(o)
 

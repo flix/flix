@@ -16,7 +16,7 @@
 mod Object {
 
     import java.util.Objects
-    import java.lang.{Object => JObject}
+    import java.lang.Object
 
     ///
     /// Returns `true` if the given value `x` is `null`.
@@ -32,7 +32,7 @@ mod Object {
             case _: Int32 => false
             case _: Int64 => false
             case _: _ =>
-                unsafe Objects.isNull(unchecked_cast(x as JObject))
+                unsafe Objects.isNull(unchecked_cast(x as Object))
         }
 
     ///

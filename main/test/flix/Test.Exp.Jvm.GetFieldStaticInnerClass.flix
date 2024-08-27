@@ -1,7 +1,7 @@
 mod Test.Exp.Jvm.GetFieldStaticInnerClass {
 
     import dev.flix.test.TestClass$_StaticNestedClass
-    import java.lang.{Object => JObject}
+    import java.lang.Object
 
     @test
     def testGetBoolField01(): Bool \ IO =
@@ -64,8 +64,8 @@ mod Test.Exp.Jvm.GetFieldStaticInnerClass {
         getField(o) == "Hello World"
 
     @test
-    def testGetObjectField01(): JObject \ IO =
-        import java_get_field dev.flix.test.TestClass$_StaticNestedClass.stringField: JObject \ IO as getField;
+    def testGetObjectField01(): Object \ IO =
+        import java_get_field dev.flix.test.TestClass$_StaticNestedClass.stringField: Object \ IO as getField;
         let o: TestClass$_StaticNestedClass = new TestClass$_StaticNestedClass();
         getField(o)
 }

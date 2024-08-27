@@ -20,7 +20,7 @@ mod Test.Exp.Instanceof {
     import java.lang.Enum
     import java.lang.Long
     import java.lang.Number
-    import java.lang.{Object => JObject}
+    import java.lang.Object
     import java.lang.{String => JString}
     import java.lang.StringBuilder
     import java.math.BigInteger
@@ -34,7 +34,7 @@ mod Test.Exp.Instanceof {
     def testInstanceof02(): Bool = "Hello World" instanceof CharSequence
 
     @test
-    def testInstanceof03(): Bool = "Hello World" instanceof JObject
+    def testInstanceof03(): Bool = "Hello World" instanceof Object
 
     @test
     def testInstanceof04(): Bool = 100ii instanceof BigInteger
@@ -43,7 +43,7 @@ mod Test.Exp.Instanceof {
     def testInstanceof05(): Bool = 100ii instanceof Number
 
     @test
-    def testInstanceof06(): Bool = 100ii instanceof JObject
+    def testInstanceof06(): Bool = 100ii instanceof Object
 
     @test
     def testInstanceof07(): Bool =
@@ -59,7 +59,7 @@ mod Test.Exp.Instanceof {
 
     @test
     def testInstanceof10(): Bool =
-        unsafe StandardOpenOption.DELETE_ON_CLOSE instanceof JObject
+        unsafe StandardOpenOption.DELETE_ON_CLOSE instanceof Object
 
     @test
     def testInstanceof11(): Bool = (100ii instanceof Long) == false
