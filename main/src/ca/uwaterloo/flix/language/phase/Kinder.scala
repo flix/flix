@@ -575,11 +575,8 @@ object Kinder {
     case ResolvedAst.Expr.Tag(sym, loc) =>
         Validation.success(KindedAst.Expr.Tag(sym, Type.freshVar(Kind.Star, loc.asSynthetic), loc))
 
-    case ResolvedAst.Expr.RestrictableTag(sym, exp0, isOpen, loc) =>
-      val expVal = visitExp(exp0, kenv0, taenv, henv0, root)
-      mapN(expVal) {
-        exp => KindedAst.Expr.RestrictableTag(sym, exp, isOpen, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
-      }
+    case ResolvedAst.Expr.RestrictableTag(sym, isOpen, loc) =>
+      Validation.success(KindedAst.Expr.RestrictableTag(sym, isOpen, Type.freshVar(Kind.Star, loc.asSynthetic), loc))
 
     case ResolvedAst.Expr.Tuple(elms0, loc) =>
       val elmsVal = traverse(elms0)(visitExp(_, kenv0, taenv, henv0, root))

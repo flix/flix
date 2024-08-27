@@ -210,10 +210,10 @@ object Lowering {
       val tparams = tparams0.map(visitTypeParam)
       val tpe = visitType(tpe0)
       val cases = cases0.map {
-        case (_, TypedAst.Case(caseSym, caseTpeDeprecated0, caseSc0, loc)) =>
-          val caseTpeDeprecated = visitType(caseTpeDeprecated0)
+        case (_, TypedAst.Case(caseSym, caseTpesDeprecated0, caseSc0, loc)) =>
+          val caseTpesDeprecated = caseTpesDeprecated0.map(visitType)
           val caseSc = visitScheme(caseSc0)
-          (caseSym, LoweredAst.Case(caseSym, caseTpeDeprecated, caseSc, loc))
+          (caseSym, LoweredAst.Case(caseSym, caseTpesDeprecated, caseSc, loc))
       }
       LoweredAst.Enum(doc, ann, mod, sym, tparams, derives, cases, tpe, loc)
   }

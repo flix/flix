@@ -28,7 +28,7 @@ object DocAst {
 
   case class Enum(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[TypeParam], cases: List[Case])
 
-  case class Case(sym: Symbol.CaseSym, tpe: Type)
+  case class Case(sym: Symbol.CaseSym, tpes: List[Type])
 
   case class TypeParam(sym: Symbol.KindedTypeVarSym)
 
@@ -238,6 +238,11 @@ object DocAst {
     def ClosureLifted(sym: Symbol.DefnSym, ds: List[Expr]): Expr = {
       val defName = AsIs(sym.toString)
       if (ds.isEmpty) defName else App(defName, ds)
+    }
+
+    def TagLifted(sym: Symbol.CaseSym, ds: List[Expr]): Expr = {
+      val tagName = AsIs(sym.toString)
+      if (ds.isEmpty) tagName else App(tagName, ds)
     }
 
     def Spawn(d1: Expr, d2: Expr): Expr =
