@@ -1876,9 +1876,7 @@ object FastSetUnification {
       visit(t, SortedMap.empty, SortedMap.empty)
     }
 
-    /**
-      * Returns the number of connectives in the terms `ts`.
-      */
+    /** Returns the number of connectives in the terms `ts`. */
     def sizes(ts: List[Term]): Int = {
       var workList = ts
       var counter = 0
@@ -2031,23 +2029,14 @@ object FastSetUnification {
         if ((app1 eq t1) && (app2 eq t2)) e else Equation.mk(app1, app2, loc)
     }
 
-    /**
-      * Applies `this` substitution to the given list of equations `l`.
-      */
-    def apply(l: List[Equation]): List[Equation] = {
+    /** Applies `this` substitution to the given list of equations `l`. */
+    def apply(l: List[Equation]): List[Equation] =
       if (m.isEmpty) l else l.map(apply)
-    }
 
-    /**
-      * Returns the number of bindings in `this` substitution.
-      */
+    /** Returns the number of bindings in `this` substitution. */
     def numberOfBindings: Int = m.size
 
-    /**
-      * Returns the size of `this` substitution.
-      *
-      * The size of a substitution is the sum of the sizes of all terms in its co-domain.
-      */
+    /** Returns the sum of the sizes of the terms in this substitution. */
     def size: Int = Term.sizes(m.values.toList)
 
     /**
