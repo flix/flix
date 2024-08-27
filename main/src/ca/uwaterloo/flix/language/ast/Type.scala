@@ -1044,51 +1044,35 @@ object Type {
   def getFlixType(c: Class[_]): Type = {
     if (c == java.lang.Boolean.TYPE) {
       Type.Bool
-    }
-    else if (c == java.lang.Byte.TYPE) {
+    }  else if (c == java.lang.Byte.TYPE) {
       Type.Int8
-    }
-    else if (c == java.lang.Short.TYPE) {
+    }  else if (c == java.lang.Short.TYPE) {
       Type.Int16
-    }
-    else if (c == java.lang.Integer.TYPE) {
+    }  else if (c == java.lang.Integer.TYPE) {
       Type.Int32
-    }
-    else if (c == java.lang.Long.TYPE) {
+    }  else if (c == java.lang.Long.TYPE) {
       Type.Int64
-    }
-    else if (c == java.lang.Character.TYPE) {
+    }  else if (c == java.lang.Character.TYPE) {
       Type.Char
-    }
-    else if (c == java.lang.Float.TYPE) {
+    }  else if (c == java.lang.Float.TYPE) {
       Type.Float32
-    }
-    else if (c == java.lang.Double.TYPE) {
+    }  else if (c == java.lang.Double.TYPE) {
       Type.Float64
-    }
-    else if (c == classOf[java.math.BigDecimal]) {
+    }  else if (c == classOf[java.math.BigDecimal]) {
       Type.BigDecimal
-    }
-    else if (c == classOf[java.math.BigInteger]) {
+    }  else if (c == classOf[java.math.BigInteger]) {
       Type.BigInt
-    }
-    else if (c == classOf[java.lang.String]) {
+    }  else if (c == classOf[java.lang.String]) {
       Type.Str
-    }
-    else if (c == classOf[java.util.regex.Pattern]) {
+    }  else if (c == classOf[java.util.regex.Pattern]) {
       Type.Regex
-    }
-    else if (c == java.lang.Void.TYPE) {
+    }  else if (c == java.lang.Void.TYPE) {
       Type.Unit
-    }
-    // handle arrays of types
-    else if (c.isArray) {
+    } else if (c.isArray) {
       val comp = c.getComponentType
       val elmType = getFlixType(comp)
       Type.mkArray(elmType, Type.IO, SourceLocation.Unknown)
-    }
-    // otherwise native type
-    else {
+    } else {
       Type.mkNative(c, SourceLocation.Unknown)
     }
   }
