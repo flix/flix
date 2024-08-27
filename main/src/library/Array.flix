@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-instance Index[Array[a, r]] {
+instance Indexable[Array[a, r]] {
     type Idx = Int32
     type Elm = a
     type Aef = r + OutOfBounds

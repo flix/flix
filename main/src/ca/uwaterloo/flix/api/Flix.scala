@@ -212,7 +212,7 @@ class Flix {
     "Filterable.flix" -> LocalResource.get("/src/library/Filterable.flix"),
     "Group.flix" -> LocalResource.get("/src/library/Group.flix"),
     "Identity.flix" -> LocalResource.get("/src/library/Identity.flix"),
-    "Index.flix" -> LocalResource.get("/src/library/Index.flix"),
+    "Indexable.flix" -> LocalResource.get("/src/library/Indexable.flix"),
     "IndexMut.flix" -> LocalResource.get("/src/library/IndexMut.flix"),
     "Monad.flix" -> LocalResource.get("/src/library/Monad.flix"),
     "MonadZero.flix" -> LocalResource.get("/src/library/MonadZero.flix"),

@@ -21,7 +21,7 @@ pub enum MutMap[k: Type, v: Type, r: Region] {
     case MutMap(Region[r], Ref[Map[k, v], r])
 }
 
-instance Index[MutMap[k, v, r]] with Order[k] {
+instance Indexable[MutMap[k, v, r]] with Order[k] {
     type Idx = k
     type Elm = v
     type Aef = r + KeyNotFound
