@@ -50,8 +50,8 @@ mod Test.Dec.Struct {
     }
 
     def _testStructTrait01(p: a): t \ DotGet_x.Aef[a] with DotGet_x[a] where DotGet_x.FieldType[a] ~ t =
-        (p€x)
+        (p->x)
 
     def _testStructTrait02(p: a): Unit \ DotPut_x.Aef[a] with DotPut_x[a] where DotPut_x.FieldType[a] ~ Int32 =
-        (p€x = 3)
+        (p->x = 3)
 }

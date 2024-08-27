@@ -16,15 +16,17 @@
 package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor, Name}
+import ca.uwaterloo.flix.language.ast.shared.Scope
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
-import ca.uwaterloo.flix.language.phase.typer.TypeReduction.{JavaMethodResolutionResult, JavaConstructorResolutionResult}
+import ca.uwaterloo.flix.language.phase.typer.TypeReduction.{JavaConstructorResolutionResult, JavaMethodResolutionResult}
 import ca.uwaterloo.flix.language.phase.unification.Unification.getUnderOrOverAppliedError
 import ca.uwaterloo.flix.language.phase.unification._
 import ca.uwaterloo.flix.util.Result.Err
 import ca.uwaterloo.flix.util.collection.{ListMap, ListOps}
-import ca.uwaterloo.flix.util.{InternalCompilerException, Result, SubEffectLevel, Validation}
+import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
+import ca.uwaterloo.flix.language.ast.Name
 
 import scala.annotation.tailrec
 
@@ -39,6 +41,9 @@ import scala.annotation.tailrec
   * We repeat this until we cannot make any more progress or we discover an invalid constraint.
   */
 object ConstraintSolver {
+
+  // TODO LEVELS: using top scope just to compile for now as we introduce levels
+  private implicit val S: Scope = Scope.Top
 
   /**
     * Resolves constraints in the given definition using the given inference result.
@@ -568,8 +573,8 @@ object ConstraintSolver {
   }
 
   /**
-   * Helper method which returns true if the given type type t0 does not have any variables.
-   */
+    * Helper method which returns true if the given type type t0 does not have any variables.
+    */
   private def isKnown(t0: Type): Boolean = t0 match { // TODO INTEROP: Actually, it cannot have variables recursively...
     case Type.Var(_, _) => false
     case Type.Apply(Type.Cst(TypeConstructor.MethodReturnType, _), _, _) => false
@@ -590,8 +595,8 @@ object ConstraintSolver {
   }
 
   /**
-   * Constructs a specific missing instance error for the given trait symbol `sym` and type `tpe`.
-   */
+    * Constructs a specific missing instance error for the given trait symbol `sym` and type `tpe`.
+    */
   def mkMissingInstance(sym: Symbol.TraitSym, tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix): TypeError = {
     val eqSym = Symbol.mkTraitSym("Eq")
     val orderSym = Symbol.mkTraitSym("Order")

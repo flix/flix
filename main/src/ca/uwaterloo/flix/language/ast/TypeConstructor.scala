@@ -304,16 +304,6 @@ object TypeConstructor {
   }
 
   /**
-    * A type constructor that represent the type of references.
-    */
-  case object Ref extends TypeConstructor {
-    /**
-      * The shape of a reference is `Ref[t, l]`.
-      */
-    def kind: Kind = Kind.Star ->: Kind.Eff ->: Kind.Star
-  }
-
-  /**
     * A type constructor that represent the type of tuples.
     */
   case class Tuple(l: Int) extends TypeConstructor {

@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider.Priority
 import ca.uwaterloo.flix.api.lsp.{CompletionItem, CompletionItemKind, InsertTextFormat, Range, TextEdit}
-import ca.uwaterloo.flix.language.ast.{Name, Symbol, Type, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.fmt.{FormatScheme, FormatType}
 import ca.uwaterloo.flix.language.ast.Symbol.{EnumSym, StructSym, ModuleSym, TypeAliasSym}
 
@@ -267,11 +267,11 @@ sealed trait Completion {
         kind = CompletionItemKind.Method
       )
 
-    case Completion.StructFieldCompletion(field, tpe) =>
+    case Completion.StructFieldCompletion(field, loc, tpe) =>
       CompletionItem(
         label = field,
         sortText = Priority.low(field),
-        textEdit = TextEdit(context.range, field),
+        textEdit = TextEdit(Range.from(loc), field),
         detail = Some(FormatType.formatType(tpe)(flix)),
         kind = CompletionItemKind.Property,
       )
@@ -283,14 +283,14 @@ sealed trait Completion {
       val returnEffect = "IO"
 
       val label = method.getName + "(" + argsWithNameAndType.mkString(", ") + "): " + returnType + " \\ " + returnEffect
-      val text = method.getName + "(" + argsWithName.mkString(", ") + ")"
+      val text = method.getName + "(" + argsWithName.zipWithIndex.map {case (arg, i) => s"$${${i + 1}:$arg}" }.mkString(", ") + ")"
       val range = Range.from(ident.loc)
 
       CompletionItem(
         label = label,
         sortText = Priority.low(label),
         textEdit = TextEdit(range, text),
-        insertTextFormat = InsertTextFormat.PlainText,
+        insertTextFormat = InsertTextFormat.Snippet,
         kind = CompletionItemKind.Method
       )
 
@@ -525,7 +525,7 @@ object Completion {
    *
    * @param field the candidate field.
    */
-  case class StructFieldCompletion(field: String, tpe: Type) extends Completion
+  case class StructFieldCompletion(field: String, symLoc: SourceLocation, tpe: Type) extends Completion
 
   /**
     * Represents a Module completion.

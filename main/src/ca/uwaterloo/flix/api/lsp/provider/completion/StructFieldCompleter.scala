@@ -31,6 +31,6 @@ object StructFieldCompleter {
       case None => Nil
     }
     val completions = fields.filter (_.sym.name.startsWith(e.field.name))
-    completions.map(field => Completion.StructFieldCompletion(field.sym.name, field.tpe))
+    completions.map(field => Completion.StructFieldCompletion(field.sym.name, e.field.loc, field.tpe))
   }
 }

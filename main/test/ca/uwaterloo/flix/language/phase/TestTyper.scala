@@ -565,14 +565,14 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |pub def f(): Int32 =
         |    let _ = {
         |        region rc {
-        |            let x = ref 123 @ rc;
+        |            let x = Ref.fresh(rc, 123);
         |            x
         |        }
         |    };
         |    42
         |
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError](result)
   }
 
@@ -582,14 +582,14 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |pub def f(): Int32 =
         |    let _ = {
         |        region rc {
-        |            let x = ref 123 @ rc;
+        |            let x = Ref.fresh(rc, 123);
         |            (123, x)
         |        }
         |    };
         |    42
         |
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError](result)
   }
 
@@ -599,14 +599,14 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |pub def f(): Int32 =
         |    let _ = {
         |        region rc {
-        |            let x = ref 123 @ rc;
+        |            let x = Ref.fresh(rc, 123);
         |            _w -> x
         |        }
         |    };
         |    42
         |
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError](result)
   }
 
@@ -616,9 +616,9 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |pub def f(): Int32 =
         |    let _ = {
         |        region rc {
-        |            let x = ref 123 @ rc;
+        |            let x = Ref.fresh(rc, 123);
         |            w -> {
-        |                discard deref x;
+        |                discard Ref.get(x);
         |                w
         |            }
         |        }
@@ -626,7 +626,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    42
         |
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError](result)
   }
 
@@ -639,9 +639,9 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |}
         |
         |pub def f(): Unit \ IO =
-        |    let m = ref None @ Static;
+        |    let m = Ref.fresh(Static, None);
         |    region rc {
-        |        let x = ref 123 @ rc;
+        |        let x = Ref.fresh(rc, 123);
         |        Ref.put(Some(x), m);
         |        ()
         |    }
@@ -659,9 +659,9 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |}
         |
         |pub def f(): Unit \ IO =
-        |    let m = ref None @ Static;
+        |    let m = Ref.fresh(Static, None);
         |    region rc {
-        |        let x = ref 123 @ rc;
+        |        let x = Ref.fresh(rc, 123);
         |        Ref.put(Some(_ -> x), m);
         |        ()
         |    }
@@ -1564,7 +1564,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    def Foo(): Unit = {
         |        region rc {
         |            let s = new S {a = 4, b = "hi", c = "hello"} @ rc;
-        |            s€a + s€b;
+        |            s->a + s->b;
         |            ()
         |        }
         |    }
@@ -1586,7 +1586,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |        region rc {
         |            let s1 = new S {c = 3} @ rc;
         |            let s2 = new S {c = "hello"} @ rc;
-        |            s1€c + s2€c;
+        |            s1->c + s2->c;
         |            ()
         |        }
         |    }
@@ -1603,7 +1603,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    struct S1[r] { field1: Int32 }
         |    struct S2[r] { field2: Int32 }
         |    def f(s: S1[r]): Unit = {
-        |        s€field2;
+        |        s->field2;
         |        ()
         |    }
         |}
@@ -1616,7 +1616,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
     val input =
       """
         |struct S[r] { }
-        |def foo(s: S[r]): Int32 = s€field
+        |def foo(s: S[r]): Int32 = s->field
         |""".stripMargin
     val result = compile(input, Options.Default)
     expectError[TypeError](result)
@@ -1635,7 +1635,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    def Foo(): Unit = {
         |        region rc {
         |            let s = new S {a = 4, b = "hi", c = "hello"} @ rc;
-        |            s€a = s€b;
+        |            s->a = s->b;
         |            ()
         |        }
         |    }
@@ -1657,7 +1657,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |        region rc {
         |            let s1 = new S {c = 3} @ rc;
         |            let s2 = new S {c = "hello"} @ rc;
-        |            s1€c = s2€c;
+        |            s1->c = s2->c;
         |            ()
         |        }
         |    }
@@ -1674,7 +1674,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    struct S1[r] { field1: Int32 }
         |    struct S2[r] { field2: Int32 }
         |    def f(s: S1[r]): Unit = {
-        |        s€field2 = 3;
+        |        s->field2 = 3;
         |        ()
         |    }
         |}
@@ -1687,7 +1687,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
     val input =
       """
         |struct S[r] { }
-        |def foo(s: S[r]): Int32 = s€field = 3
+        |def foo(s: S[r]): Int32 = s->field = 3
         |""".stripMargin
     val result = compile(input, Options.Default)
     expectError[TypeError](result)

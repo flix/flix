@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.BoundBy
 import ca.uwaterloo.flix.language.ast.Ast.TypeSource.Ascribed
+import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, Name, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugKindedAst
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugValidation
@@ -33,6 +34,9 @@ import ca.uwaterloo.flix.util.{ParOps, Validation}
   * Errors with overlapping instances or unfulfilled type constraints must be caught in later phases.
   */
 object Deriver {
+
+  // We don't use regions, so we are safe to use the global scope everywhere in this phase.
+  private implicit val S: Scope = Scope.Top
 
   val EqSym = new Symbol.TraitSym(Nil, "Eq", SourceLocation.Unknown)
   val OrderSym = new Symbol.TraitSym(Nil, "Order", SourceLocation.Unknown)

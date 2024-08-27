@@ -289,18 +289,6 @@ object Verifier {
             case _ => failMismatchedShape(t1, "Array", loc)
           }
 
-        case AtomicOp.Ref =>
-          val List(t1) = ts
-          val refType = MonoType.Ref(t1)
-          checkEq(refType, tpe, loc)
-
-        case AtomicOp.Deref =>
-          val List(t1) = ts
-          t1 match {
-            case MonoType.Ref(elm) => checkEq(elm, tpe, loc)
-            case _ => failMismatchedShape(t1, "Ref", loc)
-          }
-
         case AtomicOp.Lazy =>
           val List(t1) = ts
           tpe match {
@@ -327,15 +315,6 @@ object Verifier {
           t1 match {
             case MonoType.Tuple(elms) => checkEq(elms(idx), tpe, loc)
             case _ => failMismatchedShape(t1, "Tuple", loc)
-          }
-
-        case AtomicOp.Assign =>
-          val List(t1, t2) = ts
-          t1 match {
-            case MonoType.Ref(elm) =>
-              checkEq(t2, elm, loc)
-              check(expected = MonoType.Unit)(actual = tpe, loc)
-            case _ => failMismatchedShape(t1, "Ref", loc)
           }
 
         // Match- and Hole-errors match with any type

@@ -36,7 +36,7 @@ object HighlightProvider {
 
         case Entity.Sig(sig0) => highlightSig(uri, sig0.sym)
 
-        case Entity.Enum(enum) => highlightEnum(uri, enum.sym)
+        case Entity.Enum(enum0) => highlightEnum(uri, enum0.sym)
 
         case Entity.Struct(struct) => highlightStruct(uri, struct.sym)
 
