@@ -22,6 +22,7 @@ import ca.uwaterloo.flix.util.{Formatter, InternalCompilerException, Result}
 import scala.annotation.nowarn
 import scala.collection.immutable.{SortedMap, SortedSet}
 import scala.collection.mutable
+import scala.collection.mutable.{ListBuffer, Set as MutSet}
 
 /**
   * Fast Type Inference with Systems of Set Unification [[Equation]]s of [[Term]]s.
@@ -1071,42 +1072,38 @@ object FastSetUnification {
 
   object Term {
 
-    /**
-      * The UNIV symbol.
-      */
+    /** The full universe set (`univ`). */
     case object Univ extends Term {
       override val vars: SortedSet[Int] = SortedSet.empty
     }
 
-    /**
-      * The EMPTY symbol.
-      */
+    /** The empty set (`empty`). */
     case object Empty extends Term {
       override val vars: SortedSet[Int] = SortedSet.empty
     }
 
     /**
-      * Represents an uninterpreted constant ("rigid variable").
+      * Represents an uninterpreted constant, i.e. a rigid variable (`c42`).
       *
-      * Note: We assume that constants and variables are disjoint.
+      * OBS: [[Term.Cst]] and [[Term.Var]] must use disjoint integers.
       */
     case class Cst(c: Int) extends Term {
       override val vars: SortedSet[Int] = SortedSet.empty
     }
 
     /**
-      * Represents a set variable ("flexible variable").
+      * Represents a set variable, i.e. a flexible variable (`x42`).
       *
-      * Note: We assume that constants and variables are disjoint.
+      * OBS: [[Term.Cst]] and [[Term.Var]] must use disjoint integers.
       */
     case class Var(x: Int) extends Term {
       override val vars: SortedSet[Int] = SortedSet(x)
     }
 
     /**
-      * Represents a concrete set of elements.
+      * Represents a concrete set of elements, i.e. a union of elements (`e42.43` or `e42 ∪ e43`).
       *
-      * Note: `s` must be non-empty
+      * The set `s` is never empty.
       *
       * The `@nowarn` annotation is required for Scala 3 compatibility, since the derived `copy`
       * method is private in Scala 3 due to the private constructor. In Scala 2 the `copy` method is
@@ -1123,9 +1120,13 @@ object FastSetUnification {
     /**
       * Represents the complement of the term `t` (`!`).
       *
-      * Should NEVER be build outside of [[mkCompl]].
+      * The `@nowarn` annotation is required for Scala 3 compatibility, since the derived `copy`
+      * method is private in Scala 3 due to the private constructor. In Scala 2 the `copy` method is
+      * still public. However, we do not use the `copy` method anywhere for [[Compl]], so this is
+      * fine.
       */
-    case class Compl(t: Term) extends Term {
+    @nowarn
+    case class Compl private(t: Term) extends Term {
       override val vars: SortedSet[Int] = t.vars
     }
 
@@ -1160,9 +1161,10 @@ object FastSetUnification {
       assert(!posVars.exists(negVars.contains), this.toString)
       assert(!posCsts.exists(negCsts.contains), this.toString)
 
-      /** Returns true if any elements or constants exist in the outer intersection */
+      /** Returns `true` if any elements or constants exist in the outer intersection. */
       def triviallyNonUniv: Boolean = posElem.isDefined || posCsts.nonEmpty || negElem.isDefined || negCsts.nonEmpty
 
+      /** The set of variables in `this`. */
       override val vars: SortedSet[Int] = SortedSet.from(posVars.map(_.x)) ++ negVars.map(_.x) ++ rest.flatMap(_.vars)
     }
 
@@ -1197,24 +1199,35 @@ object FastSetUnification {
       assert(!posVars.exists(negVars.contains), this.toString)
       assert(!posCsts.exists(negCsts.contains), this.toString)
 
-      /** Returns true if any elements or constants exist in the outer union */
+      /** Returns `true` if any elements or constants exist in the outer union. */
       def triviallyNonEmpty: Boolean = posElem.isDefined || posCsts.nonEmpty || negElem.isDefined || negCsts.nonEmpty
 
+      /** The set of variables in `this`. */
       override val vars: SortedSet[Int] = SortedSet.from(posVars.map(_.x)) ++ negVars.map(_.x) ++ rest.flatMap(_.vars)
     }
 
-    final def mkElemSet(i: Int): ElemSet = {
+    /** Returns a singleton [[Term.ElemSet]]. */
+    final def mkElemSet(i: Int): Term.ElemSet = {
       Term.ElemSet(SortedSet(i))
     }
 
-    final def mkElemSet(i: SortedSet[Int]): Term = {
-      if (i.isEmpty) Term.Empty
-      else Term.ElemSet(i)
-    }
+    /**
+      * Returns [[Term.ElemSet]] if `i` is nonEmpty.
+      *
+      * Returns [[Term.Empty]] if `i` is empty.
+      */
+    final def mkElemSet(i: SortedSet[Int]): Term =
+      if (i.isEmpty) Term.Empty else Term.ElemSet(i)
 
     /**
-      * Smart constructor for complement (`!`).
+      * Returns [[Term.ElemSet]] if `i` is nonEmpty.
+      *
+      * Returns `None` if `i` is empty.
       */
+    final def mkElemSetOpt(i: SortedSet[Int]): Option[ElemSet] =
+      if (i.isEmpty) None else Some(Term.ElemSet(i))
+
+    /** Returns the complement of `t` (`!t`). */
     final def mkCompl(t: Term): Term = t match {
       case Univ => Empty
       case Empty => Univ
@@ -1232,9 +1245,7 @@ object FastSetUnification {
         reconstructInter(negElem, negCsts, negVars, posElem, posCsts, posVars, rest.map(mkCompl))
     }
 
-    /**
-      * Smart constructor for intersection (`∩`).
-      */
+    /** Returns the intersection of `t1` and `t2` (`t1 ∩ t2`). */
     final def mkInter(t1: Term, t2: Term): Term = (t1, t2) match {
       case (Empty, _) => Empty
       case (_, Empty) => Empty
@@ -1243,9 +1254,7 @@ object FastSetUnification {
       case _ => mkInterAll(List(t1, t2))
     }
 
-    /**
-      * Smart constructor for union (`∪`).
-      */
+    /** Returns the union of `t1` and `t2` (`t1 ∪ t2`). */
     final def mkUnion(t1: Term, t2: Term): Term = (t1, t2) match {
       case (Univ, _) => Univ
       case (_, Univ) => Univ
@@ -1254,134 +1263,114 @@ object FastSetUnification {
       case _ => mkUnionAll(List(t1, t2))
     }
 
-    /**
-      * Smart constructor for intersection (`∩`).
-      *
-      * A lot of heavy lifting occurs here. In particular, we must partition `ts` into
-      * (a) pos/neg elements (b) pos/neg constants, (c) pos/neg variables, and (d) other sub-terms.
-      * Moreover, we look into those sub-terms and flatten any intersections we find within.
-      */
+    /** Returns the intersection of `ts` (`ts1 ∩ ts2 ∩ ..`). */
     final def mkInterAll(ts: List[Term]): Term = {
-      // Mutable data structures to hold elements, constants, variables, and other sub-terms.
-      var posElemTerm0: Option[SortedSet[Int]] = None // None represents univ
-      val posCstTerms = mutable.Set.empty[Term.Cst]
-      val posVarTerms = mutable.Set.empty[Term.Var]
-      var negElemTerm0: SortedSet[Int] = SortedSet.empty
-      val negCstTerms = mutable.Set.empty[Term.Cst]
-      val negVarTerms = mutable.Set.empty[Term.Var]
-      val restTerms = mutable.ListBuffer.empty[Term]
-      for (t <- ts) {
+      // A) separate terms into specific buckets
+      // B) flatten one level of intersections
+
+      @inline
+      def interOpt(s1Opt: Option[SortedSet[Int]], s2: SortedSet[Int]): SortedSet[Int] = s1Opt match {
+        case Some(s1) => s1.intersect(s2)
+        case None => s2
+      }
+
+      @inline
+      def interOptOpt(s1Opt: Option[SortedSet[Int]], s2Opt: Option[SortedSet[Int]]): Option[SortedSet[Int]] = (s1Opt, s2Opt) match {
+        case (Some(s1), Some(s2)) => Some(s1.intersect(s2))
+        case (s@Some(_), None) => s
+        case (None, s@Some(_)) => s
+        case (None, None) => None
+      }
+
+      var posElem0: Option[SortedSet[Int]] = None // `None` represents `univ`
+      val posCsts = MutSet.empty[Term.Cst]
+      val posVars = MutSet.empty[Term.Var]
+      var negElem0 = SortedSet.empty[Int]
+      val negCsts = MutSet.empty[Term.Cst]
+      val negVars = MutSet.empty[Term.Var]
+      val rest = ListBuffer.empty[Term]
+
+      var workList = ts
+      while (workList.nonEmpty) {
+        val t :: next = workList
+        workList = next
         t match {
-          case Univ => // NOP - We do not have to include Univ in a intersection.
-          case Empty => return Empty // If the intersection contains EMPTY then whole intersection is EMPTY.
-
-          // Add atoms if found and check for their negation to short-circuit
-          // Element cancelling is done afterwards
-          case x@Term.Cst(_) =>
-            if (negCstTerms.contains(x)) return Empty
-            posCstTerms += x
-          case Term.Compl(x@Term.Cst(_)) =>
-            if (posCstTerms.contains(x)) return Empty
-            negCstTerms += x
+          case Univ =>
+            ()
+          case Empty =>
+            return Empty
+          case c@Term.Cst(_) =>
+            if (negCsts.contains(c)) return Empty
+            posCsts += c
+          case Term.Compl(c@Term.Cst(_)) =>
+            if (posCsts.contains(c)) return Empty
+            negCsts += c
           case Term.ElemSet(s) =>
-            posElemTerm0 = posElemTerm0.map(_.intersect(s)).orElse(Some(s))
-            if (posElemTerm0.exists(_.isEmpty)) return Empty
+            val inter = interOpt(posElem0, s)
+            if (inter.isEmpty) return Empty
+            posElem0 = Some(inter)
           case Term.Compl(Term.ElemSet(s)) =>
-            negElemTerm0 = negElemTerm0.union(s)
+            negElem0 = negElem0.union(s)
           case x@Term.Var(_) =>
-            if (negVarTerms.contains(x)) return Empty
-            posVarTerms += x
+            if (negVars.contains(x)) return Empty
+            posVars += x
           case Term.Compl(x@Term.Var(_)) =>
-            if (posVarTerms.contains(x)) return Empty
-            negVarTerms += x
-
-          // A nested intersection
-          case Inter(posElem0, posCsts0, posVars0, negElem0, negCsts0, negVars0, rest0) =>
-            // Add its atoms while checking negated occurrences.
-            // Element cancelling is done afterwards
-            posElem0 match {
-              case Some(e) =>
-                posElemTerm0 = posElemTerm0.map(_.intersect(e.s)).orElse(Some(e.s))
-                if (posElemTerm0.exists(_.isEmpty)) return Empty
-              case None => () // nothing to add
+            if (posVars.contains(x)) return Empty
+            negVars += x
+          case Inter(posElem1, posCsts1, posVars1, negElem1, negCsts1, negVars1, rest1) =>
+            posElem0 = interOptOpt(posElem1.map(_.s), posElem0)
+            if (posElem0.contains(SortedSet.empty[Int])) return Empty
+            for (x <- posCsts1) {
+              if (negCsts.contains(x)) return Empty
+              posCsts += x
             }
-            for (x <- posCsts0) {
-              if (negCstTerms.contains(x)) return Empty
-              posCstTerms += x
+            for (x <- posVars1) {
+              if (negVars.contains(x)) return Empty
+              posVars += x
             }
-            for (x <- posVars0) {
-              if (negVarTerms.contains(x)) return Empty
-              posVarTerms += x
+            for (e <- negElem1) {
+              negElem0 = negElem0.union(e.s)
             }
-            for (e <- negElem0) {
-              negElemTerm0 = negElemTerm0.union(e.s)
+            for (x <- negCsts1) {
+              if (posCsts.contains(x)) return Empty
+              negCsts += x
             }
-            for (x <- negCsts0) {
-              if (posCstTerms.contains(x)) return Empty
-              negCstTerms += x
+            for (x <- negVars1) {
+              if (posVars.contains(x)) return Empty
+              negVars += x
             }
-            for (x <- negVars0) {
-              if (posVarTerms.contains(x)) return Empty
-              negVarTerms += x
-            }
-            // Iterate through the nested sub-terms of the nested intersection to
-            // flatten the structure one layer.
-            for (t0 <- rest0) {
-              t0 match {
-                case Univ => // NOP - We do not have to include Univ in a intersection.
-                case Empty => return Empty // If the intersection contains EMPTY then whole intersection is EMPTY.
-                case x@Term.Cst(_) =>
-                  if (negCstTerms.contains(x)) return Empty
-                  posCstTerms += x
-                case Term.Compl(x@Term.Cst(_)) =>
-                  if (posCstTerms.contains(x)) return Empty
-                  negCstTerms += x
-                case Term.ElemSet(s) =>
-                  posElemTerm0 = posElemTerm0.map(_.intersect(s)).orElse(Some(s))
-                  if (posElemTerm0.exists(_.isEmpty)) return Empty
-                case Term.Compl(Term.ElemSet(s)) =>
-                  negElemTerm0 = negElemTerm0.union(s)
-                case x@Term.Var(_) =>
-                  if (negVarTerms.contains(x)) return Empty
-                  posVarTerms += x
-                case Term.Compl(x@Term.Var(_)) =>
-                  if (posVarTerms.contains(x)) return Empty
-                  negVarTerms += x
-                case _ => restTerms += t0
-              }
-            }
-          case _ => restTerms += t // We found some other sub-term.
+            workList = rest1 ++ workList
+          case union@Term.Union(_, _, _, _, _, _, _) =>
+            rest += union
+          case compl@Term.Compl(_) =>
+            rest += compl
         }
       }
-      // remove redundant elements that are known not to be included
-      val (posElemTerm, negElemTerm) = posElemTerm0 match {
+      // Check overlaps in the element sets (could be done inline)
+      val posElem = posElem0 match {
         case Some(s) =>
-          // es1 inter !es2
-          // es1 - es2
-          val posElems = s.diff(negElemTerm0)
-          val pos = if (posElems.isEmpty) return Empty else Some(Term.ElemSet(posElems))
-          (pos, None)
-        case None =>
-          val neg = if (negElemTerm0.isEmpty) None else Some(Term.ElemSet(negElemTerm0))
-          (None, neg)
+          // s ∩ !neg ∩ .. = (s - neg) ∩ !neg ∩ ..
+          val posElemSet = s.diff(negElem0)
+          if (posElemSet.isEmpty) return Empty
+          else Some(Term.ElemSet(posElemSet))
+        case None => None
       }
-
+      val negElem = Term.mkElemSetOpt(negElem0)
 
       // Eliminate intersections with zero or one subterm
-      val elms = posElemTerm.size + posCstTerms.size + posVarTerms.size + negElemTerm.size + negCstTerms.size + negVarTerms.size + restTerms.size
+      val elms = posElem.size + posCsts.size + posVars.size + negElem.size + negCsts.size + negVars.size + rest.size
       if (elms == 0) {
         return Term.Univ
       } else if (elms == 1) {
-        for (any <- posElemTerm) return any
-        for (any <- posCstTerms) return any
-        for (any <- posVarTerms) return any
-        for (any <- negElemTerm) return Term.mkCompl(any)
-        for (any <- negCstTerms) return Term.mkCompl(any)
-        for (any <- negVarTerms) return Term.mkCompl(any)
-        for (any <- restTerms) return any
+        for (any <- posElem) return any
+        for (any <- posCsts) return any
+        for (any <- posVars) return any
+        for (any <- negElem) return Term.mkCompl(any)
+        for (any <- negCsts) return Term.mkCompl(any)
+        for (any <- negVars) return Term.mkCompl(any)
+        for (any <- rest) return any
       }
-      // posElemTerms should never be over size 1 since that should short-circuit to Empty
-      Inter(posElemTerm, posCstTerms.toSet, posVarTerms.toSet, negElemTerm, negCstTerms.toSet, negVarTerms.toSet, restTerms.toList)
+      Inter(posElem, posCsts.toSet, posVars.toSet, negElem, negCsts.toSet, negVars.toSet, rest.toList)
     }
 
     /**
@@ -1398,129 +1387,114 @@ object FastSetUnification {
       Term.mkInterAll(maintain :: rest)
     }
 
-    /**
-      * Smart constructor for union (`∪`).
-      */
+    /** Returns the union of `ts` (`ts1 ∪ ts2 ∪ ..`). */
     final def mkUnionAll(ts: List[Term]): Term = {
-      // Mutable data structures to hold elements, constants, variables, and other sub-terms.
-      var posElemTerm0: SortedSet[Int] = SortedSet.empty
-      val posCstTerms = mutable.Set.empty[Term.Cst]
-      val posVarTerms = mutable.Set.empty[Term.Var]
-      var negElemTerm0: Option[SortedSet[Int]] = None
-      val negCstTerms = mutable.Set.empty[Term.Cst]
-      val negVarTerms = mutable.Set.empty[Term.Var]
-      val restTerms = mutable.ListBuffer.empty[Term]
-      for (t <- ts) {
+      // A) separate terms into specific buckets
+      // B) flatten one level of intersections
+
+      @inline
+      def unionNegOpt(s1Opt: Option[SortedSet[Int]], s2: SortedSet[Int]): SortedSet[Int] = s1Opt match {
+        case Some(s1) => s1.intersect(s2)
+        case None => s2
+      }
+
+      @inline
+      def unionNegOptOpt(s1Opt: Option[SortedSet[Int]], s2Opt: Option[SortedSet[Int]]): Option[SortedSet[Int]] = (s1Opt, s2Opt) match {
+        case (Some(s1), Some(s2)) => Some(s1.intersect(s2))
+        case (s@Some(_), None) => s
+        case (None, s@Some(_)) => s
+        case (None, None) => None
+      }
+
+      var posElem0 = SortedSet.empty[Int]
+      val poscsts = MutSet.empty[Term.Cst]
+      val posVars = MutSet.empty[Term.Var]
+      var negElem0: Option[SortedSet[Int]] = None // `None` represents `empty`
+      val negCsts = MutSet.empty[Term.Cst]
+      val negVars = MutSet.empty[Term.Var]
+      val rest = ListBuffer.empty[Term]
+
+      var workList = ts
+      while (workList.nonEmpty) {
+        val t :: next = workList
+        workList = next
         t match {
-          case Empty => // NOP - We do not have to include Empty in a union.
-          case Univ => return Univ // If the union contains UNIV then whole union is UNIV.
-
-          // Add atoms if found and check for their negation to short-circuit
+          case Empty =>
+            ()
+          case Univ =>
+            return Univ
           case x@Term.Cst(_) =>
-            if (negCstTerms.contains(x)) return Univ
-            posCstTerms += x
+            if (negCsts.contains(x)) return Univ
+            poscsts += x
           case Term.Compl(x@Term.Cst(_)) =>
-            if (posCstTerms.contains(x)) return Univ
-            negCstTerms += x
+            if (poscsts.contains(x)) return Univ
+            negCsts += x
           case Term.ElemSet(s) =>
-            posElemTerm0 = posElemTerm0.union(s)
+            posElem0 = posElem0.union(s)
           case Term.Compl(Term.ElemSet(s)) =>
-            negElemTerm0 = negElemTerm0.map(_.intersect(s)).orElse(Some(s))
-            if (negElemTerm0.exists(_.isEmpty)) return Univ
+            val union = unionNegOpt(negElem0, s)
+            if (union.isEmpty) return Univ
+            negElem0 = Some(union)
           case x@Term.Var(_) =>
-            if (negVarTerms.contains(x)) return Univ
-            posVarTerms += x
+            if (negVars.contains(x)) return Univ
+            posVars += x
           case Term.Compl(x@Term.Var(_)) =>
-            if (posVarTerms.contains(x)) return Univ
-            negVarTerms += x
-
-          // A nested union
-          case Union(posElem0, posCsts0, posVars0, negElem0, negCsts0, negVars0, rest0) =>
-            // Add its atoms while checking negated occurrences.
-            // Element cancelling is done afterwards
-            for (x <- posElem0) {
-              posElemTerm0 = posElemTerm0.union(x.s)
+            if (posVars.contains(x)) return Univ
+            negVars += x
+          case Union(posElem1, posCsts1, posVars1, negElem1, negCsts1, negVars1, rest1) =>
+            for (x <- posElem1) {
+              posElem0 = posElem0.union(x.s)
             }
-            for (x <- posCsts0) {
-              if (negCstTerms.contains(x)) return Univ
-              posCstTerms += x
+            for (x <- posCsts1) {
+              if (negCsts.contains(x)) return Univ
+              poscsts += x
             }
-            for (x <- posVars0) {
-              if (negVarTerms.contains(x)) return Univ
-              posVarTerms += x
+            for (x <- posVars1) {
+              if (negVars.contains(x)) return Univ
+              posVars += x
             }
-            negElem0 match {
-              case Some(e) =>
-                negElemTerm0 = negElemTerm0.map(_.intersect(e.s)).orElse(Some(e.s))
-                if (negElemTerm0.exists(_.isEmpty)) return Univ
-              case None => () // nothing to add
+            negElem0 = unionNegOptOpt(negElem1.map(_.s), negElem0)
+            if (negElem0.contains(SortedSet.empty[Int])) return Univ
+            for (x <- negCsts1) {
+              if (poscsts.contains(x)) return Univ
+              negCsts += x
             }
-            for (x <- negCsts0) {
-              if (posCstTerms.contains(x)) return Univ
-              negCstTerms += x
+            for (x <- negVars1) {
+              if (posVars.contains(x)) return Univ
+              negVars += x
             }
-            for (x <- negVars0) {
-              if (posVarTerms.contains(x)) return Univ
-              negVarTerms += x
-            }
-            // Iterate through the nested sub-terms of the nested intersection to
-            // flatten the structure one layer.
-            for (t0 <- rest0) {
-              t0 match {
-                case Empty => // NOP - We do not have to include Empty in a union.
-                case Univ => return Univ // If the union contains UNIV then whole union is UNIV.
-                case x@Term.Cst(_) =>
-                  if (negCstTerms.contains(x)) return Univ
-                  posCstTerms += x
-                case Term.Compl(x@Term.Cst(_)) =>
-                  if (posCstTerms.contains(x)) return Univ
-                  negCstTerms += x
-                case Term.ElemSet(s) =>
-                  posElemTerm0 = posElemTerm0.union(s)
-                case Term.Compl(Term.ElemSet(s)) =>
-                  negElemTerm0 = negElemTerm0.map(_.intersect(s)).orElse(Some(s))
-                  if (negElemTerm0.exists(_.isEmpty)) return Univ
-                case x@Term.Var(_) =>
-                  if (negVarTerms.contains(x)) return Univ
-                  posVarTerms += x
-                case Term.Compl(x@Term.Var(_)) =>
-                  if (posVarTerms.contains(x)) return Univ
-                  negVarTerms += x
-                case _ => restTerms += t0
-              }
-            }
-          case _ => restTerms += t // We found some other sub-term.
+            workList = rest1 ++ workList
+          case inter@Term.Inter(_, _, _, _, _, _, _) =>
+            rest += inter
+          case compl@Term.Compl(_) =>
+            rest += compl
         }
       }
-      // remove redundant elements that are known to be included
-      val (posElemTerm, negElemTerm) = negElemTerm0 match {
+      // Check overlaps in the element sets (could be done inline)
+      val (posElem, negElem) = negElem0 match {
         case Some(s) =>
-          // es1 union !es2
-          // !(!es1 inter es2)
-          // !(es2 - es1)
-          val negElems = s.diff(posElemTerm0)
-          val neg = if (negElems.isEmpty) return Term.Univ else Some(Term.ElemSet(negElems))
-          (None, neg)
+          // pos ∪ !s ∪ .. = !(!pos ∩ s) ∪ .. = !(s - pos) ∪ ..
+          val negElemSet = s.diff(posElem0)
+          if (negElemSet.isEmpty) return Term.Univ
+          else (None, Term.mkElemSetOpt(negElemSet))
         case None =>
-          val pos = if (posElemTerm0.isEmpty) None else Some(Term.ElemSet(posElemTerm0))
-          (pos, None)
+          (Term.mkElemSetOpt(posElem0), None)
       }
 
       // Eliminate unions with zero or one subterm
-      val elms = posElemTerm.size + posCstTerms.size + posVarTerms.size + negElemTerm.size + negCstTerms.size + negVarTerms.size + restTerms.size
+      val elms = posElem.size + poscsts.size + posVars.size + negElem.size + negCsts.size + negVars.size + rest.size
       if (elms == 0) {
         return Term.Empty
       } else if (elms == 1) {
-        for (any <- posElemTerm) return any
-        for (any <- posCstTerms) return any
-        for (any <- posVarTerms) return any
-        for (any <- negElemTerm) return Term.mkCompl(any)
-        for (any <- negCstTerms) return Term.mkCompl(any)
-        for (any <- negVarTerms) return Term.mkCompl(any)
-        for (any <- restTerms) return any
+        for (any <- posElem) return any
+        for (any <- poscsts) return any
+        for (any <- posVars) return any
+        for (any <- negElem) return Term.mkCompl(any)
+        for (any <- negCsts) return Term.mkCompl(any)
+        for (any <- negVars) return Term.mkCompl(any)
+        for (any <- rest) return any
       }
-
-      Union(posElemTerm, posCstTerms.toSet, posVarTerms.toSet, negElemTerm, negCstTerms.toSet, negVarTerms.toSet, restTerms.toList)
+      Union(posElem, poscsts.toSet, posVars.toSet, negElem, negCsts.toSet, negVars.toSet, rest.toList)
     }
 
     /**
@@ -1991,7 +1965,7 @@ object FastSetUnification {
         t0
 
       case Term.Inter(posElem, posCsts, posVars, negElem, negCsts, negVars, rest) =>
-        val ts = mutable.ListBuffer.empty[Term]
+        val ts = ListBuffer.empty[Term]
         for (x <- posVars) {
           val x1 = applyInternal(x)
           if (x1 == Term.Empty) return x1
@@ -2014,7 +1988,7 @@ object FastSetUnification {
         t0
 
       case Term.Union(posElem, posCsts, posVars, negElem, negCsts, negVars, rest) =>
-        val ts = mutable.ListBuffer.empty[Term]
+        val ts = ListBuffer.empty[Term]
         for (x <- posVars) {
           val x1 = applyInternal(x)
           if (x1 == Term.Univ) return x1
