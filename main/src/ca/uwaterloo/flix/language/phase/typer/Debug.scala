@@ -138,6 +138,7 @@ object Debug {
     case TypeConstraint.Equality(tpe1, tpe2, _) => s"""${dotId(constr)} [label = "$tpe1 ~ $tpe2"];"""
     case TypeConstraint.EqJvmConstructor(mvar, clazz, _, _) => s"""${dotId(constr)} [label = "$mvar # $clazz"];"""
     case TypeConstraint.EqJvmMethod(mvar, tpe, methodName, tpes, _) => s"""${dotId(constr)} [label = "$mvar # $tpe.${methodName.name}(${tpes.mkString(",")})"];"""
+    case TypeConstraint.EqJvmField(mvar, tpe, fieldName, _) => s"""${dotId(constr)} [label = "$mvar # $tpe.${fieldName.name}"];"""
     case TypeConstraint.EqStaticJvmMethod(mvar, clazz, methodName, tpes, _) => s"""${dotId(constr)} [label = "$mvar # ${clazz.getName}.${methodName.name}(${tpes.mkString(",")})"];"""
     case TypeConstraint.Trait(sym, tpe, _) => s"""${dotId(constr)} [label = "$sym[$tpe]"];"""
     case TypeConstraint.Purification(sym, eff1, eff2, _, nested) =>

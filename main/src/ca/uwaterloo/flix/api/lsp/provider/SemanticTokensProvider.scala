@@ -720,6 +720,8 @@ object SemanticTokensProvider {
     case TypeConstructor.JvmConstructor(_) => false
     case TypeConstructor.JvmMethod(_) => false
     case TypeConstructor.MethodReturnType => false
+    case TypeConstructor.JvmField(_) => false
+    case TypeConstructor.FieldType => false
     case TypeConstructor.Array => true
     case TypeConstructor.Vector => true
     case TypeConstructor.Pure => true

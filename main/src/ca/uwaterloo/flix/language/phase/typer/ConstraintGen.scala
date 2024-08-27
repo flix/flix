@@ -785,6 +785,16 @@ object ConstraintGen {
         val resEff = evar
         (resTpe, resEff)
 
+      case Expr.GetField2(exp, fieldName, mvar, tvar, evar, loc) =>
+        val (tpe, eff) = visitExp(exp)
+        val t = Type.Cst(TypeConstructor.FieldType, loc)
+        c.unifyJvmFieldType(mvar, tpe, fieldName, loc) // unify method
+        c.unifyType(tvar, Type.mkApply(t, List(mvar), loc), loc) // unify field type
+        c.unifyType(evar, Type.mkUnion(Type.IO :: eff :: Nil, loc), loc) // unify effects
+        val resTpe = tvar
+        val resEff = evar
+        (resTpe, resEff)
+
       case Expr.InvokeStaticMethod2(clazz, methodName, exps, mvar, tvar, evar, loc) =>
         val tpe = Type.getFlixType(clazz)
         val (tpes, effs) = exps.map(visitExp).unzip
@@ -818,7 +828,7 @@ object ConstraintGen {
         val resEff = Type.IO
         (resTpe, resEff)
 
-      case Expr.GetField(field, clazz, exp, _) =>
+      case Expr.GetFieldOld(field, clazz, exp, _) =>
         val classType = Type.getFlixType(clazz)
         val fieldType = Type.getFlixType(field.getType)
         val (tpe, _) = visitExp(exp)

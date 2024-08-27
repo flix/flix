@@ -314,6 +314,8 @@ object ConstraintSolver {
         // Otherwise other constraints may still need to be solved.
         Result.Ok(ResolutionResult(subst0, List(constr0), progress = false))
       }
+    case TypeConstraint.EqJvmField(mvar, tpe0, fieldName, prov) =>
+      Result.Err(TypeError.FieldNotFound(fieldName, tpe0, mvar.loc))
     case TypeConstraint.EqStaticJvmMethod(mvar, clazz, methodName, tpes0, prov) =>
       // Apply subst.
       val tpes = tpes0.map(subst0.apply)
@@ -588,6 +590,7 @@ object ConstraintSolver {
     case TypeConstraint.Equality(tpe1, tpe2, prov) :: _ => Some(toTypeError(UnificationError.MismatchedTypes(tpe1, tpe2), prov))
     case TypeConstraint.EqJvmConstructor(mvar, clazz, _, prov) :: _ => Some(toTypeError(UnificationError.MismatchedTypes(mvar.baseType, Type.getFlixType(clazz)), prov))
     case TypeConstraint.EqJvmMethod(mvar, tpe, _, _, prov) :: _ => Some(toTypeError(UnificationError.MismatchedTypes(mvar.baseType, tpe), prov))
+    case TypeConstraint.EqJvmField(mvar, tpe, _, prov) :: _ => Some(toTypeError(UnificationError.MismatchedTypes(mvar.baseType, tpe), prov))
     case TypeConstraint.EqStaticJvmMethod(mvar, clazz, _, _, prov) :: _ => Some(toTypeError(UnificationError.MismatchedTypes(mvar.baseType, Type.getFlixType(clazz)), prov))
     case TypeConstraint.Trait(sym, tpe, loc) :: _ => Some(mkMissingInstance(sym, tpe, renv, loc))
     case TypeConstraint.Purification(_, _, _, _, nested) :: _ => getFirstError(nested, renv)

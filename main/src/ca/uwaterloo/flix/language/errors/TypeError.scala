@@ -98,7 +98,25 @@ object TypeError {
       import formatter._
       s""">> Java method '$methodName' from type '${red(formatType(tpe, None))}' with arguments types (${tpes.mkString(", ")}) not found.
          |
-         |${code(loc, s"Java method '${methodName}' not found")}
+         |${code(loc, s"Java method '$methodName' not found")}
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * Java field not found type error.
+    *
+    * @param tpe  the type of the receiver object.
+    * @param loc  the location where the error occurred.
+    */
+  case class FieldNotFound(fieldName: Name.Ident, tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    def summary: String = s"Java field '$fieldName' in type '$tpe' not found."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s""">> Java field '$fieldName' from type '${red(formatType(tpe, None))}' not found.
+         |
+         |${code(loc, s"Java field '$fieldName' not found")}
          |""".stripMargin
     }
   }

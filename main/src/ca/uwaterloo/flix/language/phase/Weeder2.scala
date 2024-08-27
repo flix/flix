@@ -1769,7 +1769,7 @@ object Weeder2 {
       val baseExp = pickExpr(tree)
       val method = pickNameIdent(tree)
       mapN(baseExp, method) {
-        case (b, m) => throw InternalCompilerException("java field lookups are not yet implemented", m.loc)
+        case (b, m) => Expr.GetField2(b, m, tree.loc)
       }
     }
 

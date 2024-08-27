@@ -33,6 +33,7 @@ sealed trait TypeConstraint {
     case TypeConstraint.Equality(tvar1: Type.Var, tvar2: Type.Var, _) if tvar1 != tvar2 => (0, 0, 0)
     case TypeConstraint.EqJvmConstructor(_, _, _, _) => (1, 0, 0)
     case TypeConstraint.EqJvmMethod(_, _, _, _, _) => (1, 0, 0)
+    case TypeConstraint.EqJvmField(_, _, _, _) => (1, 0, 0)
     case TypeConstraint.EqStaticJvmMethod(_, _, _, _, _) => (1, 0, 0)
     case TypeConstraint.Purification(_, _, _, _, _) => (0, 0, 0)
     case TypeConstraint.Equality(tpe1, tpe2, _) =>
@@ -46,6 +47,7 @@ sealed trait TypeConstraint {
     case TypeConstraint.Equality(tpe1, tpe2, _) => s"$tpe1 ~ $tpe2"
     case TypeConstraint.EqJvmConstructor(mvar, clazz, tpes, _) => s"${mvar.baseType} ~ ${Type.getFlixType(clazz)}[$tpes" // temporary
     case TypeConstraint.EqJvmMethod(mvar, tpe, methodName, tpes, _) => s"${mvar.baseType} ~ $tpe.${methodName.name}(${tpes.mkString(",")})"
+    case TypeConstraint.EqJvmField(mvar, tpe, fieldName, _) => s"${mvar.baseType} ~ $tpe.${fieldName.name}"
     case TypeConstraint.EqStaticJvmMethod(mvar, clazz, methodName, tpes, _) => s"${mvar.baseType} ~ ${clazz.getName}.${methodName.name}(${tpes.mkString(",")}"
     case TypeConstraint.Trait(sym, tpe, _) => s"$sym[$tpe]"
     case TypeConstraint.Purification(sym, eff1, eff2, _, nested) => s"$eff1 ~ ($eff2)[$sym ↦ Pure] ∧ $nested"
@@ -58,6 +60,7 @@ sealed trait TypeConstraint {
     case TypeConstraint.Equality(tpe1, tpe2, _) => tpe1.typeVars.size + tpe2.typeVars.size
     case TypeConstraint.EqJvmConstructor(mvar, clazz, tpes, _) => tpes.foldLeft(1) { (acc, tpe) => acc + tpe.typeVars.size }
     case TypeConstraint.EqJvmMethod(mvar, tpe, _, tpes, _) => tpes.foldLeft(1 + tpe.typeVars.size) { (acc, tpe) => acc + tpe.typeVars.size }
+    case TypeConstraint.EqJvmField(mvar, tpe, _, _) => tpe.typeVars.size
     case TypeConstraint.EqStaticJvmMethod(mvar, clazz, _, tpes, _) => tpes.foldLeft(1) { (acc, tpe) => acc + tpe.typeVars.size } // to check
     case TypeConstraint.Trait(_, tpe, _) => tpe.typeVars.size
     case TypeConstraint.Purification(_, eff1, eff2, _, _) => eff1.typeVars.size + eff2.typeVars.size
@@ -90,7 +93,15 @@ object TypeConstraint {
    * A constraint indicating the equivalence between a Java method's type and a method signature, i.e., a type, method name and list of arguments.
    * Where mvar must have kind JvmConstructorOrMethod -> Type.
    */
-  case class EqJvmMethod(mvar: Type.Var, tpe0: Type, methodName: Name.Ident, tpes: List[Type], prov: Provenance) extends TypeConstraint {
+  case class EqJvmMethod(mvar: Type.Var, tpe: Type, methodName: Name.Ident, tpes: List[Type], prov: Provenance) extends TypeConstraint {
+    def loc: SourceLocation = prov.loc
+  }
+
+  /**
+    * A constraint indicating the equivalence between a Java fields's type and a field signature, i.e., a type and a field name.
+    * Where mvar must have kind JvmConstructorOrMethod -> Type.
+    */
+  case class EqJvmField(mvar: Type.Var, tpe: Type, fieldName: Name.Ident, prov: Provenance) extends TypeConstraint {
     def loc: SourceLocation = prov.loc
   }
 

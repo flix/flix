@@ -136,6 +136,14 @@ class TypeContext {
   }
 
   /**
+    * Generates constraints unifying a given Java field type and a type.
+    */
+  def unifyJvmFieldType(mvar: Type.Var, tpe: Type, fieldName: Name.Ident, loc: SourceLocation): Unit = {
+    val constr = TypeConstraint.EqJvmField(mvar, tpe, fieldName, Provenance.Match(mvar, tpe, loc))
+    currentScopeConstraints.add(constr)
+  }
+
+  /**
    * Generates constraints unifying a given static Java method type and a type.
    */
   def unifyStaticJvmMethodType(mvar: Type.Var, clazz: Class[_], tpe: Type, methodName: Name.Ident, tpes: List[Type], loc: SourceLocation): Unit = {
