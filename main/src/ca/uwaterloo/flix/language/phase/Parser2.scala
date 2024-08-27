@@ -356,7 +356,7 @@ object Parser2 {
     */
   private def atAnyOpt(kinds: Set[TokenKind])(implicit s: State): Option[TokenKind] = {
     val token = nth(0)
-    if (kinds.contains(token)) Some(token) else None
+    Some(token).filter(kinds.contains)
   }
 
   /**
