@@ -40,3 +40,11 @@ pub trait IndexableMut[t] with Indexable[t] {
     pub def put(i: Indexable.Idx[t], v: Indexable.Elm[t], t: t): Unit \ IndexableMut.Aef[t]
 
 }
+
+mod IndexableMut {
+
+    /// Alias of `put` with arguments in syntactic order.
+    pub def putSwapped(t: t, i: Indexable.Idx[t], v: Indexable.Elm[t]): Unit \ IndexableMut.Aef[t] with IndexableMut[t] =
+        put(i, v, t)
+
+}

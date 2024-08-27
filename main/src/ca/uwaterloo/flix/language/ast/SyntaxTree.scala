@@ -182,6 +182,10 @@ object SyntaxTree {
 
       case object Apply extends Expr
 
+      case object Index extends Expr
+
+      case object IndexMut extends Expr
+
       case object Ascribe extends Expr
 
       case object Binary extends Expr

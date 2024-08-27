@@ -815,6 +815,8 @@ object Weeder2 {
         case TreeKind.Expr.Use => visitExprUseExpr(tree)
         case TreeKind.Expr.Literal => visitLiteralExpr(tree)
         case TreeKind.Expr.Apply => visitApplyExpr(tree)
+        case TreeKind.Expr.Index => visitIndexExpr(tree)
+        case TreeKind.Expr.IndexMut => visitIndexMutExpr(tree)
         case TreeKind.Expr.Lambda => visitLambdaExpr(tree)
         case TreeKind.Expr.LambdaMatch => visitLambdaMatchExpr(tree)
         case TreeKind.Expr.Unary => visitUnaryExpr(tree)
@@ -1080,6 +1082,28 @@ object Weeder2 {
         case exprs =>
           val error = Malformed(NamedTokenSet.Name, SyntacticContext.Expr.OtherExpr, loc = tree.loc)
           Validation.toSoftFailure(Expr.Error(error), error)
+      }
+    }
+
+    private def visitIndexExpr(tree: Tree): Validation[Expr, CompilationMessage] = {
+      expect(tree, TreeKind.Expr.Index)
+      pickAll(TreeKind.Expr.Expr, tree) match {
+        case e1 :: e2 :: Nil => mapN(visitExpr(e1), visitExpr(e2)){
+          case (exp1, exp2) =>
+            Expr.Apply(Expr.Ambiguous(Name.mkQName("Indexable.getSwapped", exp1.loc), exp1.loc), List(exp1, exp2), tree.loc)
+        }
+        case other => throw InternalCompilerException(s"Expr.Index tree with ${other.length} operands", tree.loc)
+      }
+    }
+
+    private def visitIndexMutExpr(tree: Tree): Validation[Expr, CompilationMessage] = {
+      expect(tree, TreeKind.Expr.IndexMut)
+      pickAll(TreeKind.Expr.Expr, tree) match {
+        case e1 :: e2 :: e3 :: Nil => mapN(visitExpr(e1), visitExpr(e2), visitExpr(e3)) {
+          case (exp1, exp2, exp3) =>
+            Expr.Apply(Expr.Ambiguous(Name.mkQName("IndexableMut.putSwapped", exp1.loc), exp1.loc), List(exp1, exp2, exp3), tree.loc)
+        }
+        case other => throw InternalCompilerException(s"Expr.IndexMut tree with ${other.length} operands", tree.loc)
       }
     }
 
