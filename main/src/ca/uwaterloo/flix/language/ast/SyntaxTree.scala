@@ -198,6 +198,8 @@ object SyntaxTree {
 
       case object InvokeMethod2 extends Expr
 
+      case object GetField2 extends Expr
+
       case object Debug extends Expr
 
       case object FixpointConstraint extends Expr

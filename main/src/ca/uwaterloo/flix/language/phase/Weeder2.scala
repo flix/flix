@@ -854,6 +854,7 @@ object Weeder2 {
         case TreeKind.Expr.Do => visitDoExpr(tree)
         case TreeKind.Expr.InvokeConstructor2 => visitInvokeConstructor2Expr(tree)
         case TreeKind.Expr.InvokeMethod2 => visitInvokeMethod2Expr(tree)
+        case TreeKind.Expr.GetField2 => visitGetField2Expr(tree)
         case TreeKind.Expr.NewObject => visitNewObjectExpr(tree)
         case TreeKind.Expr.NewStruct => visitNewStructExpr(tree)
         case TreeKind.Expr.StructGet => visitStructGetExpr(tree)
@@ -1760,6 +1761,15 @@ object Weeder2 {
         case (b, m, as) =>
           val result = Expr.InvokeMethod2(b, m, as, tree.loc)
           result
+      }
+    }
+
+    private def visitGetField2Expr(tree: Tree): Validation[Expr, CompilationMessage] = {
+      expect(tree, TreeKind.Expr.GetField2)
+      val baseExp = pickExpr(tree)
+      val method = pickNameIdent(tree)
+      mapN(baseExp, method) {
+        case (b, m) => throw InternalCompilerException("java field lookups are not yet implemented", m.loc)
       }
     }
 

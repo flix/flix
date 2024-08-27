@@ -1382,8 +1382,12 @@ object Parser2 {
             val mark = openBefore(lhs)
             eat(TokenKind.Dot)
             name(Set(TokenKind.NameLowerCase), context = SyntacticContext.Expr.OtherExpr)
-            arguments()
-            lhs = close(mark, TreeKind.Expr.InvokeMethod2)
+            if (at(TokenKind.ParenL)) {
+              arguments()
+              lhs = close(mark, TreeKind.Expr.InvokeMethod2)
+            } else {
+              lhs = close(mark, TreeKind.Expr.GetField2)
+            }
             lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
           case TokenKind.Hash if nth(1) == TokenKind.NameLowerCase => // record lookup
             val mark = openBefore(lhs)
@@ -1570,7 +1574,7 @@ object Parser2 {
              | TokenKind.LiteralRegex => literalExpr()
         case TokenKind.ParenL => parenOrTupleOrLambdaExpr()
         case TokenKind.Underscore => if (nth(1) == TokenKind.ArrowThinR) unaryLambdaExpr() else name(NAME_VARIABLE, context = SyntacticContext.Expr.OtherExpr)
-        case TokenKind.NameLowerCase if nth(1) == TokenKind.Dot => invokeMethod2Expr()
+        case TokenKind.NameLowerCase if nth(1) == TokenKind.Dot => invokeMethod2OrGetField2Expr()
         case TokenKind.NameLowerCase => if (nth(1) == TokenKind.ArrowThinR) unaryLambdaExpr() else name(NAME_FIELD, allowQualified = true, context = SyntacticContext.Expr.OtherExpr)
         case TokenKind.NameUpperCase
              | TokenKind.NameMath
@@ -2508,7 +2512,7 @@ object Parser2 {
       close(mark, TreeKind.Expr.Do)
     }
 
-    private def invokeMethod2Expr()(implicit s: State): Mark.Closed = {
+    private def invokeMethod2OrGetField2Expr()(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.NameLowerCase))
       val mark = open()
 
@@ -2519,8 +2523,12 @@ object Parser2 {
 
       eat(TokenKind.Dot)
       name(Set(TokenKind.NameLowerCase), context = SyntacticContext.Expr.OtherExpr)
-      arguments()
-      close(mark, TreeKind.Expr.InvokeMethod2)
+      if (at(TokenKind.ParenL)) {
+        arguments()
+        close(mark, TreeKind.Expr.InvokeMethod2)
+      } else {
+        close(mark, TreeKind.Expr.GetField2)
+      }
     }
 
     private def ambiguousNewExpr()(implicit s: State): Mark.Closed = {
