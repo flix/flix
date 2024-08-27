@@ -144,29 +144,6 @@ object Unification {
   }
 
   /**
-    * Returns a [[TypeError.OverApplied]] or [[TypeError.UnderApplied]] type error, if applicable.
-    */
-  def getUnderOrOverAppliedError(arrowType: Type, argType: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix): TypeError = {
-    val default = TypeError.MismatchedTypes(arrowType, argType, fullType1, fullType2, renv, loc)
-
-    arrowType match {
-      case Type.Apply(_, resultType, _) =>
-        if (Unification.unifiesWith(resultType, argType, renv, ListMap.empty)) { // TODO ASSOC-TYPES empty OK?
-          arrowType.typeArguments.lift(1) match {
-            case None => default
-            case Some(excessArgument) => TypeError.OverApplied(excessArgument, loc)
-          }
-        } else {
-          arrowType.typeArguments.lift(1) match {
-            case None => default
-            case Some(missingArgument) => TypeError.UnderApplied(missingArgument, loc)
-          }
-        }
-      case _ => default
-    }
-  }
-
-  /**
     * Returns true iff `tpe1` unifies with `tpe2`, without introducing equality constraints.
     */
   def unifiesWith(tpe1: Type, tpe2: Type, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Boolean = {
