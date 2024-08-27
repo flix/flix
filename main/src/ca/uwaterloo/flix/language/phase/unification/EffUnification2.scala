@@ -23,6 +23,7 @@ import ca.uwaterloo.flix.language.phase.unification.FastSetUnification.Term.mkCo
 import ca.uwaterloo.flix.language.phase.unification.FastSetUnification.{ConflictException, Equation, Term, TooComplexException}
 import ca.uwaterloo.flix.util.collection.Bimap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
+import java.util.concurrent.ConcurrentHashMap
 
 import scala.io.AnsiColor
 
@@ -69,17 +70,19 @@ object EffUnification2 {
   }
 
   def unify(tpe1: Type, tpe2: Type, loc: SourceLocation, renv: RigidityEnv): Result[Option[Substitution], UnificationError] = {
-//    (tpe1, tpe2) match {
-//      case (t1@Type.Var(x, _), t2) if renv.isFlexible(x) && !t2.typeVars.contains(t1) =>
-//        return Result.Ok(Some(Substitution.singleton(x, t2)))
-//
-//      case (t1, t2@Type.Var(x, _)) if renv.isFlexible(x) && !t1.typeVars.contains(t2) =>
-//        return Result.Ok(Some(Substitution.singleton(x, t1)))
-//
-//      case _ => ()
-//    }
+    //    (tpe1, tpe2) match {
+    //      case (t1@Type.Var(x, _), t2) if renv.isFlexible(x) && !t2.typeVars.contains(t1) =>
+    //        return Result.Ok(Some(Substitution.singleton(x, t2)))
+    //
+    //      case (t1, t2@Type.Var(x, _)) if renv.isFlexible(x) && !t1.typeVars.contains(t2) =>
+    //        return Result.Ok(Some(Substitution.singleton(x, t1)))
+    //
+    //      case _ => ()
+    //    }
 
-    implicit val bimap: Bimap[Atom, Int] = try {mkBidirectionalVarMap(tpe1, tpe2)} catch {
+    implicit val bimap: Bimap[Atom, Int] = try {
+      mkBidirectionalVarMap(tpe1, tpe2)
+    } catch {
       case InternalCompilerException(_, _) => return Result.Ok(None)
     }
 
@@ -325,18 +328,35 @@ object EffUnification2 {
     case class Error(id: Int, kind: Kind) extends Atom
   }
 
-  private object Checking {
+  object Checking {
+
+    // OBS use --threads 1
+    var newTotal: Int = 0
+    var oldTotal: Int = 0
+    var largestDiffToNewAbs: Int = -1
+    var largestDiffToNewRat: Double = -1.0
+    var checking: Boolean = false
 
     type UnifiedI = (Substitution, List[Ast.BroadEqualityConstraint])
     type Unified = Result[UnifiedI, UnificationError]
 
     def compare(checkThings: Boolean, crash: Boolean, wait: Boolean, tpe1: Type, tpe2: Type, old: => Unified, neww: Unified, renv: RigidityEnv)(implicit flix: Flix): Unit = {
       if (!checkThings) () else {
+        checking = true
         handleResults(old, neww, crash, wait, tpe1, tpe2, renv)
       }
     }
 
     private def checkUnifiedI(old: UnifiedI, neww: UnifiedI, crash: Boolean, wait: Boolean, tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Unit = {
+      val oldSize = old._1.m.toList.map(_._2.size).sum
+      oldTotal += oldSize
+      val newSize = neww._1.m.toList.map(_._2.size).sum
+      newTotal += newSize
+      val diff = newSize - oldSize
+      if (diff > largestDiffToNewAbs) {
+        largestDiffToNewAbs = diff
+        largestDiffToNewRat = 100.0 * diff / oldSize
+      }
       (old, neww) match {
         case ((subst1, Nil), (subst2, Nil)) =>
           checkSubst(subst1, subst2, crash, wait, tpe1, tpe2, renv)
@@ -388,7 +408,7 @@ object EffUnification2 {
         (genInst, specInst, SourceLocation.Unknown)
       })
       // mark the left side rigid
-      val renv1 = generated(0).foldLeft(renv){case (acc, (_, v)) => acc.markRigid(v.sym)}
+      val renv1 = generated(0).foldLeft(renv) { case (acc, (_, v)) => acc.markRigid(v.sym) }
       unifyAll(eqs, renv1, SourceLocation.Unknown, RunOptions.default.copy(verifySize = false)) match {
         case Result.Ok(_) =>
           // everything is good!
@@ -406,7 +426,7 @@ object EffUnification2 {
           println("vars:")
           println(vars)
           println("equations:")
-          eqs.foreach{case (t1, t2, _) => printEq(t1, t2, renv1)}
+          eqs.foreach { case (t1, t2, _) => printEq(t1, t2, renv1) }
           halt(crash, wait)
       }
     }
@@ -431,7 +451,7 @@ object EffUnification2 {
     }
 
     private def freeVars(s: Substitution): Set[Symbol.KindedTypeVarSym] = {
-      s.m.foldLeft(Set.empty[Symbol.KindedTypeVarSym]){
+      s.m.foldLeft(Set.empty[Symbol.KindedTypeVarSym]) {
         case (acc, (sym, tpe)) => acc + sym ++ tpe.typeVars.map(_.sym)
       }
     }

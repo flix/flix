@@ -17,14 +17,14 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.LabelledPrecedenceGraph
-import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.shared.Scope
-import ca.uwaterloo.flix.language.dbg.AstPrinter._
+import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.typer.{ConstraintGen, ConstraintSolver, TypeContext}
-import ca.uwaterloo.flix.language.phase.unification.Substitution
+import ca.uwaterloo.flix.language.phase.unification.{EffUnification2, Substitution}
 import ca.uwaterloo.flix.util.Validation.{mapN, traverse}
-import ca.uwaterloo.flix.util._
+import ca.uwaterloo.flix.util.*
 import ca.uwaterloo.flix.util.collection.ListMap
 
 object Typer {
@@ -45,6 +45,14 @@ object Typer {
     val effs = visitEffs(root)
     val typeAliases = visitTypeAliases(root)
     val precedenceGraph = LabelledPrecedenceGraph.empty
+
+    if (EffUnification2.Checking.checking) {
+      println("subst sizes:")
+      println(s"old = ${EffUnification2.Checking.oldTotal}")
+      println(s"new = ${EffUnification2.Checking.newTotal}")
+      println(s"largest diff: abs (+ratio%) = ${EffUnification2.Checking.largestDiffToNewAbs} (+${EffUnification2.Checking.largestDiffToNewRat}%)")
+    }
+
 
     mapN(traitsVal, instancesVal, defsVal) {
       case (traits, instances, defs) =>
