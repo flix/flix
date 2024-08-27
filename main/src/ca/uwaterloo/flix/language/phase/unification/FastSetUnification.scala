@@ -1128,19 +1128,30 @@ object FastSetUnification {
     }
 
     /**
-      * Represents a intersection of terms (`∩`). An empty intersection is univ.
+      * Represents a intersection of terms (`∩`).
       *
-      * Should NEVER be build outside of [[reconstructInter]] methods.
+      * The intersection
+      * {{{
+      * posElem = Some({e1, e2}),
+      * posCsts =  Set( c1, c2),
+      * posVars =  Set( x1, x2),
+      * negElem = Some({e3, e4}),
+      * negCsts =  Set( c3, c4),
+      * negVars =  Set( x3, x4),
+      * rest    = List( e1 ∪ x9)
+      * }}}
+      * represents the formula
+      * {{{ (e1 ∪ e2) ∩ c1 ∩ c2 ∩ x1 ∩ x2 ∩ !(e3 ∪ e4) ∩ !c3 ∩ !c4 ∩ !x3 ∩ !x4 ∩ (e1 ∪ x9) }}}
       *
-      * We use a clever representation where we have a intersection of elements, constants, variables, and then sub-terms.
+      * Invariants and Properties
+      *   - An empty intersection is [[Term.Univ]].
+      *   - `posElem` and `negElem` are disjoint
+      *   - [[vars]] is precomputed on construction
       *
-      * For example, the intersection: `x7 ∩ !x2 ∩ c1 ∩ x4 ∩ (e1 ∪ x9)` is represented as:
-      *
-      * `None, Set(c1), Set(x4, x7), Set(), Set(), Set(x2), List(e1 ∪ x9)`.
-      *
-      * the `@nowarn` annotation is required for Scala 3 compatiblity, since the derived `copy` method is private
-      * in Scala 3 due to the private constructor. In Scala 2 the `copy` method is still public.
-      * However, we do not use the `copy` method anywhere for [[Equation]], so this is fine.
+      * The `@nowarn` annotation is required for Scala 3 compatibility, since the derived `copy`
+      * method is private in Scala 3 due to the private constructor. In Scala 2 the `copy` method is
+      * still public. However, we do not use the `copy` method anywhere for [[Equation]], so this is
+      * fine.
       */
     @nowarn
     case class Inter private(posElem: Option[Term.ElemSet], posCsts: Set[Term.Cst], posVars: Set[Term.Var], negElem: Option[Term.ElemSet], negCsts: Set[Term.Cst], negVars: Set[Term.Var], rest: List[Term]) extends Term {
@@ -1150,22 +1161,34 @@ object FastSetUnification {
       /** Returns true if any elements or constants exist in the outer intersection */
       def triviallyNonUniv: Boolean = posElem.isDefined || posCsts.nonEmpty || negElem.isDefined || negCsts.nonEmpty
 
-      /** Returns false if any elements or constants exist in the outer intersection */
-      def mightBeUniv: Boolean = !triviallyNonUniv
-
       override val vars: SortedSet[Int] = SortedSet.from(posVars.map(_.x)) ++ negVars.map(_.x) ++ rest.flatMap(_.vars)
     }
 
     /**
-      * A union of the terms `ts` (`∪`). An empty union is empty.
+      * Represents a union of terms (`∪`).
       *
-      * Should NEVER be build outside of [[mkUnionAll]] methods.
+      * The union
+      * {{{
+      * posElem = Some({e1, e2}),
+      * posCsts =  Set( c1, c2),
+      * posVars =  Set( x1, x2),
+      * negElem = Some({e3, e4}),
+      * negCsts =  Set( c3, c4),
+      * negVars =  Set( x3, x4),
+      * rest    = List( e1 ∩ x9)
+      * }}}
+      * represents the formula
+      * {{{ (e1 ∪ e2) ∪ c1 ∪ c2 ∪ x1 ∪ x2 ∪ !(e3 ∪ e4) ∪ !c3 ∪ !c4 ∪ !x3 ∪ !x4 ∪ (e1 ∩ x9) }}}
       *
-      * Represented similarly to [[Inter]].
+      * Invariants and Properties
+      *   - An empty union is [[Term.Empty]].
+      *   - `posElem` and `negElem` are disjoint
+      *   - [[vars]] is precomputed on construction
       *
-      * the `@nowarn` annotation is required for Scala 3 compatiblity, since the derived `copy` method is private
-      * in Scala 3 due to the private constructor. In Scala 2 the `copy` method is still public.
-      * However, we do not use the `copy` method anywhere for [[Equation]], so this is fine.
+      * The `@nowarn` annotation is required for Scala 3 compatibility, since the derived `copy`
+      * method is private in Scala 3 due to the private constructor. In Scala 2 the `copy` method is
+      * still public. However, we do not use the `copy` method anywhere for [[Equation]], so this is
+      * fine.
       */
     @nowarn
     case class Union private(posElem: Option[Term.ElemSet], posCsts: Set[Term.Cst], posVars: Set[Term.Var], negElem: Option[Term.ElemSet], negCsts: Set[Term.Cst], negVars: Set[Term.Var], rest: List[Term]) extends Term {
@@ -1174,9 +1197,6 @@ object FastSetUnification {
 
       /** Returns true if any elements or constants exist in the outer union */
       def triviallyNonEmpty: Boolean = posElem.isDefined || posCsts.nonEmpty || negElem.isDefined || negCsts.nonEmpty
-
-      /** Returns false if any elements or constants exist in the outer union */
-      def mightBeEmpty: Boolean = !triviallyNonEmpty
 
       override val vars: SortedSet[Int] = SortedSet.from(posVars.map(_.x)) ++ negVars.map(_.x) ++ rest.flatMap(_.vars)
     }
