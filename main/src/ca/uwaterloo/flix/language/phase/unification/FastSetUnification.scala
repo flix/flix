@@ -976,7 +976,7 @@ object FastSetUnification {
     def vars: SortedSet[Int]
 
     /**
-      * Syntactic sugar for [[Term.reconstructInter]].
+      * Syntactic sugar for [[Term.mkInter]].
       */
     def inter(that: Term): Term = Term.mkInter(this, that)
 
@@ -1374,13 +1374,12 @@ object FastSetUnification {
     }
 
     /**
-      * Smart constructor for intersection (`∩`).
+      * Reconstructor for intersection (`∩`).
       *
       * More efficient than the other constructors when building an intersection
-      * based on an existing intersection.
+      * based on an existing intersection/union.
       *
-      * OBS: must be composed of collections form existing intersections/unions
-      * to preserve invariants.
+      * OBS: must be called with collections from existing intersections/unions.
       */
     final def reconstructInter(posElem: Option[Term.ElemSet], posCsts: Set[Term.Cst], posVars: Set[Term.Var], negElem: Option[Term.ElemSet], negCsts: Set[Term.Cst], negVars: Set[Term.Var], rest: List[Term]): Term = {
       val maintain = Term.Inter(posElem, posCsts, posVars, negElem, negCsts, negVars, Nil)
@@ -1498,18 +1497,19 @@ object FastSetUnification {
     }
 
     /**
-      * Smart constructor for union (`∪`).
+      * Reconstructor for union (`∪`).
       *
-      * More efficient than the other constructors when building a union based on an existing union.
+      * More efficient than the other constructors when building an union
+      * based on an existing intersection/union.
+      *
+      * OBS: must be called with collections from existing intersections/unions.
       */
     final def reconstructUnion(posElem: Option[Term.ElemSet], posCsts: Set[Term.Cst], posVars: Set[Term.Var], negElem: Option[Term.ElemSet], negCsts: Set[Term.Cst], negVars: Set[Term.Var], rest: List[Term]): Term = {
       val maintain = Term.Union(posElem, posCsts, posVars, negElem, negCsts, negVars, Nil)
       Term.mkUnionAll(maintain :: rest)
     }
 
-    /**
-      * Returns the Xor of `x` and `y`. Implemented by de-sugaring: `(x - y) ∪ (y - x)`.
-      */
+    /** Returns the Xor of `x` and `y`, `(x - y) ∪ (y - x)`. */
     final def mkXor(x: Term, y: Term): Term = mkUnion(mkMinus(x, y), mkMinus(y, x))
 
     /**
