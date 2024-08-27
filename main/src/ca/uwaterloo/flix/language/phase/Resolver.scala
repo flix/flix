@@ -2319,10 +2319,12 @@ private def lookupTrait(qname: Name.QName, env: ListMap[String, Resolution], ns0
       // Case 0: No matches. Error.
       case Nil =>
         if(ns0.idents.length >= 1) {
+          // The struct name is the same as the mod name
           val struct_namespace = Name.NName(ns0.idents.init, ns0.loc)
           val struct_name = ns0.idents.last
           Result.Err(ResolutionError.UndefinedStructField(Some(Symbol.mkStructSym(struct_namespace, struct_name)), name, name.loc))
         } else {
+          // If we are in the root namespace, we can't give figure out the struct name
           Result.Err(ResolutionError.UndefinedStructField(None, name, name.loc))
         }
       // Case 1: A match was found. Success. Note that multiple matches can be found but they are prioritized by tryLookupName so this is fine.
