@@ -1395,9 +1395,9 @@ object Parser2 {
             name(NAME_FIELD, context = SyntacticContext.Expr.OtherExpr)
             lhs = close(mark, TreeKind.Expr.RecordSelect)
             lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
-          case TokenKind.Euro if nth(1) == TokenKind.NameLowerCase => // struct get / put
+          case TokenKind.StructArrow if nth(1) == TokenKind.NameLowerCase => // struct get / put
             val mark = openBefore(lhs)
-            eat(TokenKind.Euro)
+            eat(TokenKind.StructArrow)
             name(NAME_FIELD, context = SyntacticContext.Expr.OtherExpr)
             if (at(TokenKind.Equal)) { // struct put
               eat (TokenKind.Equal)

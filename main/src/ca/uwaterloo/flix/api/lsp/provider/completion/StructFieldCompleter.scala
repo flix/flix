@@ -25,6 +25,6 @@ object StructFieldCompleter {
   def getCompletions(e: ResolutionError.UndefinedStructField, root: TypedAst.Root): Iterable[Completion.StructFieldCompletion] = {
     val fields = root.structs.values.flatMap(struct => struct.fields.values)
     val completions = fields.filter (_.sym.name.startsWith(e.field.name))
-    completions.map(field => Completion.StructFieldCompletion(field.sym.name, field.tpe))
+    completions.map(field => Completion.StructFieldCompletion(field.sym.name, e.field.loc, field.tpe))
   }
 }
