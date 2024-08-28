@@ -20,7 +20,7 @@ instance Indexable[Array[a, r]] {
     type Elm = a
     type Aef = r + OutOfBounds
 
-    pub def get(i: Int32, t: Array[a, r]): a \ r + OutOfBounds = {
+    pub def get(t: Array[a, r], i: Int32): a \ r + OutOfBounds = {
         if (0 <= i and i < Array.length(t)) Array.get(i, t)
         else do OutOfBounds.outOfBounds(
             "index ${i} is out of bounds for Array of length ${Array.length(t)}"
@@ -31,7 +31,7 @@ instance Indexable[Array[a, r]] {
 instance IndexableMut[Array[a, r]] {
     type Aef = r + OutOfBounds
 
-    pub def put(i: Int32, v: a, t: Array[a, r]): Unit \ r + OutOfBounds = {
+    pub def put(t: Array[a, r], i: Int32, v: a): Unit \ r + OutOfBounds = {
         if (0 <= i and i < Array.length(t)) Array.put(v, i, t)
         else do OutOfBounds.outOfBounds(
             "index ${i} is out of bounds for Array of length ${Array.length(t)}"

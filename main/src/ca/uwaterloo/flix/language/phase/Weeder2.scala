@@ -309,12 +309,13 @@ object Weeder2 {
       }
     }
 
-    private def visitRedefinitionDecl(tree: Tree): Validation[Declaration.Redef, CompilationMessage] = {
+    private def visitRedefinitionDecl(tree: Tree)(implicit flix: Flix): Validation[Declaration.Redef, CompilationMessage] = {
       expect(tree, TreeKind.Decl.Redef)
+      val allowedModifiers: Set[TokenKind] = if (flix.options.xnodeprecated) Set.empty else Set(TokenKind.KeywordPub)
       mapN(
         pickDocumentation(tree),
         pickAnnotations(tree),
-        pickModifiers(tree, allowed = Set(TokenKind.KeywordPub)),
+        pickModifiers(tree, allowed = allowedModifiers),
         pickNameIdent(tree),
         Types.pickKindedParameters(tree),
         pickFormalParameters(tree),
@@ -482,23 +483,23 @@ object Weeder2 {
         traverse(fields)(visitStructField)
       ) {
         (doc, ann, mods, ident, tparams, fields) =>
-        // Ensure that each name is unique
-        val errors = getDuplicates(fields, (f: StructField) => f.name.name)
-        // For each field, only keep the first occurrence of the name
-        val groupedByName = fields.groupBy(_.name.name)
-        val filteredFields = groupedByName.values.map(_.head).toList
-        if (errors.isEmpty) {
-          Validation.success(Declaration.Struct(
-            doc, ann, mods, ident, tparams, filteredFields.sortBy(_.loc), tree.loc
-          ))
-        }
-        else {
-          Validation.success(Declaration.Struct(
-            doc, ann, mods, ident, tparams, filteredFields.sortBy(_.loc), tree.loc
-          )).withSoftFailures(errors.map {
-            case (field1, field2) => DuplicateStructField(ident.name, field1.name.name, field1.name.loc, field2.name.loc, ident.loc)
-          })
-        }
+          // Ensure that each name is unique
+          val errors = getDuplicates(fields, (f: StructField) => f.name.name)
+          // For each field, only keep the first occurrence of the name
+          val groupedByName = fields.groupBy(_.name.name)
+          val filteredFields = groupedByName.values.map(_.head).toList
+          if (errors.isEmpty) {
+            Validation.success(Declaration.Struct(
+              doc, ann, mods, ident, tparams, filteredFields.sortBy(_.loc), tree.loc
+            ))
+          }
+          else {
+            Validation.success(Declaration.Struct(
+              doc, ann, mods, ident, tparams, filteredFields.sortBy(_.loc), tree.loc
+            )).withSoftFailures(errors.map {
+              case (field1, field2) => DuplicateStructField(ident.name, field1.name.name, field1.name.loc, field2.name.loc, ident.loc)
+            })
+          }
       }
     }
 
@@ -514,6 +515,7 @@ object Weeder2 {
           StructField(Name.mkLabel(ident), ttype, loc)
       }
     }
+
     private def visitTypeAliasDecl(tree: Tree): Validation[Declaration.TypeAlias, CompilationMessage] = {
       expect(tree, TreeKind.Decl.TypeAlias)
       mapN(
@@ -1090,7 +1092,7 @@ object Weeder2 {
       pickAll(TreeKind.Expr.Expr, tree) match {
         case e1 :: e2 :: Nil => mapN(visitExpr(e1), visitExpr(e2)){
           case (exp1, exp2) =>
-            Expr.Apply(Expr.Ambiguous(Name.mkQName("Indexable.getSwapped", exp1.loc), exp1.loc), List(exp1, exp2), tree.loc)
+            Expr.Apply(Expr.Ambiguous(Name.mkQName("Indexable.get", exp1.loc), exp1.loc), List(exp1, exp2), tree.loc)
         }
         case other => throw InternalCompilerException(s"Expr.Index tree with ${other.length} operands", tree.loc)
       }
@@ -1101,7 +1103,7 @@ object Weeder2 {
       pickAll(TreeKind.Expr.Expr, tree) match {
         case e1 :: e2 :: e3 :: Nil => mapN(visitExpr(e1), visitExpr(e2), visitExpr(e3)) {
           case (exp1, exp2, exp3) =>
-            Expr.Apply(Expr.Ambiguous(Name.mkQName("IndexableMut.putSwapped", exp1.loc), exp1.loc), List(exp1, exp2, exp3), tree.loc)
+            Expr.Apply(Expr.Ambiguous(Name.mkQName("IndexableMut.put", exp1.loc), exp1.loc), List(exp1, exp2, exp3), tree.loc)
         }
         case other => throw InternalCompilerException(s"Expr.IndexMut tree with ${other.length} operands", tree.loc)
       }
@@ -1749,7 +1751,7 @@ object Weeder2 {
       })
     }
 
-    private def visitThrow(tree:Tree): Validation[Expr, CompilationMessage] = {
+    private def visitThrow(tree: Tree): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.Throw)
       mapN(pickExpr(tree))(e => Expr.Throw(e, tree.loc))
     }
@@ -1840,7 +1842,7 @@ object Weeder2 {
               val m = IllegalQualifiedName(tree.loc)
               Validation.toSoftFailure(Expr.Error(m), m)
           }
-       }
+      }
     }
 
     private def visitNewStructField(tree: Tree): Validation[(Name.Label, Expr), CompilationMessage] = {
