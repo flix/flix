@@ -193,6 +193,38 @@ mod TestMutList {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // size                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def size01(): Bool = region rc {
+        MutList.size(MutList.empty(rc)) == 0
+    }
+
+    @test
+    def size02(): Bool = region rc {
+        let v = MutList.empty(rc);
+        MutList.push!(42, v);
+        MutList.size(v) == 1
+    }
+
+    @test
+    def size03(): Bool = region rc {
+        MutList.size(MutList.range(rc, 0, 2)) == 2
+    }
+
+    @test
+    def size04(): Bool = region rc {
+        MutList.size(MutList.range(rc, 0, 4)) == 4
+    }
+
+    @test
+    def size05(): Bool = region rc {
+        MutList.size(MutList.range(rc, 0, 42)) == 42
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // isEmpty                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
