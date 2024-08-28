@@ -1406,6 +1406,20 @@ object Parser2 {
               lhs = close(mark, TreeKind.Expr.StructGet)
               lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
             }
+          case TokenKind.BracketL =>
+            val mark = openBefore(lhs)
+            eat(TokenKind.BracketL)
+            expression()
+            expect(TokenKind.BracketR, SyntacticContext.Expr.OtherExpr)
+            if (at(TokenKind.Equal)) { // index write
+              eat(TokenKind.Equal)
+              expression()
+              lhs = close(mark, TreeKind.Expr.IndexMut)
+              lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+            } else { // index read
+              lhs = close(mark, TreeKind.Expr.Index)
+              lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+            }
           case _ => continue = false
         }
       }
@@ -1570,7 +1584,8 @@ object Parser2 {
              | TokenKind.LiteralRegex => literalExpr()
         case TokenKind.ParenL => parenOrTupleOrLambdaExpr()
         case TokenKind.Underscore => if (nth(1) == TokenKind.ArrowThinR) unaryLambdaExpr() else name(NAME_VARIABLE, context = SyntacticContext.Expr.OtherExpr)
-        case TokenKind.NameLowerCase => if (nth(1) == TokenKind.ArrowThinR) unaryLambdaExpr() else name(NAME_FIELD, allowQualified = true, context = SyntacticContext.Expr.OtherExpr)
+        case TokenKind.NameLowerCase if nth(1) == TokenKind.ArrowThinR => unaryLambdaExpr()
+        case TokenKind.NameLowerCase => name(NAME_FIELD, allowQualified = true, context = SyntacticContext.Expr.OtherExpr)
         case TokenKind.NameUpperCase
              | TokenKind.NameMath
              | TokenKind.NameGreek => if (nth(1) == TokenKind.ArrowThinR) unaryLambdaExpr() else name(NAME_DEFINITION, allowQualified = true, context = SyntacticContext.Expr.OtherExpr)

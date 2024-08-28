@@ -25,13 +25,10 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
 
 object Unification {
 
-  // TODO LEVELS: using top scope just to compile for now as we introduce levels
-  private implicit val S: Scope = Scope.Top
-
   /**
     * Unify the two type variables `x` and `y`.
     */
-  private def unifyVars(x: Type.Var, y: Type.Var, renv: RigidityEnv)(implicit flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError] = {
+  private def unifyVars(x: Type.Var, y: Type.Var, renv: RigidityEnv)(implicit scope: Scope, flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError] = {
     // Case 0: types are identical
     if (x.sym == y.sym) {
       Result.Ok(Substitution.empty, Nil)
@@ -50,7 +47,7 @@ object Unification {
   /**
     * Unifies the given variable `x` with the given non-variable type `tpe`.
     */
-  def unifyVar(x: Type.Var, tpe: Type, renv: RigidityEnv)(implicit flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError] = {
+  def unifyVar(x: Type.Var, tpe: Type, renv: RigidityEnv)(implicit scope: Scope, flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError] = {
     tpe match {
 
       // ensure the kinds are compatible
@@ -88,9 +85,9 @@ object Unification {
     * Unifies the two given types `tpe1` and `tpe2`.
     */
   // NB: The order of cases has been determined by code coverage analysis.
-  def unifyTypes(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError] = (tpe1.kind, tpe2.kind) match {
+  def unifyTypes(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit scope: Scope, flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError] = (tpe1.kind, tpe2.kind) match {
 
-    case (Kind.Eff, Kind.Eff) => EffUnification2.unifyHelper(tpe1, tpe2, renv)
+    case (Kind.Eff, Kind.Eff) => EffUnification2.unifyHelper(tpe1, tpe2, scope, renv)
 
     case (Kind.Bool, Kind.Bool) => BoolUnification.unify(tpe1, tpe2, renv)
 
@@ -109,7 +106,7 @@ object Unification {
     * Unifies the types `tpe1` and `tpe2`.
     * The types must each have a Star or Arrow kind.
     */
-  private def unifyStarOrArrowTypes(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError] = (tpe1, tpe2) match {
+  private def unifyStarOrArrowTypes(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit scope: Scope, flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError] = (tpe1, tpe2) match {
 
     case (x: Type.Var, _) => unifyVar(x, tpe2, renv)
 
@@ -146,7 +143,7 @@ object Unification {
   /**
     * Returns true iff `tpe1` unifies with `tpe2`, without introducing equality constraints.
     */
-  def unifiesWith(tpe1: Type, tpe2: Type, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Boolean = {
+  def unifiesWith(tpe1: Type, tpe2: Type, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit scope: Scope, flix: Flix): Boolean = {
     Unification.unifyTypes(tpe1, tpe2, renv) match {
       case Result.Ok((subst, econstrs)) =>
         // check that all econstrs hold under the environment

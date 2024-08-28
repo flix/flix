@@ -34,7 +34,7 @@ object EffUnification {
   /**
     * Returns the most general unifier of the two given Boolean formulas `tpe1` and `tpe2`.
     */
-  def unify(tpe1: Type, tpe2: Type, renv0: RigidityEnv)(implicit flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError] = {
+  def unify(tpe1: Type, tpe2: Type, renv0: RigidityEnv)(implicit scope: Scope, flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError] = {
 
     // TODO: Levels
     // We cannot enforce that all variables should belong to the same level.
@@ -200,7 +200,7 @@ object EffUnification {
     * If any associated type is not fully reduced (i.e. is not of the form T[α] where α is rigid)
     * then returns None.
     */
-  private def clearAssocs(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Option[(Type, Type, Map[Symbol.KindedTypeVarSym, (Symbol.AssocTypeSym, Symbol.KindedTypeVarSym)])] = {
+  private def clearAssocs(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit scope: Scope, flix: Flix): Option[(Type, Type, Map[Symbol.KindedTypeVarSym, (Symbol.AssocTypeSym, Symbol.KindedTypeVarSym)])] = {
     val cache = mutable.HashMap.empty[(Symbol.AssocTypeSym, Symbol.KindedTypeVarSym), Symbol.KindedTypeVarSym]
 
     def visit(t0: Type): Option[Type] = t0 match {
