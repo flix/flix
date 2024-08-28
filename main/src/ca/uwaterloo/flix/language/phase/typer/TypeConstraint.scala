@@ -83,7 +83,7 @@ object TypeConstraint {
 
   /**
    * A constraint indicating the equivalence between a Java constructor's type and a class with its arguments.
-   * Where mvar must have kind JvmConstructorOrMethod -> Type.
+   * Where mvar must have kind Jvm -> Type.
    */
   case class EqJvmConstructor(cvar: Type.Var, clazz: Class[_], tpes: List[Type], prov: Provenance) extends TypeConstraint {
     def loc: SourceLocation = prov.loc
@@ -91,7 +91,7 @@ object TypeConstraint {
 
   /**
    * A constraint indicating the equivalence between a Java method's type and a method signature, i.e., a type, method name and list of arguments.
-   * Where mvar must have kind JvmConstructorOrMethod -> Type.
+   * Where mvar must have kind Jvm -> Type.
    */
   case class EqJvmMethod(mvar: Type.Var, tpe: Type, methodName: Name.Ident, tpes: List[Type], prov: Provenance) extends TypeConstraint {
     def loc: SourceLocation = prov.loc
@@ -99,7 +99,7 @@ object TypeConstraint {
 
   /**
     * A constraint indicating the equivalence between a Java fields's type and a field signature, i.e., a type and a field name.
-    * Where mvar must have kind JvmConstructorOrMethod -> Type.
+    * Where mvar must have kind Jvm -> Type.
     */
   case class EqJvmField(mvar: Type.Var, tpe: Type, fieldName: Name.Ident, prov: Provenance) extends TypeConstraint {
     def loc: SourceLocation = prov.loc
@@ -107,7 +107,7 @@ object TypeConstraint {
 
   /**
    * A constraint indicating the equivalence between a static Java method's type and a method signature, i.e., a type, method name and list of arguments.
-   * Where mvar must have kind JvmConstructorOrMethod -> Type.
+   * Where mvar must have kind Jvm -> Type.
    */
   case class EqStaticJvmMethod(mvar: Type.Var, clazz: Class[_], methodName: Name.Ident, tpes: List[Type], prov: Provenance) extends TypeConstraint {
     def loc: SourceLocation = prov.loc

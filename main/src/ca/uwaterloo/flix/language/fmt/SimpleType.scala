@@ -269,7 +269,7 @@ object SimpleType {
   case class MethodReturnType(tpe: SimpleType) extends SimpleType
 
   /**
-    * A method return type.
+    * A field type.
     */
   case class FieldType(tpe: SimpleType) extends SimpleType
 

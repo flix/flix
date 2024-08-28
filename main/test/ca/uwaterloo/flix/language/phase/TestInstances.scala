@@ -472,7 +472,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |
         |instance C[Box[a, r]] {
         |    def f[a: C](x: Box[a, r]): String = {
-        |        f(x->box)
+        |        f(x.box)
         |    }
         |}
         |""".stripMargin

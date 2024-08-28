@@ -294,7 +294,7 @@ object TypeConstructor {
     *
     * A field type can be resolved when the receiver object is known.
     *
-    * The type constructor requires a java method or constructor type constructor.
+    * The type constructor requires a java field type constructor.
     */
   @EliminatedBy(TypeReconstruction.getClass)
   case object FieldType extends TypeConstructor {
