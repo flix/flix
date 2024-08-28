@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.util.{Formatter, InternalCompilerException, Result}
 import scala.annotation.nowarn
 import scala.collection.immutable.{SortedMap, SortedSet}
 import scala.collection.mutable
-import scala.collection.mutable.{ListBuffer, Set as MutSet}
+import scala.collection.mutable.{ListBuffer, Set as MutSet, Map as MutMap}
 
 /**
   * Fast Type Inference with Systems of Set Unification [[Equation]]s of [[Term]]s.
@@ -1778,6 +1778,9 @@ object FastSetUnification {
     */
   case class SetSubstitution(m: Map[Int, Term]) {
 
+    /** Returns `true` if `this` is the empty/identity substitution. */
+    def isEmpty: Boolean = m.isEmpty
+
     /** Applies `this` substitution to the given term `t`. */
     def apply(t: Term): Term = {
       if (m.isEmpty || t.vars.isEmpty || !t.vars.exists(m.contains)) t else Term.propagation(applyInternal(t))
@@ -1900,8 +1903,8 @@ object FastSetUnification {
       * It is faster to call `smaller ++ larger` than to call `larger ++ smaller`.
       */
     def ++(that: SetSubstitution): SetSubstitution = {
-      if (this.m.isEmpty) that
-      else if (that.m.isEmpty) this
+      if (this.isEmpty) that
+      else if (that.isEmpty) this
       else {
         val notDisjoint = this.m.keySet.exists(that.m.keySet.contains)
         if (notDisjoint) {
@@ -1913,41 +1916,18 @@ object FastSetUnification {
       }
     }
 
-    /**
-      * Composes `this` substitution with `that` substitution.
-      *
-      * Conceptually `this` is a function: `b -> c` and `that` is a function `a -> b`.
-      *
-      * We want to compute `a -> c` which we get by computing `x -> this(that(x))`.
-      */
+    /** Returns `x -> this(that(x))` from `this @@ that` conceptually. */
     def @@(that: SetSubstitution): SetSubstitution = {
-      // Case 1: Return `that` if `this` is empty.
-      if (this.m.isEmpty) {
-        return that
+      if (this.m.isEmpty) that
+      else if (that.m.isEmpty) this
+      else {
+        val result = MutMap.empty[Int, Term]
+        // Add all bindings in `that` with `this` applied to the result
+        for ((x, t) <- that.m) result.update(x, this.apply(t))
+        // Add all bindings in `this` that are not in `that`.
+        for ((x, t) <- this.m) if (!that.m.contains(x)) result.update(x, t)
+        SetSubstitution(result.toMap)
       }
-
-      // Case 2: Return `this` if `that` is empty.
-      if (that.m.isEmpty) {
-        return this
-      }
-
-      // Case 3: Merge the two substitutions.
-      val result = mutable.Map.empty[Int, Term]
-
-      // Add all bindings in `that`. (Applying the current substitution).
-      for ((x, t) <- that.m) {
-        val t1 = this.apply(t)
-        result.update(x, if (t1 eq t) t else Term.propagation(t1))
-      }
-
-      // Add all bindings in `this` that are not in `that`.
-      for ((x, t) <- this.m) {
-        if (!that.m.contains(x)) {
-          result.update(x, t)
-        }
-      }
-
-      SetSubstitution(result.toMap)
     }
 
     /** Returns a multi-line pretty string of `this` */
