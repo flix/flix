@@ -20,11 +20,10 @@ import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.{Ast, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.unification.Unification
-import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
+import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.collection.{ListMap, ListOps}
 
-import java.lang.reflect.Method
-import java.lang.reflect.Constructor
+import java.lang.reflect.{Constructor, Method}
 import java.math.BigInteger
 import scala.annotation.tailrec
 
@@ -132,6 +131,16 @@ object TypeReduction {
     case _ => false
   }
 
+  /** Helper method which returns true if the given type type t0 does not have any variables. */
+  private def isKnown(t0: Type): Boolean = {
+    // TODO INTEROP: Actually, it cannot have variables recursively...
+    t0 match {
+      case Type.Var(_, _) => false
+      case Type.Apply(Type.Cst(TypeConstructor.MethodReturnType, _), _, _) => false
+      case _ => true
+    }
+  }
+
   /**
    * This is the resolution process of the Java constructor designated by a class and the parameter types.
    * Returns the return type of the Java constructor according, if there exists such a Java constructor.
@@ -143,7 +152,8 @@ object TypeReduction {
    * @return        A JavaConstructorResolutionResult object that indicates the status of the resolution progress
    */
   def lookupConstructor(clazz: Class[_], ts: List[Type], loc: SourceLocation): JavaConstructorResolutionResult = {
-    retrieveConstructor(clazz, ts, loc)
+    if (ts.forall(isKnown)) retrieveConstructor(clazz, ts, loc)
+    else JavaConstructorResolutionResult.UnresolvedTypes
   }
 
   /**
@@ -159,7 +169,8 @@ object TypeReduction {
    * @return            A JavaMethodResolutionResult object that indicates the status of the resolution progress
    */
   def lookupMethod(thisObj: Type, methodName: String, ts: List[Type], loc: SourceLocation): JavaMethodResolutionResult = {
-    thisObj match { // there might be a possible factorization
+    // there might be a possible factorization
+    if (isKnown(thisObj) && ts.forall(isKnown)) thisObj match {
       case Type.Cst(TypeConstructor.Str, _) =>
         val clazz = classOf[String]
         retrieveMethod(clazz, methodName, ts, loc = loc)
@@ -181,10 +192,12 @@ object TypeReduction {
 
       case _ => JavaMethodResolutionResult.MethodNotFound
     }
+    else JavaMethodResolutionResult.UnresolvedTypes
   }
 
   def lookupStaticMethod(clazz: Class[_], methodName: String, ts: List[Type], loc: SourceLocation): JavaMethodResolutionResult = {
-    retrieveMethod(clazz, methodName, ts, isStatic = true, loc = loc)
+    if (ts.forall(isKnown)) retrieveMethod(clazz, methodName, ts, isStatic = true, loc = loc)
+    else JavaMethodResolutionResult.UnresolvedTypes
   }
 
   /**
@@ -334,6 +347,7 @@ object TypeReduction {
     case class Resolved(tpe: Type) extends JavaMethodResolutionResult
     case class AmbiguousMethod(methods: List[Method]) extends JavaMethodResolutionResult
     case object MethodNotFound extends JavaMethodResolutionResult
+    case object UnresolvedTypes extends JavaMethodResolutionResult
   }
 
   /**
@@ -349,5 +363,6 @@ object TypeReduction {
     case class Resolved(tpe: Type) extends JavaConstructorResolutionResult
     case class AmbiguousConstructor(constructors: List[Constructor[_]]) extends JavaConstructorResolutionResult
     case object ConstructorNotFound extends JavaConstructorResolutionResult
+    case object UnresolvedTypes extends JavaConstructorResolutionResult
   }
 }
