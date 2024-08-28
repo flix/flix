@@ -132,7 +132,7 @@ object TypeReduction {
     case _ => false
   }
 
-  /** Helper method which returns true if the given type type t0 does not have any variables. */
+  /** Returns `true` if the given type type `t0` does not have any variables. */
   private def isKnown(t0: Type): Boolean = {
     // TODO INTEROP: Actually, it cannot have variables recursively...
     t0 match {
