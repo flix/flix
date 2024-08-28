@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.util.{Formatter, InternalCompilerException, Result}
 import scala.annotation.nowarn
 import scala.collection.immutable.{SortedMap, SortedSet}
 import scala.collection.mutable
-import scala.collection.mutable.{ListBuffer, Set as MutSet, Map as MutMap}
+import scala.collection.mutable.{ListBuffer, Map as MutMap, Set as MutSet}
 
 /**
   * Fast Type Inference with Systems of Set Unification [[Equation]]s of [[Term]]s.
@@ -538,17 +538,13 @@ object FastSetUnification {
       * Returns a most-general unifier for `eqs`, trying multiple permutations
       * to minimize substitution size.
       *
-      * @param sizeThreshold throws [[ComplexException]] if `eqs` is longer than `sizeThreshold`,
+      * @param sizeThreshold    throws [[ComplexException]] if `eqs` is longer than `sizeThreshold`,
       *                         a non-positive number omits the check.
       * @param permutationLimit a limit on the number of permutations to try,
       *                         a non-positive number will try all permutations.
       * @throws ComplexException if `eqs` is longer than `sizeThreshold`
       */
     def setUnifyAllPickSmallest(sizeThreshold: Int, permutationLimit: Int)(eqs: List[Equation]): SetSubstitution = {
-      if (eqs.length <= 1) {
-        return setUnifyAll(eqs)
-      }
-
       if (sizeThreshold > 0 && eqs.length > sizeThreshold) {
         throw ComplexException(
           s"Amount of complex equations in substitution (${eqs.length}) is over the threshold ($sizeThreshold).",
@@ -556,17 +552,22 @@ object FastSetUnification {
         )
       }
 
-      // We solve the first [[PermutationLimit]] permutations and pick the one that gives rise to the smallest substitution.
+      // We solve the first `permutationLimit` permutations and pick the one that
+      // gives rise to the smallest substitution.
       val permutations = if (permutationLimit > 0) eqs.permutations.take(permutationLimit) else eqs.permutations
-      val results = permutations.toList.map {
-        // TODO: stop early for sufficiently small substitutions
-        p => (p, setUnifyAll(p))
-      }.sortBy {
-        case (_, s) => s.size
+      var bestSubst = SetSubstitution.empty
+      var bestSize = -1
+      var stop = false
+      for (s <- permutations.map(setUnifyAll) if !stop) {
+        val sSize = s.size
+        if (bestSize == -1 || sSize < bestSize) {
+          bestSize = sSize
+          bestSubst = s
+          // very conservative early stop
+          if (bestSize <= 1) stop = true
+        }
       }
-
-      // Pick the smallest substitution.
-      results.head._2
+      bestSubst
     }
 
     def setUnifyPickSmallestDescr(sizeThreshold: Int, permutationLimit: Int): DescribedPhase = DescribedPhase(
@@ -591,12 +592,12 @@ object FastSetUnification {
       * @param rule         a solving rule that optionally produces constraints, cs, and a substitution subst.
       * @param selfFeeding  can the rule potentially solve any constrains in cs?
       * @param substInduced can the rule potentially discover new solvable constraints via any subst it returns?
-      * @param l            the constraints to run the rule on
+      * @param eqs          the constraints to run the rule on
       * @return the remaining constraints and the found substitution.
       */
-    private def runRule(rule: Equation => Output, selfFeeding: Boolean = true, substInduced: Boolean = true, simpleSubst: Boolean = false)(l: List[Equation]): Output = {
+    private def runRule(rule: Equation => Output, selfFeeding: Boolean = true, substInduced: Boolean = true, simpleSubst: Boolean = false)(eqs: List[Equation]): Output = {
       var subst = SetSubstitution.empty
-      var workList = l
+      var workList = eqs
       var leftover: List[Equation] = Nil
       var changed = true // has there been progress in the inner loop
       var overallChanged = false // has there been progress at any point in the loops
@@ -634,23 +635,23 @@ object FastSetUnification {
     }
 
     /** If the rule returns `true` that means that the constraint is solved by the empty substitution */
-    private def runFilterNotRule(rule: Equation => Boolean)(l: List[Equation]): Option[List[Equation]] = {
+    private def runFilterNotRule(rule: Equation => Boolean)(eqs: List[Equation]): Option[List[Equation]] = {
       val rule1 = (eq0: Equation) => if (rule(eq0)) Some((Nil, SetSubstitution.empty)) else None
-      runRule(rule1, selfFeeding = false, substInduced = false, simpleSubst = true)(l).map(_._1)
+      runRule(rule1, selfFeeding = false, substInduced = false, simpleSubst = true)(eqs).map(_._1)
     }
 
-    /** If the rule returns Some(s), then the equation is solved with s */
-    private def runSubstRule(rule: Equation => Option[SetSubstitution])(l: List[Equation]): Output = {
+    /** If the rule returns `Some(s)`, then the equation is solved with `s` */
+    private def runSubstRule(rule: Equation => Option[SetSubstitution])(eqs: List[Equation]): Output = {
       val rule1 = (eq0: Equation) => rule(eq0).map(subst => (Nil, subst))
-      runRule(rule1, selfFeeding = false)(l)
+      runRule(rule1, selfFeeding = false)(eqs)
     }
 
-    private def runSubstResRule(rule: Equation => Result[SetSubstitution, Throwable])(l: List[Equation]): SetSubstitution = {
+    private def runSubstResRule(rule: Equation => Result[SetSubstitution, Throwable])(eqs: List[Equation]): SetSubstitution = {
       val rule1 = (eq0: Equation) => rule(eq0) match {
         case Result.Ok(subst: SetSubstitution) => Some((Nil: List[Equation], subst))
         case Result.Err(ex: Throwable) => throw ex
       }
-      val res = runRule(rule1, selfFeeding = false, substInduced = false)(l)
+      val res = runRule(rule1, selfFeeding = false, substInduced = false)(eqs)
       res.map {
         case (eqs, subst) =>
           assert(eqs.isEmpty)
@@ -658,9 +659,9 @@ object FastSetUnification {
       }.getOrElse(SetSubstitution.empty)
     }
 
-    private def runErrRule(rule: Equation => Option[Throwable])(l: List[Equation]): Unit = {
+    private def runErrRule(rule: Equation => Option[Throwable])(eqs: List[Equation]): Unit = {
       val rule1 = (eq0: Equation) => rule(eq0).map[(List[Equation], SetSubstitution)](ex => throw ex)
-      val res = runRule(rule1, selfFeeding = false, substInduced = false, simpleSubst = true)(l)
+      val res = runRule(rule1, selfFeeding = false, substInduced = false, simpleSubst = true)(eqs)
       assert(res.isEmpty)
     }
 
