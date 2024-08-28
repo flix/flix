@@ -231,10 +231,8 @@ object TypeReconstruction {
     case KindedAst.Expr.Tag(sym, tvar, loc) =>
       TypedAst.Expr.Tag(sym, subst(tvar), loc)
 
-    case KindedAst.Expr.RestrictableTag(sym, exp, _, tvar, loc) =>
-      val e = visitExp(exp)
-      val eff = e.eff
-      TypedAst.Expr.RestrictableTag(sym, e, subst(tvar), eff, loc)
+    case KindedAst.Expr.RestrictableTag(sym, _, tvar, loc) =>
+      TypedAst.Expr.RestrictableTag(sym, subst(tvar), loc)
 
     case KindedAst.Expr.Tuple(elms, loc) =>
       val es = elms.map(visitExp(_))

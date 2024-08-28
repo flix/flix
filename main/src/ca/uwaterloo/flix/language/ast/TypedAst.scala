@@ -154,7 +154,9 @@ object TypedAst {
       def eff: Type = Type.Pure
     }
 
-    case class RestrictableTag(sym: Ast.RestrictableCaseSymUse, exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class RestrictableTag(sym: Ast.RestrictableCaseSymUse, tpe: Type, loc: SourceLocation) extends Expr {
+      def eff: Type = Type.Pure
+    }
 
     case class Tuple(exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 

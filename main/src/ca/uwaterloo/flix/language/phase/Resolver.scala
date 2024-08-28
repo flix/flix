@@ -1759,16 +1759,18 @@ object Resolver {
   /**
     * Resolves the tag application.
     */
-  private def visitApplyRestrictableTag(caze: NamedAst.Declaration.RestrictableCase, exps: List[NamedAst.Expr], isOpen: Boolean, env0: ListMap[String, Resolution], innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Expr, ResolutionError] = {
-    val esVal = traverse(exps)(resolveExp(_, env0))
-    mapN(esVal) {
-      // Case 1: one expression. No tuple.
-      case e :: Nil =>
-        ResolvedAst.Expr.RestrictableTag(Ast.RestrictableCaseSymUse(caze.sym, innerLoc), e, isOpen, outerLoc)
-      // Case 2: multiple expressions. Make them a tuple
-      case es =>
-        val exp = ResolvedAst.Expr.Tuple(es, outerLoc)
-        ResolvedAst.Expr.RestrictableTag(Ast.RestrictableCaseSymUse(caze.sym, innerLoc), exp, isOpen, outerLoc)
+  private def visitApplyRestrictableTag(app: NamedAst.Expr.Apply, caze: NamedAst.Declaration.RestrictableCase, exps: List[NamedAst.Expr], isOpen: Boolean, env0: ListMap[String, Resolution], innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Expr, ResolutionError] = {
+    if (caze.tpes.length == exps.length) {
+      // Case 1: Hooray! We can build the tag directly.
+      val esVal = traverse(exps)(resolveExp(_, env0))
+      mapN(esVal) {
+        case es =>
+          val base = ResolvedAst.Expr.RestrictableTag(Ast.RestrictableCaseSymUse(caze.sym, innerLoc), isOpen, innerLoc)
+          ResolvedAst.Expr.Apply(base, es, outerLoc)
+      }
+    } else {
+      // Case 2: We have to curry. (See below).
+      visitApply(app, env0)
     }
   }
 
