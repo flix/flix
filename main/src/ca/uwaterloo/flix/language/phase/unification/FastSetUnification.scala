@@ -122,7 +122,7 @@ object FastSetUnification {
         runPhase(P.checkAndSimplifyDescr)(state)(opts.copy(debugging = false))
         runPhase(P.setUnifyPickSmallestDescr(complexThreshold = opts.complexThreshold, permutationLimit = opts.permutationLimit))(state)
 
-        // SVE can solve anything that is solvable, so eqs is always empty
+        // SVE can solves everything or throws, so eqs is always empty
         assert(state.eqs.isEmpty)
         if (opts.verifySubst) verifySubst(state.subst, l)
         if (opts.verifySize) verifySubstSize(state.subst)
