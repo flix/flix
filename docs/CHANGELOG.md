@@ -2,7 +2,7 @@
 
 Version 0.50.0:
 - Language: Introduced `redef` as a short-hand to redefine functions in trait instances (thanks Jakob!)
-- Compiler: Significant improved performance of auto-complete (thanks Magnus!)
+- Compiler: Significantly improved performance of auto-complete (thanks Magnus!)
 
 Version 0.49.0:
 - Language: Significantly improved Java interoperability (thanks Chanattan!)
