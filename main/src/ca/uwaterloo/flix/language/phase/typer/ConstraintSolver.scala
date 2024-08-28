@@ -314,7 +314,8 @@ object ConstraintSolver {
         Result.Ok(ResolutionResult(subst0, List(constr0), progress = false))
       }
     case TypeConstraint.EqJvmField(mvar, tpe0, fieldName, prov) =>
-      if (isKnown(tpe0)) Result.Err(TypeError.FieldNotFound(fieldName, tpe0, mvar.loc))
+      val tpe = subst0(tpe0)
+      if (isKnown(tpe)) Result.Err(TypeError.FieldNotFound(fieldName, tpe, mvar.loc))
       else Result.Ok(ResolutionResult(subst0, List(constr0), progress = false))
     case TypeConstraint.EqStaticJvmMethod(mvar, clazz, methodName, tpes0, prov) =>
       // Apply subst.

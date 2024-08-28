@@ -33,7 +33,6 @@ sealed trait TypeConstraint {
     case TypeConstraint.Equality(tvar1: Type.Var, tvar2: Type.Var, _) if tvar1 != tvar2 => (0, 0, 0)
     case TypeConstraint.EqJvmConstructor(_, _, _, _) => (1, 0, 0)
     case TypeConstraint.EqJvmMethod(_, _, _, _, _) => (1, 0, 0)
-    case TypeConstraint.EqJvmField(_, _, _, _) => (1, 0, 0)
     case TypeConstraint.EqStaticJvmMethod(_, _, _, _, _) => (1, 0, 0)
     case TypeConstraint.Purification(_, _, _, _, _) => (0, 0, 0)
     case TypeConstraint.Equality(tpe1, tpe2, _) =>
@@ -41,6 +40,7 @@ sealed trait TypeConstraint {
       val effTvars = tvars.filter(_.kind == Kind.Eff)
       (1, effTvars.size, tvars.size)
     case TypeConstraint.Trait(_, _, _) => (2, 0, 0)
+    case TypeConstraint.EqJvmField(_, _, _, _) => (3, 0, 0) // always fails, so postpone
   }
 
   override def toString: String = this match {
