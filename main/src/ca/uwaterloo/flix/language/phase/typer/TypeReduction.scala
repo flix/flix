@@ -365,7 +365,7 @@ object TypeReduction {
         Some(true)
       case (Type.Cst(TypeConstructor.Null, _), tpe) =>
         alwaysNonPrimitive(tpe, renv)
-      case _ if (tpe1.typeVars ++ tpe2.typeVars).forall(v => renv.isRigid(v.sym)) => Some(false)
+      case _ if (tpe1.typeVars ++ tpe2.typeVars).forall(v => renv.isRigid(v.sym)(null)) => Some(false)
       case _ => None
     }
   }
@@ -394,7 +394,7 @@ object TypeReduction {
       case Type.Var(sym, _) =>
         // if sym is rigid we will never learn more (thus not always primitive)
         // if it is flexible we dont have enough information yet
-        if (renv.isRigid(sym)) Some(false) else None
+        if (renv.isRigid(sym)(null)) Some(false) else None
       case Type.Alias(_, _, tpe, _) => alwaysNonPrimitive(tpe, renv)
       case Type.AssocType(_, _, _, _) =>
         // TODO: to be more precise we need to know if it could be simplified to type or not
