@@ -80,8 +80,8 @@ instance Monad[Nec] {
 instance MonadZip[Nec] {
     pub def zipWith(f: (a, b) -> c \ ef, xs: Nec[a], ys: Nec[b]): Nec[c] \ ef = Nec.zipWith(f, xs, ys)
     pub def zipWithA(f: (a, b) -> f[c] \ ef, xs: Nec[a], ys: Nec[b]): f[Nec[c]] \ ef with Applicative[f] = Nec.zipWithA(f, xs, ys)
-    pub redef zip(xs: Nec[a], ys: Nec[b]): Nec[(a, b)] = Nec.zip(xs, ys)
-    pub redef unzip(xs: Nec[(a, b)]): (Nec[a], Nec[b]) = Nec.unzip(xs)
+    redef zip(xs: Nec[a], ys: Nec[b]): Nec[(a, b)] = Nec.zip(xs, ys)
+    redef unzip(xs: Nec[(a, b)]): (Nec[a], Nec[b]) = Nec.unzip(xs)
 }
 
 instance Foldable[Nec] {
@@ -92,35 +92,35 @@ instance Foldable[Nec] {
 
 instance UnorderedFoldable[Nec] {
     pub def foldMap(f: a -> b \ ef, c: Nec[a]): b \ ef with CommutativeMonoid[b] = Nec.foldMap(f, c)
-    pub redef isEmpty(_: Nec[a]): Bool = false
-    pub redef exists(f: a -> Bool \ ef, c: Nec[a]): Bool \ ef = Nec.exists(f, c)
-    pub redef forAll(f: a -> Bool \ ef, c: Nec[a]): Bool \ ef = Nec.forAll(f, c)
-    pub redef memberOf(x: a, c: Nec[a]): Bool with Eq[a] = Nec.memberOf(x, c)
+    redef isEmpty(_: Nec[a]): Bool = false
+    redef exists(f: a -> Bool \ ef, c: Nec[a]): Bool \ ef = Nec.exists(f, c)
+    redef forAll(f: a -> Bool \ ef, c: Nec[a]): Bool \ ef = Nec.forAll(f, c)
+    redef memberOf(x: a, c: Nec[a]): Bool with Eq[a] = Nec.memberOf(x, c)
 }
 
 instance Traversable[Nec] {
     pub def traverse(f: a -> m[b] \ ef, t: Nec[a]): m[Nec[b]] \ ef with Applicative[m] = Nec.traverse(f, t)
-    pub redef sequence(t: Nec[m[a]]): m[Nec[a]] with Applicative[m] = Nec.sequence(t)
+    redef sequence(t: Nec[m[a]]): m[Nec[a]] with Applicative[m] = Nec.sequence(t)
 }
 
 instance Reducible[Nec] {
     pub def reduceLeftTo(f: (b, a) -> b \ ef1, g: a -> b \ ef2, l: Nec[a]): b \ {ef1, ef2} = Nec.reduceLeftTo(f, g, l)
     pub def reduceRightTo(f: (a, b) -> b \ ef1, g: a -> b \ ef2, l: Nec[a]): b \ {ef1, ef2} = Nec.reduceRightTo(f, g, l)
-    pub redef head(l: Nec[a]): a = Nec.head(l)
-    pub redef last(l: Nec[a]): a = Nec.last(l)
-    pub redef init(l: Nec[a]): List[a] = Nec.init(l)
-    pub redef tail(l: Nec[a]): List[a] = Nec.tail(l)
-    pub redef exists(f: a -> Bool \ ef, l: Nec[a]): Bool \ ef = Nec.exists(f, l)
-    pub redef forAll(f: a -> Bool \ ef, l: Nec[a]): Bool \ ef = Nec.forAll(f, l)
-    pub redef find(f: a -> Bool \ ef, l: Nec[a]): Option[a] \ ef = Nec.find(f, l)
-    pub redef findLeft(f: a -> Bool \ ef, l: Nec[a]): Option[a] \ ef = Nec.findLeft(f, l)
-    pub redef findRight(f: a -> Bool \ ef, l: Nec[a]): Option[a] \ ef = Nec.findRight(f, l)
-    pub redef memberOf(a: a, l: Nec[a]): Bool with Eq[a] = Nec.memberOf(a, l)
-    pub redef dropWhile(f: a -> Bool \ ef, l: Nec[a]): List[a] \ ef = Nec.dropWhileLeft(f, l)
-    pub redef takeWhile(f: a -> Bool \ ef, l: Nec[a]): List[a] \ ef = Nec.takeWhileLeft(f, l)
-    pub redef toArray(rc: Region[r], l: Nec[a]): Array[a, r] \ r = Nec.toArray(rc, l)
-    pub redef toVector(l: Nec[a]): Vector[a] = Nec.toVector(l)
-    pub redef toList(l: Nec[a]): List[a] = Nec.toList(l)
+    redef head(l: Nec[a]): a = Nec.head(l)
+    redef last(l: Nec[a]): a = Nec.last(l)
+    redef init(l: Nec[a]): List[a] = Nec.init(l)
+    redef tail(l: Nec[a]): List[a] = Nec.tail(l)
+    redef exists(f: a -> Bool \ ef, l: Nec[a]): Bool \ ef = Nec.exists(f, l)
+    redef forAll(f: a -> Bool \ ef, l: Nec[a]): Bool \ ef = Nec.forAll(f, l)
+    redef find(f: a -> Bool \ ef, l: Nec[a]): Option[a] \ ef = Nec.find(f, l)
+    redef findLeft(f: a -> Bool \ ef, l: Nec[a]): Option[a] \ ef = Nec.findLeft(f, l)
+    redef findRight(f: a -> Bool \ ef, l: Nec[a]): Option[a] \ ef = Nec.findRight(f, l)
+    redef memberOf(a: a, l: Nec[a]): Bool with Eq[a] = Nec.memberOf(a, l)
+    redef dropWhile(f: a -> Bool \ ef, l: Nec[a]): List[a] \ ef = Nec.dropWhileLeft(f, l)
+    redef takeWhile(f: a -> Bool \ ef, l: Nec[a]): List[a] \ ef = Nec.takeWhileLeft(f, l)
+    redef toArray(rc: Region[r], l: Nec[a]): Array[a, r] \ r = Nec.toArray(rc, l)
+    redef toVector(l: Nec[a]): Vector[a] = Nec.toVector(l)
+    redef toList(l: Nec[a]): List[a] = Nec.toList(l)
 }
 
 instance ToString[Nec[a]] with ToString[a] {
