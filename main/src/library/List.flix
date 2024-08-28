@@ -202,6 +202,11 @@ mod List {
         loop(l, 0)
 
     ///
+    /// Returns the number of elements in `l`.
+    ///
+    pub def size(l: List[a]): Int32 = length(l)
+
+    ///
     /// Returns `l2` appended to `l1`.
     ///
     /// The infix operator `:::` is an alias for `append` (`l1 ::: l2 = append(l1, l2)`).
