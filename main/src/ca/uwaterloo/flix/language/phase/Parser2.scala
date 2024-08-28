@@ -1411,6 +1411,20 @@ object Parser2 {
               lhs = close(mark, TreeKind.Expr.StructGet)
               lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
             }
+          case TokenKind.BracketL =>
+            val mark = openBefore(lhs)
+            eat(TokenKind.BracketL)
+            expression()
+            expect(TokenKind.BracketR, SyntacticContext.Expr.OtherExpr)
+            if (at(TokenKind.Equal)) { // index write
+              eat(TokenKind.Equal)
+              expression()
+              lhs = close(mark, TreeKind.Expr.IndexMut)
+              lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+            } else { // index read
+              lhs = close(mark, TreeKind.Expr.Index)
+              lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+            }
           case _ => continue = false
         }
       }
