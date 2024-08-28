@@ -1090,7 +1090,7 @@ object Weeder2 {
       pickAll(TreeKind.Expr.Expr, tree) match {
         case e1 :: e2 :: Nil => mapN(visitExpr(e1), visitExpr(e2)){
           case (exp1, exp2) =>
-            Expr.Apply(Expr.Ambiguous(Name.mkQName("Indexable.getSwapped", exp1.loc), exp1.loc), List(exp1, exp2), tree.loc)
+            Expr.Apply(Expr.Ambiguous(Name.mkQName("Indexable.get", exp1.loc), exp1.loc), List(exp1, exp2), tree.loc)
         }
         case other => throw InternalCompilerException(s"Expr.Index tree with ${other.length} operands", tree.loc)
       }
@@ -1101,7 +1101,7 @@ object Weeder2 {
       pickAll(TreeKind.Expr.Expr, tree) match {
         case e1 :: e2 :: e3 :: Nil => mapN(visitExpr(e1), visitExpr(e2), visitExpr(e3)) {
           case (exp1, exp2, exp3) =>
-            Expr.Apply(Expr.Ambiguous(Name.mkQName("IndexableMut.putSwapped", exp1.loc), exp1.loc), List(exp1, exp2, exp3), tree.loc)
+            Expr.Apply(Expr.Ambiguous(Name.mkQName("IndexableMut.put", exp1.loc), exp1.loc), List(exp1, exp2, exp3), tree.loc)
         }
         case other => throw InternalCompilerException(s"Expr.IndexMut tree with ${other.length} operands", tree.loc)
       }

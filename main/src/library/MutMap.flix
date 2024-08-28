@@ -26,7 +26,7 @@ instance Indexable[MutMap[k, v, r]] with Order[k] {
     type Elm = v
     type Aef = r + KeyNotFound
 
-    pub def get(i: k, t: MutMap[k, v, r]): v \ r + KeyNotFound = {
+    pub def get(t: MutMap[k, v, r], i: k): v \ r + KeyNotFound = {
         match MutMap.get(i, t) {
             case Some(v) => v
             case None => do KeyNotFound.keyNotFound("key not found")
@@ -37,7 +37,7 @@ instance Indexable[MutMap[k, v, r]] with Order[k] {
 instance IndexableMut[MutMap[k, v, r]] with Order[k] {
     type Aef = r
 
-    pub def put(i: k, v: v, t: MutMap[k, v, r]): Unit \ r = MutMap.put!(i, v, t)
+    pub def put(t: MutMap[k, v, r], i: k, v: v): Unit \ r = MutMap.put!(i, v, t)
 }
 
 instance Iterable[MutMap[k, v, r]] {
