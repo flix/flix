@@ -436,26 +436,26 @@ object FastSetUnification {
     }
 
     /**
-      * Returns a list of non-trivial unification equations computed from the given list `l`.
+      * Returns a list of non-trivial unification equations computed from `eqs`.
       *
       * Throws a [[ConflictException]] if an unsolvable equation is encountered.
       *
       * A trivial equation is one of:
-      * -     univ ~ univ
-      * -    empty ~ empty
-      * -        e ~ e        (same element)
-      * -        c ~ c        (same constant)
-      * -        x ~ x        (same variable)
+      *   -  `univ ~ univ`
+      *   - `empty ~ empty`
+      *   -     `e ~ e`      (same element)
+      *   -     `c ~ c`      (same constant)
+      *   -     `x ~ x`      (same variable)
       */
-    def checkAndSimplify(l: List[Equation]): Option[List[Equation]] = {
+    def checkAndSimplify(eqs: List[Equation]): Option[List[Equation]] = {
       var changed = false
       // unwrap to check triviallyWrong no matter if trivial did anything
-      val res0 = runFilterNotRule(Rules.triviallyHolds)(l) match {
+      val res0 = runFilterNotRule(Rules.triviallyHolds)(eqs) match {
         case Some(eqs) =>
           changed = true
           eqs
         case None =>
-          l
+          eqs
       }
       runErrRule(Rules.triviallyWrong)(res0)
       if (changed) Some(res0) else None
@@ -463,222 +463,56 @@ object FastSetUnification {
 
     def checkAndSimplifyDescr: DescribedPhase = DescribedPhase(
       "Check and Simplify",
-      "trivial correct and incorrect equations",
+      "trivially correct and incorrect equations",
       filteringPhase(checkAndSimplify)
     )
 
-    /**
-      * Propagates constants and truth values through the equation system.
-      *
-      * The implementation saturates the system, i.e. it computes a fixpoint.
-      *
-      * The implementation uses five rewrite rules:
-      *
-      * - `x ~ univ` becomes `[x -> univ]`.
-      * - `x ~ c` becomes `[x -> c]`.
-      * - `x ~ e` becomes `[x -> e]`.
-      * - `x ∩ y ∩ !z ∩ ... ∩ rest ~ univ` becomes `[x -> univ, y -> univ, z -> empty, ...]` and `rest ~ univ`.
-      * - `x ∪ y ∪ !z ∪ ... ∪ rest ~ empty` becomes `[x -> empty, y -> empty, z -> univ, ...]` and `rest ~ empty`.
-      *
-      * For example, if the equation system is:
-      *
-      * {{{
-      *     c1794221043 ~ (x55062 ∩ x55050 ∩ x55046 ∩ x55060 ∩ x55066 ∩ x55040 ∩ x55075 ∩ x55042 ∩ x55058 ∩ x55078)
-      *     x55078 ~ x112431
-      *     c1794221043 ~ x55040
-      *     x55042 ~ x112433
-      *     x55044 ~ x112437
-      *     x55046 ~ (x112435 ∩ x55044)
-      *     x55048 ~ univ
-      *     x55050 ~ (x112439 ∩ x55048)
-      *     x55052 ~ x112443
-      *     x55055 ~ univ
-      *     x55058 ~ (x55052 ∩ x112441 ∩ x55055)
-      *     x55060 ~ x112446
-      *     x55062 ~ x112448
-      *     x55066 ~ univ
-      *     x55075 ~ x112453
-      * }}}
-      *
-      * then after constant propagation it is:
-      *
-      * {{{
-      *     c1794221043 ~ (c1794221043 ∩ x55062 ∩ x55050 ∩ x55046 ∩ x55060 ∩ x55075 ∩ x55042 ∩ x55058 ∩ x55078)
-      *     x55078 ~ x112431
-      *     x55042 ~ x112433
-      *     x55044 ~ x112437
-      *     x55046 ~ (x112435 ∩ x55044)
-      *     x112439 ~ x55050
-      *     x55052 ~ x112443
-      *     x55058 ~ (x55052 ∩ x112441)
-      *     x55060 ~ x112446
-      *     x55062 ~ x112448
-      *     x55075 ~ x112453
-      * }}}
-      *
-      * with the substitution:
-      *
-      * {{{
-      *     x55048 -> univ
-      *     x55055 -> univ
-      *     x55066 -> univ
-      *     x55040 -> c1794221043
-      * }}}
-      *
-      * Note that several equations were simplified.
-      *
-      * Note: We use `subst.extended` to check for conflicts. For example, if we already know that `s = [x -> c17]` and we
-      * learn that `x -> univ` then we will try to extend s with the new binding which will raise a [[ConflictException]].
-      */
     def propagateConstants(l: List[Equation]): Output = {
       runRule(Rules.constantAssignment, simpleSubst = true)(l)
     }
 
     def propagateConstantsDescr: DescribedPhase = DescribedPhase(
       "Constant Propagation",
-      "resolves all equations of the form: x = c where x is a var and c is univ/empty/constant/element)",
+      "solves equations: `x ~ f` where f is a formula without variables",
       propagateConstants
     )
 
-    /**
-      * Propagates variables through the equation system. Cannot fail.
-      *
-      * The observation is that we if we have simple equations of the form: `x ~ y`
-      * then we can create a substitution that binds `[x -> y]`. Every time we create
-      * a binding, we must be careful to update both unsolved and pending equations.
-      *
-      * For example, if the equation system is:
-      *
-      * {{{
-      *     x78914 ~ (c1498 ∩ c1500 ∩ c1501)
-      *     x78914 ~ (x78926 ∩ x78923 ∩ x78917)
-      *     x78917 ~ x127244
-      *     x78921 ~ x127251
-      *     x78923 ~ (x127249 ∩ x127247 ∩ x127248)
-      *     x78926 ~ (x127254 ∩ x127252)
-      * }}}
-      *
-      * then after variable propagation it is:
-      *
-      * {{{
-      *     x78914 ~ (c1498 ∩ c1500 ∩ c1501)
-      *     x78914 ~ (x78926 ∩ x78923 ∩ x127244)
-      *     x78923 ~ (x127249 ∩ x127247 ∩ x127248)
-      *     x78926 ~ (x127254 ∩ x127252)
-      * }}}
-      *
-      * with the substitution:
-      *
-      * {{{
-      *      x78917 -> x127244
-      *     x127251 -> x78921
-      * }}}
-      *
-      * Returns a list of unsolved equations and a partial substitution.
-      */
     def propagateVars(l: List[Equation]): Output = {
       runSubstRule(Rules.variableAlias)(l)
     }
 
     def propagateVarsDescr: DescribedPhase = DescribedPhase(
       "Variable Propagation",
-      "resolves all equations of the form: x = y where x and y are vars)",
+      "solves equations: `x ~ y`",
       propagateVars
     )
 
 
-    /**
-      * Assigns variables. Given a unification equation `x ~ t` we can assign `[x -> t]` if `x` does not occur in `t`.
-      *
-      * For example, given the equation system:
-      *
-      * {{{
-      *    x78914 ~ (c1498 ∩ c1500 ∩ c1501)
-      *    x78914 ~ (x78926 ∩ x78923 ∩ x127244)
-      *    x78923 ~ (x127249 ∩ x127247 ∩ x127248)
-      *    x78926 ~ (x127254 ∩ x127252)
-      * }}}
-      *
-      * We compute the substitution:
-      *
-      * {{{
-      *     x78926 -> (x127254 ∩ x127252)
-      *     x78914 -> (c1498 ∩ c1500 ∩ c1501)
-      *     x78923 -> (x127249 ∩ x127247 ∩ x127248)
-      * }}}
-      *
-      * and we have the remaining equations:
-      *
-      * {{{
-      *     (c1498 ∩ c1500 ∩ c1501) ~ (x127248 ∩ x127244 ∩ x127254 ∩ x127252 ∩ x127249 ∩ x127247)
-      * }}}
-      */
     def varAssignment(l: List[Equation]): Output = {
       runSubstRule(Rules.variableAssignment)(l)
     }
 
     def varAssignmentDescr: DescribedPhase = DescribedPhase(
       "Variable Assignment",
-      "resolves all equations of the form: x = t where x is free in t",
+      "solves equations: `x ~ t` where `t` does not contain `x`",
       varAssignment
     )
 
-    /**
-      * Eliminates trivial and redundant equations.
-      *
-      * An equation is trivial if its LHS and RHS are the same.
-      *
-      * An equation is redundant if it appears multiple times in the list of equations.
-      *
-      * For example, given the equation system:
-      *
-      * {{{
-      *   (c9 ∩ c0) ~ (c9 ∩ c0)
-      *         c10 ~ c11
-      * }}}
-      *
-      * We return the new equation system:
-      *
-      * {{{
-      *   c10 ~ c11
-      * }}}
-      *
-      * For example, given the equation system:
-      *
-      * {{{
-      *   (c1 ∩ c3) ~ (c1 ∩ c3)
-      *   (c1 ∩ c3) ~ (c1 ∩ c3)
-      * }}}
-      *
-      * We return the new equation system:
-      *
-      * {{{
-      *   (c1 ∩ c3) ~ (c1 ∩ c3)
-      * }}}
-      *
-      * We only remove equations, hence the returned substitution is always empty.
-      *
-      * Note: We only consider *syntactic equality*.
-      */
-    def eliminateTrivialAndRedundant(l: List[Equation]): Option[List[Equation]] = {
+    def eliminateTrivialAndRedundant(eqs: List[Equation]): Option[List[Equation]] = {
       var result = List.empty[Equation]
       val seen = mutable.Set.empty[Equation]
       var changed = false
 
       // We rely on equations and terms having correct equals and hashCode functions.
       // Note: We are purely working with *syntactic equality*, not *semantic equality*.
-      for (eq <- l) {
-        if (!seen.contains(eq)) {
-          // The equation has not been seen before.
-          if (eq.t1 != eq.t2) {
-            // The LHS and RHS are different.
-            seen += eq
-            result = eq :: result
-          } else {
-            changed = true
-          }
-        } else {
+      for (eq <- eqs) {
+        if (eq.t1 == eq.t2 || seen.contains(eq)) {
+          // dont add to result
           changed = true
+        } else {
+          // keep in the list
+          seen += eq
+          result = eq :: result
         }
       }
 
@@ -968,14 +802,10 @@ object FastSetUnification {
     */
   @nowarn
   case class Equation private(t1: Term, t2: Term, loc: SourceLocation) {
-    /**
-      * Returns the size of this equation which is the sum of its lhs and rhs.
-      */
+    /** Returns the size of this equation which is the sum of its lhs and rhs. */
     final def size: Int = t1.size + t2.size
 
-    /**
-      * Returns a human-readable representation of `this` unification equation.
-      */
+    /** Returns a human-readable representation of `this` unification equation. */
     override final def toString: String = s"$t1 ~ $t2"
   }
 
