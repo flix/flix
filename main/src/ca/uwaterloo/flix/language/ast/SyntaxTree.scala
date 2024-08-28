@@ -182,10 +182,6 @@ object SyntaxTree {
 
       case object Apply extends Expr
 
-      case object Index extends Expr
-
-      case object IndexMut extends Expr
-
       case object Ascribe extends Expr
 
       case object Binary extends Expr
@@ -197,6 +193,10 @@ object SyntaxTree {
       case object CheckedTypeCast extends Expr
 
       case object Do extends Expr
+
+      case object Index extends Expr
+
+      case object IndexMut extends Expr
 
       case object InvokeConstructor2 extends Expr
 
