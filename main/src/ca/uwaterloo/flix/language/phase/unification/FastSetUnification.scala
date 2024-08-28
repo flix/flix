@@ -340,10 +340,11 @@ object FastSetUnification {
         // None
         // We have this case such that the two following doesn't loop.
         case (t1, t2) if t1.noFreeVars && t2.noFreeVars =>
-          // We could check if `t1 ~ t2` since there is no variables.
-          // But if that answer is no, we need to give an error, which we can't
-          // with the current signature. Leaving it untouched if it doesn't hold
-          // would mean that we could compute Term.equivalent again and again.
+          // TODO: We could check if `t1 ~ t2` since there is no variables.
+          //       But if that answer is no, we need to give an error, which we
+          //       can't with the current signature. Leaving it untouched if it
+          //       doesn't hold would mean that we could compute Term.equivalent
+          //       again and again.
           None
 
         // !t1 ~ t2, where t2 has no variables
