@@ -381,7 +381,7 @@ object EffUnification2 {
       })
       // mark the left side rigid
       val renv1 = generated(0).foldLeft(renv) { case (acc, (_, v)) => acc.markRigid(v.sym) }
-      unifyAll(eqs, scope, renv1, SourceLocation.Unknown, RunOptions.default.copy(verifySize = false)) match {
+      unifyAll(eqs, scope, renv1, SourceLocation.Unknown, RunOptions.default.copy(sizeThreshold = -1)) match {
         case Result.Ok(_) =>
           // everything is good!
           ()

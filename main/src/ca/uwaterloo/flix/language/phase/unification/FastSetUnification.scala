@@ -46,13 +46,13 @@ object FastSetUnification {
   object Solver {
 
     /**
-      * @param sizeThreshold    the upper limit of the amount of connectives in the substitution
+      * @param sizeThreshold    the upper limit of the amount of connectives in the substitution,
+      *                         non-positive numbers disable checking
       * @param complexThreshold the upper limit of mappings in the substitution
       * @param permutationLimit the number of permutations given to SVE
       * @param debugging        prints information to terminal during solving
       * @param rerun            if a system couldn't be solved, rerun it with `debugging = true`
       * @param verifySubst      verify that the solution substitution is a solution (VERY SLOW)
-      * @param verifySize       verify that the solution substitution is less than `sizeThreshold`
       */
     case class RunOptions(
                            sizeThreshold: Int,
@@ -60,8 +60,7 @@ object FastSetUnification {
                            permutationLimit: Int,
                            debugging: Boolean,
                            rerun: Boolean,
-                           verifySubst: Boolean,
-                           verifySize: Boolean
+                           verifySubst: Boolean
                          )
 
     object RunOptions {
@@ -71,8 +70,7 @@ object FastSetUnification {
         permutationLimit = 10,
         debugging = false,
         rerun = false,
-        verifySubst = false,
-        verifySize = true
+        verifySubst = false
       )
     }
 
@@ -125,7 +123,7 @@ object FastSetUnification {
         // SVE can solves everything or throws, so eqs is always empty
         assert(state.eqs.isEmpty)
         if (opts.verifySubst) verifySubst(state.subst, l)
-        if (opts.verifySize) verifySubstSize(state.subst)
+        if (opts.sizeThreshold > 0) verifySubstSize(state.subst)
         (Result.Ok(state.subst), state.lastProgressPhase)
       } catch {
         case _: ConflictException | _: TooComplexException if !opts.debugging && opts.rerun =>
