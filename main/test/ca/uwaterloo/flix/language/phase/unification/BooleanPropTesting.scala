@@ -93,12 +93,12 @@ object BooleanPropTesting {
     // `clickAndGo` means that debugging is enabled and that every run will wait for input from StdIn.
     val clickAndGo = false
     val options = RunOptions.default.copy(debugging = if (clickAndGo) RunOptions.Debugging.DebugAll else RunOptions.Debugging.Nothing)
-    testSolvableConstraints(new Random(-1827123978312874L), explodedRandomXor, 700_000, 1, -1, wait = clickAndGo, options)
+    testSolvableConstraints(askForRerun = true, new Random(-1827123978312874L), explodedRandomXor, 700_000, 1, -1, wait = clickAndGo, options)
   }
 
   // TODO add testing of t ~ propagation(t)
 
-  def testSolvableConstraints(random: Random, genSolvable: Random => List[Equation], testLimit: Int, errLimit: Int, timeoutLimit: Int, wait: Boolean, opts: RunOptions = RunOptions.default): Boolean = {
+  def testSolvableConstraints(askForRerun: Boolean, random: Random, genSolvable: Random => List[Equation], testLimit: Int, errLimit: Int, timeoutLimit: Int, wait: Boolean, opts: RunOptions = RunOptions.default): Boolean = {
     def printProgress(tests: Int, errAmount: Int, timeoutAmount: Int, durationSeconds: Long): Unit = {
       val passed = tests - errAmount - timeoutAmount
       val runsPerSec = tests / durationSeconds.max(1)
@@ -138,7 +138,7 @@ object BooleanPropTesting {
     val (smallestError, smallestTimeout) = printTestOutput(errs, timeouts, tests)
 
     def askAndRun(description: String)(l: List[Equation]): Unit = {
-      if (askYesNo(s"Do you want to run $description?")) runEquations(l, opts.copy(debugging = RunOptions.Debugging.DebugAll))
+      if (askForRerun && askYesNo(s"Do you want to run $description?")) runEquations(l, opts.copy(debugging = RunOptions.Debugging.DebugAll))
     }
 
     smallestError.foreach(askAndRun("smallest error"))

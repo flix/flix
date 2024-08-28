@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, Rigidity, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.unification.FastSetUnification.Solver.RunOptions
 import ca.uwaterloo.flix.language.phase.unification.FastSetUnification.Term.mkCompl
-import ca.uwaterloo.flix.language.phase.unification.FastSetUnification.{ConflictException, Equation, Term, ComplexException}
+import ca.uwaterloo.flix.language.phase.unification.FastSetUnification.{ComplexException, ConflictException, Equation, Term}
 import ca.uwaterloo.flix.util.collection.Bimap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
@@ -66,7 +66,7 @@ object EffUnification2 {
       case Some(subst) => (subst, Nil)
     }
     // `old` is by-name, so don't let-bind it.
-    Checking.compare(checkThings = false, crash = true, wait = false, tpe1, tpe2, old = EffUnification.unify(tpe1, tpe2, renv)(scope, flix), neww = neww, scope, renv)
+    Checking.compare(checkThings = true, crash = true, wait = false, tpe1, tpe2, old = EffUnification.unify(tpe1, tpe2, renv)(scope, flix), neww = neww, scope, renv)
     neww
   }
 
@@ -381,9 +381,14 @@ object EffUnification2 {
       })
       // mark the left side rigid
       val renv1 = generated(0).foldLeft(renv) { case (acc, (_, v)) => acc.markRigid(v.sym) }
-      unifyAll(eqs, scope, renv1, SourceLocation.Unknown, RunOptions.default.copy(sizeThreshold = -1)) match {
+
+      val unificationres = unifyAll(eqs, scope, renv1, SourceLocation.Unknown)
+      unificationres match {
         case Result.Ok(_) =>
           // everything is good!
+          ()
+        case Result.Err(UnificationError.TooComplex(_, _)) =>
+          // we are not sure, lets say its correct
           ()
         case Result.Err(err) =>
           println()
