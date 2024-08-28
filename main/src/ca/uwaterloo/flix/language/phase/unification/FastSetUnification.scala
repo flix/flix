@@ -526,23 +526,25 @@ object FastSetUnification {
     )
 
     /**
-      * Given a unification equation system `l` computes a most-general unifier for all its equations.
+      * Returns a most-general unifier for `eqs`, trying multiple permutations
+      * to minimize substitution size.
       *
-      * If multiple equations are involved then we try to solve them in different order to find a small substitution.
+      * @param complexThreshold throws [[TooComplexException]] if `eqs` is longer,
+      *                         a non-positive number omits the check.
+      * @param permutationLimit a limit on the number of permutations to try,
+      *                         a non-positive number will try all permutations.
       */
-    def setUnifyAllPickSmallest(complexThreshold: Int, permutationLimit: Int)(l: List[Equation]): SetSubstitution = {
-      // We have at most one equation to solve: just solve immediately.
-      if (l.length <= 1) {
-        return setUnifyAll(l)
+    def setUnifyAllPickSmallest(complexThreshold: Int, permutationLimit: Int)(eqs: List[Equation]): SetSubstitution = {
+      if (eqs.length <= 1) {
+        return setUnifyAll(eqs)
       }
 
-      // Check that there are not too many complex equations.
-      if (complexThreshold > 0 && l.length > complexThreshold) {
-        throw TooComplexException(s"Too many complex equations (threshold: $complexThreshold, found: ${l.length})")
+      if (complexThreshold > 0 && eqs.length > complexThreshold) {
+        throw TooComplexException(s"Too many complex equations (threshold: $complexThreshold, found: ${eqs.length})")
       }
 
       // We solve the first [[PermutationLimit]] permutations and pick the one that gives rise to the smallest substitution.
-      val permutations = if (permutationLimit > 0) l.permutations.take(permutationLimit) else l.permutations
+      val permutations = if (permutationLimit > 0) eqs.permutations.take(permutationLimit) else eqs.permutations
       val results = permutations.toList.map {
         // TODO: stop early for sufficiently small substitutions
         p => (p, setUnifyAll(p))
@@ -560,18 +562,8 @@ object FastSetUnification {
       completePhase(setUnifyAllPickSmallest(complexThreshold, permutationLimit))
     )
 
-
-    /**
-      * Computes the most-general unifier of all the given equations `l`.
-      *
-      * Throws a [[ConflictException]] if an equation in `l` cannot be solved.
-      *
-      * Note: We assume that any existing substitution has already been applied to the equations in `l`.
-      *
-      * Note: We assume that any existing substitution will be composed with the substitution returned by this function.
-      */
-    def setUnifyAll(l: List[Equation]): SetSubstitution = {
-      runSubstResRule(Rules.setUnifyOne)(l)
+    def setUnifyAll(eqs: List[Equation]): SetSubstitution = {
+      runSubstResRule(Rules.setUnifyOne)(eqs)
     }
 
     def setUnifyAllDescr: DescribedPhase = DescribedPhase(
