@@ -92,7 +92,7 @@ object BooleanPropTesting {
   def main(args: Array[String]): Unit = {
     // `clickAndGo` means that debugging is enabled and that every run will wait for input from StdIn.
     val clickAndGo = false
-    val options = RunOptions.default.copy(debugging = clickAndGo)
+    val options = RunOptions.default.copy(debugging = if (clickAndGo) RunOptions.Debugging.DebugAll else RunOptions.Debugging.Nothing)
     testSolvableConstraints(new Random(-1827123978312874L), explodedRandomXor, 700_000, 1, -1, wait = clickAndGo, options)
   }
 
@@ -138,7 +138,7 @@ object BooleanPropTesting {
     val (smallestError, smallestTimeout) = printTestOutput(errs, timeouts, tests)
 
     def askAndRun(description: String)(l: List[Equation]): Unit = {
-      if (askYesNo(s"Do you want to run $description?")) runEquations(l, opts.copy(debugging = true))
+      if (askYesNo(s"Do you want to run $description?")) runEquations(l, opts.copy(debugging = RunOptions.Debugging.DebugAll))
     }
 
     smallestError.foreach(askAndRun("smallest error"))

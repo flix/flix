@@ -50,26 +50,33 @@ object FastSetUnification {
       *                         non-positive numbers disable checking
       * @param complexThreshold the upper limit of mappings in the substitution
       * @param permutationLimit the number of permutations given to SVE
-      * @param debugging        prints information to terminal during solving
-      * @param rerun            if a system couldn't be solved, rerun it with `debugging = true`
+      * @param debugging        prints information to terminal during solving based on the option
       * @param verifySubst      verify that the solution substitution is a solution (VERY SLOW)
       */
     case class RunOptions(
                            sizeThreshold: Int,
                            complexThreshold: Int,
                            permutationLimit: Int,
-                           debugging: Boolean,
-                           rerun: Boolean,
+                           debugging: RunOptions.Debugging,
                            verifySubst: Boolean
                          )
 
     object RunOptions {
+      sealed trait Debugging
+
+      object Debugging {
+        case object Nothing extends Debugging
+
+        case object DebugAll extends Debugging
+
+        case object RerunDebugOnCrash extends Debugging
+      }
+
       val default: RunOptions = RunOptions(
         sizeThreshold = 1800,
         complexThreshold = 10,
         permutationLimit = 10,
-        debugging = false,
-        rerun = false,
+        debugging = Debugging.Nothing,
         verifySubst = false
       )
     }
@@ -106,18 +113,20 @@ object FastSetUnification {
     def solveWithInfo(l: List[Equation], opts: RunOptions = RunOptions.default): (Result[SetSubstitution, (FastBoolUnificationException, List[Equation], SetSubstitution)], Option[(String, Int)]) = {
       import FastSetUnification.Phases as P
       implicit val implOpts: RunOptions = opts
+      val noDebug = opts.copy(debugging = RunOptions.Debugging.Nothing)
+
       val state = new State(l)
 
       debugState(state)
       try {
         runPhase(P.propagateConstantsDescr)(state)
-        runPhase(P.checkAndSimplifyDescr)(state)(opts.copy(debugging = false))
+        runPhase(P.checkAndSimplifyDescr)(state)(noDebug)
         runPhase(P.propagateVarsDescr)(state)
-        runPhase(P.checkAndSimplifyDescr)(state)(opts.copy(debugging = false))
+        runPhase(P.checkAndSimplifyDescr)(state)(noDebug)
         runPhase(P.varAssignmentDescr)(state)
-        runPhase(P.checkAndSimplifyDescr)(state)(opts.copy(debugging = false))
+        runPhase(P.checkAndSimplifyDescr)(state)(noDebug)
         runPhase(P.eliminateTrivialAndRedundantDescr)(state)
-        runPhase(P.checkAndSimplifyDescr)(state)(opts.copy(debugging = false))
+        runPhase(P.checkAndSimplifyDescr)(state)(noDebug)
         runPhase(P.setUnifyPickSmallestDescr(complexThreshold = opts.complexThreshold, permutationLimit = opts.permutationLimit))(state)
 
         // SVE can solves everything or throws, so eqs is always empty
@@ -126,9 +135,9 @@ object FastSetUnification {
         if (opts.sizeThreshold > 0) verifySubstSize(state.subst)
         (Result.Ok(state.subst), state.lastProgressPhase)
       } catch {
-        case _: ConflictException | _: TooComplexException if !opts.debugging && opts.rerun =>
+        case _: ConflictException | _: TooComplexException if opts.debugging == RunOptions.Debugging.RerunDebugOnCrash =>
           // rerun with debugging
-          solveWithInfo(l, opts.copy(debugging = true, rerun = false))
+          solveWithInfo(l, opts.copy(debugging = RunOptions.Debugging.DebugAll))
         case ex: ConflictException =>
           (Result.Err((ex, state.eqs, state.subst)), state.lastProgressPhase)
         case ex: TooComplexException =>
@@ -196,21 +205,23 @@ object FastSetUnification {
     }
 
     /** Prints the phase number, name, and description if enabled by [[RunOptions]]. */
-    private def debugPhase(number: Int, name: String, description: String)(implicit opts: RunOptions): Unit = if (opts.debugging) {
-      Console.println("-".repeat(80))
-      Console.println(s"--- Phase $number: $name")
-      Console.println(s"    ($description)")
-      Console.println("-".repeat(80))
-    }
+    private def debugPhase(number: Int, name: String, description: String)(implicit opts: RunOptions): Unit =
+      if (opts.debugging == RunOptions.Debugging.DebugAll) {
+        Console.println("-".repeat(80))
+        Console.println(s"--- Phase $number: $name")
+        Console.println(s"    ($description)")
+        Console.println("-".repeat(80))
+      }
 
     /** Prints the state equations and substitution if enabled by [[RunOptions]]. */
-    private def debugState(state: State)(implicit opts: RunOptions): Unit = if (opts.debugging) {
-      Console.println(s"Equations (${state.eqs.size}):")
-      Console.println(format(state.eqs))
-      Console.println(s"Substitution (${state.subst.numberOfBindings}):")
-      Console.println(state.subst.toString)
-      Console.println("")
-    }
+    private def debugState(state: State)(implicit opts: RunOptions): Unit =
+      if (opts.debugging == RunOptions.Debugging.DebugAll) {
+        Console.println(s"Equations (${state.eqs.size}):")
+        Console.println(format(state.eqs))
+        Console.println(s"Substitution (${state.subst.numberOfBindings}):")
+        Console.println(state.subst.toString)
+        Console.println("")
+      }
 
   }
 
