@@ -504,13 +504,16 @@ object FastSetUnification {
       varAssignment
     )
 
+    /**
+      * Eliminates redundant equations
+      *   - equations that occur multiple types
+      *   - `f ~ f` (syntactically trivial)
+      */
     def eliminateTrivialAndRedundant(eqs: List[Equation]): Option[List[Equation]] = {
       var result = List.empty[Equation]
       val seen = mutable.Set.empty[Equation]
       var changed = false
 
-      // We rely on equations and terms having correct equals and hashCode functions.
-      // Note: We are purely working with *syntactic equality*, not *semantic equality*.
       for (eq <- eqs) {
         if (eq.t1 == eq.t2 || seen.contains(eq)) {
           // dont add to result
