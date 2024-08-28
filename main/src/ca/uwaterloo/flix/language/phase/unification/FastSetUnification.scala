@@ -48,7 +48,7 @@ object FastSetUnification {
     /**
       * @param sizeThreshold    the upper limit of the amount of connectives in the substitution,
       *                         a non-positive number disables checking
-      * @param complexThreshold the upper limit of mappings in the substitution,
+      * @param complexThreshold the upper limit of equations allowed at the SVE phase,
       *                         a non-positive number disables checking
       * @param permutationLimit the number of permutations given to SVE,
       *                         a non-positive number uses all permutations
@@ -129,12 +129,15 @@ object FastSetUnification {
         runPhase(P.checkAndSimplifyDescr)(state)(noDebug)
         runPhase(P.eliminateTrivialAndRedundantDescr)(state)
         runPhase(P.checkAndSimplifyDescr)(state)(noDebug)
-        runPhase(P.setUnifyPickSmallestDescr(complexThreshold = opts.complexThreshold, permutationLimit = opts.permutationLimit))(state)
+        runPhase(P.setUnifyPickSmallestDescr(sizeThreshold = opts.complexThreshold, permutationLimit = opts.permutationLimit))(state)
 
         // SVE can solves everything or throws, so eqs is always empty
         assert(state.eqs.isEmpty)
         if (opts.verifySubst) verifySubst(state.subst, l)
-        if (opts.sizeThreshold > 0) verifySubstSize(state.subst)
+        if (opts.sizeThreshold > 0) {
+          val loc = l.headOption.map(_.loc).getOrElse(SourceLocation.Unknown)
+          verifySubstSize(state.subst, loc)
+        }
         (Result.Ok(state.subst), state.lastProgressPhase)
       } catch {
         case _: ConflictException | _: ComplexException if opts.debugging == RunOptions.Debugging.RerunDebugOnCrash =>
@@ -198,11 +201,12 @@ object FastSetUnification {
       *
       * @throws ComplexException if the substitution is too big
       */
-    private def verifySubstSize(subst: SetSubstitution)(implicit opts: RunOptions): Unit = {
+    private def verifySubstSize(subst: SetSubstitution, loc: SourceLocation)(implicit opts: RunOptions): Unit = {
       val size = subst.size
       if (opts.sizeThreshold > 0 && size > opts.sizeThreshold) {
         throw ComplexException(
-          s"Summed term sizes in substitution ($size) is over the threshold (${opts.sizeThreshold})."
+          s"Summed term sizes in substitution ($size) is over the threshold (${opts.sizeThreshold}).",
+          loc
         )
       }
     }
@@ -531,19 +535,21 @@ object FastSetUnification {
       * Returns a most-general unifier for `eqs`, trying multiple permutations
       * to minimize substitution size.
       *
-      * @param complexThreshold throws [[ComplexException]] if `eqs` is longer,
+      * @param sizeThreshold throws [[ComplexException]] if `eqs` is longer than `sizeThreshold`,
       *                         a non-positive number omits the check.
       * @param permutationLimit a limit on the number of permutations to try,
       *                         a non-positive number will try all permutations.
+      * @throws ComplexException if `eqs` is longer than `sizeThreshold`
       */
-    def setUnifyAllPickSmallest(complexThreshold: Int, permutationLimit: Int)(eqs: List[Equation]): SetSubstitution = {
+    def setUnifyAllPickSmallest(sizeThreshold: Int, permutationLimit: Int)(eqs: List[Equation]): SetSubstitution = {
       if (eqs.length <= 1) {
         return setUnifyAll(eqs)
       }
 
-      if (complexThreshold > 0 && eqs.length > complexThreshold) {
+      if (sizeThreshold > 0 && eqs.length > sizeThreshold) {
         throw ComplexException(
-          s"Amount of complex equations in substitution (${eqs.length}) is over the threshold ($complexThreshold)."
+          s"Amount of complex equations in substitution (${eqs.length}) is over the threshold ($sizeThreshold).",
+          eqs.head.loc
         )
       }
 
@@ -560,10 +566,10 @@ object FastSetUnification {
       results.head._2
     }
 
-    def setUnifyPickSmallestDescr(complexThreshold: Int, permutationLimit: Int): DescribedPhase = DescribedPhase(
+    def setUnifyPickSmallestDescr(sizeThreshold: Int, permutationLimit: Int): DescribedPhase = DescribedPhase(
       "Set Unification",
-      "resolves all remaining equations using SVE, trying multiple permutations to minimize the solution",
-      completePhase(setUnifyAllPickSmallest(complexThreshold, permutationLimit))
+      "solves anything with SVE, trying multiple permutations to minimize the solution",
+      completePhase(setUnifyAllPickSmallest(sizeThreshold, permutationLimit))
     )
 
     def setUnifyAll(eqs: List[Equation]): SetSubstitution = {
@@ -1979,12 +1985,14 @@ object FastSetUnification {
   }
 
   /** A common super-type for exceptions throw by the solver. */
-  sealed trait UnificationException extends RuntimeException
+  sealed trait UnificationException extends RuntimeException {
+    def loc: SourceLocation
+  }
 
   /** Un-unifiable terms `t1` and `t2`. */
   case class ConflictException(t1: Term, t2: Term, loc: SourceLocation) extends UnificationException
 
   /** A substitution is too large or the equation system is too complex. */
-  case class ComplexException(msg: String) extends UnificationException
+  case class ComplexException(msg: String, loc: SourceLocation) extends UnificationException
 
 }
