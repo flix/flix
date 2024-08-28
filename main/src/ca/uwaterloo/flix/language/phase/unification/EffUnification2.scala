@@ -332,7 +332,7 @@ object EffUnification2 {
     type Unified = Result[UnifiedI, UnificationError]
 
     def compare(checkThings: Boolean, crash: Boolean, wait: Boolean, tpe1: Type, tpe2: Type, old: => Unified, neww: Unified, scope: Scope, renv: RigidityEnv)(implicit flix: Flix): Unit = {
-      if (!checkThings) () else {
+      if (checkThings) {
         checking = true
         handleResults(old, neww, crash, wait, tpe1, tpe2, scope, renv)
       }
