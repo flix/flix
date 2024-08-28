@@ -20,10 +20,11 @@ import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.{Ast, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.unification.Unification
-import ca.uwaterloo.flix.util.Result
+import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 import ca.uwaterloo.flix.util.collection.{ListMap, ListOps}
 
-import java.lang.reflect.{Constructor, Method}
+import java.lang.reflect.Method
+import java.lang.reflect.Constructor
 import java.math.BigInteger
 import scala.annotation.tailrec
 
