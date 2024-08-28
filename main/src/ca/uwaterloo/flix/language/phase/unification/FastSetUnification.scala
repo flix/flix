@@ -47,9 +47,11 @@ object FastSetUnification {
 
     /**
       * @param sizeThreshold    the upper limit of the amount of connectives in the substitution,
-      *                         non-positive numbers disable checking
-      * @param complexThreshold the upper limit of mappings in the substitution
-      * @param permutationLimit the number of permutations given to SVE
+      *                         a non-positive number disables checking
+      * @param complexThreshold the upper limit of mappings in the substitution,
+      *                         a non-positive number disables checking
+      * @param permutationLimit the number of permutations given to SVE,
+      *                         a non-positive number uses all permutations
       * @param debugging        prints information to terminal during solving based on the option
       * @param verifySubst      verify that the solution substitution is a solution (VERY SLOW)
       */
@@ -695,18 +697,20 @@ object FastSetUnification {
       * If multiple equations are involved then we try to solve them in different order to find a small substitution.
       */
     def setUnifyAllPickSmallest(complexThreshold: Int, permutationLimit: Int)(l: List[Equation]): SetSubstitution = {
-      // Case 1: We have at most one equation to solve: just solve immediately.
+      // We have at most one equation to solve: just solve immediately.
       if (l.length <= 1) {
         return setUnifyAll(l)
       }
 
-      // Case 2: Check that there are not too many complex equations.
-      if (l.length > complexThreshold) {
+      // Check that there are not too many complex equations.
+      if (complexThreshold > 0 && l.length > complexThreshold) {
         throw TooComplexException(s"Too many complex equations (threshold: $complexThreshold, found: ${l.length})")
       }
 
-      // Case 3: We solve the first [[PermutationLimit]] permutations and pick the one that gives rise to the smallest substitution.
-      val results = l.permutations.take(permutationLimit).toList.map {
+      // We solve the first [[PermutationLimit]] permutations and pick the one that gives rise to the smallest substitution.
+      val permutations = if (permutationLimit > 0) l.permutations.take(permutationLimit) else l.permutations
+      val results = permutations.toList.map {
+        // TODO: stop computation for sufficiently small substitutions
         p => (p, setUnifyAll(p))
       }.sortBy {
         case (_, s) => s.size
