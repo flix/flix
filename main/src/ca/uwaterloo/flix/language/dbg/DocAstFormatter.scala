@@ -37,10 +37,10 @@ object DocAstFormatter {
           })
         }) |::| text("]")
         val casesf = curly(sep(breakWith(" "), cases.map {
-          case Case(sym, tpe@Type.Tuple(_)) =>
-            text("case") +: text(sym.name) |::| formatType(tpe, paren = false)
-          case Case(sym, tpe) =>
-            text("case") +: text(sym.name) |::| parens(formatType(tpe, paren = false))
+          case Case(sym, Nil) =>
+            text("case") +: text(sym.name)
+          case Case(sym, tpes) =>
+            text("case") +: text(sym.name) |::| parens(sep(text(", "), tpes.map(formatType(_, paren = false))))
         }))
         val d = text("enum") +: text(sym.toString) |::| tparamsf +: casesf
         ((sym.namespace :+ sym.name: Seq[String], sym.name), d)
