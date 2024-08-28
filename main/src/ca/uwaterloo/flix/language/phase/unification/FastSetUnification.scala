@@ -612,7 +612,7 @@ object FastSetUnification {
                 // add the new eqs to `workList` if declared applicable
                 if (selfFeeding) workList = eqs ++ workList
                 else leftover = eqs ++ leftover
-                subst = if (simpleSubst) s ++ subst else s @@ subst
+                subst = if (simpleSubst) s.unsafeMerge(subst) else s @@ subst
               case None =>
                 leftover = eq :: leftover
             }
@@ -1383,9 +1383,7 @@ object FastSetUnification {
         val t0 = SetSubstitution.singleton(x, Term.Empty)(t)
         val t1 = SetSubstitution.singleton(x, Term.Univ)(t)
         val se = successiveVariableElimination(Term.propagation(Term.mkInter(t0, t1)), xs)
-
-        val st = SetSubstitution.singleton(x, Term.mkUnion(se(t0), Term.mkMinus(Term.Var(x), se(t1))))
-        st ++ se
+        se.unsafeExtend(x, Term.propagation(Term.mkUnion(se(t0), Term.mkMinus(Term.Var(x), se(t1)))))
     }
 
     /**
@@ -1853,56 +1851,45 @@ object FastSetUnification {
         Term.reconstructUnion(posElem, posCsts, Set.empty, negElem, negCsts, Set.empty, ts.toList)
     }
 
-    /**
-      * Applies `this` substitution to the equation `eq`.
-      *
-      * The equation may be "flipped", for example:
-      * {{{
-      *   {x -> y}.apply(univ ~ x ∩ y) = y ~ univ
-      * }}}
-      */
-    def apply(eq: Equation): Equation = eq match {
-      case Equation(t1, t2, loc) =>
-        val app1 = apply(t1)
-        val app2 = apply(t2)
-        if ((app1 eq t1) && (app2 eq t2)) eq else Equation.mk(app1, app2, loc)
+    /** Applies `this` to `eq`. */
+    def apply(eq: Equation): Equation = {
+      val Equation(t1, t2, loc) = eq
+      val app1 = apply(t1)
+      val app2 = apply(t2)
+      if ((app1 eq t1) && (app2 eq t2)) eq else Equation.mk(app1, app2, loc)
     }
 
-    /** Applies `this` substitution to the list of equations `l`. */
-    def apply(l: List[Equation]): List[Equation] =
-      if (m.isEmpty) l else l.map(apply)
+    /** Applies `this` to `eqs`. */
+    def apply(eqs: List[Equation]): List[Equation] =
+      if (m.isEmpty) eqs else eqs.map(apply)
 
-    /** Returns the number of bindings in `this` substitution. */
+    /** Returns the number of bindings in `this`. */
     def numberOfBindings: Int = m.size
 
-    /** Returns the sum of the sizes of the terms in this substitution. */
+    /** Returns the sum of the sizes of the terms in `this`. */
     def size: Int = Term.sizes(m.values.toList)
 
     /**
-      * Extends `this` substitution with a new binding from the variable `x` to the term `t`.
+      * Adds the disjoint binding `{x -> t}` to `this`.
       *
-      * Throws a [[ConflictException]] if `x` is already bound to a term syntactically different from `t`.
+      * OBS: The variables of `this`, `x`, and `t` must not overlap for correctness.
       */
-    def extended(x: Int, t: Term, loc: SourceLocation): SetSubstitution = m.get(x) match {
-      case None => SetSubstitution(m + (x -> t))
-      case Some(t1) =>
-        // Note: If t == t1 we can just return the same substitution.
-        if (t == t1)
-          this
-        else
-          throw ConflictException(t, t1, loc)
+    def unsafeExtend(x: Int, t: Term): SetSubstitution = {
+      if (!m.contains(x)) {
+        SetSubstitution(m + (x -> t))
+      } else {
+        throw InternalCompilerException(s"Substitution already contains x$x", SourceLocation.Unknown)
+      }
     }
 
     /**
-      * Merges `this` substitution with `that` substitution.
+      * Merges the two disjoint substitutions, `this` and `that`.
       *
-      * The returned substitution has all bindings from `this` and `that` substitution.
+      * OBS: The variables in the two substitutions must not overlap for correctness.
       *
-      * The variables in the two substitutions must not overlap.
-      *
-      * It is faster to call `smaller ++ larger` than to call `larger ++ smaller`.
+      * NOTE: `smaller ++ larger` is faster than `larger ++ smaller`.
       */
-    def ++(that: SetSubstitution): SetSubstitution = {
+    def unsafeMerge(that: SetSubstitution): SetSubstitution = {
       if (this.isEmpty) that
       else if (that.isEmpty) this
       else {
@@ -1916,7 +1903,7 @@ object FastSetUnification {
       }
     }
 
-    /** Returns `x -> this(that(x))` from `this @@ that` conceptually. */
+    /** Returns `x -> this(that(x))` from `this @@ that`, conceptually. */
     def @@(that: SetSubstitution): SetSubstitution = {
       if (this.m.isEmpty) that
       else if (that.m.isEmpty) this
