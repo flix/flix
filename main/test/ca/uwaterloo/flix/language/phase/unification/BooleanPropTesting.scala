@@ -93,12 +93,12 @@ object BooleanPropTesting {
     // `clickAndGo` means that debugging is enabled and that every run will wait for input from StdIn.
     val clickAndGo = false
     val options = RunOptions.default.copy(debugging = if (clickAndGo) RunOptions.Debugging.DebugAll else RunOptions.Debugging.Nothing)
-    testSolvableConstraints(askForRerun = true, new Random(-1827123978312874L), explodedRandomXor, 700_000, 1, -1, wait = clickAndGo, options)
+    testSolvableConstraints(terminal = true, new Random(-1827123978312874L), explodedRandomXor, 700_000, 1, -1, wait = clickAndGo, options)
   }
 
   // TODO add testing of t ~ propagation(t)
 
-  def testSolvableConstraints(askForRerun: Boolean, random: Random, genSolvable: Random => List[Equation], testLimit: Int, errLimit: Int, timeoutLimit: Int, wait: Boolean, opts: RunOptions = RunOptions.default): Boolean = {
+  def testSolvableConstraints(terminal: Boolean, random: Random, genSolvable: Random => List[Equation], testLimit: Int, errLimit: Int, timeoutLimit: Int, wait: Boolean, opts: RunOptions = RunOptions.default): Boolean = {
     def printProgress(tests: Int, errAmount: Int, timeoutAmount: Int, durationSeconds: Long): Unit = {
       val passed = tests - errAmount - timeoutAmount
       val runsPerSec = tests / durationSeconds.max(1)
@@ -116,7 +116,7 @@ object BooleanPropTesting {
 
     while (continue && (testLimit <= 0 || tests < testLimit)) {
       val now = System.currentTimeMillis()
-      if (now - lastProgressPrint >= 2000) {
+      if (terminal && now - lastProgressPrint >= 2000) {
         lastProgressPrint = now
         printProgress(tests, errs.length, timeouts.length, durationSeconds = (now - start) / 1000)
       }
@@ -133,12 +133,13 @@ object BooleanPropTesting {
           timeouts += ((input, phase))
           if (timeoutLimit > 0 && timeouts.sizeIs >= timeoutLimit) continue = false
       }
-      if (wait) scala.io.StdIn.readLine()
+      if (terminal && wait) scala.io.StdIn.readLine()
     }
-    val (smallestError, smallestTimeout) = printTestOutput(errs, timeouts, tests)
+    val (smallestError, smallestTimeout) = printTestOutput(terminal, errs, timeouts, tests)
 
     def askAndRun(description: String)(l: List[Equation]): Unit = {
-      if (askForRerun && askYesNo(s"Do you want to run $description?")) runEquations(l, opts.copy(debugging = RunOptions.Debugging.DebugAll))
+      if (terminal && askYesNo(s"Do you want to run $description?"))
+        runEquations(l, opts.copy(debugging = RunOptions.Debugging.DebugAll))
     }
 
     smallestError.foreach(askAndRun("smallest error"))
@@ -146,23 +147,27 @@ object BooleanPropTesting {
     errs.isEmpty
   }
 
-  private def printTestOutput(errs: ListBuffer[(List[Equation], Boolean, Int)], timeouts: ListBuffer[(List[Equation], Int)], tests: Int): (Option[List[Equation]], Option[List[Equation]]) = {
-    println()
-    println(s"   Tests: $tests")
-    val errSize = errs.size
-    val verfSize = errs.count { case (_, b, _) => b }
-    println(s"    Errs: $errSize (${errSize / (1.0 * tests) * 100} %) ($verfSize verification errors)")
-    val timeoutSize = timeouts.size
-    println(s"Timeouts: $timeoutSize (${timeoutSize / (1.0 * tests) * 100} %)")
-    if (errs.nonEmpty) println(s"\nSmallest error:")
-    val smallestError = errs.sortBy { case (a, _, p) => (p, a.map(_.size).sum) }.headOption
-    smallestError.foreach {
-      case (err, verf, phase) => println(s">${if (verf) "v" else ""}$phase: ${err.mkString("\n")}\n>${if (verf) "v" else ""}$phase: ${toRawStringEqs(err)}")
+  private def printTestOutput(terminal: Boolean, errs: ListBuffer[(List[Equation], Boolean, Int)], timeouts: ListBuffer[(List[Equation], Int)], tests: Int): (Option[List[Equation]], Option[List[Equation]]) = {
+    if (terminal) {
+      println()
+      println(s"   Tests: $tests")
+      val errSize = errs.size
+      val verfSize = errs.count { case (_, b, _) => b }
+      println(s"    Errs: $errSize (${errSize / (1.0 * tests) * 100} %) ($verfSize verification errors)")
+      val timeoutSize = timeouts.size
+      println(s"Timeouts: $timeoutSize (${timeoutSize / (1.0 * tests) * 100} %)")
+      if (errs.nonEmpty) println(s"\nSmallest error:")
     }
-    if (timeouts.nonEmpty) println(s"\nSmallest timeout:")
+    val smallestError = errs.sortBy { case (a, _, p) => (p, a.map(_.size).sum) }.headOption
     val smallestTimeout = timeouts.sortBy(p => (p._2, p._1.map(_.size).sum)).headOption
-    smallestTimeout.foreach {
-      case (timeout, phase) => println(s">$phase: ${timeout.mkString("\n")}\n>$phase: ${toRawStringEqs(timeout)}")
+    if (terminal) {
+      smallestError.foreach {
+        case (err, verf, phase) => println(s">${if (verf) "v" else ""}$phase: ${err.mkString("\n")}\n>${if (verf) "v" else ""}$phase: ${toRawStringEqs(err)}")
+      }
+      println(s"\nSmallest timeout:")
+      smallestTimeout.foreach {
+        case (timeout, phase) => println(s">$phase: ${timeout.mkString("\n")}\n>$phase: ${toRawStringEqs(timeout)}")
+      }
     }
     (smallestError.map(_._1), smallestTimeout.map(_._1))
   }

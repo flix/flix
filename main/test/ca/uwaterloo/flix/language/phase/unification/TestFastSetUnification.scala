@@ -820,7 +820,7 @@ class TestFastSetUnification extends AnyFunSuite with TestUtils {
 
   test("Custom.Fuzzer") {
     val random = new Random(seed = 56238265)
-    assert(BooleanPropTesting.testSolvableConstraints(askForRerun = false, random, BooleanPropTesting.explodedRandomXor, 50_000, 1, -1, wait = false))
+    assert(BooleanPropTesting.testSolvableConstraints(terminal = false, random, BooleanPropTesting.explodedRandomXor, 50_000, 1, -1, wait = false))
   }
 
 }
