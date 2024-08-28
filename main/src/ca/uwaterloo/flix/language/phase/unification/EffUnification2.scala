@@ -306,26 +306,16 @@ object EffUnification2 {
   private sealed trait Atom
 
   private object Atom {
-    /**
-      * An atom representing a variable.
-      */
+    /** An atom representing a variable. */
     case class Var(sym: Symbol.KindedTypeVarSym) extends Atom
 
-    /**
-      * An atom representing an effect constant.
-      */
+    /** An atom representing an effect constant. */
     case class Eff(sym: Symbol.EffectSym) extends Atom
 
-    /**
-      * An atom representing an associated effect.
-      *
-      * The argument must either be a variable or another valid associated effect.
-      */
+    /** An atom representing an associated effect. */
     case class Assoc(sym: Symbol.AssocTypeSym, arg: Atom, kind: Kind) extends Atom
 
-    /**
-      * An atom representing an invalid type.
-      */
+    /** An atom representing an invalid type. */
     case class Error(id: Int, kind: Kind) extends Atom
   }
 
