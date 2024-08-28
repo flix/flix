@@ -16,29 +16,29 @@
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.Ast.AssocTypeConstructor
+import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, Rigidity, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.unification.FastSetUnification.Solver.RunOptions
 import ca.uwaterloo.flix.language.phase.unification.FastSetUnification.Term.mkCompl
 import ca.uwaterloo.flix.language.phase.unification.FastSetUnification.{ConflictException, Equation, Term, TooComplexException}
 import ca.uwaterloo.flix.util.collection.Bimap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
-import java.util.concurrent.ConcurrentHashMap
 
 import scala.io.AnsiColor
 
 object EffUnification2 {
 
   /**
-    * Returns the most general unifier of the pairwise unification equations in `l`.
+    * Returns a most general substitution solution to `l`.
     *
-    * @param l    the list of unification equations.
-    * @param renv the rigidity environment.
-    * @param loc  the source location of the entire equation system, e.g. the entire function body.
+    * @param l     the list of equations.
+    * @param scope the current region scope.
+    * @param renv  the rigidity environment.
+    * @param loc   the source location of the entire equation system, e.g. the entire function body.
     */
   def unifyAll(l: List[(Type, Type, SourceLocation)], scope: Scope, renv: RigidityEnv, loc: SourceLocation, opts: RunOptions = RunOptions.default): Result[Substitution, UnificationError] = {
-    // Compute a bi-directional map from type variables to ints.
+    // Compute a bi-directional map from type variables to integers.
     implicit val bimap: Bimap[Atom, Int] = mkBidirectionalVarMap(l)
 
     // Translate all unification problems from equations on types to equations on terms.
@@ -71,16 +71,6 @@ object EffUnification2 {
   }
 
   def unify(tpe1: Type, tpe2: Type, loc: SourceLocation, scope: Scope, renv: RigidityEnv): Result[Option[Substitution], UnificationError] = {
-    //    (tpe1, tpe2) match {
-    //      case (t1@Type.Var(x, _), t2) if renv.isFlexible(x) && !t2.typeVars.contains(t1) =>
-    //        return Result.Ok(Some(Substitution.singleton(x, t2)))
-    //
-    //      case (t1, t2@Type.Var(x, _)) if renv.isFlexible(x) && !t1.typeVars.contains(t2) =>
-    //        return Result.Ok(Some(Substitution.singleton(x, t1)))
-    //
-    //      case _ => ()
-    //    }
-
     implicit val bimap: Bimap[Atom, Int] = try {
       mkBidirectionalVarMap(tpe1, tpe2)
     } catch {
@@ -107,7 +97,8 @@ object EffUnification2 {
   }
 
   /**
-    * Returns a bi-directional map from type variables to ints computed from the given list of unification equations `l`.
+    * Returns a bi-directional map from type variables to ints computed from the given list of
+    * unification equations `l`.
     */
   private def mkBidirectionalVarMap(l: List[(Type, Type, SourceLocation)]): Bimap[Atom, Int] = {
     // Find all atoms that occur in anywhere in `l`.
@@ -128,9 +119,7 @@ object EffUnification2 {
     Bimap.from(atoms.toList.zipWithIndex)
   }
 
-  /**
-    * Returns the set of atoms that occur in the given type.
-    */
+  /** Returns the set of atoms that occur in the given type. */
   private def getAtoms(t: Type): Set[Atom] = t match {
     case Type.Var(sym, _) => Set(Atom.Var(sym))
     case Type.Cst(TypeConstructor.Effect(sym), _) => Set(Atom.Eff(sym))
@@ -202,9 +191,7 @@ object EffUnification2 {
     case _ => throw InternalCompilerException(s"Unexpected type: '$t'.", t.loc)
   }
 
-  /**
-    * Returns the Atom representation of the given Type.
-    */
+  /** Returns the Atom representation of the given Type. */
   private def toAtom(t: Type)(implicit scope: Scope, renv: RigidityEnv): Atom = Type.eraseTopAliases(t) match {
     case Type.Var(sym, _) => Atom.Var(sym)
     case Type.Cst(TypeConstructor.Effect(sym), _) => Atom.Eff(sym)
@@ -215,9 +202,7 @@ object EffUnification2 {
     case tpe => throw InternalCompilerException(s"Unexpected non-atom type: $tpe", tpe.loc)
   }
 
-  /**
-    * Returns the Atom representation of the given Type.
-    */
+  /** Returns the Atom representation of the given Type. */
   private def rigidToAtom(t: Type)(implicit scope: Scope, renv: RigidityEnv): Atom = Type.eraseTopAliases(t) match {
     case tpe@Type.Var(sym, _) =>
       if (renv.isRigid(sym)) Atom.Var(sym)
@@ -232,9 +217,7 @@ object EffUnification2 {
     case tpe => throw InternalCompilerException(s"Unexpected non-atom type: $tpe", tpe.loc)
   }
 
-  /**
-    * Returns a regular type substitution obtained from the given Boolean substitution `s`.
-    */
+  /** Returns a regular type substitution obtained from the given Boolean substitution `s`. */
   private def fromSetSubst(s: FastSetUnification.SetSubstitution)(implicit m: Bimap[Atom, Int]): Substitution = {
     Substitution(s.m.foldLeft(Map.empty[Symbol.KindedTypeVarSym, Type]) {
       case (macc, (k, Term.Var(x))) if k == x => macc
@@ -288,9 +271,7 @@ object EffUnification2 {
       Type.mkUnion(ts.toList, loc)
   }
 
-  /**
-    * Returns the Type represented by the given Atom.
-    */
+  /** Returns the Type represented by the given Atom. */
   private def fromAtom(s: Atom, loc: SourceLocation)(implicit m: Bimap[Atom, Int]): Type = s match {
     case Atom.Eff(sym) => Type.Cst(TypeConstructor.Effect(sym), loc)
     case Atom.Var(sym) => Type.Var(sym, loc)
