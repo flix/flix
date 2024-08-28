@@ -279,13 +279,9 @@ object ConstraintSolver {
         case JavaConstructorResolutionResult.Resolved(tpe) =>
           val subst = Substitution.singleton(cvar.sym, tpe)
           Result.Ok(ResolutionResult(subst @@ subst0, Nil, progress = true))
-        case JavaConstructorResolutionResult.AmbiguousConstructor(constructors) =>
-          Result.Err(TypeError.AmbiguousConstructor(clazz, tpes, constructors, renv, cvar.loc))
-        case JavaConstructorResolutionResult.ConstructorNotFound =>
-          // TODO INTEROP: fill in candidate methods
-          Result.Err(TypeError.ConstructorNotFound(clazz, tpes, List(), renv, cvar.loc))
-        case JavaConstructorResolutionResult.UnresolvedTypes =>
-          Result.Ok(ResolutionResult(subst0, List(constr0), progress = false))
+        case JavaConstructorResolutionResult.AmbiguousConstructor(constructors) => Result.Err(TypeError.AmbiguousConstructor(clazz, tpes, constructors, renv, cvar.loc))
+        case JavaConstructorResolutionResult.ConstructorNotFound => Result.Err(TypeError.ConstructorNotFound(clazz, tpes, List(), renv, cvar.loc)) // TODO INTEROP: fill in candidate methods
+        case JavaConstructorResolutionResult.UnresolvedTypes => Result.Ok(ResolutionResult(subst0, List(constr0), progress = false))
       }
     case TypeConstraint.EqJvmMethod(mvar, tpe0, methodName, tpes0, prov) =>
       val tpe = subst0(tpe0)
@@ -294,12 +290,9 @@ object ConstraintSolver {
         case JavaMethodResolutionResult.Resolved(tpe) =>
           val subst = Substitution.singleton(mvar.sym, tpe)
           Result.Ok(ResolutionResult(subst @@ subst0, Nil, progress = true))
-        case JavaMethodResolutionResult.AmbiguousMethod(methods) =>
-          Result.Err(TypeError.AmbiguousMethod(methodName.name, tpe, tpes, methods, renv, mvar.loc))
-        case JavaMethodResolutionResult.MethodNotFound =>
-          Result.Err(TypeError.MethodNotFound(methodName, tpe, tpes, mvar.loc))
-        case JavaMethodResolutionResult.UnresolvedTypes =>
-          Result.Ok(ResolutionResult(subst0, List(constr0), progress = false))
+        case JavaMethodResolutionResult.AmbiguousMethod(methods) => Result.Err(TypeError.AmbiguousMethod(methodName.name, tpe, tpes, methods, renv, mvar.loc))
+        case JavaMethodResolutionResult.MethodNotFound => Result.Err(TypeError.MethodNotFound(methodName, tpe, tpes, mvar.loc))
+        case JavaMethodResolutionResult.UnresolvedTypes => Result.Ok(ResolutionResult(subst0, List(constr0), progress = false))
       }
     case TypeConstraint.EqStaticJvmMethod(mvar, clazz, methodName, tpes0, prov) =>
       val tpes = tpes0.map(subst0.apply)
@@ -307,13 +300,9 @@ object ConstraintSolver {
         case JavaMethodResolutionResult.Resolved(tpe) =>
           val subst = Substitution.singleton(mvar.sym, tpe)
           Result.Ok(ResolutionResult(subst @@ subst0, Nil, progress = true))
-        case JavaMethodResolutionResult.AmbiguousMethod(methods) =>
-          Result.Err(TypeError.AmbiguousStaticMethod(clazz, methodName.name, tpes, methods, renv, mvar.loc))
-        case JavaMethodResolutionResult.MethodNotFound =>
-          // TODO INTEROP: fill in candidate methods
-          Result.Err(TypeError.StaticMethodNotFound(clazz, methodName.name, tpes, List(), renv, mvar.loc))
-        case JavaMethodResolutionResult.UnresolvedTypes =>
-          Result.Ok(ResolutionResult(subst0, List(constr0), progress = false))
+        case JavaMethodResolutionResult.AmbiguousMethod(methods) => Result.Err(TypeError.AmbiguousStaticMethod(clazz, methodName.name, tpes, methods, renv, mvar.loc))
+        case JavaMethodResolutionResult.MethodNotFound => Result.Err(TypeError.StaticMethodNotFound(clazz, methodName.name, tpes, List(), renv, mvar.loc)) // TODO INTEROP: fill in candidate methods
+        case JavaMethodResolutionResult.UnresolvedTypes => Result.Ok(ResolutionResult(subst0, List(constr0), progress = false))
       }
     case TypeConstraint.Trait(sym, tpe, loc) =>
       resolveTraitConstraint(sym, subst0(tpe), renv, loc).map {
