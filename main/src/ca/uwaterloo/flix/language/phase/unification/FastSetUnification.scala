@@ -129,7 +129,8 @@ object FastSetUnification {
         runPhase(P.checkAndSimplifyDescr)(state)(noDebug)
         runPhase(P.eliminateTrivialAndRedundantDescr)(state)
         runPhase(P.checkAndSimplifyDescr)(state)(noDebug)
-        runPhase(P.setUnifyPickSmallestDescr(sizeThreshold = opts.complexThreshold, permutationLimit = opts.permutationLimit))(state)
+        checkComplexity(opts.complexThreshold, state.eqs)
+        runPhase(P.setUnifyPickSmallestDescr(permutationLimit = opts.permutationLimit))(state)
 
         // SVE can solves everything or throws, so eqs is always empty
         assert(state.eqs.isEmpty)
@@ -148,6 +149,19 @@ object FastSetUnification {
           (Result.Err((ex, state.eqs, state.subst)), state.lastProgressPhase)
       }
 
+    }
+
+    /**
+      * Throws [[ComplexException]] if `eqs` has a length more than `sizeThreshold`.
+      * A non-positive `sizeThreshold` skips the check.
+      */
+    private def checkComplexity(sizeThreshold: Int, eqs: List[FastSetUnification.Equation]): Unit = {
+      if (sizeThreshold > 0 && eqs.length > sizeThreshold) {
+        throw ComplexException(
+          s"Amount of complex equations in substitution (${eqs.length}) is over the threshold ($sizeThreshold).",
+          eqs.head.loc
+        )
+      }
     }
 
     /**
@@ -538,20 +552,11 @@ object FastSetUnification {
       * Returns a most-general unifier for `eqs`, trying multiple permutations
       * to minimize substitution size.
       *
-      * @param sizeThreshold    throws [[ComplexException]] if `eqs` is longer than `sizeThreshold`,
-      *                         a non-positive number omits the check.
       * @param permutationLimit a limit on the number of permutations to try,
       *                         a non-positive number will try all permutations.
       * @throws ComplexException if `eqs` is longer than `sizeThreshold`
       */
-    def setUnifyAllPickSmallest(sizeThreshold: Int, permutationLimit: Int)(eqs: List[Equation]): SetSubstitution = {
-      if (sizeThreshold > 0 && eqs.length > sizeThreshold) {
-        throw ComplexException(
-          s"Amount of complex equations in substitution (${eqs.length}) is over the threshold ($sizeThreshold).",
-          eqs.head.loc
-        )
-      }
-
+    def setUnifyAllPickSmallest(permutationLimit: Int)(eqs: List[Equation]): SetSubstitution = {
       // We solve the first `permutationLimit` permutations and pick the one that
       // gives rise to the smallest substitution.
       val permutations = if (permutationLimit > 0) eqs.permutations.take(permutationLimit) else eqs.permutations
@@ -570,10 +575,10 @@ object FastSetUnification {
       bestSubst
     }
 
-    def setUnifyPickSmallestDescr(sizeThreshold: Int, permutationLimit: Int): DescribedPhase = DescribedPhase(
+    def setUnifyPickSmallestDescr(permutationLimit: Int): DescribedPhase = DescribedPhase(
       "Set Unification",
       "solves anything with SVE, trying multiple permutations to minimize the solution",
-      completePhase(setUnifyAllPickSmallest(sizeThreshold, permutationLimit))
+      completePhase(setUnifyAllPickSmallest(permutationLimit))
     )
 
     def setUnifyAll(eqs: List[Equation]): SetSubstitution = {
