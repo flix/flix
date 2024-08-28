@@ -138,7 +138,6 @@ object FastSetUnification {
         (Result.Ok(state.subst), state.lastProgressPhase)
       } catch {
         case _: ConflictException | _: TooComplexException if opts.debugging == RunOptions.Debugging.RerunDebugOnCrash =>
-          // rerun with debugging
           solveWithInfo(l, opts.copy(debugging = RunOptions.Debugging.DebugAll))
         case ex: ConflictException =>
           (Result.Err((ex, state.eqs, state.subst)), state.lastProgressPhase)
@@ -201,7 +200,7 @@ object FastSetUnification {
       */
     private def verifySubstSize(subst: SetSubstitution)(implicit opts: RunOptions): Unit = {
       val size = subst.size
-      if (size > opts.sizeThreshold) {
+      if (opts.sizeThreshold > 0 && size > opts.sizeThreshold) {
         throw TooComplexException(s"Too large a substitution (threshold: ${opts.sizeThreshold}, found: $size)")
       }
     }
