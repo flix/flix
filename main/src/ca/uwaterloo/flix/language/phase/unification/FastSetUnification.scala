@@ -1950,16 +1950,15 @@ object FastSetUnification {
       SetSubstitution(result.toMap)
     }
 
-    /**
-      * Returns a human-readable representation of `this` substitution.
-      */
+    /** Returns a multi-line pretty string of `this` */
     override def toString: String = {
       val indent = 4
+      val indentation = " ".repeat(indent)
 
       val sb = new StringBuilder()
-      // We sort the bindings by (size, name).
-      for ((x, t) <- m.toList.sortBy(kv => (kv._2.size, kv._1))) {
-        sb.append(" ".repeat(indent))
+      val sorted = m.toList.sortBy[(Int, Int)] { case (x, t) => (t.size, x) }
+      for ((x, t) <- sorted) {
+        sb.append(indentation)
         sb.append(s"x$x")
         sb.append(" -> ")
         sb.append(t)
@@ -1969,22 +1968,21 @@ object FastSetUnification {
     }
   }
 
-  /**
-    * Returns a human-readable representations of the given list of unification equations `l`.
-    */
-  private def format(l: List[Equation], indent: Int = 4): String = {
+  /** Returns a multi-line pretty string of `eqs` */
+  private def format(eqs: List[Equation], indent: Int = 4): String = {
     val sb = new StringBuilder()
-    for (Equation(t1, t2, _) <- l) {
-      sb.append(" ".repeat(indent))
-      sb.append(t1.toString)
+    val indentation = " ".repeat(indent)
+    for (Equation(t1, t2, _) <- eqs) {
+      sb.append(indentation)
+      sb.append(t1)
       sb.append(" ~ ")
-      sb.append(t2.toString)
+      sb.append(t2)
       sb.append("\n")
     }
     sb.toString()
   }
 
-  /** A common super-type for exceptions throw by the solver. */
+  /** Common trait for set unification exceptions. */
   sealed trait UnificationException extends RuntimeException {
     def loc: SourceLocation
   }
