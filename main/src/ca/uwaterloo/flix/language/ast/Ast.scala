@@ -789,7 +789,7 @@ object Ast {
 
       case object Do extends Expr
 
-      case class InvokeMethod(e: TypeError.MethodNotFound) extends Expr
+      case class InvokeMethod(tpe: ca.uwaterloo.flix.language.ast.Type, name: Name.Ident) extends Expr
 
       case class StaticFieldOrMethod(e: ResolutionError.UndefinedJvmStaticField) extends Expr
 

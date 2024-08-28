@@ -314,7 +314,8 @@ object ConstraintSolver {
         Result.Ok(ResolutionResult(subst0, List(constr0), progress = false))
       }
     case TypeConstraint.EqJvmField(mvar, tpe0, fieldName, prov) =>
-      Result.Err(TypeError.FieldNotFound(fieldName, tpe0, mvar.loc))
+      if (isKnown(tpe0)) Result.Err(TypeError.FieldNotFound(fieldName, tpe0, mvar.loc))
+      else Result.Ok(ResolutionResult(subst0, List(constr0), progress = false))
     case TypeConstraint.EqStaticJvmMethod(mvar, clazz, methodName, tpes0, prov) =>
       // Apply subst.
       val tpes = tpes0.map(subst0.apply)
@@ -495,6 +496,12 @@ object ConstraintSolver {
     case (Type.Apply(Type.Cst(TypeConstructor.MethodReturnType, _), _, _), _) =>
       Result.Ok(ResolutionResult.constraints(List(TypeConstraint.Equality(tpe1, tpe2, prov)), progress = false))
 
+    // FieldType
+    case (_, Type.Apply(Type.Cst(TypeConstructor.FieldType, _), _, _)) =>
+      Result.Ok(ResolutionResult.constraints(List(TypeConstraint.Equality(tpe1, tpe2, prov)), progress = false))
+    case (Type.Apply(Type.Cst(TypeConstructor.FieldType, _), _, _), _) =>
+      Result.Ok(ResolutionResult.constraints(List(TypeConstraint.Equality(tpe1, tpe2, prov)), progress = false))
+
     case _ =>
       Result.Err(toTypeError(UnificationError.MismatchedTypes(tpe1, tpe2), prov))
   }
@@ -578,6 +585,7 @@ object ConstraintSolver {
   private def isKnown(t0: Type): Boolean = t0 match { // TODO INTEROP: Actually, it cannot have variables recursively...
     case Type.Var(_, _) => false
     case Type.Apply(Type.Cst(TypeConstructor.MethodReturnType, _), _, _) => false
+    case Type.Apply(Type.Cst(TypeConstructor.FieldType, _), _, _) => false
     case _ => true
   }
 

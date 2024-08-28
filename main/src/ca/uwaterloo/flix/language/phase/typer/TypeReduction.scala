@@ -118,16 +118,24 @@ object TypeReduction {
           case Type.Cst(TypeConstructor.JvmMethod(method), _) => Result.Ok(Type.getFlixType(method.getReturnType), true)
           case _ => Result.Ok((tpe, false))
         }
+      case Some(TypeConstructor.FieldType) =>
+        val fieldType = tpe.typeArguments.head
+        fieldType match {
+          case Type.Cst(TypeConstructor.JvmField(field), _) => Result.Ok(Type.getFlixType(field.getType), true)
+          case _ => Result.Ok((tpe, false))
+        }
       case _ => Result.Ok((tpe, false))
     }
   }
 
   /**
-    * Returns `true` if the given type is still reducible, i.e. contains an unreduced MRT, e.g. MRT[a] where a is not known.
+    * Returns `true` if the given type is still reducible, i.e. contains an unreduced MRT or FieldType,
+    * e.g. MRT[a] where a is not known.
     */
   // TODO: This method should be recursive and not just look at the top-level type.
   def isReducible(tpe: Type): Boolean = tpe match {
     case Type.Apply(Type.Cst(TypeConstructor.MethodReturnType, _), Type.Var(_, _), _) => true
+    case Type.Apply(Type.Cst(TypeConstructor.FieldType, _), Type.Var(_, _), _) => true
     case _ => false
   }
 
