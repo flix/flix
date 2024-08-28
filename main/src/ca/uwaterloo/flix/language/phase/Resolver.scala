@@ -2319,12 +2319,21 @@ private def lookupTrait(qname: Name.QName, env: ListMap[String, Resolution], ns0
     * Finds the struct field that matches the given name `name` in the namespace `ns0`.
     */
   private def lookupStructField(name: Name.Label, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Result[NamedAst.Declaration.StructField, ResolutionError.UndefinedStructField] = {
-    val matches = tryLookupName(Name.mkQName("€" + name.name, name.loc), env, ns0, root).collect {
+    val matches = tryLookupName(Name.mkQName(ns0.parts, "€" + name.name, name.loc), env, ns0, root) collect {
       case Resolution.Declaration(s: NamedAst.Declaration.StructField) => s
     }
     matches match {
       // Case 0: No matches. Error.
-      case Nil => Result.Err(ResolutionError.UndefinedStructField(name, name.loc))
+      case Nil =>
+        if(ns0.idents.length >= 1) {
+          // The struct name is the same as the mod name
+          val struct_namespace = Name.NName(ns0.idents.init, ns0.loc)
+          val struct_name = ns0.idents.last
+          Result.Err(ResolutionError.UndefinedStructField(Some(Symbol.mkStructSym(struct_namespace, struct_name)), name, name.loc))
+        } else {
+          // If we are in the root namespace, we can't give figure out the struct name
+          Result.Err(ResolutionError.UndefinedStructField(None, name, name.loc))
+        }
       // Case 1: A match was found. Success. Note that multiple matches can be found but they are prioritized by tryLookupName so this is fine.
       case field :: _ => Result.Ok(field)
     }

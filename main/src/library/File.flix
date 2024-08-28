@@ -102,6 +102,11 @@ mod File {
         })
 
     ///
+    /// Returns the number of bytes in the file.
+    ///
+    pub def size(f: File): Result[IOError, Int64] \ IO = length(f)
+
+    ///
     /// Move the file pointer position to `pos` measured in bytes from the start of the file.
     ///
     pub def seek!(pos: Int64, f: File): Result[IOError, Unit] \ IO =
