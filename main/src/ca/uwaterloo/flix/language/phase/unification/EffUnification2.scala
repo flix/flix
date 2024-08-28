@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, Rigidity, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.unification.FastSetUnification.Solver.RunOptions
 import ca.uwaterloo.flix.language.phase.unification.FastSetUnification.Term.mkCompl
-import ca.uwaterloo.flix.language.phase.unification.FastSetUnification.{ConflictException, Equation, Term, TooComplexException}
+import ca.uwaterloo.flix.language.phase.unification.FastSetUnification.{ConflictException, Equation, Term, ComplexException}
 import ca.uwaterloo.flix.util.collection.Bimap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
@@ -51,11 +51,11 @@ object EffUnification2 {
       case Result.Ok(subst) => Result.Ok(fromSetSubst(subst))
 
       case Result.Err((ex: ConflictException, _, _)) =>
-        val tpe1 = fromTerm(ex.x, ex.loc)
-        val tpe2 = fromTerm(ex.y, ex.loc)
+        val tpe1 = fromTerm(ex.t1, ex.loc)
+        val tpe2 = fromTerm(ex.t2, ex.loc)
         Result.Err(UnificationError.MismatchedEffects(tpe1, tpe2))
 
-      case Result.Err((ex: TooComplexException, _, _)) =>
+      case Result.Err((ex: ComplexException, _, _)) =>
         Result.Err(UnificationError.TooComplex(ex.msg, loc))
     }
   }
@@ -87,11 +87,11 @@ object EffUnification2 {
       case Result.Ok(subst) => Result.Ok(Some(fromSetSubst(subst)))
 
       case Result.Err((ex: ConflictException, _, _)) =>
-        val tpe1 = fromTerm(ex.x, ex.loc)
-        val tpe2 = fromTerm(ex.y, ex.loc)
+        val tpe1 = fromTerm(ex.t1, ex.loc)
+        val tpe2 = fromTerm(ex.t2, ex.loc)
         Result.Err(UnificationError.MismatchedEffects(tpe1, tpe2))
 
-      case Result.Err((ex: TooComplexException, _, _)) =>
+      case Result.Err((ex: ComplexException, _, _)) =>
         Result.Err(UnificationError.TooComplex(ex.msg, loc))
     }
   }

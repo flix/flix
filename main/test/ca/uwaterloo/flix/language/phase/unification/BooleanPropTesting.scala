@@ -199,7 +199,7 @@ object BooleanPropTesting {
       } catch {
         case _: InternalCompilerException => (Res.Fail(true), lastPhase)
       }
-      case Result.Err((ex, _, _)) if ex.isInstanceOf[FastSetUnification.TooComplexException] =>
+      case Result.Err((ex, _, _)) if ex.isInstanceOf[FastSetUnification.ComplexException] =>
         (Res.Timeout, lastPhase)
       case Result.Err((_, _, _)) =>
         (Res.Fail(false), lastPhase)

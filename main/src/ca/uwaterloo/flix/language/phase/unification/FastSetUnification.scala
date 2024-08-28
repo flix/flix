@@ -104,7 +104,7 @@ object FastSetUnification {
       *   - Returns `Result.Err((ex, rest, s))` where `ex` is the error, `rest` is a list of
       *     unsolved equations, and `s` is a partial substitution.
       */
-    def solve(eqs: List[Equation], opts: RunOptions = RunOptions.default): Result[SetSubstitution, (FastBoolUnificationException, List[Equation], SetSubstitution)] =
+    def solve(eqs: List[Equation], opts: RunOptions = RunOptions.default): Result[SetSubstitution, (UnificationException, List[Equation], SetSubstitution)] =
       solveWithInfo(eqs, opts)._1
 
     /**
@@ -112,7 +112,7 @@ object FastSetUnification {
       *
       * Additionally returns the name and number of the last phase to make progress, if any.
       */
-    def solveWithInfo(l: List[Equation], opts: RunOptions = RunOptions.default): (Result[SetSubstitution, (FastBoolUnificationException, List[Equation], SetSubstitution)], Option[(String, Int)]) = {
+    def solveWithInfo(l: List[Equation], opts: RunOptions = RunOptions.default): (Result[SetSubstitution, (UnificationException, List[Equation], SetSubstitution)], Option[(String, Int)]) = {
       import FastSetUnification.Phases as P
       implicit val implOpts: RunOptions = opts
       val noDebug = opts.copy(debugging = RunOptions.Debugging.Nothing)
@@ -137,11 +137,11 @@ object FastSetUnification {
         if (opts.sizeThreshold > 0) verifySubstSize(state.subst)
         (Result.Ok(state.subst), state.lastProgressPhase)
       } catch {
-        case _: ConflictException | _: TooComplexException if opts.debugging == RunOptions.Debugging.RerunDebugOnCrash =>
+        case _: ConflictException | _: ComplexException if opts.debugging == RunOptions.Debugging.RerunDebugOnCrash =>
           solveWithInfo(l, opts.copy(debugging = RunOptions.Debugging.DebugAll))
         case ex: ConflictException =>
           (Result.Err((ex, state.eqs, state.subst)), state.lastProgressPhase)
-        case ex: TooComplexException =>
+        case ex: ComplexException =>
           (Result.Err((ex, state.eqs, state.subst)), state.lastProgressPhase)
       }
 
@@ -196,12 +196,12 @@ object FastSetUnification {
     /**
       * Checks that [[SetSubstitution.size]] is less than [[RunOptions.sizeThreshold]].
       *
-      * @throws TooComplexException if the substitution is too big
+      * @throws ComplexException if the substitution is too big
       */
     private def verifySubstSize(subst: SetSubstitution)(implicit opts: RunOptions): Unit = {
       val size = subst.size
       if (opts.sizeThreshold > 0 && size > opts.sizeThreshold) {
-        throw TooComplexException(
+        throw ComplexException(
           s"Summed term sizes in substitution ($size) is over the threshold (${opts.sizeThreshold})."
         )
       }
@@ -531,7 +531,7 @@ object FastSetUnification {
       * Returns a most-general unifier for `eqs`, trying multiple permutations
       * to minimize substitution size.
       *
-      * @param complexThreshold throws [[TooComplexException]] if `eqs` is longer,
+      * @param complexThreshold throws [[ComplexException]] if `eqs` is longer,
       *                         a non-positive number omits the check.
       * @param permutationLimit a limit on the number of permutations to try,
       *                         a non-positive number will try all permutations.
@@ -542,7 +542,7 @@ object FastSetUnification {
       }
 
       if (complexThreshold > 0 && eqs.length > complexThreshold) {
-        throw TooComplexException(
+        throw ComplexException(
           s"Amount of complex equations in substitution (${eqs.length}) is over the threshold ($complexThreshold)."
         )
       }
@@ -1978,17 +1978,13 @@ object FastSetUnification {
     sb.toString()
   }
 
-  /**
-    * A common super-type for exceptions throw by the solver.
-    */
-  sealed trait FastBoolUnificationException extends RuntimeException
+  /** A common super-type for exceptions throw by the solver. */
+  sealed trait UnificationException extends RuntimeException
 
-  /**
-    * Represents a set unification failure between the two terms: `x` and `y`.
-    */
-  case class ConflictException(x: Term, y: Term, loc: SourceLocation) extends FastBoolUnificationException
+  /** Un-unifiable terms `t1` and `t2`. */
+  case class ConflictException(t1: Term, t2: Term, loc: SourceLocation) extends UnificationException
 
   /** A substitution is too large or the equation system is too complex. */
-  case class TooComplexException(msg: String) extends FastBoolUnificationException
+  case class ComplexException(msg: String) extends UnificationException
 
 }
