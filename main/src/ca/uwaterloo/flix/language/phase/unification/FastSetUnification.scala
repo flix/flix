@@ -510,7 +510,7 @@ object FastSetUnification {
           // dont add to result
           changed = true
         } else {
-          // keep in the list
+          // add to result, thus not making a change
           seen += eq
           result = eq :: result
         }
@@ -544,7 +544,7 @@ object FastSetUnification {
       // We solve the first [[PermutationLimit]] permutations and pick the one that gives rise to the smallest substitution.
       val permutations = if (permutationLimit > 0) l.permutations.take(permutationLimit) else l.permutations
       val results = permutations.toList.map {
-        // TODO: stop computation for sufficiently small substitutions
+        // TODO: stop early for sufficiently small substitutions
         p => (p, setUnifyAll(p))
       }.sortBy {
         case (_, s) => s.size
