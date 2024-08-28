@@ -201,7 +201,9 @@ object FastSetUnification {
     private def verifySubstSize(subst: SetSubstitution)(implicit opts: RunOptions): Unit = {
       val size = subst.size
       if (opts.sizeThreshold > 0 && size > opts.sizeThreshold) {
-        throw TooComplexException(s"Too large a substitution (threshold: ${opts.sizeThreshold}, found: $size)")
+        throw TooComplexException(
+          s"Summed term sizes in substitution ($size) is over the threshold (${opts.sizeThreshold})."
+        )
       }
     }
 
@@ -441,11 +443,11 @@ object FastSetUnification {
       * Throws a [[ConflictException]] if an unsolvable equation is encountered.
       *
       * A trivial equation is one of:
-      *   -  `univ ~ univ`
+      *   - `univ ~ univ`
       *   - `empty ~ empty`
-      *   -     `e ~ e`      (same element)
-      *   -     `c ~ c`      (same constant)
-      *   -     `x ~ x`      (same variable)
+      *   - `e ~ e`      (same element)
+      *   - `c ~ c`      (same constant)
+      *   - `x ~ x`      (same variable)
       */
     def checkAndSimplify(eqs: List[Equation]): Option[List[Equation]] = {
       var changed = false
@@ -540,7 +542,9 @@ object FastSetUnification {
       }
 
       if (complexThreshold > 0 && eqs.length > complexThreshold) {
-        throw TooComplexException(s"Too many complex equations (threshold: $complexThreshold, found: ${eqs.length})")
+        throw TooComplexException(
+          s"Amount of complex equations in substitution (${eqs.length}) is over the threshold ($complexThreshold)."
+        )
       }
 
       // We solve the first [[PermutationLimit]] permutations and pick the one that gives rise to the smallest substitution.
@@ -1984,11 +1988,7 @@ object FastSetUnification {
     */
   case class ConflictException(x: Term, y: Term, loc: SourceLocation) extends FastBoolUnificationException
 
-  /**
-    * Represents a solution that is too complex.
-    *
-    * @param msg the specific error message.
-    */
+  /** A substitution is too large or the equation system is too complex. */
   case class TooComplexException(msg: String) extends FastBoolUnificationException
 
 }
