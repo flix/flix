@@ -594,6 +594,7 @@ object FastSetUnification {
     // Converting Rule into Phase
 
     /**
+      * Used to convert a [[Rules.Rule]] into a [[Phase]].
       * @param rule         a solving rule that optionally produces constraints, cs, and a substitution subst.
       * @param selfFeeding  can the rule potentially solve any constrains in cs?
       * @param substInduced can the rule potentially discover new solvable constraints via any subst it returns?
