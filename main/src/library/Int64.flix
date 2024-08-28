@@ -24,8 +24,10 @@ instance UpperBound[Int64] {
 
 mod Int64 {
 
-    import java.lang.{String, Long, NumberFormatException}
-    import java.math.{BigDecimal, BigInteger}
+    import java.lang.Long
+    import java.lang.NumberFormatException
+    import java.math.BigDecimal
+    import java.math.BigInteger
 
     ///
     /// Returns the number of bits used to represent an `Int64`.

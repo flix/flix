@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.language.fmt
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.VarText
+import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.phase.unification.{Substitution, TypeMinimization}
 
@@ -47,12 +48,12 @@ object FormatType {
     val freeVars = tpe.typeVars.toList.sortBy(_.sym.id)
 
     // Compute the flexible variables (i.e. the free variables that are not rigid).
-    val flexibleVars = renv.getFlexibleVarsOf(freeVars)
+    val flexibleVars = renv.getFlexibleVarsOf(freeVars)(Scope.Top) // TODO LEVELS ideally we should have a proper scope here
 
     // Compute a substitution that maps the first flexible variable to id 1 and so forth.
     val m = flexibleVars.zipWithIndex.map {
       case (tvar@Type.Var(sym, loc), index) =>
-        sym -> (Type.Var(new Symbol.KindedTypeVarSym(index, sym.text, sym.kind, sym.isRegion, loc), loc): Type)
+        sym -> (Type.Var(new Symbol.KindedTypeVarSym(index, sym.text, sym.kind, sym.isRegion, sym.scope, loc), loc): Type)
     }
     val s = Substitution(m.toMap)
 

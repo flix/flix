@@ -6,7 +6,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
-import ca.uwaterloo.flix.language.ast.shared.{Fixity, SecurityContext}
+import ca.uwaterloo.flix.language.ast.shared.{Fixity, Scope, SecurityContext}
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.language.errors.SafetyError
@@ -292,7 +292,8 @@ object Safety {
         // check whether the last case in the type match looks like `...: _`
         val missingDefault = rules.last match {
           case TypeMatchRule(_, tpe, _) => tpe match {
-            case Type.Var(sym, _) if renv.isFlexible(sym) => Nil
+            // use top scope since the rigidity check only cares if it's a syntactically known variable
+            case Type.Var(sym, _) if renv.isFlexible(sym)(Scope.Top) => Nil
             case _ => List(SafetyError.MissingDefaultTypeMatchCase(exp.loc))
           }
         }

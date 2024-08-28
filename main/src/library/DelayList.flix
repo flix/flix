@@ -230,6 +230,14 @@ mod DelayList {
         loop(l, 0)
 
     ///
+    /// Returns the number of elements in `l`.
+    ///
+    /// Forces the entire list `l`.
+    ///
+    @Experimental
+    pub def size(l: DelayList[a]): Int32 = length(l)
+
+    ///
     /// Returns `l2` appended to `l1`.
     ///
     /// Does not force the tail of `l1`.

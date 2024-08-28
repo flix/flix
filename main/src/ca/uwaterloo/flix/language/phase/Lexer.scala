@@ -201,6 +201,17 @@ object Lexer {
   }
 
   /**
+   * Peeks the character that is `n` characters before the current if available
+   */
+  private def previousN(n: Int)(implicit s: State): Option[Char] = {
+    if (s.current.offset <= n) {
+      None
+    } else {
+      Some(s.src.data(s.current.offset - (n + 1)))
+    }
+  }
+
+  /**
    * Peeks the character that state is currently sitting on without advancing.
    * Note: Peek does not to bound checks. This is done under the assumption that the lexer
    * is only ever advanced using `advance`.
@@ -337,7 +348,6 @@ object Lexer {
       case _ if isMatch("#{") => TokenKind.HashCurlyL
       case _ if isMatch("#(") => TokenKind.HashParenL
       case '#' => TokenKind.Hash
-      case '€' => TokenKind.Euro
       case _ if isMatch("//") => acceptLineOrDocComment()
       case _ if isMatch("/*") => acceptBlockComment()
       case '/' => TokenKind.Slash
@@ -352,7 +362,17 @@ object Lexer {
       case _ if isOperator(":") => TokenKind.Colon
       case _ if isOperator("**") => TokenKind.StarStar
       case _ if isOperator("<-") => TokenKind.ArrowThinL
-      case _ if isOperator("->") => TokenKind.ArrowThinR
+      case _ if isOperator("->") =>
+        // If any whitespace exists around the `->`, it is `ArrowThinR`. Otherwise it is `StructArrow`
+        // a->b:   StructArrow
+        // a ->b:  ArrowThinR
+        // a-> b:  ArrowThinR
+        // a -> b: ArrowThinR
+        if (previousN(2).exists(_.isWhitespace) || peek().isWhitespace) {
+          TokenKind.ArrowThinR
+        } else {
+          TokenKind.StructArrow
+        }
       case _ if isOperator("=>") => TokenKind.ArrowThickR
       case _ if isOperator("<=") => TokenKind.AngleLEqual
       case _ if isOperator(">=") => TokenKind.AngleREqual

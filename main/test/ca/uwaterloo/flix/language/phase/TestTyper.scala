@@ -1554,17 +1554,16 @@ class TestTyper extends AnyFunSuite with TestUtils {
   test("TypeError.StructGet.01") {
     val input =
       """
+        |struct S [v, r] {
+        |    a: Int32,
+        |    b: String,
+        |    c: v
+        |}
         |mod S {
-        |    struct S [v, r] {
-        |        a: Int32,
-        |        b: String,
-        |        c: v
-        |    }
-        |
         |    def Foo(): Unit = {
         |        region rc {
         |            let s = new S {a = 4, b = "hi", c = "hello"} @ rc;
-        |            s€a + s€b;
+        |            s->a + s->b;
         |            ()
         |        }
         |    }
@@ -1577,16 +1576,15 @@ class TestTyper extends AnyFunSuite with TestUtils {
   test("TypeError.StructGet.02") {
     val input =
       """
+        |struct S[v, r] {
+        |    c: v
+        |}
         |mod S {
-        |    struct S [v, r] {
-        |        c: v
-        |    }
-        |
         |    def Foo(): Unit = {
         |        region rc {
         |            let s1 = new S {c = 3} @ rc;
         |            let s2 = new S {c = "hello"} @ rc;
-        |            s1€c + s2€c;
+        |            s1->c + s2->c;
         |            ()
         |        }
         |    }
@@ -1599,17 +1597,16 @@ class TestTyper extends AnyFunSuite with TestUtils {
   test("TypeError.StructPut.01") {
     val input =
       """
+        |struct S[v, r] {
+        |    a: Int32,
+        |    b: String,
+        |    c: v
+        |}
         |mod S {
-        |    struct S [v, r] {
-        |        a: Int32,
-        |        b: String,
-        |        c: v
-        |    }
-        |
         |    def Foo(): Unit = {
         |        region rc {
         |            let s = new S {a = 4, b = "hi", c = "hello"} @ rc;
-        |            s€a = s€b;
+        |            s->a = s->b;
         |            ()
         |        }
         |    }
@@ -1622,16 +1619,15 @@ class TestTyper extends AnyFunSuite with TestUtils {
   test("TypeError.StructPut.02") {
     val input =
       """
+        |struct S[v, r] {
+        |    c: v
+        |}
         |mod S {
-        |    struct S [v, r] {
-        |        c: v
-        |    }
-        |
         |    def Foo(): Unit = {
         |        region rc {
         |            let s1 = new S {c = 3} @ rc;
         |            let s2 = new S {c = "hello"} @ rc;
-        |            s1€c = s2€c;
+        |            s1->c = s2->c;
         |            ()
         |        }
         |    }
