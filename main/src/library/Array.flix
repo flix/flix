@@ -135,6 +135,11 @@ mod Array {
     pub def length(a: Array[a, r]): Int32 \ r = $ARRAY_LENGTH$(a)
 
     ///
+    /// Returns the number of elements in the array `a`.
+    ///
+    pub def size(a: Array[a, r]): Int32 \ r = length(a)
+
+    ///
     /// Returns a fresh array with the elements from the array `a` from index `start` (inclusive) until index `end` (exclusive).
     ///
     pub def slice(rc1: Region[r1], start: {start = Int32}, end: {end = Int32}, a: Array[a, r]): Array[a, r1] \ { r, r1 } =
