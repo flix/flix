@@ -38,14 +38,6 @@ pub trait Indexable[t] {
     type Aef: Eff
 
     /// Retrieve the element at index `i` in `t`.
-    pub def get(i: Indexable.Idx[t], t: t): Indexable.Elm[t] \ Indexable.Aef[t]
-
-}
-
-mod Indexable {
-
-    /// Alias of `get` with arguments in syntactic order.
-    pub def getSwapped(t: t, i: Indexable.Idx[t]): Indexable.Elm[t] \ Indexable.Aef[t] with Indexable[t] =
-        get(i, t)
+    pub def get(t: t, i: Indexable.Idx[t]): Indexable.Elm[t] \ Indexable.Aef[t]
 
 }
