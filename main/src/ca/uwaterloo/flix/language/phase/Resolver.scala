@@ -20,14 +20,15 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, VarText}
 import ca.uwaterloo.flix.language.ast.NamedAst.{Declaration, RestrictableChoosePattern}
 import ca.uwaterloo.flix.language.ast.ResolvedAst.Pattern.Record
-import ca.uwaterloo.flix.language.ast.UnkindedType._
+import ca.uwaterloo.flix.language.ast.UnkindedType.*
 import ca.uwaterloo.flix.language.ast.shared.Scope
-import ca.uwaterloo.flix.language.ast.{NamedAst, Symbol, _}
-import ca.uwaterloo.flix.language.dbg.AstPrinter._
-import ca.uwaterloo.flix.language.errors.ResolutionError._
+import ca.uwaterloo.flix.language.ast.{NamedAst, Symbol, *}
+import ca.uwaterloo.flix.language.dbg.AstPrinter.*
+import ca.uwaterloo.flix.language.errors.ResolutionError.*
 import ca.uwaterloo.flix.language.errors.{Recoverable, ResolutionError, Unrecoverable}
-import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util._
+import ca.uwaterloo.flix.language.phase.typer.TypeReduction
+import ca.uwaterloo.flix.util.Validation.*
+import ca.uwaterloo.flix.util.*
 import ca.uwaterloo.flix.util.collection.{Chain, ListMap, MapOps}
 
 import java.lang.reflect.{Constructor, Field, Method, Modifier}
@@ -3437,7 +3438,7 @@ private def getRestrictableEnumIfAccessible(enum0: NamedAst.Declaration.Restrict
       }
     } catch {
       case ex: NoSuchMethodException =>
-        val candidateMethods = clazz.getMethods.filter(m => m.getName == methodName).toList
+        val candidateMethods = TypeReduction.getMethods(clazz).filter(m => m.getName == methodName)
         Result.Err(ResolutionError.UndefinedJvmMethod(clazz.getName, methodName, static, signature, candidateMethods, loc))
       // ClassNotFoundException:  Cannot happen because we already have the `Class` object.
       // NoClassDefFoundError:    Cannot happen because we already have the `Class` object.

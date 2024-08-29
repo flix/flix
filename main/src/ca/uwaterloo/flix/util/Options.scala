@@ -48,7 +48,7 @@ object Options {
     xnooptimizer = false,
     xprintphases = false,
     xnoqmc = false,
-    xnodeprecated = false,
+    xnodeprecated = true,
     xsummary = false,
     xfuzzer = false,
     xprinttyper = None,

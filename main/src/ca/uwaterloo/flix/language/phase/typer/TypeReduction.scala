@@ -221,7 +221,7 @@ object TypeReduction {
    */
   private def retrieveMethod(clazz: Class[_], methodName: String, ts: List[Type], isStatic: Boolean = false, loc: SourceLocation): JavaMethodResolutionResult = {
     // NB: this considers also static methods
-    val candidateMethods = clazz.getMethods.filter(m => isCandidateMethod(m, methodName, isStatic, ts))
+    val candidateMethods = getMethods(clazz).filter(m => isCandidateMethod(m, methodName, isStatic, ts))
 
     candidateMethods.length match {
       case 0 => JavaMethodResolutionResult.MethodNotFound
@@ -244,6 +244,33 @@ object TypeReduction {
   }
 
   /**
+    * Returns the methods of the class INCLUDING implicit interface inheritance from Object.
+    */
+  def getMethods(clazz: Class[_]): List[Method] = {
+    if (clazz.isInterface) {
+      var methods = clazz.getMethods.toList
+      for (method <- classOf[Object].getMethods) {
+        // check if it is already there
+        var exists = false
+        for (existing <- methods) {
+          if (
+            existing.getName == method.getName &&
+            isStatic(existing) == isStatic(method) &&
+              existing.getParameterTypes.sameElements(method.getParameterTypes)
+          ) {
+            // could stop early
+            exists = true
+          }
+        }
+        if (!exists) methods = method :: methods
+      }
+      methods
+    } else {
+      clazz.getMethods.toList
+    }
+  }
+
+  /**
    * Helper method that returns if the given constructor is a candidate constructor given a signature.
    */
   private def isCandidateConstructor(cand: Constructor[_], ts: List[Type]): Boolean =
@@ -259,9 +286,9 @@ object TypeReduction {
    * @param methodName the potential candidate method's name
    * @param ts         the list of parameter types of the potential candidate method
    */
-  private def isCandidateMethod(cand: Method, methodName: String, isStatic: Boolean = false, ts: List[Type]): Boolean = {
-    val static = java.lang.reflect.Modifier.isStatic(cand.getModifiers)
-    (if (isStatic) static else !static) &&
+  private def isCandidateMethod(cand: Method, methodName: String, static: Boolean = false, ts: List[Type]): Boolean = {
+    val candIsStatic = isStatic(cand)
+    (candIsStatic == static) &&
       (cand.getName == methodName) &&
       (cand.getParameterCount == ts.length) &&
       // Parameter types correspondence with subtyping
@@ -272,8 +299,12 @@ object TypeReduction {
       // if the superclass is abstract or ignore if it is a primitive type or void
       (cand.getReturnType.equals(Void.TYPE) || cand.getReturnType.isPrimitive || cand.getReturnType.isArray || // for all arrays return types?
         java.lang.reflect.Modifier.isInterface(cand.getReturnType.getModifiers) || // interfaces are considered primitives
-        !(java.lang.reflect.Modifier.isAbstract(cand.getReturnType.getModifiers) && !isStatic))
+        !(java.lang.reflect.Modifier.isAbstract(cand.getReturnType.getModifiers) && !static))
   } // temporary to avoid superclass abstract duplicate, except for static methods
+
+  private def isStatic(method: Method): Boolean = {
+    java.lang.reflect.Modifier.isStatic(method.getModifiers)
+  }
 
   /**
    * Helper method to define a sub-typing relation between two given Flix types.
@@ -284,6 +315,7 @@ object TypeReduction {
     (tpe1, tpe2) match {
       case (t1, t2) if t1 == t2 => true
       // Base types
+      case (Type.Cst(TypeConstructor.Native(_), _), Type.Cst(TypeConstructor.Native(obj), _)) if obj == classOf[java.lang.Object] => true
       case (Type.Cst(TypeConstructor.Native(clazz1), _), Type.Cst(TypeConstructor.Native(clazz2), _)) => clazz2.isAssignableFrom(clazz1)
       case (Type.Cst(TypeConstructor.Unit, _), Type.Cst(TypeConstructor.Native(clazz), _)) if clazz == classOf[java.lang.Object] => true
       case (Type.Cst(TypeConstructor.Str, _), Type.Cst(TypeConstructor.Native(clazz), _)) => clazz.isAssignableFrom(classOf[java.lang.String])
@@ -294,6 +326,43 @@ object TypeReduction {
       case (Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Array, _), elmType1, _), rcVar1, _),
       Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Array, _), elmType2, _), rcVar2, _)) =>
         isSubtype(elmType1, elmType2)
+      // Arrow to Java function interface
+      case (Type.Apply(Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Arrow(2), _), eff, _), varArg, _), varRet, _), Type.Cst(TypeConstructor.Native(clazz), _)) =>
+        (varArg, varRet) match {
+          case (Type.Cst(tc1, _), Type.Cst(tc2, _)) =>
+            (tc1, tc2) match {
+              case (TypeConstructor.Int32, TypeConstructor.Unit) =>
+                clazz == classOf[java.util.function.IntConsumer]
+              case (TypeConstructor.Int32, TypeConstructor.Bool) =>
+                clazz == classOf[java.util.function.IntPredicate]
+              case (TypeConstructor.Int32, TypeConstructor.Int32) =>
+                clazz == classOf[java.util.function.IntUnaryOperator]
+              case (TypeConstructor.Int32, TypeConstructor.Native(obj)) if obj == classOf[Object] =>
+                clazz == classOf[java.util.function.IntFunction[Object]]
+              case (TypeConstructor.Float64, TypeConstructor.Unit) =>
+                clazz == classOf[java.util.function.DoubleConsumer]
+              case (TypeConstructor.Float64, TypeConstructor.Bool) =>
+                clazz == classOf[java.util.function.DoublePredicate]
+              case (TypeConstructor.Float64, TypeConstructor.Float64) =>
+                clazz == classOf[java.util.function.DoubleUnaryOperator]
+              case (TypeConstructor.Float64, TypeConstructor.Native(obj)) if obj == classOf[Object] =>
+                clazz == classOf[java.util.function.DoubleFunction[Object]]
+              case (TypeConstructor.Int64, TypeConstructor.Unit) =>
+                clazz == classOf[java.util.function.LongConsumer]
+              case (TypeConstructor.Int64, TypeConstructor.Bool) =>
+                clazz == classOf[java.util.function.LongPredicate]
+              case (TypeConstructor.Int64, TypeConstructor.Int64) =>
+                clazz == classOf[java.util.function.LongUnaryOperator]
+              case (TypeConstructor.Int64, TypeConstructor.Native(obj)) if obj == classOf[Object] =>
+                clazz == classOf[java.util.function.LongFunction[Object]]
+              case (TypeConstructor.Native(obj), TypeConstructor.Unit) if obj == classOf[Object] =>
+                clazz == classOf[java.util.function.Consumer[Object]]
+              case (TypeConstructor.Native(obj), TypeConstructor.Bool) if obj == classOf[Object] =>
+                clazz == classOf[java.util.function.Predicate[Object]]
+              case _ => false
+            }
+          case _ => false
+        }
       // Null is a sub-type of every Java object and non-primitive Flix type
       case (Type.Cst(TypeConstructor.Null, _), Type.Cst(TypeConstructor.Native(_), _)) => true
       case (Type.Cst(TypeConstructor.Null, _), tpe) if !isPrimitive(tpe) => true

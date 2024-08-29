@@ -570,10 +570,14 @@ object ConstraintSolver {
   /**
     * Helper method which returns true if the given type type t0 does not have any variables.
     */
-  private def isKnown(t0: Type): Boolean = t0 match { // TODO INTEROP: Actually, it cannot have variables recursively...
+  private def isKnown(t0: Type): Boolean = t0 match {
+    case Type.Var(_, _) if t0.kind == Kind.Eff => true
     case Type.Var(_, _) => false
-    case Type.Apply(Type.Cst(TypeConstructor.MethodReturnType, _), _, _) => false
-    case _ => true
+    case Type.Cst(TypeConstructor.MethodReturnType, _) => false
+    case Type.Cst(_, _) => true
+    case Type.Apply(tpe1, tpe2, _) => isKnown(tpe1) && isKnown(tpe2)
+    case Type.Alias(_, _, tpe, _) => isKnown(tpe)
+    case Type.AssocType(_, _, _, _) => false
   }
 
   /**
