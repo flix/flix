@@ -136,10 +136,10 @@ object Debug {
     */
   private def toSubDot(constr: TypeConstraint): String = constr match {
     case TypeConstraint.Equality(tpe1, tpe2, _) => s"""${dotId(constr)} [label = "$tpe1 ~ $tpe2"];"""
-    case TypeConstraint.EqJvmConstructor(jvar, clazz, _, _) => s"""${dotId(constr)} [label = "$mvar # $clazz"];"""
-    case TypeConstraint.EqJvmMethod(jvar, tpe, methodName, tpes, _) => s"""${dotId(constr)} [label = "$mvar # $tpe.${methodName.name}(${tpes.mkString(",")})"];"""
-    case TypeConstraint.EqJvmField(jvar, tpe, fieldName, _) => s"""${dotId(constr)} [label = "$mvar # $tpe.${fieldName.name}"];"""
-    case TypeConstraint.EqStaticJvmMethod(jvar, clazz, methodName, tpes, _) => s"""${dotId(constr)} [label = "$mvar # ${clazz.getName}.${methodName.name}(${tpes.mkString(",")})"];"""
+    case TypeConstraint.EqJvmConstructor(jvar, clazz, _, _) => s"""${dotId(constr)} [label = "$jvar # $clazz"];"""
+    case TypeConstraint.EqJvmMethod(jvar, tpe, methodName, tpes, _) => s"""${dotId(constr)} [label = "$jvar # $tpe.${methodName.name}(${tpes.mkString(",")})"];"""
+    case TypeConstraint.EqJvmField(jvar, tpe, fieldName, _) => s"""${dotId(constr)} [label = "$jvar # $tpe.${fieldName.name}"];"""
+    case TypeConstraint.EqStaticJvmMethod(jvar, clazz, methodName, tpes, _) => s"""${dotId(constr)} [label = "$jvar # ${clazz.getName}.${methodName.name}(${tpes.mkString(",")})"];"""
     case TypeConstraint.Trait(sym, tpe, _) => s"""${dotId(constr)} [label = "$sym[$tpe]"];"""
     case TypeConstraint.Purification(sym, eff1, eff2, _, nested) =>
       val header = s"""${dotId(constr)} [label = "$eff1 ~ ($eff2)[$sym ↦ Pure]"];"""
