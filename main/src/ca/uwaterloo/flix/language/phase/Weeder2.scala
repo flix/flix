@@ -45,7 +45,7 @@ import scala.collection.mutable.ArrayBuffer
   */
 object Weeder2 {
 
-  import WeededAst.*
+  import WeededAst._
 
   def run(readRoot: ReadAst.Root, entryPoint: Option[Symbol.DefnSym], root: SyntaxTree.Root, oldRoot: WeededAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[WeededAst.Root, CompilationMessage] = {
     flix.phase("Weeder2") {
