@@ -174,11 +174,11 @@ object KindedAst {
 
     case class InvokeConstructor2(clazz: Class[_], exps: List[Expr], cvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class InvokeMethod2(exp: Expr, methodName: Name.Ident, exps: List[Expr], mvar: Type.Var, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
+    case class InvokeMethod2(exp: Expr, methodName: Name.Ident, exps: List[Expr], jvar: Type.Var, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class InvokeStaticMethod2(clazz: Class[_], methodName: Name.Ident, exps: List[Expr], mvar: Type.Var, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
+    case class InvokeStaticMethod2(clazz: Class[_], methodName: Name.Ident, exps: List[Expr], jvar: Type.Var, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class GetField2(exp: Expr, fieldName: Name.Ident, mvar: Type.Var, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
+    case class GetField2(exp: Expr, fieldName: Name.Ident, jvar: Type.Var, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
     case class InvokeConstructorOld(constructor: Constructor[_], exps: List[Expr], loc: SourceLocation) extends Expr
 

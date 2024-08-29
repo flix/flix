@@ -285,7 +285,7 @@ object TypeConstructor {
   /**
     * A type constructor that represents the type of a Java field.
     */
-  case class JvmField(method: Field) extends TypeConstructor {
+  case class JvmField(field: Field) extends TypeConstructor {
     def kind: Kind = Kind.Jvm
   }
 
@@ -294,7 +294,7 @@ object TypeConstructor {
     *
     * A field type can be resolved when the receiver object is known.
     *
-    * The type constructor requires a java field type constructor.
+    * The type constructor requires a Java field type constructor.
     */
   @EliminatedBy(TypeReconstruction.getClass)
   case object FieldType extends TypeConstructor {

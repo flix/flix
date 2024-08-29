@@ -437,11 +437,11 @@ object TypeReconstruction {
           TypedAst.Expr.Error(TypeError.UnresolvedConstructor(loc), tpe, eff)
       }
 
-    case KindedAst.Expr.InvokeMethod2(exp, _, exps, mvar, tvar, evar, loc) =>
+    case KindedAst.Expr.InvokeMethod2(exp, _, exps, jvar, tvar, evar, loc) =>
       val e = visitExp(exp)
       val es = exps.map(visitExp)
       val returnTpe = subst(tvar)
-      val methodTpe = subst(mvar)
+      val methodTpe = subst(jvar)
       val eff = subst(evar)
       methodTpe match {
         case Type.Cst(TypeConstructor.JvmMethod(method), loc) =>
@@ -450,9 +450,9 @@ object TypeReconstruction {
           TypedAst.Expr.Error(TypeError.UnresolvedMethod(loc), methodTpe, eff)
       }
 
-    case KindedAst.Expr.InvokeStaticMethod2(_, _, exps, mvar, tvar, evar, loc) =>
+    case KindedAst.Expr.InvokeStaticMethod2(_, _, exps, jvar, tvar, evar, loc) =>
       val es = exps.map(visitExp)
-      val methodTpe = subst(mvar)
+      val methodTpe = subst(jvar)
       val returnTpe = subst(tvar)
       val eff = subst(evar)
       methodTpe match {
@@ -462,16 +462,16 @@ object TypeReconstruction {
           TypedAst.Expr.Error(TypeError.UnresolvedMethod(loc), methodTpe, eff) // TODO INTEROP: UnresolvedStaticMethod ?
       }
 
-    case KindedAst.Expr.GetField2(exp, _, mvar, tvar, evar, loc) =>
+    case KindedAst.Expr.GetField2(exp, _, jvar, tvar, evar, loc) =>
       val e = visitExp(exp)
-      val returnTpe = subst(tvar)
-      val fieldTpe = subst(mvar)
+      val fieldType = subst(tvar)
+      val jvarType = subst(jvar)
       val eff = subst(evar)
-      fieldTpe match {
+      jvarType match {
         case Type.Cst(TypeConstructor.JvmField(field), loc) =>
-          TypedAst.Expr.GetField(field, e, returnTpe, eff, loc)
+          TypedAst.Expr.GetField(field, e, fieldType, eff, loc)
         case _ =>
-          TypedAst.Expr.Error(TypeError.UnresolvedMethod(loc), fieldTpe, eff)
+          TypedAst.Expr.Error(TypeError.UnresolvedField(loc), jvarType, eff)
       }
 
     case KindedAst.Expr.InvokeConstructorOld(constructor, args, loc) =>

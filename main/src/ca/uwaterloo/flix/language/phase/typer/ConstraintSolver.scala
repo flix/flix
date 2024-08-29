@@ -291,7 +291,7 @@ object ConstraintSolver {
         // Otherwise other constraints may still need to be solved.
         Result.Ok(ResolutionResult(subst0, List(constr0), progress = false))
       }
-    case TypeConstraint.EqJvmMethod(mvar, tpe0, methodName, tpes0, prov) =>
+    case TypeConstraint.EqJvmMethod(jvar, tpe0, methodName, tpes0, prov) =>
       // Recall: Subst is applied lazily. Apply it now.
       val tpe = subst0(tpe0)
       val tpes = tpes0.map(subst0.apply)
@@ -299,22 +299,22 @@ object ConstraintSolver {
       val allKnown = isKnown(tpe) && tpes.forall(isKnown)
 
       if (allKnown) {
-        TypeReduction.lookupMethod(tpe, methodName.name, tpes, mvar.loc) match {
+        TypeReduction.lookupMethod(tpe, methodName.name, tpes, jvar.loc) match {
           case JavaMethodResolutionResult.Resolved(tpe) =>
-            val subst = Substitution.singleton(mvar.sym, tpe)
+            val subst = Substitution.singleton(jvar.sym, tpe)
             Result.Ok(ResolutionResult(subst @@ subst0, Nil, progress = true))
-          case JavaMethodResolutionResult.AmbiguousMethod(methods) => Result.Err(TypeError.AmbiguousMethod(methodName.name, tpe, tpes, methods, renv, mvar.loc))
-          case JavaMethodResolutionResult.MethodNotFound => Result.Err(TypeError.MethodNotFound(methodName, tpe, tpes, mvar.loc))
+          case JavaMethodResolutionResult.AmbiguousMethod(methods) => Result.Err(TypeError.AmbiguousMethod(methodName.name, tpe, tpes, methods, renv, jvar.loc))
+          case JavaMethodResolutionResult.MethodNotFound => Result.Err(TypeError.MethodNotFound(methodName, tpe, tpes, jvar.loc))
         }
       } else {
         // Otherwise other constraints may still need to be solved.
         Result.Ok(ResolutionResult(subst0, List(constr0), progress = false))
       }
-    case TypeConstraint.EqJvmField(mvar, tpe0, fieldName, prov) =>
+    case TypeConstraint.EqJvmField(jvar, tpe0, fieldName, prov) =>
       val tpe = subst0(tpe0)
-      if (isKnown(tpe)) Result.Err(TypeError.FieldNotFound(fieldName, tpe, mvar.loc))
+      if (isKnown(tpe)) Result.Err(TypeError.FieldNotFound(fieldName, tpe, jvar.loc))
       else Result.Ok(ResolutionResult(subst0, List(constr0), progress = false))
-    case TypeConstraint.EqStaticJvmMethod(mvar, clazz, methodName, tpes0, prov) =>
+    case TypeConstraint.EqStaticJvmMethod(jvar, clazz, methodName, tpes0, prov) =>
       // Apply subst.
       val tpes = tpes0.map(subst0.apply)
       // Ensure simplification for method parameters
@@ -323,10 +323,10 @@ object ConstraintSolver {
       if (allKnown) {
         TypeReduction.lookupStaticMethod(clazz, methodName.name, tpes, prov.loc) match {
           case JavaMethodResolutionResult.Resolved(tpe) =>
-            val subst = Substitution.singleton(mvar.sym, tpe)
+            val subst = Substitution.singleton(jvar.sym, tpe)
             Result.Ok(ResolutionResult(subst @@ subst0, Nil, progress = true))
-          case JavaMethodResolutionResult.AmbiguousMethod(methods) => Result.Err(TypeError.AmbiguousStaticMethod(clazz, methodName.name, tpes, methods, renv, mvar.loc))
-          case JavaMethodResolutionResult.MethodNotFound => Result.Err(TypeError.StaticMethodNotFound(clazz, methodName.name, tpes, List(), renv, mvar.loc)) // TODO INTEROP: fill in candidate methods
+          case JavaMethodResolutionResult.AmbiguousMethod(methods) => Result.Err(TypeError.AmbiguousStaticMethod(clazz, methodName.name, tpes, methods, renv, jvar.loc))
+          case JavaMethodResolutionResult.MethodNotFound => Result.Err(TypeError.StaticMethodNotFound(clazz, methodName.name, tpes, List(), renv, jvar.loc)) // TODO INTEROP: fill in candidate methods
         }
       } else {
         Result.Ok(ResolutionResult(subst0, List(constr0), progress = false))
@@ -593,10 +593,10 @@ object ConstraintSolver {
   private def getFirstError(deferred: List[TypeConstraint], renv: RigidityEnv)(implicit flix: Flix): Option[TypeError] = deferred match {
     case Nil => None
     case TypeConstraint.Equality(tpe1, tpe2, prov) :: _ => Some(toTypeError(UnificationError.MismatchedTypes(tpe1, tpe2), prov))
-    case TypeConstraint.EqJvmConstructor(mvar, clazz, _, prov) :: _ => Some(toTypeError(UnificationError.MismatchedTypes(mvar.baseType, Type.getFlixType(clazz)), prov))
-    case TypeConstraint.EqJvmMethod(mvar, tpe, _, _, prov) :: _ => Some(toTypeError(UnificationError.MismatchedTypes(mvar.baseType, tpe), prov))
-    case TypeConstraint.EqJvmField(mvar, tpe, _, prov) :: _ => Some(toTypeError(UnificationError.MismatchedTypes(mvar.baseType, tpe), prov))
-    case TypeConstraint.EqStaticJvmMethod(mvar, clazz, _, _, prov) :: _ => Some(toTypeError(UnificationError.MismatchedTypes(mvar.baseType, Type.getFlixType(clazz)), prov))
+    case TypeConstraint.EqJvmConstructor(jvar, clazz, _, prov) :: _ => Some(toTypeError(UnificationError.MismatchedTypes(jvar.baseType, Type.getFlixType(clazz)), prov))
+    case TypeConstraint.EqJvmMethod(jvar, tpe, _, _, prov) :: _ => Some(toTypeError(UnificationError.MismatchedTypes(jvar.baseType, tpe), prov))
+    case TypeConstraint.EqJvmField(jvar, tpe, _, prov) :: _ => Some(toTypeError(UnificationError.MismatchedTypes(jvar.baseType, tpe), prov))
+    case TypeConstraint.EqStaticJvmMethod(jvar, clazz, _, _, prov) :: _ => Some(toTypeError(UnificationError.MismatchedTypes(jvar.baseType, Type.getFlixType(clazz)), prov))
     case TypeConstraint.Trait(sym, tpe, loc) :: _ => Some(mkMissingInstance(sym, tpe, renv, loc))
     case TypeConstraint.Purification(_, _, _, _, nested) :: _ => getFirstError(nested, renv)
   }

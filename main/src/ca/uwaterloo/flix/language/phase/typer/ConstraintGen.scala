@@ -775,33 +775,33 @@ object ConstraintGen {
         val resEff = evar
         (resTpe, resEff)
 
-      case Expr.InvokeMethod2(exp, methodName, exps, mvar, tvar, evar, loc) =>
+      case Expr.InvokeMethod2(exp, methodName, exps, jvar, tvar, evar, loc) =>
         val (tpe, eff) = visitExp(exp)
         val (tpes, effs) = exps.map(visitExp).unzip
         val t = Type.Cst(TypeConstructor.MethodReturnType, loc)
-        c.unifyJvmMethodType(mvar, tpe, methodName, tpes, loc) // unify method
-        c.unifyType(tvar, Type.mkApply(t, List(mvar), loc), loc) // unify method return type
+        c.unifyJvmMethodType(jvar, tpe, methodName, tpes, loc) // unify method
+        c.unifyType(tvar, Type.mkApply(t, List(jvar), loc), loc) // unify method return type
         c.unifyType(evar, Type.mkUnion(Type.IO :: eff :: effs, loc), loc) // unify effects
         val resTpe = tvar
         val resEff = evar
         (resTpe, resEff)
 
-      case Expr.InvokeStaticMethod2(clazz, methodName, exps, mvar, tvar, evar, loc) =>
+      case Expr.InvokeStaticMethod2(clazz, methodName, exps, jvar, tvar, evar, loc) =>
         val tpe = Type.getFlixType(clazz)
         val (tpes, effs) = exps.map(visitExp).unzip
         val t = Type.Cst(TypeConstructor.MethodReturnType, loc)
-        c.unifyStaticJvmMethodType(mvar, clazz, tpe, methodName, tpes, loc)
-        c.unifyType(tvar, Type.mkApply(t, List(mvar), loc), loc)
+        c.unifyStaticJvmMethodType(jvar, clazz, tpe, methodName, tpes, loc)
+        c.unifyType(tvar, Type.mkApply(t, List(jvar), loc), loc)
         c.unifyType(evar, Type.mkUnion(Type.IO :: effs, loc), loc)
         val resTpe = tvar
         val resEff = evar
         (resTpe, resEff)
 
-      case Expr.GetField2(exp, fieldName, mvar, tvar, evar, loc) =>
+      case Expr.GetField2(exp, fieldName, jvar, tvar, evar, loc) =>
         val (tpe, eff) = visitExp(exp)
         val t = Type.Cst(TypeConstructor.FieldType, loc)
-        c.unifyJvmFieldType(mvar, tpe, fieldName, loc) // unify field
-        c.unifyType(tvar, Type.mkApply(t, List(mvar), loc), loc) // unify field type
+        c.unifyJvmFieldType(jvar, tpe, fieldName, loc) // unify field
+        c.unifyType(tvar, Type.mkApply(t, List(jvar), loc), loc) // unify field type
         c.unifyType(evar, Type.mkUnion(Type.IO :: eff :: Nil, loc), loc) // unify effects
         val resTpe = tvar
         val resEff = evar

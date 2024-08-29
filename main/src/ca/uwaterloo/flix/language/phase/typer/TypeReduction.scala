@@ -111,15 +111,17 @@ object TypeReduction {
    * @param loc the location where the java method has been called
    * @return
    */
-  private def simplifyJava(tpe: Type, renv0: RigidityEnv, loc: SourceLocation): Result[(Type, Boolean), TypeError] = {
+  private def simplifyJava(tpe: Type.Apply, renv0: RigidityEnv, loc: SourceLocation): Result[(Type, Boolean), TypeError] = {
     tpe.typeConstructor match {
       case Some(TypeConstructor.MethodReturnType) =>
+        // Since `tpe` is `Type.Apply`, this is safe
         val methodType = tpe.typeArguments.head
         methodType match {
           case Type.Cst(TypeConstructor.JvmMethod(method), _) => Result.Ok(Type.getFlixType(method.getReturnType), true)
           case _ => Result.Ok((tpe, false))
         }
       case Some(TypeConstructor.FieldType) =>
+        // Since `tpe` is `Type.Apply`, this is safe
         val fieldType = tpe.typeArguments.head
         fieldType match {
           case Type.Cst(TypeConstructor.JvmField(field), _) => Result.Ok(Type.getFlixType(field.getType), true)

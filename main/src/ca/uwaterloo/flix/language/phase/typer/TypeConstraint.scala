@@ -45,10 +45,10 @@ sealed trait TypeConstraint {
 
   override def toString: String = this match {
     case TypeConstraint.Equality(tpe1, tpe2, _) => s"$tpe1 ~ $tpe2"
-    case TypeConstraint.EqJvmConstructor(mvar, clazz, tpes, _) => s"${mvar.baseType} ~ ${Type.getFlixType(clazz)}[$tpes" // temporary
-    case TypeConstraint.EqJvmMethod(mvar, tpe, methodName, tpes, _) => s"${mvar.baseType} ~ $tpe.${methodName.name}(${tpes.mkString(",")})"
-    case TypeConstraint.EqJvmField(mvar, tpe, fieldName, _) => s"${mvar.baseType} ~ $tpe.${fieldName.name}"
-    case TypeConstraint.EqStaticJvmMethod(mvar, clazz, methodName, tpes, _) => s"${mvar.baseType} ~ ${clazz.getName}.${methodName.name}(${tpes.mkString(",")}"
+    case TypeConstraint.EqJvmConstructor(jvar, clazz, tpes, _) => s"${jvar.baseType} ~ ${Type.getFlixType(clazz)}[$tpes" // temporary
+    case TypeConstraint.EqJvmMethod(jvar, tpe, methodName, tpes, _) => s"${jvar.baseType} ~ $tpe.${methodName.name}(${tpes.mkString(",")})"
+    case TypeConstraint.EqJvmField(jvar, tpe, fieldName, _) => s"${jvar.baseType} ~ $tpe.${fieldName.name}"
+    case TypeConstraint.EqStaticJvmMethod(jvar, clazz, methodName, tpes, _) => s"${jvar.baseType} ~ ${clazz.getName}.${methodName.name}(${tpes.mkString(",")}"
     case TypeConstraint.Trait(sym, tpe, _) => s"$sym[$tpe]"
     case TypeConstraint.Purification(sym, eff1, eff2, _, nested) => s"$eff1 ~ ($eff2)[$sym ↦ Pure] ∧ $nested"
   }
@@ -58,10 +58,10 @@ sealed trait TypeConstraint {
     */
   def numVars: Int = this match {
     case TypeConstraint.Equality(tpe1, tpe2, _) => tpe1.typeVars.size + tpe2.typeVars.size
-    case TypeConstraint.EqJvmConstructor(mvar, clazz, tpes, _) => tpes.foldLeft(1) { (acc, tpe) => acc + tpe.typeVars.size }
-    case TypeConstraint.EqJvmMethod(mvar, tpe, _, tpes, _) => tpes.foldLeft(1 + tpe.typeVars.size) { (acc, tpe) => acc + tpe.typeVars.size }
-    case TypeConstraint.EqJvmField(mvar, tpe, _, _) => tpe.typeVars.size
-    case TypeConstraint.EqStaticJvmMethod(mvar, clazz, _, tpes, _) => tpes.foldLeft(1) { (acc, tpe) => acc + tpe.typeVars.size } // to check
+    case TypeConstraint.EqJvmConstructor(_, _, tpes, _) => tpes.foldLeft(1) { (acc, tpe) => acc + tpe.typeVars.size }
+    case TypeConstraint.EqJvmMethod(_, tpe, _, tpes, _) => tpes.foldLeft(1 + tpe.typeVars.size) { (acc, tpe) => acc + tpe.typeVars.size }
+    case TypeConstraint.EqJvmField(_, tpe, _, _) => tpe.typeVars.size
+    case TypeConstraint.EqStaticJvmMethod(_, _, _, tpes, _) => tpes.foldLeft(1) { (acc, tpe) => acc + tpe.typeVars.size } // to check
     case TypeConstraint.Trait(_, tpe, _) => tpe.typeVars.size
     case TypeConstraint.Purification(_, eff1, eff2, _, _) => eff1.typeVars.size + eff2.typeVars.size
   }
@@ -83,7 +83,7 @@ object TypeConstraint {
 
   /**
    * A constraint indicating the equivalence between a Java constructor's type and a class with its arguments.
-   * Where mvar must have kind Jvm -> Type.
+   * Where jvar must have kind Jvm -> Type.
    */
   case class EqJvmConstructor(cvar: Type.Var, clazz: Class[_], tpes: List[Type], prov: Provenance) extends TypeConstraint {
     def loc: SourceLocation = prov.loc
@@ -91,25 +91,25 @@ object TypeConstraint {
 
   /**
    * A constraint indicating the equivalence between a Java method's type and a method signature, i.e., a type, method name and list of arguments.
-   * Where mvar must have kind Jvm -> Type.
+   * Where jvar must have kind Jvm -> Type.
    */
-  case class EqJvmMethod(mvar: Type.Var, tpe: Type, methodName: Name.Ident, tpes: List[Type], prov: Provenance) extends TypeConstraint {
+  case class EqJvmMethod(jvar: Type.Var, tpe: Type, methodName: Name.Ident, tpes: List[Type], prov: Provenance) extends TypeConstraint {
     def loc: SourceLocation = prov.loc
   }
 
   /**
     * A constraint indicating the equivalence between a Java fields's type and a field signature, i.e., a type and a field name.
-    * Where mvar must have kind Jvm -> Type.
+    * Where jvar must have kind Jvm -> Type.
     */
-  case class EqJvmField(mvar: Type.Var, tpe: Type, fieldName: Name.Ident, prov: Provenance) extends TypeConstraint {
+  case class EqJvmField(jvar: Type.Var, tpe: Type, fieldName: Name.Ident, prov: Provenance) extends TypeConstraint {
     def loc: SourceLocation = prov.loc
   }
 
   /**
    * A constraint indicating the equivalence between a static Java method's type and a method signature, i.e., a type, method name and list of arguments.
-   * Where mvar must have kind Jvm -> Type.
+   * Where jvar must have kind Jvm -> Type.
    */
-  case class EqStaticJvmMethod(mvar: Type.Var, clazz: Class[_], methodName: Name.Ident, tpes: List[Type], prov: Provenance) extends TypeConstraint {
+  case class EqStaticJvmMethod(jvar: Type.Var, clazz: Class[_], methodName: Name.Ident, tpes: List[Type], prov: Provenance) extends TypeConstraint {
     def loc: SourceLocation = prov.loc
   }
 

@@ -1382,7 +1382,7 @@ object Parser2 {
             val mark = openBefore(lhs)
             eat(TokenKind.Dot)
             name(Set(TokenKind.NameLowerCase), context = SyntacticContext.Expr.OtherExpr)
-            // exp.f is a field lookup and exp.f(..) is a java method
+            // `exp.f` is a Java field lookup and `exp.f(..)` is a Java method invocation
             if (at(TokenKind.ParenL)) {
               arguments()
               lhs = close(mark, TreeKind.Expr.InvokeMethod2)
