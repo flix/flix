@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.shared.Source
 
 /**
  * Represents the source code of a compilation unit.
@@ -26,15 +27,15 @@ import ca.uwaterloo.flix.language.CompilationMessage
  * more children. Each child is either a [[Child.TokenChild]] or a [[Child.TreeChild]].
  *
  * Note that [[SyntaxTree]] offers few guarantees. In particular:
- *     - There is no guarantee that a specific node is present or absent as a child.
- *     - There is no guarantee that a specific node has a specific number of children.
+ *   - There is no guarantee that a specific node is present or absent as a child.
+ *   - There is no guarantee that a specific node has a specific number of children.
  */
 object SyntaxTree {
 
   /**
     * A root containing syntax trees for multiple sources.
     */
-  case class Root(units: Map[Ast.Source, Tree])
+  case class Root(units: Map[Source, Tree])
 
   /**
     * The empty SyntaxTree
@@ -119,7 +120,7 @@ object SyntaxTree {
     case object TypeParameterList extends TreeKind
 
     //////////////////////////////////////////////////////////////////////////////////////////
-    /// DECLARATIONS                                                                        //
+    // DECLARATIONS                                                                         //
     //////////////////////////////////////////////////////////////////////////////////////////
     sealed trait Decl extends TreeKind
 
@@ -131,6 +132,8 @@ object SyntaxTree {
       case object Trait extends Decl
 
       case object Def extends Decl
+
+      case object Redef extends Decl
 
       case object Effect extends Decl
 
@@ -191,13 +194,13 @@ object SyntaxTree {
 
       case object Do extends Expr
 
+      case object Index extends Expr
+
+      case object IndexMut extends Expr
+
       case object InvokeConstructor2 extends Expr
 
       case object InvokeMethod2 extends Expr
-
-      case object InvokeMethod2Fragment extends Expr
-
-      case object InvokeStaticMethod2 extends Expr
 
       case object Debug extends Expr
 
@@ -287,6 +290,8 @@ object SyntaxTree {
 
       case object StructPut extends Expr
 
+      case object StructPutRHS extends Expr
+
       case object OpenVariant extends Expr
 
       case object OpenVariantAs extends Expr
@@ -306,8 +311,6 @@ object SyntaxTree {
       case object RecordOpUpdate extends Expr
 
       case object RecordSelect extends Expr
-
-      case object Ref extends Expr
 
       case object RestrictableChoose extends Expr
 
@@ -332,6 +335,8 @@ object SyntaxTree {
       case object StringInterpolation extends Expr
 
       case object Try extends Expr
+
+      case object Throw extends Expr
 
       case object TryCatchBodyFragment extends Expr
 

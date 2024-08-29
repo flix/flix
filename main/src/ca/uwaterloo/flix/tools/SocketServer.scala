@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.tools
 
 import ca.uwaterloo.flix.api.{Flix, Version}
+import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util._
@@ -23,6 +24,7 @@ import org.java_websocket.WebSocket
 import org.java_websocket.handshake.ClientHandshake
 import org.java_websocket.server.WebSocketServer
 import org.json4s.JsonAST._
+import org.json4s.jvalue2monadic
 import org.json4s.ParserUtil.ParseException
 import org.json4s.native.JsonMethods
 import org.json4s.native.JsonMethods._
@@ -160,7 +162,7 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
       logSourceCode(input)
 
       // Compile the program.
-      flix.addSourceCode("<input>", input)
+      flix.addSourceCode("<playground>", input)(SecurityContext.NoPermissions)
 
       flix.compile().toHardResult match {
         case Result.Ok(compilationResult) =>

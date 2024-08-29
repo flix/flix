@@ -62,11 +62,11 @@ object JvmBackend {
       val types = root.types ++ requiredTypes
 
       // Filter the program types into different sets
-      val erasedRefTypes = JvmOps.getErasedRefsOf(types)
       val erasedLazyTypes = JvmOps.getErasedLazyTypesOf(types)
       val erasedExtendTypes = JvmOps.getErasedRecordExtendsOf(types)
       val erasedFunctionTypes = JvmOps.getErasedArrowsOf(types)
       val erasedTuplesTypes = JvmOps.getErasedTupleTypesOf(types)
+      val erasedStructTypes = JvmOps.getErasedStructTypesOf(types)
 
       //
       // Second, generate classes.
@@ -86,13 +86,12 @@ object JvmBackend {
       val tagClasses = BackendType.erasedTypes.map(tpe => genClass(BackendObjType.Tag(tpe))).toMap
 
       val tupleClasses = erasedTuplesTypes.map(genClass).toMap
+      val structClasses = erasedStructTypes.map(genClass).toMap
 
       // Generate record classes.
       val recordInterfaces = Map(genClass(BackendObjType.Record))
       val recordEmptyClasses = Map(genClass(BackendObjType.RecordEmpty))
       val recordExtendClasses = erasedExtendTypes.map(genClass).toMap
-
-      val refClasses = erasedRefTypes.map(genClass).toMap
 
       val lazyClasses = erasedLazyTypes.map(genClass).toMap
 
@@ -128,7 +127,7 @@ object JvmBackend {
       val handlerInterface = Map(genClass(BackendObjType.Handler))
       val effectCallClass = Map(genClass(BackendObjType.EffectCall))
       val effectClasses = GenEffectClasses.gen(root.effects.values)
-      val resumptionWrappers = BackendType.erasedTypes.map(BackendObjType.ResumptionWrapper).map(genClass).toMap
+      val resumptionWrappers = BackendType.erasedTypes.map(BackendObjType.ResumptionWrapper.apply).map(genClass).toMap
 
       // Collect all the classes and interfaces together.
       List(
@@ -140,10 +139,10 @@ object JvmBackend {
         taggedAbstractClass,
         tagClasses,
         tupleClasses,
+        structClasses,
         recordInterfaces,
         recordEmptyClasses,
         recordExtendClasses,
-        refClasses,
         lazyClasses,
         anonClasses,
         unitClass,
@@ -228,7 +227,7 @@ object JvmBackend {
     // Construct the reflected function.
     (args: Array[AnyRef]) => {
       // Construct the arguments array.
-      val argsArray = if (args.isEmpty) Array(null) else args
+      val argsArray = if (args.isEmpty) Array(null: AnyRef) else args
       val parameterCount = defn.method.getParameterCount
       val argumentCount = argsArray.length
       if (argumentCount != parameterCount) {

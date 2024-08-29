@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import java.util.{Set => JSet}
+
 ///
 /// The Set type.
 ///
@@ -67,12 +69,12 @@ instance Foldable[Set] {
 
 instance UnorderedFoldable[Set] {
     pub def foldMap(f: a -> b \ ef, s: Set[a]): b \ ef with CommutativeMonoid[b] = Set.foldMap(f, s)
-    override pub def isEmpty(s: Set[a]): Bool = Set.isEmpty(s)
-    override pub def exists(f: a -> Bool \ ef, s: Set[a]): Bool \ ef = Set.exists(f, s)
-    override pub def forAll(f: a -> Bool \ ef, s: Set[a]): Bool \ ef = Set.forAll(f, s)
+    redef isEmpty(s: Set[a]): Bool = Set.isEmpty(s)
+    redef exists(f: a -> Bool \ ef, s: Set[a]): Bool \ ef = Set.exists(f, s)
+    redef forAll(f: a -> Bool \ ef, s: Set[a]): Bool \ ef = Set.forAll(f, s)
 
     @ParallelWhenPure
-    override pub def count(f: a -> Bool \ ef, s: Set[a]): Int32 \ ef = Set.count(f, s)
+    redef count(f: a -> Bool \ ef, s: Set[a]): Int32 \ ef = Set.count(f, s)
 }
 
 instance SemiGroup[Set[a]] with Order[a] {
@@ -98,14 +100,14 @@ instance Iterable[Set[a]] {
 }
 
 instance ToJava[Set[a]] with Order[a] {
-    type Out = ##java.util.Set
+    type Out = JSet
     type Aef = IO
-    pub def toJava(s: Set[a]): ##java.util.Set \ IO = Adaptor.toSet(s)
+    pub def toJava(s: Set[a]): JSet \ IO = Adaptor.toSet(s)
 }
 
 instance FromJava[Set[a]] with Order[a] {
-    type In = ##java.util.Set
-    pub def fromJava(s: ##java.util.Set): Set[a] = Adaptor.fromSet(s)
+    type In = JSet
+    pub def fromJava(s: JSet): Set[a] = Adaptor.fromSet(s)
 }
 
 mod Set {
@@ -145,7 +147,7 @@ mod Set {
         minSize >= 1024
 
     ///
-    /// Returns the size of `s`.
+    /// Returns the number of elements in `s`.
     ///
     pub def size(s: Set[a]): Int32 =
         let Set(t) = s;
@@ -568,7 +570,7 @@ mod Set {
     /// Returns the set `s` as a `MutSet`.
     ///
     pub def toMutSet(rc: Region[r], s: Set[a]): MutSet[a, r] \ r =
-        MutSet.MutSet(rc, ref s @ rc)
+        MutSet.MutSet(rc, Ref.fresh(rc, s))
 
     ///
     /// Applies `f` to every element of `s`.

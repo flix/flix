@@ -177,13 +177,13 @@ instance Order[Bool] {
 
 instance Order[Char] {
 
-    pub override def less(x: Char, y: Char): Bool = $CHAR_LT$(x, y)
+    redef less(x: Char, y: Char): Bool = $CHAR_LT$(x, y)
 
-    pub override def lessEqual(x: Char, y: Char): Bool = $CHAR_LE$(x, y)
+    redef lessEqual(x: Char, y: Char): Bool = $CHAR_LE$(x, y)
 
-    pub override def greater(x: Char, y: Char): Bool = $CHAR_GT$(x, y)
+    redef greater(x: Char, y: Char): Bool = $CHAR_GT$(x, y)
 
-    pub override def greaterEqual(x: Char, y: Char): Bool = $CHAR_GE$(x, y)
+    redef greaterEqual(x: Char, y: Char): Bool = $CHAR_GE$(x, y)
 
     pub def compare(x: Char, y: Char): Comparison =
         if ($CHAR_LT$(x, y))
@@ -197,13 +197,13 @@ instance Order[Char] {
 
 instance Order[Float32] {
 
-    pub override def less(x: Float32, y: Float32): Bool = $FLOAT32_LT$(x, y)
+    redef less(x: Float32, y: Float32): Bool = $FLOAT32_LT$(x, y)
 
-    pub override def lessEqual(x: Float32, y: Float32): Bool = $FLOAT32_LE$(x, y)
+    redef lessEqual(x: Float32, y: Float32): Bool = $FLOAT32_LE$(x, y)
 
-    pub override def greater(x: Float32, y: Float32): Bool = $FLOAT32_GT$(x, y)
+    redef greater(x: Float32, y: Float32): Bool = $FLOAT32_GT$(x, y)
 
-    pub override def greaterEqual(x: Float32, y: Float32): Bool = $FLOAT32_GE$(x, y)
+    redef greaterEqual(x: Float32, y: Float32): Bool = $FLOAT32_GE$(x, y)
 
     pub def compare(x: Float32, y: Float32): Comparison =
         if ($FLOAT32_LT$(x, y))
@@ -217,13 +217,13 @@ instance Order[Float32] {
 
 instance Order[Float64] {
 
-    pub override def less(x: Float64, y: Float64): Bool = $FLOAT64_LT$(x, y)
+    redef less(x: Float64, y: Float64): Bool = $FLOAT64_LT$(x, y)
 
-    pub override def lessEqual(x: Float64, y: Float64): Bool = $FLOAT64_LE$(x, y)
+    redef lessEqual(x: Float64, y: Float64): Bool = $FLOAT64_LE$(x, y)
 
-    pub override def greater(x: Float64, y: Float64): Bool = $FLOAT64_GT$(x, y)
+    redef greater(x: Float64, y: Float64): Bool = $FLOAT64_GT$(x, y)
 
-    pub override def greaterEqual(x: Float64, y: Float64): Bool = $FLOAT64_GE$(x, y)
+    redef greaterEqual(x: Float64, y: Float64): Bool = $FLOAT64_GE$(x, y)
 
     pub def compare(x: Float64, y: Float64): Comparison =
         if ($FLOAT64_LT$(x, y))
@@ -237,41 +237,36 @@ instance Order[Float64] {
 
 instance Order[BigDecimal] {
 
-    pub override def less(x: BigDecimal, y: BigDecimal): Bool =
-        import java.math.BigDecimal.compareTo(BigDecimal): Int32 \ {};
-        (x `compareTo` y) < 0
+    redef less(x: BigDecimal, y: BigDecimal): Bool =
+        (unsafe x.compareTo(y)) < 0
 
-    pub override def lessEqual(x: BigDecimal, y: BigDecimal): Bool =
-        import java.math.BigDecimal.compareTo(BigDecimal): Int32 \ {};
-        (x `compareTo` y) <= 0
+    redef lessEqual(x: BigDecimal, y: BigDecimal): Bool =
+        (unsafe x.compareTo(y)) <= 0
 
-    pub override def greater(x: BigDecimal, y: BigDecimal): Bool =
-        import java.math.BigDecimal.compareTo(BigDecimal): Int32 \ {};
-        (x `compareTo` y) > 0
+    redef greater(x: BigDecimal, y: BigDecimal): Bool =
+        (unsafe x.compareTo(y)) > 0
 
-    pub override def greaterEqual(x: BigDecimal, y: BigDecimal): Bool =
-        import java.math.BigDecimal.compareTo(BigDecimal): Int32 \ {};
-        (x `compareTo` y) >= 0
+    redef greaterEqual(x: BigDecimal, y: BigDecimal): Bool =
+        (unsafe x.compareTo(y)) >= 0
 
     pub def compare(x: BigDecimal, y: BigDecimal): Comparison =
-        import java.math.BigDecimal.compareTo(BigDecimal): Int32 \ {};
-        match x `compareTo` y {
+        match (unsafe x.compareTo(y)) {
+            case 0          => Comparison.EqualTo
             case z if z < 0 => Comparison.LessThan
-            case 0 => Comparison.EqualTo
-            case _ => Comparison.GreaterThan
+            case _          => Comparison.GreaterThan
         }
 
 }
 
 instance Order[Int8] {
 
-    pub override def less(x: Int8, y: Int8): Bool = $INT8_LT$(x, y)
+    redef less(x: Int8, y: Int8): Bool = $INT8_LT$(x, y)
 
-    pub override def lessEqual(x: Int8, y: Int8): Bool = $INT8_LE$(x, y)
+    redef lessEqual(x: Int8, y: Int8): Bool = $INT8_LE$(x, y)
 
-    pub override def greater(x: Int8, y: Int8): Bool = $INT8_GT$(x, y)
+    redef greater(x: Int8, y: Int8): Bool = $INT8_GT$(x, y)
 
-    pub override def greaterEqual(x: Int8, y: Int8): Bool = $INT8_GE$(x, y)
+    redef greaterEqual(x: Int8, y: Int8): Bool = $INT8_GE$(x, y)
 
     pub def compare(x: Int8, y: Int8): Comparison =
         if ($INT8_LT$(x, y))
@@ -285,13 +280,13 @@ instance Order[Int8] {
 
 instance Order[Int16] {
 
-    pub override def less(x: Int16, y: Int16): Bool = $INT16_LT$(x, y)
+    redef less(x: Int16, y: Int16): Bool = $INT16_LT$(x, y)
 
-    pub override def lessEqual(x: Int16, y: Int16): Bool = $INT16_LE$(x, y)
+    redef lessEqual(x: Int16, y: Int16): Bool = $INT16_LE$(x, y)
 
-    pub override def greater(x: Int16, y: Int16): Bool = $INT16_GT$(x, y)
+    redef greater(x: Int16, y: Int16): Bool = $INT16_GT$(x, y)
 
-    pub override def greaterEqual(x: Int16, y: Int16): Bool = $INT16_GE$(x, y)
+    redef greaterEqual(x: Int16, y: Int16): Bool = $INT16_GE$(x, y)
 
     pub def compare(x: Int16, y: Int16): Comparison =
         if ($INT16_LT$(x, y))
@@ -305,13 +300,13 @@ instance Order[Int16] {
 
 instance Order[Int32] {
 
-    pub override def less(x: Int32, y: Int32): Bool = $INT32_LT$(x, y)
+    redef less(x: Int32, y: Int32): Bool = $INT32_LT$(x, y)
 
-    pub override def lessEqual(x: Int32, y: Int32): Bool = $INT32_LE$(x, y)
+    redef lessEqual(x: Int32, y: Int32): Bool = $INT32_LE$(x, y)
 
-    pub override def greater(x: Int32, y: Int32): Bool = $INT32_GT$(x, y)
+    redef greater(x: Int32, y: Int32): Bool = $INT32_GT$(x, y)
 
-    pub override def greaterEqual(x: Int32, y: Int32): Bool = $INT32_GE$(x, y)
+    redef greaterEqual(x: Int32, y: Int32): Bool = $INT32_GE$(x, y)
 
     pub def compare(x: Int32, y: Int32): Comparison =
         if ($INT32_LT$(x, y))
@@ -325,13 +320,13 @@ instance Order[Int32] {
 
 instance Order[Int64] {
 
-    pub override def less(x: Int64, y: Int64): Bool = $INT64_LT$(x, y)
+    redef less(x: Int64, y: Int64): Bool = $INT64_LT$(x, y)
 
-    pub override def lessEqual(x: Int64, y: Int64): Bool = $INT64_LE$(x, y)
+    redef lessEqual(x: Int64, y: Int64): Bool = $INT64_LE$(x, y)
 
-    pub override def greater(x: Int64, y: Int64): Bool = $INT64_GT$(x, y)
+    redef greater(x: Int64, y: Int64): Bool = $INT64_GT$(x, y)
 
-    pub override def greaterEqual(x: Int64, y: Int64): Bool = $INT64_GE$(x, y)
+    redef greaterEqual(x: Int64, y: Int64): Bool = $INT64_GE$(x, y)
 
     pub def compare(x: Int64, y: Int64): Comparison =
         if ($INT64_LT$(x, y))
@@ -345,28 +340,23 @@ instance Order[Int64] {
 
 instance Order[BigInt] {
 
-    pub override def less(x: BigInt, y: BigInt): Bool =
-        import java.math.BigInteger.compareTo(BigInt): Int32 \ {};
-        (x `compareTo` y) < 0
+    redef less(x: BigInt, y: BigInt): Bool =
+        (unsafe x.compareTo(y)) < 0
 
-    pub override def lessEqual(x: BigInt, y: BigInt): Bool =
-        import java.math.BigInteger.compareTo(BigInt): Int32 \ {};
-        (x `compareTo` y) <= 0
+    redef lessEqual(x: BigInt, y: BigInt): Bool =
+        (unsafe x.compareTo(y)) <= 0
 
-    pub override def greater(x: BigInt, y: BigInt): Bool =
-        import java.math.BigInteger.compareTo(BigInt): Int32 \ {};
-        (x `compareTo` y) > 0
+    redef greater(x: BigInt, y: BigInt): Bool =
+        (unsafe x.compareTo(y)) > 0
 
-    pub override def greaterEqual(x: BigInt, y: BigInt): Bool =
-        import java.math.BigInteger.compareTo(BigInt): Int32 \ {};
-        (x `compareTo` y) >= 0
+    redef greaterEqual(x: BigInt, y: BigInt): Bool =
+        (unsafe x.compareTo(y)) >= 0
 
     pub def compare(x: BigInt, y: BigInt): Comparison =
-        import java.math.BigInteger.compareTo(BigInt): Int32 \ {};
-        match x `compareTo` y {
+        match (unsafe x.compareTo(y)) {
+            case 0          => Comparison.EqualTo
             case z if z < 0 => Comparison.LessThan
-            case 0 => Comparison.EqualTo
-            case _ => Comparison.GreaterThan
+            case _          => Comparison.GreaterThan
         }
 
 }
@@ -374,8 +364,7 @@ instance Order[BigInt] {
 instance Order[String] {
 
     pub def compare(x: String, y: String): Comparison =
-        import java.lang.String.compareTo(String): Int32 \ {};
-        Comparison.fromInt32((x `compareTo` y))
+        Comparison.fromInt32((unsafe x.compareTo(y)))
 
 }
 

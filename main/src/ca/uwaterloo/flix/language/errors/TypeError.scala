@@ -87,19 +87,16 @@ object TypeError {
   /**
    * Java method not found type error.
    *
-   * @param tpe0    the type of the receiver object.
-   * @param tpes    the types of the arguments.
-   * @param methods a list of possible candidate methods on the type of the receiver object.
-   * @param renv    the rigidity environment.
-   * @param loc     the location where the error occured.
+   * @param tpe  the type of the receiver object.
+   * @param tpes the types of the arguments.
+   * @param loc  the location where the error occurred.
    */
-  case class MethodNotFound(methodName: String, tpe0: Type, tpes: List[Type], methods: List[JvmMethod], renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    // TODO INTEROP better comment, e.g., list possible methods
-    def summary: String = s"Java method '$methodName' in type '$tpe0' with arguments types (${tpes.mkString(", ")}) not found."
+  case class MethodNotFound(methodName: Name.Ident, tpe: Type, tpes: List[Type], loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    def summary: String = s"Java method '$methodName' in type '$tpe' with arguments types (${tpes.mkString(", ")}) not found."
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s""">> Java method '$methodName' from type '${red(formatType(tpe0, Some(renv)))}' with arguments types (${tpes.mkString(", ")}) not found.
+      s""">> Java method '$methodName' from type '${red(formatType(tpe, None))}' with arguments types (${tpes.mkString(", ")}) not found.
          |
          |${code(loc, s"Java method '${methodName}' not found")}
          |""".stripMargin
@@ -619,24 +616,6 @@ object TypeError {
   }
 
   /**
-    * Over-applied Function.
-    *
-    * @param excessArgument the type of the excess argument.
-    * @param loc            the location where the error occurred.
-    */
-  case class OverApplied(excessArgument: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"Over-applied function. Excess argument of type: '${formatType(excessArgument)}'."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s""">> Over-applied function. Excess argument of type: '${red(formatType(excessArgument))}'.
-         |
-         |${code(loc, "over-applied function.")}
-         |""".stripMargin
-    }
-  }
-
-  /**
     * Unexpected type, but a checked type cast might work.
     *
     * @param expected the expected type.
@@ -768,24 +747,6 @@ object TypeError {
          |  ${formatType(schemaType, Some(renv))}
          |
          |does not contain the predicate '${red(pred.name)}' of type ${cyan(formatType(predType, Some(renv)))}.
-         |""".stripMargin
-    }
-  }
-
-  /**
-    * Under-applied Function.
-    *
-    * @param missingArgument the type of the missing argument.
-    * @param loc             the location where the error occurred.
-    */
-  case class UnderApplied(missingArgument: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"Under-applied function. Missing argument of type: '${formatType(missingArgument)}'."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s""">> Under-applied function. Missing argument of type: '${red(formatType(missingArgument))}'.
-         |
-         |${code(loc, "under-applied function.")}
          |""".stripMargin
     }
   }

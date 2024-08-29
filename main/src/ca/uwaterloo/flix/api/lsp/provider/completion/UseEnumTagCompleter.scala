@@ -57,7 +57,7 @@ object UseEnumTagCompleter extends Completer {
    */
   private def getUseEnumTagCompletionsWithTag(segments: List[String])(implicit root: TypedAst.Root): Iterable[UseEnumTagCompletion] = {
     if (segments.isEmpty) {
-      Nil
+      return Nil
     }
 
     //Create a new tag that matches the user's syntax.

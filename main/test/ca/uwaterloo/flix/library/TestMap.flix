@@ -1873,16 +1873,16 @@ def eq25(): Bool = Map#{1 => 2, 3 => 4, 5 => 6, 7 => 8, 9 => 10} == Map#{7 => 8,
 
 @test
 def forEach01(): Bool = region rc {
-    let ri = ref 21 @ rc;
+    let ri = Ref.fresh(rc, 21);
     Map.forEach((k, _) -> Ref.put(k, ri), Map#{});
-    21 == deref ri
+    21 == Ref.get(ri)
 }
 
 @test
 def forEach02(): Bool = region rc {
-    let ri = ref 21 @ rc;
+    let ri = Ref.fresh(rc, 21);
     Map.forEach((k, _) -> Ref.put(k, ri), Map#{1 => "Hello World!"});
-    1 == deref ri
+    1 == Ref.get(ri)
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1891,16 +1891,16 @@ def forEach02(): Bool = region rc {
 
 @test
 def forEachWithIndex01(): Bool = region rc {
-    let ri = ref 21 @ rc;
+    let ri = Ref.fresh(rc, 21);
     Map.forEachWithIndex((i, _, _) -> Ref.put(i, ri), Map#{});
-    21 == deref ri
+    21 == Ref.get(ri)
 }
 
 @test
 def forEachWithIndex02(): Bool = region rc {
-    let ri = ref 21 @ rc;
+    let ri = Ref.fresh(rc, 21);
     Map.forEachWithIndex((i, _, _) -> Ref.put(i, ri), Map#{1 => "Hello World!"});
-    0 == deref ri
+    0 == Ref.get(ri)
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1937,14 +1937,14 @@ def unfold06(): Bool =
 
 @test
 def unfoldWithIter01(): Bool = region rc {
-    let x = ref 0 @ rc;
+    let x = Ref.fresh(rc, 0);
     let step = () ->
         if (true)
             None
         else {
-            let k = deref x;
+            let k = Ref.get(x);
             let v = k + 48;
-            Ref.put(deref x + 1, x);
+            Ref.put(Ref.get(x) + 1, x);
             Some(k, v)
         };
     Map.unfoldWithIter(step) == Map#{}
@@ -1952,14 +1952,14 @@ def unfoldWithIter01(): Bool = region rc {
 
 @test
 def unfoldWithIter02(): Bool = region rc {
-    let x = ref 0 @ rc;
+    let x = Ref.fresh(rc, 0);
     let step = () ->
-        if (deref x > 0)
+        if (Ref.get(x) > 0)
             None
         else {
-            let k = deref x;
+            let k = Ref.get(x);
             let v = k + 48;
-            Ref.put(deref x + 1, x);
+            Ref.put(Ref.get(x) + 1, x);
             Some(k, v)
         };
     Map.unfoldWithIter(step) == Map#{0 => 48}
@@ -1967,14 +1967,14 @@ def unfoldWithIter02(): Bool = region rc {
 
 @test
 def unfoldWithIter03(): Bool = region rc {
-    let x = ref 0 @ rc;
+    let x = Ref.fresh(rc, 0);
     let step = () ->
-        if (deref x > 1)
+        if (Ref.get(x) > 1)
             None
         else {
-            let k = deref x;
+            let k = Ref.get(x);
             let v = k + 48;
-            Ref.put(deref x + 1, x);
+            Ref.put(Ref.get(x) + 1, x);
             Some(k, v)
         };
     Map.unfoldWithIter(step) == Map#{0 => 48, 1 => 49}
@@ -1982,14 +1982,14 @@ def unfoldWithIter03(): Bool = region rc {
 
 @test
 def unfoldWithIter04(): Bool = region rc {
-    let x = ref 0 @ rc;
+    let x = Ref.fresh(rc, 0);
     let step = () ->
-        if (deref x >= 10)
+        if (Ref.get(x) >= 10)
             None
         else {
-            let k = deref x;
+            let k = Ref.get(x);
             let v = k + 48;
-            Ref.put(deref x + 1, x);
+            Ref.put(Ref.get(x) + 1, x);
             Some(k, v)
         };
     Map.unfoldWithIter(step) == Map#{0 => 48, 1 => 49, 2 => 50, 3 => 51, 4 => 52, 5 => 53, 6 => 54, 7 => 55, 8 => 56, 9 => 57}
@@ -1997,14 +1997,14 @@ def unfoldWithIter04(): Bool = region rc {
 
 @test
 def unfoldWithIter05(): Bool = region rc {
-    let x = ref 5 @ rc;
+    let x = Ref.fresh(rc, 5);
     let step = () ->
-        if (deref x >= 10)
+        if (Ref.get(x) >= 10)
             None
         else {
-            let k = deref x;
+            let k = Ref.get(x);
             let v = k + 48;
-            Ref.put(deref x + 1, x);
+            Ref.put(Ref.get(x) + 1, x);
             Some(k, v)
         };
     Map.unfoldWithIter(step) == Map#{5 => 53, 6 => 54, 7 => 55, 8 => 56, 9 => 57}
@@ -2012,14 +2012,14 @@ def unfoldWithIter05(): Bool = region rc {
 
 @test
 def unfoldWithIter06(): Bool = region rc {
-    let x = ref 0 @ rc;
+    let x = Ref.fresh(rc, 0);
     let step = () ->
-        if (deref x >= 10)
+        if (Ref.get(x) >= 10)
             None
         else {
-            let k = deref x;
+            let k = Ref.get(x);
             let v = k + 48;
-            Ref.put(deref x + 2, x);
+            Ref.put(Ref.get(x) + 2, x);
             Some(k, v)
         };
     Map.unfoldWithIter(step) == Map#{0 => 48, 2 => 50, 4 => 52, 6 => 54, 8 => 56}
@@ -2533,34 +2533,34 @@ def rangeQuery18(): Bool =
 
     @test
     def traverse01(): Bool = region rc {
-        let st = ref '#' @ rc;
+        let st = Ref.fresh(rc, '#');
         let m: Map[Int32, Char] = Map#{};
         let ans = Map.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, m);
-        ans == Identity.Identity(Map#{}) and deref st == '#'
+        ans == Identity.Identity(Map#{}) and Ref.get(st) == '#'
     }
 
     @test
     def traverse02(): Bool = region rc {
-        let st = ref '#' @ rc;
+        let st = Ref.fresh(rc, '#');
         let m = Map#{1 => 'a'};
         let ans = Map.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, m);
-        ans == Identity.Identity(Map#{1 => 'a'}) and deref st == 'a'
+        ans == Identity.Identity(Map#{1 => 'a'}) and Ref.get(st) == 'a'
     }
 
     @test
     def traverse03(): Bool = region rc {
-        let st = ref '#' @ rc;
+        let st = Ref.fresh(rc, '#');
         let m = Map#{1 => 'a', 2 => 'b'};
         let ans = Map.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, m);
-        ans == Identity.Identity(Map#{1 => 'a', 2 => 'b'}) and deref st == 'b'
+        ans == Identity.Identity(Map#{1 => 'a', 2 => 'b'}) and Ref.get(st) == 'b'
     }
 
     @test
     def traverse04(): Bool = region rc {
-        let st = ref '#' @ rc;
+        let st = Ref.fresh(rc, '#');
         let m = Map#{1 => 'a', 2 => 'b', 3 => 'c'};
         let ans = Map.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, m);
-        ans == Identity.Identity(Map#{1 => 'a', 2 => 'b', 3 => 'c'}) and deref st == 'c'
+        ans == Identity.Identity(Map#{1 => 'a', 2 => 'b', 3 => 'c'}) and Ref.get(st) == 'c'
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2569,34 +2569,34 @@ def rangeQuery18(): Bool =
 
     @test
     def traverseWithKey01(): Bool = region rc {
-        let st = ref (0, '#') @ rc;
+        let st = Ref.fresh(rc, (0, '#'));
         let m: Map[Int32, Char] = Map#{};
         let ans = Map.traverseWithKey((k, v) -> {Ref.put((k, v), st); Identity.Identity(v)}, m);
-        ans == Identity.Identity(Map#{}) and deref st == (0, '#')
+        ans == Identity.Identity(Map#{}) and Ref.get(st) == (0, '#')
     }
 
     @test
     def traverseWithKey02(): Bool = region rc {
-        let st = ref (0, '#') @ rc;
+        let st = Ref.fresh(rc, (0, '#'));
         let m = Map#{1 => 'a'};
         let ans = Map.traverseWithKey((k, v) -> {Ref.put((k, v), st); Identity.Identity(v)}, m);
-        ans == Identity.Identity(Map#{1 => 'a'}) and deref st == (1, 'a')
+        ans == Identity.Identity(Map#{1 => 'a'}) and Ref.get(st) == (1, 'a')
     }
 
     @test
     def traverseWithKey03(): Bool = region rc {
-        let st = ref (0, '#') @ rc;
+        let st = Ref.fresh(rc, (0, '#'));
         let m = Map#{1 => 'a', 2 => 'b'};
         let ans = Map.traverseWithKey((k, v) -> {Ref.put((k, v), st); Identity.Identity(v)}, m);
-        ans == Identity.Identity(Map#{1 => 'a', 2 => 'b'}) and deref st == (2, 'b')
+        ans == Identity.Identity(Map#{1 => 'a', 2 => 'b'}) and Ref.get(st) == (2, 'b')
     }
 
     @test
     def traverseWithKey04(): Bool = region rc {
-        let st = ref (0, '#') @ rc;
+        let st = Ref.fresh(rc, (0, '#'));
         let m = Map#{1 => 'a', 2 => 'b', 3 => 'c'};
         let ans = Map.traverseWithKey((k, v) -> {Ref.put((k, v), st); Identity.Identity(v)}, m);
-        ans == Identity.Identity(Map#{1 => 'a', 2 => 'b', 3 => 'c'}) and deref st == (3, 'c')
+        ans == Identity.Identity(Map#{1 => 'a', 2 => 'b', 3 => 'c'}) and Ref.get(st) == (3, 'c')
     }
 
     /////////////////////////////////////////////////////////////////////////////

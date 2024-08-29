@@ -61,12 +61,12 @@ object TypedAstPrinter {
     case Expr.ArrayLoad(exp1, exp2, _, _, _) => DocAst.Expr.ArrayLoad(print(exp1), print(exp2))
     case Expr.ArrayLength(exp, _, _) => DocAst.Expr.ArrayLength(print(exp))
     case Expr.ArrayStore(exp1, exp2, exp3, _, _) => DocAst.Expr.ArrayStore(print(exp1), print(exp2), print(exp3))
+    case Expr.StructNew(sym, fields, region, tpe, _, _) => DocAst.Expr.StructNew(sym, fields.map {case (k, v) => (k, print(v))}, print(region))
+    case Expr.StructGet(exp, field, tpe, _, _) => DocAst.Expr.StructGet(print(exp), field)
+    case Expr.StructPut(exp1, field, exp2, tpe, _, _) => DocAst.Expr.StructPut(print(exp1), field, print(exp2))
     case Expr.VectorLit(exps, _, _, _) => DocAst.Expr.VectorLit(exps.map(print))
     case Expr.VectorLoad(exp1, exp2, _, _, _) => DocAst.Expr.VectorLoad(print(exp1), print(exp2))
     case Expr.VectorLength(exp, _) => DocAst.Expr.VectorLength(print(exp))
-    case Expr.Ref(exp1, exp2, _, _, _) => DocAst.Expr.InRegion(DocAst.Expr.Ref(print(exp1)), print(exp2))
-    case Expr.Deref(exp, _, _, _) => DocAst.Expr.Deref(print(exp))
-    case Expr.Assign(exp1, exp2, _, _, _) => DocAst.Expr.Assign(print(exp1), print(exp2))
     case Expr.Ascribe(exp, tpe, _, _) => DocAst.Expr.Ascription(print(exp), TypePrinter.print(tpe))
     case Expr.InstanceOf(exp, clazz, _) => DocAst.Expr.InstanceOf(print(exp), clazz)
     case Expr.CheckedCast(cast, exp, tpe, eff, loc) => DocAst.Expr.Unknown
@@ -74,6 +74,7 @@ object TypedAstPrinter {
     case Expr.UncheckedMaskingCast(exp, tpe, eff, loc) => DocAst.Expr.Unknown
     case Expr.Without(exp, effUse, tpe, eff, loc) => DocAst.Expr.Unknown
     case Expr.TryCatch(exp, rules, _, _, _) => DocAst.Expr.TryCatch(print(exp), rules.map(printCatchRule))
+    case Expr.Throw(exp, _, _, _) => DocAst.Expr.Throw(print(exp))
     case Expr.TryWith(exp, _Use, rules, _, _, _) => DocAst.Expr.TryWith(print(exp), _Use.sym, rules.map(printHandlerRule))
     case Expr.Do(op, exps, _, _, _) => DocAst.Expr.Do(op.sym, exps.map(print))
     case Expr.InvokeConstructor(constructor, exps, _, _, _) => DocAst.Expr.JavaInvokeConstructor(constructor, exps.map(print))

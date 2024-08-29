@@ -16,7 +16,8 @@
 
 mod Fixpoint.Solver {
 
-    use Boxable.{box, unbox}
+    import dev.flix.runtime.Global
+
     use Fixpoint.Ast.Datalog.{Datalog, Constraint, HeadTerm}
     use Fixpoint.Ast.Datalog.Datalog.{Datalog, Model, Join}
     use Fixpoint.Ast.Datalog.Constraint.Constraint
@@ -26,6 +27,8 @@ mod Fixpoint.Solver {
     use Fixpoint.Ast.Shared.Denotation.{Relational, Latticenal}
     use Fixpoint.Ast.Shared.PredSym
     use Fixpoint.Ast.Shared.PredSym.PredSym
+    use Fixpoint.Boxable.{box, unbox}
+    use Fixpoint.Boxed
     use Fixpoint.Interpreter.Database
 
     ///
@@ -119,9 +122,6 @@ mod Fixpoint.Solver {
         use Fixpoint.PredSymsOf.predSymsOf;
         use Fixpoint.SubstitutePredSym.substitute;
 
-        // Import a function that can create new ids.
-        import static dev.flix.runtime.Global.newId(): Int64 \ IO;
-
         // Determine all the predicate symbols in `d`.
         let predSyms = predSymsOf(d);
 
@@ -133,7 +133,7 @@ mod Fixpoint.Solver {
             } else {
                 // Case 2: Introduce a fresh name (index) for the predicate symbol.
                 let PredSym(name, _) = predSym;
-                let nextId = unchecked_cast((newId() + 1i64) as _ \ {});  // We add one because the counter starts at zero.
+                let nextId = unchecked_cast((Global.newId() + 1i64) as _ \ {});  // We add one because the counter starts at zero.
                 let newPredSym = PredSym(name, nextId);
                 Map.insert(predSym, newPredSym, macc)
             }

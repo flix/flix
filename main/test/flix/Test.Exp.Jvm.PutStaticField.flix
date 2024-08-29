@@ -1,5 +1,8 @@
 mod Test.Exp.Jvm.PutStaticField {
 
+    import dev.flix.test.TestClass
+    import dev.flix.test.TestClassWithInheritedMethod
+
     @test
     def testPutStaticBoolField01(): Bool \ IO =
         import static java_get_field dev.flix.test.TestClass.BOOL_FIELD: Bool \ IO as getField;

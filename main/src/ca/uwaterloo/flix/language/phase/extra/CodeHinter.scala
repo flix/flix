@@ -49,8 +49,8 @@ object CodeHinter {
     val uses = enumUses ++ tagUses
     val isDeprecated = enum0.ann.isDeprecated
     val isExperimental = enum0.ann.isExperimental
-    val deprecated = if (isDeprecated) uses.map(CodeHint.Deprecated) else Nil
-    val experimental = if (isExperimental) uses.map(CodeHint.Experimental) else Nil
+    val deprecated = if (isDeprecated) uses.map(CodeHint.Deprecated.apply) else Nil
+    val experimental = if (isExperimental) uses.map(CodeHint.Experimental.apply) else Nil
     (deprecated ++ experimental).toList
   }
 
@@ -60,9 +60,9 @@ object CodeHinter {
   private def visitTrait(trt: TypedAst.Trait)(implicit index: Index): List[CodeHint] = {
     val uses = index.usesOf(trt.sym)
     val isDeprecated = trt.ann.isDeprecated
-    val deprecated = if (isDeprecated) uses.map(CodeHint.Deprecated) else Nil
+    val deprecated = if (isDeprecated) uses.map(CodeHint.Deprecated.apply) else Nil
     val isExperimental = trt.ann.isExperimental
-    val experimental = if (isExperimental) uses.map(CodeHint.Experimental) else Nil
+    val experimental = if (isExperimental) uses.map(CodeHint.Experimental.apply) else Nil
     (deprecated ++ experimental).toList
   }
 
@@ -184,6 +184,15 @@ object CodeHinter {
     case Expr.ArrayLength(exp, _, _) =>
       visitExp(exp)
 
+    case Expr.StructNew(sym, fields, region, _, _, _) =>
+      fields.map{case (k, v) => v}.flatMap(visitExp) ++ visitExp(region)
+
+    case Expr.StructGet(exp, _, _, _, _) =>
+      visitExp(exp)
+
+    case Expr.StructPut(exp1, _, exp2, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2)
+
     case Expr.VectorLit(exps, _, _, _) =>
       visitExps(exps)
 
@@ -192,15 +201,6 @@ object CodeHinter {
 
     case Expr.VectorLength(exp, _) =>
       visitExp(exp)
-
-    case Expr.Ref(exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
-
-    case Expr.Deref(exp, _, _, _) =>
-      visitExp(exp)
-
-    case Expr.Assign(exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
 
     case Expr.Ascribe(exp, _, _, _) =>
       visitExp(exp)
@@ -224,6 +224,8 @@ object CodeHinter {
       visitExp(exp) ++ rules.flatMap {
         case CatchRule(_, _, exp) => visitExp(exp)
       }
+
+    case Expr.Throw(exp, _, _, _) => visitExp(exp)
 
     case Expr.TryWith(exp, _, rules, _, _, _) =>
       visitExp(exp) ++ rules.flatMap {

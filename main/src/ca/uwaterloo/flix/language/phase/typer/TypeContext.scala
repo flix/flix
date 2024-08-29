@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.language.phase.typer
 
+import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.{Ast, Name, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.util.InternalCompilerException
@@ -36,20 +37,18 @@ class TypeContext {
       *
       * Note: The function must return a _NEW_ object because each object has mutable state.
       */
-    def empty: ScopeConstraints = new ScopeConstraints(None)
+    def empty: ScopeConstraints = new ScopeConstraints(Scope.Top)
 
     /**
       * Creates an empty ScopeConstraints associated with the given region.
       */
-    def emptyForRegion(r: Symbol.KindedTypeVarSym): ScopeConstraints = new ScopeConstraints(Some(r))
+    def emptyForScope(s: Scope): ScopeConstraints = new ScopeConstraints(s)
   }
 
   /**
     * Stores typing information relating to a particular region scope.
-    *
-    * @param region the region symbol associated with the scope (None if not in a region).
     */
-  private class ScopeConstraints(val region: Option[Symbol.KindedTypeVarSym]) {
+  private class ScopeConstraints(val scope: Scope) {
 
     /**
       * The constraints generated for the scope.
@@ -102,6 +101,11 @@ class TypeContext {
     * Returns the current type constraints.
     */
   def getTypeConstraints: List[TypeConstraint] = currentScopeConstraints.getConstraints
+
+  /**
+    * Returns the current scope.
+    */
+  def getScope: Scope = currentScopeConstraints.scope
 
   /**
     * Generates constraints unifying the given types.
@@ -214,10 +218,10 @@ class TypeContext {
   /**
     * Adds the given trait constraints to the context.
     */
-  def addClassConstraints(tconstrs0: List[Ast.TypeConstraint], loc: SourceLocation): Unit = {
+  def addClassConstraints(tconstrs0: List[Ast.TraitConstraint], loc: SourceLocation): Unit = {
     // convert all the syntax-level constraints to semantic constraints
     val tconstrs = tconstrs0.map {
-      case Ast.TypeConstraint(head, arg, _) => TypeConstraint.Trait(head.sym, arg, loc)
+      case Ast.TraitConstraint(head, arg, _) => TypeConstraint.Trait(head.sym, arg, loc)
     }
     currentScopeConstraints.addAll(tconstrs)
   }
@@ -259,10 +263,11 @@ class TypeContext {
     * and we get a fresh empty set of constraints for the new scope.
     */
   def enterRegion(sym: Symbol.KindedTypeVarSym): Unit = {
-    // save the info from the parent region
+    val newScope = currentScopeConstraints.scope.enter(sym)
+      // save the info from the parent region
     constraintStack.push(currentScopeConstraints)
     renv = renv.markRigid(sym)
-    currentScopeConstraints = ScopeConstraints.emptyForRegion(sym)
+    currentScopeConstraints = ScopeConstraints.emptyForScope(newScope)
   }
 
   /**
@@ -282,9 +287,9 @@ class TypeContext {
     * We add the new purification constraints to the current constraints.
     */
   def exitRegion(externalEff1: Type, internalEff2: Type, loc: SourceLocation): Unit = {
-    val constr = currentScopeConstraints.region match {
-      case None => throw InternalCompilerException("unexpected missing region", loc)
-      case Some(r) =>
+    val constr = currentScopeConstraints.scope match {
+      case Scope(Nil) => throw InternalCompilerException("unexpected missing region", loc)
+      case Scope(r :: _) =>
         // TODO ASSOC-TYPES improve prov. We can probably get a better prov than "match"
         val prov = Provenance.Match(externalEff1, internalEff2, loc)
         TypeConstraint.Purification(r, externalEff1, internalEff2, prov, currentScopeConstraints.getConstraints)

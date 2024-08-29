@@ -187,6 +187,17 @@ object PredDeps {
     case Expr.ArrayStore(base, index, elm, _, _) =>
       visitExp(base) + visitExp(index) + visitExp(elm)
 
+    case Expr.StructNew(_, fields, region, _, _, _) =>
+      fields.foldLeft(visitExp(region)) {
+        case (acc, (_, e)) => acc + visitExp(e)
+      }
+
+    case Expr.StructGet(e, _, _, _, _) =>
+      visitExp(e)
+
+    case Expr.StructPut(e1, _, e2, _, _, _) =>
+      visitExp(e1) + visitExp(e2)
+
     case Expr.VectorLit(exps, _, _, _) =>
       exps.foldLeft(LabelledPrecedenceGraph.empty) {
         case (acc, e) => acc + visitExp(e)
@@ -197,15 +208,6 @@ object PredDeps {
 
     case Expr.VectorLength(exp, _) =>
       visitExp(exp)
-
-    case Expr.Ref(exp1, exp2, _, _, _) =>
-      visitExp(exp1) + visitExp(exp2)
-
-    case Expr.Deref(exp, _, _, _) =>
-      visitExp(exp)
-
-    case Expr.Assign(exp1, exp2, _, _, _) =>
-      visitExp(exp1) + visitExp(exp2)
 
     case Expr.Ascribe(exp, _, _, _) =>
       visitExp(exp)
@@ -229,6 +231,9 @@ object PredDeps {
       rules.foldLeft(visitExp(exp)) {
         case (acc, CatchRule(_, _, e)) => acc + visitExp(e)
       }
+
+    case Expr.Throw(exp, _, _, _) =>
+      visitExp(exp)
 
     case Expr.TryWith(exp, _, rules, _, _, _) =>
       rules.foldLeft(visitExp(exp)) {

@@ -60,11 +60,11 @@ object AtomicOp {
 
   case object ArrayLength extends AtomicOp
 
-  case object Ref extends AtomicOp
+  case class StructNew(sym: Symbol.StructSym, fields: List[Symbol.StructFieldSym]) extends AtomicOp
 
-  case object Deref extends AtomicOp
+  case class StructGet(sym: Symbol.StructFieldSym) extends AtomicOp
 
-  case object Assign extends AtomicOp
+  case class StructPut(sym: Symbol.StructFieldSym) extends AtomicOp
 
   case class InstanceOf(clazz: Class[_]) extends AtomicOp
 
@@ -87,6 +87,8 @@ object AtomicOp {
   case class GetStaticField(field: Field) extends AtomicOp
 
   case class PutStaticField(field: Field) extends AtomicOp
+
+  case object Throw extends AtomicOp
 
   case object Spawn extends AtomicOp
 

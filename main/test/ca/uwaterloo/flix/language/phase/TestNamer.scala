@@ -599,7 +599,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
     expectError[NameError.DuplicateUpperName](result)
   }
 
-  ignore("DuplicateUpperName.28") {
+  test("DuplicateUpperName.28") {
     val input =
       """
         |struct S[r] {}

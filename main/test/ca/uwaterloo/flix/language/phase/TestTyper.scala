@@ -490,13 +490,13 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    pub def print(): Unit
         |}
         |
-        |eff Throw {
-        |    pub def throw(): Unit
+        |eff Exc {
+        |    pub def raise(): Unit
         |}
         |
         |def f(): Unit =
         |    do Print.print();
-        |    do Throw.throw()
+        |    do Exc.raise()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError](result)
@@ -565,14 +565,14 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |pub def f(): Int32 =
         |    let _ = {
         |        region rc {
-        |            let x = ref 123 @ rc;
+        |            let x = Ref.fresh(rc, 123);
         |            x
         |        }
         |    };
         |    42
         |
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError](result)
   }
 
@@ -582,14 +582,14 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |pub def f(): Int32 =
         |    let _ = {
         |        region rc {
-        |            let x = ref 123 @ rc;
+        |            let x = Ref.fresh(rc, 123);
         |            (123, x)
         |        }
         |    };
         |    42
         |
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError](result)
   }
 
@@ -599,14 +599,14 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |pub def f(): Int32 =
         |    let _ = {
         |        region rc {
-        |            let x = ref 123 @ rc;
+        |            let x = Ref.fresh(rc, 123);
         |            _w -> x
         |        }
         |    };
         |    42
         |
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError](result)
   }
 
@@ -616,9 +616,9 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |pub def f(): Int32 =
         |    let _ = {
         |        region rc {
-        |            let x = ref 123 @ rc;
+        |            let x = Ref.fresh(rc, 123);
         |            w -> {
-        |                discard deref x;
+        |                discard Ref.get(x);
         |                w
         |            }
         |        }
@@ -626,7 +626,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    42
         |
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError](result)
   }
 
@@ -639,9 +639,9 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |}
         |
         |pub def f(): Unit \ IO =
-        |    let m = ref None @ Static;
+        |    let m = Ref.fresh(Static, None);
         |    region rc {
-        |        let x = ref 123 @ rc;
+        |        let x = Ref.fresh(rc, 123);
         |        Ref.put(Some(x), m);
         |        ()
         |    }
@@ -659,9 +659,9 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |}
         |
         |pub def f(): Unit \ IO =
-        |    let m = ref None @ Static;
+        |    let m = Ref.fresh(Static, None);
         |    region rc {
-        |        let x = ref 123 @ rc;
+        |        let x = Ref.fresh(rc, 123);
         |        Ref.put(Some(_ -> x), m);
         |        ()
         |    }
@@ -1468,10 +1468,10 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |def main(): Unit \ IO =
         |    import java_new java.lang.StringBuilder(String): ##java.lang.StringBuilder \ IO as newSB;
         |    let a = testInvokeMethod2_01(newSB(""));
-        |    println(a¤toString())
+        |    println(a.toString())
         |
         |def testInvokeMethod2_01(sb: ##java.lang.StringBuilder): ##java.lang.StringBuilder \ IO =
-        |    sb¤append(null)
+        |    sb.append(null)
         |""".stripMargin
     val result = compile(input, Options.Default)
     expectError[TypeError.AmbiguousMethod](result)
@@ -1485,9 +1485,155 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    testInvokeMethod2_01(newPS(""))
         |
         |def testInvokeMethod2_01(ps: ##java.io.PrintStream): Unit \ IO =
-        |    ps¤println(null)
+        |    ps.println(null)
         |""".stripMargin
     val result = compile(input, Options.Default)
     expectError[TypeError.AmbiguousMethod](result)
+  }
+
+  test("TypeError.NewStruct.01") {
+    val input =
+      """
+        |struct S [v, r] {
+        |    a: Int32,
+        |    b: String,
+        |    c: v
+        |}
+        |
+        |def Foo(): Unit = {
+        |    region rc {
+        |        new S {a = 3, b = 4, c = "hello"} @ rc;
+        |        ()
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.Default)
+    expectError[TypeError](result)
+  }
+
+  test("TypeError.NewStruct.02") {
+    val input =
+      """
+        |struct S [v, r] {
+        |    a: Int32,
+        |    b: String,
+        |    c: v
+        |}
+        |
+        |def Foo(): Unit = {
+        |    region rc {
+        |        new S {a = (), b = "hi", c = "hello"} @ rc;
+        |        ()
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.Default)
+    expectError[TypeError](result)
+  }
+
+  test("TypeError.NewStruct.03") {
+    val input =
+      """
+        |struct S [v, r] {
+        |    a: Int32,
+        |    b: String,
+        |    c: v
+        |}
+        |
+        |def Foo(): Unit = {
+        |    region rc {
+        |        new S {a = 3, b = "hi", c = new S {a = 4, b = 3, c = ()} @ rc } @ rc;
+        |        ()
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.Default)
+    expectError[TypeError](result)
+  }
+
+  test("TypeError.StructGet.01") {
+    val input =
+      """
+        |struct S [v, r] {
+        |    a: Int32,
+        |    b: String,
+        |    c: v
+        |}
+        |mod S {
+        |    def Foo(): Unit = {
+        |        region rc {
+        |            let s = new S {a = 4, b = "hi", c = "hello"} @ rc;
+        |            s->a + s->b;
+        |            ()
+        |        }
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.Default)
+    expectError[TypeError](result)
+  }
+
+  test("TypeError.StructGet.02") {
+    val input =
+      """
+        |struct S[v, r] {
+        |    c: v
+        |}
+        |mod S {
+        |    def Foo(): Unit = {
+        |        region rc {
+        |            let s1 = new S {c = 3} @ rc;
+        |            let s2 = new S {c = "hello"} @ rc;
+        |            s1->c + s2->c;
+        |            ()
+        |        }
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.Default)
+    expectError[TypeError](result)
+  }
+
+  test("TypeError.StructPut.01") {
+    val input =
+      """
+        |struct S[v, r] {
+        |    a: Int32,
+        |    b: String,
+        |    c: v
+        |}
+        |mod S {
+        |    def Foo(): Unit = {
+        |        region rc {
+        |            let s = new S {a = 4, b = "hi", c = "hello"} @ rc;
+        |            s->a = s->b;
+        |            ()
+        |        }
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.Default)
+    expectError[TypeError](result)
+  }
+
+  test("TypeError.StructPut.02") {
+    val input =
+      """
+        |struct S[v, r] {
+        |    c: v
+        |}
+        |mod S {
+        |    def Foo(): Unit = {
+        |        region rc {
+        |            let s1 = new S {c = 3} @ rc;
+        |            let s2 = new S {c = "hello"} @ rc;
+        |            s1->c = s2->c;
+        |            ()
+        |        }
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.Default)
+    expectError[TypeError](result)
   }
 }

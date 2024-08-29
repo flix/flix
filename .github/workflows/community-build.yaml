@@ -1,6 +1,6 @@
 name: Community Build
 
-on: [pull_request]
+on: [pull_request, merge_group]
 
 permissions:
   contents: read

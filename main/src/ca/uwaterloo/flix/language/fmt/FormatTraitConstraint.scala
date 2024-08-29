@@ -18,20 +18,20 @@ package ca.uwaterloo.flix.language.fmt
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast
 
-object FormatTypeConstraint {
+object FormatTraitConstraint {
 
   /**
     * Formats the given `tconstr` as `Class[Param]`.
     */
-  def formatTypeConstraint(tconstr: Ast.TypeConstraint)(implicit flix: Flix): String = {
-    formatTypeConstraintWithOptions(tconstr, flix.getFormatOptions)
+  def formatTraitConstraint(tconstr: Ast.TraitConstraint)(implicit flix: Flix): String = {
+    formatTraitConstraintWithOptions(tconstr, flix.getFormatOptions)
   }
 
   /**
     * Formats the given `tconstr` as `Class[Param]`.
     */
-  def formatTypeConstraintWithOptions(tconstr: Ast.TypeConstraint, fmt: FormatOptions): String = tconstr match {
-    case Ast.TypeConstraint(head, arg, _) =>
+  def formatTraitConstraintWithOptions(tconstr: Ast.TraitConstraint, fmt: FormatOptions): String = tconstr match {
+    case Ast.TraitConstraint(head, arg, _) =>
       val typeString = FormatType.formatTypeWithOptions(arg, fmt)
       s"${head.sym}[${typeString}]"
   }

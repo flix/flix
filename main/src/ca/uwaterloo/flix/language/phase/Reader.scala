@@ -18,10 +18,10 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.{Bootstrap, Flix}
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.Ast.{Input, Source}
-import ca.uwaterloo.flix.language.ast.{Ast, ReadAst}
+import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext, Source}
+import ca.uwaterloo.flix.language.ast.{ReadAst, SourceLocation}
 import ca.uwaterloo.flix.language.dbg.AstPrinter._
-import ca.uwaterloo.flix.util.{StreamOps, Validation}
+import ca.uwaterloo.flix.util.{InternalCompilerException, StreamOps, Validation}
 import ca.uwaterloo.flix.util.collection.MultiMap
 
 import java.nio.file.{Files, Path}
@@ -43,21 +43,25 @@ object Reader {
       val result = mutable.Map.empty[Source, Unit]
       for (input <- inputs) {
         input match {
-          case Input.Text(_, text, stable) =>
-            val src = Source(input, text.toCharArray, stable)
+          case Input.Text(_, text, _, _) =>
+            val src = Source(input, text.toCharArray)
             result += (src -> ())
 
-          case Input.TxtFile(path) =>
+          case Input.TxtFile(path, _) =>
             val bytes = Files.readAllBytes(path)
             val str = new String(bytes, flix.defaultCharset)
             val arr = str.toCharArray
-            val src = Source(input, arr, stable = false)
+            val src = Source(input, arr)
             result += (src -> ())
 
-          case Input.PkgFile(path) =>
-            for (src <- unpack(path)) {
+          case Input.PkgFile(path, sctx) =>
+            for (src <- unpack(path)(sctx, flix)) {
               result += (src -> ())
             }
+
+          case Input.FileInPackage(_, _, _, _) => throw InternalCompilerException("Impossible.", SourceLocation.Unknown)
+
+          case Input.Unknown => throw InternalCompilerException("Impossible.", SourceLocation.Unknown)
         }
       }
 
@@ -68,7 +72,7 @@ object Reader {
   /**
     * Returns a list of sources extracted from the given flix package at path `p`.
     */
-  private def unpack(p: Path)(implicit flix: Flix): List[Source] = {
+  private def unpack(p: Path)(implicit sctx: SecurityContext, flix: Flix): List[Source] = {
     // Check that the path is a flix package.
     if (!Bootstrap.isPkgFile(p))
       throw new RuntimeException(s"The path '$p' is not a flix package.")
@@ -82,11 +86,12 @@ object Reader {
         val entry = iterator.nextElement()
         val name = entry.getName
         if (name.endsWith(".flix")) {
-          val fullName = p.getFileName.toString + ":" + name
+          val virtualPath = p.getFileName.toString + ":" + name
           val bytes = StreamOps.readAllBytes(zip.getInputStream(entry))
           val str = new String(bytes, flix.defaultCharset)
           val arr = str.toCharArray
-          result += Source(Ast.Input.Text(fullName, str, stable = false), arr, stable = false)
+          val input = Input.FileInPackage(p, virtualPath, str, sctx)
+          result += Source(input, arr)
         }
       }
       result.toList

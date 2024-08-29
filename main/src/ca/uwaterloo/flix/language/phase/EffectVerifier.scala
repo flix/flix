@@ -17,9 +17,10 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.TypedAst.{Def, Expr, Root}
-import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.ast.*
+import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.phase.unification.{Substitution, Unification}
-import ca.uwaterloo.flix.util._
+import ca.uwaterloo.flix.util.*
 import ca.uwaterloo.flix.util.collection.ListMap
 
 /**
@@ -30,6 +31,9 @@ import ca.uwaterloo.flix.util.collection.ListMap
   * This phase is only for debugging; inconsistencies indicate a bug in the typer and result in a crash.
   */
 object EffectVerifier {
+
+  // We use top scope for simplicity. This is the most relaxed option.
+  private implicit val S: Scope = Scope.Top
 
   /**
     * Verifies the effects in the given root.
@@ -199,6 +203,19 @@ object EffectVerifier {
       visitExp(exp3)
       // TODO region stuff
       ()
+    case Expr.StructNew(sym, fields, region, tpe, eff, loc) =>
+      val expected = Type.mkUnion(fields.map {case (k, v) => v.eff} :+ region.eff, loc)
+      val actual = eff
+      expectType(expected, actual, loc)
+      fields.map {case(k, v) => v}.map(visitExp)
+      visitExp(region)
+    case Expr.StructGet(e, _, t, _, _) =>
+      // JOE TODO region stuff
+      visitExp(e)
+    case Expr.StructPut(e1, _, e2, t, _, _) =>
+      // JOE TODO region stuff
+      visitExp(e1)
+      visitExp(e2)
     case Expr.VectorLit(exps, tpe, eff, loc) =>
       exps.foreach(visitExp)
       val expected = Type.mkUnion(exps.map(_.eff), loc)
@@ -212,20 +229,6 @@ object EffectVerifier {
       expectType(expected, actual, loc)
     case Expr.VectorLength(exp, loc) =>
       visitExp(exp)
-    case Expr.Ref(exp1, exp2, tpe, eff, loc) =>
-      visitExp(exp1)
-      visitExp(exp2)
-      // TODO region stuff
-      ()
-    case Expr.Deref(exp, tpe, eff, loc) =>
-      visitExp(exp)
-      // TODO region stuff
-      ()
-    case Expr.Assign(exp1, exp2, tpe, eff, loc) =>
-      visitExp(exp1)
-      visitExp(exp2)
-      // TODO region stuff
-      ()
     case Expr.Ascribe(exp, tpe, eff, loc) =>
       visitExp(exp)
     case Expr.InstanceOf(exp, clazz, loc) =>
@@ -247,6 +250,9 @@ object EffectVerifier {
       val expected = Type.mkUnion(exp.eff :: rules.map(_.exp.eff), loc)
       val actual = eff
       expectType(expected, actual, loc)
+    case Expr.Throw(exp, eff, _, loc) =>
+      visitExp(exp)
+      expectType(eff, Type.mkUnion(exp.eff, Type.IO, loc), loc)
     case Expr.TryWith(exp, effUse, rules, tpe, eff, loc) =>
       visitExp(exp)
       rules.foreach { r => visitExp(r.exp) }
