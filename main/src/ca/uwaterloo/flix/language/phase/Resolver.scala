@@ -20,15 +20,15 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, VarText}
 import ca.uwaterloo.flix.language.ast.NamedAst.{Declaration, RestrictableChoosePattern}
 import ca.uwaterloo.flix.language.ast.ResolvedAst.Pattern.Record
-import ca.uwaterloo.flix.language.ast.UnkindedType.*
+import ca.uwaterloo.flix.language.ast.UnkindedType._
 import ca.uwaterloo.flix.language.ast.shared.Scope
-import ca.uwaterloo.flix.language.ast.{NamedAst, Symbol, *}
-import ca.uwaterloo.flix.language.dbg.AstPrinter.*
-import ca.uwaterloo.flix.language.errors.ResolutionError.*
+import ca.uwaterloo.flix.language.ast.{NamedAst, Symbol, _}
+import ca.uwaterloo.flix.language.dbg.AstPrinter._
+import ca.uwaterloo.flix.language.errors.ResolutionError._
 import ca.uwaterloo.flix.language.errors.{Recoverable, ResolutionError, Unrecoverable}
 import ca.uwaterloo.flix.language.phase.typer.TypeReduction
-import ca.uwaterloo.flix.util.Validation.*
-import ca.uwaterloo.flix.util.*
+import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.collection.{Chain, ListMap, MapOps}
 
 import java.lang.reflect.{Constructor, Field, Method, Modifier}
