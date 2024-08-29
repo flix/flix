@@ -486,7 +486,7 @@ mod Graph {
     /// The strings of nodes are put in quotes and existing quotes are escaped.
     /// Other than that, DOT identifier validity is up to the caller.
     ///
-    pub def toGraphvizWeighted(g: m[(t, Int32, t)]): String \ Foldable.Aef[m] with Foldable[m], Order[t], ToString[t] = region rc {
+    pub def toGraphvizLabeled(g: m[(t, l, t)]): String \ Foldable.Aef[m] with Foldable[m], ToString[t], ToString[l] = region rc {
         let sb = StringBuilder.empty(rc);
         def output(s) = StringBuilder.appendLine!(s, sb);
         output("digraph {");
