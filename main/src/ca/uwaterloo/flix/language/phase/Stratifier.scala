@@ -209,9 +209,7 @@ object Stratifier {
 
     case Expr.Tag(_, _, _) => exp0
 
-    case Expr.RestrictableTag(sym, exp, tpe, eff, loc) =>
-      val e = visitExp(exp)
-      Expr.RestrictableTag(sym, e, tpe, eff, loc)
+    case Expr.RestrictableTag(_, _, _) => exp0
 
     case Expr.Tuple(exps, tpe, eff, loc) =>
       val es = visitExps(exps)

@@ -414,9 +414,9 @@ object SemanticTokensProvider {
       val t = SemanticToken(SemanticTokenType.EnumMember, Nil, loc)
       Iterator(t)
 
-    case Expr.RestrictableTag(Ast.RestrictableCaseSymUse(_, loc), exp, _, _, _) =>
+    case Expr.RestrictableTag(Ast.RestrictableCaseSymUse(_, loc), _, _) =>
       val t = SemanticToken(SemanticTokenType.EnumMember, Nil, loc)
-      Iterator(t) ++ visitExp(exp)
+      Iterator(t)
 
     case Expr.Tuple(exps, _, _, _) =>
       visitExps(exps)

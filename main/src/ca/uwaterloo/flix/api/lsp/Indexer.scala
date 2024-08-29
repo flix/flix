@@ -291,10 +291,10 @@ object Indexer {
       val parent = Entity.Exp(exp0)
       Index.useOf(sym, loc, parent) ++ Index.occurrenceOf(exp0)
 
-    case Expr.RestrictableTag(Ast.RestrictableCaseSymUse(sym, loc), exp, _, _, _) =>
+    case Expr.RestrictableTag(Ast.RestrictableCaseSymUse(sym, loc), _, _) =>
       val parent = Entity.Exp(exp0)
       // TODO RESTR-VARS use of sym
-      visitExp(exp) ++ Index.occurrenceOf(exp0)
+      Index.occurrenceOf(exp0)
 
     case Expr.Tuple(exps, _, _, _) =>
       visitExps(exps) ++ Index.occurrenceOf(exp0)

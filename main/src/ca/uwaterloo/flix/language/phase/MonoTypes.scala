@@ -266,10 +266,10 @@ object MonoTypes {
       val t = visitType(tpe)
       Pattern.Cst(cst, t, loc)
 
-    case Pattern.Tag(sym, tagPat, tpe, loc) =>
-      val tp = visitPat(tagPat)
+    case Pattern.Tag(sym, pats, tpe, loc) =>
+      val ps = pats.map(visitPat)
       val t = visitType(tpe)
-      Pattern.Tag(sym, tp, t, loc)
+      Pattern.Tag(sym, ps, t, loc)
 
     case Pattern.Tuple(elms, tpe, loc) =>
       val es = elms.map(visitPat)

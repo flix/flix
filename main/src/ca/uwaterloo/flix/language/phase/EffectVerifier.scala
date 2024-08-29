@@ -141,11 +141,7 @@ object EffectVerifier {
       val actual = eff
       expectType(expected, actual, loc)
     case Expr.Tag(sym, tpe, loc) => ()
-    case Expr.RestrictableTag(sym, exp, tpe, eff, loc) =>
-      visitExp(exp)
-      val expected = exp.eff
-      val actual = eff
-      expectType(expected, actual, loc)
+    case Expr.RestrictableTag(sym, tpe, loc) => ()
     case Expr.Tuple(elms, tpe, eff, loc) =>
       elms.foreach(visitExp)
       val expected = Type.mkUnion(elms.map(_.eff), loc)

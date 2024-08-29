@@ -900,7 +900,7 @@ object Resolver {
         case ResolvedQName.Sig(sig) => visitApplySig(app, sig, exps, env0, innerLoc, outerLoc)
         case ResolvedQName.Var(_) => visitApply(app, env0)
         case ResolvedQName.Tag(caze) => visitApplyTag(app, caze, exps, env0, innerLoc, outerLoc)
-        case ResolvedQName.RestrictableTag(caze) => visitApplyRestrictableTag(caze, exps, isOpen = false, env0, innerLoc, outerLoc)
+        case ResolvedQName.RestrictableTag(caze) => visitApplyRestrictableTag(app, caze, exps, isOpen = false, env0, innerLoc, outerLoc)
         case ResolvedQName.Error(e) => Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
 
       }
@@ -911,7 +911,7 @@ object Resolver {
         case ResolvedQName.Sig(sig) => visitApplySig(app, sig, exps, env0, innerLoc, outerLoc)
         case ResolvedQName.Var(_) => visitApply(app, env0)
         case ResolvedQName.Tag(caze) => visitApplyTag(app, caze, exps, env0, innerLoc, outerLoc)
-        case ResolvedQName.RestrictableTag(caze) => visitApplyRestrictableTag(caze, exps, isOpen = true, env0, innerLoc, outerLoc)
+        case ResolvedQName.RestrictableTag(caze) => visitApplyRestrictableTag(app, caze, exps, isOpen = true, env0, innerLoc, outerLoc)
         case ResolvedQName.Error(e) => Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
       }
 

@@ -40,7 +40,7 @@ object HoverProvider {
   @tailrec
   private def hoverEntity(entity: Entity, uri: String, pos: Position)(implicit Index: Index, root: Root, flix: Flix): JObject = entity match {
 
-    case Entity.Case(caze) => hoverType(caze.tpe, caze.sym.loc)
+    case Entity.Case(caze) => hoverType(Type.mkTuplish(caze.tpes, caze.sym.loc), caze.sym.loc)
 
     case Entity.StructField(field) => hoverType(field.tpe, field.sym.loc)
 

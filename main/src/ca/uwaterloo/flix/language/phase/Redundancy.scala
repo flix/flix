@@ -550,8 +550,8 @@ object Redundancy {
       sctx.caseSyms.put(sym, ())
       Used.empty
 
-    case Expr.RestrictableTag(_, exp, _, _, _) =>
-      visitExp(exp, env0, rc)
+    case Expr.RestrictableTag(_, _, _) =>
+      Used.empty
 
     case Expr.Tuple(elms, _, _, _) =>
       visitExps(elms, env0, rc)

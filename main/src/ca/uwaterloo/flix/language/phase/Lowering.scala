@@ -458,8 +458,7 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expr.Match(e, rs, t, eff, loc)
 
-    case TypedAst.Expr.Tag(sym, exp, tpe, eff, loc) =>
-      val e = visitExp(exp)
+    case TypedAst.Expr.Tag(sym, tpe, loc) =>
       val t = visitType(tpe)
       LoweredAst.Expr.ApplyAtomic(AtomicOp.Tag(sym.sym), List(e), t, eff, loc)
 

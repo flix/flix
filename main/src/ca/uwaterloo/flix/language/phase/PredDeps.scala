@@ -150,8 +150,8 @@ object PredDeps {
     case Expr.Tag(_, _, _) =>
       LabelledPrecedenceGraph.empty
 
-    case Expr.RestrictableTag(_, exp, _, _, _) =>
-      visitExp(exp)
+    case Expr.RestrictableTag(_, _, _) =>
+      LabelledPrecedenceGraph.empty
 
     case Expr.Tuple(elms, _, _, _) =>
       elms.foldLeft(LabelledPrecedenceGraph.empty) {

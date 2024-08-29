@@ -305,8 +305,7 @@ object Safety {
 
       case Expr.Tag(_, _, _) => Nil
 
-      case Expr.RestrictableTag(_, exp, _, _, _) =>
-        visit(exp)
+      case Expr.RestrictableTag(_, _, _) => Nil
 
       case Expr.Tuple(elms, _, _, _) =>
         elms.flatMap(visit)

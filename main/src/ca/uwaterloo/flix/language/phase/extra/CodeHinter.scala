@@ -151,8 +151,7 @@ object CodeHinter {
 
     case Expr.Tag(_, _, _) => Nil
 
-    case Expr.RestrictableTag(_, exp, _, _, _) =>
-      visitExp(exp)
+    case Expr.RestrictableTag(_, _, _) => Nil
 
     case Expr.Tuple(exps, _, _, _) =>
       visitExps(exps)

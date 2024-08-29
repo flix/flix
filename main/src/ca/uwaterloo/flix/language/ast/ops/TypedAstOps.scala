@@ -61,7 +61,7 @@ object TypedAstOps {
     case Expr.TypeMatch(exp, rules, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp))
     case Expr.RestrictableChoose(_, exp, rules, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp))
     case Expr.Tag(_, _, _) => Set.empty
-    case Expr.RestrictableTag(_, exp, _, _, _) => sigSymsOf(exp)
+    case Expr.RestrictableTag(_, _, _) => Set.empty
     case Expr.Tuple(elms, _, _, _) => elms.flatMap(sigSymsOf).toSet
     case Expr.RecordEmpty(_, _) => Set.empty
     case Expr.RecordSelect(exp, _, _, _, _) => sigSymsOf(exp)
@@ -203,8 +203,7 @@ object TypedAstOps {
 
     case Expr.Tag(_, _, _) => Map.empty
 
-    case Expr.RestrictableTag(_, exp, _, _, _) =>
-      freeVars(exp)
+    case Expr.RestrictableTag(_, _, _) => Map.empty
 
     case Expr.Tuple(elms, _, _, _) =>
       elms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
