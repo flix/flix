@@ -359,7 +359,7 @@ object Main {
                      xbenchmarkPhases: Boolean = false,
                      xbenchmarkFrontend: Boolean = false,
                      xbenchmarkThroughput: Boolean = false,
-                     xnodeprecated: Boolean = true,
+                     xnodeprecated: Boolean = false,
                      xbddthreshold: Option[Int] = None,
                      xlib: LibLevel = LibLevel.All,
                      xnoboolcache: Boolean = false,
