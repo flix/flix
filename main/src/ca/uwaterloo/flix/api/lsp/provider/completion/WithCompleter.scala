@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.{Index, InsertTextFormat, TextEdit}
-import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider.Priority
+import ca.uwaterloo.flix.api.lsp.provider.CompletionPriority
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.WithCompletion
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.phase.{Deriver, Resolver}
@@ -46,7 +46,7 @@ object WithCompleter extends Completer {
         name = sym.toString
         completion = if (currentWordIsWith) s"with $name" else name
       } yield {
-        Completion.WithCompletion(completion, Priority.high(name), TextEdit(context.range, completion),
+        Completion.WithCompletion(completion, CompletionPriority.high(name), TextEdit(context.range, completion),
           Some(trt.doc.text), InsertTextFormat.PlainText)
       }
     } else if (withPattern.matches(context.prefix) || currentWordIsWith) {
@@ -57,7 +57,7 @@ object WithCompleter extends Completer {
           val application = s"$name[$hole]"
           val completion = if (currentWordIsWith) s"with $application" else application
           val label = if (currentWordIsWith) s"with $name[...]" else s"$name[...]"
-          Completion.WithCompletion(label, Priority.high(name), TextEdit(context.range, completion),
+          Completion.WithCompletion(label, CompletionPriority.high(name), TextEdit(context.range, completion),
             Some(trt.doc.text), InsertTextFormat.Snippet)
       }
     } else {

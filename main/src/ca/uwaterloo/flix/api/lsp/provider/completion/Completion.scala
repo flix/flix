@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider.Priority
+import ca.uwaterloo.flix.api.lsp.provider.CompletionPriority
 import ca.uwaterloo.flix.api.lsp.{CompletionItem, CompletionItemKind, InsertTextFormat, Range, TextEdit}
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.fmt.{FormatScheme, FormatType}
@@ -44,13 +44,13 @@ sealed trait Completion {
 
     case Completion.KeywordCompletion(name) =>
       CompletionItem(label = name,
-        sortText = Priority.normal(name),
+        sortText = CompletionPriority.normal(name),
         textEdit = TextEdit(context.range, s"$name "),
         kind = CompletionItemKind.Keyword)
     case Completion.LabelCompletion(label, prefix) =>
       val name = s"$prefix#${label.name}"
       CompletionItem(label = name,
-        sortText = Priority.high(name),
+        sortText = CompletionPriority.high(name),
         textEdit = TextEdit(context.range, name),
         kind = CompletionItemKind.Variable)
 
@@ -58,7 +58,7 @@ sealed trait Completion {
       val args = (1 until arity + 1).map(i => s"$${$i:x$i}").mkString(", ")
       CompletionItem(
         label = s"$name/$arity",
-        sortText = Priority.normal(name),
+        sortText = CompletionPriority.normal(name),
         textEdit = TextEdit(context.range, s"$name($args)"),
         detail = Some(detail),
         kind = CompletionItemKind.Field,
@@ -103,7 +103,7 @@ sealed trait Completion {
 
     case Completion.ImportCompletion(name) =>
       CompletionItem(label = name,
-        sortText = Priority.high(name),
+        sortText = CompletionPriority.high(name),
         textEdit = TextEdit(context.range, name),
         documentation = None,
         insertTextFormat = InsertTextFormat.PlainText,
@@ -111,14 +111,14 @@ sealed trait Completion {
 
     case Completion.SnippetCompletion(name, snippet, documentation) =>
       CompletionItem(label = name,
-        sortText = Priority.snippet(name),
+        sortText = CompletionPriority.snippet(name),
         textEdit = TextEdit(context.range, snippet),
         documentation = Some(documentation),
         insertTextFormat = InsertTextFormat.Snippet,
         kind = CompletionItemKind.Snippet)
     case Completion.VarCompletion(sym, tpe) =>
       CompletionItem(label = sym.text,
-        sortText = Priority.local(sym.text),
+        sortText = CompletionPriority.local(sym.text),
         textEdit = TextEdit(context.range, sym.text),
         detail = Some(FormatType.formatType(tpe)(flix)),
         kind = CompletionItemKind.Variable)
@@ -126,7 +126,7 @@ sealed trait Completion {
       val name = decl.sym.toString
       val snippet = CompletionUtils.getApplySnippet(name, decl.spec.fparams)(context)
       CompletionItem(label = CompletionUtils.getLabelForNameAndSpec(decl.sym.toString, decl.spec)(flix),
-        sortText = Priority.normal(name),
+        sortText = CompletionPriority.normal(name),
         filterText = Some(CompletionUtils.getFilterTextForName(name)),
         textEdit = TextEdit(context.range, snippet),
         detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)(flix)),
@@ -137,7 +137,7 @@ sealed trait Completion {
       val name = decl.sym.toString
       val snippet = CompletionUtils.getApplySnippet(name, decl.spec.fparams)(context)
       CompletionItem(label = CompletionUtils.getLabelForNameAndSpec(decl.sym.toString, decl.spec)(flix),
-        sortText = Priority.normal(name),
+        sortText = CompletionPriority.normal(name),
         filterText = Some(CompletionUtils.getFilterTextForName(name)),
         textEdit = TextEdit(context.range, snippet),
         detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)(flix)),
@@ -149,7 +149,7 @@ sealed trait Completion {
       val name = decl.sym.toString
       val snippet = CompletionUtils.getApplySnippet(name, decl.spec.fparams)(context)
       CompletionItem(label = CompletionUtils.getLabelForNameAndSpec(decl.sym.toString, decl.spec)(flix),
-        sortText = Priority.high(name),
+        sortText = CompletionPriority.high(name),
         filterText = Some(CompletionUtils.getFilterTextForName(name)),
         textEdit = TextEdit(context.range, snippet),
         detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)(flix)),
@@ -159,7 +159,7 @@ sealed trait Completion {
     case Completion.MatchCompletion(enm, completion) =>
       val label = s"match ${enm.sym.toString}"
       CompletionItem(label = label,
-        sortText = Priority.normal(label),
+        sortText = CompletionPriority.normal(label),
         textEdit = TextEdit(context.range, completion),
         documentation = None,
         insertTextFormat = InsertTextFormat.Snippet,
@@ -167,7 +167,7 @@ sealed trait Completion {
     case Completion.InstanceCompletion(trt, completion) =>
       val traitSym = trt.sym
       CompletionItem(label = s"$traitSym[...]",
-        sortText = Priority.high(traitSym.toString),
+        sortText = CompletionPriority.high(traitSym.toString),
         textEdit = TextEdit(context.range, completion),
         detail = Some(InstanceCompleter.fmtTrait(trt)),
         documentation = Some(trt.doc.text),
@@ -176,7 +176,7 @@ sealed trait Completion {
     case Completion.UseCompletion(name, kind) =>
       CompletionItem(
         label = name,
-        sortText = Priority.high(name),
+        sortText = CompletionPriority.high(name),
         textEdit = TextEdit(context.range, name),
         documentation = None,
         kind = kind)
@@ -208,7 +208,7 @@ sealed trait Completion {
       val name = s"${sym.toString}.${caze.sym.name}"
       CompletionItem(
         label = name,
-        sortText = Priority.normal(name),
+        sortText = CompletionPriority.normal(name),
         textEdit = TextEdit(context.range, name),
         documentation = None,
         kind = CompletionItemKind.Method)
@@ -230,7 +230,7 @@ sealed trait Completion {
       )
     case Completion.FromErrorsCompletion(name) =>
       CompletionItem(label = name,
-        sortText = Priority.high(name),
+        sortText = CompletionPriority.high(name),
         textEdit = TextEdit(context.range, name + " "),
         detail = None,
         kind = CompletionItemKind.Variable)
@@ -240,7 +240,7 @@ sealed trait Completion {
       val snippet = if (args.isEmpty) name else s"$name($args)"
       CompletionItem(
         label = CompletionUtils.getLabelForEnumTags(name, cas, arity),
-        sortText = Priority.normal(name),
+        sortText = CompletionPriority.normal(name),
         textEdit = TextEdit(context.range, snippet),
         detail = Some(enumSym.name),
         documentation = None,
@@ -250,7 +250,7 @@ sealed trait Completion {
       val name = modSym.toString
       CompletionItem(
         label = name,
-        sortText = Priority.low(name),
+        sortText = CompletionPriority.low(name),
         textEdit = TextEdit(context.range, name),
         kind = CompletionItemKind.Module)
 
@@ -261,7 +261,7 @@ sealed trait Completion {
 
       CompletionItem(
         label = label,
-        sortText = Priority.low(label),
+        sortText = CompletionPriority.low(label),
         textEdit = TextEdit(range, text),
         insertTextFormat = InsertTextFormat.PlainText,
         kind = CompletionItemKind.Method
@@ -270,7 +270,7 @@ sealed trait Completion {
     case Completion.StructFieldCompletion(field, loc, tpe) =>
       CompletionItem(
         label = field,
-        sortText = Priority.low(field),
+        sortText = CompletionPriority.low(field),
         textEdit = TextEdit(Range.from(loc), field),
         detail = Some(FormatType.formatType(tpe)(flix)),
         kind = CompletionItemKind.Property,
@@ -288,7 +288,7 @@ sealed trait Completion {
 
       CompletionItem(
         label = label,
-        sortText = Priority.low(label),
+        sortText = CompletionPriority.low(label),
         textEdit = TextEdit(range, text),
         insertTextFormat = InsertTextFormat.Snippet,
         kind = CompletionItemKind.Method
