@@ -36,11 +36,11 @@ object TypeCompleter extends Completer {
     */
   def getInternalPriority(loc: SourceLocation, ns: List[String])(implicit context: CompletionContext): String => String = {
     if (loc.source.name == context.uri)
-      CompletionPriority.boost
+      CompletionPriority.higher
     else if (ns.isEmpty)
-      CompletionPriority.normal
+      CompletionPriority.lower
     else
-      CompletionPriority.low
+      CompletionPriority.lowest
   }
 
   /**
@@ -50,7 +50,7 @@ object TypeCompleter extends Completer {
     val typePriorityBoost = raw".*:\s*(?:[^\s]|(?:\s*,\s*))*".r
     val typeAliasPriorityBoost = raw"\s*type\s+alias\s+.+\s*=\s*(?:[^\s]|(?:\s*,\s*))*".r
     val priority = if ((typePriorityBoost matches context.prefix) || (typeAliasPriorityBoost matches context.prefix))
-      CompletionPriority.boost _ else CompletionPriority.low _
+      CompletionPriority.higher _ else CompletionPriority.lowest _
     priority(name)
   }
 

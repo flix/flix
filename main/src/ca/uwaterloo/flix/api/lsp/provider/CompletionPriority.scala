@@ -30,15 +30,15 @@ package ca.uwaterloo.flix.api.lsp.provider
   * 9: Low: completions that are unlikely to be relevant unless within a specific context
   */
 object CompletionPriority {
-  def high(name: String): String = "1" + name
+  def highest(name: String): String = "1" + name
 
-  def boost(name: String): String = "2" + name
+  def higher(name: String): String = "2" + name
 
-  def snippet(name: String): String = "4" + name
+  def high(name: String): String = "4" + name
 
-  def local(name: String): String = "5" + name
+  def low(name: String): String = "5" + name
 
-  def normal(name: String): String = "7" + name
+  def lower(name: String): String = "7" + name
 
-  def low(name: String): String = "9" + name
+  def lowest(name: String): String = "9" + name
 }
