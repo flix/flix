@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.api.lsp.provider
+package ca.uwaterloo.flix.api.lsp.provider.completion
 
 /**
   * CompletionPriority
