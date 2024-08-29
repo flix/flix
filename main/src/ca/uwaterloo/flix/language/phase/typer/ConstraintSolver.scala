@@ -568,7 +568,7 @@ object ConstraintSolver {
   }
 
   /**
-    * Helper method which returns true if the given type type t0 does not have any variables.
+    * Returns `true` if the type is resolved enough for Java resolution.
     */
   private def isKnown(t0: Type): Boolean = t0 match {
     case Type.Var(_, _) if t0.kind == Kind.Eff => true
