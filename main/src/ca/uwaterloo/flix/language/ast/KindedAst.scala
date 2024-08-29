@@ -118,7 +118,7 @@ object KindedAst {
 
     case class Tag(sym: Ast.CaseSymUse, tvar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class RestrictableTag(sym: Ast.RestrictableCaseSymUse, isOpen: Boolean, tvar: Type.Var, loc: SourceLocation) extends Expr
+    case class RestrictableTag(sym: Ast.RestrictableCaseSymUse, exp: Expr, isOpen: Boolean, tvar: Type.Var, loc: SourceLocation) extends Expr
 
     case class Tuple(exps: List[Expr], loc: SourceLocation) extends Expr
 

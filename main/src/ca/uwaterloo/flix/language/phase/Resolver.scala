@@ -1760,17 +1760,16 @@ object Resolver {
     * Resolves the tag application.
     */
   private def visitApplyRestrictableTag(app: NamedAst.Expr.Apply, caze: NamedAst.Declaration.RestrictableCase, exps: List[NamedAst.Expr], isOpen: Boolean, env0: ListMap[String, Resolution], innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Expr, ResolutionError] = {
-    if (caze.tpes.length == exps.length) {
-      // Case 1: Hooray! We can build the tag directly.
-      val esVal = traverse(exps)(resolveExp(_, env0))
-      mapN(esVal) {
-        case es =>
-          val base = ResolvedAst.Expr.RestrictableTag(Ast.RestrictableCaseSymUse(caze.sym, innerLoc), isOpen, innerLoc)
-          ResolvedAst.Expr.Apply(base, es, outerLoc)
-      }
-    } else {
-      // Case 2: We have to curry. (See below).
-      visitApply(app, env0)
+    // We don't allow currying of restrictable tags.
+    val esVal = traverse(exps)(resolveExp(_, env0))
+    mapN(esVal) {
+      case es =>
+        val tup = es match {
+          case Nil => ResolvedAst.Expr.Cst(Ast.Constant.Unit, app.loc)
+          case one :: Nil => one
+          case many@(_ :: _ :: Nil) => ResolvedAst.Expr.Tuple(many, app.loc)
+        }
+        ResolvedAst.Expr.RestrictableTag(Ast.RestrictableCaseSymUse(caze.sym, innerLoc), tup, isOpen, innerLoc)
     }
   }
 
@@ -2295,7 +2294,7 @@ object Resolver {
     matches match {
       // Case 0: No matches. Error.
       case Nil =>
-        if(ns0.idents.length >= 1) {
+        if (ns0.idents.length >= 1) {
           // The struct name is the same as the mod name
           val struct_namespace = Name.NName(ns0.idents.init, ns0.loc)
           val struct_name = ns0.idents.last
