@@ -816,9 +816,9 @@ object Kinder {
       val expsVal = traverse(exps0)(visitExp(_, kenv0, taenv, henv0, root))
       mapN(expsVal) {
         exps =>
-          val cvar = Type.freshVar(Kind.Jvm, loc.asSynthetic)
+          val jvar = Type.freshVar(Kind.Jvm, loc.asSynthetic)
           val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-          KindedAst.Expr.InvokeConstructor2(clazz, exps, cvar, evar, loc)
+          KindedAst.Expr.InvokeConstructor2(clazz, exps, jvar, evar, loc)
       }
 
     case ResolvedAst.Expr.InvokeMethod2(exp0, methodName, exps0, loc) =>

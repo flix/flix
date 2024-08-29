@@ -85,7 +85,7 @@ object TypeConstraint {
    * A constraint indicating the equivalence between a Java constructor's type and a class with its arguments.
    * Where jvar must have kind Jvm -> Type.
    */
-  case class EqJvmConstructor(cvar: Type.Var, clazz: Class[_], tpes: List[Type], prov: Provenance) extends TypeConstraint {
+  case class EqJvmConstructor(jvar: Type.Var, clazz: Class[_], tpes: List[Type], prov: Provenance) extends TypeConstraint {
     def loc: SourceLocation = prov.loc
   }
 
@@ -98,7 +98,7 @@ object TypeConstraint {
   }
 
   /**
-    * A constraint indicating the equivalence between a Java fields's type and a field signature, i.e., a type and a field name.
+    * A constraint indicating the equivalence between a Java field's type and a field signature, i.e., a type and a field name.
     * Where jvar must have kind Jvm -> Type.
     */
   case class EqJvmField(jvar: Type.Var, tpe: Type, fieldName: Name.Ident, prov: Provenance) extends TypeConstraint {

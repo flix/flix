@@ -122,8 +122,8 @@ class TypeContext {
   /**
    * Generates constraints unifying a given Java constructor type and a class.
    */
-  def unifyJvmConstructorType(cvar: Type.Var, tpe: Type, clazz: Class[_], tpes: List[Type], loc: SourceLocation): Unit = {
-    val constr = TypeConstraint.EqJvmConstructor(cvar, clazz, tpes, Provenance.Match(cvar, tpe, loc))
+  def unifyJvmConstructorType(jvar: Type.Var, tpe: Type, clazz: Class[_], tpes: List[Type], loc: SourceLocation): Unit = {
+    val constr = TypeConstraint.EqJvmConstructor(jvar, clazz, tpes, Provenance.Match(jvar, tpe, loc))
     currentScopeConstraints.add(constr)
   }
 

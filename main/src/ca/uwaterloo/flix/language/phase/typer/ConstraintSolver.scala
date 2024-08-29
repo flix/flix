@@ -273,19 +273,19 @@ object ConstraintSolver {
           case ResolutionResult(subst, constrs, p) => ResolutionResult(subst @@ subst0, constrs, progress = p)
         }
       }
-    case TypeConstraint.EqJvmConstructor(cvar, clazz, tpes0, prov) =>
+    case TypeConstraint.EqJvmConstructor(jvar, clazz, tpes0, prov) =>
       // Apply substitution now
       val tpes = tpes0.map(subst0.apply)
       // Ensure that simplification for constructor parameters is done
       val allKnown = tpes.forall(isKnown)
 
       if (allKnown) {
-        TypeReduction.lookupConstructor(clazz, tpes, cvar.loc) match {
+        TypeReduction.lookupConstructor(clazz, tpes, jvar.loc) match {
           case JavaConstructorResolutionResult.Resolved(tpe) =>
-            val subst = Substitution.singleton(cvar.sym, tpe)
+            val subst = Substitution.singleton(jvar.sym, tpe)
             Result.Ok(ResolutionResult(subst @@ subst0, Nil, progress = true))
-          case JavaConstructorResolutionResult.AmbiguousConstructor(constructors) => Result.Err(TypeError.AmbiguousConstructor(clazz, tpes, constructors, renv, cvar.loc))
-          case JavaConstructorResolutionResult.ConstructorNotFound => Result.Err(TypeError.ConstructorNotFound(clazz, tpes, List(), renv, cvar.loc)) // TODO INTEROP: fill in candidate methods
+          case JavaConstructorResolutionResult.AmbiguousConstructor(constructors) => Result.Err(TypeError.AmbiguousConstructor(clazz, tpes, constructors, renv, jvar.loc))
+          case JavaConstructorResolutionResult.ConstructorNotFound => Result.Err(TypeError.ConstructorNotFound(clazz, tpes, List(), renv, jvar.loc)) // TODO INTEROP: fill in candidate methods
         }
       } else {
         // Otherwise other constraints may still need to be solved.
