@@ -194,6 +194,11 @@ object TypeReduction {
     } else JavaMethodResolutionResult.UnresolvedTypes
   }
 
+  def lookupField(thisObj: Type, fieldName: String, loc: SourceLocation): JavaFieldResolutionResult = {
+    if (isKnown(thisObj)) JavaFieldResolutionResult.FieldNotFound
+    else JavaFieldResolutionResult.UnresolvedTypes
+  }
+
   def lookupStaticMethod(clazz: Class[_], methodName: String, ts: List[Type], loc: SourceLocation): JavaMethodResolutionResult = {
     if (ts.forall(isKnown)) retrieveMethod(clazz, methodName, ts, isStatic = true, loc = loc)
     else JavaMethodResolutionResult.UnresolvedTypes
@@ -423,8 +428,7 @@ object TypeReduction {
    *      methods.
    *   1. MethodNotFound: The resolution failed to find a corresponding java method.
    *   1. UnresolvedTyped: The types involved are not reduced enough to decide the java method
-
-    */
+   */
   sealed trait JavaMethodResolutionResult
   object JavaMethodResolutionResult {
     case class Resolved(tpe: Type) extends JavaMethodResolutionResult
@@ -434,13 +438,27 @@ object TypeReduction {
   }
 
   /**
+    * Represents the result of a resolution process of a java field.
+    *
+    * There are two possible outcomes:
+    *
+    *   1. FieldNotFound: The resolution failed to find a corresponding java field.
+    *   1. UnresolvedTypes: The types involved are not reduced enough to decide the java method
+    */
+  sealed trait JavaFieldResolutionResult
+  object JavaFieldResolutionResult {
+    case object FieldNotFound extends JavaFieldResolutionResult
+    case object UnresolvedTypes extends JavaFieldResolutionResult
+  }
+
+  /**
    * Represents the result of a resolution process of a java constructor.
    *
    * There are three possible outcomes:
    *   1. Resolved(tpe): Indicates that there was some progress in the resolution and returns a simplified type of the java constructor.
    *   1. AmbiguousConstructor: The resolution lacked some elements to find a java constructor among a set of constructors.
    *   1. ConstructorNotFound: The resolution failed to find a corresponding java constructor.
-    *  1. UnresolvedTyped: The types involved are not reduced enough to decide the java method
+   *   1. UnresolvedTypes: The types involved are not reduced enough to decide the java method
    */
   sealed trait JavaConstructorResolutionResult
   object JavaConstructorResolutionResult {

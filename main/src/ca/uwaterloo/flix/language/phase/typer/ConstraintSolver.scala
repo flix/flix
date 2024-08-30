@@ -20,8 +20,8 @@ import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
-import ca.uwaterloo.flix.language.phase.typer.TypeReduction.{JavaConstructorResolutionResult, JavaMethodResolutionResult}
-import ca.uwaterloo.flix.language.phase.unification._
+import ca.uwaterloo.flix.language.phase.typer.TypeReduction.{JavaConstructorResolutionResult, JavaFieldResolutionResult, JavaMethodResolutionResult}
+import ca.uwaterloo.flix.language.phase.unification.*
 import ca.uwaterloo.flix.util.Result.Err
 import ca.uwaterloo.flix.util.collection.{ListMap, ListOps}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
@@ -293,6 +293,12 @@ object ConstraintSolver {
         case JavaMethodResolutionResult.AmbiguousMethod(methods) => Result.Err(TypeError.AmbiguousMethod(methodName.name, tpe, tpes, methods, renv, jvar.loc))
         case JavaMethodResolutionResult.MethodNotFound => Result.Err(TypeError.MethodNotFound(methodName, tpe, tpes, jvar.loc))
         case JavaMethodResolutionResult.UnresolvedTypes => Result.Ok(ResolutionResult(subst0, List(constr0), progress = false))
+      }
+    case TypeConstraint.EqJvmField(jvar, tpe0, fieldName, prov) =>
+      val tpe = subst0(tpe0)
+      TypeReduction.lookupField(tpe, fieldName.name, jvar.loc) match {
+        case JavaFieldResolutionResult.FieldNotFound => Result.Err(TypeError.FieldNotFound(fieldName, tpe, jvar.loc))
+        case JavaFieldResolutionResult.UnresolvedTypes => Result.Ok(ResolutionResult(subst0, List(constr0), progress = false))
       }
     case TypeConstraint.EqStaticJvmMethod(jvar, clazz, methodName, tpes0, prov) =>
       val tpes = tpes0.map(subst0.apply)
