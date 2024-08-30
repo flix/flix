@@ -231,8 +231,27 @@ object TypeReconstruction {
     case KindedAst.Expr.Tag(sym, tvar, loc) =>
       TypedAst.Expr.Tag(sym, subst(tvar), loc)
 
-    case KindedAst.Expr.RestrictableTag(sym, _, tvar, loc) =>
-      TypedAst.Expr.RestrictableTag(sym, subst(tvar), loc)
+    case KindedAst.Expr.RestrictableTag(sym, exp, _, tvar, loc) =>
+      val e = visitExp(exp)
+      val tpe = subst(tvar)
+
+      // Reconstruct the restrictable tag into an application
+      val es = e match {
+        case TypedAst.Expr.Cst(Ast.Constant.Unit, _, _) => Nil
+        case TypedAst.Expr.Tuple(exps, _, _, _) => exps
+        case t => List(t)
+      }
+
+      es match {
+        // Case 1: No arguments. Just the tag.
+        case Nil => TypedAst.Expr.RestrictableTag(sym, tpe, loc)
+        // Case 2: Arguments. Apply them.
+        case es@(_ :: _) =>
+          val baseTpe = Type.mkPureUncurriedArrow(es.map(_.tpe), tpe, loc)
+          val base = TypedAst.Expr.RestrictableTag(sym, baseTpe, loc)
+          val eff = Type.mkUnion(es.map(_.tpe), loc)
+          TypedAst.Expr.Apply(base, es, tpe, eff, loc)
+      }
 
     case KindedAst.Expr.Tuple(elms, loc) =>
       val es = elms.map(visitExp(_))

@@ -1671,20 +1671,10 @@ object Resolver {
   }
 
   /**
-    * Curry the tag, wrapping it in a lambda expression if it is not nullary.
+    * Apply the tag to Unit. We do not allow currying of restrictable tags.
     */
   private def visitRestrictableTag(caze: NamedAst.Declaration.RestrictableCase, isOpen: Boolean, loc: SourceLocation)(implicit scope: Scope, flix: Flix): ResolvedAst.Expr = {
-    // Find the arity of the case definition.
-    val arity = caze.tpes.length
-
-    // Create the fresh fparams
-    val fparams = mkFreshFparams(arity, loc.asSynthetic)
-
-    // The definition expression.
-    val tagExp = ResolvedAst.Expr.RestrictableTag(Ast.RestrictableCaseSymUse(caze.sym, loc), isOpen, loc)
-
-    // Create and apply the lambda expressions
-    mkCurriedLambda(fparams, tagExp, loc.asSynthetic)
+    ResolvedAst.Expr.RestrictableTag(Ast.RestrictableCaseSymUse(caze.sym, loc), ResolvedAst.Expr.Cst(Ast.Constant.Unit, loc), isOpen, loc)
   }
 
   /**
