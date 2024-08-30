@@ -50,7 +50,7 @@ instance Order[MultiMap[k, v]] with Order[k], Order[v] {
 instance Indexable[MultiMap[k, v]] with Order[k] {
     type Idx = k
     type Elm = Set[v]
-    type Aed = KeyNotFound
+    type Aef = KeyNotFound
     pub def get(t: MultiMap[k, v], i: k): Set[v] \ KeyNotFound = match MultiMap.get(i, t) {
         case Some(vs) => vs
         case None     => do KeyNotFound.keyNotFound("key not found")
