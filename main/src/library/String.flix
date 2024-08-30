@@ -18,6 +18,8 @@ mod String {
 
     import java.lang.System
     import java.util.regex.Pattern
+    import java.util.regex.PatternSyntaxException
+    import java.lang.IndexOutOfBoundsException
 
     use Regex.Flag
 
@@ -67,10 +69,15 @@ mod String {
     pub def nonEmpty(s: String): Bool = not isEmpty(s)
 
     ///
-    /// Returns the length of the string `s`.
+    /// Returns the number of characters the string `s`.
     ///
     pub def length(s: String): Int32 =
         unsafe s.length()
+
+    ///
+    /// Returns the number of characters the string `s`.
+    ///
+    pub def size(s: String): Int32 = length(s)
 
     ///
     /// Returns `true` if the string `s` starts with the string `prefix`.
@@ -297,7 +304,7 @@ mod String {
         try {
             unsafe s.matches(regex#regex)
         } catch {
-            case _: ##java.util.regex.PatternSyntaxException => false
+            case _: PatternSyntaxException => false
         }
 
     ///
@@ -315,7 +322,7 @@ mod String {
             let m1 = unsafe p1.matcher(s);
             unsafe m1.find(0)
         } catch {
-            case _: ##java.util.regex.PatternSyntaxException => false
+            case _: PatternSyntaxException => false
         }
 
     ///
@@ -326,7 +333,7 @@ mod String {
     pub def slice(start: {start = Int32}, end: {end = Int32}, s: String): String = try {
         unsafe s.substring(start#start, end#end)
     } catch {
-        case _: ##java.lang.IndexOutOfBoundsException => ""
+        case _: IndexOutOfBoundsException => ""
     }
 
     ///

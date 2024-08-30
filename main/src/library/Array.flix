@@ -15,12 +15,12 @@
  * limitations under the License.
  */
 
-instance Index[Array[a, r]] {
+instance Indexable[Array[a, r]] {
     type Idx = Int32
     type Elm = a
     type Aef = r + OutOfBounds
 
-    pub def get(i: Int32, t: Array[a, r]): a \ r + OutOfBounds = {
+    pub def get(t: Array[a, r], i: Int32): a \ r + OutOfBounds = {
         if (0 <= i and i < Array.length(t)) Array.get(i, t)
         else do OutOfBounds.outOfBounds(
             "index ${i} is out of bounds for Array of length ${Array.length(t)}"
@@ -28,10 +28,10 @@ instance Index[Array[a, r]] {
     }
 }
 
-instance IndexMut[Array[a, r]] {
+instance IndexableMut[Array[a, r]] {
     type Aef = r + OutOfBounds
 
-    pub def put(i: Int32, v: a, t: Array[a, r]): Unit \ r + OutOfBounds = {
+    pub def put(t: Array[a, r], i: Int32, v: a): Unit \ r + OutOfBounds = {
         if (0 <= i and i < Array.length(t)) Array.put(v, i, t)
         else do OutOfBounds.outOfBounds(
             "index ${i} is out of bounds for Array of length ${Array.length(t)}"
@@ -78,12 +78,12 @@ mod Array {
     ///
     pub def toString(a: Array[a, r]): String \ r with ToString[a] = region rc2 {
         let sb = StringBuilder.empty(rc2);
-        let first = ref true @ rc2;
+        let first = Ref.fresh(rc2, true);
 
         StringBuilder.appendString!("Array#{", sb);
 
         let f = x -> {
-            if (not deref first) StringBuilder.appendString!(", ", sb) else Ref.put(false, first);
+            if (not Ref.get(first)) StringBuilder.appendString!(", ", sb) else Ref.put(false, first);
             StringBuilder.appendString!("${x}", sb)
         };
         forEach(f, a);
@@ -130,9 +130,14 @@ mod Array {
     pub def nonEmpty(a: Array[a, r]): Bool \ r = not isEmpty(a)
 
     ///
-    /// Returns the length of the array `a`.
+    /// Returns the number of elements in the array `a`.
     ///
     pub def length(a: Array[a, r]): Int32 \ r = $ARRAY_LENGTH$(a)
+
+    ///
+    /// Returns the number of elements in the array `a`.
+    ///
+    pub def size(a: Array[a, r]): Int32 \ r = length(a)
 
     ///
     /// Returns a fresh array with the elements from the array `a` from index `start` (inclusive) until index `end` (exclusive).
@@ -1312,7 +1317,7 @@ mod Array {
         let len = length(a);
         let c = Order.max(len, minCap);
         let copy = copyOfRange(rc1, 0, c, a);
-        MutList.MutList(rc1, ref copy @ rc1, ref len @ rc1)
+        MutList.MutList(rc1, Ref.fresh(rc1, copy), Ref.fresh(rc1, len))
 
     ///
     /// Alias for `findIndexOfLeft`.

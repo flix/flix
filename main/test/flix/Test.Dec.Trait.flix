@@ -154,7 +154,7 @@ mod Test.Dec.Trait {
         instance C[Int32] {
             pub def f(): Int32 = 0
 
-            pub redef h(): Int32 = 1
+            redef h(): Int32 = 1
         }
 
         @test

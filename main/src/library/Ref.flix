@@ -14,25 +14,29 @@
  *  limitations under the License.
  */
 
+struct Ref[a, r] {
+    v: a
+}
+
 mod Ref {
 
     ///
     /// Returns a new reference to `x` in the region `rc`.
     ///
     pub def fresh(rc: Region[r], x: a): Ref[a, r] \ r =
-        ref x @ rc
+        new Ref { v = x } @ rc
 
     ///
     /// Returns the element referenced by `rf`.
     ///
     pub def get(rf: Ref[a, r]): a \ r =
-        deref rf
+        rf->v
 
     ///
     /// Updates `rf` to reference `x`.
     ///
     pub def put(x: a, rf: Ref[a, r]): Unit \ r =
-        $REF_ASSIGN$(rf, x)
+        rf->v = x
 
 
     ///
@@ -41,6 +45,6 @@ mod Ref {
     /// I.e. if `rf` references `x` then `rf` is updated to reference `f(x)`.
     ///
     pub def transform(f: a -> a \ ef, rf: Ref[a, r]): Unit \ { r, ef } =
-        put(f(Ref.get(rf)), rf)
+        put(f(rf->v), rf)
 
 }

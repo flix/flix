@@ -17,7 +17,6 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.{Index, InsertTextFormat, TextEdit}
-import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider.Priority
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.TypeBuiltinCompletion
 import ca.uwaterloo.flix.language.ast.TypedAst
 
@@ -42,14 +41,14 @@ object TypeBuiltinCompleter extends Completer {
   private val LowPriorityBuiltinTypeNames: List[String] = List(
     "Int8",
     "Int16",
-    "Float32"
+    "Float32",
+    "Void"
   )
 
   /* Built-in types with type parameters */
   private val BuiltinTypeNamesWithTypeParameters: List[(String, List[String])] = List(
     ("Array", List("a", "r")),
     ("Vector", List("a")),
-    ("Ref", List("a", "r")),
     ("Sender", List("t", "r")),
     ("Receiver", List("t", "r")),
     ("Lazy", List("t"))
@@ -60,20 +59,20 @@ object TypeBuiltinCompleter extends Completer {
     */
   override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[TypeBuiltinCompletion] = {
     val builtinTypes = BuiltinTypeNames.map { name =>
-      val internalPriority = Priority.high _
+      val internalPriority = CompletionPriority.highest _
       Completion.TypeBuiltinCompletion(name, TypeCompleter.priorityBoostForTypes(internalPriority(name))(context), TextEdit(context.range, name),
         InsertTextFormat.PlainText)
     }
 
     val lowPriorityBuiltinTypes = LowPriorityBuiltinTypeNames.map { name =>
-      val internalPriority = Priority.low _
+      val internalPriority = CompletionPriority.lowest _
       Completion.TypeBuiltinCompletion(name, TypeCompleter.priorityBoostForTypes(internalPriority(name))(context), TextEdit(context.range, name),
         InsertTextFormat.PlainText)
     }
 
     val builtinTypesWithParams = BuiltinTypeNamesWithTypeParameters.map {
       case (name, tparams) =>
-        val internalPriority = Priority.boost _
+        val internalPriority = CompletionPriority.higher _
         val fmtTparams = tparams.zipWithIndex.map { case (name, idx) => s"$${${idx + 1}:$name}" }.mkString(", ")
         val finalName = s"$name[${tparams.mkString(", ")}]"
         Completion.TypeBuiltinCompletion(finalName, TypeCompleter.priorityBoostForTypes(internalPriority(name))(context),

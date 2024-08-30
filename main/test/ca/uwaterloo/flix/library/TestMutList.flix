@@ -24,7 +24,7 @@ mod TestMutList {
     ///
     def capacity(v: MutList[a, r]): Int32 \ r =
         let MutList(_, a, _) = v;
-        Array.length(deref a)
+        Array.length(Ref.get(a))
 
     /////////////////////////////////////////////////////////////////////////////
     // toString                                                                //
@@ -189,6 +189,38 @@ mod TestMutList {
     @test
     def length05(): Bool = region rc {
         MutList.length(MutList.range(rc, 0, 42)) == 42
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // size                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def size01(): Bool = region rc {
+        MutList.size(MutList.empty(rc)) == 0
+    }
+
+    @test
+    def size02(): Bool = region rc {
+        let v = MutList.empty(rc);
+        MutList.push!(42, v);
+        MutList.size(v) == 1
+    }
+
+    @test
+    def size03(): Bool = region rc {
+        MutList.size(MutList.range(rc, 0, 2)) == 2
+    }
+
+    @test
+    def size04(): Bool = region rc {
+        MutList.size(MutList.range(rc, 0, 4)) == 4
+    }
+
+    @test
+    def size05(): Bool = region rc {
+        MutList.size(MutList.range(rc, 0, 42)) == 42
     }
 
 
@@ -991,7 +1023,7 @@ mod TestMutList {
         let v1 = MutList.range(rc, 0, 1000);
         let MutList(_, l1, n1) = v1;
         let MutList(_, l2, n2) = MutList.copy(rc, v1);
-        (deref n1 == deref n2) and (deref l1 `Array.sameElements` deref l2)
+        (Ref.get(n1) == Ref.get(n2)) and (Ref.get(l1) `Array.sameElements` Ref.get(l2))
     }
 
     @test
@@ -999,8 +1031,8 @@ mod TestMutList {
         let v1 = MutList.range(rc, 0, 3);
         let MutList(_, l1, n1) = v1;
         let MutList(_, l2, n2) = MutList.copy(rc, v1);
-        (deref n1 == deref n2) and (deref l1 `Array.sameElements` deref l2) and
-            (Array.length(deref l2) == 8)
+        (Ref.get(n1) == Ref.get(n2)) and (Ref.get(l1) `Array.sameElements` Ref.get(l2)) and
+            (Array.length(Ref.get(l2)) == 8)
     }
 
 
@@ -1682,11 +1714,11 @@ mod TestMutList {
         // Pop 76 element such that the load factor is strictly lower than 1 / 4.
         let v = MutList.range(rc, 0, 100);
         let c = capacity(v);
-        let i = ref 0 @ rc;
+        let i = Ref.fresh(rc, 0);
         let f = _ -> {
-            if (deref i < 76) {
+            if (Ref.get(i) < 76) {
                 discard MutList.pop!(v);
-                Ref.put(deref i + 1, i)
+                Ref.put(Ref.get(i) + 1, i)
             }
             else ()
         };

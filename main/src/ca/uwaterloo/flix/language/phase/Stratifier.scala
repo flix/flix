@@ -17,11 +17,11 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast._
-import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.ast.shared.Fixity
-import ca.uwaterloo.flix.language.dbg.AstPrinter._
+import ca.uwaterloo.flix.language.ast.Ast.*
+import ca.uwaterloo.flix.language.ast.TypedAst.*
+import ca.uwaterloo.flix.language.ast.*
+import ca.uwaterloo.flix.language.ast.shared.{Fixity, Scope}
+import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.StratificationError
 import ca.uwaterloo.flix.language.phase.PredDeps.termTypesAndDenotation
 import ca.uwaterloo.flix.language.phase.unification.Unification
@@ -30,7 +30,7 @@ import ca.uwaterloo.flix.util.{ParOps, Result, Validation}
 
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.annotation.tailrec
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 /**
   * The stratification phase breaks constraints into strata.
@@ -289,20 +289,6 @@ object Stratifier {
     case Expr.VectorLength(exp, loc) =>
       val e = visitExp(exp)
       Expr.VectorLength(e, loc)
-
-    case Expr.Ref(exp1, exp2, tpe, eff, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      Expr.Ref(e1, e2, tpe, eff, loc)
-
-    case Expr.Deref(exp, tpe, eff, loc) =>
-      val e = visitExp(exp)
-      Expr.Deref(e, tpe, eff, loc)
-
-    case Expr.Assign(exp1, exp2, tpe, eff, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      Expr.Assign(e1, e2, tpe, eff, loc)
 
     case Expr.Ascribe(exp, tpe, eff, loc) =>
       val e = visitExp(exp)
@@ -618,7 +604,7 @@ object Stratifier {
     val isEqDenotation = l1.den == l2.den
     val isEqArity = l1.arity == l2.arity
     val isEqTermTypes = l1.terms.zip(l2.terms).forall {
-      case (t1, t2) => Unification.unifiesWith(t1, t2, RigidityEnv.empty, ListMap.empty) // TODO ASSOC-TYPES empty right?
+      case (t1, t2) => Unification.unifiesWith(t1, t2, RigidityEnv.empty, ListMap.empty)(Scope.Top, flix) // TODO ASSOC-TYPES empty right? // TODO LEVELS top OK?
     }
 
     isEqPredicate && isEqDenotation && isEqArity && isEqTermTypes

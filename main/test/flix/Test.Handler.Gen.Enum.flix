@@ -9,7 +9,7 @@ mod Test.Handler.Gen.Enum {
 
     def sample(limit: Int32): List[Option[Int32]] =
         region rc {
-            let counter = ref Some(0) @ rc;
+            let counter = Ref.fresh(rc, Some(0));
             try {
                 generator(); Nil
             } with Gen {
@@ -20,7 +20,7 @@ mod Test.Handler.Gen.Enum {
         }
 
     def getAndInc(r: Ref[Option[Int32], r]): Int32 \ r =
-        match deref r {
+        match Ref.get(r) {
             case Some(i) =>
                 Ref.put(Some(i + 1), r);
                 i

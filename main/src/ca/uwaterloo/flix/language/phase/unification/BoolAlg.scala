@@ -105,11 +105,11 @@ trait BoolAlg[F] {
     // Compute the variables in `tpe`.
     val tvars =
       fs.foldLeft(SortedSet.empty[Symbol.KindedTypeVarSym])((acc, tpe) => acc ++ tpe.typeVars.map(_.sym))
-        .toList.map(BoolFormula.VarOrEff.Var)
+        .toList.map(BoolFormula.VarOrEff.Var.apply)
 
     val effs =
       fs.foldLeft(SortedSet.empty[Symbol.EffectSym])((acc, tpe) => acc ++ tpe.effects)
-        .toList.map(BoolFormula.VarOrEff.Eff)
+        .toList.map(BoolFormula.VarOrEff.Eff.apply)
 
     // Construct a bi-directional map from type variables to indices.
     // The idea is that the first variable becomes x0, the next x1, and so forth.

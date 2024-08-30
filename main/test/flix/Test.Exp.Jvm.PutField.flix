@@ -2,6 +2,7 @@ mod Test.Exp.Jvm.PutField {
 
     import dev.flix.test.TestClass
     import dev.flix.test.TestClassWithInheritedMethod
+
     @test
     def testPutBoolField01(): Bool \ IO =
         import java_get_field dev.flix.test.TestClass.boolField: Bool \ IO as getField;

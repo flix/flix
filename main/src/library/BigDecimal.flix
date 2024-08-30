@@ -21,8 +21,9 @@
 /// normalized) is provided by the function `numericEquals`.
 mod BigDecimal {
 
-    import java.math.BigDecimal;
+    import java.math.BigDecimal
     import java.math.RoundingMode
+    import java.lang.NumberFormatException
 
     ///
     /// Returns the smaller of `x` and `y`.
@@ -70,7 +71,7 @@ mod BigDecimal {
     pub def fromString(s: String): Option[BigDecimal] = try {
         Some(unsafe new BigDecimal(s.strip()))
     } catch {
-        case _: ##java.lang.NumberFormatException => None
+        case _: NumberFormatException => None
     }
 
     ///

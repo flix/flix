@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.LabelledPrecedenceGraph
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.typer.{ConstraintGen, ConstraintSolver, TypeContext}
@@ -172,6 +173,7 @@ object Typer {
     * Reconstructs types in the given def.
     */
   private def visitDef(defn: KindedAst.Def, tconstrs0: List[Ast.TraitConstraint], renv0: RigidityEnv, root: KindedAst.Root, traitEnv: Map[Symbol.TraitSym, Ast.TraitContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], open: Boolean)(implicit flix: Flix): Validation[TypedAst.Def, TypeError] = {
+    implicit val scope: Scope = Scope.Top
     implicit val r: KindedAst.Root = root
     implicit val context: TypeContext = new TypeContext
     val (tpe, eff0) = ConstraintGen.visitExp(defn.exp)
@@ -222,6 +224,7 @@ object Typer {
     * Performs type inference and reassembly on the given signature `sig`.
     */
   private def visitSig(sig: KindedAst.Sig, renv0: RigidityEnv, tconstrs0: List[Ast.TraitConstraint], root: KindedAst.Root, traitEnv: Map[Symbol.TraitSym, Ast.TraitContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Validation[TypedAst.Sig, TypeError] = {
+    implicit val scope: Scope = Scope.Top
     implicit val r: KindedAst.Root = root
     implicit val context: TypeContext = new TypeContext
     sig.exp match {
@@ -289,7 +292,7 @@ object Typer {
   private def visitEnums(root: KindedAst.Root)(implicit flix: Flix): Map[Symbol.EnumSym, TypedAst.Enum] = {
       // Visit every enum in the ast.
       val result = root.enums.toList.map {
-        case (_, enum) => visitEnum(enum, root)
+        case (_, enum0) => visitEnum(enum0, root)
       }
 
       // Sequence the results and convert them back to a map.

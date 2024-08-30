@@ -6,11 +6,12 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
-import ca.uwaterloo.flix.language.ast.shared.{Fixity, SecurityContext}
+import ca.uwaterloo.flix.language.ast.shared.{Fixity, Scope, SecurityContext}
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.language.errors.SafetyError._
+import ca.uwaterloo.flix.language.phase.typer.TypeReduction
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 
 import java.math.BigInteger
@@ -171,7 +172,7 @@ object Safety {
     */
   private def checkExportableTypes(defn: Def): List[SafetyError] = {
     val types = defn.spec.fparams.map(_.tpe) :+ defn.spec.retTpe
-    types.flatMap{ t =>
+    types.flatMap { t =>
       if (isExportableType(t)) Nil
       else List(SafetyError.IllegalExportType(t, t.loc))
     }
@@ -292,7 +293,8 @@ object Safety {
         // check whether the last case in the type match looks like `...: _`
         val missingDefault = rules.last match {
           case TypeMatchRule(_, tpe, _) => tpe match {
-            case Type.Var(sym, _) if renv.isFlexible(sym) => Nil
+            // use top scope since the rigidity check only cares if it's a syntactically known variable
+            case Type.Var(sym, _) if renv.isFlexible(sym)(Scope.Top) => Nil
             case _ => List(SafetyError.MissingDefaultTypeMatchCase(exp.loc))
           }
         }
@@ -339,7 +341,7 @@ object Safety {
         visit(base) ++ visit(index) ++ visit(elm)
 
       case Expr.StructNew(_, fields, region, _, _, _) =>
-        fields.map{case (_, v) => v}.flatMap(visit) ++ visit(region)
+        fields.map { case (_, v) => v }.flatMap(visit) ++ visit(region)
 
       case Expr.StructGet(e, _, _, _, _) =>
         visit(e)
@@ -355,15 +357,6 @@ object Safety {
 
       case Expr.VectorLength(exp, _) =>
         visit(exp)
-
-      case Expr.Ref(exp1, exp2, _, _, _) =>
-        visit(exp1) ++ visit(exp2)
-
-      case Expr.Deref(exp, _, _, _) =>
-        visit(exp)
-
-      case Expr.Assign(exp1, exp2, _, _, _) =>
-        visit(exp1) ++ visit(exp2)
 
       case Expr.Ascribe(exp, _, _, _) =>
         visit(exp)
@@ -920,11 +913,11 @@ object Safety {
   }
 
   /**
-   * Ensures that the Java type in a catch clause is Throwable or a subclass.
-   *
-   * @param clazz the Java class specified in the catch clause
-   * @param loc   the location of the catch parameter.
-   */
+    * Ensures that the Java type in a catch clause is Throwable or a subclass.
+    *
+    * @param clazz the Java class specified in the catch clause
+    * @param loc   the location of the catch parameter.
+    */
   private def checkCatchClass(clazz: java.lang.Class[_], loc: SourceLocation): List[SafetyError] = {
     if (!classOf[Throwable].isAssignableFrom(clazz)) {
       List(IllegalCatchType(loc))
@@ -934,16 +927,16 @@ object Safety {
   }
 
   /**
-   * Ensures that the type of the argument to `throw` is Throwable or a subclass.
-   *
-   * @param exp the expression to check
-   */
+    * Ensures that the type of the argument to `throw` is Throwable or a subclass.
+    *
+    * @param exp the expression to check
+    */
   private def checkThrow(exp: Expr): List[SafetyError] = {
-     val valid = exp.tpe match {
+    val valid = exp.tpe match {
       case Type.Cst(TypeConstructor.Native(clazz), loc) => classOf[Throwable].isAssignableFrom(clazz)
       case _ => false
     }
-    if(valid) {
+    if (valid) {
       List()
     } else {
       List(IllegalThrowType(exp.loc))
@@ -1036,7 +1029,7 @@ object Safety {
     * Get a Set of MethodSignatures representing the methods of `clazz`. Returns a map to allow subsequent reverse lookup.
     */
   private def getJavaMethodSignatures(clazz: java.lang.Class[_]): Map[MethodSignature, java.lang.reflect.Method] = {
-    val methods = clazz.getMethods.toList.filterNot(isStaticMethod)
+    val methods = TypeReduction.getMethods(clazz).filterNot(isStaticMethod)
     methods.foldLeft(Map.empty[MethodSignature, java.lang.reflect.Method]) {
       case (acc, m) =>
         val signature = MethodSignature(m.getName, m.getParameterTypes.toList.map(Type.getFlixType), Type.getFlixType(m.getReturnType))

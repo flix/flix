@@ -15,8 +15,11 @@
  */
 
 mod BigInt {
+
     import java.math.BigDecimal
     import java.math.BigInteger
+    import java.lang.NumberFormatException
+    import java.lang.ArithmeticException
 
     ///
     /// Returns the smaller of `x` and `y`.
@@ -162,7 +165,7 @@ mod BigInt {
     pub def fromString(s: String): Option[BigInt] = try {
         Some(unsafe new BigInteger(s.strip()))
     } catch {
-        case _: ##java.lang.NumberFormatException => None
+        case _: NumberFormatException => None
     }
 
     ///
@@ -177,7 +180,7 @@ mod BigInt {
         try {
             Some(unsafe x.byteValueExact())
         } catch {
-            case _ : ##java.lang.ArithmeticException => None
+            case _ : ArithmeticException => None
         }
 
     ///
@@ -192,7 +195,7 @@ mod BigInt {
         try {
             Some(unsafe x.shortValueExact())
         } catch {
-            case _ : ##java.lang.ArithmeticException => None
+            case _ : ArithmeticException => None
         }
 
     ///
@@ -207,7 +210,7 @@ mod BigInt {
         try {
             Some(unsafe x.intValueExact())
         } catch {
-            case _ : ##java.lang.ArithmeticException => None
+            case _ : ArithmeticException => None
         }
 
     ///
@@ -222,7 +225,7 @@ mod BigInt {
         try {
             Some(unsafe x.longValueExact())
         } catch {
-            case _ : ##java.lang.ArithmeticException => None
+            case _ : ArithmeticException => None
         }
 
     ///
@@ -294,7 +297,7 @@ mod BigInt {
             unsafe y.byteValueExact()
         } catch {
             // This should be impossible!
-            case _ : ##java.lang.ArithmeticException => minimum
+            case _ : ArithmeticException => minimum
         }
 
     ///
@@ -310,7 +313,7 @@ mod BigInt {
             unsafe y.shortValueExact()
         } catch {
             // This should be impossible!
-            case _ : ##java.lang.ArithmeticException => minimum
+            case _ : ArithmeticException => minimum
         }
 
     ///
@@ -326,7 +329,7 @@ mod BigInt {
             unsafe y.intValueExact()
         } catch {
             // This should be impossible!
-            case _ : ##java.lang.ArithmeticException => minimum
+            case _ : ArithmeticException => minimum
         }
 
     ///
@@ -342,7 +345,7 @@ mod BigInt {
             unsafe y.longValueExact()
         } catch {
             // This should be impossible!
-            case _ : ##java.lang.ArithmeticException => minimum
+            case _ : ArithmeticException => minimum
         }
 
     ///

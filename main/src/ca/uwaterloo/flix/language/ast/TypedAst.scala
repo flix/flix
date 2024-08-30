@@ -196,12 +196,6 @@ object TypedAst {
       def tpe: Type = Type.Int32
     }
 
-    case class Ref(exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
-
-    case class Deref(exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
-
-    case class Assign(exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
-
     case class Ascribe(exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class InstanceOf(exp: Expr, clazz: java.lang.Class[_], loc: SourceLocation) extends Expr {

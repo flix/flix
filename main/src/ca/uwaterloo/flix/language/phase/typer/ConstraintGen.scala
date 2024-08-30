@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.KindedAst.Expr
+import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, Name, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.{InternalCompilerException, SubEffectLevel}
 import ca.uwaterloo.flix.language.phase.unification.Substitution
@@ -39,6 +40,7 @@ object ConstraintGen {
     * The type and effect may include variables that must be resolved.
     */
   def visitExp(exp0: KindedAst.Expr)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
+    implicit val scope: Scope = c.getScope
     exp0 match {
       case Expr.Var(sym, _) =>
         val resTpe = sym.tvar
@@ -409,6 +411,7 @@ object ConstraintGen {
         // because we need to resolve local constraints
         // BEFORE purifying the region as we exit
 
+        // TODO LEVELS this may change when we do purification properly (?)
         // We must unify sym.tvar and the region var INSIDE the region
         // because we need to ensure that reference to the region are
         // resolved BEFORE purifying the region as we exit
@@ -646,43 +649,6 @@ object ConstraintGen {
         c.expectType(Type.mkVector(elmVar, loc), tpe, exp.loc)
         val resTpe = Type.Int32
         val resEff = eff
-        (resTpe, resEff)
-
-      case Expr.Ref(exp1, exp2, tvar, evar, loc) =>
-        val regionVar = Type.freshVar(Kind.Eff, loc)
-        val regionType = Type.mkRegion(regionVar, loc)
-        val (tpe1, eff1) = visitExp(exp1)
-        val (tpe2, eff2) = visitExp(exp2)
-        c.expectType(tpe2, regionType, exp2.loc)
-        c.unifyType(tvar, Type.mkRef(tpe1, regionVar, loc), loc)
-        c.unifyType(evar, Type.mkUnion(eff1, eff2, regionVar, loc), loc)
-        val resTpe = tvar
-        val resEff = evar
-        (resTpe, resEff)
-
-      case Expr.Deref(exp, tvar, evar, loc) =>
-        val elmVar = Type.freshVar(Kind.Star, loc)
-        val regionVar = Type.freshVar(Kind.Eff, loc)
-        val refType = Type.mkRef(elmVar, regionVar, loc)
-        val (tpe, eff) = visitExp(exp)
-        c.expectType(expected = refType, actual = tpe, exp.loc)
-        c.unifyType(tvar, elmVar, loc)
-        c.unifyType(evar, Type.mkUnion(eff, regionVar, loc), loc)
-        val resTpe = tvar
-        val resEff = evar
-        (resTpe, resEff)
-
-      case Expr.Assign(exp1, exp2, evar, loc) =>
-        val elmVar = Type.freshVar(Kind.Star, loc)
-        val regionVar = Type.freshVar(Kind.Eff, loc)
-        val refType = Type.mkRef(elmVar, regionVar, loc)
-        val (tpe1, eff1) = visitExp(exp1)
-        val (tpe2, eff2) = visitExp(exp2)
-        c.expectType(expected = refType, actual = tpe1, exp1.loc)
-        c.unifyType(elmVar, tpe2, exp2.loc)
-        c.unifyType(evar, Type.mkUnion(eff1, eff2, regionVar, loc), loc)
-        val resTpe = Type.Unit
-        val resEff = evar
         (resTpe, resEff)
 
       case Expr.Ascribe(exp, expectedTpe, expectedEff, tvar, loc) =>
@@ -999,6 +965,7 @@ object ConstraintGen {
     * Returns the pattern's type. The type may be a variable which must later be resolved.
     */
   def visitPattern(pat0: KindedAst.Pattern)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): Type = {
+    implicit val scope: Scope = c.getScope
     pat0 match {
       case KindedAst.Pattern.Wild(tvar, _) => tvar
 
@@ -1187,6 +1154,7 @@ object ConstraintGen {
     * Returns the type and effect of the rule body.
     */
   private def visitDefaultRule(exp0: Option[KindedAst.Expr], loc: SourceLocation)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
+    implicit val scope: Scope = c.getScope
     exp0 match {
       case None => (Type.freshVar(Kind.Star, loc), Type.Pure)
       case Some(exp) => visitExp(exp)
@@ -1254,7 +1222,8 @@ object ConstraintGen {
     * This is usually the annotated return type of the op.
     * But if the op returns Void, we return a free variable instead.
     */
-  private def getDoType(op: KindedAst.Op)(implicit flix: Flix): Type = {
+  private def getDoType(op: KindedAst.Op)(implicit c: TypeContext, flix: Flix): Type = {
+    implicit val scope: Scope = c.getScope
     // We special-case the result type of the operation.
     op.spec.tpe.typeConstructor match {
       case Some(TypeConstructor.Void) =>
@@ -1275,7 +1244,8 @@ object ConstraintGen {
     *   The second element of the return tuple would be(locations omitted) `Apply(Apply(Cst(Struct(S)), v'), r')`
     *   The third element of the return tuple would be `r'`
     */
-  private def instantiateStruct(sym: Symbol.StructSym, structs: Map[Symbol.StructSym, KindedAst.Struct])(implicit flix: Flix) : (Map[Symbol.StructFieldSym, Type], Type, Type.Var) = {
+  private def instantiateStruct(sym: Symbol.StructSym, structs: Map[Symbol.StructSym, KindedAst.Struct])(implicit c: TypeContext, flix: Flix) : (Map[Symbol.StructFieldSym, Type], Type, Type.Var) = {
+    implicit val scope: Scope = c.getScope
     val struct = structs(sym)
     assert(struct.tparams.last.sym.kind == Kind.Eff)
     val fields = struct.fields
