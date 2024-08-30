@@ -36,7 +36,7 @@ instance Indexable[DelayMap[k, v]] with Order[k] {
     type Idx = k
     type Elm = v
     type Aef = KeyNotFound
-    pub def get(i: k, t: DelayMap[k, v]): v \ KeyNotFound = match DelayMap.get(i, t) {
+    pub def get(t: DelayMap[k, v], i: k): v \ KeyNotFound = match DelayMap.get(i, t) {
         case Some(v) => v
         case None    => do KeyNotFound.keyNotFound(
             "key not found"
