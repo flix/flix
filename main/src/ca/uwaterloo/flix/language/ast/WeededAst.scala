@@ -204,6 +204,8 @@ object WeededAst {
 
     case class InvokeMethod2(exp: Expr, methodName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
 
+    case class GetField2(exp: Expr, fieldName: Name.Ident, loc: SourceLocation) extends Expr
+
     case class NewObject(tpe: Type, methods: List[JvmMethod], loc: SourceLocation) extends Expr
 
     case class StructGet(exp: Expr, label: Name.Label, loc: SourceLocation) extends Expr

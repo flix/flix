@@ -1382,8 +1382,13 @@ object Parser2 {
             val mark = openBefore(lhs)
             eat(TokenKind.Dot)
             name(Set(TokenKind.NameLowerCase), context = SyntacticContext.Expr.OtherExpr)
-            arguments()
-            lhs = close(mark, TreeKind.Expr.InvokeMethod2)
+            // `exp.f` is a Java field lookup and `exp.f(..)` is a Java method invocation
+            if (at(TokenKind.ParenL)) {
+              arguments()
+              lhs = close(mark, TreeKind.Expr.InvokeMethod2)
+            } else {
+              lhs = close(mark, TreeKind.Expr.GetField2)
+            }
             lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
           case TokenKind.Hash if nth(1) == TokenKind.NameLowerCase => // record lookup
             val mark = openBefore(lhs)

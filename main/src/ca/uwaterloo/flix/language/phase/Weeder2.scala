@@ -833,6 +833,7 @@ object Weeder2 {
         case TreeKind.Expr.ForApplicative => visitForApplicativeExpr(tree)
         case TreeKind.Expr.Foreach => visitForeachExpr(tree)
         case TreeKind.Expr.ForMonadic => visitForMonadicExpr(tree)
+        case TreeKind.Expr.GetField2 => visitGetField2Expr(tree)
         case TreeKind.Expr.ForeachYield => visitForeachYieldExpr(tree)
         case TreeKind.Expr.LetMatch => visitLetMatchExpr(tree)
         case TreeKind.Expr.Tuple => visitTupleExpr(tree)
@@ -1786,6 +1787,15 @@ object Weeder2 {
         case (b, m, as) =>
           val result = Expr.InvokeMethod2(b, m, as, tree.loc)
           result
+      }
+    }
+
+    private def visitGetField2Expr(tree: Tree): Validation[Expr, CompilationMessage] = {
+      expect(tree, TreeKind.Expr.GetField2)
+      val baseExp = pickExpr(tree)
+      val method = pickNameIdent(tree)
+      mapN(baseExp, method) {
+        case (b, m) => Expr.GetField2(b, m, tree.loc)
       }
     }
 
