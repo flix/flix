@@ -599,16 +599,16 @@ object Parser2 {
     * @return An optional parse error. If one or more item is found, None is returned.
     */
   private def oneOrMore(
-                 namedTokenSet: NamedTokenSet,
-                 getItem: () => Mark.Closed,
-                 checkForItem: TokenKind => Boolean,
-                 breakWhen: TokenKind => Boolean,
-                 context: SyntacticContext,
-                 separation: Separation = Separation.Required(TokenKind.Comma),
-                 delimiterL: TokenKind = TokenKind.ParenL,
-                 delimiterR: TokenKind = TokenKind.ParenR,
-                 optionallyWith: Option[(TokenKind, () => Unit)] = None
-               )(implicit s: State): Option[ParseError] = {
+                         namedTokenSet: NamedTokenSet,
+                         getItem: () => Mark.Closed,
+                         checkForItem: TokenKind => Boolean,
+                         breakWhen: TokenKind => Boolean,
+                         context: SyntacticContext,
+                         separation: Separation = Separation.Required(TokenKind.Comma),
+                         delimiterL: TokenKind = TokenKind.ParenL,
+                         delimiterR: TokenKind = TokenKind.ParenR,
+                         optionallyWith: Option[(TokenKind, () => Unit)] = None
+                       )(implicit s: State): Option[ParseError] = {
     val locBefore = currentSourceLocation()
     val itemCount = zeroOrMore(namedTokenSet, getItem, checkForItem, breakWhen, context, separation, delimiterL, delimiterR, optionallyWith)
     val locAfter = previousSourceLocation()
@@ -1396,7 +1396,7 @@ object Parser2 {
             eat(TokenKind.StructArrow)
             name(NAME_FIELD, context = SyntacticContext.Expr.OtherExpr)
             if (at(TokenKind.Equal)) { // struct put
-              eat (TokenKind.Equal)
+              eat(TokenKind.Equal)
               val mark2 = open()
               expression()
               close(mark2, TreeKind.Expr.StructPutRHS)
