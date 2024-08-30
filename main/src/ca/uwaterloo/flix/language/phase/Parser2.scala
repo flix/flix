@@ -599,16 +599,16 @@ object Parser2 {
     * @return An optional parse error. If one or more item is found, None is returned.
     */
   private def oneOrMore(
-                         namedTokenSet: NamedTokenSet,
-                         getItem: () => Mark.Closed,
-                         checkForItem: TokenKind => Boolean,
-                         breakWhen: TokenKind => Boolean,
-                         context: SyntacticContext,
-                         separation: Separation = Separation.Required(TokenKind.Comma),
-                         delimiterL: TokenKind = TokenKind.ParenL,
-                         delimiterR: TokenKind = TokenKind.ParenR,
-                         optionallyWith: Option[(TokenKind, () => Unit)] = None
-                       )(implicit s: State): Option[ParseError] = {
+                 namedTokenSet: NamedTokenSet,
+                 getItem: () => Mark.Closed,
+                 checkForItem: TokenKind => Boolean,
+                 breakWhen: TokenKind => Boolean,
+                 context: SyntacticContext,
+                 separation: Separation = Separation.Required(TokenKind.Comma),
+                 delimiterL: TokenKind = TokenKind.ParenL,
+                 delimiterR: TokenKind = TokenKind.ParenR,
+                 optionallyWith: Option[(TokenKind, () => Unit)] = None
+               )(implicit s: State): Option[ParseError] = {
     val locBefore = currentSourceLocation()
     val itemCount = zeroOrMore(namedTokenSet, getItem, checkForItem, breakWhen, context, separation, delimiterL, delimiterR, optionallyWith)
     val locAfter = previousSourceLocation()
@@ -628,7 +628,7 @@ object Parser2 {
   private val NAME_DEFINITION: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameUpperCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.UserDefinedOperator)
   private val NAME_PARAMETER: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.Underscore)
   private val NAME_VARIABLE: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.Underscore)
-  private val NAME_JAVA: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameUpperCase)
+  private val NAME_JAVA: Set[TokenKind] = Set(TokenKind.NameJava, TokenKind.NameLowerCase, TokenKind.NameUpperCase)
   private val NAME_QNAME: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameUpperCase)
   private val NAME_USE: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameUpperCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.UserDefinedOperator)
   private val NAME_FIELD: Set[TokenKind] = Set(TokenKind.NameLowerCase)
@@ -1396,7 +1396,7 @@ object Parser2 {
             eat(TokenKind.StructArrow)
             name(NAME_FIELD, context = SyntacticContext.Expr.OtherExpr)
             if (at(TokenKind.Equal)) { // struct put
-              eat(TokenKind.Equal)
+              eat (TokenKind.Equal)
               val mark2 = open()
               expression()
               close(mark2, TreeKind.Expr.StructPutRHS)
@@ -1638,6 +1638,7 @@ object Parser2 {
         case TokenKind.KeywordDebug
              | TokenKind.KeywordDebugBang
              | TokenKind.KeywordDebugBangBang => debugExpr()
+        case TokenKind.NameJava => name(NAME_JAVA, tail = Set(), allowQualified = true, SyntacticContext.Expr.OtherExpr)
         case t =>
           val mark = open()
           val error = UnexpectedToken(expected = NamedTokenSet.Expression, actual = Some(t), SyntacticContext.Expr.OtherExpr, loc = currentSourceLocation())
@@ -1881,12 +1882,12 @@ object Parser2 {
         case TokenKind.KeywordStatic => nth(1) match {
           case TokenKind.KeywordJavaGetField => JvmOp.staticGetField()
           case TokenKind.KeywordJavaSetField => JvmOp.staticPutField()
-          case TokenKind.NameLowerCase | TokenKind.NameUpperCase => JvmOp.staticMethod()
+          case TokenKind.NameJava | TokenKind.NameLowerCase | TokenKind.NameUpperCase => JvmOp.staticMethod()
           case t =>
             val error = UnexpectedToken(expected = NamedTokenSet.JavaImport, actual = Some(t), SyntacticContext.Unknown, loc = currentSourceLocation())
             advanceWithError(error)
         }
-        case TokenKind.NameLowerCase | TokenKind.NameUpperCase => JvmOp.method()
+        case TokenKind.NameJava | TokenKind.NameLowerCase | TokenKind.NameUpperCase => JvmOp.method()
         case t =>
           val error = UnexpectedToken(expected = NamedTokenSet.JavaImport, actual = Some(t), SyntacticContext.Unknown, loc = currentSourceLocation())
           advanceWithError(error)
@@ -3142,6 +3143,7 @@ object Parser2 {
         case TokenKind.CurlyL => recordOrEffectSetType()
         case TokenKind.HashCurlyL => schemaType()
         case TokenKind.HashParenL => schemaRowType()
+        case TokenKind.NameJava => nativeType()
         case TokenKind.AngleL => caseSetType()
         case TokenKind.KeywordNot
              | TokenKind.Tilde
@@ -3332,7 +3334,8 @@ object Parser2 {
       var continue = true
       while (continue && !eof()) {
         nth(0) match {
-          case TokenKind.NameUpperCase
+          case TokenKind.NameJava
+               | TokenKind.NameUpperCase
                | TokenKind.NameLowerCase
                | TokenKind.Dot
                | TokenKind.Dollar => advance()
