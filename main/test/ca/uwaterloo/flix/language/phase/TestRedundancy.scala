@@ -339,12 +339,9 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
   test("ShadowedName.NewObject.01") {
     val input =
       """
-        |import java.lang.Comparable
-        |import java.lang.Object
-        |
-        |def f(): Comparable \ IO =
-        |   new Comparable {
-        |     def compareTo(x: Object, _y: Object): Int32 =
+        |def f(): ##java.lang.Comparable \ IO =
+        |   new ##java.lang.Comparable {
+        |     def compareTo(x: ##java.lang.Object, _y: ##java.lang.Object): Int32 =
         |       let x = 0;
         |       x
         |   }
