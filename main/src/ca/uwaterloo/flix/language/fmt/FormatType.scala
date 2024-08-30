@@ -206,6 +206,7 @@ object FormatType {
       case SimpleType.Var(_, _, _, _) => true
       case SimpleType.Tuple(_) => true
       case SimpleType.MethodReturnType(_) => true
+      case SimpleType.FieldType(_) => true
       case SimpleType.Union(_) => true
       case SimpleType.Error => true
     }
@@ -337,7 +338,7 @@ object FormatType {
           case Kind.RecordRow => "r" + id
           case Kind.SchemaRow => "s" + id
           case Kind.Predicate => "'" + id.toString
-          case Kind.JvmConstructorOrMethod => "j" + id.toString
+          case Kind.Jvm => "j" + id.toString
           case Kind.CaseSet(_) => "c" + id.toString
           case Kind.Arrow(_, _) => "'" + id.toString
           case Kind.Error => "err" + id.toString
@@ -362,6 +363,10 @@ object FormatType {
       case SimpleType.MethodReturnType(tpe) =>
         val arg = visit(tpe, Mode.Type)
         "MethodReturnType(" + arg + ")"
+
+      case SimpleType.FieldType(tpe) =>
+        val arg = visit(tpe, Mode.Type)
+        "FieldType(" + arg + ")"
 
       case SimpleType.Error => "Error"
 

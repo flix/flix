@@ -236,6 +236,8 @@ object SyntaxTree {
 
       case object ForFragmentLet extends Expr
 
+      case object GetField2 extends Expr
+
       case object Hole extends Expr
 
       case object HoleVariable extends Expr
