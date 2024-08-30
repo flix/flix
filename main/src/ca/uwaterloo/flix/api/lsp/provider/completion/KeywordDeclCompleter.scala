@@ -23,7 +23,15 @@ import ca.uwaterloo.flix.language.ast.TypedAst
 object KeywordDeclCompleter extends Completer {
 
   def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] = 
-    List(
-    
+    List(      
+      "def",
+      "eff",
+      "enum",
+      "instance",
+      "mod",
+      "pub",
+      "sealed",
+      "trait",
+      "with",
   ) map (name => Completion.KeywordCompletion(name))
 }
