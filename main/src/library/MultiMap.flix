@@ -51,10 +51,12 @@ instance Indexable[MultiMap[k, v]] with Order[k] {
     type Idx = k
     type Elm = Set[v]
     type Aef = KeyNotFound
-    pub def get(t: MultiMap[k, v], i: k): Set[v] \ KeyNotFound = match MultiMap.get(i, t) {
-        case Some(vs) => vs
-        case None     => do KeyNotFound.keyNotFound("key not found")
-    }
+    pub def get(t: MultiMap[k, v], i: k): Set[v] \ KeyNotFound =
+        let vs = MultiMap.get(i, t);
+        if (Set.isEmpty(vs))
+            do KeyNotFound.keyNotFound("key not found")
+        else
+            vs
 }
 
 instance Foldable[MultiMap[k]] {
