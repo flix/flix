@@ -56,19 +56,19 @@ instance Foldable[Map[k]] {
 
 instance UnorderedFoldable[Map[k]] {
     pub def foldMap(f: v -> b \ ef, m: Map[k, v]): b \ ef with CommutativeMonoid[b] = Map.foldMap(f, m)
-    pub redef isEmpty(m: Map[k, v]): Bool = Map.isEmpty(m)
-    pub redef exists(f: v -> Bool \ ef, m: Map[k, v]): Bool \ ef = Map.exists(_ -> f, m)
-    pub redef forAll(f: v -> Bool \ ef, m: Map[k, v]): Bool \ ef = Map.forAll(_ -> f, m)
+    redef isEmpty(m: Map[k, v]): Bool = Map.isEmpty(m)
+    redef exists(f: v -> Bool \ ef, m: Map[k, v]): Bool \ ef = Map.exists(_ -> f, m)
+    redef forAll(f: v -> Bool \ ef, m: Map[k, v]): Bool \ ef = Map.forAll(_ -> f, m)
 }
 
 instance Traversable[Map[k]] {
     pub def traverse(f: a -> m[b] \ ef, t: Map[k, a]): m[Map[k, b]] \ ef with Applicative[m] = Map.traverse(f, t)
-    pub redef sequence(t: Map[k, m[a]]): m[Map[k, a]] with Applicative[m] = Map.sequence(t)
+    redef sequence(t: Map[k, m[a]]): m[Map[k, a]] with Applicative[m] = Map.sequence(t)
 }
 
 instance Filterable[Map[k]] with Order[k] {
     pub def filterMap(f: a -> Option[b] \ ef, m: Map[k, a]): Map[k, b] \ ef = Map.filterMap(f, m)
-    pub redef filter(f: a -> Bool \ ef, m: Map[k, a]): Map[k, a] \ ef = Map.filter(f, m)
+    redef filter(f: a -> Bool \ ef, m: Map[k, a]): Map[k, a] \ ef = Map.filter(f, m)
 }
 
 instance Witherable[Map[k]] with Order[k]

@@ -17,7 +17,6 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.TextEdit
-import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider.Priority
 import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.fmt.FormatType
 import ca.uwaterloo.flix.language.ast.Symbol
@@ -45,7 +44,7 @@ object CompletionUtils {
     }
     val label = s"$clazz$name$typesString"
     val replace = s"$clazz$name$typesString: ${convertJavaClassToFlixType(returnType)} \\ IO$finalAliasSuggestion;"
-    (label, Priority.high(s"${exec.getParameterCount}$label"), TextEdit(context.range, replace))
+    (label, CompletionPriority.highest(s"${exec.getParameterCount}$label"), TextEdit(context.range, replace))
   }
 
   private def isUnitType(tpe: Type): Boolean = tpe == Type.Unit

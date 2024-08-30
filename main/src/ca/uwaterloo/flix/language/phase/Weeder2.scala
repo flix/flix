@@ -18,8 +18,8 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast._
-import ca.uwaterloo.flix.language.ast.SyntaxTree.{Child, Tree, TreeKind}
-import ca.uwaterloo.flix.language.ast.shared.{Fixity, Source}
+import ca.uwaterloo.flix.language.ast.SyntaxTree.{Tree, TreeKind}
+import ca.uwaterloo.flix.language.ast.shared.Fixity
 import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, Name, ReadAst, SemanticOp, SourceLocation, Symbol, SyntaxTree, Token, TokenKind, WeededAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.language.errors.ParseError._
@@ -28,8 +28,8 @@ import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.collection.Chain
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result, Validation}
 
-import java.lang.{Byte => JByte, Integer => JInt, Long => JLong, Short => JShort}
-import java.util.regex.{PatternSyntaxException, Pattern => JPattern}
+import java.lang.{Byte as JByte, Integer as JInt, Long as JLong, Short as JShort}
+import java.util.regex.{PatternSyntaxException, Pattern as JPattern}
 import scala.annotation.tailrec
 import scala.collection.immutable.{::, List, Nil}
 import scala.collection.mutable.ArrayBuffer
@@ -52,7 +52,7 @@ object Weeder2 {
       val (stale, fresh) = changeSet.partition(root.units, oldRoot.units)
       // Parse each source file in parallel and join them into a WeededAst.Root
       val refreshed = ParOps.parMap(stale) {
-        case (src, tree) => mapN(weed(src, tree))(tree => src -> tree)
+        case (src, tree) => mapN(weed(tree))(tree => src -> tree)
       }
 
       val compilationUnits = mapN(sequence(refreshed))(_.toMap ++ fresh)
@@ -60,7 +60,7 @@ object Weeder2 {
     }(DebugValidation())
   }
 
-  private def weed(src: Source, tree: Tree)(implicit flix: Flix): Validation[CompilationUnit, CompilationMessage] = {
+  private def weed(tree: Tree)(implicit flix: Flix): Validation[CompilationUnit, CompilationMessage] = {
     mapN(pickAllUsesAndImports(tree), Decls.pickAllDeclarations(tree)) {
       (usesAndImports, declarations) => CompilationUnit(usesAndImports, declarations, tree.loc)
     }
@@ -309,12 +309,13 @@ object Weeder2 {
       }
     }
 
-    private def visitRedefinitionDecl(tree: Tree): Validation[Declaration.Redef, CompilationMessage] = {
+    private def visitRedefinitionDecl(tree: Tree)(implicit flix: Flix): Validation[Declaration.Redef, CompilationMessage] = {
       expect(tree, TreeKind.Decl.Redef)
+      val allowedModifiers: Set[TokenKind] = if (flix.options.xnodeprecated) Set.empty else Set(TokenKind.KeywordPub)
       mapN(
         pickDocumentation(tree),
         pickAnnotations(tree),
-        pickModifiers(tree, allowed = Set(TokenKind.KeywordPub)),
+        pickModifiers(tree, allowed = allowedModifiers),
         pickNameIdent(tree),
         Types.pickKindedParameters(tree),
         pickFormalParameters(tree),
@@ -482,23 +483,23 @@ object Weeder2 {
         traverse(fields)(visitStructField)
       ) {
         (doc, ann, mods, ident, tparams, fields) =>
-        // Ensure that each name is unique
-        val errors = getDuplicates(fields, (f: StructField) => f.name.name)
-        // For each field, only keep the first occurrence of the name
-        val groupedByName = fields.groupBy(_.name.name)
-        val filteredFields = groupedByName.values.map(_.head).toList
-        if (errors.isEmpty) {
-          Validation.success(Declaration.Struct(
-            doc, ann, mods, ident, tparams, filteredFields.sortBy(_.loc), tree.loc
-          ))
-        }
-        else {
-          Validation.success(Declaration.Struct(
-            doc, ann, mods, ident, tparams, filteredFields.sortBy(_.loc), tree.loc
-          )).withSoftFailures(errors.map {
-            case (field1, field2) => DuplicateStructField(ident.name, field1.name.name, field1.name.loc, field2.name.loc, ident.loc)
-          })
-        }
+          // Ensure that each name is unique
+          val errors = getDuplicates(fields, (f: StructField) => f.name.name)
+          // For each field, only keep the first occurrence of the name
+          val groupedByName = fields.groupBy(_.name.name)
+          val filteredFields = groupedByName.values.map(_.head).toList
+          if (errors.isEmpty) {
+            Validation.success(Declaration.Struct(
+              doc, ann, mods, ident, tparams, filteredFields.sortBy(_.loc), tree.loc
+            ))
+          }
+          else {
+            Validation.success(Declaration.Struct(
+              doc, ann, mods, ident, tparams, filteredFields.sortBy(_.loc), tree.loc
+            )).withSoftFailures(errors.map {
+              case (field1, field2) => DuplicateStructField(ident.name, field1.name.name, field1.name.loc, field2.name.loc, ident.loc)
+            })
+          }
       }
     }
 
@@ -514,6 +515,7 @@ object Weeder2 {
           StructField(Name.mkLabel(ident), ttype, loc)
       }
     }
+
     private def visitTypeAliasDecl(tree: Tree): Validation[Declaration.TypeAlias, CompilationMessage] = {
       expect(tree, TreeKind.Decl.TypeAlias)
       mapN(
@@ -645,7 +647,7 @@ object Weeder2 {
 
     private def visitAnnotation(token: Token): Validation[Ast.Annotation, CompilationMessage] = {
       val loc = token.mkSourceLocation()
-      import Ast.Annotation._
+      import Ast.Annotation.*
       token.text match {
         case "@benchmark" | "@Benchmark" => Validation.success(Benchmark(loc))
         case "@Deprecated" => Validation.success(Deprecated(loc))
@@ -852,6 +854,8 @@ object Weeder2 {
         case TreeKind.Expr.Try => visitTryExpr(tree)
         case TreeKind.Expr.Throw => visitThrow(tree)
         case TreeKind.Expr.Do => visitDoExpr(tree)
+        case TreeKind.Expr.Index => visitIndexExpr(tree)
+        case TreeKind.Expr.IndexMut => visitIndexMutExpr(tree)
         case TreeKind.Expr.InvokeConstructor2 => visitInvokeConstructor2Expr(tree)
         case TreeKind.Expr.InvokeMethod2 => visitInvokeMethod2Expr(tree)
         case TreeKind.Expr.NewObject => visitNewObjectExpr(tree)
@@ -1077,9 +1081,31 @@ object Weeder2 {
               val error = Malformed(NamedTokenSet.Name, SyntacticContext.Expr.OtherExpr, loc = tree.loc)
               Validation.toSoftFailure(Expr.Error(error), error)
           }
-        case exprs =>
+        case _ =>
           val error = Malformed(NamedTokenSet.Name, SyntacticContext.Expr.OtherExpr, loc = tree.loc)
           Validation.toSoftFailure(Expr.Error(error), error)
+      }
+    }
+
+    private def visitIndexExpr(tree: Tree): Validation[Expr, CompilationMessage] = {
+      expect(tree, TreeKind.Expr.Index)
+      pickAll(TreeKind.Expr.Expr, tree) match {
+        case e1 :: e2 :: Nil => mapN(visitExpr(e1), visitExpr(e2)) {
+          case (exp1, exp2) =>
+            Expr.Apply(Expr.Ambiguous(Name.mkQName("Indexable.get", exp1.loc), exp1.loc), List(exp1, exp2), tree.loc)
+        }
+        case other => throw InternalCompilerException(s"Expr.Index tree with ${other.length} operands", tree.loc)
+      }
+    }
+
+    private def visitIndexMutExpr(tree: Tree): Validation[Expr, CompilationMessage] = {
+      expect(tree, TreeKind.Expr.IndexMut)
+      pickAll(TreeKind.Expr.Expr, tree) match {
+        case e1 :: e2 :: e3 :: Nil => mapN(visitExpr(e1), visitExpr(e2), visitExpr(e3)) {
+          case (exp1, exp2, exp3) =>
+            Expr.Apply(Expr.Ambiguous(Name.mkQName("IndexableMut.put", exp1.loc), exp1.loc), List(exp1, exp2, exp3), tree.loc)
+        }
+        case other => throw InternalCompilerException(s"Expr.IndexMut tree with ${other.length} operands", tree.loc)
       }
     }
 
@@ -1670,7 +1696,7 @@ object Weeder2 {
         traverse(maybeWith)(visitTryWithBody),
       ) {
         // Bad case: try expr
-        case (expr, Nil, Nil) =>
+        case (_, Nil, Nil) =>
           // Fall back on Expr.Error, Parser has already reported an error.
           val error = UnexpectedToken(
             expected = NamedTokenSet.FromKinds(Set(TokenKind.KeywordCatch, TokenKind.KeywordWith)),
@@ -1679,7 +1705,7 @@ object Weeder2 {
             loc = tree.loc)
           Validation.success(Expr.Error(error))
         // Bad case: try expr catch { rules... } with eff { handlers... }
-        case (expr, _ :: _, _ :: _) =>
+        case (_, _ :: _, _ :: _) =>
           val error = Malformed(NamedTokenSet.FromKinds(Set(TokenKind.KeywordTry)), SyntacticContext.Expr.OtherExpr, hint = Some(s"Use either ${TokenKind.KeywordWith.display} or ${TokenKind.KeywordCatch.display} on ${TokenKind.KeywordTry.display}."), tree.loc)
           // Fall back on Expr.Error, Parser has already reported an error.
           Validation.success(Expr.Error(error))
@@ -1725,7 +1751,7 @@ object Weeder2 {
       })
     }
 
-    private def visitThrow(tree:Tree): Validation[Expr, CompilationMessage] = {
+    private def visitThrow(tree: Tree): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.Throw)
       mapN(pickExpr(tree))(e => Expr.Throw(e, tree.loc))
     }
@@ -1816,7 +1842,7 @@ object Weeder2 {
               val m = IllegalQualifiedName(tree.loc)
               Validation.toSoftFailure(Expr.Error(m), m)
           }
-       }
+      }
     }
 
     private def visitNewStructField(tree: Tree): Validation[(Name.Label, Expr), CompilationMessage] = {
@@ -2986,7 +3012,7 @@ object Weeder2 {
     private def pickJavaClassMember(tree: Tree): Validation[JavaClassMember, CompilationMessage] = {
       val idents = pickQNameIdents(tree)
       flatMapN(idents) {
-        case prefix :: Nil => Validation.HardFailure(Chain(UnexpectedToken(NamedTokenSet.Name, actual = None, SyntacticContext.Expr.OtherExpr, loc = tree.loc)))
+        case _ :: Nil => Validation.HardFailure(Chain(UnexpectedToken(NamedTokenSet.Name, actual = None, SyntacticContext.Expr.OtherExpr, loc = tree.loc)))
         case prefix :: suffix => Validation.success(JavaClassMember(prefix, suffix, tree.loc))
         case Nil => throw InternalCompilerException("JvmOp empty name", tree.loc)
       }
@@ -2997,17 +3023,6 @@ object Weeder2 {
       mapN(idents) {
         idents => Name.JavaName(idents, tree.loc)
       }
-    }
-  }
-
-  private def tryPickJavaName(tree: Tree): Validation[String, CompilationMessage] = {
-    val maybeQname = traverseOpt(tryPick(TreeKind.QName, tree))(visitQName)
-    flatMapN(maybeQname) {
-      // Qname starting with '##'
-      case Some(qname) if qname.namespace.idents.headOption.exists(_.name.startsWith("##")) => Validation.success(javaQnameToFqn(qname))
-      case Some(_) | None =>
-        val err = UnexpectedToken(NamedTokenSet.Name, actual = None, SyntacticContext.Expr.OtherExpr, loc = tree.loc)
-        Validation.toSoftFailure("Error", err)
     }
   }
 
@@ -3056,7 +3071,7 @@ object Weeder2 {
   private def expectAny(tree: Tree, kinds: List[TreeKind]): Unit = assert(kinds.contains(tree.kind))
 
   /**
-    * Picks first child from a tree and if it is a [[Child.TokenChild]] turns it into a Name.Ident.
+    * Picks first child from a tree and if it is a [[Token]] turns it into a Name.Ident.
     * Only use this if the structure of tree is well-known.
     * IE. Calling on a tree of kind [[TreeKind.Ident]] is fine, but if the kind is not known avoid using [[tokenToIdent]].
     */

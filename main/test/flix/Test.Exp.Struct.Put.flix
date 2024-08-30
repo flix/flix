@@ -1,11 +1,10 @@
-mod Test.Exp.Struct.Put {
-
-    struct Person[r] {
-        fstName: String,
-        lstName: String,
-        age: Int32,
-        cowboy: Bool
-    }
+struct Person[r] {
+    fstName: String,
+    lstName: String,
+    age: Int32,
+    cowboy: Bool
+}
+mod Person {
 
     @test
     def testStructPut01(): Bool =
@@ -83,11 +82,15 @@ mod Test.Exp.Struct.Put {
             s->fstName == "Lucky" and s->lstName == "Luke" and s->age == 42 and s->cowboy == true
         }
 
-    struct BinaryTree[t, r] {
-        left: Option[BinaryTree[t, r]],
-        right: Option[BinaryTree[t, r]],
-        node_value: t
-    }
+}
+
+struct BinaryTree[t, r] {
+    left: Option[BinaryTree[t, r]],
+    right: Option[BinaryTree[t, r]],
+    node_value: t
+}
+
+mod BinaryTree {
 
     def binaryTreeSum(tree: Option[BinaryTree[Int32, r]]): Int32 \ r =
         match tree {
@@ -146,10 +149,12 @@ mod Test.Exp.Struct.Put {
             binaryTreeSum(Some(tree)) == 94
         }
 
-    struct Nested[t, r] {
-        v : t
-    }
+}
+struct Nested[t, r] {
+    v : t
+}
 
+mod Nested {
     @test
     def nestedPut01(): Bool =
         region rc {
@@ -158,30 +163,31 @@ mod Test.Exp.Struct.Put {
             nested->v->v->v->v = 37;
             nested->v->v->v->v == 37
         }
+}
 
-    struct List[t, r] {
-        value: t,
-        next: Option[List[t, r]]
-    }
-
-    def listAppend(list: List[t, r], rc: Region[r], value: t): Unit \ r = match list->next {
+struct Lst[t, r] {
+    value: t,
+    next: Option[Lst[t, r]]
+}
+mod Lst {
+    def listAppend(list: Lst[t, r], rc: Region[r], value: t): Unit \ r = match list->next {
         case Some(l) => listAppend(l, rc, value)
-        case None => list->next = Some(new List {value = value, next = None} @ rc)
+        case None => list->next = Some(new Lst {value = value, next = None} @ rc)
     }
 
-    def listSum(list: List[Int32, r]): Int32 \ r =
+    def listSum(list: Lst[Int32, r]): Int32 \ r =
         list->value + match list->next {
             case Some(l) => listSum(l)
             case None => 0
         }
 
-    def listDifference(list: List[Int32, r]): Int32 \ r =
+    def listDifference(list: Lst[Int32, r]): Int32 \ r =
         list->value - match list->next {
             case Some(l) => listSum(l)
             case None => 0
         }
 
-    def listReverse(list: List[Int32, r], rc: Region[r]): List[Int32, r] \ r =
+    def listReverse(list: Lst[Int32, r], rc: Region[r]): Lst[Int32, r] \ r =
         match list->next {
             case None => list
             case Some(l) =>
@@ -191,9 +197,9 @@ mod Test.Exp.Struct.Put {
         }
 
     @test
-    def testList01(): Bool =
+    def testLst01(): Bool =
         region rc {
-            let list = new List { value = 1, next = None } @ rc;
+            let list = new Lst { value = 1, next = None } @ rc;
             listAppend(list, rc, 2);
             listAppend(list, rc, 3);
             listAppend(list, rc, 4);
@@ -207,9 +213,9 @@ mod Test.Exp.Struct.Put {
         }
 
     @test
-    def testList02(): Bool =
+    def testLst02(): Bool =
         region rc {
-            let list = new List { value = 1, next = None } @ rc;
+            let list = new Lst { value = 1, next = None } @ rc;
             listAppend(list, rc, 2);
             listAppend(list, rc, 3);
             listAppend(list, rc, 4);
@@ -223,9 +229,9 @@ mod Test.Exp.Struct.Put {
         }
 
     @test
-    def testList03(): Bool =
+    def testLst03(): Bool =
         region rc {
-            let list = new List { value = 1, next = None } @ rc;
+            let list = new Lst { value = 1, next = None } @ rc;
             listAppend(list, rc, 2);
             listAppend(list, rc, 3);
             listAppend(list, rc, 4);
@@ -239,9 +245,9 @@ mod Test.Exp.Struct.Put {
         }
 
     @test
-    def testList04(): Bool =
+    def testLst04(): Bool =
         region rc {
-            let list = new List { value = 1, next = None } @ rc;
+            let list = new Lst { value = 1, next = None } @ rc;
             listAppend(list, rc, 2);
             listAppend(list, rc, 3);
             listAppend(list, rc, 4);

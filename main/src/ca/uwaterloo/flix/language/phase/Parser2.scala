@@ -17,13 +17,13 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.ast.Ast.SyntacticContext
 import ca.uwaterloo.flix.language.ast.SyntaxTree.TreeKind
-import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.ast.shared.Source
 import ca.uwaterloo.flix.language.dbg.AstPrinter._
-import ca.uwaterloo.flix.language.errors.{ParseError, WeederError}
 import ca.uwaterloo.flix.language.errors.ParseError._
+import ca.uwaterloo.flix.language.errors.{ParseError, WeederError}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
@@ -356,7 +356,7 @@ object Parser2 {
     */
   private def atAnyOpt(kinds: Set[TokenKind])(implicit s: State): Option[TokenKind] = {
     val token = nth(0)
-    if (kinds.contains(token)) Some(token) else None
+    Some(token).filter(kinds.contains)
   }
 
   /**
@@ -1305,7 +1305,7 @@ object Parser2 {
 
     def docComment()(implicit s: State): Mark.Closed = {
       // Let `open` handle consuming the doc-comments, since it is already capable of doing so.
-      val mark = open(consumeDocComments = true)
+      val mark = open()
       close(mark, TreeKind.Doc)
     }
 
@@ -1404,6 +1404,20 @@ object Parser2 {
               lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
             } else { // struct get
               lhs = close(mark, TreeKind.Expr.StructGet)
+              lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+            }
+          case TokenKind.BracketL =>
+            val mark = openBefore(lhs)
+            eat(TokenKind.BracketL)
+            expression()
+            expect(TokenKind.BracketR, SyntacticContext.Expr.OtherExpr)
+            if (at(TokenKind.Equal)) { // index write
+              eat(TokenKind.Equal)
+              expression()
+              lhs = close(mark, TreeKind.Expr.IndexMut)
+              lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+            } else { // index read
+              lhs = close(mark, TreeKind.Expr.Index)
               lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
             }
           case _ => continue = false
@@ -1570,8 +1584,8 @@ object Parser2 {
              | TokenKind.LiteralRegex => literalExpr()
         case TokenKind.ParenL => parenOrTupleOrLambdaExpr()
         case TokenKind.Underscore => if (nth(1) == TokenKind.ArrowThinR) unaryLambdaExpr() else name(NAME_VARIABLE, context = SyntacticContext.Expr.OtherExpr)
-        case TokenKind.NameLowerCase if nth(1) == TokenKind.Dot => invokeMethod2Expr()
-        case TokenKind.NameLowerCase => if (nth(1) == TokenKind.ArrowThinR) unaryLambdaExpr() else name(NAME_FIELD, allowQualified = true, context = SyntacticContext.Expr.OtherExpr)
+        case TokenKind.NameLowerCase if nth(1) == TokenKind.ArrowThinR => unaryLambdaExpr()
+        case TokenKind.NameLowerCase => name(NAME_FIELD, allowQualified = true, context = SyntacticContext.Expr.OtherExpr)
         case TokenKind.NameUpperCase
              | TokenKind.NameMath
              | TokenKind.NameGreek => if (nth(1) == TokenKind.ArrowThinR) unaryLambdaExpr() else name(NAME_DEFINITION, allowQualified = true, context = SyntacticContext.Expr.OtherExpr)
@@ -2505,21 +2519,6 @@ object Parser2 {
       name(NAME_QNAME, allowQualified = true, context = SyntacticContext.Expr.Do)
       arguments()
       close(mark, TreeKind.Expr.Do)
-    }
-
-    private def invokeMethod2Expr()(implicit s: State): Mark.Closed = {
-      assert(at(TokenKind.NameLowerCase))
-      val mark = open()
-
-      // Wrap the lower name as an expression.
-      val mark2 = open()
-      name(Set(TokenKind.NameLowerCase), context = SyntacticContext.Expr.OtherExpr)
-      close(mark2, TreeKind.Expr.Expr)
-
-      eat(TokenKind.Dot)
-      name(Set(TokenKind.NameLowerCase), context = SyntacticContext.Expr.OtherExpr)
-      arguments()
-      close(mark, TreeKind.Expr.InvokeMethod2)
     }
 
     private def ambiguousNewExpr()(implicit s: State): Mark.Closed = {
@@ -3651,7 +3650,7 @@ object Parser2 {
     * Utility function that computes a textual representation of a [[SyntaxTree.Tree]].
     * Meant for debugging use.
     */
-  def syntaxTreeToDebugString(tree: SyntaxTree.Tree, nesting: Int = 1): String = {
+  private def syntaxTreeToDebugString(tree: SyntaxTree.Tree, nesting: Int = 1): String = {
     s"${tree.kind}${
       tree.children.map {
         case token@Token(_, _, _, _, _, _) => s"\n${"  " * nesting}'${token.text}'"

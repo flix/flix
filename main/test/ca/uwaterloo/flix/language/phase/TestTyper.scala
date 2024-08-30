@@ -1564,13 +1564,12 @@ class TestTyper extends AnyFunSuite with TestUtils {
   test("TypeError.StructGet.01") {
     val input =
       """
+        |struct S [v, r] {
+        |    a: Int32,
+        |    b: String,
+        |    c: v
+        |}
         |mod S {
-        |    struct S [v, r] {
-        |        a: Int32,
-        |        b: String,
-        |        c: v
-        |    }
-        |
         |    def Foo(): Unit = {
         |        region rc {
         |            let s = new S {a = 4, b = "hi", c = "hello"} @ rc;
@@ -1587,11 +1586,10 @@ class TestTyper extends AnyFunSuite with TestUtils {
   test("TypeError.StructGet.02") {
     val input =
       """
+        |struct S[v, r] {
+        |    c: v
+        |}
         |mod S {
-        |    struct S [v, r] {
-        |        c: v
-        |    }
-        |
         |    def Foo(): Unit = {
         |        region rc {
         |            let s1 = new S {c = 3} @ rc;
@@ -1609,13 +1607,12 @@ class TestTyper extends AnyFunSuite with TestUtils {
   test("TypeError.StructPut.01") {
     val input =
       """
+        |struct S[v, r] {
+        |    a: Int32,
+        |    b: String,
+        |    c: v
+        |}
         |mod S {
-        |    struct S [v, r] {
-        |        a: Int32,
-        |        b: String,
-        |        c: v
-        |    }
-        |
         |    def Foo(): Unit = {
         |        region rc {
         |            let s = new S {a = 4, b = "hi", c = "hello"} @ rc;
@@ -1632,11 +1629,10 @@ class TestTyper extends AnyFunSuite with TestUtils {
   test("TypeError.StructPut.02") {
     val input =
       """
+        |struct S[v, r] {
+        |    c: v
+        |}
         |mod S {
-        |    struct S [v, r] {
-        |        c: v
-        |    }
-        |
         |    def Foo(): Unit = {
         |        region rc {
         |            let s1 = new S {c = 3} @ rc;

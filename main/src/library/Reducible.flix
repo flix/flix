@@ -285,3 +285,12 @@ pub trait Reducible[t: Type -> Type] {
         Reducible.foldLeft((acc, a) -> Set.insert(a, acc), Set.empty(), t)
 
 }
+
+mod Reducible {
+
+    ///
+    /// Returns the number of elements in `t`.
+    ///
+    pub def size(t: t[a]): Int32 with Reducible[t] = Reducible.length(t)
+
+}

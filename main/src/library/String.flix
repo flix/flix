@@ -75,6 +75,11 @@ mod String {
         unsafe s.length()
 
     ///
+    /// Returns the number of characters the string `s`.
+    ///
+    pub def size(s: String): Int32 = length(s)
+
+    ///
     /// Returns `true` if the string `s` starts with the string `prefix`.
     ///
     pub def startsWith(prefix: {prefix = String}, s: String): Bool =

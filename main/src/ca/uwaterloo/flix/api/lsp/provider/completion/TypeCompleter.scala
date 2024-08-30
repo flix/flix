@@ -17,7 +17,6 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.Index
-import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider.Priority
 import ca.uwaterloo.flix.language.ast.{SourceLocation, TypedAst}
 
 object TypeCompleter extends Completer {
@@ -36,11 +35,11 @@ object TypeCompleter extends Completer {
     */
   def getInternalPriority(loc: SourceLocation, ns: List[String])(implicit context: CompletionContext): String => String = {
     if (loc.source.name == context.uri)
-      Priority.boost
+      CompletionPriority.higher
     else if (ns.isEmpty)
-      Priority.normal
+      CompletionPriority.lower
     else
-      Priority.low
+      CompletionPriority.lowest
   }
 
   /**
@@ -50,7 +49,7 @@ object TypeCompleter extends Completer {
     val typePriorityBoost = raw".*:\s*(?:[^\s]|(?:\s*,\s*))*".r
     val typeAliasPriorityBoost = raw"\s*type\s+alias\s+.+\s*=\s*(?:[^\s]|(?:\s*,\s*))*".r
     val priority = if ((typePriorityBoost matches context.prefix) || (typeAliasPriorityBoost matches context.prefix))
-      Priority.boost _ else Priority.low _
+      CompletionPriority.higher _ else CompletionPriority.lowest _
     priority(name)
   }
 
