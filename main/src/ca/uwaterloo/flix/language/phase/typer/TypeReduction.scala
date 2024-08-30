@@ -111,12 +111,20 @@ object TypeReduction {
    * @param loc the location where the java method has been called
    * @return
    */
-  private def simplifyJava(tpe: Type, renv0: RigidityEnv, loc: SourceLocation): Result[(Type, Boolean), TypeError] = {
+  private def simplifyJava(tpe: Type.Apply, renv0: RigidityEnv, loc: SourceLocation): Result[(Type, Boolean), TypeError] = {
     tpe.typeConstructor match {
       case Some(TypeConstructor.MethodReturnType) =>
+        // Since `tpe` is `Type.Apply`, this is safe
         val methodType = tpe.typeArguments.head
         methodType match {
           case Type.Cst(TypeConstructor.JvmMethod(method), _) => Result.Ok(Type.getFlixType(method.getReturnType), true)
+          case _ => Result.Ok((tpe, false))
+        }
+      case Some(TypeConstructor.FieldType) =>
+        // Since `tpe` is `Type.Apply`, this is safe
+        val fieldType = tpe.typeArguments.head
+        fieldType match {
+          case Type.Cst(TypeConstructor.JvmField(field), _) => Result.Ok(Type.getFlixType(field.getType), true)
           case _ => Result.Ok((tpe, false))
         }
       case _ => Result.Ok((tpe, false))
@@ -124,11 +132,13 @@ object TypeReduction {
   }
 
   /**
-    * Returns `true` if the given type is still reducible, i.e. contains an unreduced MRT, e.g. MRT[a] where a is not known.
+    * Returns `true` if the given type is still reducible, i.e. contains an unreduced MRT or FieldType,
+    * e.g. MRT[a] where a is not known.
     */
   // TODO: This method should be recursive and not just look at the top-level type.
   def isReducible(tpe: Type): Boolean = tpe match {
     case Type.Apply(Type.Cst(TypeConstructor.MethodReturnType, _), Type.Var(_, _), _) => true
+    case Type.Apply(Type.Cst(TypeConstructor.FieldType, _), Type.Var(_, _), _) => true
     case _ => false
   }
 
@@ -394,8 +404,9 @@ object TypeReduction {
   private def isKnown(t0: Type): Boolean = t0 match {
     case Type.Var(_, _) if t0.kind == Kind.Eff => true
     case Type.Var(_, _) => false
-    case Type.Cst(TypeConstructor.MethodReturnType, _) => false
     case Type.Cst(_, _) => true
+    case Type.Apply(Type.Cst(TypeConstructor.MethodReturnType, _), _, _) => false
+    case Type.Apply(Type.Cst(TypeConstructor.FieldType, _), _, _) => false
     case Type.Apply(tpe1, tpe2, _) => isKnown(tpe1) && isKnown(tpe2)
     case Type.Alias(_, _, tpe, _) => isKnown(tpe)
     case Type.AssocType(_, _, _, _) => false
