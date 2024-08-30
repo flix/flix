@@ -47,7 +47,7 @@ instance IndexableMut[MutList[a, r]] {
         if (0 <= i and i < MutList.length(t))
             let MutList.MutList(_, ra, _) = t;
             let a = Ref.get(ra);
-            IndexableMut.put(a, i, v)
+            a[i] = v
         else
             do OutOfBounds.outOfBounds("index ${i} is out of bounds for MutList of length ${MutList.length(t)}")
 }
