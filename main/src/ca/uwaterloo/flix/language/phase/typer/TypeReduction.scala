@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.Scope
-import ca.uwaterloo.flix.language.ast.{Ast, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
@@ -143,7 +143,8 @@ object TypeReduction {
    * @return        A JavaConstructorResolutionResult object that indicates the status of the resolution progress
    */
   def lookupConstructor(clazz: Class[_], ts: List[Type], loc: SourceLocation): JavaConstructorResolutionResult = {
-    retrieveConstructor(clazz, ts, loc)
+    if (ts.forall(isKnown)) retrieveConstructor(clazz, ts, loc)
+    else JavaConstructorResolutionResult.UnresolvedTypes
   }
 
   /**
@@ -159,7 +160,7 @@ object TypeReduction {
    * @return            A JavaMethodResolutionResult object that indicates the status of the resolution progress
    */
   def lookupMethod(thisObj: Type, methodName: String, ts: List[Type], loc: SourceLocation): JavaMethodResolutionResult = {
-    thisObj match { // there might be a possible factorization
+    if (isKnown(thisObj) && ts.forall(isKnown)) thisObj match { // there might be a possible factorization
       case Type.Cst(TypeConstructor.Str, _) =>
         val clazz = classOf[String]
         retrieveMethod(clazz, methodName, ts, loc = loc)
@@ -180,11 +181,12 @@ object TypeReduction {
         retrieveMethod(clazz, methodName, ts, loc = loc)
 
       case _ => JavaMethodResolutionResult.MethodNotFound
-    }
+    } else JavaMethodResolutionResult.UnresolvedTypes
   }
 
   def lookupStaticMethod(clazz: Class[_], methodName: String, ts: List[Type], loc: SourceLocation): JavaMethodResolutionResult = {
-    retrieveMethod(clazz, methodName, ts, isStatic = true, loc = loc)
+    if (ts.forall(isKnown)) retrieveMethod(clazz, methodName, ts, isStatic = true, loc = loc)
+    else JavaMethodResolutionResult.UnresolvedTypes
   }
 
   /**
@@ -387,6 +389,19 @@ object TypeReduction {
   }
 
   /**
+    * Returns `true` if the type is resolved enough for Java resolution.
+    */
+  private def isKnown(t0: Type): Boolean = t0 match {
+    case Type.Var(_, _) if t0.kind == Kind.Eff => true
+    case Type.Var(_, _) => false
+    case Type.Cst(TypeConstructor.MethodReturnType, _) => false
+    case Type.Cst(_, _) => true
+    case Type.Apply(tpe1, tpe2, _) => isKnown(tpe1) && isKnown(tpe2)
+    case Type.Alias(_, _, tpe, _) => isKnown(tpe)
+    case Type.AssocType(_, _, _, _) => false
+  }
+
+  /**
    * Represents the result of a resolution process of a java method.
    *
    * There are three possible outcomes:
@@ -395,13 +410,16 @@ object TypeReduction {
    *      simplified type of the java method.
    *   1. AmbiguousMethod: The resolution lacked some elements to find a java method among a set of
    *      methods.
-   *   1. MethodNotFound(): The resolution failed to find a corresponding java method.
-   */
+   *   1. MethodNotFound: The resolution failed to find a corresponding java method.
+   *   1. UnresolvedTyped: The types involved are not reduced enough to decide the java method
+
+    */
   sealed trait JavaMethodResolutionResult
   object JavaMethodResolutionResult {
     case class Resolved(tpe: Type) extends JavaMethodResolutionResult
     case class AmbiguousMethod(methods: List[Method]) extends JavaMethodResolutionResult
     case object MethodNotFound extends JavaMethodResolutionResult
+    case object UnresolvedTypes extends JavaMethodResolutionResult
   }
 
   /**
@@ -410,12 +428,14 @@ object TypeReduction {
    * There are three possible outcomes:
    *   1. Resolved(tpe): Indicates that there was some progress in the resolution and returns a simplified type of the java constructor.
    *   1. AmbiguousConstructor: The resolution lacked some elements to find a java constructor among a set of constructors.
-   *   1. ConstructorNotFound(): The resolution failed to find a corresponding java constructor.
+   *   1. ConstructorNotFound: The resolution failed to find a corresponding java constructor.
+    *  1. UnresolvedTyped: The types involved are not reduced enough to decide the java method
    */
   sealed trait JavaConstructorResolutionResult
   object JavaConstructorResolutionResult {
     case class Resolved(tpe: Type) extends JavaConstructorResolutionResult
     case class AmbiguousConstructor(constructors: List[Constructor[_]]) extends JavaConstructorResolutionResult
     case object ConstructorNotFound extends JavaConstructorResolutionResult
+    case object UnresolvedTypes extends JavaConstructorResolutionResult
   }
 }

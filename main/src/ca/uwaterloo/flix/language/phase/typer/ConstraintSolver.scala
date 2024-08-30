@@ -274,58 +274,35 @@ object ConstraintSolver {
         }
       }
     case TypeConstraint.EqJvmConstructor(cvar, clazz, tpes0, prov) =>
-      // Apply substitution now
       val tpes = tpes0.map(subst0.apply)
-      // Ensure that simplification for constructor parameters is done
-      val allKnown = tpes.forall(isKnown)
-
-      if (allKnown) {
         TypeReduction.lookupConstructor(clazz, tpes, cvar.loc) match {
           case JavaConstructorResolutionResult.Resolved(tpe) =>
             val subst = Substitution.singleton(cvar.sym, tpe)
             Result.Ok(ResolutionResult(subst @@ subst0, Nil, progress = true))
           case JavaConstructorResolutionResult.AmbiguousConstructor(constructors) => Result.Err(TypeError.AmbiguousConstructor(clazz, tpes, constructors, renv, cvar.loc))
           case JavaConstructorResolutionResult.ConstructorNotFound => Result.Err(TypeError.ConstructorNotFound(clazz, tpes, List(), renv, cvar.loc)) // TODO INTEROP: fill in candidate methods
+          case JavaConstructorResolutionResult.UnresolvedTypes => Result.Ok(ResolutionResult(subst0, List(constr0), progress = false))
         }
-      } else {
-        // Otherwise other constraints may still need to be solved.
-        Result.Ok(ResolutionResult(subst0, List(constr0), progress = false))
-      }
     case TypeConstraint.EqJvmMethod(mvar, tpe0, methodName, tpes0, prov) =>
-      // Recall: Subst is applied lazily. Apply it now.
       val tpe = subst0(tpe0)
       val tpes = tpes0.map(subst0.apply)
-      // Ensure that simplification for method parameters is done
-      val allKnown = isKnown(tpe) && tpes.forall(isKnown)
-
-      if (allKnown) {
-        TypeReduction.lookupMethod(tpe, methodName.name, tpes, mvar.loc) match {
-          case JavaMethodResolutionResult.Resolved(tpe) =>
-            val subst = Substitution.singleton(mvar.sym, tpe)
-            Result.Ok(ResolutionResult(subst @@ subst0, Nil, progress = true))
-          case JavaMethodResolutionResult.AmbiguousMethod(methods) => Result.Err(TypeError.AmbiguousMethod(methodName.name, tpe, tpes, methods, renv, mvar.loc))
-          case JavaMethodResolutionResult.MethodNotFound => Result.Err(TypeError.MethodNotFound(methodName, tpe, tpes, mvar.loc))
-        }
-      } else {
-        // Otherwise other constraints may still need to be solved.
-        Result.Ok(ResolutionResult(subst0, List(constr0), progress = false))
+      TypeReduction.lookupMethod(tpe, methodName.name, tpes, mvar.loc) match {
+        case JavaMethodResolutionResult.Resolved(tpe) =>
+          val subst = Substitution.singleton(mvar.sym, tpe)
+          Result.Ok(ResolutionResult(subst @@ subst0, Nil, progress = true))
+        case JavaMethodResolutionResult.AmbiguousMethod(methods) => Result.Err(TypeError.AmbiguousMethod(methodName.name, tpe, tpes, methods, renv, mvar.loc))
+        case JavaMethodResolutionResult.MethodNotFound => Result.Err(TypeError.MethodNotFound(methodName, tpe, tpes, mvar.loc))
+        case JavaMethodResolutionResult.UnresolvedTypes => Result.Ok(ResolutionResult(subst0, List(constr0), progress = false))
       }
     case TypeConstraint.EqStaticJvmMethod(mvar, clazz, methodName, tpes0, prov) =>
-      // Apply subst.
       val tpes = tpes0.map(subst0.apply)
-      // Ensure simplification for method parameters
-      val allKnown = tpes.forall(isKnown)
-
-      if (allKnown) {
-        TypeReduction.lookupStaticMethod(clazz, methodName.name, tpes, prov.loc) match {
-          case JavaMethodResolutionResult.Resolved(tpe) =>
-            val subst = Substitution.singleton(mvar.sym, tpe)
-            Result.Ok(ResolutionResult(subst @@ subst0, Nil, progress = true))
-          case JavaMethodResolutionResult.AmbiguousMethod(methods) => Result.Err(TypeError.AmbiguousStaticMethod(clazz, methodName.name, tpes, methods, renv, mvar.loc))
-          case JavaMethodResolutionResult.MethodNotFound => Result.Err(TypeError.StaticMethodNotFound(clazz, methodName.name, tpes, List(), renv, mvar.loc)) // TODO INTEROP: fill in candidate methods
-        }
-      } else {
-        Result.Ok(ResolutionResult(subst0, List(constr0), progress = false))
+      TypeReduction.lookupStaticMethod(clazz, methodName.name, tpes, prov.loc) match {
+        case JavaMethodResolutionResult.Resolved(tpe) =>
+          val subst = Substitution.singleton(mvar.sym, tpe)
+          Result.Ok(ResolutionResult(subst @@ subst0, Nil, progress = true))
+        case JavaMethodResolutionResult.AmbiguousMethod(methods) => Result.Err(TypeError.AmbiguousStaticMethod(clazz, methodName.name, tpes, methods, renv, mvar.loc))
+        case JavaMethodResolutionResult.MethodNotFound => Result.Err(TypeError.StaticMethodNotFound(clazz, methodName.name, tpes, List(), renv, mvar.loc)) // TODO INTEROP: fill in candidate methods
+        case JavaMethodResolutionResult.UnresolvedTypes => Result.Ok(ResolutionResult(subst0, List(constr0), progress = false))
       }
     case TypeConstraint.Trait(sym, tpe, loc) =>
       resolveTraitConstraint(sym, subst0(tpe), renv, loc).map {
@@ -565,19 +542,6 @@ object ConstraintSolver {
             }
         }
     }
-  }
-
-  /**
-    * Returns `true` if the type is resolved enough for Java resolution.
-    */
-  private def isKnown(t0: Type): Boolean = t0 match {
-    case Type.Var(_, _) if t0.kind == Kind.Eff => true
-    case Type.Var(_, _) => false
-    case Type.Cst(TypeConstructor.MethodReturnType, _) => false
-    case Type.Cst(_, _) => true
-    case Type.Apply(tpe1, tpe2, _) => isKnown(tpe1) && isKnown(tpe2)
-    case Type.Alias(_, _, tpe, _) => isKnown(tpe)
-    case Type.AssocType(_, _, _, _) => false
   }
 
   /**
