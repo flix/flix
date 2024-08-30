@@ -48,7 +48,7 @@ instance Indexable[Map[k, v]] with Order[k] {
     type Idx = k
     type Elm = v
     type Aef = KeyNotFound
-    pub def get(i: k, t: Map[k, v]): v \ KeyNotFound = match Map.get(i, t) {
+    pub def get(t: Map[k, v], i: k): v \ KeyNotFound = match Map.get(i, t) {
         case Some(v) => v
         case None    => do KeyNotFound.keyNotFound("key not found")
     }
