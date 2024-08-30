@@ -37,7 +37,6 @@ instance Hash[MultiMap[k, v]] with Hash[k], Hash[v] {
         Map.foldLeftWithKey((acc, k, v) -> acc `Hash.combine` Hash.hash(k) `Hash.combine` Hash.hash(v), Hash.magic(), m1)
 }
 
-
 instance Eq[MultiMap[k, v]] with Eq[k], Eq[v] {
     pub def eq(m1: MultiMap[k, v], m2: MultiMap[k, v]): Bool =
         MultiMap.toList(m1) == MultiMap.toList(m2)
@@ -46,6 +45,16 @@ instance Eq[MultiMap[k, v]] with Eq[k], Eq[v] {
 instance Order[MultiMap[k, v]] with Order[k], Order[v] {
     pub def compare(x: MultiMap[k, v], y: MultiMap[k, v]): Comparison =
         MultiMap.toList(x) <=> MultiMap.toList(y)
+}
+
+instance Indexable[MultiMap[k, v]] with Order[k] {
+    type Idx = k
+    type Elm = Set[v]
+    type Aed = KeyNotFound
+    pub def get(t: MultiMap[k, v], i: k): Set[v] \ KeyNotFound = match MultiMap.get(i, t) {
+        case Some(vs) => vs
+        case None     => do KeyNotFound.keyNotFound("key not found")
+    }
 }
 
 instance Foldable[MultiMap[k]] {
