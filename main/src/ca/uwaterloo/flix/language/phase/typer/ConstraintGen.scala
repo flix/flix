@@ -411,6 +411,7 @@ object ConstraintGen {
         // because we need to resolve local constraints
         // BEFORE purifying the region as we exit
 
+        // TODO LEVELS this may change when we do purification properly (?)
         // We must unify sym.tvar and the region var INSIDE the region
         // because we need to ensure that reference to the region are
         // resolved BEFORE purifying the region as we exit

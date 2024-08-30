@@ -17,9 +17,10 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.TypedAst.{Def, Expr, Root}
-import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.ast.*
+import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.phase.unification.{Substitution, Unification}
-import ca.uwaterloo.flix.util._
+import ca.uwaterloo.flix.util.*
 import ca.uwaterloo.flix.util.collection.ListMap
 
 /**
@@ -30,6 +31,9 @@ import ca.uwaterloo.flix.util.collection.ListMap
   * This phase is only for debugging; inconsistencies indicate a bug in the typer and result in a crash.
   */
 object EffectVerifier {
+
+  // We use top scope for simplicity. This is the most relaxed option.
+  private implicit val S: Scope = Scope.Top
 
   /**
     * Verifies the effects in the given root.
