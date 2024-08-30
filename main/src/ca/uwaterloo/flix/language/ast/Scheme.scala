@@ -145,7 +145,7 @@ object Scheme {
     // Resolve what we can from the new econstrs
     // TODO ASSOC-TYPES probably these should be narrow from the start
     val tconstrs2_0 = econstrs2_0.map { case Ast.BroadEqualityConstraint(t1, t2) => TypeConstraint.Equality(t1, t2, Provenance.Match(t1, t2, SourceLocation.Unknown)) }
-    val (subst, econstrs2_1) = ConstraintSolver.resolve(tconstrs2_0, Substitution.empty, RigidityEnv.empty)(scope, tenv0, eenv0, flix) match {
+    val (subst, econstrs2_1) = ConstraintSolver.resolve(tconstrs2_0, Substitution.empty, RigidityEnv.empty, sorting = true)(scope, tenv0, eenv0, flix) match {
       case Result.Ok(ResolutionResult(newSubst, newConstrs, _)) =>
         (newSubst, newConstrs)
       case _ => throw InternalCompilerException("unexpected inconsistent type constraints", SourceLocation.Unknown)
@@ -180,7 +180,7 @@ object Scheme {
     val cconstrs = sc1.tconstrs.map { case Ast.TraitConstraint(head, arg, loc) => TypeConstraint.Trait(head.sym, arg, loc) }
     val econstrs = sc1.econstrs.map { case Ast.BroadEqualityConstraint(t1, t2) => TypeConstraint.Equality(t1, t2, Provenance.Match(t1, t2, SourceLocation.Unknown)) }
     val baseConstr = TypeConstraint.Equality(sc1.base, tpe2, Provenance.Match(sc1.base, tpe2, SourceLocation.Unknown))
-    ConstraintSolver.resolve(baseConstr :: cconstrs ::: econstrs, subst, renv)(scope, cenv, eenv, flix) match {
+    ConstraintSolver.resolve(baseConstr :: cconstrs ::: econstrs, subst, renv, sorting = true)(scope, cenv, eenv, flix) match {
       // We succeed only if there are no leftover constraints
       case Result.Ok(ResolutionResult(_, Nil, _)) => true
       case _ => false
