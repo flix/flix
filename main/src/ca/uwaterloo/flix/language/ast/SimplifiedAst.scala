@@ -60,6 +60,10 @@ object SimplifiedAst {
       def purity: Purity = Pure
     }
 
+    case class Tag(sym: Symbol.CaseSym, tpe: MonoType, loc: SourceLocation) extends Expr {
+      def purity: Purity = Pure
+    }
+
     case class Lambda(fparams: List[FormalParam], exp: Expr, tpe: MonoType, loc: SourceLocation) extends Expr {
       def purity: Purity = Pure
     }

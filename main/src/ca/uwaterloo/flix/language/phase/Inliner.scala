@@ -18,8 +18,8 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur._
-import ca.uwaterloo.flix.language.ast.Purity.Pure
+import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur.*
+import ca.uwaterloo.flix.language.ast.Purity.{Pure, isPure}
 import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, LiftedAst, MonoType, OccurrenceAst, Purity, SemanticOp, SourceLocation, Symbol}
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 
@@ -120,12 +120,15 @@ object Inliner {
     case OccurrenceAst.Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
       val es = exps.map(visitExp(_, subst0))
       op match {
-        case AtomicOp.Untag(_) =>
+        case AtomicOp.Untag(_, idx) =>
           val List(e) = es
-          // Inline expressions of the form Untag(Tag(e)) => e
+          // Inline expressions of the form Untag(Tag(e0, ... e_i, ..., e_n)) if all e_i are pure
           e match {
-            case LiftedAst.Expr.ApplyAtomic(AtomicOp.Tag(_), innerExps, _, _, _) => innerExps.head
-            case _ => LiftedAst.Expr.ApplyAtomic(op, es, tpe, purity, loc)
+            case LiftedAst.Expr.ApplyAtomic(AtomicOp.Tag(_), innerExps, _, _, _) if Purity.isPure(Purity.combineAll(innerExps.map(_.purity))) =>
+              innerExps(idx)
+
+            case _ =>
+              LiftedAst.Expr.ApplyAtomic(op, es, tpe, purity, loc)
           }
 
         case _ => LiftedAst.Expr.ApplyAtomic(op, es, tpe, purity, loc)

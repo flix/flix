@@ -242,11 +242,11 @@ object Lowering {
       val tparams = tparams0.map(visitTypeParam)
       val tpe = visitType(tpe0)
       val cases = cases0.map {
-        case (_, TypedAst.RestrictableCase(caseSym0, caseTpeDeprecated0, caseSc0, loc)) =>
-          val caseTpeDeprecated = visitType(caseTpeDeprecated0)
+        case (_, TypedAst.RestrictableCase(caseSym0, caseTpesDeprecated0, caseSc0, loc)) =>
+          val caseTpesDeprecated = caseTpesDeprecated0.map(visitType)
           val caseSc = visitScheme(caseSc0)
           val caseSym = visitRestrictableCaseSym(caseSym0)
-          (caseSym, LoweredAst.Case(caseSym, caseTpeDeprecated, caseSc, loc))
+          (caseSym, LoweredAst.Case(caseSym, caseTpesDeprecated, caseSc, loc))
       }
       val sym = visitRestrictableEnumSym(sym0)
       LoweredAst.Enum(doc, ann, mod, sym, index :: tparams, derives, cases, tpe, loc)
@@ -460,14 +460,13 @@ object Lowering {
 
     case TypedAst.Expr.Tag(sym, tpe, loc) =>
       val t = visitType(tpe)
-      LoweredAst.Expr.ApplyAtomic(AtomicOp.Tag(sym.sym), List(e), t, eff, loc)
+      LoweredAst.Expr.Tag(sym.sym, t, loc)
 
-    case TypedAst.Expr.RestrictableTag(sym0, exp, tpe, eff, loc) =>
+    case TypedAst.Expr.RestrictableTag(sym0, tpe, loc) =>
       // Lower a restrictable tag into a normal tag.
       val caseSym = visitRestrictableCaseSym(sym0.sym)
-      val e = visitExp(exp)
       val t = visitType(tpe)
-      LoweredAst.Expr.ApplyAtomic(AtomicOp.Tag(caseSym), List(e), t, eff, loc)
+      LoweredAst.Expr.Tag(caseSym, t, loc)
 
     case TypedAst.Expr.Tuple(elms, tpe, eff, loc) =>
       val es = visitExps(elms)
@@ -838,10 +837,10 @@ object Lowering {
     case TypedAst.Pattern.Cst(cst, tpe, loc) =>
       LoweredAst.Pattern.Cst(cst, tpe, loc)
 
-    case TypedAst.Pattern.Tag(sym, pat, tpe, loc) =>
-      val p = visitPat(pat)
+    case TypedAst.Pattern.Tag(sym, pats, tpe, loc) =>
+      val ps = pats.map(visitPat)
       val t = visitType(tpe)
-      LoweredAst.Pattern.Tag(sym, p, t, loc)
+      LoweredAst.Pattern.Tag(sym, ps, t, loc)
 
     case TypedAst.Pattern.Tuple(elms, tpe, loc) =>
       val es = elms.map(visitPat)
@@ -957,7 +956,7 @@ object Lowering {
             case _ => LoweredAst.Pattern.Tuple(termPatterns, Type.mkTuple(termPatterns.map(_.tpe), loc.asSynthetic), loc.asSynthetic)
           }
           val tagSym = visitRestrictableCaseSymUse(sym)
-          val p = LoweredAst.Pattern.Tag(tagSym, pat1, tpe, loc)
+          val p = LoweredAst.Pattern.Tag(tagSym, List(pat1), tpe, loc)
           LoweredAst.MatchRule(p, None, e)
       }
   }

@@ -36,7 +36,7 @@ object AtomicOp {
 
   case class Tag(sym: Symbol.CaseSym) extends AtomicOp
 
-  case class Untag(sym: Symbol.CaseSym) extends AtomicOp
+  case class Untag(sym: Symbol.CaseSym, idx: Int) extends AtomicOp
 
   case class Index(idx: Int) extends AtomicOp
 

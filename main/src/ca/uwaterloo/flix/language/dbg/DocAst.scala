@@ -160,8 +160,8 @@ object DocAst {
     val Error: Expr =
       AsIs("?astError")
 
-    def Untag(sym: Symbol.CaseSym, d: Expr): Expr =
-      Keyword("untag", d)
+    def Untag(sym: Symbol.CaseSym, idx: Int, d: Expr): Expr =
+      Keyword("untag" + idx, d)
 
     def Is(sym: Symbol.CaseSym, d: Expr): Expr =
       Binary(d, "is", AsIs(sym.toString))

@@ -218,7 +218,7 @@ object Verifier {
           val List(t1) = ts
           check(expected = MonoType.Enum(sym.enumSym))(actual = tpe, loc)
 
-        case AtomicOp.Untag(sym) =>
+        case AtomicOp.Untag(sym, idx) =>
           val List(t1) = ts
           check(expected = MonoType.Enum(sym.enumSym))(actual = t1, loc)
           tpe
