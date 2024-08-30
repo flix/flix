@@ -37,8 +37,19 @@ instance Indexable[MutList[a, r]] {
     type Aef = r + OutOfBounds
     pub def get(t: MutList[a, r], i: Int32): a \ r + OutOfBounds = match MutList.nth(i, t) {
         case Some(v) => v
-        case None    => do OutOfBounds.outOfBounds("index ${i} is out of for MutList of length ${MutList.length(t)}")
+        case None    => do OutOfBounds.outOfBounds("index ${i} is out of bounds for MutList of length ${MutList.length(t)}")
     }
+}
+
+instance IndexableMut[MutList[a, r]] {
+    type Aef = r + OutOfBounds
+    pub def put(t: MutList[a, r], i: Int32, v: a): Unit \ r + OutOfBounds =
+        if (0 <= i and i < MutList.length(t))
+            let MutList.MutList(_, ra, _) = t;
+            let a = Ref.get(ra);
+            Array.put(v, i, a)
+        else
+            do OutOfBounds.outOfBounds("index ${i} is out of bounds for MutList of length ${MutList.length(t)}")
 }
 
 mod MutList {
