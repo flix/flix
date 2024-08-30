@@ -165,14 +165,16 @@ object Typer {
         case defn =>
           // Use sub-effecting for defs if the appropriate option is set
           val open = flix.options.xsubeffecting >= SubEffectLevel.LambdasAndDefs
-          visitDef(defn, tconstrs0 = Nil, RigidityEnv.empty, root, traitEnv, eqEnv, open)
+          val res = visitDef(defn, tconstrs0 = Nil, RigidityEnv.empty, root, traitEnv, eqEnv, open)
+          if (res.errors.isEmpty) res
+          else visitDef(defn, tconstrs0 = Nil, RigidityEnv.empty, root, traitEnv, eqEnv, open, sorting = false)
       })(_ ++ freshDefs)
     }
 
   /**
     * Reconstructs types in the given def.
     */
-  private def visitDef(defn: KindedAst.Def, tconstrs0: List[Ast.TraitConstraint], renv0: RigidityEnv, root: KindedAst.Root, traitEnv: Map[Symbol.TraitSym, Ast.TraitContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], open: Boolean)(implicit flix: Flix): Validation[TypedAst.Def, TypeError] = {
+  private def visitDef(defn: KindedAst.Def, tconstrs0: List[Ast.TraitConstraint], renv0: RigidityEnv, root: KindedAst.Root, traitEnv: Map[Symbol.TraitSym, Ast.TraitContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], open: Boolean, sorting: Boolean = true)(implicit flix: Flix): Validation[TypedAst.Def, TypeError] = {
     implicit val scope: Scope = Scope.Top
     implicit val r: KindedAst.Root = root
     implicit val context: TypeContext = new TypeContext
@@ -182,7 +184,7 @@ object Typer {
     // If open is set and the annotated effect is not pure, use a sub-effecting
     val eff = if (!open || defn.spec.eff == Type.Pure) eff0 else Type.mkUnion(eff0, Type.freshVar(Kind.Eff, eff0.loc), eff0.loc)
     val infResult = ConstraintSolver.InfResult(infTconstrs, tpe, eff, infRenv)
-    val substVal = ConstraintSolver.visitDef(defn, infResult, renv0, tconstrs0, traitEnv, eqEnv, root)
+    val substVal = ConstraintSolver.visitDef(defn, infResult, renv0, tconstrs0, traitEnv, eqEnv, root, sorting)
     val assocVal = checkAssocTypes(defn.spec, tconstrs0, traitEnv)
     mapN(substVal, assocVal) {
       case (subst, _) => TypeReconstruction.visitDef(defn, subst)
