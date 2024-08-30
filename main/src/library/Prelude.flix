@@ -21,6 +21,16 @@ pub enum Proxy[_] {
 pub eff IO
 
 ///
+/// The uninterpretable Exec effect.
+///
+/// The Exec effect represents the authority to start (i.e. run or execute)
+/// new processes running outside the JVM.
+///
+/// The Exec effect is uninterpretable which means that it cannot be handled.
+///
+pub eff Exec
+
+///
 /// The pure identity function.
 ///
 pub def identity(x: a): a = x
