@@ -769,8 +769,9 @@ object ConstraintGen {
       case Expr.InvokeConstructor2(clazz, exps, cvar, evar, loc) =>
         val tpe = Type.getFlixType(clazz)
         val (tpes, effs) = exps.map(visitExp).unzip
+        val baseEffs = BaseEffects.of(clazz, loc)
         c.unifyJvmConstructorType(cvar, tpe, clazz, tpes, loc) // unify constructor
-        c.unifyType(evar, Type.mkUnion(Type.IO :: effs, loc), loc) // unify effects
+        c.unifyType(evar, Type.mkUnion(Type.IO :: baseEffs :: effs, loc), loc) // unify effects
         val resTpe = tpe
         val resEff = evar
         (resTpe, resEff)
