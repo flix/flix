@@ -72,42 +72,42 @@ instance Group[Unit] {
 
 instance Group[Int8] {
     pub def inverse(x: Int8): Int8 = -x
-    pub redef remove(x: Int8, y: Int8): Int8 = x - y
+    redef remove(x: Int8, y: Int8): Int8 = x - y
 }
 
 instance Group[Int16] {
     pub def inverse(x: Int16): Int16 = -x
-    pub redef remove(x: Int16, y: Int16): Int16 = x - y
+    redef remove(x: Int16, y: Int16): Int16 = x - y
 }
 
 instance Group[Int32] {
     pub def inverse(x: Int32): Int32 = -x
-    pub redef remove(x: Int32, y: Int32): Int32 = x - y
+    redef remove(x: Int32, y: Int32): Int32 = x - y
 }
 
 instance Group[Int64] {
     pub def inverse(x: Int64): Int64 = -x
-    pub redef remove(x: Int64, y: Int64): Int64 = x - y
+    redef remove(x: Int64, y: Int64): Int64 = x - y
 }
 
 instance Group[BigInt] {
     pub def inverse(x: BigInt): BigInt = -x
-    pub redef remove(x: BigInt, y: BigInt): BigInt = x - y
+    redef remove(x: BigInt, y: BigInt): BigInt = x - y
 }
 
 instance Group[Float32] {
     pub def inverse(x: Float32): Float32 = -x
-    pub redef remove(x: Float32, y: Float32): Float32 = x - y
+    redef remove(x: Float32, y: Float32): Float32 = x - y
 }
 
 instance Group[Float64] {
     pub def inverse(x: Float64): Float64 = -x
-    pub redef remove(x: Float64, y: Float64): Float64 = x - y
+    redef remove(x: Float64, y: Float64): Float64 = x - y
 }
 
 instance Group[BigDecimal] {
     pub def inverse(x: BigDecimal): BigDecimal = -x
-    pub redef remove(x: BigDecimal, y: BigDecimal): BigDecimal = x - y
+    redef remove(x: BigDecimal, y: BigDecimal): BigDecimal = x - y
 }
 
 instance Group[(a1, a2)] with Group[a1], Group[a2] {
