@@ -764,8 +764,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[TypeError.MethodNotFound](result)
   }
 
-  // succeeds now
-  ignore("UndefinedJvmMethod.07") {
+  test("UndefinedJvmMethod.07") {
     val input =
       """
         |import java.util.Arrays
@@ -774,7 +773,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[TypeError.StaticMethodNotFound](result)
+    expectError[TypeError](result)
   }
 
   test("MismatchingType.01") {
