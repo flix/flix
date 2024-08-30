@@ -31,6 +31,16 @@ instance Iterable[MutList[a, r]] {
     pub def iterator(rc: Region[r1], l: MutList[a, r]): Iterator[a, r + r1, r1] \ (r + r1) = MutList.iterator(rc, l)
 }
 
+instance Indexable[MutList[a, r]] {
+    type Idx = Int32
+    type Elm = a
+    type Aef = r + OutOfBounds
+    pub def get(t: MutList[a, r], i: Int32): a \ r + OutOfBounds = match MutList.nth(i, t) {
+        case Some(v) => v
+        case None    => do OutOfBounds.outOfBounds("index ${i} is out of for MutList of length ${MutList.length(t)}")
+    }
+}
+
 mod MutList {
 
     ///
