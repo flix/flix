@@ -111,8 +111,8 @@ object Kinder {
   }
 
   /**
-    * Performs kinding on the given struct.
-    */
+   * Performs kinding on the given struct.
+   */
   private def visitStruct(struct0: ResolvedAst.Declaration.Struct, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Struct, KindError] = struct0 match {
     case ResolvedAst.Declaration.Struct(doc, ann, mod, sym, tparams0, fields0, loc) =>
       // In the case in which the user doesn't supply any type params,
@@ -218,8 +218,8 @@ object Kinder {
   }
 
   /**
-    * Performs kinding on the given struct field under the given kind environment.
-    */
+   * Performs kinding on the given struct field under the given kind environment.
+   */
   private def visitStructField(field0: ResolvedAst.Declaration.StructField, tparams: List[KindedAst.TypeParam], kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.StructField, KindError] = field0 match {
     case ResolvedAst.Declaration.StructField(sym, tpe0, loc) =>
       val tpeVal = visitType(tpe0, Kind.Star, kenv, taenv, root)
@@ -1247,11 +1247,7 @@ object Kinder {
       val kind = cst.kind
       unify(expectedKind, kind) match {
         case Some(_) => Validation.success(Type.Cst(cst, loc))
-        case None =>
-          val k = Kind.Error
-          val t = Type.freshError(k, tpe0.loc)
-          val e = KindError.UninferrableKind(loc)
-          Validation.toSoftFailure(t, e)
+        case None => Validation.toHardFailure(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc))
       }
 
     case UnkindedType.Apply(t10, t20, loc) =>
@@ -1788,7 +1784,7 @@ object Kinder {
 
   /**
     * Gets a kind environment from the type param, defaulting to `Kind.Eff` if it is unspecified
-    */
+   */
   private def getKindEnvFromRegion(tparam0: ResolvedAst.TypeParam)(implicit flix: Flix): KindEnv = tparam0 match {
     case ResolvedAst.TypeParam.Kinded(_, tvar, kind, _) => KindEnv.singleton(tvar -> kind)
     case ResolvedAst.TypeParam.Unkinded(_, tvar, _) => KindEnv.singleton(tvar -> Kind.Eff)
@@ -1825,8 +1821,8 @@ object Kinder {
   }
 
   /**
-    * Gets the kind of the struct.
-    */
+   * Gets the kind of the struct.
+   */
   private def getStructKind(struct0: ResolvedAst.Declaration.Struct)(implicit flix: Flix): Kind = struct0 match {
     case ResolvedAst.Declaration.Struct(_, _, _, _, tparams0, _, _) =>
       // tparams default to zero except for the region param
