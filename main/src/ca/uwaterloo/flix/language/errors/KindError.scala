@@ -58,7 +58,7 @@ object KindError {
     * @param actualKind   the actual kind.
     * @param loc          the location where the error occurred.
     */
-  case class UnexpectedKind(expectedKind: Kind, actualKind: Kind, loc: SourceLocation) extends KindError with Unrecoverable {
+  case class UnexpectedKind(expectedKind: Kind, actualKind: Kind, loc: SourceLocation) extends KindError with Recoverable {
     override def summary: String = s"Kind ${formatKind(expectedKind)} was expected, but found ${formatKind(actualKind)}."
 
     def message(formatter: Formatter): String = {
