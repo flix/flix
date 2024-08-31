@@ -1247,7 +1247,9 @@ object Kinder {
       val kind = cst.kind
       unify(expectedKind, kind) match {
         case Some(_) => Validation.success(Type.Cst(cst, loc))
-        case None => Validation.toHardFailure(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc))
+        case None =>
+          val e = KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc)
+          Validation.toSoftFailure(Type.freshError(Kind.Error, loc), e)
       }
 
     case UnkindedType.Apply(t10, t20, loc) =>
