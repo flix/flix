@@ -492,7 +492,7 @@ object Type {
     lazy val kind: Kind = {
       tpe1.kind match {
         case Kind.Arrow(_, k2) => k2
-        case _ => throw InternalCompilerException(s"Illegal kind: '${tpe1.kind}' of type '$tpe1'.", loc)
+        case _ => Kind.Error
       }
     }
 
