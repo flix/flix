@@ -16,7 +16,8 @@
 package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{Ast, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.shared.Scope
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
@@ -50,7 +51,7 @@ object TypeReduction {
    *   Elm[Elm[a]]   ~> Elm[Elm[a]]
    * }}}
    */
-  def simplify(tpe: Type, renv0: RigidityEnv, loc: SourceLocation)(implicit eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Result[(Type, Boolean), TypeError] = tpe match {
+  def simplify(tpe: Type, renv0: RigidityEnv, loc: SourceLocation)(implicit scope: Scope, eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Result[(Type, Boolean), TypeError] = tpe match {
     // A var is already simple.
     case t: Type.Var => Result.Ok((t, false))
 
@@ -110,12 +111,20 @@ object TypeReduction {
    * @param loc the location where the java method has been called
    * @return
    */
-  private def simplifyJava(tpe: Type, renv0: RigidityEnv, loc: SourceLocation)(implicit flix: Flix): Result[(Type, Boolean), TypeError] = {
+  private def simplifyJava(tpe: Type.Apply, renv0: RigidityEnv, loc: SourceLocation): Result[(Type, Boolean), TypeError] = {
     tpe.typeConstructor match {
       case Some(TypeConstructor.MethodReturnType) =>
+        // Since `tpe` is `Type.Apply`, this is safe
         val methodType = tpe.typeArguments.head
         methodType match {
           case Type.Cst(TypeConstructor.JvmMethod(method), _) => Result.Ok(Type.getFlixType(method.getReturnType), true)
+          case _ => Result.Ok((tpe, false))
+        }
+      case Some(TypeConstructor.FieldType) =>
+        // Since `tpe` is `Type.Apply`, this is safe
+        val fieldType = tpe.typeArguments.head
+        fieldType match {
+          case Type.Cst(TypeConstructor.JvmField(field), _) => Result.Ok(Type.getFlixType(field.getType), true)
           case _ => Result.Ok((tpe, false))
         }
       case _ => Result.Ok((tpe, false))
@@ -123,11 +132,13 @@ object TypeReduction {
   }
 
   /**
-    * Returns `true` if the given type is still reducible, i.e. contains an unreduced MRT, e.g. MRT[a] where a is not known.
+    * Returns `true` if the given type is still reducible, i.e. contains an unreduced MRT or FieldType,
+    * e.g. MRT[a] where a is not known.
     */
   // TODO: This method should be recursive and not just look at the top-level type.
   def isReducible(tpe: Type): Boolean = tpe match {
     case Type.Apply(Type.Cst(TypeConstructor.MethodReturnType, _), Type.Var(_, _), _) => true
+    case Type.Apply(Type.Cst(TypeConstructor.FieldType, _), Type.Var(_, _), _) => true
     case _ => false
   }
 
@@ -141,8 +152,9 @@ object TypeReduction {
    * @param loc     the location where the java constructor has been invoked
    * @return        A JavaConstructorResolutionResult object that indicates the status of the resolution progress
    */
-  def lookupConstructor(clazz: Class[_], ts: List[Type], loc: SourceLocation)(implicit flix: Flix): JavaConstructorResolutionResult = {
-    retrieveConstructor(clazz, ts, loc)
+  def lookupConstructor(clazz: Class[_], ts: List[Type], loc: SourceLocation): JavaConstructorResolutionResult = {
+    if (ts.forall(isKnown)) retrieveConstructor(clazz, ts, loc)
+    else JavaConstructorResolutionResult.UnresolvedTypes
   }
 
   /**
@@ -157,8 +169,8 @@ object TypeReduction {
    * @param loc         the location where the Java method has been called
    * @return            A JavaMethodResolutionResult object that indicates the status of the resolution progress
    */
-  def lookupMethod(thisObj: Type, methodName: String, ts: List[Type], loc: SourceLocation)(implicit flix: Flix): JavaMethodResolutionResult = {
-    thisObj match { // there might be a possible factorization
+  def lookupMethod(thisObj: Type, methodName: String, ts: List[Type], loc: SourceLocation): JavaMethodResolutionResult = {
+    if (isKnown(thisObj) && ts.forall(isKnown)) thisObj match { // there might be a possible factorization
       case Type.Cst(TypeConstructor.Str, _) =>
         val clazz = classOf[String]
         retrieveMethod(clazz, methodName, ts, loc = loc)
@@ -179,11 +191,17 @@ object TypeReduction {
         retrieveMethod(clazz, methodName, ts, loc = loc)
 
       case _ => JavaMethodResolutionResult.MethodNotFound
-    }
+    } else JavaMethodResolutionResult.UnresolvedTypes
   }
 
-  def lookupStaticMethod(clazz: Class[_], methodName: String, ts: List[Type], loc: SourceLocation)(implicit flix: Flix): JavaMethodResolutionResult = {
-    retrieveMethod(clazz, methodName, ts, isStatic = true, loc = loc)
+  def lookupField(thisObj: Type, fieldName: String, loc: SourceLocation): JavaFieldResolutionResult = {
+    if (isKnown(thisObj)) JavaFieldResolutionResult.FieldNotFound
+    else JavaFieldResolutionResult.UnresolvedTypes
+  }
+
+  def lookupStaticMethod(clazz: Class[_], methodName: String, ts: List[Type], loc: SourceLocation): JavaMethodResolutionResult = {
+    if (ts.forall(isKnown)) retrieveMethod(clazz, methodName, ts, isStatic = true, loc = loc)
+    else JavaMethodResolutionResult.UnresolvedTypes
   }
 
   /**
@@ -191,7 +209,7 @@ object TypeReduction {
    * Returns a JavaConstructorResolutionResult containing either the constructor, a list of candidate constructors or
    * a ConstructorNotFound object. The working process is similar to retrieveMethod and differs in the selection of candidate constructors.
    */
-  private def retrieveConstructor(clazz: Class[_], ts: List[Type], loc: SourceLocation)(implicit flix: Flix): JavaConstructorResolutionResult = {
+  private def retrieveConstructor(clazz: Class[_], ts: List[Type], loc: SourceLocation): JavaConstructorResolutionResult = {
     val candidateConstructors = clazz.getConstructors.filter(c => isCandidateConstructor(c, ts))
 
     candidateConstructors.length match {
@@ -218,9 +236,9 @@ object TypeReduction {
    * Helper method to retrieve a method given its name and parameter types.
    * Returns a JavaMethodResolutionResult either containing the Java method or a MethodNotFound object.
    */
-  private def retrieveMethod(clazz: Class[_], methodName: String, ts: List[Type], isStatic: Boolean = false, loc: SourceLocation)(implicit flix: Flix): JavaMethodResolutionResult = {
+  private def retrieveMethod(clazz: Class[_], methodName: String, ts: List[Type], isStatic: Boolean = false, loc: SourceLocation): JavaMethodResolutionResult = {
     // NB: this considers also static methods
-    val candidateMethods = clazz.getMethods.filter(m => isCandidateMethod(m, methodName, isStatic, ts))
+    val candidateMethods = getMethods(clazz).filter(m => isCandidateMethod(m, methodName, isStatic, ts))
 
     candidateMethods.length match {
       case 0 => JavaMethodResolutionResult.MethodNotFound
@@ -243,9 +261,36 @@ object TypeReduction {
   }
 
   /**
+    * Returns the methods of the class INCLUDING implicit interface inheritance from Object.
+    */
+  def getMethods(clazz: Class[_]): List[Method] = {
+    if (clazz.isInterface) {
+      var methods = clazz.getMethods.toList
+      for (method <- classOf[Object].getMethods) {
+        // check if it is already there
+        var exists = false
+        for (existing <- methods) {
+          if (
+            existing.getName == method.getName &&
+            isStatic(existing) == isStatic(method) &&
+              existing.getParameterTypes.sameElements(method.getParameterTypes)
+          ) {
+            // could stop early
+            exists = true
+          }
+        }
+        if (!exists) methods = method :: methods
+      }
+      methods
+    } else {
+      clazz.getMethods.toList
+    }
+  }
+
+  /**
    * Helper method that returns if the given constructor is a candidate constructor given a signature.
    */
-  private def isCandidateConstructor(cand: Constructor[_], ts: List[Type])(implicit flix: Flix): Boolean =
+  private def isCandidateConstructor(cand: Constructor[_], ts: List[Type]): Boolean =
     (cand.getParameterCount == ts.length) &&
       (cand.getParameterTypes zip ts).forall {
         case (clazz, tpe) => isSubtype(tpe, Type.getFlixType(clazz))
@@ -258,9 +303,9 @@ object TypeReduction {
    * @param methodName the potential candidate method's name
    * @param ts         the list of parameter types of the potential candidate method
    */
-  private def isCandidateMethod(cand: Method, methodName: String, isStatic: Boolean = false, ts: List[Type])(implicit flix: Flix): Boolean = {
-    val static = java.lang.reflect.Modifier.isStatic(cand.getModifiers)
-    (if (isStatic) static else !static) &&
+  private def isCandidateMethod(cand: Method, methodName: String, static: Boolean = false, ts: List[Type]): Boolean = {
+    val candIsStatic = isStatic(cand)
+    (candIsStatic == static) &&
       (cand.getName == methodName) &&
       (cand.getParameterCount == ts.length) &&
       // Parameter types correspondence with subtyping
@@ -271,15 +316,19 @@ object TypeReduction {
       // if the superclass is abstract or ignore if it is a primitive type or void
       (cand.getReturnType.equals(Void.TYPE) || cand.getReturnType.isPrimitive || cand.getReturnType.isArray || // for all arrays return types?
         java.lang.reflect.Modifier.isInterface(cand.getReturnType.getModifiers) || // interfaces are considered primitives
-        !(java.lang.reflect.Modifier.isAbstract(cand.getReturnType.getModifiers) && !isStatic))
+        !(java.lang.reflect.Modifier.isAbstract(cand.getReturnType.getModifiers) && !static))
   } // temporary to avoid superclass abstract duplicate, except for static methods
+
+  private def isStatic(method: Method): Boolean = {
+    java.lang.reflect.Modifier.isStatic(method.getModifiers)
+  }
 
   /**
    * Helper method to define a sub-typing relation between two given Flix types.
    * Returns true if tpe1 is a sub-type of type tpe2, false otherwise.
    */
   @tailrec
-  private def isSubtype(tpe1: Type, tpe2: Type)(implicit flix: Flix): Boolean = {
+  private def isSubtype(tpe1: Type, tpe2: Type): Boolean = {
     (tpe1, tpe2) match {
       case (t1, t2) if t1 == t2 => true
       // Base types
@@ -293,6 +342,43 @@ object TypeReduction {
       case (Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Array, _), elmType1, _), rcVar1, _),
       Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Array, _), elmType2, _), rcVar2, _)) =>
         isSubtype(elmType1, elmType2)
+      // Arrow to Java function interface
+      case (Type.Apply(Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Arrow(2), _), eff, _), varArg, _), varRet, _), Type.Cst(TypeConstructor.Native(clazz), _)) =>
+        (varArg, varRet) match {
+          case (Type.Cst(tc1, _), Type.Cst(tc2, _)) =>
+            (tc1, tc2) match {
+              case (TypeConstructor.Int32, TypeConstructor.Unit) =>
+                clazz == classOf[java.util.function.IntConsumer]
+              case (TypeConstructor.Int32, TypeConstructor.Bool) =>
+                clazz == classOf[java.util.function.IntPredicate]
+              case (TypeConstructor.Int32, TypeConstructor.Int32) =>
+                clazz == classOf[java.util.function.IntUnaryOperator]
+              case (TypeConstructor.Int32, TypeConstructor.Native(obj)) if obj == classOf[Object] =>
+                clazz == classOf[java.util.function.IntFunction[Object]]
+              case (TypeConstructor.Float64, TypeConstructor.Unit) =>
+                clazz == classOf[java.util.function.DoubleConsumer]
+              case (TypeConstructor.Float64, TypeConstructor.Bool) =>
+                clazz == classOf[java.util.function.DoublePredicate]
+              case (TypeConstructor.Float64, TypeConstructor.Float64) =>
+                clazz == classOf[java.util.function.DoubleUnaryOperator]
+              case (TypeConstructor.Float64, TypeConstructor.Native(obj)) if obj == classOf[Object] =>
+                clazz == classOf[java.util.function.DoubleFunction[Object]]
+              case (TypeConstructor.Int64, TypeConstructor.Unit) =>
+                clazz == classOf[java.util.function.LongConsumer]
+              case (TypeConstructor.Int64, TypeConstructor.Bool) =>
+                clazz == classOf[java.util.function.LongPredicate]
+              case (TypeConstructor.Int64, TypeConstructor.Int64) =>
+                clazz == classOf[java.util.function.LongUnaryOperator]
+              case (TypeConstructor.Int64, TypeConstructor.Native(obj)) if obj == classOf[Object] =>
+                clazz == classOf[java.util.function.LongFunction[Object]]
+              case (TypeConstructor.Native(obj), TypeConstructor.Unit) if obj == classOf[Object] =>
+                clazz == classOf[java.util.function.Consumer[Object]]
+              case (TypeConstructor.Native(obj), TypeConstructor.Bool) if obj == classOf[Object] =>
+                clazz == classOf[java.util.function.Predicate[Object]]
+              case _ => false
+            }
+          case _ => false
+        }
       // Null is a sub-type of every Java object and non-primitive Flix type
       case (Type.Cst(TypeConstructor.Null, _), Type.Cst(TypeConstructor.Native(_), _)) => true
       case (Type.Cst(TypeConstructor.Null, _), tpe) if !isPrimitive(tpe) => true
@@ -303,7 +389,7 @@ object TypeReduction {
   /**
    * Returns true iff the given type tpe is a Flix primitive.
    */
-  private def isPrimitive(tpe: Type)(implicit flix: Flix): Boolean = {
+  private def isPrimitive(tpe: Type): Boolean = {
     tpe match {
       case Type.Cst(TypeConstructor.Bool, _) => true
       case Type.Cst(TypeConstructor.Char, _) => true
@@ -318,6 +404,20 @@ object TypeReduction {
   }
 
   /**
+    * Returns `true` if the type is resolved enough for Java resolution.
+    */
+  private def isKnown(t0: Type): Boolean = t0 match {
+    case Type.Var(_, _) if t0.kind == Kind.Eff => true
+    case Type.Var(_, _) => false
+    case Type.Cst(_, _) => true
+    case Type.Apply(Type.Cst(TypeConstructor.MethodReturnType, _), _, _) => false
+    case Type.Apply(Type.Cst(TypeConstructor.FieldType, _), _, _) => false
+    case Type.Apply(tpe1, tpe2, _) => isKnown(tpe1) && isKnown(tpe2)
+    case Type.Alias(_, _, tpe, _) => isKnown(tpe)
+    case Type.AssocType(_, _, _, _) => false
+  }
+
+  /**
    * Represents the result of a resolution process of a java method.
    *
    * There are three possible outcomes:
@@ -326,13 +426,29 @@ object TypeReduction {
    *      simplified type of the java method.
    *   1. AmbiguousMethod: The resolution lacked some elements to find a java method among a set of
    *      methods.
-   *   1. MethodNotFound(): The resolution failed to find a corresponding java method.
+   *   1. MethodNotFound: The resolution failed to find a corresponding java method.
+   *   1. UnresolvedTyped: The types involved are not reduced enough to decide the java method
    */
   sealed trait JavaMethodResolutionResult
   object JavaMethodResolutionResult {
     case class Resolved(tpe: Type) extends JavaMethodResolutionResult
     case class AmbiguousMethod(methods: List[Method]) extends JavaMethodResolutionResult
     case object MethodNotFound extends JavaMethodResolutionResult
+    case object UnresolvedTypes extends JavaMethodResolutionResult
+  }
+
+  /**
+    * Represents the result of a resolution process of a java field.
+    *
+    * There are two possible outcomes:
+    *
+    *   1. FieldNotFound: The resolution failed to find a corresponding java field.
+    *   1. UnresolvedTypes: The types involved are not reduced enough to decide the java method
+    */
+  sealed trait JavaFieldResolutionResult
+  object JavaFieldResolutionResult {
+    case object FieldNotFound extends JavaFieldResolutionResult
+    case object UnresolvedTypes extends JavaFieldResolutionResult
   }
 
   /**
@@ -341,12 +457,14 @@ object TypeReduction {
    * There are three possible outcomes:
    *   1. Resolved(tpe): Indicates that there was some progress in the resolution and returns a simplified type of the java constructor.
    *   1. AmbiguousConstructor: The resolution lacked some elements to find a java constructor among a set of constructors.
-   *   1. ConstructorNotFound(): The resolution failed to find a corresponding java constructor.
+   *   1. ConstructorNotFound: The resolution failed to find a corresponding java constructor.
+   *   1. UnresolvedTypes: The types involved are not reduced enough to decide the java method
    */
   sealed trait JavaConstructorResolutionResult
   object JavaConstructorResolutionResult {
     case class Resolved(tpe: Type) extends JavaConstructorResolutionResult
     case class AmbiguousConstructor(constructors: List[Constructor[_]]) extends JavaConstructorResolutionResult
     case object ConstructorNotFound extends JavaConstructorResolutionResult
+    case object UnresolvedTypes extends JavaConstructorResolutionResult
   }
 }

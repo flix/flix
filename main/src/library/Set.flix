@@ -69,12 +69,12 @@ instance Foldable[Set] {
 
 instance UnorderedFoldable[Set] {
     pub def foldMap(f: a -> b \ ef, s: Set[a]): b \ ef with CommutativeMonoid[b] = Set.foldMap(f, s)
-    pub redef isEmpty(s: Set[a]): Bool = Set.isEmpty(s)
-    pub redef exists(f: a -> Bool \ ef, s: Set[a]): Bool \ ef = Set.exists(f, s)
-    pub redef forAll(f: a -> Bool \ ef, s: Set[a]): Bool \ ef = Set.forAll(f, s)
+    redef isEmpty(s: Set[a]): Bool = Set.isEmpty(s)
+    redef exists(f: a -> Bool \ ef, s: Set[a]): Bool \ ef = Set.exists(f, s)
+    redef forAll(f: a -> Bool \ ef, s: Set[a]): Bool \ ef = Set.forAll(f, s)
 
     @ParallelWhenPure
-    pub redef count(f: a -> Bool \ ef, s: Set[a]): Int32 \ ef = Set.count(f, s)
+    redef count(f: a -> Bool \ ef, s: Set[a]): Int32 \ ef = Set.count(f, s)
 }
 
 instance SemiGroup[Set[a]] with Order[a] {

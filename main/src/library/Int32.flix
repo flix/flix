@@ -24,8 +24,10 @@ instance UpperBound[Int32] {
 
 mod Int32 {
 
-    import java.lang.{Integer, NumberFormatException, String}
-    import java.math.{BigDecimal, BigInteger}
+    import java.lang.Integer
+    import java.lang.NumberFormatException
+    import java.math.BigDecimal
+    import java.math.BigInteger
 
     ///
     /// Returns the number of bits used to represent an `Int32`.

@@ -56,7 +56,6 @@ sealed trait TokenKind {
       case TokenKind.DotCurlyL => "'.{'"
       case TokenKind.Equal => "'='"
       case TokenKind.EqualEqual => "'=='"
-      case TokenKind.Euro => "'€'"
       case TokenKind.Hash => "'#'"
       case TokenKind.HashCurlyL => "'#{'"
       case TokenKind.HashParenL => "'#('"
@@ -155,6 +154,7 @@ sealed trait TokenKind {
       case TokenKind.Slash => "'/'"
       case TokenKind.Star => "'*'"
       case TokenKind.StarStar => "'**'"
+      case TokenKind.StructArrow => "'->'"
       case TokenKind.Tilde => "'~'"
       case TokenKind.TripleAmpersand => "'&&&'"
       case TokenKind.TripleAngleL => "'<<<'"
@@ -170,7 +170,6 @@ sealed trait TokenKind {
       case TokenKind.NameUpperCase => "<Name>"
       case TokenKind.NameMath => "<math name>"
       case TokenKind.NameGreek => "<greek name>"
-      case TokenKind.NameJava => "<java name>"
       case TokenKind.UserDefinedOperator => "<user-defined operator>"
       case TokenKind.Annotation => "<annotation>"
       case TokenKind.BuiltIn => "<built in>"
@@ -443,8 +442,7 @@ sealed trait TokenKind {
          | TokenKind.LiteralDebugStringL
          | TokenKind.KeywordDebug
          | TokenKind.KeywordDebugBang
-         | TokenKind.KeywordDebugBangBang
-         | TokenKind.NameJava => true
+         | TokenKind.KeywordDebugBangBang => true
     case _ => false
   }
 
@@ -464,7 +462,6 @@ sealed trait TokenKind {
          | TokenKind.CurlyL
          | TokenKind.HashCurlyL
          | TokenKind.HashParenL
-         | TokenKind.NameJava
          | TokenKind.AngleL
          | TokenKind.KeywordNot
          | TokenKind.Tilde
@@ -659,8 +656,6 @@ object TokenKind {
   case object Equal extends TokenKind
 
   case object EqualEqual extends TokenKind
-
-  case object Euro extends TokenKind
 
   case object Hash extends TokenKind
 
@@ -880,8 +875,6 @@ object TokenKind {
 
   case object NameGreek extends TokenKind
 
-  case object NameJava extends TokenKind
-
   case object NameLowerCase extends TokenKind
 
   case object NameMath extends TokenKind
@@ -903,6 +896,8 @@ object TokenKind {
   case object Star extends TokenKind
 
   case object StarStar extends TokenKind
+
+  case object StructArrow extends TokenKind
 
   case object Tilde extends TokenKind
 

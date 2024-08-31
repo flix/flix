@@ -19,7 +19,7 @@ mod TestToJava {
     import java.util.{List => JList}
     import java.util.{Map => JMap}
     import java.util.{Set => JSet}
-    import java.lang.{Object => JObject}
+    import java.lang.Object
 
     /////////////////////////////////////////////////////////////////////////////
     // toJavaObject                                                            //
@@ -29,7 +29,7 @@ mod TestToJava {
     def toJavaObject01(): Bool =
         let x = ToJava.toJavaObject(0);
         typematch x {
-            case _: JObject => true
+            case _: Object => true
             case _: _ => false
         }
 
@@ -37,7 +37,7 @@ mod TestToJava {
     def toJavaObject02(): Bool =
         let x = ToJava.toJavaObject("hello world!");
         typematch x {
-            case _: JObject => true
+            case _: Object => true
             case _: _ => false
         }
 

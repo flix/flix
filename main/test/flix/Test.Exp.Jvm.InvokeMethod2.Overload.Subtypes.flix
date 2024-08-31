@@ -1,7 +1,10 @@
 mod Test.Exp.Jvm.InvokeMethod2.Overload.Subtypes {
 
-    import java.lang.{Object, StringBuilder, StringBuffer, CharSequence};
-    import java.nio.CharBuffer;
+    import java.lang.CharSequence
+    import java.lang.Object
+    import java.lang.StringBuffer
+    import java.lang.StringBuilder
+    import java.nio.CharBuffer
 
    @test
    def testInvokeMethod2_02(): Bool \ IO =
