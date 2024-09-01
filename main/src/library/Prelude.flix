@@ -13,22 +13,58 @@ pub enum Proxy[_] {
 }
 
 ///
-/// The Generic IO Effect.
+/// The uninterpretable `Clock` effect.
 ///
-/// The `IO` effect is the most general effect of any
-/// operation that interacts with the environment.
+/// The `Clock` effect represents the actions required to access the system clock.
+///
+/// The `Clock` effect is uninterpretable which means that it cannot be handled.
+///
+pub eff Clock
+
+///
+/// The uninterpretable `Exec` effect.
+///
+/// The `Exec` effect represents the actions required to start (i.e. run) a new process outside the JVM.
+///
+/// The `Exec` effect is uninterpretable which means that it cannot be handled.
+///
+pub eff Exec
+
+///
+/// The uninterpretable `Exit` effect.
+///
+/// The `Exit` effect represents the actions to required to immediately terminate execution of the JVM.
+///
+/// The `Exit` effect is uninterpretable which means that it cannot be handled.
+///
+pub eff Exit
+
+///
+/// The uninterpretable IO effect.
+///
+/// The `IO` effect represents the actions not described by any other effect.
+///
+/// The `IO` effect is uninterpretable which means that it cannot be handled.
 ///
 pub eff IO
 
 ///
-/// The uninterpretable Exec effect.
+/// The uninterpretable `Net` effect.
 ///
-/// The Exec effect represents the authority to start (i.e. run or execute)
-/// new processes running outside the JVM.
+/// The `Net` effect represents the actions required to communicate over the network.
 ///
-/// The Exec effect is uninterpretable which means that it cannot be handled.
+/// The `Net` effect is uninterpretable which means that it cannot be handled.
 ///
-pub eff Exec
+pub eff Net
+
+///
+/// The uninterpretable `NonDet` effect.
+///
+/// The `NonDet` effect represents one or more non-deterministic actions.
+///
+/// The `NonDet` effect is uninterpretable which means that it cannot be handled.
+///
+pub eff NonDet
 
 ///
 /// The pure identity function.
