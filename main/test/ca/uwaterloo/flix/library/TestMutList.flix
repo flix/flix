@@ -112,6 +112,89 @@ mod TestMutList {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // get                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def get01(): Bool = region rc {
+        let r = try MutList.get(0, MutList.empty(rc)) with OutOfBounds {
+            def outOfBounds(msg, _) = msg
+        };
+        r == "index 0 is out of bounds for MutList of length 0"
+    }
+
+    @test
+    def get02(): Bool = region rc {
+        let l = MutList.empty(rc);
+        MutList.push!("item", l);
+        let r = try MutList.get(0, l) with OutOfBounds {
+            def outOfBounds(_, _) = "error"
+        };
+        r == "item"
+    }
+
+    @test
+    def get03(): Bool = region rc {
+        let l = MutList.empty(rc);
+        MutList.push!("item", l);
+        let r = try MutList.get(1, l) with OutOfBounds {
+            def outOfBounds(msg, _) = msg
+        };
+        r == "index 1 is out of bounds for MutList of length 1"
+    }
+
+    @test
+    def get04(): Bool = region rc {
+        let l = MutList.map(rc, i -> "item ${i}", MutList.range(rc, 0, 2));
+
+        let r = try MutList.get(1, l) with OutOfBounds {
+            def outOfBounds(msg, _) = msg
+        };
+        r == "item 1"
+    }
+
+    @test
+    def get05(): Bool = region rc {
+        let l = MutList.map(rc, i -> "item ${i}", MutList.range(rc, 0, 4));
+
+        let r = try MutList.get(3, l) with OutOfBounds {
+            def outOfBounds(msg, _) = msg
+        };
+        r == "item 3"
+    }
+
+    @test
+    def get06(): Bool = region rc {
+        let l = MutList.map(rc, i -> "item ${i}", MutList.range(rc, 0, 42));
+
+        let r = try MutList.get(30, l) with OutOfBounds {
+            def outOfBounds(msg, _) = msg
+        };
+        r == "item 30"
+    }
+
+    @test
+    def get07(): Bool = region rc {
+        let l = MutList.map(rc, i -> "item ${i}", MutList.range(rc, 0, 42));
+
+        let r = try MutList.get(-30, l) with OutOfBounds {
+            def outOfBounds(msg, _) = msg
+        };
+        r == "index -30 is out of bounds for MutList of length 42"
+    }
+
+    @test
+    def get08(): Bool = region rc {
+        let l = MutList.map(rc, i -> "item ${i}", MutList.range(rc, 0, 42));
+
+        let r = try MutList.get(50, l) with OutOfBounds {
+            def outOfBounds(msg, _) = msg
+        };
+        r == "index 50 is out of bounds for MutList of length 42"
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // nth                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
