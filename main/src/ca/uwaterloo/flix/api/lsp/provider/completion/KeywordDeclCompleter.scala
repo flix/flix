@@ -32,6 +32,8 @@ object KeywordDeclCompleter extends Completer {
       "pub",
       "sealed",
       "trait",
-      "with",
+      "type",
+      "struct",
+      "import",
   ) map (name => Completion.KeywordCompletion(name))
 }

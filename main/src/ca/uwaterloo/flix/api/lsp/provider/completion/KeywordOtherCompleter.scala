@@ -32,13 +32,11 @@ object KeywordOtherCompleter extends Completer {
       "@Test",
       "class",
       "fix",
-      "import",
       "law",
       "Record",
       "redef",
       "Schema",
-      "struct",
-      "type",
       "where",
+      "with",
     ) map (name => Completion.KeywordCompletion(name))
 }
