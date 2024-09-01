@@ -195,6 +195,101 @@ mod TestMutList {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // put                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def put01(): Bool = region rc {
+        let error = Ref.fresh(rc, None);
+        let l = MutList.empty(rc);
+
+        try MutList.put("new item", 0, l) with OutOfBounds {
+            def outOfBounds(msg, _) = Ref.put(Some(msg), error)
+        };
+        Ref.get(error) == Some("index 0 is out of bounds for MutList of length 0")
+    }
+
+    @test
+    def put02(): Bool = region rc {
+        let error = Ref.fresh(rc, None);
+        let l = MutList.empty(rc);
+        MutList.push!("item", l);
+
+        try MutList.put("new item", 0, l) with OutOfBounds {
+            def outOfBounds(msg, _) = Ref.put(Some(msg), error)
+        };
+        Ref.get(error) == None and MutList.nth(0, l) == Some("new item")
+    }
+
+    @test
+    def put03(): Bool = region rc {
+        let error = Ref.fresh(rc, None);
+        let l = MutList.empty(rc);
+        MutList.push!("item", l);
+
+        try MutList.put("new item", 1, l) with OutOfBounds {
+            def outOfBounds(msg, _) = Ref.put(Some(msg), error)
+        };
+        Ref.get(error) == Some("index 1 is out of bounds for MutList of length 1")
+    }
+
+    @test
+    def put04(): Bool = region rc {
+        let error = Ref.fresh(rc, None);
+        let l = MutList.range(rc, 0, 2);
+
+        try MutList.put(1234, 1, l) with OutOfBounds {
+            def outOfBounds(msg, _) = Ref.put(Some(msg), error)
+        };
+        Ref.get(error) == None and MutList.nth(1, l) == Some(1234)
+    }
+
+    @test
+    def put05(): Bool = region rc {
+        let error = Ref.fresh(rc, None);
+        let l = MutList.range(rc, 0, 4);
+
+        try MutList.put(1234, 3, l) with OutOfBounds {
+            def outOfBounds(msg, _) = Ref.put(Some(msg), error)
+        };
+        Ref.get(error) == None and MutList.nth(3, l) == Some(1234)
+    }
+
+    @test
+    def put06(): Bool = region rc {
+        let error = Ref.fresh(rc, None);
+        let l = MutList.range(rc, 0, 42);
+
+        try MutList.put(1234, 30, l) with OutOfBounds {
+            def outOfBounds(msg, _) = Ref.put(Some(msg), error)
+        };
+        Ref.get(error) == None and MutList.nth(30, l) == Some(1234)
+    }
+
+    @test
+    def put07(): Bool = region rc {
+        let error = Ref.fresh(rc, None);
+        let l = MutList.range(rc, 0, 42);
+
+        try MutList.put(1234, -30, l) with OutOfBounds {
+            def outOfBounds(msg, _) = Ref.put(Some(msg), error)
+        };
+        Ref.get(error) == Some("index -30 is out of bounds for MutList of length 42")
+    }
+
+    @test
+    def put08(): Bool = region rc {
+        let error = Ref.fresh(rc, None);
+        let l = MutList.range(rc, 0, 42);
+
+        try MutList.put(1234, 50, l) with OutOfBounds {
+            def outOfBounds(msg, _) = Ref.put(Some(msg), error)
+        };
+        Ref.get(error) == Some("index 50 is out of bounds for MutList of length 42")
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // nth                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
