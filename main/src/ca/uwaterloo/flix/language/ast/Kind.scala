@@ -90,9 +90,9 @@ object Kind {
   case object Predicate extends Kind
 
   /**
-   * Represents the kind of a Java constructor or method.
+   * Represents the kind of a Java constructor, method, or field.
    */
-  case object JvmConstructorOrMethod extends Kind
+  case object Jvm extends Kind
 
   /**
     * Represents the kind of sets of restrictable enum cases.

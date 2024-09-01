@@ -1,8 +1,8 @@
 mod Test.Exp.Jvm.GetField {
 
-    import java.lang.Object
     import dev.flix.test.TestClass
     import dev.flix.test.TestClassWithInheritedMethod
+    import java.lang.Object
 
     @test
     def testGetBoolField01(): Bool \ IO =

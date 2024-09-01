@@ -43,39 +43,27 @@ mod Test.Exp.Jvm.NewObject {
 
     @test
     def testImplementInterface01(): Bool \ IO =
-        import java.lang.Object.toString(): String \ {};
-        let anon = checked_cast(implementSerializable());
-        toString(anon).startsWith("Anon")
+        implementSerializable().toString().startsWith("Anon")
 
     @test
     def testImplementInterface02(): Bool \ IO =
-        import java.lang.Object.hashCode(): Int32 \ {};
-        let anon = checked_cast(implementSerializable());
-        let anon2 = checked_cast(implementSerializable());
-        hashCode(anon) != hashCode(anon2)
+        implementSerializable().hashCode() != implementSerializable().hashCode()
 
     @test
     def testImplementInterface03(): Bool \ IO =
-        import java.lang.Object.equals(Object): Bool \ {};
-        let anon = checked_cast(implementSerializable());
-        let anon2 = checked_cast(implementSerializable());
-        not equals(anon, anon2)
+        not implementSerializable().equals(implementSerializable())
 
     @test
     def testImplementInterface04(): Bool \ IO =
-        import java.lang.Object.getClass(): Class \ {};
-        import java.lang.Object.equals(Object): Bool \ {};
-        let anon = checked_cast(implementSerializable());
-        let anon2 = checked_cast(implementSerializable());
-        equals(checked_cast(getClass(anon)), checked_cast(getClass(anon2)))
+        implementSerializable().getClass().equals(
+            implementSerializable().getClass()
+        )
 
     @test
     def testImplementInterface05(): Bool \ IO =
-        import java.lang.Object.getClass(): Class \ {};
-        import java.lang.Object.equals(Object): Bool \ {};
-        let anon = checked_cast(implementSerializable());
-        let anon2 = checked_cast(implementSerializableAgain());
-        not equals(checked_cast(getClass(anon)), checked_cast(getClass(anon2)))
+        not implementSerializable().getClass().equals(
+            implementSerializableAgain().getClass()
+        )
 
     @test
     def testVoidInterface01(): Bool \ IO =

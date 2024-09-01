@@ -18,12 +18,12 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.PredicateCompletion
-import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor}
 import ca.uwaterloo.flix.language.fmt.FormatType
 
-object PredicateCompleter extends Completer {
+object PredicateCompleter {
 
-  def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[PredicateCompletion] = {
+  def getCompletions(ctx: CompletionContext)(implicit index: Index, flix: Flix): Iterable[PredicateCompletion] = {
     //
     // Find all predicates together with their type and source location.
     //
@@ -35,17 +35,21 @@ object PredicateCompleter extends Completer {
     for (
       (pred, arityAndLocs) <- predsWithTypeAndLoc.m;
       (tpe, loc) <- arityAndLocs;
-      if loc.source.name == context.uri
+      if loc.source.name == ctx.uri
     ) yield Completion.PredicateCompletion(pred.name, arityOf(tpe), FormatType.formatType(tpe))
   }
 
   /**
-    * Returns the arity of the given predicate type `tpe`
-    */
+   * Returns the arity of the given predicate type `tpe`.
+   *
+   * The arity might not always be known. If so, we return 1.
+   */
   private def arityOf(tpe: Type): Int = {
-    // We know that a Relation or Lattice has exactly one type argument.
-    tpe.typeArguments.head.typeConstructor match {
-      case Some(TypeConstructor.Tuple(l)) => l
+    tpe.typeArguments match {
+      case targ :: Nil => targ.typeConstructor match {
+        case Some(TypeConstructor.Tuple(l)) => l
+        case _ => 1
+      }
       case _ => 1
     }
   }

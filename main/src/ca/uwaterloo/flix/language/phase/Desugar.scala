@@ -676,20 +676,6 @@ object Desugar {
     case WeededAst.Expr.MapLit(exps, loc) =>
       desugarMapLit(exps, loc)
 
-    case WeededAst.Expr.Ref(exp1, exp2, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      Expr.Ref(e1, e2, loc)
-
-    case WeededAst.Expr.Deref(exp, loc) =>
-      val e = visitExp(exp)
-      Expr.Deref(e, loc)
-
-    case WeededAst.Expr.Assign(exp1, exp2, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      Expr.Assign(e1, e2, loc)
-
     case WeededAst.Expr.Ascribe(exp, expectedType, expectedEff, loc) =>
       val e = visitExp(exp)
       val ts = expectedType.map(visitType)
@@ -754,6 +740,10 @@ object Desugar {
       val e = visitExp(exp)
       val es = visitExps(exps)
       Expr.InvokeMethod2(e, name, es, loc)
+
+    case WeededAst.Expr.GetField2(exp, name, loc) =>
+      val e = visitExp(exp)
+      Expr.GetField2(e, name, loc)
 
     case WeededAst.Expr.NewObject(tpe, methods, loc) =>
       val t = visitType(tpe)
@@ -1261,7 +1251,7 @@ object Desugar {
     val objectId = Name.Ident("o" + Flix.Delimiter, loc0)
     val objectExp = DesugaredAst.Expr.Ambiguous(Name.QName(Name.RootNS, objectId, objectId.loc), loc0)
     val objectParam = DesugaredAst.FormalParam(objectId, Ast.Modifiers.Empty, None, loc0)
-    val call = DesugaredAst.Expr.GetField(className, fieldName, objectExp, loc0)
+    val call = DesugaredAst.Expr.GetFieldOld(className, fieldName, objectExp, loc0)
     val lambdaBody = jvmCast(call, tpe, eff, loc0)
     val e1 = DesugaredAst.Expr.Lambda(objectParam, lambdaBody, loc0)
     DesugaredAst.Expr.Let(ident0, Ast.Modifiers.Empty, e1, e, loc0)

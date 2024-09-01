@@ -44,6 +44,16 @@ instance Hash[Map[k, v]] with Hash[k], Hash[v] {
         Map.foldLeftWithKey((acc, k, v) -> acc `Hash.combine` Hash.hash(k) `Hash.combine` Hash.hash(v), Hash.magic(), m)
 }
 
+instance Indexable[Map[k, v]] with Order[k] {
+    type Idx = k
+    type Elm = v
+    type Aef = KeyNotFound
+    pub def get(t: Map[k, v], i: k): v \ KeyNotFound = match Map.get(i, t) {
+        case Some(v) => v
+        case None    => do KeyNotFound.keyNotFound("key not found")
+    }
+}
+
 instance Functor[Map[k]] {
     pub def map(f: v1 -> v2 \ ef, m: Map[k, v1]): Map[k, v2] \ ef = Map.map(f, m)
 }
@@ -56,19 +66,19 @@ instance Foldable[Map[k]] {
 
 instance UnorderedFoldable[Map[k]] {
     pub def foldMap(f: v -> b \ ef, m: Map[k, v]): b \ ef with CommutativeMonoid[b] = Map.foldMap(f, m)
-    override pub def isEmpty(m: Map[k, v]): Bool = Map.isEmpty(m)
-    override pub def exists(f: v -> Bool \ ef, m: Map[k, v]): Bool \ ef = Map.exists(_ -> f, m)
-    override pub def forAll(f: v -> Bool \ ef, m: Map[k, v]): Bool \ ef = Map.forAll(_ -> f, m)
+    redef isEmpty(m: Map[k, v]): Bool = Map.isEmpty(m)
+    redef exists(f: v -> Bool \ ef, m: Map[k, v]): Bool \ ef = Map.exists(_ -> f, m)
+    redef forAll(f: v -> Bool \ ef, m: Map[k, v]): Bool \ ef = Map.forAll(_ -> f, m)
 }
 
 instance Traversable[Map[k]] {
     pub def traverse(f: a -> m[b] \ ef, t: Map[k, a]): m[Map[k, b]] \ ef with Applicative[m] = Map.traverse(f, t)
-    pub override def sequence(t: Map[k, m[a]]): m[Map[k, a]] with Applicative[m] = Map.sequence(t)
+    redef sequence(t: Map[k, m[a]]): m[Map[k, a]] with Applicative[m] = Map.sequence(t)
 }
 
 instance Filterable[Map[k]] with Order[k] {
     pub def filterMap(f: a -> Option[b] \ ef, m: Map[k, a]): Map[k, b] \ ef = Map.filterMap(f, m)
-    pub override def filter(f: a -> Bool \ ef, m: Map[k, a]): Map[k, a] \ ef = Map.filter(f, m)
+    redef filter(f: a -> Bool \ ef, m: Map[k, a]): Map[k, a] \ ef = Map.filter(f, m)
 }
 
 instance Witherable[Map[k]] with Order[k]

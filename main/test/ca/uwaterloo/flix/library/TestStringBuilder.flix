@@ -646,6 +646,50 @@ def length05(): Bool = region rc {
 }
 
 /////////////////////////////////////////////////////////////////////////////
+// size                                                                  //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def size01(): Bool = region rc {
+    let sb = StringBuilder.empty(rc);
+    StringBuilder.size(sb) == 0
+}
+
+@test
+def size02(): Bool = region rc {
+    let sb = StringBuilder.empty(rc);
+    StringBuilder.append!('A', sb);
+    StringBuilder.size(sb) == 1
+}
+
+@test
+def size03(): Bool = region rc {
+    let sb = StringBuilder.empty(rc);
+    StringBuilder.append!('A', sb);
+    StringBuilder.append!('B', sb);
+    StringBuilder.size(sb) == 2
+}
+
+@test
+def size04(): Bool = region rc {
+    let sb = StringBuilder.empty(rc);
+    StringBuilder.appendString!("A", sb);
+    StringBuilder.appendString!("B", sb);
+    StringBuilder.size(sb) == 2
+}
+
+@test
+def size05(): Bool = region rc {
+    let sb = StringBuilder.empty(rc);
+    StringBuilder.appendString!("Hello", sb);
+    StringBuilder.append!(' ', sb);
+    StringBuilder.appendString!("World", sb);
+    StringBuilder.append!('!', sb);
+    StringBuilder.size(sb) == 12
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
 // setLength                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 

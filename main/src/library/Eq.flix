@@ -58,57 +58,57 @@ instance Eq[Unit] {
 
 instance Eq[Bool] {
     pub def eq(x: Bool, y: Bool): Bool = $BOOL_EQ$(x, y)
-    pub override def neq(x: Bool, y: Bool): Bool = $BOOL_NEQ$(x, y)
+    redef neq(x: Bool, y: Bool): Bool = $BOOL_NEQ$(x, y)
 }
 
 instance Eq[Char] {
     pub def eq(x: Char, y: Char): Bool = $CHAR_EQ$(x, y)
-    pub override def neq(x: Char, y: Char): Bool = $CHAR_NEQ$(x, y)
+    redef neq(x: Char, y: Char): Bool = $CHAR_NEQ$(x, y)
 }
 
 instance Eq[Float32] {
     pub def eq(x: Float32, y: Float32): Bool = $FLOAT32_EQ$(x, y)
-    pub override def neq(x: Float32, y: Float32): Bool = $FLOAT32_NEQ$(x, y)
+    redef neq(x: Float32, y: Float32): Bool = $FLOAT32_NEQ$(x, y)
 }
 
 instance Eq[Float64] {
     pub def eq(x: Float64, y: Float64): Bool = $FLOAT64_EQ$(x, y)
-    pub override def neq(x: Float64, y: Float64): Bool = $FLOAT64_NEQ$(x, y)
+    redef neq(x: Float64, y: Float64): Bool = $FLOAT64_NEQ$(x, y)
 }
 
 instance Eq[BigDecimal] {
     pub def eq(x: BigDecimal, y: BigDecimal): Bool =
         (unsafe x.compareTo(y)) == 0
 
-    pub override def neq(x: BigDecimal, y: BigDecimal): Bool =
+    redef neq(x: BigDecimal, y: BigDecimal): Bool =
         (unsafe x.compareTo(y)) != 0
 }
 
 instance Eq[Int8] {
     pub def eq(x: Int8, y: Int8): Bool = $INT8_EQ$(x, y)
-    pub override def neq(x: Int8, y: Int8): Bool = $INT8_NEQ$(x, y)
+    redef neq(x: Int8, y: Int8): Bool = $INT8_NEQ$(x, y)
 }
 
 instance Eq[Int16] {
     pub def eq(x: Int16, y: Int16): Bool = $INT16_EQ$(x, y)
-    pub override def neq(x: Int16, y: Int16): Bool = $INT16_NEQ$(x, y)
+    redef neq(x: Int16, y: Int16): Bool = $INT16_NEQ$(x, y)
 }
 
 instance Eq[Int32] {
     pub def eq(x: Int32, y: Int32): Bool = $INT32_EQ$(x, y)
-    pub override def neq(x: Int32, y: Int32): Bool = $INT32_NEQ$(x, y)
+    redef neq(x: Int32, y: Int32): Bool = $INT32_NEQ$(x, y)
 }
 
 instance Eq[Int64] {
     pub def eq(x: Int64, y: Int64): Bool = $INT64_EQ$(x, y)
-    pub override def neq(x: Int64, y: Int64): Bool = $INT64_NEQ$(x, y)
+    redef neq(x: Int64, y: Int64): Bool = $INT64_NEQ$(x, y)
 }
 
 instance Eq[BigInt] {
     pub def eq(x: BigInt, y: BigInt): Bool =
         (unsafe x.compareTo(y)) == 0
 
-    pub override def neq(x: BigInt, y: BigInt): Bool =
+    redef neq(x: BigInt, y: BigInt): Bool =
         (unsafe x.compareTo(y)) != 0
 }
 

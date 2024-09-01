@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.BoundBy
+import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.{Purity, Symbol, _}
 import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
@@ -29,6 +30,9 @@ import scala.annotation.tailrec
   * A phase that simplifies the MonoAst by elimination of pattern matching and other rewritings.
   */
 object Simplifier {
+
+  // We are safe to use the top scope everywhere because we do not use unification in this or future phases.
+  private implicit val S: Scope = Scope.Top
 
   def run(root: MonoAst.Root)(implicit flix: Flix): SimplifiedAst.Root = flix.phase("Simplifier") {
     implicit val universe: Set[Symbol.EffectSym] = root.effects.keys.toSet
@@ -94,12 +98,6 @@ object Simplifier {
         case AtomicOp.ArrayLit | AtomicOp.ArrayNew =>
           // The region expression is dropped (head of exps / es)
           val es1 = es.tail
-          val t = visitType(tpe)
-          SimplifiedAst.Expr.ApplyAtomic(op, es1, t, purity, loc)
-
-        case AtomicOp.Ref =>
-          // The region expression is dropped (tail of exps / es)
-          val es1 = List(es.head)
           val t = visitType(tpe)
           SimplifiedAst.Expr.ApplyAtomic(op, es1, t, purity, loc)
 
@@ -311,8 +309,6 @@ object Simplifier {
 
           case TypeConstructor.Vector => MonoType.Array(args.head)
 
-          case TypeConstructor.Ref => MonoType.Ref(args.head)
-
           case TypeConstructor.RegionToStar => MonoType.Region
 
           case TypeConstructor.Tuple(_) => MonoType.Tuple(args)
@@ -358,10 +354,16 @@ object Simplifier {
           case TypeConstructor.MethodReturnType =>
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
 
+          case TypeConstructor.FieldType =>
+            throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
+
           case TypeConstructor.JvmConstructor(_) =>
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
 
           case TypeConstructor.JvmMethod(_) =>
+            throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
+
+          case TypeConstructor.JvmField(_) =>
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
 
           case TypeConstructor.Error(_, _) =>

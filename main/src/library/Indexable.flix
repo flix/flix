@@ -16,7 +16,7 @@
  */
 
 ///
-/// An `Index` instance on a type means that it has a (partial or total) mapping from indices
+/// An `Indexable` instance on a type means that it has a (partial or total) mapping from indices
 /// (`Idx`) to elements (`Elm`). The mapping can be accessed by `get`.
 ///
 /// If all indices might not be defined (e.g. only a range of integers is valid) then then `Aef`
@@ -26,7 +26,7 @@
 /// An integer map with a default element would always contain all integers indices. This implies
 /// that iteration would go through all integers.
 ///
-pub trait Index[t] {
+pub trait Indexable[t] {
 
     /// The argument type of `get`, used to access the elements of the data structure.
     type Idx: Type
@@ -38,6 +38,6 @@ pub trait Index[t] {
     type Aef: Eff
 
     /// Retrieve the element at index `i` in `t`.
-    pub def get(i: Index.Idx[t], t: t): Index.Elm[t] \ Index.Aef[t]
+    pub def get(t: t, i: Indexable.Idx[t]): Indexable.Elm[t] \ Indexable.Aef[t]
 
 }

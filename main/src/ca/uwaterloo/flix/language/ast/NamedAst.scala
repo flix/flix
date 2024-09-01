@@ -165,12 +165,6 @@ object NamedAst {
 
     case class VectorLength(exp: Expr, loc: SourceLocation) extends Expr
 
-    case class Ref(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
-
-    case class Deref(exp: Expr, loc: SourceLocation) extends Expr
-
-    case class Assign(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
-
     case class Ascribe(exp: Expr, expectedType: Option[Type], expectedEff: Option[Type], loc: SourceLocation) extends Expr
 
     case class InstanceOf(exp: Expr, className: Name.Ident, loc: SourceLocation) extends Expr
@@ -195,13 +189,15 @@ object NamedAst {
 
     case class InvokeMethod2(exp: Expr, methodName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
 
+    case class GetField2(exp: Expr, fieldName: Name.Ident, loc: SourceLocation) extends Expr
+
     case class InvokeConstructorOld(className: String, exps: List[Expr], sig: List[Type], loc: SourceLocation) extends Expr
 
     case class InvokeMethodOld(className: String, methodName: String, exp: Expr, exps: List[Expr], sig: List[Type], retTpe: Type, loc: SourceLocation) extends Expr
 
     case class InvokeStaticMethodOld(className: String, methodName: String, exps: List[Expr], sig: List[Type], retTpe: Type, loc: SourceLocation) extends Expr
 
-    case class GetField(className: String, fieldName: String, exp: Expr, loc: SourceLocation) extends Expr
+    case class GetFieldOld(className: String, fieldName: String, exp: Expr, loc: SourceLocation) extends Expr
 
     case class PutField(className: String, fieldName: String, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 

@@ -147,8 +147,6 @@ object Tester {
             )
             terminal.flush()
             finished = true
-
-          case _ => // nop
         }
       }
     }

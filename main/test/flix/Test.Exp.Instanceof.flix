@@ -16,34 +16,34 @@
 
 mod Test.Exp.Instanceof {
 
-    import java.lang.{CharSequence => JCharSequence}
-    import java.lang.{Enum => JEnum}
-    import java.lang.{Long => JLong}
-    import java.lang.{Number => JNumber}
-    import java.lang.{Object => JObject}
+    import java.lang.CharSequence
+    import java.lang.Enum
+    import java.lang.Long
+    import java.lang.Number
+    import java.lang.Object
     import java.lang.{String => JString}
     import java.lang.StringBuilder
     import java.math.BigInteger
-    import java.nio.file.StandardOpenOption
     import java.nio.file.OpenOption
+    import java.nio.file.StandardOpenOption
 
     @test
     def testInstanceof01(): Bool = "Hello World" instanceof JString
 
     @test
-    def testInstanceof02(): Bool = "Hello World" instanceof JCharSequence
+    def testInstanceof02(): Bool = "Hello World" instanceof CharSequence
 
     @test
-    def testInstanceof03(): Bool = "Hello World" instanceof JObject
+    def testInstanceof03(): Bool = "Hello World" instanceof Object
 
     @test
     def testInstanceof04(): Bool = 100ii instanceof BigInteger
 
     @test
-    def testInstanceof05(): Bool = 100ii instanceof JNumber
+    def testInstanceof05(): Bool = 100ii instanceof Number
 
     @test
-    def testInstanceof06(): Bool = 100ii instanceof JObject
+    def testInstanceof06(): Bool = 100ii instanceof Object
 
     @test
     def testInstanceof07(): Bool =
@@ -55,14 +55,14 @@ mod Test.Exp.Instanceof {
 
     @test
     def testInstanceof09(): Bool =
-        unsafe StandardOpenOption.DELETE_ON_CLOSE instanceof JEnum
+        unsafe StandardOpenOption.DELETE_ON_CLOSE instanceof Enum
 
     @test
     def testInstanceof10(): Bool =
-        unsafe StandardOpenOption.DELETE_ON_CLOSE instanceof JObject
+        unsafe StandardOpenOption.DELETE_ON_CLOSE instanceof Object
 
     @test
-    def testInstanceof11(): Bool = (100ii instanceof JLong) == false
+    def testInstanceof11(): Bool = (100ii instanceof Long) == false
 
     @test
     def testInstanceof12(): Bool = ("Hello World" instanceof StringBuilder) == false

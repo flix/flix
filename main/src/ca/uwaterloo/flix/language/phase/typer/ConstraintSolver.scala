@@ -16,15 +16,15 @@
 package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
-import ca.uwaterloo.flix.language.phase.typer.TypeReduction.{JavaMethodResolutionResult, JavaConstructorResolutionResult}
-import ca.uwaterloo.flix.language.phase.unification.Unification.getUnderOrOverAppliedError
-import ca.uwaterloo.flix.language.phase.unification._
+import ca.uwaterloo.flix.language.phase.typer.TypeReduction.{JavaConstructorResolutionResult, JavaFieldResolutionResult, JavaMethodResolutionResult}
+import ca.uwaterloo.flix.language.phase.unification.*
 import ca.uwaterloo.flix.util.Result.Err
 import ca.uwaterloo.flix.util.collection.{ListMap, ListOps}
-import ca.uwaterloo.flix.util.{InternalCompilerException, Result, SubEffectLevel, Validation}
+import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
 
 import scala.annotation.tailrec
 
@@ -73,7 +73,7 @@ object ConstraintSolver {
 
       // The initial substitution maps from formal parameters to their types
       val initialSubst = fparams.foldLeft(Substitution.empty) {
-        case (acc, KindedAst.FormalParam(sym, mod, tpe, src, loc)) => acc ++ Substitution.singleton(sym.tvar.sym, openOuterSchema(tpe))
+        case (acc, KindedAst.FormalParam(sym, mod, tpe, src, loc)) => acc ++ Substitution.singleton(sym.tvar.sym, openOuterSchema(tpe)(Scope.Top, flix))
       }
 
       // Wildcard tparams are not counted in the tparams, so we need to traverse the types to get them.
@@ -102,7 +102,7 @@ object ConstraintSolver {
       //             This is where the stuff happens!                  //
       // We resolve the constraints under the environments we created. //
       ///////////////////////////////////////////////////////////////////
-      resolve(constrs, initialSubst, renv)(cenv, eenv, flix) match {
+      resolve(constrs, initialSubst, renv)(Scope.Top, cenv, eenv, flix) match {
         case Result.Ok(ResolutionResult(subst, deferred, _)) =>
           Debug.stopRecording()
 
@@ -193,7 +193,7 @@ object ConstraintSolver {
     *   - a substitution and leftover constraints, or
     *   - an error if resolution failed
     */
-  def resolve(constrs: List[TypeConstraint], subst0: Substitution, renv: RigidityEnv)(implicit tenv: Map[Symbol.TraitSym, Ast.TraitContext], eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Result[ResolutionResult, TypeError] = {
+  def resolve(constrs: List[TypeConstraint], subst0: Substitution, renv: RigidityEnv)(implicit scope: Scope, tenv: Map[Symbol.TraitSym, Ast.TraitContext], eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Result[ResolutionResult, TypeError] = {
 
     // We track changes to the resolution state through mutable variables.
 
@@ -241,7 +241,7 @@ object ConstraintSolver {
     *
     * Applies the initial substitution `subst0` before attempting to resolve.
     */
-  private def resolveOneOf(constrs: List[TypeConstraint], subst0: Substitution, renv: RigidityEnv)(implicit tenv: Map[Symbol.TraitSym, Ast.TraitContext], eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Result[ResolutionResult, TypeError] = {
+  private def resolveOneOf(constrs: List[TypeConstraint], subst0: Substitution, renv: RigidityEnv)(implicit scope: Scope, tenv: Map[Symbol.TraitSym, Ast.TraitContext], eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Result[ResolutionResult, TypeError] = {
     def tryResolve(cs: List[TypeConstraint]): Result[ResolutionResult, TypeError] = cs match {
       case Nil => Result.Ok(ResolutionResult(subst0, cs, progress = false))
       case hd :: tl => resolveOne(hd, renv, subst0).flatMap {
@@ -260,7 +260,7 @@ object ConstraintSolver {
   /**
     * Tries to resolve the given constraint.
     */
-  private def resolveOne(constr0: TypeConstraint, renv: RigidityEnv, subst0: Substitution)(implicit tenv: Map[Symbol.TraitSym, Ast.TraitContext], eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Result[ResolutionResult, TypeError] = constr0 match {
+  private def resolveOne(constr0: TypeConstraint, renv: RigidityEnv, subst0: Substitution)(implicit scope: Scope, tenv: Map[Symbol.TraitSym, Ast.TraitContext], eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Result[ResolutionResult, TypeError] = constr0 match {
     case TypeConstraint.Equality(tpe1, tpe2, prov0) =>
       val t1 = TypeMinimization.minimizeType(subst0(tpe1))
       val t2 = TypeMinimization.minimizeType(subst0(tpe2))
@@ -273,67 +273,50 @@ object ConstraintSolver {
           case ResolutionResult(subst, constrs, p) => ResolutionResult(subst @@ subst0, constrs, progress = p)
         }
       }
-    case TypeConstraint.EqJvmConstructor(cvar, clazz, tpes0, prov) =>
-      // Apply substitution now
+    case TypeConstraint.EqJvmConstructor(jvar, clazz, tpes0, prov) =>
       val tpes = tpes0.map(subst0.apply)
-      // Ensure that simplification for constructor parameters is done
-      val allKnown = tpes.forall(isKnown)
-
-      if (allKnown) {
-        TypeReduction.lookupConstructor(clazz, tpes, cvar.loc) match {
+        TypeReduction.lookupConstructor(clazz, tpes, jvar.loc) match {
           case JavaConstructorResolutionResult.Resolved(tpe) =>
-            val subst = Substitution.singleton(cvar.sym, tpe)
+            val subst = Substitution.singleton(jvar.sym, tpe)
             Result.Ok(ResolutionResult(subst @@ subst0, Nil, progress = true))
-          case JavaConstructorResolutionResult.AmbiguousConstructor(constructors) => Result.Err(TypeError.AmbiguousConstructor(clazz, tpes, constructors, renv, cvar.loc))
-          case JavaConstructorResolutionResult.ConstructorNotFound => Result.Err(TypeError.ConstructorNotFound(clazz, tpes, List(), renv, cvar.loc)) // TODO INTEROP: fill in candidate methods
+          case JavaConstructorResolutionResult.AmbiguousConstructor(constructors) => Result.Err(TypeError.AmbiguousConstructor(clazz, tpes, constructors, renv, jvar.loc))
+          case JavaConstructorResolutionResult.ConstructorNotFound => Result.Err(TypeError.ConstructorNotFound(clazz, tpes, List(), renv, jvar.loc)) // TODO INTEROP: fill in candidate methods
+          case JavaConstructorResolutionResult.UnresolvedTypes => Result.Ok(ResolutionResult(subst0, List(constr0), progress = false))
         }
-      } else {
-        // Otherwise other constraints may still need to be solved.
-        Result.Ok(ResolutionResult(subst0, List(constr0), progress = false))
-      }
-    case TypeConstraint.EqJvmMethod(mvar, tpe0, methodName, tpes0, prov) =>
-      // Recall: Subst is applied lazily. Apply it now.
+    case TypeConstraint.EqJvmMethod(jvar, tpe0, methodName, tpes0, prov) =>
       val tpe = subst0(tpe0)
       val tpes = tpes0.map(subst0.apply)
-      // Ensure that simplification for method parameters is done
-      val allKnown = isKnown(tpe) && tpes.forall(isKnown)
-
-      if (allKnown) {
-        TypeReduction.lookupMethod(tpe, methodName.name, tpes, mvar.loc) match {
-          case JavaMethodResolutionResult.Resolved(tpe) =>
-            val subst = Substitution.singleton(mvar.sym, tpe)
-            Result.Ok(ResolutionResult(subst @@ subst0, Nil, progress = true))
-          case JavaMethodResolutionResult.AmbiguousMethod(methods) => Result.Err(TypeError.AmbiguousMethod(methodName.name, tpe, tpes, methods, renv, mvar.loc))
-          case JavaMethodResolutionResult.MethodNotFound => Result.Err(TypeError.MethodNotFound(methodName, tpe, tpes, mvar.loc))
-        }
-      } else {
-        // Otherwise other constraints may still need to be solved.
-        Result.Ok(ResolutionResult(subst0, List(constr0), progress = false))
+      TypeReduction.lookupMethod(tpe, methodName.name, tpes, jvar.loc) match {
+        case JavaMethodResolutionResult.Resolved(tpe) =>
+          val subst = Substitution.singleton(jvar.sym, tpe)
+          Result.Ok(ResolutionResult(subst @@ subst0, Nil, progress = true))
+        case JavaMethodResolutionResult.AmbiguousMethod(methods) => Result.Err(TypeError.AmbiguousMethod(methodName.name, tpe, tpes, methods, renv, jvar.loc))
+        case JavaMethodResolutionResult.MethodNotFound => Result.Err(TypeError.MethodNotFound(methodName, tpe, tpes, jvar.loc))
+        case JavaMethodResolutionResult.UnresolvedTypes => Result.Ok(ResolutionResult(subst0, List(constr0), progress = false))
       }
-    case TypeConstraint.EqStaticJvmMethod(mvar, clazz, methodName, tpes0, prov) =>
-      // Apply subst.
+    case TypeConstraint.EqJvmField(jvar, tpe0, fieldName, prov) =>
+      val tpe = subst0(tpe0)
+      TypeReduction.lookupField(tpe, fieldName.name, jvar.loc) match {
+        case JavaFieldResolutionResult.FieldNotFound => Result.Err(TypeError.FieldNotFound(fieldName, tpe, jvar.loc))
+        case JavaFieldResolutionResult.UnresolvedTypes => Result.Ok(ResolutionResult(subst0, List(constr0), progress = false))
+      }
+    case TypeConstraint.EqStaticJvmMethod(jvar, clazz, methodName, tpes0, prov) =>
       val tpes = tpes0.map(subst0.apply)
-      // Ensure simplification for method parameters
-      val allKnown = tpes.forall(isKnown)
-
-      if (allKnown) {
-        TypeReduction.lookupStaticMethod(clazz, methodName.name, tpes, prov.loc) match {
-          case JavaMethodResolutionResult.Resolved(tpe) =>
-            val subst = Substitution.singleton(mvar.sym, tpe)
-            Result.Ok(ResolutionResult(subst @@ subst0, Nil, progress = true))
-          case JavaMethodResolutionResult.AmbiguousMethod(methods) => Result.Err(TypeError.AmbiguousStaticMethod(clazz, methodName.name, tpes, methods, renv, mvar.loc))
-          case JavaMethodResolutionResult.MethodNotFound => Result.Err(TypeError.StaticMethodNotFound(clazz, methodName.name, tpes, List(), renv, mvar.loc)) // TODO INTEROP: fill in candidate methods
-        }
-      } else {
-        Result.Ok(ResolutionResult(subst0, List(constr0), progress = false))
+      TypeReduction.lookupStaticMethod(clazz, methodName.name, tpes, prov.loc) match {
+        case JavaMethodResolutionResult.Resolved(tpe) =>
+          val subst = Substitution.singleton(jvar.sym, tpe)
+          Result.Ok(ResolutionResult(subst @@ subst0, Nil, progress = true))
+        case JavaMethodResolutionResult.AmbiguousMethod(methods) => Result.Err(TypeError.AmbiguousStaticMethod(clazz, methodName.name, tpes, methods, renv, jvar.loc))
+        case JavaMethodResolutionResult.MethodNotFound => Result.Err(TypeError.StaticMethodNotFound(clazz, methodName.name, tpes, List(), renv, jvar.loc)) // TODO INTEROP: fill in candidate methods
+        case JavaMethodResolutionResult.UnresolvedTypes => Result.Ok(ResolutionResult(subst0, List(constr0), progress = false))
       }
     case TypeConstraint.Trait(sym, tpe, loc) =>
       resolveTraitConstraint(sym, subst0(tpe), renv, loc).map {
         case (constrs, progress) => ResolutionResult(subst0, constrs, progress)
       }
     case TypeConstraint.Purification(sym, eff1, eff2, prov, nested0) =>
-      // First reduce nested constraints
-      resolveOneOf(nested0, subst0, renv).map {
+      // First reduce nested constraints under a new scope.
+      resolveOneOf(nested0, subst0, renv)(scope.enter(sym), tenv, eenv, flix).map {
         // Case 1: We have reduced everything below. Now reduce the purity constraint.
         case ResolutionResult(subst1, newConstrs, progress) if newConstrs.isEmpty =>
           val e1 = subst1(eff1)
@@ -356,7 +339,7 @@ object ConstraintSolver {
     *
     * θ ⊩ᵤ τ₁ = τ₂ ⤳ u; r
     */
-  private def resolveEquality(tpe1: Type, tpe2: Type, prov: Provenance, renv: RigidityEnv, loc: SourceLocation)(implicit eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Result[ResolutionResult, TypeError] = (tpe1.kind, tpe2.kind) match {
+  private def resolveEquality(tpe1: Type, tpe2: Type, prov: Provenance, renv: RigidityEnv, loc: SourceLocation)(implicit scope: Scope, eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Result[ResolutionResult, TypeError] = (tpe1.kind, tpe2.kind) match {
     case (Kind.Eff, Kind.Eff) =>
       // first simplify the types to get rid of assocs if we can
       for {
@@ -434,7 +417,7 @@ object ConstraintSolver {
     *
     * θ ⊩ᵤ τ₁ = τ₂ ⤳ u; r
     */
-  private def resolveEqualityStar(tpe1: Type, tpe2: Type, prov: Provenance, renv: RigidityEnv, loc: SourceLocation)(implicit eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Result[ResolutionResult, TypeError] = (tpe1, tpe2) match {
+  private def resolveEqualityStar(tpe1: Type, tpe2: Type, prov: Provenance, renv: RigidityEnv, loc: SourceLocation)(implicit scope: Scope, eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Result[ResolutionResult, TypeError] = (tpe1, tpe2) match {
     // reflU
     case (x: Type.Var, y: Type.Var) if (x == y) => Result.Ok(ResolutionResult.elimination)
 
@@ -490,6 +473,12 @@ object ConstraintSolver {
     case (Type.Apply(Type.Cst(TypeConstructor.MethodReturnType, _), _, _), _) =>
       Result.Ok(ResolutionResult.constraints(List(TypeConstraint.Equality(tpe1, tpe2, prov)), progress = false))
 
+    // FieldType
+    case (_, Type.Apply(Type.Cst(TypeConstructor.FieldType, _), _, _)) =>
+      Result.Ok(ResolutionResult.constraints(List(TypeConstraint.Equality(tpe1, tpe2, prov)), progress = false))
+    case (Type.Apply(Type.Cst(TypeConstructor.FieldType, _), _, _), _) =>
+      Result.Ok(ResolutionResult.constraints(List(TypeConstraint.Equality(tpe1, tpe2, prov)), progress = false))
+
     case _ =>
       Result.Err(toTypeError(UnificationError.MismatchedTypes(tpe1, tpe2), prov))
   }
@@ -516,7 +505,7 @@ object ConstraintSolver {
     *   ToString[a -> b \ ef] ~> <ERROR>
     * }}}
     */
-  private def resolveTraitConstraint(trt: Symbol.TraitSym, tpe0: Type, renv0: RigidityEnv, loc: SourceLocation)(implicit tenv: Map[Symbol.TraitSym, Ast.TraitContext], eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Result[(List[TypeConstraint], Boolean), TypeError] = {
+  private def resolveTraitConstraint(trt: Symbol.TraitSym, tpe0: Type, renv0: RigidityEnv, loc: SourceLocation)(implicit scope: Scope, tenv: Map[Symbol.TraitSym, Ast.TraitContext], eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Result[(List[TypeConstraint], Boolean), TypeError] = {
     // redE
     TypeReduction.simplify(tpe0, renv0, loc).flatMap {
       case (t, progress) =>
@@ -568,30 +557,22 @@ object ConstraintSolver {
   }
 
   /**
-   * Helper method which returns true if the given type type t0 does not have any variables.
-   */
-  private def isKnown(t0: Type): Boolean = t0 match { // TODO INTEROP: Actually, it cannot have variables recursively...
-    case Type.Var(_, _) => false
-    case Type.Apply(Type.Cst(TypeConstructor.MethodReturnType, _), _, _) => false
-    case _ => true
-  }
-
-  /**
     * Gets an error from the list of unresolved constraints.
     */
   private def getFirstError(deferred: List[TypeConstraint], renv: RigidityEnv)(implicit flix: Flix): Option[TypeError] = deferred match {
     case Nil => None
     case TypeConstraint.Equality(tpe1, tpe2, prov) :: _ => Some(toTypeError(UnificationError.MismatchedTypes(tpe1, tpe2), prov))
-    case TypeConstraint.EqJvmConstructor(mvar, clazz, _, prov) :: _ => Some(toTypeError(UnificationError.MismatchedTypes(mvar.baseType, Type.getFlixType(clazz)), prov))
-    case TypeConstraint.EqJvmMethod(mvar, tpe, _, _, prov) :: _ => Some(toTypeError(UnificationError.MismatchedTypes(mvar.baseType, tpe), prov))
-    case TypeConstraint.EqStaticJvmMethod(mvar, clazz, _, _, prov) :: _ => Some(toTypeError(UnificationError.MismatchedTypes(mvar.baseType, Type.getFlixType(clazz)), prov))
+    case TypeConstraint.EqJvmConstructor(jvar, clazz, _, prov) :: _ => Some(toTypeError(UnificationError.MismatchedTypes(jvar.baseType, Type.getFlixType(clazz)), prov))
+    case TypeConstraint.EqJvmMethod(jvar, tpe, _, _, prov) :: _ => Some(toTypeError(UnificationError.MismatchedTypes(jvar.baseType, tpe), prov))
+    case TypeConstraint.EqJvmField(jvar, tpe, _, prov) :: _ => Some(toTypeError(UnificationError.MismatchedTypes(jvar.baseType, tpe), prov))
+    case TypeConstraint.EqStaticJvmMethod(jvar, clazz, _, _, prov) :: _ => Some(toTypeError(UnificationError.MismatchedTypes(jvar.baseType, Type.getFlixType(clazz)), prov))
     case TypeConstraint.Trait(sym, tpe, loc) :: _ => Some(mkMissingInstance(sym, tpe, renv, loc))
     case TypeConstraint.Purification(_, _, _, _, nested) :: _ => getFirstError(nested, renv)
   }
 
   /**
-   * Constructs a specific missing instance error for the given trait symbol `sym` and type `tpe`.
-   */
+    * Constructs a specific missing instance error for the given trait symbol `sym` and type `tpe`.
+    */
   def mkMissingInstance(sym: Symbol.TraitSym, tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix): TypeError = {
     val eqSym = Symbol.mkTraitSym("Eq")
     val orderSym = Symbol.mkTraitSym("Order")
@@ -633,7 +614,7 @@ object ConstraintSolver {
     * `r`. This only happens for if the row type is the topmost type, i.e. this
     * doesn't happen inside tuples or other such nesting.
     */
-  private def openOuterSchema(tpe: Type)(implicit flix: Flix): Type = {
+  private def openOuterSchema(tpe: Type)(implicit scope: Scope, flix: Flix): Type = {
     @tailrec
     def transformRow(tpe: Type, acc: Type => Type): Type = tpe match {
       case Type.Cst(TypeConstructor.SchemaRowEmpty, loc) =>
@@ -699,7 +680,10 @@ object ConstraintSolver {
   // TODO ASSOC-TYPES This translation does not work well
   // TODO ASSOC-TYPES because provenance is not propogated properly.
   // TODO ASSOC-TYPES We also need to track the renv for use in these errors.
-  private def toTypeError(err0: UnificationError, prov: Provenance)(implicit flix: Flix): TypeError = (err0, prov) match {
+  private def toTypeError(err0: UnificationError, prov: Provenance)(implicit flix: Flix): TypeError = {
+    // TODO LEVELS Top is probably OK?
+    implicit val scope: Scope = Scope.Top
+    (err0, prov) match {
     case (err, Provenance.ExpectType(expected, actual, loc)) =>
       toTypeError(err, Provenance.Match(expected, actual, loc)) match {
         case TypeError.MismatchedTypes(baseType1, baseType2, fullType1, fullType2, renv, _) =>
@@ -734,11 +718,7 @@ object ConstraintSolver {
       }
 
     case (UnificationError.MismatchedTypes(baseType1, baseType2), Provenance.Match(type1, type2, loc)) =>
-      (baseType1.typeConstructor, baseType2.typeConstructor) match {
-        case (Some(TypeConstructor.Arrow(_)), _) => getUnderOrOverAppliedError(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc)
-        case (_, Some(TypeConstructor.Arrow(_))) => getUnderOrOverAppliedError(baseType2, baseType1, type2, type1, RigidityEnv.empty, loc)
-        case _ => TypeError.MismatchedTypes(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc)
-      }
+      TypeError.MismatchedTypes(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc)
 
     case (UnificationError.MismatchedBools(baseType1, baseType2), Provenance.Match(type1, type2, loc)) =>
       TypeError.MismatchedBools(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc)
@@ -777,6 +757,7 @@ object ConstraintSolver {
     // TODO ASSOC-TYPES these errors are relics of the old type system and should be removed
     case (UnificationError.UnsupportedEquality(t1, t2), _) => throw InternalCompilerException("unexpected error: " + err0, SourceLocation.Unknown)
     case (UnificationError.IrreducibleAssocType(sym, t), _) => throw InternalCompilerException("unexpected error: " + err0, SourceLocation.Unknown)
+  }
   }
 
   /**

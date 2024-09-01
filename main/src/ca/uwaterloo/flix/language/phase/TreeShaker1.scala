@@ -63,7 +63,7 @@ object TreeShaker1 {
     * Returns the symbols that are always reachable.
     */
   private def initReachable(root: Root): Set[ReachableSym] = {
-    root.reachable.map(ReachableSym.DefnSym)
+    root.reachable.map(ReachableSym.DefnSym.apply)
   }
 
   /**

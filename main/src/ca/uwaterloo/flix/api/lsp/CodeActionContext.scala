@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
+import org.json4s.jvalue2monadic
 import org.json4s.JsonAST._
 
 object CodeActionContext {
