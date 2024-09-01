@@ -42,7 +42,7 @@ instance Indexable[MutList[a, r]] {
 instance IndexableMut[MutList[a, r]] {
     type Aef = r + OutOfBounds
     pub def put(t: MutList[a, r], i: Int32, v: a): Unit \ r + OutOfBounds =
-        MutList.put(i, t, v)
+        MutList.put(v, i, t)
 }
 
 mod MutList {
@@ -100,7 +100,7 @@ mod MutList {
     ///
     /// Stores the value `x` at position `i` in the mutable list `v`.
     ///
-    pub def put(i: Int32, v: MutList[a, r], x: a): Unit \ r + OutOfBounds =
+    pub def put(x: a, i: Int32, v: MutList[a, r]): Unit \ r + OutOfBounds =
         let MutList(_, a, l) = v;
         if (0 <= i and i < Ref.get(l))
             Array.put(x, i, Ref.get(a))
