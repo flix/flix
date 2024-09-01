@@ -46,6 +46,24 @@ pub eff Exec
 pub eff Exit
 
 ///
+/// The uninterpretable `FileRead` effect.
+///
+/// The `FileRead` effect represents the actions to required to read from the file system.
+///
+/// The `FileRead` effect is uninterpretable which means that it cannot be handled.
+///
+pub eff FileRead
+
+///
+/// The uninterpretable `FileWrite` effect.
+///
+/// The `FileWrite` effect represents the actions to required to write to the file system.
+///
+/// The `FileWrite` effect is uninterpretable which means that it cannot be handled.
+///
+pub eff FileWrite
+
+///
 /// The uninterpretable IO effect.
 ///
 /// The `IO` effect represents the actions not described by any other effect.
