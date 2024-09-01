@@ -28,36 +28,33 @@ object Grammar {
   }
 
   /**
-    * Returns a string representation of a count of `n` things called `name` that optionally `are` something.
-    * When `n` is 1, the sentence will be singular, otherwise it will be plural.
+    * Returns a string representing `n` things called `name`, with the correct plural form,
+    * assuming that `name` is a regular noun that can be pluralized by appending an "s".
     *
-    * It is assumed that `name` is a regular noun, that can be pluralized by appending an "s".
-    *
-    * For example, given `count(1, Some("cat"), are=true)` returns "1 cat is",
-    * and given `count(2, Some("cat"), are=true)` returns "2 cats are".
-    *
-    * The `name` argument is optional, for example `count(2, None, are=true)` returns "2 are".
-    *
-    * The `are` parameter can be false (default), for example `count(3, Some("cat"))` returns "3 cats".
+    * For example:
+    *  - `n_things(1, "cat")` -> "1 cat"
+    *  - `n_things(2, "cat")` -> "2 cats"
     */
-  def count(n: Int, name: Option[String], are: Boolean = false): String = {
+  def n_things(n: Int, name: String): String = {
     val plural = n != 1
-    var s = n.toString
+    if (plural)
+      s"$n ${name}s"
+    else
+      s"$n $name"
+  }
 
-    name match {
-      case Some(ns) =>
-        s += " " + ns
-        if (plural)
-          s += "s"
-      case None => // Do nothing
-    }
-
-    if (are)
-      if (plural)
-        s += " are"
-      else
-        s += " is"
-
-    s
+  /**
+    * Returns a string representing that `n` things 'are', with the correct plural form.
+    *
+    * For example:
+    *  - `n_are(1)` -> "1 is"
+    *  - `n_are(2)` -> "2 are"
+    */
+  def n_are(n: Int): String = {
+    val plural = n != 1
+    if (plural)
+      s"$n are"
+    else
+      s"$n is"
   }
 }

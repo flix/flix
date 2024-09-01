@@ -1083,7 +1083,7 @@ object ResolutionError {
     * @param loc      the location where the error occurred.
     */
   case class MismatchedOpArity(op: Symbol.OpSym, expected: Int, actual: Int, loc: SourceLocation) extends ResolutionError with Recoverable {
-    override def summary: String = s"Expected ${Grammar.count(expected, Some("parameter"))} but found $actual."
+    override def summary: String = s"Expected ${Grammar.n_things(expected, "parameter")} but found $actual."
 
     /**
       * Returns the formatted error message.
@@ -1092,10 +1092,10 @@ object ResolutionError {
       import formatter._
       s""">> Mismatched arity.
          |
-         |The operation $op expects ${Grammar.count(expected, Some("parameter"))},
-         |but ${Grammar.count(actual, None, are=true)} provided here.
+         |The operation $op expects ${Grammar.n_things(expected, "parameter")},
+         |but ${Grammar.n_are(actual)} provided here.
          |
-         |${code(loc, s"expected ${Grammar.count(expected, Some("parameter"))} but found $actual")}
+         |${code(loc, s"expected ${Grammar.n_things(expected, "parameter")} but found $actual")}
          |""".stripMargin
     }
 
