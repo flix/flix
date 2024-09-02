@@ -165,9 +165,11 @@ object HighlightProvider {
 
   private def highlightStructField(uri: String, sym: Symbol.StructFieldSym)(implicit index: Index, root: Root): JObject = {
     val reads = index.usesOf(sym).toList.map(loc => (loc, DocumentHighlightKind.Read))
-    root.structs.get(sym.structSym) match {
-      case Some(struct) =>
-        val write = (struct.fields(sym).sym.loc, DocumentHighlightKind.Write)
+    val structOpt = root.structs.get(sym.structSym)
+    val fieldOpt = structOpt.flatMap(st => st.fields.get(sym))
+    val writeOpt = fieldOpt.map(field => (field.sym.loc, DocumentHighlightKind.Write))
+    writeOpt match {
+      case Some(write) =>
         highlight(uri, write :: reads)
       case None => highlight(uri, reads)
     }

@@ -592,7 +592,6 @@ object Ast {
     */
   case class StructFieldSymUse(sym: Symbol.StructFieldSym, loc: SourceLocation)
 
-
   /**
     * Represents a use of a restrictable enum case sym.
     */
