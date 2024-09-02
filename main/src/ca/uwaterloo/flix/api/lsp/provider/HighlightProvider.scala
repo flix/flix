@@ -164,9 +164,12 @@ object HighlightProvider {
   }
 
   private def highlightStructField(uri: String, sym: Symbol.StructFieldSym)(implicit index: Index, root: Root): JObject = {
-    val write = (root.structs(sym.structSym).fields(sym).loc, DocumentHighlightKind.Write)
+    val write = root.structs.get(sym.structSym).map(struct => (struct.fields(sym).loc, DocumentHighlightKind.Write))
     val reads = index.usesOf(sym).toList.map(loc => (loc, DocumentHighlightKind.Read))
-    highlight(uri, write :: reads)
+    write match {
+      case Some(w) => highlight(uri, w :: reads)
+      case None => highlight(uri, reads)
+    }
   }
 
   private def highlightVar(uri: String, sym: Symbol.VarSym)(implicit index: Index): JObject = {
