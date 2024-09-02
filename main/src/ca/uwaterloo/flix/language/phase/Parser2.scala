@@ -628,7 +628,7 @@ object Parser2 {
   private val NAME_DEFINITION: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameUpperCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.UserDefinedOperator)
   private val NAME_PARAMETER: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.Underscore)
   private val NAME_VARIABLE: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.Underscore)
-  private val NAME_JAVA: Set[TokenKind] = Set(TokenKind.NameJava, TokenKind.NameLowerCase, TokenKind.NameUpperCase)
+  private val NAME_JAVA: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameUpperCase)
   private val NAME_QNAME: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameUpperCase)
   private val NAME_USE: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameUpperCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.UserDefinedOperator)
   private val NAME_FIELD: Set[TokenKind] = Set(TokenKind.NameLowerCase)
@@ -1643,7 +1643,6 @@ object Parser2 {
         case TokenKind.KeywordDebug
              | TokenKind.KeywordDebugBang
              | TokenKind.KeywordDebugBangBang => debugExpr()
-        case TokenKind.NameJava => name(NAME_JAVA, tail = Set(), allowQualified = true, SyntacticContext.Expr.OtherExpr)
         case t =>
           val mark = open()
           val error = UnexpectedToken(expected = NamedTokenSet.Expression, actual = Some(t), SyntacticContext.Expr.OtherExpr, loc = currentSourceLocation())
@@ -1887,12 +1886,12 @@ object Parser2 {
         case TokenKind.KeywordStatic => nth(1) match {
           case TokenKind.KeywordJavaGetField => JvmOp.staticGetField()
           case TokenKind.KeywordJavaSetField => JvmOp.staticPutField()
-          case TokenKind.NameJava | TokenKind.NameLowerCase | TokenKind.NameUpperCase => JvmOp.staticMethod()
+          case TokenKind.NameLowerCase | TokenKind.NameUpperCase => JvmOp.staticMethod()
           case t =>
             val error = UnexpectedToken(expected = NamedTokenSet.JavaImport, actual = Some(t), SyntacticContext.Unknown, loc = currentSourceLocation())
             advanceWithError(error)
         }
-        case TokenKind.NameJava | TokenKind.NameLowerCase | TokenKind.NameUpperCase => JvmOp.method()
+        case TokenKind.NameLowerCase | TokenKind.NameUpperCase => JvmOp.method()
         case t =>
           val error = UnexpectedToken(expected = NamedTokenSet.JavaImport, actual = Some(t), SyntacticContext.Unknown, loc = currentSourceLocation())
           advanceWithError(error)
@@ -3148,7 +3147,6 @@ object Parser2 {
         case TokenKind.CurlyL => recordOrEffectSetType()
         case TokenKind.HashCurlyL => schemaType()
         case TokenKind.HashParenL => schemaRowType()
-        case TokenKind.NameJava => nativeType()
         case TokenKind.AngleL => caseSetType()
         case TokenKind.KeywordNot
              | TokenKind.Tilde
@@ -3339,8 +3337,7 @@ object Parser2 {
       var continue = true
       while (continue && !eof()) {
         nth(0) match {
-          case TokenKind.NameJava
-               | TokenKind.NameUpperCase
+          case TokenKind.NameUpperCase
                | TokenKind.NameLowerCase
                | TokenKind.Dot
                | TokenKind.Dollar => advance()
