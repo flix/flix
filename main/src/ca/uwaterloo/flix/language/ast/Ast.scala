@@ -588,6 +588,12 @@ object Ast {
   case class CaseSymUse(sym: Symbol.CaseSym, loc: SourceLocation)
 
   /**
+    * Represents a use of an effect operation sym.
+    */
+  case class StructFieldSymUse(sym: Symbol.StructFieldSym, loc: SourceLocation)
+
+
+  /**
     * Represents a use of a restrictable enum case sym.
     */
   case class RestrictableCaseSymUse(sym: Symbol.RestrictableCaseSym, loc: SourceLocation)
