@@ -60,7 +60,10 @@ object CofiniteIntSet {
   val universe: CofiniteIntSet = Compl(SortedSet.empty)
 
   /** Returns the wrapped set of `s`. */
-  def set(s: SortedSet[Int]): CofiniteIntSet = Set(s)
+  def mkSet(s: SortedSet[Int]): CofiniteIntSet = Set(s)
+
+  /** Returns the singleton set of `i`. */
+  def mkSet(i: Int): CofiniteIntSet = Set(SortedSet(i))
 
   /** Returns the union of `s1` and `s2` (`s1 ∪ s2`). */
   def union(s1: CofiniteIntSet, s2: CofiniteIntSet): CofiniteIntSet = (s1, s2) match {
@@ -125,10 +128,10 @@ object CofiniteIntSet {
     *
     * If an element is not mapped in `m`, then it will remain in the set.
     */
-  def instantiateElems(s: CofiniteIntSet, m: Map[Int, CofiniteIntSet]): CofiniteIntSet = s match {
+  def mapElements(s: CofiniteIntSet, m: Map[Int, CofiniteIntSet]): CofiniteIntSet = s match {
     case Set(s) =>
-      s.foldLeft(empty) { case (acc, elm) => union(acc, m.getOrElse(elm, elm)) }
+      s.foldLeft(empty) { case (acc, elm) => union(acc, m.getOrElse(elm, mkSet(elm))) }
     case Compl(s) =>
-      complement(instantiateElems(Set(s), m))
+      complement(mapElements(Set(s), m))
   }
 }
