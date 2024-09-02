@@ -24,7 +24,7 @@ object ExprCompleter extends Completer {
   def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] = {
     DefCompleter.getCompletions(context) ++
       LabelCompleter.getCompletions(context) ++
-      KeywordCompleter.Expr.getCompletions(context) ++
+      KeywordCompleters.Expr.getCompletions(context) ++
       MatchCompleter.getCompletions(context) ++
       VarCompleter.getCompletions(context) ++
       SignatureCompleter.getCompletions(context) ++

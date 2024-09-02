@@ -19,7 +19,20 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.language.ast.TypedAst
 
-object KeywordCompleter {
+/**
+  * A collection of keyword completers, including
+  * 
+  * - `Decl`: completer for declaraiton keywords
+  * - `Enum`: completer for declaration keywords
+  * - `Expr`: completer for expressoin keywords
+  * - `Other`: completer for miscellaneous keywords 
+  * 
+  */
+object KeywordCompleters {
+
+    /**
+      * A completer for miscellaneous keywords.
+      */ 
     object Other extends Completer {
         def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] =
             List(
@@ -39,6 +52,9 @@ object KeywordCompleter {
             ) map { case (name, priority) => Completion.KeywordCompletion(name, priority(name)) }
     }
 
+    /**
+      * A completer for declaration keywords. These are keywords that denote a declaration.
+      */
     object Decl extends Completer {
         def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] = 
             List(      
@@ -56,11 +72,17 @@ object KeywordCompleter {
         ) map {case (name, priority) => Completion.KeywordCompletion(name, priority(name)) }
     }
 
+    /**
+      * A completer for enum keywords. These are keywords that can appear within the declaration of an enum.
+      */ 
     object Enum extends Completer { 
         def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] = 
             List(Completion.KeywordCompletion("case", Priority.low("case")))
     }
 
+    /**
+      * A completer for expression keywords. These are keywords that can appear within expressions (fx within the body of a function).
+      */ 
     object Expr extends Completer {
         def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] =
             List(
