@@ -146,4 +146,19 @@ object Kind {
     case Arrow(k1, k2) => k1 :: kindArgs(k2)
     case _ => Nil
   }
+
+  def hasError(k: Kind): Boolean = k match {
+    case Wild => false
+    case WildCaseSet => false
+    case Star => false
+    case Eff => false
+    case Bool => false
+    case RecordRow => false
+    case SchemaRow => false
+    case Predicate => false
+    case Jvm => false
+    case CaseSet(_) => false
+    case Arrow(k1, k2) => hasError(k1) || hasError(k2)
+    case Error => true
+  }
 }

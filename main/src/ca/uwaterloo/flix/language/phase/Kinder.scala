@@ -1934,7 +1934,7 @@ object Kinder {
           case Some(minKind) => Validation.success(KindEnv(map + (tvar -> minKind)))
           case None =>
             val e = KindError.MismatchedKinds(kind0, kind, tvar.loc)
-            Validation.toSoftFailure(KindEnv(map + (tvar -> Kind.Error)), e)
+            Validation.toSoftFailure(KindEnv(map + (tvar -> kind0)), e)
         }
         case None => Validation.success(KindEnv(map + (tvar -> kind)))
       }
