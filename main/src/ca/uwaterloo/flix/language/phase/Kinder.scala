@@ -1357,7 +1357,9 @@ object Kinder {
             // Case 1: The kinds unify. Update the kind.
             case Some(k) => Validation.success(k)
             // Case 2: The kinds do not unify. Error.
-            case None => Validation.toHardFailure(KindError.MismatchedKinds(kindAcc, symKind, loc))
+            case None =>
+              val e = KindError.MismatchedKinds(kindAcc, symKind, loc)
+              Validation.toSoftFailure(Kind.Error, e)
           }
       }
 
@@ -1403,7 +1405,9 @@ object Kinder {
             // Case 1: The kinds unify.
             case Some(k) => Validation.success(k)
             // Case 2: The kinds do not unify. Error.
-            case None => Validation.toHardFailure(KindError.MismatchedKinds(t1.kind, t2.kind, loc))
+            case None =>
+              val e = KindError.MismatchedKinds(t1.kind, t2.kind, loc)
+              Validation.toSoftFailure(Kind.Error, e)
           }
 
           flatMapN(actualKindVal) {
@@ -1429,7 +1433,9 @@ object Kinder {
             // Case 1: The kinds unify.
             case Some(k) => Validation.success(k)
             // Case 2: The kinds do not unify. Error.
-            case None => Validation.toHardFailure(KindError.MismatchedKinds(t1.kind, t2.kind, loc))
+            case None =>
+              val e = KindError.MismatchedKinds(t1.kind, t2.kind, loc)
+              Validation.toSoftFailure(Kind.Error, e)
           }
 
           flatMapN(actualKindVal) {
@@ -1922,7 +1928,9 @@ object Kinder {
       case (tvar, kind) => map.get(tvar) match {
         case Some(kind0) => unify(kind0, kind) match {
           case Some(minKind) => Validation.success(KindEnv(map + (tvar -> minKind)))
-          case None => Validation.toHardFailure(KindError.MismatchedKinds(kind0, kind, tvar.loc))
+          case None =>
+            val e = KindError.MismatchedKinds(kind0, kind, tvar.loc)
+            Validation.toSoftFailure(KindEnv(Map.empty), e)
         }
         case None => Validation.success(KindEnv(map + (tvar -> kind)))
       }

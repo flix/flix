@@ -36,7 +36,7 @@ object KindError {
     * @param k2  the second kind.
     * @param loc the location where the error occurred.
     */
-  case class MismatchedKinds(k1: Kind, k2: Kind, loc: SourceLocation) extends KindError with Unrecoverable {
+  case class MismatchedKinds(k1: Kind, k2: Kind, loc: SourceLocation) extends KindError with Recoverable {
     override def summary: String = s"Mismatched kinds: '${formatKind(k1)}' and '${formatKind(k2)}''"
 
     def message(formatter: Formatter): String = {
