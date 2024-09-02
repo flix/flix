@@ -170,7 +170,6 @@ sealed trait TokenKind {
       case TokenKind.NameUpperCase => "<Name>"
       case TokenKind.NameMath => "<math name>"
       case TokenKind.NameGreek => "<greek name>"
-      case TokenKind.NameJava => "<java name>"
       case TokenKind.UserDefinedOperator => "<user-defined operator>"
       case TokenKind.Annotation => "<annotation>"
       case TokenKind.BuiltIn => "<built in>"
@@ -443,8 +442,7 @@ sealed trait TokenKind {
          | TokenKind.LiteralDebugStringL
          | TokenKind.KeywordDebug
          | TokenKind.KeywordDebugBang
-         | TokenKind.KeywordDebugBangBang
-         | TokenKind.NameJava => true
+         | TokenKind.KeywordDebugBangBang => true
     case _ => false
   }
 
@@ -464,7 +462,6 @@ sealed trait TokenKind {
          | TokenKind.CurlyL
          | TokenKind.HashCurlyL
          | TokenKind.HashParenL
-         | TokenKind.NameJava
          | TokenKind.AngleL
          | TokenKind.KeywordNot
          | TokenKind.Tilde
@@ -877,8 +874,6 @@ object TokenKind {
   case object Minus extends TokenKind
 
   case object NameGreek extends TokenKind
-
-  case object NameJava extends TokenKind
 
   case object NameLowerCase extends TokenKind
 
