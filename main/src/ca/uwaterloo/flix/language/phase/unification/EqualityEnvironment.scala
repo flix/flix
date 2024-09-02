@@ -132,6 +132,12 @@ object EqualityEnvironment {
           res0 <- reduceAssocTypeStep(cst, arg, eqEnv)
           res <- visit(res0)
         } yield res
+      case Type.JvmToType(tpe, loc) =>
+        for {
+          t1 <- visit(tpe)
+        } yield Type.JvmToType(t1, loc)
+      // MATT this breaks when we combine assocs and JVM constraints!
+      case Type.JvmMember(template, loc) => Result.Ok(Type.JvmMember(template, loc))
     }
 
     visit(t0)

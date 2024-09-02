@@ -62,7 +62,9 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
     def visit(t: Type): Type =
       t match {
         case x: Type.Var => m.getOrElse(x.sym, x)
+
         case Type.Cst(tc, _) => t
+
         case Type.Apply(t1, t2, loc) =>
           val y = visit(t2)
           visit(t1) match {
@@ -84,13 +86,23 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
             // Else just apply
             case x => Type.Apply(x, y, loc)
           }
+
         case Type.Alias(sym, args0, tpe0, loc) =>
           val args = args0.map(visit)
           val tpe = visit(tpe0)
           Type.Alias(sym, args, tpe, loc)
+
         case Type.AssocType(cst, args0, kind, loc) =>
           val args = args0.map(visit)
           Type.AssocType(cst, args, kind, loc)
+
+        case Type.JvmToType(tpe0, loc) =>
+          val tpe = visit(tpe0)
+          Type.JvmToType(tpe, loc)
+
+        case Type.JvmMember(template0, loc) =>
+          val template = template0.map(visit)
+          Type.JvmMember(template, loc)
       }
 
     // Optimization: Return the type if the substitution is empty. Otherwise visit the type.

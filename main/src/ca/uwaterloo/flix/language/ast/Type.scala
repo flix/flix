@@ -60,10 +60,7 @@ sealed trait Type {
     case Type.AssocType(_, arg, _, _) => arg.typeVars // TODO ASSOC-TYPES throw error?
 
     case Type.JvmToType(tpe, _) => tpe.typeVars
-    case Type.JvmField(tpe, _, _) => tpe.typeVars
-    case Type.JvmConstructor(_, tpes, _) => tpes.foldLeft(SortedSet.empty[Type.Var])((acc, t) => acc ++ t.typeVars)
-    case Type.JvmMethod(tpe, _, tpes, _) => tpes.foldLeft(tpe.typeVars)((acc, t) => acc ++ t.typeVars)
-    case Type.JvmStaticMethod(_, _, tpes, _) => tpes.foldLeft(SortedSet.empty[Type.Var])((acc, t) => acc ++ t.typeVars)
+    case Type.JvmMember(template, _) => template.getTypes.foldLeft(SortedSet.empty[Type.Var])((acc, t) => acc ++ t.typeVars)
   }
 
   /**
@@ -80,10 +77,7 @@ sealed trait Type {
     case Type.AssocType(_, arg, _, _) => arg.effects // TODO ASSOC-TYPES throw error?
 
     case Type.JvmToType(tpe, _) => tpe.effects
-    case Type.JvmField(tpe, _, _) => tpe.effects
-    case Type.JvmConstructor(_, tpes, _) => tpes.foldLeft(SortedSet.empty[Symbol.EffectSym])((acc, t) => acc ++ t.effects)
-    case Type.JvmMethod(tpe, _, tpes, _) => tpes.foldLeft(tpe.effects)((acc, t) => acc ++ t.effects)
-    case Type.JvmStaticMethod(_, _, tpes, _) => tpes.foldLeft(SortedSet.empty[Symbol.EffectSym])((acc, t) => acc ++ t.effects)
+    case Type.JvmMember(template, _) => template.getTypes.foldLeft(SortedSet.empty[Symbol.EffectSym])((acc, t) => acc ++ t.effects)
   }
 
   /**
@@ -100,10 +94,7 @@ sealed trait Type {
     case Type.AssocType(_, arg, _, _) => arg.cases // TODO ASSOC-TYPES throw error?
 
     case Type.JvmToType(tpe, _) => tpe.cases
-    case Type.JvmField(tpe, _, _) => tpe.cases
-    case Type.JvmConstructor(_, tpes, _) => tpes.foldLeft(SortedSet.empty[Symbol.RestrictableCaseSym])((acc, t) => acc ++ t.cases)
-    case Type.JvmMethod(tpe, _, tpes, _) => tpes.foldLeft(tpe.cases)((acc, t) => acc ++ t.cases)
-    case Type.JvmStaticMethod(_, _, tpes, _) => tpes.foldLeft(SortedSet.empty[Symbol.RestrictableCaseSym])((acc, t) => acc ++ t.cases)
+    case Type.JvmMember(template, _) => template.getTypes.foldLeft(SortedSet.empty[Symbol.RestrictableCaseSym])((acc, t) => acc ++ t.cases)
   }
 
   /**
@@ -119,10 +110,7 @@ sealed trait Type {
     case Type.Alias(_, _, tpe, _) => tpe.assocs
 
     case Type.JvmToType(tpe, _) => tpe.assocs
-    case Type.JvmField(tpe, _, _) => tpe.assocs
-    case Type.JvmConstructor(_, tpes, _) => tpes.foldLeft(Set.empty[Type.AssocType])((acc, t) => acc ++ t.assocs)
-    case Type.JvmMethod(tpe, _, tpes, _) => tpes.foldLeft(tpe.assocs)((acc, t) => acc ++ t.assocs)
-    case Type.JvmStaticMethod(_, _, tpes, _) => tpes.foldLeft(Set.empty[Type.AssocType])((acc, t) => acc ++ t.assocs)
+    case Type.JvmMember(template, _) => template.getTypes.foldLeft(Set.empty[Type.AssocType])((acc, t) => acc ++ t.assocs)
   }
 
   /**
@@ -152,10 +140,7 @@ sealed trait Type {
     case Type.Alias(_, _, tpe, _) => tpe.typeConstructor
     case Type.AssocType(_, _, _, loc) => None // TODO ASSOC-TYPE danger!
     case Type.JvmToType(_, _) => None
-    case Type.JvmConstructor(_, _, _) => None
-    case Type.JvmField(_, _, _) => None
-    case Type.JvmMethod(_, _, _, _) => None
-    case Type.JvmStaticMethod(_, _, _, _) => None
+    case Type.JvmMember(_, _) => None
   }
 
   /**
@@ -184,10 +169,7 @@ sealed trait Type {
     case Type.Alias(_, _, tpe, _) => tpe.typeConstructors
     case Type.AssocType(_, _, _, loc) => Nil // TODO ASSOC-TYPE danger!
     case Type.JvmToType(_, _) => Nil
-    case Type.JvmConstructor(_, _, _) => Nil
-    case Type.JvmField(_, _, _) => Nil
-    case Type.JvmMethod(_, _, _, _) => Nil
-    case Type.JvmStaticMethod(_, _, _, _) => Nil
+    case Type.JvmMember(_, _) => Nil
   }
 
   /**
@@ -240,14 +222,8 @@ sealed trait Type {
 
     case Type.JvmToType(tpe, loc) =>
       Type.JvmToType(tpe.map(f), loc)
-    case Type.JvmConstructor(clazz, tpes, loc) =>
-      Type.JvmConstructor(clazz, tpes.map(_.map(f)), loc)
-    case Type.JvmField(tpe, name, loc) =>
-      Type.JvmField(tpe.map(f), name, loc)
-    case Type.JvmMethod(tpe, name, tpes, loc) =>
-      Type.JvmMethod(tpe.map(f), name, tpes.map(_.map(f)), loc)
-    case Type.JvmStaticMethod(clazz, name, tpes, loc) =>
-      Type.JvmStaticMethod(clazz, name, tpes.map(_.map(f)), loc)
+    case Type.JvmMember(template, loc) =>
+      Type.JvmMember(template.map(t => t.map(f)), loc)
   }
 
   /**
@@ -290,10 +266,7 @@ sealed trait Type {
     case Type.Alias(_, _, tpe, _) => tpe.size
     case Type.AssocType(_, arg, kind, _) => arg.size + 1
     case Type.JvmToType(tpe, _) => tpe.size + 1
-    case Type.JvmConstructor(_, tpes, _) => tpes.map(_.size).sum + 1
-    case Type.JvmField(tpe, _, _) => tpe.size + 1
-    case Type.JvmMethod(tpe, _, tpes, _) => tpe.size + tpes.map(_.size).sum + 1
-    case Type.JvmStaticMethod(_, _, tpes, _) => tpes.map(_.size).sum + 1
+    case Type.JvmMember(template, loc) => template.getTypes.map(_.size).sum + 1
   }
 
   /**
@@ -575,20 +548,35 @@ object Type {
   }
 
   // MATT docs
-  case class JvmConstructor(clazz: Class[?], tpes: List[Type], loc: SourceLocation) extends Type with BaseType {
+  case class JvmMember(template: JvmTemplate, loc: SourceLocation) extends Type with BaseType {
     override def kind: Kind = Kind.Jvm
   }
 
-  case class JvmMethod(tpe: Type, name: Name.Ident, tpes: List[Type], loc: SourceLocation) extends Type with BaseType {
-    override def kind: Kind = Kind.Jvm
+  // MATT docs
+  sealed trait JvmTemplate {
+    // MATT docs
+    def getTypes: List[Type] = this match {
+      case JvmTemplate.JvmConstructor(_, tpes) => tpes
+      case JvmTemplate.JvmMethod(tpe, _, tpes) => tpe :: tpes
+      case JvmTemplate.JvmField(tpe, _) => List(tpe)
+      case JvmTemplate.JvmStaticMethod(_, _, tpes) => tpes
+    }
+
+    // MATT docs
+    def map(f: Type => Type): JvmTemplate = this match {
+      case JvmTemplate.JvmConstructor(clazz, tpes) => JvmTemplate.JvmConstructor(clazz, tpes.map(f))
+      case JvmTemplate.JvmMethod(tpe, name, tpes) => JvmTemplate.JvmMethod(f(tpe), name, tpes.map(f))
+      case JvmTemplate.JvmField(tpe, name) => JvmTemplate.JvmField(f(tpe), name)
+      case JvmTemplate.JvmStaticMethod(clazz, name, tpes) => JvmTemplate.JvmStaticMethod(clazz, name, tpes.map(f))
+    }
   }
 
-  case class JvmField(tpe: Type, name: Name.Ident, loc: SourceLocation) extends Type with BaseType {
-    override def kind: Kind = Kind.Jvm
-  }
-
-  case class JvmStaticMethod(clazz: Class[?], name: Name.Ident, tpes: List[Type], loc: SourceLocation) extends Type with BaseType {
-    override def kind: Kind = Kind.Jvm
+  // MATT docs
+  object JvmTemplate {
+    case class JvmConstructor(clazz: Class[?], tpes: List[Type]) extends JvmTemplate
+    case class JvmMethod(tpe: Type, name: Name.Ident, tpes: List[Type]) extends JvmTemplate
+    case class JvmField(tpe: Type, name: Name.Ident) extends JvmTemplate
+    case class JvmStaticMethod(clazz: Class[?], name: Name.Ident, tpes: List[Type]) extends JvmTemplate
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -1089,6 +1077,8 @@ object Type {
     case Type.Apply(tpe1, tpe2, loc) => Type.Apply(eraseAliases(tpe1), eraseAliases(tpe2), loc)
     case Type.Alias(_, _, tpe, _) => eraseAliases(tpe)
     case Type.AssocType(cst, args, kind, loc) => Type.AssocType(cst, args.map(eraseAliases), kind, loc)
+    case Type.JvmToType(tpe, loc) => Type.JvmToType(eraseAliases(tpe), loc)
+    case Type.JvmMember(template, loc) => Type.JvmMember(template.map(eraseAliases), loc)
   }
 
   /**
@@ -1111,6 +1101,8 @@ object Type {
     case Apply(tpe1, tpe2, _) => hasAssocType(tpe1) || hasAssocType(tpe2)
     case Alias(_, _, tpe, _) => hasAssocType(tpe)
     case AssocType(_, _, _, _) => true
+    case JvmToType(tpe, _) => hasAssocType(tpe)
+    case JvmMember(template, _) => template.getTypes.exists(hasAssocType)
   }
 
   /**

@@ -217,6 +217,10 @@ object EffUnification {
         val sym = cache.getOrElseUpdate((assoc, tvar), Symbol.freshKindedTypeVarSym(Ast.VarText.Absent, kind, isRegion = false, SourceLocation.Unknown)(Scope.Top, flix))
         Some(Type.Var(sym, SourceLocation.Unknown))
       case Type.AssocType(_, _, _, _) => None
+
+      // If we're visiting Jvm types here, then something has likely gone wrong
+      case Type.JvmToType(_, _) => None
+      case Type.JvmMember(_, _) => None
     }
 
     for {

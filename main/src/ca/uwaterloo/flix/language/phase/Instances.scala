@@ -129,6 +129,9 @@ object Instances {
 
       case Type.Alias(alias, _, _, _) => List(InstanceError.IllegalTypeAliasInstance(alias.sym, trt.sym, trt.loc))
       case Type.AssocType(assoc, _, _, loc) => List(InstanceError.IllegalAssocTypeInstance(assoc.sym, trt.sym, loc))
+
+      case Type.JvmToType(_, loc) => throw InternalCompilerException("unexpected JVM type in instance declaration", loc)
+      case Type.JvmMember(_, loc) => throw InternalCompilerException("unexpected JVM type in instance declaration", loc)
     }
   }
 

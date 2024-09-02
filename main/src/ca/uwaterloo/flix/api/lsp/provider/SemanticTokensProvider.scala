@@ -690,10 +690,7 @@ object SemanticTokensProvider {
 
     // Jvm types should not be exposed to the user.
     case _: Type.JvmToType => Iterator.empty
-    case _: Type.JvmField => Iterator.empty
-    case _: Type.JvmMethod => Iterator.empty
-    case _: Type.JvmStaticMethod => Iterator.empty
-    case _: Type.JvmConstructor => Iterator.empty
+    case _: Type.JvmMember => Iterator.empty
   }
 
   /**
@@ -724,8 +721,6 @@ object SemanticTokensProvider {
     case TypeConstructor.Struct(_, _) => true
     case TypeConstructor.RestrictableEnum(_, _) => true
     case TypeConstructor.Native(_) => true
-    case TypeConstructor.JvmConstructor(_) => false
-    case TypeConstructor.JvmMethod(_) => false
     case TypeConstructor.Array => true
     case TypeConstructor.Vector => true
     case TypeConstructor.Pure => true

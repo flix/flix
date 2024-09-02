@@ -588,10 +588,7 @@ object Indexer {
 
     // Jvm types should not be exposed to the user.
     case _: Type.JvmToType => Index.empty
-    case _: Type.JvmField => Index.empty
-    case _: Type.JvmMethod => Index.empty
-    case _: Type.JvmStaticMethod => Index.empty
-    case _: Type.JvmConstructor => Index.empty
+    case _: Type.JvmMember => Index.empty
   }
 
   /**

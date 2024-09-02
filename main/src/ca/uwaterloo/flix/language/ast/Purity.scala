@@ -173,13 +173,7 @@ object Purity {
       throw InternalCompilerException(s"Unexpected formula '$f'", f.loc)
     case Type.JvmToType(_, _) =>
       throw InternalCompilerException(s"Unexpected formula '$f'", f.loc)
-    case Type.JvmField(_, _, _) =>
-      throw InternalCompilerException(s"Unexpected formula '$f'", f.loc)
-    case Type.JvmMethod(_, _, _, _) =>
-      throw InternalCompilerException(s"Unexpected formula '$f'", f.loc)
-    case Type.JvmStaticMethod(_, _, _, _) =>
-      throw InternalCompilerException(s"Unexpected formula '$f'", f.loc)
-    case Type.JvmConstructor(_, _, _) =>
+    case Type.JvmMember(_, _) =>
       throw InternalCompilerException(s"Unexpected formula '$f'", f.loc)
   }
 

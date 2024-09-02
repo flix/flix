@@ -226,6 +226,8 @@ class TypeContext {
       case Type.Apply(tpe1, tpe2, loc) => Type.Apply(visit(tpe1), visit(tpe2), loc)
       case Type.Alias(_, _, tpe, _) => visit(tpe)
       case Type.AssocType(cst, arg, kind, loc) => Type.AssocType(cst, visit(arg), kind, loc)
+      case Type.JvmToType(tpe, loc) => Type.JvmToType(visit(tpe), loc)
+      case Type.JvmMember(template, loc) => Type.JvmMember(template.map(visit), loc)
     }
 
     visit(eff)

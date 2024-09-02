@@ -15,7 +15,8 @@
  */
 package ca.uwaterloo.flix.language.fmt
 
-import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.ast.*
+import ca.uwaterloo.flix.language.ast.Type.JvmTemplate
 import ca.uwaterloo.flix.language.errors.KindError
 import ca.uwaterloo.flix.language.fmt
 import ca.uwaterloo.flix.util.InternalCompilerException
@@ -239,6 +240,30 @@ object SimpleType {
 
   case class TagConstructor(name: String) extends SimpleType
 
+  ////////////
+  // JVM Types
+  ////////////
+
+  case class JvmToType(tpe: SimpleType) extends SimpleType
+
+  case class JvmConstructor(name: String, tpes: List[SimpleType]) extends SimpleType
+
+  case class JvmField(tpe: SimpleType, name: String) extends SimpleType
+
+  case class JvmMethod(tpe: SimpleType, name: String, tpes: List[SimpleType]) extends SimpleType
+
+  case class JvmStaticMethod(clazz: String, name: String, tpes: List[SimpleType]) extends SimpleType
+
+  /**
+    * A method return type.
+    */
+  case class MethodReturnType(tpe: SimpleType) extends SimpleType
+
+  /**
+    * A field type.
+    */
+  case class FieldType(tpe: SimpleType) extends SimpleType
+
   //////////////////////
   // Miscellaneous Types
   //////////////////////
@@ -263,15 +288,6 @@ object SimpleType {
     */
   case class Tuple(tpes: List[SimpleType]) extends SimpleType
 
-  /**
-   * A method return type.
-   */
-  case class MethodReturnType(tpe: SimpleType) extends SimpleType
-
-  /**
-    * A field type.
-    */
-  case class FieldType(tpe: SimpleType) extends SimpleType
 
   /**
     * An error type.
@@ -321,6 +337,14 @@ object SimpleType {
         mkApply(Name(cst.sym.name), (args ++ t.typeArguments).map(visit))
       case Type.AssocType(cst, arg, _, _) =>
         mkApply(Name(cst.sym.name), (arg :: t.typeArguments).map(visit))
+      case Type.JvmToType(tpe, _) =>
+        mkApply(SimpleType.JvmToType(visit(tpe)), t.typeArguments.map(visit))
+      case Type.JvmMember(template, _) => template match {
+        case JvmTemplate.JvmConstructor(clazz, tpes) => SimpleType.JvmConstructor(clazz.getSimpleName, tpes.map(visit))
+        case JvmTemplate.JvmMethod(tpe, name, tpes) => SimpleType.JvmMethod(visit(tpe), name.name, tpes.map(visit))
+        case JvmTemplate.JvmField(tpe, name) => SimpleType.JvmField(visit(tpe), name.name)
+        case JvmTemplate.JvmStaticMethod(clazz, name, tpes) => SimpleType.JvmStaticMethod(clazz.getSimpleName, name.name, tpes.map(visit))
+      }
       case Type.Cst(tc, _) => tc match {
         case TypeConstructor.Void => Void
         case TypeConstructor.AnyType => AnyType
@@ -437,6 +461,7 @@ object SimpleType {
         case TypeConstructor.Native(clazz) => Name(clazz.getName)
         case TypeConstructor.JvmConstructor(constructor) => Name(constructor.getName)
         case TypeConstructor.JvmMethod(method) => Name(method.getName)
+        case TypeConstructor.JvmField(field) => Name(field.getName)
         case TypeConstructor.Tuple(l) =>
           val tpes = t.typeArguments.map(visit).padTo(l, Hole)
           Tuple(tpes)

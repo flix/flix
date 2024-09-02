@@ -97,17 +97,8 @@ object Scheme {
       case Type.JvmToType(tpe, loc) =>
         Type.JvmToType(visitType(tpe), loc)
 
-      case Type.JvmField(tpe, name, loc) =>
-        Type.JvmField(visitType(tpe), name, loc)
-
-      case Type.JvmMethod(tpe, name, tpes, loc) =>
-        Type.JvmMethod(visitType(tpe), name, tpes.map(visitType), loc)
-
-      case Type.JvmStaticMethod(clazz, name, tpes, loc) =>
-        Type.JvmStaticMethod(clazz, name, tpes.map(visitType), loc)
-
-      case Type.JvmConstructor(clazz, tpes, loc) =>
-        Type.JvmConstructor(clazz, tpes.map(visitType), loc)
+      case Type.JvmMember(template, loc) =>
+        Type.JvmMember(template.map(visitType), loc)
     }
 
     val newBase = visitType(baseType)
