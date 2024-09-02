@@ -53,6 +53,19 @@ object KeywordCompleters {
     }
 
     /**
+      * A completer for trait declaration keywords. These are keywords that occur within a trait declaration.
+      */
+    object Trait extends Completer {
+      def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] = {
+        if (context.previousWord == "pub") {
+          [Completion.KeywordCompletion("def", Priority.lower("def"))]
+        } else {
+          [Completion.KeywordCompletion("pub", Priority.lower("pub"))]
+        }
+      }
+    }
+
+    /**
       * A completer for declaration keywords. These are keywords that denote a declaration.
       */
     object Decl extends Completer {
