@@ -70,22 +70,34 @@ object KeywordCompleters {
       * A completer for declaration keywords. These are keywords that denote a declaration.
       */
     object Decl extends Completer {
-      val def_key       = ("def"      , Priority.highest)
-      val pub_key       = ("pub"      , Priority.higher)
-      val enum_key      = ("enum"     , Priority.high)
-      val type_key      = ("type"     , Priority.high)
-      val instance_key  = ("instance" , Priority.high)
-      val mod_key       = ("mod"      , Priority.low)
-      val eff_key       = ("eff"      , Priority.lower)
-      val struct_key    = ("struct"   , Priority.lower)
-      val sealed_key    = ("sealed"   , Priority.lowest)
-      val trait_key     = ("trait"    , Priority.lowest)
-      val import_key    = ("import"   , Priority.lowest)
+      val DEF       = "def"
+      val PUB       = "pub"
+      val ENUM      = "enum"
+      val TYPE      = "type"
+      val INSTANCE  = "instance"
+      val MOD       = "mod"
+      val EFF       = "eff"
+      val STRUCT    = "struct"
+      val SEALED    = "sealed"
+      val TRAIT     = "trait"
+      val IMPORT    = "import"
+
+      val DEF_ENTRY       = (DEF      , Priority.highest)
+      val PUB_ENTRY       = (PUB      , Priority.higher)
+      val ENUM_ENTRY      = (ENUM     , Priority.high)
+      val TYPE_ENTRY      = (TYPE     , Priority.high)
+      val INSTANCE_ENTRY  = (INSTANCE , Priority.high)
+      val MOD_ENTRY       = (MOD      , Priority.low)
+      val EFF_ENTRY       = (EFF      , Priority.lower)
+      val STRUCT_ENTRY    = (STRUCT   , Priority.lower)
+      val SEALED_ENTRY    = (SEALED   , Priority.lowest)
+      val TRAIT_ENTRY     = (TRAIT    , Priority.lowest)
+      val IMPORT_ENTRY    = (IMPORT   , Priority.lowest)
 
       def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] = {
         context.previousWord match {
-          case "pub" => PubDecl.getCompletions(context)
-          case "sealed" => SealedDecl.getCompletions(context)
+          case PUB => PubDecl.getCompletions(context)
+          case SEALED => SealedDecl.getCompletions(context)
           case _ => PriDecl.getCompletions(context) ++ DeclMod.getCompletions(context)
         }
       }
@@ -93,41 +105,41 @@ object KeywordCompleters {
       object DeclMod extends Completer {
         def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] = 
           List(
-            pub_key,
-            sealed_key,
+            PUB_ENTRY,
+            SEALED_ENTRY,
           ) map { case (name, priority) => Completion.KeywordCompletion(name, priority(name)) }
       }
 
       object SealedDecl extends Completer {
         def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] = 
           List(
-            trait_key,
+            TRAIT_ENTRY,
           ) map { case (name, priority) => Completion.KeywordCompletion(name, priority(name)) }
       }
 
       object PubDecl extends Completer {
         def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] = 
           List(
-            def_key,
-            enum_key,
-            type_key,
-            eff_key,
-            struct_key,
+            DEF_ENTRY,
+            ENUM_ENTRY,
+            TYPE_ENTRY,
+            EFF_ENTRY,
+            STRUCT_ENTRY,
           ) map { case (name, priority) => Completion.KeywordCompletion(name, priority(name)) }
       }
 
       object PriDecl extends Completer {
         def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] = 
           List(
-            def_key,
-            enum_key,
-            type_key,
-            instance_key,
-            mod_key,
-            eff_key,
-            struct_key,
-            trait_key,
-            import_key,
+            DEF_ENTRY,
+            ENUM_ENTRY,
+            TYPE_ENTRY,
+            INSTANCE_ENTRY,
+            MOD_ENTRY,
+            EFF_ENTRY,
+            STRUCT_ENTRY,
+            TRAIT_ENTRY,
+            IMPORT_ENTRY,
           ) map { case (name, priority) => Completion.KeywordCompletion(name, priority(name)) }
       }
     }
