@@ -1352,6 +1352,13 @@ private def resolveExp(exp0: NamedAst.Expr, env0: ListMap[String, Resolution])(i
           ResolvedAst.Expr.InvokeMethod2(e, name, es, loc)
       }
 
+    case NamedAst.Expr.GetField2(exp, name, loc) =>
+      val eVal = resolveExp(exp, env0)
+      mapN(eVal) {
+        case e =>
+          ResolvedAst.Expr.GetField2(e, name, loc)
+      }
+
     case NamedAst.Expr.InvokeConstructorOld(className, args, sig, loc) =>
       lookupJvmClass(className, loc) match {
         case Result.Ok(clazz) =>
@@ -1403,11 +1410,11 @@ private def resolveExp(exp0: NamedAst.Expr, env0: ListMap[String, Resolution])(i
           }
       }
 
-    case NamedAst.Expr.GetField(className, fieldName, exp, loc) =>
+    case NamedAst.Expr.GetFieldOld(className, fieldName, exp, loc) =>
       lookupJvmField(className, fieldName, static = false, loc) match {
         case Result.Ok((clazz, field)) =>
           mapN(resolveExp(exp, env0)) {
-            case e => ResolvedAst.Expr.GetField(field, clazz, e, loc)
+            case e => ResolvedAst.Expr.GetFieldOld(field, clazz, e, loc)
           }
         case Result.Err(e) => Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
       }
@@ -3578,6 +3585,7 @@ private def getRestrictableEnumIfAccessible(enum0: NamedAst.Declaration.Restrict
         case TypeConstructor.CaseUnion(_) => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.Error(_, _) => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.MethodReturnType => Result.Err(ResolutionError.IllegalType(tpe, loc))
+        case TypeConstructor.FieldType => Result.Err(ResolutionError.IllegalType(tpe, loc))
 
         case TypeConstructor.AnyType => throw InternalCompilerException(s"unexpected type: $tc", tpe.loc)
         case t: TypeConstructor.Arrow => throw InternalCompilerException(s"unexpected type: $t", tpe.loc)
@@ -3586,6 +3594,7 @@ private def getRestrictableEnumIfAccessible(enum0: NamedAst.Declaration.Restrict
         case t: TypeConstructor.RestrictableEnum => throw InternalCompilerException(s"unexpected type: $t", tpe.loc)
         case TypeConstructor.JvmConstructor(_) => throw InternalCompilerException(s"unexpected type: $tc", tpe.loc)
         case TypeConstructor.JvmMethod(_) => throw InternalCompilerException(s"unexpected type: $tc", tpe.loc)
+        case TypeConstructor.JvmField(_) => throw InternalCompilerException(s"unexpected type: $tc", tpe.loc)
 
       }
 
