@@ -30,7 +30,6 @@ object KeywordOtherCompleter extends Completer {
       "@Lazy",
       "@LazyWhenPure",
       "@Test",
-      "class",
       "fix",
       "law",
       "Record",
