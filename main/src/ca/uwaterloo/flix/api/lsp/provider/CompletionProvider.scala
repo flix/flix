@@ -119,10 +119,10 @@ object CompletionProvider {
       //
       // Declarations.
       //
-      case SyntacticContext.Decl.Trait => KeywordOtherCompleter.getCompletions(context)
-      case SyntacticContext.Decl.Enum => KeywordEnumCompleter.getCompletions(context)
+      case SyntacticContext.Decl.Trait => KeywordCompleter.Other.getCompletions(context)
+      case SyntacticContext.Decl.Enum => KeywordCompleter.Enum.getCompletions(context)
       case SyntacticContext.Decl.Instance => InstanceCompleter.getCompletions(context)
-      case _: SyntacticContext.Decl => KeywordDeclCompleter.getCompletions(context) ++ SnippetCompleter.getCompletions(context)
+      case _: SyntacticContext.Decl => KeywordCompleter.Decl.getCompletions(context) ++ SnippetCompleter.getCompletions(context)
 
       //
       // Imports.
@@ -157,7 +157,7 @@ object CompletionProvider {
       // Fallthrough.
       //
       case SyntacticContext.Unknown =>
-        KeywordOtherCompleter.getCompletions(context) ++ SnippetCompleter.getCompletions(context)
+        KeywordCompleter.Other.getCompletions(context) ++ SnippetCompleter.getCompletions(context)
     }
   }
 
