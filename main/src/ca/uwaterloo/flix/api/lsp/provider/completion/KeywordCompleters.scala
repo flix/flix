@@ -58,31 +58,73 @@ object KeywordCompleters {
     object Trait extends Completer {
       def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] = {
         if (context.previousWord == "pub") {
-          [Completion.KeywordCompletion("def", Priority.lower("def"))]
+          Completion.KeywordCompletion("def", Priority.lower("def")) :: Nil
         } else {
-          [Completion.KeywordCompletion("pub", Priority.lower("pub"))]
+          Completion.KeywordCompletion("pub", Priority.lower("pub")) :: Nil
         }
       }
+    }
+
+    val def_key = ("def", Priority.highest)
+    val pub_key = ("pub", Priority.higher)
+    val enum_key = ("enum", Priority.high)
+    val type_key = ("type", Priority.high)
+    val instance_key = ("instance", Priority.high)
+    val mod_key = ("mod", Priority.low)
+    val eff_key = ("eff", Priority.lower)
+    val struct_key = ("struct", Priority.lower)
+    val sealed_key = ("sealed", Priority.lowest)
+    val trait_key = ("trait", Priority.lowest)
+    val import_key = ("import", Priority.lowest)
+
+    val decl_keys = List(
+      def_key,
+      pub_key,
+      enum_key,
+      type_key,
+      instance_key,
+      mod_key,
+      eff_key,
+      struct_key,
+      sealed_key,
+      trait_key,
+      import_key,
+    )
+
+    object SealedDecl extends Completer {
+      def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] = 
+        List(
+          trait_key,
+        ) map { case (name, priority) => Completion.KeywordCompletion(name, priority(name) )}
+    }
+
+    object PubDecl extends Completer {
+      def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] = 
+        List(
+          def_key,
+          enum_key,
+          type_key,
+          eff_key,
+          struct_key,
+        ) map { case (name, priority) => Completion.KeywordCompletion(name, priority(name)) }
+    }
+
+    object PriDecl extends Completer {
+      def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] = 
+        decl_keys map { case (name, priority) => Completion.KeywordCompletion(name, priority(name)) }
     }
 
     /**
       * A completer for declaration keywords. These are keywords that denote a declaration.
       */
     object Decl extends Completer {
-        def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] = 
-            List(      
-            ("def", Priority.highest),
-            ("pub", Priority.higher),
-            ("enum", Priority.high),
-            ("type", Priority.high),
-            ("instance", Priority.high),
-            ("mod", Priority.low),
-            ("eff", Priority.lower),
-            ("struct", Priority.lower),
-            ("sealed", Priority.lowest),
-            ("trait", Priority.lowest),
-            ("import", Priority.lowest),
-        ) map {case (name, priority) => Completion.KeywordCompletion(name, priority(name)) }
+        def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] = {
+          context.previousWord match {
+            case "pub" => PubDecl.getCompletions(context)
+            case "sealed" => SealedDecl.getCompletions(context)
+            case _ => PriDecl.getCompletions(context)
+          }
+        }
     }
 
     /**
