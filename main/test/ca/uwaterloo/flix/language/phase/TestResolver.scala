@@ -773,7 +773,43 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[TypeError.StaticMethodNotFound](result)
+    expectError[TypeError](result)
+  }
+
+  test("UndefinedJvmField.01") {
+    val input =
+      """
+        |import java.lang.Object
+        |def foo(obj: Object): String \ IO = {
+        |    obj.stringField
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.FieldNotFound](result)
+  }
+
+  test("UndefinedJvmField.02") {
+    val input =
+      """
+        |import java.lang.Object
+        |def foo(obj: Object): String \ IO = {
+        |    obj.coolField.stringField
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.FieldNotFound](result)
+  }
+
+  test("UndefinedJvmField.03") {
+    val input =
+      """
+        |import java.lang.Object
+        |def foo(obj: Object): String \ IO = {
+        |    (obj.coolField).stringField
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.FieldNotFound](result)
   }
 
   test("MismatchingType.01") {

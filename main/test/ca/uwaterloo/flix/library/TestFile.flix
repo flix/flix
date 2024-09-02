@@ -116,6 +116,24 @@ mod TestFile {
             |> Result.getWithDefault(false)
 
     /////////////////////////////////////////////////////////////////////////////
+    // size                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def size01(): Bool \ IO =
+        testReadFunction("./main/test/ca/uwaterloo/flix/library/testdata/ABCD.bin",
+                        File.size,
+                        len -> len == 8i64)
+            |> Result.getWithDefault(false)
+
+    @test
+    def size02(): Bool \ IO =
+        testReadFunction("./main/test/ca/uwaterloo/flix/library/testdata/255-1byte.bin",
+                    File.size,
+                    len -> len == 1i64)
+            |> Result.getWithDefault(false)
+
+    /////////////////////////////////////////////////////////////////////////////
     // seek!                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 

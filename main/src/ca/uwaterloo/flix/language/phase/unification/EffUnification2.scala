@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.{Rigidity, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.unification.FastBoolUnification.{ConflictException, Equation, Term, TooComplexException}
 import ca.uwaterloo.flix.language.phase.unification.UnificationError.TooComplex
@@ -33,13 +34,13 @@ object EffUnification2 {
    * @param renv the rigidity environment.
    * @param loc the source location of the entire equation system, e.g. the entire function body.
     */
-  def unifyAll(l: List[(Type, Type, SourceLocation)], renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix): Result[Substitution, UnificationError] = {
+  def unifyAll(l: List[(Type, Type, SourceLocation)], scope: Scope, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix): Result[Substitution, UnificationError] = {
     // Compute a bi-directional map from type variables to ints.
     implicit val bimap: Bimap[Type.Var, Int] = mkBidirectionalVarMap(l)
 
     // Translate all unification problems from equations on types to equations on terms.
     val equations = l.map {
-      case (tpe1, tpe2, loc) => toEquation(tpe1, tpe2, loc)(renv, bimap)
+      case (tpe1, tpe2, loc) => toEquation(tpe1, tpe2, loc)(scope, renv, bimap)
     }
 
     // Compute the most-general unifier of all the equations.
@@ -82,7 +83,7 @@ object EffUnification2 {
   /**
     * Translates the given unification equation on types `p` into a unification equation on terms.
     */
-  private def toEquation(p: (Type, Type, SourceLocation))(implicit renv: RigidityEnv, m: Bimap[Type.Var, Int]): Equation = {
+  private def toEquation(p: (Type, Type, SourceLocation))(implicit scope: Scope, renv: RigidityEnv, m: Bimap[Type.Var, Int]): Equation = {
     val (tpe1, tpe2, loc) = p
     Equation.mk(toTerm(tpe1), toTerm(tpe2), loc)
   }
@@ -94,7 +95,7 @@ object EffUnification2 {
     *
     * The rigidity environment `renv` is used to map rigid type variables to constants and flexible type variables to term variables.
     */
-  private def toTerm(t: Type)(implicit renv: RigidityEnv, m: Bimap[Type.Var, Int]): Term = Type.eraseTopAliases(t) match {
+  private def toTerm(t: Type)(implicit scope: Scope, renv: RigidityEnv, m: Bimap[Type.Var, Int]): Term = Type.eraseTopAliases(t) match {
     case Type.Pure => Term.True
     case Type.Univ => Term.False
 

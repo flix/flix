@@ -30,9 +30,17 @@ sealed trait Symbol
 object Symbol {
 
   /**
-    * The symbol for the IO effect.
+    * The set of base effects defined in the Prelude.
     */
+  val Clock: EffectSym = mkEffectSym(Name.RootNS, Ident("Clock", SourceLocation.Unknown))
+  val Exec: EffectSym = mkEffectSym(Name.RootNS, Ident("Exec", SourceLocation.Unknown))
+  val Exit: EffectSym = mkEffectSym(Name.RootNS, Ident("Exit", SourceLocation.Unknown))
+  val FileRead: EffectSym = mkEffectSym(Name.RootNS, Ident("FileRead", SourceLocation.Unknown))
+  val FileWrite: EffectSym = mkEffectSym(Name.RootNS, Ident("FileWrite", SourceLocation.Unknown))
   val IO: EffectSym = mkEffectSym(Name.RootNS, Ident("IO", SourceLocation.Unknown))
+  val Net: EffectSym = mkEffectSym(Name.RootNS, Ident("Net", SourceLocation.Unknown))
+  val NonDet: EffectSym = mkEffectSym(Name.RootNS, Ident("NonDet", SourceLocation.Unknown))
+  val Sys: EffectSym = mkEffectSym(Name.RootNS, Ident("Sys", SourceLocation.Unknown))
 
   /**
     * Returns a fresh def symbol based on the given symbol.
@@ -580,7 +588,7 @@ object Symbol {
     /**
      * The symbol's namespace
      */
-    def namespace: List[String] = structSym.namespace
+    def namespace: List[String] = structSym.namespace :+ structSym.name
   }
 
   /**
