@@ -1376,6 +1376,10 @@ object Kinder {
               val e = KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = actualKind, loc)
               Validation.toSoftFailure(Type.freshError(Kind.Error, loc), e)
 
+            case Some(Kind.Error) =>
+              val e = KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = actualKind, loc)
+              Validation.toSoftFailure(Type.freshError(Kind.Error, loc), e)
+
             case Some(_) => throw InternalCompilerException("unexpected non-case set kind", loc)
           }
       }
