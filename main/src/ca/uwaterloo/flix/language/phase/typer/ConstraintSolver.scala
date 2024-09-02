@@ -398,6 +398,18 @@ object ConstraintSolver {
         res <- CaseSetUnification.unify(t1, t2, renv, sym1.universe, sym1).mapErr(toTypeError(_, prov))
       } yield ResolutionResult.newSubst(res)
 
+    case (Kind.Jvm, Kind.Jvm) =>
+      for {
+        (t1, p1) <- TypeReduction.simplify(tpe1, renv, loc)
+        (t2, p2) <- TypeReduction.simplify(tpe2, renv, loc)
+        res = JvmUnification.unify(t1, t2, renv)
+      } yield {
+        res match {
+          case None => ResolutionResult.constraints(List(TypeConstraint.Equality(t1, t2, prov)), p1 || p2)
+          case Some(subst) => ResolutionResult.newSubst(subst)
+        }
+      }
+
     case (Kind.Error, _) => Result.Ok(ResolutionResult.newSubst(Substitution.empty))
 
     case (_, Kind.Error) => Result.Ok(ResolutionResult.newSubst(Substitution.empty))
@@ -467,16 +479,10 @@ object ConstraintSolver {
         ResolutionResult.constraints(List(TypeConstraint.Equality(t1, t2, prov)), p1 || p2)
       }
 
-    // MRT
-    case (_, Type.Apply(Type.Cst(TypeConstructor.MethodReturnType, _), _, _)) =>
+    // Java types
+    case (_, Type.JvmToType(_, _)) =>
       Result.Ok(ResolutionResult.constraints(List(TypeConstraint.Equality(tpe1, tpe2, prov)), progress = false))
-    case (Type.Apply(Type.Cst(TypeConstructor.MethodReturnType, _), _, _), _) =>
-      Result.Ok(ResolutionResult.constraints(List(TypeConstraint.Equality(tpe1, tpe2, prov)), progress = false))
-
-    // FieldType
-    case (_, Type.Apply(Type.Cst(TypeConstructor.FieldType, _), _, _)) =>
-      Result.Ok(ResolutionResult.constraints(List(TypeConstraint.Equality(tpe1, tpe2, prov)), progress = false))
-    case (Type.Apply(Type.Cst(TypeConstructor.FieldType, _), _, _), _) =>
+    case (Type.JvmToType(_, _), _) =>
       Result.Ok(ResolutionResult.constraints(List(TypeConstraint.Equality(tpe1, tpe2, prov)), progress = false))
 
     case _ =>

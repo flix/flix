@@ -19,7 +19,6 @@ package ca.uwaterloo.flix.language.errors
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.BroadEqualityConstraint
-import ca.uwaterloo.flix.language.ast.TypeConstructor.JvmMethod
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.dbg.DocAst.Type.JvmConstructor
 import ca.uwaterloo.flix.language.fmt.FormatEqualityConstraint.formatEqualityConstraint
@@ -130,7 +129,7 @@ object TypeError {
    * @param renv    the rigidity environment.
    * @param loc     the location where the error occured.
    */
-  case class StaticMethodNotFound(clazz: Class[_], methodName: String, tpes: List[Type], methods: List[JvmMethod], renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class StaticMethodNotFound(clazz: Class[_], methodName: String, tpes: List[Type], methods: List[Method], renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     // TODO INTEROP better comment, e.g., list possible methods
     def summary: String = s"Static Java method '$methodName' from class ${clazz.getName} with arguments types (${tpes.mkString(", ")}) not found."
 

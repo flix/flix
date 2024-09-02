@@ -437,19 +437,6 @@ object SimpleType {
         case TypeConstructor.Native(clazz) => Name(clazz.getName)
         case TypeConstructor.JvmConstructor(constructor) => Name(constructor.getName)
         case TypeConstructor.JvmMethod(method) => Name(method.getName)
-        case TypeConstructor.MethodReturnType =>
-          t.typeArguments.size match {
-            case 0 => SimpleType.MethodReturnType(SimpleType.Hole)
-            case 1 => SimpleType.MethodReturnType(fromWellKindedType(t.typeArguments.head))
-            case _ => throw new OverAppliedType(t.loc)
-          }
-        case TypeConstructor.JvmField(field) => Name(field.getName)
-        case TypeConstructor.FieldType =>
-          t.typeArguments.size match {
-            case 0 => SimpleType.FieldType(SimpleType.Hole)
-            case 1 => SimpleType.FieldType(fromWellKindedType(t.typeArguments.head))
-            case _ => throw new OverAppliedType(t.loc)
-          }
         case TypeConstructor.Tuple(l) =>
           val tpes = t.typeArguments.map(visit).padTo(l, Hole)
           Tuple(tpes)

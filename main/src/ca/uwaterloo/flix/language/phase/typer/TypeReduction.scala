@@ -111,24 +111,26 @@ object TypeReduction {
    * @param loc the location where the java method has been called
    * @return
    */
-  private def simplifyJava(tpe: Type.Apply, renv0: RigidityEnv, loc: SourceLocation): Result[(Type, Boolean), TypeError] = {
-    tpe.typeConstructor match {
-      case Some(TypeConstructor.MethodReturnType) =>
-        // Since `tpe` is `Type.Apply`, this is safe
-        val methodType = tpe.typeArguments.head
-        methodType match {
-          case Type.Cst(TypeConstructor.JvmMethod(method), _) => Result.Ok(Type.getFlixType(method.getReturnType), true)
-          case _ => Result.Ok((tpe, false))
-        }
-      case Some(TypeConstructor.FieldType) =>
-        // Since `tpe` is `Type.Apply`, this is safe
-        val fieldType = tpe.typeArguments.head
-        fieldType match {
-          case Type.Cst(TypeConstructor.JvmField(field), _) => Result.Ok(Type.getFlixType(field.getType), true)
-          case _ => Result.Ok((tpe, false))
-        }
-      case _ => Result.Ok((tpe, false))
-    }
+  private def simplifyJava(tpe: Type, renv0: RigidityEnv, loc: SourceLocation): Result[(Type, Boolean), TypeError] = tpe match {
+    // MATT where is static method?
+    case Type.JvmToType(Type.Cst(TypeConstructor.JvmMethod(method), _), _) =>
+      Result.Ok(Type.getFlixType(method.getReturnType), true)
+    case Type.JvmToType(Type.Cst(TypeConstructor.JvmConstructor(constructor), _), _) =>
+      Result.Ok(Type.getFlixType(constructor.getDeclaringClass), true)
+    case Type.JvmToType(Type.Cst(TypeConstructor.JvmField(field), _), _) =>
+      Result.Ok(Type.getFlixType(field.getType), true)
+
+    case Type.JvmField(tpe, name, _) =>
+      ??? // MATT
+    case Type.JvmMethod(tpe, name, tpes, loc) =>
+      ??? // MATT
+    case Type.JvmConstructor(clazz, tpes, loc) =>
+      ??? // MATT
+    case Type.JvmStaticMethod(clazz, name, tpes, loc) =>
+      ??? // MATT
+    case _ =>
+      Result.Ok((tpe, false))
+
   }
 
   /**
@@ -137,8 +139,7 @@ object TypeReduction {
     */
   // TODO: This method should be recursive and not just look at the top-level type.
   def isReducible(tpe: Type): Boolean = tpe match {
-    case Type.Apply(Type.Cst(TypeConstructor.MethodReturnType, _), Type.Var(_, _), _) => true
-    case Type.Apply(Type.Cst(TypeConstructor.FieldType, _), Type.Var(_, _), _) => true
+    case Type.JvmToType(Type.Var(_, _), _) => true
     case _ => false
   }
 

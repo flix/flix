@@ -120,38 +120,6 @@ class TypeContext {
   }
 
   /**
-   * Generates constraints unifying a given Java constructor type and a class.
-   */
-  def unifyJvmConstructorType(jvar: Type.Var, tpe: Type, clazz: Class[_], tpes: List[Type], loc: SourceLocation): Unit = {
-    val constr = TypeConstraint.EqJvmConstructor(jvar, clazz, tpes, Provenance.Match(jvar, tpe, loc))
-    currentScopeConstraints.add(constr)
-  }
-
-  /**
-   * Generates constraints unifying a given Java method type and a type.
-   */
-  def unifyJvmMethodType(jvar: Type.Var, tpe: Type, methodName: Name.Ident, tpes: List[Type], loc: SourceLocation): Unit = {
-    val constr = TypeConstraint.EqJvmMethod(jvar, tpe, methodName, tpes, Provenance.Match(jvar, tpe, loc))
-    currentScopeConstraints.add(constr)
-  }
-
-  /**
-    * Generates constraints unifying a given Java field type and a type.
-    */
-  def unifyJvmFieldType(jvar: Type.Var, tpe: Type, fieldName: Name.Ident, loc: SourceLocation): Unit = {
-    val constr = TypeConstraint.EqJvmField(jvar, tpe, fieldName, Provenance.Match(jvar, tpe, loc))
-    currentScopeConstraints.add(constr)
-  }
-
-  /**
-   * Generates constraints unifying a given static Java method type and a type.
-   */
-  def unifyStaticJvmMethodType(jvar: Type.Var, clazz: Class[_], tpe: Type, methodName: Name.Ident, tpes: List[Type], loc: SourceLocation): Unit = {
-    val constr = TypeConstraint.EqStaticJvmMethod(jvar, clazz, methodName, tpes, Provenance.Match(jvar, tpe, loc))
-    currentScopeConstraints.add(constr)
-  }
-
-  /**
     * Generates constraints unifying the given types.
     *
     * {{{

@@ -23,6 +23,7 @@ import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.ast.shared.Scope
 
+import java.lang.reflect.{Constructor, Method}
 import java.util.Objects
 import scala.annotation.tailrec
 import scala.collection.immutable.SortedSet
@@ -515,6 +516,30 @@ object Type {
     * An associated type.
     */
   case class AssocType(cst: Ast.AssocTypeConstructor, arg: Type, kind: Kind, loc: SourceLocation) extends Type with BaseType
+
+  /**
+    * A type which must be reduced by finding the correct JVM method, constructor, or field.
+    */
+  case class JvmToType(tpe: Type, loc: SourceLocation) extends Type with BaseType {
+    override def kind: Kind = Kind.Star
+  }
+
+  // MATT docs
+  case class JvmConstructor(clazz: Class[?], tpes: List[Type], loc: SourceLocation) extends Type with BaseType {
+    override def kind: Kind = Kind.Jvm
+  }
+
+  case class JvmMethod(tpe: Type, name: String, tpes: List[Type], loc: SourceLocation) extends Type with BaseType {
+    override def kind: Kind = Kind.Jvm
+  }
+
+  case class JvmField(tpe: Type, name: String, loc: SourceLocation) extends Type with BaseType {
+    override def kind: Kind = Kind.Jvm
+  }
+
+  case class JvmStaticMethod(clazz: Class[?], name: String, tpes: List[Type], loc: SourceLocation) extends Type with BaseType {
+    override def kind: Kind = Kind.Jvm
+  }
 
   /////////////////////////////////////////////////////////////////////////////
   // Utility Functions                                                       //
