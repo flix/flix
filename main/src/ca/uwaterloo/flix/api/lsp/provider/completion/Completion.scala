@@ -41,9 +41,9 @@ sealed trait Completion {
         insertTextFormat = InsertTextFormat.Snippet,
         kind = CompletionItemKind.Enum)
 
-    case Completion.KeywordCompletion(name) =>
+    case Completion.KeywordCompletion(name, priority) =>
       CompletionItem(label = name,
-        sortText = CompletionPriority.lower(name),
+        sortText = priority,
         textEdit = TextEdit(context.range, s"$name "),
         kind = CompletionItemKind.Keyword)
     case Completion.LabelCompletion(label, prefix) =>
@@ -310,8 +310,9 @@ object Completion {
     * Represents a keyword completion.
     *
     * @param name the name of the keyword.
+    * @param priority the completion priority of the keyword.
     */
-  case class KeywordCompletion(name: String) extends Completion
+  case class KeywordCompletion(name: String, priority: String) extends Completion
 
   /**
     * Represents a label completion.

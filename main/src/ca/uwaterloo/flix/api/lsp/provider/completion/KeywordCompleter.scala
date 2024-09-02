@@ -23,42 +23,42 @@ object KeywordCompleter {
     object Other extends Completer {
         def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] =
             List(
-            "@Deprecated",
-            "@Parallel",
-            "@ParallelWhenPure",
-            "@Lazy",
-            "@LazyWhenPure",
-            "@Test",
-            "fix",
-            "law",
-            "Record",
-            "redef",
-            "Schema",
-            "where",
-            "with",
-            ) map (name => Completion.KeywordCompletion(name))
+            ("with", CompletionPriority.highest),
+            ("law", CompletionPriority.higher),
+            ("@Test", CompletionPriority.high),
+            ("where", CompletionPriority.low),
+            ("fix", CompletionPriority.low),
+            ("@Deprecated", CompletionPriority.lowest),
+            ("@Parallel", CompletionPriority.lowest),
+            ("@ParallelWhenPure", CompletionPriority.lowest),
+            ("@Lazy", CompletionPriority.lowest),
+            ("@LazyWhenPure", CompletionPriority.lowest),
+            ("Record", CompletionPriority.lowest),
+            ("redef", CompletionPriority.lowest),
+            ("Schema", CompletionPriority.lowest),
+            ) map { case (name, priority) => Completion.KeywordCompletion(name, priority(name)) }
     }
 
     object Decl extends Completer {
         def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] = 
             List(      
-            "def",
-            "eff",
-            "enum",
-            "instance",
-            "mod",
-            "pub",
-            "sealed",
-            "trait",
-            "type",
-            "struct",
-            "import",
-        ) map (name => Completion.KeywordCompletion(name))
+            ("def", CompletionPriority.highest),
+            ("pub", CompletionPriority.higher),
+            ("enum", CompletionPriority.high),
+            ("type", CompletionPriority.high),
+            ("instance", CompletionPriority.high),
+            ("mod", CompletionPriority.low),
+            ("eff", CompletionPriority.lower),
+            ("struct", CompletionPriority.lower),
+            ("sealed", CompletionPriority.lowest),
+            ("trait", CompletionPriority.lowest),
+            ("import", CompletionPriority.lowest),
+        ) map {case (name, priority) => Completion.KeywordCompletion(name, priority(name)) }
     }
 
     object Enum extends Completer { 
         def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] = 
-            List(Completion.KeywordCompletion("case"))
+            List(Completion.KeywordCompletion("case", CompletionPriority.low("case")))
     }
 
     object Expr extends Completer {
@@ -99,7 +99,7 @@ object KeywordCompleter {
             "use",
             "without",
             "yield"
-            ) map (name => Completion.KeywordCompletion(name))
+            ) map (name => Completion.KeywordCompletion(name, CompletionPriority.lower(name)))
 
     }
 }
