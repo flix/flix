@@ -52,6 +52,13 @@ object InstanceCompleter extends Completer {
       case Type.AssocType(sym, args0, kind, loc) =>
         val args = args0.map(replaceText(tvar, _, newText))
         Type.AssocType(sym, args, kind, loc)
+
+      // Jvm types should not be exposed to the user.
+      case t: Type.JvmToType => t
+      case t: Type.JvmField => t
+      case t: Type.JvmMethod => t
+      case t: Type.JvmStaticMethod => t
+      case t: Type.JvmConstructor => t
     }
 
     /**

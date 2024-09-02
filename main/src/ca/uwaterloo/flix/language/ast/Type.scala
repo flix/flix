@@ -58,6 +58,12 @@ sealed trait Type {
     case Type.Apply(tpe1, tpe2, _) => tpe1.typeVars ++ tpe2.typeVars
     case Type.Alias(_, args, _, _) => args.foldLeft(SortedSet.empty[Type.Var])((acc, t) => acc ++ t.typeVars)
     case Type.AssocType(_, arg, _, _) => arg.typeVars // TODO ASSOC-TYPES throw error?
+
+    case Type.JvmToType(tpe, _) => tpe.typeVars
+    case Type.JvmField(tpe, _, _) => tpe.typeVars
+    case Type.JvmConstructor(_, tpes, _) => tpes.foldLeft(SortedSet.empty[Type.Var])((acc, t) => acc ++ t.typeVars)
+    case Type.JvmMethod(tpe, _, tpes, _) => tpes.foldLeft(tpe.typeVars)((acc, t) => acc ++ t.typeVars)
+    case Type.JvmStaticMethod(_, _, tpes, _) => tpes.foldLeft(SortedSet.empty[Type.Var])((acc, t) => acc ++ t.typeVars)
   }
 
   /**
@@ -72,6 +78,12 @@ sealed trait Type {
     case Type.Apply(tpe1, tpe2, _) => tpe1.effects ++ tpe2.effects
     case Type.Alias(_, _, tpe, _) => tpe.effects
     case Type.AssocType(_, arg, _, _) => arg.effects // TODO ASSOC-TYPES throw error?
+
+    case Type.JvmToType(tpe, _) => tpe.effects
+    case Type.JvmField(tpe, _, _) => tpe.effects
+    case Type.JvmConstructor(_, tpes, _) => tpes.foldLeft(SortedSet.empty[Symbol.EffectSym])((acc, t) => acc ++ t.effects)
+    case Type.JvmMethod(tpe, _, tpes, _) => tpes.foldLeft(tpe.effects)((acc, t) => acc ++ t.effects)
+    case Type.JvmStaticMethod(_, _, tpes, _) => tpes.foldLeft(SortedSet.empty[Symbol.EffectSym])((acc, t) => acc ++ t.effects)
   }
 
   /**
@@ -86,6 +98,12 @@ sealed trait Type {
     case Type.Apply(tpe1, tpe2, _) => tpe1.cases ++ tpe2.cases
     case Type.Alias(_, _, tpe, _) => tpe.cases
     case Type.AssocType(_, arg, _, _) => arg.cases // TODO ASSOC-TYPES throw error?
+
+    case Type.JvmToType(tpe, _) => tpe.cases
+    case Type.JvmField(tpe, _, _) => tpe.cases
+    case Type.JvmConstructor(_, tpes, _) => tpes.foldLeft(SortedSet.empty[Symbol.RestrictableCaseSym])((acc, t) => acc ++ t.cases)
+    case Type.JvmMethod(tpe, _, tpes, _) => tpes.foldLeft(tpe.cases)((acc, t) => acc ++ t.cases)
+    case Type.JvmStaticMethod(_, _, tpes, _) => tpes.foldLeft(SortedSet.empty[Symbol.RestrictableCaseSym])((acc, t) => acc ++ t.cases)
   }
 
   /**
@@ -99,6 +117,12 @@ sealed trait Type {
 
     case Type.Apply(tpe1, tpe2, _) => tpe1.assocs ++ tpe2.assocs
     case Type.Alias(_, _, tpe, _) => tpe.assocs
+
+    case Type.JvmToType(tpe, _) => tpe.assocs
+    case Type.JvmField(tpe, _, _) => tpe.assocs
+    case Type.JvmConstructor(_, tpes, _) => tpes.foldLeft(Set.empty[Type.AssocType])((acc, t) => acc ++ t.assocs)
+    case Type.JvmMethod(tpe, _, tpes, _) => tpes.foldLeft(tpe.assocs)((acc, t) => acc ++ t.assocs)
+    case Type.JvmStaticMethod(_, _, tpes, _) => tpes.foldLeft(Set.empty[Type.AssocType])((acc, t) => acc ++ t.assocs)
   }
 
   /**
@@ -127,6 +151,11 @@ sealed trait Type {
     case Type.Apply(t1, _, _) => t1.typeConstructor
     case Type.Alias(_, _, tpe, _) => tpe.typeConstructor
     case Type.AssocType(_, _, _, loc) => None // TODO ASSOC-TYPE danger!
+    case Type.JvmToType(_, _) => None
+    case Type.JvmConstructor(_, _, _) => None
+    case Type.JvmField(_, _, _) => None
+    case Type.JvmMethod(_, _, _, _) => None
+    case Type.JvmStaticMethod(_, _, _, _) => None
   }
 
   /**
@@ -154,6 +183,11 @@ sealed trait Type {
     case Type.Apply(t1, t2, _) => t1.typeConstructors ::: t2.typeConstructors
     case Type.Alias(_, _, tpe, _) => tpe.typeConstructors
     case Type.AssocType(_, _, _, loc) => Nil // TODO ASSOC-TYPE danger!
+    case Type.JvmToType(_, _) => Nil
+    case Type.JvmConstructor(_, _, _) => Nil
+    case Type.JvmField(_, _, _) => Nil
+    case Type.JvmMethod(_, _, _, _) => Nil
+    case Type.JvmStaticMethod(_, _, _, _) => Nil
   }
 
   /**
@@ -203,6 +237,17 @@ sealed trait Type {
     case Type.AssocType(sym, args, kind, loc) =>
       // Performance: Few associated types, not worth optimizing.
       Type.AssocType(sym, args.map(_.map(f)), kind, loc)
+
+    case Type.JvmToType(tpe, loc) =>
+      Type.JvmToType(tpe.map(f), loc)
+    case Type.JvmConstructor(clazz, tpes, loc) =>
+      Type.JvmConstructor(clazz, tpes.map(_.map(f)), loc)
+    case Type.JvmField(tpe, name, loc) =>
+      Type.JvmField(tpe.map(f), name, loc)
+    case Type.JvmMethod(tpe, name, tpes, loc) =>
+      Type.JvmMethod(tpe.map(f), name, tpes.map(_.map(f)), loc)
+    case Type.JvmStaticMethod(clazz, name, tpes, loc) =>
+      Type.JvmStaticMethod(clazz, name, tpes.map(_.map(f)), loc)
   }
 
   /**
@@ -244,6 +289,11 @@ sealed trait Type {
     case Type.Apply(tpe1, tpe2, _) => tpe1.size + tpe2.size + 1
     case Type.Alias(_, _, tpe, _) => tpe.size
     case Type.AssocType(_, arg, kind, _) => arg.size + 1
+    case Type.JvmToType(tpe, _) => tpe.size + 1
+    case Type.JvmConstructor(_, tpes, _) => tpes.map(_.size).sum + 1
+    case Type.JvmField(tpe, _, _) => tpe.size + 1
+    case Type.JvmMethod(tpe, _, tpes, _) => tpe.size + tpes.map(_.size).sum + 1
+    case Type.JvmStaticMethod(_, _, tpes, _) => tpes.map(_.size).sum + 1
   }
 
   /**
@@ -529,15 +579,15 @@ object Type {
     override def kind: Kind = Kind.Jvm
   }
 
-  case class JvmMethod(tpe: Type, name: String, tpes: List[Type], loc: SourceLocation) extends Type with BaseType {
+  case class JvmMethod(tpe: Type, name: Name.Ident, tpes: List[Type], loc: SourceLocation) extends Type with BaseType {
     override def kind: Kind = Kind.Jvm
   }
 
-  case class JvmField(tpe: Type, name: String, loc: SourceLocation) extends Type with BaseType {
+  case class JvmField(tpe: Type, name: Name.Ident, loc: SourceLocation) extends Type with BaseType {
     override def kind: Kind = Kind.Jvm
   }
 
-  case class JvmStaticMethod(clazz: Class[?], name: String, tpes: List[Type], loc: SourceLocation) extends Type with BaseType {
+  case class JvmStaticMethod(clazz: Class[?], name: Name.Ident, tpes: List[Type], loc: SourceLocation) extends Type with BaseType {
     override def kind: Kind = Kind.Jvm
   }
 

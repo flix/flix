@@ -687,6 +687,13 @@ object SemanticTokensProvider {
     case Type.AssocType(cst, arg, _, _) =>
       val t = SemanticToken(SemanticTokenType.Type, Nil, cst.loc)
       Iterator(t) ++ visitType(arg)
+
+    // Jvm types should not be exposed to the user.
+    case _: Type.JvmToType => Iterator.empty
+    case _: Type.JvmField => Iterator.empty
+    case _: Type.JvmMethod => Iterator.empty
+    case _: Type.JvmStaticMethod => Iterator.empty
+    case _: Type.JvmConstructor => Iterator.empty
   }
 
   /**
@@ -750,6 +757,9 @@ object SemanticTokensProvider {
     case TypeConstructor.CaseUnion(_) => false
     case TypeConstructor.CaseIntersection(_) => false
     case TypeConstructor.CaseSet(_, _) => false
+    case TypeConstructor.JvmField(_) => false
+    case TypeConstructor.JvmConstructor(_) => false
+    case TypeConstructor.JvmMethod(_) => false
     case TypeConstructor.Error(_, _) => false
   }
 

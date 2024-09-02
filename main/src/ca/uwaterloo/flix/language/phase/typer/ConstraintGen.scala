@@ -785,7 +785,7 @@ object ConstraintGen {
         // Γ ⊢ e.m(eᵢ ...) : JvmToType[ι]
         val (tpe, eff) = visitExp(exp)
         val (tpes, effs) = exps.map(visitExp).unzip
-        c.unifyType(jvar, Type.JvmMethod(tpe, methodName.name, tpes, loc), loc) // unify method type
+        c.unifyType(jvar, Type.JvmMethod(tpe, methodName, tpes, loc), loc) // unify method type
         c.unifyType(tvar, Type.JvmToType(jvar, loc), loc) // unify method return
         c.unifyType(evar, Type.mkUnion(Type.IO :: eff :: effs, loc), loc) // unify effects
         val resTpe = tvar
@@ -797,7 +797,7 @@ object ConstraintGen {
         // ---------------------------------------------------------------
         // Γ ⊢ m(eᵢ ...) : JvmToType[ι]
         val (tpes, effs) = exps.map(visitExp).unzip
-        c.unifyType(jvar, Type.JvmStaticMethod(clazz, methodName.name, tpes, loc), loc)
+        c.unifyType(jvar, Type.JvmStaticMethod(clazz, methodName, tpes, loc), loc)
         c.unifyType(tvar, Type.JvmToType(jvar, loc), loc)
         c.unifyType(evar, Type.mkUnion(Type.IO :: effs, loc), loc)
         val resTpe = tvar
@@ -809,7 +809,7 @@ object ConstraintGen {
         // ---------------------------------------------------------------
         // Γ ⊢ e.f : JvmToType[ι]
         val (tpe, eff) = visitExp(exp)
-        c.unifyType(jvar, Type.JvmField(tpe, fieldName.name, loc), loc)
+        c.unifyType(jvar, Type.JvmField(tpe, fieldName, loc), loc)
         c.unifyType(tvar, Type.JvmToType(jvar, loc), loc) // unify field type
         c.unifyType(evar, Type.mkUnion(Type.IO :: eff :: Nil, loc), loc) // unify effects
         val resTpe = tvar

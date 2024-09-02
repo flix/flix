@@ -93,6 +93,21 @@ object Scheme {
       case Type.AssocType(sym, args, kind, _) =>
         // // Performance: Few associated types, not worth optimizing.
         Type.AssocType(sym, args.map(visitType), kind, loc)
+
+      case Type.JvmToType(tpe, loc) =>
+        Type.JvmToType(visitType(tpe), loc)
+
+      case Type.JvmField(tpe, name, loc) =>
+        Type.JvmField(visitType(tpe), name, loc)
+
+      case Type.JvmMethod(tpe, name, tpes, loc) =>
+        Type.JvmMethod(visitType(tpe), name, tpes.map(visitType), loc)
+
+      case Type.JvmStaticMethod(clazz, name, tpes, loc) =>
+        Type.JvmStaticMethod(clazz, name, tpes.map(visitType), loc)
+
+      case Type.JvmConstructor(clazz, tpes, loc) =>
+        Type.JvmConstructor(clazz, tpes.map(visitType), loc)
     }
 
     val newBase = visitType(baseType)
