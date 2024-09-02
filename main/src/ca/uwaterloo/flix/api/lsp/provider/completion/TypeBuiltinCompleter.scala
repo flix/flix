@@ -59,20 +59,20 @@ object TypeBuiltinCompleter extends Completer {
     */
   override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[TypeBuiltinCompletion] = {
     val builtinTypes = BuiltinTypeNames.map { name =>
-      val internalPriority = CompletionPriority.highest _
+      val internalPriority = Priority.highest _
       Completion.TypeBuiltinCompletion(name, TypeCompleter.priorityBoostForTypes(internalPriority(name))(context), TextEdit(context.range, name),
         InsertTextFormat.PlainText)
     }
 
     val lowPriorityBuiltinTypes = LowPriorityBuiltinTypeNames.map { name =>
-      val internalPriority = CompletionPriority.lowest _
+      val internalPriority = Priority.lowest _
       Completion.TypeBuiltinCompletion(name, TypeCompleter.priorityBoostForTypes(internalPriority(name))(context), TextEdit(context.range, name),
         InsertTextFormat.PlainText)
     }
 
     val builtinTypesWithParams = BuiltinTypeNamesWithTypeParameters.map {
       case (name, tparams) =>
-        val internalPriority = CompletionPriority.higher _
+        val internalPriority = Priority.higher _
         val fmtTparams = tparams.zipWithIndex.map { case (name, idx) => s"$${${idx + 1}:$name}" }.mkString(", ")
         val finalName = s"$name[${tparams.mkString(", ")}]"
         Completion.TypeBuiltinCompletion(finalName, TypeCompleter.priorityBoostForTypes(internalPriority(name))(context),
