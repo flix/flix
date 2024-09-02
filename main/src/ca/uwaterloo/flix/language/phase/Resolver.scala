@@ -105,9 +105,7 @@ def run(root: NamedAst.Root, oldRoot: ResolvedAst.Root, changeSet: ChangeSet)(im
         flatMapN(unitsVal) {
           case units =>
             val table = SymbolTable.traverse(units)(tableUnit)
-            implicit val implicit_taenv = taenv
-            implicit val implicit_root = root
-            val structFieldTraitsVal = traverse(root.structFieldTraits)(resolveTrait(_, ListMap.empty, Name.RootNS))
+            val structFieldTraitsVal = traverse(root.structFieldTraits)(resolveTrait(_, ListMap.empty, Name.RootNS)(taenv, root, flix))
             mapN(checkSuperTraitDag(table.traits), structFieldTraitsVal) {
               case ((), structFieldTraitsList) =>
                 val structFieldTraits = structFieldTraitsList.map(t => t.sym -> t)
