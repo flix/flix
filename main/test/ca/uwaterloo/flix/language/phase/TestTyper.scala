@@ -417,7 +417,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
          |
          |def foo(x: E): String = ToString.toString(x)
          |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin.copy(threads = 1)) // MATT
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError](result)
   }
 
