@@ -324,7 +324,7 @@ object Namer {
       val tparams = tparams0.map(visitTypeParam)
 
       val mod = visitModifiers(mod0, ns0)
-      val indices = fields0.map(_.name).zipWithIndex.toMap
+      val indices = fields0.map(_.name).zip(fields0.map(_.loc).zipWithIndex).toMap
       val fields = fields0.map(visitField(sym, _, indices))
 
       NamedAst.Declaration.Struct(doc, ann, mod, sym, tparams, fields, indices, loc)
@@ -368,10 +368,11 @@ object Namer {
   /**
     * Performs naming on the given field.
     */
-  private def visitField(struct: Symbol.StructSym, field0: DesugaredAst.StructField, indices: Map[Name.Label, Int])(implicit flix: Flix, sctx: SharedContext): NamedAst.Declaration.StructField = field0 match {
+  private def visitField(struct: Symbol.StructSym, field0: DesugaredAst.StructField, indices: Map[Name.Label, (SourceLocation, Int)])(implicit flix: Flix, sctx: SharedContext): NamedAst.Declaration.StructField = field0 match {
     case DesugaredAst.StructField(name, tpe, loc) =>
       val t = visitType(tpe)
-      val sym = Symbol.mkStructFieldSym(struct, indices(name), name)
+      val (_, idx) = indices(name)
+      val sym = Symbol.mkStructFieldSym(struct, idx, name)
       NamedAst.Declaration.StructField(sym, t, loc)
   }
 
