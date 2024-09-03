@@ -20,7 +20,6 @@ import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
-import ca.uwaterloo.flix.language.phase.typer.TypeReduction.{JavaConstructorResolutionResult, JavaFieldResolutionResult, JavaMethodResolutionResult}
 import ca.uwaterloo.flix.language.phase.unification.*
 import ca.uwaterloo.flix.util.Result.Err
 import ca.uwaterloo.flix.util.collection.{ListMap, ListOps}
@@ -307,7 +306,7 @@ object ConstraintSolver {
     *
     * θ ⊩ᵤ τ₁ = τ₂ ⤳ u; r
     */
-  private def resolveEquality(t1: Type, t2: Type, prov: Provenance, renv: RigidityEnv, loc: SourceLocation)(implicit scope: Scope, eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Result[ResolutionResult, TypeError] = (tpe1.kind, tpe2.kind) match {
+  private def resolveEquality(t1: Type, t2: Type, prov: Provenance, renv: RigidityEnv, loc: SourceLocation)(implicit scope: Scope, eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Result[ResolutionResult, TypeError] = (t1.kind, t2.kind) match {
     case (Kind.Eff, Kind.Eff) =>
       // first simplify the types to get rid of assocs if we can
       for {
@@ -648,80 +647,80 @@ object ConstraintSolver {
     // TODO LEVELS Top is probably OK?
     implicit val scope: Scope = Scope.Top
     (err0, prov) match {
-    case (err, Provenance.ExpectType(expected, actual, loc)) =>
-      toTypeError(err, Provenance.Match(expected, actual, loc)) match {
-        case TypeError.MismatchedTypes(baseType1, baseType2, fullType1, fullType2, renv, _) =>
-          (baseType1.typeConstructor, baseType2.typeConstructor) match {
-            case (Some(TypeConstructor.Native(left)), Some(TypeConstructor.Native(right))) if left.isAssignableFrom(right) =>
-              TypeError.PossibleCheckedTypeCast(expected, actual, renv, loc)
-            case _ =>
-              TypeError.UnexpectedType(baseType1, baseType2, renv, loc)
-          }
-        case e => e
-      }
+      case (err, Provenance.ExpectType(expected, actual, loc)) =>
+        toTypeError(err, Provenance.Match(expected, actual, loc)) match {
+          case TypeError.MismatchedTypes(baseType1, baseType2, fullType1, fullType2, renv, _) =>
+            (baseType1.typeConstructor, baseType2.typeConstructor) match {
+              case (Some(TypeConstructor.Native(left)), Some(TypeConstructor.Native(right))) if left.isAssignableFrom(right) =>
+                TypeError.PossibleCheckedTypeCast(expected, actual, renv, loc)
+              case _ =>
+                TypeError.UnexpectedType(baseType1, baseType2, renv, loc)
+            }
+          case e => e
+        }
 
-    case (err, Provenance.ExpectEffect(expected, actual, loc)) =>
-      toTypeError(err, Provenance.Match(expected, actual, loc)) match {
-        case TypeError.MismatchedEffects(baseType1, baseType2, fullType1, fullType2, renv, _) =>
-          // TODO ASSOC-TYPES restore possible upcast error
-          TypeError.UnexpectedEffect(baseType1, baseType2, renv, loc)
-        case e => e
-      }
+      case (err, Provenance.ExpectEffect(expected, actual, loc)) =>
+        toTypeError(err, Provenance.Match(expected, actual, loc)) match {
+          case TypeError.MismatchedEffects(baseType1, baseType2, fullType1, fullType2, renv, _) =>
+            // TODO ASSOC-TYPES restore possible upcast error
+            TypeError.UnexpectedEffect(baseType1, baseType2, renv, loc)
+          case e => e
+        }
 
-    case (err, Provenance.ExpectArgument(expected, actual, sym, num, loc)) =>
-      toTypeError(err, Provenance.Match(expected, actual, loc)) match {
-        case TypeError.MismatchedBools(_, _, fullType1, fullType2, renv, loc) =>
-          TypeError.UnexpectedArg(sym, num, fullType1, fullType2, renv, loc)
+      case (err, Provenance.ExpectArgument(expected, actual, sym, num, loc)) =>
+        toTypeError(err, Provenance.Match(expected, actual, loc)) match {
+          case TypeError.MismatchedBools(_, _, fullType1, fullType2, renv, loc) =>
+            TypeError.UnexpectedArg(sym, num, fullType1, fullType2, renv, loc)
 
-        case TypeError.MismatchedArrowEffects(_, _, fullType1, fullType2, renv, loc) =>
-          TypeError.UnexpectedArg(sym, num, fullType1, fullType2, renv, loc)
+          case TypeError.MismatchedArrowEffects(_, _, fullType1, fullType2, renv, loc) =>
+            TypeError.UnexpectedArg(sym, num, fullType1, fullType2, renv, loc)
 
-        case TypeError.MismatchedTypes(_, _, fullType1, fullType2, renv, loc) =>
-          TypeError.UnexpectedArg(sym, num, fullType1, fullType2, renv, loc)
-        case e => e
-      }
+          case TypeError.MismatchedTypes(_, _, fullType1, fullType2, renv, loc) =>
+            TypeError.UnexpectedArg(sym, num, fullType1, fullType2, renv, loc)
+          case e => e
+        }
 
-    case (UnificationError.MismatchedTypes(baseType1, baseType2), Provenance.Match(type1, type2, loc)) =>
-      TypeError.MismatchedTypes(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc)
+      case (UnificationError.MismatchedTypes(baseType1, baseType2), Provenance.Match(type1, type2, loc)) =>
+        TypeError.MismatchedTypes(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc)
 
-    case (UnificationError.MismatchedBools(baseType1, baseType2), Provenance.Match(type1, type2, loc)) =>
-      TypeError.MismatchedBools(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc)
+      case (UnificationError.MismatchedBools(baseType1, baseType2), Provenance.Match(type1, type2, loc)) =>
+        TypeError.MismatchedBools(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc)
 
-    case (UnificationError.MismatchedEffects(baseType1, baseType2), Provenance.Match(type1, type2, loc)) =>
-      (type1.typeConstructor, type2.typeConstructor) match {
-        case (Some(TypeConstructor.Arrow(_)), _) => TypeError.MismatchedArrowEffects(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc)
-        case (_, Some(TypeConstructor.Arrow(_))) => TypeError.MismatchedArrowEffects(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc)
-        case _ => TypeError.MismatchedEffects(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc)
-      }
+      case (UnificationError.MismatchedEffects(baseType1, baseType2), Provenance.Match(type1, type2, loc)) =>
+        (type1.typeConstructor, type2.typeConstructor) match {
+          case (Some(TypeConstructor.Arrow(_)), _) => TypeError.MismatchedArrowEffects(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc)
+          case (_, Some(TypeConstructor.Arrow(_))) => TypeError.MismatchedArrowEffects(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc)
+          case _ => TypeError.MismatchedEffects(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc)
+        }
 
-    case (UnificationError.MismatchedCaseSets(baseType1, baseType2), Provenance.Match(type1, type2, loc)) =>
-      TypeError.MismatchedCaseSets(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc)
+      case (UnificationError.MismatchedCaseSets(baseType1, baseType2), Provenance.Match(type1, type2, loc)) =>
+        TypeError.MismatchedCaseSets(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc)
 
-    case (UnificationError.MismatchedArity(ts1, ts2), Provenance.Match(tpe1, tpe2, loc)) =>
-      TypeError.MismatchedArity(tpe1, tpe2, RigidityEnv.empty, loc)
+      case (UnificationError.MismatchedArity(ts1, ts2), Provenance.Match(tpe1, tpe2, loc)) =>
+        TypeError.MismatchedArity(tpe1, tpe2, RigidityEnv.empty, loc)
 
-    case (UnificationError.TooComplex(tpe1, tpe2), Provenance.Match(_, _, loc)) =>
-      TypeError.TooComplex(loc)
+      case (UnificationError.TooComplex(tpe1, tpe2), Provenance.Match(_, _, loc)) =>
+        TypeError.TooComplex(loc)
 
-    case (UnificationError.RigidVar(baseType1, baseType2), Provenance.Match(type1, type2, loc)) =>
-      TypeError.MismatchedTypes(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc)
-    case (UnificationError.OccursCheck(baseType1, baseType2), Provenance.Match(type1, type2, loc)) =>
-      TypeError.OccursCheck(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc)
-    case (UnificationError.UndefinedLabel(label, labelType, recordType), Provenance.Match(type1, type2, loc)) =>
-      TypeError.UndefinedLabel(label, labelType, recordType, RigidityEnv.empty, loc)
-    case (UnificationError.UndefinedPredicate(pred, predType, schemaType), Provenance.Match(type1, type2, loc)) =>
-      TypeError.UndefinedPred(pred, predType, schemaType, RigidityEnv.empty, loc)
-    case (UnificationError.NonRecordType(nonRecordType), Provenance.Match(type1, type2, loc)) =>
-      TypeError.NonRecordType(nonRecordType, RigidityEnv.empty, loc)
-    case (UnificationError.NonSchemaType(nonSchemaType), Provenance.Match(type1, type2, loc)) =>
-      TypeError.NonSchemaType(nonSchemaType, RigidityEnv.empty, loc)
-    case (UnificationError.NoMatchingInstance(tconstr), Provenance.Match(type1, type2, loc)) =>
-      mkMissingInstance(tconstr.head.sym, tconstr.arg, RigidityEnv.empty, loc)
+      case (UnificationError.RigidVar(baseType1, baseType2), Provenance.Match(type1, type2, loc)) =>
+        TypeError.MismatchedTypes(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc)
+      case (UnificationError.OccursCheck(baseType1, baseType2), Provenance.Match(type1, type2, loc)) =>
+        TypeError.OccursCheck(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc)
+      case (UnificationError.UndefinedLabel(label, labelType, recordType), Provenance.Match(type1, type2, loc)) =>
+        TypeError.UndefinedLabel(label, labelType, recordType, RigidityEnv.empty, loc)
+      case (UnificationError.UndefinedPredicate(pred, predType, schemaType), Provenance.Match(type1, type2, loc)) =>
+        TypeError.UndefinedPred(pred, predType, schemaType, RigidityEnv.empty, loc)
+      case (UnificationError.NonRecordType(nonRecordType), Provenance.Match(type1, type2, loc)) =>
+        TypeError.NonRecordType(nonRecordType, RigidityEnv.empty, loc)
+      case (UnificationError.NonSchemaType(nonSchemaType), Provenance.Match(type1, type2, loc)) =>
+        TypeError.NonSchemaType(nonSchemaType, RigidityEnv.empty, loc)
+      case (UnificationError.NoMatchingInstance(tconstr), Provenance.Match(type1, type2, loc)) =>
+        mkMissingInstance(tconstr.head.sym, tconstr.arg, RigidityEnv.empty, loc)
 
-    // TODO ASSOC-TYPES these errors are relics of the old type system and should be removed
-    case (UnificationError.UnsupportedEquality(t1, t2), _) => throw InternalCompilerException("unexpected error: " + err0, SourceLocation.Unknown)
-    case (UnificationError.IrreducibleAssocType(sym, t), _) => throw InternalCompilerException("unexpected error: " + err0, SourceLocation.Unknown)
-  }
+      // TODO ASSOC-TYPES these errors are relics of the old type system and should be removed
+      case (UnificationError.UnsupportedEquality(t1, t2), _) => throw InternalCompilerException("unexpected error: " + err0, SourceLocation.Unknown)
+      case (UnificationError.IrreducibleAssocType(sym, t), _) => throw InternalCompilerException("unexpected error: " + err0, SourceLocation.Unknown)
+    }
   }
 
   /**
