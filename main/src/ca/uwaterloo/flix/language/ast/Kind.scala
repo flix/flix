@@ -147,6 +147,10 @@ object Kind {
     case _ => Nil
   }
 
+  /**
+    * Traverses the kind and returns `true` if `k` contains [[Kind.Error]].
+    * Returns `false` otherwise.
+    */
   def hasError(k: Kind): Boolean = k match {
     case Wild => false
     case WildCaseSet => false
