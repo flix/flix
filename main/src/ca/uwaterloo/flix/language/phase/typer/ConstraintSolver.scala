@@ -408,20 +408,17 @@ object ConstraintSolver {
     case (Type.AssocType(cst1, args1, _, _), Type.AssocType(cst2, args2, _, _)) if cst1.sym == cst2.sym && args1 == args2 =>
       Result.Ok(ResolutionResult.elimination)
 
-    // redU
     // If either side is an associated type, we don't give up since we can find out more later.
     case (assoc: Type.AssocType, tpe) =>
       Result.Ok(ResolutionResult.constraints(List(TypeConstraint.Equality(assoc, tpe, prov)), progress = false))
 
-    // redU
     case (tpe, assoc: Type.AssocType) =>
       Result.Ok(ResolutionResult.constraints(List(TypeConstraint.Equality(tpe, assoc, prov)), progress = false))
 
-    // Java types
+    // If either side is an Java type, we don't give up since we can find out more later.
     case (java@Type.JvmToType(_, _), tpe) =>
       Result.Ok(ResolutionResult.constraints(List(TypeConstraint.Equality(java, tpe, prov)), progress = false))
 
-    // Java types
     case (tpe, java@Type.JvmToType(_, _)) =>
       Result.Ok(ResolutionResult.constraints(List(TypeConstraint.Equality(tpe, java, prov)), progress = false))
 
