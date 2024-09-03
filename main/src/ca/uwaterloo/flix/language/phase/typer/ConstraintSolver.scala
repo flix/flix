@@ -409,42 +409,22 @@ object ConstraintSolver {
       Result.Ok(ResolutionResult.elimination)
 
     // redU
-    // If either side is an associated type, we try to reduce both sides.
-    // This is to prevent erroneous no-progress reports when we actually could make progress on the non-matched side.
+    // If either side is an associated type, we don't give up since we can find out more later.
     case (assoc: Type.AssocType, tpe) =>
-      for {
-        (t1, p1) <- TypeReduction.simplify(assoc, renv, loc)
-        (t2, p2) <- TypeReduction.simplify(tpe, renv, loc)
-      } yield {
-        ResolutionResult.constraints(List(TypeConstraint.Equality(t1, t2, prov)), p1 || p2)
-      }
+      Result.Ok(ResolutionResult.constraints(List(TypeConstraint.Equality(assoc, tpe, prov)), progress = false))
 
     // redU
     case (tpe, assoc: Type.AssocType) =>
-      for {
-        (t1, p1) <- TypeReduction.simplify(tpe, renv, loc)
-        (t2, p2) <- TypeReduction.simplify(assoc, renv, loc)
-      } yield {
-        ResolutionResult.constraints(List(TypeConstraint.Equality(t1, t2, prov)), p1 || p2)
-      }
-
-    // Java types
-    case (tpe, java@Type.JvmToType(_, _)) =>
-      for {
-        (t1, p1) <- TypeReduction.simplify(tpe, renv, loc)
-        (t2, p2) <- TypeReduction.simplify(java, renv, loc)
-      } yield {
-        ResolutionResult.constraints(List(TypeConstraint.Equality(t1, t2, prov)), p1 || p2)
-      }
+      Result.Ok(ResolutionResult.constraints(List(TypeConstraint.Equality(tpe, assoc, prov)), progress = false))
 
     // Java types
     case (java@Type.JvmToType(_, _), tpe) =>
-      for {
-        (t1, p1) <- TypeReduction.simplify(java, renv, loc)
-        (t2, p2) <- TypeReduction.simplify(tpe, renv, loc)
-      } yield {
-        ResolutionResult.constraints(List(TypeConstraint.Equality(t1, t2, prov)), p1 || p2)
-      }
+      Result.Ok(ResolutionResult.constraints(List(TypeConstraint.Equality(java, tpe, prov)), progress = false))
+
+    // Java types
+    case (tpe, java@Type.JvmToType(_, _)) =>
+      Result.Ok(ResolutionResult.constraints(List(TypeConstraint.Equality(tpe, java, prov)), progress = false))
+
 
     case _ =>
       Result.Err(toTypeError(UnificationError.MismatchedTypes(tpe1, tpe2), prov))
