@@ -47,19 +47,18 @@ mod TestArray {
     // Indexable                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    def outOfBoundsHandler(_: Region[rc], f: Unit -> a \ OutOfBounds + rc): Option[a] = {
+    def outOfBoundsHandler(_: Region[rc], f: Unit -> Bool \ OutOfBounds + rc): Bool = {
         try {
-            Some(f())
+            f()
         } with OutOfBounds {
-            def outOfBounds(_, _) = None
+            def outOfBounds(_, _) = false
         }
     }
 
     @test
     def testIndexable01(): Bool = region rc {
         let a = Array#{1, 2, 3, 4} @ rc;
-        let res = outOfBoundsHandler(rc, () -> a[0]);
-        res == Some(1)
+        outOfBoundsHandler(rc, () -> a[0] == 1);
     }
 
     /////////////////////////////////////////////////////////////////////////////
