@@ -29,16 +29,17 @@ sealed trait CofiniteIntSet {
 
   import CofiniteIntSet.{Compl, Set}
 
-  /** Returns `true` if `this` is [[CofiniteIntSet.universe]]. */
-  def isUniverse: Boolean = this match {
-    case Compl(s) if s.isEmpty => true
-    case Set(_) => false
-    case Compl(_) => false
-  }
 
   /** Returns `true` if `this` is [[CofiniteIntSet.empty]]. */
   def isEmpty: Boolean = this match {
     case Set(s) if s.isEmpty => true
+    case Set(_) => false
+    case Compl(_) => false
+  }
+
+  /** Returns `true` if `this` is [[CofiniteIntSet.universe]]. */
+  def isUniverse: Boolean = this match {
+    case Compl(s) if s.isEmpty => true
     case Set(_) => false
     case Compl(_) => false
   }
