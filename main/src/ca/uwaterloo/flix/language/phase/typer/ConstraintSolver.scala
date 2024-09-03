@@ -307,32 +307,28 @@ object ConstraintSolver {
     *
     * θ ⊩ᵤ τ₁ = τ₂ ⤳ u; r
     */
-  private def resolveEquality(tpe1: Type, tpe2: Type, prov: Provenance, renv: RigidityEnv, loc: SourceLocation)(implicit scope: Scope, eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Result[ResolutionResult, TypeError] = (tpe1.kind, tpe2.kind) match {
+  private def resolveEquality(t1: Type, t2: Type, prov: Provenance, renv: RigidityEnv, loc: SourceLocation)(implicit scope: Scope, eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Result[ResolutionResult, TypeError] = (tpe1.kind, tpe2.kind) match {
     case (Kind.Eff, Kind.Eff) =>
       // first simplify the types to get rid of assocs if we can
       for {
-        (t1, p1) <- TypeReduction.simplify(tpe1, renv, loc)
-        (t2, p2) <- TypeReduction.simplify(tpe2, renv, loc)
         res0 <- EffUnification.unify(t1, t2, renv).mapErr(toTypeError(_, prov))
         res =
           if (res0._2.isEmpty) {
             ResolutionResult.newSubst(res0._1)
           } else {
-            ResolutionResult.constraints(List(TypeConstraint.Equality(t1, t2, prov)), p1 || p2)
+            ResolutionResult.constraints(List(TypeConstraint.Equality(t1, t2, prov)), progress = false)
           }
       } yield res
 
     case (Kind.Bool, Kind.Bool) =>
       // first simplify the types to get rid of assocs if we can
       for {
-        (t1, p1) <- TypeReduction.simplify(tpe1, renv, loc)
-        (t2, p2) <- TypeReduction.simplify(tpe2, renv, loc)
         res0 <- BoolUnification.unify(t1, t2, renv).mapErr(toTypeError(_, prov))
         res =
           if (res0._2.isEmpty) {
             ResolutionResult.newSubst(res0._1)
           } else {
-            ResolutionResult.constraints(List(TypeConstraint.Equality(t1, t2, prov)), p1 || p2)
+            ResolutionResult.constraints(List(TypeConstraint.Equality(t1, t2, prov)), progress = false)
           }
       } yield res
 
@@ -340,42 +336,30 @@ object ConstraintSolver {
     case (Kind.RecordRow, Kind.RecordRow) =>
       // first simplify the types to get rid of assocs if we can
       for {
-        (t1, p1) <- TypeReduction.simplify(tpe1, renv, loc)
-        (t2, p2) <- TypeReduction.simplify(tpe2, renv, loc)
         res0 <- RecordUnification.unifyRows(t1, t2, renv).mapErr(toTypeError(_, prov))
         res =
           if (res0._2.isEmpty) {
             ResolutionResult.newSubst(res0._1)
           } else {
-            ResolutionResult.constraints(List(TypeConstraint.Equality(t1, t2, prov)), p1 || p2)
+            ResolutionResult.constraints(List(TypeConstraint.Equality(t1, t2, prov)), progress = false)
           }
       } yield res
 
     case (Kind.SchemaRow, Kind.SchemaRow) =>
       // first simplify the types to get rid of assocs if we can
       for {
-        (t1, _) <- TypeReduction.simplify(tpe1, renv, loc)
-        (t2, _) <- TypeReduction.simplify(tpe2, renv, loc)
         res <- SchemaUnification.unifyRows(t1, t2, renv).mapErr(toTypeError(_, prov))
       } yield ResolutionResult.newSubst(res)
 
     case (Kind.CaseSet(sym1), Kind.CaseSet(sym2)) if sym1 == sym2 =>
       for {
-        (t1, _) <- TypeReduction.simplify(tpe1, renv, loc)
-        (t2, _) <- TypeReduction.simplify(tpe2, renv, loc)
         res <- CaseSetUnification.unify(t1, t2, renv, sym1.universe, sym1).mapErr(toTypeError(_, prov))
       } yield ResolutionResult.newSubst(res)
 
     case (Kind.Jvm, Kind.Jvm) =>
-      for {
-        (t1, p1) <- TypeReduction.simplify(tpe1, renv, loc)
-        (t2, p2) <- TypeReduction.simplify(tpe2, renv, loc)
-        res = JvmUnification.unify(t1, t2, renv)
-      } yield {
-        res match {
-          case None => ResolutionResult.constraints(List(TypeConstraint.Equality(t1, t2, prov)), p1 || p2)
-          case Some(subst) => ResolutionResult.newSubst(subst)
-        }
+      JvmUnification.unify(t1, t2, renv) match {
+        case None => Result.Ok(ResolutionResult.constraints(List(TypeConstraint.Equality(t1, t2, prov)), progress = false))
+        case Some(subst) => Result.Ok(ResolutionResult.newSubst(subst))
       }
 
     case (Kind.Error, _) => Result.Ok(ResolutionResult.newSubst(Substitution.empty))
@@ -384,12 +368,10 @@ object ConstraintSolver {
 
     case (k1, k2) if KindUnification.unifiesWith(k1, k2) =>
       for {
-        (t1, _) <- TypeReduction.simplify(tpe1, renv, loc)
-        (t2, _) <- TypeReduction.simplify(tpe2, renv, loc)
         res <- resolveEqualityStar(t1, t2, prov, renv, loc)
       } yield res
 
-    case _ => Err(toTypeError(UnificationError.MismatchedTypes(tpe1, tpe2), prov))
+    case _ => Err(toTypeError(UnificationError.MismatchedTypes(t1, t2), prov))
   }
 
   /**
