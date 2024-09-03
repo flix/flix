@@ -42,6 +42,26 @@ mod TestArray {
         Array.toString((Array#{'a', 'b', 'c', 'd'} @ rc)) == "Array#{a, b, c, d}"
     }
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Indexable                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    def outOfBoundsHandler(_: Region[rc], f: Unit -> a \ OutOfBounds + rc): Option[a] = {
+        try {
+            Some(f())
+        } with OutOfBounds {
+            def outOfBounds(_, _) = None
+        }
+    }
+
+    @test
+    def testIndexable01(): Bool = region rc {
+        let a = Array#{1, 2, 3, 4} @ rc;
+        let res = outOfBoundsHandler(rc, () -> a[0]);
+        res == Some(1)
+    }
+
     /////////////////////////////////////////////////////////////////////////////
     // new                                                                     //
     /////////////////////////////////////////////////////////////////////////////
