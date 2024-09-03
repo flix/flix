@@ -269,6 +269,7 @@ object ConstraintSolver {
         (t1, p1) <- TypeReduction.simplify(tmin1, renv, prov.loc)
         (t2, p2) <- TypeReduction.simplify(tmin2, renv, prov.loc)
         ResolutionResult(subst, constrs, p) <-
+          // A small hack to ensure that we do not add reducible types to the substitution.
           if (TypeReduction.isReducible(t1) || TypeReduction.isReducible(t2)) {
             Result.Ok(ResolutionResult.constraints(List(TypeConstraint.Equality(t1, t2, prov)), p1 || p2))
           } else {
