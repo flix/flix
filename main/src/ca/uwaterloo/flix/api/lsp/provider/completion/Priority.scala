@@ -31,17 +31,22 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
   * 7: Normal: completions that are relevant within no particular context
   * 9: Low: completions that are unlikely to be relevant unless within a specific context
   */
-sealed trait Priority
+sealed trait Priority {
+}
 object Priority {
   case object highest extends Priority
-
   case object higher extends Priority
-
   case object high extends Priority
-
   case object low extends Priority
-  
   case object lower extends Priority
-
   case object lowest extends Priority
+
+  def toSortText(label: String, p: Priority): String = p match {
+  	case Priority.highest => 1 + label
+  	case Priority.higher  => 2 + label
+  	case Priority.high    => 3 + label
+  	case Priority.low     => 4 + label
+  	case Priority.lower   => 5 + label
+  	case Priority.lowest  => 6 + label
+  }
 }
