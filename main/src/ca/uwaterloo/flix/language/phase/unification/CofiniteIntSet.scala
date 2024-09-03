@@ -66,6 +66,17 @@ object CofiniteIntSet {
   /** Returns the singleton set of `i`. */
   def mkSet(i: Int): CofiniteIntSet = Set(SortedSet(i))
 
+  /** Returns the complement of `s` (`!s`). */
+  def complement(s: CofiniteIntSet): CofiniteIntSet = s match {
+    case Set(s) =>
+      // !s
+      Compl(s)
+    case Compl(s) =>
+      // !!s
+      // = s             (double negation)
+      Set(s)
+  }
+
   /** Returns the union of `s1` and `s2` (`s1 ∪ s2`). */
   def union(s1: CofiniteIntSet, s2: CofiniteIntSet): CofiniteIntSet = (s1, s2) match {
     case (Set(x), Set(y)) =>
@@ -111,17 +122,6 @@ object CofiniteIntSet {
       // = !!(!x ∩ !y)   (double complement)
       // = !(x ∪ y)      (complement distribution)
       Compl(x.union(y))
-  }
-
-  /** Returns the complement of `s` (`!s`). */
-  def complement(s: CofiniteIntSet): CofiniteIntSet = s match {
-    case Set(s) =>
-      // !s
-      Compl(s)
-    case Compl(s) =>
-      // !!s
-      // = s             (double negation)
-      Set(s)
   }
 
   /**
