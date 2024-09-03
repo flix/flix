@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Constant
 import ca.uwaterloo.flix.language.fmt.{FormatOptions, FormatType}
-import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.ast.shared.Scope
 
@@ -577,6 +577,29 @@ object Type {
       case JvmTemplate.JvmField(tpe, name) => JvmTemplate.JvmField(f(tpe), name)
       case JvmTemplate.JvmMethod(tpe, name, tpes) => JvmTemplate.JvmMethod(f(tpe), name, tpes.map(f))
       case JvmTemplate.JvmStaticMethod(clazz, name, tpes) => JvmTemplate.JvmStaticMethod(clazz, name, tpes.map(f))
+    }
+
+    def traverse[E](f: Type => Result[Type, E]): Result[JvmTemplate, E] = this match {
+      case JvmTemplate.JvmConstructor(clazz, tpes0) =>
+        for {
+          tpes <- Result.traverse(tpes0)(f)
+        } yield JvmTemplate.JvmConstructor(clazz, tpes)
+
+      case JvmTemplate.JvmField(tpe0, name) =>
+        for {
+          tpe <- f(tpe0)
+        } yield JvmTemplate.JvmField(tpe, name)
+
+      case JvmTemplate.JvmMethod(tpe0, name, tpes0) =>
+        for {
+          tpe <- f(tpe0)
+          tpes <- Result.traverse(tpes0)(f)
+        } yield JvmTemplate.JvmMethod(tpe, name, tpes)
+
+      case JvmTemplate.JvmStaticMethod(clazz, name, tpes0) =>
+        for {
+          tpes <- Result.traverse(tpes0)(f)
+        } yield JvmTemplate.JvmStaticMethod(clazz, name, tpes)
     }
   }
 

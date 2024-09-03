@@ -136,8 +136,10 @@ object EqualityEnvironment {
         for {
           t1 <- visit(tpe)
         } yield Type.JvmToType(t1, loc)
-      // MATT this breaks when we combine assocs and JVM constraints!
-      case Type.JvmMember(template, loc) => Result.Ok(Type.JvmMember(template, loc))
+      case Type.JvmMember(template0, loc) =>
+        for {
+          template <- template0.traverse(visit)
+        } yield Type.JvmMember(template, loc)
     }
 
     visit(t0)
