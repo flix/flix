@@ -22,11 +22,11 @@ import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.VarCompletion
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.Symbol
 
-object VarCompleter extends Completer {
+object VarCompleter {
   /**
     * Returns a List of Completion for var.
     */
-  override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[VarCompletion] = {
+  def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[VarCompletion] = {
     // Find all local variables in the current uri with a given range.
     index.queryWithRange(context.uri, queryLine = context.range.start.line, beforeLine = 20, afterLine = 10).collect {
       case Entity.LocalVar(sym, tpe) => Completion.VarCompletion(sym, tpe)

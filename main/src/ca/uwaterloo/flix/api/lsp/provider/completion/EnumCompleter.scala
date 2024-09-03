@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.api.lsp.{Index, TextEdit}
 import ca.uwaterloo.flix.language.ast.Symbol.EnumSym
 import ca.uwaterloo.flix.language.ast.{Symbol, TypedAst}
 
-object EnumCompleter extends Completer {
+object EnumCompleter {
 
   def getCompletions(ctx: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[EnumCompletion] = {
     val enumsInModule = getEnumSymsInModule(ctx)

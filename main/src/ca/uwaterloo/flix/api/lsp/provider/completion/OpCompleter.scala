@@ -20,11 +20,11 @@ import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.OpCompletion
 import ca.uwaterloo.flix.language.ast.TypedAst
 
-object OpCompleter extends Completer{
+object OpCompleter {
   /**
     * Returns a List of Completion for completer.
     */
-  override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[OpCompletion] = {
+  def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[OpCompletion] = {
     if (context.previousWord != "do") {
       return Nil
     }
