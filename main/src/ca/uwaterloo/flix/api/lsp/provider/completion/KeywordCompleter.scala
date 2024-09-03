@@ -91,25 +91,25 @@ object KeywordCompleter {
       "without",
       "yield"
     ) map (name => Completion.KeywordCompletion(name, Priority.lower(name)))
-
+           
   /**
     * Miscellaneous keywords.
     */
   def getOtherKeywords: Iterable[Completion] =
     List(
-      Completion.KeywordCompletion("with", Priority.highest("with")),
-      Completion.KeywordCompletion("law", Priority.higher("law")),
-      Completion.KeywordCompletion("@Test", Priority.high("@Test")),
-      Completion.KeywordCompletion("where", Priority.low("where")),
-      Completion.KeywordCompletion("fix", Priority.low("fix")),
-      Completion.KeywordCompletion("@Deprecated", Priority.lowest("@Deprecated")),
-      Completion.KeywordCompletion("@Parallel", Priority.lowest("@Parallel")),
+      Completion.KeywordCompletion("with"             , Priority.highest("with")),
+      Completion.KeywordCompletion("law"              , Priority.higher("law")),
+      Completion.KeywordCompletion("@Test"            , Priority.high("@Test")),
+      Completion.KeywordCompletion("where"            , Priority.low("where")),
+      Completion.KeywordCompletion("fix"              , Priority.low("fix")),
+      Completion.KeywordCompletion("@Deprecated"      , Priority.lowest("@Deprecated")),
+      Completion.KeywordCompletion("@Parallel"        , Priority.lowest("@Parallel")),
       Completion.KeywordCompletion("@ParallelWhenPure", Priority.lowest("@ParallelWhenPure")),
-      Completion.KeywordCompletion("@Lazy", Priority.lowest("@Lazy")),
-      Completion.KeywordCompletion("@LazyWhenPure", Priority.lowest("@LazyWhenPure")),
-      Completion.KeywordCompletion("Record", Priority.lowest("Record")),
-      Completion.KeywordCompletion("redef", Priority.lowest("redef")),
-      Completion.KeywordCompletion("Schema", Priority.lowest("Schema")),
+      Completion.KeywordCompletion("@Lazy"            , Priority.lowest("@Lazy")),
+      Completion.KeywordCompletion("@LazyWhenPure"    , Priority.lowest("@LazyWhenPure")),
+      Completion.KeywordCompletion("Record"           , Priority.lowest("Record")),
+      Completion.KeywordCompletion("redef"            , Priority.lowest("redef")),
+      Completion.KeywordCompletion("Schema"           , Priority.lowest("Schema")),
     )
 
   /**
