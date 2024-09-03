@@ -770,7 +770,7 @@ object ConstraintGen {
         // Γ ⊢ eᵢ ... : τ₁ ...    Γ ⊢ ι ~ JvmConstructor(k, eᵢ ...)
         // --------------------------------------------------------
         // Γ ⊢ new k(e₁ ...) : k
-        val clazzTpe = Type.getFlixType(clazz) // MATT should use JvmType of constructor?
+        val clazzTpe = Type.getFlixType(clazz)
         val (tpes, effs) = exps.map(visitExp).unzip
         val baseEffs = BaseEffects.of(clazz, loc)
         c.unifyType(jvar, Type.JvmMember(Type.JvmTemplate.JvmConstructor(clazz, tpes), loc), loc) // unify constructor

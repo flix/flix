@@ -547,35 +547,59 @@ object Type {
     override def kind: Kind = Kind.Star
   }
 
-  // MATT docs
+  /**
+    * An unresolved Java type. Once the type variables are resolved, this can be reduced to a normal type.
+    */
   case class JvmMember(template: JvmTemplate, loc: SourceLocation) extends Type with BaseType {
     override def kind: Kind = Kind.Jvm
   }
 
-  // MATT docs
+  /**
+    * An enumeration of the unresolved Java types.
+    */
   sealed trait JvmTemplate {
-    // MATT docs
+
+    /**
+      * Returns all the types in `this`.
+      */
     def getTypes: List[Type] = this match {
       case JvmTemplate.JvmConstructor(_, tpes) => tpes
-      case JvmTemplate.JvmMethod(tpe, _, tpes) => tpe :: tpes
       case JvmTemplate.JvmField(tpe, _) => List(tpe)
+      case JvmTemplate.JvmMethod(tpe, _, tpes) => tpe :: tpes
       case JvmTemplate.JvmStaticMethod(_, _, tpes) => tpes
     }
 
-    // MATT docs
+    /**
+      * Transforms `this` by executing `f` on all the types in `this`.
+      */
     def map(f: Type => Type): JvmTemplate = this match {
       case JvmTemplate.JvmConstructor(clazz, tpes) => JvmTemplate.JvmConstructor(clazz, tpes.map(f))
-      case JvmTemplate.JvmMethod(tpe, name, tpes) => JvmTemplate.JvmMethod(f(tpe), name, tpes.map(f))
       case JvmTemplate.JvmField(tpe, name) => JvmTemplate.JvmField(f(tpe), name)
+      case JvmTemplate.JvmMethod(tpe, name, tpes) => JvmTemplate.JvmMethod(f(tpe), name, tpes.map(f))
       case JvmTemplate.JvmStaticMethod(clazz, name, tpes) => JvmTemplate.JvmStaticMethod(clazz, name, tpes.map(f))
     }
   }
 
-  // MATT docs
   object JvmTemplate {
+
+    /**
+      * A Java constructor, defined by its class and argument types.
+      */
     case class JvmConstructor(clazz: Class[?], tpes: List[Type]) extends JvmTemplate
-    case class JvmMethod(tpe: Type, name: Name.Ident, tpes: List[Type]) extends JvmTemplate
+
+    /**
+      * A Java field, defined by the receiver type and the field name.
+      */
     case class JvmField(tpe: Type, name: Name.Ident) extends JvmTemplate
+
+    /**
+      * A Java method, defined by the receiver type, the method name, and the argument types.
+      */
+    case class JvmMethod(tpe: Type, name: Name.Ident, tpes: List[Type]) extends JvmTemplate
+
+    /**
+      * A Java static method, defined by the class, the method name, and the argument types.
+      */
     case class JvmStaticMethod(clazz: Class[?], name: Name.Ident, tpes: List[Type]) extends JvmTemplate
   }
 

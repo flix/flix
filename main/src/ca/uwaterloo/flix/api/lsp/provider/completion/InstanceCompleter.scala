@@ -54,7 +54,6 @@ object InstanceCompleter extends Completer {
         Type.AssocType(sym, args, kind, loc)
 
       // Jvm types should not be exposed to the user.
-      // MATT ?
       case t: Type.JvmToType => t
       case t: Type.JvmMember => t
     }
