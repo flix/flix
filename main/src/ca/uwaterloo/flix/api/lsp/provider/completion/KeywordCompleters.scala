@@ -29,68 +29,67 @@ import ca.uwaterloo.flix.language.ast.TypedAst
   *
   */
 object KeywordCompleters {
+  private def toCompletion(entry: (String, String => String)): Completion = {
+    val (keyword, priority) = entry
+    Completion.KeywordCompletion(keyword, priority(keyword))
+  }
+    
 
   /**
     * A completer for miscellaneous keywords.
     */
-  object Other {
-    def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] =
-      List(
-        ("with", Priority.highest),
-        ("law", Priority.higher),
-        ("@Test", Priority.high),
-        ("where", Priority.low),
-        ("fix", Priority.low),
-        ("@Deprecated", Priority.lowest),
-        ("@Parallel", Priority.lowest),
-        ("@ParallelWhenPure", Priority.lowest),
-        ("@Lazy", Priority.lowest),
-        ("@LazyWhenPure", Priority.lowest),
-        ("Record", Priority.lowest),
-        ("redef", Priority.lowest),
-        ("Schema", Priority.lowest),
-      ) map { case (name, priority) => Completion.KeywordCompletion(name, priority(name)) }
-  }
+  def getOtherKeywords(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] =
+    List(
+      ("with", Priority.highest),
+      ("law", Priority.higher),
+      ("@Test", Priority.high),
+      ("where", Priority.low),
+      ("fix", Priority.low),
+      ("@Deprecated", Priority.lowest),
+      ("@Parallel", Priority.lowest),
+      ("@ParallelWhenPure", Priority.lowest),
+      ("@Lazy", Priority.lowest),
+      ("@LazyWhenPure", Priority.lowest),
+      ("Record", Priority.lowest),
+      ("redef", Priority.lowest),
+      ("Schema", Priority.lowest),
+    ) map toCompletion
 
   /**
     * A completer for trait declaration keywords. These are keywords that occur within a trait declaration.
     */
-  object Trait {
-    def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] =
-      List(
-        ("def", Priority.lower),
-        ("pub", Priority.lower),
-      ) map { case (name, priority) => Completion.KeywordCompletion(name, priority(name)) }
-  }
+  def getModKeywords(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] =
+    List(
+      ("def", Priority.lower),
+      ("pub", Priority.lower),
+    ) map toCompletion
 
 
   /**
     * A completer for declaration keywords. These are keywords that denote a declaration.
     */
-  object Decl {
-    def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] =
-      List(
-        ("def"      , Priority.highest),   
-        ("pub"      , Priority.higher),
-        ("enum"     , Priority.high),
-        ("type"     , Priority.high),
-        ("instance" , Priority.high),
-        ("mod"      , Priority.low),
-        ("eff"      , Priority.lower),
-        ("struct"   , Priority.lower),
-        ("sealed"   , Priority.lowest),
-        ("trait"    , Priority.lowest),
-        ("import"   , Priority.lowest),
-      ) map { case (name, priority) => Completion.KeywordCompletion(name, priority(name)) }
-  }
+  def getDeclKeywords(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] =
+    List(
+      ("def"      , Priority.highest),   
+      ("pub"      , Priority.higher),
+      ("enum"     , Priority.high),
+      ("type"     , Priority.high),
+      ("instance" , Priority.high),
+      ("mod"      , Priority.low),
+      ("eff"      , Priority.lower),
+      ("struct"   , Priority.lower),
+      ("sealed"   , Priority.lowest),
+      ("trait"    , Priority.lowest),
+      ("import"   , Priority.lowest),
+    ) map toCompletion
 
   /**
     * A completer for enum keywords. These are keywords that can appear within the declaration of an enum.
     */
-  object Enum {
-    def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] =
-      List(Completion.KeywordCompletion("case", Priority.low("case")))
-  }
+  def getEnumKeywords(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] =
+    List(
+      ("case", Priority.low)
+    ) map toCompletion
 
   /**
     * A completer for expression keywords. These are keywords that can appear within expressions (fx within the body of a function).
