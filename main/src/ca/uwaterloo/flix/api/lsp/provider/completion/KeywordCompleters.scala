@@ -36,7 +36,7 @@ object KeywordCompleters {
     
 
   /**
-    * A completer for miscellaneous keywords.
+    * Miscellaneous keywords.
     */
   def getOtherKeywords(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] =
     List(
@@ -56,9 +56,9 @@ object KeywordCompleters {
     ) map toCompletion
 
   /**
-    * A completer for trait declaration keywords. These are keywords that occur within a trait declaration.
+    * Trait declaration keywords. These are keywords that occur within a trait declaration.
     */
-  def getModKeywords(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] =
+  def getTraitKeywords(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] =
     List(
       ("def", Priority.lower),
       ("pub", Priority.lower),
@@ -66,7 +66,7 @@ object KeywordCompleters {
 
 
   /**
-    * A completer for declaration keywords. These are keywords that denote a declaration.
+    * Declaration keywords. These are keywords that denote a declaration.
     */
   def getDeclKeywords(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] =
     List(
@@ -84,7 +84,7 @@ object KeywordCompleters {
     ) map toCompletion
 
   /**
-    * A completer for enum keywords. These are keywords that can appear within the declaration of an enum.
+    * Enum keywords. These are keywords that can appear within the declaration of an enum.
     */
   def getEnumKeywords(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] =
     List(
@@ -92,46 +92,44 @@ object KeywordCompleters {
     ) map toCompletion
 
   /**
-    * A completer for expression keywords. These are keywords that can appear within expressions (fx within the body of a function).
+    * Expression keywords. These are keywords that can appear within expressions (fx within the body of a function).
     */
-  object Expr {
-    def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] =
-      List(
-        "and",
-        "as",
-        "def",
-        "discard",
-        "do",
-        "else",
-        "false",
-        "forA",
-        "forM",
-        "force",
-        "foreach",
-        "from",
-        "if",
-        "inject",
-        "into",
-        "lazy",
-        "let",
-        "match",
-        "new",
-        "not",
-        "or",
-        "par",
-        "query",
-        "region",
-        "select",
-        "solve",
-        "spawn",
-        "struct",
-        "true",
-        "try",
-        "typematch",
-        "unsafe",
-        "use",
-        "without",
-        "yield"
-      ) map (name => Completion.KeywordCompletion(name, Priority.lower(name)))
-  }
+  def getExprKeywords(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] =
+    List(
+      "and",
+      "as",
+      "def",
+      "discard",
+      "do",
+      "else",
+      "false",
+      "forA",
+      "forM",
+      "force",
+      "foreach",
+      "from",
+      "if",
+      "inject",
+      "into",
+      "lazy",
+      "let",
+      "match",
+      "new",
+      "not",
+      "or",
+      "par",
+      "query",
+      "region",
+      "select",
+      "solve",
+      "spawn",
+      "struct",
+      "true",
+      "try",
+      "typematch",
+      "unsafe",
+      "use",
+      "without",
+      "yield"
+    ) map (name => Completion.KeywordCompletion(name, Priority.lower(name)))
 }
