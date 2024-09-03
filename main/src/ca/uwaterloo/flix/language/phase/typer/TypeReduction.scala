@@ -162,7 +162,8 @@ object TypeReduction {
     */
   // TODO: This method should be recursive and not just look at the top-level type.
   def isReducible(tpe: Type): Boolean = tpe match {
-    case Type.JvmToType(Type.Var(_, _), _) => true
+    case Type.JvmToType(_, _) => true
+    case Type.JvmMember(_, _) => true
     case _ => false
   }
 

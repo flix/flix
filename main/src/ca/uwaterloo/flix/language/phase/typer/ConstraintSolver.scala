@@ -262,16 +262,20 @@ object ConstraintSolver {
     */
   private def resolveOne(constr0: TypeConstraint, renv: RigidityEnv, subst0: Substitution)(implicit scope: Scope, tenv: Map[Symbol.TraitSym, Ast.TraitContext], eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Result[ResolutionResult, TypeError] = constr0 match {
     case TypeConstraint.Equality(tpe1, tpe2, prov0) =>
-      val t1 = TypeMinimization.minimizeType(subst0(tpe1))
-      val t2 = TypeMinimization.minimizeType(subst0(tpe2))
+      val tmin1 = TypeMinimization.minimizeType(subst0(tpe1))
+      val tmin2 = TypeMinimization.minimizeType(subst0(tpe2))
       val prov = subst0(prov0)
-      // A small hack to ensure that we do not add reducible types to the substitution.
-      if (TypeReduction.isReducible(t1) || TypeReduction.isReducible(t2)) {
-        Result.Ok(ResolutionResult.constraints(constr0 :: Nil, progress = false))
-      } else {
-        resolveEquality(t1, t2, prov, renv, constr0.loc).map {
-          case ResolutionResult(subst, constrs, p) => ResolutionResult(subst @@ subst0, constrs, progress = p)
-        }
+      for {
+        (t1, p1) <- TypeReduction.simplify(tmin1, renv, prov.loc)
+        (t2, p2) <- TypeReduction.simplify(tmin2, renv, prov.loc)
+        ResolutionResult(subst, constrs, p) <-
+          if (TypeReduction.isReducible(t1) || TypeReduction.isReducible(t2)) {
+            Result.Ok(ResolutionResult.constraints(List(TypeConstraint.Equality(t1, t2, prov)), p1 || p2))
+          } else {
+            resolveEquality(t1, t2, prov, renv, constr0.loc)
+          }
+      } yield {
+        ResolutionResult(subst @@ subst0, constrs, p1 || p2 || p)
       }
     case TypeConstraint.Trait(sym, tpe, loc) =>
       resolveTraitConstraint(sym, subst0(tpe), renv, loc).map {
@@ -443,10 +447,22 @@ object ConstraintSolver {
       }
 
     // Java types
-    case (_, Type.JvmToType(_, _)) =>
-      Result.Ok(ResolutionResult.constraints(List(TypeConstraint.Equality(tpe1, tpe2, prov)), progress = false))
-    case (Type.JvmToType(_, _), _) =>
-      Result.Ok(ResolutionResult.constraints(List(TypeConstraint.Equality(tpe1, tpe2, prov)), progress = false))
+    case (tpe, java@Type.JvmToType(_, _)) =>
+      for {
+        (t1, p1) <- TypeReduction.simplify(tpe, renv, loc)
+        (t2, p2) <- TypeReduction.simplify(java, renv, loc)
+      } yield {
+        ResolutionResult.constraints(List(TypeConstraint.Equality(t1, t2, prov)), p1 || p2)
+      }
+
+    // Java types
+    case (java@Type.JvmToType(_, _), tpe) =>
+      for {
+        (t1, p1) <- TypeReduction.simplify(java, renv, loc)
+        (t2, p2) <- TypeReduction.simplify(tpe, renv, loc)
+      } yield {
+        ResolutionResult.constraints(List(TypeConstraint.Equality(t1, t2, prov)), p1 || p2)
+      }
 
     case _ =>
       Result.Err(toTypeError(UnificationError.MismatchedTypes(tpe1, tpe2), prov))

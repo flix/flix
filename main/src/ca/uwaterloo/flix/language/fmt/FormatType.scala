@@ -381,7 +381,7 @@ object FormatType {
       case SimpleType.JvmMethod(t0, name, ts0) =>
         val t = visit(t0, Mode.Type)
         val ts = ts0.map(visit(_, Mode.Type))
-        "JvmMethod(" + t0 + ", " + name + ", " + ts.mkString(", ") + ")"
+        "JvmMethod(" + t + ", " + name + ", " + ts.mkString(", ") + ")"
 
       case SimpleType.JvmStaticMethod(clazz, name, ts0) =>
         val ts = ts0.map(visit(_, Mode.Type))
