@@ -162,8 +162,8 @@ trait BoolAlg[F] {
     case Type.Cst(_, _) => false
     case Type.AssocType(_, tpe, _, _) => containsError(tpe)
     case Type.Apply(tpe1, tpe2, _) => containsError(tpe1) || containsError(tpe2)
-    case Type.Alias(_, _, _, _) => throw InternalCompilerException("Unreachable case", t.loc)
     case _: Type.BaseType => false
+    case Type.Alias(_, _, _, _) => throw InternalCompilerException("Unreachable case", t.loc)
   }
 
 }
