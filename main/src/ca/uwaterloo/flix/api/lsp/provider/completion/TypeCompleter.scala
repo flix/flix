@@ -33,7 +33,7 @@ object TypeCompleter {
   /**
     * Get the internal priority from the TypedAst SourceLocation and namespace
     */
-  def getInternalPriority(loc: SourceLocation, ns: List[String])(implicit context: CompletionContext): String => String = {
+  def getInternalPriority(loc: SourceLocation, ns: List[String])(implicit context: CompletionContext): Priority = {
     if (loc.source.name == context.uri)
       Priority.higher
     else if (ns.isEmpty)
@@ -45,12 +45,12 @@ object TypeCompleter {
   /**
     * Boost priority if there's a colon immediately before the word the user's typing
     */
-  def priorityBoostForTypes(name: String)(implicit context: CompletionContext): String = {
+  def priorityBoostForTypes(implicit context: CompletionContext): Priority = {
     val typePriorityBoost = raw".*:\s*(?:[^\s]|(?:\s*,\s*))*".r
     val typeAliasPriorityBoost = raw"\s*type\s+alias\s+.+\s*=\s*(?:[^\s]|(?:\s*,\s*))*".r
     val priority = if ((typePriorityBoost matches context.prefix) || (typeAliasPriorityBoost matches context.prefix))
-      Priority.higher _ else Priority.lowest _
-    priority(name)
+      Priority.higher else Priority.lowest
+    priority
   }
 
   /**
