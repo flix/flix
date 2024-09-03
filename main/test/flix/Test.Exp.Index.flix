@@ -121,6 +121,18 @@ mod Test.Exp.Index {
         let v = Vector#{Vector#{Vector#{1, 2, 3, 4}}};
         handler(() -> v[0][0][2] == 3)
 
+    @Test
+    def multiple02(): Bool = region rc {
+        let v = Vector#{Vector#{Array#{1, 2, 3, 4} @ rc}};
+        regionedHandler(rc, () -> v[0][0][2] == 3)
+    }
+
+    @Test
+    def multiple03(): Bool = region rc {
+        let v = Vector#{Array#{Map#{0 => 1, 1 => 2, 2 => 3, 4 => 4}} @ rc};
+        regionedHandler(rc, () -> v[0][0][2] == 3)
+    }
+
     def handler(f: Unit -> Bool \ OutOfBounds + KeyNotFound - a): Bool = {
         try {
             f()
@@ -131,7 +143,7 @@ mod Test.Exp.Index {
         }
     }
 
-    def regionedHandler(_: Region[rc], f: Unit -> Bool \ OutOfBounds + rc - a): Bool = {
+    def regionedHandler(_: Region[rc], f: Unit -> Bool \ rc + OutOfBounds + KeyNotFound - a): Bool = {
         try {
             f()
         } with OutOfBounds {
