@@ -312,7 +312,7 @@ object Completion {
     * @param name the name of the keyword.
     * @param priority the completion priority of the keyword.
     */
-  case class KeywordCompletion(name: String, priority: String) extends Completion
+  case class KeywordCompletion(name: String, priority: Priority) extends Completion
 
   /**
     * Represents a label completion.

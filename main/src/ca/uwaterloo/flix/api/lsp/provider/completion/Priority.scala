@@ -16,7 +16,9 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 /**
-  * CompletionPriority
+  * Priority for completions.
+  * 
+  * 
   *
   * To ensure that completions are displayed "most useful" first, we precede sortText with a number. Priorities
   * differ depending on the type of completion, and can be boosted depending upon context (e.g. type completions
@@ -29,16 +31,17 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
   * 7: Normal: completions that are relevant within no particular context
   * 9: Low: completions that are unlikely to be relevant unless within a specific context
   */
+sealed trait Priority
 object Priority {
-  def highest(name: String): String = "1" + name
+  case object highest extends Priority
 
-  def higher(name: String): String = "2" + name
+  case object higher extends Priority
 
-  def high(name: String): String = "4" + name
+  case object high extends Priority
 
-  def low(name: String): String = "5" + name
+  case object low extends Priority
+  
+  case object lower extends Priority
 
-  def lower(name: String): String = "7" + name
-
-  def lowest(name: String): String = "9" + name
+  case object lowest extends Priority
 }
