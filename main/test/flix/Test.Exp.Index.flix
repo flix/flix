@@ -3,68 +3,68 @@ mod Test.Exp.Index {
     @Test
     def array01(): Bool = region rc {
         let a = Array#{1, 2, 3, 4} @ rc;
-        regionedHandler(rc, () -> checked_ecast (a[0] == 1))
+        regionedHandler(rc, () -> a[0] == 1)
     }
 
     @Test
     def array02(): Bool = region rc {
         let a = Array#{1, 2, 3, 4} @ rc;
-        regionedHandler(rc, () -> checked_ecast (a[1] == 2))
+        regionedHandler(rc, () -> a[1] == 2)
     }
 
     @Test
     def array03(): Bool = region rc {
         let a = Array#{1, 2, 3, 4} @ rc;
-        regionedHandler(rc, () -> checked_ecast (a[2] == 3))
+        regionedHandler(rc, () -> a[2] == 3)
     }
 
     @Test
     def array04(): Bool = region rc {
         let a = Array#{1, 2, 3, 4} @ rc;
-        regionedHandler(rc, () -> checked_ecast (a[3] == 4))
+        regionedHandler(rc, () -> a[3] == 4)
     }
 
     @Test
     def array05(): Bool = region rc {
         let a = Array#{1, 2, 3, 4} @ rc;
-        not regionedHandler(rc, () -> checked_ecast (a[4] == -1))
+        not regionedHandler(rc, () -> a[4] == -1)
     }
 
     @Test
     def array06(): Bool = region rc {
         let a = Array#{1, 2, 3, 4} @ rc;
-        not regionedHandler(rc, () -> checked_ecast (a[-1] == -1))
+        not regionedHandler(rc, () -> a[-1] == -1)
     }
 
     @Test
     def vector01(): Bool =
         let v = Vector#{1, 2, 3, 4};
-        handler(() -> checked_ecast (v[0] == 1))
+        handler(() -> v[0] == 1)
 
     @Test
     def vector02(): Bool =
         let v = Vector#{1, 2, 3, 4};
-        handler(() -> checked_ecast (v[1] == 2))
+        handler(() -> v[1] == 2)
 
     @Test
     def vector03(): Bool =
         let v = Vector#{1, 2, 3, 4};
-        handler(() -> checked_ecast (v[2] == 3))
+        handler(() -> v[2] == 3)
 
     @Test
     def vector04(): Bool =
         let v = Vector#{1, 2, 3, 4};
-        handler(() -> checked_ecast (v[3] == 4))
+        handler(() -> v[3] == 4)
 
     @Test
     def vector05(): Bool =
         let v = Vector#{1, 2, 3, 4};
-        not handler(() -> checked_ecast (v[4] == -1))
+        not handler(() -> v[4] == -1)
 
     @Test
     def vector06(): Bool =
         let v = Vector#{1, 2, 3, 4};
-        not handler(() -> checked_ecast (v[-1] == -1))
+        not handler(() -> v[-1] == -1)
 
     @Test
     def map01(): Bool =
@@ -99,24 +99,29 @@ mod Test.Exp.Index {
     @Test
     def record01(): Bool =
         let r = { v = Vector#{1, 2, 3, 4} };
-        handler(() -> checked_ecast (r#v[1] == 2))
+        handler(() -> r#v[1] == 2)
 
     @Test
     def record02(): Bool =
         let r = { r = { v = Vector#{1, 2, 3, 4} } };
-        handler(() -> checked_ecast (r#r#v[1] == 2))
+        handler(() -> r#r#v[1] == 2)
 
     @Test
     def record03(): Bool =
         let r = { r = { v = Vector#{{ v = Vector#{1, 2, 3, 4} } } } };
-        handler(() -> checked_ecast (r#r#v[0]#v[1] == 2))
+        handler(() -> r#r#v[0]#v[1] == 2)
 
     @Test
     def record04(): Bool =
         let r = { r = { v = Vector#{Vector#{}, Vector#{{ v = Vector#{1, 2, 3, 4} }} } } };
-        handler(() -> checked_ecast (r#r#v[1][0]#v[1] == 2))
+        handler(() -> r#r#v[1][0]#v[1] == 2)
 
-    def handler(f: Unit -> Bool \ OutOfBounds + KeyNotFound): Bool = {
+    @Test
+    def multiple01(): Bool =
+        let v = Vector#{Vector#{Vector#{1, 2, 3, 4}}};
+        handler(() -> v[0][0][2] == 3)
+
+    def handler(f: Unit -> Bool \ OutOfBounds + KeyNotFound - a): Bool = {
         try {
             f()
         } with OutOfBounds {
@@ -126,7 +131,7 @@ mod Test.Exp.Index {
         }
     }
 
-    def regionedHandler(_: Region[rc], f: Unit -> Bool \ OutOfBounds + KeyNotFound + rc): Bool = {
+    def regionedHandler(_: Region[rc], f: Unit -> Bool \ OutOfBounds + rc - a): Bool = {
         try {
             f()
         } with OutOfBounds {
