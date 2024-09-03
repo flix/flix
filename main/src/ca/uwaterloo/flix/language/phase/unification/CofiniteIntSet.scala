@@ -124,15 +124,4 @@ object CofiniteIntSet {
       Compl(x.union(y))
   }
 
-  /**
-    * Instantiates the elements of `s` according to `m`.
-    *
-    * If an element is not mapped in `m`, then it will remain in the set.
-    */
-  def mapElements(s: CofiniteIntSet, m: Map[Int, CofiniteIntSet]): CofiniteIntSet = s match {
-    case Set(s) =>
-      s.foldLeft(empty) { case (acc, elm) => union(acc, m.getOrElse(elm, mkSet(elm))) }
-    case Compl(s) =>
-      complement(mapElements(Set(s), m))
-  }
 }
