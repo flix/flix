@@ -56,13 +56,11 @@ object KeywordCompleters {
       * A completer for trait declaration keywords. These are keywords that occur within a trait declaration.
       */
     object Trait {
-      def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] = {
-        if (context.previousWord == "pub") {
-          Completion.KeywordCompletion("def", Priority.lower("def")) :: Nil
-        } else {
-          Completion.KeywordCompletion("pub", Priority.lower("pub")) :: Nil
-        }
-      }
+      def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] =
+        List(
+          ("def", Priority.lower),
+          ("pub", Priority.lower),
+        ) map { case (name, priority) => Completion.KeywordCompletion(name, priority(name)) }
     }
 
 
