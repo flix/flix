@@ -37,11 +37,15 @@ sealed trait CofiniteIntSet {
     case Compl(_) => false
   }
 
-  /** Returns `true` if `this` is [[CofiniteIntSet.universe]]. */
+  /**
+    * Returns `true` if `this` is [[CofiniteIntSet.universe]].
+    *
+    * Remember that the universe is infinite, so no finite set is ever equivalent
+    * to universe.
+    */
   def isUniverse: Boolean = this match {
-    case Compl(s) if s.isEmpty => true
     case Set(_) => false
-    case Compl(_) => false
+    case Compl(s) => s.isEmpty
   }
 
 }
