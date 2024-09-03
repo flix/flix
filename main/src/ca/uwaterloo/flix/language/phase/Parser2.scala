@@ -2483,18 +2483,21 @@ object Parser2 {
       val mark = open()
       expect(TokenKind.KeywordWith, SyntacticContext.Expr.OtherExpr)
       name(NAME_EFFECT, allowQualified = true, context = SyntacticContext.Expr.OtherExpr)
-      oneOrMore(
-        namedTokenSet = NamedTokenSet.WithRule,
-        getItem = withRule,
-        checkForItem = kind => kind == TokenKind.KeywordDef || kind.isComment,
-        breakWhen = _.isRecoverExpr,
-        separation = Separation.Optional(TokenKind.Comma),
-        delimiterL = TokenKind.CurlyL,
-        delimiterR = TokenKind.CurlyR,
-        context = SyntacticContext.Expr.OtherExpr
-      ) match {
-        case Some(error) => closeWithError(mark, error)
-        case None => close(mark, TreeKind.Expr.TryWithBodyFragment)
+      if (at(TokenKind.CurlyL)) {
+        zeroOrMore(
+          namedTokenSet = NamedTokenSet.WithRule,
+          getItem = withRule,
+          checkForItem = kind => kind == TokenKind.KeywordDef || kind.isComment,
+          breakWhen = _.isRecoverExpr,
+          separation = Separation.Optional(TokenKind.Comma),
+          delimiterL = TokenKind.CurlyL,
+          delimiterR = TokenKind.CurlyR,
+          context = SyntacticContext.Expr.OtherExpr
+        )
+        close(mark, TreeKind.Expr.TryWithBodyFragment)
+      } else {
+        val token = nth(0)
+        closeWithError(mark, ParseError.UnexpectedToken(NamedTokenSet.FromKinds(Set(TokenKind.CurlyL)), Some(token), SyntacticContext.Expr.OtherExpr, loc = currentSourceLocation()))
       }
     }
 
