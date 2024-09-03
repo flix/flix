@@ -260,7 +260,7 @@ mod Graph {
     /// Returns a copy of the weighted directed graph `g` where all flipped
     /// edges are added. An undirected graph in directed representation.
     ///
-    pub def toUndirectedWeighted(g: m[(t, Int32, t)]): Set[(t, Int32, t)] \ Foldable.Aef[m] with Foldable[m], Order[t] = {
+    pub def toUndirectedLabeled(g: m[(t, Int32, t)]): Set[(t, Int32, t)] \ Foldable.Aef[m] with Foldable[m], Order[t] = {
         g |> Foldable.toSet
           |> Set.flatMap(match (a, w, b) -> Set#{(a, w, b), (b, w, a)})
     }
