@@ -135,7 +135,7 @@ mod Test.Exp.Indexable {
 
     @Test
     def genWithRecord01(): Bool =
-        handler(() -> f()()#v[0]#r#g()[2] == 3)
+        handler(() -> f()()#v[0]()[0]#r#g()[2] == 3)
 
     def f(): Unit -> { v = Vector[Unit -> Vector[{ r = { g = Unit -> Map[Int32, Int32] } }]] } =
         () -> {
