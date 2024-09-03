@@ -20,13 +20,7 @@ import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.language.ast.TypedAst
 
 /**
-  * A collection of keyword completers, including
-  *
-  * - `Decl`: completer for declaraiton keywords
-  * - `Enum`: completer for declaration keywords
-  * - `Expr`: completer for expressoin keywords
-  * - `Other`: completer for miscellaneous keywords
-  *
+  * Completions for keywords
   */
 object KeywordCompleter {
   /**
