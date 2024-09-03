@@ -1,4 +1,4 @@
-mod Test.Exp.Index {
+mod Test.Exp.Indexable {
 
     @Test
     def array01(): Bool = region rc {
