@@ -32,6 +32,16 @@ instance ToString[DelayMap[k, v]] with ToString[k], ToString[v] {
     pub def toString(m: DelayMap[k, v]): String = DelayMap.toString(m)
 }
 
+instance Indexable[DelayMap[k, v]] with Order[k] {
+    type Idx = k
+    type Elm = v
+    type Aef = KeyNotFound
+    pub def get(t: DelayMap[k, v], i: k): v \ KeyNotFound = match DelayMap.get(i, t) {
+        case Some(v) => v
+        case None    => do KeyNotFound.keyNotFound("key not found")
+    }
+}
+
 instance Functor[DelayMap[k]] {
     pub def map(f: v1 -> v2 \ ef, m: DelayMap[k, v1]): DelayMap[k, v2] \ ef = DelayMap.map(f, m)
 }

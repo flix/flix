@@ -200,6 +200,22 @@ mod TestChain {
     def length04(): Bool = Chain.length(List.toChain(1 :: 2 :: 3 :: Nil)) == 3
 
     /////////////////////////////////////////////////////////////////////////////
+    // size                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def size01(): Bool = Chain.size(Chain.empty()) == 0
+
+    @test
+    def size02(): Bool = Chain.size(Chain.singleton(1)) == 1
+
+    @test
+    def size03(): Bool = Chain.size(List.toChain(1 :: 2 :: Nil)) == 2
+
+    @test
+    def size04(): Bool = Chain.size(List.toChain(1 :: 2 :: 3 :: Nil)) == 3
+
+    /////////////////////////////////////////////////////////////////////////////
     // append                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 

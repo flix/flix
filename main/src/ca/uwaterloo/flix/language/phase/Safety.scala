@@ -6,11 +6,12 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
-import ca.uwaterloo.flix.language.ast.shared.{Fixity, SecurityContext}
+import ca.uwaterloo.flix.language.ast.shared.{Fixity, Scope, SecurityContext}
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.language.errors.SafetyError._
+import ca.uwaterloo.flix.language.phase.typer.TypeReduction
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 
 import java.math.BigInteger
@@ -292,7 +293,8 @@ object Safety {
         // check whether the last case in the type match looks like `...: _`
         val missingDefault = rules.last match {
           case TypeMatchRule(_, tpe, _) => tpe match {
-            case Type.Var(sym, _) if renv.isFlexible(sym) => Nil
+            // use top scope since the rigidity check only cares if it's a syntactically known variable
+            case Type.Var(sym, _) if renv.isFlexible(sym)(Scope.Top) => Nil
             case _ => List(SafetyError.MissingDefaultTypeMatchCase(exp.loc))
           }
         }
@@ -1027,7 +1029,7 @@ object Safety {
     * Get a Set of MethodSignatures representing the methods of `clazz`. Returns a map to allow subsequent reverse lookup.
     */
   private def getJavaMethodSignatures(clazz: java.lang.Class[_]): Map[MethodSignature, java.lang.reflect.Method] = {
-    val methods = clazz.getMethods.toList.filterNot(isStaticMethod)
+    val methods = TypeReduction.getMethods(clazz).filterNot(isStaticMethod)
     methods.foldLeft(Map.empty[MethodSignature, java.lang.reflect.Method]) {
       case (acc, m) =>
         val signature = MethodSignature(m.getName, m.getParameterTypes.toList.map(Type.getFlixType), Type.getFlixType(m.getReturnType))

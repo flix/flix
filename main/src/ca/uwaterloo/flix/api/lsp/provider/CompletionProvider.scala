@@ -42,32 +42,6 @@ import org.json4s.JsonDSL._
   */
 object CompletionProvider {
 
-  //
-  // To ensure that completions are displayed "most useful" first, we precede sortText with a number. Priorities
-  // differ depending on the type of completion, and can be boosted depending upon context (e.g. type completions
-  // are boosted if the cursor is preceded by a ":")
-  //
-  // 1: High: completions which are only available within a very specific context
-  // 2: Boost: completions which are normally low priority, but the context makes them more likely
-  // 4: Snippet: snippets are relatively high priority because they're rare, and to be useful at all they need to be available
-  // 5: Local: local variables
-  // 7: Normal: completions that are relevant within no particular context
-  // 9: Low: completions that are unlikely to be relevant unless within a specific context
-  //
-  object Priority {
-    def high(name: String): String = "1" + name
-
-    def boost(name: String): String = "2" + name
-
-    def snippet(name: String): String = "4" + name
-
-    def local(name: String): String = "5" + name
-
-    def normal(name: String): String = "7" + name
-
-    def low(name: String): String = "9" + name
-  }
-
   /**
     * Process a completion request.
     */
@@ -137,7 +111,7 @@ object CompletionProvider {
       //
       case SyntacticContext.Expr.Constraint => PredicateCompleter.getCompletions(context)
       case SyntacticContext.Expr.Do => OpCompleter.getCompletions(context)
-      case SyntacticContext.Expr.InvokeMethod(e) => InvokeMethodCompleter.getCompletions(e, context)
+      case SyntacticContext.Expr.InvokeMethod(tpe, name) => InvokeMethodCompleter.getCompletions(tpe, name, context)
       case SyntacticContext.Expr.StaticFieldOrMethod(e) => GetStaticFieldCompleter.getCompletions(e) ++ InvokeStaticMethodCompleter.getCompletions(e)
       case SyntacticContext.Expr.StructAccess(e) => StructFieldCompleter.getCompletions(e, root)
       case _: SyntacticContext.Expr => ExprCompleter.getCompletions(context)
@@ -145,10 +119,10 @@ object CompletionProvider {
       //
       // Declarations.
       //
-      case SyntacticContext.Decl.Trait => KeywordOtherCompleter.getCompletions(context)
-      case SyntacticContext.Decl.Enum => KeywordOtherCompleter.getCompletions(context)
+      case SyntacticContext.Decl.Trait => KeywordCompleters.Trait.getCompletions(context)
+      case SyntacticContext.Decl.Enum => KeywordCompleters.Enum.getCompletions(context)
       case SyntacticContext.Decl.Instance => InstanceCompleter.getCompletions(context)
-      case _: SyntacticContext.Decl => KeywordOtherCompleter.getCompletions(context) ++ SnippetCompleter.getCompletions(context)
+      case _: SyntacticContext.Decl => KeywordCompleters.Decl.getCompletions(context) ++ SnippetCompleter.getCompletions(context)
 
       //
       // Imports.
@@ -183,7 +157,7 @@ object CompletionProvider {
       // Fallthrough.
       //
       case SyntacticContext.Unknown =>
-        KeywordOtherCompleter.getCompletions(context) ++ SnippetCompleter.getCompletions(context)
+        KeywordCompleters.Other.getCompletions(context) ++ SnippetCompleter.getCompletions(context)
     }
   }
 
@@ -271,7 +245,8 @@ object CompletionProvider {
       case WeederError.MalformedIdentifier(_, _) => (2, SyntacticContext.Import)
       case WeederError.UnappliedIntrinsic(_, _) => (5, SyntacticContext.Expr.OtherExpr)
       case err: ResolutionError.UndefinedJvmStaticField => (1, SyntacticContext.Expr.StaticFieldOrMethod(err))
-      case err: TypeError.MethodNotFound => (1, SyntacticContext.Expr.InvokeMethod(err))
+      case err: TypeError.MethodNotFound => (1, SyntacticContext.Expr.InvokeMethod(err.tpe, err.methodName))
+      case err: TypeError.FieldNotFound => (1, SyntacticContext.Expr.InvokeMethod(err.tpe, err.fieldName))
       case err: ResolutionError.UndefinedStructField => (1, SyntacticContext.Expr.StructAccess(err))
       case err: ParseError => (5, err.sctx)
       case _ => (999, SyntacticContext.Unknown)

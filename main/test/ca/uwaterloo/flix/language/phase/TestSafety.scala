@@ -29,11 +29,13 @@ class TestSafety extends AnyFunSuite with TestUtils {
   test("IllegalCatchType.01") {
     val input =
       """
+        |import java.lang.Object
+        |
         |pub def f(): String =
         |    try {
         |        "abc"
         |    } catch {
-        |        case _s: ##java.lang.Object => "fail"
+        |        case _s: Object => "fail"
         |    }
       """.stripMargin
     val result = compile(input, Options.DefaultTest)
@@ -43,12 +45,15 @@ class TestSafety extends AnyFunSuite with TestUtils {
   test("IllegalCatchType.02") {
     val input =
       """
+        |import java.lang.Exception
+        |import java.lang.String
+        |
         |pub def f(): String =
         |    try {
         |        "abc"
         |    } catch {
-        |        case _e1: ##java.lang.Exception => "ok"
-        |        case _e2: ##java.lang.String => "not ok"
+        |        case _e1: Exception => "ok"
+        |        case _e2: String => "not ok"
         |    }
       """.stripMargin
     val result = compile(input, Options.DefaultTest)
@@ -87,15 +92,17 @@ class TestSafety extends AnyFunSuite with TestUtils {
   test("IllegalNestedTryCatch.01") {
     val input =
       """
+        |import java.lang.Exception
+        |
         |pub def f(): String =
         |    try {
         |        try {
         |            "abc"
         |        } catch {
-        |            case _e1: ##java.lang.Exception => "ok"
+        |            case _e1: Exception => "ok"
         |        }
         |    } catch {
-        |        case _e1: ##java.lang.Exception => "ok"
+        |        case _e1: Exception => "ok"
         |    }
       """.stripMargin
     val result = compile(input, Options.DefaultTest)
@@ -323,8 +330,10 @@ class TestSafety extends AnyFunSuite with TestUtils {
   test("TestInvalidThis.01") {
     val input =
       """
-        |def f(): ##java.lang.Runnable \ IO =
-        |  new ##java.lang.Runnable {
+        |import java.lang.Runnable
+        |
+        |def f(): Runnable \ IO =
+        |  new Runnable {
         |    def run(): Unit = ()
         |  }
       """.stripMargin
@@ -335,8 +344,10 @@ class TestSafety extends AnyFunSuite with TestUtils {
   test("TestInvalidThis.02") {
     val input =
       """
-        |def f(): ##java.lang.Runnable \ IO =
-        |  new ##java.lang.Runnable {
+        |import java.lang.Runnable
+        |
+        |def f(): Runnable \ IO =
+        |  new Runnable {
         |    def run(_this: Int32): Unit = ()
         |  }
       """.stripMargin
@@ -347,7 +358,9 @@ class TestSafety extends AnyFunSuite with TestUtils {
   test("TestUnimplementedMethod.01") {
     val input =
       """
-        |def f(): ##java.lang.Runnable \ IO = new ##java.lang.Runnable {}
+        |import java.lang.Runnable
+        |
+        |def f(): Runnable \ IO = new Runnable {}
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[SafetyError.NewObjectMissingMethod](result)
@@ -356,10 +369,12 @@ class TestSafety extends AnyFunSuite with TestUtils {
   test("TestExtraMethod.01") {
     val input =
       """
-        |def f(): ##java.lang.Runnable \ IO =
-        |  new ##java.lang.Runnable {
-        |    def run(_this: ##java.lang.Runnable): Unit = ()
-        |    def anExtraMethod(_this: ##java.lang.Runnable): Unit = ()
+        |import java.lang.Runnable
+        |
+        |def f(): Runnable \ IO =
+        |  new Runnable {
+        |    def run(_this: Runnable): Unit = ()
+        |    def anExtraMethod(_this: Runnable): Unit = ()
         |  }
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -369,8 +384,10 @@ class TestSafety extends AnyFunSuite with TestUtils {
   test("TestNonDefaultConstructor.01") {
     val input =
       """
-        |def f(): ##dev.flix.test.TestClassWithNonDefaultConstructor \ IO =
-        |  new ##dev.flix.test.TestClassWithNonDefaultConstructor {
+        |import dev.flix.test.TestClassWithNonDefaultConstructor
+        |
+        |def f(): TestClassWithNonDefaultConstructor \ IO =
+        |  new TestClassWithNonDefaultConstructor {
         |  }
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -380,8 +397,10 @@ class TestSafety extends AnyFunSuite with TestUtils {
   test("TestNonPublicInterface.01") {
     val input =
       """
-        |def f(): ##dev.flix.test.TestNonPublicInterface \ IO =
-        |  new ##dev.flix.test.TestNonPublicInterface {
+        |import dev.flix.test.TestNonPublicInterface
+        |
+        |def f(): TestNonPublicInterface \ IO =
+        |  new TestNonPublicInterface {
         |  }
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -509,8 +528,10 @@ class TestSafety extends AnyFunSuite with TestUtils {
   test("ImpossibleCast.09") {
     val input =
       """
-        |def f(): ##java.lang.String =
-        |    unchecked_cast(('a', 'b', false) as ##java.lang.String)
+        |import java.lang.String
+        |
+        |def f(): String =
+        |    unchecked_cast(('a', 'b', false) as String)
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[SafetyError.ImpossibleUncheckedCast](result)
@@ -555,8 +576,11 @@ class TestSafety extends AnyFunSuite with TestUtils {
   test("IllegalCheckedTypeCast.01") {
     val input =
       """
-        |def f(): ##java.io.Serializable \ IO =
-        |    import java_new java.lang.Object(): ##java.lang.Object as mkObj;
+        |import java.lang.Object
+        |import java.io.Serializable
+        |
+        |def f(): Serializable \ IO =
+        |    import java_new java.lang.Object(): Object as mkObj;
         |    checked_cast(mkObj())
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -566,8 +590,11 @@ class TestSafety extends AnyFunSuite with TestUtils {
   test("IllegalCheckedTypeCast.02") {
     val input =
       """
-        |def f(): ##java.lang.Boolean \ IO =
-        |    import java_new java.lang.Object(): ##java.lang.Object as mkObj;
+        |import java.lang.Boolean
+        |import java.lang.Object
+        |
+        |def f(): Boolean \ IO =
+        |    import java_new java.lang.Object(): Object as mkObj;
         |    checked_cast(mkObj())
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -577,8 +604,11 @@ class TestSafety extends AnyFunSuite with TestUtils {
   test("IllegalCheckedTypeCast.03") {
     val input =
       """
-        |def f(): ##java.lang.Double \ IO =
-        |    import static java.lang.Boolean.valueOf(Bool): ##java.lang.Boolean;
+        |import java.lang.Boolean
+        |import java.lang.Double
+        |
+        |def f(): Double \ IO =
+        |    import static java.lang.Boolean.valueOf(Bool): Boolean;
         |    checked_cast(valueOf(true))
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -588,8 +618,10 @@ class TestSafety extends AnyFunSuite with TestUtils {
   test("IllegalCheckedTypeCast.04") {
     val input =
       """
+        |import java.lang.Boolean
+        |
         |def f(): (Bool -> Bool) =
-        |    import static java.lang.Boolean.valueOf(Bool): ##java.lang.Boolean;
+        |    import static java.lang.Boolean.valueOf(Bool): Boolean;
         |    checked_cast(valueOf)
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -609,7 +641,9 @@ class TestSafety extends AnyFunSuite with TestUtils {
   test("IllegalCastFromNonJava.01") {
     val input =
       """
-        |def f(): ##java.lang.Object =
+        |import java.lang.Object
+        |
+        |def f(): Object =
         |    checked_cast(10i64)
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -619,7 +653,8 @@ class TestSafety extends AnyFunSuite with TestUtils {
   test("IllegalCastFromNonJava.02") {
     val input =
       """
-        |def f(): ##java.lang.Boolean =
+        |import java.lang.Boolean
+        |def f(): Boolean =
         |    checked_cast(true)
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -629,7 +664,8 @@ class TestSafety extends AnyFunSuite with TestUtils {
   test("IllegalCastFromNonJava.03") {
     val input =
       """
-        |def f(): ##java.lang.StringBuilder =
+        |import java.lang.StringBuilder
+        |def f(): StringBuilder =
         |    checked_cast(false)
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -639,8 +675,10 @@ class TestSafety extends AnyFunSuite with TestUtils {
   test("IllegalCastFromNonJava.04") {
     val input =
       """
+        |import java.lang.{Boolean => JBoolean}
+        |
         |enum Boolean(Bool)
-        |def f(): ##java.lang.Boolean =
+        |def f(): JBoolean =
         |    checked_cast(Boolean.Boolean(true))
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -651,8 +689,11 @@ class TestSafety extends AnyFunSuite with TestUtils {
     // java.lang.String is equal to String in Flix.
     val input =
       """
-        |def f(): ##java.lang.String \ IO =
-        |    import java_new java.lang.Object(): ##java.lang.Object as mkObj;
+        |import java.lang.String
+        |import java.lang.Object
+        |
+        |def f(): String \ IO =
+        |    import java_new java.lang.Object(): Object as mkObj;
         |    checked_cast(mkObj())
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -662,8 +703,10 @@ class TestSafety extends AnyFunSuite with TestUtils {
   test("IllegalCastToNonJava.02") {
     val input =
       """
+        |import java.lang.Object
+        |
         |def f(): String \ IO =
-        |    import java_new java.lang.Object(): ##java.lang.Object as mkObj;
+        |    import java_new java.lang.Object(): Object as mkObj;
         |    checked_cast(mkObj())
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -673,8 +716,10 @@ class TestSafety extends AnyFunSuite with TestUtils {
   test("IllegalCastToNonJava.03") {
     val input =
       """
+        |import java.lang.Boolean
+        |
         |def f(): Bool \ IO =
-        |    import static java.lang.Boolean.valueOf(Bool): ##java.lang.Boolean;
+        |    import static java.lang.Boolean.valueOf(Bool): Boolean;
         |    checked_cast(valueOf(true))
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -684,8 +729,10 @@ class TestSafety extends AnyFunSuite with TestUtils {
   test("IllegalCastToNonJava.04") {
     val input =
       """
+        |import java.lang.StringBuilder
+        |
         |def f(): Bool \ IO =
-        |    import java_new java.lang.StringBuilder(): ##java.lang.StringBuilder as newSb;
+        |    import java_new java.lang.StringBuilder(): StringBuilder as newSb;
         |    checked_cast(newSb())
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -695,9 +742,11 @@ class TestSafety extends AnyFunSuite with TestUtils {
   test("IllegalCastToNonJava.05") {
     val input =
       """
+        |import java.lang.StringBuilder
+        |
         |enum Boolean(Bool)
         |def f(): Boolean \ IO =
-        |    import java_new java.lang.StringBuilder(): ##java.lang.StringBuilder as newSb;
+        |    import java_new java.lang.StringBuilder(): StringBuilder as newSb;
         |    checked_cast(newSb())
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -707,9 +756,11 @@ class TestSafety extends AnyFunSuite with TestUtils {
   test("IllegalCastToNonJava.06") {
     val input =
       """
+        |import java.lang.{Boolean => JBoolean}
+        |
         |enum Boolean(Bool)
         |def f(): Boolean \ IO =
-        |    import static java.lang.Boolean.valueOf(Bool): ##java.lang.Boolean;
+        |    import static java.lang.Boolean.valueOf(Bool): JBoolean;
         |    Boolean.Boolean(checked_cast(valueOf(true)))
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -719,8 +770,10 @@ class TestSafety extends AnyFunSuite with TestUtils {
   test("IllegalCastToNonJava.07") {
     val input =
       """
+        |import java.lang.StringBuilder
+        |
         |def f(): String \ IO =
-        |    import java_new java.lang.StringBuilder(): ##java.lang.StringBuilder as newSb;
+        |    import java_new java.lang.StringBuilder(): StringBuilder as newSb;
         |    checked_cast(newSb())
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)

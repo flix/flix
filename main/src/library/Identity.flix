@@ -59,7 +59,7 @@ instance MonadZip[Identity] {
         let Identity.Identity(b) = mb;
         Identity.Identity(f(a, b))
 
-    pub redef unzip(ma: Identity[(a, b)]): (Identity[a], Identity[b]) =
+    redef unzip(ma: Identity[(a, b)]): (Identity[a], Identity[b]) =
         let Identity.Identity((a, b)) = ma;
         (Identity.Identity(a), Identity.Identity(b))
 
@@ -95,7 +95,7 @@ instance Traversable[Identity] {
         let Identity.Identity(x1) = x;
         Functor.map(Identity.Identity, f(x1))
 
-    pub redef sequence(x: Identity[m[a]]): m[Identity[a]] with Applicative[m] =
+    redef sequence(x: Identity[m[a]]): m[Identity[a]] with Applicative[m] =
         let Identity.Identity(x1) = x;
         Functor.map(Identity.Identity, x1)
 }

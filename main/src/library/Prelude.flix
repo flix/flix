@@ -13,12 +13,95 @@ pub enum Proxy[_] {
 }
 
 ///
-/// The Generic IO Effect.
+/// The uninterpretable `Clock` effect.
 ///
-/// The `IO` effect is the most general effect of any
-/// operation that interacts with the environment.
+/// The `Clock` effect represents the actions required to access the system clock.
+///
+/// This includes use of `System.currentTimeMilis` and `System.nanoTime`, but also e.g. `Date.now()`.
+///
+/// The `Clock` effect is uninterpretable which means that it cannot be handled.
+///
+pub eff Clock
+
+///
+/// The uninterpretable `Exec` effect.
+///
+/// The `Exec` effect represents the actions required to start (i.e. run) a new process outside the JVM.
+///
+/// This includes use of `System.exec`, the `Process` class, and the `ProcessBuilder` class.
+///
+/// The `Exec` effect is uninterpretable which means that it cannot be handled.
+///
+pub eff Exec
+
+///
+/// The uninterpretable `Exit` effect.
+///
+/// The `Exit` effect represents the actions to required to immediately terminate execution of the JVM.
+///
+/// This includes calls to `System.exit` and `Runtime.exit`.
+///
+/// The `Exit` effect is uninterpretable which means that it cannot be handled.
+///
+pub eff Exit
+
+///
+/// The uninterpretable `FileRead` effect.
+///
+/// The `FileRead` effect represents the actions to required to read from the file system.
+///
+/// The `FileRead` effect is uninterpretable which means that it cannot be handled.
+///
+pub eff FileRead
+
+///
+/// The uninterpretable `FileWrite` effect.
+///
+/// The `FileWrite` effect represents the actions to required to write to the file system.
+///
+/// The `FileWrite` effect is uninterpretable which means that it cannot be handled.
+///
+pub eff FileWrite
+
+///
+/// The uninterpretable IO effect.
+///
+/// The `IO` effect represents the actions not described by any other effect.
+///
+/// The `IO` effect is uninterpretable which means that it cannot be handled.
 ///
 pub eff IO
+
+///
+/// The uninterpretable `Net` effect.
+///
+/// The `Net` effect represents the actions required to communicate over the network.
+///
+/// This includes binding to local ports, DNS resolution, and connecting to the outside.
+///
+/// The `Net` effect is uninterpretable which means that it cannot be handled.
+///
+pub eff Net
+
+///
+/// The uninterpretable `NonDet` effect.
+///
+/// The `NonDet` effect represents one or more non-deterministic actions.
+///
+/// The `NonDet` effect is uninterpretable which means that it cannot be handled.
+///
+pub eff NonDet
+
+///
+/// The uninterpretable `Sys` effect.
+///
+/// The `Sys` effect represents actions that interact with the JVM.
+///
+/// This includes use of class loaders, the `Runtime` class, and reflection.
+///
+/// The `Sys` effect is uninterpretable which means that it cannot be handled.
+///
+pub eff Sys
 
 ///
 /// The pure identity function.

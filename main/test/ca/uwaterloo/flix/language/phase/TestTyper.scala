@@ -523,13 +523,15 @@ class TestTyper extends AnyFunSuite with TestUtils {
   test("Test.UnexpectedEffect.08") {
     val input =
       """
+        |import java.lang.Object
+        |
         |eff IO
         |
         |def impureX(): String \ IO = checked_ecast("x")
         |
-        |def f(): ##java.lang.Object \ IO = {
-        |    let x = new ##java.lang.Object {
-        |        def toString(_this: ##java.lang.Object): String = impureX()
+        |def f(): Object \ IO = {
+        |    let x = new Object {
+        |        def toString(_this: Object): String = impureX()
         |    };
         |    x
         |}
@@ -735,12 +737,14 @@ class TestTyper extends AnyFunSuite with TestUtils {
   test("Test.PossibleCheckedTypeCast.01") {
     val input =
       """
-        |def f(): ##dev.flix.test.TestClassWithDefaultConstructor \ IO =
-        |    import java_new dev.flix.test.TestClassWithInheritedMethod(): ##dev.flix.test.TestClassWithInheritedMethod as newObj;
-        |    let x: ##dev.flix.test.TestClassWithDefaultConstructor = newObj();
+        |import dev.flix.test.TestClassWithDefaultConstructor
+        |import dev.flix.test.TestClassWithInheritedMethod
+        |
+        |def f(): TestClassWithDefaultConstructor \ IO =
+        |    import java_new TestClassWithInheritedMethod(): TestClassWithInheritedMethod as newObj;
+        |    let x: TestClassWithDefaultConstructor = newObj();
         |    x
       """.stripMargin
-
     val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError](result)
   }
@@ -1434,11 +1438,13 @@ class TestTyper extends AnyFunSuite with TestUtils {
   test("TestTryCatch.01") {
     val input =
       """
+        |import java.io.IOError
+        |
         |enum Res { case Err(String), case Ok }
         |
         |pub def catchIO(f: Unit -> Unit \ ef): Res = {
         |    try {f(); Res.Ok} catch {
-        |        case ex: ##java.io.IOError =>
+        |        case ex: IOError =>
         |            import java.lang.Throwable.getMessage(): String;
         |            Res.Err(getMessage(ex))
         |    }
@@ -1465,12 +1471,14 @@ class TestTyper extends AnyFunSuite with TestUtils {
   test("TypeError.AmbiguousMethod.01") {
     val input =
       """
+        |import java.lang.StringBuilder
+        |
         |def main(): Unit \ IO =
-        |    import java_new java.lang.StringBuilder(String): ##java.lang.StringBuilder \ IO as newSB;
+        |    import java_new java.lang.StringBuilder(String): StringBuilder \ IO as newSB;
         |    let a = testInvokeMethod2_01(newSB(""));
         |    println(a.toString())
         |
-        |def testInvokeMethod2_01(sb: ##java.lang.StringBuilder): ##java.lang.StringBuilder \ IO =
+        |def testInvokeMethod2_01(sb: StringBuilder): StringBuilder \ IO =
         |    sb.append(null)
         |""".stripMargin
     val result = compile(input, Options.Default)
@@ -1480,11 +1488,13 @@ class TestTyper extends AnyFunSuite with TestUtils {
   test("TypeError.AmbiguousMethod.02") {
     val input =
       """
+        |import java.io.PrintStream
+        |
         |def main(): Unit \ IO =
-        |    import java_new java.io.PrintStream(String): ##java.io.PrintStream \ IO as newPS;
+        |    import java_new java.io.PrintStream(String): PrintStream \ IO as newPS;
         |    testInvokeMethod2_01(newPS(""))
         |
-        |def testInvokeMethod2_01(ps: ##java.io.PrintStream): Unit \ IO =
+        |def testInvokeMethod2_01(ps: PrintStream): Unit \ IO =
         |    ps.println(null)
         |""".stripMargin
     val result = compile(input, Options.Default)
@@ -1502,7 +1512,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |
         |def Foo(): Unit = {
         |    region rc {
-        |        new S {a = 3, b = 4, c = "hello"} @ rc;
+        |        new S @ rc {a = 3, b = 4, c = "hello"};
         |        ()
         |    }
         |}
@@ -1522,7 +1532,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |
         |def Foo(): Unit = {
         |    region rc {
-        |        new S {a = (), b = "hi", c = "hello"} @ rc;
+        |        new S @ rc {a = (), b = "hi", c = "hello"};
         |        ()
         |    }
         |}
@@ -1542,7 +1552,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |
         |def Foo(): Unit = {
         |    region rc {
-        |        new S {a = 3, b = "hi", c = new S {a = 4, b = 3, c = ()} @ rc } @ rc;
+        |        new S @ rc {a = 3, b = "hi", c = new S @ rc {a = 4, b = 3, c = ()}};
         |        ()
         |    }
         |}
@@ -1554,16 +1564,15 @@ class TestTyper extends AnyFunSuite with TestUtils {
   test("TypeError.StructGet.01") {
     val input =
       """
+        |struct S [v, r] {
+        |    a: Int32,
+        |    b: String,
+        |    c: v
+        |}
         |mod S {
-        |    struct S [v, r] {
-        |        a: Int32,
-        |        b: String,
-        |        c: v
-        |    }
-        |
         |    def Foo(): Unit = {
         |        region rc {
-        |            let s = new S {a = 4, b = "hi", c = "hello"} @ rc;
+        |            let s = new S @ rc {a = 4, b = "hi", c = "hello"};
         |            s->a + s->b;
         |            ()
         |        }
@@ -1577,15 +1586,14 @@ class TestTyper extends AnyFunSuite with TestUtils {
   test("TypeError.StructGet.02") {
     val input =
       """
+        |struct S[v, r] {
+        |    c: v
+        |}
         |mod S {
-        |    struct S [v, r] {
-        |        c: v
-        |    }
-        |
         |    def Foo(): Unit = {
         |        region rc {
-        |            let s1 = new S {c = 3} @ rc;
-        |            let s2 = new S {c = "hello"} @ rc;
+        |            let s1 = new S @ rc {c = 3};
+        |            let s2 = new S @ rc {c = "hello"};
         |            s1->c + s2->c;
         |            ()
         |        }
@@ -1599,16 +1607,15 @@ class TestTyper extends AnyFunSuite with TestUtils {
   test("TypeError.StructPut.01") {
     val input =
       """
+        |struct S[v, r] {
+        |    a: Int32,
+        |    b: String,
+        |    c: v
+        |}
         |mod S {
-        |    struct S [v, r] {
-        |        a: Int32,
-        |        b: String,
-        |        c: v
-        |    }
-        |
         |    def Foo(): Unit = {
         |        region rc {
-        |            let s = new S {a = 4, b = "hi", c = "hello"} @ rc;
+        |            let s = new S @ rc {a = 4, b = "hi", c = "hello"};
         |            s->a = s->b;
         |            ()
         |        }
@@ -1622,15 +1629,14 @@ class TestTyper extends AnyFunSuite with TestUtils {
   test("TypeError.StructPut.02") {
     val input =
       """
+        |struct S[v, r] {
+        |    c: v
+        |}
         |mod S {
-        |    struct S [v, r] {
-        |        c: v
-        |    }
-        |
         |    def Foo(): Unit = {
         |        region rc {
-        |            let s1 = new S {c = 3} @ rc;
-        |            let s2 = new S {c = "hello"} @ rc;
+        |            let s1 = new S @ rc {c = 3};
+        |            let s2 = new S @ rc {c = "hello"};
         |            s1->c = s2->c;
         |            ()
         |        }

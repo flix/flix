@@ -18,17 +18,18 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.MethodCompletion
-import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Name, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.TypeError
+import ca.uwaterloo.flix.language.phase.typer.TypeReduction
 
 import java.lang.reflect.Method
 
 object InvokeMethodCompleter {
-  def getCompletions(e: TypeError.MethodNotFound, ctx: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[MethodCompletion] = {
-    getClassOrInterface(e.tpe) match {
+  def getCompletions(obj: Type, name: Name.Ident, ctx: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[MethodCompletion] = {
+    getClassOrInterface(obj) match {
       case None => Nil
       case Some(clazz) => getMethods(clazz).map {
-        case m => MethodCompletion(e.methodName, m)
+        case m => MethodCompletion(name, m)
       }
     }
   }
@@ -37,7 +38,7 @@ object InvokeMethodCompleter {
    * Returns all relevant methods available on the given `clazz`.
    */
   private def getMethods(clazz: Class[_]): List[Method] = {
-    val availableMethods = clazz.getMethods.toList
+    val availableMethods = TypeReduction.getMethods(clazz)
     // TODO: Add more filtering
     availableMethods.sortBy(_.getName)
   }
