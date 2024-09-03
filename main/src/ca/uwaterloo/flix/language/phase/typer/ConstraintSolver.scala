@@ -308,6 +308,7 @@ object ConstraintSolver {
     */
   private def resolveEquality(t1: Type, t2: Type, prov: Provenance, renv: RigidityEnv, loc: SourceLocation)(implicit scope: Scope, eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Result[ResolutionResult, TypeError] = (t1.kind, t2.kind) match {
     case (Kind.Eff, Kind.Eff) =>
+      // first simplify the types to get rid of assocs if we can
       for {
         res0 <- EffUnification.unify(t1, t2, renv).mapErr(toTypeError(_, prov))
         res =
@@ -319,6 +320,7 @@ object ConstraintSolver {
       } yield res
 
     case (Kind.Bool, Kind.Bool) =>
+      // first simplify the types to get rid of assocs if we can
       for {
         res0 <- BoolUnification.unify(t1, t2, renv).mapErr(toTypeError(_, prov))
         res =
@@ -331,6 +333,7 @@ object ConstraintSolver {
 
 
     case (Kind.RecordRow, Kind.RecordRow) =>
+      // first simplify the types to get rid of assocs if we can
       for {
         res0 <- RecordUnification.unifyRows(t1, t2, renv).mapErr(toTypeError(_, prov))
         res =
@@ -342,6 +345,7 @@ object ConstraintSolver {
       } yield res
 
     case (Kind.SchemaRow, Kind.SchemaRow) =>
+      // first simplify the types to get rid of assocs if we can
       for {
         res <- SchemaUnification.unifyRows(t1, t2, renv).mapErr(toTypeError(_, prov))
       } yield ResolutionResult.newSubst(res)
@@ -399,6 +403,48 @@ object ConstraintSolver {
         res1 <- resolveEquality(t11, t21, prov, renv, loc)
         res2 <- resolveEquality(res1.subst(t12), res1.subst(t22), res1.subst(prov), renv, loc)
       } yield res2 @@ res1
+
+    // reflU
+    case (Type.AssocType(cst1, args1, _, _), Type.AssocType(cst2, args2, _, _)) if cst1.sym == cst2.sym && args1 == args2 =>
+      Result.Ok(ResolutionResult.elimination)
+
+    // redU
+    // If either side is an associated type, we try to reduce both sides.
+    // This is to prevent erroneous no-progress reports when we actually could make progress on the non-matched side.
+    case (assoc: Type.AssocType, tpe) =>
+      for {
+        (t1, p1) <- TypeReduction.simplify(assoc, renv, loc)
+        (t2, p2) <- TypeReduction.simplify(tpe, renv, loc)
+      } yield {
+        ResolutionResult.constraints(List(TypeConstraint.Equality(t1, t2, prov)), p1 || p2)
+      }
+
+    // redU
+    case (tpe, assoc: Type.AssocType) =>
+      for {
+        (t1, p1) <- TypeReduction.simplify(tpe, renv, loc)
+        (t2, p2) <- TypeReduction.simplify(assoc, renv, loc)
+      } yield {
+        ResolutionResult.constraints(List(TypeConstraint.Equality(t1, t2, prov)), p1 || p2)
+      }
+
+    // Java types
+    case (tpe, java@Type.JvmToType(_, _)) =>
+      for {
+        (t1, p1) <- TypeReduction.simplify(tpe, renv, loc)
+        (t2, p2) <- TypeReduction.simplify(java, renv, loc)
+      } yield {
+        ResolutionResult.constraints(List(TypeConstraint.Equality(t1, t2, prov)), p1 || p2)
+      }
+
+    // Java types
+    case (java@Type.JvmToType(_, _), tpe) =>
+      for {
+        (t1, p1) <- TypeReduction.simplify(java, renv, loc)
+        (t2, p2) <- TypeReduction.simplify(tpe, renv, loc)
+      } yield {
+        ResolutionResult.constraints(List(TypeConstraint.Equality(t1, t2, prov)), p1 || p2)
+      }
 
     case _ =>
       Result.Err(toTypeError(UnificationError.MismatchedTypes(tpe1, tpe2), prov))
