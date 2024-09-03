@@ -269,6 +269,11 @@ object SimpleType {
   case class MethodReturnType(tpe: SimpleType) extends SimpleType
 
   /**
+    * A field type.
+    */
+  case class FieldType(tpe: SimpleType) extends SimpleType
+
+  /**
     * An error type.
     */
   case object Error extends SimpleType
@@ -436,7 +441,14 @@ object SimpleType {
           t.typeArguments.size match {
             case 0 => SimpleType.MethodReturnType(SimpleType.Hole)
             case 1 => SimpleType.MethodReturnType(fromWellKindedType(t.typeArguments.head))
-            case _ => throw InternalCompilerException(s"Unexpected wrong kinded type $t", t.loc)
+            case _ => throw new OverAppliedType(t.loc)
+          }
+        case TypeConstructor.JvmField(field) => Name(field.getName)
+        case TypeConstructor.FieldType =>
+          t.typeArguments.size match {
+            case 0 => SimpleType.FieldType(SimpleType.Hole)
+            case 1 => SimpleType.FieldType(fromWellKindedType(t.typeArguments.head))
+            case _ => throw new OverAppliedType(t.loc)
           }
         case TypeConstructor.Tuple(l) =>
           val tpes = t.typeArguments.map(visit).padTo(l, Hole)

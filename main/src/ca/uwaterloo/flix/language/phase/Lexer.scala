@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.shared.Source
-import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, ReadAst, SourceLocation, SourcePosition, Token, TokenKind}
+import ca.uwaterloo.flix.language.ast.{ChangeSet, ReadAst, SourceLocation, SourcePosition, Token, TokenKind}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.{DebugNoOp, DebugValidation}
 import ca.uwaterloo.flix.language.errors.LexerError
 import ca.uwaterloo.flix.util.{ParOps, Validation}
@@ -344,7 +344,6 @@ object Lexer {
       case '\"' => acceptString()
       case '\'' => acceptChar()
       case '`' => acceptInfixFunction()
-      case _ if isMatch("##") => acceptJavaName()
       case _ if isMatch("#{") => TokenKind.HashCurlyL
       case _ if isMatch("#(") => TokenKind.HashParenL
       case '#' => TokenKind.Hash
@@ -672,22 +671,6 @@ object Lexer {
       advance()
     }
     kind
-  }
-
-
-  /**
-   * Moves current position past a java name. IE. "##java"
-   */
-  private def acceptJavaName()(implicit s: State): TokenKind = {
-    advance()
-    while (!eof()) {
-      val p = peek()
-      if (!p.isLetter && !p.isDigit && p != '_' && p != '!' && p != '$') {
-        return TokenKind.NameJava
-      }
-      advance()
-    }
-    TokenKind.NameJava
   }
 
   /**

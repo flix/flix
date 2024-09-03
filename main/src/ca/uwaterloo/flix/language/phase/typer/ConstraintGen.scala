@@ -411,6 +411,7 @@ object ConstraintGen {
         // because we need to resolve local constraints
         // BEFORE purifying the region as we exit
 
+        // TODO LEVELS this may change when we do purification properly (?)
         // We must unify sym.tvar and the region var INSIDE the region
         // because we need to ensure that reference to the region are
         // resolved BEFORE purifying the region as we exit
@@ -765,33 +766,44 @@ object ConstraintGen {
 
         (resTpe, resEff)
 
-      case Expr.InvokeConstructor2(clazz, exps, cvar, evar, loc) =>
+      case Expr.InvokeConstructor2(clazz, exps, jvar, evar, loc) =>
         val tpe = Type.getFlixType(clazz)
         val (tpes, effs) = exps.map(visitExp).unzip
-        c.unifyJvmConstructorType(cvar, tpe, clazz, tpes, loc) // unify constructor
-        c.unifyType(evar, Type.mkUnion(Type.IO :: effs, loc), loc) // unify effects
+        val baseEffs = BaseEffects.of(clazz, loc)
+        c.unifyJvmConstructorType(jvar, tpe, clazz, tpes, loc) // unify constructor
+        c.unifyType(evar, Type.mkUnion(Type.IO :: baseEffs :: effs, loc), loc) // unify effects
         val resTpe = tpe
         val resEff = evar
         (resTpe, resEff)
 
-      case Expr.InvokeMethod2(exp, methodName, exps, mvar, tvar, evar, loc) =>
+      case Expr.InvokeMethod2(exp, methodName, exps, jvar, tvar, evar, loc) =>
         val (tpe, eff) = visitExp(exp)
         val (tpes, effs) = exps.map(visitExp).unzip
         val t = Type.Cst(TypeConstructor.MethodReturnType, loc)
-        c.unifyJvmMethodType(mvar, tpe, methodName, tpes, loc) // unify method
-        c.unifyType(tvar, Type.mkApply(t, List(mvar), loc), loc) // unify method return type
+        c.unifyJvmMethodType(jvar, tpe, methodName, tpes, loc) // unify method
+        c.unifyType(tvar, Type.mkApply(t, List(jvar), loc), loc) // unify method return type
         c.unifyType(evar, Type.mkUnion(Type.IO :: eff :: effs, loc), loc) // unify effects
         val resTpe = tvar
         val resEff = evar
         (resTpe, resEff)
 
-      case Expr.InvokeStaticMethod2(clazz, methodName, exps, mvar, tvar, evar, loc) =>
+      case Expr.InvokeStaticMethod2(clazz, methodName, exps, jvar, tvar, evar, loc) =>
         val tpe = Type.getFlixType(clazz)
         val (tpes, effs) = exps.map(visitExp).unzip
         val t = Type.Cst(TypeConstructor.MethodReturnType, loc)
-        c.unifyStaticJvmMethodType(mvar, clazz, tpe, methodName, tpes, loc)
-        c.unifyType(tvar, Type.mkApply(t, List(mvar), loc), loc)
+        c.unifyStaticJvmMethodType(jvar, clazz, tpe, methodName, tpes, loc)
+        c.unifyType(tvar, Type.mkApply(t, List(jvar), loc), loc)
         c.unifyType(evar, Type.mkUnion(Type.IO :: effs, loc), loc)
+        val resTpe = tvar
+        val resEff = evar
+        (resTpe, resEff)
+
+      case Expr.GetField2(exp, fieldName, jvar, tvar, evar, loc) =>
+        val (tpe, eff) = visitExp(exp)
+        val t = Type.Cst(TypeConstructor.FieldType, loc)
+        c.unifyJvmFieldType(jvar, tpe, fieldName, loc) // unify field
+        c.unifyType(tvar, Type.mkApply(t, List(jvar), loc), loc) // unify field type
+        c.unifyType(evar, Type.mkUnion(Type.IO :: eff :: Nil, loc), loc) // unify effects
         val resTpe = tvar
         val resEff = evar
         (resTpe, resEff)
@@ -818,7 +830,7 @@ object ConstraintGen {
         val resEff = Type.IO
         (resTpe, resEff)
 
-      case Expr.GetField(field, clazz, exp, _) =>
+      case Expr.GetFieldOld(field, clazz, exp, _) =>
         val classType = Type.getFlixType(clazz)
         val fieldType = Type.getFlixType(field.getType)
         val (tpe, _) = visitExp(exp)

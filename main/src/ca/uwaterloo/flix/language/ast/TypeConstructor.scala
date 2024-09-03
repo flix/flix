@@ -4,8 +4,7 @@ import ca.uwaterloo.flix.language.ast.Ast.{EliminatedBy, IntroducedBy}
 import ca.uwaterloo.flix.language.phase.typer.TypeReduction
 import ca.uwaterloo.flix.language.phase.{Kinder, Lowering, Monomorpher, TypeReconstruction}
 
-import java.lang.reflect.Method
-import java.lang.reflect.Constructor
+import java.lang.reflect.{Constructor, Field, Method}
 import scala.collection.immutable.SortedSet
 
 /**
@@ -255,14 +254,14 @@ object TypeConstructor {
    * A type constructor that represents the type of a Java constructor.
    * */
   case class JvmConstructor(constructor: Constructor[_]) extends TypeConstructor {
-    def kind: Kind = Kind.JvmConstructorOrMethod
+    def kind: Kind = Kind.Jvm
   }
 
   /**
    * A type constructor that represents the type of a Java method.
    */
   case class JvmMethod(method: Method) extends TypeConstructor {
-    def kind: Kind = Kind.JvmConstructorOrMethod
+    def kind: Kind = Kind.Jvm
   }
 
   /**
@@ -280,7 +279,26 @@ object TypeConstructor {
    */
   @EliminatedBy(TypeReconstruction.getClass)
   case object MethodReturnType extends TypeConstructor {
-    def kind: Kind = Kind.JvmConstructorOrMethod ->: Kind.Star
+    def kind: Kind = Kind.Jvm ->: Kind.Star
+  }
+
+  /**
+    * A type constructor that represents the type of a Java field.
+    */
+  case class JvmField(field: Field) extends TypeConstructor {
+    def kind: Kind = Kind.Jvm
+  }
+
+  /**
+    * A type constructor that represents the type of a Java field.
+    *
+    * A field type can be resolved when the receiver object is known.
+    *
+    * The type constructor requires a Java field type constructor.
+    */
+  @EliminatedBy(TypeReconstruction.getClass)
+  case object FieldType extends TypeConstructor {
+    def kind: Kind = Kind.Jvm ->: Kind.Star
   }
 
   /**

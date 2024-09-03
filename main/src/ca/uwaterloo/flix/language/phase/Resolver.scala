@@ -26,6 +26,7 @@ import ca.uwaterloo.flix.language.ast.{NamedAst, Symbol, _}
 import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.language.errors.ResolutionError._
 import ca.uwaterloo.flix.language.errors.{Recoverable, ResolutionError, Unrecoverable}
+import ca.uwaterloo.flix.language.phase.typer.TypeReduction
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.collection.{Chain, ListMap, MapOps}
@@ -1354,6 +1355,13 @@ private def resolveExp(exp0: NamedAst.Expr, env0: ListMap[String, Resolution])(i
           ResolvedAst.Expr.InvokeMethod2(e, name, es, loc)
       }
 
+    case NamedAst.Expr.GetField2(exp, name, loc) =>
+      val eVal = resolveExp(exp, env0)
+      mapN(eVal) {
+        case e =>
+          ResolvedAst.Expr.GetField2(e, name, loc)
+      }
+
     case NamedAst.Expr.InvokeConstructorOld(className, args, sig, loc) =>
       lookupJvmClass(className, loc) match {
         case Result.Ok(clazz) =>
@@ -1405,11 +1413,11 @@ private def resolveExp(exp0: NamedAst.Expr, env0: ListMap[String, Resolution])(i
           }
       }
 
-    case NamedAst.Expr.GetField(className, fieldName, exp, loc) =>
+    case NamedAst.Expr.GetFieldOld(className, fieldName, exp, loc) =>
       lookupJvmField(className, fieldName, static = false, loc) match {
         case Result.Ok((clazz, field)) =>
           mapN(resolveExp(exp, env0)) {
-            case e => ResolvedAst.Expr.GetField(field, clazz, e, loc)
+            case e => ResolvedAst.Expr.GetFieldOld(field, clazz, e, loc)
           }
         case Result.Err(e) => Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
       }
@@ -2315,12 +2323,21 @@ private def lookupTrait(qname: Name.QName, env: ListMap[String, Resolution], ns0
     * Finds the struct field that matches the given name `name` in the namespace `ns0`.
     */
   private def lookupStructField(name: Name.Label, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Result[NamedAst.Declaration.StructField, ResolutionError.UndefinedStructField] = {
-    val matches = tryLookupName(Name.mkQName("€" + name.name, name.loc), env, ns0, root).collect {
+    val matches = tryLookupName(Name.mkQName(ns0.parts, "€" + name.name, name.loc), env, ns0, root) collect {
       case Resolution.Declaration(s: NamedAst.Declaration.StructField) => s
     }
     matches match {
       // Case 0: No matches. Error.
-      case Nil => Result.Err(ResolutionError.UndefinedStructField(name, name.loc))
+      case Nil =>
+        if(ns0.idents.length >= 1) {
+          // The struct name is the same as the mod name
+          val struct_namespace = Name.NName(ns0.idents.init, ns0.loc)
+          val struct_name = ns0.idents.last
+          Result.Err(ResolutionError.UndefinedStructField(Some(Symbol.mkStructSym(struct_namespace, struct_name)), name, name.loc))
+        } else {
+          // If we are in the root namespace, we can't give figure out the struct name
+          Result.Err(ResolutionError.UndefinedStructField(None, name, name.loc))
+        }
       // Case 1: A match was found. Success. Note that multiple matches can be found but they are prioritized by tryLookupName so this is fine.
       case field :: _ => Result.Ok(field)
     }
@@ -3431,7 +3448,7 @@ private def getRestrictableEnumIfAccessible(enum0: NamedAst.Declaration.Restrict
       }
     } catch {
       case ex: NoSuchMethodException =>
-        val candidateMethods = clazz.getMethods.filter(m => m.getName == methodName).toList
+        val candidateMethods = TypeReduction.getMethods(clazz).filter(m => m.getName == methodName)
         Result.Err(ResolutionError.UndefinedJvmMethod(clazz.getName, methodName, static, signature, candidateMethods, loc))
       // ClassNotFoundException:  Cannot happen because we already have the `Class` object.
       // NoClassDefFoundError:    Cannot happen because we already have the `Class` object.
@@ -3571,6 +3588,7 @@ private def getRestrictableEnumIfAccessible(enum0: NamedAst.Declaration.Restrict
         case TypeConstructor.CaseUnion(_) => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.Error(_, _) => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.MethodReturnType => Result.Err(ResolutionError.IllegalType(tpe, loc))
+        case TypeConstructor.FieldType => Result.Err(ResolutionError.IllegalType(tpe, loc))
 
         case TypeConstructor.AnyType => throw InternalCompilerException(s"unexpected type: $tc", tpe.loc)
         case t: TypeConstructor.Arrow => throw InternalCompilerException(s"unexpected type: $t", tpe.loc)
@@ -3579,6 +3597,7 @@ private def getRestrictableEnumIfAccessible(enum0: NamedAst.Declaration.Restrict
         case t: TypeConstructor.RestrictableEnum => throw InternalCompilerException(s"unexpected type: $t", tpe.loc)
         case TypeConstructor.JvmConstructor(_) => throw InternalCompilerException(s"unexpected type: $tc", tpe.loc)
         case TypeConstructor.JvmMethod(_) => throw InternalCompilerException(s"unexpected type: $tc", tpe.loc)
+        case TypeConstructor.JvmField(_) => throw InternalCompilerException(s"unexpected type: $tc", tpe.loc)
 
       }
 

@@ -339,9 +339,12 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
   test("ShadowedName.NewObject.01") {
     val input =
       """
-        |def f(): ##java.lang.Comparable \ IO =
-        |   new ##java.lang.Comparable {
-        |     def compareTo(x: ##java.lang.Object, _y: ##java.lang.Object): Int32 =
+        |import java.lang.Comparable
+        |import java.lang.Object
+        |
+        |def f(): Comparable \ IO =
+        |   new Comparable {
+        |     def compareTo(x: Object, _y: Object): Int32 =
         |       let x = 0;
         |       x
         |   }
@@ -1084,9 +1087,12 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
   test("UnusedFormalParam.NewObject.01") {
     val input =
       """
-        |def f(): ##java.lang.Comparable \ IO =
-        |   new ##java.lang.Comparable {
-        |     def compareTo(x: ##java.lang.Object, _y: ##java.lang.Object): Int32 =
+        |import java.lang.Comparable
+        |import java.lang.Object
+        |
+        |def f(): Comparable \ IO =
+        |   new Comparable {
+        |     def compareTo(x: Object, _y: Object): Int32 =
         |       0
         |   }
         """.stripMargin
@@ -1956,9 +1962,12 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
   test("RedundantCheckedTypeCast.05") {
     val input =
       """
+        |import java.lang.Object
+        |import java.lang.StringBuilder
+        |
         |def f(): Unit \ IO =
-        |    import java_new java.lang.StringBuilder(): ##java.lang.StringBuilder \ IO as newStringBuilder;
-        |    import java_new java.lang.Object(): ##java.lang.Object \ IO as newObject;
+        |    import java_new java.lang.StringBuilder(): StringBuilder \ IO as newStringBuilder;
+        |    import java_new java.lang.Object(): Object \ IO as newObject;
         |    let _ =
         |        if (true)
         |            checked_cast((newObject(), newObject()))
