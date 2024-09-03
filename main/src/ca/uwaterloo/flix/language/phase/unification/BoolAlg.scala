@@ -157,6 +157,10 @@ trait BoolAlg[F] {
     case _ => throw InternalCompilerException(s"Unexpected type: '$t'.", t.loc)
   }
 
+  /**
+    * Traverses the type and returns `true` if `t` contains [[TypeConstructor.Error]].
+    * Returns `false` otherwise.
+    */
   private def hasError(t: Type): Boolean = Type.eraseTopAliases(t) match {
     case Type.Cst(TypeConstructor.Error(_, _), _) => true
     case Type.Cst(_, _) => false
