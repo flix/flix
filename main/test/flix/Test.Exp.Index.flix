@@ -1,70 +1,120 @@
 mod Test.Exp.Index {
 
-    @test
+    @Test
     def array01(): Bool = region rc {
         let a = Array#{1, 2, 3, 4} @ rc;
         regionedHandler(rc, () -> checked_ecast (a[0] == 1))
     }
 
-    @test
+    @Test
     def array02(): Bool = region rc {
         let a = Array#{1, 2, 3, 4} @ rc;
         regionedHandler(rc, () -> checked_ecast (a[1] == 2))
     }
 
-    @test
+    @Test
     def array03(): Bool = region rc {
         let a = Array#{1, 2, 3, 4} @ rc;
         regionedHandler(rc, () -> checked_ecast (a[2] == 3))
     }
 
-    @test
+    @Test
     def array04(): Bool = region rc {
         let a = Array#{1, 2, 3, 4} @ rc;
         regionedHandler(rc, () -> checked_ecast (a[3] == 4))
     }
 
-    @test
+    @Test
     def array05(): Bool = region rc {
         let a = Array#{1, 2, 3, 4} @ rc;
         not regionedHandler(rc, () -> checked_ecast (a[4] == -1))
     }
 
-    @test
+    @Test
     def array06(): Bool = region rc {
         let a = Array#{1, 2, 3, 4} @ rc;
         not regionedHandler(rc, () -> checked_ecast (a[-1] == -1))
     }
 
-    @test
+    @Test
     def vector01(): Bool =
-        let a = Vector#{1, 2, 3, 4};
-        handler(() -> checked_ecast (a[0] == 1))
+        let v = Vector#{1, 2, 3, 4};
+        handler(() -> checked_ecast (v[0] == 1))
 
-    @test
+    @Test
     def vector02(): Bool =
-        let a = Vector#{1, 2, 3, 4};
-        handler(() -> checked_ecast (a[1] == 2))
+        let v = Vector#{1, 2, 3, 4};
+        handler(() -> checked_ecast (v[1] == 2))
 
-    @test
+    @Test
     def vector03(): Bool =
-        let a = Vector#{1, 2, 3, 4};
-        handler(() -> checked_ecast (a[2] == 3))
+        let v = Vector#{1, 2, 3, 4};
+        handler(() -> checked_ecast (v[2] == 3))
 
-    @test
+    @Test
     def vector04(): Bool =
-        let a = Vector#{1, 2, 3, 4};
-        handler(() -> checked_ecast (a[3] == 4))
+        let v = Vector#{1, 2, 3, 4};
+        handler(() -> checked_ecast (v[3] == 4))
 
-    @test
+    @Test
     def vector05(): Bool =
-        let a = Vector#{1, 2, 3, 4};
-        not handler(() -> checked_ecast (a[4] == -1))
+        let v = Vector#{1, 2, 3, 4};
+        not handler(() -> checked_ecast (v[4] == -1))
 
-    @test
+    @Test
     def vector06(): Bool =
-        let a = Vector#{1, 2, 3, 4};
-        not handler(() -> checked_ecast (a[-1] == -1))
+        let v = Vector#{1, 2, 3, 4};
+        not handler(() -> checked_ecast (v[-1] == -1))
+
+    @Test
+    def map01(): Bool =
+        let m = Map#{0 => 1, 1 => 2, 2 => 3, 3 => 4};
+        handler(() -> checked_ecast (m[0] == 1))
+
+    @Test
+    def map02(): Bool =
+        let m = Map#{0 => 1, 1 => 2, 2 => 3, 3 => 4};
+        handler(() -> checked_ecast (m[1] == 2))
+
+    @Test
+    def map03(): Bool =
+        let m = Map#{0 => 1, 1 => 2, 2 => 3, 3 => 4};
+        handler(() -> checked_ecast (m[2] == 3))
+
+    @Test
+    def map04(): Bool =
+        let m = Map#{0 => 1, 1 => 2, 2 => 3, 3 => 4};
+        handler(() -> checked_ecast (m[3] == 4))
+
+    @Test
+    def map05(): Bool =
+        let m = Map#{0 => 1, 1 => 2, 2 => 3, 3 => 4};
+        not handler(() -> checked_ecast (m[4] == -1))
+
+    @Test
+    def map06(): Bool =
+        let m = Map#{0 => 1, 1 => 2, 2 => 3, 3 => 4};
+        not handler(() -> checked_ecast (m[-1] == -1))
+
+    @Test
+    def record01(): Bool =
+        let r = { v = Vector#{1, 2, 3, 4} };
+        handler(() -> checked_ecast (r#v[1] == 2))
+
+    @Test
+    def record02(): Bool =
+        let r = { r = { v = Vector#{1, 2, 3, 4} } };
+        handler(() -> checked_ecast (r#r#v[1] == 2))
+
+    @Test
+    def record03(): Bool =
+        let r = { r = { v = Vector#{{ v = Vector#{1, 2, 3, 4} } } } };
+        handler(() -> checked_ecast (r#r#v[0]#v[1] == 2))
+
+    @Test
+    def record04(): Bool =
+        let r = { r = { v = Vector#{Vector#{}, Vector#{{ v = Vector#{1, 2, 3, 4} }} } } };
+        handler(() -> checked_ecast (r#r#v[1][0]#v[1] == 2))
 
     def handler(f: Unit -> Bool \ OutOfBounds + KeyNotFound): Bool = {
         try {
