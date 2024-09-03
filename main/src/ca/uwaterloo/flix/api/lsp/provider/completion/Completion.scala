@@ -66,7 +66,7 @@ sealed trait Completion {
 
     case Completion.TypeBuiltinCompletion(name, priority, textEdit, insertTextFormat) =>
       CompletionItem(label = name,
-        sortText = priority,
+        sortText = Priority.toSortText(priority, name),
         textEdit = textEdit,
         insertTextFormat = insertTextFormat,
         kind = CompletionItemKind.Enum)
@@ -339,7 +339,7 @@ object Completion {
     * @param textEdit         the edit which is applied to a document when selecting this completion.
     * @param insertTextFormat the format of the insert text.
     */
-  case class TypeBuiltinCompletion(name: String, priority: String, textEdit: TextEdit,
+  case class TypeBuiltinCompletion(name: String, priority: Priority, textEdit: TextEdit,
                                    insertTextFormat: InsertTextFormat) extends Completion
 
   /**

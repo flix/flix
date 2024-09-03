@@ -45,12 +45,13 @@ object TypeCompleter {
   /**
     * Boost priority if there's a colon immediately before the word the user's typing
     */
-  def priorityBoostForTypes(implicit context: CompletionContext): Priority = {
+  def priorityBoostForTypes(p: Priority)(implicit context: CompletionContext): Priority = {
     val typePriorityBoost = raw".*:\s*(?:[^\s]|(?:\s*,\s*))*".r
     val typeAliasPriorityBoost = raw"\s*type\s+alias\s+.+\s*=\s*(?:[^\s]|(?:\s*,\s*))*".r
-    val priority = if ((typePriorityBoost matches context.prefix) || (typeAliasPriorityBoost matches context.prefix))
-      Priority.higher else Priority.lowest
-    priority
+    if ((typePriorityBoost matches context.prefix) || (typeAliasPriorityBoost matches context.prefix))
+      Priority.highest 
+    else 
+      p
   }
 
   /**

@@ -59,23 +59,23 @@ object TypeBuiltinCompleter {
     */
   def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[TypeBuiltinCompletion] = {
     val builtinTypes = BuiltinTypeNames.map { name =>
-      val internalPriority = Priority.highest _
-      Completion.TypeBuiltinCompletion(name, TypeCompleter.priorityBoostForTypes(internalPriority(name))(context), TextEdit(context.range, name),
+      val internalPriority = Priority.highest
+      Completion.TypeBuiltinCompletion(name, TypeCompleter.priorityBoostForTypes(internalPriority)(context), TextEdit(context.range, name),
         InsertTextFormat.PlainText)
     }
 
     val lowPriorityBuiltinTypes = LowPriorityBuiltinTypeNames.map { name =>
-      val internalPriority = Priority.lowest _
-      Completion.TypeBuiltinCompletion(name, TypeCompleter.priorityBoostForTypes(internalPriority(name))(context), TextEdit(context.range, name),
+      val internalPriority = Priority.low
+      Completion.TypeBuiltinCompletion(name, TypeCompleter.priorityBoostForTypes(internalPriority)(context), TextEdit(context.range, name),
         InsertTextFormat.PlainText)
     }
 
     val builtinTypesWithParams = BuiltinTypeNamesWithTypeParameters.map {
       case (name, tparams) =>
-        val internalPriority = Priority.higher _
+        val internalPriority = Priority.higher
         val fmtTparams = tparams.zipWithIndex.map { case (name, idx) => s"$${${idx + 1}:$name}" }.mkString(", ")
         val finalName = s"$name[${tparams.mkString(", ")}]"
-        Completion.TypeBuiltinCompletion(finalName, TypeCompleter.priorityBoostForTypes(internalPriority(name))(context),
+        Completion.TypeBuiltinCompletion(finalName, TypeCompleter.priorityBoostForTypes(internalPriority)(context),
           TextEdit(context.range, s"$name[$fmtTparams]"), insertTextFormat = InsertTextFormat.Snippet)
     }
 
