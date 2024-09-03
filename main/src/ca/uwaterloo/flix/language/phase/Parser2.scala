@@ -2538,16 +2538,21 @@ object Parser2 {
         //     or: new Struct @ rc {}
         expect(TokenKind.At, SyntacticContext.Expr.OtherExpr)
         expression()
-        zeroOrMore(
-          namedTokenSet = NamedTokenSet.FromKinds(NAME_FIELD),
-          checkForItem = NAME_FIELD.contains,
-          getItem = structFieldInit,
-          breakWhen = _.isRecoverExpr,
-          context = SyntacticContext.Expr.OtherExpr,
-          separation = Separation.Required(TokenKind.Comma),
-          delimiterL = TokenKind.CurlyL,
-          delimiterR = TokenKind.CurlyR
-        )
+        if(!at(TokenKind.CurlyL)) {
+          expect(TokenKind.CurlyL, SyntacticContext.Expr.OtherExpr)
+        }
+        else {
+          zeroOrMore(
+            namedTokenSet = NamedTokenSet.FromKinds(NAME_FIELD),
+            checkForItem = NAME_FIELD.contains,
+            getItem = structFieldInit,
+            breakWhen = _.isRecoverExpr,
+            context = SyntacticContext.Expr.OtherExpr,
+            separation = Separation.Required(TokenKind.Comma),
+            delimiterL = TokenKind.CurlyL,
+            delimiterR = TokenKind.CurlyR
+          )
+        }
         close(mark, TreeKind.Expr.NewStruct)
       } else if (at(TokenKind.CurlyL)) {
         // Case 1: new Type { ... }
