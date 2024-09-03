@@ -408,6 +408,44 @@ object ConstraintSolver {
     case (Type.AssocType(cst1, args1, _, _), Type.AssocType(cst2, args2, _, _)) if cst1.sym == cst2.sym && args1 == args2 =>
       Result.Ok(ResolutionResult.elimination)
 
+    // redU
+    // If either side is an associated type, we try to reduce both sides.
+    // This is to prevent erroneous no-progress reports when we actually could make progress on the non-matched side.
+    case (assoc: Type.AssocType, tpe) =>
+      for {
+        (t1, p1) <- TypeReduction.simplify(assoc, renv, loc)
+        (t2, p2) <- TypeReduction.simplify(tpe, renv, loc)
+      } yield {
+        ResolutionResult.constraints(List(TypeConstraint.Equality(t1, t2, prov)), p1 || p2)
+      }
+
+    // redU
+    case (tpe, assoc: Type.AssocType) =>
+      for {
+        (t1, p1) <- TypeReduction.simplify(tpe, renv, loc)
+        (t2, p2) <- TypeReduction.simplify(assoc, renv, loc)
+      } yield {
+        ResolutionResult.constraints(List(TypeConstraint.Equality(t1, t2, prov)), p1 || p2)
+      }
+
+    // Java types
+    case (tpe, java@Type.JvmToType(_, _)) =>
+      for {
+        (t1, p1) <- TypeReduction.simplify(tpe, renv, loc)
+        (t2, p2) <- TypeReduction.simplify(java, renv, loc)
+      } yield {
+        ResolutionResult.constraints(List(TypeConstraint.Equality(t1, t2, prov)), p1 || p2)
+      }
+
+    // Java types
+    case (java@Type.JvmToType(_, _), tpe) =>
+      for {
+        (t1, p1) <- TypeReduction.simplify(java, renv, loc)
+        (t2, p2) <- TypeReduction.simplify(tpe, renv, loc)
+      } yield {
+        ResolutionResult.constraints(List(TypeConstraint.Equality(t1, t2, prov)), p1 || p2)
+      }
+
     case _ =>
       Result.Err(toTypeError(UnificationError.MismatchedTypes(tpe1, tpe2), prov))
   }
