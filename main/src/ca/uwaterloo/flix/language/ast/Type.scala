@@ -579,6 +579,11 @@ object Type {
       case JvmTemplate.JvmStaticMethod(clazz, name, tpes) => JvmTemplate.JvmStaticMethod(clazz, name, tpes.map(f))
     }
 
+    /**
+      * Transforms `this` by executing `f` on all the types in `this`.
+      *
+      * If `f` returns `Err` for any call, this function returns `Err`.
+      */
     def traverse[E](f: Type => Result[Type, E]): Result[JvmTemplate, E] = this match {
       case JvmTemplate.JvmConstructor(clazz, tpes0) =>
         for {
