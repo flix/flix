@@ -1,4 +1,4 @@
-mod Test.Exp.IndexMut {
+mod Test.Exp.IndexableMut {
 
     @Test
     def array01(): Bool = region rc {
