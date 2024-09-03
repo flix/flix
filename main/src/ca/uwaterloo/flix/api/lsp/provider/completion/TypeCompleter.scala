@@ -19,12 +19,12 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.language.ast.{SourceLocation, TypedAst}
 
-object TypeCompleter extends Completer {
+object TypeCompleter {
 
   /**
     * Returns a List of Completion for types (enums, aliases and builtin).
     */
-  override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] = {
+  def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] = {
     EnumCompleter.getCompletions(context) ++ TypeAliasCompleter.getCompletions(context) ++
       TypeBuiltinCompleter.getCompletions(context) ++ ModuleCompleter.getCompletions(context) ++
       StructCompleter.getCompletions(context)
@@ -35,11 +35,11 @@ object TypeCompleter extends Completer {
     */
   def getInternalPriority(loc: SourceLocation, ns: List[String])(implicit context: CompletionContext): String => String = {
     if (loc.source.name == context.uri)
-      CompletionPriority.higher
+      Priority.higher
     else if (ns.isEmpty)
-      CompletionPriority.lower
+      Priority.lower
     else
-      CompletionPriority.lowest
+      Priority.lowest
   }
 
   /**
@@ -49,7 +49,7 @@ object TypeCompleter extends Completer {
     val typePriorityBoost = raw".*:\s*(?:[^\s]|(?:\s*,\s*))*".r
     val typeAliasPriorityBoost = raw"\s*type\s+alias\s+.+\s*=\s*(?:[^\s]|(?:\s*,\s*))*".r
     val priority = if ((typePriorityBoost matches context.prefix) || (typeAliasPriorityBoost matches context.prefix))
-      CompletionPriority.higher _ else CompletionPriority.lowest _
+      Priority.higher _ else Priority.lowest _
     priority(name)
   }
 

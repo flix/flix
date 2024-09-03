@@ -29,7 +29,7 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
   * 7: Normal: completions that are relevant within no particular context
   * 9: Low: completions that are unlikely to be relevant unless within a specific context
   */
-object CompletionPriority {
+object Priority {
   def highest(name: String): String = "1" + name
 
   def higher(name: String): String = "2" + name
