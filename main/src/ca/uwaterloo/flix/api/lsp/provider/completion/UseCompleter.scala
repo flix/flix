@@ -19,11 +19,11 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.language.ast.TypedAst
 
-object UseCompleter extends Completer {
+object UseCompleter {
   /**
     * Returns a List of Completion for completer.
     */
-  override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] = {
+  def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] = {
       UseModuleCompleter.getCompletions(context)      ++
       UseEnumCompleter.getCompletions(context)        ++
       UseEffCompleter.getCompletions(context)         ++

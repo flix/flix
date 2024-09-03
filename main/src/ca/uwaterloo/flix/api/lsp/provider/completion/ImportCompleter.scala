@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.ImportCompletion
 import ca.uwaterloo.flix.language.ast.TypedAst
 
-object ImportCompleter extends Completer {
+object ImportCompleter {
 
   def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[ImportCompletion] = {
     val regex = raw"\s*import\s+(?:.*\s+)*(.*)".r

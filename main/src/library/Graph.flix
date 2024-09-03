@@ -260,7 +260,7 @@ mod Graph {
     /// Returns a copy of the weighted directed graph `g` where all flipped
     /// edges are added. An undirected graph in directed representation.
     ///
-    pub def toUndirectedWeighted(g: m[(t, Int32, t)]): Set[(t, Int32, t)] \ Foldable.Aef[m] with Foldable[m], Order[t] = {
+    pub def toUndirectedLabeled(g: m[(t, Int32, t)]): Set[(t, Int32, t)] \ Foldable.Aef[m] with Foldable[m], Order[t] = {
         g |> Foldable.toSet
           |> Set.flatMap(match (a, w, b) -> Set#{(a, w, b), (b, w, a)})
     }
@@ -486,7 +486,7 @@ mod Graph {
     /// The strings of nodes are put in quotes and existing quotes are escaped.
     /// Other than that, DOT identifier validity is up to the caller.
     ///
-    pub def toGraphvizWeighted(g: m[(t, Int32, t)]): String \ Foldable.Aef[m] with Foldable[m], Order[t], ToString[t] = region rc {
+    pub def toGraphvizLabeled(g: m[(t, l, t)]): String \ Foldable.Aef[m] with Foldable[m], ToString[t], ToString[l] = region rc {
         let sb = StringBuilder.empty(rc);
         def output(s) = StringBuilder.appendLine!(s, sb);
         output("digraph {");
