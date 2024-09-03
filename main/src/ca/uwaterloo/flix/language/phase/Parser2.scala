@@ -2530,9 +2530,11 @@ object Parser2 {
       Type.ttype()
 
       // NewStruct, NewObject, or InvokeConstructor?
-      if (at(TokenKind.CurlyL) && (nth(1) == TokenKind.NameLowerCase || (nth(1) == TokenKind.CurlyR && nth(2) == TokenKind.At))) {
-        // case 2: new Struct {field1 = expr1, field2 = expr2, ...} @ region
-        //     or: new Struct {} @ region
+      if (at(TokenKind.At)) {
+        // case 2: new Struct @ rc {field1 = expr1, field2 = expr2, ...}
+        //     or: new Struct @ rc {}
+        expect(TokenKind.At, SyntacticContext.Expr.OtherExpr)
+        expression()
         zeroOrMore(
           namedTokenSet = NamedTokenSet.FromKinds(NAME_FIELD),
           checkForItem = NAME_FIELD.contains,
@@ -2543,8 +2545,6 @@ object Parser2 {
           delimiterL = TokenKind.CurlyL,
           delimiterR = TokenKind.CurlyR
         )
-        expect(TokenKind.At, SyntacticContext.Expr.OtherExpr)
-        expression()
         close(mark, TreeKind.Expr.NewStruct)
       } else if (at(TokenKind.CurlyL)) {
         // Case 1: new Type { ... }

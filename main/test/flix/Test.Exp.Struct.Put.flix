@@ -10,7 +10,7 @@ mod Test.Exp.Struct.Put {
     @test
     def testStructPut01(): Bool =
         region rc {
-            let s = new Person { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true } @ rc;
+            let s = new Person @ rc { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
             s->fstName = "Unlucky";
             s->fstName == "Unlucky"
         }
@@ -18,7 +18,7 @@ mod Test.Exp.Struct.Put {
     @test
     def testStructPut02(): Bool =
         region rc {
-            let s = new Person { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true } @ rc;
+            let s = new Person @ rc { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
             s->lstName = "Uriel";
             s->lstName == "Uriel"
         }
@@ -26,7 +26,7 @@ mod Test.Exp.Struct.Put {
     @test
     def testStructPut03(): Bool =
         region rc {
-            let s = new Person { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true } @ rc;
+            let s = new Person @ rc { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
             s->age = 23;
             s->age == 23
         }
@@ -34,7 +34,7 @@ mod Test.Exp.Struct.Put {
     @test
     def testStructPut04(): Bool =
         region rc {
-            let s = new Person { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true } @ rc;
+            let s = new Person @ rc { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
             s->cowboy = false;
             not s->cowboy and s->fstName == "Lucky" and s->lstName == "Luke" and s->age == 42
         }
@@ -42,7 +42,7 @@ mod Test.Exp.Struct.Put {
     @test
     def testStructMultiPut01(): Bool =
         region rc {
-            let s = new Person { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true } @ rc;
+            let s = new Person @ rc { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
             s->fstName = "Unlucky";
             s->lstName = "Uriel";
             s->age = 23;
@@ -53,7 +53,7 @@ mod Test.Exp.Struct.Put {
     @test
     def testStructMultiPut02(): Bool =
         region rc {
-            let s = new Person { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true } @ rc;
+            let s = new Person @ rc { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
             s->cowboy = false;
             s->age = 23;
             s->lstName = "Uriel";
@@ -64,7 +64,7 @@ mod Test.Exp.Struct.Put {
     @test
     def testStructMultiPut03(): Bool =
         region rc {
-            let s = new Person { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true } @ rc;
+            let s = new Person @ rc { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
             s->fstName = "Unlucky";
             s->fstName = "Lucky";
             s->lstName = "Uriel";
@@ -75,7 +75,7 @@ mod Test.Exp.Struct.Put {
     @test
     def testStructMultiPut04(): Bool =
         region rc {
-            let s = new Person { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true } @ rc;
+            let s = new Person @ rc { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
             s->lstName = "Uriel";
             s->fstName = "Unlucky";
             s->lstName = "Luke";
@@ -107,41 +107,41 @@ mod Test.Exp.Struct.Put {
     @test
     def binaryTree01(): Bool \ IO =
         region rc {
-            let leaf1 = new BinaryTree {
+            let leaf1 = new BinaryTree @ rc {
                 left = None,
                 right = None,
                 node_value = 10
-            } @ rc;
-            let leaf2 = new BinaryTree {
+            };
+            let leaf2 = new BinaryTree @ rc {
                 left = None,
                 right = None,
                 node_value = 9
-            } @ rc;
-            let leaf3 = new BinaryTree {
+            };
+            let leaf3 = new BinaryTree @ rc {
                 left = None,
                 right = None,
                 node_value = 8
-            } @ rc;
-            let leaf4 = new BinaryTree {
+            };
+            let leaf4 = new BinaryTree @ rc {
                 left = None,
                 right = None,
                 node_value = 7
-            } @ rc;
-            let innernode1 = new BinaryTree {
+            };
+            let innernode1 = new BinaryTree @ rc {
                 left = Some(leaf1),
                 right = Some(leaf2),
                 node_value = 4
-            } @ rc;
-            let innernode2 = new BinaryTree {
+            };
+            let innernode2 = new BinaryTree @ rc {
                 left = Some(leaf3),
                 right = Some(leaf4),
                 node_value = 4
-            } @ rc;
-            let tree = new BinaryTree {
+            };
+            let tree = new BinaryTree @ rc {
                 left = Some(innernode1),
                 right = Some(innernode2),
                 node_value = 5
-            } @ rc;
+            };
             doubleTree(Some(tree));
             binaryTreeSum(Some(tree)) == 94
         }
@@ -153,7 +153,7 @@ mod Test.Exp.Struct.Put {
     @test
     def nestedPut01(): Bool =
         region rc {
-            let nested = new Nested{ v = new Nested { v = new Nested {v = new Nested {v = 15} @ rc } @ rc} @ rc } @ rc;
+            let nested = new Nested @ rc { v = new Nested @ rc { v = new Nested @ rc {v = new Nested @ rc {v = 15} }} };
             nested->v->v->v->v == 15;
             nested->v->v->v->v = 37;
             nested->v->v->v->v == 37
@@ -166,7 +166,7 @@ mod Test.Exp.Struct.Put {
 
     def listAppend(list: List[t, r], rc: Region[r], value: t): Unit \ r = match list->next {
         case Some(l) => listAppend(l, rc, value)
-        case None => list->next = Some(new List {value = value, next = None} @ rc)
+        case None => list->next = Some(new List @ rc {value = value, next = None})
     }
 
     def listSum(list: List[Int32, r]): Int32 \ r =
@@ -193,7 +193,7 @@ mod Test.Exp.Struct.Put {
     @test
     def testList01(): Bool =
         region rc {
-            let list = new List { value = 1, next = None } @ rc;
+            let list = new List @ rc { value = 1, next = None };
             listAppend(list, rc, 2);
             listAppend(list, rc, 3);
             listAppend(list, rc, 4);
@@ -209,7 +209,7 @@ mod Test.Exp.Struct.Put {
     @test
     def testList02(): Bool =
         region rc {
-            let list = new List { value = 1, next = None } @ rc;
+            let list = new List @ rc { value = 1, next = None };
             listAppend(list, rc, 2);
             listAppend(list, rc, 3);
             listAppend(list, rc, 4);
@@ -225,7 +225,7 @@ mod Test.Exp.Struct.Put {
     @test
     def testList03(): Bool =
         region rc {
-            let list = new List { value = 1, next = None } @ rc;
+            let list = new List @ rc { value = 1, next = None };
             listAppend(list, rc, 2);
             listAppend(list, rc, 3);
             listAppend(list, rc, 4);
@@ -241,7 +241,7 @@ mod Test.Exp.Struct.Put {
     @test
     def testList04(): Bool =
         region rc {
-            let list = new List { value = 1, next = None } @ rc;
+            let list = new List @ rc { value = 1, next = None };
             listAppend(list, rc, 2);
             listAppend(list, rc, 3);
             listAppend(list, rc, 4);
