@@ -133,6 +133,15 @@ mod Test.Exp.Index {
         regionedHandler(rc, () -> v[0][0][2] == 3)
     }
 
+    @Test
+    def genWithRecord01(): Bool =
+        handler(() -> f()()#v[0]#r#g()[2] == 3)
+
+    def f(): Unit -> { v = Vector[Unit -> Vector[{ r = { g = Unit -> Map[Int32, Int32] } }]] } =
+        () -> {
+            v = Vector#{() -> Vector#{{ r = { g = () -> Map#{0 => 1, 2 => 3} } }}}
+        }
+
     def handler(f: Unit -> Bool \ OutOfBounds + KeyNotFound - a): Bool = {
         try {
             f()
