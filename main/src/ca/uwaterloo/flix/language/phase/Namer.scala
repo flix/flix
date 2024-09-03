@@ -324,7 +324,7 @@ object Namer {
       val tparams = tparams0.map(visitTypeParam)
 
       val mod = visitModifiers(mod0, ns0)
-      val indices = fields0.map(_.name).zip(fields0.map(_.loc).zipWithIndex).toMap
+      val indices = fields0.map(_.name).zip(fields0.map(_.name.loc).zipWithIndex).toMap
       val fields = fields0.map(visitField(sym, _, indices))
 
       NamedAst.Declaration.Struct(doc, ann, mod, sym, tparams, fields, indices, loc)

@@ -588,7 +588,7 @@ object Ast {
   case class CaseSymUse(sym: Symbol.CaseSym, loc: SourceLocation)
 
   /**
-    * Represents a use of an effect operation sym.
+    * Represents a use of a struct field sym.
     */
   case class StructFieldSymUse(sym: Symbol.StructFieldSym, loc: SourceLocation)
 
