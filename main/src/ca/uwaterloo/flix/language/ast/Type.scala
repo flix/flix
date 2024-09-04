@@ -60,7 +60,7 @@ sealed trait Type {
     case Type.AssocType(_, arg, _, _) => arg.typeVars // TODO ASSOC-TYPES throw error?
 
     case Type.JvmToType(tpe, _) => tpe.typeVars
-    case Type.JvmMember(template, _) => template.getTypes.foldLeft(SortedSet.empty[Type.Var])((acc, t) => acc ++ t.typeVars)
+    case Type.UnresolvedJvmType(template, _) => template.getTypeArguments.foldLeft(SortedSet.empty[Type.Var])((acc, t) => acc ++ t.typeVars)
   }
 
   /**
@@ -77,7 +77,7 @@ sealed trait Type {
     case Type.AssocType(_, arg, _, _) => arg.effects // TODO ASSOC-TYPES throw error?
 
     case Type.JvmToType(tpe, _) => tpe.effects
-    case Type.JvmMember(template, _) => template.getTypes.foldLeft(SortedSet.empty[Symbol.EffectSym])((acc, t) => acc ++ t.effects)
+    case Type.UnresolvedJvmType(template, _) => template.getTypeArguments.foldLeft(SortedSet.empty[Symbol.EffectSym])((acc, t) => acc ++ t.effects)
   }
 
   /**
@@ -94,7 +94,7 @@ sealed trait Type {
     case Type.AssocType(_, arg, _, _) => arg.cases // TODO ASSOC-TYPES throw error?
 
     case Type.JvmToType(tpe, _) => tpe.cases
-    case Type.JvmMember(template, _) => template.getTypes.foldLeft(SortedSet.empty[Symbol.RestrictableCaseSym])((acc, t) => acc ++ t.cases)
+    case Type.UnresolvedJvmType(template, _) => template.getTypeArguments.foldLeft(SortedSet.empty[Symbol.RestrictableCaseSym])((acc, t) => acc ++ t.cases)
   }
 
   /**
@@ -110,7 +110,7 @@ sealed trait Type {
     case Type.Alias(_, _, tpe, _) => tpe.assocs
 
     case Type.JvmToType(tpe, _) => tpe.assocs
-    case Type.JvmMember(template, _) => template.getTypes.foldLeft(Set.empty[Type.AssocType])((acc, t) => acc ++ t.assocs)
+    case Type.UnresolvedJvmType(template, _) => template.getTypeArguments.foldLeft(Set.empty[Type.AssocType])((acc, t) => acc ++ t.assocs)
   }
 
   /**
@@ -140,7 +140,7 @@ sealed trait Type {
     case Type.Alias(_, _, tpe, _) => tpe.typeConstructor
     case Type.AssocType(_, _, _, loc) => None // TODO ASSOC-TYPE danger!
     case Type.JvmToType(_, _) => None
-    case Type.JvmMember(_, _) => None
+    case Type.UnresolvedJvmType(_, _) => None
   }
 
   /**
@@ -169,7 +169,7 @@ sealed trait Type {
     case Type.Alias(_, _, tpe, _) => tpe.typeConstructors
     case Type.AssocType(_, _, _, loc) => Nil // TODO ASSOC-TYPE danger!
     case Type.JvmToType(_, _) => Nil
-    case Type.JvmMember(_, _) => Nil
+    case Type.UnresolvedJvmType(_, _) => Nil
   }
 
   /**
@@ -222,8 +222,8 @@ sealed trait Type {
 
     case Type.JvmToType(tpe, loc) =>
       Type.JvmToType(tpe.map(f), loc)
-    case Type.JvmMember(template, loc) =>
-      Type.JvmMember(template.map(t => t.map(f)), loc)
+    case Type.UnresolvedJvmType(template, loc) =>
+      Type.UnresolvedJvmType(template.map(t => t.map(f)), loc)
   }
 
   /**
@@ -266,7 +266,7 @@ sealed trait Type {
     case Type.Alias(_, _, tpe, _) => tpe.size
     case Type.AssocType(_, arg, kind, _) => arg.size + 1
     case Type.JvmToType(tpe, _) => tpe.size + 1
-    case Type.JvmMember(template, loc) => template.getTypes.map(_.size).sum + 1
+    case Type.UnresolvedJvmType(template, loc) => template.getTypeArguments.map(_.size).sum + 1
   }
 
   /**
@@ -541,7 +541,7 @@ object Type {
   case class AssocType(cst: Ast.AssocTypeConstructor, arg: Type, kind: Kind, loc: SourceLocation) extends Type with BaseType
 
   /**
-    * A type which must be reduced by finding the correct JVM method, constructor, or field.
+    * A type which must be reduced by finding the correct JVM constructor, method, or field.
     */
   case class JvmToType(tpe: Type, loc: SourceLocation) extends Type with BaseType {
     override def kind: Kind = Kind.Star
@@ -550,33 +550,33 @@ object Type {
   /**
     * An unresolved Java type. Once the type variables are resolved, this can be reduced to a normal type.
     */
-  case class JvmMember(template: JvmTemplate, loc: SourceLocation) extends Type with BaseType {
+  case class UnresolvedJvmType(template: JvmMember, loc: SourceLocation) extends Type with BaseType {
     override def kind: Kind = Kind.Jvm
   }
 
   /**
     * An enumeration of the unresolved Java types.
     */
-  sealed trait JvmTemplate {
+  sealed trait JvmMember {
 
     /**
       * Returns all the types in `this`.
       */
-    def getTypes: List[Type] = this match {
-      case JvmTemplate.JvmConstructor(_, tpes) => tpes
-      case JvmTemplate.JvmField(tpe, _) => List(tpe)
-      case JvmTemplate.JvmMethod(tpe, _, tpes) => tpe :: tpes
-      case JvmTemplate.JvmStaticMethod(_, _, tpes) => tpes
+    def getTypeArguments: List[Type] = this match {
+      case JvmMember.JvmConstructor(_, tpes) => tpes
+      case JvmMember.JvmField(tpe, _) => List(tpe)
+      case JvmMember.JvmMethod(tpe, _, tpes) => tpe :: tpes
+      case JvmMember.JvmStaticMethod(_, _, tpes) => tpes
     }
 
     /**
       * Transforms `this` by executing `f` on all the types in `this`.
       */
-    def map(f: Type => Type): JvmTemplate = this match {
-      case JvmTemplate.JvmConstructor(clazz, tpes) => JvmTemplate.JvmConstructor(clazz, tpes.map(f))
-      case JvmTemplate.JvmField(tpe, name) => JvmTemplate.JvmField(f(tpe), name)
-      case JvmTemplate.JvmMethod(tpe, name, tpes) => JvmTemplate.JvmMethod(f(tpe), name, tpes.map(f))
-      case JvmTemplate.JvmStaticMethod(clazz, name, tpes) => JvmTemplate.JvmStaticMethod(clazz, name, tpes.map(f))
+    def map(f: Type => Type): JvmMember = this match {
+      case JvmMember.JvmConstructor(clazz, tpes) => JvmMember.JvmConstructor(clazz, tpes.map(f))
+      case JvmMember.JvmField(tpe, name) => JvmMember.JvmField(f(tpe), name)
+      case JvmMember.JvmMethod(tpe, name, tpes) => JvmMember.JvmMethod(f(tpe), name, tpes.map(f))
+      case JvmMember.JvmStaticMethod(clazz, name, tpes) => JvmMember.JvmStaticMethod(clazz, name, tpes.map(f))
     }
 
     /**
@@ -584,51 +584,52 @@ object Type {
       *
       * If `f` returns `Err` for any call, this function returns `Err`.
       */
-    def traverse[E](f: Type => Result[Type, E]): Result[JvmTemplate, E] = this match {
-      case JvmTemplate.JvmConstructor(clazz, tpes0) =>
+    // TODO CONSTR-SOLVER-2 remove this after we migrate to the new constraint solver
+    def traverse[E](f: Type => Result[Type, E]): Result[JvmMember, E] = this match {
+      case JvmMember.JvmConstructor(clazz, tpes0) =>
         for {
           tpes <- Result.traverse(tpes0)(f)
-        } yield JvmTemplate.JvmConstructor(clazz, tpes)
+        } yield JvmMember.JvmConstructor(clazz, tpes)
 
-      case JvmTemplate.JvmField(tpe0, name) =>
+      case JvmMember.JvmField(tpe0, name) =>
         for {
           tpe <- f(tpe0)
-        } yield JvmTemplate.JvmField(tpe, name)
+        } yield JvmMember.JvmField(tpe, name)
 
-      case JvmTemplate.JvmMethod(tpe0, name, tpes0) =>
+      case JvmMember.JvmMethod(tpe0, name, tpes0) =>
         for {
           tpe <- f(tpe0)
           tpes <- Result.traverse(tpes0)(f)
-        } yield JvmTemplate.JvmMethod(tpe, name, tpes)
+        } yield JvmMember.JvmMethod(tpe, name, tpes)
 
-      case JvmTemplate.JvmStaticMethod(clazz, name, tpes0) =>
+      case JvmMember.JvmStaticMethod(clazz, name, tpes0) =>
         for {
           tpes <- Result.traverse(tpes0)(f)
-        } yield JvmTemplate.JvmStaticMethod(clazz, name, tpes)
+        } yield JvmMember.JvmStaticMethod(clazz, name, tpes)
     }
   }
 
-  object JvmTemplate {
+  object JvmMember {
 
     /**
       * A Java constructor, defined by its class and argument types.
       */
-    case class JvmConstructor(clazz: Class[?], tpes: List[Type]) extends JvmTemplate
+    case class JvmConstructor(clazz: Class[?], tpes: List[Type]) extends JvmMember
 
     /**
       * A Java field, defined by the receiver type and the field name.
       */
-    case class JvmField(tpe: Type, name: Name.Ident) extends JvmTemplate
+    case class JvmField(tpe: Type, name: Name.Ident) extends JvmMember
 
     /**
       * A Java method, defined by the receiver type, the method name, and the argument types.
       */
-    case class JvmMethod(tpe: Type, name: Name.Ident, tpes: List[Type]) extends JvmTemplate
+    case class JvmMethod(tpe: Type, name: Name.Ident, tpes: List[Type]) extends JvmMember
 
     /**
       * A Java static method, defined by the class, the method name, and the argument types.
       */
-    case class JvmStaticMethod(clazz: Class[?], name: Name.Ident, tpes: List[Type]) extends JvmTemplate
+    case class JvmStaticMethod(clazz: Class[?], name: Name.Ident, tpes: List[Type]) extends JvmMember
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -1130,7 +1131,7 @@ object Type {
     case Type.Alias(_, _, tpe, _) => eraseAliases(tpe)
     case Type.AssocType(cst, args, kind, loc) => Type.AssocType(cst, args.map(eraseAliases), kind, loc)
     case Type.JvmToType(tpe, loc) => Type.JvmToType(eraseAliases(tpe), loc)
-    case Type.JvmMember(template, loc) => Type.JvmMember(template.map(eraseAliases), loc)
+    case Type.UnresolvedJvmType(template, loc) => Type.UnresolvedJvmType(template.map(eraseAliases), loc)
   }
 
   /**
@@ -1154,7 +1155,7 @@ object Type {
     case Alias(_, _, tpe, _) => hasAssocType(tpe)
     case AssocType(_, _, _, _) => true
     case JvmToType(tpe, _) => hasAssocType(tpe)
-    case JvmMember(template, _) => template.getTypes.exists(hasAssocType)
+    case UnresolvedJvmType(template, _) => template.getTypeArguments.exists(hasAssocType)
   }
 
   /**

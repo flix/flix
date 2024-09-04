@@ -773,7 +773,7 @@ object ConstraintGen {
         val clazzTpe = Type.getFlixType(clazz)
         val (tpes, effs) = exps.map(visitExp).unzip
         val baseEffs = BaseEffects.of(clazz, loc)
-        c.unifyType(jvar, Type.JvmMember(Type.JvmTemplate.JvmConstructor(clazz, tpes), loc), loc) // unify constructor
+        c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmConstructor(clazz, tpes), loc), loc) // unify constructor
         c.unifyType(evar, Type.mkUnion(Type.IO :: baseEffs :: effs, loc), loc) // unify effects
         val resTpe = clazzTpe
         val resEff = evar
@@ -785,7 +785,7 @@ object ConstraintGen {
         // Γ ⊢ e.m(eᵢ ...) : JvmToType[ι]
         val (tpe, eff) = visitExp(exp)
         val (tpes, effs) = exps.map(visitExp).unzip
-        c.unifyType(jvar, Type.JvmMember(Type.JvmTemplate.JvmMethod(tpe, methodName, tpes), loc), loc) // unify method type
+        c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmMethod(tpe, methodName, tpes), loc), loc) // unify method type
         c.unifyType(tvar, Type.JvmToType(jvar, loc), loc) // unify method return
         c.unifyType(evar, Type.mkUnion(Type.IO :: eff :: effs, loc), loc) // unify effects
         val resTpe = tvar
@@ -797,7 +797,7 @@ object ConstraintGen {
         // ---------------------------------------------------------------
         // Γ ⊢ m(eᵢ ...) : JvmToType[ι]
         val (tpes, effs) = exps.map(visitExp).unzip
-        c.unifyType(jvar, Type.JvmMember(Type.JvmTemplate.JvmStaticMethod(clazz, methodName, tpes), loc), loc)
+        c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmStaticMethod(clazz, methodName, tpes), loc), loc)
         c.unifyType(tvar, Type.JvmToType(jvar, loc), loc)
         c.unifyType(evar, Type.mkUnion(Type.IO :: effs, loc), loc)
         val resTpe = tvar
@@ -809,7 +809,7 @@ object ConstraintGen {
         // ---------------------------------------------------------------
         // Γ ⊢ e.f : JvmToType[ι]
         val (tpe, eff) = visitExp(exp)
-        c.unifyType(jvar, Type.JvmMember(Type.JvmTemplate.JvmField(tpe, fieldName), loc), loc)
+        c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmField(tpe, fieldName), loc), loc)
         c.unifyType(tvar, Type.JvmToType(jvar, loc), loc) // unify field type
         c.unifyType(evar, Type.mkUnion(Type.IO :: eff :: Nil, loc), loc) // unify effects
         val resTpe = tvar

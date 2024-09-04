@@ -100,9 +100,9 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
           val tpe = visit(tpe0)
           Type.JvmToType(tpe, loc)
 
-        case Type.JvmMember(template0, loc) =>
+        case Type.UnresolvedJvmType(template0, loc) =>
           val template = template0.map(visit)
-          Type.JvmMember(template, loc)
+          Type.UnresolvedJvmType(template, loc)
       }
 
     // Optimization: Return the type if the substitution is empty. Otherwise visit the type.

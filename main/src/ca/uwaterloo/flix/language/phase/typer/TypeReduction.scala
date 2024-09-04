@@ -111,7 +111,7 @@ object TypeReduction {
         case (j, p) => (Type.JvmToType(j, loc), p)
       }
 
-    case cons@Type.JvmMember(Type.JvmTemplate.JvmConstructor(clazz, tpes), _) =>
+    case cons@Type.UnresolvedJvmType(Type.JvmMember.JvmConstructor(clazz, tpes), _) =>
       lookupConstructor(clazz, tpes, loc) match {
         // Case 1: We resolved the type.
         case JavaConstructorResolutionResult.Resolved(tpe) => Result.Ok((tpe, true))
@@ -123,7 +123,7 @@ object TypeReduction {
         case JavaConstructorResolutionResult.UnresolvedTypes => Result.Ok(cons, false)
       }
 
-    case meth@Type.JvmMember(Type.JvmTemplate.JvmMethod(tpe, name, tpes), _) =>
+    case meth@Type.UnresolvedJvmType(Type.JvmMember.JvmMethod(tpe, name, tpes), _) =>
       lookupMethod(tpe, name.name, tpes, loc) match {
         // Case 1: We resolved the type.
         case JavaMethodResolutionResult.Resolved(tpe) => Result.Ok((tpe, true))
@@ -135,7 +135,7 @@ object TypeReduction {
         case JavaMethodResolutionResult.UnresolvedTypes => Result.Ok((meth, false))
       }
 
-    case meth@Type.JvmMember(Type.JvmTemplate.JvmStaticMethod(clazz, name, tpes), _) =>
+    case meth@Type.UnresolvedJvmType(Type.JvmMember.JvmStaticMethod(clazz, name, tpes), _) =>
       lookupStaticMethod(clazz, name.name, tpes, loc) match {
         // Case 1: We resolved the type.
         case JavaMethodResolutionResult.Resolved(tpe) => Result.Ok((tpe, true))
@@ -147,7 +147,7 @@ object TypeReduction {
         case JavaMethodResolutionResult.UnresolvedTypes => Result.Ok((meth, false))
       }
 
-    case field@Type.JvmMember(Type.JvmTemplate.JvmField(tpe, name), _) =>
+    case field@Type.UnresolvedJvmType(Type.JvmMember.JvmField(tpe, name), _) =>
       lookupField(tpe, name.name, loc) match {
         // Case 1: No such field. Error.
         case JavaFieldResolutionResult.FieldNotFound => Result.Err(TypeError.FieldNotFound(name, tpe, loc))
@@ -163,7 +163,7 @@ object TypeReduction {
   // TODO: This method should be recursive and not just look at the top-level type.
   def isReducible(tpe: Type): Boolean = tpe match {
     case Type.JvmToType(_, _) => true
-    case Type.JvmMember(_, _) => true
+    case Type.UnresolvedJvmType(_, _) => true
     case _ => false
   }
 
@@ -436,7 +436,7 @@ object TypeReduction {
     case Type.Var(_, _) => false
     case Type.Cst(_, _) => true
     case Type.JvmToType(_, _) => false
-    case Type.JvmMember(_, _) => false
+    case Type.UnresolvedJvmType(_, _) => false
     case Type.Apply(tpe1, tpe2, _) => isKnown(tpe1) && isKnown(tpe2)
     case Type.Alias(_, _, tpe, _) => isKnown(tpe)
     case Type.AssocType(_, _, _, _) => false

@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.fmt
 
 import ca.uwaterloo.flix.language.ast.*
-import ca.uwaterloo.flix.language.ast.Type.JvmTemplate
+import ca.uwaterloo.flix.language.ast.Type.JvmMember
 import ca.uwaterloo.flix.language.errors.KindError
 import ca.uwaterloo.flix.language.fmt
 import ca.uwaterloo.flix.util.InternalCompilerException
@@ -339,11 +339,11 @@ object SimpleType {
         mkApply(Name(cst.sym.name), (arg :: t.typeArguments).map(visit))
       case Type.JvmToType(tpe, _) =>
         mkApply(SimpleType.JvmToType(visit(tpe)), t.typeArguments.map(visit))
-      case Type.JvmMember(template, _) => template match {
-        case JvmTemplate.JvmConstructor(clazz, tpes) => SimpleType.JvmConstructor(clazz.getSimpleName, tpes.map(visit))
-        case JvmTemplate.JvmMethod(tpe, name, tpes) => SimpleType.JvmMethod(visit(tpe), name.name, tpes.map(visit))
-        case JvmTemplate.JvmField(tpe, name) => SimpleType.JvmField(visit(tpe), name.name)
-        case JvmTemplate.JvmStaticMethod(clazz, name, tpes) => SimpleType.JvmStaticMethod(clazz.getSimpleName, name.name, tpes.map(visit))
+      case Type.UnresolvedJvmType(template, _) => template match {
+        case JvmMember.JvmConstructor(clazz, tpes) => SimpleType.JvmConstructor(clazz.getSimpleName, tpes.map(visit))
+        case JvmMember.JvmMethod(tpe, name, tpes) => SimpleType.JvmMethod(visit(tpe), name.name, tpes.map(visit))
+        case JvmMember.JvmField(tpe, name) => SimpleType.JvmField(visit(tpe), name.name)
+        case JvmMember.JvmStaticMethod(clazz, name, tpes) => SimpleType.JvmStaticMethod(clazz.getSimpleName, name.name, tpes.map(visit))
       }
       case Type.Cst(tc, _) => tc match {
         case TypeConstructor.Void => Void

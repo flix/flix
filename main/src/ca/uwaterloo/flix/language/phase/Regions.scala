@@ -348,7 +348,7 @@ object Regions {
     case Type.Apply(tpe1, tpe2, _) => boolTypesOf(tpe1) ::: boolTypesOf(tpe2)
     case Type.Alias(_, _, tpe, _) => boolTypesOf(tpe)
     case Type.JvmToType(tpe, _) => boolTypesOf(tpe)
-    case Type.JvmMember(template, _) => template.getTypes.flatMap(boolTypesOf)
+    case Type.UnresolvedJvmType(template, _) => template.getTypeArguments.flatMap(boolTypesOf)
 
     // TODO CONSTR-SOLVER-2 Hack! We should visit the argument, but since we don't reduce, we get false positives here.
     case Type.AssocType(_, _, _, _) => Nil

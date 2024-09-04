@@ -690,7 +690,7 @@ object SemanticTokensProvider {
 
     // Jvm types should not be exposed to the user.
     case _: Type.JvmToType => Iterator.empty
-    case _: Type.JvmMember => Iterator.empty
+    case _: Type.UnresolvedJvmType => Iterator.empty
   }
 
   /**

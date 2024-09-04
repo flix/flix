@@ -86,9 +86,9 @@ case class AssocTypeSubstitution(m: Map[(Symbol.AssocTypeSym, Symbol.KindedTypeV
         case Type.JvmToType(tpe0, loc) =>
           val tpe = visit(tpe0)
           Type.JvmToType(tpe, loc)
-        case Type.JvmMember(template0, loc) =>
+        case Type.UnresolvedJvmType(template0, loc) =>
           val template = template0.map(visit)
-          Type.JvmMember(template, loc)
+          Type.UnresolvedJvmType(template, loc)
 
       }
 

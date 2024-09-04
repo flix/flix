@@ -41,7 +41,7 @@ object TypeMinimization {
       case Type.Alias(cst, args, tpe, loc) => Type.Alias(cst, args.map(minimizeType), minimizeType(tpe), loc)
       case Type.AssocType(cst, args, kind, loc) => Type.AssocType(cst, args.map(minimizeType), kind, loc)
       case Type.JvmToType(tpe, loc) => Type.JvmToType(minimizeType(tpe), loc)
-      case Type.JvmMember(template, loc) => Type.JvmMember(template.map(minimizeType), loc)
+      case Type.UnresolvedJvmType(template, loc) => Type.UnresolvedJvmType(template.map(minimizeType), loc)
     }
   }
 

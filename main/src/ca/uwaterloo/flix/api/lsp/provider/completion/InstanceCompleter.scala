@@ -55,7 +55,7 @@ object InstanceCompleter extends Completer {
 
       // Jvm types should not be exposed to the user.
       case t: Type.JvmToType => t
-      case t: Type.JvmMember => t
+      case t: Type.UnresolvedJvmType => t
     }
 
     /**
