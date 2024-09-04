@@ -1,48 +1,48 @@
 mod Test.Dec.Enum.Singleton {
 
-    /**
-     * An enum for degrees celsius.
-     */
+    ///
+    /// An enum for degrees celsius.
+     ///
     enum Celsius(Int32)
 
-    /**
-     * An enum for degrees fahrenheit.
-     */
+    ///
+    /// An enum for degrees fahrenheit.
+    ///
     enum Fahrenheit(Int32)
 
-    /**
-     * An enum for united states dollars.
-     */
+    ///
+    /// An enum for united states dollars.
+    ///
     enum USD(Float64)
 
-    /**
-     * An enum for canadian dollars.
-     */
+    ///
+    /// An enum for canadian dollars.
+    ///
     enum CAD(Float64)
 
-    /**
-     * An enum for an Option.
-     */
+    ///
+    /// An enum for an Option.
+    ///
     enum A(Option[Int32])
 
-    /**
-     * An enum for a Result.
-     */
+    ///
+    /// An enum for a Result.
+    ///
     enum B(Result[String, Int32])
 
-    /**
-     * An enum for a polymorphic pair.
-     */
+    ///
+    /// An enum for a polymorphic pair.
+    ///
     enum Pair[a, b](a, b)
 
-    /**
-     * An enum for a polymorphic Result.
-     */
+    ///
+    /// An enum for a polymorphic Result.
+    ///
     enum C[a](Result[Int32, a])
 
-    /**
-     * An enum for a polymorphic Result.
-     */
+    ///
+    /// An enum for a polymorphic Result.
+    ///
     enum D[a, b, c](Result[Result[c, b], a])
 
     @test
@@ -142,29 +142,29 @@ mod Test.Dec.Enum.Singleton {
     @test
     def testOpaqueType25(): D[Bool, Int32, String] = D.D(Err(Err("hello")))
 
-    /**
-     * A type alias for Bool.
-     */
+    ///
+    /// A type alias for Bool.
+    ///
     type alias X = Bool
 
-    /**
-     * A type alias for Int.
-     */
+    ///
+    /// A type alias for Int.
+    ///
     type alias Y = Int32
 
-    /**
-     * A polymorphic type alias for Option.
-     */
+    ///
+    /// A polymorphic type alias for Option.
+    ///
     type alias Z[a] = Option[a]
 
-    /**
-     * An enum for with a type alias.
-     */
+    ///
+    /// An enum for with a type alias.
+    ///
     enum U(Option[X])
 
-    /**
-     * An enum for with a type alias.
-     */
+    ///
+    /// An enum for with a type alias.
+    ///
     enum V(Result[X, Y])
 
     @test

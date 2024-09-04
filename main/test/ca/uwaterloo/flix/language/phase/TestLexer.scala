@@ -7,32 +7,28 @@ import org.scalatest.funsuite.AnyFunSuite
 
 class TestLexer extends AnyFunSuite with TestUtils {
 
-  test("LexerError.BlockCommentTooDeep.01") {
-    val input = "/* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* this is 32 levels deep */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */"
+  test("LexerError.MismatchedOpenClose.01") {
+    val input = "/** hello */"
     val result = compile(input, Options.TestWithLibNix)
-    expectError[LexerError.BlockCommentTooDeep](result)
+    expectError[LexerError.UnterminatedBlockComment](result)
   }
 
-  test("LexerError.BlockCommentTooDeep.02") {
-    val input = "/* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* // this is 33 levels deep */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */"
+  test("LexerError.MismatchedOpenClose.02") {
+    val input = "/* hello **/"
     val result = compile(input, Options.TestWithLibNix)
-    expectError[LexerError.BlockCommentTooDeep](result)
+    expectError[LexerError.UnterminatedBlockComment](result)
   }
 
-  test("LexerError.BlockCommentTooDeep.03") {
-    // Note: The innermost block-comment is unterminated,
-    // but the lexer should stop after bottoming out so this should still be a 'too deep' error.
-    val input = "/* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* this is 32 levels deep and unclosed */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */"
+  test("LexerError.MatchedOpenClose.01") {
+    val input = "/** hello */ **/"
     val result = compile(input, Options.TestWithLibNix)
-    expectError[LexerError.BlockCommentTooDeep](result)
+    expectSuccess(result)
   }
 
-  test("LexerError.BlockCommentTooDeep.04") {
-    // Note: The innermost block-comment is unterminated,
-    // but the lexer should stop after bottoming out so this should still be a 'too deep' error.
-    val input = "/* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* this is unclosed and deep */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */"
+  test("LexerError.MatchedOpenClose.02") {
+    val input = "/** hello /** **/"
     val result = compile(input, Options.TestWithLibNix)
-    expectError[LexerError.BlockCommentTooDeep](result)
+    expectSuccess(result)
   }
 
   test("LexerError.DoubleDottedNumber.01") {
@@ -136,16 +132,6 @@ class TestLexer extends AnyFunSuite with TestUtils {
       s"""
          |def f(): Unit = ()
          |/* This is unterminated""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[LexerError.UnterminatedBlockComment](result)
-  }
-
-  test("LexerError.UnterminatedBlockComment.04") {
-    val input =
-      s"""
-         | /* /* This is unterminated and nested */
-         |def f(): Unit = ()
-       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[LexerError.UnterminatedBlockComment](result)
   }

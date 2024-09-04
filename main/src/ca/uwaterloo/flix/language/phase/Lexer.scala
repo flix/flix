@@ -37,11 +37,6 @@ import scala.util.Random
  */
 object Lexer {
   /**
-   * The maximal allowed nesting level of block-comments.
-   */
-  private val BlockCommentMaxNestingLevel = 32
-
-  /**
    * The maximal allowed nesting level of string interpolation.
    */
   private val InterpolatedStringMaxNestingLevel = 32
@@ -564,6 +559,16 @@ object Lexer {
     matches
   }
 
+  /** Moves the current position past a sequence of `*` and returns how many was found (can be 0). */
+  private def acceptStars()(implicit s: State): Int = {
+    var count = 0
+    if (peek() == '*') {
+      count += 1
+      advance()
+    }
+    count
+  }
+
   /**
    * Checks whether the following substring matches a operator.
    * Note that __comparison includes current__.
@@ -1071,23 +1076,12 @@ object Lexer {
    * In this case a `TokenKind.Err` is returned as well.
    */
   private def acceptBlockComment()(implicit s: State): TokenKind = {
-    var level = 1
+    // we have already consumed /* so we need to count the follow-up *'s
+    val stars = acceptStars() + 1
+    val endString = ("*" * stars) + "/"
     while (!eof()) {
-      (peek(), peekPeek()) match {
-        case ('/', Some('*')) =>
-          level += 1
-          if (level >= BlockCommentMaxNestingLevel) {
-            return TokenKind.Err(LexerError.BlockCommentTooDeep(sourceLocationAtCurrent()))
-          }
-          advance()
-        case ('*', Some('/')) =>
-          level -= 1
-          advance()
-          advance()
-          if (level == 0) {
-            return TokenKind.CommentBlock
-          }
-        case _ => advance()
+      if (advance() == '*') {
+        if (isMatch(endString)) return TokenKind.CommentBlock
       }
     }
     TokenKind.Err(LexerError.UnterminatedBlockComment(sourceLocationAtStart()))
