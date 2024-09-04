@@ -147,7 +147,7 @@ object TypeReduction {
       }
 
     case field@Type.UnresolvedJvmType(Type.JvmMember.JvmField(tpe, name), _) =>
-      lookupField(tpe, name.name) match {
+      lookupField(tpe, name.name, loc) match {
         case JavaFieldResolutionResult.Resolved(tpe) => Result.Ok((tpe, true))
         case JavaFieldResolutionResult.FieldNotFound => Result.Err(TypeError.FieldNotFound(name, tpe, loc))
         case JavaFieldResolutionResult.UnresolvedTypes => Result.Ok((field, false))
@@ -155,14 +155,16 @@ object TypeReduction {
   }
 
   /**
-    * Returns `true` if the given type is still reducible, i.e. contains an unreduced MRT or FieldType,
-    * e.g. MRT[a] where a is not known.
+    * Returns `true` if the given type contains [[Type.JvmToType]] or [[Type.UnresolvedJvmType]].
     */
-  // TODO: This method should be recursive and not just look at the top-level type.
-  def isReducible(tpe: Type): Boolean = tpe match {
+  def containsJvmTypes(tpe: Type): Boolean = tpe match {
+    case Type.Var(_, _) => false
+    case Type.Cst(_, _) => false
+    case Type.Apply(tpe1, tpe2, _) => containsJvmTypes(tpe1) || containsJvmTypes(tpe2)
+    case Type.Alias(_, _, tpe, _) => containsJvmTypes(tpe)
+    case Type.AssocType(_, arg, _, _) => containsJvmTypes(arg)
     case Type.JvmToType(_, _) => true
     case Type.UnresolvedJvmType(_, _) => true
-    case _ => false
   }
 
   /**
@@ -203,11 +205,11 @@ object TypeReduction {
     } else JavaMethodResolutionResult.UnresolvedTypes
   }
 
-  def lookupField(thisObj: Type, fieldName: String): JavaFieldResolutionResult = {
+  def lookupField(thisObj: Type, fieldName: String, loc: SourceLocation): JavaFieldResolutionResult = {
     if (isKnown(thisObj)) {
       classFromFlixType(thisObj) match {
         case Some(clazz) =>
-          retrieveField(clazz, fieldName)
+          retrieveField(clazz, fieldName, loc)
         case None =>
           JavaFieldResolutionResult.FieldNotFound
       }
@@ -302,9 +304,9 @@ object TypeReduction {
     }
   }
 
-  private def retrieveField(clazz: Class[_], fieldName: String): JavaFieldResolutionResult = {
+  private def retrieveField(clazz: Class[_], fieldName: String, loc: SourceLocation): JavaFieldResolutionResult = {
       getField(clazz, fieldName) match {
-        case Some(field) => JavaFieldResolutionResult.Resolved(Type.getFlixType(field.getType))
+        case Some(field) => JavaFieldResolutionResult.Resolved(Type.Cst(TypeConstructor.JvmField(field), loc))
         case None => JavaFieldResolutionResult.FieldNotFound
       }
   }
