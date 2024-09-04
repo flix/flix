@@ -19,6 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.TypeError
+import ca.uwaterloo.flix.language.phase.typer.ConstraintSolver.ResolutionResult
 import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 import ca.uwaterloo.flix.util.collection.{ListMap, ListOps}
@@ -63,9 +64,8 @@ object TypeReduction {
       for {
         (t1, p1) <- simplify(tpe1, renv0, loc)
         (t2, p2) <- simplify(tpe2, renv0, loc)
-        (t3, p3) <- simplifyJava(Type.Apply(t1, t2, loc), renv0, loc)
       } yield {
-        (t3, p1 || p2 || p3)
+        (Type.Apply(t1, t2, loc), p1 || p2)
       }
 
     // arg_R and syn_R
@@ -102,33 +102,58 @@ object TypeReduction {
       }
 
     case Type.Alias(cst, args, t, _) => simplify(t, renv0, loc)
-  }
 
-  /**
-   * Simplifies the type of the java method.
-   *
-   * @param tpe the type of the java method
-   * @param loc the location where the java method has been called
-   * @return
-   */
-  private def simplifyJava(tpe: Type.Apply, renv0: RigidityEnv, loc: SourceLocation): Result[(Type, Boolean), TypeError] = {
-    tpe.typeConstructor match {
-      case Some(TypeConstructor.MethodReturnType) =>
-        // Since `tpe` is `Type.Apply`, this is safe
-        val methodType = tpe.typeArguments.head
-        methodType match {
-          case Type.Cst(TypeConstructor.JvmMethod(method), _) => Result.Ok(Type.getFlixType(method.getReturnType), true)
-          case _ => Result.Ok((tpe, false))
-        }
-      case Some(TypeConstructor.FieldType) =>
-        // Since `tpe` is `Type.Apply`, this is safe
-        val fieldType = tpe.typeArguments.head
-        fieldType match {
-          case Type.Cst(TypeConstructor.JvmField(field), _) => Result.Ok(Type.getFlixType(field.getType), true)
-          case _ => Result.Ok((tpe, false))
-        }
-      case _ => Result.Ok((tpe, false))
-    }
+    case Type.JvmToType(j0, _) =>
+      simplify(j0, renv0, loc).map {
+        case (Type.Cst(TypeConstructor.JvmConstructor(constructor), _), _) => (Type.getFlixType(constructor.getDeclaringClass), true)
+        case (Type.Cst(TypeConstructor.JvmField(field), _), _) => (Type.getFlixType(field.getType), true)
+        case (Type.Cst(TypeConstructor.JvmMethod(method), _), _) => (Type.getFlixType(method.getReturnType), true)
+        case (j, p) => (Type.JvmToType(j, loc), p)
+      }
+
+    case cons@Type.UnresolvedJvmType(Type.JvmMember.JvmConstructor(clazz, tpes), _) =>
+      lookupConstructor(clazz, tpes, loc) match {
+        // Case 1: We resolved the type.
+        case JavaConstructorResolutionResult.Resolved(tpe) => Result.Ok((tpe, true))
+        // Case 2: Ambiguous constructor. Error.
+        case JavaConstructorResolutionResult.AmbiguousConstructor(constructors) => Result.Err(TypeError.AmbiguousConstructor(clazz, tpes, constructors, renv0, loc))
+        // Case 3: No such constructor. Error.
+        case JavaConstructorResolutionResult.ConstructorNotFound => Result.Err(TypeError.ConstructorNotFound(clazz, tpes, List(), renv0, loc)) // TODO INTEROP: fill in candidate methods
+        // Case 4: Not ready to reduce. Return the constructor.
+        case JavaConstructorResolutionResult.UnresolvedTypes => Result.Ok(cons, false)
+      }
+
+    case meth@Type.UnresolvedJvmType(Type.JvmMember.JvmMethod(tpe, name, tpes), _) =>
+      lookupMethod(tpe, name.name, tpes, loc) match {
+        // Case 1: We resolved the type.
+        case JavaMethodResolutionResult.Resolved(tpe) => Result.Ok((tpe, true))
+        // Case 2: Ambiguous method. Error.
+        case JavaMethodResolutionResult.AmbiguousMethod(methods) => Result.Err(TypeError.AmbiguousMethod(name, tpe, tpes, methods, renv0, loc))
+        // Case 3: No such method. Error.
+        case JavaMethodResolutionResult.MethodNotFound => Result.Err(TypeError.MethodNotFound(name, tpe, tpes, loc))
+        // Case 4: Not ready to reduce. Return the method.
+        case JavaMethodResolutionResult.UnresolvedTypes => Result.Ok((meth, false))
+      }
+
+    case meth@Type.UnresolvedJvmType(Type.JvmMember.JvmStaticMethod(clazz, name, tpes), _) =>
+      lookupStaticMethod(clazz, name.name, tpes, loc) match {
+        // Case 1: We resolved the type.
+        case JavaMethodResolutionResult.Resolved(tpe) => Result.Ok((tpe, true))
+        // Case 2: Ambiguous method. Error.
+        case JavaMethodResolutionResult.AmbiguousMethod(methods) => Result.Err(TypeError.AmbiguousStaticMethod(clazz, name, tpes, methods, renv0, loc))
+        // Case 3: No such method. Error.
+        case JavaMethodResolutionResult.MethodNotFound => Result.Err(TypeError.StaticMethodNotFound(clazz, name, tpes, List(), renv0, loc)) // TODO INTEROP: fill in candidate methods
+        // Case 4: Not ready to reduce. Return the method.
+        case JavaMethodResolutionResult.UnresolvedTypes => Result.Ok((meth, false))
+      }
+
+    case field@Type.UnresolvedJvmType(Type.JvmMember.JvmField(tpe, name), _) =>
+      lookupField(tpe, name.name, loc) match {
+        // Case 1: No such field. Error.
+        case JavaFieldResolutionResult.FieldNotFound => Result.Err(TypeError.FieldNotFound(name, tpe, loc))
+        // Case 2: No such
+        case JavaFieldResolutionResult.UnresolvedTypes => Result.Ok((field, false))
+      }
   }
 
   /**
@@ -137,8 +162,8 @@ object TypeReduction {
     */
   // TODO: This method should be recursive and not just look at the top-level type.
   def isReducible(tpe: Type): Boolean = tpe match {
-    case Type.Apply(Type.Cst(TypeConstructor.MethodReturnType, _), Type.Var(_, _), _) => true
-    case Type.Apply(Type.Cst(TypeConstructor.FieldType, _), Type.Var(_, _), _) => true
+    case Type.JvmToType(_, _) => true
+    case Type.UnresolvedJvmType(_, _) => true
     case _ => false
   }
 
@@ -410,8 +435,8 @@ object TypeReduction {
     case Type.Var(_, _) if t0.kind == Kind.Eff => true
     case Type.Var(_, _) => false
     case Type.Cst(_, _) => true
-    case Type.Apply(Type.Cst(TypeConstructor.MethodReturnType, _), _, _) => false
-    case Type.Apply(Type.Cst(TypeConstructor.FieldType, _), _, _) => false
+    case Type.JvmToType(_, _) => false
+    case Type.UnresolvedJvmType(_, _) => false
     case Type.Apply(tpe1, tpe2, _) => isKnown(tpe1) && isKnown(tpe2)
     case Type.Alias(_, _, tpe, _) => isKnown(tpe)
     case Type.AssocType(_, _, _, _) => false
