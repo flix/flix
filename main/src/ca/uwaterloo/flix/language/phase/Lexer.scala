@@ -1079,9 +1079,14 @@ object Lexer {
     // we have already consumed /* so we need to count the follow-up *'s
     val stars = acceptStars() + 1
     val endString = ("*" * stars) + "/"
+    // To avoid parsing /* **/ as a valid block comment, we should keep track of first *'s
+    var firstStar = true
     while (!eof()) {
       if (advance() == '*') {
-        if (isMatch(endString)) return TokenKind.CommentBlock
+        if (firstStar && isMatch(endString)) return TokenKind.CommentBlock
+        firstStar = false
+      } else {
+        firstStar = true
       }
     }
     TokenKind.Err(LexerError.UnterminatedBlockComment(sourceLocationAtStart()))
