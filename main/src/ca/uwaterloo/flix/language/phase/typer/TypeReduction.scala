@@ -290,26 +290,32 @@ object TypeReduction {
     */
   def getMethods(clazz: Class[_]): List[Method] = {
     if (clazz.isInterface) {
-      var methods = clazz.getMethods.toList
-      for (method <- classOf[Object].getMethods) {
-        // check if it is already there
-        var exists = false
-        for (existing <- methods) {
-          if (
-            existing.getName == method.getName &&
-            isStatic(existing) == isStatic(method) &&
-              existing.getParameterTypes.sameElements(method.getParameterTypes)
-          ) {
-            // could stop early
-            exists = true
-          }
+      // Case 1: Interface. We have to add the methods from Object.
+      val declaredMethods = clazz.getMethods.toList
+
+      // Find all the methods in Object that are not declared in the interface.
+      val undeclaredObjectMethods = classOf[Object].getMethods.toList.filter {
+        case objectMethod => !declaredMethods.exists {
+          case declaredMethod => methodsMatch(objectMethod, declaredMethod)
         }
-        if (!exists) methods = method :: methods
       }
-      methods
+
+      // Add the undeclared object methods to the declared methods.
+      declaredMethods ::: undeclaredObjectMethods
+
     } else {
+      // Case 2: Class. Just return the methods.
       clazz.getMethods.toList
     }
+  }
+
+  /**
+    * Returns true if the methods are the same, modulo their declaring class.
+    */
+  private def methodsMatch(m1: Method, m2: Method): Boolean = {
+    m1.getName == m2.getName &&
+      isStatic(m1) == isStatic(m2) &&
+      m1.getParameterTypes.sameElements(m2.getParameterTypes)
   }
 
   /**
