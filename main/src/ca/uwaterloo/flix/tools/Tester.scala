@@ -147,6 +147,8 @@ object Tester {
             )
             terminal.flush()
             finished = true
+
+          case null => () // tester have not started yet, retry
         }
       }
     }

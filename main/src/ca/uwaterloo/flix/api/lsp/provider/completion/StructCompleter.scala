@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.api.lsp.{Index, TextEdit}
 import ca.uwaterloo.flix.language.ast.Symbol.StructSym
 import ca.uwaterloo.flix.language.ast.{Symbol, TypedAst}
 
-object StructCompleter extends Completer {
+object StructCompleter {
 
   def getCompletions(ctx: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[StructCompletion] = {
     val structsInModule = getStructSymsInModule(ctx)
