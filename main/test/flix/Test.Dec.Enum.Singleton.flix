@@ -2,7 +2,7 @@ mod Test.Dec.Enum.Singleton {
 
     ///
     /// An enum for degrees celsius.
-     ///
+    ///
     enum Celsius(Int32)
 
     ///
