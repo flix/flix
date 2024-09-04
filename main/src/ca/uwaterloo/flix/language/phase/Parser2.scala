@@ -2443,6 +2443,8 @@ object Parser2 {
         while (at(TokenKind.KeywordWith)) {
           withBody()
         }
+      } else {
+        expectAny(Set(TokenKind.KeywordCatch, TokenKind.KeywordWith), SyntacticContext.Expr.OtherExpr)
       }
 
       close(mark, TreeKind.Expr.Try)
