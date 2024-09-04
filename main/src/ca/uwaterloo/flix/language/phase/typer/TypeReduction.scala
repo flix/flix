@@ -210,24 +210,37 @@ object TypeReduction {
    * a ConstructorNotFound object. The working process is similar to retrieveMethod and differs in the selection of candidate constructors.
    */
   private def retrieveConstructor(clazz: Class[_], ts: List[Type], loc: SourceLocation): JavaConstructorResolutionResult = {
-    val candidateConstructors = clazz.getConstructors.filter(c => isCandidateConstructor(c, ts))
+    val candidateConstructors = clazz.getConstructors.filter(c => isCandidateConstructor(c, ts)).toList
 
-    candidateConstructors.length match {
-      case 0 => JavaConstructorResolutionResult.ConstructorNotFound
-      case 1 =>
-        val tpe = Type.Cst(TypeConstructor.JvmConstructor(candidateConstructors.head), loc)
+    candidateConstructors match {
+      // Case 1: No such constructor. Error.
+      case Nil => JavaConstructorResolutionResult.ConstructorNotFound
+
+      // Case 2: Exactly one matching constructor. Success!
+      case constructor :: Nil =>
+        val tpe = Type.Cst(TypeConstructor.JvmConstructor(constructor), loc)
         JavaConstructorResolutionResult.Resolved(tpe)
-      case _ =>
+
+      // Case 3: Multiple matching methods. We need to refine our search.
+      case cs@(_ :: _ :: _) =>
+
         // Among candidate constructors if there already exists the one with the exact signature,
         // we should ignore the rest.
-        val exactConstructor = candidateConstructors
+        val exactConstructors = cs
           .filter(c => // Parameter types correspondence with subtyping
             (c.getParameterTypes zip ts).forall {
               case (clazz, tpe) => Type.getFlixType(clazz) == tpe
             })
-        exactConstructor.length match {
-          case 1 => JavaConstructorResolutionResult.Resolved(Type.Cst(TypeConstructor.JvmConstructor(exactConstructor.head), loc))
-          case _ => JavaConstructorResolutionResult.AmbiguousConstructor(candidateConstructors.toList) // 0 corresponds to no exact constructor, 2 or higher should be impossible in Java
+
+        exactConstructors match {
+          // Case 3.1: No exact matches. We have ambiguity among the candidates.
+          case Nil => JavaConstructorResolutionResult.AmbiguousConstructor(candidateConstructors)
+
+          // Case 3.2: One exact match. Success!
+          case exact :: Nil => JavaConstructorResolutionResult.Resolved(Type.Cst(TypeConstructor.JvmConstructor(exact), loc))
+
+          // Case 3.3: Multiple exact matches. Impossible.
+          case _ :: _ :: _ => JavaConstructorResolutionResult.AmbiguousConstructor(candidateConstructors.toList) // 0 corresponds to no exact constructor, 2 or higher should be impossible in Java
         }
     }
   }
@@ -240,22 +253,35 @@ object TypeReduction {
     // NB: this considers also static methods
     val candidateMethods = getMethods(clazz).filter(m => isCandidateMethod(m, methodName, isStatic, ts))
 
-    candidateMethods.length match {
-      case 0 => JavaMethodResolutionResult.MethodNotFound
-      case 1 =>
-        val tpe = Type.Cst(TypeConstructor.JvmMethod(candidateMethods.head), loc)
+    candidateMethods match {
+      // Case 1: No such method. Error.
+      case Nil => JavaMethodResolutionResult.MethodNotFound
+
+      // Case 2: Exactly one matching method. Success!
+      case method :: Nil =>
+        val tpe = Type.Cst(TypeConstructor.JvmMethod(method), loc)
         JavaMethodResolutionResult.Resolved(tpe)
-      case _ =>
+
+      // Case 3: Multiple matching methods. We need to refine our search.
+      case ms@(_ :: _ :: _) =>
+
         // Among candidate methods if there already exists the method with the exact signature,
         // we should ignore the rest. E.g.: append(String), append(Object) in SB for the call append("a") should already know to use append(String)
-        val exactMethod = candidateMethods
-          .filter(m => // Parameter types correspondance with subtyping
+        val exactMethods = ms
+          .filter(m => // Parameter types correspondence with subtyping
             (m.getParameterTypes zip ts).forall {
               case (clazz, tpe) => Type.getFlixType(clazz) == tpe
             })
-        exactMethod.length match {
-          case 1 => JavaMethodResolutionResult.Resolved(Type.Cst(TypeConstructor.JvmMethod(exactMethod.head), loc))
-          case _ => JavaMethodResolutionResult.AmbiguousMethod(candidateMethods.toList) // 0 corresponds to no exact method, 2 or higher should be impossible in Java
+
+        exactMethods match {
+          // Case 3.1: No exact matches. We have ambiguity among the candidates.
+          case Nil => JavaMethodResolutionResult.AmbiguousMethod(candidateMethods)
+
+          // Case 3.2: One exact match. Success!
+          case exact :: Nil => JavaMethodResolutionResult.Resolved(Type.Cst(TypeConstructor.JvmMethod(exact), loc))
+
+          // Case 3.3: Multiple exact matches. Impossible.
+          case _ :: _ :: _ => throw InternalCompilerException("Unexpected multiple exact matches for Java method", loc)
         }
     }
   }
