@@ -138,11 +138,39 @@ object EqualityEnvironment {
         } yield Type.JvmToType(t1, loc)
       case Type.UnresolvedJvmType(template0, loc) =>
         for {
-          template <- template0.traverse(visit)
+          template <- traverse(template0)(visit)
         } yield Type.UnresolvedJvmType(template, loc)
     }
 
     visit(t0)
   }
 
+  /**
+    * Transforms `mem` by executing `f` on all the types in `this`.
+    *
+    * If `f` returns `Err` for any call, this function returns `Err`.
+    */
+  // TODO CONSTR-SOLVER-2 remove this after we migrate to the new constraint solver
+  private def traverse[E](mem: Type.JvmMember)(f: Type => Result[Type, E]): Result[Type.JvmMember, E] = mem match {
+    case Type.JvmMember.JvmConstructor(clazz, tpes0) =>
+      for {
+        tpes <- Result.traverse(tpes0)(f)
+      } yield Type.JvmMember.JvmConstructor(clazz, tpes)
+
+    case Type.JvmMember.JvmField(tpe0, name) =>
+      for {
+        tpe <- f(tpe0)
+      } yield Type.JvmMember.JvmField(tpe, name)
+
+    case Type.JvmMember.JvmMethod(tpe0, name, tpes0) =>
+      for {
+        tpe <- f(tpe0)
+        tpes <- Result.traverse(tpes0)(f)
+      } yield Type.JvmMember.JvmMethod(tpe, name, tpes)
+
+    case Type.JvmMember.JvmStaticMethod(clazz, name, tpes0) =>
+      for {
+        tpes <- Result.traverse(tpes0)(f)
+      } yield Type.JvmMember.JvmStaticMethod(clazz, name, tpes)
+  }
 }

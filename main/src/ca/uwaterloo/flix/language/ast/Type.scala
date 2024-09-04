@@ -578,35 +578,6 @@ object Type {
       case JvmMember.JvmMethod(tpe, name, tpes) => JvmMember.JvmMethod(f(tpe), name, tpes.map(f))
       case JvmMember.JvmStaticMethod(clazz, name, tpes) => JvmMember.JvmStaticMethod(clazz, name, tpes.map(f))
     }
-
-    /**
-      * Transforms `this` by executing `f` on all the types in `this`.
-      *
-      * If `f` returns `Err` for any call, this function returns `Err`.
-      */
-    // TODO CONSTR-SOLVER-2 remove this after we migrate to the new constraint solver
-    def traverse[E](f: Type => Result[Type, E]): Result[JvmMember, E] = this match {
-      case JvmMember.JvmConstructor(clazz, tpes0) =>
-        for {
-          tpes <- Result.traverse(tpes0)(f)
-        } yield JvmMember.JvmConstructor(clazz, tpes)
-
-      case JvmMember.JvmField(tpe0, name) =>
-        for {
-          tpe <- f(tpe0)
-        } yield JvmMember.JvmField(tpe, name)
-
-      case JvmMember.JvmMethod(tpe0, name, tpes0) =>
-        for {
-          tpe <- f(tpe0)
-          tpes <- Result.traverse(tpes0)(f)
-        } yield JvmMember.JvmMethod(tpe, name, tpes)
-
-      case JvmMember.JvmStaticMethod(clazz, name, tpes0) =>
-        for {
-          tpes <- Result.traverse(tpes0)(f)
-        } yield JvmMember.JvmStaticMethod(clazz, name, tpes)
-    }
   }
 
   object JvmMember {
