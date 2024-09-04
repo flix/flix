@@ -30,7 +30,7 @@ object TypeAliasCompleter {
       case (_, t) =>
         val name = t.sym.name
         val internalPriority = getInternalPriority(t.loc, t.sym.namespace)(context)
-        Completion.TypeAliasCompletion(t.sym, formatTParams(t.tparams), priorityBoostForTypes(internalPriority(name))(context),
+        Completion.TypeAliasCompletion(t.sym, formatTParams(t.tparams), priorityBoostForTypes(internalPriority)(context),
           TextEdit(context.range, s"$name${formatTParamsSnippet(t.tparams)}"), Some(t.doc.text))
     }
   }

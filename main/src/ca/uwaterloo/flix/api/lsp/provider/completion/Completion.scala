@@ -72,21 +72,21 @@ sealed trait Completion {
         kind = CompletionItemKind.Enum)
     case Completion.EnumCompletion(enumSym, nameSuffix, priority, textEdit, documentation) =>
       CompletionItem(label = s"${enumSym.toString}$nameSuffix",
-        sortText = priority,
+        sortText = Priority.toSortText(priority, enumSym.name),
         textEdit = textEdit,
         documentation = documentation,
         insertTextFormat = InsertTextFormat.Snippet,
         kind = CompletionItemKind.Enum)
     case Completion.StructCompletion(structSym, nameSuffix, priority, textEdit, documentation) =>
       CompletionItem(label = s"${structSym.toString}$nameSuffix",
-        sortText = priority,
+        sortText = Priority.toSortText(priority, structSym.name),
         textEdit = textEdit,
         documentation = documentation,
         insertTextFormat = InsertTextFormat.Snippet,
         kind = CompletionItemKind.Struct)
     case Completion.TypeAliasCompletion(aliasSym, nameSuffix, priority, textEdit, documentation) =>
       CompletionItem(label = s"${aliasSym.name}$nameSuffix",
-        sortText = priority,
+        sortText = Priority.toSortText(priority, aliasSym.name),
         textEdit = textEdit,
         documentation = documentation,
         insertTextFormat = InsertTextFormat.Snippet,
@@ -94,7 +94,7 @@ sealed trait Completion {
 
     case Completion.WithCompletion(name, priority, textEdit, documentation, insertTextFormat) =>
       CompletionItem(label = name,
-        sortText = priority,
+        sortText = Priority.toSortText(priority, name),
         textEdit = textEdit,
         documentation = documentation,
         insertTextFormat = insertTextFormat,
@@ -351,7 +351,7 @@ object Completion {
     * @param textEdit      the edit which is applied to a document when selecting this completion.
     * @param documentation a human-readable string that represents a doc-comment.
     */
-  case class EnumCompletion(enumSym: EnumSym, nameSuffix: String, priority: String, textEdit: TextEdit,
+  case class EnumCompletion(enumSym: EnumSym, nameSuffix: String, priority: Priority, textEdit: TextEdit,
                             documentation: Option[String]) extends Completion
 
   /**
@@ -363,7 +363,7 @@ object Completion {
     * @param textEdit      the edit which is applied to a document when selecting this completion.
     * @param documentation a human-readable string that represents a doc-comment.
     */
-  case class StructCompletion(structSym: StructSym, nameSuffix: String, priority: String, textEdit: TextEdit,
+  case class StructCompletion(structSym: StructSym, nameSuffix: String, priority: Priority, textEdit: TextEdit,
                             documentation: Option[String]) extends Completion
 
   /**
@@ -375,7 +375,7 @@ object Completion {
     * @param textEdit      the edit which is applied to a document when selecting this completion.
     * @param documentation a human-readable string that represents a doc-comment.
     */
-  case class TypeAliasCompletion(aliasSym: TypeAliasSym, nameSuffix: String, priority: String, textEdit: TextEdit,
+  case class TypeAliasCompletion(aliasSym: TypeAliasSym, nameSuffix: String, priority: Priority, textEdit: TextEdit,
                                  documentation: Option[String]) extends Completion
 
   /**
@@ -387,7 +387,7 @@ object Completion {
     * @param documentation    a human-readable string that represents a doc-comment.
     * @param insertTextFormat the format of the insert text.
     */
-  case class WithCompletion(name: String, priority: String, textEdit: TextEdit, documentation: Option[String],
+  case class WithCompletion(name: String, priority: Priority, textEdit: TextEdit, documentation: Option[String],
                             insertTextFormat: InsertTextFormat) extends Completion
 
   /**

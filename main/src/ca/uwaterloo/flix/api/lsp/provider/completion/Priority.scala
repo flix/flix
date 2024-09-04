@@ -42,11 +42,11 @@ object Priority {
   case object lowest extends Priority
 
   def toSortText(p: Priority, label: String): String = p match {
-  	case Priority.highest => 1 + label
-  	case Priority.higher  => 2 + label
-  	case Priority.high    => 3 + label
-  	case Priority.low     => 4 + label
-  	case Priority.lower   => 5 + label
-  	case Priority.lowest  => 6 + label
+  	case Priority.highest => s"1$label"
+  	case Priority.higher  => s"2$label"
+  	case Priority.high    => s"3$label"
+  	case Priority.low     => s"4$label"
+  	case Priority.lower   => s"5$label"
+  	case Priority.lowest  => s"6$label"
   }
 }

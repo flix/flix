@@ -60,7 +60,7 @@ object StructCompleter {
     val sym = decl.sym
     val name = decl.sym.name
     val internalPriority = getInternalPriority(decl.loc, decl.sym.namespace)(ctx)
-    Completion.StructCompletion(sym, formatTParams(decl.tparams), priorityBoostForTypes(internalPriority(name))(ctx),
+    Completion.StructCompletion(sym, formatTParams(decl.tparams), priorityBoostForTypes(internalPriority)(ctx),
       TextEdit(ctx.range, s"${sym.toString}${formatTParamsSnippet(decl.tparams)}"), Some(decl.doc.text))
   }
 
