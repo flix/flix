@@ -24,8 +24,7 @@ import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 import ca.uwaterloo.flix.util.collection.{ListMap, ListOps}
 
-import java.lang.reflect.Method
-import java.lang.reflect.Constructor
+import java.lang.reflect.{Constructor, Field, Method}
 import java.math.BigInteger
 import scala.annotation.tailrec
 
@@ -148,10 +147,9 @@ object TypeReduction {
       }
 
     case field@Type.UnresolvedJvmType(Type.JvmMember.JvmField(tpe, name), _) =>
-      lookupField(tpe, name.name, loc) match {
-        // Case 1: No such field. Error.
+      lookupField(tpe, name.name) match {
+        case JavaFieldResolutionResult.Resolved(tpe) => Result.Ok((tpe, true))
         case JavaFieldResolutionResult.FieldNotFound => Result.Err(TypeError.FieldNotFound(name, tpe, loc))
-        // Case 2: No such
         case JavaFieldResolutionResult.UnresolvedTypes => Result.Ok((field, false))
       }
   }
@@ -195,32 +193,25 @@ object TypeReduction {
    * @return            A JavaMethodResolutionResult object that indicates the status of the resolution progress
    */
   def lookupMethod(thisObj: Type, methodName: String, ts: List[Type], loc: SourceLocation): JavaMethodResolutionResult = {
-    if (isKnown(thisObj) && ts.forall(isKnown)) thisObj match { // there might be a possible factorization
-      case Type.Cst(TypeConstructor.Str, _) =>
-        val clazz = classOf[String]
-        retrieveMethod(clazz, methodName, ts, loc = loc)
-
-      case Type.Cst(TypeConstructor.BigInt, _) =>
-        val clazz = classOf[BigInteger]
-        retrieveMethod(clazz, methodName, ts, loc = loc)
-
-      case Type.Cst(TypeConstructor.BigDecimal, _) =>
-        val clazz = classOf[java.math.BigDecimal]
-        retrieveMethod(clazz, methodName, ts, loc = loc)
-
-      case Type.Cst(TypeConstructor.Regex, _) =>
-        val clazz = classOf[java.util.regex.Pattern]
-        retrieveMethod(clazz, methodName, ts, loc = loc)
-
-      case Type.Cst(TypeConstructor.Native(clazz), _) =>
-        retrieveMethod(clazz, methodName, ts, loc = loc)
-
-      case _ => JavaMethodResolutionResult.MethodNotFound
+    if (isKnown(thisObj) && ts.forall(isKnown)) {
+      classFromFlixType(thisObj) match {
+        case Some(clazz) =>
+          retrieveMethod(clazz, methodName, ts, loc = loc)
+        case None =>
+          JavaMethodResolutionResult.MethodNotFound
+      }
     } else JavaMethodResolutionResult.UnresolvedTypes
   }
 
-  def lookupField(thisObj: Type, fieldName: String, loc: SourceLocation): JavaFieldResolutionResult = {
-    if (isKnown(thisObj)) JavaFieldResolutionResult.FieldNotFound
+  def lookupField(thisObj: Type, fieldName: String): JavaFieldResolutionResult = {
+    if (isKnown(thisObj)) {
+      classFromFlixType(thisObj) match {
+        case Some(clazz) =>
+          retrieveField(clazz, fieldName)
+        case None =>
+          JavaFieldResolutionResult.FieldNotFound
+      }
+    }
     else JavaFieldResolutionResult.UnresolvedTypes
   }
 
@@ -311,6 +302,22 @@ object TypeReduction {
     }
   }
 
+  private def retrieveField(clazz: Class[_], fieldName: String): JavaFieldResolutionResult = {
+      getField(clazz, fieldName) match {
+        case Some(field) => JavaFieldResolutionResult.Resolved(Type.getFlixType(field.getType))
+        case None => JavaFieldResolutionResult.FieldNotFound
+      }
+  }
+
+  private def classFromFlixType(tpe: Type): Option[Class[_]] = tpe match {
+    case Type.Cst(TypeConstructor.Str, _) => Some(classOf[String])
+    case Type.Cst(TypeConstructor.BigInt, _) => Some(classOf[BigInteger])
+    case Type.Cst(TypeConstructor.BigDecimal, _) => Some(classOf[java.math.BigDecimal])
+    case Type.Cst(TypeConstructor.Regex, _) => Some(classOf[java.util.regex.Pattern])
+    case Type.Cst(TypeConstructor.Native(clazz), _) => Some(clazz)
+    case _ => None
+  }
+
   /**
     * Returns the methods of the class INCLUDING implicit interface inheritance from Object.
     */
@@ -332,6 +339,15 @@ object TypeReduction {
     } else {
       // Case 2: Class. Just return the methods.
       clazz.getMethods.toList
+    }
+  }
+
+  private def getField(clazz: Class[_], fieldName: String): Option[Field] = {
+    if (clazz.isArray && fieldName == "length") None // TODO this should return some of the length field
+    else try {
+      Some(clazz.getField(fieldName))
+    } catch {
+      case _: NoSuchFieldException => None
     }
   }
 
@@ -504,6 +520,7 @@ object TypeReduction {
     */
   sealed trait JavaFieldResolutionResult
   object JavaFieldResolutionResult {
+    case class Resolved(tpe: Type) extends JavaFieldResolutionResult
     case object FieldNotFound extends JavaFieldResolutionResult
     case object UnresolvedTypes extends JavaFieldResolutionResult
   }
