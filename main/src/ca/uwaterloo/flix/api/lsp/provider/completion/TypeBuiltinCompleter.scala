@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.lsp.{Index, InsertTextFormat, TextEdit}
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.TypeBuiltinCompletion
 import ca.uwaterloo.flix.language.ast.TypedAst
 
-object TypeBuiltinCompleter extends Completer {
+object TypeBuiltinCompleter {
 
   /* This list is manually maintained. If a new built-in type is added, it must be extended.
    * Built-in types are typically described in TypeConstructor, Namer and Resolver.
@@ -57,7 +57,7 @@ object TypeBuiltinCompleter extends Completer {
   /**
     * Returns a List of Completion for builtin types.
     */
-  override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[TypeBuiltinCompletion] = {
+  def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[TypeBuiltinCompletion] = {
     val builtinTypes = BuiltinTypeNames.map { name =>
       val internalPriority = Priority.highest _
       Completion.TypeBuiltinCompletion(name, TypeCompleter.priorityBoostForTypes(internalPriority(name))(context), TextEdit(context.range, name),

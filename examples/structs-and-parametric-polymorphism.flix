@@ -7,7 +7,7 @@ struct Stack[a, r] {
 
 mod Stack {
     pub def newStack(rc: Region[r]): Stack[a, r] \ r =
-        new Stack { rc = rc, size = 0, arr = Array.empty(rc, 10) } @ rc
+        new Stack @ rc { rc = rc, size = 0, arr = Array.empty(rc, 10) }
 
     pub def pop(s: Stack[a, r]): Unit \ r =
         s->size = s->size - 1

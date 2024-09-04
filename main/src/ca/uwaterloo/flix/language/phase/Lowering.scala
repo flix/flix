@@ -929,6 +929,9 @@ object Lowering {
 
     case Type.AssocType(cst, args, kind, loc) =>
       Type.AssocType(cst, args.map(visitType), kind, loc) // TODO ASSOC-TYPES can't put lowered stuff on right side of assoc type def...
+
+    case Type.JvmToType(_, loc) => throw InternalCompilerException("unexpected JVM type", loc)
+    case Type.UnresolvedJvmType(_, loc) => throw InternalCompilerException("unexpected JVM type", loc)
   }
 
 

@@ -153,8 +153,20 @@ trait BoolAlg[F] {
     case Type.Apply(Type.Cst(TypeConstructor.Complement, _), tpe1, _) => mkNot(fromType(tpe1, env))
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), tpe1, _), tpe2, _) => mkAnd(fromType(tpe1, env), fromType(tpe2, env))
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), tpe1, _), tpe2, _) => mkOr(fromType(tpe1, env), fromType(tpe2, env))
-    case Type.Cst(TypeConstructor.Error(_, _), _) => mkTrue
+    case _ if hasError(t) => mkTrue
     case _ => throw InternalCompilerException(s"Unexpected type: '$t'.", t.loc)
+  }
+
+  /**
+    * Traverses the type and returns `true` if `t` contains [[TypeConstructor.Error]].
+    * Returns `false` otherwise.
+    */
+  private def hasError(t: Type): Boolean = Type.eraseTopAliases(t) match {
+    case Type.Cst(TypeConstructor.Error(_, _), _) => true
+    case Type.Cst(_, _) => false
+    case Type.AssocType(_, tpe, _, _) => hasError(tpe)
+    case Type.Apply(tpe1, tpe2, _) => hasError(tpe1) || hasError(tpe2)
+    case _: Type.BaseType => false
   }
 
 }

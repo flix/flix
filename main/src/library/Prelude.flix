@@ -17,7 +17,7 @@ pub enum Proxy[_] {
 ///
 /// The `Clock` effect represents the actions required to access the system clock.
 ///
-/// This includes use of `System.currentTimeMilis` and `System.nanoTime`, but also e.g. `Date.now()`.
+/// This includes use of `System.currentTimeMillis` and `System.nanoTime`, but also e.g. `Date.now()`.
 ///
 /// The `Clock` effect is uninterpretable which means that it cannot be handled.
 ///
@@ -62,6 +62,11 @@ pub eff FileRead
 /// The `FileWrite` effect is uninterpretable which means that it cannot be handled.
 ///
 pub eff FileWrite
+
+///
+/// A type alias for the `FileRead` and `FileWrite` effects.
+///
+type alias FileIO = {FileRead, FileWrite}
 
 ///
 /// The uninterpretable IO effect.

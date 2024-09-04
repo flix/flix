@@ -1101,4 +1101,13 @@ class TestParserHappy extends AnyFunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[ParseError](result)
   }
+
+  test("NewStructNoBody.01") {
+    val input =
+      """
+        |def foo(s: S[r]): Int32 = new Struct @ r |> ???
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
 }

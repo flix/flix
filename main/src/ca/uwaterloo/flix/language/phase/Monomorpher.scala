@@ -180,6 +180,7 @@ object Monomorpher {
       case Type.Alias(_, _, t, _) =>
         // Remove the Alias.
         apply(t)
+
       case Type.AssocType(cst, arg0, _, loc) =>
         // Remove the associated type.
         val arg = apply(arg0)
@@ -189,6 +190,9 @@ object Monomorpher {
             apply(t)
           case Err(_) => throw InternalCompilerException("unexpected associated type reduction failure", loc)
         }
+
+      case Type.JvmToType(_, loc) => throw InternalCompilerException("unexpected JVM type", loc)
+      case Type.UnresolvedJvmType(_, loc) => throw InternalCompilerException("unexpected JVM type", loc)
     }
 
     /**
@@ -329,6 +333,8 @@ object Monomorpher {
     case Type.Var(_, _) => throw InternalCompilerException(s"Unexpected type variable '$rest'", rest.loc)
     case Type.Alias(_, _, _, _) => throw InternalCompilerException(s"Unexpected alias '$rest'", rest.loc)
     case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected associated type '$rest'", rest.loc)
+    case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected JVM type '$rest'", rest.loc)
+    case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected JVM type '$rest'", rest.loc)
   }
 
   /**
@@ -348,6 +354,8 @@ object Monomorpher {
     case Type.Var(_, _) => throw InternalCompilerException(s"Unexpected type variable '$rest'", rest.loc)
     case Type.Alias(_, _, _, _) => throw InternalCompilerException(s"Unexpected alias '$rest'", rest.loc)
     case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected associated type '$rest'", rest.loc)
+    case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected JVM type '$rest'", rest.loc)
+    case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected JVM type '$rest'", rest.loc)
   }
 
   /**

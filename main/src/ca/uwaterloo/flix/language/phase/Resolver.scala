@@ -3587,8 +3587,6 @@ private def getRestrictableEnumIfAccessible(enum0: NamedAst.Declaration.Restrict
         case TypeConstructor.CaseIntersection(_) => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.CaseUnion(_) => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.Error(_, _) => Result.Err(ResolutionError.IllegalType(tpe, loc))
-        case TypeConstructor.MethodReturnType => Result.Err(ResolutionError.IllegalType(tpe, loc))
-        case TypeConstructor.FieldType => Result.Err(ResolutionError.IllegalType(tpe, loc))
 
         case TypeConstructor.AnyType => throw InternalCompilerException(s"unexpected type: $tc", tpe.loc)
         case t: TypeConstructor.Arrow => throw InternalCompilerException(s"unexpected type: $t", tpe.loc)

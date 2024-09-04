@@ -584,6 +584,10 @@ object Indexer {
     case Type.Apply(tpe1, tpe2, _) => visitType(tpe1) ++ visitType(tpe2)
     case Type.Alias(Ast.AliasConstructor(sym, loc), args, _, _) => Index.occurrenceOf(tpe0) ++ Index.useOf(sym, loc) ++ traverse(args)(visitType)
     case Type.AssocType(Ast.AssocTypeConstructor(sym, loc), arg, _, _) => Index.occurrenceOf(tpe0) ++ Index.useOf(sym, loc) ++ visitType(arg)
+
+    // Jvm types should not be exposed to the user.
+    case _: Type.JvmToType => Index.empty
+    case _: Type.UnresolvedJvmType => Index.empty
   }
 
   /**
