@@ -10,35 +10,35 @@ mod Get {
     @test
     def testStructGet01(): Bool =
         region rc {
-            let s = new Get { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true } @ rc;
+            let s = new Get @ rc { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
             s->fstName == "Lucky" and s->lstName == "Luke" and s->age == 42 and s->cowboy == true
         }
 
     @test
     def testStructGet02(): String =
         region rc {
-            let s = new Get { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true } @ rc;
+            let s = new Get @ rc { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
             s->lstName
         }
 
     @test
     def testStructGet03(): Int32 =
         region rc {
-            let s = new Get { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true } @ rc;
+            let s = new Get @ rc { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
             s->age
         }
 
     @test
     def testStructGet04(): Bool =
         region rc {
-            let s = new Get { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true } @ rc;
+            let s = new Get @ rc { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
             s->cowboy
         }
 
     @test
     def testStructMultiGet01(): Bool =
         region rc {
-            let s = new Get { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true } @ rc;
+            let s = new Get @ rc { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
             let fstName = s->fstName;
             let lstName = s->lstName;
             let age = s->age;
@@ -49,7 +49,7 @@ mod Get {
     @test
     def testStructMultiGet02(): Bool =
         region rc {
-            let s = new Get { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true } @ rc;
+            let s = new Get @ rc { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
             let cowboy = s->cowboy;
             let age = s->age;
             let lstName = s->lstName;
@@ -60,7 +60,7 @@ mod Get {
     @test
     def testStructMultiGet03(): Bool =
         region rc {
-            let s = new Get { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true } @ rc;
+            let s = new Get @ rc { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
             let fstName1 = s->fstName;
             let fstName2 = s->fstName;
             let lstName1 = s->lstName;
@@ -71,7 +71,7 @@ mod Get {
     @test
     def testStructMultiGet04(): Bool =
         region rc {
-            let s = new Get { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true } @ rc;
+            let s = new Get @ rc { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
             let lstName1 = s->lstName;
             let fstName1 = s->fstName;
             let lstName2 = s->lstName;
@@ -96,21 +96,21 @@ mod BinaryTree {
     @test
     def binaryTree01(): Bool =
         region rc {
-            let leaf = new BinaryTree {
+            let leaf = new BinaryTree @ rc {
                 left = None,
                 right = None,
                 value = 3
-            } @ rc;
-            let innernode = new BinaryTree {
+            };
+            let innernode = new BinaryTree @ rc {
                 left = Some(leaf),
                 right = Some(leaf),
                 value = 4
-            } @ rc;
-            let tree = new BinaryTree {
+            };
+            let tree = new BinaryTree @ rc {
                 left = Some(innernode),
                 right = Some(innernode),
                 value = 5
-            } @ rc;
+            };
             binaryTreeSum(Some(tree)) == 25
         }
 }
@@ -123,7 +123,7 @@ mod Nested {
     @test
     def nestedPut01(): Bool =
         region rc {
-            let nested = new Nested{ v = new Nested { v = new Nested {v = new Nested {v = 15} @ rc } @ rc} @ rc } @ rc;
+            let nested = new Nested @ rc { v = new Nested @ rc { v = new Nested @ rc {v = new Nested @ rc {v = 15}}}};
             nested->v->v->v->v == 15
         }
 
