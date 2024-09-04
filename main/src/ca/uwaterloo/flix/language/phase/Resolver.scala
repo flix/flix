@@ -1136,7 +1136,7 @@ private def resolveExp(exp0: NamedAst.Expr, env0: ListMap[String, Resolution])(i
               val fieldsVal = traverse(fields) {
                 case (f, e) =>
                   val eVal = resolveExp(e, env0)
-                  val (defLoc, idx) = st0.indicesAndLocs.getOrElse(f, (SourceLocation.Unknown, 0))
+                  val (idx, defLoc) = st0.indicesAndLocs.getOrElse(f, (0, SourceLocation.Unknown))
                   val fieldSym = Symbol.mkStructFieldSym(st0.sym, idx, Name.Label(f.name, defLoc))
                   val fieldSymUse = Ast.StructFieldSymUse(fieldSym, f.loc)
                   mapN(eVal) {
