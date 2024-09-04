@@ -373,7 +373,7 @@ private def findResolutionOrder(aliases: Iterable[ResolvedAst.Declaration.TypeAl
     case op@NamedAst.Declaration.Op(sym, spec) => throw InternalCompilerException("unexpected op", sym.loc)
     case NamedAst.Declaration.Sig(sym, spec, exp) => throw InternalCompilerException("unexpected sig", sym.loc)
     case NamedAst.Declaration.Case(sym, tpe, _) => throw InternalCompilerException("unexpected case", sym.loc)
-    case NamedAst.Declaration.StructField(sym, tpe, _) => throw InternalCompilerException("unexpected struct field", sym.loc)
+    case NamedAst.Declaration.StructField(_, sym, tpe, _) => throw InternalCompilerException("unexpected struct field", sym.loc)
     case NamedAst.Declaration.RestrictableCase(sym, tpe, _) => throw InternalCompilerException("unexpected case", sym.loc)
     case NamedAst.Declaration.AssocTypeDef(doc, mod, ident, args, tpe, loc) => throw InternalCompilerException("unexpected associated type definition", ident.loc)
     case NamedAst.Declaration.AssocTypeSig(doc, mod, sym, tparams, kind, tpe, loc) => throw InternalCompilerException("unexpected associated type signature", sym.loc)
@@ -607,7 +607,7 @@ private def resolveRestrictableEnum(e0: NamedAst.Declaration.RestrictableEnum, e
     * Performs name resolution on the given struct field `field0` in the given namespace `ns0`.
     */
   private def resolveStructField(structSym: Symbol.StructSym, idx: Int, field0: NamedAst.Declaration.StructField, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration.StructField, ResolutionError] = field0 match {
-    case NamedAst.Declaration.StructField(sym, tpe0, loc) =>
+    case NamedAst.Declaration.StructField(_, sym, tpe0, loc) =>
       val tpeVal = resolveType(tpe0, Wildness.ForbidWild, env, taenv, ns0, root)
       mapN(tpeVal) {
         tpe => ResolvedAst.Declaration.StructField(sym, tpe, loc)
@@ -1191,8 +1191,13 @@ private def resolveExp(exp0: NamedAst.Expr, env0: ListMap[String, Resolution])(i
           val e2Val = resolveExp(e2, env0)
           val idx = field.sym.idx
           val fieldSymUse = Ast.StructFieldSymUse(field.sym, field0.loc)
-          mapN(e1Val, e2Val) {
+          val put = mapN(e1Val, e2Val) {
             case (e1, e2) => ResolvedAst.Expr.StructPut(e1, fieldSymUse, e2, loc)
+          }
+          if(field.mod.isMutable) {
+            put
+          } else {
+            put.withSoftFailure(ResolutionError.ImmutableField(field.sym, field0.loc))
           }
         case Result.Err(e) =>
           Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
@@ -3706,7 +3711,7 @@ private def mkUnappliedAssocType(sym: Symbol.AssocTypeSym, loc: SourceLocation):
     case NamedAst.Declaration.Def(sym, spec, exp) => sym
     case NamedAst.Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc) => sym
     case NamedAst.Declaration.Struct(doc, ann, mod, sym, tparams, fields, indices, loc) => sym
-    case NamedAst.Declaration.StructField(sym, _, _) => sym
+    case NamedAst.Declaration.StructField(_, sym, _, _) => sym
     case NamedAst.Declaration.RestrictableEnum(doc, ann, mod, sym, ident, tparams, derives, cases, loc) => sym
     case NamedAst.Declaration.TypeAlias(doc, ann, mod, sym, tparams, tpe, loc) => sym
     case NamedAst.Declaration.AssocTypeSig(doc, mod, sym, tparams, kind, tpe, loc) => sym

@@ -1608,7 +1608,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
     val input =
       """
         |struct S[v, r] {
-        |    a: Int32,
+        |    mut a: Int32,
         |    b: String,
         |    c: v
         |}
@@ -1630,7 +1630,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
     val input =
       """
         |struct S[v, r] {
-        |    c: v
+        |    mut c: v
         |}
         |mod S {
         |    def Foo(): Unit = {

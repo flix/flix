@@ -1,8 +1,8 @@
 /// A struct datatype for a mutable stack
 struct Stack[a, r] {
     rc: Region[r],
-    size: Int32,
-    arr: Array[a, r]
+    mut size: Int32,
+    mut arr: Array[a, r]
 }
 
 mod Stack {
