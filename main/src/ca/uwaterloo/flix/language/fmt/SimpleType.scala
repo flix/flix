@@ -339,7 +339,7 @@ object SimpleType {
         mkApply(Name(cst.sym.name), (arg :: t.typeArguments).map(visit))
       case Type.JvmToType(tpe, _) =>
         mkApply(SimpleType.JvmToType(visit(tpe)), t.typeArguments.map(visit))
-      case Type.UnresolvedJvmType(template, _) => template match {
+      case Type.UnresolvedJvmType(member, _) => member match {
         case JvmMember.JvmConstructor(clazz, tpes) => SimpleType.JvmConstructor(clazz.getSimpleName, tpes.map(visit))
         case JvmMember.JvmMethod(tpe, name, tpes) => SimpleType.JvmMethod(visit(tpe), name.name, tpes.map(visit))
         case JvmMember.JvmField(tpe, name) => SimpleType.JvmField(visit(tpe), name.name)

@@ -97,8 +97,8 @@ object Scheme {
       case Type.JvmToType(tpe, loc) =>
         Type.JvmToType(visitType(tpe), loc)
 
-      case Type.UnresolvedJvmType(template, loc) =>
-        Type.UnresolvedJvmType(template.map(visitType), loc)
+      case Type.UnresolvedJvmType(member, loc) =>
+        Type.UnresolvedJvmType(member.map(visitType), loc)
     }
 
     val newBase = visitType(baseType)

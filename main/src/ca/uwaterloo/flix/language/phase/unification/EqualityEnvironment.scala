@@ -136,10 +136,10 @@ object EqualityEnvironment {
         for {
           t1 <- visit(tpe)
         } yield Type.JvmToType(t1, loc)
-      case Type.UnresolvedJvmType(template0, loc) =>
+      case Type.UnresolvedJvmType(member0, loc) =>
         for {
-          template <- traverse(template0)(visit)
-        } yield Type.UnresolvedJvmType(template, loc)
+          member <- traverse(member0)(visit)
+        } yield Type.UnresolvedJvmType(member, loc)
     }
 
     visit(t0)

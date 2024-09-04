@@ -60,7 +60,7 @@ sealed trait Type {
     case Type.AssocType(_, arg, _, _) => arg.typeVars // TODO ASSOC-TYPES throw error?
 
     case Type.JvmToType(tpe, _) => tpe.typeVars
-    case Type.UnresolvedJvmType(template, _) => template.getTypeArguments.foldLeft(SortedSet.empty[Type.Var])((acc, t) => acc ++ t.typeVars)
+    case Type.UnresolvedJvmType(member, _) => member.getTypeArguments.foldLeft(SortedSet.empty[Type.Var])((acc, t) => acc ++ t.typeVars)
   }
 
   /**
@@ -77,7 +77,7 @@ sealed trait Type {
     case Type.AssocType(_, arg, _, _) => arg.effects // TODO ASSOC-TYPES throw error?
 
     case Type.JvmToType(tpe, _) => tpe.effects
-    case Type.UnresolvedJvmType(template, _) => template.getTypeArguments.foldLeft(SortedSet.empty[Symbol.EffectSym])((acc, t) => acc ++ t.effects)
+    case Type.UnresolvedJvmType(member, _) => member.getTypeArguments.foldLeft(SortedSet.empty[Symbol.EffectSym])((acc, t) => acc ++ t.effects)
   }
 
   /**
@@ -94,7 +94,7 @@ sealed trait Type {
     case Type.AssocType(_, arg, _, _) => arg.cases // TODO ASSOC-TYPES throw error?
 
     case Type.JvmToType(tpe, _) => tpe.cases
-    case Type.UnresolvedJvmType(template, _) => template.getTypeArguments.foldLeft(SortedSet.empty[Symbol.RestrictableCaseSym])((acc, t) => acc ++ t.cases)
+    case Type.UnresolvedJvmType(member, _) => member.getTypeArguments.foldLeft(SortedSet.empty[Symbol.RestrictableCaseSym])((acc, t) => acc ++ t.cases)
   }
 
   /**
@@ -110,7 +110,7 @@ sealed trait Type {
     case Type.Alias(_, _, tpe, _) => tpe.assocs
 
     case Type.JvmToType(tpe, _) => tpe.assocs
-    case Type.UnresolvedJvmType(template, _) => template.getTypeArguments.foldLeft(Set.empty[Type.AssocType])((acc, t) => acc ++ t.assocs)
+    case Type.UnresolvedJvmType(member, _) => member.getTypeArguments.foldLeft(Set.empty[Type.AssocType])((acc, t) => acc ++ t.assocs)
   }
 
   /**
@@ -222,8 +222,8 @@ sealed trait Type {
 
     case Type.JvmToType(tpe, loc) =>
       Type.JvmToType(tpe.map(f), loc)
-    case Type.UnresolvedJvmType(template, loc) =>
-      Type.UnresolvedJvmType(template.map(t => t.map(f)), loc)
+    case Type.UnresolvedJvmType(member, loc) =>
+      Type.UnresolvedJvmType(member.map(t => t.map(f)), loc)
   }
 
   /**
@@ -266,7 +266,7 @@ sealed trait Type {
     case Type.Alias(_, _, tpe, _) => tpe.size
     case Type.AssocType(_, arg, kind, _) => arg.size + 1
     case Type.JvmToType(tpe, _) => tpe.size + 1
-    case Type.UnresolvedJvmType(template, loc) => template.getTypeArguments.map(_.size).sum + 1
+    case Type.UnresolvedJvmType(member, loc) => member.getTypeArguments.map(_.size).sum + 1
   }
 
   /**
@@ -550,7 +550,7 @@ object Type {
   /**
     * An unresolved Java type. Once the type variables are resolved, this can be reduced to a normal type.
     */
-  case class UnresolvedJvmType(template: JvmMember, loc: SourceLocation) extends Type with BaseType {
+  case class UnresolvedJvmType(member: JvmMember, loc: SourceLocation) extends Type with BaseType {
     override def kind: Kind = Kind.Jvm
   }
 
@@ -1102,7 +1102,7 @@ object Type {
     case Type.Alias(_, _, tpe, _) => eraseAliases(tpe)
     case Type.AssocType(cst, args, kind, loc) => Type.AssocType(cst, args.map(eraseAliases), kind, loc)
     case Type.JvmToType(tpe, loc) => Type.JvmToType(eraseAliases(tpe), loc)
-    case Type.UnresolvedJvmType(template, loc) => Type.UnresolvedJvmType(template.map(eraseAliases), loc)
+    case Type.UnresolvedJvmType(member, loc) => Type.UnresolvedJvmType(member.map(eraseAliases), loc)
   }
 
   /**
@@ -1126,7 +1126,7 @@ object Type {
     case Alias(_, _, tpe, _) => hasAssocType(tpe)
     case AssocType(_, _, _, _) => true
     case JvmToType(tpe, _) => hasAssocType(tpe)
-    case UnresolvedJvmType(template, _) => template.getTypeArguments.exists(hasAssocType)
+    case UnresolvedJvmType(member, _) => member.getTypeArguments.exists(hasAssocType)
   }
 
   /**

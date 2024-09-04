@@ -418,7 +418,7 @@ object Typer {
       case Type.Alias(_, args, _, _) => args.flatMap(getAssocTypes) // TODO ASSOC-TYPES what to do about alias
       case assoc: Type.AssocType => List(assoc)
       case Type.JvmToType(tpe, _) => getAssocTypes(tpe)
-      case Type.UnresolvedJvmType(template, _) => template.getTypeArguments.flatMap(getAssocTypes)
+      case Type.UnresolvedJvmType(member, _) => member.getTypeArguments.flatMap(getAssocTypes)
     }
 
     spec0 match {
