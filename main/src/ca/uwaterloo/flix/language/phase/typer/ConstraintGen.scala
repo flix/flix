@@ -588,7 +588,7 @@ object ConstraintGen {
         for {
           ((fieldSym, expr), fieldTpe1) <- fields.zip(fieldTpes)
         } {
-          instantiatedFieldTpes.get(fieldSym) match {
+          instantiatedFieldTpes.get(fieldSym.sym) match {
             case None => () // if not an actual field, there is nothing to unify
             case Some(fieldTpe2) => c.unifyType(fieldTpe1, fieldTpe2, expr.loc)
           }
@@ -600,10 +600,10 @@ object ConstraintGen {
         (resTpe, resEff)
 
       case Expr.StructGet(exp, field, tvar, evar, loc) =>
-        val (instantiatedFieldTpes, structTpe, regionVar) = instantiateStruct(field.structSym, root.structs)
+        val (instantiatedFieldTpes, structTpe, regionVar) = instantiateStruct(field.sym.structSym, root.structs)
         val (tpe, eff) = visitExp(exp)
         c.expectType(structTpe, tpe, exp.loc)
-        val fieldTpe = instantiatedFieldTpes(field)
+        val fieldTpe = instantiatedFieldTpes(field.sym)
         c.unifyType(fieldTpe, tvar, loc)
         c.unifyType(Type.mkUnion(eff, regionVar, loc), evar, exp.loc)
         val resTpe = tvar
@@ -611,11 +611,11 @@ object ConstraintGen {
         (resTpe, resEff)
 
       case Expr.StructPut(exp1, field, exp2, tvar, evar, loc) =>
-        val (instantiatedFieldTpes, structTpe, regionVar) = instantiateStruct(field.structSym, root.structs)
+        val (instantiatedFieldTpes, structTpe, regionVar) = instantiateStruct(field.sym.structSym, root.structs)
         val (tpe1, eff1) = visitExp(exp1)
         val (tpe2, eff2) = visitExp(exp2)
         c.expectType(structTpe, tpe1, exp1.loc)
-        val fieldTpe = instantiatedFieldTpes(field)
+        val fieldTpe = instantiatedFieldTpes(field.sym)
         c.expectType(fieldTpe, tpe2, exp2.loc)
         c.unifyType(Type.mkUnit(loc), tvar, loc)
         c.unifyType(Type.mkUnion(eff1, eff2, regionVar, loc), evar, loc)

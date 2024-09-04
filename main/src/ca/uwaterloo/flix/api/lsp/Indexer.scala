@@ -326,7 +326,6 @@ object Indexer {
     case Expr.ArrayStore(exp1, exp2, exp3, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) ++ Index.occurrenceOf(exp0)
 
-    // STRUCTS TODO: Add indexing support for symbols and fields
     case Expr.StructNew(sym, fields, region, tpe, eff, loc) =>
       val i0 = visitExp(region) ++ Index.occurrenceOf(exp0)
       val i1 = traverse(fields) {
@@ -334,16 +333,16 @@ object Indexer {
       }
       val parent = Entity.Exp(exp0)
       val i2 = Index.useOf(sym, loc)
-      val fieldSymIndices = fields.map { case (sym, _) => Index.useOf(sym, sym.loc, parent) }
+      val fieldSymIndices = fields.map { case (sym, _) => Index.useOf(sym.sym, sym.loc, parent) }
       fieldSymIndices.foldLeft(i0 ++ i1 ++ i2)(_ ++ _)
 
     case Expr.StructGet(exp, field, tpe, eff, loc) =>
       val parent = Entity.Exp(exp0)
-      visitExp(exp) ++ Index.occurrenceOf(exp0) ++ Index.useOf(field, field.loc, parent)
+      visitExp(exp) ++ Index.occurrenceOf(exp0) ++ Index.useOf(field.sym, field.loc, parent)
 
     case Expr.StructPut(exp1, field, exp2, tpe, eff, loc) =>
       val parent = Entity.Exp(exp0)
-      visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0) ++ Index.useOf(field, field.loc, parent)
+      visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0) ++ Index.useOf(field.sym, field.loc, parent)
 
     case Expr.VectorLit(exps, _, _, _) =>
       visitExps(exps) ++ Index.occurrenceOf(exp0)
