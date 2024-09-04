@@ -1136,10 +1136,11 @@ private def resolveExp(exp0: NamedAst.Expr, env0: ListMap[String, Resolution])(i
               val fieldsVal = traverse(fields) {
                 case (f, e) =>
                   val eVal = resolveExp(e, env0)
-                  val idx = st0.indices.getOrElse(f, 0)
-                  val fieldSym = Symbol.mkStructFieldSym(st0.sym, idx, f)
+                  val (idx, defLoc) = st0.indicesAndLocs.getOrElse(f, (0, SourceLocation.Unknown))
+                  val fieldSym = Symbol.mkStructFieldSym(st0.sym, idx, Name.Label(f.name, defLoc))
+                  val fieldSymUse = Ast.StructFieldSymUse(fieldSym, f.loc)
                   mapN(eVal) {
-                    case e => (fieldSym, e)
+                    case e => (fieldSymUse, e)
                   }
               }
               val regionVal = resolveExp(region, env0)
@@ -1175,8 +1176,9 @@ private def resolveExp(exp0: NamedAst.Expr, env0: ListMap[String, Resolution])(i
         case Result.Ok(field) =>
           val eVal = resolveExp(e, env0)
           val idx = field.sym.idx
+          val fieldSymUse = Ast.StructFieldSymUse(field.sym, field0.loc)
           mapN(eVal) {
-            case e => ResolvedAst.Expr.StructGet(e, field.sym, loc)
+            case e => ResolvedAst.Expr.StructGet(e, fieldSymUse, loc)
           }
         case Result.Err(e) =>
           Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
@@ -1188,8 +1190,9 @@ private def resolveExp(exp0: NamedAst.Expr, env0: ListMap[String, Resolution])(i
           val e1Val = resolveExp(e1, env0)
           val e2Val = resolveExp(e2, env0)
           val idx = field.sym.idx
+          val fieldSymUse = Ast.StructFieldSymUse(field.sym, field0.loc)
           mapN(e1Val, e2Val) {
-            case (e1, e2) => ResolvedAst.Expr.StructPut(e1, field.sym, e2, loc)
+            case (e1, e2) => ResolvedAst.Expr.StructPut(e1, fieldSymUse, e2, loc)
           }
         case Result.Err(e) =>
           Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
@@ -3584,8 +3587,6 @@ private def getRestrictableEnumIfAccessible(enum0: NamedAst.Declaration.Restrict
         case TypeConstructor.CaseIntersection(_) => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.CaseUnion(_) => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.Error(_, _) => Result.Err(ResolutionError.IllegalType(tpe, loc))
-        case TypeConstructor.MethodReturnType => Result.Err(ResolutionError.IllegalType(tpe, loc))
-        case TypeConstructor.FieldType => Result.Err(ResolutionError.IllegalType(tpe, loc))
 
         case TypeConstructor.AnyType => throw InternalCompilerException(s"unexpected type: $tc", tpe.loc)
         case t: TypeConstructor.Arrow => throw InternalCompilerException(s"unexpected type: $t", tpe.loc)

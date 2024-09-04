@@ -351,12 +351,6 @@ object Simplifier {
           case TypeConstructor.Schema =>
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
 
-          case TypeConstructor.MethodReturnType =>
-            throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
-
-          case TypeConstructor.FieldType =>
-            throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
-
           case TypeConstructor.JvmConstructor(_) =>
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
 

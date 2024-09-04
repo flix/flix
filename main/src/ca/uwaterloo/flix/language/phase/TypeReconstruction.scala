@@ -431,7 +431,7 @@ object TypeReconstruction {
       val tpe = Type.getFlixType(clazz)
       val eff = subst(evar)
       constructorTpe match {
-        case Type.Cst(TypeConstructor.JvmConstructor(constructor), loc) =>
+        case Type.Cst(TypeConstructor.JvmConstructor(constructor), _) =>
           TypedAst.Expr.InvokeConstructor(constructor, es, tpe, eff, loc)
         case _ =>
           TypedAst.Expr.Error(TypeError.UnresolvedConstructor(loc), tpe, eff)
