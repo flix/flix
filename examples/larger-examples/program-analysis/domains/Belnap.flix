@@ -1,6 +1,6 @@
-/**
- * An implementation of the four-valued boolean lattice named for Nuel Belnap.
- */
+///
+/// An implementation of the four-valued boolean lattice named for Nuel Belnap.
+///
 mod Belnap {
 
     ///

@@ -1,6 +1,6 @@
-/**
- * An implementation of the sign domain lifted over the constant propagation domain.
- */
+///
+/// An implementation of the sign domain lifted over the constant propagation domain.
+///
 mod Domain.ConstantSign {
 
     ///
