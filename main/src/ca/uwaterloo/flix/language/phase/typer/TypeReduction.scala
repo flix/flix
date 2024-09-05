@@ -24,8 +24,7 @@ import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 import ca.uwaterloo.flix.util.collection.{ListMap, ListOps}
 
-import java.lang.reflect.Method
-import java.lang.reflect.Constructor
+import java.lang.reflect.{Constructor, Field, Method}
 import java.math.BigInteger
 import scala.annotation.tailrec
 
@@ -149,22 +148,23 @@ object TypeReduction {
 
     case field@Type.UnresolvedJvmType(Type.JvmMember.JvmField(tpe, name), _) =>
       lookupField(tpe, name.name, loc) match {
-        // Case 1: No such field. Error.
+        case JavaFieldResolutionResult.Resolved(tpe) => Result.Ok((tpe, true))
         case JavaFieldResolutionResult.FieldNotFound => Result.Err(TypeError.FieldNotFound(name, tpe, loc))
-        // Case 2: No such
         case JavaFieldResolutionResult.UnresolvedTypes => Result.Ok((field, false))
       }
   }
 
   /**
-    * Returns `true` if the given type is still reducible, i.e. contains an unreduced MRT or FieldType,
-    * e.g. MRT[a] where a is not known.
+    * Returns `true` if the given type contains [[Type.JvmToType]] or [[Type.UnresolvedJvmType]].
     */
-  // TODO: This method should be recursive and not just look at the top-level type.
-  def isReducible(tpe: Type): Boolean = tpe match {
+  def containsJvmTypes(tpe: Type): Boolean = tpe match {
+    case Type.Var(_, _) => false
+    case Type.Cst(_, _) => false
+    case Type.Apply(tpe1, tpe2, _) => containsJvmTypes(tpe1) || containsJvmTypes(tpe2)
+    case Type.Alias(_, _, tpe, _) => containsJvmTypes(tpe)
+    case Type.AssocType(_, arg, _, _) => containsJvmTypes(arg)
     case Type.JvmToType(_, _) => true
     case Type.UnresolvedJvmType(_, _) => true
-    case _ => false
   }
 
   /**
@@ -195,38 +195,53 @@ object TypeReduction {
    * @return            A JavaMethodResolutionResult object that indicates the status of the resolution progress
    */
   def lookupMethod(thisObj: Type, methodName: String, ts: List[Type], loc: SourceLocation): JavaMethodResolutionResult = {
-    if (isKnown(thisObj) && ts.forall(isKnown)) thisObj match { // there might be a possible factorization
-      case Type.Cst(TypeConstructor.Str, _) =>
-        val clazz = classOf[String]
-        retrieveMethod(clazz, methodName, ts, loc = loc)
-
-      case Type.Cst(TypeConstructor.BigInt, _) =>
-        val clazz = classOf[BigInteger]
-        retrieveMethod(clazz, methodName, ts, loc = loc)
-
-      case Type.Cst(TypeConstructor.BigDecimal, _) =>
-        val clazz = classOf[java.math.BigDecimal]
-        retrieveMethod(clazz, methodName, ts, loc = loc)
-
-      case Type.Cst(TypeConstructor.Regex, _) =>
-        val clazz = classOf[java.util.regex.Pattern]
-        retrieveMethod(clazz, methodName, ts, loc = loc)
-
-      case Type.Cst(TypeConstructor.Native(clazz), _) =>
-        retrieveMethod(clazz, methodName, ts, loc = loc)
-
-      case _ => JavaMethodResolutionResult.MethodNotFound
+    if (isKnown(thisObj) && ts.forall(isKnown)) {
+      Type.classFromFlixType(thisObj) match {
+        case Some(clazz) =>
+          retrieveMethod(clazz, methodName, ts, loc = loc)
+        case None =>
+          JavaMethodResolutionResult.MethodNotFound
+      }
     } else JavaMethodResolutionResult.UnresolvedTypes
   }
 
-  def lookupField(thisObj: Type, fieldName: String, loc: SourceLocation): JavaFieldResolutionResult = {
-    if (isKnown(thisObj)) JavaFieldResolutionResult.FieldNotFound
-    else JavaFieldResolutionResult.UnresolvedTypes
-  }
-
+  /**
+    * This is the resolution process of the Java static method method, member of the class of the Java class clazz.
+    * Returns the return type of the Java static method according to the class of clazz and the arguments of the method,
+    * if there exists such a Java method.
+    * Otherwise, either the Java method could not be found with the given method signature, or, there was an ambiguity.
+    *
+    * @param clazz       the Java class
+    * @param methodName  the Java method, supposedly member of the class of the Java object
+    * @param ts          the list containing the type of thisObj and the arguments of the method
+    * @param loc         the location where the Java method has been called
+    * @return            A JavaMethodResolutionResult object that indicates the status of the resolution progress
+    */
   def lookupStaticMethod(clazz: Class[_], methodName: String, ts: List[Type], loc: SourceLocation): JavaMethodResolutionResult = {
     if (ts.forall(isKnown)) retrieveMethod(clazz, methodName, ts, isStatic = true, loc = loc)
     else JavaMethodResolutionResult.UnresolvedTypes
+  }
+
+  /**
+    * This is the resolution process of the Java field, member of the class of the Java object thisObj.
+    * Returns the type of the Java field according to the type of thisObj if there exists such a Java method.
+    * Otherwise, either the Java field could not be found with the given name.
+    *
+    * @param thisObj    the Java object
+    * @param fieldName  the Java field, supposedly member of the class of the Java object
+    * @param loc        the location where the Java field has been accessed
+    * @return           A JavaFieldResolutionResult object that indicates the status of the resolution progress
+    */
+  def lookupField(thisObj: Type, fieldName: String, loc: SourceLocation): JavaFieldResolutionResult = {
+    if (isKnown(thisObj)) {
+      Type.classFromFlixType(thisObj) match {
+        case Some(clazz) =>
+          retrieveField(clazz, fieldName, loc)
+        case None =>
+          JavaFieldResolutionResult.FieldNotFound
+      }
+    }
+    else JavaFieldResolutionResult.UnresolvedTypes
   }
 
   /**
@@ -308,6 +323,30 @@ object TypeReduction {
           // Case 3.3: Multiple exact matches. Impossible.
           case _ :: _ :: _ => throw InternalCompilerException("Unexpected multiple exact matches for Java method", loc)
         }
+    }
+  }
+
+  /**
+    * Helper method to retrieve a field given its class and name.
+    * Returns a JavaFieldResolutionResult either containing the Java field or a FieldNotFound object.
+    */
+  private def retrieveField(clazz: Class[_], fieldName: String, loc: SourceLocation): JavaFieldResolutionResult = {
+      getField(clazz, fieldName) match {
+        case Some(field) => JavaFieldResolutionResult.Resolved(Type.Cst(TypeConstructor.JvmField(field), loc))
+        case None => JavaFieldResolutionResult.FieldNotFound
+      }
+  }
+
+  /**
+    * Returns the `fieldName` field of `clazz` if it exists.
+    *
+    * Field name "length" of array classes always return `None` (see Class.getField).
+    */
+  private def getField(clazz: Class[_], fieldName: String): Option[Field] = {
+    try {
+      Some(clazz.getField(fieldName))
+    } catch {
+      case _: NoSuchFieldException => None
     }
   }
 
@@ -504,6 +543,7 @@ object TypeReduction {
     */
   sealed trait JavaFieldResolutionResult
   object JavaFieldResolutionResult {
+    case class Resolved(tpe: Type) extends JavaFieldResolutionResult
     case object FieldNotFound extends JavaFieldResolutionResult
     case object UnresolvedTypes extends JavaFieldResolutionResult
   }
