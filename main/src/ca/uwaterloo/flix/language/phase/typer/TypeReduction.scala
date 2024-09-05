@@ -333,6 +333,15 @@ object TypeReduction {
       }
   }
 
+  private def getField(clazz: Class[_], fieldName: String): Option[Field] = {
+    if (clazz.isArray && fieldName == "length") None // TODO this should return some of the length field
+    else try {
+      Some(clazz.getField(fieldName))
+    } catch {
+      case _: NoSuchFieldException => None
+    }
+  }
+
   /**
     * Returns the methods of the class INCLUDING implicit interface inheritance from Object.
     */
@@ -354,15 +363,6 @@ object TypeReduction {
     } else {
       // Case 2: Class. Just return the methods.
       clazz.getMethods.toList
-    }
-  }
-
-  private def getField(clazz: Class[_], fieldName: String): Option[Field] = {
-    if (clazz.isArray && fieldName == "length") None // TODO this should return some of the length field
-    else try {
-      Some(clazz.getField(fieldName))
-    } catch {
-      case _: NoSuchFieldException => None
     }
   }
 
