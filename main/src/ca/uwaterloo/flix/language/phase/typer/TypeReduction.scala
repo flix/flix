@@ -205,6 +205,33 @@ object TypeReduction {
     } else JavaMethodResolutionResult.UnresolvedTypes
   }
 
+  /**
+    * This is the resolution process of the Java static method method, member of the class of the Java class clazz.
+    * Returns the return type of the Java static method according to the class of clazz and the arguments of the method,
+    * if there exists such a Java method.
+    * Otherwise, either the Java method could not be found with the given method signature, or, there was an ambiguity.
+    *
+    * @param clazz       the Java class
+    * @param methodName  the Java method, supposedly member of the class of the Java object
+    * @param ts          the list containing the type of thisObj and the arguments of the method
+    * @param loc         the location where the Java method has been called
+    * @return            A JavaMethodResolutionResult object that indicates the status of the resolution progress
+    */
+  def lookupStaticMethod(clazz: Class[_], methodName: String, ts: List[Type], loc: SourceLocation): JavaMethodResolutionResult = {
+    if (ts.forall(isKnown)) retrieveMethod(clazz, methodName, ts, isStatic = true, loc = loc)
+    else JavaMethodResolutionResult.UnresolvedTypes
+  }
+
+  /**
+    * This is the resolution process of the Java field, member of the class of the Java object thisObj.
+    * Returns the type of the Java field according to the type of thisObj if there exists such a Java method.
+    * Otherwise, either the Java field could not be found with the given name.
+    *
+    * @param thisObj    the Java object
+    * @param fieldName  the Java field, supposedly member of the class of the Java object
+    * @param loc        the location where the Java field has been accessed
+    * @return           A JavaFieldResolutionResult object that indicates the status of the resolution progress
+    */
   def lookupField(thisObj: Type, fieldName: String, loc: SourceLocation): JavaFieldResolutionResult = {
     if (isKnown(thisObj)) {
       classFromFlixType(thisObj) match {
@@ -215,11 +242,6 @@ object TypeReduction {
       }
     }
     else JavaFieldResolutionResult.UnresolvedTypes
-  }
-
-  def lookupStaticMethod(clazz: Class[_], methodName: String, ts: List[Type], loc: SourceLocation): JavaMethodResolutionResult = {
-    if (ts.forall(isKnown)) retrieveMethod(clazz, methodName, ts, isStatic = true, loc = loc)
-    else JavaMethodResolutionResult.UnresolvedTypes
   }
 
   /**
