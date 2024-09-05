@@ -29,9 +29,9 @@
 ///
 pub struct MutDeque[a: Type, r: Region] {
     r: Region[r],
-    values: Array[a, r],
-    front: Int32,
-    back: Int32
+    mut values: Array[a, r],
+    mut front: Int32,
+    mut back: Int32
 }
 
 instance Iterable[MutDeque[a, r]] {
