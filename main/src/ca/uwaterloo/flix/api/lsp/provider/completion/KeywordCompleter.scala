@@ -28,19 +28,19 @@ object KeywordCompleter {
     */
   def getOtherKeywords(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] =
     List(
-      Completion.KeywordCompletion("with"              , Priority.highest),
-      Completion.KeywordCompletion("law"               , Priority.higher),
-      Completion.KeywordCompletion("@Test"             , Priority.high),
-      Completion.KeywordCompletion("where"             , Priority.low),
-      Completion.KeywordCompletion("fix"               , Priority.low),
-      Completion.KeywordCompletion("@Deprecated"       , Priority.lowest),
-      Completion.KeywordCompletion("@Parallel"         , Priority.lowest),
-      Completion.KeywordCompletion("@ParallelWhenPure" , Priority.lowest),
-      Completion.KeywordCompletion("@Lazy"             , Priority.lowest),
-      Completion.KeywordCompletion("@LazyWhenPure"     , Priority.lowest),
-      Completion.KeywordCompletion("Record"            , Priority.lowest),
-      Completion.KeywordCompletion("redef"             , Priority.lowest),
-      Completion.KeywordCompletion("Schema"            , Priority.lowest),
+      Completion.KeywordCompletion("with"              , Priority.Highest),
+      Completion.KeywordCompletion("law"               , Priority.Higher),
+      Completion.KeywordCompletion("@Test"             , Priority.High),
+      Completion.KeywordCompletion("where"             , Priority.Low),
+      Completion.KeywordCompletion("fix"               , Priority.Low),
+      Completion.KeywordCompletion("@Deprecated"       , Priority.Lowest),
+      Completion.KeywordCompletion("@Parallel"         , Priority.Lowest),
+      Completion.KeywordCompletion("@ParallelWhenPure" , Priority.Lowest),
+      Completion.KeywordCompletion("@Lazy"             , Priority.Lowest),
+      Completion.KeywordCompletion("@LazyWhenPure"     , Priority.Lowest),
+      Completion.KeywordCompletion("Record"            , Priority.Lowest),
+      Completion.KeywordCompletion("redef"             , Priority.Lowest),
+      Completion.KeywordCompletion("Schema"            , Priority.Lowest),
     )
 
   /**
@@ -48,8 +48,8 @@ object KeywordCompleter {
     */
   def getTraitKeywords(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] =
     List(
-      Completion.KeywordCompletion("def", Priority.lower),
-      Completion.KeywordCompletion("pub", Priority.lower),
+      Completion.KeywordCompletion("def", Priority.Lower),
+      Completion.KeywordCompletion("pub", Priority.Lower),
     )
 
 
@@ -58,17 +58,17 @@ object KeywordCompleter {
     */
   def getDeclKeywords(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] =
     List(
-      Completion.KeywordCompletion("def"      , Priority.highest),
-      Completion.KeywordCompletion("pub"      , Priority.higher),
-      Completion.KeywordCompletion("enum"     , Priority.high),
-      Completion.KeywordCompletion("type"     , Priority.high),
-      Completion.KeywordCompletion("instance" , Priority.high),
-      Completion.KeywordCompletion("mod"      , Priority.low),
-      Completion.KeywordCompletion("eff"      , Priority.lower),
-      Completion.KeywordCompletion("struct"   , Priority.lower),
-      Completion.KeywordCompletion("sealed"   , Priority.lowest),
-      Completion.KeywordCompletion("trait"    , Priority.lowest),
-      Completion.KeywordCompletion("import"   , Priority.lowest),
+      Completion.KeywordCompletion("def"      , Priority.Highest),
+      Completion.KeywordCompletion("pub"      , Priority.Higher),
+      Completion.KeywordCompletion("enum"     , Priority.High),
+      Completion.KeywordCompletion("type"     , Priority.High),
+      Completion.KeywordCompletion("instance" , Priority.High),
+      Completion.KeywordCompletion("mod"      , Priority.Low),
+      Completion.KeywordCompletion("eff"      , Priority.Lower),
+      Completion.KeywordCompletion("struct"   , Priority.Lower),
+      Completion.KeywordCompletion("sealed"   , Priority.Lowest),
+      Completion.KeywordCompletion("trait"    , Priority.Lowest),
+      Completion.KeywordCompletion("import"   , Priority.Lowest),
     )
 
   /**
@@ -76,7 +76,7 @@ object KeywordCompleter {
     */
   def getEnumKeywords(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] =
     List(
-      Completion.KeywordCompletion("case", Priority.low)
+      Completion.KeywordCompletion("case", Priority.Low)
     )
 
   /**
@@ -119,5 +119,5 @@ object KeywordCompleter {
       "use",
       "without",
       "yield"
-    ) map (name => Completion.KeywordCompletion(name, Priority.lower))
+    ) map (name => Completion.KeywordCompletion(name, Priority.Lower))
 }

@@ -34,19 +34,19 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 sealed trait Priority {
 }
 object Priority {
-  case object highest extends Priority
-  case object higher extends Priority
-  case object high extends Priority
-  case object low extends Priority
-  case object lower extends Priority
-  case object lowest extends Priority
+  case object Highest extends Priority
+  case object Higher extends Priority
+  case object High extends Priority
+  case object Low extends Priority
+  case object Lower extends Priority
+  case object Lowest extends Priority
 
   def toSortText(p: Priority, label: String): String = p match {
-  	case Priority.highest => s"1$label"
-  	case Priority.higher  => s"2$label"
-  	case Priority.high    => s"3$label"
-  	case Priority.low     => s"4$label"
-  	case Priority.lower   => s"5$label"
-  	case Priority.lowest  => s"6$label"
+  	case Priority.Highest => s"1$label"
+  	case Priority.Higher  => s"2$label"
+  	case Priority.High    => s"3$label"
+  	case Priority.Low     => s"4$label"
+  	case Priority.Lower   => s"5$label"
+  	case Priority.Lowest  => s"6$label"
   }
 }
