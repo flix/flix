@@ -326,6 +326,10 @@ object TypeReduction {
     }
   }
 
+  /**
+    * Helper method to retrieve a field given its class and name.
+    * Returns a JavaFieldResolutionResult either containing the Java field or a FieldNotFound object.
+    */
   private def retrieveField(clazz: Class[_], fieldName: String, loc: SourceLocation): JavaFieldResolutionResult = {
       getField(clazz, fieldName) match {
         case Some(field) => JavaFieldResolutionResult.Resolved(Type.Cst(TypeConstructor.JvmField(field), loc))
@@ -333,9 +337,13 @@ object TypeReduction {
       }
   }
 
+  /**
+    * Returns the `fieldName` field of `clazz` if it exists.
+    *
+    * Field name "length" of array classes always return `None` (see Class.getField).
+    */
   private def getField(clazz: Class[_], fieldName: String): Option[Field] = {
-    if (clazz.isArray && fieldName == "length") None // TODO this should return some of the length field
-    else try {
+    try {
       Some(clazz.getField(fieldName))
     } catch {
       case _: NoSuchFieldException => None
