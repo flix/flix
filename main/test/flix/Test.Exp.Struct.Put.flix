@@ -1,8 +1,8 @@
 struct Person[r] {
-    fstName: String,
-    lstName: String,
-    age: Int32,
-    cowboy: Bool
+    mut fstName: String,
+    mut lstName: String,
+    mut age: Int32,
+    mut cowboy: Bool
 }
 mod Person {
 
@@ -85,9 +85,9 @@ mod Person {
 }
 
 struct BinaryTree[t, r] {
-    left: Option[BinaryTree[t, r]],
-    right: Option[BinaryTree[t, r]],
-    node_value: t
+    mut left: Option[BinaryTree[t, r]],
+    mut right: Option[BinaryTree[t, r]],
+    mut node_value: t
 }
 
 mod BinaryTree {
@@ -151,7 +151,7 @@ mod BinaryTree {
 
 }
 struct Nested[t, r] {
-    v : t
+    mut v : t
 }
 
 mod Nested {
@@ -166,8 +166,8 @@ mod Nested {
 }
 
 struct Lst[t, r] {
-    value: t,
-    next: Option[Lst[t, r]]
+    mut value: t,
+    mut next: Option[Lst[t, r]]
 }
 mod Lst {
     def listAppend(list: Lst[t, r], rc: Region[r], value: t): Unit \ r = match list->next {

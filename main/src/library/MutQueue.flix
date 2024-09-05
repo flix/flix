@@ -25,8 +25,8 @@
 ///
 pub struct MutQueue[a: Type, r: Region] {
     r: Region[r],
-    values: Array[a, r],
-    size: Int32
+    mut values: Array[a, r],
+    mut size: Int32
 }
 
 instance Iterable[MutQueue[a, r]] {

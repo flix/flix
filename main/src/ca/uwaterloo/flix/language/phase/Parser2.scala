@@ -1157,7 +1157,7 @@ object Parser2 {
       zeroOrMore(
         namedTokenSet = NamedTokenSet.FromKinds(NAME_FIELD),
         getItem = structField,
-        checkForItem = NAME_FIELD.contains,
+        checkForItem = (token => NAME_FIELD.contains(token) || token.isModifier),
         breakWhen = _.isRecoverExpr,
         delimiterL = TokenKind.CurlyL,
         delimiterR = TokenKind.CurlyR,
@@ -1169,6 +1169,7 @@ object Parser2 {
     private def structField()(implicit s: State): Mark.Closed = {
       val mark = open()
       docComment()
+      modifiers()
       name(NAME_FIELD, context = SyntacticContext.Decl.Struct)
       expect(TokenKind.Colon, SyntacticContext.Decl.Struct)
       Type.ttype()

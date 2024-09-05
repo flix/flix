@@ -1,8 +1,8 @@
 /// A mutable struct that represents a person
 struct Person[r] {
     name: String,
-    age: Int32,
-    height: Int32
+    mut age: Int32,
+    mut height: Int32
 }
 
 mod Person {
