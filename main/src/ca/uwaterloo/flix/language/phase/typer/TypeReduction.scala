@@ -338,7 +338,7 @@ object TypeReduction {
   }
 
   /**
-    * Returns the `fieldName` field of `clazz` if it exists and is public.
+    * Returns the `fieldName` field of `clazz` if it exists.
     *
     * Field name "length" of array classes always return `None` (see Class.getField).
     */
