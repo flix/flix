@@ -1172,6 +1172,41 @@ object Type {
   }
 
   /**
+    * Returns the [[Class]] object of `tpe`, if it exists.
+    *
+    * Almost the inverse function of [[getFlixType]], but arrays and unit returns None.
+    */
+  def classFromFlixType(tpe: Type): Option[Class[?]] = tpe match {
+    case Type.Bool =>
+      Some(java.lang.Boolean.TYPE)
+    case Type.Int8 =>
+      Some(java.lang.Byte.TYPE)
+    case Type.Int16 =>
+      Some(java.lang.Short.TYPE)
+    case Type.Int32 =>
+      Some(java.lang.Integer.TYPE)
+    case Type.Int64 =>
+      Some(java.lang.Long.TYPE)
+    case Type.Char =>
+      Some(java.lang.Character.TYPE)
+    case Type.Float32 =>
+      Some(java.lang.Float.TYPE)
+    case Type.Float64 =>
+      Some(java.lang.Double.TYPE)
+    case Type.Cst(TypeConstructor.BigDecimal, _) =>
+      Some(classOf[java.math.BigDecimal])
+    case Type.Cst(TypeConstructor.BigInt, _) =>
+      Some(classOf[java.math.BigInteger])
+    case Type.Cst(TypeConstructor.Str, _) =>
+      Some(classOf[String])
+    case Type.Cst(TypeConstructor.Regex, _) =>
+      Some(classOf[java.util.regex.Pattern])
+    case Type.Cst(TypeConstructor.Native(clazz), _) =>
+      Some(clazz)
+    case _ => None
+  }
+
+  /**
     * Returns the type of the given constant.
     */
   def constantType(cst: Ast.Constant): Type = cst match {

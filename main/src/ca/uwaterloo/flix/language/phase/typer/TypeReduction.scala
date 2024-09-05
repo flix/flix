@@ -196,7 +196,7 @@ object TypeReduction {
    */
   def lookupMethod(thisObj: Type, methodName: String, ts: List[Type], loc: SourceLocation): JavaMethodResolutionResult = {
     if (isKnown(thisObj) && ts.forall(isKnown)) {
-      classFromFlixType(thisObj) match {
+      Type.classFromFlixType(thisObj) match {
         case Some(clazz) =>
           retrieveMethod(clazz, methodName, ts, loc = loc)
         case None =>
@@ -234,7 +234,7 @@ object TypeReduction {
     */
   def lookupField(thisObj: Type, fieldName: String, loc: SourceLocation): JavaFieldResolutionResult = {
     if (isKnown(thisObj)) {
-      classFromFlixType(thisObj) match {
+      Type.classFromFlixType(thisObj) match {
         case Some(clazz) =>
           retrieveField(clazz, fieldName, loc)
         case None =>
@@ -331,15 +331,6 @@ object TypeReduction {
         case Some(field) => JavaFieldResolutionResult.Resolved(Type.Cst(TypeConstructor.JvmField(field), loc))
         case None => JavaFieldResolutionResult.FieldNotFound
       }
-  }
-
-  private def classFromFlixType(tpe: Type): Option[Class[_]] = tpe match {
-    case Type.Cst(TypeConstructor.Str, _) => Some(classOf[String])
-    case Type.Cst(TypeConstructor.BigInt, _) => Some(classOf[BigInteger])
-    case Type.Cst(TypeConstructor.BigDecimal, _) => Some(classOf[java.math.BigDecimal])
-    case Type.Cst(TypeConstructor.Regex, _) => Some(classOf[java.util.regex.Pattern])
-    case Type.Cst(TypeConstructor.Native(clazz), _) => Some(clazz)
-    case _ => None
   }
 
   /**
