@@ -15,7 +15,7 @@
  */
 
 struct Ref[a, r] {
-    v: a
+    mut v: a
 }
 
 mod Ref {
