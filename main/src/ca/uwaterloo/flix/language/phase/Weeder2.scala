@@ -3182,11 +3182,11 @@ object Weeder2 {
   /**
     * Picks out the first sub-tree of a specific [[TreeKind]].
     */
-  private def pick(kind: TreeKind, tree: Tree): Validation[Tree, CompilationMessage] = {
+  private def pick(kind: TreeKind, tree: Tree, sctx: SyntacticContext = SyntacticContext.Unknown): Validation[Tree, CompilationMessage] = {
     tryPick(kind, tree) match {
       case Some(t) => Validation.success(t)
       case None =>
-        val error = NeedAtleastOne(NamedTokenSet.FromTreeKinds(Set(kind)), SyntacticContext.Unknown, loc = tree.loc)
+        val error = NeedAtleastOne(NamedTokenSet.FromTreeKinds(Set(kind)), sctx, loc = tree.loc)
         Validation.HardFailure(Chain(error))
     }
   }
