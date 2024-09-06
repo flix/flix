@@ -706,7 +706,7 @@ object Namer {
 
     case DesugaredAst.Expr.StructNew(qname, exps, exp, loc) =>
       val e = visitExp(exp, ns0)
-      val es = visitStructFields(exps, ns0)
+      val es = exps.map(visitStructField(ns0))
       NamedAst.Expr.StructNew(qname, es, e, loc)
 
     case DesugaredAst.Expr.StructGet(exp, name, loc) =>
@@ -961,12 +961,6 @@ object Namer {
       val e = visitExp(exp0, ns0)
       (n, e)
   }
-
-  /**
-    * Performs naming on the given struct field expressions `exps0`.
-    */
-  private def visitStructFields(exps0: List[(Name.Label, DesugaredAst.Expr)], ns0: Name.NName)(implicit scope: Scope, sctx: SharedContext, flix: Flix): List[(Name.Label, NamedAst.Expr)] =
-    exps0.map(visitStructField(ns0))
 
   /**
     * Performs naming on the given try-catch rule `rule0`.
