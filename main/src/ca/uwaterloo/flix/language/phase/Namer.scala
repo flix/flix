@@ -427,7 +427,7 @@ object Namer {
 
       val sts = superTraits.map(visitTraitConstraint)
       val ascs = assocs.map(visitAssocTypeSig(_, sym)) // TODO switch param order to match visitSig
-      val sigs = visitSigs(signatures, ns0, sym)
+      val sigs = signatures.map(visitSig(_, ns0, sym))
       val ls = visitDefs(laws, ns0)
 
       NamedAst.Declaration.Trait(doc, ann, mod, sym, tparam, sts, ascs, sigs, ls, loc)
@@ -486,13 +486,6 @@ object Namer {
       val sym = Symbol.mkSigSym(traitSym, ident)
       val spec = NamedAst.Spec(doc, ann, mod, tparams, fps, t, ef, tcsts, ecsts, loc)
       NamedAst.Declaration.Sig(sym, spec, e)
-  }
-
-  /**
-    * Performs naming on the given signature declarations `sigs0`.
-    */
-  private def visitSigs(sigs0: List[DesugaredAst.Declaration.Sig], ns0: Name.NName, sym: Symbol.TraitSym)(implicit sctx: SharedContext, flix: Flix): List[NamedAst.Declaration.Sig] = {
-    sigs0.map(visitSig(_, ns0, sym))
   }
 
   /**
