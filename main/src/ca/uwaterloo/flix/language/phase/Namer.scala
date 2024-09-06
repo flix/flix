@@ -650,7 +650,7 @@ object Namer {
 
     case DesugaredAst.Expr.TypeMatch(exp, rules, loc) =>
       val e = visitExp(exp, ns0)
-      val rs = visitTypeMatchRules(rules, ns0)
+      val rs = rules.map(visitTypeMatchRule(_, ns0))
       NamedAst.Expr.TypeMatch(e, rs, loc)
 
     case DesugaredAst.Expr.RestrictableChoose(star, exp, rules, loc) =>
@@ -941,13 +941,6 @@ object Namer {
       val t = visitType(tpe)
       val b = visitExp(body, ns0)
       NamedAst.TypeMatchRule(sym, t, b)
-  }
-
-  /**
-    * Performs naming on the given typematch rules `rules0`.
-    */
-  private def visitTypeMatchRules(rules0: List[DesugaredAst.TypeMatchRule], ns0: Name.NName)(implicit scope: Scope, sctx: SharedContext, flix: Flix): List[NamedAst.TypeMatchRule] = {
-    rules0.map(visitTypeMatchRule(_, ns0))
   }
 
   /**
