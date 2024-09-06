@@ -16,10 +16,9 @@
 package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.Denotation
-import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.ast.*
 import ConstraintGen.{visitExp, visitPattern}
-import ca.uwaterloo.flix.language.ast.shared.Scope
+import ca.uwaterloo.flix.language.ast.shared.{Denotation, Scope}
 import ca.uwaterloo.flix.language.phase.util.PredefinedTraits
 
 object SchemaConstraintGen {
@@ -259,7 +258,7 @@ object SchemaConstraintGen {
   /**
     * Returns the trait constraints for the given term types `ts` with the given denotation `den`.
     */
-  private def getTermTraitConstraints(den: Ast.Denotation, ts: List[Type], root: KindedAst.Root, loc: SourceLocation): List[Ast.TraitConstraint] = den match {
+  private def getTermTraitConstraints(den: Denotation, ts: List[Type], root: KindedAst.Root, loc: SourceLocation): List[Ast.TraitConstraint] = den match {
     case Denotation.Relational =>
       ts.flatMap(mkTraitConstraintsForRelationalTerm(_, root, loc))
     case Denotation.Latticenal =>
