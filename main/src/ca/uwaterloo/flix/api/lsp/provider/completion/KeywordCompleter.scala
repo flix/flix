@@ -62,42 +62,62 @@ object KeywordCompleter {
     */
   def getExprKeywords: Iterable[Completion] =
     List(
-      "and",
-      "as",
-      "def",
-      "discard",
-      "do",
-      "else",
-      "false",
-      "forA",
-      "forM",
-      "force",
-      "foreach",
-      "from",
-      "if",
-      "inject",
-      "into",
-      "lazy",
-      "let",
-      "match",
-      "new",
-      "not",
-      "or",
-      "par",
-      "query",
-      "region",
-      "select",
-      "solve",
-      "spawn",
-      "struct",
-      "true",
-      "try",
-      "typematch",
-      "unsafe",
-      "use",
-      "without",
-      "yield"
-    ) map (name => Completion.KeywordCompletion(name, Priority.Lower))
+      // A
+      Completion.KeywordCompletion("and"      , Priority.High),
+      Completion.KeywordCompletion("as"       , Priority.Low),
+      // D
+      Completion.KeywordCompletion("def"      , Priority.Higher),
+      Completion.KeywordCompletion("discard"  , Priority.Low),
+      Completion.KeywordCompletion("do"       , Priority.High),
+      // E
+      Completion.KeywordCompletion("else"     , Priority.Default),
+      // F
+      Completion.KeywordCompletion("false"    , Priority.Higher),
+      Completion.KeywordCompletion("forA"     , Priority.Lowest),
+      Completion.KeywordCompletion("forM"     , Priority.Low),
+      Completion.KeywordCompletion("force"    , Priority.High),
+      Completion.KeywordCompletion("foreach"  , Priority.Lower),
+      Completion.KeywordCompletion("from"     , Priority.Highest),
+      // I
+      Completion.KeywordCompletion("if"       , Priority.Higher),
+      Completion.KeywordCompletion("inject"   , Priority.Low),
+      Completion.KeywordCompletion("into"     , Priority.High),
+      // L
+      Completion.KeywordCompletion("lazy"     , Priority.Low),
+      Completion.KeywordCompletion("let"      , Priority.High),
+      // M
+      Completion.KeywordCompletion("match"    , Priority.Default),
+      // N
+      Completion.KeywordCompletion("new"      , Priority.Low),
+      Completion.KeywordCompletion("not"      , Priority.High),
+      // O
+      Completion.KeywordCompletion("or"       , Priority.Default),
+      // P
+      Completion.KeywordCompletion("par"      , Priority.Default),
+      // Q
+      Completion.KeywordCompletion("query"    , Priority.Default),
+      // R
+      Completion.KeywordCompletion("region"   , Priority.Default),
+      // S
+      Completion.KeywordCompletion("select"   , Priority.Higher),
+      Completion.KeywordCompletion("solve"    , Priority.High),
+      Completion.KeywordCompletion("spawn"    , Priority.Low),
+      Completion.KeywordCompletion("struct"   , Priority.Lower),
+      // T
+      Completion.KeywordCompletion("true"     , Priority.Higher),
+      Completion.KeywordCompletion("try"      , Priority.High),
+      Completion.KeywordCompletion("typematch", Priority.Low),
+      // U    
+      // experitments on occurances in stdlib shows *exact* same amount of
+      // occurances of these two. However, I'm fairly confident that
+      // `use` would occur much more often in most programs.
+      Completion.KeywordCompletion("unsafe"   , Priority.Low),
+      Completion.KeywordCompletion("use"      , Priority.High),
+      // W
+      Completion.KeywordCompletion("without"  , Priority.Default),
+      // Y
+      Completion.KeywordCompletion("yield"    , Priority.Default)
+    )
            
   /**
     * Miscellaneous keywords.
