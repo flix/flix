@@ -29,17 +29,24 @@ object KeywordCompleter {
     */
   def getDeclKeywords: Iterable[Completion] =
     List(
-      Completion.KeywordCompletion("def"      , Priority.Highest),
-      Completion.KeywordCompletion("pub"      , Priority.Higher),
+      // D
+      Completion.KeywordCompletion("def"      , Priority.Default),
+      // E
+      Completion.KeywordCompletion("eff"      , Priority.Low),
       Completion.KeywordCompletion("enum"     , Priority.High),
-      Completion.KeywordCompletion("type"     , Priority.High),
+      // I
+      Completion.KeywordCompletion("import"   , Priority.Low),
       Completion.KeywordCompletion("instance" , Priority.High),
-      Completion.KeywordCompletion("mod"      , Priority.Low),
-      Completion.KeywordCompletion("eff"      , Priority.Lower),
-      Completion.KeywordCompletion("struct"   , Priority.Lower),
-      Completion.KeywordCompletion("sealed"   , Priority.Lowest),
-      Completion.KeywordCompletion("trait"    , Priority.Lowest),
-      Completion.KeywordCompletion("import"   , Priority.Lowest),
+      // M
+      Completion.KeywordCompletion("mod"      , Priority.Default),
+      // P
+      Completion.KeywordCompletion("pub"      , Priority.Default),
+      // S
+      Completion.KeywordCompletion("sealed"   , Priority.Low),
+      Completion.KeywordCompletion("struct"   , Priority.High),
+      // T
+      Completion.KeywordCompletion("trait"    , Priority.Low),
+      Completion.KeywordCompletion("type"     , Priority.High),
     )
 
   /**
