@@ -57,7 +57,7 @@ object Stratifier {
 
     // Compute the stratification at every datalog expression in the ast.
     val ds = ParOps.parMapValues(root.defs)(visitDef)
-    val is = ParOps.parMapValues(root.instances)(visitInstances)
+    val is = ParOps.parMapValues(root.instances)(is0 => is0.map(visitInstance))
     val ts = ParOps.parMapValues(root.traits)(visitTrait)
 
     Validation.toSuccessOrSoftFailure(root.copy(defs = ds, instances = is, traits = ts), sctx.errors.asScala)
@@ -86,13 +86,6 @@ object Stratifier {
   private def visitInstance(i0: TypedAst.Instance)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): TypedAst.Instance = {
     val ds = visitDefs(i0.defs)
     i0.copy(defs = ds)
-  }
-
-  /**
-    * Performs Stratification of the given instances `is0`.
-    */
-  private def visitInstances(is0: List[TypedAst.Instance])(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): List[TypedAst.Instance] = {
-    is0.map(visitInstance)
   }
 
   /**
