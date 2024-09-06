@@ -159,9 +159,9 @@ mod Test.Exp.IndexableMut {
         try {
             let m = Map#{0 => 1, 1 => 2, 2 => 3, 3 => 4} |> Map.toMutMap(rc);
             m[4] = -1;
-            false
+            m[4] == -1
         } with KeyNotFound {
-            def keyNotFound(_, _) = true
+            def keyNotFound(_, _) = false
         }
     }
 
@@ -170,9 +170,9 @@ mod Test.Exp.IndexableMut {
         try {
             let m = Map#{0 => 1, 1 => 2, 2 => 3, 3 => 4} |> Map.toMutMap(rc);
             m[-1] = -1;
-            false
+            m[-1] == -1
         } with KeyNotFound {
-            def keyNotFound(_, _) = true
+            def keyNotFound(_, _) = false
         }
     }
 
