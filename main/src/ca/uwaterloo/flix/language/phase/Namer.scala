@@ -655,7 +655,7 @@ object Namer {
 
     case DesugaredAst.Expr.RestrictableChoose(star, exp, rules, loc) =>
       val e = visitExp(exp, ns0)
-      val rs = visitRestrictableChooseRules(rules, ns0)
+      val rs = rules.map(visitRestrictableChooseRule(_, ns0))
       NamedAst.Expr.RestrictableChoose(star, e, rs, loc)
 
     case DesugaredAst.Expr.Tuple(exps, loc) =>
@@ -951,13 +951,6 @@ object Namer {
       val p = visitRestrictablePattern(pat)
       val e1 = visitExp(exp1, ns0)
       NamedAst.RestrictableChooseRule(p, e1)
-  }
-
-  /**
-    * Performs naming on the given restrictable choose rules `rules0`.
-    */
-  private def visitRestrictableChooseRules(rules0: List[DesugaredAst.RestrictableChooseRule], ns0: Name.NName)(implicit scope: Scope, sctx: SharedContext, flix: Flix): List[NamedAst.RestrictableChooseRule] = {
-    rules0.map(visitRestrictableChooseRule(_, ns0))
   }
 
   /**
