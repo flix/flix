@@ -27,41 +27,6 @@ import java.util.Objects
 object Ast {
 
   /**
-    * A common supertype for constant values.
-    */
-  sealed trait Constant
-
-  object Constant {
-    case object Unit extends Constant
-
-    case object Null extends Constant
-
-    case class Bool(lit: scala.Boolean) extends Constant
-
-    case class Char(lit: scala.Char) extends Constant
-
-    case class Float32(lit: scala.Float) extends Constant
-
-    case class Float64(lit: scala.Double) extends Constant
-
-    case class BigDecimal(lit: java.math.BigDecimal) extends Constant
-
-    case class Int8(lit: scala.Byte) extends Constant
-
-    case class Int16(lit: scala.Short) extends Constant
-
-    case class Int32(lit: scala.Int) extends Constant
-
-    case class Int64(lit: scala.Long) extends Constant
-
-    case class BigInt(lit: java.math.BigInteger) extends Constant
-
-    case class Str(lit: java.lang.String) extends Constant
-
-    case class Regex(lit: java.util.regex.Pattern) extends Constant
-  }
-
-  /**
     * A common super type for AST nodes that represent annotations.
     */
   trait Annotation {
