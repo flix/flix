@@ -67,7 +67,7 @@ object Stratifier {
     * Performs Stratification of the given trait `t0`.
     */
   private def visitTrait(t0: TypedAst.Trait)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): TypedAst.Trait = {
-    val nl = visitDefs(t0.laws)
+    val nl = t0.laws.map(visitDef)
     val ns = t0.sigs.map(visitSig)
     t0.copy(laws = nl, sigs = ns)
   }
@@ -84,7 +84,7 @@ object Stratifier {
     * Performs Stratification of the given instance `i0`.
     */
   private def visitInstance(i0: TypedAst.Instance)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): TypedAst.Instance = {
-    val ds = visitDefs(i0.defs)
+    val ds = i0.defs.map(visitDef)
     i0.copy(defs = ds)
   }
 
@@ -94,13 +94,6 @@ object Stratifier {
   private def visitDef(def0: Def)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): Def = {
     val e = visitExp(def0.exp)
     def0.copy(exp = e)
-  }
-
-  /**
-    * Performs stratification of the given definitions `defs0`.
-    */
-  private def visitDefs(defs0: List[Def])(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): List[Def] = {
-    defs0.map(visitDef)
   }
 
   /**
