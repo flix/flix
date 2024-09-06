@@ -183,7 +183,7 @@ object Stratifier {
 
     case Expr.RestrictableChoose(star, exp, rules, tpe, eff, loc) =>
       val e = visitExp(exp)
-      val rs = visitRestrictableChooseRules(rules)
+      val rs = rules.map(visitRestrictableChooseRule)
       Expr.RestrictableChoose(star, e, rs, tpe, eff, loc)
 
     case Expr.Tag(sym, exp, tpe, eff, loc) =>
@@ -439,10 +439,6 @@ object Stratifier {
     case RestrictableChooseRule(pat, exp1) =>
       val e1 = visitExp(exp1)
       RestrictableChooseRule(pat, e1)
-  }
-
-  private def visitRestrictableChooseRules(rules: List[RestrictableChooseRule])(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): List[RestrictableChooseRule] = {
-    rules.map(visitRestrictableChooseRule)
   }
 
   private def visitTryCatchRule(rule: CatchRule)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): CatchRule = rule match {
