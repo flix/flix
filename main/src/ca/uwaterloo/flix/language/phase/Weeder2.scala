@@ -781,8 +781,12 @@ object Weeder2 {
           val maybeType = tryPick(TreeKind.Type.Type, tree)
           // Check for missing or illegal type ascription
           (maybeType, presence) match {
-            case (None, Presence.Required) => Validation.toHardFailure(MissingFormalParamAscription(ident.name, tree.loc))
-            case (Some(_), Presence.Forbidden) => Validation.toHardFailure(IllegalFormalParamAscription(tree.loc))
+            case (None, Presence.Required) =>
+              val e = MissingFormalParamAscription(ident.name, tree.loc)
+              Validation.toSoftFailure(FormalParam(ident, mods, Some(Type.Error(tree.loc.asSynthetic)), tree.loc), e)
+            case (Some(_), Presence.Forbidden) =>
+              val e = IllegalFormalParamAscription(tree.loc)
+              Validation.toSoftFailure(FormalParam(ident, mods, None, tree.loc), e)
             case (Some(typeTree), _) => mapN(Types.visitType(typeTree)) { tpe => FormalParam(ident, mods, Some(tpe), tree.loc) }
             case (None, _) => Validation.success(FormalParam(ident, mods, None, tree.loc))
           }
