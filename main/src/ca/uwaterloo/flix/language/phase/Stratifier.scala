@@ -370,7 +370,7 @@ object Stratifier {
 
     case Expr.ParYield(frags, exp, tpe, eff, loc) =>
       val e = visitExp(exp)
-      val fs = visitParYieldFragments(frags)
+      val fs = frags.map(visitParYieldFragment)
       Expr.ParYield(fs, e, tpe, eff, loc)
 
     case Expr.Lazy(exp, tpe, loc) =>
@@ -470,10 +470,6 @@ object Stratifier {
     case ParYieldFragment(pat, exp1, loc1) =>
       val e1 = visitExp(exp1)
       ParYieldFragment(pat, e1, loc1)
-  }
-
-  private def visitParYieldFragments(frags: List[ParYieldFragment])(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): List[ParYieldFragment] = {
-    frags.map(visitParYieldFragment)
   }
 
   /**
