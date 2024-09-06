@@ -18,12 +18,13 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Label, LabelledEdge, LabelledPrecedenceGraph}
+import ca.uwaterloo.flix.language.ast.Ast.{Label, LabelledEdge, LabelledPrecedenceGraph}
 import ca.uwaterloo.flix.language.ast.Type.eraseAliases
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
-import ca.uwaterloo.flix.language.ast.TypedAst._
+import ca.uwaterloo.flix.language.ast.TypedAst.*
+import ca.uwaterloo.flix.language.ast.shared.Denotation
 import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor}
-import ca.uwaterloo.flix.language.dbg.AstPrinter._
+import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
 /**
