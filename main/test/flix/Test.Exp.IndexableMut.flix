@@ -231,4 +231,73 @@ mod Test.Exp.IndexableMut {
         }
     }
 
+
+    @Test
+    def multiple01(): Bool = region rc {
+        try {
+            let a = Array#{Array#{Array#{1, 2, 3, 4} @ rc } @ rc } @ rc;
+            a[0][0][2] = 42;
+            a[0][0][2] == 42
+        } with OutOfBounds {
+            def outOfBounds(_, _) = false
+        }
+    }
+
+    @Test
+    def multiple02(): Bool = region rc {
+        try {
+            let a = Array#{Array#{Array#{1, 2, 3, 4} @ rc } @ rc } @ rc;
+            a[0][0] = Array#{42} @ rc;
+            a[0][0][1] == 42
+        } with OutOfBounds {
+            def outOfBounds(_, _) = false
+        }
+    }
+
+    @Test
+    def multiple03(): Bool = region rc {
+        try {
+            let a = Array#{Array#{Array#{1, 2, 3, 4} @ rc } @ rc } @ rc;
+            a[0][0] = Array#{42} @ rc;
+            a[0][0][2] == 42
+        } with OutOfBounds {
+            def outOfBounds(_, _) = true
+        }
+    }
+
+    @Test
+    def genWithRecord01(): Bool = region rc {
+        try {
+            f()()#a[0]()[0]#r#g(rc)[2] = 42;
+            true
+        } with OutOfBounds {
+            def outOfBounds(_, _) = false
+        }
+    }
+
+    @Test
+    def genWithRecord02(): Bool = region rc {
+        try {
+            f()()#a[0]()[0]#r#g(rc)[2] = 42;
+            true
+        } with OutOfBounds {
+            def outOfBounds(_, _) = false
+        }
+    }
+
+    @Test
+    def genWithRecord03(): Bool = region rc {
+        try {
+            f()()#a[0]()[0]#r#g(rc)[-1] = 42;
+            false
+        } with OutOfBounds {
+            def outOfBounds(_, _) = true
+        }
+    }
+
+    def f(): Unit -> { a = Vector[Unit -> Vector[{ r = { g = Region[r] -> Array[Int32, r] \ r } }]] } =
+        () -> {
+            a = Vector#{() -> Vector#{{ r = { g = (rc: Region[r]) -> Array#{1, 2, 3, 4} @ rc } }} }
+        }
+
 }
