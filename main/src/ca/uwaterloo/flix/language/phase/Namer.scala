@@ -417,14 +417,6 @@ object Namer {
   }
 
   /**
-    * Performs naming on the given associated type definitions `assocs0`.
-    */
-  private def visitAssocTypeDefs(assocs0: List[DesugaredAst.Declaration.AssocTypeDef])(implicit sctx: SharedContext, flix: Flix): List[NamedAst.Declaration.AssocTypeDef] = {
-    assocs0.map(visitAssocTypeDef)
-  }
-
-
-  /**
     * Performs naming on the given trait `trt`.
     */
   private def visitTrait(trt: DesugaredAst.Declaration.Trait, ns0: Name.NName)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.Trait = trt match {
@@ -449,7 +441,7 @@ object Namer {
       val tparams = getImplicitTypeParamsFromTypes(List(tpe))
       val t = visitType(tpe)
       val tcsts = visitTraitConstraints(tconstrs)
-      val ascs = visitAssocTypeDefs(assocs)
+      val ascs = assocs.map(visitAssocTypeDef)
       val ds = visitDefs(defs, ns0)
       NamedAst.Declaration.Instance(doc, ann, mod, clazz, tparams, t, tcsts, ascs, ds, ns0.parts, loc)
   }
