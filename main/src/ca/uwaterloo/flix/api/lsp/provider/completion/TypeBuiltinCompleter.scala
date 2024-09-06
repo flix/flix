@@ -35,9 +35,9 @@ object TypeBuiltinCompleter {
       // A
       polycompletion("Array"   , List("a", "r")    , Priority.Default),
       // B
-      Completion.TypeBuiltinCompletion("Bool"      , Priority.Higher),
-      Completion.TypeBuiltinCompletion("BigInt"    , Priority.High),
       Completion.TypeBuiltinCompletion("BigDecimal", Priority.Low),
+      Completion.TypeBuiltinCompletion("BigInt"    , Priority.High),
+      Completion.TypeBuiltinCompletion("Bool"      , Priority.Higher),
       // C
       Completion.TypeBuiltinCompletion("Char"      , Priority.Default),
       // F
@@ -53,12 +53,12 @@ object TypeBuiltinCompleter {
       // R
       polycompletion("Receiver", List("t", "r")    , Priority.Default),
       // S
-      Completion.TypeBuiltinCompletion("String"    , Priority.High),
       polycompletion("Sender"  , List("t", "r")    , Priority.Low),
+      Completion.TypeBuiltinCompletion("String"    , Priority.High),
       // U
       Completion.TypeBuiltinCompletion("Unit"      , Priority.Default),
       // V
-      Completion.TypeBuiltinCompletion("Void"      , Priority.Low),
       polycompletion("Vector"  , List("a")         , Priority.High),
+      Completion.TypeBuiltinCompletion("Void"      , Priority.Low),
     )
 }

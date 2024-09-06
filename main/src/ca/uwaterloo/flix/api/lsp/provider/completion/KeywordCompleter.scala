@@ -102,14 +102,13 @@ object KeywordCompleter {
       Completion.KeywordCompletion("select"   , Priority.Higher),
       Completion.KeywordCompletion("solve"    , Priority.High),
       Completion.KeywordCompletion("spawn"    , Priority.Low),
-      Completion.KeywordCompletion("struct"   , Priority.Lower),
       // T
       Completion.KeywordCompletion("true"     , Priority.Higher),
       Completion.KeywordCompletion("try"      , Priority.High),
       Completion.KeywordCompletion("typematch", Priority.Low),
       // U    
-      // experitments on occurances in stdlib shows *exact* same amount of
-      // occurances of these two. However, I'm fairly confident that
+      // experiments on occurrences in stdlib shows the *exact* same amount of
+      // occurrences of these two. However, I'm fairly confident that
       // `use` would occur much more often in most programs.
       Completion.KeywordCompletion("unsafe"   , Priority.Low),
       Completion.KeywordCompletion("use"      , Priority.High),
@@ -125,24 +124,24 @@ object KeywordCompleter {
   def getOtherKeywords: Iterable[Completion] =
     List(
       // @
-      Completion.KeywordCompletion("@Test"            , Priority.Highest),
-      Completion.KeywordCompletion("@ParallelWhenPure", Priority.Low),
-      Completion.KeywordCompletion("@Parallel"        , Priority.Higher),
-      Completion.KeywordCompletion("@LazyWhenPure"    , Priority.Lower),
-      Completion.KeywordCompletion("@Lazy"            , Priority.High),
       Completion.KeywordCompletion("@Deprecated"      , Priority.Lowest),
-      // S
-      Completion.KeywordCompletion("Schema"           , Priority.Default),
+      Completion.KeywordCompletion("@Lazy"            , Priority.High),
+      Completion.KeywordCompletion("@LazyWhenPure"    , Priority.Lower),
+      Completion.KeywordCompletion("@Parallel"        , Priority.Higher),
+      Completion.KeywordCompletion("@ParallelWhenPure", Priority.Low),
+      Completion.KeywordCompletion("@Test"            , Priority.Highest),
       // F
       Completion.KeywordCompletion("fix"              , Priority.Default),
       // L
       Completion.KeywordCompletion("law"              , Priority.Default),
       // R
-      Completion.KeywordCompletion("redef"            , Priority.High),
       Completion.KeywordCompletion("Record"           , Priority.Low),
+      Completion.KeywordCompletion("redef"            , Priority.High),
+      // S
+      Completion.KeywordCompletion("Schema"           , Priority.Default),
       // W
-      Completion.KeywordCompletion("with"             , Priority.High),
       Completion.KeywordCompletion("where"            , Priority.Low),
+      Completion.KeywordCompletion("with"             , Priority.High),
     )
 
   /**
