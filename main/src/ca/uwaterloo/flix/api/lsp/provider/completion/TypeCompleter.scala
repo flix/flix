@@ -37,9 +37,9 @@ object TypeCompleter {
     if (loc.source.name == context.uri)
       Priority.Higher
     else if (ns.isEmpty)
-      Priority.Lower
+      Priority.Low
     else
-      Priority.Lowest
+      Priority.Lower
   }
 
   /**
