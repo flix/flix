@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.BoundBy
-import ca.uwaterloo.flix.language.ast.shared.Scope
+import ca.uwaterloo.flix.language.ast.shared.{Constant, Scope}
 import ca.uwaterloo.flix.language.ast.{Purity, Symbol, _}
 import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
@@ -140,7 +140,7 @@ object Simplifier {
     case d@MonoAst.Expr.Discard(exp, eff, loc) =>
       val sym = Symbol.freshVarSym("_", BoundBy.Let, loc)
       val t = visitType(d.tpe)
-      SimplifiedAst.Expr.Let(sym, visitExp(exp), SimplifiedAst.Expr.Cst(Ast.Constant.Unit, MonoType.Unit, loc), t, simplifyEffect(eff), loc)
+      SimplifiedAst.Expr.Let(sym, visitExp(exp), SimplifiedAst.Expr.Cst(Constant.Unit, MonoType.Unit, loc), t, simplifyEffect(eff), loc)
 
     case MonoAst.Expr.Let(sym, _, e1, e2, tpe, eff, loc) =>
       val t = visitType(tpe)
@@ -408,7 +408,7 @@ object Simplifier {
     (e1.tpe, e2.tpe) match {
       case (MonoType.Unit, MonoType.Unit) =>
         // Unit is always equal to itself.
-        return SimplifiedAst.Expr.Cst(Ast.Constant.Bool(true), MonoType.Bool, loc)
+        return SimplifiedAst.Expr.Cst(Constant.Bool(true), MonoType.Bool, loc)
 
       case (MonoType.String, _) =>
         val strClass = Class.forName("java.lang.String")
@@ -504,7 +504,7 @@ object Simplifier {
         val failure = SimplifiedAst.Expr.JumpTo(next, t, jumpPurity, loc)
 
         // Return the branch with its label.
-        label -> patternMatchList(List(pat), List(matchVar), guard.getOrElse(MonoAst.Expr.Cst(Ast.Constant.Bool(true), Type.Bool, SourceLocation.Unknown)), success, failure
+        label -> patternMatchList(List(pat), List(matchVar), guard.getOrElse(MonoAst.Expr.Cst(Constant.Bool(true), Type.Bool, SourceLocation.Unknown)), success, failure
         )
     }
     // Construct the error branch.

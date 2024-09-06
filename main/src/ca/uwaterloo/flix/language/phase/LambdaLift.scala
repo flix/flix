@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.BoundBy
-import ca.uwaterloo.flix.language.ast.shared.Scope
+import ca.uwaterloo.flix.language.ast.shared.{Constant, Scope}
 import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, LiftedAst, MonoType, Purity, SimplifiedAst, Symbol}
 import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
@@ -105,7 +105,7 @@ object LambdaLift {
 
       // Construct the closure args.
       val closureArgs = if (freeVars.isEmpty)
-        List(LiftedAst.Expr.Cst(Ast.Constant.Unit, MonoType.Unit, loc))
+        List(LiftedAst.Expr.Cst(Constant.Unit, MonoType.Unit, loc))
       else freeVars.map {
         case SimplifiedAst.FreeVar(sym, tpe) => LiftedAst.Expr.Var(sym, tpe, sym.loc)
       }

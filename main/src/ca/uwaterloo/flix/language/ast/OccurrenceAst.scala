@@ -45,7 +45,7 @@ object OccurrenceAst {
 
   object Expr {
 
-    case class Constant(cst: Ast.Constant, tpe: MonoType, loc: SourceLocation) extends OccurrenceAst.Expr {
+    case class Constant(cst: shared.Constant, tpe: MonoType, loc: SourceLocation) extends OccurrenceAst.Expr {
       def purity: Purity = Pure
     }
 
