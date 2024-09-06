@@ -466,13 +466,6 @@ object Namer {
   }
 
   /**
-    * Performs naming on the given equality constraints `econstrs`.
-    */
-  private def visitEqualityConstraints(econstrs: List[DesugaredAst.EqualityConstraint])(implicit sctx: SharedContext, flix: Flix): List[NamedAst.EqualityConstraint] = {
-    econstrs.map(visitEqualityConstraint)
-  }
-
-  /**
     * Performs naming on the given signature declaration `sig`.
     */
   private def visitSig(sig: DesugaredAst.Declaration.Sig, ns0: Name.NName, traitSym: Symbol.TraitSym)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.Sig = sig match {
@@ -485,7 +478,7 @@ object Namer {
       val t = visitType(tpe)
       val ef = eff.map(visitType)
       val tcsts = tconstrs.map(visitTraitConstraint)
-      val ecsts = visitEqualityConstraints(econstrs)
+      val ecsts = econstrs.map(visitEqualityConstraint)
 
       // Then visit the parts depending on the parameters
       val e = visitExp(exp, ns0)(Scope.Top, sctx, flix)
@@ -517,7 +510,7 @@ object Namer {
       val t = visitType(tpe)
       val ef = eff.map(visitType)
       val tcsts = tconstrs.map(visitTraitConstraint)
-      val ecsts = visitEqualityConstraints(econstrs)
+      val ecsts = econstrs.map(visitEqualityConstraint)
 
       // Then visit the parts depending on the parameters
       val e = visitExp(exp, ns0)(Scope.Top, sctx, flix)
