@@ -176,4 +176,59 @@ mod Test.Exp.IndexableMut {
         }
     }
 
+    @Test
+    def record01(): Bool = region rc {
+        try {
+            let r = { a = Array#{0, 1, 2, 3} @ rc };
+            r#a[1] = 2;
+            r#a[1] == 2
+        } with OutOfBounds {
+            def outOfBounds(_, _) = false
+        }
+    }
+
+    @Test
+    def record02(): Bool = region rc {
+        try {
+            let r = { r = { a = Array#{0, 1, 2, 3} @ rc } };
+            r#r#a[3] = 2;
+            r#r#a[3] == 2
+        } with OutOfBounds {
+            def outOfBounds(_, _) = false
+        }
+    }
+
+    @Test
+    def record03(): Bool = region rc {
+        try {
+            let r = { r = { a = Array#{{ a = Array#{1, 2, 3, 4} @ rc } } @ rc } };
+            r#r#a[0]#a[1] = 42;
+            r#r#a[0]#a[1] == 42
+        } with OutOfBounds {
+            def outOfBounds(_, _) = false
+        }
+    }
+
+    @Test
+    def record04(): Bool = region rc {
+        try {
+            let r = { r = { a = Array#{Array#{} @ rc, Array#{{ a = Array#{1, 2, 3, 4} @ rc }} @ rc } @ rc } };
+            r#r#a[1][0]#a[1] = -1;
+            r#r#a[1][0]#a[1] == -1
+        } with OutOfBounds {
+            def outOfBounds(_, _) = false
+        }
+    }
+
+    @Test
+    def record05(): Bool = region rc {
+        try {
+            let r = { r = { a = Array#{Array#{} @ rc, Array#{{ a = Array#{1, 2, 3, 4} @ rc }} @ rc } @ rc } };
+            r#r#a[1] = Array#{} @ rc;
+            r#r#a[1][0]#a[1] == -1
+        } with OutOfBounds {
+            def outOfBounds(_, _) = true
+        }
+    }
+
 }
