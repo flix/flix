@@ -26,8 +26,8 @@ mod Test.Exp.IndexableMut {
     def array03(): Bool = region rc {
         try {
             let a = Array#{0, 1, 2, 3} @ rc;
-            a[4] = 200;
-            a[4] == 200
+            a[3] = 200;
+            a[3] == 200
         } with OutOfBounds {
             def outOfBounds(_, _) = false
         }
