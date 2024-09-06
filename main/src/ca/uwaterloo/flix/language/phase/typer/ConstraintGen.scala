@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.KindedAst.Expr
-import ca.uwaterloo.flix.language.ast.shared.Scope
+import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Scope}
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, Name, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.{InternalCompilerException, SubEffectLevel}
 import ca.uwaterloo.flix.language.phase.unification.Substitution
@@ -670,7 +670,7 @@ object ConstraintGen {
       case Expr.CheckedCast(cast, exp, tvar, evar, loc) =>
         // A cast expression is sound; the type system ensures the declared type is correct.
         cast match {
-          case Ast.CheckedCastType.TypeCast =>
+          case CheckedCastType.TypeCast =>
             // We replace the type with a fresh variable to allow any type.
             // The validity of this cast is checked in the Safety phase.
             val (_, eff) = visitExp(exp)
@@ -679,7 +679,7 @@ object ConstraintGen {
             val resEff = evar
             (resTpe, resEff)
 
-          case Ast.CheckedCastType.EffectCast =>
+          case CheckedCastType.EffectCast =>
             // We union the effect with a fresh variable to allow unifying with a "larger" effect.
             val (tpe, eff) = visitExp(exp)
             c.unifyType(tvar, tpe, loc)
