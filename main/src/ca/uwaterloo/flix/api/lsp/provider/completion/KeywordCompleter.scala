@@ -33,6 +33,7 @@ object KeywordCompleter {
       Completion.KeywordCompletion("pub"      , Priority.Higher),
       Completion.KeywordCompletion("enum"     , Priority.High),
       Completion.KeywordCompletion("type"     , Priority.High),
+      Completion.KeywordCompletion("inline"   , Priority.Low),
       Completion.KeywordCompletion("instance" , Priority.High),
       Completion.KeywordCompletion("mod"      , Priority.Low),
       Completion.KeywordCompletion("eff"      , Priority.Lower),
@@ -40,6 +41,7 @@ object KeywordCompleter {
       Completion.KeywordCompletion("sealed"   , Priority.Lowest),
       Completion.KeywordCompletion("trait"    , Priority.Lowest),
       Completion.KeywordCompletion("import"   , Priority.Lowest),
+      Completion.KeywordCompletion("restrictable", Priority.Low),
     )
 
   /**
@@ -57,6 +59,14 @@ object KeywordCompleter {
     List(
       "and",
       "as",
+      "catch",
+      "checked_cast",
+      "checked_ecast",
+      "choose",
+      "choose*",
+      "debug",
+      "debug!",
+      "debug!!",
       "def",
       "discard",
       "do",
@@ -69,36 +79,60 @@ object KeywordCompleter {
       "from",
       "if",
       "inject",
+      "instanceof",
       "into",
+      "java_get_field",
+      "java_set_field",
+      "java_new",
       "lazy",
       "let",
+      "masked_cast",
       "match",
       "new",
       "not",
+      "null",
+      "open_variant",
+      "open_variant_as",
       "or",
       "par",
+      "project",
       "query",
       "region",
       "select",
       "solve",
       "spawn",
-      "struct",
+      "static",
+      "Static",
+      "throw",
       "true",
       "try",
       "typematch",
+      "unchecked_cast",
       "unsafe",
       "use",
       "without",
-      "yield"
+      "yield",
+      "Set#{}",
+      "Array#{}",
+      "Map#{}",
+      "List#{}",
+      "Vector#{}",
     ) map (name => Completion.KeywordCompletion(name, Priority.Lower))
-           
+
+  /**
+    * Instance declaration keywords.
+    */
+  def getInstanceKeywords: Iterable[Completion] =
+    List(
+      Completion.KeywordCompletion("override", Priority.Low)
+    )      
+
   /**
     * Miscellaneous keywords.
     */
   def getOtherKeywords: Iterable[Completion] =
     List(
       Completion.KeywordCompletion("with"             , Priority.Highest),
-      Completion.KeywordCompletion("law"              , Priority.Higher),
       Completion.KeywordCompletion("@Test"            , Priority.High),
       Completion.KeywordCompletion("where"            , Priority.Low),
       Completion.KeywordCompletion("fix"              , Priority.Low),
@@ -110,6 +144,11 @@ object KeywordCompleter {
       Completion.KeywordCompletion("redef"            , Priority.Lowest),
     )
 
+  def getStructKeywords: Iterable[Completion] =
+    List(
+      Completion.KeywordCompletion("mut", Priority.Low)
+    )
+
   /**
     * Trait declaration keywords. These are keywords that occur within a trait declaration.
     */
@@ -117,5 +156,15 @@ object KeywordCompleter {
     List(
       Completion.KeywordCompletion("def", Priority.Lower),
       Completion.KeywordCompletion("pub", Priority.Lower),
+    )
+
+  /**
+    * Type declaration keywords. These are the keywords that can occur
+    * within a type declaration.
+    * @return iterable with type declaration keyword completions.
+    */
+  def getTypeKeywords: Iterable[Completion] =
+    List(
+      Completion.KeywordCompletion("alias", Priority.Low)
     )
 }
