@@ -140,7 +140,7 @@ object KindedAst {
 
     case class ArrayLength(base: Expr, evar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class StructNew(sym: Symbol.StructSym, fields: List[(Symbol.StructFieldSym, Expr)], region: Expr, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
+    case class StructNew(sym: Symbol.StructSym, fields: List[(Ast.StructFieldSymUse, Expr)], region: Expr, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
     case class StructGet(exp: Expr, sym: Symbol.StructFieldSym, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
@@ -303,7 +303,7 @@ object KindedAst {
 
   case class Case(sym: Symbol.CaseSym, tpe: Type, sc: Scheme, loc: SourceLocation)
 
-  case class StructField(sym: Symbol.StructFieldSym, tpe: Type, loc: SourceLocation)
+  case class StructField(mod: Ast.Modifiers, sym: Symbol.StructFieldSym, tpe: Type, loc: SourceLocation)
 
   case class RestrictableCase(sym: Symbol.RestrictableCaseSym, tpe: Type, sc: Scheme, loc: SourceLocation)
 

@@ -588,7 +588,7 @@ object ConstraintGen {
         for {
           ((fieldSym, expr), fieldTpe1) <- fields.zip(fieldTpes)
         } {
-          instantiatedFieldTpes.get(fieldSym) match {
+          instantiatedFieldTpes.get(fieldSym.sym) match {
             case None => () // if not an actual field, there is nothing to unify
             case Some(fieldTpe2) => c.unifyType(fieldTpe1, fieldTpe2, expr.loc)
           }
@@ -767,42 +767,50 @@ object ConstraintGen {
         (resTpe, resEff)
 
       case Expr.InvokeConstructor2(clazz, exps, jvar, evar, loc) =>
-        val tpe = Type.getFlixType(clazz)
+        // Γ ⊢ eᵢ ... : τ₁ ...    Γ ⊢ ι ~ JvmConstructor(k, eᵢ ...)
+        // --------------------------------------------------------
+        // Γ ⊢ new k(e₁ ...) : k
+        val clazzTpe = Type.getFlixType(clazz)
         val (tpes, effs) = exps.map(visitExp).unzip
         val baseEffs = BaseEffects.of(clazz, loc)
-        c.unifyJvmConstructorType(jvar, tpe, clazz, tpes, loc) // unify constructor
+        c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmConstructor(clazz, tpes), loc), loc) // unify constructor
         c.unifyType(evar, Type.mkUnion(Type.IO :: baseEffs :: effs, loc), loc) // unify effects
-        val resTpe = tpe
+        val resTpe = clazzTpe
         val resEff = evar
         (resTpe, resEff)
 
       case Expr.InvokeMethod2(exp, methodName, exps, jvar, tvar, evar, loc) =>
+        // Γ ⊢ e : τ    Γ ⊢ eᵢ ... : τ₁ ...    Γ ⊢ ι ~ JvmMethod(τ, m, τᵢ ...)
+        // ---------------------------------------------------------------
+        // Γ ⊢ e.m(eᵢ ...) : JvmToType[ι]
         val (tpe, eff) = visitExp(exp)
         val (tpes, effs) = exps.map(visitExp).unzip
-        val t = Type.Cst(TypeConstructor.MethodReturnType, loc)
-        c.unifyJvmMethodType(jvar, tpe, methodName, tpes, loc) // unify method
-        c.unifyType(tvar, Type.mkApply(t, List(jvar), loc), loc) // unify method return type
+        c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmMethod(tpe, methodName, tpes), loc), loc) // unify method type
+        c.unifyType(tvar, Type.JvmToType(jvar, loc), loc) // unify method return
         c.unifyType(evar, Type.mkUnion(Type.IO :: eff :: effs, loc), loc) // unify effects
         val resTpe = tvar
         val resEff = evar
         (resTpe, resEff)
 
       case Expr.InvokeStaticMethod2(clazz, methodName, exps, jvar, tvar, evar, loc) =>
-        val tpe = Type.getFlixType(clazz)
+        // Γ ⊢ eᵢ ... : τ₁ ...    Γ ⊢ ι ~ JvmStaticMethod(m, τᵢ ...)
+        // ---------------------------------------------------------------
+        // Γ ⊢ m(eᵢ ...) : JvmToType[ι]
         val (tpes, effs) = exps.map(visitExp).unzip
-        val t = Type.Cst(TypeConstructor.MethodReturnType, loc)
-        c.unifyStaticJvmMethodType(jvar, clazz, tpe, methodName, tpes, loc)
-        c.unifyType(tvar, Type.mkApply(t, List(jvar), loc), loc)
+        c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmStaticMethod(clazz, methodName, tpes), loc), loc)
+        c.unifyType(tvar, Type.JvmToType(jvar, loc), loc)
         c.unifyType(evar, Type.mkUnion(Type.IO :: effs, loc), loc)
         val resTpe = tvar
         val resEff = evar
         (resTpe, resEff)
 
       case Expr.GetField2(exp, fieldName, jvar, tvar, evar, loc) =>
+        // Γ ⊢ e : τ    Γ ⊢ ι ~ JvmFieldMethod(τ, m)
+        // ---------------------------------------------------------------
+        // Γ ⊢ e.f : JvmToType[ι]
         val (tpe, eff) = visitExp(exp)
-        val t = Type.Cst(TypeConstructor.FieldType, loc)
-        c.unifyJvmFieldType(jvar, tpe, fieldName, loc) // unify field
-        c.unifyType(tvar, Type.mkApply(t, List(jvar), loc), loc) // unify field type
+        c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmField(tpe, fieldName), loc), loc)
+        c.unifyType(tvar, Type.JvmToType(jvar, loc), loc) // unify field type
         c.unifyType(evar, Type.mkUnion(Type.IO :: eff :: Nil, loc), loc) // unify effects
         val resTpe = tvar
         val resEff = evar
@@ -1255,15 +1263,14 @@ object ConstraintGen {
     *   The second element of the return tuple would be(locations omitted) `Apply(Apply(Cst(Struct(S)), v'), r')`
     *   The third element of the return tuple would be `r'`
     */
-  private def instantiateStruct(sym: Symbol.StructSym, structs: Map[Symbol.StructSym, KindedAst.Struct])(implicit c: TypeContext, flix: Flix) : (Map[Symbol.StructFieldSym, Type], Type, Type.Var) = {
+  def instantiateStruct(sym: Symbol.StructSym, structs: Map[Symbol.StructSym, KindedAst.Struct])(implicit c: TypeContext, flix: Flix) : (Map[Symbol.StructFieldSym, Type], Type, Type.Var) = {
     implicit val scope: Scope = c.getScope
     val struct = structs(sym)
-    assert(struct.tparams.last.sym.kind == Kind.Eff)
     val fields = struct.fields
     val (_, _, tpe, substMap) = Scheme.instantiate(struct.sc, struct.loc)
     val subst = Substitution(substMap)
     val instantiatedFields = fields.map(f => f match {
-      case KindedAst.StructField(fieldSym, tpe, _) =>
+      case KindedAst.StructField(_, fieldSym, tpe, _) =>
         fieldSym -> subst(tpe)
     })
     (instantiatedFields.toMap, tpe, substMap(struct.tparams.last.sym))

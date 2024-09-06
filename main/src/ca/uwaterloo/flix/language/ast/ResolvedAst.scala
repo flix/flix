@@ -61,7 +61,7 @@ object ResolvedAst {
 
     case class Struct(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.StructSym, tparams: List[TypeParam], fields: List[StructField], loc: SourceLocation) extends Declaration
 
-    case class StructField(sym: Symbol.StructFieldSym, tpe: UnkindedType, loc: SourceLocation)
+    case class StructField(mod: Ast.Modifiers, sym: Symbol.StructFieldSym, tpe: UnkindedType, loc: SourceLocation)
 
     case class RestrictableEnum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.RestrictableEnumSym, index: TypeParam, tparams: List[TypeParam], derives: Ast.Derivations, cases: List[Declaration.RestrictableCase], loc: SourceLocation) extends Declaration
 
@@ -157,11 +157,11 @@ object ResolvedAst {
 
     case class ArrayLength(base: Expr, loc: SourceLocation) extends Expr
 
-    case class StructNew(sym: Symbol.StructSym, exps: List[(Symbol.StructFieldSym, Expr)], region: Expr, loc: SourceLocation) extends Expr
+    case class StructNew(sym: Symbol.StructSym, exps: List[(Ast.StructFieldSymUse, Expr)], region: Expr, loc: SourceLocation) extends Expr
 
-    case class StructGet(e: Expr, field: Name.Label, loc: SourceLocation) extends Expr
+    case class StructGet(e: Expr, sym: Name.Label, loc: SourceLocation) extends Expr
 
-    case class StructPut(exp1: Expr, field: Name.Label, exp2: Expr, loc: SourceLocation) extends Expr
+    case class StructPut(exp1: Expr, sym: Name.Label, exp2: Expr, loc: SourceLocation) extends Expr
 
     case class VectorLit(exps: List[Expr], loc: SourceLocation) extends Expr
 

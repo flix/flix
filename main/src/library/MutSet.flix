@@ -19,7 +19,7 @@
 ///
 pub struct MutSet[t: Type, r: Region] {
     rc: Region[r],
-    ms: Set[t]
+    mut ms: Set[t]
 }
 
 instance Iterable[MutSet[a, r]] {
@@ -50,13 +50,13 @@ mod MutSet {
     /// Returns a fresh empty set.
     ///
     pub def empty(rc: Region[r]): MutSet[a, r] \ r =
-        new MutSet{rc = rc, ms = Set.empty()} @ rc
+        new MutSet @ rc{rc = rc, ms = Set.empty()}
 
     ///
     /// Returns the singleton set containing `x`.
     ///
     pub def singleton(rc: Region[r], x: a): MutSet[a, r] \ r with Order[a] =
-        new MutSet{rc = rc, ms = Set.singleton(x)} @ rc
+        new MutSet @ rc{rc = rc, ms = Set.singleton(x)}
 
     ///
     /// Adds the element `x` to the mutable set `s`.
@@ -306,7 +306,7 @@ mod MutSet {
     /// Returns a shallow copy of the mutable set `s`.
     ///
     pub def copy(rc1: Region[r1], s: MutSet[a, r]): MutSet[a, r1] \ { r, r1 } =
-        new MutSet {rc = rc1, ms = s->ms } @ rc1
+        new MutSet @ rc1 {rc = rc1, ms = s->ms }
 
     ///
     /// Returns a pair of mutable sets `(s1, s2)` such that:
@@ -318,7 +318,7 @@ mod MutSet {
     ///
     pub def partition(rc1: Region[r1], rc2: Region[r2], f: a -> Bool, s: MutSet[a, r]): (MutSet[a, r1], MutSet[a, r2]) \ { r, r1, r2 } with Order[a] =
         let (ys, zs) = Set.partition(f, s->ms);
-        (new MutSet{rc = rc1, ms = ys} @ rc1, new MutSet{rc = rc2, ms = zs} @ rc2)
+        (new MutSet @ rc1{rc = rc1, ms = ys}, new MutSet @ rc2{rc = rc2, ms = zs})
 
     ///
     /// Returns the mutable set `s` as an immutable set.

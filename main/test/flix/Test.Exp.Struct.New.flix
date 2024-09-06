@@ -6,7 +6,7 @@ mod Mod1 {
         @test
         def testOuterMod01(): Unit =
             region rc {
-                new Mod1.S2 {} @ rc;
+                new Mod1.S2 @ rc {};
                 ()
             }
     }
@@ -116,153 +116,153 @@ mod Test.Exp.Struct.New {
     @test
     def testEmptyStruct01(): Unit =
         region rc {
-            new Empty {} @ rc;
+            new Empty @ rc {};
             ()
         }
 
     @test
     def testEmptyStruct02(): Unit =
         region rc {
-            new OneEmpty {a = new Empty { } @ rc} @ rc;
+            new OneEmpty @ rc {a = new Empty @ rc { }};
             ()
         }
 
     @test
     def testEmptyStruct03(): Unit =
         region rc {
-            new TwoEmpty {a = new Empty {} @ rc, b = new Empty {} @ rc} @ rc;
+            new TwoEmpty @ rc  {a = new Empty @ rc  {}, b = new Empty @ rc  {}};
             ()
         }
 
     @test
     def testEmptyStruct04(): Unit =
         region rc {
-            new EmptyA { a = new EmptyB { a = new EmptyC { a = new Empty {} @ rc } @ rc } @ rc } @ rc;
+            new EmptyA @ rc { a = new EmptyB @ rc { a = new EmptyC @ rc { a = new Empty @ rc {} } } };
             ()
         }
 
     @test
     def testStructLiteral01(): Unit =
         region rc {
-            new Name { name = "Lucky Luke" } @ rc;
+            new Name @ rc { name = "Lucky Luke" };
             ()
         }
 
     @test
     def testStructLiteral02(): Unit =
         region rc {
-            new FullName { fstName = "Lucky", lstName = "Luke" } @ rc;
+            new FullName @ rc { fstName = "Lucky", lstName = "Luke" };
             ()
         }
 
     @test
     def testStructLiteral03(): Unit =
         region rc {
-            new Person { fstName = "Lucky", lstName = "Luke", age = 42 } @ rc;
+            new Person @ rc { fstName = "Lucky", lstName = "Luke", age = 42 };
             ()
         }
 
     @test
     def testStructLiteral04(): Unit =
         region rc {
-            new Cowboy { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true } @ rc;
+            new Cowboy @ rc { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
             ()
         }
 
     @test
     def testStructLiteral05(): Unit =
         region rc {
-            new TwoInts { x = 0, y = 0 } @ rc;
+            new TwoInts @ rc { x = 0, y = 0 };
             ()
         }
 
     @test
     def testStructLiteral06(): Unit =
         region rc {
-            new ThreeInts { x = 0, y = 0, z = 0 } @ rc;
+            new ThreeInts @ rc { x = 0, y = 0, z = 0 };
             ()
         }
 
     @test
     def testNestedStructLiteral01(): Unit =
         region rc {
-            new TwoIntsHolder { a = new TwoInts { x = 1, y = 2 } @ rc} @ rc;
+            new TwoIntsHolder @ rc { a = new TwoInts @ rc { x = 1, y = 2 }};
             ()
         }
 
     @test
     def testNestedStructLiteral02(): Unit =
         region rc {
-            new Outer { a = new TwoInts { x = 1, y = 2 } @ rc, b = new TwoInts { x = 3, y = 4 } @ rc } @ rc;
+            new Outer @ rc { a = new TwoInts @ rc { x = 1, y = 2 }, b = new TwoInts @ rc { x = 3, y = 4 }};
             ()
         }
 
     @test
     def testNestedStructLiteral03(): Unit =
         region rc {
-            new A {a = new B {a = new C {a = new D {a = 42} @ rc} @ rc} @ rc} @ rc;
+            new A @ rc {a = new B @ rc {a = new C @ rc {a = new D @ rc {a = 42}}}};
             ()
         }
 
     @test
     def testNestedLabels01(): Unit =
         region rc {
-            new A3 {a = new A2 {a = new A1 {a = new Empty {} @ rc} @ rc} @ rc} @ rc;
+            new A3 @ rc {a = new A2 @ rc {a = new A1 @ rc {a = new Empty @ rc {}}}};
             ()
         }
 
     @test
     def testOtherMod01(): Unit =
         region rc {
-            new Mod1.S {} @ rc;
+            new Mod1.S @ rc {};
             ()
         }
 
     @test
     def binaryTree01(): Unit =
         region rc {
-            new BinaryTree {
+            new BinaryTree @ rc {
                 left = None,
                 right = None,
                 value = 3
-            } @ rc;
+            };
             ()
         }
 
     @test
     def binaryTree02(): Unit =
         region rc {
-            let leaf = new BinaryTree {
+            let leaf = new BinaryTree @ rc {
                 left = None,
                 right = None,
                 value = 3
-            } @ rc;
-            new BinaryTree {
+            };
+            new BinaryTree @ rc {
                 left = Some(leaf),
                 right = Some(leaf),
                 value = 3
-            } @ rc;
+            };
             ()
         }
 
     @test
     def binaryTree03(): Unit =
         region rc {
-            let leaf = new BinaryTree {
+            let leaf = new BinaryTree @ rc {
                 left = None,
                 right = None,
                 value = 3
-            } @ rc;
-            let innernode = new BinaryTree {
+            };
+            let innernode = new BinaryTree @ rc {
                 left = Some(leaf),
                 right = Some(leaf),
                 value = 3
-            } @ rc;
-            new BinaryTree {
+            };
+            new BinaryTree @ rc {
                 left = Some(innernode),
                 right = Some(innernode),
                 value = 3
-            } @ rc;
+            };
             ()
         }
 

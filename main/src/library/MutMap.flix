@@ -19,7 +19,7 @@
 ///
 pub struct MutMap[k: Type, v: Type, r: Region] {
     rc: Region[r],
-    m: Map[k, v]
+    mut m: Map[k, v]
 }
 
 instance Indexable[MutMap[k, v, r]] with Order[k] {
@@ -70,13 +70,13 @@ mod MutMap {
     /// Returns a fresh empty mutable map.
     ///
     pub def empty(rc: Region[r]): MutMap[k, v, r] \ r =
-        new MutMap {rc = rc, m = Map.empty()} @ rc
+        new MutMap @ rc  {rc = rc, m = Map.empty()}
 
     ///
     /// Returns the singleton map where key `k` is mapped to value `v`.
     ///
     pub def singleton(rc: Region[r], k: k, v: v): MutMap[k, v, r] \ r with Order[k] =
-        new MutMap {rc = rc, m = Map.singleton(k, v)} @ rc
+        new MutMap @ rc  {rc = rc, m = Map.singleton(k, v)}
 
     ///
     /// Returns `true` if and only if the mutable map `m` contains the key `k`.
@@ -356,7 +356,7 @@ mod MutMap {
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
     pub def mapWithKey(rc: Region[r1], f: (k, v1) -> v2 \ ef, m: MutMap[k, v1, r]): MutMap[k, v2, r1] \ { ef, r, r1 } =
-        new MutMap {rc = rc, m = Map.mapWithKey(f, m->m)} @ rc
+        new MutMap @ rc  {rc = rc, m = Map.mapWithKey(f, m->m)}
 
     ///
     /// Alias for `foldLeftWithKey`.
@@ -502,7 +502,7 @@ mod MutMap {
     /// Returns a shallow copy of the mutable map `m`.
     ///
     pub def copy(rc: Region[r1], m: MutMap[k, v, r]): MutMap[k, v, r1] \ { r, r1 } =
-        new MutMap { rc = rc, m = m->m } @ rc
+        new MutMap @ rc  { rc = rc, m = m->m }
 
     ///
     /// Returns the mutable map `m` as an immutable map.

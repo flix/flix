@@ -180,7 +180,7 @@ object TypedAst {
       def tpe: Type = Type.Unit
     }
 
-    case class StructNew(sym: Symbol.StructSym, fields: List[(Symbol.StructFieldSym, Expr)], region: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class StructNew(sym: Symbol.StructSym, fields: List[(Ast.StructFieldSymUse, Expr)], region: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class StructGet(exp: Expr, sym: Symbol.StructFieldSym, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 

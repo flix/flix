@@ -1208,6 +1208,24 @@ object ResolutionError {
     }
   }
 
+ /**
+   * An error raised to indicate a `put` struct expression attempts to modify an immutable field
+   *
+   * @param field the immutable field
+   * @param loc   the location where the error occurred
+   */
+  case class ImmutableField(field: Symbol.StructFieldSym, loc: SourceLocation) extends ResolutionError with Recoverable {
+    override def summary: String = s"Modification of immutable field `$field`. Mark the field as `mut` to allow mutation."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s""">> Modification of immutable field `$field`. Mark the field as `mut` to allow mutation.
+         |
+         |${code(loc, "field not marked `mut`")}
+         |""".stripMargin
+    }
+  }
+
   /**
     * Removes all access modifiers from the given string `s`.
     */

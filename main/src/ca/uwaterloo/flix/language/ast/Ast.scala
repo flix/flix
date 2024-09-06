@@ -362,6 +362,11 @@ object Ast {
       */
     def isLawful: Boolean = mod contains Modifier.Lawful
 
+   /**
+     * Returns `true` if these modifiers contain the mutable modifier.
+     */
+    def isMutable: Boolean = mod contains Modifier.Mutable
+
     /**
       * Returns `true` if these modifiers contain the override modifier.
       */
@@ -400,6 +405,12 @@ object Ast {
       * The lawful modifier.
       */
     case object Lawful extends Modifier
+
+   /**
+     * The mutable modifier.
+     */
+
+    case object Mutable extends Modifier
 
     /**
       * The override modifier.
@@ -586,6 +597,11 @@ object Ast {
     * Represents a use of an enum case sym.
     */
   case class CaseSymUse(sym: Symbol.CaseSym, loc: SourceLocation)
+
+  /**
+    * Represents a use of a struct field sym.
+    */
+  case class StructFieldSymUse(sym: Symbol.StructFieldSym, loc: SourceLocation)
 
   /**
     * Represents a use of a restrictable enum case sym.

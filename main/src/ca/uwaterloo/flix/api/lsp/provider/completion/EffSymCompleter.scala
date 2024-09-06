@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.EffectCompletion
 import ca.uwaterloo.flix.language.ast.TypedAst
 
-object EffSymCompleter extends Completer {
+object EffSymCompleter {
 
   def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[EffectCompletion] = {
     root.effects.map {

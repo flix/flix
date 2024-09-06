@@ -790,7 +790,7 @@ mod Map {
     /// Returns `m` as a mutable map.
     ///
     pub def toMutMap(rc: Region[r], m: Map[k, v]): MutMap[k, v, r] \ r =
-        new MutMap{rc = rc, m = m} @ rc
+        new MutMap @ rc{rc = rc, m = m }
 
     ///
     /// Returns the map `m` as a list of key-value pairs.

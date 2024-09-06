@@ -570,7 +570,7 @@ mod Set {
     /// Returns the set `s` as a `MutSet`.
     ///
     pub def toMutSet(rc: Region[r], s: Set[a]): MutSet[a, r] \ r =
-        new MutSet {rc = rc, ms = s } @ rc
+        new MutSet @ rc  {rc = rc, ms = s }
 
     ///
     /// Applies `f` to every element of `s`.

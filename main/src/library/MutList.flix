@@ -23,8 +23,8 @@
 ///
 pub struct MutList[a: Type, r: Region] {
     rc: Region[r],
-    a: Array[a, r],
-    l: Int32
+    mut a: Array[a, r],
+    mut l: Int32
 }
 
 instance Iterable[MutList[a, r]] {
@@ -75,7 +75,7 @@ mod MutList {
     /// Returns an empty empty mutable list with a default capacity.
     ///
     pub def empty(rc: Region[r]): MutList[a, r] \ r =
-        new MutList {rc = rc, a = Array.empty(rc, minCapacity()), l = 0 } @ rc
+        new MutList @ rc  {rc = rc, a = Array.empty(rc, minCapacity()), l = 0 }
 
     ///
     /// Returns a mutable list of all integers between `b` (inclusive) and `e` (exclusive).
@@ -87,7 +87,7 @@ mod MutList {
         let d = e - b;
         let c = Order.max(d, minCap);
         let f = i -> { let x = b + i; if (x < e) x else Reflect.default() };
-        new MutList {rc = rc, a = Array.init(rc, f, c), l = d} @ rc
+        new MutList @ rc  {rc = rc, a = Array.init(rc, f, c), l = d}
 
     ///
     /// Retrieves the value at position `i` in the mutable list `v`.
@@ -349,7 +349,7 @@ mod MutList {
             }
         };
         loop(1, s);
-        new MutList {rc = rc1, a = b, l = n} @ rc1
+        new MutList @ rc1  {rc = rc1, a = b, l = n}
 
     ///
     /// Accumulates the result of applying `f` to `v` going right to left.
@@ -369,7 +369,7 @@ mod MutList {
             }
         };
         loop(l - 1, s);
-        new MutList {rc = rc1, a = b, l = n} @ rc1
+        new MutList @ rc1  {rc = rc1, a = b, l = n}
 
     ///
     /// Apply `f` to every element in `v`.
@@ -393,7 +393,7 @@ mod MutList {
                 }
             };
             loop(1);
-            new MutList {rc = rc1, a = b, l = l} @ rc1
+            new MutList @ rc1  {rc = rc1, a = b, l = l}
         }
 
     ///
@@ -409,7 +409,7 @@ mod MutList {
             Array.patch!(destIndex, bl, bs->a, destArray);
             Ref.put(destIndex + bl, rdestIndex)
          });
-         new MutList{rc = rc1, a = destArray, l = size} @ rc1
+         new MutList @ rc1 {rc = rc1, a = destArray, l = size}
 
 
     ///
@@ -440,7 +440,7 @@ mod MutList {
                 }
             };
             loop(1);
-            new MutList {rc = rc1, a = b, l = l} @ rc1
+            new MutList @ rc1  {rc = rc1, a = b, l = l}
         }
 
     ///
@@ -573,9 +573,9 @@ mod MutList {
     pub def copy(rc1: Region[r1], v: MutList[a, r]): MutList[a, r1] \ { r, r1 } =
         let len = v->l;
         if (len > minCapacity())
-            new MutList{rc = rc1, a = Array.copyOfRange(rc1, 0, len, v->a), l = len} @ rc1
+            new MutList @ rc1 {rc = rc1, a = Array.copyOfRange(rc1, 0, len, v->a), l = len}
         else
-            new MutList{rc = rc1, a = Array.copyOfRange(rc1, 0, capacity(v), v->a), l = len} @ rc1
+            new MutList @ rc1 {rc = rc1, a = Array.copyOfRange(rc1, 0, capacity(v), v->a), l = len}
 
     ///
     /// Optionally removes and returns the last element in the given mutable list `v`.

@@ -527,7 +527,8 @@ object Lowering {
     case TypedAst.Expr.StructNew(sym, fields0, region0, tpe, eff, loc) =>
       val fields = fields0.map { case (k, v) => (k, visitExp(v)) }
       val region = visitExp(region0)
-      val (names, es) = fields.unzip
+      val (names0, es) = fields.unzip
+      val names = names0.map(_.sym)
       LoweredAst.Expr.ApplyAtomic(AtomicOp.StructNew(sym, names), region :: es, tpe, eff, loc)
 
     case TypedAst.Expr.StructGet(exp0, field, tpe, eff, loc) =>
@@ -928,6 +929,9 @@ object Lowering {
 
     case Type.AssocType(cst, args, kind, loc) =>
       Type.AssocType(cst, args.map(visitType), kind, loc) // TODO ASSOC-TYPES can't put lowered stuff on right side of assoc type def...
+
+    case Type.JvmToType(_, loc) => throw InternalCompilerException("unexpected JVM type", loc)
+    case Type.UnresolvedJvmType(_, loc) => throw InternalCompilerException("unexpected JVM type", loc)
   }
 
 

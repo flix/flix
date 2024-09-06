@@ -81,8 +81,11 @@ object Deriver {
   /**
     * Builds the instances for this struct
     */
-  private def getInstancesOfStruct(struct0: KindedAst.Struct, root: KindedAst.Root)(implicit flix: Flix): List[KindedAst.Instance] =
-      struct0.fields.flatMap(f => List(fieldPutInstance(struct0, f, root), fieldGetInstance(struct0, f, root)))
+  private def getInstancesOfStruct(struct0: KindedAst.Struct, root: KindedAst.Root)(implicit flix: Flix): List[KindedAst.Instance] = {
+    val getInstances = struct0.fields.map(fieldGetInstance(struct0, _, root))
+    val putInstances = struct0.fields.filter(_.mod.isMutable).map(fieldPutInstance(struct0, _, root))
+    getInstances ++ putInstances
+  }
 
   /**
     * Builds the instances for the `get` operation of this struct field
