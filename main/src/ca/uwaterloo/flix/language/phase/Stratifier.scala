@@ -341,7 +341,7 @@ object Stratifier {
       Expr.PutStaticField(field, e, tpe, eff, loc)
 
     case Expr.NewObject(name, clazz, tpe, eff, methods, loc) =>
-      val ms = visitJvmMethods(methods)
+      val ms = methods.map(visitJvmMethod)
       Expr.NewObject(name, clazz, tpe, eff, ms, loc)
 
     case Expr.NewChannel(exp1, exp2, tpe, eff, loc) =>
@@ -457,10 +457,6 @@ object Stratifier {
     case JvmMethod(ident, fparams, exp, tpe, eff, loc) =>
       val e = visitExp(exp)
       JvmMethod(ident, fparams, e, tpe, eff, loc)
-  }
-
-  private def visitJvmMethods(methods: List[JvmMethod])(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): List[JvmMethod] = {
-    methods.map(visitJvmMethod)
   }
 
   private def visitSelectChannelRule(rule: SelectChannelRule)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): SelectChannelRule = rule match {
