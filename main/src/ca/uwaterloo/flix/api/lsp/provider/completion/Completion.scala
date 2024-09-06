@@ -70,9 +70,8 @@ sealed trait Completion {
         textEdit = TextEdit(context.range, name),
         insertTextFormat = InsertTextFormat.PlainText,
         kind = CompletionItemKind.Enum)
-    case Completion.TypeBuiltinPolyCompletion(name, params, priority) =>
-      val edit = params.zipWithIndex.map { case (param, i) => s"$${${i + 1}:$param}"}.mkString(s"$name[", ", ", "]")
-      CompletionItem(label = params.mkString(s"$name[", ", ", "]"),
+    case Completion.TypeBuiltinPolyCompletion(name, edit, priority) =>
+      CompletionItem(label = name,
         sortText = Priority.toSortText(priority, name),
         textEdit = TextEdit(context.range, edit),
         insertTextFormat = InsertTextFormat.Snippet,
@@ -356,7 +355,7 @@ object Completion {
     * @param priority  the priority of the type.
     * @param textEdit  the edit which is applied to a docuemtn when selecting this completion1
     */
-  case class TypeBuiltinPolyCompletion(name: String, params: List[String], priority: Priority) extends Completion
+  case class TypeBuiltinPolyCompletion(name: String, edit: String, priority: Priority) extends Completion
 
   /**
     * Represents a type completion for enum
