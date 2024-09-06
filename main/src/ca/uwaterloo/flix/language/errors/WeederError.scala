@@ -476,7 +476,7 @@ object WeederError {
     *
     * @param loc the location where the error occurred.
     */
-  case class IllegalFormalParamAscription(loc: SourceLocation) extends WeederError with Unrecoverable {
+  case class IllegalFormalParamAscription(loc: SourceLocation) extends WeederError with Recoverable {
     def summary: String = "Unexpected type ascription. Type ascriptions are not permitted on effect handler cases."
 
     def message(formatter: Formatter): String = {
