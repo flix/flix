@@ -81,8 +81,8 @@ mod Test.Exp.IndexableMut {
     def mutList03(): Bool = region rc {
         try {
             let l = Vector#{0, 1, 2, 3} |> Vector.toMutList(rc);
-            l[4] = 200;
-            l[0] == 200
+            l[3] = 200;
+            l[3] == 200
         } with OutOfBounds {
             def outOfBounds(_, _) = false
         }
