@@ -56,7 +56,7 @@ object KeywordCompleter {
     * Expression keywords. These are keywords that can appear within expressions (fx within the body of a function).
     */
   def getExprKeywords: Iterable[Completion] =
-    List(
+    (List(
       "and",
       "as",
       "catch",
@@ -112,12 +112,13 @@ object KeywordCompleter {
       "use",
       "without",
       "yield",
-      "Set#{}",
-      "Array#{}",
-      "Map#{}",
-      "List#{}",
-      "Vector#{}",
-    ) map (name => Completion.KeywordCompletion(name, Priority.Lower))
+    ) map (name => Completion.KeywordCompletion(name, Priority.Lower))) ++ List(
+      Completion.CollectionKeywordCompletion("Set", Priority.Low),
+      Completion.CollectionKeywordCompletion("Array", Priority.Low),
+      Completion.CollectionKeywordCompletion("Map", Priority.Low),
+      Completion.CollectionKeywordCompletion("List", Priority.Low),
+      Completion.CollectionKeywordCompletion("Vector", Priority.Low)
+    )
 
   /**
     * Instance declaration keywords.
