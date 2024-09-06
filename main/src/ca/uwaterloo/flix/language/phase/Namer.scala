@@ -69,7 +69,7 @@ object Namer {
   private def visitUnit(unit: DesugaredAst.CompilationUnit)(implicit sctx: SharedContext, flix: Flix): NamedAst.CompilationUnit = unit match {
     case DesugaredAst.CompilationUnit(usesAndImports0, decls, loc) =>
       val usesAndImports = usesAndImports0.map(visitUseOrImport)
-      val ds = visitDecls(decls, Name.RootNS)
+      val ds = decls.map(visitDecl(_, Name.RootNS)(sctx, flix))
       NamedAst.CompilationUnit(usesAndImports, ds, loc)
   }
 
@@ -90,20 +90,13 @@ object Namer {
   }
 
   /**
-    * Performs naming on the given declarations `decls0`.
-    */
-  private def visitDecls(decls0: List[DesugaredAst.Declaration], ns0: Name.NName)(implicit sctx: SharedContext, flix: Flix): List[NamedAst.Declaration] = {
-    decls0.map(visitDecl(_, ns0))
-  }
-
-  /**
     * Performs naming on the given namespace.
     */
   private def visitNamespace(decl: DesugaredAst.Declaration.Namespace, ns0: Name.NName)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.Namespace = decl match {
     case DesugaredAst.Declaration.Namespace(ident, usesAndImports0, decls, loc) =>
       val ns = Name.NName(ns0.idents :+ ident, ident.loc)
       val usesAndImports = usesAndImports0.map(visitUseOrImport)
-      val ds = visitDecls(decls, ns)
+      val ds = decls.map(visitDecl(_, ns))
       val sym = new Symbol.ModuleSym(ns.parts)
       NamedAst.Declaration.Namespace(sym, usesAndImports, ds, loc)
   }
@@ -414,13 +407,6 @@ object Namer {
   }
 
   /**
-    * Performs naming on the given associated type signatures `assocs0`.
-    */
-  private def visitAssocTypeSigs(assocs0: List[DesugaredAst.Declaration.AssocTypeSig], trt: Symbol.TraitSym)(implicit sctx: SharedContext, flix: Flix): List[NamedAst.Declaration.AssocTypeSig] = {
-    assocs0.map(visitAssocTypeSig(_, trt))
-  }
-
-  /**
     * Performs naming on the given associated type definition `d0`.
     */
   private def visitAssocTypeDef(d0: DesugaredAst.Declaration.AssocTypeDef)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.AssocTypeDef = d0 match {
@@ -431,14 +417,6 @@ object Namer {
   }
 
   /**
-    * Performs naming on the given associated type definitions `assocs0`.
-    */
-  private def visitAssocTypeDefs(assocs0: List[DesugaredAst.Declaration.AssocTypeDef])(implicit sctx: SharedContext, flix: Flix): List[NamedAst.Declaration.AssocTypeDef] = {
-    assocs0.map(visitAssocTypeDef)
-  }
-
-
-  /**
     * Performs naming on the given trait `trt`.
     */
   private def visitTrait(trt: DesugaredAst.Declaration.Trait, ns0: Name.NName)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.Trait = trt match {
@@ -447,10 +425,10 @@ object Namer {
       val mod = visitModifiers(mod0, ns0)
       val tparam = visitTypeParam(tparams0)
 
-      val sts = visitTraitConstraints(superTraits)
-      val ascs = visitAssocTypeSigs(assocs, sym) // TODO switch param order to match visitSig
-      val sigs = visitSigs(signatures, ns0, sym)
-      val ls = visitDefs(laws, ns0)
+      val sts = superTraits.map(visitTraitConstraint)
+      val ascs = assocs.map(visitAssocTypeSig(_, sym)) // TODO switch param order to match visitSig
+      val sigs = signatures.map(visitSig(_, ns0, sym))
+      val ls = laws.map(visitDef(_, ns0, DefKind.Member))
 
       NamedAst.Declaration.Trait(doc, ann, mod, sym, tparam, sts, ascs, sigs, ls, loc)
   }
@@ -462,9 +440,9 @@ object Namer {
     case DesugaredAst.Declaration.Instance(doc, ann, mod, clazz, tpe, tconstrs, assocs, defs, loc) =>
       val tparams = getImplicitTypeParamsFromTypes(List(tpe))
       val t = visitType(tpe)
-      val tcsts = visitTraitConstraints(tconstrs)
-      val ascs = visitAssocTypeDefs(assocs)
-      val ds = visitDefs(defs, ns0)
+      val tcsts = tconstrs.map(visitTraitConstraint)
+      val ascs = assocs.map(visitAssocTypeDef)
+      val ds = defs.map(visitDef(_, ns0, DefKind.Member))
       NamedAst.Declaration.Instance(doc, ann, mod, clazz, tparams, t, tcsts, ascs, ds, ns0.parts, loc)
   }
 
@@ -478,13 +456,6 @@ object Namer {
   }
 
   /**
-    * Performs naming on the given trait constraints `tconstrs`.
-    */
-  private def visitTraitConstraints(tconstrs: List[DesugaredAst.TraitConstraint])(implicit sctx: SharedContext, flix: Flix): List[NamedAst.TraitConstraint] = {
-    tconstrs.map(visitTraitConstraint)
-  }
-
-  /**
     * Performs naming on the given equality constraint `econstr`.
     */
   private def visitEqualityConstraint(econstr: DesugaredAst.EqualityConstraint)(implicit sctx: SharedContext, flix: Flix): NamedAst.EqualityConstraint = econstr match {
@@ -492,13 +463,6 @@ object Namer {
       val t1 = visitType(tpe1)
       val t2 = visitType(tpe2)
       NamedAst.EqualityConstraint(qname, t1, t2, loc)
-  }
-
-  /**
-    * Performs naming on the given equality constraints `econstrs`.
-    */
-  private def visitEqualityConstraints(econstrs: List[DesugaredAst.EqualityConstraint])(implicit sctx: SharedContext, flix: Flix): List[NamedAst.EqualityConstraint] = {
-    econstrs.map(visitEqualityConstraint)
   }
 
   /**
@@ -510,25 +474,18 @@ object Namer {
 
       // First visit all the top-level information
       val mod = visitModifiers(mod0, ns0)
-      val fps = visitFormalParams(fparams)(Scope.Top, sctx, flix)
+      val fps = fparams.map(visitFormalParam(_)(Scope.Top, sctx, flix))
       val t = visitType(tpe)
       val ef = eff.map(visitType)
-      val tcsts = visitTraitConstraints(tconstrs)
-      val ecsts = visitEqualityConstraints(econstrs)
+      val tcsts = tconstrs.map(visitTraitConstraint)
+      val ecsts = econstrs.map(visitEqualityConstraint)
 
       // Then visit the parts depending on the parameters
-      val e = visitExp(exp, ns0)(Scope.Top, sctx, flix)
+      val e = exp.map(visitExp(_, ns0)(Scope.Top, sctx, flix))
 
       val sym = Symbol.mkSigSym(traitSym, ident)
       val spec = NamedAst.Spec(doc, ann, mod, tparams, fps, t, ef, tcsts, ecsts, loc)
       NamedAst.Declaration.Sig(sym, spec, e)
-  }
-
-  /**
-    * Performs naming on the given signature declarations `sigs0`.
-    */
-  private def visitSigs(sigs0: List[DesugaredAst.Declaration.Sig], ns0: Name.NName, sym: Symbol.TraitSym)(implicit sctx: SharedContext, flix: Flix): List[NamedAst.Declaration.Sig] = {
-    sigs0.map(visitSig(_, ns0, sym))
   }
 
   /**
@@ -542,11 +499,11 @@ object Namer {
 
       // First visit all the top-level information
       val mod = visitModifiers(mod0, ns0)
-      val fps = visitFormalParams(fparams)(Scope.Top, sctx, flix)
+      val fps = fparams.map(visitFormalParam(_)(Scope.Top, sctx, flix))
       val t = visitType(tpe)
       val ef = eff.map(visitType)
-      val tcsts = visitTraitConstraints(tconstrs)
-      val ecsts = visitEqualityConstraints(econstrs)
+      val tcsts = tconstrs.map(visitTraitConstraint)
+      val ecsts = econstrs.map(visitEqualityConstraint)
 
       // Then visit the parts depending on the parameters
       val e = visitExp(exp, ns0)(Scope.Top, sctx, flix)
@@ -563,20 +520,13 @@ object Namer {
   }
 
   /**
-    * Performs naming on the given definition declarations `decls0`.
-    */
-  private def visitDefs(decls0: List[DesugaredAst.Declaration.Def], ns0: Name.NName)(implicit sctx: SharedContext, flix: Flix): List[NamedAst.Declaration.Def] = {
-    decls0.map(visitDef(_, ns0, DefKind.Member))
-  }
-
-  /**
     * Performs naming on the given effect `eff0`.
     */
   private def visitEffect(eff0: DesugaredAst.Declaration.Effect, ns0: Name.NName)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.Effect = eff0 match {
     case DesugaredAst.Declaration.Effect(doc, ann, mod0, ident, ops0, loc) =>
       val sym = Symbol.mkEffectSym(ns0, ident)
       val mod = visitModifiers(mod0, ns0)
-      val ops = visitOps(ops0, ns0, sym)
+      val ops = ops0.map(visitOp(_, ns0, sym))
       NamedAst.Declaration.Effect(doc, ann, mod, sym, ops, loc)
   }
 
@@ -587,9 +537,9 @@ object Namer {
     case DesugaredAst.Declaration.Op(doc, ann, mod0, ident, fparams, tpe, tconstrs, loc) =>
       // First visit all the top-level information
       val mod = visitModifiers(mod0, ns0)
-      val fps = visitFormalParams(fparams)(Scope.Top, sctx, flix)
+      val fps = fparams.map(visitFormalParam(_)(Scope.Top, sctx, flix))
       val t = visitType(tpe)
-      val tcsts = visitTraitConstraints(tconstrs)
+      val tcsts = tconstrs.map(visitTraitConstraint)
 
       val tparams = Nil // operations are monomorphic
       val eff = None // operations are pure
@@ -598,13 +548,6 @@ object Namer {
       val sym = Symbol.mkOpSym(effSym, ident)
       val spec = NamedAst.Spec(doc, ann, mod, tparams, fps, t, eff, tcsts, econstrs, loc)
       NamedAst.Declaration.Op(sym, spec)
-  }
-
-  /**
-    * Performs naming on the given effect operations `ops0`.
-    */
-  private def visitOps(ops0: List[DesugaredAst.Declaration.Op], ns0: Name.NName, effSym: Symbol.EffectSym)(implicit sctx: SharedContext, flix: Flix): List[NamedAst.Declaration.Op] = {
-    ops0.map(visitOp(_, ns0, effSym))
   }
 
   /**
@@ -641,7 +584,7 @@ object Namer {
 
     case DesugaredAst.Expr.Apply(exp, exps, loc) =>
       val e = visitExp(exp, ns0)
-      val es = visitExps(exps, ns0)
+      val es = exps.map(visitExp(_, ns0))
       NamedAst.Expr.Apply(e, es, loc)
 
     case DesugaredAst.Expr.Lambda(fparam, exp, loc) =>
@@ -702,21 +645,21 @@ object Namer {
 
     case DesugaredAst.Expr.Match(exp, rules, loc) =>
       val e = visitExp(exp, ns0)
-      val rs = visitMatchRules(rules, ns0)
+      val rs = rules.map(visitMatchRule(_, ns0))
       NamedAst.Expr.Match(e, rs, loc)
 
     case DesugaredAst.Expr.TypeMatch(exp, rules, loc) =>
       val e = visitExp(exp, ns0)
-      val rs = visitTypeMatchRules(rules, ns0)
+      val rs = rules.map(visitTypeMatchRule(_, ns0))
       NamedAst.Expr.TypeMatch(e, rs, loc)
 
     case DesugaredAst.Expr.RestrictableChoose(star, exp, rules, loc) =>
       val e = visitExp(exp, ns0)
-      val rs = visitRestrictableChooseRules(rules, ns0)
+      val rs = rules.map(visitRestrictableChooseRule(_, ns0))
       NamedAst.Expr.RestrictableChoose(star, e, rs, loc)
 
     case DesugaredAst.Expr.Tuple(exps, loc) =>
-      val es = visitExps(exps, ns0)
+      val es = exps.map(visitExp(_, ns0))
       NamedAst.Expr.Tuple(es, loc)
 
     case DesugaredAst.Expr.RecordEmpty(loc) =>
@@ -736,7 +679,7 @@ object Namer {
       NamedAst.Expr.RecordRestrict(label, e, loc)
 
     case DesugaredAst.Expr.ArrayLit(exps, exp, loc) =>
-      val es = visitExps(exps, ns0)
+      val es = exps.map(visitExp(_, ns0))
       val e = visitExp(exp, ns0)
       NamedAst.Expr.ArrayLit(es, e, loc)
 
@@ -763,7 +706,7 @@ object Namer {
 
     case DesugaredAst.Expr.StructNew(qname, exps, exp, loc) =>
       val e = visitExp(exp, ns0)
-      val es = visitStructFields(exps, ns0)
+      val es = exps.map(visitStructField(ns0))
       NamedAst.Expr.StructNew(qname, es, e, loc)
 
     case DesugaredAst.Expr.StructGet(exp, name, loc) =>
@@ -776,7 +719,7 @@ object Namer {
       NamedAst.Expr.StructPut(e1, name, e2, loc)
 
     case DesugaredAst.Expr.VectorLit(exps, loc) =>
-      val es = visitExps(exps, ns0)
+      val es = exps.map(visitExp(_, ns0))
       NamedAst.Expr.VectorLit(es, loc)
 
     case DesugaredAst.Expr.VectorLoad(exp1, exp2, loc) =>
@@ -818,7 +761,7 @@ object Namer {
 
     case DesugaredAst.Expr.TryCatch(exp, rules, loc) =>
       val e = visitExp(exp, ns0)
-      val rs = visitTryCatchRules(rules, ns0)
+      val rs = rules.map(visitTryCatchRule(_, ns0))
       NamedAst.Expr.TryCatch(e, rs, loc)
 
     case DesugaredAst.Expr.Throw(exp, loc) =>
@@ -827,20 +770,20 @@ object Namer {
 
     case DesugaredAst.Expr.TryWith(exp, eff, rules, loc) =>
       val e = visitExp(exp, ns0)
-      val rs = visitTryWithRules(rules, ns0)
+      val rs = rules.map(visitTryWithRule(_, ns0))
       NamedAst.Expr.TryWith(e, eff, rs, loc)
 
     case DesugaredAst.Expr.Do(op, exps, loc) =>
-      val es = visitExps(exps, ns0)
+      val es = exps.map(visitExp(_, ns0))
       NamedAst.Expr.Do(op, es, loc)
 
     case DesugaredAst.Expr.InvokeConstructor2(className, exps, loc) =>
-      val es = visitExps(exps, ns0)
+      val es = exps.map(visitExp(_, ns0))
       NamedAst.Expr.InvokeConstructor2(className, es, loc)
 
     case DesugaredAst.Expr.InvokeMethod2(exp, name, exps, loc) =>
       val e = visitExp(exp, ns0)
-      val es = visitExps(exps, ns0)
+      val es = exps.map(visitExp(_, ns0))
       NamedAst.Expr.InvokeMethod2(e, name, es, loc)
 
     case DesugaredAst.Expr.GetField2(exp, name, loc) =>
@@ -854,7 +797,7 @@ object Namer {
         return NamedAst.Expr.Error(m)
       }
 
-      val es = visitExps(exps, ns0)
+      val es = exps.map(visitExp(_, ns0))
       val ts = sig.map(visitType)
       NamedAst.Expr.InvokeConstructorOld(className, es, ts, loc)
 
@@ -866,7 +809,7 @@ object Namer {
       }
 
       val e = visitExp(exp, ns0)
-      val es = visitExps(exps, ns0)
+      val es = exps.map(visitExp(_, ns0))
       val ts = sig.map(visitType)
       val t = visitType(tpe)
       NamedAst.Expr.InvokeMethodOld(className, methodName, e, es, ts, t, loc)
@@ -878,7 +821,7 @@ object Namer {
         return NamedAst.Expr.Error(m)
       }
 
-      val es = visitExps(exps, ns0)
+      val es = exps.map(visitExp(_, ns0))
       val ts = sig.map(visitType)
       val t = visitType(tpe)
       NamedAst.Expr.InvokeStaticMethodOld(className, methodName, es, ts, t, loc)
@@ -920,8 +863,8 @@ object Namer {
       NamedAst.Expr.PutChannel(e1, e2, loc)
 
     case DesugaredAst.Expr.SelectChannel(rules, exp, loc) =>
-      val rs = visitSelectChannelRules(rules, ns0)
-      val e = visitExp(exp, ns0)
+      val rs = rules.map(visitSelectChannelRule(_, ns0))
+      val e = exp.map(visitExp(_, ns0))
       NamedAst.Expr.SelectChannel(rs, e, loc)
 
     case DesugaredAst.Expr.Spawn(exp1, exp2, loc) =>
@@ -931,7 +874,7 @@ object Namer {
 
     case DesugaredAst.Expr.ParYield(frags, exp, loc) =>
       val e = visitExp(exp, ns0)
-      val fs = visitParYieldFragments(frags, ns0)
+      val fs = frags.map(visitParYieldFragment(_, ns0))
       NamedAst.Expr.ParYield(fs, e, loc)
 
     case DesugaredAst.Expr.Lazy(exp, loc) =>
@@ -979,35 +922,14 @@ object Namer {
   }
 
   /**
-    * Performs naming on the given expression `exp0`.
-    */
-  private def visitExp(exp0: Option[DesugaredAst.Expr], ns0: Name.NName)(implicit scope: Scope, sctx: SharedContext, flix: Flix): Option[NamedAst.Expr] = {
-    exp0.map(visitExp(_, ns0))
-  }
-
-  /**
-    * Performs naming on the given expressions `exps0`.
-    */
-  private def visitExps(exps0: List[DesugaredAst.Expr], ns0: Name.NName)(implicit scope: Scope, sctx: SharedContext, flix: Flix): List[NamedAst.Expr] = {
-    exps0.map(visitExp(_, ns0))
-  }
-
-  /**
     * Performs naming on the given match rule `rule0`.
     */
   private def visitMatchRule(rule0: DesugaredAst.MatchRule, ns0: Name.NName)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.MatchRule = rule0 match {
     case DesugaredAst.MatchRule(pat, exp1, exp2) =>
       val p = visitPattern(pat)
-      val e1 = visitExp(exp1, ns0)
+      val e1 = exp1.map(visitExp(_, ns0))
       val e2 = visitExp(exp2, ns0)
       NamedAst.MatchRule(p, e1, e2)
-  }
-
-  /**
-    * Performs naming on the given match rules `rules0`.
-    */
-  private def visitMatchRules(rules0: List[DesugaredAst.MatchRule], ns0: Name.NName)(implicit scope: Scope, sctx: SharedContext, flix: Flix): List[NamedAst.MatchRule] = {
-    rules0.map(visitMatchRule(_, ns0))
   }
 
   /**
@@ -1022,13 +944,6 @@ object Namer {
   }
 
   /**
-    * Performs naming on the given typematch rules `rules0`.
-    */
-  private def visitTypeMatchRules(rules0: List[DesugaredAst.TypeMatchRule], ns0: Name.NName)(implicit scope: Scope, sctx: SharedContext, flix: Flix): List[NamedAst.TypeMatchRule] = {
-    rules0.map(visitTypeMatchRule(_, ns0))
-  }
-
-  /**
     * Performs naming on the given restrictable choose rule `rule0`.
     */
   private def visitRestrictableChooseRule(rule0: DesugaredAst.RestrictableChooseRule, ns0: Name.NName)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.RestrictableChooseRule = rule0 match {
@@ -1036,13 +951,6 @@ object Namer {
       val p = visitRestrictablePattern(pat)
       val e1 = visitExp(exp1, ns0)
       NamedAst.RestrictableChooseRule(p, e1)
-  }
-
-  /**
-    * Performs naming on the given restrictable choose rules `rules0`.
-    */
-  private def visitRestrictableChooseRules(rules0: List[DesugaredAst.RestrictableChooseRule], ns0: Name.NName)(implicit scope: Scope, sctx: SharedContext, flix: Flix): List[NamedAst.RestrictableChooseRule] = {
-    rules0.map(visitRestrictableChooseRule(_, ns0))
   }
 
   /**
@@ -1055,12 +963,6 @@ object Namer {
   }
 
   /**
-    * Performs naming on the given struct field expressions `exps0`.
-    */
-  private def visitStructFields(exps0: List[(Name.Label, DesugaredAst.Expr)], ns0: Name.NName)(implicit scope: Scope, sctx: SharedContext, flix: Flix): List[(Name.Label, NamedAst.Expr)] =
-    exps0.map(visitStructField(ns0))
-
-  /**
     * Performs naming on the given try-catch rule `rule0`.
     */
   private def visitTryCatchRule(rule0: DesugaredAst.CatchRule, ns0: Name.NName)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.CatchRule = rule0 match {
@@ -1071,27 +973,13 @@ object Namer {
   }
 
   /**
-    * Performs naming on the given try-catch rules `rules0`.
-    */
-  private def visitTryCatchRules(rules0: List[DesugaredAst.CatchRule], ns0: Name.NName)(implicit scope: Scope, sctx: SharedContext, flix: Flix): List[NamedAst.CatchRule] = {
-    rules0.map(visitTryCatchRule(_, ns0))
-  }
-
-  /**
     * Performs naming on the given handler rule `rule0`.
     */
   private def visitTryWithRule(rule0: DesugaredAst.HandlerRule, ns0: Name.NName)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.HandlerRule = rule0 match {
     case DesugaredAst.HandlerRule(op, fparams, body0) =>
-      val fps = visitFormalParams(fparams)
+      val fps = fparams.map(visitFormalParam)
       val b = visitExp(body0, ns0)
       NamedAst.HandlerRule(op, fps, b)
-  }
-
-  /**
-    * Performs naming on the given handler rules `rules0`.
-    */
-  private def visitTryWithRules(rules0: List[DesugaredAst.HandlerRule], ns0: Name.NName)(implicit scope: Scope, sctx: SharedContext, flix: Flix): List[NamedAst.HandlerRule] = {
-    rules0.map(visitTryWithRule(_, ns0))
   }
 
   /**
@@ -1107,13 +995,6 @@ object Namer {
   }
 
   /**
-    * Performs naming on the given select channel rules `rules0`.
-    */
-  private def visitSelectChannelRules(rules0: List[DesugaredAst.SelectChannelRule], ns0: Name.NName)(implicit scope: Scope, sctx: SharedContext, flix: Flix): List[NamedAst.SelectChannelRule] = {
-    rules0.map(visitSelectChannelRule(_, ns0))
-  }
-
-  /**
     * Performs naming on the given par-yield fragment `frag0`.
     */
   private def visitParYieldFragment(frag0: DesugaredAst.ParYieldFragment, ns0: Name.NName)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.ParYieldFragment = frag0 match {
@@ -1121,13 +1002,6 @@ object Namer {
       val p = visitPattern(pat)
       val e1 = visitExp(exp1, ns0)
       NamedAst.ParYieldFragment(p, e1, l)
-  }
-
-  /**
-    * Performs naming on the given par-yield fragments `frags0`.
-    */
-  private def visitParYieldFragments(frags0: List[DesugaredAst.ParYieldFragment], ns0: Name.NName)(implicit scope: Scope, sctx: SharedContext, flix: Flix): List[NamedAst.ParYieldFragment] = {
-    frags0.map(visitParYieldFragment(_, ns0))
   }
 
   /**
@@ -1191,7 +1065,7 @@ object Namer {
     */
   private def visitHeadPredicate(head: DesugaredAst.Predicate.Head, ns0: Name.NName)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.Predicate.Head = head match {
     case DesugaredAst.Predicate.Head.Atom(pred, den, exps, loc) =>
-      val es = visitExps(exps, ns0)
+      val es = exps.map(visitExp(_, ns0))
       NamedAst.Predicate.Head.Atom(pred, den, es, loc)
   }
 
@@ -1494,20 +1368,12 @@ object Namer {
     */
   private def visitJvmMethod(method: DesugaredAst.JvmMethod, ns0: Name.NName)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.JvmMethod = method match {
     case DesugaredAst.JvmMethod(ident, fparams, exp0, tpe, eff, loc) =>
-      val fps = visitFormalParams(fparams)
+      val fps = fparams.map(visitFormalParam)
       val t = visitType(tpe)
       val ef = eff.map(visitType)
       val e = visitExp(exp0, ns0)
       NamedAst.JvmMethod(ident, fps, e, t, ef, loc)
   }
-
-  /**
-    * Performs naming on the given formal parameters `fparam0`.
-    */
-  private def visitFormalParams(fparams0: List[DesugaredAst.FormalParam])(implicit scope: Scope, sctx: SharedContext, flix: Flix): List[NamedAst.FormalParam] = {
-    fparams0.map(visitFormalParam)
-  }
-
 
   /**
     * Performs naming on the given type parameter.
