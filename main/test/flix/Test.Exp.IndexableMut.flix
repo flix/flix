@@ -158,7 +158,7 @@ mod Test.Exp.IndexableMut {
     def mutMap05(): Bool = region rc {
         try {
             let m = Map#{0 => 1, 1 => 2, 2 => 3, 3 => 4} |> Map.toMutMap(rc);
-            m[4] = -1
+            m[4] = -1;
             false
         } with KeyNotFound {
             def keyNotFound(_, _) = true
