@@ -32,23 +32,33 @@ object TypeBuiltinCompleter {
     */
   def getCompletions: Iterable[Completion] =
     List(
-      Completion.TypeBuiltinCompletion("Unit"      , Priority.High),
-      Completion.TypeBuiltinCompletion("Bool"      , Priority.High),
-      Completion.TypeBuiltinCompletion("Char"      , Priority.High),
-      Completion.TypeBuiltinCompletion("Float64"   , Priority.High),
-      Completion.TypeBuiltinCompletion("BigDecimal", Priority.High),
-      Completion.TypeBuiltinCompletion("Int32"     , Priority.High),
-      Completion.TypeBuiltinCompletion("Int64"     , Priority.High),
+      // A
+      polycompletion("Array"   , List("a", "r")    , Priority.Default),
+      // B
+      Completion.TypeBuiltinCompletion("Bool"      , Priority.Higher),
       Completion.TypeBuiltinCompletion("BigInt"    , Priority.High),
+      Completion.TypeBuiltinCompletion("BigDecimal", Priority.Low),
+      // C
+      Completion.TypeBuiltinCompletion("Char"      , Priority.Default),
+      // F
+      Completion.TypeBuiltinCompletion("Float32"   , Priority.High),
+      Completion.TypeBuiltinCompletion("Float64"   , Priority.Low),
+      // I
+      Completion.TypeBuiltinCompletion("Int16"     , Priority.Low),
+      Completion.TypeBuiltinCompletion("Int32"     , Priority.Higher),
+      Completion.TypeBuiltinCompletion("Int64"     , Priority.High),
+      Completion.TypeBuiltinCompletion("Int8"      , Priority.Lower),
+      // L
+      polycompletion("Lazy"    , List("t")         , Priority.Default),
+      // R
+      polycompletion("Receiver", List("t", "r")    , Priority.Default),
+      // S
       Completion.TypeBuiltinCompletion("String"    , Priority.High),
-      Completion.TypeBuiltinCompletion("Int8"      , Priority.Lowest),
-      Completion.TypeBuiltinCompletion("Int16"     , Priority.Lowest),
-      Completion.TypeBuiltinCompletion("Float32"   , Priority.Lowest),
-      Completion.TypeBuiltinCompletion("Void"      , Priority.Lowest),
-      polycompletion("Array"   , List("a", "r")    , Priority.Lower),
-      polycompletion("Vector"  , List("a")         , Priority.Lower),
-      polycompletion("Sender"  , List("t", "r")    , Priority.Lower),
-      polycompletion("Receiver", List("t", "r")    , Priority.Lower),
-      polycompletion("Lazy"    , List("t")         , Priority.Lower),
+      polycompletion("Sender"  , List("t", "r")    , Priority.Low),
+      // U
+      Completion.TypeBuiltinCompletion("Unit"      , Priority.Default),
+      // V
+      Completion.TypeBuiltinCompletion("Void"      , Priority.Low),
+      polycompletion("Vector"  , List("a")         , Priority.High),
     )
 }
