@@ -425,7 +425,7 @@ object Namer {
       val mod = visitModifiers(mod0, ns0)
       val tparam = visitTypeParam(tparams0)
 
-      val sts = visitTraitConstraints(superTraits)
+      val sts = superTraits.map(visitTraitConstraint)
       val ascs = assocs.map(visitAssocTypeSig(_, sym)) // TODO switch param order to match visitSig
       val sigs = visitSigs(signatures, ns0, sym)
       val ls = visitDefs(laws, ns0)
@@ -440,7 +440,7 @@ object Namer {
     case DesugaredAst.Declaration.Instance(doc, ann, mod, clazz, tpe, tconstrs, assocs, defs, loc) =>
       val tparams = getImplicitTypeParamsFromTypes(List(tpe))
       val t = visitType(tpe)
-      val tcsts = visitTraitConstraints(tconstrs)
+      val tcsts = tconstrs.map(visitTraitConstraint)
       val ascs = assocs.map(visitAssocTypeDef)
       val ds = visitDefs(defs, ns0)
       NamedAst.Declaration.Instance(doc, ann, mod, clazz, tparams, t, tcsts, ascs, ds, ns0.parts, loc)
@@ -453,13 +453,6 @@ object Namer {
     case DesugaredAst.TraitConstraint(trt, tparam, loc) =>
       val t = visitType(tparam)
       NamedAst.TraitConstraint(trt, t, loc)
-  }
-
-  /**
-    * Performs naming on the given trait constraints `tconstrs`.
-    */
-  private def visitTraitConstraints(tconstrs: List[DesugaredAst.TraitConstraint])(implicit sctx: SharedContext, flix: Flix): List[NamedAst.TraitConstraint] = {
-    tconstrs.map(visitTraitConstraint)
   }
 
   /**
@@ -491,7 +484,7 @@ object Namer {
       val fps = visitFormalParams(fparams)(Scope.Top, sctx, flix)
       val t = visitType(tpe)
       val ef = eff.map(visitType)
-      val tcsts = visitTraitConstraints(tconstrs)
+      val tcsts = tconstrs.map(visitTraitConstraint)
       val ecsts = visitEqualityConstraints(econstrs)
 
       // Then visit the parts depending on the parameters
@@ -523,7 +516,7 @@ object Namer {
       val fps = visitFormalParams(fparams)(Scope.Top, sctx, flix)
       val t = visitType(tpe)
       val ef = eff.map(visitType)
-      val tcsts = visitTraitConstraints(tconstrs)
+      val tcsts = tconstrs.map(visitTraitConstraint)
       val ecsts = visitEqualityConstraints(econstrs)
 
       // Then visit the parts depending on the parameters
@@ -567,7 +560,7 @@ object Namer {
       val mod = visitModifiers(mod0, ns0)
       val fps = visitFormalParams(fparams)(Scope.Top, sctx, flix)
       val t = visitType(tpe)
-      val tcsts = visitTraitConstraints(tconstrs)
+      val tcsts = tconstrs.map(visitTraitConstraint)
 
       val tparams = Nil // operations are monomorphic
       val eff = None // operations are pure
