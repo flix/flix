@@ -107,9 +107,7 @@ object KeywordCompleter {
       Completion.KeywordCompletion("@ParallelWhenPure", Priority.Lowest),
       Completion.KeywordCompletion("@Lazy"            , Priority.Lowest),
       Completion.KeywordCompletion("@LazyWhenPure"    , Priority.Lowest),
-      Completion.KeywordCompletion("Record"           , Priority.Lowest),
       Completion.KeywordCompletion("redef"            , Priority.Lowest),
-      Completion.KeywordCompletion("Schema"           , Priority.Lowest),
     )
 
   /**
