@@ -890,7 +890,7 @@ object WeederError {
     * @param name the name of the parameter.
     * @param loc  the location of the formal parameter.
     */
-  case class MissingFormalParamAscription(name: String, loc: SourceLocation) extends WeederError with Unrecoverable {
+  case class MissingFormalParamAscription(name: String, loc: SourceLocation) extends WeederError with Recoverable {
     def summary: String = "Missing type ascription. Type ascriptions are required for parameters here."
 
     def message(formatter: Formatter): String = {
