@@ -23,66 +23,37 @@ import ca.uwaterloo.flix.language.ast.TypedAst
   * Completions for keywords
   */
 object KeywordCompleter {
-  /**
-    * Miscellaneous keywords.
-    */
-  def getOtherKeywords(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] =
-    List(
-      Completion.KeywordCompletion("with"              , Priority.Highest),
-      Completion.KeywordCompletion("law"               , Priority.Higher),
-      Completion.KeywordCompletion("@Test"             , Priority.High),
-      Completion.KeywordCompletion("where"             , Priority.Low),
-      Completion.KeywordCompletion("fix"               , Priority.Low),
-      Completion.KeywordCompletion("@Deprecated"       , Priority.Lowest),
-      Completion.KeywordCompletion("@Parallel"         , Priority.Lowest),
-      Completion.KeywordCompletion("@ParallelWhenPure" , Priority.Lowest),
-      Completion.KeywordCompletion("@Lazy"             , Priority.Lowest),
-      Completion.KeywordCompletion("@LazyWhenPure"     , Priority.Lowest),
-      Completion.KeywordCompletion("Record"            , Priority.Lowest),
-      Completion.KeywordCompletion("redef"             , Priority.Lowest),
-      Completion.KeywordCompletion("Schema"            , Priority.Lowest),
-    )
-
-  /**
-    * Trait declaration keywords. These are keywords that occur within a trait declaration.
-    */
-  def getTraitKeywords(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] =
-    List(
-      Completion.KeywordCompletion("def", Priority.Lower),
-      Completion.KeywordCompletion("pub", Priority.Lower),
-    )
-
 
   /**
     * Declaration keywords. These are keywords that denote a declaration.
     */
-  def getDeclKeywords(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] =
+  def getDeclKeywords: Iterable[Completion] =
     List(
-      Completion.KeywordCompletion("def"      , Priority.Highest),
-      Completion.KeywordCompletion("pub"      , Priority.Higher),
-      Completion.KeywordCompletion("enum"     , Priority.High),
-      Completion.KeywordCompletion("type"     , Priority.High),
-      Completion.KeywordCompletion("instance" , Priority.High),
-      Completion.KeywordCompletion("mod"      , Priority.Low),
-      Completion.KeywordCompletion("eff"      , Priority.Lower),
-      Completion.KeywordCompletion("struct"   , Priority.Lower),
-      Completion.KeywordCompletion("sealed"   , Priority.Lowest),
-      Completion.KeywordCompletion("trait"    , Priority.Lowest),
-      Completion.KeywordCompletion("import"   , Priority.Lowest),
+      Completion.KeywordCompletion("def"      , Priority.highest("def")),
+      Completion.KeywordCompletion("pub"      , Priority.higher("pub")),
+      Completion.KeywordCompletion("enum"     , Priority.high("enum")),
+      Completion.KeywordCompletion("type"     , Priority.high("type")),
+      Completion.KeywordCompletion("instance" , Priority.high("instance")),
+      Completion.KeywordCompletion("mod"      , Priority.low("mod")),
+      Completion.KeywordCompletion("eff"      , Priority.lower("eff")),
+      Completion.KeywordCompletion("struct"   , Priority.lower("struct")),
+      Completion.KeywordCompletion("sealed"   , Priority.lowest("sealed")),
+      Completion.KeywordCompletion("trait"    , Priority.lowest("trait")),
+      Completion.KeywordCompletion("import"   , Priority.lowest("import")),
     )
 
   /**
     * Enum keywords. These are keywords that can appear within the declaration of an enum.
     */
-  def getEnumKeywords(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] =
+  def getEnumKeywords: Iterable[Completion] =
     List(
-      Completion.KeywordCompletion("case", Priority.Low)
+      Completion.KeywordCompletion("case", Priority.low("case"))
     )
 
   /**
     * Expression keywords. These are keywords that can appear within expressions (fx within the body of a function).
     */
-  def getExprKeywords(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] =
+  def getExprKeywords: Iterable[Completion] =
     List(
       "and",
       "as",
@@ -119,5 +90,34 @@ object KeywordCompleter {
       "use",
       "without",
       "yield"
-    ) map (name => Completion.KeywordCompletion(name, Priority.Lower))
+    ) map (name => Completion.KeywordCompletion(name, Priority.lower(name)))
+           
+  /**
+    * Miscellaneous keywords.
+    */
+  def getOtherKeywords: Iterable[Completion] =
+    List(
+      Completion.KeywordCompletion("with"             , Priority.highest("with")),
+      Completion.KeywordCompletion("law"              , Priority.higher("law")),
+      Completion.KeywordCompletion("@Test"            , Priority.high("@Test")),
+      Completion.KeywordCompletion("where"            , Priority.low("where")),
+      Completion.KeywordCompletion("fix"              , Priority.low("fix")),
+      Completion.KeywordCompletion("@Deprecated"      , Priority.lowest("@Deprecated")),
+      Completion.KeywordCompletion("@Parallel"        , Priority.lowest("@Parallel")),
+      Completion.KeywordCompletion("@ParallelWhenPure", Priority.lowest("@ParallelWhenPure")),
+      Completion.KeywordCompletion("@Lazy"            , Priority.lowest("@Lazy")),
+      Completion.KeywordCompletion("@LazyWhenPure"    , Priority.lowest("@LazyWhenPure")),
+      Completion.KeywordCompletion("Record"           , Priority.lowest("Record")),
+      Completion.KeywordCompletion("redef"            , Priority.lowest("redef")),
+      Completion.KeywordCompletion("Schema"           , Priority.lowest("Schema")),
+    )
+
+  /**
+    * Trait declaration keywords. These are keywords that occur within a trait declaration.
+    */
+  def getTraitKeywords: Iterable[Completion] =
+    List(
+      Completion.KeywordCompletion("def", Priority.lower("def")),
+      Completion.KeywordCompletion("pub", Priority.lower("pub")),
+    )
 }

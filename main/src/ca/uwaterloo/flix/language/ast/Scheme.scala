@@ -93,6 +93,12 @@ object Scheme {
       case Type.AssocType(sym, args, kind, _) =>
         // // Performance: Few associated types, not worth optimizing.
         Type.AssocType(sym, args.map(visitType), kind, loc)
+
+      case Type.JvmToType(tpe, loc) =>
+        Type.JvmToType(visitType(tpe), loc)
+
+      case Type.UnresolvedJvmType(member, loc) =>
+        Type.UnresolvedJvmType(member.map(visitType), loc)
     }
 
     val newBase = visitType(baseType)

@@ -20,7 +20,6 @@ import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
-import ca.uwaterloo.flix.language.phase.typer.TypeReduction.{JavaConstructorResolutionResult, JavaFieldResolutionResult, JavaMethodResolutionResult}
 import ca.uwaterloo.flix.language.phase.unification.*
 import ca.uwaterloo.flix.util.Result.Err
 import ca.uwaterloo.flix.util.collection.{ListMap, ListOps}
@@ -262,53 +261,21 @@ object ConstraintSolver {
     */
   private def resolveOne(constr0: TypeConstraint, renv: RigidityEnv, subst0: Substitution)(implicit scope: Scope, tenv: Map[Symbol.TraitSym, Ast.TraitContext], eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Result[ResolutionResult, TypeError] = constr0 match {
     case TypeConstraint.Equality(tpe1, tpe2, prov0) =>
-      val t1 = TypeMinimization.minimizeType(subst0(tpe1))
-      val t2 = TypeMinimization.minimizeType(subst0(tpe2))
+      val tmin1 = TypeMinimization.minimizeType(subst0(tpe1))
+      val tmin2 = TypeMinimization.minimizeType(subst0(tpe2))
       val prov = subst0(prov0)
-      // A small hack to ensure that we do not add reducible types to the substitution.
-      if (TypeReduction.isReducible(t1) || TypeReduction.isReducible(t2)) {
-        Result.Ok(ResolutionResult.constraints(constr0 :: Nil, progress = false))
-      } else {
-        resolveEquality(t1, t2, prov, renv, constr0.loc).map {
-          case ResolutionResult(subst, constrs, p) => ResolutionResult(subst @@ subst0, constrs, progress = p)
-        }
-      }
-    case TypeConstraint.EqJvmConstructor(jvar, clazz, tpes0, prov) =>
-      val tpes = tpes0.map(subst0.apply)
-        TypeReduction.lookupConstructor(clazz, tpes, jvar.loc) match {
-          case JavaConstructorResolutionResult.Resolved(tpe) =>
-            val subst = Substitution.singleton(jvar.sym, tpe)
-            Result.Ok(ResolutionResult(subst @@ subst0, Nil, progress = true))
-          case JavaConstructorResolutionResult.AmbiguousConstructor(constructors) => Result.Err(TypeError.AmbiguousConstructor(clazz, tpes, constructors, renv, jvar.loc))
-          case JavaConstructorResolutionResult.ConstructorNotFound => Result.Err(TypeError.ConstructorNotFound(clazz, tpes, List(), renv, jvar.loc)) // TODO INTEROP: fill in candidate methods
-          case JavaConstructorResolutionResult.UnresolvedTypes => Result.Ok(ResolutionResult(subst0, List(constr0), progress = false))
-        }
-    case TypeConstraint.EqJvmMethod(jvar, tpe0, methodName, tpes0, prov) =>
-      val tpe = subst0(tpe0)
-      val tpes = tpes0.map(subst0.apply)
-      TypeReduction.lookupMethod(tpe, methodName.name, tpes, jvar.loc) match {
-        case JavaMethodResolutionResult.Resolved(tpe) =>
-          val subst = Substitution.singleton(jvar.sym, tpe)
-          Result.Ok(ResolutionResult(subst @@ subst0, Nil, progress = true))
-        case JavaMethodResolutionResult.AmbiguousMethod(methods) => Result.Err(TypeError.AmbiguousMethod(methodName.name, tpe, tpes, methods, renv, jvar.loc))
-        case JavaMethodResolutionResult.MethodNotFound => Result.Err(TypeError.MethodNotFound(methodName, tpe, tpes, jvar.loc))
-        case JavaMethodResolutionResult.UnresolvedTypes => Result.Ok(ResolutionResult(subst0, List(constr0), progress = false))
-      }
-    case TypeConstraint.EqJvmField(jvar, tpe0, fieldName, prov) =>
-      val tpe = subst0(tpe0)
-      TypeReduction.lookupField(tpe, fieldName.name, jvar.loc) match {
-        case JavaFieldResolutionResult.FieldNotFound => Result.Err(TypeError.FieldNotFound(fieldName, tpe, jvar.loc))
-        case JavaFieldResolutionResult.UnresolvedTypes => Result.Ok(ResolutionResult(subst0, List(constr0), progress = false))
-      }
-    case TypeConstraint.EqStaticJvmMethod(jvar, clazz, methodName, tpes0, prov) =>
-      val tpes = tpes0.map(subst0.apply)
-      TypeReduction.lookupStaticMethod(clazz, methodName.name, tpes, prov.loc) match {
-        case JavaMethodResolutionResult.Resolved(tpe) =>
-          val subst = Substitution.singleton(jvar.sym, tpe)
-          Result.Ok(ResolutionResult(subst @@ subst0, Nil, progress = true))
-        case JavaMethodResolutionResult.AmbiguousMethod(methods) => Result.Err(TypeError.AmbiguousStaticMethod(clazz, methodName.name, tpes, methods, renv, jvar.loc))
-        case JavaMethodResolutionResult.MethodNotFound => Result.Err(TypeError.StaticMethodNotFound(clazz, methodName.name, tpes, List(), renv, jvar.loc)) // TODO INTEROP: fill in candidate methods
-        case JavaMethodResolutionResult.UnresolvedTypes => Result.Ok(ResolutionResult(subst0, List(constr0), progress = false))
+      for {
+        (t1, p1) <- TypeReduction.simplify(tmin1, renv, prov.loc)
+        (t2, p2) <- TypeReduction.simplify(tmin2, renv, prov.loc)
+        ResolutionResult(subst, constrs, p) <-
+          // A small hack to ensure that we do not add reducible types to the substitution.
+          if (TypeReduction.containsJvmTypes(t1) || TypeReduction.containsJvmTypes(t2)) {
+            Result.Ok(ResolutionResult.constraints(List(TypeConstraint.Equality(t1, t2, prov)), p1 || p2))
+          } else {
+            resolveEquality(t1, t2, prov, renv, constr0.loc)
+          }
+      } yield {
+        ResolutionResult(subst @@ subst0, constrs, p1 || p2 || p)
       }
     case TypeConstraint.Trait(sym, tpe, loc) =>
       resolveTraitConstraint(sym, subst0(tpe), renv, loc).map {
@@ -339,32 +306,28 @@ object ConstraintSolver {
     *
     * θ ⊩ᵤ τ₁ = τ₂ ⤳ u; r
     */
-  private def resolveEquality(tpe1: Type, tpe2: Type, prov: Provenance, renv: RigidityEnv, loc: SourceLocation)(implicit scope: Scope, eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Result[ResolutionResult, TypeError] = (tpe1.kind, tpe2.kind) match {
+  private def resolveEquality(t1: Type, t2: Type, prov: Provenance, renv: RigidityEnv, loc: SourceLocation)(implicit scope: Scope, eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Result[ResolutionResult, TypeError] = (t1.kind, t2.kind) match {
     case (Kind.Eff, Kind.Eff) =>
       // first simplify the types to get rid of assocs if we can
       for {
-        (t1, p1) <- TypeReduction.simplify(tpe1, renv, loc)
-        (t2, p2) <- TypeReduction.simplify(tpe2, renv, loc)
         res0 <- EffUnification.unify(t1, t2, renv).mapErr(toTypeError(_, prov))
         res =
           if (res0._2.isEmpty) {
             ResolutionResult.newSubst(res0._1)
           } else {
-            ResolutionResult.constraints(List(TypeConstraint.Equality(t1, t2, prov)), p1 || p2)
+            ResolutionResult.constraints(List(TypeConstraint.Equality(t1, t2, prov)), progress = false)
           }
       } yield res
 
     case (Kind.Bool, Kind.Bool) =>
       // first simplify the types to get rid of assocs if we can
       for {
-        (t1, p1) <- TypeReduction.simplify(tpe1, renv, loc)
-        (t2, p2) <- TypeReduction.simplify(tpe2, renv, loc)
         res0 <- BoolUnification.unify(t1, t2, renv).mapErr(toTypeError(_, prov))
         res =
           if (res0._2.isEmpty) {
             ResolutionResult.newSubst(res0._1)
           } else {
-            ResolutionResult.constraints(List(TypeConstraint.Equality(t1, t2, prov)), p1 || p2)
+            ResolutionResult.constraints(List(TypeConstraint.Equality(t1, t2, prov)), progress = false)
           }
       } yield res
 
@@ -372,31 +335,31 @@ object ConstraintSolver {
     case (Kind.RecordRow, Kind.RecordRow) =>
       // first simplify the types to get rid of assocs if we can
       for {
-        (t1, p1) <- TypeReduction.simplify(tpe1, renv, loc)
-        (t2, p2) <- TypeReduction.simplify(tpe2, renv, loc)
         res0 <- RecordUnification.unifyRows(t1, t2, renv).mapErr(toTypeError(_, prov))
         res =
           if (res0._2.isEmpty) {
             ResolutionResult.newSubst(res0._1)
           } else {
-            ResolutionResult.constraints(List(TypeConstraint.Equality(t1, t2, prov)), p1 || p2)
+            ResolutionResult.constraints(List(TypeConstraint.Equality(t1, t2, prov)), progress = false)
           }
       } yield res
 
     case (Kind.SchemaRow, Kind.SchemaRow) =>
       // first simplify the types to get rid of assocs if we can
       for {
-        (t1, _) <- TypeReduction.simplify(tpe1, renv, loc)
-        (t2, _) <- TypeReduction.simplify(tpe2, renv, loc)
         res <- SchemaUnification.unifyRows(t1, t2, renv).mapErr(toTypeError(_, prov))
       } yield ResolutionResult.newSubst(res)
 
     case (Kind.CaseSet(sym1), Kind.CaseSet(sym2)) if sym1 == sym2 =>
       for {
-        (t1, _) <- TypeReduction.simplify(tpe1, renv, loc)
-        (t2, _) <- TypeReduction.simplify(tpe2, renv, loc)
         res <- CaseSetUnification.unify(t1, t2, renv, sym1.universe, sym1).mapErr(toTypeError(_, prov))
       } yield ResolutionResult.newSubst(res)
+
+    case (Kind.Jvm, Kind.Jvm) =>
+      JvmUnification.unify(t1, t2, renv) match {
+        case None => Result.Ok(ResolutionResult.constraints(List(TypeConstraint.Equality(t1, t2, prov)), progress = false))
+        case Some(subst) => Result.Ok(ResolutionResult.newSubst(subst))
+      }
 
     case (Kind.Error, _) => Result.Ok(ResolutionResult.newSubst(Substitution.empty))
 
@@ -404,12 +367,10 @@ object ConstraintSolver {
 
     case (k1, k2) if KindUnification.unifiesWith(k1, k2) =>
       for {
-        (t1, _) <- TypeReduction.simplify(tpe1, renv, loc)
-        (t2, _) <- TypeReduction.simplify(tpe2, renv, loc)
         res <- resolveEqualityStar(t1, t2, prov, renv, loc)
       } yield res
 
-    case _ => Err(toTypeError(UnificationError.MismatchedTypes(tpe1, tpe2), prov))
+    case _ => Err(toTypeError(UnificationError.MismatchedTypes(t1, t2), prov))
   }
 
   /**
@@ -447,37 +408,20 @@ object ConstraintSolver {
     case (Type.AssocType(cst1, args1, _, _), Type.AssocType(cst2, args2, _, _)) if cst1.sym == cst2.sym && args1 == args2 =>
       Result.Ok(ResolutionResult.elimination)
 
-    // redU
-    // If either side is an associated type, we try to reduce both sides.
-    // This is to prevent erroneous no-progress reports when we actually could make progress on the non-matched side.
+    // If either side is an associated type, we don't give up since we can find out more later.
     case (assoc: Type.AssocType, tpe) =>
-      for {
-        (t1, p1) <- TypeReduction.simplify(assoc, renv, loc)
-        (t2, p2) <- TypeReduction.simplify(tpe, renv, loc)
-      } yield {
-        ResolutionResult.constraints(List(TypeConstraint.Equality(t1, t2, prov)), p1 || p2)
-      }
+      Result.Ok(ResolutionResult.constraints(List(TypeConstraint.Equality(assoc, tpe, prov)), progress = false))
 
-    // redU
     case (tpe, assoc: Type.AssocType) =>
-      for {
-        (t1, p1) <- TypeReduction.simplify(tpe, renv, loc)
-        (t2, p2) <- TypeReduction.simplify(assoc, renv, loc)
-      } yield {
-        ResolutionResult.constraints(List(TypeConstraint.Equality(t1, t2, prov)), p1 || p2)
-      }
+      Result.Ok(ResolutionResult.constraints(List(TypeConstraint.Equality(tpe, assoc, prov)), progress = false))
 
-    // MRT
-    case (_, Type.Apply(Type.Cst(TypeConstructor.MethodReturnType, _), _, _)) =>
-      Result.Ok(ResolutionResult.constraints(List(TypeConstraint.Equality(tpe1, tpe2, prov)), progress = false))
-    case (Type.Apply(Type.Cst(TypeConstructor.MethodReturnType, _), _, _), _) =>
-      Result.Ok(ResolutionResult.constraints(List(TypeConstraint.Equality(tpe1, tpe2, prov)), progress = false))
+    // If either side is an Java type, we don't give up since we can find out more later.
+    case (java@Type.JvmToType(_, _), tpe) =>
+      Result.Ok(ResolutionResult.constraints(List(TypeConstraint.Equality(java, tpe, prov)), progress = false))
 
-    // FieldType
-    case (_, Type.Apply(Type.Cst(TypeConstructor.FieldType, _), _, _)) =>
-      Result.Ok(ResolutionResult.constraints(List(TypeConstraint.Equality(tpe1, tpe2, prov)), progress = false))
-    case (Type.Apply(Type.Cst(TypeConstructor.FieldType, _), _, _), _) =>
-      Result.Ok(ResolutionResult.constraints(List(TypeConstraint.Equality(tpe1, tpe2, prov)), progress = false))
+    case (tpe, java@Type.JvmToType(_, _)) =>
+      Result.Ok(ResolutionResult.constraints(List(TypeConstraint.Equality(tpe, java, prov)), progress = false))
+
 
     case _ =>
       Result.Err(toTypeError(UnificationError.MismatchedTypes(tpe1, tpe2), prov))
@@ -562,10 +506,6 @@ object ConstraintSolver {
   private def getFirstError(deferred: List[TypeConstraint], renv: RigidityEnv)(implicit flix: Flix): Option[TypeError] = deferred match {
     case Nil => None
     case TypeConstraint.Equality(tpe1, tpe2, prov) :: _ => Some(toTypeError(UnificationError.MismatchedTypes(tpe1, tpe2), prov))
-    case TypeConstraint.EqJvmConstructor(jvar, clazz, _, prov) :: _ => Some(toTypeError(UnificationError.MismatchedTypes(jvar.baseType, Type.getFlixType(clazz)), prov))
-    case TypeConstraint.EqJvmMethod(jvar, tpe, _, _, prov) :: _ => Some(toTypeError(UnificationError.MismatchedTypes(jvar.baseType, tpe), prov))
-    case TypeConstraint.EqJvmField(jvar, tpe, _, prov) :: _ => Some(toTypeError(UnificationError.MismatchedTypes(jvar.baseType, tpe), prov))
-    case TypeConstraint.EqStaticJvmMethod(jvar, clazz, _, _, prov) :: _ => Some(toTypeError(UnificationError.MismatchedTypes(jvar.baseType, Type.getFlixType(clazz)), prov))
     case TypeConstraint.Trait(sym, tpe, loc) :: _ => Some(mkMissingInstance(sym, tpe, renv, loc))
     case TypeConstraint.Purification(_, _, _, _, nested) :: _ => getFirstError(nested, renv)
   }
@@ -684,80 +624,80 @@ object ConstraintSolver {
     // TODO LEVELS Top is probably OK?
     implicit val scope: Scope = Scope.Top
     (err0, prov) match {
-    case (err, Provenance.ExpectType(expected, actual, loc)) =>
-      toTypeError(err, Provenance.Match(expected, actual, loc)) match {
-        case TypeError.MismatchedTypes(baseType1, baseType2, fullType1, fullType2, renv, _) =>
-          (baseType1.typeConstructor, baseType2.typeConstructor) match {
-            case (Some(TypeConstructor.Native(left)), Some(TypeConstructor.Native(right))) if left.isAssignableFrom(right) =>
-              TypeError.PossibleCheckedTypeCast(expected, actual, renv, loc)
-            case _ =>
-              TypeError.UnexpectedType(baseType1, baseType2, renv, loc)
-          }
-        case e => e
-      }
+      case (err, Provenance.ExpectType(expected, actual, loc)) =>
+        toTypeError(err, Provenance.Match(expected, actual, loc)) match {
+          case TypeError.MismatchedTypes(baseType1, baseType2, fullType1, fullType2, renv, _) =>
+            (baseType1.typeConstructor, baseType2.typeConstructor) match {
+              case (Some(TypeConstructor.Native(left)), Some(TypeConstructor.Native(right))) if left.isAssignableFrom(right) =>
+                TypeError.PossibleCheckedTypeCast(expected, actual, renv, loc)
+              case _ =>
+                TypeError.UnexpectedType(baseType1, baseType2, renv, loc)
+            }
+          case e => e
+        }
 
-    case (err, Provenance.ExpectEffect(expected, actual, loc)) =>
-      toTypeError(err, Provenance.Match(expected, actual, loc)) match {
-        case TypeError.MismatchedEffects(baseType1, baseType2, fullType1, fullType2, renv, _) =>
-          // TODO ASSOC-TYPES restore possible upcast error
-          TypeError.UnexpectedEffect(baseType1, baseType2, renv, loc)
-        case e => e
-      }
+      case (err, Provenance.ExpectEffect(expected, actual, loc)) =>
+        toTypeError(err, Provenance.Match(expected, actual, loc)) match {
+          case TypeError.MismatchedEffects(baseType1, baseType2, fullType1, fullType2, renv, _) =>
+            // TODO ASSOC-TYPES restore possible upcast error
+            TypeError.UnexpectedEffect(baseType1, baseType2, renv, loc)
+          case e => e
+        }
 
-    case (err, Provenance.ExpectArgument(expected, actual, sym, num, loc)) =>
-      toTypeError(err, Provenance.Match(expected, actual, loc)) match {
-        case TypeError.MismatchedBools(_, _, fullType1, fullType2, renv, loc) =>
-          TypeError.UnexpectedArg(sym, num, fullType1, fullType2, renv, loc)
+      case (err, Provenance.ExpectArgument(expected, actual, sym, num, loc)) =>
+        toTypeError(err, Provenance.Match(expected, actual, loc)) match {
+          case TypeError.MismatchedBools(_, _, fullType1, fullType2, renv, loc) =>
+            TypeError.UnexpectedArg(sym, num, fullType1, fullType2, renv, loc)
 
-        case TypeError.MismatchedArrowEffects(_, _, fullType1, fullType2, renv, loc) =>
-          TypeError.UnexpectedArg(sym, num, fullType1, fullType2, renv, loc)
+          case TypeError.MismatchedArrowEffects(_, _, fullType1, fullType2, renv, loc) =>
+            TypeError.UnexpectedArg(sym, num, fullType1, fullType2, renv, loc)
 
-        case TypeError.MismatchedTypes(_, _, fullType1, fullType2, renv, loc) =>
-          TypeError.UnexpectedArg(sym, num, fullType1, fullType2, renv, loc)
-        case e => e
-      }
+          case TypeError.MismatchedTypes(_, _, fullType1, fullType2, renv, loc) =>
+            TypeError.UnexpectedArg(sym, num, fullType1, fullType2, renv, loc)
+          case e => e
+        }
 
-    case (UnificationError.MismatchedTypes(baseType1, baseType2), Provenance.Match(type1, type2, loc)) =>
-      TypeError.MismatchedTypes(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc)
+      case (UnificationError.MismatchedTypes(baseType1, baseType2), Provenance.Match(type1, type2, loc)) =>
+        TypeError.MismatchedTypes(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc)
 
-    case (UnificationError.MismatchedBools(baseType1, baseType2), Provenance.Match(type1, type2, loc)) =>
-      TypeError.MismatchedBools(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc)
+      case (UnificationError.MismatchedBools(baseType1, baseType2), Provenance.Match(type1, type2, loc)) =>
+        TypeError.MismatchedBools(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc)
 
-    case (UnificationError.MismatchedEffects(baseType1, baseType2), Provenance.Match(type1, type2, loc)) =>
-      (type1.typeConstructor, type2.typeConstructor) match {
-        case (Some(TypeConstructor.Arrow(_)), _) => TypeError.MismatchedArrowEffects(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc)
-        case (_, Some(TypeConstructor.Arrow(_))) => TypeError.MismatchedArrowEffects(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc)
-        case _ => TypeError.MismatchedEffects(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc)
-      }
+      case (UnificationError.MismatchedEffects(baseType1, baseType2), Provenance.Match(type1, type2, loc)) =>
+        (type1.typeConstructor, type2.typeConstructor) match {
+          case (Some(TypeConstructor.Arrow(_)), _) => TypeError.MismatchedArrowEffects(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc)
+          case (_, Some(TypeConstructor.Arrow(_))) => TypeError.MismatchedArrowEffects(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc)
+          case _ => TypeError.MismatchedEffects(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc)
+        }
 
-    case (UnificationError.MismatchedCaseSets(baseType1, baseType2), Provenance.Match(type1, type2, loc)) =>
-      TypeError.MismatchedCaseSets(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc)
+      case (UnificationError.MismatchedCaseSets(baseType1, baseType2), Provenance.Match(type1, type2, loc)) =>
+        TypeError.MismatchedCaseSets(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc)
 
-    case (UnificationError.MismatchedArity(ts1, ts2), Provenance.Match(tpe1, tpe2, loc)) =>
-      TypeError.MismatchedArity(tpe1, tpe2, RigidityEnv.empty, loc)
+      case (UnificationError.MismatchedArity(ts1, ts2), Provenance.Match(tpe1, tpe2, loc)) =>
+        TypeError.MismatchedArity(tpe1, tpe2, RigidityEnv.empty, loc)
 
-    case (UnificationError.TooComplex(tpe1, tpe2), Provenance.Match(_, _, loc)) =>
-      TypeError.TooComplex(loc)
+      case (UnificationError.TooComplex(tpe1, tpe2), Provenance.Match(_, _, loc)) =>
+        TypeError.TooComplex(loc)
 
-    case (UnificationError.RigidVar(baseType1, baseType2), Provenance.Match(type1, type2, loc)) =>
-      TypeError.MismatchedTypes(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc)
-    case (UnificationError.OccursCheck(baseType1, baseType2), Provenance.Match(type1, type2, loc)) =>
-      TypeError.OccursCheck(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc)
-    case (UnificationError.UndefinedLabel(label, labelType, recordType), Provenance.Match(type1, type2, loc)) =>
-      TypeError.UndefinedLabel(label, labelType, recordType, RigidityEnv.empty, loc)
-    case (UnificationError.UndefinedPredicate(pred, predType, schemaType), Provenance.Match(type1, type2, loc)) =>
-      TypeError.UndefinedPred(pred, predType, schemaType, RigidityEnv.empty, loc)
-    case (UnificationError.NonRecordType(nonRecordType), Provenance.Match(type1, type2, loc)) =>
-      TypeError.NonRecordType(nonRecordType, RigidityEnv.empty, loc)
-    case (UnificationError.NonSchemaType(nonSchemaType), Provenance.Match(type1, type2, loc)) =>
-      TypeError.NonSchemaType(nonSchemaType, RigidityEnv.empty, loc)
-    case (UnificationError.NoMatchingInstance(tconstr), Provenance.Match(type1, type2, loc)) =>
-      mkMissingInstance(tconstr.head.sym, tconstr.arg, RigidityEnv.empty, loc)
+      case (UnificationError.RigidVar(baseType1, baseType2), Provenance.Match(type1, type2, loc)) =>
+        TypeError.MismatchedTypes(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc)
+      case (UnificationError.OccursCheck(baseType1, baseType2), Provenance.Match(type1, type2, loc)) =>
+        TypeError.OccursCheck(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc)
+      case (UnificationError.UndefinedLabel(label, labelType, recordType), Provenance.Match(type1, type2, loc)) =>
+        TypeError.UndefinedLabel(label, labelType, recordType, RigidityEnv.empty, loc)
+      case (UnificationError.UndefinedPredicate(pred, predType, schemaType), Provenance.Match(type1, type2, loc)) =>
+        TypeError.UndefinedPred(pred, predType, schemaType, RigidityEnv.empty, loc)
+      case (UnificationError.NonRecordType(nonRecordType), Provenance.Match(type1, type2, loc)) =>
+        TypeError.NonRecordType(nonRecordType, RigidityEnv.empty, loc)
+      case (UnificationError.NonSchemaType(nonSchemaType), Provenance.Match(type1, type2, loc)) =>
+        TypeError.NonSchemaType(nonSchemaType, RigidityEnv.empty, loc)
+      case (UnificationError.NoMatchingInstance(tconstr), Provenance.Match(type1, type2, loc)) =>
+        mkMissingInstance(tconstr.head.sym, tconstr.arg, RigidityEnv.empty, loc)
 
-    // TODO ASSOC-TYPES these errors are relics of the old type system and should be removed
-    case (UnificationError.UnsupportedEquality(t1, t2), _) => throw InternalCompilerException("unexpected error: " + err0, SourceLocation.Unknown)
-    case (UnificationError.IrreducibleAssocType(sym, t), _) => throw InternalCompilerException("unexpected error: " + err0, SourceLocation.Unknown)
-  }
+      // TODO ASSOC-TYPES these errors are relics of the old type system and should be removed
+      case (UnificationError.UnsupportedEquality(t1, t2), _) => throw InternalCompilerException("unexpected error: " + err0, SourceLocation.Unknown)
+      case (UnificationError.IrreducibleAssocType(sym, t), _) => throw InternalCompilerException("unexpected error: " + err0, SourceLocation.Unknown)
+    }
   }
 
   /**

@@ -1,15 +1,15 @@
 struct Person[r] {
-    fstName: String,
-    lstName: String,
-    age: Int32,
-    cowboy: Bool
+    mut fstName: String,
+    mut lstName: String,
+    mut age: Int32,
+    mut cowboy: Bool
 }
 mod Person {
 
     @test
     def testStructPut01(): Bool =
         region rc {
-            let s = new Person { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true } @ rc;
+            let s = new Person @ rc { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
             s->fstName = "Unlucky";
             s->fstName == "Unlucky"
         }
@@ -17,7 +17,7 @@ mod Person {
     @test
     def testStructPut02(): Bool =
         region rc {
-            let s = new Person { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true } @ rc;
+            let s = new Person @ rc { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
             s->lstName = "Uriel";
             s->lstName == "Uriel"
         }
@@ -25,7 +25,7 @@ mod Person {
     @test
     def testStructPut03(): Bool =
         region rc {
-            let s = new Person { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true } @ rc;
+            let s = new Person @ rc { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
             s->age = 23;
             s->age == 23
         }
@@ -33,7 +33,7 @@ mod Person {
     @test
     def testStructPut04(): Bool =
         region rc {
-            let s = new Person { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true } @ rc;
+            let s = new Person @ rc { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
             s->cowboy = false;
             not s->cowboy and s->fstName == "Lucky" and s->lstName == "Luke" and s->age == 42
         }
@@ -41,7 +41,7 @@ mod Person {
     @test
     def testStructMultiPut01(): Bool =
         region rc {
-            let s = new Person { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true } @ rc;
+            let s = new Person @ rc { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
             s->fstName = "Unlucky";
             s->lstName = "Uriel";
             s->age = 23;
@@ -52,7 +52,7 @@ mod Person {
     @test
     def testStructMultiPut02(): Bool =
         region rc {
-            let s = new Person { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true } @ rc;
+            let s = new Person @ rc { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
             s->cowboy = false;
             s->age = 23;
             s->lstName = "Uriel";
@@ -63,7 +63,7 @@ mod Person {
     @test
     def testStructMultiPut03(): Bool =
         region rc {
-            let s = new Person { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true } @ rc;
+            let s = new Person @ rc { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
             s->fstName = "Unlucky";
             s->fstName = "Lucky";
             s->lstName = "Uriel";
@@ -74,7 +74,7 @@ mod Person {
     @test
     def testStructMultiPut04(): Bool =
         region rc {
-            let s = new Person { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true } @ rc;
+            let s = new Person @ rc { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
             s->lstName = "Uriel";
             s->fstName = "Unlucky";
             s->lstName = "Luke";
@@ -85,9 +85,9 @@ mod Person {
 }
 
 struct BinaryTree[t, r] {
-    left: Option[BinaryTree[t, r]],
-    right: Option[BinaryTree[t, r]],
-    node_value: t
+    mut left: Option[BinaryTree[t, r]],
+    mut right: Option[BinaryTree[t, r]],
+    mut node_value: t
 }
 
 mod BinaryTree {
@@ -110,55 +110,55 @@ mod BinaryTree {
     @test
     def binaryTree01(): Bool \ IO =
         region rc {
-            let leaf1 = new BinaryTree {
+            let leaf1 = new BinaryTree @ rc {
                 left = None,
                 right = None,
                 node_value = 10
-            } @ rc;
-            let leaf2 = new BinaryTree {
+            };
+            let leaf2 = new BinaryTree @ rc {
                 left = None,
                 right = None,
                 node_value = 9
-            } @ rc;
-            let leaf3 = new BinaryTree {
+            };
+            let leaf3 = new BinaryTree @ rc {
                 left = None,
                 right = None,
                 node_value = 8
-            } @ rc;
-            let leaf4 = new BinaryTree {
+            };
+            let leaf4 = new BinaryTree @ rc {
                 left = None,
                 right = None,
                 node_value = 7
-            } @ rc;
-            let innernode1 = new BinaryTree {
+            };
+            let innernode1 = new BinaryTree @ rc {
                 left = Some(leaf1),
                 right = Some(leaf2),
                 node_value = 4
-            } @ rc;
-            let innernode2 = new BinaryTree {
+            };
+            let innernode2 = new BinaryTree @ rc {
                 left = Some(leaf3),
                 right = Some(leaf4),
                 node_value = 4
-            } @ rc;
-            let tree = new BinaryTree {
+            };
+            let tree = new BinaryTree @ rc {
                 left = Some(innernode1),
                 right = Some(innernode2),
                 node_value = 5
-            } @ rc;
+            };
             doubleTree(Some(tree));
             binaryTreeSum(Some(tree)) == 94
         }
 
 }
 struct Nested[t, r] {
-    v : t
+    mut v : t
 }
 
 mod Nested {
     @test
     def nestedPut01(): Bool =
         region rc {
-            let nested = new Nested{ v = new Nested { v = new Nested {v = new Nested {v = 15} @ rc } @ rc} @ rc } @ rc;
+            let nested = new Nested @ rc { v = new Nested @ rc { v = new Nested @ rc {v = new Nested @ rc {v = 15} }} };
             nested->v->v->v->v == 15;
             nested->v->v->v->v = 37;
             nested->v->v->v->v == 37
@@ -166,13 +166,13 @@ mod Nested {
 }
 
 struct Lst[t, r] {
-    value: t,
-    next: Option[Lst[t, r]]
+    mut value: t,
+    mut next: Option[Lst[t, r]]
 }
 mod Lst {
     def listAppend(list: Lst[t, r], rc: Region[r], value: t): Unit \ r = match list->next {
         case Some(l) => listAppend(l, rc, value)
-        case None => list->next = Some(new Lst {value = value, next = None} @ rc)
+        case None => list->next = Some(new Lst @ rc {value = value, next = None})
     }
 
     def listSum(list: Lst[Int32, r]): Int32 \ r =
@@ -199,7 +199,7 @@ mod Lst {
     @test
     def testLst01(): Bool =
         region rc {
-            let list = new Lst { value = 1, next = None } @ rc;
+            let list = new Lst @ rc { value = 1, next = None };
             listAppend(list, rc, 2);
             listAppend(list, rc, 3);
             listAppend(list, rc, 4);
@@ -215,7 +215,7 @@ mod Lst {
     @test
     def testLst02(): Bool =
         region rc {
-            let list = new Lst { value = 1, next = None } @ rc;
+            let list = new Lst @ rc { value = 1, next = None };
             listAppend(list, rc, 2);
             listAppend(list, rc, 3);
             listAppend(list, rc, 4);
@@ -231,7 +231,7 @@ mod Lst {
     @test
     def testLst03(): Bool =
         region rc {
-            let list = new Lst { value = 1, next = None } @ rc;
+            let list = new Lst @ rc { value = 1, next = None };
             listAppend(list, rc, 2);
             listAppend(list, rc, 3);
             listAppend(list, rc, 4);
@@ -247,7 +247,7 @@ mod Lst {
     @test
     def testLst04(): Bool =
         region rc {
-            let list = new Lst { value = 1, next = None } @ rc;
+            let list = new Lst @ rc { value = 1, next = None };
             listAppend(list, rc, 2);
             listAppend(list, rc, 3);
             listAppend(list, rc, 4);
