@@ -16,29 +16,47 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 /**
-  * CompletionPriority
+  * Priority for completions.
+  * 
+  * Using a priority, we can make certain suggestions occur earlier in
+  * the list of suggestions by generating a SortText using `Priority.toSortText`
+  * on the relevant priority and label. This SortText can then be used in the `CompletionItem`
+  * for the suggestion.
   *
-  * To ensure that completions are displayed "most useful" first, we precede sortText with a number. Priorities
-  * differ depending on the type of completion, and can be boosted depending upon context (e.g. type completions
-  * are boosted if the cursor is preceded by a ":")
+  * In practice, we leverage the alphabetical sorting of completions by
+  * associating each priority with a number. The higher the priority,
+  * the lower the number. Then `Priority.toSortText`
+  * prepends that number to the label. This results in completions which
+  * are firstly sorted by the priority and then by name.
   *
-  * 1: High: completions which are only available within a very specific context
-  * 2: Boost: completions which are normally low priority, but the context makes them more likely
-  * 4: Snippet: snippets are relatively high priority because they're rare, and to be useful at all they need to be available
-  * 5: Local: local variables
-  * 7: Normal: completions that are relevant within no particular context
-  * 9: Low: completions that are unlikely to be relevant unless within a specific context
   */
+sealed trait Priority {
+}
 object Priority {
-  def highest(name: String): String = "1" + name
+  case object Highest extends Priority
+  case object Higher extends Priority
+  case object High extends Priority
+  case object Low extends Priority
+  case object Lower extends Priority
+  case object Lowest extends Priority
 
-  def higher(name: String): String = "2" + name
-
-  def high(name: String): String = "4" + name
-
-  def low(name: String): String = "5" + name
-
-  def lower(name: String): String = "7" + name
-
-  def lowest(name: String): String = "9" + name
+  /**
+    * Returns a sortText string which comes earlier alphabetically the higher the priority. 
+    *
+    * The outputs of this, when sorted alphabetically, prefers inputs with 
+    * higher priorities. The higher the priority, the earlier in an alphabetical
+    * sorting it will occur.
+    *
+    * @param p      the priority to be used in the sortText.
+    * @param label  the label to be used in the sortText.
+    * @return a string which is listed earlier alphabetically the higher the priority.
+    */
+  def toSortText(p: Priority, label: String): String = p match {
+  	case Priority.Highest => s"1$label"
+  	case Priority.Higher  => s"2$label"
+  	case Priority.High    => s"3$label"
+  	case Priority.Low     => s"4$label"
+  	case Priority.Lower   => s"5$label"
+  	case Priority.Lowest  => s"6$label"
+  }
 }

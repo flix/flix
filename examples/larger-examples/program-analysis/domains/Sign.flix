@@ -1,8 +1,8 @@
-/**
- * An implementation of the sign domain.
- *
- * See Cousot & Cousot '77 for details.
- */
+///
+/// An implementation of the sign domain.
+///
+/// See Cousot & Cousot '77 for details.
+///
 mod Domain.Sign {
 
     ///

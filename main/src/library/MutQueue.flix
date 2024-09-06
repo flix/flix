@@ -25,8 +25,8 @@
 ///
 pub struct MutQueue[a: Type, r: Region] {
     r: Region[r],
-    values: Array[a, r],
-    size: Int32
+    mut values: Array[a, r],
+    mut size: Int32
 }
 
 instance Iterable[MutQueue[a, r]] {
@@ -58,7 +58,7 @@ mod MutQueue {
     /// Returns an empty MutQueue.
     ///
     pub def empty(rc: Region[r]): MutQueue[a, r] \ r =
-        new MutQueue{r = rc, values = Array.empty(rc, 8), size = 0} @ rc
+        new MutQueue @ rc {r = rc, values = Array.empty(rc, 8), size = 0}
 
     ///
     /// Returns the number of elements in `mq`.
