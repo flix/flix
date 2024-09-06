@@ -783,9 +783,11 @@ object Weeder2 {
           (maybeType, presence) match {
             case (None, Presence.Required) =>
               val e = MissingFormalParamAscription(ident.name, tree.loc)
-              val fparam = FormalParam(Name.Ident("errorFormalParameterWithMissingType", tree.loc.asSynthetic), mods, Some(Type.Error(tree.loc.asSynthetic)), tree.loc)
+              val fparam = FormalParam(ident, mods, None, tree.loc)
               Validation.toSoftFailure(fparam, e)
-            case (Some(_), Presence.Forbidden) => Validation.toHardFailure(IllegalFormalParamAscription(tree.loc))
+            case (Some(_), Presence.Forbidden) =>
+              val e = IllegalFormalParamAscription(tree.loc)
+              Validation.toSoftFailure(FormalParam(ident, mods, None, tree.loc), e)
             case (Some(typeTree), _) => mapN(Types.visitType(typeTree)) { tpe => FormalParam(ident, mods, Some(tpe), tree.loc) }
             case (None, _) => Validation.success(FormalParam(ident, mods, None, tree.loc))
           }
