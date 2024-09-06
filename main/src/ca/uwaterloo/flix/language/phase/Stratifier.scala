@@ -360,7 +360,7 @@ object Stratifier {
 
     case Expr.SelectChannel(rules, exp, tpe, eff, loc) =>
       val e = exp.map(visitExp)
-      val rs = visitSelectChannelRules(rules)
+      val rs = rules.map(visitSelectChannelRule)
       Expr.SelectChannel(rs, e, tpe, eff, loc)
 
     case Expr.Spawn(exp1, exp2, tpe, eff, loc) =>
@@ -464,10 +464,6 @@ object Stratifier {
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       SelectChannelRule(sym, e1, e2)
-  }
-
-  private def visitSelectChannelRules(rules: List[SelectChannelRule])(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): List[SelectChannelRule] = {
-    rules.map(visitSelectChannelRule)
   }
 
   private def visitParYieldFragment(frag: ParYieldFragment)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): ParYieldFragment = frag match {
