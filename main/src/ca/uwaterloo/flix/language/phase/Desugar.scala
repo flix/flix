@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Modifier
 import ca.uwaterloo.flix.language.ast.DesugaredAst.Expr
 import ca.uwaterloo.flix.language.ast.WeededAst.Predicate
-import ca.uwaterloo.flix.language.ast.shared.{Constant, Denotation, Fixity}
+import ca.uwaterloo.flix.language.ast.shared.{Denotation, Fixity}
 import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, DesugaredAst, Name, SourceLocation, Type, WeededAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugDesugaredAst
 import ca.uwaterloo.flix.util.ParOps
@@ -1392,7 +1392,7 @@ object Desugar {
 
       case (WeededAst.ForFragment.Guard(exp1, loc1), acc) =>
         val e1 = visitExp(exp1)
-        DesugaredAst.Expr.IfThenElse(e1, acc, DesugaredAst.Expr.Cst(Constant.Unit, loc1.asSynthetic), loc1.asSynthetic)
+        DesugaredAst.Expr.IfThenElse(e1, acc, DesugaredAst.Expr.Cst(Ast.Constant.Unit, loc1.asSynthetic), loc1.asSynthetic)
 
       case (WeededAst.ForFragment.Let(pat1, exp1, loc1), acc) =>
         // Rewrite to pattern match
@@ -1434,7 +1434,7 @@ object Desugar {
 
       case (WeededAst.ForFragment.Guard(exp1, loc1), acc) =>
         val e1 = visitExp(exp1)
-        val zero = mkApplyFqn(fqnZero, List(DesugaredAst.Expr.Cst(Constant.Unit, loc1.asSynthetic)), loc1.asSynthetic)
+        val zero = mkApplyFqn(fqnZero, List(DesugaredAst.Expr.Cst(Ast.Constant.Unit, loc1.asSynthetic)), loc1.asSynthetic)
         DesugaredAst.Expr.IfThenElse(e1, acc, zero, loc1.asSynthetic)
 
       case (WeededAst.ForFragment.Let(pat1, exp1, loc1), acc) =>
@@ -1559,7 +1559,7 @@ object Desugar {
   private def desugarTuple(exps0: List[WeededAst.Expr], loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
     val es = visitExps(exps0)
     es match {
-      case Nil => DesugaredAst.Expr.Cst(Constant.Unit, loc0)
+      case Nil => DesugaredAst.Expr.Cst(Ast.Constant.Unit, loc0)
       case x :: Nil => x
       case xs => DesugaredAst.Expr.Tuple(xs, loc0)
     }
@@ -1601,7 +1601,7 @@ object Desugar {
     */
   private def desugarSetLit(exps0: List[WeededAst.Expr], loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
     val es = visitExps(exps0)
-    val empty = mkApplyFqn("Set.empty", List(DesugaredAst.Expr.Cst(Constant.Unit, loc0)), loc0)
+    val empty = mkApplyFqn("Set.empty", List(DesugaredAst.Expr.Cst(Ast.Constant.Unit, loc0)), loc0)
     es.foldLeft(empty) {
       case (acc, e) => mkApplyFqn("Set.insert", List(e, acc), loc0)
     }
@@ -1611,7 +1611,7 @@ object Desugar {
     * Rewrites [[WeededAst.Expr.MapLit]] (`Map#{1 => 2, 2 => 3}`) into `Map.empty` and a `Map.insert` calls.
     */
   private def desugarMapLit(exps0: List[(WeededAst.Expr, WeededAst.Expr)], loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
-    val empty = mkApplyFqn("Map.empty", List(DesugaredAst.Expr.Cst(Constant.Unit, loc0)), loc0)
+    val empty = mkApplyFqn("Map.empty", List(DesugaredAst.Expr.Cst(Ast.Constant.Unit, loc0)), loc0)
     exps0.map {
       case (k, v) => visitExp(k) -> visitExp(v)
     }.foldLeft(empty) {
@@ -1743,7 +1743,7 @@ object Desugar {
   private def desugarDebug(exp0: WeededAst.Expr, kind0: WeededAst.DebugKind, loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
     val e = visitExp(exp0)
     val prefix = mkDebugPrefix(e, kind0, loc0)
-    val e1 = DesugaredAst.Expr.Cst(Constant.Str(prefix), loc0)
+    val e1 = DesugaredAst.Expr.Cst(Ast.Constant.Str(prefix), loc0)
     val call = mkApplyFqn("Debug.debugWithPrefix", List(e1, e), loc0)
     DesugaredAst.Expr.UncheckedMaskingCast(call, loc0)
   }

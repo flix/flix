@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.BoundBy
-import ca.uwaterloo.flix.language.ast.shared.{Constant, Scope}
+import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, Name, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugKindedAst
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugValidation
@@ -141,7 +141,7 @@ object Deriver {
 
       // create a default rule
       // `case _ => false`
-      val defaultRule = KindedAst.MatchRule(KindedAst.Pattern.Wild(Type.freshVar(Kind.Star, loc), loc), None, KindedAst.Expr.Cst(Constant.Bool(false), loc))
+      val defaultRule = KindedAst.MatchRule(KindedAst.Pattern.Wild(Type.freshVar(Kind.Star, loc), loc), None, KindedAst.Expr.Cst(Ast.Constant.Bool(false), loc))
 
       // group the match rules in an expression
       KindedAst.Expr.Match(
@@ -213,7 +213,7 @@ object Deriver {
       // `x0 == y0 and x1 == y1`
       val exp = eqs match {
         // Case 1: no arguments: return true
-        case Nil => KindedAst.Expr.Cst(Constant.Bool(true), loc)
+        case Nil => KindedAst.Expr.Cst(Ast.Constant.Bool(true), loc)
         // Case 2: at least one argument: join everything with `and`
         case head :: tail => tail.foldLeft(head: KindedAst.Expr) {
           case (acc, eq) => KindedAst.Expr.Binary(SemanticOp.BoolOp.And, acc, eq, Type.freshVar(Kind.Star, loc), loc)
@@ -380,7 +380,7 @@ object Deriver {
   private def mkCompareIndexMatchRule(caze: KindedAst.Case, index: Int, loc: SourceLocation)(implicit Flix: Flix): KindedAst.MatchRule = caze match {
     case KindedAst.Case(sym, _, _, _) =>
       val pat = KindedAst.Pattern.Tag(Ast.CaseSymUse(sym, loc), KindedAst.Pattern.Wild(Type.freshVar(Kind.Star, loc), loc), Type.freshVar(Kind.Star, loc), loc)
-      val exp = KindedAst.Expr.Cst(Constant.Int32(index), loc)
+      val exp = KindedAst.Expr.Cst(Ast.Constant.Int32(index), loc)
       KindedAst.MatchRule(pat, None, exp)
   }
 
@@ -437,7 +437,7 @@ object Deriver {
       // compare(x0, y0) `thenCompare` lazy compare(x1, y1)
       val exp = compares match {
         // Case 1: no variables to compare; just return true
-        case Nil => KindedAst.Expr.Tag(Ast.CaseSymUse(equalToSym, loc), KindedAst.Expr.Cst(Constant.Unit, loc), Type.freshVar(Kind.Star, loc), loc)
+        case Nil => KindedAst.Expr.Tag(Ast.CaseSymUse(equalToSym, loc), KindedAst.Expr.Cst(Ast.Constant.Unit, loc), Type.freshVar(Kind.Star, loc), loc)
         // Case 2: multiple comparisons to be done; wrap them in Order.thenCompare
         case cmps => cmps.reduceRight(thenCompare)
       }
@@ -549,7 +549,7 @@ object Deriver {
       val (pat, varSyms) = mkPattern(sym, tpe, "x", loc)
 
       // "C2"
-      val tagPart = KindedAst.Expr.Cst(Constant.Str(sym.name), loc)
+      val tagPart = KindedAst.Expr.Cst(Ast.Constant.Str(sym.name), loc)
 
       // call toString on each variable,
       // `toString(x0)`, `toString(x1)`
@@ -689,7 +689,7 @@ object Deriver {
       // build a hash code by repeatedly adding elements via the combine function
       // the first hash is the index + 1
       // `3 `combine` hash(x0) `combine` hash(y0)`
-      val exp = varSyms.foldLeft(KindedAst.Expr.Cst(Constant.Int32(index + 1), loc): KindedAst.Expr) {
+      val exp = varSyms.foldLeft(KindedAst.Expr.Cst(Ast.Constant.Int32(index + 1), loc): KindedAst.Expr) {
         case (acc, varSym) =>
           // `acc `combine` hash(varSym)
           KindedAst.Expr.Apply(
@@ -894,7 +894,7 @@ object Deriver {
   /**
     * Builds a string expression from the given string.
     */
-  private def mkStrExpr(str: String, loc: SourceLocation): KindedAst.Expr = KindedAst.Expr.Cst(Constant.Str(str), loc)
+  private def mkStrExpr(str: String, loc: SourceLocation): KindedAst.Expr = KindedAst.Expr.Cst(Ast.Constant.Str(str), loc)
 
   /**
     * Builds a var expression from the given var sym.
@@ -913,7 +913,7 @@ object Deriver {
     */
   private def concatAll(exps: List[KindedAst.Expr], loc: SourceLocation)(implicit flix: Flix): KindedAst.Expr = {
     exps match {
-      case Nil => KindedAst.Expr.Cst(Constant.Str(""), loc)
+      case Nil => KindedAst.Expr.Cst(Ast.Constant.Str(""), loc)
       case head :: tail => tail.foldLeft(head)(concat(_, _, loc))
     }
   }
@@ -935,7 +935,7 @@ object Deriver {
     */
   private def mkPattern(sym: Symbol.CaseSym, tpe: Type, varPrefix: String, loc: SourceLocation)(implicit flix: Flix): (KindedAst.Pattern, List[Symbol.VarSym]) = {
     unpack(tpe) match {
-      case Nil => (KindedAst.Pattern.Tag(Ast.CaseSymUse(sym, loc), KindedAst.Pattern.Cst(Constant.Unit, loc), Type.freshVar(Kind.Star, loc), loc), Nil)
+      case Nil => (KindedAst.Pattern.Tag(Ast.CaseSymUse(sym, loc), KindedAst.Pattern.Cst(Ast.Constant.Unit, loc), Type.freshVar(Kind.Star, loc), loc), Nil)
       case _ :: Nil =>
         val varSym = Symbol.freshVarSym(s"${varPrefix}0", BoundBy.Pattern, loc)
         (KindedAst.Pattern.Tag(Ast.CaseSymUse(sym, loc), mkVarPattern(varSym, loc), Type.freshVar(Kind.Star, loc), loc), List(varSym))

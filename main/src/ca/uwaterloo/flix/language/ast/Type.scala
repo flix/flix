@@ -17,10 +17,11 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.Ast.Constant
 import ca.uwaterloo.flix.language.fmt.{FormatOptions, FormatType}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 import ca.uwaterloo.flix.language.ast.Symbol
-import ca.uwaterloo.flix.language.ast.shared.{Constant, Scope}
+import ca.uwaterloo.flix.language.ast.shared.Scope
 
 import java.lang.reflect.{Constructor, Method}
 import java.util.Objects
@@ -1231,7 +1232,7 @@ object Type {
   /**
     * Returns the type of the given constant.
     */
-  def constantType(cst: Constant): Type = cst match {
+  def constantType(cst: Ast.Constant): Type = cst match {
     case Constant.Unit => Type.Unit
     case Constant.Null => Type.Null
     case Constant.Bool(_) => Type.Bool
