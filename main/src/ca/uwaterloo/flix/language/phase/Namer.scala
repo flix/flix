@@ -761,7 +761,7 @@ object Namer {
 
     case DesugaredAst.Expr.TryCatch(exp, rules, loc) =>
       val e = visitExp(exp, ns0)
-      val rs = visitTryCatchRules(rules, ns0)
+      val rs = rules.map(visitTryCatchRule(_, ns0))
       NamedAst.Expr.TryCatch(e, rs, loc)
 
     case DesugaredAst.Expr.Throw(exp, loc) =>
@@ -970,13 +970,6 @@ object Namer {
       val sym = Symbol.freshVarSym(ident, BoundBy.CatchRule)
       val b = visitExp(body, ns0)
       NamedAst.CatchRule(sym, className, b)
-  }
-
-  /**
-    * Performs naming on the given try-catch rules `rules0`.
-    */
-  private def visitTryCatchRules(rules0: List[DesugaredAst.CatchRule], ns0: Name.NName)(implicit scope: Scope, sctx: SharedContext, flix: Flix): List[NamedAst.CatchRule] = {
-    rules0.map(visitTryCatchRule(_, ns0))
   }
 
   /**
