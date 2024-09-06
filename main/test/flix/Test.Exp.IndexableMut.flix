@@ -110,4 +110,70 @@ mod Test.Exp.IndexableMut {
         }
     }
 
+    @Test
+    def mutMap01(): Bool = region rc {
+        try {
+            let m = Map#{0 => 1, 1 => 2, 2 => 3, 3 => 4} |> Map.toMutMap(rc);
+            m[0] = -1;
+            m[0] == -1
+        } with KeyNotFound {
+            def keyNotFound(_, _) = false
+        }
+    }
+
+    @Test
+    def mutMap02(): Bool = region rc {
+        try {
+            let m = Map#{0 => 1, 1 => 2, 2 => 3, 3 => 4} |> Map.toMutMap(rc);
+            m[1] = 42;
+            m[1] == 42;
+        } with KeyNotFound {
+            def keyNotFound(_, _) = false
+        }
+    }
+
+    @Test
+    def mutMap03(): Bool = region rc {
+        try {
+            let m = Map#{0 => 1, 1 => 2, 2 => 3, 3 => 4} |> Map.toMutMap(rc);
+            m[2] = 200;
+            m[2] == 200
+        } with KeyNotFound {
+            def keyNotFound(_, _) = false
+        }
+    }
+
+    @Test
+    def mutMap04(): Bool = region rc {
+        try {
+            let m = Map#{0 => 1, 1 => 2, 2 => 3, 3 => 4} |> Map.toMutMap(rc);
+            m[3] = 1234;
+            m[3] == 1234
+        } with KeyNotFound {
+            def keyNotFound(_, _) = false
+        }
+    }
+
+    @Test
+    def mutMap05(): Bool = region rc {
+        try {
+            let m = Map#{0 => 1, 1 => 2, 2 => 3, 3 => 4} |> Map.toMutMap(rc);
+            m[4] = -1
+            false
+        } with KeyNotFound {
+            def keyNotFound(_, _) = true
+        }
+    }
+
+    @Test
+    def mutMap06(): Bool = region rc {
+        try {
+            let m = Map#{0 => 1, 1 => 2, 2 => 3, 3 => 4} |> Map.toMutMap(rc);
+            m[-1] = -1;
+            false
+        } with KeyNotFound {
+            def keyNotFound(_, _) = true
+        }
+    }
+
 }
