@@ -17,8 +17,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.Ast.Denotation
-import ca.uwaterloo.flix.language.ast.shared.{Fixity, Source}
+import ca.uwaterloo.flix.language.ast.shared.{Denotation, Fixity, Source}
 import ca.uwaterloo.flix.util.collection.MultiMap
 
 object DesugaredAst {
@@ -325,7 +324,7 @@ object DesugaredAst {
 
     case class SchemaRowExtendByAlias(qname: Name.QName, targs: List[Type], rest: Type, loc: SourceLocation) extends Type
 
-    case class SchemaRowExtendByTypes(name: Name.Ident, den: Ast.Denotation, tpes: List[Type], rest: Type, loc: SourceLocation) extends Type
+    case class SchemaRowExtendByTypes(name: Name.Ident, den: Denotation, tpes: List[Type], rest: Type, loc: SourceLocation) extends Type
 
     case class Schema(row: Type, loc: SourceLocation) extends Type
 
@@ -389,7 +388,7 @@ object DesugaredAst {
 
     case class PredicateParamUntyped(pred: Name.Pred, loc: SourceLocation) extends PredicateParam
 
-    case class PredicateParamWithType(pred: Name.Pred, den: Ast.Denotation, tpes: List[Type], loc: SourceLocation) extends PredicateParam
+    case class PredicateParamWithType(pred: Name.Pred, den: Denotation, tpes: List[Type], loc: SourceLocation) extends PredicateParam
 
   }
 
