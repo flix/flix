@@ -69,7 +69,7 @@ object Namer {
   private def visitUnit(unit: DesugaredAst.CompilationUnit)(implicit sctx: SharedContext, flix: Flix): NamedAst.CompilationUnit = unit match {
     case DesugaredAst.CompilationUnit(usesAndImports0, decls, loc) =>
       val usesAndImports = usesAndImports0.map(visitUseOrImport)
-      val ds = visitDecls(decls, Name.RootNS)
+      val ds = decls.map(visitDecl(_, Name.RootNS))
       NamedAst.CompilationUnit(usesAndImports, ds, loc)
   }
 
@@ -90,20 +90,13 @@ object Namer {
   }
 
   /**
-    * Performs naming on the given declarations `decls0`.
-    */
-  private def visitDecls(decls0: List[DesugaredAst.Declaration], ns0: Name.NName)(implicit sctx: SharedContext, flix: Flix): List[NamedAst.Declaration] = {
-    decls0.map(visitDecl(_, ns0))
-  }
-
-  /**
     * Performs naming on the given namespace.
     */
   private def visitNamespace(decl: DesugaredAst.Declaration.Namespace, ns0: Name.NName)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.Namespace = decl match {
     case DesugaredAst.Declaration.Namespace(ident, usesAndImports0, decls, loc) =>
       val ns = Name.NName(ns0.idents :+ ident, ident.loc)
       val usesAndImports = usesAndImports0.map(visitUseOrImport)
-      val ds = visitDecls(decls, ns)
+      val ds = decls.map(visitDecl(_, ns))
       val sym = new Symbol.ModuleSym(ns.parts)
       NamedAst.Declaration.Namespace(sym, usesAndImports, ds, loc)
   }
