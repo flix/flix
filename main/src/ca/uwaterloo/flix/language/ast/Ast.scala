@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.ast.shared.{Denotation, Fixity, Polarity}
+import ca.uwaterloo.flix.language.ast.shared.{Denotation, Fixity}
 import ca.uwaterloo.flix.language.errors.ResolutionError
 
 import java.util.Objects
@@ -431,6 +431,25 @@ object Ast {
       * The synthetic modifier.
       */
     case object Synthetic extends Modifier
+
+  }
+
+  /**
+    * A common super-type for the polarity of an atom.
+    */
+  sealed trait Polarity
+
+  object Polarity {
+
+    /**
+      * The atom is positive.
+      */
+    case object Positive extends Polarity
+
+    /**
+      * The atom is negative.
+      */
+    case object Negative extends Polarity
 
   }
 
