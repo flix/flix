@@ -76,7 +76,7 @@ object Stratifier {
     * Performs Stratification of the given sig `s0`.
     */
   private def visitSig(s0: TypedAst.Sig)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): TypedAst.Sig = {
-    val newExp = visitExp(s0.exp)
+    val newExp = s0.exp.map(visitExp)
     s0.copy(exp = newExp)
   }
 
@@ -128,7 +128,7 @@ object Stratifier {
 
     case Expr.Apply(exp, exps, tpe, eff, loc) =>
       val e = visitExp(exp)
-      val es = visitExps(exps)
+      val es = exps.map(visitExp)
       Expr.Apply(e, es, tpe, eff, loc)
 
     case Expr.Unary(sop, exp, tpe, eff, loc) =>
@@ -195,7 +195,7 @@ object Stratifier {
       Expr.RestrictableTag(sym, e, tpe, eff, loc)
 
     case Expr.Tuple(exps, tpe, eff, loc) =>
-      val es = visitExps(exps)
+      val es = exps.map(visitExp)
       Expr.Tuple(es, tpe, eff, loc)
 
     case Expr.RecordEmpty(tpe, loc) =>
@@ -215,7 +215,7 @@ object Stratifier {
       Expr.RecordRestrict(label, e, tpe, eff, loc)
 
     case Expr.ArrayLit(exps, exp, tpe, eff, loc) =>
-      val es = visitExps(exps)
+      val es = exps.map(visitExp)
       val e = visitExp(exp)
       Expr.ArrayLit(es, e, tpe, eff, loc)
 
@@ -257,7 +257,7 @@ object Stratifier {
       Expr.StructPut(e1, field, e2, tpe, eff, loc)
 
     case Expr.VectorLit(exps, tpe, eff, loc) =>
-      val es = visitExps(exps)
+      val es = exps.map(visitExp)
       Expr.VectorLit(es, tpe, eff, loc)
 
     case Expr.VectorLoad(exp1, exp2, tpe, eff, loc) =>
@@ -308,20 +308,20 @@ object Stratifier {
       Expr.TryWith(e, sym, rs, tpe, eff, loc)
 
     case Expr.Do(sym, exps, tpe, eff, loc) =>
-      val es = visitExps(exps)
+      val es = exps.map(visitExp)
       Expr.Do(sym, es, tpe, eff, loc)
 
     case Expr.InvokeConstructor(constructor, exps, tpe, eff, loc) =>
-      val es = visitExps(exps)
+      val es = exps.map(visitExp)
       Expr.InvokeConstructor(constructor, es, tpe, eff, loc)
 
     case Expr.InvokeMethod(method, exp, exps, tpe, eff, loc) =>
       val e = visitExp(exp)
-      val es = visitExps(exps)
+      val es = exps.map(visitExp)
       Expr.InvokeMethod(method, e, es, tpe, eff, loc)
 
     case Expr.InvokeStaticMethod(method, exps, tpe, eff, loc) =>
-      val es = visitExps(exps)
+      val es = exps.map(visitExp)
       Expr.InvokeStaticMethod(method, es, tpe, eff, loc)
 
     case Expr.GetField(field, exp, tpe, eff, loc) =>
@@ -359,7 +359,7 @@ object Stratifier {
       Expr.PutChannel(e1, e2, tpe, eff, loc)
 
     case Expr.SelectChannel(rules, exp, tpe, eff, loc) =>
-      val e = visitExp(exp)
+      val e = exp.map(visitExp)
       val rs = visitSelectChannelRules(rules)
       Expr.SelectChannel(rs, e, tpe, eff, loc)
 
@@ -422,17 +422,9 @@ object Stratifier {
 
   }
 
-  private def visitExp(exp0: Option[Expr])(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): Option[Expr] = {
-    exp0.map(visitExp)
-  }
-
-  private def visitExps(exps0: List[Expr])(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): List[Expr] = {
-    exps0.map(visitExp)
-  }
-
   private def visitMatchRule(rule: MatchRule)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): MatchRule = rule match {
     case MatchRule(pat, exp1, exp2) =>
-      val e1 = visitExp(exp1)
+      val e1 = exp1.map(visitExp)
       val e2 = visitExp(exp2)
       MatchRule(pat, e1, e2)
   }
