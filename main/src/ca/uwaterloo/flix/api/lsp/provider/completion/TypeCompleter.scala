@@ -26,7 +26,7 @@ object TypeCompleter {
     */
   def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] = {
     EnumCompleter.getCompletions(context) ++ TypeAliasCompleter.getCompletions(context) ++
-      TypeBuiltinCompleter.getCompletions(context) ++ ModuleCompleter.getCompletions(context) ++
+      TypeBuiltinCompleter.getCompletions ++ ModuleCompleter.getCompletions(context) ++
       StructCompleter.getCompletions(context)
   }
 
@@ -40,18 +40,6 @@ object TypeCompleter {
       Priority.Lower
     else
       Priority.Lowest
-  }
-
-  /**
-    * Boost priority if there's a colon immediately before the word the user's typing
-    */
-  def priorityBoostForTypes(p: Priority)(implicit context: CompletionContext): Priority = {
-    val typePriorityBoost = raw".*:\s*(?:[^\s]|(?:\s*,\s*))*".r
-    val typeAliasPriorityBoost = raw"\s*type\s+alias\s+.+\s*=\s*(?:[^\s]|(?:\s*,\s*))*".r
-    if ((typePriorityBoost matches context.prefix) || (typeAliasPriorityBoost matches context.prefix))
-      Priority.Highest 
-    else 
-      p
   }
 
   /**

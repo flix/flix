@@ -64,12 +64,20 @@ sealed trait Completion {
         insertTextFormat = InsertTextFormat.Snippet
       )
 
-    case Completion.TypeBuiltinCompletion(name, priority, textEdit, insertTextFormat) =>
+    case Completion.TypeBuiltinCompletion(name, priority) =>
       CompletionItem(label = name,
         sortText = Priority.toSortText(priority, name),
-        textEdit = textEdit,
-        insertTextFormat = insertTextFormat,
+        textEdit = TextEdit(context.range, name),
+        insertTextFormat = InsertTextFormat.PlainText,
         kind = CompletionItemKind.Enum)
+    case Completion.TypeBuiltinPolyCompletion(name, params, priority) =>
+      val edit = params.zipWithIndex.map { case (param, i) => s"$${${i + 1}:$param}"}.mkString(s"$name[", ", ", "]")
+      CompletionItem(label = params.mkString(s"$name[", ", ", "]"),
+        sortText = Priority.toSortText(priority, name),
+        textEdit = TextEdit(context.range, edit),
+        insertTextFormat = InsertTextFormat.Snippet,
+        kind = CompletionItemKind.Enum
+      )
     case Completion.EnumCompletion(enumSym, nameSuffix, priority, textEdit, documentation) =>
       CompletionItem(label = s"${enumSym.toString}$nameSuffix",
         sortText = Priority.toSortText(priority, enumSym.name),
@@ -339,8 +347,16 @@ object Completion {
     * @param textEdit         the edit which is applied to a document when selecting this completion.
     * @param insertTextFormat the format of the insert text.
     */
-  case class TypeBuiltinCompletion(name: String, priority: Priority, textEdit: TextEdit,
-                                   insertTextFormat: InsertTextFormat) extends Completion
+  case class TypeBuiltinCompletion(name: String, priority: Priority) extends Completion
+
+  /**
+    * Represents a type completion for a builtin polymorphic type.
+    *
+    * @param name      the name of the type.
+    * @param priority  the priority of the type.
+    * @param textEdit  the edit which is applied to a docuemtn when selecting this completion1
+    */
+  case class TypeBuiltinPolyCompletion(name: String, params: List[String], priority: Priority) extends Completion
 
   /**
     * Represents a type completion for enum
