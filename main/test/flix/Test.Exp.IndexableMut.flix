@@ -248,7 +248,7 @@ mod Test.Exp.IndexableMut {
         try {
             let a = Array#{Array#{Array#{1, 2, 3, 4} @ rc } @ rc } @ rc;
             a[0][0] = Array#{42} @ rc;
-            a[0][0][1] == 42
+            a[0][0][0] == 42
         } with OutOfBounds {
             def outOfBounds(_, _) = false
         }
