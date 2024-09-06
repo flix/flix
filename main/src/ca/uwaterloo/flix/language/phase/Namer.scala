@@ -407,13 +407,6 @@ object Namer {
   }
 
   /**
-    * Performs naming on the given associated type signatures `assocs0`.
-    */
-  private def visitAssocTypeSigs(assocs0: List[DesugaredAst.Declaration.AssocTypeSig], trt: Symbol.TraitSym)(implicit sctx: SharedContext, flix: Flix): List[NamedAst.Declaration.AssocTypeSig] = {
-    assocs0.map(visitAssocTypeSig(_, trt))
-  }
-
-  /**
     * Performs naming on the given associated type definition `d0`.
     */
   private def visitAssocTypeDef(d0: DesugaredAst.Declaration.AssocTypeDef)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.AssocTypeDef = d0 match {
@@ -441,7 +434,7 @@ object Namer {
       val tparam = visitTypeParam(tparams0)
 
       val sts = visitTraitConstraints(superTraits)
-      val ascs = visitAssocTypeSigs(assocs, sym) // TODO switch param order to match visitSig
+      val ascs = assocs.map(visitAssocTypeSig(_, sym)) // TODO switch param order to match visitSig
       val sigs = visitSigs(signatures, ns0, sym)
       val ls = visitDefs(laws, ns0)
 
