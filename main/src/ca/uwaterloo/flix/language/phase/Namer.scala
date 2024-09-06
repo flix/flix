@@ -474,7 +474,7 @@ object Namer {
 
       // First visit all the top-level information
       val mod = visitModifiers(mod0, ns0)
-      val fps = visitFormalParams(fparams)(Scope.Top, sctx, flix)
+      val fps = fparams.map(visitFormalParam)(Scope.Top, sctx, flix)
       val t = visitType(tpe)
       val ef = eff.map(visitType)
       val tcsts = tconstrs.map(visitTraitConstraint)
@@ -499,7 +499,7 @@ object Namer {
 
       // First visit all the top-level information
       val mod = visitModifiers(mod0, ns0)
-      val fps = visitFormalParams(fparams)(Scope.Top, sctx, flix)
+      val fps = fparams.map(visitFormalParam)(Scope.Top, sctx, flix)
       val t = visitType(tpe)
       val ef = eff.map(visitType)
       val tcsts = tconstrs.map(visitTraitConstraint)
@@ -537,7 +537,7 @@ object Namer {
     case DesugaredAst.Declaration.Op(doc, ann, mod0, ident, fparams, tpe, tconstrs, loc) =>
       // First visit all the top-level information
       val mod = visitModifiers(mod0, ns0)
-      val fps = visitFormalParams(fparams)(Scope.Top, sctx, flix)
+      val fps = fparams.map(visitFormalParam)(Scope.Top, sctx, flix)
       val t = visitType(tpe)
       val tcsts = tconstrs.map(visitTraitConstraint)
 
@@ -977,7 +977,7 @@ object Namer {
     */
   private def visitTryWithRule(rule0: DesugaredAst.HandlerRule, ns0: Name.NName)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.HandlerRule = rule0 match {
     case DesugaredAst.HandlerRule(op, fparams, body0) =>
-      val fps = visitFormalParams(fparams)
+      val fps = fparams.map(visitFormalParam)
       val b = visitExp(body0, ns0)
       NamedAst.HandlerRule(op, fps, b)
   }
@@ -1368,20 +1368,12 @@ object Namer {
     */
   private def visitJvmMethod(method: DesugaredAst.JvmMethod, ns0: Name.NName)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.JvmMethod = method match {
     case DesugaredAst.JvmMethod(ident, fparams, exp0, tpe, eff, loc) =>
-      val fps = visitFormalParams(fparams)
+      val fps = fparams.map(visitFormalParam)
       val t = visitType(tpe)
       val ef = eff.map(visitType)
       val e = visitExp(exp0, ns0)
       NamedAst.JvmMethod(ident, fps, e, t, ef, loc)
   }
-
-  /**
-    * Performs naming on the given formal parameters `fparam0`.
-    */
-  private def visitFormalParams(fparams0: List[DesugaredAst.FormalParam])(implicit scope: Scope, sctx: SharedContext, flix: Flix): List[NamedAst.FormalParam] = {
-    fparams0.map(visitFormalParam)
-  }
-
 
   /**
     * Performs naming on the given type parameter.
