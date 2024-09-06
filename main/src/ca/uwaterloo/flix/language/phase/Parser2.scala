@@ -628,7 +628,7 @@ object Parser2 {
   private val NAME_DEFINITION: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameUpperCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.UserDefinedOperator)
   private val NAME_PARAMETER: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.Underscore)
   private val NAME_VARIABLE: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.Underscore)
-  private val NAME_JAVA: Set[TokenKind] = Set(TokenKind.NameJava, TokenKind.NameLowerCase, TokenKind.NameUpperCase)
+  private val NAME_JAVA: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameUpperCase)
   private val NAME_QNAME: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameUpperCase)
   private val NAME_USE: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameUpperCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.UserDefinedOperator)
   private val NAME_FIELD: Set[TokenKind] = Set(TokenKind.NameLowerCase)
@@ -1157,7 +1157,7 @@ object Parser2 {
       zeroOrMore(
         namedTokenSet = NamedTokenSet.FromKinds(NAME_FIELD),
         getItem = structField,
-        checkForItem = NAME_FIELD.contains,
+        checkForItem = (token => NAME_FIELD.contains(token) || token.isModifier),
         breakWhen = _.isRecoverExpr,
         delimiterL = TokenKind.CurlyL,
         delimiterR = TokenKind.CurlyR,
@@ -1169,6 +1169,7 @@ object Parser2 {
     private def structField()(implicit s: State): Mark.Closed = {
       val mark = open()
       docComment()
+      modifiers()
       name(NAME_FIELD, context = SyntacticContext.Decl.Struct)
       expect(TokenKind.Colon, SyntacticContext.Decl.Struct)
       Type.ttype()
@@ -1643,7 +1644,6 @@ object Parser2 {
         case TokenKind.KeywordDebug
              | TokenKind.KeywordDebugBang
              | TokenKind.KeywordDebugBangBang => debugExpr()
-        case TokenKind.NameJava => name(NAME_JAVA, tail = Set(), allowQualified = true, SyntacticContext.Expr.OtherExpr)
         case t =>
           val mark = open()
           val error = UnexpectedToken(expected = NamedTokenSet.Expression, actual = Some(t), SyntacticContext.Expr.OtherExpr, loc = currentSourceLocation())
@@ -1887,12 +1887,12 @@ object Parser2 {
         case TokenKind.KeywordStatic => nth(1) match {
           case TokenKind.KeywordJavaGetField => JvmOp.staticGetField()
           case TokenKind.KeywordJavaSetField => JvmOp.staticPutField()
-          case TokenKind.NameJava | TokenKind.NameLowerCase | TokenKind.NameUpperCase => JvmOp.staticMethod()
+          case TokenKind.NameLowerCase | TokenKind.NameUpperCase => JvmOp.staticMethod()
           case t =>
             val error = UnexpectedToken(expected = NamedTokenSet.JavaImport, actual = Some(t), SyntacticContext.Unknown, loc = currentSourceLocation())
             advanceWithError(error)
         }
-        case TokenKind.NameJava | TokenKind.NameLowerCase | TokenKind.NameUpperCase => JvmOp.method()
+        case TokenKind.NameLowerCase | TokenKind.NameUpperCase => JvmOp.method()
         case t =>
           val error = UnexpectedToken(expected = NamedTokenSet.JavaImport, actual = Some(t), SyntacticContext.Unknown, loc = currentSourceLocation())
           advanceWithError(error)
@@ -2444,6 +2444,8 @@ object Parser2 {
         while (at(TokenKind.KeywordWith)) {
           withBody()
         }
+      } else {
+        expectAny(Set(TokenKind.KeywordCatch, TokenKind.KeywordWith), SyntacticContext.Expr.OtherExpr)
       }
 
       close(mark, TreeKind.Expr.Try)
@@ -2484,18 +2486,21 @@ object Parser2 {
       val mark = open()
       expect(TokenKind.KeywordWith, SyntacticContext.Expr.OtherExpr)
       name(NAME_EFFECT, allowQualified = true, context = SyntacticContext.Expr.OtherExpr)
-      oneOrMore(
-        namedTokenSet = NamedTokenSet.WithRule,
-        getItem = withRule,
-        checkForItem = kind => kind == TokenKind.KeywordDef || kind.isComment,
-        breakWhen = _.isRecoverExpr,
-        separation = Separation.Optional(TokenKind.Comma),
-        delimiterL = TokenKind.CurlyL,
-        delimiterR = TokenKind.CurlyR,
-        context = SyntacticContext.Expr.OtherExpr
-      ) match {
-        case Some(error) => closeWithError(mark, error)
-        case None => close(mark, TreeKind.Expr.TryWithBodyFragment)
+      if (at(TokenKind.CurlyL)) {
+        zeroOrMore(
+          namedTokenSet = NamedTokenSet.WithRule,
+          getItem = withRule,
+          checkForItem = kind => kind == TokenKind.KeywordDef || kind.isComment,
+          breakWhen = _.isRecoverExpr,
+          separation = Separation.Optional(TokenKind.Comma),
+          delimiterL = TokenKind.CurlyL,
+          delimiterR = TokenKind.CurlyR,
+          context = SyntacticContext.Expr.OtherExpr
+        )
+        close(mark, TreeKind.Expr.TryWithBodyFragment)
+      } else {
+        val token = nth(0)
+        closeWithError(mark, ParseError.UnexpectedToken(NamedTokenSet.FromKinds(Set(TokenKind.CurlyL)), Some(token), SyntacticContext.Expr.OtherExpr, loc = currentSourceLocation()))
       }
     }
 
@@ -2534,21 +2539,26 @@ object Parser2 {
       Type.ttype()
 
       // NewStruct, NewObject, or InvokeConstructor?
-      if (at(TokenKind.CurlyL) && (nth(1) == TokenKind.NameLowerCase || (nth(1) == TokenKind.CurlyR && nth(2) == TokenKind.At))) {
-        // case 2: new Struct {field1 = expr1, field2 = expr2, ...} @ region
-        //     or: new Struct {} @ region
-        zeroOrMore(
-          namedTokenSet = NamedTokenSet.FromKinds(NAME_FIELD),
-          checkForItem = NAME_FIELD.contains,
-          getItem = structFieldInit,
-          breakWhen = _.isRecoverExpr,
-          context = SyntacticContext.Expr.OtherExpr,
-          separation = Separation.Required(TokenKind.Comma),
-          delimiterL = TokenKind.CurlyL,
-          delimiterR = TokenKind.CurlyR
-        )
+      if (at(TokenKind.At)) {
+        // case 2: new Struct @ rc {field1 = expr1, field2 = expr2, ...}
+        //     or: new Struct @ rc {}
         expect(TokenKind.At, SyntacticContext.Expr.OtherExpr)
         expression()
+        if(!at(TokenKind.CurlyL)) {
+          expect(TokenKind.CurlyL, SyntacticContext.Expr.OtherExpr)
+        }
+        else {
+          zeroOrMore(
+            namedTokenSet = NamedTokenSet.FromKinds(NAME_FIELD),
+            checkForItem = NAME_FIELD.contains,
+            getItem = structFieldInit,
+            breakWhen = _.isRecoverExpr,
+            context = SyntacticContext.Expr.OtherExpr,
+            separation = Separation.Required(TokenKind.Comma),
+            delimiterL = TokenKind.CurlyL,
+            delimiterR = TokenKind.CurlyR
+          )
+        }
         close(mark, TreeKind.Expr.NewStruct)
       } else if (at(TokenKind.CurlyL)) {
         // Case 1: new Type { ... }
@@ -3148,7 +3158,6 @@ object Parser2 {
         case TokenKind.CurlyL => recordOrEffectSetType()
         case TokenKind.HashCurlyL => schemaType()
         case TokenKind.HashParenL => schemaRowType()
-        case TokenKind.NameJava => nativeType()
         case TokenKind.AngleL => caseSetType()
         case TokenKind.KeywordNot
              | TokenKind.Tilde
@@ -3339,8 +3348,7 @@ object Parser2 {
       var continue = true
       while (continue && !eof()) {
         nth(0) match {
-          case TokenKind.NameJava
-               | TokenKind.NameUpperCase
+          case TokenKind.NameUpperCase
                | TokenKind.NameLowerCase
                | TokenKind.Dot
                | TokenKind.Dollar => advance()

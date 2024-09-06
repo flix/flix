@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.ModCompletion
 
-object ModuleCompleter extends Completer {
+object ModuleCompleter {
 
   def getCompletions(ctx: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[ModCompletion] = {
 

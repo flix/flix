@@ -768,6 +768,18 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
     expectMain(result)
   }
 
+  test("MissingTryBody.01") {
+    val input =
+      """
+        |def foo(): Bool =
+        |    try { true }
+        |def main(): Int32 = 123
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
   test("Regression.#7646") {
     val input =
       """
@@ -1097,6 +1109,15 @@ class TestParserHappy extends AnyFunSuite with TestUtils {
     val input =
       """
         |struct S { }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
+  test("NewStructNoBody.01") {
+    val input =
+      """
+        |def foo(s: S[r]): Int32 = new Struct @ r |> ???
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ParseError](result)

@@ -21,11 +21,11 @@ import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.InstanceCompleti
 import ca.uwaterloo.flix.language.ast.{Ast, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.fmt.FormatType
 
-object InstanceCompleter extends Completer {
+object InstanceCompleter {
   /**
     * Returns a List of Completion based on traits.
     */
-  override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[InstanceCompletion] = {
+  def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[InstanceCompletion] = {
     if (context.previousWord != "instance") {
       return Nil
     }
@@ -52,6 +52,10 @@ object InstanceCompleter extends Completer {
       case Type.AssocType(sym, args0, kind, loc) =>
         val args = args0.map(replaceText(tvar, _, newText))
         Type.AssocType(sym, args, kind, loc)
+
+      // Jvm types should not be exposed to the user.
+      case t: Type.JvmToType => t
+      case t: Type.UnresolvedJvmType => t
     }
 
     /**

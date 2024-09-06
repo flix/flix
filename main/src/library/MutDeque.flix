@@ -29,9 +29,9 @@
 ///
 pub struct MutDeque[a: Type, r: Region] {
     r: Region[r],
-    values: Array[a, r],
-    front: Int32,
-    back: Int32
+    mut values: Array[a, r],
+    mut front: Int32,
+    mut back: Int32
 }
 
 instance Iterable[MutDeque[a, r]] {
@@ -88,7 +88,7 @@ mod MutDeque {
     ///
     pub def empty(rc: Region[r]): MutDeque[a, r] \ r =
         let arr = Array.empty(rc, minCapacity());
-        new MutDeque{r = rc, values = arr, front = 0, back = 0} @ rc
+        new MutDeque @ rc {r = rc, values = arr, front = 0, back = 0}
 
     ///
     /// Returns the number of elements in `d`.

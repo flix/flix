@@ -21,11 +21,11 @@ import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.UseSignatureCompletion
 import ca.uwaterloo.flix.language.ast.TypedAst
 
-object UseSignatureCompleter extends Completer {
+object UseSignatureCompleter {
   /**
    * Returns an Iterable of UseSignatureCompletions for the completer.
    */
-  override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[UseSignatureCompletion] = {
+  def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[UseSignatureCompletion] = {
     stripWord(context) match {
       case Some(word) =>
         val uri = context.uri

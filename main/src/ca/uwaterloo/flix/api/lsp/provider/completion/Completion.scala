@@ -41,15 +41,15 @@ sealed trait Completion {
         insertTextFormat = InsertTextFormat.Snippet,
         kind = CompletionItemKind.Enum)
 
-    case Completion.KeywordCompletion(name) =>
+    case Completion.KeywordCompletion(name, priority) =>
       CompletionItem(label = name,
-        sortText = CompletionPriority.lower(name),
+        sortText = Priority.toSortText(priority, name),
         textEdit = TextEdit(context.range, s"$name "),
         kind = CompletionItemKind.Keyword)
     case Completion.LabelCompletion(label, prefix) =>
       val name = s"$prefix#${label.name}"
       CompletionItem(label = name,
-        sortText = CompletionPriority.highest(name),
+        sortText = Priority.toSortText(Priority.Highest, name),
         textEdit = TextEdit(context.range, name),
         kind = CompletionItemKind.Variable)
 
@@ -57,36 +57,43 @@ sealed trait Completion {
       val args = (1 until arity + 1).map(i => s"$${$i:x$i}").mkString(", ")
       CompletionItem(
         label = s"$name/$arity",
-        sortText = CompletionPriority.lower(name),
+        sortText = Priority.toSortText(Priority.Lower, name),
         textEdit = TextEdit(context.range, s"$name($args)"),
         detail = Some(detail),
         kind = CompletionItemKind.Field,
         insertTextFormat = InsertTextFormat.Snippet
       )
 
-    case Completion.TypeBuiltinCompletion(name, priority, textEdit, insertTextFormat) =>
+    case Completion.TypeBuiltinCompletion(name, priority) =>
       CompletionItem(label = name,
-        sortText = priority,
-        textEdit = textEdit,
-        insertTextFormat = insertTextFormat,
+        sortText = Priority.toSortText(priority, name),
+        textEdit = TextEdit(context.range, name),
+        insertTextFormat = InsertTextFormat.PlainText,
         kind = CompletionItemKind.Enum)
+    case Completion.TypeBuiltinPolyCompletion(name, edit, priority) =>
+      CompletionItem(label = name,
+        sortText = Priority.toSortText(priority, name),
+        textEdit = TextEdit(context.range, edit),
+        insertTextFormat = InsertTextFormat.Snippet,
+        kind = CompletionItemKind.Enum
+      )
     case Completion.EnumCompletion(enumSym, nameSuffix, priority, textEdit, documentation) =>
       CompletionItem(label = s"${enumSym.toString}$nameSuffix",
-        sortText = priority,
+        sortText = Priority.toSortText(priority, enumSym.name),
         textEdit = textEdit,
         documentation = documentation,
         insertTextFormat = InsertTextFormat.Snippet,
         kind = CompletionItemKind.Enum)
     case Completion.StructCompletion(structSym, nameSuffix, priority, textEdit, documentation) =>
       CompletionItem(label = s"${structSym.toString}$nameSuffix",
-        sortText = priority,
+        sortText = Priority.toSortText(priority, structSym.name),
         textEdit = textEdit,
         documentation = documentation,
         insertTextFormat = InsertTextFormat.Snippet,
         kind = CompletionItemKind.Struct)
     case Completion.TypeAliasCompletion(aliasSym, nameSuffix, priority, textEdit, documentation) =>
       CompletionItem(label = s"${aliasSym.name}$nameSuffix",
-        sortText = priority,
+        sortText = Priority.toSortText(priority, aliasSym.name),
         textEdit = textEdit,
         documentation = documentation,
         insertTextFormat = InsertTextFormat.Snippet,
@@ -94,7 +101,7 @@ sealed trait Completion {
 
     case Completion.WithCompletion(name, priority, textEdit, documentation, insertTextFormat) =>
       CompletionItem(label = name,
-        sortText = priority,
+        sortText = Priority.toSortText(priority, name),
         textEdit = textEdit,
         documentation = documentation,
         insertTextFormat = insertTextFormat,
@@ -102,7 +109,7 @@ sealed trait Completion {
 
     case Completion.ImportCompletion(name) =>
       CompletionItem(label = name,
-        sortText = CompletionPriority.highest(name),
+        sortText = Priority.toSortText(Priority.Highest, name),
         textEdit = TextEdit(context.range, name),
         documentation = None,
         insertTextFormat = InsertTextFormat.PlainText,
@@ -110,14 +117,14 @@ sealed trait Completion {
 
     case Completion.SnippetCompletion(name, snippet, documentation) =>
       CompletionItem(label = name,
-        sortText = CompletionPriority.high(name),
+        sortText = Priority.toSortText(Priority.High, name),
         textEdit = TextEdit(context.range, snippet),
         documentation = Some(documentation),
         insertTextFormat = InsertTextFormat.Snippet,
         kind = CompletionItemKind.Snippet)
     case Completion.VarCompletion(sym, tpe) =>
       CompletionItem(label = sym.text,
-        sortText = CompletionPriority.low(sym.text),
+        sortText = Priority.toSortText(Priority.Low, sym.text),
         textEdit = TextEdit(context.range, sym.text),
         detail = Some(FormatType.formatType(tpe)(flix)),
         kind = CompletionItemKind.Variable)
@@ -125,7 +132,7 @@ sealed trait Completion {
       val name = decl.sym.toString
       val snippet = CompletionUtils.getApplySnippet(name, decl.spec.fparams)(context)
       CompletionItem(label = CompletionUtils.getLabelForNameAndSpec(decl.sym.toString, decl.spec)(flix),
-        sortText = CompletionPriority.lower(name),
+        sortText = Priority.toSortText(Priority.Lower, name),
         filterText = Some(CompletionUtils.getFilterTextForName(name)),
         textEdit = TextEdit(context.range, snippet),
         detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)(flix)),
@@ -136,7 +143,7 @@ sealed trait Completion {
       val name = decl.sym.toString
       val snippet = CompletionUtils.getApplySnippet(name, decl.spec.fparams)(context)
       CompletionItem(label = CompletionUtils.getLabelForNameAndSpec(decl.sym.toString, decl.spec)(flix),
-        sortText = CompletionPriority.lower(name),
+        sortText = Priority.toSortText(Priority.Lower, name),
         filterText = Some(CompletionUtils.getFilterTextForName(name)),
         textEdit = TextEdit(context.range, snippet),
         detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)(flix)),
@@ -148,7 +155,7 @@ sealed trait Completion {
       val name = decl.sym.toString
       val snippet = CompletionUtils.getApplySnippet(name, decl.spec.fparams)(context)
       CompletionItem(label = CompletionUtils.getLabelForNameAndSpec(decl.sym.toString, decl.spec)(flix),
-        sortText = CompletionPriority.highest(name),
+        sortText = Priority.toSortText(Priority.Highest, name),
         filterText = Some(CompletionUtils.getFilterTextForName(name)),
         textEdit = TextEdit(context.range, snippet),
         detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)(flix)),
@@ -158,7 +165,7 @@ sealed trait Completion {
     case Completion.MatchCompletion(enm, completion) =>
       val label = s"match ${enm.sym.toString}"
       CompletionItem(label = label,
-        sortText = CompletionPriority.lower(label),
+        sortText = Priority.toSortText(Priority.Lower, label),
         textEdit = TextEdit(context.range, completion),
         documentation = None,
         insertTextFormat = InsertTextFormat.Snippet,
@@ -166,7 +173,7 @@ sealed trait Completion {
     case Completion.InstanceCompletion(trt, completion) =>
       val traitSym = trt.sym
       CompletionItem(label = s"$traitSym[...]",
-        sortText = CompletionPriority.highest(traitSym.toString),
+        sortText = Priority.toSortText(Priority.Highest, traitSym.toString),
         textEdit = TextEdit(context.range, completion),
         detail = Some(InstanceCompleter.fmtTrait(trt)),
         documentation = Some(trt.doc.text),
@@ -175,7 +182,7 @@ sealed trait Completion {
     case Completion.UseCompletion(name, kind) =>
       CompletionItem(
         label = name,
-        sortText = CompletionPriority.highest(name),
+        sortText = Priority.toSortText(Priority.Highest, name),
         textEdit = TextEdit(context.range, name),
         documentation = None,
         kind = kind)
@@ -207,7 +214,7 @@ sealed trait Completion {
       val name = s"${sym.toString}.${caze.sym.name}"
       CompletionItem(
         label = name,
-        sortText = CompletionPriority.lower(name),
+        sortText = Priority.toSortText(Priority.Lower, name),
         textEdit = TextEdit(context.range, name),
         documentation = None,
         kind = CompletionItemKind.Method)
@@ -229,7 +236,7 @@ sealed trait Completion {
       )
     case Completion.FromErrorsCompletion(name) =>
       CompletionItem(label = name,
-        sortText = CompletionPriority.highest(name),
+        sortText = Priority.toSortText(Priority.Highest, name),
         textEdit = TextEdit(context.range, name + " "),
         detail = None,
         kind = CompletionItemKind.Variable)
@@ -239,7 +246,7 @@ sealed trait Completion {
       val snippet = if (args.isEmpty) name else s"$name($args)"
       CompletionItem(
         label = CompletionUtils.getLabelForEnumTags(name, cas, arity),
-        sortText = CompletionPriority.lower(name),
+        sortText = Priority.toSortText(Priority.Lower, name),
         textEdit = TextEdit(context.range, snippet),
         detail = Some(enumSym.name),
         documentation = None,
@@ -249,7 +256,7 @@ sealed trait Completion {
       val name = modSym.toString
       CompletionItem(
         label = name,
-        sortText = CompletionPriority.lowest(name),
+        sortText = Priority.toSortText(Priority.Lowest, name),
         textEdit = TextEdit(context.range, name),
         kind = CompletionItemKind.Module)
 
@@ -260,7 +267,7 @@ sealed trait Completion {
 
       CompletionItem(
         label = label,
-        sortText = CompletionPriority.lowest(label),
+        sortText = Priority.toSortText(Priority.Lowest, label),
         textEdit = TextEdit(range, text),
         insertTextFormat = InsertTextFormat.PlainText,
         kind = CompletionItemKind.Method
@@ -269,7 +276,7 @@ sealed trait Completion {
     case Completion.StructFieldCompletion(field, loc, tpe) =>
       CompletionItem(
         label = field,
-        sortText = CompletionPriority.lowest(field),
+        sortText = Priority.toSortText(Priority.Lowest, field),
         textEdit = TextEdit(Range.from(loc), field),
         detail = Some(FormatType.formatType(tpe)(flix)),
         kind = CompletionItemKind.Property,
@@ -287,7 +294,7 @@ sealed trait Completion {
 
       CompletionItem(
         label = label,
-        sortText = CompletionPriority.lowest(label),
+        sortText = Priority.toSortText(Priority.Lowest, label),
         textEdit = TextEdit(range, text),
         insertTextFormat = InsertTextFormat.Snippet,
         kind = CompletionItemKind.Method
@@ -310,8 +317,9 @@ object Completion {
     * Represents a keyword completion.
     *
     * @param name the name of the keyword.
+    * @param priority the completion priority of the keyword.
     */
-  case class KeywordCompletion(name: String) extends Completion
+  case class KeywordCompletion(name: String, priority: Priority) extends Completion
 
   /**
     * Represents a label completion.
@@ -338,8 +346,16 @@ object Completion {
     * @param textEdit         the edit which is applied to a document when selecting this completion.
     * @param insertTextFormat the format of the insert text.
     */
-  case class TypeBuiltinCompletion(name: String, priority: String, textEdit: TextEdit,
-                                   insertTextFormat: InsertTextFormat) extends Completion
+  case class TypeBuiltinCompletion(name: String, priority: Priority) extends Completion
+
+  /**
+    * Represents a type completion for a builtin polymorphic type.
+    *
+    * @param name      the name of the type.
+    * @param priority  the priority of the type.
+    * @param textEdit  the edit which is applied to a docuemtn when selecting this completion1
+    */
+  case class TypeBuiltinPolyCompletion(name: String, edit: String, priority: Priority) extends Completion
 
   /**
     * Represents a type completion for enum
@@ -350,7 +366,7 @@ object Completion {
     * @param textEdit      the edit which is applied to a document when selecting this completion.
     * @param documentation a human-readable string that represents a doc-comment.
     */
-  case class EnumCompletion(enumSym: EnumSym, nameSuffix: String, priority: String, textEdit: TextEdit,
+  case class EnumCompletion(enumSym: EnumSym, nameSuffix: String, priority: Priority, textEdit: TextEdit,
                             documentation: Option[String]) extends Completion
 
   /**
@@ -362,7 +378,7 @@ object Completion {
     * @param textEdit      the edit which is applied to a document when selecting this completion.
     * @param documentation a human-readable string that represents a doc-comment.
     */
-  case class StructCompletion(structSym: StructSym, nameSuffix: String, priority: String, textEdit: TextEdit,
+  case class StructCompletion(structSym: StructSym, nameSuffix: String, priority: Priority, textEdit: TextEdit,
                             documentation: Option[String]) extends Completion
 
   /**
@@ -374,7 +390,7 @@ object Completion {
     * @param textEdit      the edit which is applied to a document when selecting this completion.
     * @param documentation a human-readable string that represents a doc-comment.
     */
-  case class TypeAliasCompletion(aliasSym: TypeAliasSym, nameSuffix: String, priority: String, textEdit: TextEdit,
+  case class TypeAliasCompletion(aliasSym: TypeAliasSym, nameSuffix: String, priority: Priority, textEdit: TextEdit,
                                  documentation: Option[String]) extends Completion
 
   /**
@@ -386,7 +402,7 @@ object Completion {
     * @param documentation    a human-readable string that represents a doc-comment.
     * @param insertTextFormat the format of the insert text.
     */
-  case class WithCompletion(name: String, priority: String, textEdit: TextEdit, documentation: Option[String],
+  case class WithCompletion(name: String, priority: Priority, textEdit: TextEdit, documentation: Option[String],
                             insertTextFormat: InsertTextFormat) extends Completion
 
   /**

@@ -417,7 +417,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
          |
          |def foo(x: E): String = ToString.toString(x)
          |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin.copy(threads = 1)) // MATT
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError](result)
   }
 
@@ -1512,7 +1512,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |
         |def Foo(): Unit = {
         |    region rc {
-        |        new S {a = 3, b = 4, c = "hello"} @ rc;
+        |        new S @ rc {a = 3, b = 4, c = "hello"};
         |        ()
         |    }
         |}
@@ -1532,7 +1532,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |
         |def Foo(): Unit = {
         |    region rc {
-        |        new S {a = (), b = "hi", c = "hello"} @ rc;
+        |        new S @ rc {a = (), b = "hi", c = "hello"};
         |        ()
         |    }
         |}
@@ -1552,7 +1552,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |
         |def Foo(): Unit = {
         |    region rc {
-        |        new S {a = 3, b = "hi", c = new S {a = 4, b = 3, c = ()} @ rc } @ rc;
+        |        new S @ rc {a = 3, b = "hi", c = new S @ rc {a = 4, b = 3, c = ()}};
         |        ()
         |    }
         |}
@@ -1572,7 +1572,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |mod S {
         |    def Foo(): Unit = {
         |        region rc {
-        |            let s = new S {a = 4, b = "hi", c = "hello"} @ rc;
+        |            let s = new S @ rc {a = 4, b = "hi", c = "hello"};
         |            s->a + s->b;
         |            ()
         |        }
@@ -1592,8 +1592,8 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |mod S {
         |    def Foo(): Unit = {
         |        region rc {
-        |            let s1 = new S {c = 3} @ rc;
-        |            let s2 = new S {c = "hello"} @ rc;
+        |            let s1 = new S @ rc {c = 3};
+        |            let s2 = new S @ rc {c = "hello"};
         |            s1->c + s2->c;
         |            ()
         |        }
@@ -1608,14 +1608,14 @@ class TestTyper extends AnyFunSuite with TestUtils {
     val input =
       """
         |struct S[v, r] {
-        |    a: Int32,
+        |    mut a: Int32,
         |    b: String,
         |    c: v
         |}
         |mod S {
         |    def Foo(): Unit = {
         |        region rc {
-        |            let s = new S {a = 4, b = "hi", c = "hello"} @ rc;
+        |            let s = new S @ rc {a = 4, b = "hi", c = "hello"};
         |            s->a = s->b;
         |            ()
         |        }
@@ -1630,13 +1630,13 @@ class TestTyper extends AnyFunSuite with TestUtils {
     val input =
       """
         |struct S[v, r] {
-        |    c: v
+        |    mut c: v
         |}
         |mod S {
         |    def Foo(): Unit = {
         |        region rc {
-        |            let s1 = new S {c = 3} @ rc;
-        |            let s2 = new S {c = "hello"} @ rc;
+        |            let s1 = new S @ rc {c = 3};
+        |            let s2 = new S @ rc {c = "hello"};
         |            s1->c = s2->c;
         |            ()
         |        }

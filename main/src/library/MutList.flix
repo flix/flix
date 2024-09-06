@@ -37,19 +37,14 @@ instance Indexable[MutList[a, r]] {
     type Idx = Int32
     type Elm = a
     type Aef = r + OutOfBounds
-    pub def get(t: MutList[a, r], i: Int32): a \ r + OutOfBounds = match MutList.nth(i, t) {
-        case Some(v) => v
-        case None    => do OutOfBounds.outOfBounds("index ${i} is out of bounds for MutList of length ${MutList.length(t)}")
-    }
+    pub def get(t: MutList[a, r], i: Int32): a \ r + OutOfBounds =
+        MutList.get(i, t)
 }
 
 instance IndexableMut[MutList[a, r]] {
     type Aef = r + OutOfBounds
     pub def put(t: MutList[a, r], i: Int32, v: a): Unit \ r + OutOfBounds =
-        if (0 <= i and i < MutList.length(t))
-            t->values[i] = v
-        else
-            do OutOfBounds.outOfBounds("index ${i} is out of bounds for MutList of length ${MutList.length(t)}")
+        MutList.put(v, i, t)
 }
 
 mod MutList {
@@ -93,6 +88,26 @@ mod MutList {
         let c = Order.max(d, minCap);
         let f = i -> { let x = b + i; if (x < e) x else Reflect.default() };
         new MutList{r = rc, values = Array.init(rc, f, c), length = d} @ rc
+
+    ///
+    /// Retrieves the value at position `i` in the mutable list `v`.
+    ///
+    pub def get(i: Int32, v: MutList[a, r]): a \ r + OutOfBounds =
+        let MutList(_, a, l) = v;
+        if (0 <= i and i < Ref.get(l))
+            Array.get(i, Ref.get(a))
+        else
+            do OutOfBounds.outOfBounds("index ${i} is out of bounds for MutList of length ${MutList.length(v)}")
+
+    ///
+    /// Stores the value `x` at position `i` in the mutable list `v`.
+    ///
+    pub def put(x: a, i: Int32, v: MutList[a, r]): Unit \ r + OutOfBounds =
+        let MutList(_, a, l) = v;
+        if (0 <= i and i < Ref.get(l))
+            Array.put(x, i, Ref.get(a))
+        else
+            do OutOfBounds.outOfBounds("index ${i} is out of bounds for MutList of length ${MutList.length(v)}")
 
     ///
     /// Optionally returns the element at position `i` in the mutable list `v`.
