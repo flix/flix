@@ -126,7 +126,7 @@ mod Test.Exp.IndexableMut {
         try {
             let m = Map#{0 => 1, 1 => 2, 2 => 3, 3 => 4} |> Map.toMutMap(rc);
             m[1] = 42;
-            m[1] == 42;
+            m[1] == 42
         } with KeyNotFound {
             def keyNotFound(_, _) = false
         }
