@@ -863,7 +863,7 @@ object Namer {
       NamedAst.Expr.PutChannel(e1, e2, loc)
 
     case DesugaredAst.Expr.SelectChannel(rules, exp, loc) =>
-      val rs = visitSelectChannelRules(rules, ns0)
+      val rs = rules.map(visitSelectChannelRule(_, ns0))
       val e = exp.map(visitExp(_, ns0))
       NamedAst.Expr.SelectChannel(rs, e, loc)
 
@@ -992,13 +992,6 @@ object Namer {
       val e1 = visitExp(exp1, ns0)
       val e2 = visitExp(exp2, ns0)
       NamedAst.SelectChannelRule(sym, e1, e2)
-  }
-
-  /**
-    * Performs naming on the given select channel rules `rules0`.
-    */
-  private def visitSelectChannelRules(rules0: List[DesugaredAst.SelectChannelRule], ns0: Name.NName)(implicit scope: Scope, sctx: SharedContext, flix: Flix): List[NamedAst.SelectChannelRule] = {
-    rules0.map(visitSelectChannelRule(_, ns0))
   }
 
   /**
