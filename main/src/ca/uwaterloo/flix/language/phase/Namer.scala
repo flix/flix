@@ -874,7 +874,7 @@ object Namer {
 
     case DesugaredAst.Expr.ParYield(frags, exp, loc) =>
       val e = visitExp(exp, ns0)
-      val fs = visitParYieldFragments(frags, ns0)
+      val fs = frags.map(visitParYieldFragment(_, ns0))
       NamedAst.Expr.ParYield(fs, e, loc)
 
     case DesugaredAst.Expr.Lazy(exp, loc) =>
@@ -1002,13 +1002,6 @@ object Namer {
       val p = visitPattern(pat)
       val e1 = visitExp(exp1, ns0)
       NamedAst.ParYieldFragment(p, e1, l)
-  }
-
-  /**
-    * Performs naming on the given par-yield fragments `frags0`.
-    */
-  private def visitParYieldFragments(frags0: List[DesugaredAst.ParYieldFragment], ns0: Name.NName)(implicit scope: Scope, sctx: SharedContext, flix: Flix): List[NamedAst.ParYieldFragment] = {
-    frags0.map(visitParYieldFragment(_, ns0))
   }
 
   /**
