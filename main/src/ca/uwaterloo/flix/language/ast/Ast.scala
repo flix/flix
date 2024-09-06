@@ -27,25 +27,6 @@ import java.util.Objects
 object Ast {
 
   /**
-    * A common supertype for casts.
-    */
-  sealed trait CheckedCastType
-
-  object CheckedCastType {
-
-    /**
-      * Represents a checked type cast.
-      */
-    case object TypeCast extends CheckedCastType
-
-    /**
-      * Represents a checked effect cast.
-      */
-    case object EffectCast extends CheckedCastType
-
-  }
-
-  /**
     * A common supertype for constant values.
     */
   sealed trait Constant
