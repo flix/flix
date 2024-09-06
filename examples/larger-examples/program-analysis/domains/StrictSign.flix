@@ -1,6 +1,6 @@
-/**
- * An implementation of the strict sign domain.
- */
+///
+/// An implementation of the strict sign domain.
+///
 mod Domain.StrictSign {
 
     ///

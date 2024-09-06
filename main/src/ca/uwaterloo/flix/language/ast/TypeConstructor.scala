@@ -265,40 +265,10 @@ object TypeConstructor {
   }
 
   /**
-   * A type constructor that represents the _return type_ of a Java method.
-   *
-   * A method return type can be resolved when the receiver object and argument types are known.
-   *
-   * A few examples:
-   *
-   *   - The type: `Apply(InvokeMethod("length", 0), String)` is equivalent to `Int32`.
-   *   - The type: `Apply(Apply(InvokeMethod("startsWith", 1), String), String)` is equivalent to `Bool`.
-   *   - The type: `Apply(Apply(Apply(InvokeMethod("substring", 2), String), Int32), Int32)` is equivalent to `String`.
-   *
-   * The type constructor requires a java method or constructor type constructor.
-   */
-  @EliminatedBy(TypeReconstruction.getClass)
-  case object MethodReturnType extends TypeConstructor {
-    def kind: Kind = Kind.Jvm ->: Kind.Star
-  }
-
-  /**
     * A type constructor that represents the type of a Java field.
     */
   case class JvmField(field: Field) extends TypeConstructor {
     def kind: Kind = Kind.Jvm
-  }
-
-  /**
-    * A type constructor that represents the type of a Java field.
-    *
-    * A field type can be resolved when the receiver object is known.
-    *
-    * The type constructor requires a Java field type constructor.
-    */
-  @EliminatedBy(TypeReconstruction.getClass)
-  case object FieldType extends TypeConstructor {
-    def kind: Kind = Kind.Jvm ->: Kind.Star
   }
 
   /**

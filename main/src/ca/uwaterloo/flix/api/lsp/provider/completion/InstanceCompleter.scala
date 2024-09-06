@@ -18,14 +18,15 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.InstanceCompletion
+import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.fmt.FormatType
 
-object InstanceCompleter extends Completer {
+object InstanceCompleter {
   /**
     * Returns a List of Completion based on traits.
     */
-  override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[InstanceCompletion] = {
+  def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[InstanceCompletion] = {
     if (context.previousWord != "instance") {
       return Nil
     }
@@ -33,32 +34,39 @@ object InstanceCompleter extends Completer {
     /**
       * Replaces the given symbol with a variable named by the given `newText`.
       */
-    def replaceText(oldSym: Symbol, tpe: Type, newText: String): Type = tpe match {
-      case Type.Var(sym, loc) if oldSym == sym =>Type.Var(sym.withText(Ast.VarText.SourceText(newText)), loc)
-      case Type.Var(_, _) => tpe
-      case Type.Cst(_, _) => tpe
+    def replaceText(oldSym: Symbol, tpe: Type, newText: String)(implicit flix: Flix): Type = {
+      implicit val scope: Scope = Scope.Top
+      tpe match {
+        case Type.Var(sym, loc) if oldSym == sym =>Type.Var(sym.withText(Ast.VarText.SourceText(newText)), loc)
+        case Type.Var(_, _) => tpe
+        case Type.Cst(_, _) => tpe
 
-      case Type.Apply(tpe1, tpe2, loc) =>
-        val t1 = replaceText(oldSym, tpe1, newText)
-        val t2 = replaceText(oldSym, tpe2, newText)
-        Type.Apply(t1, t2, loc)
+        case Type.Apply(tpe1, tpe2, loc) =>
+          val t1 = replaceText(oldSym, tpe1, newText)
+          val t2 = replaceText(oldSym, tpe2, newText)
+          Type.Apply(t1, t2, loc)
 
-      case Type.Alias(cst, args0, tpe0, loc) =>
-        if (oldSym == cst.sym) {
-          Type.freshVar(Kind.Star, loc, text = Ast.VarText.SourceText(newText))
-        } else {
-          val args = args0.map(replaceText(oldSym, _, newText))
-          val t = replaceText(oldSym, tpe0, newText)
-          Type.Alias(cst, args, t, loc)
-        }
+        case Type.Alias(cst, args0, tpe0, loc) =>
+          if (oldSym == cst.sym) {
+            Type.freshVar(Kind.Star, loc, text = Ast.VarText.SourceText(newText))
+          } else {
+            val args = args0.map(replaceText(oldSym, _, newText))
+            val t = replaceText(oldSym, tpe0, newText)
+            Type.Alias(cst, args, t, loc)
+          }
 
-      case Type.AssocType(cst, args0, kind, loc) =>
-        if (oldSym == cst.sym) {
-          Type.freshVar(Kind.Star, loc, text = Ast.VarText.SourceText(newText))
-        } else {
-          val args = args0.map(replaceText(oldSym, _, newText))
-          Type.AssocType(cst, args, kind, loc)
-        }
+        case Type.AssocType(cst, args0, kind, loc) =>
+          if (oldSym == cst.sym) {
+            Type.freshVar(Kind.Star, loc, text = Ast.VarText.SourceText(newText))
+          } else {
+            val args = args0.map(replaceText(oldSym, _, newText))
+            Type.AssocType(cst, args, kind, loc)
+          }
+
+        // Jvm types should not be exposed to the user.
+        case t: Type.JvmToType => t
+        case t: Type.UnresolvedJvmType => t
+      }
     }
 
     /**

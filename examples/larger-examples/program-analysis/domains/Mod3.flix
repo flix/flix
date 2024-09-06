@@ -1,8 +1,8 @@
-/**
- * An implementation of the modulo three abstract domain.
- *
- * Note: The Parity domain (e.g. even and odd) can be viewed as the Mod2 domain.
- */
+///
+/// An implementation of the modulo three abstract domain.
+///
+/// Note: The Parity domain (e.g. even and odd) can be viewed as the Mod2 domain.
+///
 mod Domain.Mod3 {
 
     ///
