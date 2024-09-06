@@ -23,14 +23,14 @@
 ///
 pub struct MutList[a: Type, r: Region] {
     r: Region[r],
-    values: Array[a, r],
-    length: Int32
+    mut values: Array[a, r],
+    mut length: Int32
 }
 
 instance Iterable[MutList[a, r]] {
     type Elm = a
     type Aef = r
-    pub def iterator(rc: Region[r1], l: MutList[a, r]): Iterator[a, r + r1, r1] \ r1 = MutList.iterator(rc, l)
+    pub def iterator(rc: Region[r1], l: MutList[a, r]): Iterator[a, r + r1, r1] \ (r + r1) = MutList.iterator(rc, l)
 }
 
 instance Indexable[MutList[a, r]] {
@@ -75,7 +75,7 @@ mod MutList {
     /// Returns an empty empty mutable list with a default capacity.
     ///
     pub def empty(rc: Region[r]): MutList[a, r] \ r =
-        new MutList{r = rc, values = Array.empty(rc, minCapacity()), length = 0} @ rc
+        new MutList @ rc {r = rc, values = Array.empty(rc, minCapacity()), length = 0}
 
     ///
     /// Returns a mutable list of all integers between `b` (inclusive) and `e` (exclusive).
@@ -87,15 +87,14 @@ mod MutList {
         let d = e - b;
         let c = Order.max(d, minCap);
         let f = i -> { let x = b + i; if (x < e) x else Reflect.default() };
-        new MutList{r = rc, values = Array.init(rc, f, c), length = d} @ rc
+        new MutList @ rc {r = rc, values = Array.init(rc, f, c), length = d}
 
     ///
     /// Retrieves the value at position `i` in the mutable list `v`.
     ///
     pub def get(i: Int32, v: MutList[a, r]): a \ r + OutOfBounds =
-        let MutList(_, a, l) = v;
-        if (0 <= i and i < Ref.get(l))
-            Array.get(i, Ref.get(a))
+        if (0 <= i and i < length(v))
+            Array.get(i, v->values)
         else
             do OutOfBounds.outOfBounds("index ${i} is out of bounds for MutList of length ${MutList.length(v)}")
 
@@ -103,9 +102,8 @@ mod MutList {
     /// Stores the value `x` at position `i` in the mutable list `v`.
     ///
     pub def put(x: a, i: Int32, v: MutList[a, r]): Unit \ r + OutOfBounds =
-        let MutList(_, a, l) = v;
-        if (0 <= i and i < Ref.get(l))
-            Array.put(x, i, Ref.get(a))
+        if (0 <= i and i < length(v))
+            Array.put(x, i, v->values)
         else
             do OutOfBounds.outOfBounds("index ${i} is out of bounds for MutList of length ${MutList.length(v)}")
 
@@ -339,7 +337,7 @@ mod MutList {
             }
         };
         loop(1, s);
-        new MutList{r = rc1, values = b, length = n} @ rc1
+        new MutList @ rc1 {r = rc1, values = b, length = n}
 
     ///
     /// Accumulates the result of applying `f` to `v` going right to left.
@@ -357,7 +355,7 @@ mod MutList {
             }
         };
         loop(length(v) - 1, s);
-        new MutList{r = rc1, values = b, length = n} @ rc1
+        new MutList @ rc1 {r = rc1, values = b, length = n}
 
     ///
     /// Apply `f` to every element in `v`.
@@ -379,7 +377,7 @@ mod MutList {
                 }
             };
             loop(1);
-            new MutList{r = rc1, values = b, length = length(v)} @ rc1
+            new MutList @ rc1 {r = rc1, values = b, length = length(v)}
         }
 
     ///
@@ -391,10 +389,10 @@ mod MutList {
         let destArray = Array.empty(rc1, Int32.max(size, minCapacity()));
         v |> MutList.forEach(bs -> {
             let destIndex = Ref.get(rdestIndex);
-            Array.patch!(destIndex, length(bs), v->values, destArray);
+            Array.patch!(destIndex, length(bs), bs->values, destArray);
             Ref.put(destIndex + length(bs), rdestIndex)
-         });
-         new MutList{r = rc1, values = destArray, length = size} @ rc1
+        });
+        new MutList @ rc1 {r = rc1, values = destArray, length = size}
 
 
     ///
@@ -423,7 +421,7 @@ mod MutList {
                 }
             };
             loop(1);
-            new MutList{r = rc1, values = b, length = length(v)} @ rc1
+            new MutList @ rc1 {r = rc1, values = b, length = length(v)}
         }
 
     ///
@@ -546,9 +544,9 @@ mod MutList {
     ///
     pub def copy(rc1: Region[r1], v: MutList[a, r]): MutList[a, r1] \ { r, r1 } =
         if (length(v) > minCapacity())
-            new MutList{r = rc1, values = Array.copyOfRange(rc1, 0, length(v), v->values), length = length(v)} @ rc1
+            new MutList @ rc1 {r = rc1, values = Array.copyOfRange(rc1, 0, length(v), v->values), length = length(v)}
         else
-            new MutList{r = rc1, values = Array.copyOfRange(rc1, 0, capacity(v), v->values), length = length(v)} @ rc1
+            new MutList @ rc1 {r = rc1, values = Array.copyOfRange(rc1, 0, capacity(v), v->values), length = length(v)}
 
     ///
     /// Optionally removes and returns the last element in the given mutable list `v`.
