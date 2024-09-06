@@ -29,17 +29,17 @@ object KeywordCompleter {
     */
   def getDeclKeywords: Iterable[Completion] =
     List(
-      Completion.KeywordCompletion("def"      , Priority.highest("def")),
-      Completion.KeywordCompletion("pub"      , Priority.higher("pub")),
-      Completion.KeywordCompletion("enum"     , Priority.high("enum")),
-      Completion.KeywordCompletion("type"     , Priority.high("type")),
-      Completion.KeywordCompletion("instance" , Priority.high("instance")),
-      Completion.KeywordCompletion("mod"      , Priority.low("mod")),
-      Completion.KeywordCompletion("eff"      , Priority.lower("eff")),
-      Completion.KeywordCompletion("struct"   , Priority.lower("struct")),
-      Completion.KeywordCompletion("sealed"   , Priority.lowest("sealed")),
-      Completion.KeywordCompletion("trait"    , Priority.lowest("trait")),
-      Completion.KeywordCompletion("import"   , Priority.lowest("import")),
+      Completion.KeywordCompletion("def"      , Priority.Highest),
+      Completion.KeywordCompletion("pub"      , Priority.Higher),
+      Completion.KeywordCompletion("enum"     , Priority.High),
+      Completion.KeywordCompletion("type"     , Priority.High),
+      Completion.KeywordCompletion("instance" , Priority.High),
+      Completion.KeywordCompletion("mod"      , Priority.Low),
+      Completion.KeywordCompletion("eff"      , Priority.Lower),
+      Completion.KeywordCompletion("struct"   , Priority.Lower),
+      Completion.KeywordCompletion("sealed"   , Priority.Lowest),
+      Completion.KeywordCompletion("trait"    , Priority.Lowest),
+      Completion.KeywordCompletion("import"   , Priority.Lowest),
     )
 
   /**
@@ -47,7 +47,7 @@ object KeywordCompleter {
     */
   def getEnumKeywords: Iterable[Completion] =
     List(
-      Completion.KeywordCompletion("case", Priority.low("case"))
+      Completion.KeywordCompletion("case", Priority.Low)
     )
 
   /**
@@ -90,26 +90,26 @@ object KeywordCompleter {
       "use",
       "without",
       "yield"
-    ) map (name => Completion.KeywordCompletion(name, Priority.lower(name)))
+    ) map (name => Completion.KeywordCompletion(name, Priority.Lower))
            
   /**
     * Miscellaneous keywords.
     */
   def getOtherKeywords: Iterable[Completion] =
     List(
-      Completion.KeywordCompletion("with"             , Priority.highest("with")),
-      Completion.KeywordCompletion("law"              , Priority.higher("law")),
-      Completion.KeywordCompletion("@Test"            , Priority.high("@Test")),
-      Completion.KeywordCompletion("where"            , Priority.low("where")),
-      Completion.KeywordCompletion("fix"              , Priority.low("fix")),
-      Completion.KeywordCompletion("@Deprecated"      , Priority.lowest("@Deprecated")),
-      Completion.KeywordCompletion("@Parallel"        , Priority.lowest("@Parallel")),
-      Completion.KeywordCompletion("@ParallelWhenPure", Priority.lowest("@ParallelWhenPure")),
-      Completion.KeywordCompletion("@Lazy"            , Priority.lowest("@Lazy")),
-      Completion.KeywordCompletion("@LazyWhenPure"    , Priority.lowest("@LazyWhenPure")),
-      Completion.KeywordCompletion("Record"           , Priority.lowest("Record")),
-      Completion.KeywordCompletion("redef"            , Priority.lowest("redef")),
-      Completion.KeywordCompletion("Schema"           , Priority.lowest("Schema")),
+      Completion.KeywordCompletion("with"             , Priority.Highest),
+      Completion.KeywordCompletion("law"              , Priority.Higher),
+      Completion.KeywordCompletion("@Test"            , Priority.High),
+      Completion.KeywordCompletion("where"            , Priority.Low),
+      Completion.KeywordCompletion("fix"              , Priority.Low),
+      Completion.KeywordCompletion("@Deprecated"      , Priority.Lowest),
+      Completion.KeywordCompletion("@Parallel"        , Priority.Lowest),
+      Completion.KeywordCompletion("@ParallelWhenPure", Priority.Lowest),
+      Completion.KeywordCompletion("@Lazy"            , Priority.Lowest),
+      Completion.KeywordCompletion("@LazyWhenPure"    , Priority.Lowest),
+      Completion.KeywordCompletion("Record"           , Priority.Lowest),
+      Completion.KeywordCompletion("redef"            , Priority.Lowest),
+      Completion.KeywordCompletion("Schema"           , Priority.Lowest),
     )
 
   /**
@@ -117,7 +117,7 @@ object KeywordCompleter {
     */
   def getTraitKeywords: Iterable[Completion] =
     List(
-      Completion.KeywordCompletion("def", Priority.lower("def")),
-      Completion.KeywordCompletion("pub", Priority.lower("pub")),
+      Completion.KeywordCompletion("def", Priority.Lower),
+      Completion.KeywordCompletion("pub", Priority.Lower),
     )
 }
