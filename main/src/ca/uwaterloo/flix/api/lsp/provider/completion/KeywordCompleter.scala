@@ -54,7 +54,7 @@ object KeywordCompleter {
     */
   def getEnumKeywords: Iterable[Completion] =
     List(
-      Completion.KeywordCompletion("case", Priority.Low)
+      Completion.KeywordCompletion("case", Priority.Default)
     )
 
   /**
@@ -130,7 +130,7 @@ object KeywordCompleter {
     */
   def getTraitKeywords: Iterable[Completion] =
     List(
-      Completion.KeywordCompletion("def", Priority.Lower),
-      Completion.KeywordCompletion("pub", Priority.Lower),
+      Completion.KeywordCompletion("def", Priority.Default),
+      Completion.KeywordCompletion("pub", Priority.Default),
     )
 }
