@@ -645,7 +645,7 @@ object Namer {
 
     case DesugaredAst.Expr.Match(exp, rules, loc) =>
       val e = visitExp(exp, ns0)
-      val rs = visitMatchRules(rules, ns0)
+      val rs = rules.map(visitMatchRule(_, ns0))
       NamedAst.Expr.Match(e, rs, loc)
 
     case DesugaredAst.Expr.TypeMatch(exp, rules, loc) =>
@@ -930,13 +930,6 @@ object Namer {
       val e1 = exp1.map(visitExp(_, ns0))
       val e2 = visitExp(exp2, ns0)
       NamedAst.MatchRule(p, e1, e2)
-  }
-
-  /**
-    * Performs naming on the given match rules `rules0`.
-    */
-  private def visitMatchRules(rules0: List[DesugaredAst.MatchRule], ns0: Name.NName)(implicit scope: Scope, sctx: SharedContext, flix: Flix): List[NamedAst.MatchRule] = {
-    rules0.map(visitMatchRule(_, ns0))
   }
 
   /**
