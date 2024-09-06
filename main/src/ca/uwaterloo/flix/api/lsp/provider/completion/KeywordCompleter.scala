@@ -97,19 +97,25 @@ object KeywordCompleter {
     */
   def getOtherKeywords: Iterable[Completion] =
     List(
-      Completion.KeywordCompletion("with"             , Priority.Highest),
-      Completion.KeywordCompletion("law"              , Priority.Higher),
-      Completion.KeywordCompletion("@Test"            , Priority.High),
-      Completion.KeywordCompletion("where"            , Priority.Low),
-      Completion.KeywordCompletion("fix"              , Priority.Low),
+      // @
+      Completion.KeywordCompletion("@Test"            , Priority.Highest),
+      Completion.KeywordCompletion("@ParallelWhenPure", Priority.Low),
+      Completion.KeywordCompletion("@Parallel"        , Priority.Higher),
+      Completion.KeywordCompletion("@LazyWhenPure"    , Priority.Lower),
+      Completion.KeywordCompletion("@Lazy"            , Priority.High),
       Completion.KeywordCompletion("@Deprecated"      , Priority.Lowest),
-      Completion.KeywordCompletion("@Parallel"        , Priority.Lowest),
-      Completion.KeywordCompletion("@ParallelWhenPure", Priority.Lowest),
-      Completion.KeywordCompletion("@Lazy"            , Priority.Lowest),
-      Completion.KeywordCompletion("@LazyWhenPure"    , Priority.Lowest),
-      Completion.KeywordCompletion("Record"           , Priority.Lowest),
-      Completion.KeywordCompletion("redef"            , Priority.Lowest),
-      Completion.KeywordCompletion("Schema"           , Priority.Lowest),
+      // S
+      Completion.KeywordCompletion("Schema"           , Priority.Default),
+      // F
+      Completion.KeywordCompletion("fix"              , Priority.Default),
+      // L
+      Completion.KeywordCompletion("law"              , Priority.Default),
+      // R
+      Completion.KeywordCompletion("redef"            , Priority.High),
+      Completion.KeywordCompletion("Record"           , Priority.Low),
+      // W
+      Completion.KeywordCompletion("with"             , Priority.High),
+      Completion.KeywordCompletion("where"            , Priority.Low),
     )
 
   /**
