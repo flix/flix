@@ -36,6 +36,7 @@ object Priority {
   case object Highest extends Priority
   case object Higher extends Priority
   case object High extends Priority
+  case object Default extends Priority
   case object Low extends Priority
   case object Lower extends Priority
   case object Lowest extends Priority
@@ -55,8 +56,9 @@ object Priority {
   	case Priority.Highest => s"1$label"
   	case Priority.Higher  => s"2$label"
   	case Priority.High    => s"3$label"
-  	case Priority.Low     => s"4$label"
-  	case Priority.Lower   => s"5$label"
-  	case Priority.Lowest  => s"6$label"
+  	case Priority.Default => s"4$label"
+  	case Priority.Low     => s"5$label"
+  	case Priority.Lower   => s"6$label"
+  	case Priority.Lowest  => s"7$label"
   }
 }
