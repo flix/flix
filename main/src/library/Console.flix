@@ -16,8 +16,13 @@
  */
 mod Console {
 
-    import java.lang.{System, Throwable, Integer, NumberFormatException};
-    import java.io.{Console, IOError, PrintWriter};
+    import java.io.Console
+    import java.io.IOError
+    import java.io.PrintWriter
+    import java.lang.Integer
+    import java.lang.NumberFormatException
+    import java.lang.System
+    import java.lang.Throwable
 
     ///
     /// Returns true if there is a `Console` object associated with the current JVM.
@@ -166,7 +171,7 @@ mod Console {
     ///
     /// Retrieves the console of the JVM if there is one, otherwise None.
     ///
-    def console(): Option[##java.io.Console] \ IO =
+    def console(): Option[Console] \ IO =
         System.console() |> Object.toOption
 
     ///

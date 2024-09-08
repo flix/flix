@@ -37,7 +37,6 @@ instance Hash[MultiMap[k, v]] with Hash[k], Hash[v] {
         Map.foldLeftWithKey((acc, k, v) -> acc `Hash.combine` Hash.hash(k) `Hash.combine` Hash.hash(v), Hash.magic(), m1)
 }
 
-
 instance Eq[MultiMap[k, v]] with Eq[k], Eq[v] {
     pub def eq(m1: MultiMap[k, v], m2: MultiMap[k, v]): Bool =
         MultiMap.toList(m1) == MultiMap.toList(m2)
@@ -48,6 +47,18 @@ instance Order[MultiMap[k, v]] with Order[k], Order[v] {
         MultiMap.toList(x) <=> MultiMap.toList(y)
 }
 
+instance Indexable[MultiMap[k, v]] with Order[k] {
+    type Idx = k
+    type Elm = Set[v]
+    type Aef = KeyNotFound
+    pub def get(t: MultiMap[k, v], i: k): Set[v] \ KeyNotFound =
+        let vs = MultiMap.get(i, t);
+        if (Set.isEmpty(vs))
+            do KeyNotFound.keyNotFound("key not found")
+        else
+            vs
+}
+
 instance Foldable[MultiMap[k]] {
     pub def foldLeft(f: (b, v) -> b \ ef, s: b, m: MultiMap[k, v]): b \ ef = MultiMap.foldLeft((acc, v) -> f(acc, v), s, m)
     pub def foldRight(f: (v, b) -> b \ ef, s: b, m: MultiMap[k, v]): b \ ef = MultiMap.foldRight(f, s, m)
@@ -56,9 +67,9 @@ instance Foldable[MultiMap[k]] {
 
 instance UnorderedFoldable[MultiMap[k]] {
     pub def foldMap(f: v -> b \ ef, m: MultiMap[k, v]): b \ ef with CommutativeMonoid[b] = MultiMap.foldMap(f, m)
-    override pub def isEmpty(m: MultiMap[k, v]): Bool = MultiMap.isEmpty(m)
-    override pub def exists(f: v -> Bool \ ef, m: MultiMap[k, v]): Bool \ ef = MultiMap.exists(_ -> f, m)
-    override pub def forAll(f: v -> Bool \ ef, m: MultiMap[k, v]): Bool \ ef = MultiMap.forAll(_ -> f, m)
+    redef isEmpty(m: MultiMap[k, v]): Bool = MultiMap.isEmpty(m)
+    redef exists(f: v -> Bool \ ef, m: MultiMap[k, v]): Bool \ ef = MultiMap.exists(_ -> f, m)
+    redef forAll(f: v -> Bool \ ef, m: MultiMap[k, v]): Bool \ ef = MultiMap.forAll(_ -> f, m)
 }
 
 instance SemiGroup[MultiMap[k,v]] with Order[k], Order[v] {
@@ -113,6 +124,13 @@ mod MultiMap {
     /// Returns `true` if and only if `m` is a non-empty MultiMap.
     ///
     pub def nonEmpty(m: MultiMap[k, v]): Bool = not isEmpty(m)
+
+    ///
+    /// Returns the number of keys in `m`.
+    ///
+    pub def size(m: MultiMap[k, v]): Int32 =
+        let MultiMap(t) = m;
+        Map.size(t)
 
     ///
     /// Returns `Some(vs)` if `k => vs` is in `m`.
@@ -545,8 +563,8 @@ mod MultiMap {
     /// MultiMap `m` and the index of the traversal.
     ///
     pub def forEachWithIndex(f: (Int32, k, v) -> Unit \ ef, m: MultiMap[k, v]): Unit \ ef = region rc {
-        let ix = ref 0 @ rc;
-        let f1 = (k , v) -> { let i = deref ix; f(i, k, v); Ref.put(i + 1, ix) };
+        let ix = Ref.fresh(rc, 0);
+        let f1 = (k , v) -> { let i = Ref.get(ix); f(i, k, v); Ref.put(i + 1, ix) };
         forEach(f1, m)
     }
 

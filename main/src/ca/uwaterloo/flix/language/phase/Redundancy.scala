@@ -37,9 +37,9 @@ import scala.collection.mutable.ListBuffer
   *
   * For example, the redundancy phase ensures that there are no:
   *
-  * - unused local variables.
-  * - unused enums, definitions, ...
-  * - useless expressions.
+  *   - unused local variables.
+  *   - unused enums, definitions, ...
+  *   - useless expressions.
   *
   * and so on.
   *
@@ -74,7 +74,9 @@ object Redundancy {
         checkUnusedEffects()(sctx, root) ++
         checkUnusedEnumsAndTags()(sctx, root) ++
         checkUnusedTypeParamsEnums()(root) ++
-        checkRedundantTypeConstraints()(root, flix)
+        checkUnusedStructsAndFields()(sctx, root) ++
+        checkUnusedTypeParamsStructs()(root) ++
+        checkRedundantTraitConstraints()(root, flix)
     }
 
     // Determine whether to return success or soft failure.
@@ -146,27 +148,61 @@ object Redundancy {
   }
 
   /**
+    * Checks for unused struct symbols and tags.
+    */
+  private def checkUnusedStructsAndFields()(implicit sctx: SharedContext, root: Root): List[RedundancyError] = {
+    val result = new ListBuffer[RedundancyError]
+    for ((_, struct) <- root.structs) {
+      if (deadStruct(struct)) {
+        result += UnusedStructSym(struct.sym)
+      }
+    }
+
+    result.toList
+  }
+
+  /**
+   * Checks for unused type parameters in structs.
+   */
+  private def checkUnusedTypeParamsStructs()(implicit root: Root): List[RedundancyError] = {
+    val result = new ListBuffer[RedundancyError]
+    for ((_, decl) <- root.structs) {
+      val usedTypeVars = decl.fields.foldLeft(Set.empty[Symbol.KindedTypeVarSym]) {
+        case (acc, (name, field)) =>
+          acc ++ field.tpe.typeVars.map(_.sym)
+      }
+      val unusedTypeParams = decl.tparams.init.filter { // the last tparam is implicitly used for the region
+        tparam =>
+          !usedTypeVars.contains(tparam.sym) &&
+            !tparam.name.name.startsWith("_")
+      }
+      result ++= unusedTypeParams.map(tparam => UnusedTypeParam(tparam.name, tparam.loc))
+    }
+    result.toList
+  }
+
+  /**
     * Checks for redundant type constraints in the given `root`.
     */
-  private def checkRedundantTypeConstraints()(implicit root: Root, flix: Flix): List[RedundancyError] = {
-    val defErrors = ParOps.parMap(root.defs.values)(defn => redundantTypeConstraints(defn.spec.declaredScheme.tconstrs))
-    val classErrors = ParOps.parMap(root.traits.values)(trt => redundantTypeConstraints(trt.superTraits))
-    val instErrors = ParOps.parMap(root.instances.values.flatten)(inst => redundantTypeConstraints(inst.tconstrs))
-    val sigErrors = ParOps.parMap(root.sigs.values)(sig => redundantTypeConstraints(sig.spec.declaredScheme.tconstrs))
+  private def checkRedundantTraitConstraints()(implicit root: Root, flix: Flix): List[RedundancyError] = {
+    val defErrors = ParOps.parMap(root.defs.values)(defn => redundantTraitConstraints(defn.spec.declaredScheme.tconstrs))
+    val classErrors = ParOps.parMap(root.traits.values)(trt => redundantTraitConstraints(trt.superTraits))
+    val instErrors = ParOps.parMap(root.instances.values.flatten)(inst => redundantTraitConstraints(inst.tconstrs))
+    val sigErrors = ParOps.parMap(root.sigs.values)(sig => redundantTraitConstraints(sig.spec.declaredScheme.tconstrs))
 
     (defErrors.flatten ++ classErrors.flatten ++ instErrors.flatten ++ sigErrors.flatten).toList
   }
 
   /**
-    * Finds redundant type constraints in `tconstrs`.
+    * Finds redundant trait constraints in `tconstrs`.
     */
-  private def redundantTypeConstraints(tconstrs: List[Ast.TypeConstraint])(implicit root: Root, flix: Flix): List[RedundancyError] = {
+  private def redundantTraitConstraints(tconstrs: List[Ast.TraitConstraint])(implicit root: Root, flix: Flix): List[RedundancyError] = {
     for {
       (tconstr1, i1) <- tconstrs.zipWithIndex
       (tconstr2, i2) <- tconstrs.zipWithIndex
       // don't compare a constraint against itself
       if i1 != i2 && TraitEnvironment.entails(tconstr1, tconstr2, root.traitEnv)
-    } yield RedundancyError.RedundantTypeConstraint(tconstr1, tconstr2, tconstr2.loc)
+    } yield RedundancyError.RedundantTraitConstraint(tconstr1, tconstr2, tconstr2.loc)
   }
 
   /**
@@ -558,6 +594,18 @@ object Redundancy {
       val us3 = visitExp(elm, env0, rc)
       us1 ++ us2 ++ us3
 
+    case Expr.StructNew(sym, fields, region, _, _, _) =>
+      sctx.structSyms.put(sym, ())
+      visitExps(fields.map {case (k, v) => v}, env0, rc) ++ visitExp(region, env0, rc)
+
+    case Expr.StructGet(e, field, _, _, _) =>
+      sctx.structFieldSyms.put(field.sym, ())
+      visitExp(e, env0, rc)
+
+    case Expr.StructPut(e1, field, e2, _, _, _) =>
+      sctx.structFieldSyms.put(field.sym, ())
+      visitExp(e1, env0, rc) ++ visitExp(e2, env0, rc)
+
     case Expr.VectorLit(exps, _, _, _) =>
       visitExps(exps, env0, rc)
 
@@ -568,19 +616,6 @@ object Redundancy {
 
     case Expr.VectorLength(exp, _) =>
       visitExp(exp, env0, rc)
-
-    case Expr.Ref(exp1, exp2, _, _, _) =>
-      val us1 = visitExp(exp1, env0, rc)
-      val us2 = visitExp(exp2, env0, rc)
-      us1 ++ us2
-
-    case Expr.Deref(exp, _, _, _) =>
-      visitExp(exp, env0, rc)
-
-    case Expr.Assign(exp1, exp2, _, _, _) =>
-      val us1 = visitExp(exp1, env0, rc)
-      val us2 = visitExp(exp2, env0, rc)
-      us1 ++ us2
 
     case Expr.Ascribe(exp, _, _, _) =>
       visitExp(exp, env0, rc)
@@ -636,6 +671,9 @@ object Redundancy {
       }
       usedExp ++ usedRules
 
+    case Expr.Throw(exp, _, _, _) =>
+      visitExp(exp, env0, rc)
+
     case Expr.TryWith(exp, effUse, rules, _, _, _) =>
       sctx.effSyms.put(effUse.sym, ())
       val usedExp = visitExp(exp, env0, rc)
@@ -644,7 +682,7 @@ object Redundancy {
           val usedBody = visitExp(body, env0, rc)
           val syms = fparams.map(_.sym)
           val dead = syms.filter(deadVarSym(_, usedBody))
-          acc ++ usedBody ++ dead.map(UnusedVarSym)
+          acc ++ usedBody ++ dead.map(UnusedVarSym.apply)
       }
       usedExp ++ usedRules
 
@@ -776,12 +814,9 @@ object Redundancy {
     * Visits the [[ParYieldFragment]]s `frags`.
     *
     * Returns a tuple of three entries:
-    *
-    * 1. The used variables
-    *
-    * 2. An updated environment with the free variables
-    *
-    * 3. All the free variables.
+    *   1. The used variables
+    *   1. An updated environment with the free variables
+    *   1. All the free variables.
     */
   private def visitParYieldFragments(frags: List[ParYieldFragment], env0: Env, rc: RecursionContext)(implicit lctx: LocalContext, sctx: SharedContext, root: Root, flix: Flix): (Used, Env, Set[Symbol.VarSym]) = {
     frags.foldLeft((Used.empty, env0, Set.empty[Symbol.VarSym])) {
@@ -821,7 +856,7 @@ object Redundancy {
     * it is a member of the returned set.
     */
   private def findUnusedVarSyms(freeVars: Set[Symbol.VarSym], usedSyms: Used): Set[UnusedVarSym] = {
-    freeVars.filter(sym => deadVarSym(sym, usedSyms)).map(UnusedVarSym)
+    freeVars.filter(sym => deadVarSym(sym, usedSyms)).map(UnusedVarSym.apply)
   }
 
   /**
@@ -1054,6 +1089,14 @@ object Redundancy {
       !sctx.enumSyms.containsKey(enm.sym)
 
   /**
+    * Returns `true` if the given `struct` is unused according to `used`.
+    */
+  private def deadStruct(struct: Struct)(implicit sctx: SharedContext): Boolean =
+    !struct.sym.name.startsWith("_") &&
+      !struct.mod.isPublic &&
+      !sctx.structSyms.containsKey(struct.sym)
+
+  /**
     * Returns `true` if the given `tag` of the given `enm` is unused according to `used`.
     */
   private def deadTag(enm: Enum, tag: Symbol.CaseSym)(implicit ctx: SharedContext): Boolean =
@@ -1227,6 +1270,8 @@ object Redundancy {
       new ConcurrentHashMap(),
       new ConcurrentHashMap(),
       new ConcurrentHashMap(),
+      new ConcurrentHashMap(),
+      new ConcurrentHashMap(),
       new ConcurrentHashMap())
   }
 
@@ -1242,6 +1287,8 @@ object Redundancy {
   private case class SharedContext(defSyms: ConcurrentHashMap[Symbol.DefnSym, Unit],
                                    sigSyms: ConcurrentHashMap[Symbol.SigSym, Unit],
                                    effSyms: ConcurrentHashMap[Symbol.EffectSym, Unit],
+                                   structSyms: ConcurrentHashMap[Symbol.StructSym, Unit],
+                                   structFieldSyms: ConcurrentHashMap[Symbol.StructFieldSym, Unit],
                                    enumSyms: ConcurrentHashMap[Symbol.EnumSym, Unit],
                                    caseSyms: ConcurrentHashMap[Symbol.CaseSym, Unit])
 

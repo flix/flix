@@ -38,25 +38,25 @@ mod Test.Exp.Apply.Tail {
 
     @test
     def testApplyTail13(): Bool = region rc {
-        let n = ref 1 @ rc;
+        let n = Ref.fresh(rc, 1);
         stmtRecursion(n)
     }
 
     @test
     def testApplyTail14(): Bool = region rc {
-        let n = ref 12 @ rc;
+        let n = Ref.fresh(rc, 12);
         stmtRecursion(n)
     }
 
     @test
     def testApplyTail15(): Bool = region rc {
-        let n = ref 1234 @ rc;
+        let n = Ref.fresh(rc, 1234);
         stmtRecursion(n)
     }
 
     @test
     def testApplyTail16(): Bool = region rc {
-        let n = ref 1234567 @ rc;
+        let n = Ref.fresh(rc, 1234567);
         stmtRecursion(n)
     }
 

@@ -17,8 +17,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Source}
-import ca.uwaterloo.flix.language.ast.shared.Fixity
+import ca.uwaterloo.flix.language.ast.shared.{Denotation, Fixity, Polarity, Source}
 import ca.uwaterloo.flix.util.collection.MultiMap
 
 import java.lang.reflect.{Constructor, Field, Method}
@@ -49,9 +48,9 @@ object ResolvedAst {
   object Declaration {
     case class Namespace(sym: Symbol.ModuleSym, usesAndImports: List[Ast.UseOrImport], decls: List[Declaration], loc: SourceLocation) extends Declaration
 
-    case class Trait(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.TraitSym, tparam: TypeParam, superTraits: List[TypeConstraint], assocs: List[Declaration.AssocTypeSig], sigs: Map[Symbol.SigSym, Declaration.Sig], laws: List[Declaration.Def], loc: SourceLocation) extends Declaration
+    case class Trait(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.TraitSym, tparam: TypeParam, superTraits: List[TraitConstraint], assocs: List[Declaration.AssocTypeSig], sigs: Map[Symbol.SigSym, Declaration.Sig], laws: List[Declaration.Def], loc: SourceLocation) extends Declaration
 
-    case class Instance(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, trt: Ast.TraitSymUse, tpe: UnkindedType, tconstrs: List[TypeConstraint], assocs: List[Declaration.AssocTypeDef], defs: List[Declaration.Def], ns: Name.NName, loc: SourceLocation) extends Declaration
+    case class Instance(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, trt: Ast.TraitSymUse, tpe: UnkindedType, tconstrs: List[TraitConstraint], assocs: List[Declaration.AssocTypeDef], defs: List[Declaration.Def], ns: Name.NName, loc: SourceLocation) extends Declaration
 
     case class Sig(sym: Symbol.SigSym, spec: Spec, exp: Option[Expr]) extends Declaration
 
@@ -59,13 +58,13 @@ object ResolvedAst {
 
     case class Enum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[TypeParam], derives: Ast.Derivations, cases: List[Declaration.Case], loc: SourceLocation) extends Declaration
 
-    case class Struct(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.StructSym, tparams: List[TypeParam], fields: List[Declaration.StructField], loc: SourceLocation) extends Declaration
+    case class Struct(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.StructSym, tparams: List[TypeParam], fields: List[StructField], loc: SourceLocation) extends Declaration
+
+    case class StructField(sym: Symbol.StructFieldSym, tpe: UnkindedType, loc: SourceLocation)
 
     case class RestrictableEnum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.RestrictableEnumSym, index: TypeParam, tparams: List[TypeParam], derives: Ast.Derivations, cases: List[Declaration.RestrictableCase], loc: SourceLocation) extends Declaration
 
     case class Case(sym: Symbol.CaseSym, tpe: UnkindedType, loc: SourceLocation) extends Declaration
-
-    case class StructField(sym: Symbol.StructFieldSym, tpe: UnkindedType, loc: SourceLocation)
 
     case class RestrictableCase(sym: Symbol.RestrictableCaseSym, tpe: UnkindedType, loc: SourceLocation) extends Declaration
 
@@ -80,7 +79,7 @@ object ResolvedAst {
     case class Op(sym: Symbol.OpSym, spec: Spec) extends Declaration
   }
 
-  case class Spec(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, tparams: List[TypeParam], fparams: List[FormalParam], tpe: UnkindedType, eff: Option[UnkindedType], tconstrs: List[TypeConstraint], econstrs: List[EqualityConstraint], loc: SourceLocation)
+  case class Spec(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, tparams: List[TypeParam], fparams: List[FormalParam], tpe: UnkindedType, eff: Option[UnkindedType], tconstrs: List[TraitConstraint], econstrs: List[EqualityConstraint], loc: SourceLocation)
 
   sealed trait Expr {
     def loc: SourceLocation
@@ -137,7 +136,7 @@ object ResolvedAst {
 
     case class RestrictableTag(sym: Ast.RestrictableCaseSymUse, exp: Expr, isOpen: Boolean, loc: SourceLocation) extends Expr
 
-    case class Tuple(elms: List[Expr], loc: SourceLocation) extends Expr
+    case class Tuple(exps: List[Expr], loc: SourceLocation) extends Expr
 
     case class RecordEmpty(loc: SourceLocation) extends Expr
 
@@ -157,23 +156,17 @@ object ResolvedAst {
 
     case class ArrayLength(base: Expr, loc: SourceLocation) extends Expr
 
-    case class StructNew(name: Symbol.StructSym, exps: List[(Symbol.StructFieldSym, Expr)], region: Expr, loc: SourceLocation) extends Expr
+    case class StructNew(sym: Symbol.StructSym, exps: List[(Ast.StructFieldSymUse, Expr)], region: Expr, loc: SourceLocation) extends Expr
 
-    case class StructGet(sym: Symbol.StructSym, e: Expr, f: Name.Label, loc: SourceLocation) extends Expr
+    case class StructGet(e: Expr, sym: Ast.StructFieldSymUse, loc: SourceLocation) extends Expr
 
-    case class StructPut(sym: Symbol.StructSym, exp1: Expr, name: Name.Label, exp2: Expr, loc: SourceLocation) extends Expr
+    case class StructPut(exp1: Expr, sym: Ast.StructFieldSymUse, exp2: Expr, loc: SourceLocation) extends Expr
 
     case class VectorLit(exps: List[Expr], loc: SourceLocation) extends Expr
 
     case class VectorLoad(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
     case class VectorLength(exp: Expr, loc: SourceLocation) extends Expr
-
-    case class Ref(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
-
-    case class Deref(exp: Expr, loc: SourceLocation) extends Expr
-
-    case class Assign(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
     case class Ascribe(exp: Expr, expectedType: Option[UnkindedType], expectedEff: Option[UnkindedType], loc: SourceLocation) extends Expr
 
@@ -189,6 +182,8 @@ object ResolvedAst {
 
     case class TryCatch(exp: Expr, rules: List[CatchRule], loc: SourceLocation) extends Expr
 
+    case class Throw(exp: Expr, loc: SourceLocation) extends Expr
+
     case class TryWith(exp: Expr, eff: Ast.EffectSymUse, rules: List[HandlerRule], loc: SourceLocation) extends Expr
 
     case class Do(op: Ast.OpSymUse, exps: List[Expr], loc: SourceLocation) extends Expr
@@ -199,13 +194,15 @@ object ResolvedAst {
 
     case class InvokeStaticMethod2(clazz: Class[_], methodName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
 
+    case class GetField2(exp: Expr, fieldName: Name.Ident, loc: SourceLocation) extends Expr
+
     case class InvokeConstructorOld(constructor: Constructor[_], exps: List[Expr], loc: SourceLocation) extends Expr
 
     case class InvokeMethodOld(method: Method, clazz: java.lang.Class[_], exp: Expr, exps: List[Expr], loc: SourceLocation) extends Expr
 
     case class InvokeStaticMethodOld(method: Method, exps: List[Expr], loc: SourceLocation) extends Expr
 
-    case class GetField(field: Field, clazz: java.lang.Class[_], exp: Expr, loc: SourceLocation) extends Expr
+    case class GetFieldOld(field: Field, clazz: java.lang.Class[_], exp: Expr, loc: SourceLocation) extends Expr
 
     case class PutField(field: Field, clazz: java.lang.Class[_], exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
@@ -265,7 +262,7 @@ object ResolvedAst {
 
     case class Tag(sym: Ast.CaseSymUse, pat: Pattern, loc: SourceLocation) extends Pattern
 
-    case class Tuple(elms: List[Pattern], loc: SourceLocation) extends Pattern
+    case class Tuple(pats: List[Pattern], loc: SourceLocation) extends Pattern
 
     case class Record(pats: List[Record.RecordLabelPattern], pat: Pattern, loc: SourceLocation) extends Pattern
 
@@ -309,7 +306,7 @@ object ResolvedAst {
 
     object Body {
 
-      case class Atom(pred: Name.Pred, den: Denotation, polarity: Ast.Polarity, fixity: Fixity, terms: List[Pattern], loc: SourceLocation) extends Predicate.Body
+      case class Atom(pred: Name.Pred, den: Denotation, polarity: Polarity, fixity: Fixity, terms: List[Pattern], loc: SourceLocation) extends Predicate.Body
 
       case class Functional(outVars: List[Symbol.VarSym], exp: Expr, loc: SourceLocation) extends Predicate.Body
 
@@ -331,7 +328,7 @@ object ResolvedAst {
 
     case class PredicateParamUntyped(pred: Name.Pred, loc: SourceLocation) extends PredicateParam
 
-    case class PredicateParamWithType(pred: Name.Pred, den: Ast.Denotation, tpes: List[UnkindedType], loc: SourceLocation) extends PredicateParam
+    case class PredicateParamWithType(pred: Name.Pred, den: Denotation, tpes: List[UnkindedType], loc: SourceLocation) extends PredicateParam
 
   }
 
@@ -362,7 +359,7 @@ object ResolvedAst {
     case class Implicit(name: Name.Ident, sym: Symbol.UnkindedTypeVarSym, loc: SourceLocation) extends TypeParam
   }
 
-  case class TypeConstraint(head: Ast.TypeConstraint.Head, tpe: UnkindedType, loc: SourceLocation)
+  case class TraitConstraint(head: Ast.TraitConstraint.Head, tpe: UnkindedType, loc: SourceLocation)
 
   case class EqualityConstraint(cst: Ast.AssocTypeConstructor, tpe1: UnkindedType, tpe2: UnkindedType, loc: SourceLocation)
 

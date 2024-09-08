@@ -24,8 +24,10 @@ instance UpperBound[Float64] {
 
 mod Float64 {
 
-    import java.lang.{Double, String, Math}
-    import java.math.BigDecimal;
+    import java.lang.Double
+    import java.lang.Math
+    import java.math.BigDecimal
+    import java.lang.NumberFormatException
 
     ///
     /// Returns the number of bits used to represent a `Float64`.
@@ -109,7 +111,7 @@ mod Float64 {
     pub def fromString(s: String): Option[Float64] = try {
         Some(unsafe Double.parseDouble(s.strip()))
     } catch {
-        case _: ##java.lang.NumberFormatException => None
+        case _: NumberFormatException => None
     }
 
     ///
@@ -187,7 +189,7 @@ mod Float64 {
             Some(unsafe BigDecimal.valueOf(x).toBigInteger())
         } catch {
             // Catch NaN, isInfinite.
-            case _: ##java.lang.NumberFormatException => None
+            case _: NumberFormatException => None
         }
 
     ///
@@ -220,7 +222,7 @@ mod Float64 {
         try {
             Some(unsafe new BigDecimal(x))
         } catch {
-            case _: ##java.lang.NumberFormatException => None
+            case _: NumberFormatException => None
         }
 
     ///

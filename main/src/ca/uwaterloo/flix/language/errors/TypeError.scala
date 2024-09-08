@@ -19,7 +19,6 @@ package ca.uwaterloo.flix.language.errors
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.BroadEqualityConstraint
-import ca.uwaterloo.flix.language.ast.TypeConstructor.JvmMethod
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.dbg.DocAst.Type.JvmConstructor
 import ca.uwaterloo.flix.language.fmt.FormatEqualityConstraint.formatEqualityConstraint
@@ -98,7 +97,25 @@ object TypeError {
       import formatter._
       s""">> Java method '$methodName' from type '${red(formatType(tpe, None))}' with arguments types (${tpes.mkString(", ")}) not found.
          |
-         |${code(loc, s"Java method '${methodName}' not found")}
+         |${code(loc, s"Java method '$methodName' not found")}
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * Java field not found type error.
+    *
+    * @param tpe  the type of the receiver object.
+    * @param loc  the location where the error occurred.
+    */
+  case class FieldNotFound(fieldName: Name.Ident, tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    def summary: String = s"Java field '$fieldName' in type '$tpe' not found."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s""">> Java field '$fieldName' from type '${red(formatType(tpe, None))}' not found.
+         |
+         |${code(loc, s"Java field '$fieldName' not found")}
          |""".stripMargin
     }
   }
@@ -112,7 +129,7 @@ object TypeError {
    * @param renv    the rigidity environment.
    * @param loc     the location where the error occured.
    */
-  case class StaticMethodNotFound(clazz: Class[_], methodName: String, tpes: List[Type], methods: List[JvmMethod], renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class StaticMethodNotFound(clazz: Class[_], methodName: Name.Ident, tpes: List[Type], methods: List[Method], renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     // TODO INTEROP better comment, e.g., list possible methods
     def summary: String = s"Static Java method '$methodName' from class ${clazz.getName} with arguments types (${tpes.mkString(", ")}) not found."
 
@@ -161,7 +178,7 @@ object TypeError {
    * @param renv    the rigidity environment.
    * @param loc     the location where the error occured.
    */
-  case class AmbiguousMethod(methodName: String, tpe0: Type, tpes: List[Type], methods: List[Method], renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class AmbiguousMethod(methodName: Name.Ident, tpe0: Type, tpes: List[Type], methods: List[Method], renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     // TODO INTEROP better comment with candidate methods formatting
     def summary: String = s"Ambiguous Java method '$methodName' in type '$tpe0' with arguments types (${tpes.mkString(", ")})."
 
@@ -188,7 +205,7 @@ object TypeError {
    * @param renv    the rigidity environment.
    * @param loc     the location where the error occured.
    */
-  case class AmbiguousStaticMethod(clazz: Class[_], methodName: String, tpes: List[Type], methods: List[Method], renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class AmbiguousStaticMethod(clazz: Class[_], methodName: Name.Ident, tpes: List[Type], methods: List[Method], renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     // TODO INTEROP better comment with candidate methods formatting
     def summary: String = s"Ambiguous static Java method '$methodName' from class '${clazz.getName}' with arguments types (${tpes.mkString(", ")})."
 
@@ -208,7 +225,7 @@ object TypeError {
 
   /**
    * Unresolved constructor type error.
-   * This is a dummy error used in java constructor type reconstruction for invokeConstructor2.
+   * This is a dummy error used in Java constructor type reconstruction for InvokeConstructor2.
    */
   case class UnresolvedConstructor(loc: SourceLocation) extends TypeError with Recoverable {
     def summary: String = s"Unresolved constructor"
@@ -217,12 +234,22 @@ object TypeError {
 
   /**
    * Unresolved method type error.
-   * This is a dummy error used in java method type reconstruction for invokeMethod2.
+   * This is a dummy error used in Java method type reconstruction for InvokeMethod2.
    */
   case class UnresolvedMethod(loc: SourceLocation) extends TypeError with Recoverable {
     def summary: String = s"Unresolved method"
 
     def message(formatter: Formatter): String = s"Unresolved method"
+  }
+
+  /**
+    * Unresolved field type error.
+    * This is a dummy error used in Java field type reconstruction for GetField2.
+    */
+  case class UnresolvedField(loc: SourceLocation) extends TypeError with Recoverable {
+    def summary: String = s"Unresolved field"
+
+    def message(formatter: Formatter): String = s"Unresolved field"
   }
 
 
@@ -616,24 +643,6 @@ object TypeError {
   }
 
   /**
-    * Over-applied Function.
-    *
-    * @param excessArgument the type of the excess argument.
-    * @param loc            the location where the error occurred.
-    */
-  case class OverApplied(excessArgument: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"Over-applied function. Excess argument of type: '${formatType(excessArgument)}'."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s""">> Over-applied function. Excess argument of type: '${red(formatType(excessArgument))}'.
-         |
-         |${code(loc, "over-applied function.")}
-         |""".stripMargin
-    }
-  }
-
-  /**
     * Unexpected type, but a checked type cast might work.
     *
     * @param expected the expected type.
@@ -765,24 +774,6 @@ object TypeError {
          |  ${formatType(schemaType, Some(renv))}
          |
          |does not contain the predicate '${red(pred.name)}' of type ${cyan(formatType(predType, Some(renv)))}.
-         |""".stripMargin
-    }
-  }
-
-  /**
-    * Under-applied Function.
-    *
-    * @param missingArgument the type of the missing argument.
-    * @param loc             the location where the error occurred.
-    */
-  case class UnderApplied(missingArgument: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"Under-applied function. Missing argument of type: '${formatType(missingArgument)}'."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s""">> Under-applied function. Missing argument of type: '${red(formatType(missingArgument))}'.
-         |
-         |${code(loc, "under-applied function.")}
          |""".stripMargin
     }
   }

@@ -40,6 +40,8 @@ object TypeMinimization {
       case Type.Apply(tpe1, tpe2, loc) => Type.Apply(minimizeType(tpe1), minimizeType(tpe2), loc)
       case Type.Alias(cst, args, tpe, loc) => Type.Alias(cst, args.map(minimizeType), minimizeType(tpe), loc)
       case Type.AssocType(cst, args, kind, loc) => Type.AssocType(cst, args.map(minimizeType), kind, loc)
+      case Type.JvmToType(tpe, loc) => Type.JvmToType(minimizeType(tpe), loc)
+      case Type.UnresolvedJvmType(member, loc) => Type.UnresolvedJvmType(member.map(minimizeType), loc)
     }
   }
 
@@ -56,7 +58,7 @@ object TypeMinimization {
 
       // filter out unused type constraints
       val newTconstrs = tconstrs.filter {
-        case Ast.TypeConstraint(_, Type.Var(sym, _), _) if tvars.contains(sym) => true
+        case Ast.TraitConstraint(_, Type.Var(sym, _), _) if tvars.contains(sym) => true
         case _ => false
       }
       Scheme(newQuants, newTconstrs, econstrs, newBase)
@@ -89,7 +91,7 @@ object TypeMinimization {
 
     // Compute the variables in `tpe`.
     val tvars = tpe.typeVars.toList.map(tvar => BoolFormula.VarOrEff.Var(tvar.sym))
-    val effs = tpe.effects.toList.map(BoolFormula.VarOrEff.Eff)
+    val effs = tpe.effects.toList.map(BoolFormula.VarOrEff.Eff.apply)
     val assocs = tpe.assocs.toList.map(assoc => BoolFormula.VarOrEff.Assoc(assoc.cst.sym, assoc.arg))
 
     // Construct a bi-directional map from type variables to indices.

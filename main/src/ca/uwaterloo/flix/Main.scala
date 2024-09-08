@@ -108,7 +108,8 @@ object Main {
       xverifyeffects = cmdOpts.xverifyeffects,
       xsubeffecting = cmdOpts.xsubeffecting,
       XPerfFrontend = cmdOpts.XPerfFrontend,
-      XPerfN = cmdOpts.XPerfN
+      XPerfN = cmdOpts.XPerfN,
+      xiterations = cmdOpts.xiterations,
     )
 
     // Don't use progress bar if benchmarking.
@@ -374,6 +375,7 @@ object Main {
                      xsubeffecting: SubEffectLevel = SubEffectLevel.Nothing,
                      XPerfN: Option[Int] = None,
                      XPerfFrontend: Boolean = false,
+                     xiterations: Int = 1000,
                      files: Seq[File] = Seq())
 
   /**
@@ -558,7 +560,7 @@ object Main {
       opt[LibLevel]("Xlib").action((arg, c) => c.copy(xlib = arg)).
         text("[experimental] controls the amount of std. lib. to include (nix, min, all).")
 
-      // Xnl-deprecated
+      // Xno-deprecated
       opt[Unit]("Xno-deprecated").action((_, c) => c.copy(xnodeprecated = true)).
         text("[experimental] disables deprecated features.")
 
@@ -609,6 +611,10 @@ object Main {
       // Xsubeffecting
       opt[SubEffectLevel]("Xsubeffecting").action((level, c) => c.copy(xsubeffecting = level)).
         text("[experimental] enables sub-effecting in select places")
+
+      // Xiterations
+      opt[Int]("Xiterations").action((n, c) => c.copy(xiterations = n)).
+        text("[experimental] sets the maximum number of constraint resolution iterations during typechecking")
 
       note("")
 

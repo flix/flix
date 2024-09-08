@@ -115,6 +115,21 @@ def length03(): Bool = List.length(1 :: 2 :: Nil) == 2
 def length04(): Bool = List.length(1 :: 2 :: 3 :: Nil) == 3
 
 /////////////////////////////////////////////////////////////////////////////
+// size                                                                    //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def size01(): Bool = List.size(Nil) == 0
+
+@test
+def size02(): Bool = List.size(1 :: Nil) == 1
+
+@test
+def size03(): Bool = List.size(1 :: 2 :: Nil) == 2
+
+@test
+def size04(): Bool = List.size(1 :: 2 :: 3 :: Nil) == 3
+
+/////////////////////////////////////////////////////////////////////////////
 // append                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 @test
@@ -2055,16 +2070,16 @@ def toMapWith05(): Bool =
 
 @test
 def forEach01(): Bool = region rc {
-    let ri = ref 21 @ rc;
+    let ri = Ref.fresh(rc, 21);
     List.forEach(x -> Ref.put(x, ri), Nil);
-    21 == deref ri
+    21 == Ref.get(ri)
 }
 
 @test
 def forEach02(): Bool = region rc {
-    let ri = ref 21 @ rc;
+    let ri = Ref.fresh(rc, 21);
     List.forEach(x -> Ref.put(x, ri), 1 :: 2 :: 3 :: Nil);
-    3 == deref ri
+    3 == Ref.get(ri)
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -2073,16 +2088,16 @@ def forEach02(): Bool = region rc {
 
 @test
 def forEachWithIndex01(): Bool = region rc {
-    let ri = ref 21 @ rc;
+    let ri = Ref.fresh(rc, 21);
     List.forEachWithIndex((i, _) -> Ref.put(i, ri), Nil);
-    21 == deref ri
+    21 == Ref.get(ri)
 }
 
 @test
 def forEachWithIndex02(): Bool = region rc {
-    let ri = ref 21 @ rc;
+    let ri = Ref.fresh(rc, 21);
     List.forEachWithIndex((i, _) -> Ref.put(i, ri), 1 :: 2 :: 3 :: Nil);
-    2 == deref ri
+    2 == Ref.get(ri)
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -2335,13 +2350,13 @@ def unfold06(): Bool =
 
 @test
 def unfoldWithIter01(): Bool = region rc {
-    let x = ref 0 @ rc;
+    let x = Ref.fresh(rc, 0);
     let step = () ->
         if (true)
             None
         else {
-            let c = Some(deref x + 48);
-            Ref.put(deref x + 1, x);
+            let c = Some(Ref.get(x) + 48);
+            Ref.put(Ref.get(x) + 1, x);
             c
         };
     List.unfoldWithIter(step) == Nil
@@ -2349,13 +2364,13 @@ def unfoldWithIter01(): Bool = region rc {
 
 @test
 def unfoldWithIter02(): Bool = region rc {
-    let x = ref 0 @ rc;
+    let x = Ref.fresh(rc, 0);
     let step = () ->
-        if (deref x > 0)
+        if (Ref.get(x) > 0)
             None
         else {
-            let c = Some(deref x + 48);
-            Ref.put(deref x + 1, x);
+            let c = Some(Ref.get(x) + 48);
+            Ref.put(Ref.get(x) + 1, x);
             c
         };
     List.unfoldWithIter(step) == 48 :: Nil
@@ -2363,13 +2378,13 @@ def unfoldWithIter02(): Bool = region rc {
 
 @test
 def unfoldWithIter03(): Bool = region rc {
-    let x = ref 0 @ rc;
+    let x = Ref.fresh(rc, 0);
     let step = () ->
-        if (deref x > 1)
+        if (Ref.get(x) > 1)
             None
         else {
-            let c = Some(deref x + 48);
-            Ref.put(deref x + 1, x);
+            let c = Some(Ref.get(x) + 48);
+            Ref.put(Ref.get(x) + 1, x);
             c
         };
     List.unfoldWithIter(step) == 48 :: 49 :: Nil
@@ -2377,13 +2392,13 @@ def unfoldWithIter03(): Bool = region rc {
 
 @test
 def unfoldWithIter04(): Bool = region rc {
-    let x = ref 0 @ rc;
+    let x = Ref.fresh(rc, 0);
     let step = () ->
-        if (deref x >= 10)
+        if (Ref.get(x) >= 10)
             None
         else {
-            let c = Some(deref x + 48);
-            Ref.put(deref x + 1, x);
+            let c = Some(Ref.get(x) + 48);
+            Ref.put(Ref.get(x) + 1, x);
             c
         };
     List.unfoldWithIter(step) == 48 :: 49 :: 50 :: 51 :: 52 :: 53 :: 54 :: 55 :: 56 :: 57 :: Nil
@@ -2391,13 +2406,13 @@ def unfoldWithIter04(): Bool = region rc {
 
 @test
 def unfoldWithIter05(): Bool = region rc {
-    let x = ref 5 @ rc;
+    let x = Ref.fresh(rc, 5);
     let step = () ->
-        if (deref x >= 10)
+        if (Ref.get(x) >= 10)
             None
         else {
-            let c = Some(deref x + 48);
-            Ref.put(deref x + 1, x);
+            let c = Some(Ref.get(x) + 48);
+            Ref.put(Ref.get(x) + 1, x);
             c
         };
     List.unfoldWithIter(step) == 53 :: 54 :: 55 :: 56 :: 57 :: Nil
@@ -2405,13 +2420,13 @@ def unfoldWithIter05(): Bool = region rc {
 
 @test
 def unfoldWithIter06(): Bool = region rc {
-    let x = ref 0 @ rc;
+    let x = Ref.fresh(rc, 0);
     let step = () ->
-        if (deref x >= 10)
+        if (Ref.get(x) >= 10)
             None
         else {
-            let c = Some(deref x + 48);
-            Ref.put(deref x + 2, x);
+            let c = Some(Ref.get(x) + 48);
+            Ref.put(Ref.get(x) + 2, x);
             c
         };
     List.unfoldWithIter(step) == 48 :: 50 :: 52 :: 54 :: 56 :: Nil
@@ -2423,35 +2438,35 @@ def unfoldWithIter06(): Bool = region rc {
 
 @test
 def unfoldWithOkIter01(): Bool = region rc {
-    let x = ref 0 @ rc;
+    let x = Ref.fresh(rc, 0);
     let step = () ->
         if (true) {
             Ok(None)
         } else {
-            Ok(Some(deref x))
+            Ok(Some(Ref.get(x)))
         };
     (List.unfoldWithOkIter(step): Result[Unit, _]) == Ok(Nil)
 }
 
 @test
 def unfoldWithOkIter02(): Bool = region rc {
-    let x = ref 0 @ rc;
+    let x = Ref.fresh(rc, 0);
     let step = () ->
         if (true) {
-            Err(deref x)
+            Err(Ref.get(x))
         } else {
-            Ok(Some(deref x))
+            Ok(Some(Ref.get(x)))
         };
     List.unfoldWithOkIter(step) == Err(0)
 }
 
 @test
 def unfoldWithOkIter03(): Bool = region rc {
-    let x = ref 1 @ rc;
+    let x = Ref.fresh(rc, 1);
     let step = () ->
-        if (deref x `Int32.remainder` 5 > 0) {
-            let c = deref x;
-            Ref.put(deref x + 1, x);
+        if (Ref.get(x) `Int32.remainder` 5 > 0) {
+            let c = Ref.get(x);
+            Ref.put(Ref.get(x) + 1, x);
             Ok(Some(c))
         } else {
             Ok(None)
@@ -2747,26 +2762,26 @@ def distinctWith09(): Bool =
 
     @test
     def enumerate01(): Bool = region rc {
-        let z = ref Nil @ rc;
+        let z = Ref.fresh(rc, Nil);
         let l = Nil;
-        Iterator.forEach(match (i, x) ->  Ref.put((i, x) :: deref z, z), List.enumerator(rc, l));
-        List.reverse(deref z) == (Nil: List[(Int32, Int32)])
+        Iterator.forEach(match (i, x) ->  Ref.put((i, x) :: Ref.get(z), z), List.enumerator(rc, l));
+        List.reverse(Ref.get(z)) == (Nil: List[(Int32, Int32)])
     }
 
     @test
     def enumerate02(): Bool = region rc {
-        let z = ref Nil @ rc;
+        let z = Ref.fresh(rc, Nil);
         let l = 1 :: 2 :: 3 :: Nil;
-        Iterator.forEach(match (i, x) ->  Ref.put((i, x) :: deref z, z), List.enumerator(rc, l));
-        List.reverse(deref z) == (0, 1) :: (1, 2) :: (2, 3) :: Nil
+        Iterator.forEach(match (i, x) ->  Ref.put((i, x) :: Ref.get(z), z), List.enumerator(rc, l));
+        List.reverse(Ref.get(z)) == (0, 1) :: (1, 2) :: (2, 3) :: Nil
     }
 
     @test
     def enumerate03(): Bool = region rc {
-        let z = ref Nil @ rc;
+        let z = Ref.fresh(rc, Nil);
         let l = List.range(100, 200);
-        Iterator.forEach(match (i, x) -> Ref.put((i, x) :: deref z, z), List.enumerator(rc, l));
-        List.reverse(deref z) == List.zip(List.range(0, 100), l)
+        Iterator.forEach(match (i, x) -> Ref.put((i, x) :: Ref.get(z), z), List.enumerator(rc, l));
+        List.reverse(Ref.get(z)) == List.zip(List.range(0, 100), l)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2804,34 +2819,34 @@ def distinctWith09(): Bool =
 
     @test
     def traverse01(): Bool = region rc {
-        let st = ref 0 @ rc;
+        let st = Ref.fresh(rc, 0);
         let l = Nil;
         let ans = List.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, l);
-        ans == Identity.Identity(Nil) and deref st == 0
+        ans == Identity.Identity(Nil) and Ref.get(st) == 0
     }
 
     @test
     def traverse02(): Bool = region rc {
-        let st = ref 0 @ rc;
+        let st = Ref.fresh(rc, 0);
         let l = 1 :: Nil;
         let ans = List.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, l);
-        ans == Identity.Identity(1 :: Nil) and deref st == 1
+        ans == Identity.Identity(1 :: Nil) and Ref.get(st) == 1
     }
 
     @test
     def traverse03(): Bool = region rc {
-        let st = ref 0 @ rc;
+        let st = Ref.fresh(rc, 0);
         let l = 1 :: 2 :: Nil;
         let ans = List.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, l);
-        ans == Identity.Identity(1 :: 2 :: Nil) and deref st == 2
+        ans == Identity.Identity(1 :: 2 :: Nil) and Ref.get(st) == 2
     }
 
     @test
     def traverse04(): Bool = region rc {
-        let st = ref 0 @ rc;
+        let st = Ref.fresh(rc, 0);
         let l = 1 :: 2 :: 3 :: Nil;
         let ans = List.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, l);
-        ans == Identity.Identity(1 :: 2 :: 3 :: Nil) and deref st == 3
+        ans == Identity.Identity(1 :: 2 :: 3 :: Nil) and Ref.get(st) == 3
     }
 
     /////////////////////////////////////////////////////////////////////////////

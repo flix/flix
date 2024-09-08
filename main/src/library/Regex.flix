@@ -34,6 +34,8 @@
 mod Regex {
 
     import java.util.regex.Pattern
+    import java.util.regex.{Matcher => JMatcher}
+    import java.lang.Exception
 
     use Regex.Flag
     use Regex.Flag.{CanonEq, CaseInsenstive,
@@ -102,7 +104,7 @@ mod Regex {
         try {
             unsafe Pattern.compile("^\\b$")
         } catch {
-            case _: ##java.lang.Exception => unreachable!()
+            case _: Exception => unreachable!()
         }
 
     ///
@@ -182,11 +184,8 @@ mod Regex {
     ///
     /// Splits the string `s` around matches of the Regex `regex`.
     ///
-    pub def split(regex: {regex = Regex}, s: String): List[String] = region rc {
-        let _ = rc; // This avoids a redundancy error.
+    pub def split(regex: {regex = Regex}, s: String): List[String] =
         unsafe Array.toList(unsafe regex#regex.split(s))
-    }
-
 
     ///
     /// Returns string `s` with every match of the Regex `src` replaced by the string `dst`.
@@ -547,7 +546,7 @@ mod Regex {
     /// of matches. The matcher is updated with the function find! to move to
     /// the next match.
     ///
-    enum Matcher[_: Region](##java.util.regex.Matcher)
+    enum Matcher[_: Region](JMatcher)
 
     ///
     /// Create a Matcher for Regex `rgx` on the source String `input`.

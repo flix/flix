@@ -858,7 +858,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
     expectError[KindError.UnexpectedKind](result)
   }
 
-  test("KindError.Def.TypeConstraint.01") {
+  test("KindError.Def.TraitConstraint.01") {
     val input =
       """
         |trait C[a: Type -> Type]
@@ -977,7 +977,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
     expectError[KindError.UnexpectedKind](result)
   }
 
-  ignore("KindError.Struct.Case.01") {
+  test("KindError.Struct.WrongKind.01") {
     val input =
       """
         |struct S [r] {
@@ -988,7 +988,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
     expectError[KindError.UnexpectedKind](result)
   }
 
-  ignore("KindError.Struct.Case.02") {
+  test("KindError.Struct.WrongKind.02") {
     val input =
       """
         |struct F[a, r]
@@ -1001,12 +1001,11 @@ class TestKinder extends AnyFunSuite with TestUtils {
     expectError[KindError.UnexpectedKind](result)
   }
 
-  test("KindError.Struct.Case.04") {
-    // When some kinds are specified and some aren't, the nonspecified ones
-    // default to kind Type, which is illegal for `r` in this case
+  test("KindError.Struct.WrongKind.04") {
+
     val input =
       """
-        |struct S[a: Type -> Type, r] {
+        |struct S[a: Type, r: Type] {
         |    c: a
         |}
         |""".stripMargin
@@ -1014,7 +1013,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
     expectError[KindError.MismatchedKinds](result)
   }
 
-  ignore("KindError.Struct.Case.05") {
+  test("KindError.Struct.WrongKind.05") {
     val input =
       """
         |struct S[a, r] {
@@ -1025,7 +1024,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
     expectError[KindError.UnexpectedKind](result)
   }
 
-  ignore("KindError.Struct.Type.01") {
+  test("KindError.Struct.Type.01") {
     val input =
       """
         |struct S [r] {
@@ -1036,7 +1035,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
     expectError[KindError.UnexpectedKind](result)
   }
 
-  ignore("KindError.Struct.Type.02") {
+  test("KindError.Struct.Type.02") {
     val input =
       """
         |struct S[a, r] {
@@ -1047,7 +1046,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
     expectError[KindError.UnexpectedKind](result)
   }
 
-  ignore("KindError.Struct.Type.05") {
+  test("KindError.Struct.Type.05") {
     val input =
       """
         |struct S[r]{
@@ -1075,7 +1074,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
     expectError[KindError.UnexpectedKind](result)
   }
 
-  test("KindError.Instance.TypeConstraint.01") {
+  test("KindError.Instance.TraitConstraint.01") {
     val input =
       """
         |trait C[a]
@@ -1160,7 +1159,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
     expectError[KindError.UnexpectedKind](result)
   }
 
-  test("KindError.Trait.TypeConstraint.01") {
+  test("KindError.Trait.TraitConstraint.01") {
     val input =
       """
         |trait C[a]

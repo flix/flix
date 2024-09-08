@@ -96,7 +96,7 @@ mod Seq {
     }
 
     ///
-    /// Returns the length of `l`.
+    /// Returns the number of elements in `l`.
     ///
     pub def length(l: Seq[s][a]): Int32 = choose l{
         case Seq.Nil => 0
@@ -835,9 +835,9 @@ mod Seq {
     /// Returns an iterator over `l`.
     ///
     pub def iterator(rc: Region[r], xs: Seq[s][a]): Iterator[a, r, r] \ r =
-        let ls = ref open_variant_as Seq xs @ rc;
+        let ls = Ref.fresh(rc, open_variant_as Seq xs);
         let next = () -> {
-            choose (deref ls) {
+            choose (Ref.get(ls)) {
                 case Seq.Nil            => None
                 case Seq.One(x)         => Ref.put(open_variant Seq.Nil, ls); Some(x)
                 case Seq.Cons(x, rs)    => Ref.put(rs, ls); Some(x)

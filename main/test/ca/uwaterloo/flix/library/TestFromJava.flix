@@ -22,6 +22,7 @@ mod TestFromJava {
     import java.lang.{String => JString}
     import java.math.BigInteger
     import java.math.BigDecimal
+
     /////////////////////////////////////////////////////////////////////////////
     // Int8                                                                    //
     /////////////////////////////////////////////////////////////////////////////

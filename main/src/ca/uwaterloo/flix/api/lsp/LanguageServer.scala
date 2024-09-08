@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.api.{CrashHandler, Flix, Version}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
+import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.phase.extra.CodeHinter
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
@@ -41,6 +42,7 @@ import java.nio.charset.Charset
 import java.nio.file.Path
 import java.text.SimpleDateFormat
 import java.util.Date
+import java.util.concurrent.{ExecutorService, Executors, Future}
 import java.util.zip.ZipInputStream
 import scala.collection.mutable
 
@@ -86,8 +88,26 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
 
   /**
     * The current reverse index. The index is empty until the source code is compiled.
+    *
+    * Note: The index is updated *asynchronously* by a different thread, hence:
+    *
+    * - The field must volatile because it is modified by a different thread.
+    * - The index may not always reflect the very latest version of the program.
     */
+  @volatile
   private var index: Index = Index.empty
+
+  /**
+    * A thread pool, with a single thread, which we use to execute indexing operations.
+    */
+  private val indexingPool: ExecutorService = Executors.newFixedThreadPool(1)
+
+  /**
+    * A (possibly-null) volatile reference to a future that represents the latest indexing operation.
+    *
+    * Note: Multiple indexing operations may be pending in the thread pool. This field points to the latest submitted.
+    */
+  private var indexingFuture: Future[_] = _
 
   /**
     * The current compilation errors.
@@ -190,7 +210,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
     * Add the given source code to the compiler
     */
   private def addSourceCode(uri: String, src: String): Unit = {
-    flix.addSourceCode(uri, src)
+    flix.addSourceCode(uri, src)(SecurityContext.AllPermissions) // TODO
     sources += (uri -> src)
   }
 
@@ -276,6 +296,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
       ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> ImplementationProvider.processImplementation(uri, pos)(root).map(_.toJSON))
 
     case Request.Rename(id, newName, uri, pos) =>
+      synchronouslyAwaitIndex()
       ("id" -> id) ~ RenameProvider.processRename(newName, uri, pos)(index, root)
 
     case Request.DocumentSymbols(id, uri) =>
@@ -291,9 +312,9 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
       ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ SemanticTokensProvider.provideSemanticTokens(uri)(index, root)
 
     case Request.InlayHint(id, _, _) =>
-        // InlayHints disabled due to poor ergonomics.
-        // ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> InlayHintProvider.processInlayHints(uri, range)(index, flix).map(_.toJSON))
-        ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> Nil)
+      // InlayHints disabled due to poor ergonomics.
+      // ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> InlayHintProvider.processInlayHints(uri, range)(index, flix).map(_.toJSON))
+      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> Nil)
 
     case Request.ShowAst(id) =>
       ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> ShowAstProvider.showAst()(flix))
@@ -344,10 +365,12 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
     * Helper function for [[processCheck]] which handles successful and soft failure compilations.
     */
   private def processSuccessfulCheck(requestId: String, root: Root, errors: Chain[CompilationMessage], explain: Boolean, t0: Long): JValue = {
-    val oldRoot = this.root
+    // Update the root and the errors.
     this.root = root
-    this.index = Indexer.visitRoot(root)
     this.currentErrors = errors.toList
+
+    // Asynchronously compute the reverse index.
+    asynchronouslyUpdateIndex(root)
 
     // Compute elapsed time.
     val e = System.nanoTime() - t0
@@ -364,6 +387,26 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
   }
 
   /**
+    * Asynchronously compute the reverse index using the thread pool.
+    */
+  private def asynchronouslyUpdateIndex(root: Root): Unit = {
+    this.indexingFuture = indexingPool.submit(new Runnable {
+      override def run(): Unit = {
+        LanguageServer.this.index = Indexer.visitRoot(root)
+      }
+    })
+  }
+
+  /**
+    * Synchronously wait for the most recent indexing operation to complete.
+    *
+    * This function is used to ensure the index is up-to-date before certain operations, e.g. rename.
+    */
+  private def synchronouslyAwaitIndex(): Unit = {
+    if (indexingFuture != null) indexingFuture.get()
+  }
+
+  /**
     * Processes a shutdown request.
     */
   private def processShutdown(): Nothing = {
@@ -372,8 +415,8 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
   }
 
   /**
-   * Processes a disconnection request.
-   */
+    * Processes a disconnection request.
+    */
   private def processDisconnect()(implicit ws: WebSocket): JValue = {
     val code = 1013 // 'Try again later'
     ws.closeConnection(code, "Simulating disconnection...")

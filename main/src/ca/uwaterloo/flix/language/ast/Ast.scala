@@ -16,110 +16,15 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.ast.shared.Fixity
-import ca.uwaterloo.flix.language.errors.TypeError
+import ca.uwaterloo.flix.language.ast.shared.{Denotation, Fixity, Polarity}
+import ca.uwaterloo.flix.language.errors.ResolutionError
 
-import java.nio.file.Path
 import java.util.Objects
-import scala.annotation.tailrec
 
 /**
   * A collection of AST nodes that are shared across multiple ASTs.
   */
 object Ast {
-
-  /**
-    * A common super-type for inputs.
-    */
-  sealed trait Input
-
-  object Input {
-
-    /**
-      * A source that is backed by an internal resource.
-      *
-      * A source is stable if it cannot change after being loaded (e.g. the standard library, etc).
-      */
-    case class Text(name: String, text: String, stable: Boolean) extends Input {
-      override def hashCode(): Int = name.hashCode
-
-      override def equals(obj: Any): Boolean = obj match {
-        case that: Text => this.name == that.name
-        case _ => false
-      }
-    }
-
-    /**
-      * A source that is backed by a regular file.
-      */
-    case class TxtFile(path: Path) extends Input
-
-    /**
-      * A source that is backed by flix package file.
-      */
-    case class PkgFile(path: Path) extends Input
-
-  }
-
-  /**
-    * A source is a name and an array of character data.
-    *
-    * A source is stable if it cannot change after being loaded (e.g. the standard library, etc).
-    */
-  case class Source(input: Input, data: Array[Char], stable: Boolean) extends Sourceable {
-
-    def name: String = input match {
-      case Input.Text(name, _, _) => name
-      case Input.TxtFile(path) => path.toString
-      case Input.PkgFile(path) => path.toString
-    }
-
-    def src: Source = this
-
-    override def equals(o: scala.Any): Boolean = o match {
-      case that: Source => this.input == that.input
-    }
-
-    override def hashCode(): Int = input.hashCode()
-
-    override def toString: String = name
-
-
-    /**
-      * Gets a line of text from the source as a string.
-      * If line is out of bounds the empty string is returned.
-      *
-      * This function has been adapted from parboiled2 when moving away from the library.
-      * We now produce its accompanying license in full:
-      *
-      * Copyright 2009-2019 Mathias Doenitz
-      *
-      * Licensed under the Apache License, Version 2.0 (the "License");
-      * you may not use this file except in compliance with the License.
-      * You may obtain a copy of the License at
-      *
-      * http://www.apache.org/licenses/LICENSE-2.0
-      *
-      * Unless required by applicable law or agreed to in writing, software
-      * distributed under the License is distributed on an "AS IS" BASIS,
-      * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-      * See the License for the specific language governing permissions and
-      * limitations under the License.
-      */
-    def getLine(line: Int): String = {
-      @tailrec
-      def rec(ix: Int, lineStartIx: Int, lineNr: Int): String =
-        if (ix < data.length)
-          if (data(ix) == '\n')
-            if (lineNr < line) rec(ix + 1, ix + 1, lineNr + 1)
-            else new String(data, lineStartIx, math.max(ix - lineStartIx, 0))
-          else rec(ix + 1, lineStartIx, lineNr)
-        else if (lineNr == line) new String(data, lineStartIx, math.max(ix - lineStartIx, 0))
-        else ""
-
-      rec(ix = 0, lineStartIx = 0, lineNr = 1)
-    }
-  }
 
   /**
     * A common supertype for casts.
@@ -457,6 +362,11 @@ object Ast {
       */
     def isLawful: Boolean = mod contains Modifier.Lawful
 
+   /**
+     * Returns `true` if these modifiers contain the mutable modifier.
+     */
+    def isMutable: Boolean = mod contains Modifier.Mutable
+
     /**
       * Returns `true` if these modifiers contain the override modifier.
       */
@@ -496,6 +406,12 @@ object Ast {
       */
     case object Lawful extends Modifier
 
+   /**
+     * The mutable modifier.
+     */
+
+    case object Mutable extends Modifier
+
     /**
       * The override modifier.
       */
@@ -515,44 +431,6 @@ object Ast {
       * The synthetic modifier.
       */
     case object Synthetic extends Modifier
-
-  }
-
-  /**
-    * A common super-type for the denotation of an atom.
-    */
-  sealed trait Denotation
-
-  object Denotation {
-
-    /**
-      * The atom has a relational denotation.
-      */
-    case object Relational extends Denotation
-
-    /**
-      * The atom has a latticenal denotation.
-      */
-    case object Latticenal extends Denotation
-
-  }
-
-  /**
-    * A common super-type for the polarity of an atom.
-    */
-  sealed trait Polarity
-
-  object Polarity {
-
-    /**
-      * The atom is positive.
-      */
-    case object Positive extends Polarity
-
-    /**
-      * The atom is negative.
-      */
-    case object Negative extends Polarity
 
   }
 
@@ -636,7 +514,7 @@ object Ast {
     */
   case class EliminatedBy(clazz: java.lang.Class[_]) extends scala.annotation.StaticAnnotation
 
-  case object TypeConstraint {
+  case object TraitConstraint {
     /**
       * Represents the head (located class) of a type constraint.
       */
@@ -644,11 +522,11 @@ object Ast {
   }
 
   /**
-    * Represents that the type `arg` must belong to class `sym`.
+    * Represents that the type `arg` must belong to trait `sym`.
     */
-  case class TypeConstraint(head: TypeConstraint.Head, arg: Type, loc: SourceLocation) {
+  case class TraitConstraint(head: TraitConstraint.Head, arg: Type, loc: SourceLocation) {
     override def equals(o: Any): Boolean = o match {
-      case that: TypeConstraint =>
+      case that: TraitConstraint =>
         this.head.sym == that.head.sym && this.arg == that.arg
       case _ => false
     }
@@ -683,6 +561,11 @@ object Ast {
   case class CaseSymUse(sym: Symbol.CaseSym, loc: SourceLocation)
 
   /**
+    * Represents a use of a struct field sym.
+    */
+  case class StructFieldSymUse(sym: Symbol.StructFieldSym, loc: SourceLocation)
+
+  /**
     * Represents a use of a restrictable enum case sym.
     */
   case class RestrictableCaseSymUse(sym: Symbol.RestrictableCaseSym, loc: SourceLocation)
@@ -705,7 +588,7 @@ object Ast {
   /**
     * Represents that an instance on type `tpe` has the type constraints `tconstrs`.
     */
-  case class Instance(tpe: Type, tconstrs: List[Ast.TypeConstraint])
+  case class Instance(tpe: Type, tconstrs: List[Ast.TraitConstraint])
 
   /**
     * Represents the super traits and instances available for a particular traits.
@@ -884,7 +767,11 @@ object Ast {
 
       case object Do extends Expr
 
-      case class InvokeMethod(e: TypeError.MethodNotFound) extends Expr
+      case class InvokeMethod(tpe: ca.uwaterloo.flix.language.ast.Type, name: Name.Ident) extends Expr
+
+      case class StaticFieldOrMethod(e: ResolutionError.UndefinedJvmStaticField) extends Expr
+
+      case class StructAccess(e: ResolutionError.UndefinedStructField) extends Expr
 
       case object OtherExpr extends Expr
     }

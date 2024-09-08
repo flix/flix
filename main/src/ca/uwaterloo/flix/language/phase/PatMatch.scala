@@ -17,11 +17,10 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Symbol.EnumSym
+import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, ParYieldFragment, Pattern, Root}
-import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
-import ca.uwaterloo.flix.language.dbg.AstPrinter._
+import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.NonExhaustiveMatchError
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
@@ -87,7 +86,7 @@ object PatMatch {
 
     case object Vector extends TyCon
 
-    case class Enum(name: String, sym: EnumSym, args: List[TyCon]) extends TyCon
+    case class Enum(sym: Symbol.CaseSym, args: List[TyCon]) extends TyCon
 
     case class Record(labels: List[(Name.Label, TyCon)], tail: TyCon) extends TyCon
 
@@ -181,12 +180,14 @@ object PatMatch {
       case Expr.ArrayLoad(base, index, _, _, _) => List(base, index).flatMap(visitExp)
       case Expr.ArrayStore(base, index, elm, _, _) => List(base, index, elm).flatMap(visitExp)
       case Expr.ArrayLength(base, _, _) => visitExp(base)
+      case Expr.StructNew(_, fields, region, t, _, _) =>
+        val fieldExps = fields.map { case (_, v) => v }
+        (region :: fieldExps).flatMap(visitExp)
+      case Expr.StructGet(e, _, _, _, _) => visitExp(e)
+      case Expr.StructPut(e1, _, e2, _, _, _) => List(e1, e2).flatMap(visitExp)
       case Expr.VectorLit(exps, _, _, _) => exps.flatMap(visitExp)
       case Expr.VectorLoad(exp1, exp2, _, _, _) => List(exp1, exp2).flatMap(visitExp)
       case Expr.VectorLength(exp, _) => visitExp(exp)
-      case Expr.Ref(exp1, exp2, _, _, _) => List(exp1, exp2).flatMap(visitExp)
-      case Expr.Deref(exp, _, _, _) => visitExp(exp)
-      case Expr.Assign(exp1, exp2, _, _, _) => List(exp1, exp2).flatMap(visitExp)
       case Expr.Ascribe(exp, _, _, _) => visitExp(exp)
       case Expr.InstanceOf(exp, _, _) => visitExp(exp)
       case Expr.CheckedCast(_, exp, _, _, _) => visitExp(exp)
@@ -197,6 +198,8 @@ object PatMatch {
       case Expr.TryCatch(exp, rules, _, _, _) =>
         val ruleExps = rules.map(_.exp)
         (exp :: ruleExps).flatMap(visitExp)
+
+      case TypedAst.Expr.Throw(exp, _, _, _) => visitExp(exp)
 
       case Expr.TryWith(exp, _, rules, _, _, _) =>
         val ruleExps = rules.map(_.exp)
@@ -402,8 +405,8 @@ object PatMatch {
       // If it's not our constructor, we ignore it
       case TypedAst.Pattern.Tag(Ast.CaseSymUse(sym, _), exp, _, _) =>
         ctor match {
-          case TyCon.Enum(name, _, _) =>
-            if (sym.name == name) {
+          case TyCon.Enum(ctorSym, _) =>
+            if (sym == ctorSym) {
               exp match {
                 // The expression varies depending on how many arguments it has, 0 arguments => unit, non zero
                 // => Tuple. If there are arguments, we add them to the matrix
@@ -536,8 +539,10 @@ object PatMatch {
 
       // For Enums, we have to figure out what base enum is, then look it up in the enum definitions to get the
       // other enums
-      case TyCon.Enum(_, sym, _) => {
-        root.enums(sym).cases.map(x => TyCon.Enum(x._1.name, sym, List.fill(countTypeArgs(x._2.tpe))(TyCon.Wild)))
+      case TyCon.Enum(sym, _) => {
+        root.enums(sym.enumSym).cases.map {
+          case (otherSym, caze) => TyCon.Enum(otherSym, List.fill(countTypeArgs(caze.tpe))(TyCon.Wild))
+        }
       }.toList ::: xs
 
       /* For numeric types, we consider them as "infinite" types union
@@ -581,7 +586,7 @@ object PatMatch {
     case TyCon.Tuple(args) => args.size
     case TyCon.Array => 0
     case TyCon.Vector => 0
-    case TyCon.Enum(_, _, args) => args.length
+    case TyCon.Enum(_, args) => args.length
     case TyCon.Record(labels, tail) => tail match {
       case TyCon.RecordEmpty => labels.length
       case _ => labels.length + 1
@@ -618,7 +623,6 @@ object PatMatch {
     case Some(TypeConstructor.Arrow(length)) => length
     case Some(TypeConstructor.Array) => 1
     case Some(TypeConstructor.Vector) => 1
-    case Some(TypeConstructor.Ref) => 0
     case Some(TypeConstructor.Lazy) => 1
     case Some(TypeConstructor.Enum(_, _)) => 0
     case Some(TypeConstructor.Native(_)) => 0
@@ -657,7 +661,7 @@ object PatMatch {
     case TyCon.Tuple(args) => "(" + args.foldRight("")((x, xs) => if (xs == "") prettyPrintCtor(x) + xs else prettyPrintCtor(x) + ", " + xs) + ")"
     case TyCon.Array => "Array"
     case TyCon.Vector => "Vector"
-    case TyCon.Enum(name, _, args) => if (args.isEmpty) name else name + prettyPrintCtor(TyCon.Tuple(args))
+    case TyCon.Enum(sym, args) => if (args.isEmpty) sym.name else sym.name + prettyPrintCtor(TyCon.Tuple(args))
     case TyCon.Record(labels, tail) =>
       val labelStr = labels.map {
         case (f, p) => s"$f = ${prettyPrintCtor(p)}"
@@ -679,8 +683,8 @@ object PatMatch {
     * @return True if they are the same constructor
     */
   private def sameCtor(c1: TyCon, c2: TyCon): Boolean = (c1, c2) match {
-    // Two enums are the same constructor if they have the same name and enum sym
-    case (TyCon.Enum(n1, s1, _), TyCon.Enum(n2, s2, _)) => n1 == n2 && s1 == s2
+    // Two enums are the same constructor if they have the same case symbol
+    case (TyCon.Enum(s1, _), TyCon.Enum(s2, _)) => s1 == s2
     // Everything else is the same constructor if they are the same type
     case (a: TyCon.Tuple, b: TyCon.Tuple) => true
     case (a: TyCon.Record, b: TyCon.Record) => true
@@ -715,7 +719,7 @@ object PatMatch {
         case Pattern.Tuple(elms, _, _) => elms.map(patToCtor)
         case a => List(patToCtor(a))
       }
-      TyCon.Enum(sym.name, sym.enumSym, args)
+      TyCon.Enum(sym, args)
     case Pattern.Tuple(elms, _, _) => TyCon.Tuple(elms.map(patToCtor))
     case Pattern.Record(pats, pat, _, _) =>
       val patsVal = pats.map {
@@ -748,9 +752,9 @@ object PatMatch {
     */
   private def rebuildPattern(tc: TyCon, lst: List[TyCon]): List[TyCon] = tc match {
     case TyCon.Tuple(args) => TyCon.Tuple(lst.take(args.size)) :: lst.drop(args.size)
-    case TyCon.Enum(name, sym, args) =>
+    case TyCon.Enum(sym, args) =>
       val rebuiltArgs = lst.take(args.length)
-      TyCon.Enum(name, sym, rebuiltArgs) :: lst.drop(args.length)
+      TyCon.Enum(sym, rebuiltArgs) :: lst.drop(args.length)
     case TyCon.Record(labels, _) =>
       val all = lst.take(labels.length + 1)
       val ls = labels.map {

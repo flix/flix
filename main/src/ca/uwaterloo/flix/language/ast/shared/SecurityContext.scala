@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Lukas Rønn
+ * Copyright 2024 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,18 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.api.lsp.provider.completion
-
-import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.api.lsp.Index
-import ca.uwaterloo.flix.language.ast.TypedAst
+package ca.uwaterloo.flix.language.ast.shared
 
 /**
-  * A common super-type for completers.
-  */
-trait Completer {
+ * A common super-type for security contexts.
+ */
+sealed trait SecurityContext
+
+object SecurityContext {
+
   /**
-    * Returns a List of Completion for completer.
-    */
-  def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion]
+   * A security context where everything is permitted.
+   */
+  case object AllPermissions extends SecurityContext
+
+  /**
+   * A security context where no unsafe features are permitted.
+   */
+  case object NoPermissions extends SecurityContext
+
 }

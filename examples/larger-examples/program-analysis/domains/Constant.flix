@@ -1,6 +1,6 @@
-/**
- * An implementation of the constant propagation lattice.
- */
+///
+/// An implementation of the constant propagation lattice.
+///
 mod Domain.Constant {
 
     ///
@@ -66,9 +66,9 @@ mod Domain.Constant {
     ///
     pub def alpha(i: Int32): Constant = Constant.Cst(i)
 
-    /**
-     * Over-approximates integer `increment`.
-     */
+    ///
+    /// Over-approximates integer `increment`.
+    ///
 //    #safe1(x -> x + 1)
 //    #strict1 #monotone1
     pub def inc(e: Constant): Constant =

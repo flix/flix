@@ -66,8 +66,8 @@ instance Monad[Nel] {
 instance MonadZip[Nel] {
     pub def zipWith(f: (a, b) -> c \ ef, xs: Nel[a], ys: Nel[b]): Nel[c] \ ef = Nel.zipWith(f, xs, ys)
     pub def zipWithA(f: (a, b) -> f[c] \ ef, xs: Nel[a], ys: Nel[b]): f[Nel[c]] \ ef with Applicative[f] = Nel.zipWithA(f, xs, ys)
-    pub override def zip(xs: Nel[a], ys: Nel[b]): Nel[(a, b)] = Nel.zip(xs, ys)
-    pub override def unzip(xs: Nel[(a, b)]): (Nel[a], Nel[b]) = Nel.unzip(xs)
+    redef zip(xs: Nel[a], ys: Nel[b]): Nel[(a, b)] = Nel.zip(xs, ys)
+    redef unzip(xs: Nel[(a, b)]): (Nel[a], Nel[b]) = Nel.unzip(xs)
 }
 
 instance Foldable[Nel] {
@@ -78,35 +78,35 @@ instance Foldable[Nel] {
 
 instance UnorderedFoldable[Nel] {
     pub def foldMap(f: a -> b \ ef, l: Nel[a]): b \ ef with CommutativeMonoid[b] = Nel.foldMap(f, l)
-    override pub def isEmpty(_: Nel[a]): Bool = false
-    override pub def exists(f: a -> Bool \ ef, l: Nel[a]): Bool \ ef = Nel.exists(f, l)
-    override pub def forAll(f: a -> Bool \ ef, l: Nel[a]): Bool \ ef = Nel.forAll(f, l)
-    override pub def memberOf(x: a, l: Nel[a]): Bool with Eq[a] = Nel.memberOf(x, l)
+    redef isEmpty(_: Nel[a]): Bool = false
+    redef exists(f: a -> Bool \ ef, l: Nel[a]): Bool \ ef = Nel.exists(f, l)
+    redef forAll(f: a -> Bool \ ef, l: Nel[a]): Bool \ ef = Nel.forAll(f, l)
+    redef memberOf(x: a, l: Nel[a]): Bool with Eq[a] = Nel.memberOf(x, l)
 }
 
 instance Traversable[Nel] {
     pub def traverse(f: a -> m[b] \ ef, t: Nel[a]): m[Nel[b]] \ ef with Applicative[m] = Nel.traverse(f, t)
-    pub override def sequence(t: Nel[m[a]]): m[Nel[a]] with Applicative[m] = Nel.sequence(t)
+    redef sequence(t: Nel[m[a]]): m[Nel[a]] with Applicative[m] = Nel.sequence(t)
 }
 
 instance Reducible[Nel] {
     pub def reduceLeftTo(f: (b, a) -> b \ ef1, g: a -> b \ ef2, l: Nel[a]): b \ {ef1, ef2} = Nel.reduceLeftTo(f, g, l)
     pub def reduceRightTo(f: (a, b) -> b \ ef1, g: a -> b \ ef2, l: Nel[a]): b \ {ef1, ef2} = Nel.reduceRightTo(f, g, l)
-    override pub def head(l: Nel[a]): a = Nel.head(l)
-    override pub def last(l: Nel[a]): a = Nel.last(l)
-    override pub def init(l: Nel[a]): List[a] = Nel.init(l)
-    override pub def tail(l: Nel[a]): List[a] = Nel.tail(l)
-    override pub def exists(f: a -> Bool \ ef, l: Nel[a]): Bool \ ef = Nel.exists(f, l)
-    override pub def forAll(f: a -> Bool \ ef, l: Nel[a]): Bool \ ef = Nel.forAll(f, l)
-    override pub def find(f: a -> Bool \ ef, l: Nel[a]): Option[a] \ ef = Nel.find(f, l)
-    override pub def findLeft(f: a -> Bool \ ef, l: Nel[a]): Option[a] \ ef = Nel.findLeft(f, l)
-    override pub def findRight(f: a -> Bool \ ef, l: Nel[a]): Option[a] \ ef = Nel.findRight(f, l)
-    override pub def memberOf(a: a, l: Nel[a]): Bool with Eq[a] = Nel.memberOf(a, l)
-    override pub def dropWhile(f: a -> Bool \ ef, l: Nel[a]): List[a] \ ef = Nel.dropWhile(f, l)
-    override pub def takeWhile(f: a -> Bool \ ef, l: Nel[a]): List[a] \ ef = Nel.takeWhile(f, l)
-    override pub def toArray(rc: Region[r], l: Nel[a]): Array[a, r] \ r = Nel.toArray(rc, l)
-    override pub def toVector(l: Nel[a]): Vector[a] = Nel.toVector(l)
-    override pub def toList(l: Nel[a]): List[a] = Nel.toList(l)
+    redef head(l: Nel[a]): a = Nel.head(l)
+    redef last(l: Nel[a]): a = Nel.last(l)
+    redef init(l: Nel[a]): List[a] = Nel.init(l)
+    redef tail(l: Nel[a]): List[a] = Nel.tail(l)
+    redef exists(f: a -> Bool \ ef, l: Nel[a]): Bool \ ef = Nel.exists(f, l)
+    redef forAll(f: a -> Bool \ ef, l: Nel[a]): Bool \ ef = Nel.forAll(f, l)
+    redef find(f: a -> Bool \ ef, l: Nel[a]): Option[a] \ ef = Nel.find(f, l)
+    redef findLeft(f: a -> Bool \ ef, l: Nel[a]): Option[a] \ ef = Nel.findLeft(f, l)
+    redef findRight(f: a -> Bool \ ef, l: Nel[a]): Option[a] \ ef = Nel.findRight(f, l)
+    redef memberOf(a: a, l: Nel[a]): Bool with Eq[a] = Nel.memberOf(a, l)
+    redef dropWhile(f: a -> Bool \ ef, l: Nel[a]): List[a] \ ef = Nel.dropWhile(f, l)
+    redef takeWhile(f: a -> Bool \ ef, l: Nel[a]): List[a] \ ef = Nel.takeWhile(f, l)
+    redef toArray(rc: Region[r], l: Nel[a]): Array[a, r] \ r = Nel.toArray(rc, l)
+    redef toVector(l: Nel[a]): Vector[a] = Nel.toVector(l)
+    redef toList(l: Nel[a]): List[a] = Nel.toList(l)
 }
 
 instance SemiGroup[Nel[a]] {
@@ -186,11 +186,16 @@ mod Nel {
     }
 
     ///
-    /// Returns the length of `l`.
+    /// Returns the number of elements in `l`.
     ///
     pub def length(l: Nel[a]): Int32 = match l {
         case Nel(_, xs) => 1 + List.length(xs)
     }
+
+    ///
+    /// Returns the number of elements in `l`.
+    ///
+    pub def size(l: Nel[a]): Int32 = length(l)
 
     ///
     /// Returns `l2` appended to `l1`.

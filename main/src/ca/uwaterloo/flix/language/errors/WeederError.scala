@@ -476,7 +476,7 @@ object WeederError {
     *
     * @param loc the location where the error occurred.
     */
-  case class IllegalFormalParamAscription(loc: SourceLocation) extends WeederError with Unrecoverable {
+  case class IllegalFormalParamAscription(loc: SourceLocation) extends WeederError with Recoverable {
     def summary: String = "Unexpected type ascription. Type ascriptions are not permitted on effect handler cases."
 
     def message(formatter: Formatter): String = {
@@ -633,11 +633,11 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate an illegal type constraint parameter.
+    * An error raised to indicate an illegal trait constraint parameter.
     *
     * @param loc the location where the error occurred.
     */
-  case class IllegalTypeConstraintParameter(loc: SourceLocation) extends WeederError with Unrecoverable {
+  case class IllegalTraitConstraintParameter(loc: SourceLocation) extends WeederError with Unrecoverable {
     def summary: String = s"Illegal type constraint parameter."
 
     def message(formatter: Formatter): String = {
@@ -890,7 +890,7 @@ object WeederError {
     * @param name the name of the parameter.
     * @param loc  the location of the formal parameter.
     */
-  case class MissingFormalParamAscription(name: String, loc: SourceLocation) extends WeederError with Unrecoverable {
+  case class MissingFormalParamAscription(name: String, loc: SourceLocation) extends WeederError with Recoverable {
     def summary: String = "Missing type ascription. Type ascriptions are required for parameters here."
 
     def message(formatter: Formatter): String = {

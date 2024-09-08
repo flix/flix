@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.util
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.runtime.{CompilationResult, TestFn}
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -56,6 +57,9 @@ class FlixSuite(incremental: Boolean) extends AnyFunSuite {
     // Set options.
     flix.setOptions(options)
 
+    // Default security context.
+    implicit val sctx: SecurityContext = SecurityContext.AllPermissions
+
     // Add the given path.
     flix.addFlix(path)
 
@@ -90,10 +94,12 @@ class FlixSuite(incremental: Boolean) extends AnyFunSuite {
             // Evaluate the function.
             val result = run()
             // Expect the true value, if boolean.
-            if (result.isInstanceOf[java.lang.Boolean]) {
-              if (result != true) {
-                fail("Expected true, but got false.")
-              }
+            result match {
+              case res: java.lang.Boolean =>
+                if (!res.booleanValue()) {
+                  fail("Expected true, but got false.")
+                }
+              case _ => // nop
             }
           }
         }

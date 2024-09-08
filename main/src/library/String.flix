@@ -18,6 +18,8 @@ mod String {
 
     import java.lang.System
     import java.util.regex.Pattern
+    import java.util.regex.PatternSyntaxException
+    import java.lang.IndexOutOfBoundsException
 
     use Regex.Flag
 
@@ -67,10 +69,15 @@ mod String {
     pub def nonEmpty(s: String): Bool = not isEmpty(s)
 
     ///
-    /// Returns the length of the string `s`.
+    /// Returns the number of characters the string `s`.
     ///
     pub def length(s: String): Int32 =
         unsafe s.length()
+
+    ///
+    /// Returns the number of characters the string `s`.
+    ///
+    pub def size(s: String): Int32 = length(s)
 
     ///
     /// Returns `true` if the string `s` starts with the string `prefix`.
@@ -87,10 +94,8 @@ mod String {
     ///
     /// Splits the string `s` around matches of the regular expression `regex`.
     ///
-    pub def split(regex: {regex = String}, s: String): List[String] = region rc {
-        let _ = rc; // This avoids a redundancy error.
+    pub def split(regex: {regex = String}, s: String): List[String] =
         unsafe Array.toList(unsafe s.split(regex#regex))
-    }
 
     ///
     /// Returns the lower case version of the string `s`.
@@ -299,7 +304,7 @@ mod String {
         try {
             unsafe s.matches(regex#regex)
         } catch {
-            case _: ##java.util.regex.PatternSyntaxException => false
+            case _: PatternSyntaxException => false
         }
 
     ///
@@ -311,16 +316,14 @@ mod String {
     ///
     /// Helper function for `isSubmatch`.
     ///
-    def isSubmatchHelper(pattern: String, s: String): Bool = region rc {
-        let _ = rc; // This avoids a redundancy error.
+    def isSubmatchHelper(pattern: String, s: String): Bool =
         try {
             let p1 = unsafe Pattern.compile(pattern);
             let m1 = unsafe p1.matcher(s);
             unsafe m1.find(0)
         } catch {
-            case _: ##java.util.regex.PatternSyntaxException => false
+            case _: PatternSyntaxException => false
         }
-    }
 
     ///
     /// Returns the substring of `s` from index `b` (inclusive) to index `e` (exclusive).
@@ -330,7 +333,7 @@ mod String {
     pub def slice(start: {start = Int32}, end: {end = Int32}, s: String): String = try {
         unsafe s.substring(start#start, end#end)
     } catch {
-        case _: ##java.lang.IndexOutOfBoundsException => ""
+        case _: IndexOutOfBoundsException => ""
     }
 
     ///

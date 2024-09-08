@@ -17,7 +17,8 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, ReadAst, SourceLocation, SourcePosition, Token, TokenKind}
+import ca.uwaterloo.flix.language.ast.shared.Source
+import ca.uwaterloo.flix.language.ast.{ChangeSet, ReadAst, SourceLocation, SourcePosition, Token, TokenKind}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.{DebugNoOp, DebugValidation}
 import ca.uwaterloo.flix.language.errors.LexerError
 import ca.uwaterloo.flix.util.{ParOps, Validation}
@@ -27,7 +28,7 @@ import scala.collection.mutable
 import scala.util.Random
 
 /**
- * A lexer that is able to tokenize multiple `Ast.Source`s in parallel.
+ * A lexer that is able to tokenize multiple `Source`s in parallel.
  * This lexer is resilient, meaning that when an unrecognized character is encountered,
  * the lexer will simply produce a token of kind `TokenKind.Err` an move on instead of halting.
  * There are some unrecoverable errors though, for example unterminated block-comments or unclosed string literals.
@@ -79,7 +80,7 @@ object Lexer {
    * `current` will always be on the same character as or past `start`.
    * As tokens are produced they are placed in `tokens`.
    */
-  private class State(val src: Ast.Source) {
+  private class State(val src: Source) {
     var start: Position = new Position(0, 0, 0)
     val current: Position = new Position(0, 0, 0)
     var end: Position = new Position(0, 0, 0)
@@ -93,9 +94,9 @@ object Lexer {
   private class Position(var line: Int, var column: Int, var offset: Int)
 
   /**
-   * Run the lexer on multiple `Ast.Source`s in parallel.
+   * Run the lexer on multiple `Source`s in parallel.
    */
-  def run(root: ReadAst.Root, oldTokens: Map[Ast.Source, Array[Token]], changeSet: ChangeSet)(implicit flix: Flix): Validation[Map[Ast.Source, Array[Token]], CompilationMessage] =
+  def run(root: ReadAst.Root, oldTokens: Map[Source, Array[Token]], changeSet: ChangeSet)(implicit flix: Flix): Validation[Map[Source, Array[Token]], CompilationMessage] =
     flix.phase("Lexer") {
       // Compute the stale and fresh sources.
       val (stale, fresh) = changeSet.partition(root.sources, oldTokens)
@@ -114,7 +115,7 @@ object Lexer {
   /**
    * Lexes a single source (file) into an array of tokens.
    */
-  def lex(src: Ast.Source): Validation[Array[Token], CompilationMessage] = {
+  def lex(src: Source): Validation[Array[Token], CompilationMessage] = {
     implicit val s: State = new State(src)
     while (!eof()) {
       whitespace()
@@ -196,6 +197,17 @@ object Lexer {
       None
     } else {
       Some(s.src.data(s.current.offset - 2))
+    }
+  }
+
+  /**
+   * Peeks the character that is `n` characters before the current if available
+   */
+  private def previousN(n: Int)(implicit s: State): Option[Char] = {
+    if (s.current.offset <= n) {
+      None
+    } else {
+      Some(s.src.data(s.current.offset - (n + 1)))
     }
   }
 
@@ -332,11 +344,9 @@ object Lexer {
       case '\"' => acceptString()
       case '\'' => acceptChar()
       case '`' => acceptInfixFunction()
-      case _ if isMatch("##") => acceptJavaName()
       case _ if isMatch("#{") => TokenKind.HashCurlyL
       case _ if isMatch("#(") => TokenKind.HashParenL
       case '#' => TokenKind.Hash
-      case '€' => TokenKind.Euro
       case _ if isMatch("//") => acceptLineOrDocComment()
       case _ if isMatch("/*") => acceptBlockComment()
       case '/' => TokenKind.Slash
@@ -351,7 +361,17 @@ object Lexer {
       case _ if isOperator(":") => TokenKind.Colon
       case _ if isOperator("**") => TokenKind.StarStar
       case _ if isOperator("<-") => TokenKind.ArrowThinL
-      case _ if isOperator("->") => TokenKind.ArrowThinR
+      case _ if isOperator("->") =>
+        // If any whitespace exists around the `->`, it is `ArrowThinR`. Otherwise it is `StructArrow`
+        // a->b:   StructArrow
+        // a ->b:  ArrowThinR
+        // a-> b:  ArrowThinR
+        // a -> b: ArrowThinR
+        if (previousN(2).exists(_.isWhitespace) || peek().isWhitespace) {
+          TokenKind.ArrowThinR
+        } else {
+          TokenKind.StructArrow
+        }
       case _ if isOperator("=>") => TokenKind.ArrowThickR
       case _ if isOperator("<=") => TokenKind.AngleLEqual
       case _ if isOperator(">=") => TokenKind.AngleREqual
@@ -378,7 +398,6 @@ object Lexer {
       case _ if isKeyword("debug!") => TokenKind.KeywordDebugBang
       case _ if isKeyword("debug!!") => TokenKind.KeywordDebugBangBang
       case _ if isKeyword("def") => TokenKind.KeywordDef
-      case _ if isKeyword("deref") => TokenKind.KeywordDeref
       case _ if isKeyword("discard") => TokenKind.KeywordDiscard
       case _ if isKeyword("do") => TokenKind.KeywordDo
       case _ if isKeyword("eff") => TokenKind.KeywordEff
@@ -409,6 +428,7 @@ object Lexer {
       case _ if isKeyword("masked_cast") => TokenKind.KeywordMaskedCast
       case _ if isKeyword("match") => TokenKind.KeywordMatch
       case _ if isKeyword("mod") => TokenKind.KeywordMod
+      case _ if isKeyword("mut") => TokenKind.KeywordMut
       case _ if isKeyword("new") => TokenKind.KeywordNew
       case _ if isKeyword("not") => TokenKind.KeywordNot
       case _ if isKeywordLiteral("null") => TokenKind.KeywordNull
@@ -420,7 +440,7 @@ object Lexer {
       case _ if isKeyword("pub") => TokenKind.KeywordPub
       case _ if isKeyword("project") => TokenKind.KeywordProject
       case _ if isKeyword("query") => TokenKind.KeywordQuery
-      case _ if isKeyword("ref") => TokenKind.KeywordRef
+      case _ if isKeyword("redef") => TokenKind.KeywordRedef
       case _ if isKeyword("region") => TokenKind.KeywordRegion
       case _ if isKeyword("restrictable") => TokenKind.KeywordRestrictable
       case _ if isKeyword("rvadd") => TokenKind.KeywordRvadd
@@ -652,22 +672,6 @@ object Lexer {
       advance()
     }
     kind
-  }
-
-
-  /**
-   * Moves current position past a java name. IE. "##java"
-   */
-  private def acceptJavaName()(implicit s: State): TokenKind = {
-    advance()
-    while (!eof()) {
-      val p = peek()
-      if (!p.isLetter && !p.isDigit && p != '_' && p != '!' && p != '$') {
-        return TokenKind.NameJava
-      }
-      advance()
-    }
-    TokenKind.NameJava
   }
 
   /**

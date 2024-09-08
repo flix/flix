@@ -30,11 +30,15 @@ object HighlightProvider {
       case Some(entity) => entity match {
         case Entity.Case(caze) => highlightCase(uri, caze.sym)
 
+        case Entity.StructField(field) => highlightStructField(uri, field.sym)
+
         case Entity.Def(defn) => highlightDef(uri, defn.sym)
 
         case Entity.Sig(sig0) => highlightSig(uri, sig0.sym)
 
-        case Entity.Enum(enum) => highlightEnum(uri, enum.sym)
+        case Entity.Enum(enum0) => highlightEnum(uri, enum0.sym)
+
+        case Entity.Struct(struct) => highlightStruct(uri, struct.sym)
 
         case Entity.TypeAlias(alias) => highlightTypeAlias(uri, alias.sym)
 
@@ -51,6 +55,8 @@ object HighlightProvider {
         case Entity.SigUse(sym, _, _) => highlightSig(uri, sym)
 
         case Entity.CaseUse(sym, _, _) => highlightCase(uri, sym)
+
+        case Entity.StructFieldUse(sym, _, _) => highlightStructField(uri, sym)
 
         case Entity.Exp(_) => mkNotFound(uri, pos)
 
@@ -121,6 +127,12 @@ object HighlightProvider {
     highlight(uri, write :: reads)
   }
 
+  private def highlightStruct(uri: String, sym: Symbol.StructSym)(implicit index: Index): JObject = {
+    val write = (sym.loc, DocumentHighlightKind.Write)
+    val reads = index.usesOf(sym).toList.map(loc => (loc, DocumentHighlightKind.Read))
+    highlight(uri, write :: reads)
+  }
+
   private def highlightTypeAlias(uri: String, sym: Symbol.TypeAliasSym)(implicit index: Index): JObject = {
     val write = (sym.loc, DocumentHighlightKind.Write)
     val reads = index.usesOf(sym).toList.map(loc => (loc, DocumentHighlightKind.Read))
@@ -149,6 +161,18 @@ object HighlightProvider {
     val write = (root.enums(sym.enumSym).cases(sym).loc, DocumentHighlightKind.Write)
     val reads = index.usesOf(sym).toList.map(loc => (loc, DocumentHighlightKind.Read))
     highlight(uri, write :: reads)
+  }
+
+  private def highlightStructField(uri: String, sym: Symbol.StructFieldSym)(implicit index: Index, root: Root): JObject = {
+    val reads = index.usesOf(sym).toList.map(loc => (loc, DocumentHighlightKind.Read))
+    val structOpt = root.structs.get(sym.structSym)
+    val fieldOpt = structOpt.flatMap(st => st.fields.get(sym))
+    val writeOpt = fieldOpt.map(field => (field.sym.loc, DocumentHighlightKind.Write))
+    writeOpt match {
+      case Some(write) =>
+        highlight(uri, write :: reads)
+      case None => highlight(uri, reads)
+    }
   }
 
   private def highlightVar(uri: String, sym: Symbol.VarSym)(implicit index: Index): JObject = {

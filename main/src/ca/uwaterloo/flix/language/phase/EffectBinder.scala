@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, ExpPosition}
 import ca.uwaterloo.flix.language.ast.Symbol.{DefnSym, VarSym}
+import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.{AtomicOp, LiftedAst, Purity, ReducedAst, SemanticOp, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugReducedAst
 import ca.uwaterloo.flix.language.phase.jvm.GenExpression
@@ -45,6 +46,9 @@ import scala.collection.mutable
   */
 object EffectBinder {
 
+  // We are safe to use the top scope everywhere because we do not use unification in this or future phases.
+  private implicit val S: Scope = Scope.Top
+
   /**
     * Transforms the AST such that effect operations will be run without an
     * operand stack.
@@ -52,8 +56,7 @@ object EffectBinder {
   def run(root: LiftedAst.Root)(implicit flix: Flix): ReducedAst.Root = flix.phase("EffectBinder") {
     val newDefs = ParOps.parMapValues(root.defs)(visitDef)
     val newEffects = ParOps.parMapValues(root.effects)(visitEffect)
-    val structs = Map.empty[Symbol.StructSym, ReducedAst.Struct]
-    ReducedAst.Root(newDefs, structs, newEffects, Set.empty, Nil, root.entryPoint, root.reachable, root.sources)
+    ReducedAst.Root(newDefs, newEffects, Set.empty, Nil, root.entryPoint, root.reachable, root.sources)
   }
 
   private sealed trait Binder

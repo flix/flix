@@ -32,6 +32,8 @@ mod Test.Exp.Jvm.NewObject {
     import dev.flix.test.{TestClassWithStaticNestedClass$NestedClass => NestedClass}
     import java.io.Serializable
     import java.lang.Object
+    import java.lang.Class
+    import java.util.Comparator
 
     def implementSerializable(): Serializable \ IO =
         new Serializable { }
@@ -41,39 +43,27 @@ mod Test.Exp.Jvm.NewObject {
 
     @test
     def testImplementInterface01(): Bool \ IO =
-        import java.lang.Object.toString(): String \ {};
-        let anon = checked_cast(implementSerializable());
-        toString(anon).startsWith("Anon")
+        implementSerializable().toString().startsWith("Anon")
 
     @test
     def testImplementInterface02(): Bool \ IO =
-        import java.lang.Object.hashCode(): Int32 \ {};
-        let anon = checked_cast(implementSerializable());
-        let anon2 = checked_cast(implementSerializable());
-        hashCode(anon) != hashCode(anon2)
+        implementSerializable().hashCode() != implementSerializable().hashCode()
 
     @test
     def testImplementInterface03(): Bool \ IO =
-        import java.lang.Object.equals(##java.lang.Object): Bool \ {};
-        let anon = checked_cast(implementSerializable());
-        let anon2 = checked_cast(implementSerializable());
-        not equals(anon, anon2)
+        not implementSerializable().equals(implementSerializable())
 
     @test
     def testImplementInterface04(): Bool \ IO =
-        import java.lang.Object.getClass(): ##java.lang.Class \ {};
-        import java.lang.Object.equals(##java.lang.Object): Bool \ {};
-        let anon = checked_cast(implementSerializable());
-        let anon2 = checked_cast(implementSerializable());
-        equals(checked_cast(getClass(anon)), checked_cast(getClass(anon2)))
+        implementSerializable().getClass().equals(
+            implementSerializable().getClass()
+        )
 
     @test
     def testImplementInterface05(): Bool \ IO =
-        import java.lang.Object.getClass(): ##java.lang.Class \ {};
-        import java.lang.Object.equals(##java.lang.Object): Bool \ {};
-        let anon = checked_cast(implementSerializable());
-        let anon2 = checked_cast(implementSerializableAgain());
-        not equals(checked_cast(getClass(anon)), checked_cast(getClass(anon2)))
+        not implementSerializable().getClass().equals(
+            implementSerializableAgain().getClass()
+        )
 
     @test
     def testVoidInterface01(): Bool \ IO =
@@ -230,7 +220,7 @@ mod Test.Exp.Jvm.NewObject {
     @test
     def testGenericInterface01(): Bool \ IO =
         let anon = new TestGenericInterface {
-            def testMethod(_this: TestGenericInterface, x: ##java.lang.Object): ##java.lang.Object =
+            def testMethod(_this: TestGenericInterface, x: Object): Object =
                 let str = unchecked_cast(x as String);
                 checked_cast("${str}, ${str}")
         };
@@ -278,8 +268,8 @@ mod Test.Exp.Jvm.NewObject {
 
     @test
     def testFunctionalInterface02(): Bool \ IO =
-        let anon = new ##java.util.Comparator {
-            def compare(_this: ##java.util.Comparator, _t: ##java.lang.Object, _u: ##java.lang.Object): Int32 = 0
+        let anon = new Comparator {
+            def compare(_this: Comparator, _t: Object, _u: Object): Int32 = 0
         };
         anon.compare("foo", "bar") == 0
 

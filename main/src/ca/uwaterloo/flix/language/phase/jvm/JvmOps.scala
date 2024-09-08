@@ -66,12 +66,11 @@ object JvmOps {
     // Compound
     case MonoType.Array(_) => JvmType.Object
     case MonoType.Lazy(_) => JvmType.Object
-    case MonoType.Ref(elmType) => JvmType.Reference(BackendObjType.Ref(BackendType.asErasedBackendType(elmType)).jvmName)
     case MonoType.Tuple(elms) => JvmType.Reference(BackendObjType.Tuple(elms.map(BackendType.asErasedBackendType)).jvmName)
     case MonoType.RecordEmpty => JvmType.Reference(BackendObjType.Record.jvmName)
     case MonoType.RecordExtend(_, _, _) => JvmType.Reference(BackendObjType.Record.jvmName)
     case MonoType.Enum(_) => JvmType.Object
-    case MonoType.Struct(_) => JvmType.Object
+    case MonoType.Struct(_, elms, targs) => JvmType.Reference(BackendObjType.Struct(elms.map(BackendType.toErasedBackendType)).jvmName)
     case MonoType.Arrow(_, _) => getFunctionInterfaceType(tpe)
     case MonoType.Native(clazz) => JvmType.Reference(JvmName.ofClass(clazz))
   }
@@ -94,7 +93,7 @@ object JvmOps {
       case Int32 => JvmType.PrimInt
       case Int64 => JvmType.PrimLong
       case Void | AnyType | Unit | BigDecimal | BigInt | String | Regex |
-           Region | Array(_) | Lazy(_) | Ref(_) | Tuple(_) | Enum(_) | Struct(_) |
+           Region | Array(_) | Lazy(_) | Tuple(_) | Enum(_) | Struct(_, _, _) |
            Arrow(_, _) | RecordEmpty | RecordExtend(_, _, _) | Native(_) | Null =>
         JvmType.Object
     }
@@ -118,7 +117,7 @@ object JvmOps {
       case Int64 => JvmType.PrimLong
       case Native(clazz) if clazz == classOf[Object] => JvmType.Object
       case Void | AnyType | Unit | BigDecimal | BigInt | String | Regex |
-           Region | Array(_) | Lazy(_) | Ref(_) | Tuple(_) | Enum(_) | Struct(_) |
+           Region | Array(_) | Lazy(_) | Tuple(_) | Enum(_) | Struct(_, _, _) |
            Arrow(_, _) | RecordEmpty | RecordExtend(_, _, _) | Native(_) | Null =>
         throw InternalCompilerException(s"Unexpected type $tpe", SourceLocation.Unknown)
     }
@@ -303,15 +302,6 @@ object JvmOps {
   }
 
   /**
-    * Returns the set of erased ref types in `types` without searching recursively.
-    */
-  def getErasedRefsOf(types: Iterable[MonoType]): Set[BackendObjType.Ref] =
-    types.foldLeft(Set.empty[BackendObjType.Ref]) {
-      case (acc, MonoType.Ref(tpe)) => acc + BackendObjType.Ref(BackendType.asErasedBackendType(tpe))
-      case (acc, _) => acc
-    }
-
-  /**
     * Returns the set of erased lazy types in `types` without searching recursively.
     */
   def getErasedLazyTypesOf(types: Iterable[MonoType]): Set[BackendObjType.Lazy] =
@@ -347,6 +337,16 @@ object JvmOps {
     types.foldLeft(Set.empty[BackendObjType.Tuple]) {
       case (acc, MonoType.Tuple(elms)) =>
         acc + BackendObjType.Tuple(elms.map(BackendType.asErasedBackendType))
+      case (acc, _) => acc
+    }
+
+  /**
+    * Returns the set of erased struct types in `types` without searching recursively.
+    */
+  def getErasedStructTypesOf(types: Iterable[MonoType]): Set[BackendObjType.Struct] =
+    types.foldLeft(Set.empty[BackendObjType.Struct]) {
+      case (acc, MonoType.Struct(_, elms, targs)) =>
+        acc + BackendObjType.Struct(elms.map(BackendType.asErasedBackendType))
       case (acc, _) => acc
     }
 

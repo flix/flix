@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.EliminatedBy
+import ca.uwaterloo.flix.language.ast.shared.{Denotation, Scope}
 import ca.uwaterloo.flix.language.phase.Resolver
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -315,7 +316,7 @@ object UnkindedType {
   /**
     * Returns a fresh type variable of the given kind `k` and rigidity `r`.
     */
-  def freshVar(loc: SourceLocation, isRegion: Boolean = false, text: Ast.VarText = Ast.VarText.Absent)(implicit flix: Flix): UnkindedType.Var = {
+  def freshVar(loc: SourceLocation, isRegion: Boolean = false, text: Ast.VarText = Ast.VarText.Absent)(implicit scope: Scope, flix: Flix): UnkindedType.Var = {
     val sym = Symbol.freshUnkindedTypeVarSym(text, isRegion, loc)
     UnkindedType.Var(sym, loc)
   }
@@ -466,10 +467,10 @@ object UnkindedType {
   /**
     * Constructs a predicate type.
     */
-  def mkPredicate(den: Ast.Denotation, ts0: List[UnkindedType], loc: SourceLocation): UnkindedType = {
+  def mkPredicate(den: Denotation, ts0: List[UnkindedType], loc: SourceLocation): UnkindedType = {
     val tycon = den match {
-      case Ast.Denotation.Relational => UnkindedType.Cst(TypeConstructor.Relation, loc)
-      case Ast.Denotation.Latticenal => UnkindedType.Cst(TypeConstructor.Lattice, loc)
+      case Denotation.Relational => UnkindedType.Cst(TypeConstructor.Relation, loc)
+      case Denotation.Latticenal => UnkindedType.Cst(TypeConstructor.Lattice, loc)
     }
     val ts = ts0 match {
       case Nil => UnkindedType.Cst(TypeConstructor.Unit, loc)

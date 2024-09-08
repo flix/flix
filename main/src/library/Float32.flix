@@ -24,7 +24,10 @@ instance UpperBound[Float32] {
 
 mod Float32 {
 
-    import java.lang.{Float, String, Math, Double}
+    import java.lang.Double
+    import java.lang.Float
+    import java.lang.Math
+    import java.lang.NumberFormatException
 
     ///
     /// Returns the number of bits used to represent a `Float32`.
@@ -108,7 +111,7 @@ mod Float32 {
     pub def fromString(s: String): Option[Float32] = try {
         Some(unsafe Float.parseFloat(s.strip()))
      } catch {
-         case _: ##java.lang.NumberFormatException => None
+         case _: NumberFormatException => None
      }
 
     ///

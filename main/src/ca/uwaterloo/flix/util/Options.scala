@@ -55,13 +55,14 @@ object Options {
     xverifyeffects = false,
     xsubeffecting = SubEffectLevel.Nothing,
     XPerfN = None,
-    XPerfFrontend = false
+    XPerfFrontend = false,
+    xiterations = 1000
   )
 
   /**
     * Default test options.
     */
-  val DefaultTest: Options = Default.copy(lib = LibLevel.All, progress = false, test = true)
+  val DefaultTest: Options = Default.copy(lib = LibLevel.All, progress = false, test = true, xnodeprecated = true)
 
   /**
     * Default test options with the standard library.
@@ -135,6 +136,7 @@ case class Options(lib: LibLevel,
                    xsubeffecting: SubEffectLevel,
                    XPerfFrontend: Boolean,
                    XPerfN: Option[Int],
+                   xiterations: Int,
                   )
 
 /**

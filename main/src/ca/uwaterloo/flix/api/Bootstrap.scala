@@ -17,19 +17,19 @@ package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.api.Bootstrap.{getArtifactDirectory, getManifestFile, getPkgFile}
 import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.phase.HtmlDocumentor
 import ca.uwaterloo.flix.runtime.CompilationResult
-import ca.uwaterloo.flix.tools.pkg.Dependency.FlixDependency
 import ca.uwaterloo.flix.tools.pkg.FlixPackageManager.findFlixDependencies
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
-import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, PackageModules, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, ReleaseError, Dependency}
+import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, PackageModules, ReleaseError}
 import ca.uwaterloo.flix.tools.{Benchmarker, Tester}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.flatMapN
 import ca.uwaterloo.flix.util.collection.Chain
 import ca.uwaterloo.flix.util.{Formatter, Result, Validation}
 
-import java.io.{File, PrintStream, PrintWriter}
+import java.io.{PrintStream, PrintWriter}
 import java.nio.file._
 import java.nio.file.attribute.BasicFileAttributes
 import java.util.zip.{ZipEntry, ZipInputStream, ZipOutputStream}
@@ -95,6 +95,7 @@ object Bootstrap {
          |artifact/
          |build/
          |lib/
+         |crash_report_*.txt
          |""".stripMargin
     }
 
@@ -444,6 +445,8 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   def reconfigureFlix(flix: Flix): Unit = {
     val previousSources = timestamps.keySet
 
+    implicit val defaultSctx: SecurityContext = SecurityContext.AllPermissions
+
     for (path <- sourcePaths if hasChanged(path)) {
       flix.addFlix(path)
     }
@@ -504,7 +507,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     flix.compile().toHardResult match {
       case Result.Ok(r: CompilationResult) =>
         Validation.success(r)
-      case Result.Err(errors: Chain[CompilationMessage]) =>
+      case Result.Err(errors) =>
         Validation.toHardFailure(BootstrapError.GeneralError(flix.mkMessages(errors)))
     }
   }
@@ -696,7 +699,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }.toHardResult match {
       case Result.Ok(_) =>
         Validation.success(())
-      case Result.Err(errors: Chain[CompilationMessage]) =>
+      case Result.Err(errors) =>
         Validation.toHardFailure(BootstrapError.GeneralError(flix.mkMessages(errors)))
     }
   }

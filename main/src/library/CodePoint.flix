@@ -23,7 +23,9 @@
 ///
 mod CodePoint {
 
-    import java.lang.{Character, Exception, Throwable}
+    import java.lang.Character
+    import java.lang.Exception
+    import java.lang.Throwable
 
     ///
     /// Returns the minimum integer value of a Unicode code point.

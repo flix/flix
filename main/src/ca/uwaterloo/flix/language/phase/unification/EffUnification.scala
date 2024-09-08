@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.util.Result.{Ok, ToErr, ToOk}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 import org.sosy_lab.pjbdd.api.DD
@@ -33,7 +34,7 @@ object EffUnification {
   /**
     * Returns the most general unifier of the two given Boolean formulas `tpe1` and `tpe2`.
     */
-  def unify(tpe1: Type, tpe2: Type, renv0: RigidityEnv)(implicit flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError] = {
+  def unify(tpe1: Type, tpe2: Type, renv0: RigidityEnv)(implicit scope: Scope, flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError] = {
 
     // TODO: Levels
     // We cannot enforce that all variables should belong to the same level.
@@ -199,7 +200,7 @@ object EffUnification {
     * If any associated type is not fully reduced (i.e. is not of the form T[α] where α is rigid)
     * then returns None.
     */
-  private def clearAssocs(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Option[(Type, Type, Map[Symbol.KindedTypeVarSym, (Symbol.AssocTypeSym, Symbol.KindedTypeVarSym)])] = {
+  private def clearAssocs(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit scope: Scope, flix: Flix): Option[(Type, Type, Map[Symbol.KindedTypeVarSym, (Symbol.AssocTypeSym, Symbol.KindedTypeVarSym)])] = {
     val cache = mutable.HashMap.empty[(Symbol.AssocTypeSym, Symbol.KindedTypeVarSym), Symbol.KindedTypeVarSym]
 
     def visit(t0: Type): Option[Type] = t0 match {
@@ -212,9 +213,14 @@ object EffUnification {
         } yield Type.Apply(t1, t2, loc)
       case Type.Alias(_, _, tpe, _) => visit(tpe)
       case Type.AssocType(Ast.AssocTypeConstructor(assoc, _), Type.Var(tvar, _), kind, _) if renv.isRigid(tvar) =>
-        val sym = cache.getOrElseUpdate((assoc, tvar), Symbol.freshKindedTypeVarSym(Ast.VarText.Absent, kind, isRegion = false, SourceLocation.Unknown))
+        // We use top scope as the variables will be marked as rigid anyway
+        val sym = cache.getOrElseUpdate((assoc, tvar), Symbol.freshKindedTypeVarSym(Ast.VarText.Absent, kind, isRegion = false, SourceLocation.Unknown)(Scope.Top, flix))
         Some(Type.Var(sym, SourceLocation.Unknown))
       case Type.AssocType(_, _, _, _) => None
+
+      // If we're visiting Jvm types here, then something has likely gone wrong
+      case Type.JvmToType(_, _) => None
+      case Type.UnresolvedJvmType(_, _) => None
     }
 
     for {

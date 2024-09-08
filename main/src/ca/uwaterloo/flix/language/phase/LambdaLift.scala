@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.BoundBy
+import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, LiftedAst, MonoType, Purity, SimplifiedAst, Symbol}
 import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
@@ -26,6 +27,9 @@ import java.util.concurrent.ConcurrentLinkedQueue
 import scala.jdk.CollectionConverters._
 
 object LambdaLift {
+
+  // We are safe to use the top scope everywhere because we do not use unification in this or future phases.
+  private implicit val S: Scope = Scope.Top
 
   /**
     * Performs lambda lifting on the given AST `root`.
@@ -41,9 +45,7 @@ object LambdaLift {
       case (macc, (sym, defn)) => macc + (sym -> defn)
     }
 
-    val structs = Map.empty[Symbol.StructSym, LiftedAst.Struct]
-
-    LiftedAst.Root(newDefs, structs, effects, root.entryPoint, root.reachable, root.sources)
+    LiftedAst.Root(newDefs, effects, root.entryPoint, root.reachable, root.sources)
   }
 
   private def visitDef(def0: SimplifiedAst.Def)(implicit ctx: SharedContext, flix: Flix): LiftedAst.Def = def0 match {

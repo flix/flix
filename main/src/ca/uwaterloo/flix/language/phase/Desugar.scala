@@ -17,9 +17,10 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.Ast.Modifier
 import ca.uwaterloo.flix.language.ast.DesugaredAst.Expr
 import ca.uwaterloo.flix.language.ast.WeededAst.Predicate
-import ca.uwaterloo.flix.language.ast.shared.Fixity
+import ca.uwaterloo.flix.language.ast.shared.{Denotation, Fixity}
 import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, DesugaredAst, Name, SourceLocation, Type, WeededAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugDesugaredAst
 import ca.uwaterloo.flix.util.ParOps
@@ -71,6 +72,7 @@ object Desugar {
     case d: WeededAst.Declaration.Trait => visitTrait(d)
     case d: WeededAst.Declaration.Instance => visitInstance(d)
     case d: WeededAst.Declaration.Def => visitDef(d)
+    case d: WeededAst.Declaration.Redef => visitRedef(d)
     case d: WeededAst.Declaration.Law => visitLaw(d)
     case d: WeededAst.Declaration.Enum => visitEnum(d)
     case d: WeededAst.Declaration.RestrictableEnum => visitRestrictableEnum(d)
@@ -85,7 +87,7 @@ object Desugar {
   private def visitTrait(trait0: WeededAst.Declaration.Trait)(implicit flix: Flix): DesugaredAst.Declaration.Trait = trait0 match {
     case WeededAst.Declaration.Trait(doc, ann, mod, ident, tparam0, superTraits0, assocs0, sigs0, laws0, loc) =>
       val tparam = visitTypeParam(tparam0)
-      val superTraits = superTraits0.map(visitTypeConstraint)
+      val superTraits = superTraits0.map(visitTraitConstraint)
       val assocs = assocs0.map(visitAssocTypeSig)
       val sigs = sigs0.map(visitSig)
       val laws = laws0.map(visitDef)
@@ -96,28 +98,47 @@ object Desugar {
     * Desugars the given [[WeededAst.Declaration.Instance]] `instance0`.
     */
   private def visitInstance(instance0: WeededAst.Declaration.Instance)(implicit flix: Flix): DesugaredAst.Declaration.Instance = instance0 match {
-    case WeededAst.Declaration.Instance(doc, ann, mod, trt, tpe0, tconstrs0, assocs0, defs0, loc) =>
+    case WeededAst.Declaration.Instance(doc, ann, mod, trt, tpe0, tconstrs0, assocs0, defs0, redefs0, loc) =>
       val tpe = visitType(tpe0)
-      val tconstrs = tconstrs0.map(visitTypeConstraint)
+      val tconstrs = tconstrs0.map(visitTraitConstraint)
       val assocs = assocs0.map(visitAssocTypeDef)
       val defs = defs0.map(visitDef)
-      DesugaredAst.Declaration.Instance(doc, ann, mod, trt, tpe, tconstrs, assocs, defs, loc)
+      val redefs = redefs0.map(visitRedef)
+      val defsAndRedefs = defs ++ redefs
+      DesugaredAst.Declaration.Instance(doc, ann, mod, trt, tpe, tconstrs, assocs, defsAndRedefs, loc)
   }
 
   /**
     * Desugars the given [[WeededAst.Declaration.Def]] `def0`.
     */
   private def visitDef(def0: WeededAst.Declaration.Def)(implicit flix: Flix): DesugaredAst.Declaration.Def = def0 match {
-    case WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0, fparams0, exp0, tpe0, eff0, tconstrs0, constrs0, loc) =>
+    case WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0, fparams0, exp0, tpe0, eff0, tconstrs0, econstrs0, loc) =>
       flix.subtask(ident.name, sample = true)
       val tparams = tparams0.map(visitTypeParam)
       val fparams = visitFormalParams(fparams0)
       val exp = visitExp(exp0)
       val tpe = visitType(tpe0)
       val eff = eff0.map(visitType)
-      val tconstrs = tconstrs0.map(visitTypeConstraint)
-      val constrs = constrs0.map(visitEqualityConstraint)
-      DesugaredAst.Declaration.Def(doc, ann, mod, ident, tparams, fparams, exp, tpe, eff, tconstrs, constrs, loc)
+      val tconstrs = tconstrs0.map(visitTraitConstraint)
+      val econstrs = econstrs0.map(visitEqualityConstraint)
+      DesugaredAst.Declaration.Def(doc, ann, mod, ident, tparams, fparams, exp, tpe, eff, tconstrs, econstrs, loc)
+  }
+
+  /**
+    * Desugars the given [[WeededAst.Declaration.Redef]] `def0`.
+    */
+  private def visitRedef(def0: WeededAst.Declaration.Redef)(implicit flix: Flix): DesugaredAst.Declaration.Def = def0 match {
+    case WeededAst.Declaration.Redef(doc, ann, mod0, ident, tparams0, fparams0, exp0, tpe0, eff0, tconstrs0, econstrs0, loc) =>
+      flix.subtask(ident.name, sample = true)
+      val mod = mod0.copy(mod = Modifier.Override :: mod0.mod)
+      val tparams = tparams0.map(visitTypeParam)
+      val fparams = visitFormalParams(fparams0)
+      val exp = visitExp(exp0)
+      val tpe = visitType(tpe0)
+      val eff = eff0.map(visitType)
+      val tconstrs = tconstrs0.map(visitTraitConstraint)
+      val econstrs = econstrs0.map(visitEqualityConstraint)
+      DesugaredAst.Declaration.Def(doc, ann, mod, ident, tparams, fparams, exp, tpe, eff, tconstrs, econstrs, loc)
   }
 
   /**
@@ -130,7 +151,7 @@ object Desugar {
       val exp = visitExp(exp0)
       val tpe = visitType(tpe0)
       val eff = visitType(eff0)
-      val tconstrs = tconstrs0.map(visitTypeConstraint)
+      val tconstrs = tconstrs0.map(visitTraitConstraint)
       DesugaredAst.Declaration.Law(doc, ann, mod, ident, tparams, fparams, exp, tpe, eff, tconstrs, loc)
   }
 
@@ -197,12 +218,12 @@ object Desugar {
   }
 
   /**
-    * Desugars the given [[WeededAst.TypeConstraint]] `tconstr0`.
+    * Desugars the given [[WeededAst.TraitConstraint]] `tconstr0`.
     */
-  private def visitTypeConstraint(tconstr0: WeededAst.TypeConstraint): DesugaredAst.TypeConstraint = tconstr0 match {
-    case WeededAst.TypeConstraint(trt, tpe0, loc) =>
+  private def visitTraitConstraint(tconstr0: WeededAst.TraitConstraint): DesugaredAst.TraitConstraint = tconstr0 match {
+    case WeededAst.TraitConstraint(trt, tpe0, loc) =>
       val tpe = visitType(tpe0)
-      DesugaredAst.TypeConstraint(trt, tpe, loc)
+      DesugaredAst.TraitConstraint(trt, tpe, loc)
   }
 
   /**
@@ -226,7 +247,7 @@ object Desugar {
       val exp = exp0.map(visitExp)
       val tpe = visitType(tpe0)
       val eff = eff0.map(visitType)
-      val tconstrs = tconstrs0.map(visitTypeConstraint)
+      val tconstrs = tconstrs0.map(visitTraitConstraint)
       val econstrs = econstrs0.map(visitEqualityConstraint)
       DesugaredAst.Declaration.Sig(doc, ann, mod, ident, tparams, fparams, exp, tpe, eff, tconstrs, econstrs, loc)
   }
@@ -412,12 +433,12 @@ object Desugar {
   }
 
   /**
-   * Desugars the given [[WeededAst.StructField]] `field0`.
+   * Desugars the given [[WeededAst.Declaration.StructField]] `field0`.
    */
   private def visitField(field0: WeededAst.StructField): DesugaredAst.StructField = field0 match {
-    case WeededAst.StructField(ident, tpe0, loc) =>
+    case WeededAst.StructField(mod, name, tpe0, loc) =>
       val tpe = visitType(tpe0)
-      DesugaredAst.StructField(ident, tpe, loc)
+      DesugaredAst.StructField(mod, name, tpe, loc)
   }
 
   /**
@@ -436,7 +457,7 @@ object Desugar {
     case WeededAst.Declaration.Op(doc, ann, mod, ident, fparams0, tpe0, tconstrs0, loc) =>
       val fparams = visitFormalParams(fparams0)
       val tpe = visitType(tpe0)
-      val tconstrs = tconstrs0.map(visitTypeConstraint)
+      val tconstrs = tconstrs0.map(visitTraitConstraint)
       DesugaredAst.Declaration.Op(doc, ann, mod, ident, fparams, tpe, tconstrs, loc)
   }
 
@@ -655,20 +676,6 @@ object Desugar {
     case WeededAst.Expr.MapLit(exps, loc) =>
       desugarMapLit(exps, loc)
 
-    case WeededAst.Expr.Ref(exp1, exp2, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      Expr.Ref(e1, e2, loc)
-
-    case WeededAst.Expr.Deref(exp, loc) =>
-      val e = visitExp(exp)
-      Expr.Deref(e, loc)
-
-    case WeededAst.Expr.Assign(exp1, exp2, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      Expr.Assign(e1, e2, loc)
-
     case WeededAst.Expr.Ascribe(exp, expectedType, expectedEff, loc) =>
       val e = visitExp(exp)
       val ts = expectedType.map(visitType)
@@ -709,6 +716,10 @@ object Desugar {
       val rs = rules.map(visitCatchRule)
       Expr.TryCatch(e, rs, loc)
 
+    case WeededAst.Expr.Throw(exp, loc) =>
+      val e = visitExp(exp)
+      Expr.Throw(e, loc)
+
     case WeededAst.Expr.TryWith(exp, handlers, loc) =>
       val e = visitExp(exp)
       handlers.foldLeft(e) {
@@ -729,6 +740,10 @@ object Desugar {
       val e = visitExp(exp)
       val es = visitExps(exps)
       Expr.InvokeMethod2(e, name, es, loc)
+
+    case WeededAst.Expr.GetField2(exp, name, loc) =>
+      val e = visitExp(exp)
+      Expr.GetField2(e, name, loc)
 
     case WeededAst.Expr.NewObject(tpe, methods, loc) =>
       val t = visitType(tpe)
@@ -1236,7 +1251,7 @@ object Desugar {
     val objectId = Name.Ident("o" + Flix.Delimiter, loc0)
     val objectExp = DesugaredAst.Expr.Ambiguous(Name.QName(Name.RootNS, objectId, objectId.loc), loc0)
     val objectParam = DesugaredAst.FormalParam(objectId, Ast.Modifiers.Empty, None, loc0)
-    val call = DesugaredAst.Expr.GetField(className, fieldName, objectExp, loc0)
+    val call = DesugaredAst.Expr.GetFieldOld(className, fieldName, objectExp, loc0)
     val lambdaBody = jvmCast(call, tpe, eff, loc0)
     val e1 = DesugaredAst.Expr.Lambda(objectParam, lambdaBody, loc0)
     DesugaredAst.Expr.Let(ident0, Ast.Modifiers.Empty, e1, e, loc0)
@@ -1694,7 +1709,7 @@ object Desugar {
     val pred = Name.Pred(Flix.Delimiter + "Result", loc0)
 
     // The head of the pseudo-rule.
-    val den = Ast.Denotation.Relational
+    val den = Denotation.Relational
     val head = DesugaredAst.Predicate.Head.Atom(pred, den, selects, loc0)
 
     // The body of the pseudo-rule.
@@ -1702,8 +1717,8 @@ object Desugar {
 
     // Automatically fix all lattices atoms.
     val body = guard ::: from.map {
-      case DesugaredAst.Predicate.Body.Atom(pred, Ast.Denotation.Latticenal, polarity, _, terms, loc) =>
-        DesugaredAst.Predicate.Body.Atom(pred, Ast.Denotation.Latticenal, polarity, Fixity.Fixed, terms, loc)
+      case DesugaredAst.Predicate.Body.Atom(pred, Denotation.Latticenal, polarity, _, terms, loc) =>
+        DesugaredAst.Predicate.Body.Atom(pred, Denotation.Latticenal, polarity, Fixity.Fixed, terms, loc)
       case pred => pred
     }
 

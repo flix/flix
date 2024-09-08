@@ -17,15 +17,14 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.Ast.Denotation
-import ca.uwaterloo.flix.language.ast.shared.Fixity
+import ca.uwaterloo.flix.language.ast.shared.{Denotation, Fixity, Polarity, Source}
 import ca.uwaterloo.flix.util.collection.MultiMap
 
 object WeededAst {
 
   val empty: Root = Root(Map.empty, None, MultiMap.empty)
 
-  case class Root(units: Map[Ast.Source, CompilationUnit], entryPoint: Option[Symbol.DefnSym], names: MultiMap[List[String], String])
+  case class Root(units: Map[Source, CompilationUnit], entryPoint: Option[Symbol.DefnSym], names: MultiMap[List[String], String])
 
   case class CompilationUnit(usesAndImports: List[UseOrImport], decls: List[Declaration], loc: SourceLocation)
 
@@ -38,15 +37,17 @@ object WeededAst {
     case class Namespace(ident: Name.Ident, usesAndImports: List[UseOrImport], decls: List[Declaration], loc: SourceLocation) extends Declaration
 
     // TODO change laws to Law
-    case class Trait(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparam: TypeParam, superTraits: List[TypeConstraint], assocs: List[Declaration.AssocTypeSig], sigs: List[Declaration.Sig], laws: List[Declaration.Def], loc: SourceLocation) extends Declaration
+    case class Trait(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparam: TypeParam, superTraits: List[TraitConstraint], assocs: List[Declaration.AssocTypeSig], sigs: List[Declaration.Sig], laws: List[Declaration.Def], loc: SourceLocation) extends Declaration
 
-    case class Instance(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, clazz: Name.QName, tpe: Type, tconstrs: List[TypeConstraint], assocs: List[Declaration.AssocTypeDef], defs: List[Declaration.Def], loc: SourceLocation) extends Declaration
+    case class Instance(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, clazz: Name.QName, tpe: Type, tconstrs: List[TraitConstraint], assocs: List[Declaration.AssocTypeDef], defs: List[Declaration.Def], redefs: List[Declaration.Redef], loc: SourceLocation) extends Declaration
 
-    case class Sig(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparams: List[TypeParam], fparams: List[FormalParam], exp: Option[Expr], tpe: Type, eff: Option[Type], tconstrs: List[TypeConstraint], econstrs: List[EqualityConstraint], loc: SourceLocation)
+    case class Sig(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparams: List[TypeParam], fparams: List[FormalParam], exp: Option[Expr], tpe: Type, eff: Option[Type], tconstrs: List[TraitConstraint], econstrs: List[EqualityConstraint], loc: SourceLocation)
 
-    case class Def(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparams: List[TypeParam], fparams: List[FormalParam], exp: Expr, tpe: Type, eff: Option[Type], tconstrs: List[TypeConstraint], constrs: List[EqualityConstraint], loc: SourceLocation) extends Declaration
+    case class Def(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparams: List[TypeParam], fparams: List[FormalParam], exp: Expr, tpe: Type, eff: Option[Type], tconstrs: List[TraitConstraint], constrs: List[EqualityConstraint], loc: SourceLocation) extends Declaration
 
-    case class Law(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparams: List[TypeParam], fparams: List[FormalParam], exp: Expr, tpe: Type, eff: Type, tconstrs: List[TypeConstraint], loc: SourceLocation) extends Declaration
+    case class Redef(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparams: List[TypeParam], fparams: List[FormalParam], exp: Expr, tpe: Type, eff: Option[Type], tconstrs: List[TraitConstraint], constrs: List[EqualityConstraint], loc: SourceLocation) extends Declaration
+
+    case class Law(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparams: List[TypeParam], fparams: List[FormalParam], exp: Expr, tpe: Type, eff: Type, tconstrs: List[TraitConstraint], loc: SourceLocation) extends Declaration
 
     case class Enum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparams: List[TypeParam], derives: Derivations, cases: List[Case], loc: SourceLocation) extends Declaration
 
@@ -62,7 +63,7 @@ object WeededAst {
 
     case class Effect(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, ops: List[Declaration.Op], loc: SourceLocation) extends Declaration
 
-    case class Op(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, fparams: List[FormalParam], tpe: Type, tconstrs: List[TypeConstraint], loc: SourceLocation)
+    case class Op(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, fparams: List[FormalParam], tpe: Type, tconstrs: List[TraitConstraint], loc: SourceLocation)
 
   }
 
@@ -158,7 +159,7 @@ object WeededAst {
 
     case class ArrayStore(exp1: Expr, exp2: Expr, exp3: Expr, loc: SourceLocation) extends Expr
 
-    case class StructNew(name: Name.QName, exps: List[(Name.Ident, Expr)], region: Expr, loc: SourceLocation) extends Expr
+    case class StructNew(name: Name.QName, exps: List[(Name.Label, Expr)], region: Expr, loc: SourceLocation) extends Expr
 
     case class VectorLit(exps: List[Expr], loc: SourceLocation) extends Expr
 
@@ -176,12 +177,6 @@ object WeededAst {
 
     case class MapLit(exps: List[(Expr, Expr)], loc: SourceLocation) extends Expr
 
-    case class Ref(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
-
-    case class Deref(exp: Expr, loc: SourceLocation) extends Expr
-
-    case class Assign(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
-
     case class Ascribe(exp: Expr, expectedType: Option[Type], expectedEff: Option[Type], loc: SourceLocation) extends Expr
 
     case class InstanceOf(exp: Expr, clazzName: Name.Ident, loc: SourceLocation) extends Expr
@@ -198,6 +193,8 @@ object WeededAst {
 
     case class TryCatch(exp: Expr, handlers: List[CatchRule], loc: SourceLocation) extends Expr
 
+    case class Throw(exp: Expr, loc: SourceLocation) extends Expr
+
     case class TryWith(exp: Expr, handler: List[WithHandler], loc: SourceLocation) extends Expr
 
     case class Do(op: Name.QName, exps: List[Expr], loc: SourceLocation) extends Expr
@@ -205,6 +202,8 @@ object WeededAst {
     case class InvokeConstructor2(clazzName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
 
     case class InvokeMethod2(exp: Expr, methodName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
+
+    case class GetField2(exp: Expr, fieldName: Name.Ident, loc: SourceLocation) extends Expr
 
     case class NewObject(tpe: Type, methods: List[JvmMethod], loc: SourceLocation) extends Expr
 
@@ -272,7 +271,7 @@ object WeededAst {
 
     case class Tag(qname: Name.QName, pat: Pattern, loc: SourceLocation) extends Pattern
 
-    case class Tuple(elms: scala.List[Pattern], loc: SourceLocation) extends Pattern
+    case class Tuple(pats: List[Pattern], loc: SourceLocation) extends Pattern
 
     case class Record(pats: List[Record.RecordLabelPattern], pat: Pattern, loc: SourceLocation) extends Pattern
 
@@ -319,7 +318,7 @@ object WeededAst {
 
     object Body {
 
-      case class Atom(pred: Name.Pred, den: Denotation, polarity: Ast.Polarity, fixity: Fixity, terms: List[Pattern], loc: SourceLocation) extends Predicate.Body
+      case class Atom(pred: Name.Pred, den: Denotation, polarity: Polarity, fixity: Fixity, terms: List[Pattern], loc: SourceLocation) extends Predicate.Body
 
       case class Functional(idents: List[Name.Ident], exp: Expr, loc: SourceLocation) extends Predicate.Body
 
@@ -339,7 +338,7 @@ object WeededAst {
 
     case class Unit(loc: SourceLocation) extends Type
 
-    case class Tuple(elms: List[Type], loc: SourceLocation) extends Type
+    case class Tuple(tpes: List[Type], loc: SourceLocation) extends Type
 
     case class RecordRowEmpty(loc: SourceLocation) extends Type
 
@@ -351,7 +350,7 @@ object WeededAst {
 
     case class SchemaRowExtendByAlias(qname: Name.QName, targs: List[Type], rest: Type, loc: SourceLocation) extends Type
 
-    case class SchemaRowExtendByTypes(name: Name.Ident, den: Ast.Denotation, tpes: List[Type], rest: Type, loc: SourceLocation) extends Type
+    case class SchemaRowExtendByTypes(name: Name.Ident, den: Denotation, tpes: List[Type], rest: Type, loc: SourceLocation) extends Type
 
     case class Schema(row: Type, loc: SourceLocation) extends Type
 
@@ -403,7 +402,7 @@ object WeededAst {
 
   case class Case(ident: Name.Ident, tpe: Type, loc: SourceLocation)
 
-  case class StructField(ident: Name.Ident, tpe: Type, loc: SourceLocation)
+  case class StructField(mod: Ast.Modifiers, name: Name.Label, tpe: Type, loc: SourceLocation)
 
   case class RestrictableCase(ident: Name.Ident, tpe: Type, loc: SourceLocation)
 
@@ -415,7 +414,7 @@ object WeededAst {
 
     case class PredicateParamUntyped(pred: Name.Pred, loc: SourceLocation) extends PredicateParam
 
-    case class PredicateParamWithType(pred: Name.Pred, den: Ast.Denotation, tpes: List[Type], loc: SourceLocation) extends PredicateParam
+    case class PredicateParamWithType(pred: Name.Pred, den: Denotation, tpes: List[Type], loc: SourceLocation) extends PredicateParam
 
   }
 
@@ -431,7 +430,7 @@ object WeededAst {
 
   case class RestrictableChooseRule(pat: RestrictableChoosePattern, exp: Expr)
 
-  case class TypeConstraint(trt: Name.QName, tpe: Type, loc: SourceLocation)
+  case class TraitConstraint(trt: Name.QName, tpe: Type, loc: SourceLocation)
 
   case class EqualityConstraint(qname: Name.QName, tpe1: Type, tpe2: Type, loc: SourceLocation)
 
@@ -455,7 +454,7 @@ object WeededAst {
 
   case class ParYieldFragment(pat: Pattern, exp: Expr, loc: SourceLocation)
 
-  case class Derivations(classes: List[Name.QName], loc: SourceLocation)
+  case class Derivations(traits: List[Name.QName], loc: SourceLocation)
 
 
   sealed trait ForFragment {

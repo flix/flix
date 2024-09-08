@@ -1,4 +1,4 @@
-import java.lang.Thread;
+import java.lang.Thread
 
 /// Emulates some slow computation.
 def slowFunction(): String = {

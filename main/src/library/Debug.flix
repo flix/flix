@@ -1,8 +1,15 @@
 mod Debug {
 
-    import java.lang.{System, String, Float, Byte, Double, Short, Integer, Long}
-    import java.util.{Objects, Arrays}
-    import java.math.{BigInteger, BigDecimal}
+    import java.lang.Byte
+    import java.lang.Double
+    import java.lang.Float
+    import java.lang.Integer
+    import java.lang.Long
+    import java.lang.Object
+    import java.lang.Short
+    import java.lang.System
+    import java.util.Arrays
+    import java.util.Objects
 
     ///
     /// Prints the stringified representation of `x` with the given `prefix`.
@@ -86,19 +93,19 @@ mod Debug {
             case y: Array[Int64, _] =>
                 unsafe Arrays.toString(unchecked_cast(y as Array[Int64, Static]))
             case y: Array[Unit, _] =>
-                unsafe Arrays.toString(unchecked_cast(y as Array[##java.lang.Object, Static]))
+                unsafe Arrays.toString(unchecked_cast(y as Array[Object, Static]))
             case y: Array[BigInt, _] =>
-                unsafe Arrays.toString(unchecked_cast(y as Array[##java.lang.Object, Static]))
+                unsafe Arrays.toString(unchecked_cast(y as Array[Object, Static]))
             case y: Array[BigDecimal, _] =>
-                unsafe Arrays.toString(unchecked_cast(y as Array[##java.lang.Object, Static]))
+                unsafe Arrays.toString(unchecked_cast(y as Array[Object, Static]))
             case y: Array[String, _] =>
-                unsafe Arrays.toString(unchecked_cast(y as Array[##java.lang.Object, Static]))
+                unsafe Arrays.toString(unchecked_cast(y as Array[Object, Static]))
             case y: Array[Array[_, _], _] =>
-                unsafe Arrays.deepToString(unchecked_cast(y as Array[##java.lang.Object, Static]))
+                unsafe Arrays.deepToString(unchecked_cast(y as Array[Object, Static]))
             case y: Array[_, _] =>
-                unsafe Arrays.toString(unchecked_cast(y as Array[##java.lang.Object, Static]))
+                unsafe Arrays.toString(unchecked_cast(y as Array[Object, Static]))
             case y: _ =>
-                unsafe Objects.toString(unchecked_cast(y as ##java.lang.Object))
+                unsafe Objects.toString(unchecked_cast(y as Object))
         }
     }
 

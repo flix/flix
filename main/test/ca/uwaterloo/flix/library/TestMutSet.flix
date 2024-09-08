@@ -511,29 +511,29 @@ mod TestMutSet {
     @test
     def forEach01(): Bool = region rc {
         let s = MutSet.empty(rc);
-        let ri = ref 21 @ rc;
+        let ri = Ref.fresh(rc, 21);
         MutSet.forEach(x -> Ref.put(x, ri), s);
-        21 == deref ri
+        21 == Ref.get(ri)
     }
 
     @test
     def forEach02(): Bool = region rc {
         let s = MutSet.empty(rc);
-        let ri = ref 21 @ rc;
+        let ri = Ref.fresh(rc, 21);
         MutSet.add!(0, s);
         MutSet.forEach(x -> Ref.put(x, ri), s);
-        0 == deref ri
+        0 == Ref.get(ri)
     }
 
     @test
     def forEach03(): Bool = region rc {
         let s = MutSet.empty(rc);
-        let ri = ref 21 @ rc;
+        let ri = Ref.fresh(rc, 21);
         MutSet.add!(0, s);
         MutSet.add!(1, s);
         MutSet.add!(2, s);
         MutSet.forEach(x -> Ref.put(x, ri), s);
-        2 == deref ri
+        2 == Ref.get(ri)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -543,29 +543,29 @@ mod TestMutSet {
     @test
     def forEachWithIndex01(): Bool = region rc {
         let s = MutSet.empty(rc);
-        let ri = ref 21 @ rc;
+        let ri = Ref.fresh(rc, 21);
         MutSet.forEachWithIndex((i, _) -> Ref.put(i, ri), s);
-        21 == deref ri
+        21 == Ref.get(ri)
     }
 
     @test
     def forEachWithIndex02(): Bool = region rc {
         let s = MutSet.empty(rc);
-        let ri = ref 21 @ rc;
+        let ri = Ref.fresh(rc, 21);
         MutSet.add!(100, s);
         MutSet.forEachWithIndex((i, _) -> Ref.put(i, ri), s);
-        0 == deref ri
+        0 == Ref.get(ri)
     }
 
     @test
     def forEachWithIndex03(): Bool = region rc {
         let s = MutSet.empty(rc);
-        let ri = ref 21 @ rc;
+        let ri = Ref.fresh(rc, 21);
         MutSet.add!(100, s);
         MutSet.add!(101, s);
         MutSet.add!(102, s);
         MutSet.forEachWithIndex((i, _) -> Ref.put(i, ri), s);
-        2 == deref ri
+        2 == Ref.get(ri)
     }
 
 }

@@ -17,13 +17,20 @@
 mod Adaptor {
 
     import java.lang.Object
-    import java.util.{ArrayList, Comparator, Iterator => JIterator,
-        LinkedList, List => JList, Map => JMap, Optional, Set => JSet,
-        TreeSet, TreeMap};
+    import java.util.ArrayList
+    import java.util.Collection
+    import java.util.Comparator
+    import java.util.{Iterator => JIterator}
+    import java.util.LinkedList
+    import java.util.{List => JList}
+    import java.util.{Map => JMap}
     import java.util.{Map$Entry => Entry}
+    import java.util.Optional
+    import java.util.{Set => JSet}
+    import java.util.TreeMap
+    import java.util.TreeSet
     import java.util.stream.BaseStream
     import java.util.stream.Stream
-    import java.util.Collection
 
     ///
     /// Returns a comparator for elements of type `a`.

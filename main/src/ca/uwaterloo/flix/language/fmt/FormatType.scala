@@ -17,7 +17,9 @@ package ca.uwaterloo.flix.language.fmt
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.VarText
+import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.fmt.FormatType.Mode
 import ca.uwaterloo.flix.language.phase.unification.{Substitution, TypeMinimization}
 
 object FormatType {
@@ -47,12 +49,12 @@ object FormatType {
     val freeVars = tpe.typeVars.toList.sortBy(_.sym.id)
 
     // Compute the flexible variables (i.e. the free variables that are not rigid).
-    val flexibleVars = renv.getFlexibleVarsOf(freeVars)
+    val flexibleVars = renv.getFlexibleVarsOf(freeVars)(Scope.Top) // TODO LEVELS ideally we should have a proper scope here
 
     // Compute a substitution that maps the first flexible variable to id 1 and so forth.
     val m = flexibleVars.zipWithIndex.map {
       case (tvar@Type.Var(sym, loc), index) =>
-        sym -> (Type.Var(new Symbol.KindedTypeVarSym(index, sym.text, sym.kind, sym.isRegion, loc), loc): Type)
+        sym -> (Type.Var(new Symbol.KindedTypeVarSym(index, sym.text, sym.kind, sym.isRegion, sym.scope, loc), loc): Type)
     }
     val s = Substitution(m.toMap)
 
@@ -177,7 +179,6 @@ object FormatType {
       case SimpleType.Regex => true
       case SimpleType.Array => true
       case SimpleType.Vector => true
-      case SimpleType.Ref => true
       case SimpleType.Sender => true
       case SimpleType.Receiver => true
       case SimpleType.Lazy => true
@@ -205,7 +206,13 @@ object FormatType {
       case SimpleType.Apply(_, _) => true
       case SimpleType.Var(_, _, _, _) => true
       case SimpleType.Tuple(_) => true
+      case SimpleType.JvmToType(_) => true
       case SimpleType.MethodReturnType(_) => true
+      case SimpleType.FieldType(_) => true
+      case SimpleType.JvmConstructor(_, _) => true
+      case SimpleType.JvmField(_, _) => true
+      case SimpleType.JvmMethod(_, _, _) => true
+      case SimpleType.JvmStaticMethod(_, _, _) => true
       case SimpleType.Union(_) => true
       case SimpleType.Error => true
     }
@@ -244,7 +251,6 @@ object FormatType {
       case SimpleType.Regex => "Regex"
       case SimpleType.Array => "Array"
       case SimpleType.Vector => "Vector"
-      case SimpleType.Ref => "Ref"
       case SimpleType.Sender => "Sender"
       case SimpleType.Receiver => "Receiver"
       case SimpleType.Lazy => "Lazy"
@@ -338,7 +344,7 @@ object FormatType {
           case Kind.RecordRow => "r" + id
           case Kind.SchemaRow => "s" + id
           case Kind.Predicate => "'" + id.toString
-          case Kind.JvmConstructorOrMethod => "j" + id.toString
+          case Kind.Jvm => "j" + id.toString
           case Kind.CaseSet(_) => "c" + id.toString
           case Kind.Arrow(_, _) => "'" + id.toString
           case Kind.Error => "err" + id.toString
@@ -360,9 +366,34 @@ object FormatType {
       case SimpleType.Tuple(elms) =>
         elms.map(visit(_, Mode.Type)).mkString("(", ", ", ")")
 
+      case SimpleType.JvmToType(tpe) =>
+        val arg = visit(tpe, Mode.Type)
+        "Jvm(" + arg + ")"
+
+      case SimpleType.JvmConstructor(name, tpes0) =>
+        val tpes = tpes0.map(visit(_, Mode.Type))
+        "Constructor(" + name + ", " + tpes.mkString(", ") + ")"
+
+      case SimpleType.JvmField(t0, name) =>
+        val t = visit(t0, Mode.Type)
+        "JvmField(" + t + ", " + name + ")"
+
+      case SimpleType.JvmMethod(t0, name, ts0) =>
+        val t = visit(t0, Mode.Type)
+        val ts = ts0.map(visit(_, Mode.Type))
+        "JvmMethod(" + t + ", " + name + ", " + ts.mkString(", ") + ")"
+
+      case SimpleType.JvmStaticMethod(clazz, name, ts0) =>
+        val ts = ts0.map(visit(_, Mode.Type))
+        "JvmMethod(" + clazz + ", " + name + ", " + ts.mkString(", ") + ")"
+
       case SimpleType.MethodReturnType(tpe) =>
         val arg = visit(tpe, Mode.Type)
         "MethodReturnType(" + arg + ")"
+
+      case SimpleType.FieldType(tpe) =>
+        val arg = visit(tpe, Mode.Type)
+        "FieldType(" + arg + ")"
 
       case SimpleType.Error => "Error"
 
