@@ -357,6 +357,7 @@ object Completion {
 
   /**
     * Represents a collection keyword completion (i.e. `Hash#{}`)
+    *
     * @param name      the name of the keyword.
     * @param priority  the priority of the keyword.
     */
