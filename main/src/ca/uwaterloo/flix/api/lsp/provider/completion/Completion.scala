@@ -46,6 +46,12 @@ sealed trait Completion {
         sortText = Priority.toSortText(priority, name),
         textEdit = TextEdit(context.range, s"$name "),
         kind = CompletionItemKind.Keyword)
+    case Completion.KeywordLiteralCompletion(name, priority) =>
+      CompletionItem(label = name,
+        sortText = Priority.toSortText(priority, name),
+        textEdit = TextEdit(context.range, name),
+        insertTextFormat = InsertTextFormat.PlainText,
+        kind = CompletionItemKind.Keyword)
     case Completion.KeywordCallCompletion(name, priority) =>
       CompletionItem(label = s"$name(...)",
         sortText = Priority.toSortText(priority, name),
@@ -328,18 +334,31 @@ object Completion {
   /**
     * Represents a keyword completion.
     *
-    * @param name the name of the keyword.
-    * @param priority the completion priority of the keyword.
+    * @param name      the name of the keyword.
+    * @param priority  the completion priority of the keyword.
     */
   case class KeywordCompletion(name: String, priority: Priority) extends Completion
 
   /**
+    * Represents a keyword literal completion (i.e. `true`)
+    *
+    * @param name      the name of the keyword.
+    * @param priority  the priority of the keyword.
+    */
+  case class KeywordLiteralCompletion(name: String, priority: Priority) extends Completion
+
+  /**
     * Represents a completion for a keyword with call syntax (i.e. `checked_cast`)
+    * 
+    * @param name      the name of the keyword.
+    * @param priority  the priority of the keyword.
     */
   case class KeywordCallCompletion(name: String, priority: Priority) extends Completion
 
   /**
     * Represents a collection keyword completion (i.e. `Hash#{}`)
+    * @param name      the name of the keyword.
+    * @param priority  the priority of the keyword.
     */
   case class KeywordCollectionCompletion(name: String, priority: Priority) extends Completion
 

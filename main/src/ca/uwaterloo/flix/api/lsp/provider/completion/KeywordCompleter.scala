@@ -66,31 +66,31 @@ object KeywordCompleter {
   def getExprKeywords: Iterable[Completion] =
     List(
       // A
-      Completion.KeywordCompletion("and"      , Priority.Higher),
+      Completion.KeywordCompletion("and"            , Priority.Higher),
       Completion.KeywordCollectionCompletion("Array", Priority.Low),
-      Completion.KeywordCompletion("as"       , Priority.High),
+      Completion.KeywordCompletion("as"             , Priority.High),
       // C
-      Completion.KeywordCompletion("catch"        , Priority.High),
+      Completion.KeywordCompletion("catch"            , Priority.High),
       Completion.KeywordCallCompletion("checked_cast" , Priority.Higher),
       Completion.KeywordCallCompletion("checked_ecast", Priority.Low),
-      Completion.KeywordCompletion("choose"       , Priority.Lowest),
-      Completion.KeywordCompletion("choose*"      , Priority.Lowest),
+      Completion.KeywordCompletion("choose"           , Priority.Lowest),
+      Completion.KeywordCompletion("choose*"          , Priority.Lowest),
       // D
-      Completion.KeywordCallCompletion("debug!!"  , Priority.Lowest),
-      Completion.KeywordCallCompletion("debug!"   , Priority.Lowest),
-      Completion.KeywordCallCompletion("debug"    , Priority.Lower),
-      Completion.KeywordCompletion("def"      , Priority.Higher),
-      Completion.KeywordCompletion("discard"  , Priority.Low),
-      Completion.KeywordCompletion("do"       , Priority.High),
+      Completion.KeywordCallCompletion("debug!!", Priority.Lowest),
+      Completion.KeywordCallCompletion("debug!" , Priority.Lowest),
+      Completion.KeywordCallCompletion("debug"  , Priority.Lower),
+      Completion.KeywordCompletion("def"        , Priority.Higher),
+      Completion.KeywordCompletion("discard"    , Priority.Low),
+      Completion.KeywordCompletion("do"         , Priority.High),
       // E
       Completion.KeywordCompletion("else"     , Priority.Default),
       // F
-      Completion.KeywordCompletion("false"    , Priority.Higher),
-      Completion.KeywordCompletion("forA"     , Priority.Lowest),
-      Completion.KeywordCompletion("forM"     , Priority.Low),
-      Completion.KeywordCompletion("force"    , Priority.High),
-      Completion.KeywordCompletion("foreach"  , Priority.Lower),
-      Completion.KeywordCompletion("from"     , Priority.Highest),
+      Completion.KeywordLiteralCompletion("false", Priority.Higher),
+      Completion.KeywordCompletion("forA"        , Priority.Lowest),
+      Completion.KeywordCompletion("forM"        , Priority.Low),
+      Completion.KeywordCompletion("force"       , Priority.High),
+      Completion.KeywordCompletion("foreach"     , Priority.Lower),
+      Completion.KeywordCompletion("from"        , Priority.Highest),
       // I
       Completion.KeywordCompletion("if"        , Priority.Higher),
       Completion.KeywordCompletion("inject"    , Priority.Low),
@@ -106,13 +106,13 @@ object KeywordCompleter {
       // Strange, but in the std lib this occurs much less than `lazy`
       Completion.KeywordCollectionCompletion("List", Priority.Lower),
       // M
-      Completion.KeywordCollectionCompletion("Map", Priority.Low),
-      Completion.KeywordCallCompletion("masked_cast"  , Priority.Lower),
-      Completion.KeywordCompletion("match"        , Priority.High),
+      Completion.KeywordCollectionCompletion("Map"  , Priority.Low),
+      Completion.KeywordCallCompletion("masked_cast", Priority.Lower),
+      Completion.KeywordCompletion("match"          , Priority.High),
       // N
-      Completion.KeywordCompletion("new"      , Priority.Low),
-      Completion.KeywordCompletion("not"      , Priority.High),
-      Completion.KeywordCompletion("null"     , Priority.Lower),
+      Completion.KeywordCompletion("new"        , Priority.Low),
+      Completion.KeywordCompletion("not"        , Priority.High),
+      Completion.KeywordLiteralCompletion("null", Priority.Lower),
       // O
       Completion.KeywordCompletion("open_variant"   , Priority.Low),
       Completion.KeywordCompletion("open_variant_as", Priority.Low),
@@ -129,24 +129,24 @@ object KeywordCompleter {
       // by the reasoning that sets are a very basic data type and
       // in most programs, set constructions are likely more common
       // than extracting data from datalog.
-      Completion.KeywordCompletion("select"   , Priority.Higher),
+      Completion.KeywordCompletion("select"       , Priority.Higher),
       Completion.KeywordCollectionCompletion("Set", Priority.Highest),
-      Completion.KeywordCompletion("solve"    , Priority.High),
-      Completion.KeywordCompletion("spawn"    , Priority.Low),
-      Completion.KeywordCompletion("static"   , Priority.Lowest),
-      Completion.KeywordCompletion("Static"   , Priority.Lower),
+      Completion.KeywordCompletion("solve"        , Priority.High),
+      Completion.KeywordCompletion("spawn"        , Priority.Low),
+      Completion.KeywordCompletion("static"       , Priority.Lowest),
+      Completion.KeywordCompletion("Static"       , Priority.Lower),
       // T
-      Completion.KeywordCompletion("throw"    , Priority.Lowest),
-      Completion.KeywordCompletion("true"     , Priority.Higher),
-      Completion.KeywordCompletion("try"      , Priority.High),
-      Completion.KeywordCompletion("typematch", Priority.Low),
+      Completion.KeywordCompletion("throw"      , Priority.Lowest),
+      Completion.KeywordLiteralCompletion("true", Priority.Higher),
+      Completion.KeywordCompletion("try"        , Priority.High),
+      Completion.KeywordCompletion("typematch"  , Priority.Low),
       // U    
       // experiments on occurrences in stdlib shows the *exact* same amount of
       // occurrences of these `unsafe` and `use`. However, I'm fairly confident that
       // `use` would occur much more often in most programs.
       Completion.KeywordCallCompletion("unchecked_cast", Priority.Lower),
-      Completion.KeywordCompletion("unsafe"   , Priority.Low),
-      Completion.KeywordCompletion("use"      , Priority.High),
+      Completion.KeywordCompletion("unsafe"            , Priority.Low),
+      Completion.KeywordCompletion("use"               , Priority.High),
       // V
       Completion.KeywordCollectionCompletion("Vector", Priority.Low),
       // W
@@ -161,8 +161,8 @@ object KeywordCompleter {
   def getInstanceKeywords: Iterable[Completion] =
     List(
       Completion.KeywordCompletion("override", Priority.Low),
-      Completion.KeywordCompletion("pub", Priority.Low),
-      Completion.KeywordCompletion("def", Priority.Low)
+      Completion.KeywordCompletion("pub"     , Priority.Low),
+      Completion.KeywordCompletion("def"     , Priority.Low)
     )      
 
   /**
