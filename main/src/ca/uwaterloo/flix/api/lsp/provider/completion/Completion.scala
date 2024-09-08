@@ -47,9 +47,9 @@ sealed trait Completion {
         textEdit = TextEdit(context.range, s"$name "),
         kind = CompletionItemKind.Keyword)
     case Completion.CollectionKeywordCompletion(name, priority) =>
-      CompletionItem(label = name,
+      CompletionItem(label = s"$name#{...}",
         sortText = Priority.toSortText(priority, name),
-        textEdit = TextEdit(context.range, s"$name#{ $${1:item} }"),
+        textEdit = TextEdit(context.range, s"$name#{$${1:}}"),
         insertTextFormat = InsertTextFormat.Snippet,
         kind = CompletionItemKind.Keyword)
     case Completion.LabelCompletion(label, prefix) =>
