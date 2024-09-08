@@ -46,6 +46,12 @@ sealed trait Completion {
         sortText = Priority.toSortText(priority, name),
         textEdit = TextEdit(context.range, s"$name "),
         kind = CompletionItemKind.Keyword)
+    case Completion.KeywordCallCompletion(name, priority) =>
+      CompletionItem(label = s"$name(...)",
+        sortText = Priority.toSortText(priority, name),
+        textEdit = TextEdit(context.range, s"$name($${1:})"),
+        insertTextFormat = InsertTextFormat.Snippet,
+        kind = CompletionItemKind.Keyword)
     case Completion.CollectionKeywordCompletion(name, priority) =>
       CompletionItem(label = s"$name#{...}",
         sortText = Priority.toSortText(priority, name),
@@ -326,6 +332,11 @@ object Completion {
     * @param priority the completion priority of the keyword.
     */
   case class KeywordCompletion(name: String, priority: Priority) extends Completion
+
+  /**
+    * Represents a completion for a keyword with call syntax (i.e. `checked_cast`)
+    */
+  case class KeywordCallCompletion(name: String, priority: Priority) extends Completion
 
   /**
     * Represents a collection keyword completion (i.e. `Hash#{}`)
