@@ -67,7 +67,7 @@ object KeywordCompleter {
     List(
       // A
       Completion.KeywordCompletion("and"      , Priority.Higher),
-      Completion.CollectionKeywordCompletion("Array", Priority.Low),
+      Completion.KeywordCollectionCompletion("Array", Priority.Low),
       Completion.KeywordCompletion("as"       , Priority.High),
       // C
       Completion.KeywordCompletion("catch"        , Priority.High),
@@ -104,9 +104,9 @@ object KeywordCompleter {
       Completion.KeywordCompletion("lazy"          , Priority.Low),
       Completion.KeywordCompletion("let"           , Priority.High),
       // Strange, but in the std lib this occurs much less than `lazy`
-      Completion.CollectionKeywordCompletion("List", Priority.Lower),
+      Completion.KeywordCollectionCompletion("List", Priority.Lower),
       // M
-      Completion.CollectionKeywordCompletion("Map", Priority.Low),
+      Completion.KeywordCollectionCompletion("Map", Priority.Low),
       Completion.KeywordCallCompletion("masked_cast"  , Priority.Lower),
       Completion.KeywordCompletion("match"        , Priority.High),
       // N
@@ -130,7 +130,7 @@ object KeywordCompleter {
       // in most programs, set constructions are likely more common
       // than extracting data from datalog.
       Completion.KeywordCompletion("select"   , Priority.Higher),
-      Completion.CollectionKeywordCompletion("Set", Priority.Highest),
+      Completion.KeywordCollectionCompletion("Set", Priority.Highest),
       Completion.KeywordCompletion("solve"    , Priority.High),
       Completion.KeywordCompletion("spawn"    , Priority.Low),
       Completion.KeywordCompletion("static"   , Priority.Lowest),
@@ -148,7 +148,7 @@ object KeywordCompleter {
       Completion.KeywordCompletion("unsafe"   , Priority.Low),
       Completion.KeywordCompletion("use"      , Priority.High),
       // V
-      Completion.CollectionKeywordCompletion("Vector", Priority.Low),
+      Completion.KeywordCollectionCompletion("Vector", Priority.Low),
       // W
       Completion.KeywordCompletion("without"  , Priority.Default),
       // Y

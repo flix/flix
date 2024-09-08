@@ -52,7 +52,7 @@ sealed trait Completion {
         textEdit = TextEdit(context.range, s"$name($${1:})"),
         insertTextFormat = InsertTextFormat.Snippet,
         kind = CompletionItemKind.Keyword)
-    case Completion.CollectionKeywordCompletion(name, priority) =>
+    case Completion.KeywordCollectionCompletion(name, priority) =>
       CompletionItem(label = s"$name#{...}",
         sortText = Priority.toSortText(priority, name),
         textEdit = TextEdit(context.range, s"$name#{$${1:}}"),
@@ -341,7 +341,7 @@ object Completion {
   /**
     * Represents a collection keyword completion (i.e. `Hash#{}`)
     */
-  case class CollectionKeywordCompletion(name: String, priority: Priority) extends Completion
+  case class KeywordCollectionCompletion(name: String, priority: Priority) extends Completion
 
   /**
     * Represents a label completion.
