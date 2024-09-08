@@ -35,15 +35,15 @@ object KeywordCompleter {
       Completion.KeywordCompletion("eff"      , Priority.Low),
       Completion.KeywordCompletion("enum"     , Priority.High),
       // I
-      Completion.KeywordCompletion("import"   , Priority.Low),
+      Completion.KeywordCompletion("import"   , Priority.High),
       Completion.KeywordCompletion("inline"   , Priority.Low),
-      Completion.KeywordCompletion("instance" , Priority.High),
+      Completion.KeywordCompletion("instance" , Priority.Higher),
       // M
       Completion.KeywordCompletion("mod"      , Priority.Default),
       // P
       Completion.KeywordCompletion("pub"      , Priority.Default),
       // R
-      Completion.KeywordCompletion("restrictable", Priority.Low),
+      Completion.KeywordCompletion("restrictable", Priority.Default),
       // S
       Completion.KeywordCompletion("sealed"   , Priority.Low),
       Completion.KeywordCompletion("struct"   , Priority.High),
