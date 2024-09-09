@@ -241,7 +241,7 @@ object FastSetUnification {
       *
       * The intersection
       * {{{
-      * elemsPos = Some({e1, e2}),
+      * elemPos = Some({e1, e2}),
       * cstsPos =  Set( c1, c2),
       * varsPos =  Set( x1, x2),
       * elemNeg = Some({e3, e4}),
@@ -254,7 +254,7 @@ object FastSetUnification {
       *
       * Property: An empty intersection is [[Univ]].
       *
-      * Invariant: `elemsPos` and `elemNeg` are disjoint.
+      * Invariant: `elemPos` and `elemNeg` are disjoint.
       *
       * Invariant: There is at least two formulas in the intersection.
       *
@@ -265,13 +265,13 @@ object FastSetUnification {
       */
     @nowarn
     final case class Inter private(
-                                    elemsPos: Option[ElemSet], cstsPos: Set[Cst], varsPos: Set[Var],
+                                    elemPos: Option[ElemSet], cstsPos: Set[Cst], varsPos: Set[Var],
                                     elemNeg: Option[ElemSet], cstsNeg: Set[Cst], varsNeg: Set[Var],
                                     other: List[SetFormula]
                                   ) extends SetFormula {
       assert(!varsPos.exists(varsNeg.contains), message = this.toString)
       assert(!cstsPos.exists(cstsNeg.contains), message = this.toString)
-      assert(iteratorSizeGreaterEq(subformulasOfInter(this), 2), message = this.toString)
+      assert(iteratorSizeGreaterEq(subformulasOf(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other), 2), message = this.toString)
     }
 
     /**
@@ -279,7 +279,7 @@ object FastSetUnification {
       *
       * The union
       * {{{
-      * elemsPos = Some({e1, e2}),
+      * elemPos = Some({e1, e2}),
       * cstsPos =  Set( c1, c2),
       * varsPos =  Set( x1, x2),
       * elemNeg = Some({e3, e4}),
@@ -292,7 +292,7 @@ object FastSetUnification {
       *
       * Property: An empty union is [[Empty]].
       *
-      * Invariant: `elemsPos` and `elemNeg` are disjoint.
+      * Invariant: `elemPos` and `elemNeg` are disjoint.
       *
       * Invariant: There is at least two formulas in the union.
       *
@@ -309,7 +309,7 @@ object FastSetUnification {
                                   ) extends SetFormula {
       assert(!varsPos.exists(varsNeg.contains), message = this.toString)
       assert(!cstsPos.exists(cstsNeg.contains), message = this.toString)
-      assert(iteratorSizeGreaterEq(subformulasOfUnion(this), 2), message = this.toString)
+      assert(iteratorSizeGreaterEq(subformulasOf(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other), 2), message = this.toString)
     }
 
     /** Returns a singleton [[ElemSet]]. */
@@ -724,7 +724,7 @@ object FastSetUnification {
     }
 
     /** Returns an iterator of the subterms of the union or intersection parts. */
-    def subformulasOf(
+    private def subformulasOf(
                        elemPos: Iterable[ElemSet], cstsPos: Iterable[Cst], varsPos: Iterable[Var],
                        elemNeg: Iterable[ElemSet], cstsNeg: Iterable[Cst], varsNeg: Iterable[Var],
                        other: Iterable[SetFormula]
@@ -738,17 +738,7 @@ object FastSetUnification {
         other.iterator
     }
 
-    def subformulasOfUnion(i: Union): Iterator[SetFormula] = {
-      val Union(elemsPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other) = i
-      subformulasOf(elemsPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other)
-    }
-
-    def subformulasOfInter(i: Inter): Iterator[SetFormula] = {
-      val Inter(elemsPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other) = i
-      subformulasOf(elemsPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other)
-    }
-
-    def iteratorSizeGreaterEq[T](i: Iterator[T], size: Int): Boolean = {
+    private def iteratorSizeGreaterEq[T](i: Iterator[T], size: Int): Boolean = {
       @tailrec
       def helper(accSize: Int): Boolean = {
         if (accSize >= size) true
