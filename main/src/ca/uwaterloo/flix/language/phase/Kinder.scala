@@ -1241,7 +1241,7 @@ object Kinder {
     * This is roughly analogous to the reassembly of expressions under a type environment, except that:
     *   - Kind errors may be discovered here as they may not have been found during inference (or inference may not have happened at all).
     */
-  private def visitType(tpe0: UnkindedType, expectedKind: Kind, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[Type, KindError] = tpe0 match {
+  private def visitType(tpe0: UnkindedType, expectedKind: Kind, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): Type = tpe0 match {
     case tvar: UnkindedType.Var => visitTypeVar(tvar, expectedKind, kenv)
 
     case UnkindedType.Cst(cst, loc) =>
@@ -1249,43 +1249,34 @@ object Kinder {
       unify(expectedKind, kind) match {
         case Some(_) => Validation.success(Type.Cst(cst, loc))
         case None =>
-          val e = KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc)
-          Validation.toSoftFailure(Type.freshError(Kind.Error, loc), e)
+          sctx.errors.add(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc))
+          Type.freshError(Kind.Error, loc)
       }
 
     case UnkindedType.Apply(t10, t20, loc) =>
-      val t2Val = visitType(t20, Kind.Wild, kenv, taenv, root)
-      flatMapN(t2Val) {
-        t2 =>
-          val k1 = Kind.Arrow(t2.kind, expectedKind)
-          val t1Val = visitType(t10, k1, kenv, taenv, root)
-          mapN(t1Val) {
-            t1 => mkApply(t1, t2, loc)
-          }
-      }
+      val t2 = visitType(t20, Kind.Wild, kenv, taenv, root)
+      val k1 = Kind.Arrow(t2.kind, expectedKind)
+      val t1 = visitType(t10, k1, kenv, taenv, root)
+      mkApply(t1, t2, loc)
 
     case UnkindedType.Ascribe(t, k, loc) =>
       unify(k, expectedKind) match {
         case Some(kind) => visitType(t, kind, kenv, taenv, root)
         case None =>
-          val e = KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = k, loc)
-          Validation.toSoftFailure(Type.freshError(Kind.Error, loc), e)
+          sctx.errors.add(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = k, loc))
+          Type.freshError(Kind.Error, loc)
       }
 
     case UnkindedType.Alias(cst, args0, t0, loc) =>
       taenv(cst.sym) match {
         case KindedAst.TypeAlias(_, _, _, _, tparams, tpe, _) =>
-          val argsVal = traverse(tparams.zip(args0)) {
-            case (tparam, arg) => visitType(arg, tparam.sym.kind, kenv, taenv, root)
-          }
-          val tpeVal = visitType(t0, tpe.kind, kenv, taenv, root)
-          flatMapN(argsVal, tpeVal) {
-            case (args, t) => unify(t.kind, expectedKind) match {
-              case Some(_) => Validation.success(Type.Alias(cst, args, t, loc))
-              case None =>
-                val e = KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = t.kind, loc)
-                Validation.toSoftFailure(Type.freshError(Kind.Error, loc), e)
-            }
+          val args = tparams.zip(args0).map { case (tparam, arg) => visitType(arg, tparam.sym.kind, kenv, taenv, root) }
+          val t = visitType(t0, tpe.kind, kenv, taenv, root)
+          unify(t.kind, expectedKind) match {
+            case Some(_) => Type.Alias(cst, args, t, loc)
+            case None =>
+              sctx.errors.add(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = t.kind, loc))
+              Type.freshError(Kind.Error, loc)
           }
       }
 
@@ -1299,13 +1290,11 @@ object Kinder {
           unify(k0, expectedKind) match {
             case Some(kind) =>
               val innerExpectedKind = getTraitKind(trt)
-              val argVal = visitType(arg0, innerExpectedKind, kenv, taenv, root)
-              mapN(argVal) {
-                case arg => Type.AssocType(cst, arg, kind, loc)
-              }
+              val arg = visitType(arg0, innerExpectedKind, kenv, taenv, root)
+              Type.AssocType(cst, arg, kind, loc)
             case None =>
-              val e = KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = k0, loc)
-              Validation.toSoftFailure(Type.freshError(Kind.Error, loc), e)
+              sctx.errors.add(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = k0, loc))
+              Type.freshError(Kind.Error, loc)
           }
       }
 
@@ -1313,13 +1302,11 @@ object Kinder {
       val kind = Kind.mkArrow(arity)
       unify(kind, expectedKind) match {
         case Some(_) =>
-          val effVal = visitEffectDefaultPure(eff0, kenv, taenv, root)
-          mapN(effVal) {
-            case eff => Type.mkApply(Type.Cst(TypeConstructor.Arrow(arity), loc), List(eff), loc)
-          }
+          val eff = visitEffectDefaultPure(eff0, kenv, taenv, root)
+            Type.mkApply(Type.Cst(TypeConstructor.Arrow(arity), loc), List(eff), loc)
         case None =>
-          val e = KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc)
-          Validation.toSoftFailure(Type.freshError(Kind.Error, loc), e)
+          sctx.errors.add(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc))
+          Type.freshError(Kind.Error, loc)
       }
 
     case UnkindedType.Enum(sym, loc) =>
