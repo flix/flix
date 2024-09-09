@@ -259,6 +259,7 @@ class Flix {
     "Fixpoint/Ast/PrecedenceGraph.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/PrecedenceGraph.flix"),
     "Fixpoint/Ast/Ram.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/Ram.flix"),
 
+    "Abort.flix" -> LocalResource.get("/src/library/Abort.flix"),
     "Eff/Random.flix" -> LocalResource.get("/src/library/Eff/Random.flix"),
 
     "Graph.flix" -> LocalResource.get("/src/library/Graph.flix"),
