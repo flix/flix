@@ -45,7 +45,7 @@ object WithCompleter {
         name = sym.toString
         completion = if (currentWordIsWith) s"with $name" else name
       } yield {
-        Completion.WithCompletion(completion, Priority.highest(name), TextEdit(context.range, completion),
+        Completion.WithCompletion(completion, Priority.Highest, TextEdit(context.range, completion),
           Some(trt.doc.text), InsertTextFormat.PlainText)
       }
     } else if (withPattern.matches(context.prefix) || currentWordIsWith) {
@@ -56,7 +56,7 @@ object WithCompleter {
           val application = s"$name[$hole]"
           val completion = if (currentWordIsWith) s"with $application" else application
           val label = if (currentWordIsWith) s"with $name[...]" else s"$name[...]"
-          Completion.WithCompletion(label, Priority.highest(name), TextEdit(context.range, completion),
+          Completion.WithCompletion(label, Priority.Highest, TextEdit(context.range, completion),
             Some(trt.doc.text), InsertTextFormat.Snippet)
       }
     } else {

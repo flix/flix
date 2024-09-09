@@ -29,17 +29,24 @@ object KeywordCompleter {
     */
   def getDeclKeywords: Iterable[Completion] =
     List(
-      Completion.KeywordCompletion("def"      , Priority.highest("def")),
-      Completion.KeywordCompletion("pub"      , Priority.higher("pub")),
-      Completion.KeywordCompletion("enum"     , Priority.high("enum")),
-      Completion.KeywordCompletion("type"     , Priority.high("type")),
-      Completion.KeywordCompletion("instance" , Priority.high("instance")),
-      Completion.KeywordCompletion("mod"      , Priority.low("mod")),
-      Completion.KeywordCompletion("eff"      , Priority.lower("eff")),
-      Completion.KeywordCompletion("struct"   , Priority.lower("struct")),
-      Completion.KeywordCompletion("sealed"   , Priority.lowest("sealed")),
-      Completion.KeywordCompletion("trait"    , Priority.lowest("trait")),
-      Completion.KeywordCompletion("import"   , Priority.lowest("import")),
+      // D
+      Completion.KeywordCompletion("def"      , Priority.Default),
+      // E
+      Completion.KeywordCompletion("eff"      , Priority.Low),
+      Completion.KeywordCompletion("enum"     , Priority.High),
+      // I
+      Completion.KeywordCompletion("import"   , Priority.Low),
+      Completion.KeywordCompletion("instance" , Priority.High),
+      // M
+      Completion.KeywordCompletion("mod"      , Priority.Default),
+      // P
+      Completion.KeywordCompletion("pub"      , Priority.Default),
+      // S
+      Completion.KeywordCompletion("sealed"   , Priority.Low),
+      Completion.KeywordCompletion("struct"   , Priority.High),
+      // T
+      Completion.KeywordCompletion("trait"    , Priority.Low),
+      Completion.KeywordCompletion("type"     , Priority.High),
     )
 
   /**
@@ -47,7 +54,7 @@ object KeywordCompleter {
     */
   def getEnumKeywords: Iterable[Completion] =
     List(
-      Completion.KeywordCompletion("case", Priority.low("case"))
+      Completion.KeywordCompletion("case", Priority.Default)
     )
 
   /**
@@ -55,61 +62,86 @@ object KeywordCompleter {
     */
   def getExprKeywords: Iterable[Completion] =
     List(
-      "and",
-      "as",
-      "def",
-      "discard",
-      "do",
-      "else",
-      "false",
-      "forA",
-      "forM",
-      "force",
-      "foreach",
-      "from",
-      "if",
-      "inject",
-      "into",
-      "lazy",
-      "let",
-      "match",
-      "new",
-      "not",
-      "or",
-      "par",
-      "query",
-      "region",
-      "select",
-      "solve",
-      "spawn",
-      "struct",
-      "true",
-      "try",
-      "typematch",
-      "unsafe",
-      "use",
-      "without",
-      "yield"
-    ) map (name => Completion.KeywordCompletion(name, Priority.lower(name)))
+      // A
+      Completion.KeywordCompletion("and"      , Priority.High),
+      Completion.KeywordCompletion("as"       , Priority.Low),
+      // D
+      Completion.KeywordCompletion("def"      , Priority.Higher),
+      Completion.KeywordCompletion("discard"  , Priority.Low),
+      Completion.KeywordCompletion("do"       , Priority.High),
+      // E
+      Completion.KeywordCompletion("else"     , Priority.Default),
+      // F
+      Completion.KeywordCompletion("false"    , Priority.Higher),
+      Completion.KeywordCompletion("forA"     , Priority.Lowest),
+      Completion.KeywordCompletion("forM"     , Priority.Low),
+      Completion.KeywordCompletion("force"    , Priority.High),
+      Completion.KeywordCompletion("foreach"  , Priority.Lower),
+      Completion.KeywordCompletion("from"     , Priority.Highest),
+      // I
+      Completion.KeywordCompletion("if"       , Priority.Higher),
+      Completion.KeywordCompletion("inject"   , Priority.Low),
+      Completion.KeywordCompletion("into"     , Priority.High),
+      // L
+      Completion.KeywordCompletion("lazy"     , Priority.Low),
+      Completion.KeywordCompletion("let"      , Priority.High),
+      // M
+      Completion.KeywordCompletion("match"    , Priority.Default),
+      // N
+      Completion.KeywordCompletion("new"      , Priority.Low),
+      Completion.KeywordCompletion("not"      , Priority.High),
+      // O
+      Completion.KeywordCompletion("or"       , Priority.Default),
+      // P
+      Completion.KeywordCompletion("par"      , Priority.Default),
+      // Q
+      Completion.KeywordCompletion("query"    , Priority.Default),
+      // R
+      Completion.KeywordCompletion("region"   , Priority.Default),
+      // S
+      Completion.KeywordCompletion("select"   , Priority.Higher),
+      Completion.KeywordCompletion("solve"    , Priority.High),
+      Completion.KeywordCompletion("spawn"    , Priority.Low),
+      // T
+      Completion.KeywordCompletion("true"     , Priority.Higher),
+      Completion.KeywordCompletion("try"      , Priority.High),
+      Completion.KeywordCompletion("typematch", Priority.Low),
+      // U    
+      // experiments on occurrences in stdlib shows the *exact* same amount of
+      // occurrences of these two. However, I'm fairly confident that
+      // `use` would occur much more often in most programs.
+      Completion.KeywordCompletion("unsafe"   , Priority.Low),
+      Completion.KeywordCompletion("use"      , Priority.High),
+      // W
+      Completion.KeywordCompletion("without"  , Priority.Default),
+      // Y
+      Completion.KeywordCompletion("yield"    , Priority.Default)
+    )
            
   /**
     * Miscellaneous keywords.
     */
   def getOtherKeywords: Iterable[Completion] =
     List(
-      Completion.KeywordCompletion("with"             , Priority.highest("with")),
-      Completion.KeywordCompletion("law"              , Priority.higher("law")),
-      Completion.KeywordCompletion("@Test"            , Priority.high("@Test")),
-      Completion.KeywordCompletion("where"            , Priority.low("where")),
-      Completion.KeywordCompletion("fix"              , Priority.low("fix")),
-      Completion.KeywordCompletion("@Deprecated"      , Priority.lowest("@Deprecated")),
-      Completion.KeywordCompletion("@Parallel"        , Priority.lowest("@Parallel")),
-      Completion.KeywordCompletion("@ParallelWhenPure", Priority.lowest("@ParallelWhenPure")),
-      Completion.KeywordCompletion("@Lazy"            , Priority.lowest("@Lazy")),
-      Completion.KeywordCompletion("@LazyWhenPure"    , Priority.lowest("@LazyWhenPure")),
-      Completion.KeywordCompletion("Record"           , Priority.lowest("Record")),
-      Completion.KeywordCompletion("redef"            , Priority.lowest("redef")),
-      Completion.KeywordCompletion("Schema"           , Priority.lowest("Schema")),
+      // @
+      Completion.KeywordCompletion("@Deprecated"      , Priority.Lowest),
+      Completion.KeywordCompletion("@Lazy"            , Priority.High),
+      Completion.KeywordCompletion("@LazyWhenPure"    , Priority.Lower),
+      Completion.KeywordCompletion("@Parallel"        , Priority.Higher),
+      Completion.KeywordCompletion("@ParallelWhenPure", Priority.Low),
+      Completion.KeywordCompletion("@Test"            , Priority.Highest),
+      // F
+      Completion.KeywordCompletion("fix"              , Priority.Default),
+      // L
+      Completion.KeywordCompletion("law"              , Priority.Default),
+      // R
+      Completion.KeywordCompletion("Record"           , Priority.Low),
+      Completion.KeywordCompletion("redef"            , Priority.High),
+      // S
+      Completion.KeywordCompletion("Schema"           , Priority.Default),
+      // W
+      Completion.KeywordCompletion("where"            , Priority.Low),
+      Completion.KeywordCompletion("with"             , Priority.High),
     )
 
   /**
@@ -117,7 +149,7 @@ object KeywordCompleter {
     */
   def getTraitKeywords: Iterable[Completion] =
     List(
-      Completion.KeywordCompletion("def", Priority.lower("def")),
-      Completion.KeywordCompletion("pub", Priority.lower("pub")),
+      Completion.KeywordCompletion("def", Priority.Default),
+      Completion.KeywordCompletion("pub", Priority.Default),
     )
 }

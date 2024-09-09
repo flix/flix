@@ -44,7 +44,7 @@ object CompletionUtils {
     }
     val label = s"$clazz$name$typesString"
     val replace = s"$clazz$name$typesString: ${convertJavaClassToFlixType(returnType)} \\ IO$finalAliasSuggestion;"
-    (label, Priority.highest(s"${exec.getParameterCount}$label"), TextEdit(context.range, replace))
+    (label, Priority.toSortText(Priority.Highest, s"${exec.getParameterCount}$label"), TextEdit(context.range, replace))
   }
 
   private def isUnitType(tpe: Type): Boolean = tpe == Type.Unit

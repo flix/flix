@@ -17,14 +17,14 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.Ast._
+import ca.uwaterloo.flix.language.ast.Ast.*
 import ca.uwaterloo.flix.language.ast.SyntaxTree.{Tree, TreeKind}
-import ca.uwaterloo.flix.language.ast.shared.Fixity
+import ca.uwaterloo.flix.language.ast.shared.{Denotation, Fixity, Polarity}
 import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, Name, ReadAst, SemanticOp, SourceLocation, Symbol, SyntaxTree, Token, TokenKind, WeededAst}
-import ca.uwaterloo.flix.language.dbg.AstPrinter._
-import ca.uwaterloo.flix.language.errors.ParseError._
-import ca.uwaterloo.flix.language.errors.WeederError._
-import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.language.dbg.AstPrinter.*
+import ca.uwaterloo.flix.language.errors.ParseError.*
+import ca.uwaterloo.flix.language.errors.WeederError.*
+import ca.uwaterloo.flix.util.Validation.*
 import ca.uwaterloo.flix.util.collection.Chain
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result, Validation}
 
@@ -781,8 +781,12 @@ object Weeder2 {
           val maybeType = tryPick(TreeKind.Type.Type, tree)
           // Check for missing or illegal type ascription
           (maybeType, presence) match {
-            case (None, Presence.Required) => Validation.toHardFailure(MissingFormalParamAscription(ident.name, tree.loc))
-            case (Some(_), Presence.Forbidden) => Validation.toHardFailure(IllegalFormalParamAscription(tree.loc))
+            case (None, Presence.Required) =>
+              val e = MissingFormalParamAscription(ident.name, tree.loc)
+              Validation.toSoftFailure(FormalParam(ident, mods, Some(Type.Error(tree.loc.asSynthetic)), tree.loc), e)
+            case (Some(_), Presence.Forbidden) =>
+              val e = IllegalFormalParamAscription(tree.loc)
+              Validation.toSoftFailure(FormalParam(ident, mods, None, tree.loc), e)
             case (Some(typeTree), _) => mapN(Types.visitType(typeTree)) { tpe => FormalParam(ident, mods, Some(tpe), tree.loc) }
             case (None, _) => Validation.success(FormalParam(ident, mods, None, tree.loc))
           }
@@ -2512,7 +2516,7 @@ object Weeder2 {
             case (pats, None) =>
               // Check for `[[IllegalFixedAtom]]`.
               val errors = (polarity, fixity) match {
-                case (Ast.Polarity.Negative, Fixity.Fixed) => Some(IllegalFixedAtom(tree.loc))
+                case (Polarity.Negative, Fixity.Fixed) => Some(IllegalFixedAtom(tree.loc))
                 case _ => None
               }
               Validation.success(Predicate.Body.Atom(Name.mkPred(ident), Denotation.Relational, polarity, fixity, pats, tree.loc)
@@ -3182,11 +3186,11 @@ object Weeder2 {
   /**
     * Picks out the first sub-tree of a specific [[TreeKind]].
     */
-  private def pick(kind: TreeKind, tree: Tree): Validation[Tree, CompilationMessage] = {
+  private def pick(kind: TreeKind, tree: Tree, sctx: SyntacticContext = SyntacticContext.Unknown): Validation[Tree, CompilationMessage] = {
     tryPick(kind, tree) match {
       case Some(t) => Validation.success(t)
       case None =>
-        val error = NeedAtleastOne(NamedTokenSet.FromTreeKinds(Set(kind)), SyntacticContext.Unknown, loc = tree.loc)
+        val error = NeedAtleastOne(NamedTokenSet.FromTreeKinds(Set(kind)), sctx, loc = tree.loc)
         Validation.HardFailure(Chain(error))
     }
   }
