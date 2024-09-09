@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.StructCompletion
-import ca.uwaterloo.flix.api.lsp.provider.completion.TypeCompleter.{formatTParams, formatTParamsSnippet, getInternalPriority, priorityBoostForTypes}
+import ca.uwaterloo.flix.api.lsp.provider.completion.TypeCompleter.{formatTParams, formatTParamsSnippet, getInternalPriority}
 import ca.uwaterloo.flix.api.lsp.{Index, TextEdit}
 import ca.uwaterloo.flix.language.ast.Symbol.StructSym
 import ca.uwaterloo.flix.language.ast.{Symbol, TypedAst}
@@ -60,7 +60,7 @@ object StructCompleter {
     val sym = decl.sym
     val name = decl.sym.name
     val internalPriority = getInternalPriority(decl.loc, decl.sym.namespace)(ctx)
-    Completion.StructCompletion(sym, formatTParams(decl.tparams), priorityBoostForTypes(internalPriority(name))(ctx),
+    Completion.StructCompletion(sym, formatTParams(decl.tparams), internalPriority,
       TextEdit(ctx.range, s"${sym.toString}${formatTParamsSnippet(decl.tparams)}"), Some(decl.doc.text))
   }
 

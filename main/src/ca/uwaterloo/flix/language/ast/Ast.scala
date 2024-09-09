@@ -16,8 +16,8 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.ast.shared.Fixity
-import ca.uwaterloo.flix.language.errors.{ResolutionError, TypeError}
+import ca.uwaterloo.flix.language.ast.shared.{Denotation, Fixity, Polarity}
+import ca.uwaterloo.flix.language.errors.ResolutionError
 
 import java.util.Objects
 
@@ -362,6 +362,11 @@ object Ast {
       */
     def isLawful: Boolean = mod contains Modifier.Lawful
 
+   /**
+     * Returns `true` if these modifiers contain the mutable modifier.
+     */
+    def isMutable: Boolean = mod contains Modifier.Mutable
+
     /**
       * Returns `true` if these modifiers contain the override modifier.
       */
@@ -401,6 +406,12 @@ object Ast {
       */
     case object Lawful extends Modifier
 
+   /**
+     * The mutable modifier.
+     */
+
+    case object Mutable extends Modifier
+
     /**
       * The override modifier.
       */
@@ -420,44 +431,6 @@ object Ast {
       * The synthetic modifier.
       */
     case object Synthetic extends Modifier
-
-  }
-
-  /**
-    * A common super-type for the denotation of an atom.
-    */
-  sealed trait Denotation
-
-  object Denotation {
-
-    /**
-      * The atom has a relational denotation.
-      */
-    case object Relational extends Denotation
-
-    /**
-      * The atom has a latticenal denotation.
-      */
-    case object Latticenal extends Denotation
-
-  }
-
-  /**
-    * A common super-type for the polarity of an atom.
-    */
-  sealed trait Polarity
-
-  object Polarity {
-
-    /**
-      * The atom is positive.
-      */
-    case object Positive extends Polarity
-
-    /**
-      * The atom is negative.
-      */
-    case object Negative extends Polarity
 
   }
 
@@ -586,6 +559,11 @@ object Ast {
     * Represents a use of an enum case sym.
     */
   case class CaseSymUse(sym: Symbol.CaseSym, loc: SourceLocation)
+
+  /**
+    * Represents a use of a struct field sym.
+    */
+  case class StructFieldSymUse(sym: Symbol.StructFieldSym, loc: SourceLocation)
 
   /**
     * Represents a use of a restrictable enum case sym.

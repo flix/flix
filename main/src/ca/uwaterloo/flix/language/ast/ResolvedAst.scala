@@ -17,8 +17,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.Ast.Denotation
-import ca.uwaterloo.flix.language.ast.shared.{Fixity, Source}
+import ca.uwaterloo.flix.language.ast.shared.{Denotation, Fixity, Polarity, Source}
 import ca.uwaterloo.flix.util.collection.MultiMap
 
 import java.lang.reflect.{Constructor, Field, Method}
@@ -157,11 +156,11 @@ object ResolvedAst {
 
     case class ArrayLength(base: Expr, loc: SourceLocation) extends Expr
 
-    case class StructNew(sym: Symbol.StructSym, exps: List[(Symbol.StructFieldSym, Expr)], region: Expr, loc: SourceLocation) extends Expr
+    case class StructNew(sym: Symbol.StructSym, exps: List[(Ast.StructFieldSymUse, Expr)], region: Expr, loc: SourceLocation) extends Expr
 
-    case class StructGet(e: Expr, sym: Symbol.StructFieldSym, loc: SourceLocation) extends Expr
+    case class StructGet(e: Expr, sym: Ast.StructFieldSymUse, loc: SourceLocation) extends Expr
 
-    case class StructPut(exp1: Expr, sym: Symbol.StructFieldSym, exp2: Expr, loc: SourceLocation) extends Expr
+    case class StructPut(exp1: Expr, sym: Ast.StructFieldSymUse, exp2: Expr, loc: SourceLocation) extends Expr
 
     case class VectorLit(exps: List[Expr], loc: SourceLocation) extends Expr
 
@@ -307,7 +306,7 @@ object ResolvedAst {
 
     object Body {
 
-      case class Atom(pred: Name.Pred, den: Denotation, polarity: Ast.Polarity, fixity: Fixity, terms: List[Pattern], loc: SourceLocation) extends Predicate.Body
+      case class Atom(pred: Name.Pred, den: Denotation, polarity: Polarity, fixity: Fixity, terms: List[Pattern], loc: SourceLocation) extends Predicate.Body
 
       case class Functional(outVars: List[Symbol.VarSym], exp: Expr, loc: SourceLocation) extends Predicate.Body
 
@@ -329,7 +328,7 @@ object ResolvedAst {
 
     case class PredicateParamUntyped(pred: Name.Pred, loc: SourceLocation) extends PredicateParam
 
-    case class PredicateParamWithType(pred: Name.Pred, den: Ast.Denotation, tpes: List[UnkindedType], loc: SourceLocation) extends PredicateParam
+    case class PredicateParamWithType(pred: Name.Pred, den: Denotation, tpes: List[UnkindedType], loc: SourceLocation) extends PredicateParam
 
   }
 

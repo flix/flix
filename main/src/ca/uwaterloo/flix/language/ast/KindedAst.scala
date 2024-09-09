@@ -16,8 +16,7 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.ast.Ast.Denotation
-import ca.uwaterloo.flix.language.ast.shared.{Fixity, Source}
+import ca.uwaterloo.flix.language.ast.shared.{Denotation, Fixity, Polarity, Source}
 import ca.uwaterloo.flix.language.{CompilationMessage, ast}
 import ca.uwaterloo.flix.util.collection.MultiMap
 
@@ -140,11 +139,11 @@ object KindedAst {
 
     case class ArrayLength(base: Expr, evar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class StructNew(sym: Symbol.StructSym, fields: List[(Symbol.StructFieldSym, Expr)], region: Expr, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
+    case class StructNew(sym: Symbol.StructSym, fields: List[(Ast.StructFieldSymUse, Expr)], region: Expr, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class StructGet(exp: Expr, sym: Symbol.StructFieldSym, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
+    case class StructGet(exp: Expr, sym: Ast.StructFieldSymUse, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class StructPut(exp1: Expr, sym: Symbol.StructFieldSym, exp2: Expr, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
+    case class StructPut(exp1: Expr, sym: Ast.StructFieldSymUse, exp2: Expr, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
     case class VectorLit(exps: List[Expr], tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
@@ -291,7 +290,7 @@ object KindedAst {
 
     object Body {
 
-      case class Atom(pred: Name.Pred, den: Denotation, polarity: Ast.Polarity, fixity: Fixity, terms: List[Pattern], tvar: ast.Type.Var, loc: SourceLocation) extends Predicate.Body
+      case class Atom(pred: Name.Pred, den: Denotation, polarity: Polarity, fixity: Fixity, terms: List[Pattern], tvar: ast.Type.Var, loc: SourceLocation) extends Predicate.Body
 
       case class Functional(outVars: List[Symbol.VarSym], exp: Expr, loc: SourceLocation) extends Predicate.Body
 

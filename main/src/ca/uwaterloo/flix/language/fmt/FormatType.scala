@@ -19,6 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.VarText
 import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.fmt.FormatType.Mode
 import ca.uwaterloo.flix.language.phase.unification.{Substitution, TypeMinimization}
 
 object FormatType {
@@ -205,8 +206,13 @@ object FormatType {
       case SimpleType.Apply(_, _) => true
       case SimpleType.Var(_, _, _, _) => true
       case SimpleType.Tuple(_) => true
+      case SimpleType.JvmToType(_) => true
       case SimpleType.MethodReturnType(_) => true
       case SimpleType.FieldType(_) => true
+      case SimpleType.JvmConstructor(_, _) => true
+      case SimpleType.JvmField(_, _) => true
+      case SimpleType.JvmMethod(_, _, _) => true
+      case SimpleType.JvmStaticMethod(_, _, _) => true
       case SimpleType.Union(_) => true
       case SimpleType.Error => true
     }
@@ -359,6 +365,27 @@ object FormatType {
 
       case SimpleType.Tuple(elms) =>
         elms.map(visit(_, Mode.Type)).mkString("(", ", ", ")")
+
+      case SimpleType.JvmToType(tpe) =>
+        val arg = visit(tpe, Mode.Type)
+        "Jvm(" + arg + ")"
+
+      case SimpleType.JvmConstructor(name, tpes0) =>
+        val tpes = tpes0.map(visit(_, Mode.Type))
+        "Constructor(" + name + ", " + tpes.mkString(", ") + ")"
+
+      case SimpleType.JvmField(t0, name) =>
+        val t = visit(t0, Mode.Type)
+        "JvmField(" + t + ", " + name + ")"
+
+      case SimpleType.JvmMethod(t0, name, ts0) =>
+        val t = visit(t0, Mode.Type)
+        val ts = ts0.map(visit(_, Mode.Type))
+        "JvmMethod(" + t + ", " + name + ", " + ts.mkString(", ") + ")"
+
+      case SimpleType.JvmStaticMethod(clazz, name, ts0) =>
+        val ts = ts0.map(visit(_, Mode.Type))
+        "JvmMethod(" + clazz + ", " + name + ", " + ts.mkString(", ") + ")"
 
       case SimpleType.MethodReturnType(tpe) =>
         val arg = visit(tpe, Mode.Type)

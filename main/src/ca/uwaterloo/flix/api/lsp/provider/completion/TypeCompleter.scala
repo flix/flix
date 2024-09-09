@@ -26,31 +26,20 @@ object TypeCompleter {
     */
   def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] = {
     EnumCompleter.getCompletions(context) ++ TypeAliasCompleter.getCompletions(context) ++
-      TypeBuiltinCompleter.getCompletions(context) ++ ModuleCompleter.getCompletions(context) ++
+      TypeBuiltinCompleter.getCompletions ++ ModuleCompleter.getCompletions(context) ++
       StructCompleter.getCompletions(context)
   }
 
   /**
     * Get the internal priority from the TypedAst SourceLocation and namespace
     */
-  def getInternalPriority(loc: SourceLocation, ns: List[String])(implicit context: CompletionContext): String => String = {
+  def getInternalPriority(loc: SourceLocation, ns: List[String])(implicit context: CompletionContext): Priority = {
     if (loc.source.name == context.uri)
-      Priority.higher
+      Priority.Higher
     else if (ns.isEmpty)
-      Priority.lower
+      Priority.Low
     else
-      Priority.lowest
-  }
-
-  /**
-    * Boost priority if there's a colon immediately before the word the user's typing
-    */
-  def priorityBoostForTypes(name: String)(implicit context: CompletionContext): String = {
-    val typePriorityBoost = raw".*:\s*(?:[^\s]|(?:\s*,\s*))*".r
-    val typeAliasPriorityBoost = raw"\s*type\s+alias\s+.+\s*=\s*(?:[^\s]|(?:\s*,\s*))*".r
-    val priority = if ((typePriorityBoost matches context.prefix) || (typeAliasPriorityBoost matches context.prefix))
-      Priority.higher _ else Priority.lowest _
-    priority(name)
+      Priority.Lower
   }
 
   /**

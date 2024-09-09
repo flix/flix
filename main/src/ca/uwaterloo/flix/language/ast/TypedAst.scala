@@ -17,8 +17,8 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.Ast.{Denotation, LabelledPrecedenceGraph}
-import ca.uwaterloo.flix.language.ast.shared.{Fixity, Source}
+import ca.uwaterloo.flix.language.ast.Ast.LabelledPrecedenceGraph
+import ca.uwaterloo.flix.language.ast.shared.{Denotation, Fixity, Polarity, Source}
 import ca.uwaterloo.flix.util.collection.{ListMap, MultiMap}
 
 import java.lang.reflect.{Constructor, Field, Method}
@@ -180,11 +180,11 @@ object TypedAst {
       def tpe: Type = Type.Unit
     }
 
-    case class StructNew(sym: Symbol.StructSym, fields: List[(Symbol.StructFieldSym, Expr)], region: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class StructNew(sym: Symbol.StructSym, fields: List[(Ast.StructFieldSymUse, Expr)], region: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class StructGet(exp: Expr, sym: Symbol.StructFieldSym, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class StructGet(exp: Expr, sym: Ast.StructFieldSymUse, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class StructPut(exp1: Expr, sym: Symbol.StructFieldSym, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class StructPut(exp1: Expr, sym: Ast.StructFieldSymUse, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class VectorLit(exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
@@ -337,7 +337,7 @@ object TypedAst {
 
     object Body {
 
-      case class Atom(pred: Name.Pred, den: Denotation, polarity: Ast.Polarity, fixity: Fixity, terms: List[Pattern], tpe: Type, loc: SourceLocation) extends Predicate.Body
+      case class Atom(pred: Name.Pred, den: Denotation, polarity: Polarity, fixity: Fixity, terms: List[Pattern], tpe: Type, loc: SourceLocation) extends Predicate.Body
 
       case class Functional(outVars: List[Symbol.VarSym], exp: Expr, loc: SourceLocation) extends Predicate.Body
 
