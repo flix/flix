@@ -32,7 +32,7 @@ object BaseEffects {
     * A pre-computed map from methods to effects.
     */
   private val methodEffs: Map[Method, Set[Symbol.EffectSym]] = Map(
-    classOf[java.lang.System].getMethod("currentTimeMillis") -> Set(Symbol.Clock)
+    classOf[java.lang.System].getMethod("currentTimeMillis") -> Set(Symbol.Time)
   )
 
   /**
