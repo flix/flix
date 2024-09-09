@@ -1083,7 +1083,7 @@ object WeederError {
     * @param star whether the choose is of the star kind.
     * @param loc  the location where the error occurs.
     */
-  case class UnsupportedRestrictedChoicePattern(star: Boolean, loc: SourceLocation) extends WeederError with Unrecoverable {
+  case class UnsupportedRestrictedChoicePattern(star: Boolean, loc: SourceLocation) extends WeederError with Recoverable {
     private val operationName: String = if (star) "choose*" else "choose"
 
     def summary: String = s"Unsupported $operationName pattern, only enums with variables are allowed."
