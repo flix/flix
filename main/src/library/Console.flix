@@ -60,10 +60,10 @@ mod Console {
             f()
         } with Console {
             def readln(k)        = k(System.console().readLine())
-            def print(s, k)      = { System.out.print(s); k() }
-            def printErr(s, k)   = { System.err.print(s); k() }
-            def println(s, k)    = { System.out.println(s); k() }
-            def printlnErr(s, k) = { System.err.println(s); k() }
+            def print(s, k)      = { System.out.print(s); System.out.flush(); k() }
+            def printErr(s, k)   = { System.err.print(s); System.out.flush(); k() }
+            def println(s, k)    = { System.out.println(s); System.out.flush(); k() }
+            def printlnErr(s, k) = { System.err.println(s); System.out.flush(); k() }
         }
 
 }
