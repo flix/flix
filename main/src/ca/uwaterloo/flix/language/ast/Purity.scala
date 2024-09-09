@@ -23,9 +23,9 @@ sealed trait Purity
 /**
   * Represents the purity of an expression.
   *
-  * - Pure expressions are treated as mathematical functions.
-  * - Impure expressions can use mutation or interact with the system.
-  * - Control-Impure expressions can do all the above but also use unhandled
+  *   - Pure expressions are treated as mathematical functions.
+  *   - Impure expressions can use mutation or interact with the system.
+  *   - Control-Impure expressions can do all the above but also use unhandled
   *   algebraic effects.
   *
   * In terms of the set of expressions that is allowed under each effect the
@@ -170,6 +170,10 @@ object Purity {
     case Type.Alias(_, _, _, _) =>
       throw InternalCompilerException(s"Unexpected formula '$f'", f.loc)
     case Type.AssocType(_, _, _, _) =>
+      throw InternalCompilerException(s"Unexpected formula '$f'", f.loc)
+    case Type.JvmToType(_, _) =>
+      throw InternalCompilerException(s"Unexpected formula '$f'", f.loc)
+    case Type.UnresolvedJvmType(_, _) =>
       throw InternalCompilerException(s"Unexpected formula '$f'", f.loc)
   }
 

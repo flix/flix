@@ -43,51 +43,52 @@ object SimplifiedAstPrinter {
   }
 
   /**
-    * Returns the [[DocAst.Expression]] representation of `e`.
+    * Returns the [[DocAst.Expr]] representation of `e`.
     */
-  def print(e: SimplifiedAst.Expr): DocAst.Expression = e match {
+  def print(e: SimplifiedAst.Expr): DocAst.Expr = e match {
     case Cst(cst, _, _) => ConstantPrinter.print(cst)
     case Var(sym, _, _) => printVarSym(sym)
-    case Def(sym, _, _) => DocAst.Expression.Def(sym)
-    case Lambda(fparams, exp, _, _) => DocAst.Expression.Lambda(fparams.map(printFormalParam), print(exp))
-    case Apply(exp, args, _, _, _) => DocAst.Expression.App(print(exp), args.map(print))
-    case LambdaClosure(cparams, fparams, _, exp, _, _) => DocAst.Expression.Lambda((cparams ++ fparams).map(printFormalParam), print(exp))
+    case Def(sym, _, _) => DocAst.Expr.Def(sym)
+    case Lambda(fparams, exp, _, _) => DocAst.Expr.Lambda(fparams.map(printFormalParam), print(exp))
+    case Apply(exp, args, _, _, _) => DocAst.Expr.App(print(exp), args.map(print))
+    case LambdaClosure(cparams, fparams, _, exp, _, _) => DocAst.Expr.Lambda((cparams ++ fparams).map(printFormalParam), print(exp))
     case ApplyAtomic(op, exps, tpe, _, _) => OpPrinter.print(op, exps.map(print), MonoTypePrinter.print(tpe))
-    case ApplyClo(exp, args, _, _, _) => DocAst.Expression.ApplyClo(print(exp), args.map(print), None)
-    case ApplyDef(sym, args, _, _, _) => DocAst.Expression.ApplyDef(sym, args.map(print), None)
-    case IfThenElse(exp1, exp2, exp3, _, _, _) => DocAst.Expression.IfThenElse(print(exp1), print(exp2), print(exp3))
-    case Branch(exp, branches, _, _, _) => DocAst.Expression.Branch(print(exp), MapOps.mapValues(branches)(print))
-    case JumpTo(sym, _, _, _) => DocAst.Expression.JumpTo(sym)
-    case Let(sym, exp1, exp2, _, _, _) => DocAst.Expression.Let(printVarSym(sym), Some(MonoTypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
-    case LetRec(sym, exp1, exp2, _, _, _) => DocAst.Expression.LetRec(printVarSym(sym), Some(MonoTypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
-    case Scope(sym, exp, _, _, _) => DocAst.Expression.Scope(printVarSym(sym), print(exp))
-    case TryCatch(exp, rules, _, _, _) => DocAst.Expression.TryCatch(print(exp), rules.map {
+    case ApplyClo(exp, args, _, _, _) => DocAst.Expr.ApplyClo(print(exp), args.map(print), None)
+    case ApplyDef(sym, args, _, _, _) => DocAst.Expr.ApplyDef(sym, args.map(print), None)
+    case IfThenElse(exp1, exp2, exp3, _, _, _) => DocAst.Expr.IfThenElse(print(exp1), print(exp2), print(exp3))
+    case Stm(exp1, exp2, _, _, _) => DocAst.Expr.Stm(print(exp1), print(exp2))
+    case Branch(exp, branches, _, _, _) => DocAst.Expr.Branch(print(exp), MapOps.mapValues(branches)(print))
+    case JumpTo(sym, _, _, _) => DocAst.Expr.JumpTo(sym)
+    case Let(sym, exp1, exp2, _, _, _) => DocAst.Expr.Let(printVarSym(sym), Some(MonoTypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
+    case LetRec(sym, exp1, exp2, _, _, _) => DocAst.Expr.LetRec(printVarSym(sym), Some(MonoTypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
+    case Scope(sym, exp, _, _, _) => DocAst.Expr.Scope(printVarSym(sym), print(exp))
+    case TryCatch(exp, rules, _, _, _) => DocAst.Expr.TryCatch(print(exp), rules.map {
       case SimplifiedAst.CatchRule(sym, clazz, exp) =>
         (sym, clazz, print(exp))
     })
-    case TryWith(exp, effUse, rules, _, _, _) => DocAst.Expression.TryWith(print(exp), effUse.sym, rules.map {
+    case TryWith(exp, effUse, rules, _, _, _) => DocAst.Expr.TryWith(print(exp), effUse.sym, rules.map {
       case SimplifiedAst.HandlerRule(op, fparams, exp) =>
         (op.sym, fparams.map(printFormalParam), print(exp))
     })
-    case Do(op, exps, _, _, _) => DocAst.Expression.Do(op.sym, exps.map(print))
-    case NewObject(name, clazz, tpe, _, methods, _) => DocAst.Expression.NewObject(name, clazz, MonoTypePrinter.print(tpe), methods.map {
+    case Do(op, exps, _, _, _) => DocAst.Expr.Do(op.sym, exps.map(print))
+    case NewObject(name, clazz, tpe, _, methods, _) => DocAst.Expr.NewObject(name, clazz, MonoTypePrinter.print(tpe), methods.map {
       case SimplifiedAst.JvmMethod(ident, fparams, exp, retTpe, _, _) =>
         DocAst.JvmMethod(ident, fparams.map(printFormalParam), print(exp), MonoTypePrinter.print(retTpe))
     })
   }
 
   /**
-    * Returns the [[DocAst.Expression.Ascription]] representation of `fp`.
+    * Returns the [[DocAst.Expr.Ascription]] representation of `fp`.
     */
-  private def printFormalParam(fp: SimplifiedAst.FormalParam): DocAst.Expression.Ascription = {
+  private def printFormalParam(fp: SimplifiedAst.FormalParam): DocAst.Expr.Ascription = {
     val SimplifiedAst.FormalParam(sym, _, tpe, _) = fp
-    DocAst.Expression.Ascription(printVarSym(sym), MonoTypePrinter.print(tpe))
+    DocAst.Expr.Ascription(printVarSym(sym), MonoTypePrinter.print(tpe))
   }
 
   /**
-    * Returns the [[DocAst.Expression]] representation of `sym`.
+    * Returns the [[DocAst.Expr]] representation of `sym`.
     */
-  private def printVarSym(sym: Symbol.VarSym): DocAst.Expression =
-    DocAst.Expression.Var(sym)
+  private def printVarSym(sym: Symbol.VarSym): DocAst.Expr =
+    DocAst.Expr.Var(sym)
 
 }

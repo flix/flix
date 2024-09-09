@@ -16,7 +16,9 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.{Ast, RigidityEnv, Scheme, SourceLocation, Symbol, Type, TypedAst}
+import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.language.errors.EntryPointError
 import ca.uwaterloo.flix.language.phase.unification.TraitEnvironment
 import ca.uwaterloo.flix.util.Validation.{flatMapN, mapN}
@@ -49,6 +51,9 @@ import scala.collection.mutable
   */
 object EntryPoint {
 
+  // We don't use regions, so we are safe to use the global scope everywhere in this phase.
+  private implicit val S: Scope = Scope.Top
+
   /**
     * The scheme of the entry point function.
     * `Unit -> Unit`
@@ -78,7 +83,7 @@ object EntryPoint {
       // Case 2: No entry point. Don't touch anything.
       case None => Validation.success(root.copy(reachable = getReachable(root)))
     }
-  }
+  }(DebugValidation())
 
   /**
    * Returns all reachable definitions.
@@ -86,7 +91,7 @@ object EntryPoint {
   private def getReachable(root: TypedAst.Root): Set[Symbol.DefnSym] = {
     val s = mutable.Set.empty[Symbol.DefnSym]
     for ((sym, defn) <- root.defs) {
-      if (defn.spec.ann.isBenchmark || defn.spec.ann.isTest) {
+      if (defn.spec.ann.isBenchmark || defn.spec.ann.isTest || defn.spec.ann.isExport) {
         s += sym
       }
     }
@@ -153,6 +158,7 @@ object EntryPoint {
         // Case 2: Multiple args. Error.
         case _ :: _ :: _ => Validation.toSoftFailure(None, EntryPointError.IllegalEntryPointArgs(sym, sym.loc))
         // Case 3: Empty arguments. Impossible since this is desugared to Unit.
+        // Resilience: OK because this is a desugaring that is always performed by the Weeder.
         case Nil => throw InternalCompilerException("Unexpected empty argument list.", loc)
       }
 
@@ -189,7 +195,7 @@ object EntryPoint {
       } else {
         // Delay ToString resolution if main has return type unit for testing with lib nix.
         val toString = root.traits(new Symbol.TraitSym(Nil, "ToString", SourceLocation.Unknown)).sym
-        if (TraitEnvironment.holds(Ast.TypeConstraint(Ast.TypeConstraint.Head(toString, SourceLocation.Unknown), resultTpe, SourceLocation.Unknown), traitEnv)) {
+        if (TraitEnvironment.holds(Ast.TraitConstraint(Ast.TraitConstraint.Head(toString, SourceLocation.Unknown), resultTpe, SourceLocation.Unknown), traitEnv)) {
           // Case 2: XYZ -> a with ToString[a]
           Validation.success(())
         } else {

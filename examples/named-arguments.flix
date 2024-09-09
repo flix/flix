@@ -7,10 +7,10 @@
 ///
 /// Returns true if the `sublist` is contained within the list `l`.
 ///
-pub def contains(sublist: {sublist = List[a]}, l: List[a]): Bool with Eq[a] = match (sublist.sublist, l) {
+pub def contains(sublist: {sublist = List[a]}, l: List[a]): Bool with Eq[a] = match (sublist#sublist, l) {
     case (Nil, _) => true
     case (_ :: _, Nil) => false
-    case (h1 :: t1, h2 :: t2) if h1 == h2 => contains(sublist = t1, t2) or contains(sublist = sublist.sublist, t2)
+    case (h1 :: t1, h2 :: t2) if h1 == h2 => contains(sublist = t1, t2) or contains(sublist = sublist#sublist, t2)
     case (sub, _ :: t2) => contains(sublist = sub, t2)
 }
 

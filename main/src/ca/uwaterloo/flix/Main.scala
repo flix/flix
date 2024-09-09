@@ -100,13 +100,16 @@ object Main {
       xnoboolunif = cmdOpts.xnoboolunif,
       xnoqmc = cmdOpts.xnoqmc,
       xnooptimizer = cmdOpts.xnooptimizer,
-      xprintphase = cmdOpts.xprintphase,
+      xprintphases = cmdOpts.xprintphases,
+      xnodeprecated = cmdOpts.xnodeprecated,
       xsummary = cmdOpts.xsummary,
       xfuzzer = cmdOpts.xfuzzer,
-      xparser = cmdOpts.xparser,
       xprinttyper = cmdOpts.xprinttyper,
+      xverifyeffects = cmdOpts.xverifyeffects,
+      xsubeffecting = cmdOpts.xsubeffecting,
       XPerfFrontend = cmdOpts.XPerfFrontend,
-      XPerfN = cmdOpts.XPerfN
+      XPerfN = cmdOpts.XPerfN,
+      xiterations = cmdOpts.xiterations,
     )
 
     // Don't use progress bar if benchmarking.
@@ -356,6 +359,7 @@ object Main {
                      xbenchmarkPhases: Boolean = false,
                      xbenchmarkFrontend: Boolean = false,
                      xbenchmarkThroughput: Boolean = false,
+                     xnodeprecated: Boolean = false,
                      xbddthreshold: Option[Int] = None,
                      xlib: LibLevel = LibLevel.All,
                      xnoboolcache: Boolean = false,
@@ -363,13 +367,15 @@ object Main {
                      xnoboolunif: Boolean = false,
                      xnoqmc: Boolean = false,
                      xnooptimizer: Boolean = false,
-                     xprintphase: Set[String] = Set.empty,
+                     xprintphases: Boolean = false,
                      xsummary: Boolean = false,
                      xfuzzer: Boolean = false,
-                     xparser: Boolean = false,
                      xprinttyper: Option[String] = None,
+                     xverifyeffects: Boolean = false,
+                     xsubeffecting: SubEffectLevel = SubEffectLevel.Nothing,
                      XPerfN: Option[Int] = None,
                      XPerfFrontend: Boolean = false,
+                     xiterations: Int = 1000,
                      files: Seq[File] = Seq())
 
   /**
@@ -421,10 +427,18 @@ object Main {
     * @param args the arguments array.
     */
   def parseCmdOpts(args: Array[String]): Option[CmdOpts] = {
-    implicit val readInclusion: scopt.Read[LibLevel] = scopt.Read.reads {
+    implicit val readLibLevel: scopt.Read[LibLevel] = scopt.Read.reads {
       case "nix" => LibLevel.Nix
       case "min" => LibLevel.Min
       case "all" => LibLevel.All
+      case arg => throw new IllegalArgumentException(s"'$arg' is not a valid library level. Valid options are 'all', 'min', and 'nix'.")
+    }
+
+    implicit val readSubEffectLevel: scopt.Read[SubEffectLevel] = scopt.Read.reads {
+      case "nothing" => SubEffectLevel.Nothing
+      case "lambdas" => SubEffectLevel.Lambdas
+      case "lambdas-and-instances" => SubEffectLevel.LambdasAndInstances
+      case "lambdas-and-defs" => SubEffectLevel.LambdasAndDefs
       case arg => throw new IllegalArgumentException(s"'$arg' is not a valid library level. Valid options are 'all', 'min', and 'nix'.")
     }
 
@@ -546,13 +560,17 @@ object Main {
       opt[LibLevel]("Xlib").action((arg, c) => c.copy(xlib = arg)).
         text("[experimental] controls the amount of std. lib. to include (nix, min, all).")
 
+      // Xno-deprecated
+      opt[Unit]("Xno-deprecated").action((_, c) => c.copy(xnodeprecated = true)).
+        text("[experimental] disables deprecated features.")
+
       // Xno-optimizer
       opt[Unit]("Xno-optimizer").action((_, c) => c.copy(xnooptimizer = true)).
         text("[experimental] disables compiler optimizations.")
 
       // Xprint-phase
-      opt[Seq[String]]("Xprint-phase").action((m, c) => c.copy(xprintphase = m.toSet)).
-        text("[experimental] prints the AST(s) after the given phase(s). 'all' prints all ASTs.")
+      opt[Unit]("Xprint-phases").action((_, c) => c.copy(xprintphases = true)).
+        text("[experimental] prints the ASTs after the each phase.")
 
       // Xbdd-threshold
       opt[Int]("Xbdd-threshold").action((n, c) => c.copy(xbddthreshold = Some(n))).
@@ -578,15 +596,25 @@ object Main {
       opt[Unit]("Xsummary").action((_, c) => c.copy(xsummary = true)).
         text("[experimental] prints a summary of the compiled modules.")
 
-      // Xfuzz
+      // Xfuzzer
       opt[Unit]("Xfuzzer").action((_, c) => c.copy(xfuzzer = true)).
-        text("enables compiler fuzzing.")
+        text("[experimental] enables compiler fuzzing.")
 
-      // Xparser
-      opt[Unit]("Xparser").action((_, c) => c.copy(xparser = true)).
-        text("[experimental] disables new experimental lexer and parser.")
+      // Xprint-typer
+      opt[String]("Xprint-typer").action((sym, c) => c.copy(xprinttyper = Some(sym))).
+        text("[experimental] writes constraints to dot files.")
 
-      opt[String]("Xprint-typer").action((sym, c) => c.copy(xprinttyper = Some(sym)))
+      // Xverify-effects
+      opt[String]("Xverify-effects").action((_, c) => c.copy(xverifyeffects = true)).
+        text("[experimental] verifies consistency of effects after typechecking")
+
+      // Xsubeffecting
+      opt[SubEffectLevel]("Xsubeffecting").action((level, c) => c.copy(xsubeffecting = level)).
+        text("[experimental] enables sub-effecting in select places")
+
+      // Xiterations
+      opt[Int]("Xiterations").action((n, c) => c.copy(xiterations = n)).
+        text("[experimental] sets the maximum number of constraint resolution iterations during typechecking")
 
       note("")
 

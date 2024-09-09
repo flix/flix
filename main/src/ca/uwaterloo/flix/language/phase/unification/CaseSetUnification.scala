@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.phase.unification.SetFormula._
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.collection.Bimap
@@ -29,7 +30,7 @@ object CaseSetUnification {
   /**
     * Returns the most general unifier of the two given set formulas `tpe1` and `tpe2`.
     */
-  def unify(tpe1: Type, tpe2: Type, renv0: RigidityEnv, cases: SortedSet[Symbol.RestrictableCaseSym], enumSym: Symbol.RestrictableEnumSym)(implicit flix: Flix): Result[Substitution, UnificationError] = {
+  def unify(tpe1: Type, tpe2: Type, renv0: RigidityEnv, cases: SortedSet[Symbol.RestrictableCaseSym], enumSym: Symbol.RestrictableEnumSym)(implicit scope: Scope, flix: Flix): Result[Substitution, UnificationError] = {
     ///
     /// Perform aggressive matching to optimize for common cases.
     ///
@@ -184,8 +185,8 @@ object CaseSetUnification {
 
   /**
     * A DNF formula is either:
-    * - a union of intersections of literals.
-    * - the universal set
+    *   - a union of intersections of literals.
+    *   - the universal set
     */
   private sealed trait Dnf
 
@@ -235,12 +236,11 @@ object CaseSetUnification {
   private def nnf(t: SetFormula)(implicit univ: Set[Int]): Nnf = t match {
     case Cst(syms) =>
       val lits: Set[Nnf] = syms.map(sym => Nnf.Singleton(Literal.Positive(Atom.Case(sym))))
-      lits.reduceLeftOption(Nnf.Union).getOrElse(Nnf.Empty)
+      lits.reduceLeftOption(Nnf.Union.apply).getOrElse(Nnf.Empty)
     case Var(sym) => Nnf.Singleton(Literal.Positive(Atom.Var(sym)))
     case Not(tpe) => nnfNot(tpe)
     case Or(tpe1, tpe2) => Nnf.Union(nnf(tpe1), nnf(tpe2))
     case And(tpe1, tpe2) => Nnf.Intersection(nnf(tpe1), nnf(tpe2))
-    case _ => throw InternalCompilerException(s"unexpected type: $t", SourceLocation.Unknown)
   }
 
   /**
@@ -249,7 +249,7 @@ object CaseSetUnification {
   private def nnfNot(t: SetFormula)(implicit univ: Set[Int]): Nnf = t match {
     case Cst(syms) =>
       val lits: Set[Nnf] = syms.map(sym => Nnf.Singleton(Literal.Negative(Atom.Case(sym))))
-      lits.reduceLeftOption(Nnf.Intersection).getOrElse(Nnf.All)
+      lits.reduceLeftOption(Nnf.Intersection.apply).getOrElse(Nnf.All)
     case Var(sym) => Nnf.Singleton(Literal.Negative(Atom.Var(sym)))
     case Not(tpe) => nnf(tpe)
     case Or(tpe1, tpe2) => Nnf.Intersection(
@@ -260,7 +260,6 @@ object CaseSetUnification {
       nnf(mkNot(tpe1)),
       nnf(mkNot(tpe2))
     )
-    case _ => throw InternalCompilerException(s"unexpected type: $t", SourceLocation.Unknown)
   }
 
   /**

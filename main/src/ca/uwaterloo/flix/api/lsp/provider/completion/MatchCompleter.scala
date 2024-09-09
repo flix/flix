@@ -20,11 +20,11 @@ import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.MatchCompletion
 import ca.uwaterloo.flix.language.ast.{TypeConstructor, TypedAst}
 
-object MatchCompleter extends Completer {
+object MatchCompleter {
   /**
     * Returns a List of Completion for match.
     */
-  override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[MatchCompletion] = {
+  def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[MatchCompletion] = {
     val matchPattern = raw".*\s*ma?t?c?h?\s?.*".r
 
     if (!(matchPattern matches context.prefix)) {

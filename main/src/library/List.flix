@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import java.util.{List => JList}
+
 ///
 /// The List type.
 ///
@@ -78,8 +80,8 @@ instance MonadZero[List] {
 instance MonadZip[List] {
     pub def zipWith(f: (a, b) -> c \ ef, xs: List[a], ys: List[b]): List[c] \ ef = List.zipWith(f, xs, ys)
     pub def zipWithA(f: (a, b) -> f[c] \ ef, xs: List[a], ys: List[b]): f[List[c]] \ ef with Applicative[f] = List.zipWithA(f, xs, ys)
-    pub override def zip(xs: List[a], ys: List[b]): List[(a, b)] = List.zip(xs, ys)
-    pub override def unzip(xs: List[(a, b)]): (List[a], List[b]) = List.unzip(xs)
+    redef zip(xs: List[a], ys: List[b]): List[(a, b)] = List.zip(xs, ys)
+    redef unzip(xs: List[(a, b)]): (List[a], List[b]) = List.unzip(xs)
 }
 
 instance Foldable[List] {
@@ -90,20 +92,20 @@ instance Foldable[List] {
 
 instance UnorderedFoldable[List] {
     pub def foldMap(f: a -> b \ ef, l: List[a]): b \ ef with CommutativeMonoid[b] = List.foldMap(f, l)
-    override pub def isEmpty(l: List[a]): Bool = List.isEmpty(l)
-    override pub def exists(f: a -> Bool \ ef, l: List[a]): Bool \ ef = List.exists(f, l)
-    override pub def forAll(f: a -> Bool \ ef, l: List[a]): Bool \ ef = List.forAll(f, l)
-    override pub def memberOf(x: a, l: List[a]): Bool with Eq[a] = List.memberOf(x, l)
+    redef isEmpty(l: List[a]): Bool = List.isEmpty(l)
+    redef exists(f: a -> Bool \ ef, l: List[a]): Bool \ ef = List.exists(f, l)
+    redef forAll(f: a -> Bool \ ef, l: List[a]): Bool \ ef = List.forAll(f, l)
+    redef memberOf(x: a, l: List[a]): Bool with Eq[a] = List.memberOf(x, l)
 }
 
 instance Traversable[List] {
     pub def traverse(f: a -> m[b] \ ef, t: List[a]): m[List[b]] \ ef with Applicative[m] = List.traverse(f, t)
-    pub override def sequence(t: List[m[a]]): m[List[a]] with Applicative[m] = List.sequence(t)
+    redef sequence(t: List[m[a]]): m[List[a]] with Applicative[m] = List.sequence(t)
 }
 
 instance Filterable[List] {
     pub def filterMap(f: a -> Option[b] \ ef, x: List[a]): List[b] \ ef = List.filterMap(f, x)
-    pub override def filter(f: a -> Bool \ ef, x: List[a]): List[a] \ ef = List.filter(f, x)
+    redef filter(f: a -> Bool \ ef, x: List[a]): List[a] \ ef = List.filter(f, x)
 }
 
 instance Witherable[List]
@@ -116,17 +118,25 @@ instance Monoid[List[a]] {
     pub def empty(): List[a] = Nil
 }
 
-instance Collectable[List] {
-    pub def collect(iter: Iterator[a, ef, r]): List[a] \ { r, ef } with Order[a] = Iterator.toList(iter)
+instance Collectable[List[a]] {
+    type Elm = a
+    pub def collect(iter: Iterator[a, ef, r]): List[a] \ { r, ef } = Iterator.toList(iter)
 }
 
-instance Iterable[List] {
+instance Iterable[List[a]] {
+    type Elm = a
     pub def iterator(rc: Region[r], l: List[a]): Iterator[a, r, r] \ r = List.iterator(rc, l)
 }
 
 instance ToJava[List[a]] {
-    type O = ##java.util.List
-    pub def toJava(l: List[a]): ##java.util.List \ IO = Adaptor.toList(l)
+    type Out = JList
+    type Aef = IO
+    pub def toJava(l: List[a]): JList \ IO = Adaptor.toList(l)
+}
+
+instance FromJava[List[a]] {
+    type In = JList
+    pub def fromJava(l: JList): List[a] = Adaptor.fromList(l)
 }
 
 mod List {
@@ -182,7 +192,7 @@ mod List {
     }
 
     ///
-    /// Returns the length of `l`.
+    /// Returns the number of elements in `l`.
     ///
     pub def length(l: List[a]): Int32 =
         def loop(ll, acc) = match ll {
@@ -190,6 +200,11 @@ mod List {
             case _ :: xs => loop(xs, acc + 1)
         };
         loop(l, 0)
+
+    ///
+    /// Returns the number of elements in `l`.
+    ///
+    pub def size(l: List[a]): Int32 = length(l)
 
     ///
     /// Returns `l2` appended to `l1`.
@@ -464,7 +479,7 @@ mod List {
     /// Returns `l` with every occurrence of `src` replaced by `dst`.
     ///
     pub def replace(src: {src = a}, dst: {dst = a}, l: List[a]): List[a] with Eq[a] =
-        map(e -> if (e == src.src) dst.dst else e, l)
+        map(e -> if (e == src#src) dst#dst else e, l)
 
     ///
     /// Returns `l2` with the `n` elements starting at index `i` replaced with the elements of `l1`.
@@ -764,14 +779,14 @@ mod List {
         def loop(ll, i, k) = match ll {
             case Nil     => k(Nil)
             case x :: xs =>
-                if (i < start.start)
+                if (i < start#start)
                     loop(xs, i + 1, k)
-                else if (i >= end.end)
+                else if (i >= end#end)
                     k(Nil)
                 else
                     loop(xs, i + 1, ks -> k(x :: ks))
         };
-        if (start.start < end.end) loop(l, 0, identity) else Nil
+        if (start#start < end#end) loop(l, 0, identity) else Nil
 
     ///
     /// Returns a pair of lists `(l1, l2)`.
@@ -1162,7 +1177,7 @@ mod List {
             let a = Array.empty(rc, length(l));
             forEach(match (i, b) -> Array.put(b, i, a), zipWithIndex(l));
             a
-        }
+    }
 
     ///
     /// Returns the list `l` as a vector.
@@ -1324,9 +1339,9 @@ mod List {
     /// Returns an iterator over `l`.
     ///
     pub def iterator(rc: Region[r], xs: List[a]): Iterator[a, r, r] \ r =
-        let ls = ref xs @ rc;
+        let ls = Ref.fresh(rc, xs);
         let next = () -> {
-            match (deref ls) {
+            match (Ref.get(ls)) {
                 case Nil     => None
                 case x :: rs => Ref.put(rs, ls); Some(x)
             }

@@ -613,7 +613,7 @@ mod Test.Exp.ReifyType {
     def isAppliedType03(): Bool = not isAppliedType(123)
 
     def isEmptyRecord(x: {| r}): Bool = typematch x {
-        case _: {} => true
+        case _: {|} => true
         case _: _ => false
     }
 

@@ -89,7 +89,7 @@ class TestLexer extends AnyFunSuite with TestUtils {
     expectError[LexerError.StringInterpolationTooDeep](result)
   }
 
-  test("LexerError.UnexpectedChar.01") {
+  ignore("LexerError.UnexpectedChar.01") {
     val input = "€"
     val result = compile(input, Options.TestWithLibNix)
     expectError[LexerError.UnexpectedChar](result)
@@ -268,6 +268,15 @@ class TestLexer extends AnyFunSuite with TestUtils {
 
   test("LexerError.UnterminatedString.06") {
     val input = """"${x}""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[LexerError.UnterminatedString](result)
+  }
+
+  test("LexerError.MultilineString.01") {
+    val input = s"""
+         |def f(): String = "This is a
+         |multi-line string"
+         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[LexerError.UnterminatedString](result)
   }

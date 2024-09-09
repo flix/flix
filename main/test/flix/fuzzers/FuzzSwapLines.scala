@@ -17,6 +17,7 @@ package flix.fuzzers
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.nio.file.{Files, Paths}
@@ -50,6 +51,12 @@ class FuzzSwapLines extends AnyFunSuite with TestUtils {
     compileWithSwappedLines(filepath.getFileName.toString, lines)
   }
 
+  test("ford-fulkerson") {
+    val filepath = Paths.get("examples/larger-examples/datalog/ford-fulkerson.flix")
+    val lines = Files.lines(filepath)
+    compileWithSwappedLines(filepath.getFileName.toString, lines)
+  }
+
   /**
     * We compile variants of the given program where we swap [[numSwapLines]] lines.
     * For example, in a file with 100 lines and numSwapLines = 10, we try all swaps with 10 of the lines.
@@ -69,7 +76,7 @@ class FuzzSwapLines extends AnyFunSuite with TestUtils {
       for (j <- i + 1 until numSwapLinesFixed) {
         val jStepped = Math.min(j * step, numLines)
         val src = lines.updated(iStepped, lines(jStepped)).updated(jStepped, lines(iStepped)).mkString("\n")
-        flix.addSourceCode(s"$name-swap-lines-$iStepped-and-$jStepped", src)
+        flix.addSourceCode(s"$name-swap-lines-$iStepped-and-$jStepped", src)(SecurityContext.AllPermissions)
         flix.compile() // We simply care that this does not crash.
       }
     }

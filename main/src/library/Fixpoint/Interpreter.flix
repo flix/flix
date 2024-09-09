@@ -29,8 +29,8 @@ mod Fixpoint.Interpreter {
 
     @Internal
     pub def interpretWithDatabase(rc: Region[r], db: Database[v, r], stmt: RamStmt[v]): Database[v, r] \ r with Order[v] =
-        masked_cast(Fixpoint.Debugging.notifyPreInterpret(stmt));
-        evalStmt(rc, db, stmt);
+        let s = Fixpoint.Debugging.notifyPreInterpret(stmt);
+        evalStmt(rc, db, s);
         db
 
     def evalStmt(rc: Region[r], db: Database[v, r], stmt: RamStmt[v]): Unit \ r with Order[v] =

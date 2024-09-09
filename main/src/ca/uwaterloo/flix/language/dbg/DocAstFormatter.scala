@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.dbg
 
 import ca.uwaterloo.flix.language.ast.Ast.VarText
 import ca.uwaterloo.flix.language.dbg.Doc._
-import ca.uwaterloo.flix.language.dbg.DocAst.Expression._
+import ca.uwaterloo.flix.language.dbg.DocAst.Expr._
 import ca.uwaterloo.flix.language.dbg.DocAst._
 
 import scala.annotation.tailrec
@@ -30,41 +30,41 @@ object DocAstFormatter {
     val Program(enums0, defs0) = p
     val enums = enums0.map {
       case Enum(_, _, sym, tparams, cases) =>
-        val tparamsf = if (tparams.isEmpty) empty else text("[") :: sep(text(", "), tparams.map {
+        val tparamsf = if (tparams.isEmpty) empty else text("[") |::| sep(text(", "), tparams.map {
           case DocAst.TypeParam(sym) => text(sym.text match {
             case VarText.Absent => "?"
             case VarText.SourceText(s) => s
           })
-        }) :: text("]")
+        }) |::| text("]")
         val casesf = curly(sep(breakWith(" "), cases.map {
           case Case(sym, tpe@Type.Tuple(_)) =>
-            text("case") +: text(sym.name) :: formatType(tpe, paren = false)
+            text("case") +: text(sym.name) |::| formatType(tpe, paren = false)
           case Case(sym, tpe) =>
-            text("case") +: text(sym.name) :: parens(formatType(tpe, paren = false))
+            text("case") +: text(sym.name) |::| parens(formatType(tpe, paren = false))
         }))
-        val d = text("enum") +: text(sym.toString) :: tparamsf +: casesf
+        val d = text("enum") +: text(sym.toString) |::| tparamsf +: casesf
         ((sym.namespace :+ sym.name: Seq[String], sym.name), d)
     }
     val defs = defs0.map {
-      case Def(_, _, sym, parameters, resType, effect, body) =>
+      case DocAst.Def(_, _, sym, parameters, resType, effect, body) =>
         val name = sym.toString
         val args = parameters.map(aux(_, paren = false))
         val resTypef = formatType(resType, paren = false)
         val effectf = formatEffect(effect, paren = false)
         val bodyf = format(body)
         val d = group(
-          text("def") +: text(name) :: tuple(args) ::
-            text(":") +: group(resTypef :: effectf +: text("=") :: breakWith(" ")) :: curlyOpen(bodyf)
+          text("def") +: text(name) |::| tuple(args) |::|
+            text(":") +: group(resTypef |::| effectf +: text("=") |::| breakWith(" ")) |::| curlyOpen(bodyf)
         )
         ((sym.namespace: Seq[String], sym.name), d)
     }
     (enums ++ defs).sortBy(_._1).map(_._2)
   }
 
-  def format(d: Expression)(implicit i: Indent): Doc =
+  def format(d: Expr)(implicit i: Indent): Doc =
     aux(d, paren = false, inBlock = true)
 
-  private def aux(d: Expression, paren: Boolean = true, inBlock: Boolean = false)(implicit i: Indent): Doc = {
+  private def aux(d: Expr, paren: Boolean = true, inBlock: Boolean = false)(implicit i: Indent): Doc = {
     val doc = d match {
       case Unit =>
         text("()")
@@ -75,9 +75,9 @@ object DocAstFormatter {
       case Tag(sym, List(Unit)) =>
         text(sym.toString)
       case Tag(sym, List(Tuple(args))) =>
-        text(sym.toString) :: tuple(args.map(aux(_, paren = false)))
+        text(sym.toString) |::| tuple(args.map(aux(_, paren = false)))
       case Tag(sym, args) =>
-        text(sym.toString) :: tuple(args.map(aux(_, paren = false)))
+        text(sym.toString) |::| tuple(args.map(aux(_, paren = false)))
       case AsIs(s) =>
         text(s)
       case Meta(s) =>
@@ -91,9 +91,9 @@ object DocAstFormatter {
       case Keyword(word, d) =>
         text(word) +: aux(d)
       case Unary(op, d) =>
-        text(op) :: aux(d)
+        text(op) |::| aux(d)
       case UnaryRightAfter(d, op) =>
-        aux(d) :: text(op)
+        aux(d) |::| text(op)
       case Binary(d1, op, d2) =>
         aux(d1) +: text(op) +: aux(d2)
       case IfThenElse(cond, thn, els) =>
@@ -108,7 +108,7 @@ object DocAstFormatter {
         val branchHead = aux(d, paren = false, inBlock = true)
         val delimitedBranches = branches.toList.map { case (sym, dd) =>
           val labelf = aux(dd, paren = false, inBlock = true)
-          text(sym.toString) :: text(":") +: breakIndent(labelf)
+          text(sym.toString) |::| text(":") +: breakIndent(labelf)
         }
         group(
           text("branch") +: curlyOpen(branchHead) +:
@@ -123,7 +123,7 @@ object DocAstFormatter {
             case Some(g) => text("if") +: aux(g, paren = false, inBlock = true) +: Doc.empty
           }
           val bodyF = aux(body, paren = false, inBlock = true)
-          text("case") +: patF +: guardF :: text("=>") :: breakIndent(bodyF)
+          text("case") +: patF +: guardF |::| text("=>") |::| breakIndent(bodyF)
         }
         group(
           text("match") +: scrutineeF +: curlyOpen(
@@ -136,7 +136,7 @@ object DocAstFormatter {
           val patF = aux(pat, paren = false)
           val tpeF = formatType(tpe, paren = false)
           val bodyF = aux(body, paren = false, inBlock = true)
-          text("case") +: patF +: text(":") +: tpeF +: text("=>") :: breakIndent(bodyF)
+          text("case") +: patF +: text(":") +: tpeF +: text("=>") |::| breakIndent(bodyF)
         }
         group(
           text("typematch") +: scrutineeF +: curlyOpen(
@@ -144,9 +144,11 @@ object DocAstFormatter {
           )
         )
       case Dot(d1, d2) =>
-        aux(d1) :: text(".") :: aux(d2)
+        aux(d1) |::| text(".") |::| aux(d2)
       case DoubleDot(d1, d2) =>
-        aux(d1) :: text("..") :: aux(d2)
+        aux(d1) |::| text("..") |::| aux(d2)
+      case Hash(d1, d2) =>
+        aux(d1) |::| text("#") |::| aux(d2)
       case s: Stm =>
         formatLetBlock(s, inBlock)
       case l: Let =>
@@ -159,17 +161,17 @@ object DocAstFormatter {
         text("region") +: regionf +: curly(bodyf)
       case Lambda(fparams, body) =>
         val params = fparams.map(_.v).map(aux(_, paren = false))
-        tuplish(params) +: text("->") :: breakIndent(aux(body, paren = false))
+        tuplish(params) +: text("->") |::| breakIndent(aux(body, paren = false))
       case App(f, args) =>
-        aux(f) :: tuple(args.map(aux(_, paren = false)))
+        aux(f) |::| tuple(args.map(aux(_, paren = false)))
       case SquareApp(f, args) =>
-        aux(f) :: squareTuple(args.map(aux(_, paren = false)))
+        aux(f) |::| squareTuple(args.map(aux(_, paren = false)))
       case DoubleSquareApp(f, args) =>
-        aux(f) :: doubleSquareTuple(args.map(aux(_, paren = false)))
+        aux(f) |::| doubleSquareTuple(args.map(aux(_, paren = false)))
       case Assign(d1, d2) =>
         aux(d1) +: text(":=") +: aux(d2)
       case Ascription(v, tpe) =>
-        aux(v) :: text(":") +: formatType(tpe, paren = false)
+        aux(v) |::| text(":") +: formatType(tpe, paren = false)
       case DoubleKeyword(word1, d1, word2, d2E) =>
         val d2Part = d2E match {
           case Left(d2) => aux(d2, paren = false)
@@ -180,8 +182,8 @@ object DocAstFormatter {
         val rs = semiSepOpt(rules.map {
           case (sym, clazz, rule) =>
             val rulef = aux(rule, paren = false, inBlock = true)
-            text("case") +: text(sym.toString) :: text(":") +:
-              formatJavaClass(clazz) +: text("=>") :: breakIndent(rulef)
+            text("case") +: text(sym.toString) |::| text(":") +:
+              formatJavaClass(clazz) +: text("=>") |::| breakIndent(rulef)
         })
         val bodyf = aux(d, paren = false, inBlock = true)
         group(
@@ -192,8 +194,8 @@ object DocAstFormatter {
         val rs = semiSepOpt(rules.map {
           case (sym, params, rule) =>
             val rulef = aux(rule, paren = false, inBlock = true)
-            text("def") +: text(sym.toString) :: tuple(params.map(aux(_, paren = false))) +:
-              text("=") :: breakWith(" ") :: curlyOpen(rulef)
+            text("def") +: text(sym.toString) |::| tuple(params.map(aux(_, paren = false))) +:
+              text("=") |::| breakWith(" ") |::| curlyOpen(rulef)
         })
         val bodyf = aux(d, paren = false, inBlock = true)
         group(
@@ -235,10 +237,10 @@ object DocAstFormatter {
         aux(d1, paren = false)
       case Let(v, tpe, bind, _) =>
         val bindf = aux(bind, paren = false)
-        text("let") +: aux(v) :: formatAscription(tpe) +: text("=") +: bindf
+        text("let") +: aux(v) |::| formatAscription(tpe) +: text("=") +: bindf
       case LetRec(v, tpe, bind, _) =>
         val bindf = aux(bind, paren = false)
-        text("letrec") +: aux(v) :: formatAscription(tpe) +: text("=") +: bindf
+        text("letrec") +: aux(v) |::| formatAscription(tpe) +: text("=") +: bindf
     }
     val delimitedBinders = semiSep(bindersf :+ bodyf)
     if (inBlock) group(delimitedBinders)
@@ -266,9 +268,9 @@ object DocAstFormatter {
   private def formatAscription(tpe: Option[Type])(implicit i: Indent): Doc =
     tpe.map(t => text(":") +: formatType(t)).getOrElse(empty)
 
-  private def collectLetBinders(d: Expression): (List[LetBinder], Expression) = {
+  private def collectLetBinders(d: Expr): (List[LetBinder], Expr) = {
     @tailrec
-    def chase(d0: Expression, acc: List[LetBinder]): (List[LetBinder], Expression) = {
+    def chase(d0: Expr, acc: List[LetBinder]): (List[LetBinder], Expr) = {
       d0 match {
         case s@Stm(_, d2) =>
           chase(d2, s :: acc)
@@ -283,9 +285,9 @@ object DocAstFormatter {
     chase(d, List())
   }
 
-  private def collectRecordOps(d: Expression)(implicit i: Indent): (List[RecordOp], Option[Expression]) = {
+  private def collectRecordOps(d: Expr)(implicit i: Indent): (List[RecordOp], Option[Expr]) = {
     @tailrec
-    def chase(d0: Expression, acc: List[RecordOp]): (List[RecordOp], Option[Expression]) = {
+    def chase(d0: Expr, acc: List[RecordOp]): (List[RecordOp], Option[Expr]) = {
       d0 match {
         case re@RecordExtend(_, _, rest) =>
           chase(rest, re :: acc)
@@ -316,20 +318,20 @@ object DocAstFormatter {
       case Type.App(obj, Nil) =>
         text(obj)
       case Type.App(obj, args) =>
-        text(obj) :: squareTuple(args.map(formatType(_, paren = false)))
+        text(obj) |::| squareTuple(args.map(formatType(_, paren = false)))
       case Type.Tuple(elms) =>
         tuple(elms.map(formatType(_, paren = false)))
       case arrow@Type.Arrow(_, _) =>
         val (curriedArgs, res) = collectArrowTypes(arrow)
         val formattedArgs = curriedArgs.map {
-          case ts@(Type.Tuple(_) :: Nil) =>
+          case ts@Type.Tuple(_) :: Nil =>
             tuple(ts.map(formatType(_, paren = false)))
-          case ts@(_ :: Nil) =>
+          case ts@_ :: Nil =>
             tuplish(ts.map(formatType(_, paren = true)))
           case ts =>
             tuplish(ts.map(formatType(_, paren = false)))
         }
-        group(nest(sep(text(" ->") :: breakWith(" "), formattedArgs :+ formatType(res))))
+        group(nest(sep(text(" ->") |::| breakWith(" "), formattedArgs :+ formatType(res))))
       case Type.RecordEmpty =>
         text("{}")
       case re: Type.RecordExtend =>
@@ -351,21 +353,25 @@ object DocAstFormatter {
         val (predicates, restOpt) = collectSchemaTypes(se)
         val predicatesf = predicates.map {
           case Type.SchemaExtend(name, Type.Tuple(elms), _) =>
-            text(name) :: tuple(elms.map(formatType(_, paren = false)))
+            text(name) |::| tuple(elms.map(formatType(_, paren = false)))
           case Type.SchemaExtend(name, Type.Unit, _) =>
             text(name)
           case Type.SchemaExtend(name, otherType, _) =>
-            text(name) :: parens(formatType(otherType, paren = false))
+            text(name) |::| parens(formatType(otherType, paren = false))
         }
         restOpt match {
           case Some(rest) =>
             val restf = formatType(rest, paren = false)
-            text("#") :: curly(commaSep(predicatesf) +: text("|") +\: restf)
+            text("#") |::| curly(commaSep(predicatesf) +: text("|") +\: restf)
           case None =>
-            text("#") :: curlyTuple(predicatesf)
+            text("#") |::| curlyTuple(predicatesf)
         }
       case Type.Native(clazz) =>
         formatJavaClass(clazz)
+      case Type.JvmConstructor(constructor) =>
+        formatJavaClass(constructor.getClass)
+      case Type.JvmMethod(method) =>
+        formatJavaClass(method.getClass)
       case Type.Meta(s) =>
         text(meta(s))
     }
@@ -433,9 +439,9 @@ object DocAstFormatter {
 
   private def formatEffect(effect: Eff, paren: Boolean = true)(implicit i: Indent): Doc = effect match {
     case Eff.Pure => empty
-    case Eff.Impure => text(" ") :: text("\\") +: text("Impure")
-    case Eff.ControlImpure =>  text(" ") :: text("\\") +: text("ControlImpure")
-    case Eff.AsIs(s) => text(" ") :: text("\\") +: text(s)
+    case Eff.Impure => text(" ") |::| text("\\") +: text("Impure")
+    case Eff.ControlImpure => text(" ") |::| text("\\") +: text("ControlImpure")
+    case Eff.AsIs(s) => text(" ") |::| text("\\") +: text(s)
   }
 
 }

@@ -9,7 +9,7 @@ mod Test.Handler.Gen.Int8 {
 
     def sample(limit: Int8): List[Int8] =
         region rc {
-            let counter = ref 0i8 @ rc;
+            let counter = Ref.fresh(rc, 0i8);
             try {
                 generator(); Nil
             } with Gen {
@@ -20,7 +20,7 @@ mod Test.Handler.Gen.Int8 {
         }
 
     def getAndInc(r: Ref[Int8, r]): Int8 \ r =
-        let i = deref r;
+        let i = Ref.get(r);
         Ref.put(i + 1i8, r);
         i
 

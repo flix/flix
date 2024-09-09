@@ -19,9 +19,9 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Type}
-import ca.uwaterloo.flix.language.errors.{Recoverable, TypeError, Unrecoverable}
+import ca.uwaterloo.flix.language.dbg.AstPrinter._
+import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.unification.Substitution
-import ca.uwaterloo.flix.util.collection.Chain
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
 import scala.collection.immutable.SortedSet
@@ -39,7 +39,7 @@ object Regions {
 
     // TODO: Instances
     Validation.toSuccessOrSoftFailure((), errors)
-  }
+  }(DebugValidation()(DebugNoOp()))
 
   private def visitDef(def0: Def)(implicit flix: Flix): List[TypeError.RegionVarEscapes] =
     visitExp(def0.exp)(Nil, flix)
@@ -67,7 +67,7 @@ object Regions {
       visitExp(exp) ++ checkType(tpe, loc)
 
     case Expr.Apply(exp, exps, tpe, _, loc) =>
-      visitExp(exp) ++ checkType(tpe, loc)
+      exps.flatMap(visitExp) ++ visitExp(exp) ++ checkType(tpe, loc)
 
     case Expr.Unary(_, exp, tpe, _, loc) =>
       visitExp(exp) ++ checkType(tpe, loc)
@@ -152,6 +152,15 @@ object Regions {
     case Expr.ArrayStore(exp1, exp2, exp3, _, loc) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
+    case Expr.StructNew(_, fields, region, tpe, _, loc) =>
+      fields.map{case (k, v) => v}.flatMap(visitExp) ++ visitExp(region) ++ checkType(tpe, loc)
+
+    case Expr.StructGet(e, _, tpe, _, loc) =>
+      visitExp(e) ++ checkType(tpe, loc)
+
+    case Expr.StructPut(e1, _, e2, tpe, _, loc) =>
+      visitExp(e1) ++ visitExp(e2) ++ checkType(tpe, loc)
+
     case Expr.VectorLit(exps, tpe, _, loc) =>
       exps.flatMap(visitExp) ++ checkType(tpe, loc)
 
@@ -160,15 +169,6 @@ object Regions {
 
     case Expr.VectorLength(exp, loc) =>
       visitExp(exp)
-
-    case Expr.Ref(exp1, exp2, tpe, _, loc) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ checkType(tpe, loc)
-
-    case Expr.Deref(exp, tpe, _, loc) =>
-      visitExp(exp) ++ checkType(tpe, loc)
-
-    case Expr.Assign(exp1, exp2, tpe, _, loc) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ checkType(tpe, loc)
 
     case Expr.Ascribe(exp, tpe, _, loc) =>
       visitExp(exp) ++ checkType(tpe, loc)
@@ -193,6 +193,9 @@ object Regions {
         case CatchRule(sym, clazz, e) => visitExp(e)
       }
       rulesErrors ++ visitExp(exp) ++ checkType(tpe, loc)
+
+    case Expr.Throw(exp, tpe, eff, loc) =>
+      visitExp(exp) ++ checkType(tpe, loc)
 
     case Expr.TryWith(exp, _, rules, tpe, _, loc) =>
       val rulesErrors = rules.flatMap {
@@ -344,7 +347,11 @@ object Regions {
     case _: Type.Cst => Nil
     case Type.Apply(tpe1, tpe2, _) => boolTypesOf(tpe1) ::: boolTypesOf(tpe2)
     case Type.Alias(_, _, tpe, _) => boolTypesOf(tpe)
-    case Type.AssocType(_, arg, _, _) => boolTypesOf(arg) // TODO ASSOC-TYPES ???
+    case Type.JvmToType(tpe, _) => boolTypesOf(tpe)
+    case Type.UnresolvedJvmType(member, _) => member.getTypeArguments.flatMap(boolTypesOf)
+
+    // TODO CONSTR-SOLVER-2 Hack! We should visit the argument, but since we don't reduce, we get false positives here.
+    case Type.AssocType(_, _, _, _) => Nil
   }
 
   /**

@@ -334,9 +334,9 @@ mod TestMutQueue {
     def testIterator01(): Bool = region rc {
         let mq = MutQueue.empty(rc);
         let it = MutQueue.iterator(rc, mq);
-        let sum = ref 0 @ rc;
-        Iterator.forEach(x -> Ref.put(deref sum + x, sum), it);
-        deref sum == 0
+        let sum = Ref.fresh(rc, 0);
+        Iterator.forEach(x -> Ref.put(Ref.get(sum) + x, sum), it);
+        Ref.get(sum) == 0
     }
 
     @Test
@@ -352,9 +352,9 @@ mod TestMutQueue {
         let mq = MutQueue.empty(rc);
         MutQueue.enqueueAll(mq, "a" :: "c" :: "g" :: "t" :: Nil);
         let it = MutQueue.iterator(rc, mq);
-        let str = ref "" @ rc;
-        Iterator.forEach(x -> Ref.put(String.concat(x, deref str), str), it);
-        deref str == "acgt"
+        let str = Ref.fresh(rc, "");
+        Iterator.forEach(x -> Ref.put(String.concat(x, Ref.get(str)), str), it);
+        Ref.get(str) == "acgt"
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -449,46 +449,93 @@ mod TestMutQueue {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def testArray01(): Bool = region rc {
+    def testToArray01(): Bool = region rc {
         let mq = (MutQueue.empty(rc) : MutQueue[Int32, rc]);
         Array.toString(MutQueue.toArray(rc, mq)) == "Array#{}"
     }
 
     @Test
-    def testArray02(): Bool = region rc {
+    def testToArray02(): Bool = region rc {
         let mq = (MutQueue.empty(rc) : MutQueue[Int32, rc]);
         MutQueue.enqueue(mq, 1);
         Array.toString(MutQueue.toArray(rc, mq)) == "Array#{1}"
     }
 
     @Test
-    def testArray03(): Bool = region rc {
+    def testToArray03(): Bool = region rc {
         let mq = (MutQueue.empty(rc) : MutQueue[Int32, rc]);
         MutQueue.enqueueAll(mq, 1 :: 2 :: Nil);
         Array.toString(MutQueue.toArray(rc, mq)) == "Array#{2, 1}"
     }
 
     @Test
-    def testArray04(): Bool = region rc {
+    def testToArray04(): Bool = region rc {
         let mq = (MutQueue.empty(rc) : MutQueue[Int32, rc]);
         MutQueue.enqueueAll(mq, 2 :: 1 :: Nil);
         Array.toString(MutQueue.toArray(rc, mq)) == "Array#{2, 1}"
     }
 
     @Test
-    def testArray05(): Bool = region rc {
+    def testToArray05(): Bool = region rc {
         let mq = (MutQueue.empty(rc) : MutQueue[Int32, rc]);
         MutQueue.enqueueAll(mq, 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: Nil);
         Array.toString(MutQueue.toArray(rc, mq)) == "Array#{8, 7, 6, 4, 3, 2, 5, 1}"
     }
 
     @Test
-    def testArray06(): Bool = region rc {
+    def testToArray06(): Bool = region rc {
         let mq = (MutQueue.empty(rc) : MutQueue[Int32, rc]);
         MutQueue.enqueueAll(mq, 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: Nil);
         MutQueue.dequeue(mq);
         MutQueue.dequeue(mq);
         Array.toString(MutQueue.toArray(rc, mq)) == "Array#{6, 4, 5, 1, 3, 2}"
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toVector                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def testToVector01(): Bool = region rc {
+        let mq = (MutQueue.empty(rc) : MutQueue[Int32, rc]);
+        MutQueue.toVector(mq) == (Vector#{} : Vector[Int32])
+    }
+
+    @Test
+    def testToVector02(): Bool = region rc {
+        let mq = (MutQueue.empty(rc) : MutQueue[Int32, rc]);
+        MutQueue.enqueue(mq, 1);
+        MutQueue.toVector(mq) == Vector#{1}
+    }
+
+    @Test
+    def testToVector03(): Bool = region rc {
+        let mq = (MutQueue.empty(rc) : MutQueue[Int32, rc]);
+        MutQueue.enqueueAll(mq, 1 :: 2 :: Nil);
+        MutQueue.toVector(mq) == Vector#{2, 1}
+    }
+
+    @Test
+    def testToVector04(): Bool = region rc {
+        let mq = (MutQueue.empty(rc) : MutQueue[Int32, rc]);
+        MutQueue.enqueueAll(mq, 2 :: 1 :: Nil);
+        MutQueue.toVector(mq) == Vector#{2, 1}
+    }
+
+    @Test
+    def testToVector05(): Bool = region rc {
+        let mq = (MutQueue.empty(rc) : MutQueue[Int32, rc]);
+        MutQueue.enqueueAll(mq, 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: Nil);
+        MutQueue.toVector(mq) == Vector#{8, 7, 6, 4, 3, 2, 5, 1}
+    }
+
+    @Test
+    def testToVector06(): Bool = region rc {
+        let mq = (MutQueue.empty(rc) : MutQueue[Int32, rc]);
+        MutQueue.enqueueAll(mq, 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: Nil);
+        MutQueue.dequeue(mq);
+        MutQueue.dequeue(mq);
+        MutQueue.toVector(mq) == Vector#{6, 4, 5, 1, 3, 2}
     }
 
 }

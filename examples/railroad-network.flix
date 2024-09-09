@@ -4,7 +4,7 @@
 /// Given two railroad stations a and b, if they are only connected through some station c,
 /// then they are unsafely connected. Because if c fails there is no way to get from a to b.
 ///
-def safeConnects(src: n, links: f[(n, n)]): {safe = Vector[n], unsafe = Vector[n]} with Foldable[f], Order[n] =
+def safeConnects(src: n, links: f[(n, n)]): {safe = Vector[n], unsafe1 = Vector[n]} \ Foldable.Aef[f] with Foldable[f], Order[n] =
     let db = inject links into Link;
     let pr = #{
         // Directly linked stations.
@@ -34,8 +34,8 @@ def safeConnects(src: n, links: f[(n, n)]): {safe = Vector[n], unsafe = Vector[n
     };
     let model = solve db <+> pr;
     let safe = query model select b from SafelyConnected(src, b);
-    let unsafe = query model select b from UnsafelyConnected(src, b);
-    {safe = safe, unsafe = unsafe}
+    let unsafe1 = query model select b from UnsafelyConnected(src, b);
+    {safe = safe, unsafe1 = unsafe1}
 
 ///
 /// Define some example graph to test the function `safeConnects`.
@@ -83,6 +83,6 @@ def exampleGraph(): Set[(String, String)] =
 def test(): Unit \ IO =
     let rec = safeConnects("bis", exampleGraph());
     println("Safe:");
-    rec.safe |> Vector.sort |> Vector.map(Console.green) |> Vector.forEach(println);
+    rec#safe |> Vector.sort |> Vector.map(Console.green) |> Vector.forEach(println);
     println("Unsafe:");
-    rec.unsafe |> Vector.sort |> Vector.map(Console.red) |> Vector.forEach(println)
+    rec#unsafe1 |> Vector.sort |> Vector.map(Console.red) |> Vector.forEach(println)

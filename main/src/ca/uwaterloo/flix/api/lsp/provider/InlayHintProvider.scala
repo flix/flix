@@ -28,7 +28,7 @@ object InlayHintProvider {
   /**
     * Returns the inlay hints in the given `uri` in the given `range`.
     */
-  def processInlayHints(uri: String, range: Range)(implicit index: Index, root: Root, flix: Flix): List[InlayHint] = {
+  def processInlayHints(uri: String, range: Range)(implicit index: Index, flix: Flix): List[InlayHint] = {
     index.queryByRange(uri, range) match {
       case Nil => Nil
       case entities => entities.flatMap {

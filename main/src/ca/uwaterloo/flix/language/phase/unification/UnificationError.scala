@@ -118,7 +118,7 @@ object UnificationError {
     *
     * @param tconstr the type constraint.
     */
-  case class NoMatchingInstance(tconstr: Ast.TypeConstraint) extends UnificationError with Unrecoverable
+  case class NoMatchingInstance(tconstr: Ast.TraitConstraint) extends UnificationError with Unrecoverable
 
   /**
     * A unification error resulting from an equality constraint that is not supported by the context.

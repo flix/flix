@@ -18,8 +18,11 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.BoundBy
+import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.{Purity, Symbol, _}
+import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
+import ca.uwaterloo.flix.language.phase.unification.Substitution
 
 import scala.annotation.tailrec
 
@@ -28,15 +31,19 @@ import scala.annotation.tailrec
   */
 object Simplifier {
 
+  // We are safe to use the top scope everywhere because we do not use unification in this or future phases.
+  private implicit val S: Scope = Scope.Top
+
   def run(root: MonoAst.Root)(implicit flix: Flix): SimplifiedAst.Root = flix.phase("Simplifier") {
     implicit val universe: Set[Symbol.EffectSym] = root.effects.keys.toSet
+    implicit val r = root
     val defs = ParOps.parMapValues(root.defs)(visitDef)
     val effects = ParOps.parMapValues(root.effects)(visitEffect)
 
     SimplifiedAst.Root(defs, effects, root.entryPoint, root.reachable, root.sources)
   }
 
-  private def visitDef(decl: MonoAst.Def)(implicit flix: Flix, universe: Set[Symbol.EffectSym]): SimplifiedAst.Def = decl match {
+  private def visitDef(decl: MonoAst.Def)(implicit universe: Set[Symbol.EffectSym], root: MonoAst.Root, flix: Flix): SimplifiedAst.Def = decl match {
     case MonoAst.Def(sym, spec, exp) =>
       val fs = spec.fparams.map(visitFormalParam)
       val e = visitExp(exp)
@@ -46,13 +53,13 @@ object Simplifier {
       SimplifiedAst.Def(spec.ann, spec.mod, sym, fs, e, retType, eff, sym.loc)
   }
 
-  private def visitEffect(decl: MonoAst.Effect)(implicit flix: Flix, universe: Set[Symbol.EffectSym]): SimplifiedAst.Effect = decl match {
+  private def visitEffect(decl: MonoAst.Effect)(implicit universe: Set[Symbol.EffectSym], root: MonoAst.Root, flix: Flix): SimplifiedAst.Effect = decl match {
     case MonoAst.Effect(_, ann, mod, sym, ops0, loc) =>
       val ops = ops0.map(visitEffOp)
       SimplifiedAst.Effect(ann, mod, sym, ops, loc)
   }
 
-  private def visitExp(exp0: MonoAst.Expr)(implicit flix: Flix, universe: Set[Symbol.EffectSym]): SimplifiedAst.Expr = exp0 match {
+  private def visitExp(exp0: MonoAst.Expr)(implicit universe: Set[Symbol.EffectSym], root: MonoAst.Root, flix: Flix): SimplifiedAst.Expr = exp0 match {
     case MonoAst.Expr.Var(sym, tpe, loc) =>
       val t = visitType(tpe)
       SimplifiedAst.Expr.Var(sym, t, loc)
@@ -94,12 +101,6 @@ object Simplifier {
           val t = visitType(tpe)
           SimplifiedAst.Expr.ApplyAtomic(op, es1, t, purity, loc)
 
-        case AtomicOp.Ref =>
-          // The region expression is dropped (tail of exps / es)
-          val es1 = List(es.head)
-          val t = visitType(tpe)
-          SimplifiedAst.Expr.ApplyAtomic(op, es1, t, purity, loc)
-
         case AtomicOp.Spawn =>
           // Wrap the expression in a closure: () -> tpe \ ef
           val List(e1, e2) = es
@@ -133,9 +134,8 @@ object Simplifier {
       SimplifiedAst.Expr.IfThenElse(visitExp(e1), visitExp(e2), visitExp(e3), t, simplifyEffect(eff), loc)
 
     case MonoAst.Expr.Stm(e1, e2, tpe, eff, loc) =>
-      val sym = Symbol.freshVarSym("_", BoundBy.Let, loc)
       val t = visitType(tpe)
-      SimplifiedAst.Expr.Let(sym, visitExp(e1), visitExp(e2), t, simplifyEffect(eff), loc)
+      SimplifiedAst.Expr.Stm(visitExp(e1), visitExp(e2), t, simplifyEffect(eff), loc)
 
     case d@MonoAst.Expr.Discard(exp, eff, loc) =>
       val sym = Symbol.freshVarSym("_", BoundBy.Let, loc)
@@ -221,7 +221,7 @@ object Simplifier {
       throw InternalCompilerException(s"Unexpected expression: $exp0.", loc)
   }
 
-  private def visitType(tpe: Type)(implicit flix: Flix): MonoType = {
+  private def visitType(tpe: Type)(implicit root: MonoAst.Root, flix: Flix): MonoType = {
     val base = tpe.typeConstructor
     val args = tpe.typeArguments.map(visitType)
 
@@ -238,7 +238,7 @@ object Simplifier {
 
           case TypeConstructor.Unit => MonoType.Unit
 
-          case TypeConstructor.Null => MonoType.Unit
+          case TypeConstructor.Null => MonoType.Null
 
           case TypeConstructor.Bool => MonoType.Bool
 
@@ -274,6 +274,31 @@ object Simplifier {
 
           case TypeConstructor.Enum(sym, _) => MonoType.Enum(sym)
 
+          case TypeConstructor.Struct(sym, _) =>
+            // We must do this here because the `MonoTypes` requires the individual types of each element
+            // but the `Type` type only carries around the type arguments. i.e. for `struct S[v, r] {a: List[v]}`
+            // at this point we would know `v` but we would need the type of `a`. We also erase to avoid infinitely
+            // expanding recursive types
+            val struct = root.structs(sym)
+            val subst = Substitution(struct.tparams.zip(tpe.typeArguments).toMap)
+            val substitutedStructFieldTypes = struct.fields.map { f =>
+              subst(f.tpe).typeConstructor match {
+                case Some(value) => value match {
+                  case TypeConstructor.Bool => MonoType.Bool
+                  case TypeConstructor.Char => MonoType.Char
+                  case TypeConstructor.Float32 => MonoType.Float32
+                  case TypeConstructor.Float64 => MonoType.Float64
+                  case TypeConstructor.Int8 => MonoType.Int8
+                  case TypeConstructor.Int16 => MonoType.Int16
+                  case TypeConstructor.Int32 => MonoType.Int32
+                  case TypeConstructor.Int64 => MonoType.Int64
+                  case _ => MonoType.Object
+                }
+                case None => throw InternalCompilerException(s"Unexpected type: $tpe", tpe.loc)
+              }
+            }
+            MonoType.Struct(sym, substitutedStructFieldTypes, args)
+
           case TypeConstructor.RestrictableEnum(sym, _) =>
             val enumSym = new Symbol.EnumSym(sym.namespace, sym.name, sym.loc)
             MonoType.Enum(enumSym)
@@ -283,8 +308,6 @@ object Simplifier {
           case TypeConstructor.Array => MonoType.Array(args.head)
 
           case TypeConstructor.Vector => MonoType.Array(args.head)
-
-          case TypeConstructor.Ref => MonoType.Ref(args.head)
 
           case TypeConstructor.RegionToStar => MonoType.Region
 
@@ -328,18 +351,27 @@ object Simplifier {
           case TypeConstructor.Schema =>
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
 
-          case TypeConstructor.Error(_) =>
+          case TypeConstructor.JvmConstructor(_) =>
+            throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
+
+          case TypeConstructor.JvmMethod(_) =>
+            throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
+
+          case TypeConstructor.JvmField(_) =>
+            throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
+
+          case TypeConstructor.Error(_, _) =>
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
         }
     }
   }
 
-  private def visitFormalParam(p: MonoAst.FormalParam)(implicit flix: Flix): SimplifiedAst.FormalParam = {
+  private def visitFormalParam(p: MonoAst.FormalParam)(implicit root: MonoAst.Root, flix: Flix): SimplifiedAst.FormalParam = {
     val t = visitType(p.tpe)
     SimplifiedAst.FormalParam(p.sym, p.mod, t, p.loc)
   }
 
-  private def visitJvmMethod(method: MonoAst.JvmMethod)(implicit flix: Flix, universe: Set[Symbol.EffectSym]): SimplifiedAst.JvmMethod = method match {
+  private def visitJvmMethod(method: MonoAst.JvmMethod)(implicit universe: Set[Symbol.EffectSym], root: MonoAst.Root, flix: Flix): SimplifiedAst.JvmMethod = method match {
     case MonoAst.JvmMethod(ident, fparams0, exp0, retTpe, eff, loc) =>
       val fparams = fparams0 map visitFormalParam
       val exp = visitExp(exp0)
@@ -347,7 +379,7 @@ object Simplifier {
       SimplifiedAst.JvmMethod(ident, fparams, exp, rt, simplifyEffect(eff), loc)
   }
 
-  private def pat2exp(pat0: MonoAst.Pattern)(implicit flix: Flix): SimplifiedAst.Expr = pat0 match {
+  private def pat2exp(pat0: MonoAst.Pattern)(implicit root: MonoAst.Root, flix: Flix): SimplifiedAst.Expr = pat0 match {
     case MonoAst.Pattern.Cst(cst, tpe, loc) =>
       val t = visitType(tpe)
       SimplifiedAst.Expr.Cst(cst, t, loc)
@@ -409,7 +441,7 @@ object Simplifier {
   /**
     * Eliminates pattern matching by translations to labels and jumps.
     */
-  private def patternMatchWithLabels(exp0: MonoAst.Expr, rules: List[MonoAst.MatchRule], tpe: Type, loc: SourceLocation)(implicit flix: Flix, universe: Set[Symbol.EffectSym]): SimplifiedAst.Expr = {
+  private def patternMatchWithLabels(exp0: MonoAst.Expr, rules: List[MonoAst.MatchRule], tpe: Type, loc: SourceLocation)(implicit universe: Set[Symbol.EffectSym], root: MonoAst.Root, flix: Flix): SimplifiedAst.Expr = {
     //
     // Given the code:
     //
@@ -502,7 +534,7 @@ object Simplifier {
     *
     * Evaluates `succ` on success and `fail` otherwise.
     */
-  private def patternMatchList(xs: List[MonoAst.Pattern], ys: List[Symbol.VarSym], guard: MonoAst.Expr, succ: SimplifiedAst.Expr, fail: SimplifiedAst.Expr)(implicit flix: Flix, universe: Set[Symbol.EffectSym]): SimplifiedAst.Expr =
+  private def patternMatchList(xs: List[MonoAst.Pattern], ys: List[Symbol.VarSym], guard: MonoAst.Expr, succ: SimplifiedAst.Expr, fail: SimplifiedAst.Expr)(implicit universe: Set[Symbol.EffectSym], root: MonoAst.Root, flix: Flix): SimplifiedAst.Expr =
     ((xs, ys): @unchecked) match {
       /**
         * There are no more patterns and variables to match.
@@ -620,98 +652,12 @@ object Simplifier {
       case p => throw InternalCompilerException(s"Unsupported pattern '$p'.", xs.head.loc)
     }
 
-  private def visitEffOp(op: MonoAst.Op)(implicit flix: Flix, universe: Set[Symbol.EffectSym]): SimplifiedAst.Op = op match {
+  private def visitEffOp(op: MonoAst.Op)(implicit universe: Set[Symbol.EffectSym], root: MonoAst.Root, flix: Flix): SimplifiedAst.Op = op match {
     case MonoAst.Op(sym, MonoAst.Spec(_, ann, mod, fparams0, _, retTpe0, eff0, loc)) =>
       val fparams = fparams0.map(visitFormalParam)
       val retTpe = visitType(retTpe0)
       val eff = simplifyEffect(eff0)
       SimplifiedAst.Op(sym, ann, mod, fparams, retTpe, eff, loc)
-  }
-
-  /**
-    * Returns a copy of the given expression `exp0` where every variable symbol has been replaced according to the given substitution `m`.
-    */
-  private def substitute(exp0: SimplifiedAst.Expr, m: Map[Symbol.VarSym, Symbol.VarSym]): SimplifiedAst.Expr = {
-
-    def visitExp(e: SimplifiedAst.Expr): SimplifiedAst.Expr = e match {
-      case SimplifiedAst.Expr.Cst(_, _, _) => e
-
-      case SimplifiedAst.Expr.Var(sym, tpe, loc) => m.get(sym) match {
-        case None => SimplifiedAst.Expr.Var(sym, tpe, loc)
-        case Some(replacement) => SimplifiedAst.Expr.Var(replacement, tpe, loc)
-      }
-
-      case SimplifiedAst.Expr.Def(_, _, _) => e
-
-      case SimplifiedAst.Expr.Lambda(fparams, body, tpe, loc) =>
-        SimplifiedAst.Expr.Lambda(fparams, visitExp(body), tpe, loc)
-
-      case SimplifiedAst.Expr.Apply(exp, args, tpe, purity, loc) =>
-        SimplifiedAst.Expr.Apply(visitExp(exp), args.map(visitExp), tpe, purity, loc)
-
-      case SimplifiedAst.Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
-        val es = exps map visitExp
-        SimplifiedAst.Expr.ApplyAtomic(op, es, tpe, purity, loc)
-
-      case SimplifiedAst.Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
-        SimplifiedAst.Expr.IfThenElse(visitExp(exp1), visitExp(exp2), visitExp(exp3), tpe, purity, loc)
-
-      case SimplifiedAst.Expr.Branch(exp, branches, tpe, purity, loc) =>
-        val e = visitExp(exp)
-        val bs = branches map {
-          case (sym, br) => sym -> br
-        }
-        SimplifiedAst.Expr.Branch(e, bs, tpe, purity, loc)
-
-      case SimplifiedAst.Expr.JumpTo(sym, tpe, purity, loc) =>
-        SimplifiedAst.Expr.JumpTo(sym, tpe, purity, loc)
-
-      case SimplifiedAst.Expr.Let(sym, exp1, exp2, purity, tpe, loc) =>
-        SimplifiedAst.Expr.Let(sym, visitExp(exp1), visitExp(exp2), purity, tpe, loc)
-
-      case SimplifiedAst.Expr.LetRec(sym, exp1, exp2, tpe, purity, loc) =>
-        SimplifiedAst.Expr.LetRec(sym, visitExp(exp1), visitExp(exp2), tpe, purity, loc)
-
-      case SimplifiedAst.Expr.Scope(sym, exp, tpe, purity, loc) =>
-        SimplifiedAst.Expr.Scope(sym, visitExp(exp), tpe, purity, loc)
-
-      case SimplifiedAst.Expr.TryCatch(exp, rules, tpe, purity, loc) =>
-        val e = visitExp(exp)
-        val rs = rules map {
-          case SimplifiedAst.CatchRule(sym, clazz, body) =>
-            val b = visitExp(body)
-            SimplifiedAst.CatchRule(sym, clazz, b)
-        }
-        SimplifiedAst.Expr.TryCatch(e, rs, tpe, purity, loc)
-
-      case SimplifiedAst.Expr.TryWith(exp, effUse, rules, tpe, purity, loc) =>
-        val e = visitExp(exp)
-        val rs = rules map {
-          case SimplifiedAst.HandlerRule(sym, fparams, body) =>
-            val b = visitExp(body)
-            SimplifiedAst.HandlerRule(sym, fparams, b)
-        }
-        SimplifiedAst.Expr.TryWith(e, effUse, rs, tpe, purity, loc)
-
-      case SimplifiedAst.Expr.Do(op, exps, tpe, purity, loc) =>
-        val es = exps.map(visitExp)
-        SimplifiedAst.Expr.Do(op, es, tpe, purity, loc)
-
-      case SimplifiedAst.Expr.NewObject(name, clazz, tpe, purity, methods0, loc) =>
-        val methods = methods0 map visitJvmMethod
-        SimplifiedAst.Expr.NewObject(name, clazz, tpe, purity, methods, loc)
-
-      case SimplifiedAst.Expr.LambdaClosure(_, _, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression.", loc)
-      case SimplifiedAst.Expr.ApplyClo(_, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression.", loc)
-      case SimplifiedAst.Expr.ApplyDef(_, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression.", loc)
-    }
-
-    def visitJvmMethod(method: SimplifiedAst.JvmMethod) = method match {
-      case SimplifiedAst.JvmMethod(ident, fparams, exp, tpe, purity, loc) =>
-        SimplifiedAst.JvmMethod(ident, fparams, visitExp(exp), tpe, purity, loc)
-    }
-
-    visitExp(exp0)
   }
 
   /**

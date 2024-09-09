@@ -1,3 +1,5 @@
+import java.lang.System
+
 ///
 /// Static denotes the region of global lifetime.
 ///
@@ -11,12 +13,100 @@ pub enum Proxy[_] {
 }
 
 ///
-/// The Generic IO Effect.
+/// The uninterpretable `Clock` effect.
 ///
-/// The `IO` effect is the most general effect of any
-/// operation that interacts with the environment.
+/// The `Clock` effect represents the actions required to access the system clock.
+///
+/// This includes use of `System.currentTimeMillis` and `System.nanoTime`, but also e.g. `Date.now()`.
+///
+/// The `Clock` effect is uninterpretable which means that it cannot be handled.
+///
+pub eff Clock
+
+///
+/// The uninterpretable `Exec` effect.
+///
+/// The `Exec` effect represents the actions required to start (i.e. run) a new process outside the JVM.
+///
+/// This includes use of `System.exec`, the `Process` class, and the `ProcessBuilder` class.
+///
+/// The `Exec` effect is uninterpretable which means that it cannot be handled.
+///
+pub eff Exec
+
+///
+/// The uninterpretable `Exit` effect.
+///
+/// The `Exit` effect represents the actions to required to immediately terminate execution of the JVM.
+///
+/// This includes calls to `System.exit` and `Runtime.exit`.
+///
+/// The `Exit` effect is uninterpretable which means that it cannot be handled.
+///
+pub eff Exit
+
+///
+/// The uninterpretable `FileRead` effect.
+///
+/// The `FileRead` effect represents the actions to required to read from the file system.
+///
+/// The `FileRead` effect is uninterpretable which means that it cannot be handled.
+///
+pub eff FileRead
+
+///
+/// The uninterpretable `FileWrite` effect.
+///
+/// The `FileWrite` effect represents the actions to required to write to the file system.
+///
+/// The `FileWrite` effect is uninterpretable which means that it cannot be handled.
+///
+pub eff FileWrite
+
+///
+/// A type alias for the `FileRead` and `FileWrite` effects.
+///
+type alias FileIO = {FileRead, FileWrite}
+
+///
+/// The uninterpretable IO effect.
+///
+/// The `IO` effect represents the actions not described by any other effect.
+///
+/// The `IO` effect is uninterpretable which means that it cannot be handled.
 ///
 pub eff IO
+
+///
+/// The uninterpretable `Net` effect.
+///
+/// The `Net` effect represents the actions required to communicate over the network.
+///
+/// This includes binding to local ports, DNS resolution, and connecting to the outside.
+///
+/// The `Net` effect is uninterpretable which means that it cannot be handled.
+///
+pub eff Net
+
+///
+/// The uninterpretable `NonDet` effect.
+///
+/// The `NonDet` effect represents one or more non-deterministic actions.
+///
+/// The `NonDet` effect is uninterpretable which means that it cannot be handled.
+///
+pub eff NonDet
+
+///
+/// The uninterpretable `Sys` effect.
+///
+/// The `Sys` effect represents actions that interact with the JVM.
+///
+/// This includes use of class loaders, the `Runtime` class, and reflection.
+///
+/// The `Sys` effect is uninterpretable which means that it cannot be handled.
+///
+pub eff Sys
 
 ///
 /// The pure identity function.
@@ -104,9 +194,7 @@ pub def coerce(x: t): Coerce.Out[t] with Coerce[t] = Coerce.coerce(x)
 /// Converts `x` to a string and prints it to standard out followed by a new line.
 ///
 pub def println(x: a): Unit \ IO with ToString[a] =
-    import static java_get_field java.lang.System.out: ##java.io.PrintStream \ IO as getOut;
-    import java.io.PrintStream.println(String): Unit \ IO;
-    x |> ToString.toString |> println(getOut())
+    System.out.println(x |> ToString.toString)
 
 ///
 /// Touches the given region capability `rc`.
@@ -117,16 +205,12 @@ pub def touch(_: Region[r]): Unit \ r = checked_ecast(())
 /// Crashes the current process with the given message `m`.
 ///
 pub def bug!(m: String): a = masked_cast({
-    import static java_get_field java.lang.System.err: ##java.io.PrintStream \ {} as getErr;
-    import java.io.PrintStream.println(String): Unit \ IO;
-    import java.lang.String.repeat(Int32): ##java.lang.String \ {};
-    let prt = println(getErr());
-    prt(repeat("*", 80));
-    prt("**") ;
-    prt("**  BUG: ${m}") ;
-    prt("**") ;
-    prt(repeat("*", 80));
-    prt("");
+    System.err.println("*".repeat(80));
+    System.err.println("**") ;
+    System.err.println("**  BUG: ${m}") ;
+    System.err.println("**") ;
+    System.err.println("*".repeat(80));
+    System.err.println("");
     ?panic
 })
 
@@ -142,7 +226,7 @@ pub def unreachable!(): a = bug!("Reached unreachable expression.")
 pub def printUnlessUnit(x: a): Unit \ IO with ToString[a] = {
     typematch x {
         case _: Unit => ()
-        case _: _ => println(x)
+        case _: _    => println(x)
     }
 }
 
@@ -168,8 +252,8 @@ pub enum Purity3[a: Type, b: Type, c: Type, d: Type, ef: Eff] {
 /// it to be pure.
 ///
 pub def purityOf(f: a -> b \ ef): Purity[a, b, ef] = typematch f {
-    case g: a -> b \ Pure => Purity.Pure(g)
-    case _: _             => Purity.Impure(f)
+    case g: a -> b \ {} => Purity.Pure(g)
+    case _: _           => Purity.Impure(f)
 }
 
 ///
@@ -179,8 +263,8 @@ pub def purityOf(f: a -> b \ ef): Purity[a, b, ef] = typematch f {
 /// it to be pure.
 ///
 pub def purityOf2(f: a -> b -> c \ ef): Purity2[a, b, c, ef] = typematch f {
-    case g: a -> b -> c \ Pure => Purity2.Pure(g)
-    case _: _                  => Purity2.Impure(f)
+    case g: a -> b -> c \ {} => Purity2.Pure(g)
+    case _: _                => Purity2.Impure(f)
 }
 
 ///
@@ -190,6 +274,6 @@ pub def purityOf2(f: a -> b -> c \ ef): Purity2[a, b, c, ef] = typematch f {
 /// it to be pure.
 ///
 pub def purityOf3(f: a -> b -> c -> d \ ef): Purity3[a, b, c, d, ef] = typematch f {
-    case g: a -> b -> c -> d \ Pure => Purity3.Pure(g)
-    case _: _                       => Purity3.Impure(f)
+    case g: a -> b -> c -> d \ {} => Purity3.Pure(g)
+    case _: _                     => Purity3.Impure(f)
 }

@@ -16,16 +16,14 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.api.lsp.provider._
-import ca.uwaterloo.flix.api.lsp.provider.completion.DeltaContext
-import ca.uwaterloo.flix.api.lsp.provider.completion.ranker.Differ
 import ca.uwaterloo.flix.api.{CrashHandler, Flix, Version}
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.SourceLocation
+import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
+import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.phase.extra.CodeHinter
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.Validation.{HardFailure, SoftFailure, Success}
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.collection.Chain
 import org.java_websocket.WebSocket
@@ -44,6 +42,7 @@ import java.nio.charset.Charset
 import java.nio.file.Path
 import java.text.SimpleDateFormat
 import java.util.Date
+import java.util.concurrent.{ExecutorService, Executors, Future}
 import java.util.zip.ZipInputStream
 import scala.collection.mutable
 
@@ -70,7 +69,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
   /**
     * The custom date format to use for logging.
     */
-  val DateFormat: String = "yyyy-MM-dd HH:mm:ss"
+  private val DateFormat: String = "yyyy-MM-dd HH:mm:ss"
 
   /**
     * The Flix instance (the same instance is used for incremental compilation).
@@ -80,27 +79,35 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
   /**
     * A map from source URIs to source code.
     */
-  val sources: mutable.Map[String, String] = mutable.Map.empty
+  private val sources: mutable.Map[String, String] = mutable.Map.empty
 
   /**
     * The current AST root. The root is null until the source code is compiled.
     */
-  private var root: Option[Root] = None
+  private var root: Root = TypedAst.empty
 
   /**
     * The current reverse index. The index is empty until the source code is compiled.
+    *
+    * Note: The index is updated *asynchronously* by a different thread, hence:
+    *
+    * - The field must volatile because it is modified by a different thread.
+    * - The index may not always reflect the very latest version of the program.
     */
+  @volatile
   private var index: Index = Index.empty
 
   /**
-    * The current delta context. Initially has no changes.
+    * A thread pool, with a single thread, which we use to execute indexing operations.
     */
-  private var delta: DeltaContext = DeltaContext(Map.empty)
+  private val indexingPool: ExecutorService = Executors.newFixedThreadPool(1)
 
   /**
-    * A Boolean that records if the root AST is current (i.e. up-to-date).
+    * A (possibly-null) volatile reference to a future that represents the latest indexing operation.
+    *
+    * Note: Multiple indexing operations may be pending in the thread pool. This field points to the latest submitted.
     */
-  private var current: Boolean = false
+  private var indexingFuture: Future[_] = _
 
   /**
     * The current compilation errors.
@@ -133,25 +140,22 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
     * Invoked when a client sends a message.
     */
   override def onMessage(ws: WebSocket, data: String): Unit = try {
-    parseRequest(data)(ws) match {
+    parseRequest(data) match {
       case Ok(request) =>
         val result = processRequest(request)(ws)
         if (ws.isOpen) {
           val jsonCompact = JsonMethods.compact(JsonMethods.render(result))
-          val jsonPretty = JsonMethods.pretty(JsonMethods.render(result))
-          ws.send(jsonPretty)
+          // val jsonPretty = JsonMethods.pretty(JsonMethods.render(result))
+          ws.send(jsonCompact)
         }
       case Err(msg) => log(msg)(ws)
     }
   } catch {
-    case t: InternalCompilerException =>
-      t.printStackTrace(System.err)
-      System.exit(1)
-    case t: RuntimeException =>
-      t.printStackTrace(System.err)
-      System.exit(2)
-    case t: Throwable =>
-      t.printStackTrace(System.err)
+    case ex: Throwable =>
+      // We try to scream everywhere to ensure the message is shown.
+      CrashHandler.handleCrash(ex)(flix)
+      ex.printStackTrace(System.out)
+      ex.printStackTrace(System.err)
   }
 
   /**
@@ -164,7 +168,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
   /**
     * Parse the request.
     */
-  private def parseRequest(s: String)(implicit ws: WebSocket): Result[Request, String] = try {
+  private def parseRequest(s: String): Result[Request, String] = try {
     // Parse the string `s` into a json value.
     val json = parse(s)
 
@@ -205,17 +209,15 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
   /**
     * Add the given source code to the compiler
     */
-  private def addSourceCode(uri: String, src: String) = {
-    current = false
-    flix.addSourceCode(uri, src)
+  private def addSourceCode(uri: String, src: String): Unit = {
+    flix.addSourceCode(uri, src)(SecurityContext.AllPermissions) // TODO
     sources += (uri -> src)
   }
 
   /**
     * Remove the source code associated with the given uri from the compiler
     */
-  private def remSourceCode(uri: String) = {
-    current = false
+  private def remSourceCode(uri: String): Unit = {
     flix.remSourceCode(uri)
     sources -= uri
   }
@@ -263,72 +265,62 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
       flix.addJar(path)
       ("id" -> id) ~ ("status" -> ResponseStatus.Success)
 
-    case Request.RemJar(id, uri) =>
+    case Request.RemJar(id, _) =>
       // No-op (there is no easy way to remove a Jar from the JVM)
       ("id" -> id) ~ ("status" -> ResponseStatus.Success)
 
     case Request.Version(id) => processVersion(id)
 
-    case Request.Shutdown(id) => processShutdown()
+    case Request.Shutdown(_) => processShutdown()
 
-    case Request.Disconnect(id) => processDisconnect()
+    case Request.Disconnect(_) => processDisconnect()
 
     case Request.Check(id) => processCheck(id)
 
     case Request.Codelens(id, uri) =>
-      ("id" -> id) ~ CodeLensProvider.processCodeLens(uri)(index, root)
+      ("id" -> id) ~ CodeLensProvider.processCodeLens(uri)(root)
 
     case Request.Complete(id, uri, pos) =>
-      ("id" -> id) ~ CompletionProvider.autoComplete(uri, pos, sources.get(uri), currentErrors)(flix, index, root, delta)
+      ("id" -> id) ~ CompletionProvider.autoComplete(uri, pos, sources.get(uri), currentErrors)(flix, index, root)
 
     case Request.Highlight(id, uri, pos) =>
       ("id" -> id) ~ HighlightProvider.processHighlight(uri, pos)(index, root)
 
     case Request.Hover(id, uri, pos) =>
-      ("id" -> id) ~ HoverProvider.processHover(uri, pos, current)(index, root, flix)
+      ("id" -> id) ~ HoverProvider.processHover(uri, pos)(index, root, flix)
 
     case Request.Goto(id, uri, pos) =>
       ("id" -> id) ~ GotoProvider.processGoto(uri, pos)(index, root)
 
     case Request.Implementation(id, uri, pos) =>
-      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> ImplementationProvider.processImplementation(uri, pos)(root.orNull).map(_.toJSON))
+      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> ImplementationProvider.processImplementation(uri, pos)(root).map(_.toJSON))
 
     case Request.Rename(id, newName, uri, pos) =>
-      ("id" -> id) ~ RenameProvider.processRename(newName, uri, pos)(index, root.orNull)
+      synchronouslyAwaitIndex()
+      ("id" -> id) ~ RenameProvider.processRename(newName, uri, pos)(index, root)
 
     case Request.DocumentSymbols(id, uri) =>
-      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> SymbolProvider.processDocumentSymbols(uri)(root.orNull).map(_.toJSON))
+      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> SymbolProvider.processDocumentSymbols(uri)(root).map(_.toJSON))
 
     case Request.WorkspaceSymbols(id, query) =>
-      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> SymbolProvider.processWorkspaceSymbols(query)(root.orNull).map(_.toJSON))
+      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> SymbolProvider.processWorkspaceSymbols(query)(root).map(_.toJSON))
 
     case Request.Uses(id, uri, pos) =>
-      ("id" -> id) ~ FindReferencesProvider.findRefs(uri, pos)(index, root.orNull)
+      ("id" -> id) ~ FindReferencesProvider.findRefs(uri, pos)(index, root)
 
     case Request.SemanticTokens(id, uri) =>
-      if (current)
-        ("id" -> id) ~ SemanticTokensProvider.provideSemanticTokens(uri)(index, root.orNull)
-      else
-        ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> ("data" -> Nil))
+      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ SemanticTokensProvider.provideSemanticTokens(uri)(index, root)
 
-    case Request.InlayHint(id, uri, range) =>
-        // InlayHints disabled due to poor ergonomics.
-        // ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> InlayHintProvider.processInlayHints(uri, range)(index, root.orNull, flix).map(_.toJSON))
-        ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> Nil)
+    case Request.InlayHint(id, _, _) =>
+      // InlayHints disabled due to poor ergonomics.
+      // ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> InlayHintProvider.processInlayHints(uri, range)(index, flix).map(_.toJSON))
+      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> Nil)
 
-    case Request.ShowAst(id, phase) =>
-      if (current)
-        ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> ShowAstProvider.showAst(phase)(index, root, flix))
-      else
-        ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> Nil)
+    case Request.ShowAst(id) =>
+      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> ShowAstProvider.showAst()(flix))
 
     case Request.CodeAction(id, uri, range, context) =>
-      root match {
-        case None =>
-          ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> Nil)
-        case Some(r) =>
-          ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> CodeActionProvider.getCodeActions(uri, range, context, currentErrors)(index, r, flix).map(_.toJSON))
-      }
+      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> CodeActionProvider.getCodeActions(uri, range, context, currentErrors)(index, root, flix).map(_.toJSON))
 
   }
 
@@ -353,8 +345,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
         case Result.Err(errors) =>
           // Case 3: Compilation failed. Send back the error messages.
 
-          // Mark the AST as outdated and update the current errors.
-          this.current = false
+          // Update the current errors.
           this.currentErrors = errors.toList
 
           // Publish diagnostics.
@@ -363,8 +354,6 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
       }
     } catch {
       case ex: Throwable =>
-        // Mark the AST as outdated.
-        this.current = false
         val reportPath = CrashHandler.handleCrash(ex)(flix)
         ("id" -> requestId) ~
           ("status" -> ResponseStatus.CompilerError) ~
@@ -376,12 +365,12 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
     * Helper function for [[processCheck]] which handles successful and soft failure compilations.
     */
   private def processSuccessfulCheck(requestId: String, root: Root, errors: Chain[CompilationMessage], explain: Boolean, t0: Long): JValue = {
-    val oldRoot = this.root
-    this.root = Some(root)
-    this.index = Indexer.visitRoot(root)
-    this.delta = DeltaContext.mergeDeltas(this.delta, Differ.difference(oldRoot, root))
-    this.current = true
+    // Update the root and the errors.
+    this.root = root
     this.currentErrors = errors.toList
+
+    // Asynchronously compute the reverse index.
+    asynchronouslyUpdateIndex(root)
 
     // Compute elapsed time.
     val e = System.nanoTime() - t0
@@ -398,9 +387,29 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
   }
 
   /**
+    * Asynchronously compute the reverse index using the thread pool.
+    */
+  private def asynchronouslyUpdateIndex(root: Root): Unit = {
+    this.indexingFuture = indexingPool.submit(new Runnable {
+      override def run(): Unit = {
+        LanguageServer.this.index = Indexer.visitRoot(root)
+      }
+    })
+  }
+
+  /**
+    * Synchronously wait for the most recent indexing operation to complete.
+    *
+    * This function is used to ensure the index is up-to-date before certain operations, e.g. rename.
+    */
+  private def synchronouslyAwaitIndex(): Unit = {
+    if (indexingFuture != null) indexingFuture.get()
+  }
+
+  /**
     * Processes a shutdown request.
     */
-  private def processShutdown()(implicit ws: WebSocket): Nothing = {
+  private def processShutdown(): Nothing = {
     System.exit(0)
     throw null // unreachable
   }
@@ -408,7 +417,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
   /**
     * Processes a disconnection request.
     */
-  private def processDisconnect()(implicit ws: WebSocket) = {
+  private def processDisconnect()(implicit ws: WebSocket): JValue = {
     val code = 1013 // 'Try again later'
     ws.closeConnection(code, "Simulating disconnection...")
     JNothing
@@ -417,7 +426,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
   /**
     * Processes the version request.
     */
-  private def processVersion(requestId: String)(implicit ws: WebSocket): JValue = {
+  private def processVersion(requestId: String): JValue = {
     val major = Version.CurrentVersion.major
     val minor = Version.CurrentVersion.minor
     val revision = Version.CurrentVersion.revision

@@ -20,11 +20,11 @@ import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.SnippetCompletion
 import ca.uwaterloo.flix.language.ast.TypedAst
 
-object SnippetCompleter extends Completer {
+object SnippetCompleter {
   /**
     * Returns a List of Completion for snippet.
     */
-  override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[SnippetCompletion] = {
+  def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[SnippetCompletion] = {
     List(
       // NB: Please keep the list alphabetically sorted.
       ("main",

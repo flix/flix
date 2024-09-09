@@ -16,70 +16,15 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import java.nio.file.Path
+import ca.uwaterloo.flix.language.ast.shared.{Denotation, Fixity, Polarity}
+import ca.uwaterloo.flix.language.errors.ResolutionError
+
 import java.util.Objects
 
 /**
   * A collection of AST nodes that are shared across multiple ASTs.
   */
 object Ast {
-
-  /**
-    * A common super-type for inputs.
-    */
-  sealed trait Input
-
-  object Input {
-
-    /**
-      * A source that is backed by an internal resource.
-      *
-      * A source is stable if it cannot change after being loaded (e.g. the standard library, etc).
-      */
-    case class Text(name: String, text: String, stable: Boolean) extends Input {
-      override def hashCode(): Int = name.hashCode
-
-      override def equals(obj: Any): Boolean = obj match {
-        case that: Text => this.name == that.name
-        case _ => false
-      }
-    }
-
-    /**
-      * A source that is backed by a regular file.
-      */
-    case class TxtFile(path: Path) extends Input
-
-    /**
-      * A source that is backed by flix package file.
-      */
-    case class PkgFile(path: Path) extends Input
-
-  }
-
-  /**
-    * A source is a name and an array of character data.
-    *
-    * A source is stable if it cannot change after being loaded (e.g. the standard library, etc).
-    */
-  case class Source(input: Input, data: Array[Char], stable: Boolean) extends Sourceable {
-
-    def name: String = input match {
-      case Input.Text(name, _, _) => name
-      case Input.TxtFile(path) => path.toString
-      case Input.PkgFile(path) => path.toString
-    }
-
-    def src: Source = this
-
-    override def equals(o: scala.Any): Boolean = o match {
-      case that: Source => this.input == that.input
-    }
-
-    override def hashCode(): Int = input.hashCode()
-
-    override def toString: String = name
-  }
 
   /**
     * A common supertype for casts.
@@ -174,6 +119,15 @@ object Ast {
     }
 
     /**
+      * An annotation that marks a function to exported.
+      *
+      * @param loc the source location of the annotation.
+      */
+    case class Export(loc: SourceLocation) extends Annotation {
+      override def toString: String = "@Export"
+    }
+
+    /**
       * An annotation that marks a construct as internal.
       *
       * @param loc the source location of the annotation.
@@ -250,22 +204,22 @@ object Ast {
     }
 
     /**
-     * An AST node that represents a `@TailRec` annotation.
-     *
-     * A function marked with `@TailRec` is guaranteed to be tail recursive by the compiler.
-     *
-     * @param loc the source location of the annotation.
-     */
+      * An AST node that represents a `@TailRec` annotation.
+      *
+      * A function marked with `@TailRec` is guaranteed to be tail recursive by the compiler.
+      *
+      * @param loc the source location of the annotation.
+      */
     case class TailRecursive(loc: SourceLocation) extends Annotation {
       override def toString: String = "@Tailrec"
     }
 
     /**
-     * An AST node that represents an undefined (i.e. erroneous) annotation.
-     *
-     * @param name the name of the annotation.
-     * @param loc the source location of the annotation.
-     */
+      * An AST node that represents an undefined (i.e. erroneous) annotation.
+      *
+      * @param name the name of the annotation.
+      * @param loc  the source location of the annotation.
+      */
     case class Error(name: String, loc: SourceLocation) extends Annotation {
       override def toString: String = "@" + name
     }
@@ -301,6 +255,11 @@ object Ast {
       * Returns `true` if `this` sequence contains the `@Experimental` annotation.
       */
     def isExperimental: Boolean = annotations exists (_.isInstanceOf[Annotation.Experimental])
+
+    /**
+      * Returns `true` if `this` sequence contains the `@Export` annotation.
+      */
+    def isExport: Boolean = annotations exists (_.isInstanceOf[Annotation.Export])
 
     /**
       * Returns `true` if `this` sequence contains the `@Internal` annotation.
@@ -403,6 +362,11 @@ object Ast {
       */
     def isLawful: Boolean = mod contains Modifier.Lawful
 
+   /**
+     * Returns `true` if these modifiers contain the mutable modifier.
+     */
+    def isMutable: Boolean = mod contains Modifier.Mutable
+
     /**
       * Returns `true` if these modifiers contain the override modifier.
       */
@@ -442,6 +406,12 @@ object Ast {
       */
     case object Lawful extends Modifier
 
+   /**
+     * The mutable modifier.
+     */
+
+    case object Mutable extends Modifier
+
     /**
       * The override modifier.
       */
@@ -461,63 +431,6 @@ object Ast {
       * The synthetic modifier.
       */
     case object Synthetic extends Modifier
-
-  }
-
-  /**
-    * A common super-type for the denotation of an atom.
-    */
-  sealed trait Denotation
-
-  object Denotation {
-
-    /**
-      * The atom has a relational denotation.
-      */
-    case object Relational extends Denotation
-
-    /**
-      * The atom has a latticenal denotation.
-      */
-    case object Latticenal extends Denotation
-
-  }
-
-  /**
-    * A common super-type for the polarity of an atom.
-    */
-  sealed trait Polarity
-
-  object Polarity {
-
-    /**
-      * The atom is positive.
-      */
-    case object Positive extends Polarity
-
-    /**
-      * The atom is negative.
-      */
-    case object Negative extends Polarity
-
-  }
-
-  /**
-    * A common super-type for the fixity of an atom.
-    */
-  sealed trait Fixity
-
-  object Fixity {
-
-    /**
-      * The atom is loose (it does not have to be fully materialized before it can be used).
-      */
-    case object Loose extends Fixity
-
-    /**
-      * The atom is fixed (it must be fully materialized before it can be used).
-      */
-    case object Fixed extends Fixity
 
   }
 
@@ -601,7 +514,7 @@ object Ast {
     */
   case class EliminatedBy(clazz: java.lang.Class[_]) extends scala.annotation.StaticAnnotation
 
-  case object TypeConstraint {
+  case object TraitConstraint {
     /**
       * Represents the head (located class) of a type constraint.
       */
@@ -609,11 +522,11 @@ object Ast {
   }
 
   /**
-    * Represents that the type `arg` must belong to class `sym`.
+    * Represents that the type `arg` must belong to trait `sym`.
     */
-  case class TypeConstraint(head: TypeConstraint.Head, arg: Type, loc: SourceLocation) {
+  case class TraitConstraint(head: TraitConstraint.Head, arg: Type, loc: SourceLocation) {
     override def equals(o: Any): Boolean = o match {
-      case that: TypeConstraint =>
+      case that: TraitConstraint =>
         this.head.sym == that.head.sym && this.arg == that.arg
       case _ => false
     }
@@ -648,6 +561,11 @@ object Ast {
   case class CaseSymUse(sym: Symbol.CaseSym, loc: SourceLocation)
 
   /**
+    * Represents a use of a struct field sym.
+    */
+  case class StructFieldSymUse(sym: Symbol.StructFieldSym, loc: SourceLocation)
+
+  /**
     * Represents a use of a restrictable enum case sym.
     */
   case class RestrictableCaseSymUse(sym: Symbol.RestrictableCaseSym, loc: SourceLocation)
@@ -670,7 +588,7 @@ object Ast {
   /**
     * Represents that an instance on type `tpe` has the type constraints `tconstrs`.
     */
-  case class Instance(tpe: Type, tconstrs: List[Ast.TypeConstraint])
+  case class Instance(tpe: Type, tconstrs: List[Ast.TraitConstraint])
 
   /**
     * Represents the super traits and instances available for a particular traits.
@@ -838,6 +756,8 @@ object Ast {
       case object Instance extends Decl
 
       case object OtherDecl extends Decl
+
+      case object Struct extends Decl
     }
 
     sealed trait Expr extends SyntacticContext
@@ -846,6 +766,12 @@ object Ast {
       case object Constraint extends Expr
 
       case object Do extends Expr
+
+      case class InvokeMethod(tpe: ca.uwaterloo.flix.language.ast.Type, name: Name.Ident) extends Expr
+
+      case class StaticFieldOrMethod(e: ResolutionError.UndefinedJvmStaticField) extends Expr
+
+      case class StructAccess(e: ResolutionError.UndefinedStructField) extends Expr
 
       case object OtherExpr extends Expr
     }

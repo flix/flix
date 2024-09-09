@@ -1,48 +1,48 @@
 mod Test.Dec.TypeAlias {
 
-    /**
-     * A type alias for degrees celsius.
-     */
+    ///
+    /// A type alias for degrees celsius.
+    ///
     type alias Celsius = Int32
 
-    /**
-     * A type alias for degrees fahrenheit.
-     */
+    ///
+    /// A type alias for degrees fahrenheit.
+    ///
     type alias Fahrenheit = Int32
 
-    /**
-     * A type alias for united states dollars.
-     */
+    ///
+    /// A type alias for united states dollars.
+    ///
     type alias USD = Float64
 
-    /**
-     * A type alias for canadian dollars.
-     */
+    ///
+    /// A type alias for canadian dollars.
+    ///
     type alias CAD = Float64
 
-    /**
-     * A type alias for Option of Int.
-     */
+    ///
+    /// A type alias for Option of Int.
+    ///
     type alias A = Option[Int32]
 
-    /**
-     * A type alias for a Result.
-     */
+    ///
+    /// A type alias for a Result.
+    ///
     type alias B = Result[Int32, Bool]
 
-    /**
-     * A polymorphic type alias for a Option.
-     */
+    ///
+    /// A polymorphic type alias for a Option.
+    ///
     type alias C[a] = Option[a]
 
-    /**
-     * A polymorphic type alias for a Result.
-     */
+    ///
+    /// A polymorphic type alias for a Result.
+    ///
     type alias D[a, b] = Result[a, b]
 
-    /**
-     * A partially polymorphic type alias for a Result.
-     */
+    ///
+    /// A partially polymorphic type alias for a Result.
+    ///
     type alias E[a] = Result[String, a]
 
     @test
@@ -105,34 +105,34 @@ mod Test.Dec.TypeAlias {
     @test
     def testTypeAlias20(): E[Int32] = Err("Hello World")
 
-    /**
-     * An enum for Int.
-     */
+    ///
+    /// An enum for Int.
+    ///
     enum X(Int32)
 
-    /**
-     * An enum for Option.
-     */
+    ///
+    /// An enum for Option.
+    ///
     enum Y[a](Option[a])
 
-    /**
-     * An enum for Result.
-     */
+    ///
+    /// An enum for Result.
+    ///
     enum Z[a, b](Result[a, b])
 
-    /**
-     * A type alias for an enum.
-     */
+    ///
+    /// A type alias for an enum.
+    ///
     type alias U = X
 
-    /**
-     * A type alias for a polymorphic enum.
-     */
+    ///
+    /// A type alias for a polymorphic enum.
+    ///
     type alias V[a] = Y[a]
 
-    /**
-     * A type alias for a polymorphic enum.
-     */
+    ///
+    /// A type alias for a polymorphic enum.
+    ///
     type alias W[a, b] = Z[a, b]
 
     @test
@@ -168,4 +168,14 @@ mod Test.Dec.TypeAlias {
 
     @test
     def testTypeAlias28(): P[If[true, true, false]] = ("xyz": P[true])
+
+    ///
+    /// Identity type alias
+    ///
+    type alias Id[a] = a
+
+    def testTypeAlias29Helper(x: a): Id[a] = x
+
+    @test
+    def testTypeAlias29(): Bool = testTypeAlias29Helper(123) == 123
 }

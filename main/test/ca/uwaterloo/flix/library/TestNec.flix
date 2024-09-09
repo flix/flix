@@ -228,6 +228,19 @@ mod TestNec {
     def length03(): Bool = Nec.length(necOf3(1, 2, 3)) == 3
 
     /////////////////////////////////////////////////////////////////////////////
+    // size                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def size01(): Bool = Nec.size(singleton(1)) == 1
+
+    @test
+    def size02(): Bool = Nec.size(necOf2(1, 2)) == 2
+
+    @test
+    def size03(): Bool = Nec.size(necOf3(1, 2, 3)) == 3
+
+    /////////////////////////////////////////////////////////////////////////////
     // append                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -1002,16 +1015,16 @@ mod TestNec {
 
     @test
     def forEach01(): Bool = region rc {
-        let ri = ref 21 @ rc;
+        let ri = Ref.fresh(rc, 21);
         Nec.forEach(x -> Ref.put(x, ri), singleton(1));
-        1 == deref ri
+        1 == Ref.get(ri)
     }
 
     @test
     def forEach02(): Bool = region rc {
-        let ri = ref 21 @ rc;
+        let ri = Ref.fresh(rc, 21);
         Nec.forEach(x -> Ref.put(x, ri), necOf3(1, 2, 3));
-        3 == deref ri
+        3 == Ref.get(ri)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1020,16 +1033,16 @@ mod TestNec {
 
     @test
     def forEachWithIndex01(): Bool = region rc {
-        let ri = ref 21 @ rc;
+        let ri = Ref.fresh(rc, 21);
         Nec.forEachWithIndex((i, _) -> Ref.put(i, ri), singleton(1));
-        0 == deref ri
+        0 == Ref.get(ri)
     }
 
     @test
     def forEachWithIndex02(): Bool = region rc {
-        let ri = ref 21 @ rc;
+        let ri = Ref.fresh(rc, 21);
         Nec.forEachWithIndex((i, _) -> Ref.put(i, ri), necOf3(1, 2, 3));
-        2 == deref ri
+        2 == Ref.get(ri)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1431,26 +1444,26 @@ mod TestNec {
 
     @test
     def traverse05(): Bool = region rc {
-        let st = ref 0 @ rc;
+        let st = Ref.fresh(rc, 0);
         let l = Nec.singleton(1);
         let ans = Nec.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, l);
-        ans == Identity.Identity(Nec.singleton(1)) and deref st == 1
+        ans == Identity.Identity(Nec.singleton(1)) and Ref.get(st) == 1
     }
 
     @test
     def traverse06(): Bool = region rc {
-        let st = ref 0 @ rc;
+        let st = Ref.fresh(rc, 0);
         let l = necOf2(1, 2);
         let ans = Nec.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, l);
-        ans == Identity.Identity(necOf2(1, 2)) and deref st == 2
+        ans == Identity.Identity(necOf2(1, 2)) and Ref.get(st) == 2
     }
 
     @test
     def traverse07(): Bool = region rc {
-        let st = ref 0 @ rc;
+        let st = Ref.fresh(rc, 0);
         let l = necOf3(1, 2, 3);
         let ans = Nec.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, l);
-        ans == Identity.Identity(necOf3(1, 2, 3)) and deref st == 3
+        ans == Identity.Identity(necOf3(1, 2, 3)) and Ref.get(st) == 3
     }
 
     /////////////////////////////////////////////////////////////////////////////

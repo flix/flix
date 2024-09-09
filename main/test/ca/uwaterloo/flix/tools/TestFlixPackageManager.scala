@@ -233,7 +233,7 @@ class TestFlixPackageManager extends AnyFunSuite {
   }
 
   test("Give error for missing version") {
-    assertResult(expected = PackageError.VersionDoesNotExist(SemVer(0, 0, Some(1), None, None), Project("flix", "museum")).message(f))(actual = {
+    assertResult(expected = PackageError.VersionDoesNotExist(SemVer(0, 0, 1), Project("flix", "museum")).message(f))(actual = {
       val toml = {
         """
           |[package]

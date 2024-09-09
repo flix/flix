@@ -338,7 +338,6 @@ mod TestMutMap {
             MutMap.joinWith((k, v) -> "${k} => ${v}", ", ") == "0 => 1, 1 => 2, 2 => 2"
     }
 
-
     /////////////////////////////////////////////////////////////////////////////
     // toMutDeque                                                              //
     /////////////////////////////////////////////////////////////////////////////
@@ -390,6 +389,119 @@ mod TestMutMap {
         d1 `MutDeque.sameElements` d2
     }
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toList                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toList01(): Bool = region rc {
+        let m: MutMap[Int32, Int32, _] = MutMap.empty(rc);
+        MutMap.toList(m) == (List#{} : List[(Int32, Int32)])
+    }
+
+    @test
+    def toList02(): Bool = region rc {
+        let m = Map.toMutMap(rc, Map#{1 => 2});
+        MutMap.toList(m) == List#{(1, 2)}
+    }
+
+    @test
+    def toList03(): Bool = region rc {
+        let m = Map.toMutMap(rc, Map#{1 => 2, 3 => 4, 5 => 6});
+        MutMap.toList(m) == List#{(1, 2), (3, 4), (5, 6)}
+    }
+
+    @test
+    def toList04(): Bool = region rc {
+        let m = Map.toMutMap(rc, Map#{1 => 'a', 2 => 'b', 3 => 'c'});
+        MutMap.toList(m) == List#{(1, 'a'), (2, 'b'), (3, 'c')}
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toVector                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toVector01(): Bool = region rc {
+        let m: MutMap[Int32, Int32, _] = MutMap.empty(rc);
+        MutMap.toVector(m) == (Vector#{} : Vector[(Int32, Int32)])
+    }
+
+    @test
+    def toVector02(): Bool = region rc {
+        let m = Map.toMutMap(rc, Map#{1 => 2});
+        MutMap.toVector(m) == Vector#{(1, 2)}
+    }
+
+    @test
+    def toVector03(): Bool = region rc {
+        let m = Map.toMutMap(rc, Map#{1 => 2, 3 => 4, 5 => 6});
+        MutMap.toVector(m) == Vector#{(1, 2), (3, 4), (5, 6)}
+    }
+
+    @test
+    def toVector04(): Bool = region rc {
+        let m = Map.toMutMap(rc, Map#{1 => 'a', 2 => 'b', 3 => 'c'});
+        MutMap.toVector(m) == Vector#{(1, 'a'), (2, 'b'), (3, 'c')}
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toArray                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toArray01(): Bool = region rc {
+        let m: MutMap[Int32, Int32, _] = MutMap.empty(rc);
+        Array.sameElements(MutMap.toArray(rc, m), Array#{} @ rc)
+    }
+
+    @test
+    def toArray02(): Bool = region rc {
+        let m = Map.toMutMap(rc, Map#{1 => 2});
+        Array.sameElements(MutMap.toArray(rc, m), Array#{(1, 2)} @ rc)
+    }
+
+    @test
+    def toArray03(): Bool = region rc {
+        let m = Map.toMutMap(rc, Map#{1 => 2, 3 => 4, 5 => 6});
+        Array.sameElements(MutMap.toArray(rc, m), Array#{(1, 2), (3, 4), (5, 6)} @ rc)
+    }
+
+    @test
+    def toArray04(): Bool = region rc {
+        let m = Map.toMutMap(rc, Map#{1 => 'a', 2 => 'b', 3 => 'c'});
+        Array.sameElements(MutMap.toArray(rc, m), Array#{(1, 'a'), (2, 'b'), (3, 'c')} @ rc)
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toSet                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toSet01(): Bool = region rc {
+        let m: MutMap[Int32, Int32, _] = MutMap.empty(rc);
+        MutMap.toSet(m) == (Set#{} : Set[(Int32, Int32)])
+    }
+
+    @test
+    def toSet02(): Bool = region rc {
+        let m = Map.toMutMap(rc, Map#{1 => 2});
+        MutMap.toSet(m) == Set#{(1, 2)}
+    }
+
+    @test
+    def toSet03(): Bool = region rc {
+        let m = Map.toMutMap(rc, Map#{1 => 2, 3 => 4, 5 => 6});
+        MutMap.toSet(m) == Set#{(1, 2), (3, 4), (5, 6)}
+    }
+
+    @test
+    def toSet04(): Bool = region rc {
+        let m = Map.toMutMap(rc, Map#{1 => 'a', 2 => 'b', 3 => 'c'});
+        MutMap.toSet(m) == Set#{(1, 'a'), (2, 'b'), (3, 'c')}
+    }
+
     /////////////////////////////////////////////////////////////////////////////
     // forEach                                                                 //
     /////////////////////////////////////////////////////////////////////////////
@@ -397,29 +509,29 @@ mod TestMutMap {
     @test
     def forEach01(): Bool = region rc {
         let m = MutMap.empty(rc);
-        let ri = ref 21 @ rc;
+        let ri = Ref.fresh(rc, 21);
         MutMap.forEach((k, v) -> Ref.put(k+v, ri), m);
-        21 == deref ri
+        21 == Ref.get(ri)
     }
 
     @test
     def forEach02(): Bool = region rc {
         let m = MutMap.empty(rc);
-        let ri = ref 21 @ rc;
+        let ri = Ref.fresh(rc, 21);
         MutMap.put!(0, 100, m);
         MutMap.forEach((k, v) -> Ref.put(k+v, ri), m);
-        100 == deref ri
+        100 == Ref.get(ri)
     }
 
     @test
     def forEach03(): Bool = region rc {
         let m = MutMap.empty(rc);
-        let ri = ref 21 @ rc;
+        let ri = Ref.fresh(rc, 21);
         MutMap.put!(0, 100, m);
         MutMap.put!(1, 101, m);
         MutMap.put!(2, 102, m);
         MutMap.forEach((k, v) -> Ref.put(k+v, ri), m);
-        104 == deref ri
+        104 == Ref.get(ri)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -429,29 +541,29 @@ mod TestMutMap {
     @test
     def forEachWithIndex01(): Bool = region rc {
         let m = MutMap.empty(rc);
-        let ri = ref 21 @ rc;
+        let ri = Ref.fresh(rc, 21);
         MutMap.forEachWithIndex((i, _, _) -> Ref.put(i, ri), m);
-        21 == deref ri
+        21 == Ref.get(ri)
     }
 
     @test
     def forEachWithIndex02(): Bool = region rc {
         let m = MutMap.empty(rc);
-        let ri = ref 21 @ rc;
+        let ri = Ref.fresh(rc, 21);
         MutMap.put!(0, 100, m);
         MutMap.forEachWithIndex((i, _, _) -> Ref.put(i, ri), m);
-        0 == deref ri
+        0 == Ref.get(ri)
     }
 
     @test
     def forEachWithIndex03(): Bool = region rc {
         let m = MutMap.empty(rc);
-        let ri = ref 21 @ rc;
+        let ri = Ref.fresh(rc, 21);
         MutMap.put!(0, 100, m);
         MutMap.put!(1, 101, m);
         MutMap.put!(2, 102, m);
         MutMap.forEachWithIndex((i, _, _) -> Ref.put(i, ri), m);
-        2 == deref ri
+        2 == Ref.get(ri)
     }
 
 }

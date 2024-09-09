@@ -17,6 +17,7 @@ package flix.fuzzers
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.nio.file.{Files, Paths}
@@ -46,6 +47,12 @@ class FuzzPrefixes extends AnyFunSuite with TestUtils {
     compilePrefixes(filepath.getFileName.toString, input)
   }
 
+  test("ford-fulkerson") {
+    val filepath = Paths.get("examples/larger-examples/datalog/ford-fulkerson.flix")
+    val input = Files.readString(filepath)
+    compilePrefixes(filepath.getFileName.toString, input)
+  }
+
   /**
     * We break the given string `input` down into N prefixes and compile each of them.
     * For example, if N is 100 and the input has length 300 then we create prefixes of length 3, 6, 9, ...
@@ -60,7 +67,7 @@ class FuzzPrefixes extends AnyFunSuite with TestUtils {
     for (i <- 1 until N) {
       val e = Math.min(i * step, length)
       val prefix = input.substring(0, e)
-      flix.addSourceCode(s"$name-prefix-$e", prefix)
+      flix.addSourceCode(s"$name-prefix-$e", prefix)(SecurityContext.AllPermissions)
       flix.compile() // We simply care that this does not crash.
     }
   }

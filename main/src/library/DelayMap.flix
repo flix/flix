@@ -32,6 +32,16 @@ instance ToString[DelayMap[k, v]] with ToString[k], ToString[v] {
     pub def toString(m: DelayMap[k, v]): String = DelayMap.toString(m)
 }
 
+instance Indexable[DelayMap[k, v]] with Order[k] {
+    type Idx = k
+    type Elm = v
+    type Aef = KeyNotFound
+    pub def get(t: DelayMap[k, v], i: k): v \ KeyNotFound = match DelayMap.get(i, t) {
+        case Some(v) => v
+        case None    => do KeyNotFound.keyNotFound("key not found")
+    }
+}
+
 instance Functor[DelayMap[k]] {
     pub def map(f: v1 -> v2 \ ef, m: DelayMap[k, v1]): DelayMap[k, v2] \ ef = DelayMap.map(f, m)
 }
@@ -43,9 +53,10 @@ instance Foldable[DelayMap[k]] {
 
 }
 
-instance Iterable[DelayMap[k]] {
-    pub def iterator(rc: Region[r], m: DelayMap[k, v]): Iterator[v, r, r] \ r =
-        DelayMap.iterator(rc, m) |> Iterator.map(snd)
+instance Iterable[DelayMap[k, v]] {
+    type Elm = (k, v)
+    pub def iterator(rc: Region[r], m: DelayMap[k, v]): Iterator[(k, v), r, r] \ r =
+        DelayMap.iterator(rc, m)
 }
 
 mod DelayMap {
@@ -768,7 +779,7 @@ mod DelayMap {
     ///
     @Experimental @Parallel
     pub def toMutMap(rc: Region[r], m: DelayMap[k, v]): MutMap[k, v, r] \ r =
-        MutMap.MutMap(rc, ref toMap(m) @ rc)
+        MutMap.MutMap(rc, Ref.fresh(rc, toMap(m)))
 
     ///
     /// Returns the map `m` as a set of key-value pairs.
@@ -816,8 +827,8 @@ mod DelayMap {
     ///
     @Experimental
     pub def forEachWithIndex(f: (Int32, k, v) -> Unit \ ef, m: DelayMap[k, v]): Unit \ ef = region rc {
-       let ix = ref 0 @ rc;
-       let f1 = (k, v) -> { let i =  deref ix; f(i, k, v); Ref.put(i + 1, ix) };
+       let ix = Ref.fresh(rc, 0);
+       let f1 = (k, v) -> { let i =  Ref.get(ix); f(i, k, v); Ref.put(i + 1, ix) };
        forEach(f1, m)
     }
 

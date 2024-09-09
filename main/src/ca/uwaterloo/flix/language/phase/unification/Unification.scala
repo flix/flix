@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.collection.ListMap
@@ -27,7 +28,7 @@ object Unification {
   /**
     * Unify the two type variables `x` and `y`.
     */
-  private def unifyVars(x: Type.Var, y: Type.Var, renv: RigidityEnv)(implicit flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError] = {
+  private def unifyVars(x: Type.Var, y: Type.Var, renv: RigidityEnv)(implicit scope: Scope, flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError] = {
     // Case 0: types are identical
     if (x.sym == y.sym) {
       Result.Ok(Substitution.empty, Nil)
@@ -46,7 +47,7 @@ object Unification {
   /**
     * Unifies the given variable `x` with the given non-variable type `tpe`.
     */
-  def unifyVar(x: Type.Var, tpe: Type, renv: RigidityEnv)(implicit flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError] = {
+  def unifyVar(x: Type.Var, tpe: Type, renv: RigidityEnv)(implicit scope: Scope, flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError] = {
     tpe match {
 
       // ensure the kinds are compatible
@@ -84,7 +85,7 @@ object Unification {
     * Unifies the two given types `tpe1` and `tpe2`.
     */
   // NB: The order of cases has been determined by code coverage analysis.
-  def unifyTypes(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError] = (tpe1.kind, tpe2.kind) match {
+  def unifyTypes(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit scope: Scope, flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError] = (tpe1.kind, tpe2.kind) match {
 
     case (Kind.Eff, Kind.Eff) => EffUnification.unify(tpe1, tpe2, renv)
 
@@ -105,7 +106,7 @@ object Unification {
     * Unifies the types `tpe1` and `tpe2`.
     * The types must each have a Star or Arrow kind.
     */
-  private def unifyStarOrArrowTypes(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError] = (tpe1, tpe2) match {
+  private def unifyStarOrArrowTypes(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit scope: Scope, flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError] = (tpe1, tpe2) match {
 
     case (x: Type.Var, _) => unifyVar(x, tpe2, renv)
 
@@ -132,40 +133,17 @@ object Unification {
 
     case (_, _: Type.AssocType) => Result.Ok(Substitution.empty, List(Ast.BroadEqualityConstraint(tpe1, tpe2)))
 
-    case (Type.Cst(TypeConstructor.Error(k1), _), t2) if k1 == t2.kind => Result.Ok(Substitution.empty, Nil)
+    case (Type.Cst(TypeConstructor.Error(_, k1), _), t2) if k1 == t2.kind => Result.Ok(Substitution.empty, Nil)
 
-    case (t1, Type.Cst(TypeConstructor.Error(k2), _)) if t1.kind == k2 => Result.Ok(Substitution.empty, Nil)
+    case (t1, Type.Cst(TypeConstructor.Error(_, k2), _)) if t1.kind == k2 => Result.Ok(Substitution.empty, Nil)
 
     case _ => Result.Err(UnificationError.MismatchedTypes(tpe1, tpe2))
   }
 
   /**
-    * Returns a [[TypeError.OverApplied]] or [[TypeError.UnderApplied]] type error, if applicable.
-    */
-  def getUnderOrOverAppliedError(arrowType: Type, argType: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix): TypeError = {
-    val default = TypeError.MismatchedTypes(arrowType, argType, fullType1, fullType2, renv, loc)
-
-    arrowType match {
-      case Type.Apply(_, resultType, _) =>
-        if (Unification.unifiesWith(resultType, argType, renv, ListMap.empty)) { // TODO ASSOC-TYPES empty OK?
-          arrowType.typeArguments.lift(1) match {
-            case None => default
-            case Some(excessArgument) => TypeError.OverApplied(excessArgument, loc)
-          }
-        } else {
-          arrowType.typeArguments.lift(1) match {
-            case None => default
-            case Some(missingArgument) => TypeError.UnderApplied(missingArgument, loc)
-          }
-        }
-      case _ => default
-    }
-  }
-
-  /**
     * Returns true iff `tpe1` unifies with `tpe2`, without introducing equality constraints.
     */
-  def unifiesWith(tpe1: Type, tpe2: Type, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Boolean = {
+  def unifiesWith(tpe1: Type, tpe2: Type, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit scope: Scope, flix: Flix): Boolean = {
     Unification.unifyTypes(tpe1, tpe2, renv) match {
       case Result.Ok((subst, econstrs)) =>
         // check that all econstrs hold under the environment

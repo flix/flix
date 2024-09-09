@@ -18,11 +18,13 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Label, LabelledEdge, LabelledPrecedenceGraph}
+import ca.uwaterloo.flix.language.ast.Ast.{Label, LabelledEdge, LabelledPrecedenceGraph}
 import ca.uwaterloo.flix.language.ast.Type.eraseAliases
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
-import ca.uwaterloo.flix.language.ast.TypedAst._
+import ca.uwaterloo.flix.language.ast.TypedAst.*
+import ca.uwaterloo.flix.language.ast.shared.Denotation
 import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor}
+import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
 /**
@@ -45,7 +47,7 @@ object PredDeps {
     }, _ + _)
 
     Validation.success(root.copy(precedenceGraph = g))
-  }
+  }(DebugValidation())
 
   /**
     * Returns the term types of the given relational or latticenal type.
@@ -62,10 +64,10 @@ object PredDeps {
         case Type.Cst(TypeConstructor.Unit, _) => (Nil, den)
         case _ => (List(t), den) // Unary
       }
-    case _: Type.Var =>
-      // This could occur when querying or projecting a non-existent predicate
+    case _ =>
+      // Resilience: We would want a relation or lattice, but type inference may have failed.
+      // If so, we simply return the empty list of term types with a relational denotation.
       (Nil, Denotation.Relational)
-    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe.'", tpe.loc)
   }
 
   /**
@@ -186,6 +188,17 @@ object PredDeps {
     case Expr.ArrayStore(base, index, elm, _, _) =>
       visitExp(base) + visitExp(index) + visitExp(elm)
 
+    case Expr.StructNew(_, fields, region, _, _, _) =>
+      fields.foldLeft(visitExp(region)) {
+        case (acc, (_, e)) => acc + visitExp(e)
+      }
+
+    case Expr.StructGet(e, _, _, _, _) =>
+      visitExp(e)
+
+    case Expr.StructPut(e1, _, e2, _, _, _) =>
+      visitExp(e1) + visitExp(e2)
+
     case Expr.VectorLit(exps, _, _, _) =>
       exps.foldLeft(LabelledPrecedenceGraph.empty) {
         case (acc, e) => acc + visitExp(e)
@@ -196,15 +209,6 @@ object PredDeps {
 
     case Expr.VectorLength(exp, _) =>
       visitExp(exp)
-
-    case Expr.Ref(exp1, exp2, _, _, _) =>
-      visitExp(exp1) + visitExp(exp2)
-
-    case Expr.Deref(exp, _, _, _) =>
-      visitExp(exp)
-
-    case Expr.Assign(exp1, exp2, _, _, _) =>
-      visitExp(exp1) + visitExp(exp2)
 
     case Expr.Ascribe(exp, _, _, _) =>
       visitExp(exp)
@@ -228,6 +232,9 @@ object PredDeps {
       rules.foldLeft(visitExp(exp)) {
         case (acc, CatchRule(_, _, e)) => acc + visitExp(e)
       }
+
+    case Expr.Throw(exp, _, _, _) =>
+      visitExp(exp)
 
     case Expr.TryWith(exp, _, rules, _, _, _) =>
       rules.foldLeft(visitExp(exp)) {
@@ -327,7 +334,6 @@ object PredDeps {
 
     case Expr.Error(_, _, _) =>
       LabelledPrecedenceGraph.empty
-
   }
 
   /**

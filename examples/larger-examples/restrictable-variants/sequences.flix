@@ -96,7 +96,7 @@ mod Seq {
     }
 
     ///
-    /// Returns the length of `l`.
+    /// Returns the number of elements in `l`.
     ///
     pub def length(l: Seq[s][a]): Int32 = choose l{
         case Seq.Nil => 0
@@ -307,7 +307,7 @@ mod Seq {
     /// Returns `l` with every occurrence of `src` replaced by `dst`.
     ///
     pub def replace(src: {src = a}, dst: {dst = a}, l: Seq[s][a]): Seq[s][a] with Eq[a] =
-        map(e -> if (e == src.src) dst.dst else e, l)
+        map(e -> if (e == src#src) dst#dst else e, l)
 
     ///
     /// Returns `l` with `x` inserted between every two adjacent elements.
@@ -504,7 +504,7 @@ mod Seq {
     /// Note: Indices that are out of bounds in `l` are not considered (i.e. slice(start, end, l) = slice(max(0, start), min(length(l), end), l)).
     ///
     pub def slice(start: {start = Int32}, end: {end = Int32}, l: Seq[s][a]): Seq[s rvadd <Seq.Nil>][a] =
-        l |> drop(start.start) |> take(end.end - start.start)
+        l |> drop(start#start) |> take(end#end - start#start)
 
     ///
     /// Returns `l` without the first `n` elements.
@@ -835,9 +835,9 @@ mod Seq {
     /// Returns an iterator over `l`.
     ///
     pub def iterator(rc: Region[r], xs: Seq[s][a]): Iterator[a, r, r] \ r =
-        let ls = ref open_variant_as Seq xs @ rc;
+        let ls = Ref.fresh(rc, open_variant_as Seq xs);
         let next = () -> {
-            choose (deref ls) {
+            choose (Ref.get(ls)) {
                 case Seq.Nil            => None
                 case Seq.One(x)         => Ref.put(open_variant Seq.Nil, ls); Some(x)
                 case Seq.Cons(x, rs)    => Ref.put(rs, ls); Some(x)
@@ -905,6 +905,7 @@ instance Foldable[Seq.Seq[s]] {
     pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, l: Seq.Seq[s][a]): b \ ef = Seq.foldRightWithCont(f, s, l)
 }
 
-instance Iterable[Seq.Seq[s]] {
+instance Iterable[Seq.Seq[s][a]] {
+    type Elm = a
     pub def iterator(rc: Region[r], l: Seq.Seq[s][a]): Iterator[a, r, r] \ r = Seq.iterator(rc, l)
 }

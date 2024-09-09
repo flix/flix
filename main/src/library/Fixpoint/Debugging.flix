@@ -23,46 +23,61 @@ mod Fixpoint.Debugging {
     ///
     /// Invoked before the fixpoint computation.
     ///
+    /// Note: Returns `d` to ensure it is not erased.
+    ///
     @Internal
-    pub def notifyPreSolve(d: Datalog[v], _stf: Map[PredSym, Int32]): Unit \ IO with Order[v] = {
+    pub def notifyPreSolve(d: Datalog[v]): Datalog[v] with Order[v] = masked_cast({
         if (Fixpoint.Options.enableDebugging()) {
             println(String.repeat(80, "*"));
             println("** Datalog Input");
             println(String.repeat(80, "*"));
             println("");
             println(String.indent(4, "${d}"));
-            println("")
-        } else ()
-    }
+            println("");
+            d
+        } else {
+            d
+        }
+    })
 
     ///
     /// Invoked with the minimal model of the fixpoint computation.
     ///
+    /// Note: Returns `d` to ensure it is not erased.
+    ///
     @Internal
-    pub def notifyPostSolve(d: Datalog[v]): Unit \ IO with Order[v] = {
+    pub def notifyPostSolve(d: Datalog[v]): Datalog[v] with Order[v] = masked_cast({
         if (Fixpoint.Options.enableDebugging()) {
             println(String.repeat(80, "*"));
             println("** Minimal Model");
             println(String.repeat(80, "*"));
             println("");
             println(String.indent(4, "${d}"));
-            println("")
-        } else ()
-    }
+            println("");
+            d
+        } else {
+            d
+        }
+    })
 
     ///
     /// Invoked before the fixpoint computation.
     ///
+    /// Note: Returns `s` to ensure it is not erased.
+    ///
     @Internal
-    pub def notifyPreInterpret(s: RamStmt[v]): Unit \ IO with Order[v] = {
+    pub def notifyPreInterpret(s: RamStmt[v]): RamStmt[v] with Order[v] = masked_cast({
         if (Fixpoint.Options.enableDebugging()) {
             println(String.repeat(80, "*"));
             println("** Relation Algebra Machine AST");
             println(String.repeat(80, "*"));
             println("");
             println(String.indent(4, "${s}"));
-            println("")
-        } else ()
-    }
+            println("");
+            s
+        } else {
+            s
+        }
+    })
 
 }

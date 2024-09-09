@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase.unification
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.util.{Formatter, InternalCompilerException, Result}
 
+import scala.annotation.nowarn
 import scala.collection.immutable.SortedSet
 import scala.collection.mutable
 
@@ -37,7 +38,8 @@ import scala.collection.mutable
 ///   1. We propagate ground terms (true/false/constant) in a fixpoint.
 ///   2. We propagate variables (i.e. resolving constraints of the form x = y).
 ///   3. We perform trivial assignments where the left-hand variables does not occur in the RHS.
-///   4. We do full-blown Boolean unification with SVE.
+///   4. We eliminate (now) trivial and redundant constraints.
+///   5. We do full-blown Boolean unification with SVE.
 /// - We represent a conjunction with n >= 2 terms.
 ///   - We group the terms into three: a set of constants, a set of variables, and a list of sub-terms.
 ///   - We flatten conjunctions at least one level per call to `mkAnd`.
@@ -115,8 +117,8 @@ object FastBoolUnification {
   /**
     * A stateful phased solver for Boolean unification equations. The solver maintains two fields that change over time:
     *
-    * - The current (pending) unification equations to solve.
-    * - The current (partial) substitution which represents the solution.
+    *   - The current (pending) unification equations to solve.
+    *   - The current (partial) substitution which represents the solution.
     *
     * @param l The input list of Boolean unification equations to solve.
     */
@@ -151,7 +153,8 @@ object FastBoolUnification {
         phase1ConstantPropagation()
         phase2VarPropagation()
         phase3VarAssignment()
-        phase4SVE()
+        phase4TrivialAndRedundant()
+        phase5SVE()
         verifySolution()
         verifySolutionSize()
 
@@ -206,9 +209,21 @@ object FastBoolUnification {
       debugln()
     }
 
-    private def phase4SVE(): Unit = {
+    private def phase4TrivialAndRedundant(): Unit = {
       debugln("-".repeat(80))
-      debugln("--- Phase 4: Boolean Unification")
+      debugln("--- Phase 4: Eliminate Trivial and Redundant Equations")
+      debugln("    (eliminates equations of the form X = X and duplicated equations)")
+      debugln("-".repeat(80))
+      val s = eliminateTrivialAndRedundant(currentEqns)
+      updateState(s)
+      printEquations()
+      printSubstitution()
+      debugln()
+    }
+
+    private def phase5SVE(): Unit = {
+      debugln("-".repeat(80))
+      debugln("--- Phase 5: Boolean Unification")
       debugln("    (resolves all remaining equations using SVE.)")
       debugln("-".repeat(80))
       val newSubst = boolUnifyAllPickSmallest(currentEqns)
@@ -278,18 +293,18 @@ object FastBoolUnification {
     * Throws a [[ConflictException]] if an unsolvable equation is encountered.
     *
     * A trivial equation is one of:
-    * -     true ~ true
-    * -    false ~ false
-    * -        c ~ c        (same constant)
-    * -        x ~ x        (same variable)
+    *   -     true ~ true
+    *   -    false ~ false
+    *   -        c ~ c        (same constant)
+    *   -        x ~ x        (same variable)
     *
     *
     * An unsolvable (conflicted) equation is one of:
     *
-    * -      true ~ false   (and mirrored)
-    * -       c_i ~ c_j     (different constants)
-    * -        c ~ true     (and mirrored)
-    * -        c ~ false    (and mirrored)
+    *   -      true ~ false   (and mirrored)
+    *   -       c_i ~ c_j     (different constants)
+    *   -        c ~ true     (and mirrored)
+    *   -        c ~ false    (and mirrored)
     */
   private def checkAndSimplify(l: List[Equation]): List[Equation] = l match {
     case Nil => Nil
@@ -322,9 +337,9 @@ object FastBoolUnification {
     *
     * The implementation uses three rewrite rules:
     *
-    * - `x ~ true` becomes `[x -> true]`.
-    * - `x ~ c` becomes `[x -> c]`.
-    * - `x /\ y /\ ... = true` becomes `[x -> true, y -> true, ...]`.
+    *   - `x ~ true` becomes `[x -> true]`.
+    *   - `x ~ c` becomes `[x -> c]`.
+    *   - `x /\ y /\ ... = true` becomes `[x -> true, y -> true, ...]`.
     *
     * For example, if the equation system is:
     *
@@ -552,6 +567,64 @@ object FastBoolUnification {
 
     // Reverse the unsolved equations to ensure they are returned in the original order.
     (unsolved.reverse, subst)
+  }
+
+  /**
+    * Eliminates trivial and redundant equations.
+    *
+    * An equation is trivial if its LHS and RHS are the same.
+    *
+    * An equation is redundant if it appears multiple times in the list of equations.
+    *
+    * For example, given the equation system:
+    *
+    * {{{
+    *   (c9 ∧ c0) ~ (c9 ∧ c0)
+    *         c10 ~ c11
+    * }}}
+    *
+    * We return the new equation system:
+    *
+    * {{{
+    *   c10 ~ c11
+    * }}}
+    *
+    * For example, given the equation system:
+    *
+    * {{{
+    *   (c1 ∧ c3) ~ (c1 ∧ c3)
+    *   (c1 ∧ c3) ~ (c1 ∧ c3)
+    * }}}
+    *
+    * We return the new equation system:
+    *
+    * {{{
+    *   (c1 ∧ c3) ~ (c1 ∧ c3)
+    * }}}
+    *
+    * We only remove equations, hence the returned substitution is always empty.
+    *
+    * Note: We only consider *syntactic equality*.
+    */
+  private def eliminateTrivialAndRedundant(l: List[Equation]): (List[Equation], BoolSubstitution) = {
+    var result = List.empty[Equation]
+    val seen = mutable.Set.empty[Equation]
+
+    // We rely on equations and terms having correct equals and hashCode functions.
+    // Note: We are purely working with *syntactic equality*, not *semantic equality*.
+    for (eqn <- l) {
+      if (!seen.contains(eqn)) {
+        // The equation has not been seen before.
+        if (eqn.t1 != eqn.t2) {
+          // The LHS and RHS are different.
+          seen += eqn
+          result = eqn :: result
+        }
+      }
+    }
+
+    // We reverse the list of equations to preserve the initial order.
+    (result.reverse, BoolSubstitution.empty)
   }
 
   /**
@@ -813,7 +886,7 @@ object FastBoolUnification {
         val vars = termVars -- trueVars
 
         // Recompose the conjunction. We use the smart constructor because some sets may have become empty.
-        Term.mkAnd(csts.toList.map(Term.Cst) ++ vars.toList.map(Term.Var) ++ rest)
+        Term.mkAnd(csts.toList.map(Term.Cst.apply) ++ vars.toList.map(Term.Var.apply) ++ rest)
 
       case Term.Or(ts) => Term.mkOr(ts.map(visit(_, trueCsts, trueVars)))
     }
@@ -829,15 +902,15 @@ object FastBoolUnification {
       * Returns a unification equation  `t1 ~ t2` between the terms `t1` and `t2`.
       *
       * The smart constructor performs normalization:
-      * - We move true and false to the rhs.
-      * - We move a single variable to the lhs.
-      * - We reorder constant/variables so that the smaller constant/variable is on the lhs.
+      *   - We move true and false to the rhs.
+      *   - We move a single variable to the lhs.
+      *   - We reorder constant/variables so that the smaller constant/variable is on the lhs.
       *
       * Examples:
-      * -     true ~ x7 ==> x7 ~ true
-      * -       c3 ~ c2 ==> c2 ~ c3
-      * -       x7 ~ x5 ==> x5 ~ x7
-      * - x3 /\ x7 ~ x4 ==> x4 ~ x3 /\ x7
+      *   -     true ~ x7 ==> x7 ~ true
+      *   -       c3 ~ c2 ==> c2 ~ c3
+      *   -       x7 ~ x5 ==> x5 ~ x7
+      *   - x3 /\ x7 ~ x4 ==> x4 ~ x3 /\ x7
       */
     def mk(t1: Term, t2: Term, loc: SourceLocation): Equation = (t1, t2) match {
       case (Term.Cst(c1), Term.Cst(c2)) => if (c1 <= c2) Equation(t1, t2, loc) else Equation(t2, t1, loc)
@@ -853,7 +926,12 @@ object FastBoolUnification {
     * Represents a unification equation `t1 ~ t2` between the terms `t1` and `t2`.
     *
     * WARNING: Equations should be normalized. Use the smart constructor [[Equation.mk]] to create a new equation.
+    *
+    * the `@nowarn` annotation is required for Scala 3 compatiblity, since the derived `copy` method is private
+    * in Scala 3 due to the private constructor. In Scala 2 the `copy` method is still public.
+    * However, we do not use the `copy` method anywhere for [[Equation]], so this is fine.
     */
+  @nowarn
   case class Equation private(t1: Term, t2: Term, loc: SourceLocation) {
     /**
       * Returns the size of this equation which is the sum of its lhs and rhs.

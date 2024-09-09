@@ -29,45 +29,50 @@ import scala.annotation.tailrec
 
 object HoverProvider {
 
-  def processHover(uri: String, pos: Position, current: Boolean)(implicit index: Index, root: Option[Root], flix: Flix): JObject = {
+  def processHover(uri: String, pos: Position)(implicit index: Index, root: Root, flix: Flix): JObject = {
     index.query(uri, pos) match {
       case None => mkNotFound(uri, pos)
 
-      case Some(entity) => hoverEntity(entity, uri, pos, current)
+      case Some(entity) => hoverEntity(entity, uri, pos)
     }
   }
 
   @tailrec
-  private def hoverEntity(entity: Entity, uri: String, pos: Position, current: Boolean)(implicit Index: Index, root: Option[Root], flix: Flix): JObject = entity match {
+  private def hoverEntity(entity: Entity, uri: String, pos: Position)(implicit Index: Index, root: Root, flix: Flix): JObject = entity match {
 
-    case Entity.Case(caze) => hoverType(caze.tpe, caze.sym.loc, current).getOrElse(mkNotFound(uri, pos))
+    case Entity.Case(caze) => hoverType(caze.tpe, caze.sym.loc)
 
-    case Entity.DefUse(sym, loc, _) => hoverDef(sym, loc, current).getOrElse(mkNotFound(uri, pos))
+    case Entity.StructField(field) => hoverType(field.tpe, field.sym.loc)
 
-    case Entity.SigUse(sym, loc, _) => hoverSig(sym, loc, current).getOrElse(mkNotFound(uri, pos))
+    case Entity.DefUse(sym, loc, _) => hoverDef(sym, loc)
 
-    case Entity.VarUse(_, _, parent) => hoverEntity(parent, uri, pos, current)
+    case Entity.SigUse(sym, loc, _) => hoverSig(sym, loc)
 
-    case Entity.CaseUse(_, _, parent) => hoverEntity(parent, uri, pos, current)
+    case Entity.VarUse(_, _, parent) => hoverEntity(parent, uri, pos)
 
-    case Entity.Exp(exp) => hoverTypeAndEff(exp.tpe, exp.eff, exp.loc, current).getOrElse(mkNotFound(uri, pos))
+    case Entity.CaseUse(_, _, parent) => hoverEntity(parent, uri, pos)
 
-    case Entity.FormalParam(fparam) => hoverType(fparam.tpe, fparam.loc, current).getOrElse(mkNotFound(uri, pos))
+    case Entity.StructFieldUse(_, _, parent) => hoverEntity(parent, uri, pos)
 
-    case Entity.Pattern(pat) => hoverType(pat.tpe, pat.loc, current).getOrElse(mkNotFound(uri, pos))
+    case Entity.Exp(exp) => hoverTypeAndEff(exp.tpe, exp.eff, exp.loc)
 
-    case Entity.Pred(pred, tpe) => hoverType(tpe, pred.loc, current).getOrElse(mkNotFound(uri, pos))
+    case Entity.FormalParam(fparam) => hoverType(fparam.tpe, fparam.loc)
 
-    case Entity.LocalVar(sym, tpe) => hoverType(tpe, sym.loc, current).getOrElse(mkNotFound(uri, pos))
+    case Entity.Pattern(pat) => hoverType(pat.tpe, pat.loc)
 
-    case Entity.Type(t) => hoverKind(t, current)
+    case Entity.Pred(pred, tpe) => hoverType(tpe, pred.loc)
 
-    case Entity.OpUse(sym, loc, _) => hoverOp(sym, loc, current).getOrElse(mkNotFound(uri, pos))
+    case Entity.LocalVar(sym, tpe) => hoverType(tpe, sym.loc)
+
+    case Entity.Type(t) => hoverKind(t)
+
+    case Entity.OpUse(sym, loc, _) => hoverOp(sym, loc)
 
     case Entity.Trait(_) => mkNotFound(uri, pos)
     case Entity.Def(_) => mkNotFound(uri, pos)
     case Entity.Effect(_) => mkNotFound(uri, pos)
     case Entity.Enum(_) => mkNotFound(uri, pos)
+    case Entity.Struct(_) => mkNotFound(uri, pos)
     case Entity.TypeAlias(_) => mkNotFound(uri, pos)
     case Entity.AssocType(_) => mkNotFound(uri, pos)
     case Entity.Label(_) => mkNotFound(uri, pos)
@@ -76,98 +81,77 @@ object HoverProvider {
     case Entity.TypeVar(_) => mkNotFound(uri, pos)
   }
 
-  private def hoverType(tpe: Type, loc: SourceLocation, current: Boolean)(implicit index: Index, root: Option[Root], flix: Flix): Option[JObject] = {
-    root.map {
-      case r =>
-        val minTpe = minimizeType(tpe)
-        val lowerAndUpperBounds = SetFormula.formatLowerAndUpperBounds(minTpe)(r)
-        val markup =
-          s"""${mkCurrentMsg(current)}
-             |```flix
-             |${FormatType.formatType(minTpe)}$lowerAndUpperBounds
-             |```
-             |""".stripMargin
-        val contents = MarkupContent(MarkupKind.Markdown, markup)
-        val range = Range.from(loc)
-        val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
-        ("status" -> ResponseStatus.Success) ~ ("result" -> result)
-    }
+  private def hoverType(tpe: Type, loc: SourceLocation)(implicit root: Root, flix: Flix): JObject = {
+    val minTpe = minimizeType(tpe)
+    val lowerAndUpperBounds = SetFormula.formatLowerAndUpperBounds(minTpe)(root)
+    val markup =
+      s"""```flix
+         |${FormatType.formatType(minTpe)}$lowerAndUpperBounds
+         |```
+         |""".stripMargin
+    val contents = MarkupContent(MarkupKind.Markdown, markup)
+    val range = Range.from(loc)
+    val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
+    ("status" -> ResponseStatus.Success) ~ ("result" -> result)
   }
 
-  private def hoverTypeAndEff(tpe: Type, eff: Type, loc: SourceLocation, current: Boolean)(implicit index: Index, root: Option[Root], flix: Flix): Option[JObject] = {
-    root.map {
-      case r =>
-        val minEff = minimizeType(eff)
-        val minTpe = minimizeType(tpe)
-        val lowerAndUpperBounds = SetFormula.formatLowerAndUpperBounds(minTpe)(r)
-        val markup =
-          s"""${mkCurrentMsg(current)}
-             |```flix
-             |${formatTypAndEff(minTpe, minEff)}$lowerAndUpperBounds
-             |```
-             |""".stripMargin
-        val contents = MarkupContent(MarkupKind.Markdown, markup)
-        val range = Range.from(loc)
-        val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
-        ("status" -> ResponseStatus.Success) ~ ("result" -> result)
-    }
+  private def hoverTypeAndEff(tpe: Type, eff: Type, loc: SourceLocation)(implicit flix: Flix): JObject = {
+    val minEff = minimizeType(eff)
+    val minTpe = minimizeType(tpe)
+    val markup =
+      s"""```flix
+         |${formatTypAndEff(minTpe, minEff)}
+         |```
+         |""".stripMargin
+    val contents = MarkupContent(MarkupKind.Markdown, markup)
+    val range = Range.from(loc)
+    val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
+    ("status" -> ResponseStatus.Success) ~ ("result" -> result)
   }
 
-  private def hoverDef(sym: Symbol.DefnSym, loc: SourceLocation, current: Boolean)(implicit index: Index, root: Option[Root], flix: Flix): Option[JObject] = {
-    root.map {
-      case r =>
-        val defDecl = r.defs(sym)
-        val markup =
-          s"""${mkCurrentMsg(current)}
-             |```flix
-             |${FormatSignature.asMarkDown(defDecl)}
-             |```
-             |
-             |${FormatDoc.asMarkDown(defDecl.spec.doc)}
-             |""".stripMargin
-        val contents = MarkupContent(MarkupKind.Markdown, markup)
-        val range = Range.from(loc)
-        val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
-        ("status" -> ResponseStatus.Success) ~ ("result" -> result)
-    }
+  private def hoverDef(sym: Symbol.DefnSym, loc: SourceLocation)(implicit root: Root, flix: Flix): JObject = {
+    val defDecl = root.defs(sym)
+    val markup =
+      s"""```flix
+         |${FormatSignature.asMarkDown(defDecl)}
+         |```
+         |
+         |${FormatDoc.asMarkDown(defDecl.spec.doc)}
+         |""".stripMargin
+    val contents = MarkupContent(MarkupKind.Markdown, markup)
+    val range = Range.from(loc)
+    val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
+    ("status" -> ResponseStatus.Success) ~ ("result" -> result)
   }
 
-  private def hoverSig(sym: Symbol.SigSym, loc: SourceLocation, current: Boolean)(implicit index: Index, root: Option[Root], flix: Flix): Option[JObject] = {
-    root.map {
-      case r =>
-        val sigDecl = r.sigs(sym)
-        val markup =
-          s"""${mkCurrentMsg(current)}
-             |```flix
-             |${FormatSignature.asMarkDown(sigDecl)}
-             |```
-             |
-             |${FormatDoc.asMarkDown(sigDecl.spec.doc)}
-             |""".stripMargin
-        val contents = MarkupContent(MarkupKind.Markdown, markup)
-        val range = Range.from(loc)
-        val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
-        ("status" -> ResponseStatus.Success) ~ ("result" -> result)
-    }
+  private def hoverSig(sym: Symbol.SigSym, loc: SourceLocation)(implicit root: Root, flix: Flix): JObject = {
+    val sigDecl = root.sigs(sym)
+    val markup =
+      s"""```flix
+         |${FormatSignature.asMarkDown(sigDecl)}
+         |```
+         |
+         |${FormatDoc.asMarkDown(sigDecl.spec.doc)}
+         |""".stripMargin
+    val contents = MarkupContent(MarkupKind.Markdown, markup)
+    val range = Range.from(loc)
+    val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
+    ("status" -> ResponseStatus.Success) ~ ("result" -> result)
   }
 
-  private def hoverOp(sym: Symbol.OpSym, loc: SourceLocation, current: Boolean)(implicit index: Index, root: Option[Root], flix: Flix): Option[JObject] = {
-    root.map {
-      case r =>
-        val opDecl = r.effects(sym.eff).ops.find(_.sym == sym).get // guaranteed to be present
-        val markup =
-          s"""${mkCurrentMsg(current)}
-             |```flix
-             |${FormatSignature.asMarkDown(opDecl)}
-             |```
-             |
-             |${FormatDoc.asMarkDown(opDecl.spec.doc)}
-             |""".stripMargin
-        val contents = MarkupContent(MarkupKind.Markdown, markup)
-        val range = Range.from(loc)
-        val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
-        ("status" -> ResponseStatus.Success) ~ ("result" -> result)
-    }
+  private def hoverOp(sym: Symbol.OpSym, loc: SourceLocation)(implicit root: Root, flix: Flix): JObject = {
+    val opDecl = root.effects(sym.eff).ops.find(_.sym == sym).get // guaranteed to be present
+    val markup =
+      s"""```flix
+         |${FormatSignature.asMarkDown(opDecl)}
+         |```
+         |
+         |${FormatDoc.asMarkDown(opDecl.spec.doc)}
+         |""".stripMargin
+    val contents = MarkupContent(MarkupKind.Markdown, markup)
+    val range = Range.from(loc)
+    val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
+    ("status" -> ResponseStatus.Success) ~ ("result" -> result)
   }
 
   private def formatTypAndEff(tpe0: Type, eff0: Type)(implicit flix: Flix): String = {
@@ -182,10 +166,9 @@ object HoverProvider {
     s"$t$p"
   }
 
-  private def hoverKind(t: Type, current: Boolean)(implicit index: Index, root: Option[Root]): JObject = {
+  private def hoverKind(t: Type): JObject = {
     val markup =
-      s"""${mkCurrentMsg(current)}
-         |```flix
+      s"""```flix
          |${FormatKind.formatKind(t.kind)}
          |```
          |""".stripMargin
@@ -196,12 +179,9 @@ object HoverProvider {
   }
 
   /**
-    * Returns a reply indicating that nothing was found at the `uri` and `pos`.
-    */
+   * Returns a reply indicating that nothing was found at the `uri` and `pos`.
+   */
   private def mkNotFound(uri: String, pos: Position): JObject =
     ("status" -> ResponseStatus.InvalidRequest) ~ ("message" -> s"Nothing found in '$uri' at '$pos'.")
-
-  private def mkCurrentMsg(current: Boolean): String =
-    if (!current) "(Information may not be current)" else ""
 
 }

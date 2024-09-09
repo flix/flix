@@ -580,7 +580,6 @@ object GenExpression {
 
       case AtomicOp.Index(idx) =>
         val List(exp) = exps
-
         val MonoType.Tuple(elmTypes) = exp.tpe
         val tupleType = BackendObjType.Tuple(elmTypes.map(BackendType.asErasedBackendType))
         // evaluating the `base`
@@ -784,60 +783,47 @@ object GenExpression {
         // Pushes the 'length' of the array on top of stack
         mv.visitInsn(ARRAYLENGTH)
 
-      case AtomicOp.Ref =>
-        val List(exp) = exps
-
-        val MonoType.Ref(refValueType) = tpe
-        val refType = BackendObjType.Ref(BackendType.asErasedBackendType(refValueType))
-        val internalClassName = refType.jvmName.toInternalName
-
-        // Create a new reference object
+      case AtomicOp.StructNew(sym, fields) =>
+        val region :: fieldExps = exps
+        // Evaluate the region and ignore its value
+        compileExpr(region)
+        BytecodeInstructions.xPop(BackendType.toErasedBackendType(region.tpe))(new BytecodeInstructions.F(mv))
+        // We get the JvmType of the class for the struct
+        val MonoType.Struct(_, elmTypes, _) = tpe
+        val structType = BackendObjType.Struct(elmTypes.map(BackendType.asErasedBackendType))
+        val internalClassName = structType.jvmName.toInternalName
+        // Instantiating a new object of struct
         mv.visitTypeInsn(NEW, internalClassName)
-        // Duplicate it since one instance will get consumed by constructor
+        // Duplicating the class
         mv.visitInsn(DUP)
-        // Call the constructor
-        mv.visitMethodInsn(INVOKESPECIAL, internalClassName, "<init>", MethodDescriptor.NothingToVoid.toDescriptor, false)
-        // Duplicate it since one instance will get consumed by putfield
-        mv.visitInsn(DUP)
-        // Evaluate the underlying expression
-        compileExpr(exp)
-        // set the field with the ref value
-        mv.visitFieldInsn(PUTFIELD, internalClassName, refType.ValueField.name, refType.tpe.toDescriptor)
+        // Evaluating all the elements to be stored in the struct class
+        fieldExps.foreach(compileExpr)
+        // Descriptor of constructor
+        val constructorDescriptor = MethodDescriptor(structType.elms, VoidableType.Void)
+        // Invoking the constructor
+        mv.visitMethodInsn(INVOKESPECIAL, internalClassName, "<init>", constructorDescriptor.toDescriptor, false)
 
-      case AtomicOp.Deref =>
+      case AtomicOp.StructGet(field) =>
+        val idx = field.idx
         val List(exp) = exps
-        // Add source line number for debugging (can fail with ???)
-        addSourceLine(mv, loc)
-
-        // Evaluate the exp
+        val MonoType.Struct(_, elmTypes, _) = exp.tpe
+        val structType = BackendObjType.Struct(elmTypes.map(BackendType.asErasedBackendType))
+        // evaluating the `base`
         compileExpr(exp)
+        // Retrieving the field `field${offset}`
+        mv.visitFieldInsn(GETFIELD, structType.jvmName.toInternalName, s"field$idx", JvmOps.asErasedJvmType(tpe).toDescriptor)
 
-        // the previous function is already partial
-        val MonoType.Ref(refValueType) = exp.tpe
-        val refType = BackendObjType.Ref(BackendType.asErasedBackendType(refValueType))
-        val internalClassName = refType.jvmName.toInternalName
-
-        // Cast the ref
-        mv.visitTypeInsn(CHECKCAST, internalClassName)
-        // Dereference the expression
-        mv.visitFieldInsn(GETFIELD, internalClassName, refType.ValueField.name, refType.tpe.toDescriptor)
-
-      case AtomicOp.Assign =>
+      case AtomicOp.StructPut(field) =>
+        val idx = field.idx
         val List(exp1, exp2) = exps
-
-        // Add source line number for debugging (can fail with ??? same as deref)
-        addSourceLine(mv, loc)
-
-        // Evaluate the reference address
+        val MonoType.Struct(_, elmTypes, _) = exp1.tpe
+        val structType = BackendObjType.Struct(elmTypes.map(BackendType.asErasedBackendType))
+        // evaluating the `base`
         compileExpr(exp1)
-        // Evaluating the value to be assigned to the reference
+        // evaluating the `rhs`
         compileExpr(exp2)
-
-        // the previous function is already partial
-        val MonoType.Ref(refValueType) = exp1.tpe
-        val refType = BackendObjType.Ref(BackendType.asErasedBackendType(refValueType))
-        // Invoke `setValue` method to set the value to the given number
-        mv.visitFieldInsn(PUTFIELD, refType.jvmName.toInternalName, refType.ValueField.name, refType.tpe.toDescriptor)
+        // set the field `field${offset}`
+        mv.visitFieldInsn(PUTFIELD, structType.jvmName.toInternalName, s"field$idx", JvmOps.getErasedJvmType(exp2.tpe).toDescriptor)
         // Since the return type is unit, we put an instance of unit on top of the stack
         mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
 
@@ -978,6 +964,12 @@ object GenExpression {
         // Push Unit on the stack.
         mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
 
+      case AtomicOp.Throw =>
+        // Add source line number for debugging (can fail when handling exception)
+        addSourceLine(mv, loc)
+        val List(exp) = exps
+        compileExpr(exp)
+        mv.visitInsn(ATHROW)
 
       case AtomicOp.Spawn =>
         val List(exp1, exp2) = exps

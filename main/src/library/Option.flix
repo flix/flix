@@ -71,10 +71,10 @@ instance Applicative[Option] {
     pub def ap(f: Option[a -> b \ ef], x: Option[a]) : Option[b] \ ef = Option.ap(f, x)
 
     // Same as the default implementation using `map` and `ap` but with less indirection.
-    override pub def map2(f: t1 -> t2 -> r \ ef, x1: Option[t1], x2: Option[t2]): Option[r] \ ef = Option.map2(f, x1, x2)
-    override pub def map3(f: t1 -> t2 -> t3 -> r \ ef, x1: Option[t1], x2: Option[t2], x3: Option[t3]): Option[r] \ ef = Option.map3(f, x1, x2, x3)
-    override pub def map4(f: t1 -> t2 -> t3 -> t4 -> r \ ef, x1: Option[t1], x2: Option[t2], x3: Option[t3], x4: Option[t4]): Option[r] \ ef = Option.map4(f, x1, x2, x3, x4)
-    override pub def map5(f: t1 -> t2 -> t3 -> t4 -> t5 -> r \ ef, x1: Option[t1], x2: Option[t2], x3: Option[t3], x4: Option[t4], x5: Option[t5]): Option[r] \ ef = Option.map5(f, x1, x2, x3, x4, x5)
+    redef map2(f: t1 -> t2 -> r \ ef, x1: Option[t1], x2: Option[t2]): Option[r] \ ef = Option.map2(f, x1, x2)
+    redef map3(f: t1 -> t2 -> t3 -> r \ ef, x1: Option[t1], x2: Option[t2], x3: Option[t3]): Option[r] \ ef = Option.map3(f, x1, x2, x3)
+    redef map4(f: t1 -> t2 -> t3 -> t4 -> r \ ef, x1: Option[t1], x2: Option[t2], x3: Option[t3], x4: Option[t4]): Option[r] \ ef = Option.map4(f, x1, x2, x3, x4)
+    redef map5(f: t1 -> t2 -> t3 -> t4 -> t5 -> r \ ef, x1: Option[t1], x2: Option[t2], x3: Option[t3], x4: Option[t4], x5: Option[t5]): Option[r] \ ef = Option.map5(f, x1, x2, x3, x4, x5)
 }
 
 instance Monad[Option] {
@@ -87,7 +87,7 @@ instance MonadZero[Option] {
 
 instance MonadZip[Option] {
     pub def zipWith(f: (a, b) -> c \ ef, ma: Option[a], mb: Option[b]): Option[c] \ ef = Applicative.map2(f, ma, mb)
-    pub override def zip(ma: Option[a], mb: Option[b]): Option[(a, b)] = Applicative.map2((x, y) -> (x, y), ma, mb)
+    redef zip(ma: Option[a], mb: Option[b]): Option[(a, b)] = Applicative.map2((x, y) -> (x, y), ma, mb)
 
     pub def zipWithA(f: (a, b) -> f[c] \ ef, x: Option[a], y: Option[b]): f[Option[c]] \ ef with Applicative[f] =
         use Functor.{<$>};
@@ -116,7 +116,7 @@ instance Traversable[Option] {
             case Some(a) => f(a) |> map(Some)
         }
 
-    pub override def sequence(t: Option[m[a]]): m[Option[a]] with Applicative[m] =
+    redef sequence(t: Option[m[a]]): m[Option[a]] with Applicative[m] =
         use Applicative.{point};
         use Functor.{map};
         match t {
@@ -128,7 +128,7 @@ instance Traversable[Option] {
 
 instance Filterable[Option] {
     pub def filterMap(f: a -> Option[b] \ ef, o: Option[a]): Option[b] \ ef = Option.flatMap(f, o)
-    pub override def filter(f: a -> Bool \ ef, o: Option[a]): Option[a] \ ef = Option.filter(f, o)
+    redef filter(f: a -> Bool \ ef, o: Option[a]): Option[a] \ ef = Option.filter(f, o)
 }
 
 instance Witherable[Option]
@@ -149,7 +149,8 @@ instance Monoid[Option[a]] with Monoid[a] {
 
 instance CommutativeMonoid[Option[a]] with CommutativeMonoid[a]
 
-instance Iterable[Option] {
+instance Iterable[Option[a]] {
+    type Elm = a
     pub def iterator(rc: Region[r], o: Option[a]): Iterator[a, r, r] \ r = Option.iterator(rc, o)
 }
 
@@ -185,7 +186,7 @@ mod Option {
     /// Returns `o` if it is `Some(v)`. Otherwise returns `default`.
     ///
     pub def withDefault(default: {default = Option[a]}, o: Option[a]): Option[a] = match o {
-        case None    => default.default
+        case None    => default#default
         case Some(_) => o
     }
 
@@ -194,7 +195,7 @@ mod Option {
     ///
     pub def replace(src: {src = a}, dst: {dst = a}, o: Option[a]): Option[a] with Eq[a] = match o {
         case None    => o
-        case Some(v) => Some(if (v == src.src) dst.dst else v)
+        case Some(v) => Some(if (v == src#src) dst#dst else v)
     }
 
     ///

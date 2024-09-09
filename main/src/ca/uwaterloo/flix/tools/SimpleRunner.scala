@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.tools
 
 import ca.uwaterloo.flix.Main.{CmdOpts, Command}
 import ca.uwaterloo.flix.api.{Bootstrap, Flix}
+import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.runtime.shell.Shell
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.collection.Chain
@@ -77,6 +78,7 @@ object SimpleRunner {
     val flix = new Flix()
     flix.setOptions(options)
     for (file <- cmdOpts.files) {
+      implicit val defaultSctx: SecurityContext = SecurityContext.AllPermissions
       val ext = file.getName.split('.').last
       ext match {
         case "flix" => flix.addFlix(file.toPath)

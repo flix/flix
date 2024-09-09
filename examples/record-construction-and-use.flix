@@ -1,6 +1,6 @@
 /// Returns the area of the rectangle `r`.
 /// The record `r` must have `x` and `y` labels, and no other labels.
-def area(r: {x = Int32, y = Int32}): Int32 = r.x * r.y
+def area(r: {x = Int32, y = Int32}): Int32 = r#x * r#y
 
 /// Computes the area of various rectangle records.
 /// Note that the order of labels is immaterial.
@@ -11,7 +11,7 @@ def areas(): List[Int32] =
 /// Returns the area of the polymorphic record `r`.
 /// Note that the use of the type variable `a` permits the record `r`
 /// to have labels other than `x` and `y`.
-def polyArea(r : {x = Int32, y = Int32 | a}): Int32 = r.x * r.y
+def polyArea(r : {x = Int32, y = Int32 | a}): Int32 = r#x * r#y
 
 /// Computes the area of various rectangle records.
 /// Note that some records have additional labels.

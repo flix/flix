@@ -18,7 +18,9 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Modifiers
+import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, LoweredAst, MonoAst, Name, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnvironment, Substitution, Unification}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.collection.{ListMap, ListOps}
@@ -40,16 +42,16 @@ import scala.collection.mutable
   *
   * For example, the polymorphic program:
   *
-  * -   def fst[a, b](p: (a, b)): a = let (x, y) = p ; x
-  * -   def f: Bool = fst((true, 'a'))
-  * -   def g: Int32 = fst((42, "foo"))
+  *   -   def fst[a, b](p: (a, b)): a = let (x, y) = p ; x
+  *   -   def f: Bool = fst((true, 'a'))
+  *   -   def g: Int32 = fst((42, "foo"))
   *
   * is, roughly speaking, translated to:
   *
-  * -   def fst$1(p: (Bool, Char)): Bool = let (x, y) = p ; x
-  * -   def fst$2(p: (Int32, String)): Int32 = let (x, y) = p ; x
-  * -   def f: Bool = fst$1((true, 'a'))
-  * -   def g: Bool = fst$2((42, "foo"))
+  *   -   def fst$1(p: (Bool, Char)): Bool = let (x, y) = p ; x
+  *   -   def fst$2(p: (Int32, String)): Int32 = let (x, y) = p ; x
+  *   -   def f: Bool = fst$1((true, 'a'))
+  *   -   def g: Bool = fst$2((42, "foo"))
   *
   * Additionally for things like record types and effect formulas, equivalent types are flattened
   * and ordered. This means that `{b = String, a = String}` becomes `{a = String, b = String}` and
@@ -57,27 +59,31 @@ import scala.collection.mutable
   *
   * At a high-level, monomorphization works as follows:
   *
-  * 1. We maintain a queue of functions and the concrete, normalized types they must be specialized
-  *    to.
-  * 2. We populate the queue by specialization of non-parametric function definitions.
-  * 3. We iteratively extract a function from the queue and specialize it:
-  *    a. We replace every type variable appearing anywhere in the definition by its concrete type.
-  *       b. We create new fresh local variable symbols (since the function is effectively being
-  *          copied).
-  *       c. We enqueue (or re-used) other functions referenced by the current function which
-  *          require specialization.
-  *       4. We reconstruct the AST from the specialized functions and remove all parametric
-  *          functions (Enum declarations are deleted to avoid specializing them).
+  *   1. We maintain a queue of functions and the concrete, normalized types they must be
+  *      specialized to.
+  *   1. We populate the queue by specialization of non-parametric function definitions.
+  *   1. We iteratively extract a function from the queue and specialize it:
+  *      a. We replace every type variable appearing anywhere in the definition by its concrete
+  *         type.
+  *      a. We create new fresh local variable symbols (since the function is effectively being
+  *         copied).
+  *      a. We enqueue (or re-used) other functions referenced by the current function which require
+  *         specialization.
+  *   1. We reconstruct the AST from the specialized functions and remove all parametric functions
+  *      (Enum declarations are deleted to avoid specializing them).
   *
   * Type normalization details:
   *
-  * - Record fields are in alphabetical order
-  * - Schema fields are in alphabetical order
-  * - Effect formulas are flat unions of effects in alphabetical order.
-  * - Case set formulas are a single CaseSet literal.
+  *   - Record fields are in alphabetical order
+  *   - Schema fields are in alphabetical order
+  *   - Effect formulas are flat unions of effects in alphabetical order.
+  *   - Case set formulas are a single CaseSet literal.
   *
   */
 object Monomorpher {
+
+  // TODO levels trying top scope to get it to compile. Revisit.
+  private implicit val S: Scope = Scope.Top
 
   /**
     * A strict substitution is similar to a regular substitution except that free type variables are
@@ -86,10 +92,10 @@ object Monomorpher {
     * kind. This is safe since otherwise the type would not be polymorphic after type-inference.
     *
     * Properties of normalized types (which is returned by apply):
-    * - No type variables
-    * - No associated types
-    * - No type aliases
-    * - Equivalent types are uniquely represented (e.g. fields in records types are alphabetized)
+    *   - No type variables
+    *   - No associated types
+    *   - No type aliases
+    *   - Equivalent types are uniquely represented (e.g. fields in records types are alphabetized)
     *
     * Notes on `s`: It is only applied to variables directly in the apply of the strict
     * substitution. They image of `s` does not have type aliases or associated types but can have
@@ -115,6 +121,8 @@ object Monomorpher {
       case Kind.Predicate => Type.mkAnyType(tpe0.loc)
       case Kind.CaseSet(sym) => Type.Cst(TypeConstructor.CaseSet(SortedSet.empty, sym), tpe0.loc)
       case Kind.Arrow(_, _) => Type.mkAnyType(tpe0.loc)
+      case Kind.Jvm => throw InternalCompilerException(s"Unexpected type: '$tpe0'.", tpe0.loc)
+      case Kind.Error => throw InternalCompilerException(s"Unexpected type '$tpe0'.", tpe0.loc)
     }
 
     /**
@@ -172,6 +180,7 @@ object Monomorpher {
       case Type.Alias(_, _, t, _) =>
         // Remove the Alias.
         apply(t)
+
       case Type.AssocType(cst, arg0, _, loc) =>
         // Remove the associated type.
         val arg = apply(arg0)
@@ -181,6 +190,9 @@ object Monomorpher {
             apply(t)
           case Err(_) => throw InternalCompilerException("unexpected associated type reduction failure", loc)
         }
+
+      case Type.JvmToType(_, loc) => throw InternalCompilerException("unexpected JVM type", loc)
+      case Type.UnresolvedJvmType(_, loc) => throw InternalCompilerException("unexpected JVM type", loc)
     }
 
     /**
@@ -219,7 +231,7 @@ object Monomorpher {
       *
       * For example, if the queue contains the entry:
       *
-      * -   (f$1, f, [a -> Int32])
+      *   -   (f$1, f, [a -> Int32])
       *
       * it means that the function definition f should be specialized w.r.t. the map [a -> Int32] under the fresh name f$1.
       *
@@ -232,7 +244,7 @@ object Monomorpher {
       *
       * Note: This is not synchronized.
       */
-    def nonEmpty: Boolean = {
+    def nonEmpty: Boolean = synchronized {
       !defQueue.isEmpty
     }
 
@@ -241,7 +253,7 @@ object Monomorpher {
       *
       * Note: This is not synchronized.
       */
-    def enqueue(sym: Symbol.DefnSym, defn: LoweredAst.Def, subst: StrictSubstitution): Unit = {
+    def enqueue(sym: Symbol.DefnSym, defn: LoweredAst.Def, subst: StrictSubstitution): Unit = synchronized {
       defQueue.add((sym, defn, subst))
     }
 
@@ -250,7 +262,7 @@ object Monomorpher {
       *
       * Note: This is not synchronized.
       */
-    def dequeueAll: Array[(Symbol.DefnSym, LoweredAst.Def, StrictSubstitution)] = {
+    def dequeueAll: Array[(Symbol.DefnSym, LoweredAst.Def, StrictSubstitution)] = synchronized {
       val r = defQueue.toArray(Array.empty[(Symbol.DefnSym, LoweredAst.Def, StrictSubstitution)])
       defQueue.clear()
       r
@@ -262,11 +274,11 @@ object Monomorpher {
       *
       * For example, if the function:
       *
-      * -   def fst[a, b](x: a, y: b): a = ...
+      *   -   def fst[a, b](x: a, y: b): a = ...
       *
       * has been specialized w.r.t. to `Int32` and `String` then this map will contain an entry:
       *
-      * -   (fst, (Int32, String) -> Int32) -> fst$1
+      *   -   (fst, (Int32, String) -> Int32) -> fst$1
       */
     private val def2def: mutable.Map[(Symbol.DefnSym, Type), Symbol.DefnSym] = mutable.Map.empty
 
@@ -321,6 +333,8 @@ object Monomorpher {
     case Type.Var(_, _) => throw InternalCompilerException(s"Unexpected type variable '$rest'", rest.loc)
     case Type.Alias(_, _, _, _) => throw InternalCompilerException(s"Unexpected alias '$rest'", rest.loc)
     case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected associated type '$rest'", rest.loc)
+    case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected JVM type '$rest'", rest.loc)
+    case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected JVM type '$rest'", rest.loc)
   }
 
   /**
@@ -340,6 +354,8 @@ object Monomorpher {
     case Type.Var(_, _) => throw InternalCompilerException(s"Unexpected type variable '$rest'", rest.loc)
     case Type.Alias(_, _, _, _) => throw InternalCompilerException(s"Unexpected alias '$rest'", rest.loc)
     case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected associated type '$rest'", rest.loc)
+    case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected JVM type '$rest'", rest.loc)
+    case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected JVM type '$rest'", rest.loc)
   }
 
   /**
@@ -395,14 +411,29 @@ object Monomorpher {
         MonoAst.Effect(doc, ann, mod, sym, ops, loc)
     }
 
+    val structs =  ParOps.parMapValues(root.structs) {
+      case LoweredAst.Struct(doc, ann, mod, sym, tparams0, fields, loc) =>
+        val newFields = fields.map(visitStructField)
+        val tparams = tparams0.map(_.sym)
+        MonoAst.Struct(doc, ann, mod, sym, tparams, newFields, loc)
+    }
+
     // Reassemble the AST.
     MonoAst.Root(
       ctx.toMap,
+      structs,
       effects,
       root.entryPoint,
       root.reachable,
       root.sources
     )
+  }
+
+  def visitStructField(field: LoweredAst.StructField): MonoAst.StructField = {
+    field match {
+      case LoweredAst.StructField(fieldSym, tpe, loc) =>
+        MonoAst.StructField(fieldSym, tpe, loc)
+    }
   }
 
   /**
@@ -732,27 +763,29 @@ object Monomorpher {
     */
   private def specializeDef(defn: LoweredAst.Def, tpe: Type)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): Symbol.DefnSym = {
     // Unify the declared and actual type to obtain the substitution map.
-    val subst = infallibleUnify(defn.spec.declaredScheme.base, tpe)
+    val subst = infallibleUnify(defn.spec.declaredScheme.base, tpe, defn.sym)
 
     // Check whether the function definition has already been specialized.
-    ctx.getDef2Def(defn.sym, tpe) match {
-      case None =>
-        // Case 1: The function has not been specialized.
-        // Generate a fresh specialized definition symbol.
-        val freshSym = Symbol.freshDefnSym(defn.sym)
+    ctx synchronized {
+      ctx.getDef2Def(defn.sym, tpe) match {
+        case None =>
+          // Case 1: The function has not been specialized.
+          // Generate a fresh specialized definition symbol.
+          val freshSym = Symbol.freshDefnSym(defn.sym)
 
-        // Register the fresh symbol (and actual type) in the symbol2symbol map.
-        ctx.putDef2Def(defn.sym, tpe, freshSym)
+          // Register the fresh symbol (and actual type) in the symbol2symbol map.
+          ctx.putDef2Def(defn.sym, tpe, freshSym)
 
-        // Enqueue the fresh symbol with the definition and substitution.
-        ctx.enqueue(freshSym, defn, subst)
+          // Enqueue the fresh symbol with the definition and substitution.
+          ctx.enqueue(freshSym, defn, subst)
 
-        // Now simply refer to the freshly generated symbol.
-        freshSym
-      case Some(specializedSym) =>
-        // Case 2: The function has already been specialized.
-        // Simply refer to the already existing specialized symbol.
-        specializedSym
+          // Now simply refer to the freshly generated symbol.
+          freshSym
+        case Some(specializedSym) =>
+          // Case 2: The function has already been specialized.
+          // Simply refer to the already existing specialized symbol.
+          specializedSym
+      }
     }
 
   }
@@ -786,12 +819,12 @@ object Monomorpher {
   /**
     * Unifies `tpe1` and `tpe2` which must be unifiable.
     */
-  private def infallibleUnify(tpe1: Type, tpe2: Type)(implicit root: LoweredAst.Root, flix: Flix): StrictSubstitution = {
+  private def infallibleUnify(tpe1: Type, tpe2: Type, sym: Symbol.DefnSym)(implicit root: LoweredAst.Root, flix: Flix): StrictSubstitution = {
     Unification.unifyTypes(tpe1, tpe2, RigidityEnv.empty) match {
       case Result.Ok((subst, econstrs)) => // TODO ASSOC-TYPES consider econstrs
         StrictSubstitution(subst, root.eqEnv)
       case Result.Err(_) =>
-        throw InternalCompilerException(s"Unable to unify: '$tpe1' and '$tpe2'.", tpe1.loc)
+        throw InternalCompilerException(s"Unable to unify: '$tpe1' and '$tpe2'.\nIn '${sym}'", tpe1.loc)
     }
   }
 
