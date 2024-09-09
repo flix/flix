@@ -295,48 +295,83 @@ mod TestMutList {
 
     @test
     def nth01(): Bool = region rc {
-        MutList.nth(0, (MutList.empty(rc): MutList[Int32, _])) == None
+        try {
+            MutList.nth(0, (MutList.empty(rc): MutList[Int32, _]));
+            false
+        } with IndexOutOfBounds {
+            def throw(_, _) = true
+        }
     }
 
     @test
     def nth02(): Bool = region rc {
         let v = MutList.empty(rc);
         MutList.push!(42, v);
-        MutList.nth(0, v) == Some(42)
+        try {
+            Assert.eq(42, MutList.nth(0, v))
+        } with IndexOutOfBounds {
+            def throw(_, _) = false
+        }
     }
 
     @test
     def nth03(): Bool = region rc {
         let v = MutList.empty(rc);
         MutList.push!(42, v);
-        MutList.nth(1, v) == None
+        try {
+            MutList.nth(1, v);
+            false
+        } with IndexOutOfBounds {
+            def throw(_, _) = true
+        }
     }
 
     @test
     def nth04(): Bool = region rc {
-        MutList.nth(1, MutList.range(rc, 0, 2)) == Some(1)
+        try {
+            Assert.eq(1, MutList.nth(1, MutList.range(rc, 0, 2)))
+        } with IndexOutOfBounds {
+            def throw(_, _) = false
+        }
     }
 
     @test
     def nth05(): Bool = region rc {
-        MutList.nth(3, MutList.range(rc, 0, 4)) == Some(3)
+        try {
+            Assert.eq(3, MutList.nth(3, MutList.range(rc, 0, 4)))
+        } with IndexOutOfBounds {
+            def throw(_, _) = false
+        }
     }
 
     @test
     def nth06(): Bool = region rc {
-        MutList.nth(30, MutList.range(rc, 0, 42)) == Some(30)
+        try {
+            Assert.eq(30, MutList.nth(30, MutList.range(rc, 0, 42)))
+        } with IndexOutOfBounds {
+            def throw(_, _) = false
+        }
     }
 
     @test
     def nth07(): Bool = region rc {
-        MutList.nth(-30, MutList.range(rc, 0, 42)) == None
+        try {
+            MutList.nth(-30, MutList.range(rc, 0, 42));
+            false
+        } with IndexOutOfBounds {
+            def throw(_, _) = true
+        }
     }
 
     @test
     def nth08(): Bool = region rc {
-        MutList.nth(50, MutList.range(rc, 0, 42)) == None
+        try {
+            MutList.nth(50, MutList.range(rc, 0, 42));
+            false
+        } with IndexOutOfBounds {
+            def throw(_, _) = true
+        }
     }
-
 
     /////////////////////////////////////////////////////////////////////////////
     // length                                                                  //
@@ -1269,7 +1304,11 @@ mod TestMutList {
         MutList.push!(42, v);
         MutList.push!(31, v);
         MutList.push!(1019, v);
-        MutList.length(v) == 3 and MutList.nth(0, v) == Some(42) and MutList.nth(1, v) == Some(31) and MutList.nth(2, v) == Some(1019)
+        try {
+            MutList.length(v) == 3 and MutList.nth(0, v) == 42 and MutList.nth(1, v) == 31 and MutList.nth(2, v) == 1019
+        } with IndexOutOfBounds {
+            def throw(_, _) = false
+        }
     }
 
     @test
@@ -1279,7 +1318,11 @@ mod TestMutList {
         MutList.push!(0, v);
         MutList.push!(0, v);
         MutList.push!(0, v);
-        MutList.length(v) == 4 and MutList.nth(0, v) == Some(0) and MutList.nth(1, v) == Some(0) and MutList.nth(2, v) == Some(0) and MutList.nth(3, v) == Some(0)
+        try {
+            MutList.length(v) == 4 and MutList.nth(0, v) == 0 and MutList.nth(1, v) == 0 and MutList.nth(2, v) == 0 and MutList.nth(3, v) == 0
+        } with IndexOutOfBounds {
+            def throw(_, _) = false
+        }
     }
 
 
@@ -1347,7 +1390,11 @@ mod TestMutList {
         MutList.insert!(98, 1, v);
         MutList.insert!(99, 2, v);
         MutList.insert!(107, 1, v);
-        MutList.length(v) == 4 and MutList.nth(1, v) == Some(107)
+        try {
+            MutList.length(v) == 4 and MutList.nth(1, v) == 107
+        } with IndexOutOfBounds {
+            def throw(_, _) = false
+        }
     }
 
     @test
@@ -2011,7 +2058,11 @@ mod TestMutList {
         let v = Array.toMutList(rc, Array#{1, 2, 3} @ rc);
         let a = MutList.toArray(rc, v);
         Array.put(42, 1, a);
-        MutList.nth(1, v) == Some(2)
+        try {
+            MutList.nth(1, v) == 2
+        } with IndexOutOfBounds {
+            def throw(_, _) = false
+        }
     }
 
     @test
@@ -2801,5 +2852,4 @@ mod TestMutList {
 
         MutList.length(v) == 10 and v `MutList.sameElements` List.toMutList(rc, l)
     }
-
 }

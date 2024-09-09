@@ -16,3 +16,4 @@ crash_report_*.txt
 
 # local development files
 **/personal/**
+bin/
