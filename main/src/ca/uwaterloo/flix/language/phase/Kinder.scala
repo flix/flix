@@ -1925,7 +1925,7 @@ object Kinder {
     /**
       * Adds the given mapping to the kind environment.
       */
-    def +(pair: (Symbol.UnkindedTypeVarSym, Kind)): Validation[KindEnv, KindError] = pair match {
+    def +(pair: (Symbol.UnkindedTypeVarSym, Kind))(implicit sctx: SharedContext): Validation[KindEnv, KindError] = pair match {
       case (tvar, kind) => map.get(tvar) match {
         case Some(kind0) => unify(kind0, kind) match {
           case Some(minKind) => Validation.success(KindEnv(map + (tvar -> minKind)))
