@@ -15,21 +15,23 @@
  */
 
 ///
-/// Aborts the current computation with an error message.
+/// An effect used to abort computation with an error message.
 ///
 pub eff Abort {
+
     ///
     /// Immediately aborts the current computation with the given error message `m`.
     ///
     /// The computation cannot be resumed.
     ///
     pub def abort(m: String): Void
+
 }
 
 mod Abort {
 
     ///
-    /// Runs the given function `f` which has an `Abort` effect.
+    /// Runs the `Abort` effect of the given function `f`.
     ///
     /// Returns `Ok(f())` if the computation completes successfully without aborting.
     /// Returns `Err(m)`  if the computation aborts with error message `m`.
