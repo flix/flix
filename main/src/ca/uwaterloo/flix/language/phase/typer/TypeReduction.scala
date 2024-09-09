@@ -19,38 +19,36 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.TypeError
-import ca.uwaterloo.flix.language.phase.typer.ConstraintSolver.ResolutionResult
 import ca.uwaterloo.flix.language.phase.unification.Unification
-import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 import ca.uwaterloo.flix.util.collection.{ListMap, ListOps}
+import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
 import java.lang.reflect.{Constructor, Field, Method}
-import java.math.BigInteger
 import scala.annotation.tailrec
 
 object TypeReduction {
 
   /**
-   * Simplifies the given type by reducing associated type applications.
-   *
-   * Θ ⊩ τ ⤳ τ'
-   *
-   * Returns the simplified type and a Boolean flag to indicate whether progress was made.
-   *
-   * Applications that cannot be resolved are left as they are.
-   * These are applications to variables and applications to other unresolvable types.
-   *
-   * Applications that are illegal result in an Err.
-   * These are applications to types for which the eqEnv has no corresponding instance.
-   *
-   * For example:
-   * {{{
-   *   Int           ~> Int
-   *   Elm[List[a]]  ~> a
-   *   Elm[Int]      ~> <ERROR>
-   *   Elm[Elm[a]]   ~> Elm[Elm[a]]
-   * }}}
-   */
+    * Simplifies the given type by reducing associated type applications.
+    *
+    * Θ ⊩ τ ⤳ τ'
+    *
+    * Returns the simplified type and a Boolean flag to indicate whether progress was made.
+    *
+    * Applications that cannot be resolved are left as they are.
+    * These are applications to variables and applications to other unresolvable types.
+    *
+    * Applications that are illegal result in an Err.
+    * These are applications to types for which the eqEnv has no corresponding instance.
+    *
+    * For example:
+    * {{{
+    *   Int           ~> Int
+    *   Elm[List[a]]  ~> a
+    *   Elm[Int]      ~> <ERROR>
+    *   Elm[Elm[a]]   ~> Elm[Elm[a]]
+    * }}}
+    */
   def simplify(tpe: Type, renv0: RigidityEnv, loc: SourceLocation)(implicit scope: Scope, eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Result[(Type, Boolean), TypeError] = tpe match {
     // A var is already simple.
     case t: Type.Var => Result.Ok((t, false))
@@ -168,32 +166,32 @@ object TypeReduction {
   }
 
   /**
-   * This is the resolution process of the Java constructor designated by a class and the parameter types.
-   * Returns the return type of the Java constructor according, if there exists such a Java constructor.
-   * Otherwise, either the Java constructor could not be found with the given signature or there was an ambiguity.
-   *
-   * @param clazz   the constructor's Java class
-   * @param ts      the list containing the parameter types of the constructor
-   * @param loc     the location where the java constructor has been invoked
-   * @return        A JavaConstructorResolutionResult object that indicates the status of the resolution progress
-   */
+    * This is the resolution process of the Java constructor designated by a class and the parameter types.
+    * Returns the return type of the Java constructor according, if there exists such a Java constructor.
+    * Otherwise, either the Java constructor could not be found with the given signature or there was an ambiguity.
+    *
+    * @param clazz   the constructor's Java class
+    * @param ts      the list containing the parameter types of the constructor
+    * @param loc     the location where the java constructor has been invoked
+    * @return        A JavaConstructorResolutionResult object that indicates the status of the resolution progress
+    */
   def lookupConstructor(clazz: Class[_], ts: List[Type], loc: SourceLocation): JavaConstructorResolutionResult = {
     if (ts.forall(isKnown)) retrieveConstructor(clazz, ts, loc)
     else JavaConstructorResolutionResult.UnresolvedTypes
   }
 
   /**
-   * This is the resolution process of the Java method method, member of the class of the Java object thisObj.
-   * Returns the return type of the Java method according to the type of thisObj and the arguments of the method,
-   * if there exists such a Java method.
-   * Otherwise, either the Java method could not be found with the given method signature, or, there was an ambiguity.
-   *
-   * @param thisObj     the Java object
-   * @param methodName  the Java method, supposedly member of the class of the Java object
-   * @param ts          the list containing the type of thisObj and the arguments of the method
-   * @param loc         the location where the Java method has been called
-   * @return            A JavaMethodResolutionResult object that indicates the status of the resolution progress
-   */
+    * This is the resolution process of the Java method method, member of the class of the Java object thisObj.
+    * Returns the return type of the Java method according to the type of thisObj and the arguments of the method,
+    * if there exists such a Java method.
+    * Otherwise, either the Java method could not be found with the given method signature, or, there was an ambiguity.
+    *
+    * @param thisObj     the Java object
+    * @param methodName  the Java method, supposedly member of the class of the Java object
+    * @param ts          the list containing the type of thisObj and the arguments of the method
+    * @param loc         the location where the Java method has been called
+    * @return            A JavaMethodResolutionResult object that indicates the status of the resolution progress
+    */
   def lookupMethod(thisObj: Type, methodName: String, ts: List[Type], loc: SourceLocation): JavaMethodResolutionResult = {
     if (isKnown(thisObj) && ts.forall(isKnown)) {
       Type.classFromFlixType(thisObj) match {
@@ -245,10 +243,10 @@ object TypeReduction {
   }
 
   /**
-   * Helper method to retrieve a constructor given its parameter types and the class.
-   * Returns a JavaConstructorResolutionResult containing either the constructor, a list of candidate constructors or
-   * a ConstructorNotFound object. The working process is similar to retrieveMethod and differs in the selection of candidate constructors.
-   */
+    * Helper method to retrieve a constructor given its parameter types and the class.
+    * Returns a JavaConstructorResolutionResult containing either the constructor, a list of candidate constructors or
+    * a ConstructorNotFound object. The working process is similar to retrieveMethod and differs in the selection of candidate constructors.
+    */
   private def retrieveConstructor(clazz: Class[_], ts: List[Type], loc: SourceLocation): JavaConstructorResolutionResult = {
     val candidateConstructors = clazz.getConstructors.filter(c => isCandidateConstructor(c, ts)).toList
 
@@ -286,9 +284,9 @@ object TypeReduction {
   }
 
   /**
-   * Helper method to retrieve a method given its name and parameter types.
-   * Returns a JavaMethodResolutionResult either containing the Java method or a MethodNotFound object.
-   */
+    * Helper method to retrieve a method given its name and parameter types.
+    * Returns a JavaMethodResolutionResult either containing the Java method or a MethodNotFound object.
+    */
   private def retrieveMethod(clazz: Class[_], methodName: String, ts: List[Type], isStatic: Boolean = false, loc: SourceLocation): JavaMethodResolutionResult = {
     // NB: this considers also static methods
     val candidateMethods = getMethods(clazz).filter(m => isCandidateMethod(m, methodName, isStatic, ts))
@@ -331,10 +329,10 @@ object TypeReduction {
     * Returns a JavaFieldResolutionResult either containing the Java field or a FieldNotFound object.
     */
   private def retrieveField(clazz: Class[_], fieldName: String, loc: SourceLocation): JavaFieldResolutionResult = {
-      getField(clazz, fieldName) match {
-        case Some(field) => JavaFieldResolutionResult.Resolved(Type.Cst(TypeConstructor.JvmField(field), loc))
-        case None => JavaFieldResolutionResult.FieldNotFound
-      }
+    getField(clazz, fieldName) match {
+      case Some(field) => JavaFieldResolutionResult.Resolved(Type.Cst(TypeConstructor.JvmField(field), loc))
+      case None => JavaFieldResolutionResult.FieldNotFound
+    }
   }
 
   /**
@@ -384,8 +382,8 @@ object TypeReduction {
   }
 
   /**
-   * Helper method that returns if the given constructor is a candidate constructor given a signature.
-   */
+    * Helper method that returns if the given constructor is a candidate constructor given a signature.
+    */
   private def isCandidateConstructor(cand: Constructor[_], ts: List[Type]): Boolean =
     (cand.getParameterCount == ts.length) &&
       (cand.getParameterTypes zip ts).forall {
@@ -393,12 +391,12 @@ object TypeReduction {
       }
 
   /**
-   * Helper method that returns if the given method is a candidate method given a signature.
-   *
-   * @param cand       a candidate method
-   * @param methodName the potential candidate method's name
-   * @param ts         the list of parameter types of the potential candidate method
-   */
+    * Helper method that returns if the given method is a candidate method given a signature.
+    *
+    * @param cand       a candidate method
+    * @param methodName the potential candidate method's name
+    * @param ts         the list of parameter types of the potential candidate method
+    */
   private def isCandidateMethod(cand: Method, methodName: String, static: Boolean = false, ts: List[Type]): Boolean = {
     val candIsStatic = isStatic(cand)
     (candIsStatic == static) &&
@@ -420,9 +418,9 @@ object TypeReduction {
   }
 
   /**
-   * Helper method to define a sub-typing relation between two given Flix types.
-   * Returns true if tpe1 is a sub-type of type tpe2, false otherwise.
-   */
+    * Helper method to define a sub-typing relation between two given Flix types.
+    * Returns true if tpe1 is a sub-type of type tpe2, false otherwise.
+    */
   @tailrec
   private def isSubtype(tpe1: Type, tpe2: Type): Boolean = {
     (tpe1, tpe2) match {
@@ -483,8 +481,8 @@ object TypeReduction {
   }
 
   /**
-   * Returns true iff the given type tpe is a Flix primitive.
-   */
+    * Returns true iff the given type tpe is a Flix primitive.
+    */
   private def isPrimitive(tpe: Type): Boolean = {
     tpe match {
       case Type.Cst(TypeConstructor.Bool, _) => true
@@ -514,22 +512,26 @@ object TypeReduction {
   }
 
   /**
-   * Represents the result of a resolution process of a java method.
-   *
-   * There are three possible outcomes:
-   *
-   *   1. Resolved(tpe): Indicates that there was some progress in the resolution and returns a
-   *      simplified type of the java method.
-   *   1. AmbiguousMethod: The resolution lacked some elements to find a java method among a set of
-   *      methods.
-   *   1. MethodNotFound: The resolution failed to find a corresponding java method.
-   *   1. UnresolvedTyped: The types involved are not reduced enough to decide the java method
-   */
+    * Represents the result of a resolution process of a java method.
+    *
+    * There are three possible outcomes:
+    *
+    *   1. Resolved(tpe): Indicates that there was some progress in the resolution and returns a
+    *      simplified type of the java method.
+    *   1. AmbiguousMethod: The resolution lacked some elements to find a java method among a set of
+    *      methods.
+    *   1. MethodNotFound: The resolution failed to find a corresponding java method.
+    *   1. UnresolvedTyped: The types involved are not reduced enough to decide the java method
+    */
   sealed trait JavaMethodResolutionResult
+
   object JavaMethodResolutionResult {
     case class Resolved(tpe: Type) extends JavaMethodResolutionResult
+
     case class AmbiguousMethod(methods: List[Method]) extends JavaMethodResolutionResult
+
     case object MethodNotFound extends JavaMethodResolutionResult
+
     case object UnresolvedTypes extends JavaMethodResolutionResult
   }
 
@@ -542,26 +544,33 @@ object TypeReduction {
     *   1. UnresolvedTypes: The types involved are not reduced enough to decide the java method
     */
   sealed trait JavaFieldResolutionResult
+
   object JavaFieldResolutionResult {
     case class Resolved(tpe: Type) extends JavaFieldResolutionResult
+
     case object FieldNotFound extends JavaFieldResolutionResult
+
     case object UnresolvedTypes extends JavaFieldResolutionResult
   }
 
   /**
-   * Represents the result of a resolution process of a java constructor.
-   *
-   * There are three possible outcomes:
-   *   1. Resolved(tpe): Indicates that there was some progress in the resolution and returns a simplified type of the java constructor.
-   *   1. AmbiguousConstructor: The resolution lacked some elements to find a java constructor among a set of constructors.
-   *   1. ConstructorNotFound: The resolution failed to find a corresponding java constructor.
-   *   1. UnresolvedTypes: The types involved are not reduced enough to decide the java method
-   */
+    * Represents the result of a resolution process of a java constructor.
+    *
+    * There are three possible outcomes:
+    *   1. Resolved(tpe): Indicates that there was some progress in the resolution and returns a simplified type of the java constructor.
+    *   1. AmbiguousConstructor: The resolution lacked some elements to find a java constructor among a set of constructors.
+    *   1. ConstructorNotFound: The resolution failed to find a corresponding java constructor.
+    *   1. UnresolvedTypes: The types involved are not reduced enough to decide the java method
+    */
   sealed trait JavaConstructorResolutionResult
+
   object JavaConstructorResolutionResult {
     case class Resolved(tpe: Type) extends JavaConstructorResolutionResult
+
     case class AmbiguousConstructor(constructors: List[Constructor[_]]) extends JavaConstructorResolutionResult
+
     case object ConstructorNotFound extends JavaConstructorResolutionResult
+
     case object UnresolvedTypes extends JavaConstructorResolutionResult
   }
 }
