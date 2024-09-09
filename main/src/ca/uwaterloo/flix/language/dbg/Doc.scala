@@ -35,7 +35,7 @@ object Doc {
     /**
       * Concatenates two docs.
       */
-    def |::|(d: Doc): Doc = Doc.|::|(d, this.d)
+    def |::(d: Doc): Doc = Doc.|::(d, this.d)
 
     /**
       * Concatenates two docs with a space.
@@ -76,7 +76,7 @@ object Doc {
   /**
     * Concatenates two docs.
     */
-  def |::|(d1: Doc, d2: Doc): Doc = DCons(d1, d2)
+  def |::(d1: Doc, d2: Doc): Doc = DCons(d1, d2)
 
   /**
     * The empty document.
@@ -213,17 +213,17 @@ object Doc {
     * Concatenates two docs with a space.
     */
   def +:(d1: Doc, d2: Doc): Doc =
-    d1 |::| text(" ") |::| d2
+    d1 |:: text(" ") |:: d2
 
   /**
     * Concatenates two docs with a space _or_ an ungrouped newline.
     */
   def +\:(d1: Doc, d2: Doc): Doc =
-    d1 |::| breakWith(" ") |::| d2
+    d1 |:: breakWith(" ") |:: d2
 
   /** Concatenates two docs with an ungrouped optional newline. */
   def \:(d1: Doc, d2: Doc): Doc =
-    d1 |::| breakWith("") |::| d2
+    d1 |:: breakWith("") |:: d2
 
   /**
     * Concatenates two docs with a space _or_ a grouped optional newline with
@@ -231,13 +231,13 @@ object Doc {
     * `d2` is included in the group.
     */
   def groupBreakIndent(d1: Doc, d2: Doc)(implicit i: Indent): Doc =
-    d1 |::| group(nest(breakWith(" ") |::| d2))
+    d1 |:: group(nest(breakWith(" ") |:: d2))
 
   /**
     * Prefix `d` with a space, or an indented newline if space is needed.
     */
   def breakIndent(d: Doc)(implicit i: Indent): Doc =
-    nest(breakWith(" ") |::| d)
+    nest(breakWith(" ") |:: d)
 
   /**
     * Right fold of `d` with `f`.
@@ -252,19 +252,19 @@ object Doc {
     * Inserts the separator between elements of `d`.
     */
   def sep(sep: Doc, d: List[Doc]): Doc =
-    fold(_ |::| sep |::| _, d)
+    fold(_ |:: sep |:: _, d)
 
   /**
     * Insert a comma with an ungrouped optional newline.
     */
   def commaSep(d: List[Doc]): Doc =
-    sep(text(",") |::| breakWith(" "), d)
+    sep(text(",") |:: breakWith(" "), d)
 
   /**
     * Insert a semicolon with an ungrouped optional newline.
     */
   def semiSep(d: List[Doc]): Doc =
-    sep(text(";") |::| breakWith(" "), d)
+    sep(text(";") |:: breakWith(" "), d)
 
   /**
     * Insert a semicolon and a space _or_ an ungrouped newline.
@@ -276,7 +276,7 @@ object Doc {
     * Enclose `x` with `l` and `r` with ungrouped newlines inside `l` and `r`.
     */
   def enclose(l: String, x: Doc, r: String)(implicit i: Indent): Doc = {
-    text(l) |::| nest(breakWith("") |::| x) \: text(r)
+    text(l) |:: nest(breakWith("") |:: x) \: text(r)
   }
 
   /**
