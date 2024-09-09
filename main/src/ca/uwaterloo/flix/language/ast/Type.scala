@@ -1129,6 +1129,19 @@ object Type {
   }
 
   /**
+    * Returns true if the given type contains [[Type.JvmToType]] or [[Type.UnresolvedJvmType]] somewhere within it.
+    */
+  def hasJvmType(tpe: Type): Boolean = tpe match {
+    case Type.Var(_, _) => false
+    case Type.Cst(_, _) => false
+    case Type.Apply(tpe1, tpe2, _) => hasJvmType(tpe1) || hasJvmType(tpe2)
+    case Type.Alias(_, _, tpe, _) => hasJvmType(tpe)
+    case Type.AssocType(_, arg, _, _) => hasJvmType(arg)
+    case Type.JvmToType(_, _) => true
+    case Type.UnresolvedJvmType(_, _) => true
+  }
+
+  /**
     * Returns the Flix Type of a Java Class.
     *
     * Arrays are returned with the [[Type.IO]] region.
