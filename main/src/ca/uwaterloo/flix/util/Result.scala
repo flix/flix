@@ -85,10 +85,6 @@ sealed trait Result[+T, +E] {
     */
   final def withFilter(f: T => Boolean): Result[T, E] = this
 
-  final def isOk: Boolean = this match {
-    case Result.Ok(_) => true
-    case Result.Err(_) => false
-  }
 }
 
 object Result {
