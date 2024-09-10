@@ -128,15 +128,43 @@ object FastSetUnification {
       *
       * [[Compl]], [[Union]], and [[Inter]] are connectives.
       */
-    final def size: Int = this match {
-      case Univ => 0
-      case Empty => 0
-      case Cst(_) => 0
-      case Var(_) => 0
-      case ElemSet(_) => 0
-      case Compl(t) => t.size + 1
-      case Inter(_, _, _, _, _, _, _) => sizes(List(this))
-      case Union(_, _, _, _, _, _, _) => sizes(List(this))
+    final def size: Int = {
+      var workList = List(this)
+      var counter = 0
+
+      @inline
+      def countSetFormulas(elemPos: Option[ElemSet], cstsPos: Set[Cst], varsPos: Set[Var], elemNeg: Option[ElemSet], cstsNeg: Set[Cst], varsNeg: Set[Var], other: List[SetFormula]): Unit = {
+        val negElemSize = elemNeg.size
+        val negCstsSize = cstsNeg.size
+        val negVarsSize = varsNeg.size
+        val terms = elemPos.size + cstsPos.size + varsPos.size + negElemSize + negCstsSize + negVarsSize + other.size
+        val connectives = negElemSize + negCstsSize + negVarsSize
+        counter += (terms - 1) + connectives
+        workList = other ++ workList
+      }
+
+      // variables and constants are immediately checked for overlap
+      // elements are checked at the end
+
+      while (workList.nonEmpty) {
+        val t :: next = workList
+        workList = next
+        t match {
+          case Univ => ()
+          case Empty => ()
+          case Cst(_) => ()
+          case Var(_) => ()
+          case ElemSet(_) => ()
+          case Compl(t) =>
+            counter += 1
+            workList = t :: workList
+          case Inter(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other) =>
+            countSetFormulas(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other)
+          case Union(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other) =>
+            countSetFormulas(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other)
+        }
+      }
+      counter
     }
 
     /** Returns a human-readable string of `this`. */
@@ -681,46 +709,6 @@ object FastSetUnification {
     /** Returns a map with `e -> target` for each `e` in `elem`. */
     private def setElemPointwise[T <: SetFormula](elem: ElemSet, target: T): SortedMap[Int, T] = {
       elem.s.foldLeft(SortedMap.empty[Int, T]) { case (acc, i) => acc + (i -> target) }
-    }
-
-    /** Returns the number of connectives in the terms `ts`. */
-    def sizes(ts: List[SetFormula]): Int = {
-      var workList = ts
-      var counter = 0
-
-      @inline
-      def countSetFormulas(elemPos: Option[ElemSet], cstsPos: Set[Cst], varsPos: Set[Var], elemNeg: Option[ElemSet], cstsNeg: Set[Cst], varsNeg: Set[Var], other: List[SetFormula]): Unit = {
-        val negElemSize = elemNeg.size
-        val negCstsSize = cstsNeg.size
-        val negVarsSize = varsNeg.size
-        val terms = elemPos.size + cstsPos.size + varsPos.size + negElemSize + negCstsSize + negVarsSize + other.size
-        val connectives = negElemSize + negCstsSize + negVarsSize
-        counter += (terms - 1) + connectives
-        workList = other ++ workList
-      }
-
-      // variables and constants are immediately checked for overlap
-      // elements are checked at the end
-
-      while (workList.nonEmpty) {
-        val t :: next = workList
-        workList = next
-        t match {
-          case Univ => ()
-          case Empty => ()
-          case Cst(_) => ()
-          case Var(_) => ()
-          case ElemSet(_) => ()
-          case Compl(t) =>
-            counter += 1
-            workList = t :: workList
-          case Inter(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other) =>
-            countSetFormulas(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other)
-          case Union(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other) =>
-            countSetFormulas(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other)
-        }
-      }
-      counter
     }
 
     /** Returns an iterator of the subterms of the union or intersection parts. */
