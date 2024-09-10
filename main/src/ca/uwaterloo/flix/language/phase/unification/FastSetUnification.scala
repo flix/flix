@@ -16,8 +16,11 @@
 
 package ca.uwaterloo.flix.language.phase.unification
 
-import scala.annotation.{nowarn, tailrec}
-import scala.collection.immutable.{SortedMap, SortedSet}
+import ca.uwaterloo.flix.language.ast.SourceLocation
+import ca.uwaterloo.flix.util.InternalCompilerException
+
+import scala.annotation.nowarn
+import scala.collection.immutable.SortedSet
 import scala.collection.mutable.{ListBuffer, Set as MutSet}
 
 object FastSetUnification {
@@ -35,7 +38,7 @@ object FastSetUnification {
     * universe of elements is infinite so no finite set is equivalent to universe.
     *
     * Invariant: [[SetFormula.ElemSet]], [[SetFormula.Cst]], and [[SetFormula.Var]] must use
-    *            disjoint integers (see [[unknowns]]).
+    * disjoint integers (see [[unknowns]]).
     */
   sealed trait SetFormula {
 
@@ -132,19 +135,17 @@ object FastSetUnification {
       var workList = List(this)
       var counter = 0
 
+      /** Updates `counter` and `workList` given intersection or union subformulas. */
       @inline
       def countSetFormulas(elemPos: Option[ElemSet], cstsPos: Set[Cst], varsPos: Set[Var], elemNeg: Option[ElemSet], cstsNeg: Set[Cst], varsNeg: Set[Var], other: List[SetFormula]): Unit = {
         val negElemSize = elemNeg.size
         val negCstsSize = cstsNeg.size
         val negVarsSize = varsNeg.size
-        val terms = elemPos.size + cstsPos.size + varsPos.size + negElemSize + negCstsSize + negVarsSize + other.size
+        val subformulas = elemPos.size + cstsPos.size + varsPos.size + negElemSize + negCstsSize + negVarsSize + other.size
         val connectives = negElemSize + negCstsSize + negVarsSize
-        counter += (terms - 1) + connectives
+        counter += (subformulas - 1) + connectives
         workList = other ++ workList
       }
-
-      // variables and constants are immediately checked for overlap
-      // elements are checked at the end
 
       while (workList.nonEmpty) {
         val t :: next = workList
@@ -168,39 +169,43 @@ object FastSetUnification {
     }
 
     /** Returns a human-readable string of `this`. */
-    override final def toString: String = this match {
-      case Univ => "univ"
-      case Empty => "empty"
-      case Cst(c) => s"c$c"
-      case ElemSet(s) if s.sizeIs == 1 => s"e${s.head}"
-      case ElemSet(s) => s"e${s.mkString("+")}"
-      case Var(x) => s"x$x"
-      case Compl(f) => f match {
-        case Univ => s"!$f"
-        case Empty => s"!$f"
-        case Cst(_) => s"!$f"
-        case ElemSet(_) => s"!$f"
-        case Var(_) => s"!$f"
-        case _ => s"!($f)"
+    override final def toString: String = {
+      /** Returns the string of subformulas joined by `sepString`. */
+      @inline
+      def stringOfSubformulas(sepString: String,
+                              elemPos: Option[ElemSet], cstsPos: Set[Cst], varsPos: Set[Var],
+                              elemNeg: Option[ElemSet], cstsNeg: Set[Cst], varsNeg: Set[Var],
+                              other: List[SetFormula]): String = {
+        val subformulas = elemPos.iterator ++
+          elemNeg.iterator.map(mkCompl(_)) ++
+          cstsPos.iterator ++
+          cstsNeg.iterator.map(mkCompl(_)) ++
+          varsPos.iterator ++
+          varsNeg.iterator.map(mkCompl(_)) ++
+          other.iterator
+        s"(${subformulas.mkString(sepString)})"
       }
-      case Inter(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other) =>
-        val terms = elemPos.iterator ++
-          elemNeg.iterator.map(mkCompl(_)) ++
-          cstsPos.iterator ++
-          cstsNeg.iterator.map(mkCompl(_)) ++
-          varsPos.iterator ++
-          varsNeg.iterator.map(mkCompl(_)) ++
-          other.iterator
-        s"(${terms.mkString(" ∩ ")})"
-      case Union(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other) =>
-        val terms = elemPos.iterator ++
-          elemNeg.iterator.map(mkCompl(_)) ++
-          cstsPos.iterator ++
-          cstsNeg.iterator.map(mkCompl(_)) ++
-          varsPos.iterator ++
-          varsNeg.iterator.map(mkCompl(_)) ++
-          other.iterator
-        s"(${terms.mkString(" ∪ ")})"
+
+      this match {
+        case Univ => "univ"
+        case Empty => "empty"
+        case Cst(c) => s"c$c"
+        case ElemSet(s) if s.sizeIs == 1 => s"e${s.head}"
+        case ElemSet(s) => s"e${s.mkString("+")}"
+        case Var(x) => s"x$x"
+        case Compl(f) => f match {
+          case Univ => s"!$f"
+          case Empty => s"!$f"
+          case Cst(_) => s"!$f"
+          case ElemSet(_) => s"!$f"
+          case Var(_) => s"!$f"
+          case _ => s"!($f)"
+        }
+        case Inter(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other) =>
+          stringOfSubformulas(" ∩ ", elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other)
+        case Union(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other) =>
+          stringOfSubformulas(" ∪ ", elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other)
+      }
     }
 
   }
@@ -221,7 +226,7 @@ object FastSetUnification {
       * assumptions about.
       *
       * Invariant: [[ElemSet]], [[Cst]], and [[Var]] must use
-      *            disjoint integers.
+      * disjoint integers.
       */
     final case class Cst(c: Int) extends SetFormula
 
@@ -229,7 +234,7 @@ object FastSetUnification {
       * A set variable (`x42`), i.e. a set that we do not know but should learn assumptions about.
       *
       * Invariant: [[ElemSet]], [[Cst]], and [[Var]] must use
-      *            disjoint integers.
+      * disjoint integers.
       */
     final case class Var(x: Int) extends SetFormula
 
@@ -241,7 +246,7 @@ object FastSetUnification {
       * Invariant: `s` is non-empty.
       *
       * Invariant: [[ElemSet]], [[Cst]], and [[Var]] must use
-      *            disjoint integers.
+      * disjoint integers.
       *
       * The `@nowarn` annotation is required for Scala 3 compatibility, since the derived `copy`
       * method is private in Scala 3 due to the private constructor. In Scala 2 the `copy` method is
@@ -299,7 +304,7 @@ object FastSetUnification {
                                   ) extends SetFormula {
       assert(!varsPos.exists(varsNeg.contains), message = this.toString)
       assert(!cstsPos.exists(cstsNeg.contains), message = this.toString)
-      assert(iteratorSizeGreaterEq(subformulasOf(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other), 2), message = this.toString)
+      assert(subformulasOf(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other).take(2).toList.size == 2, message = this.toString)
     }
 
     /**
@@ -337,7 +342,7 @@ object FastSetUnification {
                                   ) extends SetFormula {
       assert(!varsPos.exists(varsNeg.contains), message = this.toString)
       assert(!cstsPos.exists(cstsNeg.contains), message = this.toString)
-      assert(iteratorSizeGreaterEq(subformulasOf(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other), 2), message = this.toString)
+      assert(subformulasOf(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other).take(2).toList.sizeIs >= 2, message = this.toString)
     }
 
     /** Returns a singleton [[ElemSet]]. */
@@ -353,8 +358,7 @@ object FastSetUnification {
       */
     def mkElemSet(s: SortedSet[Int]): SetFormula = {
       // Maintains that ElemSet is non-empty.
-      if (s.isEmpty) Empty
-      else ElemSet(s)
+      if (s.isEmpty) Empty else ElemSet(s)
     }
 
     /**
@@ -362,10 +366,10 @@ object FastSetUnification {
       *
       * Returns `None` if `s` is empty.
       */
-    def mkElemSetOpt(s: SortedSet[Int]): Option[ElemSet] =
-    // Maintains that ElemSet is non-empty.
-      if (s.isEmpty) None
-      else Some(ElemSet(s))
+    def mkElemSetOpt(s: SortedSet[Int]): Option[ElemSet] = {
+      // Maintains that ElemSet is non-empty.
+      if (s.isEmpty) None else Some(ElemSet(s))
+    }
 
     /**
       * Returns the complement of `f` (`!f`).
@@ -382,18 +386,12 @@ object FastSetUnification {
       case v@Var(_) => Compl(v)
       case e@ElemSet(_) => Compl(e)
       case Compl(f1) => f1
-      // Optimized case for simple intersections.
-      case Inter(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, Nil) =>
-        Union(elemNeg, cstsNeg, varsNeg, elemPos, cstsPos, varsPos, Nil)
-      // General intersection case.
       case Inter(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other) =>
-        reconstructUnion(elemNeg, cstsNeg, varsNeg, elemPos, cstsPos, varsPos, other.map(mkCompl))
-      // Optimized case for simple unions.
-      case Union(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, Nil) =>
-        Inter(elemNeg, cstsNeg, varsNeg, elemPos, cstsPos, varsPos, Nil)
-      // General union case.
+        val simpleCompl = mkUnsafeUnion(elemNeg, cstsNeg, varsNeg, elemPos, cstsPos, varsPos)
+        mkUnionAll(simpleCompl :: other.map(mkCompl))
       case Union(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other) =>
-        reconstructInter(elemNeg, cstsNeg, varsNeg, elemPos, cstsPos, varsPos, other.map(mkCompl))
+        val simpleCompl = mkUnsafeInter(elemNeg, cstsNeg, varsNeg, elemPos, cstsPos, varsPos)
+        mkInterAll(simpleCompl :: other.map(mkCompl))
     }
 
     /**
@@ -435,32 +433,20 @@ object FastSetUnification {
       */
     def mkInterAll(fs: List[SetFormula]): SetFormula = {
       // We need to do two things:
-      // - Separate terms into specific buckets of elements/variables/constants/etc.
-      // - Flatten nested intersections
+      // - Separate subformulas into specific buckets of (neg) elements/variables/constants.
+      // - Flatten nested intersections.
 
-      /** Returns the intersection, interpreting `None` as `univ`. */
-      @inline
-      def intersectionSet(s1Opt: Option[SortedSet[Int]], s2: SortedSet[Int]): SortedSet[Int] = s1Opt match {
-        case Some(s1) => s1.intersect(s2)
-        case None => s2
-      }
-
-      /** Returns the intersection, interpreting `None` as `univ`. */
-      @inline
-      def intersectionOptSet(s1Opt: Option[SortedSet[Int]], s2Opt: Option[SortedSet[Int]]): Option[SortedSet[Int]] = (s1Opt, s2Opt) match {
-        case (Some(s1), Some(s2)) => Some(s1.intersect(s2))
-        case (s@Some(_), None) => s
-        case (None, s@Some(_)) => s
-        case (None, None) => None
-      }
-
-      var posElem0: Option[SortedSet[Int]] = None // The neutral element `univ` is not a set, so we use `None`.
+      // To avoid set computing intersections of `Option[ElemSet]`, use `CofiniteIntSet`.
+      var elemPos0 = CofiniteIntSet.universe
       val cstsPos = MutSet.empty[Cst]
       val varsPos = MutSet.empty[Var]
-      var negElem0 = SortedSet.empty[Int]
+      var elemNeg0 = SortedSet.empty[Int]
       val cstsNeg = MutSet.empty[Cst]
       val varsNeg = MutSet.empty[Var]
       val other = ListBuffer.empty[SetFormula]
+
+      // Variables and constants are checked for overlap immediately.
+      // Elements are checked at the end.
 
       var workList = fs
       while (workList.nonEmpty) {
@@ -478,58 +464,70 @@ object FastSetUnification {
             if (cstsPos.contains(c)) return Empty
             cstsNeg += c
           case ElemSet(s) =>
-            val inter = intersectionSet(posElem0, s)
-            if (inter.isEmpty) return Empty
-            posElem0 = Some(inter)
+            elemPos0 = CofiniteIntSet.intersection(elemPos0, CofiniteIntSet.mkSet(s))
+            if (elemPos0.isEmpty) return Empty
           case Compl(ElemSet(s)) =>
-            negElem0 = negElem0.union(s)
+            elemNeg0 = elemNeg0.union(s)
           case x@Var(_) =>
             if (varsNeg.contains(x)) return Empty
             varsPos += x
           case Compl(x@Var(_)) =>
             if (varsPos.contains(x)) return Empty
             varsNeg += x
-          case Inter(posElem1, posCsts1, posVars1, negElem1, negCsts1, negVars1, rest1) =>
-            posElem0 = intersectionOptSet(posElem1.map(_.s), posElem0)
-            if (posElem0.contains(SortedSet.empty[Int])) return Empty
-            for (x <- posCsts1) {
+          case Inter(elemPos1, cstsPos1, varsPos1, elemNeg1, cstsNeg1, varsNeg1, other1) =>
+            for (e <- elemPos1) {
+              elemPos0 = CofiniteIntSet.intersection(elemPos0, CofiniteIntSet.mkSet(e.s))
+              if (elemPos0.isEmpty) return Empty
+            }
+            for (x <- cstsPos1) {
               if (cstsNeg.contains(x)) return Empty
               cstsPos += x
             }
-            for (x <- posVars1) {
+            for (x <- varsPos1) {
               if (varsNeg.contains(x)) return Empty
               varsPos += x
             }
-            for (e <- negElem1) {
-              negElem0 = negElem0.union(e.s)
+            for (e <- elemNeg1) {
+              elemNeg0 = elemNeg0.union(e.s)
             }
-            for (x <- negCsts1) {
+            for (x <- cstsNeg1) {
               if (cstsPos.contains(x)) return Empty
               cstsNeg += x
             }
-            for (x <- negVars1) {
+            for (x <- varsNeg1) {
               if (varsPos.contains(x)) return Empty
               varsNeg += x
             }
-            workList = rest1 ++ workList
+            workList = other1 ++ workList
           case union@Union(_, _, _, _, _, _, _) =>
             other += union
           case compl@Compl(_) =>
             other += compl
         }
       }
-      // Check overlaps in the element sets (could be done inline)
-      val elemPos = posElem0 match {
-        case Some(s) =>
-          // s ∩ !neg ∩ .. = (s - neg) ∩ !neg ∩ ..
-          val posElemSet = s.diff(negElem0)
-          if (posElemSet.isEmpty) return Empty
-          else Some(ElemSet(posElemSet))
-        case None => None
+      // Check overlaps in the element sets (could be done inline).
+      val (elemPos, elemNeg) = elemPos0 match {
+        case _ if elemPos0.isUniverse =>
+          // univ ∩ !elemNeg0 ∩ ..
+          // = !elemNeg0 ∩ ..
+          (None, mkElemSetOpt(elemNeg0))
+        case CofiniteIntSet.Set(s) =>
+          // s ∩ !elemNeg0 ∩ ..
+          // = (s ∩ !elemNeg0) ∩ ..      (intersection associativity)
+          // = (s - elemNeg0) ∩ ..       (difference definition)
+          mkElemSetOpt(s.diff(elemNeg0)) match {
+            case Some(e) => (Some(e), None)
+            case None =>
+              // empty ∩ ..
+              // = empty
+              return Empty
+          }
+        case compl@CofiniteIntSet.Compl(_) =>
+          // Unreachable since we never only intersect finite sets with universe.
+          throw InternalCompilerException(s"Impossible co-finite set $compl", SourceLocation.Unknown)
       }
-      val elemNeg = mkElemSetOpt(negElem0)
 
-      // Reduce intersections with zero or one subformula
+      // Reduce intersections with zero or one subformula.
       subformulasOf(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other).take(2).toList match {
         case Nil => return Univ
         case one :: Nil => return one
@@ -539,17 +537,14 @@ object FastSetUnification {
     }
 
     /**
-      * Re-constructor for intersection (`∩`).
+      * Returns the intersection of subformulas from another union or intersection (`∩`).
       *
-      * More efficient than the other constructors when building an intersection
-      * based on an existing intersection/union.
+      * More efficient than the other constructors when applicable.
       *
-      * OBS: Must be called with collections from existing intersections/unions.
+      * OBS: Must be called with collections from existing intersections or unions.
       */
-    def reconstructInter(elemPos: Option[ElemSet], cstsPos: Set[Cst], varsPos: Set[Var], elemNeg: Option[ElemSet], cstsNeg: Set[Cst], varsNeg: Set[Var], other: List[SetFormula]): SetFormula = {
-      val maintain = Inter(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, Nil)
-      mkInterAll(maintain :: other)
-    }
+    def mkUnsafeInter(elemPos: Option[ElemSet], cstsPos: Set[Cst], varsPos: Set[Var], elemNeg: Option[ElemSet], cstsNeg: Set[Cst], varsNeg: Set[Var]): SetFormula =
+      Inter(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, Nil)
 
     /** Returns the union of `ts` (`ts1 ∪ ts2 ∪ ..`).
       *
@@ -557,35 +552,20 @@ object FastSetUnification {
       */
     def mkUnionAll(ts: List[SetFormula]): SetFormula = {
       // We need to do two things:
-      // - Separate terms into specific buckets of elements/variables/constants/etc.
-      // - Flatten nested unions
+      // - Separate subformulas into specific buckets of elements/variables/constants/etc.
+      // - Flatten nested unions.
 
-      /** Returns the intersection, interpreting `None` as `univ`. */
-      @inline
-      def intersectionSet(s1Opt: Option[SortedSet[Int]], s2: SortedSet[Int]): SortedSet[Int] = s1Opt match {
-        case Some(s1) => s1.intersect(s2)
-        case None => s2
-      }
-
-      /** Returns the intersection, interpreting `None` as `univ`. */
-      @inline
-      def intersectionOptSet(s1Opt: Option[SortedSet[Int]], s2Opt: Option[SortedSet[Int]]): Option[SortedSet[Int]] = (s1Opt, s2Opt) match {
-        case (Some(s1), Some(s2)) => Some(s1.intersect(s2))
-        case (s@Some(_), None) => s
-        case (None, s@Some(_)) => s
-        case (None, None) => None
-      }
-
-      var posElem0 = SortedSet.empty[Int]
+      var elemPos0 = SortedSet.empty[Int]
       val cstsPos = MutSet.empty[Cst]
       val varsPos = MutSet.empty[Var]
-      var negElem0: Option[SortedSet[Int]] = None // The neutral element `!univ` is not a set, so we use `None`.
+      // To avoid set computing intersections of `Option[ElemSet]`, use `CofiniteIntSet`.
+      var elemNeg0 = CofiniteIntSet.universe
       val cstsNeg = MutSet.empty[Cst]
       val varsNeg = MutSet.empty[Var]
       val other = ListBuffer.empty[SetFormula]
 
-      // variables and constants are immediately checked for overlap
-      // elements are checked at the end
+      // Variables and constants are checked for overlap immediately.
+      // Elements are checked at the end.
 
       var workList = ts
       while (workList.nonEmpty) {
@@ -603,67 +583,75 @@ object FastSetUnification {
             if (cstsPos.contains(x)) return Univ
             cstsNeg += x
           case ElemSet(s) =>
-            posElem0 = posElem0.union(s)
+            elemPos0 = elemPos0.union(s)
           case Compl(ElemSet(s)) =>
-            // !negElem0 ∪ !s
-            // = !!(!negElem0 ∪ !s)      (double complement)
-            // = !(negElem0 ∩ s)         (complement distribution)
-            val intersection = intersectionSet(negElem0, s)
-            if (intersection.isEmpty) return Univ
-            negElem0 = Some(intersection)
+            elemNeg0 = CofiniteIntSet.intersection(elemNeg0, CofiniteIntSet.mkSet(s))
+            if (elemNeg0.isEmpty) return Univ
           case x@Var(_) =>
             if (varsNeg.contains(x)) return Univ
             varsPos += x
           case Compl(x@Var(_)) =>
             if (varsPos.contains(x)) return Univ
             varsNeg += x
-          case Union(posElem1, posCsts1, posVars1, negElem1, negCsts1, negVars1, rest1) =>
-            for (x <- posElem1) {
-              posElem0 = posElem0.union(x.s)
+          case Union(elemPos1, cstsPos1, varsPos1, elemNeg1, cstsNeg1, varsNeg1, other1) =>
+            for (x <- elemPos1) {
+              elemPos0 = elemPos0.union(x.s)
             }
-            for (x <- posCsts1) {
+            for (x <- cstsPos1) {
               if (cstsNeg.contains(x)) return Univ
               cstsPos += x
             }
-            for (x <- posVars1) {
+            for (x <- varsPos1) {
               if (varsNeg.contains(x)) return Univ
               varsPos += x
             }
-            negElem0 = intersectionOptSet(negElem1.map(_.s), negElem0)
-            if (negElem0.contains(SortedSet.empty[Int])) return Univ
-            for (x <- negCsts1) {
+            for (e <- elemNeg1) {
+              elemNeg0 = CofiniteIntSet.intersection(elemNeg0, CofiniteIntSet.mkSet(e.s))
+              if (elemNeg0.isEmpty) return Univ
+            }
+            for (x <- cstsNeg1) {
               if (cstsPos.contains(x)) return Univ
               cstsNeg += x
             }
-            for (x <- negVars1) {
+            for (x <- varsNeg1) {
               if (varsPos.contains(x)) return Univ
               varsNeg += x
             }
-            workList = rest1 ++ workList
+            workList = other1 ++ workList
           case inter@Inter(_, _, _, _, _, _, _) =>
             other += inter
           case compl@Compl(_) =>
             other += compl
         }
       }
-      // Check overlaps in the element sets
-      val (elemPos, elemNeg) = negElem0 match {
-        case Some(s) =>
-          // posElem0 ∪ !s ∪ ..
-          // = (posElem0 ∪ !s) ∪ ..       (union associativity)
-          // = !!(posElem0 ∪ !s) ∪ ..     (double complement)
-          // = !(!posElem0 ∩ s) ∪ ..      (complement distribution)
-          // = !(s ∩ !posElem0) ∪ ..      (intersection symmetry)
-          // = !(s - posElem0) ∪ ..       (difference definition)
-          val negElemSet = s.diff(posElem0)
-          if (negElemSet.isEmpty) return Univ
-          else (None, mkElemSetOpt(negElemSet))
-        case None =>
-          // posElem0 ∪ empty ∪ ..
-          (mkElemSetOpt(posElem0), None)
+      // Check overlaps in the element sets.
+      val (elemPos, elemNeg) = elemNeg0 match {
+        case _ if elemNeg0.isUniverse =>
+          // elemPos0 ∪ !univ ∪ ..
+          // = elemPos0 ∪ empty ∪ ..      (complement of univ)
+          // = elemPos ∪ ..               (neutral union formula)
+          (mkElemSetOpt(elemPos0), None)
+        case CofiniteIntSet.Set(s) =>
+          // elemPos0 ∪ !s ∪ ..
+          // = (elemPos0 ∪ !s) ∪ ..       (union associativity)
+          // = !!(elemPos0 ∪ !s) ∪ ..     (double complement)
+          // = !(!elemPos0 ∩ s) ∪ ..      (complement distribution)
+          // = !(s ∩ !elemPos0) ∪ ..      (intersection symmetry)
+          // = !(s - elemPos0) ∪ ..       (difference definition)
+          mkElemSetOpt(s.diff(elemPos0)) match {
+            case Some(e) => (None, Some(e))
+            case None =>
+              // !empty ∪ ..
+              // = univ ∪ ..              (complement of empty)
+              // = univ
+              return Univ
+          }
+        case compl@CofiniteIntSet.Compl(_) =>
+          // Unreachable since we never only intersect finite sets with universe.
+          throw InternalCompilerException(s"Impossible co-finite set $compl", SourceLocation.Unknown)
       }
 
-      // Reduce unions with zero or one subformula
+      // Reduce unions with zero or one subformula.
       subformulasOf(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other).take(2).toList match {
         case Nil => return Empty
         case one :: Nil => return one
@@ -673,50 +661,29 @@ object FastSetUnification {
     }
 
     /**
-      * Re-constructor for union (`∪`).
+      * Returns the union of subformulas from another union or intersection (`∪`).
       *
-      * More efficient than the other constructors when building an union
-      * based on an existing intersection/union.
+      * More efficient than the other constructors when applicable.
       *
-      * OBS: Must be called with collections from existing intersections/unions.
+      * OBS: Must be called with collections from existing intersections or unions.
       */
-    def reconstructUnion(elemPos: Option[ElemSet], cstsPos: Set[Cst], varsPos: Set[Var], elemNeg: Option[ElemSet], cstsNeg: Set[Cst], varsNeg: Set[Var], other: List[SetFormula]): SetFormula = {
-      val maintain = Union(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, Nil)
-      mkUnionAll(maintain :: other)
-    }
+    def mkUnsafeUnion(elemPos: Option[ElemSet], cstsPos: Set[Cst], varsPos: Set[Var], elemNeg: Option[ElemSet], cstsNeg: Set[Cst], varsNeg: Set[Var]): Union =
+      Union(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, Nil)
 
     /** Returns the Xor of `f1` and `f2` with the formula `(f1 - f2) ∪ (f2 - f1)`. */
     def mkXor(f1: SetFormula, f2: SetFormula): SetFormula =
-      mkUnion(mkMinus(f1, f2), mkMinus(f2, f1))
+      mkUnion(mkDifference(f1, f2), mkDifference(f2, f1))
 
-    /** Returns the Minus of `f1` and `f2` (`-`) with the formula `f1 ∩ !f2`. */
-    final private def mkMinus(f1: SetFormula, f2: SetFormula): SetFormula =
+    /** Returns the difference of `f1` and `f2` (`-`) with the formula `f1 ∩ !f2`. */
+    def mkDifference(f1: SetFormula, f2: SetFormula): SetFormula =
       mkInter(f1, mkCompl(f2))
 
-    /**
-      * Returns a point-wise substitution for `{e1 ∪ e2 ∪ .. -> target}` if possible, otherwise an empty map.
-      *
-      *   - `{e1 -> target}` becomes `Map(e1 -> target)`
-      *   - `{e1 ∪ e2 ∪ .. -> empty` becomes `Map(e1 -> empty, e2 -> empty, ..)`
-      *   - otherwise `empty`
-      */
-    private def setElemOne[T <: SetFormula](elem: ElemSet, target: T): SortedMap[Int, T] = {
-      if (elem.s.sizeIs == 1) SortedMap(elem.s.head -> target)
-      else if (target == Empty) setElemPointwise(elem, target)
-      else SortedMap.empty[Int, T]
-    }
-
-    /** Returns a map with `e -> target` for each `e` in `elem`. */
-    private def setElemPointwise[T <: SetFormula](elem: ElemSet, target: T): SortedMap[Int, T] = {
-      elem.s.foldLeft(SortedMap.empty[Int, T]) { case (acc, i) => acc + (i -> target) }
-    }
-
-    /** Returns an iterator of the subterms of the union or intersection parts. */
+    /** Returns an iterator of the subformulas of the union or intersection. */
     private def subformulasOf(
-                       elemPos: Iterable[ElemSet], cstsPos: Iterable[Cst], varsPos: Iterable[Var],
-                       elemNeg: Iterable[ElemSet], cstsNeg: Iterable[Cst], varsNeg: Iterable[Var],
-                       other: Iterable[SetFormula]
-                     ): Iterator[SetFormula] = {
+                               elemPos: Iterable[ElemSet], cstsPos: Iterable[Cst], varsPos: Iterable[Var],
+                               elemNeg: Iterable[ElemSet], cstsNeg: Iterable[Cst], varsNeg: Iterable[Var],
+                               other: Iterable[SetFormula]
+                             ): Iterator[SetFormula] = {
       elemPos.iterator ++
         cstsPos.iterator ++
         varsPos.iterator ++
@@ -726,18 +693,6 @@ object FastSetUnification {
         other.iterator
     }
 
-    private def iteratorSizeGreaterEq[T](i: Iterator[T], size: Int): Boolean = {
-      @tailrec
-      def helper(accSize: Int): Boolean = {
-        if (accSize >= size) true
-        else if (i.hasNext) {
-          i.next()
-          helper(accSize + 1)
-        } else {
-          false
-        }
-      }
-      helper(0)
-    }
   }
+
 }
