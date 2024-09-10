@@ -270,6 +270,8 @@ object KindedAst {
 
     case class Var(sym: Symbol.VarSym, tvar: Type.Var, loc: SourceLocation) extends VarOrWild
 
+    case class Error(tvar: Type.Var, loc: SourceLocation) extends VarOrWild
+
     case class Tag(sym: Ast.RestrictableCaseSymUse, pat: List[VarOrWild], tvar: Type.Var, loc: SourceLocation) extends RestrictableChoosePattern
 
   }

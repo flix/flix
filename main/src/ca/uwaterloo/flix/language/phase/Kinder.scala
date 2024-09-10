@@ -1151,6 +1151,7 @@ object Kinder {
   private def visitRestrictableChoosePatternVarOrWild(pat0: ResolvedAst.RestrictableChoosePattern.VarOrWild)(implicit scope: Scope, flix: Flix): Validation[KindedAst.RestrictableChoosePattern.VarOrWild, KindError] = pat0 match {
     case ResolvedAst.RestrictableChoosePattern.Wild(loc) => Validation.success(KindedAst.RestrictableChoosePattern.Wild(Type.freshVar(Kind.Star, loc.asSynthetic), loc))
     case ResolvedAst.RestrictableChoosePattern.Var(sym, loc) => Validation.success(KindedAst.RestrictableChoosePattern.Var(sym, Type.freshVar(Kind.Star, loc.asSynthetic), loc))
+    case ResolvedAst.RestrictableChoosePattern.Error(loc) => Validation.success(KindedAst.RestrictableChoosePattern.Error(Type.freshVar(Kind.Star, loc.asSynthetic), loc))
   }
 
   /**
