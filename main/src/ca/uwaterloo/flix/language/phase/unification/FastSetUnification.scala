@@ -212,6 +212,9 @@ object FastSetUnification {
 
   object SetFormula {
 
+    /** Skip invariant checks if `false`. */
+    private val CHECK_INVARIANTS: Boolean = true
+
     /** A trait used to refer to [[Univ]] and [[Empty]] collectively. */
     sealed trait UnivOrEmpty extends SetFormula
 
@@ -255,7 +258,7 @@ object FastSetUnification {
       */
     @nowarn
     final case class ElemSet private(s: SortedSet[Int]) extends SetFormula {
-      assert(s.nonEmpty)
+      if (CHECK_INVARIANTS) assert(s.nonEmpty)
     }
 
     /**
@@ -302,9 +305,11 @@ object FastSetUnification {
                                     elemNeg: Option[ElemSet], cstsNeg: Set[Cst], varsNeg: Set[Var],
                                     other: List[SetFormula]
                                   ) extends SetFormula {
-      assert(!varsPos.exists(varsNeg.contains), message = this.toString)
-      assert(!cstsPos.exists(cstsNeg.contains), message = this.toString)
-      assert(subformulasOf(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other).take(2).toList.size == 2, message = this.toString)
+      if (CHECK_INVARIANTS) {
+        assert(!varsPos.exists(varsNeg.contains), message = this.toString)
+        assert(!cstsPos.exists(cstsNeg.contains), message = this.toString)
+        assert(subformulasOf(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other).take(2).toList.size == 2, message = this.toString)
+      }
     }
 
     /**
@@ -340,9 +345,11 @@ object FastSetUnification {
                                     elemNeg: Option[ElemSet], cstsNeg: Set[Cst], varsNeg: Set[Var],
                                     other: List[SetFormula]
                                   ) extends SetFormula {
-      assert(!varsPos.exists(varsNeg.contains), message = this.toString)
-      assert(!cstsPos.exists(cstsNeg.contains), message = this.toString)
-      assert(subformulasOf(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other).take(2).toList.sizeIs >= 2, message = this.toString)
+      if (CHECK_INVARIANTS) {
+        assert(!varsPos.exists(varsNeg.contains), message = this.toString)
+        assert(!cstsPos.exists(cstsNeg.contains), message = this.toString)
+        assert(subformulasOf(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other).take(2).toList.sizeIs >= 2, message = this.toString)
+      }
     }
 
     /** Returns a singleton [[ElemSet]]. */
