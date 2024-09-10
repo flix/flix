@@ -239,18 +239,23 @@ mod TestDebug {
     def testDebug01(): Bool =
         debug(1) == 1
 
+    @test
     def testDebug02(): Bool =
         debug("hey") == "hey"
 
+    @test
     def testDebug03(): Bool =
         debug('a') == 'a'
 
+    @test
     def testDebug03(): Bool =
         debug(null) == null
 
+    @test
     def testDebug04(): Bool =
         debug(x -> x + 1)(1) == 2
 
+    @test
     def testDebug05(): Bool =
         match debug(Poly.this('s')) {
             case Poly.this(x) => x == 's' case _ => false
@@ -260,18 +265,23 @@ mod TestDebug {
     def testDebugBang01(): Bool =
         debug!(1) == 1
 
+    @test
     def testDebugBang02(): Bool =
         debug!("hey") == "hey"
 
+    @test
     def testDebugBang03(): Bool =
         debug!('a') == 'a'
 
+    @test
     def testDebugBang03(): Bool =
         debug!(null) == null
 
+    @test
     def testDebugBang04(): Bool =
         debug!(x -> x + 1)(1) == 2
 
+    @test
     def testDebugBang05(): Bool =
         match debug!(Poly.this('s')) {
             case Poly.this(x) => x == 's' case _ => false
@@ -281,18 +291,23 @@ mod TestDebug {
     def testDebugBangBang01(): Bool =
         debug!!(1) == 1
 
+    @test
     def testDebugBangBang02(): Bool =
         debug!!("hey") == "hey"
 
+    @test
     def testDebugBangBang03(): Bool =
         debug!!('a') == 'a'
 
+    @test
     def testDebugBangBang03(): Bool =
         debug!!(null) == null
 
+    @test
     def testDebugBangBang04(): Bool =
         debug!!(x -> x + 1)(1) == 2
 
+    @test
     def testDebugBangBang05(): Bool =
         match debug!!(Poly.this('s')) {
             case Poly.this(x) => x == 's' case _ => false
