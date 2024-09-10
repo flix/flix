@@ -32,7 +32,6 @@ object Symbol {
   /**
     * The set of base effects defined in the Prelude.
     */
-  val Clock: EffectSym = mkEffectSym(Name.RootNS, Ident("Clock", SourceLocation.Unknown))
   val Exec: EffectSym = mkEffectSym(Name.RootNS, Ident("Exec", SourceLocation.Unknown))
   val Exit: EffectSym = mkEffectSym(Name.RootNS, Ident("Exit", SourceLocation.Unknown))
   val FileRead: EffectSym = mkEffectSym(Name.RootNS, Ident("FileRead", SourceLocation.Unknown))
@@ -41,6 +40,7 @@ object Symbol {
   val Net: EffectSym = mkEffectSym(Name.RootNS, Ident("Net", SourceLocation.Unknown))
   val NonDet: EffectSym = mkEffectSym(Name.RootNS, Ident("NonDet", SourceLocation.Unknown))
   val Sys: EffectSym = mkEffectSym(Name.RootNS, Ident("Sys", SourceLocation.Unknown))
+  val Time: EffectSym = mkEffectSym(Name.RootNS, Ident("Time", SourceLocation.Unknown))
 
   /**
     * Returns a fresh def symbol based on the given symbol.
