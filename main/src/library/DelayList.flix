@@ -840,8 +840,8 @@ mod DelayList {
     pub def findRight(f: a -> Bool \ ef, l: DelayList[a]): Option[a] \ ef =
         def loop(ll, k) = match ll {
             case ENil         => k()
-            case ECons(x, xs) => loop(      xs, () -> if (f(x)) Some(x) else k())
-            case LCons(x, xs) => loop(force xs, () -> if (f(x)) Some(x) else k())
+            case ECons(x, xs) => loop(      xs, -> if (f(x)) Some(x) else k())
+            case LCons(x, xs) => loop(force xs, -> if (f(x)) Some(x) else k())
             case LList(xs)    => loop(force xs, k)
         };
         loop(l, constant(None))
@@ -1208,7 +1208,7 @@ mod DelayList {
     @Experimental @Lazy
     pub def iterator(rc: Region[r], l: DelayList[a]): Iterator[a, r, r] \ r =
         let cursor = Ref.fresh(rc, l);
-        let next = () -> match head(Ref.get(cursor)) {
+        let next = -> match head(Ref.get(cursor)) {
             case None    => None
             case Some(x) =>
                 Ref.put(tail(Ref.get(cursor)), cursor);

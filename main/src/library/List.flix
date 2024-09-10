@@ -283,7 +283,7 @@ mod List {
     pub def findRight(f: a -> Bool \ ef, l: List[a]): Option[a] \ ef =
         def loop(ll, k) = match ll {
             case Nil     => k()
-            case x :: xs => loop(xs, () -> if (f(x)) Some(x) else k())
+            case x :: xs => loop(xs, -> if (f(x)) Some(x) else k())
         };
         loop(l, constant(None))
 
@@ -1340,7 +1340,7 @@ mod List {
     ///
     pub def iterator(rc: Region[r], xs: List[a]): Iterator[a, r, r] \ r =
         let ls = Ref.fresh(rc, xs);
-        let next = () -> {
+        let next = -> {
             match (Ref.get(ls)) {
                 case Nil     => None
                 case x :: rs => Ref.put(rs, ls); Some(x)

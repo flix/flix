@@ -42,11 +42,11 @@ mod Iterator {
     /// Returns an iterator built with the stepper function `f`.
     ///
     pub def iterate(rc: Region[r], f: Unit -> Option[a] \ ef): Iterator[a, ef, r] =
-        let f1 = () -> match f() {
+        let f1 = -> match f() {
             case Some(a) => Ans(a)
             case None    => Done
         };
-        let iterF = () -> checked_ecast(f1());
+        let iterF = -> checked_ecast(f1());
         Iterator(rc, iterF)
 
     ///
@@ -86,7 +86,7 @@ mod Iterator {
         if (e <= b)
             empty(rc)
         else {
-            let iterF = () -> match (Ref.get(pos)) {
+            let iterF = -> match (Ref.get(pos)) {
                 case i if i < e => Ref.put(i + 1, pos); Ans(i)
                 case _          => Done
             };
@@ -100,7 +100,7 @@ mod Iterator {
     ///
     pub def repeat(rc: Region[r], n: Int32, x: a): Iterator[a, r, r] \ r =
         let ix = Ref.fresh(rc, n);
-        let iterF = () -> {
+        let iterF = -> {
             let i = Ref.get(ix);
             if (i < 1)
                 Done
@@ -251,7 +251,7 @@ mod Iterator {
             case Skip   => Skip
             case Done   => Done
         };
-        let iterF1 = () -> step(iterF());
+        let iterF1 = -> step(iterF());
         Iterator(rc, iterF1)
 
     ///
@@ -266,7 +266,7 @@ mod Iterator {
             case Skip   => Skip
             case Done   => Done
         };
-        let iterF1 = () -> {let x = iterF(); step(x)};
+        let iterF1 = -> {let x = iterF(); step(x)};
         Iterator(rc, iterF1)
 
     ///
@@ -283,7 +283,7 @@ mod Iterator {
             case Skip   => Skip
             case Done   => Done
         };
-        let iterF1 = () -> {let x = iterF(); step(x)};
+        let iterF1 = -> {let x = iterF(); step(x)};
         Iterator(rc, iterF1)
 
     ///
@@ -314,7 +314,7 @@ mod Iterator {
             case Skip   => loop1(iter1F())
             case Done   => loop2(iter2F())
         };
-        let iter3F = () -> loop1(iter1F());
+        let iter3F = -> loop1(iter1F());
         Iterator(rc, iter3F)
 
     ///
@@ -355,7 +355,7 @@ mod Iterator {
             case (_, _)           => Done
 
         };
-        let iter3F = () -> step(iter1F(), iter2F());
+        let iter3F = -> step(iter1F(), iter2F());
         Iterator(rc, iter3F)
 
     ///
@@ -474,7 +474,7 @@ mod Iterator {
     /// If `f` returns `Err(e)`, then the iterator is depleted.
     ///
     pub def unfoldWithOk(rc: Region[r], f: Unit -> Result[e, a] \ ef): Iterator[a, ef, r] =
-        let iterF = () -> Result.toOption(f());
+        let iterF = -> Result.toOption(f());
         Iterator.iterate(rc, iterF)
 
     ///
@@ -499,7 +499,7 @@ mod Iterator {
                 case Done    => Done
             }
         };
-        let iter1F = () -> loop();
+        let iter1F = -> loop();
         Iterator(rc, iter1F)
 
     ///
@@ -526,7 +526,7 @@ mod Iterator {
                     case Done   => Done
                 }
         };
-        let iter1F = () -> loop();
+        let iter1F = -> loop();
         Iterator(rc, iter1F)
 
     ///
@@ -543,7 +543,7 @@ mod Iterator {
             case Skip   => loop(iterF())
             case Done   => Done
         };
-        let iter1F = () -> loop(iterF());
+        let iter1F = -> loop(iterF());
         Iterator(rc, iter1F)
 
     ///
@@ -566,7 +566,7 @@ mod Iterator {
             case Skip => Skip
             case Done => Done
         };
-        let iter1F = () -> loop();
+        let iter1F = -> loop();
         Iterator(rc, iter1F)
 
     ///
@@ -605,7 +605,7 @@ mod Iterator {
                 }
             }
         };
-        let iter1F = () -> outerLoop();
+        let iter1F = -> outerLoop();
         Iterator(rc, iter1F)
 
     ///
@@ -668,7 +668,7 @@ mod Iterator {
     ///
     def ofList(rc: Region[r], xs: List[a]): Iterator[a, {}, r] \ r =
         let ls = Ref.fresh(rc, xs);
-        let next = () -> {
+        let next = -> {
             match (Ref.get(ls)) {
                 case Nil     => Done
                 case x :: rs => Ref.put(rs, ls); Ans(x)
@@ -721,7 +721,7 @@ mod Iterator {
             case Skip   => Skip
             case Done   => Done
         };
-        let iterF1 = () -> step(iterF());
+        let iterF1 = -> step(iterF());
         Iterator(rc, iterF1)
 
     ///
@@ -735,7 +735,7 @@ mod Iterator {
     pub def cons(x: a, iter: Iterator[a, ef, r]): Iterator[a, ef, r] \ r =
         let Iterator(rc, iterF) = iter;
         let first = Ref.fresh(rc, true);
-        let f = () ->  {
+        let f = ->  {
             if (Ref.get(first)) {
                 Ref.put(false, first);
                 Ans(x)
@@ -743,7 +743,7 @@ mod Iterator {
             else
                 iterF()
         };
-        let iter1F = () -> f();
+        let iter1F = -> f();
         Iterator(rc, iter1F)
 
     ///

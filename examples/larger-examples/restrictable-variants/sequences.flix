@@ -182,12 +182,12 @@ mod Seq {
     /// Optionally returns the first element of `l` that satisfies the predicate `f` when searching from right to left.
     ///
     pub def findRight(f: a -> Bool \ ef, l: Seq[s][a]): SOption[a] \ ef =
-        findRightHelper(f, l, () -> open_variant Seq.Nil)
+        findRightHelper(f, l, -> open_variant Seq.Nil)
 
     def findRightHelper(f: a -> Bool \ ef1, l: Seq[s][a], k: Unit -> SOption[a] \ ef2): SOption[a] \ {ef1, ef2} = choose* l {
         case Seq.Nil            => k()
         case Seq.One(x)         => if (f(x)) open_variant Seq.One(x) else k()
-        case Seq.Cons(x, xs)    => findRightHelper(f, xs, () -> if (f(x)) open_variant Seq.One(x) else k())
+        case Seq.Cons(x, xs)    => findRightHelper(f, xs, -> if (f(x)) open_variant Seq.One(x) else k())
     }
 
     ///
@@ -836,7 +836,7 @@ mod Seq {
     ///
     pub def iterator(rc: Region[r], xs: Seq[s][a]): Iterator[a, r, r] \ r =
         let ls = Ref.fresh(rc, open_variant_as Seq xs);
-        let next = () -> {
+        let next = -> {
             choose (Ref.get(ls)) {
                 case Seq.Nil            => None
                 case Seq.One(x)         => Ref.put(open_variant Seq.Nil, ls); Some(x)

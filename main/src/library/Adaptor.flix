@@ -124,7 +124,7 @@ mod Adaptor {
         def next(x) = unchecked_cast(x.next() as _ \ r);
         let entries = entrySet(m);
         let iter = iterator(entries);
-        let getNext = () -> match hasNext(iter) {
+        let getNext = -> match hasNext(iter) {
             case true  => {
                 let entry = {let obj = next(iter); unchecked_cast(obj as Entry)};
                 let (k, v) = fromMapEntry((Proxy.Proxy: Proxy[k]), (Proxy.Proxy: Proxy[v]), entry);
@@ -140,13 +140,13 @@ mod Adaptor {
     pub def fromIterator(rc: Region[r], _: Proxy[a], iter: JIterator): Iterator[a, r, r] =
         def hasNext(x) = unchecked_cast(x.hasNext() as _ \ r);
         def next(x) = unchecked_cast(x.next() as _ \ r);
-        let step = () -> {
+        let step = -> {
             match hasNext(iter) {
                 case true  => next(iter) |> (o -> unchecked_cast(o as a)) |> Some
                 case false => None
             }
         };
-        let iterF = () -> (step());
+        let iterF = -> (step());
         Iterator.iterate(rc, iterF)
 
     ///

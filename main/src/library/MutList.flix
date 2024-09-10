@@ -869,7 +869,7 @@ mod MutList {
         let MutList(_, a, len) = l;
         let len1 = Ref.get(len);
         let ix = Ref.fresh(rc, 0);
-        let next = () -> {
+        let next = -> {
             let i = Ref.get(ix);
             if (i < len1) {
                 let x = Array.get(i, Ref.get(a));

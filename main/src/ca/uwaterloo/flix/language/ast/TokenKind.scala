@@ -391,6 +391,7 @@ sealed trait TokenKind {
          | TokenKind.KeywordNull
          | TokenKind.LiteralRegex
          | TokenKind.ParenL
+         | TokenKind.ArrowThinR
          | TokenKind.Underscore
          | TokenKind.NameLowerCase
          | TokenKind.NameUpperCase

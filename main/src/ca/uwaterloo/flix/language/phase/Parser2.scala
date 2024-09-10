@@ -1589,6 +1589,7 @@ object Parser2 {
              | TokenKind.KeywordNull
              | TokenKind.LiteralRegex => literalExpr()
         case TokenKind.ParenL => parenOrTupleOrLambdaExpr()
+        case TokenKind.ArrowThinR => thunkExpr()
         case TokenKind.Underscore => if (nth(1) == TokenKind.ArrowThinR) unaryLambdaExpr() else name(NAME_VARIABLE, context = SyntacticContext.Expr.OtherExpr)
         case TokenKind.NameLowerCase if nth(1) == TokenKind.ArrowThinR => unaryLambdaExpr()
         case TokenKind.NameLowerCase => name(NAME_FIELD, allowQualified = true, context = SyntacticContext.Expr.OtherExpr)
@@ -1756,6 +1757,16 @@ object Parser2 {
           val error = UnexpectedToken(expected = NamedTokenSet.FromKinds(Set(TokenKind.ParenL)), actual = Some(t), SyntacticContext.Expr.OtherExpr, loc = currentSourceLocation())
           advanceWithError(error)
       }
+    }
+
+    private def thunkExpr()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      expect(TokenKind.ArrowThinR, SyntacticContext.Expr.OtherExpr)
+      val mark1 = open()
+      // There is no parameter, but it is a valid parameter list
+      close(mark1, TreeKind.ParameterList)
+      expression()
+      close(mark, TreeKind.Expr.Lambda)
     }
 
     private def lambda()(implicit s: State): Mark.Closed = {

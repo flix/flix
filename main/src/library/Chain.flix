@@ -825,7 +825,7 @@ mod Chain {
     ///
     pub def iterator(rc: Region[r], c: Chain[a]): Iterator[a, r, r] \ r =
         let cursor = Ref.fresh(rc, viewLeft(c));
-        let next = () -> match (Ref.get(cursor)) {
+        let next = -> match (Ref.get(cursor)) {
             case ViewLeft.NoneLeft        => None
             case ViewLeft.SomeLeft(x, xs) =>
                 Ref.put(viewLeft(xs), cursor);

@@ -71,13 +71,13 @@ mod Bench.Chain {
     /// ofArray                                                              ///
     ////////////////////////////////////////////////////////////////////////////
     pub def listOfArray(l: Array[Int32, r]): Benchmark =
-        defBenchmark("List.ofArray", () -> {
+        defBenchmark("List.ofArray", -> {
             l |>
             Array.toList
         })
 
     pub def chainOfArray(l: Array[Int32, r]): Benchmark =
-        defBenchmark("Chain.ofArray", () -> {
+        defBenchmark("Chain.ofArray", -> {
             l |>
             Array.toChain
         })
@@ -87,14 +87,14 @@ mod Bench.Chain {
     /// cons                                                                 ///
     ////////////////////////////////////////////////////////////////////////////
     pub def listCons(l: Array[Int32, r]): Benchmark =
-        defBenchmark("List.cons", () -> {
+        defBenchmark("List.cons", -> {
             l |>
             Array.toList |>
             listConsMany(Nil)
         })
 
     pub def chainCons(l: Array[Int32, r]): Benchmark =
-        defBenchmark("Chain.cons", () -> {
+        defBenchmark("Chain.cons", -> {
             l |>
             Array.toList |>
             chainConsMany(Chain.empty())
@@ -104,14 +104,14 @@ mod Bench.Chain {
     /// snoc                                                                 ///
     ////////////////////////////////////////////////////////////////////////////
     pub def listSnoc(l: Array[Int32, r]): Benchmark =
-        defBenchmark("List.snoc", () -> {
+        defBenchmark("List.snoc", -> {
             l |>
             Array.toList |>
             listSnocMany(Nil)
         })
 
     pub def chainSnoc(l: Array[Int32, r]): Benchmark =
-        defBenchmark("Chain.snoc", () -> {
+        defBenchmark("Chain.snoc", -> {
             l |>
             Array.toList |>
             chainSnocMany(Chain.empty())
@@ -121,13 +121,13 @@ mod Bench.Chain {
     /// append                                                               ///
     ////////////////////////////////////////////////////////////////////////////
     pub def listAppend(l: Array[Int32, r]): Benchmark =
-        defBenchmark("List.append", () -> {
+        defBenchmark("List.append", -> {
             let l1 = Array.toList(l);
             listAppendMany(l1, List.map(List.repeat(3), l1))
         })
 
     pub def chainAppend(l: Array[Int32, r]): Benchmark =
-        defBenchmark("Chain.append", () -> {
+        defBenchmark("Chain.append", -> {
             let c1 = Array.toChain(l);
             let l1 = Array.toList(l);
             chainAppendMany(c1, List.map(Chain.repeat(3), l1))
