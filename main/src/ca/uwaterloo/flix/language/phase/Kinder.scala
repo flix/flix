@@ -1143,6 +1143,7 @@ object Kinder {
       mapN(patVal) {
         case pat => KindedAst.RestrictableChoosePattern.Tag(sym, pat, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }
+    case ResolvedAst.RestrictableChoosePattern.Error(loc) => Validation.success(KindedAst.RestrictableChoosePattern.Error(Type.freshVar(Kind.Star, loc.asSynthetic), loc))
   }
 
   /**

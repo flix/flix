@@ -15,32 +15,33 @@
  */
 package ca.uwaterloo.flix.language.phase
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.CheckedCastType
 import ca.uwaterloo.flix.language.ast.Type.getFlixType
 import ca.uwaterloo.flix.language.ast.{Ast, KindedAst, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.phase.unification.Substitution
 import ca.uwaterloo.flix.language.errors.TypeError
-import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
 object TypeReconstruction {
 
   /**
     * Reconstructs types in the given def.
     */
-  def visitDef(defn: KindedAst.Def, subst: Substitution): TypedAst.Def = defn match {
+  def visitDef(defn: KindedAst.Def, subst: Substitution)(implicit flix: Flix): TypedAst.Def = defn match {
     case KindedAst.Def(sym, spec0, exp0) =>
       val spec = visitSpec(spec0, subst)
-      val exp = visitExp(exp0)(subst)
+      val exp = visitExp(exp0)(subst, flix)
       TypedAst.Def(sym, spec, exp)
   }
 
   /**
     * Reconstructs types in the given sig.
     */
-  def visitSig(sig: KindedAst.Sig, subst: Substitution): TypedAst.Sig = sig match {
+  def visitSig(sig: KindedAst.Sig, subst: Substitution)(implicit flix: Flix): TypedAst.Sig = sig match {
     case KindedAst.Sig(sym, spec0, exp0) =>
       val spec = visitSpec(spec0, subst)
-      val exp = exp0.map(visitExp(_)(subst))
+      val exp = exp0.map(visitExp(_)(subst, flix))
       TypedAst.Sig(sym, spec, exp)
   }
 
@@ -87,7 +88,7 @@ object TypeReconstruction {
   /**
     * Reconstructs types in the given expression.
     */
-  private def visitExp(exp0: KindedAst.Expr)(implicit subst: Substitution): TypedAst.Expr = exp0 match {
+  private def visitExp(exp0: KindedAst.Expr)(implicit subst: Substitution, flix: Flix): TypedAst.Expr = exp0 match {
     case KindedAst.Expr.Var(sym, loc) =>
       TypedAst.Expr.Var(sym, subst(sym.tvar), loc)
 
@@ -214,19 +215,26 @@ object TypeReconstruction {
       val e = visitExp(exp)
       val rs = rules.map {
         case KindedAst.RestrictableChooseRule(pat0, body0) =>
-          val pat = pat0 match {
+          val patRes = pat0 match {
             case KindedAst.RestrictableChoosePattern.Tag(sym, pats, tvar, loc) =>
               val ps = pats.map {
                 case KindedAst.RestrictableChoosePattern.Wild(tvar, loc) => TypedAst.RestrictableChoosePattern.Wild(subst(tvar), loc)
                 case KindedAst.RestrictableChoosePattern.Var(sym, tvar, loc) => TypedAst.RestrictableChoosePattern.Var(sym, subst(tvar), loc)
               }
-              TypedAst.RestrictableChoosePattern.Tag(sym, ps, subst(tvar), loc)
+              Result.Ok(TypedAst.RestrictableChoosePattern.Tag(sym, ps, subst(tvar), loc))
+            case KindedAst.RestrictableChoosePattern.Error(tvar1, loc) => Result.Err((subst(tvar1), loc))
           }
           val body = visitExp(body0)
-          TypedAst.RestrictableChooseRule(pat, body)
+          patRes.map(TypedAst.RestrictableChooseRule(_, body))
       }
-      val eff = Type.mkUnion(rs.map(_.exp.eff), loc)
-      TypedAst.Expr.RestrictableChoose(star, e, rs, subst(tvar), eff, loc)
+      val eff = Type.mkUnion(rs.map {
+        case Result.Ok(rule) => rule.exp.eff
+        case Result.Err((tvar1, _)) => tvar1
+      }, loc)
+      if (rs.forall(_.isOk))
+        TypedAst.Expr.RestrictableChoose(star, e, rs.map(_.get), subst(tvar), eff, loc)
+      else
+        TypedAst.Expr.Error(???, Type.freshError(ca.uwaterloo.flix.language.ast.Kind.Star, loc), Type.freshError(ca.uwaterloo.flix.language.ast.Kind.Star, loc))
 
     case KindedAst.Expr.Tag(sym, exp, tvar, loc) =>
       val e = visitExp(exp)
@@ -635,7 +643,7 @@ object TypeReconstruction {
   /**
     * Applies the substitution to the given constraint.
     */
-  private def visitConstraint(c0: KindedAst.Constraint)(implicit subst: Substitution): TypedAst.Constraint = {
+  private def visitConstraint(c0: KindedAst.Constraint)(implicit subst: Substitution, flix: Flix): TypedAst.Constraint = {
     val KindedAst.Constraint(cparams0, head0, body0, loc) = c0
 
     val head = visitHeadPredicate(head0)
@@ -658,7 +666,7 @@ object TypeReconstruction {
   /**
     * Reconstructs types in the given JVM method.
     */
-  private def visitJvmMethod(method: KindedAst.JvmMethod)(implicit subst: Substitution): TypedAst.JvmMethod = {
+  private def visitJvmMethod(method: KindedAst.JvmMethod)(implicit subst: Substitution, flix: Flix): TypedAst.JvmMethod = {
     method match {
       case KindedAst.JvmMethod(ident, fparams0, exp0, tpe, eff, loc) =>
         val fparams = fparams0.map(visitFormalParam(_, subst))
@@ -701,7 +709,7 @@ object TypeReconstruction {
   /**
     * Reconstructs types in the given head predicate.
     */
-  private def visitHeadPredicate(head0: KindedAst.Predicate.Head)(implicit subst: Substitution): TypedAst.Predicate.Head = head0 match {
+  private def visitHeadPredicate(head0: KindedAst.Predicate.Head)(implicit subst: Substitution, flix: Flix): TypedAst.Predicate.Head = head0 match {
     case KindedAst.Predicate.Head.Atom(pred, den0, terms, tvar, loc) =>
       val ts = terms.map(t => visitExp(t))
       TypedAst.Predicate.Head.Atom(pred, den0, ts, subst(tvar), loc)
@@ -711,7 +719,7 @@ object TypeReconstruction {
   /**
     * Reconstructs types in the given body predicate.
     */
-  private def visitBodyPredicate(body0: KindedAst.Predicate.Body)(implicit subst: Substitution): TypedAst.Predicate.Body = body0 match {
+  private def visitBodyPredicate(body0: KindedAst.Predicate.Body)(implicit subst: Substitution, flix: Flix): TypedAst.Predicate.Body = body0 match {
     case KindedAst.Predicate.Body.Atom(pred, den0, polarity, fixity, terms, tvar, loc) =>
       val ts = terms.map(t => visitPattern(t))
       TypedAst.Predicate.Body.Atom(pred, den0, polarity, fixity, ts, subst(tvar), loc)

@@ -1043,13 +1043,15 @@ private def resolveExp(exp0: NamedAst.Expr, env0: ListMap[String, Resolution])(i
               mapN(tagVal) {
                 case tag => ResolvedAst.RestrictableChoosePattern.Tag(Ast.RestrictableCaseSymUse(tag.sym, qname.loc), pats, loc)
               }
+            case NamedAst.RestrictableChoosePattern.Error(loc) => Validation.success(ResolvedAst.RestrictableChoosePattern.Error(loc))
           }
           val env = pat0 match {
-            case RestrictableChoosePattern.Tag(qname, pat, loc) =>
+            case NamedAst.RestrictableChoosePattern.Tag(qname, pat, loc) =>
               pat.foldLeft(env0) {
                 case (acc, NamedAst.RestrictableChoosePattern.Var(sym, loc)) => acc + (sym.text -> Resolution.Var(sym))
                 case (acc, NamedAst.RestrictableChoosePattern.Wild(loc)) => acc
               }
+            case NamedAst.RestrictableChoosePattern.Error(_) => env0
           }
 
           val eVal = resolveExp(exp0, env)
