@@ -85,7 +85,7 @@ object Loader {
     * Returns a map from names to method objects for the given class `clazz`.
     */
   private def methodsOf(clazz: Class[_]): Map[String, Method] = {
-    TypeReduction.getMethods(clazz).foldLeft(Map.empty[String, Method]) {
+    JvmOps.getMethods(clazz).foldLeft(Map.empty[String, Method]) {
       case (macc, method) =>
         if (method.isSynthetic)
           macc

@@ -18,11 +18,12 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ReducedAst._
+import ca.uwaterloo.flix.language.ast.ReducedAst.*
 import ca.uwaterloo.flix.language.ast.{MonoType, ReducedAst, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.mangle
 import ca.uwaterloo.flix.util.InternalCompilerException
 
+import java.lang.reflect.{Field, Method}
 import java.nio.file.{Files, LinkOption, Path}
 
 object JvmOps {
@@ -408,6 +409,59 @@ object JvmOps {
       return b1 == 0xCA && b2 == 0xFE && b3 == 0xBA && b4 == 0xBE
     }
     false
+  }
+
+  /**
+    * Returns the methods of the class INCLUDING implicit interface inheritance from Object.
+    */
+  def getMethods(clazz: Class[?]): List[Method] = {
+    if (clazz.isInterface) {
+      // Case 1: Interface. We have to add the methods from Object.
+      val declaredMethods = clazz.getMethods.toList
+
+      // Find all the methods in Object that are not declared in the interface.
+      val undeclaredObjectMethods = classOf[Object].getMethods.toList.filter {
+        case objectMethod => !declaredMethods.exists {
+          case declaredMethod => methodsMatch(objectMethod, declaredMethod)
+        }
+      }
+
+      // Add the undeclared object methods to the declared methods.
+      declaredMethods ::: undeclaredObjectMethods
+
+    } else {
+      // Case 2: Class. Just return the methods.
+      clazz.getMethods.toList
+    }
+  }
+
+  /**
+    * Returns true if the methods are the same, modulo their declaring class.
+    */
+  private def methodsMatch(m1: Method, m2: Method): Boolean = {
+    m1.getName == m2.getName &&
+      isStatic(m1) == isStatic(m2) &&
+      m1.getParameterTypes.sameElements(m2.getParameterTypes)
+  }
+
+  /**
+    * Returns `true` if the method has the static modifier.
+    */
+  def isStatic(method: Method): Boolean = {
+    java.lang.reflect.Modifier.isStatic(method.getModifiers)
+  }
+
+  /**
+    * Returns the `fieldName` field of `clazz` if it exists.
+    *
+    * Field name "length" of array classes always return `None` (see Class.getField).
+    */
+  def getField(clazz: Class[?], fieldName: String): Option[Field] = {
+    try {
+      Some(clazz.getField(fieldName))
+    } catch {
+      case _: NoSuchFieldException => None
+    }
   }
 
 }
