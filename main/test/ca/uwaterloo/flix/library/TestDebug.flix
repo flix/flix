@@ -233,8 +233,6 @@ mod TestDebug {
         s == "{label = null}"
     }
 
-    // Test that it doesn't crash
-
     @test
     def testDebug01(): Bool =
         debug(1) == 1
