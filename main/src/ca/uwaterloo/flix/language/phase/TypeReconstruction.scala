@@ -215,26 +215,20 @@ object TypeReconstruction {
       val e = visitExp(exp)
       val rs = rules.map {
         case KindedAst.RestrictableChooseRule(pat0, body0) =>
-          val patRes = pat0 match {
+          val pat = pat0 match {
             case KindedAst.RestrictableChoosePattern.Tag(sym, pats, tvar, loc) =>
               val ps = pats.map {
                 case KindedAst.RestrictableChoosePattern.Wild(tvar, loc) => TypedAst.RestrictableChoosePattern.Wild(subst(tvar), loc)
                 case KindedAst.RestrictableChoosePattern.Var(sym, tvar, loc) => TypedAst.RestrictableChoosePattern.Var(sym, subst(tvar), loc)
               }
-              Result.Ok(TypedAst.RestrictableChoosePattern.Tag(sym, ps, subst(tvar), loc))
-            case KindedAst.RestrictableChoosePattern.Error(tvar1, loc) => Result.Err((subst(tvar1), loc))
+              TypedAst.RestrictableChoosePattern.Tag(sym, ps, subst(tvar), loc)
+            case KindedAst.RestrictableChoosePattern.Error(tvar1, loc) => TypedAst.RestrictableChoosePattern.Error(subst(tvar1), loc)
           }
           val body = visitExp(body0)
-          patRes.map(TypedAst.RestrictableChooseRule(_, body))
+          TypedAst.RestrictableChooseRule(pat, body)
       }
-      val eff = Type.mkUnion(rs.map {
-        case Result.Ok(rule) => rule.exp.eff
-        case Result.Err((tvar1, _)) => tvar1
-      }, loc)
-      if (rs.forall(_.isOk))
-        TypedAst.Expr.RestrictableChoose(star, e, rs.map(_.get), subst(tvar), eff, loc)
-      else
-        TypedAst.Expr.Error(???, Type.freshError(ca.uwaterloo.flix.language.ast.Kind.Star, loc), Type.freshError(ca.uwaterloo.flix.language.ast.Kind.Star, loc))
+      val eff = Type.mkUnion(rs.map(_.exp.eff), loc)
+      TypedAst.Expr.RestrictableChoose(star, e, rs, subst(tvar), eff, loc)
 
     case KindedAst.Expr.Tag(sym, exp, tvar, loc) =>
       val e = visitExp(exp)

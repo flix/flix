@@ -963,6 +963,7 @@ object Lowering {
           val tagSym = visitRestrictableCaseSymUse(sym)
           val p = LoweredAst.Pattern.Tag(tagSym, pat1, tpe, loc)
           LoweredAst.MatchRule(p, None, e)
+        case TypedAst.RestrictableChoosePattern.Error(_, loc) => throw InternalCompilerException("unexpected error restrictable choose pattern near", loc)
       }
   }
 

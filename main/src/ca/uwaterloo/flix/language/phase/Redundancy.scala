@@ -1029,6 +1029,7 @@ object Redundancy {
     */
   private def freeVars(p: RestrictableChoosePattern): Set[Symbol.VarSym] = p match {
     case RestrictableChoosePattern.Tag(_, pat, _, _) => pat.flatMap(freeVars).toSet
+    case RestrictableChoosePattern.Error(_, _) => Set.empty
   }
 
   /**
