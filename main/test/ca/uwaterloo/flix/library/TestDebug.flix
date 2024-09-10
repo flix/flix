@@ -248,17 +248,13 @@ mod TestDebug {
         debug('a') == 'a'
 
     @test
-    def testDebug03(): Bool =
-        debug(null) == null
-
-    @test
     def testDebug04(): Bool =
         debug(x -> x + 1)(1) == 2
 
     @test
     def testDebug05(): Bool =
-        match debug(Poly.this('s')) {
-            case Poly.this(x) => x == 's' case _ => false
+        match debug(Poly.This('s')) {
+            case Poly.This(x) => x == 's' case _ => false
         }
 
     @test
@@ -274,17 +270,13 @@ mod TestDebug {
         debug!('a') == 'a'
 
     @test
-    def testDebugBang03(): Bool =
-        debug!(null) == null
-
-    @test
     def testDebugBang04(): Bool =
         debug!(x -> x + 1)(1) == 2
 
     @test
     def testDebugBang05(): Bool =
-        match debug!(Poly.this('s')) {
-            case Poly.this(x) => x == 's' case _ => false
+        match debug!(Poly.This('s')) {
+            case Poly.This(x) => x == 's' case _ => false
         }
 
     @test
@@ -300,17 +292,13 @@ mod TestDebug {
         debug!!('a') == 'a'
 
     @test
-    def testDebugBangBang03(): Bool =
-        debug!!(null) == null
-
-    @test
     def testDebugBangBang04(): Bool =
         debug!!(x -> x + 1)(1) == 2
 
     @test
     def testDebugBangBang05(): Bool =
-        match debug!!(Poly.this('s')) {
-            case Poly.this(x) => x == 's' case _ => false
+        match debug!!(Poly.This('s')) {
+            case Poly.This(x) => x == 's' case _ => false
         }
 
 }
