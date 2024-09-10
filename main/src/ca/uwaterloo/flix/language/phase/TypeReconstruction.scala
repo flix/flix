@@ -21,7 +21,6 @@ import ca.uwaterloo.flix.language.ast.Type.getFlixType
 import ca.uwaterloo.flix.language.ast.{Ast, KindedAst, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.phase.unification.Substitution
 import ca.uwaterloo.flix.language.errors.TypeError
-import ca.uwaterloo.flix.util.InternalCompilerException
 
 object TypeReconstruction {
 
