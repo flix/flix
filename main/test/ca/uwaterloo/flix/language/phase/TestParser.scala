@@ -812,6 +812,25 @@ class TestParserHappy extends AnyFunSuite with TestUtils {
     expectSuccess(result)
   }
 
+  test("thunkLambda.01") {
+    val input =
+      """
+        |def foo(): Int32 = (-> 42)()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectSuccess(result)
+  }
+
+  test("thunkLambda.02") {
+    val input =
+      """
+        |def |>(x: a, f: a -> b \ ef): b \ ef = f(x)
+        |def foo(): Int32 = () |> (-> -> 42)()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectSuccess(result)
+  }
+
   test("ParseError.Interpolation.01") {
     val input = s"""pub def foo(): String = "$${1 + }""""
     val result = compile(input, Options.TestWithLibNix)
