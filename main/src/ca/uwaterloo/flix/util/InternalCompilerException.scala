@@ -25,4 +25,4 @@ import ca.uwaterloo.flix.language.ast.SourceLocation
   *
   * @param message the error message.
   */
-case class InternalCompilerException(message: String, loc: SourceLocation) extends RuntimeException(message + ": " + loc)
+case class InternalCompilerException(message: String, loc: SourceLocation) extends RuntimeException(message)
