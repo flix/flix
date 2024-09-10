@@ -1391,19 +1391,16 @@ object Weeder2 {
                 case Pattern.Cst(Ast.Constant.Unit, loc) => Validation.success(WeededAst.RestrictableChoosePattern.Wild(loc))
                 case other =>
                   val e = UnsupportedRestrictedChoicePattern(isStar, other.loc)
-                  val ident = Name.Ident(s"x${flix.genSym.freshId()}", other.loc.asSynthetic)
-                  Validation.toSoftFailure(WeededAst.RestrictableChoosePattern.Var(ident, other.loc.asSynthetic), e)
+                  Validation.toSoftFailure(WeededAst.RestrictableChoosePattern.Error( other.loc.asSynthetic), e)
               }
             case other =>
               val e = UnsupportedRestrictedChoicePattern(isStar, other.loc)
-              val ident = Name.Ident(s"x${flix.genSym.freshId()}", other.loc.asSynthetic)
-              Validation.toSoftFailure(List(WeededAst.RestrictableChoosePattern.Var(ident, other.loc.asSynthetic)), e)
+              Validation.toSoftFailure(List(WeededAst.RestrictableChoosePattern.Error(other.loc.asSynthetic)), e)
           }
           mapN(inner)(RestrictableChoosePattern.Tag(qname, _, loc))
         case other =>
           val e = UnsupportedRestrictedChoicePattern(isStar, other.loc)
-          val ident = Name.Ident(s"x${flix.genSym.freshId()}", other.loc.asSynthetic)
-          val patVar = WeededAst.RestrictableChoosePattern.Var(ident, other.loc)
+          val patVar = WeededAst.RestrictableChoosePattern.Error(other.loc)
           val qname = Name.mkQName(s"choosePattern${flix.genSym.freshId()}", other.loc.asSynthetic)
           Validation.toSoftFailure(RestrictableChoosePattern.Tag(qname, List(patVar), other.loc.asSynthetic), e)
       }
