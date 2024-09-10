@@ -232,4 +232,70 @@ mod TestDebug {
         let s = stringify({label = (checked_cast(null): String)});
         s == "{label = null}"
     }
+
+    // Test that it doesn't crash
+
+    @test
+    def testDebug01(): Bool =
+        debug(1) == 1
+
+    def testDebug02(): Bool =
+        debug("hey") == "hey"
+
+    def testDebug03(): Bool =
+        debug('a') == 'a'
+
+    def testDebug03(): Bool =
+        debug(null) == null
+
+    def testDebug04(): Bool =
+        debug(x -> x + 1)(1) == 2
+
+    def testDebug05(): Bool =
+        match debug(Poly.this('s')) {
+            case Poly.this(x) => x == 's' case _ => false
+        }
+
+    @test
+    def testDebugBang01(): Bool =
+        debug!(1) == 1
+
+    def testDebugBang02(): Bool =
+        debug!("hey") == "hey"
+
+    def testDebugBang03(): Bool =
+        debug!('a') == 'a'
+
+    def testDebugBang03(): Bool =
+        debug!(null) == null
+
+    def testDebugBang04(): Bool =
+        debug!(x -> x + 1)(1) == 2
+
+    def testDebugBang05(): Bool =
+        match debug!(Poly.this('s')) {
+            case Poly.this(x) => x == 's' case _ => false
+        }
+
+    @test
+    def testDebugBangBang01(): Bool =
+        debug!!(1) == 1
+
+    def testDebugBangBang02(): Bool =
+        debug!!("hey") == "hey"
+
+    def testDebugBangBang03(): Bool =
+        debug!!('a') == 'a'
+
+    def testDebugBangBang03(): Bool =
+        debug!!(null) == null
+
+    def testDebugBangBang04(): Bool =
+        debug!!(x -> x + 1)(1) == 2
+
+    def testDebugBangBang05(): Bool =
+        match debug!!(Poly.this('s')) {
+            case Poly.this(x) => x == 's' case _ => false
+        }
+
 }
