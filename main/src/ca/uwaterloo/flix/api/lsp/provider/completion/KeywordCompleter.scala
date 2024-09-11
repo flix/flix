@@ -152,7 +152,6 @@ object KeywordCompleter {
   def getInstanceKeywords: Iterable[Completion] =
     List(
       Completion.KeywordCompletion("def"     , Priority.Default),
-      Completion.KeywordCompletion("override", Priority.Default),
       Completion.KeywordCompletion("pub"     , Priority.Default),
       Completion.KeywordCompletion("redef"   , Priority.Default),
     )      
