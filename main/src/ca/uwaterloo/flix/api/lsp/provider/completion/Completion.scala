@@ -261,27 +261,27 @@ sealed trait Completion {
 
     case Completion.UseEnumCompletion(name) =>
       CompletionItem(
+        label         = name,
         sortText      = name,
         textEdit      = TextEdit(context.range, name),
-        label         = name,
         documentation = None,
         kind          = CompletionItemKind.Enum
       )
 
     case Completion.UseEffCompletion(name) =>
       CompletionItem(
+        label         = name,
         sortText      = name,
         textEdit      = TextEdit(context.range, name),
-        label         = name,
         documentation = None,
         kind          = CompletionItemKind.Enum
       )
 
     case Completion.UseDefCompletion(name) =>
       CompletionItem(
+        label         = name,
         sortText      = name,
         textEdit      = TextEdit(context.range, name),
-        label         = name,
         documentation = None,
         kind          = CompletionItemKind.Method
       )
@@ -298,18 +298,18 @@ sealed trait Completion {
 
     case Completion.UseOpCompletion(name) =>
       CompletionItem(
+        label         = name,
         sortText      = name,
         textEdit      = TextEdit(context.range, name),
-        label         = name,
         documentation = None,
         kind          = CompletionItemKind.Method
       )
 
     case Completion.UseSignatureCompletion(name) =>
       CompletionItem(
+        label         = name,
         sortText      = name,
         textEdit      = TextEdit(context.range, name),
-        label         = name,
         documentation = None,
         kind          = CompletionItemKind.Method
       )
