@@ -63,8 +63,7 @@ object KeywordCompleter {
   def getExprKeywords: Iterable[Completion] =
     List(
       // A
-      Completion.KeywordCompletion("and"            , Priority.Higher),
-      Completion.KeywordCollectionCompletion("Array", Priority.Low),
+      Completion.KeywordCompletion("and"            , Priority.Default),
       // C
       Completion.KeywordCompletion("catch"            , Priority.Default),
       // D
