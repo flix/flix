@@ -13,17 +13,6 @@ pub enum Proxy[_] {
 }
 
 ///
-/// The uninterpretable `Clock` effect.
-///
-/// The `Clock` effect represents the actions required to access the system clock.
-///
-/// This includes use of `System.currentTimeMillis` and `System.nanoTime`, but also e.g. `Date.now()`.
-///
-/// The `Clock` effect is uninterpretable which means that it cannot be handled.
-///
-pub eff Clock
-
-///
 /// The uninterpretable `Exec` effect.
 ///
 /// The `Exec` effect represents the actions required to start (i.e. run) a new process outside the JVM.
@@ -33,17 +22,6 @@ pub eff Clock
 /// The `Exec` effect is uninterpretable which means that it cannot be handled.
 ///
 pub eff Exec
-
-///
-/// The uninterpretable `Exit` effect.
-///
-/// The `Exit` effect represents the actions to required to immediately terminate execution of the JVM.
-///
-/// This includes calls to `System.exit` and `Runtime.exit`.
-///
-/// The `Exit` effect is uninterpretable which means that it cannot be handled.
-///
-pub eff Exit
 
 ///
 /// The uninterpretable `FileRead` effect.
@@ -107,6 +85,17 @@ pub eff NonDet
 /// The `Sys` effect is uninterpretable which means that it cannot be handled.
 ///
 pub eff Sys
+
+///
+/// The uninterpretable `Time` effect.
+///
+/// The `Time` effect represents the actions required to access the current time (including the system clock).
+///
+/// This includes use of `System.currentTimeMillis` and `System.nanoTime`, but also e.g. `Date.now()`.
+///
+/// The `Time` effect is uninterpretable which means that it cannot be handled.
+///
+pub eff Time
 
 ///
 /// The pure identity function.

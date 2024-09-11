@@ -1348,8 +1348,8 @@ mod DelayList {
     ///
     /// Shuffles `l` using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(rnd: Random, l: DelayList[a]): DelayList[a] \ IO = region rc {
-        toArray(rc, l) !> Array.shuffle(rnd) |> Array.toDelayList
+    pub def shuffle(l: DelayList[a]): DelayList[a] \ NonDet = region rc {
+        toArray(rc, l) !> Array.shuffle |> Array.toDelayList
     }
 
 }

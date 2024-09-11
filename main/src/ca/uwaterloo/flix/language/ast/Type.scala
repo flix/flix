@@ -391,6 +391,16 @@ object Type {
   val IO: Type = Type.Cst(TypeConstructor.Effect(Symbol.IO), SourceLocation.Unknown)
 
   /**
+    * Represents the NonDet effect.
+    */
+  val NonDet: Type = Type.Cst(TypeConstructor.Effect(Symbol.NonDet), SourceLocation.Unknown)
+
+  /**
+    * Represents the Sys effect.
+    */
+  val Sys: Type = Type.Cst(TypeConstructor.Effect(Symbol.Sys), SourceLocation.Unknown)
+
+  /**
     * Represents the universal effect set.
     */
   val Univ: Type = Type.Cst(TypeConstructor.Univ, SourceLocation.Unknown)
@@ -1126,6 +1136,19 @@ object Type {
     case AssocType(_, _, _, _) => true
     case JvmToType(tpe, _) => hasAssocType(tpe)
     case UnresolvedJvmType(member, _) => member.getTypeArguments.exists(hasAssocType)
+  }
+
+  /**
+    * Returns true if the given type contains [[Type.JvmToType]] or [[Type.UnresolvedJvmType]] somewhere within it.
+    */
+  def hasJvmType(tpe: Type): Boolean = tpe match {
+    case Type.Var(_, _) => false
+    case Type.Cst(_, _) => false
+    case Type.Apply(tpe1, tpe2, _) => hasJvmType(tpe1) || hasJvmType(tpe2)
+    case Type.Alias(_, _, tpe, _) => hasJvmType(tpe)
+    case Type.AssocType(_, arg, _, _) => hasJvmType(arg)
+    case Type.JvmToType(_, _) => true
+    case Type.UnresolvedJvmType(_, _) => true
   }
 
   /**
