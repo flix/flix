@@ -35,9 +35,8 @@ object KeywordCompleter {
       Completion.KeywordCompletion("eff"      , Priority.Low),
       Completion.KeywordCompletion("enum"     , Priority.High),
       // I
-      Completion.KeywordCompletion("import"   , Priority.High),
-      Completion.KeywordCompletion("inline"   , Priority.Low),
-      Completion.KeywordCompletion("instance" , Priority.Higher),
+      Completion.KeywordCompletion("import"   , Priority.Low),
+      Completion.KeywordCompletion("instance" , Priority.High),
       // M
       Completion.KeywordCompletion("mod"      , Priority.Default),
       // P
