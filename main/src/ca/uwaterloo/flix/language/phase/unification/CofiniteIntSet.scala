@@ -53,10 +53,10 @@ sealed trait CofiniteIntSet {
 object CofiniteIntSet {
 
   /** Represents a finite set of integers. */
-  case class Set(s: SortedSet[Int]) extends CofiniteIntSet
+  private case class Set(s: SortedSet[Int]) extends CofiniteIntSet
 
   /** Represents a co-finite set of integers. */
-  case class Compl(s: SortedSet[Int]) extends CofiniteIntSet
+  private case class Compl(s: SortedSet[Int]) extends CofiniteIntSet
 
   /** The empty set. */
   val empty: CofiniteIntSet = Set(SortedSet.empty)
