@@ -408,28 +408,42 @@ object Completion {
   case class KeywordCompletion(name: String, priority: Priority) extends Completion
 
   /**
-    * Represents a keyword literal completion (i.e. `true`)
+    * Represents a keyword literal completion (i.e. `true`).
     *
-    * @param name      the name of the keyword.
-    * @param priority  the priority of the keyword.
-    */
-  case class KeywordLiteralCompletion(name: String, priority: Priority) extends Completion
-
-  /**
-    * Represents a completion for a keyword with call syntax (i.e. `checked_cast`)
+    * The reason we differentiate bewteen normal keywords and these literals
+    * is because completions for the former should include a trailing space
+    * whereas completions for the latter we might not want one.
     * 
-    * @param name      the name of the keyword.
+    * To illustrate this consider the two following correct completions (where ˽ denotes a space)
+    *
+    * `de`      --->    `def˽`
+    * `f(fal)`  --->    `f(false)`
+    *
+    * After the keyword `def` we *always* want a space but if we were
+    * to add a trailing space after `false` we would get the unnatural completion
+    *
+    * `f(fal)`  --->    `f(false˽)`
+    *
+    * @param literal   the literal keyword text.
     * @param priority  the priority of the keyword.
     */
-  case class KeywordCallCompletion(name: String, priority: Priority) extends Completion
+  case class KeywordLiteralCompletion(literal: String, priority: Priority) extends Completion
 
   /**
-    * Represents a collection keyword completion (i.e. `Hash#{}`)
-    *
-    * @param name      the name of the keyword.
+    * Represents a completion for a keyword with call syntax (i.e. `checked_cast`).
+    * 
+    * @param keyword   the keyword text.
     * @param priority  the priority of the keyword.
     */
-  case class KeywordCollectionCompletion(name: String, priority: Priority) extends Completion
+  case class KeywordCallCompletion(keyword: String, priority: Priority) extends Completion
+
+  /**
+    * Represents a collection keyword completion (i.e. `List#{}`)
+    *
+    * @param keyword   the keyword text (before `#`).
+    * @param priority  the priority of the keyword.
+    */
+  case class KeywordCollectionCompletion(keyword: String, priority: Priority) extends Completion
 
   /**
     * Represents a label completion.
