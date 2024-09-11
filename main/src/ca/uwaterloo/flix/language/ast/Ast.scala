@@ -751,6 +751,8 @@ object Ast {
     object Decl {
       case object Trait extends Decl
 
+      case object Type extends Decl
+
       case object Enum extends Decl
 
       case object Instance extends Decl

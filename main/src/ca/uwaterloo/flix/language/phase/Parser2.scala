@@ -1178,9 +1178,9 @@ object Parser2 {
 
     private def typeAliasDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.KeywordType))
-      expect(TokenKind.KeywordType, SyntacticContext.Decl.OtherDecl)
-      expect(TokenKind.KeywordAlias, SyntacticContext.Decl.OtherDecl)
-      name(NAME_TYPE, context = SyntacticContext.Decl.OtherDecl)
+      expect(TokenKind.KeywordType, SyntacticContext.Decl.Type)
+      expect(TokenKind.KeywordAlias, SyntacticContext.Decl.Type)
+      name(NAME_TYPE, context = SyntacticContext.Decl.Type)
       if (at(TokenKind.BracketL)) {
         Type.parameters()
       }
