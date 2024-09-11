@@ -89,7 +89,6 @@ object KeywordCompleter {
       // L
       Completion.KeywordCompletion("lazy"          , Priority.Low),
       Completion.KeywordCompletion("let"           , Priority.High),
-      // Strange, but in the std lib this occurs much less than `lazy`
       Completion.KeywordCollectionCompletion("List", Priority.Lower),
       // M
       Completion.KeywordCollectionCompletion("Map"  , Priority.Low),
