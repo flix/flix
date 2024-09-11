@@ -151,9 +151,10 @@ object KeywordCompleter {
     */
   def getInstanceKeywords: Iterable[Completion] =
     List(
-      Completion.KeywordCompletion("override", Priority.Low),
-      Completion.KeywordCompletion("pub"     , Priority.Low),
-      Completion.KeywordCompletion("def"     , Priority.Low)
+      Completion.KeywordCompletion("def"     , Priority.Default),
+      Completion.KeywordCompletion("override", Priority.Default),
+      Completion.KeywordCompletion("pub"     , Priority.Default),
+      Completion.KeywordCompletion("redef"   , Priority.Default),
     )      
 
   /**
@@ -170,8 +171,6 @@ object KeywordCompleter {
       Completion.KeywordCompletion("@Test"            , Priority.Highest),
       // F
       Completion.KeywordCompletion("fix"              , Priority.Default),
-      // R
-      Completion.KeywordCompletion("redef"            , Priority.High),
       // W
       Completion.KeywordCompletion("where"            , Priority.Low),
       Completion.KeywordCompletion("with"             , Priority.High),
