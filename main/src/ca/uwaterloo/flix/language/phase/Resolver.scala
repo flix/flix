@@ -26,10 +26,8 @@ import ca.uwaterloo.flix.language.ast.{NamedAst, Symbol, *}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.ResolutionError.*
 import ca.uwaterloo.flix.language.errors.{Recoverable, ResolutionError, Unrecoverable}
-import ca.uwaterloo.flix.language.phase.jvm.JvmOps
-import ca.uwaterloo.flix.language.phase.typer.TypeReduction
-import ca.uwaterloo.flix.util.Validation.*
 import ca.uwaterloo.flix.util.*
+import ca.uwaterloo.flix.util.Validation.*
 import ca.uwaterloo.flix.util.collection.{Chain, ListMap, MapOps}
 
 import java.lang.reflect.{Constructor, Field, Method, Modifier}
@@ -3454,7 +3452,7 @@ private def getRestrictableEnumIfAccessible(enum0: NamedAst.Declaration.Restrict
       }
     } catch {
       case ex: NoSuchMethodException =>
-        val candidateMethods = JvmOps.getMethods(clazz).filter(m => m.getName == methodName)
+        val candidateMethods = Jvm.getMethods(clazz).filter(_.getName == methodName)
         Result.Err(ResolutionError.UndefinedJvmMethod(clazz.getName, methodName, static, signature, candidateMethods, loc))
       // ClassNotFoundException:  Cannot happen because we already have the `Class` object.
       // NoClassDefFoundError:    Cannot happen because we already have the `Class` object.

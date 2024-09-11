@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.TypeError
-import ca.uwaterloo.flix.language.phase.jvm.JvmOps
+import ca.uwaterloo.flix.language.phase.Jvm
 import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.collection.{ListMap, ListOps}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
@@ -288,7 +288,7 @@ object TypeReduction {
     */
   private def candidateMethods(clazz: Class[?], methodName: String, ts: List[Type], static: Boolean): List[Method] = {
     // this list contains e.g. both `StringBuilder.appendCodePoint(int)` and `AbstractStringBuilder.appendCodePoint(int)`.
-    val allCandidates = JvmOps.getMethods(clazz).filter(isCandidateMethod(_, methodName, static, ts))
+    val allCandidates = Jvm.getMethods(clazz).filter(isCandidateMethod(_, methodName, static, ts))
 
     def notOverridden(method: Method): Boolean = {
       // this is a very hardcoded hack to make the standard library compile
@@ -310,7 +310,7 @@ object TypeReduction {
     */
   private def isCandidateMethod(method: Method, methodName: String, static: Boolean, ts: List[Type]): Boolean = {
     if (method.getName != methodName) return false
-    if (JvmOps.isStatic(method) != static) return false
+    if (Jvm.isStatic(method) != static) return false
     subtypeArguments(method.getParameterTypes, ts)
   }
 
@@ -347,18 +347,11 @@ object TypeReduction {
   private def lookupField(thisObj: Type, fieldName: String): JavaFieldResolution = {
     val typeIsKnown = isKnown(thisObj)
     if (!typeIsKnown) return JavaFieldResolution.UnresolvedTypes
-    Type.classFromFlixType(thisObj) match {
-      case Some(clazz) => retrieveField(clazz, fieldName)
-      case None => JavaFieldResolution.NotFound
-    }
-  }
-
-  /** Tries to find a field of `clazz` with the name `fieldName`. */
-  private def retrieveField(clazz: Class[?], fieldName: String): JavaFieldResolution = {
-    JvmOps.getField(clazz, fieldName) match {
-      case Some(field) => JavaFieldResolution.Resolved(field)
-      case None => JavaFieldResolution.NotFound
-    }
+    val opt = for {
+      clazz <- Type.classFromFlixType(thisObj)
+      field <- Jvm.getField(clazz, fieldName, static = false)
+    } yield JavaFieldResolution.Resolved(field)
+    opt.getOrElse(JavaFieldResolution.NotFound)
   }
 
   /**
