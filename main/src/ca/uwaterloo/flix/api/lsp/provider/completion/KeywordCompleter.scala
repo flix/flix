@@ -71,14 +71,9 @@ object KeywordCompleter {
       Completion.KeywordCompletion("as"             , Priority.High),
       // C
       Completion.KeywordCompletion("catch"            , Priority.High),
-      Completion.KeywordCallCompletion("checked_cast" , Priority.Higher),
-      Completion.KeywordCallCompletion("checked_ecast", Priority.Low),
       Completion.KeywordCompletion("choose"           , Priority.Lowest),
       Completion.KeywordCompletion("choose*"          , Priority.Lowest),
       // D
-      Completion.KeywordCallCompletion("debug!!", Priority.Lowest),
-      Completion.KeywordCallCompletion("debug!" , Priority.Lowest),
-      Completion.KeywordCallCompletion("debug"  , Priority.Lower),
       Completion.KeywordCompletion("def"        , Priority.Higher),
       Completion.KeywordCompletion("discard"    , Priority.Low),
       Completion.KeywordCompletion("do"         , Priority.High),
@@ -107,7 +102,6 @@ object KeywordCompleter {
       Completion.KeywordCollectionCompletion("List", Priority.Lower),
       // M
       Completion.KeywordCollectionCompletion("Map"  , Priority.Low),
-      Completion.KeywordCallCompletion("masked_cast", Priority.Lower),
       Completion.KeywordCompletion("match"          , Priority.High),
       // N
       Completion.KeywordCompletion("new"        , Priority.Low),
@@ -144,7 +138,6 @@ object KeywordCompleter {
       // experiments on occurrences in stdlib shows the *exact* same amount of
       // occurrences of these `unsafe` and `use`. However, I'm fairly confident that
       // `use` would occur much more often in most programs.
-      Completion.KeywordCallCompletion("unchecked_cast", Priority.Lower),
       Completion.KeywordCompletion("unsafe"            , Priority.Low),
       Completion.KeywordCompletion("use"               , Priority.High),
       // V
