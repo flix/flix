@@ -108,8 +108,6 @@ object KeywordCompleter {
       Completion.KeywordCompletion("not"        , Priority.High),
       Completion.KeywordLiteralCompletion("null", Priority.Lower),
       // O
-      Completion.KeywordCompletion("open_variant"   , Priority.Low),
-      Completion.KeywordCompletion("open_variant_as", Priority.Low),
       Completion.KeywordCompletion("or"             , Priority.High),
       // P
       Completion.KeywordCompletion("par"      , Priority.Low),
