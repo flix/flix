@@ -107,10 +107,6 @@ object KeywordCompleter {
       // R
       Completion.KeywordCompletion("region"   , Priority.Default),
       // S
-      // While `Set#{...}` occures as much as `select` in the std lib (as of writing this), the former has been given a higher priority,
-      // by the reasoning that sets are a very basic data type and
-      // in most programs, set constructions are likely more common
-      // than extracting data from datalog.
       Completion.KeywordCompletion("select"       , Priority.Higher),
       Completion.KeywordCollectionCompletion("Set", Priority.Highest),
       Completion.KeywordCompletion("solve"        , Priority.High),
