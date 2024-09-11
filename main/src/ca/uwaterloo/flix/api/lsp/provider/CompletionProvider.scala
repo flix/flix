@@ -119,10 +119,10 @@ object CompletionProvider {
       //
       // Declarations.
       //
-      case SyntacticContext.Decl.Trait => KeywordCompleter.getTraitKeywords
       case SyntacticContext.Decl.Enum => KeywordCompleter.getEnumKeywords
-      case SyntacticContext.Decl.Struct => KeywordCompleter.getStructKeywords
       case SyntacticContext.Decl.Instance => InstanceCompleter.getCompletions(context) ++ KeywordCompleter.getInstanceKeywords
+      case SyntacticContext.Decl.Struct => KeywordCompleter.getStructKeywords
+      case SyntacticContext.Decl.Trait => KeywordCompleter.getTraitKeywords
       case _: SyntacticContext.Decl => KeywordCompleter.getDeclKeywords ++ SnippetCompleter.getCompletions(context)
 
       //
