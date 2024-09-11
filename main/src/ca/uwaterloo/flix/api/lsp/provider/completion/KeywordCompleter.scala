@@ -111,8 +111,6 @@ object KeywordCompleter {
       Completion.KeywordCollectionCompletion("Set", Priority.Highest),
       Completion.KeywordCompletion("solve"        , Priority.High),
       Completion.KeywordCompletion("spawn"        , Priority.Low),
-      Completion.KeywordCompletion("static"       , Priority.Lowest),
-      Completion.KeywordCompletion("Static"       , Priority.Lower),
       // T
       Completion.KeywordCompletion("throw"      , Priority.Lowest),
       Completion.KeywordLiteralCompletion("true", Priority.Higher),
