@@ -185,7 +185,7 @@ object EntryPoint {
       val resultSc = Scheme.generalize(Nil, Nil, resultTpe, RigidityEnv.empty)
 
       // Check for [[IllegalEntryPointEffect]]
-      if (declaredEff != Type.Pure && declaredEff != Type.IO) {
+      if (declaredEff != Type.Pure && (declaredEff != Type.IO || declaredEff != Type.NonDet)) {
         return Validation.toSoftFailure((),EntryPointError.IllegalEntryPointEff(sym, declaredEff, declaredEff.loc))
       }
 

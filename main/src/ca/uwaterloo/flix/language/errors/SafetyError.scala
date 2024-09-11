@@ -166,7 +166,7 @@ object SafetyError {
     def message(formatter: Formatter): String = {
       import formatter._
       s""">> Illegal entry point signature. An entry point must take a single Unit
-         |>> argument and be pure or have the IO effect.
+         |>> argument and be pure, or have the IO effect, or have the NonDet effect.
          |
          |${code(loc, "illegal signature.")}
          |
