@@ -260,7 +260,9 @@ class Flix {
     "Fixpoint/Ast/Ram.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/Ram.flix"),
 
     "Abort.flix" -> LocalResource.get("/src/library/Abort.flix"),
+    "Clock.flix" -> LocalResource.get("/src/library/Clock.flix"),
     "Eff/Random.flix" -> LocalResource.get("/src/library/Eff/Random.flix"),
+    "TimeUnit.flix" -> LocalResource.get("/src/library/TimeUnit.flix"),
 
     "Graph.flix" -> LocalResource.get("/src/library/Graph.flix"),
     "Vector.flix" -> LocalResource.get("/src/library/Vector.flix"),
