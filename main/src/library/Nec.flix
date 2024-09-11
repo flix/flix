@@ -1036,8 +1036,8 @@ mod Nec {
     ///
     /// Optionally returns the Nec `c` shuffled using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(rnd: Random, c: Nec[a]): Option[Nec[a]] \ IO = region rc {
-        toArray(rc, c) !> Array.shuffle(rnd) |> Array.toNec
+    pub def shuffle(c: Nec[a]): Option[Nec[a]] \ NonDet = region rc {
+        toArray(rc, c) !> Array.shuffle |> Array.toNec
     }
 
 }
