@@ -42,8 +42,6 @@ object KeywordCompleter {
       Completion.KeywordCompletion("mod"      , Priority.Default),
       // P
       Completion.KeywordCompletion("pub"      , Priority.Default),
-      // R
-      Completion.KeywordCompletion("restrictable", Priority.Default),
       // S
       Completion.KeywordCompletion("sealed"   , Priority.Low),
       Completion.KeywordCompletion("struct"   , Priority.High),
@@ -69,9 +67,7 @@ object KeywordCompleter {
       Completion.KeywordCompletion("and"            , Priority.Higher),
       Completion.KeywordCollectionCompletion("Array", Priority.Low),
       // C
-      Completion.KeywordCompletion("catch"            , Priority.High),
-      Completion.KeywordCompletion("choose"           , Priority.Lowest),
-      Completion.KeywordCompletion("choose*"          , Priority.Lowest),
+      Completion.KeywordCompletion("catch"            , Priority.Default),
       // D
       Completion.KeywordCompletion("def"        , Priority.Higher),
       Completion.KeywordCompletion("discard"    , Priority.Low),
