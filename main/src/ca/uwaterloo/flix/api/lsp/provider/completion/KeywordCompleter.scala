@@ -153,7 +153,6 @@ object KeywordCompleter {
       // F
       Completion.KeywordCompletion("fix"              , Priority.Default),
       // W
-      Completion.KeywordCompletion("where"            , Priority.Low),
       Completion.KeywordCompletion("with"             , Priority.High),
     )
 
