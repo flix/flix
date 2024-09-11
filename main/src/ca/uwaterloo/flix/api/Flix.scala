@@ -262,6 +262,7 @@ class Flix {
     "Abort.flix" -> LocalResource.get("/src/library/Abort.flix"),
     "Clock.flix" -> LocalResource.get("/src/library/Clock.flix"),
     "Eff/Random.flix" -> LocalResource.get("/src/library/Eff/Random.flix"),
+    "Process.flix" -> LocalResource.get("/src/library/Process.flix"),
     "TimeUnit.flix" -> LocalResource.get("/src/library/TimeUnit.flix"),
 
     "Graph.flix" -> LocalResource.get("/src/library/Graph.flix"),
