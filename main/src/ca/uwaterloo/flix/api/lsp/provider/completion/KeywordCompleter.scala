@@ -177,7 +177,7 @@ object KeywordCompleter {
 
   def getStructKeywords: Iterable[Completion] =
     List(
-      Completion.KeywordCompletion("mut", Priority.Low)
+      Completion.KeywordCompletion("mut", Priority.Default)
     )
 
   /**
