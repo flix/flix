@@ -17,7 +17,7 @@
 ///
 /// An effect used to exit the JVM.
 ///
-eff Exit1 {
+eff Exit {
 
     ///
     /// Immediately exits the JVM with the specified `exitCode`.
@@ -26,7 +26,7 @@ eff Exit1 {
 
 }
 
-mod Exit1 {
+mod Exit {
 
     import java.lang.System
 
@@ -41,7 +41,7 @@ mod Exit1 {
         // Currently try-with typing is broken, so fix it with checked_ecast
         unchecked_cast(try {
             f()
-        } with Exit1 {
+        } with Exit {
             def exit(ec, _k) = unsafe {
                 unchecked_cast(System.exit(ec) as a)
             }
