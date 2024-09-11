@@ -21,7 +21,7 @@ enum TimeUnit with Eq {
     case Days,
     case Hours,
     case Microseconds,
-    case Miliseconds,
+    case Milliseconds,
     case Minutes,
     case Nanoseconds,
     case Seconds

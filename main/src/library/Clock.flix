@@ -28,14 +28,14 @@ mod Clock {
     import java.util.concurrent.{TimeUnit => JTimeUnit}
 
     ///
-    /// Returns the number of nanoseconds since the epoch.
+    /// Returns the number of milliseconds since the epoch.
     ///
-    /// Equivalent to `currentTime(TimeUnit.Nanoseconds)`.
+    /// Equivalent to `currentTime(TimeUnit.Milliseconds)`.
     ///
-    pub def now(): Int64 \ Clock = do Clock.currentTime(TimeUnit.Nanoseconds)
+    pub def now(): Int64 \ Clock = do Clock.currentTime(TimeUnit.Milliseconds)
 
     ///
-    /// Runs the `ConsoClockle` effect of the given function `f`.
+    /// Runs the `Clock` effect of the given function `f`.
     ///
     /// In other words, re-interprets the `Clock` effect using the `IO` effect.
     ///
@@ -45,13 +45,13 @@ mod Clock {
             f()
         } with Clock {
             def currentTime(u, k) = unsafe {
-                let time = System.nanoTime();
-                let ns = JTimeUnit.NANOSECONDS;
+                let time = System.currentTimeMillis();
+                let ns = JTimeUnit.MILLISECONDS;
                 match u {
                     case TimeUnit.Days          => k(ns.toDays(time))
                     case TimeUnit.Hours         => k(ns.toHours(time))
                     case TimeUnit.Microseconds  => k(ns.toMicros(time))
-                    case TimeUnit.Miliseconds   => k(ns.toMillis(time))
+                    case TimeUnit.Milliseconds  => k(ns.toMillis(time))
                     case TimeUnit.Minutes       => k(ns.toMinutes(time))
                     case TimeUnit.Nanoseconds   => k(ns.toNanos(time))
                     case TimeUnit.Seconds       => k(ns.toSeconds(time))
