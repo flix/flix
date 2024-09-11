@@ -175,6 +175,9 @@ object KeywordCompleter {
       Completion.KeywordCompletion("with"             , Priority.High),
     )
 
+  /**
+    * Struct declaration keywords. These are keywords that occur within a struct declaration.
+    */
   def getStructKeywords: Iterable[Completion] =
     List(
       Completion.KeywordCompletion("mut", Priority.Default)
@@ -192,7 +195,6 @@ object KeywordCompleter {
   /**
     * Type declaration keywords. These are the keywords that can occur
     * within a type declaration.
-    * @return iterable with type declaration keyword completions.
     */
   def getTypeKeywords: Iterable[Completion] =
     List(
