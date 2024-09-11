@@ -391,6 +391,11 @@ object Type {
   val IO: Type = Type.Cst(TypeConstructor.Effect(Symbol.IO), SourceLocation.Unknown)
 
   /**
+    * Represents the NonDet effect.
+    */
+  val NonDet: Type = Type.Cst(TypeConstructor.Effect(Symbol.NonDet), SourceLocation.Unknown)
+
+  /**
     * Represents the universal effect set.
     */
   val Univ: Type = Type.Cst(TypeConstructor.Univ, SourceLocation.Unknown)

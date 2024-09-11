@@ -105,7 +105,7 @@ object Safety {
       // Note that exported defs have different rules
       if (defn.spec.ann.isExport) {
         Nil
-      } else if (hasUnitParameter(defn) && isPureOrIO(defn)) {
+      } else if (hasUnitParameter(defn) && isPureOrIOOrNonDet(defn)) {
         Nil
       } else {
         SafetyError.IllegalEntryPointSignature(defn.sym.loc) :: Nil
@@ -128,7 +128,7 @@ object Safety {
     } else {
       checkExportableTypes(defn)
     }
-    val effect = if (isPureOrIO(defn)) Nil else List(SafetyError.IllegalExportEffect(defn.spec.loc))
+    val effect = if (isPureOrIOOrNonDet(defn)) Nil else List(SafetyError.IllegalExportEffect(defn.spec.loc))
     nonRoot ++ pub ++ name ++ types ++ effect
   }
 
@@ -216,12 +216,13 @@ object Safety {
   }
 
   /**
-    * Returns `true` if the given `defn` is pure or has the IO effect.
+    * Returns `true` if the given `defn` is pure or has the IO effect or has the NonDet effect.
     */
-  private def isPureOrIO(defn: Def): Boolean = {
+  private def isPureOrIOOrNonDet(defn: Def): Boolean = {
     defn.spec.eff match {
       case Type.Pure => true
       case Type.IO => true
+      case Type.NonDet => true
       case _ => false
     }
   }
