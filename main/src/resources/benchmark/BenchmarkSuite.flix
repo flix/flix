@@ -13,21 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-///
-/// A benchmark suite as a single self-contained program.
-///
-/// The benchmark should be compiled and package to a JAR.
-///
-/// The benchmark can then be run in a fresh JVM and will emit JSON.
-///
-/// The workflow should be:
-///
-/// $ java -jar flix.jar build
-/// $ java -jar flix.jar build-jar
-/// $ java -jar artifacts/benchmark.jar
-///
-
 import java.lang.System
 
 ///
