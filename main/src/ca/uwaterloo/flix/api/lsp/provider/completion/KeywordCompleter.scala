@@ -68,7 +68,6 @@ object KeywordCompleter {
       // A
       Completion.KeywordCompletion("and"            , Priority.Higher),
       Completion.KeywordCollectionCompletion("Array", Priority.Low),
-      Completion.KeywordCompletion("as"             , Priority.High),
       // C
       Completion.KeywordCompletion("catch"            , Priority.High),
       Completion.KeywordCompletion("choose"           , Priority.Lowest),
