@@ -86,10 +86,6 @@ object KeywordCompleter {
       Completion.KeywordCompletion("inject"    , Priority.Low),
       Completion.KeywordCompletion("instanceof", Priority.Lowest),
       Completion.KeywordCompletion("into"      , Priority.High),
-      // J
-      Completion.KeywordCompletion("java_get_field", Priority.Lowest),
-      Completion.KeywordCompletion("java_set_field", Priority.Lowest),
-      Completion.KeywordCompletion("java_new"      , Priority.Lowest),
       // L
       Completion.KeywordCompletion("lazy"          , Priority.Low),
       Completion.KeywordCompletion("let"           , Priority.High),
