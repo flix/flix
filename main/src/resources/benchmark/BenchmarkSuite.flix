@@ -91,5 +91,5 @@ def median(l: List[Int64]): Int64 =
 /// Returns the given map `m` as a JSON string.
 ///
 def toJSON(m: Map[String, Int64]): String =
-    let kv = Map.joinWith((k, v) -> "  \"${k}\": ${v}", ",\n", m);
-    "{\n${kv}\n}"
+    let kv = Map.joinWith((k, v) -> "  { \"name\": \"${k}\", \"time\": ${v} }", ",\n", m);
+    "[\n${kv}\n]"
