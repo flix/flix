@@ -185,7 +185,6 @@ class Flix {
     "Result.flix" -> LocalResource.get("/src/library/Result.flix"),
     "Set.flix" -> LocalResource.get("/src/library/Set.flix"),
     "String.flix" -> LocalResource.get("/src/library/String.flix"),
-    "System.flix" -> LocalResource.get("/src/library/System.flix"),
     "MultiMap.flix" -> LocalResource.get("/src/library/MultiMap.flix"),
 
     "MutQueue.flix" -> LocalResource.get("/src/library/MutQueue.flix"),
@@ -230,6 +229,7 @@ class Flix {
     "StringBuilder.flix" -> LocalResource.get("/src/library/StringBuilder.flix"),
     "RedBlackTree.flix" -> LocalResource.get("/src/library/RedBlackTree.flix"),
     "GetOpt.flix" -> LocalResource.get("/src/library/GetOpt.flix"),
+    "Chalk.flix" -> LocalResource.get("/src/library/Chalk.flix"),
 
     "Concurrent/Channel.flix" -> LocalResource.get("/src/library/Concurrent/Channel.flix"),
     "Concurrent/Condition.flix" -> LocalResource.get("/src/library/Concurrent/Condition.flix"),
@@ -259,7 +259,12 @@ class Flix {
     "Fixpoint/Ast/PrecedenceGraph.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/PrecedenceGraph.flix"),
     "Fixpoint/Ast/Ram.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/Ram.flix"),
 
+    "Abort.flix" -> LocalResource.get("/src/library/Abort.flix"),
+    "Clock.flix" -> LocalResource.get("/src/library/Clock.flix"),
+    "Exit.flix" -> LocalResource.get("/src/library/Exit.flix"),
     "Eff/Random.flix" -> LocalResource.get("/src/library/Eff/Random.flix"),
+    "Process.flix" -> LocalResource.get("/src/library/Process.flix"),
+    "TimeUnit.flix" -> LocalResource.get("/src/library/TimeUnit.flix"),
 
     "Graph.flix" -> LocalResource.get("/src/library/Graph.flix"),
     "Vector.flix" -> LocalResource.get("/src/library/Vector.flix"),

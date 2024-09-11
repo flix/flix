@@ -1525,9 +1525,9 @@ mod Vector {
     ///
     /// Shuffles `v` using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(rnd: Random, v: Vector[a]): Vector[a] \ IO = region rc {
+    pub def shuffle(v: Vector[a]): Vector[a] \ NonDet = region rc {
         let arr = toArray(rc, v);
-        Array.shuffle(rnd, arr);
+        Array.shuffle(arr);
         Array.toVector(arr)
     }
 

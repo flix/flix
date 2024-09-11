@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.MethodCompletion
 import ca.uwaterloo.flix.language.errors.ResolutionError
-import ca.uwaterloo.flix.language.phase.typer.TypeReduction
+import ca.uwaterloo.flix.language.phase.jvm.JvmOps
 
 import java.lang.reflect.{Method, Modifier}
 
@@ -29,7 +29,7 @@ object InvokeStaticMethodCompleter {
   }
 
   private def getMethods(clazz: Class[_]): List[Method] = {
-    val availableMethods = TypeReduction.getMethods(clazz)
+    val availableMethods = JvmOps.getMethods(clazz)
     val staticMethods = availableMethods.filter(m => Modifier.isStatic(m.getModifiers))
     staticMethods.sortBy(_.getName)
   }
