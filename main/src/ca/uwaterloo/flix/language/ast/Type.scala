@@ -396,6 +396,11 @@ object Type {
   val NonDet: Type = Type.Cst(TypeConstructor.Effect(Symbol.NonDet), SourceLocation.Unknown)
 
   /**
+    * Represents the Sys effect.
+    */
+  val Sys: Type = Type.Cst(TypeConstructor.Effect(Symbol.Sys), SourceLocation.Unknown)
+
+  /**
     * Represents the universal effect set.
     */
   val Univ: Type = Type.Cst(TypeConstructor.Univ, SourceLocation.Unknown)
