@@ -650,7 +650,6 @@ object Weeder2 {
       val loc = token.mkSourceLocation()
       import Ast.Annotation.*
       token.text match {
-        case "@benchmark" | "@Benchmark" => Validation.success(Benchmark(loc))
         case "@Deprecated" => Validation.success(Deprecated(loc))
         case "@Experimental" => Validation.success(Experimental(loc))
         case "@Export" => Validation.success(Export(loc))
