@@ -22,33 +22,11 @@ mod Eff.Random {
         pub def flip(): Bool
     }
 
-    mod RandomCoin {
-        ///
-        /// An IO handler for `RandomCoin`.
-        ///
-        pub def ioHandler(f: Unit -> a \ ef + RandomCoin): a \ ef + IO =
-            let r = Random.fresh();
-            try f() with RandomCoin {
-                def flip(k) = k(Random.nextBool(r))
-            }
-    }
-
     pub eff BiasedCoin {
         ///
         /// Returns `true` with probability `p`.
         ///
         pub def flip(p: Float64): Bool
-    }
-
-    mod BiasedCoin {
-        ///
-        /// An IO handler for `RandomCoin`.
-        ///
-        pub def ioHandler(f: Unit -> a \ ef + BiasedCoin): a \ ef + IO =
-            let r = Random.fresh();
-            try f() with BiasedCoin {
-                def flip(p, k) = if (Random.nextFloat64(r) < p) k(true) else k(false)
-            }
     }
 
 }
