@@ -64,6 +64,8 @@ object KeywordCompleter {
       // T
       Completion.KeywordCompletion("trait"    , Priority.Low),
       Completion.KeywordCompletion("type"     , Priority.High),
+      // W
+      Completion.KeywordCompletion("with", Priority.Default),
     )
 
   /**
@@ -154,17 +156,6 @@ object KeywordCompleter {
       Completion.KeywordCompletion("pub"     , Priority.Default),
       Completion.KeywordCompletion("redef"   , Priority.Default),
     )      
-
-  /**
-    * Miscellaneous keywords.
-    */
-  def getOtherKeywords: Iterable[Completion] =
-    List(
-      // F
-      Completion.KeywordCompletion("fix"              , Priority.Default),
-      // W
-      Completion.KeywordCompletion("with"             , Priority.High),
-    )
 
   /**
     * Struct declaration keywords. These are keywords that occur within a struct declaration.
