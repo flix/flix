@@ -429,6 +429,16 @@ class TestSafety extends AnyFunSuite with TestUtils {
     expectError[SafetyError.MissingDefaultTypeMatchCase](result)
   }
 
+  test("TestIOEffectInTryWith.01") {
+    val input =
+      """
+        |def f(): Unit =
+        |    try println("Hello, World!") with IO {}
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[SafetyError.IOEffectInTryWith](result)
+  }
+
   test("UnableToDeriveSendable.01") {
     val input =
       """
