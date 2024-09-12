@@ -1,5 +1,7 @@
 mod TestRedBlackTree {
 
+    import java.util.Random
+
     use RedBlackTree.{Node}
     use RedBlackTree.Color.{Red, Black}
 
@@ -192,10 +194,9 @@ mod TestRedBlackTree {
     /// Returns a tree with `n` nodes `x -> ()` where `x` is a random integer.
     ///
     def random(n: Int32): RedBlackTree[Int32, Unit] \ IO = {
-        let seed = 42i64;
-        let r = Random.freshWithSeed(seed);
+        let rnd = new Random();
         List.foldLeft((acc, x) -> RedBlackTree.insert(x, (), acc), RedBlackTree.empty(),
-            List.map(_ -> Random.nextInt32(r), List.range(0, n)))
+            List.map(_ -> rnd.nextInt(), List.range(0, n)))
     }
 
 
