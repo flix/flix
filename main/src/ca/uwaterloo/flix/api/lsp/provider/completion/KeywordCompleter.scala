@@ -40,32 +40,33 @@ object KeywordCompleter {
   def getDeclKeywords: Iterable[Completion] =
     List(
       // @
-      Completion.KeywordCompletion("@Deprecated"      , Priority.Lowest),
-      Completion.KeywordCompletion("@Lazy"            , Priority.High),
-      Completion.KeywordCompletion("@LazyWhenPure"    , Priority.Lower),
-      Completion.KeywordCompletion("@Parallel"        , Priority.Higher),
-      Completion.KeywordCompletion("@ParallelWhenPure", Priority.Low),
-      Completion.KeywordCompletion("@Test"            , Priority.Highest),
       // D
-      Completion.KeywordCompletion("def"      , Priority.Default),
+      Completion.KeywordCompletion("@Deprecated"      , Priority.Low),
+      Completion.KeywordCompletion("def"              , Priority.High),
       // E
-      Completion.KeywordCompletion("eff"      , Priority.Low),
-      Completion.KeywordCompletion("enum"     , Priority.High),
+      Completion.KeywordCompletion("eff"              , Priority.Low),
+      Completion.KeywordCompletion("enum"             , Priority.High),
       // I
-      Completion.KeywordCompletion("import"   , Priority.Low),
-      Completion.KeywordCompletion("instance" , Priority.High),
+      Completion.KeywordCompletion("import"           , Priority.Low),
+      Completion.KeywordCompletion("instance"         , Priority.High),
+      // L
+      Completion.KeywordCompletion("@Lazy"            , Priority.High),
+      Completion.KeywordCompletion("@LazyWhenPure"    , Priority.Low),
       // M
-      Completion.KeywordCompletion("mod"      , Priority.Default),
+      Completion.KeywordCompletion("mod"              , Priority.Default),
       // P
-      Completion.KeywordCompletion("pub"      , Priority.Default),
+      Completion.KeywordCompletion("@Parallel"        , Priority.Low),
+      Completion.KeywordCompletion("@ParallelWhenPure", Priority.Lower),
+      Completion.KeywordCompletion("pub"              , Priority.High),
       // S
-      Completion.KeywordCompletion("sealed"   , Priority.Low),
-      Completion.KeywordCompletion("struct"   , Priority.High),
+      Completion.KeywordCompletion("sealed"           , Priority.Low),
+      Completion.KeywordCompletion("struct"           , Priority.High),
       // T
-      Completion.KeywordCompletion("trait"    , Priority.Low),
-      Completion.KeywordCompletion("type"     , Priority.High),
+      Completion.KeywordCompletion("@Test"            , Priority.Low),
+      Completion.KeywordCompletion("trait"            , Priority.High),
+      Completion.KeywordCompletion("type"             , Priority.Higher),
       // W
-      Completion.KeywordCompletion("with", Priority.Default),
+      Completion.KeywordCompletion("with"             , Priority.Default),
     )
 
   /**
