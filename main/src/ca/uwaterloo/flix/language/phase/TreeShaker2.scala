@@ -28,7 +28,7 @@ import ca.uwaterloo.flix.util.ParOps
   * A function is considered reachable if it:
   *
   * (a) The main function is always reachable.
-  * (b) A function marked with @benchmark or @test is reachable.
+  * (b) A function marked with @test is reachable.
   * (c) Appears in a function which itself is reachable.
   *
   */

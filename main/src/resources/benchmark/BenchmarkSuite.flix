@@ -21,8 +21,12 @@ import java.lang.System
 /// A benchmark has a name and a function to evaluate.
 ///
 def benchmarks(): Map[String, Unit -> Unit \ IO] = Map#{
-    "List.map"      => () -> List.range(0, 10_000) |> List.map(x -> x + 1) |> blackhole,
-    "List.filter"   => () -> List.range(0, 10_000) |> List.filter(x -> Int32.modulo(x, 2) == 0) |> blackhole
+    "List.filter"       => () -> List.range(0, 10_000) |> List.filter(x -> Int32.modulo(x, 2) == 0) |> blackhole,
+    "List.foldLeft"     => () -> List.range(0, 10_000) |> List.foldLeft(Add.add, 0) |> blackhole,
+    "List.foldRight"    => () -> List.range(0, 10_000) |> List.foldRight(Add.add, 0) |> blackhole,
+    "List.map"          => () -> List.range(0, 10_000) |> List.map(x -> x + 1) |> blackhole,
+    "List.length"       => () -> List.range(0, 10_000) |> List.length |> blackhole,
+    "List.reverse"      => () -> List.range(0, 10_000) |> List.reverse |> blackhole
 }
 
 ///

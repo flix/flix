@@ -38,15 +38,6 @@ class CompilationResult(root: Root,
   def getMain: Option[Array[String] => Unit] = main
 
   /**
-    * Returns all the benchmark functions in the program.
-    */
-  def getBenchmarks: Map[Symbol.DefnSym, () => AnyRef] = {
-    defs filter {
-      case (sym, _) => root.defs(sym).ann.isBenchmark
-    }
-  }
-
-  /**
     * Returns all the test functions in the program.
     */
   def getTests: Map[Symbol.DefnSym, TestFn] = {
