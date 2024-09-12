@@ -790,11 +790,12 @@ mod MutList {
     ///
     /// Modifying `l` while using an iterator has undefined behavior and is dangerous.
     ///
-    pub def iterator(rc: Region[r1], l: MutList[a, r2]): Iterator[a, r1 + r2, r1] \ r1 =
+    pub def iterator(rc: Region[r1], l: MutList[a, r2]): Iterator[a, r1 + r2, r1] \ (r1 + r2) =
         let ix = Ref.fresh(rc, 0);
+        let len = length(l);
         let next = () -> {
             let i = Ref.get(ix);
-            if (i < length(l)) {
+            if (i < len) {
                 let x = Array.get(i, l->values);
                 Ref.put(i + 1, ix);
                 Some(x)
