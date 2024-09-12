@@ -91,7 +91,7 @@ object EntryPoint {
   private def getReachable(root: TypedAst.Root): Set[Symbol.DefnSym] = {
     val s = mutable.Set.empty[Symbol.DefnSym]
     for ((sym, defn) <- root.defs) {
-      if (defn.spec.ann.isBenchmark || defn.spec.ann.isTest || defn.spec.ann.isExport) {
+      if (defn.spec.ann.isTest || defn.spec.ann.isExport) {
         s += sym
       }
     }

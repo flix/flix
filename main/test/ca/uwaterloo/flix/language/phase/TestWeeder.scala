@@ -45,19 +45,6 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.DuplicateAnnotation](result)
   }
 
-  test("DuplicateAnnotation.03") {
-    val input =
-      """
-        |def f(): Int32 = {
-        | @Benchmark @Benchmark
-        | def g(i) = if (i <= 0) 0 else g(i - 1);
-        | g(10)
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.DuplicateAnnotation](result)
-  }
-
   test("DuplicateFormalParam.01") {
     val input = "def f(x: Int32, x: Int32): Int32 = 42"
     val result = compile(input, Options.TestWithLibNix)
@@ -308,9 +295,9 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     val input =
       """
         |def f(): Int32 = {
-        | @benchmark @Tailrec
-        | def g(i) = if (i <= 0) 0 else g(i - 1);
-        | g(10)
+        |  @test @Tailrec
+        |  def g(i) = if (i <= 0) 0 else g(i - 1);
+        |  g(10)
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
