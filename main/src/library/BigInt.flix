@@ -354,7 +354,7 @@ mod BigInt {
     /// Returns `x` clamped within the Float32 range `minimum` to `maximum`.
     ///
     pub def clampToFloat32(x: BigInt, minimum: Float32, maximum: Float32): Float32 =
-        let step = () -> {
+        let step = -> {
             forM (
                 f32min <- Float32.tryToBigInt(minimum);
                 f32max <- Float32.tryToBigInt(maximum)
@@ -375,7 +375,7 @@ mod BigInt {
     /// Returns `x` clamped within the Float64 range `minimum` to `maximum`.
     ///
     pub def clampToFloat64(x: BigInt, minimum: Float64, maximum: Float64): Float64 =
-        let step = () -> {
+        let step = -> {
             forM (
                 f64min <- Float64.tryToBigInt(minimum);
                 f64max <- Float64.tryToBigInt(maximum)

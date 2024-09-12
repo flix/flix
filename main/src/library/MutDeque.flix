@@ -397,7 +397,7 @@ mod MutDeque {
     ///
     pub def iterator(rc: Region[r1], d: MutDeque[a, r2]): Iterator[a, r1 + r2, r1] \ { r1, r2 } =
         let i = Ref.fresh(rc, d->front);
-        let next = () -> {
+        let next = -> {
             if (Ref.get(i) < d->back) {
                 let x = Array.get(Ref.get(i), d->values);
                 Ref.put(Ref.get(i) + Int32.bitwiseAnd(1, capacity(d) - 1), i);

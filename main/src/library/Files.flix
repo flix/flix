@@ -337,7 +337,7 @@ mod Files {
             let javaPath = javaFile.toPath();
             let reader = JFiles.newBufferedReader(javaPath);
             let line = Ref.fresh(rc, reader.readLine());
-            let next = () -> ({
+            let next = -> ({
                 if (not Object.isNull(Ref.get(line))) {
                     try {
                         let l = Ref.get(line);
@@ -370,7 +370,7 @@ mod Files {
             let javaPath = javaFile.toPath();
             let reader = JFiles.newBufferedReader(javaPath, Charset.forName(opts#charSet));
             let line = Ref.fresh(rc, reader.readLine());
-            let next = () -> ({
+            let next = -> ({
                 if (not Object.isNull(Ref.get(line))) {
                     try {
                         let l = Ref.get(line);
@@ -460,7 +460,7 @@ mod Files {
                 let stream = new FileInputStream(javaFile);
                 let bytes: Ref[Array[Int8, _], _] = Ref.fresh(rc, Array.empty(rc, chunkSize));
                 let numberRead = Ref.fresh(rc, unchecked_cast(stream.read(Ref.get(bytes)) as _ \ IO + r));
-                let next = () -> ({
+                let next = -> ({
                     if (Ref.get(numberRead) >= 0) {
                         try {
                             let chunk = Ref.get(bytes);
@@ -771,7 +771,7 @@ mod Files {
     /// Converts a Java iterator to a Flix Iterator.
     ///
     def fromJavaIter(rc: Region[r], iter: JIterator): Iterator[a, r, r] =
-        let next = () -> {
+        let next = -> {
             if(unchecked_cast(iter.hasNext() as _ \ r)) {
                 unchecked_cast(iter.next() as a \ r) |> Some
             } else {

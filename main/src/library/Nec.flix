@@ -823,7 +823,7 @@ mod Nec {
     ///
     def iteratorHelper(rc: Region[r], vl: Option[ViewLeft[a]]): Iterator[a, r, r] \ r =
         let cursor = Ref.fresh(rc, vl);
-        let next = () -> match (Ref.get(cursor)) {
+        let next = -> match (Ref.get(cursor)) {
             case None             => None
             case Some(OneLeft(x)) =>
                 Ref.put(None, cursor);

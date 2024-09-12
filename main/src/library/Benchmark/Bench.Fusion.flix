@@ -62,14 +62,14 @@ mod Bench.Fusion {
     /// length                                                               ///
     ////////////////////////////////////////////////////////////////////////////
     pub def listLength(l: Array[Int32, r]): Benchmark =
-        defBenchmark("List.length", () -> {
+        defBenchmark("List.length", -> {
             l |>
             Array.toList |>
             List.length
         })
 
     pub def delayListLength(l: Array[Int32, r]): Benchmark =
-        defBenchmark("DelayList.length", () -> {
+        defBenchmark("DelayList.length", -> {
             l |>
             Array.toDelayList |>
             DelayList.length
@@ -79,7 +79,7 @@ mod Bench.Fusion {
     /// filter length                                                        ///
     ////////////////////////////////////////////////////////////////////////////
     pub def listFilterLength(l: Array[Int32, r]): Benchmark =
-        defBenchmark("List.filterLength", () -> {
+        defBenchmark("List.filterLength", -> {
             l |>
             Array.toList |>
             List.filter(x -> x `Int32.remainder` 2 == 0) |>
@@ -87,7 +87,7 @@ mod Bench.Fusion {
         })
 
     pub def delayListFilterLength(l: Array[Int32, r]): Benchmark =
-        defBenchmark("DelayList.filterLength", () -> {
+        defBenchmark("DelayList.filterLength", -> {
             l |>
             Array.toDelayList |>
             DelayList.filter(x -> x `Int32.remainder` 2 == 0) |>
@@ -98,7 +98,7 @@ mod Bench.Fusion {
     /// filter map length                                                    ///
     ////////////////////////////////////////////////////////////////////////////
     pub def listFilterMapLength(l: Array[Int32, r]): Benchmark =
-        defBenchmark("List.filterMapLength", () -> {
+        defBenchmark("List.filterMapLength", -> {
             l |>
             Array.toList |>
             List.filter(x -> x `Int32.remainder` 2 == 0) |>
@@ -107,7 +107,7 @@ mod Bench.Fusion {
         })
 
     pub def delayListFilterMapLength(l: Array[Int32, r]): Benchmark =
-        defBenchmark("DelayList.filterMapLength", () -> {
+        defBenchmark("DelayList.filterMapLength", -> {
             l |>
             Array.toDelayList |>
             DelayList.filter(x -> x `Int32.remainder` 2 == 0) |>
@@ -119,14 +119,14 @@ mod Bench.Fusion {
     /// sum                                                                  ///
     ////////////////////////////////////////////////////////////////////////////
     pub def listSum(l: Array[Int32, r]): Benchmark =
-        defBenchmark("List.sum", () -> {
+        defBenchmark("List.sum", -> {
             l |>
             Array.toList |>
             List.sum
         })
 
     pub def delayListSum(l: Array[Int32, r]): Benchmark =
-        defBenchmark("DelayList.sum", () -> {
+        defBenchmark("DelayList.sum", -> {
             l |>
             Array.toDelayList |>
             DelayList.sum
@@ -136,7 +136,7 @@ mod Bench.Fusion {
     /// filter sum                                                           ///
     ////////////////////////////////////////////////////////////////////////////
     pub def listFilterSum(l: Array[Int32, r]): Benchmark =
-        defBenchmark("List.filterSum", () -> {
+        defBenchmark("List.filterSum", -> {
             l |>
             Array.toList |>
             List.filter(x -> x `Int32.remainder` 2 == 0) |>
@@ -144,7 +144,7 @@ mod Bench.Fusion {
         })
 
     pub def delayListFilterSum(l: Array[Int32, r]): Benchmark =
-        defBenchmark("DelayList.filterSum", () -> {
+        defBenchmark("DelayList.filterSum", -> {
             l |>
             Array.toDelayList |>
             DelayList.filter(x -> x `Int32.remainder` 2 == 0) |>
@@ -155,7 +155,7 @@ mod Bench.Fusion {
     /// filter map sum                                                       ///
     ////////////////////////////////////////////////////////////////////////////
     pub def listFilterMapSum(l: Array[Int32, r]): Benchmark =
-        defBenchmark("List.filterMapSum", () -> {
+        defBenchmark("List.filterMapSum", -> {
             l |>
             Array.toList |>
             List.filter(x -> x `Int32.remainder` 2 == 0) |>
@@ -164,7 +164,7 @@ mod Bench.Fusion {
         })
 
     pub def delayListFilterMapSum(l: Array[Int32, r]): Benchmark =
-        defBenchmark("DelayList.filterMapSum", () -> {
+        defBenchmark("DelayList.filterMapSum", -> {
             l |>
             Array.toDelayList |>
             DelayList.filter(x -> x `Int32.remainder` 2 == 0) |>
@@ -176,7 +176,7 @@ mod Bench.Fusion {
     /// filter8                                                              ///
     ////////////////////////////////////////////////////////////////////////////
     pub def listFilter8(l: Array[Int32, r]): Benchmark =
-        defBenchmark("List.filter8", () -> {
+        defBenchmark("List.filter8", -> {
             l |>
             Array.toList |>
             List.filter(x -> x > 1) |>
@@ -191,7 +191,7 @@ mod Bench.Fusion {
         })
 
     pub def delayListFilter8(l: Array[Int32, r]): Benchmark =
-        defBenchmark("DelayList.filter8", () -> {
+        defBenchmark("DelayList.filter8", -> {
             l |>
             Array.toDelayList |>
             DelayList.filter(x -> x > 1) |>
@@ -209,7 +209,7 @@ mod Bench.Fusion {
     /// map8                                                                 ///
     ////////////////////////////////////////////////////////////////////////////
     pub def listMap8(l: Array[Int32, r]): Benchmark =
-        defBenchmark("List.map8", () -> {
+        defBenchmark("List.map8", -> {
             l |>
             Array.toList |>
             List.map(x -> x + 1) |>
@@ -224,7 +224,7 @@ mod Bench.Fusion {
         })
 
     pub def delayListMap8(l: Array[Int32, r]): Benchmark =
-        defBenchmark("DelayList.map8", () -> {
+        defBenchmark("DelayList.map8", -> {
             l |>
             Array.toDelayList |>
             DelayList.map(x -> x + 1) |>
@@ -243,7 +243,7 @@ mod Bench.Fusion {
     ////////////////////////////////////////////////////////////////////////////
     pub def listFlatMapTakeSum(l: Array[Int32, r]): Benchmark =
         let l2 = List.range(1, 10);
-        defBenchmark("List.flatMapTakeSum", () -> {
+        defBenchmark("List.flatMapTakeSum", -> {
             l |>
             Array.toList |>
             List.flatMap(x -> List.map(y -> x * y, l2)) |>
@@ -253,7 +253,7 @@ mod Bench.Fusion {
 
     pub def delayListFlatMapTakeSum(l: Array[Int32, r]): Benchmark =
         let l2 = DelayList.range(1, 10);
-        defBenchmark("DelayList.flatMapTakeSum", () -> {
+        defBenchmark("DelayList.flatMapTakeSum", -> {
             l |>
             Array.toDelayList |>
             DelayList.flatMap(x -> DelayList.map(y -> x * y, l2)) |>
@@ -266,7 +266,7 @@ mod Bench.Fusion {
     ////////////////////////////////////////////////////////////////////////////
     pub def listCartesian(l: Array[Int32, r]): Benchmark =
         let l2 = List.range(1, 10);
-        defBenchmark("List.cartesian", () -> {
+        defBenchmark("List.cartesian", -> {
             l |>
             Array.toList |>
             List.flatMap(x -> List.map(y -> x * y, l2)) |>
@@ -275,7 +275,7 @@ mod Bench.Fusion {
 
     pub def delayListCartesian(l: Array[Int32, r]): Benchmark =
         let l2 = DelayList.range(1, 10);
-        defBenchmark("DelayList.cartesian", () -> {
+        defBenchmark("DelayList.cartesian", -> {
             l |>
             Array.toDelayList |>
             DelayList.flatMap(x -> DelayList.map(y -> x * y, l2)) |>

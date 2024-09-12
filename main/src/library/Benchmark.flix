@@ -49,7 +49,7 @@ mod Benchmark {
     ///
     @Experimental
     pub def defBenchmark(name: String, f: Unit -> a \ ef): Benchmark =
-        let fn = () -> {
+        let fn = -> {
             let _ = unchecked_cast(f() as _ \ IO);
             ()
         };

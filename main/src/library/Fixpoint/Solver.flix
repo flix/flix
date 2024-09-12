@@ -494,7 +494,7 @@ mod Fixpoint.Solver {
     def injectIntoX(f: t -> List[Boxed] \ ef, p: PredSym, ts: f[t]): Datalog[Boxed] \ (ef + Foldable.Aef[f]) with Foldable[f] =
         region rc {
             let db = MutMap.empty(rc);
-            Foldable.foldLeft(() -> t -> {
+            Foldable.foldLeft(-> t -> {
                 let vs = f(t);
                 let arity = List.length(vs);
                 let ramSym = RamSym.Full(p, arity, Denotation.Relational);
