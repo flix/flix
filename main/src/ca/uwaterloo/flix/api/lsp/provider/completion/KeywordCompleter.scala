@@ -25,6 +25,16 @@ import ca.uwaterloo.flix.language.ast.TypedAst
 object KeywordCompleter {
 
   /**
+    * Constraint keywords. These are keywords that can occur in datalog constraints.
+    */
+  def getConstraintKeywords: Iterable[Completion] =
+    List(
+      Completion.KeywordCompletion("fix", Priority.Default),
+      Completion.KeywordCompletion("if", Priority.Default),
+      Completion.KeywordCompletion("not", Priority.Default),
+    )
+
+  /**
     * Declaration keywords. These are keywords that denote a declaration.
     */
   def getDeclKeywords: Iterable[Completion] =
