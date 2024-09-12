@@ -39,6 +39,13 @@ object KeywordCompleter {
     */
   def getDeclKeywords: Iterable[Completion] =
     List(
+      // @
+      Completion.KeywordCompletion("@Deprecated"      , Priority.Lowest),
+      Completion.KeywordCompletion("@Lazy"            , Priority.High),
+      Completion.KeywordCompletion("@LazyWhenPure"    , Priority.Lower),
+      Completion.KeywordCompletion("@Parallel"        , Priority.Higher),
+      Completion.KeywordCompletion("@ParallelWhenPure", Priority.Low),
+      Completion.KeywordCompletion("@Test"            , Priority.Highest),
       // D
       Completion.KeywordCompletion("def"      , Priority.Default),
       // E
@@ -153,13 +160,6 @@ object KeywordCompleter {
     */
   def getOtherKeywords: Iterable[Completion] =
     List(
-      // @
-      Completion.KeywordCompletion("@Deprecated"      , Priority.Lowest),
-      Completion.KeywordCompletion("@Lazy"            , Priority.High),
-      Completion.KeywordCompletion("@LazyWhenPure"    , Priority.Lower),
-      Completion.KeywordCompletion("@Parallel"        , Priority.Higher),
-      Completion.KeywordCompletion("@ParallelWhenPure", Priority.Low),
-      Completion.KeywordCompletion("@Test"            , Priority.Highest),
       // F
       Completion.KeywordCompletion("fix"              , Priority.Default),
       // W
