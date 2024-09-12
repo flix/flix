@@ -24,8 +24,10 @@ instance UpperBound[Int8] {
 
 mod Int8 {
 
-    import java.lang.{String, Byte, NumberFormatException}
-    import java.math.{BigDecimal, BigInteger}
+    import java.lang.Byte
+    import java.lang.NumberFormatException
+    import java.math.BigDecimal
+    import java.math.BigInteger
 
     ///
     /// Returns the number of bits used to represent an `Int8`.

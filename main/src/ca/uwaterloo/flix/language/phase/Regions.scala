@@ -170,15 +170,6 @@ object Regions {
     case Expr.VectorLength(exp, loc) =>
       visitExp(exp)
 
-    case Expr.Ref(exp1, exp2, tpe, _, loc) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ checkType(tpe, loc)
-
-    case Expr.Deref(exp, tpe, _, loc) =>
-      visitExp(exp) ++ checkType(tpe, loc)
-
-    case Expr.Assign(exp1, exp2, tpe, _, loc) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ checkType(tpe, loc)
-
     case Expr.Ascribe(exp, tpe, _, loc) =>
       visitExp(exp) ++ checkType(tpe, loc)
 
@@ -356,7 +347,11 @@ object Regions {
     case _: Type.Cst => Nil
     case Type.Apply(tpe1, tpe2, _) => boolTypesOf(tpe1) ::: boolTypesOf(tpe2)
     case Type.Alias(_, _, tpe, _) => boolTypesOf(tpe)
-    case Type.AssocType(_, arg, _, _) => boolTypesOf(arg) // TODO ASSOC-TYPES ???
+    case Type.JvmToType(tpe, _) => boolTypesOf(tpe)
+    case Type.UnresolvedJvmType(member, _) => member.getTypeArguments.flatMap(boolTypesOf)
+
+    // TODO CONSTR-SOLVER-2 Hack! We should visit the argument, but since we don't reduce, we get false positives here.
+    case Type.AssocType(_, _, _, _) => Nil
   }
 
   /**

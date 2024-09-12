@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.lsp.{DocumentHighlight, DocumentHighlightKind, Enti
 import ca.uwaterloo.flix.language.ast.TypedAst.{Pattern, Root}
 import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, Type, TypeConstructor}
 import org.json4s.JsonAST.{JArray, JObject}
-import org.json4s.JsonDSL._
+import org.json4s.JsonDSL.*
 
 object HighlightProvider {
 
@@ -36,7 +36,7 @@ object HighlightProvider {
 
         case Entity.Sig(sig0) => highlightSig(uri, sig0.sym)
 
-        case Entity.Enum(enum) => highlightEnum(uri, enum.sym)
+        case Entity.Enum(enum0) => highlightEnum(uri, enum0.sym)
 
         case Entity.Struct(struct) => highlightStruct(uri, struct.sym)
 
@@ -158,15 +158,27 @@ object HighlightProvider {
   }
 
   private def highlightCase(uri: String, sym: Symbol.CaseSym)(implicit index: Index, root: Root): JObject = {
-    val write = (root.enums(sym.enumSym).cases(sym).loc, DocumentHighlightKind.Write)
+    val write = root.enums.get(sym.enumSym) match {
+      case Some(enm) => enm.cases.get(sym) match {
+        case Some(caze) => List((caze.loc, DocumentHighlightKind.Write))
+        case _ => Nil
+      }
+      case _ => Nil
+    }
     val reads = index.usesOf(sym).toList.map(loc => (loc, DocumentHighlightKind.Read))
-    highlight(uri, write :: reads)
+    highlight(uri, write ++ reads)
   }
 
   private def highlightStructField(uri: String, sym: Symbol.StructFieldSym)(implicit index: Index, root: Root): JObject = {
-    val write = (root.structs(sym.structSym).fields(sym).loc, DocumentHighlightKind.Write)
     val reads = index.usesOf(sym).toList.map(loc => (loc, DocumentHighlightKind.Read))
-    highlight(uri, write :: reads)
+    val structOpt = root.structs.get(sym.structSym)
+    val fieldOpt = structOpt.flatMap(st => st.fields.get(sym))
+    val writeOpt = fieldOpt.map(field => (field.sym.loc, DocumentHighlightKind.Write))
+    writeOpt match {
+      case Some(write) =>
+        highlight(uri, write :: reads)
+      case None => highlight(uri, reads)
+    }
   }
 
   private def highlightVar(uri: String, sym: Symbol.VarSym)(implicit index: Index): JObject = {

@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.language.phase.typer
 
+import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.{Ast, Name, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.util.InternalCompilerException
@@ -36,20 +37,18 @@ class TypeContext {
       *
       * Note: The function must return a _NEW_ object because each object has mutable state.
       */
-    def empty: ScopeConstraints = new ScopeConstraints(None)
+    def empty: ScopeConstraints = new ScopeConstraints(Scope.Top)
 
     /**
       * Creates an empty ScopeConstraints associated with the given region.
       */
-    def emptyForRegion(r: Symbol.KindedTypeVarSym): ScopeConstraints = new ScopeConstraints(Some(r))
+    def emptyForScope(s: Scope): ScopeConstraints = new ScopeConstraints(s)
   }
 
   /**
     * Stores typing information relating to a particular region scope.
-    *
-    * @param region the region symbol associated with the scope (None if not in a region).
     */
-  private class ScopeConstraints(val region: Option[Symbol.KindedTypeVarSym]) {
+  private class ScopeConstraints(val scope: Scope) {
 
     /**
       * The constraints generated for the scope.
@@ -104,6 +103,11 @@ class TypeContext {
   def getTypeConstraints: List[TypeConstraint] = currentScopeConstraints.getConstraints
 
   /**
+    * Returns the current scope.
+    */
+  def getScope: Scope = currentScopeConstraints.scope
+
+  /**
     * Generates constraints unifying the given types.
     *
     * {{{
@@ -112,30 +116,6 @@ class TypeContext {
     */
   def unifyType(tpe1: Type, tpe2: Type, loc: SourceLocation): Unit = {
     val constr = TypeConstraint.Equality(tpe1, tpe2, Provenance.Match(tpe1, tpe2, loc))
-    currentScopeConstraints.add(constr)
-  }
-
-  /**
-   * Generates constraints unifying a given Java constructor type and a class.
-   */
-  def unifyJvmConstructorType(cvar: Type.Var, tpe: Type, clazz: Class[_], tpes: List[Type], loc: SourceLocation): Unit = {
-    val constr = TypeConstraint.EqJvmConstructor(cvar, clazz, tpes, Provenance.Match(cvar, tpe, loc))
-    currentScopeConstraints.add(constr)
-  }
-
-  /**
-   * Generates constraints unifying a given Java method type and a type.
-   */
-  def unifyJvmMethodType(mvar: Type.Var, tpe: Type, methodName: Name.Ident, tpes: List[Type], loc: SourceLocation): Unit = {
-    val constr = TypeConstraint.EqJvmMethod(mvar, tpe, methodName, tpes, Provenance.Match(mvar, tpe, loc))
-    currentScopeConstraints.add(constr)
-  }
-
-  /**
-   * Generates constraints unifying a given static Java method type and a type.
-   */
-  def unifyStaticJvmMethodType(mvar: Type.Var, clazz: Class[_], tpe: Type, methodName: Name.Ident, tpes: List[Type], loc: SourceLocation): Unit = {
-    val constr = TypeConstraint.EqStaticJvmMethod(mvar, clazz, methodName, tpes, Provenance.Match(mvar, tpe, loc))
     currentScopeConstraints.add(constr)
   }
 
@@ -246,6 +226,8 @@ class TypeContext {
       case Type.Apply(tpe1, tpe2, loc) => Type.Apply(visit(tpe1), visit(tpe2), loc)
       case Type.Alias(_, _, tpe, _) => visit(tpe)
       case Type.AssocType(cst, arg, kind, loc) => Type.AssocType(cst, visit(arg), kind, loc)
+      case Type.JvmToType(tpe, loc) => Type.JvmToType(visit(tpe), loc)
+      case Type.UnresolvedJvmType(member, loc) => Type.UnresolvedJvmType(member.map(visit), loc)
     }
 
     visit(eff)
@@ -259,10 +241,11 @@ class TypeContext {
     * and we get a fresh empty set of constraints for the new scope.
     */
   def enterRegion(sym: Symbol.KindedTypeVarSym): Unit = {
-    // save the info from the parent region
+    val newScope = currentScopeConstraints.scope.enter(sym)
+      // save the info from the parent region
     constraintStack.push(currentScopeConstraints)
     renv = renv.markRigid(sym)
-    currentScopeConstraints = ScopeConstraints.emptyForRegion(sym)
+    currentScopeConstraints = ScopeConstraints.emptyForScope(newScope)
   }
 
   /**
@@ -282,9 +265,9 @@ class TypeContext {
     * We add the new purification constraints to the current constraints.
     */
   def exitRegion(externalEff1: Type, internalEff2: Type, loc: SourceLocation): Unit = {
-    val constr = currentScopeConstraints.region match {
-      case None => throw InternalCompilerException("unexpected missing region", loc)
-      case Some(r) =>
+    val constr = currentScopeConstraints.scope match {
+      case Scope(Nil) => throw InternalCompilerException("unexpected missing region", loc)
+      case Scope(r :: _) =>
         // TODO ASSOC-TYPES improve prov. We can probably get a better prov than "match"
         val prov = Provenance.Match(externalEff1, internalEff2, loc)
         TypeConstraint.Purification(r, externalEff1, internalEff2, prov, currentScopeConstraints.getConstraints)

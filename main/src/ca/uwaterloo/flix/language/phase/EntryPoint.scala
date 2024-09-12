@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.{Ast, RigidityEnv, Scheme, SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.language.errors.EntryPointError
@@ -49,6 +50,9 @@ import scala.collection.mutable
   * }}}
   */
 object EntryPoint {
+
+  // We don't use regions, so we are safe to use the global scope everywhere in this phase.
+  private implicit val S: Scope = Scope.Top
 
   /**
     * The scheme of the entry point function.
@@ -181,7 +185,7 @@ object EntryPoint {
       val resultSc = Scheme.generalize(Nil, Nil, resultTpe, RigidityEnv.empty)
 
       // Check for [[IllegalEntryPointEffect]]
-      if (declaredEff != Type.Pure && declaredEff != Type.IO) {
+      if (declaredEff != Type.Pure && (declaredEff != Type.IO && declaredEff != Type.NonDet && declaredEff != Type.Sys)) {
         return Validation.toSoftFailure((),EntryPointError.IllegalEntryPointEff(sym, declaredEff, declaredEff.loc))
       }
 

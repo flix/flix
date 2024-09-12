@@ -24,8 +24,10 @@ instance UpperBound[Int16] {
 
 mod Int16 {
 
-    import java.lang.{NumberFormatException, Short}
-    import java.math.{BigDecimal, BigInteger}
+    import java.lang.NumberFormatException
+    import java.lang.Short
+    import java.math.BigDecimal
+    import java.math.BigInteger
 
     ///
     /// Returns the number of bits used to represent an `Int16`.

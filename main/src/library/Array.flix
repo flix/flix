@@ -15,12 +15,12 @@
  * limitations under the License.
  */
 
-instance Index[Array[a, r]] {
+instance Indexable[Array[a, r]] {
     type Idx = Int32
     type Elm = a
     type Aef = r + OutOfBounds
 
-    pub def get(i: Int32, t: Array[a, r]): a \ r + OutOfBounds = {
+    pub def get(t: Array[a, r], i: Int32): a \ r + OutOfBounds = {
         if (0 <= i and i < Array.length(t)) Array.get(i, t)
         else do OutOfBounds.outOfBounds(
             "index ${i} is out of bounds for Array of length ${Array.length(t)}"
@@ -28,10 +28,10 @@ instance Index[Array[a, r]] {
     }
 }
 
-instance IndexMut[Array[a, r]] {
+instance IndexableMut[Array[a, r]] {
     type Aef = r + OutOfBounds
 
-    pub def put(i: Int32, v: a, t: Array[a, r]): Unit \ r + OutOfBounds = {
+    pub def put(t: Array[a, r], i: Int32, v: a): Unit \ r + OutOfBounds = {
         if (0 <= i and i < Array.length(t)) Array.put(v, i, t)
         else do OutOfBounds.outOfBounds(
             "index ${i} is out of bounds for Array of length ${Array.length(t)}"
@@ -48,8 +48,9 @@ instance Iterable[Array[a, r]] {
 }
 
 mod Array {
-    import java.util.Arrays
     import java.lang.Object
+    import java.util.Arrays
+    import java.util.{Random => JRandom};
 
     ///
     /// Compares `a` and `b` lexicographically.
@@ -130,9 +131,14 @@ mod Array {
     pub def nonEmpty(a: Array[a, r]): Bool \ r = not isEmpty(a)
 
     ///
-    /// Returns the length of the array `a`.
+    /// Returns the number of elements in the array `a`.
     ///
     pub def length(a: Array[a, r]): Int32 \ r = $ARRAY_LENGTH$(a)
+
+    ///
+    /// Returns the number of elements in the array `a`.
+    ///
+    pub def size(a: Array[a, r]): Int32 \ r = length(a)
 
     ///
     /// Returns a fresh array with the elements from the array `a` from index `start` (inclusive) until index `end` (exclusive).
@@ -1665,11 +1671,12 @@ mod Array {
     ///
     /// Shuffles `a` using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(rnd: Random, a: Array[a, r]): Unit \ {r, IO} =
+    pub def shuffle(a: Array[a, r]): Unit \ {r, NonDet} = unchecked_cast({
+        let rnd = new JRandom();
         let len = Array.length(a);
         def loop(i) = {
             if (i > 0) {
-                let j = Random.nextNatWithMax(rnd, i + 1);
+                let j = rnd.nextInt(i + 1);
                 Array.swap!(i, j, a);
                 loop(i - 1)
             }
@@ -1677,5 +1684,6 @@ mod Array {
                 ()
         };
         loop(len - 1)
+    } as _ \ {r, NonDet})
 
 }

@@ -14,13 +14,15 @@
  * limitations under the License.
  */
 
+ import java.io.RandomAccessFile
+
 ///
 /// Represents a RandomAccessFile - a read-only or read-write file with random access.
 ///
 /// File does not properly support Unicode and uses Java / JVM conventions for representing
 /// numbers so it is inadequate for serializing data portably.
 ///
-enum File(##java.io.RandomAccessFile)
+enum File(RandomAccessFile)
 
 instance Reader[File] {
     pub def read(b: Array[Int8, r], r: File): Result[IOError, Int32] \ {IO, r} =
@@ -91,13 +93,18 @@ mod File {
         })
 
     ///
-    /// Get the length of an open file.
+    /// Returns the number of bytes in the file.
     ///
     pub def length(f: File): Result[IOError, Int64] \ IO =
         IOError.tryCatch(_ -> {
             let File(f1) = f;
             f1.length()
         })
+
+    ///
+    /// Returns the number of bytes in the file.
+    ///
+    pub def size(f: File): Result[IOError, Int64] \ IO = length(f)
 
     ///
     /// Move the file pointer position to `pos` measured in bytes from the start of the file.

@@ -25,12 +25,14 @@ mod Concurrent {
     pub enum ReentrantLock(JReentrantLock)
 
     mod ReentrantLock {
+
         import java.util.concurrent.TimeUnit
+        import java.lang.InterruptedException
+        import java.lang.IllegalMonitorStateException
+        import java.util.concurrent.locks.{ReentrantLock => JReentrantLock}
 
         use Concurrent.Condition
         use Concurrent.Condition.Condition
-
-        import java.util.concurrent.locks.{ReentrantLock => JReentrantLock};
 
         ///
         /// Creates an instance of ReentrantLock with the given fairness policy.
@@ -60,12 +62,12 @@ mod Concurrent {
         /// Acquires the lock unless the current thread is interrupted.
         ///
         @Internal
-        pub def lockInterruptibly(lock: ReentrantLock): Result[##java.lang.InterruptedException, Unit] \ IO =
+        pub def lockInterruptibly(lock: ReentrantLock): Result[InterruptedException, Unit] \ IO =
             let ReentrantLock(l) = lock;
             try {
                 Ok(l.lockInterruptibly())
             } catch {
-                case e: ##java.lang.InterruptedException => Err(e)
+                case e: InterruptedException => Err(e)
             }
 
         ///
@@ -88,24 +90,24 @@ mod Concurrent {
         /// Acquires the lock if it is not held by another thread within the given waiting time (nanos) and the current thread has not been interrupted.
         ///
         @Internal
-        pub def tryLockNanos(lock: ReentrantLock, nanosTimeout: Int64): Result[##java.lang.InterruptedException, Bool] \ IO =
+        pub def tryLockNanos(lock: ReentrantLock, nanosTimeout: Int64): Result[InterruptedException, Bool] \ IO =
             let ReentrantLock(l) = lock;
             try {
                 Ok(l.tryLock(nanosTimeout, TimeUnit.NANOSECONDS))
             } catch {
-                case e: ##java.lang.InterruptedException => Err(e)
+                case e: InterruptedException => Err(e)
             }
 
         ///
         /// Attempts to release this lock.
         ///
         @Internal
-        pub def unlock(lock: ReentrantLock): Result[##java.lang.IllegalMonitorStateException, Unit] \ IO =
+        pub def unlock(lock: ReentrantLock): Result[IllegalMonitorStateException, Unit] \ IO =
             let ReentrantLock(l) = lock;
             try {
                 Ok(l.unlock())
             } catch {
-                case e: ##java.lang.IllegalMonitorStateException => Err(e)
+                case e: IllegalMonitorStateException => Err(e)
             }
 
     }

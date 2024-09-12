@@ -135,7 +135,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |mod B {
          |    def g(): Unit = {
          |        region rc {
-         |            new A.S { a = 3 } @ rc;
+         |            new A.S @ rc { a = 3 };
          |            ()
          |        }
          |    }
@@ -773,7 +773,43 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[TypeError.StaticMethodNotFound](result)
+    expectError[TypeError](result)
+  }
+
+  test("UndefinedJvmField.01") {
+    val input =
+      """
+        |import java.lang.Object
+        |def foo(obj: Object): String \ IO = {
+        |    obj.stringField
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.FieldNotFound](result)
+  }
+
+  test("UndefinedJvmField.02") {
+    val input =
+      """
+        |import java.lang.Object
+        |def foo(obj: Object): String \ IO = {
+        |    obj.coolField.stringField
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.FieldNotFound](result)
+  }
+
+  test("UndefinedJvmField.03") {
+    val input =
+      """
+        |import java.lang.Object
+        |def foo(obj: Object): String \ IO = {
+        |    (obj.coolField).stringField
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.FieldNotFound](result)
   }
 
   test("MismatchingType.01") {
@@ -1632,7 +1668,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
       """
         |def f(): Unit = {
         |    region rc {
-        |        new UndefinedStruct{ } @ rc;
+        |        new UndefinedStruct @ rc { };
         |        ()
         |    }
         |}
@@ -1648,7 +1684,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    struct S1[r] {}
         |    def f(): Unit = {
         |        region rc {
-        |            new UndefinedStruct{ } @ rc;
+        |            new UndefinedStruct @ rc { };
         |            ()
         |        }
         |    }
@@ -1658,9 +1694,6 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.UndefinedStruct](result)
   }
 
-  // This test is temporarily disabled because the creation of S1 is valid
-  // and thus the compiler attempts to continue to compile this program and
-  // fails in future unimplemented phases.
   test("ResolutionError.UndefinedStruct.03") {
     val input =
       """
@@ -1668,8 +1701,8 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |    struct S1[r] {}
         |    def f(): Unit = {
         |        region rc {
-        |            new UndefinedStruct{ } @ rc;
-        |            new S1 { } @ rc;
+        |            new UndefinedStruct @ rc { };
+        |            new S1 @ rc { };
         |            ()
         |        }
         |    }
@@ -1687,7 +1720,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |mod S {
         |    struct S[r] { }
         |    def f(s: S[r]): Unit = {
-        |        s€missingField;
+        |        s->missingField;
         |        ()
         |    }
         |}
@@ -1702,7 +1735,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |mod S {
         |    struct S[r] { }
         |    def f(s: S[r]): Unit = {
-        |        s€missingField = 3;
+        |        s->missingField = 3;
         |        ()
         |    }
         |}
@@ -1717,7 +1750,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |mod S {
         |    struct S[r] { field1: Int32 }
         |    def f(s: S[r]): Unit = {
-        |        s€missingField = 3;
+        |        s->missingField = 3;
         |        ()
         |    }
         |}
@@ -1732,7 +1765,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
                   |    a: Int32
                   |}
                   |def f(rc: Region): S[r] = {
-                  |    new S { } @ rc
+                  |    new S @ rc { }
                   |}
                   |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -1746,7 +1779,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
                   |}
                   |struct S2[r] { }
                   |def f(rc: Region): S[r] = {
-                  |    new S { } @ rc
+                  |    new S @ rc { }
                   |}
                   |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -1761,7 +1794,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
                   |    c: Int32
                   |}
                   |def f(rc: Region): S[r] = {
-                  |    new S { a = 4, c = 2 } @ rc
+                  |    new S @ rc { a = 4, c = 2 }
                   |}
                   |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -1774,7 +1807,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
                   |    a: Int32
                   |}
                   |def f(rc: Region): S[r] = {
-                  |    new S { a = 4, b = "hello" } @ rc
+                  |    new S @ rc { a = 4, b = "hello" }
                   |}
                   |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -1789,7 +1822,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
                   |    c: Int32
                   |}
                   |def f(rc: Region): S[r] = {
-                  |    new S {b = 4, c = 3, a = 2, extra = 5} @ rc
+                  |    new S @ rc {b = 4, c = 3, a = 2, extra = 5}
                   |}
                   |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -1800,18 +1833,64 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val input = """
                   |struct S[r] { }
                   |def f(rc: Region): S[r] = {
-                  |    new S {a = 3} @ rc
+                  |    new S @ rc {a = 3}
                   |}
                   |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.ExtraStructFieldInNew](result)
   }
 
+  test("ResolutionError.MutateImmutableField.01") {
+    val input = """
+                  |mod S {
+                  |    struct S[r] {f: Int32}
+                  |    def f(rc: Region): Unit = {
+                  |        new S @ rc {f = 3};
+                  |        s->f = 2;
+                  |        ()
+                  |    }
+                  |}
+                  |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.ImmutableField](result)
+  }
+
+  test("ResolutionError.MutateImmutableField.02") {
+    val input = """
+                  |mod S {
+                  |    struct S[r] {f1: Int32, mut f2: Int32, f3: Int32}
+                  |    def f(rc: Region): Unit = {
+                  |        new S @ rc {f1 = 3, f2 = 4, f3 = 5};
+                  |        s->f2 = 2;
+                  |        s->f1 = 2;
+                  |        ()
+                  |    }
+                  |}
+                  |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.ImmutableField](result)
+  }
+
+  test("ResolutionError.MutateImmutableField.03") {
+    val input = """
+                  |mod S {
+                  |    struct S[v, r] {f: Int32, mut f2: v}
+                  |    def f(rc: Region): Unit = {
+                  |        new S @ rc {f = 3, f2 = new S @ rc {f = 4, f2 = 5}};
+                  |        s->f2->f = 2;
+                  |        ()
+                  |    }
+                  |}
+                  |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.ImmutableField](result)
+  }
+
   test("ResolutionError.StructFieldIncorrectOrder.01") {
     val input = """
                   |struct S[r] {a: Int32, b: Int32}
                   |def f(rc: Region): S[r] = {
-                  |    new S {b = 3, a = 4} @ rc
+                  |    new S @ rc {b = 3, a = 4}
                   |}
                   |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -1822,7 +1901,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val input = """
                   |struct S[r] {f: Int32, l: Int32, i: Int32, x: Int32}
                   |def f(rc: Region): S[r] = {
-                  |    new S {f = 3, l = 4, x = 2, i = 9} @ rc
+                  |    new S @ rc {f = 3, l = 4, x = 2, i = 9}
                   |}
                   |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -1833,7 +1912,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val input = """
                   |struct S[r] {s1: String, f: Int32, l: Int32, i: Int32, x: Int32, s2: String}
                   |def f(rc: Region): S[r] = {
-                  |    new S {s2 = "s", f = 1, l = 1, i = 1, x = 1, s1 = "s"} @ rc
+                  |    new S @ rc {s2 = "s", f = 1, l = 1, i = 1, x = 1, s1 = "s"}
                   |}
                   |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)

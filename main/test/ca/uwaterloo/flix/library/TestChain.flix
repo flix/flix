@@ -200,6 +200,22 @@ mod TestChain {
     def length04(): Bool = Chain.length(List.toChain(1 :: 2 :: 3 :: Nil)) == 3
 
     /////////////////////////////////////////////////////////////////////////////
+    // size                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def size01(): Bool = Chain.size(Chain.empty()) == 0
+
+    @test
+    def size02(): Bool = Chain.size(Chain.singleton(1)) == 1
+
+    @test
+    def size03(): Bool = Chain.size(List.toChain(1 :: 2 :: Nil)) == 2
+
+    @test
+    def size04(): Bool = Chain.size(List.toChain(1 :: 2 :: 3 :: Nil)) == 3
+
+    /////////////////////////////////////////////////////////////////////////////
     // append                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -1979,30 +1995,30 @@ mod TestChain {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def shuffle01(): Bool \ IO =
+    def shuffle01(): Bool \ NonDet =
         let l: List[Int32] = Nil;
-        let c = List.toChain(l) |> Chain.shuffle(Random.fresh());
+        let c = List.toChain(l) |> Chain.shuffle;
 
         Chain.length(c) == 0 and Chain.toSet(c) == Set#{}
 
     @test
-    def shuffle02(): Bool \ IO =
+    def shuffle02(): Bool \ NonDet =
         let l = 1 :: Nil;
-        let c = List.toChain(l) |> Chain.shuffle(Random.fresh());
+        let c = List.toChain(l) |> Chain.shuffle;
 
         Chain.length(c) == 1 and Chain.toSet(c) == Set#{1}
 
     @test
-    def shuffle03(): Bool \ IO =
+    def shuffle03(): Bool \ NonDet =
         let l = 1 :: 2 :: 3 :: Nil;
-        let c = List.toChain(l) |> Chain.shuffle(Random.fresh());
+        let c = List.toChain(l) |> Chain.shuffle;
 
         Chain.length(c) == 3 and Chain.toSet(c) == Set#{1, 2, 3}
 
     @test
-    def shuffle04(): Bool \ IO =
+    def shuffle04(): Bool \ NonDet =
         let l = 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: 9 :: Nil;
-        let c = List.toChain(l) |> Chain.shuffle(Random.fresh());
+        let c = List.toChain(l) |> Chain.shuffle;
 
         Chain.length(c) == 10 and Chain.toSet(c) == Set#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
 

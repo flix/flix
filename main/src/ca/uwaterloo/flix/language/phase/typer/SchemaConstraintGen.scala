@@ -16,14 +16,15 @@
 package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.Denotation
-import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.ast.*
 import ConstraintGen.{visitExp, visitPattern}
+import ca.uwaterloo.flix.language.ast.shared.{Denotation, Scope}
 import ca.uwaterloo.flix.language.phase.util.PredefinedTraits
 
 object SchemaConstraintGen {
 
   def visitFixpointConstraintSet(e: KindedAst.Expr.FixpointConstraintSet)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
+    implicit val scope: Scope = c.getScope
     e match {
       case KindedAst.Expr.FixpointConstraintSet(cs, tvar, loc) =>
         val constraintTypes = cs.map(visitConstraint)
@@ -37,6 +38,7 @@ object SchemaConstraintGen {
   }
 
   def visitFixpointLambda(e: KindedAst.Expr.FixpointLambda)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
+    implicit val scope: Scope = c.getScope
     e match {
       case KindedAst.Expr.FixpointLambda(pparams, exp, tvar, loc) =>
 
@@ -59,6 +61,7 @@ object SchemaConstraintGen {
   }
 
   def visitFixpointMerge(e: KindedAst.Expr.FixpointMerge)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
+    implicit val scope: Scope = c.getScope
     e match {
       case KindedAst.Expr.FixpointMerge(exp1, exp2, loc) =>
         //
@@ -76,6 +79,7 @@ object SchemaConstraintGen {
   }
 
   def visitFixpointSolve(e: KindedAst.Expr.FixpointSolve)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
+    implicit val scope: Scope = c.getScope
     e match {
       case KindedAst.Expr.FixpointSolve(exp, loc) =>
         //
@@ -93,6 +97,7 @@ object SchemaConstraintGen {
 
 
   def visitFixpointFilter(e: KindedAst.Expr.FixpointFilter)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
+    implicit val scope: Scope = c.getScope
     e match {
       case KindedAst.Expr.FixpointFilter(pred, exp, tvar, loc) =>
         //
@@ -114,6 +119,7 @@ object SchemaConstraintGen {
   }
 
   def visitFixpointInject(e: KindedAst.Expr.FixpointInject)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
+    implicit val scope: Scope = c.getScope
     e match {
       case KindedAst.Expr.FixpointInject(exp, pred, tvar, evar, loc) =>
         //
@@ -147,6 +153,7 @@ object SchemaConstraintGen {
   }
 
   def visitFixpointProject(e: KindedAst.Expr.FixpointProject)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
+    implicit val scope: Scope = c.getScope
     e match {
       case KindedAst.Expr.FixpointProject(pred, exp1, exp2, tvar, loc) =>
         //
@@ -171,6 +178,7 @@ object SchemaConstraintGen {
   }
 
   private def visitConstraint(con0: KindedAst.Constraint)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): Type = {
+    implicit val scope: Scope = c.getScope
     val KindedAst.Constraint(cparams, head0, body0, loc) = con0
     //
     //  A_0 : tpe, A_1: tpe, ..., A_n : tpe
@@ -191,6 +199,7 @@ object SchemaConstraintGen {
     * Infers the type of the given head predicate.
     */
   private def visitHeadPredicate(head: KindedAst.Predicate.Head)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): Type = {
+    implicit val scope: Scope = c.getScope
     head match {
       case KindedAst.Predicate.Head.Atom(pred, den, terms, tvar, loc) =>
         // Adds additional type constraints if the denotation is a lattice.
@@ -209,6 +218,7 @@ object SchemaConstraintGen {
     * Infers the type of the given body predicate.
     */
   private def visitBodyPredicate(body0: KindedAst.Predicate.Body)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): Type = {
+    implicit val scope: Scope = c.getScope
     body0 match {
       case KindedAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, tvar, loc) =>
         val restRow = Type.freshVar(Kind.SchemaRow, loc)
@@ -248,7 +258,7 @@ object SchemaConstraintGen {
   /**
     * Returns the trait constraints for the given term types `ts` with the given denotation `den`.
     */
-  private def getTermTraitConstraints(den: Ast.Denotation, ts: List[Type], root: KindedAst.Root, loc: SourceLocation): List[Ast.TraitConstraint] = den match {
+  private def getTermTraitConstraints(den: Denotation, ts: List[Type], root: KindedAst.Root, loc: SourceLocation): List[Ast.TraitConstraint] = den match {
     case Denotation.Relational =>
       ts.flatMap(mkTraitConstraintsForRelationalTerm(_, root, loc))
     case Denotation.Latticenal =>
@@ -282,5 +292,5 @@ object SchemaConstraintGen {
   }
 
 
-  private def mkAnySchemaRowType(loc: SourceLocation)(implicit flix: Flix): Type = Type.freshVar(Kind.SchemaRow, loc)
+  private def mkAnySchemaRowType(loc: SourceLocation)(implicit scope: Scope, flix: Flix): Type = Type.freshVar(Kind.SchemaRow, loc)
 }

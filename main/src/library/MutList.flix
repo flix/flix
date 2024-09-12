@@ -31,6 +31,20 @@ instance Iterable[MutList[a, r]] {
     pub def iterator(rc: Region[r1], l: MutList[a, r]): Iterator[a, r + r1, r1] \ (r + r1) = MutList.iterator(rc, l)
 }
 
+instance Indexable[MutList[a, r]] {
+    type Idx = Int32
+    type Elm = a
+    type Aef = r + OutOfBounds
+    pub def get(t: MutList[a, r], i: Int32): a \ r + OutOfBounds =
+        MutList.get(i, t)
+}
+
+instance IndexableMut[MutList[a, r]] {
+    type Aef = r + OutOfBounds
+    pub def put(t: MutList[a, r], i: Int32, v: a): Unit \ r + OutOfBounds =
+        MutList.put(v, i, t)
+}
+
 mod MutList {
 
     ///
@@ -74,6 +88,26 @@ mod MutList {
         MutList(rc, Ref.fresh(rc, Array.init(rc, f, c)), Ref.fresh(rc, d))
 
     ///
+    /// Retrieves the value at position `i` in the mutable list `v`.
+    ///
+    pub def get(i: Int32, v: MutList[a, r]): a \ r + OutOfBounds =
+        let MutList(_, a, l) = v;
+        if (0 <= i and i < Ref.get(l))
+            Array.get(i, Ref.get(a))
+        else
+            do OutOfBounds.outOfBounds("index ${i} is out of bounds for MutList of length ${MutList.length(v)}")
+
+    ///
+    /// Stores the value `x` at position `i` in the mutable list `v`.
+    ///
+    pub def put(x: a, i: Int32, v: MutList[a, r]): Unit \ r + OutOfBounds =
+        let MutList(_, a, l) = v;
+        if (0 <= i and i < Ref.get(l))
+            Array.put(x, i, Ref.get(a))
+        else
+            do OutOfBounds.outOfBounds("index ${i} is out of bounds for MutList of length ${MutList.length(v)}")
+
+    ///
     /// Optionally returns the element at position `i` in the mutable list `v`.
     ///
     pub def nth(i: Int32, v: MutList[a, r]): Option[a] \ r =
@@ -89,6 +123,11 @@ mod MutList {
     pub def length(v: MutList[a, r]): Int32 \ r =
         let MutList(_, _, l) = v;
         Ref.get(l)
+
+    ///
+    /// Returns the number of elements in the given mutable list `v`.
+    ///
+    pub def size(v: MutList[a, r]): Int32 \ r = length(v)
 
     ///
     /// Returns `true` if the given mutable list `v` is empty.
@@ -973,8 +1012,8 @@ mod MutList {
     ///
     /// Shuffles `v` using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(rc1: Region[r1], rnd: Random, v: MutList[a, r1]): MutList[a, r1] \ { r1, IO } = region rc2 {
-        toArray(rc2, v) !> Array.shuffle(rnd) |> Array.toMutList(rc1)
+    pub def shuffle(rc1: Region[r1], v: MutList[a, r1]): MutList[a, r1] \ { r1, NonDet } = region rc2 {
+        toArray(rc2, v) !> Array.shuffle |> Array.toMutList(rc1)
     }
 
 }

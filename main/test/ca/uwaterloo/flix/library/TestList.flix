@@ -115,6 +115,21 @@ def length03(): Bool = List.length(1 :: 2 :: Nil) == 2
 def length04(): Bool = List.length(1 :: 2 :: 3 :: Nil) == 3
 
 /////////////////////////////////////////////////////////////////////////////
+// size                                                                    //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def size01(): Bool = List.size(Nil) == 0
+
+@test
+def size02(): Bool = List.size(1 :: Nil) == 1
+
+@test
+def size03(): Bool = List.size(1 :: 2 :: Nil) == 2
+
+@test
+def size04(): Bool = List.size(1 :: 2 :: 3 :: Nil) == 3
+
+/////////////////////////////////////////////////////////////////////////////
 // append                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 @test
@@ -2880,30 +2895,30 @@ def distinctWith09(): Bool =
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def shuffle01(): Bool \ IO =
+    def shuffle01(): Bool \ NonDet =
         let l1: List[Int32] = Nil;
-        let l2 = List.shuffle(Random.fresh(), l1);
+        let l2 = List.shuffle(l1);
 
         List.length(l2) == 0 and List.toSet(l2) == Set#{}
 
     @test
-    def shuffle02(): Bool \ IO =
+    def shuffle02(): Bool \ NonDet =
         let l1 = 1 :: Nil;
-        let l2 = List.shuffle(Random.fresh(), l1);
+        let l2 = List.shuffle(l1);
 
         List.length(l2) == 1 and List.toSet(l2) == Set#{1}
 
     @test
-    def shuffle03(): Bool \ IO =
+    def shuffle03(): Bool \ NonDet =
         let l1 = 1 :: 2 :: 3 :: Nil;
-        let l2 = List.shuffle(Random.fresh(), l1);
+        let l2 = List.shuffle(l1);
 
         List.length(l2) == 3 and List.toSet(l2) == Set#{1, 2, 3}
 
     @test
-    def shuffle04(): Bool \ IO =
+    def shuffle04(): Bool \ NonDet =
         let l1 = 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: 9 :: Nil;
-        let l2 = List.shuffle(Random.fresh(), l1);
+        let l2 = List.shuffle(l1);
 
         List.length(l2) == 10 and List.toSet(l2) == Set#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
 

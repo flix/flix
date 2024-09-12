@@ -194,6 +194,10 @@ object SyntaxTree {
 
       case object Do extends Expr
 
+      case object Index extends Expr
+
+      case object IndexMut extends Expr
+
       case object InvokeConstructor2 extends Expr
 
       case object InvokeMethod2 extends Expr
@@ -231,6 +235,8 @@ object SyntaxTree {
       case object ForFragmentGuard extends Expr
 
       case object ForFragmentLet extends Expr
+
+      case object GetField2 extends Expr
 
       case object Hole extends Expr
 
@@ -307,8 +313,6 @@ object SyntaxTree {
       case object RecordOpUpdate extends Expr
 
       case object RecordSelect extends Expr
-
-      case object Ref extends Expr
 
       case object RestrictableChoose extends Expr
 

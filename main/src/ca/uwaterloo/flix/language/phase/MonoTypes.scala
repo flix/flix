@@ -328,6 +328,9 @@ object MonoTypes {
         case Type.AssocType(_, _, _, _) =>
           // Assumed to have been removed earlier.
           throw InternalCompilerException(s"Unexpected associated type: '$tpe'", tpe.loc)
+
+        case Type.JvmToType(_, loc) => throw InternalCompilerException("unexpected JVM type", loc)
+        case Type.UnresolvedJvmType(_, loc) => throw InternalCompilerException("unexpected JVM type", loc)
       }
     }
   }

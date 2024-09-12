@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Lukas Rønn
+ * Copyright 2024 Holger Dal Mogensen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,18 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.api.lsp.provider.completion
-
-import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.api.lsp.Index
-import ca.uwaterloo.flix.language.ast.TypedAst
+package ca.uwaterloo.flix.language.ast.shared
 
 /**
-  * A common super-type for completers.
+  * A common super-type for the denotation of an atom.
   */
-trait Completer {
+sealed trait Denotation
+
+object Denotation {
+
   /**
-    * Returns a List of Completion for completer.
+    * The atom has a relational denotation.
     */
-  def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion]
+  case object Relational extends Denotation
+
+  /**
+    * The atom has a latticenal denotation.
+    */
+  case object Latticenal extends Denotation
+
 }

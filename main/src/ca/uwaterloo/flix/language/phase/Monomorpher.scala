@@ -18,8 +18,9 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Modifiers
+import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, LoweredAst, MonoAst, Name, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.language.dbg.AstPrinter._
+import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnvironment, Substitution, Unification}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.collection.{ListMap, ListOps}
@@ -81,6 +82,9 @@ import scala.collection.mutable
   */
 object Monomorpher {
 
+  // TODO levels trying top scope to get it to compile. Revisit.
+  private implicit val S: Scope = Scope.Top
+
   /**
     * A strict substitution is similar to a regular substitution except that free type variables are
     * replaced by an appropriate default type. In other words, when performing a type substitution,
@@ -117,7 +121,7 @@ object Monomorpher {
       case Kind.Predicate => Type.mkAnyType(tpe0.loc)
       case Kind.CaseSet(sym) => Type.Cst(TypeConstructor.CaseSet(SortedSet.empty, sym), tpe0.loc)
       case Kind.Arrow(_, _) => Type.mkAnyType(tpe0.loc)
-      case Kind.JvmConstructorOrMethod => throw InternalCompilerException(s"Unexpected type: '$tpe0'.", tpe0.loc)
+      case Kind.Jvm => throw InternalCompilerException(s"Unexpected type: '$tpe0'.", tpe0.loc)
       case Kind.Error => throw InternalCompilerException(s"Unexpected type '$tpe0'.", tpe0.loc)
     }
 
@@ -176,6 +180,7 @@ object Monomorpher {
       case Type.Alias(_, _, t, _) =>
         // Remove the Alias.
         apply(t)
+
       case Type.AssocType(cst, arg0, _, loc) =>
         // Remove the associated type.
         val arg = apply(arg0)
@@ -185,6 +190,9 @@ object Monomorpher {
             apply(t)
           case Err(_) => throw InternalCompilerException("unexpected associated type reduction failure", loc)
         }
+
+      case Type.JvmToType(_, loc) => throw InternalCompilerException("unexpected JVM type", loc)
+      case Type.UnresolvedJvmType(_, loc) => throw InternalCompilerException("unexpected JVM type", loc)
     }
 
     /**
@@ -325,6 +333,8 @@ object Monomorpher {
     case Type.Var(_, _) => throw InternalCompilerException(s"Unexpected type variable '$rest'", rest.loc)
     case Type.Alias(_, _, _, _) => throw InternalCompilerException(s"Unexpected alias '$rest'", rest.loc)
     case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected associated type '$rest'", rest.loc)
+    case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected JVM type '$rest'", rest.loc)
+    case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected JVM type '$rest'", rest.loc)
   }
 
   /**
@@ -344,6 +354,8 @@ object Monomorpher {
     case Type.Var(_, _) => throw InternalCompilerException(s"Unexpected type variable '$rest'", rest.loc)
     case Type.Alias(_, _, _, _) => throw InternalCompilerException(s"Unexpected alias '$rest'", rest.loc)
     case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected associated type '$rest'", rest.loc)
+    case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected JVM type '$rest'", rest.loc)
+    case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected JVM type '$rest'", rest.loc)
   }
 
   /**

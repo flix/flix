@@ -324,6 +324,19 @@ mod TestDelayList {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // size                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def size01(): Bool =
+        (DelayList.empty(): DelayList[Int32]) |> DelayList.size == 0
+
+    @test
+    def size02(): Bool =
+        DelayList.range(0, 100000) |> DelayList.size == 100000
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // reverse                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -3042,30 +3055,30 @@ mod TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def shuffle01(): Bool \ IO =
+    def shuffle01(): Bool \ NonDet =
         let l1: List[Int32] = Nil;
-        let l2 = List.toDelayList(l1) |> DelayList.shuffle(Random.fresh());
+        let l2 = List.toDelayList(l1) |> DelayList.shuffle;
 
         DelayList.length(l2) == 0 and DelayList.toSet(l2) == Set#{}
 
     @test
-    def shuffle02(): Bool \ IO =
+    def shuffle02(): Bool \ NonDet =
         let l1 = 1 :: Nil;
-        let l2 = List.toDelayList(l1) |> DelayList.shuffle(Random.fresh());
+        let l2 = List.toDelayList(l1) |> DelayList.shuffle;
 
         DelayList.length(l2) == 1 and DelayList.toSet(l2) == Set#{1}
 
     @test
-    def shuffle03(): Bool \ IO =
+    def shuffle03(): Bool \ NonDet =
         let l1 = 1 :: 2 :: 3 :: Nil;
-        let l2 = List.toDelayList(l1) |> DelayList.shuffle(Random.fresh());
+        let l2 = List.toDelayList(l1) |> DelayList.shuffle;
 
         DelayList.length(l2) == 3 and DelayList.toSet(l2) == Set#{1, 2, 3}
 
     @test
-    def shuffle04(): Bool \ IO =
+    def shuffle04(): Bool \ NonDet =
         let l1 = 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: 9 :: Nil;
-        let l2 = List.toDelayList(l1) |> DelayList.shuffle(Random.fresh());
+        let l2 = List.toDelayList(l1) |> DelayList.shuffle;
 
         DelayList.length(l2) == 10 and DelayList.toSet(l2) == Set#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
 

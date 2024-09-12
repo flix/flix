@@ -473,15 +473,6 @@ object SemanticTokensProvider {
     case Expr.VectorLength(exp, _) =>
       visitExp(exp)
 
-    case Expr.Ref(exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
-
-    case Expr.Deref(exp, _, _, _) =>
-      visitExp(exp)
-
-    case Expr.Assign(exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
-
     case Expr.Ascribe(exp, tpe, _, _) =>
       visitExp(exp) ++ visitType(tpe)
 
@@ -696,6 +687,10 @@ object SemanticTokensProvider {
     case Type.AssocType(cst, arg, _, _) =>
       val t = SemanticToken(SemanticTokenType.Type, Nil, cst.loc)
       Iterator(t) ++ visitType(arg)
+
+    // Jvm types should not be exposed to the user.
+    case _: Type.JvmToType => Iterator.empty
+    case _: Type.UnresolvedJvmType => Iterator.empty
   }
 
   /**
@@ -726,12 +721,8 @@ object SemanticTokensProvider {
     case TypeConstructor.Struct(_, _) => true
     case TypeConstructor.RestrictableEnum(_, _) => true
     case TypeConstructor.Native(_) => true
-    case TypeConstructor.JvmConstructor(_) => false
-    case TypeConstructor.JvmMethod(_) => false
-    case TypeConstructor.MethodReturnType => false
     case TypeConstructor.Array => true
     case TypeConstructor.Vector => true
-    case TypeConstructor.Ref => true
     case TypeConstructor.Pure => true
     case TypeConstructor.Univ => true
     case TypeConstructor.True => true
@@ -761,6 +752,9 @@ object SemanticTokensProvider {
     case TypeConstructor.CaseUnion(_) => false
     case TypeConstructor.CaseIntersection(_) => false
     case TypeConstructor.CaseSet(_, _) => false
+    case TypeConstructor.JvmField(_) => false
+    case TypeConstructor.JvmConstructor(_) => false
+    case TypeConstructor.JvmMethod(_) => false
     case TypeConstructor.Error(_, _) => false
   }
 

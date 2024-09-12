@@ -4,8 +4,7 @@ import ca.uwaterloo.flix.language.ast.Ast.{EliminatedBy, IntroducedBy}
 import ca.uwaterloo.flix.language.phase.typer.TypeReduction
 import ca.uwaterloo.flix.language.phase.{Kinder, Lowering, Monomorpher, TypeReconstruction}
 
-import java.lang.reflect.Method
-import java.lang.reflect.Constructor
+import java.lang.reflect.{Constructor, Field, Method}
 import scala.collection.immutable.SortedSet
 
 /**
@@ -255,32 +254,21 @@ object TypeConstructor {
    * A type constructor that represents the type of a Java constructor.
    * */
   case class JvmConstructor(constructor: Constructor[_]) extends TypeConstructor {
-    def kind: Kind = Kind.JvmConstructorOrMethod
+    def kind: Kind = Kind.Jvm
   }
 
   /**
    * A type constructor that represents the type of a Java method.
    */
   case class JvmMethod(method: Method) extends TypeConstructor {
-    def kind: Kind = Kind.JvmConstructorOrMethod
+    def kind: Kind = Kind.Jvm
   }
 
   /**
-   * A type constructor that represents the _return type_ of a Java method.
-   *
-   * A method return type can be resolved when the receiver object and argument types are known.
-   *
-   * A few examples:
-   *
-   *   - The type: `Apply(InvokeMethod("length", 0), String)` is equivalent to `Int32`.
-   *   - The type: `Apply(Apply(InvokeMethod("startsWith", 1), String), String)` is equivalent to `Bool`.
-   *   - The type: `Apply(Apply(Apply(InvokeMethod("substring", 2), String), Int32), Int32)` is equivalent to `String`.
-   *
-   * The type constructor requires a java method or constructor type constructor.
-   */
-  @EliminatedBy(TypeReconstruction.getClass)
-  case object MethodReturnType extends TypeConstructor {
-    def kind: Kind = Kind.JvmConstructorOrMethod ->: Kind.Star
+    * A type constructor that represents the type of a Java field.
+    */
+  case class JvmField(field: Field) extends TypeConstructor {
+    def kind: Kind = Kind.Jvm
   }
 
   /**
@@ -301,16 +289,6 @@ object TypeConstructor {
       * The shape of an array is `Array[t]`.
       */
     def kind: Kind = Kind.Star ->: Kind.Star
-  }
-
-  /**
-    * A type constructor that represent the type of references.
-    */
-  case object Ref extends TypeConstructor {
-    /**
-      * The shape of a reference is `Ref[t, l]`.
-      */
-    def kind: Kind = Kind.Star ->: Kind.Eff ->: Kind.Star
   }
 
   /**

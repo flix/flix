@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, UnkindedType}
-import ca.uwaterloo.flix.util.Formatter
+import ca.uwaterloo.flix.util.{Formatter, Grammar}
 
 import java.lang.reflect.{Constructor, Field, Method}
 
@@ -1083,10 +1083,7 @@ object ResolutionError {
     * @param loc      the location where the error occurred.
     */
   case class MismatchedOpArity(op: Symbol.OpSym, expected: Int, actual: Int, loc: SourceLocation) extends ResolutionError with Recoverable {
-    val params: String = if (expected == 1) "parameter" else "parameters"
-    val be: String = if (actual == 1) "is" else "are"
-
-    override def summary: String = s"Expected $expected $params but found $actual."
+    override def summary: String = s"Expected ${Grammar.n_things(expected, "parameter")} but found $actual."
 
     /**
       * Returns the formatted error message.
@@ -1095,10 +1092,10 @@ object ResolutionError {
       import formatter._
       s""">> Mismatched arity.
          |
-         |The operation $op expects $expected $params,
-         |but $actual $be provided here.
+         |The operation $op expects ${Grammar.n_things(expected, "parameter")},
+         |but ${Grammar.n_are(actual)} provided here.
          |
-         |${code(loc, s"expected $expected $params but found $actual")}
+         |${code(loc, s"expected ${Grammar.n_things(expected, "parameter")} but found $actual")}
          |""".stripMargin
     }
 
@@ -1129,15 +1126,20 @@ object ResolutionError {
   /**
     * An error raised to indicate an undefined field in a `struct.field` or `struct.field = value` expression.
     *
+    * @param struct the name of the struct
     * @param field the name of the missing field.
     * @param loc   the location where the error occurred.
     */
-  case class UndefinedStructField(field: Name.Label, loc: SourceLocation) extends ResolutionError with Recoverable {
-    override def summary: String = s"Undefined struct field '$field'"
+  case class UndefinedStructField(struct: Option[Symbol.StructSym], field: Name.Label, loc: SourceLocation) extends ResolutionError with Recoverable {
+    private def structMessage: String = struct match {
+      case Some(sym) => s" on struct '$sym'"
+      case None => ""
+    }
+    override def summary: String = s"Undefined struct field '$field'$structMessage"
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s""">> Undefined struct field '${red(field.toString)}'.
+      s""">> Undefined struct field '${red(field.toString)}'$structMessage.
          |
          |${code(loc, "undefined field")}
          |""".stripMargin
@@ -1202,6 +1204,24 @@ object ResolutionError {
          |Actual Order:   ${providedFields.mkString(", ")}
          |
          |${code(loc, "incorrect order")}
+         |""".stripMargin
+    }
+  }
+
+ /**
+   * An error raised to indicate a `put` struct expression attempts to modify an immutable field
+   *
+   * @param field the immutable field
+   * @param loc   the location where the error occurred
+   */
+  case class ImmutableField(field: Symbol.StructFieldSym, loc: SourceLocation) extends ResolutionError with Recoverable {
+    override def summary: String = s"Modification of immutable field `$field`. Mark the field as `mut` to allow mutation."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s""">> Modification of immutable field `$field`. Mark the field as `mut` to allow mutation.
+         |
+         |${code(loc, "field not marked `mut`")}
          |""".stripMargin
     }
   }

@@ -46,7 +46,9 @@ tasks.withType(ScalaCompile) {
             "-Xfatal-warnings",
             "-Ypatmat-exhaust-depth", "400",
             "-release", "11",
-            "-opt:inline:ca.uwaterloo.**"
+            "-opt:inline:ca.uwaterloo.**",
+            "-Xsource:3",    // Scala 3 migration flag
+            "-Ytasty-reader" // Scala 3 migration flag
     ]
     compileScala.sourceCompatibility = 21
     compileScala.targetCompatibility = 21
@@ -79,7 +81,7 @@ jar {
         configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
         configurations.compileClasspath.collect { it.isDirectory() ? it : zipTree(it) }
     }
-    
+
     from('main') {
         include '**/*.flix'
         include '**/*.zip'
@@ -104,7 +106,7 @@ task testAll(dependsOn: ['testClasses'], type: JavaExec) {
 
 test.dependsOn testAll
 
-task vscode(type: Copy, dependsOn:[clean, jar]) {
+task vscode(type: Copy, dependsOn: [clean, jar]) {
     from 'build/libs/flix.jar'
     into providers.gradleProperty('dev.flix.vscode.project')
 }

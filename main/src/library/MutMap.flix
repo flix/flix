@@ -21,12 +21,12 @@ pub enum MutMap[k: Type, v: Type, r: Region] {
     case MutMap(Region[r], Ref[Map[k, v], r])
 }
 
-instance Index[MutMap[k, v, r]] with Order[k] {
+instance Indexable[MutMap[k, v, r]] with Order[k] {
     type Idx = k
     type Elm = v
     type Aef = r + KeyNotFound
 
-    pub def get(i: k, t: MutMap[k, v, r]): v \ r + KeyNotFound = {
+    pub def get(t: MutMap[k, v, r], i: k): v \ r + KeyNotFound = {
         match MutMap.get(i, t) {
             case Some(v) => v
             case None => do KeyNotFound.keyNotFound("key not found")
@@ -34,10 +34,10 @@ instance Index[MutMap[k, v, r]] with Order[k] {
     }
 }
 
-instance IndexMut[MutMap[k, v, r]] with Order[k] {
+instance IndexableMut[MutMap[k, v, r]] with Order[k] {
     type Aef = r
 
-    pub def put(i: k, v: v, t: MutMap[k, v, r]): Unit \ r = MutMap.put!(i, v, t)
+    pub def put(t: MutMap[k, v, r], i: k, v: v): Unit \ r = MutMap.put!(i, v, t)
 }
 
 instance Iterable[MutMap[k, v, r]] {
@@ -193,7 +193,7 @@ mod MutMap {
         Map.valuesOf(Ref.get(mm))
 
     ///
-    /// Returns the size of the mutable map `m`.
+    /// Returns the number of keys in the mutable map `m`.
     ///
     pub def size(m: MutMap[k, v, r]): Int32 \ r =
         let MutMap(_, mm) = m;

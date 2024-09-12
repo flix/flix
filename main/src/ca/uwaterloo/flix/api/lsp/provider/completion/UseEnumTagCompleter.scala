@@ -23,11 +23,11 @@ import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.UseEnumTagComple
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.ast.SourceLocation
 
-object UseEnumTagCompleter extends Completer {
+object UseEnumTagCompleter {
   /**
    * Returns an Iterable of Completions for enum tag usages.
    */
-  override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[UseEnumTagCompletion] = {
+  def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[UseEnumTagCompletion] = {
     //Need to return completion possibilities regardless of whether a tag was provided.
     stripWord(context) match {
       case Some(word) => {
@@ -57,7 +57,7 @@ object UseEnumTagCompleter extends Completer {
    */
   private def getUseEnumTagCompletionsWithTag(segments: List[String])(implicit root: TypedAst.Root): Iterable[UseEnumTagCompletion] = {
     if (segments.isEmpty) {
-      Nil
+      return Nil
     }
 
     //Create a new tag that matches the user's syntax.

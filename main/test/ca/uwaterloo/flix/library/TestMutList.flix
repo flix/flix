@@ -112,6 +112,184 @@ mod TestMutList {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // get                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def get01(): Bool = region rc {
+        let r = try MutList.get(0, MutList.empty(rc)) with OutOfBounds {
+            def outOfBounds(msg, _) = msg
+        };
+        r == "index 0 is out of bounds for MutList of length 0"
+    }
+
+    @test
+    def get02(): Bool = region rc {
+        let l = MutList.empty(rc);
+        MutList.push!("item", l);
+        let r = try MutList.get(0, l) with OutOfBounds {
+            def outOfBounds(_, _) = "error"
+        };
+        r == "item"
+    }
+
+    @test
+    def get03(): Bool = region rc {
+        let l = MutList.empty(rc);
+        MutList.push!("item", l);
+        let r = try MutList.get(1, l) with OutOfBounds {
+            def outOfBounds(msg, _) = msg
+        };
+        r == "index 1 is out of bounds for MutList of length 1"
+    }
+
+    @test
+    def get04(): Bool = region rc {
+        let l = MutList.map(rc, i -> "item ${i}", MutList.range(rc, 0, 2));
+
+        let r = try MutList.get(1, l) with OutOfBounds {
+            def outOfBounds(msg, _) = msg
+        };
+        r == "item 1"
+    }
+
+    @test
+    def get05(): Bool = region rc {
+        let l = MutList.map(rc, i -> "item ${i}", MutList.range(rc, 0, 4));
+
+        let r = try MutList.get(3, l) with OutOfBounds {
+            def outOfBounds(msg, _) = msg
+        };
+        r == "item 3"
+    }
+
+    @test
+    def get06(): Bool = region rc {
+        let l = MutList.map(rc, i -> "item ${i}", MutList.range(rc, 0, 42));
+
+        let r = try MutList.get(30, l) with OutOfBounds {
+            def outOfBounds(msg, _) = msg
+        };
+        r == "item 30"
+    }
+
+    @test
+    def get07(): Bool = region rc {
+        let l = MutList.map(rc, i -> "item ${i}", MutList.range(rc, 0, 42));
+
+        let r = try MutList.get(-30, l) with OutOfBounds {
+            def outOfBounds(msg, _) = msg
+        };
+        r == "index -30 is out of bounds for MutList of length 42"
+    }
+
+    @test
+    def get08(): Bool = region rc {
+        let l = MutList.map(rc, i -> "item ${i}", MutList.range(rc, 0, 42));
+
+        let r = try MutList.get(50, l) with OutOfBounds {
+            def outOfBounds(msg, _) = msg
+        };
+        r == "index 50 is out of bounds for MutList of length 42"
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // put                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def put01(): Bool = region rc {
+        let error = Ref.fresh(rc, None);
+        let l = MutList.empty(rc);
+
+        try MutList.put("new item", 0, l) with OutOfBounds {
+            def outOfBounds(msg, _) = Ref.put(Some(msg), error)
+        };
+        Ref.get(error) == Some("index 0 is out of bounds for MutList of length 0")
+    }
+
+    @test
+    def put02(): Bool = region rc {
+        let error = Ref.fresh(rc, None);
+        let l = MutList.empty(rc);
+        MutList.push!("item", l);
+
+        try MutList.put("new item", 0, l) with OutOfBounds {
+            def outOfBounds(msg, _) = Ref.put(Some(msg), error)
+        };
+        Ref.get(error) == None and MutList.nth(0, l) == Some("new item")
+    }
+
+    @test
+    def put03(): Bool = region rc {
+        let error = Ref.fresh(rc, None);
+        let l = MutList.empty(rc);
+        MutList.push!("item", l);
+
+        try MutList.put("new item", 1, l) with OutOfBounds {
+            def outOfBounds(msg, _) = Ref.put(Some(msg), error)
+        };
+        Ref.get(error) == Some("index 1 is out of bounds for MutList of length 1")
+    }
+
+    @test
+    def put04(): Bool = region rc {
+        let error = Ref.fresh(rc, None);
+        let l = MutList.range(rc, 0, 2);
+
+        try MutList.put(1234, 1, l) with OutOfBounds {
+            def outOfBounds(msg, _) = Ref.put(Some(msg), error)
+        };
+        Ref.get(error) == None and MutList.nth(1, l) == Some(1234)
+    }
+
+    @test
+    def put05(): Bool = region rc {
+        let error = Ref.fresh(rc, None);
+        let l = MutList.range(rc, 0, 4);
+
+        try MutList.put(1234, 3, l) with OutOfBounds {
+            def outOfBounds(msg, _) = Ref.put(Some(msg), error)
+        };
+        Ref.get(error) == None and MutList.nth(3, l) == Some(1234)
+    }
+
+    @test
+    def put06(): Bool = region rc {
+        let error = Ref.fresh(rc, None);
+        let l = MutList.range(rc, 0, 42);
+
+        try MutList.put(1234, 30, l) with OutOfBounds {
+            def outOfBounds(msg, _) = Ref.put(Some(msg), error)
+        };
+        Ref.get(error) == None and MutList.nth(30, l) == Some(1234)
+    }
+
+    @test
+    def put07(): Bool = region rc {
+        let error = Ref.fresh(rc, None);
+        let l = MutList.range(rc, 0, 42);
+
+        try MutList.put(1234, -30, l) with OutOfBounds {
+            def outOfBounds(msg, _) = Ref.put(Some(msg), error)
+        };
+        Ref.get(error) == Some("index -30 is out of bounds for MutList of length 42")
+    }
+
+    @test
+    def put08(): Bool = region rc {
+        let error = Ref.fresh(rc, None);
+        let l = MutList.range(rc, 0, 42);
+
+        try MutList.put(1234, 50, l) with OutOfBounds {
+            def outOfBounds(msg, _) = Ref.put(Some(msg), error)
+        };
+        Ref.get(error) == Some("index 50 is out of bounds for MutList of length 42")
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // nth                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -189,6 +367,38 @@ mod TestMutList {
     @test
     def length05(): Bool = region rc {
         MutList.length(MutList.range(rc, 0, 42)) == 42
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // size                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def size01(): Bool = region rc {
+        MutList.size(MutList.empty(rc)) == 0
+    }
+
+    @test
+    def size02(): Bool = region rc {
+        let v = MutList.empty(rc);
+        MutList.push!(42, v);
+        MutList.size(v) == 1
+    }
+
+    @test
+    def size03(): Bool = region rc {
+        MutList.size(MutList.range(rc, 0, 2)) == 2
+    }
+
+    @test
+    def size04(): Bool = region rc {
+        MutList.size(MutList.range(rc, 0, 4)) == 4
+    }
+
+    @test
+    def size05(): Bool = region rc {
+        MutList.size(MutList.range(rc, 0, 42)) == 42
     }
 
 
@@ -2557,36 +2767,36 @@ mod TestMutList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def shuffle01(): Bool \ IO = region rc {
+    def shuffle01(): Bool \ NonDet = region rc {
         let l: List[Int32] = Nil;
-        let v = MutList.shuffle(rc, Random.fresh(), List.toMutList(rc, l));
+        let v = MutList.shuffle(rc, List.toMutList(rc, l));
         MutList.sort!(v);
 
         MutList.length(v) == 0 and v `MutList.sameElements` List.toMutList(rc, l)
     }
 
     @test
-    def shuffle02(): Bool \ IO = region rc {
+    def shuffle02(): Bool \ NonDet = region rc {
         let l = 1 :: Nil;
-        let v = MutList.shuffle(rc, Random.fresh(), List.toMutList(rc, l));
+        let v = MutList.shuffle(rc, List.toMutList(rc, l));
         MutList.sort!(v);
 
         MutList.length(v) == 1 and v `MutList.sameElements` List.toMutList(rc, l)
     }
 
     @test
-    def shuffle03(): Bool \ IO = region rc {
+    def shuffle03(): Bool \ NonDet = region rc {
         let l = 1 :: 2 :: 3 :: Nil;
-        let v = MutList.shuffle(rc, Random.fresh(), List.toMutList(rc, l));
+        let v = MutList.shuffle(rc, List.toMutList(rc, l));
         MutList.sort!(v);
 
         MutList.length(v) == 3 and v `MutList.sameElements` List.toMutList(rc, l)
     }
 
     @test
-    def shuffle04(): Bool \ IO = region rc {
+    def shuffle04(): Bool \ NonDet = region rc {
         let l = 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: 9 :: Nil;
-        let v = MutList.shuffle(rc, Random.fresh(), List.toMutList(rc, l));
+        let v = MutList.shuffle(rc, List.toMutList(rc, l));
         MutList.sort!(v);
 
         MutList.length(v) == 10 and v `MutList.sameElements` List.toMutList(rc, l)

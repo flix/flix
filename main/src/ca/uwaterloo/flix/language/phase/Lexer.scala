@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.shared.Source
-import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, ReadAst, SourceLocation, SourcePosition, Token, TokenKind}
+import ca.uwaterloo.flix.language.ast.{ChangeSet, ReadAst, SourceLocation, SourcePosition, Token, TokenKind}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.{DebugNoOp, DebugValidation}
 import ca.uwaterloo.flix.language.errors.LexerError
 import ca.uwaterloo.flix.util.{ParOps, Validation}
@@ -201,6 +201,17 @@ object Lexer {
   }
 
   /**
+   * Peeks the character that is `n` characters before the current if available
+   */
+  private def previousN(n: Int)(implicit s: State): Option[Char] = {
+    if (s.current.offset <= n) {
+      None
+    } else {
+      Some(s.src.data(s.current.offset - (n + 1)))
+    }
+  }
+
+  /**
    * Peeks the character that state is currently sitting on without advancing.
    * Note: Peek does not to bound checks. This is done under the assumption that the lexer
    * is only ever advanced using `advance`.
@@ -333,11 +344,9 @@ object Lexer {
       case '\"' => acceptString()
       case '\'' => acceptChar()
       case '`' => acceptInfixFunction()
-      case _ if isMatch("##") => acceptJavaName()
       case _ if isMatch("#{") => TokenKind.HashCurlyL
       case _ if isMatch("#(") => TokenKind.HashParenL
       case '#' => TokenKind.Hash
-      case '€' => TokenKind.Euro
       case _ if isMatch("//") => acceptLineOrDocComment()
       case _ if isMatch("/*") => acceptBlockComment()
       case '/' => TokenKind.Slash
@@ -352,7 +361,17 @@ object Lexer {
       case _ if isOperator(":") => TokenKind.Colon
       case _ if isOperator("**") => TokenKind.StarStar
       case _ if isOperator("<-") => TokenKind.ArrowThinL
-      case _ if isOperator("->") => TokenKind.ArrowThinR
+      case _ if isOperator("->") =>
+        // If any whitespace exists around the `->`, it is `ArrowThinR`. Otherwise it is `StructArrow`
+        // a->b:   StructArrow
+        // a ->b:  ArrowThinR
+        // a-> b:  ArrowThinR
+        // a -> b: ArrowThinR
+        if (previousN(2).exists(_.isWhitespace) || peek().isWhitespace) {
+          TokenKind.ArrowThinR
+        } else {
+          TokenKind.StructArrow
+        }
       case _ if isOperator("=>") => TokenKind.ArrowThickR
       case _ if isOperator("<=") => TokenKind.AngleLEqual
       case _ if isOperator(">=") => TokenKind.AngleREqual
@@ -375,11 +394,10 @@ object Lexer {
       case _ if isKeyword("checked_ecast") => TokenKind.KeywordCheckedECast
       case _ if isKeyword("choose*") => TokenKind.KeywordChooseStar
       case _ if isKeyword("choose") => TokenKind.KeywordChoose
-      case _ if isKeyword("debug") => TokenKind.KeywordDebug
-      case _ if isKeyword("debug!") => TokenKind.KeywordDebugBang
       case _ if isKeyword("debug!!") => TokenKind.KeywordDebugBangBang
+      case _ if isKeyword("debug!") => TokenKind.KeywordDebugBang
+      case _ if isKeyword("debug") => TokenKind.KeywordDebug
       case _ if isKeyword("def") => TokenKind.KeywordDef
-      case _ if isKeyword("deref") => TokenKind.KeywordDeref
       case _ if isKeyword("discard") => TokenKind.KeywordDiscard
       case _ if isKeyword("do") => TokenKind.KeywordDo
       case _ if isKeyword("eff") => TokenKind.KeywordEff
@@ -410,6 +428,7 @@ object Lexer {
       case _ if isKeyword("masked_cast") => TokenKind.KeywordMaskedCast
       case _ if isKeyword("match") => TokenKind.KeywordMatch
       case _ if isKeyword("mod") => TokenKind.KeywordMod
+      case _ if isKeyword("mut") => TokenKind.KeywordMut
       case _ if isKeyword("new") => TokenKind.KeywordNew
       case _ if isKeyword("not") => TokenKind.KeywordNot
       case _ if isKeywordLiteral("null") => TokenKind.KeywordNull
@@ -422,7 +441,6 @@ object Lexer {
       case _ if isKeyword("project") => TokenKind.KeywordProject
       case _ if isKeyword("query") => TokenKind.KeywordQuery
       case _ if isKeyword("redef") => TokenKind.KeywordRedef
-      case _ if isKeyword("ref") => TokenKind.KeywordRef
       case _ if isKeyword("region") => TokenKind.KeywordRegion
       case _ if isKeyword("restrictable") => TokenKind.KeywordRestrictable
       case _ if isKeyword("rvadd") => TokenKind.KeywordRvadd
@@ -654,22 +672,6 @@ object Lexer {
       advance()
     }
     kind
-  }
-
-
-  /**
-   * Moves current position past a java name. IE. "##java"
-   */
-  private def acceptJavaName()(implicit s: State): TokenKind = {
-    advance()
-    while (!eof()) {
-      val p = peek()
-      if (!p.isLetter && !p.isDigit && p != '_' && p != '!' && p != '$') {
-        return TokenKind.NameJava
-      }
-      advance()
-    }
-    TokenKind.NameJava
   }
 
   /**
