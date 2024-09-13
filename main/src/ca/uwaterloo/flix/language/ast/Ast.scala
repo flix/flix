@@ -749,10 +749,6 @@ object Ast {
     sealed trait Decl extends SyntacticContext
 
     object Decl {
-      case object Trait extends Decl
-
-      case object Type extends Decl
-
       case object Enum extends Decl
 
       case object Instance extends Decl
@@ -760,6 +756,10 @@ object Ast {
       case object Module extends Decl
 
       case object Struct extends Decl
+
+      case object Trait extends Decl
+
+      case object Type extends Decl
     }
 
     sealed trait Expr extends SyntacticContext
