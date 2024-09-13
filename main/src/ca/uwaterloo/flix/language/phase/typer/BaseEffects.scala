@@ -54,11 +54,4 @@ object BaseEffects {
       Type.mkUnion(tpes, loc)
   }
 
-  /**
-    * Returns the base effects of accessing the field `f`.
-    *
-    * Accessing a field always has the `IO` effect.
-    */
-  def getFieldEffs(f: Field, loc: SourceLocation): Type = Type.IO
-
 }
