@@ -111,9 +111,9 @@ object TypeReduction {
 
     case Type.JvmToEff(j0, _) =>
       simplify(j0, renv0, loc).map {
-        case (Type.Cst(TypeConstructor.JvmConstructor(constructor), loc), _) => (BaseEffects.of(constructor.getDeclaringClass, loc), true)
-        case (Type.Cst(TypeConstructor.JvmField(field), _), _) => (BaseEffects.of(field, loc), true)
-        case (Type.Cst(TypeConstructor.JvmMethod(method), _), _) => (BaseEffects.of(method, loc), true)
+        case (Type.Cst(TypeConstructor.JvmConstructor(constructor), loc), _) => (BaseEffects.getConstructorEffs(constructor, loc), true)
+        case (Type.Cst(TypeConstructor.JvmField(field), _), _) => (BaseEffects.getFieldEffs(field, loc), true)
+        case (Type.Cst(TypeConstructor.JvmMethod(method), _), _) => (BaseEffects.getMethodEffs(method, loc), true)
         case (j, p) => (Type.JvmToEff(j, loc), p)
       }
 

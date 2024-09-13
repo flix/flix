@@ -772,9 +772,8 @@ object ConstraintGen {
         // Γ ⊢ new k(e₁ ...) : k
         val clazzTpe = Type.getFlixType(clazz)
         val (tpes, effs) = exps.map(visitExp).unzip
-        val baseEffs = BaseEffects.of(clazz, loc)
         c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmConstructor(clazz, tpes), loc), loc) // unify constructor
-        c.unifyType(evar, Type.mkUnion(Type.IO :: baseEffs :: effs, loc), loc) // unify effects
+        c.unifyType(evar, Type.mkUnion(Type.IO :: effs, loc), loc) // unify effects
         val resTpe = clazzTpe
         val resEff = evar
         (resTpe, resEff)

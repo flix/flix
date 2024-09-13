@@ -17,16 +17,15 @@ package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
 
-import java.lang.reflect.{Field, Method}
+import java.lang.reflect.{Constructor, Field, Method}
 
 object BaseEffects {
 
   /**
-    * A pre-computed map from classes to effects.
+    * A pre-computed map from constructors to effects.
     */
-  private val classEffs: Map[String, Set[Symbol.EffectSym]] = Map(
-    classOf[java.lang.ProcessBuilder].getName -> Set(Symbol.Exec)
-  )
+  private val constructorEffs: Map[Constructor[?], Set[Symbol.EffectSym]] = Map.empty ++
+    classOf[java.lang.ProcessBuilder].getConstructors.map(c => (c, Set(Symbol.Net)))
 
   /**
     * A pre-computed map from methods to effects.
@@ -36,30 +35,31 @@ object BaseEffects {
   )
 
   /**
-    * Returns the effects of the given Java class `c`.
+    * Returns the base effects of calling the given constructor `c`.
     */
-  def of(c: Class[?], loc: SourceLocation): Type = {
-    val effs = classEffs.getOrElse(c.getName, Set.empty).toList
-    val tpes = effs.map(sym => Type.Cst(TypeConstructor.Effect(sym), loc))
-    Type.mkUnion(tpes, loc)
+  def getConstructorEffs(c: Constructor[?], loc: SourceLocation): Type = constructorEffs.get(c) match {
+    case None => Type.IO
+    case Some(effs) =>
+      val tpes = effs.toList.map(sym => Type.Cst(TypeConstructor.Effect(sym), loc))
+      Type.mkUnion(tpes, loc)
   }
 
   /**
-    * Returns the effects of the given Java field `f`.
+    * Returns the base effects of calling the given method `m`.
     */
-  def of(f: Field, loc: SourceLocation): Type = Type.Pure
+  def getMethodEffs(m: Method, loc: SourceLocation): Type = methodEffs.get(m) match {
+    case None => Type.IO
+    case Some(effs) =>
+      println(m.getName)
+      val tpes = effs.toList.map(sym => Type.Cst(TypeConstructor.Effect(sym), loc))
+      Type.mkUnion(tpes, loc)
+  }
 
   /**
-    * Returns the effects of the given Java method `m`.
+    * Returns the base effects of accessing the field `f`.
+    *
+    * Accessing a field always has the `IO` effect.
     */
-  def of(m: Method, loc: SourceLocation): Type = {
-    methodEffs.get(m) match {
-      case None => Type.Pure
-      case Some(effs) =>
-        println(m.getName)
-        val tpes = effs.toList.map(sym => Type.Cst(TypeConstructor.Effect(sym), loc))
-        Type.mkUnion(tpes, loc)
-    }
-  }
+  def getFieldEffs(f: Field, loc: SourceLocation): Type = Type.IO
 
 }
