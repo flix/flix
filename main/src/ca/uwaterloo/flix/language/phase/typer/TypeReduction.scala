@@ -109,6 +109,14 @@ object TypeReduction {
         case (j, p) => (Type.JvmToType(j, loc), p)
       }
 
+    case Type.JvmToEff(j0, _) =>
+      simplify(j0, renv0, loc).map {
+        case (Type.Cst(TypeConstructor.JvmConstructor(constructor), loc), _) => (BaseEffects.of(constructor.getDeclaringClass, loc), true)
+        case (Type.Cst(TypeConstructor.JvmField(field), _), _) => (BaseEffects.of(field, loc), true)
+        case (Type.Cst(TypeConstructor.JvmMethod(method), _), _) => (BaseEffects.of(method, loc), true)
+        case (j, p) => (Type.JvmToEff(j, loc), p)
+      }
+
     case cons@Type.UnresolvedJvmType(Type.JvmMember.JvmConstructor(clazz, tpes), _) =>
       lookupConstructor(clazz, tpes, loc) match {
         case JavaConstructorResolution.Resolved(constructor) =>
@@ -452,6 +460,7 @@ object TypeReduction {
     case Type.Var(_, _) => false
     case Type.Cst(_, _) => true
     case Type.JvmToType(_, _) => false
+    case Type.JvmToEff(_, _) => false
     case Type.UnresolvedJvmType(_, _) => false
     case Type.Apply(t1, t2, _) => isKnown(t1) && isKnown(t2)
     case Type.Alias(_, _, t, _) => isKnown(t)

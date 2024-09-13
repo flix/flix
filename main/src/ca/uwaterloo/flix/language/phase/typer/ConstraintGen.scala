@@ -779,27 +779,29 @@ object ConstraintGen {
         val resEff = evar
         (resTpe, resEff)
 
-      case Expr.InvokeMethod2(exp, methodName, exps, jvar, tvar, evar, loc) =>
+      case Expr.InvokeMethod2(exp, methodName, exps, jvar, jevar, tvar, evar, loc) =>
         // Γ ⊢ e : τ    Γ ⊢ eᵢ ... : τ₁ ...    Γ ⊢ ι ~ JvmMethod(τ, m, τᵢ ...)
         // ---------------------------------------------------------------
-        // Γ ⊢ e.m(eᵢ ...) : JvmToType[ι]
+        // Γ ⊢ e.m(eᵢ ...) : JvmToType[ι] \ JvmToEff[ι]
         val (tpe, eff) = visitExp(exp)
         val (tpes, effs) = exps.map(visitExp).unzip
-        c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmMethod(tpe, methodName, tpes), loc), loc) // unify method type
-        c.unifyType(tvar, Type.JvmToType(jvar, loc), loc) // unify method return
-        c.unifyType(evar, Type.mkUnion(Type.IO :: eff :: effs, loc), loc) // unify effects
+        c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmMethod(tpe, methodName, tpes), loc), loc)
+        c.unifyType(tvar, Type.JvmToType(jvar, loc), loc)
+        c.unifyType(jevar, Type.JvmToEff(jvar, loc), loc)
+        c.unifyType(evar, Type.mkUnion(Type.IO :: jevar :: eff :: effs, loc), loc)
         val resTpe = tvar
         val resEff = evar
         (resTpe, resEff)
 
-      case Expr.InvokeStaticMethod2(clazz, methodName, exps, jvar, tvar, evar, loc) =>
+      case Expr.InvokeStaticMethod2(clazz, methodName, exps, jvar, jevar, tvar, evar, loc) =>
         // Γ ⊢ eᵢ ... : τ₁ ...    Γ ⊢ ι ~ JvmStaticMethod(m, τᵢ ...)
         // ---------------------------------------------------------------
-        // Γ ⊢ m(eᵢ ...) : JvmToType[ι]
+        // Γ ⊢ m(eᵢ ...) : JvmToType[ι] \ JvmToEff[ι]
         val (tpes, effs) = exps.map(visitExp).unzip
         c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmStaticMethod(clazz, methodName, tpes), loc), loc)
         c.unifyType(tvar, Type.JvmToType(jvar, loc), loc)
-        c.unifyType(evar, Type.mkUnion(Type.IO :: effs, loc), loc)
+        c.unifyType(jevar, Type.JvmToEff(jvar, loc), loc)
+        c.unifyType(evar, Type.mkUnion(Type.IO :: jevar :: effs, loc), loc)
         val resTpe = tvar
         val resEff = evar
         (resTpe, resEff)

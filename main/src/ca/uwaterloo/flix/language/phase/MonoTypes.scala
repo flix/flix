@@ -330,6 +330,7 @@ object MonoTypes {
           throw InternalCompilerException(s"Unexpected associated type: '$tpe'", tpe.loc)
 
         case Type.JvmToType(_, loc) => throw InternalCompilerException("unexpected JVM type", loc)
+        case Type.JvmToEff(_, loc) => throw InternalCompilerException("unexpected JVM effect", loc)
         case Type.UnresolvedJvmType(_, loc) => throw InternalCompilerException("unexpected JVM type", loc)
       }
     }

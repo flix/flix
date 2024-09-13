@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
 
-import java.lang.reflect.Method
+import java.lang.reflect.{Field, Method}
 
 object BaseEffects {
 
@@ -45,12 +45,21 @@ object BaseEffects {
   }
 
   /**
+    * Returns the effects of the given Java field `f`.
+    */
+  def of(f: Field, loc: SourceLocation): Type = Type.Pure
+
+  /**
     * Returns the effects of the given Java method `m`.
     */
   def of(m: Method, loc: SourceLocation): Type = {
-    val effs = methodEffs.getOrElse(m, Set.empty).toList
-    val tpes = effs.map(sym => Type.Cst(TypeConstructor.Effect(sym), loc))
-    Type.mkUnion(tpes, loc)
+    methodEffs.get(m) match {
+      case None => Type.Pure
+      case Some(effs) =>
+        println(m.getName)
+        val tpes = effs.toList.map(sym => Type.Cst(TypeConstructor.Effect(sym), loc))
+        Type.mkUnion(tpes, loc)
+    }
   }
 
 }

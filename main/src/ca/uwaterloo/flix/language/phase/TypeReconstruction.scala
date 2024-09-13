@@ -437,7 +437,7 @@ object TypeReconstruction {
           TypedAst.Expr.Error(TypeError.UnresolvedConstructor(loc), tpe, eff)
       }
 
-    case KindedAst.Expr.InvokeMethod2(exp, _, exps, jvar, tvar, evar, loc) =>
+    case KindedAst.Expr.InvokeMethod2(exp, _, exps, jvar, _, tvar, evar, loc) =>
       val e = visitExp(exp)
       val es = exps.map(visitExp)
       val returnTpe = subst(tvar)
@@ -450,7 +450,7 @@ object TypeReconstruction {
           TypedAst.Expr.Error(TypeError.UnresolvedMethod(loc), methodTpe, eff)
       }
 
-    case KindedAst.Expr.InvokeStaticMethod2(_, _, exps, jvar, tvar, evar, loc) =>
+    case KindedAst.Expr.InvokeStaticMethod2(_, _, exps, jvar, _, tvar, evar, loc) =>
       val es = exps.map(visitExp)
       val methodTpe = subst(jvar)
       val returnTpe = subst(tvar)
