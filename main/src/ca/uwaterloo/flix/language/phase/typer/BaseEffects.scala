@@ -25,7 +25,7 @@ object BaseEffects {
     * A pre-computed map from constructors to effects.
     */
   private val constructorEffs: Map[Constructor[?], Set[Symbol.EffectSym]] = Map.empty ++
-    classOf[java.lang.ProcessBuilder].getConstructors.map(c => (c, Set(Symbol.Net)))
+    classOf[java.net.URL].getConstructors.map(c => (c, Set(Symbol.Net)))
 
   /**
     * A pre-computed map from methods to effects.
@@ -50,7 +50,6 @@ object BaseEffects {
   def getMethodEffs(m: Method, loc: SourceLocation): Type = methodEffs.get(m) match {
     case None => Type.IO
     case Some(effs) =>
-      println(m.getName)
       val tpes = effs.toList.map(sym => Type.Cst(TypeConstructor.Effect(sym), loc))
       Type.mkUnion(tpes, loc)
   }

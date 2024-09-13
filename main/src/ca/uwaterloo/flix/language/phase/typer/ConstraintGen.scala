@@ -766,14 +766,15 @@ object ConstraintGen {
 
         (resTpe, resEff)
 
-      case Expr.InvokeConstructor2(clazz, exps, jvar, evar, loc) =>
+      case Expr.InvokeConstructor2(clazz, exps, jvar, jevar, evar, loc) =>
         // Γ ⊢ eᵢ ... : τ₁ ...    Γ ⊢ ι ~ JvmConstructor(k, eᵢ ...)
         // --------------------------------------------------------
-        // Γ ⊢ new k(e₁ ...) : k
+        // Γ ⊢ new k(e₁ ...) : k \ JvmToEff[ι]
         val clazzTpe = Type.getFlixType(clazz)
         val (tpes, effs) = exps.map(visitExp).unzip
-        c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmConstructor(clazz, tpes), loc), loc) // unify constructor
-        c.unifyType(evar, Type.mkUnion(Type.IO :: effs, loc), loc) // unify effects
+        c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmConstructor(clazz, tpes), loc), loc)
+        c.unifyType(jevar, Type.JvmToEff(jvar, loc), loc)
+        c.unifyType(evar, Type.mkUnion(jevar :: effs, loc), loc)
         val resTpe = clazzTpe
         val resEff = evar
         (resTpe, resEff)
@@ -787,7 +788,7 @@ object ConstraintGen {
         c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmMethod(tpe, methodName, tpes), loc), loc)
         c.unifyType(tvar, Type.JvmToType(jvar, loc), loc)
         c.unifyType(jevar, Type.JvmToEff(jvar, loc), loc)
-        c.unifyType(evar, Type.mkUnion(Type.IO :: jevar :: eff :: effs, loc), loc)
+        c.unifyType(evar, Type.mkUnion(jevar :: eff :: effs, loc), loc)
         val resTpe = tvar
         val resEff = evar
         (resTpe, resEff)
@@ -800,7 +801,7 @@ object ConstraintGen {
         c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmStaticMethod(clazz, methodName, tpes), loc), loc)
         c.unifyType(tvar, Type.JvmToType(jvar, loc), loc)
         c.unifyType(jevar, Type.JvmToEff(jvar, loc), loc)
-        c.unifyType(evar, Type.mkUnion(Type.IO :: jevar :: effs, loc), loc)
+        c.unifyType(evar, Type.mkUnion(jevar :: effs, loc), loc)
         val resTpe = tvar
         val resEff = evar
         (resTpe, resEff)
