@@ -13,20 +13,41 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-mod Eff.Random {
+mod Eff {
 
+    ///
+    /// An effect used to throw a random coin.
+    ///
     pub eff RandomCoin {
+
         ///
         /// Returns `true` or `false` with equal chance.
         ///
         pub def flip(): Bool
+
     }
 
-    pub eff BiasedCoin {
+    mod RandomCoin {
+
+        import java.util.Random
+
         ///
-        /// Returns `true` with probability `p`.
+        /// Runs the `RandomCoin` effect of the given function `f`.
         ///
-        pub def flip(p: Float64): Bool
+        /// In other words, re-interprets the `RandomCoin` effect using the `IO` effect.
+        ///
+        pub def run(f: Unit -> a \ ef): a \ (ef - RandomCoin) + IO = {
+            // Currently try-with typing is broken, so fix it with checked_ecast
+            checked_ecast(try {
+                f()
+            } with RandomCoin {
+                def flip(k) = unsafe {
+                    let rnd = new Random();
+                    k(rnd.nextBoolean())
+                }
+            })
+        }
+
     }
 
 }
