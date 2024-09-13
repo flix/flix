@@ -69,7 +69,7 @@ object BaseEffects {
    */
   def getMethodEffs(m: Method, loc: SourceLocation): Type = methodEffs.get(m) match {
     case None =>
-      // Case 1: No effects for the constructor. Try the class map.
+      // Case 1: No effects for the method. Try the class map.
       classEffs.get(m.getDeclaringClass) match {
         case None =>
           // Case 1.1: We use the IO effect by default.
