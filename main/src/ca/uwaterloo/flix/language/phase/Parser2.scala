@@ -748,7 +748,7 @@ object Parser2 {
       val isDanglingDoc = consumeDocComments && nth(-1) == TokenKind.CommentDoc && !nth(0).isDocumentable
       if (isDanglingDoc) {
         val errMark = open()
-        closeWithError(errMark, MisplacedDocComments(SyntacticContext.Decl.OtherDecl, previousSourceLocation()))
+        closeWithError(errMark, MisplacedDocComments(SyntacticContext.Decl.Module, previousSourceLocation()))
       }
       close(mark, TreeKind.CommentList)
     }
@@ -865,7 +865,7 @@ object Parser2 {
         case TokenKind.Eof => close(mark, TreeKind.CommentList) // Last tokens in the file were comments.
         case at =>
           val loc = currentSourceLocation()
-          val error = UnexpectedToken(expected = NamedTokenSet.Declaration, actual = Some(at), SyntacticContext.Decl.OtherDecl, loc = loc)
+          val error = UnexpectedToken(expected = NamedTokenSet.Declaration, actual = Some(at), SyntacticContext.Decl.Module, loc = loc)
           if (nestingLevel == 0) {
             // If we are at top-level (nestingLevel == 0) skip ahead until we hit another declaration.
             // If we are in a module (nestingLevel > 0) we let the module rule handle recovery.
@@ -879,9 +879,9 @@ object Parser2 {
 
     private def moduleDecl(mark: Mark.Opened, nestingLevel: Int = 0)(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.KeywordMod))
-      expect(TokenKind.KeywordMod, SyntacticContext.Decl.OtherDecl)
-      name(NAME_MODULE, allowQualified = true, context = SyntacticContext.Decl.OtherDecl)
-      expect(TokenKind.CurlyL, SyntacticContext.Decl.OtherDecl)
+      expect(TokenKind.KeywordMod, SyntacticContext.Decl.Module)
+      name(NAME_MODULE, allowQualified = true, context = SyntacticContext.Decl.Module)
+      expect(TokenKind.CurlyL, SyntacticContext.Decl.Module)
       usesOrImports()
       var continue = true
       while (continue && !eof()) {
@@ -891,7 +891,7 @@ object Parser2 {
           case at =>
             val markErr = open()
             val loc = currentSourceLocation()
-            val error = UnexpectedToken(expected = NamedTokenSet.Declaration, actual = Some(at), SyntacticContext.Decl.OtherDecl, loc = loc)
+            val error = UnexpectedToken(expected = NamedTokenSet.Declaration, actual = Some(at), SyntacticContext.Decl.Module, loc = loc)
             // Skip ahead until we find another declaration or a '}' signifying the end of the module.
             while (!nth(0).isRecoverMod && !eof()) {
               advance()
@@ -899,7 +899,7 @@ object Parser2 {
             closeWithError(markErr, error)
         }
       }
-      expect(TokenKind.CurlyR, SyntacticContext.Decl.OtherDecl)
+      expect(TokenKind.CurlyR, SyntacticContext.Decl.Module)
       close(mark, TreeKind.Decl.Module)
     }
 
@@ -983,13 +983,13 @@ object Parser2 {
 
     private def signatureDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.KeywordDef))
-      expect(TokenKind.KeywordDef, SyntacticContext.Decl.OtherDecl)
-      name(NAME_DEFINITION, context = SyntacticContext.Decl.OtherDecl)
+      expect(TokenKind.KeywordDef, SyntacticContext.Decl.Module)
+      name(NAME_DEFINITION, context = SyntacticContext.Decl.Module)
       if (at(TokenKind.BracketL)) {
         Type.parameters()
       }
-      parameters(SyntacticContext.Decl.OtherDecl)
-      expect(TokenKind.Colon, SyntacticContext.Decl.OtherDecl)
+      parameters(SyntacticContext.Decl.Module)
+      expect(TokenKind.Colon, SyntacticContext.Decl.Module)
       Type.typeAndEffect()
 
       if (at(TokenKind.KeywordWith)) {
@@ -1006,13 +1006,13 @@ object Parser2 {
 
     private def definitionDecl(mark: Mark.Opened, declKind: TokenKind = TokenKind.KeywordDef)(implicit s: State): Mark.Closed = {
       assert(at(declKind))
-      expect(declKind, SyntacticContext.Decl.OtherDecl)
-      name(NAME_DEFINITION, context = SyntacticContext.Decl.OtherDecl)
+      expect(declKind, SyntacticContext.Decl.Module)
+      name(NAME_DEFINITION, context = SyntacticContext.Decl.Module)
       if (at(TokenKind.BracketL)) {
         Type.parameters()
       }
-      parameters(SyntacticContext.Decl.OtherDecl)
-      expect(TokenKind.Colon, SyntacticContext.Decl.OtherDecl)
+      parameters(SyntacticContext.Decl.Module)
+      expect(TokenKind.Colon, SyntacticContext.Decl.Module)
       Type.typeAndEffect()
       if (at(TokenKind.KeywordWith)) {
         Type.constraints()
@@ -1028,7 +1028,7 @@ object Parser2 {
       if (eat(TokenKind.Equal)) {
         Expr.statement()
       } else {
-        expect(TokenKind.Equal, SyntacticContext.Decl.OtherDecl) // Produce an error for missing '='
+        expect(TokenKind.Equal, SyntacticContext.Decl.Module) // Produce an error for missing '='
       }
 
       val treeKind = if (declKind == TokenKind.KeywordRedef) TreeKind.Decl.Redef else TreeKind.Decl.Def
@@ -1037,15 +1037,15 @@ object Parser2 {
 
     private def lawDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.KeywordLaw))
-      expect(TokenKind.KeywordLaw, SyntacticContext.Decl.OtherDecl)
-      name(NAME_DEFINITION, context = SyntacticContext.Decl.OtherDecl)
-      expect(TokenKind.Colon, SyntacticContext.Decl.OtherDecl)
-      expect(TokenKind.KeywordForall, SyntacticContext.Decl.OtherDecl)
+      expect(TokenKind.KeywordLaw, SyntacticContext.Decl.Module)
+      name(NAME_DEFINITION, context = SyntacticContext.Decl.Module)
+      expect(TokenKind.Colon, SyntacticContext.Decl.Module)
+      expect(TokenKind.KeywordForall, SyntacticContext.Decl.Module)
       if (at(TokenKind.BracketL)) {
         Type.parameters()
       }
       if (at(TokenKind.ParenL)) {
-        parameters(SyntacticContext.Decl.OtherDecl)
+        parameters(SyntacticContext.Decl.Module)
       }
       if (at(TokenKind.KeywordWith)) {
         Type.constraints()
@@ -1192,8 +1192,8 @@ object Parser2 {
 
     private def associatedTypeSigDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.KeywordType))
-      expect(TokenKind.KeywordType, SyntacticContext.Decl.OtherDecl)
-      name(NAME_TYPE, context = SyntacticContext.Decl.OtherDecl)
+      expect(TokenKind.KeywordType, SyntacticContext.Decl.Module)
+      name(NAME_TYPE, context = SyntacticContext.Decl.Module)
       if (at(TokenKind.BracketL)) {
         Type.parameters()
       }
@@ -1207,8 +1207,8 @@ object Parser2 {
     }
 
     private def associatedTypeDefDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
-      expect(TokenKind.KeywordType, SyntacticContext.Decl.OtherDecl)
-      name(NAME_TYPE, context = SyntacticContext.Decl.OtherDecl)
+      expect(TokenKind.KeywordType, SyntacticContext.Decl.Module)
+      name(NAME_TYPE, context = SyntacticContext.Decl.Module)
       if (at(TokenKind.BracketL)) {
         Type.arguments()
       }
@@ -1220,8 +1220,8 @@ object Parser2 {
 
     private def effectDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.KeywordEff))
-      expect(TokenKind.KeywordEff, SyntacticContext.Decl.OtherDecl)
-      name(NAME_EFFECT, context = SyntacticContext.Decl.OtherDecl)
+      expect(TokenKind.KeywordEff, SyntacticContext.Decl.Module)
+      name(NAME_EFFECT, context = SyntacticContext.Decl.Module)
 
       // Check for illegal type parameters.
       if (at(TokenKind.BracketL)) {
@@ -1247,18 +1247,18 @@ object Parser2 {
               while (!nth(0).isFirstDecl && !eat(TokenKind.CurlyR) && !eof()) {
                 advance()
               }
-              val error = UnexpectedToken(expected = NamedTokenSet.FromKinds(Set(TokenKind.KeywordDef)), actual = Some(at), SyntacticContext.Decl.OtherDecl, loc = loc)
+              val error = UnexpectedToken(expected = NamedTokenSet.FromKinds(Set(TokenKind.KeywordDef)), actual = Some(at), SyntacticContext.Decl.Module, loc = loc)
               closeWithError(errMark, error, Some(at))
           }
         }
-        expect(TokenKind.CurlyR, SyntacticContext.Decl.OtherDecl)
+        expect(TokenKind.CurlyR, SyntacticContext.Decl.Module)
       }
       close(mark, TreeKind.Decl.Effect)
     }
 
     private def operationDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
-      expect(TokenKind.KeywordDef, SyntacticContext.Decl.OtherDecl)
-      name(NAME_DEFINITION, context = SyntacticContext.Decl.OtherDecl)
+      expect(TokenKind.KeywordDef, SyntacticContext.Decl.Module)
+      name(NAME_DEFINITION, context = SyntacticContext.Decl.Module)
 
       // Check for illegal type parameters.
       if (at(TokenKind.BracketL)) {
@@ -1269,7 +1269,7 @@ object Parser2 {
       }
 
       if (at(TokenKind.ParenL)) {
-        parameters(SyntacticContext.Decl.OtherDecl)
+        parameters(SyntacticContext.Decl.Module)
       }
       if (eat(TokenKind.Colon)) {
         val typeLoc = currentSourceLocation()
@@ -1334,12 +1334,12 @@ object Parser2 {
     private def equalityConstraints()(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.KeywordWhere))
       val mark = open()
-      expect(TokenKind.KeywordWhere, SyntacticContext.Decl.OtherDecl)
+      expect(TokenKind.KeywordWhere, SyntacticContext.Decl.Module)
       var continue = nth(0).isFirstType
       while (continue && !eof()) {
         val markConstraint = open()
         Type.ttype()
-        expect(TokenKind.Tilde, SyntacticContext.Decl.OtherDecl)
+        expect(TokenKind.Tilde, SyntacticContext.Decl.Module)
         Type.ttype()
         continue = eat(TokenKind.Comma)
         close(markConstraint, TreeKind.Decl.EqualityConstraintFragment)

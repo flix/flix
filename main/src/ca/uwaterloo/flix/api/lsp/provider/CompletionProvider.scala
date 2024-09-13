@@ -119,12 +119,12 @@ object CompletionProvider {
       //
       // Declarations.
       //
-      case SyntacticContext.Decl.Enum      => KeywordCompleter.getEnumKeywords
-      case SyntacticContext.Decl.Instance  => InstanceCompleter.getCompletions(context) ++ KeywordCompleter.getInstanceKeywords
-      case SyntacticContext.Decl.Struct    => KeywordCompleter.getStructKeywords
-      case SyntacticContext.Decl.Trait     => KeywordCompleter.getTraitKeywords
-      case SyntacticContext.Decl.Type      => KeywordCompleter.getTypeKeywords
-      case SyntacticContext.Decl.OtherDecl => KeywordCompleter.getDeclKeywords ++ SnippetCompleter.getCompletions(context)
+      case SyntacticContext.Decl.Enum     => KeywordCompleter.getEnumKeywords
+      case SyntacticContext.Decl.Instance => InstanceCompleter.getCompletions(context) ++ KeywordCompleter.getInstanceKeywords
+      case SyntacticContext.Decl.Struct   => KeywordCompleter.getStructKeywords
+      case SyntacticContext.Decl.Trait    => KeywordCompleter.getTraitKeywords
+      case SyntacticContext.Decl.Type     => KeywordCompleter.getTypeKeywords
+      case SyntacticContext.Decl.Module   => KeywordCompleter.getDeclKeywords ++ SnippetCompleter.getCompletions(context)
 
       //
       // Imports.
