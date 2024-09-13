@@ -107,16 +107,14 @@ object KeywordCompleter {
       // L
       Completion.KeywordCompletion("lazy"          , Priority.Low),
       Completion.KeywordCompletion("let"           , Priority.High),
-      Completion.KeywordCollectionCompletion("List", Priority.Lower),
       // M
-      Completion.KeywordCollectionCompletion("Map"  , Priority.Low),
-      Completion.KeywordCompletion("match"          , Priority.High),
+      Completion.KeywordCompletion("match"          , Priority.Default),
       // N
       Completion.KeywordCompletion("new"        , Priority.Low),
       Completion.KeywordCompletion("not"        , Priority.High),
       Completion.KeywordLiteralCompletion("null", Priority.Lower),
       // O
-      Completion.KeywordCompletion("or"             , Priority.High),
+      Completion.KeywordCompletion("or"             , Priority.Default),
       // P
       Completion.KeywordCompletion("par"      , Priority.Low),
       Completion.KeywordCompletion("project"  , Priority.High),
@@ -126,7 +124,6 @@ object KeywordCompleter {
       Completion.KeywordCompletion("region"   , Priority.Default),
       // S
       Completion.KeywordCompletion("select"       , Priority.Higher),
-      Completion.KeywordCollectionCompletion("Set", Priority.Highest),
       Completion.KeywordCompletion("solve"        , Priority.High),
       Completion.KeywordCompletion("spawn"        , Priority.Low),
       // T
@@ -140,8 +137,6 @@ object KeywordCompleter {
       // `use` would occur much more often in most programs.
       Completion.KeywordCompletion("unsafe"            , Priority.Low),
       Completion.KeywordCompletion("use"               , Priority.High),
-      // V
-      Completion.KeywordCollectionCompletion("Vector", Priority.Low),
       // W
       Completion.KeywordCompletion("without"  , Priority.Default),
       // Y
