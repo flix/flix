@@ -116,7 +116,7 @@ final class BddFormulaAlg(implicit flix: Flix) extends BoolAlg[DD] {
     */
   override def satisfiable(f: DD): Boolean = !f.isFalse
 
-  override def toType(f: DD, env: Bimap[BoolFormula.VarOrEff, Int]): Type = {
+  override def toType(f: DD, env: Bimap[BoolFormula.IrreducibleEff, Int]): Type = {
     if (!flix.options.xnoqmc) {
       toTypeQMC(f, env)
     } else {
@@ -131,16 +131,17 @@ final class BddFormulaAlg(implicit flix: Flix) extends BoolAlg[DD] {
     * if it is true returns the path, otherwise returns false.
     * ORs all returned paths together.
     */
-  private def createTypeFromBDDAux(dd: DD, tpe: Type, env: Bimap[BoolFormula.VarOrEff, Int]): Type = {
+  private def createTypeFromBDDAux(dd: DD, tpe: Type, env: Bimap[BoolFormula.IrreducibleEff, Int]): Type = {
     if (dd.isLeaf) {
       return if (dd.isTrue) tpe else Type.Univ
     }
 
     val currentVar = dd.getVariable
     val typeVar = env.getBackward(currentVar) match {
-      case Some(BoolFormula.VarOrEff.Var(sym)) => Type.Var(sym, SourceLocation.Unknown)
-      case Some(BoolFormula.VarOrEff.Eff(sym)) => Type.Cst(TypeConstructor.Effect(sym), SourceLocation.Unknown)
-      case Some(BoolFormula.VarOrEff.Assoc(sym, arg)) => Type.AssocType(Ast.AssocTypeConstructor(sym, SourceLocation.Unknown), arg, Kind.Eff, SourceLocation.Unknown)
+      case Some(BoolFormula.IrreducibleEff.Var(sym)) => Type.Var(sym, SourceLocation.Unknown)
+      case Some(BoolFormula.IrreducibleEff.Eff(sym)) => Type.Cst(TypeConstructor.Effect(sym), SourceLocation.Unknown)
+      case Some(BoolFormula.IrreducibleEff.Assoc(sym, arg)) => Type.AssocType(Ast.AssocTypeConstructor(sym, SourceLocation.Unknown), arg, Kind.Eff, SourceLocation.Unknown)
+      case Some(BoolFormula.IrreducibleEff.JvmToEff(t)) => t
       case None => throw InternalCompilerException(s"unexpected unknown ID: $currentVar", SourceLocation.Unknown)
     }
 
@@ -160,7 +161,7 @@ final class BddFormulaAlg(implicit flix: Flix) extends BoolAlg[DD] {
   /**
     * Converting a BDD to a Type using the Quine-McCluskey algorithm
     */
-  private def toTypeQMC(f: DD, env: Bimap[BoolFormula.VarOrEff, Int]): Type = {
+  private def toTypeQMC(f: DD, env: Bimap[BoolFormula.IrreducibleEff, Int]): Type = {
     //Easy shortcuts if formula is true, false or a variable
     if (f.isLeaf) {
       if (f.isTrue) {
@@ -172,9 +173,10 @@ final class BddFormulaAlg(implicit flix: Flix) extends BoolAlg[DD] {
     if (isVar(f)) {
       val id = f.getVariable
       val tpe = env.getBackward(id) match {
-        case Some(BoolFormula.VarOrEff.Var(sym)) => Type.Var(sym, SourceLocation.Unknown)
-        case Some(BoolFormula.VarOrEff.Eff(sym)) => Type.Cst(TypeConstructor.Effect(sym), SourceLocation.Unknown)
-        case Some(BoolFormula.VarOrEff.Assoc(sym, arg)) => Type.AssocType(Ast.AssocTypeConstructor(sym, SourceLocation.Unknown), arg, Kind.Eff, SourceLocation.Unknown)
+        case Some(BoolFormula.IrreducibleEff.Var(sym)) => Type.Var(sym, SourceLocation.Unknown)
+        case Some(BoolFormula.IrreducibleEff.Eff(sym)) => Type.Cst(TypeConstructor.Effect(sym), SourceLocation.Unknown)
+        case Some(BoolFormula.IrreducibleEff.Assoc(sym, arg)) => Type.AssocType(Ast.AssocTypeConstructor(sym, SourceLocation.Unknown), arg, Kind.Eff, SourceLocation.Unknown)
+        case Some(BoolFormula.IrreducibleEff.JvmToEff(t)) => t
         case None => throw InternalCompilerException(s"unexpected unknown ID: $id", SourceLocation.Unknown)
       }
       return tpe

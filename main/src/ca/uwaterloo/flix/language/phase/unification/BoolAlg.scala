@@ -101,19 +101,19 @@ trait BoolAlg[F] {
     *
     * This environment should be used in the functions [[toType]] and [[fromType]].
     */
-  def getEnv(fs: List[Type]): Bimap[BoolFormula.VarOrEff, Int] = {
+  def getEnv(fs: List[Type]): Bimap[BoolFormula.IrreducibleEff, Int] = {
     // Compute the variables in `tpe`.
     val tvars =
       fs.foldLeft(SortedSet.empty[Symbol.KindedTypeVarSym])((acc, tpe) => acc ++ tpe.typeVars.map(_.sym))
-        .toList.map(BoolFormula.VarOrEff.Var.apply)
+        .toList.map(BoolFormula.IrreducibleEff.Var.apply)
 
     val effs =
       fs.foldLeft(SortedSet.empty[Symbol.EffectSym])((acc, tpe) => acc ++ tpe.effects)
-        .toList.map(BoolFormula.VarOrEff.Eff.apply)
+        .toList.map(BoolFormula.IrreducibleEff.Eff.apply)
 
     // Construct a bi-directional map from type variables to indices.
     // The idea is that the first variable becomes x0, the next x1, and so forth.
-    (tvars ++ effs).zipWithIndex.foldLeft(Bimap.empty[BoolFormula.VarOrEff, Int]) {
+    (tvars ++ effs).zipWithIndex.foldLeft(Bimap.empty[BoolFormula.IrreducibleEff, Int]) {
       case (macc, (sym, x)) => macc + (sym -> x)
     }
   }
@@ -121,12 +121,12 @@ trait BoolAlg[F] {
   /**
     * Returns a rigidity environment on formulas that is equivalent to the given one on types.
     */
-  def liftRigidityEnv(renv: RigidityEnv, env: Bimap[BoolFormula.VarOrEff, Int]): SortedSet[Int] = {
+  def liftRigidityEnv(renv: RigidityEnv, env: Bimap[BoolFormula.IrreducibleEff, Int]): SortedSet[Int] = {
     val rigidVars = renv.s.flatMap {
-      case tvar => env.getForward(BoolFormula.VarOrEff.Var(tvar))
+      case tvar => env.getForward(BoolFormula.IrreducibleEff.Var(tvar))
     }
     val effs = env.m1.collect {
-      case (BoolFormula.VarOrEff.Eff(_), i) => i
+      case (BoolFormula.IrreducibleEff.Eff(_), i) => i
     }
     rigidVars ++ effs
   }
@@ -134,17 +134,17 @@ trait BoolAlg[F] {
   /**
     * Converts the given formula f into a type.
     */
-  def toType(f: F, env: Bimap[BoolFormula.VarOrEff, Int]): Type
+  def toType(f: F, env: Bimap[BoolFormula.IrreducibleEff, Int]): Type
 
   /**
     * Converts the given type t into a formula.
     */
-  def fromType(t: Type, env: Bimap[BoolFormula.VarOrEff, Int]): F = Type.eraseTopAliases(t) match {
-    case Type.Var(sym, _) => env.getForward(BoolFormula.VarOrEff.Var(sym)) match {
+  def fromType(t: Type, env: Bimap[BoolFormula.IrreducibleEff, Int]): F = Type.eraseTopAliases(t) match {
+    case Type.Var(sym, _) => env.getForward(BoolFormula.IrreducibleEff.Var(sym)) match {
       case None => throw InternalCompilerException(s"Unexpected unbound variable: '$sym'.", sym.loc)
       case Some(x) => mkVar(x)
     }
-    case Type.Cst(TypeConstructor.Effect(sym), _) => env.getForward(BoolFormula.VarOrEff.Eff(sym)) match {
+    case Type.Cst(TypeConstructor.Effect(sym), _) => env.getForward(BoolFormula.IrreducibleEff.Eff(sym)) match {
       case None => throw InternalCompilerException(s"Unexpected unbound effect: '$sym'.", sym.loc)
       case Some(x) => mkVar(x)
     }

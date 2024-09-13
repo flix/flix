@@ -819,9 +819,8 @@ object Kinder {
       mapN(expsVal) {
         exps =>
           val jvar = Type.freshVar(Kind.Jvm, loc.asSynthetic)
-          val jevar = Type.freshVar(Kind.Eff, loc.asSynthetic)
           val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-          KindedAst.Expr.InvokeConstructor2(clazz, exps, jvar, jevar, evar, loc)
+          KindedAst.Expr.InvokeConstructor2(clazz, exps, jvar, evar, loc)
       }
 
     case ResolvedAst.Expr.InvokeMethod2(exp0, methodName, exps0, loc) =>
@@ -830,10 +829,9 @@ object Kinder {
       mapN(expVal, expsVal) {
         case (exp, exps) =>
           val jvar = Type.freshVar(Kind.Jvm, loc.asSynthetic)
-          val jevar = Type.freshVar(Kind.Eff, loc.asSynthetic)
           val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
           val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-          KindedAst.Expr.InvokeMethod2(exp, methodName, exps, jvar, jevar, tvar, evar, loc)
+          KindedAst.Expr.InvokeMethod2(exp, methodName, exps, jvar, tvar, evar, loc)
       }
 
     case ResolvedAst.Expr.InvokeStaticMethod2(clazz, methodName, exps0, loc) =>
@@ -841,10 +839,9 @@ object Kinder {
       mapN(expsVal) {
         exps =>
           val jvar = Type.freshVar(Kind.Jvm, loc.asSynthetic)
-          val jevar = Type.freshVar(Kind.Eff, loc.asSynthetic)
           val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
           val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-          KindedAst.Expr.InvokeStaticMethod2(clazz, methodName, exps, jvar, jevar, tvar, evar, loc)
+          KindedAst.Expr.InvokeStaticMethod2(clazz, methodName, exps, jvar, tvar, evar, loc)
       }
 
     case ResolvedAst.Expr.GetField2(exp0, fieldName, loc) =>

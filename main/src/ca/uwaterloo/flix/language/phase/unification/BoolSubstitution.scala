@@ -123,14 +123,15 @@ case class BoolSubstitution[F](m: Map[Int, F]) {
   /**
     * Converts this formula substitution into a type substitution
     */
-  def toTypeSubstitution(env: Bimap[BoolFormula.VarOrEff, Int])(implicit alg: BoolAlg[F]): Substitution = {
+  def toTypeSubstitution(env: Bimap[BoolFormula.IrreducibleEff, Int])(implicit alg: BoolAlg[F]): Substitution = {
     val map = m.map {
       case (k0, v0) =>
         val k = env.getBackward(k0).getOrElse(throw InternalCompilerException(s"missing key $k0", SourceLocation.Unknown))
         val tvar = k match {
-          case BoolFormula.VarOrEff.Var(sym) => sym
-          case BoolFormula.VarOrEff.Eff(sym) => throw InternalCompilerException(s"unexpected substituted effect: ${sym}", SourceLocation.Unknown)
-          case BoolFormula.VarOrEff.Assoc(sym, arg) => throw InternalCompilerException(s"unexpected substituted effect: ${sym}", SourceLocation.Unknown)
+          case BoolFormula.IrreducibleEff.Var(sym) => sym
+          case BoolFormula.IrreducibleEff.Eff(sym) => throw InternalCompilerException(s"unexpected substituted effect: ${sym}", SourceLocation.Unknown)
+          case BoolFormula.IrreducibleEff.Assoc(sym, arg) => throw InternalCompilerException(s"unexpected substituted effect: ${sym}", SourceLocation.Unknown)
+          case BoolFormula.IrreducibleEff.JvmToEff(t) => throw InternalCompilerException(s"unexpected substituted effect: ${t}", SourceLocation.Unknown)
         }
         val v = alg.toType(v0, env)
         (tvar, v)
