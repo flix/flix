@@ -131,9 +131,6 @@ object KeywordCompleter {
       Completion.KeywordCompletion("try"         , Priority.High),
       Completion.KeywordCompletion("typematch"   , Priority.Low),
       // U    
-      // experiments on occurrences in stdlib shows the *exact* same amount of
-      // occurrences of these `unsafe` and `use`. However, I'm fairly confident that
-      // `use` would occur much more often in most programs.
       Completion.KeywordCompletion("unsafe"      , Priority.Low),
       Completion.KeywordCompletion("use"         , Priority.High),
       // W
