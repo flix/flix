@@ -265,6 +265,7 @@ class Flix {
     "Eff/RandomCoin.flix" -> LocalResource.get("/src/library/Eff/RandomCoin.flix"),
 
     "Logger.flix" -> LocalResource.get("/src/library/Logger.flix"),
+    "FilePath.flix" -> LocalResource.get("/src/library/FilePath.flix"),
     "Process.flix" -> LocalResource.get("/src/library/Process.flix"),
     "Severity.flix" -> LocalResource.get("/src/library/Severity.flix"),
     "TimeUnit.flix" -> LocalResource.get("/src/library/TimeUnit.flix"),
