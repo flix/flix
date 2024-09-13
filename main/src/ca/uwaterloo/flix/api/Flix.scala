@@ -261,7 +261,9 @@ class Flix {
     "Abort.flix" -> LocalResource.get("/src/library/Abort.flix"),
     "Clock.flix" -> LocalResource.get("/src/library/Clock.flix"),
     "Exit.flix" -> LocalResource.get("/src/library/Exit.flix"),
-    "Eff/Random.flix" -> LocalResource.get("/src/library/Eff/Random.flix"),
+    "Eff/BiasedCoin.flix" -> LocalResource.get("/src/library/Eff/BiasedCoin.flix"),
+    "Eff/RandomCoin.flix" -> LocalResource.get("/src/library/Eff/RandomCoin.flix"),
+
     "Logger.flix" -> LocalResource.get("/src/library/Logger.flix"),
     "Process.flix" -> LocalResource.get("/src/library/Process.flix"),
     "Severity.flix" -> LocalResource.get("/src/library/Severity.flix"),
