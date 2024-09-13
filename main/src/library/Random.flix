@@ -74,4 +74,24 @@ mod Random {
         })
     }
 
+    ///
+    /// Runs the `Random` effect of the given function `f` from an initial seed.
+    ///
+    /// In other words, re-interprets the `Random` effect using seeded deterministic randomness.
+    ///
+    pub def runWithSeed(seed: Int64, f: Unit -> a \ ef): a \ ef - Random = unchecked_cast(({
+        let rnd = new JRandom(seed);
+        // Currently try-with typing is broken, so fix it with checked_ecast
+        checked_ecast(try {
+            f()
+        } with Random {
+            def randomBool(k)       = k(rnd.nextBoolean())
+            def randomFloat32(k)    = k(rnd.nextFloat())
+            def randomFloat64(k)    = k(rnd.nextDouble())
+            def randomInt32(k)      = k(rnd.nextInt())
+            def randomInt64(k)      = k(rnd.nextLong())
+            def randomGaussian(k)   = k(rnd.nextGaussian())
+        })
+    }: _ \ (ef - Random) + IO) as _ \ ef - Random)
+
 }
