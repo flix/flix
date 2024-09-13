@@ -21,6 +21,8 @@ import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.collection.ListMap
 
+import scala.runtime.AbstractFunction3
+
 /**
   * A proxy for implementations of unification as we transition to the new solver.
   */
@@ -38,6 +40,17 @@ object Unification {
     */
   def unifyTypes(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit scope: Scope, flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError] = {
     OldStarUnification.unifyTypes(tpe1, tpe2, renv)
+  }
+
+  /**
+    * Fully unifies the given types, returning None if there are unresolvable constraints.
+    */
+  def fullyUnifyTypes(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit scope: Scope, flix: Flix): Option[Substitution] = {
+    OldStarUnification.unifyTypes(tpe1, tpe2, renv) match {
+      case Result.Ok((subst, Nil)) => Some(subst)
+      case Result.Ok((_, _ :: _)) => None
+      case Result.Err(_) => None
+    }
   }
 
   /**

@@ -41,10 +41,9 @@ object EqualityEnvironment {
     for {
       res1 <- reduceType(newTpe1, eqEnv)
       res2 <- reduceType(newTpe2, eqEnv)
-      res <- Unification.unifyTypes(res1, res2, renv) match {
-        case Result.Ok((subst, Nil)) => Result.Ok(subst): Result[Substitution, UnificationError]
-        case Result.Ok((_, _ :: _)) => Result.Err(UnificationError.UnsupportedEquality(res1, res2)): Result[Substitution, UnificationError]
-        case Result.Err(_) => Result.Err(UnificationError.UnsupportedEquality(res1, res2): UnificationError): Result[Substitution, UnificationError]
+      res <- Unification.fullyUnifyTypes(res1, res2, renv) match {
+        case Some(subst) => Result.Ok(subst): Result[Substitution, UnificationError]
+        case None => Result.Err(UnificationError.UnsupportedEquality(res1, res2)): Result[Substitution, UnificationError]
       }
       // TODO ASSOC-TYPES weird typing hack
     } yield res

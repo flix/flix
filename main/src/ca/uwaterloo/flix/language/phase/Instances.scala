@@ -208,8 +208,8 @@ object Instances {
     // lazily find the instance whose type unifies and save the substitution
     ListOps.findMap(superInsts) {
       superInst =>
-        Unification.unifyTypes(tpe, superInst.tpe, RigidityEnv.empty).toOption.map {
-          case (subst, _) => (superInst, subst) // TODO ASSOC-TYPES consider econstrs
+        Unification.fullyUnifyTypes(tpe, superInst.tpe, RigidityEnv.empty).map {
+          case subst => (superInst, subst)
         }
     }
   }

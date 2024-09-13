@@ -117,11 +117,11 @@ object TraitEnvironment {
       val renv = RigidityEnv.ofRigidVars(arg.typeVars.map(_.sym))
 
       def tryInst(inst: Ast.Instance): Validation[List[Ast.TraitConstraint], UnificationError] = {
-        val substVal = Unification.unifyTypes(inst.tpe, arg, renv).toValidation
-        Validation.flatMapN(substVal) {
-          case (subst, Nil) => Validation.success(inst.tconstrs.map(subst.apply))
+        val substOpt = Unification.fullyUnifyTypes(inst.tpe, arg, renv)
+        substOpt match  {
+          case Some(subst) => Validation.success(inst.tconstrs.map(subst.apply))
           // if there are leftover constraints, then we can't be sure that this is the right instance
-          case (_, _ :: _) => Validation.toHardFailure(UnificationError.MismatchedTypes(inst.tpe, arg))
+          case None => Validation.toHardFailure(UnificationError.MismatchedTypes(inst.tpe, arg))
         }
       }
 
