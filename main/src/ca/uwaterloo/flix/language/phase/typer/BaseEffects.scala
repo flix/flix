@@ -40,7 +40,7 @@ object BaseEffects {
    * If there is are specific effect(s) for a constructor or method then we use the effects for the entire class.
    */
   private val classEffs: Map[Class[?], Set[Symbol.EffectSym]] = Map(
-    classOf[java.lang.ProcessBuilder] -> Set(Symbol.Net)
+    classOf[java.lang.ProcessBuilder] -> Set(Symbol.Exec)
   )
 
   /**
