@@ -571,7 +571,7 @@ object Type {
   }
 
   /**
-    * An effect which must be reduced by finding the correct JVM constructor, method, or field.
+    * An effect which must be reduced by finding the correct JVM constructor or method.
     */
   case class JvmToEff(tpe: Type, loc: SourceLocation) extends Type with BaseType {
     override def kind: Kind = Kind.Eff

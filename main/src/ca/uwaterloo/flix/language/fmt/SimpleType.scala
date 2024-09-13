@@ -246,6 +246,8 @@ object SimpleType {
 
   case class JvmToType(tpe: SimpleType) extends SimpleType
 
+  case class JvmToEff(tpe: SimpleType) extends SimpleType
+
   case class JvmConstructor(name: String, tpes: List[SimpleType]) extends SimpleType
 
   case class JvmField(tpe: SimpleType, name: String) extends SimpleType
@@ -253,11 +255,6 @@ object SimpleType {
   case class JvmMethod(tpe: SimpleType, name: String, tpes: List[SimpleType]) extends SimpleType
 
   case class JvmStaticMethod(clazz: String, name: String, tpes: List[SimpleType]) extends SimpleType
-
-  /**
-    * A method return type.
-    */
-  case class MethodReturnType(tpe: SimpleType) extends SimpleType
 
   /**
     * A field type.
@@ -340,7 +337,7 @@ object SimpleType {
       case Type.JvmToType(tpe, _) =>
         mkApply(SimpleType.JvmToType(visit(tpe)), t.typeArguments.map(visit))
       case Type.JvmToEff(tpe, _) =>
-        ??? // TODO
+        mkApply(SimpleType.JvmToEff(visit(tpe)), t.typeArguments.map(visit))
       case Type.UnresolvedJvmType(member, _) => member match {
         case JvmMember.JvmConstructor(clazz, tpes) => SimpleType.JvmConstructor(clazz.getSimpleName, tpes.map(visit))
         case JvmMember.JvmMethod(tpe, name, tpes) => SimpleType.JvmMethod(visit(tpe), name.name, tpes.map(visit))
