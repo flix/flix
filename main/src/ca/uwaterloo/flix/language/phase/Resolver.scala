@@ -1756,7 +1756,7 @@ private def visitApplyDef(app: NamedAst.Expr.Apply, defn: NamedAst.Declaration.D
       mapN(esVal) {
         es =>
           val base = ResolvedAst.Expr.Def(defn.sym, innerLoc)
-          ResolvedAst.Expr.Apply(base, es, outerLoc)
+          ResolvedAst.Expr.ApplyDef(base, es, outerLoc)
       }
     } else {
       // Case 2: We have to curry. (See below).
