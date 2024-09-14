@@ -121,6 +121,7 @@ object ConstraintGen {
             None
         }
 
+
         knownTarget match {
           case Some((sym, tvar1, constrs1, econstrs1, declaredType)) =>
             //
@@ -156,6 +157,8 @@ object ConstraintGen {
             val resEff = evar
             (resTpe, resEff)
         }
+
+      case Expr.ApplyDef(exp, exps, tvar, evar, loc) => visitExp(Expr.Apply(exp, exps, tvar, evar, loc))
 
       case Expr.Lambda(fparam, exp, loc) =>
         c.unifyType(fparam.sym.tvar, fparam.tpe, loc)
@@ -1261,11 +1264,11 @@ object ConstraintGen {
     * Returns a map from field name to its instantiated type, the type of the instantiated struct, and the instantiated struct's region variable
     *
     * For example, for the struct `struct S [v, r] { a: v, b: Int32 }` where `v` instantiates to `v'` and `r` instantiates to `r'`
-    *   The first element of the return tuple would be a map with entries `a -> v'` and `b -> Int32`
-    *   The second element of the return tuple would be(locations omitted) `Apply(Apply(Cst(Struct(S)), v'), r')`
-    *   The third element of the return tuple would be `r'`
+    * The first element of the return tuple would be a map with entries `a -> v'` and `b -> Int32`
+    * The second element of the return tuple would be(locations omitted) `Apply(Apply(Cst(Struct(S)), v'), r')`
+    * The third element of the return tuple would be `r'`
     */
-  private def instantiateStruct(sym: Symbol.StructSym, structs: Map[Symbol.StructSym, KindedAst.Struct])(implicit c: TypeContext, flix: Flix) : (Map[Symbol.StructFieldSym, Type], Type, Type.Var) = {
+  private def instantiateStruct(sym: Symbol.StructSym, structs: Map[Symbol.StructSym, KindedAst.Struct])(implicit c: TypeContext, flix: Flix): (Map[Symbol.StructFieldSym, Type], Type, Type.Var) = {
     implicit val scope: Scope = c.getScope
     val struct = structs(sym)
     assert(struct.tparams.last.sym.kind == Kind.Eff)

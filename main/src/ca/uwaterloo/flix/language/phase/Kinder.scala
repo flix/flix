@@ -29,7 +29,6 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.collection.immutable.SortedSet
-import scala.collection.mutable.ArrayBuffer
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 
 /**
@@ -432,7 +431,7 @@ object Kinder {
 
     case ResolvedAst.Expr.Var(sym, loc) => Validation.success(KindedAst.Expr.Var(sym, loc))
 
-    case ResolvedAst.Expr.Def(sym, loc) => Validation.success(KindedAst.Expr.Def(sym, Type.freshVar(Kind.Star, loc.asSynthetic), loc))
+    case ResolvedAst.Expr.Def(sym, loc) => visitDefn(ResolvedAst.Expr.Def(sym, loc))
 
     case ResolvedAst.Expr.Sig(sym, loc) => Validation.success(KindedAst.Expr.Sig(sym, Type.freshVar(Kind.Star, loc.asSynthetic), loc))
 
@@ -474,13 +473,13 @@ object Kinder {
       }
 
     case ResolvedAst.Expr.ApplyDef(defn0, exps0, loc) =>
-      val expVal = visitExp(defn0, kenv0, taenv, henv0, root)
+      val expVal = visitDefn(defn0)
       val expsVal = traverse(exps0)(visitExp(_, kenv0, taenv, henv0, root))
       mapN(expVal, expsVal) {
         case (exp, exps) =>
           val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
           val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-          KindedAst.Expr.Apply(exp, exps, tvar, evar, loc)
+          KindedAst.Expr.ApplyDef(exp, exps, tvar, evar, loc)
       }
 
     case ResolvedAst.Expr.Lambda(fparam0, exp0, loc) =>
@@ -1030,6 +1029,10 @@ object Kinder {
       // Note: We must NOT use [[Validation.toSoftFailure]] because
       // that would duplicate the error inside the Validation.
       Validation.success(KindedAst.Expr.Error(m, tvar, evar))
+  }
+
+  private def visitDefn(defn0: ResolvedAst.Expr.Def)(implicit scope: Scope, flix: Flix): Validation[KindedAst.Expr.Def, KindError] = defn0 match {
+    case ResolvedAst.Expr.Def(sym, loc) => Validation.success(KindedAst.Expr.Def(sym, Type.freshVar(Kind.Star, loc.asSynthetic), loc))
   }
 
   /**
