@@ -207,7 +207,7 @@ object FormatType {
       case SimpleType.Var(_, _, _, _) => true
       case SimpleType.Tuple(_) => true
       case SimpleType.JvmToType(_) => true
-      case SimpleType.MethodReturnType(_) => true
+      case SimpleType.JvmToEff(_) => true
       case SimpleType.FieldType(_) => true
       case SimpleType.JvmConstructor(_, _) => true
       case SimpleType.JvmField(_, _) => true
@@ -368,7 +368,11 @@ object FormatType {
 
       case SimpleType.JvmToType(tpe) =>
         val arg = visit(tpe, Mode.Type)
-        "Jvm(" + arg + ")"
+        "JvmToType(" + arg + ")"
+
+      case SimpleType.JvmToEff(tpe) =>
+        val arg = visit(tpe, Mode.Type)
+        "JvmToEff(" + arg + ")"
 
       case SimpleType.JvmConstructor(name, tpes0) =>
         val tpes = tpes0.map(visit(_, Mode.Type))
@@ -386,10 +390,6 @@ object FormatType {
       case SimpleType.JvmStaticMethod(clazz, name, ts0) =>
         val ts = ts0.map(visit(_, Mode.Type))
         "JvmMethod(" + clazz + ", " + name + ", " + ts.mkString(", ") + ")"
-
-      case SimpleType.MethodReturnType(tpe) =>
-        val arg = visit(tpe, Mode.Type)
-        "MethodReturnType(" + arg + ")"
 
       case SimpleType.FieldType(tpe) =>
         val arg = visit(tpe, Mode.Type)

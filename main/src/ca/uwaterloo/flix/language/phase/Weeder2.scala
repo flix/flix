@@ -766,7 +766,7 @@ object Weeder2 {
         }
       ).getOrElse(Validation.toSoftFailure(
         List(unitFormalParameter(tree.loc)),
-        UnexpectedToken(NamedTokenSet.FromKinds(Set(TokenKind.ParenL)), actual = None, SyntacticContext.Decl.OtherDecl, loc = tree.loc))
+        UnexpectedToken(NamedTokenSet.FromKinds(Set(TokenKind.ParenL)), actual = None, SyntacticContext.Decl.Module, loc = tree.loc))
       )
     }
 

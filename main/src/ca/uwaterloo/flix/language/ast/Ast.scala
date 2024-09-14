@@ -679,15 +679,17 @@ object Ast {
     sealed trait Decl extends SyntacticContext
 
     object Decl {
-      case object Trait extends Decl
-
       case object Enum extends Decl
 
       case object Instance extends Decl
 
-      case object OtherDecl extends Decl
+      case object Module extends Decl
 
       case object Struct extends Decl
+
+      case object Trait extends Decl
+
+      case object Type extends Decl
     }
 
     sealed trait Expr extends SyntacticContext
@@ -728,18 +730,6 @@ object Ast {
 
     case object Unknown extends SyntacticContext
 
-    def join(ctx1: SyntacticContext, ctx2: SyntacticContext): SyntacticContext = (ctx1, ctx2) match {
-      case (_, SyntacticContext.Expr.OtherExpr) => ctx1
-      case (SyntacticContext.Expr.OtherExpr, _) => ctx2
-
-      case (_, SyntacticContext.Unknown) => ctx1
-      case (SyntacticContext.Unknown, _) => ctx2
-
-      case (SyntacticContext.Type.OtherType, SyntacticContext.WithClause) => SyntacticContext.WithClause
-      case (SyntacticContext.WithClause, SyntacticContext.Type.OtherType) => SyntacticContext.WithClause
-
-      case _ => ctx1
-    }
   }
 
 }

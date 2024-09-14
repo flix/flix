@@ -123,12 +123,12 @@ object BoolFormula {
     *
     * The map `m` must bind each free type variable in `tpe` to a Boolean variable.
     */
-  def fromEffType(tpe: Type, m: Bimap[VarOrEff, Int]): BoolFormula = tpe match {
-    case Type.Var(sym, _) => m.getForward(VarOrEff.Var(sym)) match {
+  def fromEffType(tpe: Type, m: Bimap[IrreducibleEff, Int]): BoolFormula = tpe match {
+    case Type.Var(sym, _) => m.getForward(IrreducibleEff.Var(sym)) match {
       case None => throw InternalCompilerException(s"Unexpected unbound variable: '$sym'.", sym.loc)
       case Some(x) => Var(x)
     }
-    case Type.Cst(TypeConstructor.Effect(sym), _) => m.getForward(VarOrEff.Eff(sym)) match {
+    case Type.Cst(TypeConstructor.Effect(sym), _) => m.getForward(IrreducibleEff.Eff(sym)) match {
       case None => throw InternalCompilerException(s"Unexpected unbound effect: '$sym'.", sym.loc)
       case Some(x) => Var(x)
     }
@@ -137,8 +137,12 @@ object BoolFormula {
     case Type.Apply(Type.Cst(TypeConstructor.Complement, _), tpe1, _) => Not(fromEffType(tpe1, m))
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), tpe1, _), tpe2, _) => And(fromEffType(tpe1, m), fromEffType(tpe2, m))
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), tpe1, _), tpe2, _) => Or(fromEffType(tpe1, m), fromEffType(tpe2, m))
-    case Type.AssocType(Ast.AssocTypeConstructor(sym, _), arg, _, _) => m.getForward(VarOrEff.Assoc(sym, arg)) match {
+    case Type.AssocType(Ast.AssocTypeConstructor(sym, _), arg, _, _) => m.getForward(IrreducibleEff.Assoc(sym, arg)) match {
       case None => throw InternalCompilerException(s"Unexpected unbound associated effect: '$sym'.", sym.loc)
+      case Some(x) => Var(x)
+    }
+    case t: Type.JvmToEff => m.getForward(IrreducibleEff.JvmToEff(t)) match {
+      case None => throw InternalCompilerException(s"Unexpected unbound JvmToEff", t.loc)
       case Some(x) => Var(x)
     }
     case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
@@ -149,8 +153,8 @@ object BoolFormula {
     *
     * The map `m` must bind each free type variable in `tpe` to a Boolean variable.
     */
-  def fromBoolType(tpe: Type, m: Bimap[VarOrEff, Int]): BoolFormula = tpe match {
-    case Type.Var(sym, _) => m.getForward(VarOrEff.Var(sym)) match {
+  def fromBoolType(tpe: Type, m: Bimap[IrreducibleEff, Int]): BoolFormula = tpe match {
+    case Type.Var(sym, _) => m.getForward(IrreducibleEff.Var(sym)) match {
       case None => throw InternalCompilerException(s"Unexpected unbound variable: '$sym'.", sym.loc)
       case Some(x) => Var(x)
     }
@@ -167,7 +171,7 @@ object BoolFormula {
     *
     * The map `m` must bind each free variable in `f` to a type variable.
     */
-  def toType(f: BoolFormula, m: Bimap[VarOrEff, Int], kind: Kind, loc: SourceLocation): Type = kind match {
+  def toType(f: BoolFormula, m: Bimap[IrreducibleEff, Int], kind: Kind, loc: SourceLocation): Type = kind match {
     case Kind.Eff => toEffType(f, m, loc)
     case Kind.Bool => toBoolType(f, m, loc)
     case _ => throw InternalCompilerException(s"Unexpected kind: '$kind'.", loc)
@@ -178,14 +182,15 @@ object BoolFormula {
     *
     * The map `m` must bind each free variable in `f` to a type variable.
     */
-  private def toEffType(f: BoolFormula, m: Bimap[VarOrEff, Int], loc: SourceLocation): Type = f match {
+  private def toEffType(f: BoolFormula, m: Bimap[IrreducibleEff, Int], loc: SourceLocation): Type = f match {
     case True => Type.Pure
     case False => Type.Univ
     case Var(x) => m.getBackward(x) match {
       case None => throw InternalCompilerException(s"Unexpected unbound variable: '$x'.", loc)
-      case Some(VarOrEff.Var(sym)) => Type.Var(sym, loc)
-      case Some(VarOrEff.Eff(sym)) => Type.Cst(TypeConstructor.Effect(sym), loc)
-      case Some(VarOrEff.Assoc(sym, arg)) => Type.AssocType(Ast.AssocTypeConstructor(sym, loc), arg, Kind.Eff, loc)
+      case Some(IrreducibleEff.Var(sym)) => Type.Var(sym, loc)
+      case Some(IrreducibleEff.Eff(sym)) => Type.Cst(TypeConstructor.Effect(sym), loc)
+      case Some(IrreducibleEff.Assoc(sym, arg)) => Type.AssocType(Ast.AssocTypeConstructor(sym, loc), arg, Kind.Eff, loc)
+      case Some(IrreducibleEff.JvmToEff(t)) => t
     }
     case Not(f1) => Type.mkComplement(toEffType(f1, m, loc), loc)
     case And(t1, t2) => Type.mkUnion(toEffType(t1, m, loc), toEffType(t2, m, loc), loc)
@@ -197,14 +202,15 @@ object BoolFormula {
     *
     * The map `m` must bind each free variable in `f` to a type variable.
     */
-  private def toBoolType(f: BoolFormula, m: Bimap[VarOrEff, Int], loc: SourceLocation): Type = f match {
+  private def toBoolType(f: BoolFormula, m: Bimap[IrreducibleEff, Int], loc: SourceLocation): Type = f match {
     case True => Type.True
     case False => Type.False
     case Var(x) => m.getBackward(x) match {
       case None => throw InternalCompilerException(s"Unexpected unbound variable: '$x'.", loc)
-      case Some(VarOrEff.Var(sym)) => Type.Var(sym, loc)
-      case Some(VarOrEff.Eff(sym)) => throw InternalCompilerException(s"Unexpected effect in Boolean type: '$sym'.'", loc)
-      case Some(VarOrEff.Assoc(sym, arg)) => throw InternalCompilerException(s"Unexpected associated effect in Boolean type: '$sym'.'", loc)
+      case Some(IrreducibleEff.Var(sym)) => Type.Var(sym, loc)
+      case Some(IrreducibleEff.Eff(sym)) => throw InternalCompilerException(s"Unexpected effect in Boolean type: '$sym'.'", loc)
+      case Some(IrreducibleEff.Assoc(sym, arg)) => throw InternalCompilerException(s"Unexpected associated effect in Boolean type: '$sym'.'", loc)
+      case Some(BoolFormula.IrreducibleEff.JvmToEff(t)) => t
     }
     case Not(f1) => Type.mkNot(toBoolType(f1, m, loc), loc)
     case And(t1, t2) => Type.mkAnd(toBoolType(t1, m, loc), toBoolType(t2, m, loc), loc)
@@ -212,25 +218,19 @@ object BoolFormula {
   }
 
   /**
-    * Union of variable and effect types.
+    * An irreducible effect.
     */
-  sealed trait VarOrEff
+  sealed trait IrreducibleEff
 
-  object VarOrEff {
-    /**
-      * A type variable.
-      */
-    case class Var(sym: Symbol.KindedTypeVarSym) extends VarOrEff
+  object IrreducibleEff {
 
-    /**
-      * An effect constant.
-      */
-    case class Eff(sym: Symbol.EffectSym) extends VarOrEff
+    case class Var(sym: Symbol.KindedTypeVarSym) extends IrreducibleEff
 
-    /**
-      * An associated effect.
-      */
-    case class Assoc(sym: Symbol.AssocTypeSym, arg: Type) extends VarOrEff
+    case class Eff(sym: Symbol.EffectSym) extends IrreducibleEff
+
+    case class Assoc(sym: Symbol.AssocTypeSym, arg: Type) extends IrreducibleEff
+
+    case class JvmToEff(tpe: Type.JvmToEff) extends IrreducibleEff
   }
 
 }

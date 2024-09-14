@@ -109,7 +109,7 @@ object CompletionProvider {
       //
       // Expressions.
       //
-      case SyntacticContext.Expr.Constraint => PredicateCompleter.getCompletions(context)
+      case SyntacticContext.Expr.Constraint => PredicateCompleter.getCompletions(context) ++ KeywordCompleter.getConstraintKeywords
       case SyntacticContext.Expr.Do => OpCompleter.getCompletions(context)
       case SyntacticContext.Expr.InvokeMethod(tpe, name) => InvokeMethodCompleter.getCompletions(tpe, name, context)
       case SyntacticContext.Expr.StaticFieldOrMethod(e) => GetStaticFieldCompleter.getCompletions(e) ++ InvokeStaticMethodCompleter.getCompletions(e)
@@ -119,10 +119,12 @@ object CompletionProvider {
       //
       // Declarations.
       //
-      case SyntacticContext.Decl.Trait => KeywordCompleter.getTraitKeywords
-      case SyntacticContext.Decl.Enum => KeywordCompleter.getEnumKeywords
-      case SyntacticContext.Decl.Instance => InstanceCompleter.getCompletions(context)
-      case _: SyntacticContext.Decl => KeywordCompleter.getDeclKeywords ++ SnippetCompleter.getCompletions(context)
+      case SyntacticContext.Decl.Enum     => KeywordCompleter.getEnumKeywords
+      case SyntacticContext.Decl.Instance => InstanceCompleter.getCompletions(context) ++ KeywordCompleter.getInstanceKeywords
+      case SyntacticContext.Decl.Module   => KeywordCompleter.getModKeywords ++ SnippetCompleter.getCompletions(context)
+      case SyntacticContext.Decl.Struct   => KeywordCompleter.getStructKeywords
+      case SyntacticContext.Decl.Trait    => KeywordCompleter.getTraitKeywords
+      case SyntacticContext.Decl.Type     => KeywordCompleter.getTypeKeywords
 
       //
       // Imports.
@@ -157,7 +159,7 @@ object CompletionProvider {
       // Fallthrough.
       //
       case SyntacticContext.Unknown =>
-        KeywordCompleter.getOtherKeywords ++ SnippetCompleter.getCompletions(context)
+        SnippetCompleter.getCompletions(context)
     }
   }
 

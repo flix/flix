@@ -13,18 +13,17 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-mod TestEffRandom {
 
-    use Eff.Random.RandomCoin
-    use Eff.Random.BiasedCoin
-
-    @Test
-    pub def testRandomCoin01(): Unit \ IO =
-        RandomCoin.ioHandler(() -> do RandomCoin.flip());
-        ()
-
-    pub def testBiasedCoin(): Unit \ IO =
-        BiasedCoin.ioHandler(() -> do BiasedCoin.flip(0.8));
-        ()
-
+///
+/// Represents levels of severity.
+///
+/// `Trace` is the lowest level of severity.
+/// `Fatal` is the highest level of severity.
+///
+pub enum Severity with Eq, Order, ToString {
+    case Trace
+    case Debug
+    case Info
+    case Warn
+    case Fatal
 }

@@ -769,12 +769,12 @@ object ConstraintGen {
       case Expr.InvokeConstructor2(clazz, exps, jvar, evar, loc) =>
         // Γ ⊢ eᵢ ... : τ₁ ...    Γ ⊢ ι ~ JvmConstructor(k, eᵢ ...)
         // --------------------------------------------------------
-        // Γ ⊢ new k(e₁ ...) : k
+        // Γ ⊢ new k(e₁ ...) : k \ JvmToEff[ι]
+        val baseEff = Type.JvmToEff(jvar, loc)
         val clazzTpe = Type.getFlixType(clazz)
         val (tpes, effs) = exps.map(visitExp).unzip
-        val baseEffs = BaseEffects.of(clazz, loc)
-        c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmConstructor(clazz, tpes), loc), loc) // unify constructor
-        c.unifyType(evar, Type.mkUnion(Type.IO :: baseEffs :: effs, loc), loc) // unify effects
+        c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmConstructor(clazz, tpes), loc), loc)
+        c.unifyType(evar, Type.mkUnion(baseEff :: effs, loc), loc)
         val resTpe = clazzTpe
         val resEff = evar
         (resTpe, resEff)
@@ -782,12 +782,13 @@ object ConstraintGen {
       case Expr.InvokeMethod2(exp, methodName, exps, jvar, tvar, evar, loc) =>
         // Γ ⊢ e : τ    Γ ⊢ eᵢ ... : τ₁ ...    Γ ⊢ ι ~ JvmMethod(τ, m, τᵢ ...)
         // ---------------------------------------------------------------
-        // Γ ⊢ e.m(eᵢ ...) : JvmToType[ι]
+        // Γ ⊢ e.m(eᵢ ...) : JvmToType[ι] \ JvmToEff[ι]
+        val baseEff = Type.JvmToEff(jvar, loc)
         val (tpe, eff) = visitExp(exp)
         val (tpes, effs) = exps.map(visitExp).unzip
-        c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmMethod(tpe, methodName, tpes), loc), loc) // unify method type
-        c.unifyType(tvar, Type.JvmToType(jvar, loc), loc) // unify method return
-        c.unifyType(evar, Type.mkUnion(Type.IO :: eff :: effs, loc), loc) // unify effects
+        c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmMethod(tpe, methodName, tpes), loc), loc)
+        c.unifyType(tvar, Type.JvmToType(jvar, loc), loc)
+        c.unifyType(evar, Type.mkUnion(baseEff :: eff :: effs, loc), loc)
         val resTpe = tvar
         val resEff = evar
         (resTpe, resEff)
@@ -795,11 +796,12 @@ object ConstraintGen {
       case Expr.InvokeStaticMethod2(clazz, methodName, exps, jvar, tvar, evar, loc) =>
         // Γ ⊢ eᵢ ... : τ₁ ...    Γ ⊢ ι ~ JvmStaticMethod(m, τᵢ ...)
         // ---------------------------------------------------------------
-        // Γ ⊢ m(eᵢ ...) : JvmToType[ι]
+        // Γ ⊢ m(eᵢ ...) : JvmToType[ι] \ JvmToEff[ι]
+        val baseEff = Type.JvmToEff(jvar, loc)
         val (tpes, effs) = exps.map(visitExp).unzip
         c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmStaticMethod(clazz, methodName, tpes), loc), loc)
         c.unifyType(tvar, Type.JvmToType(jvar, loc), loc)
-        c.unifyType(evar, Type.mkUnion(Type.IO :: effs, loc), loc)
+        c.unifyType(evar, Type.mkUnion(baseEff :: effs, loc), loc)
         val resTpe = tvar
         val resEff = evar
         (resTpe, resEff)
