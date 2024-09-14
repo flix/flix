@@ -13,42 +13,41 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-mod Eff.Random {
+mod Eff {
 
-    pub eff RandomCoin {
-        ///
-        /// Returns `true` or `false` with equal chance.
-        ///
-        pub def flip(): Bool
-    }
-
-    mod RandomCoin {
-        ///
-        /// An IO handler for `RandomCoin`.
-        ///
-        pub def ioHandler(f: Unit -> a \ ef + RandomCoin): a \ ef + IO =
-            let r = Random.fresh();
-            try f() with RandomCoin {
-                def flip(k) = k(Random.nextBool(r))
-            }
-    }
-
+    ///
+    /// An effect used to throw a biased coin.
+    ///
     pub eff BiasedCoin {
+
         ///
         /// Returns `true` with probability `p`.
         ///
         pub def flip(p: Float64): Bool
+
     }
 
     mod BiasedCoin {
+
+        import java.util.Random
+
         ///
-        /// An IO handler for `RandomCoin`.
+        /// Runs the `BiasedCoin` effect of the given function `f`.
         ///
-        pub def ioHandler(f: Unit -> a \ ef + BiasedCoin): a \ ef + IO =
-            let r = Random.fresh();
-            try f() with BiasedCoin {
-                def flip(p, k) = if (Random.nextFloat64(r) < p) k(true) else k(false)
-            }
+        /// In other words, re-interprets the `BiasedCoin` effect using the `IO` effect.
+        ///
+        pub def run(f: Unit -> a \ ef): a \ (ef - BiasedCoin) + IO = {
+            // Currently try-with typing is broken, so fix it with checked_ecast
+            checked_ecast(try {
+                f()
+            } with BiasedCoin {
+                def flip(p, k) = unsafe {
+                    let rnd = new Random();
+                    k(rnd.nextDouble() <= p)
+                }
+            })
+        }
+
     }
 
 }

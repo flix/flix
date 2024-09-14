@@ -94,8 +94,6 @@ object EntryPointError {
       s""">> Unhandled effect: '${red(FormatType.formatType(eff))}'.
          |
          |${code(loc, "unhandled effect")}
-         |
-         |The entry point cannot have any effect other than IO.
          |""".stripMargin
     }
 

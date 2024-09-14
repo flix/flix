@@ -16,21 +16,19 @@
 package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.api.Bootstrap.{getArtifactDirectory, getManifestFile, getPkgFile}
-import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.phase.HtmlDocumentor
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.pkg.FlixPackageManager.findFlixDependencies
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, PackageModules, ReleaseError}
-import ca.uwaterloo.flix.tools.{Benchmarker, Tester}
+import ca.uwaterloo.flix.tools.Tester
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.flatMapN
-import ca.uwaterloo.flix.util.collection.Chain
 import ca.uwaterloo.flix.util.{Formatter, Result, Validation}
 
 import java.io.{PrintStream, PrintWriter}
-import java.nio.file._
+import java.nio.file.*
 import java.nio.file.attribute.BasicFileAttributes
 import java.util.zip.{ZipEntry, ZipInputStream, ZipOutputStream}
 import java.util.{Calendar, GregorianCalendar}
@@ -668,16 +666,6 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     } match {
       case Success(()) => Validation.success(())
       case Failure(e) => Validation.toHardFailure(BootstrapError.FileError(e.getMessage))
-    }
-  }
-
-  /**
-    * Runs all benchmarks in the flix package for the project.
-    */
-  def benchmark(flix: Flix): Validation[Unit, BootstrapError] = {
-    Validation.mapN(build(flix)) {
-      compilationResult =>
-        Benchmarker.benchmark(compilationResult, new PrintWriter(System.out, true))(flix.options)
     }
   }
 

@@ -53,13 +53,15 @@ sealed trait Type {
   lazy val typeVars: SortedSet[Type.Var] = this match {
     case x: Type.Var => SortedSet(x)
 
-    case Type.Cst(tc, _) => SortedSet.empty
+    case Type.Cst(_, _) => SortedSet.empty
 
     case Type.Apply(tpe1, tpe2, _) => tpe1.typeVars ++ tpe2.typeVars
     case Type.Alias(_, args, _, _) => args.foldLeft(SortedSet.empty[Type.Var])((acc, t) => acc ++ t.typeVars)
     case Type.AssocType(_, arg, _, _) => arg.typeVars // TODO ASSOC-TYPES throw error?
 
     case Type.JvmToType(tpe, _) => tpe.typeVars
+    case Type.JvmToEff(tpe, _) => tpe.typeVars
+
     case Type.UnresolvedJvmType(member, _) => member.getTypeArguments.foldLeft(SortedSet.empty[Type.Var])((acc, t) => acc ++ t.typeVars)
   }
 
@@ -77,6 +79,8 @@ sealed trait Type {
     case Type.AssocType(_, arg, _, _) => arg.effects // TODO ASSOC-TYPES throw error?
 
     case Type.JvmToType(tpe, _) => tpe.effects
+    case Type.JvmToEff(tpe, _) => tpe.effects
+
     case Type.UnresolvedJvmType(member, _) => member.getTypeArguments.foldLeft(SortedSet.empty[Symbol.EffectSym])((acc, t) => acc ++ t.effects)
   }
 
@@ -94,6 +98,7 @@ sealed trait Type {
     case Type.AssocType(_, arg, _, _) => arg.cases // TODO ASSOC-TYPES throw error?
 
     case Type.JvmToType(tpe, _) => tpe.cases
+    case Type.JvmToEff(tpe, _) => tpe.cases
     case Type.UnresolvedJvmType(member, _) => member.getTypeArguments.foldLeft(SortedSet.empty[Symbol.RestrictableCaseSym])((acc, t) => acc ++ t.cases)
   }
 
@@ -110,7 +115,24 @@ sealed trait Type {
     case Type.Alias(_, _, tpe, _) => tpe.assocs
 
     case Type.JvmToType(tpe, _) => tpe.assocs
+    case Type.JvmToEff(tpe, _) => tpe.assocs
     case Type.UnresolvedJvmType(member, _) => member.getTypeArguments.foldLeft(Set.empty[Type.AssocType])((acc, t) => acc ++ t.assocs)
+  }
+
+  /**
+   * Returns all the JvmToEffs in the given type.
+   */
+  def jvmToEffs: Set[Type.JvmToEff] = this match {
+    case t: Type.JvmToEff => Set(t)
+
+    case _: Type.Var => Set.empty
+    case _: Type.Cst => Set.empty
+
+    case Type.Apply(tpe1, tpe2, _) => tpe1.jvmToEffs ++ tpe2.jvmToEffs
+    case Type.Alias(_, _, tpe, _) => tpe.jvmToEffs
+    case Type.AssocType(_, arg, _, _) => arg.jvmToEffs
+    case Type.JvmToType(tpe, _) => tpe.jvmToEffs
+    case Type.UnresolvedJvmType(member, _) => member.getTypeArguments.foldLeft(Set.empty[Type.JvmToEff])((acc, t) => acc ++ t.jvmToEffs)
   }
 
   /**
@@ -140,6 +162,7 @@ sealed trait Type {
     case Type.Alias(_, _, tpe, _) => tpe.typeConstructor
     case Type.AssocType(_, _, _, loc) => None // TODO ASSOC-TYPE danger!
     case Type.JvmToType(_, _) => None
+    case Type.JvmToEff(_, _) => None
     case Type.UnresolvedJvmType(_, _) => None
   }
 
@@ -169,6 +192,7 @@ sealed trait Type {
     case Type.Alias(_, _, tpe, _) => tpe.typeConstructors
     case Type.AssocType(_, _, _, loc) => Nil // TODO ASSOC-TYPE danger!
     case Type.JvmToType(_, _) => Nil
+    case Type.JvmToEff(_, _) => Nil
     case Type.UnresolvedJvmType(_, _) => Nil
   }
 
@@ -222,6 +246,10 @@ sealed trait Type {
 
     case Type.JvmToType(tpe, loc) =>
       Type.JvmToType(tpe.map(f), loc)
+
+    case Type.JvmToEff(tpe, loc) =>
+      Type.JvmToEff(tpe.map(f), loc)
+
     case Type.UnresolvedJvmType(member, loc) =>
       Type.UnresolvedJvmType(member.map(t => t.map(f)), loc)
   }
@@ -266,6 +294,7 @@ sealed trait Type {
     case Type.Alias(_, _, tpe, _) => tpe.size
     case Type.AssocType(_, arg, kind, _) => arg.size + 1
     case Type.JvmToType(tpe, _) => tpe.size + 1
+    case Type.JvmToEff(tpe, _) => tpe.size + 1
     case Type.UnresolvedJvmType(member, loc) => member.getTypeArguments.map(_.size).sum + 1
   }
 
@@ -389,6 +418,16 @@ object Type {
     * Represents the IO effect.
     */
   val IO: Type = Type.Cst(TypeConstructor.Effect(Symbol.IO), SourceLocation.Unknown)
+
+  /**
+    * Represents the NonDet effect.
+    */
+  val NonDet: Type = Type.Cst(TypeConstructor.Effect(Symbol.NonDet), SourceLocation.Unknown)
+
+  /**
+    * Represents the Sys effect.
+    */
+  val Sys: Type = Type.Cst(TypeConstructor.Effect(Symbol.Sys), SourceLocation.Unknown)
 
   /**
     * Represents the universal effect set.
@@ -545,6 +584,13 @@ object Type {
     */
   case class JvmToType(tpe: Type, loc: SourceLocation) extends Type with BaseType {
     override def kind: Kind = Kind.Star
+  }
+
+  /**
+    * An effect which must be reduced by finding the correct JVM constructor or method.
+    */
+  case class JvmToEff(tpe: Type, loc: SourceLocation) extends Type with BaseType {
+    override def kind: Kind = Kind.Eff
   }
 
   /**
@@ -1101,6 +1147,7 @@ object Type {
     case Type.Alias(_, _, tpe, _) => eraseAliases(tpe)
     case Type.AssocType(cst, args, kind, loc) => Type.AssocType(cst, args.map(eraseAliases), kind, loc)
     case Type.JvmToType(tpe, loc) => Type.JvmToType(eraseAliases(tpe), loc)
+    case Type.JvmToEff(tpe, loc) => Type.JvmToEff(eraseAliases(tpe), loc)
     case Type.UnresolvedJvmType(member, loc) => Type.UnresolvedJvmType(member.map(eraseAliases), loc)
   }
 
@@ -1125,7 +1172,22 @@ object Type {
     case Alias(_, _, tpe, _) => hasAssocType(tpe)
     case AssocType(_, _, _, _) => true
     case JvmToType(tpe, _) => hasAssocType(tpe)
+    case JvmToEff(tpe, _) => hasAssocType(tpe)
     case UnresolvedJvmType(member, _) => member.getTypeArguments.exists(hasAssocType)
+  }
+
+  /**
+    * Returns true if the given type contains [[Type.JvmToType]] or [[Type.UnresolvedJvmType]] somewhere within it.
+    */
+  def hasJvmType(tpe: Type): Boolean = tpe match {
+    case Type.Var(_, _) => false
+    case Type.Cst(_, _) => false
+    case Type.Apply(tpe1, tpe2, _) => hasJvmType(tpe1) || hasJvmType(tpe2)
+    case Type.Alias(_, _, tpe, _) => hasJvmType(tpe)
+    case Type.AssocType(_, arg, _, _) => hasJvmType(arg)
+    case Type.JvmToType(_, _) => true
+    case Type.JvmToEff(_, _) => true
+    case Type.UnresolvedJvmType(_, _) => true
   }
 
   /**

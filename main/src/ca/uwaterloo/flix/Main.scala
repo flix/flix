@@ -238,20 +238,6 @@ object Main {
               System.exit(1)
           }
 
-        case Command.Benchmark =>
-          flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)) {
-            bootstrap =>
-              val flix = new Flix().setFormatter(formatter)
-              flix.setOptions(options.copy(progress = false))
-              bootstrap.benchmark(flix)
-          }.toHardResult match {
-            case Result.Ok(_) =>
-              System.exit(0)
-            case Result.Err(errors) =>
-              errors.map(_.message(formatter)).foreach(println)
-              System.exit(1)
-          }
-
         case Command.Test =>
           flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)) {
             bootstrap =>
@@ -403,8 +389,6 @@ object Main {
 
     case object Run extends Command
 
-    case object Benchmark extends Command
-
     case object Test extends Command
 
     case object Repl extends Command
@@ -463,8 +447,6 @@ object Main {
       cmd("doc").action((_, c) => c.copy(command = Command.Doc)).text("  generates API documentation.")
 
       cmd("run").action((_, c) => c.copy(command = Command.Run)).text("  runs main for the current project.")
-
-      cmd("benchmark").action((_, c) => c.copy(command = Command.Benchmark)).text("  runs the benchmarks for the current project.")
 
       cmd("test").action((_, c) => c.copy(command = Command.Test)).text("  runs the tests for the current project.")
 

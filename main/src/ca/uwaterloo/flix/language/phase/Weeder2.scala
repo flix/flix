@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.*
 import ca.uwaterloo.flix.language.ast.SyntaxTree.{Tree, TreeKind}
-import ca.uwaterloo.flix.language.ast.shared.{Denotation, Fixity, Polarity}
+import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Denotation, Fixity, Polarity}
 import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, Name, ReadAst, SemanticOp, SourceLocation, Symbol, SyntaxTree, Token, TokenKind, WeededAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.ParseError.*
@@ -650,7 +650,6 @@ object Weeder2 {
       val loc = token.mkSourceLocation()
       import Ast.Annotation.*
       token.text match {
-        case "@benchmark" | "@Benchmark" => Validation.success(Benchmark(loc))
         case "@Deprecated" => Validation.success(Deprecated(loc))
         case "@Experimental" => Validation.success(Experimental(loc))
         case "@Export" => Validation.success(Export(loc))
@@ -767,7 +766,7 @@ object Weeder2 {
         }
       ).getOrElse(Validation.toSoftFailure(
         List(unitFormalParameter(tree.loc)),
-        UnexpectedToken(NamedTokenSet.FromKinds(Set(TokenKind.ParenL)), actual = None, SyntacticContext.Decl.OtherDecl, loc = tree.loc))
+        UnexpectedToken(NamedTokenSet.FromKinds(Set(TokenKind.ParenL)), actual = None, SyntacticContext.Decl.Module, loc = tree.loc))
       )
     }
 
@@ -1646,14 +1645,14 @@ object Weeder2 {
     private def visitCheckedTypeCastExpr(tree: Tree): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.CheckedTypeCast)
       mapN(pickExpr(tree)) {
-        expr => Expr.CheckedCast(Ast.CheckedCastType.TypeCast, expr, tree.loc)
+        expr => Expr.CheckedCast(CheckedCastType.TypeCast, expr, tree.loc)
       }
     }
 
     private def visitCheckedEffectCastExpr(tree: Tree): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.CheckedEffectCast)
       mapN(pickExpr(tree)) {
-        expr => Expr.CheckedCast(Ast.CheckedCastType.EffectCast, expr, tree.loc)
+        expr => Expr.CheckedCast(CheckedCastType.EffectCast, expr, tree.loc)
       }
     }
 

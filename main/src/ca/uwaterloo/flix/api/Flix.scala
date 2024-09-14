@@ -154,7 +154,6 @@ class Flix {
   private val standardLibrary = List(
     "Array.flix" -> LocalResource.get("/src/library/Array.flix"),
     "Assert.flix" -> LocalResource.get("/src/library/Assert.flix"),
-    "Benchmark.flix" -> LocalResource.get("/src/library/Benchmark.flix"),
     "BigDecimal.flix" -> LocalResource.get("/src/library/BigDecimal.flix"),
     "BigInt.flix" -> LocalResource.get("/src/library/BigInt.flix"),
     "Box.flix" -> LocalResource.get("/src/library/Box.flix"),
@@ -185,7 +184,6 @@ class Flix {
     "Result.flix" -> LocalResource.get("/src/library/Result.flix"),
     "Set.flix" -> LocalResource.get("/src/library/Set.flix"),
     "String.flix" -> LocalResource.get("/src/library/String.flix"),
-    "System.flix" -> LocalResource.get("/src/library/System.flix"),
     "MultiMap.flix" -> LocalResource.get("/src/library/MultiMap.flix"),
 
     "MutQueue.flix" -> LocalResource.get("/src/library/MutQueue.flix"),
@@ -230,6 +228,7 @@ class Flix {
     "StringBuilder.flix" -> LocalResource.get("/src/library/StringBuilder.flix"),
     "RedBlackTree.flix" -> LocalResource.get("/src/library/RedBlackTree.flix"),
     "GetOpt.flix" -> LocalResource.get("/src/library/GetOpt.flix"),
+    "Chalk.flix" -> LocalResource.get("/src/library/Chalk.flix"),
 
     "Concurrent/Channel.flix" -> LocalResource.get("/src/library/Concurrent/Channel.flix"),
     "Concurrent/Condition.flix" -> LocalResource.get("/src/library/Concurrent/Condition.flix"),
@@ -260,7 +259,16 @@ class Flix {
     "Fixpoint/Ast/Ram.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/Ram.flix"),
 
     "Abort.flix" -> LocalResource.get("/src/library/Abort.flix"),
-    "Eff/Random.flix" -> LocalResource.get("/src/library/Eff/Random.flix"),
+    "Clock.flix" -> LocalResource.get("/src/library/Clock.flix"),
+    "Exit.flix" -> LocalResource.get("/src/library/Exit.flix"),
+    "Eff/BiasedCoin.flix" -> LocalResource.get("/src/library/Eff/BiasedCoin.flix"),
+    "Eff/RandomCoin.flix" -> LocalResource.get("/src/library/Eff/RandomCoin.flix"),
+
+    "Logger.flix" -> LocalResource.get("/src/library/Logger.flix"),
+    "FilePath.flix" -> LocalResource.get("/src/library/FilePath.flix"),
+    "Process.flix" -> LocalResource.get("/src/library/Process.flix"),
+    "Severity.flix" -> LocalResource.get("/src/library/Severity.flix"),
+    "TimeUnit.flix" -> LocalResource.get("/src/library/TimeUnit.flix"),
 
     "Graph.flix" -> LocalResource.get("/src/library/Graph.flix"),
     "Vector.flix" -> LocalResource.get("/src/library/Vector.flix"),
