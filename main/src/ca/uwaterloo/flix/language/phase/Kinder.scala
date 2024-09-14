@@ -100,14 +100,14 @@ object Kinder {
       flatMapN(tparamsVal) {
         case tparams =>
           val targs = tparams.map(tparam => Type.Var(tparam.sym, tparam.loc.asSynthetic))
-          val tpe = Type.mkApply(Type.Cst(TypeConstructor.Enum(sym, getEnumKind(enum0)), sym.loc.asSynthetic), targs, sym.loc.asSynthetic)
+          val t = Type.mkApply(Type.Cst(TypeConstructor.Enum(sym, getEnumKind(enum0)), sym.loc.asSynthetic), targs, sym.loc.asSynthetic)
           val casesVal = traverse(cases0) {
-            case case0 => mapN(visitCase(case0, tparams, tpe, kenv, taenv, root)) {
+            case case0 => mapN(visitCase(case0, tparams, t, kenv, taenv, root)) {
               caze => caze.sym -> caze
             }
           }
           mapN(casesVal) {
-            case cases => KindedAst.Enum(doc, ann, mod, sym, tparams, derives, cases.toMap, tpe, loc)
+            case cases => KindedAst.Enum(doc, ann, mod, sym, tparams, derives, cases.toMap, t, loc)
           }
       }
   }
@@ -162,14 +162,14 @@ object Kinder {
       flatMapN(indexVal, tparamsVal) {
         case (index, tparams) =>
           val targs = (index :: tparams).map(tparam => Type.Var(tparam.sym, tparam.loc.asSynthetic))
-          val tpe = Type.mkApply(Type.Cst(TypeConstructor.RestrictableEnum(sym, getRestrictableEnumKind(enum0)), sym.loc.asSynthetic), targs, sym.loc.asSynthetic)
+          val t = Type.mkApply(Type.Cst(TypeConstructor.RestrictableEnum(sym, getRestrictableEnumKind(enum0)), sym.loc.asSynthetic), targs, sym.loc.asSynthetic)
           val casesVal = traverse(cases0) {
-            case case0 => mapN(visitRestrictableCase(case0, index, tparams, tpe, kenv, taenv, root)) {
+            case case0 => mapN(visitRestrictableCase(case0, index, tparams, t, kenv, taenv, root)) {
               caze => caze.sym -> caze
             }
           }
           mapN(casesVal) {
-            case cases => KindedAst.RestrictableEnum(doc, ann, mod, sym, index, tparams, derives, cases.toMap, tpe, loc)
+            case cases => KindedAst.RestrictableEnum(doc, ann, mod, sym, index, tparams, derives, cases.toMap, t, loc)
           }
       }
 
@@ -182,12 +182,10 @@ object Kinder {
   private def visitTypeAlias(alias: ResolvedAst.Declaration.TypeAlias, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[KindedAst.TypeAlias, KindError] = alias match {
     case ResolvedAst.Declaration.TypeAlias(doc, ann, mod, sym, tparams0, tpe0, loc) =>
       val kenv = getKindEnvFromTypeParams(tparams0)
-
       val tparamsVal = traverse(tparams0)(visitTypeParam(_, kenv))
-      val tpe = visitType(tpe0, Kind.Wild, kenv, taenv, root)
-
+      val t = visitType(tpe0, Kind.Wild, kenv, taenv, root)
       mapN(tparamsVal) {
-        case tparams => KindedAst.TypeAlias(doc, ann, mod, sym, tparams, tpe, loc)
+        case tparams => KindedAst.TypeAlias(doc, ann, mod, sym, tparams, t, loc)
       }
   }
 
@@ -210,10 +208,10 @@ object Kinder {
     */
   private def visitCase(caze0: ResolvedAst.Declaration.Case, tparams: List[KindedAst.TypeParam], resTpe: Type, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[KindedAst.Case, KindError] = caze0 match {
     case ResolvedAst.Declaration.Case(sym, tpe0, loc) =>
-      val tpe = visitType(tpe0, Kind.Star, kenv, taenv, root)
+      val t = visitType(tpe0, Kind.Star, kenv, taenv, root)
       val quants = tparams.map(_.sym)
-      val sc = Scheme(quants, Nil, Nil, Type.mkPureArrow(tpe, resTpe, sym.loc.asSynthetic))
-      Validation.success(KindedAst.Case(sym, tpe, sc, loc))
+      val sc = Scheme(quants, Nil, Nil, Type.mkPureArrow(t, resTpe, sym.loc.asSynthetic))
+      Validation.success(KindedAst.Case(sym, t, sc, loc))
   }
 
   /**
@@ -221,8 +219,8 @@ object Kinder {
     */
   private def visitStructField(field0: ResolvedAst.Declaration.StructField, tparams: List[KindedAst.TypeParam], kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[KindedAst.StructField, KindError] = field0 match {
     case ResolvedAst.Declaration.StructField(sym, tpe0, loc) =>
-      val tpe = visitType(tpe0, Kind.Star, kenv, taenv, root)
-      Validation.success(KindedAst.StructField(sym, tpe, loc))
+      val t = visitType(tpe0, Kind.Star, kenv, taenv, root)
+      Validation.success(KindedAst.StructField(sym, t, loc))
   }
 
   /**
@@ -230,10 +228,10 @@ object Kinder {
     */
   private def visitRestrictableCase(caze0: ResolvedAst.Declaration.RestrictableCase, index: KindedAst.TypeParam, tparams: List[KindedAst.TypeParam], resTpe: Type, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[KindedAst.RestrictableCase, KindError] = caze0 match {
     case ResolvedAst.Declaration.RestrictableCase(sym, tpe0, loc) =>
-      val tpe = visitType(tpe0, Kind.Star, kenv, taenv, root)
+      val t = visitType(tpe0, Kind.Star, kenv, taenv, root)
       val quants = (index :: tparams).map(_.sym)
-      val sc = Scheme(quants, Nil, Nil, Type.mkPureArrow(tpe, resTpe, sym.loc.asSynthetic))
-      Validation.success(KindedAst.RestrictableCase(sym, tpe, sc, loc)) // TODO RESTR-VARS the scheme is different for these. REVISIT
+      val sc = Scheme(quants, Nil, Nil, Type.mkPureArrow(t, resTpe, sym.loc.asSynthetic))
+      Validation.success(KindedAst.RestrictableCase(sym, t, sc, loc)) // TODO RESTR-VARS the scheme is different for these. REVISIT
   }
 
   /**
@@ -279,14 +277,14 @@ object Kinder {
       val kenvVal = inferType(tpe0, kind, KindEnv.empty, taenv, root)
       flatMapN(kenvVal) {
         kenv =>
-          val tpe = visitType(tpe0, kind, kenv, taenv, root)
+          val t = visitType(tpe0, kind, kenv, taenv, root)
           val tconstrsVal = traverse(tconstrs0)(visitTraitConstraint(_, kenv, taenv, root))
           val assocsVal = traverse(assocs0)(visitAssocTypeDef(_, kind, kenv, taenv, root))
           flatMapN(tconstrsVal, assocsVal) {
             case (tconstrs, assocs) =>
               val defsVal = traverse(defs0)(visitDef(_, tconstrs, kenv, taenv, root))
               mapN(defsVal) {
-                case defs => KindedAst.Instance(doc, ann, mod, trt, tpe, tconstrs, assocs, defs, ns, loc)
+                case defs => KindedAst.Instance(doc, ann, mod, trt, t, tconstrs, assocs, defs, ns, loc)
               }
           }
       }
@@ -373,17 +371,16 @@ object Kinder {
     case ResolvedAst.Spec(doc, ann, mod, tparams0, fparams0, tpe0, eff0, tconstrs0, econstrs0, loc) =>
       val tparamsVal = traverse(tparams0)(visitTypeParam(_, kenv))
       val fparamsVal = traverse(fparams0)(visitFormalParam(_, kenv, taenv, root))
-      val tpe = visitType(tpe0, Kind.Star, kenv, taenv, root)
-      val eff = visitEffectDefaultPure(eff0, kenv, taenv, root)
+      val t = visitType(tpe0, Kind.Star, kenv, taenv, root)
+      val ef = visitEffectDefaultPure(eff0, kenv, taenv, root)
       val tconstrsVal = traverse(tconstrs0)(visitTraitConstraint(_, kenv, taenv, root))
       val econstrsVal = traverse(econstrs0)(visitEqualityConstraint(_, kenv, taenv, root))
-
       mapN(tparamsVal, fparamsVal, tconstrsVal, econstrsVal) {
         case (tparams, fparams, tconstrs, econstrs) =>
           val allQuantifiers = quantifiers ::: tparams.map(_.sym)
-          val base = Type.mkUncurriedArrowWithEffect(fparams.map(_.tpe), eff, tpe, tpe.loc)
+          val base = Type.mkUncurriedArrowWithEffect(fparams.map(_.tpe), ef, t, t.loc)
           val sc = Scheme(allQuantifiers, tconstrs, econstrs.map(EqualityEnvironment.broaden), base)
-          KindedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, eff, tconstrs, econstrs, loc)
+          KindedAst.Spec(doc, ann, mod, tparams, fparams, sc, t, ef, tconstrs, econstrs, loc)
       }
   }
 
@@ -393,9 +390,9 @@ object Kinder {
   private def visitAssocTypeSig(s0: ResolvedAst.Declaration.AssocTypeSig, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[KindedAst.AssocTypeSig, KindError] = s0 match {
     case ResolvedAst.Declaration.AssocTypeSig(doc, mod, sym, tparam0, kind, tpe0, loc) =>
       val tparamVal = visitTypeParam(tparam0, kenv)
-      val tpe = tpe0.map(visitType(_, kind, kenv, taenv, root))
+      val t = tpe0.map(visitType(_, kind, kenv, taenv, root))
       mapN(tparamVal) {
-        case tparam => KindedAst.AssocTypeSig(doc, mod, sym, tparam, kind, tpe, loc)
+        case tparam => KindedAst.AssocTypeSig(doc, mod, sym, tparam, kind, t, loc)
       }
   }
 
@@ -408,8 +405,8 @@ object Kinder {
       val assocSig = trt.assocs.find(assoc => assoc.sym == symUse.sym).get
       val tpeKind = assocSig.kind
       val args = visitType(arg0, trtKind, kenv, taenv, root)
-      val tpe = visitType(tpe0, tpeKind, kenv, taenv, root)
-      Validation.success(KindedAst.AssocTypeDef(doc, mod, symUse, args, tpe, loc))
+      val t = visitType(tpe0, tpeKind, kenv, taenv, root)
+      Validation.success(KindedAst.AssocTypeDef(doc, mod, symUse, args, t, loc))
   }
 
   /**
@@ -1027,10 +1024,10 @@ object Kinder {
     */
   private def visitTypeMatchRule(rule0: ResolvedAst.TypeMatchRule, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], henv: Option[(Type.Var, Type.Var)], root: ResolvedAst.Root)(implicit scope: Scope, sctx: SharedContext, flix: Flix): Validation[KindedAst.TypeMatchRule, KindError] = rule0 match {
     case ResolvedAst.TypeMatchRule(sym, tpe0, exp0) =>
-      val tpe = visitType(tpe0, Kind.Star, kenv, taenv, root)
+      val t = visitType(tpe0, Kind.Star, kenv, taenv, root)
       val expVal = visitExp(exp0, kenv, taenv, henv, root)
       mapN(expVal) {
-        case exp => KindedAst.TypeMatchRule(sym, tpe, exp)
+        case exp => KindedAst.TypeMatchRule(sym, t, exp)
       }
   }
 
@@ -1495,8 +1492,8 @@ object Kinder {
     */
   private def visitPredicateParam(pparam0: ResolvedAst.PredicateParam, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit scope: Scope, sctx: SharedContext, flix: Flix): Validation[KindedAst.PredicateParam, KindError] = pparam0 match {
     case ResolvedAst.PredicateParam.PredicateParamUntyped(pred, loc) =>
-      val tpe = Type.freshVar(Kind.Predicate, loc)
-      Validation.success(KindedAst.PredicateParam(pred, tpe, loc))
+      val t = Type.freshVar(Kind.Predicate, loc)
+      Validation.success(KindedAst.PredicateParam(pred, t, loc))
 
     case ResolvedAst.PredicateParam.PredicateParamWithType(pred, den, tpes, loc) =>
       val ts = tpes.map(visitType(_, Kind.Star, kenv, taenv, root))
@@ -1515,9 +1512,9 @@ object Kinder {
       val fparamsVal = traverse(fparams)(visitFormalParam(_, kenv, taenv, root))
       val expVal = visitExp(exp, kenv, taenv, henv, root)
       val eff = visitEffectDefaultPure(eff0, kenv, taenv, root)
-      val tpe = visitType(tpe0, Kind.Wild, kenv, taenv, root)
+      val t = visitType(tpe0, Kind.Wild, kenv, taenv, root)
       mapN(fparamsVal, expVal) {
-        case (f, e) => KindedAst.JvmMethod(method.ident, f, e, tpe, eff, loc)
+        case (f, e) => KindedAst.JvmMethod(method.ident, f, e, t, eff, loc)
       }
   }
 
