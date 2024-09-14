@@ -19,18 +19,18 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.ExpPosition
-import ca.uwaterloo.flix.language.ast.ReducedAst.*
-import ca.uwaterloo.flix.language.ast.SemanticOp.*
+import ca.uwaterloo.flix.language.ast.ReducedAst._
+import ca.uwaterloo.flix.language.ast.SemanticOp._
 import ca.uwaterloo.flix.language.ast.shared.Constant
-import ca.uwaterloo.flix.language.ast.{MonoType, *}
+import ca.uwaterloo.flix.language.ast.{MonoType, _}
 import ca.uwaterloo.flix.language.dbg.printer.OpPrinter
 import ca.uwaterloo.flix.language.phase.jvm.BackendObjType.JavaObject
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.InstructionSet
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.util.InternalCompilerException
 import org.objectweb.asm
-import org.objectweb.asm.Opcodes.*
-import org.objectweb.asm.*
+import org.objectweb.asm.Opcodes._
+import org.objectweb.asm._
 
 /**
   * Generate expression

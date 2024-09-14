@@ -104,7 +104,7 @@ object Safety {
       // Note that exported defs have different rules
       if (defn.spec.ann.isExport) {
         Nil
-      } else if (hasUnitParameter(defn) && isPureOrIO(defn)) {
+      } else if (hasUnitParameter(defn) && isAllowedEffect(defn)) {
         Nil
       } else {
         SafetyError.IllegalEntryPointSignature(defn.sym.loc) :: Nil
@@ -127,7 +127,7 @@ object Safety {
     } else {
       checkExportableTypes(defn)
     }
-    val effect = if (isPureOrIO(defn)) Nil else List(SafetyError.IllegalExportEffect(defn.spec.loc))
+    val effect = if (isAllowedEffect(defn)) Nil else List(SafetyError.IllegalExportEffect(defn.spec.loc))
     nonRoot ++ pub ++ name ++ types ++ effect
   }
 
@@ -215,9 +215,9 @@ object Safety {
   }
 
   /**
-    * Returns `true` if the given `defn` is pure or has the IO effect.
+    * Returns `true` if the given `defn` is pure or has an effect that is allowed for a top-level function.
     */
-  private def isPureOrIO(defn: Def): Boolean = {
+  private def isAllowedEffect(defn: Def): Boolean = {
     defn.spec.eff match {
       case Type.Pure => true
       case Type.IO => true
@@ -1060,11 +1060,5 @@ object Safety {
     */
   private def isAbstractMethod(m: java.lang.reflect.Method): Boolean =
     java.lang.reflect.Modifier.isAbstract(m.getModifiers)
-
-  /**
-    * Returns `true` if the given method `m` is static.
-    */
-  private def isStaticMethod(m: java.lang.reflect.Method): Boolean =
-    java.lang.reflect.Modifier.isStatic(m.getModifiers)
 
 }
