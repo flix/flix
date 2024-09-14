@@ -1210,10 +1210,10 @@ object Kinder {
   /**
     * Performs kinding on the given type variable under the given kind environment, with `expectedKind` expected from context.
     */
-  private def visitTypeVar(tvar: UnkindedType.Var, expectedKind: Kind, kenv: KindEnv)(implicit sctx: SharedContext): Validation[Type.Var, KindError] = tvar match {
+  private def visitTypeVar(tvar: UnkindedType.Var, expectedKind: Kind, kenv: KindEnv)(implicit sctx: SharedContext): Type.Var = tvar match {
     case UnkindedType.Var(sym0, loc) =>
       val sym = visitTypeVarSym(sym0, expectedKind, kenv, loc)
-      Validation.success(Type.Var(sym, loc))
+      Type.Var(sym, loc)
   }
 
   /**
@@ -1242,7 +1242,7 @@ object Kinder {
     *   - Kind errors may be discovered here as they may not have been found during inference (or inference may not have happened at all).
     */
   private def visitType(tpe0: UnkindedType, expectedKind: Kind, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[Type, KindError] = tpe0 match {
-    case tvar: UnkindedType.Var => visitTypeVar(tvar, expectedKind, kenv)
+    case tvar: UnkindedType.Var => Validation.success(visitTypeVar(tvar, expectedKind, kenv))
 
     case UnkindedType.Cst(cst, loc) =>
       val kind = cst.kind
