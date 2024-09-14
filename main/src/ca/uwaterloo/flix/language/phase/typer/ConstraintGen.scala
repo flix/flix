@@ -158,7 +158,23 @@ object ConstraintGen {
             (resTpe, resEff)
         }
 
-      case Expr.ApplyDef(exp, exps, tvar, evar, loc) => visitExp(Expr.Apply(exp, exps, tvar, evar, loc))
+      case Expr.ApplyDef(KindedAst.Expr.Def(sym, tvar1, loc1), exps, tvar, evar, loc) =>
+        val defn = root.defs(sym)
+        val (tconstrs1, econstrs1, declaredType, _) = Scheme.instantiate(defn.spec.sc, loc1.asSynthetic)
+        val constrs1 = tconstrs1.map(_.copy(loc = loc))
+        val declaredEff = declaredType.arrowEffectType
+        val declaredArgumentTypes = declaredType.arrowArgTypes
+        val declaredResultType = declaredType.arrowResultType
+        val (tpes, effs) = exps.map(visitExp).unzip
+        c.expectTypeArguments(sym, declaredArgumentTypes, tpes, exps.map(_.loc))
+        c.addClassConstraints(constrs1, loc)
+        econstrs1.foreach { econstr => c.unifyType(econstr.tpe1, econstr.tpe2, loc) }
+        c.unifyType(tvar1, declaredType, loc)
+        c.unifyType(tvar, declaredResultType, loc)
+        c.unifyType(evar, Type.mkUnion(declaredEff :: effs, loc), loc)
+        val resTpe = tvar
+        val resEff = evar
+        (resTpe, resEff)
 
       case Expr.Lambda(fparam, exp, loc) =>
         c.unifyType(fparam.sym.tvar, fparam.tpe, loc)
