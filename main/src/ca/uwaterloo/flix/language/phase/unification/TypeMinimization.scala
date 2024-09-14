@@ -41,6 +41,7 @@ object TypeMinimization {
       case Type.Alias(cst, args, tpe, loc) => Type.Alias(cst, args.map(minimizeType), minimizeType(tpe), loc)
       case Type.AssocType(cst, args, kind, loc) => Type.AssocType(cst, args.map(minimizeType), kind, loc)
       case Type.JvmToType(tpe, loc) => Type.JvmToType(minimizeType(tpe), loc)
+      case Type.JvmToEff(tpe, loc) => Type.JvmToEff(minimizeType(tpe), loc)
       case Type.UnresolvedJvmType(member, loc) => Type.UnresolvedJvmType(member.map(minimizeType), loc)
     }
   }
@@ -90,13 +91,14 @@ object TypeMinimization {
     }
 
     // Compute the variables in `tpe`.
-    val tvars = tpe.typeVars.toList.map(tvar => BoolFormula.VarOrEff.Var(tvar.sym))
-    val effs = tpe.effects.toList.map(BoolFormula.VarOrEff.Eff.apply)
-    val assocs = tpe.assocs.toList.map(assoc => BoolFormula.VarOrEff.Assoc(assoc.cst.sym, assoc.arg))
+    val tvars = tpe.typeVars.toList.map(tvar => BoolFormula.IrreducibleEff.Var(tvar.sym))
+    val effs = tpe.effects.toList.map(BoolFormula.IrreducibleEff.Eff.apply)
+    val assocs = tpe.assocs.toList.map(assoc => BoolFormula.IrreducibleEff.Assoc(assoc.cst.sym, assoc.arg))
+    val jvmToEffs = tpe.jvmToEffs.toList.map(tpe => BoolFormula.IrreducibleEff.JvmToEff(tpe))
 
     // Construct a bi-directional map from type variables to indices.
     // The idea is that the first variable becomes x0, the next x1, and so forth.
-    val m = (tvars ++ effs ++ assocs).zipWithIndex.foldLeft(Bimap.empty[BoolFormula.VarOrEff, BoolFormulaTable.Variable]) {
+    val m = (tvars ++ effs ++ assocs ++ jvmToEffs).zipWithIndex.foldLeft(Bimap.empty[BoolFormula.IrreducibleEff, BoolFormulaTable.Variable]) {
       case (macc, (sym, x)) => macc + (sym -> x)
     }
 

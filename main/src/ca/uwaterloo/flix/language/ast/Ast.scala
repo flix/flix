@@ -27,25 +27,6 @@ import java.util.Objects
 object Ast {
 
   /**
-    * A common supertype for casts.
-    */
-  sealed trait CheckedCastType
-
-  object CheckedCastType {
-
-    /**
-      * Represents a checked type cast.
-      */
-    case object TypeCast extends CheckedCastType
-
-    /**
-      * Represents a checked effect cast.
-      */
-    case object EffectCast extends CheckedCastType
-
-  }
-
-  /**
     * A common supertype for constant values.
     */
   sealed trait Constant
@@ -88,17 +69,6 @@ object Ast {
   }
 
   object Annotation {
-
-    /**
-      * An AST node that represents a `@benchmark` annotation.
-      *
-      * A function marked with `benchmark` is evaluated as part of the benchmark framework.
-      *
-      * @param loc the source location of the annotation.
-      */
-    case class Benchmark(loc: SourceLocation) extends Annotation {
-      override def toString: String = "@benchmark"
-    }
 
     /**
       * An annotation that marks a construct as deprecated.
@@ -240,11 +210,6 @@ object Ast {
     * A sequence of annotations.
     */
   case class Annotations(annotations: List[Annotation]) {
-
-    /**
-      * Returns `true` if `this` sequence contains the `@benchmark` annotation.
-      */
-    def isBenchmark: Boolean = annotations exists (_.isInstanceOf[Annotation.Benchmark])
 
     /**
       * Returns `true` if `this` sequence contains the `@Deprecated` annotation.
