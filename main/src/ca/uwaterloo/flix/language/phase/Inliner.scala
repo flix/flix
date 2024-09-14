@@ -79,7 +79,7 @@ object Inliner {
     val fparams = def0.fparams.map {
       case (OccurrenceAst.FormalParam(sym, mod, tpe, loc), _) => LiftedAst.FormalParam(sym, mod, tpe, loc)
     }
-    LiftedAst.Def(def0.ann, def0.mod, def0.sym, cparams, fparams, convertedExp, def0.tpe, convertedExp.purity, def0.loc)
+    LiftedAst.Def(def0.ann, def0.mod, def0.sym, cparams, fparams, convertedExp, def0.tpe, def0.loc)
   }
 
   private def visitEffect(effect: OccurrenceAst.Effect): LiftedAst.Effect = effect match {
