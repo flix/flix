@@ -15,10 +15,6 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
-import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.api.lsp.Index
-import ca.uwaterloo.flix.language.ast.TypedAst
-
 /**
   * Completions for keywords
   */
@@ -35,9 +31,9 @@ object KeywordCompleter {
     )
 
   /**
-    * Declaration keywords. These are keywords that denote a declaration.
+    * Module keywords. These are keywords that can occur in a module.
     */
-  def getDeclKeywords: Iterable[Completion] =
+  def getModKeywords: Iterable[Completion] =
     List(
       // D
       Completion.KeywordCompletion("@Deprecated"      , Priority.Low),
@@ -130,7 +126,7 @@ object KeywordCompleter {
       Completion.KeywordLiteralCompletion("true" , Priority.Higher),
       Completion.KeywordCompletion("try"         , Priority.High),
       Completion.KeywordCompletion("typematch"   , Priority.Low),
-      // U    
+      // U
       Completion.KeywordCompletion("unsafe"      , Priority.Low),
       Completion.KeywordCompletion("use"         , Priority.High),
       // W
@@ -138,7 +134,7 @@ object KeywordCompleter {
       // Y
       Completion.KeywordCompletion("yield"       , Priority.Default)
     )
-           
+
   /**
     * Instance declaration keywords.
     */
@@ -147,7 +143,7 @@ object KeywordCompleter {
       Completion.KeywordCompletion("def"  , Priority.Default),
       Completion.KeywordCompletion("pub"  , Priority.Default),
       Completion.KeywordCompletion("redef", Priority.Default),
-    )      
+    )
 
   /**
     * Struct declaration keywords. These are keywords that occur within a struct declaration.
