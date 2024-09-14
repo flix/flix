@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.shared.{Denotation, Fixity, Polarity, Source}
+import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Denotation, Fixity, Polarity, Source}
 import ca.uwaterloo.flix.util.collection.MultiMap
 
 import java.lang.reflect.{Constructor, Field, Method}
@@ -172,7 +172,7 @@ object ResolvedAst {
 
     case class InstanceOf(exp: Expr, clazz: java.lang.Class[_], loc: SourceLocation) extends Expr
 
-    case class CheckedCast(cast: Ast.CheckedCastType, exp: Expr, loc: SourceLocation) extends Expr
+    case class CheckedCast(cast: CheckedCastType, exp: Expr, loc: SourceLocation) extends Expr
 
     case class UncheckedCast(exp: Expr, declaredType: Option[UnkindedType], declaredEff: Option[UnkindedType], loc: SourceLocation) extends Expr
 

@@ -1689,24 +1689,24 @@ mod TestNec {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def shuffle01(): Bool \ IO =
-        let c = Nec.singleton(1) |> Nec.shuffle(Random.fresh());
+    def shuffle01(): Bool \ NonDet =
+        let c = Nec.singleton(1) |> Nec.shuffle;
         match c {
             case Some(cc) => Nec.length(cc) == 1 and Nec.toSet(cc) == Set#{1}
             case _       => false
         }
 
     @test
-    def shuffle02(): Bool \ IO =
-        let c = necOf3(1, 2, 3) |> Nec.shuffle(Random.fresh());
+    def shuffle02(): Bool \ NonDet =
+        let c = necOf3(1, 2, 3) |> Nec.shuffle;
         match c {
             case Some(cc) => Nec.length(cc) == 3 and Nec.toSet(cc) == Set#{1, 2, 3}
             case _       => false
         }
 
     @test
-    def shuffle03(): Bool \ IO =
-        let c = necOf8(1, 2, 3, 4, 5, 6, 7, 8) |> Nec.shuffle(Random.fresh());
+    def shuffle03(): Bool \ NonDet =
+        let c = necOf8(1, 2, 3, 4, 5, 6, 7, 8) |> Nec.shuffle;
         match c {
             case Some(cc) => Nec.length(cc) == 8 and Nec.toSet(cc) == Set#{1, 2, 3, 4, 5, 6, 7, 8}
             case _       => false

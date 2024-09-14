@@ -1,12 +1,11 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.CheckedCastType
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.TypedAst.*
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps.*
-import ca.uwaterloo.flix.language.ast.shared.{Denotation, Fixity, Polarity, Scope, SecurityContext}
+import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Denotation, Fixity, Polarity, Scope, SecurityContext}
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.SafetyError
@@ -105,7 +104,7 @@ object Safety {
       // Note that exported defs have different rules
       if (defn.spec.ann.isExport) {
         Nil
-      } else if (hasUnitParameter(defn) && isPureOrIO(defn)) {
+      } else if (hasUnitParameter(defn) && isAllowedEffect(defn)) {
         Nil
       } else {
         SafetyError.IllegalEntryPointSignature(defn.sym.loc) :: Nil
@@ -128,7 +127,7 @@ object Safety {
     } else {
       checkExportableTypes(defn)
     }
-    val effect = if (isPureOrIO(defn)) Nil else List(SafetyError.IllegalExportEffect(defn.spec.loc))
+    val effect = if (isAllowedEffect(defn)) Nil else List(SafetyError.IllegalExportEffect(defn.spec.loc))
     nonRoot ++ pub ++ name ++ types ++ effect
   }
 
@@ -216,12 +215,14 @@ object Safety {
   }
 
   /**
-    * Returns `true` if the given `defn` is pure or has the IO effect.
+    * Returns `true` if the given `defn` is pure or has an effect that is allowed for a top-level function.
     */
-  private def isPureOrIO(defn: Def): Boolean = {
+  private def isAllowedEffect(defn: Def): Boolean = {
     defn.spec.eff match {
       case Type.Pure => true
       case Type.IO => true
+      case Type.NonDet => true
+      case Type.Sys => true
       case _ => false
     }
   }
