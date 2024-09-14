@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, VarText}
 import ca.uwaterloo.flix.language.ast.NamedAst.{Declaration, RestrictableChoosePattern}
 import ca.uwaterloo.flix.language.ast.ResolvedAst.Pattern.Record
 import ca.uwaterloo.flix.language.ast.UnkindedType.*
-import ca.uwaterloo.flix.language.ast.shared.Scope
+import ca.uwaterloo.flix.language.ast.shared.{Constant, Scope}
 import ca.uwaterloo.flix.language.ast.{NamedAst, Symbol, *}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.ResolutionError.*
@@ -888,7 +888,7 @@ private def resolveExp(exp0: NamedAst.Expr, env0: ListMap[String, Resolution])(i
             // Check for a single Unit argument
             // Returns out of resolveExp
             return flatMapN(expsVal) {
-              case ResolvedAst.Expr.Cst(Ast.Constant.Unit, _) :: Nil =>
+              case ResolvedAst.Expr.Cst(Constant.Unit, _) :: Nil =>
                 Validation.success(ResolvedAst.Expr.InvokeStaticMethod2(clazz, methodName, Nil, outerLoc))
               case es =>
                 Validation.success(ResolvedAst.Expr.InvokeStaticMethod2(clazz, methodName, es, outerLoc))
@@ -1678,7 +1678,7 @@ private def visitTag(caze: NamedAst.Declaration.Case, loc: SourceLocation)(impli
     // Check if the tag value has Unit type.
     if (isUnitType(caze.tpe)) {
       // Case 1: The tag value has Unit type. Construct the Unit expression.
-      val e = ResolvedAst.Expr.Cst(Ast.Constant.Unit, loc)
+      val e = ResolvedAst.Expr.Cst(Constant.Unit, loc)
       ResolvedAst.Expr.Tag(Ast.CaseSymUse(caze.sym, loc), e, loc)
     } else {
       // Case 2: The tag has a non-Unit type. Hence the tag is used as a function.
@@ -1708,7 +1708,7 @@ private def visitRestrictableTag(caze: NamedAst.Declaration.RestrictableCase, is
     // Check if the tag value has Unit type.
     if (isUnitType(caze.tpe)) {
       // Case 1: The tag value has Unit type. Construct the Unit expression.
-      val e = ResolvedAst.Expr.Cst(Ast.Constant.Unit, loc)
+      val e = ResolvedAst.Expr.Cst(Constant.Unit, loc)
       ResolvedAst.Expr.RestrictableTag(Ast.RestrictableCaseSymUse(caze.sym, loc), e, isOpen, loc)
     } else {
       // Case 2: The tag has a non-Unit type. Hence the tag is used as a function.
