@@ -463,8 +463,18 @@ object Kinder {
 
     case ResolvedAst.Expr.Cst(cst, loc) => Validation.success(KindedAst.Expr.Cst(cst, loc))
 
-    case ResolvedAst.Expr.Apply(exp0, exps0, af, loc) =>
+    case ResolvedAst.Expr.Apply(exp0, exps0, loc) =>
       val expVal = visitExp(exp0, kenv0, taenv, henv0, root)
+      val expsVal = traverse(exps0)(visitExp(_, kenv0, taenv, henv0, root))
+      mapN(expVal, expsVal) {
+        case (exp, exps) =>
+          val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+          val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
+          KindedAst.Expr.Apply(exp, exps, tvar, evar, loc)
+      }
+
+    case ResolvedAst.Expr.ApplyDef(defn0, exps0, loc) =>
+      val expVal = visitExp(defn0, kenv0, taenv, henv0, root)
       val expsVal = traverse(exps0)(visitExp(_, kenv0, taenv, henv0, root))
       mapN(expVal, expsVal) {
         case (exp, exps) =>

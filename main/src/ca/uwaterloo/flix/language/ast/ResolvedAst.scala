@@ -103,7 +103,9 @@ object ResolvedAst {
 
     case class Cst(cst: Ast.Constant, loc: SourceLocation) extends Expr
 
-    case class Apply(exp: Expr, exps: List[Expr], af: ApplyFlag, loc: SourceLocation) extends Expr
+    case class Apply(exp: Expr, exps: List[Expr], loc: SourceLocation) extends Expr
+
+    case class ApplyDef(defn: Def, exps: List[Expr], loc: SourceLocation) extends Expr
 
     case class Lambda(fparam: FormalParam, exp: Expr, loc: SourceLocation) extends Expr
 
@@ -365,11 +367,4 @@ object ResolvedAst {
 
   case class ParYieldFragment(pat: Pattern, exp: Expr, loc: SourceLocation)
 
-  sealed trait ApplyFlag
-
-  object ApplyFlag {
-    case object Curried extends ApplyFlag
-
-    case object Def extends ApplyFlag
-  }
 }
