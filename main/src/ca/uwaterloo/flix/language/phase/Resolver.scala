@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, VarText}
 import ca.uwaterloo.flix.language.ast.NamedAst.{Declaration, RestrictableChoosePattern}
+import ca.uwaterloo.flix.language.ast.ResolvedAst.ApplyFlag
 import ca.uwaterloo.flix.language.ast.ResolvedAst.Pattern.Record
 import ca.uwaterloo.flix.language.ast.UnkindedType.*
 import ca.uwaterloo.flix.language.ast.shared.Scope
@@ -1629,7 +1630,7 @@ private def mkCurriedLambda(fparams: List[ResolvedAst.FormalParam], baseExp: Res
     val argExps = fparams.map(fparam => ResolvedAst.Expr.Var(fparam.sym, l))
 
     // The apply expression inside the lambda.
-    val applyExp = ResolvedAst.Expr.Apply(baseExp, argExps, l)
+    val applyExp = ResolvedAst.Expr.Apply(baseExp, argExps, ApplyFlag.Curried, l)
 
     // The curried lambda expressions.
     fparams.foldRight(applyExp: ResolvedAst.Expr) {
@@ -1741,7 +1742,7 @@ private def visitApply(exp: NamedAst.Expr.Apply, env0: ListMap[String, Resolutio
       mapN(expVal, expsVal) {
         case (e, es) =>
           es.foldLeft(e) {
-            case (acc, a) => ResolvedAst.Expr.Apply(acc, List(a), loc.asSynthetic)
+            case (acc, a) => ResolvedAst.Expr.Apply(acc, List(a), ApplyFlag.Curried, loc.asSynthetic)
           }
       }
   }
@@ -1756,7 +1757,7 @@ private def visitApplyDef(app: NamedAst.Expr.Apply, defn: NamedAst.Declaration.D
       mapN(esVal) {
         es =>
           val base = ResolvedAst.Expr.Def(defn.sym, innerLoc)
-          ResolvedAst.Expr.ApplyDef(base, es, outerLoc)
+          ResolvedAst.Expr.Apply(base, es, ApplyFlag.Def, outerLoc)
       }
     } else {
       // Case 2: We have to curry. (See below).
@@ -1774,7 +1775,7 @@ private def visitApplySig(app: NamedAst.Expr.Apply, sig: NamedAst.Declaration.Si
       mapN(esVal) {
         case es =>
           val base = ResolvedAst.Expr.Sig(sig.sym, innerLoc)
-          ResolvedAst.Expr.Apply(base, es, outerLoc)
+          ResolvedAst.Expr.Apply(base, es, ApplyFlag.Curried, outerLoc)
       }
     } else {
       // Case 2: We have to curry. (See below).
