@@ -431,7 +431,7 @@ object Kinder {
 
     case ResolvedAst.Expr.Var(sym, loc) => Validation.success(KindedAst.Expr.Var(sym, loc))
 
-    case ResolvedAst.Expr.Def(sym, loc) => visitDef(ResolvedAst.Expr.Def(sym, loc))
+    case ResolvedAst.Expr.Def(sym, loc) => Validation.success(KindedAst.Expr.Def(sym, Type.freshVar(Kind.Star, loc.asSynthetic), loc))
 
     case ResolvedAst.Expr.Sig(sym, loc) => Validation.success(KindedAst.Expr.Sig(sym, Type.freshVar(Kind.Star, loc.asSynthetic), loc))
 
@@ -472,14 +472,14 @@ object Kinder {
           KindedAst.Expr.Apply(exp, exps, tvar, evar, loc)
       }
 
-    case ResolvedAst.Expr.ApplyDef(defn0, exps0, loc) =>
-      val expVal = visitDef(defn0)
+    case ResolvedAst.Expr.ApplyDef(ResolvedAst.Expr.Def(sym, loc1), exps0, loc2) =>
+      val e = KindedAst.Expr.Def(sym, Type.freshVar(Kind.Star, loc1.asSynthetic), loc1)
       val expsVal = traverse(exps0)(visitExp(_, kenv0, taenv, henv0, root))
-      mapN(expVal, expsVal) {
-        case (exp, exps) =>
-          val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-          val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-          KindedAst.Expr.ApplyDef(exp, exps, tvar, evar, loc)
+      mapN(expsVal) {
+        case exps =>
+          val tvar = Type.freshVar(Kind.Star, loc2.asSynthetic)
+          val evar = Type.freshVar(Kind.Eff, loc2.asSynthetic)
+          KindedAst.Expr.ApplyDef(e, exps, tvar, evar, loc2)
       }
 
     case ResolvedAst.Expr.Lambda(fparam0, exp0, loc) =>
@@ -1029,10 +1029,6 @@ object Kinder {
       // Note: We must NOT use [[Validation.toSoftFailure]] because
       // that would duplicate the error inside the Validation.
       Validation.success(KindedAst.Expr.Error(m, tvar, evar))
-  }
-
-  private def visitDef(defn0: ResolvedAst.Expr.Def)(implicit scope: Scope, flix: Flix): Validation[KindedAst.Expr.Def, KindError] = defn0 match {
-    case ResolvedAst.Expr.Def(sym, loc) => Validation.success(KindedAst.Expr.Def(sym, Type.freshVar(Kind.Star, loc.asSynthetic), loc))
   }
 
   /**
