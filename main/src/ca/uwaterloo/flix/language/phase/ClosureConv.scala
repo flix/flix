@@ -321,17 +321,17 @@ object ClosureConv {
 
       case Expr.ApplyClo(exp, exps, tpe, purity, loc) =>
         val e = visitExp(exp)
-        val as = exps.map(visitExp)
-        Expr.ApplyClo(e, as, tpe, purity, loc)
+        val es = exps.map(visitExp)
+        Expr.ApplyClo(e, es, tpe, purity, loc)
 
       case Expr.ApplyDef(exp, exps, tpe, purity, loc) =>
-        val as = exps.map(visitExp)
-        Expr.ApplyDef(exp, as, tpe, purity, loc)
+        val es = exps.map(visitExp)
+        Expr.ApplyDef(exp, es, tpe, purity, loc)
 
-      case Expr.Apply(exp, args, tpe, purity, loc) =>
+      case Expr.Apply(exp, exps, tpe, purity, loc) =>
         val e = visitExp(exp)
-        val as = args map visitExp
-        Expr.Apply(e, as, tpe, purity, loc)
+        val es = exps.map(visitExp)
+        Expr.Apply(e, es, tpe, purity, loc)
 
       case Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
         val e1 = visitExp(exp1)
