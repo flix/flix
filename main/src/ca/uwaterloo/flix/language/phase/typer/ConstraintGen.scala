@@ -102,13 +102,6 @@ object ConstraintGen {
         // - have better performance (we don't generate unnecessary type variables)
         //
         val knownTarget = exp match {
-          case KindedAst.Expr.Def(sym, tvar1, loc1) =>
-            // Case 1: Lookup the sym and instantiate its scheme.
-            val defn = root.defs(sym)
-            val (tconstrs1, econstrs1, declaredType, _) = Scheme.instantiate(defn.spec.sc, loc1.asSynthetic)
-            val constrs1 = tconstrs1.map(_.copy(loc = loc))
-            Some((sym, tvar1, constrs1, econstrs1, declaredType))
-
           case KindedAst.Expr.Sig(sym, tvar1, loc1) =>
             // Case 2: Lookup the sym and instantiate its scheme.
             val sig = root.traits(sym.trt).sigs(sym)
