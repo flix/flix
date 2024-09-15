@@ -108,6 +108,14 @@ object CodeHinter {
       }
       hints0 ++ visitExp(exp) ++ visitExps(exps)
 
+    case Expr.ApplyDef(exp, exps, _, _, loc) =>
+      val Expr.Def(sym, _, _) = exp
+      val hints0 = exps match {
+        case lambda :: _ => checkEffect(sym, lambda.tpe, loc)
+        case _ => Nil
+      }
+      hints0 ++ visitExp(exp) ++ visitExps(exps)
+
     case Expr.Unary(_, exp, _, _, _) =>
       visitExp(exp)
 
@@ -185,7 +193,7 @@ object CodeHinter {
       visitExp(exp)
 
     case Expr.StructNew(sym, fields, region, _, _, _) =>
-      fields.map{case (k, v) => v}.flatMap(visitExp) ++ visitExp(region)
+      fields.map { case (k, v) => v }.flatMap(visitExp) ++ visitExp(region)
 
     case Expr.StructGet(exp, _, _, _, _) =>
       visitExp(exp)
