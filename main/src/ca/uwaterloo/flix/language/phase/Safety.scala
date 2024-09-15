@@ -428,9 +428,15 @@ object Safety {
           SafetyError.Forbidden(ctx, loc) :: res
         }
 
-      case Expr.TryWith(exp, _, rules, _, _, _) =>
-        visit(exp) ++
+      case Expr.TryWith(exp, effUse, rules, _, _, _) =>
+        val res = visit(exp) ++
           rules.flatMap { case HandlerRule(_, _, e) => visit(e) }
+
+        if (effUse.sym == Symbol.IO) {
+          IOEffectInTryWith(effUse.loc) :: res
+        } else {
+          res
+        }
 
       case Expr.Do(_, exps, _, _, _) =>
         exps.flatMap(visit)
