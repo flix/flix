@@ -538,6 +538,25 @@ object SafetyError {
   }
 
   /**
+    * An error raised to indicate that the IO effect is attempted to be handled in a try-with expression.
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class IOEffectInTryWith(loc: SourceLocation) extends SafetyError with Recoverable {
+    override def summary: String = s"The IO effect cannot be handled."
+
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s""">> The IO effect cannot be handled.
+         |
+         |${code(loc, "attempted to handle the IO effect here.")}
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
     * An error raised to indicate an invalid `this` parameter for a method.
     *
     * @param clazz           The expected `this` type.
