@@ -1195,11 +1195,11 @@ object ResolutionError {
     * @param loc            the location where the error occurred
     */
   case class IllegalFieldOrderInNew(sym: Symbol.StructSym, providedFields: List[Name.Label], expectedFields: List[Name.Label], loc: SourceLocation) extends ResolutionError with Recoverable {
-    override def summary: String = s"Structs fields must be initialized in their declaration order"
+    override def summary: String = s"Struct fields must be initialized in their declaration order"
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s""">> Structs fields must be initialized in their declaration order
+      s""">> Struct fields must be initialized in their declaration order
          |
          |Expected Order: ${expectedFields.mkString(", ")}
          |Actual Order:   ${providedFields.mkString(", ")}
