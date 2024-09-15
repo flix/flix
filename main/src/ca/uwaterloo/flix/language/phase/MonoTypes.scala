@@ -102,12 +102,13 @@ object MonoTypes {
       val p = visitType(eff)
       Expr.Apply(e, es, t, p, loc)
 
-    case Expr.ApplyDef(exp, exps, tpe, eff, loc) =>
-      val e = visitExp(exp)
+    case Expr.ApplyDef(Expr.Def(sym, tpe1, loc1), exps, tpe2, eff, loc2) =>
+      val t1 = visitType(tpe1)
+      val e = Expr.Def(sym, t1, loc1)
       val es = exps.map(visitExp)
-      val t = visitType(tpe)
+      val t2 = visitType(tpe2)
       val p = visitType(eff)
-      Expr.Apply(e, es, t, p, loc)
+      Expr.ApplyDef(e, es, t2, p, loc2)
 
     case Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp)
