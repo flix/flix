@@ -431,7 +431,7 @@ object Kinder {
 
     case ResolvedAst.Expr.Var(sym, loc) => Validation.success(KindedAst.Expr.Var(sym, loc))
 
-    case ResolvedAst.Expr.Def(sym, loc) => visitDefn(ResolvedAst.Expr.Def(sym, loc))
+    case ResolvedAst.Expr.Def(sym, loc) => visitDef(ResolvedAst.Expr.Def(sym, loc))
 
     case ResolvedAst.Expr.Sig(sym, loc) => Validation.success(KindedAst.Expr.Sig(sym, Type.freshVar(Kind.Star, loc.asSynthetic), loc))
 
@@ -473,7 +473,7 @@ object Kinder {
       }
 
     case ResolvedAst.Expr.ApplyDef(defn0, exps0, loc) =>
-      val expVal = visitDefn(defn0)
+      val expVal = visitDef(defn0)
       val expsVal = traverse(exps0)(visitExp(_, kenv0, taenv, henv0, root))
       mapN(expVal, expsVal) {
         case (exp, exps) =>
@@ -1031,7 +1031,7 @@ object Kinder {
       Validation.success(KindedAst.Expr.Error(m, tvar, evar))
   }
 
-  private def visitDefn(defn0: ResolvedAst.Expr.Def)(implicit scope: Scope, flix: Flix): Validation[KindedAst.Expr.Def, KindError] = defn0 match {
+  private def visitDef(defn0: ResolvedAst.Expr.Def)(implicit scope: Scope, flix: Flix): Validation[KindedAst.Expr.Def, KindError] = defn0 match {
     case ResolvedAst.Expr.Def(sym, loc) => Validation.success(KindedAst.Expr.Def(sym, Type.freshVar(Kind.Star, loc.asSynthetic), loc))
   }
 
