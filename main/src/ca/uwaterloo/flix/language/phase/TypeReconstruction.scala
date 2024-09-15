@@ -91,8 +91,7 @@ object TypeReconstruction {
     case KindedAst.Expr.Var(sym, loc) =>
       TypedAst.Expr.Var(sym, subst(sym.tvar), loc)
 
-    case KindedAst.Expr.Def(sym, tvar, loc) =>
-      TypedAst.Expr.Def(sym, subst(tvar), loc)
+    case KindedAst.Expr.Def(sym, tvar, loc) => visitDef(KindedAst.Expr.Def(sym, tvar, loc))
 
     case KindedAst.Expr.Sig(sym, tvar, loc) =>
       TypedAst.Expr.Sig(sym, subst(tvar), loc)
@@ -123,9 +122,9 @@ object TypeReconstruction {
       TypedAst.Expr.Apply(e, es, subst(tvar), subst(evar), loc)
 
     case KindedAst.Expr.ApplyDef(defn, exps, tvar, evar, loc) =>
-      val e = visitExp(defn)
+      val e = visitDef(defn)
       val es = exps.map(visitExp(_))
-      TypedAst.Expr.Apply(e, es, subst(tvar), subst(evar), loc)
+      TypedAst.Expr.ApplyDef(e, es, subst(tvar), subst(evar), loc)
 
     case KindedAst.Expr.Lambda(fparam, exp, loc) =>
       val p = visitFormalParam(fparam, subst)
@@ -635,6 +634,10 @@ object TypeReconstruction {
       val tpe = subst(tvar)
       val eff = subst(evar)
       TypedAst.Expr.Error(m, tpe, eff)
+  }
+
+  private def visitDef(defn0: KindedAst.Expr.Def)(implicit subst: Substitution): TypedAst.Expr.Def = defn0 match {
+    case KindedAst.Expr.Def(sym, tvar, loc) => TypedAst.Expr.Def(sym, subst(tvar), loc)
   }
 
   /**

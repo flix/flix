@@ -240,6 +240,9 @@ object Indexer {
     case Expr.Apply(exp, exps, _, _, _) =>
       visitExp(exp) ++ visitExps(exps) ++ Index.occurrenceOf(exp0)
 
+    case Expr.ApplyDef(exp, exps, _, _, _) =>
+      visitExp(exp) ++ visitExps(exps) ++ Index.occurrenceOf(exp0)
+
     case Expr.Unary(_, exp, _, _, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0)
 
