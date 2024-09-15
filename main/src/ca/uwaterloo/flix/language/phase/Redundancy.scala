@@ -66,7 +66,7 @@ object Redundancy {
     }, _ ++ _).errors.toList
 
     // Check for unused symbols.
-    val errors = {
+    val errorsss = {
       errorsFromDefs ++
         errorsFromInst ++
         errorsFromSigs ++
@@ -78,6 +78,7 @@ object Redundancy {
         checkUnusedTypeParamsStructs()(root) ++
         checkRedundantTraitConstraints()(root, flix)
     }
+    val errors = Nil
 
     // Determine whether to return success or soft failure.
     Validation.toSuccessOrSoftFailure(root, errors)

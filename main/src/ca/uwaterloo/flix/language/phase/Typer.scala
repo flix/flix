@@ -184,6 +184,7 @@ object Typer {
     val infResult = ConstraintSolver.InfResult(infTconstrs, tpe, eff, infRenv)
     val substVal = ConstraintSolver.visitDef(defn, infResult, renv0, tconstrs0, traitEnv, eqEnv, root)
     val assocVal = checkAssocTypes(defn.spec, tconstrs0, traitEnv)
+    println(ConstraintGen.Counter)
     mapN(substVal, assocVal) {
       case (subst, _) => TypeReconstruction.visitDef(defn, subst)
     }
