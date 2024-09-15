@@ -33,8 +33,6 @@ import ca.uwaterloo.flix.language.phase.unification.Substitution
   */
 object ConstraintGen {
 
-  var Counter = 0
-
   /**
     * Generates constraints for the given expression `exp0`, adding them to the type context `c`.
     *
@@ -160,7 +158,6 @@ object ConstraintGen {
         }
 
       case Expr.Lambda(fparam, exp, loc) =>
-        Counter = Counter + 1
         c.unifyType(fparam.sym.tvar, fparam.tpe, loc)
         val (tpe, eff0) = visitExp(exp)
         // Use sub-effecting for lambdas if the appropriate option is set
