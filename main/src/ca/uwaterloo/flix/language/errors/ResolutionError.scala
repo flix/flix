@@ -1199,10 +1199,10 @@ object ResolutionError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s""">> Struct fields must be initialized in their declaration order
+      s""">> Struct fields must be initialized in their declaration order.
          |
-         |Expected Order: ${expectedFields.mkString(", ")}
-         |Actual Order:   ${providedFields.mkString(", ")}
+         |Expected: ${expectedFields.mkString(", ")}
+         |Actual  : ${providedFields.mkString(", ")}
          |
          |${code(loc, "incorrect order")}
          |""".stripMargin
