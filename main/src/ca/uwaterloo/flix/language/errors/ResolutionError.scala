@@ -1216,15 +1216,15 @@ object ResolutionError {
     * @param loc   the location where the error occurred.
     */
   case class ImmutableField(field: Symbol.StructFieldSym, loc: SourceLocation) extends ResolutionError with Recoverable {
-    override def summary: String = s"Modification of immutable field `$field`. Mark the field as 'mut' to allow mutation."
+    override def summary: String = s"Modification of immutable field `${field.name}`."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Modification of immutable field '$field'.
+      s""">> Modification of immutable field '${red(field.name)}' on ${cyan(field.structSym.toString)}'.
          |
          |${code(loc, "immutable field")}
          |
-         |Mark the field as 'mut' to allow mutation.
+         |Mark the field as 'mut' in the declaration of the struct.
          |""".stripMargin
     }
   }
