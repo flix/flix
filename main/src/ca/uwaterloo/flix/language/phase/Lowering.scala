@@ -354,7 +354,9 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expr.Var(sym, t, loc)
 
-    case TypedAst.Expr.Def(sym, tpe, loc) => visitDef(TypedAst.Expr.Def(sym, tpe, loc))
+    case TypedAst.Expr.Def(sym, tpe, loc) =>
+      val t = visitType(tpe)
+      LoweredAst.Expr.Def(sym, t, loc)
 
     case TypedAst.Expr.Sig(sym, tpe, loc) =>
       val t = visitType(tpe)
@@ -387,11 +389,12 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expr.Apply(e, es, t, eff, loc)
 
-    case TypedAst.Expr.ApplyDef(exp, exps, tpe, eff, loc) =>
-      val e = visitDef(exp)
+    case TypedAst.Expr.ApplyDef(TypedAst.Expr.Def(sym, tpe1, loc1), exps, tpe2, eff, loc2) =>
+      val t1 = visitType(tpe1)
+      val e = LoweredAst.Expr.Def(sym, t1, loc1)
       val es = visitExps(exps)
-      val t = visitType(tpe)
-      LoweredAst.Expr.ApplyDef(e, es, t, eff, loc)
+      val t2 = visitType(tpe2)
+      LoweredAst.Expr.ApplyDef(e, es, t2, eff, loc2)
 
     case TypedAst.Expr.Unary(sop, exp, tpe, eff, loc) =>
       val e = visitExp(exp)
@@ -827,12 +830,6 @@ object Lowering {
     * Lowers the given list of expressions `exps0`.
     */
   private def visitExps(exps0: List[TypedAst.Expr])(implicit scope: Scope, root: TypedAst.Root, flix: Flix): List[LoweredAst.Expr] = exps0.map(visitExp)
-
-  private def visitDef(defn0: TypedAst.Expr.Def)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Expr.Def = defn0 match {
-    case TypedAst.Expr.Def(sym, tpe, loc) =>
-      val t = visitType(tpe)
-      LoweredAst.Expr.Def(sym, t, loc)
-  }
 
   /**
     * Lowers the given pattern `pat0`.
