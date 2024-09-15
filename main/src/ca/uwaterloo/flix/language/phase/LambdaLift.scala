@@ -114,16 +114,16 @@ object LambdaLift {
       LiftedAst.Expr.ApplyAtomic(AtomicOp.Closure(freshSymbol), closureArgs, arrowTpe, Purity.Pure, loc)
 
     case SimplifiedAst.Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
-      val es = exps map visitExp
+      val es = exps.map(visitExp)
       LiftedAst.Expr.ApplyAtomic(op, es, tpe, purity, loc)
 
     case SimplifiedAst.Expr.ApplyClo(exp, exps, tpe, purity, loc) =>
       val e = visitExp(exp)
-      val es = exps map visitExp
+      val es = exps.map(visitExp)
       LiftedAst.Expr.ApplyClo(e, es, tpe, purity, loc)
 
-    case SimplifiedAst.Expr.ApplyDef(sym, exps, tpe, purity, loc) =>
-      val es = exps map visitExp
+    case SimplifiedAst.Expr.ApplyDef(SimplifiedAst.Expr.Def(sym, _, _), exps, tpe, purity, loc) =>
+      val es = exps.map(visitExp)
       LiftedAst.Expr.ApplyDef(sym, es, tpe, purity, loc)
 
     case SimplifiedAst.Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>

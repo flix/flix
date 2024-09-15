@@ -65,7 +65,7 @@ object ClosureConv {
       //
       // The closure has no free variables since it is a reference to a top-level function.
       //
-      // This case happens if the programmers writes e.g.:
+      // This case happens if the programmer writes e.g.:
       //
       // let m = List.map; ...
       //
@@ -77,21 +77,14 @@ object ClosureConv {
       //
       mkLambdaClosure(fparams, exp, tpe, loc)
 
-    case Expr.Apply(exp, exps, tpe, purity, loc) => exp match {
-      case Expr.Def(sym, _, _) =>
-        //
-        // Special Case: Direct call to a known function symbol.
-        //
-        val es = exps.map(visitExp)
-        Expr.ApplyDef(sym, es, tpe, purity, loc)
-      case _ =>
-        //
-        // General Case: Call to closure.
-        //
-        val e = visitExp(exp)
-        val es = exps.map(visitExp)
-        Expr.ApplyClo(e, es, tpe, purity, loc)
-    }
+    case Expr.Apply(exp, exps, tpe, purity, loc) =>
+      val e = visitExp(exp)
+      val es = exps.map(visitExp)
+      Expr.ApplyClo(e, es, tpe, purity, loc)
+
+    case Expr.ApplyDef(exp, exps, tpe, purity, loc) =>
+      val es = exps.map(visitExp)
+      Expr.ApplyDef(exp, es, tpe, purity, loc)
 
     case Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
       val es = exps map visitExp
@@ -167,7 +160,6 @@ object ClosureConv {
 
     case Expr.ApplyClo(_, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.", loc)
 
-    case Expr.ApplyDef(_, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.", loc)
   }
 
   /**
@@ -224,6 +216,9 @@ object ClosureConv {
     case Expr.Apply(exp, args, _, _, _) =>
       freeVars(exp) ++ freeVarsExps(args)
 
+    case Expr.ApplyDef(_, exps, _, _, _) =>
+      freeVarsExps(exps)
+
     case Expr.ApplyAtomic(_, exps, _, _, _) =>
       freeVarsExps(exps)
 
@@ -270,7 +265,6 @@ object ClosureConv {
 
     case Expr.ApplyClo(_, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.", loc)
 
-    case Expr.ApplyDef(_, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.", loc)
   }
 
   /**
@@ -318,21 +312,21 @@ object ClosureConv {
         Expr.Lambda(fs, e, tpe, loc)
 
       case Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
-        val es = exps map visitExp
+        val es = exps.map(visitExp)
         Expr.ApplyAtomic(op, es, tpe, purity, loc)
 
       case Expr.LambdaClosure(cparams, fparams, freeVars, exp, tpe, loc) =>
         val e = visitExp(exp)
         Expr.LambdaClosure(cparams, fparams, freeVars, e, tpe, loc)
 
-      case Expr.ApplyClo(exp, args, tpe, purity, loc) =>
+      case Expr.ApplyClo(exp, exps, tpe, purity, loc) =>
         val e = visitExp(exp)
-        val as = args map visitExp
+        val as = exps.map(visitExp)
         Expr.ApplyClo(e, as, tpe, purity, loc)
 
-      case Expr.ApplyDef(sym, args, tpe, purity, loc) =>
-        val as = args map visitExp
-        Expr.ApplyDef(sym, as, tpe, purity, loc)
+      case Expr.ApplyDef(exp, exps, tpe, purity, loc) =>
+        val as = exps.map(visitExp)
+        Expr.ApplyDef(exp, as, tpe, purity, loc)
 
       case Expr.Apply(exp, args, tpe, purity, loc) =>
         val e = visitExp(exp)
