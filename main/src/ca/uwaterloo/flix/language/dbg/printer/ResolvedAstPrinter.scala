@@ -23,6 +23,7 @@ import ca.uwaterloo.flix.language.dbg.DocAst
 
 object ResolvedAstPrinter {
 
+  /** Returns the [[DocAst.Program]] representation of `root`. */
   def print(root: ResolvedAst.Root): DocAst.Program = {
     val defs = root.defs.values.map {
       case ResolvedAst.Declaration.Def(sym, spec, exp) =>
@@ -31,6 +32,7 @@ object ResolvedAstPrinter {
     DocAst.Program(Nil, defs)
   }
 
+  /** Returns the [[DocAst.Expr]] representation of `exp`. */
   private def print(exp: ResolvedAst.Expr): DocAst.Expr = exp match {
     case Expr.Var(sym, _) => printVarSym(sym)
     case Expr.Def(sym, _) => DocAst.Expr.AsIs(sym.text)
@@ -122,6 +124,7 @@ object ResolvedAstPrinter {
     case Expr.Error(_) => DocAst.Expr.Error
   }
 
+  /** Returns the [[DocAst.Expr]] representation of `pat`. */
   private def printPattern(pat: ResolvedAst.Pattern): DocAst.Expr = pat match {
     case Pattern.Wild(_) => DocAst.Expr.Wild
     case Pattern.Var(sym, _) => printVarSym(sym)
@@ -133,17 +136,13 @@ object ResolvedAstPrinter {
     case Pattern.Error(_) => DocAst.Expr.Error
   }
 
-  /**
-    * Returns the [[DocAst.Expr.Ascription]] representation of `fp`.
-    */
+  /** Returns the [[DocAst.Expr.Ascription]] representation of `fp`. */
   private def printFormalParam(fp: ResolvedAst.FormalParam): DocAst.Expr.Ascription = {
     val ResolvedAst.FormalParam(sym, _, _, _) = fp
     DocAst.Expr.Ascription(printVarSym(sym), DocAst.Type.Unknown)
   }
 
-  /**
-    * Returns the [[DocAst.Expr]] representation of `sym`.
-    */
+  /** Returns the [[DocAst.Expr]] representation of `sym`. */
   private def printVarSym(sym: Symbol.VarSym): DocAst.Expr =
     DocAst.Expr.Var(sym)
 
