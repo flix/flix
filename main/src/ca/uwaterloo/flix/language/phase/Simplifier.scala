@@ -92,7 +92,7 @@ object Simplifier {
       SimplifiedAst.Expr.ApplyDef(e, es, t2, simplifyEffect(eff), loc2)
 
     case MonoAst.Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
-      val es = exps map visitExp
+      val es = exps.map(visitExp)
       val purity = simplifyEffect(eff)
       op match {
         case AtomicOp.Binary(SemanticOp.StringOp.Concat) =>
