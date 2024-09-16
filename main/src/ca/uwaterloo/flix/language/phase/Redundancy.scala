@@ -328,10 +328,10 @@ object Redundancy {
 
     case Expr.Use(_, alias, exp, _) =>
       // Check if the alias is shadowing
-      val shadowedName = shadowing(alias.name, alias.loc, env0)
+      val shadowedName = shadowing(VarOrAlias.Alias(alias.name), alias.loc, env0)
 
       // Add the name to the environment
-      val env = env0 + (alias.name -> alias.loc)
+      val env = env0 + (VarOrAlias.Alias(alias.name) -> alias.loc)
 
       // Visit the expression with the extended environment
       val innerUsed = visitExp(exp, env, rc)
@@ -347,7 +347,7 @@ object Redundancy {
       val innerUsed = visitExp(exp, env1, rc)
 
       // Check if the formal parameter is shadowing.
-      val shadowedVar = shadowing(fparam.sym.text, fparam.sym.loc, env0)
+      val shadowedVar = shadowingVar(fparam.sym, env0)
 
       // Check if the lambda parameter symbol is dead.
       if (deadVarSym(fparam.sym, innerUsed))
@@ -377,7 +377,7 @@ object Redundancy {
       val innerUsed2 = visitExp(exp2, env1, rc)
 
       // Check for shadowing.
-      val shadowedVar = shadowing(sym.text, sym.loc, env0)
+      val shadowedVar = shadowingVar(sym, env0)
 
       // Check if the let-bound variable symbol is dead in exp2.
       if (deadVarSym(sym, innerUsed2))
@@ -396,7 +396,7 @@ object Redundancy {
       val used = innerUsed1 ++ innerUsed2
 
       // Check for shadowing.
-      val shadowedVar = shadowing(sym.text, sym.loc, env0)
+      val shadowedVar = shadowingVar(sym, env0)
 
       // Check if the let-bound variable symbol is dead in exp1 + exp2.
       if (deadVarSym(sym, used))
@@ -415,7 +415,7 @@ object Redundancy {
       val innerUsed = visitExp(exp, env1, rc)
 
       // Check for shadowing.
-      val shadowedVar = shadowing(sym.text, sym.loc, env0)
+      val shadowedVar = shadowingVar(sym, env0)
 
       // Check if the let-bound variable symbol is dead in exp.
       if (deadVarSym(sym, innerUsed))
@@ -746,7 +746,7 @@ object Redundancy {
           val env1 = env0 + sym
 
           // Check for shadowing.
-          val shadowedVar = shadowing(sym.text, sym.loc, env0)
+          val shadowedVar = shadowingVar(sym, env0)
 
           // Visit the channel and body expressions.
           val chanUsed = visitExp(chan, env1, rc)
@@ -847,7 +847,7 @@ object Redundancy {
     * Returns the symbols that the free variables shadow in env0.
     */
   private def findShadowedVarSyms(freeVars: Set[Symbol.VarSym], env0: Env): Used = {
-    freeVars.map(sym => shadowing(sym.text, sym.loc, env0)).foldLeft(Used.empty)(_ ++ _)
+    freeVars.map(shadowingVar(_, env0)).foldLeft(Used.empty)(_ ++ _)
   }
 
   /**
@@ -1040,20 +1040,26 @@ object Redundancy {
   }
 
   /**
-    * Checks whether the variable symbol `sym` shadows another variable in the environment `env`.
+    * Checks whether the variable `v` shadows another variable in the environment `env`.
     */
-  private def shadowing(name: String, loc: SourceLocation, env: Env): Used =
-    env.names.get(name) match {
+  private def shadowing(v: VarOrAlias, loc: SourceLocation, env: Env): Used =
+    env.names.get(v) match {
       case None =>
         Used.empty
       case Some(shadowed) =>
-        if (Name.isWild(name))
+        if (Name.isWild(v.text))
           Used.empty
         else
           Used.empty +
-            ShadowedName(name, shadowing = loc, shadowed = shadowed) +
-            ShadowingName(name, shadowing = loc, shadowed = shadowed)
+            ShadowedName(v.text, shadowing = loc, shadowed = shadowed) +
+            ShadowingName(v.text, shadowing = loc, shadowed = shadowed)
     }
+
+  /**
+    * Checks whether the variable `sym` shadows another variable in the environment `env`.
+    */
+  private def shadowingVar(sym: Symbol.VarSym, env: Env): Used =
+    shadowing(VarOrAlias.Var(sym), sym.loc, env)
 
   /**
     * Returns `true` if the given definition `decl` is unused according to `used`.
@@ -1140,12 +1146,12 @@ object Redundancy {
   /**
     * Represents a name environment.
     */
-  private case class Env(names: Map[String, SourceLocation]) {
+  private case class Env(names: Map[VarOrAlias, SourceLocation]) {
     /**
       * Updates `this` environment with a new variable symbol `sym`.
       */
     def +(sym: Symbol.VarSym): Env = {
-      copy(names = names + (sym.text -> sym.loc))
+      copy(names = names + (VarOrAlias.Var(sym) -> sym.loc))
     }
 
     /**
@@ -1158,7 +1164,7 @@ object Redundancy {
     /**
       * Updates `this` environment with a new `name`.
       */
-    def +(nameAndLoc: (String, SourceLocation)): Env = {
+    def +(nameAndLoc: (VarOrAlias, SourceLocation)): Env = {
       copy(names = names + nameAndLoc)
     }
   }
@@ -1316,5 +1322,26 @@ object Redundancy {
       * Adds the given variable to the context.
       */
     def withVar(v: Symbol.VarSym): RecursionContext = this.copy(vars = this.vars + v)
+  }
+
+  /**
+    * A union type for [[Symbol.VarSym]] and [[String]] (representing a use-alias).
+    */
+  private sealed trait VarOrAlias {
+    /**
+      * Retuns the text of the var or alias, not including the unique ID.
+      */
+    def text: String = this match {
+      case VarOrAlias.Var(sym) => sym.text
+      case VarOrAlias.Alias(name) => name
+    }
+  }
+
+  private object VarOrAlias {
+
+    case class Var(sym: Symbol.VarSym) extends VarOrAlias
+
+    case class Alias(name: String) extends VarOrAlias
+
   }
 }
