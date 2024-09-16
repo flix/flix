@@ -1124,25 +1124,26 @@ object ResolutionError {
   }
 
   /**
-    * An error raised to indicate an undefined field in a `struct.field` or `struct.field = value` expression.
+    * An error raised to indicate an undefined struct field in a struct get or struct put expression.
     *
-    * @param struct the name of the struct
-    * @param field the name of the missing field.
-    * @param loc   the location where the error occurred.
+    * @param struct the optional symbol of the struct.
+    * @param field  the name of the missing field.
+    * @param loc    the location where the error occurred.
     */
   case class UndefinedStructField(struct: Option[Symbol.StructSym], field: Name.Label, loc: SourceLocation) extends ResolutionError with Recoverable {
-    private def structMessage: String = struct match {
-      case Some(sym) => s" on struct '$sym'"
-      case None => ""
-    }
     override def summary: String = s"Undefined struct field '$field'$structMessage"
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Undefined struct field '${red(field.toString)}'$structMessage.
          |
          |${code(loc, "undefined field")}
          |""".stripMargin
+    }
+
+    private def structMessage: String = struct match {
+      case Some(sym) => s" on struct '$sym'."
+      case None => ""
     }
   }
 
@@ -1194,34 +1195,36 @@ object ResolutionError {
     * @param loc            the location where the error occurred
     */
   case class IllegalFieldOrderInNew(sym: Symbol.StructSym, providedFields: List[Name.Label], expectedFields: List[Name.Label], loc: SourceLocation) extends ResolutionError with Recoverable {
-    override def summary: String = s"Structs fields must be initialized in their declaration order"
+    override def summary: String = s"Struct fields must be initialized in their declaration order"
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s""">> Structs fields must be initialized in their declaration order
+      s""">> Struct fields must be initialized in their declaration order.
          |
-         |Expected Order: ${expectedFields.mkString(", ")}
-         |Actual Order:   ${providedFields.mkString(", ")}
+         |Expected: ${expectedFields.mkString(", ")}
+         |Actual  : ${providedFields.mkString(", ")}
          |
          |${code(loc, "incorrect order")}
          |""".stripMargin
     }
   }
 
- /**
-   * An error raised to indicate a `put` struct expression attempts to modify an immutable field
-   *
-   * @param field the immutable field
-   * @param loc   the location where the error occurred
-   */
+  /**
+    * An error raised to indicate a `put` struct expression attempts to modify an immutable field.
+    *
+    * @param field the immutable field.
+    * @param loc   the location where the error occurred.
+    */
   case class ImmutableField(field: Symbol.StructFieldSym, loc: SourceLocation) extends ResolutionError with Recoverable {
-    override def summary: String = s"Modification of immutable field `$field`. Mark the field as `mut` to allow mutation."
+    override def summary: String = s"Modification of immutable field `${field.name}`."
 
     def message(formatter: Formatter): String = {
-      import formatter._
-      s""">> Modification of immutable field `$field`. Mark the field as `mut` to allow mutation.
+      import formatter.*
+      s""">> Modification of immutable field '${red(field.name)}' on ${cyan(field.structSym.toString)}'.
          |
-         |${code(loc, "field not marked `mut`")}
+         |${code(loc, "immutable field")}
+         |
+         |Mark the field as 'mut' in the declaration of the struct.
          |""".stripMargin
     }
   }
