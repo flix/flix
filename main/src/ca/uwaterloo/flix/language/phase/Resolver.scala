@@ -1774,7 +1774,7 @@ private def visitApplySig(app: NamedAst.Expr.Apply, sig: NamedAst.Declaration.Si
       mapN(esVal) {
         case es =>
           val base = ResolvedAst.Expr.Sig(sig.sym, innerLoc)
-          ResolvedAst.Expr.Apply(base, es, outerLoc)
+          ResolvedAst.Expr.ApplySig(base, es, outerLoc)
       }
     } else {
       // Case 2: We have to curry. (See below).

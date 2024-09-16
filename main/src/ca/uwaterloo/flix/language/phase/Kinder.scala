@@ -457,6 +457,16 @@ object Kinder {
           KindedAst.Expr.Apply(exp, exps, tvar, evar, loc)
       }
 
+    case ResolvedAst.Expr.ApplySig(ResolvedAst.Expr.Sig(sym, loc1), exps0, loc2) =>
+      val e = KindedAst.Expr.Sig(sym, Type.freshVar(Kind.Star, loc1.asSynthetic), loc1)
+      val expsVal = traverse(exps0)(visitExp(_, kenv0, taenv, henv0, root))
+      mapN(expsVal) {
+        case exps =>
+          val tvar = Type.freshVar(Kind.Star, loc2.asSynthetic)
+          val evar = Type.freshVar(Kind.Eff, loc2.asSynthetic)
+          KindedAst.Expr.Apply(e, exps, tvar, evar, loc2)
+      }
+
     case ResolvedAst.Expr.Lambda(fparam0, exp0, loc) =>
       val fparamVal = visitFormalParam(fparam0, kenv0, taenv, root)
       val expVal = visitExp(exp0, kenv0, taenv, henv0, root)
