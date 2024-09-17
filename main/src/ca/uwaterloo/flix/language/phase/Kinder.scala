@@ -955,10 +955,10 @@ object Kinder {
       }
 
     case ResolvedAst.Expr.FixpointLambda(pparams, exp, loc) =>
-      val psVal = traverse(pparams)(visitPredicateParam(_, kenv0, taenv, root))
+      val ps = pparams.map(visitPredicateParam(_, kenv0, taenv, root))
       val expVal = visitExp(exp, kenv0, taenv, henv0, root)
-      mapN(psVal, expVal) {
-        case (ps, e) => KindedAst.Expr.FixpointLambda(ps, e, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
+      mapN(expVal) {
+        case e => KindedAst.Expr.FixpointLambda(ps, e, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }.recoverOne {
         case err: KindError =>
           val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
@@ -1488,10 +1488,10 @@ object Kinder {
   /**
     * Performs kinding on the given predicate param under the given kind environment.
     */
-  private def visitPredicateParam(pparam0: ResolvedAst.PredicateParam, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit scope: Scope, sctx: SharedContext, flix: Flix): Validation[KindedAst.PredicateParam, KindError] = pparam0 match {
+  private def visitPredicateParam(pparam0: ResolvedAst.PredicateParam, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit scope: Scope, sctx: SharedContext, flix: Flix): KindedAst.PredicateParam = pparam0 match {
     case ResolvedAst.PredicateParam.PredicateParamUntyped(pred, loc) =>
       val t = Type.freshVar(Kind.Predicate, loc)
-      Validation.success(KindedAst.PredicateParam(pred, t, loc))
+      KindedAst.PredicateParam(pred, t, loc)
 
     case ResolvedAst.PredicateParam.PredicateParamWithType(pred, den, tpes, loc) =>
       val ts = tpes.map(visitType(_, Kind.Star, kenv, taenv, root))
@@ -1499,7 +1499,7 @@ object Kinder {
         case Denotation.Relational => Type.mkRelation(ts, pred.loc.asSynthetic)
         case Denotation.Latticenal => Type.mkLattice(ts, pred.loc.asSynthetic)
       }
-      Validation.success(KindedAst.PredicateParam(pred, t, loc))
+      KindedAst.PredicateParam(pred, t, loc)
   }
 
   /**
