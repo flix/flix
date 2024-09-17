@@ -27,25 +27,6 @@ import java.util.Objects
 object Ast {
 
   /**
-    * A common supertype for casts.
-    */
-  sealed trait CheckedCastType
-
-  object CheckedCastType {
-
-    /**
-      * Represents a checked type cast.
-      */
-    case object TypeCast extends CheckedCastType
-
-    /**
-      * Represents a checked effect cast.
-      */
-    case object EffectCast extends CheckedCastType
-
-  }
-
-  /**
     * A common supertype for constant values.
     */
   sealed trait Constant
@@ -88,17 +69,6 @@ object Ast {
   }
 
   object Annotation {
-
-    /**
-      * An AST node that represents a `@benchmark` annotation.
-      *
-      * A function marked with `benchmark` is evaluated as part of the benchmark framework.
-      *
-      * @param loc the source location of the annotation.
-      */
-    case class Benchmark(loc: SourceLocation) extends Annotation {
-      override def toString: String = "@benchmark"
-    }
 
     /**
       * An annotation that marks a construct as deprecated.
@@ -240,11 +210,6 @@ object Ast {
     * A sequence of annotations.
     */
   case class Annotations(annotations: List[Annotation]) {
-
-    /**
-      * Returns `true` if `this` sequence contains the `@benchmark` annotation.
-      */
-    def isBenchmark: Boolean = annotations exists (_.isInstanceOf[Annotation.Benchmark])
 
     /**
       * Returns `true` if `this` sequence contains the `@Deprecated` annotation.
@@ -749,15 +714,17 @@ object Ast {
     sealed trait Decl extends SyntacticContext
 
     object Decl {
-      case object Trait extends Decl
-
       case object Enum extends Decl
 
       case object Instance extends Decl
 
-      case object OtherDecl extends Decl
+      case object Module extends Decl
 
       case object Struct extends Decl
+
+      case object Trait extends Decl
+
+      case object Type extends Decl
     }
 
     sealed trait Expr extends SyntacticContext
@@ -798,18 +765,6 @@ object Ast {
 
     case object Unknown extends SyntacticContext
 
-    def join(ctx1: SyntacticContext, ctx2: SyntacticContext): SyntacticContext = (ctx1, ctx2) match {
-      case (_, SyntacticContext.Expr.OtherExpr) => ctx1
-      case (SyntacticContext.Expr.OtherExpr, _) => ctx2
-
-      case (_, SyntacticContext.Unknown) => ctx1
-      case (SyntacticContext.Unknown, _) => ctx2
-
-      case (SyntacticContext.Type.OtherType, SyntacticContext.WithClause) => SyntacticContext.WithClause
-      case (SyntacticContext.WithClause, SyntacticContext.Type.OtherType) => SyntacticContext.WithClause
-
-      case _ => ctx1
-    }
   }
 
 }

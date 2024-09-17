@@ -220,6 +220,7 @@ object EffUnification {
 
       // If we're visiting Jvm types here, then something has likely gone wrong
       case Type.JvmToType(_, _) => None
+      case Type.JvmToEff(_, _) => None
       case Type.UnresolvedJvmType(_, _) => None
     }
 

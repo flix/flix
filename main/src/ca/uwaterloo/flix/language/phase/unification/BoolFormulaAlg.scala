@@ -163,16 +163,17 @@ class BoolFormulaAlg extends BoolAlg[BoolFormula] {
     case Var(sym) => fn(sym)
   }
 
-  override def toType(f: BoolFormula, env: Bimap[BoolFormula.VarOrEff, Int]): Type = f match {
+  override def toType(f: BoolFormula, env: Bimap[BoolFormula.IrreducibleEff, Int]): Type = f match {
     case True => Type.Pure
     case False => Type.Univ
     case And(f1, f2) => Type.mkApply(Type.Union, List(toType(f1, env), toType(f2, env)), SourceLocation.Unknown)
     case Or(f1, f2) => Type.mkApply(Type.Intersection, List(toType(f1, env), toType(f2, env)), SourceLocation.Unknown)
     case Not(f1) => Type.Apply(Type.Complement, toType(f1, env), SourceLocation.Unknown)
     case Var(id) => env.getBackward(id) match {
-      case Some(BoolFormula.VarOrEff.Var(sym)) => Type.Var(sym, SourceLocation.Unknown)
-      case Some(BoolFormula.VarOrEff.Eff(sym)) => Type.Cst(TypeConstructor.Effect(sym), SourceLocation.Unknown)
-      case Some(BoolFormula.VarOrEff.Assoc(sym, arg)) => Type.AssocType(Ast.AssocTypeConstructor(sym, SourceLocation.Unknown), arg, Kind.Eff, SourceLocation.Unknown)
+      case Some(BoolFormula.IrreducibleEff.Var(sym)) => Type.Var(sym, SourceLocation.Unknown)
+      case Some(BoolFormula.IrreducibleEff.Eff(sym)) => Type.Cst(TypeConstructor.Effect(sym), SourceLocation.Unknown)
+      case Some(BoolFormula.IrreducibleEff.Assoc(sym, arg)) => Type.AssocType(Ast.AssocTypeConstructor(sym, SourceLocation.Unknown), arg, Kind.Eff, SourceLocation.Unknown)
+      case Some(BoolFormula.IrreducibleEff.JvmToEff(t)) => t
       case None => throw InternalCompilerException(s"unexpected unknown ID: $id", SourceLocation.Unknown)
     }
   }

@@ -24,17 +24,6 @@ pub enum Proxy[_] {
 pub eff Exec
 
 ///
-/// The uninterpretable `Exit` effect.
-///
-/// The `Exit` effect represents the actions to required to immediately terminate execution of the JVM.
-///
-/// This includes calls to `System.exit` and `Runtime.exit`.
-///
-/// The `Exit` effect is uninterpretable which means that it cannot be handled.
-///
-pub eff Exit
-
-///
 /// The uninterpretable `FileRead` effect.
 ///
 /// The `FileRead` effect represents the actions to required to read from the file system.

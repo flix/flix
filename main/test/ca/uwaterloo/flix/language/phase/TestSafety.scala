@@ -429,6 +429,16 @@ class TestSafety extends AnyFunSuite with TestUtils {
     expectError[SafetyError.MissingDefaultTypeMatchCase](result)
   }
 
+  test("TestIOEffectInTryWith.01") {
+    val input =
+      """
+        |def f(): Unit =
+        |    try println("Hello, World!") with IO {}
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[SafetyError.IOEffectInTryWith](result)
+  }
+
   test("UnableToDeriveSendable.01") {
     val input =
       """
@@ -880,21 +890,6 @@ class TestSafety extends AnyFunSuite with TestUtils {
   }
 
   test("IllegalEntryPointSignature.05") {
-    val input =
-      """
-        |eff Print {
-        |    pub def println(): Unit
-        |}
-        |
-        |@benchmark
-        |def foo(): Unit \ Print = do Print.println()
-        |
-      """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.IllegalEntryPointSignature](result)
-  }
-
-  test("IllegalEntryPointSignature.06") {
     val input =
       """
         |eff Print {

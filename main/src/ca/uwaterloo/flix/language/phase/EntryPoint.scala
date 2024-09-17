@@ -91,7 +91,7 @@ object EntryPoint {
   private def getReachable(root: TypedAst.Root): Set[Symbol.DefnSym] = {
     val s = mutable.Set.empty[Symbol.DefnSym]
     for ((sym, defn) <- root.defs) {
-      if (defn.spec.ann.isBenchmark || defn.spec.ann.isTest || defn.spec.ann.isExport) {
+      if (defn.spec.ann.isTest || defn.spec.ann.isExport) {
         s += sym
       }
     }
@@ -185,7 +185,7 @@ object EntryPoint {
       val resultSc = Scheme.generalize(Nil, Nil, resultTpe, RigidityEnv.empty)
 
       // Check for [[IllegalEntryPointEffect]]
-      if (declaredEff != Type.Pure && (declaredEff != Type.IO && declaredEff != Type.NonDet)) {
+      if (declaredEff != Type.Pure && (declaredEff != Type.IO && declaredEff != Type.NonDet && declaredEff != Type.Sys)) {
         return Validation.toSoftFailure((),EntryPointError.IllegalEntryPointEff(sym, declaredEff, declaredEff.loc))
       }
 

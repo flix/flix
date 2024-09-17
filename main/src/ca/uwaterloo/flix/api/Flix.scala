@@ -154,7 +154,6 @@ class Flix {
   private val standardLibrary = List(
     "Array.flix" -> LocalResource.get("/src/library/Array.flix"),
     "Assert.flix" -> LocalResource.get("/src/library/Assert.flix"),
-    "Benchmark.flix" -> LocalResource.get("/src/library/Benchmark.flix"),
     "BigDecimal.flix" -> LocalResource.get("/src/library/BigDecimal.flix"),
     "BigInt.flix" -> LocalResource.get("/src/library/BigInt.flix"),
     "Box.flix" -> LocalResource.get("/src/library/Box.flix"),
@@ -261,7 +260,14 @@ class Flix {
 
     "Abort.flix" -> LocalResource.get("/src/library/Abort.flix"),
     "Clock.flix" -> LocalResource.get("/src/library/Clock.flix"),
-    "Eff/Random.flix" -> LocalResource.get("/src/library/Eff/Random.flix"),
+    "Exit.flix" -> LocalResource.get("/src/library/Exit.flix"),
+    "Eff/BiasedCoin.flix" -> LocalResource.get("/src/library/Eff/BiasedCoin.flix"),
+    "Eff/RandomCoin.flix" -> LocalResource.get("/src/library/Eff/RandomCoin.flix"),
+
+    "Logger.flix" -> LocalResource.get("/src/library/Logger.flix"),
+    "FilePath.flix" -> LocalResource.get("/src/library/FilePath.flix"),
+    "Process.flix" -> LocalResource.get("/src/library/Process.flix"),
+    "Severity.flix" -> LocalResource.get("/src/library/Severity.flix"),
     "TimeUnit.flix" -> LocalResource.get("/src/library/TimeUnit.flix"),
 
     "Graph.flix" -> LocalResource.get("/src/library/Graph.flix"),
