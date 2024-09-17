@@ -122,7 +122,7 @@ object LambdaLift {
       val es = exps.map(visitExp)
       LiftedAst.Expr.ApplyClo(e, es, tpe, purity, loc)
 
-    case SimplifiedAst.Expr.ApplyDef(SimplifiedAst.Expr.Def(sym, _, _), exps, tpe, purity, loc) =>
+    case SimplifiedAst.Expr.ApplyDef(sym, exps, tpe, purity, loc) =>
       val es = exps.map(visitExp)
       LiftedAst.Expr.ApplyDef(sym, es, tpe, purity, loc)
 
