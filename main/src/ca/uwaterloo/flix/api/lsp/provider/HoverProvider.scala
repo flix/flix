@@ -26,19 +26,31 @@ import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
 
 import scala.annotation.tailrec
+import ca.uwaterloo.flix.language.ast.TypedAst.Expr
+import ca.uwaterloo.flix.util.Result.ToErr
+import ca.uwaterloo.flix.language.ast.SourcePosition
+import ca.uwaterloo.flix.language.ast.shared.Source
+import ca.uwaterloo.flix.language.ast.TypedAst
 
 object HoverProvider {
-
   def processHover(uri: String, pos: Position)(implicit index: Index, root: Root, flix: Flix): JObject = {
-    index.query(uri, pos) match {
-      case None => mkNotFound(uri, pos)
+    hover(uri, pos)
+  }
 
-      case Some(entity) => hoverEntity(entity, uri, pos)
+
+  def hover(uri: String, pos: Position)(implicit root: Root, flix: Flix): JObject = {
+    var stack: List[Entity] = Nil
+    def visit(e: Entity): Unit = {
+      stack = e :: stack
     }
+
+    Visitors.visitRoot(visit, Visitors.inside(uri, pos))(root)
+
+    hoverEntity(stack.head, uri, pos)
   }
 
   @tailrec
-  private def hoverEntity(entity: Entity, uri: String, pos: Position)(implicit Index: Index, root: Root, flix: Flix): JObject = entity match {
+  private def hoverEntity(entity: Entity, uri: String, pos: Position)(implicit root: Root, flix: Flix): JObject = entity match {
 
     case Entity.Case(caze) => hoverType(caze.tpe, caze.sym.loc)
 
