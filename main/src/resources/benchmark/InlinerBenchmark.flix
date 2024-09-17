@@ -1,4 +1,4 @@
-mod MapInts {
+mod InlinerBenchmarkNormal {
 
     pub def map(f: a -> b, l: List[a]) : List[b] = {
         def mp(xs, acc) = match xs {
