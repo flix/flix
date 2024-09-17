@@ -155,8 +155,8 @@ object TypedAstOps {
         case (acc, exp) => freeVars(exp) ++ acc
       }
 
-    case Expr.ApplyDef(exp, exps, _, _, _) =>
-      exps.foldLeft(freeVars(exp)) {
+    case Expr.ApplyDef(_, exps, _, _, _) =>
+      exps.foldLeft(Map.empty[Symbol.VarSym, Type]) {
         case (acc, exp) => freeVars(exp) ++ acc
       }
 

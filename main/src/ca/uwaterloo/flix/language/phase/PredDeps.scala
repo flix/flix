@@ -103,8 +103,7 @@ object PredDeps {
       }
 
     case Expr.ApplyDef(exp, exps, _, _, _) =>
-      val init = visitExp(exp)
-      exps.foldLeft(init) {
+      exps.foldLeft(LabelledPrecedenceGraph.empty) {
         case (acc, exp) => acc + visitExp(exp)
       }
 
