@@ -82,9 +82,9 @@ object ClosureConv {
       val es = exps.map(visitExp)
       Expr.ApplyClo(e, es, tpe, purity, loc)
 
-    case Expr.ApplyDef(exp, exps, tpe, purity, loc) =>
+    case Expr.ApplyDef(sym, exps, tpe, purity, loc) =>
       val es = exps.map(visitExp)
-      Expr.ApplyDef(exp, es, tpe, purity, loc)
+      Expr.ApplyDef(sym, es, tpe, purity, loc)
 
     case Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
       val es = exps map visitExp
@@ -324,9 +324,9 @@ object ClosureConv {
         val es = exps.map(visitExp)
         Expr.ApplyClo(e, es, tpe, purity, loc)
 
-      case Expr.ApplyDef(exp, exps, tpe, purity, loc) =>
+      case Expr.ApplyDef(sym, exps, tpe, purity, loc) =>
         val es = exps.map(visitExp)
-        Expr.ApplyDef(exp, es, tpe, purity, loc)
+        Expr.ApplyDef(sym, es, tpe, purity, loc)
 
       case Expr.Apply(exp, exps, tpe, purity, loc) =>
         val e = visitExp(exp)
