@@ -13,6 +13,10 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+
+///
+/// An effect used to access the current (real-world) time.
+///
 eff Clock {
 
     ///

@@ -587,6 +587,7 @@ object Indexer {
 
     // Jvm types should not be exposed to the user.
     case _: Type.JvmToType => Index.empty
+    case _: Type.JvmToEff => Index.empty
     case _: Type.UnresolvedJvmType => Index.empty
   }
 

@@ -13,18 +13,15 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-mod TestEffRandom {
 
-    use Eff.Random.RandomCoin
-    use Eff.Random.BiasedCoin
+///
+/// An effect used to start a process outside the JVM.
+///
+eff Process {
 
-    @Test
-    pub def testRandomCoin01(): Unit \ IO =
-        RandomCoin.ioHandler(() -> do RandomCoin.flip());
-        ()
-
-    pub def testBiasedCoin(): Unit \ IO =
-        BiasedCoin.ioHandler(() -> do BiasedCoin.flip(0.8));
-        ()
+    ///
+    /// Immediately executes the command `cmd` passing the arguments `args`.
+    ///
+    pub def exec(cmd: String, args: List[String]): Unit
 
 }
