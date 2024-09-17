@@ -4033,7 +4033,7 @@ private def mkUnappliedAssocType(sym: Symbol.AssocTypeSym, loc: SourceLocation):
   }
 
   /**
-    * Used to generated unique [[Symbol.VarSym]] per expression.
+    * Used to generated [[Symbol.VarSym]] with unique names.
     */
   private class LocalContext(private var id: Int) {
     def nextId(): Int = {
