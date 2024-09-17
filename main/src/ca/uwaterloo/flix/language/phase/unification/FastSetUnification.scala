@@ -63,28 +63,32 @@ object FastSetUnification {
     }
 
     /** `true` if `this` contains neither [[Var]] nor [[Cst]]. */
-    final def ground: Boolean = this match {
+    final def isGround: Boolean = this match {
       case Univ => true
       case Empty => true
       case Cst(_) => false
       case Var(_) => false
       case ElemSet(_) => true
-      case Compl(t) => t.ground
+      case Compl(t) => t.isGround
       case Inter(_, cstsPos, varsPos, _, cstsNeg, varsNeg, other) =>
         cstsPos.isEmpty &&
           varsPos.isEmpty &&
           cstsNeg.isEmpty &&
           varsNeg.isEmpty &&
-          other.forall(_.ground)
+          other.forall(_.isGround)
       case Union(_, cstsPos, varsPos, _, cstsNeg, varsNeg, other) =>
         cstsPos.isEmpty &&
           varsPos.isEmpty &&
           cstsNeg.isEmpty &&
           varsNeg.isEmpty &&
-          other.forall(_.ground)
+          other.forall(_.isGround)
     }
 
-    /** Returns all [[Var]] and [[Cst]] that occur in `this`. */
+    /**
+      * Returns all [[Cst]] and [[Var]] that occur in `this`.
+      *
+      * Invariant: [[Cst]], and [[Var]] must use disjoint integers.
+      */
     final def unknowns: SortedSet[Int] = this match {
       case Univ => SortedSet.empty
       case Empty => SortedSet.empty
@@ -202,7 +206,8 @@ object FastSetUnification {
     final case class Cst(c: Int) extends SetFormula
 
     /**
-      * A set variable (`x42`), i.e. a set that we do not know but should learn assumptions about.
+      * A set variable (`x42`), i.e. a set that we do not know but should instantiate to its most
+      * general form via unification.
       *
       * Invariant: [[ElemSet]], [[Cst]], and [[Var]] must use disjoint integers.
       */
