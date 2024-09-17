@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.dbg.printer
 
-import ca.uwaterloo.flix.language.ast.LoweredAst
+import ca.uwaterloo.flix.language.ast.{Ast, LoweredAst}
 import ca.uwaterloo.flix.language.ast.LoweredAst.{Expr, Pattern}
 import ca.uwaterloo.flix.language.dbg.DocAst
 
@@ -58,7 +58,7 @@ object LoweredAstPrinter {
     case Expr.Sig(sym, tpe, loc) => DocAst.Expr.Sig(sym)
     case Expr.Lambda(fparam, exp, tpe, loc) => DocAst.Expr.Lambda(List(printFormalParam(fparam)), print(exp))
     case Expr.Apply(exp, exps, tpe, eff, loc) => DocAst.Expr.ApplyClo(print(exp), exps.map(print), None)
-    case Expr.ApplyDef(Expr.Def(sym, _, _), exps, _, _, _) => DocAst.Expr.ApplyDef(sym, exps.map(print), None)
+    case Expr.ApplyDef(Ast.DefSymUse(sym, _), exps, _, _, _) => DocAst.Expr.ApplyDef(sym, exps.map(print), None)
     case Expr.ApplyAtomic(op, exps, tpe, _, loc) => OpPrinter.print(op, exps.map(print), TypePrinter.print(tpe))
     case Expr.Let(sym, mod, exp1, exp2, tpe, eff, loc) => DocAst.Expr.Let(DocAst.Expr.Var(sym), None, print(exp1), print(exp2))
     case Expr.LetRec(sym, mod, exp1, exp2, tpe, eff, loc) => DocAst.Expr.LetRec(DocAst.Expr.Var(sym), None, print(exp1), print(exp2))

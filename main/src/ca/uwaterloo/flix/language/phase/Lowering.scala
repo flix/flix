@@ -389,11 +389,10 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expr.Apply(e, es, t, eff, loc)
 
-    case TypedAst.Expr.ApplyDef(sym, exps, tpe2, eff, loc2) =>
+    case TypedAst.Expr.ApplyDef(sym, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp)
-      val t2 = visitType(tpe2)
-      ???
-    // LoweredAst.Expr.ApplyDef(e, es, t2, eff, loc2)
+      val t = visitType(tpe)
+      LoweredAst.Expr.ApplyDef(sym, es, t, eff, loc)
 
     case TypedAst.Expr.Unary(sop, exp, tpe, eff, loc) =>
       val e = visitExp(exp)

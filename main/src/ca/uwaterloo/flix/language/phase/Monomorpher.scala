@@ -520,11 +520,14 @@ object Monomorpher {
       val es = exps.map(visitExp(_, env0, subst))
       MonoAst.Expr.Apply(e, es, subst(tpe), subst(eff), loc)
 
-    case LoweredAst.Expr.ApplyDef(LoweredAst.Expr.Def(sym, tpe1, loc1), exps, tpe2, eff, loc2) =>
+    case LoweredAst.Expr.ApplyDef(Ast.DefSymUse(sym, loc1), exps, tpe, eff, loc2) =>
+      val spec = root.defs(sym).spec
+      val declaredTypes = spec.fparams.map(_.tpe)
+      // Is this correct or should this be curried? Maybe done in ConstraintGen?
+      val tpe1 = Type.mkApply(Type.Cst(TypeConstructor.Arrow(declaredTypes.length), loc1), spec.eff :: declaredTypes, loc1)
       val newSym = specializeDefSym(sym, subst(tpe1))
-      val e = MonoAst.Expr.Def(newSym, subst(tpe1), loc1)
       val es = exps.map(visitExp(_, env0, subst))
-      MonoAst.Expr.ApplyDef(e, es, subst(tpe2), subst(eff), loc2)
+      MonoAst.Expr.ApplyDef(Ast.DefSymUse(newSym, loc1), es, subst(tpe), subst(eff), loc2)
 
     case LoweredAst.Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp(_, env0, subst))
