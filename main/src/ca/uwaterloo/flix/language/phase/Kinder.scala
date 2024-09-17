@@ -149,18 +149,12 @@ object Kinder {
       val indexVal = visitIndex(index0, sym, kenv)
       val tparamsVal = traverse(tparams0)(visitTypeParam(_, kenv))
 
-      flatMapN(indexVal, tparamsVal) {
+      mapN(indexVal, tparamsVal) {
         case (index, tparams) =>
           val targs = (index :: tparams).map(tparam => Type.Var(tparam.sym, tparam.loc.asSynthetic))
           val t = Type.mkApply(Type.Cst(TypeConstructor.RestrictableEnum(sym, getRestrictableEnumKind(enum0)), sym.loc.asSynthetic), targs, sym.loc.asSynthetic)
-          val casesVal = traverse(cases0) {
-            case case0 => mapN(visitRestrictableCase(case0, index, tparams, t, kenv, taenv, root)) {
-              caze => caze.sym -> caze
-            }
-          }
-          mapN(casesVal) {
-            case cases => KindedAst.RestrictableEnum(doc, ann, mod, sym, index, tparams, derives, cases.toMap, t, loc)
-          }
+          val cases = cases0.map(visitRestrictableCase(_, index, tparams, t, kenv, taenv, root)).map(caze => caze.sym -> caze).toMap
+          KindedAst.RestrictableEnum(doc, ann, mod, sym, index, tparams, derives, cases, t, loc)
       }
 
   }
@@ -216,12 +210,12 @@ object Kinder {
   /**
     * Performs kinding on the given enum case under the given kind environment.
     */
-  private def visitRestrictableCase(caze0: ResolvedAst.Declaration.RestrictableCase, index: KindedAst.TypeParam, tparams: List[KindedAst.TypeParam], resTpe: Type, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[KindedAst.RestrictableCase, KindError] = caze0 match {
+  private def visitRestrictableCase(caze0: ResolvedAst.Declaration.RestrictableCase, index: KindedAst.TypeParam, tparams: List[KindedAst.TypeParam], resTpe: Type, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): KindedAst.RestrictableCase = caze0 match {
     case ResolvedAst.Declaration.RestrictableCase(sym, tpe0, loc) =>
       val t = visitType(tpe0, Kind.Star, kenv, taenv, root)
       val quants = (index :: tparams).map(_.sym)
       val sc = Scheme(quants, Nil, Nil, Type.mkPureArrow(t, resTpe, sym.loc.asSynthetic))
-      Validation.success(KindedAst.RestrictableCase(sym, t, sc, loc)) // TODO RESTR-VARS the scheme is different for these. REVISIT
+      KindedAst.RestrictableCase(sym, t, sc, loc) // TODO RESTR-VARS the scheme is different for these. REVISIT
   }
 
   /**
@@ -229,7 +223,6 @@ object Kinder {
     */
   private def visitTraits(root: ResolvedAst.Root, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], oldRoot: KindedAst.Root, changeSet: ChangeSet)(implicit sctx: SharedContext, flix: Flix): Validation[Map[Symbol.TraitSym, KindedAst.Trait], KindError] = {
     val (staleTraits, freshTraits) = changeSet.partition(root.traits, oldRoot.traits)
-
     val result = ParOps.parTraverseValues(staleTraits)(visitTrait(_, taenv, root))
     mapN(result)(freshTraits ++ _)
   }
@@ -240,7 +233,6 @@ object Kinder {
   private def visitTrait(trt: ResolvedAst.Declaration.Trait, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[KindedAst.Trait, KindError] = trt match {
     case ResolvedAst.Declaration.Trait(doc, ann, mod, sym, tparam0, superTraits0, assocs0, sigs0, laws0, loc) =>
       val kenv = getKindEnvFromTypeParam(tparam0)
-
       val tparamsVal = visitTypeParam(tparam0, kenv)
       val superTraitsVal = traverse(superTraits0)(visitTraitConstraint(_, kenv, taenv, root))
       val assocsVal = traverse(assocs0)(visitAssocTypeSig(_, kenv, taenv, root))
