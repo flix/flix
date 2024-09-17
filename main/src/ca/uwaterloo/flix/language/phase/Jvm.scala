@@ -49,6 +49,28 @@ object Jvm {
     * Returns the methods of the class.
     *
     * If the given class is an array, the method `clone` is not included (see Class.getMethods).
+    */
+  def getMethods(clazz: Class[?]): List[Method] =
+    getMethods(clazz, static = true, instance = true)
+
+  /**
+    * Returns the static methods of the class.
+    */
+  def getStaticMethods(clazz: Class[?]): List[Method] =
+    getMethods(clazz, static = true, instance = false)
+
+  /**
+    * Returns the instance methods of the class.
+    *
+    * If the given class is an array, the method `clone` is not included (see Class.getMethods).
+    */
+  def getInstanceMethods(clazz: Class[?]): List[Method] =
+    getMethods(clazz, static = false, instance = true)
+
+  /**
+    * Returns the methods of the class.
+    *
+    * If the given class is an array, the method `clone` is not included (see Class.getMethods).
     *
     * Returns `Nil` if both static` and `instance` is `false`.
     *
@@ -56,7 +78,7 @@ object Jvm {
     * @param static whether to include static methods
     * @param instance whether to include instance methods
     */
-  def getMethodsHelper(clazz: Class[?], static: Boolean, instance: Boolean): List[Method] = {
+  private def getMethods(clazz: Class[?], static: Boolean, instance: Boolean): List[Method] = {
     val allMethods = clazz.getMethods.toList
     var methods = allMethods
 
@@ -78,28 +100,6 @@ object Jvm {
     if (!instance) methods = methods.filterNot(isInstance(_))
     methods
   }
-
-  /**
-    * Returns the methods of the class.
-    *
-    * If the given class is an array, the method `clone` is not included (see Class.getMethods).
-    */
-  def getMethods(clazz: Class[?]): List[Method] =
-    getMethodsHelper(clazz, static = true, instance = true)
-
-  /**
-    * Returns the static methods of the class.
-    */
-  def getStaticMethods(clazz: Class[?]): List[Method] =
-    getMethodsHelper(clazz, static = true, instance = false)
-
-  /**
-    * Returns the instance methods of the class.
-    *
-    * If the given class is an array, the method `clone` is not included (see Class.getMethods).
-    */
-  def getInstanceMethods(clazz: Class[?]): List[Method] =
-    getMethodsHelper(clazz, static = false, instance = true)
 
   /** Returns true if the methods are the same in regards to overloading. */
   private def methodsMatch(m1: Method, m2: Method): Boolean = {
