@@ -98,61 +98,61 @@ object Visitors {
       case Expr.Hole(sym, tpe, loc) => visit(expr)
       case Expr.HoleWithExp(exp, tpe, eff, loc) => {
         visit(expr)
-        if (accept(exp)) recur(exp)
+        if (accept(exp)) { recur(exp) }
       }
       case Expr.OpenAs(symUse, exp, tpe, loc) => {
         visit(expr)
-        if (accept(exp)) recur(exp)
+        if (accept(exp)) { recur(exp) }
       }
       case Expr.Use(sym, alias, exp, loc) => {
         visit(expr)
-        if (accept(exp)) recur(exp)
+        if (accept(exp)) { recur(exp) }
       }
       case Expr.Lambda(fparam, exp, tpe, loc) => {
         visit(expr)
-        if (accept(exp)) recur(exp)
+        if (accept(exp)) { recur(exp) }
       }
       case Expr.Apply(exp, exps, tpe, eff, loc) => {
         visit(expr)
-        if (accept(exp)) recur(exp)
+        if (accept(exp)) { recur(exp) }
         exps.foreach(recur)
       }
       case Expr.Unary(sop, exp, tpe, eff, loc) => {
         visit(expr)
-        if (accept(exp)) recur(exp)
+        if (accept(exp)) { recur(exp) }
       }
       case Expr.Binary(sop, exp1, exp2, tpe, eff, loc) =>
         visit(expr)
-        if (accept(exp1)) recur(exp1)
-        if (accept(exp2)) recur(exp2)
+        if (accept(exp1)) { recur(exp1) }
+        if (accept(exp2)) { recur(exp2) }
       case Expr.Let(sym, mod, exp1, exp2, tpe, eff, loc) =>
         visit(expr)
-        if (accept(exp1)) recur(exp1)
-        if (accept(exp2)) recur(exp2)
+        if (accept(exp1)) { recur(exp1) }
+        if (accept(exp2)) { recur(exp2) }
       case Expr.LetRec(sym, ann, mod, exp1, exp2, tpe, eff, loc) => {
         visit(expr)
-        if (accept(exp1)) recur(exp1)
-        if (accept(exp2)) recur(exp2)
+        if (accept(exp1)) { recur(exp1) }
+        if (accept(exp2)) { recur(exp2) }
       }
       case Expr.Region(tpe, loc) => visit(expr)
       case Expr.Scope(sym, regionVar, exp, tpe, eff, loc) => visit(expr)
       case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) => visit(expr)
       case Expr.Stm(exp1, exp2, _, _, _) => {
         visit(expr)
-        if (accept(exp1)) recur(exp1)
-        if (accept(exp2)) recur(exp2)
+        if (accept(exp1)) { recur(exp1) }
+        if (accept(exp2)) { recur(exp2) }
       }
       case Expr.Discard(exp, eff, loc) => {
         visit(expr)
-        if (accept(exp)) recur(exp)
+        if (accept(exp)) { recur(exp) }
       }
       case Expr.Match(exp, rules, tpe, eff, loc) => {
         visit(expr)
-        if (accept(exp)) recur(exp)
+        if (accept(exp)) { recur(exp) }
       }
       case Expr.TypeMatch(exp, rules, tpe, eff, loc) => {
         visit(expr)
-        if (accept(exp)) recur(exp)
+        if (accept(exp)) { recur(exp) }
       }
       case Expr.RestrictableChoose(star, exp, rules, tpe, eff, loc) => ???
       case Expr.Tag(sym, exp, tpe, eff, loc) => ???
