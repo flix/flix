@@ -1726,7 +1726,7 @@ private def visitApplyToplevelFull(base: ResolvedAst.Expr, arity: Int, exps: Lis
   }
 
   /**
-    * Returns a curried lambda and applicatoin of `defn`.
+    * Returns a curried lambda and application of `defn`.
     *
     *   - `Int32.add ===> x -> y -> Int32.add(x, y)`
     */
@@ -1745,13 +1745,12 @@ private def visitDef(defn: NamedAst.Declaration.Def, loc: SourceLocation)(implic
     */
 private def visitApplyDef(defn: NamedAst.Declaration.Def, exps: List[NamedAst.Expr], env: ListMap[String, Resolver.Resolution], innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, lctx: LocalContext, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Expr, ResolutionError] = {
     mapN(traverse(exps)(resolveExp(_, env))) {
-      case es =>
-        visitApplyToplevelFull(ResolvedAst.Expr.Def(defn.sym, innerLoc), defn.spec.fparams.length, es, outerLoc)
+      es => visitApplyToplevelFull(ResolvedAst.Expr.Def(defn.sym, innerLoc), defn.spec.fparams.length, es, outerLoc)
     }
   }
 
   /**
-    * Returns a curried lambda and applicatoin of `sig`.
+    * Returns a curried lambda and application of `sig`.
     *
     *   - `Add.add ===> x -> y -> Add.add(x, y)`
     */
@@ -1770,8 +1769,7 @@ private def visitSig(sig: NamedAst.Declaration.Sig, loc: SourceLocation)(implici
     */
 private def visitApplySig(sig: NamedAst.Declaration.Sig, exps: List[NamedAst.Expr], env: ListMap[String, Resolution], innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, lctx: LocalContext, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Expr, ResolutionError] = {
     mapN(traverse(exps)(resolveExp(_, env))) {
-      case es =>
-        visitApplyToplevelFull(ResolvedAst.Expr.Sig(sig.sym, innerLoc), sig.spec.fparams.length, es, outerLoc)
+      es => visitApplyToplevelFull(ResolvedAst.Expr.Sig(sig.sym, innerLoc), sig.spec.fparams.length, es, outerLoc)
     }
   }
 
