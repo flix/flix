@@ -370,13 +370,13 @@ object Kinder {
   private def visitSpec(spec0: ResolvedAst.Spec, quantifiers: List[Symbol.KindedTypeVarSym], extraTconstrs: List[Ast.TraitConstraint], kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[KindedAst.Spec, KindError] = spec0 match {
     case ResolvedAst.Spec(doc, ann, mod, tparams0, fparams0, tpe0, eff0, tconstrs0, econstrs0, loc) =>
       val tparamsVal = traverse(tparams0)(visitTypeParam(_, kenv))
-      val fparamsVal = traverse(fparams0)(visitFormalParam(_, kenv, taenv, root))
+      val fparams = fparams0.map(visitFormalParam(_, kenv, taenv, root))
       val t = visitType(tpe0, Kind.Star, kenv, taenv, root)
       val ef = visitEffectDefaultPure(eff0, kenv, taenv, root)
       val tconstrsVal = traverse(tconstrs0)(visitTraitConstraint(_, kenv, taenv, root))
       val econstrsVal = traverse(econstrs0)(visitEqualityConstraint(_, kenv, taenv, root))
-      mapN(tparamsVal, fparamsVal, tconstrsVal, econstrsVal) {
-        case (tparams, fparams, tconstrs, econstrs) =>
+      mapN(tparamsVal, tconstrsVal, econstrsVal) {
+        case (tparams, tconstrs, econstrs) =>
           val allQuantifiers = quantifiers ::: tparams.map(_.sym)
           val base = Type.mkUncurriedArrowWithEffect(fparams.map(_.tpe), ef, t, t.loc)
           val sc = Scheme(allQuantifiers, tconstrs, econstrs.map(EqualityEnvironment.broaden), base)
@@ -458,10 +458,10 @@ object Kinder {
       }
 
     case ResolvedAst.Expr.Lambda(fparam0, exp0, loc) =>
-      val fparamVal = visitFormalParam(fparam0, kenv0, taenv, root)
+      val fparam = visitFormalParam(fparam0, kenv0, taenv, root)
       val expVal = visitExp(exp0, kenv0, taenv, henv0, root)
-      mapN(fparamVal, expVal) {
-        case (fparam, exp) => KindedAst.Expr.Lambda(fparam, exp, loc)
+      mapN(expVal) {
+        case exp => KindedAst.Expr.Lambda(fparam, exp, loc)
       }.recoverOne {
         case err: KindError =>
           val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
@@ -1064,10 +1064,10 @@ object Kinder {
 
       val henv = Some((tvar, hTvar))
 
-      val fparamsVal = traverse(fparams0)(visitFormalParam(_, kenv, taenv, root))
+      val fparams = fparams0.map(visitFormalParam(_, kenv, taenv, root))
       val expVal = visitExp(exp0, kenv, taenv, henv, root)
-      mapN(fparamsVal, expVal) {
-        case (fparams, exp) => KindedAst.HandlerRule(op, fparams, exp, tvar)
+      mapN(expVal) {
+        case exp => KindedAst.HandlerRule(op, fparams, exp, tvar)
       }
   }
 
@@ -1476,13 +1476,13 @@ object Kinder {
   /**
     * Performs kinding on the given formal param under the given kind environment.
     */
-  private def visitFormalParam(fparam0: ResolvedAst.FormalParam, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[KindedAst.FormalParam, KindError] = fparam0 match {
+  private def visitFormalParam(fparam0: ResolvedAst.FormalParam, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): KindedAst.FormalParam = fparam0 match {
     case ResolvedAst.FormalParam(sym, mod, tpe0, loc) =>
       val (t, src) = tpe0 match {
         case None => (sym.tvar, Ast.TypeSource.Inferred)
         case Some(tpe) => (visitType(tpe, Kind.Star, kenv, taenv, root), Ast.TypeSource.Ascribed)
       }
-      Validation.success(KindedAst.FormalParam(sym, mod, t, src, loc))
+      KindedAst.FormalParam(sym, mod, t, src, loc)
   }
 
   /**
@@ -1506,13 +1506,13 @@ object Kinder {
     * Performs kinding on the given JVM method.
     */
   private def visitJvmMethod(method: ResolvedAst.JvmMethod, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], henv: Option[(Type.Var, Type.Var)], root: ResolvedAst.Root)(implicit scope: Scope, sctx: SharedContext, flix: Flix) = method match {
-    case ResolvedAst.JvmMethod(_, fparams, exp, tpe0, eff0, loc) =>
-      val fparamsVal = traverse(fparams)(visitFormalParam(_, kenv, taenv, root))
+    case ResolvedAst.JvmMethod(_, fparams0, exp, tpe0, eff0, loc) =>
+      val fparams = fparams0.map(visitFormalParam(_, kenv, taenv, root))
       val expVal = visitExp(exp, kenv, taenv, henv, root)
       val eff = visitEffectDefaultPure(eff0, kenv, taenv, root)
       val t = visitType(tpe0, Kind.Wild, kenv, taenv, root)
-      mapN(fparamsVal, expVal) {
-        case (f, e) => KindedAst.JvmMethod(method.ident, f, e, t, eff, loc)
+      mapN(expVal) {
+        case e => KindedAst.JvmMethod(method.ident, fparams, e, t, eff, loc)
       }
   }
 
