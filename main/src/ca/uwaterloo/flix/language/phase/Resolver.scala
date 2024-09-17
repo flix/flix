@@ -1744,7 +1744,8 @@ object Resolver {
     */
   private def visitApplyDef(defn: NamedAst.Declaration.Def, exps: List[NamedAst.Expr], env: ListMap[String, Resolver.Resolution], innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Expr, ResolutionError] = {
     mapN(traverse(exps)(resolveExp(_, env))) {
-      es => visitApplyToplevelFull(ResolvedAst.Expr.Def(defn.sym, innerLoc), defn.spec.fparams.length, es, outerLoc)
+      case es if defn.spec.fparams.length == es.length => ResolvedAst.Expr.ApplyDef(Ast.DefSymUse(defn.sym, innerLoc), es, outerLoc)
+      case es => visitApplyToplevelFull(ResolvedAst.Expr.Def(defn.sym, innerLoc), defn.spec.fparams.length, es, outerLoc)
     }
   }
 

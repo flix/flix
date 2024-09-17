@@ -456,7 +456,7 @@ object Kinder {
           KindedAst.Expr.Apply(exp, exps, tvar, evar, loc)
       }
 
-    case ResolvedAst.Expr.ApplyDef(ResolvedAst.Expr.Def(sym, loc1), exps0, loc2) =>
+    case ResolvedAst.Expr.ApplyDef(Ast.DefSymUse(sym, loc1), exps0, loc2) =>
       val e = KindedAst.Expr.Def(sym, Type.freshVar(Kind.Star, loc1.asSynthetic), loc1)
       val expsVal = traverse(exps0)(visitExp(_, kenv0, taenv, henv0, root))
       mapN(expsVal) {
