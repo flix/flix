@@ -216,7 +216,8 @@ object ClosureConv {
     case Expr.Apply(exp, args, _, _, _) =>
       freeVars(exp) ++ freeVarsExps(args)
 
-    case Expr.ApplyDef(_, _, _, _, _) => SortedSet.empty
+    case Expr.ApplyDef(_, exps, _, _, _) =>
+      freeVarsExps(exps)
 
     case Expr.ApplyAtomic(_, exps, _, _, _) =>
       freeVarsExps(exps)
