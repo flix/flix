@@ -797,12 +797,11 @@ private def resolveExp(exp0: NamedAst.Expr, env0: ListMap[String, Resolution])(i
           case Some(List(Resolution.JavaClass(clazz))) =>
             // We have a static field access.
             val fieldName = qname.ident
-            try {
-              val field = clazz.getField(fieldName.name)
-              // Returns out of resolveExp
-              return Validation.success(ResolvedAst.Expr.GetStaticField(field, loc))
-            } catch {
-              case _: NoSuchFieldException =>
+            Jvm.getField(clazz, fieldName.name, static = true) match {
+              case Some(field) =>
+                // Returns out of resolveExp
+                return Validation.success(ResolvedAst.Expr.GetStaticField(field, loc))
+              case None =>
                 val m = ResolutionError.UndefinedJvmStaticField(clazz, fieldName, loc)
                 // Returns out of resolveExp
                 return Validation.toSoftFailure(ResolvedAst.Expr.Error(m), m)
@@ -3424,7 +3423,7 @@ private def getRestrictableEnumIfAccessible(enum0: NamedAst.Declaration.Restrict
       val method = clazz.getMethod(methodName, signature: _*)
 
       // Check if the method should be and is static.
-      if (static != Modifier.isStatic(method.getModifiers)) {
+      if (static != Jvm.isStatic(method)) {
         throw new NoSuchMethodException()
       } else {
         // Check that the return type of the method matches the declared type.
@@ -3470,7 +3469,7 @@ private def getRestrictableEnumIfAccessible(enum0: NamedAst.Declaration.Restrict
           val field = clazz.getField(fieldName)
 
           // Check if the field should be and is static.
-          if (static == Modifier.isStatic(field.getModifiers))
+          if (static == Jvm.isStatic(field))
             Result.Ok((clazz, field))
           else
             throw new NoSuchFieldException()
