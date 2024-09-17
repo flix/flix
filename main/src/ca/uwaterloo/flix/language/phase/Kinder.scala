@@ -94,21 +94,14 @@ object Kinder {
   private def visitEnum(enum0: ResolvedAst.Declaration.Enum, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[KindedAst.Enum, KindError] = enum0 match {
     case ResolvedAst.Declaration.Enum(doc, ann, mod, sym, tparams0, derives, cases0, loc) =>
       val kenv = getKindEnvFromTypeParams(tparams0)
-
       val tparamsVal = traverse(tparams0)(visitTypeParam(_, kenv))
 
-      flatMapN(tparamsVal) {
+      mapN(tparamsVal) {
         case tparams =>
           val targs = tparams.map(tparam => Type.Var(tparam.sym, tparam.loc.asSynthetic))
           val t = Type.mkApply(Type.Cst(TypeConstructor.Enum(sym, getEnumKind(enum0)), sym.loc.asSynthetic), targs, sym.loc.asSynthetic)
-          val casesVal = traverse(cases0) {
-            case case0 => mapN(visitCase(case0, tparams, t, kenv, taenv, root)) {
-              caze => caze.sym -> caze
-            }
-          }
-          mapN(casesVal) {
-            case cases => KindedAst.Enum(doc, ann, mod, sym, tparams, derives, cases.toMap, t, loc)
-          }
+          val cases = cases0.map(visitCase(_, tparams, t, kenv, taenv, root)).map(caze => caze.sym -> caze).toMap
+          KindedAst.Enum(doc, ann, mod, sym, tparams, derives, cases, t, loc)
       }
   }
 
@@ -134,15 +127,12 @@ object Kinder {
         case kenv =>
           val tparamsVal = traverse(tparams1)(visitTypeParam(_, kenv))
 
-          flatMapN(tparamsVal) {
+          mapN(tparamsVal) {
             case kindedTparams =>
-              val fieldsVal = traverse(fields0)(visitStructField(_, kindedTparams, kenv, taenv, root))
-              mapN(fieldsVal) {
-                case fields =>
-                  val targs = kindedTparams.map(tparam => Type.Var(tparam.sym, tparam.loc.asSynthetic))
-                  val sc = Scheme(kindedTparams.map(_.sym), List(), List(), Type.mkStruct(sym, targs, loc))
-                  KindedAst.Struct(doc, ann, mod, sym, kindedTparams, sc, fields, loc)
-              }
+              val fields = fields0.map(visitStructField(_, kindedTparams, kenv, taenv, root))
+              val targs = kindedTparams.map(tparam => Type.Var(tparam.sym, tparam.loc.asSynthetic))
+              val sc = Scheme(kindedTparams.map(_.sym), List(), List(), Type.mkStruct(sym, targs, loc))
+              KindedAst.Struct(doc, ann, mod, sym, kindedTparams, sc, fields, loc)
           }
       }
   }
@@ -206,21 +196,21 @@ object Kinder {
   /**
     * Performs kinding on the given enum case under the given kind environment.
     */
-  private def visitCase(caze0: ResolvedAst.Declaration.Case, tparams: List[KindedAst.TypeParam], resTpe: Type, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[KindedAst.Case, KindError] = caze0 match {
+  private def visitCase(caze0: ResolvedAst.Declaration.Case, tparams: List[KindedAst.TypeParam], resTpe: Type, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): KindedAst.Case = caze0 match {
     case ResolvedAst.Declaration.Case(sym, tpe0, loc) =>
       val t = visitType(tpe0, Kind.Star, kenv, taenv, root)
       val quants = tparams.map(_.sym)
       val sc = Scheme(quants, Nil, Nil, Type.mkPureArrow(t, resTpe, sym.loc.asSynthetic))
-      Validation.success(KindedAst.Case(sym, t, sc, loc))
+      KindedAst.Case(sym, t, sc, loc)
   }
 
   /**
     * Performs kinding on the given struct field under the given kind environment.
     */
-  private def visitStructField(field0: ResolvedAst.Declaration.StructField, tparams: List[KindedAst.TypeParam], kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[KindedAst.StructField, KindError] = field0 match {
+  private def visitStructField(field0: ResolvedAst.Declaration.StructField, tparams: List[KindedAst.TypeParam], kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): KindedAst.StructField = field0 match {
     case ResolvedAst.Declaration.StructField(sym, tpe0, loc) =>
       val t = visitType(tpe0, Kind.Star, kenv, taenv, root)
-      Validation.success(KindedAst.StructField(sym, t, loc))
+      KindedAst.StructField(sym, t, loc)
   }
 
   /**
