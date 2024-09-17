@@ -31,6 +31,14 @@ def benchmarks(): Map[String, Unit -> Unit \ IO] = Map#{
         let l = InlinerBenchmarkNormal.range(0, 100_000);
         let l2 = InlinerBenchmarkNormal.map(x -> x + 1, l);
         println(InlinerBenchmarkNormal.length(l2))
+    },
+    "(inliner) Map 100_000 inlined" => () -> {
+        let top = 99999; // 100_000 - 1
+        let l = InlinerBenchmarkInlined.rng(top, Nil);
+        let l2 = InlinerBenchmarkInlined.mp(l, Nil);
+        let l3 = InlinerBenchmarkInlined.rv(l2, Nil);
+        let l4 = InlinerBenchmarkInlined.ln(l3, 0);
+        println(l4)
     }
 }
 
