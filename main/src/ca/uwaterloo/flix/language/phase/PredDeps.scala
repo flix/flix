@@ -102,7 +102,7 @@ object PredDeps {
         case (acc, exp) => acc + visitExp(exp)
       }
 
-    case Expr.ApplyDef(exp, exps, _, _, _) =>
+    case Expr.ApplyDef(exp, exps, _, _, _, _) =>
       exps.foldLeft(LabelledPrecedenceGraph.empty) {
         case (acc, exp) => acc + visitExp(exp)
       }

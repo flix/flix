@@ -260,7 +260,7 @@ object Safety {
       case Expr.Apply(exp, exps, _, _, _) =>
         visit(exp) ++ exps.flatMap(visit)
 
-      case Expr.ApplyDef(_, exps, _, _, _) =>
+      case Expr.ApplyDef(_, exps, _, _, _, _) =>
         exps.flatMap(visit)
 
       case Expr.Unary(_, exp, _, _, _) =>

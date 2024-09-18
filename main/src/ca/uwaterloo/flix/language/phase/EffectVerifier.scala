@@ -79,7 +79,7 @@ object EffectVerifier {
       val expected = Type.mkUnion(Type.eraseTopAliases(exp.tpe).arrowEffectType :: exp.eff :: exps.map(_.eff), loc)
       val actual = eff
       expectType(expected, actual, loc)
-    case Expr.ApplyDef(_, exps, _, eff, loc) =>
+    case Expr.ApplyDef(_, exps, _, _, eff, loc) =>
       exps.foreach(visitExp)
       val expected = Type.mkUnion(exps.map(_.eff), loc)
       val actual = eff

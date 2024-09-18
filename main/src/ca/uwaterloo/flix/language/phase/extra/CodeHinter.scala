@@ -108,7 +108,7 @@ object CodeHinter {
       }
       hints0 ++ visitExp(exp) ++ visitExps(exps)
 
-    case Expr.ApplyDef(Ast.DefSymUse(sym, loc1), exps, _, _, loc2) =>
+    case Expr.ApplyDef(Ast.DefSymUse(sym, loc1), exps, _, _, _, loc2) =>
       val hints0 = exps match {
         case lambda :: _ => checkEffect(sym, lambda.tpe, loc2)
         case _ => Nil
