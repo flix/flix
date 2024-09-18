@@ -240,7 +240,7 @@ object Indexer {
     case Expr.Apply(exp, exps, _, _, _) =>
       visitExp(exp) ++ visitExps(exps) ++ Index.occurrenceOf(exp0)
 
-    case Expr.ApplyDef(Ast.DefSymUse(sym, loc), exps, _, _, _) =>
+    case Expr.ApplyDef(Ast.DefSymUse(sym, loc), exps, _, _, _, _) =>
       val parent = Entity.Exp(exp0)
       visitExps(exps) ++ Index.occurrenceOf(exp0) ++ Index.useOf(sym, loc, parent)
 

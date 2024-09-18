@@ -442,9 +442,10 @@ object Kinder {
       val expsVal = traverse(exps0)(visitExp(_, kenv0, taenv, henv0, root))
       mapN(expsVal) {
         case exps =>
+          val ftvar = Type.freshVar(Kind.Star, loc2.asSynthetic)
           val tvar = Type.freshVar(Kind.Star, loc2.asSynthetic)
           val evar = Type.freshVar(Kind.Eff, loc2.asSynthetic)
-          KindedAst.Expr.ApplyDef(sym, exps, tvar, evar, loc2)
+          KindedAst.Expr.ApplyDef(sym, exps, ftvar, tvar, evar, loc2)
       }
 
     case ResolvedAst.Expr.Lambda(fparam0, exp0, loc) =>

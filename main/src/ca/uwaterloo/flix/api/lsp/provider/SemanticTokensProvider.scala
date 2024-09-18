@@ -356,7 +356,7 @@ object SemanticTokensProvider {
         case (acc, exp) => acc ++ visitExp(exp)
       }
 
-    case Expr.ApplyDef(Ast.DefSymUse(sym, loc), exps, _, _, _) =>
+    case Expr.ApplyDef(Ast.DefSymUse(sym, loc), exps, _, _, _, _) =>
       val o = if (isOperatorName(sym.name)) SemanticTokenType.Operator else SemanticTokenType.Function
       val t = SemanticToken(o, Nil, loc)
       exps.foldLeft(Iterator(t)) {
