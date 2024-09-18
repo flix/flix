@@ -9,6 +9,7 @@ import ca.uwaterloo.flix.language.ast.Type
 import ca.uwaterloo.flix.api.lsp.Position
 import ca.uwaterloo.flix.language.ast.TypedAst.Effect
 import ca.uwaterloo.flix.language.ast.Ast.Annotation
+import ca.uwaterloo.flix.language.ast.TypedAst.Constraint
 
 
 object Visitors {
@@ -84,129 +85,214 @@ object Visitors {
     }
 
     if (inside(accept, defn.exp)) {
-      visitExpr(exp => visit(Entity.Exp(exp)), exp => inside(accept, defn))(defn.exp)
+      visitExpr(visit, accept)(defn.exp)
     }
   }
 
-  def visitExpr(visit: Expr => Unit, accept: Expr => Boolean)(expr: Expr): Unit = {
+  def visitExpr(visit: Entity => Unit, accept: SourceLocation => Boolean)(expr: Expr): Unit = {
+    // TODO: handle mutually recursive calls to non expressions in expressions (fx annotations)
     val recur = visitExpr(visit, accept)
+    def recurIf(e: Expr): Unit = {
+      if (accept(e.loc)) { recur(e) }
+    }
+
+    visit(Entity.Exp(expr))
     expr match {
-      case Expr.Cst(_, _, _) => visit(expr)
-      case Expr.Var(_, _, _) => visit(expr)
-      case Expr.Def(sym, tpe, loc) => visit(expr)
-      case Expr.Sig(sym, tpe, loc) => visit(expr)
-      case Expr.Hole(sym, tpe, loc) => visit(expr)
+      case Expr.Cst(_, _, _) => ()
+      case Expr.Var(_, _, _) => ()
+      case Expr.Def(sym, tpe, loc) => ()
+      case Expr.Sig(sym, tpe, loc) => ()
+      case Expr.Hole(sym, tpe, loc) => ()
       case Expr.HoleWithExp(exp, tpe, eff, loc) => {
-        visit(expr)
-        if (accept(exp)) { recur(exp) }
+        recurIf(exp)
       }
       case Expr.OpenAs(symUse, exp, tpe, loc) => {
-        visit(expr)
-        if (accept(exp)) { recur(exp) }
+        recurIf(exp)
       }
       case Expr.Use(sym, alias, exp, loc) => {
-        visit(expr)
-        if (accept(exp)) { recur(exp) }
+        recurIf(exp)
       }
       case Expr.Lambda(fparam, exp, tpe, loc) => {
-        visit(expr)
-        if (accept(exp)) { recur(exp) }
+        recurIf(exp)
       }
       case Expr.Apply(exp, exps, tpe, eff, loc) => {
-        visit(expr)
-        if (accept(exp)) { recur(exp) }
-        exps.foreach(recur)
+        recurIf(exp)
+        exps.foreach(recurIf)
       }
       case Expr.Unary(sop, exp, tpe, eff, loc) => {
-        visit(expr)
-        if (accept(exp)) { recur(exp) }
+        recurIf(exp)
       }
       case Expr.Binary(sop, exp1, exp2, tpe, eff, loc) =>
-        visit(expr)
-        if (accept(exp1)) { recur(exp1) }
-        if (accept(exp2)) { recur(exp2) }
+        recurIf(exp1)
+        recurIf(exp2)
       case Expr.Let(sym, mod, exp1, exp2, tpe, eff, loc) =>
-        visit(expr)
-        if (accept(exp1)) { recur(exp1) }
-        if (accept(exp2)) { recur(exp2) }
+        recurIf(exp1)
+        recurIf(exp2)
       case Expr.LetRec(sym, ann, mod, exp1, exp2, tpe, eff, loc) => {
-        visit(expr)
-        if (accept(exp1)) { recur(exp1) }
-        if (accept(exp2)) { recur(exp2) }
+        recurIf(exp1)
+        recurIf(exp2)
       }
-      case Expr.Region(tpe, loc) => visit(expr)
-      case Expr.Scope(sym, regionVar, exp, tpe, eff, loc) => visit(expr)
-      case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) => visit(expr)
+      case Expr.Region(tpe, loc) => 
+      case Expr.Scope(sym, regionVar, exp, tpe, eff, loc) => {
+        recurIf(exp)
+      }
+      case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) => {
+        recurIf(exp1)
+        recurIf(exp2)
+        recurIf(exp3)
+      }
       case Expr.Stm(exp1, exp2, _, _, _) => {
-        visit(expr)
-        if (accept(exp1)) { recur(exp1) }
-        if (accept(exp2)) { recur(exp2) }
+        recurIf(exp1)
+        recurIf(exp2)
       }
       case Expr.Discard(exp, eff, loc) => {
-        visit(expr)
-        if (accept(exp)) { recur(exp) }
+        recurIf(exp)
       }
       case Expr.Match(exp, rules, tpe, eff, loc) => {
-        visit(expr)
-        if (accept(exp)) { recur(exp) }
+        recurIf(exp)
       }
       case Expr.TypeMatch(exp, rules, tpe, eff, loc) => {
-        visit(expr)
-        if (accept(exp)) { recur(exp) }
+        recurIf(exp)
       }
-      case Expr.RestrictableChoose(star, exp, rules, tpe, eff, loc) => ???
-      case Expr.Tag(sym, exp, tpe, eff, loc) => ???
-      case Expr.RestrictableTag(sym, exp, tpe, eff, loc) => ???
-      case Expr.Tuple(exps, tpe, eff, loc) => ???
-      case Expr.RecordEmpty(tpe, loc) => ???
-      case Expr.RecordSelect(exp, label, tpe, eff, loc) => ???
-      case Expr.RecordExtend(label, exp1, exp2, tpe, eff, loc) => ???
-      case Expr.RecordRestrict(label, exp, tpe, eff, loc) => ???
-      case Expr.ArrayLit(exps, exp, tpe, eff, loc) => ???
-      case Expr.ArrayNew(exp1, exp2, exp3, tpe, eff, loc) => ???
-      case Expr.ArrayLoad(exp1, exp2, tpe, eff, loc) => ???
-      case Expr.ArrayLength(exp, eff, loc) => ???
-      case Expr.ArrayStore(exp1, exp2, exp3, eff, loc) => ???
-      case Expr.StructNew(sym, fields, region, tpe, eff, loc) => ???
-      case Expr.StructGet(exp, sym, tpe, eff, loc) => ???
-      case Expr.StructPut(exp1, sym, exp2, tpe, eff, loc) => ???
-      case Expr.VectorLit(exps, tpe, eff, loc) => ???
-      case Expr.VectorLoad(exp1, exp2, tpe, eff, loc) => ???
-      case Expr.VectorLength(exp, loc) => ???
-      case Expr.Ascribe(exp, tpe, eff, loc) => ???
-      case Expr.InstanceOf(exp, clazz, loc) => ???
-      case Expr.CheckedCast(cast, exp, tpe, eff, loc) => ???
-      case Expr.UncheckedCast(exp, decalredType, declaredEff, tpe, eff, loc) => ???
-      case Expr.UncheckedMaskingCast(exp, tpe, eff, loc) => ???
-      case Expr.Without(exp, effUse, tpe, eff, loc) => ???
-      case Expr.TryCatch(exp, rules, tpe, eff, loc) => ???
-      case Expr.Throw(exp, tpe, eff, loc) => ???
-      case Expr.TryWith(exp, effUse, rules, tpe, eff, loc) => ???
-      case Expr.Do(op, exps, tpe, eff, loc) => ???
-      case Expr.InvokeConstructor(constructor, exps, tpe, eff, loc) => ???
-      case Expr.InvokeMethod(method, exp, exps, tpe, eff, loc) => ???
-      case Expr.InvokeStaticMethod(method, exps, tpe, eff, loc) => ???
-      case Expr.GetField(field, exp, tpe, eff, loc) => ???
-      case Expr.PutField(field, exp1, exp2, tpe, eff, loc) => ???
-      case Expr.GetStaticField(field, tpe, eff, loc) => ???
-      case Expr.PutStaticField(field, exp, tpe, eff, loc) => ???
-      case Expr.NewObject(name, clazz, tpe, eff, methods, loc) => ???
-      case Expr.NewChannel(exp1, exp2, tpe, eff, loc) => ???
-      case Expr.GetChannel(exp, tpe, eff, loc) => ???
-      case Expr.PutChannel(exp1, exp2, tpe, eff, loc) => ???
-      case Expr.SelectChannel(rules, default, tpe, eff, loc) => ???
-      case Expr.Spawn(exp1, exp2, tpe, eff, loc) => ???
-      case Expr.ParYield(frags, exp, tpe, eff, loc) => ???
-      case Expr.Lazy(exp, tpe, loc) => ???
-      case Expr.Force(exp, tpe, eff, loc) => ???
-      case Expr.FixpointConstraintSet(cs, tpe, loc) => ???
-      case Expr.FixpointLambda(pparams, exp, tpe, eff, loc) => ???
-      case Expr.FixpointMerge(exp1, exp2, tpe, eff, loc) => ???
-      case Expr.FixpointSolve(exp, tpe, eff, loc) => ???
-      case Expr.FixpointFilter(pred, exp, tpe, eff, loc) => ???
-      case Expr.FixpointInject(exp, pred, tpe, eff, loc) => ???
-      case Expr.FixpointProject(pred, exp, tpe, eff, loc) => ???
-      case Expr.Error(m, tpe, eff) => ???  
+      case Expr.RestrictableChoose(star, exp, rules, tpe, eff, loc) => {
+        // Very limited hover info since feature is experimental
+        recurIf(exp)
+        rules.map(rule => rule.exp).foreach(recurIf)
+      }
+      case Expr.Tag(sym, exp, tpe, eff, loc) => {
+        recurIf(exp)
+      }
+      case Expr.RestrictableTag(sym, exp, tpe, eff, loc) => {
+        recurIf(exp)
+      }
+      case Expr.Tuple(exps, tpe, eff, loc) => {
+        exps.foreach(recurIf)
+      }
+      case Expr.RecordEmpty(tpe, loc) => ()
+      case Expr.RecordSelect(exp, label, tpe, eff, loc) => {
+        recurIf(exp)
+      }
+      case Expr.RecordExtend(label, exp1, exp2, tpe, eff, loc) => {
+        recurIf(exp1)
+        recurIf(exp2)
+      }
+      case Expr.RecordRestrict(label, exp, tpe, eff, loc) => {
+        recurIf(exp)
+      }
+      case Expr.ArrayLit(exps, exp, tpe, eff, loc) => {
+        recurIf(exp)
+        exps.foreach(recurIf)
+      }
+      case Expr.ArrayNew(exp1, exp2, exp3, tpe, eff, loc) => {
+        recurIf(exp1)
+        recurIf(exp2)
+        recurIf(exp3)
+      }
+      case Expr.ArrayLoad(exp1, exp2, tpe, eff, loc) => {
+        recurIf(exp1)
+        recurIf(exp2)
+      }
+      case Expr.ArrayLength(exp, eff, loc) => {
+        recurIf(exp)
+      }
+      case Expr.ArrayStore(exp1, exp2, exp3, eff, loc) => {
+        recurIf(exp1)
+        recurIf(exp2)
+      }
+      case Expr.StructNew(sym, fields, region, tpe, eff, loc) => {
+        fields.foreach{ case (_, e) => recurIf(e) }
+        recurIf(region)
+      }
+      case Expr.StructGet(exp, sym, tpe, eff, loc) => {
+        recurIf(exp)
+      }
+      case Expr.StructPut(exp1, sym, exp2, tpe, eff, loc) => {
+        recurIf(exp1)
+        recurIf(exp2)
+      }
+      case Expr.VectorLit(exps, tpe, eff, loc) => {
+        exps.foreach(recurIf)
+      }
+      case Expr.VectorLoad(exp1, exp2, tpe, eff, loc) => {
+        recurIf(exp1)
+        recurIf(exp2)
+      }
+      case Expr.VectorLength(exp, loc) => recurIf(exp)
+      case Expr.Ascribe(exp, tpe, eff, loc) => recurIf(exp)
+      case Expr.InstanceOf(exp, clazz, loc) => recurIf(exp)
+      case Expr.CheckedCast(cast, exp, tpe, eff, loc) => recurIf(exp)
+      case Expr.UncheckedCast(exp, decalredType, declaredEff, tpe, eff, loc) => recurIf(exp)
+      case Expr.UncheckedMaskingCast(exp, tpe, eff, loc) => recurIf(exp)
+      case Expr.Without(exp, effUse, tpe, eff, loc) => recurIf(exp)
+      case Expr.TryCatch(exp, rules, tpe, eff, loc) => {
+        recurIf(exp)
+        rules.map(rule => rule.exp).foreach(recurIf)
+      }
+      case Expr.Throw(exp, tpe, eff, loc) => recurIf(exp)
+      case Expr.TryWith(exp, effUse, rules, tpe, eff, loc) => {
+        recurIf(exp)
+        rules.map(rule => rule.exp).foreach(recurIf)
+      }
+      case Expr.Do(op, exps, tpe, eff, loc) => exps.foreach(recurIf)
+      case Expr.InvokeConstructor(constructor, exps, tpe, eff, loc) => exps.foreach(recurIf)
+      case Expr.InvokeMethod(method, exp, exps, tpe, eff, loc) => {
+        recurIf(exp)
+        exps.foreach(recurIf)
+      }
+      case Expr.InvokeStaticMethod(method, exps, tpe, eff, loc) => exps.foreach(recurIf)
+      case Expr.GetField(field, exp, tpe, eff, loc) => recurIf(exp)
+      case Expr.PutField(field, exp1, exp2, tpe, eff, loc) => {
+        recurIf(exp1)
+        recurIf(exp2)
+      }
+      case Expr.GetStaticField(field, tpe, eff, loc) => ()
+      case Expr.PutStaticField(field, exp, tpe, eff, loc) => recurIf(exp)
+      case Expr.NewObject(name, clazz, tpe, eff, methods, loc) => ()
+      case Expr.NewChannel(exp1, exp2, tpe, eff, loc) => {
+        recurIf(exp1)
+        recurIf(exp2)
+      }
+      case Expr.GetChannel(exp, tpe, eff, loc) => recurIf(exp)
+      case Expr.PutChannel(exp1, exp2, tpe, eff, loc) => {
+        recurIf(exp1)
+        recurIf(exp2)
+      }
+      case Expr.SelectChannel(rules, default, tpe, eff, loc) => {
+        rules.foreach(rule => {
+          recurIf(rule.chan)
+          recurIf(rule.exp)
+        })
+
+        default.foreach(recurIf)
+      }
+      case Expr.Spawn(exp1, exp2, tpe, eff, loc) => {
+        recurIf(exp1)
+        recurIf(exp2)
+      }
+      case Expr.ParYield(frags, exp, tpe, eff, loc) => {
+        recurIf(exp)
+        frags.foreach(frag => {
+          recurIf(frag.exp)
+          // TODO: visit frag.pat (pattern)
+        })
+      }
+      case Expr.Lazy(exp, tpe, loc) => recurIf(exp)
+      case Expr.Force(exp, tpe, eff, loc) => recurIf(exp)
+      case Expr.FixpointConstraintSet(cs, tpe, loc) => {
+        cs.foreach(visitConstraint(???, ???))
+      }
+      case Expr.FixpointLambda(pparams, exp, tpe, eff, loc) => recurIf(exp)
+      case Expr.FixpointMerge(exp1, exp2, tpe, eff, loc) => {
+        recurIf(exp1)
+        recurIf(exp2)
+      }
+      case Expr.FixpointSolve(exp, tpe, eff, loc) => recurIf(exp)
+      case Expr.FixpointFilter(pred, exp, tpe, eff, loc) => recurIf(exp)
+      case Expr.FixpointInject(exp, pred, tpe, eff, loc) => recurIf(exp)
+      case Expr.FixpointProject(pred, exp, tpe, eff, loc) => recurIf(exp)
+      case Expr.Error(m, tpe, eff) => ()
     }
   }
+
+  def visitConstraint(visit: Entity => Unit, accept: SourceLocation => Boolean)(constraint: Constraint): Unit = ???
 }
