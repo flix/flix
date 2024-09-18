@@ -44,7 +44,7 @@ object HoverProvider {
       stack = e :: stack
     }
 
-    Visitors.visitRoot(visit, Visitors.inside(uri, pos))(root)
+    Visitors.visitRoot(root, ???, Visitors.inside(uri, pos))
 
     hoverEntity(stack.head, uri, pos)
   }
