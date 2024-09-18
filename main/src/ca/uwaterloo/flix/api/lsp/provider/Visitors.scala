@@ -15,18 +15,22 @@ import ca.uwaterloo.flix.language.ast.TypedAst.StructField
 
 
 object Visitors {
-  def visitRoot(visit: Entity => Unit, accept: SourceLocation => Boolean)(root: Root): Unit = {
-    // visit(Entity.Root(root))?
+  // For now, visit is a placeholder. In the end we'll need some way
+  // to supply visit functions for all types of elements at this top level
+  def visitRoot(root: Root, visit: Root => Unit, accept: SourceLocation => Boolean): Unit = {
+
 
     root.defs.map{ case (_, defn) => {
-      if (inside(accept, defn)) {
-        visitDef(visit, accept)(defn)
+      val insideDefn = accept(defn.spec.loc) || accept(defn.exp.loc) || accept(defn.sym.loc)
+      if (insideDefn) {
+        visitDef(defn, ???, accept)
       }
     }}
 
-    root.effects.map{ case (_, v) => {
-      if (inside(accept, v)) {
-        visitEffect(visit, accept)(v)
+    root.effects.map{ case (_, eff) => {
+      val insideEff = accept(eff.loc) || eff.ann.annotations.exists(ann => accept(ann.loc)) || accept(eff.sym.loc)
+      if (insideEff) {
+        visitEffect(eff, ???, accept)
       }
     }}
 
@@ -55,18 +59,6 @@ object Visitors {
     !(posLine == loc.endLine && posCol > loc.endCol)
   }
 
-  def inside(other: SourceLocation => Boolean, defn: Def): Boolean = {
-    other(defn.spec.loc) || other(defn.exp.loc) || other(defn.sym.loc)
-  }
-
-  def inside(other: SourceLocation => Boolean, expr: Expr): Boolean = other(expr.loc)
-
-  def inside(other: SourceLocation => Boolean, effect: Effect): Boolean = {
-    other(effect.loc) || effect.ann.annotations.exists(ann => inside(other, ann)) || other(effect.sym.loc)
-  }
-
-  def inside(other: SourceLocation => Boolean, ann: Annotation): Boolean = other(ann.loc)
-
   def inside(loc1: SourceLocation, loc2: SourceLocation): Boolean = {
     loc1.source == loc2.source &&
     (loc1.beginLine >= loc2.beginLine) &&
@@ -75,242 +67,271 @@ object Visitors {
     !(loc1.endLine == loc2.endLine && loc1.endCol > loc2.endCol)
   }
 
-  def visitEffect(visit: Entity => Unit, accept: SourceLocation => Boolean)(effect: Effect): Unit = {
-    visit(Entity.Effect(effect))
+  def visitEffect(eff: Effect, visit: Effect => Unit, accept: SourceLocation => Boolean): Unit = {
+    visit(eff)
     ???
   }
 
-  def visitDef(visit: Entity => Unit, accept: SourceLocation => Boolean)(defn: Def): Unit = {
-    visit(Entity.Def(defn))
+  def visitDef(defn: Def, visit: Def => Unit, accept: SourceLocation => Boolean): Unit = {
+    visit(defn)
     if (accept(defn.spec.loc)) {
       ???
     }
 
-    if (inside(accept, defn.exp)) {
-      visitExpr(visit, accept)(defn.exp)
+    if (accept(defn.exp.loc)) {
+      visitExpr(defn.exp, ???, accept)
     }
   }
 
-  def visitExpr(visit: Entity => Unit, accept: SourceLocation => Boolean)(expr: Expr): Unit = {
+  def visitExpr(expr: Expr, visit: Expr => Unit, accept: SourceLocation => Boolean): Unit = {
     // TODO: handle mutually recursive calls to non expressions in expressions (fx annotations)
-    val recur = visitExpr(visit, accept)
-    def recurIf(e: Expr): Unit = {
-      if (accept(e.loc)) { recur(e) }
-    }
 
-    visit(Entity.Exp(expr))
+    visit(expr)
     expr match {
       case Expr.Cst(cst, tpe, loc) => ()
-      case Expr.Var(sym, tpe, loc) => visit(Entity.VarUse(sym, loc, Entity.Exp(expr)))
-      case Expr.Def(sym, tpe, loc) => visit(Entity.DefUse(sym, loc, Entity.Exp(expr)))
-      case Expr.Sig(sym, tpe, loc) => visit(Entity.SigUse(sym, loc, Entity.Exp(expr)))
+      case Expr.Var(sym, tpe, loc) => ()
+      case Expr.Def(sym, tpe, loc) => ()
+      case Expr.Sig(sym, tpe, loc) => ()
       case Expr.Hole(sym, tpe, loc) => ()
       case Expr.HoleWithExp(exp, tpe, eff, loc) => {
-        recurIf(exp)
+        if (accept(exp.loc)) { visitExpr(exp, visit, accept) }
       }
       case Expr.OpenAs(symUse, exp, tpe, loc) => {
-        recurIf(exp)
+        if (accept(exp.loc)) { visitExpr(exp, visit, accept) }
       }
       case Expr.Use(sym, alias, exp, loc) => {
-        recurIf(exp)
+        if (accept(exp.loc)) { visitExpr(exp, visit, accept) }
       }
       case Expr.Lambda(fparam, exp, tpe, loc) => {
-        if (accept(fparam.loc)) { visit(Entity.FormalParam(fparam)) }
-        recurIf(exp)
+        if (accept(exp.loc)) { visitExpr(exp, visit, accept) }
       }
       case Expr.Apply(exp, exps, tpe, eff, loc) => {
-        recurIf(exp)
-        exps.foreach(recurIf)
+        if (accept(exp.loc)) { visitExpr(exp, visit, accept) }
+        exps.foreach(e => visitExpr(e, visit, accept))
       }
       case Expr.Unary(sop, exp, tpe, eff, loc) => {
-        recurIf(exp)
+        if (accept(exp.loc)) { visitExpr(exp, visit, accept) }
       }
       case Expr.Binary(sop, exp1, exp2, tpe, eff, loc) =>
-        recurIf(exp1)
-        recurIf(exp2)
+        if (accept(exp1.loc)) { visitExpr(exp1, visit, accept) }
+        if (accept(exp2.loc)) { visitExpr(exp2, visit, accept) }
       case Expr.Let(sym, mod, exp1, exp2, tpe, eff, loc) =>
-        if (accept(sym.loc)) { visit(Entity.LocalVar(sym, tpe)) }
-        recurIf(exp1)
-        recurIf(exp2)
+        if (accept(exp1.loc)) { visitExpr(exp1, visit, accept) }
+        if (accept(exp2.loc)) { visitExpr(exp2, visit, accept) }
       case Expr.LetRec(sym, ann, mod, exp1, exp2, tpe, eff, loc) => {
-        if (accept(sym.loc)) { visit(Entity.LocalVar(sym, tpe)) }
-        recurIf(exp1)
-        recurIf(exp2)
+        if (accept(exp1.loc)) { visitExpr(exp1, visit, accept) }
+        if (accept(exp2.loc)) { visitExpr(exp2, visit, accept) }
       }
       case Expr.Region(tpe, loc) => ()
       case Expr.Scope(sym, regionVar, exp, tpe, eff, loc) => {
-        if (accept(sym.loc)) { visit(Entity.VarUse(sym, sym.loc, Entity.Exp(expr)))}
-        recurIf(exp)
+        if (accept(exp.loc)) { visitExpr(exp, visit, accept) }
       }
       case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) => {
-        recurIf(exp1)
-        recurIf(exp2)
-        recurIf(exp3)
+        if (accept(exp1.loc)) { visitExpr(exp1, visit, accept) }
+        if (accept(exp2.loc)) { visitExpr(exp2, visit, accept) }
+        if (accept(exp3.loc)) { visitExpr(exp3, visit, accept) }
       }
       case Expr.Stm(exp1, exp2, _, _, _) => {
-        recurIf(exp1)
-        recurIf(exp2)
+        if (accept(exp1.loc)) { visitExpr(exp1, visit, accept) }
+        if (accept(exp2.loc)) { visitExpr(exp2, visit, accept) }
       }
       case Expr.Discard(exp, eff, loc) => {
-        recurIf(exp)
+        if (accept(exp.loc)) { visitExpr(exp, visit, accept) }
       }
       case Expr.Match(exp, rules, tpe, eff, loc) => {
         rules.foreach(rule => {
-          recurIf(rule.exp)
-          rule.guard.foreach(recurIf)
-          visitPattern(visit, accept)(rule.pat)
+          if (accept(rule.exp.loc)) { visitExpr(rule.exp, visit, accept) }
+          rule.guard.foreach(e => if (accept(e.loc)) { visitExpr(e, visit, accept) })
+          visitPattern(rule.pat, ???, accept)
         })
-        recurIf(exp)
+        if (accept(exp.loc)) { visitExpr(exp, visit, accept) }
       }
       case Expr.TypeMatch(exp, rules, tpe, eff, loc) => {
-        recurIf(exp)
+        if (accept(exp.loc)) { visitExpr(exp, visit, accept) }
       }
       case Expr.RestrictableChoose(star, exp, rules, tpe, eff, loc) => {
         // Very limited hover info since feature is experimental
-        recurIf(exp)
-        rules.map(rule => rule.exp).foreach(recurIf)
+        if (accept(exp.loc)) { visitExpr(exp, visit, accept) }
+        rules.foreach(rule => visitExpr(rule.exp, visit, accept))
       }
       case Expr.Tag(sym, exp, tpe, eff, loc) => {
-        if (accept(sym.loc)) { visit(Entity.CaseUse(sym.sym, sym.loc, Entity.Exp(expr))) }
-        recurIf(exp)
+        if (accept(exp.loc)) { visitExpr(exp, visit, accept) }
       }
       case Expr.RestrictableTag(sym, exp, tpe, eff, loc) => {
-        recurIf(exp)
+        if (accept(exp.loc)) { visitExpr(exp, visit, accept) }
       }
       case Expr.Tuple(exps, tpe, eff, loc) => {
-        exps.foreach(recurIf)
+        exps.foreach(e => if (accept(e.loc)) { visitExpr(e, visit, accept) })
       }
       case Expr.RecordEmpty(tpe, loc) => ()
       case Expr.RecordSelect(exp, label, tpe, eff, loc) => {
-        recurIf(exp)
+        if (accept(exp.loc)) { visitExpr(exp, visit, accept) }
       }
       case Expr.RecordExtend(label, exp1, exp2, tpe, eff, loc) => {
-        recurIf(exp1)
-        recurIf(exp2)
+        if (accept(exp1.loc)) { visitExpr(exp1, visit, accept) }
+        if (accept(exp2.loc)) { visitExpr(exp2, visit, accept) }
       }
       case Expr.RecordRestrict(label, exp, tpe, eff, loc) => {
-        recurIf(exp)
+        if (accept(exp.loc)) { visitExpr(exp, visit, accept) }
       }
       case Expr.ArrayLit(exps, exp, tpe, eff, loc) => {
-        recurIf(exp)
-        exps.foreach(recurIf)
+        if (accept(exp.loc)) { visitExpr(exp, visit, accept) }
+        exps.foreach(e => if (accept(e.loc)) { visitExpr(e, visit, accept) })
       }
       case Expr.ArrayNew(exp1, exp2, exp3, tpe, eff, loc) => {
-        recurIf(exp1)
-        recurIf(exp2)
-        recurIf(exp3)
+        if (accept(exp1.loc)) { visitExpr(exp1, visit, accept) }
+        if (accept(exp2.loc)) { visitExpr(exp2, visit, accept) }
+        if (accept(exp3.loc)) { visitExpr(exp3, visit, accept) }
       }
       case Expr.ArrayLoad(exp1, exp2, tpe, eff, loc) => {
-        recurIf(exp1)
-        recurIf(exp2)
+        if (accept(exp1.loc)) { visitExpr(exp1, visit, accept) }
+        if (accept(exp2.loc)) { visitExpr(exp2, visit, accept) }
       }
       case Expr.ArrayLength(exp, eff, loc) => {
-        recurIf(exp)
+        if (accept(exp.loc)) { visitExpr(exp, visit, accept) }
       }
       case Expr.ArrayStore(exp1, exp2, exp3, eff, loc) => {
-        recurIf(exp1)
-        recurIf(exp2)
+        if (accept(exp1.loc)) { visitExpr(exp1, visit, accept) }
+        if (accept(exp2.loc)) { visitExpr(exp2, visit, accept) }
       }
       case Expr.StructNew(sym, fields, region, tpe, eff, loc) => {
-        fields.foreach{ case (f, e) => {
-          // Unsure about this
-          if (accept(f.loc)) { Entity.StructFieldUse(f.sym, f.loc, Entity.Exp(expr)) }
-          recurIf(e) 
-        }}
-        recurIf(region)
+        fields.foreach{ case (_, e) => { if (accept(e.loc)) { visitExpr(e, visit, accept) } }}
+        if (accept(region.loc)) { visitExpr(region, visit, accept) }
       }
       case Expr.StructGet(exp, sym, tpe, eff, loc) => {
-        recurIf(exp)
+        if (accept(exp.loc)) { visitExpr(exp, visit, accept) }
       }
       case Expr.StructPut(exp1, sym, exp2, tpe, eff, loc) => {
-        recurIf(exp1)
-        recurIf(exp2)
+        if (accept(exp1.loc)) { visitExpr(exp1, visit, accept) }
+        if (accept(exp2.loc)) { visitExpr(exp2, visit, accept) }
       }
       case Expr.VectorLit(exps, tpe, eff, loc) => {
-        exps.foreach(recurIf)
+        exps.foreach(e => if (accept(e.loc)) { visitExpr(e, visit, accept) })
       }
       case Expr.VectorLoad(exp1, exp2, tpe, eff, loc) => {
-        recurIf(exp1)
-        recurIf(exp2)
+        if (accept(exp1.loc)) { visitExpr(exp1, visit, accept) }
+        if (accept(exp2.loc)) { visitExpr(exp2, visit, accept) }
       }
-      case Expr.VectorLength(exp, loc) => recurIf(exp)
-      case Expr.Ascribe(exp, tpe, eff, loc) => recurIf(exp)
-      case Expr.InstanceOf(exp, clazz, loc) => recurIf(exp)
-      case Expr.CheckedCast(cast, exp, tpe, eff, loc) => recurIf(exp)
-      case Expr.UncheckedCast(exp, decalredType, declaredEff, tpe, eff, loc) => recurIf(exp)
-      case Expr.UncheckedMaskingCast(exp, tpe, eff, loc) => recurIf(exp)
-      case Expr.Without(exp, effUse, tpe, eff, loc) => recurIf(exp)
+      case Expr.VectorLength(exp, loc) => {
+        if (accept(exp.loc)) { visitExpr(exp, visit, accept)}
+      }
+      case Expr.Ascribe(exp, tpe, eff, loc) => {
+        if (accept(exp.loc)) { visitExpr(exp, visit, accept)}
+      }
+      case Expr.InstanceOf(exp, clazz, loc) => {
+        if (accept(exp.loc)) { visitExpr(exp, visit, accept)}
+      }
+      case Expr.CheckedCast(cast, exp, tpe, eff, loc) => {
+        if (accept(exp.loc)) { visitExpr(exp, visit, accept)}
+      }
+      case Expr.UncheckedCast(exp, decalredType, declaredEff, tpe, eff, loc) => {
+        if (accept(exp.loc)) { visitExpr(exp, visit, accept)}
+      }
+      case Expr.UncheckedMaskingCast(exp, tpe, eff, loc) => {
+        if (accept(exp.loc)) { visitExpr(exp, visit, accept)}
+      }
+      case Expr.Without(exp, effUse, tpe, eff, loc) => {
+        if (accept(exp.loc)) { visitExpr(exp, visit, accept)}
+      }
       case Expr.TryCatch(exp, rules, tpe, eff, loc) => {
-        recurIf(exp)
-        rules.map(rule => rule.exp).foreach(recurIf)
+        if (accept(exp.loc)) { visitExpr(exp, visit, accept)}
+        rules.foreach(rule => if (accept(rule.exp.loc)) { visitExpr(rule.exp, visit, accept)} )
       }
-      case Expr.Throw(exp, tpe, eff, loc) => recurIf(exp)
+      case Expr.Throw(exp, tpe, eff, loc) => {
+        if (accept(exp.loc)) { visitExpr(exp, visit, accept)}
+      }
       case Expr.TryWith(exp, effUse, rules, tpe, eff, loc) => {
-        recurIf(exp)
-        rules.map(rule => rule.exp).foreach(recurIf)
+        if (accept(exp.loc)) { visitExpr(exp, visit, accept)}
+        rules.foreach(rule => if (accept(rule.exp.loc)) { visitExpr(rule.exp, visit, accept)} )
       }
-      case Expr.Do(op, exps, tpe, eff, loc) => exps.foreach(recurIf)
-      case Expr.InvokeConstructor(constructor, exps, tpe, eff, loc) => exps.foreach(recurIf)
+      case Expr.Do(op, exps, tpe, eff, loc) => {
+        exps.foreach(e => if (accept(e.loc)) { visitExpr(e, visit, accept) })
+      }
+      case Expr.InvokeConstructor(constructor, exps, tpe, eff, loc) => {
+        exps.foreach(e => if (accept(e.loc)) { visitExpr(e, visit, accept) })
+      }
       case Expr.InvokeMethod(method, exp, exps, tpe, eff, loc) => {
-        recurIf(exp)
-        exps.foreach(recurIf)
+        if (accept(exp.loc)) { visitExpr(exp, visit, accept)}
+        exps.foreach(e => if (accept(e.loc)) { visitExpr(e, visit, accept) })
       }
-      case Expr.InvokeStaticMethod(method, exps, tpe, eff, loc) => exps.foreach(recurIf)
-      case Expr.GetField(field, exp, tpe, eff, loc) => recurIf(exp)
+      case Expr.InvokeStaticMethod(method, exps, tpe, eff, loc) => {
+        exps.foreach(e => if (accept(e.loc)) { visitExpr(e, visit, accept) })
+      }
+      case Expr.GetField(field, exp, tpe, eff, loc) => {
+        if (accept(exp.loc)) { visitExpr(exp, visit, accept)}
+      }
       case Expr.PutField(field, exp1, exp2, tpe, eff, loc) => {
-        recurIf(exp1)
-        recurIf(exp2)
+        if (accept(exp1.loc)) { visitExpr(exp1, visit, accept) }
+        if (accept(exp2.loc)) { visitExpr(exp2, visit, accept) }
       }
       case Expr.GetStaticField(field, tpe, eff, loc) => ()
-      case Expr.PutStaticField(field, exp, tpe, eff, loc) => recurIf(exp)
+      case Expr.PutStaticField(field, exp, tpe, eff, loc) => {
+        if (accept(exp.loc)) { visitExpr(exp, visit, accept) }
+      }
       case Expr.NewObject(name, clazz, tpe, eff, methods, loc) => ()
       case Expr.NewChannel(exp1, exp2, tpe, eff, loc) => {
-        recurIf(exp1)
-        recurIf(exp2)
+        if (accept(exp1.loc)) { visitExpr(exp1, visit, accept) }
+        if (accept(exp2.loc)) { visitExpr(exp2, visit, accept) }
       }
-      case Expr.GetChannel(exp, tpe, eff, loc) => recurIf(exp)
+      case Expr.GetChannel(exp, tpe, eff, loc) => {
+        if (accept(exp.loc)) { visitExpr(exp, visit, accept)}
+      }
       case Expr.PutChannel(exp1, exp2, tpe, eff, loc) => {
-        recurIf(exp1)
-        recurIf(exp2)
+        if (accept(exp1.loc)) { visitExpr(exp1, visit, accept) }
+        if (accept(exp2.loc)) { visitExpr(exp2, visit, accept) }
       }
       case Expr.SelectChannel(rules, default, tpe, eff, loc) => {
         rules.foreach(rule => {
-          recurIf(rule.chan)
-          recurIf(rule.exp)
+          if (accept(rule.chan.loc)) { visitExpr(rule.chan, visit, accept) }
+          if (accept(rule.exp.loc)) { visitExpr(rule.exp, visit, accept)}
         })
 
-        default.foreach(recurIf)
+        default.foreach(e => if (accept(e.loc)) { visitExpr(e, visit, accept) })
       }
       case Expr.Spawn(exp1, exp2, tpe, eff, loc) => {
-        recurIf(exp1)
-        recurIf(exp2)
+        if (accept(exp1.loc)) { visitExpr(exp1, visit, accept) }
+        if (accept(exp2.loc)) { visitExpr(exp2, visit, accept) }
       }
       case Expr.ParYield(frags, exp, tpe, eff, loc) => {
-        recurIf(exp)
+        if (accept(exp.loc)) { visitExpr(exp, visit, accept)}
         frags.foreach(frag => {
-          recurIf(frag.exp)
+          if (accept(frag.exp.loc)) { visitExpr(frag.exp, visit, accept)}
           // TODO: visit frag.pat (pattern)
         })
       }
-      case Expr.Lazy(exp, tpe, loc) => recurIf(exp)
-      case Expr.Force(exp, tpe, eff, loc) => recurIf(exp)
+      case Expr.Lazy(exp, tpe, loc) => {
+        if (accept(exp.loc)) { visitExpr(exp, visit, accept)}
+      }
+      case Expr.Force(exp, tpe, eff, loc) => {
+        if (accept(exp.loc)) { visitExpr(exp, visit, accept)}
+      }
       case Expr.FixpointConstraintSet(cs, tpe, loc) => {
-        cs.foreach(visitConstraint(???, ???))
+        cs.foreach(con => visitConstraint(con, ???, accept))
       }
-      case Expr.FixpointLambda(pparams, exp, tpe, eff, loc) => recurIf(exp)
+      case Expr.FixpointLambda(pparams, exp, tpe, eff, loc) => {
+        if (accept(exp.loc)) { visitExpr(exp, visit, accept)}
+      }
       case Expr.FixpointMerge(exp1, exp2, tpe, eff, loc) => {
-        recurIf(exp1)
-        recurIf(exp2)
+        if (accept(exp1.loc)) { visitExpr(exp1, visit, accept) }
+        if (accept(exp2.loc)) { visitExpr(exp2, visit, accept) }
       }
-      case Expr.FixpointSolve(exp, tpe, eff, loc) => recurIf(exp)
-      case Expr.FixpointFilter(pred, exp, tpe, eff, loc) => recurIf(exp)
-      case Expr.FixpointInject(exp, pred, tpe, eff, loc) => recurIf(exp)
-      case Expr.FixpointProject(pred, exp, tpe, eff, loc) => recurIf(exp)
+      case Expr.FixpointSolve(exp, tpe, eff, loc) => {
+        if (accept(exp.loc)) { visitExpr(exp, visit, accept)}
+      }
+      case Expr.FixpointFilter(pred, exp, tpe, eff, loc) => {
+        if (accept(exp.loc)) { visitExpr(exp, visit, accept)}
+      }
+      case Expr.FixpointInject(exp, pred, tpe, eff, loc) => {
+        if (accept(exp.loc)) { visitExpr(exp, visit, accept)}
+      }
+      case Expr.FixpointProject(pred, exp, tpe, eff, loc) => {
+        if (accept(exp.loc)) { visitExpr(exp, visit, accept)}
+      }
       case Expr.Error(m, tpe, eff) => ()
     }
   }
 
-  def visitConstraint(visit: Entity => Unit, accept: SourceLocation => Boolean)(constraint: Constraint): Unit = ???
+  def visitConstraint(con: Constraint, visit: Constraint => Unit, accept: SourceLocation => Boolean): Unit = ???
 
-  def visitPattern(visit: Entity => Unit, accept: SourceLocation => Boolean)(pattern: Pattern): Unit = ???
+  def visitPattern(pat: Pattern, visit: Pattern => Unit, accept: SourceLocation => Boolean): Unit = ???
 }
