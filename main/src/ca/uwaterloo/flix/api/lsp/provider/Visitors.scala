@@ -10,6 +10,8 @@ import ca.uwaterloo.flix.api.lsp.Position
 import ca.uwaterloo.flix.language.ast.TypedAst.Effect
 import ca.uwaterloo.flix.language.ast.Ast.Annotation
 import ca.uwaterloo.flix.language.ast.TypedAst.Constraint
+import ca.uwaterloo.flix.language.ast.TypedAst.Pattern
+import ca.uwaterloo.flix.language.ast.TypedAst.StructField
 
 
 object Visitors {
@@ -98,10 +100,10 @@ object Visitors {
 
     visit(Entity.Exp(expr))
     expr match {
-      case Expr.Cst(_, _, _) => ()
-      case Expr.Var(_, _, _) => ()
-      case Expr.Def(sym, tpe, loc) => ()
-      case Expr.Sig(sym, tpe, loc) => ()
+      case Expr.Cst(cst, tpe, loc) => ()
+      case Expr.Var(sym, tpe, loc) => visit(Entity.VarUse(sym, loc, Entity.Exp(expr)))
+      case Expr.Def(sym, tpe, loc) => visit(Entity.DefUse(sym, loc, Entity.Exp(expr)))
+      case Expr.Sig(sym, tpe, loc) => visit(Entity.SigUse(sym, loc, Entity.Exp(expr)))
       case Expr.Hole(sym, tpe, loc) => ()
       case Expr.HoleWithExp(exp, tpe, eff, loc) => {
         recurIf(exp)
@@ -113,6 +115,7 @@ object Visitors {
         recurIf(exp)
       }
       case Expr.Lambda(fparam, exp, tpe, loc) => {
+        if (accept(fparam.loc)) { visit(Entity.FormalParam(fparam)) }
         recurIf(exp)
       }
       case Expr.Apply(exp, exps, tpe, eff, loc) => {
@@ -126,14 +129,17 @@ object Visitors {
         recurIf(exp1)
         recurIf(exp2)
       case Expr.Let(sym, mod, exp1, exp2, tpe, eff, loc) =>
+        if (accept(sym.loc)) { visit(Entity.LocalVar(sym, tpe)) }
         recurIf(exp1)
         recurIf(exp2)
       case Expr.LetRec(sym, ann, mod, exp1, exp2, tpe, eff, loc) => {
+        if (accept(sym.loc)) { visit(Entity.LocalVar(sym, tpe)) }
         recurIf(exp1)
         recurIf(exp2)
       }
-      case Expr.Region(tpe, loc) => 
+      case Expr.Region(tpe, loc) => ()
       case Expr.Scope(sym, regionVar, exp, tpe, eff, loc) => {
+        if (accept(sym.loc)) { visit(Entity.VarUse(sym, sym.loc, Entity.Exp(expr)))}
         recurIf(exp)
       }
       case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) => {
@@ -149,6 +155,11 @@ object Visitors {
         recurIf(exp)
       }
       case Expr.Match(exp, rules, tpe, eff, loc) => {
+        rules.foreach(rule => {
+          recurIf(rule.exp)
+          rule.guard.foreach(recurIf)
+          visitPattern(visit, accept)(rule.pat)
+        })
         recurIf(exp)
       }
       case Expr.TypeMatch(exp, rules, tpe, eff, loc) => {
@@ -160,6 +171,7 @@ object Visitors {
         rules.map(rule => rule.exp).foreach(recurIf)
       }
       case Expr.Tag(sym, exp, tpe, eff, loc) => {
+        if (accept(sym.loc)) { visit(Entity.CaseUse(sym.sym, sym.loc, Entity.Exp(expr))) }
         recurIf(exp)
       }
       case Expr.RestrictableTag(sym, exp, tpe, eff, loc) => {
@@ -200,7 +212,11 @@ object Visitors {
         recurIf(exp2)
       }
       case Expr.StructNew(sym, fields, region, tpe, eff, loc) => {
-        fields.foreach{ case (_, e) => recurIf(e) }
+        fields.foreach{ case (f, e) => {
+          // Unsure about this
+          if (accept(f.loc)) { Entity.StructFieldUse(f.sym, f.loc, Entity.Exp(expr)) }
+          recurIf(e) 
+        }}
         recurIf(region)
       }
       case Expr.StructGet(exp, sym, tpe, eff, loc) => {
@@ -295,4 +311,6 @@ object Visitors {
   }
 
   def visitConstraint(visit: Entity => Unit, accept: SourceLocation => Boolean)(constraint: Constraint): Unit = ???
+
+  def visitPattern(visit: Entity => Unit, accept: SourceLocation => Boolean)(pattern: Pattern): Unit = ???
 }
