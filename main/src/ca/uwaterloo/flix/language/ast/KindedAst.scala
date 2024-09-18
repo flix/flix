@@ -89,7 +89,8 @@ object KindedAst {
 
     case class Apply(exp: Expr, exps: List[Expr], tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class ApplyDef(sym: Ast.DefSymUse, exps: List[Expr], tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
+    /** `ftvar` is needed to know the intrinsic effect of the def. */
+    case class ApplyDef(sym: Ast.DefSymUse, exps: List[Expr], ftvar: Type.Var, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
     case class Lambda(fparam: FormalParam, exp: Expr, loc: SourceLocation) extends Expr
 
