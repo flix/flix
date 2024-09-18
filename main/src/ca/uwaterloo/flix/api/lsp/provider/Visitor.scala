@@ -29,7 +29,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Pattern
 import ca.uwaterloo.flix.language.ast.TypedAst.StructField
 
 
-object Visitors {
+object Visitor {
   // For now, visit is a placeholder. In the end we'll need some way
   // to supply visit functions for all types of elements at this top level
   def visitRoot(root: Root, visit: Root => Unit, accept: SourceLocation => Boolean): Unit = {
