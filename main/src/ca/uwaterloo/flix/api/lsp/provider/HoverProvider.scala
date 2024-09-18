@@ -33,7 +33,7 @@ import ca.uwaterloo.flix.language.ast.shared.Source
 import ca.uwaterloo.flix.language.ast.TypedAst
 
 object HoverProvider {
-  def processHover(uri: String, pos: Position)(implicit index: Index, root: Root, flix: Flix): JObject = {
+  def processHover(uri: String, pos: Position)(implicit root: Root, flix: Flix): JObject = {
     hover(uri, pos)
   }
 
