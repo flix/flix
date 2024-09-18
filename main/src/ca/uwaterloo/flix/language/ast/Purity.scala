@@ -114,7 +114,7 @@ object Purity {
   /**
     * Returns the purity of the given formula `eff`. Returns [[Pure]] for the
     * effect constant of [[TypeConstructor.Pure]], returns [[Impure]] for the
-    * effect constant of [[Symbol.IO]], and [[ControlImpure]] otherwise.
+    * effect constant of [[Symbol.IO]] or other Java effects, and [[ControlImpure]] otherwise.
     *
     * Assumes that the given type is a well-formed formula without variables,
     * aliases, or associated types.
@@ -122,9 +122,22 @@ object Purity {
   def fromType(eff: Type)(implicit universe: Set[Symbol.EffectSym]): Purity = {
     evaluateFormula(eff) match {
       case set if set.isEmpty => Purity.Pure
-      case set if set.sizeIs == 1 && set.contains(Symbol.IO) => Purity.Impure
+      case set if set.forall(isJavaEffect) => Purity.Impure
       case _ => Purity.ControlImpure
     }
+  }
+
+  def isJavaEffect(sym: Symbol.EffectSym): Boolean = sym match {
+    case Symbol.Exec => true
+    case Symbol.Exit => true
+    case Symbol.FileRead => true
+    case Symbol.FileWrite => true
+    case Symbol.IO => true
+    case Symbol.Net => true
+    case Symbol.NonDet => true
+    case Symbol.Sys => true
+    case Symbol.Time => true
+    case _ => false
   }
 
   /**
