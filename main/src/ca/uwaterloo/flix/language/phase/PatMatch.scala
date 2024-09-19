@@ -625,12 +625,12 @@ object PatMatch {
     case Some(TypeConstructor.Vector) => 1
     case Some(TypeConstructor.Lazy) => 1
     case Some(TypeConstructor.Enum(_, _)) => 0
+    case Some(TypeConstructor.Struct(_, _)) => 0
     case Some(TypeConstructor.Native(_)) => 0
     case Some(TypeConstructor.Tuple(l)) => l
     case Some(TypeConstructor.RecordRowExtend(_)) => 2
     case Some(TypeConstructor.SchemaRowExtend(_)) => 2
     case Some(TypeConstructor.Error(_, _)) => 0
-
     case _ =>
       // Resilience: OK to throw. We will have replaced the non-star type with Type.Error of star kind.
       throw InternalCompilerException(s"Unexpected type: '$tpe' with wrong kind.", tpe.loc)
