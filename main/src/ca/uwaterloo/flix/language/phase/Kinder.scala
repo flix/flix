@@ -353,9 +353,9 @@ object Kinder {
       val t = visitType(tpe0, Kind.Star, kenv, taenv, root)
       val ef = visitEffectDefaultPure(eff0, kenv, taenv, root)
       val tconstrs = tconstrs0.map(visitTraitConstraint(_, kenv, taenv, root))
-      val econstrsVal = traverse(econstrs0)(visitEqualityConstraint(_, kenv, taenv, root))
-      mapN(tparamsVal, econstrsVal) {
-        case (tparams, econstrs) =>
+      val econstrs = econstrs0.map(visitEqualityConstraint(_, kenv, taenv, root))
+      mapN(tparamsVal) {
+        case tparams =>
           val allQuantifiers = quantifiers ::: tparams.map(_.sym)
           val base = Type.mkUncurriedArrowWithEffect(fparams.map(_.tpe), ef, t, t.loc)
           val sc = Scheme(allQuantifiers, tconstrs, econstrs.map(EqualityEnvironment.broaden), base)
@@ -1418,11 +1418,11 @@ object Kinder {
   /**
     * Performs kinding on the given equality constraint under the given kind environment.
     */
-  private def visitEqualityConstraint(econstr: ResolvedAst.EqualityConstraint, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[Ast.EqualityConstraint, KindError] = econstr match {
+  private def visitEqualityConstraint(econstr: ResolvedAst.EqualityConstraint, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): Ast.EqualityConstraint = econstr match {
     case ResolvedAst.EqualityConstraint(cst, tpe1, tpe2, loc) =>
       val t1 = visitType(tpe1, Kind.Wild, kenv, taenv, root)
       val t2 = visitType(tpe2, Kind.Wild, kenv, taenv, root)
-      Validation.success(Ast.EqualityConstraint(cst, t1, t2, loc))
+      Ast.EqualityConstraint(cst, t1, t2, loc)
   }
 
   /**
