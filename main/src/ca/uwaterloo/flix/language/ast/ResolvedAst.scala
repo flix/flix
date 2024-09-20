@@ -290,6 +290,8 @@ object ResolvedAst {
 
     case class Tag(sym: Ast.RestrictableCaseSymUse, pat: List[VarOrWild], loc: SourceLocation) extends RestrictableChoosePattern
 
+    case class Error(loc: SourceLocation) extends VarOrWild
+
   }
 
   sealed trait Predicate
