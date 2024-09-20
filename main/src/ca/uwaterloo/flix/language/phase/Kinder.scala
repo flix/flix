@@ -64,27 +64,25 @@ object Kinder {
     implicit val sctx: SharedContext = SharedContext.mk()
 
     // Type aliases must be processed first in order to provide a `taenv` for looking up type alias symbols.
-    flatMapN(visitTypeAliases(root.taOrder, root)) {
-      taenv =>
+    val taenv = visitTypeAliases(root.taOrder, root)
 
-        val enums = ParOps.parMapValues(root.enums)(visitEnum(_, taenv, root))
+    val enums = ParOps.parMapValues(root.enums)(visitEnum(_, taenv, root))
 
-        val structsVal = ParOps.parTraverseValues(root.structs)(visitStruct(_, taenv, root))
+    val structsVal = ParOps.parTraverseValues(root.structs)(visitStruct(_, taenv, root))
 
-        val restrictableEnums = ParOps.parMapValues(root.restrictableEnums)(visitRestrictableEnum(_, taenv, root))
+    val restrictableEnums = ParOps.parMapValues(root.restrictableEnums)(visitRestrictableEnum(_, taenv, root))
 
-        val traitsVal = visitTraits(root, taenv, oldRoot, changeSet)
+    val traitsVal = visitTraits(root, taenv, oldRoot, changeSet)
 
-        val defsVal = visitDefs(root, taenv, oldRoot, changeSet)
+    val defsVal = visitDefs(root, taenv, oldRoot, changeSet)
 
-        val instancesVal = ParOps.parTraverseValues(root.instances)(traverse(_)(i => visitInstance(i, taenv, root)))
+    val instancesVal = ParOps.parTraverseValues(root.instances)(traverse(_)(i => visitInstance(i, taenv, root)))
 
-        val effectsVal = ParOps.parTraverseValues(root.effects)(visitEffect(_, taenv, root))
+    val effectsVal = ParOps.parTraverseValues(root.effects)(visitEffect(_, taenv, root))
 
-        mapN(structsVal, traitsVal, defsVal, instancesVal, effectsVal) {
-          case (structs, traits, defs, instances, effects) =>
-            KindedAst.Root(traits, instances, defs, enums, structs, restrictableEnums, effects, taenv, root.uses, root.entryPoint, root.sources, root.names)
-        }
+    mapN(structsVal, traitsVal, defsVal, instancesVal, effectsVal) {
+      case (structs, traits, defs, instances, effects) =>
+        KindedAst.Root(traits, instances, defs, enums, structs, restrictableEnums, effects, taenv, root.uses, root.entryPoint, root.sources, root.names)
     }.withSoftFailures(sctx.errors.asScala)
   }(DebugValidation())
 
@@ -161,13 +159,12 @@ object Kinder {
     * Performs kinding on the given type aliases.
     * The aliases must be sorted topologically.
     */
-  private def visitTypeAliases(aliases: List[Symbol.TypeAliasSym], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], KindError] = {
-    fold(aliases, Map.empty[Symbol.TypeAliasSym, KindedAst.TypeAlias]) {
+  private def visitTypeAliases(aliases: List[Symbol.TypeAliasSym], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): Map[Symbol.TypeAliasSym, KindedAst.TypeAlias] = {
+    aliases.foldLeft(Map.empty[Symbol.TypeAliasSym, KindedAst.TypeAlias]) {
       case (taenv, sym) =>
         val alias = root.typeAliases(sym)
-        mapN(Validation.success(visitTypeAlias(alias, taenv, root))) {
-          case kind => taenv + (sym -> kind)
-        }
+        val kind = visitTypeAlias(alias, taenv, root)
+        taenv + (sym -> kind)
     }
   }
 
