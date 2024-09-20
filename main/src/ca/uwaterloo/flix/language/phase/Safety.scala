@@ -238,8 +238,6 @@ object Safety {
 
       case Expr.Var(_, _, _) => Nil
 
-      case Expr.Def(_, _, _) => Nil
-
       case Expr.Sig(_, _, _) => Nil
 
       case Expr.Hole(_, _, _) => Nil

@@ -354,10 +354,6 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expr.Var(sym, t, loc)
 
-    case TypedAst.Expr.Def(sym, tpe, loc) =>
-      val t = visitType(tpe)
-      LoweredAst.Expr.Def(sym, t, loc)
-
     case TypedAst.Expr.Sig(sym, tpe, loc) =>
       val t = visitType(tpe)
       LoweredAst.Expr.Sig(sym, t, loc)

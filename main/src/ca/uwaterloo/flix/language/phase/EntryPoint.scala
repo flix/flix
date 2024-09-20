@@ -239,7 +239,6 @@ object EntryPoint {
     // printUnlessUnit(func(args))
     val printSym = root.defs(new Symbol.DefnSym(None, Nil, "printUnlessUnit", SourceLocation.Unknown)).sym
     val printTpe = Type.mkArrowWithEffect(ftpe.arrowResultType, Type.IO, Type.Unit, SourceLocation.Unknown)
-    val printFunc = TypedAst.Expr.Def(printSym, printTpe, SourceLocation.Unknown)
     val print = TypedAst.Expr.ApplyDef(Ast.DefSymUse(printSym, SourceLocation.Unknown), List(call), printTpe, Type.Unit, Type.IO, SourceLocation.Unknown)
 
     val sym = new Symbol.DefnSym(None, Nil, "main" + Flix.Delimiter, SourceLocation.Unknown)

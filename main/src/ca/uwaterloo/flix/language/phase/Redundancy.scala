@@ -300,14 +300,6 @@ object Redundancy {
       case (true, true) => Used.empty + HiddenVarSym(sym, loc)
     }
 
-    case Expr.Def(sym, _, _) =>
-      // Recursive calls do not count as uses.
-      if (!rc.defn.contains(sym)) {
-        sctx.defSyms.put(sym, ())
-        Used.empty
-      } else
-        Used.empty
-
     case Expr.Sig(sym, _, _) =>
       // Recursive calls do not count as uses.
       if (!rc.sig.contains(sym)) {
