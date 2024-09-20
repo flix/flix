@@ -31,6 +31,14 @@ class FlixSuite(incremental: Boolean) extends AnyFunSuite {
     */
   var flix = new Flix()
 
+  def mkTestDirCollected(path: String)(implicit options: Options): Unit = {
+    val iter = Files.walk(Paths.get(path), 1)
+      .iterator().asScala
+      .filter(p => Files.isRegularFile(p) && p.toString.endsWith(".flix"))
+      .toList.sorted
+    test(path)(compileAndRun(iter))
+  }
+
   def mkTestDir(path: String)(implicit options: Options): Unit = {
     val iter = Files.walk(Paths.get(path), 1)
       .iterator().asScala
