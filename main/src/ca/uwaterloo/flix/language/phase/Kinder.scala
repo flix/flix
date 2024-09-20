@@ -149,12 +149,12 @@ object Kinder {
     * Performs kinding on the given type alias.
     * Returns the kind of the type alias.
     */
-  private def visitTypeAlias(alias: ResolvedAst.Declaration.TypeAlias, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[KindedAst.TypeAlias, KindError] = alias match {
+  private def visitTypeAlias(alias: ResolvedAst.Declaration.TypeAlias, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): KindedAst.TypeAlias = alias match {
     case ResolvedAst.Declaration.TypeAlias(doc, ann, mod, sym, tparams0, tpe0, loc) =>
       val kenv = getKindEnvFromTypeParams(tparams0)
       val tparams = tparams0.map(visitTypeParam(_, kenv))
       val t = visitType(tpe0, Kind.Wild, kenv, taenv, root)
-      Validation.success(KindedAst.TypeAlias(doc, ann, mod, sym, tparams, t, loc))
+      KindedAst.TypeAlias(doc, ann, mod, sym, tparams, t, loc)
   }
 
   /**
@@ -165,7 +165,7 @@ object Kinder {
     fold(aliases, Map.empty[Symbol.TypeAliasSym, KindedAst.TypeAlias]) {
       case (taenv, sym) =>
         val alias = root.typeAliases(sym)
-        mapN(visitTypeAlias(alias, taenv, root)) {
+        mapN(Validation.success(visitTypeAlias(alias, taenv, root))) {
           case kind => taenv + (sym -> kind)
         }
     }
