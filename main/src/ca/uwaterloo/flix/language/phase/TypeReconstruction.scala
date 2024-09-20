@@ -91,8 +91,6 @@ object TypeReconstruction {
     case KindedAst.Expr.Var(sym, loc) =>
       TypedAst.Expr.Var(sym, subst(sym.tvar), loc)
 
-    case KindedAst.Expr.Def(sym, tvar, loc) => TypedAst.Expr.Def(sym, subst(tvar), loc)
-
     case KindedAst.Expr.Sig(sym, tvar, loc) =>
       TypedAst.Expr.Sig(sym, subst(tvar), loc)
 
