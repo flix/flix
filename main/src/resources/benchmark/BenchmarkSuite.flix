@@ -16,33 +16,6 @@
 import java.lang.System
 
 ///
-/// Returns the list of benchmarks.
-///
-/// A benchmark has a name and a function to evaluate.
-///
-def benchmarks(): Map[String, Unit -> Unit \ IO] = Map#{
-    "List.filter"    => () -> List.range(0, 10_000) |> List.filter(x -> Int32.modulo(x, 2) == 0) |> blackhole,
-    "List.foldLeft"  => () -> List.range(0, 10_000) |> List.foldLeft(Add.add, 0) |> blackhole,
-    "List.foldRight" => () -> List.range(0, 10_000) |> List.foldRight(Add.add, 0) |> blackhole,
-    "List.map"       => () -> List.range(0, 10_000) |> List.map(x -> x + 1) |> blackhole,
-    "List.length"    => () -> List.range(0, 10_000) |> List.length |> blackhole,
-    "List.reverse"   => () -> List.range(0, 10_000) |> List.reverse |> blackhole,
-    "InlinerMap100k" => () -> {
-        let l = InlinerBenchmarkNormal.range(0, 100_000);
-        let l2 = InlinerBenchmarkNormal.map(x -> x + 1, l);
-        println(InlinerBenchmarkNormal.length(l2))
-    },
-    "InlinerMap100kOptimized" => () -> {
-        let top = 99999; // 100_000 - 1
-        let l = InlinerBenchmarkInlined.rng(top, Nil);
-        let l2 = InlinerBenchmarkInlined.mp(l, Nil);
-        let l3 = InlinerBenchmarkInlined.rv(l2, Nil);
-        let l4 = InlinerBenchmarkInlined.ln(l3, 0);
-        println(l4)
-    }
-}
-
-///
 /// Main entry point.
 ///
 def main(): Unit \ IO =
