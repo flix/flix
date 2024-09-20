@@ -103,9 +103,6 @@ object TreeShaker1 {
     case Expr.Var(_, _, _) =>
       Set.empty
 
-    case Expr.Def(sym, _, _) =>
-      Set(ReachableSym.DefnSym(sym))
-
     case Expr.Sig(sym, _, _) =>
       Set(ReachableSym.SigSym(sym))
 

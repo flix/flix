@@ -496,13 +496,6 @@ object Monomorpher {
     case LoweredAst.Expr.Var(sym, tpe, loc) =>
       MonoAst.Expr.Var(env0(sym), subst(tpe), loc)
 
-    case LoweredAst.Expr.Def(sym, tpe, loc) =>
-      /*
-       * !! This is where all the magic happens !!
-       */
-      val newSym = specializeDefSym(sym, subst(tpe))
-      MonoAst.Expr.Def(newSym, subst(tpe), loc)
-
     case LoweredAst.Expr.Sig(sym, tpe, loc) =>
       val newSym = specializeSigSym(sym, subst(tpe))
       MonoAst.Expr.Def(newSym, subst(tpe), loc)
