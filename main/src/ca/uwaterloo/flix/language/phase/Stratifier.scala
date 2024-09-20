@@ -131,9 +131,9 @@ object Stratifier {
       val es = exps.map(visitExp)
       Expr.Apply(e, es, tpe, eff, loc)
 
-    case Expr.ApplyDef(exp, exps, ftpe, tpe, eff, loc) =>
+    case Expr.ApplyDef(symUse, exps, ftpe, tpe, eff, loc) =>
       val es = exps.map(visitExp)
-      Expr.ApplyDef(exp, es, ftpe, tpe, eff, loc)
+      Expr.ApplyDef(symUse, es, ftpe, tpe, eff, loc)
 
     case Expr.Unary(sop, exp, tpe, eff, loc) =>
       val e = visitExp(exp)

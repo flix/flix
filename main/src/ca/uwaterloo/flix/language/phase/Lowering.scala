@@ -1879,9 +1879,9 @@ object Lowering {
       val es = exps.map(substExp(_, subst))
       LoweredAst.Expr.Apply(e, es, tpe, eff, loc)
 
-    case LoweredAst.Expr.ApplyDef(exp, exps, ftpe, tpe, eff, loc) =>
+    case LoweredAst.Expr.ApplyDef(symUse, exps, ftpe, tpe, eff, loc) =>
       val es = exps.map(substExp(_, subst))
-      LoweredAst.Expr.ApplyDef(exp, es, ftpe, tpe, eff, loc)
+      LoweredAst.Expr.ApplyDef(symUse, es, ftpe, tpe, eff, loc)
 
     case LoweredAst.Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
       val es = exps.map(substExp(_, subst))
