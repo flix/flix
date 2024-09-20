@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-mod InlinerBenchmarkOptimized {
+mod BenchmarkInlinerOptimized {
 
     pub def mp(xs: List[Int32], acc: List[Int32]): List[Int32] = match xs {
         case Nil     => acc
