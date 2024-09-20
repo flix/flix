@@ -64,10 +64,6 @@ object Simplifier {
       val t = visitType(tpe)
       SimplifiedAst.Expr.Var(sym, t, loc)
 
-    case MonoAst.Expr.Def(sym, tpe, loc) =>
-      val t = visitType(tpe)
-      SimplifiedAst.Expr.Def(sym, t, loc)
-
     case MonoAst.Expr.Cst(cst, tpe, loc) =>
       val t = visitType(tpe)
       SimplifiedAst.Expr.Cst(cst, t, loc)
@@ -84,10 +80,10 @@ object Simplifier {
       val t = visitType(tpe)
       SimplifiedAst.Expr.Apply(e, es, t, simplifyEffect(eff), loc)
 
-    case MonoAst.Expr.ApplyDef(Ast.DefSymUse(sym, _), exps, tpe2, eff, loc2) =>
+    case MonoAst.Expr.ApplyDef(Ast.DefSymUse(sym, _), exps, tpe, eff, loc) =>
       val es = exps.map(visitExp)
-      val t2 = visitType(tpe2)
-      SimplifiedAst.Expr.ApplyDef(sym, es, t2, simplifyEffect(eff), loc2)
+      val t = visitType(tpe)
+      SimplifiedAst.Expr.ApplyDef(sym, es, t, simplifyEffect(eff), loc)
 
     case MonoAst.Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp)

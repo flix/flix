@@ -81,10 +81,6 @@ object MonoTypes {
       val t = visitType(tpe)
       Expr.Var(sym, t, loc)
 
-    case Expr.Def(sym, tpe, loc) =>
-      val t = visitType(tpe)
-      Expr.Def(sym, t, loc)
-
     case Expr.Sig(sym, tpe, loc) =>
       val t = visitType(tpe)
       Expr.Sig(sym, t, loc)
