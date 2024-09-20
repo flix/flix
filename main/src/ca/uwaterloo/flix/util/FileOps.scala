@@ -71,7 +71,19 @@ object FileOps {
   /**
     * Returns all files ending with `.flix` in `path`.
     *
-    * The search is limited at `depth` levels of subdirectories.
+    * The search is limited at `depth - 1` levels of subdirectories.
+    *
+    * E.g., if `depth = 1` then given the directory structure below,
+    * `Subfile.flix` will not be included.
+    *
+    * {{{
+    * path
+    * ├── Main.flix
+    * └── subdir
+    *     └── Subfile.flix
+    * }}}
+    *
+    *
     */
   def getFlixFilesIn(path: String, depth: Int): List[Path] = {
     Files.walk(Paths.get(path), depth)
