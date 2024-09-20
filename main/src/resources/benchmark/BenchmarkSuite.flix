@@ -27,12 +27,12 @@ def benchmarks(): Map[String, Unit -> Unit \ IO] = Map#{
     "List.map"       => () -> List.range(0, 10_000) |> List.map(x -> x + 1) |> blackhole,
     "List.length"    => () -> List.range(0, 10_000) |> List.length |> blackhole,
     "List.reverse"   => () -> List.range(0, 10_000) |> List.reverse |> blackhole,
-    "(inliner) Map 100_000 normal" => () -> {
+    "InlinerMap100k" => () -> {
         let l = InlinerBenchmarkNormal.range(0, 100_000);
         let l2 = InlinerBenchmarkNormal.map(x -> x + 1, l);
         println(InlinerBenchmarkNormal.length(l2))
     },
-    "(inliner) Map 100_000 inlined" => () -> {
+    "InlinerMap100kOptimized" => () -> {
         let top = 99999; // 100_000 - 1
         let l = InlinerBenchmarkInlined.rng(top, Nil);
         let l2 = InlinerBenchmarkInlined.mp(l, Nil);
