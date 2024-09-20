@@ -234,10 +234,10 @@ object Kinder {
     case ResolvedAst.Declaration.Trait(doc, ann, mod, sym, tparam0, superTraits0, assocs0, sigs0, laws0, loc) =>
       val kenv = getKindEnvFromTypeParam(tparam0)
       val tparamsVal = visitTypeParam(tparam0, kenv)
-      val superTraitsVal = traverse(superTraits0)(visitTraitConstraint(_, kenv, taenv, root))
+      val superTraits = superTraits0.map(visitTraitConstraint(_, kenv, taenv, root))
       val assocsVal = traverse(assocs0)(visitAssocTypeSig(_, kenv, taenv, root))
-      flatMapN(tparamsVal, superTraitsVal, assocsVal) {
-        case (tparam, superTraits, assocs) =>
+      flatMapN(tparamsVal, assocsVal) {
+        case (tparam, assocs) =>
           val sigsVal = traverse(sigs0) {
             case (sigSym, sig0) => mapN(visitSig(sig0, tparam, superTraits, kenv, taenv, root))(sig => sigSym -> sig)
           }
@@ -260,14 +260,11 @@ object Kinder {
       flatMapN(kenvVal) {
         kenv =>
           val t = visitType(tpe0, kind, kenv, taenv, root)
-          val tconstrsVal = traverse(tconstrs0)(visitTraitConstraint(_, kenv, taenv, root))
+          val tconstrs = tconstrs0.map(visitTraitConstraint(_, kenv, taenv, root))
           val assocsVal = traverse(assocs0)(visitAssocTypeDef(_, kind, kenv, taenv, root))
-          flatMapN(tconstrsVal, assocsVal) {
-            case (tconstrs, assocs) =>
-              val defsVal = traverse(defs0)(visitDef(_, tconstrs, kenv, taenv, root))
-              mapN(defsVal) {
-                case defs => KindedAst.Instance(doc, ann, mod, trt, t, tconstrs, assocs, defs, ns, loc)
-              }
+          val defsVal = traverse(defs0)(visitDef(_, tconstrs, kenv, taenv, root))
+          mapN(assocsVal, defsVal) {
+            case (assocs, defs) => KindedAst.Instance(doc, ann, mod, trt, t, tconstrs, assocs, defs, ns, loc)
           }
       }
   }
@@ -355,10 +352,10 @@ object Kinder {
       val fparams = fparams0.map(visitFormalParam(_, kenv, taenv, root))
       val t = visitType(tpe0, Kind.Star, kenv, taenv, root)
       val ef = visitEffectDefaultPure(eff0, kenv, taenv, root)
-      val tconstrsVal = traverse(tconstrs0)(visitTraitConstraint(_, kenv, taenv, root))
+      val tconstrs = tconstrs0.map(visitTraitConstraint(_, kenv, taenv, root))
       val econstrsVal = traverse(econstrs0)(visitEqualityConstraint(_, kenv, taenv, root))
-      mapN(tparamsVal, tconstrsVal, econstrsVal) {
-        case (tparams, tconstrs, econstrs) =>
+      mapN(tparamsVal, econstrsVal) {
+        case (tparams, econstrs) =>
           val allQuantifiers = quantifiers ::: tparams.map(_.sym)
           val base = Type.mkUncurriedArrowWithEffect(fparams.map(_.tpe), ef, t, t.loc)
           val sc = Scheme(allQuantifiers, tconstrs, econstrs.map(EqualityEnvironment.broaden), base)
@@ -1411,11 +1408,11 @@ object Kinder {
   /**
     * Performs kinding on the given trait constraint under the given kind environment.
     */
-  private def visitTraitConstraint(tconstr: ResolvedAst.TraitConstraint, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[Ast.TraitConstraint, KindError] = tconstr match {
+  private def visitTraitConstraint(tconstr: ResolvedAst.TraitConstraint, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): Ast.TraitConstraint = tconstr match {
     case ResolvedAst.TraitConstraint(head, tpe0, loc) =>
       val traitKind = getTraitKind(root.traits(head.sym))
       val t = visitType(tpe0, traitKind, kenv, taenv, root)
-      Validation.success(Ast.TraitConstraint(head, t, loc))
+      Ast.TraitConstraint(head, t, loc)
   }
 
   /**
