@@ -282,10 +282,10 @@ object Kinder {
       flatMapN(kenvVal) {
         kenv =>
           val henv = None
-          val specVal = visitSpec(spec0, Nil, kenv, taenv, root)
+          val spec = visitSpec(spec0, Nil, kenv, taenv, root)
           val expVal = visitExp(exp0, kenv, taenv, henv, root)(Scope.Top, sctx, flix)
-          mapN(specVal, expVal) {
-            case (spec, exp) => KindedAst.Def(sym, spec, exp)
+          mapN(expVal) {
+            case exp => KindedAst.Def(sym, spec, exp)
           }
       }
   }
@@ -299,10 +299,10 @@ object Kinder {
       flatMapN(kenvVal) {
         kenv =>
           val henv = None
-          val specVal = visitSpec(spec0, List(traitTparam.sym), kenv, taenv, root)
+          val spec = visitSpec(spec0, List(traitTparam.sym), kenv, taenv, root)
           val expVal = traverseOpt(exp0)(visitExp(_, kenv, taenv, henv, root)(Scope.Top, sctx, flix))
-          mapN(specVal, expVal) {
-            case (spec, exp) => KindedAst.Sig(sym, spec, exp)
+          mapN(expVal) {
+            case exp => KindedAst.Sig(sym, spec, exp)
           }
       }
   }
@@ -313,12 +313,10 @@ object Kinder {
   private def visitOp(op: ResolvedAst.Declaration.Op, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[KindedAst.Op, KindError] = op match {
     case ResolvedAst.Declaration.Op(sym, spec0) =>
       val kenvVal = inferSpec(spec0, KindEnv.empty, taenv, root)
-      flatMapN(kenvVal) {
+      mapN(kenvVal) {
         case kenv =>
-          val specVal = visitSpec(spec0, Nil, kenv, taenv, root)
-          mapN(specVal) {
-            case spec => KindedAst.Op(sym, spec)
-          }
+          val spec = visitSpec(spec0, Nil, kenv, taenv, root)
+          KindedAst.Op(sym, spec)
       }
   }
 
@@ -327,7 +325,7 @@ object Kinder {
     *
     * Adds `quantifiers` to the generated scheme's quantifier list.
     */
-  private def visitSpec(spec0: ResolvedAst.Spec, quantifiers: List[Symbol.KindedTypeVarSym], kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[KindedAst.Spec, KindError] = spec0 match {
+  private def visitSpec(spec0: ResolvedAst.Spec, quantifiers: List[Symbol.KindedTypeVarSym], kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): KindedAst.Spec = spec0 match {
     case ResolvedAst.Spec(doc, ann, mod, tparams0, fparams0, tpe0, eff0, tconstrs0, econstrs0, loc) =>
       val tparams = tparams0.map(visitTypeParam(_, kenv))
       val fparams = fparams0.map(visitFormalParam(_, kenv, taenv, root))
@@ -338,7 +336,7 @@ object Kinder {
       val allQuantifiers = quantifiers ::: tparams.map(_.sym)
       val base = Type.mkUncurriedArrowWithEffect(fparams.map(_.tpe), ef, t, t.loc)
       val sc = Scheme(allQuantifiers, tconstrs, econstrs.map(EqualityEnvironment.broaden), base)
-      Validation.success(KindedAst.Spec(doc, ann, mod, tparams, fparams, sc, t, ef, tconstrs, econstrs, loc))
+      KindedAst.Spec(doc, ann, mod, tparams, fparams, sc, t, ef, tconstrs, econstrs, loc)
   }
 
   /**
