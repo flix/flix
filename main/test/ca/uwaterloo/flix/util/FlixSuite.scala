@@ -21,8 +21,7 @@ import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.runtime.{CompilationResult, TestFn}
 import org.scalatest.funsuite.AnyFunSuite
 
-import java.nio.file.{Files, Path, Paths}
-import scala.jdk.CollectionConverters._
+import java.nio.file.{Path, Paths}
 
 class FlixSuite(incremental: Boolean) extends AnyFunSuite {
 
