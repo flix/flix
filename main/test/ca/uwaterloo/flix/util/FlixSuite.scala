@@ -36,7 +36,8 @@ class FlixSuite(incremental: Boolean) extends AnyFunSuite {
       .iterator().asScala
       .filter(p => Files.isRegularFile(p) && p.toString.endsWith(".flix"))
       .toList.sorted
-    test(path)(compileAndRun(iter))
+    val n = iter.headOption.map(p => p.getFileName.toString).getOrElse(path)
+    test(n)(compileAndRun(iter))
   }
 
   def mkTestDir(path: String)(implicit options: Options): Unit = {
