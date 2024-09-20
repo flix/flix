@@ -40,24 +40,3 @@ def benchmarks(): Map[String, Unit -> Unit \ IO] = Map#{
         println(l4)
     }
 }
-
-mod InlinerBenchmarkOptimized {
-
-    pub def mp(xs: List[Int32], acc: List[Int32]): List[Int32] = match xs {
-        case Nil     => acc
-        case z :: zs => mp(zs, z + 1 :: acc)
-    }
-
-    pub def rv(xs: List[a], acc: List[a]): List[a] = match xs {
-        case Nil     => acc
-        case z :: zs => rv(zs, z :: acc)
-    }
-
-    pub def ln(xs: List[a], acc: Int32): Int32 = match xs {
-        case Nil     => acc
-        case _ :: zs => ln(zs, acc + 1)
-    }
-
-    pub def rng(i: Int32, acc: List[Int32]): List[Int32] = if (i < 0) acc else rng(i - 1, i :: acc)
-
-}
