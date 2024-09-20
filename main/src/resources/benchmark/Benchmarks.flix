@@ -33,10 +33,10 @@ def benchmarks(): Map[String, Unit -> Unit \ IO] = Map#{
     },
     "InlinerMap100kOptimized" => () -> {
         let top = 99999; // 100_000 - 1
-        let l = BenchmarkInlinerOptimized.rng(top, Nil);
-        let l2 = BenchmarkInlinerOptimized.mp(l, Nil);
-        let l3 = BenchmarkInlinerOptimized.rv(l2, Nil);
-        let l4 = BenchmarkInlinerOptimized.ln(l3, 0);
+        let l = Benchmark.Inliner.Optimized.rng(top, Nil);
+        let l2 = Benchmark.Inliner.Optimized.mp(l, Nil);
+        let l3 = Benchmark.Inliner.Optimized.rv(l2, Nil);
+        let l4 = Benchmark.Inliner.Optimized.ln(l3, 0);
         println(l4)
     }
 }
