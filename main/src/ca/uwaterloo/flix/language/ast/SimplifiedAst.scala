@@ -77,7 +77,7 @@ object SimplifiedAst {
     case class ApplyClo(exp: Expr, exps: List[Expr], tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 
     @IntroducedBy(ClosureConv.getClass)
-    case class ApplyDef(sym: Symbol.DefnSym, args: List[Expr], tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
+    case class ApplyDef(symUse: Symbol.DefnSym, args: List[Expr], tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 
     case class IfThenElse(exp1: Expr, exp2: Expr, exp3: Expr, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 

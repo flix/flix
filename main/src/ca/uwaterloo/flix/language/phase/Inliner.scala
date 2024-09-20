@@ -362,9 +362,9 @@ object Inliner {
       val es = exps.map(substituteExp(_, env0))
       LiftedAst.Expr.ApplyClo(e, es, tpe, purity, loc)
 
-    case OccurrenceAst.Expr.ApplyDef(sym, exps, tpe, purity, loc) =>
+    case OccurrenceAst.Expr.ApplyDef(symUse, exps, tpe, purity, loc) =>
       val es = exps.map(substituteExp(_, env0))
-      LiftedAst.Expr.ApplyDef(sym, es, tpe, purity, loc)
+      LiftedAst.Expr.ApplyDef(symUse, es, tpe, purity, loc)
 
     case OccurrenceAst.Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       val e1 = substituteExp(exp1, env0)

@@ -50,7 +50,7 @@ object LiftedAstPrinter {
     case Var(sym, _, _) => printVarSym(sym)
     case ApplyAtomic(op, exps, tpe, _, _) => OpPrinter.print(op, exps.map(print), MonoTypePrinter.print(tpe))
     case ApplyClo(exp, exps, _, _, _) => DocAst.Expr.ApplyClo(print(exp), exps.map(print), None)
-    case ApplyDef(sym, args, _, _, _) => DocAst.Expr.ApplyDef(sym, args.map(print), None)
+    case ApplyDef(symUse, args, _, _, _) => DocAst.Expr.ApplyDef(symUse, args.map(print), None)
     case IfThenElse(exp1, exp2, exp3, _, _, _) => DocAst.Expr.IfThenElse(print(exp1), print(exp2), print(exp3))
     case Branch(exp, branches, _, _, _) => DocAst.Expr.Branch(print(exp), MapOps.mapValues(branches)(print))
     case JumpTo(sym, _, _, _) => DocAst.Expr.JumpTo(sym)
