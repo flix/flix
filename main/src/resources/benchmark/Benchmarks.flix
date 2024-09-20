@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Jakob Schneider Villumsen
+ * Copyright 2024 Magnus Madsen, Jakob Schneider Villumsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,39 +39,6 @@ def benchmarks(): Map[String, Unit -> Unit \ IO] = Map#{
         let l4 = InlinerBenchmarkOptimized.ln(l3, 0);
         println(l4)
     }
-}
-
-mod InlinerBenchmark {
-
-    pub def map(f: a -> b, l: List[a]) : List[b] = {
-        def mp(xs, acc) = match xs {
-            case Nil     => rev(acc)
-            case z :: zs => mp(zs, f(z) :: acc)
-        };
-        mp(l, Nil)
-    }
-
-    pub def rev(l: List[a]): List[a] = {
-        def rv(xs, acc) = match xs {
-            case Nil     => acc
-            case z :: zs => rv(zs, z :: acc)
-        };
-        rv(l, Nil)
-    }
-
-    pub def range(bot: Int32, top: Int32): List[Int32] = {
-        def rng(i, acc) = if (i < bot) acc else rng(i - 1, i :: acc);
-        rng(top - 1, Nil)
-    }
-
-    pub def length(l: List[a]): Int32 = {
-        def len(xs, acc) = match xs {
-            case Nil     => acc
-            case _ :: zs => len(zs, acc + 1)
-        };
-        len(l, 0)
-    }
-
 }
 
 mod InlinerBenchmarkOptimized {
