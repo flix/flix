@@ -555,7 +555,7 @@ object Desugar {
       val e2 = visitExp(exp2)
       Expr.LetRec(ident, ann, mod, e1, e2, loc)
 
-    case WeededAst.Expr.LetRec2(ann, mod, ident, fparams, exp, tpe, eff, loc) => ???
+    case WeededAst.Expr.LetRec2(ann, ident, fparams, exp, tpe, eff, loc) => ???
 
     case WeededAst.Expr.LetImport(op, exp, loc) =>
       desugarLetImport(op, exp, loc)
