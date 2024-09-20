@@ -71,7 +71,7 @@ object Kinder {
 
         val structsVal = ParOps.parTraverseValues(root.structs)(visitStruct(_, taenv, root))
 
-        val restrictableEnumsVal = ParOps.parTraverseValues(root.restrictableEnums)(visitRestrictableEnum(_, taenv, root))
+        val restrictableEnums = ParOps.parMapValues(root.restrictableEnums)(visitRestrictableEnum(_, taenv, root))
 
         val traitsVal = visitTraits(root, taenv, oldRoot, changeSet)
 
@@ -81,8 +81,8 @@ object Kinder {
 
         val effectsVal = ParOps.parTraverseValues(root.effects)(visitEffect(_, taenv, root))
 
-        mapN(structsVal, restrictableEnumsVal, traitsVal, defsVal, instancesVal, effectsVal) {
-          case (structs, restrictableEnums, traits, defs, instances, effects) =>
+        mapN(structsVal, traitsVal, defsVal, instancesVal, effectsVal) {
+          case (structs, traits, defs, instances, effects) =>
             KindedAst.Root(traits, instances, defs, enums, structs, restrictableEnums, effects, taenv, root.uses, root.entryPoint, root.sources, root.names)
         }
     }.withSoftFailures(sctx.errors.asScala)
@@ -132,7 +132,7 @@ object Kinder {
   /**
     * Performs kinding on the given restrictable enum.
     */
-  private def visitRestrictableEnum(enum0: ResolvedAst.Declaration.RestrictableEnum, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[KindedAst.RestrictableEnum, KindError] = enum0 match {
+  private def visitRestrictableEnum(enum0: ResolvedAst.Declaration.RestrictableEnum, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): KindedAst.RestrictableEnum = enum0 match {
     case ResolvedAst.Declaration.RestrictableEnum(doc, ann, mod, sym, index0, tparams0, derives, cases0, loc) =>
       val kenvIndex = getKindEnvFromIndex(index0, sym)
       val kenvTparams = getKindEnvFromTypeParams(tparams0)
@@ -142,7 +142,7 @@ object Kinder {
       val targs = (index :: tparams).map(tparam => Type.Var(tparam.sym, tparam.loc.asSynthetic))
       val t = Type.mkApply(Type.Cst(TypeConstructor.RestrictableEnum(sym, getRestrictableEnumKind(enum0)), sym.loc.asSynthetic), targs, sym.loc.asSynthetic)
       val cases = cases0.map(visitRestrictableCase(_, index, tparams, t, kenv, taenv, root)).map(caze => caze.sym -> caze).toMap
-      Validation.success(KindedAst.RestrictableEnum(doc, ann, mod, sym, index, tparams, derives, cases, t, loc))
+      KindedAst.RestrictableEnum(doc, ann, mod, sym, index, tparams, derives, cases, t, loc)
   }
 
   /**
