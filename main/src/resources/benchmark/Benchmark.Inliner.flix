@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-mod InlinerBenchmark {
+mod Benchmark.Inliner {
 
     pub def map(f: a -> b, l: List[a]) : List[b] = {
         def mp(xs, acc) = match xs {
