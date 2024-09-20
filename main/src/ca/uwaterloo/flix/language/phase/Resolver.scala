@@ -917,7 +917,8 @@ object Resolver {
         case ResolvedQName.Error(e) => Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
       }
 
-    case app@NamedAst.Expr.Apply(NamedAst.Expr.LetRec2(ann, sym, fparams, exp, tpe, eff, innerLoc), exps, outerLoc) => ???
+    case app@NamedAst.Expr.Apply(letrec@NamedAst.Expr.LetRec2(ann, sym, fparams, exp, tpe, eff, innerLoc), exps, outerLoc) =>
+      visitApplyLetRec(sym, fparams, exp, exps, tpe, eff, innerLoc, outerLoc)
 
     case app@NamedAst.Expr.Apply(_, _, _) =>
       visitApply(app, env0)
@@ -1788,6 +1789,8 @@ object Resolver {
       es => visitApplyToplevelFull(ResolvedAst.Expr.Sig(sig.sym, innerLoc), sig.spec.fparams.length, es, outerLoc)
     }
   }
+
+  private def visitApplyLetRec(sym: Symbol.VarSym, fparams: List[NamedAst.FormalParam], exp: NamedAst.Expr, exps: List[NamedAst.Expr], tpe: Option[NamedAst.Type], eff: Option[NamedAst.Type], innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Expr, ResolutionError] = ???
 
   /**
     * Resolves the tag application.
