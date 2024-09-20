@@ -30,12 +30,30 @@ class FlixSuite(incremental: Boolean) extends AnyFunSuite {
     */
   var flix = new Flix()
 
+  /**
+    * Runs all tests in all files in the directory located at `path`.
+    *
+    * In contrast to [[mkTestDir]], this function compiles all files
+    * together so files can depend on each other.
+    *
+    * Subdirectories are excluded.
+    *
+    */
   def mkTestDirCollected(path: String)(implicit options: Options): Unit = {
     val files = FileOps.getFlixFilesIn(path, 1)
     val n = files.headOption.map(p => p.getFileName.toString).getOrElse(path)
     test(n)(compileAndRun(files))
   }
 
+  /**
+    * Runs all tests in all files in the directory located at `path`.
+    *
+    * This function compiles each file separately, so files cannot depend
+    * each other. If that is a requirement use [[mkTestDirCollected]] instead.
+    *
+    * Subdirectories are excluded.
+    *
+    */
   def mkTestDir(path: String)(implicit options: Options): Unit = {
     val files = FileOps.getFlixFilesIn(path, 1)
     for (p <- files) {
@@ -43,6 +61,9 @@ class FlixSuite(incremental: Boolean) extends AnyFunSuite {
     }
   }
 
+  /**
+    * Runs all the tests in the file located at `path`.
+    */
   def mkTest(path: String)(implicit options: Options): Unit = {
     val p = Paths.get(path)
     val n = p.getFileName.toString
