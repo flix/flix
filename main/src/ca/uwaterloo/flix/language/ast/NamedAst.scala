@@ -122,6 +122,8 @@ object NamedAst {
 
     case class LetRec(sym: Symbol.VarSym, ann: Ast.Annotations, mod: Ast.Modifiers, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
+    case class LetRec2(ann: Ast.Annotations, sym: Symbol.VarSym, fparams: List[FormalParam], exp: Expr, tpe: Option[Type], eff: Option[Type], loc: SourceLocation) extends Expr
+
     case class Region(tpe: ca.uwaterloo.flix.language.ast.Type, loc: SourceLocation) extends Expr
 
     case class Scope(sym: Symbol.VarSym, regionVar: Symbol.UnkindedTypeVarSym, exp: Expr, loc: SourceLocation) extends Expr

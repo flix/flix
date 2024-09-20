@@ -621,6 +621,10 @@ object Ast {
       */
     case object Constraint extends BoundBy
 
+    /**
+      * Represents a variable that is bound by a local def.
+      */
+    case object LetRec extends BoundBy
   }
 
   /**

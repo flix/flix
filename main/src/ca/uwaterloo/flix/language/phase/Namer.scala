@@ -629,6 +629,14 @@ object Namer {
       val e2 = visitExp(exp2, ns0)
       NamedAst.Expr.LetRec(sym, ann, mod, e1, e2, loc)
 
+    case DesugaredAst.Expr.LetRec2(ann, ident, fparams, exp, tpe, eff, loc) =>
+      val sym = Symbol.freshVarSym(ident, BoundBy.LetRec) // use defnsym instead?
+      val fps = fparams.map(visitFormalParam(_))
+      val e = visitExp(exp, ns0)
+      val t = tpe.map(visitType)
+      val ef = eff.map(visitType)
+      NamedAst.Expr.LetRec2(ann, sym, fps, e, t, ef, loc)
+
     case DesugaredAst.Expr.Region(tpe, loc) =>
       NamedAst.Expr.Region(tpe, loc)
 
