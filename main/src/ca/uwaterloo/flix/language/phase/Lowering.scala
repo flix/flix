@@ -385,7 +385,7 @@ object Lowering {
 
     case TypedAst.Expr.Apply(exp, exps, tpe, eff, loc) =>
       val e = visitExp(exp)
-      val es = visitExps(exps)
+      val es = exps.map(visitExp)
       val t = visitType(tpe)
       LoweredAst.Expr.Apply(e, es, t, eff, loc)
 
@@ -470,7 +470,7 @@ object Lowering {
       LoweredAst.Expr.ApplyAtomic(AtomicOp.Tag(caseSym), List(e), t, eff, loc)
 
     case TypedAst.Expr.Tuple(elms, tpe, eff, loc) =>
-      val es = visitExps(elms)
+      val es = elms.map(visitExp)
       val t = visitType(tpe)
       LoweredAst.Expr.ApplyAtomic(AtomicOp.Tuple, es, t, eff, loc)
 
@@ -495,7 +495,7 @@ object Lowering {
       LoweredAst.Expr.ApplyAtomic(AtomicOp.RecordRestrict(label), List(e), t, eff, loc)
 
     case TypedAst.Expr.ArrayLit(exps, exp, tpe, eff, loc) =>
-      val es = visitExps(exps)
+      val es = exps.map(visitExp)
       val e = visitExp(exp)
       val t = visitType(tpe)
       LoweredAst.Expr.ApplyAtomic(AtomicOp.ArrayLit, e :: es, t, eff, loc)
@@ -542,7 +542,7 @@ object Lowering {
       LoweredAst.Expr.ApplyAtomic(AtomicOp.StructPut(field.sym), List(struct, rhs), tpe, eff, loc)
 
     case TypedAst.Expr.VectorLit(exps, tpe, eff, loc) =>
-      val es = visitExps(exps)
+      val es = exps.map(visitExp)
       val t = visitType(tpe)
       LoweredAst.Expr.VectorLit(es, t, eff, loc)
 
@@ -602,22 +602,22 @@ object Lowering {
       LoweredAst.Expr.TryWith(e, sym, rs, t, eff, loc)
 
     case TypedAst.Expr.Do(sym, exps, tpe, eff, loc) =>
-      val es = visitExps(exps)
+      val es = exps.map(visitExp)
       LoweredAst.Expr.Do(sym, es, tpe, eff, loc)
 
     case TypedAst.Expr.InvokeConstructor(constructor, exps, tpe, eff, loc) =>
-      val es = visitExps(exps)
+      val es = exps.map(visitExp)
       val t = visitType(tpe)
       LoweredAst.Expr.ApplyAtomic(AtomicOp.InvokeConstructor(constructor), es, t, eff, loc)
 
     case TypedAst.Expr.InvokeMethod(method, exp, exps, tpe, eff, loc) =>
       val e = visitExp(exp)
-      val es = visitExps(exps)
+      val es = exps.map(visitExp)
       val t = visitType(tpe)
       LoweredAst.Expr.ApplyAtomic(AtomicOp.InvokeMethod(method), e :: es, t, eff, loc)
 
     case TypedAst.Expr.InvokeStaticMethod(method, exps, tpe, eff, loc) =>
-      val es = visitExps(exps)
+      val es = exps.map(visitExp)
       val t = visitType(tpe)
       LoweredAst.Expr.ApplyAtomic(AtomicOp.InvokeStaticMethod(method), es, t, eff, loc)
 
@@ -818,11 +818,6 @@ object Lowering {
       throw InternalCompilerException(s"Unexpected error expression near", m.loc)
 
   }
-
-  /**
-    * Lowers the given list of expressions `exps0`.
-    */
-  private def visitExps(exps0: List[TypedAst.Expr])(implicit scope: Scope, root: TypedAst.Root, flix: Flix): List[LoweredAst.Expr] = exps0.map(visitExp)
 
   /**
     * Lowers the given pattern `pat0`.
