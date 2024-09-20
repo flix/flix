@@ -29,7 +29,8 @@ def benchmarks(): Map[String, Unit -> Unit \ IO] = Map#{
     "InlinerMap100k" => () -> {
         let l = Benchmark.Inliner.range(0, 100_000);
         let l2 = Benchmark.Inliner.map(x -> x + 1, l);
-        println(Benchmark.Inliner.length(l2))
+        let len = Benchmark.Inliner.length(l2);
+        println(len)
     },
     "InlinerMap100kOptimized" => () -> {
         let top = 99999; // 100_000 - 1
