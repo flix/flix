@@ -109,6 +109,8 @@ object DocAst {
 
     case class LetRec(v: Expr, tpe: Option[Type], bind: Expr, body: Expr) extends LetBinder
 
+    case class LetRec2(sym: Expr, parameters: List[Expr.Ascription], resType: Option[Type], effect: Option[Eff], body: Expr) extends Atom
+
     case class Scope(v: Expr, d: Expr) extends Atom
 
     case class App(f: Expr, args: List[Expr]) extends Atom

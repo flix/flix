@@ -51,12 +51,13 @@ object ResolvedAstPrinter {
     case Expr.Discard(exp, _) => DocAst.Expr.Discard(print(exp))
     case Expr.Let(sym, _, exp1, exp2, _) => DocAst.Expr.Let(printVarSym(sym), None, print(exp1), print(exp2))
     case Expr.LetRec(sym, _, _, exp1, exp2, _) => DocAst.Expr.LetRec(printVarSym(sym), None, print(exp1), print(exp2))
+    case Expr.LetRec2(_, sym, fparams, exp, tpe, eff, _) => DocAst.Expr.LetRec2(printVarSym(sym), fparams.map(printFormalParam), tpe.map(_ => DocAst.Type.Unknown), eff.map(_ => DocAst.Eff.AsIs("Unknown")), print(exp))
     case Expr.Region(_, _) => DocAst.Expr.Region
     case Expr.Scope(sym, _, exp, _) => DocAst.Expr.Scope(printVarSym(sym), print(exp))
     case Expr.Match(exp, rules, _) => DocAst.Expr.Match(print(exp), rules.map {
       case ResolvedAst.MatchRule(pat, guard, exp) => (printPattern(pat), guard.map(print), print(exp))
     })
-    case Expr.TypeMatch(exp, rules, _) => DocAst.Expr.TypeMatch(print(exp), rules.map{
+    case Expr.TypeMatch(exp, rules, _) => DocAst.Expr.TypeMatch(print(exp), rules.map {
       case ResolvedAst.TypeMatchRule(sym, _, exp) => (printVarSym(sym), DocAst.Type.Unknown, print(exp))
     })
     case Expr.RestrictableChoose(_, _, _, _) => DocAst.Expr.Unknown
@@ -72,7 +73,7 @@ object ResolvedAstPrinter {
     case Expr.ArrayLoad(base, index, _) => DocAst.Expr.ArrayLoad(print(base), print(index))
     case Expr.ArrayStore(base, index, elm, _) => DocAst.Expr.ArrayStore(print(base), print(index), print(elm))
     case Expr.ArrayLength(base, _) => DocAst.Expr.ArrayLength(print(base))
-    case Expr.StructNew(sym, exps, region, _) => DocAst.Expr.StructNew(sym, exps.map{
+    case Expr.StructNew(sym, exps, region, _) => DocAst.Expr.StructNew(sym, exps.map {
       case (sym, exp) => (sym.sym, print(exp))
     }, print(region))
     case Expr.StructGet(e, sym, _) => DocAst.Expr.StructGet(print(e), sym.sym)
@@ -86,7 +87,7 @@ object ResolvedAstPrinter {
     case Expr.UncheckedCast(exp, _, _, _) => DocAst.Expr.Cast(print(exp), DocAst.Type.Unknown)
     case Expr.UncheckedMaskingCast(exp, _) => DocAst.Expr.Cast(print(exp), DocAst.Type.Unknown)
     case Expr.Without(exp, eff, _) => DocAst.Expr.Without(print(exp), eff.sym)
-    case Expr.TryCatch(exp, rules, _) => DocAst.Expr.TryCatch(print(exp), rules.map{
+    case Expr.TryCatch(exp, rules, _) => DocAst.Expr.TryCatch(print(exp), rules.map {
       case ResolvedAst.CatchRule(sym, clazz, exp) => (sym, clazz, print(exp))
     })
     case Expr.Throw(exp, _) => DocAst.Expr.Throw(print(exp))

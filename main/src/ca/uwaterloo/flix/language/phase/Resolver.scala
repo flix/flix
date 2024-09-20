@@ -917,6 +917,8 @@ object Resolver {
         case ResolvedQName.Error(e) => Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
       }
 
+    case app@NamedAst.Expr.Apply(NamedAst.Expr.LetRec2(ann, sym, fparams, exp, tpe, eff, innerLoc), exps, outerLoc) => ???
+
     case app@NamedAst.Expr.Apply(_, _, _) =>
       visitApply(app, env0)
 
@@ -980,7 +982,18 @@ object Resolver {
         case (e1, e2) => ResolvedAst.Expr.LetRec(sym, ann, mod, e1, e2, loc)
       }
 
-    case NamedAst.Expr.LetRec2(ann, sym, fparams, exp, tpe, eff, loc) => ???
+    case NamedAst.Expr.LetRec2(ann, sym, fparams0, exp0, tpe0, eff0, loc) =>
+      val fparamsVal = traverse(fparams0)(resolveFormalParam(_, env0, taenv, ns0, root))
+      flatMapN(fparamsVal) {
+        fparams =>
+          val env1 = env0 ++ mkFormalParamEnv(fparams)
+          val expVal = resolveExp(exp0, env1)
+          val tpeVal = traverseOpt(tpe0)(resolveType(_, Wildness.AllowWild, env1, taenv, ns0, root))
+          val effVal = traverseOpt(eff0)(resolveType(_, Wildness.AllowWild, env1, taenv, ns0, root))
+          mapN(expVal, tpeVal, effVal) {
+            case (e, t, ef) => ResolvedAst.Expr.LetRec2(ann, sym, fparams, e, t, ef, loc)
+          }
+      }
 
     case NamedAst.Expr.Region(tpe, loc) =>
       Validation.success(ResolvedAst.Expr.Region(tpe, loc))

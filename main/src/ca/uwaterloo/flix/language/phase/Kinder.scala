@@ -469,6 +469,8 @@ object Kinder {
         case (exp1, exp2) => KindedAst.Expr.LetRec(sym, ann, mod, exp1, exp2, loc)
       }
 
+    case ResolvedAst.Expr.LetRec2(ann, sym, fparams, exp, tpe, eff, loc) => ???
+
     case ResolvedAst.Expr.Region(tpe, loc) =>
       Validation.success(KindedAst.Expr.Region(tpe, loc))
 
