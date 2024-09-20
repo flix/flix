@@ -86,7 +86,7 @@ object Simplifier {
 
     case MonoAst.Expr.ApplyDef(Ast.DefSymUse(sym, loc1), exps, ftpe, tpe, eff, loc2) =>
       val ft = visitType(ftpe)
-      val e = SimplifiedAst.Expr.Def(sym, ft, loc1)
+      val e = SimplifiedAst.Expr.Def(sym, ft, loc1) // Add Expr.Def to avoid breaking the backend, will be removed later
       val es = exps.map(visitExp)
       val t = visitType(tpe)
       SimplifiedAst.Expr.Apply(e, es, t, simplifyEffect(eff), loc2)
