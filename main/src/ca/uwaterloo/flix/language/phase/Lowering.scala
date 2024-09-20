@@ -952,6 +952,7 @@ object Lowering {
           val termPatterns = pat0.map {
             case TypedAst.RestrictableChoosePattern.Var(sym, tpe, loc) => LoweredAst.Pattern.Var(sym, tpe, loc)
             case TypedAst.RestrictableChoosePattern.Wild(tpe, loc) => LoweredAst.Pattern.Wild(tpe, loc)
+            case TypedAst.RestrictableChoosePattern.Error(_, loc) => throw InternalCompilerException("unexpected restrictable choose variable near", loc)
           }
           val pat1 = termPatterns match {
             case Nil => LoweredAst.Pattern.Cst(Constant.Unit, Type.mkUnit(loc), loc)
