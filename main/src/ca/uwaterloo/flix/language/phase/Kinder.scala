@@ -239,7 +239,7 @@ object Kinder {
       flatMapN(tparamsVal, assocsVal) {
         case (tparam, assocs) =>
           val sigsVal = traverse(sigs0) {
-            case (sigSym, sig0) => mapN(visitSig(sig0, tparam, superTraits, kenv, taenv, root))(sig => sigSym -> sig)
+            case (sigSym, sig0) => mapN(visitSig(sig0, tparam, kenv, taenv, root))(sig => sigSym -> sig)
           }
           val lawsVal = traverse(laws0)(visitDef(_, Nil, kenv, taenv, root)) // TODO ASSOC-TYPES need to include super traits?
           mapN(sigsVal, lawsVal) {
@@ -312,7 +312,7 @@ object Kinder {
   /**
     * Performs kinding on the given sig under the given kind environment.
     */
-  private def visitSig(sig0: ResolvedAst.Declaration.Sig, traitTparam: KindedAst.TypeParam, traitConstraints: List[Ast.TraitConstraint], kenv0: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[KindedAst.Sig, KindError] = sig0 match {
+  private def visitSig(sig0: ResolvedAst.Declaration.Sig, traitTparam: KindedAst.TypeParam, kenv0: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[KindedAst.Sig, KindError] = sig0 match {
     case ResolvedAst.Declaration.Sig(sym, spec0, exp0) =>
       val kenvVal = getKindEnvFromSpec(spec0, kenv0, taenv, root)
       flatMapN(kenvVal) {
