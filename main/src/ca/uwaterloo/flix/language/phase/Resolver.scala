@@ -917,7 +917,7 @@ object Resolver {
         case ResolvedQName.Error(e) => Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
       }
 
-    case app@NamedAst.Expr.Apply(letrec@NamedAst.Expr.LetRec2(ann, sym, fparams, exp, tpe, eff, innerLoc), exps, outerLoc) =>
+    case NamedAst.Expr.Apply(NamedAst.Expr.LetRec2(ann, sym, fparams, exp, tpe, eff, innerLoc), exps, outerLoc) =>
       visitApplyLetRec(sym, fparams, exp, exps, tpe, eff, innerLoc, outerLoc)
 
     case app@NamedAst.Expr.Apply(_, _, _) =>
