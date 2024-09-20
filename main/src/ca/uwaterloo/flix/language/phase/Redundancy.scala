@@ -162,8 +162,8 @@ object Redundancy {
   }
 
   /**
-   * Checks for unused type parameters in structs.
-   */
+    * Checks for unused type parameters in structs.
+    */
   private def checkUnusedTypeParamsStructs()(implicit root: Root): List[RedundancyError] = {
     val result = new ListBuffer[RedundancyError]
     for ((_, decl) <- root.structs) {
@@ -360,10 +360,12 @@ object Redundancy {
       val us2 = visitExps(exps, env0, rc)
       us1 ++ us2
 
-    case Expr.ApplyDef(exp, exps, _, _, _) =>
-      val us1 = visitExp(exp, env0, rc)
-      val us2 = visitExps(exps, env0, rc)
-      us1 ++ us2
+    case Expr.ApplyDef(Ast.DefSymUse(sym, _), exps, _, _, _, _) =>
+      // Recursive calls do not count as uses.
+      if (!rc.defn.contains(sym)) {
+        sctx.defSyms.put(sym, ())
+      }
+      visitExps(exps, env0, rc)
 
     case Expr.Unary(_, exp, _, _, _) =>
       visitExp(exp, env0, rc)
@@ -601,7 +603,7 @@ object Redundancy {
 
     case Expr.StructNew(sym, fields, region, _, _, _) =>
       sctx.structSyms.put(sym, ())
-      visitExps(fields.map {case (k, v) => v}, env0, rc) ++ visitExp(region, env0, rc)
+      visitExps(fields.map { case (k, v) => v }, env0, rc) ++ visitExp(region, env0, rc)
 
     case Expr.StructGet(e, field, _, _, _) =>
       sctx.structFieldSyms.put(field.sym, ())

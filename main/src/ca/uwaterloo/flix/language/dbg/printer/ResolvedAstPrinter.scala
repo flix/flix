@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.dbg.printer
 
 import ca.uwaterloo.flix.language.ast.ResolvedAst.{Expr, Pattern}
-import ca.uwaterloo.flix.language.ast.{ResolvedAst, Symbol}
+import ca.uwaterloo.flix.language.ast.{Ast, ResolvedAst, Symbol}
 import ca.uwaterloo.flix.language.dbg.DocAst
 
 
@@ -43,7 +43,7 @@ object ResolvedAstPrinter {
     case Expr.Use(_, _, _, _) => DocAst.Expr.Unknown
     case Expr.Cst(cst, _) => ConstantPrinter.print(cst)
     case Expr.Apply(exp, exps, _) => DocAst.Expr.App(print(exp), exps.map(print))
-    case Expr.ApplyDef(exp, exps, _) => DocAst.Expr.App(print(exp), exps.map(print))
+    case Expr.ApplyDef(Ast.DefSymUse(sym, _), exps, _) => DocAst.Expr.App(DocAst.Expr.AsIs(sym.name), exps.map(print))
     case Expr.Lambda(fparam, exp, _) => DocAst.Expr.Lambda(List(printFormalParam(fparam)), print(exp))
     case Expr.Unary(sop, exp, _) => DocAst.Expr.Unary(OpPrinter.print(sop), print(exp))
     case Expr.Binary(sop, exp1, exp2, _) => DocAst.Expr.Binary(print(exp1), OpPrinter.print(sop), print(exp2))

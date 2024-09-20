@@ -541,6 +541,12 @@ object Ast {
   case class RestrictableEnumSymUse(sym: Symbol.RestrictableEnumSym, loc: SourceLocation)
 
   /**
+    * Represents a use of an defn sym.
+    */
+  case class DefSymUse(sym: Symbol.DefnSym, loc: SourceLocation)
+
+
+  /**
     * Represents a use of a class sym.
     */
   case class TraitSymUse(sym: Symbol.TraitSym, loc: SourceLocation)

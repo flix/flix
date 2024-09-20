@@ -105,7 +105,7 @@ object ResolvedAst {
 
     case class Apply(exp: Expr, exps: List[Expr], loc: SourceLocation) extends Expr
 
-    case class ApplyDef(exp: Expr.Def, exps: List[Expr], loc: SourceLocation) extends Expr
+    case class ApplyDef(sym: Ast.DefSymUse, exps: List[Expr], loc: SourceLocation) extends Expr
 
     case class Lambda(fparam: FormalParam, exp: Expr, loc: SourceLocation) extends Expr
 
