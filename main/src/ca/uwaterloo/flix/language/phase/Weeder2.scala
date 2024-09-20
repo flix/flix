@@ -1291,11 +1291,9 @@ object Weeder2 {
         Types.tryPickEffect(tree),
       ) {
         case (ann, (exp1, exp2), fparams, ident, tpe, eff) =>
-          val e = if (tpe.isDefined || eff.isDefined) Expr.Ascribe(exp1, tpe, eff, exp1.loc) else exp1
-          val lambda = fparams.foldRight(e) {
-            case (fparam, acc) => WeededAst.Expr.Lambda(fparam, acc, exp1.loc.asSynthetic)
-          }
-          Expr.LetRec(ident, ann, Ast.Modifiers.Empty, lambda, exp2, tree.loc)
+          // val e = if (tpe.isDefined || eff.isDefined) Expr.Ascribe(exp1, tpe, eff, exp1.loc) else exp1
+          val e1 = Expr.LetRec2(ann, Ast.Modifiers.Empty, ident, fparams, exp1, tpe, eff, exp1.loc)
+          Expr.Stm(e1, exp2, tree.loc)
       }
     }
 
