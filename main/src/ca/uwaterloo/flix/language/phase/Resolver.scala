@@ -1702,23 +1702,54 @@ object Resolver {
     *   - ` f(a,b)  ===> f(a, b)`
     *   - `f(a,b,c) ===> f(a, b)(c)`
     */
-  private def visitApplyToplevelFull(base: ResolvedAst.Expr, arity: Int, exps: List[ResolvedAst.Expr], loc: SourceLocation)(implicit scope: Scope, flix: Flix): ResolvedAst.Expr = {
+  private def visitApplyToplevelDefFull(defn: NamedAst.Declaration.Def, arity: Int, exps: List[ResolvedAst.Expr], innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, flix: Flix): ResolvedAst.Expr = {
     val (directArgs, cloArgs) = exps.splitAt(arity)
 
-    val fparamsPadding = mkFreshFparams(arity - directArgs.length, loc.asSynthetic)
-    val argsPadding = fparamsPadding.map(fp => ResolvedAst.Expr.Var(fp.sym, loc.asSynthetic))
+    val fparamsPadding = mkFreshFparams(arity - directArgs.length, outerLoc.asSynthetic)
+    val argsPadding = fparamsPadding.map(fp => ResolvedAst.Expr.Var(fp.sym, outerLoc.asSynthetic))
 
     val fullArgs = directArgs ++ argsPadding
-    val fullDefApplication = ResolvedAst.Expr.Apply(base, fullArgs, loc)
+    val fullDefApplication = ResolvedAst.Expr.ApplyDef(Ast.DefSymUse(defn.sym, innerLoc), fullArgs, outerLoc)
 
     // The ordering of lambdas and closure application doesn't matter,
     // `fparamsPadding.isEmpty` iff `cloArgs.nonEmpty`.
     val fullDefLambda = fparamsPadding.foldRight(fullDefApplication: ResolvedAst.Expr) {
-      case (fp, acc) => ResolvedAst.Expr.Lambda(fp, acc, loc.asSynthetic)
+      case (fp, acc) => ResolvedAst.Expr.Lambda(fp, acc, outerLoc.asSynthetic)
     }
 
     val closureApplication = cloArgs.foldLeft(fullDefLambda) {
-      case (acc, cloArg) => ResolvedAst.Expr.Apply(acc, List(cloArg), loc)
+      case (acc, cloArg) => ResolvedAst.Expr.Apply(acc, List(cloArg), outerLoc)
+    }
+
+    closureApplication
+  }
+
+  /**
+    * Resolve the application of a top-level function or signature `base` with some `arity`.
+    *
+    * Example with `def f(a: Char, b: Char): Char -> Char`
+    *   - `   f     ===> x -> y -> f(x, y)`
+    *   - `  f(a)   ===> x -> f(a, x)`
+    *   - ` f(a,b)  ===> f(a, b)`
+    *   - `f(a,b,c) ===> f(a, b)(c)`
+    */
+  private def visitApplyToplevelSigFull(base: ResolvedAst.Expr, arity: Int, exps: List[ResolvedAst.Expr], outerLoc: SourceLocation)(implicit scope: Scope, flix: Flix): ResolvedAst.Expr = {
+    val (directArgs, cloArgs) = exps.splitAt(arity)
+
+    val fparamsPadding = mkFreshFparams(arity - directArgs.length, outerLoc.asSynthetic)
+    val argsPadding = fparamsPadding.map(fp => ResolvedAst.Expr.Var(fp.sym, outerLoc.asSynthetic))
+
+    val fullArgs = directArgs ++ argsPadding
+    val fullDefApplication = ResolvedAst.Expr.Apply(base, fullArgs, outerLoc)
+
+    // The ordering of lambdas and closure application doesn't matter,
+    // `fparamsPadding.isEmpty` iff `cloArgs.nonEmpty`.
+    val fullDefLambda = fparamsPadding.foldRight(fullDefApplication: ResolvedAst.Expr) {
+      case (fp, acc) => ResolvedAst.Expr.Lambda(fp, acc, outerLoc.asSynthetic)
+    }
+
+    val closureApplication = cloArgs.foldLeft(fullDefLambda) {
+      case (acc, cloArg) => ResolvedAst.Expr.Apply(acc, List(cloArg), outerLoc)
     }
 
     closureApplication
@@ -1730,7 +1761,7 @@ object Resolver {
     *   - `Int32.add ===> x -> y -> Int32.add(x, y)`
     */
   private def visitDef(defn: NamedAst.Declaration.Def, loc: SourceLocation)(implicit scope: Scope, flix: Flix): ResolvedAst.Expr = {
-    visitApplyToplevelFull(ResolvedAst.Expr.Def(defn.sym, loc), defn.spec.fparams.length, Nil, loc.asSynthetic)
+    visitApplyToplevelDefFull(defn, defn.spec.fparams.length, Nil, loc, loc.asSynthetic)
   }
 
   /**
@@ -1744,8 +1775,7 @@ object Resolver {
     */
   private def visitApplyDef(defn: NamedAst.Declaration.Def, exps: List[NamedAst.Expr], env: ListMap[String, Resolver.Resolution], innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Expr, ResolutionError] = {
     mapN(traverse(exps)(resolveExp(_, env))) {
-      case es if defn.spec.fparams.length == es.length => ResolvedAst.Expr.ApplyDef(Ast.DefSymUse(defn.sym, innerLoc), es, outerLoc)
-      case es => visitApplyToplevelFull(ResolvedAst.Expr.Def(defn.sym, innerLoc), defn.spec.fparams.length, es, outerLoc)
+      case es => visitApplyToplevelDefFull(defn, defn.spec.fparams.length, es, innerLoc, outerLoc)
     }
   }
 
@@ -1755,7 +1785,7 @@ object Resolver {
     *   - `Add.add ===> x -> y -> Add.add(x, y)`
     */
   private def visitSig(sig: NamedAst.Declaration.Sig, loc: SourceLocation)(implicit scope: Scope, flix: Flix): ResolvedAst.Expr = {
-    visitApplyToplevelFull(ResolvedAst.Expr.Sig(sig.sym, loc), sig.spec.fparams.length, Nil, loc.asSynthetic)
+    visitApplyToplevelSigFull(ResolvedAst.Expr.Sig(sig.sym, loc), sig.spec.fparams.length, Nil, loc.asSynthetic)
   }
 
   /**
@@ -1769,7 +1799,7 @@ object Resolver {
     */
   private def visitApplySig(sig: NamedAst.Declaration.Sig, exps: List[NamedAst.Expr], env: ListMap[String, Resolution], innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Expr, ResolutionError] = {
     mapN(traverse(exps)(resolveExp(_, env))) {
-      es => visitApplyToplevelFull(ResolvedAst.Expr.Sig(sig.sym, innerLoc), sig.spec.fparams.length, es, outerLoc)
+      es => visitApplyToplevelSigFull(ResolvedAst.Expr.Sig(sig.sym, innerLoc), sig.spec.fparams.length, es, outerLoc)
     }
   }
 

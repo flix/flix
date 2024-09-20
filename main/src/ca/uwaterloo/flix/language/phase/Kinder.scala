@@ -397,7 +397,6 @@ object Kinder {
 
     case ResolvedAst.Expr.Var(sym, loc) => Validation.success(KindedAst.Expr.Var(sym, loc))
 
-    case ResolvedAst.Expr.Def(sym, loc) => Validation.success(KindedAst.Expr.Def(sym, Type.freshVar(Kind.Star, loc.asSynthetic), loc))
 
     case ResolvedAst.Expr.Sig(sym, loc) => Validation.success(KindedAst.Expr.Sig(sym, Type.freshVar(Kind.Star, loc.asSynthetic), loc))
 
