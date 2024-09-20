@@ -45,10 +45,10 @@ class FlixSuite(incremental: Boolean) extends AnyFunSuite {
   def mkTest(path: String)(implicit options: Options): Unit = {
     val p = Paths.get(path)
     val n = p.getFileName.toString
-    test(n)(compileAndRun(p))
+    test(n)(compileAndRun(List(p)))
   }
 
-  private def compileAndRun(path: Path)(implicit options: Options): Unit = {
+  private def compileAndRun(paths: List[Path])(implicit options: Options): Unit = {
     // Construct a new fresh Flix object if incremental compilation is disabled.
     if (!incremental) {
       flix = new Flix()
@@ -61,7 +61,9 @@ class FlixSuite(incremental: Boolean) extends AnyFunSuite {
     implicit val sctx: SecurityContext = SecurityContext.AllPermissions
 
     // Add the given path.
-    flix.addFlix(path)
+    for (p <- paths) {
+      flix.addFlix(p)
+    }
 
     try {
       // Compile and Evaluate the program to obtain the compilationResult.
@@ -74,7 +76,9 @@ class FlixSuite(incremental: Boolean) extends AnyFunSuite {
       }
     } finally {
       // Remove the source path.
-      flix.remFlix(path)
+      for (p <- paths) {
+        flix.remFlix(p)
+      }
     }
   }
 
