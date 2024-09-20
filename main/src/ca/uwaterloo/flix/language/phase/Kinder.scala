@@ -67,7 +67,7 @@ object Kinder {
     flatMapN(visitTypeAliases(root.taOrder, root)) {
       taenv =>
 
-        val enumsVal = ParOps.parTraverseValues(root.enums)(visitEnum(_, taenv, root))
+        val enums = ParOps.parMapValues(root.enums)(visitEnum(_, taenv, root))
 
         val structsVal = ParOps.parTraverseValues(root.structs)(visitStruct(_, taenv, root))
 
@@ -81,8 +81,8 @@ object Kinder {
 
         val effectsVal = ParOps.parTraverseValues(root.effects)(visitEffect(_, taenv, root))
 
-        mapN(enumsVal, structsVal, restrictableEnumsVal, traitsVal, defsVal, instancesVal, effectsVal) {
-          case (enums, structs, restrictableEnums, traits, defs, instances, effects) =>
+        mapN(structsVal, restrictableEnumsVal, traitsVal, defsVal, instancesVal, effectsVal) {
+          case (structs, restrictableEnums, traits, defs, instances, effects) =>
             KindedAst.Root(traits, instances, defs, enums, structs, restrictableEnums, effects, taenv, root.uses, root.entryPoint, root.sources, root.names)
         }
     }.withSoftFailures(sctx.errors.asScala)
@@ -91,14 +91,14 @@ object Kinder {
   /**
     * Performs kinding on the given enum.
     */
-  private def visitEnum(enum0: ResolvedAst.Declaration.Enum, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[KindedAst.Enum, KindError] = enum0 match {
+  private def visitEnum(enum0: ResolvedAst.Declaration.Enum, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): KindedAst.Enum = enum0 match {
     case ResolvedAst.Declaration.Enum(doc, ann, mod, sym, tparams0, derives, cases0, loc) =>
       val kenv = getKindEnvFromTypeParams(tparams0)
       val tparams = tparams0.map(visitTypeParam(_, kenv))
       val targs = tparams.map(tparam => Type.Var(tparam.sym, tparam.loc.asSynthetic))
       val t = Type.mkApply(Type.Cst(TypeConstructor.Enum(sym, getEnumKind(enum0)), sym.loc.asSynthetic), targs, sym.loc.asSynthetic)
       val cases = cases0.map(visitCase(_, tparams, t, kenv, taenv, root)).map(caze => caze.sym -> caze).toMap
-      Validation.success(KindedAst.Enum(doc, ann, mod, sym, tparams, derives, cases, t, loc))
+      KindedAst.Enum(doc, ann, mod, sym, tparams, derives, cases, t, loc)
   }
 
   /**
