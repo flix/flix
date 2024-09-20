@@ -27,21 +27,21 @@ def benchmarks(): Map[String, Unit -> Unit \ IO] = Map#{
     "List.length"    => () -> List.range(0, 10_000) |> List.length |> blackhole,
     "List.reverse"   => () -> List.range(0, 10_000) |> List.reverse |> blackhole,
     "InlinerMap100k" => () -> {
-        let l = InlinerBenchmarkNormal.range(0, 100_000);
-        let l2 = InlinerBenchmarkNormal.map(x -> x + 1, l);
-        println(InlinerBenchmarkNormal.length(l2))
+        let l = InlinerBenchmark.range(0, 100_000);
+        let l2 = InlinerBenchmark.map(x -> x + 1, l);
+        println(InlinerBenchmark.length(l2))
     },
     "InlinerMap100kOptimized" => () -> {
         let top = 99999; // 100_000 - 1
-        let l = InlinerBenchmarkInlined.rng(top, Nil);
-        let l2 = InlinerBenchmarkInlined.mp(l, Nil);
-        let l3 = InlinerBenchmarkInlined.rv(l2, Nil);
-        let l4 = InlinerBenchmarkInlined.ln(l3, 0);
+        let l = InlinerBenchmarkOptimized.rng(top, Nil);
+        let l2 = InlinerBenchmarkOptimized.mp(l, Nil);
+        let l3 = InlinerBenchmarkOptimized.rv(l2, Nil);
+        let l4 = InlinerBenchmarkOptimized.ln(l3, 0);
         println(l4)
     }
 }
 
-mod InlinerBenchmarkNormal {
+mod InlinerBenchmark {
 
     pub def map(f: a -> b, l: List[a]) : List[b] = {
         def mp(xs, acc) = match xs {
@@ -74,7 +74,7 @@ mod InlinerBenchmarkNormal {
 
 }
 
-mod InlinerBenchmarkInlined {
+mod InlinerBenchmarkOptimized {
 
     pub def mp(xs: List[Int32], acc: List[Int32]): List[Int32] = match xs {
         case Nil     => acc
