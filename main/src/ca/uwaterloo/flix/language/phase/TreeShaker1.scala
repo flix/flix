@@ -17,8 +17,8 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Symbol
-import ca.uwaterloo.flix.language.ast.LoweredAst._
+import ca.uwaterloo.flix.language.ast.{Ast, Symbol}
+import ca.uwaterloo.flix.language.ast.LoweredAst.*
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugLoweredAst
 import ca.uwaterloo.flix.util.ParOps
 
@@ -115,8 +115,8 @@ object TreeShaker1 {
     case Expr.Apply(exp, exps, _, _, _) =>
       visitExp(exp) ++ visitExps(exps)
 
-    case Expr.ApplyDef(exp, exps, _, _, _) =>
-      visitExp(exp) ++ visitExps(exps)
+    case Expr.ApplyDef(Ast.DefSymUse(sym, _), exps, _, _, _, _) =>
+      Set(ReachableSym.DefnSym(sym)) ++ visitExps(exps)
 
     case Expr.ApplyAtomic(_, exps, _, _, _) =>
       visitExps(exps)
