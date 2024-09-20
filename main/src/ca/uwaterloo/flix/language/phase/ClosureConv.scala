@@ -55,22 +55,6 @@ object ClosureConv {
 
     case Expr.Var(_, _, _) => exp0
 
-    case Expr.Def(sym, tpe, loc) =>
-      //
-      // Special Case: A def expression occurs outside of an `Apply` expression.
-      //
-
-      //
-      // We must create a closure that references the definition symbol.
-      //
-      // The closure has no free variables since it is a reference to a top-level function.
-      //
-      // This case happens if the programmer writes e.g.:
-      //
-      // let m = List.map; ...
-      //
-      Expr.ApplyAtomic(AtomicOp.Closure(sym), List.empty, tpe, Purity.Pure, loc)
-
     case Expr.Lambda(fparams, exp, tpe, loc) =>
       //
       // Main case: Convert a lambda expression to a lambda closure.
@@ -208,8 +192,6 @@ object ClosureConv {
 
     case Expr.Var(sym, tpe, _) => SortedSet(FreeVar(sym, tpe))
 
-    case Expr.Def(_, _, _) => SortedSet.empty
-
     case Expr.Lambda(args, body, _, _) =>
       filterBoundParams(freeVars(body), args)
 
@@ -303,8 +285,6 @@ object ClosureConv {
         case None => Expr.Var(sym, tpe, loc)
         case Some(newSym) => Expr.Var(newSym, tpe, loc)
       }
-
-      case Expr.Def(_, _, _) => e
 
       case Expr.Lambda(fparams, exp, tpe, loc) =>
         val fs = fparams.map(visitFormalParam)

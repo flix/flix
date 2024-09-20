@@ -201,8 +201,6 @@ object LambdaLift {
       val methods = methods0.map(visitJvmMethod)
       LiftedAst.Expr.NewObject(name, clazz, tpe, purity, methods, loc)
 
-    case SimplifiedAst.Expr.Def(_, _, loc) => throw InternalCompilerException(s"Unexpected expression.", loc)
-
     case SimplifiedAst.Expr.Lambda(_, _, _, loc) => throw InternalCompilerException(s"Unexpected expression.", loc)
 
     case SimplifiedAst.Expr.Apply(_, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression.", loc)

@@ -56,10 +56,6 @@ object SimplifiedAst {
       def purity: Purity = Pure
     }
 
-    case class Def(sym: Symbol.DefnSym, tpe: MonoType, loc: SourceLocation) extends Expr {
-      def purity: Purity = Pure
-    }
-
     case class Lambda(fparams: List[FormalParam], exp: Expr, tpe: MonoType, loc: SourceLocation) extends Expr {
       def purity: Purity = Pure
     }
