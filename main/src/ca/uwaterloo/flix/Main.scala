@@ -423,7 +423,7 @@ object Main {
       case "lambdas" => SubEffectLevel.Lambdas
       case "lambdas-and-instances" => SubEffectLevel.LambdasAndInstances
       case "lambdas-and-defs" => SubEffectLevel.LambdasAndDefs
-      case arg => throw new IllegalArgumentException(s"'$arg' is not a valid library level. Valid options are 'all', 'min', and 'nix'.")
+      case arg => throw new IllegalArgumentException(s"'$arg' is not a valid subeffecting option. Valid options are 'nothing', 'lambdas', 'lambdas-and-instances', and 'lambdas-and-defs'.")
     }
 
     val parser = new scopt.OptionParser[CmdOpts]("flix") {
