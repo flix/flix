@@ -16,24 +16,32 @@
 package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp.Entity
-import ca.uwaterloo.flix.language.ast.TypedAst.Root
+import ca.uwaterloo.flix.language.ast.TypedAst.{
+  Root, 
+  Def, 
+  Expr, 
+  Effect, 
+  Enum,
+  Constraint, 
+  Pattern, 
+  StructField,
+  Case,
+  Instance,
+  RestrictableEnum,
+  RestrictableCase,
+  Sig
+}
 import ca.uwaterloo.flix.language.ast.SourceLocation
-import ca.uwaterloo.flix.language.ast.TypedAst.Def
-import ca.uwaterloo.flix.language.ast.TypedAst.Expr
 import ca.uwaterloo.flix.language.ast.Type
 import ca.uwaterloo.flix.api.lsp.Position
-import ca.uwaterloo.flix.language.ast.TypedAst.Effect
 import ca.uwaterloo.flix.language.ast.Ast.Annotation
-import ca.uwaterloo.flix.language.ast.TypedAst.Constraint
-import ca.uwaterloo.flix.language.ast.TypedAst.Pattern
-import ca.uwaterloo.flix.language.ast.TypedAst.StructField
-
+import ca.uwaterloo.flix.language.ast.TypedAst.Struct
+import ca.uwaterloo.flix.language.ast.TypedAst.Trait
 
 object Visitor {
   // For now, visit is a placeholder. In the end we'll need some way
   // to supply visit functions for all types of elements at this top level
   def visitRoot(root: Root, visit: Root => Unit, accept: SourceLocation => Boolean): Unit = {
-
 
     root.defs.map{ case (_, defn) => {
       val insideDefn = accept(defn.spec.loc) || accept(defn.exp.loc) || accept(defn.sym.loc)
@@ -50,15 +58,42 @@ object Visitor {
     }}
 
     // root.entryPoint.map{ case v => visitEntryPoint(visit, accept)(v) }
-    // root.enums.map{ case (_, v) => visitEnum(???, ???)(v) };
-    // root.instances.map { case (_, v) => visitInstance(???, ???)(v) };
-    // root.modules.map { case (_, v) => visitModule(???, ???)(v) };
-    // root.restrictableEnums.map { case (_, v) => visitRestrictable(???, ???)(v) }; //experimental, prob should be removed
-    // root.sigs.map{ case (_, v) => visitSig(???, ???)(v) };
-    // root.structs.map{ case (_, v) => visitStruct(???, ???)(v) };
+    root.enums.map{ case (_, e) => {
+      if (accept(e.loc)) { visitEnum(e, ???, accept) } }
+    }
+
+    root.instances.map { case (_, l) => {
+      l.foreach(ins => if (accept(ins.loc)) { visitInstance(ins, ???, accept) }) }
+    }
+
+    // root.modules.map { case (_, v) => visitModule(v, ???, ???) }
+
+    root.restrictableEnums.map { case (_, e) => {
+      if (accept(e.loc)) { visitResEnum(e, ???, accept) } } // experimental, maybe should be removed?
+    }
+
+    root.sigs.map{ case (_, sig) => {
+      val insideSig = accept(sig.spec.loc) || sig.exp.exists(e => accept(e.loc)) || accept(sig.sym.loc)
+      if (insideSig) {
+        visitSig(sig, ???, accept)
+      }
+    }}
+
+    root.structs.map{ case (_, struct) => {
+      val insideStruct = accept(struct.loc) || struct.fields.exists{ case (s, c) => accept(s.loc) || accept(c.loc) }
+      if (insideStruct) {
+        visitStruct(struct, ???, accept)
+      }
+    }
+
     // root.traitEnv.map{ case (_, v) => visitTraitEnv(???, ???)(v) };
-    // root.traits.map{ case (_, v) =>  visitTrait(???, ???)(v) };
+
+    root.traits.map{ case (_, t) => {
+      if (accept(t.loc)) { visitTrait(t, ???, accept) }
+    }}
+
     // root.typeAliases.map{ case (_, v) => visitTypeAlias(???, ???)(v) };
+
     // root.uses.map{ case (_, v) => visitUse(???, ???)(v) };
   }
 
@@ -82,6 +117,65 @@ object Visitor {
     !(loc1.endLine == loc2.endLine && loc1.endCol > loc2.endCol)
   }
 
+  def visitEnum(e: Enum, visit: Enum => Unit, accept: SourceLocation => Boolean): Unit = {
+    visit(e)
+    e.cases
+     .map{case (_, c) => c}
+     .foreach(c => if (accept(c.loc)) { visitCase(c, ???, accept) })
+  }
+
+  def visitCase(c: Case, visit: Case => Unit, accept: SourceLocation => Boolean): Unit = {
+    visit(c)
+  }
+
+  def visitResEnum(e: RestrictableEnum, visit: RestrictableEnum => Unit, accept: SourceLocation => Boolean): Unit = {
+    visit(e)
+    e.cases
+     .map{case (_, c) => c}
+     .foreach(c => if (accept(c.loc)) { visitResCase(c, ???, accept) })
+  }
+
+  def visitResCase(c: RestrictableCase, visit: RestrictableCase => Unit, accept: SourceLocation => Boolean): Unit = {
+    visit(c)
+  }
+
+  def visitInstance(ins: Instance, visit: Instance => Unit, accept: SourceLocation => Boolean): Unit = {
+    visit(ins)
+    ins.defs.foreach(defn => visitDef(defn, ???, accept))
+  }
+
+  def visitSig(sig: Sig, visit: Sig => Unit, accept: SourceLocation => Boolean): Unit = {
+    visit(sig)
+    if (accept(sig.spec.loc)) {
+      ??? // TODO
+    }
+
+    sig.exp.foreach(exp =>
+      if (accept(exp.loc)) {
+        visitExpr(exp, ???, accept)
+      }
+    )
+  }
+
+  def visitStruct(struct: Struct, visit: Struct => Unit, accept: SourceLocation => Boolean): Unit = {
+    visit(struct)
+    struct.fields.foreach{case (_, field) => {
+      if (accept(field.loc) ) { 
+        visitStructField(field, ???, accept) 
+      }
+    }}
+  }
+
+  def visitStructField(field: StructField, visit: StructField => Unit, accept: SourceLocation => Boolean): Unit = {
+    visit(field)
+  }
+
+  def visitTrait(t: Trait, visit: Trait => Unit, accept: SourceLocation => Boolean): Unit = {
+    visit(t)
+    t.laws.foreach(law => visitDef(law, ???, accept))
+    t.sigs.foreach(sig => visitSig(sig, ???, accept))
+  }
+  
   def visitEffect(eff: Effect, visit: Effect => Unit, accept: SourceLocation => Boolean): Unit = {
     visit(eff)
     ???
@@ -90,7 +184,7 @@ object Visitor {
   def visitDef(defn: Def, visit: Def => Unit, accept: SourceLocation => Boolean): Unit = {
     visit(defn)
     if (accept(defn.spec.loc)) {
-      ???
+      ??? // TODO
     }
 
     if (accept(defn.exp.loc)) {
