@@ -84,7 +84,7 @@ object Visitor {
       if (insideStruct) {
         visitStruct(struct, ???, accept)
       }
-    }
+    }}
 
     // root.traitEnv.map{ case (_, v) => visitTraitEnv(???, ???)(v) };
 
