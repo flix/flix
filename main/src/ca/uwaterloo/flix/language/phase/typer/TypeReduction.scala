@@ -23,6 +23,7 @@ import ca.uwaterloo.flix.language.phase.jvm.JvmOps
 import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.collection.{ListMap, ListOps}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
+import org.apache.commons.lang3.reflect.MethodUtils
 
 import java.lang.reflect.{Constructor, Field, Method}
 import scala.annotation.tailrec
@@ -274,59 +275,80 @@ object TypeReduction {
 
   /** Tries to find a static/dynamic method of `clazz` that takes arguments of type `ts`. */
   private def retrieveMethod(clazz: Class[?], methodName: String, ts: List[Type], static: Boolean, loc: SourceLocation): JavaMethodResolution = {
-    val candidates = candidateMethods(clazz, methodName, ts, static)
-
-    candidates match {
-      case Nil => JavaMethodResolution.NotFound
-      case method :: Nil => JavaMethodResolution.Resolved(method)
-      case _ :: _ :: _ =>
-        // Multiple candidate constructors exist according to subtyping, so we search for an exact
-        // match. Candidates could contain `append(String)` and `append(Object)` for the call
-        // `append("a")`.
-        val exactMatches = candidates.filter(m => exactArguments(m.getParameterTypes, ts))
-
-        exactMatches match {
-          // No exact matches. We have ambiguity among the candidates.
-          case Nil => JavaMethodResolution.AmbiguousMethod(candidates)
-
-          case exact :: Nil => JavaMethodResolution.Resolved(exact)
-
-          // Multiple exact matches are impossible in Java.
-          case _ :: _ :: _ =>
-            throw InternalCompilerException("Unexpected multiple exact matches for Java method", loc)
-        }
+    val tparams = ts.map(getJavaType)
+    val m = MethodUtils.getMatchingAccessibleMethod(clazz, methodName, tparams *)
+    // We check if we found a method and if its static flag matches.
+    if (m != null && JvmOps.isStatic(m) == static) {
+      // Case 1: We found the method on the clazz.
+      JavaMethodResolution.Resolved(m)
+    } else {
+      // Case 2: We failed to find the method on the clazz.
+      // We make one attempt on java.lang.Object.
+      val classObj = classOf[java.lang.Object]
+      val m = MethodUtils.getMatchingAccessibleMethod(classObj, methodName, tparams *)
+      if (m != null) {
+        // Case 2.1: We found the method on java.lang.Object.
+        JavaMethodResolution.Resolved(m)
+      } else {
+        // Case 2.2: We failed to find the method, so we report an error on the original clazz.
+        JavaMethodResolution.NotFound
+      }
     }
   }
 
   /**
-    * Removes methods of super-classes that are overridden with the same types.
-    */
-  private def candidateMethods(clazz: Class[?], methodName: String, ts: List[Type], static: Boolean): List[Method] = {
-    // this list contains e.g. both `StringBuilder.appendCodePoint(int)` and `AbstractStringBuilder.appendCodePoint(int)`.
-    val allCandidates = JvmOps.getMethods(clazz).filter(isCandidateMethod(_, methodName, static, ts))
+   * Returns the Java reflective class object corresponding to the given Flix `tpe`.
+   */
+  private def getJavaType(tpe: Type): Class[?] = tpe match {
+    case Type.Bool => java.lang.Boolean.TYPE
+    case Type.Int8 => java.lang.Byte.TYPE
+    case Type.Int16 => java.lang.Short.TYPE
+    case Type.Int32 => java.lang.Integer.TYPE
+    case Type.Int64 => java.lang.Long.TYPE
+    case Type.Char => java.lang.Character.TYPE
+    case Type.Float32 => java.lang.Float.TYPE
+    case Type.Float64 => java.lang.Double.TYPE
+    case Type.Cst(TypeConstructor.BigDecimal, _) => classOf[java.math.BigDecimal]
+    case Type.Cst(TypeConstructor.BigInt, _) => classOf[java.math.BigInteger]
+    case Type.Cst(TypeConstructor.Str, _) => classOf[String]
+    case Type.Cst(TypeConstructor.Regex, _) => classOf[java.util.regex.Pattern]
+    case Type.Cst(TypeConstructor.Native(clazz), _) => clazz
 
-    def notOverridden(method: Method): Boolean = {
-      // this is a very hardcoded hack to make the standard library compile
-      // conceptually we should whether the defining classes are subtypes of eachother with exact signatures
-      // but that requires the Class object, which getMethods don't give us
-      method.getReturnType.equals(Void.TYPE) ||
-        method.getReturnType.isPrimitive ||
-        method.getReturnType.isArray ||
-        java.lang.reflect.Modifier.isInterface(method.getReturnType.getModifiers) ||
-        !(java.lang.reflect.Modifier.isAbstract(method.getReturnType.getModifiers) && !static)
-    }
+    // Arrays
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Array, _), elmType, _), _, _) =>
+      // Find the Java class of the element type.
+      val t = getJavaType(elmType)
 
-    allCandidates.filter(notOverridden)
-  }
+      // Find the Java class of the array type.
+      // See: https://stackoverflow.com/questions/1679421/how-to-get-the-array-class-for-a-given-class-in-java
+      val phantomArr = java.lang.reflect.Array.newInstance(t, 0)
+      val arrType = phantomArr.getClass
+      arrType
 
-  /**
-    * Returns `true` if `method` has name `methodName`, is static if `static == true`, and can be
-    * called with arguments types in `ts` according to subtyping.
-    */
-  private def isCandidateMethod(method: Method, methodName: String, static: Boolean, ts: List[Type]): Boolean = {
-    if (method.getName != methodName) return false
-    if (JvmOps.isStatic(method) != static) return false
-    subtypeArguments(method.getParameterTypes, ts)
+    // Functions
+    case Type.Apply(Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Arrow(2), _), _, _), varArg, _), varRet, _) =>
+      (varArg, varRet) match {
+        case (Type.Cst(tc1, _), Type.Cst(tc2, _)) =>
+          (tc1, tc2) match {
+            case (TypeConstructor.Int32, TypeConstructor.Unit) => classOf[java.util.function.IntConsumer]
+            case (TypeConstructor.Int32, TypeConstructor.Bool) => classOf[java.util.function.IntPredicate]
+            case (TypeConstructor.Int32, TypeConstructor.Int32) => classOf[java.util.function.IntUnaryOperator]
+            case (TypeConstructor.Int32, TypeConstructor.Native(obj)) if obj == classOf[Object] => classOf[java.util.function.IntFunction[Object]]
+            case (TypeConstructor.Float64, TypeConstructor.Unit) => classOf[java.util.function.DoubleConsumer]
+            case (TypeConstructor.Float64, TypeConstructor.Bool) => classOf[java.util.function.DoublePredicate]
+            case (TypeConstructor.Float64, TypeConstructor.Float64) => classOf[java.util.function.DoubleUnaryOperator]
+            case (TypeConstructor.Float64, TypeConstructor.Native(obj)) if obj == classOf[Object] => classOf[java.util.function.DoubleFunction[Object]]
+            case (TypeConstructor.Int64, TypeConstructor.Unit) => classOf[java.util.function.LongConsumer]
+            case (TypeConstructor.Int64, TypeConstructor.Bool) => classOf[java.util.function.LongPredicate]
+            case (TypeConstructor.Int64, TypeConstructor.Int64) => classOf[java.util.function.LongUnaryOperator]
+            case (TypeConstructor.Int64, TypeConstructor.Native(obj)) if obj == classOf[Object] => classOf[java.util.function.LongFunction[Object]]
+            case (TypeConstructor.Native(obj), TypeConstructor.Unit) if obj == classOf[Object] => classOf[java.util.function.Consumer[Object]]
+            case (TypeConstructor.Native(obj), TypeConstructor.Bool) if obj == classOf[Object] => classOf[java.util.function.Predicate[Object]]
+            case _ => classOf[Object] // default
+          }
+        case _ => classOf[Object] // default
+      }
+    case _ => classOf[Object] // default
   }
 
   /** Returns `true` if the `arguments` types exactly match the `params` types. */
