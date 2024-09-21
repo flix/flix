@@ -277,7 +277,8 @@ object TypeReduction {
   private def retrieveMethod(clazz: Class[?], methodName: String, ts: List[Type], static: Boolean, loc: SourceLocation): JavaMethodResolution = {
     val tparams = ts.map(getJavaType)
     val m = MethodUtils.getMatchingAccessibleMethod(clazz, methodName, tparams *)
-    if (m != null) {
+    // We check if we found a method and if its static flag matches.
+    if (m != null && JvmOps.isStatic(m) == static) {
       // Case 1: We found the method on the clazz.
       JavaMethodResolution.Resolved(m)
     } else {
