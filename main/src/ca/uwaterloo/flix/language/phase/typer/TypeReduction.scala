@@ -23,6 +23,7 @@ import ca.uwaterloo.flix.language.phase.jvm.JvmOps
 import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.collection.{ListMap, ListOps}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
+import org.apache.commons.lang3.reflect.MethodUtils
 
 import java.lang.reflect.{Constructor, Field, Method}
 import scala.annotation.tailrec
@@ -274,28 +275,48 @@ object TypeReduction {
 
   /** Tries to find a static/dynamic method of `clazz` that takes arguments of type `ts`. */
   private def retrieveMethod(clazz: Class[?], methodName: String, ts: List[Type], static: Boolean, loc: SourceLocation): JavaMethodResolution = {
-    val candidates = candidateMethods(clazz, methodName, ts, static)
+    val tparams = ts.map(getJavaType)
+      val m = MethodUtils.getMatchingAccessibleMethod(clazz, methodName, tparams *) // The star is for vargs.
+      if (m != null) {
+        JavaMethodResolution.Resolved(m)
+      } else {
+        val candidates = clazz.getMethods.toList.filter(_.getName == methodName)
+        JavaMethodResolution.AmbiguousMethod(candidates)
+      }
+  }
 
-    candidates match {
-      case Nil => JavaMethodResolution.NotFound
-      case method :: Nil => JavaMethodResolution.Resolved(method)
-      case _ :: _ :: _ =>
-        // Multiple candidate constructors exist according to subtyping, so we search for an exact
-        // match. Candidates could contain `append(String)` and `append(Object)` for the call
-        // `append("a")`.
-        val exactMatches = candidates.filter(m => exactArguments(m.getParameterTypes, ts))
+  /**
+   * Returns the Java reflective class object corresponding to the given Flix `tpe`.
+   */
+  private def getJavaType(tpe: Type): Class[?] = tpe match {
+    case Type.Bool => java.lang.Boolean.TYPE
+    case Type.Int8 => java.lang.Byte.TYPE
+    case Type.Int16 => java.lang.Short.TYPE
+    case Type.Int32 => java.lang.Integer.TYPE
+    case Type.Int64 => java.lang.Long.TYPE
+    case Type.Char => java.lang.Character.TYPE
+    case Type.Float32 => java.lang.Float.TYPE
+    case Type.Float64 => java.lang.Double.TYPE
+    case Type.Cst(TypeConstructor.BigDecimal, _) => classOf[java.math.BigDecimal]
+    case Type.Cst(TypeConstructor.BigInt, _) => classOf[java.math.BigInteger]
+    case Type.Cst(TypeConstructor.Str, _) => classOf[String]
+    case Type.Cst(TypeConstructor.Regex, _) => classOf[java.util.regex.Pattern]
+    case Type.Cst(TypeConstructor.Native(clazz), _) => clazz
 
-        exactMatches match {
-          // No exact matches. We have ambiguity among the candidates.
-          case Nil => JavaMethodResolution.AmbiguousMethod(candidates)
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Array, _), elmType, _), _, _) =>
+      // Find the Java class of the element type.
+      val t = getJavaType(elmType)
 
-          case exact :: Nil => JavaMethodResolution.Resolved(exact)
+      // Find the Java class of the array type.
+      // See: https://stackoverflow.com/questions/1679421/how-to-get-the-array-class-for-a-given-class-in-java
+      val phantomArr = java.lang.reflect.Array.newInstance(t, 0)
+      val arrType = phantomArr.getClass
+      arrType
 
-          // Multiple exact matches are impossible in Java.
-          case _ :: _ :: _ =>
-            throw InternalCompilerException("Unexpected multiple exact matches for Java method", loc)
-        }
-    }
+    case _ =>
+      println(tpe)
+      classOf[Object] // wrong
+
   }
 
   /**
