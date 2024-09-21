@@ -276,13 +276,23 @@ object TypeReduction {
   /** Tries to find a static/dynamic method of `clazz` that takes arguments of type `ts`. */
   private def retrieveMethod(clazz: Class[?], methodName: String, ts: List[Type], static: Boolean, loc: SourceLocation): JavaMethodResolution = {
     val tparams = ts.map(getJavaType)
-      val m = MethodUtils.getMatchingAccessibleMethod(clazz, methodName, tparams *) // The star is for vargs.
+    val m = MethodUtils.getMatchingAccessibleMethod(clazz, methodName, tparams *)
+    if (m != null) {
+      // Case 1: We found the method on the clazz.
+      JavaMethodResolution.Resolved(m)
+    } else {
+      // Case 2: We failed to find the method on the clazz.
+      // We make one attempt on java.lang.Object.
+      val classObj = classOf[java.lang.Object]
+      val m = MethodUtils.getMatchingAccessibleMethod(classObj, methodName, tparams *)
       if (m != null) {
+        // Case 2.1: We found the method on java.lang.Object.
         JavaMethodResolution.Resolved(m)
       } else {
-        val candidates = clazz.getMethods.toList.filter(_.getName == methodName)
-        JavaMethodResolution.AmbiguousMethod(candidates)
+        // Case 2.2: We failed to find the method, so we report an error on the original clazz.
+        JavaMethodResolution.NotFound
       }
+    }
   }
 
   /**
@@ -338,37 +348,6 @@ object TypeReduction {
         case _ => classOf[Object] // default
       }
     case _ => classOf[Object] // default
-  }
-
-  /**
-    * Removes methods of super-classes that are overridden with the same types.
-    */
-  private def candidateMethods(clazz: Class[?], methodName: String, ts: List[Type], static: Boolean): List[Method] = {
-    // this list contains e.g. both `StringBuilder.appendCodePoint(int)` and `AbstractStringBuilder.appendCodePoint(int)`.
-    val allCandidates = JvmOps.getMethods(clazz).filter(isCandidateMethod(_, methodName, static, ts))
-
-    def notOverridden(method: Method): Boolean = {
-      // this is a very hardcoded hack to make the standard library compile
-      // conceptually we should whether the defining classes are subtypes of eachother with exact signatures
-      // but that requires the Class object, which getMethods don't give us
-      method.getReturnType.equals(Void.TYPE) ||
-        method.getReturnType.isPrimitive ||
-        method.getReturnType.isArray ||
-        java.lang.reflect.Modifier.isInterface(method.getReturnType.getModifiers) ||
-        !(java.lang.reflect.Modifier.isAbstract(method.getReturnType.getModifiers) && !static)
-    }
-
-    allCandidates.filter(notOverridden)
-  }
-
-  /**
-    * Returns `true` if `method` has name `methodName`, is static if `static == true`, and can be
-    * called with arguments types in `ts` according to subtyping.
-    */
-  private def isCandidateMethod(method: Method, methodName: String, static: Boolean, ts: List[Type]): Boolean = {
-    if (method.getName != methodName) return false
-    if (JvmOps.isStatic(method) != static) return false
-    subtypeArguments(method.getParameterTypes, ts)
   }
 
   /** Returns `true` if the `arguments` types exactly match the `params` types. */
