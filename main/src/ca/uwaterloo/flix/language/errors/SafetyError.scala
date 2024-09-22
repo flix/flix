@@ -538,18 +538,19 @@ object SafetyError {
   }
 
   /**
-    * An error raised to indicate that the IO effect is attempted to be handled in a try-with expression.
+    * An error raised to indicate that a base effect is attempted to be handled in a try-with expression.
     *
     * @param loc the location where the error occurred.
+    * @param sym the effect symbol.
     */
-  case class IOEffectInTryWith(loc: SourceLocation) extends SafetyError with Recoverable {
-    override def summary: String = s"The IO effect cannot be handled."
+  case class BaseEffectInTryWith(loc: SourceLocation, sym: Symbol.EffectSym) extends SafetyError with Recoverable {
+    override def summary: String = s"The ${sym.name} effect cannot be handled."
 
     override def message(formatter: Formatter): String = {
       import formatter._
-      s""">> The IO effect cannot be handled.
+      s""">> The ${sym.name} effect cannot be handled.
          |
-         |${code(loc, "attempted to handle the IO effect here.")}
+         |${code(loc, s"attempted to handle the ${sym.name} effect here.")}
          |""".stripMargin
     }
 

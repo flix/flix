@@ -429,15 +429,87 @@ class TestSafety extends AnyFunSuite with TestUtils {
     expectError[SafetyError.MissingDefaultTypeMatchCase](result)
   }
 
-  test("TestIOEffectInTryWith.01") {
+  test("TestBaseEffectInTryWith.01") {
     val input =
       """
         |def f(): Unit =
         |    try println("Hello, World!") with IO {}
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[SafetyError.IOEffectInTryWith](result)
+    expectError[SafetyError.BaseEffectInTryWith](result)
   }
+
+  test("TestBaseEffectInTryWith.02") {
+    val input =
+      """
+        |def f(): Unit =
+        |    try g() with Exec {}
+        |
+        |def g(): Unit \ Exec = ???
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[SafetyError.BaseEffectInTryWith](result)
+  }
+
+  test("TestBaseEffectInTryWith.03") {
+    val input =
+      """
+        |def f(): Unit =
+        |    try g() with FileRead {}
+        |
+        |def g(): Unit \ FileRead = ???
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[SafetyError.BaseEffectInTryWith](result)
+  }
+
+  test("TestBaseEffectInTryWith.04") {
+    val input =
+      """
+        |def f(): Unit =
+        |    try g() with FileWrite {}
+        |
+        |def g(): Unit \ FileWrite = ???
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[SafetyError.BaseEffectInTryWith](result)
+  }
+
+    test("TestBaseEffectInTryWith.05") {
+      val input =
+        """
+          |def f(): Unit =
+          |    try g() with Net {}
+          |
+          |def g(): Unit \ Net = ???
+      """.stripMargin
+      val result = compile(input, Options.TestWithLibMin)
+      expectError[SafetyError.BaseEffectInTryWith](result)
+    }
+
+    test("TestBaseEffectInTryWith.06") {
+      val input =
+        """
+          |def f(): Unit =
+          |    try g() with NonDet {}
+          |
+          |def g(): Unit \ NonDet = ???
+      """.stripMargin
+      val result = compile(input, Options.TestWithLibMin)
+      expectError[SafetyError.BaseEffectInTryWith](result)
+    }
+
+    test("TestBaseEffectInTryWith.07") {
+      val input =
+        """
+          |def f(): Unit =
+          |    try g() with Sys {}
+          |
+          |def g(): Unit \ Sys = ???
+      """.stripMargin
+      val result = compile(input, Options.TestWithLibMin)
+      expectError[SafetyError.BaseEffectInTryWith](result)
+    }
 
   test("UnableToDeriveSendable.01") {
     val input =
