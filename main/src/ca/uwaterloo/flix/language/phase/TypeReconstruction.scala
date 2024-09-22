@@ -218,6 +218,7 @@ object TypeReconstruction {
               val ps = pats.map {
                 case KindedAst.RestrictableChoosePattern.Wild(tvar, loc) => TypedAst.RestrictableChoosePattern.Wild(subst(tvar), loc)
                 case KindedAst.RestrictableChoosePattern.Var(sym, tvar, loc) => TypedAst.RestrictableChoosePattern.Var(sym, subst(tvar), loc)
+                case KindedAst.RestrictableChoosePattern.Error(tvar, loc) => TypedAst.RestrictableChoosePattern.Error(subst(tvar), loc)
               }
               TypedAst.RestrictableChoosePattern.Tag(sym, ps, subst(tvar), loc)
           }

@@ -1052,6 +1052,7 @@ object Namer {
         // make a fresh variable symbol for the local variable.
         val sym = Symbol.freshVarSym(ident, BoundBy.Pattern)
         NamedAst.RestrictableChoosePattern.Var(sym, loc)
+      case DesugaredAst.RestrictableChoosePattern.Error(loc) => NamedAst.RestrictableChoosePattern.Error(loc)
     }
 
     pat0 match {

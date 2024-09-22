@@ -282,6 +282,8 @@ object NamedAst {
 
     case class Tag(qname: Name.QName, pat: List[VarOrWild], loc: SourceLocation) extends RestrictableChoosePattern
 
+    case class Error(loc: SourceLocation) extends VarOrWild
+
   }
 
   sealed trait Predicate

@@ -288,6 +288,8 @@ object ResolvedAst {
 
     case class Tag(sym: Ast.RestrictableCaseSymUse, pat: List[VarOrWild], loc: SourceLocation) extends RestrictableChoosePattern
 
+    case class Error(loc: SourceLocation) extends VarOrWild
+
   }
 
   sealed trait Predicate
@@ -332,11 +334,11 @@ object ResolvedAst {
 
   }
 
-  case class JvmMethod(ident: Name.Ident, fparams: Seq[FormalParam], exp: Expr, tpe: UnkindedType, eff: Option[UnkindedType], loc: SourceLocation)
+  case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], exp: Expr, tpe: UnkindedType, eff: Option[UnkindedType], loc: SourceLocation)
 
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: Expr)
 
-  case class HandlerRule(op: Ast.OpSymUse, fparams: Seq[FormalParam], exp: Expr)
+  case class HandlerRule(op: Ast.OpSymUse, fparams: List[FormalParam], exp: Expr)
 
   case class RestrictableChooseRule(pat: RestrictableChoosePattern, exp: Expr)
 

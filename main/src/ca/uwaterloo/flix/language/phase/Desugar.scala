@@ -919,6 +919,10 @@ object Desugar {
 
         case WeededAst.RestrictableChoosePattern.Var(ident, loc) =>
           DesugaredAst.RestrictableChoosePattern.Var(ident, loc)
+
+        case WeededAst.RestrictableChoosePattern.Error(loc) =>
+          DesugaredAst.RestrictableChoosePattern.Error(loc)
+
       }
 
     pat0 match {

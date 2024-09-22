@@ -272,6 +272,8 @@ object KindedAst {
 
     case class Tag(sym: Ast.RestrictableCaseSymUse, pat: List[VarOrWild], tvar: Type.Var, loc: SourceLocation) extends RestrictableChoosePattern
 
+    case class Error(tvar: Type.Var, loc: SourceLocation) extends VarOrWild
+
   }
 
   sealed trait Predicate

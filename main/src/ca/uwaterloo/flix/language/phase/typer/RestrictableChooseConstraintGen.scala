@@ -353,6 +353,7 @@ object RestrictableChooseConstraintGen {
     case KindedAst.RestrictableChoosePattern.Var(sym, tvar, loc) =>
       c.unifyType(sym.tvar, tvar, loc)
       tvar
+    case KindedAst.RestrictableChoosePattern.Error(tvar, _) => tvar
   }
 
   /**

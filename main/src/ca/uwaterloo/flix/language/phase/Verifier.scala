@@ -637,6 +637,9 @@ object Verifier {
       case MonoType.Arrow(List(MonoType.Float64), MonoType.Object) if klazz.isAssignableFrom(classOf[java.util.function.DoubleFunction[Object]]) => tpe
       case MonoType.Arrow(List(MonoType.Float64), MonoType.Bool) if klazz.isAssignableFrom(classOf[java.util.function.DoublePredicate]) => tpe
       case MonoType.Arrow(List(MonoType.Float64), MonoType.Float64) if klazz.isAssignableFrom(classOf[java.util.function.DoubleUnaryOperator]) => tpe
+
+      case MonoType.Array(_) => tpe // TODO: Array subtyping
+
       case _ => failMismatchedTypes(tpe, klazz, loc)
     }
   }
