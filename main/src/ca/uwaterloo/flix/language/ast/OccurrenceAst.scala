@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.Purity.Pure
-import ca.uwaterloo.flix.language.ast.shared.Source
+import ca.uwaterloo.flix.language.ast.shared.{Constant, Source}
 
 object OccurrenceAst {
 
@@ -45,7 +45,7 @@ object OccurrenceAst {
 
   object Expr {
 
-    case class Constant(cst: Ast.Constant, tpe: MonoType, loc: SourceLocation) extends OccurrenceAst.Expr {
+    case class Cst(cst: Constant, tpe: MonoType, loc: SourceLocation) extends OccurrenceAst.Expr {
       def purity: Purity = Pure
     }
 
