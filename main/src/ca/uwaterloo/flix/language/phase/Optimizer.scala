@@ -52,7 +52,7 @@ object Optimizer {
     * A pure and trivial expression can always be inlined even without duplicating work.
     */
   def isTrivialExp(exp0: Expr): Boolean = exp0 match {
-    case Expr.Constant(_, _, _) => true
+    case Expr.Cst(_, _, _) => true
     case Expr.Var(_, _, _) => true
     case _ => false
   }

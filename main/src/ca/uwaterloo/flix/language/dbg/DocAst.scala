@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.language.dbg
 
+import ca.uwaterloo.flix.language.ast.shared.Constant
 import ca.uwaterloo.flix.language.ast.{Ast, Name, Symbol}
 
 import java.lang.reflect.{Constructor, Field, Method}
@@ -255,7 +256,7 @@ object DocAst {
     def Without(d: Expr, sym: Symbol.EffectSym): Expr =
       Binary(d, "without", AsIs(sym.toString))
 
-    def Cst(cst: Ast.Constant): Expr =
+    def Cst(cst: Constant): Expr =
       printer.ConstantPrinter.print(cst)
 
     def ApplyClo(d: Expr, ds: List[Expr], ct: Option[Ast.ExpPosition]): Expr =

@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.ExpPosition
 import ca.uwaterloo.flix.language.ast.ReducedAst._
 import ca.uwaterloo.flix.language.ast.SemanticOp._
+import ca.uwaterloo.flix.language.ast.shared.Constant
 import ca.uwaterloo.flix.language.ast.{MonoType, _}
 import ca.uwaterloo.flix.language.dbg.printer.OpPrinter
 import ca.uwaterloo.flix.language.phase.jvm.BackendObjType.JavaObject
@@ -54,24 +55,24 @@ object GenExpression {
   def compileExpr(exp0: Expr)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = exp0 match {
 
     case Expr.Cst(cst, tpe, loc) => cst match {
-      case Ast.Constant.Unit =>
+      case Constant.Unit =>
         mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName,
           BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.toDescriptor)
 
-      case Ast.Constant.Null =>
+      case Constant.Null =>
         mv.visitInsn(ACONST_NULL)
         AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
 
-      case Ast.Constant.Bool(true) =>
+      case Constant.Bool(true) =>
         mv.visitInsn(ICONST_1)
 
-      case Ast.Constant.Bool(false) =>
+      case Constant.Bool(false) =>
         mv.visitInsn(ICONST_0)
 
-      case Ast.Constant.Char(c) =>
+      case Constant.Char(c) =>
         compileInt(c)
 
-      case Ast.Constant.Float32(f) =>
+      case Constant.Float32(f) =>
         f match {
           case 0f => mv.visitInsn(FCONST_0)
           case 1f => mv.visitInsn(FCONST_1)
@@ -79,14 +80,14 @@ object GenExpression {
           case _ => mv.visitLdcInsn(f)
         }
 
-      case Ast.Constant.Float64(d) =>
+      case Constant.Float64(d) =>
         d match {
           case 0d => mv.visitInsn(DCONST_0)
           case 1d => mv.visitInsn(DCONST_1)
           case _ => mv.visitLdcInsn(d)
         }
 
-      case Ast.Constant.BigDecimal(dd) =>
+      case Constant.BigDecimal(dd) =>
         // Can fail with NumberFormatException
         addSourceLine(mv, loc)
         mv.visitTypeInsn(NEW, BackendObjType.BigDecimal.jvmName.toInternalName)
@@ -95,19 +96,19 @@ object GenExpression {
         mv.visitMethodInsn(INVOKESPECIAL, BackendObjType.BigDecimal.jvmName.toInternalName, "<init>",
           AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.Void), false)
 
-      case Ast.Constant.Int8(b) =>
+      case Constant.Int8(b) =>
         compileInt(b)
 
-      case Ast.Constant.Int16(s) =>
+      case Constant.Int16(s) =>
         compileInt(s)
 
-      case Ast.Constant.Int32(i) =>
+      case Constant.Int32(i) =>
         compileInt(i)
 
-      case Ast.Constant.Int64(l) =>
+      case Constant.Int64(l) =>
         compileLong(l)
 
-      case Ast.Constant.BigInt(ii) =>
+      case Constant.BigInt(ii) =>
         // Add source line number for debugging (can fail with NumberFormatException)
         addSourceLine(mv, loc)
         mv.visitTypeInsn(NEW, BackendObjType.BigInt.jvmName.toInternalName)
@@ -116,10 +117,10 @@ object GenExpression {
         mv.visitMethodInsn(INVOKESPECIAL, BackendObjType.BigInt.jvmName.toInternalName, "<init>",
           AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.Void), false)
 
-      case Ast.Constant.Str(s) =>
+      case Constant.Str(s) =>
         mv.visitLdcInsn(s)
 
-      case Ast.Constant.Regex(patt) =>
+      case Constant.Regex(patt) =>
         // Add source line number for debugging (can fail with PatternSyntaxException)
         addSourceLine(mv, loc)
         mv.visitLdcInsn(patt.pattern)

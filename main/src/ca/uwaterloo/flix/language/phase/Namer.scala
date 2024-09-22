@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.BoundBy
-import ca.uwaterloo.flix.language.ast.shared.{Scope, Source}
+import ca.uwaterloo.flix.language.ast.shared.{Constant, Scope, Source}
 import ca.uwaterloo.flix.language.ast.{NamedAst, _}
 import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.language.errors.NameError
@@ -1258,21 +1258,21 @@ object Namer {
   private def freeVars(pat0: DesugaredAst.Pattern): List[Name.Ident] = pat0 match {
     case DesugaredAst.Pattern.Var(ident, _) => List(ident)
     case DesugaredAst.Pattern.Wild(_) => Nil
-    case DesugaredAst.Pattern.Cst(Ast.Constant.Unit, _) => Nil
-    case DesugaredAst.Pattern.Cst(Ast.Constant.Bool(true), _) => Nil
-    case DesugaredAst.Pattern.Cst(Ast.Constant.Bool(false), _) => Nil
-    case DesugaredAst.Pattern.Cst(Ast.Constant.Char(_), _) => Nil
-    case DesugaredAst.Pattern.Cst(Ast.Constant.Float32(_), _) => Nil
-    case DesugaredAst.Pattern.Cst(Ast.Constant.Float64(_), _) => Nil
-    case DesugaredAst.Pattern.Cst(Ast.Constant.BigDecimal(_), _) => Nil
-    case DesugaredAst.Pattern.Cst(Ast.Constant.Int8(_), _) => Nil
-    case DesugaredAst.Pattern.Cst(Ast.Constant.Int16(_), _) => Nil
-    case DesugaredAst.Pattern.Cst(Ast.Constant.Int32(_), _) => Nil
-    case DesugaredAst.Pattern.Cst(Ast.Constant.Int64(_), _) => Nil
-    case DesugaredAst.Pattern.Cst(Ast.Constant.BigInt(_), _) => Nil
-    case DesugaredAst.Pattern.Cst(Ast.Constant.Str(_), _) => Nil
-    case DesugaredAst.Pattern.Cst(Ast.Constant.Regex(_), _) => Nil
-    case DesugaredAst.Pattern.Cst(Ast.Constant.Null, loc) => throw InternalCompilerException("unexpected null pattern", loc)
+    case DesugaredAst.Pattern.Cst(Constant.Unit, _) => Nil
+    case DesugaredAst.Pattern.Cst(Constant.Bool(true), _) => Nil
+    case DesugaredAst.Pattern.Cst(Constant.Bool(false), _) => Nil
+    case DesugaredAst.Pattern.Cst(Constant.Char(_), _) => Nil
+    case DesugaredAst.Pattern.Cst(Constant.Float32(_), _) => Nil
+    case DesugaredAst.Pattern.Cst(Constant.Float64(_), _) => Nil
+    case DesugaredAst.Pattern.Cst(Constant.BigDecimal(_), _) => Nil
+    case DesugaredAst.Pattern.Cst(Constant.Int8(_), _) => Nil
+    case DesugaredAst.Pattern.Cst(Constant.Int16(_), _) => Nil
+    case DesugaredAst.Pattern.Cst(Constant.Int32(_), _) => Nil
+    case DesugaredAst.Pattern.Cst(Constant.Int64(_), _) => Nil
+    case DesugaredAst.Pattern.Cst(Constant.BigInt(_), _) => Nil
+    case DesugaredAst.Pattern.Cst(Constant.Str(_), _) => Nil
+    case DesugaredAst.Pattern.Cst(Constant.Regex(_), _) => Nil
+    case DesugaredAst.Pattern.Cst(Constant.Null, loc) => throw InternalCompilerException("unexpected null pattern", loc)
     case DesugaredAst.Pattern.Tag(_, p, _) => freeVars(p)
     case DesugaredAst.Pattern.Tuple(elms, _) => elms.flatMap(freeVars)
     case DesugaredAst.Pattern.Record(pats, pat, _) => recordPatternFreeVars(pats) ++ freeVars(pat)
