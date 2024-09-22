@@ -139,7 +139,7 @@ object OccurrenceAnalyzer {
     * Performs occurrence analysis on the given expression `exp0`
     */
   private def visitExp(sym0: Symbol.DefnSym, exp0: LiftedAst.Expr): (OccurrenceAst.Expr, OccurInfo) = exp0 match {
-    case Expr.Cst(cst, tpe, loc) => (OccurrenceAst.Expr.Constant(cst, tpe, loc), OccurInfo.One)
+    case Expr.Cst(cst, tpe, loc) => (OccurrenceAst.Expr.Cst(cst, tpe, loc), OccurInfo.One)
 
     case Expr.Var(sym, tpe, loc) => (OccurrenceAst.Expr.Var(sym, tpe, loc), OccurInfo(Map.empty, Map(sym -> Once), 1))
 
