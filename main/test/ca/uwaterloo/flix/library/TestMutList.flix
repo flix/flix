@@ -16,15 +16,8 @@
 
 mod TestMutList {
     use ToString.toString
-    use MutList.MutList
     use MutList.sameElements
 
-    ///
-    /// Helper function to test capacity of internal array.
-    ///
-    def capacity(v: MutList[a, r]): Int32 \ r =
-        let MutList(_, a, _) = v;
-        Array.length(Ref.get(a))
 
     /////////////////////////////////////////////////////////////////////////////
     // toString                                                                //
@@ -1707,58 +1700,6 @@ mod TestMutList {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // reserve!                                                                //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def reserve!01(): Bool = region rc {
-        let v = MutList.empty(rc);
-        MutList.reserve!(4, v);
-        capacity(v) - MutList.length(v) >= 4
-    }
-
-    @test
-    def reserve!02(): Bool = region rc {
-        let v = MutList.range(rc, 0, 5);
-        MutList.reserve!(5, v);
-        capacity(v) - MutList.length(v) >= 5
-    }
-
-    @test
-    def reserve!03(): Bool = region rc {
-        let v = MutList.range(rc, 0, 99);
-        MutList.reserve!(1, v);
-        capacity(v) - MutList.length(v) >= 1
-    }
-
-    @test
-    def reserve!04(): Bool = region rc {
-        let v = MutList.range(rc, 0, 100);
-        MutList.reserve!(100, v);
-        capacity(v) - MutList.length(v) >= 100
-    }
-
-    @test
-    def reserve!05(): Bool = region rc {
-        let v = MutList.range(rc, 0, 5);
-        MutList.reserve!(MutList.length(v), v);
-        capacity(v) - MutList.length(v) >= MutList.length(v)
-    }
-
-    @test
-    def reserve!06(): Bool = region rc {
-        let n = 197;
-        let v = MutList.range(rc, 0, n);
-        MutList.reserve!(1, v);
-        MutList.reserve!(1, v);
-        MutList.reserve!(1, v);
-        MutList.reserve!(1, v);
-        MutList.reserve!(1, v);
-        capacity(v) - MutList.length(v) >= 1
-    }
-
-
-    /////////////////////////////////////////////////////////////////////////////
     // iterator                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -1880,53 +1821,6 @@ mod TestMutList {
         let f = (_, x) -> if (x `Int32.remainder` 2 == 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         MutList.forEachWithIndex(f, v);
         StringBuilder.toString(sb) == "TFTFT"
-    }
-
-
-    /////////////////////////////////////////////////////////////////////////////
-    // compress!                                                               //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def compress!01(): Bool = region rc {
-        // Pop 76 element such that the load factor is strictly lower than 1 / 4.
-        let v = MutList.range(rc, 0, 100);
-        let c = capacity(v);
-        let i = Ref.fresh(rc, 0);
-        let f = _ -> {
-            if (Ref.get(i) < 76) {
-                discard MutList.pop!(v);
-                Ref.put(Ref.get(i) + 1, i)
-            }
-            else ()
-        };
-        MutList.forEach(f, v);
-        capacity(v) == c / 2 and
-            MutList.length(v) == 100 - 75 - 1
-    }
-
-    @test
-    def compress!02(): Bool = region rc {
-        let v = MutList.empty(rc);
-        MutList.compress!(v);
-        capacity(v) == capacity(MutList.empty(rc))
-    }
-
-    @test
-    def compress!03(): Bool = region rc {
-        let v = MutList.empty(rc);
-        let c = capacity(v);
-        MutList.push!(42, v);
-        MutList.compress!(v);
-        capacity(v) <= c and
-        MutList.length(v) == 1
-    }
-
-    @test
-    def compress!04(): Bool = region rc {
-        let v = MutList.range(rc, 0, 5);
-        MutList.compress!(v);
-        capacity(v) <= capacity(MutList.range(rc, 0, 5))
     }
 
 
