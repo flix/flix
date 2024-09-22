@@ -552,10 +552,11 @@ mod MutList {
     /// Optionally removes and returns the last element in the given mutable list `v`.
     ///
     pub def pop!(v: MutList[a, r]): Option[a] \ r =
-        if (length(v) > 0)
-            let last = Array.get(length(v) - 1, v->values);
-            v->length = length(v) - 1;
-            Array.put(Reflect.default(), length(v) - 1, v->values);
+        let len = length(v);
+        if (len > 0)
+            let last = Array.get(len - 1, v->values);
+            v->length = len - 1;
+            Array.put(Reflect.default(), len - 1, v->values);
             compress!(v);
             Some(last)
         else
@@ -790,7 +791,7 @@ mod MutList {
     ///
     /// Modifying `l` while using an iterator has undefined behavior and is dangerous.
     ///
-    pub def iterator(rc: Region[r1], l: MutList[a, r2]): Iterator[a, r1 + r2, r1] \ (r1 + r2) =
+    pub def iterator(rc: Region[r1], l: MutList[a, r2]): Iterator[a, r1 + r2, r1] \ { r1, r2 } =
         let ix = Ref.fresh(rc, 0);
         let len = length(l);
         let next = () -> {
