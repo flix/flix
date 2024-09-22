@@ -29,28 +29,30 @@ import ca.uwaterloo.flix.language.ast.TypedAst.{
   Instance,
   RestrictableEnum,
   RestrictableCase,
-  Sig
+  Sig,
+  Struct,
+  Trait,
+  TypeAlias,
+  TypeParam
 }
+import ca.uwaterloo.flix.language.ast.Ast.UseOrImport
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.ast.Type
 import ca.uwaterloo.flix.api.lsp.Position
-import ca.uwaterloo.flix.language.ast.Ast.Annotation
-import ca.uwaterloo.flix.language.ast.TypedAst.Struct
-import ca.uwaterloo.flix.language.ast.TypedAst.Trait
 
 object Visitor {
   // For now, visit is a placeholder. In the end we'll need some way
   // to supply visit functions for all types of elements at this top level
   def visitRoot(root: Root, visit: Root => Unit, accept: SourceLocation => Boolean): Unit = {
 
-    root.defs.map{ case (_, defn) => {
+    root.defs.foreach{ case (_, defn) => {
       val insideDefn = accept(defn.spec.loc) || accept(defn.exp.loc) || accept(defn.sym.loc)
       if (insideDefn) {
         visitDef(defn, ???, accept)
       }
     }}
 
-    root.effects.map{ case (_, eff) => {
+    root.effects.foreach{ case (_, eff) => {
       val insideEff = accept(eff.loc) || eff.ann.annotations.exists(ann => accept(ann.loc)) || accept(eff.sym.loc)
       if (insideEff) {
         visitEffect(eff, ???, accept)
@@ -58,28 +60,28 @@ object Visitor {
     }}
 
     // root.entryPoint.map{ case v => visitEntryPoint(visit, accept)(v) }
-    root.enums.map{ case (_, e) => {
+    root.enums.foreach{ case (_, e) => {
       if (accept(e.loc)) { visitEnum(e, ???, accept) } }
     }
 
-    root.instances.map { case (_, l) => {
+    root.instances.foreach{ case (_, l) => {
       l.foreach(ins => if (accept(ins.loc)) { visitInstance(ins, ???, accept) }) }
     }
 
     // root.modules.map { case (_, v) => visitModule(v, ???, ???) }
 
-    root.restrictableEnums.map { case (_, e) => {
+    root.restrictableEnums.foreach{ case (_, e) => {
       if (accept(e.loc)) { visitResEnum(e, ???, accept) } } // experimental, maybe should be removed?
     }
 
-    root.sigs.map{ case (_, sig) => {
+    root.sigs.foreach{ case (_, sig) => {
       val insideSig = accept(sig.spec.loc) || sig.exp.exists(e => accept(e.loc)) || accept(sig.sym.loc)
       if (insideSig) {
         visitSig(sig, ???, accept)
       }
     }}
 
-    root.structs.map{ case (_, struct) => {
+    root.structs.foreach{ case (_, struct) => {
       val insideStruct = accept(struct.loc) || struct.fields.exists{ case (s, c) => accept(s.loc) || accept(c.loc) }
       if (insideStruct) {
         visitStruct(struct, ???, accept)
@@ -88,13 +90,15 @@ object Visitor {
 
     // root.traitEnv.map{ case (_, v) => visitTraitEnv(???, ???)(v) };
 
-    root.traits.map{ case (_, t) => {
+    root.traits.foreach{ case (_, t) => {
       if (accept(t.loc)) { visitTrait(t, ???, accept) }
     }}
 
-    // root.typeAliases.map{ case (_, v) => visitTypeAlias(???, ???)(v) };
+    root.typeAliases.foreach{ case (_, alias) => {
+      if (accept(alias.loc)) { visitTypeAlias(alias, ???, accept) }
+    }}
 
-    // root.uses.map{ case (_, v) => visitUse(???, ???)(v) };
+    // root.uses
   }
 
   def inside(uri: String, pos: Position)(loc: SourceLocation): Boolean = {
@@ -190,6 +194,19 @@ object Visitor {
     if (accept(defn.exp.loc)) {
       visitExpr(defn.exp, ???, accept)
     }
+  }
+
+  def visitTypeAlias(alias: TypeAlias, visit: TypeAlias => Unit, accept: SourceLocation => Boolean): Unit = {
+    visit(alias)
+    alias.tparams.map(tp => if (accept(tp.loc)) { visitTypeParam(tp, ???, accept) })
+  }
+
+  def visitTypeParam(tparam: TypeParam, visit: TypeParam => Unit, accept: SourceLocation => Boolean): Unit = {
+    visit(tparam)
+  }
+
+  def visitUse(use: UseOrImport, visit: UseOrImport => Unit, accept: SourceLocation => Boolean): Unit = {
+    visit(use)
   }
 
   def visitExpr(expr: Expr, visit: Expr => Unit, accept: SourceLocation => Boolean): Unit = {
