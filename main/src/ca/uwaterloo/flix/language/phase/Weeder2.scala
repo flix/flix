@@ -19,7 +19,8 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.*
 import ca.uwaterloo.flix.language.ast.SyntaxTree.{Tree, TreeKind}
-import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Constant, Denotation, Fixity, Polarity}
+import ca.uwaterloo.flix.language.ast.shared.Annotation.Export
+import ca.uwaterloo.flix.language.ast.shared.{Annotation, CheckedCastType, Constant, Denotation, Fixity, Polarity}
 import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, Name, ReadAst, SemanticOp, SourceLocation, Symbol, SyntaxTree, Token, TokenKind, WeededAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.ParseError.*
@@ -646,9 +647,9 @@ object Weeder2 {
       mapN(annotations)(Ast.Annotations(_))
     }
 
-    private def visitAnnotation(token: Token): Validation[Ast.Annotation, CompilationMessage] = {
+    private def visitAnnotation(token: Token): Validation[Annotation, CompilationMessage] = {
       val loc = token.mkSourceLocation()
-      import Ast.Annotation.*
+      import Annotation.*
       token.text match {
         case "@Deprecated" => Validation.success(Deprecated(loc))
         case "@Experimental" => Validation.success(Experimental(loc))
@@ -662,7 +663,7 @@ object Weeder2 {
         case "@Skip" => Validation.success(Skip(loc))
         case "@Test" | "@test" => Validation.success(Test(loc))
         case "@TailRec" => Validation.success(TailRecursive(loc))
-        case other => Validation.toSoftFailure(Ast.Annotation.Error(other.stripPrefix("@"), loc), UndefinedAnnotation(other, loc))
+        case other => Validation.toSoftFailure(Annotation.Error(other.stripPrefix("@"), loc), UndefinedAnnotation(other, loc))
       }
     }
 
@@ -1267,7 +1268,7 @@ object Weeder2 {
           val errors = ArrayBuffer.empty[IllegalAnnotation]
           for (a <- as) {
             a match {
-              case Ast.Annotation.TailRecursive(_) => // OK
+              case Annotation.TailRecursive(_) => // OK
               case otherAnn => errors += IllegalAnnotation(otherAnn.loc)
             }
           }
