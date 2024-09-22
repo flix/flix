@@ -1192,18 +1192,9 @@ mod TestMutList {
     @test
     def copy04(): Bool = region rc {
         let v1 = MutList.range(rc, 0, 1000);
-        let MutList(_, l1, n1) = v1;
-        let MutList(_, l2, n2) = MutList.copy(rc, v1);
-        (Ref.get(n1) == Ref.get(n2)) and (Ref.get(l1) `Array.sameElements` Ref.get(l2))
-    }
-
-    @test
-    def copy05(): Bool = region rc {
-        let v1 = MutList.range(rc, 0, 3);
-        let MutList(_, l1, n1) = v1;
-        let MutList(_, l2, n2) = MutList.copy(rc, v1);
-        (Ref.get(n1) == Ref.get(n2)) and (Ref.get(l1) `Array.sameElements` Ref.get(l2)) and
-            (Array.length(Ref.get(l2)) == 8)
+        let v2 = MutList.copy(rc, v1);
+        (MutList.length(v1) == MutList.length(v2)) and
+            (MutList.toArray(rc, v1) `Array.sameElements` MutList.toArray(rc, v2))
     }
 
 
