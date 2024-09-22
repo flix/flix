@@ -49,10 +49,10 @@ object LambdaLift {
   }
 
   private def visitDef(def0: SimplifiedAst.Def)(implicit ctx: SharedContext, flix: Flix): LiftedAst.Def = def0 match {
-    case SimplifiedAst.Def(ann, mod, sym, fparams, exp, tpe, purity, loc) =>
+    case SimplifiedAst.Def(ann, mod, sym, fparams, exp, tpe, _, loc) =>
       val fs = fparams.map(visitFormalParam)
       val e = visitExp(exp)(sym, ctx, flix)
-      LiftedAst.Def(ann, mod, sym, Nil, fs, e, tpe, purity, loc)
+      LiftedAst.Def(ann, mod, sym, Nil, fs, e, tpe, loc)
   }
 
   private def visitEffect(effect: SimplifiedAst.Effect): LiftedAst.Effect = effect match {
@@ -98,7 +98,7 @@ object LambdaLift {
 
       // Construct a new definition.
       val defTpe = arrowTpe.result
-      val defn = LiftedAst.Def(ann, mod, freshSymbol, cs, fs, liftedExp, defTpe, liftedExp.purity, loc)
+      val defn = LiftedAst.Def(ann, mod, freshSymbol, cs, fs, liftedExp, defTpe, loc)
 
       // Add the new definition to the map of lifted definitions.
       ctx.liftedDefs.add(freshSymbol -> defn)
