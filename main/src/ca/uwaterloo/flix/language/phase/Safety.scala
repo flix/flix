@@ -221,6 +221,8 @@ object Safety {
     defn.spec.eff match {
       case Type.Pure => true
       case Type.IO => true
+      case Type.NonDet => true
+      case Type.Sys => true
       case _ => false
     }
   }
