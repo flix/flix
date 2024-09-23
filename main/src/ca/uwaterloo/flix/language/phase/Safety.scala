@@ -10,8 +10,6 @@ import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.language.errors.SafetyError.*
-import ca.uwaterloo.flix.language.phase.jvm.JvmOps
-import ca.uwaterloo.flix.language.phase.typer.TypeReduction
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 
 import java.math.BigInteger
@@ -1037,7 +1035,7 @@ object Safety {
     * Get a Set of MethodSignatures representing the methods of `clazz`. Returns a map to allow subsequent reverse lookup.
     */
   private def getJavaMethodSignatures(clazz: java.lang.Class[_]): Map[MethodSignature, java.lang.reflect.Method] = {
-    val methods = JvmOps.getMethods(clazz).filterNot(JvmOps.isStatic)
+    val methods = Jvm.getInstanceMethods(clazz)
     methods.foldLeft(Map.empty[MethodSignature, java.lang.reflect.Method]) {
       case (acc, m) =>
         val signature = MethodSignature(m.getName, m.getParameterTypes.toList.map(Type.getFlixType), Type.getFlixType(m.getReturnType))

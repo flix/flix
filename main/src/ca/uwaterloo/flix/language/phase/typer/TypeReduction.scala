@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.TypeError
-import ca.uwaterloo.flix.language.phase.jvm.JvmOps
+import ca.uwaterloo.flix.language.phase.Jvm
 import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.collection.{ListMap, ListOps}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
@@ -276,7 +276,7 @@ object TypeReduction {
     val tparams = ts.map(getJavaType)
     val m = MethodUtils.getMatchingAccessibleMethod(clazz, methodName, tparams *)
     // We check if we found a method and if its static flag matches.
-    if (m != null && JvmOps.isStatic(m) == static) {
+    if (m != null && Jvm.isStatic(m) == static) {
       // Case 1: We found the method on the clazz.
       JavaMethodResolution.Resolved(m)
     } else {
@@ -382,18 +382,11 @@ object TypeReduction {
   private def lookupField(thisObj: Type, fieldName: String): JavaFieldResolution = {
     val typeIsKnown = isKnown(thisObj)
     if (!typeIsKnown) return JavaFieldResolution.UnresolvedTypes
-    Type.classFromFlixType(thisObj) match {
-      case Some(clazz) => retrieveField(clazz, fieldName)
-      case None => JavaFieldResolution.NotFound
-    }
-  }
-
-  /** Tries to find a field of `clazz` with the name `fieldName`. */
-  private def retrieveField(clazz: Class[?], fieldName: String): JavaFieldResolution = {
-    JvmOps.getField(clazz, fieldName) match {
-      case Some(field) => JavaFieldResolution.Resolved(field)
-      case None => JavaFieldResolution.NotFound
-    }
+    val opt = for {
+      clazz <- Type.classFromFlixType(thisObj)
+      field <- Jvm.getField(clazz, fieldName, static = false)
+    } yield JavaFieldResolution.Resolved(field)
+    opt.getOrElse(JavaFieldResolution.NotFound)
   }
 
   /**
