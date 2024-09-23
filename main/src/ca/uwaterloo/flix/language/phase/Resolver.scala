@@ -820,7 +820,7 @@ private def resolveExp(exp0: NamedAst.Expr, env0: ListMap[String, Resolution])(i
         case ResolvedQName.Var(sym) => ResolvedAst.Expr.Var(sym, loc)
         case ResolvedQName.Tag(caze) => visitTag(caze, loc)
         case ResolvedQName.RestrictableTag(caze) => visitRestrictableTag(caze, isOpen = false, loc)
-        case ResolvedQName.Op()
+        case ResolvedQName.Op(op) => ResolvedAst.Expr.Do(op, ???, loc) // MATT exprs?
         case ResolvedQName.Error(e) => ResolvedAst.Expr.Error(e)
       }
 
@@ -831,6 +831,7 @@ private def resolveExp(exp0: NamedAst.Expr, env0: ListMap[String, Resolution])(i
         case ResolvedQName.Var(sym) => ResolvedAst.Expr.Var(sym, loc)
         case ResolvedQName.Tag(caze) => visitTag(caze, loc)
         case ResolvedQName.RestrictableTag(caze) => visitRestrictableTag(caze, isOpen = true, loc)
+        case ResolvedQName.Op(op) => ResolvedAst.Expr.Do(op, ???, loc) // MATT expres?
         case ResolvedQName.Error(e) => ResolvedAst.Expr.Error(e)
       }
 
