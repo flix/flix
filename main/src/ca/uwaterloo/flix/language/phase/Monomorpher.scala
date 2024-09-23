@@ -820,7 +820,7 @@ object Monomorpher {
     * Unifies `tpe1` and `tpe2` which must be unifiable.
     */
   private def infallibleUnify(tpe1: Type, tpe2: Type, sym: Symbol.DefnSym)(implicit root: LoweredAst.Root, flix: Flix): StrictSubstitution = {
-    Unification.fullyUnifyTypes(tpe1, tpe2, RigidityEnv.empty, root.eqEnv) match {
+    Unification.unifyTypesIgnoreLeftoverAssocs(tpe1, tpe2, RigidityEnv.empty, root.eqEnv) match {
       case Some(subst) =>
         StrictSubstitution(subst, root.eqEnv)
       case None =>

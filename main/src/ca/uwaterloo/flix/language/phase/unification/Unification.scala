@@ -55,6 +55,15 @@ object Unification {
   }
 
   /**
+    * Unifies the given types, but ignores any unresolved constraints from associated types.
+    */
+  def unifyTypesIgnoreLeftoverAssocs(tpe1: Type, tpe2: Type, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit scope: Scope, flix: Flix): Option[Substitution] = {
+    OldStarUnification.unifyTypes(tpe1, tpe2, renv).toOption.map {
+      case (subst, _) => subst
+    }
+  }
+
+  /**
     * Returns true iff `tpe1` unifies with `tpe2`, without introducing equality constraints.
     */
   def unifiesWith(tpe1: Type, tpe2: Type, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit scope: Scope, flix: Flix): Boolean = {
