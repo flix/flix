@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ca.uwaterloo.flix.language.phase.unification
+package ca.uwaterloo.flix.util
 
 import scala.collection.immutable.SortedSet
 
