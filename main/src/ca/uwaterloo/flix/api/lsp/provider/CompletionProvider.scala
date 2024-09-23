@@ -119,18 +119,18 @@ object CompletionProvider {
       //
       // Declarations.
       //
-      case SyntacticContext.Decl.Def      => Nil
-      case SyntacticContext.Decl.Enum     => KeywordCompleter.getEnumKeywords
-      case SyntacticContext.Decl.EnumHeader => Nil
-      case SyntacticContext.Decl.Instance => InstanceCompleter.getCompletions(context) ++ KeywordCompleter.getInstanceKeywords
+      case SyntacticContext.Decl.Def            => Nil
+      case SyntacticContext.Decl.Enum           => KeywordCompleter.getEnumKeywords
+      case SyntacticContext.Decl.EnumHeader     => Nil
+      case SyntacticContext.Decl.Instance       => InstanceCompleter.getCompletions(context) ++ KeywordCompleter.getInstanceKeywords
       case SyntacticContext.Decl.InstanceHeader => Nil
-      case SyntacticContext.Decl.Module   => KeywordCompleter.getModKeywords ++ SnippetCompleter.getCompletions(context)
-      case SyntacticContext.Decl.ModuleHeader => Nil
-      case SyntacticContext.Decl.Struct   => KeywordCompleter.getStructKeywords
-      case SyntacticContext.Decl.StructHeader => Nil
-      case SyntacticContext.Decl.Trait    => KeywordCompleter.getTraitKeywords
-      case SyntacticContext.Decl.TraitHeader => Nil
-      case SyntacticContext.Decl.Type     => KeywordCompleter.getTypeKeywords
+      case SyntacticContext.Decl.Module         => KeywordCompleter.getModKeywords ++ SnippetCompleter.getCompletions(context)
+      case SyntacticContext.Decl.ModuleHeader   => Nil
+      case SyntacticContext.Decl.Struct         => KeywordCompleter.getStructKeywords
+      case SyntacticContext.Decl.StructHeader   => Nil
+      case SyntacticContext.Decl.Trait          => KeywordCompleter.getTraitKeywords
+      case SyntacticContext.Decl.TraitHeader    => Nil
+      case SyntacticContext.Decl.Type           => KeywordCompleter.getTypeKeywords
 
       //
       // Imports.
