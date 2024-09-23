@@ -286,7 +286,7 @@ object TypeConstructor {
     */
   case object Vector extends TypeConstructor {
     /**
-      * The shape of an array is `Array[t]`.
+      * The shape of a vector is `Vector[t]`.
       */
     def kind: Kind = Kind.Star ->: Kind.Star
   }
