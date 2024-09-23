@@ -983,8 +983,8 @@ object Parser2 {
 
     private def signatureDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.KeywordDef))
-      expect(TokenKind.KeywordDef, SyntacticContext.Decl.Module)
-      name(NAME_DEFINITION, context = SyntacticContext.Decl.Module)
+      expect(TokenKind.KeywordDef, SyntacticContext.Keyword)
+      name(NAME_DEFINITION, context = SyntacticContext.Name)
       if (at(TokenKind.BracketL)) {
         Type.parameters()
       }
@@ -1006,8 +1006,8 @@ object Parser2 {
 
     private def definitionDecl(mark: Mark.Opened, declKind: TokenKind = TokenKind.KeywordDef)(implicit s: State): Mark.Closed = {
       assert(at(declKind))
-      expect(declKind, SyntacticContext.Decl.Def)
-      name(NAME_DEFINITION, context = SyntacticContext.Decl.Def)
+      expect(declKind, SyntacticContext.Keyword)
+      name(NAME_DEFINITION, context = SyntacticContext.Name)
       if (at(TokenKind.BracketL)) {
         Type.parameters()
       }
@@ -1037,8 +1037,8 @@ object Parser2 {
 
     private def lawDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.KeywordLaw))
-      expect(TokenKind.KeywordLaw, SyntacticContext.Decl.Module)
-      name(NAME_DEFINITION, context = SyntacticContext.Decl.Module)
+      expect(TokenKind.KeywordLaw, SyntacticContext.Keyword)
+      name(NAME_DEFINITION, context = SyntacticContext.Name)
       expect(TokenKind.Colon, SyntacticContext.Decl.Module)
       expect(TokenKind.KeywordForall, SyntacticContext.Decl.Module)
       if (at(TokenKind.BracketL)) {
@@ -1060,9 +1060,9 @@ object Parser2 {
     private def enumerationDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
       assert(atAny(Set(TokenKind.KeywordRestrictable, TokenKind.KeywordEnum)))
       val isRestrictable = eat(TokenKind.KeywordRestrictable)
-      expect(TokenKind.KeywordEnum, SyntacticContext.Decl.Enum)
+      expect(TokenKind.KeywordEnum, SyntacticContext.Keyword)
       val nameLoc = currentSourceLocation()
-      name(NAME_TYPE, context = SyntacticContext.Decl.Enum)
+      name(NAME_TYPE, context = SyntacticContext.Name)
       if (isRestrictable) {
         expect(TokenKind.BracketL, SyntacticContext.Decl.Enum)
         val markParam = open()
@@ -1150,9 +1150,9 @@ object Parser2 {
 
     private def structDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.KeywordStruct))
-      expect(TokenKind.KeywordStruct, SyntacticContext.Decl.StructHeader)
+      expect(TokenKind.KeywordStruct, SyntacticContext.Keyword)
       val nameLoc = currentSourceLocation()
-      name(NAME_TYPE, context = SyntacticContext.Decl.StructHeader)
+      name(NAME_TYPE, context = SyntacticContext.Name)
       Type.parameters()
       zeroOrMore(
         namedTokenSet = NamedTokenSet.FromKinds(NAME_FIELD),
@@ -1178,9 +1178,9 @@ object Parser2 {
 
     private def typeAliasDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.KeywordType))
-      expect(TokenKind.KeywordType, SyntacticContext.Decl.Type)
+      expect(TokenKind.KeywordType, SyntacticContext.Keyword)
       expect(TokenKind.KeywordAlias, SyntacticContext.Decl.Type)
-      name(NAME_TYPE, context = SyntacticContext.Decl.Type)
+      name(NAME_TYPE, context = SyntacticContext.Name)
       if (at(TokenKind.BracketL)) {
         Type.parameters()
       }
@@ -1192,8 +1192,8 @@ object Parser2 {
 
     private def associatedTypeSigDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.KeywordType))
-      expect(TokenKind.KeywordType, SyntacticContext.Decl.Module)
-      name(NAME_TYPE, context = SyntacticContext.Decl.Module)
+      expect(TokenKind.KeywordType, SyntacticContext.Keyword)
+      name(NAME_TYPE, context = SyntacticContext.Name)
       if (at(TokenKind.BracketL)) {
         Type.parameters()
       }
@@ -1207,8 +1207,8 @@ object Parser2 {
     }
 
     private def associatedTypeDefDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
-      expect(TokenKind.KeywordType, SyntacticContext.Decl.Module)
-      name(NAME_TYPE, context = SyntacticContext.Decl.Module)
+      expect(TokenKind.KeywordType, SyntacticContext.Keyword)
+      name(NAME_TYPE, context = SyntacticContext.Name)
       if (at(TokenKind.BracketL)) {
         Type.arguments()
       }
@@ -1220,8 +1220,8 @@ object Parser2 {
 
     private def effectDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.KeywordEff))
-      expect(TokenKind.KeywordEff, SyntacticContext.Decl.Module)
-      name(NAME_EFFECT, context = SyntacticContext.Decl.Module)
+      expect(TokenKind.KeywordEff, SyntacticContext.Keyword)
+      name(NAME_EFFECT, context = SyntacticContext.Name)
 
       // Check for illegal type parameters.
       if (at(TokenKind.BracketL)) {
@@ -1257,8 +1257,8 @@ object Parser2 {
     }
 
     private def operationDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
-      expect(TokenKind.KeywordDef, SyntacticContext.Decl.Module)
-      name(NAME_DEFINITION, context = SyntacticContext.Decl.Module)
+      expect(TokenKind.KeywordDef, SyntacticContext.Keyword)
+      name(NAME_DEFINITION, context = SyntacticContext.Name)
 
       // Check for illegal type parameters.
       if (at(TokenKind.BracketL)) {

@@ -119,23 +119,28 @@ object CompletionProvider {
       //
       // Declarations.
       //
-      case SyntacticContext.Decl.Def            => Nil
-      case SyntacticContext.Decl.Enum           => KeywordCompleter.getEnumKeywords
-      case SyntacticContext.Decl.EnumHeader     => Nil
-      case SyntacticContext.Decl.Instance       => InstanceCompleter.getCompletions(context) ++ KeywordCompleter.getInstanceKeywords
-      case SyntacticContext.Decl.InstanceHeader => Nil
-      case SyntacticContext.Decl.Module         => KeywordCompleter.getModKeywords ++ SnippetCompleter.getCompletions(context)
-      case SyntacticContext.Decl.ModuleHeader   => Nil
-      case SyntacticContext.Decl.Struct         => KeywordCompleter.getStructKeywords
-      case SyntacticContext.Decl.StructHeader   => Nil
-      case SyntacticContext.Decl.Trait          => KeywordCompleter.getTraitKeywords
-      case SyntacticContext.Decl.TraitHeader    => Nil
-      case SyntacticContext.Decl.Type           => KeywordCompleter.getTypeKeywords
+      case SyntacticContext.Decl.Def      => Nil
+      case SyntacticContext.Decl.Enum     => KeywordCompleter.getEnumKeywords
+      case SyntacticContext.Decl.Instance => InstanceCompleter.getCompletions(context) ++ KeywordCompleter.getInstanceKeywords
+      case SyntacticContext.Decl.Module   => KeywordCompleter.getModKeywords ++ SnippetCompleter.getCompletions(context)
+      case SyntacticContext.Decl.Struct   => KeywordCompleter.getStructKeywords
+      case SyntacticContext.Decl.Trait    => KeywordCompleter.getTraitKeywords
+      case SyntacticContext.Decl.Type     => KeywordCompleter.getTypeKeywords
 
       //
       // Imports.
       //
       case SyntacticContext.Import => ImportCompleter.getCompletions(context)
+
+      //
+      // Keywords. Note that this is not the context in which keywords can occur, but the context of a keyword, i.e. inside a keyword.
+      //
+      case SyntacticContext.Keyword => Nil
+
+      //
+      // Names.
+      //
+      case SyntacticContext.Name => Nil
 
       //
       // Types.
