@@ -98,7 +98,7 @@ object LoweredAst {
 
     case class Apply(exp: Expr, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class ApplyDef(symUse: Ast.DefSymUse, exps: List[Expr], ftpe: Type, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class ApplyDef(sym: Symbol.DefnSym, exps: List[Expr], ftpe: Type, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class ApplyAtomic(op: AtomicOp, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
