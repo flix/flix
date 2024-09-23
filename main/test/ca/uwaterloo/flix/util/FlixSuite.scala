@@ -36,11 +36,9 @@ class FlixSuite(incremental: Boolean) extends AnyFunSuite {
     * In contrast to [[mkTestDir]], this function compiles all files
     * together so files can depend on each other.
     *
-    * Subdirectories are excluded.
-    *
     */
-  def mkTestDirCollected(path: String)(implicit options: Options): Unit = {
-    val files = FileOps.getFlixFilesIn(path, 1)
+  def mkTestDirCollected(path: String, depth: Int = 1)(implicit options: Options): Unit = {
+    val files = FileOps.getFlixFilesIn(path, depth)
     val n = files.headOption.map(p => p.getFileName.toString).getOrElse(path)
     test(n)(compileAndRun(files))
   }
