@@ -49,17 +49,9 @@ object FastSetUnification {
       case ElemSet(_) => SortedSet.empty
       case Compl(t) => t.variables
       case Inter(_, _, varsPos, _, _, varsNeg, other) =>
-        SortedSet.from(
-          varsPos.iterator.map(_.x) ++
-            varsNeg.iterator.map(_.x) ++
-            other.iterator.flatMap(_.variables)
-        )
+        SortedSet.from(varsPos.map(_.x)) ++ varsNeg.map(_.x) ++ other.flatMap(_.variables)
       case Union(_, _, varsPos, _, _, varsNeg, other) =>
-        SortedSet.from(
-          varsPos.iterator.map(_.x) ++
-            varsNeg.iterator.map(_.x) ++
-            other.iterator.flatMap(_.variables)
-        )
+        SortedSet.from(varsPos.map(_.x)) ++ varsNeg.map(_.x) ++ other.flatMap(_.variables)
     }
 
     /** `true` if `this` contains neither [[Var]] nor [[Cst]]. */
