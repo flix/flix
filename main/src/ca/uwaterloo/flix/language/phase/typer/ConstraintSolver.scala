@@ -469,9 +469,8 @@ object ConstraintSolver {
             // find the first (and only) instance that matches
             val tconstrsOpt = ListOps.findMap(insts) {
               inst =>
-                Unification.unifyTypes(t, inst.tpe, renv).toOption.flatMap {
-                  case (subst, Nil) => Some(inst.tconstrs.map(subst.apply))
-                  case (_, _ :: _) => None // if we have leftover constraints then it didn't actually unify
+                Unification.fullyUnifyTypes(t, inst.tpe, renv, eenv).map {
+                  case subst => inst.tconstrs.map(subst.apply)
                 }
             }
             tconstrsOpt match {

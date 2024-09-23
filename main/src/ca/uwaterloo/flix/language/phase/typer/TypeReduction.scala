@@ -77,9 +77,8 @@ object TypeReduction {
           // find the first (and only) instance that matches
           val simplifiedOpt = ListOps.findMap(insts) {
             inst =>
-              Unification.unifyTypes(t, inst.arg, renv).toOption.flatMap {
-                case (subst, Nil) => Some(subst(inst.ret))
-                case (_, _ :: _) => None // if we have leftover constraints then it didn't actually unify
+              Unification.fullyUnifyTypes(t, inst.arg, renv, eenv).map {
+                case subst => subst(inst.ret)
               }
           }
           simplifiedOpt match {
