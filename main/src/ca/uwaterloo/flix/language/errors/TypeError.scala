@@ -18,14 +18,13 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.Ast.BroadEqualityConstraint
-import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.dbg.DocAst.Type.JvmConstructor
 import ca.uwaterloo.flix.language.fmt.FormatEqualityConstraint.formatEqualityConstraint
 import ca.uwaterloo.flix.language.fmt.FormatType.formatType
 import ca.uwaterloo.flix.util.{Formatter, Grammar}
 
-import java.lang.reflect.{Method, Constructor};
+import java.lang.reflect.{Constructor, Method}
 
 /**
   * A common super-type for type errors.
@@ -49,7 +48,7 @@ object TypeError {
     def summary: String = s"Irreducible associated type: ${formatType(assocType)}"
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Irreducible associated type: ${formatType(assocType)}
          |
          |${code(loc, "irreducible associated type.")}
@@ -62,19 +61,17 @@ object TypeError {
   }
 
   /**
-   * Java constructor not found type error.
-   *
-   * @param tpes    the types of the arguments.
-   * @param methods a list of possible candidate constructors on the type of the receiver object.
-   * @param renv    the rigidity environment.
-   * @param loc     the location where the error occured.
-   */
-  case class ConstructorNotFound(clazz: Class[_], tpes: List[Type], constructors: List[JvmConstructor], renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    // TODO INTEROP better comment, e.g., list possible constructors
+    * Java constructor not found type error.
+    *
+    * @param tpes the types of the arguments.
+    * @param renv the rigidity environment.
+    * @param loc  the location where the error occured.
+    */
+  case class ConstructorNotFound(clazz: Class[?], tpes: List[Type], renv: RigidityEnv, loc: SourceLocation) extends TypeError {
     def summary: String = s"Java '${clazz.getName}' constructor with arguments types (${tpes.mkString(", ")}) not found."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s"""${line(kind, source.name)}
          |>> Java '${clazz.getName}' constructor with arguments types (${tpes.mkString(", ")}) not found.
          |
@@ -84,17 +81,17 @@ object TypeError {
   }
 
   /**
-   * Java method not found type error.
-   *
-   * @param tpe  the type of the receiver object.
-   * @param tpes the types of the arguments.
-   * @param loc  the location where the error occurred.
-   */
+    * Java method not found type error.
+    *
+    * @param tpe  the type of the receiver object.
+    * @param tpes the types of the arguments.
+    * @param loc  the location where the error occurred.
+    */
   case class MethodNotFound(methodName: Name.Ident, tpe: Type, tpes: List[Type], loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def summary: String = s"Java method '$methodName' in type '$tpe' with arguments types (${tpes.mkString(", ")}) not found."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Java method '$methodName' from type '${red(formatType(tpe, None))}' with arguments types (${tpes.mkString(", ")}) not found.
          |
          |${code(loc, s"Java method '$methodName' not found")}
@@ -105,14 +102,14 @@ object TypeError {
   /**
     * Java field not found type error.
     *
-    * @param tpe  the type of the receiver object.
-    * @param loc  the location where the error occurred.
+    * @param tpe the type of the receiver object.
+    * @param loc the location where the error occurred.
     */
   case class FieldNotFound(fieldName: Name.Ident, tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def summary: String = s"Java field '$fieldName' in type '$tpe' not found."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Java field '$fieldName' from type '${red(formatType(tpe, None))}' not found.
          |
          |${code(loc, s"Java field '$fieldName' not found")}
@@ -121,42 +118,39 @@ object TypeError {
   }
 
   /**
-   * Static Java method not found type error.
-   *
-   * @param clazz   the Java class expected to contain the static method
-   * @param tpes    the types of the arguments.
-   * @param methods a list of possible candidate methods in the class.
-   * @param renv    the rigidity environment.
-   * @param loc     the location where the error occured.
-   */
-  case class StaticMethodNotFound(clazz: Class[_], methodName: Name.Ident, tpes: List[Type], methods: List[Method], renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    // TODO INTEROP better comment, e.g., list possible methods
+    * Static Java method not found type error.
+    *
+    * @param clazz the Java class expected to contain the static method
+    * @param tpes  the types of the arguments.
+    * @param renv  the rigidity environment.
+    * @param loc   the location where the error occurred.
+    */
+  case class StaticMethodNotFound(clazz: Class[?], methodName: Name.Ident, tpes: List[Type], renv: RigidityEnv, loc: SourceLocation) extends TypeError {
     def summary: String = s"Static Java method '$methodName' from class ${clazz.getName} with arguments types (${tpes.mkString(", ")}) not found."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Static Java method '$methodName' from class '${clazz.getName}' with arguments types (${tpes.mkString(", ")}) not found.
          |
-         |${code(loc, s"Static Java method '${methodName}' not found")}
+         |${code(loc, s"Static Java method '$methodName' not found")}
          |""".stripMargin
     }
   }
 
   /**
-   * Java ambiguous constructor type error.
-   *
-   * @param tpes    the types of the arguments.
-   * @param constructors a list of possible candidate constructors on the type of the receiver object.
-   * @param renv    the rigidity environment.
-   * @param loc     the location where the error occured.
-   */
-  case class AmbiguousConstructor(clazz: Class[_], tpes: List[Type], constructors: List[Constructor[_]], renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    // TODO INTEROP better comment with candidate constructors formatting
+    * Java ambiguous constructor type error.
+    *
+    * @param tpes         the types of the arguments.
+    * @param constructors a list of possible candidate constructors on the type of the receiver object.
+    * @param renv         the rigidity environment.
+    * @param loc          the location where the error occured.
+    */
+  case class AmbiguousConstructor(clazz: Class[?], tpes: List[Type], constructors: List[Constructor[?]], renv: RigidityEnv, loc: SourceLocation) extends TypeError {
     def summary: String = s"Ambiguous Java '${clazz.getName}' constructor with arguments types (${tpes.mkString(", ")})."
 
     def message(formatter: Formatter): String = {
-      import formatter._
-      def constructorToStr(c: Constructor[_]) = {
+      import formatter.*
+      def constructorToStr(c: Constructor[?]) = {
         s"${c.getName}(${c.getParameterTypes.map(t => t.getName).mkString(", ")})"
       }
       s"""${line(kind, source.name)}
@@ -170,20 +164,19 @@ object TypeError {
   }
 
   /**
-   * Java ambiguous method type error.
-   *
-   * @param tpe0    the type of the receiver object.
-   * @param tpes    the types of the arguments.
-   * @param methods a list of possible candidate methods on the type of the receiver object.
-   * @param renv    the rigidity environment.
-   * @param loc     the location where the error occured.
-   */
+    * Java ambiguous method type error.
+    *
+    * @param tpe0    the type of the receiver object.
+    * @param tpes    the types of the arguments.
+    * @param methods a list of possible candidate methods on the type of the receiver object.
+    * @param renv    the rigidity environment.
+    * @param loc     the location where the error occured.
+    */
   case class AmbiguousMethod(methodName: Name.Ident, tpe0: Type, tpes: List[Type], methods: List[Method], renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    // TODO INTEROP better comment with candidate methods formatting
     def summary: String = s"Ambiguous Java method '$methodName' in type '$tpe0' with arguments types (${tpes.mkString(", ")})."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       def methodToStr(m: Method) = {
         s"${m.getName}(${m.getParameterTypes.map(t => t.getName).mkString(", ")})"
       }
@@ -192,26 +185,25 @@ object TypeError {
          |Possible candidate methods:
          |  - ${methods.map(m => methodToStr(m)).mkString("\n  - ")}
          |
-         |${code(loc, s"Ambiguous Java method '${methodName}'")}
+         |${code(loc, s"Ambiguous Java method '$methodName'")}
          |""".stripMargin
     }
   }
 
   /**
-   * Java ambiguous static method type error.
-   *
-   * @param clazz   the Java class expected to contain the static method
-   * @param tpes    the types of the arguments.
-   * @param methods a list of possible candidate methods in the class
-   * @param renv    the rigidity environment.
-   * @param loc     the location where the error occured.
-   */
-  case class AmbiguousStaticMethod(clazz: Class[_], methodName: Name.Ident, tpes: List[Type], methods: List[Method], renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    // TODO INTEROP better comment with candidate methods formatting
+    * Java ambiguous static method type error.
+    *
+    * @param clazz   the Java class expected to contain the static method
+    * @param tpes    the types of the arguments.
+    * @param methods a list of possible candidate methods in the class
+    * @param renv    the rigidity environment.
+    * @param loc     the location where the error occured.
+    */
+  case class AmbiguousStaticMethod(clazz: Class[?], methodName: Name.Ident, tpes: List[Type], methods: List[Method], renv: RigidityEnv, loc: SourceLocation) extends TypeError {
     def summary: String = s"Ambiguous static Java method '$methodName' from class '${clazz.getName}' with arguments types (${tpes.mkString(", ")})."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       def methodToStr(m: Method) = {
         s"${m.getName}(${m.getParameterTypes.map(t => t.getName).mkString(", ")})"
       }
@@ -219,24 +211,25 @@ object TypeError {
          | Possible candidate static methods:
          |  ${methods.map(m => methodToStr(m)).mkString(", ")}
          |
-         |${code(loc, s"Ambiguous static Java method '${methodName}'")}
+         |${code(loc, s"Ambiguous static Java method '$methodName'")}
          |""".stripMargin
     }
   }
 
   /**
-   * Unresolved constructor type error.
-   * This is a dummy error used in Java constructor type reconstruction for InvokeConstructor2.
-   */
+    * Unresolved constructor type error.
+    * This is a dummy error used in Java constructor type reconstruction for InvokeConstructor2.
+    */
   case class UnresolvedConstructor(loc: SourceLocation) extends TypeError with Recoverable {
     def summary: String = s"Unresolved constructor"
+
     def message(formatter: Formatter): String = s"Unresolved constructor"
   }
 
   /**
-   * Unresolved method type error.
-   * This is a dummy error used in Java method type reconstruction for InvokeMethod2.
-   */
+    * Unresolved method type error.
+    * This is a dummy error used in Java method type reconstruction for InvokeMethod2.
+    */
   case class UnresolvedMethod(loc: SourceLocation) extends TypeError with Recoverable {
     def summary: String = s"Unresolved method"
 
@@ -266,7 +259,7 @@ object TypeError {
     def summary: String = s"Unable to unify the types '${formatType(tpe1, Some(renv))}' and '${formatType(tpe2, Some(renv))}'."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Unable to unify the types: '${red(formatType(tpe1, Some(renv)))}' and '${red(formatType(tpe2, Some(renv)))}'.
          |
          |${code(loc, "mismatched arity of types.")}
@@ -289,7 +282,7 @@ object TypeError {
     def summary: String = s"Mismatched Pure and Effectful Functions."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Mismatched Pure and Effectful Functions.
          |
          |${code(loc, "mismatched pure and effectful functions.")}
@@ -314,7 +307,7 @@ object TypeError {
     def summary: String = s"Unable to unify the Boolean formulas '${formatType(baseType1, Some(renv))}' and '${formatType(baseType2, Some(renv))}'."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Unable to unify the Boolean formulas: '${red(formatType(baseType1, Some(renv)))}' and '${red(formatType(baseType2, Some(renv)))}'.
          |
          |${code(loc, "mismatched Boolean formulas.")}
@@ -339,7 +332,7 @@ object TypeError {
     def summary: String = s"Unable to unify the case set formulas '${formatType(baseType1, Some(renv))}' and '${formatType(baseType2, Some(renv))}'."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Unable to unify the case set formulas: '${red(formatType(baseType1, Some(renv)))}' and '${red(formatType(baseType2, Some(renv)))}'.
          |
          |${code(loc, "mismatched case set formulas.")}
@@ -364,7 +357,7 @@ object TypeError {
     def summary: String = s"Unable to unify the effect formulas '${formatType(baseType1, Some(renv))}' and '${formatType(baseType2, Some(renv))}'."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Unable to unify the effect formulas: '${red(formatType(baseType1, Some(renv)))}' and '${red(formatType(baseType2, Some(renv)))}'.
          |
          |${code(loc, "mismatched effect formulas.")}
@@ -389,7 +382,7 @@ object TypeError {
     def summary: String = s"Unable to unify the types '${formatType(fullType1, Some(renv))}' and '${formatType(fullType2, Some(renv))}'."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Unable to unify the types: '${red(formatType(baseType1, Some(renv)))}' and '${red(formatType(baseType2, Some(renv)))}'.
          |
          |${code(loc, "mismatched types.")}
@@ -412,7 +405,7 @@ object TypeError {
     def summary: String = s"No instance of the '$trt' class for the type '${formatType(tpe, Some(renv))}'."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> No instance of the '${cyan(trt.toString)}' class for the type '${red(formatType(tpe, Some(renv)))}'.
          |
          |${code(loc, s"missing instance")}
@@ -433,7 +426,7 @@ object TypeError {
     def summary: String = s"No instance of the '$trt' class for the function type '${formatType(tpe, Some(renv))}'."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> No instance of the '${cyan(trt.toString)}' class for the ${magenta("function")} type '${red(formatType(tpe, Some(renv)))}'.
          |
          |>> Did you forget to apply the function to all of its arguments?
@@ -455,7 +448,7 @@ object TypeError {
     def summary: String = s"Equality is not defined on '${formatType(tpe, Some(renv))}'. Define or derive instance of Eq."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Equality is not defined on ${red(formatType(tpe, Some(renv)))}. Define or derive an instance of Eq.
          |
          |${code(loc, s"missing Eq instance")}
@@ -488,7 +481,7 @@ object TypeError {
     def summary: String = s"Order is not defined on '${formatType(tpe, Some(renv))}'. Define or derive instance of Order."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Order is not defined on ${red(formatType(tpe, Some(renv)))}. Define or derive an instance of Order.
          |
          |${code(loc, s"missing Order instance")}
@@ -522,7 +515,7 @@ object TypeError {
     def summary: String = s"Sendable is not defined for '${formatType(tpe, Some(renv))}'. Define or derive instance of Sendable."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Sendable is not defined on ${red(formatType(tpe, Some(renv)))}. Define or derive an instance of Sendable.
          |
          |${code(loc, s"missing Sendable instance")}
@@ -555,7 +548,7 @@ object TypeError {
     def summary: String = s"ToString is not defined for '${formatType(tpe, Some(renv))}'. Define or derive instance of ToString."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> ToString is not defined on ${red(formatType(tpe, Some(renv)))}. Define or derive an instance of ToString.
          |
          |${code(loc, s"missing ToString instance")}
@@ -588,7 +581,7 @@ object TypeError {
     def summary: String = s"Unexpected non-record type '$tpe'."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Unexpected non-record type: '${red(formatType(tpe, Some(renv)))}'.
          |
          |${code(loc, "unexpected non-record type.")}
@@ -607,7 +600,7 @@ object TypeError {
     def summary: String = s"Unexpected non-schema type '$tpe'."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Unexpected non-schema type: '${red(formatType(tpe, Some(renv)))}'.
          |
          |${code(loc, "unexpected non-schema type.")}
@@ -630,7 +623,7 @@ object TypeError {
     def summary: String = s"Unable to unify the type variable '$baseVar' with the type '$baseType'."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Unable to unify the type variable '${red(formatType(baseVar, Some(renv)))}' with the type '${red(formatType(baseType, Some(renv)))}'.
          |
          |>> The type variable occurs recursively within the type.
@@ -655,7 +648,7 @@ object TypeError {
     def summary: String = s"Expected type '${formatType(expected, Some(renv))}' but found type: '${formatType(inferred, Some(renv))}'."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Expected type: '${red(formatType(expected, Some(renv)))}' but found type: '${red(formatType(inferred, Some(renv)))}'.
          |
          |${code(loc, "expression has unexpected type.")}
@@ -687,7 +680,7 @@ object TypeError {
     def summary: String = s"Region variable '${formatType(rvar)}' escapes its scope."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> The region variable '${red(formatType(rvar))}' escapes its scope.
          |
          |${code(loc, "region variable escapes.")}
@@ -714,7 +707,7 @@ object TypeError {
     def summary: String = s"Type inference too complex."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> ${red("Type inference failed due to too complex unification.")}'.
          |
          |Try to break your function into smaller functions.
@@ -738,7 +731,7 @@ object TypeError {
     def summary: String = s"Missing label '$label' of type '$labelType'."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Missing label '${red(label.name)}' of type '${cyan(formatType(labelType, Some(renv)))}'.
          |
          |${code(loc, "missing label.")}
@@ -765,7 +758,7 @@ object TypeError {
     def summary: String = s"Missing predicate '${pred.name}' of type '$predType'."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Missing predicate '${red(pred.name)}' of type '${cyan(formatType(predType, Some(renv)))}'.
          |
          |${code(loc, "missing predicate.")}
@@ -792,7 +785,7 @@ object TypeError {
     def summary: String = s"Expected argument of type '${formatType(expected, Some(renv))}', but got '${formatType(actual, Some(renv))}'."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Expected argument of type '${formatType(expected, Some(renv))}', but got '${formatType(actual, Some(renv))}'.
          |
          |${code(loc, s"expected: '${cyan(formatType(expected, Some(renv)))}'")}
@@ -817,7 +810,7 @@ object TypeError {
     def summary: String = s"Expected type '${formatType(expected, Some(renv))}' but found type: '${formatType(inferred, Some(renv))}'."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Expected type: '${red(formatType(expected, Some(renv)))}' but found type: '${red(formatType(inferred, Some(renv)))}'.
          |
          |${code(loc, "expression has unexpected type.")}
@@ -837,7 +830,7 @@ object TypeError {
     def summary: String = s"Expected type '${formatType(expected, Some(renv))}' but found type: '${formatType(inferred, Some(renv))}'."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Expected type: '${red(formatType(expected, Some(renv)))}' but found type: '${red(formatType(inferred, Some(renv)))}'.
          |
          |${code(loc, "expression has unexpected type.")}
@@ -855,7 +848,7 @@ object TypeError {
     def summary: String = s"Unsupported type equality: ${formatEqualityConstraint(econstr)}"
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Unsupported type equality: ${formatEqualityConstraint(econstr)}
          |
          |${code(loc, "unsupported type equality.")}
@@ -879,7 +872,7 @@ object TypeError {
     def summary: String = s"No constraint of the '$trt' trait for the type '${formatType(tpe, Some(renv))}'"
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> No constraint of the '${cyan(trt.toString)}' trait for the type '${red(formatType(tpe, Some(renv)))}'.
          |
          |${code(loc, s"missing constraint")}
