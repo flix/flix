@@ -49,6 +49,19 @@ object EqualityEnvironment {
     } yield res
   }.toValidation
 
+
+  /**
+    * Checks that the `givenEconstrs` entail all the given `wantedEconstrs`.
+    */
+  def entailAll(givenEconstrs: List[Ast.EqualityConstraint], wantedEconstrs: List[Ast.BroadEqualityConstraint], renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit scope: Scope, flix: Flix): Validation[Substitution, UnificationError] = {
+    Validation.fold(wantedEconstrs, Substitution.empty) {
+      case (subst, wantedEconstr) =>
+        Validation.mapN(entail(givenEconstrs, subst(wantedEconstr), renv, eqEnv)) {
+          case subst1 => subst1 @@ subst
+        }
+    }
+  }
+
   /**
     * Converts the given EqualityConstraint into a BroadEqualityConstraint.
     */
