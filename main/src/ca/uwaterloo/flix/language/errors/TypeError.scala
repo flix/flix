@@ -63,9 +63,9 @@ object TypeError {
   /**
     * Java constructor not found type error.
     *
-    * @param tpes    the types of the arguments.
-    * @param renv    the rigidity environment.
-    * @param loc     the location where the error occured.
+    * @param tpes the types of the arguments.
+    * @param renv the rigidity environment.
+    * @param loc  the location where the error occured.
     */
   case class ConstructorNotFound(clazz: Class[?], tpes: List[Type], renv: RigidityEnv, loc: SourceLocation) extends TypeError {
     def summary: String = s"Java '${clazz.getName}' constructor with arguments types (${tpes.mkString(", ")}) not found."
@@ -102,8 +102,8 @@ object TypeError {
   /**
     * Java field not found type error.
     *
-    * @param tpe  the type of the receiver object.
-    * @param loc  the location where the error occurred.
+    * @param tpe the type of the receiver object.
+    * @param loc the location where the error occurred.
     */
   case class FieldNotFound(fieldName: Name.Ident, tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def summary: String = s"Java field '$fieldName' in type '$tpe' not found."
@@ -121,9 +121,9 @@ object TypeError {
     * Static Java method not found type error.
     *
     * @param clazz the Java class expected to contain the static method
-    * @param tpes the types of the arguments.
-    * @param renv the rigidity environment.
-    * @param loc the location where the error occurred.
+    * @param tpes  the types of the arguments.
+    * @param renv  the rigidity environment.
+    * @param loc   the location where the error occurred.
     */
   case class StaticMethodNotFound(clazz: Class[?], methodName: Name.Ident, tpes: List[Type], renv: RigidityEnv, loc: SourceLocation) extends TypeError {
     def summary: String = s"Static Java method '$methodName' from class ${clazz.getName} with arguments types (${tpes.mkString(", ")}) not found."
@@ -140,10 +140,10 @@ object TypeError {
   /**
     * Java ambiguous constructor type error.
     *
-    * @param tpes the types of the arguments.
+    * @param tpes         the types of the arguments.
     * @param constructors a list of possible candidate constructors on the type of the receiver object.
-    * @param renv the rigidity environment.
-    * @param loc the location where the error occured.
+    * @param renv         the rigidity environment.
+    * @param loc          the location where the error occured.
     */
   case class AmbiguousConstructor(clazz: Class[?], tpes: List[Type], constructors: List[Constructor[?]], renv: RigidityEnv, loc: SourceLocation) extends TypeError {
     def summary: String = s"Ambiguous Java '${clazz.getName}' constructor with arguments types (${tpes.mkString(", ")})."
