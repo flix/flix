@@ -82,23 +82,23 @@ object KeywordCompleter {
       // C
       Completion.KeywordCompletion("catch"       , Priority.Default),
       // D
-      Completion.KeywordCompletion("def"         , Priority.Higher),
-      Completion.KeywordCompletion("discard"     , Priority.Low),
-      Completion.KeywordCompletion("do"          , Priority.High),
+      Completion.KeywordCompletion("def"         , Priority.High),
+      Completion.KeywordCompletion("discard"     , Priority.Lower),
+      Completion.KeywordCompletion("do"          , Priority.Low),
       // E
       Completion.KeywordCompletion("else"        , Priority.Default),
       // F
-      Completion.KeywordLiteralCompletion("false", Priority.Higher),
+      Completion.KeywordLiteralCompletion("false", Priority.High),
       Completion.KeywordCompletion("forA"        , Priority.Lowest),
-      Completion.KeywordCompletion("forM"        , Priority.Low),
-      Completion.KeywordCompletion("force"       , Priority.High),
-      Completion.KeywordCompletion("foreach"     , Priority.Lower),
-      Completion.KeywordCompletion("from"        , Priority.Highest),
+      Completion.KeywordCompletion("forM"        , Priority.Lower),
+      Completion.KeywordCompletion("force"       , Priority.Low),
+      Completion.KeywordCompletion("foreach"     , Priority.Low),
+      Completion.KeywordCompletion("from"        , Priority.High),
       // I
-      Completion.KeywordCompletion("if"          , Priority.Higher),
-      Completion.KeywordCompletion("inject"      , Priority.Low),
+      Completion.KeywordCompletion("if"          , Priority.High),
+      Completion.KeywordCompletion("inject"      , Priority.Lower),
       Completion.KeywordCompletion("instanceof"  , Priority.Lowest),
-      Completion.KeywordCompletion("into"        , Priority.High),
+      Completion.KeywordCompletion("into"        , Priority.Low),
       // L
       Completion.KeywordCompletion("lazy"        , Priority.Low),
       Completion.KeywordCompletion("let"         , Priority.High),
@@ -111,21 +111,21 @@ object KeywordCompleter {
       // O
       Completion.KeywordCompletion("or"          , Priority.Default),
       // P
-      Completion.KeywordCompletion("par"         , Priority.Low),
-      Completion.KeywordCompletion("project"     , Priority.High),
+      Completion.KeywordCompletion("par"         , Priority.Lower),
+      Completion.KeywordCompletion("project"     , Priority.Low),
       // Q
       Completion.KeywordCompletion("query"       , Priority.Default),
       // R
       Completion.KeywordCompletion("region"      , Priority.Default),
       // S
-      Completion.KeywordCompletion("select"      , Priority.Higher),
-      Completion.KeywordCompletion("solve"       , Priority.High),
-      Completion.KeywordCompletion("spawn"       , Priority.Low),
+      Completion.KeywordCompletion("select"      , Priority.High),
+      Completion.KeywordCompletion("solve"       , Priority.Low),
+      Completion.KeywordCompletion("spawn"       , Priority.Lower),
       // T
       Completion.KeywordCompletion("throw"       , Priority.Lowest),
-      Completion.KeywordLiteralCompletion("true" , Priority.Higher),
-      Completion.KeywordCompletion("try"         , Priority.High),
-      Completion.KeywordCompletion("typematch"   , Priority.Low),
+      Completion.KeywordLiteralCompletion("true" , Priority.High),
+      Completion.KeywordCompletion("try"         , Priority.Low),
+      Completion.KeywordCompletion("typematch"   , Priority.Lower),
       // U
       Completion.KeywordCompletion("unsafe"      , Priority.Low),
       Completion.KeywordCompletion("use"         , Priority.High),
