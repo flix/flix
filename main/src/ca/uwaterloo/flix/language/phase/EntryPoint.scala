@@ -195,7 +195,7 @@ object EntryPoint {
       } else {
         // Delay ToString resolution if main has return type unit for testing with lib nix.
         val toString = root.traits(new Symbol.TraitSym(Nil, "ToString", SourceLocation.Unknown)).sym
-        if (TraitEnvironment.holds(Ast.TraitConstraint(Ast.TraitConstraint.Head(toString, SourceLocation.Unknown), resultTpe, SourceLocation.Unknown), traitEnv)) {
+        if (TraitEnvironment.holds(Ast.TraitConstraint(Ast.TraitConstraint.Head(toString, SourceLocation.Unknown), resultTpe, SourceLocation.Unknown), traitEnv, root.eqEnv)) {
           // Case 2: XYZ -> a with ToString[a]
           Validation.success(())
         } else {

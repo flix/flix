@@ -469,7 +469,7 @@ object ConstraintSolver {
             // find the first (and only) instance that matches
             val tconstrsOpt = ListOps.findMap(insts) {
               inst =>
-                Unification.fullyUnifyTypes(t, inst.tpe, renv).map {
+                Unification.fullyUnifyTypes(t, inst.tpe, renv, eenv).map {
                   case subst => inst.tconstrs.map(subst.apply)
                 }
             }

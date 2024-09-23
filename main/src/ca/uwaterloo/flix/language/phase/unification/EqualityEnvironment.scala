@@ -38,10 +38,11 @@ object EqualityEnvironment {
     val newTpe2 = subst(tpe2)
 
     // check that econstr becomes tautological (according to global instance map)
+    // we specifically use the empty eqEnv for this check
     for {
       res1 <- reduceType(newTpe1, eqEnv)
       res2 <- reduceType(newTpe2, eqEnv)
-      res <- Unification.fullyUnifyTypes(res1, res2, renv) match {
+      res <- Unification.fullyUnifyTypes(res1, res2, renv, ListMap.empty) match {
         case Some(subst) => Result.Ok(subst): Result[Substitution, UnificationError]
         case None => Result.Err(UnificationError.UnsupportedEquality(res1, res2)): Result[Substitution, UnificationError]
       }

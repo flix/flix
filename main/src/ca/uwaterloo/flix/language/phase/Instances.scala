@@ -208,7 +208,7 @@ object Instances {
     // lazily find the instance whose type unifies and save the substitution
     ListOps.findMap(superInsts) {
       superInst =>
-        Unification.fullyUnifyTypes(tpe, superInst.tpe, RigidityEnv.empty).map {
+        Unification.fullyUnifyTypes(tpe, superInst.tpe, RigidityEnv.empty, root.eqEnv).map {
           case subst => (superInst, subst)
         }
     }
@@ -229,7 +229,7 @@ object Instances {
               // Case 1: An instance matches. Check that its constraints are entailed by this instance.
               superInst.tconstrs flatMap {
                 tconstr =>
-                  TraitEnvironment.entail(tconstrs.map(subst.apply), subst(tconstr), root.traitEnv).toHardResult match {
+                  TraitEnvironment.entail(tconstrs.map(subst.apply), subst(tconstr), root.traitEnv, root.eqEnv).toHardResult match {
                     case Result.Ok(_) => Nil
                     case Result.Err(errors) => errors.map {
                       case UnificationError.NoMatchingInstance(missingTconstr) => InstanceError.MissingTraitConstraint(missingTconstr, superTrait, trt.loc)

@@ -578,7 +578,7 @@ object Monomorpher {
       ListOps.findMap(rules) {
         case LoweredAst.TypeMatchRule(sym, t, body0) =>
           // try to unify
-          Unification.fullyUnifyTypes(expTpe, subst.nonStrict(t), renv) match {
+          Unification.fullyUnifyTypes(expTpe, subst.nonStrict(t), renv, root.eqEnv) match {
             // Case 1: types don't unify; just continue
             case None => None
             // Case 2: types unify; use the substitution in the body
@@ -820,7 +820,7 @@ object Monomorpher {
     * Unifies `tpe1` and `tpe2` which must be unifiable.
     */
   private def infallibleUnify(tpe1: Type, tpe2: Type, sym: Symbol.DefnSym)(implicit root: LoweredAst.Root, flix: Flix): StrictSubstitution = {
-    Unification.fullyUnifyTypes(tpe1, tpe2, RigidityEnv.empty) match {
+    Unification.fullyUnifyTypes(tpe1, tpe2, RigidityEnv.empty, root.eqEnv) match {
       case Some(subst) =>
         StrictSubstitution(subst, root.eqEnv)
       case None =>
