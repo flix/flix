@@ -246,6 +246,7 @@ object CompletionProvider {
       case ResolutionError.UndefinedOp(_, _) => (1, SyntacticContext.Expr.Do)
       case WeederError.MalformedIdentifier(_, _) => (2, SyntacticContext.Import)
       case WeederError.UnappliedIntrinsic(_, _) => (5, SyntacticContext.Expr.OtherExpr)
+      case WeederError.UndefinedAnnotation(_, _) => (1, SyntacticContext.Decl.Module)
       case err: ResolutionError.UndefinedJvmStaticField => (1, SyntacticContext.Expr.StaticFieldOrMethod(err))
       case err: TypeError.MethodNotFound => (1, SyntacticContext.Expr.InvokeMethod(err.tpe, err.methodName))
       case err: TypeError.FieldNotFound => (1, SyntacticContext.Expr.InvokeMethod(err.tpe, err.fieldName))

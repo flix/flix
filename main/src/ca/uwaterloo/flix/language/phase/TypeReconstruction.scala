@@ -16,11 +16,10 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.ast.Type.getFlixType
-import ca.uwaterloo.flix.language.ast.shared.CheckedCastType
-import ca.uwaterloo.flix.language.ast.{Ast, KindedAst, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Constant}
+import ca.uwaterloo.flix.language.ast.{KindedAst, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.phase.unification.Substitution
 import ca.uwaterloo.flix.language.errors.TypeError
-import ca.uwaterloo.flix.util.InternalCompilerException
 
 object TypeReconstruction {
 
@@ -112,8 +111,8 @@ object TypeReconstruction {
       val e = visitExp(exp)
       TypedAst.Expr.Use(sym, alias, e, loc)
 
-    case KindedAst.Expr.Cst(Ast.Constant.Null, loc) =>
-      TypedAst.Expr.Cst(Ast.Constant.Null, Type.Null, loc)
+    case KindedAst.Expr.Cst(Constant.Null, loc) =>
+      TypedAst.Expr.Cst(Constant.Null, Type.Null, loc)
 
     case KindedAst.Expr.Cst(cst, loc) => TypedAst.Expr.Cst(cst, Type.constantType(cst), loc)
 
@@ -219,6 +218,7 @@ object TypeReconstruction {
               val ps = pats.map {
                 case KindedAst.RestrictableChoosePattern.Wild(tvar, loc) => TypedAst.RestrictableChoosePattern.Wild(subst(tvar), loc)
                 case KindedAst.RestrictableChoosePattern.Var(sym, tvar, loc) => TypedAst.RestrictableChoosePattern.Var(sym, subst(tvar), loc)
+                case KindedAst.RestrictableChoosePattern.Error(tvar, loc) => TypedAst.RestrictableChoosePattern.Error(subst(tvar), loc)
               }
               TypedAst.RestrictableChoosePattern.Tag(sym, ps, subst(tvar), loc)
           }
@@ -355,9 +355,9 @@ object TypeReconstruction {
           TypedAst.Expr.CheckedCast(cast, e, e.tpe, eff, loc)
       }
 
-    case KindedAst.Expr.UncheckedCast(KindedAst.Expr.Cst(Ast.Constant.Null, _), _, _, tvar, loc) =>
+    case KindedAst.Expr.UncheckedCast(KindedAst.Expr.Cst(Constant.Null, _), _, _, tvar, loc) =>
       val t = subst(tvar)
-      TypedAst.Expr.Cst(Ast.Constant.Null, t, loc)
+      TypedAst.Expr.Cst(Constant.Null, t, loc)
 
     case KindedAst.Expr.UncheckedCast(exp, declaredType0, declaredEff0, tvar, loc) =>
       val e = visitExp(exp)
