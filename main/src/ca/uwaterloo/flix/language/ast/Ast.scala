@@ -544,15 +544,27 @@ object Ast {
     sealed trait Decl extends SyntacticContext
 
     object Decl {
+      case object Def extends Decl
+
       case object Enum extends Decl
+
+      case object EnumHeader extends Decl
 
       case object Instance extends Decl
 
+      case object InstanceHeader extends Decl
+
       case object Module extends Decl
+
+      case object ModuleHeader extends Decl
 
       case object Struct extends Decl
 
+      case object StructHeader extends Decl
+
       case object Trait extends Decl
+
+      case object TraitHeader extends Decl
 
       case object Type extends Decl
     }
