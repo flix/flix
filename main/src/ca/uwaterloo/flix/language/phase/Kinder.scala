@@ -116,15 +116,12 @@ object Kinder {
       val kenv1 = getKindEnvFromTypeParams(tparams1.init)
       val kenv2 = getKindEnvFromRegion(tparams1.last)
       // The last add is simply to verify that the last tparam was marked as Eff
-      val kenvVal = KindEnv.disjointAppend(kenv1, kenv2) + (tparams1.last.sym -> Kind.Eff)
-      mapN(kenvVal) {
-        case kenv =>
-          val tparams = tparams1.map(visitTypeParam(_, kenv))
-          val fields = fields0.map(visitStructField(_, tparams, kenv, taenv, root))
-          val targs = tparams.map(tparam => Type.Var(tparam.sym, tparam.loc.asSynthetic))
-          val sc = Scheme(tparams.map(_.sym), List(), List(), Type.mkStruct(sym, targs, loc))
-          KindedAst.Struct(doc, ann, mod, sym, tparams, sc, fields, loc)
-      }
+      val kenv = KindEnv.disjointAppend(kenv1, kenv2) + (tparams1.last.sym -> Kind.Eff)
+      val tparams = tparams1.map(visitTypeParam(_, kenv))
+      val fields = fields0.map(visitStructField(_, tparams, kenv, taenv, root))
+      val targs = tparams.map(tparam => Type.Var(tparam.sym, tparam.loc.asSynthetic))
+      val sc = Scheme(tparams.map(_.sym), List(), List(), Type.mkStruct(sym, targs, loc))
+      Validation.success(KindedAst.Struct(doc, ann, mod, sym, tparams, sc, fields, loc))
   }
 
   /**
@@ -475,14 +472,12 @@ object Kinder {
     case ResolvedAst.Expr.Scope(sym, regionVar, exp0, loc) =>
       val rv = Type.Var(regionVar.withKind(Kind.Eff), loc)
       val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-      flatMapN(kenv0 + (regionVar -> Kind.Eff)) {
-        case kenv =>
-          // Record that we enter the new scope.
-          val newScope = scope.enter(rv.sym)
-          val expVal = visitExp(exp0, kenv, taenv, henv0, root)(newScope, sctx, flix)
-          mapN(expVal) {
-            exp => KindedAst.Expr.Scope(sym, rv, exp, evar, loc)
-          }
+      val kenv = kenv0 + (regionVar -> Kind.Eff)
+      // Record that we enter the new scope.
+      val newScope = scope.enter(rv.sym)
+      val expVal = visitExp(exp0, kenv, taenv, henv0, root)(newScope, sctx, flix)
+      mapN(expVal) {
+        exp => KindedAst.Expr.Scope(sym, rv, exp, evar, loc)
       }
 
     case ResolvedAst.Expr.Match(exp0, rules0, loc) =>
@@ -1475,7 +1470,7 @@ object Kinder {
     * A KindEnvironment is provided in case some subset of of kinds have been declared (and therefore should not be inferred),
     * as in the case of a trait type parameter used in a sig or law.
     */
-  private def inferSpec(spec0: ResolvedAst.Spec, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindEnv, KindError] = spec0 match {
+  private def inferSpec(spec0: ResolvedAst.Spec, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[KindEnv, KindError] = spec0 match {
     case ResolvedAst.Spec(_, _, _, _, fparams, tpe, eff0, tconstrs, econstrs, _) =>
       val fparamKenvsVal = traverse(fparams)(inferFormalParam(_, kenv, taenv, root))
       val tpeKenvVal = inferType(tpe, Kind.Star, kenv, taenv, root)
@@ -1483,7 +1478,7 @@ object Kinder {
       val tconstrsKenvsVal = traverse(tconstrs)(inferTraitConstraint(_, kenv, taenv, root))
       val econstrsKenvsVal = traverse(econstrs)(inferEqualityConstraint(_, kenv, taenv, root))
 
-      flatMapN(fparamKenvsVal, tpeKenvVal, effKenvsVal, tconstrsKenvsVal, econstrsKenvsVal) {
+      mapN(fparamKenvsVal, tpeKenvVal, effKenvsVal, tconstrsKenvsVal, econstrsKenvsVal) {
         case (fparamKenvs, tpeKenv, effKenvs, tconstrKenvs, econstrsKenvs) =>
           KindEnv.merge(fparamKenvs ::: tpeKenv :: effKenvs ::: tconstrKenvs ::: econstrsKenvs)
       }
@@ -1493,7 +1488,7 @@ object Kinder {
   /**
     * Infers a kind environment from the given formal param.
     */
-  private def inferFormalParam(fparam0: ResolvedAst.FormalParam, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindEnv, KindError] = fparam0 match {
+  private def inferFormalParam(fparam0: ResolvedAst.FormalParam, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[KindEnv, KindError] = fparam0 match {
     case ResolvedAst.FormalParam(_, _, tpe0, _) => tpe0 match {
       case None => Validation.success(KindEnv.empty)
       case Some(tpe) => inferType(tpe, Kind.Star, kenv, taenv, root)
@@ -1503,7 +1498,7 @@ object Kinder {
   /**
     * Infers a kind environment from the given type constraint.
     */
-  private def inferTraitConstraint(tconstr: ResolvedAst.TraitConstraint, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindEnv, KindError] = tconstr match {
+  private def inferTraitConstraint(tconstr: ResolvedAst.TraitConstraint, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[KindEnv, KindError] = tconstr match {
     case ResolvedAst.TraitConstraint(head, tpe, _) =>
       val kind = getTraitKind(root.traits(head.sym))
       inferType(tpe, kind, kenv: KindEnv, taenv, root)
@@ -1512,16 +1507,14 @@ object Kinder {
   /**
     * Infers a kind environment from the given equality constraint.
     */
-  private def inferEqualityConstraint(econstr: ResolvedAst.EqualityConstraint, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindEnv, KindError] = econstr match {
+  private def inferEqualityConstraint(econstr: ResolvedAst.EqualityConstraint, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[KindEnv, KindError] = econstr match {
     case ResolvedAst.EqualityConstraint(Ast.AssocTypeConstructor(sym, _), tpe1, tpe2, _) =>
       val trt = root.traits(sym.trt)
       val kind1 = getTraitKind(trt)
       val kind2 = trt.assocs.find(_.sym == sym).get.kind
       val kenv1Val = inferType(tpe1, kind1, kenv, taenv, root)
       val kenv2Val = inferType(tpe2, kind2, kenv, taenv, root)
-      flatMapN(kenv1Val, kenv2Val) {
-        case (kenv1, kenv2) => kenv1 ++ kenv2
-      }
+      mapN(kenv1Val, kenv2Val)(_ ++ _)
   }
 
   /**
@@ -1531,7 +1524,7 @@ object Kinder {
     *   - There are no kind variables; kinds that cannot be determined are instead marked with [[Kind.Wild]].
     *   - Subkinding may allow a variable to be ascribed with two different kinds; the most specific is used in the returned environment.
     */
-  private def inferType(tpe: UnkindedType, expectedKind: Kind, kenv0: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindEnv, KindError] = tpe.baseType match {
+  private def inferType(tpe: UnkindedType, expectedKind: Kind, kenv0: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[KindEnv, KindError] = tpe.baseType match {
     // Case 1: the type constructor is a variable: all args are * and the constructor is * -> * -> * ... -> expectedType
     case tvar: UnkindedType.Var =>
       val tyconKind = kenv0.map.get(tvar.sym) match {
@@ -1545,19 +1538,15 @@ object Kinder {
       }
 
       val args = Kind.kindArgs(tyconKind)
-      fold(tpe.typeArguments.zip(args), KindEnv.singleton(tvar.sym -> tyconKind)) {
-        case (acc, (targ, kind)) => flatMapN(inferType(targ, kind, kenv0, taenv, root)) {
-          kenv => acc ++ kenv
-        }
+      tpe.typeArguments.zip(args).foldLeft(Validation.success(KindEnv.singleton(tvar.sym -> tyconKind)): Validation[KindEnv, KindError]) {
+        case (acc, (targ, kind)) => mapN(acc, inferType(targ, kind, kenv0, taenv, root))(_ ++ _)
       }
 
     case UnkindedType.Cst(cst, loc) =>
       val args = Kind.kindArgs(cst.kind)
 
-      fold(tpe.typeArguments.zip(args), KindEnv.empty) {
-        case (acc, (targ, kind)) => flatMapN(inferType(targ, kind, kenv0, taenv, root)) {
-          kenv => acc ++ kenv
-        }
+      tpe.typeArguments.zip(args).foldLeft(Validation.success(KindEnv.empty): Validation[KindEnv, KindError]) {
+        case (acc, (targ, kind)) => mapN(acc, inferType(targ, kind, kenv0, taenv, root))(_ ++ _)
       }
 
     case UnkindedType.Ascribe(t, k, _) => inferType(t, k, kenv0, taenv, root)
@@ -1566,10 +1555,8 @@ object Kinder {
       val alias = taenv(cst.sym)
       val tparamKinds = alias.tparams.map(_.sym.kind)
 
-      fold(args.zip(tparamKinds), KindEnv.empty) {
-        case (acc, (targ, kind)) => flatMapN(inferType(targ, kind, kenv0, taenv, root)) {
-          kenv => acc ++ kenv
-        }
+      args.zip(tparamKinds).foldLeft(Validation.success(KindEnv.empty): Validation[KindEnv, KindError]) {
+        case (acc, (targ, kind)) => mapN(acc, inferType(targ, kind, kenv0, taenv, root))(_ ++ _)
       }
 
     case UnkindedType.AssocType(cst, arg, _) =>
@@ -1579,12 +1566,10 @@ object Kinder {
 
     case UnkindedType.Arrow(eff, _, _) =>
       val effKenvsVal = traverse(eff)(inferType(_, Kind.Eff, kenv0, taenv, root))
-      val argKenvVal = fold(tpe.typeArguments, KindEnv.empty) {
-        case (acc, targ) => flatMapN(inferType(targ, Kind.Star, kenv0, taenv, root)) {
-          kenv => acc ++ kenv
-        }
+      val argKenvVal = tpe.typeArguments.foldLeft(Validation.success(KindEnv.empty): Validation[KindEnv, KindError]) {
+        case (acc, targ) => mapN(acc, inferType(targ, Kind.Star, kenv0, taenv, root))(_ ++ _)
       }
-      flatMapN(effKenvsVal, argKenvVal) {
+      mapN(effKenvsVal, argKenvVal) {
         case (effKenvs, argKenv) => KindEnv.merge(effKenvs :+ argKenv)
       }
 
@@ -1592,30 +1577,24 @@ object Kinder {
       val tyconKind = getEnumKind(root.enums(sym))
       val args = Kind.kindArgs(tyconKind)
 
-      fold(tpe.typeArguments.zip(args), KindEnv.empty) {
-        case (acc, (targ, kind)) => flatMapN(inferType(targ, kind, kenv0, taenv, root)) {
-          kenv => acc ++ kenv
-        }
+      tpe.typeArguments.zip(args).foldLeft(Validation.success(KindEnv.empty): Validation[KindEnv, KindError]) {
+        case (acc, (targ, kind)) => mapN(acc, inferType(targ, kind, kenv0, taenv, root))(_ ++ _)
       }
 
     case UnkindedType.Struct(sym, _) =>
       val tyconKind = getStructKind(root.structs(sym))
       val args = Kind.kindArgs(tyconKind)
 
-      fold(tpe.typeArguments.zip(args), KindEnv.empty) {
-        case (acc, (targ, kind)) => flatMapN(inferType(targ, kind, kenv0, taenv, root)) {
-          kenv => acc ++ kenv
-        }
+      tpe.typeArguments.zip(args).foldLeft(Validation.success(KindEnv.empty): Validation[KindEnv, KindError]) {
+        case (acc, (targ, kind)) => mapN(acc, inferType(targ, kind, kenv0, taenv, root))(_ ++ _)
       }
 
     case UnkindedType.RestrictableEnum(sym, _) =>
       val tyconKind = getRestrictableEnumKind(root.restrictableEnums(sym))
       val args = Kind.kindArgs(tyconKind)
 
-      fold(tpe.typeArguments.zip(args), KindEnv.empty) {
-        case (acc, (targ, kind)) => flatMapN(inferType(targ, kind, kenv0, taenv, root)) {
-          kenv => acc ++ kenv
-        }
+      tpe.typeArguments.zip(args).foldLeft(Validation.success(KindEnv.empty): Validation[KindEnv, KindError]) {
+        case (acc, (targ, kind)) => mapN(acc, inferType(targ, kind, kenv0, taenv, root))(_ ++ _)
       }
 
     case UnkindedType.CaseSet(_, _) => Validation.success(KindEnv.empty)
@@ -1640,9 +1619,7 @@ object Kinder {
 
       val kenv1Val = inferType(t1, expected, kenv0, taenv, root)
       val kenv2Val = inferType(t2, expected, kenv0, taenv, root)
-      flatMapN(kenv1Val, kenv2Val) {
-        case (kenv1, kenv2) => kenv1 ++ kenv2
-      }
+      mapN(kenv1Val, kenv2Val)(_ ++ _)
 
     case UnkindedType.CaseIntersection(t1, t2, _) =>
       // Expected kind for t1 and t2 is GenericCaseSet, but if we have a more specific kind we use that.
@@ -1654,9 +1631,7 @@ object Kinder {
 
       val kenv1Val = inferType(t1, expected, kenv0, taenv, root)
       val kenv2Val = inferType(t2, expected, kenv0, taenv, root)
-      flatMapN(kenv1Val, kenv2Val) {
-        case (kenv1, kenv2) => kenv1 ++ kenv2
-      }
+      mapN(kenv1Val, kenv2Val)(_ ++ _)
 
     case UnkindedType.Error(_) => Validation.success(KindEnv.empty)
 
@@ -1703,19 +1678,16 @@ object Kinder {
   /**
     * Gets a kind environment from the spec.
     */
-  private def getKindEnvFromSpec(spec0: ResolvedAst.Spec, kenv0: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindEnv, KindError] = spec0 match {
+  private def getKindEnvFromSpec(spec0: ResolvedAst.Spec, kenv0: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[KindEnv, KindError] = spec0 match {
     case ResolvedAst.Spec(_, _, _, tparams0, _, _, _, _, _, _) =>
       // first get the kenv from the declared tparams
       val kenv1 = getKindEnvFromTypeParams(tparams0)
 
       // merge it from the kenv from the context
-      val kenv2Val = kenv0 ++ kenv1
+      val kenv2 = kenv0 ++ kenv1
 
       // Finally do inference on the spec under the new kenv
-      flatMapN(kenv2Val) {
-        case kenv2 =>
-          inferSpec(spec0, kenv2, taenv, root)
-      }
+      inferSpec(spec0, kenv2, taenv, root)
   }
 
   /**
@@ -1796,10 +1768,8 @@ object Kinder {
     /**
       * Merges all the given kind environments.
       */
-    def merge(kenvs: List[KindEnv]): Validation[KindEnv, KindError] = {
-      fold(kenvs, KindEnv.empty) {
-        case (acc, kenv) => acc ++ kenv
-      }
+    def merge(kenvs: List[KindEnv])(implicit sctx: SharedContext): KindEnv = {
+      kenvs.foldLeft(KindEnv.empty)(_ ++ _)
     }
 
     /**
@@ -1825,25 +1795,24 @@ object Kinder {
     /**
       * Adds the given mapping to the kind environment.
       */
-    def +(pair: (Symbol.UnkindedTypeVarSym, Kind)): Validation[KindEnv, KindError] = pair match {
+    def +(pair: (Symbol.UnkindedTypeVarSym, Kind))(implicit sctx: SharedContext): KindEnv = pair match {
       case (tvar, kind) => map.get(tvar) match {
         case Some(kind0) => unify(kind0, kind) match {
-          case Some(minKind) => Validation.success(KindEnv(map + (tvar -> minKind)))
+          case Some(minKind) => KindEnv(map + (tvar -> minKind))
           case None =>
             val e = KindError.MismatchedKinds(kind0, kind, tvar.loc)
-            Validation.toSoftFailure(KindEnv(map + (tvar -> kind0)), e)
+            sctx.errors.add(e)
+            KindEnv(map + (tvar -> kind0))
         }
-        case None => Validation.success(KindEnv(map + (tvar -> kind)))
+        case None => KindEnv(map + (tvar -> kind))
       }
     }
 
     /**
       * Merges the given kind environment into this kind environment.
       */
-    def ++(other: KindEnv): Validation[KindEnv, KindError] = {
-      fold(other.map, this) {
-        case (acc, pair) => acc + pair
-      }
+    def ++(other: KindEnv)(implicit sctx: SharedContext): KindEnv = {
+      other.map.foldLeft(this)(_ + _)
     }
   }
 
