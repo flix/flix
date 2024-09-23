@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, VarText}
 import ca.uwaterloo.flix.language.ast.NamedAst.{Declaration, RestrictableChoosePattern}
 import ca.uwaterloo.flix.language.ast.ResolvedAst.Pattern.Record
 import ca.uwaterloo.flix.language.ast.UnkindedType.*
-import ca.uwaterloo.flix.language.ast.shared.Scope
+import ca.uwaterloo.flix.language.ast.shared.{Constant, Scope}
 import ca.uwaterloo.flix.language.ast.{NamedAst, Symbol, *}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.ResolutionError.*
@@ -30,7 +30,7 @@ import ca.uwaterloo.flix.util.*
 import ca.uwaterloo.flix.util.Validation.*
 import ca.uwaterloo.flix.util.collection.{Chain, ListMap, MapOps}
 
-import java.lang.reflect.{Constructor, Field, Method, Modifier}
+import java.lang.reflect.{Constructor, Field, Method}
 import scala.annotation.tailrec
 import scala.collection.immutable.SortedSet
 import scala.collection.mutable
@@ -885,7 +885,7 @@ private def resolveExp(exp0: NamedAst.Expr, env0: ListMap[String, Resolution])(i
             // Check for a single Unit argument
             // Returns out of resolveExp
             return flatMapN(expsVal) {
-              case ResolvedAst.Expr.Cst(Ast.Constant.Unit, _) :: Nil =>
+              case ResolvedAst.Expr.Cst(Constant.Unit, _) :: Nil =>
                 Validation.success(ResolvedAst.Expr.InvokeStaticMethod2(clazz, methodName, Nil, outerLoc))
               case es =>
                 Validation.success(ResolvedAst.Expr.InvokeStaticMethod2(clazz, methodName, es, outerLoc))
@@ -896,8 +896,8 @@ private def resolveExp(exp0: NamedAst.Expr, env0: ListMap[String, Resolution])(i
       }
 
       flatMapN(lookupQName(qname, env0, ns0, root)) {
-        case ResolvedQName.Def(defn) => visitApplyDef(app, defn, exps, env0, innerLoc, outerLoc)
-        case ResolvedQName.Sig(sig) => visitApplySig(app, sig, exps, env0, innerLoc, outerLoc)
+        case ResolvedQName.Def(defn) => visitApplyDef(defn, exps, env0, innerLoc, outerLoc)
+        case ResolvedQName.Sig(sig) => visitApplySig(sig, exps, env0, innerLoc, outerLoc)
         case ResolvedQName.Var(_) => visitApply(app, env0)
         case ResolvedQName.Tag(caze) => visitApplyTag(caze, exps, env0, innerLoc, outerLoc)
         case ResolvedQName.RestrictableTag(caze) => visitApplyRestrictableTag(caze, exps, isOpen = false, env0, innerLoc, outerLoc)
@@ -907,8 +907,8 @@ private def resolveExp(exp0: NamedAst.Expr, env0: ListMap[String, Resolution])(i
 
     case app@NamedAst.Expr.Apply(NamedAst.Expr.Open(qname, innerLoc), exps, outerLoc) =>
       flatMapN(lookupQName(qname, env0, ns0, root)) {
-        case ResolvedQName.Def(defn) => visitApplyDef(app, defn, exps, env0, innerLoc, outerLoc)
-        case ResolvedQName.Sig(sig) => visitApplySig(app, sig, exps, env0, innerLoc, outerLoc)
+        case ResolvedQName.Def(defn) => visitApplyDef(defn, exps, env0, innerLoc, outerLoc)
+        case ResolvedQName.Sig(sig) => visitApplySig(sig, exps, env0, innerLoc, outerLoc)
         case ResolvedQName.Var(_) => visitApply(app, env0)
         case ResolvedQName.Tag(caze) => visitApplyTag(caze, exps, env0, innerLoc, outerLoc)
         case ResolvedQName.RestrictableTag(caze) => visitApplyRestrictableTag(caze, exps, isOpen = true, env0, innerLoc, outerLoc)
@@ -1036,6 +1036,7 @@ private def resolveExp(exp0: NamedAst.Expr, env0: ListMap[String, Resolution])(i
               val pats = pat.map {
                 case NamedAst.RestrictableChoosePattern.Wild(loc) => ResolvedAst.RestrictableChoosePattern.Wild(loc)
                 case NamedAst.RestrictableChoosePattern.Var(sym, loc) => ResolvedAst.RestrictableChoosePattern.Var(sym, loc)
+                case NamedAst.RestrictableChoosePattern.Error(loc) => ResolvedAst.RestrictableChoosePattern.Error(loc)
               }
               mapN(tagVal) {
                 case tag => ResolvedAst.RestrictableChoosePattern.Tag(Ast.RestrictableCaseSymUse(tag.sym, qname.loc), pats, loc)
@@ -1046,6 +1047,7 @@ private def resolveExp(exp0: NamedAst.Expr, env0: ListMap[String, Resolution])(i
               pat.foldLeft(env0) {
                 case (acc, NamedAst.RestrictableChoosePattern.Var(sym, loc)) => acc + (sym.text -> Resolution.Var(sym))
                 case (acc, NamedAst.RestrictableChoosePattern.Wild(loc)) => acc
+                case (acc, NamedAst.RestrictableChoosePattern.Error(_)) => acc
               }
           }
 
@@ -1610,62 +1612,10 @@ private def resolveExp(exp0: NamedAst.Expr, env0: ListMap[String, Resolution])(i
     */
 private def mkFreshFparams(arity: Int, loc: SourceLocation)(implicit scope: Scope, flix: Flix): List[ResolvedAst.FormalParam] = {
     // Introduce a fresh variable symbol for each argument of the function definition.
-    val varSyms = (0 until arity).map(i => Symbol.freshVarSym(Flix.Delimiter + i, BoundBy.FormalParam, loc)).toList
+    val varSyms = (0 until arity).map(i => freshVarSym("arg" + i, BoundBy.FormalParam, loc)).toList
 
     // Introduce a formal parameter for each variable symbol.
     varSyms.map(sym => ResolvedAst.FormalParam(sym, Ast.Modifiers.Empty, None, loc))
-  }
-
-  /**
-    * Creates a lambda for use in a curried dif or sig application.
-    */
-private def mkCurriedLambda(fparams: List[ResolvedAst.FormalParam], baseExp: ResolvedAst.Expr, loc: SourceLocation): ResolvedAst.Expr = {
-    val l = loc.asSynthetic
-
-    // The arguments passed to the definition (i.e. the fresh variable symbols).
-    val argExps = fparams.map(fparam => ResolvedAst.Expr.Var(fparam.sym, l))
-
-    // The apply expression inside the lambda.
-    val applyExp = ResolvedAst.Expr.Apply(baseExp, argExps, l)
-
-    // The curried lambda expressions.
-    fparams.foldRight(applyExp: ResolvedAst.Expr) {
-      case (fparam, acc) => ResolvedAst.Expr.Lambda(fparam, acc, l)
-    }
-  }
-
-  /**
-    * Curry the def, wrapping it in lambda expressions.
-    */
-private def visitDef(defn: NamedAst.Declaration.Def, loc: SourceLocation)(implicit scope: Scope, flix: Flix): ResolvedAst.Expr = {
-    // Find the arity of the function definition.
-    val arity = defn.spec.fparams.length
-
-    // Create the fresh fparams
-    val fparams = mkFreshFparams(arity, loc.asSynthetic)
-
-    // The definition expression.
-    val defExp = ResolvedAst.Expr.Def(defn.sym, loc)
-
-    // Create and apply the lambda expressions
-    mkCurriedLambda(fparams, defExp, loc.asSynthetic)
-  }
-
-  /**
-    * Curry the sig, wrapping it in lambda expressions.
-    */
-private def visitSig(sig: NamedAst.Declaration.Sig, loc: SourceLocation)(implicit scope: Scope, flix: Flix): ResolvedAst.Expr = {
-    // Find the arity of the function definition.
-    val arity = sig.spec.fparams.length
-
-    // Create the fresh fparams
-    val fparams = mkFreshFparams(arity, loc.asSynthetic)
-
-    // The signature expression.
-    val sigExp = ResolvedAst.Expr.Sig(sig.sym, loc)
-
-    // Create and apply the lambda expressions
-    mkCurriedLambda(fparams, sigExp, loc.asSynthetic)
   }
 
   /**
@@ -1675,14 +1625,14 @@ private def visitTag(caze: NamedAst.Declaration.Case, loc: SourceLocation)(impli
     // Check if the tag value has Unit type.
     if (isUnitType(caze.tpe)) {
       // Case 1: The tag value has Unit type. Construct the Unit expression.
-      val e = ResolvedAst.Expr.Cst(Ast.Constant.Unit, loc)
+      val e = ResolvedAst.Expr.Cst(Constant.Unit, loc)
       ResolvedAst.Expr.Tag(Ast.CaseSymUse(caze.sym, loc), e, loc)
     } else {
       // Case 2: The tag has a non-Unit type. Hence the tag is used as a function.
       // If the tag is `Some` we construct the lambda: x -> Some(x).
 
       // Construct a fresh symbol for the formal parameter.
-      val freshVar = Symbol.freshVarSym("x" + Flix.Delimiter, BoundBy.FormalParam, loc)
+      val freshVar = freshVarSym("x", BoundBy.FormalParam, loc)
 
       // Construct the formal parameter for the fresh symbol.
       val freshParam = ResolvedAst.FormalParam(freshVar, Ast.Modifiers.Empty, None, loc)
@@ -1705,14 +1655,14 @@ private def visitRestrictableTag(caze: NamedAst.Declaration.RestrictableCase, is
     // Check if the tag value has Unit type.
     if (isUnitType(caze.tpe)) {
       // Case 1: The tag value has Unit type. Construct the Unit expression.
-      val e = ResolvedAst.Expr.Cst(Ast.Constant.Unit, loc)
+      val e = ResolvedAst.Expr.Cst(Constant.Unit, loc)
       ResolvedAst.Expr.RestrictableTag(Ast.RestrictableCaseSymUse(caze.sym, loc), e, isOpen, loc)
     } else {
       // Case 2: The tag has a non-Unit type. Hence the tag is used as a function.
       // If the tag is `Some` we construct the lambda: x -> Some(x).
 
       // Construct a fresh symbol for the formal parameter.
-      val freshVar = Symbol.freshVarSym("x" + Flix.Delimiter, BoundBy.FormalParam, loc)
+      val freshVar = freshVarSym("x", BoundBy.FormalParam, loc)
 
       // Construct the formal parameter for the fresh symbol.
       val freshParam = ResolvedAst.FormalParam(freshVar, Ast.Modifiers.Empty, None, loc)
@@ -1744,38 +1694,81 @@ private def visitApply(exp: NamedAst.Expr.Apply, env0: ListMap[String, Resolutio
   }
 
   /**
-    * Resolve the application expression, applying `defn` to `exps`.
+    * Resolve the application of a top-level function or signature `base` with some `arity`.
+    *
+    * Example with `def f(a: Char, b: Char): Char -> Char`
+    *   - `   f     ===> x -> y -> f(x, y)`
+    *   - `  f(a)   ===> x -> f(a, x)`
+    *   - ` f(a,b)  ===> f(a, b)`
+    *   - `f(a,b,c) ===> f(a, b)(c)`
     */
-private def visitApplyDef(app: NamedAst.Expr.Apply, defn: NamedAst.Declaration.Def, exps: List[NamedAst.Expr], env0: ListMap[String, Resolution], innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Expr, ResolutionError] = {
-    if (defn.spec.fparams.length == exps.length) {
-      // Case 1: Hooray! We can call the function directly.
-      val esVal = traverse(exps)(resolveExp(_, env0))
-      mapN(esVal) {
-        es =>
-          val base = ResolvedAst.Expr.Def(defn.sym, innerLoc)
-          ResolvedAst.Expr.Apply(base, es, outerLoc)
-      }
-    } else {
-      // Case 2: We have to curry. (See below).
-      visitApply(app, env0)
+private def visitApplyToplevelFull(base: ResolvedAst.Expr, arity: Int, exps: List[ResolvedAst.Expr], loc: SourceLocation)(implicit scope: Scope, flix: Flix): ResolvedAst.Expr = {
+    val (directArgs, cloArgs) = exps.splitAt(arity)
+
+    val fparamsPadding = mkFreshFparams(arity - directArgs.length, loc.asSynthetic)
+    val argsPadding = fparamsPadding.map(fp => ResolvedAst.Expr.Var(fp.sym, loc.asSynthetic))
+
+    val fullArgs = directArgs ++ argsPadding
+    val fullDefApplication = ResolvedAst.Expr.Apply(base, fullArgs, loc)
+
+    // The ordering of lambdas and closure application doesn't matter,
+    // `fparamsPadding.isEmpty` iff `cloArgs.nonEmpty`.
+    val fullDefLambda = fparamsPadding.foldRight(fullDefApplication: ResolvedAst.Expr){
+      case (fp, acc) => ResolvedAst.Expr.Lambda(fp, acc, loc.asSynthetic)
+    }
+
+    val closureApplication = cloArgs.foldLeft(fullDefLambda){
+      case (acc, cloArg) => ResolvedAst.Expr.Apply(acc, List(cloArg), loc)
+    }
+
+    closureApplication
+  }
+
+  /**
+    * Returns a curried lambda and application of `defn`.
+    *
+    *   - `Int32.add ===> x -> y -> Int32.add(x, y)`
+    */
+private def visitDef(defn: NamedAst.Declaration.Def, loc: SourceLocation)(implicit scope: Scope, flix: Flix): ResolvedAst.Expr = {
+    visitApplyToplevelFull(ResolvedAst.Expr.Def(defn.sym, loc), defn.spec.fparams.length, Nil, loc.asSynthetic)
+  }
+
+  /**
+    * Resolve the application expression, applying `defn` to `exps`.
+    *
+    * Example with `def f(a: Char, b: Char): Char -> Char`
+    *   - `   f     ===> x -> y -> f(x, y)`
+    *   - `  f(a)   ===> x -> f(a, x)`
+    *   - ` f(a,b)  ===> f(a, b)`
+    *   - `f(a,b,c) ===> f(a, b)(c)`
+    */
+private def visitApplyDef(defn: NamedAst.Declaration.Def, exps: List[NamedAst.Expr], env: ListMap[String, Resolver.Resolution], innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Expr, ResolutionError] = {
+    mapN(traverse(exps)(resolveExp(_, env))) {
+      es => visitApplyToplevelFull(ResolvedAst.Expr.Def(defn.sym, innerLoc), defn.spec.fparams.length, es, outerLoc)
     }
   }
 
   /**
-    * Resolve the application expression, applying `sig` to `exps`.
+    * Returns a curried lambda and application of `sig`.
+    *
+    *   - `Add.add ===> x -> y -> Add.add(x, y)`
     */
-private def visitApplySig(app: NamedAst.Expr.Apply, sig: NamedAst.Declaration.Sig, exps: List[NamedAst.Expr], env0: ListMap[String, Resolution], innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Expr, ResolutionError] = {
-    if (sig.spec.fparams.length == exps.length) {
-      // Case 1: Hooray! We can call the function directly.
-      val esVal = traverse(exps)(resolveExp(_, env0))
-      mapN(esVal) {
-        case es =>
-          val base = ResolvedAst.Expr.Sig(sig.sym, innerLoc)
-          ResolvedAst.Expr.Apply(base, es, outerLoc)
-      }
-    } else {
-      // Case 2: We have to curry. (See below).
-      visitApply(app, env0)
+private def visitSig(sig: NamedAst.Declaration.Sig, loc: SourceLocation)(implicit scope: Scope, flix: Flix): ResolvedAst.Expr = {
+    visitApplyToplevelFull(ResolvedAst.Expr.Sig(sig.sym, loc), sig.spec.fparams.length, Nil, loc.asSynthetic)
+  }
+
+  /**
+    * Resolve the application expression, applying `sig` to `exps`.
+    *
+    * Example with `def f(a: Char, b: Char): Char -> Char`
+    *   - `   f     ===> x -> y -> f(x, y)`
+    *   - `  f(a)   ===> x -> f(a, x)`
+    *   - ` f(a,b)  ===> f(a, b)`
+    *   - `f(a,b,c) ===> f(a, b)(c)`
+    */
+private def visitApplySig(sig: NamedAst.Declaration.Sig, exps: List[NamedAst.Expr], env: ListMap[String, Resolution], innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Expr, ResolutionError] = {
+    mapN(traverse(exps)(resolveExp(_, env))) {
+      es => visitApplyToplevelFull(ResolvedAst.Expr.Sig(sig.sym, innerLoc), sig.spec.fparams.length, es, outerLoc)
     }
   }
 
@@ -4031,4 +4024,12 @@ private def mkUnappliedAssocType(sym: Symbol.AssocTypeSym, loc: SourceLocation):
       }
     }
   }
+
+  /**
+    * Returns a fresh [[Symbol.VarSym]] with fresh text to avoid shadowing errors
+    * in [[ca.uwaterloo.flix.language.phase.Redundancy]].
+    */
+  def freshVarSym(name: String, boundBy: BoundBy, loc: SourceLocation)(implicit scope: Scope, flix: Flix): Symbol.VarSym =
+    Symbol.freshVarSym(name + Flix.Delimiter + flix.genSym.freshId(), boundBy, loc)
+
 }

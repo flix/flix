@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Denotation, Fixity, Polarity, Source}
+import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Constant, Denotation, Fixity, Polarity, Source}
 import ca.uwaterloo.flix.util.collection.MultiMap
 
 import java.lang.reflect.{Constructor, Field, Method}
@@ -101,7 +101,7 @@ object ResolvedAst {
 
     case class Use(sym: Symbol, alias: Name.Ident, exp: Expr, loc: SourceLocation) extends Expr
 
-    case class Cst(cst: Ast.Constant, loc: SourceLocation) extends Expr
+    case class Cst(cst: Constant, loc: SourceLocation) extends Expr
 
     case class Apply(exp: Expr, exps: List[Expr], loc: SourceLocation) extends Expr
 
@@ -258,7 +258,7 @@ object ResolvedAst {
 
     case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends Pattern
 
-    case class Cst(cst: Ast.Constant, loc: SourceLocation) extends Pattern
+    case class Cst(cst: Constant, loc: SourceLocation) extends Pattern
 
     case class Tag(sym: Ast.CaseSymUse, pat: Pattern, loc: SourceLocation) extends Pattern
 
@@ -287,6 +287,8 @@ object ResolvedAst {
     case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends VarOrWild
 
     case class Tag(sym: Ast.RestrictableCaseSymUse, pat: List[VarOrWild], loc: SourceLocation) extends RestrictableChoosePattern
+
+    case class Error(loc: SourceLocation) extends VarOrWild
 
   }
 
@@ -332,11 +334,11 @@ object ResolvedAst {
 
   }
 
-  case class JvmMethod(ident: Name.Ident, fparams: Seq[FormalParam], exp: Expr, tpe: UnkindedType, eff: Option[UnkindedType], loc: SourceLocation)
+  case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], exp: Expr, tpe: UnkindedType, eff: Option[UnkindedType], loc: SourceLocation)
 
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: Expr)
 
-  case class HandlerRule(op: Ast.OpSymUse, fparams: Seq[FormalParam], exp: Expr)
+  case class HandlerRule(op: Ast.OpSymUse, fparams: List[FormalParam], exp: Expr)
 
   case class RestrictableChooseRule(pat: RestrictableChoosePattern, exp: Expr)
 
