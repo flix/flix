@@ -133,8 +133,7 @@ object TypeReduction {
         case JavaConstructorResolution.AmbiguousConstructor(constructors) =>
           Result.Err(TypeError.AmbiguousConstructor(clazz, tpes, constructors, renv0, loc))
         case JavaConstructorResolution.NotFound =>
-          // TODO INTEROP: fill in candidate methods
-          Result.Err(TypeError.ConstructorNotFound(clazz, tpes, List(), renv0, loc))
+          Result.Err(TypeError.ConstructorNotFound(clazz, tpes, renv0, loc))
         case JavaConstructorResolution.UnresolvedTypes =>
           Result.Ok(cons, false)
       }
@@ -160,8 +159,7 @@ object TypeReduction {
         case JavaMethodResolution.AmbiguousMethod(methods) =>
           Result.Err(TypeError.AmbiguousStaticMethod(clazz, name, tpes, methods, renv0, loc))
         case JavaMethodResolution.NotFound =>
-          // TODO INTEROP: fill in candidate methods
-          Result.Err(TypeError.StaticMethodNotFound(clazz, name, tpes, List(), renv0, loc))
+          Result.Err(TypeError.StaticMethodNotFound(clazz, name, tpes, renv0, loc))
         case JavaMethodResolution.UnresolvedTypes =>
           Result.Ok((meth, false))
       }
