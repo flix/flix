@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, VarText}
 import ca.uwaterloo.flix.language.ast.NamedAst.{Declaration, RestrictableChoosePattern}
+import ca.uwaterloo.flix.language.ast.ResolvedAst.Expr
 import ca.uwaterloo.flix.language.ast.ResolvedAst.Pattern.Record
 import ca.uwaterloo.flix.language.ast.UnkindedType.*
 import ca.uwaterloo.flix.language.ast.shared.{Constant, Scope}
@@ -1780,7 +1781,9 @@ private def visitSig(sig: NamedAst.Declaration.Sig, loc: SourceLocation)(implici
     */
 private def visitApplySig(sig: NamedAst.Declaration.Sig, exps: List[NamedAst.Expr], env: ListMap[String, Resolution], innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Expr, ResolutionError] = {
     mapN(traverse(exps)(resolveExp(_, env))) {
-      es => visitApplyToplevelFull(args => ResolvedAst.Expr.Apply(ResolvedAst.Expr.Sig(sig.sym, innerLoc), args, outerLoc), sig.spec.fparams.length, es, outerLoc)
+      es =>
+        val base = args => ResolvedAst.Expr.Apply(ResolvedAst.Expr.Sig(sig.sym, innerLoc), args, outerLoc)
+        visitApplyToplevelFull(base, sig.spec.fparams.length, es, outerLoc)
     }
   }
 
