@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Denotation, Fixity, Polarity, Source}
+import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Constant, Denotation, Fixity, Polarity, Source}
 import ca.uwaterloo.flix.util.collection.MultiMap
 
 import java.lang.reflect.{Constructor, Field, Method}
@@ -101,7 +101,7 @@ object ResolvedAst {
 
     case class Use(sym: Symbol, alias: Name.Ident, exp: Expr, loc: SourceLocation) extends Expr
 
-    case class Cst(cst: Ast.Constant, loc: SourceLocation) extends Expr
+    case class Cst(cst: Constant, loc: SourceLocation) extends Expr
 
     case class Apply(exp: Expr, exps: List[Expr], loc: SourceLocation) extends Expr
 
@@ -260,7 +260,7 @@ object ResolvedAst {
 
     case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends Pattern
 
-    case class Cst(cst: Ast.Constant, loc: SourceLocation) extends Pattern
+    case class Cst(cst: Constant, loc: SourceLocation) extends Pattern
 
     case class Tag(sym: Ast.CaseSymUse, pat: Pattern, loc: SourceLocation) extends Pattern
 

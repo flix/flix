@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.Ast.IntroducedBy
 import ca.uwaterloo.flix.language.ast.Purity.Pure
-import ca.uwaterloo.flix.language.ast.shared.Source
+import ca.uwaterloo.flix.language.ast.shared.{Constant, Source}
 import ca.uwaterloo.flix.language.phase.ClosureConv
 
 object SimplifiedAst {
@@ -48,7 +48,7 @@ object SimplifiedAst {
 
   object Expr {
 
-    case class Cst(cst: Ast.Constant, tpe: MonoType, loc: SourceLocation) extends Expr {
+    case class Cst(cst: Constant, tpe: MonoType, loc: SourceLocation) extends Expr {
       def purity: Purity = Pure
     }
 

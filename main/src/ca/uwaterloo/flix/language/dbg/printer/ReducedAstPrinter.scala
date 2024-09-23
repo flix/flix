@@ -28,14 +28,14 @@ object ReducedAstPrinter {
     */
   def print(root: ReducedAst.Root): DocAst.Program = {
     val defs = root.defs.values.map {
-      case ReducedAst.Def(ann, mod, sym, cparams, fparams, _, _, stmt, tpe, _, purity, _) =>
+      case ReducedAst.Def(ann, mod, sym, cparams, fparams, _, _, stmt, tpe, _, _) =>
         DocAst.Def(
           ann,
           mod,
           sym,
           (cparams ++ fparams).map(printFormalParam),
           MonoTypePrinter.print(tpe),
-          PurityPrinter.print(purity),
+          PurityPrinter.print(stmt.purity),
           print(stmt)
         )
     }.toList

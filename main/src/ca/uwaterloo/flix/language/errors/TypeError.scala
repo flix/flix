@@ -188,8 +188,9 @@ object TypeError {
         s"${m.getName}(${m.getParameterTypes.map(t => t.getName).mkString(", ")})"
       }
       s""">> Java method '$methodName' from type '${red(formatType(tpe0, Some(renv)))}' with arguments types (${tpes.mkString(", ")}) is ambiguous.
-         | Possible candidate methods:
-         |  ${methods.map(m => methodToStr(m)).mkString(", ")}
+         |
+         |Possible candidate methods:
+         |  - ${methods.map(m => methodToStr(m)).mkString("\n  - ")}
          |
          |${code(loc, s"Ambiguous Java method '${methodName}'")}
          |""".stripMargin

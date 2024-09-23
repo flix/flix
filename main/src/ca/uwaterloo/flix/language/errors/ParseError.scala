@@ -299,23 +299,5 @@ object ParseError {
     case i1 :: Nil => s"$i1"
     case i :: tail => s"$i, ${prettyJoin(tail)}"
   }
-
-  /**
-    * A __legacy__ error used to support the previous parser.
-    * TODO: Remove this with the previous parser.
-    */
-  case class Legacy(message: String, sctx: SyntacticContext, loc: SourceLocation) extends ParseError with Recoverable {
-    override val kind = s"Parse Error ($sctx)"
-
-    def summary: String = message
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s""">> $message
-         |
-         |${code(loc, s"Here")}
-         |""".stripMargin
-    }
-  }
 }
 

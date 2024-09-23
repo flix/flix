@@ -79,7 +79,7 @@ object Inliner {
     val fparams = def0.fparams.map {
       case (OccurrenceAst.FormalParam(sym, mod, tpe, loc), _) => LiftedAst.FormalParam(sym, mod, tpe, loc)
     }
-    LiftedAst.Def(def0.ann, def0.mod, def0.sym, cparams, fparams, convertedExp, def0.tpe, convertedExp.purity, def0.loc)
+    LiftedAst.Def(def0.ann, def0.mod, def0.sym, cparams, fparams, convertedExp, def0.tpe, def0.loc)
   }
 
   private def visitEffect(effect: OccurrenceAst.Effect): LiftedAst.Effect = effect match {
@@ -99,7 +99,7 @@ object Inliner {
     * Returns an expression of Monotype Expression
     */
   private def visitExp(exp0: OccurrenceAst.Expr, subst0: Map[Symbol.VarSym, Expr])(implicit root: OccurrenceAst.Root, flix: Flix): LiftedAst.Expr = exp0 match {
-    case OccurrenceAst.Expr.Constant(cst, tpe, loc) => LiftedAst.Expr.Cst(cst, tpe, loc)
+    case OccurrenceAst.Expr.Cst(cst, tpe, loc) => LiftedAst.Expr.Cst(cst, tpe, loc)
 
     case OccurrenceAst.Expr.Var(sym, tpe, loc) =>
       subst0.get(sym) match {
@@ -349,7 +349,7 @@ object Inliner {
     * Substitute variables in `exp0` for new fresh variables in `env0`
     */
   private def substituteExp(exp0: OccurrenceAst.Expr, env0: Map[Symbol.VarSym, Symbol.VarSym])(implicit root: OccurrenceAst.Root, flix: Flix): LiftedAst.Expr = exp0 match {
-    case OccurrenceAst.Expr.Constant(cst, tpe, loc) => LiftedAst.Expr.Cst(cst, tpe, loc)
+    case OccurrenceAst.Expr.Cst(cst, tpe, loc) => LiftedAst.Expr.Cst(cst, tpe, loc)
 
     case OccurrenceAst.Expr.Var(sym, tpe, loc) => LiftedAst.Expr.Var(env0.getOrElse(sym, sym), tpe, loc)
 
