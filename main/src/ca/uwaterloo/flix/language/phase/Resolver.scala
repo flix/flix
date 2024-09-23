@@ -1746,7 +1746,15 @@ private def visitDef(defn: NamedAst.Declaration.Def, loc: SourceLocation)(implic
     */
 private def visitApplyDef(defn: NamedAst.Declaration.Def, exps: List[NamedAst.Expr], env: ListMap[String, Resolver.Resolution], innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Expr, ResolutionError] = {
     mapN(traverse(exps)(resolveExp(_, env))) {
+
+      // Case 1: We have enough arguments (exps) to fully apply `defn`
+      // so we can just construct an `ApplyDef` node directly without
+      // introducing any lambdas or currying arguments.
       case es if defn.spec.fparams.length == es.length => ResolvedAst.Expr.ApplyDef(Ast.DefSymUse(defn.sym, innerLoc), es, outerLoc)
+
+      // Case 2: There is a difference in the expected number of arguments
+      // and the actual number of arguments so we have to introduce
+      // lambdas or introduce currying.
       case es => visitApplyToplevelFull(ResolvedAst.Expr.Def(defn.sym, innerLoc), defn.spec.fparams.length, es, outerLoc)
     }
   }
