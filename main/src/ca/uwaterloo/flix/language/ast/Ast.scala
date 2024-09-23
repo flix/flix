@@ -16,6 +16,8 @@
 
 package ca.uwaterloo.flix.language.ast
 
+import ca.uwaterloo.flix.language.ast
+
 import ca.uwaterloo.flix.language.ast.shared.{Annotation, Denotation, Fixity, Polarity}
 import ca.uwaterloo.flix.language.errors.ResolutionError
 
@@ -548,23 +550,13 @@ object Ast {
 
       case object Enum extends Decl
 
-      case object EnumHeader extends Decl
-
       case object Instance extends Decl
-
-      case object InstanceHeader extends Decl
 
       case object Module extends Decl
 
-      case object ModuleHeader extends Decl
-
       case object Struct extends Decl
 
-      case object StructHeader extends Decl
-
       case object Trait extends Decl
-
-      case object TraitHeader extends Decl
 
       case object Type extends Decl
     }
@@ -576,7 +568,7 @@ object Ast {
 
       case object Do extends Expr
 
-      case class InvokeMethod(tpe: ca.uwaterloo.flix.language.ast.Type, name: Name.Ident) extends Expr
+      case class InvokeMethod(tpe: ca.uwaterloo.flix.language.ast.Type, name: ast.Name.Ident) extends Expr
 
       case class StaticFieldOrMethod(e: ResolutionError.UndefinedJvmStaticField) extends Expr
 
@@ -586,6 +578,10 @@ object Ast {
     }
 
     case object Import extends SyntacticContext
+
+    case object Keyword extends SyntacticContext
+
+    case object Name extends SyntacticContext
 
     sealed trait Pat extends SyntacticContext
 

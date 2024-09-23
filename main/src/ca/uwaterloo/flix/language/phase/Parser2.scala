@@ -879,8 +879,8 @@ object Parser2 {
 
     private def moduleDecl(mark: Mark.Opened, nestingLevel: Int = 0)(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.KeywordMod))
-      expect(TokenKind.KeywordMod, SyntacticContext.Decl.ModuleHeader)
-      name(NAME_MODULE, allowQualified = true, context = SyntacticContext.Decl.ModuleHeader)
+      expect(TokenKind.KeywordMod, SyntacticContext.Keyword)
+      name(NAME_MODULE, allowQualified = true, context = SyntacticContext.Name)
       expect(TokenKind.CurlyL, SyntacticContext.Decl.Module)
       usesOrImports()
       var continue = true
@@ -905,8 +905,8 @@ object Parser2 {
 
     private def traitDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.KeywordTrait))
-      expect(TokenKind.KeywordTrait, SyntacticContext.Decl.TraitHeader)
-      name(NAME_DEFINITION, context = SyntacticContext.Decl.TraitHeader)
+      expect(TokenKind.KeywordTrait, SyntacticContext.Keyword)
+      name(NAME_DEFINITION, context = SyntacticContext.Name)
       Type.parameters()
       if (at(TokenKind.KeywordWith)) {
         Type.constraints()
@@ -941,8 +941,8 @@ object Parser2 {
 
     private def instanceDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.KeywordInstance))
-      expect(TokenKind.KeywordInstance, SyntacticContext.Decl.InstanceHeader)
-      name(NAME_DEFINITION, allowQualified = true, context = SyntacticContext.Decl.InstanceHeader)
+      expect(TokenKind.KeywordInstance, SyntacticContext.Keyword)
+      name(NAME_DEFINITION, allowQualified = true, context = SyntacticContext.Name)
       if (!eat(TokenKind.BracketL)) {
         // Produce an error for missing type parameter.
         expect(TokenKind.BracketL, SyntacticContext.Decl.Instance, hint = Some("Instances must have a type parameter."))
