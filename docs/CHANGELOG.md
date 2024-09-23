@@ -1,5 +1,8 @@
 # Changelog
 
+Version 0.51.0:
+- Language: Added support for mutable structs (thanks Joseph!)
+
 Version 0.50.0:
 - Language: Introduced `redef` as a short-hand to redefine functions in trait instances (thanks Jakob!)
 - Compiler: Significantly improved performance of auto-complete (thanks Magnus!)
