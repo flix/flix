@@ -120,6 +120,10 @@ object FastSetUnification {
       * [[Compl]], [[Union]], and [[Inter]] are connectives.
       */
     final def size: Int = {
+      // This is a worklist algorithm (instead of a recursive algorithm) because:
+      // - It doesn't use the stack: error reporting will not be overridden by stack overflow.
+      // - The complexity is self-contained so maintenance cost is lower.
+      // - The cost of bugs is low since size is not used for correctness.
       var workList = List(this)
       var counter = 0
 
