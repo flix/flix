@@ -330,9 +330,9 @@ object ClosureConv {
         val as = args map visitExp
         Expr.ApplyClo(e, as, tpe, purity, loc)
 
-      case Expr.ApplyDef(sym, args, tpe, purity, loc) =>
+      case Expr.ApplyDef(symUse, args, tpe, purity, loc) =>
         val as = args map visitExp
-        Expr.ApplyDef(sym, as, tpe, purity, loc)
+        Expr.ApplyDef(symUse, as, tpe, purity, loc)
 
       case Expr.Apply(exp, args, tpe, purity, loc) =>
         val e = visitExp(exp)

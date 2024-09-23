@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, VarText}
 import ca.uwaterloo.flix.language.ast.NamedAst.{Declaration, RestrictableChoosePattern}
+import ca.uwaterloo.flix.language.ast.ResolvedAst.Expr
 import ca.uwaterloo.flix.language.ast.ResolvedAst.Pattern.Record
 import ca.uwaterloo.flix.language.ast.UnkindedType.*
 import ca.uwaterloo.flix.language.ast.shared.{Constant, Scope}
@@ -1702,14 +1703,14 @@ private def visitApply(exp: NamedAst.Expr.Apply, env0: ListMap[String, Resolutio
     *   - ` f(a,b)  ===> f(a, b)`
     *   - `f(a,b,c) ===> f(a, b)(c)`
     */
-private def visitApplyToplevelFull(base: ResolvedAst.Expr, arity: Int, exps: List[ResolvedAst.Expr], loc: SourceLocation)(implicit scope: Scope, flix: Flix): ResolvedAst.Expr = {
+  private def visitApplyToplevelFull(base: List[ResolvedAst.Expr] => ResolvedAst.Expr, arity: Int, exps: List[ResolvedAst.Expr], loc: SourceLocation)(implicit scope: Scope, flix: Flix): ResolvedAst.Expr = {
     val (directArgs, cloArgs) = exps.splitAt(arity)
 
     val fparamsPadding = mkFreshFparams(arity - directArgs.length, loc.asSynthetic)
     val argsPadding = fparamsPadding.map(fp => ResolvedAst.Expr.Var(fp.sym, loc.asSynthetic))
 
     val fullArgs = directArgs ++ argsPadding
-    val fullDefApplication = ResolvedAst.Expr.Apply(base, fullArgs, loc)
+    val fullDefApplication = base(fullArgs)
 
     // The ordering of lambdas and closure application doesn't matter,
     // `fparamsPadding.isEmpty` iff `cloArgs.nonEmpty`.
@@ -1730,7 +1731,8 @@ private def visitApplyToplevelFull(base: ResolvedAst.Expr, arity: Int, exps: Lis
     *   - `Int32.add ===> x -> y -> Int32.add(x, y)`
     */
 private def visitDef(defn: NamedAst.Declaration.Def, loc: SourceLocation)(implicit scope: Scope, flix: Flix): ResolvedAst.Expr = {
-    visitApplyToplevelFull(ResolvedAst.Expr.Def(defn.sym, loc), defn.spec.fparams.length, Nil, loc.asSynthetic)
+  val base = es => ResolvedAst.Expr.ApplyDef(Ast.DefSymUse(defn.sym, loc), es, loc.asSynthetic)
+  visitApplyToplevelFull(base, defn.spec.fparams.length, Nil, loc.asSynthetic)
   }
 
   /**
@@ -1744,7 +1746,20 @@ private def visitDef(defn: NamedAst.Declaration.Def, loc: SourceLocation)(implic
     */
 private def visitApplyDef(defn: NamedAst.Declaration.Def, exps: List[NamedAst.Expr], env: ListMap[String, Resolver.Resolution], innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Expr, ResolutionError] = {
     mapN(traverse(exps)(resolveExp(_, env))) {
-      es => visitApplyToplevelFull(ResolvedAst.Expr.Def(defn.sym, innerLoc), defn.spec.fparams.length, es, outerLoc)
+
+      // Case 1: We have enough arguments (exps) to fully apply `defn`
+      // so we can just construct an `ApplyDef` node directly without
+      // introducing any lambdas or currying arguments.
+      case es if defn.spec.fparams.length == es.length =>
+        ResolvedAst.Expr.ApplyDef(Ast.DefSymUse(defn.sym, innerLoc), es, outerLoc)
+
+      // Case 2: There is a difference in the expected number of arguments
+      // and the actual number of arguments so we have to introduce
+      // lambdas or introduce currying.
+      // The inner-most expression is still an ApplyDef, however.
+      case es =>
+        val base = args => ResolvedAst.Expr.ApplyDef(Ast.DefSymUse(defn.sym, innerLoc), args, outerLoc)
+        visitApplyToplevelFull(base, defn.spec.fparams.length, es, outerLoc)
     }
   }
 
@@ -1754,7 +1769,8 @@ private def visitApplyDef(defn: NamedAst.Declaration.Def, exps: List[NamedAst.Ex
     *   - `Add.add ===> x -> y -> Add.add(x, y)`
     */
 private def visitSig(sig: NamedAst.Declaration.Sig, loc: SourceLocation)(implicit scope: Scope, flix: Flix): ResolvedAst.Expr = {
-    visitApplyToplevelFull(ResolvedAst.Expr.Sig(sig.sym, loc), sig.spec.fparams.length, Nil, loc.asSynthetic)
+  val base = es => ResolvedAst.Expr.Apply(ResolvedAst.Expr.Sig(sig.sym, loc), es, loc.asSynthetic)
+  visitApplyToplevelFull(base, sig.spec.fparams.length, Nil, loc.asSynthetic)
   }
 
   /**
@@ -1768,7 +1784,9 @@ private def visitSig(sig: NamedAst.Declaration.Sig, loc: SourceLocation)(implici
     */
 private def visitApplySig(sig: NamedAst.Declaration.Sig, exps: List[NamedAst.Expr], env: ListMap[String, Resolution], innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Expr, ResolutionError] = {
     mapN(traverse(exps)(resolveExp(_, env))) {
-      es => visitApplyToplevelFull(ResolvedAst.Expr.Sig(sig.sym, innerLoc), sig.spec.fparams.length, es, outerLoc)
+      es =>
+        val base = args => ResolvedAst.Expr.Apply(ResolvedAst.Expr.Sig(sig.sym, innerLoc), args, outerLoc)
+        visitApplyToplevelFull(base, sig.spec.fparams.length, es, outerLoc)
     }
   }
 

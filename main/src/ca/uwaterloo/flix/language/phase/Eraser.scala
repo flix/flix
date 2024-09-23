@@ -130,8 +130,8 @@ object Eraser {
     case ApplyClo(exp, exps, ct, tpe, purity, loc) =>
       val ac = ApplyClo(visitExp(exp), exps.map(visitExp), ct, box(tpe), purity, loc)
       castExp(unboxExp(ac, erase(tpe), purity, loc), visitType(tpe), purity, loc)
-    case ApplyDef(sym, exps, ct, tpe, purity, loc) =>
-      val ad = ApplyDef(sym, exps.map(visitExp), ct, box(tpe), purity, loc)
+    case ApplyDef(symUse, exps, ct, tpe, purity, loc) =>
+      val ad = ApplyDef(symUse, exps.map(visitExp), ct, box(tpe), purity, loc)
       castExp(unboxExp(ad, erase(tpe), purity, loc), visitType(tpe), purity, loc)
     case ApplySelfTail(sym, actuals, tpe, purity, loc) =>
       ApplySelfTail(sym, actuals.map(visitExp), visitType(tpe), purity, loc)
