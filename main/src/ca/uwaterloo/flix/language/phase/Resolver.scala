@@ -1733,7 +1733,8 @@ private def visitApply(exp: NamedAst.Expr.Apply, env0: ListMap[String, Resolutio
     *   - `Int32.add ===> x -> y -> Int32.add(x, y)`
     */
 private def visitDef(defn: NamedAst.Declaration.Def, loc: SourceLocation)(implicit scope: Scope, flix: Flix): ResolvedAst.Expr = {
-  visitApplyToplevelFull(es => ResolvedAst.Expr.ApplyDef(Ast.DefSymUse(defn.sym, loc), es, loc.asSynthetic), defn.spec.fparams.length, Nil, loc.asSynthetic)
+  val base = es => ResolvedAst.Expr.ApplyDef(Ast.DefSymUse(defn.sym, loc), es, loc.asSynthetic)
+  visitApplyToplevelFull(base, defn.spec.fparams.length, Nil, loc.asSynthetic)
   }
 
   /**
@@ -1751,13 +1752,16 @@ private def visitApplyDef(defn: NamedAst.Declaration.Def, exps: List[NamedAst.Ex
       // Case 1: We have enough arguments (exps) to fully apply `defn`
       // so we can just construct an `ApplyDef` node directly without
       // introducing any lambdas or currying arguments.
-      case es if defn.spec.fparams.length == es.length => ResolvedAst.Expr.ApplyDef(Ast.DefSymUse(defn.sym, innerLoc), es, outerLoc)
+      case es if defn.spec.fparams.length == es.length =>
+        ResolvedAst.Expr.ApplyDef(Ast.DefSymUse(defn.sym, innerLoc), es, outerLoc)
 
       // Case 2: There is a difference in the expected number of arguments
       // and the actual number of arguments so we have to introduce
       // lambdas or introduce currying.
       // The inner-most expression is still an ApplyDef, however.
-      case es => visitApplyToplevelFull(args => ResolvedAst.Expr.ApplyDef(Ast.DefSymUse(defn.sym, innerLoc), args, outerLoc), defn.spec.fparams.length, es, outerLoc)
+      case es =>
+        val base = args => ResolvedAst.Expr.ApplyDef(Ast.DefSymUse(defn.sym, innerLoc), args, outerLoc)
+        visitApplyToplevelFull(base, defn.spec.fparams.length, es, outerLoc)
     }
   }
 
@@ -1767,7 +1771,8 @@ private def visitApplyDef(defn: NamedAst.Declaration.Def, exps: List[NamedAst.Ex
     *   - `Add.add ===> x -> y -> Add.add(x, y)`
     */
 private def visitSig(sig: NamedAst.Declaration.Sig, loc: SourceLocation)(implicit scope: Scope, flix: Flix): ResolvedAst.Expr = {
-  visitApplyToplevelFull(es => ResolvedAst.Expr.Apply(ResolvedAst.Expr.Sig(sig.sym, loc), es, loc.asSynthetic), sig.spec.fparams.length, Nil, loc.asSynthetic)
+  val base = es => ResolvedAst.Expr.Apply(ResolvedAst.Expr.Sig(sig.sym, loc), es, loc.asSynthetic)
+  visitApplyToplevelFull(base, sig.spec.fparams.length, Nil, loc.asSynthetic)
   }
 
   /**
