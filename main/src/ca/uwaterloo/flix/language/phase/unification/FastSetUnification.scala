@@ -273,8 +273,11 @@ object FastSetUnification {
                                     other: List[SetFormula]
                                   ) extends SetFormula {
       if (CHECK_INVARIANTS) {
+        // `varsPos` and `varsNeg` are disjoint.
         assert(!varsPos.exists(varsNeg.contains), message = this.toString)
+        // `cstsPos` and `cstsNeg` are disjoint.
         assert(!cstsPos.exists(cstsNeg.contains), message = this.toString)
+        // There is always at least two subformulas.
         assert(subformulasOf(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other).take(2).toList.size == 2, message = this.toString)
       }
     }
@@ -313,8 +316,11 @@ object FastSetUnification {
                                     other: List[SetFormula]
                                   ) extends SetFormula {
       if (CHECK_INVARIANTS) {
+        // `varsPos` and `varsNeg` are disjoint.
         assert(!varsPos.exists(varsNeg.contains), message = this.toString)
+        // `cstsPos` and `cstsNeg` are disjoint.
         assert(!cstsPos.exists(cstsNeg.contains), message = this.toString)
+        // There is always at least two subformulas.
         assert(subformulasOf(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other).take(2).toList.sizeIs >= 2, message = this.toString)
       }
     }
