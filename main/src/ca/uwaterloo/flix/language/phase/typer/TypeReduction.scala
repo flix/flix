@@ -322,6 +322,17 @@ object TypeReduction {
       val arrType = phantomArr.getClass
       arrType
 
+    // Vectors
+    case Type.Apply(Type.Cst(TypeConstructor.Vector, _), elmType, _) =>
+      // Find the Java class of the element type.
+      val t = getJavaType(elmType)
+
+      // Find the Java class of the array type.
+      // See: https://stackoverflow.com/questions/1679421/how-to-get-the-array-class-for-a-given-class-in-java
+      val phantomArr = java.lang.reflect.Array.newInstance(t, 0)
+      val arrType = phantomArr.getClass
+      arrType
+
     // Functions
     case Type.Apply(Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Arrow(2), _), _, _), varArg, _), varRet, _) =>
       (varArg, varRet) match {
