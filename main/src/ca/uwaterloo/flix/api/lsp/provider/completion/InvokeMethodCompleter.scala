@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.MethodCompletion
 import ca.uwaterloo.flix.language.ast.{Name, Type, TypedAst}
-import ca.uwaterloo.flix.language.phase.Jvm
+import ca.uwaterloo.flix.util.Jvm
 
 object InvokeMethodCompleter {
 
