@@ -127,9 +127,7 @@ object TypeReduction {
         case JavaConstructorResolution.Resolved(constructor) =>
           val tpe = Type.Cst(TypeConstructor.JvmConstructor(constructor), loc)
           Result.Ok((tpe, true))
-        case JavaConstructorResolution.AmbiguousConstructor(constructors) =>
-          Result.Err(TypeError.AmbiguousConstructor(clazz, tpes, constructors, renv0, loc))
-        case JavaConstructorResolution.NotFound =>
+       case JavaConstructorResolution.NotFound =>
           Result.Err(TypeError.ConstructorNotFound(clazz, tpes, renv0, loc))
         case JavaConstructorResolution.UnresolvedTypes =>
           Result.Ok(cons, false)
@@ -140,8 +138,6 @@ object TypeReduction {
         case JavaMethodResolution.Resolved(method) =>
           val tpe = Type.Cst(TypeConstructor.JvmMethod(method), loc)
           Result.Ok((tpe, true))
-        case JavaMethodResolution.AmbiguousMethod(methods) =>
-          Result.Err(TypeError.AmbiguousMethod(name, tpe, tpes, methods, renv0, loc))
         case JavaMethodResolution.NotFound =>
           Result.Err(TypeError.MethodNotFound(name, tpe, tpes, loc))
         case JavaMethodResolution.UnresolvedTypes =>
@@ -153,9 +149,7 @@ object TypeReduction {
         case JavaMethodResolution.Resolved(method) =>
           val tpe = Type.Cst(TypeConstructor.JvmMethod(method), loc)
           Result.Ok((tpe, true))
-        case JavaMethodResolution.AmbiguousMethod(methods) =>
-          Result.Err(TypeError.AmbiguousStaticMethod(clazz, name, tpes, methods, renv0, loc))
-        case JavaMethodResolution.NotFound =>
+         case JavaMethodResolution.NotFound =>
           Result.Err(TypeError.StaticMethodNotFound(clazz, name, tpes, renv0, loc))
         case JavaMethodResolution.UnresolvedTypes =>
           Result.Ok((meth, false))
@@ -337,9 +331,6 @@ object TypeReduction {
     /** One matching method. */
     case class Resolved(method: Method) extends JavaMethodResolution
 
-    /** Many matching methods */
-    case class AmbiguousMethod(methods: List[Method]) extends JavaMethodResolution
-
     /** No matching method. */
     case object NotFound extends JavaMethodResolution
 
@@ -358,9 +349,6 @@ object TypeReduction {
 
     /** One matching constructor. */
     case class Resolved(constructor: Constructor[?]) extends JavaConstructorResolution
-
-    /** Many matching constructors. */
-    case class AmbiguousConstructor(constructors: List[Constructor[?]]) extends JavaConstructorResolution
 
     /** No matching constructor. */
     case object NotFound extends JavaConstructorResolution
