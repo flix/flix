@@ -1582,7 +1582,6 @@ object Kinder {
     case UnkindedType.RestrictableEnum(sym, _) =>
       val tyconKind = getRestrictableEnumKind(root.restrictableEnums(sym))
       val args = Kind.kindArgs(tyconKind)
-
       tpe.typeArguments.zip(args).foldLeft(KindEnv.empty) {
         case (acc, (targ, kind)) => acc ++ inferType(targ, kind, kenv0, taenv, root)
       }
