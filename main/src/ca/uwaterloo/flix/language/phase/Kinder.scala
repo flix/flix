@@ -77,10 +77,10 @@ object Kinder {
 
     val instancesVal = ParOps.parTraverseValues(root.instances)(traverse(_)(i => visitInstance(i, taenv, root)))
 
-    val effectsVal = ParOps.parTraverseValues(root.effects)(visitEffect(_, taenv, root))
+    val effects = ParOps.parMapValues(root.effects)(visitEffect(_, taenv, root))
 
-    mapN(structsVal, traitsVal, defsVal, instancesVal, effectsVal) {
-      case (structs, traits, defs, instances, effects) =>
+    mapN(structsVal, traitsVal, defsVal, instancesVal) {
+      case (structs, traits, defs, instances) =>
         KindedAst.Root(traits, instances, defs, enums, structs, restrictableEnums, effects, taenv, root.uses, root.entryPoint, root.sources, root.names)
     }.withSoftFailures(sctx.errors.asScala)
   }(DebugValidation())
@@ -245,10 +245,10 @@ object Kinder {
   /**
     * Performs kinding on the given effect declaration.
     */
-  private def visitEffect(eff: ResolvedAst.Declaration.Effect, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[KindedAst.Effect, KindError] = eff match {
+  private def visitEffect(eff: ResolvedAst.Declaration.Effect, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): KindedAst.Effect = eff match {
     case ResolvedAst.Declaration.Effect(doc, ann, mod, sym, ops0, loc) =>
       val ops = ops0.map(visitOp(_, taenv, root))
-      Validation.success(KindedAst.Effect(doc, ann, mod, sym, ops, loc))
+      KindedAst.Effect(doc, ann, mod, sym, ops, loc)
   }
 
   /**
