@@ -25,7 +25,6 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, Jvm, Result}
 import org.apache.commons.lang3.reflect.{ConstructorUtils, MethodUtils}
 
 import java.lang.reflect.{Constructor, Field, Method}
-import scala.annotation.tailrec
 
 object TypeReduction {
 
@@ -124,7 +123,7 @@ object TypeReduction {
       }
 
     case cons@Type.UnresolvedJvmType(Type.JvmMember.JvmConstructor(clazz, tpes), _) =>
-      lookupConstructor(clazz, tpes, loc) match {
+      lookupConstructor(clazz, tpes) match {
         case JavaConstructorResolution.Resolved(constructor) =>
           val tpe = Type.Cst(TypeConstructor.JvmConstructor(constructor), loc)
           Result.Ok((tpe, true))
@@ -137,7 +136,7 @@ object TypeReduction {
       }
 
     case meth@Type.UnresolvedJvmType(Type.JvmMember.JvmMethod(tpe, name, tpes), _) =>
-      lookupMethod(tpe, name.name, tpes, loc) match {
+      lookupMethod(tpe, name.name, tpes) match {
         case JavaMethodResolution.Resolved(method) =>
           val tpe = Type.Cst(TypeConstructor.JvmMethod(method), loc)
           Result.Ok((tpe, true))
@@ -150,7 +149,7 @@ object TypeReduction {
       }
 
     case meth@Type.UnresolvedJvmType(Type.JvmMember.JvmStaticMethod(clazz, name, tpes), _) =>
-      lookupStaticMethod(clazz, name.name, tpes, loc) match {
+      lookupStaticMethod(clazz, name.name, tpes) match {
         case JavaMethodResolution.Resolved(method) =>
           val tpe = Type.Cst(TypeConstructor.JvmMethod(method), loc)
           Result.Ok((tpe, true))
@@ -197,7 +196,7 @@ object TypeReduction {
   }
 
   /** Tries to find a constructor of `clazz` that takes arguments of type `ts`. */
-  private def lookupConstructor(clazz: Class[?], ts: List[Type], loc: SourceLocation): JavaConstructorResolution = {
+  private def lookupConstructor(clazz: Class[?], ts: List[Type]): JavaConstructorResolution = {
     val typesAreKnown = ts.forall(isKnown)
     if (!typesAreKnown) return JavaConstructorResolution.UnresolvedTypes
 
@@ -211,10 +210,6 @@ object TypeReduction {
       JavaConstructorResolution.NotFound
     }
   }
-
-  /** Returns `true` if `constructor` can be called with arguments types in `ts` according to subtyping. */
-  private def isCandidateConstructor(constructor: Constructor[?], ts: List[Type]): Boolean =
-    subtypeArguments(constructor.getParameterTypes, ts)
 
   /** A lookup result of a Java method. */
   private sealed trait JavaMethodResolution
@@ -239,25 +234,26 @@ object TypeReduction {
   }
 
   /** Tries to find a method of `thisObj` that takes arguments of type `ts`. */
-  private def lookupMethod(thisObj: Type, methodName: String, ts: List[Type], loc: SourceLocation): JavaMethodResolution = {
+  private def lookupMethod(thisObj: Type, methodName: String, ts: List[Type]): JavaMethodResolution = {
     val typesAreKnown = isKnown(thisObj) && ts.forall(isKnown)
     if (!typesAreKnown) return JavaMethodResolution.UnresolvedTypes
 
     Type.classFromFlixType(thisObj) match {
-      case Some(clazz) => retrieveMethod(clazz, methodName, ts, static = false, loc)
+      case Some(clazz) => retrieveMethod(clazz, methodName, ts, static = false)
       case None => JavaMethodResolution.NotFound
     }
   }
 
   /** Tries to find a static method of `clazz` that takes arguments of type `ts`. */
-  private def lookupStaticMethod(clazz: Class[?], methodName: String, ts: List[Type], loc: SourceLocation): JavaMethodResolution = {
+  private def lookupStaticMethod(clazz: Class[?], methodName: String, ts: List[Type]): JavaMethodResolution = {
     val typesAreKnown = ts.forall(isKnown)
     if (!typesAreKnown) return JavaMethodResolution.UnresolvedTypes
-    retrieveMethod(clazz, methodName, ts, static = true, loc)
+
+    retrieveMethod(clazz, methodName, ts, static = true)
   }
 
   /** Tries to find a static/dynamic method of `clazz` that takes arguments of type `ts`. */
-  private def retrieveMethod(clazz: Class[?], methodName: String, ts: List[Type], static: Boolean, loc: SourceLocation): JavaMethodResolution = {
+  private def retrieveMethod(clazz: Class[?], methodName: String, ts: List[Type], static: Boolean): JavaMethodResolution = {
     val tparams = ts.map(getJavaType)
     val m = MethodUtils.getMatchingAccessibleMethod(clazz, methodName, tparams *)
     // We check if we found a method and if its static flag matches.
@@ -334,16 +330,6 @@ object TypeReduction {
     case _ => classOf[Object] // default
   }
 
-  /** Returns `true` if the `arguments` types exactly match the `params` types. */
-  private def exactArguments(params: Iterable[Class[?]], arguments: Iterable[Type]): Boolean = {
-    params.corresponds(arguments) { case (p, a) => Type.getFlixType(p) == a }
-  }
-
-  /** Returns `true` if the `arguments` types are subtypes of the `params` types. */
-  private def subtypeArguments(params: Iterable[Class[?]], arguments: Iterable[Type]): Boolean = {
-    params.corresponds(arguments) { case (p, a) => isSubtype(a, Type.getFlixType(p)) }
-  }
-
   /** A lookup result of a Java field. */
   private sealed trait JavaFieldResolution
 
@@ -372,91 +358,6 @@ object TypeReduction {
       field <- Jvm.getField(clazz, fieldName, static = false)
     } yield JavaFieldResolution.Resolved(field)
     opt.getOrElse(JavaFieldResolution.NotFound)
-  }
-
-  /**
-    * Returns `true` if `tpe1` is a Java subtype of `tpe2`.
-    *
-    * OBS: the given types must be known according to [[isKnown]].
-    */
-  @tailrec
-  private def isSubtype(tpe1: Type, tpe2: Type): Boolean = {
-    (tpe1, tpe2) match {
-      case (t1, t2) if t1 == t2 => true
-      // Base types
-      case (Type.Cst(TypeConstructor.Native(clazz1), _), Type.Cst(TypeConstructor.Native(clazz2), _)) =>
-        clazz2.isAssignableFrom(clazz1)
-      case (Type.Cst(TypeConstructor.Unit, _), Type.Cst(TypeConstructor.Native(clazz), _)) =>
-        clazz == classOf[java.lang.Object]
-      case (Type.Cst(TypeConstructor.Str, _), Type.Cst(TypeConstructor.Native(clazz), _)) =>
-        clazz.isAssignableFrom(classOf[java.lang.String])
-      case (Type.Cst(TypeConstructor.BigInt, _), Type.Cst(TypeConstructor.Native(clazz), _)) =>
-        clazz.isAssignableFrom(classOf[java.math.BigInteger])
-      case (Type.Cst(TypeConstructor.BigDecimal, _), Type.Cst(TypeConstructor.Native(clazz), _)) =>
-        clazz.isAssignableFrom(classOf[java.math.BigDecimal])
-      case (Type.Cst(TypeConstructor.Regex, _), Type.Cst(TypeConstructor.Native(clazz), _)) =>
-        clazz.isAssignableFrom(classOf[java.util.regex.Pattern])
-      // Arrays
-      case (Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Array, _), elmType1, _), _, _),
-      Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Array, _), elmType2, _), _, _)) =>
-        isSubtype(elmType1, elmType2)
-      // Arrow to Java function interface
-      case (Type.Apply(Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Arrow(2), _), _, _), varArg, _), varRet, _), Type.Cst(TypeConstructor.Native(clazz), _)) =>
-        (varArg, varRet) match {
-          case (Type.Cst(tc1, _), Type.Cst(tc2, _)) =>
-            (tc1, tc2) match {
-              case (TypeConstructor.Int32, TypeConstructor.Unit) =>
-                clazz == classOf[java.util.function.IntConsumer]
-              case (TypeConstructor.Int32, TypeConstructor.Bool) =>
-                clazz == classOf[java.util.function.IntPredicate]
-              case (TypeConstructor.Int32, TypeConstructor.Int32) =>
-                clazz == classOf[java.util.function.IntUnaryOperator]
-              case (TypeConstructor.Int32, TypeConstructor.Native(obj)) if obj == classOf[Object] =>
-                clazz == classOf[java.util.function.IntFunction[Object]]
-              case (TypeConstructor.Float64, TypeConstructor.Unit) =>
-                clazz == classOf[java.util.function.DoubleConsumer]
-              case (TypeConstructor.Float64, TypeConstructor.Bool) =>
-                clazz == classOf[java.util.function.DoublePredicate]
-              case (TypeConstructor.Float64, TypeConstructor.Float64) =>
-                clazz == classOf[java.util.function.DoubleUnaryOperator]
-              case (TypeConstructor.Float64, TypeConstructor.Native(obj)) if obj == classOf[Object] =>
-                clazz == classOf[java.util.function.DoubleFunction[Object]]
-              case (TypeConstructor.Int64, TypeConstructor.Unit) =>
-                clazz == classOf[java.util.function.LongConsumer]
-              case (TypeConstructor.Int64, TypeConstructor.Bool) =>
-                clazz == classOf[java.util.function.LongPredicate]
-              case (TypeConstructor.Int64, TypeConstructor.Int64) =>
-                clazz == classOf[java.util.function.LongUnaryOperator]
-              case (TypeConstructor.Int64, TypeConstructor.Native(obj)) if obj == classOf[Object] =>
-                clazz == classOf[java.util.function.LongFunction[Object]]
-              case (TypeConstructor.Native(obj), TypeConstructor.Unit) if obj == classOf[Object] =>
-                clazz == classOf[java.util.function.Consumer[Object]]
-              case (TypeConstructor.Native(obj), TypeConstructor.Bool) if obj == classOf[Object] =>
-                clazz == classOf[java.util.function.Predicate[Object]]
-              case _ => false
-            }
-          case _ => false
-        }
-      // Null is a sub-type of every Java object and non-primitive Flix type
-      case (Type.Cst(TypeConstructor.Null, _), Type.Cst(TypeConstructor.Native(_), _)) => true
-      case (Type.Cst(TypeConstructor.Null, _), tpe) if !isPrimitive(tpe) => true
-      case _ => false
-    }
-  }
-
-  /** Returns `true` if the given `tpe` is a primitive type. */
-  private def isPrimitive(tpe: Type): Boolean = {
-    tpe match {
-      case Type.Cst(TypeConstructor.Bool, _) => true
-      case Type.Cst(TypeConstructor.Char, _) => true
-      case Type.Cst(TypeConstructor.Float32, _) => true
-      case Type.Cst(TypeConstructor.Float64, _) => true
-      case Type.Cst(TypeConstructor.Int8, _) => true
-      case Type.Cst(TypeConstructor.Int16, _) => true
-      case Type.Cst(TypeConstructor.Int32, _) => true
-      case Type.Cst(TypeConstructor.Int64, _) => true
-      case _ => false
-    }
   }
 
   /** Returns `true` if type is resolved enough for Java resolution. */
