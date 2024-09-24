@@ -1480,12 +1480,12 @@ object Kinder {
       val fparamKenvsVal = traverse(fparams)(inferFormalParam(_, kenv, taenv, root))
       val tpeKenv = inferType(tpe, Kind.Star, kenv, taenv, root)
       val effKenvs = eff0.map(inferType(_, Kind.Eff, kenv, taenv, root)).toList
-      val tconstrsKenvsVal = traverse(tconstrs)(inferTraitConstraint(_, kenv, taenv, root))
+      val tconstrsKenvs = tconstrs.map(inferTraitConstraint(_, kenv, taenv, root))
       val econstrsKenvs = econstrs.map(inferEqualityConstraint(_, kenv, taenv, root))
 
-      mapN(fparamKenvsVal, tconstrsKenvsVal) {
-        case (fparamKenvs, tconstrKenvs) =>
-          KindEnv.merge(fparamKenvs ::: tpeKenv :: effKenvs ::: tconstrKenvs ::: econstrsKenvs)
+      mapN(fparamKenvsVal) {
+        case fparamKenvs =>
+          KindEnv.merge(fparamKenvs ::: tpeKenv :: effKenvs ::: tconstrsKenvs ::: econstrsKenvs)
       }
 
   }
@@ -1503,10 +1503,10 @@ object Kinder {
   /**
     * Infers a kind environment from the given type constraint.
     */
-  private def inferTraitConstraint(tconstr: ResolvedAst.TraitConstraint, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[KindEnv, KindError] = tconstr match {
+  private def inferTraitConstraint(tconstr: ResolvedAst.TraitConstraint, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): KindEnv = tconstr match {
     case ResolvedAst.TraitConstraint(head, tpe, _) =>
       val kind = getTraitKind(root.traits(head.sym))
-      Validation.success(inferType(tpe, kind, kenv: KindEnv, taenv, root))
+      inferType(tpe, kind, kenv: KindEnv, taenv, root)
   }
 
   /**
