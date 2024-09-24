@@ -1706,8 +1706,8 @@ object Resolver {
   private def visitApplyToplevelFull(base: List[ResolvedAst.Expr] => ResolvedAst.Expr, arity: Int, exps: List[ResolvedAst.Expr], loc: SourceLocation)(implicit scope: Scope, flix: Flix): ResolvedAst.Expr = {
     val (directArgs, cloArgs) = exps.splitAt(arity)
 
-    val fparamsPadding = mkFreshFparams(arity - directArgs.length, outerLoc.asSynthetic)
-    val argsPadding = fparamsPadding.map(fp => ResolvedAst.Expr.Var(fp.sym, outerLoc.asSynthetic))
+    val fparamsPadding = mkFreshFparams(arity - directArgs.length, loc.asSynthetic)
+    val argsPadding = fparamsPadding.map(fp => ResolvedAst.Expr.Var(fp.sym, loc.asSynthetic))
 
     val fullArgs = directArgs ++ argsPadding
     val fullDefApplication = base(fullArgs)
@@ -1715,11 +1715,11 @@ object Resolver {
     // The ordering of lambdas and closure application doesn't matter,
     // `fparamsPadding.isEmpty` iff `cloArgs.nonEmpty`.
     val fullDefLambda = fparamsPadding.foldRight(fullDefApplication: ResolvedAst.Expr) {
-      case (fp, acc) => ResolvedAst.Expr.Lambda(fp, acc, outerLoc.asSynthetic)
+      case (fp, acc) => ResolvedAst.Expr.Lambda(fp, acc, loc.asSynthetic)
     }
 
     val closureApplication = cloArgs.foldLeft(fullDefLambda) {
-      case (acc, cloArg) => ResolvedAst.Expr.Apply(acc, List(cloArg), outerLoc)
+      case (acc, cloArg) => ResolvedAst.Expr.Apply(acc, List(cloArg), loc)
     }
 
     closureApplication
