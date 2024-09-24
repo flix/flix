@@ -457,18 +457,7 @@ object SetFormula {
           if (varsPos.contains(x)) return Empty
           varsNeg += x
         case Inter(elemPos1, cstsPos1, varsPos1, elemNeg1, cstsNeg1, varsNeg1, other1) =>
-          for (e <- elemPos1) {
-            elemPos0 = CofiniteIntSet.intersection(elemPos0, CofiniteIntSet.mkSet(e.s))
-            if (elemPos0.isEmpty) return Empty
-          }
-          for (x <- cstsPos1) {
-            if (cstsNeg.contains(x)) return Empty
-            cstsPos += x
-          }
-          for (x <- varsPos1) {
-            if (varsNeg.contains(x)) return Empty
-            varsPos += x
-          }
+          // To avoid wrapping negated subformulas, we process them inline
           for (e <- elemNeg1) {
             elemPos0 = CofiniteIntSet.difference(elemPos0, CofiniteIntSet.mkSet(e.s))
             if (elemPos0.isEmpty) return Empty
@@ -481,7 +470,8 @@ object SetFormula {
             if (varsPos.contains(x)) return Empty
             varsNeg += x
           }
-          workList = other1 ++ workList
+          // Add the positive subformulas to the work list
+          workList = elemPos1.toList ++ cstsPos1 ++ varsPos1 ++ other1 ++ workList
         case union@Union(_, _, _, _, _, _, _) =>
           other += union
         case compl@Compl(_) =>
@@ -595,18 +585,7 @@ object SetFormula {
           if (varsPos.contains(x)) return Univ
           varsNeg += x
         case Union(elemPos1, cstsPos1, varsPos1, elemNeg1, cstsNeg1, varsNeg1, other1) =>
-          for (e <- elemPos1) {
-            elemNeg0 = CofiniteIntSet.difference(elemNeg0, CofiniteIntSet.mkSet(e.s))
-            if (elemNeg0.isEmpty) return Univ
-          }
-          for (x <- cstsPos1) {
-            if (cstsNeg.contains(x)) return Univ
-            cstsPos += x
-          }
-          for (x <- varsPos1) {
-            if (varsNeg.contains(x)) return Univ
-            varsPos += x
-          }
+          // To avoid wrapping negated subformulas, we process them inline
           for (e <- elemNeg1) {
             elemNeg0 = CofiniteIntSet.intersection(elemNeg0, CofiniteIntSet.mkSet(e.s))
             if (elemNeg0.isEmpty) return Univ
@@ -619,7 +598,8 @@ object SetFormula {
             if (varsPos.contains(x)) return Univ
             varsNeg += x
           }
-          workList = other1 ++ workList
+          // Add the positive subformulas to the work list
+          workList = elemPos1.toList ++ cstsPos1 ++ varsPos1 ++ other1 ++ workList
         case inter@Inter(_, _, _, _, _, _, _) =>
           other += inter
         case compl@Compl(_) =>
