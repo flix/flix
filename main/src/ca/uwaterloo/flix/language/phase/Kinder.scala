@@ -304,12 +304,9 @@ object Kinder {
     */
   private def visitOp(op: ResolvedAst.Declaration.Op, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[KindedAst.Op, KindError] = op match {
     case ResolvedAst.Declaration.Op(sym, spec0) =>
-      val kenvVal = inferSpec(spec0, KindEnv.empty, taenv, root)
-      mapN(kenvVal) {
-        case kenv =>
-          val spec = visitSpec(spec0, Nil, kenv, taenv, root)
-          KindedAst.Op(sym, spec)
-      }
+      val kenv = inferSpec(spec0, KindEnv.empty, taenv, root)
+      val spec = visitSpec(spec0, Nil, kenv, taenv, root)
+      Validation.success(KindedAst.Op(sym, spec))
   }
 
   /**
@@ -1475,14 +1472,14 @@ object Kinder {
     * A KindEnvironment is provided in case some subset of of kinds have been declared (and therefore should not be inferred),
     * as in the case of a trait type parameter used in a sig or law.
     */
-  private def inferSpec(spec0: ResolvedAst.Spec, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[KindEnv, KindError] = spec0 match {
+  private def inferSpec(spec0: ResolvedAst.Spec, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): KindEnv = spec0 match {
     case ResolvedAst.Spec(_, _, _, _, fparams, tpe, eff0, tconstrs, econstrs, _) =>
       val fparamKenvs = fparams.map(inferFormalParam(_, kenv, taenv, root))
       val tpeKenv = inferType(tpe, Kind.Star, kenv, taenv, root)
       val effKenvs = eff0.map(inferType(_, Kind.Eff, kenv, taenv, root)).toList
       val tconstrsKenvs = tconstrs.map(inferTraitConstraint(_, kenv, taenv, root))
       val econstrsKenvs = econstrs.map(inferEqualityConstraint(_, kenv, taenv, root))
-      Validation.success(KindEnv.merge(fparamKenvs ::: tpeKenv :: effKenvs ::: tconstrsKenvs ::: econstrsKenvs))
+      KindEnv.merge(fparamKenvs ::: tpeKenv :: effKenvs ::: tconstrsKenvs ::: econstrsKenvs)
   }
 
   /**
@@ -1678,7 +1675,7 @@ object Kinder {
       val kenv2 = kenv0 ++ kenv1
 
       // Finally do inference on the spec under the new kenv
-      inferSpec(spec0, kenv2, taenv, root)
+      Validation.success(inferSpec(spec0, kenv2, taenv, root))
   }
 
   /**
