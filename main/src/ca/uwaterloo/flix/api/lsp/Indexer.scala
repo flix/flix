@@ -222,7 +222,7 @@ object Indexer {
       val parent = Entity.Exp(exp0)
       Index.occurrenceOf(exp0) ++ Index.useOf(sym, loc, parent) ++ Index.useOf(sym.trt, loc)
 
-    case Expr.Hole(_, _, _) =>
+    case Expr.Hole(_, _, _, _) =>
       Index.occurrenceOf(exp0)
 
     case Expr.HoleWithExp(exp, _, _, _) =>

@@ -136,7 +136,7 @@ object PatMatch {
       case Expr.Var(_, _, _) => Nil
       case Expr.Def(_, _, _) => Nil
       case Expr.Sig(_, _, _) => Nil
-      case Expr.Hole(_, _, _) => Nil
+      case Expr.Hole(_, _, _, _) => Nil
       case Expr.HoleWithExp(exp, _, _, _) => visitExp(exp)
       case Expr.OpenAs(_, exp, _, _) => visitExp(exp)
       case Expr.Use(_, _, exp, _) => visitExp(exp)

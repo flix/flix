@@ -336,7 +336,7 @@ object SemanticTokensProvider {
       val t = SemanticToken(o, Nil, loc)
       Iterator(t)
 
-    case Expr.Hole(_, _, _) => Iterator.empty
+    case Expr.Hole(_, _, _, _) => Iterator.empty
 
     case Expr.HoleWithExp(exp, _, _, _) => visitExp(exp)
 

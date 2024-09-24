@@ -30,7 +30,7 @@ object TypedAstPrinter {
     case Expr.Var(sym, _, _) => printVar(sym)
     case Expr.Def(sym, _, _) => DocAst.Expr.Def(sym)
     case Expr.Sig(sym, tpe, loc) => DocAst.Expr.Unknown
-    case Expr.Hole(sym, _, _) => DocAst.Expr.Hole(sym)
+    case Expr.Hole(sym, _, _, _) => DocAst.Expr.Hole(sym)
     case Expr.HoleWithExp(exp, _, _, _) => DocAst.Expr.HoleWithExp(print(exp))
     case Expr.OpenAs(symUse, exp, tpe, loc) => DocAst.Expr.Unknown
     case Expr.Use(sym, alias, exp, loc) => DocAst.Expr.Unknown
