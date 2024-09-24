@@ -215,7 +215,7 @@ object TypeReduction {
       // We make one attempt on java.lang.Object.
       val classObj = classOf[java.lang.Object]
       val m = MethodUtils.getMatchingAccessibleMethod(classObj, methodName, tparams *)
-      if (m != null) {
+      if (m != null && Jvm.isStatic(m) == static) {
         // Case 2.1: We found the method on java.lang.Object.
         JavaMethodResolution.Resolved(m)
       } else {

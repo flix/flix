@@ -462,7 +462,7 @@ object TypeReconstruction {
         case Type.Cst(TypeConstructor.JvmMethod(method), loc) =>
           TypedAst.Expr.InvokeStaticMethod(method, es, returnTpe, eff, loc)
         case _ =>
-          TypedAst.Expr.Error(TypeError.UnresolvedMethod(loc), methodTpe, eff) // TODO INTEROP: UnresolvedStaticMethod ?
+          TypedAst.Expr.Error(TypeError.UnresolvedStaticMethod(loc), methodTpe, eff)
       }
 
     case KindedAst.Expr.GetField2(exp, _, jvar, tvar, evar, loc) =>
