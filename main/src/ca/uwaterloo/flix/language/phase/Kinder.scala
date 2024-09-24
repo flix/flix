@@ -247,10 +247,8 @@ object Kinder {
     */
   private def visitEffect(eff: ResolvedAst.Declaration.Effect, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[KindedAst.Effect, KindError] = eff match {
     case ResolvedAst.Declaration.Effect(doc, ann, mod, sym, ops0, loc) =>
-      val opsVal = traverse(ops0)(visitOp(_, taenv, root))
-      mapN(opsVal) {
-        case ops => KindedAst.Effect(doc, ann, mod, sym, ops, loc)
-      }
+      val ops = ops0.map(visitOp(_, taenv, root))
+      Validation.success(KindedAst.Effect(doc, ann, mod, sym, ops, loc))
   }
 
   /**
@@ -295,11 +293,11 @@ object Kinder {
   /**
     * Performs kinding on the given effect operation under the given kind environment.
     */
-  private def visitOp(op: ResolvedAst.Declaration.Op, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[KindedAst.Op, KindError] = op match {
+  private def visitOp(op: ResolvedAst.Declaration.Op, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): KindedAst.Op = op match {
     case ResolvedAst.Declaration.Op(sym, spec0) =>
       val kenv = inferSpec(spec0, KindEnv.empty, taenv, root)
       val spec = visitSpec(spec0, Nil, kenv, taenv, root)
-      Validation.success(KindedAst.Op(sym, spec))
+      KindedAst.Op(sym, spec)
   }
 
   /**
