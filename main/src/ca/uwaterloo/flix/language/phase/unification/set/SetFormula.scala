@@ -445,10 +445,10 @@ object SetFormula {
           if (cstsPos.contains(c)) return Empty
           cstsNeg += c
         case ElemSet(s) =>
-          elemPos0 = CofiniteIntSet.intersection(elemPos0, CofiniteIntSet.mkSet(s))
+          elemPos0 = CofiniteIntSet.intersection(elemPos0, s)
           if (elemPos0.isEmpty) return Empty
         case Compl(ElemSet(s)) =>
-          elemPos0 = CofiniteIntSet.difference(elemPos0, CofiniteIntSet.mkSet(s))
+          elemPos0 = CofiniteIntSet.difference(elemPos0, s)
           if (elemPos0.isEmpty) return Empty
         case x@Var(_) =>
           if (varsNeg.contains(x)) return Empty
@@ -459,7 +459,7 @@ object SetFormula {
         case Inter(elemPos1, cstsPos1, varsPos1, elemNeg1, cstsNeg1, varsNeg1, other1) =>
           // To avoid wrapping negated subformulas, we process them inline
           for (e <- elemNeg1) {
-            elemPos0 = CofiniteIntSet.difference(elemPos0, CofiniteIntSet.mkSet(e.s))
+            elemPos0 = CofiniteIntSet.difference(elemPos0, e.s)
             if (elemPos0.isEmpty) return Empty
           }
           for (x <- cstsNeg1) {
@@ -573,10 +573,10 @@ object SetFormula {
           if (cstsPos.contains(x)) return Univ
           cstsNeg += x
         case ElemSet(s) =>
-          elemNeg0 = CofiniteIntSet.difference(elemNeg0, CofiniteIntSet.mkSet(s))
+          elemNeg0 = CofiniteIntSet.difference(elemNeg0, s)
           if (elemNeg0.isEmpty) return Univ
         case Compl(ElemSet(s)) =>
-          elemNeg0 = CofiniteIntSet.intersection(elemNeg0, CofiniteIntSet.mkSet(s))
+          elemNeg0 = CofiniteIntSet.intersection(elemNeg0, s)
           if (elemNeg0.isEmpty) return Univ
         case x@Var(_) =>
           if (varsNeg.contains(x)) return Univ
@@ -587,7 +587,7 @@ object SetFormula {
         case Union(elemPos1, cstsPos1, varsPos1, elemNeg1, cstsNeg1, varsNeg1, other1) =>
           // To avoid wrapping negated subformulas, we process them inline
           for (e <- elemNeg1) {
-            elemNeg0 = CofiniteIntSet.intersection(elemNeg0, CofiniteIntSet.mkSet(e.s))
+            elemNeg0 = CofiniteIntSet.intersection(elemNeg0, e.s)
             if (elemNeg0.isEmpty) return Univ
           }
           for (x <- cstsNeg1) {
