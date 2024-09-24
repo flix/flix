@@ -356,11 +356,6 @@ object Ast {
   case class CaseSymUse(sym: Symbol.CaseSym, loc: SourceLocation)
 
   /**
-    * Represents a use of an defn sym.
-    */
-  case class DefSymUse(sym: Symbol.DefnSym, loc: SourceLocation)
-
-  /**
     * Represents a use of a struct field sym.
     */
   case class StructFieldSymUse(sym: Symbol.StructFieldSym, loc: SourceLocation)
@@ -379,7 +374,6 @@ object Ast {
     * Represents a use of a defn sym.
     */
   case class DefSymUse(sym: Symbol.DefnSym, loc: SourceLocation)
-
 
   /**
     * Represents a use of a class sym.
