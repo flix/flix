@@ -20,38 +20,28 @@ import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor, TypedAst}
 
 object FormatSignature {
 
-  /**
-    * Returns a markdown string for the signature of the given definition.
-    */
+  /** Returns a markdown string for the signature of the given definition. */
   def asMarkDown(defn: TypedAst.Def)(implicit flix: Flix): String = {
     formatSpec(defn.sym.name, defn.spec)
   }
 
-  /**
-    * Returns a markdown string for the signature of the given definition.
-    */
+  /** Returns a markdown string for the signature of the given definition. */
   def asMarkDown(sig: TypedAst.Sig)(implicit flix: Flix): String = {
     formatSpec(sig.sym.name, sig.spec)
   }
 
-  /**
-    * Returns a markdown string for the signature of the given definition.
-    */
+  /** Returns a markdown string for the signature of the given definition. */
   def asMarkDown(op: TypedAst.Op)(implicit flix: Flix): String = {
     formatSpec(op.sym.name, op.spec)
   }
 
-  /**
-    * Returns a markdown string for the given `name` and `spec`.
-    */
+  /** Returns a markdown string for the given `name` and `spec`. */
   private def formatSpec(name: String, spec: TypedAst.Spec)(implicit flix: Flix): String = {
     s"def $name(${formatFormalParams(spec.fparams)}): ${formatResultTypeAndEff(spec.retTpe, spec.eff)}"
 
   }
 
-  /**
-    * Returns a formatted string of the formal parameters.
-    */
+  /** Returns a formatted string of the formal parameters. */
   private def formatFormalParams(fparams0: List[TypedAst.FormalParam])(implicit flix: Flix): String = fparams0 match {
     // Case 1: Single Unit type parameter. This gets sugared into a nullary function: `foo()`
     case fparam :: Nil if fparam.tpe == Type.Unit => ""
@@ -64,9 +54,7 @@ object FormatSignature {
 
   }
 
-  /**
-    * Returns a formatted string of the result type and effect.
-    */
+  /** Returns a formatted string of the result type and effect. */
   private def formatResultTypeAndEff(tpe: Type, eff: Type)(implicit flix: Flix): String = eff match {
     case Type.Cst(TypeConstructor.Pure, _) => FormatType.formatType(tpe)
     case Type.Cst(TypeConstructor.Univ, _) => s"${FormatType.formatType(tpe)} \\ IO"

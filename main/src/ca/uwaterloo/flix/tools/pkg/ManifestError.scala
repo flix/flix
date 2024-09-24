@@ -20,9 +20,7 @@ import ca.uwaterloo.flix.util.Formatter
 import java.nio.file.Path
 
 sealed trait ManifestError {
-  /**
-    * Returns a human-readable and formatted string representation of this error.
-    */
+  /** Returns a human-readable and formatted string representation of this error. */
   def message(f: Formatter): String
 }
 

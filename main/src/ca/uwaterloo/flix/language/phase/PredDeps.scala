@@ -49,9 +49,7 @@ object PredDeps {
     Validation.success(root.copy(precedenceGraph = g))
   }(DebugValidation())
 
-  /**
-    * Returns the term types of the given relational or latticenal type.
-    */
+  /** Returns the term types of the given relational or latticenal type. */
   def termTypesAndDenotation(tpe: Type): (List[Type], Denotation) = eraseAliases(tpe) match {
     case Type.Apply(Type.Cst(tc, _), t, _) =>
       val den = tc match {
@@ -70,9 +68,7 @@ object PredDeps {
       (Nil, Denotation.Relational)
   }
 
-  /**
-    * Returns the labelled graph of the given expression `exp0`.
-    */
+  /** Returns the labelled graph of the given expression `exp0`. */
   private def visitExp(exp0: Expr): LabelledPrecedenceGraph = exp0 match {
     case Expr.Cst(_, _, _) => LabelledPrecedenceGraph.empty
 
@@ -341,9 +337,7 @@ object PredDeps {
       LabelledPrecedenceGraph.empty
   }
 
-  /**
-    * Returns the labelled graph of the given constraint `c0`.
-    */
+  /** Returns the labelled graph of the given constraint `c0`. */
   private def visitConstraint(c: Constraint): LabelledPrecedenceGraph = c match {
     case Constraint(_, Predicate.Head.Atom(headPred, den, _, headTpe, _), body0, _) =>
       val (headTerms, _) = termTypesAndDenotation(headTpe)

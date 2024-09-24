@@ -29,48 +29,30 @@ import com.github.rjeschke.txtmark
 import java.net.URLEncoder
 import scala.annotation.tailrec
 
-/**
-  * A phase that emits a JSON file for library documentation.
-  */
+/** A phase that emits a JSON file for library documentation. */
 object HtmlDocumentor {
 
-  /**
-    * The "Pseudo-name" of the root namespace displayed on the pages.
-    */
+  /** The "Pseudo-name" of the root namespace displayed on the pages. */
   val RootNS: String = "Prelude"
-  /**
-    * The "Pseudo-name" of the root namespace used for its file name.
-    */
+  /** The "Pseudo-name" of the root namespace used for its file name. */
   val RootFileName: String = "index"
 
-  /**
-    * The directory where to write the ouput.
-    */
+  /** The directory where to write the ouput. */
   val OutputDirectory: Path = Paths.get("./build/doc")
 
-  /**
-    * The path to the the stylesheet, relative to the resources folder.
-    */
+  /** The path to the the stylesheet, relative to the resources folder. */
   val Stylesheet: String = "/doc/styles.css"
 
-  /**
-    * The path to the the favicon, relative to the resources folder.
-    */
+  /** The path to the the favicon, relative to the resources folder. */
   val FavIcon: String = "/doc/favicon.png"
 
-  /**
-    * The path to the the script, relative to the resources folder.
-    */
+  /** The path to the the script, relative to the resources folder. */
   val Script: String = "/doc/index.js"
 
-  /**
-    * The path to the the icon directory, relative to the resources folder.
-    */
+  /** The path to the the icon directory, relative to the resources folder. */
   val Icons: String = "/doc/icons"
 
-  /**
-    * The root of the link to each file of the standard library.
-    */
+  /** The root of the link to each file of the standard library. */
   val LibraryGitHub: String = "https://github.com/flix/flix/blob/master/main/src/library/"
 
   def run(root: TypedAst.Root, packageModules: PackageModules)(implicit flix: Flix): Unit = {
@@ -82,9 +64,7 @@ object HtmlDocumentor {
     writeAssets()
   }
 
-  /**
-    * Documents the given `Module`, `mod`, and all of its contained items, writing the resulting HTML to disk.
-    */
+  /** Documents the given `Module`, `mod`, and all of its contained items, writing the resulting HTML to disk. */
   private def visitMod(mod: Module)(implicit flix: Flix): Unit = {
     val out = documentModule(mod)
     writeDocFile(mod.fileName, out)
@@ -95,9 +75,7 @@ object HtmlDocumentor {
     mod.enums.foreach(visitEnum)
   }
 
-  /**
-    * Documents the given `Trait`, `trt`, and all of its contained items, writing the resulting HTML to disk.
-    */
+  /** Documents the given `Trait`, `trt`, and all of its contained items, writing the resulting HTML to disk. */
   private def visitTrait(trt: Trait)(implicit flix: Flix): Unit = {
     val out = documentTrait(trt)
     writeDocFile(trt.fileName, out)
@@ -110,9 +88,7 @@ object HtmlDocumentor {
     }
   }
 
-  /**
-    * Documents the given `Effect`, `eff`, and all of its contained items, writing the resulting HTML to disk.
-    */
+  /** Documents the given `Effect`, `eff`, and all of its contained items, writing the resulting HTML to disk. */
   private def visitEffect(eff: Effect)(implicit flix: Flix): Unit = {
     val out = documentEffect(eff)
     writeDocFile(eff.fileName, out)
@@ -125,9 +101,7 @@ object HtmlDocumentor {
     }
   }
 
-  /**
-    * Documents the given `Enum`, `enm`, and all of its contained items, writing the resulting HTML to disk.
-    */
+  /** Documents the given `Enum`, `enm`, and all of its contained items, writing the resulting HTML to disk. */
   private def visitEnum(enm: Enum)(implicit flix: Flix): Unit = {
     val out = documentEnum(enm)
     writeDocFile(enm.fileName, out)
@@ -140,64 +114,40 @@ object HtmlDocumentor {
     }
   }
 
-  /**
-    * Get the shortest name of the module symbol, e.g. 'StdOut'.
-    */
+  /** Get the shortest name of the module symbol, e.g. 'StdOut'. */
   private def moduleName(sym: Symbol.ModuleSym): String = sym.ns.lastOption.getOrElse(RootNS)
 
-  /**
-    * Get the fully qualified name of the module symbol, e.g. 'System.StdOut'.
-    */
+  /** Get the fully qualified name of the module symbol, e.g. 'System.StdOut'. */
   private def moduleQualifiedName(sym: Symbol.ModuleSym): String = if (sym.isRoot) RootNS else sym.toString
 
-  /**
-    * Get the file name of the module symbol, e.g. 'System.StdOut.html'.
-    */
+  /** Get the file name of the module symbol, e.g. 'System.StdOut.html'. */
   private def moduleFileName(sym: Symbol.ModuleSym): String = s"${if (sym.isRoot) RootFileName else sym.toString}.html"
 
-  /**
-    * Get the shortest name of the trait symbol, e.g. 'Foldable'.
-    */
+  /** Get the shortest name of the trait symbol, e.g. 'Foldable'. */
   private def traitName(sym: Symbol.TraitSym): String = sym.name
 
-  /**
-    * Get the fully qualified name of the trait symbol, e.g. 'Fixpoint.PredSymsOf'.
-    */
+  /** Get the fully qualified name of the trait symbol, e.g. 'Fixpoint.PredSymsOf'. */
   private def traitQualifiedName(sym: Symbol.TraitSym): String = sym.toString
 
-  /**
-    * Get the file name of the trait symbol, e.g. 'Fixpoint.PredSymsOf.html'.
-    */
+  /** Get the file name of the trait symbol, e.g. 'Fixpoint.PredSymsOf.html'. */
   private def traitFileName(sym: Symbol.TraitSym): String = s"${sym.toString}.html"
 
-  /**
-    * Get the shortest name of the effect symbol, e.g. 'StdOut'.
-    */
+  /** Get the shortest name of the effect symbol, e.g. 'StdOut'. */
   private def effectName(sym: Symbol.EffectSym): String = sym.name
 
-  /**
-    * Get the fully qualified name of the effect symbol, e.g. 'System.StdOut'.
-    */
+  /** Get the fully qualified name of the effect symbol, e.g. 'System.StdOut'. */
   private def effectQualifiedName(sym: Symbol.EffectSym): String = sym.toString
 
-  /**
-    * Get the file name of the effect symbol, e.g. 'System.StdOut.html'.
-    */
+  /** Get the file name of the effect symbol, e.g. 'System.StdOut.html'. */
   private def effectFileName(sym: Symbol.EffectSym): String = s"${sym.toString}.html"
 
-  /**
-    * Get the shortest name of the enum symbol, e.g. 'StdOut'.
-    */
+  /** Get the shortest name of the enum symbol, e.g. 'StdOut'. */
   private def enumName(sym: Symbol.EnumSym): String = sym.name
 
-  /**
-    * Get the fully qualified name of the enum symbol, e.g. 'System.StdOut'.
-    */
+  /** Get the fully qualified name of the enum symbol, e.g. 'System.StdOut'. */
   private def enumQualifiedName(sym: Symbol.EnumSym): String = sym.toString
 
-  /**
-    * Get the file name of the enum symbol, e.g. 'System.StdOut.html'.
-    */
+  /** Get the file name of the enum symbol, e.g. 'System.StdOut.html'. */
   private def enumFileName(sym: Symbol.EnumSym): String = s"${sym.toString}.html"
 
   /**
@@ -208,9 +158,7 @@ object HtmlDocumentor {
     */
   private def splitModules(root: TypedAst.Root): Module = {
 
-    /**
-      * Visits a module and all of its submodules
-      */
+    /** Visits a module and all of its submodules */
     def visitMod(moduleSym: Symbol.ModuleSym, parent: Option[Symbol.ModuleSym]): Module = {
       val mod = root.modules(moduleSym)
       val uses = root.uses.getOrElse(moduleSym, Nil)
@@ -277,9 +225,7 @@ object HtmlDocumentor {
     */
   private def mkEnum(sym: Symbol.EnumSym, parent: Symbol.ModuleSym, root: TypedAst.Root): Enum = {
 
-    /**
-      * Checks if a [[TypedAst.Instance]] with the given type `tpe` should be included on the page of the given enum.
-      */
+    /** Checks if a [[TypedAst.Instance]] with the given type `tpe` should be included on the page of the given enum. */
     @tailrec
     def enumMatchesInstance(enm: Symbol.EnumSym, tpe: Type): Boolean = tpe match {
       // An instance should be included if:
@@ -297,9 +243,7 @@ object HtmlDocumentor {
     Enum(root.enums(sym), instances, parent, None)
   }
 
-  /**
-    * Filter the module, `mod`, and its children, removing all items and empty modules, which shouldn't appear in the documentation.
-    */
+  /** Filter the module, `mod`, and its children, removing all items and empty modules, which shouldn't appear in the documentation. */
   private def filterModules(mod: Module, packageModules: PackageModules): Module = {
     filterEmpty(filterContents(mod, packageModules))
   }
@@ -420,9 +364,7 @@ object HtmlDocumentor {
     * i.e. this should be called before `pairModules`.
     */
   private def filterEmpty(mod: Module): Module = {
-    /**
-      * Recursively walks the module tree removing empty modules.
-      */
+    /** Recursively walks the module tree removing empty modules. */
     def visitMod(mod: Module): Option[Module] = mod match {
       case Module(sym, parent, uses, submodules, traits, effects, enums, typeAliases, defs) =>
         val filteredSubMods = submodules.flatMap(visitMod)
@@ -465,9 +407,7 @@ object HtmlDocumentor {
       ))
   }
 
-  /**
-    * Get the given module tree, but with all companion modules paired to their respective items.
-    */
+  /** Get the given module tree, but with all companion modules paired to their respective items. */
   private def pairModules(mod: Module): Module = mod match {
     case Module(sym, parent, uses, submodules, traits, effects, enums, typeAliases, defs) =>
 
@@ -507,9 +447,7 @@ object HtmlDocumentor {
       )
   }
 
-  /**
-    * Documents the given `Module`, `mod`, returning a string of HTML.
-    */
+  /** Documents the given `Module`, `mod`, returning a string of HTML. */
   private def documentModule(mod: Module)(implicit flix: Flix): String = {
     implicit val sb: StringBuilder = new StringBuilder()
 
@@ -564,9 +502,7 @@ object HtmlDocumentor {
     sb.toString()
   }
 
-  /**
-    * Documents the given `Trait`, `trt`, returning a string of HTML.
-    */
+  /** Documents the given `Trait`, `trt`, returning a string of HTML. */
   private def documentTrait(trt: Trait)(implicit flix: Flix): String = {
     implicit val sb: StringBuilder = new StringBuilder()
 
@@ -658,9 +594,7 @@ object HtmlDocumentor {
     sb.toString()
   }
 
-  /**
-    * Documents the given `Effect`, `eff`, returning a string of HTML.
-    */
+  /** Documents the given `Effect`, `eff`, returning a string of HTML. */
   private def documentEffect(eff: Effect)(implicit flix: Flix): String = {
     implicit val sb: StringBuilder = new StringBuilder()
 
@@ -738,9 +672,7 @@ object HtmlDocumentor {
     sb.toString()
   }
 
-  /**
-    * Documents the given `Enum`, `enm`, returning a string of HTML.
-    */
+  /** Documents the given `Enum`, `enm`, returning a string of HTML. */
   private def documentEnum(enm: Enum)(implicit flix: Flix): String = {
     implicit val sb: StringBuilder = new StringBuilder()
 
@@ -816,9 +748,7 @@ object HtmlDocumentor {
     sb.toString()
   }
 
-  /**
-    * Generates the string representing the head of the HTML document.
-    */
+  /** Generates the string representing the head of the HTML document. */
   private def mkHead(name: String): String = {
     s"""<!doctype html><html lang='en'>
        |<head>
@@ -1155,9 +1085,7 @@ object HtmlDocumentor {
     sb.append("</span>")
   }
 
-  /**
-    * Document the name of the given trait symbol, creating a link to the trait's documentation.
-    */
+  /** Document the name of the given trait symbol, creating a link to the trait's documentation. */
   private def docTraitName(sym: Symbol.TraitSym)(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append(s"<a class='tpe-constraint' href='${escUrl(traitFileName(sym))}' title='trait ${esc(traitName(sym))}'>")
     sb.append(esc(sym.name))
@@ -1404,9 +1332,7 @@ object HtmlDocumentor {
     }
   }
 
-  /**
-    * Runs the given `docElt` on each element of `list`, separated by the string: ", " (comma + space)
-    */
+  /** Runs the given `docElt` on each element of `list`, separated by the string: ", " (comma + space) */
   private def docList[T](list: List[T])(docElt: T => Unit)(implicit flix: Flix, sb: StringBuilder): Unit = {
     for ((e, i) <- list.zipWithIndex) {
       docElt(e)
@@ -1416,9 +1342,7 @@ object HtmlDocumentor {
     }
   }
 
-  /**
-    * Make a copy of the static assets into the output directory.
-    */
+  /** Make a copy of the static assets into the output directory. */
   private def writeAssets(): Unit = {
     val stylesheet = readResource(Stylesheet)
     writeFile("styles.css", stylesheet)
@@ -1439,16 +1363,12 @@ object HtmlDocumentor {
     sb.append(readResourceString(s"$Icons/$name.svg"))
   }
 
-  /**
-    * Write the documentation output string into the output directory with the given `name`.
-    */
+  /** Write the documentation output string into the output directory with the given `name`. */
   private def writeDocFile(name: String, output: String): Unit = {
     writeFile(s"$name", output.getBytes)
   }
 
-  /**
-    * Write the file to the output directory with the given file name.
-    */
+  /** Write the file to the output directory with the given file name. */
   private def writeFile(name: String, output: Array[Byte]): Unit = {
     val path = OutputDirectory.resolve(name)
     try {
@@ -1486,19 +1406,13 @@ object HtmlDocumentor {
     s"$LibraryGitHub${escUrl(loc.source.name)}#L${loc.beginLine}-L${loc.endLine}"
   }
 
-  /**
-    * Escape any HTML in the string.
-    */
+  /** Escape any HTML in the string. */
   private def esc(s: String): String = xml.Utility.escape(s)
 
-  /**
-    * Transform the string into a valid URL.
-    */
+  /** Transform the string into a valid URL. */
   private def escUrl(s: String): String = URLEncoder.encode(s, "UTF-8")
 
-  /**
-    * An item is a unit that is typically output to its own HTML file.
-    */
+  /** An item is a unit that is typically output to its own HTML file. */
   private sealed trait Item {
     /** The shortest name of the item, e.g. 'StdOut' */
     def name: String
@@ -1510,9 +1424,7 @@ object HtmlDocumentor {
     def fileName: String
   }
 
-  /**
-    * A representation of a module that's easier to work with while generating documentation.
-    */
+  /** A representation of a module that's easier to work with while generating documentation. */
   private case class Module(sym: Symbol.ModuleSym,
                             parent: Option[Symbol.ModuleSym],
                             uses: List[Ast.UseOrImport],
@@ -1529,9 +1441,7 @@ object HtmlDocumentor {
     override def fileName: String = moduleFileName(this.sym)
   }
 
-  /**
-    * A representation of a trait that's easier to work with while generating documentation.
-    */
+  /** A representation of a trait that's easier to work with while generating documentation. */
   private case class Trait(decl: TypedAst.Trait,
                            signatures: List[TypedAst.Sig],
                            defs: List[TypedAst.Sig],
@@ -1545,9 +1455,7 @@ object HtmlDocumentor {
     override def fileName: String = traitFileName(this.decl.sym)
   }
 
-  /**
-    * A representation of an effect that's easier to work with while generating documentation.
-    */
+  /** A representation of an effect that's easier to work with while generating documentation. */
   private case class Effect(decl: TypedAst.Effect,
                             parent: Symbol.ModuleSym,
                             companionMod: Option[Module]) extends Item {
@@ -1558,9 +1466,7 @@ object HtmlDocumentor {
     override def fileName: String = effectFileName(this.decl.sym)
   }
 
-  /**
-    * A representation of an enum that's easier to work with while generating documentation.
-    */
+  /** A representation of an enum that's easier to work with while generating documentation. */
   private case class Enum(decl: TypedAst.Enum,
                           instances: List[TypedAst.Instance],
                           parent: Symbol.ModuleSym,

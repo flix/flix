@@ -20,9 +20,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.util.Formatter
 
-/**
-  * An error raised to indicate a non-exhaustive pattern match expression.
-  */
+/** An error raised to indicate a non-exhaustive pattern match expression. */
 case class NonExhaustiveMatchError(pat: String, loc: SourceLocation) extends CompilationMessage with Recoverable {
   val kind = "Pattern Match"
 

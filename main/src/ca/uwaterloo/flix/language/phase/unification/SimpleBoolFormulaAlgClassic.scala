@@ -18,9 +18,7 @@ import ca.uwaterloo.flix.language.ast.{Ast, Kind, SourceLocation, Type, TypeCons
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.Bimap
 
-/**
-  * An implementation of the [[BoolAlg]] interface for [[BoolFormula]].
-  */
+/** An implementation of the [[BoolAlg]] interface for [[BoolFormula]]. */
 // TODO EFF-MIGRATION copy-pasted from BoolFormulaAlgClassic -- generalize the trait and deduplicate
 class SimpleBoolFormulaAlgClassic extends BoolFormulaAlg {
 
@@ -200,9 +198,7 @@ class SimpleBoolFormulaAlgClassic extends BoolFormulaAlg {
   // No minimization via tabling.
   override def minimize(f: BoolFormula): BoolFormula = f
 
-  /**
-    * Converts the given type t into a formula.
-    */
+  /** Converts the given type t into a formula. */
   override def fromType(t: Type, env: Bimap[BoolFormula.IrreducibleEff, Int]): BoolFormula = Type.eraseTopAliases(t) match {
     case Type.Var(sym, _) => env.getForward(BoolFormula.IrreducibleEff.Var(sym)) match {
       case None => throw InternalCompilerException(s"Unexpected unbound variable: '$sym'.", sym.loc)

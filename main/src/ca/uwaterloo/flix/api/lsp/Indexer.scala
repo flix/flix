@@ -22,9 +22,7 @@ import ca.uwaterloo.flix.language.ast._
 
 object Indexer {
 
-  /**
-    * Returns a reverse index for the given AST `root`.
-    */
+  /** Returns a reverse index for the given AST `root`. */
   def visitRoot(root: Root): Index = {
     Index.all(
       traverse(root.defs.values)(visitDef),
@@ -39,9 +37,7 @@ object Indexer {
     )
   }
 
-  /**
-    * Returns a reverse index for the given definition `def0`.
-    */
+  /** Returns a reverse index for the given definition `def0`. */
   private def visitDef(def0: Def): Index = def0 match {
     case Def(_, spec, exp) =>
       Index.all(
@@ -51,9 +47,7 @@ object Indexer {
       )
   }
 
-  /**
-    * Returns a reverse index for the given signature `sig0`.
-    */
+  /** Returns a reverse index for the given signature `sig0`. */
   private def visitSig(sig0: Sig): Index = sig0 match {
     case Sig(_, spec, exp) =>
       Index.all(
@@ -63,9 +57,7 @@ object Indexer {
       )
   }
 
-  /**
-    * Returns a reverse index for the given `spec`.
-    */
+  /** Returns a reverse index for the given `spec`. */
   private def visitSpec(spec: Spec): Index = spec match {
     case Spec(_, _, _, tparams, fparams, _, retTpe, eff, tconstrs, econstrs, _) =>
       Index.all(
@@ -78,9 +70,7 @@ object Indexer {
       )
   }
 
-  /**
-    * Returns a reverse index for the given enum `enum0`.
-    */
+  /** Returns a reverse index for the given enum `enum0`. */
   private def visitEnum(enum0: Enum): Index = enum0 match {
     case Enum(_, _, _, _, tparams, derives, cases, _, _) =>
       Index.all(
@@ -93,17 +83,13 @@ object Indexer {
       )
   }
 
-  /**
-    * Returns a reverse index for the given enum case `caze0`.
-    */
+  /** Returns a reverse index for the given enum case `caze0`. */
   private def visitCase(caze0: Case): Index = caze0 match {
     case Case(_, tpe, _, _) =>
       Index.occurrenceOf(caze0) ++ visitType(tpe)
   }
 
-  /**
-   * Returns a reverse index for the given struct `struct0`.
-   */
+  /** Returns a reverse index for the given struct `struct0`. */
   private def visitStruct(struct0: Struct): Index = struct0 match {
     case Struct(doc, ann, mod, sym, tparams, sc, fields, loc) =>
       Index.all(
@@ -115,9 +101,7 @@ object Indexer {
       )
   }
 
-  /**
-    * Returns a reverse index for the given trait `trait0`.
-    */
+  /** Returns a reverse index for the given trait `trait0`. */
   private def visitTrait(trait0: TypedAst.Trait): Index = trait0 match {
     case Trait(doc, ann, mod, sym, tparam, superTraits, assocs, signatures, laws, loc) =>
       Index.all(
@@ -130,9 +114,7 @@ object Indexer {
       )
   }
 
-  /**
-    * Returns a reverse index for the given instance `instance0`.
-    */
+  /** Returns a reverse index for the given instance `instance0`. */
   private def visitInstance(instance0: Instance): Index = instance0 match {
     case Instance(_, _, _, trt, tpe, tconstrs, assocs, defs, _, _) =>
       Index.all(
@@ -144,9 +126,7 @@ object Indexer {
       )
   }
 
-  /**
-    * Returns a reverse index for the given type alias `alias0`.
-    */
+  /** Returns a reverse index for the given type alias `alias0`. */
   private def visitTypeAlias(alias0: TypeAlias): Index = alias0 match {
     case TypeAlias(_, _, _, _, tparams, tpe, _) =>
       Index.all(
@@ -157,9 +137,7 @@ object Indexer {
   }
 
 
-  /**
-    * Returns a reverse index for the given associated type definition `assoc`.
-    */
+  /** Returns a reverse index for the given associated type definition `assoc`. */
   private def visitAssocTypeDef(assoc: AssocTypeDef): Index = assoc match {
     case AssocTypeDef(_, _, Ast.AssocTypeSymUse(sym, loc), arg, tpe, _) =>
       Index.all(
@@ -169,9 +147,7 @@ object Indexer {
       )
   }
 
-  /**
-    * Returns a reverse index for the given associated type signature `assoc`.
-    */
+  /** Returns a reverse index for the given associated type signature `assoc`. */
   private def visitAssocTypeSig(assoc: AssocTypeSig): Index = assoc match {
     case AssocTypeSig(_, _, _, tparam, _, tpe, _) =>
       Index.all(
@@ -181,9 +157,7 @@ object Indexer {
       )
   }
 
-  /**
-    * Returns a reverse index for the given effect `eff0`
-    */
+  /** Returns a reverse index for the given effect `eff0` */
   private def visitEff(eff0: Effect): Index = eff0 match {
     case Effect(_, _, _, _, ops, _) =>
       Index.all(
@@ -192,9 +166,7 @@ object Indexer {
       )
   }
 
-  /**
-    * Returns a reverse index for the given effect operation `op0`
-    */
+  /** Returns a reverse index for the given effect operation `op0` */
   private def visitOp(op0: Op): Index = op0 match {
     case Op(_, spec) =>
       Index.all(
@@ -203,9 +175,7 @@ object Indexer {
       )
   }
 
-  /**
-    * Returns a reverse index for the given expression `exp0`.
-    */
+  /** Returns a reverse index for the given expression `exp0`. */
   private def visitExp(exp0: Expr): Index = exp0 match {
     case Expr.Cst(_, _, _) =>
       Index.occurrenceOf(exp0)
@@ -485,14 +455,10 @@ object Indexer {
       Index.occurrenceOf(exp0)
   }
 
-  /**
-    * Returns a reverse index for the given expressions `exps0`.
-    */
+  /** Returns a reverse index for the given expressions `exps0`. */
   private def visitExps(exps0: List[Expr]): Index = traverse(exps0)(visitExp)
 
-  /**
-    * Returns a reverse index for the given pattern `pat0`.
-    */
+  /** Returns a reverse index for the given pattern `pat0`. */
   private def visitPat(pat0: Pattern): Index = pat0 match {
     case Pattern.Wild(_, _) => Index.occurrenceOf(pat0)
     case Pattern.Var(sym, tpe, _) =>
@@ -508,21 +474,15 @@ object Indexer {
     case Pattern.Error(_, _) => Index.empty
   }
 
-  /**
-    * Returns a reverse index for the given patterns `pats0`.
-    */
+  /** Returns a reverse index for the given patterns `pats0`. */
   private def visitPats(pats0: List[Pattern]): Index = traverse(pats0)(visitPat)
 
-  /**
-    * Returns a reverse index for the given [[Pattern.Record.RecordLabelPattern]] `rfp`.
-    */
+  /** Returns a reverse index for the given [[Pattern.Record.RecordLabelPattern]] `rfp`. */
   private def visitRecordLabelPattern(rfp: Pattern.Record.RecordLabelPattern): Index = {
     Index.useOf(rfp.label) ++ visitType(rfp.tpe) ++ visitPat(rfp.pat)
   }
 
-  /**
-    * Returns a reverse index for the given constraint `c0`.
-    */
+  /** Returns a reverse index for the given constraint `c0`. */
   private def visitConstraint(c0: Constraint): Index = c0 match {
     case Constraint(_, head, body, _) =>
       Index.all(
@@ -531,48 +491,36 @@ object Indexer {
       )
   }
 
-  /**
-    * Returns a reverse index for the given head predicate `h0`.
-    */
+  /** Returns a reverse index for the given head predicate `h0`. */
   private def visitHead(h0: Predicate.Head): Index = h0 match {
     case Head.Atom(pred, _, terms, tpe, _) => Index.occurrenceOf(pred, tpe) ++ Index.defOf(pred) ++ visitExps(terms)
   }
 
-  /**
-    * Returns a reverse index for the given body predicate `b0`.
-    */
+  /** Returns a reverse index for the given body predicate `b0`. */
   private def visitBody(b0: Predicate.Body): Index = b0 match {
     case Body.Atom(pred, _, _, _, terms, tpe, _) => Index.occurrenceOf(pred, tpe) ++ Index.useOf(pred) ++ visitPats(terms)
     case Body.Guard(exp, _) => visitExp(exp)
     case Body.Functional(_, exp, _) => visitExp(exp)
   }
 
-  /**
-    * Returns a reverse index for the given type parameter `tparam0`.
-    */
+  /** Returns a reverse index for the given type parameter `tparam0`. */
   private def visitTypeParam(tparam0: TypeParam): Index = tparam0 match {
     case TypeParam(_, sym, _) => Index.occurrenceOf(sym)
   }
 
-  /**
-    * Returns a reverse index for the given formal parameter `fparam0`.
-    */
+  /** Returns a reverse index for the given formal parameter `fparam0`. */
   private def visitFormalParam(fparam0: FormalParam): Index = fparam0 match {
     case FormalParam(_, _, tpe, _, _) =>
       Index.occurrenceOf(fparam0) ++ visitType(tpe)
   }
 
-  /**
-    * Returns a reverse index for the given predicate parameter `pparam0`.
-    */
+  /** Returns a reverse index for the given predicate parameter `pparam0`. */
   private def visitPredicateParam(pparam0: PredicateParam): Index = pparam0 match {
     case PredicateParam(pred, tpe, _) =>
       Index.occurrenceOf(pred, tpe) ++ Index.defOf(pred) ++ visitType(tpe)
   }
 
-  /**
-    * Returns a reverse index for the given type `tpe0`.
-    */
+  /** Returns a reverse index for the given type `tpe0`. */
   private def visitType(tpe0: Type): Index = tpe0 match {
     case Type.Var(sym, loc) => Index.occurrenceOf(tpe0) ++ Index.useOf(sym, loc)
     case Type.Cst(tc, loc) => tc match {
@@ -595,31 +543,23 @@ object Indexer {
     case _: Type.UnresolvedJvmType => Index.empty
   }
 
-  /**
-    * Returns a reverse index for the given trait constraint `tconstr0`.
-    */
+  /** Returns a reverse index for the given trait constraint `tconstr0`. */
   private def visitTraitConstraint(tconstr0: Ast.TraitConstraint): Index = tconstr0 match {
     case Ast.TraitConstraint(head, arg, _) => visitTraitConstraintHead(head) ++ visitType(arg)
   }
 
-  /**
-    * Returns a reverse index for the given trait constraint `head`.
-    */
+  /** Returns a reverse index for the given trait constraint `head`. */
   private def visitTraitConstraintHead(head0: Ast.TraitConstraint.Head): Index = head0 match {
     case Ast.TraitConstraint.Head(sym, loc) => Index.useOf(sym, loc)
   }
 
-  /**
-    * Returns a reverse index for the given equality constraint `econstr0`.
-    */
+  /** Returns a reverse index for the given equality constraint `econstr0`. */
   private def visitEqualityConstraint(econstr0: Ast.EqualityConstraint): Index = econstr0 match {
     case Ast.EqualityConstraint(cst, tpe1, tpe2, loc) =>
       visitAssocTypeConstructor(cst) ++ visitType(tpe1) ++ visitType(tpe2)
   }
 
-  /**
-    * Returns a reverse index for the given associated type constructor `cst`.
-    */
+  /** Returns a reverse index for the given associated type constructor `cst`. */
   private def visitAssocTypeConstructor(cst: Ast.AssocTypeConstructor): Index = cst match {
     case Ast.AssocTypeConstructor(sym, loc) => Index.useOf(sym, loc)
   }

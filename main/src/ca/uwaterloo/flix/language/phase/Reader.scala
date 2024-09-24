@@ -29,14 +29,10 @@ import java.util.zip.ZipFile
 import scala.collection.mutable
 import scala.util.Using
 
-/**
-  * A phase to read inputs into memory.
-  */
+/** A phase to read inputs into memory. */
 object Reader {
 
-  /**
-    * Reads the given source inputs into memory.
-    */
+  /** Reads the given source inputs into memory. */
   def run(inputs: List[Input], names: MultiMap[List[String], String])(implicit flix: Flix): Validation[ReadAst.Root, CompilationMessage] =
     flix.phase("Reader") {
 
@@ -69,9 +65,7 @@ object Reader {
       Validation.success(ReadAst.Root(sources, names))
     }(DebugValidation()(DebugNoOp()))
 
-  /**
-    * Returns a list of sources extracted from the given flix package at path `p`.
-    */
+  /** Returns a list of sources extracted from the given flix package at path `p`. */
   private def unpack(p: Path)(implicit sctx: SecurityContext, flix: Flix): List[Source] = {
     // Check that the path is a flix package.
     if (!Bootstrap.isPkgFile(p))

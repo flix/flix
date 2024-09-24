@@ -7,9 +7,7 @@ import ca.uwaterloo.flix.language.dbg.DocAst
 
 object TypedAstPrinter {
 
-  /**
-    * Returns the [[DocAst.Program]] representation of `root`.
-    */
+  /** Returns the [[DocAst.Program]] representation of `root`. */
   def print(root: TypedAst.Root): DocAst.Program = {
     val enums = root.enums.values.map {
       case TypedAst.Enum(_, ann, mod, sym, tparams, _, cases, _, _) =>
@@ -22,9 +20,7 @@ object TypedAstPrinter {
     DocAst.Program(enums, defs)
   }
 
-  /**
-    * Returns the [[DocAst.Expr]] representation of `e`.
-    */
+  /** Returns the [[DocAst.Expr]] representation of `e`. */
   private def print(e: TypedAst.Expr): DocAst.Expr = e match {
     case Expr.Cst(cst, _, _) => ConstantPrinter.print(cst)
     case Expr.Var(sym, _, _) => printVar(sym)
@@ -103,38 +99,28 @@ object TypedAstPrinter {
     case Expr.Error(_, _, _) => DocAst.Expr.Error
   }
 
-  /**
-    * Returns the [[DocAst.JvmMethod]] representation of `method`.
-    */
+  /** Returns the [[DocAst.JvmMethod]] representation of `method`. */
   private def printJvmMethod(method: TypedAst.JvmMethod): DocAst.JvmMethod = method match {
     case TypedAst.JvmMethod(ident, fparams, exp, retTpe, _, _) =>
       DocAst.JvmMethod(ident, fparams.map(printFormalParam), print(exp), TypePrinter.print(retTpe))
   }
 
-  /**
-    * Returns the [[DocAst]] representation of `rule`.
-    */
+  /** Returns the [[DocAst]] representation of `rule`. */
   private def printHandlerRule(rule: TypedAst.HandlerRule): (Symbol.OpSym, List[DocAst.Expr.Ascription], DocAst.Expr) = rule match {
     case TypedAst.HandlerRule(op, fparams, exp) => (op.sym, fparams.map(printFormalParam), print(exp))
   }
 
-  /**
-    * Returns the [[DocAst]] representation of `rule`.
-    */
+  /** Returns the [[DocAst]] representation of `rule`. */
   private def printCatchRule(rule: TypedAst.CatchRule): (Symbol.VarSym, Class[_], DocAst.Expr) = rule match {
     case TypedAst.CatchRule(sym, clazz, exp) => (sym, clazz, print(exp))
   }
 
-  /**
-    * Returns the [[DocAst]] representation of `rule`.
-    */
+  /** Returns the [[DocAst]] representation of `rule`. */
   private def printMatchRule(rule: TypedAst.MatchRule): (DocAst.Expr, Option[DocAst.Expr], DocAst.Expr) = rule match {
     case TypedAst.MatchRule(pat, guard, exp) => (printPattern(pat), guard.map(print), print(exp))
   }
 
-  /**
-    * Returns the [[DocAst.Expr]] representation of `pattern`.
-    */
+  /** Returns the [[DocAst.Expr]] representation of `pattern`. */
   private def printPattern(pattern: TypedAst.Pattern): DocAst.Expr = pattern match {
     case Pattern.Wild(_, _) => DocAst.Expr.Wild
     case Pattern.Var(sym, _, _) => printVar(sym)
@@ -146,9 +132,7 @@ object TypedAstPrinter {
     case Pattern.Error(_, _) => DocAst.Expr.Error
   }
 
-  /**
-    * Returns the [[DocAst.Expr]] representation of `pats`.
-    */
+  /** Returns the [[DocAst.Expr]] representation of `pats`. */
   private def printRecordPattern(pats: List[Record.RecordLabelPattern], pat: Pattern): DocAst.Expr = {
     pats.foldRight(printPattern(pat)) {
       case (TypedAst.Pattern.Record.RecordLabelPattern(label, _, pat, _), acc) =>
@@ -156,31 +140,23 @@ object TypedAstPrinter {
     }
   }
 
-  /**
-    * Returns the [[DocAst.Expr]] representation of `sym`.
-    */
+  /** Returns the [[DocAst.Expr]] representation of `sym`. */
   private def printVar(sym: Symbol.VarSym): DocAst.Expr = {
     DocAst.Expr.Var(sym)
   }
 
-  /**
-    * Returns the [[DocAst.Expr.Ascription]] representation of `fp`.
-    */
+  /** Returns the [[DocAst.Expr.Ascription]] representation of `fp`. */
   private def printFormalParam(fp: TypedAst.FormalParam): DocAst.Expr.Ascription = {
     val TypedAst.FormalParam(sym, _, tpe, _, _) = fp
     DocAst.Expr.Ascription(DocAst.Expr.Var(sym), TypePrinter.print(tpe))
   }
 
-  /**
-    * Returns the [[DocAst.Case]] representation of `caze`.
-    */
+  /** Returns the [[DocAst.Case]] representation of `caze`. */
   private def printCase(caze: TypedAst.Case): DocAst.Case = caze match {
     case TypedAst.Case(sym, tpe, _, _) => DocAst.Case(sym, TypePrinter.print(tpe))
   }
 
-  /**
-    * Returns the [[DocAst.TypeParam]] representation of `tp`.
-    */
+  /** Returns the [[DocAst.TypeParam]] representation of `tp`. */
   private def printTypeParam(tp: TypedAst.TypeParam): DocAst.TypeParam = tp match {
     case TypedAst.TypeParam(_, sym, _) => DocAst.TypeParam(sym)
   }

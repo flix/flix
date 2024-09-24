@@ -22,16 +22,12 @@ sealed trait Repository
 
 object Repository {
 
-  /**
-   * Convert a [[String]] into a [[Repository]].
-   */
+  /** Convert a [[String]] into a [[Repository]]. */
   def mkRepository(s: String): Result[Repository, RepositoryError] = s match {
     case "github" => Ok(Repository.GitHub)
     case _ => Err(RepositoryError.UnsupportedRepositoryError(s))
   }
 
-  /**
-   * A GitHub repository.
-   */
+  /** A GitHub repository. */
   case object GitHub extends Repository
 }

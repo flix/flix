@@ -15,9 +15,7 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
-/**
-  * Represents an `InsertTextFormat` in LSP.
-  */
+/** Represents an `InsertTextFormat` in LSP. */
 sealed trait InsertTextFormat {
   def toInt: Int = this match {
     case InsertTextFormat.PlainText => 1
@@ -27,9 +25,7 @@ sealed trait InsertTextFormat {
 
 object InsertTextFormat {
 
-  /**
-    * The primary text to be inserted is treated as a plain string.
-    */
+  /** The primary text to be inserted is treated as a plain string. */
   case object PlainText extends InsertTextFormat
 
   /**

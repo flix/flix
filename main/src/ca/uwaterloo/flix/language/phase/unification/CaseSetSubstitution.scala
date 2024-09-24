@@ -20,18 +20,12 @@ import ca.uwaterloo.flix.language.phase.unification.SetFormula.VarOrCase
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.Bimap
 
-/**
-  * Companion object for the [[CaseSetSubstitution]] class.
-  */
+/** Companion object for the [[CaseSetSubstitution]] class. */
 object CaseSetSubstitution {
-  /**
-    * Returns the empty substitution.
-    */
+  /** Returns the empty substitution. */
   def empty: CaseSetSubstitution = CaseSetSubstitution(Map.empty)
 
-  /**
-    * Returns the singleton substitution mapping the type variable `x` to `tpe`.
-    */
+  /** Returns the singleton substitution mapping the type variable `x` to `tpe`. */
   def singleton(x: Int, f: SetFormula): CaseSetSubstitution = {
     // Ensure that we do not add any x -> x mappings.
     f match {
@@ -42,19 +36,13 @@ object CaseSetSubstitution {
 
 }
 
-/**
-  * A substitution is a map from type variables to types.
-  */
+/** A substitution is a map from type variables to types. */
 case class CaseSetSubstitution(m: Map[Int, SetFormula]) {
 
-  /**
-    * Returns `true` if `this` is the empty substitution.
-    */
+  /** Returns `true` if `this` is the empty substitution. */
   val isEmpty: Boolean = m.isEmpty
 
-  /**
-    * Applies `this` substitution to the given type `tpe0`.
-    */
+  /** Applies `this` substitution to the given type `tpe0`. */
   def apply(f: SetFormula)(implicit univ: Set[Int]): SetFormula = {
     // Optimization: Return the type if the substitution is empty. Otherwise visit the type.
     if (isEmpty) {
@@ -64,15 +52,11 @@ case class CaseSetSubstitution(m: Map[Int, SetFormula]) {
     }
   }
 
-  /**
-    * Applies `this` substitution to the given types `ts`.
-    */
+  /** Applies `this` substitution to the given types `ts`. */
   def apply(ts: List[SetFormula])(implicit univ: Set[Int]): List[SetFormula] =
     if (isEmpty) ts else ts.map(apply(_))
 
-  /**
-    * Returns the left-biased composition of `this` substitution with `that` substitution.
-    */
+  /** Returns the left-biased composition of `this` substitution with `that` substitution. */
   def ++(that: CaseSetSubstitution): CaseSetSubstitution = {
     if (this.isEmpty) {
       that
@@ -85,9 +69,7 @@ case class CaseSetSubstitution(m: Map[Int, SetFormula]) {
     }
   }
 
-  /**
-    * Returns the composition of `this` substitution with `that` substitution.
-    */
+  /** Returns the composition of `this` substitution with `that` substitution. */
   def @@(that: CaseSetSubstitution)(implicit univ: Set[Int]): CaseSetSubstitution = {
     // Case 1: Return `that` if `this` is empty.
     if (this.isEmpty) {
@@ -120,9 +102,7 @@ case class CaseSetSubstitution(m: Map[Int, SetFormula]) {
     CaseSetSubstitution(newBoolAlgebraMap.toMap)
   }
 
-  /**
-    * Converts this formula substitution into a type substitution
-    */
+  /** Converts this formula substitution into a type substitution */
   def toTypeSubstitution(sym: Symbol.RestrictableEnumSym, env: Bimap[SetFormula.VarOrCase, Int]): Substitution = {
     val map = m.map {
       case (k0, v0) =>

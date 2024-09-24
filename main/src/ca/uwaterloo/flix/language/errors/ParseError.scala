@@ -21,9 +21,7 @@ import ca.uwaterloo.flix.language.ast.Ast.SyntacticContext
 import ca.uwaterloo.flix.language.ast.{SourceLocation, SyntaxTree, TokenKind}
 import ca.uwaterloo.flix.util.{Formatter, InternalCompilerException}
 
-/**
-  * A common super-type for parser errors.
-  */
+/** A common super-type for parser errors. */
 sealed trait ParseError extends CompilationMessage {
   val kind = "Parse Error"
   val sctx: SyntacticContext

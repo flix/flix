@@ -23,9 +23,7 @@ import ca.uwaterloo.flix.language.ast.{SourceLocation, Type, TypeConstructor, Ty
 
 object EnumTagCompleter {
 
-  /**
-    * Returns a List of Completion for enum tags.
-    */
+  /** Returns a List of Completion for enum tags. */
   def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[EnumTagCompletion] = {
     // We don't know if the user has provided a tag, so we have to try both cases
     val fqn = context.word.split('.').toList
@@ -34,9 +32,7 @@ object EnumTagCompleter {
       getEnumTagCompletionsWithTag(fqn)
   }
 
-  /**
-    * Gets completions for enum tags without tag provided
-    */
+  /** Gets completions for enum tags without tag provided */
   private def getEnumTagCompletionsWithoutTag(fqn: List[String])(implicit root: TypedAst.Root): Iterable[EnumTagCompletion] = {
     val enumSym = mkEnumSym(fqn)
     root.enums.get(enumSym) match {
@@ -49,9 +45,7 @@ object EnumTagCompleter {
     }
   }
 
-  /**
-    * Gets completions for enum tags with tag provided
-    */
+  /** Gets completions for enum tags with tag provided */
   private def getEnumTagCompletionsWithTag(fqn: List[String])(implicit root: TypedAst.Root): Iterable[EnumTagCompletion] = {
     // The user has provided a tag
     // We know that there is at least one dot, so we split the context.word and

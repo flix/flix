@@ -21,9 +21,7 @@ import ca.uwaterloo.flix.util.Formatter
 import org.json4s.JsonDSL._
 import org.json4s._
 
-/**
-  * Companion object of [[PublishDiagnosticsParams]].
-  */
+/** Companion object of [[PublishDiagnosticsParams]]. */
 object PublishDiagnosticsParams {
   def fromMessages(errors: Iterable[CompilationMessage], explain: Boolean): List[PublishDiagnosticsParams] = {
     val formatter: Formatter = Formatter.NoFormatter

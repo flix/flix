@@ -20,16 +20,12 @@ import ca.uwaterloo.flix.language.ast.Ast
 
 object FormatEqualityConstraint {
 
-  /**
-    * Formats the given `econstr` as `Assoc[Arg] ~ Type`.
-    */
+  /** Formats the given `econstr` as `Assoc[Arg] ~ Type`. */
   def formatEqualityConstraint(econstr: Ast.BroadEqualityConstraint)(implicit flix: Flix): String = {
     formatEqualityConstraintWithOptions(econstr, flix.getFormatOptions)
   }
 
-  /**
-    * Formats the given `econstr` as `Assoc[Arg] ~ Type`.
-    */
+  /** Formats the given `econstr` as `Assoc[Arg] ~ Type`. */
   def formatEqualityConstraintWithOptions(tconstr: Ast.BroadEqualityConstraint, fmt: FormatOptions): String = tconstr match {
     case Ast.BroadEqualityConstraint(tpe1, tpe2) =>
       val tpe1String = FormatType.formatTypeWithOptions(tpe1, fmt)

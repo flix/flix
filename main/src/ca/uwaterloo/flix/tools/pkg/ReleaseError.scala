@@ -19,9 +19,7 @@ import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.util.Formatter
 
 sealed trait ReleaseError {
-  /**
-    * Returns a human-readable and formatted string representation of this error.
-    */
+  /** Returns a human-readable and formatted string representation of this error. */
   def message(f: Formatter): String
 }
 

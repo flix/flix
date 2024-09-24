@@ -41,9 +41,7 @@ class Parsed(s: String) extends ParsedLine {
   def line() = s
 }
 
-/**
-  * Implementation of jline's `Parser` to trigger jline's line continuation functionality
-  */
+/** Implementation of jline's `Parser` to trigger jline's line continuation functionality */
 class ShellParser extends Parser {
   def parse(s: String, cursor: Int, context: Parser.ParseContext): ParsedLine = {
 

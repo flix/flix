@@ -20,9 +20,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation}
 import ca.uwaterloo.flix.util.Formatter
 
-/**
-  * A common super-type for weeding errors.
-  */
+/** A common super-type for weeding errors. */
 sealed trait WeederError extends CompilationMessage {
   val kind = "Syntax Error"
 }
@@ -603,9 +601,7 @@ object WeederError {
          |""".stripMargin
     }
 
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
+    /** Returns a formatted string with helpful suggestions. */
     override def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} A regex cannot be used as a pattern. It can be used in an `if` guard, e.g using `isMatch` or `isSubmatch`."
@@ -753,9 +749,7 @@ object WeederError {
 
   }
 
-  /**
-    * An error raised to indicate that a name is not a valid Flix identifier.
-    */
+  /** An error raised to indicate that a name is not a valid Flix identifier. */
   case class MalformedIdentifier(name: String, loc: SourceLocation) extends WeederError with Recoverable {
     def summary: String = s"Malformed identifier: '$name'."
 

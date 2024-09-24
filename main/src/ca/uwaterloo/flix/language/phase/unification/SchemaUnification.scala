@@ -55,9 +55,7 @@ object SchemaUnification {
     case _ => throw InternalCompilerException(s"unexpected types: ($tpe1), ($tpe2)", tpe1.loc)
   }
 
-  /**
-    * Attempts to rewrite the given row type `rewrittenRow` such that it shares a first label with `staticRow`.
-    */
+  /** Attempts to rewrite the given row type `rewrittenRow` such that it shares a first label with `staticRow`. */
   // NOTE: This is a copy of the [[RecordUnification.rewriteRecordRow]] function. It would be nice if it could be the same function, but the shape of labels is different.
   private def rewriteSchemaRow(rewrittenRow: Type, staticRow: Type, renv: RigidityEnv)(implicit scope: Scope, flix: Flix): Result[(Substitution, Type), UnificationError] = {
 

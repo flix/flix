@@ -17,9 +17,7 @@ package ca.uwaterloo.flix.util.collection
 
 object IteratorOps {
 
-  /**
-    * Concatenates the given iterators.
-    */
+  /** Concatenates the given iterators. */
   def all[A](iters: IterableOnce[A]*): Iterator[A] = {
     iters.foldLeft(Iterator.empty[A])(_ ++ _)
   }

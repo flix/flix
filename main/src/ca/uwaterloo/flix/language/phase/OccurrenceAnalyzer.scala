@@ -33,14 +33,10 @@ object OccurrenceAnalyzer {
 
   object OccurInfo {
 
-    /**
-      * Occurrence information for an empty sequence of expressions
-      */
+    /** Occurrence information for an empty sequence of expressions */
     val Empty: OccurInfo = OccurInfo(Map.empty, Map.empty, 0)
 
-    /**
-      * The initial occurrence information for an expression of size 1, i.e. an expression without subexpressions.
-      */
+    /** The initial occurrence information for an expression of size 1, i.e. an expression without subexpressions. */
     val One: OccurInfo = OccurInfo(Map.empty, Map.empty, 1)
   }
 
@@ -49,16 +45,12 @@ object OccurrenceAnalyzer {
     * `size` represents the number of expressions in the body of a `def`
     */
   case class OccurInfo(defs: Map[DefnSym, Occur], vars: Map[VarSym, Occur], size: Int) {
-    /**
-      * Increments number of expressions by one
-      */
+    /** Increments number of expressions by one */
     def increaseSizeByOne(): OccurInfo = this.copy(size = this.size + 1)
   }
 
 
-  /**
-    * Performs occurrence analysis on the given AST `root`.
-    */
+  /** Performs occurrence analysis on the given AST `root`. */
   def run(root: LiftedAst.Root)(implicit flix: Flix): Validation[OccurrenceAst.Root, CompilationMessage] = {
 
     val defs = visitDefs(root.defs)
@@ -97,9 +89,7 @@ object OccurrenceAnalyzer {
     }
   }
 
-  /**
-    * Visits a definition in the program and performs occurrence analysis
-    */
+  /** Visits a definition in the program and performs occurrence analysis */
   private def visitDef(defn: LiftedAst.Def): (OccurrenceAst.Def, OccurInfo) = {
     val (e, oi) = visitExp(defn.sym, defn.exp)
     val cparams = defn.cparams.map(visitFormalParam).map(p => (p, oi.vars.getOrElse(p.sym, Dead)))
@@ -129,15 +119,11 @@ object OccurrenceAnalyzer {
     (OccurrenceAst.Def(defn.ann, defn.mod, defn.sym, cparams, fparams, e, defContext, defn.tpe, defn.loc), oi)
   }
 
-  /**
-    * Translates the given formal param `p` to the OccurrenceAst.
-    */
+  /** Translates the given formal param `p` to the OccurrenceAst. */
   private def visitFormalParam(p: LiftedAst.FormalParam): OccurrenceAst.FormalParam =
     OccurrenceAst.FormalParam(p.sym, p.mod, p.tpe, p.loc)
 
-  /**
-    * Performs occurrence analysis on the given expression `exp0`
-    */
+  /** Performs occurrence analysis on the given expression `exp0` */
   private def visitExp(sym0: Symbol.DefnSym, exp0: LiftedAst.Expr): (OccurrenceAst.Expr, OccurInfo) = exp0 match {
     case Expr.Cst(cst, tpe, loc) => (OccurrenceAst.Expr.Cst(cst, tpe, loc), OccurInfo.One)
 
@@ -257,32 +243,24 @@ object OccurrenceAnalyzer {
 
   }
 
-  /**
-    * Performs occurrence analysis on a list of expressions 'exps' and merges occurrences
-    */
+  /** Performs occurrence analysis on a list of expressions 'exps' and merges occurrences */
   private def visitExps(sym0: Symbol.DefnSym, exps: List[LiftedAst.Expr]): (List[OccurrenceAst.Expr], OccurInfo) = {
     val (es, o1) = exps.map(visitExp(sym0, _)).unzip
     val o2 = o1.foldLeft(OccurInfo.Empty)((acc, o3) => combineAllSeq(acc, o3))
     (es, o2)
   }
 
-  /**
-    * Combines the 2 objects `o1` and `o2` of the type OccurInfo into a single OccurInfo object using the function `combineBranch`.
-    */
+  /** Combines the 2 objects `o1` and `o2` of the type OccurInfo into a single OccurInfo object using the function `combineBranch`. */
   private def combineAllBranch(o1: OccurInfo, o2: OccurInfo): OccurInfo = {
     combineAll(o1, o2, combineBranch)
   }
 
-  /**
-    * Combines the 2 objects `o1` and `o2` of the type OccurInfo into a single OccurInfo object using the function `combineSeq`.
-    */
+  /** Combines the 2 objects `o1` and `o2` of the type OccurInfo into a single OccurInfo object using the function `combineSeq`. */
   private def combineAllSeq(o1: OccurInfo, o2: OccurInfo): OccurInfo = {
     combineAll(o1, o2, combineSeq)
   }
 
-  /**
-    * Combines the 2 objects `o1` and `o2` of the type OccurInfo into a single OccurInfo object using the argument `combine`.
-    */
+  /** Combines the 2 objects `o1` and `o2` of the type OccurInfo into a single OccurInfo object using the argument `combine`. */
   private def combineAll(o1: OccurInfo, o2: OccurInfo, combine: (Occur, Occur) => Occur): OccurInfo = {
     val varMap = combineMaps(o1.vars, o2.vars, combine)
     val defMap = combineMaps(o1.defs, o2.defs, combine)
@@ -290,9 +268,7 @@ object OccurrenceAnalyzer {
     OccurInfo(defMap, varMap, size)
   }
 
-  /**
-    * Combines the 2 maps `m1` and `m2` of the type (A -> Occur) into a single map of the same type using the argument `combine`.
-    */
+  /** Combines the 2 maps `m1` and `m2` of the type (A -> Occur) into a single map of the same type using the argument `combine`. */
   private def combineMaps[A](m1: Map[A, Occur], m2: Map[A, Occur], combine: (Occur, Occur) => Occur): Map[A, Occur] = {
     val (smallest, largest) = if (m1.size < m2.size) (m1, m2) else (m2, m1)
     smallest.foldLeft[Map[A, Occur]](largest) {
@@ -302,9 +278,7 @@ object OccurrenceAnalyzer {
     }
   }
 
-  /**
-    * Combines two occurrences `o1` and `o2` of type Occur into a single occurrence.
-    */
+  /** Combines two occurrences `o1` and `o2` of type Occur into a single occurrence. */
   private def combineSeq(o1: Occur, o2: Occur): Occur = (o1, o2) match {
     case (DontInline, _) => DontInline
     case (_, DontInline) => DontInline

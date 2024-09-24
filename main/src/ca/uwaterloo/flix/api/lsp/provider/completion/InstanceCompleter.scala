@@ -23,17 +23,13 @@ import ca.uwaterloo.flix.language.ast.{Ast, Kind, Symbol, Type, TypeConstructor,
 import ca.uwaterloo.flix.language.fmt.FormatType
 
 object InstanceCompleter {
-  /**
-    * Returns a List of Completion based on traits.
-    */
+  /** Returns a List of Completion based on traits. */
   def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[InstanceCompletion] = {
     if (context.previousWord != "instance") {
       return Nil
     }
 
-    /**
-      * Replaces the given symbol with a variable named by the given `newText`.
-      */
+    /** Replaces the given symbol with a variable named by the given `newText`. */
     def replaceText(oldSym: Symbol, tpe: Type, newText: String)(implicit flix: Flix): Type = {
       implicit val scope: Scope = Scope.Top
       tpe match {
@@ -70,30 +66,22 @@ object InstanceCompleter {
       }
     }
 
-    /**
-      * Formats the given type `tpe`.
-      */
+    /** Formats the given type `tpe`. */
     def fmtType(tpe: Type, holes: Map[Symbol, String])(implicit flix: Flix): String = {
       val replaced = holes.foldLeft(tpe) { case (t, (sym, hole)) => replaceText(sym, t, hole) }
       FormatType.formatType(replaced)
     }
 
-    /**
-      * Formats the given associated type `assoc`.
-      */
+    /** Formats the given associated type `assoc`. */
     def fmtAssocType(assoc: TypedAst.AssocTypeSig, holes: Map[Symbol, String])(implicit flix: Flix): String = {
       s"    type ${assoc.sym.name} = ${holes(assoc.sym)}"
     }
 
-    /**
-      * Formats the given formal parameters in `spec`.
-      */
+    /** Formats the given formal parameters in `spec`. */
     def fmtFormalParams(spec: TypedAst.Spec, holes: Map[Symbol, String])(implicit flix: Flix): String =
       spec.fparams.map(fparam => s"${fparam.sym.text}: ${fmtType(fparam.tpe, holes)}").mkString(", ")
 
-    /**
-      * Formats the given signature `sig`.
-      */
+    /** Formats the given signature `sig`. */
     def fmtSignature(sig: TypedAst.Sig, holes: Map[Symbol, String])(implicit flix: Flix): String = {
       val fparams = fmtFormalParams(sig.spec, holes)
       val retTpe = fmtType(sig.spec.retTpe, holes)
@@ -126,9 +114,7 @@ object InstanceCompleter {
     }.toList
   }
 
-  /**
-    * Formats the given trait `trt`.
-    */
+  /** Formats the given trait `trt`. */
   def fmtTrait(trt: TypedAst.Trait): String = {
     s"trait ${trt.sym.name}[${trt.tparam.name.name}]"
   }

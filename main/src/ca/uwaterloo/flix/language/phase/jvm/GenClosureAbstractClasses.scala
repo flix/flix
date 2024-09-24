@@ -27,9 +27,7 @@ object GenClosureAbstractClasses {
   val GetUniqueThreadClosureFunctionName: String = "getUniqueThreadClosure"
 
 
-  /**
-    * Returns the set of function abstract classes for the given set of types `ts`.
-    */
+  /** Returns the set of function abstract classes for the given set of types `ts`. */
   def gen(ts: Set[MonoType])(implicit flix: Flix): Map[JvmName, JvmClass] = {
     ts.foldLeft(Map.empty[JvmName, JvmClass]) {
       case (macc, tpe: MonoType.Arrow) =>

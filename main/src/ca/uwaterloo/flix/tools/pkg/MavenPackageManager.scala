@@ -83,9 +83,7 @@ object MavenPackageManager {
     }.map(dep => s"${dep.groupId}:${dep.artifactId}:${dep.versionTag}")
   }
 
-  /**
-    * Creates Coursier dependencies from a list of Strings
-    */
+  /** Creates Coursier dependencies from a list of Strings */
   private def createCoursierDependencies(depString: String): Result[CoursierDependency, PackageError] =
     coursier.parse.DependencyParser.dependency(depString, scalaVersion) match {
       case Left(error) => throw InternalCompilerException(s"Coursier error: $error", SourceLocation.Unknown)

@@ -20,16 +20,12 @@ import ca.uwaterloo.flix.language.ast.SourceLocation
 import org.json4s.JsonDSL._
 import org.json4s._
 
-/**
-  * Companion object of [[Location]].
-  */
+/** Companion object of [[Location]]. */
 object Location {
   def from(loc: SourceLocation): Location = Location(loc.source.name, Range.from(loc))
 }
 
-/**
-  * Represents a `Location` in LSP.
-  */
+/** Represents a `Location` in LSP. */
 case class Location(uri: String, range: Range) {
   def toJSON: JValue = ("uri" -> uri) ~ ("range" -> range.toJSON)
 }

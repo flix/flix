@@ -380,9 +380,7 @@ object ManifestParser {
     }
   }
 
-  /**
-   * Attempt to retrieve a [[SemVer]] at `depKey` from the table `deps`.
-   */
+  /** Attempt to retrieve a [[SemVer]] at `depKey` from the table `deps`. */
   private def getFlixVersion(deps: TomlTable, depKey: String, p: Path): Result[SemVer, ManifestError] = {
     // Ensure the version is a String.
     if (!deps.isString(depKey)) {
@@ -396,9 +394,7 @@ object ManifestParser {
     }
   }
 
-  /**
-   * Retrieve a list of permissions from a [[TomlTable]] `depTbl` at `key`.
-   */
+  /** Retrieve a list of permissions from a [[TomlTable]] `depTbl` at `key`. */
   private def getPermissions(depTbl: TomlTable, key: String, p: Path): Result[List[Permission], ManifestError] = {
     // Ensure the permissions are an Array.
     if (!depTbl.isArray(key)) {
@@ -477,9 +473,7 @@ object ManifestParser {
     }
   }
 
-  /**
-   * Checks that a package name does not include any illegal characters.
-   */
+  /** Checks that a package name does not include any illegal characters. */
   private def checkNameCharacters(name: String, p: Path): Result[String, ManifestError] = {
     if (name.matches("^[a-zA-Z0-9.:/_-]+$"))
       Ok(name)
@@ -498,9 +492,7 @@ object ManifestParser {
     }).toOk
   }
 
-  /**
-   * Creates the `PackageModules` object from `optList`.
-   */
+  /** Creates the `PackageModules` object from `optList`. */
   private def toPackageModules(optList: Option[List[String]], p: Path): Result[PackageModules, ManifestError] = {
     optList match {
       case None =>

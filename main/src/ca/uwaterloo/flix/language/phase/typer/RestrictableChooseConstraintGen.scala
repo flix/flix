@@ -49,25 +49,19 @@ object RestrictableChooseConstraintGen {
     }.toSet
   }
 
-  /**
-    * Converts the list of restrictable case symbols to a closed set type.
-    */
+  /** Converts the list of restrictable case symbols to a closed set type. */
   private def toType(syms: Set[Symbol.RestrictableCaseSym], enumSym: Symbol.RestrictableEnumSym, loc: SourceLocation): Type = {
     Type.Cst(TypeConstructor.CaseSet(syms.to(SortedSet), enumSym), loc)
   }
 
-  /**
-    * Unifies t1 and t2 where t1 is a subset of t2.
-    */
+  /** Unifies t1 and t2 where t1 is a subset of t2. */
   private def unifySubset(t1: Type, t2: Type, sym: Symbol.RestrictableEnumSym, loc: SourceLocation)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): Unit = {
     val diff = Type.mkCaseDifference(t1, t2, sym, loc)
     // t1 <: t2 <=> t1 - t2 ≡ ∅
     c.unifyType(diff, Type.Cst(TypeConstructor.CaseSet(SortedSet.empty, sym), loc), loc)
   }
 
-  /**
-    * Performs type inference on the given restrictable choose expression.
-    */
+  /** Performs type inference on the given restrictable choose expression. */
   def visitRestrictableChoose(exp: KindedAst.Expr.RestrictableChoose)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
     implicit val scope: Scope = c.getScope
 
@@ -171,9 +165,7 @@ object RestrictableChooseConstraintGen {
     }
   }
 
-  /**
-    * Performs type inference on the given restrictable tag expression.
-    */
+  /** Performs type inference on the given restrictable tag expression. */
   def visitRestrictableTag(exp: KindedAst.Expr.RestrictableTag)(implicit scope: Scope, c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
     exp match {
       case KindedAst.Expr.RestrictableTag(symUse, exp, isOpen, tvar, loc) =>
@@ -312,15 +304,11 @@ object RestrictableChooseConstraintGen {
     (enumType, indexVar, tparamArgs)
   }
 
-  /**
-    * Infers the type of the given restrictable choice pattern `pat0`.
-    */
+  /** Infers the type of the given restrictable choice pattern `pat0`. */
   private def visitRestrictableChoosePattern(pat0: KindedAst.RestrictableChoosePattern)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): Type = {
     implicit val scope: Scope = c.getScope
 
-    /**
-      * Local pattern visitor.
-      */
+    /** Local pattern visitor. */
     def visit(p: KindedAst.RestrictableChoosePattern): Type = p match {
       case KindedAst.RestrictableChoosePattern.Tag(symUse, pat, tvar, loc) =>
         // Lookup the enum declaration.
@@ -345,9 +333,7 @@ object RestrictableChooseConstraintGen {
     visit(pat0)
   }
 
-  /**
-    * Infers the type of the given restrictable choice pattern `pat0`.
-    */
+  /** Infers the type of the given restrictable choice pattern `pat0`. */
   private def visitVarOrWild(pat: KindedAst.RestrictableChoosePattern.VarOrWild)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): Type = pat match {
     case KindedAst.RestrictableChoosePattern.Wild(tvar, _) => tvar
     case KindedAst.RestrictableChoosePattern.Var(sym, tvar, loc) =>
@@ -356,9 +342,7 @@ object RestrictableChooseConstraintGen {
     case KindedAst.RestrictableChoosePattern.Error(tvar, _) => tvar
   }
 
-  /**
-    * Infers the type of the given patterns `pats0`.
-    */
+  /** Infers the type of the given patterns `pats0`. */
   private def visitRestrictableChoosePatterns(pats0: List[KindedAst.RestrictableChoosePattern])(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): List[Type] = {
     pats0.map(visitRestrictableChoosePattern)
   }

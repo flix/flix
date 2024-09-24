@@ -16,9 +16,7 @@
 package ca.uwaterloo.flix.api.lsp
 import org.json4s.{JInt, JValue}
 
-/**
-  * Represents an `InlayHintKind` in LSP.
-  */
+/** Represents an `InlayHintKind` in LSP. */
 sealed trait InlayHintKind {
   def toJSON: JValue = this match {
     case InlayHintKind.Type => JInt(1)
@@ -27,12 +25,8 @@ sealed trait InlayHintKind {
 }
 
 object InlayHintKind {
-  /**
-    * An inlay hint that for a type annotation.
-    */
+  /** An inlay hint that for a type annotation. */
   case object Type extends InlayHintKind
-  /**
-    * An inlay hint that is for a parameter.
-    */
+  /** An inlay hint that is for a parameter. */
   case object Parameter extends InlayHintKind
 }

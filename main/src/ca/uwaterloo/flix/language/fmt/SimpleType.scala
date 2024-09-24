@@ -21,9 +21,7 @@ import ca.uwaterloo.flix.language.errors.KindError
 import ca.uwaterloo.flix.language.fmt
 import ca.uwaterloo.flix.util.InternalCompilerException
 
-/**
-  * A well-kinded type in an easily-printable format.
-  */
+/** A well-kinded type in an easily-printable format. */
 sealed trait SimpleType
 
 object SimpleType {
@@ -100,106 +98,70 @@ object SimpleType {
   // Records
   //////////
 
-  /**
-    * A record constructor. `arg` should be a variable or a Hole.
-    */
+  /** A record constructor. `arg` should be a variable or a Hole. */
   case class RecordConstructor(arg: SimpleType) extends SimpleType
 
-  /**
-    * An unextended record.
-    */
+  /** An unextended record. */
   case class Record(labels: List[RecordLabelType]) extends SimpleType
 
-  /**
-    * An extended record. `arg` should be a variable or a Hole.
-    */
+  /** An extended record. `arg` should be a variable or a Hole. */
   case class RecordExtend(labels: List[RecordLabelType], rest: SimpleType) extends SimpleType
 
-  /**
-    * An unextended record row.
-    */
+  /** An unextended record row. */
   case class RecordRow(labels: List[RecordLabelType]) extends SimpleType
 
-  /**
-    * An extended record row. `arg` should be a variable or a Hole.
-    */
+  /** An extended record row. `arg` should be a variable or a Hole. */
   case class RecordRowExtend(labels: List[RecordLabelType], rest: SimpleType) extends SimpleType
 
   //////////
   // Schemas
   //////////
 
-  /**
-    * A schema constructor. `arg` should be a variable or a Hole.
-    */
+  /** A schema constructor. `arg` should be a variable or a Hole. */
   case class SchemaConstructor(arg: SimpleType) extends SimpleType
 
-  /**
-    * An unextended schema.
-    */
+  /** An unextended schema. */
   case class Schema(fields: List[PredicateFieldType]) extends SimpleType
 
-  /**
-    * An extended schema. `arg` should be a variable or a Hole.
-    */
+  /** An extended schema. `arg` should be a variable or a Hole. */
   case class SchemaExtend(fields: List[PredicateFieldType], rest: SimpleType) extends SimpleType
 
-  /**
-    * An unextended schema row.
-    */
+  /** An unextended schema row. */
   case class SchemaRow(fields: List[PredicateFieldType]) extends SimpleType
 
-  /**
-    * An extended schema row. `arg` should be a variable or a Hole.
-    */
+  /** An extended schema row. `arg` should be a variable or a Hole. */
   case class SchemaRowExtend(fields: List[PredicateFieldType], rest: SimpleType) extends SimpleType
 
   ////////////////////
   // Boolean Operators
   ////////////////////
 
-  /**
-    * Boolean negation.
-    */
+  /** Boolean negation. */
   case class Not(tpe: SimpleType) extends SimpleType
 
-  /**
-    * A chain of types connected by `and`.
-    */
+  /** A chain of types connected by `and`. */
   case class And(tpes: List[SimpleType]) extends SimpleType
 
-  /**
-    * A chain of types connected by `or`.
-    */
+  /** A chain of types connected by `or`. */
   case class Or(tpes: List[SimpleType]) extends SimpleType
 
   ////////////////
   // Set Operators
   ////////////////
 
-  /**
-    * Set complement.
-    */
+  /** Set complement. */
   case class Complement(tpe: SimpleType) extends SimpleType
 
-  /**
-    * A chain of types in a set.
-    */
+  /** A chain of types in a set. */
   case class Union(tpes: List[SimpleType]) extends SimpleType
 
-  /**
-    * A chain of types connected by `&`.
-    */
+  /** A chain of types connected by `&`. */
   case class Plus(tpes: List[SimpleType]) extends SimpleType
 
-  /**
-    * A chain of types connected by `&`.
-    */
+  /** A chain of types connected by `&`. */
   case class Intersection(tpes: List[SimpleType]) extends SimpleType
 
-  /**
-    * Difference of two types.
-    */
+  /** Difference of two types. */
   case class Difference(tpe1: SimpleType, tpe2: SimpleType) extends SimpleType
 
   /////////////
@@ -208,30 +170,22 @@ object SimpleType {
 
   case object RelationConstructor extends SimpleType
 
-  /**
-    * A relation over a list of types.
-    */
+  /** A relation over a list of types. */
   case class Relation(tpes: List[SimpleType]) extends SimpleType
 
   case object LatticeConstructor extends SimpleType
 
-  /**
-    * A lattice over a list of types.
-    */
+  /** A lattice over a list of types. */
   case class Lattice(tpes: List[SimpleType], lat: SimpleType) extends SimpleType
 
   ////////////
   // Functions
   ////////////
 
-  /**
-    * A pure function.
-    */
+  /** A pure function. */
   case class PureArrow(arg: SimpleType, ret: SimpleType) extends SimpleType
 
-  /**
-    * A function with a purity.
-    */
+  /** A function with a purity. */
   case class PolyArrow(arg: SimpleType, eff: SimpleType, ret: SimpleType) extends SimpleType
 
   ///////
@@ -256,75 +210,51 @@ object SimpleType {
 
   case class JvmStaticMethod(clazz: String, name: String, tpes: List[SimpleType]) extends SimpleType
 
-  /**
-    * A field type.
-    */
+  /** A field type. */
   case class FieldType(tpe: SimpleType) extends SimpleType
 
   //////////////////////
   // Miscellaneous Types
   //////////////////////
 
-  /**
-    * A simple named type (e.g., enum or type alias).
-    */
+  /** A simple named type (e.g., enum or type alias). */
   case class Name(name: String) extends SimpleType
 
-  /**
-    * A type applied to one or more types.
-    */
+  /** A type applied to one or more types. */
   case class Apply(tpe: SimpleType, tpes: List[SimpleType]) extends SimpleType
 
-  /**
-    * A type variable.
-    */
+  /** A type variable. */
   case class Var(id: Int, kind: Kind, isRegion: Boolean, text: Ast.VarText) extends SimpleType
 
-  /**
-    * A tuple.
-    */
+  /** A tuple. */
   case class Tuple(tpes: List[SimpleType]) extends SimpleType
 
 
-  /**
-    * An error type.
-    */
+  /** An error type. */
   case object Error extends SimpleType
 
   /////////
   // Fields
   /////////
 
-  /**
-    * A record label name and its type.
-    */
+  /** A record label name and its type. */
   case class RecordLabelType(name: String, tpe: SimpleType)
 
-  /**
-    * A common supertype for schema predicates.
-    */
+  /** A common supertype for schema predicates. */
   sealed trait PredicateFieldType {
     val name: String
   }
 
-  /**
-    * A relation field name and its types.
-    */
+  /** A relation field name and its types. */
   case class RelationFieldType(name: String, tpes: List[SimpleType]) extends PredicateFieldType
 
-  /**
-    * A lattice field name, its types, and its lattice.
-    */
+  /** A lattice field name, its types, and its lattice. */
   case class LatticeFieldType(name: String, tpes: List[SimpleType], lat: SimpleType) extends PredicateFieldType
 
-  /**
-    * A predicate field type that's not actually a predicate.
-    */
+  /** A predicate field type that's not actually a predicate. */
   case class NonPredFieldType(name: String, tpe: SimpleType) extends PredicateFieldType
 
-  /**
-    * Creates a simple type from the well-kinded type `t`.
-    */
+  /** Creates a simple type from the well-kinded type `t`. */
   def fromWellKindedType(t0: Type): SimpleType = {
 
     def visit(t: Type): SimpleType = t.baseType match {
@@ -589,26 +519,20 @@ object SimpleType {
     visit(t0)
   }
 
-  /**
-    * Builds an Apply type.
-    */
+  /** Builds an Apply type. */
   private def mkApply(base: SimpleType, args: List[SimpleType]): SimpleType = args match {
     case Nil => base
     case _ :: _ => Apply(base, args)
   }
 
-  /**
-    * Extracts the types from a tuple, treating non-tuples as singletons.
-    */
+  /** Extracts the types from a tuple, treating non-tuples as singletons. */
   private def destructTuple(tpe: SimpleType): List[SimpleType] = tpe match {
     case Tuple(fields) => fields
     case Unit => Nil
     case t => t :: Nil
   }
 
-  /**
-    * Transforms the given type, assuming it is a record row.
-    */
+  /** Transforms the given type, assuming it is a record row. */
   private def fromRecordRow(row0: Type): SimpleType = {
     def visit(row: Type): SimpleType = row match {
       // Case 1: A fully applied record row.
@@ -636,9 +560,7 @@ object SimpleType {
     }
   }
 
-  /**
-    * Transforms the given type, assuming it is a schema row.
-    */
+  /** Transforms the given type, assuming it is a schema row. */
   private def fromSchemaRow(row0: Type): SimpleType = {
     def visit(row: Type): SimpleType = row match {
       // Case 1: A fully applied record row.
@@ -727,9 +649,7 @@ object SimpleType {
     case ts => Intersection(ts)
   }
 
-  /**
-    * Map over the first element in the list, if it exists.
-    */
+  /** Map over the first element in the list, if it exists. */
   private def mapHead[A](l: List[A], f: A => A): List[A] = l match {
     case Nil => Nil
     case hd :: tl => f(hd) :: tl

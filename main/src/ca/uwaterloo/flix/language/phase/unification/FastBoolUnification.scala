@@ -85,9 +85,7 @@ object FastBoolUnification {
     */
   private val PermutationLimit: Int = 10
 
-  /**
-    * Enable debugging (prints information during Boolean unification).
-    */
+  /** Enable debugging (prints information during Boolean unification). */
   private val Debugging: Boolean = false
 
   /**
@@ -97,9 +95,7 @@ object FastBoolUnification {
     */
   private val Verify: Boolean = false
 
-  /**
-    * Internal formatter. Used for debugging.
-    */
+  /** Internal formatter. Used for debugging. */
   private val formatter: Formatter = Formatter.NoFormatter
 
   /**
@@ -135,9 +131,7 @@ object FastBoolUnification {
       */
     private var currentEqns: List[Equation] = l
 
-    /**
-      * The current substitution. Initially empty, but grows during computation.
-      */
+    /** The current substitution. Initially empty, but grows during computation. */
     private var currentSubst: BoolSubstitution = BoolSubstitution.empty
 
     /**
@@ -256,9 +250,7 @@ object FastBoolUnification {
       }
     }
 
-    /**
-      * Checks that current substitution has not grown too large according to the defined threshold.
-      */
+    /** Checks that current substitution has not grown too large according to the defined threshold. */
     private def verifySolutionSize(): Unit = {
       val size = currentSubst.size
       if (size > SizeThreshold) {
@@ -785,9 +777,7 @@ object FastBoolUnification {
       evaluateAll(t, xs, trueVars + x) || evaluateAll(t, xs, trueVars)
   }
 
-  /**
-    * Returns `true` if the given term `t` evaluates to true when all variables in `trueVars` are true and all other variables are false.
-    */
+  /** Returns `true` if the given term `t` evaluates to true when all variables in `trueVars` are true and all other variables are false. */
   private def evaluate(t: Term, trueVars: SortedSet[Int]): Boolean = t match {
     case Term.True => true
     case Term.False => false
@@ -894,9 +884,7 @@ object FastBoolUnification {
     visit(t, SortedSet.empty, SortedSet.empty)
   }
 
-  /**
-    * Companion object for [[Equation]].
-    */
+  /** Companion object for [[Equation]]. */
   object Equation {
     /**
       * Returns a unification equation  `t1 ~ t2` between the terms `t1` and `t2`.
@@ -933,14 +921,10 @@ object FastBoolUnification {
     */
   @nowarn
   case class Equation private(t1: Term, t2: Term, loc: SourceLocation) {
-    /**
-      * Returns the size of this equation which is the sum of its lhs and rhs.
-      */
+    /** Returns the size of this equation which is the sum of its lhs and rhs. */
     final def size: Int = t1.size + t2.size
 
-    /**
-      * Returns a human-readable representation of `this` unification equation.
-      */
+    /** Returns a human-readable representation of `this` unification equation. */
     override final def toString: String = s"$t1 ~ $t2"
   }
 
@@ -951,19 +935,13 @@ object FastBoolUnification {
     */
   sealed trait Term {
 
-    /**
-      * Syntactic sugar for [[Term.mkAnd]].
-      */
+    /** Syntactic sugar for [[Term.mkAnd]]. */
     final def &(that: Term): Term = Term.mkAnd(this, that)
 
-    /**
-      * Syntactic sugar for [[Equation.mk]]
-      */
+    /** Syntactic sugar for [[Equation.mk]] */
     final def ~(that: Term)(implicit loc: SourceLocation): Equation = Equation.mk(this, that, loc)
 
-    /**
-      * Returns all variables that occur in `this` term.
-      */
+    /** Returns all variables that occur in `this` term. */
     final def freeVars: SortedSet[Int] = this match {
       case Term.True => SortedSet.empty
       case Term.False => SortedSet.empty
@@ -994,9 +972,7 @@ object FastBoolUnification {
       case Term.Or(ts) => ts.map(_.size).sum + (ts.length - 1)
     }
 
-    /**
-      * Returns a human-readable representation of `this` term.
-      */
+    /** Returns a human-readable representation of `this` term. */
     override def toString: String = this match {
       case Term.True => formatter.red("true")
       case Term.False => formatter.red("false")
@@ -1014,14 +990,10 @@ object FastBoolUnification {
 
   object Term {
 
-    /**
-      * The TRUE symbol.
-      */
+    /** The TRUE symbol. */
     case object True extends Term
 
-    /**
-      * The FALSE symbol.
-      */
+    /** The FALSE symbol. */
     case object False extends Term
 
     /**
@@ -1038,9 +1010,7 @@ object FastBoolUnification {
       */
     case class Var(x: Int) extends Term
 
-    /**
-      * Represents the negation of the term `t`.
-      */
+    /** Represents the negation of the term `t`. */
     case class Not(t: Term) extends Term
 
     /**
@@ -1068,9 +1038,7 @@ object FastBoolUnification {
       assert(ts.length >= 2)
     }
 
-    /**
-      * Smart constructor for negation.
-      */
+    /** Smart constructor for negation. */
     final def mkNot(t: Term): Term = t match {
       case True => False
       case False => True
@@ -1078,9 +1046,7 @@ object FastBoolUnification {
       case _ => Not(t)
     }
 
-    /**
-      * Smart constructor for conjunction.
-      */
+    /** Smart constructor for conjunction. */
     final def mkAnd(t1: Term, t2: Term): Term = (t1, t2) match {
       case (False, _) => False
       case (_, False) => False
@@ -1089,9 +1055,7 @@ object FastBoolUnification {
       case _ => mkAnd(List(t1, t2))
     }
 
-    /**
-      * Smart constructor for disjunction.
-      */
+    /** Smart constructor for disjunction. */
     final def mkOr(t1: Term, t2: Term): Term = (t1, t2) match {
       case (True, _) => True
       case (_, True) => True
@@ -1146,9 +1110,7 @@ object FastBoolUnification {
       }
     }
 
-    /**
-      * Smart constructor for disjunction.
-      */
+    /** Smart constructor for disjunction. */
     final def mkOr(ts: List[Term]): Term = {
       // We refer to [[mkAnd]] since the structure is similar.
 
@@ -1179,25 +1141,17 @@ object FastBoolUnification {
       }
     }
 
-    /**
-      * Returns the Xor of `x` and `y`. Implemented by desugaring.
-      */
+    /** Returns the Xor of `x` and `y`. Implemented by desugaring. */
     final def mkXor(x: Term, y: Term): Term = mkOr(mkAnd(x, mkNot(y)), mkAnd(mkNot(x), y))
 
   }
 
-  /**
-    * Companion object of [[BoolSubstitution]].
-    */
+  /** Companion object of [[BoolSubstitution]]. */
   object BoolSubstitution {
-    /**
-      * The empty substitution.
-      */
+    /** The empty substitution. */
     val empty: BoolSubstitution = BoolSubstitution(Map.empty)
 
-    /**
-      * Returns a singleton substitution where the variable `x` is bound to the term `t`.
-      */
+    /** Returns a singleton substitution where the variable `x` is bound to the term `t`. */
     def singleton(x: Int, t: Term): BoolSubstitution = BoolSubstitution(Map(x -> t))
   }
 
@@ -1255,14 +1209,10 @@ object FastBoolUnification {
       case Equation(t1, t2, loc) => Equation.mk(apply(t1), apply(t2), loc)
     }
 
-    /**
-      * Applies `this` substitution to the given list of equations `l`.
-      */
+    /** Applies `this` substitution to the given list of equations `l`. */
     def apply(l: List[Equation]): List[Equation] = l.map(apply)
 
-    /**
-      * Returns the number of bindings in `this` substitution.
-      */
+    /** Returns the number of bindings in `this` substitution. */
     def numberOfBindings: Int = m.size
 
     /**
@@ -1339,9 +1289,7 @@ object FastBoolUnification {
       BoolSubstitution(result.toMap)
     }
 
-    /**
-      * Returns a human-readable representation of `this` substitution.
-      */
+    /** Returns a human-readable representation of `this` substitution. */
     override def toString: String = {
       val indent = 4
 
@@ -1358,9 +1306,7 @@ object FastBoolUnification {
     }
   }
 
-  /**
-    * Returns a human-readable representations of the given list of unification equations `l`.
-    */
+  /** Returns a human-readable representations of the given list of unification equations `l`. */
   private def format(l: List[Equation], indent: Int = 4): String = {
     val sb = new StringBuilder()
     for (Equation(t1, t2, _) <- l) {
@@ -1400,14 +1346,10 @@ object FastBoolUnification {
     }
   }
 
-  /**
-    * A common super-type for exceptions throw by the solver.
-    */
+  /** A common super-type for exceptions throw by the solver. */
   sealed trait FastBoolUnificationException extends RuntimeException
 
-  /**
-    * Represents a Boolean unification failure between the two terms: `x` and `y`.
-    */
+  /** Represents a Boolean unification failure between the two terms: `x` and `y`. */
   case class ConflictException(x: Term, y: Term, loc: SourceLocation) extends FastBoolUnificationException
 
   /**

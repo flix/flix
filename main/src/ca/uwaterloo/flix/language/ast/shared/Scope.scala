@@ -19,14 +19,10 @@ import ca.uwaterloo.flix.language.ast.Symbol
 
 case class Scope(syms: List[Symbol.KindedTypeVarSym]) {
 
-  /**
-    * Returns the scope corresponding to the given region sym, nested inside the current region.
-    */
+  /** Returns the scope corresponding to the given region sym, nested inside the current region. */
   def enter(sym: Symbol.KindedTypeVarSym): Scope = Scope(sym :: syms)
 
-  /**
-    * Returns true iff `this` scope is outside of `that` scope.
-    */
+  /** Returns true iff `this` scope is outside of `that` scope. */
   def isOutside(that: Scope): Boolean = {
     // In principle, we should check that `this.syms` is a suffix of `that.syms`,
     // but checking length is sufficient.
@@ -37,9 +33,7 @@ case class Scope(syms: List[Symbol.KindedTypeVarSym]) {
 
 object Scope {
 
-  /**
-    * The scope that is not inside any region.
-    */
+  /** The scope that is not inside any region. */
   // TODO LEVELS is declaration level higher?
   val Top: Scope = Scope(Nil)
 

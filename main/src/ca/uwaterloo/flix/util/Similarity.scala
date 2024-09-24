@@ -17,9 +17,7 @@ package ca.uwaterloo.flix.util
 
 object Similarity {
 
-  /**
-    * Returns the value of the key in `haystacks` which is closets to the given `needle`.
-    */
+  /** Returns the value of the key in `haystacks` which is closets to the given `needle`. */
   def closestMatch[V](needle: String, haystacks: Map[String, V]): V = {
     val (smallestKey, smallestValue) = haystacks.minBy {
       case (k, v) =>
@@ -61,9 +59,7 @@ object Similarity {
     d(lenStr1)(lenStr2)
   }
 
-  /**
-    * Returns the minimum of the given `nums`.
-    */
+  /** Returns the minimum of the given `nums`. */
   private def min(nums: Int*): Int = nums.min
 
 }

@@ -21,96 +21,60 @@ import ca.uwaterloo.flix.language.errors.ResolutionError
 
 import java.util.Objects
 
-/**
-  * A collection of AST nodes that are shared across multiple ASTs.
-  */
+/** A collection of AST nodes that are shared across multiple ASTs. */
 object Ast {
 
-  /**
-    * Companion object of [[Annotations]].
-    */
+  /** Companion object of [[Annotations]]. */
   object Annotations {
-    /**
-      * The empty sequence of annotations.
-      */
+    /** The empty sequence of annotations. */
     val Empty: Annotations = Annotations(Nil)
   }
 
-  /**
-    * A sequence of annotations.
-    */
+  /** A sequence of annotations. */
   case class Annotations(annotations: List[Annotation]) {
 
-    /**
-      * Returns `true` if `this` sequence contains the `@Deprecated` annotation.
-      */
+    /** Returns `true` if `this` sequence contains the `@Deprecated` annotation. */
     def isDeprecated: Boolean = annotations exists (_.isInstanceOf[Annotation.Deprecated])
 
-    /**
-      * Returns `true` if `this` sequence contains the `@Experimental` annotation.
-      */
+    /** Returns `true` if `this` sequence contains the `@Experimental` annotation. */
     def isExperimental: Boolean = annotations exists (_.isInstanceOf[Annotation.Experimental])
 
-    /**
-      * Returns `true` if `this` sequence contains the `@Export` annotation.
-      */
+    /** Returns `true` if `this` sequence contains the `@Export` annotation. */
     def isExport: Boolean = annotations exists (_.isInstanceOf[Annotation.Export])
 
-    /**
-      * Returns `true` if `this` sequence contains the `@Internal` annotation.
-      */
+    /** Returns `true` if `this` sequence contains the `@Internal` annotation. */
     def isInternal: Boolean = annotations exists (_.isInstanceOf[Annotation.Internal])
 
-    /**
-      * Returns `true` if `this` sequence contains the `@Lazy` annotation.
-      */
+    /** Returns `true` if `this` sequence contains the `@Lazy` annotation. */
     def isLazy: Boolean = annotations exists (_.isInstanceOf[Annotation.Lazy])
 
-    /**
-      * Returns `true` if `this` sequence contains the `@LazyWhenPure` annotation.
-      */
+    /** Returns `true` if `this` sequence contains the `@LazyWhenPure` annotation. */
     def isLazyWhenPure: Boolean = annotations exists (_.isInstanceOf[Annotation.LazyWhenPure])
 
-    /**
-      * Returns `true` if `this` sequence contains the `@MustUse` annotation.
-      */
+    /** Returns `true` if `this` sequence contains the `@MustUse` annotation. */
     def isMustUse: Boolean = annotations exists (_.isInstanceOf[Annotation.MustUse])
 
-    /**
-      * Returns `true` if `this` sequence contains the `@Parallel` annotation.
-      */
+    /** Returns `true` if `this` sequence contains the `@Parallel` annotation. */
     def isParallel: Boolean = annotations exists (_.isInstanceOf[Annotation.Parallel])
 
-    /**
-      * Returns `true` if `this` sequence contains the `@ParallelWhenPure` annotation.
-      */
+    /** Returns `true` if `this` sequence contains the `@ParallelWhenPure` annotation. */
     def isParallelWhenPure: Boolean = annotations exists (_.isInstanceOf[Annotation.ParallelWhenPure])
 
-    /**
-      * Returns `true` if `this` sequence contains the `@Skip` annotation.
-      */
+    /** Returns `true` if `this` sequence contains the `@Skip` annotation. */
     def isSkip: Boolean = annotations exists (_.isInstanceOf[Annotation.Skip])
 
-    /**
-      * Returns `true` if `this` sequence contains the `@Test` annotation.
-      */
+    /** Returns `true` if `this` sequence contains the `@Test` annotation. */
     def isTest: Boolean = annotations exists (_.isInstanceOf[Annotation.Test])
   }
 
-  /**
-    * A common super-type that represents an expression position (tail position or not).
-    */
+  /** A common super-type that represents an expression position (tail position or not). */
   sealed trait ExpPosition
 
   object ExpPosition {
-    /**
-      * Represents an expression in tail position.
-      */
+    /** Represents an expression in tail position. */
     case object Tail extends ExpPosition
 
-    /**
-      * Represents an expression in non-tail position.
-      */
+    /** Represents an expression in non-tail position. */
     case object NonTail extends ExpPosition
   }
 
@@ -126,105 +90,67 @@ object Ast {
       map(_.trim).
       mkString("\n")
 
-    /**
-      * Returns a string representation that hides the internals.
-      */
+    /** Returns a string representation that hides the internals. */
     override def toString: String = "Doc(...)"
   }
 
-  /**
-    * Companion object of [[Modifiers]].
-    */
+  /** Companion object of [[Modifiers]]. */
   object Modifiers {
-    /**
-      * The empty sequence of modifiers.
-      */
+    /** The empty sequence of modifiers. */
     val Empty: Modifiers = Modifiers(Nil)
   }
 
-  /**
-    * A sequence of modifiers.
-    */
+  /** A sequence of modifiers. */
   case class Modifiers(mod: List[Modifier]) {
 
-    /**
-      * Returns a new modifier sequence with `pub` added.
-      */
+    /** Returns a new modifier sequence with `pub` added. */
     def asPublic: Modifiers = if (isPublic) this else Modifiers(Modifier.Public :: mod)
 
-    /**
-      * Returns `true` if these modifiers contain the lawful modifier.
-      */
+    /** Returns `true` if these modifiers contain the lawful modifier. */
     def isLawful: Boolean = mod contains Modifier.Lawful
 
-   /**
-     * Returns `true` if these modifiers contain the mutable modifier.
-     */
+   /** Returns `true` if these modifiers contain the mutable modifier. */
     def isMutable: Boolean = mod contains Modifier.Mutable
 
-    /**
-      * Returns `true` if these modifiers contain the override modifier.
-      */
+    /** Returns `true` if these modifiers contain the override modifier. */
     def isOverride: Boolean = mod contains Modifier.Override
 
-    /**
-      * Returns `true` if these modifiers contain the public modifier.
-      */
+    /** Returns `true` if these modifiers contain the public modifier. */
     def isPublic: Boolean = mod contains Modifier.Public
 
-    /**
-      * Returns `true` if these modifiers contain the sealed modifier.
-      */
+    /** Returns `true` if these modifiers contain the sealed modifier. */
     def isSealed: Boolean = mod contains Modifier.Sealed
 
-    /**
-      * Returns `true` if these modifiers contain the synthetic modifier.
-      */
+    /** Returns `true` if these modifiers contain the synthetic modifier. */
     def isSynthetic: Boolean = mod contains Modifier.Synthetic
 
-    /**
-      * Returns a string representation that hides the internals.
-      */
+    /** Returns a string representation that hides the internals. */
     override def toString: String = "Modifiers(...)"
 
   }
 
-  /**
-    * A common super-type for modifiers.
-    */
+  /** A common super-type for modifiers. */
   sealed trait Modifier
 
   object Modifier {
 
-    /**
-      * The lawful modifier.
-      */
+    /** The lawful modifier. */
     case object Lawful extends Modifier
 
-   /**
-     * The mutable modifier.
-     */
+   /** The mutable modifier. */
 
     case object Mutable extends Modifier
 
-    /**
-      * The override modifier.
-      */
+    /** The override modifier. */
     case object Override extends Modifier
 
-    /**
-      * The public modifier.
-      */
+    /** The public modifier. */
     case object Public extends Modifier
 
-    /**
-      * The sealed modifier.
-      */
+    /** The sealed modifier. */
     case object Sealed extends Modifier
 
-    /**
-      * The synthetic modifier.
-      */
+    /** The synthetic modifier. */
     case object Synthetic extends Modifier
 
   }
@@ -236,9 +162,7 @@ object Ast {
     */
   case class LabelledEdge(head: Name.Pred, polarity: Polarity, fixity: Fixity, labels: Vector[Label], body: Name.Pred, loc: SourceLocation)
 
-  /**
-    * Represents a label in the labelled graph.
-    */
+  /** Represents a label in the labelled graph. */
   case class Label(pred: Name.Pred, den: Denotation, arity: Int, terms: List[Type])
 
   /**
@@ -252,16 +176,12 @@ object Ast {
     * and `C -[B]-> A`.
     */
   object LabelledPrecedenceGraph {
-    /**
-      * The empty labelled graph.
-      */
+    /** The empty labelled graph. */
     val empty: LabelledPrecedenceGraph = LabelledPrecedenceGraph(Vector.empty)
   }
 
   case class LabelledPrecedenceGraph(edges: Vector[LabelledEdge]) {
-    /**
-      * Returns a labelled graph with all labelled edges in `this` and `that` labelled graph.
-      */
+    /** Returns a labelled graph with all labelled edges in `this` and `that` labelled graph. */
     def +(that: LabelledPrecedenceGraph): LabelledPrecedenceGraph = {
       if (this eq LabelledPrecedenceGraph.empty)
         that
@@ -288,37 +208,25 @@ object Ast {
   }
 
   object Stratification {
-    /**
-      * Represents the empty stratification.
-      */
+    /** Represents the empty stratification. */
     val empty: Stratification = Stratification(Map.empty)
   }
 
-  /**
-    * Represents a stratification that maps every predicate symbol to its stratum.
-    */
+  /** Represents a stratification that maps every predicate symbol to its stratum. */
   case class Stratification(m: Map[Name.Pred, Int])
 
-  /**
-    * Represents that the annotated element is introduced by the class `clazz`.
-    */
+  /** Represents that the annotated element is introduced by the class `clazz`. */
   case class IntroducedBy(clazz: java.lang.Class[_]) extends scala.annotation.StaticAnnotation
 
-  /**
-    * Represents that the annotated element is eliminated by the class `clazz`.
-    */
+  /** Represents that the annotated element is eliminated by the class `clazz`. */
   case class EliminatedBy(clazz: java.lang.Class[_]) extends scala.annotation.StaticAnnotation
 
   case object TraitConstraint {
-    /**
-      * Represents the head (located class) of a type constraint.
-      */
+    /** Represents the head (located class) of a type constraint. */
     case class Head(sym: Symbol.TraitSym, loc: SourceLocation)
   }
 
-  /**
-    * Represents that the type `arg` must belong to trait `sym`.
-    */
+  /** Represents that the type `arg` must belong to trait `sym`. */
   case class TraitConstraint(head: TraitConstraint.Head, arg: Type, loc: SourceLocation) {
     override def equals(o: Any): Boolean = o match {
       case that: TraitConstraint =>
@@ -329,9 +237,7 @@ object Ast {
     override def hashCode(): Int = Objects.hash(head.sym, arg)
   }
 
-  /**
-    * Represents that `cst[tpe1]` and `tpe2` are equivalent types.
-    */
+  /** Represents that `cst[tpe1]` and `tpe2` are equivalent types. */
   case class EqualityConstraint(cst: Ast.AssocTypeConstructor, tpe1: Type, tpe2: Type, loc: SourceLocation)
 
   /**
@@ -340,60 +246,38 @@ object Ast {
     */
   case class BroadEqualityConstraint(tpe1: Type, tpe2: Type) // TODO ASSOC-TYPES not really an AST feature
 
-  /**
-    * Represents a use of an effect sym.
-    */
+  /** Represents a use of an effect sym. */
   case class EffectSymUse(sym: Symbol.EffectSym, loc: SourceLocation)
 
-  /**
-    * Represents a use of an effect operation sym.
-    */
+  /** Represents a use of an effect operation sym. */
   case class OpSymUse(sym: Symbol.OpSym, loc: SourceLocation)
 
-  /**
-    * Represents a use of an enum case sym.
-    */
+  /** Represents a use of an enum case sym. */
   case class CaseSymUse(sym: Symbol.CaseSym, loc: SourceLocation)
 
-  /**
-    * Represents a use of a struct field sym.
-    */
+  /** Represents a use of a struct field sym. */
   case class StructFieldSymUse(sym: Symbol.StructFieldSym, loc: SourceLocation)
 
-  /**
-    * Represents a use of a restrictable enum case sym.
-    */
+  /** Represents a use of a restrictable enum case sym. */
   case class RestrictableCaseSymUse(sym: Symbol.RestrictableCaseSym, loc: SourceLocation)
 
-  /**
-    * Represents a use of a restrictable enum sym.
-    */
+  /** Represents a use of a restrictable enum sym. */
   case class RestrictableEnumSymUse(sym: Symbol.RestrictableEnumSym, loc: SourceLocation)
 
-  /**
-    * Represents a use of a defn sym.
-    */
+  /** Represents a use of a defn sym. */
   case class DefSymUse(sym: Symbol.DefnSym, loc: SourceLocation)
 
 
-  /**
-    * Represents a use of a class sym.
-    */
+  /** Represents a use of a class sym. */
   case class TraitSymUse(sym: Symbol.TraitSym, loc: SourceLocation)
 
-  /**
-    * Represents a use of an associated type sym.
-    */
+  /** Represents a use of an associated type sym. */
   case class AssocTypeSymUse(sym: Symbol.AssocTypeSym, loc: SourceLocation)
 
-  /**
-    * Represents that an instance on type `tpe` has the type constraints `tconstrs`.
-    */
+  /** Represents that an instance on type `tpe` has the type constraints `tconstrs`. */
   case class Instance(tpe: Type, tconstrs: List[Ast.TraitConstraint])
 
-  /**
-    * Represents the super traits and instances available for a particular traits.
-    */
+  /** Represents the super traits and instances available for a particular traits. */
   case class TraitContext(superTraits: List[Symbol.TraitSym], instances: List[Ast.Instance])
 
   /**
@@ -403,9 +287,7 @@ object Ast {
     */
   case class AssocTypeDef(arg: Type, ret: Type)
 
-  /**
-    * Represents a derivation on an enum (e.g. `enum E with Eq`).
-    */
+  /** Represents a derivation on an enum (e.g. `enum E with Eq`). */
   case class Derivation(trt: Symbol.TraitSym, loc: SourceLocation)
 
   /**
@@ -420,53 +302,35 @@ object Ast {
     */
   case class Derivations(traits: List[Derivation], loc: SourceLocation)
 
-  /**
-    * Represents the way a variable is bound.
-    */
+  /** Represents the way a variable is bound. */
   sealed trait BoundBy
 
   object BoundBy {
 
-    /**
-      * Represents a variable that is bound by a formal parameter.
-      */
+    /** Represents a variable that is bound by a formal parameter. */
     case object FormalParam extends BoundBy
 
-    /**
-      * Represents a variable that is bound by a let-binding.
-      */
+    /** Represents a variable that is bound by a let-binding. */
     case object Let extends BoundBy
 
-    /**
-      * Represents a variable that is bound by a pattern.
-      */
+    /** Represents a variable that is bound by a pattern. */
     case object Pattern extends BoundBy
 
-    /**
-      * Represents a variable that is bound by a select.
-      */
+    /** Represents a variable that is bound by a select. */
     case object SelectRule extends BoundBy
 
-    /**
-      * Represents a variable that is bound by a catch rule.
-      */
+    /** Represents a variable that is bound by a catch rule. */
     case object CatchRule extends BoundBy
 
-    /**
-      * Represents a variable that is bound by a constraint.
-      */
+    /** Represents a variable that is bound by a constraint. */
     case object Constraint extends BoundBy
 
   }
 
-  /**
-    * Represents the text of a variable.
-    */
+  /** Represents the text of a variable. */
   sealed trait VarText {
 
-    /**
-      * A measure of precision of the text.
-      */
+    /** A measure of precision of the text. */
     private def precision: Int = this match {
       case VarText.Absent => 0
       case VarText.SourceText(_) => 2
@@ -482,59 +346,39 @@ object Ast {
   }
 
   object VarText {
-    /**
-      * The variable has no associated text.
-      */
+    /** The variable has no associated text. */
     case object Absent extends VarText
 
-    /**
-      * The variable is associated with the string `s` taken directly from the source code.
-      */
+    /** The variable is associated with the string `s` taken directly from the source code. */
     case class SourceText(s: String) extends VarText
   }
 
-  /**
-    * Enum representing whether a type is ascribed or inferred.
-    */
+  /** Enum representing whether a type is ascribed or inferred. */
   sealed trait TypeSource
 
   object TypeSource {
-    /**
-      * The type is ascribed (present in the source code).
-      */
+    /** The type is ascribed (present in the source code). */
     case object Ascribed extends TypeSource
 
-    /**
-      * The type is inferred (absent in the source code).
-      */
+    /** The type is inferred (absent in the source code). */
     case object Inferred extends TypeSource
   }
 
-  /**
-    * A constructor for a type alias. (Not a valid type by itself).
-    */
+  /** A constructor for a type alias. (Not a valid type by itself). */
   case class AliasConstructor(sym: Symbol.TypeAliasSym, loc: SourceLocation)
 
-  /**
-    * A constructor for an associated type. (Not a valid type by itself).
-    */
+  /** A constructor for an associated type. (Not a valid type by itself). */
   case class AssocTypeConstructor(sym: Symbol.AssocTypeSym, loc: SourceLocation)
 
-  /**
-    * A use of a Flix symbol or import of a Java class.
-    */
+  /** A use of a Flix symbol or import of a Java class. */
   sealed trait UseOrImport
 
   object UseOrImport {
 
-    /**
-      * A use of a Flix declaration symbol.
-      */
+    /** A use of a Flix declaration symbol. */
     case class Use(sym: Symbol, alias: Name.Ident, loc: SourceLocation) extends UseOrImport
 
-    /**
-      * An import of a Java class.
-      */
+    /** An import of a Java class. */
     case class Import(clazz: Class[_], alias: Name.Ident, loc: SourceLocation) extends UseOrImport
   }
 

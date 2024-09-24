@@ -18,9 +18,7 @@ package ca.uwaterloo.flix.language.phase.unification
 import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.errors.Unrecoverable
 
-/**
-  * A common super-type for unification errors.
-  */
+/** A common super-type for unification errors. */
 sealed trait UnificationError
 
 object UnificationError {

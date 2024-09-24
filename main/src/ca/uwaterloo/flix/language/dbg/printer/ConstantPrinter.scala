@@ -21,9 +21,7 @@ import ca.uwaterloo.flix.language.dbg.DocAst.Expr
 
 object ConstantPrinter {
 
-  /**
-    * Returns the [[Expr]] representation of `cst`.
-    */
+  /** Returns the [[Expr]] representation of `cst`. */
   def print(cst: Constant): Expr = cst match {
     case Constant.Unit => Expr.Unit
     case Constant.Null => Expr.AsIs("null")

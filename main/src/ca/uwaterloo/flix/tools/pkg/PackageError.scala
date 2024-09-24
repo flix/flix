@@ -21,9 +21,7 @@ import ca.uwaterloo.flix.util.Formatter
 import java.net.URL
 
 sealed trait PackageError {
-  /**
-    * Returns a human-readable and formatted string representation of this error.
-    */
+  /** Returns a human-readable and formatted string representation of this error. */
   def message(f: Formatter): String
 }
 

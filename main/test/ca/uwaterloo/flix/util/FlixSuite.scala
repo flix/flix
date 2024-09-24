@@ -25,9 +25,7 @@ import java.nio.file.{Path, Paths}
 
 class FlixSuite(incremental: Boolean) extends AnyFunSuite {
 
-  /**
-    * A global Flix instance that is used if incremental compilation is enabled.
-    */
+  /** A global Flix instance that is used if incremental compilation is enabled. */
   var flix = new Flix()
 
   /**
@@ -59,9 +57,7 @@ class FlixSuite(incremental: Boolean) extends AnyFunSuite {
     }
   }
 
-  /**
-    * Runs all the tests in the file located at `path`.
-    */
+  /** Runs all the tests in the file located at `path`. */
   def mkTest(path: String)(implicit options: Options): Unit = {
     val p = Paths.get(path)
     val n = p.getFileName.toString

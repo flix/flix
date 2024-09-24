@@ -15,9 +15,7 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
-/**
-  * Represents a `SymbolKind` in LSP.
-  */
+/** Represents a `SymbolKind` in LSP. */
 sealed trait SymbolKind {
   def toInt: Int = this match {
     case SymbolKind.File => 1

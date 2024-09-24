@@ -21,9 +21,7 @@ import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.DefCompletion
 import ca.uwaterloo.flix.language.ast.TypedAst
 
 object DefCompleter {
-  /**
-    * Returns a List of Completion for defs.
-    */
+  /** Returns a List of Completion for defs. */
   def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[DefCompletion] = {
     val word = context.word
     val uri = context.uri
@@ -37,9 +35,7 @@ object DefCompleter {
       )
   }
 
-  /**
-    * Returns `true` if the given definition `decl` should be included in the suggestions.
-    */
+  /** Returns `true` if the given definition `decl` should be included in the suggestions. */
   private def matchesDef(decl: TypedAst.Def, word: String, uri: String): Boolean = {
     def isInternal(decl: TypedAst.Def): Boolean = decl.spec.ann.isInternal
 

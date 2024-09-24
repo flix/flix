@@ -20,9 +20,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.Formatter
 
-/**
-  * A common super-type for derivation errors.
-  */
+/** A common super-type for derivation errors. */
 sealed trait DerivationError extends CompilationMessage {
   val kind: String = "Derivation Error"
 }

@@ -36,9 +36,7 @@ object EffectVerifier {
   // We use top scope for simplicity. This is the most relaxed option.
   private implicit val S: Scope = Scope.Top
 
-  /**
-    * Verifies the effects in the given root.
-    */
+  /** Verifies the effects in the given root. */
   def run(root: Root)(implicit flix: Flix): Unit = {
     if (flix.options.xverifyeffects) {
       // TODO visit sigs and instances
@@ -48,17 +46,13 @@ object EffectVerifier {
     }
   }
 
-  /**
-    * Verifies the effects in the given definition.
-    */
+  /** Verifies the effects in the given definition. */
   def visitDef(defn: Def)(implicit eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Unit = {
     visitExp(defn.exp)
     expectType(defn.spec.eff, defn.exp.eff, defn.exp.loc)
   }
 
-  /**
-    * Verifies the effects in the given expression
-    */
+  /** Verifies the effects in the given expression */
   def visitExp(e: Expr)(implicit eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Unit = e match {
     case Expr.Cst(cst, tpe, loc) => ()
     case Expr.Var(sym, tpe, loc) => ()
@@ -365,9 +359,7 @@ object EffectVerifier {
     case Expr.Error(m, tpe, eff) => ()
   }
 
-  /**
-    * Throws an exception if the actual type does not match the expected type.
-    */
+  /** Throws an exception if the actual type does not match the expected type. */
   private def expectType(expected: Type, actual: Type, loc: SourceLocation)(implicit eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Unit = {
     // mark everything as rigid
     val renv = RigidityEnv.ofRigidVars(expected.typeVars.map(_.sym) ++ actual.typeVars.map(_.sym))

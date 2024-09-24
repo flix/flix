@@ -3,9 +3,7 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.language.ast.shared.{Input, Source}
 
 object SourcePosition {
-  /**
-    * Represents an unknown source position.
-    */
+  /** Represents an unknown source position. */
   val Unknown: SourcePosition = SourcePosition(Source(Input.Unknown, Array.emptyCharArray), 0, 0)
 }
 
@@ -19,9 +17,7 @@ object SourcePosition {
   */
 case class SourcePosition(source: Source, line: Int, col: Short) {
 
-  /**
-    * Returns `true` if `this` and `o` represent the same source position.
-    */
+  /** Returns `true` if `this` and `o` represent the same source position. */
   override def equals(o: Any): Boolean = o match {
     case that: SourcePosition =>
       this.source == that.source &&
@@ -30,9 +26,7 @@ case class SourcePosition(source: Source, line: Int, col: Short) {
     case _ => false
   }
 
-  /**
-    * Returns the hashCode of `this` source position.
-    */
+  /** Returns the hashCode of `this` source position. */
   override def hashCode(): Int = source.hashCode() + line + col
 
 }

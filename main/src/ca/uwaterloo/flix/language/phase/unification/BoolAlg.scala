@@ -21,79 +21,49 @@ import ca.uwaterloo.flix.util.collection.Bimap
 
 import scala.collection.immutable.SortedSet
 
-/**
-  * A type class for Boolean Formulas.
-  */
+/** A type class for Boolean Formulas. */
 trait BoolAlg[F] {
 
-  /**
-    * Returns `true` if `f` represents TRUE.
-    */
+  /** Returns `true` if `f` represents TRUE. */
   def isTrue(f: F): Boolean
 
-  /**
-    * Returns `true` if `f` represents FALSE.
-    */
+  /** Returns `true` if `f` represents FALSE. */
   def isFalse(f: F): Boolean
 
-  /**
-    * Returns `true` if `f` represents a variable.
-    */
+  /** Returns `true` if `f` represents a variable. */
   def isVar(f: F): Boolean
 
-  /**
-    * Returns a representation of TRUE.
-    */
+  /** Returns a representation of TRUE. */
   def mkTrue: F
 
-  /**
-    * Returns a representation of FALSE.
-    */
+  /** Returns a representation of FALSE. */
   def mkFalse: F
 
-  /**
-    * Returns a representation of the variable with the given `id`.
-    */
+  /** Returns a representation of the variable with the given `id`. */
   def mkVar(id: Int): F
 
-  /**
-    * Returns a representation of the complement of `f`.
-    */
+  /** Returns a representation of the complement of `f`. */
   def mkNot(f: F): F
 
-  /**
-    * Returns a representation of the disjunction of `f1` and `f2`.
-    */
+  /** Returns a representation of the disjunction of `f1` and `f2`. */
   def mkOr(f1: F, f2: F): F
 
-  /**
-    * Returns a representation of the conjunction of `f1` and `f2`.
-    */
+  /** Returns a representation of the conjunction of `f1` and `f2`. */
   def mkAnd(f1: F, f2: F): F
 
-  /**
-    * Returns a representation of the formula `f1 xor f2`.
-    */
+  /** Returns a representation of the formula `f1 xor f2`. */
   def mkXor(f1: F, f2: F): F = mkOr(mkAnd(f1, mkNot(f2)), mkAnd(mkNot(f1), f2))
 
-  /**
-    * Returns the set of free variables in `f`.
-    */
+  /** Returns the set of free variables in `f`. */
   def freeVars(f: F): SortedSet[Int]
 
-  /**
-    * Applies the function `fn` to every variable in `f`.
-    */
+  /** Applies the function `fn` to every variable in `f`. */
   def map(f: F)(fn: Int => F): F
 
-  /**
-    * Returns `true` if formula is satisfiable and `false` otherwise.
-    */
+  /** Returns `true` if formula is satisfiable and `false` otherwise. */
   def satisfiable(f: F): Boolean
 
-  /**
-    * Returns a representation equivalent to `f` (but potentially smaller).
-    */
+  /** Returns a representation equivalent to `f` (but potentially smaller). */
   def minimize(f: F): F
 
   /**
@@ -118,9 +88,7 @@ trait BoolAlg[F] {
     }
   }
 
-  /**
-    * Returns a rigidity environment on formulas that is equivalent to the given one on types.
-    */
+  /** Returns a rigidity environment on formulas that is equivalent to the given one on types. */
   def liftRigidityEnv(renv: RigidityEnv, env: Bimap[BoolFormula.IrreducibleEff, Int]): SortedSet[Int] = {
     val rigidVars = renv.s.flatMap {
       case tvar => env.getForward(BoolFormula.IrreducibleEff.Var(tvar))
@@ -131,14 +99,10 @@ trait BoolAlg[F] {
     rigidVars ++ effs
   }
 
-  /**
-    * Converts the given formula f into a type.
-    */
+  /** Converts the given formula f into a type. */
   def toType(f: F, env: Bimap[BoolFormula.IrreducibleEff, Int]): Type
 
-  /**
-    * Converts the given type t into a formula.
-    */
+  /** Converts the given type t into a formula. */
   def fromType(t: Type, env: Bimap[BoolFormula.IrreducibleEff, Int]): F = Type.eraseTopAliases(t) match {
     case Type.Var(sym, _) => env.getForward(BoolFormula.IrreducibleEff.Var(sym)) match {
       case None => throw InternalCompilerException(s"Unexpected unbound variable: '$sym'.", sym.loc)

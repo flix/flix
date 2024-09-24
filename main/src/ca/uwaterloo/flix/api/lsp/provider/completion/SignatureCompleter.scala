@@ -21,9 +21,7 @@ import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.SigCompletion
 import ca.uwaterloo.flix.language.ast.TypedAst
 
 object SignatureCompleter {
-  /**
-    * Returns a List of Completion for completer.
-    */
+  /** Returns a List of Completion for completer. */
   def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[SigCompletion] = {
     val word = context.word
     val uri = context.uri
@@ -37,9 +35,7 @@ object SignatureCompleter {
       )
   }
 
-  /**
-    * Returns `true` if the given signature `sign` should be included in the suggestions.
-    */
+  /** Returns `true` if the given signature `sign` should be included in the suggestions. */
   private def matchesSig(sign: TypedAst.Sig, word: String, uri: String): Boolean = {
     val isPublic = sign.spec.mod.isPublic
     val isNamespace = word.nonEmpty && word.head.isUpper

@@ -18,19 +18,13 @@ package ca.uwaterloo.flix.util
 
 object Duration {
 
-  /**
-    * Returns the minimal duration of `xs`.
-    */
+  /** Returns the minimal duration of `xs`. */
   def min(xs: Iterable[Duration]): Duration = xs.min
 
-  /**
-    * Returns the maximum duration of `xs`.
-    */
+  /** Returns the maximum duration of `xs`. */
   def max(xs: Iterable[Duration]): Duration = xs.max
 
-  /**
-    * Returns the average duration of `xs`.
-    */
+  /** Returns the average duration of `xs`. */
   def avg(xs: Iterable[Duration]): Duration = {
     val l = xs.toList
     new Duration(l.map(_.d).sum / l.length)
@@ -47,29 +41,19 @@ object Duration {
   */
 case class Duration(d: Long) {
 
-  /**
-    * Returns the elapsed time in nanoseconds.
-    */
+  /** Returns the elapsed time in nanoseconds. */
   def nanoseconds: Double = d.toDouble
 
-  /**
-    * Returns the elapsed time in microseconds.
-    */
+  /** Returns the elapsed time in microseconds. */
   def microseconds: Double = nanoseconds / 1000.0
 
-  /**
-    * Returns the elapsed time in milliseconds.
-    */
+  /** Returns the elapsed time in milliseconds. */
   def milliseconds: Double = microseconds / 1000.0
 
-  /**
-    * Returns the elapsed time in seconds.
-    */
+  /** Returns the elapsed time in seconds. */
   def seconds: Double = milliseconds / 1000.0
 
-  /**
-    * Returns a human readable string of the elapsed time.
-    */
+  /** Returns a human readable string of the elapsed time. */
   def fmt: String = {
     val OneMicroSecond = 1000L
     val OneMilliSecond = 1000L * OneMicroSecond
@@ -85,24 +69,16 @@ case class Duration(d: Long) {
       fmtSeconds
   }
 
-  /**
-    * Returns the elapsed time as a human readable string in nanoseconds.
-    */
+  /** Returns the elapsed time as a human readable string in nanoseconds. */
   def fmtNanoSeconds: String = f"$nanoseconds" + "ns"
 
-  /**
-    * Returns the elapsed time as a human readable string in microseconds.
-    */
+  /** Returns the elapsed time as a human readable string in microseconds. */
   def fmtMicroSeconds: String = f"$microseconds%.1f" + "us"
 
-  /**
-    * Returns the elapsed time as a human readable string in milliseconds.
-    */
+  /** Returns the elapsed time as a human readable string in milliseconds. */
   def fmtMilliSeconds: String = f"$milliseconds%.1f" + "ms"
 
-  /**
-    * Returns the elapsed time as a human readable string in seconds.
-    */
+  /** Returns the elapsed time as a human readable string in seconds. */
   def fmtSeconds: String = f"$seconds%.1f" + "s"
 
 }

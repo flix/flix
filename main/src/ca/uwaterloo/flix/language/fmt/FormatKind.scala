@@ -19,9 +19,7 @@ import ca.uwaterloo.flix.language.ast.Kind
 
 object FormatKind {
 
-  /**
-    * Create a string representation of the kind.
-    */
+  /** Create a string representation of the kind. */
   def formatKind(kind: Kind): String = kind match {
     case Kind.Wild => "???"
     case Kind.WildCaseSet => s"CaseSet[???]"

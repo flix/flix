@@ -23,9 +23,7 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
 
 object EqualityEnvironment {
 
-  /**
-    * Checks that the given `econstrs` entail the given `econstr`.
-    */
+  /** Checks that the given `econstrs` entail the given `econstr`. */
   def entail(econstrs: List[Ast.EqualityConstraint], econstr: Ast.BroadEqualityConstraint, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit scope: Scope, flix: Flix): Validation[Substitution, UnificationError] = {
     // create assoc-type substitution using econstrs
     val subst = toSubst(econstrs)
@@ -51,9 +49,7 @@ object EqualityEnvironment {
   }.toValidation
 
 
-  /**
-    * Checks that the `givenEconstrs` entail all the given `wantedEconstrs`.
-    */
+  /** Checks that the `givenEconstrs` entail all the given `wantedEconstrs`. */
   def entailAll(givenEconstrs: List[Ast.EqualityConstraint], wantedEconstrs: List[Ast.BroadEqualityConstraint], renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit scope: Scope, flix: Flix): Validation[Substitution, UnificationError] = {
     Validation.fold(wantedEconstrs, Substitution.empty) {
       case (subst, wantedEconstr) =>
@@ -63,26 +59,20 @@ object EqualityEnvironment {
     }
   }
 
-  /**
-    * Converts the given EqualityConstraint into a BroadEqualityConstraint.
-    */
+  /** Converts the given EqualityConstraint into a BroadEqualityConstraint. */
   def narrow(econstr: Ast.BroadEqualityConstraint): Ast.EqualityConstraint = econstr match {
     case Ast.BroadEqualityConstraint(Type.AssocType(cst, tpe1, _, _), tpe2) =>
       Ast.EqualityConstraint(cst, tpe1, tpe2, SourceLocation.Unknown)
     case _ => throw InternalCompilerException("unexpected broad equality constraint", SourceLocation.Unknown)
   }
 
-  /**
-    * Converts the given Equality
-    */
+  /** Converts the given Equality */
   def broaden(econstr: Ast.EqualityConstraint): Ast.BroadEqualityConstraint = econstr match {
     case Ast.EqualityConstraint(cst, tpe1, tpe2, loc) =>
       Ast.BroadEqualityConstraint(Type.AssocType(cst, tpe1, Kind.Wild, loc), tpe2)
   }
 
-  /**
-    * Converts the list of equality constraints to a substitution.
-    */
+  /** Converts the list of equality constraints to a substitution. */
   private def toSubst(econstrs: List[Ast.EqualityConstraint]): AssocTypeSubstitution = {
     econstrs.foldLeft(AssocTypeSubstitution.empty) {
       case (acc, Ast.EqualityConstraint(Ast.AssocTypeConstructor(sym, _), Type.Var(tvar, _), tpe2, _)) =>
@@ -110,9 +100,7 @@ object EqualityEnvironment {
     }
   }
 
-  /**
-    * Fully reduces the given associated type.
-    */
+  /** Fully reduces the given associated type. */
   def reduceAssocType(cst: Ast.AssocTypeConstructor, arg: Type, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit scope: Scope, flix: Flix): Result[Type, UnificationError] = {
     for {
       tpe <- reduceAssocTypeStep(cst, arg, eqEnv)
@@ -120,9 +108,7 @@ object EqualityEnvironment {
     } yield res
   }
 
-  /**
-    * Reduces associated types in the equality environment.
-    */
+  /** Reduces associated types in the equality environment. */
   def reduceType(t0: Type, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit scope: Scope, flix: Flix): Result[Type, UnificationError] = {
     // TODO ASSOC-TYPE require that AssocTypeDefs which themselves include assoc types are supported by tconstrs
     def visit(t: Type): Result[Type, UnificationError] = t match {

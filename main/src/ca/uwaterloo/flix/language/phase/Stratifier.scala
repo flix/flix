@@ -45,9 +45,7 @@ import scala.jdk.CollectionConverters.*
   * Reports a [[StratificationError]] if the constraints cannot be stratified.
   */
 object Stratifier {
-  /**
-    * Returns a stratified version of the given AST `root`.
-    */
+  /** Returns a stratified version of the given AST `root`. */
   def run(root: Root)(implicit flix: Flix): Validation[Root, StratificationError] = flix.phase("Stratifier") {
     // Construct a new shared context.
     implicit val sctx: SharedContext = SharedContext.mk()
@@ -63,42 +61,32 @@ object Stratifier {
     Validation.toSuccessOrSoftFailure(root.copy(defs = ds, instances = is, traits = ts), sctx.errors.asScala)
   }(DebugValidation())
 
-  /**
-    * Performs Stratification of the given trait `t0`.
-    */
+  /** Performs Stratification of the given trait `t0`. */
   private def visitTrait(t0: TypedAst.Trait)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): TypedAst.Trait = {
     val nl = t0.laws.map(visitDef)
     val ns = t0.sigs.map(visitSig)
     t0.copy(laws = nl, sigs = ns)
   }
 
-  /**
-    * Performs Stratification of the given sig `s0`.
-    */
+  /** Performs Stratification of the given sig `s0`. */
   private def visitSig(s0: TypedAst.Sig)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): TypedAst.Sig = {
     val newExp = s0.exp.map(visitExp)
     s0.copy(exp = newExp)
   }
 
-  /**
-    * Performs Stratification of the given instance `i0`.
-    */
+  /** Performs Stratification of the given instance `i0`. */
   private def visitInstance(i0: TypedAst.Instance)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): TypedAst.Instance = {
     val ds = i0.defs.map(visitDef)
     i0.copy(defs = ds)
   }
 
-  /**
-    * Performs stratification of the given definition `def0`.
-    */
+  /** Performs stratification of the given definition `def0`. */
   private def visitDef(def0: Def)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): Def = {
     val e = visitExp(def0.exp)
     def0.copy(exp = e)
   }
 
-  /**
-    * Performs stratification of the given expression `exp0`.
-    */
+  /** Performs stratification of the given expression `exp0`. */
   private def visitExp(exp0: Expr)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): Expr = exp0 match {
     case Expr.Cst(_, _, _) => exp0
 
@@ -476,13 +464,9 @@ object Stratifier {
       ParYieldFragment(pat, e1, loc1)
   }
 
-  /**
-    * Reorders a constraint such that its negated atoms and loop predicates occur last.
-    */
+  /** Reorders a constraint such that its negated atoms and loop predicates occur last. */
   private def reorder(c0: Constraint): Constraint = {
-    /**
-      * Returns `true` if the body predicate is negated.
-      */
+    /** Returns `true` if the body predicate is negated. */
     def isNegativeOrLoop(p: Predicate.Body): Boolean = p match {
       case Predicate.Body.Atom(_, _, Polarity.Negative, _, _, _, _) => true
       case Predicate.Body.Functional(_, _, _) => true
@@ -497,9 +481,7 @@ object Stratifier {
     c0.copy(body = first ::: last)
   }
 
-  /**
-    * Computes the stratification of the given labelled graph `g` for the given row type `tpe` at the given source location `loc`.
-    */
+  /** Computes the stratification of the given labelled graph `g` for the given row type `tpe` at the given source location `loc`. */
   private def stratify(g: LabelledPrecedenceGraph, tpe: Type, loc: SourceLocation)(implicit sctx: SharedContext, flix: Flix): Unit = {
     // The key is the set of predicates that occur in the row type.
     val key = predicateSymbolsOf(tpe)
@@ -516,9 +498,7 @@ object Stratifier {
     }
   }
 
-  /**
-    * Returns the map of predicates that appears in the given Schema `tpe`.
-    */
+  /** Returns the map of predicates that appears in the given Schema `tpe`. */
   private def predicateSymbolsOf(tpe: Type): Map[Name.Pred, Label] = {
     @tailrec
     def visitType(tpe: Type, acc: Map[Name.Pred, Label]): Map[Name.Pred, Label] = tpe match {
@@ -539,9 +519,7 @@ object Stratifier {
     }
   }
 
-  /**
-    * Returns `true` if the two given labels `l1` and `l2` are considered equal.
-    */
+  /** Returns `true` if the two given labels `l1` and `l2` are considered equal. */
   private def labelEq(l1: Label, l2: Label)(implicit flix: Flix): Boolean = {
     val isEqPredicate = l1.pred == l2.pred
     val isEqDenotation = l1.den == l2.den
@@ -570,9 +548,7 @@ object Stratifier {
     }.toSet
 
   private object SharedContext {
-    /**
-      * Returns a fresh shared context.
-      */
+    /** Returns a fresh shared context. */
     def mk(): SharedContext = new SharedContext(new ConcurrentLinkedQueue())
   }
 

@@ -44,9 +44,7 @@ object OpPrinter {
   private val shr = "shr"
   private val xor = "xor"
 
-  /**
-    * Returns the string representation of `so`.
-    */
+  /** Returns the string representation of `so`. */
   def print(so: SemanticOp): String = so match {
     case BoolOp.Not |
          Int8Op.Not |
@@ -162,9 +160,7 @@ object OpPrinter {
          Int64Op.Shr => shr
   }
 
-  /**
-    * Returns the [[DocAst.Expr]] representation of `op`.
-    */
+  /** Returns the [[DocAst.Expr]] representation of `op`. */
   def print(op: AtomicOp, ds: List[Expr], tpe: DocAst.Type): Expr = (op, ds) match {
     case (AtomicOp.Region, Nil) => Region
     case (AtomicOp.RecordEmpty, Nil) => RecordEmpty

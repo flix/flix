@@ -19,9 +19,7 @@ import ca.uwaterloo.flix.language.ast.Kind
 
 object KindUnification {
 
-  /**
-    * Unifies the kinds, returning the most specific kind if possible.
-    */
+  /** Unifies the kinds, returning the most specific kind if possible. */
   def unify(k1: Kind, k2: Kind): Option[Kind] = (k1, k2) match {
     // NB:  The order of these cases is determined by coverage analysis.
 
@@ -56,9 +54,7 @@ object KindUnification {
     case _ => None
   }
 
-  /**
-    * Returns true iff the two kinds can be unified.
-    */
+  /** Returns true iff the two kinds can be unified. */
   def unifiesWith(k1: Kind, k2: Kind): Boolean = unify(k1, k2) match {
     case None => false
     case Some(_) => true

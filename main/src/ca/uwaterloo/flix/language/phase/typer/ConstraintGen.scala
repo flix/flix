@@ -1104,9 +1104,7 @@ object ConstraintGen {
       visitExp(exp)
   }
 
-  /**
-    * Generates constraints unifying the given expected and actual formal parameters.
-    */
+  /** Generates constraints unifying the given expected and actual formal parameters. */
   private def unifyFormalParams(op: Symbol.OpSym, expected: List[KindedAst.FormalParam], actual: List[KindedAst.FormalParam], loc: SourceLocation)(implicit c: TypeContext, flix: Flix): Unit = {
     // length check done in Resolver
     c.expectTypeArguments(op, expectedTypes = expected.map(_.tpe), actualTypes = actual.map(_.tpe), actual.map(_.loc))
@@ -1144,15 +1142,11 @@ object ConstraintGen {
       }
   }
 
-  /**
-    * Generates constraints for the JVM method.
-    */
+  /** Generates constraints for the JVM method. */
   private def visitJvmMethod(method: KindedAst.JvmMethod)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): Unit = method match {
     case KindedAst.JvmMethod(_, fparams, exp, returnTpe, eff, _) =>
 
-      /**
-        * Constrains the given formal parameter to its declared type.
-        */
+      /** Constrains the given formal parameter to its declared type. */
       def visitFormalParam(fparam: KindedAst.FormalParam): Unit = fparam match {
         case KindedAst.FormalParam(sym, _, tpe, _, loc) =>
           c.unifyType(sym.tvar, tpe, loc)
@@ -1216,9 +1210,7 @@ object ConstraintGen {
     eff
   }
 
-  /**
-    * Generates constraints for the given ParYieldFragment.
-    */
+  /** Generates constraints for the given ParYieldFragment. */
   private def visitParYieldFragment(frag: KindedAst.ParYieldFragment)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): Unit = frag match {
     case KindedAst.ParYieldFragment(pat, exp, loc) =>
       val patTpe = visitPattern(pat)
@@ -1240,9 +1232,7 @@ object ConstraintGen {
     Type.mkRecord(ps, loc)
   }
 
-  /**
-    * Returns the operation corresponding to the given symbol.
-    */
+  /** Returns the operation corresponding to the given symbol. */
   private def lookupOp(sym: Symbol.OpSym, loc: SourceLocation)(implicit root: KindedAst.Root): KindedAst.Op = {
     val eff = root.effects(sym.eff)
     eff.ops.find(_.sym == sym)

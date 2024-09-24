@@ -28,9 +28,7 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.jdk.CollectionConverters._
 
-/**
-  * The Namer phase introduces unique symbols for each syntactic entity in the program.
-  */
+/** The Namer phase introduces unique symbols for each syntactic entity in the program. */
 object Namer {
 
   /**
@@ -63,9 +61,7 @@ object Namer {
       Validation.toSuccessOrSoftFailure(NamedAst.Root(symbols, instances, uses, units, program.entryPoint, locations, program.names), sctx.errors.asScala)
     }(DebugValidation())
 
-  /**
-    * Performs naming on the given compilation unit `unit` under the given (partial) program `prog0`.
-    */
+  /** Performs naming on the given compilation unit `unit` under the given (partial) program `prog0`. */
   private def visitUnit(unit: DesugaredAst.CompilationUnit)(implicit sctx: SharedContext, flix: Flix): NamedAst.CompilationUnit = unit match {
     case DesugaredAst.CompilationUnit(usesAndImports0, decls, loc) =>
       val usesAndImports = usesAndImports0.map(visitUseOrImport)
@@ -73,9 +69,7 @@ object Namer {
       NamedAst.CompilationUnit(usesAndImports, ds, loc)
   }
 
-  /**
-    * Performs naming on the given declaration.
-    */
+  /** Performs naming on the given declaration. */
   private def visitDecl(decl0: DesugaredAst.Declaration, ns0: Name.NName)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration = decl0 match {
     case decl: DesugaredAst.Declaration.Namespace => visitNamespace(decl, ns0)
     case decl: DesugaredAst.Declaration.Trait => visitTrait(decl, ns0)
@@ -89,9 +83,7 @@ object Namer {
     case decl: DesugaredAst.Declaration.Law => throw InternalCompilerException("unexpected law", decl.loc)
   }
 
-  /**
-    * Performs naming on the given namespace.
-    */
+  /** Performs naming on the given namespace. */
   private def visitNamespace(decl: DesugaredAst.Declaration.Namespace, ns0: Name.NName)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.Namespace = decl match {
     case DesugaredAst.Declaration.Namespace(ident, usesAndImports0, decls, loc) =>
       val ns = Name.NName(ns0.idents :+ ident, ident.loc)
@@ -101,9 +93,7 @@ object Namer {
       NamedAst.Declaration.Namespace(sym, usesAndImports, ds, loc)
   }
 
-  /**
-    * Adds symbols from the compilation unit to the table.
-    */
+  /** Adds symbols from the compilation unit to the table. */
   private def tableUnit(table0: SymbolTable, unit: NamedAst.CompilationUnit)(implicit sctx: SharedContext): SymbolTable = unit match {
     case NamedAst.CompilationUnit(_, decls, _) => decls.foldLeft(table0)(tableDecl)
   }
@@ -169,9 +159,7 @@ object Namer {
 
   }
 
-  /**
-    * Tries to add the given declaration to the table.
-    */
+  /** Tries to add the given declaration to the table. */
   private def tryAddToTable(table: SymbolTable, ns: List[String], name: String, decl: NamedAst.Declaration)(implicit sctx: SharedContext): SymbolTable = {
     lookupName(name, ns, table) match {
       case LookupResult.NotDefined => addDeclToTable(table, ns, name, decl)
@@ -181,9 +169,7 @@ object Namer {
     }
   }
 
-  /**
-    * Adds the given declaration to the table.
-    */
+  /** Adds the given declaration to the table. */
   private def addDeclToTable(table: SymbolTable, ns: List[String], name: String, decl: NamedAst.Declaration): SymbolTable = table match {
     case SymbolTable(symbols0, instances, uses) =>
       val oldMap = symbols0.getOrElse(ns, ListMap.empty)
@@ -192,9 +178,7 @@ object Namer {
       SymbolTable(symbols, instances, uses)
   }
 
-  /**
-    * Adds the given instance to the table.
-    */
+  /** Adds the given instance to the table. */
   private def addInstanceToTable(table: SymbolTable, ns: List[String], name: String, decl: NamedAst.Declaration.Instance): SymbolTable = table match {
     case SymbolTable(symbols, instances0, uses) =>
       val oldMap = instances0.getOrElse(ns, Map.empty)
@@ -206,9 +190,7 @@ object Namer {
       SymbolTable(symbols, instances, uses)
   }
 
-  /**
-    * Adds the given uses to the table.
-    */
+  /** Adds the given uses to the table. */
   private def addUsesToTable(table: SymbolTable, ns: List[String], usesAndImports: List[NamedAst.UseOrImport]): SymbolTable = table match {
     case SymbolTable(symbols, instances, uses0) =>
       val oldList = uses0.getOrElse(ns, Nil)
@@ -217,9 +199,7 @@ object Namer {
       SymbolTable(symbols, instances, uses)
   }
 
-  /**
-    * Creates a pair of errors reporting a duplicate type declaration at each location.
-    */
+  /** Creates a pair of errors reporting a duplicate type declaration at each location. */
   private def mkDuplicateNamePair(name: String, loc1: SourceLocation, loc2: SourceLocation)(implicit sctx: SharedContext): Unit = {
     // NB: We report an error at both source locations.
     if (name.charAt(0).isUpper) {
@@ -233,9 +213,7 @@ object Namer {
     }
   }
 
-  /**
-    * The result of looking up a type or trait name in an ast root.
-    */
+  /** The result of looking up a type or trait name in an ast root. */
   private sealed trait NameLookupResult
 
   private object LookupResult {
@@ -246,9 +224,7 @@ object Namer {
 
   }
 
-  /**
-    * Looks up the uppercase name in the given namespace and root.
-    */
+  /** Looks up the uppercase name in the given namespace and root. */
   private def lookupName(name: String, ns0: List[String], table: SymbolTable): NameLookupResult = {
     val symbols0 = table.symbols.getOrElse(ns0, ListMap.empty)
     // ignore namespaces
@@ -263,9 +239,7 @@ object Namer {
     }
   }
 
-  /**
-    * Performs naming on the given constraint `c0`.
-    */
+  /** Performs naming on the given constraint `c0`. */
   private def visitConstraint(c0: DesugaredAst.Constraint, ns0: Name.NName)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.Constraint = c0 match {
     case DesugaredAst.Constraint(h, bs, loc) =>
 
@@ -289,9 +263,7 @@ object Namer {
   }
 
 
-  /**
-    * Performs naming on the given enum `enum0`.
-    */
+  /** Performs naming on the given enum `enum0`. */
   private def visitEnum(enum0: DesugaredAst.Declaration.Enum, ns0: Name.NName)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.Enum = enum0 match {
     case DesugaredAst.Declaration.Enum(doc, ann, mod0, ident, tparams0, derives0, cases0, loc) =>
       val sym = Symbol.mkEnumSym(ns0, ident)
@@ -306,9 +278,7 @@ object Namer {
       NamedAst.Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc)
   }
 
-  /**
-    * Performs the naming on the given struct `struct0`.
-    */
+  /** Performs the naming on the given struct `struct0`. */
   private def visitStruct(struct0: DesugaredAst.Declaration.Struct, ns0: Name.NName)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.Struct = struct0 match {
     case DesugaredAst.Declaration.Struct(doc, ann, mod0, ident, tparams0, fields0, loc) =>
       val sym = Symbol.mkStructSym(ns0, ident)
@@ -326,9 +296,7 @@ object Namer {
       NamedAst.Declaration.Struct(doc, ann, mod, sym, tparams, fields, indices, loc)
   }
 
-  /**
-    * Performs naming on the given enum `enum0`.
-    */
+  /** Performs naming on the given enum `enum0`. */
   private def visitRestrictableEnum(enum0: DesugaredAst.Declaration.RestrictableEnum, ns0: Name.NName)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.RestrictableEnum = enum0 match {
     case DesugaredAst.Declaration.RestrictableEnum(doc, ann, mod0, ident, index0, tparams0, derives0, cases, loc) =>
       val caseIdents = cases.map(_.ident)
@@ -345,15 +313,11 @@ object Namer {
       NamedAst.Declaration.RestrictableEnum(doc, ann, mod, sym, index, tparams, derives, cs, loc)
   }
 
-  /**
-    * Performs naming on the given enum derivations.
-    */
+  /** Performs naming on the given enum derivations. */
   private def visitDerivations(derives0: DesugaredAst.Derivations): NamedAst.Derivations =
     NamedAst.Derivations(derives0.traits, derives0.loc)
 
-  /**
-    * Performs naming on the given enum case.
-    */
+  /** Performs naming on the given enum case. */
   private def visitCase(case0: DesugaredAst.Case, enumSym: Symbol.EnumSym)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.Case = case0 match {
     case DesugaredAst.Case(ident, tpe, loc) =>
       val t = visitType(tpe)
@@ -361,9 +325,7 @@ object Namer {
       NamedAst.Declaration.Case(caseSym, t, loc)
   }
 
-  /**
-    * Performs naming on the given field.
-    */
+  /** Performs naming on the given field. */
   private def visitField(struct: Symbol.StructSym, field0: DesugaredAst.StructField, indices: Map[Name.Label, (Int, SourceLocation)])(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.StructField = field0 match {
     case DesugaredAst.StructField(mod, name, tpe, loc) =>
       val t = visitType(tpe)
@@ -372,9 +334,7 @@ object Namer {
       NamedAst.Declaration.StructField(mod, sym, t, loc)
   }
 
-  /**
-    * Performs naming on the given enum case.
-    */
+  /** Performs naming on the given enum case. */
   private def visitRestrictableCase(case0: DesugaredAst.RestrictableCase, enumSym: Symbol.RestrictableEnumSym)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.RestrictableCase = case0 match {
     case DesugaredAst.RestrictableCase(ident, tpe, loc) =>
       val t = visitType(tpe)
@@ -382,9 +342,7 @@ object Namer {
       NamedAst.Declaration.RestrictableCase(caseSym, t, loc)
   }
 
-  /**
-    * Performs naming on the given type alias `alias0`.
-    */
+  /** Performs naming on the given type alias `alias0`. */
   private def visitTypeAlias(alias0: DesugaredAst.Declaration.TypeAlias, ns0: Name.NName)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.TypeAlias = alias0 match {
     case DesugaredAst.Declaration.TypeAlias(doc, ann, mod0, ident, tparams0, tpe, loc) =>
       val mod = visitModifiers(mod0, ns0)
@@ -394,9 +352,7 @@ object Namer {
       NamedAst.Declaration.TypeAlias(doc, ann, mod, sym, tparams, t, loc)
   }
 
-  /**
-    * Performs naming on the given associated type signature `s0`.
-    */
+  /** Performs naming on the given associated type signature `s0`. */
   private def visitAssocTypeSig(s0: DesugaredAst.Declaration.AssocTypeSig, trt: Symbol.TraitSym)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.AssocTypeSig = s0 match {
     case DesugaredAst.Declaration.AssocTypeSig(doc, mod, ident, tparams0, kind0, tpe, loc) =>
       val sym = Symbol.mkAssocTypeSym(trt, ident)
@@ -406,9 +362,7 @@ object Namer {
       NamedAst.Declaration.AssocTypeSig(doc, mod, sym, tparam, kind, t, loc)
   }
 
-  /**
-    * Performs naming on the given associated type definition `d0`.
-    */
+  /** Performs naming on the given associated type definition `d0`. */
   private def visitAssocTypeDef(d0: DesugaredAst.Declaration.AssocTypeDef)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.AssocTypeDef = d0 match {
     case DesugaredAst.Declaration.AssocTypeDef(doc, mod, ident, arg, tpe, loc) =>
       val t1 = visitType(arg)
@@ -416,9 +370,7 @@ object Namer {
       NamedAst.Declaration.AssocTypeDef(doc, mod, ident, t1, t2, loc)
   }
 
-  /**
-    * Performs naming on the given trait `trt`.
-    */
+  /** Performs naming on the given trait `trt`. */
   private def visitTrait(trt: DesugaredAst.Declaration.Trait, ns0: Name.NName)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.Trait = trt match {
     case DesugaredAst.Declaration.Trait(doc, ann, mod0, ident, tparams0, superTraits, assocs, signatures, laws, loc) =>
       val sym = Symbol.mkTraitSym(ns0, ident)
@@ -433,9 +385,7 @@ object Namer {
       NamedAst.Declaration.Trait(doc, ann, mod, sym, tparam, sts, ascs, sigs, ls, loc)
   }
 
-  /**
-    * Performs naming on the given instance `instance`.
-    */
+  /** Performs naming on the given instance `instance`. */
   private def visitInstance(instance: DesugaredAst.Declaration.Instance, ns0: Name.NName)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.Instance = instance match {
     case DesugaredAst.Declaration.Instance(doc, ann, mod, clazz, tpe, tconstrs, assocs, defs, loc) =>
       val tparams = getImplicitTypeParamsFromTypes(List(tpe))
@@ -446,18 +396,14 @@ object Namer {
       NamedAst.Declaration.Instance(doc, ann, mod, clazz, tparams, t, tcsts, ascs, ds, ns0.parts, loc)
   }
 
-  /**
-    * Performs naming on the given trait constraint `tconstr`.
-    */
+  /** Performs naming on the given trait constraint `tconstr`. */
   private def visitTraitConstraint(tconstr: DesugaredAst.TraitConstraint)(implicit sctx: SharedContext, flix: Flix): NamedAst.TraitConstraint = tconstr match {
     case DesugaredAst.TraitConstraint(trt, tparam, loc) =>
       val t = visitType(tparam)
       NamedAst.TraitConstraint(trt, t, loc)
   }
 
-  /**
-    * Performs naming on the given equality constraint `econstr`.
-    */
+  /** Performs naming on the given equality constraint `econstr`. */
   private def visitEqualityConstraint(econstr: DesugaredAst.EqualityConstraint)(implicit sctx: SharedContext, flix: Flix): NamedAst.EqualityConstraint = econstr match {
     case DesugaredAst.EqualityConstraint(qname, tpe1, tpe2, loc) =>
       val t1 = visitType(tpe1)
@@ -465,9 +411,7 @@ object Namer {
       NamedAst.EqualityConstraint(qname, t1, t2, loc)
   }
 
-  /**
-    * Performs naming on the given signature declaration `sig`.
-    */
+  /** Performs naming on the given signature declaration `sig`. */
   private def visitSig(sig: DesugaredAst.Declaration.Sig, ns0: Name.NName, traitSym: Symbol.TraitSym)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.Sig = sig match {
     case DesugaredAst.Declaration.Sig(doc, ann, mod0, ident, tparams0, fparams, exp, tpe, eff, tconstrs, econstrs, loc) =>
       val tparams = getTypeParamsFromFormalParams(tparams0, fparams, tpe, eff, econstrs)
@@ -488,9 +432,7 @@ object Namer {
       NamedAst.Declaration.Sig(sym, spec, e)
   }
 
-  /**
-    * Performs naming on the given definition declaration `decl0`.
-    */
+  /** Performs naming on the given definition declaration `decl0`. */
   private def visitDef(decl0: DesugaredAst.Declaration.Def, ns0: Name.NName, defKind: DefKind)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.Def = decl0 match {
     case DesugaredAst.Declaration.Def(doc, ann, mod0, ident, tparams0, fparams, exp, tpe, eff, tconstrs, econstrs, loc) =>
       flix.subtask(ident.name, sample = true)
@@ -519,9 +461,7 @@ object Namer {
       NamedAst.Declaration.Def(sym, spec, e)
   }
 
-  /**
-    * Performs naming on the given effect `eff0`.
-    */
+  /** Performs naming on the given effect `eff0`. */
   private def visitEffect(eff0: DesugaredAst.Declaration.Effect, ns0: Name.NName)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.Effect = eff0 match {
     case DesugaredAst.Declaration.Effect(doc, ann, mod0, ident, ops0, loc) =>
       val sym = Symbol.mkEffectSym(ns0, ident)
@@ -530,9 +470,7 @@ object Namer {
       NamedAst.Declaration.Effect(doc, ann, mod, sym, ops, loc)
   }
 
-  /**
-    * Performs naming on the given effect operation `op0`.
-    */
+  /** Performs naming on the given effect operation `op0`. */
   private def visitOp(op0: DesugaredAst.Declaration.Op, ns0: Name.NName, effSym: Symbol.EffectSym)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.Op = op0 match {
     case DesugaredAst.Declaration.Op(doc, ann, mod0, ident, fparams, tpe, tconstrs, loc) =>
       // First visit all the top-level information
@@ -550,9 +488,7 @@ object Namer {
       NamedAst.Declaration.Op(sym, spec)
   }
 
-  /**
-    * Performs naming on the given expression `exp0`.
-    */
+  /** Performs naming on the given expression `exp0`. */
   // TODO NS-REFACTOR can remove ns0 too?
   private def visitExp(exp0: DesugaredAst.Expr, ns0: Name.NName)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.Expr = exp0 match {
     case DesugaredAst.Expr.Ambiguous(name, loc) =>
@@ -921,9 +857,7 @@ object Namer {
 
   }
 
-  /**
-    * Performs naming on the given match rule `rule0`.
-    */
+  /** Performs naming on the given match rule `rule0`. */
   private def visitMatchRule(rule0: DesugaredAst.MatchRule, ns0: Name.NName)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.MatchRule = rule0 match {
     case DesugaredAst.MatchRule(pat, exp1, exp2) =>
       val p = visitPattern(pat)
@@ -932,9 +866,7 @@ object Namer {
       NamedAst.MatchRule(p, e1, e2)
   }
 
-  /**
-    * Performs naming on the given typematch rule `rule0`.
-    */
+  /** Performs naming on the given typematch rule `rule0`. */
   private def visitTypeMatchRule(rule0: DesugaredAst.TypeMatchRule, ns0: Name.NName)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.TypeMatchRule = rule0 match {
     case DesugaredAst.TypeMatchRule(ident, tpe, body) =>
       val sym = Symbol.freshVarSym(ident, BoundBy.Pattern)
@@ -943,9 +875,7 @@ object Namer {
       NamedAst.TypeMatchRule(sym, t, b)
   }
 
-  /**
-    * Performs naming on the given restrictable choose rule `rule0`.
-    */
+  /** Performs naming on the given restrictable choose rule `rule0`. */
   private def visitRestrictableChooseRule(rule0: DesugaredAst.RestrictableChooseRule, ns0: Name.NName)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.RestrictableChooseRule = rule0 match {
     case DesugaredAst.RestrictableChooseRule(pat, exp1) =>
       val p = visitRestrictablePattern(pat)
@@ -953,18 +883,14 @@ object Namer {
       NamedAst.RestrictableChooseRule(p, e1)
   }
 
-  /**
-    * Performs naming on the given struct field expression `exp0`.
-    */
+  /** Performs naming on the given struct field expression `exp0`. */
   private def visitStructField(ns0: Name.NName)(exp0: (Name.Label, DesugaredAst.Expr))(implicit scope: Scope, sctx: SharedContext, flix: Flix): (Name.Label, NamedAst.Expr) = exp0 match {
     case (n, exp0) =>
       val e = visitExp(exp0, ns0)
       (n, e)
   }
 
-  /**
-    * Performs naming on the given try-catch rule `rule0`.
-    */
+  /** Performs naming on the given try-catch rule `rule0`. */
   private def visitTryCatchRule(rule0: DesugaredAst.CatchRule, ns0: Name.NName)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.CatchRule = rule0 match {
     case DesugaredAst.CatchRule(ident, className, body) =>
       val sym = Symbol.freshVarSym(ident, BoundBy.CatchRule)
@@ -972,9 +898,7 @@ object Namer {
       NamedAst.CatchRule(sym, className, b)
   }
 
-  /**
-    * Performs naming on the given handler rule `rule0`.
-    */
+  /** Performs naming on the given handler rule `rule0`. */
   private def visitTryWithRule(rule0: DesugaredAst.HandlerRule, ns0: Name.NName)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.HandlerRule = rule0 match {
     case DesugaredAst.HandlerRule(op, fparams, body0) =>
       val fps = fparams.map(visitFormalParam)
@@ -982,9 +906,7 @@ object Namer {
       NamedAst.HandlerRule(op, fps, b)
   }
 
-  /**
-    * Performs naming on the given select channel rule `rule0`.
-    */
+  /** Performs naming on the given select channel rule `rule0`. */
   private def visitSelectChannelRule(rule0: DesugaredAst.SelectChannelRule, ns0: Name.NName)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.SelectChannelRule = rule0 match {
     case DesugaredAst.SelectChannelRule(ident, exp1, exp2) =>
       // make a fresh variable symbol for the local recursive variable.
@@ -994,9 +916,7 @@ object Namer {
       NamedAst.SelectChannelRule(sym, e1, e2)
   }
 
-  /**
-    * Performs naming on the given par-yield fragment `frag0`.
-    */
+  /** Performs naming on the given par-yield fragment `frag0`. */
   private def visitParYieldFragment(frag0: DesugaredAst.ParYieldFragment, ns0: Name.NName)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.ParYieldFragment = frag0 match {
     case DesugaredAst.ParYieldFragment(pat, exp1, l) =>
       val p = visitPattern(pat)
@@ -1004,9 +924,7 @@ object Namer {
       NamedAst.ParYieldFragment(p, e1, l)
   }
 
-  /**
-    * Names the given pattern `pat0`.
-    */
+  /** Names the given pattern `pat0`. */
   private def visitPattern(pat0: DesugaredAst.Pattern)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.Pattern = pat0 match {
     case DesugaredAst.Pattern.Wild(loc) => NamedAst.Pattern.Wild(loc)
     case DesugaredAst.Pattern.Var(ident, loc) =>
@@ -1042,9 +960,7 @@ object Namer {
     case DesugaredAst.Pattern.Error(loc) => NamedAst.Pattern.Error(loc)
   }
 
-  /**
-    * Names the given pattern `pat0`
-    */
+  /** Names the given pattern `pat0` */
   private def visitRestrictablePattern(pat0: DesugaredAst.RestrictableChoosePattern)(implicit scope: Scope, flix: Flix): NamedAst.RestrictableChoosePattern = {
     def visitVarPlace(vp: DesugaredAst.RestrictableChoosePattern.VarOrWild): NamedAst.RestrictableChoosePattern.VarOrWild = vp match {
       case DesugaredAst.RestrictableChoosePattern.Wild(loc) => NamedAst.RestrictableChoosePattern.Wild(loc)
@@ -1061,18 +977,14 @@ object Namer {
     }
   }
 
-  /**
-    * Names the given head predicate `head`.
-    */
+  /** Names the given head predicate `head`. */
   private def visitHeadPredicate(head: DesugaredAst.Predicate.Head, ns0: Name.NName)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.Predicate.Head = head match {
     case DesugaredAst.Predicate.Head.Atom(pred, den, exps, loc) =>
       val es = exps.map(visitExp(_, ns0))
       NamedAst.Predicate.Head.Atom(pred, den, es, loc)
   }
 
-  /**
-    * Names the given body predicate `body`.
-    */
+  /** Names the given body predicate `body`. */
   private def visitBodyPredicate(body: DesugaredAst.Predicate.Body, ns0: Name.NName)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.Predicate.Body = body match {
     case DesugaredAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, loc) =>
       val ts = terms.map(visitPattern)
@@ -1087,9 +999,7 @@ object Namer {
       NamedAst.Predicate.Body.Guard(e, loc)
   }
 
-  /**
-    * Names the given type `tpe0`.
-    */
+  /** Names the given type `tpe0`. */
   private def visitType(tpe0: DesugaredAst.Type)(implicit sctx: SharedContext, flix: Flix): NamedAst.Type = tpe0 match {
     case DesugaredAst.Type.Unit(loc) =>
       NamedAst.Type.Unit(loc)
@@ -1217,9 +1127,7 @@ object Namer {
       NamedAst.Type.Error(loc)
   }
 
-  /**
-    * Performs naming on the given kind.
-    */
+  /** Performs naming on the given kind. */
   private def visitKind(k0: DesugaredAst.Kind): NamedAst.Kind = k0 match {
     case DesugaredAst.Kind.Ambiguous(qname, loc) => NamedAst.Kind.Ambiguous(qname, loc)
     case DesugaredAst.Kind.Arrow(k10, k20, loc) =>
@@ -1228,9 +1136,7 @@ object Namer {
       NamedAst.Kind.Arrow(k1, k2, loc)
   }
 
-  /**
-    * Returns `true` if the given string `s` is a suspicious type variable name.
-    */
+  /** Returns `true` if the given string `s` is a suspicious type variable name. */
   private def isSuspiciousTypeVarName(s: String): Boolean = s match {
     case "void" => true
     case "unit" => true
@@ -1252,9 +1158,7 @@ object Namer {
     case _ => false
   }
 
-  /**
-    * Returns all the free variables in the given pattern `pat0`.
-    */
+  /** Returns all the free variables in the given pattern `pat0`. */
   private def freeVars(pat0: DesugaredAst.Pattern): List[Name.Ident] = pat0 match {
     case DesugaredAst.Pattern.Var(ident, _) => List(ident)
     case DesugaredAst.Pattern.Wild(_) => Nil
@@ -1280,18 +1184,14 @@ object Namer {
     case DesugaredAst.Pattern.Error(_) => Nil
   }
 
-  /**
-    * Returns the free variables in the list of [[Record.RecordLabelPattern]] `pats`.
-    */
+  /** Returns the free variables in the list of [[Record.RecordLabelPattern]] `pats`. */
   private def recordPatternFreeVars(pats: List[DesugaredAst.Pattern.Record.RecordLabelPattern]): List[Name.Ident] = {
     def optFreeVars(rfp: DesugaredAst.Pattern.Record.RecordLabelPattern): List[Name.Ident] = rfp.pat.map(freeVars).getOrElse(Nil)
 
     pats.flatMap(optFreeVars)
   }
 
-  /**
-    * Returns the free variables in the given type `tpe0`.
-    */
+  /** Returns the free variables in the given type `tpe0`. */
   private def freeTypeVars(tpe0: DesugaredAst.Type): List[Name.Ident] = tpe0 match {
     case DesugaredAst.Type.Var(ident, _) => ident :: Nil
     case DesugaredAst.Type.Ambiguous(_, _) => Nil
@@ -1337,9 +1237,7 @@ object Namer {
     }
   }
 
-  /**
-    * Translates the given weeded formal parameter to a named formal parameter.
-    */
+  /** Translates the given weeded formal parameter to a named formal parameter. */
   private def visitFormalParam(fparam: DesugaredAst.FormalParam)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.FormalParam = fparam match {
     case DesugaredAst.FormalParam(ident, mod, tpe, loc) =>
       // Generate a fresh variable symbol for the identifier.
@@ -1352,9 +1250,7 @@ object Namer {
       NamedAst.FormalParam(freshSym, mod, t, loc)
   }
 
-  /**
-    * Translates the given weeded predicate parameter to a named predicate parameter.
-    */
+  /** Translates the given weeded predicate parameter to a named predicate parameter. */
   private def visitPredicateParam(pparam: DesugaredAst.PredicateParam)(implicit sctx: SharedContext, flix: Flix): NamedAst.PredicateParam = pparam match {
     case DesugaredAst.PredicateParam.PredicateParamUntyped(pred, loc) =>
       NamedAst.PredicateParam.PredicateParamUntyped(pred, loc)
@@ -1364,9 +1260,7 @@ object Namer {
       NamedAst.PredicateParam.PredicateParamWithType(pred, den, ts, loc)
   }
 
-  /**
-    * Translates the given weeded JvmMethod to a named JvmMethod.
-    */
+  /** Translates the given weeded JvmMethod to a named JvmMethod. */
   private def visitJvmMethod(method: DesugaredAst.JvmMethod, ns0: Name.NName)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.JvmMethod = method match {
     case DesugaredAst.JvmMethod(ident, fparams, exp0, tpe, eff, loc) =>
       val fps = fparams.map(visitFormalParam)
@@ -1376,9 +1270,7 @@ object Namer {
       NamedAst.JvmMethod(ident, fps, e, t, ef, loc)
   }
 
-  /**
-    * Performs naming on the given type parameter.
-    */
+  /** Performs naming on the given type parameter. */
   private def visitTypeParam(tparam0: DesugaredAst.TypeParam)(implicit flix: Flix): NamedAst.TypeParam = tparam0 match {
     case DesugaredAst.TypeParam.Kinded(ident, kind) =>
       NamedAst.TypeParam.Kinded(ident, mkTypeVarSym(ident), visitKind(kind), ident.loc)
@@ -1386,9 +1278,7 @@ object Namer {
       NamedAst.TypeParam.Unkinded(ident, mkTypeVarSym(ident), ident.loc)
   }
 
-  /**
-    * Performs naming on the given type parameters `tparams0` from the given formal params `fparams` and overall type `tpe`.
-    */
+  /** Performs naming on the given type parameters `tparams0` from the given formal params `fparams` and overall type `tpe`. */
   private def getTypeParamsFromFormalParams(tparams0: List[DesugaredAst.TypeParam], fparams: List[DesugaredAst.FormalParam], tpe: DesugaredAst.Type, eff: Option[DesugaredAst.Type], econstrs: List[DesugaredAst.EqualityConstraint])(implicit sctx: SharedContext, flix: Flix): List[NamedAst.TypeParam] = {
     tparams0 match {
       case Nil => visitImplicitTypeParamsFromFormalParams(fparams, tpe, eff, econstrs)
@@ -1396,9 +1286,7 @@ object Namer {
     }
   }
 
-  /**
-    * Returns the explicit type parameters from the given type parameter names.
-    */
+  /** Returns the explicit type parameters from the given type parameter names. */
   private def visitExplicitTypeParams(tparams0: List[DesugaredAst.TypeParam])(implicit flix: Flix): List[NamedAst.TypeParam] = {
     tparams0.map {
       case DesugaredAst.TypeParam.Kinded(ident, kind) =>
@@ -1408,9 +1296,7 @@ object Namer {
     }
   }
 
-  /**
-    * Returns the implicit type parameters constructed from the given types.
-    */
+  /** Returns the implicit type parameters constructed from the given types. */
   private def getImplicitTypeParamsFromTypes(types: List[DesugaredAst.Type])(implicit flix: Flix): List[NamedAst.TypeParam] = {
     val tvars = types.flatMap(freeTypeVars).distinct
     tvars.map {
@@ -1444,9 +1330,7 @@ object Namer {
     }
   }
 
-  /**
-    * Gets the location of the symbol of the declaration.
-    */
+  /** Gets the location of the symbol of the declaration. */
   private def getSymLocation(f: NamedAst.Declaration): SourceLocation = f match {
     case NamedAst.Declaration.Trait(_, _, _, sym, _, _, _, _, _, _) => sym.loc
     case NamedAst.Declaration.Sig(sym, _, _) => sym.loc
@@ -1466,25 +1350,19 @@ object Namer {
     case NamedAst.Declaration.Namespace(_, _, _, loc) => throw InternalCompilerException("Unexpected namespace", loc)
   }
 
-  /**
-    * Creates a flexible unkinded type variable symbol from the given ident.
-    */
+  /** Creates a flexible unkinded type variable symbol from the given ident. */
   private def mkTypeVarSym(ident: Name.Ident)(implicit flix: Flix): Symbol.UnkindedTypeVarSym = {
     // We use the top scope since this function is only used for creating top-level stuff.
     Symbol.freshUnkindedTypeVarSym(Ast.VarText.SourceText(ident.name), isRegion = false, ident.loc)(Scope.Top, flix)
   }
 
-  /**
-    * Performs naming on the given `use`.
-    */
+  /** Performs naming on the given `use`. */
   private def visitUseOrImport(use: DesugaredAst.UseOrImport): NamedAst.UseOrImport = use match {
     case DesugaredAst.UseOrImport.Use(qname, alias, loc) => NamedAst.UseOrImport.Use(qname, alias, loc)
     case DesugaredAst.UseOrImport.Import(name, alias, loc) => NamedAst.UseOrImport.Import(name, alias, loc)
   }
 
-  /**
-    * A structure holding the symbols and instances in the program.
-    */
+  /** A structure holding the symbols and instances in the program. */
   case class SymbolTable(symbols: Map[List[String], ListMap[String, NamedAst.Declaration]], instances: Map[List[String], Map[String, List[NamedAst.Declaration.Instance]]], uses: Map[List[String], List[NamedAst.UseOrImport]])
 
   object SymbolTable {
@@ -1493,30 +1371,20 @@ object Namer {
 
   }
 
-  /**
-    * An enumeration of the kinds of defs.
-    */
+  /** An enumeration of the kinds of defs. */
   private sealed trait DefKind
 
   private object DefKind {
-    /**
-      * A def that is a member of an instance or trait.
-      */
+    /** A def that is a member of an instance or trait. */
     case object Member extends DefKind
 
-    /**
-      * A def that is not a member of an instance or trait.
-      */
+    /** A def that is not a member of an instance or trait. */
     case object NonMember extends DefKind
   }
 
-  /**
-    * Companion object for [[SharedContext]]
-    */
+  /** Companion object for [[SharedContext]] */
   private object SharedContext {
-    /**
-      * Returns a fresh shared context.
-      */
+    /** Returns a fresh shared context. */
     def mk(): SharedContext = new SharedContext(new ConcurrentLinkedQueue())
   }
 

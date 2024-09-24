@@ -60,14 +60,10 @@ object EntryPoint {
     */
   private val EntryPointScheme = Scheme(Nil, Nil, Nil, Type.mkIoArrow(Type.Unit, Type.Unit, SourceLocation.Unknown))
 
-  /**
-    * The default entry point in case none is specified. (`main`)
-    */
+  /** The default entry point in case none is specified. (`main`) */
   private val DefaultEntryPoint = Symbol.mkDefnSym("main")
 
-  /**
-    * Introduces a new function `main%` which calls the entry point (if any).
-    */
+  /** Introduces a new function `main%` which calls the entry point (if any). */
   def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, EntryPointError] = flix.phase("EntryPoint") {
     flatMapN(findOriginalEntryPoint(root)) {
       // Case 1: We have an entry point. Wrap it.
@@ -85,9 +81,7 @@ object EntryPoint {
     }
   }(DebugValidation())
 
-  /**
-   * Returns all reachable definitions.
-   */
+  /** Returns all reachable definitions. */
   private def getReachable(root: TypedAst.Root): Set[Symbol.DefnSym] = {
     val s = mutable.Set.empty[Symbol.DefnSym]
     for ((sym, defn) <- root.defs) {
@@ -98,9 +92,7 @@ object EntryPoint {
     s.toSet
   }
 
-  /**
-    * Finds the entry point in the given `root`.
-    */
+  /** Finds the entry point in the given `root`. */
   private def findOriginalEntryPoint(root: TypedAst.Root)(implicit flix: Flix): Validation[Option[TypedAst.Def], EntryPointError] = {
     root.entryPoint match {
       case None => root.defs.get(DefaultEntryPoint) match {
@@ -114,9 +106,7 @@ object EntryPoint {
     }
   }
 
-  /**
-    * Retrieves an arbitrary source location from the root.
-    */
+  /** Retrieves an arbitrary source location from the root. */
   private def getArbitrarySourceLocation(root: TypedAst.Root)(implicit flix: Flix): SourceLocation = {
     root.sources.headOption match {
       // Case 1: Some arbitrary source. Use its location.
@@ -205,9 +195,7 @@ object EntryPoint {
       }
   }
 
-  /**
-    * Builds the new entry point function that calls the old entry point function.
-    */
+  /** Builds the new entry point function that calls the old entry point function. */
   private def mkEntryPoint(oldEntryPoint: TypedAst.Def, root: TypedAst.Root)(implicit flix: Flix): TypedAst.Def = {
 
     val argSym = Symbol.freshVarSym("_unit", Ast.BoundBy.FormalParam, SourceLocation.Unknown)

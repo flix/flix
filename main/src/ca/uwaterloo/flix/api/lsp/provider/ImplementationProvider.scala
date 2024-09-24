@@ -21,9 +21,7 @@ import ca.uwaterloo.flix.language.ast.Symbol
 
 object ImplementationProvider {
 
-  /**
-    * Returns implementations LocationLink for a given trait.
-    */
+  /** Returns implementations LocationLink for a given trait. */
   def processImplementation(uri: String, position: Position)(implicit root: Root): List[LocationLink] = {
     if (root == null) {
       // No AST available.

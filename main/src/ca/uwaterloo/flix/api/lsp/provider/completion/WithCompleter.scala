@@ -22,9 +22,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.phase.{Deriver, Resolver}
 
 object WithCompleter {
-  /**
-    * Returns a List of Completion based on with type class constraints.
-    */
+  /** Returns a List of Completion based on with type class constraints. */
   def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[WithCompletion] = {
     /*
      * When used with `enum`, `with` needs to be treated differently: we should only show derivable

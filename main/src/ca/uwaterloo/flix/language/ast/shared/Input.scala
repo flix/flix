@@ -17,14 +17,10 @@ package ca.uwaterloo.flix.language.ast.shared
 
 import java.nio.file.Path
 
-/**
-  * A common super-type for inputs.
-  */
+/** A common super-type for inputs. */
 sealed trait Input {
 
-  /**
-    * Returns `true` if the input is stable (i.e. cannot be changed once loaded).
-    */
+  /** Returns `true` if the input is stable (i.e. cannot be changed once loaded). */
   def isStable: Boolean = this match {
     case Input.Text(_, _, stable, _) => stable
     case Input.TxtFile(_, _) => false
@@ -33,9 +29,7 @@ sealed trait Input {
     case Input.Unknown => false
   }
 
-  /**
-    * Returns the security context associated with the input.
-    */
+  /** Returns the security context associated with the input. */
   def security: SecurityContext = this match {
     case Input.Text(_, _, _, sctx) => sctx
     case Input.TxtFile(_, sctx) => sctx
@@ -48,9 +42,7 @@ sealed trait Input {
 
 object Input {
 
-  /**
-    * Represents an input that originates from a virtual path.
-    */
+  /** Represents an input that originates from a virtual path. */
   case class Text(name: String, text: String, stable: Boolean, sctx: SecurityContext) extends Input {
     override def hashCode(): Int = name.hashCode
 
@@ -60,24 +52,16 @@ object Input {
     }
   }
 
-  /**
-    * Represents an input that originates from the filesystem.
-    */
+  /** Represents an input that originates from the filesystem. */
   case class TxtFile(path: Path, sctx: SecurityContext) extends Input
 
-  /**
-    * Represents an input, which is a package, on the filesystem.
-    */
+  /** Represents an input, which is a package, on the filesystem. */
   case class PkgFile(packagePath: Path, sctx: SecurityContext) extends Input
 
-  /**
-    * Represents an input that originates from inside a package.
-    */
+  /** Represents an input that originates from inside a package. */
   case class FileInPackage(packagePath: Path, virtualPath: String, text: String, sctx: SecurityContext) extends Input
 
-  /**
-    * Represents an input from an unknown source.
-    */
+  /** Represents an input from an unknown source. */
   case object Unknown extends Input
 
 }

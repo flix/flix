@@ -26,9 +26,7 @@ import ca.uwaterloo.flix.language.phase.unification.Substitution
 
 import scala.annotation.tailrec
 
-/**
-  * A phase that simplifies the MonoAst by elimination of pattern matching and other rewritings.
-  */
+/** A phase that simplifies the MonoAst by elimination of pattern matching and other rewritings. */
 object Simplifier {
 
   // We are safe to use the top scope everywhere because we do not use unification in this or future phases.
@@ -445,9 +443,7 @@ object Simplifier {
     SimplifiedAst.Expr.ApplyAtomic(AtomicOp.Binary(sop), List(e1, e2), MonoType.Bool, purity, loc)
   }
 
-  /**
-    * Eliminates pattern matching by translations to labels and jumps.
-    */
+  /** Eliminates pattern matching by translations to labels and jumps. */
   private def patternMatchWithLabels(exp0: MonoAst.Expr, rules: List[MonoAst.MatchRule], tpe: Type, loc: SourceLocation)(implicit universe: Set[Symbol.EffectSym], root: MonoAst.Root, flix: Flix): SimplifiedAst.Expr = {
     //
     // Given the code:
@@ -667,9 +663,7 @@ object Simplifier {
       SimplifiedAst.Op(sym, ann, mod, fparams, retTpe, eff, loc)
   }
 
-  /**
-    * Returns the purity of an expression.
-    */
+  /** Returns the purity of an expression. */
   private def simplifyEffect(eff: Type)(implicit universe: Set[Symbol.EffectSym]): Purity = {
     Purity.fromType(eff)
   }

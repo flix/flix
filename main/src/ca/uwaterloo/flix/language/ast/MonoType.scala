@@ -28,9 +28,7 @@ object MonoType {
   // Primitive Types.
   //
 
-  /**
-    * Represents an uninhabited type, not an absent value like in Java.
-    */
+  /** Represents an uninhabited type, not an absent value like in Java. */
   case object Void extends MonoType
 
   case object AnyType extends MonoType

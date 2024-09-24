@@ -30,17 +30,13 @@ trait TestUtils {
 
   this: AnyFunSuite =>
 
-  /**
-    * Checks the given input string `s` with the given compilation options `o`.
-    */
+  /** Checks the given input string `s` with the given compilation options `o`. */
   def check(s: String, o: Options): Validation[TypedAst.Root, CompilationMessage] = {
     implicit val sctx: SecurityContext = SecurityContext.AllPermissions
     new Flix().setOptions(o).addSourceCode("<test>", s).check()
   }
 
-  /**
-   * Compiles the given input string `s` with the given compilation options `o`.
-   */
+  /** Compiles the given input string `s` with the given compilation options `o`. */
   def compile(s: String, o: Options): Validation[CompilationResult, CompilationMessage] = {
     implicit val sctx: SecurityContext = SecurityContext.AllPermissions
     new Flix().setOptions(o).addSourceCode("<test>", s).compile()
@@ -50,19 +46,13 @@ trait TestUtils {
     errors.map(_.messageWithLoc(Formatter.NoFormatter)).mkString("\n\n")
   }
 
-  /**
-    * Asserts that the result of a compiler check is a failure with a value of the parametric type `T`.
-    */
+  /** Asserts that the result of a compiler check is a failure with a value of the parametric type `T`. */
   def expectErrorOnCheck[T](result: Validation[TypedAst.Root, CompilationMessage])(implicit classTag: ClassTag[T]): Unit = expectErrorGen[TypedAst.Root, T](result)
 
-  /**
-   * Asserts that the compilation result is a failure with a value of the parametric type `T`.
-   */
+  /** Asserts that the compilation result is a failure with a value of the parametric type `T`. */
   def expectError[T](result: Validation[CompilationResult, CompilationMessage])(implicit classTag: ClassTag[T]): Unit = expectErrorGen[CompilationResult, T](result)
 
-  /**
-    * Asserts that validation contains a defined entrypoint.
-    */
+  /** Asserts that validation contains a defined entrypoint. */
   def expectMain(result: Validation[TypedAst.Root, CompilationMessage]): Unit = {
     result.toSoftResult match {
       case Result.Ok((res, _)) => if (res.entryPoint.isEmpty) {
@@ -72,9 +62,7 @@ trait TestUtils {
     }
   }
 
-  /**
-   * Asserts that the validation does not contain a value of the parametric type `T`.
-   */
+  /** Asserts that the validation does not contain a value of the parametric type `T`. */
   def rejectError[T](result: Validation[CompilationResult, CompilationMessage])(implicit classTag: ClassTag[T]): Unit = result.toHardResult match {
     case Result.Ok(_) => ()
 
@@ -86,9 +74,7 @@ trait TestUtils {
         fail(s"Unexpected an error of type ${rejected.getSimpleName}.")
   }
 
-  /**
-   * Asserts that the validation is successful.
-   */
+  /** Asserts that the validation is successful. */
   def expectSuccess(result: Validation[CompilationResult, CompilationMessage]): Unit = result.toHardResult match {
     case Result.Ok(_) => ()
     case Result.Err(errors) =>

@@ -39,41 +39,27 @@ class TypeContext {
       */
     def empty: ScopeConstraints = new ScopeConstraints(Scope.Top)
 
-    /**
-      * Creates an empty ScopeConstraints associated with the given region.
-      */
+    /** Creates an empty ScopeConstraints associated with the given region. */
     def emptyForScope(s: Scope): ScopeConstraints = new ScopeConstraints(s)
   }
 
-  /**
-    * Stores typing information relating to a particular region scope.
-    */
+  /** Stores typing information relating to a particular region scope. */
   private class ScopeConstraints(val scope: Scope) {
 
-    /**
-      * The constraints generated for the scope.
-      */
+    /** The constraints generated for the scope. */
     private val constrs: mutable.ListBuffer[TypeConstraint] = mutable.ListBuffer.empty
 
-    /**
-      * Adds the given constraint to the constraint set.
-      */
+    /** Adds the given constraint to the constraint set. */
     def add(constr: TypeConstraint): Unit = this.constrs.addOne(constr)
 
-    /**
-      * Adds all the given constraints to the constraint set.
-      */
+    /** Adds all the given constraints to the constraint set. */
     def addAll(constrs: Iterable[TypeConstraint]): Unit = this.constrs.addAll(constrs)
 
-    /**
-      * Returns the generated constraints.
-      */
+    /** Returns the generated constraints. */
     def getConstraints: List[TypeConstraint] = this.constrs.toList
   }
 
-  /**
-    * The current scope of constraints.
-    */
+  /** The current scope of constraints. */
   private var currentScopeConstraints: ScopeConstraints = ScopeConstraints.empty
 
   /**
@@ -92,19 +78,13 @@ class TypeContext {
     */
   private val constraintStack: mutable.Stack[ScopeConstraints] = mutable.Stack.empty
 
-  /**
-    * Returns the current rigidity environment.
-    */
+  /** Returns the current rigidity environment. */
   def getRigidityEnv: RigidityEnv = renv
 
-  /**
-    * Returns the current type constraints.
-    */
+  /** Returns the current type constraints. */
   def getTypeConstraints: List[TypeConstraint] = currentScopeConstraints.getConstraints
 
-  /**
-    * Returns the current scope.
-    */
+  /** Returns the current scope. */
   def getScope: Scope = currentScopeConstraints.scope
 
   /**
@@ -191,9 +171,7 @@ class TypeContext {
     }
   }
 
-  /**
-    * Adds the given trait constraints to the context.
-    */
+  /** Adds the given trait constraints to the context. */
   def addClassConstraints(tconstrs0: List[Ast.TraitConstraint], loc: SourceLocation): Unit = {
     // convert all the syntax-level constraints to semantic constraints
     val tconstrs = tconstrs0.map {
@@ -202,9 +180,7 @@ class TypeContext {
     currentScopeConstraints.addAll(tconstrs)
   }
 
-  /**
-    * Marks the given type variable as rigid in the context.
-    */
+  /** Marks the given type variable as rigid in the context. */
   def rigidify(sym: Symbol.KindedTypeVarSym): Unit = {
     renv = renv.markRigid(sym)
   }

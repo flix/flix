@@ -39,9 +39,7 @@ import scala.annotation.tailrec
   */
 object ConstraintSolver {
 
-  /**
-    * Resolves constraints in the given definition using the given inference result.
-    */
+  /** Resolves constraints in the given definition using the given inference result. */
   def visitDef(defn: KindedAst.Def, infResult: InfResult, renv0: RigidityEnv, tconstrs0: List[Ast.TraitConstraint], tenv0: Map[Symbol.TraitSym, Ast.TraitContext], eqEnv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], root: KindedAst.Root)(implicit flix: Flix): Validation[Substitution, TypeError] = defn match {
     case KindedAst.Def(sym, spec, _) =>
       if (flix.options.xprinttyper.contains(sym.toString)) {
@@ -50,9 +48,7 @@ object ConstraintSolver {
       visitSpec(spec, infResult, renv0, tconstrs0, tenv0, eqEnv0, root)
   }
 
-  /**
-    * Resolves constraints in the given signature using the given inference result.
-    */
+  /** Resolves constraints in the given signature using the given inference result. */
   def visitSig(sig: KindedAst.Sig, infResult: InfResult, renv0: RigidityEnv, tconstrs0: List[Ast.TraitConstraint], tenv0: Map[Symbol.TraitSym, Ast.TraitContext], eqEnv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], root: KindedAst.Root)(implicit flix: Flix): Validation[Substitution, TypeError] = sig match {
     case KindedAst.Sig(_, _, None) => Validation.success(Substitution.empty)
     case KindedAst.Sig(sym, spec, Some(_)) =>
@@ -62,9 +58,7 @@ object ConstraintSolver {
       visitSpec(spec, infResult, renv0, tconstrs0, tenv0, eqEnv0, root)
   }
 
-  /**
-    * Resolves constraints in the given spec using the given inference result.
-    */
+  /** Resolves constraints in the given spec using the given inference result. */
   def visitSpec(spec: KindedAst.Spec, infResult: InfResult, renv0: RigidityEnv, tconstrs0: List[Ast.TraitConstraint], tenv0: Map[Symbol.TraitSym, Ast.TraitContext], eqEnv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], root: KindedAst.Root)(implicit flix: Flix): Validation[Substitution, TypeError] = spec match {
     case KindedAst.Spec(_, _, _, _, fparams, _, tpe, eff, tconstrs, econstrs, loc) =>
 
@@ -256,9 +250,7 @@ object ConstraintSolver {
     tryResolve(constrs.sortBy(_.index))
   }
 
-  /**
-    * Tries to resolve the given constraint.
-    */
+  /** Tries to resolve the given constraint. */
   private def resolveOne(constr0: TypeConstraint, renv: RigidityEnv, subst0: Substitution)(implicit scope: Scope, tenv: Map[Symbol.TraitSym, Ast.TraitContext], eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Result[ResolutionResult, TypeError] = constr0 match {
     case TypeConstraint.Equality(tpe1, tpe2, prov0) =>
       val tmin1 = TypeMinimization.minimizeType(subst0(tpe1))
@@ -499,9 +491,7 @@ object ConstraintSolver {
     }
   }
 
-  /**
-    * Gets an error from the list of unresolved constraints.
-    */
+  /** Gets an error from the list of unresolved constraints. */
   private def getFirstError(deferred: List[TypeConstraint], renv: RigidityEnv)(implicit flix: Flix): Option[TypeError] = deferred match {
     case Nil => None
     case TypeConstraint.Equality(tpe1, tpe2, prov) :: _ => Some(toTypeError(UnificationError.MismatchedTypes(tpe1, tpe2), prov))
@@ -509,9 +499,7 @@ object ConstraintSolver {
     case TypeConstraint.Purification(_, _, _, _, nested) :: _ => getFirstError(nested, renv)
   }
 
-  /**
-    * Constructs a specific missing instance error for the given trait symbol `sym` and type `tpe`.
-    */
+  /** Constructs a specific missing instance error for the given trait symbol `sym` and type `tpe`. */
   def mkMissingInstance(sym: Symbol.TraitSym, tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix): TypeError = {
     val eqSym = Symbol.mkTraitSym("Eq")
     val orderSym = Symbol.mkTraitSym("Order")
@@ -735,14 +723,10 @@ object ConstraintSolver {
 
   object ResolutionResult {
 
-    /**
-      * Indicates that a constraint was eliminated.
-      */
+    /** Indicates that a constraint was eliminated. */
     val elimination: ResolutionResult = ResolutionResult(Substitution.empty, Nil, progress = true)
 
-    /**
-      * Indicates that a constraint was resolved to a substitution.
-      */
+    /** Indicates that a constraint was resolved to a substitution. */
     def newSubst(subst: Substitution): ResolutionResult = ResolutionResult(subst, Nil, progress = true)
 
     /**

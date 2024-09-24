@@ -31,25 +31,19 @@ object ClosureConv {
   // We are safe to use the top scope everywhere because we do not use unification in this or future phases.
   private implicit val S: Scope = Scope.Top
 
-  /**
-    * Performs closure conversion on the given AST `root`.
-    */
+  /** Performs closure conversion on the given AST `root`. */
   def run(root: Root)(implicit flix: Flix): Root = flix.phase("ClosureConv") {
     val newDefs = ParOps.parMapValues(root.defs)(visitDef)
 
     root.copy(defs = newDefs)
   }
 
-  /**
-    * Performs closure conversion on the given definition `def0`.
-    */
+  /** Performs closure conversion on the given definition `def0`. */
   private def visitDef(def0: Def)(implicit flix: Flix): Def = {
     def0.copy(exp = visitExp(def0.exp))
   }
 
-  /**
-    * Performs closure conversion on the given expression `exp0`.
-    */
+  /** Performs closure conversion on the given expression `exp0`. */
   private def visitExp(exp0: Expr)(implicit flix: Flix): Expr = exp0 match {
     case Expr.Cst(_, _, _) => exp0
 
@@ -190,9 +184,7 @@ object ClosureConv {
     Expr.LambdaClosure(cloParams, fparams, fvs, newBody, tpe, loc)
   }
 
-  /**
-    * Returns a pair of a formal parameter list and a substitution
-    */
+  /** Returns a pair of a formal parameter list and a substitution */
   private def getFormalParamsAndSubst(fvs: List[FreeVar], loc: SourceLocation)(implicit flix: Flix): (List[FormalParam], Map[Symbol.VarSym, Symbol.VarSym]) = {
     val subst = mutable.Map.empty[Symbol.VarSym, Symbol.VarSym]
     val fparams = fvs.map {
@@ -273,33 +265,25 @@ object ClosureConv {
     case Expr.ApplyDef(_, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.", loc)
   }
 
-  /**
-    * Returns the free variables in `exps0`.
-    */
+  /** Returns the free variables in `exps0`. */
   private def freeVarsExps(exps0: List[Expr]): SortedSet[FreeVar] =
     exps0.foldLeft(SortedSet.empty[FreeVar]) {
       case (acc, exp) => acc ++ freeVars(exp)
     }
 
-  /**
-    * Returns `fvs` without the variable symbol `bound`.
-    */
+  /** Returns `fvs` without the variable symbol `bound`. */
   private def filterBoundVar(fvs: SortedSet[FreeVar], bound: Symbol.VarSym): SortedSet[FreeVar] =
     fvs.filter {
       case FreeVar(sym, _) => sym != bound
     }
 
-  /**
-    * Returns `fvs` without all the variable symbols in the formal parameters `bound`.
-    */
+  /** Returns `fvs` without all the variable symbols in the formal parameters `bound`. */
   private def filterBoundParams(fvs: SortedSet[FreeVar], bound: List[FormalParam]): SortedSet[FreeVar] =
     fvs.filter {
       case FreeVar(sym, _) => !bound.exists(fparam => sym == fparam.sym)
     }
 
-  /**
-    * Applies the given substitution map `subst` to the given expression `e`.
-    */
+  /** Applies the given substitution map `subst` to the given expression `e`. */
   private def applySubst(e0: Expr, subst: Map[Symbol.VarSym, Symbol.VarSym])(implicit flix: Flix): Expr = {
 
     def visitExp(e: Expr): Expr = e match {

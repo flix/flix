@@ -52,30 +52,20 @@ object Parser2 {
 
   private sealed trait Event
 
-  /**
-    * An event emitted by the parser while traversing a list of [[Token]]s
-    */
+  /** An event emitted by the parser while traversing a list of [[Token]]s */
   private object Event {
-    /**
-      * Opens a grouping of tokens with the [[TreeKind]] kind.
-      */
+    /** Opens a grouping of tokens with the [[TreeKind]] kind. */
     case class Open(kind: TreeKind) extends Event
 
-    /**
-      * Closed the most recently opened group.
-      */
+    /** Closed the most recently opened group. */
     case object Close extends Event
 
-    /**
-      * Advances one token adding it to the currently open group.
-      */
+    /** Advances one token adding it to the currently open group. */
     case object Advance extends Event
   }
 
   private class State(val tokens: Array[Token], val src: Source) {
-    /**
-      * The current token being considered by the parser.
-      */
+    /** The current token being considered by the parser. */
     var position: Int = 0
     /**
       * The parser avoids endless loops via a fuel abstraction.
@@ -228,9 +218,7 @@ object Parser2 {
     SourceLocation(isReal = true, token.sp1, token.sp2)
   }
 
-  /**
-    * Get current position of the parser as a [[SourceLocation]]
-    */
+  /** Get current position of the parser as a [[SourceLocation]] */
   private def currentSourceLocation()(implicit s: State): SourceLocation = {
     val token = s.tokens(s.position)
     SourceLocation(isReal = true, token.sp1, token.sp2)
@@ -275,9 +263,7 @@ object Parser2 {
     mark
   }
 
-  /**
-    * Advances the parser one token. [[advance]] refuels the parser.
-    */
+  /** Advances the parser one token. [[advance]] refuels the parser. */
   private def advance()(implicit s: State): Unit = {
     if (eof()) {
       return
@@ -296,9 +282,7 @@ object Parser2 {
     close(mark, TreeKind.ErrorTree(error))
   }
 
-  /**
-    * Wrap the next token in an error.
-    */
+  /** Wrap the next token in an error. */
   private def advanceWithError(error: CompilationMessage, mark: Option[Mark.Opened] = None)(implicit s: State): Mark.Closed = {
     val m = mark.getOrElse(open())
     nth(0) match {
@@ -310,9 +294,7 @@ object Parser2 {
     close(m, TreeKind.ErrorTree(error))
   }
 
-  /**
-    * Check if the parser is at the end-of-file.
-    */
+  /** Check if the parser is at the end-of-file. */
   private def eof()(implicit s: State): Boolean = {
     s.position == s.tokens.length - 1
   }
@@ -336,16 +318,12 @@ object Parser2 {
     }
   }
 
-  /**
-    * Checks if the parser is at a token of a specific `kind`.
-    */
+  /** Checks if the parser is at a token of a specific `kind`. */
   private def at(kind: TokenKind)(implicit s: State): Boolean = {
     nth(0) == kind
   }
 
-  /**
-    * Checks if the parser is at a token of kind in `kinds`.
-    */
+  /** Checks if the parser is at a token of kind in `kinds`. */
   private def atAny(kinds: Set[TokenKind])(implicit s: State): Boolean = {
     kinds.contains(nth(0))
   }
@@ -359,9 +337,7 @@ object Parser2 {
     Some(token).filter(kinds.contains)
   }
 
-  /**
-    * Checks if the parser is at a token of a specific `kind` and advances past it if it is.
-    */
+  /** Checks if the parser is at a token of a specific `kind` and advances past it if it is. */
   private def eat(kind: TokenKind)(implicit s: State): Boolean = {
     if (at(kind)) {
       advance()
@@ -371,9 +347,7 @@ object Parser2 {
     }
   }
 
-  /**
-    * Checks if the parser is at a token of kind in `kinds` and advances past it if it is.
-    */
+  /** Checks if the parser is at a token of kind in `kinds` and advances past it if it is. */
   private def eatAny(kinds: Set[TokenKind])(implicit s: State): Boolean = {
     if (atAny(kinds)) {
       advance()
@@ -420,9 +394,7 @@ object Parser2 {
     closeWithError(mark, error)
   }
 
-  /**
-    * Advance past current token if it is of kind in `kinds`. Otherwise wrap it in an error.
-    */
+  /** Advance past current token if it is of kind in `kinds`. Otherwise wrap it in an error. */
   private def expectAny(kinds: Set[TokenKind], context: SyntacticContext, hint: Option[String] = None)(implicit s: State): Unit = {
     if (eatAny(kinds)) {
       return
@@ -476,9 +448,7 @@ object Parser2 {
     false
   }
 
-  /**
-    * Enumeration of possible separation modes between a list of items.
-    */
+  /** Enumeration of possible separation modes between a list of items. */
   sealed trait Separation
 
   private object Separation {
@@ -498,9 +468,7 @@ object Parser2 {
       */
     case class Optional(separator: TokenKind, allowTrailing: Boolean = false) extends Separation
 
-    /**
-      * Separator is disallowed.
-      */
+    /** Separator is disallowed. */
     case object None extends Separation
   }
 
@@ -2155,9 +2123,7 @@ object Parser2 {
       // Determines if a '{' is opening a block, a record literal or a record operation.
       assert(at(TokenKind.CurlyL))
 
-      /**
-        * Gets the distance to the first non-comment token after lookahead.
-        */
+      /** Gets the distance to the first non-comment token after lookahead. */
       @tailrec
       def nextNonComment(lookahead: Int): Int = {
         if (s.position + lookahead > s.tokens.length - 1) {

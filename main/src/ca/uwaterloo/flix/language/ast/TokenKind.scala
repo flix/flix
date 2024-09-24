@@ -200,22 +200,16 @@ sealed trait TokenKind {
     }
   }
 
-  /**
-    * Checks if this token is a line or block comment.
-    */
+  /** Checks if this token is a line or block comment. */
   def isCommentNonDoc: Boolean = this match {
     case TokenKind.CommentLine | TokenKind.CommentBlock => true
     case _ => false
   }
 
-  /**
-    * Checks if this token is a doc, line or block comment.
-    */
+  /** Checks if this token is a doc, line or block comment. */
   def isComment: Boolean = this == TokenKind.CommentDoc || this.isCommentNonDoc
 
-  /**
-    * Checks if this token is a keyword.
-    */
+  /** Checks if this token is a keyword. */
   def isKeyword: Boolean = this match {
     case TokenKind.KeywordAlias => true
     case TokenKind.KeywordAnd => true
@@ -300,9 +294,7 @@ sealed trait TokenKind {
     case _ => false
   }
 
-  /**
-    * Checks if this token is a modifier.
-    */
+  /** Checks if this token is a modifier. */
   def isModifier: Boolean = this match {
     case TokenKind.KeywordSealed
          | TokenKind.KeywordLawful
@@ -367,9 +359,7 @@ sealed trait TokenKind {
     case _ => false
   })
 
-  /**
-    * Checks if kind is one of the [[TokenKind]]s that can validly appear as the first token of any expression.
-    */
+  /** Checks if kind is one of the [[TokenKind]]s that can validly appear as the first token of any expression. */
   def isFirstExpr: Boolean = this match {
     case TokenKind.KeywordOpenVariant
          | TokenKind.KeywordOpenVariantAs
@@ -450,9 +440,7 @@ sealed trait TokenKind {
     case _ => false
   }
 
-  /**
-    * Checks if kind is one of the [[TokenKind]]s that can validly appear as the first token of any type.
-    */
+  /** Checks if kind is one of the [[TokenKind]]s that can validly appear as the first token of any type. */
   def isFirstType: Boolean = this match {
     case TokenKind.NameUpperCase
          | TokenKind.NameMath
@@ -474,9 +462,7 @@ sealed trait TokenKind {
     case _ => false
   }
 
-  /**
-    * Checks if kind is one of the [[TokenKind]]s that can validly appear as the first token of any pattern.
-    */
+  /** Checks if kind is one of the [[TokenKind]]s that can validly appear as the first token of any pattern. */
   def isFirstPattern: Boolean = this match {
     case TokenKind.NameLowerCase
          | TokenKind.NameGreek
@@ -546,33 +532,25 @@ sealed trait TokenKind {
     */
   def isRecoverExpr: Boolean = this.isFirstDecl || this == TokenKind.Semi
 
-  /**
-    * Checks if kind is a TokenKind that warrants breaking a type parsing loop.
-    */
+  /** Checks if kind is a TokenKind that warrants breaking a type parsing loop. */
   def isRecoverType: Boolean = this.isFirstDecl || (this match {
     case TokenKind.Semi | TokenKind.Equal => true
     case _ => false
   })
 
-  /**
-    * Checks if kind is a TokenKind that warrants breaking a pattern parsing loop.
-    */
+  /** Checks if kind is a TokenKind that warrants breaking a pattern parsing loop. */
   def isRecoverPattern: Boolean = this.isFirstDecl || (this match {
     case TokenKind.ArrowThickR | TokenKind.KeywordCase => true
     case _ => false
   })
 
-  /**
-    * Checks if kind is a TokenKind that warrants breaking the top-level use or import parsing loop.
-    */
+  /** Checks if kind is a TokenKind that warrants breaking the top-level use or import parsing loop. */
   def isRecoverUseOrImport: Boolean = this.isFirstDecl || (this match {
     case TokenKind.Semi | TokenKind.KeywordUse | TokenKind.KeywordImport => true
     case _ => false
   })
 
-  /**
-    * Checks if kind is a TokenKind that warrants breaking a function parameter parsing loop.
-    */
+  /** Checks if kind is a TokenKind that warrants breaking a function parameter parsing loop. */
   def isRecoverParameters: Boolean = this.isFirstDecl || (this match {
     case TokenKind.Colon | TokenKind.Equal => true
     case _ => false

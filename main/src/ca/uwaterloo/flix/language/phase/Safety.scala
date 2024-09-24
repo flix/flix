@@ -27,9 +27,7 @@ import scala.annotation.tailrec
   */
 object Safety {
 
-  /**
-    * Performs safety and well-formedness checks on the given AST `root`.
-    */
+  /** Performs safety and well-formedness checks on the given AST `root`. */
   def run(root: Root)(implicit flix: Flix): Validation[Root, SafetyError] = flix.phase("Safety") {
     //
     // Collect all errors.
@@ -47,9 +45,7 @@ object Safety {
     Validation.toSuccessOrSoftFailure(root, errors)
   }(DebugValidation())
 
-  /**
-    * Checks that no type parameters for types that implement `Sendable` of kind `Region`
-    */
+  /** Checks that no type parameters for types that implement `Sendable` of kind `Region` */
   private def visitSendable(root: Root): List[SafetyError] = {
     val sendableClass = new Symbol.TraitSym(Nil, "Sendable", SourceLocation.Unknown)
 
@@ -62,9 +58,7 @@ object Safety {
     }
   }
 
-  /**
-    * Performs safety and well-formedness checks on the given signature `sig`.
-    */
+  /** Performs safety and well-formedness checks on the given signature `sig`. */
   private def visitSig(sig: Sig)(implicit flix: Flix): List[SafetyError] = {
     val renv = sig.spec.tparams.map(_.sym).foldLeft(RigidityEnv.empty) {
       case (acc, e) => acc.markRigid(e)
@@ -75,9 +69,7 @@ object Safety {
     }
   }
 
-  /**
-    * Performs safety and well-formedness checks on the given definition `def0`.
-    */
+  /** Performs safety and well-formedness checks on the given definition `def0`. */
   private def visitDef(def0: Def)(implicit flix: Flix): List[SafetyError] = {
     val exportErrs = if (def0.spec.ann.isExport) visitExportDef(def0) else Nil
     val renv = def0.spec.tparams.map(_.sym).foldLeft(RigidityEnv.empty) {
@@ -129,9 +121,7 @@ object Safety {
     nonRoot ++ pub ++ name ++ types ++ effect
   }
 
-  /**
-    * Returns `true` if the given `defn` has a single `Unit` parameter.
-    */
+  /** Returns `true` if the given `defn` has a single `Unit` parameter. */
   private def hasUnitParameter(defn: Def): Boolean = {
     defn.spec.fparams match {
       case fparam :: Nil =>
@@ -143,23 +133,17 @@ object Safety {
     }
   }
 
-  /**
-    * Returns `true` if the given `defn` is in the root namespace.
-    */
+  /** Returns `true` if the given `defn` is in the root namespace. */
   private def isInRootNamespace(defn: Def): Boolean = {
     defn.sym.namespace.isEmpty
   }
 
-  /**
-    * Returns `true` if the given `defn` has the public modifier.
-    */
+  /** Returns `true` if the given `defn` has the public modifier. */
   private def isPub(defn: Def): Boolean = {
     defn.spec.mod.isPublic
   }
 
-  /**
-    * Returns `true` if the given `defn` has a polymorphic type.
-    */
+  /** Returns `true` if the given `defn` has a polymorphic type. */
   private def isPolymorphic(defn: Def): Boolean = {
     defn.spec.tparams.nonEmpty
   }
@@ -205,16 +189,12 @@ object Safety {
     }
   }
 
-  /**
-    * Returns `true` if given `defn` has a name that is directly valid in Java.
-    */
+  /** Returns `true` if given `defn` has a name that is directly valid in Java. */
   private def validJavaName(sym: Symbol.DefnSym): Boolean = {
     sym.name.matches("[a-z][a-zA-Z0-9]*")
   }
 
-  /**
-    * Returns `true` if the given `defn` is pure or has an effect that is allowed for a top-level function.
-    */
+  /** Returns `true` if the given `defn` is pure or has an effect that is allowed for a top-level function. */
   private def isAllowedEffect(defn: Def): Boolean = {
     defn.spec.eff match {
       case Type.Pure => true
@@ -225,9 +205,7 @@ object Safety {
     }
   }
 
-  /**
-    * Performs safety and well-formedness checks on the given expression `exp0`.
-    */
+  /** Performs safety and well-formedness checks on the given expression `exp0`. */
   private def visitExp(e0: Expr, renv: RigidityEnv)(implicit inTryCatch: Boolean, flix: Flix): List[SafetyError] = {
 
     // Nested try-catch generates wrong code in the backend, so it is disallowed.
@@ -581,9 +559,7 @@ object Safety {
 
   }
 
-  /**
-    * Checks if the given type cast is legal.
-    */
+  /** Checks if the given type cast is legal. */
   private def verifyCheckedTypeCast(from: Type, to: Type, loc: SourceLocation)(implicit flix: Flix): List[SafetyError] = {
     (from.baseType, to.baseType) match {
 
@@ -686,9 +662,7 @@ object Safety {
     }
   }
 
-  /**
-    * Performs safety and well-formedness checks on the given constraint `c0`.
-    */
+  /** Performs safety and well-formedness checks on the given constraint `c0`. */
   private def checkConstraint(c0: Constraint, renv: RigidityEnv)(implicit inTryCatch: Boolean, flix: Flix): List[SafetyError] = {
     //
     // Compute the set of positively defined variable symbols in the constraint.
@@ -736,9 +710,7 @@ object Safety {
     err1 ++ err2 ++ err3
   }
 
-  /**
-    * Performs safety check on the pattern of an atom body.
-    */
+  /** Performs safety check on the pattern of an atom body. */
   private def checkBodyPattern(p0: Predicate.Body): List[SafetyError] = p0 match {
     case Predicate.Body.Atom(_, _, _, _, terms, _, loc) =>
       terms.foldLeft[List[SafetyError]](Nil)((acc, term) => term match {
@@ -801,15 +773,11 @@ object Safety {
   private def makeIllegalNonPositivelyBoundVariableError(sym: Symbol.VarSym, loc: SourceLocation): SafetyError =
     if (sym.isWild) IllegalNegativelyBoundWildVar(sym, loc) else IllegalNonPositivelyBoundVar(sym, loc)
 
-  /**
-    * Returns all the positively defined variable symbols in the given constraint `c0`.
-    */
+  /** Returns all the positively defined variable symbols in the given constraint `c0`. */
   private def positivelyDefinedVariables(c0: Constraint): Set[Symbol.VarSym] =
     c0.body.flatMap(positivelyDefinedVariables).toSet
 
-  /**
-    * Returns all positively defined variable symbols in the given body predicate `p0`.
-    */
+  /** Returns all positively defined variable symbols in the given body predicate `p0`. */
   private def positivelyDefinedVariables(p0: Predicate.Body): Set[Symbol.VarSym] = p0 match {
     case Predicate.Body.Atom(_, _, polarity, _, terms, _, _) => polarity match {
       case Polarity.Positive =>
@@ -835,9 +803,7 @@ object Safety {
   private def fixedLatticeVariablesOf(c0: Constraint): Set[Symbol.VarSym] =
     c0.body.flatMap(fixedLatticenalVariablesOf).toSet
 
-  /**
-    * Computes the lattice variables of `p0` if it is a fixed atom.
-    */
+  /** Computes the lattice variables of `p0` if it is a fixed atom. */
   private def fixedLatticenalVariablesOf(p0: Predicate.Body): Set[Symbol.VarSym] = p0 match {
     case Body.Atom(_, Denotation.Latticenal, _, Fixity.Fixed, terms, _, _) =>
       terms.lastOption.map(freeVarsOf).getOrElse(Set.empty)
@@ -852,9 +818,7 @@ object Safety {
   private def nonFixedLatticeVariablesOf(c0: Constraint): Set[Symbol.VarSym] =
     c0.body.flatMap(latticenalVariablesOf).toSet
 
-  /**
-    * Computes the lattice variables of `p0` if it is not a fixed atom.
-    */
+  /** Computes the lattice variables of `p0` if it is not a fixed atom. */
   private def latticenalVariablesOf(p0: Predicate.Body): Set[Symbol.VarSym] = p0 match {
     case Predicate.Body.Atom(_, Denotation.Latticenal, _, Fixity.Loose, terms, _, _) =>
       terms.lastOption.map(freeVarsOf).getOrElse(Set.empty)
@@ -862,9 +826,7 @@ object Safety {
     case _ => Set.empty
   }
 
-  /**
-    * Checks for `IllegalRelationalUseOfLatticeVariable` in the given `head` predicate.
-    */
+  /** Checks for `IllegalRelationalUseOfLatticeVariable` in the given `head` predicate. */
   private def checkHeadPredicate(head: Predicate.Head, latVars: Set[Symbol.VarSym]): List[SafetyError] = head match {
     case Predicate.Head.Atom(_, Denotation.Latticenal, terms, _, loc) =>
       // Check the relational terms ("the keys").
@@ -914,9 +876,7 @@ object Safety {
     case Pattern.Error(_, _) => Nil
   }
 
-  /**
-    * Helper function for [[visitPat]].
-    */
+  /** Helper function for [[visitPat]]. */
   private def visitRecordPattern(pats: List[Pattern.Record.RecordLabelPattern], pat: Pattern, loc: SourceLocation): List[SafetyError] = {
     visitPats(pats.map(_.pat), loc) ++ visitPat(pat, loc)
   }
@@ -952,9 +912,7 @@ object Safety {
     }
   }
 
-  /**
-    * Ensures that `methods` fully implement `clazz`
-    */
+  /** Ensures that `methods` fully implement `clazz` */
   private def checkObjectImplementation(clazz: java.lang.Class[_], tpe: Type, methods: List[JvmMethod], loc: SourceLocation): List[SafetyError] = {
     //
     // Check that `clazz` doesn't have a non-default constructor
@@ -1016,14 +974,10 @@ object Safety {
     constructorErrors ++ visibilityErrors ++ thisErrors ++ unimplementedErrors ++ extraErrors
   }
 
-  /**
-    * Represents the signature of a method, used to compare Java signatures against Flix signatures.
-    */
+  /** Represents the signature of a method, used to compare Java signatures against Flix signatures. */
   private case class MethodSignature(name: String, paramTypes: List[Type], retTpe: Type)
 
-  /**
-    * Convert a list of Flix methods to a set of MethodSignatures. Returns a map to allow subsequent reverse lookup.
-    */
+  /** Convert a list of Flix methods to a set of MethodSignatures. Returns a map to allow subsequent reverse lookup. */
   private def getFlixMethodSignatures(methods: List[JvmMethod]): Map[MethodSignature, JvmMethod] = {
     methods.foldLeft(Map.empty[MethodSignature, JvmMethod]) {
       case (acc, m@JvmMethod(ident, fparams, _, retTpe, _, _)) =>
@@ -1034,9 +988,7 @@ object Safety {
     }
   }
 
-  /**
-    * Get a Set of MethodSignatures representing the methods of `clazz`. Returns a map to allow subsequent reverse lookup.
-    */
+  /** Get a Set of MethodSignatures representing the methods of `clazz`. Returns a map to allow subsequent reverse lookup. */
   private def getJavaMethodSignatures(clazz: java.lang.Class[_]): Map[MethodSignature, java.lang.reflect.Method] = {
     val methods = Jvm.getInstanceMethods(clazz)
     methods.foldLeft(Map.empty[MethodSignature, java.lang.reflect.Method]) {
@@ -1046,9 +998,7 @@ object Safety {
     }
   }
 
-  /**
-    * Return true if the given `clazz` has a non-private zero argument constructor.
-    */
+  /** Return true if the given `clazz` has a non-private zero argument constructor. */
   private def hasNonPrivateZeroArgConstructor(clazz: java.lang.Class[_]): Boolean = {
     try {
       val constructor = clazz.getDeclaredConstructor()
@@ -1058,15 +1008,11 @@ object Safety {
     }
   }
 
-  /**
-    * Returns `true` if the given class `c` is public.
-    */
+  /** Returns `true` if the given class `c` is public. */
   private def isPublicClass(c: java.lang.Class[_]): Boolean =
     java.lang.reflect.Modifier.isPublic(c.getModifiers)
 
-  /**
-    * Return `true` if the given method `m` is abstract.
-    */
+  /** Return `true` if the given method `m` is abstract. */
   private def isAbstractMethod(m: java.lang.reflect.Method): Boolean =
     java.lang.reflect.Modifier.isAbstract(m.getModifiers)
 

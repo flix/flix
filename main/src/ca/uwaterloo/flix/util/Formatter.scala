@@ -153,9 +153,7 @@ trait Formatter {
 
   private def padLeft(width: Int, s: String): String = String.format("%" + width + "s", s)
 
-  /**
-    * Takes a list of strings and right-pads them with spaces to all take up the same space.
-    */
+  /** Takes a list of strings and right-pads them with spaces to all take up the same space. */
   private def padToLongest(l: List[String]): List[String] = {
     val longestLength = l.map(s => s.length).max
     l.map(s => s.padTo(longestLength, ' '))
@@ -164,9 +162,7 @@ trait Formatter {
 
 object Formatter {
 
-  /**
-    * A formatter that does not apply any color styling.
-    */
+  /** A formatter that does not apply any color styling. */
   object NoFormatter extends Formatter {
 
     override def black(s: String): String = s
@@ -239,9 +235,7 @@ object Formatter {
 
   }
 
-  /**
-    * A terminal context compatible with an ANSI terminal.
-    */
+  /** A terminal context compatible with an ANSI terminal. */
   object AnsiTerminalFormatter extends Formatter {
 
     override def black(s: String): String = fgColor(1, 1, 1, s)
@@ -320,19 +314,13 @@ object Formatter {
 
   }
 
-  /**
-    * Returns the default formatter based on the detected color support.
-    */
+  /** Returns the default formatter based on the detected color support. */
   def getDefault: Formatter = if (hasColorSupport) AnsiTerminalFormatter else NoFormatter
 
-  /**
-    * Returns `true` if the terminal appears to support at least 256 colors.
-    */
+  /** Returns `true` if the terminal appears to support at least 256 colors. */
   def hasColorSupport: Boolean = isAnsiTerminal || isTrueColorTerminal || isWindowsTerminal || isIdeaTerminal
 
-  /**
-    * Returns `true` if the terminal appears to be an ANSI terminal.
-    */
+  /** Returns `true` if the terminal appears to be an ANSI terminal. */
   private def isAnsiTerminal: Boolean = {
     val term = System.getenv("TERM")
     term != null && (
@@ -342,25 +330,19 @@ object Formatter {
         term.contains("screen"))
   }
 
-  /**
-    * Returns `true` if the terminal appears to support 24bit colors.
-    */
+  /** Returns `true` if the terminal appears to support 24bit colors. */
   private def isTrueColorTerminal: Boolean = {
     val colorTerm = System.getenv("COLORTERM")
     colorTerm != null && colorTerm.contains("truecolor")
   }
 
-  /**
-    * Returns `true` if the terminal appears to be a Windows Terminal.
-    */
+  /** Returns `true` if the terminal appears to be a Windows Terminal. */
   private def isWindowsTerminal: Boolean = {
     val wtSession = System.getenv("WT_SESSION")
     wtSession != null
   }
 
-  /**
-    * Returns `true` if the terminal appears to be an IDEA emulator.
-    */
+  /** Returns `true` if the terminal appears to be an IDEA emulator. */
   private def isIdeaTerminal: Boolean = {
     val emulator = System.getenv("TERMINAL_EMULATOR")
     emulator != null && emulator.contains("JetBrains")

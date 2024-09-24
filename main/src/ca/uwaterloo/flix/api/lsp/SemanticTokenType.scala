@@ -46,69 +46,43 @@ sealed trait SemanticTokenType {
 
 object SemanticTokenType {
 
-  /**
-    * For identifiers that declare or reference a class type.
-    */
+  /** For identifiers that declare or reference a class type. */
   case object Class extends SemanticTokenType
 
-  /**
-    * For identifiers that declare or reference an enumeration type.
-    */
+  /** For identifiers that declare or reference an enumeration type. */
   case object Enum extends SemanticTokenType
 
-  /**
-    * For identifiers that declare an enumeration property, constant, or member.
-    */
+  /** For identifiers that declare an enumeration property, constant, or member. */
   case object EnumMember extends SemanticTokenType
 
-  /**
-    * For identifiers that declare a function.
-    */
+  /** For identifiers that declare a function. */
   case object Function extends SemanticTokenType
 
-  /**
-    * For identifiers that declare or reference an interface type.
-    */
+  /** For identifiers that declare or reference an interface type. */
   case object Interface extends SemanticTokenType
 
-  /**
-    * For tokens that represent an operator.
-    */
+  /** For tokens that represent an operator. */
   case object Operator extends SemanticTokenType
 
-  /**
-    * For identifiers that declare or reference a function or method parameters.
-    */
+  /** For identifiers that declare or reference a function or method parameters. */
   case object Parameter extends SemanticTokenType
 
-  /**
-    * For identifiers that declare or reference a member property, member field, or member variable.
-    */
+  /** For identifiers that declare or reference a member property, member field, or member variable. */
   case object Property extends SemanticTokenType
 
-  /**
-    * For identifiers that declare a member function or method.
-    */
+  /** For identifiers that declare a member function or method. */
   case object Method extends SemanticTokenType
 
-  /**
-    * For identifiers that declare or reference a namespace, module, or package.
-    */
+  /** For identifiers that declare or reference a namespace, module, or package. */
   case object Namespace extends SemanticTokenType
 
-  /**
-    * For identifiers that declare or reference a type that is not covered above.
-    */
+  /** For identifiers that declare or reference a type that is not covered above. */
   case object Type extends SemanticTokenType
 
-  /**
-    * For identifiers that declare or reference a type parameter.
-    */
+  /** For identifiers that declare or reference a type parameter. */
   case object TypeParameter extends SemanticTokenType
 
-  /**
-    * For identifiers that declare or reference a local or global variable.
-    */
+  /** For identifiers that declare or reference a local or global variable. */
   case object Variable extends SemanticTokenType
 
 }

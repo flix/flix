@@ -27,9 +27,7 @@ object TypeBuiltinCompleter {
     Completion.TypeBuiltinPolyCompletion(finalName, edit, p)
   }
 
-  /**
-    * Returns a List of Completion for builtin types.
-    */
+  /** Returns a List of Completion for builtin types. */
   def getCompletions: Iterable[Completion] =
     List(
       // A

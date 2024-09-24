@@ -28,9 +28,7 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
 
 object Scheme {
 
-  /**
-    * Instantiate one of the variables in the scheme, adding new quantifiers as needed.
-    */
+  /** Instantiate one of the variables in the scheme, adding new quantifiers as needed. */
   def partiallyInstantiate(sc: Scheme, quantifier: Symbol.KindedTypeVarSym, value: Type, loc: SourceLocation)(implicit scope: Scope, flix: Flix): Scheme = sc match {
     case Scheme(quantifiers, tconstrs, econstrs, base) =>
       if (!quantifiers.contains(quantifier)) {
@@ -43,9 +41,7 @@ object Scheme {
       generalize(newTconstrs, newEconstrs, newBase, RigidityEnv.empty)
   }
 
-  /**
-    * Instantiates the given type scheme `sc` by replacing all quantified variables with fresh type variables.
-    */
+  /** Instantiates the given type scheme `sc` by replacing all quantified variables with fresh type variables. */
   def instantiate(sc: Scheme, loc: SourceLocation)(implicit scope: Scope, flix: Flix): (List[Ast.TraitConstraint], List[Ast.BroadEqualityConstraint], Type, Map[Symbol.KindedTypeVarSym, Type.Var]) = {
     // Compute the base type.
     val baseType = sc.base
@@ -120,18 +116,14 @@ object Scheme {
     (newTconstrs, newEconstrs, newBase, substMap)
   }
 
-  /**
-    * Generalizes the given type `tpe0` with respect to the empty type environment.
-    */
+  /** Generalizes the given type `tpe0` with respect to the empty type environment. */
   def generalize(tconstrs: List[Ast.TraitConstraint], econstrs: List[Ast.BroadEqualityConstraint], tpe0: Type, renv: RigidityEnv)(implicit scope: Scope): Scheme = {
     val tvars = tpe0.typeVars ++ tconstrs.flatMap(tconstr => tconstr.arg.typeVars) ++ econstrs.flatMap(econstr => econstr.tpe1.typeVars ++ econstr.tpe2.typeVars)
     val quantifiers = renv.getFlexibleVarsOf(tvars.toList)
     Scheme(quantifiers.map(_.sym), tconstrs, econstrs, tpe0)
   }
 
-  /**
-    * Returns `true` if the given schemes are equivalent.
-    */
+  /** Returns `true` if the given schemes are equivalent. */
   // TODO can optimize?
   def equal(sc1: Scheme, sc2: Scheme, traitEnv: Map[Symbol.TraitSym, Ast.TraitContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit scope: Scope, flix: Flix): Boolean = {
     lessThanEqual(sc1, sc2, traitEnv, eqEnv) && lessThanEqual(sc2, sc1, traitEnv, eqEnv)
@@ -199,14 +191,10 @@ object Scheme {
 
 }
 
-/**
-  * Representation of polytypes.
-  */
+/** Representation of polytypes. */
 case class Scheme(quantifiers: List[Symbol.KindedTypeVarSym], tconstrs: List[Ast.TraitConstraint], econstrs: List[Ast.BroadEqualityConstraint], base: Type) {
 
-  /**
-    * Returns a human readable representation of the polytype.
-    */
+  /** Returns a human readable representation of the polytype. */
   override def toString: String = {
     FormatScheme.formatSchemeWithOptions(this, FormatOptions.Internal)
   }

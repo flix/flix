@@ -62,9 +62,7 @@ object FormatType {
     s(tpe)
   }
 
-  /**
-    * Transforms the given well-kinded type into a string, using the given format options.
-    */
+  /** Transforms the given well-kinded type into a string, using the given format options. */
   def formatTypeWithOptions(tpe: Type, fmt: FormatOptions): String = {
     try {
       format(SimpleType.fromWellKindedType(tpe))(fmt)
@@ -73,53 +71,37 @@ object FormatType {
     }
   }
 
-  /**
-    * Transforms the given kinded type variable symbol into a string.
-    */
+  /** Transforms the given kinded type variable symbol into a string. */
   def formatTypeVarSym(sym: Symbol.KindedTypeVarSym)(implicit flix: Flix): String = {
     formatTypeVarSymWithOptions(sym, flix.getFormatOptions)
   }
 
-  /**
-    * Transforms the given kinded type variable symbol into a string.
-    */
+  /** Transforms the given kinded type variable symbol into a string. */
   def formatTypeVarSymWithOptions(sym: Symbol.KindedTypeVarSym, fmt: FormatOptions): String = {
     val tpe = Type.Var(sym, SourceLocation.Unknown)
     formatTypeWithOptions(tpe, fmt)
   }
 
-  /**
-    * Transforms the given simple type into a string.
-    */
+  /** Transforms the given simple type into a string. */
   def formatSimpleType(tpe: SimpleType)(implicit flix: Flix): String =
     formatSimpleTypeWithOptions(tpe, flix.getFormatOptions)
 
-  /**
-    * Transforms the given simple type into a string, using the given format options.
-    */
+  /** Transforms the given simple type into a string, using the given format options. */
   def formatSimpleTypeWithOptions(tpe: SimpleType, fmt: FormatOptions): String =
     format(tpe)(fmt)
 
-  /**
-    * Transforms the given type into a string.
-    */
+  /** Transforms the given type into a string. */
   private def format(tpe00: SimpleType)(implicit fmt: FormatOptions): String = {
 
-    /**
-      * Wraps the given type with parentheses.
-      */
+    /** Wraps the given type with parentheses. */
     def parenthesize(s: String): String = "(" + s + ")"
 
-    /**
-      * Transforms the given record `labelType` pair into a string.
-      */
+    /** Transforms the given record `labelType` pair into a string. */
     def visitRecordLabelType(labelType: SimpleType.RecordLabelType): String = labelType match {
       case SimpleType.RecordLabelType(label, tpe) => s"$label = ${visit(tpe, Mode.Type)}"
     }
 
-    /**
-      * Transforms the given schema `fieldType` pair into a string.
-      */
+    /** Transforms the given schema `fieldType` pair into a string. */
     def visitSchemaFieldType(fieldType: SimpleType.PredicateFieldType): String = fieldType match {
       case SimpleType.RelationFieldType(field, tpes) =>
         val tpeString = tpes.map(visit(_, Mode.Type)).mkString(", ")
@@ -217,9 +199,7 @@ object FormatType {
       case SimpleType.Error => true
     }
 
-    /**
-      * Delimits the given `tpe`, parenthesizing it if needed.
-      */
+    /** Delimits the given `tpe`, parenthesizing it if needed. */
     def delimit(tpe: SimpleType, mode: Mode): String = {
       if (isDelimited(tpe)) {
         visit(tpe, mode)
@@ -228,9 +208,7 @@ object FormatType {
       }
     }
 
-    /**
-      * Converts the given `tpe0` to a string.
-      */
+    /** Converts the given `tpe0` to a string. */
     def visit(tpe0: SimpleType, mode: Mode): String = tpe0 match {
       case SimpleType.Hole => "?"
       case SimpleType.Void => "Void"
@@ -402,9 +380,7 @@ object FormatType {
     visit(tpe00, Mode.Type)
   }
 
-  /**
-    * Flag indicating whether a type should be formatted as an effect or as a regular type.
-    */
+  /** Flag indicating whether a type should be formatted as an effect or as a regular type. */
   private sealed trait Mode
 
   private object Mode {

@@ -15,14 +15,10 @@
  */
 package ca.uwaterloo.flix.util.collection
 
-/**
-  * Operations on lists.
-  */
+/** Operations on lists. */
 object ListOps {
 
-  /**
-    * Unzips the given list of 4-tuples into 4 lists.
-    */
+  /** Unzips the given list of 4-tuples into 4 lists. */
   def unzip4[T1, T2, T3, T4](list: List[(T1, T2, T3, T4)]): (List[T1], List[T2], List[T3], List[T4]) = {
     list.foldRight((Nil: List[T1], Nil: List[T2], Nil: List[T3], Nil: List[T4])) {
       case ((h1, h2, h3, h4), (t1, t2, t3, t4)) => (h1 :: t1, h2 :: t2, h3 :: t3, h4 :: t4)

@@ -22,16 +22,12 @@ import org.objectweb.asm
 
 import java.nio.file.{Path, Paths}
 
-/**
-  * Companion object for the [[JvmName]] class.
-  */
+/** Companion object for the [[JvmName]] class. */
 object JvmName {
 
   // TODO: Would be nice to allow BackendObjType here to avoid conversions
   case class MethodDescriptor(arguments: List[BackendType], result: VoidableType) {
-    /**
-      * Returns the type descriptor of this method.
-      */
+    /** Returns the type descriptor of this method. */
     val toDescriptor: String = {
       // Descriptor of result
       val resultDescriptor = result.toDescriptor
@@ -53,19 +49,13 @@ object JvmName {
       MethodDescriptor(argument.toList, result)
   }
 
-  /**
-    * The name of the static constructor method `<clinit>`.
-    */
+  /** The name of the static constructor method `<clinit>`. */
   val StaticConstructorMethod: String = "<clinit>"
 
-  /**
-    * The name of the constructor method `<init>`.
-    */
+  /** The name of the constructor method `<init>`. */
   val ConstructorMethod: String = "<init>"
 
-  /**
-    * Returns the JvmName of the given string `s`.
-    */
+  /** Returns the JvmName of the given string `s`. */
   def mk(s: String): JvmName = {
     val l = s.split("/")
     JvmName(l.init.toList, l.last)
@@ -98,9 +88,7 @@ object JvmName {
   def mkClassName(prefix: String): String =
     mkClassName(prefix, Nil)
 
-  /**
-    * Performs name mangling on the given string `s` to avoid issues with special characters.
-    */
+  /** Performs name mangling on the given string `s` to avoid issues with special characters. */
   // TODO: Magnus: Use this in appropriate places.
   def mangle(s: String): String = s.
     replace("+", Flix.Delimiter + "plus").
@@ -185,9 +173,7 @@ object JvmName {
   * @param name the class or interface name.
   */
 case class JvmName(pkg: List[String], name: String) {
-  /**
-    * Returns the type descriptor of `this` Java name.
-    */
+  /** Returns the type descriptor of `this` Java name. */
   lazy val toDescriptor: String =
     if (pkg.isEmpty) "L" + name + ";" else "L" + pkg.mkString("/") + "/" + name + ";"
 
@@ -209,18 +195,12 @@ case class JvmName(pkg: List[String], name: String) {
   lazy val toInternalName: String =
     if (pkg.isEmpty) name else pkg.mkString("/") + "/" + name
 
-  /**
-    * Returns the relative path of `this` Java name.
-    */
+  /** Returns the relative path of `this` Java name. */
   lazy val toPath: Path = Paths.get(pkg.mkString("/"), name + ".class")
 
-  /**
-    * Wraps this name in `backendObjType.Native`.
-    */
+  /** Wraps this name in `backendObjType.Native`. */
   def toObjTpe: BackendObjType.Native = BackendObjType.Native(this)
 
-  /**
-    * Wraps this name in `BackendType.Reference(BackendObjType.Native(...))`.
-    */
+  /** Wraps this name in `BackendType.Reference(BackendObjType.Native(...))`. */
   def toTpe: BackendType.Reference = this.toObjTpe.toTpe
 }

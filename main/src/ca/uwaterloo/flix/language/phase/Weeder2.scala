@@ -1048,9 +1048,7 @@ object Weeder2 {
       flatMapN(pick(TreeKind.ArgumentList, tree))(visitArguments)
     }
 
-    /**
-      * This method is the same as pickArguments but considers Unit as no-argument. It calls visitMethodArguments instead.
-      */
+    /** This method is the same as pickArguments but considers Unit as no-argument. It calls visitMethodArguments instead. */
     private def pickRawArguments(tree: Tree)(implicit flix: Flix): Validation[List[Expr], CompilationMessage] = {
       flatMapN(pick(TreeKind.ArgumentList, tree))(visitMethodArguments)
     }
@@ -2329,76 +2327,58 @@ object Weeder2 {
       }
     }
 
-    /**
-      * Attempts to parse the given tree to a float32.
-      */
+    /** Attempts to parse the given tree to a float32. */
     def toFloat32(token: Token): Validation[Expr, CompilationMessage] =
       tryParseFloat(token,
         (text, loc) => Validation.success(Expr.Cst(Constant.Float32(text.stripSuffix("f32").toFloat), loc))
       )
 
-    /**
-      * Attempts to parse the given tree to a float32.
-      */
+    /** Attempts to parse the given tree to a float32. */
     def toFloat64(token: Token): Validation[Expr, CompilationMessage] =
       tryParseFloat(token,
         (text, loc) => Validation.success(Expr.Cst(Constant.Float64(text.stripSuffix("f64").toDouble), loc))
       )
 
-    /**
-      * Attempts to parse the given tree to a big decimal.
-      */
+    /** Attempts to parse the given tree to a big decimal. */
     def toBigDecimal(token: Token): Validation[Expr, CompilationMessage] =
       tryParseFloat(token, (text, loc) => {
         val bigDecimal = new java.math.BigDecimal(text.stripSuffix("ff"))
         Validation.success(Expr.Cst(Constant.BigDecimal(bigDecimal), loc))
       })
 
-    /**
-      * Attempts to parse the given tree to a int8.
-      */
+    /** Attempts to parse the given tree to a int8. */
     def toInt8(token: Token): Validation[Expr, CompilationMessage] =
       tryParseInt(token, "i8", (radix, digits, loc) =>
         Expr.Cst(Constant.Int8(JByte.parseByte(digits, radix)), loc)
       )
 
-    /**
-      * Attempts to parse the given tree to a int16.
-      */
+    /** Attempts to parse the given tree to a int16. */
     def toInt16(token: Token): Validation[Expr, CompilationMessage] = {
       tryParseInt(token, "i16", (radix, digits, loc) =>
         Expr.Cst(Constant.Int16(JShort.parseShort(digits, radix)), loc)
       )
     }
 
-    /**
-      * Attempts to parse the given tree to a int32.
-      */
+    /** Attempts to parse the given tree to a int32. */
     def toInt32(token: Token): Validation[Expr, CompilationMessage] =
       tryParseInt(token, "i32", (radix, digits, loc) =>
         Expr.Cst(Constant.Int32(JInt.parseInt(digits, radix)), loc)
       )
 
-    /**
-      * Attempts to parse the given tree to a int64.
-      */
+    /** Attempts to parse the given tree to a int64. */
     def toInt64(token: Token): Validation[Expr, CompilationMessage] = {
       tryParseInt(token, "i64", (radix, digits, loc) =>
         Expr.Cst(Constant.Int64(JLong.parseLong(digits, radix)), loc)
       )
     }
 
-    /**
-      * Attempts to parse the given tree to a int64.
-      */
+    /** Attempts to parse the given tree to a int64. */
     def toBigInt(token: Token): Validation[Expr, CompilationMessage] =
       tryParseInt(token, "ii", (radix, digits, loc) =>
         Expr.Cst(Constant.BigInt(new java.math.BigInteger(digits, radix)), loc)
       )
 
-    /**
-      * Attempts to compile the given regular expression into a Pattern.
-      */
+    /** Attempts to compile the given regular expression into a Pattern. */
     def toRegex(token: Token): Validation[Expr, CompilationMessage] = {
       val loc = token.mkSourceLocation()
       val text = token.text.stripPrefix("regex\"").stripSuffix("\"")
@@ -3119,16 +3099,12 @@ object Weeder2 {
     }
   }
 
-  /**
-    * Turns a Name.QName into a string by removing prefix "##" and joining with ".".
-    */
+  /** Turns a Name.QName into a string by removing prefix "##" and joining with ".". */
   private def javaQnameToFqn(qname: Name.QName): String = {
     (qname.namespace.idents.map(_.name.stripPrefix("##")) :+ qname.ident.name).mkString(".")
   }
 
-  /**
-    * When kinds are elided they default to the kind `Type`.
-    */
+  /** When kinds are elided they default to the kind `Type`. */
   private def defaultKind(ident: Name.Ident): Kind = Kind.Ambiguous(Name.mkQName("Type"), ident.loc.asSynthetic)
 
   /**
@@ -3155,9 +3131,7 @@ object Weeder2 {
     )
   }
 
-  /**
-    * Tries to find a token child of a specific [[TokenKind]].
-    */
+  /** Tries to find a token child of a specific [[TokenKind]]. */
   private def hasToken(kind: TokenKind, tree: Tree): Boolean = {
     tree.children.exists {
       case Token(k, _, _, _, _, _) => k == kind
@@ -3165,25 +3139,19 @@ object Weeder2 {
     }
   }
 
-  /**
-    * Collects all immediate child trees from a tree.
-    */
+  /** Collects all immediate child trees from a tree. */
   private def pickAllTrees(tree: Tree): List[Tree] = {
     tree.children.collect {
       case t: Tree => t
     }.toList
   }
 
-  /**
-    * Collects all immediate child tokens from a tree.
-    */
+  /** Collects all immediate child tokens from a tree. */
   private def pickAllTokens(tree: Tree): Array[Token] = {
     tree.children.collect { case token@Token(_, _, _, _, _, _) => token }
   }
 
-  /**
-    * Collects the text in immediate token children
-    */
+  /** Collects the text in immediate token children */
   private def text(tree: Tree): List[String] = {
     tree.children.foldLeft[List[String]](List.empty)((acc, c) => c match {
       case token@Token(_, _, _, _, _, _) => acc :+ token.text
@@ -3191,9 +3159,7 @@ object Weeder2 {
     })
   }
 
-  /**
-    * Picks out the first sub-tree of a specific [[TreeKind]].
-    */
+  /** Picks out the first sub-tree of a specific [[TreeKind]]. */
   private def pick(kind: TreeKind, tree: Tree, sctx: SyntacticContext = SyntacticContext.Unknown): Validation[Tree, CompilationMessage] = {
     tryPick(kind, tree) match {
       case Some(t) => Validation.success(t)
@@ -3203,9 +3169,7 @@ object Weeder2 {
     }
   }
 
-  /**
-    * Tries to pick out the first sub-tree of a specific [[TreeKind]].
-    */
+  /** Tries to pick out the first sub-tree of a specific [[TreeKind]]. */
   private def tryPick(kind: TreeKind, tree: Tree): Option[Tree] = {
     tree.children.find {
       case tree: Tree if tree.kind == kind => true
@@ -3216,9 +3180,7 @@ object Weeder2 {
     }
   }
 
-  /**
-    * Picks out all the sub-trees of a specific [[TreeKind]].
-    */
+  /** Picks out all the sub-trees of a specific [[TreeKind]]. */
   private def pickAll(kind: TreeKind, tree: Tree): List[Tree] = {
     tree.children.foldLeft[List[Tree]](List.empty)((acc, child) => child match {
       case tree: Tree if tree.kind == kind => acc.appended(tree)
@@ -3245,25 +3207,17 @@ object Weeder2 {
     List.from(pairs.flatten)
   }
 
-  /**
-    * Ternary enumeration of constraints on the presence of something.
-    */
+  /** Ternary enumeration of constraints on the presence of something. */
   private sealed trait Presence
 
   private object Presence {
-    /**
-      * Indicates that the thing is required.
-      */
+    /** Indicates that the thing is required. */
     case object Required extends Presence
 
-    /**
-      * Indicates that the thing is optional.
-      */
+    /** Indicates that the thing is optional. */
     case object Optional extends Presence
 
-    /**
-      * Indicates that the thing is forbidden.
-      */
+    /** Indicates that the thing is forbidden. */
     case object Forbidden extends Presence
   }
 }

@@ -28,14 +28,10 @@ import java.io.{File, PrintStream}
 import java.net.BindException
 import java.nio.file.Paths
 
-/**
-  * The main entry point for the Flix compiler and runtime.
-  */
+/** The main entry point for the Flix compiler and runtime. */
 object Main {
 
-  /**
-    * The main method.
-    */
+  /** The main method. */
   def main(argv: Array[String]): Unit = {
 
     val cwd = Paths.get(".").toAbsolutePath.normalize()
@@ -326,9 +322,7 @@ object Main {
     }
   }
 
-  /**
-    * A case class representing the parsed command line options.
-    */
+  /** A case class representing the parsed command line options. */
   case class CmdOpts(command: Command = Command.None,
                      args: Option[String] = None,
                      entryPoint: Option[String] = None,
@@ -364,9 +358,7 @@ object Main {
                      xiterations: Int = 1000,
                      files: Seq[File] = Seq())
 
-  /**
-    * A case class representing possible commands.
-    */
+  /** A case class representing possible commands. */
   sealed trait Command
 
   object Command {

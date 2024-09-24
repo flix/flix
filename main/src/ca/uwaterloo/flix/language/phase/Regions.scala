@@ -295,9 +295,7 @@ object Regions {
       visitExp(exp) ++ checkType(tpe, loc)
   }
 
-  /**
-    * Ensures that no region escapes inside `tpe`.
-    */
+  /** Ensures that no region escapes inside `tpe`. */
   private def checkType(tpe: Type, loc: SourceLocation)(implicit scope: List[Type.Var], flix: Flix): List[TypeError.RegionVarEscapes] = {
     // Compute the region variables that escape.
     // We should minimize `tpe`, but we do not because of the performance cost.
@@ -341,9 +339,7 @@ object Regions {
     !sameType(t0, t1)
   }
 
-  /**
-    * Extracts all the boolean formulas from the given type `t0`.
-    */
+  /** Extracts all the boolean formulas from the given type `t0`. */
   private def boolTypesOf(t0: Type): List[Type] = t0 match {
     case t if t.kind == Kind.Eff => List(t)
     case _: Type.Var => Nil
@@ -358,9 +354,7 @@ object Regions {
     case Type.AssocType(_, _, _, _) => Nil
   }
 
-  /**
-    * Returns true iff the two types denote the same Boolean function, using the same variables.
-    */
+  /** Returns true iff the two types denote the same Boolean function, using the same variables. */
   private def sameType(t1: Type, t2: Type)(implicit flix: Flix): Boolean = {
     val tvars = t1.typeVars ++ t2.typeVars
 
@@ -383,9 +377,7 @@ object Regions {
     subsets.forall(trueVars => eval(t1, trueVars) == eval(t2, trueVars))
   }
 
-  /**
-    * Returns all region variables in the given type `tpe`.
-    */
+  /** Returns all region variables in the given type `tpe`. */
   private def regionVarsOf(tpe: Type): SortedSet[Type.Var] = tpe.typeVars.filter {
     case tvar =>
       val isBool = tvar.sym.kind == Kind.Eff

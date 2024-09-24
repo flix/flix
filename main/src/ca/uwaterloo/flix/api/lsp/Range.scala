@@ -22,22 +22,16 @@ import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import org.json4s.JsonDSL._
 import org.json4s._
 
-/**
-  * Companion object of [[Range]].
-  */
+/** Companion object of [[Range]]. */
 object Range {
 
-  /**
-    * Returns a range from the given source location `loc`.
-    */
+  /** Returns a range from the given source location `loc`. */
   def from(loc: SourceLocation): Range = {
     // NB: LSP line and column numbers are zero-indexed.
     Range(Position.fromBegin(loc), Position.fromEnd(loc))
   }
 
-  /**
-    * Tries to parse the given `json` value as a [[Range]].
-    */
+  /** Tries to parse the given `json` value as a [[Range]]. */
   def parse(json: JValue): Result[Range, String] = {
     val startResult = Position.parse(json \\ "start")
     val endResult = Position.parse(json \\ "end")

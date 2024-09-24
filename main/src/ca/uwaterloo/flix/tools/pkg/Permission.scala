@@ -17,28 +17,20 @@ package ca.uwaterloo.flix.tools.pkg
 
 sealed trait Permission
 
-/**
- * Permissions for dependencies.
- */
+/** Permissions for dependencies. */
 object Permission {
 
-  /**
-   * Permission to have an effect.
-   */
+  /** Permission to have an effect. */
   case object Effect extends Permission {
     override def toString: String = "effect"
   }
 
-  /**
-   * Permission to call Java libraries.
-   */
+  /** Permission to call Java libraries. */
   case object JavaInterop extends Permission {
     override def toString: String = "java-interop"
   }
 
-  /**
-   * Permission to use unchecked casts.
-   */
+  /** Permission to use unchecked casts. */
   case object UncheckedCast extends Permission {
     override def toString: String = "unchecked-cast"
   }

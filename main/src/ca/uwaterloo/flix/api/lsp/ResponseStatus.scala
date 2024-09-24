@@ -17,19 +17,13 @@ package ca.uwaterloo.flix.api.lsp
 
 object ResponseStatus {
 
-  /**
-    * Request was successfully processed.
-    */
+  /** Request was successfully processed. */
   val Success = "success"
 
-  /**
-    * Request was invalid and could not be processed.
-    */
+  /** Request was invalid and could not be processed. */
   val InvalidRequest = "invalid_request"
 
-  /**
-    * The compiler has crashed.
-    */
+  /** The compiler has crashed. */
   val CompilerError = "compiler_error"
 
 }

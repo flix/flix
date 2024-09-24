@@ -27,9 +27,7 @@ object LocalResource {
 
   private val cache = mutable.Map.empty[String, String]
 
-  /**
-    * Returns the given relative path as a string.
-    */
+  /** Returns the given relative path as a string. */
   def get(relativePath: String): String = cache.getOrElseUpdate(relativePath, {
     val inputStream = getInputStream(relativePath)
     val result = StreamOps.readAll(inputStream)
@@ -37,9 +35,7 @@ object LocalResource {
     result
   })
 
-  /**
-    * Returns the an input stream for the given relative path.
-    */
+  /** Returns the an input stream for the given relative path. */
   def getInputStream(relativePath: String): InputStream = {
     val path = Paths.get(RootPath + relativePath)
 

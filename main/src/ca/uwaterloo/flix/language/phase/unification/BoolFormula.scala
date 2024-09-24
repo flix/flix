@@ -21,14 +21,10 @@ import ca.uwaterloo.flix.util.collection.Bimap
 
 import scala.collection.immutable.SortedSet
 
-/**
-  * A common super-type for Boolean algebras.
-  */
+/** A common super-type for Boolean algebras. */
 sealed trait BoolFormula {
 
-  /**
-    * Returns the free variables in `this` expression.
-    */
+  /** Returns the free variables in `this` expression. */
   final def freeVars: SortedSet[Int] = this match {
     case BoolFormula.True => SortedSet.empty
     case BoolFormula.False => SortedSet.empty
@@ -52,9 +48,7 @@ sealed trait BoolFormula {
     case BoolFormula.Or(t1, t2) => t1.size + t2.size + 1
   }
 
-  /**
-    * Returns a human-readable string representation of `this` expression.
-    */
+  /** Returns a human-readable string representation of `this` expression. */
   override def toString: String = this match {
     case BoolFormula.True => "true"
     case BoolFormula.False => "false"
@@ -71,34 +65,22 @@ sealed trait BoolFormula {
 
 object BoolFormula {
 
-  /**
-    * Represents the constant ⊤.
-    */
+  /** Represents the constant ⊤. */
   case object True extends BoolFormula
 
-  /**
-    * Represents the constant ⊥.
-    */
+  /** Represents the constant ⊥. */
   case object False extends BoolFormula
 
-  /**
-    * Represents a variable. Variables are numbered by integers.
-    */
+  /** Represents a variable. Variables are numbered by integers. */
   case class Var(x: Int) extends BoolFormula
 
-  /**
-    * Represents ¬f
-    */
+  /** Represents ¬f */
   case class Not(f: BoolFormula) extends BoolFormula
 
-  /**
-    * Represents f1 ⊓ f2
-    */
+  /** Represents f1 ⊓ f2 */
   case class And(f1: BoolFormula, f2: BoolFormula) extends BoolFormula
 
-  /**
-    * Represents f1 ⊔ f2
-    */
+  /** Represents f1 ⊔ f2 */
   case class Or(f1: BoolFormula, f2: BoolFormula) extends BoolFormula
 
   /**
@@ -217,9 +199,7 @@ object BoolFormula {
     case Or(t1, t2) => Type.mkOr(toBoolType(t1, m, loc), toBoolType(t2, m, loc), loc)
   }
 
-  /**
-    * An irreducible effect.
-    */
+  /** An irreducible effect. */
   sealed trait IrreducibleEff
 
   object IrreducibleEff {

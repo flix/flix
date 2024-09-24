@@ -21,15 +21,11 @@ import java.lang.reflect.{Constructor, Method}
 
 object BaseEffects {
 
-  /**
-   * A pre-computed map from constructors to effects.
-   */
+  /** A pre-computed map from constructors to effects. */
   private val constructorEffs: Map[Constructor[?], Set[Symbol.EffectSym]] = Map.empty ++
     classOf[java.net.URL].getConstructors.map(c => (c, Set(Symbol.Net)))
 
-  /**
-   * A pre-computed map from methods to effects.
-   */
+  /** A pre-computed map from methods to effects. */
   private val methodEffs: Map[Method, Set[Symbol.EffectSym]] = Map(
     classOf[java.lang.System].getMethod("currentTimeMillis") -> Set(Symbol.Time)
   )
@@ -43,9 +39,7 @@ object BaseEffects {
     classOf[java.lang.ProcessBuilder] -> Set(Symbol.Exec)
   )
 
-  /**
-   * Returns the base effects of calling the given constructor `c`.
-   */
+  /** Returns the base effects of calling the given constructor `c`. */
   def getConstructorEffs(c: Constructor[?], loc: SourceLocation): Type = constructorEffs.get(c) match {
     case None =>
       // Case 1: No effects for the constructor. Try the class map.
@@ -64,9 +58,7 @@ object BaseEffects {
       Type.mkUnion(tpes, loc)
   }
 
-  /**
-   * Returns the base effects of calling the given method `m`.
-   */
+  /** Returns the base effects of calling the given method `m`. */
   def getMethodEffs(m: Method, loc: SourceLocation): Type = methodEffs.get(m) match {
     case None =>
       // Case 1: No effects for the method. Try the class map.

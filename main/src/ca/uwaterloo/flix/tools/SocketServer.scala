@@ -43,24 +43,16 @@ import java.util.Date
   */
 class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port)) {
 
-  /**
-    * The custom date format to use for logging.
-    */
+  /** The custom date format to use for logging. */
   val DateFormat: String = "yyyy-MM-dd HH:mm:ss"
 
-  /**
-    * The Flix instance (the same instance is reused for incremental compilation).
-    */
+  /** The Flix instance (the same instance is reused for incremental compilation). */
   private val flix: Flix = new Flix().setFormatter(NoFormatter)
 
-  /**
-    * The number of warm-up iterations.
-    */
+  /** The number of warm-up iterations. */
   private val WarmupIterations: Int = 5
 
-  /**
-    * Invoked when the server is started.
-    */
+  /** Invoked when the server is started. */
   override def onStart(): Unit = {
     val options = Options.Default.copy(progress = false)
     flix.setOptions(options)
@@ -75,23 +67,17 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
     Console.println(s"WebSocket server listening on: ws://localhost:$port")
   }
 
-  /**
-    * Invoked when a client connects.
-    */
+  /** Invoked when a client connects. */
   override def onOpen(ws: WebSocket, ch: ClientHandshake): Unit = {
     log("Client Connected.")
   }
 
-  /**
-    * Invoked when a client disconnects.
-    */
+  /** Invoked when a client disconnects. */
   override def onClose(ws: WebSocket, i: Int, s: String, b: Boolean): Unit = {
     // nop
   }
 
-  /**
-    * Invoked when a client sends a message.
-    */
+  /** Invoked when a client sends a message. */
   override def onMessage(ws: WebSocket, data: String): Unit = {
     // Log the length and size of the received data.
     log(s"Received ${data.length} characters of source code.")
@@ -104,9 +90,7 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
     }
   }
 
-  /**
-    * Invoked when an error occurs.
-    */
+  /** Invoked when an error occurs. */
   override def onError(ws: WebSocket, e: Exception): Unit = e match {
     case _: InternalCompilerException =>
       log(s"Unexpected error: ${e.getMessage}")
@@ -117,9 +101,7 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
     case ex => throw ex
   }
 
-  /**
-    * Parse the request.
-    */
+  /** Parse the request. */
   private def parseRequest(s: String)(implicit ws: WebSocket): Option[String] = try {
     // Parse the string into a json object.
     val json = parse(s)
@@ -139,9 +121,7 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
       None
   }
 
-  /**
-    * Process the request.
-    */
+  /** Process the request. */
   private def processRequest(src: String)(implicit ws: WebSocket): Unit = {
     // Evaluate the string.
     val result = eval(src)
@@ -153,9 +133,7 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
     ws.send(json)
   }
 
-  /**
-    * Evaluates the given string `input` as a Flix program.
-    */
+  /** Evaluates the given string `input` as a Flix program. */
   private def eval(input: String): Result[(String, Long, Long), String] = {
     try {
       // Log the source code to compile.
@@ -190,9 +168,7 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
     }
   }
 
-  /**
-    * Returns the given `result` as a JSON object.
-    */
+  /** Returns the given `result` as a JSON object. */
   private def getJSON(result: Result[(String, Long, Long), String]): JObject =
     result match {
       case Ok((msg, compilationTime, evaluationTime)) => JObject(
@@ -209,18 +185,14 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
       )
     }
 
-  /**
-    * Logs the given message `msg` along with information about the connection `ws`.
-    */
+  /** Logs the given message `msg` along with information about the connection `ws`. */
   private def log(msg: String): Unit = {
     val dateFormat = new SimpleDateFormat(DateFormat)
     val datePart = dateFormat.format(new Date())
     Console.println(s"[$datePart]: $msg")
   }
 
-  /**
-    * Logs the given program.
-    */
+  /** Logs the given program. */
   private def logSourceCode(input: String): Unit = try {
     val hash = sha1(input)
     val p = Paths.get(s"./cache/$hash.flix")
@@ -231,18 +203,14 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
       ex.printStackTrace()
   }
 
-  /**
-    * Returns the `SHA1` of the given string `s`.
-    */
+  /** Returns the `SHA1` of the given string `s`. */
   private def sha1(s: String): String = {
     val crypt = MessageDigest.getInstance("SHA-1")
     crypt.update(s.getBytes("UTF-8"))
     byteToHex(crypt.digest)
   }
 
-  /**
-    * Returns the given byte array as a String.
-    */
+  /** Returns the given byte array as a String. */
   private def byteToHex(hash: Array[Byte]): String = {
     val formatter = new java.util.Formatter()
     for (b <- hash) {
@@ -253,9 +221,7 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
     result
   }
 
-  /**
-    * Returns the current Flix version.
-    */
+  /** Returns the current Flix version. */
   private def getVersionWithPort: String = "flix-" + Version.CurrentVersion.toString + " on port " + port
 
 }

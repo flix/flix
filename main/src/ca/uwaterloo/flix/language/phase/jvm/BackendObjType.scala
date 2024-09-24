@@ -29,13 +29,9 @@ import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescripto
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.{DevFlixRuntime, JavaLang, JavaLangInvoke, JavaUtil, JavaUtilConcurrent, MethodDescriptor, RootPackage}
 import org.objectweb.asm.Opcodes
 
-/**
-  * Represents all Flix types that are objects on the JVM (array is an exception).
-  */
+/** Represents all Flix types that are objects on the JVM (array is an exception). */
 sealed trait BackendObjType {
-  /**
-    * The `JvmName` that represents the type `Ref(Int)` refers to `"Ref$Int"`.
-    */
+  /** The `JvmName` that represents the type `Ref(Int)` refers to `"Ref$Int"`. */
   val jvmName: JvmName = this match {
     case BackendObjType.Unit => JvmName(DevFlixRuntime, mkClassName("Unit"))
     case BackendObjType.Lazy(tpe) => JvmName(RootPackage, mkClassName("Lazy", tpe))
@@ -93,14 +89,10 @@ sealed trait BackendObjType {
     case BackendObjType.ResumptionWrapper(t) => JvmName(DevFlixRuntime, mkClassName("ResumptionWrapper", t))
   }
 
-  /**
-    * The JVM type descriptor of the form `"L<jvmName.toInternalName>;"`.
-    */
+  /** The JVM type descriptor of the form `"L<jvmName.toInternalName>;"`. */
   def toDescriptor: String = jvmName.toDescriptor
 
-  /**
-    * Returns `this` wrapped in `BackendType.Reference`.
-    */
+  /** Returns `this` wrapped in `BackendType.Reference`. */
   def toTpe: BackendType.Reference = BackendType.Reference(this)
 
   protected def nullarySuperConstructor(superClass: ConstructorMethod): ConstructorMethod = ConstructorMethod(
@@ -416,13 +408,9 @@ object BackendObjType {
 
   case class Arrow(args: List[BackendType], result: BackendType) extends BackendObjType with Generatable {
 
-    /**
-      * Represents a function interface from `java.util.function`.
-      */
+    /** Represents a function interface from `java.util.function`. */
     sealed trait FunctionInterface {
-      /**
-        * The JvmName of the interface.
-        */
+      /** The JvmName of the interface. */
       def jvmName: JvmName = this match {
         case ObjFunction => JvmName.ObjFunction
         case ObjConsumer => JvmName.ObjConsumer
@@ -600,9 +588,7 @@ object BackendObjType {
     // Float64 -> Float64
     case object DoubleUnaryOperator extends FunctionInterface
 
-    /**
-      * Returns the specialized java function interfaces of the function type.
-      */
+    /** Returns the specialized java function interfaces of the function type. */
     def specialization(): List[FunctionInterface] = {
       (args, result) match {
         case (BackendType.Reference(BackendObjType.JavaObject) :: Nil, _) =>
@@ -773,9 +759,7 @@ object BackendObjType {
       }
     ))
 
-    /**
-      * Compares the label of `this`and `ALOAD(1)` and executes the designated branch.
-      */
+    /** Compares the label of `this`and `ALOAD(1)` and executes the designated branch. */
     private def caseOnLabelEquality(cases: Branch => InstructionSet): InstructionSet =
       thisLoad() ~ GETFIELD(LabelField) ~
         ALOAD(1) ~
@@ -1616,9 +1600,7 @@ object BackendObjType {
 
     def ObjectField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "o", BackendObjType.JavaObject.toTpe)
 
-    /**
-      * Returns the field of Value corresponding to the given type
-      */
+    /** Returns the field of Value corresponding to the given type */
     def fieldFromType(tpe: BackendType): InstanceField = {
       import BackendType._
       tpe match {

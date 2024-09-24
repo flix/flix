@@ -24,28 +24,20 @@ case class FormatOptions(varNames: FormatOptions.VarName)
 
 object FormatOptions {
 
-  /**
-    * The format options to use for internal
-    */
+  /** The format options to use for internal */
   val Internal: FormatOptions = FormatOptions(
     varNames = VarName.IdBased
   )
 
-  /**
-    * An enum for formatting type variables.
-    */
+  /** An enum for formatting type variables. */
   sealed trait VarName
 
   object VarName {
 
-    /**
-      * Indicates that variables should be formatted by their ID, such as `t1234`.
-      */
+    /** Indicates that variables should be formatted by their ID, such as `t1234`. */
     case object IdBased extends VarName
 
-    /**
-      * Indicates that variables should be formatted by their name, such as `res`.
-      */
+    /** Indicates that variables should be formatted by their name, such as `res`. */
     case object NameBased extends VarName
   }
 }

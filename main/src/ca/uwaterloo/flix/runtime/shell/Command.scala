@@ -18,41 +18,27 @@ package ca.uwaterloo.flix.runtime.shell
 
 import org.jline.terminal.Terminal
 
-/**
-  * A common super-type for commands.
-  */
+/** A common super-type for commands. */
 sealed trait Command
 
 object Command {
 
-  /**
-    * Does literally nothing.
-    */
+  /** Does literally nothing. */
   case object Nop extends Command
 
-  /**
-    * Reloads all source paths.
-    */
+  /** Reloads all source paths. */
   case object Reload extends Command
 
-  /**
-    * Displays documentation about the fqn s
-    */
+  /** Displays documentation about the fqn s */
   case class Info(s: String) extends Command
 
-  /**
-    * Creates a new project in the current directory
-    */
+  /** Creates a new project in the current directory */
   case object Init extends Command
 
-  /**
-    * Builds the current project.
-    */
+  /** Builds the current project. */
   case object Build extends Command
 
-  /**
-    * Builds a jar file from the current project.
-    */
+  /** Builds a jar file from the current project. */
   case object BuildJar extends Command
 
   /**
@@ -61,69 +47,43 @@ object Command {
     */
   case object BuildFatJar extends Command
 
-  /**
-    * Builds an fpkg file from the current project.
-    */
+  /** Builds an fpkg file from the current project. */
   case object BuildPkg extends Command
 
-  /**
-    * Publishes a release of the current project to GitHub.
-    */
+  /** Publishes a release of the current project to GitHub. */
   case object Release extends Command
 
-  /**
-    * Checks the current project for errors.
-    */
+  /** Checks the current project for errors. */
   case object Check extends Command
 
-  /**
-    * Generates API document for the current project.
-    */
+  /** Generates API document for the current project. */
   case object Doc extends Command
 
-  /**
-    * Runs the tests for the current project.
-    */
+  /** Runs the tests for the current project. */
   case object Test extends Command
 
-  /**
-    * Show dependencies which have newer versions available.
-    */
+  /** Show dependencies which have newer versions available. */
   case object Outdated extends Command
 
-  /**
-    * Terminates the shell.
-    */
+  /** Terminates the shell. */
   case object Quit extends Command
 
-  /**
-    * Prints helpful information about the available commands.
-    */
+  /** Prints helpful information about the available commands. */
   case object Help extends Command
 
-  /**
-    * Praise Le Toucan.
-    */
+  /** Praise Le Toucan. */
   case object Praise extends Command
 
-  /**
-    * Eval source code.
-    */
+  /** Eval source code. */
   case class Eval(s: String) extends Command
 
-  /**
-    * Reload and eval source code.
-    */
+  /** Reload and eval source code. */
   case class ReloadAndEval(s: String) extends Command
 
-  /**
-    * Unknown command.
-    */
+  /** Unknown command. */
   case class Unknown(s: String) extends Command
 
-  /**
-    * Parses the given `input` into a command.
-    */
+  /** Parses the given `input` into a command. */
   def parse(input: String)(implicit terminal: Terminal): Command = {
     //
     // Eof

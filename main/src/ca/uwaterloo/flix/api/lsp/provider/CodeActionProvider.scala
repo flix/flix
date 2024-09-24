@@ -29,9 +29,7 @@ object CodeActionProvider {
     getActionsFromErrors(uri, range, currentErrors) ++ getActionsFromIndex(uri, range, currentErrors)
   }
 
-  /**
-    * Returns code actions based on the current errors.
-    */
+  /** Returns code actions based on the current errors. */
   private def getActionsFromErrors(uri: String, range: Range, currentErrors: List[CompilationMessage])(implicit index: Index, root: Root, flix: Flix): List[CodeAction] = currentErrors.flatMap {
     case ResolutionError.UndefinedName(qn, _, env, _, loc) if onSameLine(range, loc) =>
       if (qn.namespace.isRoot)
@@ -82,9 +80,7 @@ object CodeActionProvider {
     case _ => Nil
   }
 
-  /**
-    * Returns code actions based on the current index and the given range.
-    */
+  /** Returns code actions based on the current index and the given range. */
   private def getActionsFromIndex(uri: String, range: Range, currentErrors: List[CompilationMessage])(implicit index: Index, root: Root, flix: Flix): List[CodeAction] =
     index.query(uri, range.start) match {
       case None => Nil // No code actions.
@@ -119,9 +115,7 @@ object CodeActionProvider {
     mkUseSym(ident, syms.map(_.name), syms, uri)
   }
 
-  /**
-    * Returns a code action that proposes to `use` a trait.
-    */
+  /** Returns a code action that proposes to `use` a trait. */
   private def mkUseTrait(ident: Name.Ident, uri: String)(implicit root: Root): List[CodeAction] = {
     val syms = root.traits.map {
       case (sym, _) => sym
@@ -129,9 +123,7 @@ object CodeActionProvider {
     mkUseSym(ident, syms.map(_.name), syms, uri)
   }
 
-  /**
-    * Returns a code action that proposes to `use` an effect.
-    */
+  /** Returns a code action that proposes to `use` an effect. */
   private def mkUseEffect(ident: Name.Ident, uri: String)(implicit root: Root): List[CodeAction] = {
     val syms = root.effects.map {
       case (sym, _) => sym
@@ -139,9 +131,7 @@ object CodeActionProvider {
     mkUseSym(ident, syms.map(_.name), syms, uri)
   }
 
-  /**
-    * Returns a code action that proposes to `use` a type.
-    */
+  /** Returns a code action that proposes to `use` a type. */
   private def mkUseType(ident: Name.Ident, uri: String)(implicit root: Root): List[CodeAction] = {
     val names = root.enums.map { case (sym, _) => sym.name } ++
       root.restrictableEnums.map { case (sym, _) => sym.name } ++
@@ -214,9 +204,7 @@ object CodeActionProvider {
       uri,
     )
 
-  /**
-    * Returns a code action that proposes to prefix the name of an unused function by an underscore.
-    */
+  /** Returns a code action that proposes to prefix the name of an unused function by an underscore. */
   private def mkUnusedDefCodeAction(sym: Symbol.DefnSym, uri: String): CodeAction =
     mkPrefixWithUnderscore(
       "Prefix unused function with underscore",
@@ -224,9 +212,7 @@ object CodeActionProvider {
       uri,
     )
 
-  /**
-    * Returns a code action that proposes to prefix the name of an unused formal parameter by an underscore.
-    */
+  /** Returns a code action that proposes to prefix the name of an unused formal parameter by an underscore. */
   private def mkUnusedParamCodeAction(sym: Symbol.VarSym, uri: String): CodeAction =
     mkPrefixWithUnderscore(
       "Prefix unused parameter with underscore",
@@ -234,9 +220,7 @@ object CodeActionProvider {
       uri,
     )
 
-  /**
-    * Returns a code action that proposes to prefix the name of an unused type parameter by an underscore.
-    */
+  /** Returns a code action that proposes to prefix the name of an unused type parameter by an underscore. */
   private def mkUnusedTypeParamCodeAction(sym: Name.Ident, uri: String): CodeAction =
     mkPrefixWithUnderscore(
       "Prefix unused type parameter with underscore",
@@ -244,9 +228,7 @@ object CodeActionProvider {
       uri,
     )
 
-  /**
-    * Returns a code action that proposes to prefix the name of an unused effect by an underscore.
-    */
+  /** Returns a code action that proposes to prefix the name of an unused effect by an underscore. */
   private def mkUnusedEffectCodeAction(sym: Symbol.EffectSym, uri: String): CodeAction =
     mkPrefixWithUnderscore(
       "Prefix unused effect with underscore",
@@ -254,9 +236,7 @@ object CodeActionProvider {
       uri,
     )
 
-  /**
-    * Returns a code action that proposes to prefix the name of an unused enum by an underscore.
-    */
+  /** Returns a code action that proposes to prefix the name of an unused enum by an underscore. */
   private def mkUnusedEnumCodeAction(sym: Symbol.EnumSym, uri: String): CodeAction =
     mkPrefixWithUnderscore(
       s"Prefix unused enum with underscore",
@@ -264,9 +244,7 @@ object CodeActionProvider {
       uri,
     )
 
-  /**
-    * Returns a code action that proposes to prefix the name of an unused enum case by an underscore.
-    */
+  /** Returns a code action that proposes to prefix the name of an unused enum case by an underscore. */
   private def mkUnusedEnumTagCodeAction(sym: Symbol.CaseSym, uri: String): CodeAction =
     mkPrefixWithUnderscore(
       s"Prefix unused case with underscore",
@@ -352,27 +330,19 @@ object CodeActionProvider {
       command = None
     )
 
-  /**
-    * Returns a quickfix code action to derive the `Eq` trait for the given type `tpe` if it is an enum.
-    */
+  /** Returns a quickfix code action to derive the `Eq` trait for the given type `tpe` if it is an enum. */
   private def mkDeriveMissingEq(tpe: Type, uri: String)(implicit root: Root): Option[CodeAction] =
     mkDeriveMissing(tpe, "Eq", uri)
 
-  /**
-    * Returns a quickfix code action to derive the `Order` trait for the given type `tpe` if it is an enum.
-    */
+  /** Returns a quickfix code action to derive the `Order` trait for the given type `tpe` if it is an enum. */
   private def mkDeriveMissingOrder(tpe: Type, uri: String)(implicit root: Root): Option[CodeAction] =
     mkDeriveMissing(tpe, "Order", uri)
 
-  /**
-    * Returns a quickfix code action to derive the `ToString` trait for the given type `tpe` if it is an enum.
-    */
+  /** Returns a quickfix code action to derive the `ToString` trait for the given type `tpe` if it is an enum. */
   private def mkDeriveMissingToString(tpe: Type, uri: String)(implicit root: Root): Option[CodeAction] =
     mkDeriveMissing(tpe, "ToString", uri)
 
-  /**
-   * Returns a quickfix code action to derive the missing supertrait for the given subtrait.
-   */
+  /** Returns a quickfix code action to derive the missing supertrait for the given subtrait. */
   private def mkDeriveMissingSuperTrait(tpe: Type, superTrait: Symbol.TraitSym, uri: String)(implicit root: Root): Option[CodeAction] =
     mkDeriveMissing(tpe, superTrait.name, uri)
 
@@ -396,19 +366,13 @@ object CodeActionProvider {
 
   // TODO: We should only offer to derive traits which have not already been derived.
 
-  /**
-    * Returns a code action to derive the `Eq` trait.
-    */
+  /** Returns a code action to derive the `Eq` trait. */
   private def mkDeriveEq(e: TypedAst.Enum, uri: String): Option[CodeAction] = mkDerive(e, "Eq", uri)
 
-  /**
-    * Returns a code action to derive the `Order` trait.
-    */
+  /** Returns a code action to derive the `Order` trait. */
   private def mkDeriveOrder(e: TypedAst.Enum, uri: String): Option[CodeAction] = mkDerive(e, "Order", uri)
 
-  /**
-    * Returns a code action to derive the `ToString` trait.
-    */
+  /** Returns a code action to derive the `ToString` trait. */
   private def mkDeriveToString(e: TypedAst.Enum, uri: String): Option[CodeAction] = mkDerive(e, "ToString", uri)
 
   // TODO: Add derivation for the Hash and Sendable traits.
@@ -468,9 +432,7 @@ object CodeActionProvider {
     )
   }
 
-  /**
-    * Returns `true` if the given `range` starts on the same line as the given source location `loc`.
-    */
+  /** Returns `true` if the given `range` starts on the same line as the given source location `loc`. */
   // TODO: We should introduce a mechanism that checks if the given range *overlaps* with the given loc.
   private def onSameLine(range: Range, loc: SourceLocation): Boolean = range.start.line == loc.beginLine
 

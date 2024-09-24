@@ -23,9 +23,7 @@ import ca.uwaterloo.flix.util.collection.MapOps
 
 object SimplifiedAstPrinter {
 
-  /**
-    * Returns the [[DocAst.Program]] representation of `root`.
-    */
+  /** Returns the [[DocAst.Program]] representation of `root`. */
   def print(root: SimplifiedAst.Root): DocAst.Program = {
     val defs = root.defs.values.map {
       case SimplifiedAst.Def(ann, mod, sym, formals, exp, tpe, _, _) =>
@@ -42,9 +40,7 @@ object SimplifiedAstPrinter {
     DocAst.Program(Nil, defs)
   }
 
-  /**
-    * Returns the [[DocAst.Expr]] representation of `e`.
-    */
+  /** Returns the [[DocAst.Expr]] representation of `e`. */
   def print(e: SimplifiedAst.Expr): DocAst.Expr = e match {
     case Cst(cst, _, _) => ConstantPrinter.print(cst)
     case Var(sym, _, _) => printVarSym(sym)
@@ -77,17 +73,13 @@ object SimplifiedAstPrinter {
     })
   }
 
-  /**
-    * Returns the [[DocAst.Expr.Ascription]] representation of `fp`.
-    */
+  /** Returns the [[DocAst.Expr.Ascription]] representation of `fp`. */
   private def printFormalParam(fp: SimplifiedAst.FormalParam): DocAst.Expr.Ascription = {
     val SimplifiedAst.FormalParam(sym, _, tpe, _) = fp
     DocAst.Expr.Ascription(printVarSym(sym), MonoTypePrinter.print(tpe))
   }
 
-  /**
-    * Returns the [[DocAst.Expr]] representation of `sym`.
-    */
+  /** Returns the [[DocAst.Expr]] representation of `sym`. */
   private def printVarSym(sym: Symbol.VarSym): DocAst.Expr =
     DocAst.Expr.Var(sym)
 

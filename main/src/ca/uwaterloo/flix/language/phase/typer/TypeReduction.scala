@@ -225,9 +225,7 @@ object TypeReduction {
     }
   }
 
-  /**
-   * Returns the Java reflective class object corresponding to the given Flix `tpe`.
-   */
+  /** Returns the Java reflective class object corresponding to the given Flix `tpe`. */
   private def getJavaType(tpe: Type): Class[?] = tpe match {
     case Type.Bool => java.lang.Boolean.TYPE
     case Type.Int8 => java.lang.Byte.TYPE

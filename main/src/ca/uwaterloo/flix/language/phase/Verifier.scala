@@ -23,9 +23,7 @@ import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 import scala.annotation.tailrec
 
-/**
-  * Verify the AST before bytecode generation.
-  */
+/** Verify the AST before bytecode generation. */
 object Verifier {
 
   def run(root: Root)(implicit flix: Flix): Root = flix.phase("Verifier") {
@@ -555,36 +553,28 @@ object Verifier {
 
   }
 
-  /**
-    * Asserts that the the given type `expected` is equal to the `actual` type.
-    */
+  /** Asserts that the the given type `expected` is equal to the `actual` type. */
   private def check(expected: MonoType)(actual: MonoType, loc: SourceLocation): MonoType = {
     if (expected == actual)
       expected
     else failUnexpectedType(actual, expected, loc)
   }
 
-  /**
-    * Asserts that the two given types `tpe1` and `tpe2` are the same.
-    */
+  /** Asserts that the two given types `tpe1` and `tpe2` are the same. */
   private def checkEq(tpe1: MonoType, tpe2: MonoType, loc: SourceLocation): MonoType = {
     if (tpe1 == tpe2)
       tpe1
     else failMismatchedTypes(tpe1, tpe2, loc)
   }
 
-  /**
-    * Asserts that the list of types `ts` matches the list of java classes `cs`
-    */
+  /** Asserts that the list of types `ts` matches the list of java classes `cs` */
   private def checkJavaParameters(ts: List[MonoType], cs: List[Class[_]], loc: SourceLocation): Unit = {
     if (ts.length != cs.length)
       throw InternalCompilerException("Number of types in constructor call mismatch with parameter list", loc)
     ts.zip(cs).foreach { case (tp, klazz) => checkJavaSubtype(tp, klazz, loc) }
   }
 
-  /**
-    * Asserts that the type `tpe` is a `Struct` type whose name is `sym0`
-    */
+  /** Asserts that the type `tpe` is a `Struct` type whose name is `sym0` */
   private def checkStructType(tpe: MonoType, sym0: Symbol.StructSym, loc: SourceLocation): Unit = {
     tpe match {
       case MonoType.Struct(sym, _, _) =>
@@ -595,9 +585,7 @@ object Verifier {
     }
   }
 
-  /**
-    * Asserts that `tpe` is a subtype of the java class type `klazz`.
-    */
+  /** Asserts that `tpe` is a subtype of the java class type `klazz`. */
   private def checkJavaSubtype(tpe: MonoType, klazz: Class[_], loc: SourceLocation): MonoType = {
     tpe match {
       case MonoType.Array(elmt) if klazz.isArray =>
@@ -674,33 +662,25 @@ object Verifier {
     case _ => failMismatchedShape(rec, "Record", loc)
   }
 
-  /**
-    * Throw `InternalCompilerException` because the `found` does not match the shape specified by `expected`.
-    */
+  /** Throw `InternalCompilerException` because the `found` does not match the shape specified by `expected`. */
   private def failMismatchedShape(found: MonoType, expected: String, loc: SourceLocation): Nothing =
     throw InternalCompilerException(
       s"Mismatched shape near ${loc.format}: expected = \'$expected\', found = $found", loc
     )
 
-  /**
-    * Throw `InternalCompilerException` because the `expected` type does not match the `found` type.
-    */
+  /** Throw `InternalCompilerException` because the `expected` type does not match the `found` type. */
   private def failUnexpectedType(found: MonoType, expected: MonoType, loc: SourceLocation): Nothing =
     throw InternalCompilerException(
       s"Unexpected type near ${loc.format}: expected = $expected, found = $found", loc
     )
 
-  /**
-    * Throw `InternalCompilerException` because `tpe1` is not equal to `tpe2`.
-    */
+  /** Throw `InternalCompilerException` because `tpe1` is not equal to `tpe2`. */
   private def failMismatchedTypes(tpe1: MonoType, tpe2: MonoType, loc: SourceLocation): Nothing =
     throw InternalCompilerException(
       s"Mismatched types near ${loc.format}: tpe1 = $tpe1, tpe2 = $tpe2", loc
     )
 
-  /**
-    * Throw `InternalCompilerException` because `tpe` does not match `klazz`.
-    */
+  /** Throw `InternalCompilerException` because `tpe` does not match `klazz`. */
   private def failMismatchedTypes(tpe: MonoType, klazz: Class[_], loc: SourceLocation): Nothing =
     throw InternalCompilerException(
       s"Mismatched types near ${loc.format}: tpe1 = $tpe, class = $klazz", loc

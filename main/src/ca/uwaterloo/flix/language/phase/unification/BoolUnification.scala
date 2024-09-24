@@ -20,14 +20,10 @@ import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.{Ok, ToErr, ToOk}
 
-/**
- * An implementation of Boolean Unification is for the `Bool` kind.
- */
+/** An implementation of Boolean Unification is for the `Bool` kind. */
 object BoolUnification {
 
-  /**
-   * Returns the most general unifier of the two given Boolean formulas `tpe1` and `tpe2`.
-   */
+  /** Returns the most general unifier of the two given Boolean formulas `tpe1` and `tpe2`. */
   def unify(tpe1: Type, tpe2: Type, renv0: RigidityEnv)(implicit flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError] = {
 
     // TODO: Levels
@@ -65,9 +61,7 @@ object BoolUnification {
   }
 
 
-  /**
-   * Lookup the unifier of `tpe1` and `tpe2` or solve them.
-   */
+  /** Lookup the unifier of `tpe1` and `tpe2` or solve them. */
   private def lookupOrSolve[F](tpe1: Type, tpe2: Type, renv0: RigidityEnv)
                               (implicit flix: Flix, alg: BoolAlg[F]): Result[Substitution, UnificationError] = {
     //
@@ -88,9 +82,7 @@ object BoolUnification {
     }
   }
 
-  /**
-   * Returns the most general unifier of the two given Boolean formulas `tpe1` and `tpe2`.
-   */
+  /** Returns the most general unifier of the two given Boolean formulas `tpe1` and `tpe2`. */
   private def booleanUnification[F](tpe1: F, tpe2: F, renv: Set[Int])
                                    (implicit flix: Flix, alg: BoolAlg[F]): Option[BoolSubstitution[F]] = {
     // The boolean expression we want to show is 0.
@@ -113,9 +105,7 @@ object BoolUnification {
     }
   }
 
-  /**
-   * Determine the variable order.
-   */
+  /** Determine the variable order. */
   private def computeVariableOrder(l: List[Int]): List[Int] = l
 
   /**

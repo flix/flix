@@ -27,39 +27,27 @@ import java.nio.file.{Files, Path}
   */
 object Debug {
 
-  /**
-    * The directory in which to store the constraint graphs.
-    */
+  /** The directory in which to store the constraint graphs. */
   private var graphDir: Path = _
 
-  /**
-    * Indicates whether we are currently recording constraint resolution.
-    */
+  /** Indicates whether we are currently recording constraint resolution. */
   private var record: Boolean = false
 
-  /**
-    * The number of the next graph to record.
-    */
+  /** The number of the next graph to record. */
   private var index = 0
 
 
-  /**
-    * Activates recording of constraint resolution.
-    */
+  /** Activates recording of constraint resolution. */
   def startRecording()(implicit flix: Flix): Unit = {
     graphDir = flix.options.output.getOrElse(Path.of("./build/")).resolve("constraint-graphs")
     Files.createDirectories(graphDir)
     record = true
   }
 
-  /**
-    * Deactivates recording of constraint resolution.
-    */
+  /** Deactivates recording of constraint resolution. */
   def stopRecording(): Unit = record = false
 
-  /**
-    * Records the given typing constraints and substitution as a dot graph.
-    */
+  /** Records the given typing constraints and substitution as a dot graph. */
   def recordGraph(tconstrs: List[TypeConstraint], subst: Substitution): Unit = {
     if (record) {
       val dot = toDotWithSubst(tconstrs, subst)
@@ -70,9 +58,7 @@ object Debug {
     }
   }
 
-  /**
-    * Generates a GraphViz (dot) string representing the given constraints.
-    */
+  /** Generates a GraphViz (dot) string representing the given constraints. */
   def toDot(constrs: List[TypeConstraint]): String = {
     val contents = constrs.map(toSubDot)
     val edges = constrs.map { constr => s"root -> ${dotId(constr)};" }
@@ -86,9 +72,7 @@ object Debug {
       ).mkString("\n"))
   }
 
-  /**
-    * Generates a GraphViz (dot) string representing the given constraints and substitution.
-    */
+  /** Generates a GraphViz (dot) string representing the given constraints and substitution. */
   def toDotWithSubst(constrs: List[TypeConstraint], subst: Substitution): String = {
     val contents = constrs.map(toSubDot)
     val edges = constrs.map { constr => s"root -> ${dotId(constr)};" }
@@ -131,9 +115,7 @@ object Debug {
       ).mkString("\n"))
   }
 
-  /**
-    * Generates a GraphViz (dot) string representing a fragment of the constraint graph.
-    */
+  /** Generates a GraphViz (dot) string representing a fragment of the constraint graph. */
   private def toSubDot(constr: TypeConstraint): String = constr match {
     case TypeConstraint.Equality(tpe1, tpe2, _) => s"""${dotId(constr)} [label = "$tpe1 ~ $tpe2"];"""
     case TypeConstraint.Trait(sym, tpe, _) => s"""${dotId(constr)} [label = "$sym[$tpe]"];"""
@@ -144,14 +126,10 @@ object Debug {
       (header :: children ::: edges).mkString("\n")
   }
 
-  /**
-    * Returns a probably-unique ID for the constraint.
-    */
+  /** Returns a probably-unique ID for the constraint. */
   private def dotId(constr: TypeConstraint): Int = System.identityHashCode(constr: TypeConstraint)
 
 
-  /**
-    * Escapes slashes in the string for use with GraphViz.
-    */
+  /** Escapes slashes in the string for use with GraphViz. */
   private def format(s: String): String = s.replace("\\", "\\\\")
 }

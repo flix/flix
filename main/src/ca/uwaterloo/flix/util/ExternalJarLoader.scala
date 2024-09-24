@@ -24,9 +24,7 @@ import java.net.{URL, URLClassLoader}
   * (otherwise compiled Flix code has access to all classes within the compiler)
   */
 class ExternalJarLoader extends URLClassLoader(Array.empty, ClassLoader.getPlatformClassLoader()) {
-  /**
-    * Adds the URL to the class loader.
-    */
+  /** Adds the URL to the class loader. */
   override def addURL(url: URL): Unit = {
     // just reimplements the superclass, but makes it public
     super.addURL(url)

@@ -25,9 +25,7 @@ import ca.uwaterloo.flix.language.phase.unification.TypeMinimization
 
 object InlayHintProvider {
 
-  /**
-    * Returns the inlay hints in the given `uri` in the given `range`.
-    */
+  /** Returns the inlay hints in the given `uri` in the given `range`. */
   def processInlayHints(uri: String, range: Range)(implicit index: Index, flix: Flix): List[InlayHint] = {
     index.queryByRange(uri, range) match {
       case Nil => Nil
@@ -38,9 +36,7 @@ object InlayHintProvider {
     }
   }
 
-  /**
-    * Returns an inlay hint for the given formal param `fparam`.
-    */
+  /** Returns an inlay hint for the given formal param `fparam`. */
   private def getFormalParamHint(fparam: TypedAst.FormalParam)(implicit flix: Flix): Option[InlayHint] = fparam match {
     case FormalParam(sym, _, tpe, src, loc) => src match {
       case TypeSource.Ascribed =>
@@ -60,9 +56,7 @@ object InlayHintProvider {
     }
   }
 
-  /**
-    * Returns `true` if the given type `tpe` is a type variable.
-    */
+  /** Returns `true` if the given type `tpe` is a type variable. */
   private def isTypeVar(tpe: Type): Boolean = tpe match {
     case Type.Var(_, _) => true
     case _ => false

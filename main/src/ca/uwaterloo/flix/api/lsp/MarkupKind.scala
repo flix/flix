@@ -18,9 +18,7 @@ package ca.uwaterloo.flix.api.lsp
 import org.json4s.JString
 import org.json4s.JsonAST.JValue
 
-/**
-  * Represents a `MarkupKind` in LSP.
-  */
+/** Represents a `MarkupKind` in LSP. */
 sealed trait MarkupKind {
   def toJSON: JValue = this match {
     case MarkupKind.PlainText => JString("plaintext")

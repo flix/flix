@@ -55,9 +55,7 @@ object RecordUnification {
     case _ => throw InternalCompilerException(s"unexpected types: ($tpe1), ($tpe2)", tpe1.loc)
   }
 
-  /**
-    * Attempts to rewrite the given row type `rewrittenRow` such that it shares a first label with `staticRow`.
-    */
+  /** Attempts to rewrite the given row type `rewrittenRow` such that it shares a first label with `staticRow`. */
   private def rewriteRecordRow(rewrittenRow: Type, staticRow: Type, renv: RigidityEnv)(implicit scope: Scope, flix: Flix): Result[(Substitution, Type, List[Ast.BroadEqualityConstraint]), UnificationError] = {
 
     def visit(row: Type): Result[(Substitution, Type, List[Ast.BroadEqualityConstraint]), UnificationError] = (row, staticRow) match {

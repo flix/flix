@@ -17,18 +17,12 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.language.ast.{Ast, Scheme, Symbol, Type, TypeConstructor}
 
-/**
-  * Companion object for the [[AssocTypeSubstitution]] class.
-  */
+/** Companion object for the [[AssocTypeSubstitution]] class. */
 object AssocTypeSubstitution {
-  /**
-    * Returns the empty substitution.
-    */
+  /** Returns the empty substitution. */
   val empty: AssocTypeSubstitution = AssocTypeSubstitution(Map.empty)
 
-  /**
-    * Returns the singleton substitution mapping the type variable `x` to `tpe`.
-    */
+  /** Returns the singleton substitution mapping the type variable `x` to `tpe`. */
   def singleton(assoc: Symbol.AssocTypeSym, tvar: Symbol.KindedTypeVarSym, tpe: Type): AssocTypeSubstitution = {
     tpe match {
       // avoid x -> x mappings
@@ -39,19 +33,13 @@ object AssocTypeSubstitution {
 
 }
 
-/**
-  * A substitution is a map from type variables to types.
-  */
+/** A substitution is a map from type variables to types. */
 case class AssocTypeSubstitution(m: Map[(Symbol.AssocTypeSym, Symbol.KindedTypeVarSym), Type]) {
 
-  /**
-    * Returns `true` if `this` is the empty substitution.
-    */
+  /** Returns `true` if `this` is the empty substitution. */
   val isEmpty: Boolean = m.isEmpty
 
-  /**
-    * Applies `this` substitution to the given type `tpe0`.
-    */
+  /** Applies `this` substitution to the given type `tpe0`. */
   def apply(tpe0: Type): Type = {
     // NB: The order of cases has been determined by code coverage analysis.
     def visit(t: Type): Type =
@@ -99,14 +87,10 @@ case class AssocTypeSubstitution(m: Map[(Symbol.AssocTypeSym, Symbol.KindedTypeV
     if (isEmpty) tpe0 else visit(tpe0)
   }
 
-  /**
-    * Applies `this` substitution to the given types `ts`.
-    */
+  /** Applies `this` substitution to the given types `ts`. */
   def apply(ts: List[Type]): List[Type] = if (isEmpty) ts else ts map apply
 
-  /**
-    * Applies `this` substitution to the given type constraint `tc`.
-    */
+  /** Applies `this` substitution to the given type constraint `tc`. */
   def apply(tc: Ast.TraitConstraint): Ast.TraitConstraint = if (isEmpty) tc else tc.copy(arg = apply(tc.arg))
 
   /**
@@ -119,23 +103,17 @@ case class AssocTypeSubstitution(m: Map[(Symbol.AssocTypeSym, Symbol.KindedTypeV
       Scheme(quantifiers, tconstrs.map(apply), econstrs.map(apply), apply(base))
   }
 
-  /**
-    * Applies `this` substitution to the given pair of types `ts`.
-    */
+  /** Applies `this` substitution to the given pair of types `ts`. */
   def apply(ec: Ast.EqualityConstraint): Ast.EqualityConstraint = if (isEmpty) ec else ec match {
     case Ast.EqualityConstraint(cst, t1, t2, loc) => Ast.EqualityConstraint(cst, apply(t1), apply(t2), loc)
   }
 
-  /**
-    * Applies `this` substitution to the given pair of types `ts`.
-    */
+  /** Applies `this` substitution to the given pair of types `ts`. */
   def apply(ec: Ast.BroadEqualityConstraint): Ast.BroadEqualityConstraint = if (isEmpty) ec else ec match {
     case Ast.BroadEqualityConstraint(t1, t2) => Ast.BroadEqualityConstraint(apply(t1), apply(t2))
   }
 
-  /**
-    * Returns the left-biased composition of `this` substitution with `that` substitution.
-    */
+  /** Returns the left-biased composition of `this` substitution with `that` substitution. */
   def ++(that: AssocTypeSubstitution): AssocTypeSubstitution = {
     if (this.isEmpty) {
       that
@@ -148,9 +126,7 @@ case class AssocTypeSubstitution(m: Map[(Symbol.AssocTypeSym, Symbol.KindedTypeV
     }
   }
 
-  /**
-    * Returns the composition of `this` substitution with `that` substitution.
-    */
+  /** Returns the composition of `this` substitution with `that` substitution. */
   def @@(that: AssocTypeSubstitution): AssocTypeSubstitution = {
     // Case 1: Return `that` if `this` is empty.
     if (this.isEmpty) {

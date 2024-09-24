@@ -24,9 +24,7 @@ import ca.uwaterloo.flix.language.errors.CodeHint
 
 object CodeHinter {
 
-  /**
-    * Returns a collection of code quality hints for the given AST `root`.
-    */
+  /** Returns a collection of code quality hints for the given AST `root`. */
   def run(root: TypedAst.Root, sources: Set[String])(implicit flix: Flix, index: Index): List[CodeHint] = {
     val traitHints = root.traits.values.flatMap(visitTrait(_)(index)).toList
     val defsHints = root.defs.values.flatMap(visitDef(_)(root, flix)).toList
@@ -34,15 +32,11 @@ object CodeHinter {
     (traitHints ++ defsHints ++ enumsHints).filter(include(_, sources))
   }
 
-  /**
-    * Returns `true` if the given code `hint` should be included in the result.
-    */
+  /** Returns `true` if the given code `hint` should be included in the result. */
   private def include(hint: CodeHint, sources: Set[String]): Boolean =
     sources.contains(hint.loc.source.name)
 
-  /**
-    * Computes code quality hints for the given enum `enum`.
-    */
+  /** Computes code quality hints for the given enum `enum`. */
   private def visitEnum(enum0: TypedAst.Enum)(implicit index: Index): List[CodeHint] = {
     val tagUses = enum0.cases.keys.flatMap(sym => index.usesOf(sym))
     val enumUses = index.usesOf(enum0.sym)
@@ -54,9 +48,7 @@ object CodeHinter {
     (deprecated ++ experimental).toList
   }
 
-  /**
-    * Computes code quality hints for the given trait `trt`.
-    */
+  /** Computes code quality hints for the given trait `trt`. */
   private def visitTrait(trt: TypedAst.Trait)(implicit index: Index): List[CodeHint] = {
     val uses = index.usesOf(trt.sym)
     val isDeprecated = trt.ann.isDeprecated
@@ -66,16 +58,12 @@ object CodeHinter {
     (deprecated ++ experimental).toList
   }
 
-  /**
-    * Computes code quality hints for the given definition `def0`.
-    */
+  /** Computes code quality hints for the given definition `def0`. */
   private def visitDef(def0: TypedAst.Def)(implicit root: Root, flix: Flix): List[CodeHint] = {
     visitExp(def0.exp)
   }
 
-  /**
-    * Computes code quality hints for the given expression `exp0`.
-    */
+  /** Computes code quality hints for the given expression `exp0`. */
   private def visitExp(exp0: Expr)(implicit root: Root, flix: Flix): List[CodeHint] = exp0 match {
     case Expr.Var(_, _, _) => Nil
 
@@ -326,37 +314,27 @@ object CodeHinter {
 
   }
 
-  /**
-    * Computes code quality hints for the given list of expressions `exps`.
-    */
+  /** Computes code quality hints for the given list of expressions `exps`. */
   private def visitExps(exps: List[Expr])(implicit root: Root, flix: Flix): List[CodeHint] =
     exps.flatMap(visitExp)
 
-  /**
-    * Computes code quality hints for the given constraint `c`.
-    */
+  /** Computes code quality hints for the given constraint `c`. */
   private def visitConstraint(c: Constraint)(implicit root: Root, flix: Flix): List[CodeHint] =
     visitHeadPredicate(c.head) ++ c.body.flatMap(visitBodyPredicate)
 
-  /**
-    * Computes code quality hints for the given head predicate `p`.
-    */
+  /** Computes code quality hints for the given head predicate `p`. */
   private def visitHeadPredicate(p: TypedAst.Predicate.Head)(implicit root: Root, flix: Flix): List[CodeHint] = p match {
     case Head.Atom(_, _, terms, _, _) => visitExps(terms)
   }
 
-  /**
-    * Computes code quality hints for the given body predicate `p`.
-    */
+  /** Computes code quality hints for the given body predicate `p`. */
   private def visitBodyPredicate(p: TypedAst.Predicate.Body)(implicit root: Root, flix: Flix): List[CodeHint] = p match {
     case Body.Atom(_, _, _, _, _, _, _) => Nil
     case Body.Functional(_, exp, _) => visitExp(exp)
     case Body.Guard(exp, _) => visitExp(exp)
   }
 
-  /**
-    * Checks whether `sym` would benefit from `tpe` being pure.
-    */
+  /** Checks whether `sym` would benefit from `tpe` being pure. */
   private def checkEffect(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation)(implicit root: Root): List[CodeHint] = {
     if (lazyWhenPure(sym)) {
       if (isPureFunction(tpe))
@@ -391,9 +369,7 @@ object CodeHinter {
     defn.spec.ann.isParallelWhenPure
   }
 
-  /**
-    * Checks whether the given definition symbol `sym` is deprecated.
-    */
+  /** Checks whether the given definition symbol `sym` is deprecated. */
   private def checkDeprecated(sym: Symbol.DefnSym, loc: SourceLocation)(implicit root: Root): List[CodeHint] = {
     val defn = root.defs(sym)
     val isDeprecated = defn.spec.ann.isDeprecated
@@ -404,9 +380,7 @@ object CodeHinter {
     }
   }
 
-  /**
-    * Checks whether the given definition symbol `sym` is experimental.
-    */
+  /** Checks whether the given definition symbol `sym` is experimental. */
   private def checkExperimental(sym: Symbol.DefnSym, loc: SourceLocation)(implicit root: Root): List[CodeHint] = {
     val defn = root.defs(sym)
     val isExperimental = defn.spec.ann.isExperimental
@@ -417,9 +391,7 @@ object CodeHinter {
     }
   }
 
-  /**
-    * Checks whether the given definition symbol `sym` is unsafe.
-    */
+  /** Checks whether the given definition symbol `sym` is unsafe. */
   private def checkParallel(sym: Symbol.DefnSym, loc: SourceLocation)(implicit root: Root): List[CodeHint] = {
     val defn = root.defs(sym)
     val isParallel = defn.spec.ann.isParallel
@@ -430,9 +402,7 @@ object CodeHinter {
     }
   }
 
-  /**
-    * Checks whether the given definition symbol `sym` is lazy.
-    */
+  /** Checks whether the given definition symbol `sym` is lazy. */
   private def checkLazy(sym: Symbol.DefnSym, loc: SourceLocation)(implicit root: Root): List[CodeHint] = {
     val defn = root.defs(sym)
     val isLazy = defn.spec.ann.isLazy
@@ -443,9 +413,7 @@ object CodeHinter {
     }
   }
 
-  /**
-    * Returns `true` if the given function type `tpe` is pure.
-    */
+  /** Returns `true` if the given function type `tpe` is pure. */
   private def isPureFunction(tpe: Type): Boolean = tpe.typeConstructor match {
     case Some(TypeConstructor.Arrow(_)) => tpe.arrowEffectType == Type.Pure
     case _ => false

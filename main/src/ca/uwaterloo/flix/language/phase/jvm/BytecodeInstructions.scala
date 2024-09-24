@@ -25,9 +25,7 @@ import org.objectweb.asm.{Label, MethodVisitor, Opcodes}
 
 object BytecodeInstructions {
 
-  /**
-    * A Frame that represents the Jvm state and contains a visitor to emit code
-    */
+  /** A Frame that represents the Jvm state and contains a visitor to emit code */
   sealed class F(visitor: MethodVisitor) {
     def visitTypeInstruction(opcode: Int, tpe: JvmName): Unit =
       visitor.visitTypeInsn(opcode, tpe.toInternalName)
@@ -64,9 +62,7 @@ object BytecodeInstructions {
 
   type InstructionSet = F => F
 
-  /**
-    * Returns the sequential composition of the two instructions.
-    */
+  /** Returns the sequential composition of the two instructions. */
   def compose(i1: InstructionSet, i2: InstructionSet): InstructionSet =
     f => i2(i1(f))
 
@@ -611,9 +607,7 @@ object BytecodeInstructions {
     case BackendType.Array(_) | BackendType.Reference(_) => ALOAD(index)
   }
 
-  /**
-    * Pops the top of the stack using `POP` or `POP2` depending on the value size.
-    */
+  /** Pops the top of the stack using `POP` or `POP2` depending on the value size. */
   def xPop(tpe: BackendType): InstructionSet = tpe match {
     case BackendType.Bool | BackendType.Char | BackendType.Int8 | BackendType.Int16 | BackendType.Int32 |
          BackendType.Float32 | BackendType.Array(_) | BackendType.Reference(_) => POP()
@@ -672,9 +666,7 @@ object BytecodeInstructions {
   def composeN(ins: IterableOnce[InstructionSet]): InstructionSet =
     ins.iterator.foldLeft(nop())(compose)
 
-  /**
-    * Sequential composition with `sep` between elements.
-    */
+  /** Sequential composition with `sep` between elements. */
   def joinN(ins: List[InstructionSet], sep: InstructionSet): InstructionSet = ins match {
     case Nil => nop()
     case head :: next => head ~ composeN(next.map(e => sep ~ e))

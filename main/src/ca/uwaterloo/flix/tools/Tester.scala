@@ -26,14 +26,10 @@ import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.logging.{Level, Logger}
 import scala.util.matching.Regex
 
-/**
-  * Evaluates all tests in a Flix program.
-  */
+/** Evaluates all tests in a Flix program. */
 object Tester {
 
-  /**
-    * Runs all tests.
-    */
+  /** Runs all tests. */
   def run(filters: List[Regex], compilationResult: CompilationResult)(implicit flix: Flix): Result[Unit, Int] = {
     //
     // Find all test cases (both active and ignored).
@@ -59,9 +55,7 @@ object Tester {
     }
   }
 
-  /**
-    * A class that reports the results of test events as they come in.
-    */
+  /** A class that reports the results of test events as they come in. */
   private class TestReporter(queue: ConcurrentLinkedQueue[TestEvent], tests: Vector[TestCase])(implicit flix: Flix) extends Thread {
 
     private val success = new java.util.concurrent.atomic.AtomicBoolean(true)
@@ -155,13 +149,9 @@ object Tester {
 
   }
 
-  /**
-    * A class that runs all the given tests emitting test events.
-    */
+  /** A class that runs all the given tests emitting test events. */
   private class TestRunner(queue: ConcurrentLinkedQueue[TestEvent], tests: Vector[TestCase])(implicit flix: Flix) extends Thread {
-    /**
-      * Runs all the given tests.
-      */
+    /** Runs all the given tests. */
     override def run(): Unit = {
       val start = System.nanoTime()
       for (testCase <- tests) {
@@ -171,9 +161,7 @@ object Tester {
       queue.add(TestEvent.Finished(Duration(elapsed)))
     }
 
-    /**
-      * Runs the given `test` emitting test events.
-      */
+    /** Runs the given `test` emitting test events. */
     private def runTest(test: TestCase): Unit = test match {
       case TestCase(sym, skip, run) =>
         // Check if the test case should be ignored.
@@ -265,9 +253,7 @@ object Tester {
     }
   }
 
-  /**
-    * A class used to redirect the standard out and standard error streams.
-    */
+  /** A class used to redirect the standard out and standard error streams. */
   class ConsoleRedirection {
     private val bytesOut = new ByteArrayOutputStream()
     private val bytesErr = new ByteArrayOutputStream()
@@ -277,19 +263,13 @@ object Tester {
     private var oldStreamOut: PrintStream = _
     private var oldStreamErr: PrintStream = _
 
-    /**
-      * Returns the string emitted to the std out during redirection.
-      */
+    /** Returns the string emitted to the std out during redirection. */
     def stdOut: List[String] = bytesOut.toString().linesIterator.toList
 
-    /**
-      * Returns the string emitted to the std err during redirection.
-      */
+    /** Returns the string emitted to the std err during redirection. */
     def stdErr: List[String] = bytesErr.toString().linesIterator.toList
 
-    /**
-      * Redirect std out and std err.
-      */
+    /** Redirect std out and std err. */
     def redirect(): Unit = {
       // Store the old streams.
       oldStreamOut = System.out
@@ -300,9 +280,7 @@ object Tester {
       System.setErr(new TeeOutputStream(streamErr, oldStreamErr))
     }
 
-    /**
-      * Restore the std in and std err to their original streams.
-      */
+    /** Restore the std in and std err to their original streams. */
     def restore(): Unit = {
       // Flush the new streams.
       System.out.flush()
@@ -314,13 +292,9 @@ object Tester {
     }
   }
 
-  /**
-    * Returns all test cases from the given compilation `result` which satisfy at least one filter.
-    */
+  /** Returns all test cases from the given compilation `result` which satisfy at least one filter. */
   private def getTestCases(filters: List[Regex], compilationResult: CompilationResult): Vector[TestCase] = {
-    /**
-      * Returns `true` if at least one filter matches the given symbol _OR_ if there are no filters.
-      */
+    /** Returns `true` if at least one filter matches the given symbol _OR_ if there are no filters. */
     def isMatch(test: TestCase): Boolean = {
       val name = test.sym.toString
       filters.isEmpty || filters.exists(regex => regex.matches(name))
@@ -333,9 +307,7 @@ object Tester {
     allTests.filter(isMatch).toVector.sorted
   }
 
-  /**
-    * Returns the stack trace of the given exception `ex` as a list of strings.
-    */
+  /** Returns the stack trace of the given exception `ex` as a list of strings. */
   private def fmtStackTrace(ex: Throwable): Vector[String] = {
     val sw = new StringWriter()
     val pw = new PrintWriter(sw)
@@ -354,36 +326,24 @@ object Tester {
     override def compare(that: TestCase): Int = this.sym.toString.compareTo(that.sym.toString)
   }
 
-  /**
-    * A common super-type for test events.
-    */
+  /** A common super-type for test events. */
   sealed trait TestEvent
 
   object TestEvent {
 
-    /**
-      * A test event emitted immediately before a test case is executed.
-      */
+    /** A test event emitted immediately before a test case is executed. */
     case class Before(sym: Symbol.DefnSym) extends TestEvent
 
-    /**
-      * A test event emitted to indicate that a test succeeded.
-      */
+    /** A test event emitted to indicate that a test succeeded. */
     case class Success(sym: Symbol.DefnSym, d: Duration) extends TestEvent
 
-    /**
-      * A test event emitted to indicate that a test failed.
-      */
+    /** A test event emitted to indicate that a test failed. */
     case class Failure(sym: Symbol.DefnSym, output: List[String], d: Duration) extends TestEvent
 
-    /**
-      * A test event emitted to indicate that a test was ignored.
-      */
+    /** A test event emitted to indicate that a test was ignored. */
     case class Skip(sym: Symbol.DefnSym) extends TestEvent
 
-    /**
-      * A test event emitted to indicates that testing has completed.
-      */
+    /** A test event emitted to indicates that testing has completed. */
     case class Finished(d: Duration) extends TestEvent
   }
 

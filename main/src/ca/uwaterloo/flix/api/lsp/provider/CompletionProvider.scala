@@ -42,9 +42,7 @@ import org.json4s.JsonDSL._
   */
 object CompletionProvider {
 
-  /**
-    * Process a completion request.
-    */
+  /** Process a completion request. */
   def autoComplete(uri: String, pos: Position, source: Option[String], currentErrors: List[CompilationMessage])(implicit flix: Flix, index: Index, root: TypedAst.Root): JObject = {
     val holeCompletions = getHoleExpCompletions(pos, uri, index, root)
     // If we are currently on a hole the only useful completion is a hole completion.
@@ -68,9 +66,7 @@ object CompletionProvider {
     ("status" -> ResponseStatus.Success) ~ ("result" -> CompletionList(isIncomplete = true, completions).toJSON)
   }
 
-  /**
-    * Gets completions for when the cursor position is on a hole expression with an expression
-    */
+  /** Gets completions for when the cursor position is on a hole expression with an expression */
   private def getHoleExpCompletions(pos: Position, uri: String, index: Index, root: TypedAst.Root)(implicit flix: Flix): Iterable[CompletionItem] = {
     val entity = index.query(uri, pos)
     entity match {
@@ -84,9 +80,7 @@ object CompletionProvider {
     }
   }
 
-  /**
-    * Creates a completion item from a hole with expression and a def.
-    */
+  /** Creates a completion item from a hole with expression and a def. */
   private def holeDefCompletion(priority: String, loc: SourceLocation, sym: Symbol.VarSym, decl: TypedAst.Def)(implicit flix: Flix): CompletionItem = {
     val name = decl.sym.toString
     val args = decl.spec.fparams.dropRight(1).zipWithIndex.map {
@@ -163,14 +157,10 @@ object CompletionProvider {
     }
   }
 
-  /**
-    * Characters that constitute a word.
-    */
+  /** Characters that constitute a word. */
   private def isWordChar(c: Char) = isLetter(c) || Lexer.isMathNameChar(c) || Lexer.isGreekNameChar(c) || Lexer.isUserOp(c).isDefined
 
-  /**
-    * Characters that may appear in a word.
-    */
+  /** Characters that may appear in a word. */
   private def isLetter(c: Char) = c match {
       case c if c >= 'a' && c <= 'z' => true
       case c if c >= 'A' && c <= 'Z' => true
@@ -185,9 +175,7 @@ object CompletionProvider {
       case _ => false
     }
 
-  /**
-    * Returns the word at the end of a string, discarding trailing whitespace first
-    */
+  /** Returns the word at the end of a string, discarding trailing whitespace first */
   private def getLastWord(s: String): String = {
     s.reverse.dropWhile(_.isWhitespace).takeWhile(isWordChar).reverse
   }
@@ -200,9 +188,7 @@ object CompletionProvider {
     s.reverse.dropWhile(isWordChar).dropWhile(_.isWhitespace).takeWhile(isWordChar).reverse
   }
 
-  /**
-    * Find context from the source, and cursor position within it.
-    */
+  /** Find context from the source, and cursor position within it. */
   private def getContext(source: String, uri: String, pos: Position, errors: List[CompilationMessage]): Option[CompletionContext] = {
     val x = pos.character - 1
     val y = pos.line - 1

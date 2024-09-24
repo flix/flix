@@ -38,17 +38,13 @@ import ca.uwaterloo.flix.util.collection.MapOps
   */
 object TailPos {
 
-  /**
-    * Identifies expressions in tail position in the given AST `root`.
-    */
+  /** Identifies expressions in tail position in the given AST `root`. */
   def run(root: Root)(implicit flix: Flix): Root = flix.phase("TailPos") {
     val defns = ParOps.parMapValues(root.defs)(visitDef)
     root.copy(defs = defns)
   }
 
-  /**
-    * Identifies expressions in tail position in the given definition `defn`.
-    */
+  /** Identifies expressions in tail position in the given definition `defn`. */
   private def visitDef(defn: Def): Def = {
     /**
       * Introduces expressions in tail position in the given expression `exp0`.

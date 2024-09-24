@@ -24,9 +24,7 @@ import ca.uwaterloo.flix.util.collection.Chain
 
 import java.nio.file.Path
 
-/**
-  * Manages the functionality of the compiler in non-packager mode.
-  */
+/** Manages the functionality of the compiler in non-packager mode. */
 object SimpleRunner {
 
   def run(cwd: Path, cmdOpts: CmdOpts, options: Options): Result[Unit, Int] = {

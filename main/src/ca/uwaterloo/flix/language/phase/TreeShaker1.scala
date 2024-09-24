@@ -40,9 +40,7 @@ import ca.uwaterloo.flix.util.ParOps
   */
 object TreeShaker1 {
 
-  /**
-    * Performs tree shaking on the given AST `root`.
-    */
+  /** Performs tree shaking on the given AST `root`. */
   def run(root: Root)(implicit flix: Flix): Root = flix.phase("TreeShaker1") {
     // Compute the symbols that are always reachable.
     val initReach = initReachable(root)
@@ -59,9 +57,7 @@ object TreeShaker1 {
     root.copy(defs = reachableDefs)
   }
 
-  /**
-    * Returns the symbols that are always reachable.
-    */
+  /** Returns the symbols that are always reachable. */
   private def initReachable(root: Root): Set[ReachableSym] = {
     root.reachable.map(ReachableSym.DefnSym.apply)
   }
@@ -93,9 +89,7 @@ object TreeShaker1 {
       }
   }
 
-  /**
-    * Returns the function and signature symbols reachable from the given expression `e0`.
-    */
+  /** Returns the function and signature symbols reachable from the given expression `e0`. */
   private def visitExp(e0: Expr): Set[ReachableSym] = e0 match {
     case Expr.Cst(_, _, _) =>
       Set.empty
@@ -173,15 +167,11 @@ object TreeShaker1 {
       visitExp(exp) ++ visitExps(rules.map(_.exp))
   }
 
-  /**
-    * Returns the function symbols reachable from `exps`.
-    */
+  /** Returns the function symbols reachable from `exps`. */
   private def visitExps(exps: List[Expr]): Set[ReachableSym] = exps.map(visitExp).fold(Set())(_ ++ _)
 
 
-  /**
-    * A common super-type for reachable symbols (defs, traits, sigs)
-    */
+  /** A common super-type for reachable symbols (defs, traits, sigs) */
   sealed trait ReachableSym
 
   object ReachableSym {

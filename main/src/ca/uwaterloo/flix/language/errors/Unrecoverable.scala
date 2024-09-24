@@ -15,9 +15,7 @@
  */
 package ca.uwaterloo.flix.language.errors
 
-/**
-  * A marker trait for errors that are unrecoverable.
-  */
+/** A marker trait for errors that are unrecoverable. */
 trait Unrecoverable {
   final def cannotBeBothRecoverableAndUnrecoverable(): Unit = ()
 }

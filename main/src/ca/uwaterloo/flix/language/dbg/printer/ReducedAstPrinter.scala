@@ -23,9 +23,7 @@ import ca.uwaterloo.flix.util.collection.MapOps
 
 object ReducedAstPrinter {
 
-  /**
-    * Returns the [[DocAst.Program]] representation of `root`.
-    */
+  /** Returns the [[DocAst.Program]] representation of `root`. */
   def print(root: ReducedAst.Root): DocAst.Program = {
     val defs = root.defs.values.map {
       case ReducedAst.Def(ann, mod, sym, cparams, fparams, _, _, stmt, tpe, _, _) =>
@@ -42,9 +40,7 @@ object ReducedAstPrinter {
     DocAst.Program(Nil, defs)
   }
 
-  /**
-    * Returns the [[DocAst.Expr]] representation of `e`.
-    */
+  /** Returns the [[DocAst.Expr]] representation of `e`. */
   def print(e: ReducedAst.Expr): DocAst.Expr = e match {
     case Expr.Cst(cst, _, _) => ConstantPrinter.print(cst)
     case Expr.Var(sym, _, _) => printVarSym(sym)
@@ -70,23 +66,17 @@ object ReducedAstPrinter {
     case Expr.NewObject(name, clazz, tpe, _, methods, _) => DocAst.Expr.NewObject(name, clazz, MonoTypePrinter.print(tpe), methods.map(printJvmMethod))
   }
 
-  /**
-    * Returns the [[DocAst.Expr.Ascription]] representation of `fp`.
-    */
+  /** Returns the [[DocAst.Expr.Ascription]] representation of `fp`. */
   private def printFormalParam(fp: ReducedAst.FormalParam): DocAst.Expr.Ascription = {
     val ReducedAst.FormalParam(sym, _, tpe, _) = fp
     DocAst.Expr.Ascription(printVarSym(sym), MonoTypePrinter.print(tpe))
   }
 
-  /**
-    * Returns the [[DocAst.Expr]] representation of `sym`.
-    */
+  /** Returns the [[DocAst.Expr]] representation of `sym`. */
   private def printVarSym(sym: Symbol.VarSym): DocAst.Expr =
     DocAst.Expr.Var(sym)
 
-  /**
-    * Returns the [[DocAst.JvmMethod]] representation of `method`.
-    */
+  /** Returns the [[DocAst.JvmMethod]] representation of `method`. */
   private def printJvmMethod(method: ReducedAst.JvmMethod): DocAst.JvmMethod = method match {
     case ReducedAst.JvmMethod(ident, fparams, exp, tpe, _, _) =>
       DocAst.JvmMethod(ident, fparams map printFormalParam, print(exp), MonoTypePrinter.print(tpe))

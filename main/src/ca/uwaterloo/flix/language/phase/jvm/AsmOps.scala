@@ -25,9 +25,7 @@ import org.objectweb.asm.{ClassWriter, MethodVisitor}
 
 object AsmOps {
 
-  /**
-    * Returns the target JVM version.
-    */
+  /** Returns the target JVM version. */
   def JavaVersion(implicit flix: Flix): Int = flix.options.target match {
     case JvmTarget.Version21 => V21
   }
@@ -43,9 +41,7 @@ object AsmOps {
     }
   }
 
-  /**
-    * Returns the stack size of a variable of type `tpe` in jvm.
-    */
+  /** Returns the stack size of a variable of type `tpe` in jvm. */
   def getStackSize(tpe: JvmType): Int = tpe match {
     case JvmType.Void => throw InternalCompilerException(s"Unexpected type: $tpe", SourceLocation.Unknown)
     case JvmType.PrimBool => 1
@@ -59,9 +55,7 @@ object AsmOps {
     case JvmType.Reference(_) => 1
   }
 
-  /**
-    * Returns the load instruction for the value of the type specified by `tpe`
-    */
+  /** Returns the load instruction for the value of the type specified by `tpe` */
   def getLoadInstruction(tpe: JvmType): Int = tpe match {
     case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe", SourceLocation.Unknown)
     case JvmType.PrimBool | JvmType.PrimChar | JvmType.PrimByte | JvmType.PrimShort | JvmType.PrimInt => ILOAD
@@ -71,9 +65,7 @@ object AsmOps {
     case JvmType.Reference(_) => ALOAD
   }
 
-  /**
-    * Returns the store instruction for the value of the type specified by `tpe`
-    */
+  /** Returns the store instruction for the value of the type specified by `tpe` */
   def getStoreInstruction(tpe: JvmType): Int = tpe match {
     case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe", SourceLocation.Unknown)
     case JvmType.PrimBool | JvmType.PrimChar | JvmType.PrimByte | JvmType.PrimShort | JvmType.PrimInt => ISTORE
@@ -83,9 +75,7 @@ object AsmOps {
     case JvmType.Reference(_) => ASTORE
   }
 
-  /**
-    * Returns the array load instruction for arrays of the given JvmType tpe
-    */
+  /** Returns the array load instruction for arrays of the given JvmType tpe */
   def getArrayLoadInstruction(tpe: JvmType): Int = tpe match {
     case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe", SourceLocation.Unknown)
     case JvmType.PrimBool => BALOAD
@@ -99,9 +89,7 @@ object AsmOps {
     case JvmType.Reference(_) => AALOAD
   }
 
-  /**
-    * Returns the array store instruction for arrays of the given JvmType tpe
-    */
+  /** Returns the array store instruction for arrays of the given JvmType tpe */
   def getArrayStoreInstruction(tpe: JvmType): Int = tpe match {
     case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe", SourceLocation.Unknown)
     case JvmType.PrimBool => BASTORE
@@ -115,9 +103,7 @@ object AsmOps {
     case JvmType.Reference(_) => AASTORE
   }
 
-  /**
-    * Returns the CheckCast type for the value of the type specified by `tpe`
-    */
+  /** Returns the CheckCast type for the value of the type specified by `tpe` */
   def getArrayType(tpe: JvmType): String = tpe match {
     case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe", SourceLocation.Unknown)
     case JvmType.PrimBool => "[Z"
@@ -132,9 +118,7 @@ object AsmOps {
     case JvmType.Reference(_) => "[Ljava/lang/Object;"
   }
 
-  /**
-    * Returns the load instruction corresponding to the given type `tpe`
-    */
+  /** Returns the load instruction corresponding to the given type `tpe` */
   def getReturnInstruction(tpe: JvmType): Int = tpe match {
     case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe", SourceLocation.Unknown)
     case JvmType.PrimBool | JvmType.PrimChar | JvmType.PrimByte | JvmType.PrimShort | JvmType.PrimInt => IRETURN
@@ -144,9 +128,7 @@ object AsmOps {
     case JvmType.Reference(_) => ARETURN
   }
 
-  /**
-    * Returns the descriptor of a method take takes the given `argumentTypes` and returns the given `resultType`.
-    */
+  /** Returns the descriptor of a method take takes the given `argumentTypes` and returns the given `resultType`. */
   def getMethodDescriptor(argumentTypes: List[JvmType], resultType: JvmType): String = {
     // Descriptor of result
     val resultDescriptor = resultType.toDescriptor
@@ -269,9 +251,7 @@ object AsmOps {
     method.visitEnd()
   }
 
-  /**
-    * Generates code which instantiate a reified source location.
-    */
+  /** Generates code which instantiate a reified source location. */
   def compileReifiedSourceLocation(mv: MethodVisitor, loc: SourceLocation): Unit = {
     val RslType = BackendObjType.ReifiedSourceLocation
     mv.visitTypeInsn(NEW, RslType.jvmName.toInternalName)
@@ -284,9 +264,7 @@ object AsmOps {
     mv.visitMethodInsn(INVOKESPECIAL, RslType.jvmName.toInternalName, JvmName.ConstructorMethod, RslType.Constructor.d.toDescriptor, false)
   }
 
-  /**
-    * This will generate a method which will throw an exception in case of getting called.
-    */
+  /** This will generate a method which will throw an exception in case of getting called. */
   def compileExceptionThrowerMethod(visitor: ClassWriter, modifiers: Int, methodName: String, descriptor: String, message: String): Unit = {
     // TODO: Ramin: The descriptor argument should be a JvmType, not a string.
     // Method visitor.
@@ -311,9 +289,7 @@ object AsmOps {
     method.visitEnd()
   }
 
-  /**
-    * Emits code that puts the function object of the def symbol `def` on top of the stack.
-    */
+  /** Emits code that puts the function object of the def symbol `def` on top of the stack. */
   def compileDefSymbol(sym: Symbol.DefnSym, mv: MethodVisitor): Unit = {
     // JvmType of Def
     val defJvmType = JvmOps.getFunctionDefinitionClassType(sym)
@@ -335,9 +311,7 @@ object AsmOps {
     */
   def boxFieldWithGetter(method: MethodVisitor, fieldType: JvmType, classType: JvmType.Reference, getterName: String): Unit = {
 
-    /**
-      * This method will box the primitive on top of the stack
-      */
+    /** This method will box the primitive on top of the stack */
     def box(boxedObjectInternalName: String, signature: String): Unit = {
       method.visitTypeInsn(NEW, boxedObjectInternalName)
       method.visitInsn(DUP)
@@ -375,9 +349,7 @@ object AsmOps {
     */
   def boxField(method: MethodVisitor, fieldType: JvmType, classType: JvmType.Reference, fieldName: String): Unit = {
 
-    /**
-      * This method will box the primitive on top of the stack
-      */
+    /** This method will box the primitive on top of the stack */
     def box(boxedObjectInternalName: String, signature: String): Unit = {
       method.visitTypeInsn(NEW, boxedObjectInternalName)
       method.visitInsn(DUP)
@@ -416,9 +388,7 @@ object AsmOps {
     */
   def boxField(method: MethodVisitor, fieldType: BackendType, className: JvmName, fieldName: String): Unit = {
 
-    /**
-      * This method will box the primitive on top of the stack
-      */
+    /** This method will box the primitive on top of the stack */
     def box(boxedObjectInternalName: String, signature: String): Unit = {
       method.visitTypeInsn(NEW, boxedObjectInternalName)
       method.visitInsn(DUP)

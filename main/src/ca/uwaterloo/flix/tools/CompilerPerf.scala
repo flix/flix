@@ -29,24 +29,16 @@ import java.nio.file.Path
 
 object CompilerPerf {
 
-  /**
-    * The default number of compilations.
-    */
+  /** The default number of compilations. */
   private val DefaultN: Int = 7
 
-  /**
-    * The number of threads to use for the single-thread experiment.
-    */
+  /** The number of threads to use for the single-thread experiment. */
   private val MinThreads: Int = 1
 
-  /**
-    * The number of threads to use for the multi-threaded experiment.
-    */
+  /** The number of threads to use for the multi-threaded experiment. */
   private val MaxThreads: Int = Runtime.getRuntime.availableProcessors()
 
-  /**
-    * The Python program used to generate graphs.
-    */
+  /** The Python program used to generate graphs. */
   private val Python =
     """
       |# $ pip install pandas
@@ -208,9 +200,7 @@ object CompilerPerf {
 
   case class Runs(lines: Int, times: List[Long], phases: List[(String, List[Long])])
 
-  /**
-    * Run compiler performance experiments.
-    */
+  /** Run compiler performance experiments. */
   def run(opts: Options): Unit = {
     // Options
     val o = opts.copy(progress = false, loadClassFiles = false)
@@ -387,9 +377,7 @@ object CompilerPerf {
 
   }
 
-  /**
-    * Runs Flix with one thread and non-incremental.
-    */
+  /** Runs Flix with one thread and non-incremental. */
   private def perfBaseLine(N: Int, o: Options): IndexedSeq[Run] = {
     // Note: The Flix object is created _for every iteration._
     (0 until N).map { _ =>
@@ -403,9 +391,7 @@ object CompilerPerf {
     }
   }
 
-  /**
-    * Runs Flix with n threads and non-incremental.
-    */
+  /** Runs Flix with n threads and non-incremental. */
   private def perfBaseLineWithPar(N: Int, o: Options): IndexedSeq[Run] = {
     // Note: The Flix object is created _for every iteration._
     (0 until N).map { _ =>
@@ -419,9 +405,7 @@ object CompilerPerf {
     }
   }
 
-  /**
-    * Runs Flix with n threads and incrementally.
-    */
+  /** Runs Flix with n threads and incrementally. */
   private def perfBaseLineWithParInc(N: Int, o: Options): IndexedSeq[Run] = {
     // Note: The Flix object is created _once_.
     val flix: Flix = new Flix()
@@ -434,9 +418,7 @@ object CompilerPerf {
     }
   }
 
-  /**
-    * Runs Flix once.
-    */
+  /** Runs Flix once. */
   private def runSingle(flix: Flix): Run = {
     val frontendOnly = flix.options.XPerfFrontend
 
@@ -457,9 +439,7 @@ object CompilerPerf {
     Run(totalLines, totalTime, phases.toList)
   }
 
-  /**
-    * Merges a sequences of runs `l`.
-    */
+  /** Merges a sequences of runs `l`. */
   private def aggregate(l: IndexedSeq[Run]): Runs = {
     if (l.isEmpty) {
       throw InternalCompilerException("'l' must be non-empty.", SourceLocation.Unknown)
@@ -476,27 +456,19 @@ object CompilerPerf {
     Runs(lines, times, transposedWithPhases)
   }
 
-  /**
-    * Returns the throughput per second.
-    */
+  /** Returns the throughput per second. */
   private def throughput(lines: Long, time: Long): Int = ((1_000_000_000L * lines).toDouble / time.toDouble).toInt
 
-  /**
-    * Returns the given time `l` in milliseconds.
-    */
+  /** Returns the given time `l` in milliseconds. */
   private def milliseconds(l: Double): Double = l / 1_000_000.0
 
-  /**
-    * Flushes (clears) all caches.
-    */
+  /** Flushes (clears) all caches. */
   private def flushCaches(): Unit = {
     UnificationCache.GlobalBool.clear()
     UnificationCache.GlobalBdd.clear()
   }
 
-  /**
-    * Adds test code to the benchmarking suite.
-    */
+  /** Adds test code to the benchmarking suite. */
   private def addInputs(flix: Flix): Unit = {
     implicit val sctx: SecurityContext = SecurityContext.AllPermissions
     flix.addSourceCode("TestArray.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestArray.flix"))
@@ -517,9 +489,7 @@ object CompilerPerf {
     flix.addSourceCode("TestValidation.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestValidation.flix"))
   }
 
-  /**
-    * Writes the given `json` to the given `file`.
-    */
+  /** Writes the given `json` to the given `file`. */
   private def writeFile(file: String, json: JValue): Unit = {
     val directory = Path.of("./build/").resolve("perf/")
     val filePath = directory.resolve(s"$file")

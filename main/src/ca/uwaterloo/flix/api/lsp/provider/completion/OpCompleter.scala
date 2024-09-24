@@ -21,9 +21,7 @@ import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.OpCompletion
 import ca.uwaterloo.flix.language.ast.TypedAst
 
 object OpCompleter {
-  /**
-    * Returns a List of Completion for completer.
-    */
+  /** Returns a List of Completion for completer. */
   def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[OpCompletion] = {
     if (context.previousWord != "do") {
       return Nil
@@ -41,9 +39,7 @@ object OpCompleter {
       )
   }
 
-  /**
-    * Returns `true` if the given effect operation `op` should be included in the suggestions.
-    */
+  /** Returns `true` if the given effect operation `op` should be included in the suggestions. */
   private def matchesOp(op: TypedAst.Op, word: String, uri: String): Boolean = {
     val isPublic = op.spec.mod.isPublic
     val isNamespace = word.nonEmpty && word.head.isUpper

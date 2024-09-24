@@ -7,9 +7,7 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, Jvm}
 
 import java.lang.reflect.{InvocationTargetException, Method}
 
-/**
-  * Loads all the generated classes into the JVM and decorates the AST.
-  */
+/** Loads all the generated classes into the JVM and decorates the AST. */
 object Loader {
 
   /**
@@ -80,9 +78,7 @@ object Loader {
     } else None
   }
 
-  /**
-    * Returns a map from names to method objects for the given class `clazz`.
-    */
+  /** Returns a map from names to method objects for the given class `clazz`. */
   private def methodsOf(clazz: Class[_]): Map[String, Method] = {
     Jvm.getMethods(clazz).foldLeft(Map.empty[String, Method]) {
       case (macc, method) =>

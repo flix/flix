@@ -25,19 +25,13 @@ import scala.reflect.ClassTag
 
 object ParOps {
 
-  /**
-    * The threshold at which `parAgg` switches from parallel to sequential evaluation.
-    */
+  /** The threshold at which `parAgg` switches from parallel to sequential evaluation. */
   private val SequentialThreshold: Int = 4
 
-  /**
-    * Returns true if the compiler is running on a single thread.
-    */
+  /** Returns true if the compiler is running on a single thread. */
   private def singleThreaded(implicit flix: Flix): Boolean = flix.options.threads == 1
 
-  /**
-    * Applies the function `f` to every element of `xs` in parallel.
-    */
+  /** Applies the function `f` to every element of `xs` in parallel. */
   def parMap[A, B: ClassTag](xs: Iterable[A])(f: A => B)(implicit flix: Flix): Iterable[B] = {
     // Just map if we're single-threaded.
     if (singleThreaded) {
@@ -82,25 +76,19 @@ object ParOps {
     out
   }
 
-  /**
-    * Applies the function `f` to every value of the map `m` in parallel.
-    */
+  /** Applies the function `f` to every value of the map `m` in parallel. */
   def parMapValues[K, A, B](m: Map[K, A])(f: A => B)(implicit flix: Flix): Map[K, B] =
     parMap(m) {
       case (k, v) => (k, f(v))
     }.toMap
 
-  /**
-    * Applies the function `f` to every element of `xs` in parallel. Aggregates the result using the applicative instance for [[Validation]].
-    */
+  /** Applies the function `f` to every element of `xs` in parallel. Aggregates the result using the applicative instance for [[Validation]]. */
   def parTraverse[A, B, E](xs: Iterable[A])(f: A => Validation[B, E])(implicit flix: Flix): Validation[Iterable[B], E] = {
     val results = parMap(xs)(f)
     Validation.sequence(results)
   }
 
-  /**
-    * Applies the function `f` to every element of the map `m` in parallel. Aggregates the result using the applicative instance for [[Validation]].
-    */
+  /** Applies the function `f` to every element of the map `m` in parallel. Aggregates the result using the applicative instance for [[Validation]]. */
   def parTraverseValues[K, A, B, E](m: Map[K, A])(f: A => Validation[B, E])(implicit flix: Flix): Validation[Map[K, B], E] = {
     val parVals = parTraverse(m) {
       case (k, v) => Validation.mapN(f(v))((k, _))
@@ -108,17 +96,13 @@ object ParOps {
     Validation.mapN(parVals)(_.toMap)
   }
 
-  /**
-    * Aggregates the result of applying `seq` and `comb` to `xs`.
-    */
+  /** Aggregates the result of applying `seq` and `comb` to `xs`. */
   def parAgg[A: ClassTag, S](xs: Iterable[A], z: => S)(seq: (S, A) => S, comb: (S, S) => S)(implicit flix: Flix): S = {
     // Just fold if we're single-threaded.
     if (singleThreaded) {
       return xs.foldLeft(z)(seq)
     }
-    /**
-      * A ForkJoin task that operates on the array `a` from the interval `b` to `e`.
-      */
+    /** A ForkJoin task that operates on the array `a` from the interval `b` to `e`. */
     case class Task(a: Array[A], b: Int, e: Int) extends RecursiveTask[S] {
       override def compute(): S = {
         val span = e - b
@@ -150,9 +134,7 @@ object ParOps {
     }
   }
 
-  /**
-    * Computes the set of reachables Ts starting from `init` and using the `next` function.
-    */
+  /** Computes the set of reachables Ts starting from `init` and using the `next` function. */
   def parReach[T](init: Set[T], next: T => Set[T])(implicit flix: Flix): Set[T] = {
     if (singleThreaded) {
       return seqReach(init, next)
@@ -198,9 +180,7 @@ object ParOps {
     reach
   }
 
-  /**
-    * Computes the set of reachables Ts starting from `init` and using the `next` function.
-    */
+  /** Computes the set of reachables Ts starting from `init` and using the `next` function. */
   private def seqReach[T](init: Set[T], next: T => Set[T]): Set[T] = {
     // A mutable variable that holds the currently reachable Ts.
     var reach = init

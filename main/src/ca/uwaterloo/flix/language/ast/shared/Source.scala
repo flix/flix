@@ -19,9 +19,7 @@ import ca.uwaterloo.flix.language.ast.Sourceable
 
 import scala.annotation.tailrec
 
-/**
- * A source is a name and an array of character data.
- */
+/** A source is a name and an array of character data. */
 case class Source(input: Input, data: Array[Char]) extends Sourceable {
 
   def name: String = input match {

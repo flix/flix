@@ -57,9 +57,7 @@ object EffUnification2 {
     }
   }
 
-  /**
-    * Returns a bi-directional map from type variables to ints computed from the given list of unification equations `l`.
-    */
+  /** Returns a bi-directional map from type variables to ints computed from the given list of unification equations `l`. */
   private def mkBidirectionalVarMap(l: List[(Type, Type, SourceLocation)]): Bimap[Type.Var, Int] = {
     // Find all type variables that occur in anywhere in `l`.
     val allVars = mutable.Set.empty[Type.Var]
@@ -80,9 +78,7 @@ object EffUnification2 {
     Bimap(forward, backward)
   }
 
-  /**
-    * Translates the given unification equation on types `p` into a unification equation on terms.
-    */
+  /** Translates the given unification equation on types `p` into a unification equation on terms. */
   private def toEquation(p: (Type, Type, SourceLocation))(implicit scope: Scope, renv: RigidityEnv, m: Bimap[Type.Var, Int]): Equation = {
     val (tpe1, tpe2, loc) = p
     Equation.mk(toTerm(tpe1), toTerm(tpe2), loc)
@@ -114,9 +110,7 @@ object EffUnification2 {
     case _ => throw InternalCompilerException(s"Unexpected type: '$t'.", t.loc)
   }
 
-  /**
-    * Returns a regular type substitution obtained from the given Boolean substitution `s`.
-    */
+  /** Returns a regular type substitution obtained from the given Boolean substitution `s`. */
   private def fromBoolSubst(s: FastBoolUnification.BoolSubstitution)(implicit m: Bimap[Type.Var, Int]): Substitution = {
     Substitution(s.m.foldLeft(Map.empty[Symbol.KindedTypeVarSym, Type]) {
       case (macc, (k, v)) =>

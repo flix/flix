@@ -205,9 +205,7 @@ object HighlightProvider {
     highlight(uri, write :: reads)
   }
 
-  /**
-    * Returns a reply indicating that nothing was found at the `uri` and `pos`.
-    */
+  /** Returns a reply indicating that nothing was found at the `uri` and `pos`. */
   private def mkNotFound(uri: String, pos: Position): JObject =
     ("status" -> ResponseStatus.InvalidRequest) ~ ("message" -> s"Nothing found in '$uri' at '$pos'.")
 

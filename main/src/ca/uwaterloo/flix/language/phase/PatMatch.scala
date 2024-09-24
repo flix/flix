@@ -105,9 +105,7 @@ object PatMatch {
 
   private case class NonExhaustive(pat: List[TyCon]) extends Exhaustiveness
 
-  /**
-    * Returns an error message if a pattern match is not exhaustive
-    */
+  /** Returns an error message if a pattern match is not exhaustive */
   def run(root: TypedAst.Root)(implicit flix: Flix): Validation[Root, NonExhaustiveMatchError] =
     flix.phase("PatMatch") {
       implicit val r: TypedAst.Root = root
@@ -246,9 +244,7 @@ object PatMatch {
     }
   }
 
-  /**
-    * Performs exhaustive checking on the given constraint `c`.
-    */
+  /** Performs exhaustive checking on the given constraint `c`. */
   private def visitConstraint(c0: TypedAst.Constraint)(implicit root: TypedAst.Root, flix: Flix): List[NonExhaustiveMatchError] = c0 match {
     case TypedAst.Constraint(_, head0, body0, _) =>
       val headErrs = visitHeadPred(head0)

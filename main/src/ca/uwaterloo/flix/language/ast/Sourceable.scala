@@ -19,9 +19,7 @@ import ca.uwaterloo.flix.language.ast.shared.Source
 
 trait Sourceable {
 
-  /**
-    * Returns the source of `this`.
-    */
+  /** Returns the source of `this`. */
   def src: Source
 
 }

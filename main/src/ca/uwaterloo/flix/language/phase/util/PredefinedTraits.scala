@@ -26,17 +26,13 @@ import ca.uwaterloo.flix.util.InternalCompilerException
   */
 object PredefinedTraits {
 
-  /**
-    * Returns the trait symbol with the given `name`.
-    */
+  /** Returns the trait symbol with the given `name`. */
   def lookupTraitSym(name: String, root: KindedAst.Root): Symbol.TraitSym = {
     val key = new Symbol.TraitSym(Nil, name, SourceLocation.Unknown)
     root.traits.getOrElse(key, throw InternalCompilerException(s"The trait: '$key' is not defined.", SourceLocation.Unknown)).sym
   }
 
-  /**
-    * Returns the sig symbol with the given `clazz` and name `sig`.
-    */
+  /** Returns the sig symbol with the given `clazz` and name `sig`. */
   def lookupSigSym(trt: String, sig: String, root: KindedAst.Root): Symbol.SigSym = {
     val trtKey = new Symbol.TraitSym(Nil, trt, SourceLocation.Unknown)
     val sigKey = new Symbol.SigSym(trtKey, sig, SourceLocation.Unknown)
@@ -45,25 +41,19 @@ object PredefinedTraits {
       .sym
   }
 
-  /**
-    * Returns the def symbol with the given `name` in the given namespace `ns`.
-    */
+  /** Returns the def symbol with the given `name` in the given namespace `ns`. */
   def lookupDefSym(ns: List[String], name: String, root: KindedAst.Root): Symbol.DefnSym = {
     val key = new Symbol.DefnSym(None, ns, name, SourceLocation.Unknown)
     root.defs.getOrElse(key, throw InternalCompilerException(s"The definition '$key' is not defined.", SourceLocation.Unknown)).sym
   }
 
-  /**
-    * Returns the enum symbol with the given name `name`.
-    */
+  /** Returns the enum symbol with the given name `name`. */
   def lookupEnumSym(name: String, root: KindedAst.Root): Symbol.EnumSym = {
     val key = new Symbol.EnumSym(Nil, name, SourceLocation.Unknown)
     root.enums.getOrElse(key, throw InternalCompilerException(s"The definition '$key' is not defined.", SourceLocation.Unknown)).sym
   }
 
-  /**
-    * Returns the case symbol with the given name `cazeName`.
-    */
+  /** Returns the case symbol with the given name `cazeName`. */
   def lookupCaseSym(enumName: String, cazeName: String, root: KindedAst.Root): Symbol.CaseSym = {
     val enumKey = new Symbol.EnumSym(Nil, enumName, SourceLocation.Unknown)
     val enumDecl = root.enums.getOrElse(enumKey, throw InternalCompilerException(s"The definition '$enumKey' is not defined.", SourceLocation.Unknown))

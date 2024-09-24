@@ -26,17 +26,13 @@ import ca.uwaterloo.flix.util.ParOps
 import org.objectweb.asm.Opcodes._
 import org.objectweb.asm.{ClassWriter, Label, MethodVisitor, Opcodes}
 
-/**
-  * Generates byte code for the function and closure classes.
-  */
+/** Generates byte code for the function and closure classes. */
 object GenFunAndClosureClasses {
 
   /** Print functional call information at runtime if true */
   val onCallDebugging = false
 
-  /**
-    * Returns a map of function- and closure-classes for the given set `defs`.
-    */
+  /** Returns a map of function- and closure-classes for the given set `defs`. */
   def gen(defs: Map[Symbol.DefnSym, Def])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     ParOps.parAgg(defs.values, Map.empty[JvmName, JvmClass])({
 

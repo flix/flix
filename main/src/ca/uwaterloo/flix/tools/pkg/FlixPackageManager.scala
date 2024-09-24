@@ -38,16 +38,12 @@ object FlixPackageManager {
     findTransitiveDependenciesRec(manifest, path, List(manifest), apiKey)
   }
 
-  /**
-    * Finds the Flix dependencies in a Manifest.
-    */
+  /** Finds the Flix dependencies in a Manifest. */
   def findFlixDependencies(manifest: Manifest): List[FlixDependency] = {
     manifest.dependencies.collect { case dep: FlixDependency => dep }
   }
 
-  /**
-    * Finds the most relevant available updates for the given dependency.
-    */
+  /** Finds the most relevant available updates for the given dependency. */
   def findAvailableUpdates(dep: FlixDependency, apiKey: Option[String]): Result[AvailableUpdates, PackageError] =
     for (
       githubProject <- GitHub.parseProject(s"${dep.username}/${dep.projectName}");

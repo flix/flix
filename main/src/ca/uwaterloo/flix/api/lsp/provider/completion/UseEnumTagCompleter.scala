@@ -24,9 +24,7 @@ import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.ast.SourceLocation
 
 object UseEnumTagCompleter {
-  /**
-   * Returns an Iterable of Completions for enum tag usages.
-   */
+  /** Returns an Iterable of Completions for enum tag usages. */
   def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[UseEnumTagCompletion] = {
     //Need to return completion possibilities regardless of whether a tag was provided.
     stripWord(context) match {
@@ -38,9 +36,7 @@ object UseEnumTagCompleter {
     }
   }
 
-  /**
-   * Returns an Iterable of completions for enum tag uses without a tag present.
-   */
+  /** Returns an Iterable of completions for enum tag uses without a tag present. */
   private def getUseEnumTagCompletionsNoTag(segments: List[String])(implicit root: TypedAst.Root): Iterable[UseEnumTagCompletion] = {
     val sym = mkEnumSym(segments)
     root.enums.get(sym) match {
@@ -52,9 +48,7 @@ object UseEnumTagCompleter {
     }
   }
 
-  /**
-   * Returns an Iterable of completions for enum tag usages with tags present.
-   */
+  /** Returns an Iterable of completions for enum tag usages with tags present. */
   private def getUseEnumTagCompletionsWithTag(segments: List[String])(implicit root: TypedAst.Root): Iterable[UseEnumTagCompletion] = {
     if (segments.isEmpty) {
       return Nil

@@ -17,9 +17,7 @@ package ca.uwaterloo.flix.language.ast.shared
 
 import ca.uwaterloo.flix.language.ast.SourceLocation
 
-/**
-  * A common super type for AST nodes that represent annotations.
-  */
+/** A common super type for AST nodes that represent annotations. */
 trait Annotation {
   def loc: SourceLocation
 }

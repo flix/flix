@@ -24,9 +24,7 @@ import ca.uwaterloo.flix.language.fmt.FormatEqualityConstraint.formatEqualityCon
 import ca.uwaterloo.flix.language.fmt.FormatType.formatType
 import ca.uwaterloo.flix.util.{Formatter, Grammar}
 
-/**
-  * A common super-type for type errors.
-  */
+/** A common super-type for type errors. */
 sealed trait TypeError extends CompilationMessage with Recoverable {
   val kind: String = "Type Error"
 }

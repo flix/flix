@@ -40,50 +40,32 @@ import scala.language.implicitConversions
 import scala.util.Using
 
 object Flix {
-  /**
-    * The reserved Flix delimiter.
-    */
+  /** The reserved Flix delimiter. */
   val Delimiter: String = "$"
 
-  /**
-    * The file extension for intermediate representation files.
-    */
+  /** The file extension for intermediate representation files. */
   val IrFileExtension = "flixir"
 
-  /**
-    * The maximum width of the intermediate representation files.
-    */
+  /** The maximum width of the intermediate representation files. */
   val IrFileWidth = 80
 
-  /**
-    * The number of spaces per indentation in the intermediate representation files.
-    */
+  /** The number of spaces per indentation in the intermediate representation files. */
   val IrFileIndentation = 4
 }
 
-/**
-  * Main programmatic interface for Flix.
-  */
+/** Main programmatic interface for Flix. */
 class Flix {
 
-  /**
-    * A sequence of inputs to be parsed into Flix ASTs.
-    */
+  /** A sequence of inputs to be parsed into Flix ASTs. */
   private val inputs = mutable.Map.empty[String, Input]
 
-  /**
-    * The set of sources changed since last compilation.
-    */
+  /** The set of sources changed since last compilation. */
   private var changeSet: ChangeSet = ChangeSet.Everything
 
-  /**
-    * The set of known Java classes and interfaces.
-    */
+  /** The set of known Java classes and interfaces. */
   private var knownClassesAndInterfaces: MultiMap[List[String], String] = getJavaPlatformClassesAndInterfaces()
 
-  /**
-    * A cache of ASTs for incremental compilation.
-    */
+  /** A cache of ASTs for incremental compilation. */
   private var cachedLexerTokens: Map[Source, Array[Token]] = Map.empty
   private var cachedParserCst: SyntaxTree.Root = SyntaxTree.empty
   private var cachedWeederAst: WeededAst.Root = WeededAst.empty
@@ -278,54 +260,34 @@ class Flix {
     "FromJava.flix" -> LocalResource.get("/src/library/FromJava.flix"),
   )
 
-  /**
-    * A map to track the time spent in each phase and sub-phase.
-    */
+  /** A map to track the time spent in each phase and sub-phase. */
   var phaseTimers: ListBuffer[PhaseTime] = ListBuffer.empty
 
-  /**
-    * The current phase we are in. Initially null.
-    */
+  /** The current phase we are in. Initially null. */
   private var currentPhase: PhaseTime = _
 
-  /**
-    * The progress bar.
-    */
+  /** The progress bar. */
   private val progressBar: ProgressBar = new ProgressBar
 
-  /**
-    * The default assumed charset.
-    */
+  /** The default assumed charset. */
   val defaultCharset: Charset = Charset.forName("UTF-8")
 
-  /**
-    * The current Flix options.
-    */
+  /** The current Flix options. */
   var options: Options = Options.Default
 
-  /**
-    * The thread pool executor service for `this` Flix instance.
-    */
+  /** The thread pool executor service for `this` Flix instance. */
   var threadPool: java.util.concurrent.ForkJoinPool = _
 
-  /**
-    * The symbol generator associated with this Flix instance.
-    */
+  /** The symbol generator associated with this Flix instance. */
   val genSym = new GenSym()
 
-  /**
-    * The default output formatter.
-    */
+  /** The default output formatter. */
   private var formatter: Formatter = NoFormatter
 
-  /**
-    * A class loader for loading external JARs.
-    */
+  /** A class loader for loading external JARs. */
   val jarLoader = new ExternalJarLoader
 
-  /**
-    * Adds the given string `text` with the given `name`.
-    */
+  /** Adds the given string `text` with the given `name`. */
   def addSourceCode(name: String, text: String)(implicit sctx: SecurityContext): Flix = {
     if (name == null)
       throw new IllegalArgumentException("'name' must be non-null.")
@@ -337,9 +299,7 @@ class Flix {
     this
   }
 
-  /**
-    * Removes the source code with the given `name`.
-    */
+  /** Removes the source code with the given `name`. */
   def remSourceCode(name: String): Flix = {
     if (name == null)
       throw new IllegalArgumentException("'name' must be non-null.")
@@ -347,9 +307,7 @@ class Flix {
     this
   }
 
-  /**
-    * Adds the given path `p` as Flix source file.
-    */
+  /** Adds the given path `p` as Flix source file. */
   def addFlix(p: Path)(implicit sctx: SecurityContext): Flix = {
     if (p == null)
       throw new IllegalArgumentException(s"'p' must be non-null.")
@@ -366,9 +324,7 @@ class Flix {
     this
   }
 
-  /**
-    * Adds the given path `p` as a Flix package file.
-    */
+  /** Adds the given path `p` as a Flix package file. */
   def addPkg(p: Path)(implicit sctx: SecurityContext): Flix = {
     if (p == null)
       throw new IllegalArgumentException(s"'p' must be non-null.")
@@ -385,9 +341,7 @@ class Flix {
     this
   }
 
-  /**
-    * Removes the given path `p` as a Flix source file.
-    */
+  /** Removes the given path `p` as a Flix source file. */
   def remFlix(p: Path): Flix = {
     if (!p.getFileName.toString.endsWith(".flix"))
       throw new IllegalArgumentException(s"'$p' must be a *.flix file.")
@@ -396,9 +350,7 @@ class Flix {
     this
   }
 
-  /**
-    * Adds the JAR file at path `p` to the class loader.
-    */
+  /** Adds the JAR file at path `p` to the class loader. */
   def addJar(p: Path): Flix = {
     if (p == null)
       throw new IllegalArgumentException(s"'p' must be non-null.")
@@ -414,9 +366,7 @@ class Flix {
     this
   }
 
-  /**
-    * Adds the given `input` under the given `name`.
-    */
+  /** Adds the given `input` under the given `name`. */
   private def addInput(name: String, input: Input): Unit = inputs.get(name) match {
     case None =>
       inputs += name -> input
@@ -437,9 +387,7 @@ class Flix {
       inputs += name -> Input.Text(name, "", stable = false, /* unused */ SecurityContext.NoPermissions)
   }
 
-  /**
-    * Sets the options used for this Flix instance.
-    */
+  /** Sets the options used for this Flix instance. */
   def setOptions(opts: Options): Flix = {
     if (opts == null)
       throw new IllegalArgumentException("'opts' must be non-null.")
@@ -447,23 +395,17 @@ class Flix {
     this
   }
 
-  /**
-    * Returns the format options associated with this Flix instance.
-    */
+  /** Returns the format options associated with this Flix instance. */
   def getFormatOptions: FormatOptions = {
     FormatOptions(
       varNames = FormatOptions.VarName.NameBased // TODO add cli option
     )
   }
 
-  /**
-    * Returns the current formatter instance.
-    */
+  /** Returns the current formatter instance. */
   def getFormatter: Formatter = this.formatter
 
-  /**
-    * Sets the output formatter used for this Flix instance.
-    */
+  /** Sets the output formatter used for this Flix instance. */
   def setFormatter(formatter: Formatter): Flix = {
     if (formatter == null)
       throw new IllegalArgumentException("'formatter' must be non-null.")
@@ -482,9 +424,7 @@ class Flix {
       errors.toSeq.sortBy(_.loc).map(cm => cm.messageWithLoc(formatter)).toList
   }
 
-  /**
-    * Compiles the Flix program and returns a typed ast.
-    */
+  /** Compiles the Flix program and returns a typed ast. */
   def check(): Validation[TypedAst.Root, CompilationMessage] = try {
     import Validation.Implicit.AsMonad
 
@@ -561,9 +501,7 @@ class Flix {
       throw ex
   }
 
-  /**
-    * Compiles the given typed ast to an executable ast.
-    */
+  /** Compiles the given typed ast to an executable ast. */
   def codeGen(typedAst: TypedAst.Root): Validation[CompilationResult, CompilationMessage] = try {
     // Mark this object as implicit.
     implicit val flix: Flix = this
@@ -606,17 +544,13 @@ class Flix {
       throw ex
   }
 
-  /**
-    * Compiles the given typed ast to an executable ast.
-    */
+  /** Compiles the given typed ast to an executable ast. */
   def compile(): Validation[CompilationResult, CompilationMessage] = {
     val result = check().toHardFailure
     Validation.flatMapN(result)(codeGen)
   }
 
-  /**
-    * Enters the phase with the given name.
-    */
+  /** Enters the phase with the given name. */
   def phase[A](phase: String)(f: => A)(implicit d: Debug[A]): A = {
     // Initialize the phase time object.
     currentPhase = PhaseTime(phase, 0)
@@ -644,25 +578,19 @@ class Flix {
     r
   }
 
-  /**
-    * Returns the total compilation time in nanoseconds.
-    */
+  /** Returns the total compilation time in nanoseconds. */
   def getTotalTime: Long = phaseTimers.foldLeft(0L) {
     case (acc, phase) => acc + phase.time
   }
 
-  /**
-    * A callback to indicate that work has started on the given subtask.
-    */
+  /** A callback to indicate that work has started on the given subtask. */
   def subtask(subtask: String, sample: Boolean = false): Unit = {
     if (options.progress) {
       progressBar.observe(currentPhase.phase, subtask, sample)
     }
   }
 
-  /**
-    * Returns a list of inputs constructed from the strings and paths passed to Flix.
-    */
+  /** Returns a list of inputs constructed from the strings and paths passed to Flix. */
   private def getInputs: List[Input] = {
     val lib = options.lib match {
       case LibLevel.Nix => Nil
@@ -672,44 +600,32 @@ class Flix {
     inputs.values.toList ::: lib
   }
 
-  /**
-    * Returns the inputs for the given list of (path, text) pairs.
-    */
+  /** Returns the inputs for the given list of (path, text) pairs. */
   private def getLibraryInputs(xs: List[(String, String)]): List[Input] = xs.foldLeft(List.empty[Input]) {
     case (xs, (virtualPath, text)) => Input.Text(virtualPath, text, stable = true, SecurityContext.AllPermissions) :: xs
   }
 
-  /**
-    * Initializes the fork-join thread pool.
-    */
+  /** Initializes the fork-join thread pool. */
   private def initForkJoinPool(): Unit = {
     threadPool = new ForkJoinPool(options.threads)
   }
 
-  /**
-    * Shuts down the fork-join thread pools.
-    */
+  /** Shuts down the fork-join thread pools. */
   private def shutdownForkJoinPool(): Unit = {
     threadPool.shutdown()
   }
 
-  /**
-    * Extends the set of known Java classes and interfaces with those in the given JAR-file `p`.
-    */
+  /** Extends the set of known Java classes and interfaces with those in the given JAR-file `p`. */
   private def extendKnownJavaClassesAndInterfaces(p: Path): Unit = {
     knownClassesAndInterfaces = knownClassesAndInterfaces ++ getPackageContent(getClassesAndInterfacesOfJar(p))
   }
 
-  /**
-    * Returns all Java classes and interfaces in the current Java Platform.
-    */
+  /** Returns all Java classes and interfaces in the current Java Platform. */
   private def getJavaPlatformClassesAndInterfaces(): MultiMap[List[String], String] = {
     getPackageContent(ClassList.TheList)
   }
 
-  /**
-    * Returns the names of all classes and interfaces in the given JAR-file `p`.
-    */
+  /** Returns the names of all classes and interfaces in the given JAR-file `p`. */
   private def getClassesAndInterfacesOfJar(p: Path): List[String] = {
     Using(new ZipFile(p.toFile)) { zip =>
       val result = mutable.ListBuffer.empty[String]
@@ -725,9 +641,7 @@ class Flix {
     }.get
   }
 
-  /**
-    * Returns a multimap from Java packages to sub-packages, classes, and interfaces.
-    */
+  /** Returns a multimap from Java packages to sub-packages, classes, and interfaces. */
   private def getPackageContent(l: List[String]): MultiMap[List[String], String] = {
     l.foldLeft[MultiMap[List[String], String]](MultiMap.empty) {
       case (acc, clazz) =>

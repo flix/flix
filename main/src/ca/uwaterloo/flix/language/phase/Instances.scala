@@ -30,9 +30,7 @@ object Instances {
   // We use top scope everywhere here since we are only looking at declarations.
   private implicit val S: Scope = Scope.Top
 
-  /**
-    * Validates instances and traits in the given AST root.
-    */
+  /** Validates instances and traits in the given AST root. */
   def run(root: TypedAst.Root, oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[TypedAst.Root, InstanceError] =
     flix.phase("Instances") {
       val errors = visitInstances(root, oldRoot, changeSet) ::: visitTraits(root)
@@ -40,17 +38,13 @@ object Instances {
       Validation.toSuccessOrSoftFailure(root, errors)
     }(DebugValidation())
 
-  /**
-    * Validates all instances in the given AST root.
-    */
+  /** Validates all instances in the given AST root. */
   private def visitTraits(root: TypedAst.Root)(implicit flix: Flix): List[InstanceError] = {
     val results = ParOps.parMap(root.traits.values)(visitTrait)
     results.flatten.toList
   }
 
-  /**
-    * Checks that all signatures in `trait0` are used in laws if `trait0` is marked `lawful`.
-    */
+  /** Checks that all signatures in `trait0` are used in laws if `trait0` is marked `lawful`. */
   private def checkLawApplication(trait0: TypedAst.Trait): List[InstanceError] = trait0 match {
     // Case 1: lawful trait
     case TypedAst.Trait(_, _, mod, _, _, _, _, sigs, laws, _) if mod.isLawful =>
@@ -65,16 +59,12 @@ object Instances {
     case TypedAst.Trait(_, _, _, _, _, _, _, _, _, _) => Nil
   }
 
-  /**
-    * Performs validations on a single trait.
-    */
+  /** Performs validations on a single trait. */
   private def visitTrait(trait0: TypedAst.Trait): List[InstanceError] = {
     checkLawApplication(trait0)
   }
 
-  /**
-    * Validates all instances in the given AST root.
-    */
+  /** Validates all instances in the given AST root. */
   private def visitInstances(root: TypedAst.Root, oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): List[InstanceError] = {
     // Check the instances of each trait in parallel.
     val results = ParOps.parMap(root.instances.values)(checkInstancesOfTrait(_, root, changeSet))
@@ -136,9 +126,7 @@ object Instances {
     }
   }
 
-  /**
-    * Checks for overlap of instance types, assuming the instances are of the same trait.
-    */
+  /** Checks for overlap of instance types, assuming the instances are of the same trait. */
   private def checkOverlap(inst1: TypedAst.Instance, heads: Map[TypeConstructor, TypedAst.Instance])(implicit flix: Flix): List[InstanceError] = {
     // Note: We have that Type.Error unifies with any other type, hence we filter such instances here.
     unsafeGetHead(inst1) match {
@@ -159,9 +147,7 @@ object Instances {
     }
   }
 
-  /**
-    * Checks that every signature in `trt` is implemented in `inst`, and that `inst` does not have any extraneous definitions.
-    */
+  /** Checks that every signature in `trt` is implemented in `inst`, and that `inst` does not have any extraneous definitions. */
   private def checkSigMatch(inst: TypedAst.Instance, root: TypedAst.Root)(implicit flix: Flix): List[InstanceError] = {
     val trt = root.traits(inst.trt.sym)
 
@@ -201,9 +187,7 @@ object Instances {
     sigMatchVal ::: extraDefVal
   }
 
-  /**
-    * Finds an instance of the trait for a given type.
-    */
+  /** Finds an instance of the trait for a given type. */
   def findInstanceForType(tpe: Type, trt: Symbol.TraitSym, root: TypedAst.Root)(implicit flix: Flix): Option[(Ast.Instance, Substitution)] = {
     val superInsts = root.traitEnv.get(trt).map(_.instances).getOrElse(Nil)
     // lazily find the instance whose type unifies and save the substitution
@@ -245,9 +229,7 @@ object Instances {
       }
   }
 
-  /**
-    * Reassembles an instance
-    */
+  /** Reassembles an instance */
   private def checkInstance(inst: TypedAst.Instance, root: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): List[InstanceError] = {
     val isTraitStable = inst.trt.loc.source.input.isStable
     val isInstanceStable = inst.loc.source.input.isStable
@@ -259,9 +241,7 @@ object Instances {
     checkSigMatch(inst, root) ::: checkOrphan(inst) ::: checkSuperInstances(inst, root)
   }
 
-  /**
-    * Reassembles a set of instances of the same trait.
-    */
+  /** Reassembles a set of instances of the same trait. */
   private def checkInstancesOfTrait(insts0: List[TypedAst.Instance], root: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): List[InstanceError] = {
 
     // Instances can be uniquely identified by their heads,

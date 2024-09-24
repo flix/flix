@@ -23,17 +23,13 @@ import org.json4s.JsonDSL._
 
 object CodeLensProvider {
 
-  /**
-    * Processes a codelens request.
-    */
+  /** Processes a codelens request. */
   def processCodeLens(uri: String)(implicit root: Root): JObject = {
     val codeLenses = getRunCodeLenses(uri) ::: getTestCodeLenses(uri)
     ("status" -> ResponseStatus.Success) ~ ("result" -> JArray(codeLenses.map(_.toJSON)))
   }
 
-  /**
-    * Returns code lenses for running entry points.
-    */
+  /** Returns code lenses for running entry points. */
   private def getRunCodeLenses(uri: String)(implicit root: Root): List[CodeLens] = {
     getEntryPoints(uri)(root).map {
       case sym =>
@@ -44,9 +40,7 @@ object CodeLensProvider {
     }
   }
 
-  /**
-    * Returns code lenses for running tests.
-    */
+  /** Returns code lenses for running tests. */
   private def getTestCodeLenses(uri: String)(implicit root: Root): List[CodeLens] = {
     getTests(uri)(root).map {
       case sym =>
@@ -56,53 +50,39 @@ object CodeLensProvider {
     }
   }
 
-  /**
-    * Returns all entry points in the given `uri`.
-    */
+  /** Returns all entry points in the given `uri`. */
   private def getEntryPoints(uri: String)(implicit root: Root): List[Symbol.DefnSym] = root.defs.foldLeft(List.empty[Symbol.DefnSym]) {
     case (acc, (sym, defn)) if matchesUri(uri, sym.loc) && isEntryPoint(defn.spec) => defn.sym :: acc
     case (acc, _) => acc
   }
 
-  /**
-    * Returns all tests in the given `uri`.
-    */
+  /** Returns all tests in the given `uri`. */
   private def getTests(uri: String)(implicit root: Root): List[Symbol.DefnSym] = root.defs.foldLeft(List.empty[Symbol.DefnSym]) {
     case (acc, (sym, defn)) if matchesUri(uri, sym.loc) && isEntryPoint(defn.spec) && isTest(defn.spec) => defn.sym :: acc
     case (acc, _) => acc
   }
 
-  /**
-    * Returns `true` if the given `spec` is an entry point.
-    */
+  /** Returns `true` if the given `spec` is an entry point. */
   private def isEntryPoint(s: Spec): Boolean = s.fparams match {
     case fparam :: Nil => isUnitType(fparam.tpe) && isPublic(s)
     case _ => false
   }
 
-  /**
-    * Returns `true` if the given `defn` is marked as a test.
-    */
+  /** Returns `true` if the given `defn` is marked as a test. */
   private def isTest(s: Spec): Boolean = s.ann.isTest
 
-  /**
-    * Returns `true` if the given type `tpe` is the Unit type.
-    */
+  /** Returns `true` if the given type `tpe` is the Unit type. */
   private def isUnitType(tpe: Type): Boolean = tpe.typeConstructor match {
     case Some(TypeConstructor.Unit) => true
     case _ => false
   }
 
-  /**
-    * Returns `true` if the given `defn` is marked as public
-    */
+  /** Returns `true` if the given `defn` is marked as public */
   private def isPublic(spec: Spec): Boolean = {
     spec.mod.isPublic
   }
 
-  /**
-    * Returns `true` if the given source location `loc` matches the given `uri`.
-    */
+  /** Returns `true` if the given source location `loc` matches the given `uri`. */
   private def matchesUri(uri: String, loc: SourceLocation): Boolean = uri == loc.source.name
 
 }

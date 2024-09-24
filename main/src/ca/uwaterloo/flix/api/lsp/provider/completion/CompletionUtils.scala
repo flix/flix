@@ -138,9 +138,7 @@ object CompletionUtils {
     s"$name("
   }
 
-  /**
-    * Returns a class object if the string is a class or removing the last "part" makes it a class
-    */
+  /** Returns a class object if the string is a class or removing the last "part" makes it a class */
   def classFromDotSeperatedString(clazz: String): Option[(Class[_], String)] = {
     // If the last charachter is . then this drops that
     // I.e if we have java.lang.String. this converts to java.lang.String
@@ -151,9 +149,7 @@ object CompletionUtils {
     classFromString(clazz1).orElse(classFromString(clazz2))
   }
 
-  /**
-    * Return a class object if the class exists
-    */
+  /** Return a class object if the class exists */
   def classFromString(clazz: String): Option[(Class[_], String)] = {
     try {
       Some((java.lang.Class.forName(clazz), clazz))

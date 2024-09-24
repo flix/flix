@@ -28,9 +28,7 @@ import ca.uwaterloo.flix.util.collection.Bimap
   */
 object TypeMinimization {
 
-  /**
-    * Minimizes the given type, reducing it to a more concise equivalent form.
-    */
+  /** Minimizes the given type, reducing it to a more concise equivalent form. */
   def minimizeType(t: Type): Type = t.kind match {
     case Kind.Eff => minimizeBoolAlg(t)
     case Kind.Bool => minimizeBoolAlg(t)
@@ -46,9 +44,7 @@ object TypeMinimization {
     }
   }
 
-  /**
-    * Minimizes the given scheme, reducing it to a more concise equivalent form.
-    */
+  /** Minimizes the given scheme, reducing it to a more concise equivalent form. */
   def minimizeScheme(sc: Scheme): Scheme = sc match {
     case Scheme(quantifiers, tconstrs, econstrs, base) =>
       val newBase = minimizeType(base)

@@ -23,28 +23,20 @@ import ca.uwaterloo.flix.util.collection.ListMap
 
 import scala.runtime.AbstractFunction3
 
-/**
-  * A proxy for implementations of unification as we transition to the new solver.
-  */
+/** A proxy for implementations of unification as we transition to the new solver. */
 object Unification {
 
-  /**
-    * Unifies the given variable `x` with the given non-variable type `tpe`.
-    */
+  /** Unifies the given variable `x` with the given non-variable type `tpe`. */
   def unifyVar(x: Type.Var, tpe: Type, renv: RigidityEnv)(implicit scope: Scope, flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError] = {
     OldStarUnification.unifyVar(x, tpe, renv)
   }
 
-  /**
-    * Unifies the two given types `tpe1` and `tpe2`.
-    */
+  /** Unifies the two given types `tpe1` and `tpe2`. */
   def unifyTypes(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit scope: Scope, flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError] = {
     OldStarUnification.unifyTypes(tpe1, tpe2, renv)
   }
 
-  /**
-    * Fully unifies the given types, returning None if there are unresolvable constraints.
-    */
+  /** Fully unifies the given types, returning None if there are unresolvable constraints. */
   def fullyUnifyTypes(tpe1: Type, tpe2: Type, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit scope: Scope, flix: Flix): Option[Substitution] = {
     OldStarUnification.unifyTypes(tpe1, tpe2, renv) match {
       case Result.Ok((subst, constrs)) => EqualityEnvironment.entailAll(Nil, constrs, renv, eqEnv).toHardResult.toOption.map {
@@ -54,18 +46,14 @@ object Unification {
     }
   }
 
-  /**
-    * Unifies the given types, but ignores any unresolved constraints from associated types.
-    */
+  /** Unifies the given types, but ignores any unresolved constraints from associated types. */
   def unifyTypesIgnoreLeftoverAssocs(tpe1: Type, tpe2: Type, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit scope: Scope, flix: Flix): Option[Substitution] = {
     OldStarUnification.unifyTypes(tpe1, tpe2, renv).toOption.map {
       case (subst, _) => subst
     }
   }
 
-  /**
-    * Returns true iff `tpe1` unifies with `tpe2`, without introducing equality constraints.
-    */
+  /** Returns true iff `tpe1` unifies with `tpe2`, without introducing equality constraints. */
   def unifiesWith(tpe1: Type, tpe2: Type, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit scope: Scope, flix: Flix): Boolean = {
     OldStarUnification.unifiesWith(tpe1, tpe2, renv, eqEnv)
   }

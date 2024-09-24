@@ -796,9 +796,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
   }
 }
 
-/**
-  * Note that CompilerSuite and LibrarySuite covers the positive testing of the parser well.
-  */
+/** Note that CompilerSuite and LibrarySuite covers the positive testing of the parser well. */
 class TestParserHappy extends AnyFunSuite with TestUtils {
   test("DetectRecord.01") {
     val input =

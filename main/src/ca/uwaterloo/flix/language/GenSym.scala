@@ -20,14 +20,10 @@ import java.util.concurrent.atomic.AtomicInteger
 
 final class GenSym() {
 
-  /**
-    * An internal counter.
-    */
+  /** An internal counter. */
   private val counter: AtomicInteger = new AtomicInteger(0)
 
-  /**
-    * Returns a freshly generated unique id.
-    */
+  /** Returns a freshly generated unique id. */
   def freshId(): Int = {
     counter.getAndIncrement()
   }

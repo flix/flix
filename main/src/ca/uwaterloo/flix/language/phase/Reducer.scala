@@ -175,9 +175,7 @@ object Reducer {
     }
   }
 
-  /**
-    * Companion object for [[LocalContext]].
-    */
+  /** Companion object for [[LocalContext]]. */
   private object LocalContext {
     def mk(): LocalContext = LocalContext(mutable.ArrayBuffer.empty, 0)
   }
@@ -196,16 +194,12 @@ object Reducer {
     */
   private case class SharedContext(anonClasses: ConcurrentLinkedQueue[AnonClass], defTypes: ConcurrentHashMap[MonoType, Unit])
 
-  /**
-    * Returns all types contained in the given `Effect`.
-    */
+  /** Returns all types contained in the given `Effect`. */
   private def typesOfEffect(e: Effect): Set[MonoType] = {
     e.ops.toSet.map(extractFunctionType)
   }
 
-  /**
-    * Returns the function type based `op` represents.
-    */
+  /** Returns the function type based `op` represents. */
   private def extractFunctionType(op: Op): MonoType = {
     val paramTypes = op.fparams.map(_.tpe)
     val resType = op.tpe

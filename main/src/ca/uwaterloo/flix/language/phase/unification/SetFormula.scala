@@ -9,9 +9,7 @@ import scala.collection.immutable.SortedSet
 
 sealed trait SetFormula {
 
-  /**
-    * Returns the free variables in `this` expression.
-    */
+  /** Returns the free variables in `this` expression. */
   final def freeVars: SortedSet[Int] = this match {
     case SetFormula.Cst(_) => SortedSet.empty
     case SetFormula.Var(x) => SortedSet(x)
@@ -33,9 +31,7 @@ sealed trait SetFormula {
     case SetFormula.Or(t1, t2) => t1.size + t2.size + 1
   }
 
-  /**
-    * Returns a human-readable string representation of `this` expression.
-    */
+  /** Returns a human-readable string representation of `this` expression. */
   override def toString: String = this match {
     case SetFormula.Cst(s) => s.map(_.toString).mkString("{", ", ", "}")
     case SetFormula.Var(x) => s"x$x"
@@ -61,24 +57,16 @@ object SetFormula {
 
   case class Or(f1: SetFormula, f2: SetFormula) extends SetFormula
 
-  /**
-    * Represents the empty set.
-    */
+  /** Represents the empty set. */
   val Empty: SetFormula = Cst(Set.empty)
 
-  /**
-    * Constructs the universe set.
-    */
+  /** Constructs the universe set. */
   def mkUni()(implicit univ: Set[Int]): SetFormula = Cst(univ)
 
-  /**
-    * Returns the constant set for the given `s`.
-    */
+  /** Returns the constant set for the given `s`. */
   def mkCst(s: Set[Int]): SetFormula = Cst(s)
 
-  /**
-    * Returns the negation of the set formula `tpe0`.
-    */
+  /** Returns the negation of the set formula `tpe0`. */
   def mkNot(f0: SetFormula)(implicit univ: Set[Int]): SetFormula = f0 match {
     case SetFormula.Cst(s) =>
       SetFormula.Cst(univ -- s)
@@ -89,9 +77,7 @@ object SetFormula {
     case _ => SetFormula.Not(f0)
   }
 
-  /**
-    * Returns the conjunction of the two set formulas `tpe1` and `tpe2`.
-    */
+  /** Returns the conjunction of the two set formulas `tpe1` and `tpe2`. */
   def mkAnd(f1: SetFormula, f2: SetFormula)(implicit univ: Set[Int]): SetFormula = (f1, f2) match {
     case (SetFormula.Cst(x1), x2) if x1 == univ =>
       x2
@@ -111,9 +97,7 @@ object SetFormula {
     case _ => SetFormula.And(f1, f2)
   }
 
-  /**
-    * Returns the disjunction of the two set formulas `tpe1` and `tpe2`.
-    */
+  /** Returns the disjunction of the two set formulas `tpe1` and `tpe2`. */
   def mkOr(f1: SetFormula, f2: SetFormula)(implicit univ: Set[Int]): SetFormula = (f1, f2) match {
     case (SetFormula.Cst(x1), _) if x1 == univ =>
       mkUni()
@@ -178,9 +162,7 @@ object SetFormula {
       }
   }
 
-  /**
-    * Returns a minimized type based on SetFormula minimization.
-    */
+  /** Returns a minimized type based on SetFormula minimization. */
   def minimizeType(tpe: Type, sym: Symbol.RestrictableEnumSym, univ: SortedSet[Symbol.RestrictableCaseSym], loc: SourceLocation): Type = {
     val (m, setFormulaUniv) = mkEnv(List(tpe), univ)
     val setFormula = fromCaseType(tpe, m, setFormulaUniv)
@@ -206,9 +188,7 @@ object SetFormula {
     case Or(f1, f2) => Or(substitute(f1, m), substitute(f2, m))
   }
 
-  /**
-    * Runs the function `fn` on all the variables in the formula.
-    */
+  /** Runs the function `fn` on all the variables in the formula. */
   def map(f: SetFormula)(fn: Int => SetFormula)(implicit univ: Set[Int]): SetFormula = f match {
     case Cst(s) => Cst(s)
     case Var(x) => fn(x)
@@ -217,9 +197,7 @@ object SetFormula {
     case Or(f1, f2) => mkOr(map(f1)(fn), map(f2)(fn))
   }
 
-  /**
-    * Creates an environment for mapping between proper types and formulas.
-    */
+  /** Creates an environment for mapping between proper types and formulas. */
   def mkEnv(ts: List[Type], univ: SortedSet[Symbol.RestrictableCaseSym]): (Bimap[VarOrCase, Int], Set[Int]) = {
     val vars = ts.flatMap(_.typeVars).map(_.sym).distinct.map(VarOrCase.Var.apply)
     val cases = (univ.toSet ++ ts.flatMap(_.cases)).map(VarOrCase.Case.apply)
@@ -235,9 +213,7 @@ object SetFormula {
     (Bimap(forward, backward), newUniv.toSet)
   }
 
-  /**
-    * Converts a rigidity environment to an equivalent environment for use with set formulas.
-    */
+  /** Converts a rigidity environment to an equivalent environment for use with set formulas. */
   def liftRigidityEnv(renv: RigidityEnv, env: Bimap[VarOrCase, Int]): Set[Int] = {
     // We use flatmap because if a var is not in the env,
     // then it is not relevant to the types.
@@ -294,25 +270,17 @@ object SetFormula {
     case Or(t1, t2) => Type.mkCaseUnion(toCaseType(t1, enumSym, m, loc), toCaseType(t2, enumSym, m, loc), enumSym, loc)
   }
 
-  /**
-    * Union of variable and case types.
-    */
+  /** Union of variable and case types. */
   sealed trait VarOrCase
 
   object VarOrCase {
-    /**
-      * A type variable.
-      */
+    /** A type variable. */
     case class Var(sym: Symbol.KindedTypeVarSym) extends VarOrCase
 
-    /**
-      * A Case constant.
-      */
+    /** A Case constant. */
     case class Case(sym: Symbol.RestrictableCaseSym) extends VarOrCase
 
-    /**
-      * Extracts the sym from the case.
-      */
+    /** Extracts the sym from the case. */
     def getCase(x: VarOrCase): Symbol.RestrictableCaseSym = x match {
       case Var(_) => throw InternalCompilerException("unexpected var", SourceLocation.Unknown)
       case Case(sym) => sym

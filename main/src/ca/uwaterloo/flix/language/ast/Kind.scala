@@ -20,9 +20,7 @@ import ca.uwaterloo.flix.language.fmt.FormatKind
 
 import scala.annotation.tailrec
 
-/**
-  * A kind represents the "type" of a type expression.
-  */
+/** A kind represents the "type" of a type expression. */
 sealed trait Kind {
 
   /**
@@ -35,9 +33,7 @@ sealed trait Kind {
     */
   def ->:(left: Kind): Kind = Kind.Arrow(left, this)
 
-  /**
-    * Returns a human readable representation of `this` kind.
-    */
+  /** Returns a human readable representation of `this` kind. */
   override def toString: String = FormatKind.formatKind(this)
 
 
@@ -59,59 +55,37 @@ object Kind {
     */
   case object WildCaseSet extends Kind
 
-  /**
-    * Represents the kind of types.
-    */
+  /** Represents the kind of types. */
   case object Star extends Kind
 
-  /**
-    * Represents the kind of effect sets.
-    */
+  /** Represents the kind of effect sets. */
   case object Eff extends Kind
 
-  /**
-    * Represents the kind of Boolean formulas
-    */
+  /** Represents the kind of Boolean formulas */
   case object Bool extends Kind
 
-  /**
-    * Represents the kind of record rows.
-    */
+  /** Represents the kind of record rows. */
   case object RecordRow extends Kind
 
-  /**
-    * Represents the kind of schema rows.
-    */
+  /** Represents the kind of schema rows. */
   case object SchemaRow extends Kind
 
-  /**
-    * Represents the kind of predicates.
-    */
+  /** Represents the kind of predicates. */
   case object Predicate extends Kind
 
-  /**
-   * Represents the kind of a Java constructor, method, or field.
-   */
+  /** Represents the kind of a Java constructor, method, or field. */
   case object Jvm extends Kind
 
-  /**
-    * Represents the kind of sets of restrictable enum cases.
-    */
+  /** Represents the kind of sets of restrictable enum cases. */
   case class CaseSet(sym: Symbol.RestrictableEnumSym) extends Kind
 
-  /**
-    * Represents the kind of type expressions `k1 -> k2`.
-    */
+  /** Represents the kind of type expressions `k1 -> k2`. */
   case class Arrow(k1: Kind, k2: Kind) extends Kind
 
-  /**
-    * Represents an error kind.
-    */
+  /** Represents an error kind. */
   case object Error extends Kind
 
-  /**
-    * Returns the kind: * -> (* ... -> *)
-    */
+  /** Returns the kind: * -> (* ... -> *) */
   def mkArrow(length: Int): Kind = {
     if (length == 0) {
       return Star
@@ -122,26 +96,20 @@ object Kind {
     }
   }
 
-  /**
-    * Returns the kind: k1 -> (k2 ... -> (kn -> *)) for the given list of kinds `ks`.
-    */
+  /** Returns the kind: k1 -> (k2 ... -> (kn -> *)) for the given list of kinds `ks`. */
   def mkArrow(ks: List[Kind]): Kind = ks match {
     case Nil => Star
     case x :: xs => Arrow(x, mkArrow(xs))
   }
 
-  /**
-    * Returns the base of an arrow kind.
-    */
+  /** Returns the base of an arrow kind. */
   @tailrec
   def base(k: Kind): Kind = k match {
     case Arrow(k1, _) => base(k1)
     case _ => k
   }
 
-  /**
-    * Returns the arguments of an arrow kind.
-    */
+  /** Returns the arguments of an arrow kind. */
   def kindArgs(k: Kind): List[Kind] = k match {
     case Arrow(k1, k2) => k1 :: kindArgs(k2)
     case _ => Nil

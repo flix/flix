@@ -125,89 +125,55 @@ object Bootstrap {
     Validation.success(())
   }
 
-  /**
-    * Returns the path to the artifact directory relative to the given path `p`.
-    */
+  /** Returns the path to the artifact directory relative to the given path `p`. */
   private def getArtifactDirectory(p: Path): Path = p.resolve("./artifact/").normalize()
 
-  /**
-    * Returns the path to the library directory relative to the given path `p`.
-    */
+  /** Returns the path to the library directory relative to the given path `p`. */
   def getLibraryDirectory(p: Path): Path = p.resolve("./lib/").normalize()
 
-  /**
-    * Returns the path to the source directory relative to the given path `p`.
-    */
+  /** Returns the path to the source directory relative to the given path `p`. */
   private def getSourceDirectory(p: Path): Path = p.resolve("./src/").normalize()
 
-  /**
-    * Returns the path to the test directory relative to the given path `p`.
-    */
+  /** Returns the path to the test directory relative to the given path `p`. */
   private def getTestDirectory(p: Path): Path = p.resolve("./test/").normalize()
 
-  /**
-    * Returns the path to the build directory relative to the given path `p`.
-    */
+  /** Returns the path to the build directory relative to the given path `p`. */
   private def getBuildDirectory(p: Path): Path = p.resolve("./build/").normalize()
 
-  /**
-    * Returns the directory of the output .class-files relative to the given path `p`.
-    */
+  /** Returns the directory of the output .class-files relative to the given path `p`. */
   private def getClassDirectory(p: Path): Path = getBuildDirectory(p).resolve("./class/")
 
-  /**
-    * Returns the path to the LICENSE file relative to the given path `p`.
-    */
+  /** Returns the path to the LICENSE file relative to the given path `p`. */
   private def getLicenseFile(p: Path): Path = p.resolve("./LICENSE.md").normalize()
 
-  /**
-    * Returns the path to the README file relative to the given path `p`.
-    */
+  /** Returns the path to the README file relative to the given path `p`. */
   private def getReadmeFile(p: Path): Path = p.resolve("./README.md").normalize()
 
-  /**
-    * Returns the path to the main source file relative to the given path `p`.
-    */
+  /** Returns the path to the main source file relative to the given path `p`. */
   private def getMainSourceFile(p: Path): Path = getSourceDirectory(p).resolve("./Main.flix").normalize()
 
-  /**
-    * Returns the path to the main test file relative to the given path `p`.
-    */
+  /** Returns the path to the main test file relative to the given path `p`. */
   private def getMainTestFile(p: Path): Path = getTestDirectory(p).resolve("./TestMain.flix").normalize()
 
-  /**
-    * Returns the path to the Manifest file relative to the given path `p`.
-    */
+  /** Returns the path to the Manifest file relative to the given path `p`. */
   private def getManifestFile(p: Path): Path = p.resolve("./flix.toml").normalize()
 
-  /**
-    * Returns the path to the .gitignore file relative to the given path `p`.
-    */
+  /** Returns the path to the .gitignore file relative to the given path `p`. */
   private def getGitIgnoreFile(p: Path): Path = p.resolve("./.gitignore").normalize()
 
-  /**
-    * Returns the path to the jar file based on the given path `p`.
-    */
+  /** Returns the path to the jar file based on the given path `p`. */
   private def getJarFile(p: Path): Path = getArtifactDirectory(p).resolve(getPackageName(p) + ".jar").normalize()
 
-  /**
-    * Returns the package name based on the given path `p`.
-    */
+  /** Returns the package name based on the given path `p`. */
   private def getPackageName(p: Path): String = p.toAbsolutePath.normalize().getFileName.toString
 
-  /**
-    * Returns the path to the pkg file based on the given path `p`.
-    */
+  /** Returns the path to the pkg file based on the given path `p`. */
   private def getPkgFile(p: Path): Path = getArtifactDirectory(p).resolve(getPackageName(p) + ".fpkg").normalize()
 
-  /**
-    * Returns `true` if the given path `p` is a jar-file.
-    */
+  /** Returns `true` if the given path `p` is a jar-file. */
   private def isJarFile(p: Path): Boolean = p.getFileName.toString.endsWith(".jar") && isZipArchive(p)
 
-  /**
-    * Returns `true` if the given path `p` is a fpkg-file.
-    */
+  /** Returns `true` if the given path `p` is a fpkg-file. */
   def isPkgFile(p: Path): Boolean = p.getFileName.toString.endsWith(".fpkg") && isZipArchive(p)
 
   /**
@@ -222,9 +188,7 @@ object Bootstrap {
     }
   }
 
-  /**
-    * Creates a new text file at the given path `p` with the given content `s` if the file does not already exist.
-    */
+  /** Creates a new text file at the given path `p` with the given content `s` if the file does not already exist. */
   private def newFileIfAbsent(p: Path)(s: String)(implicit out: PrintStream): Unit = {
     if (!Files.exists(p)) {
       out.println(s"Creating '$p'.")
@@ -242,18 +206,14 @@ object Bootstrap {
     */
   private val ENOUGH_OLD_CONSTANT_TIME: Long = new GregorianCalendar(2014, Calendar.JUNE, 27, 0, 0, 0).getTimeInMillis
 
-  /**
-    * Adds an entry to the given zip file.
-    */
+  /** Adds an entry to the given zip file. */
   private def addToZip(zip: ZipOutputStream, name: String, p: Path): Unit = {
     if (Files.exists(p)) {
       addToZip(zip, name, Files.readAllBytes(p))
     }
   }
 
-  /**
-    * Adds an entry to the given zip file.
-    */
+  /** Adds an entry to the given zip file. */
   private def addToZip(zip: ZipOutputStream, name: String, d: Array[Byte]): Unit = {
     val entry = new ZipEntry(name)
     entry.setTime(ENOUGH_OLD_CONSTANT_TIME)
@@ -262,9 +222,7 @@ object Bootstrap {
     zip.closeEntry()
   }
 
-  /**
-    * Returns `true` if the given path `p` is a zip-archive.
-    */
+  /** Returns `true` if the given path `p` is a zip-archive. */
   private def isZipArchive(p: Path): Boolean = {
     if (Files.exists(p) && Files.isReadable(p) && Files.isRegularFile(p)) {
       // Read the first four bytes of the file.
@@ -288,15 +246,11 @@ object Bootstrap {
   private def convertPathToRelativeFileName(root: Path, path: Path): String =
     root.relativize(path).toString.replace('\\', '/')
 
-  /**
-    * Returns all files in the given path `p` ending with .`ext`.
-    */
+  /** Returns all files in the given path `p` ending with .`ext`. */
   private def getAllFilesWithExt(p: Path, ext: String): List[Path] =
     getAllFiles(p).filter(p => p.getFileName.toString.endsWith(s".$ext"))
 
-  /**
-    * Returns all files in the given path `p`.
-    */
+  /** Returns all files in the given path `p`. */
   private def getAllFiles(p: Path): List[Path] = {
     if (Files.isReadable(p) && Files.isDirectory(p)) {
       val visitor = new FileVisitor
@@ -307,9 +261,7 @@ object Bootstrap {
     }
   }
 
-  /**
-    * Returns all .flix files directly in the directory given by `p`.
-    */
+  /** Returns all .flix files directly in the directory given by `p`. */
   private def getAllFlixFilesHere(path: Path): List[Path] = {
     val files = path.toFile.listFiles()
     if (files == null) {
@@ -471,16 +423,12 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     timestamps = currentSources.map(f => f -> f.toFile.lastModified).toMap
   }
 
-  /**
-    * Returns true if the timestamp of the given source file has changed since the last reload.
-    */
+  /** Returns true if the timestamp of the given source file has changed since the last reload. */
   private def hasChanged(file: Path) = {
     !(timestamps contains file) || (timestamps(file) != file.toFile.lastModified())
   }
 
-  /**
-    * Type checks the source files for the project.
-    */
+  /** Type checks the source files for the project. */
   def check(flix: Flix): Validation[Unit, BootstrapError] = {
     // Add sources and packages.
     reconfigureFlix(flix)
@@ -491,9 +439,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }
   }
 
-  /**
-    * Builds (compiles) the source files for the project.
-    */
+  /** Builds (compiles) the source files for the project. */
   def build(flix: Flix): Validation[CompilationResult, BootstrapError] = {
     // Configure a new Flix object.
     val newOptions = flix.options.copy(output = Some(Bootstrap.getBuildDirectory(projectPath)))
@@ -510,9 +456,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }
   }
 
-  /**
-    * Builds a jar package for the project.
-    */
+  /** Builds a jar package for the project. */
   def buildJar()(implicit formatter: Formatter): Validation[Unit, BootstrapError] = {
 
     // The path to the jar file.
@@ -625,9 +569,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }
   }
 
-  /**
-    * Builds a flix package for the project.
-    */
+  /** Builds a flix package for the project. */
   def buildPkg()(implicit formatter: Formatter): Validation[Unit, BootstrapError] = {
 
     // Check that there is a `flix.toml` file.
@@ -669,9 +611,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }
   }
 
-  /**
-    * Generates API documentation.
-    */
+  /** Generates API documentation. */
   def doc(flix: Flix): Validation[Unit, BootstrapError] = {
     // Add sources and packages.
     reconfigureFlix(flix)
@@ -692,9 +632,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }
   }
 
-  /**
-    * Runs the main function in flix package for the project.
-    */
+  /** Runs the main function in flix package for the project. */
   def run(flix: Flix, args: Array[String]): Validation[Unit, BootstrapError] = {
     Validation.mapN(build(flix)) {
       _.getMain match {
@@ -704,9 +642,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }
   }
 
-  /**
-    * Runs all tests in the flix package for the project.
-    */
+  /** Runs all tests in the flix package for the project. */
   def test(flix: Flix): Validation[Unit, BootstrapError] = {
     flatMapN(build(flix)) {
       compilationResult =>
@@ -717,9 +653,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }
   }
 
-  /**
-    * Package the current project and release it on GitHub.
-    */
+  /** Package the current project and release it on GitHub. */
   def release(flix: Flix)(implicit out: PrintStream): Validation[Unit, BootstrapError] = {
     implicit val formatter: Formatter = flix.getFormatter
 

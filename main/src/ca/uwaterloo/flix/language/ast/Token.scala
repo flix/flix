@@ -48,8 +48,6 @@ case class Token(kind: TokenKind, src: Source, start: Int, end: Int, sp1: Source
     */
   def mkSourceLocation(isReal: Boolean = true): SourceLocation = SourceLocation(isReal, sp1, sp2)
 
-  /**
-    * Returns a string representation of this token. Must only be used for debugging.
-    */
+  /** Returns a string representation of this token. Must only be used for debugging. */
   override def toString: String = s"Token($kind, $text, ${sp1.line}, ${sp1.col}, ${sp2.line}, ${sp2.col})"
 }

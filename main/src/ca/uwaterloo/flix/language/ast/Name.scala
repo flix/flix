@@ -18,14 +18,10 @@ package ca.uwaterloo.flix.language.ast
 
 object Name {
 
-  /**
-    * The root namespace.
-    */
+  /** The root namespace. */
   val RootNS: NName = NName(Nil, SourceLocation.Unknown)
 
-  /**
-    * Returns the given string `fqn` as a qualified name.
-    */
+  /** Returns the given string `fqn` as a qualified name. */
   def mkQName(fqn: String, loc: SourceLocation = SourceLocation.Unknown): QName = {
     val split = fqn.split('.')
     if (split.length == 1)
@@ -35,36 +31,26 @@ object Name {
     mkQName(parts, name, loc)
   }
 
-  /**
-    * Creates a qualified name from the given namespace `ns` and name `name`.
-    */
+  /** Creates a qualified name from the given namespace `ns` and name `name`. */
   def mkQName(ns: List[String], name: String, loc: SourceLocation): QName = {
     val nname = NName(ns.map(t => Name.Ident(t, loc)), loc)
     val ident = Ident(name, loc)
     QName(nname, ident, loc)
   }
 
-  /**
-    * Converts the given identifier `ident` to a label.
-    */
+  /** Converts the given identifier `ident` to a label. */
   def mkLabel(ident: Ident): Label = Label(ident.name, ident.loc)
 
-  /**
-    * Converts the given identifier `ident` to a predicate name.
-    */
+  /** Converts the given identifier `ident` to a predicate name. */
   def mkPred(ident: Ident): Pred = Pred(ident.name, ident.loc)
 
-  /**
-    * Builds an unlocated name from the given namespace parts.
-    */
+  /** Builds an unlocated name from the given namespace parts. */
   def mkUnlocatedNName(parts: List[String]): NName = {
     val idents = parts.map(Ident(_, SourceLocation.Unknown))
     NName(idents, SourceLocation.Unknown)
   }
 
-  /**
-    * Returns true if the given string represents a wildcard name.
-    */
+  /** Returns true if the given string represents a wildcard name. */
   def isWild(name: String): Boolean = name.startsWith("_")
 
   /**
@@ -74,37 +60,25 @@ object Name {
     * @param loc  the source location of the identifier.
     */
   case class Ident(name: String, loc: SourceLocation) {
-    /**
-      * Returns `true`if `this` identifier is a wildcard.
-      */
+    /** Returns `true`if `this` identifier is a wildcard. */
     def isWild: Boolean = name.startsWith("_")
 
-    /**
-      * Returns `true` if `this` identifier is uppercase.
-      */
+    /** Returns `true` if `this` identifier is uppercase. */
     def isUpper: Boolean = name.charAt(0).isUpper
 
-    /**
-      * Returns `true` if `this` identifier is lowercase.
-      */
+    /** Returns `true` if `this` identifier is lowercase. */
     def isLower: Boolean = name.charAt(0).isLower
 
-    /**
-      * Two identifiers are equal if they have the same name.
-      */
+    /** Two identifiers are equal if they have the same name. */
     override def hashCode(): Int = name.hashCode
 
-    /**
-      * Two identifiers are equal if they have the same name.
-      */
+    /** Two identifiers are equal if they have the same name. */
     override def equals(o: Any): Boolean = o match {
       case that: Ident => this.name == that.name
       case _ => false
     }
 
-    /**
-      * Human readable representation.
-      */
+    /** Human readable representation. */
     override def toString: String = name
   }
 
@@ -115,32 +89,22 @@ object Name {
     * @param loc    the source location of the namespace.
     */
   case class NName(idents: List[Ident], loc: SourceLocation) {
-    /**
-      * Returns `true` if this is the root namespace.
-      */
+    /** Returns `true` if this is the root namespace. */
     def isRoot: Boolean = idents.isEmpty
 
-    /**
-      * Returns the string parts of the namespace.
-      */
+    /** Returns the string parts of the namespace. */
     def parts: List[String] = idents.map(_.name)
 
-    /**
-      * Returns `true` if `this` namespace equals `that`.
-      */
+    /** Returns `true` if `this` namespace equals `that`. */
     override def equals(o: scala.Any): Boolean = o match {
       case that: NName => this.parts == that.parts
       case _ => false
     }
 
-    /**
-      * Returns the hash code of `this` namespace.
-      */
+    /** Returns the hash code of `this` namespace. */
     override def hashCode(): Int = parts.hashCode()
 
-    /**
-      * Human readable representation.
-      */
+    /** Human readable representation. */
     override def toString: String = if (idents.isEmpty) "" else idents.mkString(".")
   }
 
@@ -152,14 +116,10 @@ object Name {
     * @param loc       the source location of the qualified name.
     */
   case class QName(namespace: NName, ident: Ident, loc: SourceLocation) {
-    /**
-      * Returns `true` if this name is unqualified (i.e. has no namespace).
-      */
+    /** Returns `true` if this name is unqualified (i.e. has no namespace). */
     def isUnqualified: Boolean = namespace.isRoot
 
-    /**
-      * Human readable representation.
-      */
+    /** Human readable representation. */
     override def toString: String = if (isUnqualified) ident.toString else namespace.toString + "." + ident
   }
 
@@ -171,22 +131,16 @@ object Name {
     */
   case class Label(name: String, loc: SourceLocation) {
 
-    /**
-      * Two label names are equal if their names are the same.
-      */
+    /** Two label names are equal if their names are the same. */
     override def equals(o: Any): Boolean = o match {
       case that: Label => this.name == that.name
       case _ => false
     }
 
-    /**
-      * Two label names are equal if their names are the same.
-      */
+    /** Two label names are equal if their names are the same. */
     override def hashCode(): Int = name.hashCode
 
-    /**
-      * Human readable representation.
-      */
+    /** Human readable representation. */
     override def toString: String = name
   }
 
@@ -198,22 +152,16 @@ object Name {
    */
   case class StructField(name: String, loc: SourceLocation) {
 
-    /**
-     * Two struct field names are equal if their names are the same.
-     */
+    /** Two struct field names are equal if their names are the same. */
     override def equals(o: Any): Boolean = o match {
       case that: StructField => this.name == that.name
       case _ => false
     }
 
-    /**
-     * Two struct field names are equal if their names are the same.
-     */
+    /** Two struct field names are equal if their names are the same. */
     override def hashCode(): Int = name.hashCode
 
-    /**
-     * Human readable representation.
-     */
+    /** Human readable representation. */
     override def toString: String = name
   }
 
@@ -225,22 +173,16 @@ object Name {
     */
   case class Pred(name: String, loc: SourceLocation) {
 
-    /**
-      * Two predicate names are equal if their names are the same.
-      */
+    /** Two predicate names are equal if their names are the same. */
     override def equals(o: Any): Boolean = o match {
       case that: Pred => this.name == that.name
       case _ => false
     }
 
-    /**
-      * Two predicate names are equal if their names are the same.
-      */
+    /** Two predicate names are equal if their names are the same. */
     override def hashCode(): Int = name.hashCode
 
-    /**
-      * Human readable representation.
-      */
+    /** Human readable representation. */
     override def toString: String = name
   }
 
@@ -252,22 +194,16 @@ object Name {
    */
   case class Field(name: String, loc: SourceLocation) {
 
-    /**
-     * Two label names are equal if their names are the same.
-     */
+    /** Two label names are equal if their names are the same. */
     override def equals(o: Any): Boolean = o match {
       case that: Label => this.name == that.name
       case _ => false
     }
 
-    /**
-     * Two label names are equal if their names are the same.
-     */
+    /** Two label names are equal if their names are the same. */
     override def hashCode(): Int = name.hashCode
 
-    /**
-     * Human readable representation.
-     */
+    /** Human readable representation. */
     override def toString: String = name
   }
 
@@ -279,9 +215,7 @@ object Name {
     */
   case class JavaName(fqn: Seq[String], loc: SourceLocation) {
 
-    /**
-      * Human readable representation.
-      */
+    /** Human readable representation. */
     override def toString: String = fqn.mkString(".")
   }
 }

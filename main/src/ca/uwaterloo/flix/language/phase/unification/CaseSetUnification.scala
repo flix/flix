@@ -27,9 +27,7 @@ import scala.collection.immutable.SortedSet
 
 object CaseSetUnification {
 
-  /**
-    * Returns the most general unifier of the two given set formulas `tpe1` and `tpe2`.
-    */
+  /** Returns the most general unifier of the two given set formulas `tpe1` and `tpe2`. */
   def unify(tpe1: Type, tpe2: Type, renv0: RigidityEnv, cases: SortedSet[Symbol.RestrictableCaseSym], enumSym: Symbol.RestrictableEnumSym)(implicit scope: Scope, flix: Flix): Result[Substitution, UnificationError] = {
     ///
     /// Perform aggressive matching to optimize for common cases.
@@ -64,9 +62,7 @@ object CaseSetUnification {
     }
   }
 
-  /**
-    * Returns the most general unifier of the two given set formulas `tpe1` and `tpe2`.
-    */
+  /** Returns the most general unifier of the two given set formulas `tpe1` and `tpe2`. */
   private def booleanUnification(tpe1: SetFormula, tpe2: SetFormula, renv: Set[Int], univ: Set[Int], sym: Symbol.RestrictableEnumSym, env: Bimap[VarOrCase, Int])(implicit flix: Flix): Result[CaseSetSubstitution, UnificationError] = {
     // The boolean expression we want to show is 0.
     val query = minimize(mkEq(tpe1, tpe2)(univ))(univ)
@@ -123,9 +119,7 @@ object CaseSetUnification {
     synthVars ::: realVars
   }
 
-  /**
-    * Performs successive variable elimination on the given set expression `f`.
-    */
+  /** Performs successive variable elimination on the given set expression `f`. */
   private def successiveVariableElimination(f: SetFormula, fvs: List[Int])(implicit univ: Set[Int], flix: Flix): CaseSetSubstitution = fvs match {
     case Nil =>
       // Determine if f is necessarily empty when all (rigid) variables and constants are made flexible.
@@ -145,20 +139,14 @@ object CaseSetUnification {
       st ++ se
   }
 
-  /**
-    * An exception thrown to indicate that boolean unification failed.
-    */
+  /** An exception thrown to indicate that boolean unification failed. */
   private case object SetUnificationException extends RuntimeException
 
-  /**
-    * To unify two set formulas p and q it suffices to unify t = (p ∧ ¬q) ∨ (¬p ∧ q) and check t = 0.
-    */
+  /** To unify two set formulas p and q it suffices to unify t = (p ∧ ¬q) ∨ (¬p ∧ q) and check t = 0. */
   private def mkEq(p: SetFormula, q: SetFormula)(implicit univ: Set[Int]): SetFormula =
     mkOr(mkAnd(p, mkNot(q)), mkAnd(mkNot(p), q))
 
-  /**
-    * An atom is a constant or a variable.
-    */
+  /** An atom is a constant or a variable. */
   private sealed trait Atom
 
   private object Atom {
@@ -167,9 +155,7 @@ object CaseSetUnification {
     case class Case(sym: Int) extends Atom
   }
 
-  /**
-    * A literal is a negated or un-negated atom.
-    */
+  /** A literal is a negated or un-negated atom. */
   private sealed trait Literal
 
   private object Literal {
@@ -178,9 +164,7 @@ object CaseSetUnification {
     case class Negative(atom: Atom) extends Literal
   }
 
-  /**
-    * A DNF intersection is a set of literals.
-    */
+  /** A DNF intersection is a set of literals. */
   private type Intersection = Set[Literal]
 
   /**
@@ -193,20 +177,14 @@ object CaseSetUnification {
   private object Dnf {
     case class Union(inters: Set[Intersection]) extends Dnf // TODO should be a list to avoid extra comparisons?
 
-    /**
-      * The bottom value is an empty union.
-      */
+    /** The bottom value is an empty union. */
     val Empty = Union(Set())
 
-    /**
-      * The top value is an empty intersection.
-      */
+    /** The top value is an empty intersection. */
     val All = Union(Set(Set()))
   }
 
-  /**
-    * An NNF formula is a formula where all negations are on atoms.
-    */
+  /** An NNF formula is a formula where all negations are on atoms. */
   private sealed trait Nnf
 
   private object Nnf {
@@ -221,18 +199,14 @@ object CaseSetUnification {
     case object All extends Nnf
   }
 
-  /**
-    * Converts the given type to DNF
-    */
+  /** Converts the given type to DNF */
   private def dnf(t: SetFormula)(implicit univ: Set[Int]): Dnf = {
     val n = nnf(t)
     val d = nnfToDnf(n)
     d
   }
 
-  /**
-    * Converts the given type to NNF.
-    */
+  /** Converts the given type to NNF. */
   private def nnf(t: SetFormula)(implicit univ: Set[Int]): Nnf = t match {
     case Cst(syms) =>
       val lits: Set[Nnf] = syms.map(sym => Nnf.Singleton(Literal.Positive(Atom.Case(sym))))
@@ -243,9 +217,7 @@ object CaseSetUnification {
     case And(tpe1, tpe2) => Nnf.Intersection(nnf(tpe1), nnf(tpe2))
   }
 
-  /**
-    * Converts the complement of the given type to NNF.
-    */
+  /** Converts the complement of the given type to NNF. */
   private def nnfNot(t: SetFormula)(implicit univ: Set[Int]): Nnf = t match {
     case Cst(syms) =>
       val lits: Set[Nnf] = syms.map(sym => Nnf.Singleton(Literal.Negative(Atom.Case(sym))))
@@ -262,9 +234,7 @@ object CaseSetUnification {
     )
   }
 
-  /**
-    * Converts the given type from NNF to DNF.
-    */
+  /** Converts the given type from NNF to DNF. */
   private def nnfToDnf(t: Nnf): Dnf = t match {
     case Nnf.Union(tpe1, tpe2) => union(nnfToDnf(tpe1), nnfToDnf(tpe2))
     case Nnf.Intersection(tpe1, tpe2) => intersect(nnfToDnf(tpe1), nnfToDnf(tpe2))
@@ -273,9 +243,7 @@ object CaseSetUnification {
     case Nnf.All => Dnf.All
   }
 
-  /**
-    * Calculates the intersection of two DNF sets.
-    */
+  /** Calculates the intersection of two DNF sets. */
   private def intersect(t1: Dnf, t2: Dnf): Dnf = (t1, t2) match {
     case (Dnf.Union(inters1), Dnf.Union(inters2)) =>
       val inters = for {
@@ -285,16 +253,12 @@ object CaseSetUnification {
       Dnf.Union(inters)
   }
 
-  /**
-    * Calculates the union of two DNF sets.
-    */
+  /** Calculates the union of two DNF sets. */
   private def union(t1: Dnf, t2: Dnf): Dnf = (t1, t2) match {
     case (Dnf.Union(inters1), Dnf.Union(inters2)) => Dnf.Union(inters1 ++ inters2)
   }
 
-  /**
-    * Returns true if the given DNF set represents an empty set.
-    */
+  /** Returns true if the given DNF set represents an empty set. */
   private def isEmpty(t1: Dnf)(implicit univ: Set[Int]): Boolean = t1 match {
     case Dnf.Union(inters) => inters.forall(isEmptyIntersection)
   }

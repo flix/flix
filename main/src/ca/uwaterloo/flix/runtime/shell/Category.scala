@@ -19,30 +19,20 @@ import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext, Source}
 import ca.uwaterloo.flix.language.phase.Lexer
 import ca.uwaterloo.flix.util.Validation
 
-/**
-  * A common super-type for the syntactic category of a source code fragment.
-  */
+/** A common super-type for the syntactic category of a source code fragment. */
 sealed trait Category
 
 object Category {
-  /**
-    * Represents source code that is a declaration.
-    */
+  /** Represents source code that is a declaration. */
   case object Decl extends Category
 
-  /**
-    * Represents source code that is an expression.
-    */
+  /** Represents source code that is an expression. */
   case object Expr extends Category
 
-  /**
-    * Represents source code whose category cannot be determined.
-    */
+  /** Represents source code whose category cannot be determined. */
   case object Unknown extends Category
 
-  /**
-    * Returns the syntactic category of the given source code string `s`.
-    */
+  /** Returns the syntactic category of the given source code string `s`. */
   def categoryOf(s: String): Category = {
     val input = Input.Text("<shell>", s, stable = false, SecurityContext.AllPermissions)
     val source = Source(input, s.toCharArray)

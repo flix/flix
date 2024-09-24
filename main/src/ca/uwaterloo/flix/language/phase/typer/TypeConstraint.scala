@@ -18,9 +18,7 @@ package ca.uwaterloo.flix.language.phase.typer
 import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type}
 
 
-/**
-  * A constraint generated via type inference.
-  */
+/** A constraint generated via type inference. */
 sealed trait TypeConstraint {
 
   /**
@@ -45,9 +43,7 @@ sealed trait TypeConstraint {
     case TypeConstraint.Purification(sym, eff1, eff2, _, nested) => s"$eff1 ~ ($eff2)[$sym ↦ Pure] ∧ $nested"
   }
 
-  /**
-    * Returns the number of type variables in the constraint.
-    */
+  /** Returns the number of type variables in the constraint. */
   def numVars: Int = this match {
     case TypeConstraint.Equality(tpe1, tpe2, _) => tpe1.typeVars.size + tpe2.typeVars.size
     case TypeConstraint.Trait(_, tpe, _) => tpe.typeVars.size
@@ -100,24 +96,16 @@ object TypeConstraint {
 
   object Provenance {
 
-    /**
-      * The constraint indicates that the left type is the expected type, while the right type is the actual type.
-      */
+    /** The constraint indicates that the left type is the expected type, while the right type is the actual type. */
     case class ExpectType(expected: Type, actual: Type, loc: SourceLocation) extends Provenance
 
-    /**
-      * The constraint indicates that the left effect is the expected effect, while the right effect is the actual effect.
-      */
+    /** The constraint indicates that the left effect is the expected effect, while the right effect is the actual effect. */
     case class ExpectEffect(expected: Type, actual: Type, loc: SourceLocation) extends Provenance
 
-    /**
-      * The constraint indicates that the left type is the expected type of the `n`th argument to a function.
-      */
+    /** The constraint indicates that the left type is the expected type of the `n`th argument to a function. */
     case class ExpectArgument(expected: Type, actual: Type, sym: Symbol, num: Int, loc: SourceLocation) extends Provenance
 
-    /**
-      * The constraint indicates that the types must match.
-      */
+    /** The constraint indicates that the types must match. */
     case class Match(tpe1: Type, tpe2: Type, loc: SourceLocation) extends Provenance
   }
 }

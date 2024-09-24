@@ -15,9 +15,7 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
-/**
-  * Represents a `DiagnosticTag` in LSP.
-  */
+/** Represents a `DiagnosticTag` in LSP. */
 sealed trait DiagnosticTag {
   def toInt: Int = this match {
     case DiagnosticTag.Unnecessary => 1

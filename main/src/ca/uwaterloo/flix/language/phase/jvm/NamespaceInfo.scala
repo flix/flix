@@ -19,24 +19,16 @@ package ca.uwaterloo.flix.language.phase.jvm
 import ca.uwaterloo.flix.language.ast.ReducedAst.Def
 import ca.uwaterloo.flix.language.ast.Symbol
 
-/**
-  * Meta information about a namespace.
-  */
+/** Meta information about a namespace. */
 case class NamespaceInfo(ns: List[String], defs: Map[Symbol.DefnSym, Def]) {
 
-  /**
-    * Returns `true` if `this` is the root namespace.
-    */
+  /** Returns `true` if `this` is the root namespace. */
   def isRoot: Boolean = ns.isEmpty
 
-  /**
-    * Returns the hash code of `this` namespace.
-    */
+  /** Returns the hash code of `this` namespace. */
   override def hashCode(): Int = ns.hashCode()
 
-  /**
-    * Returns `true` if the given `obj` is the same namespace as `this`.
-    */
+  /** Returns `true` if the given `obj` is the same namespace as `this`. */
   override def equals(obj: scala.Any): Boolean = obj match {
     case that: NamespaceInfo => this.ns == that.ns
     case _ => false

@@ -15,21 +15,15 @@
  */
 package ca.uwaterloo.flix.language.ast.shared
 
-/**
-  * A common super-type for the polarity of an atom.
-  */
+/** A common super-type for the polarity of an atom. */
 sealed trait Polarity
 
 object Polarity {
 
-  /**
-    * The atom is positive.
-    */
+  /** The atom is positive. */
   case object Positive extends Polarity
 
-  /**
-    * The atom is negative.
-    */
+  /** The atom is negative. */
   case object Negative extends Polarity
 
 }

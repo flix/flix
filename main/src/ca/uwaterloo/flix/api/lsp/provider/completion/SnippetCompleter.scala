@@ -21,9 +21,7 @@ import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.SnippetCompletio
 import ca.uwaterloo.flix.language.ast.TypedAst
 
 object SnippetCompleter {
-  /**
-    * Returns a List of Completion for snippet.
-    */
+  /** Returns a List of Completion for snippet. */
   def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[SnippetCompletion] = {
     List(
       // NB: Please keep the list alphabetically sorted.

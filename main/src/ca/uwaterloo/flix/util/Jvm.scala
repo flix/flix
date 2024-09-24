@@ -37,15 +37,11 @@ object Jvm {
     }
   }
 
-  /**
-    * Returns `true` if `member` is a static member ([[Field]] and [[Method]] extends [[Member]]).
-    */
+  /** Returns `true` if `member` is a static member ([[Field]] and [[Method]] extends [[Member]]). */
   def isStatic(member: Member): Boolean =
     java.lang.reflect.Modifier.isStatic(member.getModifiers)
 
-  /**
-    * Returns `true` if `member` is an instance member ([[Field]] and [[Method]] extends [[Member]]).
-    */
+  /** Returns `true` if `member` is an instance member ([[Field]] and [[Method]] extends [[Member]]). */
   def isInstance(member: Member): Boolean =
     !isStatic(member)
 
@@ -57,9 +53,7 @@ object Jvm {
   def getMethods(clazz: Class[?]): List[Method] =
     getMethods(clazz, static = true, instance = true)
 
-  /**
-    * Returns the static methods of the class.
-    */
+  /** Returns the static methods of the class. */
   def getStaticMethods(clazz: Class[?]): List[Method] =
     getMethods(clazz, static = true, instance = false)
 
@@ -105,9 +99,7 @@ object Jvm {
     methods
   }
 
-  /**
-    * Returns true if the methods are the same in regards to overloading.
-    */
+  /** Returns true if the methods are the same in regards to overloading. */
   private def methodsMatch(m1: Method, m2: Method): Boolean = {
     m1.getName == m2.getName &&
       isStatic(m1) == isStatic(m2) &&

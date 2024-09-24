@@ -22,9 +22,7 @@ import ca.uwaterloo.flix.util.collection.Bimap
 
 import scala.collection.immutable.{IntMap, SortedSet}
 
-/**
-  * An implementation of the [[BoolAlg]] interface for [[BoolFormula]].
-  */
+/** An implementation of the [[BoolAlg]] interface for [[BoolFormula]]. */
 class BoolFormulaAlg extends BoolAlg[BoolFormula] {
 
   override def isTrue(f: BoolFormula): Boolean = f == BoolFormula.True
@@ -43,9 +41,7 @@ class BoolFormulaAlg extends BoolAlg[BoolFormula] {
     case _ => evaluateAll(f, freeVars(f).toList, List.empty)
   }
 
-  /**
-    * Enumerates all assignments to `f` and checks if one of them is satisfiable.
-    */
+  /** Enumerates all assignments to `f` and checks if one of them is satisfiable. */
   private def evaluateAll(f: BoolFormula, l: List[Int], env: List[Int]): Boolean = l match {
     case Nil =>
       // All variables are bound. Compute the truth value.
@@ -182,9 +178,7 @@ class BoolFormulaAlg extends BoolAlg[BoolFormula] {
 
   override def minimize(f: BoolFormula): BoolFormula = BoolFormulaTable.minimizeFormula(f)
 
-  /**
-    * Minimizes `f` via the Quine-McCluskey algorithm
-    */
+  /** Minimizes `f` via the Quine-McCluskey algorithm */
   def minimizeQMC(f: BoolFormula): BoolFormula = f match {
     case BoolFormula.True => BoolFormula.True
     case BoolFormula.False => BoolFormula.False
@@ -192,9 +186,7 @@ class BoolFormulaAlg extends BoolAlg[BoolFormula] {
     case _ => QuineMcCluskey.qmcToBoolFormula(collectMinTerms(f, freeVars(f)))
   }
 
-  /**
-    * Collects all min terms for `f`.
-    */
+  /** Collects all min terms for `f`. */
   private def collectMinTerms(f: BoolFormula, vars: SortedSet[Int]): Set[IntMap[BoolVal]] = {
     val all = collectAll(f, vars.toList, List.empty)
     all.map[IntMap[BoolVal]](l => {
@@ -210,9 +202,7 @@ class BoolFormulaAlg extends BoolAlg[BoolFormula] {
     })
   }
 
-  /**
-    * Enumerates all assignments to `f` and returns the true ones as a set.
-    */
+  /** Enumerates all assignments to `f` and returns the true ones as a set. */
   private def collectAll(f: BoolFormula, l: List[Int], env: List[Int]): Set[List[Int]] = l match {
     case Nil =>
       // All variables are bound. Return the set of positive vars

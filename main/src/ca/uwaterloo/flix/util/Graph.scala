@@ -4,9 +4,7 @@ import scala.collection.mutable
 
 object Graph {
 
-  /**
-    * A result of a topological sort.
-    */
+  /** A result of a topological sort. */
   sealed trait TopologicalSort[N]
   object TopologicalSort {
 
@@ -36,9 +34,7 @@ object Graph {
     val sorted = mutable.LinkedHashSet.empty[N]
 
 
-    /**
-      * Optionally returns a list of nodes forming a cycle.
-      */
+    /** Optionally returns a list of nodes forming a cycle. */
     def visit(node: N, path: List[N]): Option[List[N]] = {
       if (sorted.contains(node)) {
         // Case 1: We've visited this node and it's acyclic.

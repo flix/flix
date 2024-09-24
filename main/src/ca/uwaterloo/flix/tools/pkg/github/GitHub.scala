@@ -28,21 +28,15 @@ import java.net.{URI, URL}
 import java.nio.file.{Files, Path}
 import javax.net.ssl.HttpsURLConnection
 
-/**
-  * An interface for the GitHub API.
-  */
+/** An interface for the GitHub API. */
 object GitHub {
 
-  /**
-    * A GitHub project.
-    */
+  /** A GitHub project. */
   case class Project(owner: String, repo: String) {
     override def toString: String = s"$owner/$repo"
   }
 
-  /**
-    * A release of a GitHub project.
-    */
+  /** A release of a GitHub project. */
   case class Release(version: SemVer, assets: List[Asset])
 
   /**
@@ -52,9 +46,7 @@ object GitHub {
     */
   case class Asset(name: String, url: URL)
 
-  /**
-    * Lists the project's releases.
-    */
+  /** Lists the project's releases. */
   def getReleases(project: Project, apiKey: Option[String]): Result[List[Release], PackageError] = {
     val url = releasesUrl(project)
     val json = try {
@@ -75,9 +67,7 @@ object GitHub {
     Ok(releaseJsons.arr.map(parseRelease))
   }
 
-  /**
-    * Publish a new release the given project.
-    */
+  /** Publish a new release the given project. */
   def publishRelease(project: Project, version: SemVer, artifacts: Iterable[Path], apiKey: String): Result[Unit, ReleaseError] = {
     for (
       _ <- verifyRelease(project, version, apiKey);
@@ -87,9 +77,7 @@ object GitHub {
     ) yield Ok(())
   }
 
-  /**
-    * Verifies that the release does not already exist.
-    */
+  /** Verifies that the release does not already exist. */
   private def verifyRelease(project: Project, version: SemVer, apiKey: String): Result[Unit, ReleaseError] = {
     val url = releaseVersionUrl(project, version)
 
@@ -161,9 +149,7 @@ object GitHub {
     Ok(id)
   }
 
-  /**
-    * Uploads a single asset.
-    */
+  /** Uploads a single asset. */
   private def uploadAsset(assetPath: Path, project: Project, releaseId: String, apiKey: String): Result[Unit, ReleaseError] = {
     val assetName = assetPath.getFileName.toString
     val assetData = Files.readAllBytes(assetPath)
@@ -195,9 +181,7 @@ object GitHub {
     }
   }
 
-  /**
-    * Mark the given release as no longer being a draft, making it publicly available.
-    */
+  /** Mark the given release as no longer being a draft, making it publicly available. */
   private def markReleaseReady(project: Project, version: SemVer, releaseId: String, apiKey: String): Result[Unit, ReleaseError] = {
     val content: JValue = "draft" -> false
     val jsonCompact = compact(render(content))
@@ -233,17 +217,13 @@ object GitHub {
     }
   }
 
-  /**
-    * Parses a GitHub project from an `<owner>/<repo>` string.
-    */
+  /** Parses a GitHub project from an `<owner>/<repo>` string. */
   def parseProject(string: String): Result[Project, PackageError] = string.split('/') match {
     case Array(owner, repo) if owner.nonEmpty && repo.nonEmpty => Ok(Project(owner, repo))
     case _ => Err(PackageError.InvalidProjectName(string))
   }
 
-  /**
-    * Gets the project release with the highest semantic version.
-    */
+  /** Gets the project release with the highest semantic version. */
   def getLatestRelease(project: Project, apiKey: Option[String]): Result[Release, PackageError] = {
     getReleases(project, apiKey).flatMap {
       releases =>
@@ -254,9 +234,7 @@ object GitHub {
     }
   }
 
-  /**
-    * Gets the project release with the relevant semantic version.
-    */
+  /** Gets the project release with the relevant semantic version. */
   def getSpecificRelease(project: Project, version: SemVer, apiKey: Option[String]): Result[Release, PackageError] = {
     getReleases(project, apiKey).flatMap {
       releases =>
@@ -267,43 +245,31 @@ object GitHub {
     }
   }
 
-  /**
-    * Downloads the given asset.
-    */
+  /** Downloads the given asset. */
   def downloadAsset(asset: Asset): InputStream =
     asset.url.openStream()
 
-  /**
-    * Returns the URL that returns data related to the project's releases.
-    */
+  /** Returns the URL that returns data related to the project's releases. */
   private def releasesUrl(project: Project): URL = {
     new URI(s"https://api.github.com/repos/${project.owner}/${project.repo}/releases").toURL
   }
 
-  /**
-    * Returns the URL for updating information about this specific release.
-    */
+  /** Returns the URL for updating information about this specific release. */
   private def releaseIdUrl(project: Project, releaseId: String): URL = {
     new URL(s"${releasesUrl(project).toString}/$releaseId")
   }
 
-  /**
-    * Returns the URL for viewing basic information about this specific release.
-    */
+  /** Returns the URL for viewing basic information about this specific release. */
   private def releaseVersionUrl(project: Project, version: SemVer): URL = {
     new URL(s"${releasesUrl(project).toString}/tags/v$version")
   }
 
-  /**
-    * Returns the URL that release assets can be uploaded to.
-    */
+  /** Returns the URL that release assets can be uploaded to. */
   private def releaseAssetUploadUrl(project: Project, releaseId: String, assetName: String): URL = {
     new URI(s"https://uploads.github.com/repos/${project.owner}/${project.repo}/releases/$releaseId/assets?name=$assetName").toURL
   }
 
-  /**
-    * Parses a Release JSON.
-    */
+  /** Parses a Release JSON. */
   private def parseRelease(json: JValue): Release = {
     val version = parseSemVer((json \ "tag_name").values.toString)
     val assetJsons = (json \ "assets").asInstanceOf[JArray]
@@ -311,9 +277,7 @@ object GitHub {
     Release(version, assets)
   }
 
-  /**
-    * Parses an Asset JSON.
-    */
+  /** Parses an Asset JSON. */
   private def parseAsset(asset: JValue): Asset = {
     val url = asset \ "browser_download_url"
     val name = asset \ "name"

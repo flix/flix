@@ -48,17 +48,13 @@ object TraitEnvironment {
     }
   }
 
-  /**
-    * Returns true iff type constraint `tconstr1` entails tconstr2 under trait environment `traitEnv`.
-    */
+  /** Returns true iff type constraint `tconstr1` entails tconstr2 under trait environment `traitEnv`. */
   def entails(tconstr1: Ast.TraitConstraint, tconstr2: Ast.TraitConstraint, traitEnv: Map[Symbol.TraitSym, Ast.TraitContext]): Boolean = {
     val superTraits = bySuper(tconstr1, traitEnv)
     superTraits.contains(tconstr2)
   }
 
-  /**
-    * Returns true iff the given type constraint holds under the given trait environment.
-    */
+  /** Returns true iff the given type constraint holds under the given trait environment. */
   def holds(tconstr: Ast.TraitConstraint, traitEnv: Map[Symbol.TraitSym, Ast.TraitContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit scope: Scope, flix: Flix): Boolean = {
     byInst(tconstr, traitEnv, eqEnv).toHardResult match {
       case Result.Ok(_) => true
@@ -66,9 +62,7 @@ object TraitEnvironment {
     }
   }
 
-  /**
-    * Removes the type constraints which are entailed by the others in the list.
-    */
+  /** Removes the type constraints which are entailed by the others in the list. */
   private def simplify(tconstrs0: List[Ast.TraitConstraint], traitEnv: Map[Symbol.TraitSym, Ast.TraitContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit scope: Scope, flix: Flix): List[Ast.TraitConstraint] = {
 
     @tailrec
@@ -86,9 +80,7 @@ object TraitEnvironment {
     loop(tconstrs0, Nil)
   }
 
-  /**
-    * Normalizes a list of type constraints, converting to head-normal form and removing semantic duplicates.
-    */
+  /** Normalizes a list of type constraints, converting to head-normal form and removing semantic duplicates. */
   def reduce(tconstrs0: List[Ast.TraitConstraint], traitEnv: Map[Symbol.TraitSym, Ast.TraitContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit scope: Scope, flix: Flix): Validation[List[Ast.TraitConstraint], UnificationError] = {
     val tconstrs1 = tconstrs0.map {
       case Ast.TraitConstraint(head, tpe, loc) => Ast.TraitConstraint(head, Type.eraseAliases(tpe), loc)
@@ -97,9 +89,7 @@ object TraitEnvironment {
     Validation.mapN(normalization)(tconstrs => simplify(tconstrs.flatten, traitEnv, eqEnv))
   }
 
-  /**
-    * Converts the type constraint to head-normal form, i.e. `a[X1, Xn]`, where `a` is a variable and `n >= 0`.
-    */
+  /** Converts the type constraint to head-normal form, i.e. `a[X1, Xn]`, where `a` is a variable and `n >= 0`. */
   private def toHeadNormalForm(tconstr: Ast.TraitConstraint, traitEnv: Map[Symbol.TraitSym, TraitContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit scope: Scope, flix: Flix): Validation[List[Ast.TraitConstraint], UnificationError] = {
     if (isHeadNormalForm(tconstr.arg)) {
       Validation.success(List(tconstr))
@@ -108,9 +98,7 @@ object TraitEnvironment {
     }
   }
 
-  /**
-    * Returns the list of constraints that hold if the given constraint `tconstr` holds, using the constraints on available instances.
-    */
+  /** Returns the list of constraints that hold if the given constraint `tconstr` holds, using the constraints on available instances. */
   private def byInst(tconstr: Ast.TraitConstraint, traitEnv: Map[Symbol.TraitSym, Ast.TraitContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit scope: Scope, flix: Flix): Validation[List[Ast.TraitConstraint], UnificationError] = tconstr match {
     case Ast.TraitConstraint(head, arg, loc) =>
       val matchingInstances = traitEnv.get(head.sym).map(_.instances).getOrElse(Nil)
@@ -168,9 +156,7 @@ object TraitEnvironment {
     }
   }
 
-  /**
-    * Returns true iff this type is in head-normal form.
-    */
+  /** Returns true iff this type is in head-normal form. */
   private def isHeadNormalForm(tpe: Type): Boolean = {
     tpe.typeConstructor.isEmpty
   }

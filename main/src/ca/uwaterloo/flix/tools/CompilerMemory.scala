@@ -23,9 +23,7 @@ import org.json4s.native.JsonMethods
 
 object CompilerMemory {
 
-  /**
-    * Crudely measure compiler memory usage.
-    */
+  /** Crudely measure compiler memory usage. */
   def run(o: Options): Unit = {
     // Run the Flix compiler on some input.
     val flix = new Flix
@@ -36,9 +34,7 @@ object CompilerMemory {
     measureMemoryUsage(o)
   }
 
-  /**
-    * Sleeps a bit and hints the GC to run.
-    */
+  /** Sleeps a bit and hints the GC to run. */
   private def sleepAndGc(): Unit = {
     for (i <- 0 until 5) {
       Thread.sleep(1_000)
@@ -46,9 +42,7 @@ object CompilerMemory {
     }
   }
 
-  /**
-    * Prints the estimated amount of memory used (in megabytes).
-    */
+  /** Prints the estimated amount of memory used (in megabytes). */
   private def measureMemoryUsage(o: Options): Unit = {
     val usedMemory = Runtime.getRuntime.totalMemory() - Runtime.getRuntime.freeMemory()
     if (o.json) {
@@ -60,9 +54,7 @@ object CompilerMemory {
     }
   }
 
-  /**
-    * Adds test code to the benchmark.
-    */
+  /** Adds test code to the benchmark. */
   private def addInputs(flix: Flix): Unit = {
     implicit val sctx: SecurityContext = SecurityContext.AllPermissions
     flix.addSourceCode("TestArray.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestArray.flix"))

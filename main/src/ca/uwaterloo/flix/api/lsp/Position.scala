@@ -21,26 +21,18 @@ import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import org.json4s.JsonDSL._
 import org.json4s._
 
-/**
-  * Companion object for [[Position]].
-  */
+/** Companion object for [[Position]]. */
 object Position {
 
-  /**
-    * Returns a position from the given source location `loc` using its beginning line and col.
-    */
+  /** Returns a position from the given source location `loc` using its beginning line and col. */
   def fromBegin(loc: SourceLocation): Position =
     Position(loc.beginLine - 1, loc.beginCol - 1)
 
-  /**
-    * Returns a position from the given source location `loc` using its ending line and col.
-    */
+  /** Returns a position from the given source location `loc` using its ending line and col. */
   def fromEnd(loc: SourceLocation): Position =
     Position(loc.endLine - 1, loc.endCol - 1)
 
-  /**
-    * Tries to parse the given `json` value as a [[Position]].
-    */
+  /** Tries to parse the given `json` value as a [[Position]]. */
   def parse(json: JValue): Result[Position, String] = {
     // NB: LSP line and column numbers are zero-indexed, but Flix uses 1-indexed numbers internally.
     val lineResult: Result[Int, String] = json \\ "line" match {

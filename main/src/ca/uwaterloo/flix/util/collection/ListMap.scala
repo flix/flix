@@ -16,23 +16,15 @@
 
 package ca.uwaterloo.flix.util.collection
 
-/**
-  * Companion object for the [[ListMap]] class.
-  */
+/** Companion object for the [[ListMap]] class. */
 object ListMap {
-  /**
-    * Returns the empty list map.
-    */
+  /** Returns the empty list map. */
   def empty[K, V]: ListMap[K, V] = ListMap(Map.empty)
 
-  /**
-    * Returns a singleton list map with a mapping from `k` to `v`.
-    */
+  /** Returns a singleton list map with a mapping from `k` to `v`. */
   def singleton[K, V](k: K, v: V): ListMap[K, V] = empty + (k -> v)
 
-  /**
-    * Creates a ListMap from the given iterable.
-    */
+  /** Creates a ListMap from the given iterable. */
   def from[K, V](it: Iterable[(K, V)]): ListMap[K, V] = {
     it.iterator.foldLeft(ListMap.empty[K, V]) {
       case (acc, (k, v)) => acc + (k, v)
@@ -46,51 +38,37 @@ object ListMap {
   */
 case class ListMap[K, V](m: Map[K, List[V]]) {
 
-  /**
-    * Optionally returns the list of values that the key `k` maps to.
-    */
+  /** Optionally returns the list of values that the key `k` maps to. */
   def get(k: K): Option[List[V]] = m.get(k)
 
-  /**
-    * Returns the list of values that the key `k` maps to.
-    */
+  /** Returns the list of values that the key `k` maps to. */
   def apply(k: K): List[V] = m.getOrElse(k, List.empty)
 
-  /**
-    * Returns `this` list map extended with an additional mapping from `k` to `v`.
-    */
+  /** Returns `this` list map extended with an additional mapping from `k` to `v`. */
   def +(kv: (K, V)): ListMap[K, V] = {
     val (k, v) = kv
     val l = m.getOrElse(k, List.empty)
     ListMap(m + (k -> (v :: l)))
   }
 
-  /**
-    * Returns `this` list map extended with additional mappings from `k`to the values in `vs`.
-    */
+  /** Returns `this` list map extended with additional mappings from `k`to the values in `vs`. */
   def ++(kvs: (K, List[V])): ListMap[K, V] = {
     val (k, vs) = kvs
     val l = m.getOrElse(k, List.empty)
     ListMap(m + (k -> (vs ++ l)))
   }
 
-  /**
-    * Returns `this` list map extended with all mappings in `that` list mapping.
-    */
+  /** Returns `this` list map extended with all mappings in `that` list mapping. */
   def ++(that: ListMap[K, V]): ListMap[K, V] = {
     that.m.foldLeft(this) {
       case (macc, (k, vs)) => macc ++ (k -> vs)
     }
   }
 
-  /**
-   * Returns `this` list map without the mapping for `k`.
-   */
+  /** Returns `this` list map without the mapping for `k`. */
   def -(k: K): ListMap[K, V] = ListMap(m - k)
 
-  /**
-   * Returns ´this´ list map without the mappings for ´ks´.
-   */
+  /** Returns ´this´ list map without the mappings for ´ks´. */
   def --(ks: Iterable[K]): ListMap[K, V] = ListMap(m -- ks)
 
 }

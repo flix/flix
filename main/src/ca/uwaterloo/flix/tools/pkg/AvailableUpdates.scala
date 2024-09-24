@@ -17,9 +17,7 @@ package ca.uwaterloo.flix.tools.pkg
 
 case class AvailableUpdates(major: Option[SemVer], minor: Option[SemVer], patch: Option[SemVer]) {
 
-  /**
-    * Returns `true` if no updates are available.
-    */
+  /** Returns `true` if no updates are available. */
   def isEmpty: Boolean =
     major.isEmpty && minor.isEmpty && patch.isEmpty
 

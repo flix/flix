@@ -24,19 +24,13 @@ import org.sosy_lab.pjbdd.api.{Builders, Creator, DD}
 
 import scala.collection.immutable.{IntMap, SortedSet}
 
-/**
-  * Companion object of [[BddFormulaAlg]].
-  */
+/** Companion object of [[BddFormulaAlg]]. */
 object BddFormulaAlg {
-  /**
-    * Thread-safe factory for creating BDDs
-    */
+  /** Thread-safe factory for creating BDDs */
   val GlobalBddBuilder: Creator = Builders.bddBuilder().build()
 }
 
-/**
-  * An implementation of the [[BoolAlg]] interface for [[BoolFormula]].
-  */
+/** An implementation of the [[BoolAlg]] interface for [[BoolFormula]]. */
 final class BddFormulaAlg(implicit flix: Flix) extends BoolAlg[DD] {
 
   override def isTrue(f: DD): Boolean = f.isTrue
@@ -106,14 +100,10 @@ final class BddFormulaAlg(implicit flix: Flix) extends BoolAlg[DD] {
     }
   }
 
-  /**
-    * BDDs are always minimal.
-    */
+  /** BDDs are always minimal. */
   override def minimize(f: DD): DD = f
 
-  /**
-    * A BDD is satisfiable if it is not F, since BDDs are always minimal.
-    */
+  /** A BDD is satisfiable if it is not F, since BDDs are always minimal. */
   override def satisfiable(f: DD): Boolean = !f.isFalse
 
   override def toType(f: DD, env: Bimap[BoolFormula.IrreducibleEff, Int]): Type = {
@@ -158,9 +148,7 @@ final class BddFormulaAlg(implicit flix: Flix) extends BoolAlg[DD] {
     }
   }
 
-  /**
-    * Converting a BDD to a Type using the Quine-McCluskey algorithm
-    */
+  /** Converting a BDD to a Type using the Quine-McCluskey algorithm */
   private def toTypeQMC(f: DD, env: Bimap[BoolFormula.IrreducibleEff, Int]): Type = {
     //Easy shortcuts if formula is true, false or a variable
     if (f.isLeaf) {

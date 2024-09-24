@@ -445,9 +445,7 @@ object SafetyError {
          |""".stripMargin
     }
 
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
+    /** Returns a formatted string with helpful suggestions. */
     override def explain(formatter: Formatter): Option[String] = Some({
       s"""A lattice variable cannot be used as relational variable unless the atom
          |from which it originates is marked with `fix`.
@@ -696,9 +694,7 @@ object SafetyError {
     }
   }
 
-  /**
-    * Format a Java type suitable for method implementation.
-    */
+  /** Format a Java type suitable for method implementation. */
   private def formatJavaType(t: java.lang.Class[_]): String = {
     if (t.isPrimitive || t.isArray)
       Type.getFlixType(t).toString

@@ -32,14 +32,10 @@ class CompilationResult(root: Root,
                         val totalTime: Long,
                         val codeSize: Int) {
 
-  /**
-    * Optionally returns the main function.
-    */
+  /** Optionally returns the main function. */
   def getMain: Option[Array[String] => Unit] = main
 
-  /**
-    * Returns all the test functions in the program.
-    */
+  /** Returns all the test functions in the program. */
   def getTests: Map[Symbol.DefnSym, TestFn] = {
     defs.collect {
       case (sym, run) if root.defs(sym).ann.isTest =>
@@ -48,9 +44,7 @@ class CompilationResult(root: Root,
     }
   }
 
-  /**
-    * Returns the total number of lines of compiled code.
-    */
+  /** Returns the total number of lines of compiled code. */
   def getTotalLines: Int = root.sources.foldLeft(0) {
     case (acc, (_, sl)) => acc + sl.endLine
   }

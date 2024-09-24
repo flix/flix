@@ -28,9 +28,7 @@ import scala.collection.mutable
 
 object UllmansAlgorithm {
 
-  /**
-    * Represents a dependency between two predicate symbols.
-    */
+  /** Represents a dependency between two predicate symbols. */
   sealed trait DependencyEdge {
     def head: Name.Pred
 
@@ -65,9 +63,7 @@ object UllmansAlgorithm {
     case class Strong(head: Name.Pred, body: Name.Pred, loc: SourceLocation) extends DependencyEdge
   }
 
-  /**
-    * Represents the separated dependency graph oblivious to the rules that contain them.
-    */
+  /** Represents the separated dependency graph oblivious to the rules that contain them. */
   type DependencyGraph = Set[DependencyEdge]
 
   /**

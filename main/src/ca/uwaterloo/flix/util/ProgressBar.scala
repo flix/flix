@@ -18,14 +18,10 @@ package ca.uwaterloo.flix.util
 import java.util.concurrent.atomic.AtomicInteger
 
 class ProgressBar {
-  /**
-    * The characters in the spinner.
-    */
+  /** The characters in the spinner. */
   private val SpinnerChars = Array("|", "/", "-", "\\")
 
-  /**
-    * The sample rate.
-    */
+  /** The sample rate. */
   private val SampleRate: Int = 100
 
   /**
@@ -42,9 +38,7 @@ class ProgressBar {
     */
   private val sampleTick = new AtomicInteger(0)
 
-  /**
-    * A Boolean that represents whether the terminal is believed to support color.
-    */
+  /** A Boolean that represents whether the terminal is believed to support color. */
   private val supportsColors: Boolean = Formatter.hasColorSupport
 
   /**
@@ -110,18 +104,14 @@ class ProgressBar {
     else
       s.substring(0, l - 3) + "..."
 
-  /**
-    * Colors the given string `s` green (if supported).
-    */
+  /** Colors the given string `s` green (if supported). */
   private def colorGreen(s: String): String =
     if (supportsColors)
       Console.GREEN + s + Console.RESET
     else
       s
 
-  /**
-    * Colors the given string `s` blue (if supported).
-    */
+  /** Colors the given string `s` blue (if supported). */
   private def colorBlue(s: String): String =
     if (supportsColors)
       Console.BLUE + s + Console.RESET

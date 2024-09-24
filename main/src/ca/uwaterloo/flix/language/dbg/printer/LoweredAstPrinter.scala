@@ -21,9 +21,7 @@ import ca.uwaterloo.flix.language.dbg.DocAst
 
 object LoweredAstPrinter {
 
-  /**
-    * Returns the [[DocAst.Program]] representation of `root`.
-    */
+  /** Returns the [[DocAst.Program]] representation of `root`. */
   def print(root: LoweredAst.Root): DocAst.Program = {
     val enums = root.enums.values.map {
       case LoweredAst.Enum(_, ann, mod, sym, tparams, _, cases0, _, _) =>
@@ -48,9 +46,7 @@ object LoweredAstPrinter {
     DocAst.Program(enums, defs)
   }
 
-  /**
-    * Returns the [[DocAst.Expr]] representation of `e`.
-    */
+  /** Returns the [[DocAst.Expr]] representation of `e`. */
   def print(e: LoweredAst.Expr): DocAst.Expr = e match {
     case Expr.Cst(cst, tpe, loc) => ConstantPrinter.print(cst)
     case Expr.Var(sym, tpe, loc) => DocAst.Expr.Var(sym)
@@ -115,9 +111,7 @@ object LoweredAstPrinter {
       DocAst.Expr.NewObject(name, clazz, TypePrinter.print(tpe), methodsD)
   }
 
-  /**
-    * Converts the given pattern into a [[DocAst.Expr]].
-    */
+  /** Converts the given pattern into a [[DocAst.Expr]]. */
   private def printPattern(pat: LoweredAst.Pattern): DocAst.Expr = pat match {
     case Pattern.Wild(tpe, loc) => DocAst.Expr.Wild
     case Pattern.Var(sym, tpe, loc) => DocAst.Expr.Var(sym)
@@ -128,9 +122,7 @@ object LoweredAstPrinter {
     case Pattern.RecordEmpty(_, _) => DocAst.Expr.RecordEmpty
   }
 
-  /**
-    * Converts the record pattern into a [[DocAst.Expr]] by adding a series of [[DocAst.Expr.RecordExtend]] expressions.
-    */
+  /** Converts the record pattern into a [[DocAst.Expr]] by adding a series of [[DocAst.Expr.RecordExtend]] expressions. */
   private def printRecordPattern(pats: List[LoweredAst.Pattern.Record.RecordLabelPattern], pat: LoweredAst.Pattern): DocAst.Expr = {
     pats.foldRight(printPattern(pat)) {
       case (LoweredAst.Pattern.Record.RecordLabelPattern(label, _, p, _), acc) =>
@@ -138,17 +130,13 @@ object LoweredAstPrinter {
     }
   }
 
-  /**
-    * Returns the [[DocAst.Expr.Ascription]] representation of `fp`.
-    */
+  /** Returns the [[DocAst.Expr.Ascription]] representation of `fp`. */
   private def printFormalParam(fp: LoweredAst.FormalParam): DocAst.Expr.Ascription = {
     val LoweredAst.FormalParam(sym, _, tpe, _, _) = fp
     DocAst.Expr.Ascription(DocAst.Expr.Var(sym), TypePrinter.print(tpe))
   }
 
-  /**
-    * Returns the [[DocAst.TypeParam]] representation of `tp`.
-    */
+  /** Returns the [[DocAst.TypeParam]] representation of `tp`. */
   private def printTypeParam(tp: LoweredAst.TypeParam): DocAst.TypeParam = tp match {
     case LoweredAst.TypeParam(_, sym, _) =>
       DocAst.TypeParam(sym)

@@ -22,9 +22,7 @@ import ca.uwaterloo.flix.language.fmt.{FormatOptions, FormatType}
 
 object TypePrinter {
 
-  /**
-    * Returns the [[DocAst.Type]] representation of `tpe`.
-    */
+  /** Returns the [[DocAst.Type]] representation of `tpe`. */
   def print(tpe: Type): DocAst.Type = {
     // Temporarily use existing type formatting
     // try to unpack one arrow type for the sake of signatures
@@ -44,9 +42,7 @@ object TypePrinter {
     }
   }
 
-  /**
-    * Returns the [[DocAst.Eff]] representation of `tpe`.
-    */
+  /** Returns the [[DocAst.Eff]] representation of `tpe`. */
   def printAsEffect(tpe: Type): DocAst.Eff = tpe match {
     case Type.Cst(TypeConstructor.Pure, _) => DocAst.Eff.Pure
     case Type.Cst(TypeConstructor.Univ, _) => DocAst.Eff.Univ

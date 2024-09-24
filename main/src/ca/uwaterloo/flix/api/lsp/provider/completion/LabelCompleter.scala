@@ -22,9 +22,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst
 
 object LabelCompleter {
 
-  /**
-    * Returns a list of [[LabelCompletion]]s.
-    */
+  /** Returns a list of [[LabelCompletion]]s. */
   def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[LabelCompletion] = {
     // Do not get label completions if we are importing or using.
     if (context.prefix.contains("import") || context.prefix.contains("use")) {
@@ -45,8 +43,6 @@ object LabelCompleter {
     }
   }
 
-  /**
-    * Returns true if the first char of the string is lowerCase, false otherwise.
-    */
+  /** Returns true if the first char of the string is lowerCase, false otherwise. */
   private def isFirstCharLowerCase(str: String): Boolean = str.headOption.exists(_.isLower)
 }

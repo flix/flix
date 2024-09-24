@@ -15,21 +15,15 @@
  */
 package ca.uwaterloo.flix.language.ast.shared
 
-/**
-  * A common supertype for casts.
-  */
+/** A common supertype for casts. */
 sealed trait CheckedCastType
 
 object CheckedCastType {
 
-  /**
-    * Represents a checked type cast.
-    */
+  /** Represents a checked type cast. */
   case object TypeCast extends CheckedCastType
 
-  /**
-    * Represents a checked effect cast.
-    */
+  /** Represents a checked effect cast. */
   case object EffectCast extends CheckedCastType
 
 }

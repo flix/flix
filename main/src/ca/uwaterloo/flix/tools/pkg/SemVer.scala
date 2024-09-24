@@ -17,9 +17,7 @@ package ca.uwaterloo.flix.tools.pkg
 
 object SemVer {
 
-  /**
-    * An ordering on Semantic Versions
-    */
+  /** An ordering on Semantic Versions */
   implicit def semVerOrdering: Ordering[SemVer] =
     Ordering.by((_: SemVer).major)
       .orElseBy(_.minor)
@@ -36,9 +34,7 @@ object SemVer {
   }
 }
 
-/**
-  * A semantic version number.
-  */
+/** A semantic version number. */
 case class SemVer(major: Int, minor: Int, patch: Int) {
   override def toString: String = s"$major.$minor.$patch"
 

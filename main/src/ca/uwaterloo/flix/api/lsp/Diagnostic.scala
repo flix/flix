@@ -21,9 +21,7 @@ import ca.uwaterloo.flix.util.Formatter
 import org.json4s.JsonDSL._
 import org.json4s._
 
-/**
-  * Companion object for [[Diagnostic]].
-  */
+/** Companion object for [[Diagnostic]]. */
 object Diagnostic {
   def from(compilationMessage: CompilationMessage, explain: Boolean, formatter: Formatter): Diagnostic = {
     val range = Range.from(compilationMessage.loc)

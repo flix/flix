@@ -22,9 +22,7 @@ import ca.uwaterloo.flix.util.SubEffectLevel.toInt
 import java.nio.file.Path
 
 object Options {
-  /**
-    * Default options.
-    */
+  /** Default options. */
   val Default: Options = Options(
     lib = LibLevel.All,
     entryPoint = None,
@@ -59,24 +57,16 @@ object Options {
     xiterations = 1000
   )
 
-  /**
-    * Default test options.
-    */
+  /** Default test options. */
   val DefaultTest: Options = Default.copy(lib = LibLevel.All, progress = false, test = true, xnodeprecated = true)
 
-  /**
-    * Default test options with the standard library.
-    */
+  /** Default test options with the standard library. */
   val TestWithLibAll: Options = DefaultTest
 
-  /**
-    * Default test options with the minimal library.
-    */
+  /** Default test options with the minimal library. */
   val TestWithLibMin: Options = DefaultTest.copy(lib = LibLevel.Min)
 
-  /**
-    * Default test options without any library.
-    */
+  /** Default test options without any library. */
   val TestWithLibNix: Options = DefaultTest.copy(lib = LibLevel.Nix)
 }
 
@@ -139,16 +129,12 @@ case class Options(lib: LibLevel,
                    xiterations: Int,
                   )
 
-/**
-  * An option to control the version of emitted JVM bytecode.
-  */
+/** An option to control the version of emitted JVM bytecode. */
 sealed trait JvmTarget
 
 object JvmTarget {
 
-  /**
-    * Emit bytecode for Java 21.
-    */
+  /** Emit bytecode for Java 21. */
   object Version21 extends JvmTarget
 
 }
@@ -157,55 +143,37 @@ sealed trait LibLevel
 
 object LibLevel {
 
-  /**
-    * Do not include any libraries, even those essential for basic functionality.
-    */
+  /** Do not include any libraries, even those essential for basic functionality. */
   case object Nix extends LibLevel
 
-  /**
-    * Only include essential libraries.
-    */
+  /** Only include essential libraries. */
   case object Min extends LibLevel
 
-  /**
-    * Include the full standard library.
-    */
+  /** Include the full standard library. */
   case object All extends LibLevel
 
 }
 
-/**
-  * Compare [[LibLevel]]s based on how much sub-effecting they allow.
-  */
+/** Compare [[LibLevel]]s based on how much sub-effecting they allow. */
 sealed trait SubEffectLevel extends Ordered[SubEffectLevel] {
   override def compare(that: SubEffectLevel): Int = toInt(this).compare(toInt(that))
 }
 
 object SubEffectLevel {
 
-  /**
-    * Do not use sub-effecting anywhere.
-    */
+  /** Do not use sub-effecting anywhere. */
   case object Nothing extends SubEffectLevel
 
-  /**
-    * Allow sub-effecting on lambdas.
-    */
+  /** Allow sub-effecting on lambdas. */
   case object Lambdas extends SubEffectLevel
 
-  /**
-    * Allow sub-effecting on lambdas and instance def bodies
-    */
+  /** Allow sub-effecting on lambdas and instance def bodies */
   case object LambdasAndInstances extends SubEffectLevel
 
-  /**
-    * Allow sub-effecting on lambdas and def bodies
-    */
+  /** Allow sub-effecting on lambdas and def bodies */
   case object LambdasAndDefs extends SubEffectLevel
 
-  /**
-    * Returns an integer where a larger number means more sub-effecting.
-    */
+  /** Returns an integer where a larger number means more sub-effecting. */
   def toInt(level: SubEffectLevel): Int = level match {
     case Nothing => 0
     case Lambdas => 1

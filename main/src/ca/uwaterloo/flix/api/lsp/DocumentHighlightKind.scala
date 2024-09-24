@@ -18,9 +18,7 @@ package ca.uwaterloo.flix.api.lsp
 import org.json4s.JsonDSL._
 import org.json4s._
 
-/**
-  * Represents a `DocumentHighlight` in LSP.
-  */
+/** Represents a `DocumentHighlight` in LSP. */
 sealed trait DocumentHighlightKind {
   def toJSON: JValue = this match {
     case DocumentHighlightKind.Text => 1
@@ -31,19 +29,13 @@ sealed trait DocumentHighlightKind {
 
 object DocumentHighlightKind {
 
-  /**
-    * A textual occurrence.
-    */
+  /** A textual occurrence. */
   case object Text extends DocumentHighlightKind
 
-  /**
-    * Read-access of a symbol, like reading a variable.
-    */
+  /** Read-access of a symbol, like reading a variable. */
   case object Read extends DocumentHighlightKind
 
-  /**
-    * Write-access of a symbol, like writing to a variable.
-    */
+  /** Write-access of a symbol, like writing to a variable. */
   case object Write extends DocumentHighlightKind
 
 }

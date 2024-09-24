@@ -23,9 +23,7 @@ import ca.uwaterloo.flix.language.ast.Purity.Pure
 import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, LiftedAst, MonoType, OccurrenceAst, Purity, SemanticOp, SourceLocation, Symbol}
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 
-/**
-  * The inliner replaces closures and functions by their code to improve performance.
-  */
+/** The inliner replaces closures and functions by their code to improve performance. */
 object Inliner {
 
   sealed trait Expr
@@ -36,19 +34,13 @@ object Inliner {
     case class OccurrenceExp(exp: OccurrenceAst.Expr) extends Expr
   }
 
-  /**
-    * A function below the soft threshold is typically inlined.
-    */
+  /** A function below the soft threshold is typically inlined. */
   private val SoftInlineThreshold: Int = 4
 
-  /**
-    * A function above the hard threshold is never inlined.
-    */
+  /** A function above the hard threshold is never inlined. */
   private val HardInlineThreshold: Int = 8
 
-  /**
-    * Returns `true` if `def0` should be inlined.
-    */
+  /** Returns `true` if `def0` should be inlined. */
   private def canInlineDef(def0: OccurrenceAst.Def): Boolean = {
     val mayInline = def0.context.occur != DontInline && !def0.context.isSelfRecursive
     val belowSoft = def0.context.size < SoftInlineThreshold
@@ -57,9 +49,7 @@ object Inliner {
     mayInline && shouldInline
   }
 
-  /**
-    * Performs inlining on the given AST `root`.
-    */
+  /** Performs inlining on the given AST `root`. */
   def run(root: OccurrenceAst.Root)(implicit flix: Flix): Validation[LiftedAst.Root, CompilationMessage] = {
     val defs = ParOps.parMapValues(root.defs)(d => visitDef(d)(flix, root))
     val effects = ParOps.parMapValues(root.effects)(visitEffect)
@@ -274,33 +264,25 @@ object Inliner {
 
   }
 
-  /**
-    * Checks if `occur` is Dead.
-    */
+  /** Checks if `occur` is Dead. */
   private def isDead(occur: OccurrenceAst.Occur): Boolean = occur match {
     case Dead => true
     case _ => false
   }
 
-  /**
-    * Checks if `occur` is Once and `purity` is Pure
-    */
+  /** Checks if `occur` is Once and `purity` is Pure */
   private def isUsedOnceAndPure(occur: OccurrenceAst.Occur, purity: Purity): Boolean = (occur, purity) match {
     case (Once, Purity.Pure) => true
     case _ => false
   }
 
-  /**
-    * Checks if `exp0` is trivial and `purity` is pure
-    */
+  /** Checks if `exp0` is trivial and `purity` is pure */
   private def isTrivialAndPure(exp0: LiftedAst.Expr, purity: Purity): Boolean = purity match {
     case Purity.Pure => isTrivialExp(exp0)
     case _ => false
   }
 
-  /**
-    * Checks if `occur` is dead and  `exp` is pure.
-    */
+  /** Checks if `occur` is dead and  `exp` is pure. */
   private def isDeadAndPure(occur: OccurrenceAst.Occur, exp: LiftedAst.Expr): Boolean = (occur, exp.purity) match {
     case (Dead, Pure) => true
     case _ => false
@@ -345,9 +327,7 @@ object Inliner {
     case _ => false
   }
 
-  /**
-    * Substitute variables in `exp0` for new fresh variables in `env0`
-    */
+  /** Substitute variables in `exp0` for new fresh variables in `env0` */
   private def substituteExp(exp0: OccurrenceAst.Expr, env0: Map[Symbol.VarSym, Symbol.VarSym])(implicit root: OccurrenceAst.Root, flix: Flix): LiftedAst.Expr = exp0 match {
     case OccurrenceAst.Expr.Cst(cst, tpe, loc) => LiftedAst.Expr.Cst(cst, tpe, loc)
 
@@ -442,9 +422,7 @@ object Inliner {
 
   }
 
-  /**
-    * Translates the given formal parameter `fparam` from OccurrenceAst.FormalParam into a lifted formal parameter.
-    */
+  /** Translates the given formal parameter `fparam` from OccurrenceAst.FormalParam into a lifted formal parameter. */
   private def visitFormalParam(fparam: OccurrenceAst.FormalParam): LiftedAst.FormalParam = fparam match {
     case OccurrenceAst.FormalParam(sym, mod, tpe, loc) => LiftedAst.FormalParam(sym, mod, tpe, loc)
  }

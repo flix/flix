@@ -20,16 +20,12 @@ import ca.uwaterloo.flix.language.ast.Ast
 
 object FormatTraitConstraint {
 
-  /**
-    * Formats the given `tconstr` as `Class[Param]`.
-    */
+  /** Formats the given `tconstr` as `Class[Param]`. */
   def formatTraitConstraint(tconstr: Ast.TraitConstraint)(implicit flix: Flix): String = {
     formatTraitConstraintWithOptions(tconstr, flix.getFormatOptions)
   }
 
-  /**
-    * Formats the given `tconstr` as `Class[Param]`.
-    */
+  /** Formats the given `tconstr` as `Class[Param]`. */
   def formatTraitConstraintWithOptions(tconstr: Ast.TraitConstraint, fmt: FormatOptions): String = tconstr match {
     case Ast.TraitConstraint(head, arg, _) =>
       val typeString = FormatType.formatTypeWithOptions(arg, fmt)

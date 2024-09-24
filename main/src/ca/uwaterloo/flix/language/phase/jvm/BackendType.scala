@@ -23,9 +23,7 @@ import org.objectweb.asm.Opcodes
 
 import scala.annotation.tailrec
 
-/**
-  * Represents all Flix types that are not objects on the JVM (array is an exception).
-  */
+/** Represents all Flix types that are not objects on the JVM (array is an exception). */
 sealed trait BackendType extends VoidableType {
 
   def toDescriptor: String = {
@@ -64,9 +62,7 @@ sealed trait BackendType extends VoidableType {
     case BackendType.Array(_) | BackendType.Reference(_) => BackendObjType.JavaObject.toTpe
   }
 
-  /**
-    * Returns the erased type represented as [[JvmType]]. Arrays are erased.
-    */
+  /** Returns the erased type represented as [[JvmType]]. Arrays are erased. */
   def toErasedJvmType: JvmType = this match {
     case BackendType.Array(_) => JvmType.Object
     case BackendType.Reference(_) => JvmType.Object
@@ -80,9 +76,7 @@ sealed trait BackendType extends VoidableType {
     case BackendType.Float64 => JvmType.PrimDouble
   }
 
-  /**
-    * A string representing the erased type. This is used for parametrized class names.
-    */
+  /** A string representing the erased type. This is used for parametrized class names. */
   val toErasedString: String = this match {
     case BackendType.Bool => "Bool"
     case BackendType.Char => "Char"
@@ -105,14 +99,10 @@ sealed trait BackendType extends VoidableType {
          BackendType.Int32 | BackendType.Float32 | BackendType.Array(_) | BackendType.Reference(_) => false
   }
 
-  /**
-    * Returns the Array fill type for the value of the type specified by `tpe`.
-    */
+  /** Returns the Array fill type for the value of the type specified by `tpe`. */
   def toArrayFillType: String = mkDescriptor(BackendType.Array(this.toErased), this.toErased)(VoidableType.Void).toDescriptor
 
-  /**
-    * Returns the array store instruction for arrays of the given tpe.
-    */
+  /** Returns the array store instruction for arrays of the given tpe. */
   def getArrayStoreInstruction: Int = this match {
     case BackendType.Bool => Opcodes.BASTORE
     case BackendType.Char => Opcodes.CASTORE
@@ -147,9 +137,7 @@ object BackendType {
 
   case class Array(tpe: BackendType) extends BackendType
 
-  /**
-    * Holds a reference to some object type.
-    */
+  /** Holds a reference to some object type. */
   case class Reference(ref: BackendObjType) extends BackendType {
     def name: JvmName = ref.jvmName
   }
@@ -191,9 +179,7 @@ object BackendType {
     }
   }
 
-  /**
-    * Contains all the primitive types and `Reference(Native(JvmName.Object))`.
-    */
+  /** Contains all the primitive types and `Reference(Native(JvmName.Object))`. */
   def erasedTypes: List[BackendType] = List(
     BackendType.Bool,
     BackendType.Char,
@@ -206,9 +192,7 @@ object BackendType {
     BackendObjType.JavaObject.toTpe,
   )
 
-  /**
-    * Computes the erased `BackendType` based on the given `MonoType`.
-    */
+  /** Computes the erased `BackendType` based on the given `MonoType`. */
   def toErasedBackendType(tpe: MonoType): BackendType = tpe match {
     case MonoType.Bool => BackendType.Bool
     case MonoType.Char => BackendType.Char

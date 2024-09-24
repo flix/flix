@@ -34,29 +34,19 @@ import scala.collection.mutable
 
 class Shell(bootstrap: Bootstrap, options: Options) {
 
-  /**
-    * The mutable list of source code fragments.
-    */
+  /** The mutable list of source code fragments. */
   private val fragments = mutable.Stack.empty[String]
 
-  /**
-    * The Flix instance (the same instance is used for incremental compilation).
-    */
+  /** The Flix instance (the same instance is used for incremental compilation). */
   private implicit val flix: Flix = new Flix().setFormatter(AnsiTerminalFormatter)
 
-  /**
-    * The result of the most recent compilation
-    */
+  /** The result of the most recent compilation */
   private var root: Option[Root] = None
 
-  /**
-    * Is this the first compile
-    */
+  /** Is this the first compile */
   private var isFirstCompile = true
 
-  /**
-    * Remove any line continuation backslashes from the given string
-    */
+  /** Remove any line continuation backslashes from the given string */
   private def unescapeLine(s: String): String = {
 
     // (?s) enables dotall mode (so . matches newlines)
@@ -73,9 +63,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     }
   }
 
-  /**
-    * Continuously reads a line of input from the terminal, parses and executes it.
-    */
+  /** Continuously reads a line of input from the terminal, parses and executes it. */
   def loop(): Unit = {
     // Silence JLine warnings about terminal type.
     Logger.getLogger("org.jline").setLevel(Level.OFF)
@@ -127,9 +115,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     terminal.writer().println("Thanks, and goodbye.")
   }
 
-  /**
-    * Prints the welcome banner to the terminal.
-    */
+  /** Prints the welcome banner to the terminal. */
   private def printWelcomeBanner()(implicit terminal: Terminal): Unit = {
     val banner =
       """     __   _   _
@@ -144,14 +130,10 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     terminal.flush()
   }
 
-  /**
-    * Returns the Flix prompt.
-    */
+  /** Returns the Flix prompt. */
   private def prompt: String = "flix> "
 
-  /**
-    * Executes the given command `cmd`.
-    */
+  /** Executes the given command `cmd`. */
   private def execute(cmd: Command)(implicit terminal: Terminal): Unit = {
     implicit val formatter: Formatter = flix.getFormatter
     implicit val out: PrintStream = new PrintStream(terminal.output())
@@ -178,9 +160,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     }
   }
 
-  /**
-    * Reloads every source path.
-    */
+  /** Reloads every source path. */
   private def execReload()(implicit terminal: Terminal): Unit = {
 
     // Scan the disk to find changes, and add source to the flix object
@@ -193,9 +173,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     isFirstCompile = false
   }
 
-  /**
-    * Displays documentation for the given identifier
-    */
+  /** Displays documentation for the given identifier */
   private def execInfo(s: String)(implicit terminal: Terminal): Unit = {
     val w = terminal.writer()
     val traitSym = Symbol.mkTraitSym(s)
@@ -229,16 +207,12 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     }
   }
 
-  /**
-    * Exits the shell.
-    */
+  /** Exits the shell. */
   private def execQuit(): Unit = {
     Thread.currentThread().interrupt()
   }
 
-  /**
-    * Executes the help command.
-    */
+  /** Executes the help command. */
   private def execHelp()(implicit terminal: Terminal): Unit = {
     val w = terminal.writer()
 
@@ -261,17 +235,13 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     w.println()
   }
 
-  /**
-    * Executes the praise command.
-    */
+  /** Executes the praise command. */
   private def execPraise()(implicit terminal: Terminal): Unit = {
     val w = terminal.writer()
     w.print(Toucan.leToucan())
   }
 
-  /**
-    * Evaluates the given source code.
-    */
+  /** Evaluates the given source code. */
   private def execEval(s: String)(implicit terminal: Terminal): Unit = {
     val w = terminal.writer()
 
@@ -324,40 +294,30 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     }
   }
 
-  /**
-    * Reloads and evaluates the given source code.
-    */
+  /** Reloads and evaluates the given source code. */
   private def execReloadAndEval(s: String)(implicit terminal: Terminal): Unit = {
     execReload()
     execEval(s)
   }
 
-  /**
-    * Executes the given bootstrap function and prints any errors.
-    */
+  /** Executes the given bootstrap function and prints any errors. */
   private def execBootstrap[T](f: => Validation[T, BootstrapError])(implicit formatter: Formatter, out: PrintStream): Unit = {
     f.errors.map(_.message(formatter)).foreach(out.println)
   }
 
-  /**
-    * Removes all code fragments, restoring the REPL to an initial state
-    */
+  /** Removes all code fragments, restoring the REPL to an initial state */
   private def clearFragments(): Unit = {
     for (i <- 0 to fragments.length)
       flix.remSourceCode("$" + i)
     fragments.clear()
   }
 
-  /**
-    * Reports unknown command.
-    */
+  /** Reports unknown command. */
   private def execUnknown(s: String)(implicit terminal: Terminal): Unit = {
     terminal.writer().println(s"Unknown command '$s'. Try `:help'.")
   }
 
-  /**
-    * Compiles the current files and packages (first time from scratch, subsequent times incrementally)
-    */
+  /** Compiles the current files and packages (first time from scratch, subsequent times incrementally) */
   private def compile(entryPoint: Option[Symbol.DefnSym] = None, progress: Boolean = true)(implicit terminal: Terminal): Validation[CompilationResult, CompilationMessage] = {
 
     // Set the main entry point if there is one (i.e. if the programmer wrote an expression)
@@ -382,9 +342,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     result
   }
 
-  /**
-    * Run the given main function
-    */
+  /** Run the given main function */
   private def run(main: Symbol.DefnSym)(implicit terminal: Terminal): Unit = {
     // Recompile the program.
     compile(entryPoint = Some(main), progress = false).toHardResult match {

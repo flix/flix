@@ -96,9 +96,7 @@ object AstPrinter {
     writeToDisk(phase, formatDocProgram(dast))
   }
 
-  /**
-    * Formats `p` as a [[String]].
-    */
+  /** Formats `p` as a [[String]]. */
   private def formatDocProgram(p: DocAst.Program): String = {
     implicit val i: Doc.Indent = Doc.indentationLevel(IrFileIndentation)
     val docs = DocAstFormatter.format(p)

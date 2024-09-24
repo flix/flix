@@ -20,9 +20,7 @@ import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation}
 import ca.uwaterloo.flix.language.fmt.FormatKind.formatKind
 import ca.uwaterloo.flix.util.Formatter
 
-/**
-  * A common super-type for kind errors.
-  */
+/** A common super-type for kind errors. */
 sealed trait KindError extends CompilationMessage {
   val kind: String = "Kind Error"
 }

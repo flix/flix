@@ -23,9 +23,7 @@ import org.json4s.JsonDSL._
 
 object GotoProvider {
 
-  /**
-   * Processes a goto request.
-   */
+  /** Processes a goto request. */
   def processGoto(uri: String, pos: Position)(implicit index: Index, root: Root): JObject = {
     index.query(uri, pos) match {
       case None => mkNotFound(uri, pos)
@@ -94,9 +92,7 @@ object GotoProvider {
     }
   }
 
-  /**
-   * Returns a reply indicating that nothing was found at the `uri` and `pos`.
-   */
+  /** Returns a reply indicating that nothing was found at the `uri` and `pos`. */
   private def mkNotFound(uri: String, pos: Position): JObject =
     ("status" -> ResponseStatus.InvalidRequest) ~ ("message" -> s"Nothing found in '$uri' at '$pos'.")
 

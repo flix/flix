@@ -15,9 +15,7 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
-/**
-  * Represents a `CompletionItemKind` in LSP.
-  */
+/** Represents a `CompletionItemKind` in LSP. */
 sealed trait CompletionItemKind {
   def toInt: Int = this match {
     case CompletionItemKind.Text => 1

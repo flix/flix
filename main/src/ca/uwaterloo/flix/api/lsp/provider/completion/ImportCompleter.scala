@@ -33,9 +33,7 @@ object ImportCompleter {
     }
   }
 
-  /**
-    * Gets completions from a java path prefix
-    */
+  /** Gets completions from a java path prefix */
   private def javaClassCompletionsFromPrefix(prefix: List[String])(implicit root: TypedAst.Root): Iterable[ImportCompletion] = {
     root.names(prefix).map(clazz => {
       val label = prefix match {

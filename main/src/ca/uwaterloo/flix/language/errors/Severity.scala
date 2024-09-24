@@ -19,19 +19,13 @@ sealed trait Severity
 
 object Severity {
 
-  /**
-    * A severity that represents a program error.
-    */
+  /** A severity that represents a program error. */
   case object Error extends Severity
 
-  /**
-    * A severity that represents information.
-    */
+  /** A severity that represents information. */
   case object Info extends Severity
 
-  /**
-    * A severity that represents a code hint.
-    */
+  /** A severity that represents a code hint. */
   case object Hint extends Severity
 
 }

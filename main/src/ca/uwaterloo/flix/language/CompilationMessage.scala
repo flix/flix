@@ -20,34 +20,22 @@ import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.ast.shared.Source
 import ca.uwaterloo.flix.util.Formatter
 
-/**
-  * A common super-type for compilation messages.
-  */
+/** A common super-type for compilation messages. */
 trait CompilationMessage {
 
-  /**
-    * Returns the kind of error message, e.g. "Syntax Error" or "Type Error".
-    */
+  /** Returns the kind of error message, e.g. "Syntax Error" or "Type Error". */
   def kind: String
 
-  /**
-    * Returns the input source of the error message.
-    */
+  /** Returns the input source of the error message. */
   def source: Source = loc.source
 
-  /**
-    * Returns the primary source location of the error.
-    */
+  /** Returns the primary source location of the error. */
   def loc: SourceLocation
 
-  /**
-    * Returns a short description of the error message.
-    */
+  /** Returns a short description of the error message. */
   def summary: String
 
-  /**
-    * Returns the error message formatted with source location.
-    */
+  /** Returns the error message formatted with source location. */
   def messageWithLoc(formatter: Formatter): String = {
     formatter.line(kind, source.name) + System.lineSeparator() + message(formatter)
   }
@@ -59,9 +47,7 @@ trait CompilationMessage {
     */
   def message(formatter: Formatter): String
 
-  /**
-    * Returns a formatted string with helpful suggestions.
-    */
+  /** Returns a formatted string with helpful suggestions. */
   def explain(formatter: Formatter): Option[String] = None
 
 }

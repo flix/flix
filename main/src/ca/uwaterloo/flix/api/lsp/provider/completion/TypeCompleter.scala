@@ -21,18 +21,14 @@ import ca.uwaterloo.flix.language.ast.{SourceLocation, TypedAst}
 
 object TypeCompleter {
 
-  /**
-    * Returns a List of Completion for types (enums, aliases and builtin).
-    */
+  /** Returns a List of Completion for types (enums, aliases and builtin). */
   def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] = {
     EnumCompleter.getCompletions(context) ++ TypeAliasCompleter.getCompletions(context) ++
       TypeBuiltinCompleter.getCompletions ++ ModuleCompleter.getCompletions(context) ++
       StructCompleter.getCompletions(context)
   }
 
-  /**
-    * Get the internal priority from the TypedAst SourceLocation and namespace
-    */
+  /** Get the internal priority from the TypedAst SourceLocation and namespace */
   def getInternalPriority(loc: SourceLocation, ns: List[String])(implicit context: CompletionContext): Priority = {
     if (loc.source.name == context.uri)
       Priority.Higher

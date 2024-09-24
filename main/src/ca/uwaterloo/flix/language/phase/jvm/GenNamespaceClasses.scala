@@ -22,14 +22,10 @@ import ca.uwaterloo.flix.util.ParOps
 import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.Opcodes._
 
-/**
-  * Generates bytecode for the namespace classes.
-  */
+/** Generates bytecode for the namespace classes. */
 object GenNamespaceClasses {
 
-  /**
-    * Returns the set of namespaces classes for the given set of namespaces.
-    */
+  /** Returns the set of namespaces classes for the given set of namespaces. */
   def gen(namespaces: Set[NamespaceInfo])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     //
     // Generate a namespace class for each namespace and collect the results in a map.
@@ -41,9 +37,7 @@ object GenNamespaceClasses {
     }.toMap
   }
 
-  /**
-    * Returns the namespace class for the given namespace `ns`.
-    */
+  /** Returns the namespace class for the given namespace `ns`. */
   private def genBytecode(jvmName: JvmName, ns: NamespaceInfo)(implicit root: Root, flix: Flix): Array[Byte] = {
     // Class visitor
     val visitor = AsmOps.mkClassWriter()
@@ -65,9 +59,7 @@ object GenNamespaceClasses {
     visitor.toByteArray
   }
 
-  /**
-    * Adding a shim for the function `defn` on namespace `ns`
-    */
+  /** Adding a shim for the function `defn` on namespace `ns` */
   private def compileShimMethod(visitor: ClassWriter, defn: Def): Unit = {
     // Name of the shim
     val name = JvmOps.getDefMethodNameInNamespaceClass(defn)
@@ -112,9 +104,7 @@ object GenNamespaceClasses {
     method.visitEnd()
   }
 
-  /**
-    * Add the constructor for the class which initializes each field
-    */
+  /** Add the constructor for the class which initializes each field */
   private def compileNamespaceConstructor(visitor: ClassWriter): Unit = {
     // Method header
     val constructor = visitor.visitMethod(ACC_PUBLIC, "<init>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), null, null)

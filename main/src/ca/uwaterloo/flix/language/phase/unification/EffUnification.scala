@@ -26,14 +26,10 @@ import scala.collection.mutable
 
 object EffUnification {
 
-  /**
-    * The number of variables required before we switch to using BDDs for SVE.
-    */
+  /** The number of variables required before we switch to using BDDs for SVE. */
   private val DefaultThreshold: Int = 5
 
-  /**
-    * Returns the most general unifier of the two given Boolean formulas `tpe1` and `tpe2`.
-    */
+  /** Returns the most general unifier of the two given Boolean formulas `tpe1` and `tpe2`. */
   def unify(tpe1: Type, tpe2: Type, renv0: RigidityEnv)(implicit scope: Scope, flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError] = {
 
     // TODO: Levels
@@ -238,9 +234,7 @@ object EffUnification {
   }
 
 
-  /**
-    * Lookup the unifier of `tpe1` and `tpe2` or solve them.
-    */
+  /** Lookup the unifier of `tpe1` and `tpe2` or solve them. */
   private def lookupOrSolve[F](tpe1: Type, tpe2: Type, renv0: RigidityEnv)
                               (implicit flix: Flix, alg: BoolAlg[F], cache: UnificationCache[F]): Result[Substitution, UnificationError] = {
     //
@@ -277,9 +271,7 @@ object EffUnification {
     }
   }
 
-  /**
-    * Returns the most general unifier of the two given Boolean formulas `tpe1` and `tpe2`.
-    */
+  /** Returns the most general unifier of the two given Boolean formulas `tpe1` and `tpe2`. */
   private def booleanUnification[F](tpe1: F, tpe2: F, renv: Set[Int])
                                    (implicit flix: Flix, alg: BoolAlg[F]): Option[BoolSubstitution[F]] = {
     // The boolean expression we want to show is 0.

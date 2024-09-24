@@ -29,9 +29,7 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
   */
 object MonoTypes {
 
-  /**
-    * Performs monomorphization of enums on the given AST `root` and removes alias types.
-    */
+  /** Performs monomorphization of enums on the given AST `root` and removes alias types. */
   def run(root: MonoAst.Root)(implicit flix: Flix): MonoAst.Root = flix.phase("MonoTypes") {
     // Assumptions:
     // - All typeclass information have been transformed into defs - this
@@ -47,9 +45,7 @@ object MonoTypes {
     root.copy(defs = defs)
   }
 
-  /**
-    * Returns a [[MonoAst.Def]] with specialized enums and without aliases in its types.
-    */
+  /** Returns a [[MonoAst.Def]] with specialized enums and without aliases in its types. */
   private def visitDef(defn: MonoAst.Def): MonoAst.Def = defn match {
     case MonoAst.Def(sym, spec, exp) =>
       val s = visitSpec(spec)
@@ -57,9 +53,7 @@ object MonoTypes {
       MonoAst.Def(sym, s, e)
   }
 
-  /**
-    * Returns a [[MonoAst.Spec]] with specialized enums and without aliases in its types.
-    */
+  /** Returns a [[MonoAst.Spec]] with specialized enums and without aliases in its types. */
   private def visitSpec(spec: MonoAst.Spec): MonoAst.Spec = spec match {
     case MonoAst.Spec(doc, ann, mod, fparams, functionType, retTpe, eff, loc) =>
       val fs = fparams.map(visitFormalParam)
@@ -69,9 +63,7 @@ object MonoTypes {
       MonoAst.Spec(doc, ann, mod, fs, ft, rt, p, loc)
   }
 
-  /**
-    * Returns an expression with specialized enums and without aliases in its types
-    */
+  /** Returns an expression with specialized enums and without aliases in its types */
   private def visitExp(exp: MonoAst.Expr): MonoAst.Expr = exp match {
     case Expr.Cst(cst, tpe, loc) =>
       val t = visitType(tpe)
@@ -257,9 +249,7 @@ object MonoTypes {
       Expr.NewObject(name, clazz, t, p, ms, loc)
   }
 
-  /**
-    * Returns a pattern with specialized enums in its type and no aliases.
-    */
+  /** Returns a pattern with specialized enums in its type and no aliases. */
   private def visitPat(pat: MonoAst.Pattern): MonoAst.Pattern = pat match {
     case Pattern.Wild(tpe, loc) =>
       val t = visitType(tpe)
@@ -343,9 +333,7 @@ object MonoTypes {
     }
   }
 
-  /**
-    * Returns a formal param with specialized enums in its type and no aliases.
-    */
+  /** Returns a formal param with specialized enums in its type and no aliases. */
   private def visitFormalParam(p: MonoAst.FormalParam): MonoAst.FormalParam = p match {
     case MonoAst.FormalParam(sym, mod, tpe, src, loc) =>
       val t = visitType(tpe)

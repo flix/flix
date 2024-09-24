@@ -22,9 +22,7 @@ import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.UseSignatureComp
 import ca.uwaterloo.flix.language.ast.TypedAst
 
 object UseSignatureCompleter {
-  /**
-   * Returns an Iterable of UseSignatureCompletions for the completer.
-   */
+  /** Returns an Iterable of UseSignatureCompletions for the completer. */
   def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[UseSignatureCompletion] = {
     stripWord(context) match {
       case Some(word) =>
@@ -35,9 +33,7 @@ object UseSignatureCompleter {
     }
   }
 
-  /**
-   * Strips the current word of `use` to enable completion checking.
-   */
+  /** Strips the current word of `use` to enable completion checking. */
   private def stripWord(ctx: CompletionContext): Option[String] = {
     val regex = raw"\s*use\s+(.*)".r
     ctx.prefix match {
@@ -46,9 +42,7 @@ object UseSignatureCompleter {
     }
   }
 
-  /**
-   * Returns 'true' if `parsedWord` matches a valid signature.
-   */
+  /** Returns 'true' if `parsedWord` matches a valid signature. */
   private def validMatch(sig: TypedAst.Sig, parsedWord: String, uri: String): Boolean = {
     val isLocal = uri == sig.sym.loc.source.name
     val isPublic = sig.spec.mod.isPublic

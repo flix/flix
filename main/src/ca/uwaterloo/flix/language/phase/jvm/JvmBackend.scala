@@ -28,9 +28,7 @@ import java.lang.reflect.InvocationTargetException
 
 object JvmBackend {
 
-  /**
-    * Emits JVM bytecode for the given AST `root`.
-    */
+  /** Emits JVM bytecode for the given AST `root`. */
   def run(root: Root)(implicit flix: Flix): CompilationResult = flix.phase("JvmBackend") {
 
     // Put the AST root into implicit scope.
@@ -203,9 +201,7 @@ object JvmBackend {
     (g.jvmName, JvmClass(g.jvmName, g.genByteCode()))
   }
 
-  /**
-    * Returns a map from non-closure definition symbols to executable functions (backed by JVM backend).
-    */
+  /** Returns a map from non-closure definition symbols to executable functions (backed by JVM backend). */
   private def getCompiledDefs(root: Root): Map[Symbol.DefnSym, () => AnyRef] =
     root.defs.foldLeft(Map.empty[Symbol.DefnSym, () => AnyRef]) {
       case (macc, (_, defn)) if defn.cparams.nonEmpty =>
@@ -215,9 +211,7 @@ object JvmBackend {
         macc + (sym -> (() => link(sym, root).apply(args)))
     }
 
-  /**
-    * Returns a function object for the given definition symbol `sym`.
-    */
+  /** Returns a function object for the given definition symbol `sym`. */
   private def link(sym: Symbol.DefnSym, root: Root): java.util.function.Function[Array[AnyRef], AnyRef] = {
     // Retrieve the definition and its type.
     val defn = root.defs.getOrElse(sym, throw InternalCompilerException(s"Linking error: '$sym' cannot be found in root defs", SourceLocation.Unknown))

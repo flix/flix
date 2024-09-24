@@ -24,9 +24,7 @@ import java.nio.file.{Files, Paths}
 
 class FuzzPrefixes extends AnyFunSuite with TestUtils {
 
-  /**
-    * The number of prefixes to compile for each program.
-    */
+  /** The number of prefixes to compile for each program. */
   private val N: Int = 25
 
   test("simple-card-game") {

@@ -22,204 +22,126 @@ import ca.uwaterloo.flix.util.collection.MultiMap
 import scala.collection.mutable.ArrayBuffer
 
 object Index {
-  /**
-    * Represents the empty reverse index.
-    */
+  /** Represents the empty reverse index. */
   val empty: Index = Index(Map.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty,
     MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty,
     MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty)
 
-  /**
-    * Merges all the given indices.
-    */
+  /** Merges all the given indices. */
   def all(indices: Index*): Index = indices.foldLeft(Index.empty)(_ ++ _)
 
-  /**
-    * Returns an index for the given `trait0`.
-    */
+  /** Returns an index for the given `trait0`. */
   def occurrenceOf(trait0: TypedAst.Trait): Index = empty + Entity.Trait(trait0)
 
-  /**
-    * Returns an index for the given `case0`.
-    */
+  /** Returns an index for the given `case0`. */
   def occurrenceOf(case0: Case): Index = empty + Entity.Case(case0)
 
-  /**
-    * Returns an index for the given `field0`.
-    */
+  /** Returns an index for the given `field0`. */
   def occurrenceOf(field0: StructField): Index = empty + Entity.StructField(field0)
 
-  /**
-    * Returns an index for the given `defn0`.
-    */
+  /** Returns an index for the given `defn0`. */
   def occurrenceOf(defn0: Def): Index = empty + Entity.Def(defn0)
 
-  /**
-    * Returns an index for the given `sig0`.
-    */
+  /** Returns an index for the given `sig0`. */
   def occurrenceOf(sig0: Sig): Index = empty + Entity.Sig(sig0)
 
-  /**
-    * Returns an index for the given `enum0`.
-    */
+  /** Returns an index for the given `enum0`. */
   def occurrenceOf(enum0: Enum): Index = empty + Entity.Enum(enum0)
 
-  /**
-    * Returns an index for the given `struct0`.
-    */
+  /** Returns an index for the given `struct0`. */
   def occurrenceOf(struct0: Struct): Index = empty + Entity.Struct(struct0)
 
-  /**
-    * Returns an index for the given `alias0`.
-    */
+  /** Returns an index for the given `alias0`. */
   def occurrenceOf(alias0: TypeAlias): Index = empty + Entity.TypeAlias(alias0)
 
-  /**
-    * Returns an index for the given `alias0`.
-    */
+  /** Returns an index for the given `alias0`. */
   def occurrenceOf(assoc: AssocTypeSig): Index = empty + Entity.AssocType(assoc)
 
-  /**
-    * Returns an index for the given `exp0`.
-    */
+  /** Returns an index for the given `exp0`. */
   def occurrenceOf(exp0: Expr): Index = empty + Entity.Exp(exp0)
 
-  /**
-    * Returns an index for the given `fparam0`.
-    */
+  /** Returns an index for the given `fparam0`. */
   def occurrenceOf(fparam0: FormalParam): Index = empty + Entity.FormalParam(fparam0)
 
-  /**
-    * Returns an index for the given `pat0`.
-    */
+  /** Returns an index for the given `pat0`. */
   def occurrenceOf(pat0: Pattern): Index = empty + Entity.Pattern(pat0)
 
-  /**
-    * Returns an index for the given label `label`.
-    */
+  /** Returns an index for the given label `label`. */
   def occurrenceOf(label: Name.Label): Index = empty + Entity.Label(label)
 
-  /**
-    * Returns an index for the given atom `a0`.
-    */
+  /** Returns an index for the given atom `a0`. */
   def occurrenceOf(pred: Name.Pred, tpe0: Type): Index = Index.empty.copy(predTypes = MultiMap.singleton(pred, (tpe0, pred.loc))) + Entity.Pred(pred, tpe0)
 
-  /**
-    * Returns an index for the given type `t`.
-    */
+  /** Returns an index for the given type `t`. */
   def occurrenceOf(t: Type): Index = empty + Entity.Type(t)
 
-  /**
-    * Returns an index for the given local variable `sym0`.
-    */
+  /** Returns an index for the given local variable `sym0`. */
   def occurrenceOf(sym: Symbol.VarSym, tpe0: Type): Index = empty + Entity.LocalVar(sym, tpe0)
 
-  /**
-    * Returns an index for the given local variable `sym0`.
-    */
+  /** Returns an index for the given local variable `sym0`. */
   def occurrenceOf(sym: Symbol.KindedTypeVarSym): Index = empty + Entity.TypeVar(sym)
 
-  /**
-    * Returns an index for the given effect `sym`.
-    */
+  /** Returns an index for the given effect `sym`. */
   def occurrenceOf(eff: Effect): Index = empty + Entity.Effect(eff)
 
-  /**
-    * Returns an index for the given effect operation `sym`.
-    */
+  /** Returns an index for the given effect operation `sym`. */
   def occurrenceOf(op: Op): Index = empty + Entity.Op(op)
 
-  /**
-    * Returns an index with the symbol 'sym' used at location 'loc'.
-    */
+  /** Returns an index with the symbol 'sym' used at location 'loc'. */
   def useOf(sym: Symbol.TraitSym, loc: SourceLocation): Index = Index.empty.copy(classUses = MultiMap.singleton(sym, loc))
 
-  /**
-    * Returns an index with the symbol 'sym' used at location 'loc'.
-    */
+  /** Returns an index with the symbol 'sym' used at location 'loc'. */
   def useOf(sym: Symbol.SigSym, loc: SourceLocation, parent: Entity): Index =
     Index.empty.copy(sigUses = MultiMap.singleton(sym, loc)) + Entity.SigUse(sym, loc, parent)
 
-  /**
-    * Returns an index with the symbol `sym` used at location `loc.`
-    */
+  /** Returns an index with the symbol `sym` used at location `loc.` */
   def useOf(sym: Symbol.DefnSym, loc: SourceLocation, parent: Entity): Index =
     Index.empty.copy(defUses = MultiMap.singleton(sym, loc)) + Entity.DefUse(sym, loc, parent)
 
-  /**
-    * Returns an index with the symbol `sym` used at location `loc.`
-    */
+  /** Returns an index with the symbol `sym` used at location `loc.` */
   def useOf(sym: Symbol.EnumSym, loc: SourceLocation): Index = Index.empty.copy(enumUses = MultiMap.singleton(sym, loc))
 
-  /**
-   * Returns an index with the symbol `sym` used at location `loc.`
-   */
+  /** Returns an index with the symbol `sym` used at location `loc.` */
   def useOf(sym: Symbol.StructSym, loc: SourceLocation): Index = Index.empty.copy(structUses = MultiMap.singleton(sym, loc))
 
-  /**
-    * Returns an index with the symbol `sym` used at location `loc.`
-    */
+  /** Returns an index with the symbol `sym` used at location `loc.` */
   def useOf(sym: Symbol.CaseSym, loc: SourceLocation, parent: Entity): Index = Index.empty.copy(tagUses = MultiMap.singleton(sym, loc)) + Entity.CaseUse(sym, loc, parent)
 
-  /**
-   * Returns an index with the symbol `sym` used at location `loc.`
-   */
+  /** Returns an index with the symbol `sym` used at location `loc.` */
   def useOf(sym: Symbol.StructFieldSym, loc: SourceLocation, parent: Entity): Index = Index.empty.copy(structFieldUses = MultiMap.singleton(sym, loc)) + Entity.StructFieldUse(sym, loc, parent)
 
-  /**
-    * Returns an index with the symbol `sym` used at location `loc.`
-    */
+  /** Returns an index with the symbol `sym` used at location `loc.` */
   def useOf(sym: Symbol.TypeAliasSym, loc: SourceLocation): Index = Index.empty.copy(aliasUses = MultiMap.singleton(sym, loc))
 
-  /**
-    * Returns an index with the symbol `sym` used at location `loc.`
-    */
+  /** Returns an index with the symbol `sym` used at location `loc.` */
   def useOf(sym: Symbol.AssocTypeSym, loc: SourceLocation): Index = Index.empty.copy(assocUses = MultiMap.singleton(sym, loc))
 
-  /**
-    * Returns an index with the symbol `sym` used at location `loc.`
-    */
+  /** Returns an index with the symbol `sym` used at location `loc.` */
   def useOf(sym: Symbol.VarSym, loc: SourceLocation, parent: Entity): Index =
     Index.empty.copy(varUses = MultiMap.singleton(sym, loc)) + Entity.VarUse(sym, loc, parent)
 
-  /**
-    * Returns an index with the symbol `sym` used at location `loc.`
-    */
+  /** Returns an index with the symbol `sym` used at location `loc.` */
   def useOf(sym: Symbol.KindedTypeVarSym, loc: SourceLocation): Index = Index.empty.copy(tvarUses = MultiMap.singleton(sym, loc))
 
-  /**
-    * Returns an index with the symbol `sym` used at location `loc.`
-    */
+  /** Returns an index with the symbol `sym` used at location `loc.` */
   def useOf(sym: Symbol.EffectSym, loc: SourceLocation): Index = Index.empty.copy(effUses = MultiMap.singleton(sym, loc))
 
-  /**
-    * Returns an index with the symbol `sym` used at location `loc.`
-    */
+  /** Returns an index with the symbol `sym` used at location `loc.` */
   def useOf(sym: Symbol.OpSym, loc: SourceLocation, parent: Entity): Index = Index.empty.copy(opUses = MultiMap.singleton(sym, loc)) + Entity.OpUse(sym, loc, parent)
 
-  /**
-    * Returns an index with a def of the given `label`.
-    */
+  /** Returns an index with a def of the given `label`. */
   def defOf(label: Name.Label): Index = Index.empty.copy(labelDefs = MultiMap.singleton(label, label.loc))
 
-  /**
-    * Returns an index with a use of the given `label`.
-    */
+  /** Returns an index with a use of the given `label`. */
   def useOf(label: Name.Label): Index = Index.empty.copy(labelUses = MultiMap.singleton(label, label.loc))
 
-  /**
-    * Returns an index with a def of the predicate `pred`.
-    */
+  /** Returns an index with a def of the predicate `pred`. */
   def defOf(pred: Name.Pred): Index = Index.empty.copy(predDefs = MultiMap.singleton(pred, pred.loc))
 
-  /**
-    * Returns an index with a use of the predicate `pred`.
-    */
+  /** Returns an index with a use of the predicate `pred`. */
   def useOf(pred: Name.Pred): Index = Index.empty.copy(predUses = MultiMap.singleton(pred, pred.loc))
 
-  /**
-    * Applies `f` to each element in `xs` and merges the result into a single index.
-    */
+  /** Applies `f` to each element in `xs` and merges the result into a single index. */
   def traverse[T](xs: Iterable[T])(f: T => Index): Index = {
     xs.foldLeft(Index.empty) {
       case (acc, idx) => acc ++ f(idx)
@@ -228,9 +150,7 @@ object Index {
 
 }
 
-/**
-  * Represents a reserve index from documents to line numbers to expressions.
-  */
+/** Represents a reserve index from documents to line numbers to expressions. */
 case class Index(m: Map[(String, Int), List[Entity]],
                  classUses: MultiMap[Symbol.TraitSym, SourceLocation],
                  sigUses: MultiMap[Symbol.SigSym, SourceLocation],
@@ -252,9 +172,7 @@ case class Index(m: Map[(String, Int), List[Entity]],
                  opUses: MultiMap[Symbol.OpSym, SourceLocation]
                 ) {
 
-  /**
-    * Optionally returns the expression in the document at the given `uri` at the given position `pos`.
-    */
+  /** Optionally returns the expression in the document at the given `uri` at the given position `pos`. */
   // TODO: Add support for multi-line expressions.
   def query(uri: String, pos: Position): Option[Entity] = {
     // A key consists of a uri and a line number.
@@ -275,9 +193,7 @@ case class Index(m: Map[(String, Int), List[Entity]],
     }
   }
 
-  /**
-    * Returns the expressions in the document at the given `uri` in the given range `range`.
-    */
+  /** Returns the expressions in the document at the given `uri` in the given range `range`. */
   def queryByRange(uri: String, range: Range): List[Entity] = {
     (range.start.line to range.end.line).flatMap { line =>
       m.getOrElse((uri, line), Nil)
@@ -285,9 +201,7 @@ case class Index(m: Map[(String, Int), List[Entity]],
   }
 
 
-  /**
-    * Returns all entities in the document at the given `uri`.
-    */
+  /** Returns all entities in the document at the given `uri`. */
   def query(uri: String): Iterable[Entity] = {
     val res = new ArrayBuffer[Entity]()
     for (((entitiesUri, _), entities) <- m) {
@@ -314,94 +228,58 @@ case class Index(m: Map[(String, Int), List[Entity]],
     }
   }
 
-  /**
-    * Returns all uses of the given symbol `sym`.
-    */
+  /** Returns all uses of the given symbol `sym`. */
   def usesOf(sym: Symbol.TraitSym): Set[SourceLocation] = classUses(sym)
 
-  /**
-    * Returns all uses of the given symbol `sym`.
-    */
+  /** Returns all uses of the given symbol `sym`. */
   def usesOf(sym: Symbol.SigSym): Set[SourceLocation] = sigUses(sym)
 
-  /**
-    * Returns all uses of the given symbol `sym`.
-    */
+  /** Returns all uses of the given symbol `sym`. */
   def usesOf(sym: Symbol.DefnSym): Set[SourceLocation] = defUses(sym)
 
-  /**
-    * Returns all uses of the given symbol `sym`.
-    */
+  /** Returns all uses of the given symbol `sym`. */
   def usesOf(sym: Symbol.EnumSym): Set[SourceLocation] = enumUses(sym)
 
-  /**
-   * Returns all uses of the given symbol `sym`.
-   */
+  /** Returns all uses of the given symbol `sym`. */
   def usesOf(sym: Symbol.StructSym): Set[SourceLocation] = structUses(sym)
 
-  /**
-    * Returns all uses of the given symbol `sym`.
-    */
+  /** Returns all uses of the given symbol `sym`. */
   def usesOf(sym: Symbol.TypeAliasSym): Set[SourceLocation] = aliasUses(sym)
 
-  /**
-    * Returns all uses of the given symbol `sym`.
-    */
+  /** Returns all uses of the given symbol `sym`. */
   def usesOf(sym: Symbol.AssocTypeSym): Set[SourceLocation] = assocUses(sym)
 
-  /**
-    * Returns all uses of the given symbol `sym` and `tag`.
-    */
+  /** Returns all uses of the given symbol `sym` and `tag`. */
   def usesOf(sym: Symbol.CaseSym): Set[SourceLocation] = tagUses(sym)
 
-  /**
-   * Returns all uses of the given symbol `sym`
-   */
+  /** Returns all uses of the given symbol `sym` */
   def usesOf(sym: Symbol.StructFieldSym): Set[SourceLocation] = structFieldUses(sym)
 
-  /**
-    * Returns all uses of the given symbol `sym`.
-    */
+  /** Returns all uses of the given symbol `sym`. */
   def usesOf(sym: Symbol.VarSym): Set[SourceLocation] = varUses(sym)
 
-  /**
-    * Returns all uses of the given symbol `sym`.
-    */
+  /** Returns all uses of the given symbol `sym`. */
   def usesOf(sym: Symbol.KindedTypeVarSym): Set[SourceLocation] = tvarUses(sym)
 
-  /**
-    * Returns all uses of the given symbol `sym`.
-    */
+  /** Returns all uses of the given symbol `sym`. */
   def usesOf(sym: Symbol.EffectSym): Set[SourceLocation] = effUses(sym)
 
-  /**
-    * Returns all uses of the given symbol `sym`.
-    */
+  /** Returns all uses of the given symbol `sym`. */
   def usesOf(sym: Symbol.OpSym): Set[SourceLocation] = opUses(sym)
 
-  /**
-    * Returns all defs of the given `label`.
-    */
+  /** Returns all defs of the given `label`. */
   def defsOf(label: Name.Label): Set[SourceLocation] = labelDefs(label)
 
-  /**
-    * Returns all uses of the given `label`.
-    */
+  /** Returns all uses of the given `label`. */
   def usesOf(label: Name.Label): Set[SourceLocation] = labelUses(label)
 
-  /**
-    * Returns all defs of the given predicate `pred`.
-    */
+  /** Returns all defs of the given predicate `pred`. */
   def defsOf(pred: Name.Pred): Set[SourceLocation] = predDefs(pred)
 
-  /**
-    * Returns all uses of the given predicate `pred`.
-    */
+  /** Returns all uses of the given predicate `pred`. */
   def usesOf(pred: Name.Pred): Set[SourceLocation] = predUses(pred)
 
-  /**
-    * Adds the given entity `exp0` to `this` index.
-    */
+  /** Adds the given entity `exp0` to `this` index. */
   private def +(entity: Entity): Index = {
     // Do not index synthetic source locations.
     if (entity.loc.isSynthetic) {
@@ -423,9 +301,7 @@ case class Index(m: Map[(String, Int), List[Entity]],
     copy(m = m + ((uri, beginLine) -> newEntities))
   }
 
-  /**
-    * Merges two indexes.
-    */
+  /** Merges two indexes. */
   def ++(that: Index): Index = {
     val m3 = that.m.foldLeft(this.m) {
       case (macc, (line, exps1)) =>
@@ -456,9 +332,7 @@ case class Index(m: Map[(String, Int), List[Entity]],
     )
   }
 
-  /**
-    * Returns the span (i.e. length) of the given source location `loc`.
-    */
+  /** Returns the span (i.e. length) of the given source location `loc`. */
   private def span(loc: SourceLocation): Int =
     if (loc.beginLine == loc.endLine)
       loc.endCol - loc.beginCol

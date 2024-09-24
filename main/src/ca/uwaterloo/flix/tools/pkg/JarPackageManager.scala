@@ -73,9 +73,7 @@ object JarPackageManager {
     Ok(assetPath)
   }
 
-  /**
-    * Finds the jar dependencies in a Manifest.
-    */
+  /** Finds the jar dependencies in a Manifest. */
   private def findJarDependencies(manifest: Manifest): List[JarDependency] = {
     manifest.dependencies.collect { case dep: JarDependency => dep }
   }

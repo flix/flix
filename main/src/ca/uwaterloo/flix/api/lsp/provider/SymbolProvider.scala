@@ -37,9 +37,7 @@ object SymbolProvider {
     (traits ++ defs ++ enums ++ sigs ++ effs).toList
   }
 
-  /**
-    * Returns all symbols that are inside the file pointed by uri.
-    */
+  /** Returns all symbols that are inside the file pointed by uri. */
   def processDocumentSymbols(uri: String)(implicit root: Root): List[DocumentSymbol] = {
     val enums = root.enums.values.collect { case enum0 if enum0.loc.source.name == uri => mkEnumDocumentSymbol(enum0) }
     val defs = root.defs.values.collect { case d if d.sym.loc.source.name == uri => mkDefDocumentSymbol(d) }
@@ -48,9 +46,7 @@ object SymbolProvider {
     (traits ++ defs ++ enums ++ effs).toList
   }
 
-  /**
-    * Returns an Interface SymbolInformation from a Trait node.
-    */
+  /** Returns an Interface SymbolInformation from a Trait node. */
   private def mkTraitSymbolInformation(t: TypedAst.Trait) = t match {
     case TypedAst.Trait(_, _, _, sym, _, _, _, _, _, _) => SymbolInformation(
       sym.name, SymbolKind.Interface, Nil, deprecated = false, Location(sym.loc.source.name, Range.from(sym.loc)), None,
@@ -73,45 +69,35 @@ object SymbolProvider {
     )
   }
 
-  /**
-    * Returns a TypeParameter DocumentSymbol from a TypeParam node.
-    */
+  /** Returns a TypeParameter DocumentSymbol from a TypeParam node. */
   private def mkTypeParamDocumentSymbol(t: TypedAst.TypeParam) = t match {
     case TypedAst.TypeParam(name, tpe, loc) => DocumentSymbol(
       name.name, Some(formatKind(tpe.kind)), SymbolKind.TypeParameter, Range.from(loc), Range.from(loc), Nil, Nil,
     )
   }
 
-  /**
-    * Returns a Method DocumentSymbol from a Sig node.
-    */
+  /** Returns a Method DocumentSymbol from a Sig node. */
   private def mkSigDocumentSymbol(s: TypedAst.Sig): DocumentSymbol = s match {
     case TypedAst.Sig(sym, spec, _) => DocumentSymbol(
       sym.name, Some(spec.doc.text), SymbolKind.Method, Range.from(sym.loc), Range.from(sym.loc), Nil, Nil,
     )
   }
 
-  /**
-    * Returns a Method SymbolInformation from a Sig node.
-    */
+  /** Returns a Method SymbolInformation from a Sig node. */
   private def mkSigSymbolInformation(s: TypedAst.Sig): SymbolInformation = s match {
     case TypedAst.Sig(sym, _, _) => SymbolInformation(
       sym.name, SymbolKind.Method, Nil, deprecated = false, Location(sym.loc.source.name, Range.from(sym.loc)), None,
     )
   }
 
-  /**
-    * Returns a Function DocumentSymbol from a Def node.
-    */
+  /** Returns a Function DocumentSymbol from a Def node. */
   private def mkDefDocumentSymbol(d: TypedAst.Def): DocumentSymbol = d match {
     case TypedAst.Def(sym, spec, _) => DocumentSymbol(
       sym.name, Some(spec.doc.text), SymbolKind.Function, Range.from(sym.loc), Range.from(sym.loc), Nil, Nil,
     )
   }
 
-  /**
-    * Returns a Function SymbolInformation from a Def node.
-    */
+  /** Returns a Function SymbolInformation from a Def node. */
   private def mkDefSymbolInformation(d: TypedAst.Def): SymbolInformation = d match {
     case TypedAst.Def(sym, _, _) => SymbolInformation(
       sym.name, SymbolKind.Function, Nil, deprecated = false, Location(sym.loc.source.name, Range.from(sym.loc)), None,
@@ -134,9 +120,7 @@ object SymbolProvider {
     )
   }
 
-  /**
-    * Returns an EnumMember DocumentSymbol from a Case node.
-    */
+  /** Returns an EnumMember DocumentSymbol from a Case node. */
   private def mkCaseDocumentSymbol(c: TypedAst.Case): DocumentSymbol = c match {
     case TypedAst.Case(sym, _, _, loc) => DocumentSymbol(
       sym.name, None, SymbolKind.EnumMember, Range.from(loc), Range.from(loc), Nil, Nil,
@@ -154,17 +138,13 @@ object SymbolProvider {
       )
   }
 
-  /**
-    * Returns an EnumMember SymbolInformation from a Case node.
-    */
+  /** Returns an EnumMember SymbolInformation from a Case node. */
   private def mkCaseSymbolInformation(c: TypedAst.Case): SymbolInformation = c match {
     case TypedAst.Case(sym, _, _, loc) => SymbolInformation(
       sym.name, SymbolKind.EnumMember, Nil, deprecated = false, Location(loc.source.name, Range.from(loc)), None)
   }
 
-  /**
-    * Returns an Interface SymbolInformation from an Effect node.
-    */
+  /** Returns an Interface SymbolInformation from an Effect node. */
   private def mkEffectSymbolInformation(effect: TypedAst.Effect): List[SymbolInformation] = effect match {
     case TypedAst.Effect(_, _, _, sym, ops, _) =>
       ops.map(mkOpSymbolInformation) :+ SymbolInformation(
@@ -187,17 +167,13 @@ object SymbolProvider {
     )
   }
 
-  /**
-    * Returns an Function SymbolInformation from an Op node.
-    */
+  /** Returns an Function SymbolInformation from an Op node. */
   private def mkOpSymbolInformation(op: TypedAst.Op): SymbolInformation = op match {
     case TypedAst.Op(sym, _) =>
       SymbolInformation(sym.name, SymbolKind.Function, Nil, deprecated = false, Location(sym.loc.source.name, Range.from(sym.loc)), None)
   }
 
-  /**
-    * Returns a Method DocumentSymbol from an Op node.
-    */
+  /** Returns a Method DocumentSymbol from an Op node. */
   private def mkOpDocumentSymbol(s: TypedAst.Op): DocumentSymbol = s match {
     case TypedAst.Op(sym, spec) => DocumentSymbol(
       sym.name, Some(spec.doc.text), SymbolKind.Method, Range.from(sym.loc), Range.from(sym.loc), Nil, Nil,

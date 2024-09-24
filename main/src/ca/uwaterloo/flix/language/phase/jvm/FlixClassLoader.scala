@@ -30,14 +30,10 @@ import scala.collection.mutable
   */
 class FlixClassLoader(classes: Map[String, JvmClass])(implicit flix: Flix) extends ClassLoader(ClassLoader.getPlatformClassLoader) {
 
-  /**
-    * An internal cache of already loaded classes.
-    */
+  /** An internal cache of already loaded classes. */
   private val cache = mutable.Map.empty[String, Class[_]]
 
-  /**
-    * Finds the class with the given binary `name`.
-    */
+  /** Finds the class with the given binary `name`. */
   override def loadClass(name: String): Class[_] = try {
     // Lookup the internal name in the cache to see if the class was already defined.
     cache.get(name) match {

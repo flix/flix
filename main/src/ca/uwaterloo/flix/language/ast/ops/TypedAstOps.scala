@@ -6,14 +6,10 @@ import ca.uwaterloo.flix.language.ast.{Symbol, Type}
 
 object TypedAstOps {
 
-  /**
-    * Returns the free variables in the given pattern `pat0`.
-    */
+  /** Returns the free variables in the given pattern `pat0`. */
   def freeVarsOf(pat0: Pattern): Set[Symbol.VarSym] = binds(pat0).keySet
 
-  /**
-    * Returns the set of variable symbols bound by the given pattern `pat0`.
-    */
+  /** Returns the set of variable symbols bound by the given pattern `pat0`. */
   def binds(pat0: Pattern): Map[Symbol.VarSym, Type] = pat0 match {
     case Pattern.Wild(tpe, loc) => Map.empty
     case Pattern.Var(sym, tpe, loc) => Map(sym -> tpe)
@@ -32,9 +28,7 @@ object TypedAstOps {
     case Pattern.Error(_, _) => Map.empty
   }
 
-  /**
-    * Creates a set of all the sigs used in the given `exp`.
-    */
+  /** Creates a set of all the sigs used in the given `exp`. */
   def sigSymsOf(exp0: Expr): Set[Symbol.SigSym] = exp0 match {
     case Expr.Cst(_, _, _) => Set.empty
     case Expr.Var(_, _, _) => Set.empty
@@ -113,9 +107,7 @@ object TypedAstOps {
     case Expr.Error(_, _, _) => Set.empty
   }
 
-  /**
-    * Creates an iterable over all the instance defs in `root`.
-    */
+  /** Creates an iterable over all the instance defs in `root`. */
   def instanceDefsOf(root: Root): Iterable[Def] = {
     for {
       instsPerClass <- root.instances.values
@@ -124,9 +116,7 @@ object TypedAstOps {
     } yield defn
   }
 
-  /**
-    * Returns the free variables in the given expression `exp0`.
-    */
+  /** Returns the free variables in the given expression `exp0`. */
   def freeVars(exp0: Expr): Map[Symbol.VarSym, Type] = exp0 match {
     case Expr.Cst(_, _, _) => Map.empty
 
@@ -387,9 +377,7 @@ object TypedAstOps {
 
   }
 
-  /**
-    * Returns the free variables in the given pattern `pat0`.
-    */
+  /** Returns the free variables in the given pattern `pat0`. */
   private def freeVars(pat0: Pattern): Map[Symbol.VarSym, Type] = pat0 match {
     case Pattern.Wild(_, _) => Map.empty
     case Pattern.Var(sym, tpe, _) => Map(sym -> tpe)
@@ -410,9 +398,7 @@ object TypedAstOps {
     case Pattern.Error(_, _) => Map.empty
   }
 
-  /**
-    * Returns the free variables in the given restrictable pattern `pat0`.
-    */
+  /** Returns the free variables in the given restrictable pattern `pat0`. */
   private def freeVars(pat0: RestrictableChoosePattern): Set[Symbol.VarSym] = pat0 match {
     case RestrictableChoosePattern.Tag(_, pat, _, _) => pat.flatMap(freeVars).toSet
   }
@@ -423,17 +409,13 @@ object TypedAstOps {
     case RestrictableChoosePattern.Error(_, _) => None
   }
 
-  /**
-    * Returns the free variables in the given constraint `constraint0`.
-    */
+  /** Returns the free variables in the given constraint `constraint0`. */
   private def freeVars(constraint0: Constraint): Map[Symbol.VarSym, Type] = constraint0 match {
     case Constraint(cparams0, head, body, _) =>
       (freeVars(head) ++ body.flatMap(freeVars)) -- cparams0.map(_.sym)
   }
 
-  /**
-    * Returns the free variables in the given head predicate `head0`.
-    */
+  /** Returns the free variables in the given head predicate `head0`. */
   private def freeVars(head0: Predicate.Head): Map[Symbol.VarSym, Type] = head0 match {
     case Head.Atom(_, _, terms, _, _) =>
       terms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
@@ -441,9 +423,7 @@ object TypedAstOps {
       }
   }
 
-  /**
-    * Returns the free variables in the given body predicate `body0`.
-    */
+  /** Returns the free variables in the given body predicate `body0`. */
   private def freeVars(body0: Predicate.Body): Map[Symbol.VarSym, Type] = body0 match {
     case Body.Atom(_, _, _, _, terms, _, _) =>
       terms.foldLeft(Map.empty[Symbol.VarSym, Type]) {

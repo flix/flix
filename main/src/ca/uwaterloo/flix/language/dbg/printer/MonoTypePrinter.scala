@@ -21,9 +21,7 @@ import ca.uwaterloo.flix.language.dbg.DocAst.Type
 
 object MonoTypePrinter {
 
-  /**
-    * Returns the [[Type]] representation of `tpe`.
-    */
+  /** Returns the [[Type]] representation of `tpe`. */
   def print(tpe: MonoType): Type = tpe match {
     case MonoType.Void => Type.Void
     case MonoType.AnyType => Type.AnyType

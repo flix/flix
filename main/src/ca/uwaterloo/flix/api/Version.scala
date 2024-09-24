@@ -17,15 +17,11 @@
 package ca.uwaterloo.flix.api
 
 object Version {
-  /**
-    * Represents the current version of Flix.
-    */
+  /** Represents the current version of Flix. */
   val CurrentVersion: Version = Version(major = 0, minor = 50, revision = 0)
 }
 
-/**
-  * A case class to represent versions.
-  */
+/** A case class to represent versions. */
 case class Version(major: Int, minor: Int, revision: Int) {
   override val toString: String = s"$major.$minor.$revision"
 }

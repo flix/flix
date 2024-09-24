@@ -19,14 +19,10 @@ import ca.uwaterloo.flix.language.ast.shared.Source
 
 trait Locatable extends Sourceable {
 
-  /**
-    * Returns the source location of `this`.
-    */
+  /** Returns the source location of `this`. */
   def loc: SourceLocation
 
-  /**
-    * Returns the source of `this`.
-    */
+  /** Returns the source of `this`. */
   override def src: Source = loc.source
 
 }

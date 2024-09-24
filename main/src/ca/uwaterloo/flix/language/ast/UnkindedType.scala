@@ -27,9 +27,7 @@ import scala.collection.immutable.SortedSet
 sealed trait UnkindedType {
   def loc: SourceLocation
 
-  /**
-    * Maps all the type vars in the type according to the given function `f`.
-    */
+  /** Maps all the type vars in the type according to the given function `f`. */
   def map(f: Symbol.UnkindedTypeVarSym => UnkindedType): UnkindedType = this match {
     case UnkindedType.Var(sym, _) => f(sym)
     case t: UnkindedType.Cst => t
@@ -105,9 +103,7 @@ sealed trait UnkindedType {
 
 object UnkindedType {
 
-  /**
-    * A type variable.
-    */
+  /** A type variable. */
   case class Var(sym: Symbol.UnkindedTypeVarSym, loc: SourceLocation) extends UnkindedType {
     override def equals(that: Any): Boolean = that match {
       case Var(sym2, _) => sym == sym2
@@ -117,9 +113,7 @@ object UnkindedType {
     override def hashCode(): Int = Objects.hash(sym)
   }
 
-  /**
-    * A type constant.
-    */
+  /** A type constant. */
   case class Cst(tc: TypeConstructor, loc: SourceLocation) extends UnkindedType {
     override def equals(that: Any): Boolean = that match {
       case Cst(tc2, _) => tc == tc2
@@ -129,9 +123,7 @@ object UnkindedType {
     override def hashCode(): Int = Objects.hash(tc)
   }
 
-  /**
-    * An unkinded enum.
-    */
+  /** An unkinded enum. */
   case class Enum(sym: Symbol.EnumSym, loc: SourceLocation) extends UnkindedType {
     override def equals(that: Any): Boolean = that match {
       case Enum(sym2, _) => sym == sym2
@@ -141,9 +133,7 @@ object UnkindedType {
     override def hashCode(): Int = Objects.hash(sym)
   }
 
-  /**
-   * An unkinded struct.
-   */
+  /** An unkinded struct. */
   case class Struct(sym: Symbol.StructSym, loc: SourceLocation) extends UnkindedType {
     override def equals(that: Any): Boolean = that match {
       case Struct(sym2, _) => sym == sym2
@@ -153,9 +143,7 @@ object UnkindedType {
     override def hashCode(): Int = Objects.hash(sym)
   }
 
-  /**
-    * An unkinded restrictable enum.
-    */
+  /** An unkinded restrictable enum. */
   case class RestrictableEnum(sym: Symbol.RestrictableEnumSym, loc: SourceLocation) extends UnkindedType {
     override def equals(that: Any): Boolean = that match {
       case RestrictableEnum(sym2, _) => sym == sym2
@@ -193,9 +181,7 @@ object UnkindedType {
     override def hashCode(): Int = Objects.hash(sym)
   }
 
-  /**
-    * A type application.
-    */
+  /** A type application. */
   case class Apply(tpe1: UnkindedType, tpe2: UnkindedType, loc: SourceLocation) extends UnkindedType {
     override def equals(that: Any): Boolean = that match {
       case Apply(tpe1_2, tpe2_2, _) => tpe1 == tpe1_2 && tpe2 == tpe2_2
@@ -205,9 +191,7 @@ object UnkindedType {
     override def hashCode(): Int = Objects.hash(tpe1, tpe2)
   }
 
-  /**
-    * A function type.
-    */
+  /** A function type. */
   case class Arrow(eff: Option[UnkindedType], arity: Int, loc: SourceLocation) extends UnkindedType {
     override def equals(that: Any): Boolean = that match {
       case Arrow(eff2, arity2, _) => eff2 == eff && arity == arity2
@@ -217,9 +201,7 @@ object UnkindedType {
     override def hashCode(): Int = Objects.hash(eff, arity)
   }
 
-  /**
-    * A case set type.
-    */
+  /** A case set type. */
   case class CaseSet(cases: List[Symbol.RestrictableCaseSym], loc: SourceLocation) extends UnkindedType {
     override def equals(that: Any): Boolean = that match {
       case CaseSet(cases2, _) => cases == cases2
@@ -229,9 +211,7 @@ object UnkindedType {
     override def hashCode(): Int = Objects.hash(cases)
   }
 
-  /**
-    * A case complement type.
-    */
+  /** A case complement type. */
   case class CaseComplement(tpe: UnkindedType, loc: SourceLocation) extends UnkindedType {
     override def equals(that: Any): Boolean = that match {
       case CaseComplement(tpe2, _) => tpe == tpe2
@@ -241,9 +221,7 @@ object UnkindedType {
     override def hashCode(): Int = Objects.hash(tpe)
   }
 
-  /**
-    * A case union type.
-    */
+  /** A case union type. */
   case class CaseUnion(tpe1: UnkindedType, tpe2: UnkindedType, loc: SourceLocation) extends UnkindedType {
     override def equals(that: Any): Boolean = that match {
       case CaseUnion(thatTpe1, thatTpe2, _) => tpe1 == thatTpe1 && tpe2 == thatTpe2
@@ -253,9 +231,7 @@ object UnkindedType {
     override def hashCode(): Int = Objects.hash(tpe1, tpe2)
   }
 
-  /**
-    * A case intersection type.
-    */
+  /** A case intersection type. */
   case class CaseIntersection(tpe1: UnkindedType, tpe2: UnkindedType, loc: SourceLocation) extends UnkindedType {
     override def equals(that: Any): Boolean = that match {
       case CaseIntersection(thatTpe1, thatTpe2, _) => tpe1 == thatTpe1 && tpe2 == thatTpe2
@@ -265,9 +241,7 @@ object UnkindedType {
     override def hashCode(): Int = Objects.hash(tpe1, tpe2)
   }
 
-  /**
-    * A type with a kind ascription.
-    */
+  /** A type with a kind ascription. */
   case class Ascribe(tpe: UnkindedType, kind: Kind, loc: SourceLocation) extends UnkindedType {
     override def equals(that: Any): Boolean = that match {
       case Ascribe(tpe2, kind2, _) => tpe == tpe2 && kind == kind2
@@ -277,9 +251,7 @@ object UnkindedType {
     override def hashCode(): Int = Objects.hash(tpe, kind)
   }
 
-  /**
-    * A fully resolved type alias.
-    */
+  /** A fully resolved type alias. */
   case class Alias(cst: Ast.AliasConstructor, args: List[UnkindedType], tpe: UnkindedType, loc: SourceLocation) extends UnkindedType {
     override def equals(that: Any): Boolean = that match {
       case Alias(Ast.AliasConstructor(sym2, _), args2, tpe2, _) => cst.sym == sym2 && args == args2 && tpe == tpe2
@@ -289,9 +261,7 @@ object UnkindedType {
     override def hashCode(): Int = Objects.hash(cst, args, tpe)
   }
 
-  /**
-    * A fully resolved associated type.
-    */
+  /** A fully resolved associated type. */
   case class AssocType(cst: Ast.AssocTypeConstructor, arg: UnkindedType, loc: SourceLocation) extends UnkindedType {
     override def equals(that: Any): Boolean = that match {
       case AssocType(Ast.AssocTypeConstructor(sym2, _), arg2, _) => cst.sym == sym2 && arg == arg2
@@ -301,9 +271,7 @@ object UnkindedType {
     override def hashCode(): Int = Objects.hash(cst, arg)
   }
 
-  /**
-    * A fully resolved error type.
-    */
+  /** A fully resolved error type. */
   case class Error(loc: SourceLocation) extends UnkindedType {
     override def equals(that: Any): Boolean = that match {
       case Error(_) => true
@@ -313,75 +281,55 @@ object UnkindedType {
     override def hashCode(): Int = 17
   }
 
-  /**
-    * Returns a fresh type variable of the given kind `k` and rigidity `r`.
-    */
+  /** Returns a fresh type variable of the given kind `k` and rigidity `r`. */
   def freshVar(loc: SourceLocation, isRegion: Boolean = false, text: Ast.VarText = Ast.VarText.Absent)(implicit scope: Scope, flix: Flix): UnkindedType.Var = {
     val sym = Symbol.freshUnkindedTypeVarSym(text, isRegion, loc)
     UnkindedType.Var(sym, loc)
   }
 
-  /**
-    * Returns the Int32 type.
-    */
+  /** Returns the Int32 type. */
   def mkInt32(loc: SourceLocation): UnkindedType = {
     UnkindedType.Cst(TypeConstructor.Int32, loc)
   }
 
-  /**
-    * Returns the Int64 type.
-    */
+  /** Returns the Int64 type. */
   def mkInt64(loc: SourceLocation): UnkindedType = {
     UnkindedType.Cst(TypeConstructor.Int64, loc)
   }
 
-  /**
-    * Returns the Float64 type.
-    */
+  /** Returns the Float64 type. */
   def mkFloat64(loc: SourceLocation): UnkindedType = {
     UnkindedType.Cst(TypeConstructor.Float64, loc)
   }
 
-  /**
-   * Returns the Bool type.
-   */
+  /** Returns the Bool type. */
   def mkBool(loc: SourceLocation): UnkindedType = {
     UnkindedType.Cst(TypeConstructor.Bool, loc)
   }
 
-  /**
-   * Returns the Unit type.
-   */
+  /** Returns the Unit type. */
   def mkUnit(loc: SourceLocation): UnkindedType = {
     UnkindedType.Cst(TypeConstructor.Unit, loc)
   }
 
-  /**
-    * Returns the ##java.lang.Object type.
-    */
+  /** Returns the ##java.lang.Object type. */
   def mkObject(loc: SourceLocation): UnkindedType = {
     val obj = Class.forName("java.lang.Object")
     UnkindedType.Cst(TypeConstructor.Native(obj), loc)
   }
 
-  /**
-    * Constructs the apply type base[t_1, ,..., t_n].
-    */
+  /** Constructs the apply type base[t_1, ,..., t_n]. */
   def mkApply(base: UnkindedType, ts: List[UnkindedType], loc: SourceLocation): UnkindedType = ts.foldLeft(base) {
     case (acc, t) => Apply(acc, t, loc)
   }
 
-  /**
-    * Constructs the type a -> b \ IO
-    */
+  /** Constructs the type a -> b \ IO */
   def mkIoArrow(a: UnkindedType, b: UnkindedType, loc: SourceLocation): UnkindedType = {
     val eff = Some(UnkindedType.Cst(TypeConstructor.Effect(Symbol.IO), loc))
     mkApply(UnkindedType.Arrow(eff, 2, loc), List(a, b), loc)
   }
 
-  /**
-    * Constructs the tuple type (A, B, ...) where the types are drawn from the list `ts`.
-    */
+  /** Constructs the tuple type (A, B, ...) where the types are drawn from the list `ts`. */
   def mkTuple(ts: List[UnkindedType], loc: SourceLocation): UnkindedType = {
     val init = UnkindedType.Cst(TypeConstructor.Tuple(ts.length), loc)
     ts.foldLeft(init: UnkindedType) {
@@ -389,38 +337,28 @@ object UnkindedType {
     }
   }
 
-  /**
-    * Constructs a RecordExtend type.
-    */
+  /** Constructs a RecordExtend type. */
   def mkRecordRowExtend(label: Name.Label, tpe: UnkindedType, rest: UnkindedType, loc: SourceLocation): UnkindedType = {
     mkApply(UnkindedType.Cst(TypeConstructor.RecordRowExtend(label), loc), List(tpe, rest), loc)
   }
 
-  /**
-    * Constructs a SchemaExtend type.
-    */
+  /** Constructs a SchemaExtend type. */
   def mkSchemaRowExtend(pred: Name.Pred, tpe: UnkindedType, rest: UnkindedType, loc: SourceLocation): UnkindedType = {
     mkApply(UnkindedType.Cst(TypeConstructor.SchemaRowExtend(pred), loc), List(tpe, rest), loc)
   }
 
-  /**
-    * Constructs a Record type.
-    */
+  /** Constructs a Record type. */
   def mkRecord(tpe: UnkindedType, loc: SourceLocation): UnkindedType = {
     Apply(UnkindedType.Cst(TypeConstructor.Record, loc), tpe, loc)
   }
 
-  /**
-    * Constructs a Schema type.
-    */
+  /** Constructs a Schema type. */
   def mkSchema(tpe: UnkindedType, loc: SourceLocation): UnkindedType = {
     Apply(UnkindedType.Cst(TypeConstructor.Schema, loc), tpe, loc)
   }
 
 
-  /**
-    * Construct a relation type with the given list of type arguments `ts0`.
-    */
+  /** Construct a relation type with the given list of type arguments `ts0`. */
   def mkRelation(ts0: List[UnkindedType], loc: SourceLocation): UnkindedType = {
     val ts = ts0 match {
       case Nil => UnkindedType.Cst(TypeConstructor.Unit, loc)
@@ -431,9 +369,7 @@ object UnkindedType {
     Apply(UnkindedType.Cst(TypeConstructor.Relation, loc), ts, loc)
   }
 
-  /**
-    * Construct a lattice type with the given list of type arguments `ts0`.
-    */
+  /** Construct a lattice type with the given list of type arguments `ts0`. */
   def mkLattice(ts0: List[UnkindedType], loc: SourceLocation): UnkindedType = {
     val ts = ts0 match {
       case Nil => UnkindedType.Cst(TypeConstructor.Unit, loc)
@@ -444,29 +380,19 @@ object UnkindedType {
     Apply(UnkindedType.Cst(TypeConstructor.Lattice, loc), ts, loc)
   }
 
-  /**
-    * Construct the enum type constructor for the given symbol `sym` with the given kind `k`.
-    */
+  /** Construct the enum type constructor for the given symbol `sym` with the given kind `k`. */
   def mkEnum(sym: Symbol.EnumSym, loc: SourceLocation): UnkindedType = UnkindedType.Enum(sym, loc)
 
-  /**
-    * Construct the struct type constructor for the given symbol `sym` with the given kind `k`.
-    */
+  /** Construct the struct type constructor for the given symbol `sym` with the given kind `k`. */
   def mkStruct(sym: Symbol.StructSym, loc: SourceLocation): UnkindedType = UnkindedType.Struct(sym, loc)
 
-  /**
-    * Construct the restrictable enum type constructor for the given symbol `sym` with the given kind `k`.
-    */
+  /** Construct the restrictable enum type constructor for the given symbol `sym` with the given kind `k`. */
   def mkRestrictableEnum(sym: Symbol.RestrictableEnumSym, loc: SourceLocation): UnkindedType = UnkindedType.RestrictableEnum(sym, loc)
 
-  /**
-    * Construct the effect type for the given symbol.
-    */
+  /** Construct the effect type for the given symbol. */
   def mkEffect(sym: Symbol.EffectSym, loc: SourceLocation): UnkindedType = UnkindedType.Cst(TypeConstructor.Effect(sym), loc)
 
-  /**
-    * Constructs a predicate type.
-    */
+  /** Constructs a predicate type. */
   def mkPredicate(den: Denotation, ts0: List[UnkindedType], loc: SourceLocation): UnkindedType = {
     val tycon = den match {
       case Denotation.Relational => UnkindedType.Cst(TypeConstructor.Relation, loc)
@@ -481,39 +407,25 @@ object UnkindedType {
     UnkindedType.Apply(tycon, ts, loc)
   }
 
-  /**
-    * Returns the type `Not(tpe1)`.
-    */
+  /** Returns the type `Not(tpe1)`. */
   def mkNot(tpe1: UnkindedType, loc: SourceLocation): UnkindedType = UnkindedType.mkApply(UnkindedType.Cst(TypeConstructor.Not, loc), List(tpe1), loc)
 
-  /**
-    * Returns the type `And(tpe1, tpe2)`.
-    */
+  /** Returns the type `And(tpe1, tpe2)`. */
   def mkAnd(tpe1: UnkindedType, tpe2: UnkindedType, loc: SourceLocation): UnkindedType = UnkindedType.mkApply(UnkindedType.Cst(TypeConstructor.And, loc), List(tpe1, tpe2), loc)
 
-  /**
-    * Returns the type `Or(tpe1, tpe2)`.
-    */
+  /** Returns the type `Or(tpe1, tpe2)`. */
   def mkOr(tpe1: UnkindedType, tpe2: UnkindedType, loc: SourceLocation): UnkindedType = UnkindedType.mkApply(UnkindedType.Cst(TypeConstructor.Or, loc), List(tpe1, tpe2), loc)
 
-  /**
-    * Returns the type `Complement(tpe1)`.
-    */
+  /** Returns the type `Complement(tpe1)`. */
   def mkComplement(tpe1: UnkindedType, loc: SourceLocation): UnkindedType = UnkindedType.mkApply(UnkindedType.Cst(TypeConstructor.Complement, loc), List(tpe1), loc)
 
-  /**
-    * Returns the type `Union(tpe1, tpe2)`.
-    */
+  /** Returns the type `Union(tpe1, tpe2)`. */
   def mkUnion(tpe1: UnkindedType, tpe2: UnkindedType, loc: SourceLocation): UnkindedType = UnkindedType.mkApply(UnkindedType.Cst(TypeConstructor.Union, loc), List(tpe1, tpe2), loc)
 
-  /**
-    * Returns the type `Intersection(tpe1, tpe2)`.
-    */
+  /** Returns the type `Intersection(tpe1, tpe2)`. */
   def mkIntersection(tpe1: UnkindedType, tpe2: UnkindedType, loc: SourceLocation): UnkindedType = UnkindedType.mkApply(UnkindedType.Cst(TypeConstructor.Intersection, loc), List(tpe1, tpe2), loc)
 
-  /**
-    * Constructs the uncurried arrow type (A_1, ..., A_n) -> B \ e.
-    */
+  /** Constructs the uncurried arrow type (A_1, ..., A_n) -> B \ e. */
   def mkUncurriedArrowWithEffect(as: List[UnkindedType], e: Option[UnkindedType], b: UnkindedType, loc: SourceLocation): UnkindedType = {
     val arrow = UnkindedType.Arrow(e, as.length + 1, loc)
     val inner = as.foldLeft(arrow: UnkindedType) {
@@ -522,9 +434,7 @@ object UnkindedType {
     UnkindedType.Apply(inner, b, loc)
   }
 
-  /**
-    * Erases all the aliases from the type.
-    */
+  /** Erases all the aliases from the type. */
   def eraseAliases(tpe0: UnkindedType): UnkindedType = tpe0 match {
     case tpe: Var => tpe
     case tpe: Cst => tpe
@@ -547,9 +457,7 @@ object UnkindedType {
 
   // TODO remove once typechecking Resolver.lookupJVMMethod is moved to Typer
 
-  /**
-    * Returns the Flix UnkindedType of a Java Class
-    */
+  /** Returns the Flix UnkindedType of a Java Class */
   def getFlixType(c: Class[_]): UnkindedType = {
     if (c == java.lang.Boolean.TYPE) {
       UnkindedType.Cst(TypeConstructor.Bool, SourceLocation.Unknown)

@@ -32,19 +32,13 @@ sealed trait Doc
 object Doc {
 
   implicit class DocOps(d: Doc) {
-    /**
-      * Concatenates two docs.
-      */
+    /** Concatenates two docs. */
     def |::(d: Doc): Doc = Doc.|::(d, this.d)
 
-    /**
-      * Concatenates two docs with a space.
-      */
+    /** Concatenates two docs with a space. */
     def +:(d: Doc): Doc = Doc.+:(d, this.d)
 
-    /**
-      * Concatenates two docs with a space _or_ an ungrouped newline.
-      */
+    /** Concatenates two docs with a space _or_ an ungrouped newline. */
     def +\:(d: Doc): Doc = Doc.+\:(d, this.d)
 
     /** Concatenates two docs with an ungrouped optional newline. */
@@ -73,14 +67,10 @@ object Doc {
 
   def indentationLevel(i: Int): Indent = Indentation(i)
 
-  /**
-    * Concatenates two docs.
-    */
+  /** Concatenates two docs. */
   def |::(d1: Doc, d2: Doc): Doc = DCons(d1, d2)
 
-  /**
-    * The empty document.
-    */
+  /** The empty document. */
   def empty: Doc = DNil
 
   /**
@@ -95,9 +85,7 @@ object Doc {
     */
   def nest(d: Doc)(implicit i: Indent): Doc = Nest(indentI(i), d)
 
-  /**
-    * Inserts the string `s` is space is available, otherwise a newline is used.
-    */
+  /** Inserts the string `s` is space is available, otherwise a newline is used. */
   def breakWith(s: String): Doc = Break(s)
 
   /**
@@ -119,9 +107,7 @@ object Doc {
   private case class SLine(i: Int, d: SDoc) extends SDoc
 
 
-  /**
-    * Returns the string representation of `d`.
-    */
+  /** Returns the string representation of `d`. */
   private def sdocToString(d: SDoc): String = {
     val sb = new mutable.StringBuilder()
 
@@ -209,15 +195,11 @@ object Doc {
 
   // aux
 
-  /**
-    * Concatenates two docs with a space.
-    */
+  /** Concatenates two docs with a space. */
   def +:(d1: Doc, d2: Doc): Doc =
     d1 |:: text(" ") |:: d2
 
-  /**
-    * Concatenates two docs with a space _or_ an ungrouped newline.
-    */
+  /** Concatenates two docs with a space _or_ an ungrouped newline. */
   def +\:(d1: Doc, d2: Doc): Doc =
     d1 |:: breakWith(" ") |:: d2
 
@@ -233,73 +215,51 @@ object Doc {
   def groupBreakIndent(d1: Doc, d2: Doc)(implicit i: Indent): Doc =
     d1 |:: group(nest(breakWith(" ") |:: d2))
 
-  /**
-    * Prefix `d` with a space, or an indented newline if space is needed.
-    */
+  /** Prefix `d` with a space, or an indented newline if space is needed. */
   def breakIndent(d: Doc)(implicit i: Indent): Doc =
     nest(breakWith(" ") |:: d)
 
-  /**
-    * Right fold of `d` with `f`.
-    */
+  /** Right fold of `d` with `f`. */
   def fold(f: (Doc, Doc) => Doc, d: List[Doc]): Doc = d match {
     case Nil => empty
     case x :: Nil => x
     case x :: xs => f(x, fold(f, xs))
   }
 
-  /**
-    * Inserts the separator between elements of `d`.
-    */
+  /** Inserts the separator between elements of `d`. */
   def sep(sep: Doc, d: List[Doc]): Doc =
     fold(_ |:: sep |:: _, d)
 
-  /**
-    * Insert a comma with an ungrouped optional newline.
-    */
+  /** Insert a comma with an ungrouped optional newline. */
   def commaSep(d: List[Doc]): Doc =
     sep(text(",") |:: breakWith(" "), d)
 
-  /**
-    * Insert a semicolon with an ungrouped optional newline.
-    */
+  /** Insert a semicolon with an ungrouped optional newline. */
   def semiSep(d: List[Doc]): Doc =
     sep(text(";") |:: breakWith(" "), d)
 
-  /**
-    * Insert a semicolon and a space _or_ an ungrouped newline.
-    */
+  /** Insert a semicolon and a space _or_ an ungrouped newline. */
   def semiSepOpt(d: List[Doc]): Doc =
     sep(breakWith("; "), d)
 
-  /**
-    * Enclose `x` with `l` and `r` with ungrouped newlines inside `l` and `r`.
-    */
+  /** Enclose `x` with `l` and `r` with ungrouped newlines inside `l` and `r`. */
   def enclose(l: String, x: Doc, r: String)(implicit i: Indent): Doc = {
     text(l) |:: nest(breakWith("") |:: x) \: text(r)
   }
 
-  /**
-    * Enclose `x` with `(..)` with grouped newlines inside.
-    */
+  /** Enclose `x` with `(..)` with grouped newlines inside. */
   def parens(x: Doc)(implicit i: Indent): Doc =
     group(enclose("(", x, ")"))
 
-  /**
-    * Enclose `x` with `(..)` with ungrouped newlines inside.
-    */
+  /** Enclose `x` with `(..)` with ungrouped newlines inside. */
   def parensOpen(x: Doc)(implicit i: Indent): Doc =
     enclose("(", x, ")")
 
-  /**
-    * Enclose `x` with `{..}` with grouped newlines inside.
-    */
+  /** Enclose `x` with `{..}` with grouped newlines inside. */
   def curly(x: Doc)(implicit i: Indent): Doc =
     group(enclose("{", x, "}"))
 
-  /**
-    * Enclose `x` with `{..}` with ungrouped newlines inside.
-    */
+  /** Enclose `x` with `{..}` with ungrouped newlines inside. */
   def curlyOpen(x: Doc)(implicit i: Indent): Doc =
     enclose("{", x, "}")
 
@@ -317,9 +277,7 @@ object Doc {
     case _ => group(curly(commaSep(xs)))
   }
 
-  /**
-    * Enclose `x` with `[..]` with grouped newlines inside.
-    */
+  /** Enclose `x` with `[..]` with grouped newlines inside. */
   def square(x: Doc)(implicit i: Indent): Doc =
     group(enclose("[", x, "]"))
 
@@ -337,9 +295,7 @@ object Doc {
     case _ => square(commaSep(xs))
   }
 
-  /**
-    * Enclose `x` with `[|..|]` with grouped newlines inside.
-    */
+  /** Enclose `x` with `[|..|]` with grouped newlines inside. */
   def doubleSquare(x: Doc)(implicit i: Indent): Doc =
     group(enclose("[|", x, "|]"))
 

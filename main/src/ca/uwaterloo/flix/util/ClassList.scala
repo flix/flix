@@ -15,9 +15,7 @@
  */
 package ca.uwaterloo.flix.util
 
-/**
-  * A list of classes available on the Java Platform.
-  */
+/** A list of classes available on the Java Platform. */
 object ClassList {
 
   /**

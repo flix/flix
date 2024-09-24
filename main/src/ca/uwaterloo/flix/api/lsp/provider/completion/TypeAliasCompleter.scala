@@ -22,9 +22,7 @@ import ca.uwaterloo.flix.api.lsp.{Index, TextEdit}
 import ca.uwaterloo.flix.language.ast.TypedAst
 
 object TypeAliasCompleter {
-  /**
-    * Returns a List of Completion for alias types.
-    */
+  /** Returns a List of Completion for alias types. */
   def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[TypeAliasCompletion] = {
     root.typeAliases.map { case (_, t) =>
       val name = t.sym.name

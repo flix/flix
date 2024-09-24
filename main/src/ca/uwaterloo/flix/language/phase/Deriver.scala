@@ -60,9 +60,7 @@ object Deriver {
     }
   }(DebugValidation())
 
-  /**
-    * Builds the instances derived from this enum.
-    */
+  /** Builds the instances derived from this enum. */
   private def getDerivedInstances(enum0: KindedAst.Enum, root: KindedAst.Root)(implicit flix: Flix): Validation[List[KindedAst.Instance], DerivationError] = enum0 match {
     case KindedAst.Enum(_, _, _, enumSym, _, derives, cases, _, _) =>
 
@@ -131,9 +129,7 @@ object Deriver {
       ))
   }
 
-  /**
-    * Creates the eq implementation for the given enum, where `param1` and `param2` are the parameters to the function.
-    */
+  /** Creates the eq implementation for the given enum, where `param1` and `param2` are the parameters to the function. */
   private def mkEqImpl(enum0: KindedAst.Enum, param1: Symbol.VarSym, param2: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Expr = enum0 match {
     case KindedAst.Enum(_, _, _, _, _, _, cases, _, _) =>
       // create a match rule for each case
@@ -151,9 +147,7 @@ object Deriver {
       )
   }
 
-  /**
-    * Creates the eq spec for the given enum, where `param1` and `param2` are the parameters to the function.
-    */
+  /** Creates the eq spec for the given enum, where `param1` and `param2` are the parameters to the function. */
   private def mkEqSpec(enum0: KindedAst.Enum, param1: Symbol.VarSym, param2: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Spec = enum0 match {
     case KindedAst.Enum(_, _, _, _, tparams, _, _, tpe, _) =>
       val eqTraitSym = PredefinedTraits.lookupTraitSym("Eq", root)
@@ -180,9 +174,7 @@ object Deriver {
       )
   }
 
-  /**
-    * Creates an Eq match rule for the given enum case.
-    */
+  /** Creates an Eq match rule for the given enum case. */
   private def mkEqMatchRule(caze: KindedAst.Case, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.MatchRule = caze match {
     case KindedAst.Case(sym, tpe, _, _) =>
       val eqSym = PredefinedTraits.lookupSigSym("Eq", "eq", root)
@@ -281,9 +273,7 @@ object Deriver {
       ))
   }
 
-  /**
-    * Creates the compare implementation for the given enum, where `param1` and `param2` are the parameters to the function.
-    */
+  /** Creates the compare implementation for the given enum, where `param1` and `param2` are the parameters to the function. */
   private def mkCompareImpl(enum0: KindedAst.Enum, param1: Symbol.VarSym, param2: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Expr = enum0 match {
     case KindedAst.Enum(_, _, _, _, _, _, cases, _, _) =>
       val compareSigSym = PredefinedTraits.lookupSigSym("Order", "compare", root)
@@ -342,9 +332,7 @@ object Deriver {
       KindedAst.Expr.Let(lambdaVarSym, Ast.Modifiers.Empty, lambda, matchExp, loc)
   }
 
-  /**
-    * Creates the eq spec for the given enum, where `param1` and `param2` are the parameters to the function.
-    */
+  /** Creates the eq spec for the given enum, where `param1` and `param2` are the parameters to the function. */
   private def mkCompareSpec(enum0: KindedAst.Enum, param1: Symbol.VarSym, param2: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root): KindedAst.Spec = enum0 match {
     case KindedAst.Enum(_, _, _, _, tparams, _, _, tpe, _) =>
       val orderTraitSym = PredefinedTraits.lookupTraitSym("Order", root)
@@ -495,9 +483,7 @@ object Deriver {
       ))
   }
 
-  /**
-    * Creates the toString implementation for the given enum, where `param` is the parameter to the function.
-    */
+  /** Creates the toString implementation for the given enum, where `param` is the parameter to the function. */
   private def mkToStringImpl(enum0: KindedAst.Enum, param: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Expr = enum0 match {
     case KindedAst.Enum(_, _, _, _, _, _, cases, _, _) =>
       // create a match rule for each case
@@ -511,9 +497,7 @@ object Deriver {
       )
   }
 
-  /**
-    * Creates the toString spec for the given enum, where `param` is the parameter to the function.
-    */
+  /** Creates the toString spec for the given enum, where `param` is the parameter to the function. */
   private def mkToStringSpec(enum0: KindedAst.Enum, param: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Spec = enum0 match {
     case KindedAst.Enum(_, _, _, _, tparams, _, _, tpe, _) =>
       val toStringTraitSym = PredefinedTraits.lookupTraitSym("ToString", root)
@@ -537,9 +521,7 @@ object Deriver {
       )
   }
 
-  /**
-    * Creates a ToString match rule for the given enum case.
-    */
+  /** Creates a ToString match rule for the given enum case. */
   private def mkToStringMatchRule(caze: KindedAst.Case, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.MatchRule = caze match {
     case KindedAst.Case(sym, tpe, _, _) =>
       val toStringSym = PredefinedTraits.lookupSigSym("ToString", "toString", root)
@@ -630,9 +612,7 @@ object Deriver {
       ))
   }
 
-  /**
-    * Creates the hash implementation for the given enum, where `param` is the parameter to the function.
-    */
+  /** Creates the hash implementation for the given enum, where `param` is the parameter to the function. */
   private def mkHashImpl(enum0: KindedAst.Enum, param: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Expr = enum0 match {
     case KindedAst.Enum(_, _, _, _, _, _, cases, _, _) =>
       // create a match rule for each case
@@ -648,9 +628,7 @@ object Deriver {
       )
   }
 
-  /**
-    * Creates the hash spec for the given enum, where `param` is the parameter to the function.
-    */
+  /** Creates the hash spec for the given enum, where `param` is the parameter to the function. */
   private def mkHashSpec(enum0: KindedAst.Enum, param: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Spec = enum0 match {
     case KindedAst.Enum(_, _, _, _, tparams, _, _, tpe, _) =>
       val hashTraitSym = PredefinedTraits.lookupTraitSym("Hash", root)
@@ -674,9 +652,7 @@ object Deriver {
       )
   }
 
-  /**
-    * Creates a Hash match rule for the given enum case.
-    */
+  /** Creates a Hash match rule for the given enum case. */
   private def mkHashMatchRule(caze: KindedAst.Case, index: Int, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.MatchRule = caze match {
     case KindedAst.Case(sym, tpe, _, _) =>
       val hashSigSym = PredefinedTraits.lookupSigSym("Hash", "hash", root)
@@ -815,9 +791,7 @@ object Deriver {
       }
   }
 
-  /**
-    * Creates the coerce implementation for the given enum.
-    */
+  /** Creates the coerce implementation for the given enum. */
   private def mkCoerceImpl(enum0: KindedAst.Enum, param: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Expr = enum0 match {
     case KindedAst.Enum(_, _, _, _, _, _, cases, _, _) =>
       val (_, caze) = cases.head
@@ -830,9 +804,7 @@ object Deriver {
       )
   }
 
-  /**
-    * Creates the coerce specification for the given enum.
-    */
+  /** Creates the coerce specification for the given enum. */
   private def mkCoerceSpec(enum0: KindedAst.Enum, param: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Spec = enum0 match {
     case KindedAst.Enum(_, _, _, _, tparams, _, cases, tpe, _) =>
       val coerceTraitSym = PredefinedTraits.lookupTraitSym("Coerce", root)
@@ -858,9 +830,7 @@ object Deriver {
       )
   }
 
-  /**
-    * Creates a Coerce match rule for the given enum case.
-    */
+  /** Creates a Coerce match rule for the given enum case. */
   private def mkCoerceMatchRule(caze: KindedAst.Case, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.MatchRule = caze match {
     case KindedAst.Case(sym, tpe, _, _) =>
       // get a pattern corresponding to this case, e.g.
@@ -875,9 +845,7 @@ object Deriver {
       KindedAst.MatchRule(pat, None, exp)
   }
 
-  /**
-    * Returns the cases in `m` in a *stable order* that relies on the order of their source locations.
-    */
+  /** Returns the cases in `m` in a *stable order* that relies on the order of their source locations. */
   private def getCasesInStableOrder(m: Map[Symbol.CaseSym, KindedAst.Case]): List[KindedAst.Case] = {
     m.values.toList.sortBy(_.loc)
   }
@@ -891,26 +859,18 @@ object Deriver {
       Ast.TraitConstraint(Ast.TraitConstraint.Head(trt, loc), Type.Var(tparam.sym, loc), loc)
   }
 
-  /**
-    * Builds a string expression from the given string.
-    */
+  /** Builds a string expression from the given string. */
   private def mkStrExpr(str: String, loc: SourceLocation): KindedAst.Expr = KindedAst.Expr.Cst(Constant.Str(str), loc)
 
-  /**
-    * Builds a var expression from the given var sym.
-    */
+  /** Builds a var expression from the given var sym. */
   private def mkVarExpr(varSym: Symbol.VarSym, loc: SourceLocation): KindedAst.Expr.Var = KindedAst.Expr.Var(varSym, loc)
 
-  /**
-    * Builds a string concatenation expression from the given expressions.
-    */
+  /** Builds a string concatenation expression from the given expressions. */
   private def concat(exp1: KindedAst.Expr, exp2: KindedAst.Expr, loc: SourceLocation)(implicit flix: Flix): KindedAst.Expr = {
     KindedAst.Expr.Binary(SemanticOp.StringOp.Concat, exp1, exp2, Type.freshVar(Kind.Star, loc), loc)
   }
 
-  /**
-    * Builds a string concatenation expression from the given expressions.
-    */
+  /** Builds a string concatenation expression from the given expressions. */
   private def concatAll(exps: List[KindedAst.Expr], loc: SourceLocation)(implicit flix: Flix): KindedAst.Expr = {
     exps match {
       case Nil => KindedAst.Expr.Cst(Constant.Str(""), loc)
@@ -930,9 +890,7 @@ object Deriver {
     case _ => List(tpe)
   }
 
-  /**
-    * Creates a pattern corresponding to the given tag type.
-    */
+  /** Creates a pattern corresponding to the given tag type. */
   private def mkPattern(sym: Symbol.CaseSym, tpe: Type, varPrefix: String, loc: SourceLocation)(implicit flix: Flix): (KindedAst.Pattern, List[Symbol.VarSym]) = {
     unpack(tpe) match {
       case Nil => (KindedAst.Pattern.Tag(Ast.CaseSymUse(sym, loc), KindedAst.Pattern.Cst(Constant.Unit, loc), Type.freshVar(Kind.Star, loc), loc), Nil)
@@ -946,14 +904,10 @@ object Deriver {
     }
   }
 
-  /**
-    * Creates a variable pattern using the given variable symbol.
-    */
+  /** Creates a variable pattern using the given variable symbol. */
   private def mkVarPattern(varSym: Symbol.VarSym, loc: SourceLocation): KindedAst.Pattern = KindedAst.Pattern.Var(varSym, varSym.tvar, loc)
 
-  /**
-    * Inserts `sep` between every two elements of `list`.
-    */
+  /** Inserts `sep` between every two elements of `list`. */
   private def intersperse[A](list: List[A], sep: A): List[A] = list match {
     case Nil => Nil
     case last :: Nil => last :: Nil

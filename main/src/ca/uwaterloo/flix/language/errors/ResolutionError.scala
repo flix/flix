@@ -22,9 +22,7 @@ import ca.uwaterloo.flix.util.{Formatter, Grammar}
 
 import java.lang.reflect.{Constructor, Field, Method}
 
-/**
-  * A common super-type for resolution errors.
-  */
+/** A common super-type for resolution errors. */
 sealed trait ResolutionError extends CompilationMessage {
   val kind = "Resolution Error"
 }
@@ -652,9 +650,7 @@ object ResolutionError {
          |""".stripMargin
     }
 
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
+    /** Returns a formatted string with helpful suggestions. */
     override def explain(formatter: Formatter): Option[String] = {
       if (raw".*\.[A-Z].*\.[A-Z].*".r matches name)
         Some(s"Static nested classes should be specified using '$$', e.g. java.util.Locale$$Builder")
@@ -1085,9 +1081,7 @@ object ResolutionError {
   case class MismatchedOpArity(op: Symbol.OpSym, expected: Int, actual: Int, loc: SourceLocation) extends ResolutionError with Recoverable {
     override def summary: String = s"Expected ${Grammar.n_things(expected, "parameter")} but found $actual."
 
-    /**
-      * Returns the formatted error message.
-      */
+    /** Returns the formatted error message. */
     override def message(formatter: Formatter): String = {
       import formatter._
       s""">> Mismatched arity.
@@ -1099,9 +1093,7 @@ object ResolutionError {
          |""".stripMargin
     }
 
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
+    /** Returns a formatted string with helpful suggestions. */
     override def explain(formatter: Formatter): Option[String] = None
   }
 
@@ -1229,9 +1221,7 @@ object ResolutionError {
     }
   }
 
-  /**
-    * Removes all access modifiers from the given string `s`.
-    */
+  /** Removes all access modifiers from the given string `s`. */
   private def stripAccessModifier(s: String): String =
     s.replace("public", "").
       replace("protected", "").

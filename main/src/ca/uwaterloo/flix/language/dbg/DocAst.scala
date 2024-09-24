@@ -95,9 +95,7 @@ object DocAst {
     /** e.g. `r..toString()`. It is used for java "dots" */
     case class DoubleDot(d1: Expr, d2: Expr) extends Atom
 
-    /**
-      * e.g. `r#x` for [[RecordSelect]].
-      */
+    /** e.g. `r#x` for [[RecordSelect]]. */
     case class Hash(d1: Expr, d2: Expr) extends Atom
 
     case class TryCatch(d: Expr, rules: List[(Symbol.VarSym, Class[_], Expr)]) extends Atom

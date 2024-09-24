@@ -36,14 +36,10 @@ import scala.collection.mutable
   */
 object BoolFormulaTable {
 
-  /**
-    * A flag used to control whether to print debug information.
-    */
+  /** A flag used to control whether to print debug information. */
   private val Debug: Boolean = false
 
-  /**
-    * The path to the table.
-    */
+  /** The path to the table. */
   private val Path: String = "/src/ca/uwaterloo/flix/language/phase/unification/Table4.pn.zip"
 
   /**
@@ -53,19 +49,13 @@ object BoolFormulaTable {
     */
   private val MaxVars: Int = 4
 
-  /**
-    * The set of variables that the minimization table uses.
-    */
+  /** The set of variables that the minimization table uses. */
   private val VarSet: SortedSet[Int] = Range(0, MaxVars).to(SortedSet)
 
-  /**
-    * The size a formula (but represented as a type) must have before we try to minimize it.
-    */
+  /** The size a formula (but represented as a type) must have before we try to minimize it. */
   val Threshold: Int = 10
 
-  /**
-    * A Boolean variable is represented by a unique number.
-    */
+  /** A Boolean variable is represented by a unique number. */
   type Variable = Int
 
   /**
@@ -176,9 +166,7 @@ object BoolFormulaTable {
       }
   }
 
-  /**
-    * Renames every variable in the given formula `f` and looks it up in the minimal table.
-    */
+  /** Renames every variable in the given formula `f` and looks it up in the minimal table. */
   private def alphaRenameAndLookup(f: BoolFormula): BoolFormula = {
     // Compute a renaming. The first variable is x0, the next is x1, and so forth.
     val m = f.freeVars.toList.zipWithIndex.foldLeft(Bimap.empty[Variable, Variable]) {
@@ -188,9 +176,7 @@ object BoolFormulaTable {
     substitute(lookup(substitute(f, m)), m.swap)
   }
 
-  /**
-    * Attempts to minimize the given Boolean formula `f` using the table.
-    */
+  /** Attempts to minimize the given Boolean formula `f` using the table. */
   private def lookup(f: BoolFormula): BoolFormula = {
     // If the formula `f` has more variables than `f` then we cannot use the table.
     if (f.freeVars.size > MaxVars) {
@@ -249,9 +235,7 @@ object BoolFormulaTable {
     case Or(f1, f2) => eval(f1, env) || eval(f2, env)
   }
 
-  /**
-    * Parses the built-in table into an S-expression and then into an in-memory table.
-    */
+  /** Parses the built-in table into an S-expression and then into an in-memory table. */
   private def initTable(): Array[BoolFormula] = {
     val table = loadTable()
 
@@ -268,9 +252,7 @@ object BoolFormulaTable {
     table
   }
 
-  /**
-    * Loads the table of minimal Boolean formulas from the disk.
-    */
+  /** Loads the table of minimal Boolean formulas from the disk. */
   private def loadTable(): Array[BoolFormula] = try {
     val allLines = readTableFromZip(Path)
 
@@ -339,48 +321,36 @@ object BoolFormulaTable {
     parse(l.trim().toList, Nil)
   }
 
-  /**
-    * Returns the *canonical* representation of the given variable `x`.
-    */
+  /** Returns the *canonical* representation of the given variable `x`. */
   private def mkVar(x: Int)(implicit cache: mutable.Map[BoolFormula, BoolFormula]): BoolFormula = {
     val f = Var(x)
     cache.getOrElseUpdate(f, f)
   }
 
-  /**
-    * Returns the canonical representation of the negation of the given formula `f1`.
-    */
+  /** Returns the canonical representation of the negation of the given formula `f1`. */
   private def mkNot(f1: BoolFormula)(implicit cache: mutable.Map[BoolFormula, BoolFormula]): BoolFormula = {
     val f = Not(f1)
     cache.getOrElseUpdate(f, f)
   }
 
-  /**
-    * Returns the canonical representation of the conjunction of the given formulas `f1` and `f2`.
-    */
+  /** Returns the canonical representation of the conjunction of the given formulas `f1` and `f2`. */
   private def mkAnd(f1: BoolFormula, f2: BoolFormula)(implicit cache: mutable.Map[BoolFormula, BoolFormula]): BoolFormula = {
     val f = And(f1, f2)
     cache.getOrElseUpdate(f, f)
   }
 
-  /**
-    * Returns the canonical representation of the disjunction of the given formulas `f1` and `f2`.
-    */
+  /** Returns the canonical representation of the disjunction of the given formulas `f1` and `f2`. */
   private def mkOr(f1: BoolFormula, f2: BoolFormula)(implicit cache: mutable.Map[BoolFormula, BoolFormula]): BoolFormula = {
     val f = Or(f1, f2)
     cache.getOrElseUpdate(f, f)
   }
 
 
-  /**
-    * Formats the given int `i` as a bit string with `n` bits.
-    */
+  /** Formats the given int `i` as a bit string with `n` bits. */
   private def toBinaryString(i: Int, n: Int): String =
     leftPad(i.toBinaryString, n)
 
-  /**
-    * Left pads `s` with `c` to reach length `len`.
-    */
+  /** Left pads `s` with `c` to reach length `len`. */
   private def leftPad(s: String, len: Int): String =
     ' '.toString * (len - s.length()) + s
 }

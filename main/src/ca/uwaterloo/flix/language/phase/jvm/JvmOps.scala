@@ -28,9 +28,7 @@ import java.nio.file.{Files, LinkOption, Path}
 
 object JvmOps {
 
-  /**
-    * The root package name.
-    */
+  /** The root package name. */
   val RootPackage: List[String] = Nil
 
   /**
@@ -220,9 +218,7 @@ object JvmOps {
     JvmType.Reference(JvmName(pkg, name))
   }
 
-  /**
-    * Returns the op name of the given symbol.
-    */
+  /** Returns the op name of the given symbol. */
   def getEffectOpName(op: Symbol.OpSym): String = {
     mangle(op.name)
   }
@@ -241,9 +237,7 @@ object JvmOps {
     getNamespaceName(ns.ns)
   }
 
-  /**
-    * Returns the namespace name of the given definition symbol `sym`.
-    */
+  /** Returns the namespace name of the given definition symbol `sym`. */
   def getNamespaceName(sym: Symbol.DefnSym): JvmName = {
     getNamespaceName(sym.namespace)
   }
@@ -291,9 +285,7 @@ object JvmOps {
     case JvmType.Reference(_) => "Obj"
   }
 
-  /**
-    * Returns the set of namespaces in the given AST `root`.
-    */
+  /** Returns the set of namespaces in the given AST `root`. */
   def namespacesOf(root: Root): Set[NamespaceInfo] = {
     // Group every symbol by namespace.
     root.defs.groupBy(_._1.namespace).map {
@@ -302,18 +294,14 @@ object JvmOps {
     }.toSet
   }
 
-  /**
-    * Returns the set of erased lazy types in `types` without searching recursively.
-    */
+  /** Returns the set of erased lazy types in `types` without searching recursively. */
   def getErasedLazyTypesOf(types: Iterable[MonoType]): Set[BackendObjType.Lazy] =
     types.foldLeft(Set.empty[BackendObjType.Lazy]) {
       case (acc, MonoType.Lazy(tpe)) => acc + BackendObjType.Lazy(BackendType.asErasedBackendType(tpe))
       case (acc, _) => acc
     }
 
-  /**
-    * Returns the set of erased record extend types in `types` without searching recursively.
-    */
+  /** Returns the set of erased record extend types in `types` without searching recursively. */
   def getErasedRecordExtendsOf(types: Iterable[MonoType]): Set[BackendObjType.RecordExtend] =
     types.foldLeft(Set.empty[BackendObjType.RecordExtend]) {
       case (acc, MonoType.RecordExtend(_, value, _)) =>
@@ -321,9 +309,7 @@ object JvmOps {
       case (acc, _) => acc
     }
 
-  /**
-    * Returns the set of erased function types in `types` without searching recursively.
-    */
+  /** Returns the set of erased function types in `types` without searching recursively. */
   def getErasedArrowsOf(types: Iterable[MonoType]): Set[BackendObjType.Arrow] =
     types.foldLeft(Set.empty[BackendObjType.Arrow]) {
       case (acc, MonoType.Arrow(args, result)) =>
@@ -331,9 +317,7 @@ object JvmOps {
       case (acc, _) => acc
     }
 
-  /**
-    * Returns the set of erased tuple types in `types` without searching recursively.
-    */
+  /** Returns the set of erased tuple types in `types` without searching recursively. */
   def getErasedTupleTypesOf(types: Iterable[MonoType]): Set[BackendObjType.Tuple] =
     types.foldLeft(Set.empty[BackendObjType.Tuple]) {
       case (acc, MonoType.Tuple(elms)) =>
@@ -341,9 +325,7 @@ object JvmOps {
       case (acc, _) => acc
     }
 
-  /**
-    * Returns the set of erased struct types in `types` without searching recursively.
-    */
+  /** Returns the set of erased struct types in `types` without searching recursively. */
   def getErasedStructTypesOf(types: Iterable[MonoType]): Set[BackendObjType.Struct] =
     types.foldLeft(Set.empty[BackendObjType.Struct]) {
       case (acc, MonoType.Struct(_, elms, targs)) =>
@@ -387,14 +369,10 @@ object JvmOps {
     Files.write(path, clazz.bytecode)
   }
 
-  /**
-    * Returns `true` if the given `path` is non-empty (i.e. contains data).
-    */
+  /** Returns `true` if the given `path` is non-empty (i.e. contains data). */
   private def isEmpty(path: Path): Boolean = Files.size(path) == 0L
 
-  /**
-    * Returns `true` if the given `path` exists and is a Java Virtual Machine class file.
-    */
+  /** Returns `true` if the given `path` exists and is a Java Virtual Machine class file. */
   private def isClassFile(path: Path): Boolean = {
     if (Files.exists(path) && Files.isReadable(path) && Files.isRegularFile(path)) {
       // Read the first four bytes of the file.

@@ -25,9 +25,7 @@ import scala.jdk.CollectionConverters._
 
 class FuzzDuplicateLines extends AnyFunSuite with TestUtils {
 
-  /**
-    * Number of variants to make of each file. Each variant has a single line duplicated.
-    */
+  /** Number of variants to make of each file. Each variant has a single line duplicated. */
   private val N = 10
 
   test("simple-card-game") {

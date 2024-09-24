@@ -18,14 +18,10 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 
-/**
-  * Loads generated JVM bytecode classes using a custom class loader.
-  */
+/** Loads generated JVM bytecode classes using a custom class loader. */
 object BytecodeLoader {
 
-  /**
-    * Loads the given JVM `classes` using a custom class loader.
-    */
+  /** Loads the given JVM `classes` using a custom class loader. */
   def loadAll(classes: Map[JvmName, JvmClass])(implicit flix: Flix): Map[JvmName, Class[_]] = {
     //
     // Compute a map from binary names (strings) to JvmClasses.

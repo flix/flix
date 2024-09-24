@@ -31,9 +31,7 @@ object LambdaLift {
   // We are safe to use the top scope everywhere because we do not use unification in this or future phases.
   private implicit val S: Scope = Scope.Top
 
-  /**
-    * Performs lambda lifting on the given AST `root`.
-    */
+  /** Performs lambda lifting on the given AST `root`. */
   def run(root: SimplifiedAst.Root)(implicit flix: Flix): LiftedAst.Root = flix.phase("LambdaLift") {
     implicit val ctx: SharedContext = SharedContext(new ConcurrentLinkedQueue())
 

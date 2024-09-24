@@ -195,9 +195,7 @@ object SchemaConstraintGen {
   }
 
 
-  /**
-    * Infers the type of the given head predicate.
-    */
+  /** Infers the type of the given head predicate. */
   private def visitHeadPredicate(head: KindedAst.Predicate.Head)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): Type = {
     implicit val scope: Scope = c.getScope
     head match {
@@ -214,9 +212,7 @@ object SchemaConstraintGen {
     }
   }
 
-  /**
-    * Infers the type of the given body predicate.
-    */
+  /** Infers the type of the given body predicate. */
   private def visitBodyPredicate(body0: KindedAst.Predicate.Body)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): Type = {
     implicit val scope: Scope = c.getScope
     body0 match {
@@ -247,17 +243,13 @@ object SchemaConstraintGen {
     }
   }
 
-  /**
-    * Returns the relation or lattice type of `name` with the term types `ts`.
-    */
+  /** Returns the relation or lattice type of `name` with the term types `ts`. */
   private def mkRelationOrLatticeType(name: String, den: Denotation, ts: List[Type], root: KindedAst.Root, loc: SourceLocation)(implicit flix: Flix): Type = den match {
     case Denotation.Relational => Type.mkRelation(ts, loc)
     case Denotation.Latticenal => Type.mkLattice(ts, loc)
   }
 
-  /**
-    * Returns the trait constraints for the given term types `ts` with the given denotation `den`.
-    */
+  /** Returns the trait constraints for the given term types `ts` with the given denotation `den`. */
   private def getTermTraitConstraints(den: Denotation, ts: List[Type], root: KindedAst.Root, loc: SourceLocation): List[Ast.TraitConstraint] = den match {
     case Denotation.Relational =>
       ts.flatMap(mkTraitConstraintsForRelationalTerm(_, root, loc))
@@ -265,9 +257,7 @@ object SchemaConstraintGen {
       ts.init.flatMap(mkTraitConstraintsForRelationalTerm(_, root, loc)) ::: mkTraitConstraintsForLatticeTerm(ts.last, root, loc)
   }
 
-  /**
-    * Constructs the trait constraints for the given relational term type `tpe`.
-    */
+  /** Constructs the trait constraints for the given relational term type `tpe`. */
   private def mkTraitConstraintsForRelationalTerm(tpe: Type, root: KindedAst.Root, loc: SourceLocation): List[Ast.TraitConstraint] = {
     val traits = List(
       PredefinedTraits.lookupTraitSym("Eq", root),
@@ -276,9 +266,7 @@ object SchemaConstraintGen {
     traits.map(trt => Ast.TraitConstraint(Ast.TraitConstraint.Head(trt, loc), tpe, loc))
   }
 
-  /**
-    * Constructs the trait constraints for the given lattice term type `tpe`.
-    */
+  /** Constructs the trait constraints for the given lattice term type `tpe`. */
   private def mkTraitConstraintsForLatticeTerm(tpe: Type, root: KindedAst.Root, loc: SourceLocation): List[Ast.TraitConstraint] = {
     val traits = List(
       PredefinedTraits.lookupTraitSym("Eq", root),

@@ -19,14 +19,10 @@ import ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, TypedAst}
 
 sealed trait Entity {
-  /**
-    * The source location of the entity.
-    */
+  /** The source location of the entity. */
   def loc: SourceLocation
 
-  /**
-    * The precision of an entity.
-    */
+  /** The precision of an entity. */
   def precision: Entity.Precision
 
   /**

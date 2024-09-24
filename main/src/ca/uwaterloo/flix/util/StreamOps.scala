@@ -20,9 +20,7 @@ import java.io.*
 
 object StreamOps {
 
-  /**
-    * Reads an array of all bytes read from the given input stream `is`.
-    */
+  /** Reads an array of all bytes read from the given input stream `is`. */
   def readAllBytes(inputStream: InputStream): Array[Byte] = {
     val outputStream = new ByteArrayOutputStream()
 
@@ -37,9 +35,7 @@ object StreamOps {
     outputStream.toByteArray
   }
 
-  /**
-    * Reads the `inputStream` into a string.
-    */
+  /** Reads the `inputStream` into a string. */
   def readAll(inputStream: InputStream): String = {
     val reader = new BufferedReader(new InputStreamReader(inputStream, "UTF-8"))
     val result = readAll(reader)
@@ -47,9 +43,7 @@ object StreamOps {
     result
   }
 
-  /**
-    * Reads the `reader` into a string.
-    */
+  /** Reads the `reader` into a string. */
   def readAll(reader: BufferedReader): String = {
     val sb = new StringBuilder()
     var line = reader.readLine()

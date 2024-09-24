@@ -8,19 +8,13 @@ import ca.uwaterloo.flix.util.{LocalResource, Options, StatUtils}
 import org.json4s.JsonDSL._
 import org.json4s.native.JsonMethods
 
-/**
-  * A collection of internal utilities to measure the performance of the Flix compiler itself.
-  */
+/** A collection of internal utilities to measure the performance of the Flix compiler itself. */
 object BenchmarkCompilerOld {
 
-  /**
-    * The number of compilations to perform when collecting statistics.
-    */
+  /** The number of compilations to perform when collecting statistics. */
   val N = 10
 
-  /**
-    * Outputs statistics about the size of the generated JVM code.
-    */
+  /** Outputs statistics about the size of the generated JVM code. */
   def benchmarkCodeSize(o: Options): Unit = {
     val flix = newFlix(o)
     val result = flix.compile().unsafeGet
@@ -43,9 +37,7 @@ object BenchmarkCompilerOld {
     }
   }
 
-  /**
-    * Outputs statistics about time spent in each compiler phase.
-    */
+  /** Outputs statistics about time spent in each compiler phase. */
   def benchmarkPhases(o: Options): Unit = {
     //
     // Collect data from N iterations.
@@ -79,9 +71,7 @@ object BenchmarkCompilerOld {
     processPhasesResults(o, r)
   }
 
-  /**
-    * Processes and prints the results of the phase benchmarking.
-    */
+  /** Processes and prints the results of the phase benchmarking. */
   private def processPhasesResults(o: Options, r: IndexedSeq[(CompilationResult, List[PhaseTime])]): Unit = {
     //
     // Split into compilation results and phase results.
@@ -137,9 +127,7 @@ object BenchmarkCompilerOld {
     }
   }
 
-  /**
-    * Computes the throughput of the compiler.
-    */
+  /** Computes the throughput of the compiler. */
   def benchmarkThroughput(o: Options, frontend: Boolean): Unit = {
 
     case class Run(lines: Int, time: Long)
@@ -219,14 +207,10 @@ object BenchmarkCompilerOld {
     }
   }
 
-  /**
-    * Returns the throughput per second.
-    */
+  /** Returns the throughput per second. */
   private def throughput(lines: Long, time: Long): Int = ((1_000_000_000L * lines).toDouble / time.toDouble).toInt
 
-  /**
-    * Returns a Flix object configured with the benchmark program.
-    */
+  /** Returns a Flix object configured with the benchmark program. */
   private def newFlix(o: Options): Flix = {
     val flix = new Flix()
     flushCaches()
@@ -238,17 +222,13 @@ object BenchmarkCompilerOld {
     flix
   }
 
-  /**
-    * Flushes (clears) all caches.
-    */
+  /** Flushes (clears) all caches. */
   private def flushCaches(): Unit = {
     UnificationCache.GlobalBool.clear()
     UnificationCache.GlobalBdd.clear()
   }
 
-  /**
-    * Adds test code to the benchmarking suite.
-    */
+  /** Adds test code to the benchmarking suite. */
   private def addInputs(flix: Flix): Unit = {
     implicit val sctx: SecurityContext = SecurityContext.AllPermissions
     flix.addSourceCode("TestArray.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestArray.flix"))
@@ -270,9 +250,7 @@ object BenchmarkCompilerOld {
 }
 
   case object SummaryStatistics {
-    /**
-      * Builds the summary statistics from the given data.
-      */
+    /** Builds the summary statistics from the given data. */
     def from[T](data: Seq[T])(implicit numeric: Numeric[T]): SummaryStatistics = {
       SummaryStatistics(
         min = numeric.toDouble(data.min),
@@ -284,9 +262,7 @@ object BenchmarkCompilerOld {
     }
   }
 
-  /**
-    * A collection of summary statistics.
-    */
+  /** A collection of summary statistics. */
   case class SummaryStatistics(min: Double, max: Double, mean: Double, median: Double, stdDev: Double)
 
 }

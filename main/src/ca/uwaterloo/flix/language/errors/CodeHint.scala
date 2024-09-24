@@ -17,9 +17,7 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
 
-/**
-  * A common super-type for code hints.
-  */
+/** A common super-type for code hints. */
 trait CodeHint {
   def summary: String
 

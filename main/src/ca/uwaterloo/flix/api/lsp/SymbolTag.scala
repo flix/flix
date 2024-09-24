@@ -17,9 +17,7 @@ package ca.uwaterloo.flix.api.lsp
 
 import org.json4s.JsonAST.{JInt, JValue}
 
-/**
-  * Represents a `SymbolTag` in LSP.
-  */
+/** Represents a `SymbolTag` in LSP. */
 trait SymbolTag {
   def toJSON: JValue = this match {
     case SymbolTag.Deprecated => JInt(1)

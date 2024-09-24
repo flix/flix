@@ -15,9 +15,7 @@
  */
 package ca.uwaterloo.flix.language.ast.shared
 
-/**
-  * A common supertype for constant values.
-  */
+/** A common supertype for constant values. */
 sealed trait Constant
 
 object Constant {

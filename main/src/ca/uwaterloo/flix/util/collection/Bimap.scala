@@ -16,13 +16,9 @@
 
 package ca.uwaterloo.flix.util.collection
 
-/**
-  * Companion object of the [[Bimap]] class.
-  */
+/** Companion object of the [[Bimap]] class. */
 object Bimap {
-  /**
-    * Returns the empty Bimap.
-    */
+  /** Returns the empty Bimap. */
   def empty[A, B]: Bimap[A, B] = Bimap(Map.empty, Map.empty)
 
   /**
@@ -37,29 +33,19 @@ object Bimap {
   }
 }
 
-/**
-  * A bi-directional map (i.e. a one-to-one map) from A to B and B to A.
-  */
+/** A bi-directional map (i.e. a one-to-one map) from A to B and B to A. */
 case class Bimap[A, B](m1: Map[A, B], m2: Map[B, A]) {
 
-  /**
-    * Alias for adds the pair `p` to the map.
-    */
+  /** Alias for adds the pair `p` to the map. */
   def +(p: (A, B)): Bimap[A, B] = Bimap(m1 + (p._1 -> p._2), m2 + (p._2 -> p._1))
 
-  /**
-    * Optionally returns the value `a` is mapped to.
-    */
+  /** Optionally returns the value `a` is mapped to. */
   def getForward(a: A): Option[B] = m1.get(a)
 
-  /**
-    * Optionally returns the value `b` is mapped to.
-    */
+  /** Optionally returns the value `b` is mapped to. */
   def getBackward(b: B): Option[A] = m2.get(b)
 
-  /**
-    * Returns the same map but swapped.
-    */
+  /** Returns the same map but swapped. */
   def swap: Bimap[B, A] = Bimap(m2, m1)
 
 }

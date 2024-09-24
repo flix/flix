@@ -23,9 +23,7 @@ package ca.uwaterloo.flix.language.phase.jvm
   * A JVM type is either one of the primitive types or a reference type.
   */
 sealed trait JvmType {
-  /**
-    * Returns the type descriptor of `this` Java name.
-    */
+  /** Returns the type descriptor of `this` Java name. */
   def toDescriptor: String = this match {
     case JvmType.Void => "V"
     case JvmType.PrimBool => "Z"
@@ -54,54 +52,34 @@ sealed trait JvmType {
 }
 
 object JvmType {
-  /**
-    * Represents the void type.
-    */
+  /** Represents the void type. */
   case object Void extends JvmType
 
-  /**
-    * Represents the primitive boolean type.
-    */
+  /** Represents the primitive boolean type. */
   case object PrimBool extends JvmType
 
-  /**
-    * Represents the primitive character type.
-    */
+  /** Represents the primitive character type. */
   case object PrimChar extends JvmType
 
-  /**
-    * Represents the primitive byte type.
-    */
+  /** Represents the primitive byte type. */
   case object PrimByte extends JvmType
 
-  /**
-    * Represents the primitive short type.
-    */
+  /** Represents the primitive short type. */
   case object PrimShort extends JvmType
 
-  /**
-    * Represents the primitive int type.
-    */
+  /** Represents the primitive int type. */
   case object PrimInt extends JvmType
 
-  /**
-    * Represents the primitive long type.
-    */
+  /** Represents the primitive long type. */
   case object PrimLong extends JvmType
 
-  /**
-    * Represents the primitive float type.
-    */
+  /** Represents the primitive float type. */
   case object PrimFloat extends JvmType
 
-  /**
-    * Represents the primitive double type.
-    */
+  /** Represents the primitive double type. */
   case object PrimDouble extends JvmType
 
-  /**
-    * Represents a reference type of the given `name`.
-    */
+  /** Represents a reference type of the given `name`. */
   case class Reference(name: JvmName) extends JvmType
 
   //

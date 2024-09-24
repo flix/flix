@@ -25,9 +25,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import java.nio.file.{Files, Paths}
 
 class FuzzDeleteLines extends AnyFunSuite with TestUtils {
-  /**
-    * Number of variants to make for each file. Each variant has a single line deleted.
-    */
+  /** Number of variants to make for each file. Each variant has a single line deleted. */
   private val N = 10
 
   test("simple-card-game") {

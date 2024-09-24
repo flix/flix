@@ -66,24 +66,16 @@ import scala.collection.mutable
   */
 class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSocketAddress("localhost", port)) {
 
-  /**
-    * The custom date format to use for logging.
-    */
+  /** The custom date format to use for logging. */
   private val DateFormat: String = "yyyy-MM-dd HH:mm:ss"
 
-  /**
-    * The Flix instance (the same instance is used for incremental compilation).
-    */
+  /** The Flix instance (the same instance is used for incremental compilation). */
   private val flix: Flix = new Flix().setFormatter(NoFormatter).setOptions(o)
 
-  /**
-    * A map from source URIs to source code.
-    */
+  /** A map from source URIs to source code. */
   private val sources: mutable.Map[String, String] = mutable.Map.empty
 
-  /**
-    * The current AST root. The root is null until the source code is compiled.
-    */
+  /** The current AST root. The root is null until the source code is compiled. */
   private var root: Root = TypedAst.empty
 
   /**
@@ -97,9 +89,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
   @volatile
   private var index: Index = Index.empty
 
-  /**
-    * A thread pool, with a single thread, which we use to execute indexing operations.
-    */
+  /** A thread pool, with a single thread, which we use to execute indexing operations. */
   private val indexingPool: ExecutorService = Executors.newFixedThreadPool(1)
 
   /**
@@ -109,36 +99,26 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
     */
   private var indexingFuture: Future[_] = _
 
-  /**
-    * The current compilation errors.
-    */
+  /** The current compilation errors. */
   private var currentErrors: List[CompilationMessage] = Nil
 
-  /**
-    * Invoked when the server is started.
-    */
+  /** Invoked when the server is started. */
   override def onStart(): Unit = {
     Console.println(s"Listen on '$getAddress'.")
   }
 
-  /**
-    * Invoked when a client connects.
-    */
+  /** Invoked when a client connects. */
   override def onOpen(ws: WebSocket, ch: ClientHandshake): Unit = {
     /* nop */
     Console.println(s"Client at '${ws.getRemoteSocketAddress}' connected.")
   }
 
-  /**
-    * Invoked when a client disconnects.
-    */
+  /** Invoked when a client disconnects. */
   override def onClose(ws: WebSocket, i: Int, s: String, b: Boolean): Unit = {
     Console.println(s"Client at '${ws.getRemoteSocketAddress}' disconnected.")
   }
 
-  /**
-    * Invoked when a client sends a message.
-    */
+  /** Invoked when a client sends a message. */
   override def onMessage(ws: WebSocket, data: String): Unit = try {
     parseRequest(data) match {
       case Ok(request) =>
@@ -158,16 +138,12 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
       ex.printStackTrace(System.err)
   }
 
-  /**
-    * Invoked when an error occurs.
-    */
+  /** Invoked when an error occurs. */
   override def onError(ws: WebSocket, e: Exception): Unit = {
     // Nop - Keep LanguageServer alive.
   }
 
-  /**
-    * Parse the request.
-    */
+  /** Parse the request. */
   private def parseRequest(s: String): Result[Request, String] = try {
     // Parse the string `s` into a json value.
     val json = parse(s)
@@ -206,25 +182,19 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
     case ex: ParseException => Err(s"Malformed request. Unable to parse JSON: '${ex.getMessage}'.")
   }
 
-  /**
-    * Add the given source code to the compiler
-    */
+  /** Add the given source code to the compiler */
   private def addSourceCode(uri: String, src: String): Unit = {
     flix.addSourceCode(uri, src)(SecurityContext.AllPermissions) // TODO
     sources += (uri -> src)
   }
 
-  /**
-    * Remove the source code associated with the given uri from the compiler
-    */
+  /** Remove the source code associated with the given uri from the compiler */
   private def remSourceCode(uri: String): Unit = {
     flix.remSourceCode(uri)
     sources -= uri
   }
 
-  /**
-    * Process the request.
-    */
+  /** Process the request. */
   private def processRequest(request: Request)(implicit ws: WebSocket): JValue = request match {
 
     case Request.AddUri(id, uri, src) =>
@@ -324,9 +294,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
 
   }
 
-  /**
-    * Processes a validate request.
-    */
+  /** Processes a validate request. */
   private def processCheck(requestId: String): JValue = {
 
     // Measure elapsed time.
@@ -361,9 +329,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
     }
   }
 
-  /**
-    * Helper function for [[processCheck]] which handles successful and soft failure compilations.
-    */
+  /** Helper function for [[processCheck]] which handles successful and soft failure compilations. */
   private def processSuccessfulCheck(requestId: String, root: Root, errors: Chain[CompilationMessage], explain: Boolean, t0: Long): JValue = {
     // Update the root and the errors.
     this.root = root
@@ -386,9 +352,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
     ("id" -> requestId) ~ ("status" -> ResponseStatus.Success) ~ ("time" -> e) ~ ("result" -> results.map(_.toJSON))
   }
 
-  /**
-    * Asynchronously compute the reverse index using the thread pool.
-    */
+  /** Asynchronously compute the reverse index using the thread pool. */
   private def asynchronouslyUpdateIndex(root: Root): Unit = {
     this.indexingFuture = indexingPool.submit(new Runnable {
       override def run(): Unit = {
@@ -406,26 +370,20 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
     if (indexingFuture != null) indexingFuture.get()
   }
 
-  /**
-    * Processes a shutdown request.
-    */
+  /** Processes a shutdown request. */
   private def processShutdown(): Nothing = {
     System.exit(0)
     throw null // unreachable
   }
 
-  /**
-    * Processes a disconnection request.
-    */
+  /** Processes a disconnection request. */
   private def processDisconnect()(implicit ws: WebSocket): JValue = {
     val code = 1013 // 'Try again later'
     ws.closeConnection(code, "Simulating disconnection...")
     JNothing
   }
 
-  /**
-    * Processes the version request.
-    */
+  /** Processes the version request. */
   private def processVersion(requestId: String): JValue = {
     val major = Version.CurrentVersion.major
     val minor = Version.CurrentVersion.minor
@@ -434,9 +392,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
     ("id" -> requestId) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> version)
   }
 
-  /**
-    * Logs the given message `msg` along with information about the connection `ws`.
-    */
+  /** Logs the given message `msg` along with information about the connection `ws`. */
   private def log(msg: String)(implicit ws: WebSocket): Unit = {
     val dateFormat = new SimpleDateFormat(DateFormat)
     val datePart = dateFormat.format(new Date())

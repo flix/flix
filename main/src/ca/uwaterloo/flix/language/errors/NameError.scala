@@ -20,9 +20,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.util.Formatter
 
-/**
-  * A common super-type for naming errors.
-  */
+/** A common super-type for naming errors. */
 sealed trait NameError extends CompilationMessage with Recoverable {
   val kind = "Name Error"
 }

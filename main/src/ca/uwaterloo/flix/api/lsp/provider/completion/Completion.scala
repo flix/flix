@@ -23,13 +23,9 @@ import ca.uwaterloo.flix.language.ast.Symbol.{EnumSym, StructSym, ModuleSym, Typ
 
 import java.lang.reflect.{Field, Method}
 
-/**
-  * A common super-type for auto-completions.
-  */
+/** A common super-type for auto-completions. */
 sealed trait Completion {
-  /**
-    * Returns a LSP completion item for `this`.
-    */
+  /** Returns a LSP completion item for `this`. */
   def toCompletionItem(context: CompletionContext)(implicit flix: Flix): CompletionItem = this match {
 
     case Completion.EffectCompletion(sym, doc) =>
@@ -395,7 +391,7 @@ object Completion {
     * The reason we differentiate bewteen normal keywords and these literals
     * is because completions for the former should include a trailing space
     * whereas completions for the latter we might not want one.
-    * 
+    *
     * To illustrate this consider the two following correct completions (where ˽ denotes a space)
     *
     * `de`      --->    `def˽`

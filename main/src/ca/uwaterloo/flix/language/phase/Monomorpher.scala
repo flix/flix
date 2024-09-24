@@ -105,9 +105,7 @@ object Monomorpher {
     */
   private case class StrictSubstitution(s: Substitution, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix) {
 
-    /**
-      * Returns the normalized default type for the kind of `tpe0`.
-      */
+    /** Returns the normalized default type for the kind of `tpe0`. */
     private def default(tpe0: Type): Type = tpe0.kind match {
       case Kind.Wild => Type.mkAnyType(tpe0.loc)
       case Kind.WildCaseSet => Type.mkAnyType(tpe0.loc)
@@ -205,9 +203,7 @@ object Monomorpher {
       case (tvar, tpe) => StrictSubstitution(s ++ Substitution.singleton(tvar, tpe), eqEnv)
     }
 
-    /**
-      * Removes the binding for the given type variable `tvar` (if it exists).
-      */
+    /** Removes the binding for the given type variable `tvar` (if it exists). */
     def unbind(sym: Symbol.KindedTypeVarSym): StrictSubstitution =
       StrictSubstitution(s.unbind(sym), eqEnv)
 
@@ -283,35 +279,25 @@ object Monomorpher {
       */
     private val def2def: mutable.Map[(Symbol.DefnSym, Type), Symbol.DefnSym] = mutable.Map.empty
 
-    /**
-      * Optionally returns the specialized def symbol for the given symbol `sym` and type `tpe`.
-      */
+    /** Optionally returns the specialized def symbol for the given symbol `sym` and type `tpe`. */
     def getDef2Def(sym: Symbol.DefnSym, tpe: Type): Option[Symbol.DefnSym] = synchronized {
       def2def.get((sym, tpe))
     }
 
-    /**
-      * Adds a new def2def binding for the given symbol `sym1` and type `tpe`.
-      */
+    /** Adds a new def2def binding for the given symbol `sym1` and type `tpe`. */
     def putDef2Def(sym1: Symbol.DefnSym, tpe: Type, sym2: Symbol.DefnSym): Unit = synchronized {
       def2def.put((sym1, tpe), sym2)
     }
 
-    /**
-      * A map used to collect specialized definitions, etc.
-      */
+    /** A map used to collect specialized definitions, etc. */
     private val specializedDefns: mutable.Map[Symbol.DefnSym, MonoAst.Def] = mutable.Map.empty
 
-    /**
-      * Adds a new specialized definition for the given def symbol `sym`.
-      */
+    /** Adds a new specialized definition for the given def symbol `sym`. */
     def putSpecializedDef(sym: Symbol.DefnSym, defn: MonoAst.Def): Unit = synchronized {
       specializedDefns.put(sym, defn)
     }
 
-    /**
-      * Returns the specialized definitions as an immutable map.
-      */
+    /** Returns the specialized definitions as an immutable map. */
     def toMap: Map[Symbol.DefnSym, MonoAst.Def] = synchronized {
       specializedDefns.toMap
     }
@@ -361,9 +347,7 @@ object Monomorpher {
     case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected JVM type '$rest'", rest.loc)
   }
 
-  /**
-    * Performs monomorphization of the given AST `root`.
-    */
+  /** Performs monomorphization of the given AST `root`. */
   def run(root: LoweredAst.Root)(implicit flix: Flix): MonoAst.Root = flix.phase("Monomorpher") {
 
     implicit val r: LoweredAst.Root = root
@@ -452,9 +436,7 @@ object Monomorpher {
       MonoAst.Spec(doc, ann, mod, fparams, declaredScheme.base, subst(retTpe), subst(eff), loc)
   }
 
-  /**
-    * Adds a specialized def for the given symbol `freshSym` and def `defn` with the given substitution `subst`.
-    */
+  /** Adds a specialized def for the given symbol `freshSym` and def `defn` with the given substitution `subst`. */
   private def mkFreshDefn(freshSym: Symbol.DefnSym, defn: LoweredAst.Def, subst: StrictSubstitution)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): Unit = {
     // Specialize the formal parameters and introduce fresh local variable symbols.
     val (fparams, env0) = specializeFormalParams(defn.spec.fparams, subst)
@@ -750,16 +732,12 @@ object Monomorpher {
     }
   }
 
-  /**
-    * Converts a signature with an implementation into the equivalent definition.
-    */
+  /** Converts a signature with an implementation into the equivalent definition. */
   private def sigToDef(sigSym: Symbol.SigSym, spec: LoweredAst.Spec, exp: LoweredAst.Expr): LoweredAst.Def = {
     LoweredAst.Def(sigSymToDefnSym(sigSym), spec, exp)
   }
 
-  /**
-    * Converts a SigSym into the equivalent DefnSym.
-    */
+  /** Converts a SigSym into the equivalent DefnSym. */
   private def sigSymToDefnSym(sigSym: Symbol.SigSym): Symbol.DefnSym = {
     val ns = sigSym.trt.namespace :+ sigSym.trt.name
     new Symbol.DefnSym(None, ns, sigSym.name, sigSym.loc)
@@ -825,9 +803,7 @@ object Monomorpher {
     (MonoAst.FormalParam(freshSym, mod, subst0(tpe), src, loc), Map(sym -> freshSym))
   }
 
-  /**
-    * Unifies `tpe1` and `tpe2` which must be unifiable.
-    */
+  /** Unifies `tpe1` and `tpe2` which must be unifiable. */
   private def infallibleUnify(tpe1: Type, tpe2: Type, sym: Symbol.DefnSym)(implicit root: LoweredAst.Root, flix: Flix): StrictSubstitution = {
     Unification.unifyTypesIgnoreLeftoverAssocs(tpe1, tpe2, RigidityEnv.empty, root.eqEnv) match {
       case Some(subst) =>

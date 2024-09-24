@@ -17,9 +17,7 @@ package ca.uwaterloo.flix.language.ast
 
 import java.lang.reflect.{Constructor, Field, Method}
 
-/**
-  * A common super-type for control pure expressions.
-  */
+/** A common super-type for control pure expressions. */
 sealed trait AtomicOp
 
 object AtomicOp {

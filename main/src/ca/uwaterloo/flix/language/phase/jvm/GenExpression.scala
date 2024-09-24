@@ -32,9 +32,7 @@ import org.objectweb.asm
 import org.objectweb.asm.Opcodes._
 import org.objectweb.asm._
 
-/**
-  * Generate expression
-  */
+/** Generate expression */
 object GenExpression {
 
   type Ref[T] = Array[T]
@@ -49,9 +47,7 @@ object GenExpression {
                            pcCounter: Ref[Int]
                           )
 
-  /**
-    * Emits code for the given expression `exp0` to the given method `visitor` in the `currentClass`.
-    */
+  /** Emits code for the given expression `exp0` to the given method `visitor` in the `currentClass`. */
   def compileExpr(exp0: Expr)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = exp0 match {
 
     case Expr.Cst(cst, tpe, loc) => cst match {
@@ -1493,9 +1489,7 @@ object GenExpression {
     mv.visitMethodInsn(INVOKEVIRTUAL, printStream.toInternalName, "println", MethodDescriptor.mkDescriptor(BackendObjType.String.toTpe)(VoidableType.Void).toDescriptor, false)
   }
 
-  /**
-    * Emits code that instantiates an array of the type `tpe`.
-    */
+  /** Emits code that instantiates an array of the type `tpe`. */
   private def visitArrayInstantiate(mv: MethodVisitor, tpe: BackendType): Unit = {
     tpe match {
       case BackendType.Array(_) => mv.visitTypeInsn(ANEWARRAY, tpe.toDescriptor)
@@ -1609,18 +1603,14 @@ object GenExpression {
     case _ => mv.visitLdcInsn(i)
   }
 
-  /**
-    * Adds the source of the line for debugging
-    */
+  /** Adds the source of the line for debugging */
   private def addSourceLine(visitor: MethodVisitor, loc: SourceLocation): Unit = {
     val label = new Label()
     visitor.visitLabel(label)
     visitor.visitLineNumber(loc.beginLine, label)
   }
 
-  /**
-    * Pushes arguments onto the stack ready to invoke a method
-    */
+  /** Pushes arguments onto the stack ready to invoke a method */
   private def pushArgs(args: List[Expr], signature: Array[Class[_ <: Object]])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
     // Evaluate arguments left-to-right and push them onto the stack.
     for ((arg, argType) <- args.zip(signature)) {
