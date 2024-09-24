@@ -128,4 +128,8 @@ object CofiniteIntSet {
       Compl(x.union(y))
   }
 
+  /** Returns the difference of `s1` and `s2` (`s1 - s2`). */
+  def difference(s1: CofiniteIntSet, s2: CofiniteIntSet): CofiniteIntSet =
+    intersection(s1, complement(s2))
+
 }

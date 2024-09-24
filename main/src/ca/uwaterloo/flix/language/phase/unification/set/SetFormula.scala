@@ -363,16 +363,6 @@ object SetFormula {
   }
 
   /**
-    * Returns [[ElemSet]] if `s` is non-empty.
-    *
-    * Returns `None` if `s` is empty.
-    */
-  def mkElemSetOpt(s: SortedSet[Int]): Option[ElemSet] = {
-    // Maintains that ElemSet is non-empty.
-    if (s.isEmpty) None else Some(ElemSet(s))
-  }
-
-  /**
     * Returns the complement of `f` (`!f`).
     *
     * Complements are pushed to the bottom of the formula.
@@ -422,20 +412,22 @@ object SetFormula {
     */
   def mkInterAll(fs: List[SetFormula]): SetFormula = {
     // We need to do two things:
-    // - Separate subformulas into specific buckets of (neg) elements/variables/constants.
+    // - Separate subformulas into specific buckets of pos/neg elements/variables/constants and other.
     // - Flatten nested intersections.
 
-    // To avoid set computing intersections of `Option[ElemSet]`, use `CofiniteIntSet`.
+    // es1 ∩ !es2 ∩ es3 ∩ !es4 ∩ ..
+    // univ ∩ es1 ∩ !es2 ∩ es3 ∩ !es4 ∩ ..       (neutral intersection formula)
+    // = (univ ∩ es1 ∩ es3 ∩ !es2 ∩ !es4) ∩ ..   (intersection associativity)
+    // = (univ ∩ es1 ∩ es3 - es2 - es4) ∩ ..
+    // So we keep one CofiniteIntSet that represents both element sets -
+    // intersecting positive elems and differencing negative elements.
+
     var elemPos0 = CofiniteIntSet.universe
     val cstsPos = MutSet.empty[Cst]
     val varsPos = MutSet.empty[Var]
-    var elemNeg0 = SortedSet.empty[Int]
     val cstsNeg = MutSet.empty[Cst]
     val varsNeg = MutSet.empty[Var]
     val other = ListBuffer.empty[SetFormula]
-
-    // Variables and constants are checked for overlap immediately.
-    // Elements are checked at the end.
 
     var workList = fs
     while (workList.nonEmpty) {
@@ -456,7 +448,8 @@ object SetFormula {
           elemPos0 = CofiniteIntSet.intersection(elemPos0, CofiniteIntSet.mkSet(s))
           if (elemPos0.isEmpty) return Empty
         case Compl(ElemSet(s)) =>
-          elemNeg0 = elemNeg0.union(s)
+          elemPos0 = CofiniteIntSet.difference(elemPos0, CofiniteIntSet.mkSet(s))
+          if (elemPos0.isEmpty) return Empty
         case x@Var(_) =>
           if (varsNeg.contains(x)) return Empty
           varsPos += x
@@ -477,7 +470,8 @@ object SetFormula {
             varsPos += x
           }
           for (e <- elemNeg1) {
-            elemNeg0 = elemNeg0.union(e.s)
+            elemPos0 = CofiniteIntSet.difference(elemPos0, CofiniteIntSet.mkSet(e.s))
+            if (elemPos0.isEmpty) return Empty
           }
           for (x <- cstsNeg1) {
             if (cstsPos.contains(x)) return Empty
@@ -494,29 +488,33 @@ object SetFormula {
           other += compl
       }
     }
-    // Check overlaps in the element sets (could be done inline).
+    // Split into pos/neg elements.
     val (elemPos, elemNeg) = elemPos0 match {
-      case _ if elemPos0.isUniverse =>
-        // univ ∩ !elemNeg0 ∩ ..
-        // = !elemNeg0 ∩ ..
-        (None, mkElemSetOpt(elemNeg0))
       case CofiniteIntSet.Set(s) =>
-        // s ∩ !elemNeg0 ∩ ..
-        // = (s ∩ !elemNeg0) ∩ ..      (intersection associativity)
-        // = (s - elemNeg0) ∩ ..       (difference definition)
-        mkElemSetOpt(s.diff(elemNeg0)) match {
-          case Some(e) => (Some(e), None)
-          case None =>
-            // empty ∩ ..
-            // = empty
-            return Empty
+        if (s.isEmpty) {
+          // empty ∩ ..
+          // = empty       (idempotent intersection formula)
+          // Could return Empty, but unreachable since we check for empty at each operation.
+          throw InternalCompilerException(s"Impossible empty ElemSet $s", SourceLocation.Unknown)
+        } else {
+          // s.nonEmpty
+          // s ∩ ..
+          (Some(ElemSet(s)), None)
         }
-      case compl@CofiniteIntSet.Compl(_) =>
-        // Unreachable since we never only intersect finite sets with universe.
-        throw InternalCompilerException(s"Impossible co-finite set $compl", SourceLocation.Unknown)
+      case CofiniteIntSet.Compl(s) =>
+        if (s.isEmpty) {
+          // !empty ∩ ..
+          // = univ ∩ ..   (complement distribution)
+          // = ..          (neutral intersection formula)
+          (None, None)
+        } else {
+          // s.nonEmpty
+          // !s ∩ ..
+          (None, Some(ElemSet(s)))
+        }
     }
 
-    // Reduce intersections with zero or one subformula.
+    // Avoid intersections with zero or one subformula.
     subformulasOf(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other).take(2).toList match {
       case Nil => return Univ
       case one :: Nil => return one
@@ -548,13 +546,19 @@ object SetFormula {
     */
   def mkUnionAll(ts: List[SetFormula]): SetFormula = {
     // We need to do two things:
-    // - Separate subformulas into specific buckets of elements/variables/constants/etc.
+    // - Separate subformulas into specific buckets of pos/neg elements/variables/constants and other.
     // - Flatten nested unions.
 
-    var elemPos0 = SortedSet.empty[Int]
+    // es1 ∪ !es2 ∪ es3 ∪ !es4 ∪ ..
+    // empty ∪ es1 ∪ !es2 ∪ es3 ∪ !es4 ∪ ..       (neutral union formula)
+    // = (empty ∪ es1 ∪ es3 ∪ !es2 ∪ !es4) ∪ ..   (intersection associativity)
+    // = !!(empty ∪ es1 ∪ es3 ∪ !es2 ∪ !es4) ∪ .. (double complement)
+    // = !(univ ∩ !es1 ∩ !es3 ∩ es2 ∩ es4) ∪ .. (double complement)
+    // So we keep one CofiniteIntSet that represents both element sets -
+    // differencing positive elems and intersecting negative elements.
+
     val cstsPos = MutSet.empty[Cst]
     val varsPos = MutSet.empty[Var]
-    // To avoid set computing intersections of `Option[ElemSet]`, use `CofiniteIntSet`.
     var elemNeg0 = CofiniteIntSet.universe
     val cstsNeg = MutSet.empty[Cst]
     val varsNeg = MutSet.empty[Var]
@@ -579,7 +583,8 @@ object SetFormula {
           if (cstsPos.contains(x)) return Univ
           cstsNeg += x
         case ElemSet(s) =>
-          elemPos0 = elemPos0.union(s)
+          elemNeg0 = CofiniteIntSet.difference(elemNeg0, CofiniteIntSet.mkSet(s))
+          if (elemNeg0.isEmpty) return Univ
         case Compl(ElemSet(s)) =>
           elemNeg0 = CofiniteIntSet.intersection(elemNeg0, CofiniteIntSet.mkSet(s))
           if (elemNeg0.isEmpty) return Univ
@@ -590,8 +595,9 @@ object SetFormula {
           if (varsPos.contains(x)) return Univ
           varsNeg += x
         case Union(elemPos1, cstsPos1, varsPos1, elemNeg1, cstsNeg1, varsNeg1, other1) =>
-          for (x <- elemPos1) {
-            elemPos0 = elemPos0.union(x.s)
+          for (e <- elemPos1) {
+            elemNeg0 = CofiniteIntSet.difference(elemNeg0, CofiniteIntSet.mkSet(e.s))
+            if (elemNeg0.isEmpty) return Univ
           }
           for (x <- cstsPos1) {
             if (cstsNeg.contains(x)) return Univ
@@ -620,34 +626,35 @@ object SetFormula {
           other += compl
       }
     }
-    // Check overlaps in the element sets.
+    // Split into pos/neg elements.
     val (elemPos, elemNeg) = elemNeg0 match {
-      case _ if elemNeg0.isUniverse =>
-        // elemPos0 ∪ !univ ∪ ..
-        // = elemPos0 ∪ empty ∪ ..      (complement of univ)
-        // = elemPos0 ∪ ..               (neutral union formula)
-        (mkElemSetOpt(elemPos0), None)
       case CofiniteIntSet.Set(s) =>
-        // elemPos0 ∪ !s ∪ ..
-        // = (elemPos0 ∪ !s) ∪ ..       (union associativity)
-        // = !!(elemPos0 ∪ !s) ∪ ..     (double complement)
-        // = !(!elemPos0 ∩ s) ∪ ..      (complement distribution)
-        // = !(s ∩ !elemPos0) ∪ ..      (intersection symmetry)
-        // = !(s - elemPos0) ∪ ..       (difference definition)
-        mkElemSetOpt(s.diff(elemPos0)) match {
-          case Some(e) => (None, Some(e))
-          case None =>
-            // !empty ∪ ..
-            // = univ ∪ ..              (complement of empty)
-            // = univ
-            return Univ
+        if (s.isEmpty) {
+          // !empty ∪ ..
+          // = univ ∪ ..   (complement distribution)
+          // = univ        (idempotent union formula)
+          // Could return Univ, but unreachable since we check for empty at each operation.
+          throw InternalCompilerException(s"Impossible empty ElemSet $s", SourceLocation.Unknown)
+        } else {
+          // s.nonEmpty
+          // !s ∪ ..
+          (None, Some(ElemSet(s)))
         }
-      case compl@CofiniteIntSet.Compl(_) =>
-        // Unreachable since we never only intersect finite sets with universe.
-        throw InternalCompilerException(s"Impossible co-finite set $compl", SourceLocation.Unknown)
+      case CofiniteIntSet.Compl(s) =>
+        if (s.isEmpty) {
+          // !!empty ∪ ..
+          // = empty ∪ ..  (double complement)
+          // = ..          (neutral union formula)
+          (None, None)
+        } else {
+          // s.nonEmpty
+          // !!s ∪ ..
+          // = s ∪ ..      (double complement)
+          (Some(ElemSet(s)), None)
+        }
     }
 
-    // Reduce unions with zero or one subformula.
+    // Avoid unions with zero or one subformula.
     subformulasOf(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other).take(2).toList match {
       case Nil => return Empty
       case one :: Nil => return one
