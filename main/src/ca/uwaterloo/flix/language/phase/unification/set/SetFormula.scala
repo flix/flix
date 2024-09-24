@@ -541,7 +541,8 @@ object SetFormula {
     case _ => mkUnionAll(List(f1, f2))
   }
 
-  /** Returns the union of `ts` (`ts1 ∪ ts2 ∪ ..`).
+  /**
+    * Returns the union of `ts` (`ts1 ∪ ts2 ∪ ..`).
     *
     * Nested unions are put into a single union.
     */
