@@ -39,7 +39,7 @@ object TypedAstOps {
     case Expr.Cst(_, _, _) => Set.empty
     case Expr.Var(_, _, _) => Set.empty
     case Expr.Sig(sym, _, _) => Set(sym)
-    case Expr.Hole(_, _, _) => Set.empty
+    case Expr.Hole(_, _, _, _) => Set.empty
     case Expr.HoleWithExp(exp, _, _, _) => sigSymsOf(exp)
     case Expr.OpenAs(_, exp, _, _) => sigSymsOf(exp)
     case Expr.Use(_, _, exp, _) => sigSymsOf(exp)
@@ -133,7 +133,7 @@ object TypedAstOps {
 
     case Expr.Sig(_, _, _) => Map.empty
 
-    case Expr.Hole(_, _, _) => Map.empty
+    case Expr.Hole(_, _, _, _) => Map.empty
 
     case Expr.HoleWithExp(exp, _, _, _) =>
       freeVars(exp)
@@ -417,6 +417,7 @@ object TypedAstOps {
   private def freeVars(v: RestrictableChoosePattern.VarOrWild): Option[Symbol.VarSym] = v match {
     case RestrictableChoosePattern.Wild(_, _) => None
     case RestrictableChoosePattern.Var(sym, _, _) => Some(sym)
+    case RestrictableChoosePattern.Error(_, _) => None
   }
 
   /**

@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.TypedAst.{Def, Expr, Root}
 import ca.uwaterloo.flix.language.ast.*
+import ca.uwaterloo.flix.language.ast.Type.eraseTopAliases
 import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.phase.unification.{Substitution, Unification}
 import ca.uwaterloo.flix.util.*
@@ -62,7 +63,7 @@ object EffectVerifier {
     case Expr.Cst(cst, tpe, loc) => ()
     case Expr.Var(sym, tpe, loc) => ()
     case Expr.Sig(sym, tpe, loc) => ()
-    case Expr.Hole(sym, tpe, loc) => ()
+    case Expr.Hole(sym, tpe, eff, loc) => ()
     case Expr.HoleWithExp(exp, tpe, eff, loc) =>
       visitExp(exp)
     // TODO ?
@@ -78,9 +79,9 @@ object EffectVerifier {
       val expected = Type.mkUnion(Type.eraseTopAliases(exp.tpe).arrowEffectType :: exp.eff :: exps.map(_.eff), loc)
       val actual = eff
       expectType(expected, actual, loc)
-    case Expr.ApplyDef(_, exps, _, _, eff, loc) =>
+    case Expr.ApplyDef(_, exps, itpe, _, eff, loc) =>
       exps.foreach(visitExp)
-      val expected = Type.mkUnion(exps.map(_.eff), loc)
+      val expected = Type.mkUnion(Type.eraseTopAliases(itpe).arrowEffectType :: exps.map(_.eff), loc)
       val actual = eff
       expectType(expected, actual, loc)
     case Expr.Unary(sop, exp, tpe, eff, loc) =>

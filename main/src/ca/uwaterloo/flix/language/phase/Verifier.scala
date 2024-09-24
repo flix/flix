@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.Constant
+import ca.uwaterloo.flix.language.ast.shared.Constant
 import ca.uwaterloo.flix.language.ast.ReducedAst._
 import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoType, SemanticOp, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.dbg.AstPrinter._
@@ -637,6 +637,9 @@ object Verifier {
       case MonoType.Arrow(List(MonoType.Float64), MonoType.Object) if klazz.isAssignableFrom(classOf[java.util.function.DoubleFunction[Object]]) => tpe
       case MonoType.Arrow(List(MonoType.Float64), MonoType.Bool) if klazz.isAssignableFrom(classOf[java.util.function.DoublePredicate]) => tpe
       case MonoType.Arrow(List(MonoType.Float64), MonoType.Float64) if klazz.isAssignableFrom(classOf[java.util.function.DoubleUnaryOperator]) => tpe
+
+      case MonoType.Array(_) => tpe // TODO: Array subtyping
+
       case _ => failMismatchedTypes(tpe, klazz, loc)
     }
   }

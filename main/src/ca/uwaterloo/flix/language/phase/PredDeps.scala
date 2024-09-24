@@ -80,7 +80,7 @@ object PredDeps {
 
     case Expr.Sig(_, _, _) => LabelledPrecedenceGraph.empty
 
-    case Expr.Hole(_, _, _) => LabelledPrecedenceGraph.empty
+    case Expr.Hole(_, _, _, _) => LabelledPrecedenceGraph.empty
 
     case Expr.HoleWithExp(exp, _, _, _) =>
       visitExp(exp)
@@ -100,7 +100,7 @@ object PredDeps {
         case (acc, exp) => acc + visitExp(exp)
       }
 
-    case Expr.ApplyDef(exp, exps, _, _, _, _) =>
+    case Expr.ApplyDef(_, exps, _, _, _, _) =>
       exps.foldLeft(LabelledPrecedenceGraph.empty) {
         case (acc, exp) => acc + visitExp(exp)
       }

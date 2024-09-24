@@ -38,10 +38,10 @@ object Eraser {
   }
 
   private def visitDef(defn: Def): Def = defn match {
-    case Def(ann, mod, sym, cparams, fparams, lparams, pcPoints, exp, tpe, originalTpe, purity, loc) =>
+    case Def(ann, mod, sym, cparams, fparams, lparams, pcPoints, exp, tpe, originalTpe, loc) =>
       val eNew = visitExp(exp)
-      val e = Expr.ApplyAtomic(AtomicOp.Box, List(eNew), box(tpe), purity, loc)
-      Def(ann, mod, sym, cparams.map(visitParam), fparams.map(visitParam), lparams.map(visitLocalParam), pcPoints, e, box(tpe), UnboxedType(erase(originalTpe.tpe)), purity, loc)
+      val e = Expr.ApplyAtomic(AtomicOp.Box, List(eNew), box(tpe), exp.purity, loc)
+      Def(ann, mod, sym, cparams.map(visitParam), fparams.map(visitParam), lparams.map(visitLocalParam), pcPoints, e, box(tpe), UnboxedType(erase(originalTpe.tpe)), loc)
   }
 
   private def visitParam(fp: FormalParam): FormalParam = fp match {
@@ -130,8 +130,8 @@ object Eraser {
     case ApplyClo(exp, exps, ct, tpe, purity, loc) =>
       val ac = ApplyClo(visitExp(exp), exps.map(visitExp), ct, box(tpe), purity, loc)
       castExp(unboxExp(ac, erase(tpe), purity, loc), visitType(tpe), purity, loc)
-    case ApplyDef(sym, exps, ct, tpe, purity, loc) =>
-      val ad = ApplyDef(sym, exps.map(visitExp), ct, box(tpe), purity, loc)
+    case ApplyDef(symUse, exps, ct, tpe, purity, loc) =>
+      val ad = ApplyDef(symUse, exps.map(visitExp), ct, box(tpe), purity, loc)
       castExp(unboxExp(ad, erase(tpe), purity, loc), visitType(tpe), purity, loc)
     case ApplySelfTail(sym, actuals, tpe, purity, loc) =>
       ApplySelfTail(sym, actuals.map(visitExp), visitType(tpe), purity, loc)

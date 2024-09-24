@@ -58,9 +58,9 @@ object ConstraintGen {
         val resEff = Type.Pure
         (resTpe, resEff)
 
-      case Expr.Hole(_, tpe, _) =>
+      case Expr.Hole(_, tpe, eff, _) =>
         val resTpe = tpe
-        val resEff = Type.Pure
+        val resEff = eff
         (resTpe, resEff)
 
       case Expr.HoleWithExp(exp, tvar, evar, loc) =>
@@ -140,7 +140,7 @@ object ConstraintGen {
             (resTpe, resEff)
         }
 
-      case Expr.ApplyDef(Ast.DefSymUse(sym, loc1), exps, ftvar, tvar, evar, loc2) =>
+      case Expr.ApplyDef(Ast.DefSymUse(sym, loc1), exps, itvar, tvar, evar, loc2) =>
         val defn = root.defs(sym)
         val (tconstrs1, econstrs1, declaredType, _) = Scheme.instantiate(defn.spec.sc, loc1.asSynthetic)
         val constrs1 = tconstrs1.map(_.copy(loc = loc2))
@@ -148,7 +148,7 @@ object ConstraintGen {
         val declaredArgumentTypes = declaredType.arrowArgTypes
         val declaredResultType = declaredType.arrowResultType
         val (tpes, effs) = exps.map(visitExp).unzip
-        c.unifyType(ftvar, declaredType, loc2)
+        c.unifyType(itvar, declaredType, loc2)
         c.expectTypeArguments(sym, declaredArgumentTypes, tpes, exps.map(_.loc))
         c.addClassConstraints(constrs1, loc2)
         econstrs1.foreach { econstr => c.unifyType(econstr.tpe1, econstr.tpe2, loc2) }

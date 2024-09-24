@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.Ast.EliminatedBy
-import ca.uwaterloo.flix.language.ast.shared.{Denotation, Fixity, Polarity, Source}
+import ca.uwaterloo.flix.language.ast.shared.{Constant, Denotation, Fixity, Polarity, Source}
 import ca.uwaterloo.flix.language.phase.Monomorpher
 import ca.uwaterloo.flix.util.collection.ListMap
 
@@ -75,7 +75,7 @@ object LoweredAst {
 
   object Expr {
 
-    case class Cst(cst: Ast.Constant, tpe: Type, loc: SourceLocation) extends Expr {
+    case class Cst(cst: Constant, tpe: Type, loc: SourceLocation) extends Expr {
       def eff: Type = Type.Pure
     }
 
@@ -94,7 +94,7 @@ object LoweredAst {
 
     case class Apply(exp: Expr, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class ApplyDef(sym: Ast.DefSymUse, exps: List[Expr], ftpe: Type, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class ApplyDef(sym: Symbol.DefnSym, exps: List[Expr], itpe: Type, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class ApplyAtomic(op: AtomicOp, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
@@ -152,7 +152,7 @@ object LoweredAst {
 
     case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends Pattern
 
-    case class Cst(cst: Ast.Constant, tpe: Type, loc: SourceLocation) extends Pattern
+    case class Cst(cst: Constant, tpe: Type, loc: SourceLocation) extends Pattern
 
     case class Tag(sym: Ast.CaseSymUse, pat: Pattern, tpe: Type, loc: SourceLocation) extends Pattern
 

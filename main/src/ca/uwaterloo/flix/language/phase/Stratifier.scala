@@ -106,7 +106,7 @@ object Stratifier {
 
     case Expr.Sig(_, _, _) => exp0
 
-    case Expr.Hole(_, _, _) => exp0
+    case Expr.Hole(_, _, _, _) => exp0
 
     case Expr.HoleWithExp(exp, tpe, eff, loc) =>
       val e = visitExp(exp)
@@ -129,9 +129,9 @@ object Stratifier {
       val es = exps.map(visitExp)
       Expr.Apply(e, es, tpe, eff, loc)
 
-    case Expr.ApplyDef(exp, exps, ftpe, tpe, eff, loc) =>
+    case Expr.ApplyDef(symUse, exps, itpe, tpe, eff, loc) =>
       val es = exps.map(visitExp)
-      Expr.ApplyDef(exp, es, ftpe, tpe, eff, loc)
+      Expr.ApplyDef(symUse, es, itpe, tpe, eff, loc)
 
     case Expr.Unary(sop, exp, tpe, eff, loc) =>
       val e = visitExp(exp)

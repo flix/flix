@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Denotation, Fixity, Polarity, Source}
+import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Constant, Denotation, Fixity, Polarity, Source}
 import ca.uwaterloo.flix.language.{CompilationMessage, ast}
 import ca.uwaterloo.flix.util.collection.MultiMap
 
@@ -75,7 +75,7 @@ object KindedAst {
 
     case class Sig(sym: Symbol.SigSym, tvar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class Hole(sym: Symbol.HoleSym, tvar: Type.Var, loc: SourceLocation) extends Expr
+    case class Hole(sym: Symbol.HoleSym, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
     case class HoleWithExp(exp: Expr, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
@@ -83,12 +83,11 @@ object KindedAst {
 
     case class Use(sym: Symbol, alias: Name.Ident, exp: Expr, loc: SourceLocation) extends Expr
 
-    case class Cst(cst: Ast.Constant, loc: SourceLocation) extends Expr
+    case class Cst(cst: Constant, loc: SourceLocation) extends Expr
 
     case class Apply(exp: Expr, exps: List[Expr], tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
-    /** `ftvar` is needed to know the intrinsic effect of the def. */
-    case class ApplyDef(sym: Ast.DefSymUse, exps: List[Expr], ftvar: Type.Var, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
+    case class ApplyDef(symUse: Ast.DefSymUse, exps: List[Expr], itvar: Type, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
     case class Lambda(fparam: FormalParam, exp: Expr, loc: SourceLocation) extends Expr
 
@@ -242,7 +241,7 @@ object KindedAst {
 
     case class Var(sym: Symbol.VarSym, tvar: ast.Type.Var, loc: SourceLocation) extends Pattern
 
-    case class Cst(cst: Ast.Constant, loc: SourceLocation) extends Pattern
+    case class Cst(cst: Constant, loc: SourceLocation) extends Pattern
 
     case class Tag(sym: Ast.CaseSymUse, pat: Pattern, tvar: ast.Type.Var, loc: SourceLocation) extends Pattern
 
@@ -272,6 +271,8 @@ object KindedAst {
     case class Var(sym: Symbol.VarSym, tvar: Type.Var, loc: SourceLocation) extends VarOrWild
 
     case class Tag(sym: Ast.RestrictableCaseSymUse, pat: List[VarOrWild], tvar: Type.Var, loc: SourceLocation) extends RestrictableChoosePattern
+
+    case class Error(tvar: Type.Var, loc: SourceLocation) extends VarOrWild
 
   }
 

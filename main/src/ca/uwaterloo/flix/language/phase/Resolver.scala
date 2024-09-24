@@ -19,19 +19,19 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, VarText}
 import ca.uwaterloo.flix.language.ast.NamedAst.{Declaration, RestrictableChoosePattern}
+import ca.uwaterloo.flix.language.ast.ResolvedAst.Expr
 import ca.uwaterloo.flix.language.ast.ResolvedAst.Pattern.Record
 import ca.uwaterloo.flix.language.ast.UnkindedType.*
-import ca.uwaterloo.flix.language.ast.shared.Scope
+import ca.uwaterloo.flix.language.ast.shared.{Constant, Scope}
 import ca.uwaterloo.flix.language.ast.{NamedAst, Symbol, *}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.ResolutionError.*
 import ca.uwaterloo.flix.language.errors.{Recoverable, ResolutionError, Unrecoverable}
-import ca.uwaterloo.flix.language.phase.jvm.JvmOps
-import ca.uwaterloo.flix.util.Validation.*
 import ca.uwaterloo.flix.util.*
+import ca.uwaterloo.flix.util.Validation.*
 import ca.uwaterloo.flix.util.collection.{Chain, ListMap, MapOps}
 
-import java.lang.reflect.{Constructor, Field, Method, Modifier}
+import java.lang.reflect.{Constructor, Field, Method}
 import scala.annotation.tailrec
 import scala.collection.immutable.SortedSet
 import scala.collection.mutable
@@ -798,12 +798,11 @@ object Resolver {
           case Some(List(Resolution.JavaClass(clazz))) =>
             // We have a static field access.
             val fieldName = qname.ident
-            try {
-              val field = clazz.getField(fieldName.name)
-              // Returns out of resolveExp
-              return Validation.success(ResolvedAst.Expr.GetStaticField(field, loc))
-            } catch {
-              case _: NoSuchFieldException =>
+            Jvm.getField(clazz, fieldName.name, static = true) match {
+              case Some(field) =>
+                // Returns out of resolveExp
+                return Validation.success(ResolvedAst.Expr.GetStaticField(field, loc))
+              case None =>
                 val m = ResolutionError.UndefinedJvmStaticField(clazz, fieldName, loc)
                 // Returns out of resolveExp
                 return Validation.toSoftFailure(ResolvedAst.Expr.Error(m), m)
@@ -887,7 +886,7 @@ object Resolver {
             // Check for a single Unit argument
             // Returns out of resolveExp
             return flatMapN(expsVal) {
-              case ResolvedAst.Expr.Cst(Ast.Constant.Unit, _) :: Nil =>
+              case ResolvedAst.Expr.Cst(Constant.Unit, _) :: Nil =>
                 Validation.success(ResolvedAst.Expr.InvokeStaticMethod2(clazz, methodName, Nil, outerLoc))
               case es =>
                 Validation.success(ResolvedAst.Expr.InvokeStaticMethod2(clazz, methodName, es, outerLoc))
@@ -1038,6 +1037,7 @@ object Resolver {
               val pats = pat.map {
                 case NamedAst.RestrictableChoosePattern.Wild(loc) => ResolvedAst.RestrictableChoosePattern.Wild(loc)
                 case NamedAst.RestrictableChoosePattern.Var(sym, loc) => ResolvedAst.RestrictableChoosePattern.Var(sym, loc)
+                case NamedAst.RestrictableChoosePattern.Error(loc) => ResolvedAst.RestrictableChoosePattern.Error(loc)
               }
               mapN(tagVal) {
                 case tag => ResolvedAst.RestrictableChoosePattern.Tag(Ast.RestrictableCaseSymUse(tag.sym, qname.loc), pats, loc)
@@ -1048,6 +1048,7 @@ object Resolver {
               pat.foldLeft(env0) {
                 case (acc, NamedAst.RestrictableChoosePattern.Var(sym, loc)) => acc + (sym.text -> Resolution.Var(sym))
                 case (acc, NamedAst.RestrictableChoosePattern.Wild(loc)) => acc
+                case (acc, NamedAst.RestrictableChoosePattern.Error(_)) => acc
               }
           }
 
@@ -1625,7 +1626,7 @@ object Resolver {
     // Check if the tag value has Unit type.
     if (isUnitType(caze.tpe)) {
       // Case 1: The tag value has Unit type. Construct the Unit expression.
-      val e = ResolvedAst.Expr.Cst(Ast.Constant.Unit, loc)
+      val e = ResolvedAst.Expr.Cst(Constant.Unit, loc)
       ResolvedAst.Expr.Tag(Ast.CaseSymUse(caze.sym, loc), e, loc)
     } else {
       // Case 2: The tag has a non-Unit type. Hence the tag is used as a function.
@@ -1655,7 +1656,7 @@ object Resolver {
     // Check if the tag value has Unit type.
     if (isUnitType(caze.tpe)) {
       // Case 1: The tag value has Unit type. Construct the Unit expression.
-      val e = ResolvedAst.Expr.Cst(Ast.Constant.Unit, loc)
+      val e = ResolvedAst.Expr.Cst(Constant.Unit, loc)
       ResolvedAst.Expr.RestrictableTag(Ast.RestrictableCaseSymUse(caze.sym, loc), e, isOpen, loc)
     } else {
       // Case 2: The tag has a non-Unit type. Hence the tag is used as a function.
@@ -1702,45 +1703,14 @@ object Resolver {
     *   - ` f(a,b)  ===> f(a, b)`
     *   - `f(a,b,c) ===> f(a, b)(c)`
     */
-  private def visitApplyToplevelDefFull(defn: NamedAst.Declaration.Def, arity: Int, exps: List[ResolvedAst.Expr], innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, flix: Flix): ResolvedAst.Expr = {
+  private def visitApplyToplevelFull(base: List[ResolvedAst.Expr] => ResolvedAst.Expr, arity: Int, exps: List[ResolvedAst.Expr], loc: SourceLocation)(implicit scope: Scope, flix: Flix): ResolvedAst.Expr = {
     val (directArgs, cloArgs) = exps.splitAt(arity)
 
     val fparamsPadding = mkFreshFparams(arity - directArgs.length, outerLoc.asSynthetic)
     val argsPadding = fparamsPadding.map(fp => ResolvedAst.Expr.Var(fp.sym, outerLoc.asSynthetic))
 
     val fullArgs = directArgs ++ argsPadding
-    val fullDefApplication = ResolvedAst.Expr.ApplyDef(Ast.DefSymUse(defn.sym, innerLoc), fullArgs, outerLoc)
-
-    // The ordering of lambdas and closure application doesn't matter,
-    // `fparamsPadding.isEmpty` iff `cloArgs.nonEmpty`.
-    val fullDefLambda = fparamsPadding.foldRight(fullDefApplication: ResolvedAst.Expr) {
-      case (fp, acc) => ResolvedAst.Expr.Lambda(fp, acc, outerLoc.asSynthetic)
-    }
-
-    val closureApplication = cloArgs.foldLeft(fullDefLambda) {
-      case (acc, cloArg) => ResolvedAst.Expr.Apply(acc, List(cloArg), outerLoc)
-    }
-
-    closureApplication
-  }
-
-  /**
-    * Resolve the application of a top-level function or signature `base` with some `arity`.
-    *
-    * Example with `def f(a: Char, b: Char): Char -> Char`
-    *   - `   f     ===> x -> y -> f(x, y)`
-    *   - `  f(a)   ===> x -> f(a, x)`
-    *   - ` f(a,b)  ===> f(a, b)`
-    *   - `f(a,b,c) ===> f(a, b)(c)`
-    */
-  private def visitApplyToplevelSigFull(base: ResolvedAst.Expr, arity: Int, exps: List[ResolvedAst.Expr], outerLoc: SourceLocation)(implicit scope: Scope, flix: Flix): ResolvedAst.Expr = {
-    val (directArgs, cloArgs) = exps.splitAt(arity)
-
-    val fparamsPadding = mkFreshFparams(arity - directArgs.length, outerLoc.asSynthetic)
-    val argsPadding = fparamsPadding.map(fp => ResolvedAst.Expr.Var(fp.sym, outerLoc.asSynthetic))
-
-    val fullArgs = directArgs ++ argsPadding
-    val fullDefApplication = ResolvedAst.Expr.Apply(base, fullArgs, outerLoc)
+    val fullDefApplication = base(fullArgs)
 
     // The ordering of lambdas and closure application doesn't matter,
     // `fparamsPadding.isEmpty` iff `cloArgs.nonEmpty`.
@@ -1761,7 +1731,8 @@ object Resolver {
     *   - `Int32.add ===> x -> y -> Int32.add(x, y)`
     */
   private def visitDef(defn: NamedAst.Declaration.Def, loc: SourceLocation)(implicit scope: Scope, flix: Flix): ResolvedAst.Expr = {
-    visitApplyToplevelDefFull(defn, defn.spec.fparams.length, Nil, loc, loc.asSynthetic)
+    val base = es => ResolvedAst.Expr.ApplyDef(Ast.DefSymUse(defn.sym, loc), es, loc.asSynthetic)
+    visitApplyToplevelFull(base, defn.spec.fparams.length, Nil, loc.asSynthetic)
   }
 
   /**
@@ -1775,7 +1746,20 @@ object Resolver {
     */
   private def visitApplyDef(defn: NamedAst.Declaration.Def, exps: List[NamedAst.Expr], env: ListMap[String, Resolver.Resolution], innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Expr, ResolutionError] = {
     mapN(traverse(exps)(resolveExp(_, env))) {
-      case es => visitApplyToplevelDefFull(defn, defn.spec.fparams.length, es, innerLoc, outerLoc)
+
+      // Case 1: We have enough arguments (exps) to fully apply `defn`
+      // so we can just construct an `ApplyDef` node directly without
+      // introducing any lambdas or currying arguments.
+      case es if defn.spec.fparams.length == es.length =>
+        ResolvedAst.Expr.ApplyDef(Ast.DefSymUse(defn.sym, innerLoc), es, outerLoc)
+
+      // Case 2: There is a difference in the expected number of arguments
+      // and the actual number of arguments so we have to introduce
+      // lambdas or introduce currying.
+      // The inner-most expression is still an ApplyDef, however.
+      case es =>
+        val base = args => ResolvedAst.Expr.ApplyDef(Ast.DefSymUse(defn.sym, innerLoc), args, outerLoc)
+        visitApplyToplevelFull(base, defn.spec.fparams.length, es, outerLoc)
     }
   }
 
@@ -1785,7 +1769,8 @@ object Resolver {
     *   - `Add.add ===> x -> y -> Add.add(x, y)`
     */
   private def visitSig(sig: NamedAst.Declaration.Sig, loc: SourceLocation)(implicit scope: Scope, flix: Flix): ResolvedAst.Expr = {
-    visitApplyToplevelSigFull(ResolvedAst.Expr.Sig(sig.sym, loc), sig.spec.fparams.length, Nil, loc.asSynthetic)
+    val base = es => ResolvedAst.Expr.Apply(ResolvedAst.Expr.Sig(sig.sym, loc), es, loc.asSynthetic)
+    visitApplyToplevelFull(base, sig.spec.fparams.length, Nil, loc.asSynthetic)
   }
 
   /**
@@ -1799,7 +1784,9 @@ object Resolver {
     */
   private def visitApplySig(sig: NamedAst.Declaration.Sig, exps: List[NamedAst.Expr], env: ListMap[String, Resolution], innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Expr, ResolutionError] = {
     mapN(traverse(exps)(resolveExp(_, env))) {
-      es => visitApplyToplevelSigFull(ResolvedAst.Expr.Sig(sig.sym, innerLoc), sig.spec.fparams.length, es, outerLoc)
+      es =>
+        val base = args => ResolvedAst.Expr.Apply(ResolvedAst.Expr.Sig(sig.sym, innerLoc), args, outerLoc)
+        visitApplyToplevelFull(base, sig.spec.fparams.length, es, outerLoc)
     }
   }
 
@@ -3447,7 +3434,7 @@ object Resolver {
       val method = clazz.getMethod(methodName, signature: _*)
 
       // Check if the method should be and is static.
-      if (static != Modifier.isStatic(method.getModifiers)) {
+      if (static != Jvm.isStatic(method)) {
         throw new NoSuchMethodException()
       } else {
         // Check that the return type of the method matches the declared type.
@@ -3475,7 +3462,7 @@ object Resolver {
       }
     } catch {
       case ex: NoSuchMethodException =>
-        val candidateMethods = JvmOps.getMethods(clazz).filter(m => m.getName == methodName)
+        val candidateMethods = Jvm.getMethods(clazz).filter(_.getName == methodName)
         Result.Err(ResolutionError.UndefinedJvmMethod(clazz.getName, methodName, static, signature, candidateMethods, loc))
       // ClassNotFoundException:  Cannot happen because we already have the `Class` object.
       // NoClassDefFoundError:    Cannot happen because we already have the `Class` object.
@@ -3493,7 +3480,7 @@ object Resolver {
           val field = clazz.getField(fieldName)
 
           // Check if the field should be and is static.
-          if (static == Modifier.isStatic(field.getModifiers))
+          if (static == Jvm.isStatic(field))
             Result.Ok((clazz, field))
           else
             throw new NoSuchFieldException()

@@ -331,7 +331,7 @@ object SemanticTokensProvider {
       val t = SemanticToken(o, Nil, loc)
       Iterator(t)
 
-    case Expr.Hole(_, _, _) => Iterator.empty
+    case Expr.Hole(_, _, _, _) => Iterator.empty
 
     case Expr.HoleWithExp(exp, _, _, _) => visitExp(exp)
 
@@ -656,9 +656,10 @@ object SemanticTokensProvider {
   private def visitRestrictableChoosePat(pat0: RestrictableChoosePattern): Iterator[SemanticToken] = pat0 match {
     case RestrictableChoosePattern.Tag(Ast.RestrictableCaseSymUse(_, tagLoc), pat1, tpe, loc) =>
       val t1 = SemanticToken(SemanticTokenType.EnumMember, Nil, tagLoc)
-      val ts = pat1.iterator.map {
-        case RestrictableChoosePattern.Wild(_, loc) => SemanticToken(SemanticTokenType.Variable, Nil, loc)
-        case RestrictableChoosePattern.Var(_, _, loc) => SemanticToken(SemanticTokenType.Variable, Nil, loc)
+      val ts = pat1.iterator.flatMap {
+        case RestrictableChoosePattern.Wild(_, loc) => Iterator(SemanticToken(SemanticTokenType.Variable, Nil, loc))
+        case RestrictableChoosePattern.Var(_, _, loc) => Iterator(SemanticToken(SemanticTokenType.Variable, Nil, loc))
+        case RestrictableChoosePattern.Error(_, _) => Iterator.empty
       }
       Iterator(t1) ++ ts
   }

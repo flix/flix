@@ -19,15 +19,15 @@ import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util._
+import ca.uwaterloo.flix.util.*
 import org.java_websocket.WebSocket
 import org.java_websocket.handshake.ClientHandshake
 import org.java_websocket.server.WebSocketServer
-import org.json4s.JsonAST._
+import org.json4s.JsonAST.*
 import org.json4s.jvalue2monadic
 import org.json4s.ParserUtil.ParseException
 import org.json4s.native.JsonMethods
-import org.json4s.native.JsonMethods._
+import org.json4s.native.JsonMethods.*
 
 import java.io.IOException
 import java.net.InetSocketAddress
@@ -175,11 +175,10 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
               Ok("Compilation was successful. No main function to run.", compilationResult.totalTime, 0L)
             case Some(main) =>
               // Evaluate the main function and get the result as a string.
-              val timer = new Timer({
-                val (_, stdOut, stdErr) = SafeExec.execute(() => main(Array.empty))
-                stdOut + stdErr
-              })
-              Ok(timer.getResult, compilationResult.totalTime, timer.getElapsed)
+              val t = System.nanoTime()
+              val (_, stdOut, stdErr) = SafeExec.execute(() => main(Array.empty))
+              val e = System.nanoTime() - t
+              Ok(stdOut + stdErr, compilationResult.totalTime, e)
           }
 
         case Result.Err(errors) =>

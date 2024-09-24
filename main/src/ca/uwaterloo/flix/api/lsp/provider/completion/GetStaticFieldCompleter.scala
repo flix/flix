@@ -17,8 +17,9 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.FieldCompletion
 import ca.uwaterloo.flix.language.errors.ResolutionError
+import ca.uwaterloo.flix.util.Jvm
 
-import java.lang.reflect.{Field, Method, Modifier}
+import java.lang.reflect.Field
 
 object GetStaticFieldCompleter {
   def getCompletions(e: ResolutionError.UndefinedJvmStaticField): Iterable[FieldCompletion] = {
@@ -27,9 +28,9 @@ object GetStaticFieldCompleter {
     }
   }
 
-  private def getFields(clazz: Class[_]): List[Field] = {
+  private def getFields(clazz: Class[?]): List[Field] = {
     val availableFields = clazz.getFields.toList
-    val staticFields = availableFields.filter(m => Modifier.isStatic(m.getModifiers))
+    val staticFields = availableFields.filter(m => Jvm.isStatic(m))
     staticFields.sortBy(_.getName)
   }
 }
