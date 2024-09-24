@@ -21,6 +21,6 @@ class BenchmarkSuite extends FlixSuite(incremental = true) {
 
   private implicit val TestOptions: Options = Options.TestWithLibAll
 
-  mkTestDirCollected("main/src/resources/benchmark", depth = 2)
+  mkTestDirCollected("main/src/resources/benchmark")
 
 }
