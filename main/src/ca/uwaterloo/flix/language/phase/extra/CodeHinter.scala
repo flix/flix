@@ -108,17 +108,6 @@ object CodeHinter {
         checkLazy(sym, loc1)
       hints0 ++ hints1 ++ visitExps(exps)
 
-    case Expr.ApplyDef(Ast.DefSymUse(sym, loc1), exps, _, _, _, loc2) =>
-      val hints0 = exps match {
-        case lambda :: _ => checkEffect(sym, lambda.tpe, loc2)
-        case _ => Nil
-      }
-      val hints1 = checkDeprecated(sym, loc1) ++
-        checkExperimental(sym, loc1) ++
-        checkParallel(sym, loc1) ++
-        checkLazy(sym, loc1)
-      hints0 ++ hints1 ++ visitExps(exps)
-
     case Expr.Unary(_, exp, _, _, _) =>
       visitExp(exp)
 
