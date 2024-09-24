@@ -173,28 +173,6 @@ object TypeReduction {
       }
   }
 
-  /** A lookup result of a Java constructor. */
-  private sealed trait JavaConstructorResolution
-
-  private object JavaConstructorResolution {
-
-    /** One matching constructor. */
-    case class Resolved(constructor: Constructor[?]) extends JavaConstructorResolution
-
-    /** Many matching constructors. */
-    case class AmbiguousConstructor(constructors: List[Constructor[?]]) extends JavaConstructorResolution
-
-    /** No matching constructor. */
-    case object NotFound extends JavaConstructorResolution
-
-    /**
-      * The types of the lookup are not resolved enough to decide
-      * (they contain type variables, associated types, etc.).
-      */
-    case object UnresolvedTypes extends JavaConstructorResolution
-
-  }
-
   /** Tries to find a constructor of `clazz` that takes arguments of type `ts`. */
   private def lookupConstructor(clazz: Class[?], ts: List[Type]): JavaConstructorResolution = {
     val typesAreKnown = ts.forall(isKnown)
@@ -209,28 +187,6 @@ object TypeReduction {
     } else {
       JavaConstructorResolution.NotFound
     }
-  }
-
-  /** A lookup result of a Java method. */
-  private sealed trait JavaMethodResolution
-
-  private object JavaMethodResolution {
-
-    /** One matching method. */
-    case class Resolved(method: Method) extends JavaMethodResolution
-
-    /** Many matching methods */
-    case class AmbiguousMethod(methods: List[Method]) extends JavaMethodResolution
-
-    /** No matching method. */
-    case object NotFound extends JavaMethodResolution
-
-    /**
-      * The types of the lookup are not resolved enough to decide
-      * (they contain type variables, associated types, etc.).
-      */
-    case object UnresolvedTypes extends JavaMethodResolution
-
   }
 
   /** Tries to find a method of `thisObj` that takes arguments of type `ts`. */
@@ -330,25 +286,6 @@ object TypeReduction {
     case _ => classOf[Object] // default
   }
 
-  /** A lookup result of a Java field. */
-  private sealed trait JavaFieldResolution
-
-  private object JavaFieldResolution {
-
-    /** One matching field. */
-    case class Resolved(field: Field) extends JavaFieldResolution
-
-    /** No matching field. */
-    case object NotFound extends JavaFieldResolution
-
-    /**
-      * The types of the lookup are not resolved enough to decide
-      * (it contains type variables, associated types, etc.).
-      */
-    case object UnresolvedTypes extends JavaFieldResolution
-
-  }
-
   /** Tries to find a field of `thisObj` with the name `fieldName`. */
   private def lookupField(thisObj: Type, fieldName: String): JavaFieldResolution = {
     val typeIsKnown = isKnown(thisObj)
@@ -371,6 +308,69 @@ object TypeReduction {
     case Type.Apply(t1, t2, _) => isKnown(t1) && isKnown(t2)
     case Type.Alias(_, _, t, _) => isKnown(t)
     case Type.AssocType(_, _, _, _) => false
+  }
+
+  /** A lookup result of a Java field. */
+  private sealed trait JavaFieldResolution
+
+  private object JavaFieldResolution {
+
+    /** One matching field. */
+    case class Resolved(field: Field) extends JavaFieldResolution
+
+    /** No matching field. */
+    case object NotFound extends JavaFieldResolution
+
+    /**
+     * The types of the lookup are not resolved enough to decide
+     * (it contains type variables, associated types, etc.).
+     */
+    case object UnresolvedTypes extends JavaFieldResolution
+
+  }
+
+  /** A lookup result of a Java method. */
+  private sealed trait JavaMethodResolution
+
+  private object JavaMethodResolution {
+
+    /** One matching method. */
+    case class Resolved(method: Method) extends JavaMethodResolution
+
+    /** Many matching methods */
+    case class AmbiguousMethod(methods: List[Method]) extends JavaMethodResolution
+
+    /** No matching method. */
+    case object NotFound extends JavaMethodResolution
+
+    /**
+     * The types of the lookup are not resolved enough to decide
+     * (they contain type variables, associated types, etc.).
+     */
+    case object UnresolvedTypes extends JavaMethodResolution
+
+  }
+
+  /** A lookup result of a Java constructor. */
+  private sealed trait JavaConstructorResolution
+
+  private object JavaConstructorResolution {
+
+    /** One matching constructor. */
+    case class Resolved(constructor: Constructor[?]) extends JavaConstructorResolution
+
+    /** Many matching constructors. */
+    case class AmbiguousConstructor(constructors: List[Constructor[?]]) extends JavaConstructorResolution
+
+    /** No matching constructor. */
+    case object NotFound extends JavaConstructorResolution
+
+    /**
+     * The types of the lookup are not resolved enough to decide
+     * (they contain type variables, associated types, etc.).
+     */
+    case object UnresolvedTypes extends JavaConstructorResolution
+
   }
 
 }
