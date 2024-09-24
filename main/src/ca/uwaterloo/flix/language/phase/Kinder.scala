@@ -1477,26 +1477,21 @@ object Kinder {
     */
   private def inferSpec(spec0: ResolvedAst.Spec, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[KindEnv, KindError] = spec0 match {
     case ResolvedAst.Spec(_, _, _, _, fparams, tpe, eff0, tconstrs, econstrs, _) =>
-      val fparamKenvsVal = traverse(fparams)(inferFormalParam(_, kenv, taenv, root))
+      val fparamKenvs = fparams.map(inferFormalParam(_, kenv, taenv, root))
       val tpeKenv = inferType(tpe, Kind.Star, kenv, taenv, root)
       val effKenvs = eff0.map(inferType(_, Kind.Eff, kenv, taenv, root)).toList
       val tconstrsKenvs = tconstrs.map(inferTraitConstraint(_, kenv, taenv, root))
       val econstrsKenvs = econstrs.map(inferEqualityConstraint(_, kenv, taenv, root))
-
-      mapN(fparamKenvsVal) {
-        case fparamKenvs =>
-          KindEnv.merge(fparamKenvs ::: tpeKenv :: effKenvs ::: tconstrsKenvs ::: econstrsKenvs)
-      }
-
+      Validation.success(KindEnv.merge(fparamKenvs ::: tpeKenv :: effKenvs ::: tconstrsKenvs ::: econstrsKenvs))
   }
 
   /**
     * Infers a kind environment from the given formal param.
     */
-  private def inferFormalParam(fparam0: ResolvedAst.FormalParam, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[KindEnv, KindError] = fparam0 match {
+  private def inferFormalParam(fparam0: ResolvedAst.FormalParam, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): KindEnv = fparam0 match {
     case ResolvedAst.FormalParam(_, _, tpe0, _) => tpe0 match {
-      case None => Validation.success(KindEnv.empty)
-      case Some(tpe) => Validation.success(inferType(tpe, Kind.Star, kenv, taenv, root))
+      case None => KindEnv.empty
+      case Some(tpe) => inferType(tpe, Kind.Star, kenv, taenv, root)
     }
   }
 
