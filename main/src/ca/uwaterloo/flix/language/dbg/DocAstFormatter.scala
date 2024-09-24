@@ -316,14 +316,13 @@ object DocAstFormatter {
       case Type.AsIs(s) =>
         text(s)
       case Type.App(obj, Nil) =>
-        text(obj)
+        formatType(obj, paren)
       case Type.App(obj, args) =>
-        text(obj) |:: squareTuple(args.map(formatType(_, paren = false)))
+        formatType(obj) |:: squareTuple(args.map(formatType(_, paren = false)))
       case Type.Tuple(elms) =>
         tuple(elms.map(formatType(_, paren = false)))
-      case arrow@Type.Arrow(_, _) =>
-        val (curriedArgs, res) = collectArrowTypes(arrow)
-        val formattedArgs = curriedArgs.map {
+      case Type.Arrow(args, res) =>
+        val formattedArgs = args match {
           case ts@Type.Tuple(_) :: Nil =>
             tuple(ts.map(formatType(_, paren = false)))
           case ts@_ :: Nil =>
@@ -331,7 +330,17 @@ object DocAstFormatter {
           case ts =>
             tuplish(ts.map(formatType(_, paren = false)))
         }
-        group(nest(sep(text(" ->") |:: breakWith(" "), formattedArgs :+ formatType(res))))
+        group(formattedArgs +: text("->") +\: formatType(res))
+      case Type.ArrowEff(args, res, eff) =>
+        val formattedArgs = args match {
+          case ts@Type.Tuple(_) :: Nil =>
+            tuple(ts.map(formatType(_, paren = false)))
+          case ts@_ :: Nil =>
+            tuplish(ts.map(formatType(_, paren = true)))
+          case ts =>
+            tuplish(ts.map(formatType(_, paren = false)))
+        }
+        group(formattedArgs +: text("->") +\: formatType(res) +: text("\\") +: formatType(eff))
       case Type.RecordEmpty =>
         text("{}")
       case re: Type.RecordExtend =>
@@ -379,22 +388,6 @@ object DocAstFormatter {
       case _: Type.Composite if paren => parens(d)
       case _: Type.Composite | _: Type.Atom => d
     }
-  }
-
-  /**
-    * Collects a sequence of [[Type.Arrow]] into a shallow list of their
-    * arguments and the final return type.
-    */
-  private def collectArrowTypes(tpe: Type): (List[List[Type]], Type) = {
-    @tailrec
-    def chase(tpe0: Type, acc: List[List[Type]]): (List[List[Type]], Type) = {
-      tpe0 match {
-        case Type.Arrow(args, res) => chase(res, args :: acc)
-        case other => (acc.reverse, other)
-      }
-    }
-
-    chase(tpe, List())
   }
 
   /**

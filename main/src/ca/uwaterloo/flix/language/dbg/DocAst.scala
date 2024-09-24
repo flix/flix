@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.language.ast.shared.Constant
 import ca.uwaterloo.flix.language.ast.{Ast, Name, Symbol}
 
 import java.lang.reflect.{Constructor, Field, Method}
+import scala.collection.immutable.SortedSet
 
 sealed trait DocAst
 
@@ -100,7 +101,7 @@ object DocAst {
       */
     case class Hash(d1: Expr, d2: Expr) extends Atom
 
-    case class TryCatch(d: Expr, rules: List[(Symbol.VarSym, Class[_], Expr)]) extends Atom
+    case class TryCatch(d: Expr, rules: List[(Symbol.VarSym, Class[?], Expr)]) extends Atom
 
     case class TryWith(d1: Expr, eff: Symbol.EffectSym, rules: List[(Symbol.OpSym, List[Ascription], Expr)]) extends Atom
 
@@ -122,11 +123,11 @@ object DocAst {
 
     case class Ascription(v: Expr, tpe: Type) extends Composite
 
-    case class NewObject(name: String, clazz: Class[_], tpe: Type, methods: List[JvmMethod]) extends Composite
+    case class NewObject(name: String, clazz: Class[?], tpe: Type, methods: List[JvmMethod]) extends Composite
 
     case class Lambda(fparams: List[Expr.Ascription], body: Expr) extends Composite
 
-    case class Native(clazz: Class[_]) extends Atom
+    case class Native(clazz: Class[?]) extends Atom
 
     val Unknown: Expr =
       Meta("unknown exp")
@@ -233,7 +234,7 @@ object DocAst {
     def Index(idx: Int, d: Expr): Expr =
       Dot(d, AsIs(s"_$idx"))
 
-    def InstanceOf(d: Expr, clazz: Class[_]): Expr =
+    def InstanceOf(d: Expr, clazz: Class[?]): Expr =
       Binary(d, "instanceof", Native(clazz))
 
     def ClosureLifted(sym: Symbol.DefnSym, ds: List[Expr]): Expr = {
@@ -285,7 +286,7 @@ object DocAst {
       Dot(Native(f.getDeclaringClass), AsIs(f.getName))
     }
 
-    def JavaInvokeConstructor(c: Constructor[_], ds: List[Expr]): Expr = {
+    def JavaInvokeConstructor(c: Constructor[?], ds: List[Expr]): Expr = {
       App(Native(c.getDeclaringClass), ds)
     }
 
@@ -327,25 +328,39 @@ object DocAst {
 
     case class AsIs(s: String) extends Atom
 
-    case class App(obj: String, args: List[Type]) extends Atom
+    case class App(obj: Type, args: List[Type]) extends Atom
 
     case class Tuple(elms: List[Type]) extends Atom
 
     case class Arrow(args: List[Type], res: Type) extends Composite
 
+    case class ArrowEff(args: List[Type], res: Type, eff: Type) extends Composite
+
+    case object RecordRowEmpty extends Atom
+
+    case class RecordRowExtend(label: String, value: Type, rest: Type) extends Atom
+
     case object RecordEmpty extends Atom
 
     case class RecordExtend(label: String, value: Type, rest: Type) extends Atom
+
+    case object SchemaRowEmpty extends Atom
+
+    case class SchemaRowExtend(label: String, tpe: Type, rest: Type) extends Atom
 
     case object SchemaEmpty extends Atom
 
     case class SchemaExtend(name: String, tpe: Type, rest: Type) extends Atom
 
-    case class Native(clazz: Class[_]) extends Atom
+    case class Native(clazz: Class[?]) extends Atom
 
-    case class JvmConstructor(constructor: Constructor[_]) extends Atom
+    case class JvmConstructor(constructor: Constructor[?]) extends Atom
 
     case class JvmMethod(method: Method) extends Atom
+
+    case class JvmField(field: Field) extends Atom
+
+    case class CaseSet(syms: SortedSet[Symbol.RestrictableCaseSym]) extends Atom
 
     /** inserted string printed as-is (assumed not to require parenthesis) */
     case class Meta(s: String) extends Atom
@@ -380,19 +395,33 @@ object DocAst {
 
     val Regex: Type = AsIs("Regex")
 
+    val Record: Type = AsIs("Record")
+
     val Region: Type = AsIs("Region")
 
     val Null: Type = AsIs("Null")
 
-    def Array(t: Type): Type = App("Array", List(t))
+    val Schema: Type = AsIs("Schema")
 
-    def Lazy(t: Type): Type = App("Lazy", List(t))
+    val Sender: Type = AsIs("Sender")
 
-    def Enum(sym: Symbol.EnumSym, args: List[Type]): Type = App(sym.toString, args)
+    val Receiver: Type = AsIs("Receiver")
 
-    def Struct(sym: Symbol.StructSym, args: List[Type]): Type = App(sym.toString, args)
+    val Error: Type = AsIs("Error")
 
-    def Var(id: Int): Type = AsIs(s"var$id")
+    def Alias(sym: Symbol.TypeAliasSym, args: List[Type]): Type = App(AsIs(sym.toString), args)
+
+    def AssocType(sym: Symbol.AssocTypeSym, arg: Type): Type = App(AsIs(sym.toString), List(arg))
+
+    def Array(t: Type): Type = App(AsIs("Array"), List(t))
+
+    def Lazy(t: Type): Type = App(AsIs("Lazy"), List(t))
+
+    def Enum(sym: Symbol.EnumSym, args: List[Type]): Type = App(AsIs(sym.toString), args)
+
+    def Struct(sym: Symbol.StructSym, args: List[Type]): Type = App(AsIs(sym.toString), args)
+
+    def Var(sym: Symbol.KindedTypeVarSym): Type = AsIs(sym.toString)
   }
 
   sealed trait Eff

@@ -20,6 +20,8 @@ import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.DocAst
 import ca.uwaterloo.flix.language.fmt.{FormatOptions, FormatType}
 
+import scala.annotation.tailrec
+
 object TypePrinter {
 
   /**
@@ -61,6 +63,60 @@ object TypePrinter {
   /** Returns the type as a simple string */
   private def typeToString(tpe: Type): String = {
     FormatType.formatTypeWithOptions(tpe, FormatOptions(FormatOptions.VarName.NameBased))
+  }
+
+  def printTpe(tpe: Type): DocAst.Type = {
+    val (base, args0) = collectApp(tpe)
+    val args = args0.map(print)
+    base match {
+      case Type.Var(sym, _) => DocAst.Type.App(DocAst.Type.Var(sym), args)
+      case Type.Cst(TypeConstructor.Arrow(arity), _) if args.lengthIs == arity + 1 && arity >= 3 =>
+        // could be optimized
+        // (eff, args.., res)
+        if (args0.head == Type.Pure) {
+          val res = args.last
+          val actualArgs = args.dropRight(1).drop(1)
+          DocAst.Type.Arrow(actualArgs, res)
+        } else {
+          val eff = args.head
+          val res = args.last
+          val actualArgs = args.dropRight(1).drop(1)
+          DocAst.Type.ArrowEff(actualArgs, res, eff)
+        }
+      case Type.Cst(TypeConstructor.RecordRowExtend(label), _) if args.lengthIs == 2 =>
+        val List(arg0, arg1) = args
+        DocAst.Type.RecordRowExtend(label.toString, arg0, arg1)
+      case Type.Cst(TypeConstructor.SchemaRowExtend(label), _) if args.lengthIs == 2 =>
+        val List(arg0, arg1) = args
+        DocAst.Type.SchemaRowExtend(label.toString, arg0, arg1)
+      case Type.Cst(TypeConstructor.Lazy, _) if args.lengthIs == 1 =>
+        val List(arg0) = args
+        DocAst.Type.Lazy(arg0)
+      case Type.Cst(TypeConstructor.Tuple(arity), _) if args.lengthIs == arity =>
+        DocAst.Type.Tuple(args)
+      // not, and, or, pure?, univ?, complement, union, intersection, caseXOp
+      case Type.Cst(tc, _) => DocAst.Type.App(TypeConstructorPrinter.print(tc), args)
+      case Type.Alias(cst, aliasArgs, _, _) => DocAst.Type.App(DocAst.Type.Alias(cst.sym, aliasArgs.map(print)), args)
+      case Type.AssocType(cst, arg, _, _) => DocAst.Type.App(DocAst.Type.AssocType(cst.sym, print(arg)), args)
+      case Type.JvmToType(tpe, _) => DocAst.Type.App(DocAst.Type.App(DocAst.Type.AsIs("JvmToType"), List(print(tpe))), args)
+      case Type.JvmToEff(tpe, _) => DocAst.Type.App(DocAst.Type.App(DocAst.Type.AsIs("JvmToEff"), List(print(tpe))), args)
+      case Type.UnresolvedJvmType(member, _) => DocAst.Type.App(DocAst.Type.App(printJvmMember(member), List(print(tpe))), args)
+      case Type.Apply(_, _, _) =>
+        // `collectApp` does not return Apply as base.
+        DocAst.Type.Meta("bug in TypePrinter")
+    }
+  }
+
+  private def printJvmMember(member: Type.JvmMember): DocAst.Type = DocAst.Type.Meta("JvmMember")
+
+  /** Returns e.g. `App(App(Tuple, Char), Char)` as `(Type, List(Char, Char))`. */
+  private def collectApp(tpe: Type): (Type, List[Type]) = {
+    @tailrec
+    def helper(tpe0: Type, acc: List[Type]): (Type, List[Type]) = tpe0 match {
+      case Type.Apply(tpe1, tpe2, _) => helper(tpe1, tpe2 :: acc)
+      case _ => (tpe0, acc.reverse)
+    }
+    helper(tpe, Nil)
   }
 
 }
