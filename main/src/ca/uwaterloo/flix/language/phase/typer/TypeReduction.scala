@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.collection.{ListMap, ListOps}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Jvm, Result}
-import org.apache.commons.lang3.reflect.MethodUtils
+import org.apache.commons.lang3.reflect.{ConstructorUtils, MethodUtils}
 
 import java.lang.reflect.{Constructor, Field, Method}
 import scala.annotation.tailrec
@@ -201,27 +201,14 @@ object TypeReduction {
     val typesAreKnown = ts.forall(isKnown)
     if (!typesAreKnown) return JavaConstructorResolution.UnresolvedTypes
 
-    val candidates = clazz.getConstructors.toList.filter(isCandidateConstructor(_, ts))
+    val tparams = ts.map(getJavaType)
+    val c = ConstructorUtils.getMatchingAccessibleConstructor(clazz, tparams *)
 
-    candidates match {
-      case Nil => JavaConstructorResolution.NotFound
-      case constructor :: Nil => JavaConstructorResolution.Resolved(constructor)
-      case _ :: _ :: _ =>
-        // Multiple candidate constructors exist according to subtyping, so we search for an exact
-        // match. Candidates could contain `append(String)` and `append(Object)` for the call
-        // `append("a")`.
-        val exactMatches = candidates.filter(c => exactArguments(c.getParameterTypes, ts))
-
-        exactMatches match {
-          // No exact matches - we have ambiguity among the candidates.
-          case Nil => JavaConstructorResolution.AmbiguousConstructor(candidates)
-
-          case constructor :: Nil => JavaConstructorResolution.Resolved(constructor)
-
-          // Multiple exact matches are impossible in Java.
-          case _ :: _ :: _ =>
-            throw InternalCompilerException("Unexpected multiple exact matches for Java constructor", loc)
-        }
+    // Check if we found a matching constructor.
+    if (c != null) {
+      JavaConstructorResolution.Resolved(c)
+    } else {
+      JavaConstructorResolution.NotFound
     }
   }
 
