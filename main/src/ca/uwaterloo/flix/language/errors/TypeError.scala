@@ -24,8 +24,6 @@ import ca.uwaterloo.flix.language.fmt.FormatEqualityConstraint.formatEqualityCon
 import ca.uwaterloo.flix.language.fmt.FormatType.formatType
 import ca.uwaterloo.flix.util.{Formatter, Grammar}
 
-import java.lang.reflect.{Constructor, Method}
-
 /**
   * A common super-type for type errors.
   */
@@ -136,116 +134,6 @@ object TypeError {
          |""".stripMargin
     }
   }
-
-  /**
-    * Java ambiguous constructor type error.
-    *
-    * @param tpes         the types of the arguments.
-    * @param constructors a list of possible candidate constructors on the type of the receiver object.
-    * @param renv         the rigidity environment.
-    * @param loc          the location where the error occured.
-    */
-  case class AmbiguousConstructor(clazz: Class[?], tpes: List[Type], constructors: List[Constructor[?]], renv: RigidityEnv, loc: SourceLocation) extends TypeError {
-    def summary: String = s"Ambiguous Java '${clazz.getName}' constructor with arguments types (${tpes.mkString(", ")})."
-
-    def message(formatter: Formatter): String = {
-      import formatter.*
-      def constructorToStr(c: Constructor[?]) = {
-        s"${c.getName}(${c.getParameterTypes.map(t => t.getName).mkString(", ")})"
-      }
-      s"""${line(kind, source.name)}
-         |>> Java '${clazz.getName}' constructor with arguments types (${tpes.mkString(", ")}) is ambiguous.
-         | Possible candidate constructors:
-         |  ${constructors.map(m => constructorToStr(m)).mkString(", ")}
-         |
-         |${code(loc, s"Ambiguous Java '${clazz.getName}' constructor")}
-         |""".stripMargin
-    }
-  }
-
-  /**
-    * Java ambiguous method type error.
-    *
-    * @param tpe0    the type of the receiver object.
-    * @param tpes    the types of the arguments.
-    * @param methods a list of possible candidate methods on the type of the receiver object.
-    * @param renv    the rigidity environment.
-    * @param loc     the location where the error occured.
-    */
-  case class AmbiguousMethod(methodName: Name.Ident, tpe0: Type, tpes: List[Type], methods: List[Method], renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"Ambiguous Java method '$methodName' in type '$tpe0' with arguments types (${tpes.mkString(", ")})."
-
-    def message(formatter: Formatter): String = {
-      import formatter.*
-      def methodToStr(m: Method) = {
-        s"${m.getName}(${m.getParameterTypes.map(t => t.getName).mkString(", ")})"
-      }
-      s""">> Java method '$methodName' from type '${red(formatType(tpe0, Some(renv)))}' with arguments types (${tpes.mkString(", ")}) is ambiguous.
-         |
-         |Possible candidate methods:
-         |  - ${methods.map(m => methodToStr(m)).mkString("\n  - ")}
-         |
-         |${code(loc, s"Ambiguous Java method '$methodName'")}
-         |""".stripMargin
-    }
-  }
-
-  /**
-    * Java ambiguous static method type error.
-    *
-    * @param clazz   the Java class expected to contain the static method
-    * @param tpes    the types of the arguments.
-    * @param methods a list of possible candidate methods in the class
-    * @param renv    the rigidity environment.
-    * @param loc     the location where the error occured.
-    */
-  case class AmbiguousStaticMethod(clazz: Class[?], methodName: Name.Ident, tpes: List[Type], methods: List[Method], renv: RigidityEnv, loc: SourceLocation) extends TypeError {
-    def summary: String = s"Ambiguous static Java method '$methodName' from class '${clazz.getName}' with arguments types (${tpes.mkString(", ")})."
-
-    def message(formatter: Formatter): String = {
-      import formatter.*
-      def methodToStr(m: Method) = {
-        s"${m.getName}(${m.getParameterTypes.map(t => t.getName).mkString(", ")})"
-      }
-      s""">> Static Java method '$methodName' from class '${clazz.getName}' with arguments types (${tpes.mkString(", ")}) is ambiguous.
-         | Possible candidate static methods:
-         |  ${methods.map(m => methodToStr(m)).mkString(", ")}
-         |
-         |${code(loc, s"Ambiguous static Java method '$methodName'")}
-         |""".stripMargin
-    }
-  }
-
-  /**
-    * Unresolved constructor type error.
-    * This is a dummy error used in Java constructor type reconstruction for InvokeConstructor2.
-    */
-  case class UnresolvedConstructor(loc: SourceLocation) extends TypeError with Recoverable {
-    def summary: String = s"Unresolved constructor"
-
-    def message(formatter: Formatter): String = s"Unresolved constructor"
-  }
-
-  /**
-    * Unresolved method type error.
-    * This is a dummy error used in Java method type reconstruction for InvokeMethod2.
-    */
-  case class UnresolvedMethod(loc: SourceLocation) extends TypeError with Recoverable {
-    def summary: String = s"Unresolved method"
-
-    def message(formatter: Formatter): String = s"Unresolved method"
-  }
-
-  /**
-    * Unresolved field type error.
-    * This is a dummy error used in Java field type reconstruction for GetField2.
-    */
-  case class UnresolvedField(loc: SourceLocation) extends TypeError with Recoverable {
-    def summary: String = s"Unresolved field"
-
-    def message(formatter: Formatter): String = s"Unresolved field"
-  }
-
 
   /**
     * Mismatched Arity.
@@ -836,6 +724,46 @@ object TypeError {
          |${code(loc, "expression has unexpected type.")}
          |""".stripMargin
     }
+  }
+
+  /**
+   * Unresolved constructor type error.
+   * This is a dummy error used in Java constructor type reconstruction for InvokeConstructor2.
+   */
+  case class UnresolvedConstructor(loc: SourceLocation) extends TypeError with Recoverable {
+    def summary: String = s"Unresolved constructor"
+
+    def message(formatter: Formatter): String = s"Unresolved constructor"
+  }
+
+  /**
+   * Unresolved field type error.
+   * This is a dummy error used in Java field type reconstruction for GetField2.
+   */
+  case class UnresolvedField(loc: SourceLocation) extends TypeError with Recoverable {
+    def summary: String = s"Unresolved field"
+
+    def message(formatter: Formatter): String = s"Unresolved field"
+  }
+
+  /**
+   * Unresolved method type error.
+   * This is a dummy error used in Java method type reconstruction for InvokeMethod2.
+   */
+  case class UnresolvedMethod(loc: SourceLocation) extends TypeError with Recoverable {
+    def summary: String = s"Unresolved method"
+
+    def message(formatter: Formatter): String = s"Unresolved method"
+  }
+
+  /**
+   * Unresolved method type error.
+   * This is a dummy error used in Java method type reconstruction for InvokeStaticMethod2.
+   */
+  case class UnresolvedStaticMethod(loc: SourceLocation) extends TypeError with Recoverable {
+    def summary: String = s"Unresolved static method"
+
+    def message(formatter: Formatter): String = s"Unresolved static method"
   }
 
   /**
