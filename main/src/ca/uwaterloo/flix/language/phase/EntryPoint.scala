@@ -228,17 +228,16 @@ object EntryPoint {
 
     // NB: Getting the type directly from the scheme assumes the function is not polymorphic.
     // This is a valid assumption with the limitations we set on the entry point.
-    val ftpe = oldEntryPoint.spec.declaredScheme.base
-
+    val itpe = oldEntryPoint.spec.declaredScheme.base
     val defSym = Ast.DefSymUse(oldEntryPoint.sym, SourceLocation.Unknown)
     val args = List(TypedAst.Expr.Cst(Constant.Unit, Type.Unit, SourceLocation.Unknown))
     // func()
-    val call = TypedAst.Expr.ApplyDef(defSym, args, ftpe, ftpe.arrowResultType, ftpe.arrowEffectType, SourceLocation.Unknown)
+    val call = TypedAst.Expr.ApplyDef(defSym, args, itpe, itpe.arrowResultType, itpe.arrowEffectType, SourceLocation.Unknown)
 
     // one of:
     // printUnlessUnit(func(args))
     val printSym = root.defs(new Symbol.DefnSym(None, Nil, "printUnlessUnit", SourceLocation.Unknown)).sym
-    val printTpe = Type.mkArrowWithEffect(ftpe.arrowResultType, Type.IO, Type.Unit, SourceLocation.Unknown)
+    val printTpe = Type.mkArrowWithEffect(itpe.arrowResultType, Type.IO, Type.Unit, SourceLocation.Unknown)
     val print = TypedAst.Expr.ApplyDef(Ast.DefSymUse(printSym, SourceLocation.Unknown), List(call), printTpe, Type.Unit, Type.IO, SourceLocation.Unknown)
 
     val sym = new Symbol.DefnSym(None, Nil, "main" + Flix.Delimiter, SourceLocation.Unknown)
