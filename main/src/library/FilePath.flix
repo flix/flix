@@ -57,7 +57,6 @@ pub eff FilePath {
     ///
     pub def isExecutable(f: String): Bool
 
-
     ///
     /// Returns the last access time of the given file `f` in milliseconds since the epoch.
     ///
