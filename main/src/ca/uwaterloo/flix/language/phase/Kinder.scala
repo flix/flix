@@ -862,14 +862,15 @@ object Kinder {
     case ResolvedAst.Expr.ParYield(frags, exp0, loc) =>
       val fragsVal = traverse(frags) {
         case ResolvedAst.ParYieldFragment(pat, exp1, l0) =>
-          val patVal = visitPattern(pat, kenv0, root)
+          val p = visitPattern(pat, kenv0, root)
           val expVal = visitExp(exp1, kenv0, taenv, henv0, root)
-          mapN(patVal, expVal) {
-            case (p, e) => KindedAst.ParYieldFragment(p, e, l0)
+          mapN(expVal) {
+            case e => KindedAst.ParYieldFragment(p, e, l0)
           }
       }
 
-      mapN(fragsVal, visitExp(exp0, kenv0, taenv, henv0, root)) {
+      val expVal = visitExp(exp0, kenv0, taenv, henv0, root)
+      mapN(fragsVal, expVal) {
         case (fs, exp) => KindedAst.Expr.ParYield(fs, exp, loc)
       }
 
@@ -948,11 +949,11 @@ object Kinder {
     */
   private def visitMatchRule(rule0: ResolvedAst.MatchRule, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], henv: Option[(Type.Var, Type.Var)], root: ResolvedAst.Root)(implicit scope: Scope, sctx: SharedContext, flix: Flix): Validation[KindedAst.MatchRule, KindError] = rule0 match {
     case ResolvedAst.MatchRule(pat0, guard0, exp0) =>
-      val patVal = visitPattern(pat0, kenv, root)
+      val pat = visitPattern(pat0, kenv, root)
       val guardVal = traverseOpt(guard0)(visitExp(_, kenv, taenv, henv, root))
       val expVal = visitExp(exp0, kenv, taenv, henv, root)
-      mapN(patVal, guardVal, expVal) {
-        case (pat, guard, exp) => KindedAst.MatchRule(pat, guard, exp)
+      mapN(guardVal, expVal) {
+        case (guard, exp) => KindedAst.MatchRule(pat, guard, exp)
       }
   }
 
@@ -1023,36 +1024,31 @@ object Kinder {
   /**
     * Performs kinding on the given pattern under the given kind environment.
     */
-  private def visitPattern(pat00: ResolvedAst.Pattern, kenv: KindEnv, root: ResolvedAst.Root)(implicit scope: Scope, flix: Flix): Validation[KindedAst.Pattern, KindError] = pat00 match {
-    case ResolvedAst.Pattern.Wild(loc) => Validation.success(KindedAst.Pattern.Wild(Type.freshVar(Kind.Star, loc.asSynthetic), loc))
-    case ResolvedAst.Pattern.Var(sym, loc) => Validation.success(KindedAst.Pattern.Var(sym, Type.freshVar(Kind.Star, loc.asSynthetic), loc))
-    case ResolvedAst.Pattern.Cst(cst, loc) => Validation.success(KindedAst.Pattern.Cst(cst, loc))
+  private def visitPattern(pat00: ResolvedAst.Pattern, kenv: KindEnv, root: ResolvedAst.Root)(implicit scope: Scope, flix: Flix): KindedAst.Pattern = pat00 match {
+    case ResolvedAst.Pattern.Wild(loc) => KindedAst.Pattern.Wild(Type.freshVar(Kind.Star, loc.asSynthetic), loc)
+    case ResolvedAst.Pattern.Var(sym, loc) => KindedAst.Pattern.Var(sym, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
+    case ResolvedAst.Pattern.Cst(cst, loc) => KindedAst.Pattern.Cst(cst, loc)
     case ResolvedAst.Pattern.Tag(sym, pat0, loc) =>
-      val patVal = visitPattern(pat0, kenv, root)
-      mapN(patVal) {
-        pat => KindedAst.Pattern.Tag(sym, pat, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
-      }
+      val pat = visitPattern(pat0, kenv, root)
+      KindedAst.Pattern.Tag(sym, pat, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
+
     case ResolvedAst.Pattern.Tuple(elms0, loc) =>
-      val elmsVal = traverse(elms0)(visitPattern(_, kenv, root))
-      mapN(elmsVal) {
-        elms => KindedAst.Pattern.Tuple(elms, loc)
-      }
+      val elms = elms0.map(visitPattern(_, kenv, root))
+      KindedAst.Pattern.Tuple(elms, loc)
+
     case ResolvedAst.Pattern.Record(pats, pat, loc) =>
-      val psVal = traverse(pats) {
+      val ps = pats.map {
         case ResolvedAst.Pattern.Record.RecordLabelPattern(label, pat1, loc1) =>
           val tvar = Type.freshVar(Kind.Star, loc1.asSynthetic)
-          mapN(visitPattern(pat1, kenv, root)) {
-            case p => KindedAst.Pattern.Record.RecordLabelPattern(label, tvar, p, loc1)
-          }
+          val p = visitPattern(pat1, kenv, root)
+          KindedAst.Pattern.Record.RecordLabelPattern(label, tvar, p, loc1)
       }
-      val pVal = visitPattern(pat, kenv, root)
-      mapN(psVal, pVal) {
-        case (ps, p) => KindedAst.Pattern.Record(ps, p, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
-      }
+      val p = visitPattern(pat, kenv, root)
+      KindedAst.Pattern.Record(ps, p, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
 
-    case ResolvedAst.Pattern.RecordEmpty(loc) => Validation.success(KindedAst.Pattern.RecordEmpty(loc))
+    case ResolvedAst.Pattern.RecordEmpty(loc) => KindedAst.Pattern.RecordEmpty(loc)
 
-    case ResolvedAst.Pattern.Error(loc) => Validation.success(KindedAst.Pattern.Error(Type.freshVar(Kind.Star, loc.asSynthetic), loc))
+    case ResolvedAst.Pattern.Error(loc) => KindedAst.Pattern.Error(Type.freshVar(Kind.Star, loc.asSynthetic), loc)
   }
 
   /**
@@ -1109,10 +1105,8 @@ object Kinder {
     */
   private def visitBodyPredicate(pred0: ResolvedAst.Predicate.Body, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], henv: Option[(Type.Var, Type.Var)], root: ResolvedAst.Root)(implicit scope: Scope, sctx: SharedContext, flix: Flix): Validation[KindedAst.Predicate.Body, KindError] = pred0 match {
     case ResolvedAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms0, loc) =>
-      val termsVal = traverse(terms0)(visitPattern(_, kenv, root))
-      mapN(termsVal) {
-        terms => KindedAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, Type.freshVar(Kind.Predicate, loc.asSynthetic), loc)
-      }
+      val terms = terms0.map(visitPattern(_, kenv, root))
+      Validation.success(KindedAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, Type.freshVar(Kind.Predicate, loc.asSynthetic), loc))
 
     case ResolvedAst.Predicate.Body.Functional(outVars, exp0, loc) =>
       val expVal = visitExp(exp0, kenv, taenv, henv, root)
