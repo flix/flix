@@ -23,6 +23,7 @@ import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur.*
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.{DefContext, Occur}
 import ca.uwaterloo.flix.language.ast.Symbol.{DefnSym, LabelSym, VarSym}
 import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, LiftedAst, OccurrenceAst, Symbol}
+import ca.uwaterloo.flix.util.collection.MapOps
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
 /**
@@ -62,9 +63,11 @@ object OccurrenceAnalyzer {
   def run(root: LiftedAst.Root)(implicit flix: Flix): Validation[OccurrenceAst.Root, CompilationMessage] = {
 
     val defs = visitDefs(root.defs)
+    val enums = ParOps.parMapValues(root.enums)(visitEnum)
+    val structs = ParOps.parMapValues(root.structs)(visitStruct)
     val effects = root.effects.map { case (k, v) => k -> visitEffect(v) }
 
-    val result = OccurrenceAst.Root(defs, effects, root.entryPoint, root.reachable, root.sources)
+    val result = OccurrenceAst.Root(defs, enums, structs, effects, root.entryPoint, root.reachable, root.sources)
 
     Validation.success(result)
   }
@@ -134,6 +137,28 @@ object OccurrenceAnalyzer {
     */
   private def visitFormalParam(p: LiftedAst.FormalParam): OccurrenceAst.FormalParam =
     OccurrenceAst.FormalParam(p.sym, p.mod, p.tpe, p.loc)
+
+  private def visitEnum(enm: LiftedAst.Enum): OccurrenceAst.Enum = enm match {
+    case LiftedAst.Enum(doc, ann, mod, sym, tparams0, cases0, loc) =>
+      val tparams = tparams0.map(param => OccurrenceAst.TypeParam(param.name, param.sym, param.loc))
+      val cases = MapOps.mapValues(cases0)(visitEnumCase)
+      OccurrenceAst.Enum(doc, ann, mod, sym, tparams, cases, loc)
+  }
+
+  private def visitEnumCase(caze: LiftedAst.Case): OccurrenceAst.Case = caze match {
+    case LiftedAst.Case(sym, tpe, loc) => OccurrenceAst.Case(sym, tpe, loc)
+  }
+
+  private def visitStruct(struct: LiftedAst.Struct): OccurrenceAst.Struct = struct match {
+    case LiftedAst.Struct(doc, ann, mod, sym, tparams0, fields0, loc) =>
+      val tparams = tparams0.map(param => OccurrenceAst.TypeParam(param.name, param.sym, param.loc))
+      val fields = fields0.map(visitStructField)
+      OccurrenceAst.Struct(doc, ann, mod, sym, tparams, fields, loc)
+  }
+
+  private def visitStructField(field: LiftedAst.StructField): OccurrenceAst.StructField = field match {
+    case LiftedAst.StructField(sym, tpe, loc) => OccurrenceAst.StructField(sym, tpe, loc)
+  }
 
   /**
     * Performs occurrence analysis on the given expression `exp0`

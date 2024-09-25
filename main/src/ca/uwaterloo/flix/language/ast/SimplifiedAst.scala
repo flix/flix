@@ -23,15 +23,21 @@ import ca.uwaterloo.flix.language.phase.ClosureConv
 
 object SimplifiedAst {
 
-  val empty: Root = Root(Map.empty, Map.empty, None, Set.empty, Map.empty)
+  val empty: Root = Root(Map.empty, Map.empty, Map.empty, Map.empty, None, Set.empty, Map.empty)
 
   case class Root(defs: Map[Symbol.DefnSym, Def],
+                  enums: Map[Symbol.EnumSym, Enum],
+                  structs: Map[Symbol.StructSym, Struct],
                   effects: Map[Symbol.EffectSym, Effect],
                   entryPoint: Option[Symbol.DefnSym],
                   reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 
   case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, fparams: List[FormalParam], exp: Expr, tpe: MonoType, purity: Purity, loc: SourceLocation)
+
+  case class Enum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[TypeParam], cases: Map[Symbol.CaseSym, Case], loc: SourceLocation)
+
+  case class Struct(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.StructSym, tparams: List[TypeParam], fields: List[StructField], loc: SourceLocation)
 
   case class Effect(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EffectSym, ops: List[Op], loc: SourceLocation)
 
@@ -103,6 +109,12 @@ object SimplifiedAst {
 
   }
 
+  /** [[Type]] is used here because [[Enum]] declarations are not monomorphized! */
+  case class Case(sym: Symbol.CaseSym, tpe: Type, loc: SourceLocation)
+
+  /** [[Type]] is used here because [[Struct]] declarations are not monomorphized! */
+  case class StructField(sym: Symbol.StructFieldSym, tpe: Type, loc: SourceLocation)
+
   case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], exp: Expr, retTpe: MonoType, purity: Purity, loc: SourceLocation)
 
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[?], exp: Expr)
@@ -110,6 +122,8 @@ object SimplifiedAst {
   case class HandlerRule(op: Ast.OpSymUse, fparams: List[FormalParam], exp: Expr)
 
   case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: MonoType, loc: SourceLocation)
+
+  case class TypeParam(name: Name.Ident, sym: Symbol.KindedTypeVarSym, loc: SourceLocation)
 
   case class FreeVar(sym: Symbol.VarSym, tpe: MonoType) extends Ordered[FreeVar] {
     override def compare(that: FreeVar): Int = this.sym.compare(that.sym)

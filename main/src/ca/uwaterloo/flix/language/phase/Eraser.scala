@@ -3,9 +3,10 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ReducedAst.Expr.*
 import ca.uwaterloo.flix.language.ast.ReducedAst.*
-import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoType, Purity, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoType, Purity, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugReducedAst
-import ca.uwaterloo.flix.util.ParOps
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
+import ca.uwaterloo.flix.util.collection.MapOps
 
 /**
   * Erase types and introduce corresponding casting
@@ -33,8 +34,10 @@ object Eraser {
 
   def run(root: Root)(implicit flix: Flix): Root = flix.phase("Eraser") {
     val newDefs = ParOps.parMapValues(root.defs)(visitDef)
+    val newEnums = ParOps.parMapValues(root.enums)(visitEnum)
+    val newStructs = ParOps.parMapValues(root.structs)(visitStruct)
     val newEffects = ParOps.parMapValues(root.effects)(visitEffect)
-    root.copy(defs = newDefs, effects = newEffects)
+    root.copy(defs = newDefs, enums = newEnums, structs = newStructs, effects = newEffects)
   }
 
   private def visitDef(defn: Def): Def = defn match {
@@ -52,6 +55,28 @@ object Eraser {
   private def visitLocalParam(p: LocalParam): LocalParam = p match {
     case LocalParam(sym, tpe) =>
       LocalParam(sym, visitType(tpe))
+  }
+
+  private def visitEnum(enm: Enum): Enum = enm match {
+    case Enum(doc, ann, mod, sym, tparams, cases0, loc) =>
+      val cases = MapOps.mapValues(cases0)(visitEnumTag)
+      Enum(doc, ann, mod, sym, tparams, cases, loc)
+  }
+
+  private def visitEnumTag(caze: Case): Case = caze match {
+    case Case(sym, tpe, loc) =>
+      Case(sym, erase(tpe), loc)
+  }
+
+  private def visitStruct(struct: Struct): Struct = struct match {
+    case Struct(doc, ann, mod, sym, tparams, fields0, loc) =>
+      val fields = fields0.map(visitStructField)
+      Struct(doc, ann, mod, sym, tparams, fields, loc)
+  }
+
+  private def visitStructField(field: StructField): StructField = field match {
+    case StructField(sym, tpe, loc) =>
+      StructField(sym, erase(tpe), loc)
   }
 
   private def visitBranch(branch: (Symbol.LabelSym, Expr)): (Symbol.LabelSym, Expr) = branch match {
@@ -201,8 +226,8 @@ object Eraser {
       case Array(tpe) => Array(visitType(tpe))
       case Lazy(tpe) => Lazy(erase(tpe))
       case Tuple(elms) => Tuple(elms.map(erase))
-      case MonoType.Enum(sym) => MonoType.Enum(sym)
-      case MonoType.Struct(sym, elms, tparams) => MonoType.Struct(sym, elms.map(erase), tparams.map(erase))
+      case MonoType.Enum(sym, targs) => MonoType.Enum(sym, targs.map(erase))
+      case MonoType.Struct(sym, tparams) => MonoType.Struct(sym, tparams.map(erase))
       case Arrow(args, result) => Arrow(args.map(visitType), box(result))
       case RecordEmpty => RecordEmpty
       case RecordExtend(label, value, rest) => RecordExtend(label, erase(value), visitType(rest))
@@ -210,7 +235,7 @@ object Eraser {
     }
   }
 
-  private def erase(tpe: MonoType): MonoType = {
+  def erase(tpe: MonoType): MonoType = {
     import MonoType.*
     tpe match {
       case Bool => Bool
@@ -221,11 +246,32 @@ object Eraser {
       case Int16 => Int16
       case Int32 => Int32
       case Int64 => Int64
-      case Void | AnyType | Unit | BigDecimal | BigInt | String | Regex |
-           Region | Array(_) | Lazy(_) | Tuple(_) | MonoType.Enum(_) |
-           MonoType.Struct(_, _, _) | Arrow(_, _) | RecordEmpty | RecordExtend(_, _, _) | Native(_) | Null =>
+      case Void | AnyType | Unit | BigDecimal | BigInt | String | Regex | Region | Array(_) |
+           Lazy(_) | Tuple(_) | MonoType.Enum(_, _) | MonoType.Struct(_, _) | Arrow(_, _) |
+           RecordEmpty | RecordExtend(_, _, _) | Native(_) | Null =>
         MonoType.Object
     }
+  }
+
+  private def erase(tpe: Type): Type = tpe match {
+    case v@Type.Var(_, _) => v
+    case c@Type.Cst(tc, loc) => tc match {
+      case TypeConstructor.Bool => c
+      case TypeConstructor.Char => c
+      case TypeConstructor.Float32 => c
+      case TypeConstructor.Float64 => c
+      case TypeConstructor.Int8 => c
+      case TypeConstructor.Int16 => c
+      case TypeConstructor.Int32 => c
+      case TypeConstructor.Int64 => c
+      case _ => Type.Cst(TypeConstructor.Native(classOf[Object]), loc)
+    }
+    case Type.Apply(_, _, loc) => Type.Cst(TypeConstructor.Native(classOf[Object]), loc)
+    case Type.Alias(_, _, _, _) => throw InternalCompilerException(s"Unexpected type $tpe", tpe.loc)
+    case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected type $tpe", tpe.loc)
+    case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected type $tpe", tpe.loc)
+    case Type.JvmToEff(_, _) => throw InternalCompilerException(s"Unexpected type $tpe", tpe.loc)
+    case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected type $tpe", tpe.loc)
   }
 
   private def box(tpe: MonoType): MonoType = MonoType.Object

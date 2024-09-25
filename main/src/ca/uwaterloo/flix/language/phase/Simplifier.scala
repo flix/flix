@@ -21,8 +21,8 @@ import ca.uwaterloo.flix.language.ast.Ast.BoundBy
 import ca.uwaterloo.flix.language.ast.shared.{Constant, Scope}
 import ca.uwaterloo.flix.language.ast.{Purity, Symbol, *}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
+import ca.uwaterloo.flix.util.collection.MapOps
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
-import ca.uwaterloo.flix.language.phase.unification.Substitution
 
 import scala.annotation.tailrec
 
@@ -36,11 +36,13 @@ object Simplifier {
 
   def run(root: MonoAst.Root)(implicit flix: Flix): SimplifiedAst.Root = flix.phase("Simplifier") {
     implicit val universe: Set[Symbol.EffectSym] = root.effects.keys.toSet
-    implicit val r = root
+    implicit val r: MonoAst.Root = root
     val defs = ParOps.parMapValues(root.defs)(visitDef)
+    val enums = ParOps.parMapValues(root.enums)(visitEnum)
+    val structs = ParOps.parMapValues(root.structs)(visitStruct)
     val effects = ParOps.parMapValues(root.effects)(visitEffect)
 
-    SimplifiedAst.Root(defs, effects, root.entryPoint, root.reachable, root.sources)
+    SimplifiedAst.Root(defs, enums, structs, effects, root.entryPoint, root.reachable, root.sources)
   }
 
   private def visitDef(decl: MonoAst.Def)(implicit universe: Set[Symbol.EffectSym], root: MonoAst.Root, flix: Flix): SimplifiedAst.Def = decl match {
@@ -51,6 +53,28 @@ object Simplifier {
       val retType = visitType(funType.arrowResultType)
       val eff = simplifyEffect(funType.arrowEffectType)
       SimplifiedAst.Def(spec.ann, spec.mod, sym, fs, e, retType, eff, sym.loc)
+  }
+
+  private def visitEnum(enm: MonoAst.Enum): SimplifiedAst.Enum = enm match {
+    case MonoAst.Enum(doc, ann, mod, sym, tparams0, cases0, loc) =>
+      val tparams = tparams0.map(param => SimplifiedAst.TypeParam(param.name, param.sym, param.loc))
+      val cases = MapOps.mapValues(cases0)(visitEnumCase)
+      SimplifiedAst.Enum(doc, ann, mod, sym, tparams, cases, loc)
+  }
+
+  private def visitEnumCase(caze: MonoAst.Case): SimplifiedAst.Case = caze match {
+    case MonoAst.Case(sym, tpe, loc) => SimplifiedAst.Case(sym, visitPolyType(tpe), loc)
+  }
+
+  private def visitStruct(struct: MonoAst.Struct): SimplifiedAst.Struct = struct match {
+    case MonoAst.Struct(doc, ann, mod, sym, tparams0, fields0, loc) =>
+      val tparams = tparams0.map(param => SimplifiedAst.TypeParam(param.name, param.sym, param.loc))
+      val fields = fields0.map(visitStructField)
+      SimplifiedAst.Struct(doc, ann, mod, sym, tparams, fields, loc)
+  }
+
+  private def visitStructField(field: MonoAst.StructField): SimplifiedAst.StructField = field match {
+    case MonoAst.StructField(sym, tpe, loc) => SimplifiedAst.StructField(sym, visitPolyType(tpe), loc)
   }
 
   private def visitEffect(decl: MonoAst.Effect)(implicit universe: Set[Symbol.EffectSym], root: MonoAst.Root, flix: Flix): SimplifiedAst.Effect = decl match {
@@ -228,7 +252,7 @@ object Simplifier {
       throw InternalCompilerException(s"Unexpected expression: $exp0.", loc)
   }
 
-  private def visitType(tpe: Type)(implicit root: MonoAst.Root, flix: Flix): MonoType = {
+  private def visitType(tpe: Type): MonoType = {
     val base = tpe.typeConstructor
     val args = tpe.typeArguments.map(visitType)
 
@@ -279,36 +303,13 @@ object Simplifier {
 
           case TypeConstructor.Lazy => MonoType.Lazy(args.head)
 
-          case TypeConstructor.Enum(sym, _) => MonoType.Enum(sym)
+          case TypeConstructor.Enum(sym, _) => MonoType.Enum(sym, args)
 
-          case TypeConstructor.Struct(sym, _) =>
-            // We must do this here because the `MonoTypes` requires the individual types of each element
-            // but the `Type` type only carries around the type arguments. i.e. for `struct S[v, r] {a: List[v]}`
-            // at this point we would know `v` but we would need the type of `a`. We also erase to avoid infinitely
-            // expanding recursive types
-            val struct = root.structs(sym)
-            val subst = Substitution(struct.tparams.zip(tpe.typeArguments).toMap)
-            val substitutedStructFieldTypes = struct.fields.map { f =>
-              subst(f.tpe).typeConstructor match {
-                case Some(value) => value match {
-                  case TypeConstructor.Bool => MonoType.Bool
-                  case TypeConstructor.Char => MonoType.Char
-                  case TypeConstructor.Float32 => MonoType.Float32
-                  case TypeConstructor.Float64 => MonoType.Float64
-                  case TypeConstructor.Int8 => MonoType.Int8
-                  case TypeConstructor.Int16 => MonoType.Int16
-                  case TypeConstructor.Int32 => MonoType.Int32
-                  case TypeConstructor.Int64 => MonoType.Int64
-                  case _ => MonoType.Object
-                }
-                case None => throw InternalCompilerException(s"Unexpected type: $tpe", tpe.loc)
-              }
-            }
-            MonoType.Struct(sym, substitutedStructFieldTypes, args)
+          case TypeConstructor.Struct(sym, _) => MonoType.Struct(sym, args)
 
           case TypeConstructor.RestrictableEnum(sym, _) =>
             val enumSym = new Symbol.EnumSym(sym.namespace, sym.name, sym.loc)
-            MonoType.Enum(enumSym)
+            MonoType.Enum(enumSym, args)
 
           case TypeConstructor.Native(clazz) => MonoType.Native(clazz)
 
@@ -370,6 +371,137 @@ object Simplifier {
           case TypeConstructor.Error(_, _) =>
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
         }
+    }
+  }
+
+  /** Copy of [[visitType]] that returns [[Type]] instead. */
+  private def visitPolyType(tpe: Type): Type = {
+    val base = tpe.baseType
+    val args = tpe.typeArguments.map(visitPolyType)
+
+    base match {
+      case v@Type.Var(_, _) => Type.mkApply(v, args, tpe.loc)
+
+      case Type.Cst(tc, _) =>
+        tc match {
+          case TypeConstructor.Void => Type.Cst(tc, tpe.loc)
+
+          case TypeConstructor.AnyType => Type.Cst(tc, tpe.loc)
+
+          case TypeConstructor.Unit => Type.Cst(tc, tpe.loc)
+
+          case TypeConstructor.Null => Type.Cst(tc, tpe.loc)
+
+          case TypeConstructor.Bool => Type.Cst(tc, tpe.loc)
+
+          case TypeConstructor.Char => Type.Cst(tc, tpe.loc)
+
+          case TypeConstructor.Float32 => Type.Cst(tc, tpe.loc)
+
+          case TypeConstructor.Float64 => Type.Cst(tc, tpe.loc)
+
+          case TypeConstructor.BigDecimal => Type.Cst(tc, tpe.loc)
+
+          case TypeConstructor.Int8 => Type.Cst(tc, tpe.loc)
+
+          case TypeConstructor.Int16 => Type.Cst(tc, tpe.loc)
+
+          case TypeConstructor.Int32 => Type.Cst(tc, tpe.loc)
+
+          case TypeConstructor.Int64 => Type.Cst(tc, tpe.loc)
+
+          case TypeConstructor.BigInt => Type.Cst(tc, tpe.loc)
+
+          case TypeConstructor.Str => Type.Cst(tc, tpe.loc)
+
+          case TypeConstructor.Regex => Type.Cst(tc, tpe.loc)
+
+          case TypeConstructor.RecordRowEmpty => Type.Cst(tc, tpe.loc)
+
+          case TypeConstructor.Sender => throw InternalCompilerException("Unexpected Sender", tpe.loc)
+
+          case TypeConstructor.Receiver => throw InternalCompilerException("Unexpected Receiver", tpe.loc)
+
+          case TypeConstructor.Lazy => Type.mkApply(Type.Cst(tc, tpe.loc), args, tpe.loc)
+
+          case TypeConstructor.Enum(sym, _) => Type.mkApply(Type.Cst(tc, tpe.loc), args, tpe.loc)
+
+          case TypeConstructor.Struct(sym, _) => Type.mkApply(Type.Cst(tc, tpe.loc), args, tpe.loc)
+
+          case TypeConstructor.RestrictableEnum(sym, _) =>
+            val enumSym = new Symbol.EnumSym(sym.namespace, sym.name, sym.loc)
+            Type.mkEnum(enumSym, args, tpe.loc)
+
+          case TypeConstructor.Native(clazz) => Type.Cst(tc, tpe.loc)
+
+          case TypeConstructor.Array =>
+            // remove region
+            // OBS: non-well kinded type
+            Type.Apply(Type.Cst(TypeConstructor.Array, tpe.loc), args.head, tpe.loc)
+
+          case TypeConstructor.Vector =>
+            // OBS: non-well kinded type
+            Type.Apply(Type.Cst(TypeConstructor.Array, tpe.loc), args.head, tpe.loc)
+
+          case TypeConstructor.RegionToStar => Type.mkApply(Type.Cst(tc, tpe.loc), args, tpe.loc)
+
+          case TypeConstructor.Tuple(_) => Type.mkApply(Type.Cst(tc, tpe.loc), args, tpe.loc)
+
+          case TypeConstructor.Arrow(_) =>
+            // remove effect
+            // OBS: non-well kinded type
+            Type.mkApply(Type.Cst(TypeConstructor.Arrow(args.length - 1), tpe.loc), args.drop(1), tpe.loc)
+
+          case TypeConstructor.RecordRowExtend(_) => Type.mkApply(Type.Cst(tc, tpe.loc), args, tpe.loc)
+
+          case TypeConstructor.Record => Type.mkApply(Type.Cst(tc, tpe.loc), args, tpe.loc)
+
+          case TypeConstructor.True => Type.mkUnit(tpe.loc)
+          case TypeConstructor.False => Type.mkUnit(tpe.loc)
+          case TypeConstructor.Not => Type.mkUnit(tpe.loc)
+          case TypeConstructor.And => Type.mkUnit(tpe.loc)
+          case TypeConstructor.Or => Type.mkUnit(tpe.loc)
+
+          case TypeConstructor.Pure => Type.mkUnit(tpe.loc)
+          case TypeConstructor.Univ => Type.mkUnit(tpe.loc)
+          case TypeConstructor.Complement => Type.mkUnit(tpe.loc)
+          case TypeConstructor.Union => Type.mkUnit(tpe.loc)
+          case TypeConstructor.Intersection => Type.mkUnit(tpe.loc)
+          case TypeConstructor.Effect(_) => Type.mkUnit(tpe.loc)
+          case TypeConstructor.CaseSet(_, _) => Type.mkUnit(tpe.loc)
+          case TypeConstructor.CaseComplement(_) => Type.mkUnit(tpe.loc)
+          case TypeConstructor.CaseIntersection(_) => Type.mkUnit(tpe.loc)
+          case TypeConstructor.CaseUnion(_) => Type.mkUnit(tpe.loc)
+
+          case TypeConstructor.Relation =>
+            throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
+
+          case TypeConstructor.Lattice =>
+            throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
+
+          case TypeConstructor.SchemaRowEmpty =>
+            throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
+
+          case TypeConstructor.SchemaRowExtend(_) =>
+            throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
+
+          case TypeConstructor.Schema =>
+            throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
+
+          case TypeConstructor.JvmConstructor(_) =>
+            throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
+
+          case TypeConstructor.JvmMethod(_) =>
+            throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
+
+          case TypeConstructor.JvmField(_) =>
+            throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
+
+          case TypeConstructor.Error(_, _) =>
+            throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
+        }
+
+      case _ => throw InternalCompilerException(s"Unexpected type: '$base'", tpe.loc)
     }
   }
 

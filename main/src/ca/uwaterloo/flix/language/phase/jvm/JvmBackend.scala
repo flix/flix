@@ -66,7 +66,8 @@ object JvmBackend {
       val erasedExtendTypes = JvmOps.getErasedRecordExtendsOf(types)
       val erasedFunctionTypes = JvmOps.getErasedArrowsOf(types)
       val erasedTuplesTypes = JvmOps.getErasedTupleTypesOf(types)
-      val erasedStructTypes = JvmOps.getErasedStructTypesOf(types)
+      val erasedTagTypes = JvmOps.getErasedTagTypesOf(root, types)
+      val erasedStructTypes = JvmOps.getErasedStructTypesOf(root, types)
 
       //
       // Second, generate classes.
@@ -83,7 +84,7 @@ object JvmBackend {
       val closureAbstractClasses = GenClosureAbstractClasses.gen(types)
 
       val taggedAbstractClass = Map(genClass(BackendObjType.Tagged))
-      val tagClasses = BackendType.erasedTypes.map(tpe => genClass(BackendObjType.Tag(tpe))).toMap
+      val tagClasses = erasedTagTypes.map(genClass).toMap
 
       val tupleClasses = erasedTuplesTypes.map(genClass).toMap
       val structClasses = erasedStructTypes.map(genClass).toMap

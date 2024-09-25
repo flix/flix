@@ -61,7 +61,7 @@ object GenExpression {
 
       case Constant.Null =>
         mv.visitInsn(ACONST_NULL)
-        AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
+        AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(root, tpe))
 
       case Constant.Bool(true) =>
         mv.visitInsn(ICONST_1)
@@ -130,7 +130,7 @@ object GenExpression {
     }
 
     case Expr.Var(sym, tpe, _) =>
-      val varType = JvmOps.getJvmType(tpe)
+      val varType = JvmOps.getJvmType(root, tpe)
       val xLoad = AsmOps.getLoadInstruction(varType)
       mv.visitVarInsn(xLoad, sym.getStackOffset(ctx.localOffset))
 
@@ -556,28 +556,29 @@ object GenExpression {
 
       case AtomicOp.Tag(sym) =>
         val List(exp) = exps
+        val expIndex = 0
 
-        val tagType = BackendObjType.Tag(BackendType.toErasedBackendType(exp.tpe))
+        val tagType = BackendObjType.Tag(List(BackendType.toErasedBackendType(exp.tpe)))
 
         val ins = {
           import BytecodeInstructions.*
           NEW(tagType.jvmName) ~ DUP() ~ INVOKESPECIAL(tagType.Constructor) ~
             DUP() ~ BackendObjType.Tagged.mkTagName(sym) ~ PUTFIELD(tagType.NameField) ~
-            DUP() ~ cheat(mv => compileExpr(exp)(mv, ctx, root, flix)) ~ PUTFIELD(tagType.ValueField)
+            DUP() ~ cheat(mv => compileExpr(exp)(mv, ctx, root, flix)) ~ PUTFIELD(tagType.IndexField(expIndex))
         }
         ins(new BytecodeInstructions.F(mv))
 
       case AtomicOp.Untag(_) =>
         val List(exp) = exps
-        val tagType = BackendObjType.Tag(BackendType.toErasedBackendType(tpe))
+        val tagType = BackendObjType.Tag(List(BackendType.toErasedBackendType(tpe)))
 
         compileExpr(exp)
         val ins = {
           import BytecodeInstructions.*
-          CHECKCAST(tagType.jvmName) ~ GETFIELD(tagType.ValueField)
+          CHECKCAST(tagType.jvmName) ~ GETFIELD(tagType.IndexField(0))
         }
         ins(new BytecodeInstructions.F(mv))
-        AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
+        AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(root, tpe))
 
       case AtomicOp.Index(idx) =>
         val List(exp) = exps
@@ -790,7 +791,8 @@ object GenExpression {
         compileExpr(region)
         BytecodeInstructions.xPop(BackendType.toErasedBackendType(region.tpe))(new BytecodeInstructions.F(mv))
         // We get the JvmType of the class for the struct
-        val MonoType.Struct(_, elmTypes, _) = tpe
+        val MonoType.Struct(_, targs) = tpe
+        val elmTypes: List[MonoType] = ???
         val structType = BackendObjType.Struct(elmTypes.map(BackendType.asErasedBackendType))
         val internalClassName = structType.jvmName.toInternalName
         // Instantiating a new object of struct
@@ -807,7 +809,8 @@ object GenExpression {
       case AtomicOp.StructGet(field) =>
         val idx = field.idx
         val List(exp) = exps
-        val MonoType.Struct(_, elmTypes, _) = exp.tpe
+        val MonoType.Struct(_, targs) = exp.tpe
+        val elmTypes: List[MonoType] = ???
         val structType = BackendObjType.Struct(elmTypes.map(BackendType.asErasedBackendType))
         // evaluating the `base`
         compileExpr(exp)
@@ -817,7 +820,8 @@ object GenExpression {
       case AtomicOp.StructPut(field) =>
         val idx = field.idx
         val List(exp1, exp2) = exps
-        val MonoType.Struct(_, elmTypes, _) = exp1.tpe
+        val MonoType.Struct(_, targs) = exp1.tpe
+        val elmTypes: List[MonoType] = ???
         val structType = BackendObjType.Struct(elmTypes.map(BackendType.asErasedBackendType))
         // evaluating the `base`
         compileExpr(exp1)
@@ -837,7 +841,7 @@ object GenExpression {
       case AtomicOp.Cast =>
         val List(exp) = exps
         compileExpr(exp)
-        AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
+        AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(root, tpe))
 
       case AtomicOp.Unbox =>
         val List(exp) = exps
@@ -934,7 +938,7 @@ object GenExpression {
         addSourceLine(mv, loc)
         compileExpr(exp)
         val declaration = asm.Type.getInternalName(field.getDeclaringClass)
-        mv.visitFieldInsn(GETFIELD, declaration, field.getName, JvmOps.getJvmType(tpe).toDescriptor)
+        mv.visitFieldInsn(GETFIELD, declaration, field.getName, JvmOps.getJvmType(root, tpe).toDescriptor)
 
       case AtomicOp.PutField(field) =>
         val List(exp1, exp2) = exps
@@ -943,7 +947,7 @@ object GenExpression {
         compileExpr(exp1)
         compileExpr(exp2)
         val declaration = asm.Type.getInternalName(field.getDeclaringClass)
-        mv.visitFieldInsn(PUTFIELD, declaration, field.getName, JvmOps.getJvmType(exp2.tpe).toDescriptor)
+        mv.visitFieldInsn(PUTFIELD, declaration, field.getName, JvmOps.getJvmType(root, exp2.tpe).toDescriptor)
 
         // Push Unit on the stack.
         mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
@@ -952,7 +956,7 @@ object GenExpression {
         // Add source line number for debugging (can fail when calling java)
         addSourceLine(mv, loc)
         val declaration = asm.Type.getInternalName(field.getDeclaringClass)
-        mv.visitFieldInsn(GETSTATIC, declaration, field.getName, JvmOps.getJvmType(tpe).toDescriptor)
+        mv.visitFieldInsn(GETSTATIC, declaration, field.getName, JvmOps.getJvmType(root, tpe).toDescriptor)
 
       case AtomicOp.PutStaticField(field) =>
         val List(exp) = exps
@@ -960,7 +964,7 @@ object GenExpression {
         addSourceLine(mv, loc)
         compileExpr(exp)
         val declaration = asm.Type.getInternalName(field.getDeclaringClass)
-        mv.visitFieldInsn(PUTSTATIC, declaration, field.getName, JvmOps.getJvmType(exp.tpe).toDescriptor)
+        mv.visitFieldInsn(PUTSTATIC, declaration, field.getName, JvmOps.getJvmType(root, exp.tpe).toDescriptor)
 
         // Push Unit on the stack.
         mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
@@ -1242,7 +1246,7 @@ object GenExpression {
     case Expr.Let(sym, exp1, exp2, _, _, _) =>
       compileExpr(exp1)
       // Jvm Type of the `exp1`
-      val jvmType = JvmOps.getJvmType(exp1.tpe)
+      val jvmType = JvmOps.getJvmType(root, exp1.tpe)
       // Store instruction for `jvmType`
       val iStore = AsmOps.getStoreInstruction(jvmType)
       AsmOps.castIfNotPrim(mv, jvmType)
@@ -1251,7 +1255,7 @@ object GenExpression {
 
     case Expr.LetRec(varSym, index, defSym, exp1, exp2, _, _, _) =>
       // Jvm Type of the `exp1`
-      val jvmType = JvmOps.getJvmType(exp1.tpe)
+      val jvmType = JvmOps.getJvmType(root, exp1.tpe)
       // Store instruction for `jvmType`
       val iStore = AsmOps.getStoreInstruction(jvmType)
       // JvmType of the closure
@@ -1465,7 +1469,7 @@ object GenExpression {
       BytecodeInstructions.GETFIELD(BackendObjType.Value.fieldFromType(erasedResult))(new BytecodeInstructions.F(mv))
 
       mv.visitLabel(afterUnboxing)
-      AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
+      AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(root, tpe))
 
     case Expr.NewObject(name, _, _, _, methods, _) =>
       val exps = methods.map(_.exp)

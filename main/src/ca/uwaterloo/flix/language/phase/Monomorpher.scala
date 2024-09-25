@@ -23,8 +23,8 @@ import ca.uwaterloo.flix.language.ast.{Ast, Kind, LoweredAst, MonoAst, Name, Rig
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnvironment, Substitution, Unification}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.collection.{ListMap, ListOps}
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result}
+import ca.uwaterloo.flix.util.collection.{ListMap, ListOps, MapOps}
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.collection.immutable.SortedSet
@@ -128,13 +128,17 @@ object Monomorpher {
     /**
       * Applies `this` substitution to the given type `tpe`, returning a normalized type.
       *
+      * `keepVariables` can only be `true` if `this.s` is empty. It will avoid removing variables.
+      * This is useful for structs and enums that want type normalization but not monomorphization.
+      *
       * Performance Note: We are on a hot path. We take extra care to avoid redundant type objects.
       */
-    def apply(tpe0: Type): Type = tpe0 match {
+    def apply(tpe0: Type, keepVariables: Boolean = false): Type = tpe0 match {
       case x: Type.Var =>
         // Remove variables by substitution, otherwise by default type.
         s.m.get(x.sym) match {
           case Some(t) =>
+            if (keepVariables) throw InternalCompilerException("Keeping variables with non-empty strict subst", tpe0.loc)
             // Use default since variables in the output of `s.m` are unconstrained.
             // It is important to do this before apply to avoid looping on variables.
             val t1 = t.map(default)
@@ -142,7 +146,7 @@ object Monomorpher {
             apply(t1)
           case None =>
             // Default types are normalized.
-            default(x)
+            if (keepVariables) x else default(x)
         }
 
       case Type.Cst(_, _) =>
@@ -414,16 +418,24 @@ object Monomorpher {
         MonoAst.Effect(doc, ann, mod, sym, ops, loc)
     }
 
-    val structs =  ParOps.parMapValues(root.structs) {
+    val enums = ParOps.parMapValues(root.enums) {
+      case LoweredAst.Enum(doc, ann, mod, sym, tparams0, _, cases, loc) =>
+        val newCases = MapOps.mapValues(cases)(visitEnumCase(_, empty))
+        val tparams = tparams0.map(param => MonoAst.TypeParam(param.name, param.sym, param.loc))
+        MonoAst.Enum(doc, ann, mod, sym, tparams, newCases, loc)
+    }
+
+    val structs = ParOps.parMapValues(root.structs) {
       case LoweredAst.Struct(doc, ann, mod, sym, tparams0, fields, loc) =>
-        val newFields = fields.map(visitStructField)
-        val tparams = tparams0.map(_.sym)
+        val newFields = fields.map(visitStructField(_, empty))
+        val tparams = tparams0.map(param => MonoAst.TypeParam(param.name, param.sym, param.loc))
         MonoAst.Struct(doc, ann, mod, sym, tparams, newFields, loc)
     }
 
     // Reassemble the AST.
     MonoAst.Root(
       ctx.toMap,
+      enums,
       structs,
       effects,
       root.entryPoint,
@@ -432,10 +444,17 @@ object Monomorpher {
     )
   }
 
-  def visitStructField(field: LoweredAst.StructField): MonoAst.StructField = {
+  def visitStructField(field: LoweredAst.StructField, subst: StrictSubstitution): MonoAst.StructField = {
     field match {
       case LoweredAst.StructField(fieldSym, tpe, loc) =>
-        MonoAst.StructField(fieldSym, tpe, loc)
+        MonoAst.StructField(fieldSym, subst(tpe, keepVariables = true), loc)
+    }
+  }
+
+  def visitEnumCase(caze: LoweredAst.Case, subst: StrictSubstitution): MonoAst.Case = {
+    caze match {
+      case LoweredAst.Case(sym, tpe, _, loc) =>
+        MonoAst.Case(sym, subst(tpe, keepVariables = true), loc)
     }
   }
 

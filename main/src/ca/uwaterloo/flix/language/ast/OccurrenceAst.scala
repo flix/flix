@@ -22,12 +22,18 @@ import ca.uwaterloo.flix.language.ast.shared.{Constant, Source}
 object OccurrenceAst {
 
   case class Root(defs: Map[Symbol.DefnSym, OccurrenceAst.Def],
+                  enums: Map[Symbol.EnumSym, Enum],
+                  structs: Map[Symbol.StructSym, Struct],
                   effects: Map[Symbol.EffectSym, OccurrenceAst.Effect],
                   entryPoint: Option[Symbol.DefnSym],
                   reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 
   case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, cparams: List[(OccurrenceAst.FormalParam, Occur)], fparams: List[(OccurrenceAst.FormalParam, Occur)], exp: OccurrenceAst.Expr, context: DefContext, tpe: MonoType, loc: SourceLocation)
+
+  case class Enum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[TypeParam], cases: Map[Symbol.CaseSym, Case], loc: SourceLocation)
+
+  case class Struct(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.StructSym, tparams: List[TypeParam], fields: List[StructField], loc: SourceLocation)
 
   case class Effect(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EffectSym, ops: List[Op], loc: SourceLocation)
 
@@ -81,6 +87,12 @@ object OccurrenceAst {
 
   }
 
+  /** [[Type]] is used here because [[Enum]] declarations are not monomorphized! */
+  case class Case(sym: Symbol.CaseSym, tpe: Type, loc: SourceLocation)
+
+  /** [[Type]] is used here because [[Struct]] declarations are not monomorphized! */
+  case class StructField(sym: Symbol.StructFieldSym, tpe: Type, loc: SourceLocation)
+
   case class JvmMethod(ident: Name.Ident, fparams: List[OccurrenceAst.FormalParam], clo: OccurrenceAst.Expr, retTpe: MonoType, purity: Purity, loc: SourceLocation)
 
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[?], exp: OccurrenceAst.Expr)
@@ -88,6 +100,8 @@ object OccurrenceAst {
   case class HandlerRule(op: Ast.OpSymUse, fparams: List[FormalParam], exp: OccurrenceAst.Expr)
 
   case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: MonoType, loc: SourceLocation)
+
+  case class TypeParam(name: Name.Ident, sym: Symbol.KindedTypeVarSym, loc: SourceLocation)
 
   sealed trait Occur
 

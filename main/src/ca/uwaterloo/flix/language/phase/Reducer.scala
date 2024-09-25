@@ -42,10 +42,12 @@ object Reducer {
 
     val newDefs = ParOps.parMapValues(root.defs)(visitDef)
     val defTypes = ctx.defTypes.keys.asScala.toSet
-
+    // This is an over approximation of the types in enums and structs since they are erased.
+    val enumTypes = Set(MonoType.Bool, MonoType.Char, MonoType.Int8, MonoType.Int16, MonoType.Int32, MonoType.Int64, MonoType.Float32, MonoType.Float64, MonoType.Object)
+    val structTypes = enumTypes
     val effectTypes = root.effects.values.toSet.flatMap(typesOfEffect)
 
-    val types = nestedTypesOf(Set.empty, Queue.from(defTypes ++ effectTypes))
+    val types = nestedTypesOf(Set.empty, Queue.from(effectTypes ++ structTypes ++ enumTypes ++ defTypes))
 
     root.copy(defs = newDefs, anonClasses = ctx.anonClasses.asScala.toList, types = types)
   }
@@ -228,12 +230,13 @@ object Reducer {
       case Some((tpe, taskList)) =>
         val taskList1 = tpe match {
           case Void | AnyType | Unit | Bool | Char | Float32 | Float64 | BigDecimal | Int8 | Int16 |
-               Int32 | Int64 | BigInt | String | Regex | Region | Enum(_) | RecordEmpty |
+               Int32 | Int64 | BigInt | String | Regex | Region | RecordEmpty |
                Native(_) | Null => taskList
           case Array(elm) => taskList.enqueue(elm)
           case Lazy(elm) => taskList.enqueue(elm)
           case Tuple(elms) => taskList.enqueueAll(elms)
-          case Struct(_, elms, _) => taskList.enqueueAll(elms)
+          case Enum(_, targs) => taskList.enqueueAll(targs)
+          case Struct(_, targs) => taskList.enqueueAll(targs)
           case Arrow(targs, tresult) => taskList.enqueueAll(targs).enqueue(tresult)
           case RecordExtend(_, value, rest) => taskList.enqueue(value).enqueue(rest)
         }

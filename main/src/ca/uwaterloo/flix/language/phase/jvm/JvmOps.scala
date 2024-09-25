@@ -19,11 +19,11 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ReducedAst.*
-import ca.uwaterloo.flix.language.ast.{MonoType, ReducedAst, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{MonoType, ReducedAst, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.phase.Eraser
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.mangle
 import ca.uwaterloo.flix.util.InternalCompilerException
 
-import java.lang.reflect.{Field, Method}
 import java.nio.file.{Files, LinkOption, Path}
 
 object JvmOps {
@@ -45,7 +45,7 @@ object JvmOps {
     * Int -> Bool           =>      Fn1$Int$Bool
     * (Int, Int) -> Bool    =>      Fn2$Int$Int$Bool
     */
-  def getJvmType(tpe: MonoType): JvmType = tpe match {
+  def getJvmType(root: Root, tpe: MonoType): JvmType = tpe match {
     // Primitives
     case MonoType.Void => JvmType.Object
     case MonoType.AnyType => JvmType.Object
@@ -70,8 +70,10 @@ object JvmOps {
     case MonoType.Tuple(elms) => JvmType.Reference(BackendObjType.Tuple(elms.map(BackendType.asErasedBackendType)).jvmName)
     case MonoType.RecordEmpty => JvmType.Reference(BackendObjType.Record.jvmName)
     case MonoType.RecordExtend(_, _, _) => JvmType.Reference(BackendObjType.Record.jvmName)
-    case MonoType.Enum(_) => JvmType.Object
-    case MonoType.Struct(_, elms, targs) => JvmType.Reference(BackendObjType.Struct(elms.map(BackendType.toErasedBackendType)).jvmName)
+    case MonoType.Enum(_, _) => JvmType.Object
+    case MonoType.Struct(sym, targs) =>
+      val elms: List[BackendType] = instantiateStruct(root.structs(sym), targs.map(Eraser.erase))
+      JvmType.Reference(BackendObjType.Struct(elms).jvmName)
     case MonoType.Arrow(_, _) => getFunctionInterfaceType(tpe)
     case MonoType.Native(clazz) => JvmType.Reference(JvmName.ofClass(clazz))
   }
@@ -94,7 +96,7 @@ object JvmOps {
       case Int32 => JvmType.PrimInt
       case Int64 => JvmType.PrimLong
       case Void | AnyType | Unit | BigDecimal | BigInt | String | Regex |
-           Region | Array(_) | Lazy(_) | Tuple(_) | Enum(_) | Struct(_, _, _) |
+           Region | Array(_) | Lazy(_) | Tuple(_) | Enum(_, _) | Struct(_, _) |
            Arrow(_, _) | RecordEmpty | RecordExtend(_, _, _) | Native(_) | Null =>
         JvmType.Object
     }
@@ -118,7 +120,7 @@ object JvmOps {
       case Int64 => JvmType.PrimLong
       case Native(clazz) if clazz == classOf[Object] => JvmType.Object
       case Void | AnyType | Unit | BigDecimal | BigInt | String | Regex |
-           Region | Array(_) | Lazy(_) | Tuple(_) | Enum(_) | Struct(_, _, _) |
+           Region | Array(_) | Lazy(_) | Tuple(_) | Enum(_, _) | Struct(_, _) |
            Arrow(_, _) | RecordEmpty | RecordExtend(_, _, _) | Native(_) | Null =>
         throw InternalCompilerException(s"Unexpected type $tpe", SourceLocation.Unknown)
     }
@@ -344,12 +346,61 @@ object JvmOps {
   /**
     * Returns the set of erased struct types in `types` without searching recursively.
     */
-  def getErasedStructTypesOf(types: Iterable[MonoType]): Set[BackendObjType.Struct] =
+  def getErasedStructTypesOf(root: Root, types: Iterable[MonoType]): Set[BackendObjType.Struct] =
     types.foldLeft(Set.empty[BackendObjType.Struct]) {
-      case (acc, MonoType.Struct(_, elms, targs)) =>
-        acc + BackendObjType.Struct(elms.map(BackendType.asErasedBackendType))
+      case (acc, MonoType.Struct(sym, targs)) =>
+        acc + BackendObjType.Struct(instantiateStruct(root.structs(sym), targs))
       case (acc, _) => acc
     }
+
+  private def instantiateStruct(struct: ReducedAst.Struct, targs: List[MonoType]): List[BackendType] = {
+    assert(struct.tparams.length == targs.length)
+    val map = struct.tparams.map(_.sym).zip(targs).toMap
+    struct.fields.map(field => instantiateType(map, field.tpe))
+  }
+
+  /**
+    * Returns the set of erased struct types in `types` without searching recursively.
+    */
+  def getErasedTagTypesOf(root: Root, types: Iterable[MonoType]): Set[BackendObjType.Tag] =
+    types.foldLeft(Set.empty[BackendObjType.Tag]) {
+      case (acc, MonoType.Enum(sym, targs)) =>
+        val tags = instantiateEnum(root.enums(sym), targs)
+        tags.foldLeft(acc){
+          case (acc, tagElms) => acc + BackendObjType.Tag(tagElms)
+        }
+      case (acc, _) => acc
+    }
+
+  private def instantiateEnum(enm: ReducedAst.Enum, targs: List[MonoType]): List[List[BackendType]] = {
+    assert(enm.tparams.length == targs.length)
+    val map = enm.tparams.map(_.sym).zip(targs).toMap
+    enm.cases.map{
+      case (_, caze) => List(caze.tpe).map(instantiateType(map, _))
+    }.toList
+  }
+
+  private def instantiateType(map: Map[Symbol.KindedTypeVarSym, MonoType], tpe: Type): BackendType = tpe match {
+    case Type.Var(sym, _) => BackendType.asErasedBackendType(map(sym))
+    case Type.Cst(tc, _) => tc match {
+      case TypeConstructor.Bool => BackendType.Bool
+      case TypeConstructor.Char => BackendType.Char
+      case TypeConstructor.Float32 => BackendType.Float32
+      case TypeConstructor.Float64 => BackendType.Float64
+      case TypeConstructor.Int8 => BackendType.Int8
+      case TypeConstructor.Int16 => BackendType.Int16
+      case TypeConstructor.Int32 => BackendType.Int32
+      case TypeConstructor.Int64 => BackendType.Int64
+      case TypeConstructor.Native(clazz) if clazz == classOf[Object] => BackendObjType.JavaObject.toTpe
+      case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'", tpe.loc)
+    }
+    case Type.Apply(_, _, _) => throw InternalCompilerException(s"Unexpected type: '$tpe'", tpe.loc)
+    case Type.Alias(_, _, _, _) => throw InternalCompilerException(s"Unexpected type: '$tpe'", tpe.loc)
+    case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected type: '$tpe'", tpe.loc)
+    case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected type: '$tpe'", tpe.loc)
+    case Type.JvmToEff(_, _) => throw InternalCompilerException(s"Unexpected type: '$tpe'", tpe.loc)
+    case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected type: '$tpe'", tpe.loc)
+  }
 
   /**
     * Writes the given JVM class `clazz` to a sub path under the given `prefixPath`.

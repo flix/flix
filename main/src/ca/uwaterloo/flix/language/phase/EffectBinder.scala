@@ -55,8 +55,10 @@ object EffectBinder {
     */
   def run(root: LiftedAst.Root)(implicit flix: Flix): ReducedAst.Root = flix.phase("EffectBinder") {
     val newDefs = ParOps.parMapValues(root.defs)(visitDef)
+    val newEnums = ParOps.parMapValues(root.enums)(visitEnum)
+    val newStructs = ParOps.parMapValues(root.structs)(visitStruct)
     val newEffects = ParOps.parMapValues(root.effects)(visitEffect)
-    ReducedAst.Root(newDefs, newEffects, Set.empty, Nil, root.entryPoint, root.reachable, root.sources)
+    ReducedAst.Root(newDefs, newEnums, newStructs, newEffects, Set.empty, Nil, root.entryPoint, root.reachable, root.sources)
   }
 
   private sealed trait Binder
@@ -78,6 +80,28 @@ object EffectBinder {
       val lparams = Nil
       val exp = visitExpr(exp0)
       ReducedAst.Def(ann, mod, sym, cparams, fparams, lparams, -1, exp, tpe, ReducedAst.UnboxedType(tpe), loc)
+  }
+
+  private def visitEnum(enm: LiftedAst.Enum): ReducedAst.Enum = enm match {
+    case LiftedAst.Enum(doc, ann, mod, sym, tparams0, cases0, loc) =>
+      val tparams = tparams0.map(param => ReducedAst.TypeParam(param.name, param.sym, param.loc))
+      val cases = MapOps.mapValues(cases0)(visitEnumCase)
+      ReducedAst.Enum(doc, ann, mod, sym, tparams, cases, loc)
+  }
+
+  private def visitEnumCase(caze: LiftedAst.Case): ReducedAst.Case = caze match {
+    case LiftedAst.Case(sym, tpe, loc) => ReducedAst.Case(sym, tpe, loc)
+  }
+
+  private def visitStruct(struct: LiftedAst.Struct): ReducedAst.Struct = struct match {
+    case LiftedAst.Struct(doc, ann, mod, sym, tparams0, fields0, loc) =>
+      val tparams = tparams0.map(param => ReducedAst.TypeParam(param.name, param.sym, param.loc))
+      val fields = fields0.map(visitStructField)
+      ReducedAst.Struct(doc, ann, mod, sym, tparams, fields, loc)
+  }
+
+  private def visitStructField(field: LiftedAst.StructField): ReducedAst.StructField = field match {
+    case LiftedAst.StructField(sym, tpe, loc) => ReducedAst.StructField(sym, tpe, loc)
   }
 
   private def visitEffect(e: LiftedAst.Effect): ReducedAst.Effect = e match {

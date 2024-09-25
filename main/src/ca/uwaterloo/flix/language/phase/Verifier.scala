@@ -211,16 +211,14 @@ object Verifier {
 
         case AtomicOp.Is(sym) =>
           val List(t1) = ts
-          check(expected = MonoType.Enum(sym.enumSym))(actual = t1, loc)
           check(expected = MonoType.Bool)(actual = tpe, loc)
 
         case AtomicOp.Tag(sym) =>
           val List(t1) = ts
-          check(expected = MonoType.Enum(sym.enumSym))(actual = tpe, loc)
+          tpe
 
         case AtomicOp.Untag(sym) =>
           val List(t1) = ts
-          check(expected = MonoType.Enum(sym.enumSym))(actual = t1, loc)
           tpe
 
         case AtomicOp.ArrayLength =>
@@ -587,7 +585,7 @@ object Verifier {
     */
   private def checkStructType(tpe: MonoType, sym0: Symbol.StructSym, loc: SourceLocation): Unit = {
     tpe match {
-      case MonoType.Struct(sym, _, _) =>
+      case MonoType.Struct(sym, _) =>
         if(sym0 != sym) {
           throw InternalCompilerException(s"Expected struct type $sym0, got struct type $sym", loc)
         }
