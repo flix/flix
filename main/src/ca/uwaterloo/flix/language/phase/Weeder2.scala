@@ -19,7 +19,8 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.*
 import ca.uwaterloo.flix.language.ast.SyntaxTree.{Tree, TreeKind}
-import ca.uwaterloo.flix.language.ast.shared.{Denotation, Fixity, Polarity}
+import ca.uwaterloo.flix.language.ast.shared.Annotation.Export
+import ca.uwaterloo.flix.language.ast.shared.{Annotation, CheckedCastType, Constant, Denotation, Fixity, Polarity}
 import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, Name, ReadAst, SemanticOp, SourceLocation, Symbol, SyntaxTree, Token, TokenKind, WeededAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.ParseError.*
@@ -646,11 +647,10 @@ object Weeder2 {
       mapN(annotations)(Ast.Annotations(_))
     }
 
-    private def visitAnnotation(token: Token): Validation[Ast.Annotation, CompilationMessage] = {
+    private def visitAnnotation(token: Token): Validation[Annotation, CompilationMessage] = {
       val loc = token.mkSourceLocation()
-      import Ast.Annotation.*
+      import Annotation.*
       token.text match {
-        case "@benchmark" | "@Benchmark" => Validation.success(Benchmark(loc))
         case "@Deprecated" => Validation.success(Deprecated(loc))
         case "@Experimental" => Validation.success(Experimental(loc))
         case "@Export" => Validation.success(Export(loc))
@@ -663,7 +663,7 @@ object Weeder2 {
         case "@Skip" => Validation.success(Skip(loc))
         case "@Test" | "@test" => Validation.success(Test(loc))
         case "@TailRec" => Validation.success(TailRecursive(loc))
-        case other => Validation.toSoftFailure(Ast.Annotation.Error(other.stripPrefix("@"), loc), UndefinedAnnotation(other, loc))
+        case other => Validation.toSoftFailure(Annotation.Error(other.stripPrefix("@"), loc), UndefinedAnnotation(other, loc))
       }
     }
 
@@ -767,7 +767,7 @@ object Weeder2 {
         }
       ).getOrElse(Validation.toSoftFailure(
         List(unitFormalParameter(tree.loc)),
-        UnexpectedToken(NamedTokenSet.FromKinds(Set(TokenKind.ParenL)), actual = None, SyntacticContext.Decl.OtherDecl, loc = tree.loc))
+        UnexpectedToken(NamedTokenSet.FromKinds(Set(TokenKind.ParenL)), actual = None, SyntacticContext.Decl.Module, loc = tree.loc))
       )
     }
 
@@ -922,7 +922,7 @@ object Weeder2 {
 
     private def visitStringInterpolationExpr(tree: Tree)(implicit flix: Flix): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.StringInterpolation)
-      val init = WeededAst.Expr.Cst(Ast.Constant.Str(""), tree.loc)
+      val init = WeededAst.Expr.Cst(Constant.Str(""), tree.loc)
       var isDebug = false
       // Check for empty interpolation
       if (tryPick(TreeKind.Expr.Expr, tree).isEmpty) {
@@ -941,7 +941,7 @@ object Weeder2 {
             Validation.success(acc)
           } else {
             val (processed, errors) = Constants.visitChars(lit, loc)
-            val cst = Validation.success(Expr.Cst(Ast.Constant.Str(processed), loc)).withSoftFailures(errors)
+            val cst = Validation.success(Expr.Cst(Constant.Str(processed), loc)).withSoftFailures(errors)
             mapN(cst) {
               cst => Expr.Binary(SemanticOp.StringOp.Concat, acc, cst, tree.loc.asSynthetic)
             }
@@ -1006,9 +1006,9 @@ object Weeder2 {
       expectAny(tree, List(TreeKind.Expr.Literal, TreeKind.Pattern.Literal))
       tree.children(0) match {
         case token@Token(_, _, _, _, _, _) => token.kind match {
-          case TokenKind.KeywordNull => Validation.success(Expr.Cst(Ast.Constant.Null, token.mkSourceLocation()))
-          case TokenKind.KeywordTrue => Validation.success(Expr.Cst(Ast.Constant.Bool(true), token.mkSourceLocation()))
-          case TokenKind.KeywordFalse => Validation.success(Expr.Cst(Ast.Constant.Bool(false), token.mkSourceLocation()))
+          case TokenKind.KeywordNull => Validation.success(Expr.Cst(Constant.Null, token.mkSourceLocation()))
+          case TokenKind.KeywordTrue => Validation.success(Expr.Cst(Constant.Bool(true), token.mkSourceLocation()))
+          case TokenKind.KeywordFalse => Validation.success(Expr.Cst(Constant.Bool(false), token.mkSourceLocation()))
           case TokenKind.LiteralString => Constants.toStringCst(token)
           case TokenKind.LiteralChar => Constants.toChar(token)
           case TokenKind.LiteralInt8 => Constants.toInt8(token)
@@ -1063,7 +1063,7 @@ object Weeder2 {
         (unnamed, named) =>
           unnamed ++ named match {
             // Add synthetic unit arguments if there are none
-            case Nil => List(Expr.Cst(Ast.Constant.Unit, tree.loc))
+            case Nil => List(Expr.Cst(Constant.Unit, tree.loc))
             case args => args.sortBy(_.loc)
           }
       }
@@ -1268,7 +1268,7 @@ object Weeder2 {
           val errors = ArrayBuffer.empty[IllegalAnnotation]
           for (a <- as) {
             a match {
-              case Ast.Annotation.TailRecursive(_) => // OK
+              case Annotation.TailRecursive(_) => // OK
               case otherAnn => errors += IllegalAnnotation(otherAnn.loc)
             }
           }
@@ -1383,21 +1383,19 @@ object Weeder2 {
           val inner = pat match {
             case Pattern.Wild(loc) => Validation.success(List(WeededAst.RestrictableChoosePattern.Wild(loc)))
             case Pattern.Var(ident, loc) => Validation.success(List(WeededAst.RestrictableChoosePattern.Var(ident, loc)))
-            case Pattern.Cst(Ast.Constant.Unit, loc) => Validation.success(List(WeededAst.RestrictableChoosePattern.Wild(loc)))
+            case Pattern.Cst(Constant.Unit, loc) => Validation.success(List(WeededAst.RestrictableChoosePattern.Wild(loc)))
             case Pattern.Tuple(elms, _) =>
               traverse(elms) {
                 case Pattern.Wild(loc) => Validation.success(WeededAst.RestrictableChoosePattern.Wild(loc))
                 case Pattern.Var(ident, loc) => Validation.success(WeededAst.RestrictableChoosePattern.Var(ident, loc))
-                case Pattern.Cst(Ast.Constant.Unit, loc) => Validation.success(WeededAst.RestrictableChoosePattern.Wild(loc))
+                case Pattern.Cst(Constant.Unit, loc) => Validation.success(WeededAst.RestrictableChoosePattern.Wild(loc))
                 case other =>
                   val e = UnsupportedRestrictedChoicePattern(isStar, other.loc)
-                  val ident = Name.Ident(s"x${flix.genSym.freshId()}", other.loc.asSynthetic)
-                  Validation.toSoftFailure(WeededAst.RestrictableChoosePattern.Var(ident, other.loc.asSynthetic), e)
+                  Validation.toSoftFailure(WeededAst.RestrictableChoosePattern.Error( other.loc.asSynthetic), e)
               }
             case other =>
               val e = UnsupportedRestrictedChoicePattern(isStar, other.loc)
-              val ident = Name.Ident(s"x${flix.genSym.freshId()}", other.loc.asSynthetic)
-              Validation.toSoftFailure(List(WeededAst.RestrictableChoosePattern.Var(ident, other.loc.asSynthetic)), e)
+              Validation.toSoftFailure(List(WeededAst.RestrictableChoosePattern.Error(other.loc.asSynthetic)), e)
           }
           mapN(inner)(RestrictableChoosePattern.Tag(qname, _, loc))
         case other =>
@@ -1654,14 +1652,14 @@ object Weeder2 {
     private def visitCheckedTypeCastExpr(tree: Tree)(implicit flix: Flix): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.CheckedTypeCast)
       mapN(pickExpr(tree)) {
-        expr => Expr.CheckedCast(Ast.CheckedCastType.TypeCast, expr, tree.loc)
+        expr => Expr.CheckedCast(CheckedCastType.TypeCast, expr, tree.loc)
       }
     }
 
     private def visitCheckedEffectCastExpr(tree: Tree)(implicit flix: Flix): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.CheckedEffectCast)
       mapN(pickExpr(tree)) {
-        expr => Expr.CheckedCast(Ast.CheckedCastType.EffectCast, expr, tree.loc)
+        expr => Expr.CheckedCast(CheckedCastType.EffectCast, expr, tree.loc)
       }
     }
 
@@ -2216,7 +2214,7 @@ object Weeder2 {
           maybePat match {
             case None =>
               // Synthetically add unit pattern to tag
-              val lit = Pattern.Cst(Ast.Constant.Unit, tree.loc.asSynthetic)
+              val lit = Pattern.Cst(Constant.Unit, tree.loc.asSynthetic)
               Pattern.Tag(qname, lit, tree.loc)
             case Some(pat) => Pattern.Tag(qname, pat, tree.loc)
           }
@@ -2227,7 +2225,7 @@ object Weeder2 {
       expect(tree, TreeKind.Pattern.Tuple)
       val patterns = pickAll(TreeKind.Pattern.Pattern, tree)
       mapN(traverse(patterns)(visitPattern(_, seen))) {
-        case Nil => Pattern.Cst(Ast.Constant.Unit, tree.loc)
+        case Nil => Pattern.Cst(Constant.Unit, tree.loc)
         case x :: Nil => x
         case xs => Pattern.Tuple(xs, tree.loc)
       }
@@ -2334,7 +2332,7 @@ object Weeder2 {
       */
     def toFloat32(token: Token): Validation[Expr, CompilationMessage] =
       tryParseFloat(token,
-        (text, loc) => Validation.success(Expr.Cst(Ast.Constant.Float32(text.stripSuffix("f32").toFloat), loc))
+        (text, loc) => Validation.success(Expr.Cst(Constant.Float32(text.stripSuffix("f32").toFloat), loc))
       )
 
     /**
@@ -2342,7 +2340,7 @@ object Weeder2 {
       */
     def toFloat64(token: Token): Validation[Expr, CompilationMessage] =
       tryParseFloat(token,
-        (text, loc) => Validation.success(Expr.Cst(Ast.Constant.Float64(text.stripSuffix("f64").toDouble), loc))
+        (text, loc) => Validation.success(Expr.Cst(Constant.Float64(text.stripSuffix("f64").toDouble), loc))
       )
 
     /**
@@ -2351,7 +2349,7 @@ object Weeder2 {
     def toBigDecimal(token: Token): Validation[Expr, CompilationMessage] =
       tryParseFloat(token, (text, loc) => {
         val bigDecimal = new java.math.BigDecimal(text.stripSuffix("ff"))
-        Validation.success(Expr.Cst(Ast.Constant.BigDecimal(bigDecimal), loc))
+        Validation.success(Expr.Cst(Constant.BigDecimal(bigDecimal), loc))
       })
 
     /**
@@ -2359,7 +2357,7 @@ object Weeder2 {
       */
     def toInt8(token: Token): Validation[Expr, CompilationMessage] =
       tryParseInt(token, "i8", (radix, digits, loc) =>
-        Expr.Cst(Ast.Constant.Int8(JByte.parseByte(digits, radix)), loc)
+        Expr.Cst(Constant.Int8(JByte.parseByte(digits, radix)), loc)
       )
 
     /**
@@ -2367,7 +2365,7 @@ object Weeder2 {
       */
     def toInt16(token: Token): Validation[Expr, CompilationMessage] = {
       tryParseInt(token, "i16", (radix, digits, loc) =>
-        Expr.Cst(Ast.Constant.Int16(JShort.parseShort(digits, radix)), loc)
+        Expr.Cst(Constant.Int16(JShort.parseShort(digits, radix)), loc)
       )
     }
 
@@ -2376,7 +2374,7 @@ object Weeder2 {
       */
     def toInt32(token: Token): Validation[Expr, CompilationMessage] =
       tryParseInt(token, "i32", (radix, digits, loc) =>
-        Expr.Cst(Ast.Constant.Int32(JInt.parseInt(digits, radix)), loc)
+        Expr.Cst(Constant.Int32(JInt.parseInt(digits, radix)), loc)
       )
 
     /**
@@ -2384,7 +2382,7 @@ object Weeder2 {
       */
     def toInt64(token: Token): Validation[Expr, CompilationMessage] = {
       tryParseInt(token, "i64", (radix, digits, loc) =>
-        Expr.Cst(Ast.Constant.Int64(JLong.parseLong(digits, radix)), loc)
+        Expr.Cst(Constant.Int64(JLong.parseLong(digits, radix)), loc)
       )
     }
 
@@ -2393,7 +2391,7 @@ object Weeder2 {
       */
     def toBigInt(token: Token): Validation[Expr, CompilationMessage] =
       tryParseInt(token, "ii", (radix, digits, loc) =>
-        Expr.Cst(Ast.Constant.BigInt(new java.math.BigInteger(digits, radix)), loc)
+        Expr.Cst(Constant.BigInt(new java.math.BigInteger(digits, radix)), loc)
       )
 
     /**
@@ -2405,7 +2403,7 @@ object Weeder2 {
       val (processed, errors) = visitChars(text, loc)
       try {
         val pattern = JPattern.compile(processed)
-        Validation.success(Expr.Cst(Ast.Constant.Regex(pattern), loc)).withSoftFailures(errors)
+        Validation.success(Expr.Cst(Constant.Regex(pattern), loc)).withSoftFailures(errors)
       } catch {
         case ex: PatternSyntaxException =>
           val err = MalformedRegex(token.text, ex.getMessage, loc)
@@ -2472,7 +2470,7 @@ object Weeder2 {
         val error = MalformedChar(processed, loc)
         Validation.toSoftFailure(Expr.Error(error), error).withSoftFailures(errors)
       } else {
-        Validation.success(Expr.Cst(Ast.Constant.Char(processed.head), loc)).withSoftFailures(errors)
+        Validation.success(Expr.Cst(Constant.Char(processed.head), loc)).withSoftFailures(errors)
       }
     }
 
@@ -2480,7 +2478,7 @@ object Weeder2 {
       val loc = token.mkSourceLocation()
       val text = token.text.stripPrefix("\"").stripSuffix("\"")
       val (processed, errors) = visitChars(text, loc)
-      Validation.success(Expr.Cst(Ast.Constant.Str(processed), loc)).withSoftFailures(errors)
+      Validation.success(Expr.Cst(Constant.Str(processed), loc)).withSoftFailures(errors)
     }
   }
 

@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.LabelledPrecedenceGraph
-import ca.uwaterloo.flix.language.ast.shared.{Denotation, Fixity, Polarity, Source}
+import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Constant, Denotation, Fixity, Polarity, Source}
 import ca.uwaterloo.flix.util.collection.{ListMap, MultiMap}
 
 import java.lang.reflect.{Constructor, Field, Method}
@@ -84,7 +84,7 @@ object TypedAst {
 
   object Expr {
 
-    case class Cst(cst: Ast.Constant, tpe: Type, loc: SourceLocation) extends Expr {
+    case class Cst(cst: Constant, tpe: Type, loc: SourceLocation) extends Expr {
       def eff: Type = Type.Pure
     }
 
@@ -100,9 +100,7 @@ object TypedAst {
       def eff: Type = Type.Pure
     }
 
-    case class Hole(sym: Symbol.HoleSym, tpe: Type, loc: SourceLocation) extends Expr {
-      def eff: Type = Type.Pure
-    }
+    case class Hole(sym: Symbol.HoleSym, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class HoleWithExp(exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
@@ -121,6 +119,8 @@ object TypedAst {
     }
 
     case class Apply(exp: Expr, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+
+    case class ApplyDef(symUse: Ast.DefSymUse, exps: List[Expr], itpe: Type, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class Unary(sop: SemanticOp.UnaryOp, exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
@@ -204,7 +204,7 @@ object TypedAst {
       def tpe: Type = Type.Bool
     }
 
-    case class CheckedCast(cast: Ast.CheckedCastType, exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class CheckedCast(cast: CheckedCastType, exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class UncheckedCast(exp: Expr, declaredType: Option[Type], declaredEff: Option[Type], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
@@ -288,7 +288,7 @@ object TypedAst {
 
     case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends Pattern
 
-    case class Cst(cst: Ast.Constant, tpe: Type, loc: SourceLocation) extends Pattern
+    case class Cst(cst: Constant, tpe: Type, loc: SourceLocation) extends Pattern
 
     case class Tag(sym: Ast.CaseSymUse, pat: Pattern, tpe: Type, loc: SourceLocation) extends Pattern
 
@@ -317,7 +317,7 @@ object TypedAst {
 
     case class Tag(sym: Ast.RestrictableCaseSymUse, pat: List[VarOrWild], tpe: Type, loc: SourceLocation) extends RestrictableChoosePattern
 
-    case class Error(value: Type, loc: SourceLocation) extends RestrictableChoosePattern
+    case class Error(value: Type, loc: SourceLocation) extends VarOrWild with RestrictableChoosePattern
 
   }
 

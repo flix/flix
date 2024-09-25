@@ -17,8 +17,8 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Symbol
-import ca.uwaterloo.flix.language.ast.LoweredAst._
+import ca.uwaterloo.flix.language.ast.{Ast, Symbol}
+import ca.uwaterloo.flix.language.ast.LoweredAst.*
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugLoweredAst
 import ca.uwaterloo.flix.util.ParOps
 
@@ -29,7 +29,7 @@ import ca.uwaterloo.flix.util.ParOps
   *
   * (a) The main function is always reachable.
   *
-  * (b) A function marked with @benchmark or @test is reachable.
+  * (b) A function marked with @test is reachable.
   *
   * (c) Appears in a function which itself is reachable.
   *
@@ -114,6 +114,9 @@ object TreeShaker1 {
 
     case Expr.Apply(exp, exps, _, _, _) =>
       visitExp(exp) ++ visitExps(exps)
+
+    case Expr.ApplyDef(sym, exps, _, _, _, _) =>
+      Set(ReachableSym.DefnSym(sym)) ++ visitExps(exps)
 
     case Expr.ApplyAtomic(_, exps, _, _, _) =>
       visitExps(exps)

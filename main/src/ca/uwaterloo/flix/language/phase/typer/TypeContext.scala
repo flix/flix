@@ -227,6 +227,7 @@ class TypeContext {
       case Type.Alias(_, _, tpe, _) => visit(tpe)
       case Type.AssocType(cst, arg, kind, loc) => Type.AssocType(cst, visit(arg), kind, loc)
       case Type.JvmToType(tpe, loc) => Type.JvmToType(visit(tpe), loc)
+      case Type.JvmToEff(tpe, loc) => Type.JvmToEff(visit(tpe), loc)
       case Type.UnresolvedJvmType(member, loc) => Type.UnresolvedJvmType(member.map(visit), loc)
     }
 

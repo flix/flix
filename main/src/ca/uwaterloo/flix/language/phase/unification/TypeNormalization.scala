@@ -123,14 +123,16 @@ object TypeNormalization {
         // Else just apply
         case x => Type.Apply(x, t2, applyLoc)
       }
-    case Type.Alias(cst, _, _, loc) =>
-      throw InternalCompilerException(s"Unexpected type alias: '${cst.sym}'", loc)
-    case Type.AssocType(cst, _, _, loc) =>
-      throw InternalCompilerException(s"Unexpected associated type: '${cst.sym}'", loc)
-    case t@Type.JvmToType(_, loc) =>
-      throw InternalCompilerException(s"Unexpected JVM type: '$t", loc)
-    case t@Type.UnresolvedJvmType(_, loc) =>
-      throw InternalCompilerException(s"Unexpected JVM type: '$t", loc)
+
+    case Type.Alias(cst, _, _, loc) => throw InternalCompilerException(s"Unexpected type alias: '${cst.sym}'", loc)
+
+    case Type.AssocType(cst, _, _, loc) => throw InternalCompilerException(s"Unexpected associated type: '${cst.sym}'", loc)
+
+    case t@Type.JvmToType(_, loc) => throw InternalCompilerException(s"Unexpected JVM type: '$t", loc)
+
+    case t@Type.JvmToEff(_, loc) => throw InternalCompilerException(s"Unexpected JVM effect: '$t", loc)
+
+    case t@Type.UnresolvedJvmType(_, loc) => throw InternalCompilerException(s"Unexpected JVM type: '$t", loc)
   }
 
   /**

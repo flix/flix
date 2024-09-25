@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.shared.{Denotation, Fixity, Polarity, Source}
+import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Constant, Denotation, Fixity, Polarity, Source}
 import ca.uwaterloo.flix.util.collection.MultiMap
 
 object DesugaredAst {
@@ -91,7 +91,7 @@ object DesugaredAst {
 
     case class Use(uses: List[UseOrImport], exp: Expr, loc: SourceLocation) extends Expr
 
-    case class Cst(cst: Ast.Constant, loc: SourceLocation) extends Expr
+    case class Cst(cst: Constant, loc: SourceLocation) extends Expr
 
     case class Apply(exp: Expr, exps: List[Expr], loc: SourceLocation) extends Expr
 
@@ -157,7 +157,7 @@ object DesugaredAst {
 
     case class InstanceOf(exp: Expr, className: Name.Ident, loc: SourceLocation) extends Expr
 
-    case class CheckedCast(cast: Ast.CheckedCastType, exp: Expr, loc: SourceLocation) extends Expr
+    case class CheckedCast(cast: CheckedCastType, exp: Expr, loc: SourceLocation) extends Expr
 
     case class UncheckedCast(exp: Expr, declaredType: Option[Type], declaredEff: Option[Type], loc: SourceLocation) extends Expr
 
@@ -241,7 +241,7 @@ object DesugaredAst {
 
     case class Var(ident: Name.Ident, loc: SourceLocation) extends Pattern
 
-    case class Cst(cst: Ast.Constant, loc: SourceLocation) extends Pattern
+    case class Cst(cst: Constant, loc: SourceLocation) extends Pattern
 
     case class Tag(qname: Name.QName, pat: Pattern, loc: SourceLocation) extends Pattern
 
@@ -273,7 +273,7 @@ object DesugaredAst {
 
     case class Tag(qname: Name.QName, pat: List[VarOrWild], loc: SourceLocation) extends RestrictableChoosePattern
 
-    case class Error(loc: SourceLocation) extends RestrictableChoosePattern
+    case class Error(loc: SourceLocation) extends VarOrWild with RestrictableChoosePattern
 
   }
 

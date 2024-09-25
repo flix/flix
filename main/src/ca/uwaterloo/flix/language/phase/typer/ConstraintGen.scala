@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.KindedAst.Expr
-import ca.uwaterloo.flix.language.ast.shared.Scope
+import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Scope}
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, Name, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.{InternalCompilerException, SubEffectLevel}
 import ca.uwaterloo.flix.language.phase.unification.Substitution
@@ -69,9 +69,9 @@ object ConstraintGen {
         val resEff = Type.Pure
         (resTpe, resEff)
 
-      case Expr.Hole(_, tpe, _) =>
+      case Expr.Hole(_, tpe, eff, _) =>
         val resTpe = tpe
-        val resEff = Type.Pure
+        val resEff = eff
         (resTpe, resEff)
 
       case Expr.HoleWithExp(exp, tvar, evar, loc) =>
@@ -102,13 +102,6 @@ object ConstraintGen {
         // - have better performance (we don't generate unnecessary type variables)
         //
         val knownTarget = exp match {
-          case KindedAst.Expr.Def(sym, tvar1, loc1) =>
-            // Case 1: Lookup the sym and instantiate its scheme.
-            val defn = root.defs(sym)
-            val (tconstrs1, econstrs1, declaredType, _) = Scheme.instantiate(defn.spec.sc, loc1.asSynthetic)
-            val constrs1 = tconstrs1.map(_.copy(loc = loc))
-            Some((sym, tvar1, constrs1, econstrs1, declaredType))
-
           case KindedAst.Expr.Sig(sym, tvar1, loc1) =>
             // Case 2: Lookup the sym and instantiate its scheme.
             val sig = root.traits(sym.trt).sigs(sym)
@@ -120,6 +113,7 @@ object ConstraintGen {
             // Case 3: Unknown target.
             None
         }
+
 
         knownTarget match {
           case Some((sym, tvar1, constrs1, econstrs1, declaredType)) =>
@@ -156,6 +150,24 @@ object ConstraintGen {
             val resEff = evar
             (resTpe, resEff)
         }
+
+      case Expr.ApplyDef(Ast.DefSymUse(sym, loc1), exps, itvar, tvar, evar, loc2) =>
+        val defn = root.defs(sym)
+        val (tconstrs1, econstrs1, declaredType, _) = Scheme.instantiate(defn.spec.sc, loc1.asSynthetic)
+        val constrs1 = tconstrs1.map(_.copy(loc = loc2))
+        val declaredEff = declaredType.arrowEffectType
+        val declaredArgumentTypes = declaredType.arrowArgTypes
+        val declaredResultType = declaredType.arrowResultType
+        val (tpes, effs) = exps.map(visitExp).unzip
+        c.unifyType(itvar, declaredType, loc2)
+        c.expectTypeArguments(sym, declaredArgumentTypes, tpes, exps.map(_.loc))
+        c.addClassConstraints(constrs1, loc2)
+        econstrs1.foreach { econstr => c.unifyType(econstr.tpe1, econstr.tpe2, loc2) }
+        c.unifyType(tvar, declaredResultType, loc2)
+        c.unifyType(evar, Type.mkUnion(declaredEff :: effs, loc2), loc2)
+        val resTpe = tvar
+        val resEff = evar
+        (resTpe, resEff)
 
       case Expr.Lambda(fparam, exp, loc) =>
         c.unifyType(fparam.sym.tvar, fparam.tpe, loc)
@@ -670,7 +682,7 @@ object ConstraintGen {
       case Expr.CheckedCast(cast, exp, tvar, evar, loc) =>
         // A cast expression is sound; the type system ensures the declared type is correct.
         cast match {
-          case Ast.CheckedCastType.TypeCast =>
+          case CheckedCastType.TypeCast =>
             // We replace the type with a fresh variable to allow any type.
             // The validity of this cast is checked in the Safety phase.
             val (_, eff) = visitExp(exp)
@@ -679,7 +691,7 @@ object ConstraintGen {
             val resEff = evar
             (resTpe, resEff)
 
-          case Ast.CheckedCastType.EffectCast =>
+          case CheckedCastType.EffectCast =>
             // We union the effect with a fresh variable to allow unifying with a "larger" effect.
             val (tpe, eff) = visitExp(exp)
             c.unifyType(tvar, tpe, loc)
@@ -769,12 +781,12 @@ object ConstraintGen {
       case Expr.InvokeConstructor2(clazz, exps, jvar, evar, loc) =>
         // Γ ⊢ eᵢ ... : τ₁ ...    Γ ⊢ ι ~ JvmConstructor(k, eᵢ ...)
         // --------------------------------------------------------
-        // Γ ⊢ new k(e₁ ...) : k
+        // Γ ⊢ new k(e₁ ...) : k \ JvmToEff[ι]
+        val baseEff = Type.JvmToEff(jvar, loc)
         val clazzTpe = Type.getFlixType(clazz)
         val (tpes, effs) = exps.map(visitExp).unzip
-        val baseEffs = BaseEffects.of(clazz, loc)
-        c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmConstructor(clazz, tpes), loc), loc) // unify constructor
-        c.unifyType(evar, Type.mkUnion(Type.IO :: baseEffs :: effs, loc), loc) // unify effects
+        c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmConstructor(clazz, tpes), loc), loc)
+        c.unifyType(evar, Type.mkUnion(baseEff :: effs, loc), loc)
         val resTpe = clazzTpe
         val resEff = evar
         (resTpe, resEff)
@@ -782,12 +794,13 @@ object ConstraintGen {
       case Expr.InvokeMethod2(exp, methodName, exps, jvar, tvar, evar, loc) =>
         // Γ ⊢ e : τ    Γ ⊢ eᵢ ... : τ₁ ...    Γ ⊢ ι ~ JvmMethod(τ, m, τᵢ ...)
         // ---------------------------------------------------------------
-        // Γ ⊢ e.m(eᵢ ...) : JvmToType[ι]
+        // Γ ⊢ e.m(eᵢ ...) : JvmToType[ι] \ JvmToEff[ι]
+        val baseEff = Type.JvmToEff(jvar, loc)
         val (tpe, eff) = visitExp(exp)
         val (tpes, effs) = exps.map(visitExp).unzip
-        c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmMethod(tpe, methodName, tpes), loc), loc) // unify method type
-        c.unifyType(tvar, Type.JvmToType(jvar, loc), loc) // unify method return
-        c.unifyType(evar, Type.mkUnion(Type.IO :: eff :: effs, loc), loc) // unify effects
+        c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmMethod(tpe, methodName, tpes), loc), loc)
+        c.unifyType(tvar, Type.JvmToType(jvar, loc), loc)
+        c.unifyType(evar, Type.mkUnion(baseEff :: eff :: effs, loc), loc)
         val resTpe = tvar
         val resEff = evar
         (resTpe, resEff)
@@ -795,11 +808,12 @@ object ConstraintGen {
       case Expr.InvokeStaticMethod2(clazz, methodName, exps, jvar, tvar, evar, loc) =>
         // Γ ⊢ eᵢ ... : τ₁ ...    Γ ⊢ ι ~ JvmStaticMethod(m, τᵢ ...)
         // ---------------------------------------------------------------
-        // Γ ⊢ m(eᵢ ...) : JvmToType[ι]
+        // Γ ⊢ m(eᵢ ...) : JvmToType[ι] \ JvmToEff[ι]
+        val baseEff = Type.JvmToEff(jvar, loc)
         val (tpes, effs) = exps.map(visitExp).unzip
         c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmStaticMethod(clazz, methodName, tpes), loc), loc)
         c.unifyType(tvar, Type.JvmToType(jvar, loc), loc)
-        c.unifyType(evar, Type.mkUnion(Type.IO :: effs, loc), loc)
+        c.unifyType(evar, Type.mkUnion(baseEff :: effs, loc), loc)
         val resTpe = tvar
         val resEff = evar
         (resTpe, resEff)
@@ -1259,11 +1273,11 @@ object ConstraintGen {
     * Returns a map from field name to its instantiated type, the type of the instantiated struct, and the instantiated struct's region variable
     *
     * For example, for the struct `struct S [v, r] { a: v, b: Int32 }` where `v` instantiates to `v'` and `r` instantiates to `r'`
-    *   The first element of the return tuple would be a map with entries `a -> v'` and `b -> Int32`
-    *   The second element of the return tuple would be(locations omitted) `Apply(Apply(Cst(Struct(S)), v'), r')`
-    *   The third element of the return tuple would be `r'`
+    * The first element of the return tuple would be a map with entries `a -> v'` and `b -> Int32`
+    * The second element of the return tuple would be(locations omitted) `Apply(Apply(Cst(Struct(S)), v'), r')`
+    * The third element of the return tuple would be `r'`
     */
-  private def instantiateStruct(sym: Symbol.StructSym, structs: Map[Symbol.StructSym, KindedAst.Struct])(implicit c: TypeContext, flix: Flix) : (Map[Symbol.StructFieldSym, Type], Type, Type.Var) = {
+  private def instantiateStruct(sym: Symbol.StructSym, structs: Map[Symbol.StructSym, KindedAst.Struct])(implicit c: TypeContext, flix: Flix): (Map[Symbol.StructFieldSym, Type], Type, Type.Var) = {
     implicit val scope: Scope = c.getScope
     val struct = structs(sym)
     assert(struct.tparams.last.sym.kind == Kind.Eff)

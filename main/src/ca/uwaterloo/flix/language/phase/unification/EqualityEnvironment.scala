@@ -38,17 +38,30 @@ object EqualityEnvironment {
     val newTpe2 = subst(tpe2)
 
     // check that econstr becomes tautological (according to global instance map)
+    // we specifically use the empty eqEnv for this check
     for {
       res1 <- reduceType(newTpe1, eqEnv)
       res2 <- reduceType(newTpe2, eqEnv)
-      res <- Unification.unifyTypes(res1, res2, renv) match {
-        case Result.Ok((subst, Nil)) => Result.Ok(subst): Result[Substitution, UnificationError]
-        case Result.Ok((_, _ :: _)) => Result.Err(UnificationError.UnsupportedEquality(res1, res2)): Result[Substitution, UnificationError]
-        case Result.Err(_) => Result.Err(UnificationError.UnsupportedEquality(res1, res2): UnificationError): Result[Substitution, UnificationError]
+      res <- Unification.fullyUnifyTypes(res1, res2, renv, ListMap.empty) match {
+        case Some(subst) => Result.Ok(subst): Result[Substitution, UnificationError]
+        case None => Result.Err(UnificationError.UnsupportedEquality(res1, res2)): Result[Substitution, UnificationError]
       }
       // TODO ASSOC-TYPES weird typing hack
     } yield res
   }.toValidation
+
+
+  /**
+    * Checks that the `givenEconstrs` entail all the given `wantedEconstrs`.
+    */
+  def entailAll(givenEconstrs: List[Ast.EqualityConstraint], wantedEconstrs: List[Ast.BroadEqualityConstraint], renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit scope: Scope, flix: Flix): Validation[Substitution, UnificationError] = {
+    Validation.fold(wantedEconstrs, Substitution.empty) {
+      case (subst, wantedEconstr) =>
+        Validation.mapN(entail(givenEconstrs, subst(wantedEconstr), renv, eqEnv)) {
+          case subst1 => subst1 @@ subst
+        }
+    }
+  }
 
   /**
     * Converts the given EqualityConstraint into a BroadEqualityConstraint.
@@ -136,6 +149,10 @@ object EqualityEnvironment {
         for {
           t1 <- visit(tpe)
         } yield Type.JvmToType(t1, loc)
+      case Type.JvmToEff(tpe, loc) =>
+        for {
+          t1 <- visit(tpe)
+        } yield Type.JvmToEff(t1, loc)
       case Type.UnresolvedJvmType(member0, loc) =>
         for {
           member <- traverse(member0)(visit)

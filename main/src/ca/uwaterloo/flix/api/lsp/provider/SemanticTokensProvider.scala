@@ -336,7 +336,7 @@ object SemanticTokensProvider {
       val t = SemanticToken(o, Nil, loc)
       Iterator(t)
 
-    case Expr.Hole(_, _, _) => Iterator.empty
+    case Expr.Hole(_, _, _, _) => Iterator.empty
 
     case Expr.HoleWithExp(exp, _, _, _) => visitExp(exp)
 
@@ -353,6 +353,13 @@ object SemanticTokensProvider {
 
     case Expr.Apply(exp, exps, _, _, _) =>
       exps.foldLeft(visitExp(exp)) {
+        case (acc, exp) => acc ++ visitExp(exp)
+      }
+
+    case Expr.ApplyDef(Ast.DefSymUse(sym, loc), exps, _, _, _, _) =>
+      val o = if (isOperatorName(sym.name)) SemanticTokenType.Operator else SemanticTokenType.Function
+      val t = SemanticToken(o, Nil, loc)
+      exps.foldLeft(Iterator(t)) {
         case (acc, exp) => acc ++ visitExp(exp)
       }
 
@@ -654,9 +661,10 @@ object SemanticTokensProvider {
   private def visitRestrictableChoosePat(pat0: RestrictableChoosePattern): Iterator[SemanticToken] = pat0 match {
     case RestrictableChoosePattern.Tag(Ast.RestrictableCaseSymUse(_, tagLoc), pat1, tpe, loc) =>
       val t1 = SemanticToken(SemanticTokenType.EnumMember, Nil, tagLoc)
-      val ts = pat1.iterator.map {
-        case RestrictableChoosePattern.Wild(_, loc) => SemanticToken(SemanticTokenType.Variable, Nil, loc)
-        case RestrictableChoosePattern.Var(_, _, loc) => SemanticToken(SemanticTokenType.Variable, Nil, loc)
+      val ts = pat1.iterator.flatMap {
+        case RestrictableChoosePattern.Wild(_, loc) => Iterator(SemanticToken(SemanticTokenType.Variable, Nil, loc))
+        case RestrictableChoosePattern.Var(_, _, loc) => Iterator(SemanticToken(SemanticTokenType.Variable, Nil, loc))
+        case RestrictableChoosePattern.Error(_, _) => Iterator.empty
       }
       Iterator(t1) ++ ts
     case RestrictableChoosePattern.Error(_, _) => Iterator.empty
@@ -691,6 +699,7 @@ object SemanticTokensProvider {
 
     // Jvm types should not be exposed to the user.
     case _: Type.JvmToType => Iterator.empty
+    case _: Type.JvmToEff => Iterator.empty
     case _: Type.UnresolvedJvmType => Iterator.empty
   }
 

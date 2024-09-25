@@ -324,8 +324,11 @@ object Lexer {
       case '\\' => TokenKind.Backslash
       case _ if isMatch(".{") => TokenKind.DotCurlyL
       case '.' =>
-        // Check for whitespace around dot.
-        if (previousPrevious().exists(_.isWhitespace)) {
+        if (peek() == '.' && peekPeek().contains('.')) {
+          advance()
+          advance()
+          TokenKind.DotDotDot
+        } else if (previousPrevious().exists(_.isWhitespace)) {
           // If the dot is prefixed with whitespace we treat that as an error.
           TokenKind.Err(LexerError.FreeDot(sourceLocationAtStart()))
         } else if (peek().isWhitespace) {
@@ -394,9 +397,9 @@ object Lexer {
       case _ if isKeyword("checked_ecast") => TokenKind.KeywordCheckedECast
       case _ if isKeyword("choose*") => TokenKind.KeywordChooseStar
       case _ if isKeyword("choose") => TokenKind.KeywordChoose
-      case _ if isKeyword("debug") => TokenKind.KeywordDebug
-      case _ if isKeyword("debug!") => TokenKind.KeywordDebugBang
       case _ if isKeyword("debug!!") => TokenKind.KeywordDebugBangBang
+      case _ if isKeyword("debug!") => TokenKind.KeywordDebugBang
+      case _ if isKeyword("debug") => TokenKind.KeywordDebug
       case _ if isKeyword("def") => TokenKind.KeywordDef
       case _ if isKeyword("discard") => TokenKind.KeywordDiscard
       case _ if isKeyword("do") => TokenKind.KeywordDo

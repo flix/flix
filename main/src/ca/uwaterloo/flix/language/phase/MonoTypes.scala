@@ -102,6 +102,13 @@ object MonoTypes {
       val p = visitType(eff)
       Expr.Apply(e, es, t, p, loc)
 
+    case Expr.ApplyDef(symUse, exps, itpe, tpe, eff, loc) =>
+      val es = exps.map(visitExp)
+      val it = visitType(itpe)
+      val t = visitType(tpe)
+      val p = visitType(eff)
+      Expr.ApplyDef(symUse, es, it, t, p, loc)
+
     case Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp)
       val t = visitType(tpe)
@@ -330,6 +337,7 @@ object MonoTypes {
           throw InternalCompilerException(s"Unexpected associated type: '$tpe'", tpe.loc)
 
         case Type.JvmToType(_, loc) => throw InternalCompilerException("unexpected JVM type", loc)
+        case Type.JvmToEff(_, loc) => throw InternalCompilerException("unexpected JVM effect", loc)
         case Type.UnresolvedJvmType(_, loc) => throw InternalCompilerException("unexpected JVM type", loc)
       }
     }

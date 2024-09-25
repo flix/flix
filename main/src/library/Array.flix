@@ -48,8 +48,9 @@ instance Iterable[Array[a, r]] {
 }
 
 mod Array {
-    import java.util.Arrays
     import java.lang.Object
+    import java.util.Arrays
+    import java.util.{Random => JRandom};
 
     ///
     /// Compares `a` and `b` lexicographically.
@@ -1670,11 +1671,12 @@ mod Array {
     ///
     /// Shuffles `a` using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(rnd: Random, a: Array[a, r]): Unit \ {r, IO} =
+    pub def shuffle(a: Array[a, r]): Unit \ {r, NonDet} = unchecked_cast({
+        let rnd = new JRandom();
         let len = Array.length(a);
         def loop(i) = {
             if (i > 0) {
-                let j = Random.nextNatWithMax(rnd, i + 1);
+                let j = rnd.nextInt(i + 1);
                 Array.swap!(i, j, a);
                 loop(i - 1)
             }
@@ -1682,5 +1684,6 @@ mod Array {
                 ()
         };
         loop(len - 1)
+    } as _ \ {r, NonDet})
 
 }

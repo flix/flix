@@ -1,19 +1,16 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.CheckedCastType
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.TypedAst.*
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps.*
-import ca.uwaterloo.flix.language.ast.shared.{Denotation, Fixity, Polarity, Scope, SecurityContext}
+import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Denotation, Fixity, Polarity, Scope, SecurityContext}
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.language.errors.SafetyError.*
-import ca.uwaterloo.flix.language.phase.jvm.JvmOps
-import ca.uwaterloo.flix.language.phase.typer.TypeReduction
-import ca.uwaterloo.flix.util.{ParOps, Validation}
+import ca.uwaterloo.flix.util.{Jvm, ParOps, Validation}
 
 import java.math.BigInteger
 import scala.annotation.tailrec
@@ -105,7 +102,7 @@ object Safety {
       // Note that exported defs have different rules
       if (defn.spec.ann.isExport) {
         Nil
-      } else if (hasUnitParameter(defn) && isPureOrIO(defn)) {
+      } else if (hasUnitParameter(defn) && isAllowedEffect(defn)) {
         Nil
       } else {
         SafetyError.IllegalEntryPointSignature(defn.sym.loc) :: Nil
@@ -128,7 +125,7 @@ object Safety {
     } else {
       checkExportableTypes(defn)
     }
-    val effect = if (isPureOrIO(defn)) Nil else List(SafetyError.IllegalExportEffect(defn.spec.loc))
+    val effect = if (isAllowedEffect(defn)) Nil else List(SafetyError.IllegalExportEffect(defn.spec.loc))
     nonRoot ++ pub ++ name ++ types ++ effect
   }
 
@@ -216,12 +213,14 @@ object Safety {
   }
 
   /**
-    * Returns `true` if the given `defn` is pure or has the IO effect.
+    * Returns `true` if the given `defn` is pure or has an effect that is allowed for a top-level function.
     */
-  private def isPureOrIO(defn: Def): Boolean = {
+  private def isAllowedEffect(defn: Def): Boolean = {
     defn.spec.eff match {
       case Type.Pure => true
       case Type.IO => true
+      case Type.NonDet => true
+      case Type.Sys => true
       case _ => false
     }
   }
@@ -241,7 +240,7 @@ object Safety {
 
       case Expr.Sig(_, _, _) => Nil
 
-      case Expr.Hole(_, _, _) => Nil
+      case Expr.Hole(_, _, _, _) => Nil
 
       case Expr.HoleWithExp(exp, _, _, _) =>
         visit(exp)
@@ -258,6 +257,9 @@ object Safety {
 
       case Expr.Apply(exp, exps, _, _, _) =>
         visit(exp) ++ exps.flatMap(visit)
+
+      case Expr.ApplyDef(_, exps, _, _, _, _) =>
+        exps.flatMap(visit)
 
       case Expr.Unary(_, exp, _, _, _) =>
         visit(exp)
@@ -424,9 +426,15 @@ object Safety {
           SafetyError.Forbidden(ctx, loc) :: res
         }
 
-      case Expr.TryWith(exp, _, rules, _, _, _) =>
-        visit(exp) ++
+      case Expr.TryWith(exp, effUse, rules, _, _, _) =>
+        val res = visit(exp) ++
           rules.flatMap { case HandlerRule(_, _, e) => visit(e) }
+
+        if (effUse.sym == Symbol.IO) {
+          IOEffectInTryWith(effUse.loc) :: res
+        } else {
+          res
+        }
 
       case Expr.Do(_, exps, _, _, _) =>
         exps.flatMap(visit)
@@ -1030,7 +1038,7 @@ object Safety {
     * Get a Set of MethodSignatures representing the methods of `clazz`. Returns a map to allow subsequent reverse lookup.
     */
   private def getJavaMethodSignatures(clazz: java.lang.Class[_]): Map[MethodSignature, java.lang.reflect.Method] = {
-    val methods = JvmOps.getMethods(clazz).filterNot(JvmOps.isStatic)
+    val methods = Jvm.getInstanceMethods(clazz)
     methods.foldLeft(Map.empty[MethodSignature, java.lang.reflect.Method]) {
       case (acc, m) =>
         val signature = MethodSignature(m.getName, m.getParameterTypes.toList.map(Type.getFlixType), Type.getFlixType(m.getReturnType))

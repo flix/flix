@@ -97,6 +97,9 @@ object Scheme {
       case Type.JvmToType(tpe, loc) =>
         Type.JvmToType(visitType(tpe), loc)
 
+      case Type.JvmToEff(tpe, loc) =>
+        Type.JvmToEff(visitType(tpe), loc)
+
       case Type.UnresolvedJvmType(member, loc) =>
         Type.UnresolvedJvmType(member.map(visitType), loc)
     }

@@ -16,14 +16,14 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.CheckedCastType
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
-import ca.uwaterloo.flix.language.ast.TypedAst._
+import ca.uwaterloo.flix.language.ast.TypedAst.*
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
+import ca.uwaterloo.flix.language.ast.shared.CheckedCastType
 import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.language.dbg.AstPrinter._
+import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.RedundancyError
-import ca.uwaterloo.flix.language.errors.RedundancyError._
+import ca.uwaterloo.flix.language.errors.RedundancyError.*
 import ca.uwaterloo.flix.language.phase.unification.TraitEnvironment
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 
@@ -162,8 +162,8 @@ object Redundancy {
   }
 
   /**
-   * Checks for unused type parameters in structs.
-   */
+    * Checks for unused type parameters in structs.
+    */
   private def checkUnusedTypeParamsStructs()(implicit root: Root): List[RedundancyError] = {
     val result = new ListBuffer[RedundancyError]
     for ((_, decl) <- root.structs) {
@@ -316,7 +316,7 @@ object Redundancy {
       } else
         Used.empty
 
-    case Expr.Hole(sym, _, _) =>
+    case Expr.Hole(sym, _, _, _) =>
       lctx.holeSyms += sym
       Used.empty
 
@@ -359,6 +359,13 @@ object Redundancy {
       val us1 = visitExp(exp, env0, rc)
       val us2 = visitExps(exps, env0, rc)
       us1 ++ us2
+
+    case Expr.ApplyDef(Ast.DefSymUse(sym, _), exps, _, _, _, _) =>
+      // Recursive calls do not count as uses.
+      if (!rc.defn.contains(sym)) {
+        sctx.defSyms.put(sym, ())
+      }
+      visitExps(exps, env0, rc)
 
     case Expr.Unary(_, exp, _, _, _) =>
       visitExp(exp, env0, rc)
@@ -596,7 +603,7 @@ object Redundancy {
 
     case Expr.StructNew(sym, fields, region, _, _, _) =>
       sctx.structSyms.put(sym, ())
-      visitExps(fields.map {case (k, v) => v}, env0, rc) ++ visitExp(region, env0, rc)
+      visitExps(fields.map { case (k, v) => v }, env0, rc) ++ visitExp(region, env0, rc)
 
     case Expr.StructGet(e, field, _, _, _) =>
       sctx.structFieldSyms.put(field.sym, ())
@@ -998,7 +1005,7 @@ object Redundancy {
     * Returns true if the expression is a hole.
     */
   private def isHole(exp: Expr): Boolean = exp match {
-    case Expr.Hole(_, _, _) => true
+    case Expr.Hole(_, _, _, _) => true
     case Expr.HoleWithExp(_, _, _, _) => true
     case _ => false
   }
@@ -1038,6 +1045,7 @@ object Redundancy {
   private def freeVars(v: RestrictableChoosePattern.VarOrWild): Option[Symbol.VarSym] = v match {
     case RestrictableChoosePattern.Wild(_, _) => None
     case RestrictableChoosePattern.Var(sym, _, _) => Some(sym)
+    case RestrictableChoosePattern.Error(_, _) => None
   }
 
   /**

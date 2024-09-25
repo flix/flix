@@ -55,8 +55,9 @@ mod Console {
     ///
     /// In other words, re-interprets the `Console` effect using the `IO` effect.
     ///
-    pub def run(f: Unit -> a \ Console): a \ IO =
-        try {
+    pub def run(f: Unit -> a \ ef): a \ (ef - Console) + IO = {
+        // Currently try-with typing is broken, so fix it with checked_ecast
+        checked_ecast(try {
             f()
         } with Console {
             def readln(k)        = k(System.console().readLine())
@@ -64,6 +65,7 @@ mod Console {
             def printErr(s, k)   = { System.err.print(s); System.err.flush(); k() }
             def println(s, k)    = { System.out.println(s); System.out.flush(); k() }
             def printlnErr(s, k) = { System.err.println(s); System.err.flush(); k() }
-        }
+        })
+    }
 
 }

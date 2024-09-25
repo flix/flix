@@ -48,7 +48,7 @@ object QuineMcCluskey {
     * Note: the implementation does not find a
     * minimal, but instead a greedy cover
     */
-  def qmcToType(minTerms: Set[IntMap[BoolVal]], env: Bimap[BoolFormula.VarOrEff, Int]): Type = {
+  def qmcToType(minTerms: Set[IntMap[BoolVal]], env: Bimap[BoolFormula.IrreducibleEff, Int]): Type = {
     val primeImplicants = collectPrimeImplicants(minTerms)
     val cover = findCover(minTerms, primeImplicants)
     coverToType(cover, env)
@@ -74,7 +74,7 @@ object QuineMcCluskey {
     * Converting a cover to a Type by making each prime
     * implicant into an AND and OR'ing them together
     */
-  private def coverToType(cover: Set[IntMap[BoolVal]], env: Bimap[BoolFormula.VarOrEff, Int]): Type = {
+  private def coverToType(cover: Set[IntMap[BoolVal]], env: Bimap[BoolFormula.IrreducibleEff, Int]): Type = {
     val typeList = cover.foldLeft(List.empty[Type])((acc, m) => acc ++ List(primeImpToType(m, env)))
     if (typeList.size == 1) {
       typeList.head
@@ -88,13 +88,14 @@ object QuineMcCluskey {
     * "Don't care"'s are thrown away, 0's are mapped to
     * NOTs of vars and 1's are mapped to vars
     */
-  private def primeImpToType(primeImp: IntMap[BoolVal], env: Bimap[BoolFormula.VarOrEff, Int]): Type = {
+  private def primeImpToType(primeImp: IntMap[BoolVal], env: Bimap[BoolFormula.IrreducibleEff, Int]): Type = {
     val typeVars = primeImp.filter{ case (_, boolValue) => boolValue != BoolVal.DontCare}.map[Type]{
       case (formVar, boolValue) =>
       val tpe = env.getBackward(formVar) match {
-        case Some(BoolFormula.VarOrEff.Var(sym)) => Type.Var(sym, SourceLocation.Unknown)
-        case Some(BoolFormula.VarOrEff.Eff(sym)) => Type.Cst(TypeConstructor.Effect(sym), SourceLocation.Unknown)
-        case Some(BoolFormula.VarOrEff.Assoc(sym, arg)) => Type.AssocType(Ast.AssocTypeConstructor(sym, SourceLocation.Unknown), arg, Kind.Eff, SourceLocation.Unknown)
+        case Some(BoolFormula.IrreducibleEff.Var(sym)) => Type.Var(sym, SourceLocation.Unknown)
+        case Some(BoolFormula.IrreducibleEff.Eff(sym)) => Type.Cst(TypeConstructor.Effect(sym), SourceLocation.Unknown)
+        case Some(BoolFormula.IrreducibleEff.Assoc(sym, arg)) => Type.AssocType(Ast.AssocTypeConstructor(sym, SourceLocation.Unknown), arg, Kind.Eff, SourceLocation.Unknown)
+        case Some(BoolFormula.IrreducibleEff.JvmToEff(t)) => t
         case None => throw InternalCompilerException(s"unexpected unknown ID: $formVar", SourceLocation.Unknown)
       }
       if (boolValue == BoolVal.False) {

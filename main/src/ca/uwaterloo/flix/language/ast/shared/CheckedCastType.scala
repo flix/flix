@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Magnus Madsen
+ * Copyright 2024 Holger Dal Mogensen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,14 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package ca.uwaterloo.flix.language.ast.shared
 
-package ca.uwaterloo.flix.util
+/**
+  * A common supertype for casts.
+  */
+sealed trait CheckedCastType
 
-object TimeOps {
+object CheckedCastType {
 
   /**
-    * Converts the given number of nanoseconds `l` into human readable string representation.
+    * Represents a checked type cast.
     */
-  def toSeconds(l: Long): String = f"${l.toDouble / 1_000_000_000.0}%3.1f"
+  case object TypeCast extends CheckedCastType
+
+  /**
+    * Represents a checked effect cast.
+    */
+  case object EffectCast extends CheckedCastType
 
 }

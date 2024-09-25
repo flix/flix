@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, ParYieldFragment, Pattern, Root}
+import ca.uwaterloo.flix.language.ast.shared.Constant
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.NonExhaustiveMatchError
@@ -135,13 +136,14 @@ object PatMatch {
       case Expr.Var(_, _, _) => Nil
       case Expr.Def(_, _, _) => Nil
       case Expr.Sig(_, _, _) => Nil
-      case Expr.Hole(_, _, _) => Nil
+      case Expr.Hole(_, _, _, _) => Nil
       case Expr.HoleWithExp(exp, _, _, _) => visitExp(exp)
       case Expr.OpenAs(_, exp, _, _) => visitExp(exp)
       case Expr.Use(_, _, exp, _) => visitExp(exp)
       case Expr.Cst(_, _, _) => Nil
       case Expr.Lambda(_, body, _, _) => visitExp(body)
       case Expr.Apply(exp, exps, _, _, _) => (exp :: exps).flatMap(visitExp)
+      case Expr.ApplyDef(_, exps, _, _, _, _) => exps.flatMap(visitExp)
       case Expr.Unary(_, exp, _, _, _) => visitExp(exp)
       case Expr.Binary(_, exp1, exp2, _, _, _) => List(exp1, exp2).flatMap(visitExp)
       case Expr.Let(_, _, exp1, exp2, _, _, _) => List(exp1, exp2).flatMap(visitExp)
@@ -412,7 +414,7 @@ object PatMatch {
                 // => Tuple. If there are arguments, we add them to the matrix
                 case TypedAst.Pattern.Tuple(elms, _, _) =>
                   (elms ::: pat.tail) :: acc
-                case TypedAst.Pattern.Cst(Ast.Constant.Unit, _, _) =>
+                case TypedAst.Pattern.Cst(Constant.Unit, _, _) =>
                   pat.tail :: acc
                 case _ =>
                   (exp :: pat.tail) :: acc
@@ -625,12 +627,12 @@ object PatMatch {
     case Some(TypeConstructor.Vector) => 1
     case Some(TypeConstructor.Lazy) => 1
     case Some(TypeConstructor.Enum(_, _)) => 0
+    case Some(TypeConstructor.Struct(_, _)) => 0
     case Some(TypeConstructor.Native(_)) => 0
     case Some(TypeConstructor.Tuple(l)) => l
     case Some(TypeConstructor.RecordRowExtend(_)) => 2
     case Some(TypeConstructor.SchemaRowExtend(_)) => 2
     case Some(TypeConstructor.Error(_, _)) => 0
-
     case _ =>
       // Resilience: OK to throw. We will have replaced the non-star type with Type.Error of star kind.
       throw InternalCompilerException(s"Unexpected type: '$tpe' with wrong kind.", tpe.loc)
@@ -700,22 +702,22 @@ object PatMatch {
   private def patToCtor(pattern: TypedAst.Pattern): TyCon = pattern match {
     case Pattern.Wild(_, _) => TyCon.Wild
     case Pattern.Var(_, _, _) => TyCon.Wild
-    case Pattern.Cst(Ast.Constant.Unit, _, _) => TyCon.Unit
-    case Pattern.Cst(Ast.Constant.Bool(true), _, _) => TyCon.True
-    case Pattern.Cst(Ast.Constant.Bool(false), _, _) => TyCon.False
-    case Pattern.Cst(Ast.Constant.Char(_), _, _) => TyCon.Char
-    case Pattern.Cst(Ast.Constant.Float32(_), _, _) => TyCon.Float32
-    case Pattern.Cst(Ast.Constant.Float64(_), _, _) => TyCon.Float64
-    case Pattern.Cst(Ast.Constant.BigDecimal(_), _, _) => TyCon.BigDecimal
-    case Pattern.Cst(Ast.Constant.Int8(_), _, _) => TyCon.Int8
-    case Pattern.Cst(Ast.Constant.Int16(_), _, _) => TyCon.Int16
-    case Pattern.Cst(Ast.Constant.Int32(_), _, _) => TyCon.Int32
-    case Pattern.Cst(Ast.Constant.Int64(_), _, _) => TyCon.Int64
-    case Pattern.Cst(Ast.Constant.BigInt(_), _, _) => TyCon.BigInt
-    case Pattern.Cst(Ast.Constant.Str(_), _, _) => TyCon.Str
+    case Pattern.Cst(Constant.Unit, _, _) => TyCon.Unit
+    case Pattern.Cst(Constant.Bool(true), _, _) => TyCon.True
+    case Pattern.Cst(Constant.Bool(false), _, _) => TyCon.False
+    case Pattern.Cst(Constant.Char(_), _, _) => TyCon.Char
+    case Pattern.Cst(Constant.Float32(_), _, _) => TyCon.Float32
+    case Pattern.Cst(Constant.Float64(_), _, _) => TyCon.Float64
+    case Pattern.Cst(Constant.BigDecimal(_), _, _) => TyCon.BigDecimal
+    case Pattern.Cst(Constant.Int8(_), _, _) => TyCon.Int8
+    case Pattern.Cst(Constant.Int16(_), _, _) => TyCon.Int16
+    case Pattern.Cst(Constant.Int32(_), _, _) => TyCon.Int32
+    case Pattern.Cst(Constant.Int64(_), _, _) => TyCon.Int64
+    case Pattern.Cst(Constant.BigInt(_), _, _) => TyCon.BigInt
+    case Pattern.Cst(Constant.Str(_), _, _) => TyCon.Str
     case Pattern.Tag(Ast.CaseSymUse(sym, _), pat, _, _) =>
       val args = pat match {
-        case Pattern.Cst(Ast.Constant.Unit, _, _) => List.empty[TyCon]
+        case Pattern.Cst(Constant.Unit, _, _) => List.empty[TyCon]
         case Pattern.Tuple(elms, _, _) => elms.map(patToCtor)
         case a => List(patToCtor(a))
       }
@@ -732,11 +734,11 @@ object PatMatch {
 
     case Pattern.Error(_, _) => TyCon.Wild
 
-    case Pattern.Cst(Ast.Constant.Regex(_), _, _) =>
+    case Pattern.Cst(Constant.Regex(_), _, _) =>
       // Resilience: OK to throw. We will have replaced the erroneous pattern by Pattern.Error.
       throw InternalCompilerException("Unexpected Regex pattern", pattern.loc)
 
-    case Pattern.Cst(Ast.Constant.Null, _, _) =>
+    case Pattern.Cst(Constant.Null, _, _) =>
       // Resilience: OK to throw. We will have replaced the erroneous pattern by Pattern.Error.
       throw InternalCompilerException("Unexpected Null pattern", pattern.loc)
   }

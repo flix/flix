@@ -165,8 +165,7 @@ object SafetyError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s""">> Illegal entry point signature. An entry point must take a single Unit
-         |>> argument and be pure or have the IO effect.
+      s""">> Illegal entry point signature.
          |
          |${code(loc, "illegal signature.")}
          |
@@ -536,6 +535,25 @@ object SafetyError {
          |
          |""".stripMargin
     })
+  }
+
+  /**
+    * An error raised to indicate that the IO effect is attempted to be handled in a try-with expression.
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class IOEffectInTryWith(loc: SourceLocation) extends SafetyError with Recoverable {
+    override def summary: String = s"The IO effect cannot be handled."
+
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s""">> The IO effect cannot be handled.
+         |
+         |${code(loc, "attempted to handle the IO effect here.")}
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
   }
 
   /**

@@ -222,7 +222,7 @@ object Indexer {
       val parent = Entity.Exp(exp0)
       Index.occurrenceOf(exp0) ++ Index.useOf(sym, loc, parent) ++ Index.useOf(sym.trt, loc)
 
-    case Expr.Hole(_, _, _) =>
+    case Expr.Hole(_, _, _, _) =>
       Index.occurrenceOf(exp0)
 
     case Expr.HoleWithExp(exp, _, _, _) =>
@@ -239,6 +239,10 @@ object Indexer {
 
     case Expr.Apply(exp, exps, _, _, _) =>
       visitExp(exp) ++ visitExps(exps) ++ Index.occurrenceOf(exp0)
+
+    case Expr.ApplyDef(Ast.DefSymUse(sym, loc), exps, _, _, _, _) =>
+      val parent = Entity.Exp(exp0)
+      visitExps(exps) ++ Index.occurrenceOf(exp0) ++ Index.useOf(sym, loc, parent)
 
     case Expr.Unary(_, exp, _, _, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0)
@@ -587,6 +591,7 @@ object Indexer {
 
     // Jvm types should not be exposed to the user.
     case _: Type.JvmToType => Index.empty
+    case _: Type.JvmToEff => Index.empty
     case _: Type.UnresolvedJvmType => Index.empty
   }
 

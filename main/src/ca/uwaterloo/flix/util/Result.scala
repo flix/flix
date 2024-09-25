@@ -151,26 +151,6 @@ object Result {
   }
 
   /**
-    * Applies f to each element in the list and flattens the results.
-    *
-    * Fails at the first error found, or returns the new list.
-    */
-  def flatTraverse[T, S, E](xs: Iterable[T])(f: T => Result[List[S], E]): Result[List[S], E] = {
-    val res = ArrayBuffer.empty[S]
-
-    for (x <- xs) {
-      f(x) match {
-        // Case 1: Ok. Add to the list.
-        case Ok(ok) => res.addAll(ok)
-        // Case 2: Error. Short-circuit.
-        case Err(err) => return Err(err)
-      }
-    }
-
-    Ok(res.toList)
-  }
-
-  /**
     * Adds an implicit `toOk` method.
     */
   implicit class ToOk[+T](val t: T) {
