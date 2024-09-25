@@ -1476,7 +1476,7 @@ object Kinder {
   /**
     * Infers a kind environment from the given type constraint.
     */
-  private def inferTraitConstraint(tconstr: ResolvedAst.TraitConstraint, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): KindEnv = tconstr match {
+  private def inferTraitConstraint(tconstr: ResolvedAst.TraitConstraint, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext): KindEnv = tconstr match {
     case ResolvedAst.TraitConstraint(head, tpe, _) =>
       val kind = getTraitKind(root.traits(head.sym))
       inferType(tpe, kind, kenv: KindEnv, taenv, root)
@@ -1485,7 +1485,7 @@ object Kinder {
   /**
     * Infers a kind environment from the given equality constraint.
     */
-  private def inferEqualityConstraint(econstr: ResolvedAst.EqualityConstraint, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): KindEnv = econstr match {
+  private def inferEqualityConstraint(econstr: ResolvedAst.EqualityConstraint, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext): KindEnv = econstr match {
     case ResolvedAst.EqualityConstraint(Ast.AssocTypeConstructor(sym, _), tpe1, tpe2, _) =>
       val trt = root.traits(sym.trt)
       val kind1 = getTraitKind(trt)
@@ -1502,7 +1502,7 @@ object Kinder {
     *   - There are no kind variables; kinds that cannot be determined are instead marked with [[Kind.Wild]].
     *   - Subkinding may allow a variable to be ascribed with two different kinds; the most specific is used in the returned environment.
     */
-  private def inferType(tpe: UnkindedType, expectedKind: Kind, kenv0: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): KindEnv = tpe.baseType match {
+  private def inferType(tpe: UnkindedType, expectedKind: Kind, kenv0: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext): KindEnv = tpe.baseType match {
     // Case 1: the type constructor is a variable: all args are * and the constructor is * -> * -> * ... -> expectedType
     case tvar: UnkindedType.Var =>
       val tyconKind = kenv0.map.get(tvar.sym) match {
@@ -1611,7 +1611,7 @@ object Kinder {
   /**
     * Gets a kind environment from the type params, defaulting to Star kind if they are unkinded.
     */
-  private def getKindEnvFromTypeParams(tparams0: List[ResolvedAst.TypeParam])(implicit flix: Flix): KindEnv = {
+  private def getKindEnvFromTypeParams(tparams0: List[ResolvedAst.TypeParam]): KindEnv = {
     val kenvs = tparams0.map(getKindEnvFromTypeParam)
     KindEnv.disjointMerge(kenvs)
   }
@@ -1661,7 +1661,7 @@ object Kinder {
   /**
     * Gets the kind of the enum.
     */
-  private def getEnumKind(enum0: ResolvedAst.Declaration.Enum)(implicit flix: Flix): Kind = enum0 match {
+  private def getEnumKind(enum0: ResolvedAst.Declaration.Enum): Kind = enum0 match {
     case ResolvedAst.Declaration.Enum(_, _, _, _, tparams, _, _, _) =>
       val kenv = getKindEnvFromTypeParams(tparams)
       tparams.foldRight(Kind.Star: Kind) {
@@ -1672,7 +1672,7 @@ object Kinder {
   /**
     * Gets the kind of the struct.
     */
-  private def getStructKind(struct0: ResolvedAst.Declaration.Struct)(implicit flix: Flix): Kind = struct0 match {
+  private def getStructKind(struct0: ResolvedAst.Declaration.Struct): Kind = struct0 match {
     case ResolvedAst.Declaration.Struct(_, _, _, _, tparams0, _, _) =>
       // tparams default to zero except for the region param
       val kenv1 = getKindEnvFromTypeParams(tparams0.init)
@@ -1687,7 +1687,7 @@ object Kinder {
   /**
     * Gets the kind of the restrictable enum.
     */
-  private def getRestrictableEnumKind(enum0: ResolvedAst.Declaration.RestrictableEnum)(implicit flix: Flix): Kind = enum0 match {
+  private def getRestrictableEnumKind(enum0: ResolvedAst.Declaration.RestrictableEnum): Kind = enum0 match {
     case ResolvedAst.Declaration.RestrictableEnum(_, _, _, sym, index, tparams, _, _, _) =>
       val kenvIndex = getKindEnvFromIndex(index, sym)
       val kenvTparams = getKindEnvFromTypeParams(tparams)
