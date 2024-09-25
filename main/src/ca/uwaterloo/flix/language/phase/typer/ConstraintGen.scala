@@ -169,6 +169,8 @@ object ConstraintGen {
         val resEff = evar
         (resTpe, resEff)
 
+      case Expr.ApplyLocalDef(sym, exps, itvar, tvar, evar, loc2) => ???
+
       case Expr.Lambda(fparam, exp, loc) =>
         c.unifyType(fparam.sym.tvar, fparam.tpe, loc)
         val (tpe, eff0) = visitExp(exp)
@@ -411,6 +413,8 @@ object ConstraintGen {
         val resTpe = tpe2
         val resEff = Type.mkUnion(eff1, eff2, loc)
         (resTpe, resEff)
+
+      case Expr.LocalDef(ann, sym, fparams, exp1, exp2, tpe, eff, loc) => ???
 
       case Expr.Region(tpe, _) =>
         val resTpe = tpe

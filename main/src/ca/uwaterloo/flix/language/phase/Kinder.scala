@@ -396,6 +396,16 @@ object Kinder {
           KindedAst.Expr.ApplyDef(Ast.DefSymUse(sym, loc1), exps, itvar, tvar, evar, loc2)
       }
 
+    case ResolvedAst.Expr.ApplyLocalDef(sym, exps0, loc) =>
+      val expsVal = traverse(exps0)(visitExp(_, kenv0, taenv, henv0, root))
+      mapN(expsVal) {
+        case exps =>
+          val itvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+          val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+          val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
+          KindedAst.Expr.ApplyLocalDef(sym, exps, itvar, tvar, evar, loc)
+      }
+
     case ResolvedAst.Expr.Lambda(fparam0, exp0, loc) =>
       val fparam = visitFormalParam(fparam0, kenv0, taenv, root)
       val expVal = visitExp(exp0, kenv0, taenv, henv0, root)
@@ -455,7 +465,20 @@ object Kinder {
         case (exp1, exp2) => KindedAst.Expr.LetRec(sym, ann, mod, exp1, exp2, loc)
       }
 
-    case ResolvedAst.Expr.LocalDef(ann, sym, fparams, exp1, exp2, tpe, eff, loc) => ???
+    case ResolvedAst.Expr.LocalDef(ann, sym, fparams0, exp1, exp2, tpe, eff, loc) =>
+      val fparams = fparams0.map(visitFormalParam(_, kenv0, taenv, root))
+      val fparamKenvs = fparams0.map(inferFormalParam(_, kenv0, taenv, root))
+      val tpeKenv = tpe.map(inferType(_, Kind.Star, kenv0, taenv, root)).toList
+      val effKenv = eff.map(inferType(_, Kind.Eff, kenv0, taenv, root)).toList
+      val kenv1 = KindEnv.merge(fparamKenvs ::: tpeKenv ::: effKenv)
+      val kenv2 = kenv0 ++ kenv1
+      val exp1Val = visitExp(exp1, kenv2, taenv, henv0, root)
+      val exp2Val = visitExp(exp2, kenv0, taenv, henv0, root)
+      val t = tpe.map(visitType(_, Kind.Star, kenv0, taenv, root))
+      val ef = tpe.map(visitType(_, Kind.Eff, kenv0, taenv, root))
+      mapN(exp1Val, exp2Val) {
+        case (e1, e2) => KindedAst.Expr.LocalDef(ann, sym, fparams, e1, e2, t, ef, loc)
+      }
 
     case ResolvedAst.Expr.Region(tpe, loc) =>
       Validation.success(KindedAst.Expr.Region(tpe, loc))
