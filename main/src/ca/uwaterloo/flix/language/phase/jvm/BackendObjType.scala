@@ -419,14 +419,16 @@ object BackendObjType {
           pushString(", ") ~ SWAP() ~
           INVOKESTATIC(String.JoinMethod)
       }
-      // new String[3] // referred to as `arr`
-      ICONST_3() ~ ANEWARRAY(String.jvmName) ~
-        // arr[0] = "Tag("
-        DUP() ~ ICONST_0() ~ pushString("Tag(") ~ AASTORE() ~
-        // arr[1] = "v1, v2, v3"
-        DUP() ~ ICONST_1() ~ commaSepElmString() ~ AASTORE() ~
-        // arr[2] = ")"
-        DUP() ~ ICONST_2() ~ pushString(")") ~ AASTORE() ~
+      // new String[4] // referred to as `arr`
+      ICONST_4() ~ ANEWARRAY(String.jvmName) ~
+        // arr[0] = "Enum"
+        DUP() ~ ICONST_0() ~ thisLoad() ~ GETFIELD(NameField) ~ AASTORE() ~
+        // arr[1] = "("
+        DUP() ~ ICONST_1() ~ pushString("(") ~ AASTORE() ~
+        // arr[2] = "v1, v2, v3"
+        DUP() ~ ICONST_2() ~ commaSepElmString() ~ AASTORE() ~
+        // arr[3] = ")"
+        DUP() ~ ICONST_3() ~ pushString(")") ~ AASTORE() ~
         // ["", arr]
         pushString("") ~ SWAP() ~
         INVOKESTATIC(String.JoinMethod) ~

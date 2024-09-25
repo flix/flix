@@ -480,7 +480,7 @@ object Simplifier {
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
 
           case TypeConstructor.SchemaRowEmpty =>
-            throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
+            throw InternalCompilerException(s"Unexpected type: '$tpe'. ${tpe.loc}", tpe.loc)
 
           case TypeConstructor.SchemaRowExtend(_) =>
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
