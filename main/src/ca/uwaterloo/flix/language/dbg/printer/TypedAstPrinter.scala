@@ -32,11 +32,11 @@ object TypedAstPrinter {
     case Expr.Sig(sym, tpe, loc) => DocAst.Expr.Unknown
     case Expr.Hole(sym, _, _, _) => DocAst.Expr.Hole(sym)
     case Expr.HoleWithExp(exp, _, _, _) => DocAst.Expr.HoleWithExp(print(exp))
-    case Expr.OpenAs(symUse, exp, tpe, loc) => DocAst.Expr.Unknown
-    case Expr.Use(sym, alias, exp, loc) => DocAst.Expr.Unknown
+    case Expr.OpenAs(_, _, _, _) => DocAst.Expr.Unknown
+    case Expr.Use(_, _, _, _) => DocAst.Expr.Unknown
     case Expr.Lambda(fparam, exp, _, _) => DocAst.Expr.Lambda(List(printFormalParam(fparam)), print(exp))
     case Expr.Apply(exp, exps, _, _, _) => DocAst.Expr.App(print(exp), exps.map(print))
-    case Expr.ApplyDef(Ast.DefSymUse(sym, _), exps, _, _, _, _) => DocAst.Expr.App(DocAst.Expr.Def(sym), exps.map(print))
+    case Expr.ApplyDef(Ast.DefSymUse(sym, _), exps, _, _, _, _) => DocAst.Expr.ApplyDef(sym, exps.map(print), None)
     case Expr.Unary(sop, exp, _, _, _) => DocAst.Expr.Unary(OpPrinter.print(sop), print(exp))
     case Expr.Binary(sop, exp1, exp2, _, _, _) => DocAst.Expr.Binary(print(exp1), OpPrinter.print(sop), print(exp2))
     case Expr.Let(sym, _, exp1, exp2, _, _, _) => DocAst.Expr.Let(printVar(sym), Some(TypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
@@ -121,7 +121,7 @@ object TypedAstPrinter {
   /**
     * Returns the [[DocAst]] representation of `rule`.
     */
-  private def printCatchRule(rule: TypedAst.CatchRule): (Symbol.VarSym, Class[_], DocAst.Expr) = rule match {
+  private def printCatchRule(rule: TypedAst.CatchRule): (Symbol.VarSym, Class[?], DocAst.Expr) = rule match {
     case TypedAst.CatchRule(sym, clazz, exp) => (sym, clazz, print(exp))
   }
 

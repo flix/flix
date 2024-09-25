@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.{ChangeSet, ReadAst, SourceLocation, Sourc
 import ca.uwaterloo.flix.language.dbg.AstPrinter.{DebugNoOp, DebugValidation}
 import ca.uwaterloo.flix.language.errors.LexerError
 import ca.uwaterloo.flix.util.{ParOps, Validation}
-import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.Validation.*
 
 import scala.collection.mutable
 import scala.util.Random

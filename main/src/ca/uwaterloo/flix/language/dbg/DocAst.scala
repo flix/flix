@@ -100,7 +100,7 @@ object DocAst {
       */
     case class Hash(d1: Expr, d2: Expr) extends Atom
 
-    case class TryCatch(d: Expr, rules: List[(Symbol.VarSym, Class[_], Expr)]) extends Atom
+    case class TryCatch(d: Expr, rules: List[(Symbol.VarSym, Class[?], Expr)]) extends Atom
 
     case class TryWith(d1: Expr, eff: Symbol.EffectSym, rules: List[(Symbol.OpSym, List[Ascription], Expr)]) extends Atom
 
@@ -122,11 +122,11 @@ object DocAst {
 
     case class Ascription(v: Expr, tpe: Type) extends Composite
 
-    case class NewObject(name: String, clazz: Class[_], tpe: Type, methods: List[JvmMethod]) extends Composite
+    case class NewObject(name: String, clazz: Class[?], tpe: Type, methods: List[JvmMethod]) extends Composite
 
     case class Lambda(fparams: List[Expr.Ascription], body: Expr) extends Composite
 
-    case class Native(clazz: Class[_]) extends Atom
+    case class Native(clazz: Class[?]) extends Atom
 
     val Unknown: Expr =
       Meta("unknown exp")
@@ -233,7 +233,7 @@ object DocAst {
     def Index(idx: Int, d: Expr): Expr =
       Dot(d, AsIs(s"_$idx"))
 
-    def InstanceOf(d: Expr, clazz: Class[_]): Expr =
+    def InstanceOf(d: Expr, clazz: Class[?]): Expr =
       Binary(d, "instanceof", Native(clazz))
 
     def ClosureLifted(sym: Symbol.DefnSym, ds: List[Expr]): Expr = {
@@ -285,7 +285,7 @@ object DocAst {
       Dot(Native(f.getDeclaringClass), AsIs(f.getName))
     }
 
-    def JavaInvokeConstructor(c: Constructor[_], ds: List[Expr]): Expr = {
+    def JavaInvokeConstructor(c: Constructor[?], ds: List[Expr]): Expr = {
       App(Native(c.getDeclaringClass), ds)
     }
 
@@ -341,9 +341,9 @@ object DocAst {
 
     case class SchemaExtend(name: String, tpe: Type, rest: Type) extends Atom
 
-    case class Native(clazz: Class[_]) extends Atom
+    case class Native(clazz: Class[?]) extends Atom
 
-    case class JvmConstructor(constructor: Constructor[_]) extends Atom
+    case class JvmConstructor(constructor: Constructor[?]) extends Atom
 
     case class JvmMethod(method: Method) extends Atom
 
