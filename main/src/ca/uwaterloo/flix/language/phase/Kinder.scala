@@ -212,17 +212,13 @@ object Kinder {
       val kenv = getKindEnvFromTypeParam(tparam0)
       val tparam = visitTypeParam(tparam0, kenv)
       val superTraits = superTraits0.map(visitTraitConstraint(_, kenv, taenv, root))
-      val assocsVal = traverse(assocs0)(visitAssocTypeSig(_, kenv, taenv, root))
-      flatMapN(assocsVal) {
-        case assocs =>
-          val sigsVal = traverse(sigs0) {
-            case (sigSym, sig0) => mapN(visitSig(sig0, tparam, kenv, taenv, root))(sig => sigSym -> sig)
-          }
-          val lawsVal = traverse(laws0)(visitDef(_, kenv, taenv, root)) // TODO ASSOC-TYPES need to include super traits?
-          mapN(sigsVal, lawsVal) {
-            case (sigs, laws) => KindedAst.Trait(doc, ann, mod, sym, tparam, superTraits, assocs, sigs.toMap, laws, loc)
-          }
-
+      val assocs = assocs0.map(visitAssocTypeSig(_, kenv, taenv, root))
+      val sigsVal = traverse(sigs0) {
+        case (sigSym, sig0) => mapN(visitSig(sig0, tparam, kenv, taenv, root))(sig => sigSym -> sig)
+      }
+      val lawsVal = traverse(laws0)(visitDef(_, kenv, taenv, root)) // TODO ASSOC-TYPES need to include super traits?
+      mapN(sigsVal, lawsVal) {
+        case (sigs, laws) => KindedAst.Trait(doc, ann, mod, sym, tparam, superTraits, assocs, sigs.toMap, laws, loc)
       }
   }
 
@@ -322,11 +318,11 @@ object Kinder {
   /**
     * Performs kinding on the given associated type signature under the given kind environment.
     */
-  private def visitAssocTypeSig(s0: ResolvedAst.Declaration.AssocTypeSig, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[KindedAst.AssocTypeSig, KindError] = s0 match {
+  private def visitAssocTypeSig(s0: ResolvedAst.Declaration.AssocTypeSig, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): KindedAst.AssocTypeSig = s0 match {
     case ResolvedAst.Declaration.AssocTypeSig(doc, mod, sym, tparam0, kind, tpe0, loc) =>
       val tparam = visitTypeParam(tparam0, kenv)
       val t = tpe0.map(visitType(_, kind, kenv, taenv, root))
-      Validation.success(KindedAst.AssocTypeSig(doc, mod, sym, tparam, kind, t, loc))
+      KindedAst.AssocTypeSig(doc, mod, sym, tparam, kind, t, loc)
   }
 
   /**
