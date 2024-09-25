@@ -362,6 +362,13 @@ object SemanticTokensProvider {
       exps.foldLeft(Iterator(t)) {
         case (acc, exp) => acc ++ visitExp(exp)
       }
+    case Expr.ApplyLocalDef(sym, exps, _, _, _, loc) =>
+      val o = SemanticTokenType.Function
+      val t = SemanticToken(o, Nil, loc)
+      Iterator(t)
+      exps.foldLeft(Iterator(t)) {
+        case (acc, exp) => acc ++ visitExp(exp)
+      }
 
     case Expr.Unary(_, exp, _, _, _) =>
       visitExp(exp)
