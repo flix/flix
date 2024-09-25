@@ -67,7 +67,7 @@ object Kinder {
 
     val enums = ParOps.parMapValues(root.enums)(visitEnum(_, taenv, root))
 
-    val structsVal = ParOps.parTraverseValues(root.structs)(visitStruct(_, taenv, root))
+    val structs = ParOps.parMapValues(root.structs)(visitStruct(_, taenv, root))
 
     val restrictableEnums = ParOps.parMapValues(root.restrictableEnums)(visitRestrictableEnum(_, taenv, root))
 
@@ -79,8 +79,8 @@ object Kinder {
 
     val effects = ParOps.parMapValues(root.effects)(visitEffect(_, taenv, root))
 
-    mapN(structsVal, traitsVal, defsVal, instancesVal) {
-      case (structs, traits, defs, instances) =>
+    mapN(traitsVal, defsVal, instancesVal) {
+      case (traits, defs, instances) =>
         KindedAst.Root(traits, instances, defs, enums, structs, restrictableEnums, effects, taenv, root.uses, root.entryPoint, root.sources, root.names)
     }.withSoftFailures(sctx.errors.asScala)
   }(DebugValidation())
@@ -101,7 +101,7 @@ object Kinder {
   /**
     * Performs kinding on the given struct.
     */
-  private def visitStruct(struct0: ResolvedAst.Declaration.Struct, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[KindedAst.Struct, KindError] = struct0 match {
+  private def visitStruct(struct0: ResolvedAst.Declaration.Struct, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): KindedAst.Struct = struct0 match {
     case ResolvedAst.Declaration.Struct(doc, ann, mod, sym, tparams0, fields0, loc) =>
       // In the case in which the user doesn't supply any type params,
       // the parser will have already notified the user of this error
@@ -120,7 +120,7 @@ object Kinder {
       val fields = fields0.map(visitStructField(_, tparams, kenv, taenv, root))
       val targs = tparams.map(tparam => Type.Var(tparam.sym, tparam.loc.asSynthetic))
       val sc = Scheme(tparams.map(_.sym), List(), List(), Type.mkStruct(sym, targs, loc))
-      Validation.success(KindedAst.Struct(doc, ann, mod, sym, tparams, sc, fields, loc))
+      KindedAst.Struct(doc, ann, mod, sym, tparams, sc, fields, loc)
   }
 
   /**
