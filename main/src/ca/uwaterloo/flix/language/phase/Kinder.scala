@@ -1519,7 +1519,7 @@ object Kinder {
         case (acc, (targ, kind)) => acc ++ inferType(targ, kind, kenv0, taenv, root)
       }
 
-    case UnkindedType.Cst(cst, loc) =>
+    case UnkindedType.Cst(cst, _) =>
       val args = Kind.kindArgs(cst.kind)
       tpe.typeArguments.zip(args).foldLeft(KindEnv.empty) {
         case (acc, (targ, kind)) => acc ++ inferType(targ, kind, kenv0, taenv, root)
