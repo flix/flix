@@ -111,7 +111,7 @@ object DesugaredAst {
 
     case class LetRec(ident: Name.Ident, ann: Ast.Annotations, mod: Ast.Modifiers, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
-    case class LetRec2(ann: Ast.Annotations, ident: Name.Ident, fparams: List[FormalParam], exp: Expr, tpe: Option[Type], eff: Option[Type], loc: SourceLocation) extends Expr
+    case class LocalDef(ann: Ast.Annotations, ident: Name.Ident, fparams: List[FormalParam], exp1: Expr, exp2: Expr, tpe: Option[Type], eff: Option[Type], loc: SourceLocation) extends Expr
 
     case class Region(tpe: ca.uwaterloo.flix.language.ast.Type, loc: SourceLocation) extends Expr
 

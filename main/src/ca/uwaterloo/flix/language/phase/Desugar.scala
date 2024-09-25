@@ -555,12 +555,13 @@ object Desugar {
       val e2 = visitExp(exp2)
       Expr.LetRec(ident, ann, mod, e1, e2, loc)
 
-    case WeededAst.Expr.LetRec2(ann, ident, fparams, exp, tpe, eff, loc) =>
+    case WeededAst.Expr.LocalDef(ann, ident, fparams, exp1, exp2, tpe, eff, loc) =>
       val fps = visitFormalParams(fparams)
-      val e = visitExp(exp)
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
       val t = tpe.map(visitType)
       val ef = eff.map(visitType)
-      Expr.LetRec2(ann, ident, fps, e, t, ef, loc)
+      Expr.LocalDef(ann, ident, fps, e1, e2, t, ef, loc)
 
     case WeededAst.Expr.LetImport(op, exp, loc) =>
       desugarLetImport(op, exp, loc)
