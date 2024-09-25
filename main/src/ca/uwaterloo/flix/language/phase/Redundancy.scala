@@ -367,6 +367,13 @@ object Redundancy {
       }
       visitExps(exps, env0, rc)
 
+    case Expr.ApplyLocalDef(sym, exps, _, _, _, _) =>
+      // Recursive calls do not count as uses.
+      // if (!rc.defn.contains(sym)) {
+      //  sctx.defSyms.put(sym, ())
+      // }
+      visitExps(exps, env0, rc)
+
     case Expr.Unary(_, exp, _, _, _) =>
       visitExp(exp, env0, rc)
 

@@ -119,6 +119,9 @@ object CodeHinter {
         checkLazy(sym, loc1)
       hints0 ++ hints1 ++ visitExps(exps)
 
+    case Expr.ApplyLocalDef(_, exps, _, _, _, _) =>
+      visitExps(exps)
+
     case Expr.Unary(_, exp, _, _, _) =>
       visitExp(exp)
 

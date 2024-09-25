@@ -85,6 +85,11 @@ object EffectVerifier {
       val expected = Type.mkUnion(Type.eraseTopAliases(itpe).arrowEffectType :: exps.map(_.eff), loc)
       val actual = eff
       expectType(expected, actual, loc)
+    case Expr.ApplyLocalDef(_, exps, itpe, _, eff, loc) =>
+      exps.foreach(visitExp)
+      val expected = Type.mkUnion(Type.eraseTopAliases(itpe).arrowEffectType :: exps.map(_.eff), loc)
+      val actual = eff
+      expectType(expected, actual, loc)
     case Expr.Unary(sop, exp, tpe, eff, loc) =>
       visitExp(exp)
       val expected = exp.eff
