@@ -51,7 +51,7 @@ object Reducer {
   }
 
   private def visitDef(d: Def)(implicit ctx: SharedContext): Def = d match {
-    case Def(ann, mod, sym, cparams, fparams, lparams, _, exp, tpe, unboxedType, purity, loc) =>
+    case Def(ann, mod, sym, cparams, fparams, lparams, _, exp, tpe, unboxedType, loc) =>
       implicit val lctx: LocalContext = LocalContext.mk()
       assert(lparams.isEmpty, s"Unexpected def local params before Reducer: $lparams")
       val e = visitExpr(exp)
@@ -68,7 +68,7 @@ object Reducer {
       ctx.defTypes.put(unboxedType.tpe, ())
       cParamTypes.foreach(t => ctx.defTypes.put(t, ()))
 
-      Def(ann, mod, sym, cparams, fparams, ls, pcPoints, e, tpe, unboxedType, purity, loc)
+      Def(ann, mod, sym, cparams, fparams, ls, pcPoints, e, tpe, unboxedType, loc)
   }
 
   private def visitExpr(exp0: Expr)(implicit lctx: LocalContext, ctx: SharedContext): Expr = {
@@ -90,10 +90,10 @@ object Reducer {
         val es = exps.map(visitExpr)
         Expr.ApplyClo(e, es, ct, tpe, purity, loc)
 
-      case Expr.ApplyDef(sym, exps, ct, tpe, purity, loc) =>
+      case Expr.ApplyDef(symUse, exps, ct, tpe, purity, loc) =>
         if (ct == ExpPosition.NonTail && Purity.isControlImpure(purity)) lctx.pcPoints += 1
         val es = exps.map(visitExpr)
-        Expr.ApplyDef(sym, es, ct, tpe, purity, loc)
+        Expr.ApplyDef(symUse, es, ct, tpe, purity, loc)
 
       case Expr.ApplySelfTail(sym, exps, tpe, purity, loc) =>
         val es = exps.map(visitExpr)

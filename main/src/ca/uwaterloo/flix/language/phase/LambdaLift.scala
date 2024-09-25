@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.BoundBy
-import ca.uwaterloo.flix.language.ast.shared.Scope
+import ca.uwaterloo.flix.language.ast.shared.{Constant, Scope}
 import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, LiftedAst, MonoType, Purity, SimplifiedAst, Symbol}
 import ca.uwaterloo.flix.language.dbg.AstPrinter._
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
@@ -49,10 +49,10 @@ object LambdaLift {
   }
 
   private def visitDef(def0: SimplifiedAst.Def)(implicit ctx: SharedContext, flix: Flix): LiftedAst.Def = def0 match {
-    case SimplifiedAst.Def(ann, mod, sym, fparams, exp, tpe, purity, loc) =>
+    case SimplifiedAst.Def(ann, mod, sym, fparams, exp, tpe, _, loc) =>
       val fs = fparams.map(visitFormalParam)
       val e = visitExp(exp)(sym, ctx, flix)
-      LiftedAst.Def(ann, mod, sym, Nil, fs, e, tpe, purity, loc)
+      LiftedAst.Def(ann, mod, sym, Nil, fs, e, tpe, loc)
   }
 
   private def visitEffect(effect: SimplifiedAst.Effect): LiftedAst.Effect = effect match {
@@ -98,14 +98,14 @@ object LambdaLift {
 
       // Construct a new definition.
       val defTpe = arrowTpe.result
-      val defn = LiftedAst.Def(ann, mod, freshSymbol, cs, fs, liftedExp, defTpe, liftedExp.purity, loc)
+      val defn = LiftedAst.Def(ann, mod, freshSymbol, cs, fs, liftedExp, defTpe, loc)
 
       // Add the new definition to the map of lifted definitions.
       ctx.liftedDefs.add(freshSymbol -> defn)
 
       // Construct the closure args.
       val closureArgs = if (freeVars.isEmpty)
-        List(LiftedAst.Expr.Cst(Ast.Constant.Unit, MonoType.Unit, loc))
+        List(LiftedAst.Expr.Cst(Constant.Unit, MonoType.Unit, loc))
       else freeVars.map {
         case SimplifiedAst.FreeVar(sym, tpe) => LiftedAst.Expr.Var(sym, tpe, sym.loc)
       }
@@ -122,9 +122,9 @@ object LambdaLift {
       val es = exps map visitExp
       LiftedAst.Expr.ApplyClo(e, es, tpe, purity, loc)
 
-    case SimplifiedAst.Expr.ApplyDef(sym, exps, tpe, purity, loc) =>
+    case SimplifiedAst.Expr.ApplyDef(symUse, exps, tpe, purity, loc) =>
       val es = exps map visitExp
-      LiftedAst.Expr.ApplyDef(sym, es, tpe, purity, loc)
+      LiftedAst.Expr.ApplyDef(symUse, es, tpe, purity, loc)
 
     case SimplifiedAst.Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       val e1 = visitExp(exp1)

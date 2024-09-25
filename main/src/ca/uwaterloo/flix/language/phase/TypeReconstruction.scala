@@ -16,11 +16,10 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.ast.Type.getFlixType
-import ca.uwaterloo.flix.language.ast.shared.CheckedCastType
-import ca.uwaterloo.flix.language.ast.{Ast, KindedAst, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Constant}
+import ca.uwaterloo.flix.language.ast.{KindedAst, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.phase.unification.Substitution
 import ca.uwaterloo.flix.language.errors.TypeError
-import ca.uwaterloo.flix.util.InternalCompilerException
 
 object TypeReconstruction {
 
@@ -91,14 +90,13 @@ object TypeReconstruction {
     case KindedAst.Expr.Var(sym, loc) =>
       TypedAst.Expr.Var(sym, subst(sym.tvar), loc)
 
-    case KindedAst.Expr.Def(sym, tvar, loc) =>
-      TypedAst.Expr.Def(sym, subst(tvar), loc)
+    case KindedAst.Expr.Def(sym, tvar, loc) => TypedAst.Expr.Def(sym, subst(tvar), loc)
 
     case KindedAst.Expr.Sig(sym, tvar, loc) =>
       TypedAst.Expr.Sig(sym, subst(tvar), loc)
 
-    case KindedAst.Expr.Hole(sym, tpe, loc) =>
-      TypedAst.Expr.Hole(sym, subst(tpe), loc)
+    case KindedAst.Expr.Hole(sym, tpe, evar, loc) =>
+      TypedAst.Expr.Hole(sym, subst(tpe), subst(evar), loc)
 
     case KindedAst.Expr.HoleWithExp(exp, tvar, evar, loc) =>
       val e = visitExp(exp)
@@ -112,8 +110,8 @@ object TypeReconstruction {
       val e = visitExp(exp)
       TypedAst.Expr.Use(sym, alias, e, loc)
 
-    case KindedAst.Expr.Cst(Ast.Constant.Null, loc) =>
-      TypedAst.Expr.Cst(Ast.Constant.Null, Type.Null, loc)
+    case KindedAst.Expr.Cst(Constant.Null, loc) =>
+      TypedAst.Expr.Cst(Constant.Null, Type.Null, loc)
 
     case KindedAst.Expr.Cst(cst, loc) => TypedAst.Expr.Cst(cst, Type.constantType(cst), loc)
 
@@ -121,6 +119,10 @@ object TypeReconstruction {
       val e = visitExp(exp)
       val es = exps.map(visitExp(_))
       TypedAst.Expr.Apply(e, es, subst(tvar), subst(evar), loc)
+
+    case KindedAst.Expr.ApplyDef(symUse, exps, itvar, tvar, evar, loc2) =>
+      val es = exps.map(visitExp)
+      TypedAst.Expr.ApplyDef(symUse, es, subst(itvar), subst(tvar), subst(evar), loc2)
 
     case KindedAst.Expr.Lambda(fparam, exp, loc) =>
       val p = visitFormalParam(fparam, subst)
@@ -356,9 +358,9 @@ object TypeReconstruction {
           TypedAst.Expr.CheckedCast(cast, e, e.tpe, eff, loc)
       }
 
-    case KindedAst.Expr.UncheckedCast(KindedAst.Expr.Cst(Ast.Constant.Null, _), _, _, tvar, loc) =>
+    case KindedAst.Expr.UncheckedCast(KindedAst.Expr.Cst(Constant.Null, _), _, _, tvar, loc) =>
       val t = subst(tvar)
-      TypedAst.Expr.Cst(Ast.Constant.Null, t, loc)
+      TypedAst.Expr.Cst(Constant.Null, t, loc)
 
     case KindedAst.Expr.UncheckedCast(exp, declaredType0, declaredEff0, tvar, loc) =>
       val e = visitExp(exp)
@@ -460,7 +462,7 @@ object TypeReconstruction {
         case Type.Cst(TypeConstructor.JvmMethod(method), loc) =>
           TypedAst.Expr.InvokeStaticMethod(method, es, returnTpe, eff, loc)
         case _ =>
-          TypedAst.Expr.Error(TypeError.UnresolvedMethod(loc), methodTpe, eff) // TODO INTEROP: UnresolvedStaticMethod ?
+          TypedAst.Expr.Error(TypeError.UnresolvedStaticMethod(loc), methodTpe, eff)
       }
 
     case KindedAst.Expr.GetField2(exp, _, jvar, tvar, evar, loc) =>
