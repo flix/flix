@@ -386,30 +386,3 @@ mod ClassHierarchyAnalysis {
         }
     }
 }
-
-expected = Arrow(List(
-    Enum(
-        List,
-        List(
-            Enum(Fixpoint.Ast.Shared.PredSym,List())
-        )),
-        Enum(
-            Fixpoint.Ast.Datalog.Datalog,
-            List(Enum(Fixpoint.Boxed,List()))
-        )
-    ),Enum(Fixpoint.Ast.Datalog.Datalog,List(Enum(Fixpoint.Boxed,List()))))
-found    = Arrow(List(
-    Enum(
-        List,
-        List(
-            Enum(
-                List,
-                List(Enum(Fixpoint.Ast.Shared.PredSym,List()))
-            )
-        )
-    ),
-    Enum(
-        Fixpoint.Ast.Datalog.Datalog,
-        List(Enum(Fixpoint.Boxed,List()))
-    )),
-    Enum(Fixpoint.Ast.Datalog.Datalog,List(Enum(Fixpoint.Boxed,List()))))
