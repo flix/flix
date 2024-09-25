@@ -303,14 +303,14 @@ object Typer {
     * Reconstructs types in the given enum.
     */
   private def visitEnum(enum0: KindedAst.Enum, root: KindedAst.Root)(implicit flix: Flix): (Symbol.EnumSym, TypedAst.Enum) = enum0 match {
-    case KindedAst.Enum(doc, ann, mod, enumSym, tparams0, derives, cases0, tpe, loc) =>
+    case KindedAst.Enum(doc, ann, mod, enumSym, tparams0, derives, cases0, _, loc) =>
       val tparams = tparams0.map(visitTypeParam(_, root))
       val cases = cases0 map {
         case (name, KindedAst.Case(caseSym, tagType, sc, caseLoc)) =>
           name -> TypedAst.Case(caseSym, tagType, sc, caseLoc)
       }
 
-      enumSym -> TypedAst.Enum(doc, ann, mod, enumSym, tparams, derives, cases, tpe, loc)
+      enumSym -> TypedAst.Enum(doc, ann, mod, enumSym, tparams, derives, cases, loc)
   }
 
   /**
@@ -357,7 +357,7 @@ object Typer {
     * Reconstructs types in the given restrictable enum.
     */
   private def visitRestrictableEnum(enum0: KindedAst.RestrictableEnum, root: KindedAst.Root)(implicit flix: Flix): (Symbol.RestrictableEnumSym, TypedAst.RestrictableEnum) = enum0 match {
-    case KindedAst.RestrictableEnum(doc, ann, mod, enumSym, index0, tparams0, derives, cases0, tpe, loc) =>
+    case KindedAst.RestrictableEnum(doc, ann, mod, enumSym, index0, tparams0, derives, cases0, _, loc) =>
       val index = TypedAst.TypeParam(index0.name, index0.sym, index0.loc)
       val tparams = tparams0.map(visitTypeParam(_, root))
       val cases = cases0 map {
@@ -365,7 +365,7 @@ object Typer {
           name -> TypedAst.RestrictableCase(caseSym, tagType, sc, caseLoc)
       }
 
-      enumSym -> TypedAst.RestrictableEnum(doc, ann, mod, enumSym, index, tparams, derives, cases, tpe, loc)
+      enumSym -> TypedAst.RestrictableEnum(doc, ann, mod, enumSym, index, tparams, derives, cases, loc)
   }
 
   /**

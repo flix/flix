@@ -12,7 +12,7 @@ object TypedAstPrinter {
     */
   def print(root: TypedAst.Root): DocAst.Program = {
     val enums = root.enums.values.map {
-      case TypedAst.Enum(_, ann, mod, sym, tparams, _, cases, _, _) =>
+      case TypedAst.Enum(_, ann, mod, sym, tparams, _, cases, _) =>
         DocAst.Enum(ann, mod, sym, tparams.map(printTypeParam), cases.values.map(printCase).toList)
     }.toList
     val defs = root.defs.values.map {

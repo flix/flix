@@ -82,7 +82,7 @@ object Indexer {
     * Returns a reverse index for the given enum `enum0`.
     */
   private def visitEnum(enum0: Enum): Index = enum0 match {
-    case Enum(_, _, _, _, tparams, derives, cases, _, _) =>
+    case Enum(_, _, _, _, tparams, derives, cases, _) =>
       Index.all(
         Index.occurrenceOf(enum0),
         traverse(tparams)(visitTypeParam),

@@ -26,7 +26,7 @@ object LoweredAstPrinter {
     */
   def print(root: LoweredAst.Root): DocAst.Program = {
     val enums = root.enums.values.map {
-      case LoweredAst.Enum(_, ann, mod, sym, tparams, _, cases0, _, _) =>
+      case LoweredAst.Enum(_, ann, mod, sym, tparams, _, cases0, _) =>
         val cases = cases0.values.map {
           case LoweredAst.Case(sym, tpe, _, _) =>
             DocAst.Case(sym, TypePrinter.print(tpe))
