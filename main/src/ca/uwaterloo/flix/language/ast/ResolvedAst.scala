@@ -107,6 +107,8 @@ object ResolvedAst {
 
     case class ApplyDef(symUse: Ast.DefSymUse, exps: List[Expr], loc: SourceLocation) extends Expr
 
+    case class ApplyLocalDef(sym: Symbol.VarSym, exps: List[Expr], loc: SourceLocation) extends Expr
+
     case class Lambda(fparam: FormalParam, exp: Expr, loc: SourceLocation) extends Expr
 
     case class Unary(sop: SemanticOp.UnaryOp, exp: Expr, loc: SourceLocation) extends Expr

@@ -93,7 +93,7 @@ object Resolver {
     val usesVal = root.uses.map {
       case (ns, uses0) =>
         mapN(traverse(uses0)(visitUseOrImport(_, ns, root))) {
-          u => (new Symbol.ModuleSym(ns.parts) -> u)
+          u => new Symbol.ModuleSym(ns.parts) -> u
         }
     }
 
@@ -899,6 +899,7 @@ object Resolver {
       flatMapN(lookupQName(qname, env0, ns0, root)) {
         case ResolvedQName.Def(defn) => visitApplyDef(defn, exps, env0, innerLoc, outerLoc)
         case ResolvedQName.Sig(sig) => visitApplySig(sig, exps, env0, innerLoc, outerLoc)
+        case ResolvedQName.Var(sym) if BoundBy.LocalDef == sym.boundBy => visitApplyLocalDef(sym, exps, env0, innerLoc, outerLoc)
         case ResolvedQName.Var(_) => visitApply(app, env0)
         case ResolvedQName.Tag(caze) => visitApplyTag(caze, exps, env0, innerLoc, outerLoc)
         case ResolvedQName.RestrictableTag(caze) => visitApplyRestrictableTag(caze, exps, isOpen = false, env0, innerLoc, outerLoc)
@@ -915,9 +916,6 @@ object Resolver {
         case ResolvedQName.RestrictableTag(caze) => visitApplyRestrictableTag(caze, exps, isOpen = true, env0, innerLoc, outerLoc)
         case ResolvedQName.Error(e) => Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
       }
-
-    case NamedAst.Expr.Apply(NamedAst.Expr.LocalDef(ann, sym, fparams, exp1, _, tpe, eff, innerLoc), exps, outerLoc) =>
-      visitApplyLetRec(sym, fparams, exp1, exps, tpe, eff, innerLoc, outerLoc)
 
     case app@NamedAst.Expr.Apply(_, _, _) =>
       visitApply(app, env0)
@@ -988,12 +986,15 @@ object Resolver {
         fparams =>
           val env1 = env0 ++ mkFormalParamEnv(fparams) // What about recursive functions?
           val exp1Val = resolveExp(exp1, env1)
-          val env2 = env0 ++ mkVarEnv(sym)
-          val exp2Val = resolveExp(exp2, env2)
-          val tpeVal = traverseOpt(tpe0)(resolveType(_, Wildness.AllowWild, env1, taenv, ns0, root))
-          val effVal = traverseOpt(eff0)(resolveType(_, Wildness.AllowWild, env1, taenv, ns0, root))
-          mapN(exp1Val, exp2Val, tpeVal, effVal) {
-            case (e1, e2, t, ef) => ResolvedAst.Expr.LocalDef(ann, sym, fparams, e1, e2, t, ef, loc)
+          flatMapN(exp1Val) {
+            e1 =>
+              val env2 = env0 ++ mkLocalDefEnv(sym, fparams, e1)
+              val exp2Val = resolveExp(exp2, env2)
+              val tpeVal = traverseOpt(tpe0)(resolveType(_, Wildness.AllowWild, env1, taenv, ns0, root))
+              val effVal = traverseOpt(eff0)(resolveType(_, Wildness.AllowWild, env1, taenv, ns0, root))
+              mapN(exp2Val, tpeVal, effVal) {
+                case (e2, t, ef) => ResolvedAst.Expr.LocalDef(ann, sym, fparams, e1, e2, t, ef, loc)
+              }
           }
       }
 
@@ -1808,7 +1809,14 @@ object Resolver {
     }
   }
 
-  private def visitApplyLetRec(sym: Symbol.VarSym, fparams: List[NamedAst.FormalParam], exp: NamedAst.Expr, exps: List[NamedAst.Expr], tpe: Option[NamedAst.Type], eff: Option[NamedAst.Type], innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Expr, ResolutionError] = ???
+  private def visitApplyLocalDef(sym: Symbol.VarSym, exps: List[NamedAst.Expr], env: ListMap[String, Resolution], innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Expr, ResolutionError] = {
+    val Resolution.LocalDef(_, fparams, exp) :: _ = env(sym.text)
+    mapN(traverse(exps)(resolveExp(_, env))) {
+      es =>
+        val base = args => ResolvedAst.Expr.ApplyLocalDef(sym, args, outerLoc)
+        visitApplyToplevelFull(base, fparams.length, es, outerLoc)
+    }
+  }
 
   /**
     * Resolves the tag application.
@@ -3884,6 +3892,10 @@ object Resolver {
     }
   }
 
+  private def mkLocalDefEnv(sym: Symbol.VarSym, fparams: List[ResolvedAst.FormalParam], exp: Expr): ListMap[String, Resolution] = {
+    ListMap.singleton(sym.text, Resolution.LocalDef(sym, fparams, exp))
+  }
+
   /**
     * Creates an environment from the given variable symbol.
     */
@@ -3990,6 +4002,8 @@ object Resolver {
     case class JavaClass(clazz: Class[_]) extends Resolution
 
     case class Var(sym: Symbol.VarSym) extends Resolution
+
+    case class LocalDef(sym: Symbol.VarSym, fparams: List[ResolvedAst.FormalParam], exp: Expr) extends Resolution
 
     case class TypeVar(sym: Symbol.UnkindedTypeVarSym) extends Resolution
   }

@@ -375,7 +375,6 @@ object Ast {
     */
   case class DefSymUse(sym: Symbol.DefnSym, loc: SourceLocation)
 
-
   /**
     * Represents a use of a class sym.
     */
