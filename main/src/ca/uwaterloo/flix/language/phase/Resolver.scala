@@ -1722,7 +1722,7 @@ object Resolver {
     *   - ` f(a,b)  ===> f(a, b)`
     *   - `f(a,b,c) ===> f(a, b)(c)`
     */
-  private def visitApplyToplevelFull(base: List[ResolvedAst.Expr] => ResolvedAst.Expr, arity: Int, exps: List[ResolvedAst.Expr], loc: SourceLocation)(implicit scope: Scope, flix: Flix): ResolvedAst.Expr = {
+  private def visitApplyFull(base: List[ResolvedAst.Expr] => ResolvedAst.Expr, arity: Int, exps: List[ResolvedAst.Expr], loc: SourceLocation)(implicit scope: Scope, flix: Flix): ResolvedAst.Expr = {
     val (directArgs, cloArgs) = exps.splitAt(arity)
 
     val fparamsPadding = mkFreshFparams(arity - directArgs.length, loc.asSynthetic)
@@ -1751,7 +1751,7 @@ object Resolver {
     */
   private def visitDef(defn: NamedAst.Declaration.Def, loc: SourceLocation)(implicit scope: Scope, flix: Flix): ResolvedAst.Expr = {
     val base = es => ResolvedAst.Expr.ApplyDef(Ast.DefSymUse(defn.sym, loc), es, loc.asSynthetic)
-    visitApplyToplevelFull(base, defn.spec.fparams.length, Nil, loc.asSynthetic)
+    visitApplyFull(base, defn.spec.fparams.length, Nil, loc.asSynthetic)
   }
 
   /**
@@ -1778,7 +1778,7 @@ object Resolver {
       // The inner-most expression is still an ApplyDef, however.
       case es =>
         val base = args => ResolvedAst.Expr.ApplyDef(Ast.DefSymUse(defn.sym, innerLoc), args, outerLoc)
-        visitApplyToplevelFull(base, defn.spec.fparams.length, es, outerLoc)
+        visitApplyFull(base, defn.spec.fparams.length, es, outerLoc)
     }
   }
 
@@ -1789,7 +1789,7 @@ object Resolver {
     */
   private def visitSig(sig: NamedAst.Declaration.Sig, loc: SourceLocation)(implicit scope: Scope, flix: Flix): ResolvedAst.Expr = {
     val base = es => ResolvedAst.Expr.Apply(ResolvedAst.Expr.Sig(sig.sym, loc), es, loc.asSynthetic)
-    visitApplyToplevelFull(base, sig.spec.fparams.length, Nil, loc.asSynthetic)
+    visitApplyFull(base, sig.spec.fparams.length, Nil, loc.asSynthetic)
   }
 
   /**
@@ -1805,7 +1805,7 @@ object Resolver {
     mapN(traverse(exps)(resolveExp(_, env))) {
       es =>
         val base = args => ResolvedAst.Expr.Apply(ResolvedAst.Expr.Sig(sig.sym, innerLoc), args, outerLoc)
-        visitApplyToplevelFull(base, sig.spec.fparams.length, es, outerLoc)
+        visitApplyFull(base, sig.spec.fparams.length, es, outerLoc)
     }
   }
 
@@ -1814,7 +1814,7 @@ object Resolver {
     mapN(traverse(exps)(resolveExp(_, env))) {
       es =>
         val base = args => ResolvedAst.Expr.ApplyLocalDef(sym, args, outerLoc)
-        visitApplyToplevelFull(base, fparams.length, es, outerLoc)
+        visitApplyFull(base, fparams.length, es, outerLoc)
     }
   }
 
