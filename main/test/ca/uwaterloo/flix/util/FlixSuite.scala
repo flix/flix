@@ -39,10 +39,9 @@ class FlixSuite(incremental: Boolean) extends AnyFunSuite {
     * Subdirectories are excluded.
     *
     */
-  def mkTestDirCollected(path: String)(implicit options: Options): Unit = {
+  def mkTestDirCollected(path: String, name: String)(implicit options: Options): Unit = {
     val files = FileOps.getFlixFilesIn(path, 1)
-    val n = files.headOption.map(p => p.getFileName.toString).getOrElse(path)
-    test(n)(compileAndRun(files))
+    test(name)(compileAndRun(files))
   }
 
   /**
