@@ -460,7 +460,7 @@ object Ast {
     /**
       * Represents a variable that is bound by a local def.
       */
-    case object LetRec extends BoundBy
+    case object LocalDef extends BoundBy
   }
 
   /**

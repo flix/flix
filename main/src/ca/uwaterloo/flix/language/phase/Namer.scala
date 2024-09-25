@@ -630,7 +630,7 @@ object Namer {
       NamedAst.Expr.LetRec(sym, ann, mod, e1, e2, loc)
 
     case DesugaredAst.Expr.LocalDef(ann, ident, fparams, exp1, exp2, tpe, eff, loc) =>
-      val sym = Symbol.freshVarSym(ident, BoundBy.LetRec) // use defnsym instead?
+      val sym = Symbol.freshVarSym(ident, BoundBy.LocalDef) // use defnsym instead?
       val fps = fparams.map(visitFormalParam(_))
       val e1 = visitExp(exp1, ns0)
       val e2 = visitExp(exp2, ns0)
