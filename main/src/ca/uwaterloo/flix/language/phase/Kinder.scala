@@ -1628,7 +1628,7 @@ object Kinder {
   /**
     * Gets a kind environment from the type param, defaulting the to kind of the given enum's tags if it is unkinded.
     */
-  private def getKindEnvFromIndex(index0: ResolvedAst.TypeParam, sym: Symbol.RestrictableEnumSym)(implicit flix: Flix): KindEnv = index0 match {
+  private def getKindEnvFromIndex(index0: ResolvedAst.TypeParam, sym: Symbol.RestrictableEnumSym): KindEnv = index0 match {
     case ResolvedAst.TypeParam.Kinded(_, tvar, kind, _) => KindEnv.singleton(tvar -> kind)
     case ResolvedAst.TypeParam.Unkinded(_, tvar, _) => KindEnv.singleton(tvar -> Kind.CaseSet(sym))
     case ResolvedAst.TypeParam.Implicit(_, _, _) => KindEnv.empty
