@@ -235,10 +235,10 @@ object Kinder {
       val kenv = inferType(tpe0, kind, KindEnv.empty, taenv, root)
       val t = visitType(tpe0, kind, kenv, taenv, root)
       val tconstrs = tconstrs0.map(visitTraitConstraint(_, kenv, taenv, root))
-      val assocsVal = traverse(assocs0)(visitAssocTypeDef(_, kind, kenv, taenv, root))
+      val assocs = assocs0.map(visitAssocTypeDef(_, kind, kenv, taenv, root))
       val defsVal = traverse(defs0)(visitDef(_, kenv, taenv, root))
-      mapN(assocsVal, defsVal) {
-        case (assocs, defs) => KindedAst.Instance(doc, ann, mod, trt, t, tconstrs, assocs, defs, ns, loc)
+      mapN(defsVal) {
+        case defs => KindedAst.Instance(doc, ann, mod, trt, t, tconstrs, assocs, defs, ns, loc)
       }
   }
 
@@ -332,14 +332,14 @@ object Kinder {
   /**
     * Performs kinding on the given associated type definition under the given kind environment.
     */
-  private def visitAssocTypeDef(d0: ResolvedAst.Declaration.AssocTypeDef, trtKind: Kind, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[KindedAst.AssocTypeDef, KindError] = d0 match {
+  private def visitAssocTypeDef(d0: ResolvedAst.Declaration.AssocTypeDef, trtKind: Kind, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): KindedAst.AssocTypeDef = d0 match {
     case ResolvedAst.Declaration.AssocTypeDef(doc, mod, symUse, arg0, tpe0, loc) =>
       val trt = root.traits(symUse.sym.trt)
       val assocSig = trt.assocs.find(assoc => assoc.sym == symUse.sym).get
       val tpeKind = assocSig.kind
       val args = visitType(arg0, trtKind, kenv, taenv, root)
       val t = visitType(tpe0, tpeKind, kenv, taenv, root)
-      Validation.success(KindedAst.AssocTypeDef(doc, mod, symUse, args, t, loc))
+      KindedAst.AssocTypeDef(doc, mod, symUse, args, t, loc)
   }
 
   /**
