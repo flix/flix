@@ -244,6 +244,10 @@ object Indexer {
       val parent = Entity.Exp(exp0)
       visitExps(exps) ++ Index.occurrenceOf(exp0) ++ Index.useOf(sym, loc, parent)
 
+    case Expr.ApplyLocalDef(sym, exps, _, _, _, loc) =>
+      val parent = Entity.Exp(exp0)
+      visitExps(exps) ++ Index.occurrenceOf(exp0) ++ Index.useOf(sym, loc, parent)
+
     case Expr.Unary(_, exp, _, _, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0)
 
