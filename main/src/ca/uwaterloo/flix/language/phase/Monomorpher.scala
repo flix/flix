@@ -416,7 +416,7 @@ object Monomorpher {
 
     val structs =  ParOps.parMapValues(root.structs) {
       case LoweredAst.Struct(doc, ann, mod, sym, tparams0, fields, loc) =>
-        val newFields = fields.map(visitStructField)
+        val newFields = fields.map(visitStructField(_, empty))
         val tparams = tparams0.map(_.sym)
         MonoAst.Struct(doc, ann, mod, sym, tparams, newFields, loc)
     }
@@ -432,10 +432,10 @@ object Monomorpher {
     )
   }
 
-  def visitStructField(field: LoweredAst.StructField): MonoAst.StructField = {
+  def visitStructField(field: LoweredAst.StructField, subst: StrictSubstitution): MonoAst.StructField = {
     field match {
       case LoweredAst.StructField(fieldSym, tpe, loc) =>
-        MonoAst.StructField(fieldSym, tpe, loc)
+        MonoAst.StructField(fieldSym, subst(tpe), loc)
     }
   }
 
