@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ReducedAst.{Def, Root}
 import ca.uwaterloo.flix.util.ParOps
 import org.objectweb.asm.ClassWriter
-import org.objectweb.asm.Opcodes._
+import org.objectweb.asm.Opcodes.*
 
 /**
   * Generates bytecode for the namespace classes.

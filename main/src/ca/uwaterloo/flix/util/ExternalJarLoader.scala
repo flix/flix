@@ -32,7 +32,7 @@ class ExternalJarLoader extends URLClassLoader(Array.empty, ClassLoader.getPlatf
     super.addURL(url)
   }
 
-  override def findClass(name: String): Class[_ <: Object] = {
+  override def findClass(name: String): Class[? <: Object] = {
     try {
       super.findClass(name)
     } catch {

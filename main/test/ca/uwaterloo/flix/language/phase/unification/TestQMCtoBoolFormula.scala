@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.language.phase.unification.BoolFormula._
+import ca.uwaterloo.flix.language.phase.unification.BoolFormula.*
 import org.scalatest.funsuite.AnyFunSuite
 
 class TestQMCtoBoolFormula extends AnyFunSuite {

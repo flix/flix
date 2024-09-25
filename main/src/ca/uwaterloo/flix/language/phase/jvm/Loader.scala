@@ -26,7 +26,7 @@ object Loader {
     // Computes a map from classes and method names to method objects.
     //
     // TODO: We should not load all method objects here. Only a subset. Need some notion of entry points.
-    val allMethods = loadedClasses.foldLeft(Map.empty[Class[_], Map[String, Method]]) {
+    val allMethods = loadedClasses.foldLeft(Map.empty[Class[?], Map[String, Method]]) {
       case (macc, (_, clazz)) => macc + (clazz -> methodsOf(clazz))
     }
 
@@ -83,7 +83,7 @@ object Loader {
   /**
     * Returns a map from names to method objects for the given class `clazz`.
     */
-  private def methodsOf(clazz: Class[_]): Map[String, Method] = {
+  private def methodsOf(clazz: Class[?]): Map[String, Method] = {
     Jvm.getMethods(clazz).foldLeft(Map.empty[String, Method]) {
       case (macc, method) =>
         if (method.isSynthetic)
