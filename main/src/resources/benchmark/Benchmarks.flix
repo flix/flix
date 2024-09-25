@@ -33,7 +33,7 @@ def benchmarks(): Map[String, Unit -> Unit \ IO] = Map#{
         blackhole(l3)
     },
     "InlinerMap10kOptimized" => () -> {
-        let top = 9999; // 10_000 - 1
+        let top = 10_000 - 1;
         let l1 = Benchmark.Inliner.Optimized.rng(top, Nil);
         let l2 = Benchmark.Inliner.Optimized.mp(l1, Nil);
         let l3 = Benchmark.Inliner.Optimized.rv(l2, Nil);
