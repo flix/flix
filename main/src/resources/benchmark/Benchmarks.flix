@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-import java.lang.System
-
 ///
 /// Returns the list of benchmarks.
 ///
@@ -32,7 +30,7 @@ def benchmarks(): Map[String, Unit -> Unit \ IO] = Map#{
         let l1 = Benchmark.Inliner.range(0, 100_000);
         let l2 = Benchmark.Inliner.map(x -> x + 1, l1);
         let l3 = Benchmark.Inliner.length(l2);
-        System.err.println(l3)
+        blackhole(l3)
     },
     "InlinerMap100kOptimized" => () -> {
         let top = 99999; // 100_000 - 1
@@ -40,6 +38,6 @@ def benchmarks(): Map[String, Unit -> Unit \ IO] = Map#{
         let l2 = Benchmark.Inliner.Optimized.mp(l1, Nil);
         let l3 = Benchmark.Inliner.Optimized.rv(l2, Nil);
         let l4 = Benchmark.Inliner.Optimized.ln(l3, 0);
-        System.err.println(l4)
+        blackhole(l4)
     }
 }
