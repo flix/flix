@@ -414,7 +414,40 @@ object ConstraintGen {
         val resEff = Type.mkUnion(eff1, eff2, loc)
         (resTpe, resEff)
 
-      case Expr.LocalDef(ann, sym, fparams, exp1, exp2, tpe, eff, loc) => ???
+      case Expr.LocalDef(_, sym, fparams, exp1, exp2, tpe, eff, loc) =>
+        val (tpe1, eff1) = visitExp(exp1)
+        val baseTpe = tpe.getOrElse(Type.freshVar(Kind.Star, loc.asSynthetic))
+        val baseEff = eff.getOrElse(Type.freshVar(Kind.Eff, loc.asSynthetic))
+        c.unifyType(baseTpe, tpe1, exp1.loc)
+        c.unifyType(baseEff, eff1, exp1.loc)
+        val defTpe = Type.mkCurriedArrowWithEffect(fparams.map(_.tpe), baseEff, baseTpe, sym.loc)
+        c.unifyType(sym.tvar, defTpe, sym.loc)
+        val (tpe2, eff2) = visitExp(exp2)
+        val resTpe = tpe2
+        val resEff = Type.mkUnion(baseEff, eff1, eff2, loc)
+        (resTpe, resEff)
+
+      /* lambda
+      c.unifyType(fparam.sym.tvar, fparam.tpe, loc)
+      val (tpe, eff0) = visitExp(exp)
+      // Use sub-effecting for lambdas if the appropriate option is set
+      val eff = if (flix.options.xsubeffecting < SubEffectLevel.Lambdas) eff0 else Type.mkUnion(eff0, Type.freshVar(Kind.Eff, loc), loc)
+      val resTpe = Type.mkArrowWithEffect(fparam.tpe, eff, tpe, loc)
+      val resEff = Type.Pure
+      (resTpe, resEff)
+      */
+
+      /* expr.def
+      val defn = root.defs(sym)
+      val (tconstrs, econstrs, defTpe, _) = Scheme.instantiate(defn.spec.sc, loc.asSynthetic)
+      c.unifyType(tvar, defTpe, loc)
+      val constrs = tconstrs.map(_.copy(loc = loc))
+      c.addClassConstraints(tconstrs, loc)
+      econstrs.foreach { econstr => c.unifyType(econstr.tpe1, econstr.tpe2, loc) }
+      val resTpe = defTpe
+      val resEff = Type.Pure
+      (resTpe, resEff)
+       */
 
       case Expr.Region(tpe, _) =>
         val resTpe = tpe
