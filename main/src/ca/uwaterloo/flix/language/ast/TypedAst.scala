@@ -317,7 +317,7 @@ object TypedAst {
 
     case class Tag(sym: Ast.RestrictableCaseSymUse, pat: List[VarOrWild], tpe: Type, loc: SourceLocation) extends RestrictableChoosePattern
 
-    case class Error(value: Type, loc: SourceLocation) extends VarOrWild with RestrictableChoosePattern
+    case class Error(tpe: Type, loc: SourceLocation) extends VarOrWild with RestrictableChoosePattern
 
   }
 
