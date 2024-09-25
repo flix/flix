@@ -117,7 +117,7 @@ object Kinder {
       // The last add is simply to verify that the last tparam was marked as Eff
       val kenv = KindEnv.disjointAppend(kenv1, kenv2) + (tparams1.last.sym -> Kind.Eff)
       val tparams = tparams1.map(visitTypeParam(_, kenv))
-      val fields = fields0.map(visitStructField(_, tparams, kenv, taenv, root))
+      val fields = fields0.map(visitStructField(_, kenv, taenv, root))
       val targs = tparams.map(tparam => Type.Var(tparam.sym, tparam.loc.asSynthetic))
       val sc = Scheme(tparams.map(_.sym), List(), List(), Type.mkStruct(sym, targs, loc))
       KindedAst.Struct(doc, ann, mod, sym, tparams, sc, fields, loc)
@@ -178,7 +178,7 @@ object Kinder {
   /**
     * Performs kinding on the given struct field under the given kind environment.
     */
-  private def visitStructField(field0: ResolvedAst.Declaration.StructField, tparams: List[KindedAst.TypeParam], kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): KindedAst.StructField = field0 match {
+  private def visitStructField(field0: ResolvedAst.Declaration.StructField, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): KindedAst.StructField = field0 match {
     case ResolvedAst.Declaration.StructField(sym, tpe0, loc) =>
       val t = visitType(tpe0, Kind.Star, kenv, taenv, root)
       KindedAst.StructField(sym, t, loc)
