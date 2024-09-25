@@ -16,7 +16,8 @@
 
 package ca.uwaterloo.flix.language.phase.jvm
 
-import ca.uwaterloo.flix.language.ast.{MonoType, SourceLocation}
+import ca.uwaterloo.flix.language.ast.ReducedAst.Root
+import ca.uwaterloo.flix.language.ast.{MonoType, ReducedAst, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
 import ca.uwaterloo.flix.util.InternalCompilerException
 import org.objectweb.asm.Opcodes
@@ -160,7 +161,7 @@ object BackendType {
     * Note: Instead of using [[toBackendType]] and then [[BackendType.toErased]]
     * use [[toErasedBackendType]].
     */
-  def toBackendType(tpe0: MonoType): BackendType = {
+  def toBackendType(tpe0: MonoType)(implicit root: ReducedAst.Root): BackendType = {
     tpe0 match {
       case MonoType.Void => BackendObjType.JavaObject.toTpe
       case MonoType.AnyType => BackendObjType.JavaObject.toTpe
@@ -183,7 +184,7 @@ object BackendType {
       case MonoType.Lazy(tpe) => BackendObjType.Lazy(toBackendType(tpe)).toTpe
       case MonoType.Tuple(elms) => BackendObjType.Tuple(elms.map(toBackendType)).toTpe
       case MonoType.Enum(_, _) => BackendObjType.Tagged.toTpe
-      case MonoType.Struct(_, targs) => ??? //BackendObjType.Struct(targs.map(toBackendType)).toTpe
+      case MonoType.Struct(sym, targs) => BackendObjType.Struct(JvmOps.instantiateStruct(root.structs(sym), targs)).toTpe
       case MonoType.Arrow(args, result) => BackendObjType.Arrow(args.map(toBackendType), toBackendType(result)).toTpe
       case MonoType.RecordEmpty => BackendObjType.RecordEmpty.toTpe
       case MonoType.RecordExtend(_, value, _) => BackendObjType.RecordExtend(toBackendType(value)).toTpe

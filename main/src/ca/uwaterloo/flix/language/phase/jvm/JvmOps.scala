@@ -353,7 +353,7 @@ object JvmOps {
       case (acc, _) => acc
     }
 
-  private def instantiateStruct(struct: ReducedAst.Struct, targs: List[MonoType]): List[BackendType] = {
+  def instantiateStruct(struct: ReducedAst.Struct, targs: List[MonoType]): List[BackendType] = {
     assert(struct.tparams.length == targs.length)
     val map = struct.tparams.map(_.sym).zip(targs).toMap
     struct.fields.map(field => instantiateType(map, field.tpe))
