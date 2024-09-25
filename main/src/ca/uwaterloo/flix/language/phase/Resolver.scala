@@ -987,7 +987,7 @@ object Resolver {
       flatMapN(fparamsVal) {
         fparams =>
           val env1 = env0 ++ mkFormalParamEnv(fparams) // What about recursive functions?
-          val exp1Val = resolveExp(exp0, env1)
+          val exp1Val = resolveExp(exp01, env1)
           val env2 = env0 ++ mkVarEnv(sym)
           val exp2Val = resolveExp(exp02, env2)
           val tpeVal = traverseOpt(tpe0)(resolveType(_, Wildness.AllowWild, env1, taenv, ns0, root))
