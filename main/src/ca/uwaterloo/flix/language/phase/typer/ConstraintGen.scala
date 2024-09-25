@@ -169,7 +169,10 @@ object ConstraintGen {
         val resEff = evar
         (resTpe, resEff)
 
-      case Expr.ApplyLocalDef(sym, exps, itvar, tvar, evar, loc2) => ???
+      case Expr.ApplyLocalDef(sym, exps, itvar, tvar, evar, loc) =>
+        val (tpes, effs) = exps.map(visitExp).unzip
+        c.unifyType(evar, Type.mkUnion(effs, loc), loc)
+        ??? // TODO: Go back to Resolver and add LocalDefSpec that has fparams
 
       case Expr.Lambda(fparam, exp, loc) =>
         c.unifyType(fparam.sym.tvar, fparam.tpe, loc)
