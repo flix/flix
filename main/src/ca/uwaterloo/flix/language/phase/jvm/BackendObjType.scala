@@ -19,12 +19,12 @@ package ca.uwaterloo.flix.language.phase.jvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.phase.jvm.BackendObjType.mkClassName
-import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.Branch._
-import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions._
+import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.Branch.*
+import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.*
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final.{IsFinal, NotFinal}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.{IsPrivate, IsPublic}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Volatility.{IsVolatile, NotVolatile}
-import ca.uwaterloo.flix.language.phase.jvm.ClassMaker._
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.*
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.{DevFlixRuntime, JavaLang, JavaLangInvoke, JavaUtil, JavaUtilConcurrent, MethodDescriptor, RootPackage}
 import org.objectweb.asm.Opcodes
@@ -1620,7 +1620,7 @@ object BackendObjType {
       * Returns the field of Value corresponding to the given type
       */
     def fieldFromType(tpe: BackendType): InstanceField = {
-      import BackendType._
+      import BackendType.*
       tpe match {
         case Bool => BoolField
         case Char => CharField

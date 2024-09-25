@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.util
 
 import ca.uwaterloo.flix.language.errors.{Recoverable, Unrecoverable}
-import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.Validation.*
 import ca.uwaterloo.flix.util.collection.Chain
 import org.scalatest.funsuite.AnyFunSuite
 

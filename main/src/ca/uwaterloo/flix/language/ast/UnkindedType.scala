@@ -550,7 +550,7 @@ object UnkindedType {
   /**
     * Returns the Flix UnkindedType of a Java Class
     */
-  def getFlixType(c: Class[_]): UnkindedType = {
+  def getFlixType(c: Class[?]): UnkindedType = {
     if (c == java.lang.Boolean.TYPE) {
       UnkindedType.Cst(TypeConstructor.Bool, SourceLocation.Unknown)
     }
