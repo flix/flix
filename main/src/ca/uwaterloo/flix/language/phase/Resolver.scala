@@ -982,14 +982,14 @@ object Resolver {
         case (e1, e2) => ResolvedAst.Expr.LetRec(sym, ann, mod, e1, e2, loc)
       }
 
-    case NamedAst.Expr.LocalDef(ann, sym, fparams0, exp01, exp02, tpe0, eff0, loc) =>
+    case NamedAst.Expr.LocalDef(ann, sym, fparams0, exp1, exp2, tpe0, eff0, loc) =>
       val fparamsVal = traverse(fparams0)(resolveFormalParam(_, env0, taenv, ns0, root))
       flatMapN(fparamsVal) {
         fparams =>
           val env1 = env0 ++ mkFormalParamEnv(fparams) // What about recursive functions?
-          val exp1Val = resolveExp(exp01, env1)
+          val exp1Val = resolveExp(exp1, env1)
           val env2 = env0 ++ mkVarEnv(sym)
-          val exp2Val = resolveExp(exp02, env2)
+          val exp2Val = resolveExp(exp2, env2)
           val tpeVal = traverseOpt(tpe0)(resolveType(_, Wildness.AllowWild, env1, taenv, ns0, root))
           val effVal = traverseOpt(eff0)(resolveType(_, Wildness.AllowWild, env1, taenv, ns0, root))
           mapN(exp1Val, exp2Val, tpeVal, effVal) {
