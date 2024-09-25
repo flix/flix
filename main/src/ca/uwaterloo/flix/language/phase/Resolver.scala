@@ -1813,7 +1813,7 @@ object Resolver {
     val Resolution.LocalDef(_, fparams, exp) :: _ = env(sym.text)
     mapN(traverse(exps)(resolveExp(_, env))) {
       es =>
-        val base = args => ResolvedAst.Expr.ApplyLocalDef(sym, args, outerLoc)
+        val base = args => ResolvedAst.Expr.ApplyLocalDef(sym, args, outerLoc) // TODO: Add Ast.LocalDefSymUse?
         visitApplyFull(base, fparams.length, es, outerLoc)
     }
   }
