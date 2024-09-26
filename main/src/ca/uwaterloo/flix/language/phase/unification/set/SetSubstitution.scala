@@ -30,7 +30,7 @@ private object SetSubstitution {
 }
 
 /**
-  * Represents a substitution from set variables (represented as integers) to set formulas.
+  * Represents a substitution from [[SetFormula.Var]] (represented as integers) to [[SetFormula]].
   *
   * A substitution contains a partial map from variables to formulas. This partial map implies a
   * total map by leaving un-mapped variables as they are (the identity mapping).
@@ -43,7 +43,7 @@ case class SetSubstitution(m: Map[Int, SetFormula]) {
   /** Returns `true` if `this` is the empty substitution (`[]`). */
   def isEmpty: Boolean = m.isEmpty
 
-  /** Applies `this` substitution to `f`. */
+  /** Applies `this` substitution to `f`. Replaces [[SetFormula.Var]] according to `this`. */
   def apply(f: SetFormula): SetFormula =
     if (m.isEmpty) f else applyInternal(f)
 
