@@ -21,7 +21,8 @@ import ca.uwaterloo.flix.util.{CofiniteIntSet, InternalCompilerException}
 
 import scala.annotation.nowarn
 import scala.collection.immutable.SortedSet
-import scala.collection.mutable.{ListBuffer, Set as MutSet}
+import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 
 /**
   * A common super-type for set formulas `f`, like `x1 ∩ x2 ∪ (e4 ∪ !c17)`.
@@ -423,10 +424,10 @@ object SetFormula {
     // intersecting positive elems and differencing negative elements.
 
     var elemPos0 = CofiniteIntSet.universe
-    val cstsPos = MutSet.empty[Cst]
-    val varsPos = MutSet.empty[Var]
-    val cstsNeg = MutSet.empty[Cst]
-    val varsNeg = MutSet.empty[Var]
+    val cstsPos = mutable.Set.empty[Cst]
+    val varsPos = mutable.Set.empty[Var]
+    val cstsNeg = mutable.Set.empty[Cst]
+    val varsNeg = mutable.Set.empty[Var]
     val other = ListBuffer.empty[SetFormula]
 
     var workList = fs
@@ -547,11 +548,11 @@ object SetFormula {
     // So we keep one CofiniteIntSet that represents both element sets -
     // differencing positive elems and intersecting negative elements.
 
-    val cstsPos = MutSet.empty[Cst]
-    val varsPos = MutSet.empty[Var]
+    val cstsPos = mutable.Set.empty[Cst]
+    val varsPos = mutable.Set.empty[Var]
     var elemNeg0 = CofiniteIntSet.universe
-    val cstsNeg = MutSet.empty[Cst]
-    val varsNeg = MutSet.empty[Var]
+    val cstsNeg = mutable.Set.empty[Cst]
+    val varsNeg = mutable.Set.empty[Var]
     val other = ListBuffer.empty[SetFormula]
 
     // Variables and constants are checked for overlap immediately.
