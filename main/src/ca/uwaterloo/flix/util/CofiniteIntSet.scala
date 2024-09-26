@@ -107,6 +107,10 @@ object CofiniteIntSet {
       Compl(x.intersect(y))
   }
 
+  /** Returns the union of `s1` and `s2` (`s1 ∪ s2`). */
+  def union(s1: CofiniteIntSet, s2: SortedSet[Int]): CofiniteIntSet =
+    union(s1, mkSet(s2))
+
   /** Returns the intersection of `s1` and `s2` (`s1 ∩ s2`). */
   def intersection(s1: CofiniteIntSet, s2: CofiniteIntSet): CofiniteIntSet = (s1, s2) match {
     case (Set(x), Set(y)) =>
@@ -127,5 +131,17 @@ object CofiniteIntSet {
       // = !(x ∪ y)      (complement distribution)
       Compl(x.union(y))
   }
+
+  /** Returns the intersection of `s1` and `s2` (`s1 ∩ s2`). */
+  def intersection(s1: CofiniteIntSet, s2: SortedSet[Int]): CofiniteIntSet =
+    intersection(s1, mkSet(s2))
+
+  /** Returns the difference of `s1` and `s2` (`s1 - s2`). */
+  def difference(s1: CofiniteIntSet, s2: CofiniteIntSet): CofiniteIntSet =
+    intersection(s1, complement(s2))
+
+  /** Returns the difference of `s1` and `s2` (`s1 - s2`). */
+  def difference(s1: CofiniteIntSet, s2: SortedSet[Int]): CofiniteIntSet =
+    difference(s1, mkSet(s2))
 
 }
