@@ -36,8 +36,8 @@ import scala.collection.mutable.ListBuffer
   * A set without unknowns can be evaluated to get a finite or a co-finite set of elements. The
   * universe of elements is infinite so no finite set is equivalent to universe.
   *
-  * Invariant: [[SetFormula.ElemSet]], [[SetFormula.Cst]], and [[SetFormula.Var]] must use
-  * disjoint integers (see [[unknowns]]).
+  * Invariant: [[SetFormula.ElemSet]], [[SetFormula.Cst]], and [[SetFormula.Var]] must use disjoint
+  * integers.
   */
 sealed trait SetFormula {
 
