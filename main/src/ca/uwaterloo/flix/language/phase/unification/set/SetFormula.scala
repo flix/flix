@@ -37,7 +37,7 @@ import scala.collection.mutable.ListBuffer
   * universe of elements is infinite so no finite set is equivalent to universe.
   *
   * Invariant: [[SetFormula.ElemSet]], [[SetFormula.Cst]], and [[SetFormula.Var]] must use disjoint
-  * integers.
+  * integers (see [[SetFormula.unknowns]]).
   */
 sealed trait SetFormula {
 

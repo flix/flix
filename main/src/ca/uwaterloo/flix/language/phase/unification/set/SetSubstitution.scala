@@ -37,9 +37,6 @@ private object SetSubstitution {
   *
   * Substitutions are written `[x -> t1, y -> t2, ..]`.
   * Any individual pair, `x -> t1`, is called a binding or a mapping.
-  *
-  * Invariant: [[SetFormula.ElemSet]], [[SetFormula.Cst]], and [[SetFormula.Var]] must use disjoint
-  * integers.
   */
 case class SetSubstitution(m: Map[Int, SetFormula]) {
 
