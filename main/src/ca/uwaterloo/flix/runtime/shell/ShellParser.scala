@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.runtime.shell
 import org.jline.reader.{EOFError, ParsedLine, Parser}
 import org.jline.reader.Parser.ParseContext
 
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 /**
   * Minimal implementation of `ParsedLine`, necessary to keep jline happy.

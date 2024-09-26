@@ -40,7 +40,7 @@ object KindError {
     override def summary: String = s"Mismatched kinds: '${formatKind(k1)}' and '${formatKind(k2)}''"
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> This type variable was used as both kind '${red(formatKind(k1))}' and kind '${red(formatKind(k2))}'.
          |
          |${code(loc, "mismatched kind.")}
@@ -62,7 +62,7 @@ object KindError {
     override def summary: String = s"Kind ${formatKind(expectedKind)} was expected, but found ${formatKind(actualKind)}."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Expected kind '${red(formatKind(expectedKind))}' here, but kind '${red(formatKind(actualKind))}' is used.
          |
          |${code(loc, "unexpected kind.")}
@@ -82,7 +82,7 @@ object KindError {
     override def summary: String = "Unable to infer kind."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Unable to infer kind.
          |
          |${code(loc, "uninferred kind.")}
@@ -91,7 +91,7 @@ object KindError {
     }
 
     override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
+      import formatter.*
       s"${underline("Tip: ")} Add a kind annotation."
     })
   }

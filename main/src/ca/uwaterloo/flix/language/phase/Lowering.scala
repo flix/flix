@@ -205,16 +205,15 @@ object Lowering {
     * Lowers the given enum `enum0`.
     */
   private def visitEnum(enum0: TypedAst.Enum)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Enum = enum0 match {
-    case TypedAst.Enum(doc, ann, mod, sym, tparams0, derives, cases0, tpe0, loc) =>
+    case TypedAst.Enum(doc, ann, mod, sym, tparams0, derives, cases0, loc) =>
       val tparams = tparams0.map(visitTypeParam)
-      val tpe = visitType(tpe0)
       val cases = cases0.map {
         case (_, TypedAst.Case(caseSym, caseTpeDeprecated0, caseSc0, loc)) =>
           val caseTpeDeprecated = visitType(caseTpeDeprecated0)
           val caseSc = visitScheme(caseSc0)
           (caseSym, LoweredAst.Case(caseSym, caseTpeDeprecated, caseSc, loc))
       }
-      LoweredAst.Enum(doc, ann, mod, sym, tparams, derives, cases, tpe, loc)
+      LoweredAst.Enum(doc, ann, mod, sym, tparams, derives, cases, loc)
   }
 
   /**
@@ -234,12 +233,11 @@ object Lowering {
     * Lowers the given enum `enum0` from a restrictable enum into a regular enum.
     */
   private def visitRestrictableEnum(enum0: TypedAst.RestrictableEnum)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Enum = enum0 match {
-    case TypedAst.RestrictableEnum(doc, ann, mod, sym0, index0, tparams0, derives, cases0, tpe0, loc) =>
+    case TypedAst.RestrictableEnum(doc, ann, mod, sym0, index0, tparams0, derives, cases0, loc) =>
       // index is erased since related checking has concluded.
       // Restrictable tag is lowered into a regular tag
       val index = visitTypeParam(index0)
       val tparams = tparams0.map(visitTypeParam)
-      val tpe = visitType(tpe0)
       val cases = cases0.map {
         case (_, TypedAst.RestrictableCase(caseSym0, caseTpeDeprecated0, caseSc0, loc)) =>
           val caseTpeDeprecated = visitType(caseTpeDeprecated0)
@@ -248,7 +246,7 @@ object Lowering {
           (caseSym, LoweredAst.Case(caseSym, caseTpeDeprecated, caseSc, loc))
       }
       val sym = visitRestrictableEnumSym(sym0)
-      LoweredAst.Enum(doc, ann, mod, sym, index :: tparams, derives, cases, tpe, loc)
+      LoweredAst.Enum(doc, ann, mod, sym, index :: tparams, derives, cases, loc)
   }
 
   /**

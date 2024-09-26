@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.language.phase.unification.BoolFormula._
-import ca.uwaterloo.flix.language.phase.unification.BoolFormulaTable._
+import ca.uwaterloo.flix.language.phase.unification.BoolFormula.*
+import ca.uwaterloo.flix.language.phase.unification.BoolFormulaTable.*
 import org.scalatest.funsuite.AnyFunSuite
 
 class TestBoolFormulaTable extends AnyFunSuite {

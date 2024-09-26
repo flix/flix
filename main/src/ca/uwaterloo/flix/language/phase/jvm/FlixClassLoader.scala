@@ -33,12 +33,12 @@ class FlixClassLoader(classes: Map[String, JvmClass])(implicit flix: Flix) exten
   /**
     * An internal cache of already loaded classes.
     */
-  private val cache = mutable.Map.empty[String, Class[_]]
+  private val cache = mutable.Map.empty[String, Class[?]]
 
   /**
     * Finds the class with the given binary `name`.
     */
-  override def loadClass(name: String): Class[_] = try {
+  override def loadClass(name: String): Class[?] = try {
     // Lookup the internal name in the cache to see if the class was already defined.
     cache.get(name) match {
       case None =>

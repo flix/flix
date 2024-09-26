@@ -891,7 +891,7 @@ object Type {
   /**
     * Constructs the a native type.
     */
-  def mkNative(clazz: Class[_], loc: SourceLocation): Type = Type.Cst(TypeConstructor.Native(clazz), loc)
+  def mkNative(clazz: Class[?], loc: SourceLocation): Type = Type.Cst(TypeConstructor.Native(clazz), loc)
 
   /**
     * Constructs a RecordExtend type.

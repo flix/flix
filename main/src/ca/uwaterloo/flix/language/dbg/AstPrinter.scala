@@ -18,8 +18,8 @@ package ca.uwaterloo.flix.language.dbg
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.Flix.{IrFileExtension, IrFileIndentation, IrFileWidth}
-import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.dbg.printer._
+import ca.uwaterloo.flix.language.ast.*
+import ca.uwaterloo.flix.language.dbg.printer.*
 import ca.uwaterloo.flix.util.tc.Debug
 import ca.uwaterloo.flix.util.{FileOps, InternalCompilerException, Validation}
 
