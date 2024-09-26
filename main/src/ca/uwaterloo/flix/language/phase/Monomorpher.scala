@@ -106,39 +106,15 @@ object Monomorpher {
   private case class StrictSubstitution(s: Substitution, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix) {
 
     /**
-      * Returns the normalized default type for the kind of `tpe0`.
-      */
-    private def default(tpe0: Type): Type = tpe0.kind match {
-      case Kind.Wild => Type.mkAnyType(tpe0.loc)
-      case Kind.WildCaseSet => Type.mkAnyType(tpe0.loc)
-      case Kind.Star => Type.mkAnyType(tpe0.loc)
-      case Kind.Eff =>
-        // If an effect variable is free, we may assume its Pure due to the subst. lemma.
-        Type.Pure
-      case Kind.Bool => Type.mkAnyType(tpe0.loc)
-      case Kind.RecordRow => Type.RecordRowEmpty
-      case Kind.SchemaRow => Type.SchemaRowEmpty
-      case Kind.Predicate => Type.mkAnyType(tpe0.loc)
-      case Kind.CaseSet(sym) => Type.Cst(TypeConstructor.CaseSet(SortedSet.empty, sym), tpe0.loc)
-      case Kind.Arrow(_, _) => Type.mkAnyType(tpe0.loc)
-      case Kind.Jvm => throw InternalCompilerException(s"Unexpected type: '$tpe0'.", tpe0.loc)
-      case Kind.Error => throw InternalCompilerException(s"Unexpected type '$tpe0'.", tpe0.loc)
-    }
-
-    /**
       * Applies `this` substitution to the given type `tpe`, returning a normalized type.
-      *
-      * `keepVariables` can only be `true` if `this.s` is empty. It will avoid removing variables.
-      * This is useful for structs and enums that want type normalization but not monomorphization.
       *
       * Performance Note: We are on a hot path. We take extra care to avoid redundant type objects.
       */
-    def apply(tpe0: Type, keepVariables: Boolean = false): Type = tpe0 match {
+    def apply(tpe0: Type): Type = tpe0 match {
       case x: Type.Var =>
         // Remove variables by substitution, otherwise by default type.
         s.m.get(x.sym) match {
           case Some(t) =>
-            if (keepVariables) throw InternalCompilerException("Keeping variables with non-empty strict subst", tpe0.loc)
             // Use default since variables in the output of `s.m` are unconstrained.
             // It is important to do this before apply to avoid looping on variables.
             val t1 = t.map(default)
@@ -146,54 +122,23 @@ object Monomorpher {
             apply(t1)
           case None =>
             // Default types are normalized.
-            if (keepVariables) x else default(x)
+            default(x)
         }
 
       case Type.Cst(_, _) =>
         // Performance: Reuse tpe0.
         tpe0
 
-      case Type.Apply(t1, t2, loc) =>
-
-        (apply(t1), apply(t2)) match {
-          // Simplify boolean equations.
-          case (Type.Cst(TypeConstructor.Complement, _), y) => Type.mkComplement(y, loc)
-          case (Type.Apply(Type.Cst(TypeConstructor.Union, _), x, _), y) => Type.mkUnion(x, y, loc)
-          case (Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x, _), y) => Type.mkIntersection(x, y, loc)
-
-          case (Type.Cst(TypeConstructor.CaseComplement(sym), _), y) => Type.mkCaseComplement(y, sym, loc)
-          case (Type.Apply(Type.Cst(TypeConstructor.CaseIntersection(sym), _), x, _), y) => Type.mkCaseIntersection(x, y, sym, loc)
-          case (Type.Apply(Type.Cst(TypeConstructor.CaseUnion(sym), _), x, _), y) => Type.mkCaseUnion(x, y, sym, loc)
-
-          // Put records in alphabetical order
-          case (Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(label), _), tpe, _), rest) => mkRecordExtendSorted(label, tpe, rest, loc)
-
-          // Put schemas in alphabetical order
-          case (Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(label), _), tpe, _), rest) => mkSchemaExtendSorted(label, tpe, rest, loc)
-
-          // Else just apply.
-          case (x, y) =>
-            // Performance: Reuse tpe0, if possible.
-            if ((x eq t1) && (y eq t2)) {
-              tpe0
-            } else {
-              Type.Apply(x, y, loc)
-            }
-        }
+      case app@Type.Apply(_, _, _) =>
+        normalizeApply(apply, app)
 
       case Type.Alias(_, _, t, _) =>
         // Remove the Alias.
         apply(t)
 
-      case Type.AssocType(cst, arg0, _, loc) =>
+      case Type.AssocType(cst, arg0, _, _) =>
         // Remove the associated type.
-        val arg = apply(arg0)
-        EqualityEnvironment.reduceAssocType(cst, arg, eqEnv) match {
-          case Ok(t) =>
-            // Use apply to normalize the type, `t` is ground.
-            apply(t)
-          case Err(_) => throw InternalCompilerException("unexpected associated type reduction failure", loc)
-        }
+        apply(infallibleReduceAssocType(cst, apply(arg0), eqEnv))
 
       case Type.JvmToType(_, loc) => throw InternalCompilerException("unexpected JVM type", loc)
       case Type.JvmToEff(_, loc) => throw InternalCompilerException("unexpected JVM eff", loc)
@@ -325,7 +270,7 @@ object Monomorpher {
     * Returns a sorted record, assuming that `rest` is sorted.
     * Sorting is stable on duplicate fields.
     *
-    * Assumes that rest does not contain variables, aliases, or associated types.
+    * Assumes that rest does not contain aliases or associated types.
     */
   private def mkRecordExtendSorted(label: Name.Label, tpe: Type, rest: Type, loc: SourceLocation): Type = rest match {
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(l), loc1), t, loc2), r, loc3) if l.name < label.name =>
@@ -335,7 +280,7 @@ object Monomorpher {
     case Type.Cst(_, _) | Type.Apply(_, _, _) =>
       // Non-record related types or a record in correct order.
       Type.mkRecordRowExtend(label, tpe, rest, loc)
-    case Type.Var(_, _) => throw InternalCompilerException(s"Unexpected type variable '$rest'", rest.loc)
+    case v@Type.Var(_, _) => v
     case Type.Alias(_, _, _, _) => throw InternalCompilerException(s"Unexpected alias '$rest'", rest.loc)
     case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected associated type '$rest'", rest.loc)
     case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected JVM type '$rest'", rest.loc)
@@ -347,7 +292,7 @@ object Monomorpher {
     * Returns a sorted schema, assuming that `rest` is sorted.
     * Sorting is stable on duplicate predicates.
     *
-    * Assumes that rest does not contain variables, aliases, or associated types.
+    * Assumes that rest does not contain aliases or associated types.
     */
   private def mkSchemaExtendSorted(label: Name.Pred, tpe: Type, rest: Type, loc: SourceLocation): Type = rest match {
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(l), loc1), t, loc2), r, loc3) if l.name < label.name =>
@@ -357,7 +302,7 @@ object Monomorpher {
     case Type.Cst(_, _) | Type.Apply(_, _, _) =>
       // Non-record related types or a record in correct order.
       Type.mkSchemaRowExtend(label, tpe, rest, loc)
-    case Type.Var(_, _) => throw InternalCompilerException(s"Unexpected type variable '$rest'", rest.loc)
+    case v@Type.Var(_, _) => v
     case Type.Alias(_, _, _, _) => throw InternalCompilerException(s"Unexpected alias '$rest'", rest.loc)
     case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected associated type '$rest'", rest.loc)
     case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected JVM type '$rest'", rest.loc)
@@ -420,14 +365,14 @@ object Monomorpher {
 
     val enums = ParOps.parMapValues(root.enums) {
       case LoweredAst.Enum(doc, ann, mod, sym, tparams0, _, cases, loc) =>
-        val newCases = MapOps.mapValues(cases)(visitEnumCase(_, empty))
+        val newCases = MapOps.mapValues(cases)(visitEnumCase)
         val tparams = tparams0.map(param => MonoAst.TypeParam(param.name, param.sym, param.loc))
         MonoAst.Enum(doc, ann, mod, sym, tparams, newCases, loc)
     }
 
     val structs = ParOps.parMapValues(root.structs) {
       case LoweredAst.Struct(doc, ann, mod, sym, tparams0, fields, loc) =>
-        val newFields = fields.map(visitStructField(_, empty))
+        val newFields = fields.map(visitStructField)
         val tparams = tparams0.map(param => MonoAst.TypeParam(param.name, param.sym, param.loc))
         MonoAst.Struct(doc, ann, mod, sym, tparams, newFields, loc)
     }
@@ -444,17 +389,17 @@ object Monomorpher {
     )
   }
 
-  def visitStructField(field: LoweredAst.StructField, subst: StrictSubstitution): MonoAst.StructField = {
+  def visitStructField(field: LoweredAst.StructField)(implicit root: LoweredAst.Root, flix: Flix): MonoAst.StructField = {
     field match {
       case LoweredAst.StructField(fieldSym, tpe, loc) =>
-        MonoAst.StructField(fieldSym, subst(tpe, keepVariables = true), loc)
+        MonoAst.StructField(fieldSym, simplify(tpe, root.eqEnv), loc)
     }
   }
 
-  def visitEnumCase(caze: LoweredAst.Case, subst: StrictSubstitution): MonoAst.Case = {
+  def visitEnumCase(caze: LoweredAst.Case)(implicit root: LoweredAst.Root, flix: Flix): MonoAst.Case = {
     caze match {
       case LoweredAst.Case(sym, tpe, _, loc) =>
-        MonoAst.Case(sym, subst(tpe, keepVariables = true), loc)
+        MonoAst.Case(sym, simplify(tpe, root.eqEnv), loc)
     }
   }
 
@@ -854,6 +799,80 @@ object Monomorpher {
       case None =>
         throw InternalCompilerException(s"Unable to unify: '$tpe1' and '$tpe2'.\nIn '${sym}'", tpe1.loc)
     }
+  }
+
+  /** Reduces the given associated type and crashes if it is not possible. */
+  private def infallibleReduceAssocType(cst: Ast.AssocTypeConstructor, arg: Type, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Type = {
+    EqualityEnvironment.reduceAssocType(cst, arg, eqEnv) match {
+      case Ok(t) => t
+      case Err(_) => throw InternalCompilerException("Unexpected associated type reduction failure", arg.loc)
+    }
+  }
+
+  /**
+    * Removes [[Type.Alias]] and [[Type.AssocType]]. This is used for enum and struct types that remain polymorphic.
+    *
+    * OBS: The given type must only contain associated types of ground types.
+    */
+  private def simplify(tpe: Type, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Type = tpe match {
+    case v@Type.Var(_, _) => v
+    case c@Type.Cst(_, _) => c
+    case app@Type.Apply(_, _, _) => normalizeApply(simplify(_, eqEnv), app)
+    case Type.Alias(_, _, tpe, _) => simplify(tpe, eqEnv)
+    case Type.AssocType(cst, arg0, _, _) => simplify(infallibleReduceAssocType(cst, simplify(arg0, eqEnv), eqEnv), eqEnv)
+    case Type.JvmToType(_, loc) => throw InternalCompilerException("unexpected JVM type", loc)
+    case Type.JvmToEff(_, loc) => throw InternalCompilerException("unexpected JVM eff", loc)
+    case Type.UnresolvedJvmType(_, loc) => throw InternalCompilerException("unexpected JVM type", loc)
+  }
+
+  /**
+    * Applies `f` on both sides of the application, then normalizing the remaining type.
+    *
+    * OBS: `f` must not output [[Type.AssocType]] or [[Type.Alias]].
+    */
+  @inline
+  private def normalizeApply(f: Type => Type, app: Type.Apply): Type = {
+    val Type.Apply(tpe1, tpe2, loc) = app
+    (f(tpe1), f(tpe2)) match {
+      // Simplify equations.
+      case (Type.Cst(TypeConstructor.Complement, _), y) => Type.mkComplement(y, loc)
+      case (Type.Apply(Type.Cst(TypeConstructor.Union, _), x, _), y) => Type.mkUnion(x, y, loc)
+      case (Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x, _), y) => Type.mkIntersection(x, y, loc)
+
+      case (Type.Cst(TypeConstructor.CaseComplement(sym), _), y) => Type.mkCaseComplement(y, sym, loc)
+      case (Type.Apply(Type.Cst(TypeConstructor.CaseIntersection(sym), _), x, _), y) => Type.mkCaseIntersection(x, y, sym, loc)
+      case (Type.Apply(Type.Cst(TypeConstructor.CaseUnion(sym), _), x, _), y) => Type.mkCaseUnion(x, y, sym, loc)
+
+      // Put records in alphabetical order.
+      case (Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(label), _), tpe, _), rest) =>
+        mkRecordExtendSorted(label, tpe, rest, loc)
+
+      // Put schemas in alphabetical order.
+      case (Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(label), _), tpe, _), rest) =>
+        mkSchemaExtendSorted(label, tpe, rest, loc)
+
+      case (x, y) =>
+        // Performance: Reuse tpe, if possible.
+        if ((x eq tpe1) && (y eq tpe2)) app else Type.Apply(x, y, loc)
+    }
+  }
+
+  /** Returns the normalized default type for the kind of `tpe0`. */
+  private def default(tpe0: Type): Type = tpe0.kind match {
+    case Kind.Wild => Type.mkAnyType(tpe0.loc)
+    case Kind.WildCaseSet => Type.mkAnyType(tpe0.loc)
+    case Kind.Star => Type.mkAnyType(tpe0.loc)
+    case Kind.Eff =>
+      // If an effect variable is free, we may assume its Pure due to the subst. lemma.
+      Type.Pure
+    case Kind.Bool => Type.mkAnyType(tpe0.loc)
+    case Kind.RecordRow => Type.RecordRowEmpty
+    case Kind.SchemaRow => Type.SchemaRowEmpty
+    case Kind.Predicate => Type.mkAnyType(tpe0.loc)
+    case Kind.CaseSet(sym) => Type.Cst(TypeConstructor.CaseSet(SortedSet.empty, sym), tpe0.loc)
+    case Kind.Arrow(_, _) => Type.mkAnyType(tpe0.loc)
+    case Kind.Jvm => throw InternalCompilerException(s"Unexpected type: '$tpe0'.", tpe0.loc)
+    case Kind.Error => throw InternalCompilerException(s"Unexpected type '$tpe0'.", tpe0.loc)
   }
 
 }

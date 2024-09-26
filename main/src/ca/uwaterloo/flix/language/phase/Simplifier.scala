@@ -479,11 +479,9 @@ object Simplifier {
           case TypeConstructor.Lattice =>
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
 
-          case TypeConstructor.SchemaRowEmpty =>
-            throw InternalCompilerException(s"Unexpected type: '$tpe'. ${tpe.loc}", tpe.loc)
+          case TypeConstructor.SchemaRowEmpty => Type.mkApply(Type.Cst(tc, tpe.loc), args, tpe.loc)
 
-          case TypeConstructor.SchemaRowExtend(_) =>
-            throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
+          case TypeConstructor.SchemaRowExtend(_) => Type.mkApply(Type.Cst(tc, tpe.loc), args, tpe.loc)
 
           case TypeConstructor.Schema =>
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
