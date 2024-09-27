@@ -134,6 +134,9 @@ object CodeHinter {
     case Expr.LetRec(_, _, _, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
+    case Expr.LocalDef(_, _, _, _, _, exp1, exp2, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2)
+
     case Expr.Region(_, _) => Nil
 
     case Expr.Scope(_, _, exp, _, _, _) =>

@@ -52,6 +52,7 @@ object TypedAstOps {
     case Expr.Binary(_, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expr.Let(_, _, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expr.LetRec(_, _, _, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
+    case Expr.LocalDef(_, _, _, _, _, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expr.Region(_, _) => Set.empty
     case Expr.Scope(_, _, exp, _, _, _) => sigSymsOf(exp)
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2) ++ sigSymsOf(exp3)
@@ -177,6 +178,9 @@ object TypedAstOps {
 
     case Expr.LetRec(sym, _, _, exp1, exp2, _, _, _) =>
       (freeVars(exp1) ++ freeVars(exp2)) - sym
+
+    case Expr.LocalDef(_, sym, fparams, _, _, exp1, exp2, _, _, _) =>
+      (freeVars(exp1) -- fparams.map(_.sym) - sym) ++ freeVars(exp2)
 
     case Expr.Region(_, _) =>
       Map.empty

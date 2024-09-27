@@ -42,6 +42,7 @@ object TypedAstPrinter {
     case Expr.Binary(sop, exp1, exp2, _, _, _) => DocAst.Expr.Binary(print(exp1), OpPrinter.print(sop), print(exp2))
     case Expr.Let(sym, _, exp1, exp2, _, _, _) => DocAst.Expr.Let(printVar(sym), Some(TypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
     case Expr.LetRec(sym, _, _, exp1, exp2, _, _, _) => DocAst.Expr.LetRec(printVar(sym), Some(TypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
+    case Expr.LocalDef(_, sym, _, _, _, exp1, exp2, _, _, _) => DocAst.Expr.LetRec(printVar(sym), Some(TypePrinter.print(exp1.tpe)), print(exp1), print(exp2)) // Fix this
     case Expr.Region(_, _) => DocAst.Expr.Region
     case Expr.Scope(sym, _, exp, _, _, _) => DocAst.Expr.Scope(printVar(sym), print(exp))
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) => DocAst.Expr.IfThenElse(print(exp1), print(exp2), print(exp3))

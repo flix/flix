@@ -418,6 +418,36 @@ object Redundancy {
       else
         (used ++ shadowedVar) - sym
 
+    case Expr.LocalDef(_, sym, fparams, _, _, exp1, exp2, _, _, _) =>
+      // Extend the environment with the variable symbol.
+      val env1 = env0 + sym
+
+      // Visit the two expressions under the extended environment.
+      // Also add fparams to env1 in the first expression.
+      // Add the variable to the recursion context only in the first expression.
+      val innerUsed1 = visitExp(exp1, env1 ++ fparams.map(_.sym), rc.withVar(sym))
+      val innerUsed2 = visitExp(exp2, env1, rc)
+      val used = innerUsed1 ++ innerUsed2
+
+      // Check for shadowing.
+      val fparamVars = fparams.map(_.sym)
+      val shadowedFparamVars = fparamVars.map(s => shadowing(s.text, s.loc, env0))
+
+      // Check if the fparams are dead in exp1
+      val res1 = fparamVars.zip(shadowedFparamVars).foldLeft(Used.empty) {
+        case (acc, (s, shadow)) if deadVarSym(s, innerUsed1) => (acc ++ shadow) - s + UnusedVarSym(s)
+        case (acc, (s, shadow)) => (acc ++ shadow) - s
+      }
+
+      // Check if the LocalDef variable symbol is dead in exp1 + exp2.
+      val shadowedVar = shadowing(sym.text, sym.loc, env0)
+      val res2 = if (deadVarSym(sym, used))
+        (used ++ shadowedVar) - sym + UnusedVarSym(sym)
+      else
+        (used ++ shadowedVar) - sym
+
+      res1 ++ res2
+
     case Expr.Region(_, _) =>
       Used.empty
 

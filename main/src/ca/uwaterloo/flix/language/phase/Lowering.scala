@@ -423,6 +423,8 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expr.LetRec(sym, mod, e1, e2, t, eff, loc)
 
+    case TypedAst.Expr.LocalDef(ann, sym, fparams, declaredType, declaredEff, exp1, exp2, tpe, eff, loc) => ??? // make letrec
+
     case TypedAst.Expr.Region(tpe, loc) =>
       val t = visitType(tpe)
       LoweredAst.Expr.ApplyAtomic(AtomicOp.Region, List.empty, t, Type.Pure, loc)

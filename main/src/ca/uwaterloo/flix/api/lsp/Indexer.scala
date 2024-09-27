@@ -102,8 +102,8 @@ object Indexer {
   }
 
   /**
-   * Returns a reverse index for the given struct `struct0`.
-   */
+    * Returns a reverse index for the given struct `struct0`.
+    */
   private def visitStruct(struct0: Struct): Index = struct0 match {
     case Struct(doc, ann, mod, sym, tparams, sc, fields, loc) =>
       Index.all(
@@ -259,6 +259,17 @@ object Indexer {
 
     case Expr.LetRec(sym, _, _, exp1, exp2, _, _, _) =>
       Index.occurrenceOf(sym, exp1.tpe) ++ visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
+
+    case Expr.LocalDef(_, sym, fparams, declaredType, declaredEff, exp1, exp2, _, _, _) =>
+      Index.all(
+        traverse(fparams)(visitFormalParam),
+        visitType(declaredType),
+        visitType(declaredEff),
+        Index.occurrenceOf(sym, exp1.tpe),
+        visitExp(exp1),
+        visitExp(exp2),
+        Index.occurrenceOf(exp0)
+      )
 
     case Expr.Region(_, _) =>
       Index.occurrenceOf(exp0)

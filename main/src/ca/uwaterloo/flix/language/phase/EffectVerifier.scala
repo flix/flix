@@ -113,6 +113,12 @@ object EffectVerifier {
       val expected = Type.mkUnion(exp1.eff, exp2.eff, loc)
       val actual = eff
       expectType(expected, actual, loc)
+    case Expr.LocalDef(ann, sym, fparams, declaredType, declaredEff, exp1, exp2, tpe, eff, loc) =>
+      visitExp(exp1)
+      visitExp(exp2)
+      val expected = exp2.eff
+      val actual = eff
+      expectType(expected, actual, loc)
     case Expr.Region(tpe, loc) => ()
     case Expr.Scope(sym, regionVar, exp, tpe, eff, loc) =>
       visitExp(exp)
