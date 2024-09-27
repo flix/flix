@@ -302,12 +302,12 @@ object Ast {
   /**
     * Represents that the annotated element is introduced by the class `clazz`.
     */
-  case class IntroducedBy(clazz: java.lang.Class[_]) extends scala.annotation.StaticAnnotation
+  case class IntroducedBy(clazz: java.lang.Class[?]) extends scala.annotation.StaticAnnotation
 
   /**
     * Represents that the annotated element is eliminated by the class `clazz`.
     */
-  case class EliminatedBy(clazz: java.lang.Class[_]) extends scala.annotation.StaticAnnotation
+  case class EliminatedBy(clazz: java.lang.Class[?]) extends scala.annotation.StaticAnnotation
 
   case object TraitConstraint {
     /**
@@ -538,7 +538,7 @@ object Ast {
     /**
       * An import of a Java class.
       */
-    case class Import(clazz: Class[_], alias: Name.Ident, loc: SourceLocation) extends UseOrImport
+    case class Import(clazz: Class[?], alias: Name.Ident, loc: SourceLocation) extends UseOrImport
   }
 
   /**

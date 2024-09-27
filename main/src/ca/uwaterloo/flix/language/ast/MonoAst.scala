@@ -120,7 +120,7 @@ object MonoAst {
 
     case class Do(op: Ast.OpSymUse, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class NewObject(name: String, clazz: java.lang.Class[_], tpe: Type, eff: Type, methods: List[JvmMethod], loc: SourceLocation) extends Expr
+    case class NewObject(name: String, clazz: java.lang.Class[?], tpe: Type, eff: Type, methods: List[JvmMethod], loc: SourceLocation) extends Expr
 
   }
 
@@ -207,7 +207,7 @@ object MonoAst {
 
   case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], exp: Expr, retTpe: Type, eff: Type, loc: SourceLocation)
 
-  case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: Expr)
+  case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[?], exp: Expr)
 
   case class HandlerRule(op: Ast.OpSymUse, fparams: List[FormalParam], exp: Expr)
 

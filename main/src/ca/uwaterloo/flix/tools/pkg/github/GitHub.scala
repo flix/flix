@@ -18,8 +18,8 @@ package ca.uwaterloo.flix.tools.pkg.github
 import ca.uwaterloo.flix.tools.pkg.{PackageError, ReleaseError, SemVer}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.{Result, StreamOps}
-import org.json4s.JsonDSL._
-import org.json4s._
+import org.json4s.JsonDSL.*
+import org.json4s.*
 import org.json4s.JsonAST.{JArray, JValue}
 import org.json4s.native.JsonMethods.{compact, parse, render}
 

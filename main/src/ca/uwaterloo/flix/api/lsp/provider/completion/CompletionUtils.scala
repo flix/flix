@@ -36,7 +36,7 @@ object CompletionUtils {
       case None => ""
     }
     // Get the name of the function if it is not a constructor.
-    val name = if (exec.isInstanceOf[Constructor[_ <: Object]]) "" else s".${exec.getName}"
+    val name = if (exec.isInstanceOf[Constructor[? <: Object]]) "" else s".${exec.getName}"
     // So for constructors we do not have a return type method but we know it is the declaring class.
     val returnType = exec match {
       case method: Method => method.getReturnType
@@ -141,7 +141,7 @@ object CompletionUtils {
   /**
     * Returns a class object if the string is a class or removing the last "part" makes it a class
     */
-  def classFromDotSeperatedString(clazz: String): Option[(Class[_], String)] = {
+  def classFromDotSeperatedString(clazz: String): Option[(Class[?], String)] = {
     // If the last charachter is . then this drops that
     // I.e if we have java.lang.String. this converts to java.lang.String
     // while if it does not end with . it is unchanged
@@ -154,7 +154,7 @@ object CompletionUtils {
   /**
     * Return a class object if the class exists
     */
-  def classFromString(clazz: String): Option[(Class[_], String)] = {
+  def classFromString(clazz: String): Option[(Class[?], String)] = {
     try {
       Some((java.lang.Class.forName(clazz), clazz))
     }
@@ -167,7 +167,7 @@ object CompletionUtils {
     * Converts a Java Class Object into a string representing the type in flix syntax.
     * I.e. java.lang.String => String, byte => Int8, java.lang.Object[] => Array[##java.lang.Object, false].
     */
-  def convertJavaClassToFlixType(clazz: Class[_]): String = {
+  def convertJavaClassToFlixType(clazz: Class[?]): String = {
     if (clazz.isArray()) {
       s"Array[${convertJavaClassToFlixType(clazz.getComponentType())}, Static]"
     }

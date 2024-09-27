@@ -19,11 +19,11 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.{Entity, Index, MarkupContent, MarkupKind, Position, Range, ResponseStatus}
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.language.fmt._
+import ca.uwaterloo.flix.language.fmt.*
 import ca.uwaterloo.flix.language.phase.unification.SetFormula
 import ca.uwaterloo.flix.language.phase.unification.TypeMinimization.minimizeType
 import org.json4s.JsonAST.JObject
-import org.json4s.JsonDSL._
+import org.json4s.JsonDSL.*
 
 import scala.annotation.tailrec
 

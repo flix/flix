@@ -18,14 +18,14 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.SourceLocation
-import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions._
+import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.*
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Abstract.{IsAbstract, NotAbstract}
-import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final._
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final.*
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Interface.{IsInterface, NotInterface}
-import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Static._
-import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility._
-import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Volatility._
-import ca.uwaterloo.flix.language.phase.jvm.ClassMaker._
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Static.*
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.*
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Volatility.*
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.*
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.util.InternalCompilerException
 import org.objectweb.asm.{ClassWriter, Opcodes}

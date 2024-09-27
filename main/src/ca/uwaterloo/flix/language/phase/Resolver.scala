@@ -672,7 +672,7 @@ object Resolver {
         val m = mutable.Map.empty[Symbol.AssocTypeSym, ResolvedAst.Declaration.AssocTypeDef]
 
         // We collect [[DuplicateAssocTypeDef]] and [[DuplicateAssocTypeDef]] errors.
-        val errors = mutable.ListBuffer.empty[ResolutionError with Unrecoverable]
+        val errors = mutable.ListBuffer.empty[ResolutionError & Unrecoverable]
 
         // Build the map `m` and check for [[DuplicateAssocTypeDef]].
         for (d@ResolvedAst.Declaration.AssocTypeDef(_, _, use, _, _, loc1) <- xs) {
@@ -1768,18 +1768,7 @@ object Resolver {
     */
   private def visitApplyDef(defn: NamedAst.Declaration.Def, exps: List[NamedAst.Expr], env: ListMap[String, Resolver.Resolution], innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Expr, ResolutionError] = {
     mapN(traverse(exps)(resolveExp(_, env))) {
-
-      // Case 1: We have enough arguments (exps) to fully apply `defn`
-      // so we can just construct an `ApplyDef` node directly without
-      // introducing any lambdas or currying arguments.
-      case es if defn.spec.fparams.length == es.length =>
-        ResolvedAst.Expr.ApplyDef(Ast.DefSymUse(defn.sym, innerLoc), es, outerLoc)
-
-      // Case 2: There is a difference in the expected number of arguments
-      // and the actual number of arguments so we have to introduce
-      // lambdas or introduce currying.
-      // The inner-most expression is still an ApplyDef, however.
-      case es =>
+      es =>
         val base = args => ResolvedAst.Expr.ApplyDef(Ast.DefSymUse(defn.sym, innerLoc), args, outerLoc)
         visitApplyFull(base, defn.spec.fparams.length, es, outerLoc)
     }
@@ -2877,7 +2866,7 @@ object Resolver {
     /**
       * The result is a Java class.
       */
-    case class JavaClass(clazz: Class[_]) extends TypeLookupResult
+    case class JavaClass(clazz: Class[?]) extends TypeLookupResult
 
     /**
       * The result is an associated type constructor.
@@ -2959,7 +2948,7 @@ object Resolver {
   /**
     * Looks up the type variable with the given name.
     */
-  private def lookupTypeVar(ident: Name.Ident, wildness: Wildness, env: ListMap[String, Resolution])(implicit flix: Flix): Result[Symbol.UnkindedTypeVarSym, ResolutionError with Recoverable] = {
+  private def lookupTypeVar(ident: Name.Ident, wildness: Wildness, env: ListMap[String, Resolution])(implicit flix: Flix): Result[Symbol.UnkindedTypeVarSym, ResolutionError & Recoverable] = {
     if (ident.isWild) {
       wildness match {
         case Wildness.AllowWild =>
@@ -3440,7 +3429,7 @@ object Resolver {
   /**
     * Returns the class reflection object for the given `className`.
     */
-  private def lookupJvmClass(className: String, loc: SourceLocation)(implicit flix: Flix): Result[Class[_], ResolutionError with Recoverable] = try {
+  private def lookupJvmClass(className: String, loc: SourceLocation)(implicit flix: Flix): Result[Class[?], ResolutionError & Recoverable] = try {
     // Don't initialize the class; we don't want to execute static initializers.
     val initialize = false
     Result.Ok(Class.forName(className, initialize, flix.jarLoader))
@@ -3452,7 +3441,7 @@ object Resolver {
   /**
     * Returns the class reflection object for the given `className`.
     */
-  private def lookupJvmClass2(className: String, env0: ListMap[String, Resolution], loc: SourceLocation)(implicit flix: Flix): Result[Class[_], ResolutionError with Recoverable] = {
+  private def lookupJvmClass2(className: String, env0: ListMap[String, Resolution], loc: SourceLocation)(implicit flix: Flix): Result[Class[?], ResolutionError & Recoverable] = {
     lookupJvmClass(className, loc) match {
       case Result.Ok(clazz) => Result.Ok(clazz)
       case Result.Err(e) => env0.get(className) match {
@@ -3465,10 +3454,10 @@ object Resolver {
   /**
     * Returns the constructor reflection object for the given `clazz` and `signature`.
     */
-  private def lookupJvmConstructor(clazz: Class[_], signature: List[Class[_]], loc: SourceLocation)(implicit flix: Flix): Result[Constructor[_], ResolutionError with Recoverable] = {
+  private def lookupJvmConstructor(clazz: Class[?], signature: List[Class[?]], loc: SourceLocation)(implicit flix: Flix): Result[Constructor[?], ResolutionError & Recoverable] = {
     try {
       // Lookup the constructor with the appropriate signature.
-      Result.Ok(clazz.getConstructor(signature: _*))
+      Result.Ok(clazz.getConstructor(signature *))
     } catch {
       case ex: NoSuchMethodException => Result.Err(ResolutionError.UndefinedJvmConstructor(clazz, signature, clazz.getConstructors.toList, loc))
       // ClassNotFoundException:  Cannot happen because we already have the `Class` object.
@@ -3479,10 +3468,10 @@ object Resolver {
   /**
     * Returns the method reflection object for the given `clazz`, `methodName`, and `signature`.
     */
-  private def lookupJvmMethod(clazz: Class[_], methodName: String, signature: List[Class[_]], retTpe: UnkindedType, static: Boolean, loc: SourceLocation)(implicit flix: Flix): Result[Method, ResolutionError with Recoverable] = {
+  private def lookupJvmMethod(clazz: Class[?], methodName: String, signature: List[Class[?]], retTpe: UnkindedType, static: Boolean, loc: SourceLocation)(implicit flix: Flix): Result[Method, ResolutionError & Recoverable] = {
     try {
       // Lookup the method with the appropriate signature.
-      val method = clazz.getMethod(methodName, signature: _*)
+      val method = clazz.getMethod(methodName, signature *)
 
       // Check if the method should be and is static.
       if (static != Jvm.isStatic(method)) {
@@ -3523,7 +3512,7 @@ object Resolver {
   /**
     * Returns the class and field reflection objects for the given `className` and `fieldName`.
     */
-  private def lookupJvmField(className: String, fieldName: String, static: Boolean, loc: SourceLocation)(implicit flix: Flix): Result[(Class[_], Field), ResolutionError with Recoverable] = {
+  private def lookupJvmField(className: String, fieldName: String, static: Boolean, loc: SourceLocation)(implicit flix: Flix): Result[(Class[?], Field), ResolutionError & Recoverable] = {
     lookupJvmClass(className, loc).flatMap {
       case clazz =>
         try {
@@ -3548,7 +3537,7 @@ object Resolver {
   /**
     * Performs name resolution on the given `signature`.
     */
-  private def lookupSignature(signature: List[UnkindedType], loc: SourceLocation)(implicit flix: Flix): Validation[List[Class[_]], ResolutionError] = {
+  private def lookupSignature(signature: List[UnkindedType], loc: SourceLocation)(implicit flix: Flix): Validation[List[Class[?]], ResolutionError] = {
     Result.traverse(signature)(getJVMType(_, loc)).toValidation
   }
 
@@ -3559,7 +3548,7 @@ object Resolver {
     *
     * An array type is mapped to the corresponding array type.
     */
-  private def getJVMType(tpe: UnkindedType, loc: SourceLocation)(implicit flix: Flix): Result[Class[_], ResolutionError] = {
+  private def getJVMType(tpe: UnkindedType, loc: SourceLocation)(implicit flix: Flix): Result[Class[?], ResolutionError] = {
     val erased = UnkindedType.eraseAliases(tpe)
     val baseType = erased.baseType
     baseType match {
@@ -3733,7 +3722,7 @@ object Resolver {
   /**
     * Returns the class object for an array with elements of the given `elmClass` type.
     */
-  private def getJVMArrayType(elmClass: Class[_]): Class[_] = {
+  private def getJVMArrayType(elmClass: Class[?]): Class[?] = {
     // See: https://stackoverflow.com/questions/1679421/how-to-get-the-array-class-for-a-given-class-in-java
     java.lang.reflect.Array.newInstance(elmClass, 0).getClass
   }
@@ -3948,7 +3937,7 @@ object Resolver {
   /**
     * Converts the class into a Flix type.
     */
-  private def flixifyType(clazz: Class[_], loc: SourceLocation): UnkindedType = clazz.getName match {
+  private def flixifyType(clazz: Class[?], loc: SourceLocation): UnkindedType = clazz.getName match {
     case "java.math.BigDecimal" => UnkindedType.Cst(TypeConstructor.BigDecimal, loc)
     case "java.math.BigInteger" => UnkindedType.Cst(TypeConstructor.BigInt, loc)
     case "java.lang.String" => UnkindedType.Cst(TypeConstructor.Str, loc)
@@ -4024,7 +4013,7 @@ object Resolver {
   private object Resolution {
     case class Declaration(decl: NamedAst.Declaration) extends Resolution
 
-    case class JavaClass(clazz: Class[_]) extends Resolution
+    case class JavaClass(clazz: Class[?]) extends Resolution
 
     case class Var(sym: Symbol.VarSym) extends Resolution
 

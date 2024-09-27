@@ -17,8 +17,8 @@ package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.api.lsp.Index.traverse
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
-import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.ast.TypedAst.*
+import ca.uwaterloo.flix.language.ast.*
 
 object Indexer {
 

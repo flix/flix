@@ -202,7 +202,7 @@ object TypedAst {
 
     case class Ascribe(exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class InstanceOf(exp: Expr, clazz: java.lang.Class[_], loc: SourceLocation) extends Expr {
+    case class InstanceOf(exp: Expr, clazz: java.lang.Class[?], loc: SourceLocation) extends Expr {
       def eff: Type = exp.eff
 
       def tpe: Type = Type.Bool
@@ -224,7 +224,7 @@ object TypedAst {
 
     case class Do(op: Ast.OpSymUse, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class InvokeConstructor(constructor: Constructor[_], exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class InvokeConstructor(constructor: Constructor[?], exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class InvokeMethod(method: Method, exp: Expr, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
@@ -238,7 +238,7 @@ object TypedAst {
 
     case class PutStaticField(field: Field, exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class NewObject(name: String, clazz: java.lang.Class[_], tpe: Type, eff: Type, methods: List[JvmMethod], loc: SourceLocation) extends Expr
+    case class NewObject(name: String, clazz: java.lang.Class[?], tpe: Type, eff: Type, methods: List[JvmMethod], loc: SourceLocation) extends Expr
 
     case class NewChannel(exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
@@ -369,7 +369,7 @@ object TypedAst {
 
   case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], exp: Expr, retTpe: Type, eff: Type, loc: SourceLocation)
 
-  case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: Expr)
+  case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[?], exp: Expr)
 
   case class HandlerRule(op: Ast.OpSymUse, fparams: List[FormalParam], exp: Expr)
 

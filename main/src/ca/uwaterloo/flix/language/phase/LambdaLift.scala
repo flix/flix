@@ -20,11 +20,11 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.BoundBy
 import ca.uwaterloo.flix.language.ast.shared.{Constant, Scope}
 import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, LiftedAst, MonoType, Purity, SimplifiedAst, Symbol}
-import ca.uwaterloo.flix.language.dbg.AstPrinter._
+import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import java.util.concurrent.ConcurrentLinkedQueue
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 object LambdaLift {
 

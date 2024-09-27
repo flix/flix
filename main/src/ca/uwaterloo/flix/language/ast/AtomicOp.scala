@@ -66,7 +66,7 @@ object AtomicOp {
 
   case class StructPut(sym: Symbol.StructFieldSym) extends AtomicOp
 
-  case class InstanceOf(clazz: Class[_]) extends AtomicOp
+  case class InstanceOf(clazz: Class[?]) extends AtomicOp
 
   case object Cast extends AtomicOp
 
@@ -74,7 +74,7 @@ object AtomicOp {
 
   case object Box extends AtomicOp
 
-  case class InvokeConstructor(constructor: Constructor[_]) extends AtomicOp
+  case class InvokeConstructor(constructor: Constructor[?]) extends AtomicOp
 
   case class InvokeMethod(method: Method) extends AtomicOp
 

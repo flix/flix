@@ -76,7 +76,7 @@ object Tester {
 
       // Import formatter.
       val formatter = flix.getFormatter
-      import formatter._
+      import formatter.*
 
       // Initialize the terminal.
       implicit val terminal: Terminal = TerminalBuilder

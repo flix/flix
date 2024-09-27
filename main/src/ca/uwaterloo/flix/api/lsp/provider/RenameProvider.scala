@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.lsp.{Entity, Index, Position, Range, ResponseStatus
 import ca.uwaterloo.flix.language.ast.TypedAst.{Pattern, Root}
 import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, Type, TypeConstructor}
 import org.json4s.JsonAST.JObject
-import org.json4s.JsonDSL._
+import org.json4s.JsonDSL.*
 
 object RenameProvider {
 

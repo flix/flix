@@ -15,14 +15,14 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider
 
-import ca.uwaterloo.flix.api.lsp._
+import ca.uwaterloo.flix.api.lsp.*
 import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
-import ca.uwaterloo.flix.language.ast.TypedAst._
+import ca.uwaterloo.flix.language.ast.TypedAst.*
 import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.util.collection.IteratorOps
 import org.json4s.JsonAST.JObject
-import org.json4s.JsonDSL._
+import org.json4s.JsonDSL.*
 
 import scala.collection.immutable.SortedSet
 import scala.collection.mutable.ArrayBuffer
@@ -169,7 +169,7 @@ object SemanticTokensProvider {
       IteratorOps.all(
         Iterator(t),
         visitTypeParams(tparams),
-        Iterator(derives.traits: _*).map {
+        Iterator(derives.traits *).map {
           case Ast.Derivation(_, loc) => SemanticToken(SemanticTokenType.Class, Nil, loc)
         },
         cases.foldLeft(Iterator.empty[SemanticToken]) {
