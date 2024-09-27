@@ -716,4 +716,40 @@ object BytecodeInstructions {
     case Condition.NONNULL => Condition.NULL
     case Condition.NULL => Condition.NONNULL
   }
+
+  object Util {
+
+    /**
+      * Returns a instructions `[] --> [prefix + "s1, s2, .." + suffix]`
+      * given `getNthString(i)`, that should be `[] --> [si]`.
+      */
+    def mkString(prefix: Option[InstructionSet], suffix: Option[InstructionSet], length: Int, getNthString: Int => InstructionSet): InstructionSet = {
+      // [] --> [new String[length]] // Referred to as `elms`.
+      cheat(mv => GenExpression.compileInt(length)(mv)) ~ ANEWARRAY(BackendObjType.String.jvmName) ~
+      // [elms] --> [elms, -1] // Running index referred to as `i`.
+      ICONST_M1() ~
+      // [elms, -1] --> [elms, length]
+      composeN((0 until length).map{i =>
+        // [elms, i-1] -> [elms, i]
+        ICONST_1() ~ IADD() ~
+        // [elms, i] -> [elms, i, elms, i]
+        DUP2() ~
+        // [elms, i, elms, i] -> [elms, i, elms, i, nth(i)]
+        getNthString(i) ~
+        // [elms, i, elms, i, nth(i)] -> [elms, i]
+        AASTORE()
+      }) ~
+      // [elms, length] --> [elms]
+      POP() ~
+      // [elms] -> [", ", elms]
+      pushString(", ") ~ SWAP() ~
+      // [", ", elms] --> ["s1, s2, .."]
+      INVOKESTATIC(BackendObjType.String.JoinMethod) ~
+      // ["s1, s2, .."] --> [prefix + "s1, s2, .."]
+      prefix.map(ins => ins ~ SWAP() ~ INVOKEVIRTUAL(BackendObjType.String.Concat)).getOrElse(nop()) ~
+      // [prefix + "s1, s2, .."] --> [prefix + "s1, s2, .." + suffix]
+      suffix.map(ins => ins ~ INVOKEVIRTUAL(BackendObjType.String.Concat)).getOrElse(nop())
+    }
+
+  }
 }
