@@ -345,7 +345,7 @@ object BackendObjType {
     def Constructor: ConstructorMethod = nullarySuperConstructor(Tagged.Constructor)
 
     def ToStringMethod: InstanceMethod = JavaObject.ToStringMethod.implementation(this.jvmName, Some(_ => {
-      Util.mkString(Some(thisLoad() ~ GETFIELD(NameField)), Some(pushString(")")), 1, _ => getValueString()) ~
+      Util.mkString(Some(thisLoad() ~ GETFIELD(NameField) ~ pushString("(") ~ INVOKEVIRTUAL(String.Concat)), Some(pushString(")")), 1, _ => getValueString()) ~
       xReturn(String.toTpe)
     }))
 
