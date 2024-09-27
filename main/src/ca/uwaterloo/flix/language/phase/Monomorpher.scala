@@ -542,6 +542,15 @@ object Monomorpher {
       val env1 = env0 + (sym -> freshSym)
       MonoAst.Expr.LetRec(freshSym, mod, visitExp(exp1, env1, subst), visitExp(exp2, env1, subst), subst(tpe), subst(eff), loc)
 
+    case LoweredAst.Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, loc) =>
+      // Generate a fresh symbol for the let-bound variable.
+      val freshSym = Symbol.freshVarSym(sym)
+      val env1 = env0 + (sym -> freshSym)
+      val (fps, env2) = specializeFormalParams(fparams, subst)
+      val e1 = visitExp(exp1, env1 ++ env2, subst)
+      val e2 = visitExp(exp2, env1, subst)
+      MonoAst.Expr.LocalDef(freshSym, fps, e1, e2, subst(tpe), subst(eff), loc)
+
     case LoweredAst.Expr.Scope(sym, regionVar, exp, tpe, eff, loc) =>
       val freshSym = Symbol.freshVarSym(sym)
       val env1 = env0 + (sym -> freshSym)

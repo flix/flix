@@ -170,6 +170,9 @@ object LambdaLift {
         case _ => throw InternalCompilerException(s"Unexpected expression: '$e1'.", loc)
       }
 
+    case SimplifiedAst.Expr.LocalDef(sym, fparams, exp1, exp2, tpe, purity, loc) =>
+      throw InternalCompilerException("Unreachable LocalDef case in LambdaLift", loc)
+
     case SimplifiedAst.Expr.Scope(sym, exp, tpe, purity, loc) =>
       val e = visitExp(exp)
       LiftedAst.Expr.Scope(sym, e, tpe, purity, loc)

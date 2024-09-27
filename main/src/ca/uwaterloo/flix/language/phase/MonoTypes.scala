@@ -129,6 +129,14 @@ object MonoTypes {
       val p = visitType(eff)
       Expr.LetRec(sym, mod, e1, e2, t, p, loc)
 
+    case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, loc) =>
+      val fps = fparams.map(visitFormalParam)
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      val t = visitType(tpe)
+      val p = visitType(eff)
+      Expr.LocalDef(sym, fps, e1, e2, t, p, loc)
+
     case Expr.Scope(sym, regionVar, exp, tpe, eff, loc) =>
       // The region variable has been rendered redundant by Monomorph.
       // It has replaced the region with pure/impure and the variable could

@@ -124,6 +124,12 @@ object ClosureConv {
     case Expr.LetRec(sym, e1, e2, tpe, purity, loc) =>
       Expr.LetRec(sym, visitExp(e1), visitExp(e2), tpe, purity, loc)
 
+    case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, purity, loc) =>
+      val t = MonoType.Arrow(fparams.map(_.tpe), exp1.tpe)
+      val e1 = mkLambdaClosure(fparams, exp1, t, sym.loc)
+      val e2 = visitExp(exp2)
+      Expr.LetRec(sym, e1, e2, tpe, purity, loc)
+
     case Expr.Scope(sym, e, tpe, purity, loc) =>
       Expr.Scope(sym, visitExp(e), tpe, purity, loc)
 
@@ -246,6 +252,11 @@ object ClosureConv {
     case Expr.LetRec(sym, exp1, exp2, _, _, _) =>
       filterBoundVar(freeVars(exp1) ++ freeVars(exp2), sym)
 
+    case Expr.LocalDef(sym, fparams, exp1, exp2, _, _, _) =>
+      val bound = sym :: fparams.map(_.sym)
+      filterBoundVars(freeVars(exp1), bound) ++
+        filterBoundVar(freeVars(exp2), sym)
+
     case Expr.Scope(sym, exp, _, _, _) => filterBoundVar(freeVars(exp), sym)
 
     case Expr.TryCatch(exp, rules, _, _, _) => rules.foldLeft(freeVars(exp)) {
@@ -290,12 +301,18 @@ object ClosureConv {
     }
 
   /**
+    * Returns `fvs` without all the variable symbols in the symbols `bound`.
+    */
+  private def filterBoundVars(fvs: SortedSet[FreeVar], bound: List[Symbol.VarSym]): SortedSet[FreeVar] =
+    fvs.filter {
+      case FreeVar(sym, _) => !bound.contains(sym)
+    }
+
+  /**
     * Returns `fvs` without all the variable symbols in the formal parameters `bound`.
     */
   private def filterBoundParams(fvs: SortedSet[FreeVar], bound: List[FormalParam]): SortedSet[FreeVar] =
-    fvs.filter {
-      case FreeVar(sym, _) => !bound.exists(fparam => sym == fparam.sym)
-    }
+    filterBoundVars(fvs, bound.map(_.sym))
 
   /**
     * Applies the given substitution map `subst` to the given expression `e`.
@@ -371,6 +388,13 @@ object ClosureConv {
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
         Expr.LetRec(newSym, e1, e2, tpe, purity, loc)
+
+      case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, purity, loc) =>
+        val newSym = subst.getOrElse(sym, sym)
+        val fps = fparams.map(visitFormalParam)
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
+        Expr.LocalDef(newSym, fps, e1, e2, tpe, purity, loc)
 
       case Expr.Scope(sym, exp, tpe, purity, loc) =>
         val newSym = subst.getOrElse(sym, sym)
