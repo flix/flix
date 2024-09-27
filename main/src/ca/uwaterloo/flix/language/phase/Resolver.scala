@@ -815,6 +815,7 @@ object Resolver {
       mapN(lookupQName(qname, env0, ns0, root)) {
         case ResolvedQName.Def(defn) => visitDef(defn, loc)
         case ResolvedQName.Sig(sig) => visitSig(sig, loc)
+        case ResolvedQName.LocalDef(sym, fparams) => visitLocalDef(sym, fparams.length, loc)
         case ResolvedQName.Var(sym) => ResolvedAst.Expr.Var(sym, loc)
         case ResolvedQName.Tag(caze) => visitTag(caze, loc)
         case ResolvedQName.RestrictableTag(caze) => visitRestrictableTag(caze, isOpen = false, loc)
@@ -825,6 +826,7 @@ object Resolver {
       mapN(lookupQName(name, env0, ns0, root)) {
         case ResolvedQName.Def(defn) => visitDef(defn, loc)
         case ResolvedQName.Sig(sig) => visitSig(sig, loc)
+        case ResolvedQName.LocalDef(sym, fparams) => visitLocalDef(sym, fparams.length, loc)
         case ResolvedQName.Var(sym) => ResolvedAst.Expr.Var(sym, loc)
         case ResolvedQName.Tag(caze) => visitTag(caze, loc)
         case ResolvedQName.RestrictableTag(caze) => visitRestrictableTag(caze, isOpen = true, loc)
@@ -899,7 +901,7 @@ object Resolver {
       flatMapN(lookupQName(qname, env0, ns0, root)) {
         case ResolvedQName.Def(defn) => visitApplyDef(defn, exps, env0, innerLoc, outerLoc)
         case ResolvedQName.Sig(sig) => visitApplySig(sig, exps, env0, innerLoc, outerLoc)
-        case ResolvedQName.Var(sym) if BoundBy.LocalDef == sym.boundBy => visitApplyLocalDef(sym, exps, env0, innerLoc, outerLoc)
+        case ResolvedQName.LocalDef(sym, fparams) => visitApplyLocalDef(sym, fparams.length, exps, env0, innerLoc, outerLoc)
         case ResolvedQName.Var(_) => visitApply(app, env0)
         case ResolvedQName.Tag(caze) => visitApplyTag(caze, exps, env0, innerLoc, outerLoc)
         case ResolvedQName.RestrictableTag(caze) => visitApplyRestrictableTag(caze, exps, isOpen = false, env0, innerLoc, outerLoc)
@@ -911,6 +913,7 @@ object Resolver {
       flatMapN(lookupQName(qname, env0, ns0, root)) {
         case ResolvedQName.Def(defn) => visitApplyDef(defn, exps, env0, innerLoc, outerLoc)
         case ResolvedQName.Sig(sig) => visitApplySig(sig, exps, env0, innerLoc, outerLoc)
+        case ResolvedQName.LocalDef(sym, fparams) => visitApplyLocalDef(sym, fparams.length, exps, env0, innerLoc, outerLoc)
         case ResolvedQName.Var(_) => visitApply(app, env0)
         case ResolvedQName.Tag(caze) => visitApplyTag(caze, exps, env0, innerLoc, outerLoc)
         case ResolvedQName.RestrictableTag(caze) => visitApplyRestrictableTag(caze, exps, isOpen = true, env0, innerLoc, outerLoc)
@@ -984,14 +987,14 @@ object Resolver {
       val fparamsVal = traverse(fparams0)(resolveFormalParam(_, env0, taenv, ns0, root))
       flatMapN(fparamsVal) {
         fparams =>
-          val env1 = env0 ++ mkFormalParamEnv(fparams) // What about recursive functions?
+          val env1 = env0 ++ mkLocalDefEnv(sym, fparams) ++ mkFormalParamEnv(fparams)
           val exp1Val = resolveExp(exp1, env1)
           flatMapN(exp1Val) {
             e1 =>
-              val env2 = env0 ++ mkLocalDefEnv(sym, fparams, e1)
+              val env2 = env0 ++ mkLocalDefEnv(sym, fparams)
               val exp2Val = resolveExp(exp2, env2)
-              val tpeVal = traverseOpt(tpe0)(resolveType(_, Wildness.AllowWild, env1, taenv, ns0, root))
-              val effVal = traverseOpt(eff0)(resolveType(_, Wildness.AllowWild, env1, taenv, ns0, root))
+              val tpeVal = traverseOpt(tpe0)(resolveType(_, Wildness.AllowWild, env1, taenv, ns0, root)) // mk env without fparams
+              val effVal = traverseOpt(eff0)(resolveType(_, Wildness.AllowWild, env1, taenv, ns0, root)) // mk env without fparams
               mapN(exp2Val, tpeVal, effVal) {
                 case (e2, t, ef) => ResolvedAst.Expr.LocalDef(ann, sym, fparams, e1, e2, t, ef, loc)
               }
@@ -1809,12 +1812,30 @@ object Resolver {
     }
   }
 
-  private def visitApplyLocalDef(sym: Symbol.VarSym, exps: List[NamedAst.Expr], env: ListMap[String, Resolution], innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Expr, ResolutionError] = {
-    val Resolution.LocalDef(_, fparams, exp) :: _ = env(sym.text)
+  /**
+    * Returns a curried lambda and application of `sym`.
+    *
+    *   - `loop ===> x -> y -> loop(x, y)`
+    */
+  private def visitLocalDef(sym: Symbol.VarSym, arity: Int, loc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], root: NamedAst.Root, flix: Flix): ResolvedAst.Expr = {
+    val base = es => ResolvedAst.Expr.ApplyLocalDef(sym, es, loc.asSynthetic)
+    visitApplyFull(base, arity, Nil, loc.asSynthetic)
+  }
+
+  /**
+    * Resolve the application expression, applying `sym` to `exps`.
+    *
+    * Example with `def f(a: Char, b: Char): Char -> Char`
+    *   - `   f     ===> x -> y -> f(x, y)`
+    *   - `  f(a)   ===> x -> f(a, x)`
+    *   - ` f(a,b)  ===> f(a, b)`
+    *   - `f(a,b,c) ===> f(a, b)(c)`
+    */
+  private def visitApplyLocalDef(sym: Symbol.VarSym, arity: Int, exps: List[NamedAst.Expr], env: ListMap[String, Resolution], innerLoc: SourceLocation, outerLoc: SourceLocation)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Expr, ResolutionError] = {
     mapN(traverse(exps)(resolveExp(_, env))) {
       es =>
         val base = args => ResolvedAst.Expr.ApplyLocalDef(sym, args, outerLoc) // TODO: Add Ast.LocalDefSymUse?
-        visitApplyFull(base, fparams.length, es, outerLoc)
+        visitApplyFull(base, arity, es, outerLoc)
     }
   }
 
@@ -2265,6 +2286,7 @@ object Resolver {
       case decl@Resolution.Declaration(_: NamedAst.Declaration.Case) => decl
       case decl@Resolution.Declaration(_: NamedAst.Declaration.RestrictableCase) => decl
       case decl@Resolution.Var(_) => decl
+      case decl@Resolution.LocalDef(_, _) => decl
     } match {
       case Resolution.Declaration(defn: NamedAst.Declaration.Def) :: _ =>
         if (isDefAccessible(defn, ns0)) {
@@ -2288,6 +2310,7 @@ object Resolver {
       case Resolution.Declaration(caze: NamedAst.Declaration.RestrictableCase) :: Nil =>
         Validation.success(ResolvedQName.RestrictableTag(caze))
       // TODO NS-REFACTOR check accessibility
+      case Resolution.LocalDef(sym, fparams) :: _ => Validation.success(ResolvedQName.LocalDef(sym, fparams))
       case Resolution.Var(sym) :: _ => Validation.success(ResolvedQName.Var(sym))
       case _ =>
         val e = ResolutionError.UndefinedName(qname, ns0, filterToVarEnv(env), isUse = false, qname.loc)
@@ -3892,8 +3915,8 @@ object Resolver {
     }
   }
 
-  private def mkLocalDefEnv(sym: Symbol.VarSym, fparams: List[ResolvedAst.FormalParam], exp: Expr): ListMap[String, Resolution] = {
-    ListMap.singleton(sym.text, Resolution.LocalDef(sym, fparams, exp))
+  private def mkLocalDefEnv(sym: Symbol.VarSym, fparams: List[ResolvedAst.FormalParam]): ListMap[String, Resolution] = {
+    ListMap.singleton(sym.text, Resolution.LocalDef(sym, fparams))
   }
 
   /**
@@ -3982,6 +4005,8 @@ object Resolver {
 
     case class Def(defn: NamedAst.Declaration.Def) extends ResolvedQName
 
+    case class LocalDef(sym: Symbol.VarSym, fparams: List[ResolvedAst.FormalParam]) extends ResolvedQName
+
     case class Sig(sig: NamedAst.Declaration.Sig) extends ResolvedQName
 
     case class Tag(caze: NamedAst.Declaration.Case) extends ResolvedQName
@@ -4003,7 +4028,7 @@ object Resolver {
 
     case class Var(sym: Symbol.VarSym) extends Resolution
 
-    case class LocalDef(sym: Symbol.VarSym, fparams: List[ResolvedAst.FormalParam], exp: Expr) extends Resolution
+    case class LocalDef(sym: Symbol.VarSym, fparams: List[ResolvedAst.FormalParam]) extends Resolution
 
     case class TypeVar(sym: Symbol.UnkindedTypeVarSym) extends Resolution
   }
