@@ -169,11 +169,12 @@ object ConstraintGen {
         val resEff = evar
         (resTpe, resEff)
 
-      case Expr.ApplyLocalDef(sym, exps, _, tvar, evar, loc) =>
+      case Expr.ApplyLocalDef(sym, exps, itvar, tvar, evar, loc) =>
         val (tpes, effs) = exps.map(visitExp).unzip
         val defResTpe = Type.freshVar(Kind.Star, loc.asSynthetic)
         val defEff = Type.freshVar(Kind.Eff, loc.asSynthetic)
         val actualDefTpe = Type.mkCurriedArrowWithEffect(tpes, defEff, defResTpe, loc)
+        c.unifyType(actualDefTpe, itvar, loc)
         c.expectType(sym.tvar, actualDefTpe, loc)
         c.unifyType(tvar, defResTpe, loc)
         c.unifyType(evar, Type.mkUnion(defEff :: effs, loc), loc)
@@ -426,14 +427,12 @@ object ConstraintGen {
 
       case Expr.LocalDef(_, sym, fparams, exp1, exp2, tpe, eff, loc) =>
         val (tpe1, eff1) = visitExp(exp1)
-        val bodyTpe = Type.freshVar(Kind.Star, loc.asSynthetic)
-        val bodyEff = Type.freshVar(Kind.Eff, loc.asSynthetic)
-        val defTpe = Type.mkCurriedArrowWithEffect(fparams.map(_.tpe), bodyEff, bodyTpe, sym.loc)
+        fparams.foreach(fp => c.unifyType(fp.sym.tvar, fp.tpe, loc))
+        val defEff = if (flix.options.xsubeffecting < SubEffectLevel.Lambdas) eff1 else Type.mkUnion(eff1, Type.freshVar(Kind.Eff, loc), loc)
+        val defTpe = Type.mkCurriedArrowWithEffect(fparams.map(_.tpe), defEff, tpe1, sym.loc)
         c.unifyType(sym.tvar, defTpe, sym.loc)
-        c.unifyType(bodyTpe, tpe1, exp1.loc)
-        c.unifyType(bodyEff, eff1, exp1.loc)
-        c.unifyType(tpe, bodyTpe, sym.loc)
-        c.unifyType(eff, bodyEff, sym.loc)
+        c.unifyType(tpe, tpe1, sym.loc)
+        c.unifyType(eff, eff1, sym.loc)
         val (tpe2, eff2) = visitExp(exp2)
         val resTpe = tpe2
         val resEff = eff2
