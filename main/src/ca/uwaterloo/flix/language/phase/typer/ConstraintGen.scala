@@ -432,8 +432,8 @@ object ConstraintGen {
         c.unifyType(sym.tvar, defTpe, sym.loc)
         c.unifyType(bodyTpe, tpe1, exp1.loc)
         c.unifyType(bodyEff, eff1, exp1.loc)
-        c.expectType(tpe, bodyTpe, sym.loc)
-        c.expectType(eff, bodyEff, sym.loc)
+        c.unifyType(tpe, bodyTpe, sym.loc)
+        c.unifyType(eff, bodyEff, sym.loc)
         val (tpe2, eff2) = visitExp(exp2)
         val resTpe = tpe2
         val resEff = eff2
