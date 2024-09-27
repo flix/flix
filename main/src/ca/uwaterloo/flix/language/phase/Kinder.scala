@@ -474,8 +474,8 @@ object Kinder {
       val kenv2 = kenv0 ++ kenv1
       val exp1Val = visitExp(exp1, kenv2, taenv, henv0, root)
       val exp2Val = visitExp(exp2, kenv0, taenv, henv0, root)
-      val t = tpe.map(visitType(_, Kind.Star, kenv0, taenv, root))
-      val ef = tpe.map(visitType(_, Kind.Eff, kenv0, taenv, root))
+      val t = tpe.map(visitType(_, Kind.Star, kenv0, taenv, root)).getOrElse(Type.freshVar(Kind.Star, loc.asSynthetic))
+      val ef = tpe.map(visitType(_, Kind.Eff, kenv0, taenv, root)).getOrElse(Type.freshVar(Kind.Eff, loc.asSynthetic))
       mapN(exp1Val, exp2Val) {
         case (e1, e2) => KindedAst.Expr.LocalDef(ann, sym, fparams, e1, e2, t, ef, loc)
       }
