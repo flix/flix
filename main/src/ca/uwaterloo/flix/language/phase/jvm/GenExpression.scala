@@ -557,24 +557,24 @@ object GenExpression {
       case AtomicOp.Tag(sym) =>
         val List(exp) = exps
 
-        val tagType = BackendObjType.Tag(BackendType.toErasedBackendType(exp.tpe))
+        val tagType = BackendObjType.Tag(List(BackendType.toErasedBackendType(exp.tpe)))
 
         val ins = {
           import BytecodeInstructions.*
           NEW(tagType.jvmName) ~ DUP() ~ INVOKESPECIAL(tagType.Constructor) ~
             DUP() ~ BackendObjType.Tagged.mkTagName(sym) ~ PUTFIELD(tagType.NameField) ~
-            DUP() ~ cheat(mv => compileExpr(exp)(mv, ctx, root, flix)) ~ PUTFIELD(tagType.ValueField)
+            DUP() ~ cheat(mv => compileExpr(exp)(mv, ctx, root, flix)) ~ PUTFIELD(tagType.IndexField(0))
         }
         ins(new BytecodeInstructions.F(mv))
 
       case AtomicOp.Untag(_) =>
         val List(exp) = exps
-        val tagType = BackendObjType.Tag(BackendType.toErasedBackendType(tpe))
+        val tagType = BackendObjType.Tag(List(BackendType.toErasedBackendType(tpe)))
 
         compileExpr(exp)
         val ins = {
           import BytecodeInstructions.*
-          CHECKCAST(tagType.jvmName) ~ GETFIELD(tagType.ValueField)
+          CHECKCAST(tagType.jvmName) ~ GETFIELD(tagType.IndexField(0))
         }
         ins(new BytecodeInstructions.F(mv))
         AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
