@@ -279,7 +279,7 @@ object Simplifier {
 
           case TypeConstructor.Lazy => MonoType.Lazy(args.head)
 
-          case TypeConstructor.Enum(sym, _) => MonoType.Enum(sym)
+          case TypeConstructor.Enum(sym, _) => MonoType.Enum(sym, args)
 
           case TypeConstructor.Struct(sym, _) =>
             // We must do this here because the `MonoTypes` requires the individual types of each element
@@ -308,7 +308,7 @@ object Simplifier {
 
           case TypeConstructor.RestrictableEnum(sym, _) =>
             val enumSym = new Symbol.EnumSym(sym.namespace, sym.name, sym.loc)
-            MonoType.Enum(enumSym)
+            MonoType.Enum(enumSym, args)
 
           case TypeConstructor.Native(clazz) => MonoType.Native(clazz)
 
