@@ -368,11 +368,7 @@ object Redundancy {
       visitExps(exps, env0, rc)
 
     case Expr.ApplyLocalDef(sym, exps, _, _, _, _) =>
-      // Recursive calls do not count as uses.
-      // if (!rc.defn.contains(sym)) {
-      //  sctx.defSyms.put(sym, ())
-      // }
-      visitExps(exps, env0, rc)
+      Used.of(sym) ++ visitExps(exps, env0, rc)
 
     case Expr.Unary(_, exp, _, _, _) =>
       visitExp(exp, env0, rc)
@@ -430,23 +426,21 @@ object Redundancy {
       val used = innerUsed1 ++ innerUsed2
 
       // Check for shadowing.
-      val fparamVars = fparams.map(_.sym)
-      val shadowedFparamVars = fparamVars.map(s => shadowing(s.text, s.loc, env0))
-
-      // Check if the fparams are dead in exp1
-      val res1 = fparamVars.zip(shadowedFparamVars).foldLeft(Used.empty) {
-        case (acc, (s, shadow)) if deadVarSym(s, innerUsed1) => (acc ++ shadow) - s + UnusedVarSym(s)
-        case (acc, (s, shadow)) => (acc ++ shadow) - s
-      }
-
       // Check if the LocalDef variable symbol is dead in exp1 + exp2.
       val shadowedVar = shadowing(sym.text, sym.loc, env0)
-      val res2 = if (deadVarSym(sym, used))
+      val res1 = if (deadVarSym(sym, used))
         (used ++ shadowedVar) - sym + UnusedVarSym(sym)
       else
         (used ++ shadowedVar) - sym
 
-      res1 ++ res2
+      // Check if the fparams are dead in exp1
+      val fparamVars = fparams.map(_.sym)
+      val shadowedFparamVars = fparamVars.map(s => shadowing(s.text, s.loc, env0))
+
+      fparamVars.zip(shadowedFparamVars).foldLeft(res1) {
+        case (acc, (s, shadow)) if deadVarSym(s, innerUsed1) => (acc ++ shadow) - s + UnusedVarSym(s)
+        case (acc, (s, shadow)) => (acc ++ shadow) - s
+      }
 
     case Expr.Region(_, _) =>
       Used.empty
