@@ -529,7 +529,7 @@ object Monomorpher {
     case LoweredAst.Expr.ApplyLocalDef(sym, exps, itpe, tpe, eff, loc) =>
       val it = subst(itpe)
       val es = exps.map(visitExp(_, env0, subst))
-      MonoAst.Expr.ApplyLocalDef(sym, es, it, subst(tpe), subst(eff), loc)
+      MonoAst.Expr.ApplyLocalDef(env0(sym), es, it, subst(tpe), subst(eff), loc)
 
     case LoweredAst.Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp(_, env0, subst))
