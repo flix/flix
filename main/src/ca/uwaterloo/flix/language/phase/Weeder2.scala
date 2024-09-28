@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.*
 import ca.uwaterloo.flix.language.ast.SyntaxTree.{Tree, TreeKind}
 import ca.uwaterloo.flix.language.ast.shared.Annotation.Export
-import ca.uwaterloo.flix.language.ast.shared.{Annotation, CheckedCastType, Constant, Denotation, Fixity, Polarity}
+import ca.uwaterloo.flix.language.ast.shared.{Annotation, Annotations, CheckedCastType, Constant, Denotation, Fixity, Polarity}
 import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, Name, ReadAst, SemanticOp, SourceLocation, Symbol, SyntaxTree, Token, TokenKind, WeededAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.ParseError.*
@@ -628,7 +628,7 @@ object Weeder2 {
       }
     }
 
-    def pickAnnotations(tree: Tree): Validation[Ast.Annotations, CompilationMessage] = {
+    def pickAnnotations(tree: Tree): Validation[Annotations, CompilationMessage] = {
       val maybeAnnotations = tryPick(TreeKind.AnnotationList, tree)
       val annotations = maybeAnnotations.map(
           tree => {
@@ -644,7 +644,7 @@ object Weeder2 {
           })
         .getOrElse(Validation.success(List.empty))
 
-      mapN(annotations)(Ast.Annotations(_))
+      mapN(annotations)(Annotations(_))
     }
 
     private def visitAnnotation(token: Token): Validation[Annotation, CompilationMessage] = {
@@ -1263,7 +1263,7 @@ object Weeder2 {
     private def visitLetRecDefExpr(tree: Tree)(implicit flix: Flix): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.LetRecDef)
       val annVal = flatMapN(Decls.pickAnnotations(tree)) {
-        case Ast.Annotations(as) =>
+        case Annotations(as) =>
           // Check for [[IllegalAnnotation]]
           val errors = ArrayBuffer.empty[IllegalAnnotation]
           for (a <- as) {
@@ -1272,7 +1272,7 @@ object Weeder2 {
               case otherAnn => errors += IllegalAnnotation(otherAnn.loc)
             }
           }
-          Validation.toSuccessOrSoftFailure(Ast.Annotations(as), errors)
+          Validation.toSuccessOrSoftFailure(Annotations(as), errors)
       }
 
       val exprs = flatMapN(pickExpr(tree)) {
