@@ -357,7 +357,7 @@ object RestrictableChooseConstraintGen {
         val resTpe = tvar
         resTpe
 
-      case KindedAst.RestrictableChoosePattern.Error(_, loc) =>  Type.freshError(Kind.Star, loc)
+      case KindedAst.RestrictableChoosePattern.Error(_, loc) => Type.freshError(Kind.Star, loc)
     }
 
     visit(pat0)
