@@ -2485,7 +2485,7 @@ object Parser2 {
       assert(at(TokenKind.KeywordWith))
       val mark = open()
       expect(TokenKind.KeywordWith, SyntacticContext.Expr.OtherExpr)
-      name(NAME_EFFECT, allowQualified = true, context = SyntacticContext.Expr.OtherExpr)
+      name(NAME_EFFECT, allowQualified = true, context = SyntacticContext.WithHandler)
       if (at(TokenKind.CurlyL)) {
         zeroOrMore(
           namedTokenSet = NamedTokenSet.WithRule,

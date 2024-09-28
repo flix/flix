@@ -17,9 +17,9 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.{CompletionItem, CompletionItemKind, InsertTextFormat, Range, TextEdit}
+import ca.uwaterloo.flix.language.ast.Symbol.{EnumSym, ModuleSym, StructSym, TypeAliasSym}
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.fmt.{FormatScheme, FormatType}
-import ca.uwaterloo.flix.language.ast.Symbol.{EnumSym, StructSym, ModuleSym, TypeAliasSym}
 
 import java.lang.reflect.{Field, Method}
 
@@ -132,9 +132,19 @@ sealed trait Completion {
         label            = name,
         sortText         = Priority.toSortText(priority, name),
         textEdit         = textEdit,
-        documentation    = documentation,
+        documentation = documentation,
         insertTextFormat = insertTextFormat,
-        kind             = CompletionItemKind.Class
+        kind = CompletionItemKind.Class
+      )
+
+    case Completion.WithHandlerCompletion(name, textEdit) =>
+      CompletionItem(
+        label = name,
+        sortText = Priority.toSortText(Priority.Highest, name),
+        textEdit = textEdit,
+        documentation    = None,
+        insertTextFormat = InsertTextFormat.PlainText,
+        kind             = CompletionItemKind.Snippet
       )
 
     case Completion.ImportCompletion(name) =>
@@ -395,7 +405,7 @@ object Completion {
     * The reason we differentiate bewteen normal keywords and these literals
     * is because completions for the former should include a trailing space
     * whereas completions for the latter we might not want one.
-    * 
+    *
     * To illustrate this consider the two following correct completions (where ˽ denotes a space)
     *
     * `de`      --->    `def˽`
@@ -494,6 +504,14 @@ object Completion {
     */
   case class WithCompletion(name: String, priority: Priority, textEdit: TextEdit, documentation: Option[String],
                             insertTextFormat: InsertTextFormat) extends Completion
+
+  /**
+    * Represents a WithHandler completion
+    *
+    * @param name             the name of the completion.
+    * @param textEdit         the edit which is applied to a document when selecting this completion.
+    */
+  case class WithHandlerCompletion(name: String, textEdit: TextEdit) extends Completion
 
   /**
     * Represents a package, class, or interface completion.
