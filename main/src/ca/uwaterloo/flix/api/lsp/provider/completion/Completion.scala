@@ -160,7 +160,7 @@ sealed trait Completion {
     case Completion.VarCompletion(sym, tpe) =>
       CompletionItem(
         label    = sym.text,
-        sortText = Priority.toSortText(Priority.Low, sym.text),
+        sortText = Priority.toSortText(Priority.Higher, sym.text),
         textEdit = TextEdit(context.range, sym.text),
         detail   = Some(FormatType.formatType(tpe)(flix)),
         kind     = CompletionItemKind.Variable
