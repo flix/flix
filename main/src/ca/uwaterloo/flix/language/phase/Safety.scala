@@ -430,7 +430,7 @@ object Safety {
         val res = visit(exp) ++
           rules.flatMap { case HandlerRule(_, _, e) => visit(e) }
 
-        if (isBaseEffect(effUse.sym)) {
+        if (Symbol.isBaseEffect(effUse.sym)) {
           BaseEffectInTryWith(effUse.loc, effUse.sym) :: res
         } else {
           res
@@ -579,19 +579,6 @@ object Safety {
 
     visit(e0)
 
-  }
-
-  private def isBaseEffect(effSym: Symbol.EffectSym): Boolean = {
-    effSym match {
-      case Symbol.IO => true
-      case Symbol.Exec => true
-      case Symbol.FileRead => true
-      case Symbol.FileWrite => true
-      case Symbol.Net => true
-      case Symbol.NonDet => true
-      case Symbol.Sys => true
-      case _ => false
-    }
   }
 
   /**
