@@ -85,7 +85,7 @@ object MonoType {
 
   case class RecordExtend(label: String, value: MonoType, rest: MonoType) extends MonoType
 
-  case class Native(clazz: Class[_]) extends MonoType
+  case class Native(clazz: Class[?]) extends MonoType
 
   val Object: MonoType = Native(classOf[java.lang.Object])
 

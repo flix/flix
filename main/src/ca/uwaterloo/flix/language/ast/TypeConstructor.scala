@@ -246,14 +246,14 @@ object TypeConstructor {
   /**
     * A type constructor that represent the type of JVM classes.
     */
-  case class Native(clazz: Class[_]) extends TypeConstructor {
+  case class Native(clazz: Class[?]) extends TypeConstructor {
     def kind: Kind = Kind.Star
   }
 
   /**
    * A type constructor that represents the type of a Java constructor.
    * */
-  case class JvmConstructor(constructor: Constructor[_]) extends TypeConstructor {
+  case class JvmConstructor(constructor: Constructor[?]) extends TypeConstructor {
     def kind: Kind = Kind.Jvm
   }
 

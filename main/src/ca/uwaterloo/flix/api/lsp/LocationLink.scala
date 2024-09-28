@@ -17,8 +17,8 @@ package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, TypedAst}
-import org.json4s.JsonDSL._
-import org.json4s._
+import org.json4s.JsonDSL.*
+import org.json4s.*
 
 /**
   * Companion object of [[LocationLink]]

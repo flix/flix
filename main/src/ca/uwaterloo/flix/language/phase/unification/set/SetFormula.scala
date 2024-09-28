@@ -16,8 +16,13 @@
 
 package ca.uwaterloo.flix.language.phase.unification.set
 
+import ca.uwaterloo.flix.language.ast.SourceLocation
+import ca.uwaterloo.flix.util.{CofiniteIntSet, InternalCompilerException}
+
 import scala.annotation.nowarn
 import scala.collection.immutable.SortedSet
+import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 
 /**
   * A common super-type for set formulas `f`, like `x1 ∩ x2 ∪ (e4 ∪ !c17)`.
@@ -31,8 +36,8 @@ import scala.collection.immutable.SortedSet
   * A set without unknowns can be evaluated to get a finite or a co-finite set of elements. The
   * universe of elements is infinite so no finite set is equivalent to universe.
   *
-  * Invariant: [[SetFormula.ElemSet]], [[SetFormula.Cst]], and [[SetFormula.Var]] must use
-  * disjoint integers (see [[unknowns]]).
+  * Invariant: [[SetFormula.ElemSet]], [[SetFormula.Cst]], and [[SetFormula.Var]] must use disjoint
+  * integers (see [[SetFormula.unknowns]]).
   */
 sealed trait SetFormula {
 
@@ -337,5 +342,314 @@ object SetFormula {
       varsNeg.iterator.map(Compl(_)) ++
       other.iterator
   }
+
+  //
+  // Smart Constructors
+  //
+
+  /** Returns a singleton [[ElemSet]]. */
+  def mkElemSet(e: Int): ElemSet = {
+    // Maintains that ElemSet is non-empty.
+    ElemSet(SortedSet(e))
+  }
+
+  /**
+    * Returns [[ElemSet]] if `s` is non-empty.
+    *
+    * Returns [[Empty]] if `s` is empty.
+    */
+  def mkElemSet(s: SortedSet[Int]): SetFormula = {
+    // Maintains that ElemSet is non-empty.
+    if (s.isEmpty) Empty else ElemSet(s)
+  }
+
+  /**
+    * Returns the complement of `f` (`!f`).
+    *
+    * Complements are pushed to the bottom of the formula.
+    *
+    * Example
+    *   - `mkCompl(x1 ∩ (!x2 ∪ x3)) = !x1 ∪ (x2 ∩ !x3)`
+    */
+  def mkCompl(f: SetFormula): SetFormula = f match {
+    case Univ => Empty
+    case Empty => Univ
+    case cst@Cst(_) => Compl(cst)
+    case v@Var(_) => Compl(v)
+    case e@ElemSet(_) => Compl(e)
+    case Compl(f1) => f1
+    case Inter(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other) =>
+      // Swapping the elements maintain all invariants, so building directly is safe.
+      // This avoids putting Compl on the list of negated elems, csts, and vars.
+      val simpleCompl = Union(elemNeg, cstsNeg, varsNeg, elemPos, cstsPos, varsPos, List())
+      mkUnionAll(simpleCompl :: other.map(mkCompl))
+    case Union(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other) =>
+      // Swapping the elements maintain all invariants, so building directly is safe.
+      // This avoids putting Compl on the list of negated elems, csts, and vars.
+      val simpleCompl = Inter(elemNeg, cstsNeg, varsNeg, elemPos, cstsPos, varsPos, List())
+      mkInterAll(simpleCompl :: other.map(mkCompl))
+  }
+
+  /**
+    * Returns the intersection of `f1` and `f2` (`f1 ∩ f2`).
+    *
+    * Nested intersections are put into a single intersection.
+    *
+    * Example
+    *   - `mkInter((x ∩ y), (z ∩ q)) = x ∩ y ∩ z ∩ q`
+    */
+  def mkInter(f1: SetFormula, f2: SetFormula): SetFormula = (f1, f2) match {
+    case (Empty, _) => Empty
+    case (_, Empty) => Empty
+    case (Univ, _) => f2
+    case (_, Univ) => f1
+    case _ => mkInterAll(List(f1, f2))
+  }
+
+  /**
+    * Returns the intersection of `fs` (`fs1 ∩ fs2 ∩ ..`).
+    *
+    * Nested intersections are put into a single intersection.
+    */
+  def mkInterAll(fs: List[SetFormula]): SetFormula = {
+    // We need to do two things:
+    // - Separate subformulas into specific buckets of pos/neg elements/variables/constants and other.
+    // - Flatten nested intersections.
+
+    // es1 ∩ !es2 ∩ es3 ∩ !es4 ∩ ..
+    // univ ∩ es1 ∩ !es2 ∩ es3 ∩ !es4 ∩ ..       (neutral intersection formula)
+    // = (univ ∩ es1 ∩ es3 ∩ !es2 ∩ !es4) ∩ ..   (intersection associativity)
+    // = (univ ∩ es1 ∩ es3 - es2 - es4) ∩ ..
+    // So we keep one CofiniteIntSet that represents both element sets -
+    // intersecting positive elems and differencing negative elements.
+
+    var elemPos0 = CofiniteIntSet.universe
+    val cstsPos = mutable.Set.empty[Cst]
+    val varsPos = mutable.Set.empty[Var]
+    val cstsNeg = mutable.Set.empty[Cst]
+    val varsNeg = mutable.Set.empty[Var]
+    val other = ListBuffer.empty[SetFormula]
+
+    var workList = fs
+    while (workList.nonEmpty) {
+      val t :: next = workList
+      workList = next
+      t match {
+        case Univ =>
+          ()
+        case Empty =>
+          return Empty
+        case c@Cst(_) =>
+          if (cstsNeg.contains(c)) return Empty
+          cstsPos += c
+        case Compl(c@Cst(_)) =>
+          if (cstsPos.contains(c)) return Empty
+          cstsNeg += c
+        case ElemSet(s) =>
+          elemPos0 = CofiniteIntSet.intersection(elemPos0, s)
+          if (elemPos0.isEmpty) return Empty
+        case Compl(ElemSet(s)) =>
+          elemPos0 = CofiniteIntSet.difference(elemPos0, s)
+          if (elemPos0.isEmpty) return Empty
+        case x@Var(_) =>
+          if (varsNeg.contains(x)) return Empty
+          varsPos += x
+        case Compl(x@Var(_)) =>
+          if (varsPos.contains(x)) return Empty
+          varsNeg += x
+        case Inter(elemPos1, cstsPos1, varsPos1, elemNeg1, cstsNeg1, varsNeg1, other1) =>
+          // To avoid wrapping negated subformulas, we process them inline
+          for (e <- elemNeg1) {
+            elemPos0 = CofiniteIntSet.difference(elemPos0, e.s)
+            if (elemPos0.isEmpty) return Empty
+          }
+          for (x <- cstsNeg1) {
+            if (cstsPos.contains(x)) return Empty
+            cstsNeg += x
+          }
+          for (x <- varsNeg1) {
+            if (varsPos.contains(x)) return Empty
+            varsNeg += x
+          }
+          // Add the positive subformulas to the work list
+          workList = elemPos1.toList ++ cstsPos1 ++ varsPos1 ++ other1 ++ workList
+        case union@Union(_, _, _, _, _, _, _) =>
+          other += union
+        case compl@Compl(_) =>
+          other += compl
+      }
+    }
+    // Split into pos/neg elements.
+    val (elemPos, elemNeg) = elemPos0 match {
+      case CofiniteIntSet.Set(s) =>
+        if (s.isEmpty) {
+          // empty ∩ ..
+          // = empty       (idempotent intersection formula)
+          // Could return Empty, but unreachable since we check for empty at each operation.
+          throw InternalCompilerException(s"Impossible empty ElemSet $s", SourceLocation.Unknown)
+        } else {
+          // s.nonEmpty
+          // s ∩ ..
+          (Some(ElemSet(s)), None)
+        }
+      case CofiniteIntSet.Compl(s) =>
+        if (s.isEmpty) {
+          // !empty ∩ ..
+          // = univ ∩ ..   (complement distribution)
+          // = ..          (neutral intersection formula)
+          (None, None)
+        } else {
+          // s.nonEmpty
+          // !s ∩ ..
+          (None, Some(ElemSet(s)))
+        }
+    }
+
+    // Avoid intersections with zero or one subformula.
+    subformulasOf(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other).take(2).toList match {
+      case Nil => return Univ
+      case one :: Nil => return one
+      case _ => ()
+    }
+    Inter(elemPos, cstsPos.toSet, varsPos.toSet, elemNeg, cstsNeg.toSet, varsNeg.toSet, other.toList)
+  }
+
+  /**
+    * Returns the union of `f1` and `f2` (`f1 ∪ f2`).
+    *
+    * Nested unions are put into a single union.
+    *
+    * Example
+    *   - `mkUnion((x ∪ y), (z ∪ q)) = x ∪ y ∪ z ∪ q`
+    */
+  def mkUnion(f1: SetFormula, f2: SetFormula): SetFormula = (f1, f2) match {
+    case (Univ, _) => Univ
+    case (_, Univ) => Univ
+    case (Empty, _) => f2
+    case (_, Empty) => f1
+    case _ => mkUnionAll(List(f1, f2))
+  }
+
+  /**
+    * Returns the union of `ts` (`ts1 ∪ ts2 ∪ ..`).
+    *
+    * Nested unions are put into a single union.
+    */
+  def mkUnionAll(ts: List[SetFormula]): SetFormula = {
+    // We need to do two things:
+    // - Separate subformulas into specific buckets of pos/neg elements/variables/constants and other.
+    // - Flatten nested unions.
+
+    // es1 ∪ !es2 ∪ es3 ∪ !es4 ∪ ..
+    // empty ∪ es1 ∪ !es2 ∪ es3 ∪ !es4 ∪ ..       (neutral union formula)
+    // = (empty ∪ es1 ∪ es3 ∪ !es2 ∪ !es4) ∪ ..   (intersection associativity)
+    // = !!(empty ∪ es1 ∪ es3 ∪ !es2 ∪ !es4) ∪ .. (double complement)
+    // = !(univ ∩ !es1 ∩ !es3 ∩ es2 ∩ es4) ∪ .. (double complement)
+    // So we keep one CofiniteIntSet that represents both element sets -
+    // differencing positive elems and intersecting negative elements.
+
+    val cstsPos = mutable.Set.empty[Cst]
+    val varsPos = mutable.Set.empty[Var]
+    var elemNeg0 = CofiniteIntSet.universe
+    val cstsNeg = mutable.Set.empty[Cst]
+    val varsNeg = mutable.Set.empty[Var]
+    val other = ListBuffer.empty[SetFormula]
+
+    // Variables and constants are checked for overlap immediately.
+    // Elements are checked at the end.
+
+    var workList = ts
+    while (workList.nonEmpty) {
+      val t :: next = workList
+      workList = next
+      t match {
+        case Empty =>
+          ()
+        case Univ =>
+          return Univ
+        case x@Cst(_) =>
+          if (cstsNeg.contains(x)) return Univ
+          cstsPos += x
+        case Compl(x@Cst(_)) =>
+          if (cstsPos.contains(x)) return Univ
+          cstsNeg += x
+        case ElemSet(s) =>
+          elemNeg0 = CofiniteIntSet.difference(elemNeg0, s)
+          if (elemNeg0.isEmpty) return Univ
+        case Compl(ElemSet(s)) =>
+          elemNeg0 = CofiniteIntSet.intersection(elemNeg0, s)
+          if (elemNeg0.isEmpty) return Univ
+        case x@Var(_) =>
+          if (varsNeg.contains(x)) return Univ
+          varsPos += x
+        case Compl(x@Var(_)) =>
+          if (varsPos.contains(x)) return Univ
+          varsNeg += x
+        case Union(elemPos1, cstsPos1, varsPos1, elemNeg1, cstsNeg1, varsNeg1, other1) =>
+          // To avoid wrapping negated subformulas, we process them inline
+          for (e <- elemNeg1) {
+            elemNeg0 = CofiniteIntSet.intersection(elemNeg0, e.s)
+            if (elemNeg0.isEmpty) return Univ
+          }
+          for (x <- cstsNeg1) {
+            if (cstsPos.contains(x)) return Univ
+            cstsNeg += x
+          }
+          for (x <- varsNeg1) {
+            if (varsPos.contains(x)) return Univ
+            varsNeg += x
+          }
+          // Add the positive subformulas to the work list
+          workList = elemPos1.toList ++ cstsPos1 ++ varsPos1 ++ other1 ++ workList
+        case inter@Inter(_, _, _, _, _, _, _) =>
+          other += inter
+        case compl@Compl(_) =>
+          other += compl
+      }
+    }
+    // Split into pos/neg elements.
+    val (elemPos, elemNeg) = elemNeg0 match {
+      case CofiniteIntSet.Set(s) =>
+        if (s.isEmpty) {
+          // !empty ∪ ..
+          // = univ ∪ ..   (complement distribution)
+          // = univ        (idempotent union formula)
+          // Could return Univ, but unreachable since we check for empty at each operation.
+          throw InternalCompilerException(s"Impossible empty ElemSet $s", SourceLocation.Unknown)
+        } else {
+          // s.nonEmpty
+          // !s ∪ ..
+          (None, Some(ElemSet(s)))
+        }
+      case CofiniteIntSet.Compl(s) =>
+        if (s.isEmpty) {
+          // !!empty ∪ ..
+          // = empty ∪ ..  (double complement)
+          // = ..          (neutral union formula)
+          (None, None)
+        } else {
+          // s.nonEmpty
+          // !!s ∪ ..
+          // = s ∪ ..      (double complement)
+          (Some(ElemSet(s)), None)
+        }
+    }
+
+    // Avoid unions with zero or one subformula.
+    subformulasOf(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, other).take(2).toList match {
+      case Nil => return Empty
+      case one :: Nil => return one
+      case _ => ()
+    }
+    Union(elemPos, cstsPos.toSet, varsPos.toSet, elemNeg, cstsNeg.toSet, varsNeg.toSet, other.toList)
+  }
+
+  /** Returns the Xor of `f1` and `f2` with the formula `(f1 - f2) ∪ (f2 - f1)`. */
+  def mkXor(f1: SetFormula, f2: SetFormula): SetFormula =
+    mkUnion(mkDifference(f1, f2), mkDifference(f2, f1))
+
+  /** Returns the difference of `f1` and `f2` (`-`) with the formula `f1 ∩ !f2`. */
+  def mkDifference(f1: SetFormula, f2: SetFormula): SetFormula =
+    mkInter(f1, mkCompl(f2))
 
 }

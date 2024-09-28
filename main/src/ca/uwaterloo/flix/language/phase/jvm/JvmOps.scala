@@ -83,7 +83,7 @@ object JvmOps {
     * Every primitive type is mapped to itself and every other type is mapped to Object.
     */
   def getErasedJvmType(tpe: MonoType): JvmType = {
-    import MonoType._
+    import MonoType.*
     tpe match {
       case Bool => JvmType.PrimBool
       case Char => JvmType.PrimChar
@@ -106,7 +106,7 @@ object JvmOps {
     * Every primitive type is mapped to itself and every other type is mapped to Object.
     */
   def asErasedJvmType(tpe: MonoType): JvmType = {
-    import MonoType._
+    import MonoType.*
     tpe match {
       case Bool => JvmType.PrimBool
       case Char => JvmType.PrimChar
