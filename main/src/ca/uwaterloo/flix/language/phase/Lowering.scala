@@ -956,7 +956,7 @@ object Lowering {
           val termPatterns = pat0.map {
             case TypedAst.RestrictableChoosePattern.Var(sym, tpe, loc) => LoweredAst.Pattern.Var(sym, tpe, loc)
             case TypedAst.RestrictableChoosePattern.Wild(tpe, loc) => LoweredAst.Pattern.Wild(tpe, loc)
-            case TypedAst.RestrictableChoosePattern.Error(_, loc) => throw InternalCompilerException("unexpected restrictable choose variable near", loc)
+            case TypedAst.RestrictableChoosePattern.Error(_, loc) => throw InternalCompilerException("unexpected restrictable choose variable", loc)
           }
           val pat1 = termPatterns match {
             case Nil => LoweredAst.Pattern.Cst(Constant.Unit, Type.mkUnit(loc), loc)
@@ -966,7 +966,7 @@ object Lowering {
           val tagSym = visitRestrictableCaseSymUse(sym)
           val p = LoweredAst.Pattern.Tag(tagSym, pat1, tpe, loc)
           LoweredAst.MatchRule(p, None, e)
-        case TypedAst.RestrictableChoosePattern.Error(_, loc) => throw InternalCompilerException("unexpected error restrictable choose pattern near", loc)
+        case TypedAst.RestrictableChoosePattern.Error(_, loc) => throw InternalCompilerException("unexpected error restrictable choose pattern", loc)
       }
   }
 
