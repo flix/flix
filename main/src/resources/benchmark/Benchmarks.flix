@@ -26,14 +26,14 @@ def benchmarks(): Map[String, Unit -> Unit \ IO] = Map#{
     "List.map"       => () -> List.range(0, 10_000) |> List.map(x -> x + 1) |> blackhole,
     "List.length"    => () -> List.range(0, 10_000) |> List.length |> blackhole,
     "List.reverse"   => () -> List.range(0, 10_000) |> List.reverse |> blackhole,
-    "InlinerMap100k" => () -> {
-        let l1 = Benchmark.Inliner.range(0, 100_000);
+    "InlinerMap10k" => () -> {
+        let l1 = Benchmark.Inliner.range(0, 10_000);
         let l2 = Benchmark.Inliner.map(x -> x + 1, l1);
         let l3 = Benchmark.Inliner.length(l2);
         blackhole(l3)
     },
-    "InlinerMap100kOptimized" => () -> {
-        let top = 99999; // 100_000 - 1
+    "InlinerMap10kOptimized" => () -> {
+        let top = 10_000 - 1;
         let l1 = Benchmark.Inliner.Optimized.rng(top, Nil);
         let l2 = Benchmark.Inliner.Optimized.mp(l1, Nil);
         let l3 = Benchmark.Inliner.Optimized.rv(l2, Nil);

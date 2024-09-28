@@ -16,11 +16,11 @@
 
 package ca.uwaterloo.flix.language.dbg.printer
 
-import ca.uwaterloo.flix.language.ast.SemanticOp._
-import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.ast.SemanticOp.*
+import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.dbg.DocAst
 import ca.uwaterloo.flix.language.dbg.DocAst.Expr
-import ca.uwaterloo.flix.language.dbg.DocAst.Expr._
+import ca.uwaterloo.flix.language.dbg.DocAst.Expr.*
 
 object OpPrinter {
 

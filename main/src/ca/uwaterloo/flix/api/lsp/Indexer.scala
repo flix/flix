@@ -17,8 +17,8 @@ package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.api.lsp.Index.traverse
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
-import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.ast.TypedAst.*
+import ca.uwaterloo.flix.language.ast.*
 
 object Indexer {
 
@@ -82,7 +82,7 @@ object Indexer {
     * Returns a reverse index for the given enum `enum0`.
     */
   private def visitEnum(enum0: Enum): Index = enum0 match {
-    case Enum(_, _, _, _, tparams, derives, cases, _, _) =>
+    case Enum(_, _, _, _, tparams, derives, cases, _) =>
       Index.all(
         Index.occurrenceOf(enum0),
         traverse(tparams)(visitTypeParam),

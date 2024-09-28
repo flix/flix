@@ -18,7 +18,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ReducedAst._
+import ca.uwaterloo.flix.language.ast.ReducedAst.*
 import ca.uwaterloo.flix.language.ast.{MonoType, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugNoOp
 import ca.uwaterloo.flix.runtime.CompilationResult
@@ -83,7 +83,7 @@ object JvmBackend {
       val closureAbstractClasses = GenClosureAbstractClasses.gen(types)
 
       val taggedAbstractClass = Map(genClass(BackendObjType.Tagged))
-      val tagClasses = BackendType.erasedTypes.map(tpe => genClass(BackendObjType.Tag(tpe))).toMap
+      val tagClasses = BackendType.erasedTypes.map(tpe => genClass(BackendObjType.Tag(List(tpe)))).toMap
 
       val tupleClasses = erasedTuplesTypes.map(genClass).toMap
       val structClasses = erasedStructTypes.map(genClass).toMap
@@ -237,7 +237,7 @@ object JvmBackend {
       // Perform the method call using reflection.
       try {
         // Call the method passing the arguments.
-        val result = defn.method.invoke(null, argsArray: _*)
+        val result = defn.method.invoke(null, argsArray *)
         result
       } catch {
         case e: InvocationTargetException =>

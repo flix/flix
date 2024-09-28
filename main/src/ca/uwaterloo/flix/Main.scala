@@ -20,9 +20,9 @@ import ca.uwaterloo.flix.api.lsp.LanguageServer
 import ca.uwaterloo.flix.api.{Bootstrap, Flix, Version}
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.runtime.shell.Shell
-import ca.uwaterloo.flix.tools._
+import ca.uwaterloo.flix.tools.*
 import ca.uwaterloo.flix.util.Validation.flatMapN
-import ca.uwaterloo.flix.util._
+import ca.uwaterloo.flix.util.*
 
 import java.io.{File, PrintStream}
 import java.net.BindException
