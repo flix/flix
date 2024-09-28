@@ -52,6 +52,7 @@ sealed trait TokenKind {
       case TokenKind.CurlyR => "'}'"
       case TokenKind.Dollar => "'$'"
       case TokenKind.Dot => "'.'"
+      case TokenKind.DotDotDot => "'...'"
       case TokenKind.DotWhiteSpace => "'. '"
       case TokenKind.DotCurlyL => "'.{'"
       case TokenKind.Equal => "'='"
@@ -422,6 +423,7 @@ sealed trait TokenKind {
          | TokenKind.ListHash
          | TokenKind.SetHash
          | TokenKind.MapHash
+         | TokenKind.DotDotDot
          | TokenKind.KeywordCheckedCast
          | TokenKind.KeywordCheckedECast
          | TokenKind.KeywordUncheckedCast
@@ -650,6 +652,8 @@ object TokenKind {
   case object Dollar extends TokenKind
 
   case object Dot extends TokenKind
+
+  case object DotDotDot extends TokenKind
 
   case object DotWhiteSpace extends TokenKind
 

@@ -38,7 +38,7 @@ object NameError {
     def summary: String = s"Deprecated feature."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Deprecated feature. Use --Xdeprecated to enable.
          |
          |${code(loc, "deprecated")}
@@ -59,7 +59,7 @@ object NameError {
     def summary: String = s"Duplicate definition of '$name'."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Duplicate definition of '${red(name)}'.
          |
          |${code(loc1, "the first definition was here.")}
@@ -93,7 +93,7 @@ object NameError {
     def summary: String = s"Duplicate definition of '$name'."
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Duplicate definition of '${red(name)}'.
          |
          |${code(loc1, "the first definition was here.")}
@@ -116,7 +116,7 @@ object NameError {
     def summary: String = s"Suspicious type variable '$name'. Did you mean: '${name.capitalize}'?"
 
     def message(formatter: Formatter): String = {
-      import formatter._
+      import formatter.*
       s""">> Suspicious type variable '${red(name)}'. Did you mean: '${cyan(name.capitalize)}'?
          |
          |${code(loc, "suspicious type variable.")}

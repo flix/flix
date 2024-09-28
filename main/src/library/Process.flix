@@ -25,3 +25,29 @@ eff Process {
     pub def exec(cmd: String, args: List[String]): Unit
 
 }
+
+mod Process {
+
+    import java.lang.ProcessBuilder
+    import java.lang.Runtime
+
+    ///
+    /// Runs the `Process` effect of the given function `f`.
+    ///
+    /// In other words, re-interprets the `Process` effect using the `Exec` effect.
+    ///
+    pub def run(f: Unit -> a \ ef): a \ (ef - Process) + Exec = {
+        // Currently try-with typing is broken, so fix it with checked_ecast
+        checked_ecast(try {
+            f()
+        } with Process {
+            def exec(cmd, args, k) = region rc {
+                let arr = List.toArray(rc, cmd :: args);
+                let pb = new ProcessBuilder(arr);
+                pb.start();
+                k()
+            }
+        })
+    }
+
+}

@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.language.ast.ops
 
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
-import ca.uwaterloo.flix.language.ast.TypedAst._
+import ca.uwaterloo.flix.language.ast.TypedAst.*
 import ca.uwaterloo.flix.language.ast.{Symbol, Type}
 
 object TypedAstOps {
@@ -40,12 +40,13 @@ object TypedAstOps {
     case Expr.Var(_, _, _) => Set.empty
     case Expr.Def(_, _, _) => Set.empty
     case Expr.Sig(sym, _, _) => Set(sym)
-    case Expr.Hole(_, _, _) => Set.empty
+    case Expr.Hole(_, _, _, _) => Set.empty
     case Expr.HoleWithExp(exp, _, _, _) => sigSymsOf(exp)
     case Expr.OpenAs(_, exp, _, _) => sigSymsOf(exp)
     case Expr.Use(_, _, exp, _) => sigSymsOf(exp)
     case Expr.Lambda(_, exp, _, _) => sigSymsOf(exp)
     case Expr.Apply(exp, exps, _, _, _) => sigSymsOf(exp) ++ exps.flatMap(sigSymsOf)
+    case Expr.ApplyDef(_, exps, _, _, _, _) => exps.flatMap(sigSymsOf).toSet
     case Expr.Unary(_, exp, _, _, _) => sigSymsOf(exp)
     case Expr.Binary(_, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expr.Let(_, _, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
@@ -135,7 +136,7 @@ object TypedAstOps {
 
     case Expr.Sig(_, _, _) => Map.empty
 
-    case Expr.Hole(_, _, _) => Map.empty
+    case Expr.Hole(_, _, _, _) => Map.empty
 
     case Expr.HoleWithExp(exp, _, _, _) =>
       freeVars(exp)
@@ -151,6 +152,11 @@ object TypedAstOps {
 
     case Expr.Apply(exp, exps, _, _, _) =>
       exps.foldLeft(freeVars(exp)) {
+        case (acc, exp) => freeVars(exp) ++ acc
+      }
+
+    case Expr.ApplyDef(_, exps, _, _, _, _) =>
+      exps.foldLeft(Map.empty[Symbol.VarSym, Type]) {
         case (acc, exp) => freeVars(exp) ++ acc
       }
 

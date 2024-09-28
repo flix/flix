@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.{ChangeSet, ReadAst, SourceLocation, Sourc
 import ca.uwaterloo.flix.language.dbg.AstPrinter.{DebugNoOp, DebugValidation}
 import ca.uwaterloo.flix.language.errors.LexerError
 import ca.uwaterloo.flix.util.{ParOps, Validation}
-import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.Validation.*
 
 import scala.collection.mutable
 import scala.util.Random
@@ -324,8 +324,11 @@ object Lexer {
       case '\\' => TokenKind.Backslash
       case _ if isMatch(".{") => TokenKind.DotCurlyL
       case '.' =>
-        // Check for whitespace around dot.
-        if (previousPrevious().exists(_.isWhitespace)) {
+        if (peek() == '.' && peekPeek().contains('.')) {
+          advance()
+          advance()
+          TokenKind.DotDotDot
+        } else if (previousPrevious().exists(_.isWhitespace)) {
           // If the dot is prefixed with whitespace we treat that as an error.
           TokenKind.Err(LexerError.FreeDot(sourceLocationAtStart()))
         } else if (peek().isWhitespace) {

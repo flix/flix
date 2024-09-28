@@ -43,6 +43,22 @@ object Symbol {
   val Time: EffectSym = mkEffectSym(Name.RootNS, Ident("Time", SourceLocation.Unknown))
 
   /**
+    * Returns `true` if the given effect symbol is a base effect.
+    */
+  def isBaseEffect(sym: EffectSym): Boolean = sym match {
+    case Exec => true
+    case Exit => true
+    case FileRead => true
+    case FileWrite => true
+    case IO => true
+    case Net => true
+    case NonDet => true
+    case Sys => true
+    case Time => true
+    case _ => false
+  }
+
+  /**
     * Returns a fresh def symbol based on the given symbol.
     */
   def freshDefnSym(sym: DefnSym)(implicit flix: Flix): DefnSym = {

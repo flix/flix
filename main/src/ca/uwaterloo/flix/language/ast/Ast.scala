@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.ast.shared.{Denotation, Fixity, Polarity}
+import ca.uwaterloo.flix.language.ast.shared.{Annotation, Denotation, Fixity, Polarity}
 import ca.uwaterloo.flix.language.errors.ResolutionError
 
 import java.util.Objects
@@ -25,141 +25,6 @@ import java.util.Objects
   * A collection of AST nodes that are shared across multiple ASTs.
   */
 object Ast {
-
-  /**
-    * A common super type for AST nodes that represent annotations.
-    */
-  trait Annotation {
-    def loc: SourceLocation
-  }
-
-  object Annotation {
-
-    /**
-      * An annotation that marks a construct as deprecated.
-      *
-      * @param loc the source location of the annotation.
-      */
-    case class Deprecated(loc: SourceLocation) extends Annotation {
-      override def toString: String = "@Deprecated"
-    }
-
-    /**
-      * An annotation that marks a construct as experimental.
-      *
-      * @param loc the source location of the annotation.
-      */
-    case class Experimental(loc: SourceLocation) extends Annotation {
-      override def toString: String = "@Experimental"
-    }
-
-    /**
-      * An annotation that marks a function to exported.
-      *
-      * @param loc the source location of the annotation.
-      */
-    case class Export(loc: SourceLocation) extends Annotation {
-      override def toString: String = "@Export"
-    }
-
-    /**
-      * An annotation that marks a construct as internal.
-      *
-      * @param loc the source location of the annotation.
-      */
-    case class Internal(loc: SourceLocation) extends Annotation {
-      override def toString: String = "@Internal"
-    }
-
-    /**
-      * An annotation that marks a function definition as using parallel evaluation.
-      *
-      * @param loc the source location of the annotation.
-      */
-    case class Parallel(loc: SourceLocation) extends Annotation {
-      override def toString: String = "@Parallel"
-    }
-
-    /**
-      * An annotation that marks a function definition as using parallel evaluation when given a pure function argument.
-      *
-      * @param loc the source location of the annotation.
-      */
-    case class ParallelWhenPure(loc: SourceLocation) extends Annotation {
-      override def toString: String = "@ParallelWhenPure"
-    }
-
-    /**
-      * An annotation that marks a function definition as using lazy evaluation.
-      *
-      * @param loc the source location of the annotation.
-      */
-    case class Lazy(loc: SourceLocation) extends Annotation {
-      override def toString: String = "@Lazy"
-    }
-
-    /**
-      * An annotation that marks a function definition as using lazy evaluation when given a pure function argument.
-      *
-      * @param loc the source location of the annotation.
-      */
-    case class LazyWhenPure(loc: SourceLocation) extends Annotation {
-      override def toString: String = "@LazyWhenPure"
-    }
-
-    /**
-      * An annotation that marks a type as must-use.
-      *
-      * @param loc the source location of the annotation.
-      */
-    case class MustUse(loc: SourceLocation) extends Annotation {
-      override def toString: String = "@MustUse"
-    }
-
-    /**
-      * An AST node that represents a `@Skip` annotation.
-      *
-      * A function marked with `Skip` is skipped by the test framework.
-      *
-      * @param loc the source location of the annotation.
-      */
-    case class Skip(loc: SourceLocation) extends Annotation {
-      override def toString: String = "@Skip"
-    }
-
-    /**
-      * An AST node that represents a `@Test` annotation.
-      *
-      * A function marked with `Test` is evaluated as part of the test framework.
-      *
-      * @param loc the source location of the annotation.
-      */
-    case class Test(loc: SourceLocation) extends Annotation {
-      override def toString: String = "@Test"
-    }
-
-    /**
-      * An AST node that represents a `@TailRec` annotation.
-      *
-      * A function marked with `@TailRec` is guaranteed to be tail recursive by the compiler.
-      *
-      * @param loc the source location of the annotation.
-      */
-    case class TailRecursive(loc: SourceLocation) extends Annotation {
-      override def toString: String = "@Tailrec"
-    }
-
-    /**
-      * An AST node that represents an undefined (i.e. erroneous) annotation.
-      *
-      * @param name the name of the annotation.
-      * @param loc  the source location of the annotation.
-      */
-    case class Error(name: String, loc: SourceLocation) extends Annotation {
-      override def toString: String = "@" + name
-    }
-
-  }
 
   /**
     * Companion object of [[Annotations]].
@@ -437,12 +302,12 @@ object Ast {
   /**
     * Represents that the annotated element is introduced by the class `clazz`.
     */
-  case class IntroducedBy(clazz: java.lang.Class[_]) extends scala.annotation.StaticAnnotation
+  case class IntroducedBy(clazz: java.lang.Class[?]) extends scala.annotation.StaticAnnotation
 
   /**
     * Represents that the annotated element is eliminated by the class `clazz`.
     */
-  case class EliminatedBy(clazz: java.lang.Class[_]) extends scala.annotation.StaticAnnotation
+  case class EliminatedBy(clazz: java.lang.Class[?]) extends scala.annotation.StaticAnnotation
 
   case object TraitConstraint {
     /**
@@ -504,6 +369,12 @@ object Ast {
     * Represents a use of a restrictable enum sym.
     */
   case class RestrictableEnumSymUse(sym: Symbol.RestrictableEnumSym, loc: SourceLocation)
+
+  /**
+    * Represents a use of a defn sym.
+    */
+  case class DefSymUse(sym: Symbol.DefnSym, loc: SourceLocation)
+
 
   /**
     * Represents a use of a class sym.
@@ -664,7 +535,7 @@ object Ast {
     /**
       * An import of a Java class.
       */
-    case class Import(clazz: Class[_], alias: Name.Ident, loc: SourceLocation) extends UseOrImport
+    case class Import(clazz: Class[?], alias: Name.Ident, loc: SourceLocation) extends UseOrImport
   }
 
   /**

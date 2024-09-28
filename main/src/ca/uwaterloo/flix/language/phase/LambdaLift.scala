@@ -20,11 +20,11 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.BoundBy
 import ca.uwaterloo.flix.language.ast.shared.{Constant, Scope}
 import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, LiftedAst, MonoType, Purity, SimplifiedAst, Symbol}
-import ca.uwaterloo.flix.language.dbg.AstPrinter._
+import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import java.util.concurrent.ConcurrentLinkedQueue
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 object LambdaLift {
 
@@ -122,9 +122,9 @@ object LambdaLift {
       val es = exps map visitExp
       LiftedAst.Expr.ApplyClo(e, es, tpe, purity, loc)
 
-    case SimplifiedAst.Expr.ApplyDef(sym, exps, tpe, purity, loc) =>
+    case SimplifiedAst.Expr.ApplyDef(symUse, exps, tpe, purity, loc) =>
       val es = exps map visitExp
-      LiftedAst.Expr.ApplyDef(sym, es, tpe, purity, loc)
+      LiftedAst.Expr.ApplyDef(symUse, es, tpe, purity, loc)
 
     case SimplifiedAst.Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       val e1 = visitExp(exp1)

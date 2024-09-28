@@ -260,7 +260,7 @@ object Validation {
   /**
     * Traverses `xs` applying the function `f` to each element, ignoring non-error results.
     */
-  def traverseX[T, E](xs: Iterable[T])(f: T => Validation[_, E]): Validation[Unit, E] = {
+  def traverseX[T, E](xs: Iterable[T])(f: T => Validation[?, E]): Validation[Unit, E] = {
     mapN(traverse(xs)(f))(_ => ())
   }
 

@@ -82,7 +82,7 @@ object PredDeps {
 
     case Expr.Sig(_, _, _) => LabelledPrecedenceGraph.empty
 
-    case Expr.Hole(_, _, _) => LabelledPrecedenceGraph.empty
+    case Expr.Hole(_, _, _, _) => LabelledPrecedenceGraph.empty
 
     case Expr.HoleWithExp(exp, _, _, _) =>
       visitExp(exp)
@@ -99,6 +99,11 @@ object PredDeps {
     case Expr.Apply(exp, exps, _, _, _) =>
       val init = visitExp(exp)
       exps.foldLeft(init) {
+        case (acc, exp) => acc + visitExp(exp)
+      }
+
+    case Expr.ApplyDef(_, exps, _, _, _, _) =>
+      exps.foldLeft(LabelledPrecedenceGraph.empty) {
         case (acc, exp) => acc + visitExp(exp)
       }
 

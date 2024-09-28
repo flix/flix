@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.InstructionSet
 import ca.uwaterloo.flix.language.phase.jvm.GenExpression.compileInt
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.util.ParOps
-import org.objectweb.asm.Opcodes._
+import org.objectweb.asm.Opcodes.*
 import org.objectweb.asm.{ClassWriter, Label, MethodVisitor, Opcodes}
 
 /**
@@ -226,14 +226,14 @@ object GenFunAndClosureClasses {
       val defaultLabel = new Label()
       m.visitVarInsn(ALOAD, 0)
       m.visitFieldInsn(GETFIELD, classType.name.toInternalName, "pc", BackendType.Int32.toDescriptor)
-      m.visitTableSwitchInsn(1, pcLabels.length, defaultLabel, pcLabels: _*)
+      m.visitTableSwitchInsn(1, pcLabels.length, defaultLabel, pcLabels *)
       m.visitLabel(defaultLabel)
     }
 
     // Generating the expression
     val newFrame = BytecodeInstructions.thisLoad() ~ BytecodeInstructions.cheat(_.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, copyName, nothingToTDescriptor(classType).toDescriptor, false))
     val setPc = {
-      import BytecodeInstructions._
+      import BytecodeInstructions.*
       SWAP() ~ DUP_X1() ~ SWAP() ~ // clo, pc ---> clo, clo, pc
       BytecodeInstructions.cheat(_.visitFieldInsn(Opcodes.PUTFIELD, classType.name.toInternalName, "pc", BackendType.Int32.toDescriptor)) ~
         lparams.foldLeft(nop()){case (acc, (name, index, isWild, tpe)) =>
@@ -270,7 +270,7 @@ object GenFunAndClosureClasses {
     * A partial copy is without local parameters and without pc
     */
   private def mkCopy(classType: JvmType.Reference, defn: Def): InstructionSet = {
-    import BytecodeInstructions._
+    import BytecodeInstructions.*
     val pc = List(("pc", MonoType.Int32))
     val fparams = defn.fparams.zipWithIndex.map(p => (s"arg${p._2}", p._1.tpe))
     val cparams = defn.cparams.zipWithIndex.map(p => (s"clo${p._2}", p._1.tpe))

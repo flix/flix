@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ca.uwaterloo.flix.language.phase.unification
+package ca.uwaterloo.flix.util
 
 import scala.collection.immutable.SortedSet
 
@@ -53,10 +53,10 @@ sealed trait CofiniteIntSet {
 object CofiniteIntSet {
 
   /** Represents a finite set of integers. */
-  private case class Set(s: SortedSet[Int]) extends CofiniteIntSet
+  case class Set(s: SortedSet[Int]) extends CofiniteIntSet
 
   /** Represents a co-finite set of integers. */
-  private case class Compl(s: SortedSet[Int]) extends CofiniteIntSet
+  case class Compl(s: SortedSet[Int]) extends CofiniteIntSet
 
   /** The empty set. */
   val empty: CofiniteIntSet = Set(SortedSet.empty)
@@ -107,6 +107,10 @@ object CofiniteIntSet {
       Compl(x.intersect(y))
   }
 
+  /** Returns the union of `s1` and `s2` (`s1 ∪ s2`). */
+  def union(s1: CofiniteIntSet, s2: SortedSet[Int]): CofiniteIntSet =
+    union(s1, mkSet(s2))
+
   /** Returns the intersection of `s1` and `s2` (`s1 ∩ s2`). */
   def intersection(s1: CofiniteIntSet, s2: CofiniteIntSet): CofiniteIntSet = (s1, s2) match {
     case (Set(x), Set(y)) =>
@@ -127,5 +131,17 @@ object CofiniteIntSet {
       // = !(x ∪ y)      (complement distribution)
       Compl(x.union(y))
   }
+
+  /** Returns the intersection of `s1` and `s2` (`s1 ∩ s2`). */
+  def intersection(s1: CofiniteIntSet, s2: SortedSet[Int]): CofiniteIntSet =
+    intersection(s1, mkSet(s2))
+
+  /** Returns the difference of `s1` and `s2` (`s1 - s2`). */
+  def difference(s1: CofiniteIntSet, s2: CofiniteIntSet): CofiniteIntSet =
+    intersection(s1, complement(s2))
+
+  /** Returns the difference of `s1` and `s2` (`s1 - s2`). */
+  def difference(s1: CofiniteIntSet, s2: SortedSet[Int]): CofiniteIntSet =
+    difference(s1, mkSet(s2))
 
 }
