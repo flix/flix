@@ -76,44 +76,43 @@ object RestrictableChooseConstraintGen {
       case KindedAst.Expr.RestrictableChoose(false, exp0, rules0, tpe0, loc) =>
 
         // Get the enum symbols for the matched type
-        val enumSym0 = rules0.headOption.flatMap {
-          case rule => rule.pat match {
-            case KindedAst.RestrictableChoosePattern.Tag(sym, _, _, _) => Some(sym.sym.enumSym)
-            case KindedAst.RestrictableChoosePattern.Error(_, _) => None
+        rules0.headOption match {
+          case None => throw InternalCompilerException("unexpected empty choose", loc)
+          case Some(rule) => rule.pat match {
+            case RestrictableChoosePattern.Error(_, loc) => // If the pattern is an error we just return fresh error variables
+              (Type.freshError(Kind.Error, loc), Type.freshError(Kind.Error, loc))
+
+            case RestrictableChoosePattern.Tag(sym, _, _, _) =>
+              val enumSym = sym.sym.enumSym
+              val enum0 = root.restrictableEnums(enumSym)
+              val universe = enum0.cases.keys.toSet
+              val (enumType, indexVar, _) = instantiatedEnumType(enumSym, enum0, loc.asSynthetic)
+              val domSet = dom(rules0)
+              val domM = toType(domSet, enumSym, loc.asSynthetic)
+
+              // Γ ⊢ e: τ_in
+              val (tpe, eff) = visitExp(exp0)
+              val patTpes = visitRestrictableChoosePatterns(rules0.map(_.pat))
+              c.unifyAllTypes(tpe :: patTpes, loc)
+
+              // τ_in = (... + l_i(τ_i) + ...)[φ_in]
+              c.unifyType(enumType, tpe, loc)
+
+              // φ_in <: dom(M)
+              if (domSet != universe) {
+                unifySubset(indexVar, domM, enumSym, loc.asSynthetic)
+              }
+
+              // Γ, x_i: τ_i ⊢ e_i: τ_out
+              val (tpes, effs) = rules0.map(rule => visitExp(rule.exp)).unzip
+
+              // τ_out
+              c.unifyAllTypes(tpe0 :: tpes, loc)
+              val resTpe = tpe0
+              val resEff = Type.mkUnion(eff :: effs, loc)
+              (resTpe, resEff)
+
           }
-        }
-
-        enumSym0 match {
-          case Some(enumSym) =>
-            val enum0 = root.restrictableEnums(enumSym)
-            val universe = enum0.cases.keys.toSet
-            val (enumType, indexVar, _) = instantiatedEnumType(enumSym, enum0, loc.asSynthetic)
-            val domSet = dom(rules0)
-            val domM = toType(domSet, enumSym, loc.asSynthetic)
-
-            // Γ ⊢ e: τ_in
-            val (tpe, eff) = visitExp(exp0)
-            val patTpes = visitRestrictableChoosePatterns(rules0.map(_.pat))
-            c.unifyAllTypes(tpe :: patTpes, loc)
-
-            // τ_in = (... + l_i(τ_i) + ...)[φ_in]
-            c.unifyType(enumType, tpe, loc)
-
-            // φ_in <: dom(M)
-            if (domSet != universe) {
-              unifySubset(indexVar, domM, enumSym, loc.asSynthetic)
-            }
-
-            // Γ, x_i: τ_i ⊢ e_i: τ_out
-            val (tpes, effs) = rules0.map(rule => visitExp(rule.exp)).unzip
-
-            // τ_out
-            c.unifyAllTypes(tpe0 :: tpes, loc)
-            val resTpe = tpe0
-            val resEff = Type.mkUnion(eff :: effs, loc)
-            (resTpe, resEff)
-
-          case None => (Type.freshError(Kind.Error, loc), Type.freshError(Kind.Error, loc))
         }
 
       case KindedAst.Expr.RestrictableChoose(true, exp0, rules0, tpe0, loc) =>
