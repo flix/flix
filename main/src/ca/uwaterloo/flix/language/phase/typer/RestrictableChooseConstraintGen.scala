@@ -82,7 +82,7 @@ object RestrictableChooseConstraintGen {
             case RestrictableChoosePattern.Error(_, loc) => // If the pattern is an error we just return fresh error variables
               (Type.freshError(Kind.Error, loc), Type.freshError(Kind.Error, loc))
 
-            case RestrictableChoosePattern.Tag(sym, _, _, _) =>
+            case RestrictableChoosePattern.Tag(sym, _, _, _) => // If the pattern is Tag then we emit constraint rules
               val enumSym = sym.sym.enumSym
               val enum0 = root.restrictableEnums(enumSym)
               val universe = enum0.cases.keys.toSet
