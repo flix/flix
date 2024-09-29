@@ -28,13 +28,14 @@ object WithHandlerCompleter {
     // TODO: infer the effect of the expression
     root.effects.map { case (sym, eff) =>
       val effString = sym.name
-      val opStrings = eff.ops.map {
-        case TypedAst.Op(sym, spec) =>
-        val fparamsString = (spec.fparams.map(p => p.sym.text) :+ "k").mkString(", ")
-        s"    def ${sym.name}($fparamsString) = ???"
-      }
+      val opStrings = eff.ops.map(fmtOp)
       val bodyString = s"$effString {\n${opStrings.mkString("\n")}\n}"
       Completion.WithHandlerCompletion(effString, TextEdit(context.range, bodyString))
     }
+  }
+
+  private def fmtOp(op: TypedAst.Op): String = {
+    val fparamsString = (op.spec.fparams.map(p => p.sym.text) :+ "k").mkString(", ")
+    s"    def ${op.sym.name}($fparamsString) = ???"
   }
 }
