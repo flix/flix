@@ -26,11 +26,12 @@ import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
 
 import scala.annotation.tailrec
-import ca.uwaterloo.flix.language.ast.TypedAst.Expr
+import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, Def}
 import ca.uwaterloo.flix.util.Result.ToErr
 import ca.uwaterloo.flix.language.ast.SourcePosition
 import ca.uwaterloo.flix.language.ast.shared.Source
 import ca.uwaterloo.flix.language.ast.TypedAst
+import scala.collection.immutable
 
 object HoverProvider {
   def processHover(uri: String, pos: Position)(implicit root: Root, flix: Flix): JObject = {
@@ -39,14 +40,39 @@ object HoverProvider {
 
 
   def hover(uri: String, pos: Position)(implicit root: Root, flix: Flix): JObject = {
-    var stack: List[Entity] = Nil
-    def visit(e: Entity): Unit = {
+    var stack: List[Any] = Nil
+
+    def seenExpr(e: Expr): Unit = {
       stack = e :: stack
     }
 
-    Visitor.visitRoot(root, ???, Visitor.inside(uri, pos))
+    def seenDef(defn: Def): Unit = {
+      stack = defn :: stack
+    }
 
-    hoverEntity(stack.head, uri, pos)
+    Visitor.visitRoot(root,
+                      seenDef,
+                      eff => (),
+                      enum => (),
+                      seenExpr,
+                      instance => (),
+                      restrictableEnum => (),
+                      rot => (),
+                      sig => (),
+                      struct => (),
+                      traitt => (),
+                      typeAlias => (),
+                      Visitor.inside(uri, pos))
+
+    stack match {
+    	case head :: _ => hoverAny(stack.head, uri, pos)
+    	case Nil => mkNotFound(uri, pos)
+    }
+  }
+
+  private def hoverAny(x: Any, uri: String, pos: Position)(implicit root: Root, flix: Flix): JObject = x match {
+    case x: Expr => hoverTypeAndEff(x.tpe, x.eff, x.loc)
+    case _ => mkNotFound(uri, pos)
   }
 
   @tailrec
