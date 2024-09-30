@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.util
 
 import java.lang.reflect.{Field, Member, Method}
 
-object Jvm {
+object JvmUtils {
 
   /**
     * Returns the (static/dynamic) `fieldName` field of `clazz` if it exists.

@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.FieldCompletion
 import ca.uwaterloo.flix.language.errors.ResolutionError
-import ca.uwaterloo.flix.util.Jvm
+import ca.uwaterloo.flix.util.JvmUtils
 
 import java.lang.reflect.Field
 
@@ -30,7 +30,7 @@ object GetStaticFieldCompleter {
 
   private def getFields(clazz: Class[?]): List[Field] = {
     val availableFields = clazz.getFields.toList
-    val staticFields = availableFields.filter(m => Jvm.isStatic(m))
+    val staticFields = availableFields.filter(m => JvmUtils.isStatic(m))
     staticFields.sortBy(_.getName)
   }
 }
