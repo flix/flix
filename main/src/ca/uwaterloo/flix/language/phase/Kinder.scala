@@ -216,9 +216,9 @@ object Kinder {
       val sigsVal = traverse(sigs0) {
         case (sigSym, sig0) => mapN(visitSig(sig0, tparam, kenv, taenv, root))(sig => sigSym -> sig)
       }
-      val lawsVal = traverse(laws0)(visitDef(_, kenv, taenv, root)) // TODO ASSOC-TYPES need to include super traits?
-      mapN(sigsVal, lawsVal) {
-        case (sigs, laws) => KindedAst.Trait(doc, ann, mod, sym, tparam, superTraits, assocs, sigs.toMap, laws, loc)
+      val laws = laws0.map(visitDef(_, kenv, taenv, root)) // TODO ASSOC-TYPES need to include super traits?
+      mapN(sigsVal) {
+        case sigs => KindedAst.Trait(doc, ann, mod, sym, tparam, superTraits, assocs, sigs.toMap, laws, loc)
       }
   }
 
@@ -232,10 +232,8 @@ object Kinder {
       val t = visitType(tpe0, kind, kenv, taenv, root)
       val tconstrs = tconstrs0.map(visitTraitConstraint(_, kenv, taenv, root))
       val assocs = assocs0.map(visitAssocTypeDef(_, kind, kenv, taenv, root))
-      val defsVal = traverse(defs0)(visitDef(_, kenv, taenv, root))
-      mapN(defsVal) {
-        case defs => KindedAst.Instance(doc, ann, mod, trt, t, tconstrs, assocs, defs, ns, loc)
-      }
+      val defs = defs0.map(visitDef(_, kenv, taenv, root))
+      Validation.success(KindedAst.Instance(doc, ann, mod, trt, t, tconstrs, assocs, defs, ns, loc))
   }
 
   /**
@@ -252,22 +250,21 @@ object Kinder {
     */
   private def visitDefs(root: ResolvedAst.Root, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], oldRoot: KindedAst.Root, changeSet: ChangeSet)(implicit sctx: SharedContext, flix: Flix): Validation[Map[Symbol.DefnSym, KindedAst.Def], KindError] = {
     val (staleDefs, freshDefs) = changeSet.partition(root.defs, oldRoot.defs)
-
-    val result = ParOps.parTraverseValues(staleDefs)(visitDef(_, KindEnv.empty, taenv, root))
-    mapN(result)(freshDefs ++ _)
+    val result = ParOps.parMapValues(staleDefs)(visitDef(_, KindEnv.empty, taenv, root))
+    Validation.success(freshDefs ++ result)
   }
 
   /**
     * Performs kinding on the given def under the given kind environment.
     */
-  private def visitDef(def0: ResolvedAst.Declaration.Def, kenv0: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[KindedAst.Def, KindError] = def0 match {
+  private def visitDef(def0: ResolvedAst.Declaration.Def, kenv0: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): KindedAst.Def = def0 match {
     case ResolvedAst.Declaration.Def(sym, spec0, exp0) =>
       flix.subtask(sym.toString, sample = true)
       val kenv = getKindEnvFromSpec(spec0, kenv0, taenv, root)
       val henv = None
       val spec = visitSpec(spec0, Nil, kenv, taenv, root)
       val exp = visitExp(exp0, kenv, taenv, henv, root)(Scope.Top, sctx, flix)
-      Validation.success(KindedAst.Def(sym, spec, exp))
+      KindedAst.Def(sym, spec, exp)
   }
 
   /**
