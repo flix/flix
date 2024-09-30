@@ -773,8 +773,6 @@ object Kinder {
     case ResolvedAst.Expr.Error(m) =>
       val tvar = Type.freshVar(Kind.Star, m.loc)
       val evar = Type.freshVar(Kind.Eff, m.loc)
-      // Note: We must NOT use [[Validation.toSoftFailure]] because
-      // that would duplicate the error inside the Validation.
       KindedAst.Expr.Error(m, tvar, evar)
   }
 
