@@ -1213,7 +1213,7 @@ object Lowering {
         case None => throw InternalCompilerException("Unexpected nullary lattice predicate.", loc)
         case Some(tpe) =>
           // The type `Denotation[tpe]`.
-          val unboxedDenotationType = Type.mkEnum(Enums.Denotation, tpe :: Nil, loc)
+          val unboxedDenotationType = Type.mkEnum(Enums.Denotation, visitType(tpe) :: Nil, loc)
 
           // The type `Denotation[Boxed]`.
           val boxedDenotationType = Types.Denotation

@@ -83,7 +83,7 @@ object JvmBackend {
       val closureAbstractClasses = GenClosureAbstractClasses.gen(types)
 
       val taggedAbstractClass = Map(genClass(BackendObjType.Tagged))
-      val tagClasses = BackendType.erasedTypes.map(tpe => genClass(BackendObjType.Tag(tpe))).toMap
+      val tagClasses = BackendType.erasedTypes.map(tpe => genClass(BackendObjType.Tag(List(tpe)))).toMap
 
       val tupleClasses = erasedTuplesTypes.map(genClass).toMap
       val structClasses = erasedStructTypes.map(genClass).toMap

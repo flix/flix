@@ -110,6 +110,19 @@ case class SetSubstitution(m: Map[Int, SetFormula]) {
       SetFormula.mkUnionAll(simpleUnion :: ts.toList)
   }
 
+  /** Applies `this` to both sides of `eq`. */
+  def apply(eq: Equation): Equation = {
+    val Equation(t1, t2, loc) = eq
+    val app1 = apply(t1)
+    val app2 = apply(t2)
+    // Maintain and exploit reference equality for performance.
+    if ((app1 eq t1) && (app2 eq t2)) eq else Equation.mk(app1, app2, loc)
+  }
+
+  /** Applies `this` to each [[Equation]] in `eqs`. */
+  def apply(eqs: List[Equation]): List[Equation] =
+    if (m.isEmpty) eqs else eqs.map(apply)
+
   /** Returns the number of bindings in `this`. */
   def numberOfBindings: Int = m.size
 
