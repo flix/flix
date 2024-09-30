@@ -380,12 +380,12 @@ object Kinder {
       val evar = Type.freshVar(Kind.Eff, loc2.asSynthetic)
       KindedAst.Expr.ApplyDef(Ast.DefSymUse(sym, loc1), exps, itvar, tvar, evar, loc2)
 
-    case ResolvedAst.Expr.ApplySig(sym, exps0, loc) =>
+    case ResolvedAst.Expr.ApplySig(Ast.SigSymUse(sym, loc1), exps0, loc2) =>
       val exps = exps0.map(visitExp(_, kenv0, taenv, henv0, root))
-      val itvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-      val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-      val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-      KindedAst.Expr.ApplySig(sym, exps, itvar, tvar, evar, loc)
+      val itvar = Type.freshVar(Kind.Star, loc1.asSynthetic)
+      val tvar = Type.freshVar(Kind.Star, loc2.asSynthetic)
+      val evar = Type.freshVar(Kind.Eff, loc2.asSynthetic)
+      KindedAst.Expr.ApplySig(Ast.SigSymUse(sym, loc1), exps, itvar, tvar, evar, loc2)
 
     case ResolvedAst.Expr.Lambda(fparam0, exp0, loc) =>
       val fparam = visitFormalParam(fparam0, kenv0, taenv, root)
