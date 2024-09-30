@@ -228,11 +228,12 @@ object Reducer {
       case Some((tpe, taskList)) =>
         val taskList1 = tpe match {
           case Void | AnyType | Unit | Bool | Char | Float32 | Float64 | BigDecimal | Int8 | Int16 |
-               Int32 | Int64 | BigInt | String | Regex | Region | Enum(_) | RecordEmpty |
+               Int32 | Int64 | BigInt | String | Regex | Region | RecordEmpty |
                Native(_) | Null => taskList
           case Array(elm) => taskList.enqueue(elm)
           case Lazy(elm) => taskList.enqueue(elm)
           case Tuple(elms) => taskList.enqueueAll(elms)
+          case Enum(_, targs) => taskList.enqueueAll(targs)
           case Struct(_, elms, _) => taskList.enqueueAll(elms)
           case Arrow(targs, tresult) => taskList.enqueueAll(targs).enqueue(tresult)
           case RecordExtend(_, value, rest) => taskList.enqueue(value).enqueue(rest)
