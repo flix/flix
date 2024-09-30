@@ -75,12 +75,14 @@ object Kinder {
 
     val defsVal = visitDefs(root, taenv, oldRoot, changeSet)
 
-    val instancesVal = ParOps.parTraverseValues(root.instances)(traverse(_)(i => visitInstance(i, taenv, root)))
+    val instances = ParOps.parMapValues(root.instances)(_.map(visitInstance(_, taenv, root))) // Should this not be root.instances.map(ParOps.parMap)?
+    // I.e., for every trait, we check all instances in parallel so we get a parallel task for every instance
+    // instead of check all traits in parallel which spawns k threads each does synchronous code
 
     val effects = ParOps.parMapValues(root.effects)(visitEffect(_, taenv, root))
 
-    mapN(traitsVal, defsVal, instancesVal) {
-      case (traits, defs, instances) =>
+    mapN(traitsVal, defsVal) {
+      case (traits, defs) =>
         KindedAst.Root(traits, instances, defs, enums, structs, restrictableEnums, effects, taenv, root.uses, root.entryPoint, root.sources, root.names)
     }.withSoftFailures(sctx.errors.asScala)
   }(DebugValidation())
@@ -225,7 +227,7 @@ object Kinder {
   /**
     * Performs kinding on the given instance.
     */
-  private def visitInstance(inst: ResolvedAst.Declaration.Instance, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[KindedAst.Instance, KindError] = inst match {
+  private def visitInstance(inst: ResolvedAst.Declaration.Instance, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): KindedAst.Instance = inst match {
     case ResolvedAst.Declaration.Instance(doc, ann, mod, trt, tpe0, tconstrs0, assocs0, defs0, ns, loc) =>
       val kind = getTraitKind(root.traits(trt.sym))
       val kenv = inferType(tpe0, kind, KindEnv.empty, taenv, root)
@@ -233,7 +235,7 @@ object Kinder {
       val tconstrs = tconstrs0.map(visitTraitConstraint(_, kenv, taenv, root))
       val assocs = assocs0.map(visitAssocTypeDef(_, kind, kenv, taenv, root))
       val defs = defs0.map(visitDef(_, kenv, taenv, root))
-      Validation.success(KindedAst.Instance(doc, ann, mod, trt, t, tconstrs, assocs, defs, ns, loc))
+      KindedAst.Instance(doc, ann, mod, trt, t, tconstrs, assocs, defs, ns, loc)
   }
 
   /**
