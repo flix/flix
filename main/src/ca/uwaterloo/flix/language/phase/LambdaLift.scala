@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.BoundBy
-import ca.uwaterloo.flix.language.ast.shared.{Constant, Scope}
+import ca.uwaterloo.flix.language.ast.shared.{Annotations, Constant, Scope}
 import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, LiftedAst, MonoType, Purity, SimplifiedAst, Symbol}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
@@ -85,7 +85,7 @@ object LambdaLift {
       val freshSymbol = Symbol.freshDefnSym(sym0)
 
       // Construct annotations and modifiers for the fresh definition.
-      val ann = Ast.Annotations.Empty
+      val ann = Annotations.Empty
       val mod = Ast.Modifiers(Ast.Modifier.Synthetic :: Nil)
 
       // Construct the closure parameters
