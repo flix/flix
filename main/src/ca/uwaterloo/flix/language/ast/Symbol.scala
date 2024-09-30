@@ -47,7 +47,6 @@ object Symbol {
     */
   def isBaseEffect(sym: EffectSym): Boolean = sym match {
     case Exec => true
-    case Exit => true
     case FileRead => true
     case FileWrite => true
     case IO => true
