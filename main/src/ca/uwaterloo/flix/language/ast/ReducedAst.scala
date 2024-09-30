@@ -74,7 +74,7 @@ object ReducedAst {
 
     case class ApplyClo(exp: Expr, exps: List[Expr], ct: ExpPosition, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class ApplyDef(symUse: Symbol.DefnSym, exps: List[Expr], ct: ExpPosition, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
+    case class ApplyDef(sym: Symbol.DefnSym, exps: List[Expr], ct: ExpPosition, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 
     case class ApplySelfTail(sym: Symbol.DefnSym, actuals: List[Expr], tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 
