@@ -1034,7 +1034,7 @@ object Weeder2 {
 
     private def visitApplyExpr(tree: Tree)(implicit flix: Flix): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.Apply)
-      flatMapN(pick(TreeKind.Expr.Expr, tree), pickArguments(tree)) {
+      flatMapN(pick(TreeKind.Expr.Expr, tree), pickArguments(tree, sctx = SyntacticContext.Expr.OtherExpr)) {
         case (expr, args) =>
           val maybeIntrinsic = tryPick(TreeKind.Expr.Intrinsic, expr)
           maybeIntrinsic match {
@@ -1044,8 +1044,8 @@ object Weeder2 {
       }
     }
 
-    private def pickArguments(tree: Tree)(implicit flix: Flix): Validation[List[Expr], CompilationMessage] = {
-      flatMapN(pick(TreeKind.ArgumentList, tree))(visitArguments)
+    private def pickArguments(tree: Tree, sctx: SyntacticContext)(implicit flix: Flix): Validation[List[Expr], CompilationMessage] = {
+      flatMapN(pick(TreeKind.ArgumentList, tree, sctx = sctx))(visitArguments)
     }
 
     /**
@@ -1774,7 +1774,7 @@ object Weeder2 {
 
     private def visitDoExpr(tree: Tree)(implicit flix: Flix): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.Do)
-      mapN(pickQName(tree), pickArguments(tree)) {
+      mapN(pickQName(tree), pickArguments(tree, sctx = SyntacticContext.Expr.Do)) {
         (op, args) => Expr.Do(op, args, tree.loc)
       }
     }
