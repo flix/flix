@@ -71,21 +71,19 @@ object Kinder {
 
     val restrictableEnums = ParOps.parMapValues(root.restrictableEnums)(visitRestrictableEnum(_, taenv, root))
 
-    val traitsVal = visitTraits(root, taenv, oldRoot, changeSet)
+    val traits = visitTraits(root, taenv, oldRoot, changeSet)
 
     val defs = visitDefs(root, taenv, oldRoot, changeSet)
 
-    val instances = ParOps.parMapValues(root.instances)(_.map(visitInstance(_, taenv, root)))
-    // Should this not be root.instances.map(ParOps.parMap)?
+    // Should `instances` not be root.instances.map(ParOps.parMap)?
     // I.e., for every trait, we check all instances in parallel so we get a parallel task for every instance
     // instead of check all traits in parallel which spawns k threads each does synchronous code
+    val instances = ParOps.parMapValues(root.instances)(_.map(visitInstance(_, taenv, root)))
 
     val effects = ParOps.parMapValues(root.effects)(visitEffect(_, taenv, root))
 
-    mapN(traitsVal) {
-      case traits =>
-        KindedAst.Root(traits, instances, defs, enums, structs, restrictableEnums, effects, taenv, root.uses, root.entryPoint, root.sources, root.names)
-    }.withSoftFailures(sctx.errors.asScala)
+    val newRoot = KindedAst.Root(traits, instances, defs, enums, structs, restrictableEnums, effects, taenv, root.uses, root.entryPoint, root.sources, root.names)
+    Validation.success(newRoot).withSoftFailures(sctx.errors.asScala)
   }(DebugValidation())
 
   /**
@@ -201,10 +199,10 @@ object Kinder {
   /**
     * Performs kinding on the all the traits in the given root.
     */
-  private def visitTraits(root: ResolvedAst.Root, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], oldRoot: KindedAst.Root, changeSet: ChangeSet)(implicit sctx: SharedContext, flix: Flix): Validation[Map[Symbol.TraitSym, KindedAst.Trait], KindError] = {
+  private def visitTraits(root: ResolvedAst.Root, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], oldRoot: KindedAst.Root, changeSet: ChangeSet)(implicit sctx: SharedContext, flix: Flix): Map[Symbol.TraitSym, KindedAst.Trait] = {
     val (staleTraits, freshTraits) = changeSet.partition(root.traits, oldRoot.traits)
     val result = ParOps.parMapValues(staleTraits)(visitTrait(_, taenv, root))
-    Validation.success(freshTraits ++ result)
+    freshTraits ++ result
   }
 
   /**
