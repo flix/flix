@@ -1051,8 +1051,8 @@ object Weeder2 {
     /**
       * This method is the same as pickArguments but considers Unit as no-argument. It calls visitMethodArguments instead.
       */
-    private def pickRawArguments(tree: Tree)(implicit flix: Flix): Validation[List[Expr], CompilationMessage] = {
-      flatMapN(pick(TreeKind.ArgumentList, tree))(visitMethodArguments)
+    private def pickRawArguments(tree: Tree, sctx: SyntacticContext)(implicit flix: Flix): Validation[List[Expr], CompilationMessage] = {
+      flatMapN(pick(TreeKind.ArgumentList, tree, sctx = sctx))(visitMethodArguments)
     }
 
     private def visitArguments(tree: Tree)(implicit flix: Flix): Validation[List[Expr], CompilationMessage] = {
@@ -1781,7 +1781,7 @@ object Weeder2 {
 
     private def visitInvokeConstructor2Expr(tree: Tree)(implicit flix: Flix): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.InvokeConstructor2)
-      flatMapN(Types.pickType(tree), pickRawArguments(tree)) {
+      flatMapN(Types.pickType(tree), pickRawArguments(tree, sctx = SyntacticContext.Expr.New)) {
         (tpe, exps) =>
           tpe match {
             case WeededAst.Type.Ambiguous(qname, _) if qname.isUnqualified =>
@@ -1797,7 +1797,7 @@ object Weeder2 {
       expect(tree, TreeKind.Expr.InvokeMethod2)
       val baseExp = pickExpr(tree)
       val method = pickNameIdent(tree)
-      val argsExps = pickRawArguments(tree)
+      val argsExps = pickRawArguments(tree, sctx = SyntacticContext.Expr.OtherExpr)
       mapN(baseExp, method, argsExps) {
         case (b, m, as) =>
           val result = Expr.InvokeMethod2(b, m, as, tree.loc)
