@@ -747,7 +747,7 @@ object Lowering {
     case TypedAst.Expr.FixpointLambda(pparams, exp, _, eff, loc) =>
       val defn = Defs.lookup(Defs.Rename)
       val defExp = LoweredAst.Expr.Def(defn.sym, Types.RenameType, loc)
-      val predExps = mkList(pparams.map(pparam => mkPredSym(pparam.pred)), Types.mkList(Types.PredSym, loc), loc)
+      val predExps = mkList(pparams.map(pparam => mkPredSym(pparam.pred)), Types.PredSym, loc)
       val argExps = predExps :: visitExp(exp) :: Nil
       val resultType = Types.Datalog
       LoweredAst.Expr.Apply(defExp, argExps, resultType, eff, loc)
