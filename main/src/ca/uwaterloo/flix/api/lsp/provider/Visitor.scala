@@ -256,7 +256,7 @@ object Visitor {
       case Expr.Var(sym, tpe, loc) => ()
       case Expr.Def(sym, tpe, loc) => ()
       case Expr.Sig(sym, tpe, loc) => ()
-      case Expr.Hole(sym, tpe, loc) => ()
+      case Expr.Hole(sym, tpe, eff, loc) => ()
 
       case Expr.HoleWithExp(exp, tpe, eff, loc) => {
         if (accept(exp.loc)) { visitExpr(exp, seen, accept) }
@@ -280,6 +280,11 @@ object Visitor {
           if (accept(e.loc)) { visitExpr(e, seen, accept) }
         })
       }
+
+      case Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
+        exps.foreach(e => {
+          if (accept(e.loc)) { visitExpr(e, seen, accept) }
+        })
 
       case Expr.Unary(sop, exp, tpe, eff, loc) => {
         if (accept(exp.loc)) { visitExpr(exp, seen, accept) }
