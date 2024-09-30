@@ -73,7 +73,7 @@ object Kinder {
 
     val traitsVal = visitTraits(root, taenv, oldRoot, changeSet)
 
-    val defsVal = visitDefs(root, taenv, oldRoot, changeSet)
+    val defs = visitDefs(root, taenv, oldRoot, changeSet)
 
     val instances = ParOps.parMapValues(root.instances)(_.map(visitInstance(_, taenv, root)))
     // Should this not be root.instances.map(ParOps.parMap)?
@@ -82,8 +82,8 @@ object Kinder {
 
     val effects = ParOps.parMapValues(root.effects)(visitEffect(_, taenv, root))
 
-    mapN(traitsVal, defsVal) {
-      case (traits, defs) =>
+    mapN(traitsVal) {
+      case traits =>
         KindedAst.Root(traits, instances, defs, enums, structs, restrictableEnums, effects, taenv, root.uses, root.entryPoint, root.sources, root.names)
     }.withSoftFailures(sctx.errors.asScala)
   }(DebugValidation())
@@ -251,10 +251,10 @@ object Kinder {
   /**
     * Performs kinding on the all the definitions in the given root.
     */
-  private def visitDefs(root: ResolvedAst.Root, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], oldRoot: KindedAst.Root, changeSet: ChangeSet)(implicit sctx: SharedContext, flix: Flix): Validation[Map[Symbol.DefnSym, KindedAst.Def], KindError] = {
+  private def visitDefs(root: ResolvedAst.Root, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], oldRoot: KindedAst.Root, changeSet: ChangeSet)(implicit sctx: SharedContext, flix: Flix): Map[Symbol.DefnSym, KindedAst.Def] = {
     val (staleDefs, freshDefs) = changeSet.partition(root.defs, oldRoot.defs)
     val result = ParOps.parMapValues(staleDefs)(visitDef(_, KindEnv.empty, taenv, root))
-    Validation.success(freshDefs ++ result)
+    freshDefs ++ result
   }
 
   /**
