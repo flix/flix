@@ -229,10 +229,10 @@ object EntryPoint {
     // NB: Getting the type directly from the scheme assumes the function is not polymorphic.
     // This is a valid assumption with the limitations we set on the entry point.
     val itpe = oldEntryPoint.spec.declaredScheme.base
-    val defSym = Ast.DefSymUse(oldEntryPoint.sym, SourceLocation.Unknown)
+    val symUse = Ast.DefSymUse(oldEntryPoint.sym, SourceLocation.Unknown)
     val args = List(TypedAst.Expr.Cst(Constant.Unit, Type.Unit, SourceLocation.Unknown))
     // func()
-    val call = TypedAst.Expr.ApplyDef(defSym, args, itpe, itpe.arrowResultType, itpe.arrowEffectType, SourceLocation.Unknown)
+    val call = TypedAst.Expr.ApplyDef(symUse, args, itpe, itpe.arrowResultType, itpe.arrowEffectType, SourceLocation.Unknown)
 
     // one of:
     // printUnlessUnit(func(args))
