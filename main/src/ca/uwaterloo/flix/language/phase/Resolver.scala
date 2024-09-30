@@ -818,6 +818,7 @@ object Resolver {
         case ResolvedQName.Var(sym) => ResolvedAst.Expr.Var(sym, loc)
         case ResolvedQName.Tag(caze) => visitTag(caze, loc)
         case ResolvedQName.RestrictableTag(caze) => visitRestrictableTag(caze, isOpen = false, loc)
+        case ResolvedQName.Op(op) => ResolvedAst.Expr.Do(op, ???, loc) // MATT exprs?
         case ResolvedQName.Error(e) => ResolvedAst.Expr.Error(e)
       }
 
@@ -828,6 +829,7 @@ object Resolver {
         case ResolvedQName.Var(sym) => ResolvedAst.Expr.Var(sym, loc)
         case ResolvedQName.Tag(caze) => visitTag(caze, loc)
         case ResolvedQName.RestrictableTag(caze) => visitRestrictableTag(caze, isOpen = true, loc)
+        case ResolvedQName.Op(op) => ResolvedAst.Expr.Do(op, ???, loc) // MATT expres?
         case ResolvedQName.Error(e) => ResolvedAst.Expr.Error(e)
       }
 
@@ -2223,6 +2225,7 @@ object Resolver {
     resolutions.collect {
       case decl@Resolution.Declaration(_: NamedAst.Declaration.Def) => decl
       case decl@Resolution.Declaration(_: NamedAst.Declaration.Sig) => decl
+      case decl@Resolution.Declaration(_: NamedAst.Declaration.Op) => decl
       case decl@Resolution.Declaration(_: NamedAst.Declaration.Case) => decl
       case decl@Resolution.Declaration(_: NamedAst.Declaration.RestrictableCase) => decl
       case decl@Resolution.Var(_) => decl
@@ -2238,6 +2241,12 @@ object Resolver {
           Validation.success(ResolvedQName.Sig(sig))
         } else {
           Validation.toSoftFailure(ResolvedQName.Sig(sig), ResolutionError.InaccessibleSig(sig.sym, ns0, qname.loc))
+        }
+      case Resolution.Declaration(op: NamedAst.Declaration.Op) :: _ =>
+        if (isOpAccessible(op, ns0)) {
+          Validation.success(ResolvedQName.Op(op))
+        } else {
+          Validation.toSoftFailure(ResolvedQName.Op(op), ResolutionError.InaccessibleOp(op.sym, ns0, qname.loc))
         }
       //      case Resolution.Declaration(caze1: NamedAst.Declaration.Case) :: Resolution.Declaration(caze2: NamedAst.Declaration.Case) :: _ =>
       //        // Multiple case matches. Error.
@@ -3940,6 +3949,8 @@ object Resolver {
     case class Def(defn: NamedAst.Declaration.Def) extends ResolvedQName
 
     case class Sig(sig: NamedAst.Declaration.Sig) extends ResolvedQName
+
+    case class Op(op: NamedAst.Declaration.Op) extends ResolvedQName
 
     case class Tag(caze: NamedAst.Declaration.Case) extends ResolvedQName
 
