@@ -49,7 +49,7 @@ class VisitorSuite extends AnyFunSuite {
     val loc = SourceLocation(
       false,
       SourcePosition(source, 6, 4),
-      SourcePosition(source, 6, 4),
+      SourcePosition(source, 6, 5),
     )
     val pos = Position.fromZeroIndexed(5, 3)
 
