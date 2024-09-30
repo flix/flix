@@ -38,6 +38,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.{
 import ca.uwaterloo.flix.language.ast.Ast.UseOrImport
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.ast.Type
+import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.api.lsp.Position
 
 /**
@@ -124,15 +125,17 @@ object Visitor {
   }
 
   def inside(uri: String, pos: Position)(loc: SourceLocation): Boolean = {
-    val posLine = pos.line
-    val posCol = pos.character
+    val (x, y) = pos.toZeroIndexed
+
+    val posLine = x + 1
+    val posCol = y + 1
 
     // sp1 and sp2, by invariant, has the same source, so we can use either
     (uri == loc.sp1.source.name) &&
     (posLine >= loc.beginLine) &&
     (posLine <= loc.endLine) &&
-    !(posLine == loc.beginLine && posCol < loc.beginCol) &&
-    !(posLine == loc.endLine && posCol > loc.endCol)
+    (!(posLine == loc.beginLine && posCol < loc.beginCol)) &&
+    (!(posLine == loc.endLine && posCol >= loc.endCol)) // geq because end column is exclusive
   }
 
   def inside(loc1: SourceLocation, loc2: SourceLocation): Boolean = {
@@ -273,7 +276,9 @@ object Visitor {
 
       case Expr.Apply(exp, exps, tpe, eff, loc) => {
         if (accept(exp.loc)) { visitExpr(exp, seen, accept) }
-        exps.foreach(e => visitExpr(e, seen, accept))
+        exps.foreach(e => {
+          if (accept(e.loc)) { visitExpr(e, seen, accept) }
+        })
       }
 
       case Expr.Unary(sop, exp, tpe, eff, loc) => {

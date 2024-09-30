@@ -64,14 +64,15 @@ object HoverProvider {
                       typeAlias => (),
                       Visitor.inside(uri, pos))
 
-    stack match {
-    	case head :: _ => hoverAny(stack.head, uri, pos)
-    	case Nil => mkNotFound(uri, pos)
-    }
+    hoverAny(stack, uri, pos)
   }
 
-  private def hoverAny(x: Any, uri: String, pos: Position)(implicit root: Root, flix: Flix): JObject = x match {
-    case x: Expr => hoverTypeAndEff(x.tpe, x.eff, x.loc)
+  private def hoverAny(trace: List[Any], uri: String, pos: Position)(implicit root: Root, flix: Flix): JObject = trace match {
+    case Expr.Def(sym, tpe, loc) :: _ => hoverDef(sym, loc)
+    case Expr.Sig(sym, tpe, loc) :: _ => hoverSig(sym, loc)
+    case (v: Expr.Var) :: _ => hoverTypeAndEff(v.tpe, v.eff, v.loc)
+    case (hole: Expr.Hole) :: _ => hoverTypeAndEff(hole.tpe, hole.eff, hole.loc)
+    case (x: Expr) :: _ => hoverTypeAndEff(x.tpe, x.eff, x.loc)
     case _ => mkNotFound(uri, pos)
   }
 

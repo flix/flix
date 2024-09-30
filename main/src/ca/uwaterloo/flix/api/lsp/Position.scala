@@ -27,6 +27,14 @@ import org.json4s._
 object Position {
 
   /**
+    * Returns a position from zero-indexed input
+    *
+    * Temporary fix due to positions currently being one-indexed.
+    */
+  def fromZeroIndexed(line: Int, character: Int): Position =
+    Position(line + 1, character + 1)
+
+  /**
     * Returns a position from the given source location `loc` using its beginning line and col.
     */
   def fromBegin(loc: SourceLocation): Position =
@@ -61,9 +69,18 @@ object Position {
 /**
   * Represent a `Position` in LSP.
   *
+  * TODO currently not actually zero-indexed but instead one-indexed because of `parse` function. This needs to be fixed!
+  *
   * @param line      Line position in a document (zero-based).
   * @param character Character offset on a line in a document (zero-based).
   */
 case class Position(line: Int, character: Int) {
   def toJSON: JValue = ("line" -> line) ~ ("character" -> character)
+
+  /**
+    * Returns zero-indexed tuple containing line and character.
+    *
+    * Temporary fix for Position erroneously being one-indexed.
+    */
+  def toZeroIndexed: (Int, Int) = (line - 1, character - 1)
 }
