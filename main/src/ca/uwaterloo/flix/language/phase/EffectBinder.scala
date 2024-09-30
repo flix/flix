@@ -235,9 +235,9 @@ object EffectBinder {
       val es = exps.map(visitExprWithBinders(binders))
       ReducedAst.Expr.ApplyClo(e, es, ExpPosition.NonTail, tpe, purity, loc)
 
-    case LiftedAst.Expr.ApplyDef(sym, exps, tpe, purity, loc) =>
+    case LiftedAst.Expr.ApplyDef(symUse, exps, tpe, purity, loc) =>
       val es = exps.map(visitExprWithBinders(binders))
-      ReducedAst.Expr.ApplyDef(sym, es, ExpPosition.NonTail, tpe, purity, loc)
+      ReducedAst.Expr.ApplyDef(symUse, es, ExpPosition.NonTail, tpe, purity, loc)
 
     case LiftedAst.Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       val e1 = visitExprInnerWithBinders(binders)(exp1)

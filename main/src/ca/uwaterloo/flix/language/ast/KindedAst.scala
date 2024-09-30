@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Constant, Denotation, Fixity, Polarity, Source}
+import ca.uwaterloo.flix.language.ast.shared.{Annotations, CheckedCastType, Constant, Denotation, Fixity, Polarity, Source}
 import ca.uwaterloo.flix.language.{CompilationMessage, ast}
 import ca.uwaterloo.flix.util.collection.MultiMap
 
@@ -39,29 +39,29 @@ object KindedAst {
                   sources: Map[Source, SourceLocation],
                   names: MultiMap[List[String], String])
 
-  case class Trait(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.TraitSym, tparam: TypeParam, superTraits: List[Ast.TraitConstraint], assocs: List[AssocTypeSig], sigs: Map[Symbol.SigSym, Sig], laws: List[Def], loc: SourceLocation)
+  case class Trait(doc: Ast.Doc, ann: Annotations, mod: Ast.Modifiers, sym: Symbol.TraitSym, tparam: TypeParam, superTraits: List[Ast.TraitConstraint], assocs: List[AssocTypeSig], sigs: Map[Symbol.SigSym, Sig], laws: List[Def], loc: SourceLocation)
 
-  case class Instance(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, trt: Ast.TraitSymUse, tpe: Type, tconstrs: List[Ast.TraitConstraint], assocs: List[AssocTypeDef], defs: List[Def], ns: Name.NName, loc: SourceLocation)
+  case class Instance(doc: Ast.Doc, ann: Annotations, mod: Ast.Modifiers, trt: Ast.TraitSymUse, tpe: Type, tconstrs: List[Ast.TraitConstraint], assocs: List[AssocTypeDef], defs: List[Def], ns: Name.NName, loc: SourceLocation)
 
   case class Sig(sym: Symbol.SigSym, spec: Spec, exp: Option[Expr])
 
   case class Def(sym: Symbol.DefnSym, spec: Spec, exp: Expr)
 
-  case class Spec(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, tparams: List[TypeParam], fparams: List[FormalParam], sc: Scheme, tpe: Type, eff: Type, tconstrs: List[Ast.TraitConstraint], econstrs: List[Ast.EqualityConstraint], loc: SourceLocation)
+  case class Spec(doc: Ast.Doc, ann: Annotations, mod: Ast.Modifiers, tparams: List[TypeParam], fparams: List[FormalParam], sc: Scheme, tpe: Type, eff: Type, tconstrs: List[Ast.TraitConstraint], econstrs: List[Ast.EqualityConstraint], loc: SourceLocation)
 
-  case class Enum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[TypeParam], derives: Ast.Derivations, cases: Map[Symbol.CaseSym, Case], tpe: Type, loc: SourceLocation)
+  case class Enum(doc: Ast.Doc, ann: Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[TypeParam], derives: Ast.Derivations, cases: Map[Symbol.CaseSym, Case], tpe: Type, loc: SourceLocation)
 
-  case class Struct(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.StructSym, tparams: List[TypeParam], sc: Scheme, fields: List[StructField], loc: SourceLocation)
+  case class Struct(doc: Ast.Doc, ann: Annotations, mod: Ast.Modifiers, sym: Symbol.StructSym, tparams: List[TypeParam], sc: Scheme, fields: List[StructField], loc: SourceLocation)
 
-  case class RestrictableEnum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.RestrictableEnumSym, index: TypeParam, tparams: List[TypeParam], derives: Ast.Derivations, cases: Map[Symbol.RestrictableCaseSym, RestrictableCase], tpe: Type, loc: SourceLocation)
+  case class RestrictableEnum(doc: Ast.Doc, ann: Annotations, mod: Ast.Modifiers, sym: Symbol.RestrictableEnumSym, index: TypeParam, tparams: List[TypeParam], derives: Ast.Derivations, cases: Map[Symbol.RestrictableCaseSym, RestrictableCase], tpe: Type, loc: SourceLocation)
 
-  case class TypeAlias(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.TypeAliasSym, tparams: List[TypeParam], tpe: Type, loc: SourceLocation)
+  case class TypeAlias(doc: Ast.Doc, ann: Annotations, mod: Ast.Modifiers, sym: Symbol.TypeAliasSym, tparams: List[TypeParam], tpe: Type, loc: SourceLocation)
 
   case class AssocTypeSig(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.AssocTypeSym, tparam: TypeParam, kind: Kind, tpe: Option[Type], loc: SourceLocation)
 
   case class AssocTypeDef(doc: Ast.Doc, mod: Ast.Modifiers, sym: Ast.AssocTypeSymUse, arg: Type, tpe: Type, loc: SourceLocation)
 
-  case class Effect(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EffectSym, ops: List[Op], loc: SourceLocation)
+  case class Effect(doc: Ast.Doc, ann: Annotations, mod: Ast.Modifiers, sym: Symbol.EffectSym, ops: List[Op], loc: SourceLocation)
 
   case class Op(sym: Symbol.OpSym, spec: Spec)
 
@@ -77,7 +77,7 @@ object KindedAst {
 
     case class Sig(sym: Symbol.SigSym, tvar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class Hole(sym: Symbol.HoleSym, tvar: Type.Var, loc: SourceLocation) extends Expr
+    case class Hole(sym: Symbol.HoleSym, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
     case class HoleWithExp(exp: Expr, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
@@ -88,6 +88,8 @@ object KindedAst {
     case class Cst(cst: Constant, loc: SourceLocation) extends Expr
 
     case class Apply(exp: Expr, exps: List[Expr], tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
+
+    case class ApplyDef(symUse: Ast.DefSymUse, exps: List[Expr], itvar: Type, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
     case class Lambda(fparam: FormalParam, exp: Expr, loc: SourceLocation) extends Expr
 
@@ -103,7 +105,7 @@ object KindedAst {
 
     case class Let(sym: Symbol.VarSym, mod: Ast.Modifiers, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
-    case class LetRec(sym: Symbol.VarSym, ann: Ast.Annotations, mod: Ast.Modifiers, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
+    case class LetRec(sym: Symbol.VarSym, ann: Annotations, mod: Ast.Modifiers, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
     case class Region(tpe: Type, loc: SourceLocation) extends Expr
 
@@ -153,7 +155,7 @@ object KindedAst {
 
     case class Ascribe(exp: Expr, expectedType: Option[Type], expectedPur: Option[Type], tvar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class InstanceOf(exp: Expr, clazz: java.lang.Class[_], loc: SourceLocation) extends Expr
+    case class InstanceOf(exp: Expr, clazz: java.lang.Class[?], loc: SourceLocation) extends Expr
 
     case class CheckedCast(cast: CheckedCastType, exp: Expr, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
@@ -171,29 +173,29 @@ object KindedAst {
 
     case class Do(op: Ast.OpSymUse, exps: List[Expr], tvar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class InvokeConstructor2(clazz: Class[_], exps: List[Expr], jvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
+    case class InvokeConstructor2(clazz: Class[?], exps: List[Expr], jvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
     case class InvokeMethod2(exp: Expr, methodName: Name.Ident, exps: List[Expr], jvar: Type.Var, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class InvokeStaticMethod2(clazz: Class[_], methodName: Name.Ident, exps: List[Expr], jvar: Type.Var, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
+    case class InvokeStaticMethod2(clazz: Class[?], methodName: Name.Ident, exps: List[Expr], jvar: Type.Var, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
     case class GetField2(exp: Expr, fieldName: Name.Ident, jvar: Type.Var, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class InvokeConstructorOld(constructor: Constructor[_], exps: List[Expr], loc: SourceLocation) extends Expr
+    case class InvokeConstructorOld(constructor: Constructor[?], exps: List[Expr], loc: SourceLocation) extends Expr
 
-    case class InvokeMethodOld(method: Method, clazz: java.lang.Class[_], exp: Expr, exps: List[Expr], loc: SourceLocation) extends Expr
+    case class InvokeMethodOld(method: Method, clazz: java.lang.Class[?], exp: Expr, exps: List[Expr], loc: SourceLocation) extends Expr
 
     case class InvokeStaticMethodOld(method: Method, exps: List[Expr], loc: SourceLocation) extends Expr
 
-    case class GetFieldOld(field: Field, clazz: java.lang.Class[_], exp: Expr, loc: SourceLocation) extends Expr
+    case class GetFieldOld(field: Field, clazz: java.lang.Class[?], exp: Expr, loc: SourceLocation) extends Expr
 
-    case class PutField(field: Field, clazz: java.lang.Class[_], exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
+    case class PutField(field: Field, clazz: java.lang.Class[?], exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
     case class GetStaticField(field: Field, loc: SourceLocation) extends Expr
 
     case class PutStaticField(field: Field, exp: Expr, loc: SourceLocation) extends Expr
 
-    case class NewObject(name: String, clazz: java.lang.Class[_], methods: List[JvmMethod], loc: SourceLocation) extends Expr
+    case class NewObject(name: String, clazz: java.lang.Class[?], methods: List[JvmMethod], loc: SourceLocation) extends Expr
 
     case class NewChannel(exp1: Expr, exp2: Expr, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
@@ -318,7 +320,7 @@ object KindedAst {
 
   case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], exp: Expr, tpe: Type, eff: Type, loc: SourceLocation)
 
-  case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: Expr)
+  case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[?], exp: Expr)
 
   case class HandlerRule(op: Ast.OpSymUse, fparams: List[FormalParam], exp: Expr, tvar: Type.Var)
 

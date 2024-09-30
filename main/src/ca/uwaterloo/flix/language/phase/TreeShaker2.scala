@@ -17,9 +17,9 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.LiftedAst._
+import ca.uwaterloo.flix.language.ast.LiftedAst.*
 import ca.uwaterloo.flix.language.ast.{AtomicOp, Symbol}
-import ca.uwaterloo.flix.language.dbg.AstPrinter._
+import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.util.ParOps
 
 /**

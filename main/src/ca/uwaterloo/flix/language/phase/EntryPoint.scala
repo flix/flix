@@ -16,9 +16,9 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.shared.{Constant, Scope}
+import ca.uwaterloo.flix.language.ast.shared.{Annotations, Constant, Scope}
 import ca.uwaterloo.flix.language.ast.{Ast, RigidityEnv, Scheme, SourceLocation, Symbol, Type, TypedAst}
-import ca.uwaterloo.flix.language.dbg.AstPrinter._
+import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.EntryPointError
 import ca.uwaterloo.flix.language.phase.unification.TraitEnvironment
 import ca.uwaterloo.flix.util.Validation.{flatMapN, mapN}
@@ -195,7 +195,7 @@ object EntryPoint {
       } else {
         // Delay ToString resolution if main has return type unit for testing with lib nix.
         val toString = root.traits(new Symbol.TraitSym(Nil, "ToString", SourceLocation.Unknown)).sym
-        if (TraitEnvironment.holds(Ast.TraitConstraint(Ast.TraitConstraint.Head(toString, SourceLocation.Unknown), resultTpe, SourceLocation.Unknown), traitEnv)) {
+        if (TraitEnvironment.holds(Ast.TraitConstraint(Ast.TraitConstraint.Head(toString, SourceLocation.Unknown), resultTpe, SourceLocation.Unknown), traitEnv, root.eqEnv)) {
           // Case 2: XYZ -> a with ToString[a]
           Validation.success(())
         } else {
@@ -214,7 +214,7 @@ object EntryPoint {
 
     val spec = TypedAst.Spec(
       doc = Ast.Doc(Nil, SourceLocation.Unknown),
-      ann = Ast.Annotations.Empty,
+      ann = Annotations.Empty,
       mod = Ast.Modifiers.Empty,
       tparams = Nil,
       fparams = List(TypedAst.FormalParam(argSym, Ast.Modifiers.Empty, Type.Unit, Ast.TypeSource.Ascribed, SourceLocation.Unknown)),

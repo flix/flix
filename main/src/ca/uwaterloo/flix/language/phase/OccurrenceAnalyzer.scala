@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.LiftedAst.Expr
-import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur._
+import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur.*
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.{DefContext, Occur}
 import ca.uwaterloo.flix.language.ast.Symbol.{DefnSym, LabelSym, VarSym}
 import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, LiftedAst, OccurrenceAst, Symbol}

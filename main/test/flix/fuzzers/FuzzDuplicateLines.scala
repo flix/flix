@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.nio.file.{Files, Paths}
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 class FuzzDuplicateLines extends AnyFunSuite with TestUtils {
 

@@ -71,7 +71,7 @@ object JvmName {
     JvmName(l.init.toList, l.last)
   }
 
-  def ofClass(clazz: Class[_]): JvmName = {
+  def ofClass(clazz: Class[?]): JvmName = {
     // TODO: Ugly hack.
     // Maybe use clazz.getPackage and clazz.getSimpleName
     val fqn = clazz.getName.replace('.', '/')

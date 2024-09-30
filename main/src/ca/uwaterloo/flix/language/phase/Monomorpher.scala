@@ -106,26 +106,6 @@ object Monomorpher {
   private case class StrictSubstitution(s: Substitution, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix) {
 
     /**
-      * Returns the normalized default type for the kind of `tpe0`.
-      */
-    private def default(tpe0: Type): Type = tpe0.kind match {
-      case Kind.Wild => Type.mkAnyType(tpe0.loc)
-      case Kind.WildCaseSet => Type.mkAnyType(tpe0.loc)
-      case Kind.Star => Type.mkAnyType(tpe0.loc)
-      case Kind.Eff =>
-        // If an effect variable is free, we may assume its Pure due to the subst. lemma.
-        Type.Pure
-      case Kind.Bool => Type.mkAnyType(tpe0.loc)
-      case Kind.RecordRow => Type.RecordRowEmpty
-      case Kind.SchemaRow => Type.SchemaRowEmpty
-      case Kind.Predicate => Type.mkAnyType(tpe0.loc)
-      case Kind.CaseSet(sym) => Type.Cst(TypeConstructor.CaseSet(SortedSet.empty, sym), tpe0.loc)
-      case Kind.Arrow(_, _) => Type.mkAnyType(tpe0.loc)
-      case Kind.Jvm => throw InternalCompilerException(s"Unexpected type: '$tpe0'.", tpe0.loc)
-      case Kind.Error => throw InternalCompilerException(s"Unexpected type '$tpe0'.", tpe0.loc)
-    }
-
-    /**
       * Applies `this` substitution to the given type `tpe`, returning a normalized type.
       *
       * Performance Note: We are on a hot path. We take extra care to avoid redundant type objects.
@@ -520,6 +500,12 @@ object Monomorpher {
       val es = exps.map(visitExp(_, env0, subst))
       MonoAst.Expr.Apply(e, es, subst(tpe), subst(eff), loc)
 
+    case LoweredAst.Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc2) =>
+      val it = subst(itpe)
+      val newSym = specializeDefSym(sym, it)
+      val es = exps.map(visitExp(_, env0, subst))
+      MonoAst.Expr.ApplyDef(newSym, es, it, subst(tpe), subst(eff), loc2)
+
     case LoweredAst.Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp(_, env0, subst))
       MonoAst.Expr.ApplyAtomic(op, es, subst(tpe), subst(eff), loc)
@@ -581,11 +567,11 @@ object Monomorpher {
       ListOps.findMap(rules) {
         case LoweredAst.TypeMatchRule(sym, t, body0) =>
           // try to unify
-          Unification.unifyTypes(expTpe, subst.nonStrict(t), renv) match {
+          Unification.fullyUnifyTypes(expTpe, subst.nonStrict(t), renv, root.eqEnv) match {
             // Case 1: types don't unify; just continue
-            case Result.Err(_) => None
+            case None => None
             // Case 2: types unify; use the substitution in the body
-            case Result.Ok((caseSubst, econstrs)) => // TODO ASSOC-TYPES consider econstrs
+            case Some(caseSubst) =>
               // visit the base expression under the initial environment
               val e = visitExp(exp, env0, subst)
               // Generate a fresh symbol for the let-bound variable.
@@ -823,12 +809,30 @@ object Monomorpher {
     * Unifies `tpe1` and `tpe2` which must be unifiable.
     */
   private def infallibleUnify(tpe1: Type, tpe2: Type, sym: Symbol.DefnSym)(implicit root: LoweredAst.Root, flix: Flix): StrictSubstitution = {
-    Unification.unifyTypes(tpe1, tpe2, RigidityEnv.empty) match {
-      case Result.Ok((subst, econstrs)) => // TODO ASSOC-TYPES consider econstrs
+    Unification.unifyTypesIgnoreLeftoverAssocs(tpe1, tpe2, RigidityEnv.empty, root.eqEnv) match {
+      case Some(subst) =>
         StrictSubstitution(subst, root.eqEnv)
-      case Result.Err(_) =>
+      case None =>
         throw InternalCompilerException(s"Unable to unify: '$tpe1' and '$tpe2'.\nIn '${sym}'", tpe1.loc)
     }
+  }
+
+  /** Returns the normalized default type for the kind of `tpe0`. */
+  private def default(tpe0: Type): Type = tpe0.kind match {
+    case Kind.Wild => Type.mkAnyType(tpe0.loc)
+    case Kind.WildCaseSet => Type.mkAnyType(tpe0.loc)
+    case Kind.Star => Type.mkAnyType(tpe0.loc)
+    case Kind.Eff =>
+      // If an effect variable is free, we may assume its Pure due to the subst. lemma.
+      Type.Pure
+    case Kind.Bool => Type.mkAnyType(tpe0.loc)
+    case Kind.RecordRow => Type.RecordRowEmpty
+    case Kind.SchemaRow => Type.SchemaRowEmpty
+    case Kind.Predicate => Type.mkAnyType(tpe0.loc)
+    case Kind.CaseSet(sym) => Type.Cst(TypeConstructor.CaseSet(SortedSet.empty, sym), tpe0.loc)
+    case Kind.Arrow(_, _) => Type.mkAnyType(tpe0.loc)
+    case Kind.Jvm => throw InternalCompilerException(s"Unexpected type: '$tpe0'.", tpe0.loc)
+    case Kind.Error => throw InternalCompilerException(s"Unexpected type '$tpe0'.", tpe0.loc)
   }
 
 }
