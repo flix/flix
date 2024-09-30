@@ -124,9 +124,9 @@ object TypeReconstruction {
       val es = exps.map(visitExp)
       TypedAst.Expr.ApplyDef(symUse, es, subst(itvar), subst(tvar), subst(evar), loc)
 
-    case KindedAst.Expr.ApplySig(sym, exps, itvar, tvar, evar, loc) =>
+    case KindedAst.Expr.ApplySig(symUse, exps, itvar, tvar, evar, loc) =>
       val es = exps.map(visitExp)
-      TypedAst.Expr.ApplySig(sym, es, subst(itvar), subst(tvar), subst(evar), loc)
+      TypedAst.Expr.ApplySig(symUse, es, subst(itvar), subst(tvar), subst(evar), loc)
 
     case KindedAst.Expr.Lambda(fparam, exp, loc) =>
       val p = visitFormalParam(fparam, subst)
