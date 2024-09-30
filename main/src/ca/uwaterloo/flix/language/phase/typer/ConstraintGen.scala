@@ -124,20 +124,20 @@ object ConstraintGen {
         val resEff = evar
         (resTpe, resEff)
 
-      case Expr.ApplySig(sym, exps, itvar, tvar, evar, loc) =>
+      case Expr.ApplySig(Ast.SigSymUse(sym, loc1), exps, itvar, tvar, evar, loc2) =>
         val sig = root.traits(sym.trt).sigs(sym)
-        val (tconstrs1, econstrs1, declaredType, _) = Scheme.instantiate(sig.spec.sc, loc.asSynthetic) // loc of sym
-        val constrs1 = tconstrs1.map(_.copy(loc = loc)) // loc of sym
+        val (tconstrs1, econstrs1, declaredType, _) = Scheme.instantiate(sig.spec.sc, loc1.asSynthetic)
+        val constrs1 = tconstrs1.map(_.copy(loc = loc1))
         val declaredEff = declaredType.arrowEffectType
         val declaredArgumentTypes = declaredType.arrowArgTypes
         val declaredResultType = declaredType.arrowResultType
         val (tpes, effs) = exps.map(visitExp).unzip
         c.expectTypeArguments(sym, declaredArgumentTypes, tpes, exps.map(_.loc))
-        c.addClassConstraints(constrs1, loc)
-        econstrs1.foreach { econstr => c.unifyType(econstr.tpe1, econstr.tpe2, loc) }
-        c.unifyType(itvar, declaredType, loc)
-        c.unifyType(tvar, declaredResultType, loc)
-        c.unifyType(evar, Type.mkUnion(declaredEff :: effs, loc), loc)
+        c.addClassConstraints(constrs1, loc2)
+        econstrs1.foreach { econstr => c.unifyType(econstr.tpe1, econstr.tpe2, loc2) }
+        c.unifyType(itvar, declaredType, loc2)
+        c.unifyType(tvar, declaredResultType, loc2)
+        c.unifyType(evar, Type.mkUnion(declaredEff :: effs, loc2), loc2)
         val resTpe = tvar
         val resEff = evar
         (resTpe, resEff)
