@@ -75,7 +75,8 @@ object Kinder {
 
     val defsVal = visitDefs(root, taenv, oldRoot, changeSet)
 
-    val instances = ParOps.parMapValues(root.instances)(_.map(visitInstance(_, taenv, root))) // Should this not be root.instances.map(ParOps.parMap)?
+    val instances = ParOps.parMapValues(root.instances)(_.map(visitInstance(_, taenv, root)))
+    // Should this not be root.instances.map(ParOps.parMap)?
     // I.e., for every trait, we check all instances in parallel so we get a parallel task for every instance
     // instead of check all traits in parallel which spawns k threads each does synchronous code
 
@@ -202,14 +203,14 @@ object Kinder {
     */
   private def visitTraits(root: ResolvedAst.Root, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], oldRoot: KindedAst.Root, changeSet: ChangeSet)(implicit sctx: SharedContext, flix: Flix): Validation[Map[Symbol.TraitSym, KindedAst.Trait], KindError] = {
     val (staleTraits, freshTraits) = changeSet.partition(root.traits, oldRoot.traits)
-    val result = ParOps.parTraverseValues(staleTraits)(visitTrait(_, taenv, root))
-    mapN(result)(freshTraits ++ _)
+    val result = ParOps.parMapValues(staleTraits)(visitTrait(_, taenv, root))
+    Validation.success(freshTraits ++ result)
   }
 
   /**
     * Performs kinding on the given trait.
     */
-  private def visitTrait(trt: ResolvedAst.Declaration.Trait, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[KindedAst.Trait, KindError] = trt match {
+  private def visitTrait(trt: ResolvedAst.Declaration.Trait, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): KindedAst.Trait = trt match {
     case ResolvedAst.Declaration.Trait(doc, ann, mod, sym, tparam0, superTraits0, assocs0, sigs0, laws0, loc) =>
       val kenv = getKindEnvFromTypeParam(tparam0)
       val tparam = visitTypeParam(tparam0, kenv)
@@ -221,7 +222,7 @@ object Kinder {
           sigSym -> sig
       }
       val laws = laws0.map(visitDef(_, kenv, taenv, root)) // TODO ASSOC-TYPES need to include super traits?
-      Validation.success(KindedAst.Trait(doc, ann, mod, sym, tparam, superTraits, assocs, sigs, laws, loc))
+      KindedAst.Trait(doc, ann, mod, sym, tparam, superTraits, assocs, sigs, laws, loc)
   }
 
   /**
