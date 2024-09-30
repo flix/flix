@@ -327,12 +327,12 @@ object BackendObjType {
     }
   }
 
-  case class Tag(tpe: BackendType) extends BackendObjType with Generatable {
+  case class Tag(elms: List[BackendType]) extends BackendObjType with Generatable {
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = ClassMaker.mkClass(this.jvmName, IsFinal, superClass = Tagged.jvmName)
 
       cm.mkConstructor(Constructor)
-      cm.mkField(ValueField)
+      elms.indices.foreach(i => cm.mkField(IndexField(i)))
       cm.mkMethod(ToStringMethod)
 
       cm.closeClassMaker()
@@ -340,18 +340,18 @@ object BackendObjType {
 
     def NameField: InstanceField = Tagged.NameField
 
-    def ValueField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "value", tpe)
+    def IndexField(i: Int): InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, s"v$i", elms(i))
 
     def Constructor: ConstructorMethod = nullarySuperConstructor(Tagged.Constructor)
 
     def ToStringMethod: InstanceMethod = JavaObject.ToStringMethod.implementation(this.jvmName, Some(_ => {
-      Util.mkString(Some(thisLoad() ~ GETFIELD(NameField) ~ pushString("(") ~ INVOKEVIRTUAL(String.Concat)), Some(pushString(")")), 1, _ => getValueString()) ~
+      Util.mkString(Some(thisLoad() ~ GETFIELD(NameField) ~ pushString("(") ~ INVOKEVIRTUAL(String.Concat)), Some(pushString(")")), elms.length, getIndexString) ~
       xReturn(String.toTpe)
     }))
 
-    /** `[] --> [this.value.xString()]` */
-    private def getValueString(): InstructionSet = {
-      val field = ValueField
+    /** `[] --> [this.index(i).xString()]` */
+    private def getIndexString(i: Int): InstructionSet = {
+      val field = IndexField(i)
       thisLoad() ~ GETFIELD(field) ~ xToString(field.tpe)
     }
   }

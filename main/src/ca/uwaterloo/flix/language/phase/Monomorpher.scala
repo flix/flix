@@ -106,26 +106,6 @@ object Monomorpher {
   private case class StrictSubstitution(s: Substitution, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix) {
 
     /**
-      * Returns the normalized default type for the kind of `tpe0`.
-      */
-    private def default(tpe0: Type): Type = tpe0.kind match {
-      case Kind.Wild => Type.mkAnyType(tpe0.loc)
-      case Kind.WildCaseSet => Type.mkAnyType(tpe0.loc)
-      case Kind.Star => Type.mkAnyType(tpe0.loc)
-      case Kind.Eff =>
-        // If an effect variable is free, we may assume its Pure due to the subst. lemma.
-        Type.Pure
-      case Kind.Bool => Type.mkAnyType(tpe0.loc)
-      case Kind.RecordRow => Type.RecordRowEmpty
-      case Kind.SchemaRow => Type.SchemaRowEmpty
-      case Kind.Predicate => Type.mkAnyType(tpe0.loc)
-      case Kind.CaseSet(sym) => Type.Cst(TypeConstructor.CaseSet(SortedSet.empty, sym), tpe0.loc)
-      case Kind.Arrow(_, _) => Type.mkAnyType(tpe0.loc)
-      case Kind.Jvm => throw InternalCompilerException(s"Unexpected type: '$tpe0'.", tpe0.loc)
-      case Kind.Error => throw InternalCompilerException(s"Unexpected type '$tpe0'.", tpe0.loc)
-    }
-
-    /**
       * Applies `this` substitution to the given type `tpe`, returning a normalized type.
       *
       * Performance Note: We are on a hot path. We take extra care to avoid redundant type objects.
@@ -849,6 +829,24 @@ object Monomorpher {
       case None =>
         throw InternalCompilerException(s"Unable to unify: '$tpe1' and '$tpe2'.\nIn '${sym}'", tpe1.loc)
     }
+  }
+
+  /** Returns the normalized default type for the kind of `tpe0`. */
+  private def default(tpe0: Type): Type = tpe0.kind match {
+    case Kind.Wild => Type.mkAnyType(tpe0.loc)
+    case Kind.WildCaseSet => Type.mkAnyType(tpe0.loc)
+    case Kind.Star => Type.mkAnyType(tpe0.loc)
+    case Kind.Eff =>
+      // If an effect variable is free, we may assume its Pure due to the subst. lemma.
+      Type.Pure
+    case Kind.Bool => Type.mkAnyType(tpe0.loc)
+    case Kind.RecordRow => Type.RecordRowEmpty
+    case Kind.SchemaRow => Type.SchemaRowEmpty
+    case Kind.Predicate => Type.mkAnyType(tpe0.loc)
+    case Kind.CaseSet(sym) => Type.Cst(TypeConstructor.CaseSet(SortedSet.empty, sym), tpe0.loc)
+    case Kind.Arrow(_, _) => Type.mkAnyType(tpe0.loc)
+    case Kind.Jvm => throw InternalCompilerException(s"Unexpected type: '$tpe0'.", tpe0.loc)
+    case Kind.Error => throw InternalCompilerException(s"Unexpected type '$tpe0'.", tpe0.loc)
   }
 
 }
