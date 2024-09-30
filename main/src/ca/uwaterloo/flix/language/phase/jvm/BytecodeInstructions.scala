@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.Branch.{FalseBranch, TrueBranch}
-import ca.uwaterloo.flix.language.phase.jvm.ClassMaker._
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.*
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
 import org.objectweb.asm
@@ -39,7 +39,7 @@ object BytecodeInstructions {
 
     // TODO: sanitize varags
     def visitInvokeDynamicInstruction(methodName: String, descriptor: MethodDescriptor, bootstrapMethodHandle: Handle, bootstrapMethodArguments: Any*): Unit =
-      visitor.visitInvokeDynamicInsn(methodName, descriptor.toDescriptor, bootstrapMethodHandle.handle, bootstrapMethodArguments: _*)
+      visitor.visitInvokeDynamicInsn(methodName, descriptor.toDescriptor, bootstrapMethodHandle.handle, bootstrapMethodArguments *)
 
     def visitFieldInstruction(opcode: Int, owner: JvmName, fieldName: String, fieldType: BackendType): Unit =
       visitor.visitFieldInsn(opcode, owner.toInternalName, fieldName, fieldType.toDescriptor)
@@ -325,7 +325,7 @@ object BytecodeInstructions {
   def mkStaticLambda(lambdaMethod: InterfaceMethod, callD: MethodDescriptor, callHandle: Handle, drop: Int): InstructionSet = f => {
     f.visitInvokeDynamicInstruction(
       lambdaMethod.name,
-      mkDescriptor(callD.arguments.dropRight(drop): _*)(lambdaMethod.clazz.toTpe),
+      mkDescriptor(callD.arguments.dropRight(drop) *)(lambdaMethod.clazz.toTpe),
       mkStaticHandle(BackendObjType.LambdaMetaFactory.MetaFactoryMethod),
       lambdaMethod.d.toAsmType,
       callHandle.handle,
@@ -715,5 +715,45 @@ object BytecodeInstructions {
     case Condition.NE => Condition.EQ
     case Condition.NONNULL => Condition.NULL
     case Condition.NULL => Condition.NONNULL
+  }
+
+  object Util {
+
+    /**
+      * Returns a instructions `[] --> [prefix + "s1, s2, .." + suffix]`.
+      *
+      * @param prefix       `[] -> ["prefixString"]`
+      * @param suffix       `[] -> ["suffixString"]`
+      * @param length       `getNthString` will be called with the range `[0, length[`
+      * @param getNthString `[] -> [si: String]`
+      */
+    def mkString(prefix: Option[InstructionSet], suffix: Option[InstructionSet], length: Int, getNthString: Int => InstructionSet): InstructionSet = {
+      // [] --> [new String[length]] // Referred to as `elms`.
+      cheat(mv => GenExpression.compileInt(length)(mv)) ~ ANEWARRAY(BackendObjType.String.jvmName) ~
+      // [elms] --> [elms, -1] // Running index referred to as `i`.
+      ICONST_M1() ~
+      // [elms, -1] --> [elms, length]
+      composeN((0 until length).map { i =>
+        // [elms, i-1] -> [elms, i]
+        ICONST_1() ~ IADD() ~
+        // [elms, i] -> [elms, i, elms, i]
+        DUP2() ~
+        // [elms, i, elms, i] -> [elms, i, elms, i, nth(i)]
+        getNthString(i) ~
+        // [elms, i, elms, i, nth(i)] -> [elms, i]
+        AASTORE()
+      }) ~
+      // [elms, length] --> [elms]
+      POP() ~
+      // [elms] -> [", ", elms]
+      pushString(", ") ~ SWAP() ~
+      // [", ", elms] --> ["s1, s2, .."]
+      INVOKESTATIC(BackendObjType.String.JoinMethod) ~
+      // ["s1, s2, .."] --> [prefix + "s1, s2, .."]
+      prefix.map(ins => ins ~ SWAP() ~ INVOKEVIRTUAL(BackendObjType.String.Concat)).getOrElse(nop()) ~
+      // [prefix + "s1, s2, .."] --> [prefix + "s1, s2, .." + suffix]
+      suffix.map(ins => ins ~ INVOKEVIRTUAL(BackendObjType.String.Concat)).getOrElse(nop())
+    }
+
   }
 }

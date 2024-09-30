@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.Purity.Pure
-import ca.uwaterloo.flix.language.ast.shared.{Constant, Source}
+import ca.uwaterloo.flix.language.ast.shared.{Annotations, Constant, Source}
 
 object OccurrenceAst {
 
@@ -27,13 +27,11 @@ object OccurrenceAst {
                   reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 
-  case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, cparams: List[(OccurrenceAst.FormalParam, Occur)], fparams: List[(OccurrenceAst.FormalParam, Occur)], exp: OccurrenceAst.Expr, context: DefContext, tpe: MonoType, loc: SourceLocation)
+  case class Def(ann: Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, cparams: List[(OccurrenceAst.FormalParam, Occur)], fparams: List[(OccurrenceAst.FormalParam, Occur)], exp: OccurrenceAst.Expr, context: DefContext, tpe: MonoType, loc: SourceLocation)
 
-  case class Effect(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EffectSym, ops: List[Op], loc: SourceLocation)
+  case class Effect(ann: Annotations, mod: Ast.Modifiers, sym: Symbol.EffectSym, ops: List[Op], loc: SourceLocation)
 
-  case class Op(sym: Symbol.OpSym, ann: Ast.Annotations, mod: Ast.Modifiers, fparams: List[FormalParam], tpe: MonoType, purity: Purity, loc: SourceLocation)
-
-  case class Struct(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.StructSym, fields: List[StructField], loc: SourceLocation)
+  case class Op(sym: Symbol.OpSym, ann: Annotations, mod: Ast.Modifiers, fparams: List[FormalParam], tpe: MonoType, purity: Purity, loc: SourceLocation)
 
   sealed trait Expr {
     def tpe: MonoType
@@ -57,7 +55,7 @@ object OccurrenceAst {
 
     case class ApplyClo(exp: OccurrenceAst.Expr, exps: List[OccurrenceAst.Expr], tpe: MonoType, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expr
 
-    case class ApplyDef(sym: Symbol.DefnSym, exps: List[OccurrenceAst.Expr], tpe: MonoType, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expr
+    case class ApplyDef(symUse: Symbol.DefnSym, exps: List[OccurrenceAst.Expr], tpe: MonoType, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expr
 
     case class IfThenElse(exp1: OccurrenceAst.Expr, exp2: OccurrenceAst.Expr, exp3: OccurrenceAst.Expr, tpe: MonoType, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expr
 
@@ -79,15 +77,13 @@ object OccurrenceAst {
 
     case class Do(op: Ast.OpSymUse, exps: List[OccurrenceAst.Expr], tpe: MonoType, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expr
 
-    case class NewObject(name: String, clazz: java.lang.Class[_], tpe: MonoType, purity: Purity, methods: List[OccurrenceAst.JvmMethod], loc: SourceLocation) extends OccurrenceAst.Expr
+    case class NewObject(name: String, clazz: java.lang.Class[?], tpe: MonoType, purity: Purity, methods: List[OccurrenceAst.JvmMethod], loc: SourceLocation) extends OccurrenceAst.Expr
 
   }
 
-  case class StructField(sym: Symbol.StructFieldSym, idx: Int, tpe: Type, loc: SourceLocation)
-
   case class JvmMethod(ident: Name.Ident, fparams: List[OccurrenceAst.FormalParam], clo: OccurrenceAst.Expr, retTpe: MonoType, purity: Purity, loc: SourceLocation)
 
-  case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: OccurrenceAst.Expr)
+  case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[?], exp: OccurrenceAst.Expr)
 
   case class HandlerRule(op: Ast.OpSymUse, fparams: List[FormalParam], exp: OccurrenceAst.Expr)
 

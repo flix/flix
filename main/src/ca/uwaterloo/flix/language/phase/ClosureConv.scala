@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.SimplifiedAst._
+import ca.uwaterloo.flix.language.ast.SimplifiedAst.*
 import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, MonoType, Purity, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugSimplifiedAst
@@ -330,9 +330,9 @@ object ClosureConv {
         val as = args map visitExp
         Expr.ApplyClo(e, as, tpe, purity, loc)
 
-      case Expr.ApplyDef(sym, args, tpe, purity, loc) =>
+      case Expr.ApplyDef(symUse, args, tpe, purity, loc) =>
         val as = args map visitExp
-        Expr.ApplyDef(sym, as, tpe, purity, loc)
+        Expr.ApplyDef(symUse, as, tpe, purity, loc)
 
       case Expr.Apply(exp, args, tpe, purity, loc) =>
         val e = visitExp(exp)

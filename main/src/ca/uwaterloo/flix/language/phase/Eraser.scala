@@ -1,8 +1,8 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ReducedAst.Expr._
-import ca.uwaterloo.flix.language.ast.ReducedAst._
+import ca.uwaterloo.flix.language.ast.ReducedAst.Expr.*
+import ca.uwaterloo.flix.language.ast.ReducedAst.*
 import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoType, Purity, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugReducedAst
 import ca.uwaterloo.flix.util.ParOps
@@ -130,8 +130,8 @@ object Eraser {
     case ApplyClo(exp, exps, ct, tpe, purity, loc) =>
       val ac = ApplyClo(visitExp(exp), exps.map(visitExp), ct, box(tpe), purity, loc)
       castExp(unboxExp(ac, erase(tpe), purity, loc), visitType(tpe), purity, loc)
-    case ApplyDef(sym, exps, ct, tpe, purity, loc) =>
-      val ad = ApplyDef(sym, exps.map(visitExp), ct, box(tpe), purity, loc)
+    case ApplyDef(symUse, exps, ct, tpe, purity, loc) =>
+      val ad = ApplyDef(symUse, exps.map(visitExp), ct, box(tpe), purity, loc)
       castExp(unboxExp(ad, erase(tpe), purity, loc), visitType(tpe), purity, loc)
     case ApplySelfTail(sym, actuals, tpe, purity, loc) =>
       ApplySelfTail(sym, actuals.map(visitExp), visitType(tpe), purity, loc)
@@ -179,7 +179,7 @@ object Eraser {
   }
 
   private def visitType(tpe: MonoType): MonoType = {
-    import MonoType._
+    import MonoType.*
     tpe match {
       case Void => Void
       case AnyType => AnyType
@@ -211,7 +211,7 @@ object Eraser {
   }
 
   private def erase(tpe: MonoType): MonoType = {
-    import MonoType._
+    import MonoType.*
     tpe match {
       case Bool => Bool
       case Char => Char

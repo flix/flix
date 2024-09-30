@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 
 import java.util
 import java.util.concurrent.{Callable, CountDownLatch, RecursiveTask}
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 import scala.reflect.ClassTag
 
 object ParOps {

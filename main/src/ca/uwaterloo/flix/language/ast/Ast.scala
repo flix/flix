@@ -27,77 +27,6 @@ import java.util.Objects
 object Ast {
 
   /**
-    * Companion object of [[Annotations]].
-    */
-  object Annotations {
-    /**
-      * The empty sequence of annotations.
-      */
-    val Empty: Annotations = Annotations(Nil)
-  }
-
-  /**
-    * A sequence of annotations.
-    */
-  case class Annotations(annotations: List[Annotation]) {
-
-    /**
-      * Returns `true` if `this` sequence contains the `@Deprecated` annotation.
-      */
-    def isDeprecated: Boolean = annotations exists (_.isInstanceOf[Annotation.Deprecated])
-
-    /**
-      * Returns `true` if `this` sequence contains the `@Experimental` annotation.
-      */
-    def isExperimental: Boolean = annotations exists (_.isInstanceOf[Annotation.Experimental])
-
-    /**
-      * Returns `true` if `this` sequence contains the `@Export` annotation.
-      */
-    def isExport: Boolean = annotations exists (_.isInstanceOf[Annotation.Export])
-
-    /**
-      * Returns `true` if `this` sequence contains the `@Internal` annotation.
-      */
-    def isInternal: Boolean = annotations exists (_.isInstanceOf[Annotation.Internal])
-
-    /**
-      * Returns `true` if `this` sequence contains the `@Lazy` annotation.
-      */
-    def isLazy: Boolean = annotations exists (_.isInstanceOf[Annotation.Lazy])
-
-    /**
-      * Returns `true` if `this` sequence contains the `@LazyWhenPure` annotation.
-      */
-    def isLazyWhenPure: Boolean = annotations exists (_.isInstanceOf[Annotation.LazyWhenPure])
-
-    /**
-      * Returns `true` if `this` sequence contains the `@MustUse` annotation.
-      */
-    def isMustUse: Boolean = annotations exists (_.isInstanceOf[Annotation.MustUse])
-
-    /**
-      * Returns `true` if `this` sequence contains the `@Parallel` annotation.
-      */
-    def isParallel: Boolean = annotations exists (_.isInstanceOf[Annotation.Parallel])
-
-    /**
-      * Returns `true` if `this` sequence contains the `@ParallelWhenPure` annotation.
-      */
-    def isParallelWhenPure: Boolean = annotations exists (_.isInstanceOf[Annotation.ParallelWhenPure])
-
-    /**
-      * Returns `true` if `this` sequence contains the `@Skip` annotation.
-      */
-    def isSkip: Boolean = annotations exists (_.isInstanceOf[Annotation.Skip])
-
-    /**
-      * Returns `true` if `this` sequence contains the `@Test` annotation.
-      */
-    def isTest: Boolean = annotations exists (_.isInstanceOf[Annotation.Test])
-  }
-
-  /**
     * A common super-type that represents an expression position (tail position or not).
     */
   sealed trait ExpPosition
@@ -302,12 +231,12 @@ object Ast {
   /**
     * Represents that the annotated element is introduced by the class `clazz`.
     */
-  case class IntroducedBy(clazz: java.lang.Class[_]) extends scala.annotation.StaticAnnotation
+  case class IntroducedBy(clazz: java.lang.Class[?]) extends scala.annotation.StaticAnnotation
 
   /**
     * Represents that the annotated element is eliminated by the class `clazz`.
     */
-  case class EliminatedBy(clazz: java.lang.Class[_]) extends scala.annotation.StaticAnnotation
+  case class EliminatedBy(clazz: java.lang.Class[?]) extends scala.annotation.StaticAnnotation
 
   case object TraitConstraint {
     /**
@@ -369,6 +298,12 @@ object Ast {
     * Represents a use of a restrictable enum sym.
     */
   case class RestrictableEnumSymUse(sym: Symbol.RestrictableEnumSym, loc: SourceLocation)
+
+  /**
+    * Represents a use of a defn sym.
+    */
+  case class DefSymUse(sym: Symbol.DefnSym, loc: SourceLocation)
+
 
   /**
     * Represents a use of a class sym.
@@ -529,7 +464,7 @@ object Ast {
     /**
       * An import of a Java class.
       */
-    case class Import(clazz: Class[_], alias: Name.Ident, loc: SourceLocation) extends UseOrImport
+    case class Import(clazz: Class[?], alias: Name.Ident, loc: SourceLocation) extends UseOrImport
   }
 
   /**

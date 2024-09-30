@@ -19,8 +19,8 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.BoundBy
 import ca.uwaterloo.flix.language.ast.shared.{Constant, Scope}
-import ca.uwaterloo.flix.language.ast.{Purity, Symbol, _}
-import ca.uwaterloo.flix.language.dbg.AstPrinter._
+import ca.uwaterloo.flix.language.ast.{Purity, Symbol, *}
+import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 import ca.uwaterloo.flix.language.phase.unification.Substitution
 
@@ -80,6 +80,13 @@ object Simplifier {
 
     case MonoAst.Expr.Apply(exp, exps, tpe, eff, loc) =>
       val e = visitExp(exp)
+      val es = exps.map(visitExp)
+      val t = visitType(tpe)
+      SimplifiedAst.Expr.Apply(e, es, t, simplifyEffect(eff), loc)
+
+    case MonoAst.Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
+      val ft = visitType(itpe)
+      val e = SimplifiedAst.Expr.Def(sym, ft, loc) // Add Expr.Def to avoid breaking the backend, will be removed later
       val es = exps.map(visitExp)
       val t = visitType(tpe)
       SimplifiedAst.Expr.Apply(e, es, t, simplifyEffect(eff), loc)

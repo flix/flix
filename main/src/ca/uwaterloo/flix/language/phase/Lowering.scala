@@ -205,16 +205,15 @@ object Lowering {
     * Lowers the given enum `enum0`.
     */
   private def visitEnum(enum0: TypedAst.Enum)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Enum = enum0 match {
-    case TypedAst.Enum(doc, ann, mod, sym, tparams0, derives, cases0, tpe0, loc) =>
+    case TypedAst.Enum(doc, ann, mod, sym, tparams0, derives, cases0, loc) =>
       val tparams = tparams0.map(visitTypeParam)
-      val tpe = visitType(tpe0)
       val cases = cases0.map {
         case (_, TypedAst.Case(caseSym, caseTpeDeprecated0, caseSc0, loc)) =>
           val caseTpeDeprecated = visitType(caseTpeDeprecated0)
           val caseSc = visitScheme(caseSc0)
           (caseSym, LoweredAst.Case(caseSym, caseTpeDeprecated, caseSc, loc))
       }
-      LoweredAst.Enum(doc, ann, mod, sym, tparams, derives, cases, tpe, loc)
+      LoweredAst.Enum(doc, ann, mod, sym, tparams, derives, cases, loc)
   }
 
   /**
@@ -234,12 +233,11 @@ object Lowering {
     * Lowers the given enum `enum0` from a restrictable enum into a regular enum.
     */
   private def visitRestrictableEnum(enum0: TypedAst.RestrictableEnum)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Enum = enum0 match {
-    case TypedAst.RestrictableEnum(doc, ann, mod, sym0, index0, tparams0, derives, cases0, tpe0, loc) =>
+    case TypedAst.RestrictableEnum(doc, ann, mod, sym0, index0, tparams0, derives, cases0, loc) =>
       // index is erased since related checking has concluded.
       // Restrictable tag is lowered into a regular tag
       val index = visitTypeParam(index0)
       val tparams = tparams0.map(visitTypeParam)
-      val tpe = visitType(tpe0)
       val cases = cases0.map {
         case (_, TypedAst.RestrictableCase(caseSym0, caseTpeDeprecated0, caseSc0, loc)) =>
           val caseTpeDeprecated = visitType(caseTpeDeprecated0)
@@ -248,7 +246,7 @@ object Lowering {
           (caseSym, LoweredAst.Case(caseSym, caseTpeDeprecated, caseSc, loc))
       }
       val sym = visitRestrictableEnumSym(sym0)
-      LoweredAst.Enum(doc, ann, mod, sym, index :: tparams, derives, cases, tpe, loc)
+      LoweredAst.Enum(doc, ann, mod, sym, index :: tparams, derives, cases, loc)
   }
 
   /**
@@ -362,9 +360,9 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expr.Sig(sym, t, loc)
 
-    case TypedAst.Expr.Hole(sym, tpe, loc) =>
+    case TypedAst.Expr.Hole(sym, tpe, eff, loc) =>
       val t = visitType(tpe)
-      LoweredAst.Expr.ApplyAtomic(AtomicOp.HoleError(sym), List.empty, t, Type.Pure, loc)
+      LoweredAst.Expr.ApplyAtomic(AtomicOp.HoleError(sym), List.empty, t, eff, loc)
 
     case TypedAst.Expr.HoleWithExp(_, tpe, _, loc) =>
       val sym = Symbol.freshHoleSym(loc)
@@ -388,6 +386,12 @@ object Lowering {
       val es = exps.map(visitExp)
       val t = visitType(tpe)
       LoweredAst.Expr.Apply(e, es, t, eff, loc)
+
+    case TypedAst.Expr.ApplyDef(Ast.DefSymUse(sym, _), exps, itpe, tpe, eff, loc) =>
+      val es = exps.map(visitExp)
+      val ft = visitType(itpe)
+      val t = visitType(tpe)
+      LoweredAst.Expr.ApplyDef(sym, es, ft, t, eff, loc)
 
     case TypedAst.Expr.Unary(sop, exp, tpe, eff, loc) =>
       val e = visitExp(exp)
@@ -1007,7 +1011,7 @@ object Lowering {
   /**
     * Lowers the given select channel rule `rule0`.
     */
-  private def visitSelectChannelRule(rule0: TypedAst.SelectChannelRule)(implicit scope: Scope, root:TypedAst.Root, flix: Flix): LoweredAst.SelectChannelRule = rule0 match {
+  private def visitSelectChannelRule(rule0: TypedAst.SelectChannelRule)(implicit scope: Scope, root: TypedAst.Root, flix: Flix): LoweredAst.SelectChannelRule = rule0 match {
     case TypedAst.SelectChannelRule(sym, chan, exp) =>
       val c = visitExp(chan)
       val e = visitExp(exp)
@@ -1042,7 +1046,7 @@ object Lowering {
   /**
     * Lowers the given head predicate `p0`.
     */
-  private def visitHeadPred(cparams0: List[TypedAst.ConstraintParam], p0: TypedAst.Predicate.Head)(implicit scope: Scope, root:TypedAst.Root, flix: Flix): LoweredAst.Expr = p0 match {
+  private def visitHeadPred(cparams0: List[TypedAst.ConstraintParam], p0: TypedAst.Predicate.Head)(implicit scope: Scope, root: TypedAst.Root, flix: Flix): LoweredAst.Expr = p0 match {
     case TypedAst.Predicate.Head.Atom(pred, den, terms, _, loc) =>
       val predSymExp = mkPredSym(pred)
       val denotationExp = mkDenotation(den, terms.lastOption.map(_.tpe), loc)
@@ -1081,7 +1085,7 @@ object Lowering {
   /**
     * Lowers the given head term `exp0`.
     */
-  private def visitHeadTerm(cparams0: List[TypedAst.ConstraintParam], exp0: TypedAst.Expr)(implicit scope: Scope, root:TypedAst.Root, flix: Flix): LoweredAst.Expr = {
+  private def visitHeadTerm(cparams0: List[TypedAst.ConstraintParam], exp0: TypedAst.Expr)(implicit scope: Scope, root: TypedAst.Root, flix: Flix): LoweredAst.Expr = {
     //
     // We need to consider four cases:
     //
@@ -1149,7 +1153,7 @@ object Lowering {
   /**
     * Lowers the given JvmMethod `method`.
     */
-  private def visitJvmMethod(method: TypedAst.JvmMethod)(implicit scope: Scope, root:TypedAst.Root, flix: Flix): LoweredAst.JvmMethod = method match {
+  private def visitJvmMethod(method: TypedAst.JvmMethod)(implicit scope: Scope, root: TypedAst.Root, flix: Flix): LoweredAst.JvmMethod = method match {
     case TypedAst.JvmMethod(ident, fparams, exp, retTyp, eff, loc) =>
       val fs = fparams.map(visitFormalParam)
       val e = visitExp(exp)
@@ -1209,7 +1213,7 @@ object Lowering {
         case None => throw InternalCompilerException("Unexpected nullary lattice predicate.", loc)
         case Some(tpe) =>
           // The type `Denotation[tpe]`.
-          val unboxedDenotationType = Type.mkEnum(Enums.Denotation, tpe :: Nil, loc)
+          val unboxedDenotationType = Type.mkEnum(Enums.Denotation, visitType(tpe) :: Nil, loc)
 
           // The type `Denotation[Boxed]`.
           val boxedDenotationType = Types.Denotation
@@ -1379,7 +1383,7 @@ object Lowering {
   /**
     * Returns a `Fixpoint/Ast/Datalog.HeadTerm.AppX`.
     */
-  private def mkAppTerm(fvs: List[(Symbol.VarSym, Type)], exp: LoweredAst.Expr, loc: SourceLocation)(implicit scope: Scope, root:TypedAst.Root, flix: Flix): LoweredAst.Expr = {
+  private def mkAppTerm(fvs: List[(Symbol.VarSym, Type)], exp: LoweredAst.Expr, loc: SourceLocation)(implicit scope: Scope, root: TypedAst.Root, flix: Flix): LoweredAst.Expr = {
     // Compute the number of free variables.
     val arity = fvs.length
 
@@ -1872,6 +1876,10 @@ object Lowering {
       val e = substExp(exp, subst)
       val es = exps.map(substExp(_, subst))
       LoweredAst.Expr.Apply(e, es, tpe, eff, loc)
+
+    case LoweredAst.Expr.ApplyDef(symUse, exps, itpe, tpe, eff, loc) =>
+      val es = exps.map(substExp(_, subst))
+      LoweredAst.Expr.ApplyDef(symUse, es, itpe, tpe, eff, loc)
 
     case LoweredAst.Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
       val es = exps.map(substExp(_, subst))

@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.dbg.AstPrinter
 import ca.uwaterloo.flix.language.phase.Typer
 import ca.uwaterloo.flix.util.Similarity
 import org.json4s.JsonAST.JObject
-import org.json4s.JsonDSL._
+import org.json4s.JsonDSL.*
 
 import java.nio.file.Path
 

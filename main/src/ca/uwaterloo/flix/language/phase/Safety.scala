@@ -10,9 +10,7 @@ import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.language.errors.SafetyError.*
-import ca.uwaterloo.flix.language.phase.jvm.JvmOps
-import ca.uwaterloo.flix.language.phase.typer.TypeReduction
-import ca.uwaterloo.flix.util.{ParOps, Validation}
+import ca.uwaterloo.flix.util.{Jvm, ParOps, Validation}
 
 import java.math.BigInteger
 import scala.annotation.tailrec
@@ -242,7 +240,7 @@ object Safety {
 
       case Expr.Sig(_, _, _) => Nil
 
-      case Expr.Hole(_, _, _) => Nil
+      case Expr.Hole(_, _, _, _) => Nil
 
       case Expr.HoleWithExp(exp, _, _, _) =>
         visit(exp)
@@ -259,6 +257,9 @@ object Safety {
 
       case Expr.Apply(exp, exps, _, _, _) =>
         visit(exp) ++ exps.flatMap(visit)
+
+      case Expr.ApplyDef(_, exps, _, _, _, _) =>
+        exps.flatMap(visit)
 
       case Expr.Unary(_, exp, _, _, _) =>
         visit(exp)
@@ -926,7 +927,7 @@ object Safety {
     * @param clazz the Java class specified in the catch clause
     * @param loc   the location of the catch parameter.
     */
-  private def checkCatchClass(clazz: java.lang.Class[_], loc: SourceLocation): List[SafetyError] = {
+  private def checkCatchClass(clazz: java.lang.Class[?], loc: SourceLocation): List[SafetyError] = {
     if (!classOf[Throwable].isAssignableFrom(clazz)) {
       List(IllegalCatchType(loc))
     } else {
@@ -954,7 +955,7 @@ object Safety {
   /**
     * Ensures that `methods` fully implement `clazz`
     */
-  private def checkObjectImplementation(clazz: java.lang.Class[_], tpe: Type, methods: List[JvmMethod], loc: SourceLocation): List[SafetyError] = {
+  private def checkObjectImplementation(clazz: java.lang.Class[?], tpe: Type, methods: List[JvmMethod], loc: SourceLocation): List[SafetyError] = {
     //
     // Check that `clazz` doesn't have a non-default constructor
     //
@@ -1036,8 +1037,8 @@ object Safety {
   /**
     * Get a Set of MethodSignatures representing the methods of `clazz`. Returns a map to allow subsequent reverse lookup.
     */
-  private def getJavaMethodSignatures(clazz: java.lang.Class[_]): Map[MethodSignature, java.lang.reflect.Method] = {
-    val methods = JvmOps.getMethods(clazz).filterNot(JvmOps.isStatic)
+  private def getJavaMethodSignatures(clazz: java.lang.Class[?]): Map[MethodSignature, java.lang.reflect.Method] = {
+    val methods = Jvm.getInstanceMethods(clazz)
     methods.foldLeft(Map.empty[MethodSignature, java.lang.reflect.Method]) {
       case (acc, m) =>
         val signature = MethodSignature(m.getName, m.getParameterTypes.toList.map(Type.getFlixType), Type.getFlixType(m.getReturnType))
@@ -1048,7 +1049,7 @@ object Safety {
   /**
     * Return true if the given `clazz` has a non-private zero argument constructor.
     */
-  private def hasNonPrivateZeroArgConstructor(clazz: java.lang.Class[_]): Boolean = {
+  private def hasNonPrivateZeroArgConstructor(clazz: java.lang.Class[?]): Boolean = {
     try {
       val constructor = clazz.getDeclaredConstructor()
       !java.lang.reflect.Modifier.isPrivate(constructor.getModifiers)
@@ -1060,7 +1061,7 @@ object Safety {
   /**
     * Returns `true` if the given class `c` is public.
     */
-  private def isPublicClass(c: java.lang.Class[_]): Boolean =
+  private def isPublicClass(c: java.lang.Class[?]): Boolean =
     java.lang.reflect.Modifier.isPublic(c.getModifiers)
 
   /**
