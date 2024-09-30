@@ -80,7 +80,7 @@ object RestrictableChooseConstraintGen {
           case None => throw InternalCompilerException("unexpected empty choose", loc)
           case Some(rule) => rule.pat match {
             case RestrictableChoosePattern.Error(_, loc) => // If the pattern is an error we just return fresh error variables
-              (Type.freshError(Kind.Error, loc), Type.freshError(Kind.Error, loc))
+              (Type.freshError(Kind.Star, loc), Type.freshError(Kind.Star, loc))
 
             case RestrictableChoosePattern.Tag(sym, _, _, _) => // If the pattern is Tag then we emit constraint rules
               val enumSym = sym.sym.enumSym
@@ -182,7 +182,7 @@ object RestrictableChooseConstraintGen {
             val resEff = Type.mkUnion(eff :: effs, loc)
             (resTpe, resEff)
 
-          case None => (Type.freshError(Kind.Error, loc), Type.freshError(Kind.Error, loc))
+          case None => (Type.freshError(Kind.Star, loc), Type.freshError(Kind.Star, loc))
         }
     }
   }
