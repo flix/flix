@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.{Ast, Kind, RigidityEnv, SourceLocation, S
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.collection.{ListMap, ListOps}
-import ca.uwaterloo.flix.util.{InternalCompilerException, Jvm, Result}
+import ca.uwaterloo.flix.util.{InternalCompilerException, JvmUtils, Result}
 import org.apache.commons.lang3.reflect.{ConstructorUtils, MethodUtils}
 
 import java.lang.reflect.{Constructor, Field, Method}
@@ -207,7 +207,7 @@ object TypeReduction {
     val tparams = ts.map(getJavaType)
     val m = MethodUtils.getMatchingAccessibleMethod(clazz, methodName, tparams *)
     // We check if we found a method and if its static flag matches.
-    if (m != null && Jvm.isStatic(m) == static) {
+    if (m != null && JvmUtils.isStatic(m) == static) {
       // Case 1: We found the method on the clazz.
       JavaMethodResolution.Resolved(m)
     } else {
@@ -215,7 +215,7 @@ object TypeReduction {
       // We make one attempt on java.lang.Object.
       val classObj = classOf[java.lang.Object]
       val m = MethodUtils.getMatchingAccessibleMethod(classObj, methodName, tparams *)
-      if (m != null && Jvm.isStatic(m) == static) {
+      if (m != null && JvmUtils.isStatic(m) == static) {
         // Case 2.1: We found the method on java.lang.Object.
         JavaMethodResolution.Resolved(m)
       } else {
@@ -297,7 +297,7 @@ object TypeReduction {
     if (!typeIsKnown) return JavaFieldResolution.UnresolvedTypes
     val opt = for {
       clazz <- Type.classFromFlixType(thisObj)
-      field <- Jvm.getField(clazz, fieldName, static = false)
+      field <- JvmUtils.getField(clazz, fieldName, static = false)
     } yield JavaFieldResolution.Resolved(field)
     opt.getOrElse(JavaFieldResolution.NotFound)
   }
