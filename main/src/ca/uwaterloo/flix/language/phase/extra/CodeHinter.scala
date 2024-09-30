@@ -98,10 +98,7 @@ object CodeHinter {
       visitExp(exp) ++ visitExps(exps)
 
     case Expr.ApplyDef(Ast.DefSymUse(sym, loc1), exps, _, _, _, loc2) =>
-      val hints0 = exps match {
-        case lambda :: _ => checkEffect(sym, lambda.tpe, loc2) // why does this not check the rest of the exps?
-        case _ => Nil
-      }
+      val hints0 = exps.flatMap(e => checkEffect(sym, e.tpe, e.loc))
       val hints1 = checkDeprecated(sym, loc1) ++
         checkExperimental(sym, loc1) ++
         checkParallel(sym, loc1) ++
