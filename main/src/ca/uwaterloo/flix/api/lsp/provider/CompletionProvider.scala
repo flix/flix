@@ -111,7 +111,13 @@ object CompletionProvider {
       //
       case SyntacticContext.Expr.Constraint => PredicateCompleter.getCompletions(context) ++ KeywordCompleter.getConstraintKeywords
       case SyntacticContext.Expr.Do => OpCompleter.getCompletions(context)
-      case SyntacticContext.Expr.InvokeMethod(tpe, name) => InvokeMethodCompleter.getCompletions(tpe, name, context)
+      case SyntacticContext.Expr.InvokeMethod(tpe, name) =>
+        if ("match".startsWith(name.name)) {
+          MagicMatchCompleter.getCompletions(name, tpe)
+        } else {
+          InvokeMethodCompleter.getCompletions(tpe, name, context)
+        }
+
       case SyntacticContext.Expr.StaticFieldOrMethod(e) => GetStaticFieldCompleter.getCompletions(e) ++ InvokeStaticMethodCompleter.getCompletions(e)
       case SyntacticContext.Expr.StructAccess(e) => StructFieldCompleter.getCompletions(e, root)
       case _: SyntacticContext.Expr => ExprCompleter.getCompletions(context)
