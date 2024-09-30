@@ -150,17 +150,19 @@ object RestrictableChooseConstraintGen {
         ((targsOut :: bodyTargs).transpose).foreach(c.unifyAllTypes(_, loc))
 
         val indicesAndTags = bodyIndexVars.zip(patternTagTypes)
-        val intros = mkUnion(indicesAndTags.map { case (i, tag) => Type.mkCaseDifference(i, tag, enumSym, loc.asSynthetic) })
-        val potentiallyStable = mkUnion(indicesAndTags.map { case (i, tag) => Type.mkCaseIntersection(i, tag, enumSym, loc.asSynthetic) })
 
         // φ_out :> (φ_in ∩ potentiallyStable) ∪ intros
-        val set = Type.mkCaseUnion(
-          Type.mkCaseIntersection(indexInVar, potentiallyStable, enumSym, loc),
-          intros,
-          enumSym,
-          loc
-        )
-        unifySubset(set, indexOutVar, enumSym, loc)
+        // but the subtyping check is split based on the premise that if x :> y and x :> z
+        // then x :> y ∪ z.
+        // Thus check that for each intro in intros is true that φ_out :> intro
+        // and for each ps in potentiallyStable: φ_out :> φ_in ∩ ps.
+        indicesAndTags.foreach {
+          case (i, tag) =>
+            val potentiallyStable = Type.mkCaseIntersection(indexInVar, Type.mkCaseIntersection(i, tag, enumSym, loc.asSynthetic), enumSym, loc)
+            val intro = Type.mkCaseDifference(i, tag, enumSym, loc.asSynthetic)
+            unifySubset(intro, indexOutVar, enumSym, loc)
+            unifySubset(potentiallyStable, indexOutVar, enumSym, loc)
+        }
 
         // τ_out
         c.unifyType(enumTypeOut, tpe0, loc)
