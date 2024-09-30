@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast
 import ca.uwaterloo.flix.language.ast.ReducedAst.*
+import ca.uwaterloo.flix.language.ast.shared.ExpPosition
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugReducedAst
 import ca.uwaterloo.flix.util.ParOps
 import ca.uwaterloo.flix.util.collection.MapOps
@@ -30,10 +31,10 @@ import ca.uwaterloo.flix.util.collection.MapOps
   * Specifically, it replaces [[Expr.ApplyDef]] AST nodes with [[Expr.ApplySelfTail]] AST nodes
   * when the [[Expr.ApplyDef]] node calls the enclosing function and occurs in tail position.
   *
-  * Otherwise, it adds [[Ast.ExpPosition.Tail]] to function calls and try-with expressions in tail
+  * Otherwise, it adds [[ExpPosition.Tail]] to function calls and try-with expressions in tail
   * position.
   *
-  * For correctness it is assumed that all calls in the given AST have [[Ast.ExpPosition.NonTail]]
+  * For correctness it is assumed that all calls in the given AST have [[ExpPosition.NonTail]]
   * and there are no [[Expr.ApplySelfTail]] nodes present.
   */
 object TailPos {
@@ -89,13 +90,13 @@ object TailPos {
 
       case Expr.ApplyClo(exp, exps, _, tpe, purity, loc) =>
         // Mark expression as tail position.
-        Expr.ApplyClo(exp, exps, Ast.ExpPosition.Tail, tpe, purity, loc)
+        Expr.ApplyClo(exp, exps, ExpPosition.Tail, tpe, purity, loc)
 
       case Expr.ApplyDef(sym, exps, _, tpe, purity, loc) =>
         // Check whether this is a self recursive call.
         if (defn.sym != sym) {
           // Mark expression as tail position.
-          Expr.ApplyDef(sym, exps, Ast.ExpPosition.Tail, tpe, purity, loc)
+          Expr.ApplyDef(sym, exps, ExpPosition.Tail, tpe, purity, loc)
         } else {
           // Self recursive tail call.
           Expr.ApplySelfTail(sym, exps, tpe, purity, loc)
@@ -103,7 +104,7 @@ object TailPos {
 
       case Expr.TryWith(exp, effUse, rules, _, tpe, purity, loc) =>
         // Mark expression as tail position.
-        Expr.TryWith(exp, effUse, rules, Ast.ExpPosition.Tail, tpe, purity, loc)
+        Expr.TryWith(exp, effUse, rules, ExpPosition.Tail, tpe, purity, loc)
 
       // Non-tail expressions
       case Expr.ApplyAtomic(_, _, _, _, _) => exp0

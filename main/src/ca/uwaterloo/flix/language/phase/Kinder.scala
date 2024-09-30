@@ -266,10 +266,8 @@ object Kinder {
       val kenv = getKindEnvFromSpec(spec0, kenv0, taenv, root)
       val henv = None
       val spec = visitSpec(spec0, Nil, kenv, taenv, root)
-      val expVal = visitExp(exp0, kenv, taenv, henv, root)(Scope.Top, sctx, flix)
-      mapN(expVal) {
-        case exp => KindedAst.Def(sym, spec, exp)
-      }
+      val exp = visitExp(exp0, kenv, taenv, henv, root)(Scope.Top, sctx, flix)
+      Validation.success(KindedAst.Def(sym, spec, exp))
   }
 
   /**
@@ -280,10 +278,8 @@ object Kinder {
       val kenv = getKindEnvFromSpec(spec0, kenv0, taenv, root)
       val henv = None
       val spec = visitSpec(spec0, List(traitTparam.sym), kenv, taenv, root)
-      val expVal = traverseOpt(exp0)(visitExp(_, kenv, taenv, henv, root)(Scope.Top, sctx, flix))
-      mapN(expVal) {
-        case exp => KindedAst.Sig(sym, spec, exp)
-      }
+      val exp = exp0.map(visitExp(_, kenv, taenv, henv, root)(Scope.Top, sctx, flix))
+      Validation.success(KindedAst.Sig(sym, spec, exp))
   }
 
   /**
@@ -305,14 +301,14 @@ object Kinder {
     case ResolvedAst.Spec(doc, ann, mod, tparams0, fparams0, tpe0, eff0, tconstrs0, econstrs0, loc) =>
       val tparams = tparams0.map(visitTypeParam(_, kenv))
       val fparams = fparams0.map(visitFormalParam(_, kenv, taenv, root))
-      val t = visitType(tpe0, Kind.Star, kenv, taenv, root)
-      val ef = visitEffectDefaultPure(eff0, kenv, taenv, root)
+      val tpe = visitType(tpe0, Kind.Star, kenv, taenv, root)
+      val eff = visitEffectDefaultPure(eff0, kenv, taenv, root)
       val tconstrs = tconstrs0.map(visitTraitConstraint(_, kenv, taenv, root))
       val econstrs = econstrs0.map(visitEqualityConstraint(_, kenv, taenv, root))
       val allQuantifiers = quantifiers ::: tparams.map(_.sym)
-      val base = Type.mkUncurriedArrowWithEffect(fparams.map(_.tpe), ef, t, t.loc)
+      val base = Type.mkUncurriedArrowWithEffect(fparams.map(_.tpe), eff, tpe, tpe.loc)
       val sc = Scheme(allQuantifiers, tconstrs, econstrs.map(EqualityEnvironment.broaden), base)
-      KindedAst.Spec(doc, ann, mod, tparams, fparams, sc, t, ef, tconstrs, econstrs, loc)
+      KindedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, eff, tconstrs, econstrs, loc)
   }
 
   /**
@@ -321,8 +317,8 @@ object Kinder {
   private def visitAssocTypeSig(s0: ResolvedAst.Declaration.AssocTypeSig, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit sctx: SharedContext, flix: Flix): KindedAst.AssocTypeSig = s0 match {
     case ResolvedAst.Declaration.AssocTypeSig(doc, mod, sym, tparam0, kind, tpe0, loc) =>
       val tparam = visitTypeParam(tparam0, kenv)
-      val t = tpe0.map(visitType(_, kind, kenv, taenv, root))
-      KindedAst.AssocTypeSig(doc, mod, sym, tparam, kind, t, loc)
+      val tpe = tpe0.map(visitType(_, kind, kenv, taenv, root))
+      KindedAst.AssocTypeSig(doc, mod, sym, tparam, kind, tpe, loc)
   }
 
   /**
@@ -334,379 +330,281 @@ object Kinder {
       val assocSig = trt.assocs.find(assoc => assoc.sym == symUse.sym).get
       val tpeKind = assocSig.kind
       val args = visitType(arg0, trtKind, kenv, taenv, root)
-      val t = visitType(tpe0, tpeKind, kenv, taenv, root)
-      KindedAst.AssocTypeDef(doc, mod, symUse, args, t, loc)
+      val tpe = visitType(tpe0, tpeKind, kenv, taenv, root)
+      KindedAst.AssocTypeDef(doc, mod, symUse, args, tpe, loc)
   }
 
   /**
     * Performs kinding on the given expression under the given kind environment.
     */
-  private def visitExp(exp00: ResolvedAst.Expr, kenv0: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], henv0: Option[(Type.Var, Type.Var)], root: ResolvedAst.Root)(implicit scope: Scope, sctx: SharedContext, flix: Flix): Validation[KindedAst.Expr, KindError] = exp00 match {
+  private def visitExp(exp00: ResolvedAst.Expr, kenv0: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], henv0: Option[(Type.Var, Type.Var)], root: ResolvedAst.Root)(implicit scope: Scope, sctx: SharedContext, flix: Flix): KindedAst.Expr = exp00 match {
+    case ResolvedAst.Expr.Var(sym, loc) =>
+      KindedAst.Expr.Var(sym, loc)
 
-    case ResolvedAst.Expr.Var(sym, loc) => Validation.success(KindedAst.Expr.Var(sym, loc))
+    case ResolvedAst.Expr.Def(sym, loc) =>
+      val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+      KindedAst.Expr.Def(sym, tvar, loc)
 
-    case ResolvedAst.Expr.Def(sym, loc) => Validation.success(KindedAst.Expr.Def(sym, Type.freshVar(Kind.Star, loc.asSynthetic), loc))
+    case ResolvedAst.Expr.Sig(sym, loc) =>
+      val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+      KindedAst.Expr.Sig(sym, tvar, loc)
 
-    case ResolvedAst.Expr.Sig(sym, loc) => Validation.success(KindedAst.Expr.Sig(sym, Type.freshVar(Kind.Star, loc.asSynthetic), loc))
-
-    case ResolvedAst.Expr.Hole(sym, loc) => Validation.success(KindedAst.Expr.Hole(sym, Type.freshVar(Kind.Star, loc.asSynthetic), Type.freshVar(Kind.Eff, loc.asSynthetic), loc))
+    case ResolvedAst.Expr.Hole(sym, loc) =>
+      val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+      val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
+      KindedAst.Expr.Hole(sym, tvar, evar, loc)
 
     case ResolvedAst.Expr.HoleWithExp(exp0, loc) =>
-      val expVal = visitExp(exp0, kenv0, taenv, henv0, root)
-      mapN(expVal) {
-        case exp =>
-          val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-          val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-          KindedAst.Expr.HoleWithExp(exp, tvar, evar, loc)
-      }
+      val exp = visitExp(exp0, kenv0, taenv, henv0, root)
+      val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+      val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
+      KindedAst.Expr.HoleWithExp(exp, tvar, evar, loc)
 
     case ResolvedAst.Expr.OpenAs(sym, exp0, loc) =>
-      val expVal = visitExp(exp0, kenv0, taenv, henv0, root)
-      mapN(expVal) {
-        case exp =>
-          val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-          KindedAst.Expr.OpenAs(sym, exp, tvar, loc)
-      }
+      val exp = visitExp(exp0, kenv0, taenv, henv0, root)
+      val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+      KindedAst.Expr.OpenAs(sym, exp, tvar, loc)
 
     case ResolvedAst.Expr.Use(sym, alias, exp0, loc) =>
-      val expVal = visitExp(exp0, kenv0, taenv, henv0, root)
-      mapN(expVal) {
-        case exp => KindedAst.Expr.Use(sym, alias, exp, loc)
-      }
+      val exp = visitExp(exp0, kenv0, taenv, henv0, root)
+      KindedAst.Expr.Use(sym, alias, exp, loc)
 
-    case ResolvedAst.Expr.Cst(cst, loc) => Validation.success(KindedAst.Expr.Cst(cst, loc))
+    case ResolvedAst.Expr.Cst(cst, loc) =>
+      KindedAst.Expr.Cst(cst, loc)
 
     case ResolvedAst.Expr.Apply(exp0, exps0, loc) =>
-      val expVal = visitExp(exp0, kenv0, taenv, henv0, root)
-      val expsVal = traverse(exps0)(visitExp(_, kenv0, taenv, henv0, root))
-      mapN(expVal, expsVal) {
-        case (exp, exps) =>
-          val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-          val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-          KindedAst.Expr.Apply(exp, exps, tvar, evar, loc)
-      }
+      val exp = visitExp(exp0, kenv0, taenv, henv0, root)
+      val exps = exps0.map(visitExp(_, kenv0, taenv, henv0, root))
+      val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+      val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
+      KindedAst.Expr.Apply(exp, exps, tvar, evar, loc)
 
     case ResolvedAst.Expr.ApplyDef(Ast.DefSymUse(sym, loc1), exps0, loc2) =>
-      val expsVal = traverse(exps0)(visitExp(_, kenv0, taenv, henv0, root))
-      mapN(expsVal) {
-        case exps =>
-          val itvar = Type.freshVar(Kind.Star, loc1.asSynthetic)
-          val tvar = Type.freshVar(Kind.Star, loc2.asSynthetic)
-          val evar = Type.freshVar(Kind.Eff, loc2.asSynthetic)
-          KindedAst.Expr.ApplyDef(Ast.DefSymUse(sym, loc1), exps, itvar, tvar, evar, loc2)
-      }
+      val exps = exps0.map(visitExp(_, kenv0, taenv, henv0, root))
+      val itvar = Type.freshVar(Kind.Star, loc1.asSynthetic)
+      val tvar = Type.freshVar(Kind.Star, loc2.asSynthetic)
+      val evar = Type.freshVar(Kind.Eff, loc2.asSynthetic)
+      KindedAst.Expr.ApplyDef(Ast.DefSymUse(sym, loc1), exps, itvar, tvar, evar, loc2)
 
     case ResolvedAst.Expr.Lambda(fparam0, exp0, loc) =>
       val fparam = visitFormalParam(fparam0, kenv0, taenv, root)
-      val expVal = visitExp(exp0, kenv0, taenv, henv0, root)
-      mapN(expVal) {
-        case exp => KindedAst.Expr.Lambda(fparam, exp, loc)
-      }.recoverOne {
-        case err: KindError =>
-          val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-          val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-          KindedAst.Expr.Error(err, tvar, evar)
-      }
+      val exp = visitExp(exp0, kenv0, taenv, henv0, root)
+      KindedAst.Expr.Lambda(fparam, exp, loc)
 
     case ResolvedAst.Expr.Unary(sop, exp0, loc) =>
-      val expVal = visitExp(exp0, kenv0, taenv, henv0, root)
-      mapN(expVal) {
-        exp => KindedAst.Expr.Unary(sop, exp, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
-      }
+      val exp = visitExp(exp0, kenv0, taenv, henv0, root)
+      val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+      KindedAst.Expr.Unary(sop, exp, tvar, loc)
 
     case ResolvedAst.Expr.Binary(sop, exp10, exp20, loc) =>
-      val exp1Val = visitExp(exp10, kenv0, taenv, henv0, root)
-      val exp2Val = visitExp(exp20, kenv0, taenv, henv0, root)
-      mapN(exp1Val, exp2Val) {
-        case (exp1, exp2) => KindedAst.Expr.Binary(sop, exp1, exp2, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
-      }
+      val exp1 = visitExp(exp10, kenv0, taenv, henv0, root)
+      val exp2 = visitExp(exp20, kenv0, taenv, henv0, root)
+      val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+      KindedAst.Expr.Binary(sop, exp1, exp2, tvar, loc)
 
     case ResolvedAst.Expr.IfThenElse(exp10, exp20, exp30, loc) =>
-      val exp1Val = visitExp(exp10, kenv0, taenv, henv0, root)
-      val exp2Val = visitExp(exp20, kenv0, taenv, henv0, root)
-      val exp3Val = visitExp(exp30, kenv0, taenv, henv0, root)
-      mapN(exp1Val, exp2Val, exp3Val) {
-        case (exp1, exp2, exp3) => KindedAst.Expr.IfThenElse(exp1, exp2, exp3, loc)
-      }
+      val exp1 = visitExp(exp10, kenv0, taenv, henv0, root)
+      val exp2 = visitExp(exp20, kenv0, taenv, henv0, root)
+      val exp3 = visitExp(exp30, kenv0, taenv, henv0, root)
+      KindedAst.Expr.IfThenElse(exp1, exp2, exp3, loc)
 
     case ResolvedAst.Expr.Stm(exp10, exp20, loc) =>
-      val exp1Val = visitExp(exp10, kenv0, taenv, henv0, root)
-      val exp2Val = visitExp(exp20, kenv0, taenv, henv0, root)
-      mapN(exp1Val, exp2Val) {
-        case (exp1, exp2) => KindedAst.Expr.Stm(exp1, exp2, loc)
-      }
+      val exp1 = visitExp(exp10, kenv0, taenv, henv0, root)
+      val exp2 = visitExp(exp20, kenv0, taenv, henv0, root)
+      KindedAst.Expr.Stm(exp1, exp2, loc)
 
-    case ResolvedAst.Expr.Discard(exp, loc) =>
-      mapN(visitExp(exp, kenv0, taenv, henv0, root)) {
-        case e => KindedAst.Expr.Discard(e, loc)
-      }
+    case ResolvedAst.Expr.Discard(exp0, loc) =>
+      val exp = visitExp(exp0, kenv0, taenv, henv0, root)
+      KindedAst.Expr.Discard(exp, loc)
 
     case ResolvedAst.Expr.Let(sym, mod, exp10, exp20, loc) =>
-      val exp1Val = visitExp(exp10, kenv0, taenv, henv0, root)
-      val exp2Val = visitExp(exp20, kenv0, taenv, henv0, root)
-      mapN(exp1Val, exp2Val) {
-        case (exp1, exp2) => KindedAst.Expr.Let(sym, mod, exp1, exp2, loc)
-      }
+      val exp1 = visitExp(exp10, kenv0, taenv, henv0, root)
+      val exp2 = visitExp(exp20, kenv0, taenv, henv0, root)
+      KindedAst.Expr.Let(sym, mod, exp1, exp2, loc)
 
     case ResolvedAst.Expr.LetRec(sym, ann, mod, exp10, exp20, loc) =>
-      val exp1Val = visitExp(exp10, kenv0, taenv, henv0, root)
-      val exp2Val = visitExp(exp20, kenv0, taenv, henv0, root)
-      mapN(exp1Val, exp2Val) {
-        case (exp1, exp2) => KindedAst.Expr.LetRec(sym, ann, mod, exp1, exp2, loc)
-      }
+      val exp1 = visitExp(exp10, kenv0, taenv, henv0, root)
+      val exp2 = visitExp(exp20, kenv0, taenv, henv0, root)
+      KindedAst.Expr.LetRec(sym, ann, mod, exp1, exp2, loc)
 
     case ResolvedAst.Expr.Region(tpe, loc) =>
-      Validation.success(KindedAst.Expr.Region(tpe, loc))
+      KindedAst.Expr.Region(tpe, loc)
 
     case ResolvedAst.Expr.Scope(sym, regionVar, exp0, loc) =>
-      val rv = Type.Var(regionVar.withKind(Kind.Eff), loc)
+      val rvar = Type.Var(regionVar.withKind(Kind.Eff), loc)
       val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
       val kenv = kenv0 + (regionVar -> Kind.Eff)
       // Record that we enter the new scope.
-      val newScope = scope.enter(rv.sym)
-      val expVal = visitExp(exp0, kenv, taenv, henv0, root)(newScope, sctx, flix)
-      mapN(expVal) {
-        exp => KindedAst.Expr.Scope(sym, rv, exp, evar, loc)
-      }
+      val newScope = scope.enter(rvar.sym)
+      val exp = visitExp(exp0, kenv, taenv, henv0, root)(newScope, sctx, flix)
+      KindedAst.Expr.Scope(sym, rvar, exp, evar, loc)
 
     case ResolvedAst.Expr.Match(exp0, rules0, loc) =>
-      val expVal = visitExp(exp0, kenv0, taenv, henv0, root)
-      val rulesVal = traverse(rules0)(visitMatchRule(_, kenv0, taenv, henv0, root))
-      mapN(expVal, rulesVal) {
-        case (exp, rules) => KindedAst.Expr.Match(exp, rules, loc)
-      }
+      val exp = visitExp(exp0, kenv0, taenv, henv0, root)
+      val rules = rules0.map(visitMatchRule(_, kenv0, taenv, henv0, root))
+      KindedAst.Expr.Match(exp, rules, loc)
 
     case ResolvedAst.Expr.TypeMatch(exp0, rules0, loc) =>
-      val expVal = visitExp(exp0, kenv0, taenv, henv0, root)
-      val rulesVal = traverse(rules0)(visitTypeMatchRule(_, kenv0, taenv, henv0, root))
-      mapN(expVal, rulesVal) {
-        case (exp, rules) => KindedAst.Expr.TypeMatch(exp, rules, loc)
-      }.recoverOne {
-        case err: KindError =>
-          val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-          val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-          KindedAst.Expr.Error(err, tvar, evar)
-      }
+      val exp = visitExp(exp0, kenv0, taenv, henv0, root)
+      val rules = rules0.map(visitTypeMatchRule(_, kenv0, taenv, henv0, root))
+      KindedAst.Expr.TypeMatch(exp, rules, loc)
 
     case ResolvedAst.Expr.RestrictableChoose(star, exp0, rules0, loc) =>
-      val expVal = visitExp(exp0, kenv0, taenv, henv0, root)
-      val rulesVal = traverse(rules0)(visitRestrictableChooseRule(_, kenv0, taenv, henv0, root))
-      mapN(expVal, rulesVal) {
-        case (exp, rules) => KindedAst.Expr.RestrictableChoose(star, exp, rules, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
-      }
+      val exp = visitExp(exp0, kenv0, taenv, henv0, root)
+      val rules = rules0.map(visitRestrictableChooseRule(_, kenv0, taenv, henv0, root))
+      val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+      KindedAst.Expr.RestrictableChoose(star, exp, rules, tvar, loc)
 
     case ResolvedAst.Expr.Tag(sym, exp0, loc) =>
-      val expVal = visitExp(exp0, kenv0, taenv, henv0, root)
-      mapN(expVal) {
-        exp => KindedAst.Expr.Tag(sym, exp, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
-      }
+      val exp = visitExp(exp0, kenv0, taenv, henv0, root)
+      val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+      KindedAst.Expr.Tag(sym, exp, tvar, loc)
 
     case ResolvedAst.Expr.RestrictableTag(sym, exp0, isOpen, loc) =>
-      val expVal = visitExp(exp0, kenv0, taenv, henv0, root)
-      mapN(expVal) {
-        exp => KindedAst.Expr.RestrictableTag(sym, exp, isOpen, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
-      }
+      val exp = visitExp(exp0, kenv0, taenv, henv0, root)
+      val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+      KindedAst.Expr.RestrictableTag(sym, exp, isOpen, tvar, loc)
 
-    case ResolvedAst.Expr.Tuple(elms0, loc) =>
-      val elmsVal = traverse(elms0)(visitExp(_, kenv0, taenv, henv0, root))
-      mapN(elmsVal) {
-        elms => KindedAst.Expr.Tuple(elms, loc)
-      }
+    case ResolvedAst.Expr.Tuple(exps0, loc) =>
+      val exps = exps0.map(visitExp(_, kenv0, taenv, henv0, root))
+      KindedAst.Expr.Tuple(exps, loc)
 
-    case ResolvedAst.Expr.RecordEmpty(loc) => Validation.success(KindedAst.Expr.RecordEmpty(loc))
+    case ResolvedAst.Expr.RecordEmpty(loc) =>
+      KindedAst.Expr.RecordEmpty(loc)
 
     case ResolvedAst.Expr.RecordSelect(exp0, label, loc) =>
-      val expVal = visitExp(exp0, kenv0, taenv, henv0, root)
-      mapN(expVal) {
-        exp => KindedAst.Expr.RecordSelect(exp, label, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
-      }
+      val exp = visitExp(exp0, kenv0, taenv, henv0, root)
+      val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+      KindedAst.Expr.RecordSelect(exp, label, tvar, loc)
 
-    case ResolvedAst.Expr.RecordExtend(label, value0, rest0, loc) =>
-      val valueVal = visitExp(value0, kenv0, taenv, henv0, root)
-      val restVal = visitExp(rest0, kenv0, taenv, henv0, root)
-      mapN(valueVal, restVal) {
-        case (value, rest) => KindedAst.Expr.RecordExtend(label, value, rest, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
-      }
+    case ResolvedAst.Expr.RecordExtend(label, exp10, exp20, loc) =>
+      val exp1 = visitExp(exp10, kenv0, taenv, henv0, root)
+      val exp2 = visitExp(exp20, kenv0, taenv, henv0, root)
+      val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+      KindedAst.Expr.RecordExtend(label, exp1, exp2, tvar, loc)
 
-    case ResolvedAst.Expr.RecordRestrict(label, rest0, loc) =>
-      val restVal = visitExp(rest0, kenv0, taenv, henv0, root)
-      mapN(restVal) {
-        rest => KindedAst.Expr.RecordRestrict(label, rest, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
-      }
+    case ResolvedAst.Expr.RecordRestrict(label, exp0, loc) =>
+      val exp = visitExp(exp0, kenv0, taenv, henv0, root)
+      val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+      KindedAst.Expr.RecordRestrict(label, exp, tvar, loc)
 
-    case ResolvedAst.Expr.ArrayLit(exps, exp, loc) =>
-      val esVal = traverse(exps)(visitExp(_, kenv0, taenv, henv0, root))
-      val eVal = visitExp(exp, kenv0, taenv, henv0, root)
-      mapN(esVal, eVal) {
-        case (es, e) =>
-          val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-          val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-          KindedAst.Expr.ArrayLit(es, e, tvar, evar, loc)
-      }
+    case ResolvedAst.Expr.ArrayLit(exps0, exp0, loc) =>
+      val exps = exps0.map(visitExp(_, kenv0, taenv, henv0, root))
+      val exp = visitExp(exp0, kenv0, taenv, henv0, root)
+      val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+      val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
+      KindedAst.Expr.ArrayLit(exps, exp, tvar, evar, loc)
 
-    case ResolvedAst.Expr.ArrayNew(exp1, exp2, exp3, loc) =>
-      val e1Val = visitExp(exp1, kenv0, taenv, henv0, root)
-      val e2Val = visitExp(exp2, kenv0, taenv, henv0, root)
-      val e3Val = visitExp(exp3, kenv0, taenv, henv0, root)
-      mapN(e1Val, e2Val, e3Val) {
-        case (e1, e2, e3) =>
-          val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-          val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-          KindedAst.Expr.ArrayNew(e1, e2, e3, tvar, evar, loc)
-      }
+    case ResolvedAst.Expr.ArrayNew(exp10, exp20, exp30, loc) =>
+      val exp1 = visitExp(exp10, kenv0, taenv, henv0, root)
+      val exp2 = visitExp(exp20, kenv0, taenv, henv0, root)
+      val exp3 = visitExp(exp30, kenv0, taenv, henv0, root)
+      val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+      val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
+      KindedAst.Expr.ArrayNew(exp1, exp2, exp3, tvar, evar, loc)
 
-    case ResolvedAst.Expr.ArrayLoad(base0, index0, loc) =>
-      val baseVal = visitExp(base0, kenv0, taenv, henv0, root)
-      val indexVal = visitExp(index0, kenv0, taenv, henv0, root)
-      mapN(baseVal, indexVal) {
-        case (base, index) =>
-          val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-          KindedAst.Expr.ArrayLoad(base, index, Type.freshVar(Kind.Star, loc.asSynthetic), evar, loc)
-      }
+    case ResolvedAst.Expr.ArrayLoad(exp10, exp20, loc) =>
+      val exp1 = visitExp(exp10, kenv0, taenv, henv0, root)
+      val exp2 = visitExp(exp20, kenv0, taenv, henv0, root)
+      val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+      val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
+      KindedAst.Expr.ArrayLoad(exp1, exp2, tvar, evar, loc)
 
-    case ResolvedAst.Expr.ArrayStore(base0, index0, elm0, loc) =>
-      val baseVal = visitExp(base0, kenv0, taenv, henv0, root)
-      val indexVal = visitExp(index0, kenv0, taenv, henv0, root)
-      val elmVal = visitExp(elm0, kenv0, taenv, henv0, root)
-      mapN(baseVal, indexVal, elmVal) {
-        case (base, index, elm) =>
-          val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-          KindedAst.Expr.ArrayStore(base, index, elm, evar, loc)
-      }
+    case ResolvedAst.Expr.ArrayStore(exp10, exp20, exp30, loc) =>
+      val exp1 = visitExp(exp10, kenv0, taenv, henv0, root)
+      val exp2 = visitExp(exp20, kenv0, taenv, henv0, root)
+      val exp3 = visitExp(exp30, kenv0, taenv, henv0, root)
+      val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
+      KindedAst.Expr.ArrayStore(exp1, exp2, exp3, evar, loc)
 
-    case ResolvedAst.Expr.ArrayLength(base0, loc) =>
-      val baseVal = visitExp(base0, kenv0, taenv, henv0, root)
-      mapN(baseVal) {
-        base =>
-          val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-          KindedAst.Expr.ArrayLength(base, evar, loc)
-      }
+    case ResolvedAst.Expr.ArrayLength(exp0, loc) =>
+      val exp = visitExp(exp0, kenv0, taenv, henv0, root)
+      val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
+      KindedAst.Expr.ArrayLength(exp, evar, loc)
 
-    case ResolvedAst.Expr.StructNew(sym, fields, region, loc) =>
-      val fieldsVal = traverse(fields) {
-        case (field, exp) => mapN(visitExp(exp, kenv0, taenv, henv0, root)) {
-          case e => (field, e)
-        }
+    case ResolvedAst.Expr.StructNew(sym, fields0, region0, loc) =>
+      val fields = fields0.map {
+        case (field, exp0) =>
+          val exp = visitExp(exp0, kenv0, taenv, henv0, root)
+          (field, exp)
       }
-      val regionVal = visitExp(region, kenv0, taenv, henv0, root)
-      mapN(fieldsVal, regionVal) {
-        case (fs, r) =>
-          val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-          val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-          KindedAst.Expr.StructNew(sym, fs, r, tvar, evar, loc)
-      }
+      val region = visitExp(region0, kenv0, taenv, henv0, root)
+      val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+      val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
+      KindedAst.Expr.StructNew(sym, fields, region, tvar, evar, loc)
 
-    case ResolvedAst.Expr.StructGet(e, field, loc) =>
-      val expVal = visitExp(e, kenv0, taenv, henv0, root)
-      mapN(expVal) {
-        case exp =>
-          val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-          val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-          KindedAst.Expr.StructGet(exp, field, tvar, evar, loc)
-      }
+    case ResolvedAst.Expr.StructGet(exp0, field0, loc) =>
+      val exp = visitExp(exp0, kenv0, taenv, henv0, root)
+      val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+      val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
+      KindedAst.Expr.StructGet(exp, field0, tvar, evar, loc)
 
-    case ResolvedAst.Expr.StructPut(e1, sym, e2, loc) =>
-      val exp1Val = visitExp(e1, kenv0, taenv, henv0, root)
-      val exp2Val = visitExp(e2, kenv0, taenv, henv0, root)
-      mapN(exp1Val, exp2Val) {
-        case (exp1, exp2) =>
-          val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-          val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-          KindedAst.Expr.StructPut(exp1, sym, exp2, tvar, evar, loc)
-      }
+    case ResolvedAst.Expr.StructPut(exp10, sym, exp20, loc) =>
+      val exp1 = visitExp(exp10, kenv0, taenv, henv0, root)
+      val exp2 = visitExp(exp20, kenv0, taenv, henv0, root)
+      val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+      val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
+      KindedAst.Expr.StructPut(exp1, sym, exp2, tvar, evar, loc)
 
-    case ResolvedAst.Expr.VectorLit(exps, loc) =>
-      val expsVal = traverse(exps)(visitExp(_, kenv0, taenv, henv0, root))
-      mapN(expsVal) {
-        case es =>
-          val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-          val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-          KindedAst.Expr.VectorLit(es, tvar, evar, loc)
-      }
+    case ResolvedAst.Expr.VectorLit(exps0, loc) =>
+      val exps = exps0.map(visitExp(_, kenv0, taenv, henv0, root))
+      val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+      val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
+      KindedAst.Expr.VectorLit(exps, tvar, evar, loc)
 
-    case ResolvedAst.Expr.VectorLoad(exp1, exp2, loc) =>
-      val exp1Val = visitExp(exp1, kenv0, taenv, henv0, root)
-      val exp2Val = visitExp(exp2, kenv0, taenv, henv0, root)
-      mapN(exp1Val, exp2Val) {
-        case (e1, e2) =>
-          val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-          KindedAst.Expr.VectorLoad(e1, e2, Type.freshVar(Kind.Star, loc.asSynthetic), evar, loc)
-      }
+    case ResolvedAst.Expr.VectorLoad(exp10, exp20, loc) =>
+      val exp1 = visitExp(exp10, kenv0, taenv, henv0, root)
+      val exp2 = visitExp(exp20, kenv0, taenv, henv0, root)
+      val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+      val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
+      KindedAst.Expr.VectorLoad(exp1, exp2, tvar, evar, loc)
 
     case ResolvedAst.Expr.VectorLength(exp, loc) =>
-      val expVal = visitExp(exp, kenv0, taenv, henv0, root)
-      mapN(expVal) {
-        e => KindedAst.Expr.VectorLength(e, loc)
-      }
+      val e = visitExp(exp, kenv0, taenv, henv0, root)
+      KindedAst.Expr.VectorLength(e, loc)
 
     case ResolvedAst.Expr.Ascribe(exp0, expectedType0, expectedEff0, loc) =>
-      val expVal = visitExp(exp0, kenv0, taenv, henv0, root)
+      val exp = visitExp(exp0, kenv0, taenv, henv0, root)
       val expectedType = expectedType0.map(visitType(_, Kind.Star, kenv0, taenv, root))
       val expectedEff = expectedEff0.map(visitType(_, Kind.Eff, kenv0, taenv, root))
-      mapN(expVal) {
-        case exp =>
-          KindedAst.Expr.Ascribe(exp, expectedType, expectedEff, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
-      }.recoverOne {
-        case err: KindError =>
-          val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-          val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-          KindedAst.Expr.Error(err, tvar, evar)
-      }
+      val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+      KindedAst.Expr.Ascribe(exp, expectedType, expectedEff, tvar, loc)
 
     case ResolvedAst.Expr.InstanceOf(exp0, clazz, loc) =>
-      val expVal = visitExp(exp0, kenv0, taenv, henv0, root)
-      mapN(expVal) {
-        exp => KindedAst.Expr.InstanceOf(exp, clazz, loc)
-      }
+      val exp = visitExp(exp0, kenv0, taenv, henv0, root)
+      KindedAst.Expr.InstanceOf(exp, clazz, loc)
 
-    case ResolvedAst.Expr.CheckedCast(cast, exp, loc) =>
-      mapN(visitExp(exp, kenv0, taenv, henv0, root)) {
-        case e =>
-          val tvar = Type.freshVar(Kind.Star, loc)
-          val evar = Type.freshVar(Kind.Eff, loc)
-          KindedAst.Expr.CheckedCast(cast, e, tvar, evar, loc)
-      }
-
-    case ResolvedAst.Expr.UncheckedCast(exp0, declaredType0, declaredEff0, loc) =>
-      val expVal = visitExp(exp0, kenv0, taenv, henv0, root)
-      val declaredType = declaredType0.map(visitType(_, Kind.Star, kenv0, taenv, root))
-      val declaredEff = declaredEff0.map(visitType(_, Kind.Eff, kenv0, taenv, root))
-      mapN(expVal) {
-        case exp =>
-          KindedAst.Expr.UncheckedCast(exp, declaredType, declaredEff, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
-      }.recoverOne {
-        case err: KindError =>
-          val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-          val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-          KindedAst.Expr.Error(err, tvar, evar)
-      }
-
-    case ResolvedAst.Expr.UncheckedMaskingCast(exp, loc) =>
-      val eVal = visitExp(exp, kenv0, taenv, henv0, root)
-      mapN(eVal) {
-        case e => KindedAst.Expr.UncheckedMaskingCast(e, loc)
-      }
-
-    case ResolvedAst.Expr.Without(exp0, eff, loc) =>
-      val expVal = visitExp(exp0, kenv0, taenv, henv0, root)
-      mapN(expVal) {
-        case exp => KindedAst.Expr.Without(exp, eff, loc)
-      }
-
-    case ResolvedAst.Expr.TryCatch(exp0, rules0, loc) =>
-      val expVal = visitExp(exp0, kenv0, taenv, henv0, root)
-      val rulesVal = traverse(rules0)(visitCatchRule(_, kenv0, taenv, henv0, root))
-      mapN(expVal, rulesVal) {
-        case (exp, rules) => KindedAst.Expr.TryCatch(exp, rules, loc)
-      }
-
-    case ResolvedAst.Expr.Throw(exp0, loc) =>
+    case ResolvedAst.Expr.CheckedCast(cast, exp0, loc) =>
+      val exp = visitExp(exp0, kenv0, taenv, henv0, root)
       val tvar = Type.freshVar(Kind.Star, loc)
       val evar = Type.freshVar(Kind.Eff, loc)
-      val expVal = visitExp(exp0, kenv0, taenv, henv0, root)
-      mapN(expVal) {
-        case exp => KindedAst.Expr.Throw(exp, tvar, evar, loc)
-      }
+      KindedAst.Expr.CheckedCast(cast, exp, tvar, evar, loc)
+
+    case ResolvedAst.Expr.UncheckedCast(exp0, declaredType0, declaredEff0, loc) =>
+      val exp = visitExp(exp0, kenv0, taenv, henv0, root)
+      val declaredType = declaredType0.map(visitType(_, Kind.Star, kenv0, taenv, root))
+      val declaredEff = declaredEff0.map(visitType(_, Kind.Eff, kenv0, taenv, root))
+      val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+      KindedAst.Expr.UncheckedCast(exp, declaredType, declaredEff, tvar, loc)
+
+    case ResolvedAst.Expr.UncheckedMaskingCast(exp0, loc) =>
+      val exp = visitExp(exp0, kenv0, taenv, henv0, root)
+      KindedAst.Expr.UncheckedMaskingCast(exp, loc)
+
+    case ResolvedAst.Expr.Without(exp0, eff, loc) =>
+      val exp = visitExp(exp0, kenv0, taenv, henv0, root)
+      KindedAst.Expr.Without(exp, eff, loc)
+
+    case ResolvedAst.Expr.TryCatch(exp0, rules0, loc) =>
+      val exp = visitExp(exp0, kenv0, taenv, henv0, root)
+      val rules = rules0.map(visitCatchRule(_, kenv0, taenv, henv0, root))
+      KindedAst.Expr.TryCatch(exp, rules, loc)
+
+    case ResolvedAst.Expr.Throw(exp0, loc) =>
+      val exp = visitExp(exp0, kenv0, taenv, henv0, root)
+      val tvar = Type.freshVar(Kind.Star, loc)
+      val evar = Type.freshVar(Kind.Eff, loc)
+      KindedAst.Expr.Throw(exp, tvar, evar, loc)
 
     case ResolvedAst.Expr.TryWith(exp0, eff, rules0, loc) =>
       // create a fresh type variable for the handling block (same as resume result)
@@ -715,287 +613,217 @@ object Kinder {
       val tvar = Type.freshVar(Kind.Star, loc)
 
       // use the old henv for the handled expression
-      val expVal = visitExp(exp0, kenv0, taenv, henv0, root)
+      val exp = visitExp(exp0, kenv0, taenv, henv0, root)
 
       // use the new henv for the handler
-      val rulesVal = traverse(rules0)(visitHandlerRule(_, kenv0, taenv, tvar, root))
-      mapN(expVal, rulesVal) {
-        case (exp, rules) => KindedAst.Expr.TryWith(exp, eff, rules, tvar, loc)
-      }.recoverOne {
-        case err: KindError =>
-          val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-          val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-          KindedAst.Expr.Error(err, tvar, evar)
-      }
+      val rules = rules0.map(visitHandlerRule(_, kenv0, taenv, tvar, root))
+      KindedAst.Expr.TryWith(exp, eff, rules, tvar, loc)
 
-    case ResolvedAst.Expr.Do(op, args0, loc) =>
-      val argsVal = traverse(args0)(visitExp(_, kenv0, taenv, henv0, root))
+    case ResolvedAst.Expr.Do(op, exps0, loc) =>
+      val exps = exps0.map(visitExp(_, kenv0, taenv, henv0, root))
       val tvar = Type.freshVar(Kind.Star, loc)
-      mapN(argsVal) {
-        case args => KindedAst.Expr.Do(op, args, tvar, loc)
-      }
+      KindedAst.Expr.Do(op, exps, tvar, loc)
 
     case ResolvedAst.Expr.InvokeConstructor2(clazz, exps0, loc) =>
-      val expsVal = traverse(exps0)(visitExp(_, kenv0, taenv, henv0, root))
-      mapN(expsVal) {
-        exps =>
-          val jvar = Type.freshVar(Kind.Jvm, loc.asSynthetic)
-          val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-          KindedAst.Expr.InvokeConstructor2(clazz, exps, jvar, evar, loc)
-      }
+      val exps = exps0.map(visitExp(_, kenv0, taenv, henv0, root))
+      val jvar = Type.freshVar(Kind.Jvm, loc.asSynthetic)
+      val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
+      KindedAst.Expr.InvokeConstructor2(clazz, exps, jvar, evar, loc)
 
     case ResolvedAst.Expr.InvokeMethod2(exp0, methodName, exps0, loc) =>
-      val expVal = visitExp(exp0, kenv0, taenv, henv0, root)
-      val expsVal = traverse(exps0)(visitExp(_, kenv0, taenv, henv0, root))
-      mapN(expVal, expsVal) {
-        case (exp, exps) =>
-          val jvar = Type.freshVar(Kind.Jvm, loc.asSynthetic)
-          val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-          val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-          KindedAst.Expr.InvokeMethod2(exp, methodName, exps, jvar, tvar, evar, loc)
-      }
+      val exp = visitExp(exp0, kenv0, taenv, henv0, root)
+      val exps = exps0.map(visitExp(_, kenv0, taenv, henv0, root))
+      val jvar = Type.freshVar(Kind.Jvm, loc.asSynthetic)
+      val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+      val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
+      KindedAst.Expr.InvokeMethod2(exp, methodName, exps, jvar, tvar, evar, loc)
 
     case ResolvedAst.Expr.InvokeStaticMethod2(clazz, methodName, exps0, loc) =>
-      val expsVal = traverse(exps0)(visitExp(_, kenv0, taenv, henv0, root))
-      mapN(expsVal) {
-        exps =>
-          val jvar = Type.freshVar(Kind.Jvm, loc.asSynthetic)
-          val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-          val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-          KindedAst.Expr.InvokeStaticMethod2(clazz, methodName, exps, jvar, tvar, evar, loc)
-      }
+      val exps = exps0.map(visitExp(_, kenv0, taenv, henv0, root))
+      val jvar = Type.freshVar(Kind.Jvm, loc.asSynthetic)
+      val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+      val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
+      KindedAst.Expr.InvokeStaticMethod2(clazz, methodName, exps, jvar, tvar, evar, loc)
 
     case ResolvedAst.Expr.GetField2(exp0, fieldName, loc) =>
-      val expVal = visitExp(exp0, kenv0, taenv, henv0, root)
-      mapN(expVal) {
-        case exp =>
-          val jvar = Type.freshVar(Kind.Jvm, loc.asSynthetic)
-          val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-          val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-          KindedAst.Expr.GetField2(exp, fieldName, jvar, tvar, evar, loc)
-      }
+      val exp = visitExp(exp0, kenv0, taenv, henv0, root)
+      val jvar = Type.freshVar(Kind.Jvm, loc.asSynthetic)
+      val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+      val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
+      KindedAst.Expr.GetField2(exp, fieldName, jvar, tvar, evar, loc)
 
-    case ResolvedAst.Expr.InvokeConstructorOld(constructor, args0, loc) =>
-      val argsVal = traverse(args0)(visitExp(_, kenv0, taenv, henv0, root))
-      mapN(argsVal) {
-        args => KindedAst.Expr.InvokeConstructorOld(constructor, args, loc)
-      }
+    case ResolvedAst.Expr.InvokeConstructorOld(constructor, exps0, loc) =>
+      val exps = exps0.map(visitExp(_, kenv0, taenv, henv0, root))
+      KindedAst.Expr.InvokeConstructorOld(constructor, exps, loc)
 
-    case ResolvedAst.Expr.InvokeMethodOld(method, clazz, exp0, args0, loc) =>
-      val expVal = visitExp(exp0, kenv0, taenv, henv0, root)
-      val argsVal = traverse(args0)(visitExp(_, kenv0, taenv, henv0, root))
-      mapN(expVal, argsVal) {
-        case (exp, args) => KindedAst.Expr.InvokeMethodOld(method, clazz, exp, args, loc)
-      }
+    case ResolvedAst.Expr.InvokeMethodOld(method, clazz, exp0, exps0, loc) =>
+      val exp = visitExp(exp0, kenv0, taenv, henv0, root)
+      val exps = exps0.map(visitExp(_, kenv0, taenv, henv0, root))
+      KindedAst.Expr.InvokeMethodOld(method, clazz, exp, exps, loc)
 
-    case ResolvedAst.Expr.InvokeStaticMethodOld(method, args0, loc) =>
-      val argsVal = traverse(args0)(visitExp(_, kenv0, taenv, henv0, root))
-      mapN(argsVal) {
-        args => KindedAst.Expr.InvokeStaticMethodOld(method, args, loc)
-      }
+    case ResolvedAst.Expr.InvokeStaticMethodOld(method, exps0, loc) =>
+      val exps = exps0.map(visitExp(_, kenv0, taenv, henv0, root))
+      KindedAst.Expr.InvokeStaticMethodOld(method, exps, loc)
 
     case ResolvedAst.Expr.GetFieldOld(field, clazz, exp0, loc) =>
-      val expVal = visitExp(exp0, kenv0, taenv, henv0, root)
-      mapN(expVal) {
-        exp => KindedAst.Expr.GetFieldOld(field, clazz, exp, loc)
-      }
+      val exp = visitExp(exp0, kenv0, taenv, henv0, root)
+      KindedAst.Expr.GetFieldOld(field, clazz, exp, loc)
 
     case ResolvedAst.Expr.PutField(field, clazz, exp10, exp20, loc) =>
-      val exp1Val = visitExp(exp10, kenv0, taenv, henv0, root)
-      val exp2Val = visitExp(exp20, kenv0, taenv, henv0, root)
-      mapN(exp1Val, exp2Val) {
-        case (exp1, exp2) => KindedAst.Expr.PutField(field, clazz, exp1, exp2, loc)
-      }
+      val exp1 = visitExp(exp10, kenv0, taenv, henv0, root)
+      val exp2 = visitExp(exp20, kenv0, taenv, henv0, root)
+      KindedAst.Expr.PutField(field, clazz, exp1, exp2, loc)
 
-    case ResolvedAst.Expr.GetStaticField(field, loc) => Validation.success(KindedAst.Expr.GetStaticField(field, loc))
+    case ResolvedAst.Expr.GetStaticField(field, loc) =>
+      KindedAst.Expr.GetStaticField(field, loc)
 
     case ResolvedAst.Expr.PutStaticField(field, exp0, loc) =>
-      val expVal = visitExp(exp0, kenv0, taenv, henv0, root)
-      mapN(expVal) {
-        exp => KindedAst.Expr.PutStaticField(field, exp, loc)
-      }
+      val exp = visitExp(exp0, kenv0, taenv, henv0, root)
+      KindedAst.Expr.PutStaticField(field, exp, loc)
 
-    case ResolvedAst.Expr.NewObject(name, clazz, methods, loc) =>
-      mapN(traverse(methods)(visitJvmMethod(_, kenv0, taenv, henv0, root))) {
-        methods => KindedAst.Expr.NewObject(name, clazz, methods, loc)
-      }.recoverOne {
-        case err: KindError =>
-          val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-          val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-          KindedAst.Expr.Error(err, tvar, evar)
-      }
+    case ResolvedAst.Expr.NewObject(name, clazz, methods0, loc) =>
+      val methods = methods0.map(visitJvmMethod(_, kenv0, taenv, henv0, root))
+      KindedAst.Expr.NewObject(name, clazz, methods, loc)
 
     case ResolvedAst.Expr.NewChannel(exp10, exp20, loc) =>
-      val exp1Val = visitExp(exp10, kenv0, taenv, henv0, root)
-      val exp2Val = visitExp(exp20, kenv0, taenv, henv0, root)
-      mapN(exp1Val, exp2Val) {
-        case (exp1, exp2) => KindedAst.Expr.NewChannel(exp1, exp2, Type.freshVar(Kind.Star, loc.asSynthetic), Type.freshVar(Kind.Eff, loc.asSynthetic), loc)
-      }
+      val exp1 = visitExp(exp10, kenv0, taenv, henv0, root)
+      val exp2 = visitExp(exp20, kenv0, taenv, henv0, root)
+      val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+      val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
+      KindedAst.Expr.NewChannel(exp1, exp2, tvar, evar, loc)
 
     case ResolvedAst.Expr.GetChannel(exp0, loc) =>
-      val expVal = visitExp(exp0, kenv0, taenv, henv0, root)
-      mapN(expVal) {
-        exp => KindedAst.Expr.GetChannel(exp, Type.freshVar(Kind.Star, loc.asSynthetic), Type.freshVar(Kind.Eff, loc.asSynthetic), loc)
-      }
+      val exp = visitExp(exp0, kenv0, taenv, henv0, root)
+      val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+      val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
+      KindedAst.Expr.GetChannel(exp, tvar, evar, loc)
 
     case ResolvedAst.Expr.PutChannel(exp10, exp20, loc) =>
-      val exp1Val = visitExp(exp10, kenv0, taenv, henv0, root)
-      val exp2Val = visitExp(exp20, kenv0, taenv, henv0, root)
-      mapN(exp1Val, exp2Val) {
-        case (exp1, exp2) => KindedAst.Expr.PutChannel(exp1, exp2, Type.freshVar(Kind.Eff, loc.asSynthetic), loc)
-      }
+      val exp1 = visitExp(exp10, kenv0, taenv, henv0, root)
+      val exp2 = visitExp(exp20, kenv0, taenv, henv0, root)
+      val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
+      KindedAst.Expr.PutChannel(exp1, exp2, evar, loc)
 
-    case ResolvedAst.Expr.SelectChannel(rules0, default0, loc) =>
-      val rulesVal = traverse(rules0)(visitSelectChannelRule(_, kenv0, taenv, henv0, root))
-      val defaultVal = traverseOpt(default0)(visitExp(_, kenv0, taenv, henv0, root))
-      mapN(rulesVal, defaultVal) {
-        case (rules, default) => KindedAst.Expr.SelectChannel(rules, default, Type.freshVar(Kind.Star, loc.asSynthetic), Type.freshVar(Kind.Eff, loc.asSynthetic), loc)
-      }
+    case ResolvedAst.Expr.SelectChannel(rules0, exp0, loc) =>
+      val rules = rules0.map(visitSelectChannelRule(_, kenv0, taenv, henv0, root))
+      val exp = exp0.map(visitExp(_, kenv0, taenv, henv0, root))
+      val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+      val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
+      KindedAst.Expr.SelectChannel(rules, exp, tvar, evar, loc)
 
-    case ResolvedAst.Expr.Spawn(exp1, exp2, loc) =>
-      val e1Val = visitExp(exp1, kenv0, taenv, henv0, root)
-      val e2Val = visitExp(exp2, kenv0, taenv, henv0, root)
-      mapN(e1Val, e2Val) {
-        case (e1, e2) => KindedAst.Expr.Spawn(e1, e2, loc)
-      }
+    case ResolvedAst.Expr.Spawn(exp10, exp20, loc) =>
+      val exp1 = visitExp(exp10, kenv0, taenv, henv0, root)
+      val exp2 = visitExp(exp20, kenv0, taenv, henv0, root)
+      KindedAst.Expr.Spawn(exp1, exp2, loc)
 
-    case ResolvedAst.Expr.ParYield(frags, exp0, loc) =>
-      val fragsVal = traverse(frags) {
-        case ResolvedAst.ParYieldFragment(pat, exp1, l0) =>
-          val p = visitPattern(pat, kenv0, root)
-          val expVal = visitExp(exp1, kenv0, taenv, henv0, root)
-          mapN(expVal) {
-            case e => KindedAst.ParYieldFragment(p, e, l0)
-          }
+    case ResolvedAst.Expr.ParYield(frags0, exp0, loc) =>
+      val frags = frags0.map {
+        case ResolvedAst.ParYieldFragment(pat1, exp1, l0) =>
+          val pat = visitPattern(pat1, kenv0, root)
+          val exp = visitExp(exp1, kenv0, taenv, henv0, root)
+          KindedAst.ParYieldFragment(pat, exp, l0)
       }
-
-      val expVal = visitExp(exp0, kenv0, taenv, henv0, root)
-      mapN(fragsVal, expVal) {
-        case (fs, exp) => KindedAst.Expr.ParYield(fs, exp, loc)
-      }
+      val exp = visitExp(exp0, kenv0, taenv, henv0, root)
+      KindedAst.Expr.ParYield(frags, exp, loc)
 
     case ResolvedAst.Expr.Lazy(exp0, loc) =>
-      val expVal = visitExp(exp0, kenv0, taenv, henv0, root)
-      mapN(expVal) {
-        exp => KindedAst.Expr.Lazy(exp, loc)
-      }
+      val exp = visitExp(exp0, kenv0, taenv, henv0, root)
+      KindedAst.Expr.Lazy(exp, loc)
 
     case ResolvedAst.Expr.Force(exp0, loc) =>
-      val expVal = visitExp(exp0, kenv0, taenv, henv0, root)
-      mapN(expVal) {
-        exp => KindedAst.Expr.Force(exp, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
-      }
+      val exp = visitExp(exp0, kenv0, taenv, henv0, root)
+      val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+      KindedAst.Expr.Force(exp, tvar, loc)
 
     case ResolvedAst.Expr.FixpointConstraintSet(cs0, loc) =>
-      val csVal = traverse(cs0)(visitConstraint(_, kenv0, taenv, henv0, root))
-      mapN(csVal) {
-        cs => KindedAst.Expr.FixpointConstraintSet(cs, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
-      }
+      val cs = cs0.map(visitConstraint(_, kenv0, taenv, henv0, root))
+      val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+      KindedAst.Expr.FixpointConstraintSet(cs, tvar, loc)
 
-    case ResolvedAst.Expr.FixpointLambda(pparams, exp, loc) =>
-      val ps = pparams.map(visitPredicateParam(_, kenv0, taenv, root))
-      val expVal = visitExp(exp, kenv0, taenv, henv0, root)
-      mapN(expVal) {
-        case e => KindedAst.Expr.FixpointLambda(ps, e, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
-      }.recoverOne {
-        case err: KindError =>
-          val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-          val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-          KindedAst.Expr.Error(err, tvar, evar)
-      }
+    case ResolvedAst.Expr.FixpointLambda(pparams0, exp0, loc) =>
+      val pparams = pparams0.map(visitPredicateParam(_, kenv0, taenv, root))
+      val exp = visitExp(exp0, kenv0, taenv, henv0, root)
+      val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+      KindedAst.Expr.FixpointLambda(pparams, exp, tvar, loc)
 
     case ResolvedAst.Expr.FixpointMerge(exp10, exp20, loc) =>
-      val exp1Val = visitExp(exp10, kenv0, taenv, henv0, root)
-      val exp2Val = visitExp(exp20, kenv0, taenv, henv0, root)
-      mapN(exp1Val, exp2Val) {
-        case (exp1, exp2) => KindedAst.Expr.FixpointMerge(exp1, exp2, loc)
-      }
+      val exp1 = visitExp(exp10, kenv0, taenv, henv0, root)
+      val exp2 = visitExp(exp20, kenv0, taenv, henv0, root)
+      KindedAst.Expr.FixpointMerge(exp1, exp2, loc)
 
     case ResolvedAst.Expr.FixpointSolve(exp0, loc) =>
-      val expVal = visitExp(exp0, kenv0, taenv, henv0, root)
-      mapN(expVal) {
-        exp => KindedAst.Expr.FixpointSolve(exp, loc)
-      }
+      val exp = visitExp(exp0, kenv0, taenv, henv0, root)
+      KindedAst.Expr.FixpointSolve(exp, loc)
 
     case ResolvedAst.Expr.FixpointFilter(pred, exp0, loc) =>
-      val expVal = visitExp(exp0, kenv0, taenv, henv0, root)
-      mapN(expVal) {
-        exp => KindedAst.Expr.FixpointFilter(pred, exp, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
-      }
+      val exp = visitExp(exp0, kenv0, taenv, henv0, root)
+      val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+      KindedAst.Expr.FixpointFilter(pred, exp, tvar, loc)
 
     case ResolvedAst.Expr.FixpointInject(exp0, pred, loc) =>
-      val expVal = visitExp(exp0, kenv0, taenv, henv0, root)
-      mapN(expVal) {
-        exp => KindedAst.Expr.FixpointInject(exp, pred, Type.freshVar(Kind.Star, loc.asSynthetic), Type.freshVar(Kind.Eff, loc.asSynthetic), loc)
-      }
+      val exp = visitExp(exp0, kenv0, taenv, henv0, root)
+      val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+      val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
+      KindedAst.Expr.FixpointInject(exp, pred, tvar, evar, loc)
 
     case ResolvedAst.Expr.FixpointProject(pred, exp10, exp20, loc) =>
-      val exp1Val = visitExp(exp10, kenv0, taenv, henv0, root)
-      val exp2Val = visitExp(exp20, kenv0, taenv, henv0, root)
-      mapN(exp1Val, exp2Val) {
-        case (exp1, exp2) => KindedAst.Expr.FixpointProject(pred, exp1, exp2, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
-      }
+      val exp1 = visitExp(exp10, kenv0, taenv, henv0, root)
+      val exp2 = visitExp(exp20, kenv0, taenv, henv0, root)
+      val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+      KindedAst.Expr.FixpointProject(pred, exp1, exp2, tvar, loc)
 
     case ResolvedAst.Expr.Error(m) =>
       val tvar = Type.freshVar(Kind.Star, m.loc)
       val evar = Type.freshVar(Kind.Eff, m.loc)
       // Note: We must NOT use [[Validation.toSoftFailure]] because
       // that would duplicate the error inside the Validation.
-      Validation.success(KindedAst.Expr.Error(m, tvar, evar))
+      KindedAst.Expr.Error(m, tvar, evar)
   }
 
   /**
     * Performs kinding on the given match rule under the given kind environment.
     */
-  private def visitMatchRule(rule0: ResolvedAst.MatchRule, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], henv: Option[(Type.Var, Type.Var)], root: ResolvedAst.Root)(implicit scope: Scope, sctx: SharedContext, flix: Flix): Validation[KindedAst.MatchRule, KindError] = rule0 match {
+  private def visitMatchRule(rule0: ResolvedAst.MatchRule, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], henv: Option[(Type.Var, Type.Var)], root: ResolvedAst.Root)(implicit scope: Scope, sctx: SharedContext, flix: Flix): KindedAst.MatchRule = rule0 match {
     case ResolvedAst.MatchRule(pat0, guard0, exp0) =>
       val pat = visitPattern(pat0, kenv, root)
-      val guardVal = traverseOpt(guard0)(visitExp(_, kenv, taenv, henv, root))
-      val expVal = visitExp(exp0, kenv, taenv, henv, root)
-      mapN(guardVal, expVal) {
-        case (guard, exp) => KindedAst.MatchRule(pat, guard, exp)
-      }
+      val guard = guard0.map(visitExp(_, kenv, taenv, henv, root))
+      val exp = visitExp(exp0, kenv, taenv, henv, root)
+      KindedAst.MatchRule(pat, guard, exp)
   }
 
   /**
     * Performs kinding on the given match rule under the given kind environment.
     */
-  private def visitTypeMatchRule(rule0: ResolvedAst.TypeMatchRule, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], henv: Option[(Type.Var, Type.Var)], root: ResolvedAst.Root)(implicit scope: Scope, sctx: SharedContext, flix: Flix): Validation[KindedAst.TypeMatchRule, KindError] = rule0 match {
+  private def visitTypeMatchRule(rule0: ResolvedAst.TypeMatchRule, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], henv: Option[(Type.Var, Type.Var)], root: ResolvedAst.Root)(implicit scope: Scope, sctx: SharedContext, flix: Flix): KindedAst.TypeMatchRule = rule0 match {
     case ResolvedAst.TypeMatchRule(sym, tpe0, exp0) =>
-      val t = visitType(tpe0, Kind.Star, kenv, taenv, root)
-      val expVal = visitExp(exp0, kenv, taenv, henv, root)
-      mapN(expVal) {
-        case exp => KindedAst.TypeMatchRule(sym, t, exp)
-      }
+      val tpe = visitType(tpe0, Kind.Star, kenv, taenv, root)
+      val exp = visitExp(exp0, kenv, taenv, henv, root)
+      KindedAst.TypeMatchRule(sym, tpe, exp)
   }
 
   /**
     * Performs kinding on the given relational choice rule under the given kind environment.
     */
-  private def visitRestrictableChooseRule(rule0: ResolvedAst.RestrictableChooseRule, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], henv: Option[(Type.Var, Type.Var)], root: ResolvedAst.Root)(implicit scope: Scope, sctx: SharedContext, flix: Flix): Validation[KindedAst.RestrictableChooseRule, KindError] = rule0 match {
+  private def visitRestrictableChooseRule(rule0: ResolvedAst.RestrictableChooseRule, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], henv: Option[(Type.Var, Type.Var)], root: ResolvedAst.Root)(implicit scope: Scope, sctx: SharedContext, flix: Flix): KindedAst.RestrictableChooseRule = rule0 match {
     case ResolvedAst.RestrictableChooseRule(pat0, exp0) =>
       val pat = visitRestrictableChoosePattern(pat0)
-      val expVal = visitExp(exp0, kenv, taenv, henv, root)
-      mapN(expVal) {
-        case exp => KindedAst.RestrictableChooseRule(pat, exp)
-      }
+      val exp = visitExp(exp0, kenv, taenv, henv, root)
+      KindedAst.RestrictableChooseRule(pat, exp)
   }
 
   /**
     * Performs kinding on the given catch rule under the given kind environment.
     */
-  private def visitCatchRule(rule0: ResolvedAst.CatchRule, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], henv: Option[(Type.Var, Type.Var)], root: ResolvedAst.Root)(implicit scope: Scope, sctx: SharedContext, flix: Flix): Validation[KindedAst.CatchRule, KindError] = rule0 match {
+  private def visitCatchRule(rule0: ResolvedAst.CatchRule, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], henv: Option[(Type.Var, Type.Var)], root: ResolvedAst.Root)(implicit scope: Scope, sctx: SharedContext, flix: Flix): KindedAst.CatchRule = rule0 match {
     case ResolvedAst.CatchRule(sym, clazz, exp0) =>
-      val expVal = visitExp(exp0, kenv, taenv, henv, root)
-      mapN(expVal) {
-        exp => KindedAst.CatchRule(sym, clazz, exp)
-      }
+      val exp = visitExp(exp0, kenv, taenv, henv, root)
+      KindedAst.CatchRule(sym, clazz, exp)
   }
 
   /**
     * Performs kinding on the given handler rule under the given kind environment.
     */
-  private def visitHandlerRule(rule0: ResolvedAst.HandlerRule, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], hTvar: Type.Var, root: ResolvedAst.Root)(implicit scope: Scope, sctx: SharedContext, flix: Flix): Validation[KindedAst.HandlerRule, KindError] = rule0 match {
+  private def visitHandlerRule(rule0: ResolvedAst.HandlerRule, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], hTvar: Type.Var, root: ResolvedAst.Root)(implicit scope: Scope, sctx: SharedContext, flix: Flix): KindedAst.HandlerRule = rule0 match {
     case ResolvedAst.HandlerRule(op, fparams0, exp0) =>
       // create a new type variable for the op return type (same as resume argument type)
       val tvar = Type.freshVar(Kind.Star, exp0.loc)
@@ -1003,52 +831,59 @@ object Kinder {
       val henv = Some((tvar, hTvar))
 
       val fparams = fparams0.map(visitFormalParam(_, kenv, taenv, root))
-      val expVal = visitExp(exp0, kenv, taenv, henv, root)
-      mapN(expVal) {
-        case exp => KindedAst.HandlerRule(op, fparams, exp, tvar)
-      }
+      val exp = visitExp(exp0, kenv, taenv, henv, root)
+      KindedAst.HandlerRule(op, fparams, exp, tvar)
   }
 
   /**
     * Performs kinding on the given select channel rule under the given kind environment.
     */
-  private def visitSelectChannelRule(rule0: ResolvedAst.SelectChannelRule, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], henv: Option[(Type.Var, Type.Var)], root: ResolvedAst.Root)(implicit scope: Scope, sctx: SharedContext, flix: Flix): Validation[KindedAst.SelectChannelRule, KindError] = rule0 match {
+  private def visitSelectChannelRule(rule0: ResolvedAst.SelectChannelRule, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], henv: Option[(Type.Var, Type.Var)], root: ResolvedAst.Root)(implicit scope: Scope, sctx: SharedContext, flix: Flix): KindedAst.SelectChannelRule = rule0 match {
     case ResolvedAst.SelectChannelRule(sym, chan0, exp0) =>
-      val chanVal = visitExp(chan0, kenv, taenv, henv, root)
-      val expVal = visitExp(exp0, kenv, taenv, henv, root)
-      mapN(chanVal, expVal) {
-        case (chan, exp) => KindedAst.SelectChannelRule(sym, chan, exp)
-      }
+      val chan = visitExp(chan0, kenv, taenv, henv, root)
+      val exp = visitExp(exp0, kenv, taenv, henv, root)
+      KindedAst.SelectChannelRule(sym, chan, exp)
   }
 
   /**
     * Performs kinding on the given pattern under the given kind environment.
     */
   private def visitPattern(pat00: ResolvedAst.Pattern, kenv: KindEnv, root: ResolvedAst.Root)(implicit scope: Scope, flix: Flix): KindedAst.Pattern = pat00 match {
-    case ResolvedAst.Pattern.Wild(loc) => KindedAst.Pattern.Wild(Type.freshVar(Kind.Star, loc.asSynthetic), loc)
-    case ResolvedAst.Pattern.Var(sym, loc) => KindedAst.Pattern.Var(sym, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
+    case ResolvedAst.Pattern.Wild(loc) =>
+      val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+      KindedAst.Pattern.Wild(tvar, loc)
+
+    case ResolvedAst.Pattern.Var(sym, loc) =>
+      val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+      KindedAst.Pattern.Var(sym, tvar, loc)
+
     case ResolvedAst.Pattern.Cst(cst, loc) => KindedAst.Pattern.Cst(cst, loc)
     case ResolvedAst.Pattern.Tag(sym, pat0, loc) =>
       val pat = visitPattern(pat0, kenv, root)
-      KindedAst.Pattern.Tag(sym, pat, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
+      val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+      KindedAst.Pattern.Tag(sym, pat, tvar, loc)
 
-    case ResolvedAst.Pattern.Tuple(elms0, loc) =>
-      val elms = elms0.map(visitPattern(_, kenv, root))
-      KindedAst.Pattern.Tuple(elms, loc)
+    case ResolvedAst.Pattern.Tuple(pats0, loc) =>
+      val pats = pats0.map(visitPattern(_, kenv, root))
+      KindedAst.Pattern.Tuple(pats, loc)
 
-    case ResolvedAst.Pattern.Record(pats, pat, loc) =>
-      val ps = pats.map {
+    case ResolvedAst.Pattern.Record(pats0, pat0, loc) =>
+      val pats = pats0.map {
         case ResolvedAst.Pattern.Record.RecordLabelPattern(label, pat1, loc1) =>
           val tvar = Type.freshVar(Kind.Star, loc1.asSynthetic)
-          val p = visitPattern(pat1, kenv, root)
-          KindedAst.Pattern.Record.RecordLabelPattern(label, tvar, p, loc1)
+          val pat = visitPattern(pat1, kenv, root)
+          KindedAst.Pattern.Record.RecordLabelPattern(label, tvar, pat, loc1)
       }
-      val p = visitPattern(pat, kenv, root)
-      KindedAst.Pattern.Record(ps, p, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
+      val pat = visitPattern(pat0, kenv, root)
+      val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+      KindedAst.Pattern.Record(pats, pat, tvar, loc)
 
-    case ResolvedAst.Pattern.RecordEmpty(loc) => KindedAst.Pattern.RecordEmpty(loc)
+    case ResolvedAst.Pattern.RecordEmpty(loc) =>
+      KindedAst.Pattern.RecordEmpty(loc)
 
-    case ResolvedAst.Pattern.Error(loc) => KindedAst.Pattern.Error(Type.freshVar(Kind.Star, loc.asSynthetic), loc)
+    case ResolvedAst.Pattern.Error(loc) =>
+      val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+      KindedAst.Pattern.Error(tvar, loc)
   }
 
   /**
@@ -1057,32 +892,40 @@ object Kinder {
   private def visitRestrictableChoosePattern(pat00: ResolvedAst.RestrictableChoosePattern)(implicit scope: Scope, flix: Flix): KindedAst.RestrictableChoosePattern = pat00 match {
     case ResolvedAst.RestrictableChoosePattern.Tag(sym, pat0, loc) =>
       val pat = pat0.map(visitRestrictableChoosePatternVarOrWild)
-      KindedAst.RestrictableChoosePattern.Tag(sym, pat, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
+      val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+      KindedAst.RestrictableChoosePattern.Tag(sym, pat, tvar, loc)
 
     case ResolvedAst.RestrictableChoosePattern.Error(loc) =>
-      KindedAst.RestrictableChoosePattern.Error(Type.freshVar(Kind.Star, loc.asSynthetic), loc)
+      val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+      KindedAst.RestrictableChoosePattern.Error(tvar, loc)
   }
 
   /**
     * Performs kinding on the given restrictable choice pattern under the given kind environment.
     */
   private def visitRestrictableChoosePatternVarOrWild(pat0: ResolvedAst.RestrictableChoosePattern.VarOrWild)(implicit scope: Scope, flix: Flix): KindedAst.RestrictableChoosePattern.VarOrWild = pat0 match {
-    case ResolvedAst.RestrictableChoosePattern.Wild(loc) => KindedAst.RestrictableChoosePattern.Wild(Type.freshVar(Kind.Star, loc.asSynthetic), loc)
-    case ResolvedAst.RestrictableChoosePattern.Var(sym, loc) => KindedAst.RestrictableChoosePattern.Var(sym, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
-    case ResolvedAst.RestrictableChoosePattern.Error(loc) => KindedAst.RestrictableChoosePattern.Error(Type.freshVar(Kind.Star, loc.asSynthetic), loc)
+    case ResolvedAst.RestrictableChoosePattern.Wild(loc) =>
+      val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+      KindedAst.RestrictableChoosePattern.Wild(tvar, loc)
+
+    case ResolvedAst.RestrictableChoosePattern.Var(sym, loc) =>
+      val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+      KindedAst.RestrictableChoosePattern.Var(sym, tvar, loc)
+
+    case ResolvedAst.RestrictableChoosePattern.Error(loc) =>
+      val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+      KindedAst.RestrictableChoosePattern.Error(tvar, loc)
   }
 
   /**
     * Performs kinding on the given constraint under the given kind environment.
     */
-  private def visitConstraint(constraint0: ResolvedAst.Constraint, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], henv: Option[(Type.Var, Type.Var)], root: ResolvedAst.Root)(implicit scope: Scope, sctx: SharedContext, flix: Flix): Validation[KindedAst.Constraint, KindError] = constraint0 match {
+  private def visitConstraint(constraint0: ResolvedAst.Constraint, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], henv: Option[(Type.Var, Type.Var)], root: ResolvedAst.Root)(implicit scope: Scope, sctx: SharedContext, flix: Flix): KindedAst.Constraint = constraint0 match {
     case ResolvedAst.Constraint(cparams0, head0, body0, loc) =>
       val cparams = cparams0.map(visitConstraintParam)
-      val headVal = visitHeadPredicate(head0, kenv, taenv, henv, root)
-      val bodyVal = traverse(body0)(visitBodyPredicate(_, kenv, taenv, henv, root))
-      mapN(headVal, bodyVal) {
-        case (head, body) => KindedAst.Constraint(cparams, head, body, loc)
-      }
+      val head = visitHeadPredicate(head0, kenv, taenv, henv, root)
+      val body = body0.map(visitBodyPredicate(_, kenv, taenv, henv, root))
+      KindedAst.Constraint(cparams, head, body, loc)
   }
 
   /**
@@ -1095,33 +938,29 @@ object Kinder {
   /**
     * Performs kinding on the given head predicate under the given kind environment.
     */
-  private def visitHeadPredicate(pred0: ResolvedAst.Predicate.Head, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], henv: Option[(Type.Var, Type.Var)], root: ResolvedAst.Root)(implicit scope: Scope, sctx: SharedContext, flix: Flix): Validation[KindedAst.Predicate.Head, KindError] = pred0 match {
+  private def visitHeadPredicate(pred0: ResolvedAst.Predicate.Head, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], henv: Option[(Type.Var, Type.Var)], root: ResolvedAst.Root)(implicit scope: Scope, sctx: SharedContext, flix: Flix): KindedAst.Predicate.Head = pred0 match {
     case ResolvedAst.Predicate.Head.Atom(pred, den, terms0, loc) =>
-      val termsVal = traverse(terms0)(visitExp(_, kenv, taenv, henv, root))
-      mapN(termsVal) {
-        terms => KindedAst.Predicate.Head.Atom(pred, den, terms, Type.freshVar(Kind.Predicate, loc.asSynthetic), loc)
-      }
+      val terms = terms0.map(visitExp(_, kenv, taenv, henv, root))
+      val pvar = Type.freshVar(Kind.Predicate, loc.asSynthetic)
+      KindedAst.Predicate.Head.Atom(pred, den, terms, pvar, loc)
   }
 
   /**
     * Performs kinding on the given body predicate under the given kind environment.
     */
-  private def visitBodyPredicate(pred0: ResolvedAst.Predicate.Body, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], henv: Option[(Type.Var, Type.Var)], root: ResolvedAst.Root)(implicit scope: Scope, sctx: SharedContext, flix: Flix): Validation[KindedAst.Predicate.Body, KindError] = pred0 match {
+  private def visitBodyPredicate(pred0: ResolvedAst.Predicate.Body, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], henv: Option[(Type.Var, Type.Var)], root: ResolvedAst.Root)(implicit scope: Scope, sctx: SharedContext, flix: Flix): KindedAst.Predicate.Body = pred0 match {
     case ResolvedAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms0, loc) =>
       val terms = terms0.map(visitPattern(_, kenv, root))
-      Validation.success(KindedAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, Type.freshVar(Kind.Predicate, loc.asSynthetic), loc))
+      val pvar = Type.freshVar(Kind.Predicate, loc.asSynthetic)
+      KindedAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, pvar, loc)
 
     case ResolvedAst.Predicate.Body.Functional(outVars, exp0, loc) =>
-      val expVal = visitExp(exp0, kenv, taenv, henv, root)
-      mapN(expVal) {
-        exp => KindedAst.Predicate.Body.Functional(outVars, exp, loc)
-      }
+      val exp = visitExp(exp0, kenv, taenv, henv, root)
+      KindedAst.Predicate.Body.Functional(outVars, exp, loc)
 
     case ResolvedAst.Predicate.Body.Guard(exp0, loc) =>
-      val expVal = visitExp(exp0, kenv, taenv, henv, root)
-      mapN(expVal) {
-        exp => KindedAst.Predicate.Body.Guard(exp, loc)
-      }
+      val exp = visitExp(exp0, kenv, taenv, henv, root)
+      KindedAst.Predicate.Body.Guard(exp, loc)
   }
 
   /**
@@ -1440,15 +1279,13 @@ object Kinder {
   /**
     * Performs kinding on the given JVM method.
     */
-  private def visitJvmMethod(method: ResolvedAst.JvmMethod, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], henv: Option[(Type.Var, Type.Var)], root: ResolvedAst.Root)(implicit scope: Scope, sctx: SharedContext, flix: Flix) = method match {
-    case ResolvedAst.JvmMethod(_, fparams0, exp, tpe0, eff0, loc) =>
+  private def visitJvmMethod(method: ResolvedAst.JvmMethod, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], henv: Option[(Type.Var, Type.Var)], root: ResolvedAst.Root)(implicit scope: Scope, sctx: SharedContext, flix: Flix): KindedAst.JvmMethod = method match {
+    case ResolvedAst.JvmMethod(_, fparams0, exp0, tpe0, eff0, loc) =>
       val fparams = fparams0.map(visitFormalParam(_, kenv, taenv, root))
-      val expVal = visitExp(exp, kenv, taenv, henv, root)
+      val exp = visitExp(exp0, kenv, taenv, henv, root)
       val eff = visitEffectDefaultPure(eff0, kenv, taenv, root)
-      val t = visitType(tpe0, Kind.Wild, kenv, taenv, root)
-      mapN(expVal) {
-        case e => KindedAst.JvmMethod(method.ident, fparams, e, t, eff, loc)
-      }
+      val tpe = visitType(tpe0, Kind.Wild, kenv, taenv, root)
+      KindedAst.JvmMethod(method.ident, fparams, exp, tpe, eff, loc)
   }
 
   /**
