@@ -218,12 +218,23 @@ object Verifier {
           check(expected = MonoType.Bool)(actual = tpe, loc)
 
         case AtomicOp.Tag(sym) =>
-          val List(t1) = ts
-          check(expected = MonoType.Enum(sym.enumSym, List(t1)))(actual = tpe, loc)
+          val List(_) = ts
+          // Tag(Nil), ()) : List[t]
+          // Checking this requires instantiating the enum case
+          tpe match {
+            case MonoType.Enum(enumSym, _) if enumSym == sym.enumSym => ()
+            case _ => failMismatchedShape(tpe, sym.enumSym.toString, loc)
+          }
+          tpe
 
         case AtomicOp.Untag(sym) =>
           val List(t1) = ts
-          check(expected = MonoType.Enum(sym.enumSym, List(t1)))(actual = t1, loc)
+          // Untag(Nil): Unit
+          // Checking this requires instantiating the enum case
+          t1 match {
+            case MonoType.Enum(enumSym, _) if enumSym == sym.enumSym => ()
+            case _ => failMismatchedShape(t1, sym.enumSym.toString, loc)
+          }
           tpe
 
         case AtomicOp.ArrayLength =>
