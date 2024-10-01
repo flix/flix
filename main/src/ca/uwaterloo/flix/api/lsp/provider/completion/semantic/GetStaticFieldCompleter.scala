@@ -20,18 +20,10 @@ import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.FieldCompletion
 import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.util.JvmUtils
 
-import java.lang.reflect.Field
-
 object GetStaticFieldCompleter {
 
   def getCompletions(e: ResolutionError.UndefinedJvmStaticField): List[Completion] = {
-    getFields(e.clazz).map(FieldCompletion(e.field, _))
-  }
-
-  private def getFields(clazz: Class[?]): List[Field] = {
-    val availableFields = clazz.getFields.toList
-    val staticFields = availableFields.filter(m => JvmUtils.isStatic(m))
-    staticFields.sortBy(_.getName)
+    JvmUtils.getStaticFields(e.clazz).sortBy(_.getName).map(FieldCompletion(e.field, _))
   }
 
 }
