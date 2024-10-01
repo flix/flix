@@ -18,6 +18,8 @@ package ca.uwaterloo.flix.api.lsp.provider
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.*
 import ca.uwaterloo.flix.api.lsp.provider.completion.*
+import ca.uwaterloo.flix.api.lsp.provider.completion.semantic.{GetStaticFieldCompleter, InvokeStaticMethodCompleter}
+import ca.uwaterloo.flix.api.lsp.provider.completion.syntactic.{ExprSnippetCompleter, KeywordCompleter}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.SyntacticContext
 import ca.uwaterloo.flix.language.ast.TypedAst
@@ -72,7 +74,7 @@ object CompletionProvider {
       //
       case SyntacticContext.Decl.Enum => KeywordCompleter.getEnumKeywords
       case SyntacticContext.Decl.Instance => InstanceCompleter.getCompletions(ctx) ++ KeywordCompleter.getInstanceKeywords
-      case SyntacticContext.Decl.Module => KeywordCompleter.getModKeywords ++ SnippetCompleter.getCompletions(ctx)
+      case SyntacticContext.Decl.Module => KeywordCompleter.getModKeywords ++ ExprSnippetCompleter.getCompletions()
       case SyntacticContext.Decl.Struct => KeywordCompleter.getStructKeywords
       case SyntacticContext.Decl.Trait => KeywordCompleter.getTraitKeywords
       case SyntacticContext.Decl.Type => KeywordCompleter.getTypeKeywords
