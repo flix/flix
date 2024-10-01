@@ -666,20 +666,20 @@ object SetFormula {
     *
     * Invariant: [[ElemSet]], [[Cst]], and [[Var]] must use disjoint integers.
     */
-  def propagation(t: SetFormula): SetFormula = propagationHelper(t, SortedMap.empty)
+  def propagation(t: SetFormula): SetFormula = propagationWithInsts(t, SortedMap.empty)
 
   /**
     * Applies set propagation to `f` where `insts` keep track of running instantiations for
     * [[ElemSet]], [[Cst]], and [[Var]] (using the identity mapping if not present).
     */
-  private def propagationHelper(f: SetFormula, insts: SortedMap[Int, UnivOrEmpty]): SetFormula = f match {
+  private def propagationWithInsts(f: SetFormula, insts: SortedMap[Int, UnivOrEmpty]): SetFormula = f match {
     case Univ => f
     case Empty => f
     case Cst(c) => insts.getOrElse(c, f)
     case Var(x) => insts.getOrElse(x, f)
     case e@ElemSet(_) => instElemSet(e, insts)
     case compl@Compl(f1) =>
-      val f1Prop = propagationHelper(f1, insts)
+      val f1Prop = propagationWithInsts(f1, insts)
       // Maintain and exploit reference equality for performance.
       if (f1Prop eq f1) compl else mkCompl(f1Prop)
 
@@ -727,7 +727,7 @@ object SetFormula {
       // If a subformula becomes an element set, a constant, or a variable after propagation,
       // add it to the propagated atoms. This information could also be propagated backwards for
       // further simplification.
-      val rest = rest0.map(f => propagationHelper(f, currentInsts) match {
+      val rest = rest0.map(f => propagationWithInsts(f, currentInsts) match {
         case Univ => Univ
         case Empty => Empty
         case cst@Cst(c) =>
@@ -802,7 +802,7 @@ object SetFormula {
       // If a subformula becomes an element set, a constant, or a variable after propagation,
       // add it to the propagated atoms. This information could also be propagated backwards for
       // further simplification.
-      val rest = rest0.map(f => propagationHelper(f, currentInsts) match {
+      val rest = rest0.map(f => propagationWithInsts(f, currentInsts) match {
         case Univ => Univ
         case Empty => Empty
         case cst@Cst(c) =>
