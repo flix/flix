@@ -725,8 +725,7 @@ object SetFormula {
         varsNeg.map(_.x -> Empty)
 
       // If a subformula becomes an element set, a constant, or a variable after propagation,
-      // add it to the propagated atoms. This information could also be propagated backwards for
-      // further simplification.
+      // add it to the propagated atoms. This allows further simplification in the remaining `rest0`.
       val rest = rest0.map(f => propagationWithInsts(f, currentInsts) match {
         case Univ => Univ
         case Empty => Empty
@@ -800,8 +799,7 @@ object SetFormula {
         varsNeg.map(_.x -> Univ)
 
       // If a subformula becomes an element set, a constant, or a variable after propagation,
-      // add it to the propagated atoms. This information could also be propagated backwards for
-      // further simplification.
+      // add it to the propagated atoms. This allows further simplification in the remaining `rest0`.
       val rest = rest0.map(f => propagationWithInsts(f, currentInsts) match {
         case Univ => Univ
         case Empty => Empty
