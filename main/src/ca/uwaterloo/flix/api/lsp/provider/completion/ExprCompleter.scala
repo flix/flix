@@ -32,6 +32,8 @@ object ExprCompleter {
       SnippetCompleter.getCompletions(context) ++
       EnumCompleter.getCompletions(context) ++
       StructCompleter.getCompletions(context) ++
-      ModuleCompleter.getCompletions(context)
+      ModuleCompleter.getCompletions(context) ++
+      HoleCompletion.getHoleCompletion(context, index, root)
   }
+
 }

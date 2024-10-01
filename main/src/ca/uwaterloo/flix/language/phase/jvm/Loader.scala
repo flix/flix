@@ -3,7 +3,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ReducedAst.Root
 import ca.uwaterloo.flix.language.ast.SourceLocation
-import ca.uwaterloo.flix.util.{InternalCompilerException, Jvm}
+import ca.uwaterloo.flix.util.{InternalCompilerException, JvmUtils}
 
 import java.lang.reflect.{InvocationTargetException, Method}
 
@@ -84,7 +84,7 @@ object Loader {
     * Returns a map from names to method objects for the given class `clazz`.
     */
   private def methodsOf(clazz: Class[?]): Map[String, Method] = {
-    Jvm.getMethods(clazz).foldLeft(Map.empty[String, Method]) {
+    JvmUtils.getMethods(clazz).foldLeft(Map.empty[String, Method]) {
       case (macc, method) =>
         if (method.isSynthetic)
           macc

@@ -74,9 +74,6 @@ object Kinder {
 
     val defs = visitDefs(root, taenv, oldRoot, changeSet)
 
-    // Should `instances` not be root.instances.map(ParOps.parMap)?
-    // I.e., for every trait, we check all instances in parallel so we get a parallel task for every instance
-    // instead of check all traits in parallel which spawns k threads each does synchronous code
     val instances = ParOps.parMapValues(root.instances)(_.map(visitInstance(_, taenv, root)))
 
     val effects = ParOps.parMapValues(root.effects)(visitEffect(_, taenv, root))

@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.MethodCompletion
 import ca.uwaterloo.flix.language.ast.{Name, Type, TypedAst}
-import ca.uwaterloo.flix.util.Jvm
+import ca.uwaterloo.flix.util.JvmUtils
 
 object InvokeMethodCompleter {
 
@@ -28,7 +28,7 @@ object InvokeMethodCompleter {
       case None =>
         Nil
       case Some(clazz) =>
-        Jvm.getInstanceMethods(clazz).sortBy(_.getName).map(MethodCompletion(name, _))
+        JvmUtils.getInstanceMethods(clazz).sortBy(_.getName).map(MethodCompletion(name, _))
     }
   }
 
