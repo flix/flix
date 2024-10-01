@@ -38,6 +38,12 @@ object JvmUtils {
   }
 
   /**
+    * Returns the static fields of the class.
+    */
+  def getStaticFields(clazz: Class[?]): List[Field] =
+    clazz.getFields.toList.filter(isStatic)
+
+  /**
     * Returns `true` if `member` is a static member ([[Field]] and [[Method]] extends [[Member]]).
     */
   def isStatic(member: Member): Boolean =
