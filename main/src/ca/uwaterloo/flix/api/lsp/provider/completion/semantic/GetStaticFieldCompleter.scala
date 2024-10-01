@@ -13,16 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.api.lsp.provider.completion
+package ca.uwaterloo.flix.api.lsp.provider.completion.semantic
 
-import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.MethodCompletion
+import ca.uwaterloo.flix.api.lsp.provider.completion.Completion
+import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.FieldCompletion
 import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.util.JvmUtils
 
-object InvokeStaticMethodCompleter {
+import java.lang.reflect.Field
 
-  def getCompletions(e: ResolutionError.UndefinedJvmStaticField): Iterable[MethodCompletion] = {
-    JvmUtils.getStaticMethods(e.clazz).sortBy(_.getName).map(MethodCompletion(e.field, _))
+object GetStaticFieldCompleter {
+
+  def getCompletions(e: ResolutionError.UndefinedJvmStaticField): List[Completion] = {
+    getFields(e.clazz).map(FieldCompletion(e.field, _))
+  }
+
+  private def getFields(clazz: Class[?]): List[Field] = {
+    val availableFields = clazz.getFields.toList
+    val staticFields = availableFields.filter(m => JvmUtils.isStatic(m))
+    staticFields.sortBy(_.getName)
   }
 
 }
