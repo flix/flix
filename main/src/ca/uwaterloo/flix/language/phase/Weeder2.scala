@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.*
 import ca.uwaterloo.flix.language.ast.SyntaxTree.{Tree, TreeKind}
 import ca.uwaterloo.flix.language.ast.shared.Annotation.Export
-import ca.uwaterloo.flix.language.ast.shared.{Annotation, CheckedCastType, Constant, Denotation, Fixity, Polarity}
+import ca.uwaterloo.flix.language.ast.shared.{Annotation, Annotations, CheckedCastType, Constant, Denotation, Fixity, Polarity}
 import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, Name, ReadAst, SemanticOp, SourceLocation, Symbol, SyntaxTree, Token, TokenKind, WeededAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.ParseError.*
@@ -628,7 +628,7 @@ object Weeder2 {
       }
     }
 
-    def pickAnnotations(tree: Tree): Validation[Ast.Annotations, CompilationMessage] = {
+    def pickAnnotations(tree: Tree): Validation[Annotations, CompilationMessage] = {
       val maybeAnnotations = tryPick(TreeKind.AnnotationList, tree)
       val annotations = maybeAnnotations.map(
           tree => {
@@ -644,7 +644,7 @@ object Weeder2 {
           })
         .getOrElse(Validation.success(List.empty))
 
-      mapN(annotations)(Ast.Annotations(_))
+      mapN(annotations)(Annotations(_))
     }
 
     private def visitAnnotation(token: Token): Validation[Annotation, CompilationMessage] = {
@@ -1034,7 +1034,7 @@ object Weeder2 {
 
     private def visitApplyExpr(tree: Tree)(implicit flix: Flix): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.Apply)
-      flatMapN(pick(TreeKind.Expr.Expr, tree), pickArguments(tree)) {
+      flatMapN(pick(TreeKind.Expr.Expr, tree), pickArguments(tree, sctx = SyntacticContext.Expr.OtherExpr)) {
         case (expr, args) =>
           val maybeIntrinsic = tryPick(TreeKind.Expr.Intrinsic, expr)
           maybeIntrinsic match {
@@ -1044,15 +1044,15 @@ object Weeder2 {
       }
     }
 
-    private def pickArguments(tree: Tree)(implicit flix: Flix): Validation[List[Expr], CompilationMessage] = {
-      flatMapN(pick(TreeKind.ArgumentList, tree))(visitArguments)
+    private def pickArguments(tree: Tree, sctx: SyntacticContext)(implicit flix: Flix): Validation[List[Expr], CompilationMessage] = {
+      flatMapN(pick(TreeKind.ArgumentList, tree, sctx = sctx))(visitArguments)
     }
 
     /**
       * This method is the same as pickArguments but considers Unit as no-argument. It calls visitMethodArguments instead.
       */
-    private def pickRawArguments(tree: Tree)(implicit flix: Flix): Validation[List[Expr], CompilationMessage] = {
-      flatMapN(pick(TreeKind.ArgumentList, tree))(visitMethodArguments)
+    private def pickRawArguments(tree: Tree, sctx: SyntacticContext)(implicit flix: Flix): Validation[List[Expr], CompilationMessage] = {
+      flatMapN(pick(TreeKind.ArgumentList, tree, sctx = sctx))(visitMethodArguments)
     }
 
     private def visitArguments(tree: Tree)(implicit flix: Flix): Validation[List[Expr], CompilationMessage] = {
@@ -1263,7 +1263,7 @@ object Weeder2 {
     private def visitLetRecDefExpr(tree: Tree)(implicit flix: Flix): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.LetRecDef)
       val annVal = flatMapN(Decls.pickAnnotations(tree)) {
-        case Ast.Annotations(as) =>
+        case Annotations(as) =>
           // Check for [[IllegalAnnotation]]
           val errors = ArrayBuffer.empty[IllegalAnnotation]
           for (a <- as) {
@@ -1272,7 +1272,7 @@ object Weeder2 {
               case otherAnn => errors += IllegalAnnotation(otherAnn.loc)
             }
           }
-          Validation.toSuccessOrSoftFailure(Ast.Annotations(as), errors)
+          Validation.toSuccessOrSoftFailure(Annotations(as), errors)
       }
 
       val exprs = flatMapN(pickExpr(tree)) {
@@ -1774,14 +1774,14 @@ object Weeder2 {
 
     private def visitDoExpr(tree: Tree)(implicit flix: Flix): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.Do)
-      mapN(pickQName(tree), pickArguments(tree)) {
+      mapN(pickQName(tree), pickArguments(tree, sctx = SyntacticContext.Expr.Do)) {
         (op, args) => Expr.Do(op, args, tree.loc)
       }
     }
 
     private def visitInvokeConstructor2Expr(tree: Tree)(implicit flix: Flix): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.InvokeConstructor2)
-      flatMapN(Types.pickType(tree), pickRawArguments(tree)) {
+      flatMapN(Types.pickType(tree), pickRawArguments(tree, sctx = SyntacticContext.Expr.New)) {
         (tpe, exps) =>
           tpe match {
             case WeededAst.Type.Ambiguous(qname, _) if qname.isUnqualified =>
@@ -1797,7 +1797,7 @@ object Weeder2 {
       expect(tree, TreeKind.Expr.InvokeMethod2)
       val baseExp = pickExpr(tree)
       val method = pickNameIdent(tree)
-      val argsExps = pickRawArguments(tree)
+      val argsExps = pickRawArguments(tree, sctx = SyntacticContext.Expr.OtherExpr)
       mapN(baseExp, method, argsExps) {
         case (b, m, as) =>
           val result = Expr.InvokeMethod2(b, m, as, tree.loc)

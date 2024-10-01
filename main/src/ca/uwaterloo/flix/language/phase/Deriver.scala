@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.BoundBy
-import ca.uwaterloo.flix.language.ast.shared.{Constant, Scope}
+import ca.uwaterloo.flix.language.ast.shared.{Annotations, Constant, Scope}
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, Name, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugKindedAst
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugValidation
@@ -119,7 +119,7 @@ object Deriver {
 
       Validation.success(KindedAst.Instance(
         doc = Ast.Doc(Nil, loc),
-        ann = Ast.Annotations.Empty,
+        ann = Annotations.Empty,
         mod = Ast.Modifiers.Empty,
         trt = Ast.TraitSymUse(eqTraitSym, loc),
         tpe = tpe,
@@ -159,7 +159,7 @@ object Deriver {
       val eqTraitSym = PredefinedTraits.lookupTraitSym("Eq", root)
       KindedAst.Spec(
         doc = Ast.Doc(Nil, loc),
-        ann = Ast.Annotations.Empty,
+        ann = Annotations.Empty,
         mod = Ast.Modifiers.Empty,
         tparams = tparams,
         fparams = List(
@@ -269,7 +269,7 @@ object Deriver {
       val tconstrs = getTraitConstraintsForTypeParams(tparams, orderTraitSym, loc)
       Validation.success(KindedAst.Instance(
         doc = Ast.Doc(Nil, loc),
-        ann = Ast.Annotations.Empty,
+        ann = Annotations.Empty,
         mod = Ast.Modifiers.Empty,
         trt = Ast.TraitSymUse(orderTraitSym, loc),
         tpe = tpe,
@@ -352,7 +352,7 @@ object Deriver {
 
       KindedAst.Spec(
         doc = Ast.Doc(Nil, loc),
-        ann = Ast.Annotations.Empty,
+        ann = Annotations.Empty,
         mod = Ast.Modifiers.Empty,
         tparams = tparams,
         fparams = List(
@@ -421,12 +421,13 @@ object Deriver {
         * (Cannot be inlined due to issues with Scala's type inference.
         */
       def thenCompare(exp1: KindedAst.Expr, exp2: KindedAst.Expr): KindedAst.Expr = {
-        KindedAst.Expr.Apply(
-          KindedAst.Expr.Def(thenCompareDefSym, Type.freshVar(Kind.Star, loc), loc),
+        KindedAst.Expr.ApplyDef(
+          Ast.DefSymUse(thenCompareDefSym, loc),
           List(
             exp1,
             KindedAst.Expr.Lazy(exp2, loc)
           ),
+          Type.freshVar(Kind.Star, loc),
           Type.freshVar(Kind.Star, loc),
           Type.freshVar(Kind.Eff, loc),
           loc
@@ -483,7 +484,7 @@ object Deriver {
 
       Validation.success(KindedAst.Instance(
         doc = Ast.Doc(Nil, loc),
-        ann = Ast.Annotations.Empty,
+        ann = Annotations.Empty,
         mod = Ast.Modifiers.Empty,
         trt = Ast.TraitSymUse(toStringTraitSym, loc),
         tpe = tpe,
@@ -519,7 +520,7 @@ object Deriver {
       val toStringTraitSym = PredefinedTraits.lookupTraitSym("ToString", root)
       KindedAst.Spec(
         doc = Ast.Doc(Nil, loc),
-        ann = Ast.Annotations.Empty,
+        ann = Annotations.Empty,
         mod = Ast.Modifiers.Empty,
         tparams = tparams,
         fparams = List(KindedAst.FormalParam(param, Ast.Modifiers.Empty, tpe, Ast.TypeSource.Ascribed, loc)),
@@ -618,7 +619,7 @@ object Deriver {
       val tconstrs = getTraitConstraintsForTypeParams(tparams, hashTraitSym, loc)
       Validation.success(KindedAst.Instance(
         doc = Ast.Doc(Nil, loc),
-        ann = Ast.Annotations.Empty,
+        ann = Annotations.Empty,
         mod = Ast.Modifiers.Empty,
         trt = Ast.TraitSymUse(hashTraitSym, loc),
         tpe = tpe,
@@ -656,7 +657,7 @@ object Deriver {
       val hashTraitSym = PredefinedTraits.lookupTraitSym("Hash", root)
       KindedAst.Spec(
         doc = Ast.Doc(Nil, loc),
-        ann = Ast.Annotations.Empty,
+        ann = Annotations.Empty,
         mod = Ast.Modifiers.Empty,
         tparams = tparams,
         fparams = List(KindedAst.FormalParam(param, Ast.Modifiers.Empty, tpe, Ast.TypeSource.Ascribed, loc)),
@@ -692,8 +693,8 @@ object Deriver {
       val exp = varSyms.foldLeft(KindedAst.Expr.Cst(Constant.Int32(index + 1), loc): KindedAst.Expr) {
         case (acc, varSym) =>
           // `acc `combine` hash(varSym)
-          KindedAst.Expr.Apply(
-            KindedAst.Expr.Def(combineDefSym, Type.freshVar(Kind.Star, loc), loc),
+          KindedAst.Expr.ApplyDef(
+            Ast.DefSymUse(combineDefSym, loc),
             List(
               acc,
               KindedAst.Expr.Apply(
@@ -704,6 +705,7 @@ object Deriver {
                 loc
               ),
             ),
+            Type.freshVar(Kind.Star, loc),
             Type.freshVar(Kind.Star, loc),
             Type.freshVar(Kind.Eff, loc),
             loc
@@ -740,7 +742,7 @@ object Deriver {
 
       Validation.success(KindedAst.Instance(
         doc = Ast.Doc(Nil, loc),
-        ann = Ast.Annotations.Empty,
+        ann = Annotations.Empty,
         mod = Ast.Modifiers.Empty,
         trt = Ast.TraitSymUse(sendableTraitSym, loc),
         tpe = tpe,
@@ -800,7 +802,7 @@ object Deriver {
 
         Validation.success(Some(KindedAst.Instance(
           doc = Ast.Doc(Nil, loc),
-          ann = Ast.Annotations.Empty,
+          ann = Annotations.Empty,
           mod = Ast.Modifiers.Empty,
           trt = Ast.TraitSymUse(coerceTraitSym, loc),
           tpe = tpe,
@@ -840,7 +842,7 @@ object Deriver {
       val retTpe = caze.tpe
       KindedAst.Spec(
         doc = Ast.Doc(Nil, loc),
-        ann = Ast.Annotations.Empty,
+        ann = Annotations.Empty,
         mod = Ast.Modifiers.Empty,
         tparams = tparams,
         fparams = List(KindedAst.FormalParam(param, Ast.Modifiers.Empty, tpe, Ast.TypeSource.Ascribed, loc)),

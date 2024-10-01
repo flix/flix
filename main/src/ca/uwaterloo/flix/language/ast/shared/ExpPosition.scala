@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Magnus Madsen
+ * Copyright 2024 Holger Dal Mogensen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,19 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package ca.uwaterloo.flix.language.ast.shared
 
-package ca.uwaterloo.flix.api
-
-object Version {
-  /**
-    * Represents the current version of Flix.
-    */
-  val CurrentVersion: Version = Version(major = 0, minor = 51, revision = 0)
-}
 
 /**
-  * A case class to represent versions.
+  * A common super-type that represents an expression position (tail position or not).
   */
-case class Version(major: Int, minor: Int, revision: Int) {
-  override val toString: String = s"$major.$minor.$revision"
+sealed trait ExpPosition
+
+object ExpPosition {
+  /**
+    * Represents an expression in tail position.
+    */
+  case object Tail extends ExpPosition
+
+  /**
+    * Represents an expression in non-tail position.
+    */
+  case object NonTail extends ExpPosition
 }

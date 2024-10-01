@@ -18,10 +18,9 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.ExpPosition
 import ca.uwaterloo.flix.language.ast.ReducedAst.*
 import ca.uwaterloo.flix.language.ast.SemanticOp.*
-import ca.uwaterloo.flix.language.ast.shared.Constant
+import ca.uwaterloo.flix.language.ast.shared.{Constant, ExpPosition}
 import ca.uwaterloo.flix.language.ast.{MonoType, *}
 import ca.uwaterloo.flix.language.dbg.printer.OpPrinter
 import ca.uwaterloo.flix.language.phase.jvm.BackendObjType.JavaObject
@@ -556,7 +555,6 @@ object GenExpression {
 
       case AtomicOp.Tag(sym) =>
         val List(exp) = exps
-        val expIndex = 0
 
         val tagType = BackendObjType.Tag(List(BackendType.toErasedBackendType(exp.tpe)))
 
@@ -564,7 +562,7 @@ object GenExpression {
           import BytecodeInstructions.*
           NEW(tagType.jvmName) ~ DUP() ~ INVOKESPECIAL(tagType.Constructor) ~
             DUP() ~ BackendObjType.Tagged.mkTagName(sym) ~ PUTFIELD(tagType.NameField) ~
-            DUP() ~ cheat(mv => compileExpr(exp)(mv, ctx, root, flix)) ~ PUTFIELD(tagType.IndexField(expIndex))
+            DUP() ~ cheat(mv => compileExpr(exp)(mv, ctx, root, flix)) ~ PUTFIELD(tagType.IndexField(0))
         }
         ins(new BytecodeInstructions.F(mv))
 

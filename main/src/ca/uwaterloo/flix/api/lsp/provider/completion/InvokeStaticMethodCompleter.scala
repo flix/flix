@@ -17,12 +17,12 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.MethodCompletion
 import ca.uwaterloo.flix.language.errors.ResolutionError
-import ca.uwaterloo.flix.util.Jvm
+import ca.uwaterloo.flix.util.JvmUtils
 
 object InvokeStaticMethodCompleter {
 
   def getCompletions(e: ResolutionError.UndefinedJvmStaticField): Iterable[MethodCompletion] = {
-    Jvm.getStaticMethods(e.clazz).sortBy(_.getName).map(MethodCompletion(e.field, _))
+    JvmUtils.getStaticMethods(e.clazz).sortBy(_.getName).map(MethodCompletion(e.field, _))
   }
 
 }
