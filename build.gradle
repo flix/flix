@@ -87,6 +87,7 @@ jar {
         include '**/*.flix'
         include '**/*.zip'
         include '**/ClassList.txt'
+        include '**/*.json'
     }
 
     duplicatesStrategy = 'exclude'
