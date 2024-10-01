@@ -20,9 +20,8 @@ import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.util.{CofiniteIntSet, InternalCompilerException}
 
 import scala.annotation.nowarn
-import scala.collection.immutable.SortedSet
-import scala.collection.mutable.ListBuffer
-import scala.collection.{SortedMap, mutable}
+import scala.collection.immutable.{SortedSet, SortedMap}
+import scala.collection.mutable
 
 /**
   * A common super-type for set formulas `f`, like `x1 ∩ x2 ∪ (e4 ∪ !c17)`.
@@ -428,7 +427,7 @@ object SetFormula {
     val varsPos = mutable.Set.empty[Var]
     val cstsNeg = mutable.Set.empty[Cst]
     val varsNeg = mutable.Set.empty[Var]
-    val other = ListBuffer.empty[SetFormula]
+    val other = mutable.ListBuffer.empty[SetFormula]
 
     var workList = fs
     while (workList.nonEmpty) {
@@ -553,7 +552,7 @@ object SetFormula {
     var elemNeg0 = CofiniteIntSet.universe
     val cstsNeg = mutable.Set.empty[Cst]
     val varsNeg = mutable.Set.empty[Var]
-    val other = ListBuffer.empty[SetFormula]
+    val other = mutable.ListBuffer.empty[SetFormula]
 
     // Variables and constants are checked for overlap immediately.
     // Elements are checked at the end.
