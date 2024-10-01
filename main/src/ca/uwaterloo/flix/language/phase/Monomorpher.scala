@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnvironment, Substitution, Unification}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.collection.{ListMap, ListOps}
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result}
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.collection.immutable.SortedSet
@@ -111,65 +111,36 @@ object Monomorpher {
       * Performance Note: We are on a hot path. We take extra care to avoid redundant type objects.
       */
     def apply(tpe0: Type): Type = tpe0 match {
-      case x: Type.Var =>
+      case v@Type.Var(sym, _) =>
         // Remove variables by substitution, otherwise by default type.
-        s.m.get(x.sym) match {
+        s.m.get(sym) match {
           case Some(t) =>
             // Use default since variables in the output of `s.m` are unconstrained.
             // It is important to do this before apply to avoid looping on variables.
             val t1 = t.map(default)
-            // Use apply to normalize the type, `t1` is ground.
-            apply(t1)
+            // `t1` is ground but still might need normalization.
+            simplify(t1, eqEnv)
           case None =>
-            // Default types are normalized.
-            default(x)
+            // Default types are already normalized, so no normalization needed.
+            default(v)
         }
 
-      case Type.Cst(_, _) =>
-        // Performance: Reuse tpe0.
-        tpe0
+      case cst@Type.Cst(_, _) =>
+        // Maintain and exploit reference equality for performance.
+        cst
 
-      case Type.Apply(t1, t2, loc) =>
-
-        (apply(t1), apply(t2)) match {
-          // Simplify boolean equations.
-          case (Type.Cst(TypeConstructor.Complement, _), y) => Type.mkComplement(y, loc)
-          case (Type.Apply(Type.Cst(TypeConstructor.Union, _), x, _), y) => Type.mkUnion(x, y, loc)
-          case (Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x, _), y) => Type.mkIntersection(x, y, loc)
-
-          case (Type.Cst(TypeConstructor.CaseComplement(sym), _), y) => Type.mkCaseComplement(y, sym, loc)
-          case (Type.Apply(Type.Cst(TypeConstructor.CaseIntersection(sym), _), x, _), y) => Type.mkCaseIntersection(x, y, sym, loc)
-          case (Type.Apply(Type.Cst(TypeConstructor.CaseUnion(sym), _), x, _), y) => Type.mkCaseUnion(x, y, sym, loc)
-
-          // Put records in alphabetical order
-          case (Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(label), _), tpe, _), rest) => mkRecordExtendSorted(label, tpe, rest, loc)
-
-          // Put schemas in alphabetical order
-          case (Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(label), _), tpe, _), rest) => mkSchemaExtendSorted(label, tpe, rest, loc)
-
-          // Else just apply.
-          case (x, y) =>
-            // Performance: Reuse tpe0, if possible.
-            if ((x eq t1) && (y eq t2)) {
-              tpe0
-            } else {
-              Type.Apply(x, y, loc)
-            }
-        }
+      case app@Type.Apply(_, _, _) =>
+        normalizeApply(apply, app)
 
       case Type.Alias(_, _, t, _) =>
-        // Remove the Alias.
+        // Remove the Alias and continue.
         apply(t)
 
-      case Type.AssocType(cst, arg0, _, loc) =>
+      case Type.AssocType(cst, arg0, _, _) =>
         // Remove the associated type.
-        val arg = apply(arg0)
-        EqualityEnvironment.reduceAssocType(cst, arg, eqEnv) match {
-          case Ok(t) =>
-            // Use apply to normalize the type, `t` is ground.
-            apply(t)
-          case Err(_) => throw InternalCompilerException("unexpected associated type reduction failure", loc)
-        }
+        val reducedType = infallibleReduceAssocType(cst, apply(arg0), eqEnv)
+        // `reducedType` is ground, but might need normalization.
+        simplify(reducedType, eqEnv)
 
       case Type.JvmToType(_, loc) => throw InternalCompilerException("unexpected JVM type", loc)
       case Type.JvmToEff(_, loc) => throw InternalCompilerException("unexpected JVM eff", loc)
@@ -810,6 +781,62 @@ object Monomorpher {
         StrictSubstitution(subst, root.eqEnv)
       case None =>
         throw InternalCompilerException(s"Unable to unify: '$tpe1' and '$tpe2'.\nIn '${sym}'", tpe1.loc)
+    }
+  }
+
+  /** Reduces the given associated type and crashes if it is not possible. */
+  private def infallibleReduceAssocType(cst: Ast.AssocTypeConstructor, arg: Type, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Type = {
+    EqualityEnvironment.reduceAssocType(cst, arg, eqEnv) match {
+      case Ok(t) => t
+      case Err(_) => throw InternalCompilerException("Unexpected associated type reduction failure", arg.loc)
+    }
+  }
+
+  /**
+    * Removes [[Type.Alias]] and [[Type.AssocType]], or crashes if some [[Type.AssocType]] is not
+    * reducible.
+    */
+  private def simplify(tpe: Type, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Type = tpe match {
+    case v@Type.Var(_, _) => v
+    case c@Type.Cst(_, _) => c
+    case app@Type.Apply(_, _, _) => normalizeApply(simplify(_, eqEnv), app)
+    case Type.Alias(_, _, tpe, _) => simplify(tpe, eqEnv)
+    case Type.AssocType(cst, arg0, _, _) => simplify(infallibleReduceAssocType(cst, simplify(arg0, eqEnv), eqEnv), eqEnv)
+    case Type.JvmToType(_, loc) => throw InternalCompilerException("unexpected JVM type", loc)
+    case Type.JvmToEff(_, loc) => throw InternalCompilerException("unexpected JVM eff", loc)
+    case Type.UnresolvedJvmType(_, loc) => throw InternalCompilerException("unexpected JVM type", loc)
+  }
+
+  /**
+    * Applies `f` on both sides of the application, then normalizing the remaining type.
+    *
+    * OBS: `f` must not output [[Type.AssocType]] or [[Type.Alias]].
+    */
+  @inline
+  private def normalizeApply(normalize: Type => Type, app: Type.Apply): Type = {
+    val Type.Apply(tpe1, tpe2, loc) = app
+    (normalize(tpe1), normalize(tpe2)) match {
+      // Simplify effect equations.
+      case (Type.Cst(TypeConstructor.Complement, _), y) => Type.mkComplement(y, loc)
+      case (Type.Apply(Type.Cst(TypeConstructor.Union, _), x, _), y) => Type.mkUnion(x, y, loc)
+      case (Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x, _), y) => Type.mkIntersection(x, y, loc)
+
+      // Simplify case equations.
+      case (Type.Cst(TypeConstructor.CaseComplement(sym), _), y) => Type.mkCaseComplement(y, sym, loc)
+      case (Type.Apply(Type.Cst(TypeConstructor.CaseIntersection(sym), _), x, _), y) => Type.mkCaseIntersection(x, y, sym, loc)
+      case (Type.Apply(Type.Cst(TypeConstructor.CaseUnion(sym), _), x, _), y) => Type.mkCaseUnion(x, y, sym, loc)
+
+      // Put records in alphabetical order.
+      case (Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(label), _), tpe, _), rest) =>
+        mkRecordExtendSorted(label, tpe, rest, loc)
+
+      // Put schemas in alphabetical order.
+      case (Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(label), _), tpe, _), rest) =>
+        mkSchemaExtendSorted(label, tpe, rest, loc)
+
+      case (x, y) =>
+        // Maintain and exploit reference equality for performance.
+        if ((x eq tpe1) && (y eq tpe2)) app else Type.Apply(x, y, loc)
     }
   }
 
