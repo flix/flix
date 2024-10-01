@@ -1,0 +1,17 @@
+{
+  "classes": [
+    {
+      "class": "java.lang.ProcessBuilder",
+      "effects": [
+        "Exec"
+      ]
+    },
+    {
+      "class": "java.lang.reflect.Method",
+      "effects": [
+        "Sys"
+      ]
+    }
+  ]
+}
+
