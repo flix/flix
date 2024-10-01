@@ -90,10 +90,10 @@ object Reducer {
         val es = exps.map(visitExpr)
         Expr.ApplyClo(e, es, ct, tpe, purity, loc)
 
-      case Expr.ApplyDef(symUse, exps, ct, tpe, purity, loc) =>
+      case Expr.ApplyDef(sym, exps, ct, tpe, purity, loc) =>
         if (ct == ExpPosition.NonTail && Purity.isControlImpure(purity)) lctx.pcPoints += 1
         val es = exps.map(visitExpr)
-        Expr.ApplyDef(symUse, es, ct, tpe, purity, loc)
+        Expr.ApplyDef(sym, es, ct, tpe, purity, loc)
 
       case Expr.ApplySelfTail(sym, exps, tpe, purity, loc) =>
         val es = exps.map(visitExpr)

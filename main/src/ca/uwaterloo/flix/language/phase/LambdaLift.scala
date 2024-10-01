@@ -114,17 +114,17 @@ object LambdaLift {
       LiftedAst.Expr.ApplyAtomic(AtomicOp.Closure(freshSymbol), closureArgs, arrowTpe, Purity.Pure, loc)
 
     case SimplifiedAst.Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
-      val es = exps map visitExp
+      val es = exps.map(visitExp)
       LiftedAst.Expr.ApplyAtomic(op, es, tpe, purity, loc)
 
     case SimplifiedAst.Expr.ApplyClo(exp, exps, tpe, purity, loc) =>
       val e = visitExp(exp)
-      val es = exps map visitExp
+      val es = exps.map(visitExp)
       LiftedAst.Expr.ApplyClo(e, es, tpe, purity, loc)
 
-    case SimplifiedAst.Expr.ApplyDef(symUse, exps, tpe, purity, loc) =>
-      val es = exps map visitExp
-      LiftedAst.Expr.ApplyDef(symUse, es, tpe, purity, loc)
+    case SimplifiedAst.Expr.ApplyDef(sym, exps, tpe, purity, loc) =>
+      val es = exps.map(visitExp)
+      LiftedAst.Expr.ApplyDef(sym, es, tpe, purity, loc)
 
     case SimplifiedAst.Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       val e1 = visitExp(exp1)
@@ -200,8 +200,6 @@ object LambdaLift {
     case SimplifiedAst.Expr.NewObject(name, clazz, tpe, purity, methods0, loc) =>
       val methods = methods0.map(visitJvmMethod)
       LiftedAst.Expr.NewObject(name, clazz, tpe, purity, methods, loc)
-
-    case SimplifiedAst.Expr.Def(_, _, loc) => throw InternalCompilerException(s"Unexpected expression.", loc)
 
     case SimplifiedAst.Expr.Lambda(_, _, _, loc) => throw InternalCompilerException(s"Unexpected expression.", loc)
 

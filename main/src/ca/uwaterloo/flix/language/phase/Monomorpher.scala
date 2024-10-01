@@ -42,16 +42,16 @@ import scala.collection.mutable
   *
   * For example, the polymorphic program:
   *
-  *   -   def fst[a, b](p: (a, b)): a = let (x, y) = p ; x
-  *   -   def f: Bool = fst((true, 'a'))
-  *   -   def g: Int32 = fst((42, "foo"))
+  *   - def fst[a, b](p: (a, b)): a = let (x, y) = p ; x
+  *   - def f: Bool = fst((true, 'a'))
+  *   - def g: Int32 = fst((42, "foo"))
   *
   * is, roughly speaking, translated to:
   *
-  *   -   def fst$1(p: (Bool, Char)): Bool = let (x, y) = p ; x
-  *   -   def fst$2(p: (Int32, String)): Int32 = let (x, y) = p ; x
-  *   -   def f: Bool = fst$1((true, 'a'))
-  *   -   def g: Bool = fst$2((42, "foo"))
+  *   - def fst$1(p: (Bool, Char)): Bool = let (x, y) = p ; x
+  *   - def fst$2(p: (Int32, String)): Int32 = let (x, y) = p ; x
+  *   - def f: Bool = fst$1((true, 'a'))
+  *   - def g: Bool = fst$2((42, "foo"))
   *
   * Additionally for things like record types and effect formulas, equivalent types are flattened
   * and ordered. This means that `{b = String, a = String}` becomes `{a = String, b = String}` and
@@ -212,7 +212,7 @@ object Monomorpher {
       *
       * For example, if the queue contains the entry:
       *
-      *   -   (f$1, f, [a -> Int32])
+      *   - (f$1, f, [a -> Int32])
       *
       * it means that the function definition f should be specialized w.r.t. the map [a -> Int32] under the fresh name f$1.
       *
@@ -255,11 +255,11 @@ object Monomorpher {
       *
       * For example, if the function:
       *
-      *   -   def fst[a, b](x: a, y: b): a = ...
+      *   - def fst[a, b](x: a, y: b): a = ...
       *
       * has been specialized w.r.t. to `Int32` and `String` then this map will contain an entry:
       *
-      *   -   (fst, (Int32, String) -> Int32) -> fst$1
+      *   - (fst, (Int32, String) -> Int32) -> fst$1
       */
     private val def2def: mutable.Map[(Symbol.DefnSym, Type), Symbol.DefnSym] = mutable.Map.empty
 
@@ -394,7 +394,7 @@ object Monomorpher {
         MonoAst.Effect(doc, ann, mod, sym, ops, loc)
     }
 
-    val structs =  ParOps.parMapValues(root.structs) {
+    val structs = ParOps.parMapValues(root.structs) {
       case LoweredAst.Struct(doc, ann, mod, sym, tparams0, fields, loc) =>
         val newFields = fields.map(visitStructField)
         val tparams = tparams0.map(_.sym)
@@ -476,16 +476,9 @@ object Monomorpher {
     case LoweredAst.Expr.Var(sym, tpe, loc) =>
       MonoAst.Expr.Var(env0(sym), subst(tpe), loc)
 
-    case LoweredAst.Expr.Def(sym, tpe, loc) =>
-      /*
-       * !! This is where all the magic happens !!
-       */
-      val newSym = specializeDefSym(sym, subst(tpe))
-      MonoAst.Expr.Def(newSym, subst(tpe), loc)
-
     case LoweredAst.Expr.Sig(sym, tpe, loc) =>
       val newSym = specializeSigSym(sym, subst(tpe))
-      MonoAst.Expr.Def(newSym, subst(tpe), loc)
+      MonoAst.Expr.Sig(newSym, subst(tpe), loc)
 
     case LoweredAst.Expr.Cst(cst, tpe, loc) =>
       MonoAst.Expr.Cst(cst, subst(tpe), loc)
@@ -498,7 +491,10 @@ object Monomorpher {
     case LoweredAst.Expr.Apply(exp, exps, tpe, eff, loc) =>
       val e = visitExp(exp, env0, subst)
       val es = exps.map(visitExp(_, env0, subst))
-      MonoAst.Expr.Apply(e, es, subst(tpe), subst(eff), loc)
+      e match {
+        case MonoAst.Expr.Sig(sym, itpe, _) => MonoAst.Expr.ApplyDef(sym, es, itpe, subst(tpe), subst(eff), loc)
+        case _ => MonoAst.Expr.Apply(e, es, subst(tpe), subst(eff), loc)
+      }
 
     case LoweredAst.Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc2) =>
       val it = subst(itpe)
