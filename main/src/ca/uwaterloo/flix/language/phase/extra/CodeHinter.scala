@@ -94,16 +94,19 @@ object CodeHinter {
     case Expr.Lambda(_, exp, _, _) =>
       visitExp(exp)
 
-    case Expr.Apply(exp, exps, _, _, loc) =>
+    case Expr.Apply(exp, exps, _, _, _) =>
       visitExp(exp) ++ visitExps(exps)
 
-    case Expr.ApplyDef(Ast.DefSymUse(sym, loc1), exps, _, _, _, loc2) =>
+    case Expr.ApplyDef(Ast.DefSymUse(sym, loc1), exps, _, _, _, _) =>
       val hints0 = exps.flatMap(e => checkEffect(sym, e.tpe, e.loc))
       val hints1 = checkDeprecated(sym, loc1) ++
         checkExperimental(sym, loc1) ++
         checkParallel(sym, loc1) ++
         checkLazy(sym, loc1)
       hints0 ++ hints1 ++ visitExps(exps)
+
+    case Expr.ApplySig(_, exps, _, _, _, _) =>
+      visitExps(exps)
 
     case Expr.Unary(_, exp, _, _, _) =>
       visitExp(exp)
