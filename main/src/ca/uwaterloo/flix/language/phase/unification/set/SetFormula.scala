@@ -719,10 +719,10 @@ object SetFormula {
       var currentInsts = insts ++
         setElemOneOpt(elemPos, Univ) ++
         setElemOneOpt(elemNeg, Empty) ++
-        cstsPos.iterator.map(_.c -> Univ) ++
-        cstsNeg.iterator.map(_.c -> Empty) ++
-        varsPos.iterator.map(_.x -> Univ) ++
-        varsNeg.iterator.map(_.x -> Empty)
+        cstsPos.map(_.c -> Univ) ++
+        cstsNeg.map(_.c -> Empty) ++
+        varsPos.map(_.x -> Univ) ++
+        varsNeg.map(_.x -> Empty)
 
       // If a subformula becomes an element set, a constant, or a variable after propagation,
       // add it to the propagated atoms. This information could also be propagated backwards for
@@ -794,10 +794,10 @@ object SetFormula {
       var currentInsts = insts ++
         setElemOneOpt(elemPos, Empty) ++
         setElemOneOpt(elemNeg, Univ) ++
-        cstsPos.iterator.map(_.c -> Empty) ++
-        cstsNeg.iterator.map(_.c -> Univ) ++
-        varsPos.iterator.map(_.x -> Empty) ++
-        varsNeg.iterator.map(_.x -> Univ)
+        cstsPos.map(_.c -> Empty) ++
+        cstsNeg.map(_.c -> Univ) ++
+        varsPos.map(_.x -> Empty) ++
+        varsNeg.map(_.x -> Univ)
 
       // If a subformula becomes an element set, a constant, or a variable after propagation,
       // add it to the propagated atoms. This information could also be propagated backwards for
