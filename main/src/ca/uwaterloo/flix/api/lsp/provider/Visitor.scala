@@ -146,7 +146,7 @@ object Visitor {
     !(loc1.endLine == loc2.endLine && loc1.endCol > loc2.endCol)
   }
 
-  def visitEnum(e: Enum, seen: Enum => Unit, accept: SourceLocation => Boolean): Unit = {
+  private def visitEnum(e: Enum, seen: Enum => Unit, accept: SourceLocation => Boolean): Unit = {
     // TODO
     // visit(e)
     // e.cases
@@ -154,12 +154,12 @@ object Visitor {
     //  .foreach(c => if (accept(c.loc)) { visitCase(c, ???, accept) })
   }
 
-  def visitCase(c: Case, seen: Case => Unit, accept: SourceLocation => Boolean): Unit = {
+  private def visitCase(c: Case, seen: Case => Unit, accept: SourceLocation => Boolean): Unit = {
     // TODO
     // visit(c)
   }
 
-  def visitResEnum(e: RestrictableEnum, seen: RestrictableEnum => Unit, accept: SourceLocation => Boolean): Unit = {
+  private def visitResEnum(e: RestrictableEnum, seen: RestrictableEnum => Unit, accept: SourceLocation => Boolean): Unit = {
     // TODO
     // visit(e)
     // e.cases
@@ -167,18 +167,18 @@ object Visitor {
     //  .foreach(c => if (accept(c.loc)) { visitResCase(c, ???, accept) })
   }
 
-  def visitResCase(c: RestrictableCase, seen: RestrictableCase => Unit, accept: SourceLocation => Boolean): Unit = {
+  private def visitResCase(c: RestrictableCase, seen: RestrictableCase => Unit, accept: SourceLocation => Boolean): Unit = {
     // TODO
     // visit(c)
   }
 
-  def visitInstance(ins: Instance, seen: Instance => Unit, accept: SourceLocation => Boolean): Unit = {
+  private def visitInstance(ins: Instance, seen: Instance => Unit, accept: SourceLocation => Boolean): Unit = {
     // TODO
     // visit(ins)
     // ins.defs.foreach(defn => visitDef(defn, ???, accept))
   }
 
-  def visitSig(sig: Sig, seen: Sig => Unit, accept: SourceLocation => Boolean): Unit = {
+  private def visitSig(sig: Sig, seen: Sig => Unit, accept: SourceLocation => Boolean): Unit = {
     // TODO
     // visit(sig)
     // if (accept(sig.spec.loc)) {
@@ -192,7 +192,7 @@ object Visitor {
     // )
   }
 
-  def visitStruct(struct: Struct, seen: Struct => Unit, accept: SourceLocation => Boolean): Unit = {
+  private def visitStruct(struct: Struct, seen: Struct => Unit, accept: SourceLocation => Boolean): Unit = {
     // TODO
     // visit(struct)
     // struct.fields.foreach{case (_, field) => {
@@ -202,25 +202,25 @@ object Visitor {
     // }}
   }
 
-  def visitStructField(field: StructField, seen: StructField => Unit, accept: SourceLocation => Boolean): Unit = {
+  private def visitStructField(field: StructField, seen: StructField => Unit, accept: SourceLocation => Boolean): Unit = {
     // TODO
     // visit(field)
   }
 
-  def visitTrait(t: Trait, seen: Trait => Unit, accept: SourceLocation => Boolean): Unit = {
+  private def visitTrait(t: Trait, seen: Trait => Unit, accept: SourceLocation => Boolean): Unit = {
     // TODO
     // visit(t)
     // t.laws.foreach(law => visitDef(law, ???, accept))
     // t.sigs.foreach(sig => visitSig(sig, ???, accept))
   }
   
-  def visitEffect(eff: Effect, seen: Effect => Unit, accept: SourceLocation => Boolean): Unit = {
+  private def visitEffect(eff: Effect, seen: Effect => Unit, accept: SourceLocation => Boolean): Unit = {
     // TODO
     // visit(eff)
     // ???
   }
 
-  def visitDef(defn: Def, seenDef: Def => Unit, seenExpr: Expr => Unit, accept: SourceLocation => Boolean): Unit = {
+  private def visitDef(defn: Def, seenDef: Def => Unit, seenExpr: Expr => Unit, accept: SourceLocation => Boolean): Unit = {
     seenDef(defn)
     if (accept(defn.spec.loc)) {
       // TODO
@@ -231,23 +231,23 @@ object Visitor {
     }
   }
 
-  def visitTypeAlias(alias: TypeAlias, seen: TypeAlias => Unit, accept: SourceLocation => Boolean): Unit = {
+  private def visitTypeAlias(alias: TypeAlias, seen: TypeAlias => Unit, accept: SourceLocation => Boolean): Unit = {
     // TODO
     // visit(alias)
     // alias.tparams.map(tp => if (accept(tp.loc)) { visitTypeParam(tp, ???, accept) })
   }
 
-  def visitTypeParam(tparam: TypeParam, seen: TypeParam => Unit, accept: SourceLocation => Boolean): Unit = {
+  private def visitTypeParam(tparam: TypeParam, seen: TypeParam => Unit, accept: SourceLocation => Boolean): Unit = {
     // TODO
     // visit(tparam)
   }
 
-  def visitUse(use: UseOrImport, seen: UseOrImport => Unit, accept: SourceLocation => Boolean): Unit = {
+  private def visitUse(use: UseOrImport, seen: UseOrImport => Unit, accept: SourceLocation => Boolean): Unit = {
     // TODO
     // visit(use)
   }
 
-  def visitExpr(expr: Expr, seen: Expr => Unit, accept: SourceLocation => Boolean): Unit = {
+  private def visitExpr(expr: Expr, seen: Expr => Unit, accept: SourceLocation => Boolean): Unit = {
     // TODO: handle mutually recursive calls to other visit functions
 
     seen(expr)
@@ -519,11 +519,11 @@ object Visitor {
     }
   }
 
-  def visitConstraint(con: Constraint, visit: Constraint => Unit, accept: SourceLocation => Boolean): Unit = {
+  private def visitConstraint(con: Constraint, visit: Constraint => Unit, accept: SourceLocation => Boolean): Unit = {
     // TODO
   }
 
-  def visitPattern(pat: Pattern, visit: Pattern => Unit, accept: SourceLocation => Boolean): Unit = {
+  private def visitPattern(pat: Pattern, visit: Pattern => Unit, accept: SourceLocation => Boolean): Unit = {
     // TODO
   }
 }
