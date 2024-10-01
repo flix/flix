@@ -55,43 +55,20 @@ object ClosureConv {
 
     case Expr.Var(_, _, _) => exp0
 
-    case Expr.Def(sym, tpe, loc) =>
-      //
-      // Special Case: A def expression occurs outside of an `Apply` expression.
-      //
-
-      //
-      // We must create a closure that references the definition symbol.
-      //
-      // The closure has no free variables since it is a reference to a top-level function.
-      //
-      // This case happens if the programmers writes e.g.:
-      //
-      // let m = List.map; ...
-      //
-      Expr.ApplyAtomic(AtomicOp.Closure(sym), List.empty, tpe, Purity.Pure, loc)
-
     case Expr.Lambda(fparams, exp, tpe, loc) =>
       //
       // Main case: Convert a lambda expression to a lambda closure.
       //
       mkLambdaClosure(fparams, exp, tpe, loc)
 
-    case Expr.Apply(exp, exps, tpe, purity, loc) => exp match {
-      case Expr.Def(sym, _, _) =>
-        //
-        // Special Case: Direct call to a known function symbol.
-        //
-        val es = exps.map(visitExp)
-        Expr.ApplyDef(sym, es, tpe, purity, loc)
-      case _ =>
-        //
-        // General Case: Call to closure.
-        //
-        val e = visitExp(exp)
-        val es = exps.map(visitExp)
-        Expr.ApplyClo(e, es, tpe, purity, loc)
-    }
+    case Expr.Apply(exp, exps, tpe, purity, loc) =>
+      val e = visitExp(exp)
+      val es = exps.map(visitExp)
+      Expr.ApplyClo(e, es, tpe, purity, loc)
+
+    case Expr.ApplyDef(sym, exps, tpe, purity, loc) =>
+      val es = exps.map(visitExp)
+      Expr.ApplyDef(sym, es, tpe, purity, loc)
 
     case Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
       val es = exps map visitExp
@@ -167,7 +144,6 @@ object ClosureConv {
 
     case Expr.ApplyClo(_, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.", loc)
 
-    case Expr.ApplyDef(_, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.", loc)
   }
 
   /**
@@ -216,13 +192,14 @@ object ClosureConv {
 
     case Expr.Var(sym, tpe, _) => SortedSet(FreeVar(sym, tpe))
 
-    case Expr.Def(_, _, _) => SortedSet.empty
-
     case Expr.Lambda(args, body, _, _) =>
       filterBoundParams(freeVars(body), args)
 
     case Expr.Apply(exp, args, _, _, _) =>
       freeVars(exp) ++ freeVarsExps(args)
+
+    case Expr.ApplyDef(_, exps, _, _, _) =>
+      freeVarsExps(exps)
 
     case Expr.ApplyAtomic(_, exps, _, _, _) =>
       freeVarsExps(exps)
@@ -270,7 +247,6 @@ object ClosureConv {
 
     case Expr.ApplyClo(_, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.", loc)
 
-    case Expr.ApplyDef(_, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.", loc)
   }
 
   /**
@@ -310,34 +286,32 @@ object ClosureConv {
         case Some(newSym) => Expr.Var(newSym, tpe, loc)
       }
 
-      case Expr.Def(_, _, _) => e
-
       case Expr.Lambda(fparams, exp, tpe, loc) =>
         val fs = fparams.map(visitFormalParam)
         val e = visitExp(exp)
         Expr.Lambda(fs, e, tpe, loc)
 
       case Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
-        val es = exps map visitExp
+        val es = exps.map(visitExp)
         Expr.ApplyAtomic(op, es, tpe, purity, loc)
 
       case Expr.LambdaClosure(cparams, fparams, freeVars, exp, tpe, loc) =>
         val e = visitExp(exp)
         Expr.LambdaClosure(cparams, fparams, freeVars, e, tpe, loc)
 
-      case Expr.ApplyClo(exp, args, tpe, purity, loc) =>
+      case Expr.ApplyClo(exp, exps, tpe, purity, loc) =>
         val e = visitExp(exp)
-        val as = args map visitExp
-        Expr.ApplyClo(e, as, tpe, purity, loc)
+        val es = exps.map(visitExp)
+        Expr.ApplyClo(e, es, tpe, purity, loc)
 
-      case Expr.ApplyDef(symUse, args, tpe, purity, loc) =>
-        val as = args map visitExp
-        Expr.ApplyDef(symUse, as, tpe, purity, loc)
+      case Expr.ApplyDef(sym, exps, tpe, purity, loc) =>
+        val es = exps.map(visitExp)
+        Expr.ApplyDef(sym, es, tpe, purity, loc)
 
-      case Expr.Apply(exp, args, tpe, purity, loc) =>
+      case Expr.Apply(exp, exps, tpe, purity, loc) =>
         val e = visitExp(exp)
-        val as = args map visitExp
-        Expr.Apply(e, as, tpe, purity, loc)
+        val es = exps.map(visitExp)
+        Expr.Apply(e, es, tpe, purity, loc)
 
       case Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
         val e1 = visitExp(exp1)
