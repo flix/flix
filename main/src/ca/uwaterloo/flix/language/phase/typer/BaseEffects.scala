@@ -30,13 +30,13 @@ object BaseEffects {
     * A pre-computed map from constructors to effects.
     */
   private val constructorEffs: Map[Constructor[?], Set[Symbol.EffectSym]] = Map.empty ++
-    classOf[java.net.URL].getConstructors.map(c => (c, Set(Symbol.Net)))
+    classOf[java.net.URL].getConstructors.map(c => (c, Set(Symbol.Net))) // TODO: Load from JSON
 
   /**
     * A pre-computed map from methods to effects.
     */
   private val methodEffs: Map[Method, Set[Symbol.EffectSym]] = Map(
-    classOf[java.lang.System].getMethod("currentTimeMillis") -> Set(Symbol.Time)
+    classOf[java.lang.System].getMethod("currentTimeMillis") -> Set(Symbol.Time) // TODO: Load from JSON
   )
 
   /**
@@ -99,8 +99,6 @@ object BaseEffects {
       case JArray(a) => a.map(parseClassAndEffSet)
       case _ => throw InternalCompilerException("Unexpected non-array value of the 'classes' field.", SourceLocation.Unknown)
     }
-
-    println(classEffs)
 
     classEffs.toMap
   }
