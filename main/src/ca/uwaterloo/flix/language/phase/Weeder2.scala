@@ -442,18 +442,28 @@ object Weeder2 {
       ) {
         (doc, ann, mods, ident, rParam, derivations, tparams, tpe, cases) =>
           val casesVal = (tpe, cases) match {
-            // Error: both singleton shorthand and cases provided
-            case (Some(_), _ :: _) => Validation.toHardFailure(IllegalEnum(ident.loc))
-            // Empty enum
-            case (None, Nil) => Validation.success(List.empty)
+            // Empty singleton enum
+            case (Some(Type.Error(_)), Nil) =>
+              // Fall back on no cases, parser has already reported an error
+              Validation.success(List.empty)
             // Singleton enum
-            case (Some(t), Nil) =>
-              Validation.success(List(WeededAst.RestrictableCase(ident, flattenEnumCaseType(t), ident.loc)))
-            // Multiton enum
+            case (Some(t), cs) =>
+              // Error if both singleton shorthand and cases provided
+              // Treat this as an implicit case with the type t, e.g.,
+              // enum Foo(Int32) { case Bar, case Baz }
+              // ===>
+              // enum Foo { case Foo(Int32), case Bar, case Baz }
+              val syntheticCase = WeededAst.RestrictableCase(ident, flattenEnumCaseType(t), ident.loc)
+              val allCases = syntheticCase :: cs
+              val errors = getDuplicates(allCases, (c: RestrictableCase) => c.ident.name).map {
+                case (left, right) => DuplicateTag(ident.name, left.ident, left.loc, right.loc)
+              }
+              Validation.success(allCases).withSoftFailures(errors)
+            // Empty or Multiton enum
             case (None, cs) =>
-              val errors = getDuplicates(cs, (c: RestrictableCase) => c.ident.name).map(pair =>
-                DuplicateTag(ident.name, pair._1.ident, pair._1.loc, pair._2.loc)
-              )
+              val errors = getDuplicates(cs, (c: RestrictableCase) => c.ident.name).map {
+                case (left, right) => DuplicateTag(ident.name, left.ident, left.loc, right.loc)
+              }
               Validation.success(cases).withSoftFailures(errors)
           }
           mapN(casesVal) {
