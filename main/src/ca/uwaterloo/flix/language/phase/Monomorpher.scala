@@ -272,17 +272,16 @@ object Monomorpher {
     * Returns a sorted record, assuming that `rest` is sorted.
     * Sorting is stable on duplicate fields.
     *
-    * Assumes that rest does not contain variables, aliases, or associated types.
+    * Assumes that rest does not contain [[Type.AssocType]] or [[Type.Alias]].
     */
   private def mkRecordExtendSorted(label: Name.Label, tpe: Type, rest: Type, loc: SourceLocation): Type = rest match {
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(l), loc1), t, loc2), r, loc3) if l.name < label.name =>
       // Push extend further.
       val newRest = mkRecordExtendSorted(label, tpe, r, loc)
       Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(l), loc1), t, loc2), newRest, loc3)
-    case Type.Cst(_, _) | Type.Apply(_, _, _) =>
+    case Type.Cst(_, _) | Type.Apply(_, _, _) | Type.Var(_, _) =>
       // Non-record related types or a record in correct order.
       Type.mkRecordRowExtend(label, tpe, rest, loc)
-    case Type.Var(_, _) => throw InternalCompilerException(s"Unexpected type variable '$rest'", rest.loc)
     case Type.Alias(_, _, _, _) => throw InternalCompilerException(s"Unexpected alias '$rest'", rest.loc)
     case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected associated type '$rest'", rest.loc)
     case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected JVM type '$rest'", rest.loc)
@@ -301,10 +300,9 @@ object Monomorpher {
       // Push extend further.
       val newRest = mkSchemaExtendSorted(label, tpe, r, loc)
       Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(l), loc1), t, loc2), newRest, loc3)
-    case Type.Cst(_, _) | Type.Apply(_, _, _) =>
+    case Type.Cst(_, _) | Type.Apply(_, _, _) | Type.Var(_, _) =>
       // Non-record related types or a record in correct order.
       Type.mkSchemaRowExtend(label, tpe, rest, loc)
-    case Type.Var(_, _) => throw InternalCompilerException(s"Unexpected type variable '$rest'", rest.loc)
     case Type.Alias(_, _, _, _) => throw InternalCompilerException(s"Unexpected alias '$rest'", rest.loc)
     case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected associated type '$rest'", rest.loc)
     case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected JVM type '$rest'", rest.loc)
