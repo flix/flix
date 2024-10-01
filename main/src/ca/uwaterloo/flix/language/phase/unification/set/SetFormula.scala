@@ -724,38 +724,30 @@ object SetFormula {
         varsPos.map(_.x -> Univ) ++
         varsNeg.map(_.x -> Empty)
 
-      // If a subformula becomes an element set, a constant, or a variable after propagation,
-      // add it to the propagated atoms. This allows further simplification in the remaining `rest0`.
-      val rest = rest0.map(f => propagationWithInsts(f, currentInsts) match {
-        case Univ => Univ
-        case Empty => Empty
-        case cst@Cst(c) =>
-          currentInsts += (c -> Univ)
-          cst
-        case compl@Compl(Cst(c)) =>
-          currentInsts += (c -> Empty)
-          compl
-        case v@Var(x) =>
-          currentInsts += (x -> Univ)
-          v
-        case compl@Compl(Var(x)) =>
-          currentInsts += (x -> Empty)
-          compl
-        case e@ElemSet(_) =>
-          currentInsts ++= setElemOne(e, Univ)
-          e
-        case compl@Compl(e@ElemSet(_)) =>
-          currentInsts ++= setElemOne(e, Empty)
-          compl
-        case compl@Compl(_) => compl
-        case inter@Inter(_, _, _, _, _, _, _) => inter
-        case union@Union(_, _, _, _, _, _, _) => union
+      // Recursively instantiate `rest` while collecting further instantiations as we go.
+      val rest = mutable.ListBuffer.empty[SetFormula]
+      for (f <- rest0) {
+        val fProp = propagationWithInsts(f, currentInsts)
+        // Add elements, constants, and variables to the instantiations.
+        fProp match {
+          case Cst(c) => currentInsts += (c -> Univ)
+          case Compl(Cst(c)) => currentInsts += (c -> Empty)
+          case Var(x) => currentInsts += (x -> Univ)
+          case Compl(Var(x)) => currentInsts += (x -> Empty)
+          case e@ElemSet(_) => currentInsts ++= setElemOne(e, Univ)
+          case Compl(e@ElemSet(_)) => currentInsts ++= setElemOne(e, Empty)
+          case Univ => ()
+          case Empty => ()
+          case Compl(_) => ()
+          case Inter(_, _, _, _, _, _, _) => ()
+          case Union(_, _, _, _, _, _, _) => ()
+        }
+        rest.appended(fProp)
       }
-      )
       // We adhere to invariants, so building directly is safe.
       // This avoids putting complement on the list of negated elements, constants, and variables.
       val simpleInter = Inter(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, Nil)
-      mkInterAll(simpleInter :: rest)
+      mkInterAll(simpleInter :: rest.toList)
 
     case Union(elemPos0, cstsPos0, varsPos0, elemNeg0, cstsNeg0, varsNeg0, rest0) =>
       // Compute element sets and check for early exits.
@@ -798,38 +790,30 @@ object SetFormula {
         varsPos.map(_.x -> Empty) ++
         varsNeg.map(_.x -> Univ)
 
-      // If a subformula becomes an element set, a constant, or a variable after propagation,
-      // add it to the propagated atoms. This allows further simplification in the remaining `rest0`.
-      val rest = rest0.map(f => propagationWithInsts(f, currentInsts) match {
-        case Univ => Univ
-        case Empty => Empty
-        case cst@Cst(c) =>
-          currentInsts += (c -> Univ)
-          cst
-        case compl@Compl(Cst(c)) =>
-          currentInsts += (c -> Empty)
-          compl
-        case v@Var(x) =>
-          currentInsts += (x -> Univ)
-          v
-        case compl@Compl(Var(x)) =>
-          currentInsts += (x -> Empty)
-          compl
-        case e@ElemSet(_) =>
-          currentInsts ++= setElemOne(e, Univ)
-          e
-        case compl@Compl(e@ElemSet(_)) =>
-          currentInsts ++= setElemOne(e, Empty)
-          compl
-        case compl@Compl(_) => compl
-        case inter@Inter(_, _, _, _, _, _, _) => inter
-        case union@Union(_, _, _, _, _, _, _) => union
+      // Recursively instantiate `rest` while collecting further instantiations as we go.
+      val rest = mutable.ListBuffer.empty[SetFormula]
+      for (f <- rest0) {
+        val fProp = propagationWithInsts(f, currentInsts)
+        // Add elements, constants, and variables to the instantiations.
+        fProp match {
+          case Cst(c) => currentInsts += (c -> Univ)
+          case Compl(Cst(c)) => currentInsts += (c -> Empty)
+          case Var(x) => currentInsts += (x -> Univ)
+          case Compl(Var(x)) => currentInsts += (x -> Empty)
+          case e@ElemSet(_) => currentInsts ++= setElemOne(e, Univ)
+          case Compl(e@ElemSet(_)) => currentInsts ++= setElemOne(e, Empty)
+          case Univ => ()
+          case Empty => ()
+          case Compl(_) => ()
+          case Inter(_, _, _, _, _, _, _) => ()
+          case Union(_, _, _, _, _, _, _) => ()
+        }
+        rest.appended(fProp)
       }
-      )
       // We adhere to invariants, so building directly is safe.
       // This avoids putting complement on the list of negated elements, constants, and variables.
       val simpleInter = Inter(elemPos, cstsPos, varsPos, elemNeg, cstsNeg, varsNeg, Nil)
-      mkInterAll(simpleInter :: rest)
+      mkInterAll(simpleInter :: rest.toList)
   }
 
   /**
