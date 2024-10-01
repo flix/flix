@@ -53,7 +53,7 @@ object HoverProvider {
     Visitor.visitRoot(root,
                       seenDef,
                       eff => (),
-                      enum => (),
+                      enm => (),
                       seenExpr,
                       instance => (),
                       restrictableEnum => (),
