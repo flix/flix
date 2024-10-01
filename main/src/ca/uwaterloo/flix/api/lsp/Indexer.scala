@@ -214,10 +214,6 @@ object Indexer {
       val parent = Entity.Exp(exp0)
       Index.occurrenceOf(exp0) ++ Index.useOf(sym, loc, parent)
 
-    case Expr.Def(sym, _, loc) =>
-      val parent = Entity.Exp(exp0)
-      Index.occurrenceOf(exp0) ++ Index.useOf(sym, loc, parent)
-
     case Expr.Sig(sym, _, loc) =>
       val parent = Entity.Exp(exp0)
       Index.occurrenceOf(exp0) ++ Index.useOf(sym, loc, parent) ++ Index.useOf(sym.trt, loc)

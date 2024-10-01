@@ -55,7 +55,7 @@ object OccurrenceAst {
 
     case class ApplyClo(exp: OccurrenceAst.Expr, exps: List[OccurrenceAst.Expr], tpe: MonoType, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expr
 
-    case class ApplyDef(symUse: Symbol.DefnSym, exps: List[OccurrenceAst.Expr], tpe: MonoType, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expr
+    case class ApplyDef(sym: Symbol.DefnSym, exps: List[OccurrenceAst.Expr], tpe: MonoType, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expr
 
     case class IfThenElse(exp1: OccurrenceAst.Expr, exp2: OccurrenceAst.Expr, exp3: OccurrenceAst.Expr, tpe: MonoType, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expr
 
