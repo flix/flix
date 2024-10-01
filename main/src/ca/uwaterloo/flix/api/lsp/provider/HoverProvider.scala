@@ -40,7 +40,7 @@ object HoverProvider {
 
 
   def hover(uri: String, pos: Position)(implicit root: Root, flix: Flix): JObject = {
-    var stack: List[Any] = Nil
+    var stack: List[AnyRef] = Nil
 
     def seenExpr(e: Expr): Unit = {
       stack = e :: stack
@@ -64,15 +64,18 @@ object HoverProvider {
                       typeAlias => (),
                       Visitor.inside(uri, pos))
 
-    hoverAny(stack, uri, pos)
+    stack.headOption match {
+      case None => mkNotFound(uri, pos)
+      case Some(node) => hoverAny(node, uri, pos)
+    }
   }
 
-  private def hoverAny(trace: List[Any], uri: String, pos: Position)(implicit root: Root, flix: Flix): JObject = trace match {
-    case Expr.Def(sym, tpe, loc) :: _ => hoverDef(sym, loc)
-    case Expr.Sig(sym, tpe, loc) :: _ => hoverSig(sym, loc)
-    case Expr.Var(sym, tpe, loc) :: _ => hoverType(tpe, loc)
-    case (hole: Expr.Hole) :: _ => hoverTypeAndEff(hole.tpe, hole.eff, hole.loc)
-    case (x: Expr) :: _ => hoverTypeAndEff(x.tpe, x.eff, x.loc)
+  private def hoverAny(node: AnyRef, uri: String, pos: Position)(implicit root: Root, flix: Flix): JObject = node match {
+    case Expr.Def(sym, tpe, loc) => hoverDef(sym, loc)
+    case Expr.Sig(sym, tpe, loc) => hoverSig(sym, loc)
+    case Expr.Var(sym, tpe, loc) => hoverType(tpe, loc)
+    case hole: Expr.Hole => hoverTypeAndEff(hole.tpe, hole.eff, hole.loc)
+    case exp: Expr => hoverTypeAndEff(exp.tpe, exp.eff, exp.loc)
     case _ => mkNotFound(uri, pos)
   }
 
