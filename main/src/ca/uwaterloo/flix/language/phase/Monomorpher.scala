@@ -465,11 +465,17 @@ object Monomorpher {
         case _ => MonoAst.Expr.Apply(e, es, subst(tpe), subst(eff), loc)
       }
 
-    case LoweredAst.Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc2) =>
+    case LoweredAst.Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
       val it = subst(itpe)
       val newSym = specializeDefSym(sym, it)
       val es = exps.map(visitExp(_, env0, subst))
-      MonoAst.Expr.ApplyDef(newSym, es, it, subst(tpe), subst(eff), loc2)
+      MonoAst.Expr.ApplyDef(newSym, es, it, subst(tpe), subst(eff), loc)
+
+    case LoweredAst.Expr.ApplySig(sym, exps, itpe, tpe, eff, loc) =>
+      val it = subst(itpe)
+      val newSym = specializeSigSym(sym, it)
+      val es = exps.map(visitExp(_, env0, subst))
+      MonoAst.Expr.ApplyDef(newSym, es, it, subst(tpe), subst(eff), loc)
 
     case LoweredAst.Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp(_, env0, subst))

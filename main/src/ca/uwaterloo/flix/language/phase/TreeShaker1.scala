@@ -115,6 +115,9 @@ object TreeShaker1 {
     case Expr.ApplyDef(sym, exps, _, _, _, _) =>
       Set(ReachableSym.DefnSym(sym)) ++ visitExps(exps)
 
+    case Expr.ApplySig(sym, exps, _, _, _, _) =>
+      Set(ReachableSym.SigSym(sym)) ++ visitExps(exps)
+
     case Expr.ApplyAtomic(_, exps, _, _, _) =>
       visitExps(exps)
 
