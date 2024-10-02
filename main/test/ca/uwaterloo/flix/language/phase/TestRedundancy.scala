@@ -2202,4 +2202,14 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     expectError[RedundancyError.ShadowingName](result)
   }
 
+  test("ShadowedVariable.LocalDef.01") {
+    val input =
+      """
+        |def f(): Int32 =
+        |   def g() = { def g() = 1; g() };
+        |   g()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.ShadowingName](result)
+  }
 }
