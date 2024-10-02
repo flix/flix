@@ -1307,8 +1307,8 @@ object Weeder2 {
         Types.tryPickType(tree),
         Types.tryPickEffect(tree),
       ) {
-        case (ann, (exp1, exp2), fparams, ident, tpe, eff) =>
-          Expr.LocalDef(ann, ident, fparams, exp1, exp2, tpe, eff, tree.loc)
+        case (ann, (exp1, exp2), fparams, ident, declaredTpe, declaredEff) =>
+          Expr.LocalDef(ann, ident, fparams, declaredTpe, declaredEff, exp1, exp2, tree.loc)
       }
     }
 

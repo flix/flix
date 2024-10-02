@@ -167,8 +167,8 @@ object Desugar {
   }
 
   /**
-   * Desugars the given [[WeededAst.Declaration.Struct]] `struct0`.
-   */
+    * Desugars the given [[WeededAst.Declaration.Struct]] `struct0`.
+    */
   private def visitStruct(struct0: WeededAst.Declaration.Struct): DesugaredAst.Declaration.Struct = struct0 match {
     case WeededAst.Declaration.Struct(doc, ann, mod, ident, tparams0, fields0, loc) =>
       val tparams = tparams0.map(visitTypeParam)
@@ -433,8 +433,8 @@ object Desugar {
   }
 
   /**
-   * Desugars the given [[WeededAst.Declaration.StructField]] `field0`.
-   */
+    * Desugars the given [[WeededAst.Declaration.StructField]] `field0`.
+    */
   private def visitField(field0: WeededAst.StructField): DesugaredAst.StructField = field0 match {
     case WeededAst.StructField(mod, name, tpe0, loc) =>
       val tpe = visitType(tpe0)
@@ -555,13 +555,13 @@ object Desugar {
       val e2 = visitExp(exp2)
       Expr.LetRec(ident, ann, mod, e1, e2, loc)
 
-    case WeededAst.Expr.LocalDef(ann, ident, fparams, exp1, exp2, tpe, eff, loc) =>
+    case WeededAst.Expr.LocalDef(ann, ident, fparams, dtpe, deff, exp1, exp2, loc) =>
       val fps = visitFormalParams(fparams)
+      val t = dtpe.map(visitType)
+      val ef = deff.map(visitType)
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      val t = tpe.map(visitType)
-      val ef = eff.map(visitType)
-      Expr.LocalDef(ann, ident, fps, e1, e2, t, ef, loc)
+      Expr.LocalDef(ann, ident, fps, t, ef, e1, e2, loc)
 
     case WeededAst.Expr.LetImport(op, exp, loc) =>
       desugarLetImport(op, exp, loc)
