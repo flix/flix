@@ -360,7 +360,11 @@ object Redundancy {
       visitExps(exps, env0, rc)
 
     case Expr.ApplyLocalDef(sym, exps, _, _, _, _) =>
-      Used.of(sym) ++ visitExps(exps, env0, rc)
+      if (rc.vars.contains(sym)) {
+        visitExps(exps, env0, rc)
+      } else {
+        Used.of(sym) ++ visitExps(exps, env0, rc)
+      }
 
     case Expr.Unary(_, exp, _, _, _) =>
       visitExp(exp, env0, rc)
