@@ -1,6 +1,5 @@
 {
   "constructors": {
-    "java.lang.ProcessBuilder": "Exec",
     "java.net.URL": "Net"
   }
 }
