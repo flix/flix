@@ -25,10 +25,14 @@ import java.lang.reflect.{Constructor, Method}
 
 object BaseEffects {
 
-  /**
-    * The path to the class effects.
-    */
-  private val ClassEffsPath = "/src/ca/uwaterloo/flix/language/phase/typer/BaseEffects.ClassEffs.json"
+  /** The path to the class effects. */
+  private val ClassEffsPath = "/src/ca/uwaterloo/flix/language/phase/typer/BaseEffects.Classes.json"
+
+  /** The path to the constructor effects. */
+  private val ConstructorEffsPath = "/src/ca/uwaterloo/flix/language/phase/typer/BaseEffects.Constructors.json"
+
+  /** The path to the method effects. */
+  private val MethodEffsPath = "/src/ca/uwaterloo/flix/language/phase/typer/BaseEffects.Methods.json"
 
   /**
     * A pre-computed map from classes to effects.
@@ -40,9 +44,7 @@ object BaseEffects {
   /**
     * A pre-computed map from constructors to effects.
     */
-  private val constructorEffs: Map[Constructor[?], Set[Symbol.EffectSym]] = Map.empty ++
-    classOf[java.net.URL].getConstructors.map(c => (c, Set(Symbol.Net))) // TODO: Load from JSON
-
+  private val constructorEffs: Map[Constructor[?], Set[Symbol.EffectSym]] = loadConstructorEffs()
   /**
     * A pre-computed map from methods to effects.
     */
@@ -114,6 +116,38 @@ object BaseEffects {
           val clazz = Class.forName(className)
           val effSet = s.split(",").map(_.trim).map(Symbol.parseBaseEff).toSet
           (clazz, effSet)
+        case _ => throw InternalCompilerException("Unexpected field value.", SourceLocation.Unknown)
+      }
+      case _ => throw InternalCompilerException("Unexpected JSON format.", SourceLocation.Unknown)
+    }
+
+    m.toMap
+  }
+
+  /**
+    * Parses a JSON object of the form:
+    *
+    * {{{
+    * {
+    *   "constructors": {
+    *     "java.lang.ProcessBuilder": "Exec",
+    *     "java.net.URL": "Net"
+    *   }
+    * }
+    * }}}
+    *
+    * Note: The effect set applies to *ALL* constructors of the class.
+    */
+  private def loadConstructorEffs(): Map[Constructor[?], Set[Symbol.EffectSym]] = {
+    val data = LocalResource.get(ConstructorEffsPath)
+    val json = parse(data)
+
+    val m = json \\ "constructors" match {
+      case JObject(l) => l.flatMap {
+        case (className, JString(s)) =>
+          val clazz = Class.forName(className)
+          val effSet = s.split(",").map(_.trim).map(Symbol.parseBaseEff).toSet
+          clazz.getConstructors.map(c => (c, effSet))
         case _ => throw InternalCompilerException("Unexpected field value.", SourceLocation.Unknown)
       }
       case _ => throw InternalCompilerException("Unexpected JSON format.", SourceLocation.Unknown)
