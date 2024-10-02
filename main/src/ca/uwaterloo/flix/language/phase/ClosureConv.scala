@@ -110,6 +110,9 @@ object ClosureConv {
     case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, purity, loc) =>
       // Step 1: Compute the free variables in the body expression.
       //         (Remove the variables bound by the function itself).
+      //         `sym` is treated as free in exp1, since it will
+      //         converted to a DefnSym when lifted where it is
+      //         no longer free.
       val fvs = filterBoundParams(freeVars(exp1), fparams).toList
 
       // Step 2: Convert the free variables into a new parameter list and substitution.
@@ -117,10 +120,14 @@ object ClosureConv {
 
       val newLocalDefFreeVars = localDefFreeVars + (sym -> fvs)
 
-      // Step 3: Replace every old symbol by its new symbol in the body of the function.
-      val e1 = visitExp(applySubst(exp1, subst))(newLocalDefFreeVars, flix)
+      // Step 3: Rewrite all ApplyLocalDef nodes (recursive calls)
+      // to apply sym to local variables in addition to the actual parameters.
+      val e11 = visitExp(exp1)(newLocalDefFreeVars, flix)
 
-      // Step 4: Rewrite every ApplyLocalDef node to apply with the free vars and then the parameters
+      // Step 4: Replace every old symbol by its new symbol in the body of the function.
+      val e1 = applySubst(e11, subst)
+
+      // Step 5: Rewrite every ApplyLocalDef node to apply to the free vars and then the parameters.
       val e2 = visitExp(exp2)(newLocalDefFreeVars, flix)
       val fps = cloParams ++ fparams
       Expr.LocalDef(sym, fps, e1, e2, tpe, purity, loc)
