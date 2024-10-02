@@ -21,10 +21,6 @@ import ca.uwaterloo.flix.language.ast.TypedAst
 
 object WithHandlerCompleter {
   def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[Completion] = {
-    if (context.previousWord != "with") {
-      return Nil
-    }
-
     // TODO: infer the effect of the expression
     root.effects.map { case (sym, eff) =>
       val effString = sym.name
