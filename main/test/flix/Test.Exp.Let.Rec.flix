@@ -58,6 +58,13 @@ mod Test.Exp.LetRec {
         def loop(n) = if (n == 0) inc(0) else loop(dec(n));
         loop(10) == 1
 
+    @test
+    def testLetRecCapture05(): Bool =
+        let a = 1;
+        let b = 2;
+        def f(c) = if (c == 2) () -> c + b else if (c == 1) () -> f(b) else () -> f(a);
+        (() -> f(10))()()()()
+
     ///
     /// Nested Let Recs.
     ///
