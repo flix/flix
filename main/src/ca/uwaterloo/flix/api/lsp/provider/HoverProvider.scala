@@ -67,6 +67,7 @@ object HoverProvider {
                       restrictableEnum => (),
                       root => (),
                       sig => (),
+                      spec => (),
                       struct => (),
                       typeMatchRule => (),
                       traitt => (),

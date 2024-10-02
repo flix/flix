@@ -31,6 +31,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.{
   RestrictableEnum,
   RestrictableCase,
   Sig,
+  Spec,
   Struct,
   Trait,
   TypeAlias,
@@ -81,6 +82,7 @@ object Visitor {
                 seenResEnum: RestrictableEnum => Unit,
                 seenRoot: Root => Unit,
                 seenSig: Sig => Unit,
+                seenSpec: Spec => Unit,
                 seenStruct: Struct => Unit,
                 seenTMatchRule: TypeMatchRule => Unit,
                 seenTrait: Trait => Unit,
@@ -88,7 +90,7 @@ object Visitor {
                 seenTypeAlias: TypeAlias => Unit,
                 accept: SourceLocation => Boolean): Unit = {
 
-    root.defs.foreach{ case (_, defn) => visitDef(defn, seenAnnos, seenCatchRule, seenConstraint, seenDef, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept) }
+    root.defs.foreach{ case (_, defn) => visitDef(defn, seenAnnos, seenCatchRule, seenConstraint, seenDef, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenSpec, seenTMatchRule, seenType, accept) }
 
     root.effects.foreach{ case (_, eff) => visitEffect(eff, seenEff, accept) }
 
@@ -223,6 +225,7 @@ object Visitor {
                        seenHandlerRule: HandlerRule => Unit,
                        seenMatchRule: MatchRule => Unit,
                        seenPat: Pattern => Unit,
+                       seenSpec: Spec => Unit,
                        seenTMatchRule: TypeMatchRule => Unit,
                        seenType: Type => Unit,
                        accept: SourceLocation => Boolean): Unit = {
@@ -231,9 +234,13 @@ object Visitor {
 
     seenDef(defn)
 
-    // TODO visitSpec
+    visitSpec(defn.spec, seenSpec, accept)
 
     visitExpr(defn.exp, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept)
+  }
+
+  private def visitSpec(spec: Spec, seen: Spec => Unit, accept: SourceLocation => Boolean): Unit = {
+    // TODO
   }
 
   private def visitTypeAlias(alias: TypeAlias, seen: TypeAlias => Unit, accept: SourceLocation => Boolean): Unit = {
