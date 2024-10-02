@@ -35,7 +35,7 @@ object LambdaLift {
     * Performs lambda lifting on the given AST `root`.
     */
   def run(root: SimplifiedAst.Root)(implicit flix: Flix): LiftedAst.Root = flix.phase("LambdaLift") {
-    implicit val ctx: SharedContext = SharedContext(new ConcurrentLinkedQueue())
+    implicit val ctx: SharedContext = SharedContext.mk()
 
     val defs = ParOps.parMapValues(root.defs)(visitDef)
     val effects = ParOps.parMapValues(root.effects)(visitEffect)
@@ -128,9 +128,11 @@ object LambdaLift {
 
     case SimplifiedAst.Expr.ApplyLocalDef(sym, exps, itpe, tpe, purity, loc) =>
       val es = exps.map(visitExp)
-      // TODO: Rewrite to ApplyDef with fresh DefnSym
-      // LiftedAst.Expr.ApplyDef(sym, es, tpe, purity, loc)
-      ???
+      val newDefnSym = ctx.liftedLocalDefs.asScala.toMap.get(sym)
+      newDefnSym match {
+        case Some(defnSym) => LiftedAst.Expr.ApplyDef(defnSym, es, tpe, purity, loc)
+        case None => throw InternalCompilerException(s"unable to find lifted def for local def $sym", loc)
+      }
 
     case SimplifiedAst.Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       val e1 = visitExp(exp1)
@@ -177,8 +179,16 @@ object LambdaLift {
       }
 
     case SimplifiedAst.Expr.LocalDef(sym, fparams, exp1, exp2, tpe, purity, loc) =>
-      // TODO: Lift to top level with fresh defnsym
-      ???
+      val body = visitExp(exp1)
+      val freshDefnSym = Symbol.freshDefnSym(sym0)
+      val ann = Annotations.Empty
+      val mod = Ast.Modifiers(Ast.Modifier.Synthetic :: Nil)
+      val fps = fparams.map(visitFormalParam)
+      val defTpe = exp1.tpe
+      val liftedDef = LiftedAst.Def(ann, mod, freshDefnSym, List.empty, fps, body, defTpe, loc.asSynthetic)
+      ctx.liftedDefs.add(freshDefnSym -> liftedDef)
+      ctx.liftedLocalDefs.add(sym -> freshDefnSym)
+      visitExp(exp2) // LocalDef node is erased here
 
     case SimplifiedAst.Expr.Scope(sym, exp, tpe, purity, loc) =>
       val e = visitExp(exp)
@@ -232,6 +242,10 @@ object LambdaLift {
     *
     * We use a concurrent (non-blocking) linked queue to ensure thread-safety.
     */
-  private case class SharedContext(liftedDefs: ConcurrentLinkedQueue[(Symbol.DefnSym, LiftedAst.Def)])
+  private case class SharedContext(liftedDefs: ConcurrentLinkedQueue[(Symbol.DefnSym, LiftedAst.Def)], liftedLocalDefs: ConcurrentLinkedQueue[(Symbol.VarSym, Symbol.DefnSym)])
+
+  private object SharedContext {
+    def mk(): SharedContext = SharedContext(new ConcurrentLinkedQueue(), new ConcurrentLinkedQueue())
+  }
 
 }
