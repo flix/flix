@@ -54,6 +54,7 @@ object SimplifiedAstPrinter {
     case ApplyAtomic(op, exps, tpe, _, _) => OpPrinter.print(op, exps.map(print), MonoTypePrinter.print(tpe))
     case ApplyClo(exp, args, _, _, _) => DocAst.Expr.ApplyClo(print(exp), args.map(print), None)
     case ApplyDef(sym, exps, _, _, _) => DocAst.Expr.ApplyDef(sym, exps.map(print), None)
+    case ApplyLocalDef(sym, exps, _, _, _, _) => DocAst.Expr.ApplyClo(printVarSym(sym), exps.map(print), None)
     case IfThenElse(exp1, exp2, exp3, _, _, _) => DocAst.Expr.IfThenElse(print(exp1), print(exp2), print(exp3))
     case Stm(exp1, exp2, _, _, _) => DocAst.Expr.Stm(print(exp1), print(exp2))
     case Branch(exp, branches, _, _, _) => DocAst.Expr.Branch(print(exp), MapOps.mapValues(branches)(print))

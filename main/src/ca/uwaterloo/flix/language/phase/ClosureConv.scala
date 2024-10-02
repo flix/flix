@@ -70,6 +70,10 @@ object ClosureConv {
       val es = exps.map(visitExp)
       Expr.ApplyDef(sym, es, tpe, purity, loc)
 
+    case Expr.ApplyLocalDef(sym, exps, itpe, tpe, purity, loc) =>
+      val es = exps.map(visitExp)
+      Expr.ApplyLocalDef(sym, es, itpe, tpe, purity, loc)
+
     case Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
       val es = exps map visitExp
       Expr.ApplyAtomic(op, es, tpe, purity, loc)
@@ -207,6 +211,9 @@ object ClosureConv {
     case Expr.ApplyDef(_, exps, _, _, _) =>
       freeVarsExps(exps)
 
+    case Expr.ApplyLocalDef(_, exps, _, _, _, _) =>
+      freeVarsExps(exps)
+
     case Expr.ApplyAtomic(_, exps, _, _, _) =>
       freeVarsExps(exps)
 
@@ -324,6 +331,14 @@ object ClosureConv {
       case Expr.ApplyDef(sym, exps, tpe, purity, loc) =>
         val es = exps.map(visitExp)
         Expr.ApplyDef(sym, es, tpe, purity, loc)
+
+      case Expr.ApplyLocalDef(sym, exps, itpe, tpe, purity, loc) =>
+        val es = exps.map(visitExp)
+        val sym1 = subst.get(sym) match {
+          case None => sym
+          case Some(newSym) => newSym
+        }
+        Expr.ApplyLocalDef(sym1, es, itpe, tpe, purity, loc)
 
       case Expr.Apply(exp, exps, tpe, purity, loc) =>
         val e = visitExp(exp)

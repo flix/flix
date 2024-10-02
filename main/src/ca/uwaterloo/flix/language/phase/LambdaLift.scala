@@ -126,6 +126,12 @@ object LambdaLift {
       val es = exps.map(visitExp)
       LiftedAst.Expr.ApplyDef(sym, es, tpe, purity, loc)
 
+    case SimplifiedAst.Expr.ApplyLocalDef(sym, exps, itpe, tpe, purity, loc) =>
+      val es = exps.map(visitExp)
+      // TODO: Rewrite to ApplyDef with fresh DefnSym
+      // LiftedAst.Expr.ApplyDef(sym, es, tpe, purity, loc)
+      ???
+
     case SimplifiedAst.Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
@@ -171,7 +177,8 @@ object LambdaLift {
       }
 
     case SimplifiedAst.Expr.LocalDef(sym, fparams, exp1, exp2, tpe, purity, loc) =>
-      throw InternalCompilerException("Unreachable LocalDef case in LambdaLift", loc)
+      // TODO: Lift to top level with fresh defnsym
+      ???
 
     case SimplifiedAst.Expr.Scope(sym, exp, tpe, purity, loc) =>
       val e = visitExp(exp)
