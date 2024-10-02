@@ -59,7 +59,7 @@ object Symbol {
   /**
     * Parses the given String `s` into an effect symbol.
     *
-    * The String must be a valid name of a base effects.
+    * The String must be a valid name of a base effect.
     */
   def parseBaseEff(s: String): Symbol.EffectSym = s match {
     case "Exec" => Exec

@@ -45,6 +45,7 @@ object BaseEffects {
     * A pre-computed map from constructors to effects.
     */
   private val constructorEffs: Map[Constructor[?], Set[Symbol.EffectSym]] = loadConstructorEffs()
+
   /**
     * A pre-computed map from methods to effects.
     */
