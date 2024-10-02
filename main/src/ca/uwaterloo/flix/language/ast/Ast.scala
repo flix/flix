@@ -27,23 +27,6 @@ import java.util.Objects
 object Ast {
 
   /**
-    * A common super-type that represents an expression position (tail position or not).
-    */
-  sealed trait ExpPosition
-
-  object ExpPosition {
-    /**
-      * Represents an expression in tail position.
-      */
-    case object Tail extends ExpPosition
-
-    /**
-      * Represents an expression in non-tail position.
-      */
-    case object NonTail extends ExpPosition
-  }
-
-  /**
     * Documentation.
     *
     * @param lines the lines of the comments.
@@ -304,7 +287,6 @@ object Ast {
     */
   case class DefSymUse(sym: Symbol.DefnSym, loc: SourceLocation)
 
-
   /**
     * Represents a use of a class sym.
     */
@@ -500,6 +482,8 @@ object Ast {
       case object Do extends Expr
 
       case class InvokeMethod(tpe: ca.uwaterloo.flix.language.ast.Type, name: Name.Ident) extends Expr
+
+      case object New extends Expr
 
       case class StaticFieldOrMethod(e: ResolutionError.UndefinedJvmStaticField) extends Expr
 

@@ -13,23 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.api.lsp.provider.completion
+package ca.uwaterloo.flix.api.lsp.provider.completion.semantic
 
-import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.api.lsp.Index
+import ca.uwaterloo.flix.api.lsp.provider.completion.Completion
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.MethodCompletion
-import ca.uwaterloo.flix.language.ast.{Name, Type, TypedAst}
+import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.util.JvmUtils
 
-object InvokeMethodCompleter {
+object InvokeStaticMethodCompleter {
 
-  def getCompletions(obj: Type, name: Name.Ident, ctx: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root): Iterable[MethodCompletion] = {
-    Type.classFromFlixType(obj) match {
-      case None =>
-        Nil
-      case Some(clazz) =>
-        JvmUtils.getInstanceMethods(clazz).sortBy(_.getName).map(MethodCompletion(name, _))
-    }
+  def getCompletions(e: ResolutionError.UndefinedJvmStaticField): List[Completion] = {
+    JvmUtils.getStaticMethods(e.clazz).sortBy(_.getName).map(MethodCompletion(e.field, _))
   }
 
 }

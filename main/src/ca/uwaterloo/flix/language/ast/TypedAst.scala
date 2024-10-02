@@ -92,10 +92,6 @@ object TypedAst {
       def eff: Type = Type.Pure
     }
 
-    case class Def(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation) extends Expr {
-      def eff: Type = Type.Pure
-    }
-
     case class Sig(sym: Symbol.SigSym, tpe: Type, loc: SourceLocation) extends Expr {
       def eff: Type = Type.Pure
     }
@@ -317,7 +313,7 @@ object TypedAst {
 
     case class Tag(sym: Ast.RestrictableCaseSymUse, pat: List[VarOrWild], tpe: Type, loc: SourceLocation) extends RestrictableChoosePattern
 
-    case class Error(tpe: Type, loc: SourceLocation) extends VarOrWild
+    case class Error(tpe: Type, loc: SourceLocation) extends VarOrWild with RestrictableChoosePattern
 
   }
 

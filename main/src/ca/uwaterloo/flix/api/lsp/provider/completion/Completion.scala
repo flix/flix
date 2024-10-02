@@ -232,15 +232,6 @@ sealed trait Completion {
         kind             = CompletionItemKind.Snippet
       )
 
-    case Completion.UseCompletion(name, kind) =>
-      CompletionItem(
-        label         = name,
-        sortText      = Priority.toSortText(Priority.Highest, name),
-        textEdit      = TextEdit(context.range, name),
-        documentation = None,
-        kind          = kind
-      )
-
     case Completion.UseEnumCompletion(name) =>
       CompletionItem(
         label         = name,
@@ -294,15 +285,6 @@ sealed trait Completion {
         textEdit      = TextEdit(context.range, name),
         documentation = None,
         kind          = CompletionItemKind.Method
-      )
-
-    case Completion.FromErrorsCompletion(name) =>
-      CompletionItem(
-        label    = name,
-        sortText = Priority.toSortText(Priority.Highest, name),
-        textEdit = TextEdit(context.range, name + " "),
-        detail   = None,
-        kind     = CompletionItemKind.Variable
       )
 
     case Completion.EnumTagCompletion(enumSym, cas, arity) =>
@@ -368,6 +350,22 @@ sealed trait Completion {
         kind             = CompletionItemKind.Method
       )
 
+    case Completion.HoleCompletion(sym, decl, priority, loc) =>
+      val name = decl.sym.toString
+      val args = decl.spec.fparams.dropRight(1).zipWithIndex.map {
+        case (fparam, idx) => "$" + s"{${idx + 1}:?${fparam.sym.text}}"
+      } ::: sym.text :: Nil
+      val params = args.mkString(", ")
+      val snippet = s"$name($params)"
+      CompletionItem(label = CompletionUtils.getLabelForNameAndSpec(decl.sym.toString, decl.spec),
+        filterText = Some(s"${sym.text}?$name"),
+        sortText = priority,
+        textEdit = TextEdit(Range.from(loc), snippet),
+        detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)),
+        documentation = Some(decl.spec.doc.text),
+        insertTextFormat = InsertTextFormat.Snippet,
+        kind = CompletionItemKind.Function)
+
   }
 }
 
@@ -395,7 +393,7 @@ object Completion {
     * The reason we differentiate bewteen normal keywords and these literals
     * is because completions for the former should include a trailing space
     * whereas completions for the latter we might not want one.
-    * 
+    *
     * To illustrate this consider the two following correct completions (where ˽ denotes a space)
     *
     * `de`      --->    `def˽`
@@ -433,8 +431,6 @@ object Completion {
     *
     * @param name             the name of the BuiltinType.
     * @param priority         the priority of the BuiltinType.
-    * @param textEdit         the edit which is applied to a document when selecting this completion.
-    * @param insertTextFormat the format of the insert text.
     */
   case class TypeBuiltinCompletion(name: String, priority: Priority) extends Completion
 
@@ -443,7 +439,6 @@ object Completion {
     *
     * @param name      the name of the type.
     * @param priority  the priority of the type.
-    * @param textEdit  the edit which is applied to a docuemtn when selecting this completion1
     */
   case class TypeBuiltinPolyCompletion(name: String, edit: String, priority: Priority) extends Completion
 
@@ -558,15 +553,6 @@ object Completion {
   case class InstanceCompletion(trt: TypedAst.Trait, completion: String) extends Completion
 
   /**
-    * Represents an Use completion.
-    *
-    * @param name the name of the use completion.
-    * @param kind the kind of completion.
-    */
-  case class UseCompletion(name: String, kind: CompletionItemKind) extends Completion
-
-
-  /**
     * Represents a Use Enum completion.
     *
     * @param name the name of the use enum completion.
@@ -610,13 +596,6 @@ object Completion {
   case class UseSignatureCompletion(name: String) extends Completion
 
   /**
-    * Represents a FromErrors completion
-    *
-    * @param name the name of the fromError completion.
-    */
-  case class FromErrorsCompletion(name: String) extends Completion
-
-  /**
     * Represents an EnumTag completion
     *
     * @param enumSym the sym of the enum.
@@ -654,5 +633,15 @@ object Completion {
     * @param method the candidate method.
     */
   case class MethodCompletion(ident: Name.Ident, method: Method) extends Completion
+
+  /**
+    * Represents a hole completion.
+    *
+    * @param sym      the variable symbol being completed on.
+    * @param decl     the proposed def declaration to call.
+    * @param priority the priority of the completion (multiple suggestions are possible and they are ranked).
+    * @param loc      the source location of the hole.
+    */
+  case class HoleCompletion(sym: Symbol.VarSym, decl: TypedAst.Def, priority: String, loc: SourceLocation) extends Completion
 
 }

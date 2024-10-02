@@ -281,7 +281,9 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
       ("id" -> id) ~ CodeLensProvider.processCodeLens(uri)(root)
 
     case Request.Complete(id, uri, pos) =>
-      ("id" -> id) ~ CompletionProvider.autoComplete(uri, pos, sources.get(uri), currentErrors)(flix, index, root)
+      // Find the source of the given URI (which should always exist).
+      val sourceCode = sources(uri)
+      ("id" -> id) ~ CompletionProvider.autoComplete(uri, pos, sourceCode, currentErrors)(flix, index, root)
 
     case Request.Highlight(id, uri, pos) =>
       ("id" -> id) ~ HighlightProvider.processHighlight(uri, pos)(index, root)
