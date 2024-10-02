@@ -993,8 +993,8 @@ object Resolver {
             e1 =>
               val env2 = env0 ++ mkLocalDefEnv(sym, fparams)
               val exp2Val = resolveExp(exp2, env2)
-              val tpeVal = traverseOpt(tpe0)(resolveType(_, Wildness.AllowWild, env1, taenv, ns0, root)) // mk env without fparams
-              val effVal = traverseOpt(eff0)(resolveType(_, Wildness.AllowWild, env1, taenv, ns0, root)) // mk env without fparams
+              val tpeVal = traverseOpt(tpe0)(resolveType(_, Wildness.AllowWild, env1, taenv, ns0, root))
+              val effVal = traverseOpt(eff0)(resolveType(_, Wildness.AllowWild, env1, taenv, ns0, root))
               mapN(exp2Val, tpeVal, effVal) {
                 case (e2, t, ef) => ResolvedAst.Expr.LocalDef(ann, sym, fparams, e1, e2, t, ef, loc)
               }
