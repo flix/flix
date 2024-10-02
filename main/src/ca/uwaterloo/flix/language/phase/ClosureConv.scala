@@ -194,7 +194,7 @@ object ClosureConv {
     //         ====>
     //             let a = 1;
     //             def f(b) = b;
-    //             (c -> f(c))(a)
+    //             c -> f(c)
     val freeVarsTotal = freeVars(exp).flatMap(fv => fv :: localDefFreeVars.getOrElse(fv.sym, List.empty))
     val fvs = filterBoundParams(freeVarsTotal, fparams).toList
 
