@@ -19,8 +19,8 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.BoundBy
 import ca.uwaterloo.flix.language.ast.shared.{Constant, Scope}
-import ca.uwaterloo.flix.language.ast.{Purity, Symbol, _}
-import ca.uwaterloo.flix.language.dbg.AstPrinter._
+import ca.uwaterloo.flix.language.ast.{Purity, Symbol, *}
+import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 import ca.uwaterloo.flix.language.phase.unification.Substitution
 
@@ -64,10 +64,6 @@ object Simplifier {
       val t = visitType(tpe)
       SimplifiedAst.Expr.Var(sym, t, loc)
 
-    case MonoAst.Expr.Def(sym, tpe, loc) =>
-      val t = visitType(tpe)
-      SimplifiedAst.Expr.Def(sym, t, loc)
-
     case MonoAst.Expr.Cst(cst, tpe, loc) =>
       val t = visitType(tpe)
       SimplifiedAst.Expr.Cst(cst, t, loc)
@@ -84,8 +80,13 @@ object Simplifier {
       val t = visitType(tpe)
       SimplifiedAst.Expr.Apply(e, es, t, simplifyEffect(eff), loc)
 
+    case MonoAst.Expr.ApplyDef(sym, exps, _, tpe, eff, loc) =>
+      val es = exps.map(visitExp)
+      val t = visitType(tpe)
+      SimplifiedAst.Expr.ApplyDef(sym, es, t, simplifyEffect(eff), loc)
+
     case MonoAst.Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
-      val es = exps map visitExp
+      val es = exps.map(visitExp)
       val purity = simplifyEffect(eff)
       op match {
         case AtomicOp.Binary(SemanticOp.StringOp.Concat) =>
@@ -272,7 +273,7 @@ object Simplifier {
 
           case TypeConstructor.Lazy => MonoType.Lazy(args.head)
 
-          case TypeConstructor.Enum(sym, _) => MonoType.Enum(sym)
+          case TypeConstructor.Enum(sym, _) => MonoType.Enum(sym, args)
 
           case TypeConstructor.Struct(sym, _) =>
             // We must do this here because the `MonoTypes` requires the individual types of each element
@@ -301,7 +302,7 @@ object Simplifier {
 
           case TypeConstructor.RestrictableEnum(sym, _) =>
             val enumSym = new Symbol.EnumSym(sym.namespace, sym.name, sym.loc)
-            MonoType.Enum(enumSym)
+            MonoType.Enum(enumSym, args)
 
           case TypeConstructor.Native(clazz) => MonoType.Native(clazz)
 

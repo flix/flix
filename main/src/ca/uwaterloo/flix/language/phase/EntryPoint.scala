@@ -16,9 +16,9 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.shared.{Constant, Scope}
+import ca.uwaterloo.flix.language.ast.shared.{Annotations, Constant, Scope}
 import ca.uwaterloo.flix.language.ast.{Ast, RigidityEnv, Scheme, SourceLocation, Symbol, Type, TypedAst}
-import ca.uwaterloo.flix.language.dbg.AstPrinter._
+import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.EntryPointError
 import ca.uwaterloo.flix.language.phase.unification.TraitEnvironment
 import ca.uwaterloo.flix.util.Validation.{flatMapN, mapN}
@@ -195,7 +195,7 @@ object EntryPoint {
       } else {
         // Delay ToString resolution if main has return type unit for testing with lib nix.
         val toString = root.traits(new Symbol.TraitSym(Nil, "ToString", SourceLocation.Unknown)).sym
-        if (TraitEnvironment.holds(Ast.TraitConstraint(Ast.TraitConstraint.Head(toString, SourceLocation.Unknown), resultTpe, SourceLocation.Unknown), traitEnv)) {
+        if (TraitEnvironment.holds(Ast.TraitConstraint(Ast.TraitConstraint.Head(toString, SourceLocation.Unknown), resultTpe, SourceLocation.Unknown), traitEnv, root.eqEnv)) {
           // Case 2: XYZ -> a with ToString[a]
           Validation.success(())
         } else {
@@ -214,7 +214,7 @@ object EntryPoint {
 
     val spec = TypedAst.Spec(
       doc = Ast.Doc(Nil, SourceLocation.Unknown),
-      ann = Ast.Annotations.Empty,
+      ann = Annotations.Empty,
       mod = Ast.Modifiers.Empty,
       tparams = Nil,
       fparams = List(TypedAst.FormalParam(argSym, Ast.Modifiers.Empty, Type.Unit, Ast.TypeSource.Ascribed, SourceLocation.Unknown)),
@@ -228,17 +228,17 @@ object EntryPoint {
 
     // NB: Getting the type directly from the scheme assumes the function is not polymorphic.
     // This is a valid assumption with the limitations we set on the entry point.
-    val func = TypedAst.Expr.Def(oldEntryPoint.sym, oldEntryPoint.spec.declaredScheme.base, SourceLocation.Unknown)
-
+    val itpe = oldEntryPoint.spec.declaredScheme.base
+    val symUse = Ast.DefSymUse(oldEntryPoint.sym, SourceLocation.Unknown)
+    val args = List(TypedAst.Expr.Cst(Constant.Unit, Type.Unit, SourceLocation.Unknown))
     // func()
-    val call = TypedAst.Expr.Apply(func, List(TypedAst.Expr.Cst(Constant.Unit, Type.Unit, SourceLocation.Unknown)), oldEntryPoint.spec.declaredScheme.base.arrowResultType, oldEntryPoint.spec.declaredScheme.base.arrowEffectType, SourceLocation.Unknown)
+    val call = TypedAst.Expr.ApplyDef(symUse, args, itpe, itpe.arrowResultType, itpe.arrowEffectType, SourceLocation.Unknown)
 
     // one of:
     // printUnlessUnit(func(args))
     val printSym = root.defs(new Symbol.DefnSym(None, Nil, "printUnlessUnit", SourceLocation.Unknown)).sym
-    val printTpe = Type.mkArrowWithEffect(oldEntryPoint.spec.declaredScheme.base.arrowResultType, Type.IO, Type.Unit, SourceLocation.Unknown)
-    val printFunc = TypedAst.Expr.Def(printSym, printTpe, SourceLocation.Unknown)
-    val print = TypedAst.Expr.Apply(printFunc, List(call), Type.Unit, Type.IO, SourceLocation.Unknown)
+    val printTpe = Type.mkArrowWithEffect(itpe.arrowResultType, Type.IO, Type.Unit, SourceLocation.Unknown)
+    val print = TypedAst.Expr.ApplyDef(Ast.DefSymUse(printSym, SourceLocation.Unknown), List(call), printTpe, Type.Unit, Type.IO, SourceLocation.Unknown)
 
     val sym = new Symbol.DefnSym(None, Nil, "main" + Flix.Delimiter, SourceLocation.Unknown)
 

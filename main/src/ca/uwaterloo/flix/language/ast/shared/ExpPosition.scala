@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Magnus Madsen
+ * Copyright 2024 Holger Dal Mogensen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,14 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package ca.uwaterloo.flix.language.ast.shared
 
-package ca.uwaterloo.flix.util
 
-object TimeOps {
+/**
+  * A common super-type that represents an expression position (tail position or not).
+  */
+sealed trait ExpPosition
+
+object ExpPosition {
+  /**
+    * Represents an expression in tail position.
+    */
+  case object Tail extends ExpPosition
 
   /**
-    * Converts the given number of nanoseconds `l` into human readable string representation.
+    * Represents an expression in non-tail position.
     */
-  def toSeconds(l: Long): String = f"${l.toDouble / 1_000_000_000.0}%3.1f"
-
+  case object NonTail extends ExpPosition
 }

@@ -13,17 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.api.lsp.provider.completion
+package ca.uwaterloo.flix.api.lsp.provider.completion.syntactic
+
+import ca.uwaterloo.flix.api.lsp.provider.completion.{Completion, Priority}
 
 /**
-  * Completions for keywords
+  * Completions for keywords.
   */
 object KeywordCompleter {
 
   /**
     * Constraint keywords. These are keywords that can occur in datalog constraints.
     */
-  def getConstraintKeywords: Iterable[Completion] =
+  def getConstraintKeywords: List[Completion] =
     List(
       Completion.KeywordCompletion("fix", Priority.Default),
       Completion.KeywordCompletion("if" , Priority.Default),
@@ -33,7 +35,7 @@ object KeywordCompleter {
   /**
     * Module keywords. These are keywords that can occur in a module.
     */
-  def getModKeywords: Iterable[Completion] =
+  def getModKeywords: List[Completion] =
     List(
       // D
       Completion.KeywordCompletion("@Deprecated"      , Priority.Low),
@@ -67,7 +69,7 @@ object KeywordCompleter {
   /**
     * Enum keywords. These are keywords that can appear within the declaration of an enum.
     */
-  def getEnumKeywords: Iterable[Completion] =
+  def getEnumKeywords: List[Completion] =
     List(
       Completion.KeywordCompletion("case", Priority.Default)
     )
@@ -75,7 +77,7 @@ object KeywordCompleter {
   /**
     * Expression keywords. These are keywords that can appear within expressions (fx within the body of a function).
     */
-  def getExprKeywords: Iterable[Completion] =
+  def getExprKeywords: List[Completion] =
     List(
       // A
       Completion.KeywordCompletion("and"         , Priority.Default),
@@ -138,7 +140,7 @@ object KeywordCompleter {
   /**
     * Instance declaration keywords.
     */
-  def getInstanceKeywords: Iterable[Completion] =
+  def getInstanceKeywords: List[Completion] =
     List(
       Completion.KeywordCompletion("def"  , Priority.Default),
       Completion.KeywordCompletion("pub"  , Priority.Default),
@@ -148,7 +150,7 @@ object KeywordCompleter {
   /**
     * Struct declaration keywords. These are keywords that occur within a struct declaration.
     */
-  def getStructKeywords: Iterable[Completion] =
+  def getStructKeywords: List[Completion] =
     List(
       Completion.KeywordCompletion("mut", Priority.Default)
     )
@@ -156,7 +158,7 @@ object KeywordCompleter {
   /**
     * Trait declaration keywords. These are keywords that occur within a trait declaration.
     */
-  def getTraitKeywords: Iterable[Completion] =
+  def getTraitKeywords: List[Completion] =
     List(
       Completion.KeywordCompletion("def", Priority.Default),
       Completion.KeywordCompletion("pub", Priority.Default),
@@ -166,8 +168,9 @@ object KeywordCompleter {
     * Type declaration keywords. These are the keywords that can occur
     * within a type declaration.
     */
-  def getTypeKeywords: Iterable[Completion] =
+  def getTypeKeywords: List[Completion] =
     List(
       Completion.KeywordCompletion("alias", Priority.Default)
     )
+
 }

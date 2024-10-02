@@ -90,14 +90,11 @@ object TypeReconstruction {
     case KindedAst.Expr.Var(sym, loc) =>
       TypedAst.Expr.Var(sym, subst(sym.tvar), loc)
 
-    case KindedAst.Expr.Def(sym, tvar, loc) =>
-      TypedAst.Expr.Def(sym, subst(tvar), loc)
-
     case KindedAst.Expr.Sig(sym, tvar, loc) =>
       TypedAst.Expr.Sig(sym, subst(tvar), loc)
 
-    case KindedAst.Expr.Hole(sym, tpe, loc) =>
-      TypedAst.Expr.Hole(sym, subst(tpe), loc)
+    case KindedAst.Expr.Hole(sym, tpe, evar, loc) =>
+      TypedAst.Expr.Hole(sym, subst(tpe), subst(evar), loc)
 
     case KindedAst.Expr.HoleWithExp(exp, tvar, evar, loc) =>
       val e = visitExp(exp)
@@ -120,6 +117,10 @@ object TypeReconstruction {
       val e = visitExp(exp)
       val es = exps.map(visitExp(_))
       TypedAst.Expr.Apply(e, es, subst(tvar), subst(evar), loc)
+
+    case KindedAst.Expr.ApplyDef(symUse, exps, itvar, tvar, evar, loc2) =>
+      val es = exps.map(visitExp)
+      TypedAst.Expr.ApplyDef(symUse, es, subst(itvar), subst(tvar), subst(evar), loc2)
 
     case KindedAst.Expr.Lambda(fparam, exp, loc) =>
       val p = visitFormalParam(fparam, subst)
@@ -221,6 +222,7 @@ object TypeReconstruction {
                 case KindedAst.RestrictableChoosePattern.Error(tvar, loc) => TypedAst.RestrictableChoosePattern.Error(subst(tvar), loc)
               }
               TypedAst.RestrictableChoosePattern.Tag(sym, ps, subst(tvar), loc)
+            case KindedAst.RestrictableChoosePattern.Error(tvar1, loc) => TypedAst.RestrictableChoosePattern.Error(subst(tvar1), loc)
           }
           val body = visitExp(body0)
           TypedAst.RestrictableChooseRule(pat, body)
@@ -459,7 +461,7 @@ object TypeReconstruction {
         case Type.Cst(TypeConstructor.JvmMethod(method), loc) =>
           TypedAst.Expr.InvokeStaticMethod(method, es, returnTpe, eff, loc)
         case _ =>
-          TypedAst.Expr.Error(TypeError.UnresolvedMethod(loc), methodTpe, eff) // TODO INTEROP: UnresolvedStaticMethod ?
+          TypedAst.Expr.Error(TypeError.UnresolvedStaticMethod(loc), methodTpe, eff)
       }
 
     case KindedAst.Expr.GetField2(exp, _, jvar, tvar, evar, loc) =>

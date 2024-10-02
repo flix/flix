@@ -75,7 +75,7 @@ object MonoType {
 
   case class Tuple(tpes: List[MonoType]) extends MonoType
 
-  case class Enum(sym: Symbol.EnumSym) extends MonoType
+  case class Enum(sym: Symbol.EnumSym, targs: List[MonoType]) extends MonoType
 
   case class Struct(sym: Symbol.StructSym, elmTpes: List[MonoType], targs: List[MonoType]) extends MonoType
 
@@ -85,7 +85,7 @@ object MonoType {
 
   case class RecordExtend(label: String, value: MonoType, rest: MonoType) extends MonoType
 
-  case class Native(clazz: Class[_]) extends MonoType
+  case class Native(clazz: Class[?]) extends MonoType
 
   val Object: MonoType = Native(classOf[java.lang.Object])
 

@@ -70,7 +70,7 @@ object JvmOps {
     case MonoType.Tuple(elms) => JvmType.Reference(BackendObjType.Tuple(elms.map(BackendType.asErasedBackendType)).jvmName)
     case MonoType.RecordEmpty => JvmType.Reference(BackendObjType.Record.jvmName)
     case MonoType.RecordExtend(_, _, _) => JvmType.Reference(BackendObjType.Record.jvmName)
-    case MonoType.Enum(_) => JvmType.Object
+    case MonoType.Enum(_, _) => JvmType.Object
     case MonoType.Struct(_, elms, targs) => JvmType.Reference(BackendObjType.Struct(elms.map(BackendType.toErasedBackendType)).jvmName)
     case MonoType.Arrow(_, _) => getFunctionInterfaceType(tpe)
     case MonoType.Native(clazz) => JvmType.Reference(JvmName.ofClass(clazz))
@@ -83,7 +83,7 @@ object JvmOps {
     * Every primitive type is mapped to itself and every other type is mapped to Object.
     */
   def getErasedJvmType(tpe: MonoType): JvmType = {
-    import MonoType._
+    import MonoType.*
     tpe match {
       case Bool => JvmType.PrimBool
       case Char => JvmType.PrimChar
@@ -94,8 +94,9 @@ object JvmOps {
       case Int32 => JvmType.PrimInt
       case Int64 => JvmType.PrimLong
       case Void | AnyType | Unit | BigDecimal | BigInt | String | Regex |
-           Region | Array(_) | Lazy(_) | Tuple(_) | Enum(_) | Struct(_, _, _) |
-           Arrow(_, _) | RecordEmpty | RecordExtend(_, _, _) | Native(_) | Null =>
+           Region | Array(_) | Lazy(_) | Tuple(_) | Enum(_, _) |
+           Struct(_, _, _) | Arrow(_, _) | RecordEmpty | RecordExtend(_, _, _) |
+           Native(_) | Null =>
         JvmType.Object
     }
   }
@@ -106,7 +107,7 @@ object JvmOps {
     * Every primitive type is mapped to itself and every other type is mapped to Object.
     */
   def asErasedJvmType(tpe: MonoType): JvmType = {
-    import MonoType._
+    import MonoType.*
     tpe match {
       case Bool => JvmType.PrimBool
       case Char => JvmType.PrimChar
@@ -118,8 +119,9 @@ object JvmOps {
       case Int64 => JvmType.PrimLong
       case Native(clazz) if clazz == classOf[Object] => JvmType.Object
       case Void | AnyType | Unit | BigDecimal | BigInt | String | Regex |
-           Region | Array(_) | Lazy(_) | Tuple(_) | Enum(_) | Struct(_, _, _) |
-           Arrow(_, _) | RecordEmpty | RecordExtend(_, _, _) | Native(_) | Null =>
+           Region | Array(_) | Lazy(_) | Tuple(_) | Enum(_, _) |
+           Struct(_, _, _) | Arrow(_, _) | RecordEmpty | RecordExtend(_, _, _) |
+           Native(_) | Null =>
         throw InternalCompilerException(s"Unexpected type $tpe", SourceLocation.Unknown)
     }
   }
@@ -409,59 +411,6 @@ object JvmOps {
       return b1 == 0xCA && b2 == 0xFE && b3 == 0xBA && b4 == 0xBE
     }
     false
-  }
-
-  /**
-    * Returns the methods of the class INCLUDING implicit interface inheritance from Object.
-    */
-  def getMethods(clazz: Class[?]): List[Method] = {
-    if (clazz.isInterface) {
-      // Case 1: Interface. We have to add the methods from Object.
-      val declaredMethods = clazz.getMethods.toList
-
-      // Find all the methods in Object that are not declared in the interface.
-      val undeclaredObjectMethods = classOf[Object].getMethods.toList.filter {
-        case objectMethod => !declaredMethods.exists {
-          case declaredMethod => methodsMatch(objectMethod, declaredMethod)
-        }
-      }
-
-      // Add the undeclared object methods to the declared methods.
-      declaredMethods ::: undeclaredObjectMethods
-
-    } else {
-      // Case 2: Class. Just return the methods.
-      clazz.getMethods.toList
-    }
-  }
-
-  /**
-    * Returns true if the methods are the same, modulo their declaring class.
-    */
-  private def methodsMatch(m1: Method, m2: Method): Boolean = {
-    m1.getName == m2.getName &&
-      isStatic(m1) == isStatic(m2) &&
-      m1.getParameterTypes.sameElements(m2.getParameterTypes)
-  }
-
-  /**
-    * Returns `true` if the method has the static modifier.
-    */
-  def isStatic(method: Method): Boolean = {
-    java.lang.reflect.Modifier.isStatic(method.getModifiers)
-  }
-
-  /**
-    * Returns the `fieldName` field of `clazz` if it exists.
-    *
-    * Field name "length" of array classes always return `None` (see Class.getField).
-    */
-  def getField(clazz: Class[?], fieldName: String): Option[Field] = {
-    try {
-      Some(clazz.getField(fieldName))
-    } catch {
-      case _: NoSuchFieldException => None
-    }
   }
 
 }

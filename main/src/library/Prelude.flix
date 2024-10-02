@@ -87,17 +87,6 @@ pub eff NonDet
 pub eff Sys
 
 ///
-/// The uninterpretable `Time` effect.
-///
-/// The `Time` effect represents the actions required to access the current time (including the system clock).
-///
-/// This includes use of `System.currentTimeMillis` and `System.nanoTime`, but also e.g. `Date.now()`.
-///
-/// The `Time` effect is uninterpretable which means that it cannot be handled.
-///
-pub eff Time
-
-///
 /// The pure identity function.
 ///
 pub def identity(x: a): a = x

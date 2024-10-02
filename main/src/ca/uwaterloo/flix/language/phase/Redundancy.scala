@@ -162,8 +162,8 @@ object Redundancy {
   }
 
   /**
-   * Checks for unused type parameters in structs.
-   */
+    * Checks for unused type parameters in structs.
+    */
   private def checkUnusedTypeParamsStructs()(implicit root: Root): List[RedundancyError] = {
     val result = new ListBuffer[RedundancyError]
     for ((_, decl) <- root.structs) {
@@ -300,14 +300,6 @@ object Redundancy {
       case (true, true) => Used.empty + HiddenVarSym(sym, loc)
     }
 
-    case Expr.Def(sym, _, _) =>
-      // Recursive calls do not count as uses.
-      if (!rc.defn.contains(sym)) {
-        sctx.defSyms.put(sym, ())
-        Used.empty
-      } else
-        Used.empty
-
     case Expr.Sig(sym, _, _) =>
       // Recursive calls do not count as uses.
       if (!rc.sig.contains(sym)) {
@@ -316,7 +308,7 @@ object Redundancy {
       } else
         Used.empty
 
-    case Expr.Hole(sym, _, _) =>
+    case Expr.Hole(sym, _, _, _) =>
       lctx.holeSyms += sym
       Used.empty
 
@@ -359,6 +351,13 @@ object Redundancy {
       val us1 = visitExp(exp, env0, rc)
       val us2 = visitExps(exps, env0, rc)
       us1 ++ us2
+
+    case Expr.ApplyDef(Ast.DefSymUse(sym, _), exps, _, _, _, _) =>
+      // Recursive calls do not count as uses.
+      if (!rc.defn.contains(sym)) {
+        sctx.defSyms.put(sym, ())
+      }
+      visitExps(exps, env0, rc)
 
     case Expr.Unary(_, exp, _, _, _) =>
       visitExp(exp, env0, rc)
@@ -596,7 +595,7 @@ object Redundancy {
 
     case Expr.StructNew(sym, fields, region, _, _, _) =>
       sctx.structSyms.put(sym, ())
-      visitExps(fields.map {case (k, v) => v}, env0, rc) ++ visitExp(region, env0, rc)
+      visitExps(fields.map { case (k, v) => v }, env0, rc) ++ visitExp(region, env0, rc)
 
     case Expr.StructGet(e, field, _, _, _) =>
       sctx.structFieldSyms.put(field.sym, ())
@@ -998,7 +997,7 @@ object Redundancy {
     * Returns true if the expression is a hole.
     */
   private def isHole(exp: Expr): Boolean = exp match {
-    case Expr.Hole(_, _, _) => true
+    case Expr.Hole(_, _, _, _) => true
     case Expr.HoleWithExp(_, _, _, _) => true
     case _ => false
   }
@@ -1029,6 +1028,7 @@ object Redundancy {
     */
   private def freeVars(p: RestrictableChoosePattern): Set[Symbol.VarSym] = p match {
     case RestrictableChoosePattern.Tag(_, pat, _, _) => pat.flatMap(freeVars).toSet
+    case RestrictableChoosePattern.Error(_, _) => Set.empty
   }
 
   /**

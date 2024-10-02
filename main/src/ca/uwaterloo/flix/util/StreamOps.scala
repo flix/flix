@@ -16,9 +16,7 @@
 
 package ca.uwaterloo.flix.util
 
-import java.io._
-import java.nio.file.{Files, Path}
-import java.util.zip.ZipInputStream
+import java.io.*
 
 object StreamOps {
 
@@ -61,42 +59,6 @@ object StreamOps {
     }
     reader.close()
     sb.toString()
-  }
-
-  /**
-    * Copies the `inputStream` to the `outputStream`.
-    */
-  def writeAll(inputStream: InputStream, outputStream: PrintStream): Unit = {
-    val reader = new BufferedReader(new InputStreamReader(inputStream))
-    var line = reader.readLine()
-    while (line != null) {
-      outputStream.println(line)
-      line = reader.readLine()
-    }
-  }
-
-  /**
-    * Copies the `inputStream` to the `path`.
-    */
-  def writeAll(inputStream: InputStream, path: Path): Unit = {
-    val outputStream = Files.newOutputStream(path)
-    StreamOps.writeAll(inputStream, new PrintStream(outputStream))
-  }
-
-  /**
-    * Copies the content of the current zip entry to the `path`.
-    */
-  def writeAll(zip: ZipInputStream, path: Path): Unit = {
-    val BufferSize = 4096
-
-    val os = Files.newOutputStream(path)
-    val bf: Array[Byte] = new Array[Byte](BufferSize)
-    var read = zip.read(bf)
-    while (read != -1) {
-      os.write(bf, 0, read)
-      read = zip.read(bf)
-    }
-    os.close()
   }
 
 }

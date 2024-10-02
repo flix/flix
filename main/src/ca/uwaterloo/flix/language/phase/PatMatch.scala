@@ -134,15 +134,15 @@ object PatMatch {
   private def visitExp(tast: TypedAst.Expr)(implicit root: TypedAst.Root, flix: Flix): List[NonExhaustiveMatchError] = {
     tast match {
       case Expr.Var(_, _, _) => Nil
-      case Expr.Def(_, _, _) => Nil
       case Expr.Sig(_, _, _) => Nil
-      case Expr.Hole(_, _, _) => Nil
+      case Expr.Hole(_, _, _, _) => Nil
       case Expr.HoleWithExp(exp, _, _, _) => visitExp(exp)
       case Expr.OpenAs(_, exp, _, _) => visitExp(exp)
       case Expr.Use(_, _, exp, _) => visitExp(exp)
       case Expr.Cst(_, _, _) => Nil
       case Expr.Lambda(_, body, _, _) => visitExp(body)
       case Expr.Apply(exp, exps, _, _, _) => (exp :: exps).flatMap(visitExp)
+      case Expr.ApplyDef(_, exps, _, _, _, _) => exps.flatMap(visitExp)
       case Expr.Unary(_, exp, _, _, _) => visitExp(exp)
       case Expr.Binary(_, exp1, exp2, _, _, _) => List(exp1, exp2).flatMap(visitExp)
       case Expr.Let(_, _, exp1, exp2, _, _, _) => List(exp1, exp2).flatMap(visitExp)

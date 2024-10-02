@@ -18,8 +18,8 @@ package ca.uwaterloo.flix.language.phase.extra
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
-import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.TypedAst.*
+import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.CodeHint
 
 object CodeHinter {
@@ -79,15 +79,9 @@ object CodeHinter {
   private def visitExp(exp0: Expr)(implicit root: Root, flix: Flix): List[CodeHint] = exp0 match {
     case Expr.Var(_, _, _) => Nil
 
-    case Expr.Def(sym, _, loc) =>
-      checkDeprecated(sym, loc) ++
-        checkExperimental(sym, loc) ++
-        checkParallel(sym, loc) ++
-        checkLazy(sym, loc)
-
     case Expr.Sig(_, _, _) => Nil
 
-    case Expr.Hole(_, _, _) => Nil
+    case Expr.Hole(_, _, _, _) => Nil
 
     case Expr.HoleWithExp(exp, _, _, _) => visitExp(exp)
 
@@ -101,12 +95,15 @@ object CodeHinter {
       visitExp(exp)
 
     case Expr.Apply(exp, exps, _, _, loc) =>
-      val hints0 = (exp, exps) match {
-        case (Expr.Def(sym, _, _), lambda :: _) =>
-          checkEffect(sym, lambda.tpe, loc)
-        case _ => Nil
-      }
-      hints0 ++ visitExp(exp) ++ visitExps(exps)
+      visitExp(exp) ++ visitExps(exps)
+
+    case Expr.ApplyDef(Ast.DefSymUse(sym, loc1), exps, _, _, _, loc2) =>
+      val hints0 = exps.flatMap(e => checkEffect(sym, e.tpe, e.loc))
+      val hints1 = checkDeprecated(sym, loc1) ++
+        checkExperimental(sym, loc1) ++
+        checkParallel(sym, loc1) ++
+        checkLazy(sym, loc1)
+      hints0 ++ hints1 ++ visitExps(exps)
 
     case Expr.Unary(_, exp, _, _, _) =>
       visitExp(exp)
@@ -185,7 +182,7 @@ object CodeHinter {
       visitExp(exp)
 
     case Expr.StructNew(sym, fields, region, _, _, _) =>
-      fields.map{case (k, v) => v}.flatMap(visitExp) ++ visitExp(region)
+      fields.map { case (k, v) => v }.flatMap(visitExp) ++ visitExp(region)
 
     case Expr.StructGet(exp, _, _, _, _) =>
       visitExp(exp)

@@ -18,19 +18,18 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.ExpPosition
-import ca.uwaterloo.flix.language.ast.ReducedAst._
-import ca.uwaterloo.flix.language.ast.SemanticOp._
-import ca.uwaterloo.flix.language.ast.shared.Constant
-import ca.uwaterloo.flix.language.ast.{MonoType, _}
+import ca.uwaterloo.flix.language.ast.ReducedAst.*
+import ca.uwaterloo.flix.language.ast.SemanticOp.*
+import ca.uwaterloo.flix.language.ast.shared.{Constant, ExpPosition}
+import ca.uwaterloo.flix.language.ast.{MonoType, *}
 import ca.uwaterloo.flix.language.dbg.printer.OpPrinter
 import ca.uwaterloo.flix.language.phase.jvm.BackendObjType.JavaObject
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.InstructionSet
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.util.InternalCompilerException
 import org.objectweb.asm
-import org.objectweb.asm.Opcodes._
-import org.objectweb.asm._
+import org.objectweb.asm.Opcodes.*
+import org.objectweb.asm.*
 
 /**
   * Generate expression
@@ -548,7 +547,7 @@ object GenExpression {
 
         compileExpr(exp)
         val ins = {
-          import BytecodeInstructions._
+          import BytecodeInstructions.*
           CHECKCAST(taggedType.jvmName) ~ GETFIELD(taggedType.NameField) ~
             BackendObjType.Tagged.mkTagName(sym) ~ BackendObjType.Tagged.eqTagName()
         }
@@ -557,24 +556,24 @@ object GenExpression {
       case AtomicOp.Tag(sym) =>
         val List(exp) = exps
 
-        val tagType = BackendObjType.Tag(BackendType.toErasedBackendType(exp.tpe))
+        val tagType = BackendObjType.Tag(List(BackendType.toErasedBackendType(exp.tpe)))
 
         val ins = {
-          import BytecodeInstructions._
+          import BytecodeInstructions.*
           NEW(tagType.jvmName) ~ DUP() ~ INVOKESPECIAL(tagType.Constructor) ~
             DUP() ~ BackendObjType.Tagged.mkTagName(sym) ~ PUTFIELD(tagType.NameField) ~
-            DUP() ~ cheat(mv => compileExpr(exp)(mv, ctx, root, flix)) ~ PUTFIELD(tagType.ValueField)
+            DUP() ~ cheat(mv => compileExpr(exp)(mv, ctx, root, flix)) ~ PUTFIELD(tagType.IndexField(0))
         }
         ins(new BytecodeInstructions.F(mv))
 
       case AtomicOp.Untag(_) =>
         val List(exp) = exps
-        val tagType = BackendObjType.Tag(BackendType.toErasedBackendType(tpe))
+        val tagType = BackendObjType.Tag(List(BackendType.toErasedBackendType(tpe)))
 
         compileExpr(exp)
         val ins = {
-          import BytecodeInstructions._
-          CHECKCAST(tagType.jvmName) ~ GETFIELD(tagType.ValueField)
+          import BytecodeInstructions.*
+          CHECKCAST(tagType.jvmName) ~ GETFIELD(tagType.IndexField(0))
         }
         ins(new BytecodeInstructions.F(mv))
         AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
@@ -854,7 +853,7 @@ object GenExpression {
         val erasedExpTpe = BackendType.toErasedBackendType(exp.tpe)
         val valueField = BackendObjType.Value.fieldFromType(erasedExpTpe)
         val ins = {
-          import BytecodeInstructions._
+          import BytecodeInstructions.*
           NEW(BackendObjType.Value.jvmName) ~ DUP() ~ INVOKESPECIAL(BackendObjType.Value.Constructor) ~ DUP() ~
           xSwap(lowerLarge = erasedExpTpe.is64BitWidth, higherLarge = true) ~ // two objects on top of the stack
           PUTFIELD(valueField)
@@ -1014,7 +1013,7 @@ object GenExpression {
         val lazyType = BackendObjType.Lazy(BackendType.asErasedBackendType(elmType))
 
         val ins = {
-          import BytecodeInstructions._
+          import BytecodeInstructions.*
           NEW(lazyType.jvmName) ~
             DUP() ~  cheat(mv => compileExpr(exp)(mv, ctx, root, flix)) ~ INVOKESPECIAL(lazyType.Constructor)
         }
@@ -1032,7 +1031,7 @@ object GenExpression {
         compileExpr(exp)
 
         val ins = {
-          import BytecodeInstructions._
+          import BytecodeInstructions.*
           CHECKCAST(lazyType.jvmName) ~
           DUP() ~ GETFIELD(lazyType.ExpField) ~
           ifConditionElse(Condition.NONNULL)(
@@ -1381,7 +1380,7 @@ object GenExpression {
       // exp is a Unit -> exp.tpe closure
       val effectJvmName = JvmOps.getEffectDefinitionClassType(effUse.sym).name
       val ins = {
-        import BytecodeInstructions._
+        import BytecodeInstructions.*
         // eff name
         pushString(effUse.sym.toString) ~
         // handler
@@ -1428,7 +1427,7 @@ object GenExpression {
 
       ctx.pcCounter(0) += 1
       val ins: InstructionSet = {
-        import BytecodeInstructions._
+        import BytecodeInstructions.*
         import BackendObjType.Suspension
         val effectClass = JvmOps.getEffectDefinitionClassType(op.sym.eff)
         val effectStaticMethod = ClassMaker.StaticMethod(
@@ -1621,7 +1620,7 @@ object GenExpression {
   /**
     * Pushes arguments onto the stack ready to invoke a method
     */
-  private def pushArgs(args: List[Expr], signature: Array[Class[_ <: Object]])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
+  private def pushArgs(args: List[Expr], signature: Array[Class[? <: Object]])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
     // Evaluate arguments left-to-right and push them onto the stack.
     for ((arg, argType) <- args.zip(signature)) {
       compileExpr(arg)

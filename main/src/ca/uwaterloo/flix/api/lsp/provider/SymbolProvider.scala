@@ -123,7 +123,7 @@ object SymbolProvider {
     * It navigates the AST and adds Cases of enum as children DocumentSymbols.
     */
   private def mkEnumDocumentSymbol(enum0: TypedAst.Enum): DocumentSymbol = enum0 match {
-    case TypedAst.Enum(doc, _, _, sym, tparams, _, cases, _, loc) => DocumentSymbol(
+    case TypedAst.Enum(doc, _, _, sym, tparams, _, cases, loc) => DocumentSymbol(
       sym.name,
       Some(doc.text),
       SymbolKind.Enum,
@@ -148,7 +148,7 @@ object SymbolProvider {
     * It navigates the AST and returns also the Cases of the enum to the returned List.
     */
   private def mkEnumSymbolInformation(enum0: TypedAst.Enum): List[SymbolInformation] = enum0 match {
-    case TypedAst.Enum(_, _, _, sym, _, _, cases, _, loc) =>
+    case TypedAst.Enum(_, _, _, sym, _, _, cases, loc) =>
       cases.values.map(mkCaseSymbolInformation).toList :+ SymbolInformation(
         sym.name, SymbolKind.Enum, Nil, deprecated = false, Location(loc.source.name, Range.from(loc)), None,
       )

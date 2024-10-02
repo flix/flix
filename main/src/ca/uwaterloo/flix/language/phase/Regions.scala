@@ -17,9 +17,9 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.TypedAst._
+import ca.uwaterloo.flix.language.ast.TypedAst.*
 import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Type}
-import ca.uwaterloo.flix.language.dbg.AstPrinter._
+import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.unification.Substitution
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
@@ -49,11 +49,9 @@ object Regions {
 
     case Expr.Var(_, tpe, loc) => checkType(tpe, loc)
 
-    case Expr.Def(_, _, _) => Nil
-
     case Expr.Sig(_, _, _) => Nil
 
-    case Expr.Hole(_, _, _) => Nil
+    case Expr.Hole(_, _, _, _) => Nil
 
     case Expr.HoleWithExp(exp, tpe, _, loc) =>
       visitExp(exp) ++ checkType(tpe, loc)
@@ -68,6 +66,9 @@ object Regions {
 
     case Expr.Apply(exp, exps, tpe, _, loc) =>
       exps.flatMap(visitExp) ++ visitExp(exp) ++ checkType(tpe, loc)
+
+    case Expr.ApplyDef(_, exps, _, tpe, _, loc) =>
+      exps.flatMap(visitExp) ++ checkType(tpe, loc)
 
     case Expr.Unary(_, exp, tpe, _, loc) =>
       visitExp(exp) ++ checkType(tpe, loc)

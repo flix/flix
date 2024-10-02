@@ -19,12 +19,12 @@ package ca.uwaterloo.flix.language.phase.jvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.phase.jvm.BackendObjType.mkClassName
-import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.Branch._
-import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions._
+import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.*
+import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.Branch.*
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.*
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final.{IsFinal, NotFinal}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.{IsPrivate, IsPublic}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Volatility.{IsVolatile, NotVolatile}
-import ca.uwaterloo.flix.language.phase.jvm.ClassMaker._
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.{DevFlixRuntime, JavaLang, JavaLangInvoke, JavaUtil, JavaUtilConcurrent, MethodDescriptor, RootPackage}
 import org.objectweb.asm.Opcodes
@@ -249,41 +249,15 @@ object BackendObjType {
     }))
 
     def ToStringMethod: InstanceMethod = JavaObject.ToStringMethod.implementation(this.jvmName, Some(_ => {
-      // [...] -> [..., "(v1, v2, ...)"]
-      def commaSepElmString(): InstructionSet = {
-        // new String[elms.length] // referred to as `elms`
-        cheat(mv => GenExpression.compileInt(elms.length)(mv)) ~ ANEWARRAY(String.jvmName) ~
-        ICONST_M1() ~ // running index referred to as `j`
-        // current stack [elms, j]
-        composeN(elms.indices.map(i => {
-          val field = IndexField(i)
-          // j = j + 1
-          ICONST_1() ~ IADD() ~
-          // [elms, j] -> [elms, j, elms, j]
-          DUP2() ~
-          // this.field$i.toString
-          thisLoad() ~ GETFIELD(field) ~ xToString(field.tpe) ~
-          // [elms, j, elms, j, string] -> [elms, j]
-          AASTORE()
-        })) ~
-        POP() ~
-        // [elms] -> [", ", elms]
-        pushString(", ") ~ SWAP() ~
-        INVOKESTATIC(String.JoinMethod)
-      }
-      // new String[3] // referred to as `arr`
-      ICONST_3() ~ ANEWARRAY(String.jvmName) ~
-      // arr[0] = "("
-      DUP() ~ ICONST_0() ~ pushString("(") ~ AASTORE() ~
-      // arr[1] = "(v1, v2, v3)"
-      DUP() ~ ICONST_1() ~ commaSepElmString() ~ AASTORE() ~
-      // arr[2] = ")"
-      DUP() ~ ICONST_2() ~ pushString(")") ~ AASTORE() ~
-      // ["", arr]
-      pushString("") ~ SWAP() ~
-      INVOKESTATIC(String.JoinMethod) ~
+      Util.mkString(Some(pushString("(")), Some(pushString(")")), elms.length, getIndexField) ~
       xReturn(String.toTpe)
     }))
+
+    /** `[] --> [this.index(i).xString()]` */
+    private def getIndexField(i: Int): InstructionSet = {
+      val field = IndexField(i)
+      thisLoad() ~ GETFIELD(field) ~ xToString(field.tpe)
+    }
 
   }
   case class Struct(elms: List[BackendType]) extends BackendObjType with Generatable {
@@ -316,41 +290,15 @@ object BackendObjType {
     }))
 
     def ToStringMethod: InstanceMethod = JavaObject.ToStringMethod.implementation(this.jvmName, Some(_ => {
-      // [...] -> [..., "v1, v2, ..."]
-      def commaSepElmString(): InstructionSet = {
-        // new String[elms.length] // referred to as `elms`
-        cheat(mv => GenExpression.compileInt(elms.length)(mv)) ~ ANEWARRAY(String.jvmName) ~
-          ICONST_M1() ~ // running index referred to as `j`
-          // current stack [elms, j]
-          composeN(elms.indices.map(i => {
-            val field = IndexField(i)
-            // [elms, j] -> [elms, j+1]
-            ICONST_1() ~ IADD() ~
-              // [elms, j + 1] -> [elms, j + 1, elms, j + 1]
-              DUP2() ~
-              // this.field$i.toString
-              thisLoad() ~ GETFIELD(field) ~ xToString(field.tpe) ~
-              // [elms, j + 1, elms, j + 1, string] -> [elms, j + 1]
-              AASTORE()
-          })) ~
-          POP() ~
-          // [elms] -> [", ", elms]
-          pushString(", ") ~ SWAP() ~
-          INVOKESTATIC(String.JoinMethod)
-      }
-      // new String[3] // referred to as `arr`
-      ICONST_3() ~ ANEWARRAY(String.jvmName) ~
-        // arr[0] = "Struct("
-        DUP() ~ ICONST_0() ~ pushString("Struct(") ~ AASTORE() ~
-        // arr[1] = "v1, v2, v3"
-        DUP() ~ ICONST_1() ~ commaSepElmString() ~ AASTORE() ~
-        // arr[2] = ")"
-        DUP() ~ ICONST_2() ~ pushString(")") ~ AASTORE() ~
-        // ["", arr]
-        pushString("") ~ SWAP() ~
-        INVOKESTATIC(String.JoinMethod) ~
-        xReturn(String.toTpe)
+      Util.mkString(Some(pushString("Struct(")), Some(pushString(")")), elms.length, getIndexString) ~
+      xReturn(String.toTpe)
     }))
+
+    /** `[] --> [this.index(i).xString()]` */
+    private def getIndexString(i: Int): InstructionSet = {
+      val field = IndexField(i)
+      thisLoad() ~ GETFIELD(field) ~ xToString(field.tpe)
+    }
 
   }
 
@@ -379,12 +327,12 @@ object BackendObjType {
     }
   }
 
-  case class Tag(tpe: BackendType) extends BackendObjType with Generatable {
+  case class Tag(elms: List[BackendType]) extends BackendObjType with Generatable {
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = ClassMaker.mkClass(this.jvmName, IsFinal, superClass = Tagged.jvmName)
 
       cm.mkConstructor(Constructor)
-      cm.mkField(ValueField)
+      elms.indices.foreach(i => cm.mkField(IndexField(i)))
       cm.mkMethod(ToStringMethod)
 
       cm.closeClassMaker()
@@ -392,26 +340,20 @@ object BackendObjType {
 
     def NameField: InstanceField = Tagged.NameField
 
-    def ValueField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "value", tpe)
+    def IndexField(i: Int): InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, s"v$i", elms(i))
 
     def Constructor: ConstructorMethod = nullarySuperConstructor(Tagged.Constructor)
 
     def ToStringMethod: InstanceMethod = JavaObject.ToStringMethod.implementation(this.jvmName, Some(_ => {
-      // new String[4] // referred to as `arr`
-      ICONST_4() ~ ANEWARRAY(String.jvmName) ~
-      // arr[0] = "Enum"
-      DUP() ~ ICONST_0() ~ thisLoad() ~ GETFIELD(NameField) ~ AASTORE() ~
-      // arr[1] = "("
-      DUP() ~ ICONST_1() ~ pushString("(") ~ AASTORE() ~
-      // arr[2] = this.value.toString()
-      DUP() ~ ICONST_2() ~ thisLoad() ~ GETFIELD(ValueField) ~ xToString(ValueField.tpe) ~ AASTORE() ~
-      // arr[3] = ")"
-      DUP() ~ ICONST_3() ~ pushString(")") ~ AASTORE() ~
-      // ["", arr]
-      pushString("") ~ SWAP() ~
-      INVOKESTATIC(String.JoinMethod) ~
+      Util.mkString(Some(thisLoad() ~ GETFIELD(NameField) ~ pushString("(") ~ INVOKEVIRTUAL(String.Concat)), Some(pushString(")")), elms.length, getIndexString) ~
       xReturn(String.toTpe)
     }))
+
+    /** `[] --> [this.index(i).xString()]` */
+    private def getIndexString(i: Int): InstructionSet = {
+      val field = IndexField(i)
+      thisLoad() ~ GETFIELD(field) ~ xToString(field.tpe)
+    }
   }
 
   case class Arrow(args: List[BackendType], result: BackendType) extends BackendObjType with Generatable {
@@ -1306,6 +1248,9 @@ object BackendObjType {
 
     def ObjectValueOf: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
       "valueOf", mkDescriptor(BackendObjType.JavaObject.toTpe)(this.jvmName.toTpe), None)
+
+    def Concat: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, NotFinal,
+      "concat", mkDescriptor(this.jvmName.toTpe)(this.jvmName.toTpe), None)
   }
 
   case object CharSequence extends BackendObjType
@@ -1620,7 +1565,7 @@ object BackendObjType {
       * Returns the field of Value corresponding to the given type
       */
     def fieldFromType(tpe: BackendType): InstanceField = {
-      import BackendType._
+      import BackendType.*
       tpe match {
         case Bool => BoolField
         case Char => CharField
