@@ -50,15 +50,28 @@ import ca.uwaterloo.flix.language.ast.Ast.UseOrImport
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.ast.Type
 import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.ast.Scheme
+import ca.uwaterloo.flix.language.ast.Ast.Modifiers
+import ca.uwaterloo.flix.language.ast.Ast.Derivations
 import ca.uwaterloo.flix.api.lsp.Position
+import ca.uwaterloo.flix.language.ast.Ast.Derivation
+import ca.uwaterloo.flix.language.ast.Ast.TraitConstraint
+import ca.uwaterloo.flix.language.ast.Ast.TraitSymUse
+import ca.uwaterloo.flix.language.ast.TypedAst.AssocTypeDef
+import ca.uwaterloo.flix.language.ast.Ast.AssocTypeSymUse
 
 object Visitor {
 
   trait Consumer {
     def consumeAnns(anns: Annotations): Unit = ()
+    def consumeAssocTypeDef(tdefn: AssocTypeDef): Unit = ()
+    def consumeAssocTypeSymUse(symUse: AssocTypeSymUse): Unit = ()
+    def consumeCase(cse: Case): Unit = ()
     def consumeCatchRule(rule: CatchRule): Unit = ()
     def consumeConstraint(c: Constraint): Unit = ()
     def consumeDef(defn: Def): Unit = ()
+    def consumeDerive(derive: Derivation): Unit = ()
+    def consumeDeriveList(deriveList: Derivations): Unit = ()
     def consumeEff(eff: Effect): Unit = ()
     def consumeEnum(enm: Enum): Unit = ()
     def consumeExpr(exp: Expr): Unit = ()
@@ -68,13 +81,17 @@ object Visitor {
     def consumeInstance(ins: Instance): Unit = ()
     def consumeMatchRule(rule: MatchRule): Unit = ()
     def consumePat(pat: Pattern): Unit = ()
-    def consumeResEnum(res: RestrictableEnum): Unit = ()
+    def consumeResEnum(enm: RestrictableEnum): Unit = ()
+    def consumeResCase(cse: RestrictableCase): Unit = ()
     def consumeRoot(root: Root): Unit = ()
     def consumeSig(sig: Sig): Unit = ()
     def consumeSpec(spec: Spec): Unit = ()
     def consumeStruct(struct: Struct): Unit = ()
     def consumeTMatchRule(rule: TypeMatchRule): Unit = ()
     def consumeTrait(traitt: Trait): Unit = ()
+    def consumeTraitConstraint(tc: TraitConstraint): Unit = ()
+    def consumeTraitConstraintHead(tcHead: TraitConstraint.Head): Unit = ()
+    def consumeTraitSymUse(symUse: TraitSymUse): Unit= ()
     def consumeType(tpe: Type): Unit = ()
     def consumeTypeAlias(alias: TypeAlias): Unit = ()
   }
@@ -171,35 +188,91 @@ object Visitor {
   }
 
   private def visitEnum(enm: Enum)(implicit a: Acceptor, c: Consumer): Unit = {
-    // TODO
-    // visit(e)
-    // e.cases
-    //  .map{case (_, c) => c}
-    //  .foreach(c => if (accept(c.loc)) { visitCase(c, ???, accept) })
+    if (!a.accept(enm.loc)) { return }
+
+    c.consumeEnum(enm)
+
+    // TODO visit symbols?
+    visitAnnotations(enm.ann)
+    // TODO visit modifiers?
+    enm.tparams.foreach(visitTypeParam)
+    visitDeriveList(enm.derives)
+    enm.cases.map(_._2).foreach(visitCase)
+  }
+
+  private def visitDeriveList(deriveList: Derivations)(implicit a: Acceptor, c: Consumer): Unit = {
+    if (!a.accept(deriveList.loc)) { return }
+    c.consumeDeriveList(deriveList)
+    deriveList.traits.foreach(visitDerive)
+  }
+
+  private def visitDerive(derive: Derivation)(implicit a: Acceptor, c: Consumer): Unit = {
+    if (!a.accept(derive.loc)) { return }
+    c.consumeDerive(derive)
   }
 
   private def visitCase(cse: Case)(implicit a: Acceptor, c: Consumer): Unit = {
-    // TODO
-    // visit(c)
+    if (!a.accept(cse.loc)) { return }
+    c.consumeCase(cse)
+    // TODO visit scheme?
   }
 
   private def visitResEnum(enm: RestrictableEnum)(implicit a: Acceptor, c: Consumer): Unit = {
-    // TODO
-    // visit(e)
-    // e.cases
-    //  .map{case (_, c) => c}
-    //  .foreach(c => if (accept(c.loc)) { visitResCase(c, ???, accept) })
+    if (!a.accept(enm.loc)) { return }
+    
+    c.consumeResEnum(enm)
+
+    visitAnnotations(enm.ann)
+    visitTypeParam(enm.index)
+    enm.tparams.foreach(visitTypeParam)
+    visitDeriveList(enm.derives)
+    enm.cases.map(_._2).foreach(visitResCase)
   }
 
   private def visitResCase(cse: RestrictableCase)(implicit a: Acceptor, c: Consumer): Unit = {
-    // TODO
-    // visit(c)
+    if (!a.accept(cse.loc)) { return }
+    c.consumeResCase(cse)
+    // TODO visit scheme?
   }
 
   private def visitInstance(ins: Instance)(implicit a: Acceptor, c: Consumer): Unit = {
-    // TODO
-    // visit(ins)
-    // ins.defs.foreach(defn => visitDef(defn, ???, accept))
+    if (!a.accept(ins.loc)) { return }
+
+    visitAnnotations(ins.ann)
+    visitTraitSymUse(ins.trt)
+    ins.tconstrs.foreach(visitTraitConstraint)
+    ins.assocs.foreach(visitAssocTypeDef)
+    ins.defs.foreach(visitDef)
+  }
+
+  private def visitTraitSymUse(symUse: TraitSymUse)(implicit a: Acceptor, c: Consumer): Unit = {
+    if (!a.accept(symUse.loc)) { return }
+    c.consumeTraitSymUse(symUse)
+  }
+
+  private def visitTraitConstraint(tc: TraitConstraint)(implicit a: Acceptor, c: Consumer): Unit = {
+    if (!a.accept(tc.loc)) { return }
+
+    c.consumeTraitConstraint(tc)
+    visitTraitConstraintHead(tc.head)
+    visitType(tc.arg)
+  }
+
+  private def visitTraitConstraintHead(tcHead: TraitConstraint.Head)(implicit a: Acceptor, c: Consumer): Unit = {
+    if (!a.accept(tcHead.loc)) { return }
+    c.consumeTraitConstraintHead(tcHead)
+  }
+
+  private def visitAssocTypeDef(tdefn: AssocTypeDef)(implicit a: Acceptor, c: Consumer): Unit = {
+    if (!a.accept(tdefn.loc)) { return }
+    c.consumeAssocTypeDef(tdefn)
+    visitAssocTypeSymUse(tdefn.sym)
+    visitType(tdefn.arg)
+  }
+
+  private def visitAssocTypeSymUse(symUse: AssocTypeSymUse)(implicit a: Acceptor, c: Consumer): Unit = {
+    if (!a.accept(symUse.loc)) { return }
+    c.consumeAssocTypeSymUse(symUse)
   }
 
   private def visitSig(sig: Sig)(implicit a: Acceptor, c: Consumer): Unit = {
