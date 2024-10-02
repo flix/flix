@@ -48,9 +48,7 @@ object BaseEffects {
   /**
     * A pre-computed map from methods to effects.
     */
-  private val methodEffs: Map[Method, Set[Symbol.EffectSym]] = Map(
-    classOf[java.lang.System].getMethod("currentTimeMillis") -> Set(Symbol.Time) // TODO: Load from JSON
-  )
+  private val methodEffs: Map[Method, Set[Symbol.EffectSym]] = loadMethodEffs()
 
   /**
     * Returns the base effects of calling the given constructor `c`.
@@ -95,7 +93,7 @@ object BaseEffects {
   }
 
   /**
-    * Parses a JSON object of the form:
+    * Parses a JSON file of the form:
     *
     * {{{
     * {
@@ -125,7 +123,7 @@ object BaseEffects {
   }
 
   /**
-    * Parses a JSON object of the form:
+    * Parses a JSON file of the form:
     *
     * {{{
     * {
@@ -148,6 +146,40 @@ object BaseEffects {
           val clazz = Class.forName(className)
           val effSet = s.split(",").map(_.trim).map(Symbol.parseBaseEff).toSet
           clazz.getConstructors.map(c => (c, effSet))
+        case _ => throw InternalCompilerException("Unexpected field value.", SourceLocation.Unknown)
+      }
+      case _ => throw InternalCompilerException("Unexpected JSON format.", SourceLocation.Unknown)
+    }
+
+    m.toMap
+  }
+
+  /**
+    * Parses a JSON file of the form:
+    *
+    * {{{
+    * {
+    *   "methods": {
+    *     "java.lang.System::exit": "Sys"
+    *   }
+    * }
+    * }}}
+    *
+    * Note: The effect set applies to *ALL* constructors of the class.
+    */
+  private def loadMethodEffs(): Map[Method, Set[Symbol.EffectSym]] = {
+    val data = LocalResource.get(MethodEffsPath)
+    val json = parse(data)
+
+    val m = json \\ "methods" match {
+      case JObject(l) => l.flatMap {
+        case (classNameAndMethod, JString(s)) =>
+          val cc = classNameAndMethod.indexOf("::")
+          val className = classNameAndMethod.substring(0, cc)
+          val methodName = classNameAndMethod.substring(cc + 2)
+          val clazz = Class.forName(className)
+          val effSet = s.split(",").map(_.trim).map(Symbol.parseBaseEff).toSet
+          clazz.getMethods.filter(_.getName == methodName).map(m => (m, effSet))
         case _ => throw InternalCompilerException("Unexpected field value.", SourceLocation.Unknown)
       }
       case _ => throw InternalCompilerException("Unexpected JSON format.", SourceLocation.Unknown)
