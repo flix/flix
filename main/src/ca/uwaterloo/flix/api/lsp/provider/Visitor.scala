@@ -52,10 +52,6 @@ import ca.uwaterloo.flix.language.ast.Type
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.api.lsp.Position
 
-/**
-  * A collection of visit functions that can apply a set of functions
-  * to an TypedAst node and all of it's children recursively.
-  */
 object Visitor {
 
   trait Consumer {
@@ -100,12 +96,25 @@ object Visitor {
   }
 
   /**
-    * Applies a `seenRoot` to the root AST node and recursively visits
-    * all children, applying the corresponding `seenX` functions.
+    * Visits the root AST node and recursively visits
+    * all children that are accepted by the acceptor,
+    * "consuming" each node visited (including the root).
     *
-    * @param root    The AST root node.
-    * @param seenX   The `seen` function that is to be applied to X type AST nodes.
-    * @param accept  A predicate determining whether to visit a child node.
+    * By "consuming" what is meant is that the node is used
+    * as the input to a function of the consumer associated with
+    * the AST node type. Such consumer funcitons have no output, 
+    * but can have effects. For instance, the consumer can be defined such that each
+    * expression containing a specific variable is collected in a list, via
+    * mutation a variable.
+    *
+    * Note that if a node is not accepted, none of the nodes in it's
+    * subtree will be visited either. For instance, if a `def` is not
+    * accepted, none of the expressions in the body will be visited eiter,
+    * even if they would otherwise be accepted by the acceptor.
+    *
+    * @param root      The AST root node.
+    * @param consumer  A consumer which defines what to do when visiting different types of AST nodes.
+    * @param acceptor  An acceptor which defines the the criteria for whether an AST node should be visited.
     */
   def visitRoot(root: Root, consumer: Consumer, acceptor: Acceptor): Unit = {
 
