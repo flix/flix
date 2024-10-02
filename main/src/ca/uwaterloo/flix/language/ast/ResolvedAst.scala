@@ -89,8 +89,6 @@ object ResolvedAst {
 
     case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends Expr
 
-    case class Def(sym: Symbol.DefnSym, loc: SourceLocation) extends Expr
-
     case class Sig(sym: Symbol.SigSym, loc: SourceLocation) extends Expr
 
     case class Hole(sym: Symbol.HoleSym, loc: SourceLocation) extends Expr
@@ -290,7 +288,7 @@ object ResolvedAst {
 
     case class Tag(sym: Ast.RestrictableCaseSymUse, pat: List[VarOrWild], loc: SourceLocation) extends RestrictableChoosePattern
 
-    case class Error(loc: SourceLocation) extends VarOrWild
+    case class Error(loc: SourceLocation) extends VarOrWild with RestrictableChoosePattern
 
   }
 

@@ -1,0 +1,6 @@
+{
+  "methods": {
+    "java.lang.Runtime::exec": "Exec",
+    "java.lang.System::exit": "Sys"
+  }
+}

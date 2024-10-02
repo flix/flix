@@ -10,7 +10,7 @@ import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.language.errors.SafetyError.*
-import ca.uwaterloo.flix.util.{Jvm, ParOps, Validation}
+import ca.uwaterloo.flix.util.{JvmUtils, ParOps, Validation}
 
 import java.math.BigInteger
 import scala.annotation.tailrec
@@ -235,8 +235,6 @@ object Safety {
       case Expr.Cst(_, _, _) => Nil
 
       case Expr.Var(_, _, _) => Nil
-
-      case Expr.Def(_, _, _) => Nil
 
       case Expr.Sig(_, _, _) => Nil
 
@@ -1038,7 +1036,7 @@ object Safety {
     * Get a Set of MethodSignatures representing the methods of `clazz`. Returns a map to allow subsequent reverse lookup.
     */
   private def getJavaMethodSignatures(clazz: java.lang.Class[?]): Map[MethodSignature, java.lang.reflect.Method] = {
-    val methods = Jvm.getInstanceMethods(clazz)
+    val methods = JvmUtils.getInstanceMethods(clazz)
     methods.foldLeft(Map.empty[MethodSignature, java.lang.reflect.Method]) {
       case (acc, m) =>
         val signature = MethodSignature(m.getName, m.getParameterTypes.toList.map(Type.getFlixType), Type.getFlixType(m.getReturnType))

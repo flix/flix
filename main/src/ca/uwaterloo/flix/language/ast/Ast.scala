@@ -287,7 +287,6 @@ object Ast {
     */
   case class DefSymUse(sym: Symbol.DefnSym, loc: SourceLocation)
 
-
   /**
     * Represents a use of a class sym.
     */
@@ -483,6 +482,8 @@ object Ast {
       case object Do extends Expr
 
       case class InvokeMethod(tpe: ca.uwaterloo.flix.language.ast.Type, name: Name.Ident) extends Expr
+
+      case object New extends Expr
 
       case class StaticFieldOrMethod(e: ResolutionError.UndefinedJvmStaticField) extends Expr
 

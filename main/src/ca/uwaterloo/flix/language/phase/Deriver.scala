@@ -421,12 +421,13 @@ object Deriver {
         * (Cannot be inlined due to issues with Scala's type inference.
         */
       def thenCompare(exp1: KindedAst.Expr, exp2: KindedAst.Expr): KindedAst.Expr = {
-        KindedAst.Expr.Apply(
-          KindedAst.Expr.Def(thenCompareDefSym, Type.freshVar(Kind.Star, loc), loc),
+        KindedAst.Expr.ApplyDef(
+          Ast.DefSymUse(thenCompareDefSym, loc),
           List(
             exp1,
             KindedAst.Expr.Lazy(exp2, loc)
           ),
+          Type.freshVar(Kind.Star, loc),
           Type.freshVar(Kind.Star, loc),
           Type.freshVar(Kind.Eff, loc),
           loc
@@ -692,8 +693,8 @@ object Deriver {
       val exp = varSyms.foldLeft(KindedAst.Expr.Cst(Constant.Int32(index + 1), loc): KindedAst.Expr) {
         case (acc, varSym) =>
           // `acc `combine` hash(varSym)
-          KindedAst.Expr.Apply(
-            KindedAst.Expr.Def(combineDefSym, Type.freshVar(Kind.Star, loc), loc),
+          KindedAst.Expr.ApplyDef(
+            Ast.DefSymUse(combineDefSym, loc),
             List(
               acc,
               KindedAst.Expr.Apply(
@@ -704,6 +705,7 @@ object Deriver {
                 loc
               ),
             ),
+            Type.freshVar(Kind.Star, loc),
             Type.freshVar(Kind.Star, loc),
             Type.freshVar(Kind.Eff, loc),
             loc

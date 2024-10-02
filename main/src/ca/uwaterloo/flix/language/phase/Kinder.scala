@@ -74,9 +74,6 @@ object Kinder {
 
     val defs = visitDefs(root, taenv, oldRoot, changeSet)
 
-    // Should `instances` not be root.instances.map(ParOps.parMap)?
-    // I.e., for every trait, we check all instances in parallel so we get a parallel task for every instance
-    // instead of check all traits in parallel which spawns k threads each does synchronous code
     val instances = ParOps.parMapValues(root.instances)(_.map(visitInstance(_, taenv, root)))
 
     val effects = ParOps.parMapValues(root.effects)(visitEffect(_, taenv, root))
@@ -337,10 +334,6 @@ object Kinder {
   private def visitExp(exp00: ResolvedAst.Expr, kenv0: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], henv0: Option[(Type.Var, Type.Var)], root: ResolvedAst.Root)(implicit scope: Scope, sctx: SharedContext, flix: Flix): KindedAst.Expr = exp00 match {
     case ResolvedAst.Expr.Var(sym, loc) =>
       KindedAst.Expr.Var(sym, loc)
-
-    case ResolvedAst.Expr.Def(sym, loc) =>
-      val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-      KindedAst.Expr.Def(sym, tvar, loc)
 
     case ResolvedAst.Expr.Sig(sym, loc) =>
       val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
@@ -889,6 +882,10 @@ object Kinder {
       val pat = pat0.map(visitRestrictableChoosePatternVarOrWild)
       val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
       KindedAst.RestrictableChoosePattern.Tag(sym, pat, tvar, loc)
+
+    case ResolvedAst.RestrictableChoosePattern.Error(loc) =>
+      val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+      KindedAst.RestrictableChoosePattern.Error(tvar, loc)
   }
 
   /**
