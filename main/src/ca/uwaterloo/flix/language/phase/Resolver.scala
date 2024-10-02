@@ -996,7 +996,7 @@ object Resolver {
               val tpeVal = traverseOpt(dtpe0)(resolveType(_, Wildness.AllowWild, env1, taenv, ns0, root))
               val effVal = traverseOpt(deff0)(resolveType(_, Wildness.AllowWild, env1, taenv, ns0, root))
               mapN(exp2Val, tpeVal, effVal) {
-                case (e2, t, ef) => ResolvedAst.Expr.LocalDef(ann, sym, fparams, e1, e2, t, ef, loc)
+                case (e2, t, ef) => ResolvedAst.Expr.LocalDef(ann, sym, fparams, t, ef, e1, e2, loc)
               }
           }
       }
