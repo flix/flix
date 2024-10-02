@@ -110,10 +110,8 @@ object ClosureConv {
     case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, purity, loc) =>
       // Step 1: Compute the free variables in the body expression.
       //         (Remove the variables bound by the function itself).
-      //         `sym` is treated as free in exp1, since it will
-      //         converted to a DefnSym when lifted where it is
-      //         no longer free.
-      val fvs = filterBoundParams(freeVars(exp1), fparams).toList
+      val bound = sym :: fparams.map(_.sym)
+      val fvs = filterBoundVars(freeVars(exp1), bound).toList
 
       // Step 2: Convert the free variables into a new parameter list and substitution.
       val (cloParams, subst) = getFormalParamsAndSubst(fvs, loc)
