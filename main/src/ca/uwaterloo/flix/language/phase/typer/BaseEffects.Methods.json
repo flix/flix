@@ -1,0 +1,5 @@
+{
+  "methods": {
+    "java.lang.System::exit": "Sys"
+  }
+}
