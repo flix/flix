@@ -86,7 +86,15 @@ object Simplifier {
       SimplifiedAst.Expr.ApplyDef(sym, es, t, simplifyEffect(eff), loc)
 
     case MonoAst.Expr.ApplyLocalDef(sym, exps, itpe, tpe, eff, loc) =>
-      val ft = visitType(itpe)
+      val ft = visitType(itpe) match {
+        case MonoType.Arrow(args, result) =>
+          println(s"result type is $result, ${loc.format}")
+          args.foldRight(result) {
+            case (a, acc) => MonoType.Arrow(List(a), acc)
+          }
+        case _ => throw InternalCompilerException("bad1", loc)
+      }
+      println(s"ft is $ft, ${loc.format}")
       val e = SimplifiedAst.Expr.Var(sym, ft, loc)
       val es = exps.map(visitExp)
       val t = visitType(tpe)
