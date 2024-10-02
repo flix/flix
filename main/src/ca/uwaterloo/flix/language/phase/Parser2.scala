@@ -2517,7 +2517,7 @@ object Parser2 {
         close(mark, TreeKind.Expr.TryWithBodyFragment)
       } else {
         val token = nth(0)
-        closeWithError(mark, ParseError.UnexpectedToken(NamedTokenSet.FromKinds(Set(TokenKind.CurlyL)), Some(token), SyntacticContext.Expr.OtherExpr, loc = currentSourceLocation()))
+        closeWithError(mark, ParseError.UnexpectedToken(NamedTokenSet.FromKinds(Set(TokenKind.CurlyL)), Some(token), SyntacticContext.WithHandler, loc = currentSourceLocation()))
       }
     }
 
