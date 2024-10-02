@@ -79,12 +79,6 @@ object CodeHinter {
   private def visitExp(exp0: Expr)(implicit root: Root, flix: Flix): List[CodeHint] = exp0 match {
     case Expr.Var(_, _, _) => Nil
 
-    case Expr.Def(sym, _, loc) =>
-      checkDeprecated(sym, loc) ++
-        checkExperimental(sym, loc) ++
-        checkParallel(sym, loc) ++
-        checkLazy(sym, loc)
-
     case Expr.Sig(_, _, _) => Nil
 
     case Expr.Hole(_, _, _, _) => Nil
@@ -101,18 +95,10 @@ object CodeHinter {
       visitExp(exp)
 
     case Expr.Apply(exp, exps, _, _, loc) =>
-      val hints0 = (exp, exps) match {
-        case (Expr.Def(sym, _, _), lambda :: _) =>
-          checkEffect(sym, lambda.tpe, loc)
-        case _ => Nil
-      }
-      hints0 ++ visitExp(exp) ++ visitExps(exps)
+      visitExp(exp) ++ visitExps(exps)
 
     case Expr.ApplyDef(Ast.DefSymUse(sym, loc1), exps, _, _, _, loc2) =>
-      val hints0 = exps match {
-        case lambda :: _ => checkEffect(sym, lambda.tpe, loc2)
-        case _ => Nil
-      }
+      val hints0 = exps.flatMap(e => checkEffect(sym, e.tpe, e.loc))
       val hints1 = checkDeprecated(sym, loc1) ++
         checkExperimental(sym, loc1) ++
         checkParallel(sym, loc1) ++

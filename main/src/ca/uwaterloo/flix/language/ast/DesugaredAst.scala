@@ -275,7 +275,7 @@ object DesugaredAst {
 
     case class Tag(qname: Name.QName, pat: List[VarOrWild], loc: SourceLocation) extends RestrictableChoosePattern
 
-    case class Error(loc: SourceLocation) extends VarOrWild
+    case class Error(loc: SourceLocation) extends VarOrWild with RestrictableChoosePattern
 
   }
 

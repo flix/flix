@@ -937,6 +937,8 @@ object Desugar {
       case WeededAst.RestrictableChoosePattern.Tag(qname, pat, loc) =>
         val p = pat.map(visitVarOrWild)
         DesugaredAst.RestrictableChoosePattern.Tag(qname, p, loc)
+      case WeededAst.RestrictableChoosePattern.Error(loc) =>
+        DesugaredAst.RestrictableChoosePattern.Error(loc)
     }
   }
 

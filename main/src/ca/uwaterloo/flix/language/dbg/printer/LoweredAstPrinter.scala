@@ -54,7 +54,6 @@ object LoweredAstPrinter {
   def print(e: LoweredAst.Expr): DocAst.Expr = e match {
     case Expr.Cst(cst, tpe, loc) => ConstantPrinter.print(cst)
     case Expr.Var(sym, tpe, loc) => DocAst.Expr.Var(sym)
-    case Expr.Def(sym, tpe, loc) => DocAst.Expr.Def(sym)
     case Expr.Sig(sym, tpe, loc) => DocAst.Expr.Sig(sym)
     case Expr.Lambda(fparam, exp, tpe, loc) => DocAst.Expr.Lambda(List(printFormalParam(fparam)), print(exp))
     case Expr.Apply(exp, exps, tpe, eff, loc) => DocAst.Expr.ApplyClo(print(exp), exps.map(print), None)

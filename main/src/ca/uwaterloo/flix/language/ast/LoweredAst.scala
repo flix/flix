@@ -83,10 +83,6 @@ object LoweredAst {
       def eff: Type = Type.Pure
     }
 
-    case class Def(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation) extends Expr {
-      def eff: Type = Type.Pure
-    }
-
     @EliminatedBy(Monomorpher.getClass)
     case class Sig(sym: Symbol.SigSym, tpe: Type, loc: SourceLocation) extends Expr {
       def eff: Type = Type.Pure
