@@ -285,7 +285,6 @@ object Visitor {
     expr match {
       case Expr.Cst(cst, tpe, loc) => ()
       case Expr.Var(sym, tpe, loc) => ()
-      case Expr.Def(sym, tpe, loc) => ()
       case Expr.Sig(sym, tpe, loc) => ()
       case Expr.Hole(sym, tpe, eff, loc) => ()
 

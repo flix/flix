@@ -60,7 +60,6 @@ object HoverProvider {
   }
 
   private def hoverAny(node: AnyRef, uri: String, pos: Position)(implicit root: Root, flix: Flix): JObject = node match {
-    case Expr.Def(sym, tpe, loc) => hoverDef(sym, loc)
     case Expr.Sig(sym, tpe, loc) => hoverSig(sym, loc)
     case Expr.Var(sym, tpe, loc) => hoverType(tpe, loc)
     case hole: Expr.Hole => hoverTypeAndEff(hole.tpe, hole.eff, hole.loc)
