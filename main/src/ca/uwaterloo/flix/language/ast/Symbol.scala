@@ -33,7 +33,6 @@ object Symbol {
     * The set of base effects defined in the Prelude.
     */
   val Exec: EffectSym = mkEffectSym(Name.RootNS, Ident("Exec", SourceLocation.Unknown))
-  val Exit: EffectSym = mkEffectSym(Name.RootNS, Ident("Exit", SourceLocation.Unknown))
   val FileRead: EffectSym = mkEffectSym(Name.RootNS, Ident("FileRead", SourceLocation.Unknown))
   val FileWrite: EffectSym = mkEffectSym(Name.RootNS, Ident("FileWrite", SourceLocation.Unknown))
   val IO: EffectSym = mkEffectSym(Name.RootNS, Ident("IO", SourceLocation.Unknown))
@@ -45,7 +44,7 @@ object Symbol {
   /**
     * Returns `true` if the given effect symbol is a base effect.
     */
-  def isBaseEffect(sym: EffectSym): Boolean = sym match {
+  def isBaseEff(sym: EffectSym): Boolean = sym match {
     case Exec => true
     case FileRead => true
     case FileWrite => true
@@ -55,6 +54,23 @@ object Symbol {
     case Sys => true
     case Time => true
     case _ => false
+  }
+
+  /**
+    * Parses the given String `s` into an effect symbol.
+    *
+    * The String must be a valid name of a base effect.
+    */
+  def parseBaseEff(s: String): Symbol.EffectSym = s match {
+    case "Exec" => Exec
+    case "FileRead" => FileRead
+    case "FileWrite" => FileWrite
+    case "IO" => IO
+    case "Net" => Net
+    case "NonDet" => NonDet
+    case "Sys" => Sys
+    case "Time" => Time
+    case _ => throw InternalCompilerException(s"Unknown base effect: '$s'.", SourceLocation.Unknown)
   }
 
   /**

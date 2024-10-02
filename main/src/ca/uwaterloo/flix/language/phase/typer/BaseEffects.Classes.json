@@ -1,0 +1,6 @@
+{
+  "classes": {
+    "java.lang.ProcessBuilder": "Exec",
+    "java.lang.reflect.Method": "Sys"
+  }
+}

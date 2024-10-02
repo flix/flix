@@ -111,34 +111,36 @@ object Monomorpher {
       * Performance Note: We are on a hot path. We take extra care to avoid redundant type objects.
       */
     def apply(tpe0: Type): Type = tpe0 match {
-      case x: Type.Var =>
+      case v@Type.Var(sym, _) =>
         // Remove variables by substitution, otherwise by default type.
-        s.m.get(x.sym) match {
+        s.m.get(sym) match {
           case Some(t) =>
             // Use default since variables in the output of `s.m` are unconstrained.
             // It is important to do this before apply to avoid looping on variables.
             val t1 = t.map(default)
-            // Use apply to normalize the type, `t1` is ground.
-            apply(t1)
+            // `t1` is ground but still might need normalization.
+            simplify(t1, eqEnv)
           case None =>
-            // Default types are normalized.
-            default(x)
+            // Default types are already normalized, so no normalization needed.
+            default(v)
         }
 
-      case Type.Cst(_, _) =>
-        // Performance: Reuse tpe0.
-        tpe0
+      case cst@Type.Cst(_, _) =>
+        // Maintain and exploit reference equality for performance.
+        cst
 
       case app@Type.Apply(_, _, _) =>
         normalizeApply(apply, app)
 
       case Type.Alias(_, _, t, _) =>
-        // Remove the Alias.
+        // Remove the Alias and continue.
         apply(t)
 
       case Type.AssocType(cst, arg0, _, _) =>
         // Remove the associated type.
-        apply(infallibleReduceAssocType(cst, apply(arg0), eqEnv))
+        val reducedType = infallibleReduceAssocType(cst, apply(arg0), eqEnv)
+        // `reducedType` is ground, but might need normalization.
+        simplify(reducedType, eqEnv)
 
       case Type.JvmToType(_, loc) => throw InternalCompilerException("unexpected JVM type", loc)
       case Type.JvmToEff(_, loc) => throw InternalCompilerException("unexpected JVM eff", loc)
@@ -270,17 +272,16 @@ object Monomorpher {
     * Returns a sorted record, assuming that `rest` is sorted.
     * Sorting is stable on duplicate fields.
     *
-    * Assumes that rest does not contain aliases or associated types.
+    * Assumes that rest does not contain [[Type.AssocType]] or [[Type.Alias]].
     */
   private def mkRecordExtendSorted(label: Name.Label, tpe: Type, rest: Type, loc: SourceLocation): Type = rest match {
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(l), loc1), t, loc2), r, loc3) if l.name < label.name =>
       // Push extend further.
       val newRest = mkRecordExtendSorted(label, tpe, r, loc)
       Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(l), loc1), t, loc2), newRest, loc3)
-    case Type.Cst(_, _) | Type.Apply(_, _, _) =>
+    case Type.Cst(_, _) | Type.Apply(_, _, _) | Type.Var(_, _) =>
       // Non-record related types or a record in correct order.
       Type.mkRecordRowExtend(label, tpe, rest, loc)
-    case v@Type.Var(_, _) => v
     case Type.Alias(_, _, _, _) => throw InternalCompilerException(s"Unexpected alias '$rest'", rest.loc)
     case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected associated type '$rest'", rest.loc)
     case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected JVM type '$rest'", rest.loc)
@@ -299,10 +300,9 @@ object Monomorpher {
       // Push extend further.
       val newRest = mkSchemaExtendSorted(label, tpe, r, loc)
       Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(l), loc1), t, loc2), newRest, loc3)
-    case Type.Cst(_, _) | Type.Apply(_, _, _) =>
+    case Type.Cst(_, _) | Type.Apply(_, _, _) | Type.Var(_, _) =>
       // Non-record related types or a record in correct order.
       Type.mkSchemaRowExtend(label, tpe, rest, loc)
-    case v@Type.Var(_, _) => v
     case Type.Alias(_, _, _, _) => throw InternalCompilerException(s"Unexpected alias '$rest'", rest.loc)
     case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected associated type '$rest'", rest.loc)
     case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected JVM type '$rest'", rest.loc)
@@ -806,9 +806,8 @@ object Monomorpher {
   }
 
   /**
-    * Removes [[Type.Alias]] and [[Type.AssocType]]. This is used for enum and struct types that remain polymorphic.
-    *
-    * OBS: The given type must only contain associated types of ground types.
+    * Removes [[Type.Alias]] and [[Type.AssocType]], or crashes if some [[Type.AssocType]] is not
+    * reducible.
     */
   private def simplify(tpe: Type, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Type = tpe match {
     case v@Type.Var(_, _) => v
@@ -827,14 +826,15 @@ object Monomorpher {
     * OBS: `f` must not output [[Type.AssocType]] or [[Type.Alias]].
     */
   @inline
-  private def normalizeApply(f: Type => Type, app: Type.Apply): Type = {
+  private def normalizeApply(normalize: Type => Type, app: Type.Apply): Type = {
     val Type.Apply(tpe1, tpe2, loc) = app
-    (f(tpe1), f(tpe2)) match {
-      // Simplify equations.
+    (normalize(tpe1), normalize(tpe2)) match {
+      // Simplify effect equations.
       case (Type.Cst(TypeConstructor.Complement, _), y) => Type.mkComplement(y, loc)
       case (Type.Apply(Type.Cst(TypeConstructor.Union, _), x, _), y) => Type.mkUnion(x, y, loc)
       case (Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x, _), y) => Type.mkIntersection(x, y, loc)
 
+      // Simplify case equations.
       case (Type.Cst(TypeConstructor.CaseComplement(sym), _), y) => Type.mkCaseComplement(y, sym, loc)
       case (Type.Apply(Type.Cst(TypeConstructor.CaseIntersection(sym), _), x, _), y) => Type.mkCaseIntersection(x, y, sym, loc)
       case (Type.Apply(Type.Cst(TypeConstructor.CaseUnion(sym), _), x, _), y) => Type.mkCaseUnion(x, y, sym, loc)
@@ -848,7 +848,7 @@ object Monomorpher {
         mkSchemaExtendSorted(label, tpe, rest, loc)
 
       case (x, y) =>
-        // Performance: Reuse tpe, if possible.
+        // Maintain and exploit reference equality for performance.
         if ((x eq tpe1) && (y eq tpe2)) app else Type.Apply(x, y, loc)
     }
   }
