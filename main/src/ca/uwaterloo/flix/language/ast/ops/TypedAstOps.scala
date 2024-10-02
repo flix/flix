@@ -418,6 +418,7 @@ object TypedAstOps {
     */
   private def freeVars(pat0: RestrictableChoosePattern): Set[Symbol.VarSym] = pat0 match {
     case RestrictableChoosePattern.Tag(_, pat, _, _) => pat.flatMap(freeVars).toSet
+    case RestrictableChoosePattern.Error(_, _) => Set.empty
   }
 
   private def freeVars(v: RestrictableChoosePattern.VarOrWild): Option[Symbol.VarSym] = v match {

@@ -226,6 +226,7 @@ object TypeReconstruction {
                 case KindedAst.RestrictableChoosePattern.Error(tvar, loc) => TypedAst.RestrictableChoosePattern.Error(subst(tvar), loc)
               }
               TypedAst.RestrictableChoosePattern.Tag(sym, ps, subst(tvar), loc)
+            case KindedAst.RestrictableChoosePattern.Error(tvar1, loc) => TypedAst.RestrictableChoosePattern.Error(subst(tvar1), loc)
           }
           val body = visitExp(body0)
           TypedAst.RestrictableChooseRule(pat, body)

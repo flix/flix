@@ -44,8 +44,9 @@ object RestrictableChooseConstraintGen {
     * then it returns { Expr.Var, Expr.Xor, Expr.Cst, Expr.And }.
     */
   private def dom(rules: List[KindedAst.RestrictableChooseRule]): Set[Symbol.RestrictableCaseSym] = {
-    rules.map {
-      case KindedAst.RestrictableChooseRule(KindedAst.RestrictableChoosePattern.Tag(sym, _, _, _), _) => sym.sym
+    rules.flatMap {
+      case KindedAst.RestrictableChooseRule(KindedAst.RestrictableChoosePattern.Tag(sym, _, _, _), _) => List(sym.sym)
+      case KindedAst.RestrictableChooseRule(KindedAst.RestrictableChoosePattern.Error(_, _), _) => List.empty
     }.toSet
   }
 
@@ -75,99 +76,113 @@ object RestrictableChooseConstraintGen {
       case KindedAst.Expr.RestrictableChoose(false, exp0, rules0, tpe0, loc) =>
 
         // Get the enum symbols for the matched type
-        val enumSym = rules0.headOption.getOrElse(throw InternalCompilerException("unexpected empty choose", loc)).pat match {
-          case KindedAst.RestrictableChoosePattern.Tag(sym, _, _, _) => sym.sym.enumSym
+        rules0.headOption match {
+          case None => throw InternalCompilerException("unexpected empty choose", loc)
+          case Some(rule) => rule.pat match {
+            case RestrictableChoosePattern.Error(_, loc) => // If the pattern is an error we just return fresh error variables
+              (Type.freshError(Kind.Star, loc), Type.freshError(Kind.Eff, loc))
+
+            case RestrictableChoosePattern.Tag(sym, _, _, _) => // If the pattern is Tag then we emit constraint rules
+              val enumSym = sym.sym.enumSym
+              val enum0 = root.restrictableEnums(enumSym)
+              val universe = enum0.cases.keys.toSet
+              val (enumType, indexVar, _) = instantiatedEnumType(enumSym, enum0, loc.asSynthetic)
+              val domSet = dom(rules0)
+              val domM = toType(domSet, enumSym, loc.asSynthetic)
+
+              // Γ ⊢ e: τ_in
+              val (tpe, eff) = visitExp(exp0)
+              val patTpes = visitRestrictableChoosePatterns(rules0.map(_.pat))
+              c.unifyAllTypes(tpe :: patTpes, loc)
+
+              // τ_in = (... + l_i(τ_i) + ...)[φ_in]
+              c.unifyType(enumType, tpe, loc)
+
+              // φ_in <: dom(M)
+              if (domSet != universe) {
+                unifySubset(indexVar, domM, enumSym, loc.asSynthetic)
+              }
+
+              // Γ, x_i: τ_i ⊢ e_i: τ_out
+              val (tpes, effs) = rules0.map(rule => visitExp(rule.exp)).unzip
+
+              // τ_out
+              c.unifyAllTypes(tpe0 :: tpes, loc)
+              val resTpe = tpe0
+              val resEff = Type.mkUnion(eff :: effs, loc)
+              (resTpe, resEff)
+
+          }
         }
-
-        val `enum` = root.restrictableEnums(enumSym)
-        val universe = `enum`.cases.keys.toSet
-        val (enumType, indexVar, _) = instantiatedEnumType(enumSym, `enum`, loc.asSynthetic)
-        val domSet = dom(rules0)
-        val domM = toType(domSet, enumSym, loc.asSynthetic)
-
-        // Γ ⊢ e: τ_in
-        val (tpe, eff) = visitExp(exp0)
-        val patTpes = visitRestrictableChoosePatterns(rules0.map(_.pat))
-        c.unifyAllTypes(tpe :: patTpes, loc)
-
-        // τ_in = (... + l_i(τ_i) + ...)[φ_in]
-        c.unifyType(enumType, tpe, loc)
-
-        // φ_in <: dom(M)
-        if (domSet != universe) {
-          unifySubset(indexVar, domM, enumSym, loc.asSynthetic)
-        }
-
-        // Γ, x_i: τ_i ⊢ e_i: τ_out
-        val (tpes, effs) = rules0.map(rule => visitExp(rule.exp)).unzip
-
-        // τ_out
-        c.unifyAllTypes(tpe0 :: tpes, loc)
-        val resTpe = tpe0
-        val resEff = Type.mkUnion(eff :: effs, loc)
-        (resTpe, resEff)
 
       case KindedAst.Expr.RestrictableChoose(true, exp0, rules0, tpe0, loc) =>
 
         // Get the enum symbols for the matched type
-        val enumSym = rules0.headOption.getOrElse(throw InternalCompilerException("unexpected empty choose", loc)).pat match {
-          case KindedAst.RestrictableChoosePattern.Tag(sym, _, _, _) => sym.sym.enumSym
+        rules0.headOption match {
+          case None => throw InternalCompilerException("unexpected empty choose", loc)
+          case Some(rule) => rule.pat match {
+            case RestrictableChoosePattern.Error(_, loc) => // If the pattern is an error we just return fresh error variables
+              (Type.freshError(Kind.Star, loc), Type.freshError(Kind.Eff, loc))
+
+            case RestrictableChoosePattern.Tag(sym, _, _, _) => // If the pattern is Tag then we emit constraint rules
+              val enumSym = sym.sym.enumSym
+              val enum0 = root.restrictableEnums(enumSym)
+
+              // The expected enum types and the index variables.
+              val (enumTypeIn, indexInVar, _) = instantiatedEnumType(enumSym, enum0, loc.asSynthetic)
+              val (enumTypeOut, indexOutVar, targsOut) = instantiatedEnumType(enumSym, enum0, loc.asSynthetic)
+              val (bodyTypes, bodyIndexVars, bodyTargs) = rules0.map(_ => instantiatedEnumType(enumSym, enum0, loc.asSynthetic)).unzip3
+              val patternTagTypes = rules0.map(_.pat match {
+                case RestrictableChoosePattern.Tag(sym, _, _, loc) => Type.Cst(TypeConstructor.CaseSet(SortedSet(sym.sym), enumSym), loc.asSynthetic)
+                case RestrictableChoosePattern.Error(tvar, _) => tvar
+              })
+
+              val domSet = dom(rules0)
+              val domM = toType(domSet, enumSym, loc.asSynthetic)
+
+              def mkUnion(l: List[Type]): Type =
+                l.reduceOption(Type.mkCaseUnion(_, _, enumSym, loc.asSynthetic)).
+                  getOrElse(throw InternalCompilerException("unexpected empty choose", loc))
+
+              // Γ ⊢ e: τ_in
+              val (tpe, eff) = visitExp(exp0)
+              val patTpes = visitRestrictableChoosePatterns(rules0.map(_.pat))
+              c.unifyAllTypes(tpe :: patTpes, loc)
+
+              // τ_in = (... + l^in_i(τ^in_i) + ...)[φ_in]
+              c.unifyType(enumTypeIn, tpe, loc)
+
+              // φ_in <: dom(M)
+              unifySubset(indexInVar, domM, enumSym, loc.asSynthetic)
+
+              // Γ, x_i: τ^in_i ⊢ e_i: τ^out_i
+              val (tpes, effs) = rules0.map(rule => visitExp(rule.exp)).unzip
+              tpes.zip(bodyTypes).foreach { case (t1, t2) => c.unifyType(t1, t2, loc) }
+
+              // τ_out = (... + l^out_i(τ^out_i) + ...)[_]
+              ((targsOut :: bodyTargs).transpose).foreach(c.unifyAllTypes(_, loc))
+
+              val indicesAndTags = bodyIndexVars.zip(patternTagTypes)
+              val intros = mkUnion(indicesAndTags.map { case (i, tag) => Type.mkCaseDifference(i, tag, enumSym, loc.asSynthetic) })
+              val potentiallyStable = mkUnion(indicesAndTags.map { case (i, tag) => Type.mkCaseIntersection(i, tag, enumSym, loc.asSynthetic) })
+
+              // φ_out :> (φ_in ∩ potentiallyStable) ∪ intros
+              val set = Type.mkCaseUnion(
+                Type.mkCaseIntersection(indexInVar, potentiallyStable, enumSym, loc),
+                intros,
+                enumSym,
+                loc
+              )
+              unifySubset(set, indexOutVar, enumSym, loc)
+
+              // τ_out
+              c.unifyType(enumTypeOut, tpe0, loc)
+              val resTpe = enumTypeOut
+              val resEff = Type.mkUnion(eff :: effs, loc)
+              (resTpe, resEff)
+
+          }
         }
-
-        val `enum` = root.restrictableEnums(enumSym)
-
-        // The expected enum types and the index variables.
-        val (enumTypeIn, indexInVar, _) = instantiatedEnumType(enumSym, `enum`, loc.asSynthetic)
-        val (enumTypeOut, indexOutVar, targsOut) = instantiatedEnumType(enumSym, `enum`, loc.asSynthetic)
-        val (bodyTypes, bodyIndexVars, bodyTargs) = rules0.map(_ => instantiatedEnumType(enumSym, `enum`, loc.asSynthetic)).unzip3
-        val patternTagTypes = rules0.map(_.pat match {
-          case RestrictableChoosePattern.Tag(sym, _, _, loc) => Type.Cst(TypeConstructor.CaseSet(SortedSet(sym.sym), enumSym), loc.asSynthetic)
-        })
-
-        val domSet = dom(rules0)
-        val domM = toType(domSet, enumSym, loc.asSynthetic)
-
-        def mkUnion(l: List[Type]): Type =
-          l.reduceOption(Type.mkCaseUnion(_, _, enumSym, loc.asSynthetic)).
-            getOrElse(throw InternalCompilerException("unexpected empty choose", loc))
-
-        // Γ ⊢ e: τ_in
-        val (tpe, eff) = visitExp(exp0)
-        val patTpes = visitRestrictableChoosePatterns(rules0.map(_.pat))
-        c.unifyAllTypes(tpe :: patTpes, loc)
-
-        // τ_in = (... + l^in_i(τ^in_i) + ...)[φ_in]
-        c.unifyType(enumTypeIn, tpe, loc)
-
-        // φ_in <: dom(M)
-        unifySubset(indexInVar, domM, enumSym, loc.asSynthetic)
-
-        // Γ, x_i: τ^in_i ⊢ e_i: τ^out_i
-        val (tpes, effs) = rules0.map(rule => visitExp(rule.exp)).unzip
-        tpes.zip(bodyTypes).foreach { case (t1, t2) => c.unifyType(t1, t2, loc) }
-
-        // τ_out = (... + l^out_i(τ^out_i) + ...)[_]
-        ((targsOut :: bodyTargs).transpose).foreach(c.unifyAllTypes(_, loc))
-
-        val indicesAndTags = bodyIndexVars.zip(patternTagTypes)
-        val intros = mkUnion(indicesAndTags.map { case (i, tag) => Type.mkCaseDifference(i, tag, enumSym, loc.asSynthetic) })
-        val potentiallyStable = mkUnion(indicesAndTags.map { case (i, tag) => Type.mkCaseIntersection(i, tag, enumSym, loc.asSynthetic) })
-
-        // φ_out :> (φ_in ∩ potentiallyStable) ∪ intros
-        val set = Type.mkCaseUnion(
-          Type.mkCaseIntersection(indexInVar, potentiallyStable, enumSym, loc),
-          intros,
-          enumSym,
-          loc
-        )
-        unifySubset(set, indexOutVar, enumSym, loc)
-
-        // τ_out
-        c.unifyType(enumTypeOut, tpe0, loc)
-        val resTpe = enumTypeOut
-        val resEff = Type.mkUnion(eff :: effs, loc)
-        (resTpe, resEff)
-
     }
   }
 
@@ -340,6 +355,8 @@ object RestrictableChooseConstraintGen {
         c.unifyType(tagType, Type.mkPureArrow(tpe, tvar, loc), loc)
         val resTpe = tvar
         resTpe
+
+      case KindedAst.RestrictableChoosePattern.Error(_, loc) => Type.freshError(Kind.Star, loc)
     }
 
     visit(pat0)

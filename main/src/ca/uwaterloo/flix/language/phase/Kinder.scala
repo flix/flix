@@ -889,6 +889,10 @@ object Kinder {
       val pat = pat0.map(visitRestrictableChoosePatternVarOrWild)
       val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
       KindedAst.RestrictableChoosePattern.Tag(sym, pat, tvar, loc)
+
+    case ResolvedAst.RestrictableChoosePattern.Error(loc) =>
+      val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+      KindedAst.RestrictableChoosePattern.Error(tvar, loc)
   }
 
   /**

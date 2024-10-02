@@ -669,6 +669,7 @@ object SemanticTokensProvider {
         case RestrictableChoosePattern.Error(_, _) => Iterator.empty
       }
       Iterator(t1) ++ ts
+    case RestrictableChoosePattern.Error(_, _) => Iterator.empty
   }
 
   /**
