@@ -102,10 +102,7 @@ object ClosureConv {
       Expr.LetRec(sym, visitExp(e1), visitExp(e2), tpe, purity, loc)
 
     case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, purity, loc) =>
-      val t = fparams.map(_.tpe).foldRight(exp1.tpe) {
-        case (t, acc) => MonoType.Arrow(List(t), acc)
-      }
-      println(s"closureconv: exp1.tpe: ${exp1.tpe}, ${loc.format}\nt is $t, ${loc.format}")
+      val t = MonoType.Arrow(fparams.map(_.tpe), exp1.tpe)
       val e1 = mkLambdaClosure(fparams, exp1, t, sym.loc)
       val e2 = visitExp(exp2)
       Expr.LetRec(sym, e1, e2, tpe, purity, loc)

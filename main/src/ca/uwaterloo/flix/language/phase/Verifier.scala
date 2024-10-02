@@ -373,9 +373,7 @@ object Verifier {
 
           val decl = MonoType.Arrow(defn.cparams.map(_.tpe), signature)
           val actual = MonoType.Arrow(ts, tpe)
-          if (loc.format == "main/test/flix/Test.Exp.Let.Rec.flix:8:13") {
-            println(s"defn.tpe: ${defn.tpe}\nsignature: $signature\ndecl: $decl\nactual: $actual")
-          }
+
           checkEq(decl, actual, loc)
           tpe
 
