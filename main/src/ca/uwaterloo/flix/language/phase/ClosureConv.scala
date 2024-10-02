@@ -112,6 +112,7 @@ object ClosureConv {
       //         (Remove the variables bound by the function itself).
       val bound = sym :: fparams.map(_.sym)
       val fvs = filterBoundVars(freeVars(exp1), bound).toList
+      bound.foreach(v => assert(!fvs.contains(v)))
 
       // Step 2: Convert the free variables into a new parameter list and substitution.
       val (cloParams, subst) = getFormalParamsAndSubst(fvs, loc)
@@ -194,7 +195,7 @@ object ClosureConv {
     //             let a = 1;
     //             def f(b) = b;
     //             (c -> f(c))(a)
-    val fvs = filterBoundParams(freeVars(exp), fparams).toList.flatMap(fv => localDefFreeVars.getOrElse(fv.sym, List.empty))
+    val fvs = filterBoundParams(freeVars(exp), fparams).flatMap(fv => localDefFreeVars.getOrElse(fv.sym, List.empty)).toList
 
     // Step 2: Convert the free variables into a new parameter list and substitution.
     val (cloParams, subst) = getFormalParamsAndSubst(fvs, loc)
