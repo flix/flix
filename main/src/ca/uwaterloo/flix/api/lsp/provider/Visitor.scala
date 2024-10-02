@@ -59,6 +59,7 @@ import ca.uwaterloo.flix.language.ast.Ast.TraitConstraint
 import ca.uwaterloo.flix.language.ast.Ast.TraitSymUse
 import ca.uwaterloo.flix.language.ast.TypedAst.AssocTypeDef
 import ca.uwaterloo.flix.language.ast.Ast.AssocTypeSymUse
+import ca.uwaterloo.flix.language.ast.Ast.RestrictableEnumSymUse
 
 object Visitor {
 
@@ -366,6 +367,7 @@ object Visitor {
       }
 
       case Expr.OpenAs(symUse, exp, tpe, loc) => {
+        visitResEnumSymUse(symUse)
         visitExpr(exp) 
       }
 
@@ -615,6 +617,10 @@ object Visitor {
 
       case Expr.Error(m, tpe, eff) => ()
     }
+  }
+
+  private def visitResEnumSymUse(symUse: RestrictableEnumSymUse)(implicit a: Acceptor, c: Consumer): Unit = {
+    // TODO
   }
 
   private def visitFParam(fparam: FormalParam)(implicit a: Acceptor, c: Consumer): Unit = {
