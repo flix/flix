@@ -39,7 +39,6 @@ object Symbol {
   val Net: EffectSym = mkEffectSym(Name.RootNS, Ident("Net", SourceLocation.Unknown))
   val NonDet: EffectSym = mkEffectSym(Name.RootNS, Ident("NonDet", SourceLocation.Unknown))
   val Sys: EffectSym = mkEffectSym(Name.RootNS, Ident("Sys", SourceLocation.Unknown))
-  val Time: EffectSym = mkEffectSym(Name.RootNS, Ident("Time", SourceLocation.Unknown))
 
   /**
     * Returns `true` if the given effect symbol is a base effect.
@@ -52,7 +51,6 @@ object Symbol {
     case Net => true
     case NonDet => true
     case Sys => true
-    case Time => true
     case _ => false
   }
 
@@ -69,7 +67,6 @@ object Symbol {
     case "Net" => Net
     case "NonDet" => NonDet
     case "Sys" => Sys
-    case "Time" => Time
     case _ => throw InternalCompilerException(s"Unknown base effect: '$s'.", SourceLocation.Unknown)
   }
 
