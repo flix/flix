@@ -126,12 +126,12 @@ object LambdaLift {
       val es = exps.map(visitExp)
       LiftedAst.Expr.ApplyDef(sym, es, tpe, purity, loc)
 
-    case SimplifiedAst.Expr.ApplyLocalDef(sym, exps, itpe, tpe, purity, loc) =>
+    case SimplifiedAst.Expr.ApplyLocalDef(sym, exps, _, tpe, purity, loc) =>
       val es = exps.map(visitExp)
       val newDefnSym = ctx.liftedLocalDefs.asScala.toMap.get(sym)
       newDefnSym match {
         case Some(defnSym) => LiftedAst.Expr.ApplyDef(defnSym, es, tpe, purity, loc)
-        case None => throw InternalCompilerException(s"unable to find lifted def for local def $sym", loc)
+        case None => throw InternalCompilerException(s"unable to find lifted def for local def $sym at ${loc.format}", loc)
       }
 
     case SimplifiedAst.Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
@@ -178,16 +178,20 @@ object LambdaLift {
         case _ => throw InternalCompilerException(s"Unexpected expression: '$e1'.", loc)
       }
 
-    case SimplifiedAst.Expr.LocalDef(sym, fparams, exp1, exp2, tpe, purity, loc) =>
-      val body = visitExp(exp1)
+    case SimplifiedAst.Expr.LocalDef(sym, fparams, exp1, exp2, _, _, loc) =>
       val freshDefnSym = Symbol.freshDefnSym(sym0)
+      ctx.liftedLocalDefs.add(sym -> freshDefnSym)
+      // It is **very import** we add the mapping `sym -> freshDefnSym` to ctx
+      // before visiting the body since exp1 may contain recursive calls to `sym`
+      // so they need to be substituted for `freshDefnSym` in `exp1` which
+      // `visitExp` handles for us.
+      val body = visitExp(exp1)
       val ann = Annotations.Empty
       val mod = Ast.Modifiers(Ast.Modifier.Synthetic :: Nil)
       val fps = fparams.map(visitFormalParam)
       val defTpe = exp1.tpe
       val liftedDef = LiftedAst.Def(ann, mod, freshDefnSym, List.empty, fps, body, defTpe, loc.asSynthetic)
       ctx.liftedDefs.add(freshDefnSym -> liftedDef)
-      ctx.liftedLocalDefs.add(sym -> freshDefnSym)
       visitExp(exp2) // LocalDef node is erased here
 
     case SimplifiedAst.Expr.Scope(sym, exp, tpe, purity, loc) =>
