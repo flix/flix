@@ -42,7 +42,7 @@ object HoverProvider {
   def hover(uri: String, pos: Position)(implicit root: Root, flix: Flix): JObject = {
     var stack: List[AnyRef] = Nil
 
-    object hoverConsumer extends Visitor.Consumer {
+    case object hoverConsumer extends Visitor.Consumer {
       override def consumeExpr(exp: Expr): Unit = {
         stack = exp :: stack
       }
@@ -51,7 +51,7 @@ object HoverProvider {
       }
     }
 
-    Visitor.visitRoot(root, hoverConsumer, Visitor.inside(uri, pos))
+    Visitor.visitRoot(root, hoverConsumer, Visitor.insideAcceptor(uri, pos))
 
     stack.headOption match {
       case None => mkNotFound(uri, pos)

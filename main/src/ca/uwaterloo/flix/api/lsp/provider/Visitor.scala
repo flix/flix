@@ -83,6 +83,21 @@ object Visitor {
     def consumeTypeAlias(alias: TypeAlias): Unit = ()
   }
 
+  trait Acceptor {
+    def accept(loc: SourceLocation): Boolean;
+  }
+
+  case object allAcceptor extends Acceptor {
+    def accept(loc: SourceLocation): Boolean = true
+  }
+
+  case class fileAcceptor(uri: String) extends Acceptor {
+    def accept(loc: SourceLocation): Boolean = uri == loc.source.name
+  }
+
+  case class insideAcceptor(uri: String, pos: Position) extends Acceptor {
+    def accept(loc: SourceLocation): Boolean = inside(uri, pos)(loc)
+  }
 
   /**
     * Applies a `seenRoot` to the root AST node and recursively visits
@@ -92,33 +107,34 @@ object Visitor {
     * @param seenX   The `seen` function that is to be applied to X type AST nodes.
     * @param accept  A predicate determining whether to visit a child node.
     */
-  def visitRoot(root: Root, consumer: Consumer, accept: SourceLocation => Boolean): Unit = {
+  def visitRoot(root: Root, consumer: Consumer, acceptor: Acceptor): Unit = {
 
     implicit val c = consumer
+    implicit val a = acceptor
 
-    root.defs.foreach{ case (_, defn) => visitDef(defn, accept) }
+    root.defs.foreach{ case (_, defn) => visitDef(defn) }
 
-    root.effects.foreach{ case (_, eff) => visitEffect(eff, accept) }
+    root.effects.foreach{ case (_, eff) => visitEffect(eff) }
 
     // root.entryPoint.map{ case v => visitEntryPoint(visit, accept)(v) }
 
-    root.enums.foreach{ case (_, e) => visitEnum(e, accept) }
+    root.enums.foreach{ case (_, e) => visitEnum(e) }
 
-    root.instances.foreach{ case (_, l) => l.foreach(ins => visitInstance(ins, accept)) }
+    root.instances.foreach{ case (_, l) => l.foreach(visitInstance) }
 
     // root.modules.map { case (_, v) => visitModule(v, ???, ???) }
 
-    root.restrictableEnums.foreach{ case (_, e) => visitResEnum(e, accept) } // experimental, maybe should be removed? 
+    root.restrictableEnums.foreach{ case (_, enm) => visitResEnum(enm) } // experimental, maybe should be removed? 
 
-    root.sigs.foreach{ case (_, sig) => visitSig(sig, accept) }
+    root.sigs.foreach{ case (_, sig) => visitSig(sig) }
 
-    root.structs.foreach{ case (_, struct) => visitStruct(struct, accept) }
+    root.structs.foreach{ case (_, struct) => visitStruct(struct) }
 
     // root.traitEnv.map{ case (_, v) => visitTraitEnv(???, ???)(v) };
 
-    root.traits.foreach{ case (_, t) => visitTrait(t, accept) }
+    root.traits.foreach{ case (_, traitt) => visitTrait(traitt) }
 
-    root.typeAliases.foreach{ case (_, alias) => visitTypeAlias(alias, accept) }
+    root.typeAliases.foreach{ case (_, alias) => visitTypeAlias(alias) }
 
     // root.uses
   }
@@ -145,7 +161,7 @@ object Visitor {
     !(loc1.endLine == loc2.endLine && loc1.endCol > loc2.endCol)
   }
 
-  private def visitEnum(e: Enum, accept: SourceLocation => Boolean)(implicit consumer: Consumer): Unit = {
+  private def visitEnum(enm: Enum)(implicit a: Acceptor, c: Consumer): Unit = {
     // TODO
     // visit(e)
     // e.cases
@@ -153,12 +169,12 @@ object Visitor {
     //  .foreach(c => if (accept(c.loc)) { visitCase(c, ???, accept) })
   }
 
-  private def visitCase(c: Case, accept: SourceLocation => Boolean)(implicit consumer: Consumer): Unit = {
+  private def visitCase(cse: Case)(implicit a: Acceptor, c: Consumer): Unit = {
     // TODO
     // visit(c)
   }
 
-  private def visitResEnum(e: RestrictableEnum, accept: SourceLocation => Boolean)(implicit consumer: Consumer): Unit = {
+  private def visitResEnum(enm: RestrictableEnum)(implicit a: Acceptor, c: Consumer): Unit = {
     // TODO
     // visit(e)
     // e.cases
@@ -166,18 +182,18 @@ object Visitor {
     //  .foreach(c => if (accept(c.loc)) { visitResCase(c, ???, accept) })
   }
 
-  private def visitResCase(c: RestrictableCase, accept: SourceLocation => Boolean)(implicit consumer: Consumer): Unit = {
+  private def visitResCase(cse: RestrictableCase)(implicit a: Acceptor, c: Consumer): Unit = {
     // TODO
     // visit(c)
   }
 
-  private def visitInstance(ins: Instance, accept: SourceLocation => Boolean)(implicit consumer: Consumer): Unit = {
+  private def visitInstance(ins: Instance)(implicit a: Acceptor, c: Consumer): Unit = {
     // TODO
     // visit(ins)
     // ins.defs.foreach(defn => visitDef(defn, ???, accept))
   }
 
-  private def visitSig(sig: Sig, accept: SourceLocation => Boolean)(implicit consumer: Consumer): Unit = {
+  private def visitSig(sig: Sig)(implicit a: Acceptor, c: Consumer): Unit = {
     // TODO
     // visit(sig)
     // if (accept(sig.spec.loc)) {
@@ -191,7 +207,7 @@ object Visitor {
     // )
   }
 
-  private def visitStruct(struct: Struct, accept: SourceLocation => Boolean)(implicit consumer: Consumer): Unit = {
+  private def visitStruct(struct: Struct)(implicit a: Acceptor, c: Consumer): Unit = {
     // TODO
     // visit(struct)
     // struct.fields.foreach{case (_, field) => {
@@ -201,61 +217,61 @@ object Visitor {
     // }}
   }
 
-  private def visitStructField(field: StructField, accept: SourceLocation => Boolean)(implicit consumer: Consumer): Unit = {
+  private def visitStructField(field: StructField)(implicit a: Acceptor, c: Consumer): Unit = {
     // TODO
     // visit(field)
   }
 
-  private def visitTrait(t: Trait, accept: SourceLocation => Boolean)(implicit consumer: Consumer): Unit = {
+  private def visitTrait(t: Trait)(implicit a: Acceptor, c: Consumer): Unit = {
     // TODO
     // visit(t)
     // t.laws.foreach(law => visitDef(law, ???, accept))
     // t.sigs.foreach(sig => visitSig(sig, ???, accept))
   }
   
-  private def visitEffect(eff: Effect, accept: SourceLocation => Boolean)(implicit consumer: Consumer): Unit = {
-    if (!(accept(eff.loc))) { return }
+  private def visitEffect(eff: Effect)(implicit a: Acceptor, c: Consumer): Unit = {
+    if (!(a.accept(eff.loc))) { return }
     // TODO
     // visit(eff)
     // ???
   }
 
-  private def visitDef(defn: Def, accept: SourceLocation => Boolean)(implicit consumer: Consumer): Unit = {
-    val insideDefn = accept(defn.spec.loc) || accept(defn.exp.loc) || accept(defn.sym.loc)
+  private def visitDef(defn: Def)(implicit a: Acceptor, c: Consumer): Unit = {
+    val insideDefn = a.accept(defn.spec.loc) || a.accept(defn.exp.loc) || a.accept(defn.sym.loc)
     if (!insideDefn) { return }
 
-    consumer.consumeDef(defn)
+    c.consumeDef(defn)
 
-    visitSpec(defn.spec, accept)
-    visitExpr(defn.exp, accept)
+    visitSpec(defn.spec)
+    visitExpr(defn.exp)
   }
 
-  private def visitSpec(spec: Spec, accept: SourceLocation => Boolean)(implicit consumer: Consumer): Unit = {
+  private def visitSpec(spec: Spec)(implicit a: Acceptor, c: Consumer): Unit = {
     // TODO
   }
 
-  private def visitTypeAlias(alias: TypeAlias, accept: SourceLocation => Boolean)(implicit consumer: Consumer): Unit = {
+  private def visitTypeAlias(alias: TypeAlias)(implicit a: Acceptor, c: Consumer): Unit = {
     // TODO
     // visit(alias)
     // alias.tparams.map(tp => if (accept(tp.loc)) { visitTypeParam(tp, ???, accept) })
   }
 
-  private def visitTypeParam(tparam: TypeParam, accept: SourceLocation => Boolean)(implicit consumer: Consumer): Unit = {
+  private def visitTypeParam(tparam: TypeParam)(implicit a: Acceptor, c: Consumer): Unit = {
     // TODO
     // visit(tparam)
   }
 
-  private def visitUse(use: UseOrImport, accept: SourceLocation => Boolean)(implicit consumer: Consumer): Unit = {
+  private def visitUse(use: UseOrImport)(implicit a: Acceptor, c: Consumer): Unit = {
     // TODO
     // visit(use)
   }
 
-  private def visitExpr(expr: Expr, accept: SourceLocation => Boolean)(implicit consumer: Consumer): Unit = {
+  private def visitExpr(expr: Expr)(implicit a: Acceptor, c: Consumer): Unit = {
     // TODO: handle mutually recursive calls to other visit functions
 
-    if (!(accept(expr.loc))) { return }
+    if (!(a.accept(expr.loc))) { return }
 
-    consumer.consumeExpr(expr)
+    c.consumeExpr(expr)
 
     expr match {
       case Expr.Cst(cst, tpe, loc) => ()
@@ -265,298 +281,298 @@ object Visitor {
       case Expr.Hole(sym, tpe, eff, loc) => ()
 
       case Expr.HoleWithExp(exp, tpe, eff, loc) => {
-        visitExpr(exp, accept) 
+        visitExpr(exp) 
       }
 
       case Expr.OpenAs(symUse, exp, tpe, loc) => {
-        visitExpr(exp, accept) 
+        visitExpr(exp) 
       }
 
       case Expr.Use(sym, alias, exp, loc) => {
-        visitExpr(exp, accept) 
+        visitExpr(exp) 
       }
 
       case Expr.Lambda(fparam, exp, tpe, loc) => {
-        visitFParam(fparam, accept)
-        visitExpr(exp, accept) 
+        visitFParam(fparam)
+        visitExpr(exp) 
       }
 
       case Expr.Apply(exp, exps, tpe, eff, loc) => {
-        visitExpr(exp, accept) 
-        exps.foreach(e => visitExpr(e, accept))
+        visitExpr(exp) 
+        exps.foreach(e => visitExpr(e))
       }
 
       case Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
-        exps.foreach(e => visitExpr(e, accept))
+        exps.foreach(e => visitExpr(e))
 
       case Expr.Unary(sop, exp, tpe, eff, loc) => {
-        visitExpr(exp, accept) 
+        visitExpr(exp) 
       }
 
       case Expr.Binary(sop, exp1, exp2, tpe, eff, loc) =>
-        visitExpr(exp1, accept) 
-        visitExpr(exp2, accept) 
+        visitExpr(exp1) 
+        visitExpr(exp2) 
 
       case Expr.Let(sym, mod, exp1, exp2, tpe, eff, loc) =>
-        visitExpr(exp1, accept) 
-        visitExpr(exp2, accept) 
+        visitExpr(exp1) 
+        visitExpr(exp2) 
 
       case Expr.LetRec(sym, ann, mod, exp1, exp2, tpe, eff, loc) =>
-        visitAnnotations(ann, accept)
-        visitExpr(exp1, accept) 
-        visitExpr(exp2, accept) 
+        visitAnnotations(ann)
+        visitExpr(exp1) 
+        visitExpr(exp2) 
 
       case Expr.Region(tpe, loc) => ()
 
       case Expr.Scope(sym, regionVar, exp, tpe, eff, loc) =>
-        visitExpr(exp, accept) 
+        visitExpr(exp) 
 
       case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
-        visitExpr(exp1, accept) 
-        visitExpr(exp2, accept) 
-        visitExpr(exp3, accept) 
+        visitExpr(exp1) 
+        visitExpr(exp2) 
+        visitExpr(exp3) 
 
       case Expr.Stm(exp1, exp2, _, _, _) =>
-        visitExpr(exp1, accept) 
-        visitExpr(exp2, accept) 
+        visitExpr(exp1) 
+        visitExpr(exp2) 
 
       case Expr.Discard(exp, eff, loc) =>
-        visitExpr(exp, accept) 
+        visitExpr(exp) 
 
       case Expr.Match(exp, rules, tpe, eff, loc) =>
-        visitExpr(exp, accept) 
-        rules.foreach(rule => visitMatchRule(rule, accept))
+        visitExpr(exp) 
+        rules.foreach(rule => visitMatchRule(rule))
 
       case Expr.TypeMatch(exp, rules, tpe, eff, loc) =>
-        visitExpr(exp, accept) 
-        rules.foreach(rule => visitTypeMatchRule(rule, accept))
+        visitExpr(exp) 
+        rules.foreach(rule => visitTypeMatchRule(rule))
 
       case Expr.RestrictableChoose(star, exp, rules, tpe, eff, loc) =>
         // Does nothing because feature is experimental
 
       case Expr.Tag(sym, exp, tpe, eff, loc) =>
-        visitExpr(exp, accept) 
+        visitExpr(exp) 
 
       case Expr.RestrictableTag(sym, exp, tpe, eff, loc) =>
-        visitExpr(exp, accept) 
+        visitExpr(exp) 
 
       case Expr.Tuple(exps, tpe, eff, loc) =>
-        exps.foreach(e => visitExpr(e, accept))
+        exps.foreach(e => visitExpr(e))
 
       case Expr.RecordEmpty(tpe, loc) => ()
 
       case Expr.RecordSelect(exp, label, tpe, eff, loc) =>
-        visitExpr(exp, accept) 
+        visitExpr(exp) 
 
       case Expr.RecordExtend(label, exp1, exp2, tpe, eff, loc) =>
-        visitExpr(exp1, accept) 
-        visitExpr(exp2, accept) 
+        visitExpr(exp1) 
+        visitExpr(exp2) 
 
       case Expr.RecordRestrict(label, exp, tpe, eff, loc) =>
-        visitExpr(exp, accept) 
+        visitExpr(exp) 
 
       case Expr.ArrayLit(exps, exp, tpe, eff, loc) =>
-        visitExpr(exp, accept) 
-        exps.foreach(e => visitExpr(e, accept))
+        visitExpr(exp) 
+        exps.foreach(e => visitExpr(e))
 
       case Expr.ArrayNew(exp1, exp2, exp3, tpe, eff, loc) =>
-        visitExpr(exp1, accept) 
-        visitExpr(exp2, accept) 
-        visitExpr(exp3, accept) 
+        visitExpr(exp1) 
+        visitExpr(exp2) 
+        visitExpr(exp3) 
 
       case Expr.ArrayLoad(exp1, exp2, tpe, eff, loc) =>
-        visitExpr(exp1, accept) 
-        visitExpr(exp2, accept) 
+        visitExpr(exp1) 
+        visitExpr(exp2) 
 
       case Expr.ArrayLength(exp, eff, loc) =>
-        visitExpr(exp, accept) 
+        visitExpr(exp) 
 
       case Expr.ArrayStore(exp1, exp2, exp3, eff, loc) =>
-        visitExpr(exp1, accept) 
-        visitExpr(exp2, accept) 
-        visitExpr(exp3, accept)
+        visitExpr(exp1) 
+        visitExpr(exp2) 
+        visitExpr(exp3)
 
       case Expr.StructNew(sym, fields, region, tpe, eff, loc) =>
         fields.foreach{ case (_, e) => { 
-          visitExpr(e, accept)  
+          visitExpr(e)  
         }}
 
-        visitExpr(region, accept)
+        visitExpr(region)
 
-        visitExpr(region, accept) 
+        visitExpr(region) 
 
       case Expr.StructGet(exp, sym, tpe, eff, loc) =>
-        visitExpr(exp, accept) 
+        visitExpr(exp) 
 
       case Expr.StructPut(exp1, sym, exp2, tpe, eff, loc) =>
-        visitExpr(exp1, accept) 
-        visitExpr(exp2, accept) 
+        visitExpr(exp1) 
+        visitExpr(exp2) 
 
       case Expr.VectorLit(exps, tpe, eff, loc) =>
-        exps.foreach(e => visitExpr(e, accept))
+        exps.foreach(e => visitExpr(e))
 
       case Expr.VectorLoad(exp1, exp2, tpe, eff, loc) =>
-        visitExpr(exp1, accept) 
-        visitExpr(exp2, accept) 
+        visitExpr(exp1) 
+        visitExpr(exp2) 
 
       case Expr.VectorLength(exp, loc) =>
-        visitExpr(exp, accept)
+        visitExpr(exp)
 
       case Expr.Ascribe(exp, tpe, eff, loc) =>
-        visitExpr(exp, accept)
+        visitExpr(exp)
 
       case Expr.InstanceOf(exp, clazz, loc) =>
-        visitExpr(exp, accept)
+        visitExpr(exp)
 
       case Expr.CheckedCast(cast, exp, tpe, eff, loc) =>
-        visitExpr(exp, accept)
+        visitExpr(exp)
         // TODO maybe we need to visit `cast` (`CheckTypeCast`)?
 
       case Expr.UncheckedCast(exp, declaredType, declaredEff, tpe, eff, loc) =>
-        visitExpr(exp, accept)
-        declaredType.foreach(t => visitType(t, accept))
-        declaredEff.foreach(t => visitType(t, accept))
+        visitExpr(exp)
+        declaredType.foreach(t => visitType(t))
+        declaredEff.foreach(t => visitType(t))
 
       case Expr.UncheckedMaskingCast(exp, tpe, eff, loc) =>
-        visitExpr(exp, accept)
+        visitExpr(exp)
 
       case Expr.Without(exp, effUse, tpe, eff, loc) =>
-        visitExpr(exp, accept)
+        visitExpr(exp)
 
       case Expr.TryCatch(exp, rules, tpe, eff, loc) =>
-        visitExpr(exp, accept)
-        rules.foreach(rule => visitCatchRule(rule, accept))
+        visitExpr(exp)
+        rules.foreach(rule => visitCatchRule(rule))
 
       case Expr.Throw(exp, tpe, eff, loc) =>
-        visitExpr(exp, accept)
+        visitExpr(exp)
 
       case Expr.TryWith(exp, effUse, rules, tpe, eff, loc) =>
-        visitExpr(exp, accept)
-        rules.foreach(rule => visitHandlerRule(rule, accept))
+        visitExpr(exp)
+        rules.foreach(rule => visitHandlerRule(rule))
 
       case Expr.Do(op, exps, tpe, eff, loc) =>
-        exps.foreach(e => visitExpr(e, accept))
+        exps.foreach(e => visitExpr(e))
 
       case Expr.InvokeConstructor(constructor, exps, tpe, eff, loc) =>
-        exps.foreach(e => visitExpr(e, accept))
+        exps.foreach(e => visitExpr(e))
 
       case Expr.InvokeMethod(method, exp, exps, tpe, eff, loc) =>
-        visitExpr(exp, accept)
-        exps.foreach(e => visitExpr(e, accept))
+        visitExpr(exp)
+        exps.foreach(e => visitExpr(e))
 
       case Expr.InvokeStaticMethod(method, exps, tpe, eff, loc) =>
-        exps.foreach(e => visitExpr(e, accept))
+        exps.foreach(e => visitExpr(e))
 
       case Expr.GetField(field, exp, tpe, eff, loc) =>
-        visitExpr(exp, accept)
+        visitExpr(exp)
 
       case Expr.PutField(field, exp1, exp2, tpe, eff, loc) =>
-        visitExpr(exp1, accept) 
-        visitExpr(exp2, accept) 
+        visitExpr(exp1) 
+        visitExpr(exp2) 
 
       case Expr.GetStaticField(field, tpe, eff, loc) => ()
 
       case Expr.PutStaticField(field, exp, tpe, eff, loc) =>
-        visitExpr(exp, accept) 
+        visitExpr(exp) 
 
       case Expr.NewObject(name, clazz, tpe, eff, methods, loc) => ()
 
       case Expr.NewChannel(exp1, exp2, tpe, eff, loc) =>
-        visitExpr(exp1, accept) 
-        visitExpr(exp2, accept) 
+        visitExpr(exp1) 
+        visitExpr(exp2) 
 
       case Expr.GetChannel(exp, tpe, eff, loc) =>
-        visitExpr(exp, accept)
+        visitExpr(exp)
 
       case Expr.PutChannel(exp1, exp2, tpe, eff, loc) =>
-        visitExpr(exp1, accept) 
-        visitExpr(exp2, accept) 
+        visitExpr(exp1) 
+        visitExpr(exp2) 
 
       case Expr.SelectChannel(rules, default, tpe, eff, loc) =>
         rules.foreach(rule => {
-          visitExpr(rule.chan, accept)
-          visitExpr(rule.exp, accept)
+          visitExpr(rule.chan)
+          visitExpr(rule.exp)
         })
 
-        default.foreach(e => visitExpr(e, accept))
+        default.foreach(e => visitExpr(e))
 
       case Expr.Spawn(exp1, exp2, tpe, eff, loc) =>
-        visitExpr(exp1, accept) 
-        visitExpr(exp2, accept) 
+        visitExpr(exp1) 
+        visitExpr(exp2) 
 
       case Expr.ParYield(frags, exp, tpe, eff, loc) =>
-        visitExpr(exp, accept)
-        frags.foreach(frag => visitParYieldFrag(frag, accept))
+        visitExpr(exp)
+        frags.foreach(frag => visitParYieldFrag(frag))
 
       case Expr.Lazy(exp, tpe, loc) =>
-        visitExpr(exp, accept)
+        visitExpr(exp)
 
       case Expr.Force(exp, tpe, eff, loc) =>
-        visitExpr(exp, accept)
+        visitExpr(exp)
 
       case Expr.FixpointConstraintSet(cs, tpe, loc) =>
-        cs.foreach(con => visitConstraint(con, accept))
+        cs.foreach(con => visitConstraint(con))
 
       case Expr.FixpointLambda(pparams, exp, tpe, eff, loc) =>
-        visitExpr(exp, accept)
+        visitExpr(exp)
 
       case Expr.FixpointMerge(exp1, exp2, tpe, eff, loc) =>
-        visitExpr(exp1, accept) 
-        visitExpr(exp2, accept) 
+        visitExpr(exp1) 
+        visitExpr(exp2) 
 
       case Expr.FixpointSolve(exp, tpe, eff, loc) =>
-        visitExpr(exp, accept)
+        visitExpr(exp)
 
       case Expr.FixpointFilter(pred, exp, tpe, eff, loc) =>
-        visitExpr(exp, accept)
+        visitExpr(exp)
 
       case Expr.FixpointInject(exp, pred, tpe, eff, loc) =>
-        visitExpr(exp, accept)
+        visitExpr(exp)
 
       case Expr.FixpointProject(pred, exp, tpe, eff, loc) =>
-        visitExpr(exp, accept)
+        visitExpr(exp)
 
       case Expr.Error(m, tpe, eff) => ()
     }
   }
 
-  private def visitFParam(fparam: FormalParam, accept: SourceLocation => Boolean)(implicit consumer: Consumer): Unit = {
+  private def visitFParam(fparam: FormalParam)(implicit a: Acceptor, c: Consumer): Unit = {
     // TODO
   }
 
-  private def visitHandlerRule(rule: HandlerRule, accept: SourceLocation => Boolean)(implicit consumer: Consumer): Unit = {
+  private def visitHandlerRule(rule: HandlerRule)(implicit a: Acceptor, c: Consumer): Unit = {
     // TODO
   }
 
-  private def visitParYieldFrag(frag: ParYieldFragment, accept: SourceLocation => Boolean)(implicit consumer: Consumer): Unit = {
+  private def visitParYieldFrag(frag: ParYieldFragment)(implicit a: Acceptor, c: Consumer): Unit = {
     // TODO
   }
 
-  private def visitMatchRule(rule: MatchRule, accept: SourceLocation => Boolean)(implicit consumer: Consumer): Unit = {
+  private def visitMatchRule(rule: MatchRule)(implicit a: Acceptor, c: Consumer): Unit = {
     // TODO
   }
 
-  private def visitTypeMatchRule(rule: TypeMatchRule, accept: SourceLocation => Boolean)(implicit consumer: Consumer): Unit = {
+  private def visitTypeMatchRule(rule: TypeMatchRule)(implicit a: Acceptor, c: Consumer): Unit = {
     // TODO
   }
 
-  private def visitType(tpe: Type, accept: SourceLocation => Boolean)(implicit consumer: Consumer): Unit = {
+  private def visitType(tpe: Type)(implicit a: Acceptor, c: Consumer): Unit = {
     // TODO
   }
 
-  private def visitAnnotations(ann: Annotations, accept: SourceLocation => Boolean)(implicit consumer: Consumer): Unit = {
+  private def visitAnnotations(anns: Annotations)(implicit a: Acceptor, c: Consumer): Unit = {
     // TODO
   }
 
-  private def visitCatchRule(rule: CatchRule, accept: SourceLocation => Boolean)(implicit consumer: Consumer): Unit = {
+  private def visitCatchRule(rule: CatchRule)(implicit a: Acceptor, c: Consumer): Unit = {
     // TODO
   }
 
-  private def visitConstraint(con: Constraint, accept: SourceLocation => Boolean)(implicit consumer: Consumer): Unit = {
+  private def visitConstraint(con: Constraint)(implicit a: Acceptor, c: Consumer): Unit = {
     // TODO
   }
 
-  private def visitPattern(pat: Pattern, accept: SourceLocation => Boolean)(implicit consumer: Consumer): Unit = {
+  private def visitPattern(pat: Pattern)(implicit a: Acceptor, c: Consumer): Unit = {
     // TODO
   }
 }
