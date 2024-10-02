@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Magnus Madsen
+ * Copyright 2024 Holger Dal Mogensen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,15 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.language.fmt
+package ca.uwaterloo.flix.language.ast.shared
 
-import ca.uwaterloo.flix.language.ast.shared.Doc
+import ca.uwaterloo.flix.language.ast.SourceLocation
 
-object FormatDoc {
+/**
+  * Documentation.
+  *
+  * @param lines the lines of the comments.
+  * @param loc   the source location of the text.
+  */
+case class Doc(lines: List[String], loc: SourceLocation) {
+  def text: String = lines.
+    dropWhile(_.trim.isEmpty).
+    map(_.trim).
+    mkString("\n")
 
   /**
-    * Returns a markdown string for the given documentation `doc`.
+    * Returns a string representation that hides the internals.
     */
-  def asMarkDown(doc: Doc): String = doc.lines.mkString("\n")
-
+  override def toString: String = "Doc(...)"
 }
