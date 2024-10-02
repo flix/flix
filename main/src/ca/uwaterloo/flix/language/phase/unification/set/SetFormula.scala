@@ -690,7 +690,9 @@ object SetFormula {
           case Univ => None
           case Empty => return Empty
           case e@ElemSet(_) => Some(e)
-          case _ => ??? // Unreachable according to instElemSet.
+          case other =>
+            // Unreachable since `instElemSet` only returns univ, empty, or elem set.
+            throw InternalCompilerException(s"Unexpected formula: '$other'", SourceLocation.Unknown)
         }
         case None => None
       }
@@ -701,7 +703,9 @@ object SetFormula {
           case Univ => return Empty
           case Empty => None
           case e@ElemSet(_) => Some(e)
-          case _ => ??? // Unreachable according to instElemSet.
+          case other =>
+            // Unreachable since `instElemSet` only returns univ, empty, or elem set.
+            throw InternalCompilerException(s"Unexpected formula: '$other'", SourceLocation.Unknown)
         }
         case None => None
       }
@@ -756,7 +760,9 @@ object SetFormula {
           case Univ => return Univ
           case Empty => None
           case e@ElemSet(_) => Some(e)
-          case _ => ??? // Unreachable according to instElemSet.
+          case other =>
+            // Unreachable since `instElemSet` only returns univ, empty, or elem set.
+            throw InternalCompilerException(s"Unexpected formula: '$other'", SourceLocation.Unknown)
         }
         case None => None
       }
@@ -767,7 +773,9 @@ object SetFormula {
           case Univ => None
           case Empty => return Univ
           case e@ElemSet(_) => Some(e)
-          case _ => ??? // Unreachable according to instElemSet.
+          case other =>
+            // Unreachable since `instElemSet` only returns univ, empty, or elem set.
+            throw InternalCompilerException(s"Unexpected formula: '$other'", SourceLocation.Unknown)
         }
         case None => None
       }
