@@ -540,10 +540,10 @@ object SafetyError {
   /**
     * An error raised to indicate that a base effect is attempted to be handled in a try-with expression.
     *
-    * @param loc the location where the error occurred.
     * @param sym the effect symbol.
+    * @param loc the location where the error occurred.
     */
-  case class BaseEffectInTryWith(loc: SourceLocation, sym: Symbol.EffectSym) extends SafetyError with Recoverable {
+  case class BaseEffectInTryWith(sym: Symbol.EffectSym, loc: SourceLocation) extends SafetyError with Recoverable {
     override def summary: String = s"The ${sym.name} effect cannot be handled."
 
     override def message(formatter: Formatter): String = {

@@ -431,7 +431,7 @@ object Safety {
           rules.flatMap { case HandlerRule(_, _, e) => visit(e) }
 
         if (Symbol.isBaseEffect(effUse.sym)) {
-          BaseEffectInTryWith(effUse.loc, effUse.sym) :: res
+          BaseEffectInTryWith(effUse.sym, effUse.loc) :: res
         } else {
           res
         }
