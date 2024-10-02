@@ -17,7 +17,6 @@ package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.{InternalCompilerException, LocalResource}
-import org.json4s.JArray
 import org.json4s.JsonAST.*
 import org.json4s.jvalue2monadic
 import org.json4s.native.JsonMethods.parse
@@ -25,6 +24,18 @@ import org.json4s.native.JsonMethods.parse
 import java.lang.reflect.{Constructor, Method}
 
 object BaseEffects {
+
+  /**
+    * The path to the class effects.
+    */
+  private val ClassEffsPath = "/src/ca/uwaterloo/flix/language/phase/typer/BaseEffects.ClassEffs.json"
+
+  /**
+    * A pre-computed map from classes to effects.
+    *
+    * If there is are specific effect(s) for a constructor or method then we use the effects for the entire class.
+    */
+  private val classEffs: Map[Class[?], Set[Symbol.EffectSym]] = loadClassEffs()
 
   /**
     * A pre-computed map from constructors to effects.
@@ -38,13 +49,6 @@ object BaseEffects {
   private val methodEffs: Map[Method, Set[Symbol.EffectSym]] = Map(
     classOf[java.lang.System].getMethod("currentTimeMillis") -> Set(Symbol.Time) // TODO: Load from JSON
   )
-
-  /**
-    * A pre-computed map from classes to effects.
-    *
-    * If there is are specific effect(s) for a constructor or method then we use the effects for the entire class.
-    */
-  private val classEffs: Map[Class[?], Set[Symbol.EffectSym]] = loadClassEffs()
 
   /**
     * Returns the base effects of calling the given constructor `c`.
@@ -89,48 +93,33 @@ object BaseEffects {
   }
 
   /**
-    * Load class effects from JSON.
-    */
-  private def loadClassEffs(): Map[Class[?], Set[Symbol.EffectSym]] = {
-    val data = LocalResource.get("/src/ca/uwaterloo/flix/language/phase/typer/BaseEffects.ClassEffs.json")
-    val json = parse(data)
-
-    val classEffs = json \\ "classes" match {
-      case JArray(a) => a.map(parseClassAndEffSet)
-      case _ => throw InternalCompilerException("Unexpected non-array value of the 'classes' field.", SourceLocation.Unknown)
-    }
-
-    classEffs.toMap
-  }
-
-  /**
     * Parses a JSON object of the form:
     *
     * {{{
     * {
-    *   "class": "java.lang.ProcessBuilder",
-    *   "effects": [
-    *     "Exec"
-    *   ]
+    *   "classes": {
+    *     "java.lang.ProcessBuilder": "Exec, FileRead",
+    *     "java.lang.reflect.Method": "Sys"
+    *   }
     * }
     * }}}
-    *
-    * into a pair (classOf[ProcessBuilder], Set(Exec)).
     */
-  private def parseClassAndEffSet(json: JValue): (Class[?], Set[Symbol.EffectSym]) = {
-    val className = json \\ "class" match {
-      case JString(s) => s
-      case _ => throw InternalCompilerException("Unexpected non-string value of the 'class' field.", SourceLocation.Unknown)
-    }
-    val effects = json \\ "effects" match {
-      case JArray(a) => a.map {
-        case JString(eff) => eff
-        case _ => throw InternalCompilerException("Unexpected non-string value of an effect.", SourceLocation.Unknown)
+  private def loadClassEffs(): Map[Class[?], Set[Symbol.EffectSym]] = {
+    val data = LocalResource.get(ClassEffsPath)
+    val json = parse(data)
+
+    val m = json \\ "classes" match {
+      case JObject(l) => l.map {
+        case (className, JString(s)) =>
+          val clazz = Class.forName(className)
+          val effSet = s.split(",").map(_.trim).map(Symbol.parseBaseEff).toSet
+          (clazz, effSet)
+        case _ => throw InternalCompilerException("Unexpected field value.", SourceLocation.Unknown)
       }
-      case _ => throw InternalCompilerException("Unexpected non-array value of the 'effects' field.", SourceLocation.Unknown)
+      case _ => throw InternalCompilerException("Unexpected JSON format.", SourceLocation.Unknown)
     }
 
-    (Class.forName(className), effects.map(Symbol.parseBaseEff).toSet)
+    m.toMap
   }
 
 }
