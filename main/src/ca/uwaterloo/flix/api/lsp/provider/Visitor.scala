@@ -186,8 +186,7 @@ object Visitor {
   }
   
   private def visitEffect(eff: Effect, seen: Effect => Unit, accept: SourceLocation => Boolean): Unit = {
-    val insideEff = accept(eff.loc) || eff.ann.annotations.exists(ann => accept(ann.loc)) || accept(eff.sym.loc)
-    if (!(insideEff)) { return }
+    if (!(accept(eff.loc))) { return }
     // TODO
     // visit(eff)
     // ???
