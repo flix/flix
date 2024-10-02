@@ -42,38 +42,16 @@ object HoverProvider {
   def hover(uri: String, pos: Position)(implicit root: Root, flix: Flix): JObject = {
     var stack: List[AnyRef] = Nil
 
-    def seenExpr(e: Expr): Unit = {
-      stack = e :: stack
+    object hoverConsumer extends Visitor.Consumer {
+      override def consumeExpr(exp: Expr): Unit = {
+        stack = exp :: stack
+      }
+      override def consumeDef(defn: Def): Unit = {
+        stack = defn :: stack
+      }
     }
 
-    def seenDef(defn: Def): Unit = {
-      stack = defn :: stack
-    }
-
-    Visitor.visitRoot(root,
-                      annos => (),
-                      catchRule => (),
-                      constraint => (),
-                      seenDef,
-                      eff => (),
-                      enm => (),
-                      seenExpr,
-                      fparam => (),
-                      parYieldfrag => (),
-                      handlerRule => (),
-                      instance => (),
-                      matchRule => (),
-                      pattern => (),
-                      restrictableEnum => (),
-                      root => (),
-                      sig => (),
-                      spec => (),
-                      struct => (),
-                      typeMatchRule => (),
-                      traitt => (),
-                      tpe => (),
-                      typeAlias => (),
-                      Visitor.inside(uri, pos))
+    Visitor.visitRoot(root, hoverConsumer, Visitor.inside(uri, pos))
 
     stack.headOption match {
       case None => mkNotFound(uri, pos)
