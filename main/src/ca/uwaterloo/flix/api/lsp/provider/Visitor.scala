@@ -22,6 +22,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.{
   Expr, 
   Effect, 
   Enum,
+  FormalParam,
   Constraint, 
   Pattern, 
   StructField,
@@ -33,7 +34,16 @@ import ca.uwaterloo.flix.language.ast.TypedAst.{
   Struct,
   Trait,
   TypeAlias,
-  TypeParam
+  TypeParam,
+  MatchRule,
+  TypeMatchRule,
+  CatchRule,
+  HandlerRule,
+  ParYieldFragment
+}
+
+import ca.uwaterloo.flix.language.ast.shared.{
+  Annotations
 }
 import ca.uwaterloo.flix.language.ast.Ast.UseOrImport
 import ca.uwaterloo.flix.language.ast.SourceLocation
@@ -55,20 +65,30 @@ object Visitor {
     * @param accept  A predicate determining whether to visit a child node.
     */
   def visitRoot(root: Root, 
+                seenAnnos: Annotations => Unit,
+                seenCatchRule: CatchRule => Unit,
+                seenConstraint: Constraint => Unit,
                 seenDef: Def => Unit,
                 seenEff: Effect => Unit,
                 seenEnum: Enum => Unit,
                 seenExpr: Expr => Unit,
+                seenFParam: FormalParam => Unit,
+                seenFrag: ParYieldFragment => Unit,
+                seenHandlerRule: HandlerRule => Unit,
                 seenInstance: Instance => Unit,
+                seenMatchRule: MatchRule => Unit,
+                seenPat: Pattern => Unit,
                 seenResEnum: RestrictableEnum => Unit,
                 seenRoot: Root => Unit,
                 seenSig: Sig => Unit,
                 seenStruct: Struct => Unit,
+                seenTMatchRule: TypeMatchRule => Unit,
                 seenTrait: Trait => Unit,
+                seenType: Type => Unit,
                 seenTypeAlias: TypeAlias => Unit,
                 accept: SourceLocation => Boolean): Unit = {
 
-    root.defs.foreach{ case (_, defn) => visitDef(defn, seenDef, seenExpr, accept) }
+    root.defs.foreach{ case (_, defn) => visitDef(defn, seenAnnos, seenCatchRule, seenConstraint, seenDef, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept) }
 
     root.effects.foreach{ case (_, eff) => visitEffect(eff, seenEff, accept) }
 
@@ -192,7 +212,20 @@ object Visitor {
     // ???
   }
 
-  private def visitDef(defn: Def, seenDef: Def => Unit, seenExpr: Expr => Unit, accept: SourceLocation => Boolean): Unit = {
+  private def visitDef(defn: Def, 
+                       seenAnnos: Annotations => Unit,
+                       seenCatchRule: CatchRule => Unit,
+                       seenConstraint: Constraint => Unit,
+                       seenDef: Def => Unit, 
+                       seenExpr: Expr => Unit, 
+                       seenFParam: FormalParam => Unit,
+                       seenFrag: ParYieldFragment => Unit,
+                       seenHandlerRule: HandlerRule => Unit,
+                       seenMatchRule: MatchRule => Unit,
+                       seenPat: Pattern => Unit,
+                       seenTMatchRule: TypeMatchRule => Unit,
+                       seenType: Type => Unit,
+                       accept: SourceLocation => Boolean): Unit = {
     val insideDefn = accept(defn.spec.loc) || accept(defn.exp.loc) || accept(defn.sym.loc)
     if (!insideDefn) { return }
 
@@ -200,7 +233,7 @@ object Visitor {
 
     // TODO visitSpec
 
-    visitExpr(defn.exp, seenExpr, accept)
+    visitExpr(defn.exp, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept)
   }
 
   private def visitTypeAlias(alias: TypeAlias, seen: TypeAlias => Unit, accept: SourceLocation => Boolean): Unit = {
@@ -219,12 +252,24 @@ object Visitor {
     // visit(use)
   }
 
-  private def visitExpr(expr: Expr, seen: Expr => Unit, accept: SourceLocation => Boolean): Unit = {
+  private def visitExpr(expr: Expr, 
+                        seenAnnos: Annotations => Unit,
+                        seenCatchRule: CatchRule => Unit,
+                        seenConstraint: Constraint => Unit,
+                        seenExpr: Expr => Unit, 
+                        seenFParam: FormalParam => Unit,
+                        seenFrag: ParYieldFragment => Unit,
+                        seenHandlerRule: HandlerRule => Unit,
+                        seenMatchRule: MatchRule => Unit,
+                        seenPat: Pattern => Unit,
+                        seenTMatchRule: TypeMatchRule => Unit,
+                        seenType: Type => Unit,
+                        accept: SourceLocation => Boolean): Unit = {
     // TODO: handle mutually recursive calls to other visit functions
 
     if (!(accept(expr.loc))) { return }
 
-    seen(expr)
+    seenExpr(expr)
 
     expr match {
       case Expr.Cst(cst, tpe, loc) => ()
@@ -234,264 +279,291 @@ object Visitor {
       case Expr.Hole(sym, tpe, eff, loc) => ()
 
       case Expr.HoleWithExp(exp, tpe, eff, loc) => {
-        visitExpr(exp, seen, accept) 
+        visitExpr(exp, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept) 
       }
 
       case Expr.OpenAs(symUse, exp, tpe, loc) => {
-        visitExpr(exp, seen, accept) 
+        visitExpr(exp, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept) 
       }
 
       case Expr.Use(sym, alias, exp, loc) => {
-        visitExpr(exp, seen, accept) 
+        visitExpr(exp, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept) 
       }
 
       case Expr.Lambda(fparam, exp, tpe, loc) => {
-        visitExpr(exp, seen, accept) 
+        visitFParam(fparam, seenFParam, accept)
+        visitExpr(exp, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept) 
       }
 
       case Expr.Apply(exp, exps, tpe, eff, loc) => {
-        visitExpr(exp, seen, accept) 
-        exps.foreach(e => {
-          visitExpr(e, seen, accept) 
-        })
+        visitExpr(exp, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept) 
+        exps.foreach(e => visitExpr(e, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept))
       }
 
       case Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
-        exps.foreach(e => {
-          visitExpr(e, seen, accept) 
-        })
+        exps.foreach(e => visitExpr(e, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept))
 
       case Expr.Unary(sop, exp, tpe, eff, loc) => {
-        visitExpr(exp, seen, accept) 
+        visitExpr(exp, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept) 
       }
 
       case Expr.Binary(sop, exp1, exp2, tpe, eff, loc) =>
-        visitExpr(exp1, seen, accept) 
-        visitExpr(exp2, seen, accept) 
+        visitExpr(exp1, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept) 
+        visitExpr(exp2, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept) 
 
       case Expr.Let(sym, mod, exp1, exp2, tpe, eff, loc) =>
-        visitExpr(exp1, seen, accept) 
-        visitExpr(exp2, seen, accept) 
+        visitExpr(exp1, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept) 
+        visitExpr(exp2, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept) 
 
       case Expr.LetRec(sym, ann, mod, exp1, exp2, tpe, eff, loc) =>
-        visitExpr(exp1, seen, accept) 
-        visitExpr(exp2, seen, accept) 
+        visitAnnotations(ann, seenAnnos, accept)
+        visitExpr(exp1, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept) 
+        visitExpr(exp2, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept) 
 
       case Expr.Region(tpe, loc) => ()
 
       case Expr.Scope(sym, regionVar, exp, tpe, eff, loc) =>
-        visitExpr(exp, seen, accept) 
+        visitExpr(exp, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept) 
 
       case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
-        visitExpr(exp1, seen, accept) 
-        visitExpr(exp2, seen, accept) 
-        visitExpr(exp3, seen, accept) 
+        visitExpr(exp1, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept) 
+        visitExpr(exp2, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept) 
+        visitExpr(exp3, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept) 
 
       case Expr.Stm(exp1, exp2, _, _, _) =>
-        visitExpr(exp1, seen, accept) 
-        visitExpr(exp2, seen, accept) 
+        visitExpr(exp1, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept) 
+        visitExpr(exp2, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept) 
 
       case Expr.Discard(exp, eff, loc) =>
-        visitExpr(exp, seen, accept) 
+        visitExpr(exp, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept) 
 
       case Expr.Match(exp, rules, tpe, eff, loc) =>
-        rules.foreach(rule => {
-          visitExpr(rule.exp, seen, accept) 
-          rule.guard.foreach(e => visitExpr(e, seen, accept))
-          // TODO
-          // visitPattern(rule.pat, ???, accept)
-        })
-
-        visitExpr(exp, seen, accept) 
+        visitExpr(exp, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept) 
+        rules.foreach(rule => visitMatchRule(rule, seenMatchRule, accept))
 
       case Expr.TypeMatch(exp, rules, tpe, eff, loc) =>
-        visitExpr(exp, seen, accept) 
+        visitExpr(exp, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept) 
+        rules.foreach(rule => visitTypeMatchRule(rule, seenTMatchRule, accept))
 
       case Expr.RestrictableChoose(star, exp, rules, tpe, eff, loc) =>
         // Does nothing because feature is experimental
 
       case Expr.Tag(sym, exp, tpe, eff, loc) =>
-        visitExpr(exp, seen, accept) 
+        visitExpr(exp, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept) 
 
       case Expr.RestrictableTag(sym, exp, tpe, eff, loc) =>
-        visitExpr(exp, seen, accept) 
+        visitExpr(exp, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept) 
 
       case Expr.Tuple(exps, tpe, eff, loc) =>
-        exps.foreach(e => visitExpr(e, seen, accept))
+        exps.foreach(e => visitExpr(e, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept))
 
       case Expr.RecordEmpty(tpe, loc) => ()
 
       case Expr.RecordSelect(exp, label, tpe, eff, loc) =>
-        visitExpr(exp, seen, accept) 
+        visitExpr(exp, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept) 
 
       case Expr.RecordExtend(label, exp1, exp2, tpe, eff, loc) =>
-        visitExpr(exp1, seen, accept) 
-        visitExpr(exp2, seen, accept) 
+        visitExpr(exp1, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept) 
+        visitExpr(exp2, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept) 
 
       case Expr.RecordRestrict(label, exp, tpe, eff, loc) =>
-        visitExpr(exp, seen, accept) 
+        visitExpr(exp, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept) 
 
       case Expr.ArrayLit(exps, exp, tpe, eff, loc) =>
-        visitExpr(exp, seen, accept) 
-        exps.foreach(e => visitExpr(e, seen, accept))
+        visitExpr(exp, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept) 
+        exps.foreach(e => visitExpr(e, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept))
 
       case Expr.ArrayNew(exp1, exp2, exp3, tpe, eff, loc) =>
-        visitExpr(exp1, seen, accept) 
-        visitExpr(exp2, seen, accept) 
-        visitExpr(exp3, seen, accept) 
+        visitExpr(exp1, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept) 
+        visitExpr(exp2, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept) 
+        visitExpr(exp3, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept) 
 
       case Expr.ArrayLoad(exp1, exp2, tpe, eff, loc) =>
-        visitExpr(exp1, seen, accept) 
-        visitExpr(exp2, seen, accept) 
+        visitExpr(exp1, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept) 
+        visitExpr(exp2, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept) 
 
       case Expr.ArrayLength(exp, eff, loc) =>
-        visitExpr(exp, seen, accept) 
+        visitExpr(exp, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept) 
 
       case Expr.ArrayStore(exp1, exp2, exp3, eff, loc) =>
-        visitExpr(exp1, seen, accept) 
-        visitExpr(exp2, seen, accept) 
+        visitExpr(exp1, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept) 
+        visitExpr(exp2, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept) 
+        visitExpr(exp3, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept)
 
       case Expr.StructNew(sym, fields, region, tpe, eff, loc) =>
         fields.foreach{ case (_, e) => { 
-          visitExpr(e, seen, accept)  
+          visitExpr(e, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept)  
         }}
 
-        visitExpr(region, seen, accept) 
+        visitExpr(region, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept)
+
+        visitExpr(region, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept) 
 
       case Expr.StructGet(exp, sym, tpe, eff, loc) =>
-        visitExpr(exp, seen, accept) 
+        visitExpr(exp, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept) 
 
       case Expr.StructPut(exp1, sym, exp2, tpe, eff, loc) =>
-        visitExpr(exp1, seen, accept) 
-        visitExpr(exp2, seen, accept) 
+        visitExpr(exp1, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept) 
+        visitExpr(exp2, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept) 
 
       case Expr.VectorLit(exps, tpe, eff, loc) =>
-        exps.foreach(e => visitExpr(e, seen, accept))
+        exps.foreach(e => visitExpr(e, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept))
 
       case Expr.VectorLoad(exp1, exp2, tpe, eff, loc) =>
-        visitExpr(exp1, seen, accept) 
-        visitExpr(exp2, seen, accept) 
+        visitExpr(exp1, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept) 
+        visitExpr(exp2, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept) 
 
       case Expr.VectorLength(exp, loc) =>
-        visitExpr(exp, seen, accept)
+        visitExpr(exp, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept)
 
       case Expr.Ascribe(exp, tpe, eff, loc) =>
-        visitExpr(exp, seen, accept)
+        visitExpr(exp, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept)
 
       case Expr.InstanceOf(exp, clazz, loc) =>
-        visitExpr(exp, seen, accept)
+        visitExpr(exp, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept)
 
       case Expr.CheckedCast(cast, exp, tpe, eff, loc) =>
-        visitExpr(exp, seen, accept)
+        visitExpr(exp, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept)
+        // TODO maybe we need to visit `cast` (`CheckTypeCast`)?
 
-      case Expr.UncheckedCast(exp, decalredType, declaredEff, tpe, eff, loc) =>
-        visitExpr(exp, seen, accept)
+      case Expr.UncheckedCast(exp, declaredType, declaredEff, tpe, eff, loc) =>
+        visitExpr(exp, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept)
+        declaredType.foreach(t => visitType(t, seenType, accept))
+        declaredEff.foreach(t => visitType(t, seenType, accept))
 
       case Expr.UncheckedMaskingCast(exp, tpe, eff, loc) =>
-        visitExpr(exp, seen, accept)
+        visitExpr(exp, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept)
 
       case Expr.Without(exp, effUse, tpe, eff, loc) =>
-        visitExpr(exp, seen, accept)
+        visitExpr(exp, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept)
 
       case Expr.TryCatch(exp, rules, tpe, eff, loc) =>
-        visitExpr(exp, seen, accept)
-        rules.foreach(rule => visitExpr(rule.exp, seen, accept))
+        visitExpr(exp, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept)
+        rules.foreach(rule => visitCatchRule(rule, seenCatchRule, accept))
 
       case Expr.Throw(exp, tpe, eff, loc) =>
-        visitExpr(exp, seen, accept)
+        visitExpr(exp, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept)
 
       case Expr.TryWith(exp, effUse, rules, tpe, eff, loc) =>
-        visitExpr(exp, seen, accept)
-        rules.foreach(rule => visitExpr(rule.exp, seen, accept))
+        visitExpr(exp, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept)
+        rules.foreach(rule => visitHandlerRule(rule, seenHandlerRule, accept))
 
       case Expr.Do(op, exps, tpe, eff, loc) =>
-        exps.foreach(e => visitExpr(e, seen, accept))
+        exps.foreach(e => visitExpr(e, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept))
 
       case Expr.InvokeConstructor(constructor, exps, tpe, eff, loc) =>
-        exps.foreach(e => visitExpr(e, seen, accept))
+        exps.foreach(e => visitExpr(e, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept))
 
       case Expr.InvokeMethod(method, exp, exps, tpe, eff, loc) =>
-        visitExpr(exp, seen, accept)
-        exps.foreach(e => visitExpr(e, seen, accept))
+        visitExpr(exp, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept)
+        exps.foreach(e => visitExpr(e, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept))
 
       case Expr.InvokeStaticMethod(method, exps, tpe, eff, loc) =>
-        exps.foreach(e => visitExpr(e, seen, accept))
+        exps.foreach(e => visitExpr(e, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept))
 
       case Expr.GetField(field, exp, tpe, eff, loc) =>
-        visitExpr(exp, seen, accept)
+        visitExpr(exp, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept)
 
       case Expr.PutField(field, exp1, exp2, tpe, eff, loc) =>
-        visitExpr(exp1, seen, accept) 
-        visitExpr(exp2, seen, accept) 
+        visitExpr(exp1, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept) 
+        visitExpr(exp2, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept) 
 
       case Expr.GetStaticField(field, tpe, eff, loc) => ()
 
       case Expr.PutStaticField(field, exp, tpe, eff, loc) =>
-        visitExpr(exp, seen, accept) 
+        visitExpr(exp, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept) 
 
       case Expr.NewObject(name, clazz, tpe, eff, methods, loc) => ()
 
       case Expr.NewChannel(exp1, exp2, tpe, eff, loc) =>
-        visitExpr(exp1, seen, accept) 
-        visitExpr(exp2, seen, accept) 
+        visitExpr(exp1, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept) 
+        visitExpr(exp2, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept) 
 
       case Expr.GetChannel(exp, tpe, eff, loc) =>
-        visitExpr(exp, seen, accept)
+        visitExpr(exp, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept)
 
       case Expr.PutChannel(exp1, exp2, tpe, eff, loc) =>
-        visitExpr(exp1, seen, accept) 
-        visitExpr(exp2, seen, accept) 
+        visitExpr(exp1, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept) 
+        visitExpr(exp2, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept) 
 
       case Expr.SelectChannel(rules, default, tpe, eff, loc) =>
         rules.foreach(rule => {
-          visitExpr(rule.chan, seen, accept)
-          visitExpr(rule.exp, seen, accept)
+          visitExpr(rule.chan, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept)
+          visitExpr(rule.exp, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept)
         })
 
-        default.foreach(e => visitExpr(e, seen, accept))
+        default.foreach(e => visitExpr(e, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept))
 
       case Expr.Spawn(exp1, exp2, tpe, eff, loc) =>
-        visitExpr(exp1, seen, accept) 
-        visitExpr(exp2, seen, accept) 
+        visitExpr(exp1, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept) 
+        visitExpr(exp2, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept) 
 
       case Expr.ParYield(frags, exp, tpe, eff, loc) =>
-        visitExpr(exp, seen, accept)
-        frags.foreach(frag => {
-          visitExpr(frag.exp, seen, accept)
-          // TODO: visit frag.pat (pattern)
-        })
+        visitExpr(exp, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept)
+        frags.foreach(frag => visitParYieldFrag(frag, seenFrag, accept))
 
       case Expr.Lazy(exp, tpe, loc) =>
-        visitExpr(exp, seen, accept)
+        visitExpr(exp, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept)
 
       case Expr.Force(exp, tpe, eff, loc) =>
-        visitExpr(exp, seen, accept)
+        visitExpr(exp, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept)
 
       case Expr.FixpointConstraintSet(cs, tpe, loc) =>
-        // TODO
-        // cs.foreach(con => visitConstraint(con, ???, accept))
+        cs.foreach(con => visitConstraint(con, seenConstraint, accept))
 
       case Expr.FixpointLambda(pparams, exp, tpe, eff, loc) =>
-        visitExpr(exp, seen, accept)
+        visitExpr(exp, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept)
 
       case Expr.FixpointMerge(exp1, exp2, tpe, eff, loc) =>
-        visitExpr(exp1, seen, accept) 
-        visitExpr(exp2, seen, accept) 
+        visitExpr(exp1, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept) 
+        visitExpr(exp2, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept) 
 
       case Expr.FixpointSolve(exp, tpe, eff, loc) =>
-        visitExpr(exp, seen, accept)
+        visitExpr(exp, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept)
 
       case Expr.FixpointFilter(pred, exp, tpe, eff, loc) =>
-        visitExpr(exp, seen, accept)
+        visitExpr(exp, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept)
 
       case Expr.FixpointInject(exp, pred, tpe, eff, loc) =>
-        visitExpr(exp, seen, accept)
+        visitExpr(exp, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept)
 
       case Expr.FixpointProject(pred, exp, tpe, eff, loc) =>
-        visitExpr(exp, seen, accept)
+        visitExpr(exp, seenAnnos, seenCatchRule, seenConstraint, seenExpr, seenFParam, seenFrag, seenHandlerRule, seenMatchRule, seenPat, seenTMatchRule, seenType, accept)
 
       case Expr.Error(m, tpe, eff) => ()
     }
+  }
+
+  private def visitFParam(fparam: FormalParam, seen: FormalParam => Unit, accept: SourceLocation => Boolean): Unit = {
+    // TODO
+  }
+
+  private def visitHandlerRule(rule: HandlerRule, seen: HandlerRule => Unit, accept: SourceLocation => Boolean): Unit = {
+    // TODO
+  }
+
+  private def visitParYieldFrag(frag: ParYieldFragment, seen: ParYieldFragment => Unit, accept: SourceLocation => Boolean): Unit = {
+    // TODO
+  }
+
+  private def visitMatchRule(rule: MatchRule, seen: MatchRule => Unit, accept: SourceLocation => Boolean): Unit = {
+    // TODO
+  }
+
+  private def visitTypeMatchRule(rule: TypeMatchRule, seen: TypeMatchRule => Unit, accept: SourceLocation => Boolean): Unit = {
+    // TODO
+  }
+
+  private def visitType(tpe: Type, seen: Type => Unit, accept: SourceLocation => Boolean): Unit = {
+    // TODO
+  }
+
+  private def visitAnnotations(ann: Annotations, seen: Annotations => Unit, accept: SourceLocation => Boolean): Unit = {
+    // TODO
+  }
+
+  private def visitCatchRule(rule: CatchRule, seen: CatchRule => Unit, accept: SourceLocation => Boolean): Unit = {
+    // TODO
   }
 
   private def visitConstraint(con: Constraint, visit: Constraint => Unit, accept: SourceLocation => Boolean): Unit = {

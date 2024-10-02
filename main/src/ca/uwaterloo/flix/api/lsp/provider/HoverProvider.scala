@@ -51,16 +51,26 @@ object HoverProvider {
     }
 
     Visitor.visitRoot(root,
+                      annos => (),
+                      catchRule => (),
+                      constraint => (),
                       seenDef,
                       eff => (),
                       enm => (),
                       seenExpr,
+                      fparam => (),
+                      parYieldfrag => (),
+                      handlerRule => (),
                       instance => (),
+                      matchRule => (),
+                      pattern => (),
                       restrictableEnum => (),
-                      rot => (),
+                      root => (),
                       sig => (),
                       struct => (),
+                      typeMatchRule => (),
                       traitt => (),
+                      tpe => (),
                       typeAlias => (),
                       Visitor.inside(uri, pos))
 
