@@ -116,16 +116,16 @@ object ClosureConv {
       // Step 2: Convert the free variables into a new parameter list and substitution.
       val (cloParams, subst) = getFormalParamsAndSubst(fvs, loc)
 
+      // Step 3: Update the mapping from the function to its free vars
       val newLocalDefFreeVars = localDefFreeVars + (sym -> fvs)
 
-      // Step 3: Rewrite all ApplyLocalDef nodes (recursive calls)
-      // to apply sym to local variables in addition to the actual parameters.
+      // Step 4: Rewrite every ApplyLocalDef node (recursive call) to apply to the free vars and then the parameters.
       val e11 = visitExp(exp1)(newLocalDefFreeVars, flix)
 
-      // Step 4: Replace every old symbol by its new symbol in the body of the function.
+      // Step 5: Replace every old symbol by its new symbol in the body of the function.
       val e1 = applySubst(e11, subst)
 
-      // Step 5: Rewrite every ApplyLocalDef node to apply to the free vars and then the parameters.
+      // Step 6: Rewrite every ApplyLocalDef node to apply to the free vars and then the parameters.
       val e2 = visitExp(exp2)(newLocalDefFreeVars, flix)
       val fps = cloParams ++ fparams
       Expr.LocalDef(sym, fps, e1, e2, tpe, purity, loc)
@@ -183,7 +183,18 @@ object ClosureConv {
   private def mkLambdaClosure(fparams: List[FormalParam], exp: Expr, tpe: MonoType, loc: SourceLocation)(implicit localDefFreeVars: Map[Symbol.VarSym, List[FreeVar]], flix: Flix): Expr.LambdaClosure = {
     // Step 1: Compute the free variables in the lambda expression.
     //         (Remove the variables bound by the lambda itself).
-    val fvs = filterBoundParams(freeVars(exp), fparams).toList
+    //         Add the captured symbols of any local defs that are captured by this lambda,
+    //         since the ApplyLocalDef will have new formal params,
+    //         so this lambda must also be able to apply with those captured symbols,
+    //         e.g.,
+    //             let a = 1;
+    //             def f() = a;
+    //             f
+    //         ====>
+    //             let a = 1;
+    //             def f(b) = b;
+    //             (c -> f(c))(a)
+    val fvs = filterBoundParams(freeVars(exp), fparams).toList.flatMap(fv => localDefFreeVars.getOrElse(fv.sym, List.empty))
 
     // Step 2: Convert the free variables into a new parameter list and substitution.
     val (cloParams, subst) = getFormalParamsAndSubst(fvs, loc)
