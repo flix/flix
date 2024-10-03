@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.shared.{Annotations, Constant, Scope}
+import ca.uwaterloo.flix.language.ast.shared.{Annotations, Constant, Doc, Scope}
 import ca.uwaterloo.flix.language.ast.{Ast, RigidityEnv, Scheme, SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.EntryPointError
@@ -213,7 +213,7 @@ object EntryPoint {
     val argSym = Symbol.freshVarSym("_unit", Ast.BoundBy.FormalParam, SourceLocation.Unknown)
 
     val spec = TypedAst.Spec(
-      doc = Ast.Doc(Nil, SourceLocation.Unknown),
+      doc = Doc(Nil, SourceLocation.Unknown),
       ann = Annotations.Empty,
       mod = Ast.Modifiers.Empty,
       tparams = Nil,
