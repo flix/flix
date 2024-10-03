@@ -24,6 +24,10 @@ object RecordConstraintSolver {
     case (Type.Var(sym, _), tpe) if (!tpe.typeVars.exists(_.sym == sym) && renv.isFlexible(sym)) =>
       ResolutionResult.newSubst(Substitution.singleton(sym, tpe))
 
+      // MATT docs
+    case (Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(label1), _), t1, _), rest1, _), Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(label2), _), t2, _), rest2, _)) if label1 == label2 =>
+      ResolutionResult.constraints(List(Equality(t1, t2, prov), Equality(rest1, rest2, prov)), progress = true)
+
     // ρ₂ ~~{ℓ : τ₁}~~> { ℓ : τ₃ | ρ₃ }    τ₁ ~ τ₃ => C    ρ₁ ~ ρ₃ => C'
     // -----------------------------------------------------------------
     //              { ℓ : τ₁ | ρ₁ } ~ ρ₂ => C ∪ C'
