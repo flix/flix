@@ -21,7 +21,13 @@ object RecordConstraintSolver {
     //    α ∉ fv(ρ)
     // ----------------
     // α ~ ρ => {α ↦ ρ}
-    case (Type.Var(sym, _), tpe) if (!tpe.typeVars.exists(_.sym == sym) && renv.isFlexible(sym)) =>
+    case (Type.Var(sym, _), tpe) if !tpe.typeVars.exists(_.sym == sym) && renv.isFlexible(sym) =>
+      ResolutionResult.newSubst(Substitution.singleton(sym, tpe))
+
+    //    α ∉ fv(ρ)
+    // ----------------
+    //  ρ ~ α => {α ↦ ρ}
+    case (tpe, Type.Var(sym, _)) if !tpe.typeVars.exists(_.sym == sym) && renv.isFlexible(sym) =>
       ResolutionResult.newSubst(Substitution.singleton(sym, tpe))
 
       // MATT docs
