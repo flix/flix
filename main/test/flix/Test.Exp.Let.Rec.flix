@@ -62,29 +62,40 @@ mod Test.Exp.LetRec {
     def testLetRecCapture05(): Bool =
         let a = 1;
         let b = 2;
-        def f(c) = if (c == 2) _ -> c + b else if (c == 1) f(b) else f(a);
-        f(10)(0) == 4
+        def f(c) = if (c == 2) () -> c + b else if (c == 1) f(b) else f(a);
+        f(10)() == 4
 
     @test
     def testLetRecCapture06(): Bool =
         let a = 1;
         let b = 2;
-        def f(c) = if (c == 2) _ -> c + b else if (c == 1) f(b) else f(a);
-        ((q) -> f(q))(10)(0) == 4
+        def f(c) = if (c == 2) () -> c + b else if (c == 1) f(b) else f(a);
+        ((q) -> f(q))(10)() == 4
 
     @test
     def testLetRecCapture07(): Bool =
         let a = 1;
         let b = 2;
-        def f(c) = if (c == 2) _ -> c + b else if (c == 1) f(b) else f(a);
-        (() -> f)()(10)(0) == 4
+        def f(c) = if (c == 2) () -> c + b else if (c == 1) f(b) else f(a);
+        (() -> f)()(10)() == 4
 
     @test
     def testLetRecCapture08(): Bool =
         let a = 1;
         let b = 2;
-        def f(c) = if (c == 2) _ -> c + b else if (c == 1) f(b) else f(a);
-        (() -> f(b))()(0) == 4
+        def f(c) = if (c == 2) () -> c + b else if (c == 1) f(b) else f(a);
+        (() -> f(b))()() == 4
+
+    @test
+    def testLetRecCapture09(): Bool =
+        let a = 1;
+        let b = 2;
+        let g = {
+            let d = 3;
+            def f(l) = if (l == 4) () -> d + l else f(a + b + 1);
+            () -> f
+        };
+        g()(5)() == 7
 
     ///
     /// Nested Let Recs.
