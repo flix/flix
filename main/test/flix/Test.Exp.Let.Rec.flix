@@ -79,6 +79,13 @@ mod Test.Exp.LetRec {
         def f(c) = if (c == 2) _ -> c + b else if (c == 1) f(b) else f(a);
         (() -> f)()(10)(0) == 4
 
+    @test
+    def testLetRecCapture08(): Bool =
+        let a = 1;
+        let b = 2;
+        def f(c) = if (c == 2) _ -> c + b else if (c == 1) f(b) else f(a);
+        (() -> f(b))()(0) == 4
+
     ///
     /// Nested Let Recs.
     ///
