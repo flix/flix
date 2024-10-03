@@ -44,13 +44,13 @@ object ClosureConv {
     * Performs closure conversion on the given definition `def0`.
     */
   private def visitDef(def0: Def)(implicit flix: Flix): Def = {
-    def0.copy(exp = visitExp(def0.exp)(Map.empty, flix))
+    def0.copy(exp = visitExp(def0.exp))
   }
 
   /**
     * Performs closure conversion on the given expression `exp0`.
     */
-  private def visitExp(exp0: Expr)(implicit localDefFreeVars: Map[Symbol.VarSym, List[FreeVar]], flix: Flix): Expr = exp0 match {
+  private def visitExp(exp0: Expr)(implicit flix: Flix): Expr = exp0 match {
     case Expr.Cst(_, _, _) => exp0
 
     case Expr.Var(_, _, _) => exp0
@@ -72,9 +72,7 @@ object ClosureConv {
 
     case Expr.ApplyLocalDef(sym, exps, itpe, tpe, purity, loc) =>
       val es = exps.map(visitExp)
-      val cloArgs = localDefFreeVars.getOrElse(sym, List.empty).map(fv => Expr.Var(fv.sym, fv.tpe, loc.asSynthetic))
-      val newArgs = cloArgs ++ es
-      Expr.ApplyLocalDef(sym, newArgs, itpe, tpe, purity, loc)
+      Expr.ApplyLocalDef(sym, es, itpe, tpe, purity, loc)
 
     case Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
       val es = exps map visitExp
@@ -116,18 +114,13 @@ object ClosureConv {
       // Step 2: Convert the free variables into a new parameter list and substitution.
       val (cloParams, subst) = getFormalParamsAndSubst(fvs, loc)
 
-      // Step 3: Replace every old symbol by its new symbol in the body of the function.
-      val e11 = applySubst(exp1, subst)
+      // Step 3: Replace every old symbol by its new symbol in the body of the function
+      //         and rewrite every occurrence of `sym` to apply with formal params
+      val e1 = visitExp(applySubst(rewriteApplyLocalDef(exp1, sym, fvs), subst))
 
-      // Step 4: Rewrite every ApplyLocalDef node (recursive call) to apply to the free vars and then the parameters.
-      val freshVars = localDefFreeVars + (sym -> cloParams.map(cp => FreeVar(cp.sym, cp.tpe)))
-      val e1 = visitExp(e11)(freshVars, flix)
+      // Step 4: Rewrite every ApplyLocalDef node to apply to the free vars and then the parameters.
+      val e2 = visitExp(rewriteApplyLocalDef(exp2, sym, fvs))
 
-      // Step 5: Update the mapping from the function to its free vars
-      val updatedLocalDefFreeVars = localDefFreeVars + (sym -> fvs)
-
-      // Step 6: Rewrite every ApplyLocalDef node to apply to the free vars and then the parameters.
-      val e2 = visitExp(exp2)(updatedLocalDefFreeVars, flix)
       val fps = cloParams ++ fparams
       Expr.LocalDef(sym, fps, e1, e2, tpe, purity, loc)
 
@@ -176,27 +169,50 @@ object ClosureConv {
 
   }
 
+  private def rewriteApplyLocalDef(expr00: Expr, sym0: Symbol.VarSym, freeVars: List[FreeVar]): Expr = {
+    def visit(expr0: Expr): Expr = expr0 match {
+      case Expr.Cst(cst, tpe, loc) => Expr.Cst(cst, tpe, loc)
+      case Expr.Var(sym, tpe, loc) => Expr.Var(sym, tpe, loc)
+      case Expr.Lambda(fparams, exp, tpe, loc) => Expr.Lambda(fparams, visit(exp), tpe, loc)
+      case Expr.Apply(exp, args, tpe, purity, loc) => Expr.Apply(visit(exp), args.map(visit), tpe, purity, loc)
+      case Expr.LambdaClosure(cparams, fparams, freeVars, exp, tpe, loc) => Expr.LambdaClosure(cparams, fparams, freeVars, visit(exp), tpe, loc)
+      case Expr.ApplyAtomic(op, exps, tpe, purity, loc) => Expr.ApplyAtomic(op, exps.map(visit), tpe, purity, loc)
+      case Expr.ApplyClo(exp, exps, tpe, purity, loc) => Expr.ApplyClo(visit(exp), exps.map(visit), tpe, purity, loc)
+      case Expr.ApplyDef(sym, exps, tpe, purity, loc) => Expr.ApplyDef(sym, exps.map(visit), tpe, purity, loc)
+      case Expr.ApplyLocalDef(sym, exps, itpe, tpe, purity, loc) =>
+        val es = exps.map(visit)
+        if (sym == sym0) {
+          val all = freeVars.map(fv => Expr.Var(fv.sym, fv.tpe, loc.asSynthetic)) ++ es
+          Expr.ApplyLocalDef(sym, all, itpe, tpe, purity, loc)
+        } else {
+          Expr.ApplyLocalDef(sym, es, itpe, tpe, purity, loc)
+        }
+      case Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) => Expr.IfThenElse(visit(exp1), visit(exp2), visit(exp3), tpe, purity, loc)
+      case Expr.Stm(exp1, exp2, tpe, purity, loc) => Expr.Stm(visit(exp1), visit(exp2), tpe, purity, loc)
+      case Expr.Branch(exp, branches, tpe, purity, loc) => Expr.Branch(visit(exp), branches.map { case (s, e) => s -> visit(e) }, tpe, purity, loc)
+      case Expr.JumpTo(sym, tpe, purity, loc) => Expr.JumpTo(sym, tpe, purity, loc)
+      case Expr.Let(sym, exp1, exp2, tpe, purity, loc) => Expr.Let(sym, visit(exp1), visit(exp2), tpe, purity, loc)
+      case Expr.LetRec(sym, exp1, exp2, tpe, purity, loc) => Expr.LetRec(sym, visit(exp1), visit(exp2), tpe, purity, loc)
+      case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, purity, loc) => Expr.LocalDef(sym, fparams, visit(exp1), visit(exp2), tpe, purity, loc)
+      case Expr.Scope(sym, exp, tpe, purity, loc) => Expr.Scope(sym, visit(exp), tpe, purity, loc)
+      case Expr.TryCatch(exp, rules, tpe, purity, loc) => Expr.TryCatch(visit(exp), rules.map { case CatchRule(sym, clazz, exp) => CatchRule(sym, clazz, visit(exp)) }, tpe, purity, loc)
+      case Expr.TryWith(exp, effUse, rules, tpe, purity, loc) => Expr.TryWith(visit(exp), effUse, rules.map { case HandlerRule(op, fparams, exp) => HandlerRule(op, fparams, visit(exp)) }, tpe, purity, loc)
+      case Expr.Do(op, exps, tpe, purity, loc) => Expr.Do(op, exps.map(visit), tpe, purity, loc)
+      case Expr.NewObject(name, clazz, tpe, purity, methods, loc) => Expr.NewObject(name, clazz, tpe, purity, methods.map { case JvmMethod(ident, fparams, exp, retTpe, purity, loc) => JvmMethod(ident, fparams, visit(exp), retTpe, purity, loc) }, loc)
+    }
+
+    visit(expr00)
+  }
+
   /**
     * Returns a LambdaClosure under the given formal parameters fparams for the body expression exp where the overall lambda has type tpe.
     *
     * `exp` is visited inside this function and should not be visited before.
     */
-  private def mkLambdaClosure(fparams: List[FormalParam], exp: Expr, tpe: MonoType, loc: SourceLocation)(implicit localDefFreeVars: Map[Symbol.VarSym, List[FreeVar]], flix: Flix): Expr.LambdaClosure = {
+  private def mkLambdaClosure(fparams: List[FormalParam], exp: Expr, tpe: MonoType, loc: SourceLocation)(implicit flix: Flix): Expr.LambdaClosure = {
     // Step 1: Compute the free variables in the lambda expression.
     //         (Remove the variables bound by the lambda itself).
-    //         Add the captured symbols of any local defs that are captured by this lambda,
-    //         since the ApplyLocalDef will have new formal params,
-    //         so this lambda must also be able to apply with those captured symbols,
-    //         e.g.,
-    //             let a = 1;
-    //             def f() = a;
-    //             f
-    //         ====>
-    //             let a = 1;
-    //             def f(b) = b;
-    //             c -> f(c)
-    val freeVarsTotal = freeVars(exp).flatMap(fv => fv :: localDefFreeVars.getOrElse(fv.sym, List.empty))
-    val fvs = filterBoundParams(freeVarsTotal, fparams).toList
+    val fvs = filterBoundParams(freeVars(exp), fparams).toList
 
     // Step 2: Convert the free variables into a new parameter list and substitution.
     val (cloParams, subst) = getFormalParamsAndSubst(fvs, loc)
