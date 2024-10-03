@@ -36,7 +36,7 @@ object RecordConstraintSolver {
           ResolutionResult.constraints(List(Equality(tpe1, tpe2, prov)), progress = false)
       }
 
-    case _ => throw InternalCompilerException("unexpected type for record constraint solver", SourceLocation.Unknown)
+    case _ => ResolutionResult.constraints(List(Equality(tpe1, tpe2, prov)), progress = false)
   }
 
   /**
@@ -63,6 +63,6 @@ object RecordConstraintSolver {
       val subst = Substitution.singleton(sym, newRow)
       Some((newRow, subst))
 
-    case _ => ??? // MATT
+    case _ => None
   }
 }
