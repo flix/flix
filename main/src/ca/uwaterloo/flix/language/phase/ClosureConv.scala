@@ -114,13 +114,14 @@ object ClosureConv {
       // Step 2: Convert the free variables into a new parameter list and substitution.
       val (cloParams, subst) = getFormalParamsAndSubst(fvs, loc)
 
-      // Step 3: Replace every old symbol by its new symbol in the body of the function
-      //         and rewrite every occurrence of `sym` to apply with formal params
+      // Step 3: Rewrite every recursive call to include free vars and then replace
+      //         every occurrence of the free vars with their substitution.
       val e1 = visitExp(applySubst(rewriteApplyLocalDef(exp1, sym, fvs), subst))
 
-      // Step 4: Rewrite every ApplyLocalDef node to apply to the free vars and then the parameters.
+      // Step 4: Rewrite every ApplyLocalDef node to include free vars.
       val e2 = visitExp(rewriteApplyLocalDef(exp2, sym, fvs))
 
+      // Step 5: Update the definition to include the new parameter list
       val fps = cloParams ++ fparams
       Expr.LocalDef(sym, fps, e1, e2, tpe, purity, loc)
 
